@@ -52,6 +52,19 @@
     "method": "feature-delta motion vector objective at projector level"
   },
   {
+    "id": "2605.22558",
+    "title": "GeoWeaver: Grounding Visual Tokens with Geometric Evidence before Scene Reasoning",
+    "short": "GeoWeaver",
+    "category": "Geometry-grounded VLM",
+    "priority": "P2",
+    "date": "2026-05-24",
+    "venue": "arXiv",
+    "url": "https://arxiv.org/abs/2605.22558",
+    "thesis": "几何不应该只在 reasoning 阶段后融合，它应该先改造视觉 token 的坐标感。",
+    "takeaway": "这篇不是 JEPA，而是 VLM 视觉 token grounding：冻结几何编码器的证据被分配给多层视觉 token。",
+    "method": "multi-level geometry bank + residual grounding before LLM reasoning"
+  },
+  {
     "id": "2605.21059",
     "title": "Multimodal LLMs under Pairwise Modalities",
     "short": "Pairwise Modalities",
@@ -62,18 +75,6 @@
     "url": "https://arxiv.org/abs/2605.21059",
     "thesis": "多模态模型不一定需要完整 joint tuples；只要模态图连通，pairwise supervision 可以成为可扩展替代品。",
     "takeaway": "这是本 MVP 的 MinerU 图文样例页：Fig.1 解释动机，Fig.2 解释共享/私有 latent 生成过程。",
-    "method": "self-modal reconstruction + pairwise contrastive latent alignment",
-    "figures": [
-      {
-        "src": "../assets/mineru/2605.21059/images/fig1.jpg",
-        "label": "Fig. 1 · Pairwise supervision is the scalable object",
-        "caption": "Joint tuples are expensive; pairwise text-image, image-tactile, and text-3D data can form a connected modality graph."
-      },
-      {
-        "src": "../assets/mineru/2605.21059/images/fig2.jpg",
-        "label": "Fig. 2 · Shared and modality-specific latent factors",
-        "caption": "The paper separates common causal factors from modality-private variables before alignment."
-      }
-    ]
+    "method": "self-modal reconstruction + pairwise contrastive latent alignment"
   }
 ]

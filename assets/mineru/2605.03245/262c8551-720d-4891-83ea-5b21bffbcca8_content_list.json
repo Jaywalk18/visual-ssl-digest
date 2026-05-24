@@ -1,0 +1,2902 @@
+[
+    {
+        "type": "text",
+        "text": "Text-Conditional JEPA for Learning Semantically Rich Visual Representations ",
+        "text_level": 1,
+        "bbox": [
+            89,
+            109,
+            883,
+            131
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "Chen Huang 1 Xianhang Li 1 Vimal Thilak 1 Etai Littwin 1 Josh Susskind 1 ",
+        "bbox": [
+            212,
+            176,
+            754,
+            193
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "Abstract ",
+        "text_level": 1,
+        "bbox": [
+            241,
+            220,
+            318,
+            234
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "Image-based Joint-Embedding Predictive Architecture (I-JEPA) offers a promising approach to visual self-supervised learning through masked feature prediction. However with the inherent visual uncertainty at masked positions, feature prediction remains challenging and may fail to learn semantic representations. In this work, we propose Text-Conditional JEPA (TC-JEPA) that uses image captions to reduce the prediction uncertainty. Specifically, we modulate the predicted patch features using a fine-grained text conditioner that computes sparse cross-attention over input text tokens. With such conditioning, patch features become predictable as a function of text, thus are more semantically meaningful. We show TC-JEPA improves downstream performance and training stability, with promising scaling properties. TC-JEPA also offers a new visionlanguage pretraining paradigm based on feature prediction only, outperforming contrastive methods on diverse tasks, especially those requiring fine-grained visual understanding and reasoning. ",
+        "bbox": [
+            117,
+            246,
+            444,
+            580
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "1. Introduction ",
+        "text_level": 1,
+        "bbox": [
+            86,
+            611,
+            217,
+            626
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "Significant advances have been made in the field of Self-Supervised Learning (SSL) from images, with two common families of SSL approaches. Invariance-based methods produce high-level semantic representations by learning invariances across augmented image views (Chen et al., 2020; Grill et al., 2020; Caron et al., 2021). However, some image augmentations may hurt downstream generalization on tasks that require different invariances (Xiao et al., 2021; Huang et al., 2023). Masked Image Modeling (MIM) methods require less prior knowledge and learn visual representations by reconstructing masked image patches in the pixel (He et al., 2022) or latent space (Baevski et al., 2022). ",
+        "bbox": [
+            84,
+            637,
+            475,
+            819
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "image",
+        "img_path": "images/d94f9ec752f9ba8abb6795d779d360335583f289725b9baa7ac6f61cdea8f1cc.jpg",
+        "image_caption": [
+            "(a) "
+        ],
+        "image_footnote": [],
+        "content": "",
+        "bbox": [
+            576,
+            210,
+            808,
+            343
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "chart",
+        "img_path": "images/0a65426a09226e650ac879c6dcaaffb7f64fb6a5a6152afb9f01874cc2831439.jpg",
+        "content": "",
+        "chart_caption": [
+            "(b) ",
+            "IN-1k linear classi cation "
+        ],
+        "chart_footnote": [],
+        "bbox": [
+            500,
+            366,
+            694,
+            473
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "chart",
+        "img_path": "images/7434f5079fcf83fbdcaba68b45d56e0aad6857c72e027f7332c205153bebf883.jpg",
+        "content": "",
+        "chart_caption": [
+            "ADE20k linear segmentation ",
+            "Figure 1. (a) TC-JEPA is trained to predict the representation of a signal y from that of signal x, using a predictor conditioned on text input t to facilitate prediction. (b) TC-JEPA vs. 3 types of visual representation learning methods: MIM (I-JEPA), invariance-based SSL (DINOv2) and contrastive image-text training (SigLIP) methods. Note SigLIP is trained on a large dataset WebLI, while others are trained on the much smaller IN-21k dataset; both TC-JEPA and SigLIP use weak text supervision from image captions. TC-JEPA performs best for fine-grained image understanding (segmentation), scaling well with model size, and approaches the classification performance of SOTA invariance learning approach DINOv2 that requires handcrafted augmentations. "
+        ],
+        "chart_footnote": [],
+        "bbox": [
+            694,
+            364,
+            883,
+            473
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "MIM typically learns patch-level features that prioritize local structure, and latent MIM methods like Image-based Joint-Embedding Predictive Architecture (I-JEPA) (Assran et al., 2023) gain more popularity due to their ability to capture both local and semantic information. ",
+        "bbox": [
+            495,
+            641,
+            885,
+            717
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "Recent works either improve the JEPA objective (Darcet et al., 2025) or even scale to videos (Bardes et al., 2024). Despite these successes, JEPA’s core pretext task still poses challenges. Namely, predicting features in arbitrary masked positions involves large uncertainties. For example, it is hard to predict the masked bookshelf in the dog image in Fig. 2, since a clean wall would also be a plausible prediction. The intrinsic prediction uncertainty often makes I-JEPA sensitive to the masking strategy. When the mutual information between the context and masked patches is too low, feature prediction becomes challenging and may lead to representation collapse with no useful semantics encoded. Two recent attempts to address this issue use position-conditional encoders (Littwin et al., 2024) or stochastic positional embeddings (Bar et al., 2024), but the prediction difficulty remains without adding new information. ",
+        "bbox": [
+            495,
+            724,
+            888,
+            905
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "aside_text",
+        "text": "arXiv:2605.03245v1 [cs.LG] 5 May 2026 ",
+        "bbox": [
+            22,
+            279,
+            58,
+            717
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "page_footnote",
+        "text": "1Apple, Cupertino, United States. Correspondence to: Chen Huang <chen-huang@apple.com>. ",
+        "bbox": [
+            84,
+            827,
+            473,
+            854
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "page_footnote",
+        "text": "Proceedings of the $\\it 4 3 ^ { r d }$ International Conference on Machine Learning, Seoul, South Korea. PMLR 306, 2026. Copyright 2026 by the author(s). ",
+        "bbox": [
+            84,
+            864,
+            473,
+            905
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "page_number",
+        "text": "1 ",
+        "bbox": [
+            480,
+            922,
+            491,
+            934
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "",
+        "bbox": [
+            84,
+            85,
+            475,
+            147
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "text",
+        "text": "We propose to aid feature prediction using human- or LMMgenerated image captions (required only for feature pretraining, not at test time). Intuitively, a caption about scene composition (e.g., dog + bookshelf) can reveal the spatial relationships between context and target (bookshelf) windows. When the feature predictor is augmented with such text information, we can substantially reduce the feature prediction uncertainty. Hence we propose Text-Conditional JEPA (TC-JEPA) that combines the predictive power of JEPAs with text conditioning inputs (Fig. 1), which is under-explored in the context of visual representation learning. This way, we turn I-JEPA into a text-conditional representation learner, where patch representations are now predictable or transformable when “prompted” by text, thus are more language aligned and semantically meaningful. ",
+        "bbox": [
+            84,
+            152,
+            477,
+            380
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "text",
+        "text": "For strong text conditioning, we introduce a new finegrained text conditioner. Specifically, we modulate the predicted patch features at multiple layers of the predictor, by using cross-attention over text tokens. This helps to identify fine-grained correspondences between image patches and word tokens, which is optimized in a self-supervised way to best facilitate feature prediction. We further discuss useful regularizations on the patch-word similarities using sparsity and consistency constraints. Overall, our TC-JEPA is found to achieve improved performance on various tasks of classification and dense prediction, while being highly scalable and stable to train. ",
+        "bbox": [
+            84,
+            386,
+            477,
+            566
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "text",
+        "text": "Note the use of image-text pairs in TC-JEPA makes it comparable to language-supervised methods. One popular language-supervised method is CLIP (Radford et al., 2021) that contrasts image and text features. However, CLIP tends to focus on high-level semantics and abstract away detailed information, hence struggling with fine-grained image understanding tasks. Recent methods (Li et al., 2022b; Chen et al., 2025) improve by using grounding data, e.g., bounding box and region descriptions. Alternatives operate in an unsupervised way and incorporate fine-grained loss like the local-to-global image consistency loss (Dong et al., 2023; Naeem et al., 2024). More related to our method is unsupervised correspondence learning between image patches and text (Yao et al., 2022; Bica et al., 2024; Zheng et al., 2024). One key difference is that TC-JEPA learns such fine-grained correspondences for feature prediction rather than contrastive learning. In summary, we provide a new fine-grained vision-language pretraining method using the feature prediction objective, with no grounding data or contrastive loss. Experiments show TC-JEPA can achieve stronger performance than contrastive methods on different tasks, including dense prediction (e.g., segmentation) and multimodal (image captioning and VQA) tasks. ",
+        "bbox": [
+            84,
+            575,
+            477,
+            893
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "text",
+        "text": "",
+        "bbox": [
+            496,
+            84,
+            885,
+            114
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "text",
+        "text": "Our main contributions are as follows: 1) We propose TC-JEPA to improve I-JEPA via fine-grained text conditioning, which in turn produces semantically rich visual representations. 2) TC-JEPA leads to improved downstream performance, training stability and scaling properties. 3) TC-JEPA offers a fine-grained vision-language pretraining paradigm based on feature prediction only, which outperforms contrastive methods on diverse (fine-grained) tasks. ",
+        "bbox": [
+            496,
+            122,
+            887,
+            243
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "text",
+        "text": "2. Related Work ",
+        "text_level": 1,
+        "bbox": [
+            496,
+            263,
+            638,
+            277
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "text",
+        "text": "Visual SSL has evolved along two different paths. Invariance-based methods encourage the similarity between augmented views of the same image, using either a contrastive (Chen et al., 2020) or non-contrastive (Grill et al., 2020) loss with different mechanisms to prevent collapse. MoCo v3 (Chen et al., 2021) and DINO (Caron et al., 2021) use similar ideas for training with ViT (Dosovitskiy et al., 2021). These methods often excel at high-level vision tasks like classification, but are limited by the carefully designed data augmentations (Xiao et al., 2021; Huang et al., 2023). Whereas, MIM methods learn visual representations through a more generic pretext task: reconstructing masked image parts in pixel (He et al., 2022) or latent space (Baevski et al., 2022; Assran et al., 2023). While MIM typically captures local image information, latent MIM methods strike a better balance between learning local and highly semantic representations. There is also iBOT (Zhou et al., 2022) and DINOv2 (Oquab et al., 2024) that combines invariance learning and MIM, and Franca (Venkataramanan et al., 2025) and Web-DINO (Fan et al., 2025) are the recent scaling efforts of iBOT and DINOv2, respectively. ",
+        "bbox": [
+            495,
+            287,
+            888,
+            606
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "text",
+        "text": "JEPA offers a promising approach to latent MIM that learns by predicting masked information in feature space. JEPA has been successfully applied to audio (Baevski et al., 2022), image (Assran et al., 2023) and video data (Bardes et al., 2024). A recent line of work attempts to improve the JEPA prediction task. For example, CAPI (Darcet et al., 2025) predicts latent clusterings as the target representations to stabilize training. To address the prediction uncertainty at masked positions, some remedies include using positionconditional encoders (Littwin et al., 2024) or stochastic positional embeddings (Bar et al., 2024). We propose to use text information to explicitly reduce uncertainties, which was not explored for JEPA prediction before. ",
+        "bbox": [
+            495,
+            613,
+            888,
+            809
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "text",
+        "text": "Language-supervised methods are popularized by contrastive models like CLIP (Radford et al., 2021) and SigLIP (Zhai et al., 2023) that learn joint embeddings for image and text on large-scale datasets (Xu et al., 2024). Subsequent efforts improve the image-text alignment by using captioning loss (Yu et al., 2022), masked language modeling (Li et al., 2022a) or a cross-modal encoder via self-attention (Li et al., 2021; 2022a). Alternative works aim at training fine-grained vision-language models, either by using extra grounding data (Li et al., 2022b; Chen et al., 2025) or incorporating fine-grained loss like local-to-global image consistency (Dong et al., 2023; Naeem et al., 2024) and unsupervised correspondence learning between image patches and text tokens (Yao et al., 2022; Bica et al., 2024) or entire text captions (Zheng et al., 2024). We similarly learn such unsupervised correspondences but for JEPA prediction instead, leading to a non-contrastive, fine-grained vision-language pretraining approach. ",
+        "bbox": [
+            496,
+            816,
+            888,
+            893
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "header",
+        "text": "TC-JEPA ",
+        "bbox": [
+            450,
+            56,
+            517,
+            69
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "page_number",
+        "text": "2 ",
+        "bbox": [
+            480,
+            922,
+            491,
+            934
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "text",
+        "text": "",
+        "bbox": [
+            84,
+            84,
+            475,
+            282
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "3. Method ",
+        "text_level": 1,
+        "bbox": [
+            84,
+            300,
+            176,
+            316
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "3.1. I-JEPA Baseline ",
+        "text_level": 1,
+        "bbox": [
+            84,
+            325,
+            233,
+            340
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "The I-JEPA objective is to predict the representations of masked image parts, i.e., target patches $y = \\{ y _ { j } | j \\in B _ { y } \\}$ , given the context patches $x = \\{ x _ { i } | i \\in B _ { x } \\}$ in the same image, where $B _ { x }$ and $B _ { y }$ denote the set of context and target indices respectively. A multi-block masking strategy is used to produce non-overlapping patches x and y. ",
+        "bbox": [
+            84,
+            349,
+            475,
+            441
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "Context and target encoding. The context patch representations $z _ { x } = \\{ z _ { x _ { i } } \\} _ { i \\in B _ { i } }$ are extracted via an encoder $f _ { \\theta }$ parameterized using standard ViT (Dosovitskiy et al., 2021): $z _ { x _ { i } } = f _ { \\theta } ( x _ { i } )$ where each $z _ { x _ { i } } \\in \\mathbb { R } ^ { d }$ has a position embedding $p _ { i } \\in \\mathbb { R } ^ { d }$ added to it. The groundtruth target patch features $z _ { y _ { j } } = f _ { \\bar { \\theta } } ( y _ { j } ) \\in \\mathbb { R } ^ { d }$ are processed by $f _ { \\bar { \\theta } }$ that is an exponential moving average of $f _ { \\theta }$ . ",
+        "bbox": [
+            84,
+            448,
+            475,
+            555
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "Target prediction. We predict target features $\\begin{array} { r l } { \\hat { z } _ { y } } & { { } = } \\end{array}$ $\\{ \\hat { z } _ { y _ { j } } \\} _ { j \\in B _ { y } }$ via a predictor $g _ { \\phi }$ implemented as a narrow ViT. Specifically, $\\hat { z } _ { y } = g _ { \\phi } ( z _ { x } , m )$ , i.e., the predictor takes as input all the context features $z _ { x }$ and, conditioned on a sequence of positional mask tokens $m = \\{ m _ { j } \\} _ { j \\in B _ { y } }$ , predicts the target representations at patch positions specified by the mask tokens. Here, every mask token $m _ { j } \\in \\mathbb { R } ^ { d }$ is the sum of the position embedding $p _ { j }$ of the $j ^ { t h }$ target patch and a shared learnable vector m˜ , i.e., $m _ { j } = p _ { j } + \\tilde { m }$ . ",
+        "bbox": [
+            84,
+            561,
+            475,
+            698
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "Loss. The encoder $f _ { \\theta }$ and predictor $g _ { \\phi }$ are trained simultaneously by minimizing the feature prediction error: ",
+        "bbox": [
+            84,
+            704,
+            475,
+            736
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "equation",
+        "text": "$$\n\\mathcal {L} _ {\\text { predict }} = \\frac {1}{| B _ {y} |} \\sum_ {j \\in B _ {y}} \\| \\hat {z} _ {y _ {j}} - z _ {y _ {j}} \\| _ {2}, \\tag {1}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            163,
+            743,
+            475,
+            780
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "where $z _ { y _ { j } } = f _ { \\bar { \\theta } } ( y _ { j } )$ uses both an exponential-moving average feature extractor and a stop-gradient operation to prevent representation collapse. ",
+        "bbox": [
+            84,
+            789,
+            475,
+            835
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "3.2. Text-Conditional JEPA ",
+        "text_level": 1,
+        "bbox": [
+            84,
+            851,
+            281,
+            866
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "We propose to aid JEPA prediction by conditioning the predictor $g _ { \\phi }$ on (synthesized) image captions in addition to the positional mask tokens. Image captions are particularly helpful in case of low mutual information between the context and target patches, which can benefit from text descriptions often about scene composition or object interactions. ",
+        "bbox": [
+            84,
+            875,
+            475,
+            906
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "",
+        "bbox": [
+            496,
+            84,
+            887,
+            145
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "For conditioning purposes, given a text caption c associated with input image, we first map c using the pretrained T5 (Raffel et al., 2020) into a sequence of word embeddings $t = [ t _ { 1 } , \\dots , t _ { S } ] \\in \\mathbb { R } ^ { d _ { t } \\times S }$ , where $t _ { s } \\in \\mathbb { R } ^ { d _ { t } }$ and S is the sequence length. We use the language model T5 rather than CLIP’s text encoder (Radford et al., 2021) since T5 can better represent the composition and order information in natural language captions (Yuksekgonul et al., 2023). ",
+        "bbox": [
+            496,
+            152,
+            887,
+            273
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "To condition predictor $g _ { \\phi }$ on the extra sequence t, one straightforward way is simply to append t as additional tokens to the input sequence of $g _ { \\phi } , i . e . , g _ { \\phi } ( z _ { x } , m , t )$ . This is often referred to as sequence conditioning (Garrido et al., 2024; Assran et al., 2025). However, sequence conditioning will increase the sequence length processed by the predictor ViT, which requires additional model capacity with nonnegligible overhead in memory and compute. Moreover, such conditioning is only applied at the predictor’s input layer, with its effect rapidly vanishing in deeper layers. ",
+        "bbox": [
+            496,
+            281,
+            887,
+            434
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "Cross attention over word sequence. To address the above drawbacks, we propose to condition predictor $g _ { \\phi }$ by using lightweight cross attention over the word sequence at multiple layers of $g _ { \\phi }$ . We choose to directly condition the multi-layer patch representations in $g _ { \\phi }$ , because this allows us to compute patch-word similarities $( i . e .$ , fine-grained image-text correspondences) that unlock capabilities akin to visual grounding1. Concretely, we define query $q \\in \\mathbb { R } ^ { d }$ as for icted at the. Then q c $l ^ { t h }$ layer of s-attend $g _ { \\phi }$ $l \\in [ 1 , L ] , i . e . , q \\in \\{ \\hat { z } _ { x } ^ { ( l ) } , \\hat { z } _ { y } ^ { ( l ) } \\}$ the word embedding sequence $t \\in \\mathbb { R } ^ { d _ { t } \\times S }$ giving: ",
+        "bbox": [
+            496,
+            439,
+            887,
+            609
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "Attention $( q ^ { ( l ) } , K ^ { ( l ) } , V ^ { ( l ) } ) = \\sum _ { s = 1 } ^ { S }$ softmax $\\left( \\boldsymbol { q } ^ { ( l ) } ^ { \\top } \\cdot { K } _ { : , s } ^ { ( l ) } \\right) \\cdot { V } _ { : , s } ^ { ( l ) }$ ",
+        "bbox": [
+            486,
+            616,
+            901,
+            656
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "equation",
+        "text": "$$\nq ^ {(l)} = W _ {Q} ^ {(l)} \\cdot q, K ^ {(l)} = W _ {K} ^ {(l)} \\cdot t, V ^ {(l)} = W _ {V} ^ {(l)} \\cdot t,\n$$",
+        "text_format": "latex",
+        "bbox": [
+            486,
+            657,
+            828,
+            680
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "equation",
+        "text": "$$\nq \\leftarrow q + \\text { Attention } (q ^ {(l)}, K ^ {(l)}, V ^ {(l)}), \\tag {2}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            486,
+            681,
+            901,
+            700
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "where W (l)Q $W _ { Q } ^ { ( l ) } \\in \\mathbb { R } ^ { d \\times d } , W _ { K } ^ { ( l ) } \\in \\mathbb { R } ^ { d \\times d _ { t } }$ and $W _ { V } ^ { ( l ) } \\in \\mathbb { R } ^ { d \\times d _ { t } }$ are the learnable query, key and value matrices at layer l. Each cross-attention layer is residual and its output is added back to $q ,$ followed by an MLP network and LayerNorm. ",
+        "bbox": [
+            495,
+            707,
+            885,
+            772
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "In doing so, predictor $g _ { \\phi } ( z _ { x } , m , t )$ is conditioned in a patchspecific way: text t sefor each context patch $\\stackrel { \\cdot } { \\hat { z } } _ { x _ { i \\mid i \\in B _ { z } } } ^ { ( l ) }$ updates the feax or target patch zˆ(l)yj|j∈By $\\hat { z } _ { y _ { j \\mid j \\in B _ { y } } } ^ { ( l ) }$ dicted. Also note our text conditioning is attentive, which enables a selective use of word tokens in t for every patch, bearing similarity to visual grounding. However, one key difference from supervised visual grounding is that we find such finegrained correspondences in a self-supervised way, without any grounding annotations in given image-text pairs. The only supervision we use is the patch feature prediction error (Eq. (1)), i.e., we identify the word-patch correspondences that best support accurate feature prediction. ",
+        "bbox": [
+            495,
+            777,
+            887,
+            857
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "header",
+        "text": "TC-JEPA ",
+        "bbox": [
+            450,
+            56,
+            517,
+            69
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "page_footnote",
+        "text": "1Visual grounding (Xiao et al., 2025) is a task of identifying the fine-grained correspondence between words in a text caption and objects/patches in an image. ",
+        "bbox": [
+            496,
+            864,
+            885,
+            906
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "page_number",
+        "text": "3 ",
+        "bbox": [
+            480,
+            922,
+            491,
+            934
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "image",
+        "img_path": "images/5ceb4d7d2d5e3cfe2efe79262205e252fccb946d687ad798ab297b8ea5cb9f10.jpg",
+        "image_caption": [
+            "Figure 2. TC-JEPA: conditioning the I-JEPA predictor $g _ { \\phi }$ on text captions using a fine-grained text conditioner. Conditioning is applied to the patch features predicted at multiple layers of $g _ { \\phi } .$ , using cross attention over the word embedding sequences $\\{ t ^ { 1 } , \\ldots , t ^ { N } \\}$ extracted for N captions. This leads to multi-caption-conditioned patch features that are then max-pooled at each layer. Our text conditioning process is akin to self-supervised visual grounding, which identifies the fine-grained patch-word correspondences that are only optimized for target feature prediction. To further improve the self-supervised process, for conditioning with each $( n ^ { t h } )$ caption, we impose sparsity constraint $\\mathcal { L } _ { \\mathrm { s p a r s e } } ^ { n }$ and cross-layer consistency constraint $\\mathcal { L } _ { \\mathrm { c o n s i s t e n c y } } ^ { \\hat { n } }$ on the patch-word similarities. "
+        ],
+        "image_footnote": [],
+        "content": "",
+        "bbox": [
+            86,
+            71,
+            885,
+            324
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "text",
+        "text": "",
+        "bbox": [
+            84,
+            436,
+            475,
+            542
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "text",
+        "text": "To further improve the unsupervised process as defined by Eq. (2), we regularize the cosine patch-word similarities O(l)i = max(cos(q(l), K(l)), 0) ∈ RS when they are pos- $O _ { i } ^ { ( l ) } = \\operatorname* { m a x } ( \\cos ( { q ^ { ( l ) } , K ^ { ( l ) } } ) , 0 ) \\in \\mathbb { R } ^ { S }$ itive, $i . e . ,$ , between semantically related patch-word pairs. Nothe $O _ { i } ^ { ( l ) }$ is a rch for rity vector computed betweenand the entire word sequence $i ^ { t h }$ $i \\in \\{ B _ { x } , B _ { y } \\}$ t at layer l. Then we impose a sparsity constraint on $O _ { i } ^ { ( l ) }$ to maximize the selectivity of patch features with respect to related words. It is also found helpful to enforce cross-layer consistency of $O _ { i } ^ { ( l ) }$ to obtain similar word selections across layers for each patch. We do so by penalizing the deviation between $O _ { i } ^ { ( l ) }$ and the cross-layer mean ${ \\bar { O } } _ { i }$ : ",
+        "bbox": [
+            84,
+            550,
+            475,
+            743
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "equation",
+        "text": "$$\n\\mathcal {L} _ {\\text { sparse }} = \\frac {1}{| B _ {x} | + | B _ {y} |} \\sum_ {i \\in \\{B _ {x}, B _ {y} \\}} \\frac {1}{L} \\sum_ {l = 1} ^ {L} \\| O _ {i} ^ {(l)} \\| _ {1}, \\bar {O} _ {i} = \\frac {1}{L} \\sum_ {l = 1} ^ {L} O _ {i} ^ {(l)},\n$$",
+        "text_format": "latex",
+        "bbox": [
+            71,
+            750,
+            486,
+            795
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "equation",
+        "text": "$$\n\\mathcal {L} _ {\\text { consistency }} = \\frac {1}{| B _ {x} | + | B _ {y} |} \\sum_ {i \\in \\{B _ {x}, B _ {y} \\}} \\frac {1}{L} \\sum_ {l = 1} ^ {L} \\| O _ {i} ^ {(l)} - \\bar {O} _ {i} \\| _ {1},\n$$",
+        "text_format": "latex",
+        "bbox": [
+            71,
+            797,
+            436,
+            842
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "equation",
+        "text": "$$\n\\mathcal {L} = \\mathcal {L} _ {\\text { predict }} + \\lambda \\mathcal {L} _ {\\text { sparse }} + \\beta \\mathcal {L} _ {\\text { consistency }}, \\tag {3}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            71,
+            844,
+            488,
+            862
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "text",
+        "text": "where λ and β are the loss coefficients. ",
+        "bbox": [
+            84,
+            867,
+            344,
+            881
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "text",
+        "text": "With the overall loss function, we obtain a fine-grained text conditioner that is jointly optimized for feature prediction. Such a conditioner can reliably provide language-aware modulation on image patch feature prediction. This is desirable from the perspective of visual representation learning, because it means feature representations are predictable or transformable between local image regions as a function of text. This lends our patch representations with some level of multimodal understanding capabilities, making them textsensitive and semantically meaningful. ",
+        "bbox": [
+            84,
+            890,
+            473,
+            905
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "text",
+        "text": "",
+        "bbox": [
+            496,
+            436,
+            888,
+            573
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "text",
+        "text": "Multi-caption conditioning. When multiple text captions $\\{ c _ { n } \\} _ { n \\in [ 1 , N ] }$ are available to describe an image, they are more capable of capturing the richness of visual content; and with more text information, we may further improve the conditioning effect. Consider the image in Fig. 2 where the context patches are insufficient to predict representations of the target patch, a random bookshelf in the background. Compared to using only one text caption, using multiple captions is more likely to cover the background element or its spatial relationship with foreground objects, which could better guide feature prediction for the target bookshelf. ",
+        "bbox": [
+            496,
+            580,
+            887,
+            747
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "text",
+        "text": "For effective multi-caption conditioning, we need a good strategy to fuse text information. Since different captions floften capture different visual aspects, each caption offers a unique relationship between context and target patches. In other words, diverse captions often provide differing signals to condition the same inter-patch feature transformation. This makes it suboptimal to directly concatenate captions as a single text input to predictor $g _ { \\phi } .$ , since a target patch can simultaneously attend to multiple captions each with a different conditioning signal. ",
+        "bbox": [
+            495,
+            753,
+            887,
+            906
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "header",
+        "text": "TC-JEPA ",
+        "bbox": [
+            450,
+            56,
+            517,
+            69
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "page_number",
+        "text": "4 ",
+        "bbox": [
+            480,
+            922,
+            491,
+            934
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "text",
+        "text": "Here we choose to independently condition $g _ { \\phi }$ using each caption $c _ { n } .$ , followed by a feature-level fusion strategy. Let $t ^ { n }$ denote the word sequence for $c _ { n }$ . The query patch features q at the ${ { l } ^ { t h } }$ layer of $g _ { \\phi }$ will cross-attend to each $t ^ { n }$ using Eq. (2). We denote the separately conditioned patch features as $\\hat { z } _ { y _ { j , n } } ^ { ( l ) }$ zˆyj,n or zˆ xi,n $\\hat { z } _ { x _ { i , n } } ^ { ( l ) }$ for $n \\in [ 1 , N ]$ , and the rectified cosine patch-word similaritiescaption-conditioned feature set $\\{ \\hat { z } _ { y _ { j , n } } ^ { ( l ) } \\}$ $O _ { i , n } ^ { ( l ) }$ $\\{ \\hat { z } _ { x _ { i , n } } ^ { ( l ) } \\}$ the multi- at layer l, we max-pool them along the n dimension to fuse the most useful text information from N captions. The pooling result $\\hat { z } _ { y _ { j } } ^ { ( l ) }$ zˆyj or zˆxi $\\hat { z } _ { x _ { i } } ^ { ( l ) }$ is fed as input to the next layer. ",
+        "bbox": [
+            84,
+            84,
+            475,
+            263
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "We also regularize the patch-word similarities $\\{ O _ { i , n } ^ { ( l ) } \\}$ when conditioning the $i ^ { t h }$ patch with all the $n \\in [ 1 , N ]$ ] captions at layer l. Let $\\mathcal { L } _ { \\mathrm { s p a r s e } } ^ { n }$ denote the sparsity loss computed using Eq. (3) for conditioningconsistency loss for the $n ^ { t h }$ th the  capti $n ^ { t h }$ caption. Sis denoted as $\\mathcal { L } _ { \\mathrm { c c } } ^ { n }$ rly, thensistency. ",
+        "bbox": [
+            84,
+            271,
+            477,
+            368
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "equation",
+        "text": "$$\n\\mathcal {L} = \\mathcal {L} _ {\\text { predict }} + \\frac {\\lambda}{N} \\sum_ {n = 1} ^ {N} \\mathcal {L} _ {\\text { sparse }} ^ {n} + \\frac {\\beta}{N} \\sum_ {n = 1} ^ {N} \\mathcal {L} _ {\\text { consistency }} ^ {n}. \\tag {4}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            104,
+            375,
+            475,
+            416
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "4. Experimental Setup ",
+        "text_level": 1,
+        "bbox": [
+            84,
+            431,
+            277,
+            449
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "4.1. Pretraining on ImageNet ",
+        "text_level": 1,
+        "bbox": [
+            84,
+            455,
+            294,
+            472
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "Data preparation. IN-1k and IN-21k (Russakovsky et al., 2015) are the golden pretraining datasets for most visual SSL methods. We compare with recent SSL methods all pretrained on the same ImageNet dataset, either IN-1k or IN-21k, except that our TC-JEPA uses the dataset enriched with synthetic image captions. Following (Zheng et al., 2024), we use ShareGPT4V (Chen et al., 2024) to synthesize captions, with an average of 8.3/8.7 caption sentences per image for IN-1k/-21k. Appendix B includes the caption examples, statistics and generation details. ",
+        "bbox": [
+            84,
+            479,
+            475,
+            632
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "Implementation. We use the ViT architecture of ViT-B/16, ViT-L/16 or ViT-H/14 as image encoder $f _ { \\theta } ,$ , which is jointly trained with the predictor $g _ { \\phi }$ and text conditioner. For text conditioning purposes, we randomly sample N (default: 8) captions from the synthesized ones for each image. Note N is capped by the number of available synthetic captions per image. Loss coefficients in Eq. (4) are $\\lambda = 0 . 1 , \\beta = 0 . 5$ . We include in Appendix E the analysis of hyperparameters as well as our training stability, while Appendix D discusses compute cost. The full training and evaluation details are included in Appendix C. ",
+        "bbox": [
+            84,
+            638,
+            477,
+            806
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "4.2. Pretraining on Image-Text Datasets ",
+        "text_level": 1,
+        "bbox": [
+            84,
+            821,
+            367,
+            837
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "Data preparation. To further scale up training, we leverage the large image-text datasets CC12M (Changpinyo et al., 2021) and YFCC15M (Thomee et al., 2016). This also allows fair comparisons with recent contrastive visionlanguage models pretrained using these two datasets. We follow (Zheng et al., 2024) again to use ShareGPT4V to enrich the image captions available on CC12M and YFCC15M (details in Appendix B), which facilitates strong text conditioning in our TC-JEPA. We combine the raw caption with ShareGPT4V-synthesized ones for each image, which are then randomly sampled (N = 8) for our pretraining. ",
+        "bbox": [
+            84,
+            845,
+            477,
+            906
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "table",
+        "img_path": "images/0d2cf4d8aac21beb2c1e9af3b24cdfc473c8fb498f6f99e9d1026126b0bb4322.jpg",
+        "table_caption": [
+            "Table 1. Linear probing results on IN-1k. All methods are pretrained on IN-1k images, and TC-JEPA uses extra text supervision. "
+        ],
+        "table_footnote": [],
+        "table_body": "<table><tr><td>Method</td><td>Arch.</td><td>Epochs</td><td>Top-1</td></tr><tr><td colspan=\"4\">MIM methods (no augmentations)</td></tr><tr><td>data2vec (Baevski et al., 2022)</td><td>ViT-L/16</td><td>1600</td><td>77.3</td></tr><tr><td rowspan=\"3\">MAE (He et al., 2022)</td><td>ViT-B/16</td><td>1600</td><td>68.0</td></tr><tr><td>ViT-L/16</td><td>1600</td><td>76.0</td></tr><tr><td>ViT-H/14</td><td>1600</td><td>77.2</td></tr><tr><td rowspan=\"3\">I-JEPA (Assran et al., 2023)</td><td>ViT-B/16</td><td>600</td><td>72.9</td></tr><tr><td>ViT-L/16</td><td>600</td><td>77.5</td></tr><tr><td>ViT-H/14</td><td>300</td><td>79.3</td></tr><tr><td rowspan=\"3\">StoP (Bar et al., 2024)</td><td>ViT-B/16</td><td>600</td><td>74.5</td></tr><tr><td>ViT-L/16</td><td>600</td><td>78.5</td></tr><tr><td>ViT-H/14</td><td>300</td><td>79.6</td></tr><tr><td rowspan=\"3\">TC-JEPA (ours)</td><td>ViT-B/16</td><td>600</td><td>75.8</td></tr><tr><td>ViT-L/16</td><td>600</td><td>79.6</td></tr><tr><td>ViT-H/14</td><td>300</td><td>80.4</td></tr><tr><td colspan=\"4\">Invariance-based SSL methods (with augmentations)</td></tr><tr><td>SimCLR v2 (Chen et al., 2020)</td><td>RN152 (2×)</td><td>800</td><td>79.1</td></tr><tr><td>BYOL (Grill et al., 2020)</td><td>RN200 (2×)</td><td>800</td><td>79.6</td></tr><tr><td rowspan=\"2\">MoCo v3 (Chen et al., 2021)</td><td>ViT-B/16</td><td>300</td><td>76.7</td></tr><tr><td>ViT-BN-L/7</td><td>300</td><td>81.0</td></tr><tr><td rowspan=\"2\">DINO (Caron et al., 2021)</td><td>ViT-B/16</td><td>400</td><td>78.1</td></tr><tr><td>ViT-B/8</td><td>300</td><td>80.1</td></tr><tr><td rowspan=\"2\">iBOT (Zhou et al., 2022)</td><td>ViT-B/16</td><td>250</td><td>79.8</td></tr><tr><td>ViT-L/16</td><td>250</td><td>81.0</td></tr></table>",
+        "bbox": [
+            519,
+            113,
+            864,
+            436
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "",
+        "bbox": [
+            495,
+            450,
+            888,
+            556
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "Implementation. We train the ViT-B/16 and ViT-L/14 models for $f _ { \\theta }$ . Training and evaluation details are described in Appendix C. We use the same loss coefficients $\\lambda = 0 . 1$ , $\\beta = 0 . 5$ as downstream performance is not very sensitive to them (Appendix E). ",
+        "bbox": [
+            495,
+            564,
+            888,
+            642
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "5. Results ",
+        "text_level": 1,
+        "bbox": [
+            496,
+            659,
+            584,
+            674
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "5.1. Evaluating ImageNet Pretraining ",
+        "text_level": 1,
+        "bbox": [
+            496,
+            685,
+            764,
+            702
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "Image classification. Table 1 shows linear probing results on IN-1k using the encoder pretrained on the same dataset. Several observations: 1) TC-JEPA outperforms I-JEPA across 3 model scales, demonstrating our capabilities of encoding high-level semantics in visual representations. The larger TC-JEPA models also narrow the performance gap with invariance-based methods such as iBOT (80.4 vs. 81) without requiring hand-crafted data augmentations. 2) With text conditioning, TC-JEPA consistently outperforms StoP that improves JEPA prediction via stochastic positional embeddings. 3) When compared to other MIM methods like MAE and data2vec, TC-JEPA achieves significant gains in both performance and training speed (5× fewer epochs). ",
+        "bbox": [
+            495,
+            709,
+            888,
+            906
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "header",
+        "text": "TC-JEPA ",
+        "bbox": [
+            450,
+            56,
+            517,
+            69
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "page_number",
+        "text": "5 ",
+        "bbox": [
+            480,
+            922,
+            491,
+            934
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "table",
+        "img_path": "images/f983971f7d354096c9f8a619d635c4666048947b2a3cad225601de7d4b7a131d.jpg",
+        "table_caption": [
+            "Table 2. Transfer performance on other classification and dense tasks (object detection and semantic segmentation). All methods are pretrained on IN-1k, and our TC-JEPA uses extra text supervision. Linear: linear evaluation. FT: fine-tuning. "
+        ],
+        "table_footnote": [],
+        "table_body": "<table><tr><td rowspan=\"3\">Method</td><td rowspan=\"3\">ViT</td><td colspan=\"3\">Classification</td><td>Detection</td><td colspan=\"4\">Semantic segmentation (mIoU)</td></tr><tr><td>CIFAR100</td><td>Places205</td><td>iNat18</td><td>COCO</td><td colspan=\"2\">ADE20k</td><td colspan=\"2\">VOC</td></tr><tr><td colspan=\"3\">Linear probing accuracy</td><td> $AP^b$ </td><td>Linear</td><td>FT</td><td>Linear</td><td>FT</td></tr><tr><td colspan=\"10\">MIM methods (no augmentations)</td></tr><tr><td>data2vec (Baevski et al., 2022)</td><td>L/16</td><td>81.6</td><td>54.6</td><td>28.1</td><td>52.9</td><td>38.8</td><td>54.4</td><td>59.1</td><td>75.3</td></tr><tr><td>MAE (He et al., 2022)</td><td>H/14</td><td>77.3</td><td>55.0</td><td>32.9</td><td>50.1</td><td>33.3</td><td>50.9</td><td>67.6</td><td>80.7</td></tr><tr><td>I-JEPA (Assran et al., 2023)</td><td>H/14</td><td>87.5</td><td>58.4</td><td>47.6</td><td>53.7</td><td>36.9</td><td>51.2</td><td>64.6</td><td>81.4</td></tr><tr><td>StoP (Bar et al., 2024)</td><td>H/14</td><td>87.7</td><td>58.4</td><td>50.9</td><td>53.5</td><td>36.6</td><td>53.3</td><td>66.9</td><td>82.3</td></tr><tr><td>TC-JEPA (ours)</td><td>H/14</td><td>88.5</td><td>59.1</td><td>54.8</td><td>55.2</td><td>39.5</td><td>55.7</td><td>70.4</td><td>83.8</td></tr><tr><td colspan=\"10\">Invariance-based SSL methods (with augmentations)</td></tr><tr><td>DINO (Caron et al., 2021)</td><td>B/16</td><td>84.8</td><td>55.2</td><td>50.1</td><td>50.1</td><td>27.5</td><td>44.7</td><td>63.1</td><td>75.4</td></tr><tr><td>iBOT (Zhou et al., 2022)</td><td>B/16</td><td>85.5</td><td>56.7</td><td>50.0</td><td>51.2</td><td>32.3</td><td>48.2</td><td>64.3</td><td>78.2</td></tr><tr><td>TC-JEPA (ours)</td><td>B/16</td><td>84.5</td><td>56.9</td><td>49.3</td><td>52.6</td><td>36.6</td><td>51.6</td><td>66.2</td><td>81.5</td></tr></table>",
+        "bbox": [
+            130,
+            112,
+            844,
+            320
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "table",
+        "img_path": "images/c3302a72df70f8cde294afefa8a87560dbebbf26c67e4d70909138b566b2e37d.jpg",
+        "table_caption": [
+            "Table 3. Scaling pretraining data to IN-21k and image-text datasets CC27M (YFCC15M+CC12M) to compare with the state of the arts. Our TC-JEPA belongs to MIM methods but using weak text supervision. †: distilled from DINOv2-G on LVD-142M (results cited from (Venkataramanan et al., 2025)). C100: CIFAR100. Class.: linear classification. Seg.: linear segmentation (mIoU). "
+        ],
+        "table_footnote": [],
+        "table_body": "<table><tr><td rowspan=\"2\">Method</td><td rowspan=\"2\">ViT</td><td rowspan=\"2\">Data</td><td colspan=\"2\">Class.</td><td>Seg.</td></tr><tr><td>IN1k</td><td>C100</td><td>ADE</td></tr><tr><td colspan=\"6\">MIM methods (no augmentations)</td></tr><tr><td>I-JEPA (Assran et al., 2023)</td><td>L/16</td><td>IN-21k</td><td>77.2</td><td>88.7</td><td>38.2</td></tr><tr><td>CAPI (Darcet et al., 2025)</td><td>L/14</td><td>IN-21k</td><td>79.3</td><td>89.2</td><td>38.7</td></tr><tr><td>TC-JEPA (ours)</td><td>L/16</td><td>IN-21k</td><td>82.1</td><td>91.6</td><td>41.2</td></tr><tr><td>TC-JEPA (ours)</td><td>L/16</td><td>CC27M</td><td>81.4</td><td>91.2</td><td>42.1</td></tr><tr><td colspan=\"6\">Invariance+MIM-based SSL methods (with augmentations)</td></tr><tr><td>iBOT (Zhou et al., 2022)</td><td>L/16</td><td>IN-21k</td><td>82.3</td><td>92.8</td><td>39.2</td></tr><tr><td>Franca (Venkataramanan et al., 2025)</td><td>L/14</td><td>IN-21k</td><td>84.5</td><td>94.1</td><td>41.4</td></tr><tr><td>DINOv2 (Oquab et al., 2024)</td><td>L/14</td><td>IN-21k</td><td>84.0</td><td>93.9</td><td>37.8</td></tr><tr><td>DINOv2 (Oquab et al., 2024)†</td><td>L/14</td><td>LVD-142M</td><td>86.3</td><td>93.4</td><td>41.8</td></tr><tr><td>Web-DINO (Fan et al., 2025)</td><td>L/16</td><td>MC-2B</td><td>82.4</td><td>90.7</td><td>40.3</td></tr><tr><td colspan=\"6\">Language-supervised methods</td></tr><tr><td>SigLIP (Zhai et al., 2023)</td><td>L/16</td><td>WebLI</td><td>80.5</td><td>89.8</td><td>20.5</td></tr><tr><td>SigLIP2 (Tschannen et al., 2025)</td><td>L/16</td><td>WebLI</td><td>82.5</td><td>91.2</td><td>24.6</td></tr></table>",
+        "bbox": [
+            89,
+            435,
+            470,
+            619
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "text",
+        "text": "Transfer learning. To assess generalization, we perform linear probing on other classification datasets: CI-FAR100 (Krizhevsky, 2009), Places205 (Zhou et al., 2014) and iNat18 (Van Horn et al., 2018). Table 2 shows that TC-JEPA outperforms previous MIM methods across the three datasets, and decreases the gap again with augmentation invariance-based methods, even surpassing them on Places205. ",
+        "bbox": [
+            84,
+            641,
+            475,
+            762
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "text",
+        "text": "Dense prediction tasks. We consider object detection on COCO dataset (Lin et al., 2014) and semantic segmentation on ADE20k (Zhou et al., 2017) and Pascal VOC (Everingham et al., 2015), and report $\\mathsf { A P } ^ { b }$ and mIoU for the two tasks. These tasks require good localization and recognition, which could benefit from spatial and semantic patch representations. Note segmentation is performed under both linear and full fine-tuning protocols, with the former being a more explicit evaluation of representation quality. ",
+        "bbox": [
+            84,
+            768,
+            475,
+            906
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "image",
+        "img_path": "images/db7a8d75d70abf0fc6a783047b23f2ed6db86ec47ae1601caaf763e2e41f461c.jpg",
+        "image_caption": [
+            "Figure 3. Scaling behavior of I-JEPA and TC-JEPA w.r.t. both model and training data size. Top row: scaling up model size when trained on IN-21k. Bottom row: increasing pretraining data when training ViT-L/16. "
+        ],
+        "image_footnote": [],
+        "content": "",
+        "bbox": [
+            498,
+            338,
+            888,
+            569
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "text",
+        "text": "In Table 2, we see the local patch features learned by our TC-JEPA significantly improve over invariance-based methods on dense tasks, since the latter prioritize global image features. For instance, on COCO detection task, TC-JEPA achieves 2.5% and 1.4% APb gains over DINO and iBOT respectively, suggesting limited localization capabilities with invariance learning. When compared with prior MIM methods that similarly learn local features, TC-JEPA outperforms them across different tasks and evaluation settings by learning text-sensitive, and hence more semantically meaningful patch features. Note TC-JEPA achieves this without performance degradation on classification tasks, highlighting its ability to produce strong visual representations that can capture both global and fine-grained information. ",
+        "bbox": [
+            495,
+            641,
+            888,
+            853
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "text",
+        "text": "Scaling up training data. We further explore the scaling behavior of TC-JEPA w.r.t. data size. After scaling from IN-1k to IN-21k (13M images) and to the combined image-text datasets YFCC15M+CC12M, we compare with state-of-theart self- and text-supervised models in Table 3. ",
+        "bbox": [
+            496,
+            859,
+            888,
+            906
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "header",
+        "text": "TC-JEPA ",
+        "bbox": [
+            450,
+            56,
+            517,
+            69
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "page_number",
+        "text": "6 ",
+        "bbox": [
+            480,
+            922,
+            491,
+            934
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "table",
+        "img_path": "images/5cb8ef683719ea8a70338c2917ff359914fda9fc0f3a3d6ccc98c9f4241904b7.jpg",
+        "table_caption": [
+            "Table 4. Comparing with contrastive vision-language models pretrained on image-text datasets. CC27M denotes our combined YFCC15M+CC12M datasets. The SPARC and DreamLIP methods use the same extra synthetic text captions as TC-JEPA. †: our implementation. Class.: linear classification. Det.: object detection $( \\mathsf { A P } ^ { b } )$ . Seg.: semantic segmentation (mIoU) via supervised finetuning transfer. "
+        ],
+        "table_footnote": [],
+        "table_body": "<table><tr><td>Method</td><td>ViT</td><td>Data</td><td>Class. Det. IN1k</td><td>COCO</td><td>Seg. ADE</td></tr><tr><td>CLIP (Radford et al., 2021)</td><td>B/16</td><td>YFCC15M</td><td>66.5</td><td>43.6</td><td>47.8</td></tr><tr><td>BLIP (Li et al., 2022a)</td><td>B/16</td><td>Merged14M</td><td>71.2</td><td>43.1</td><td>46.9</td></tr><tr><td>MaskCLIP (Dong et al., 2023)</td><td>B/16</td><td>YFCC15M</td><td>73.7</td><td>45.4</td><td>50.5</td></tr><tr><td>SPARC (Bica et al., 2024)†</td><td>B/16</td><td>YFCC15M</td><td>73.4</td><td>52.0</td><td>52.3</td></tr><tr><td>DreamLIP (Zheng et al., 2024)</td><td>B/16</td><td>YFCC15M</td><td>75.2</td><td>47.2</td><td>49.6</td></tr><tr><td>TC-JEPA (ours)</td><td>B/16</td><td>YFCC15M</td><td>77.1</td><td>54.5</td><td>55.2</td></tr><tr><td>GroupViT (Xu et al., 2022)</td><td>S/16</td><td>CC27M</td><td>69.8</td><td>44.3</td><td>50.1</td></tr><tr><td>SPARC (Bica et al., 2024)†</td><td>B/16</td><td>CC27M</td><td>74.1</td><td>52.6</td><td>54.0</td></tr><tr><td>DreamLIP (Zheng et al., 2024)</td><td>B/16</td><td>CC30M</td><td>78.6</td><td>50.7</td><td>52.4</td></tr><tr><td>TC-JEPA (ours)</td><td>B/16</td><td>CC27M</td><td>77.3</td><td>55.6</td><td>56.8</td></tr><tr><td>TC-JEPA (ours)</td><td>L/14</td><td>CC27M</td><td>81.9</td><td>58.0</td><td>58.8</td></tr></table>",
+        "bbox": [
+            89,
+            176,
+            470,
+            344
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "text",
+        "text": "",
+        "bbox": [
+            84,
+            359,
+            475,
+            390
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "text",
+        "text": "We find our IN-21k pretrained model already matches or exceeds the classification performance of the text-supervised models SigLIP/v2 trained on a much larger dataset WebLI. In the meantime, TC-JEPA achieves huge gains on ADE20k segmentation (e.g., +16.6% mIoU over SigLIP2). This confirms the advantage of our text-conditional JEPA objective over contrastive image-text alignment, which tends to dismiss image details that are key to dense tasks. ",
+        "bbox": [
+            84,
+            397,
+            475,
+            518
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "text",
+        "text": "In comparison to MIM methods, TC-JEPA significantly outperforms the I-JEPA and recent CAPI methods on both classification and segmentation tasks. Methods of iBOT, Franca and DINOv2 further combine MIM and invariance learning for stronger SSL. When trained on the same IN-21k dataset, TC-JEPA and Franca achieve the highest mIoU on ADE20k (41.2/41.4), and TC-JEPA remains competitive on classification tasks (within 2.5% of top performers). After scaling training data to YFCC15M+CC12M, TC-JEPA sets a new state of the art (42.1) on ADE20k. Notably on ADE20k, TC-JEPA surpasses DINOv2 (41.8) distilled from LVD-142M and Web-DINO (40.3) trained on MC-2B, while using 5× and 75× less data respectively. ",
+        "bbox": [
+            84,
+            525,
+            475,
+            722
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "text",
+        "text": "Finally, Fig. 3 shows TC-JEPA scales well with both data and model size, outperforming I-JEPA baseline in all settings. Interestingly, increasing pretraining data for I-JEPA does not exhibit a clear scaling trend on IN-1k classification. ",
+        "bbox": [
+            84,
+            729,
+            475,
+            790
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "text",
+        "text": "5.2. Evaluating Pretraining with Image-Text Datasets ",
+        "text_level": 1,
+        "bbox": [
+            84,
+            806,
+            460,
+            821
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "text",
+        "text": "Pretraining on image-text datasets enables comparing with popular vision-language models mostly trained via contrastive image-text alignment (e.g., CLIP). Note our TC-JEPA offers a non-contrastive vision-language pretraining method, based on text-conditional, latent MIM. TC-JEPA further captures fine-grained image-text correspondence (between patches and text tokens) under this new paradigm. To evaluate whether TC-JEPA improves fine-grained image understanding, we again test on classification and other tasks that require such fine-grained capabilities. We focus on comparing with recent contrastive methods using the same/similar image-text datasets and training backbones. Special attention is paid to contrastive methods that use a fine-grained loss but no grounding data. ",
+        "bbox": [
+            84,
+            830,
+            475,
+            905
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "table",
+        "img_path": "images/6e4e205e52f9fd00932a0940622a92a470acf3c72e18b1adef6fdb2fbd16b5e4.jpg",
+        "table_caption": [
+            "Table 5. Comparison with contrastive methods on visionlanguage tasks: image captioning (CIDEr score) and VQA (accuracy). All methods are pretrained on YFCC15M with a ViT-B/16 visual encoder. SPARC uses the same extra synthetic text captions as TC-JEPA. †: our implementation. "
+        ],
+        "table_footnote": [],
+        "table_body": "<table><tr><td rowspan=\"2\">Method</td><td>Captioning</td><td colspan=\"2\">VQA</td></tr><tr><td>COCO</td><td>GQA</td><td>VQAv2</td></tr><tr><td>CLIP (Radford et al., 2021)</td><td>108.3</td><td>44.6</td><td>55.2</td></tr><tr><td>SPARC (Bica et al., 2024)†</td><td>109.7</td><td>45.4</td><td>56.2</td></tr><tr><td>TC-JEPA (ours)</td><td>111.6</td><td>46.3</td><td>57.8</td></tr></table>",
+        "bbox": [
+            529,
+            151,
+            854,
+            227
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "text",
+        "text": "",
+        "bbox": [
+            495,
+            250,
+            887,
+            385
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "text",
+        "text": "Classification and dense tasks. Table 4 shows that TC-JEPA, when trained on YFCC15M, significantly outperforms CLIP across tasks by up to 10.9%, highlighting our ability to learn both semantically meaningful and spatially precise features. On the other hand, BLIP combines contrastive image-text learning with masked language modeling, which improves classification performance over CLIP but hurts localization (detection and segmentation). MaskCLIP further improves by adding a local-to-global image consistency loss, but underperforms our approach. SPARC and DreamLIP are more related to TC-JEPA in that they similarly model fine-grained correspondence between image patches and multiple words or text captions. We differ by learning such properties in a non-contrastive way and perform better across the board. ",
+        "bbox": [
+            495,
+            391,
+            888,
+            618
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "text",
+        "text": "When scaling to larger datasets YFCC15M+CC12M, our TC-JEPA still surpasses SPARC and DreamLIP on dense tasks while achieving classification performance comparable to DreamLIP (77.3 vs. 78.6). TC-JEPA also consistently outperforms GroupViT, a method specialized for semantic segmentation. The gains become more pronounced when we scale up to a larger model ViT-L/14, demonstrating good scalability of TC-JEPA. ",
+        "bbox": [
+            495,
+            626,
+            887,
+            747
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "text",
+        "text": "Vision-language tasks. Recall the patch representations learned with TC-JEPA are predictable as a function of text, encoding rich semantics in a predictive way. One hypothesis is that such predictive representations have strong multimodal capabilities, which could be better-suited than constrastively learned features for vision-language understanding and generation tasks. We empirically prove this hypothesis by evaluating the representations learned by TC-JEPA and contrastive baselines on the Visual Question Answering (VQA) tasks on GQA (Hudson & Manning, 2019) and ",
+        "bbox": [
+            495,
+            753,
+            888,
+            905
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "header",
+        "text": "TC-JEPA ",
+        "bbox": [
+            450,
+            56,
+            517,
+            69
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "page_number",
+        "text": "7 ",
+        "bbox": [
+            480,
+            922,
+            491,
+            934
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "image",
+        "img_path": "images/55e6f85c111fad78e8ffa61ac7a84d454305342c30593477581123a1d1989765.jpg",
+        "image_caption": [
+            "Figure 4. Ablating the key components of our text conditioning method. All baselines use the ViT-L/16 encoder pretrained on IN-1k (with the same synthetic text captions). "
+        ],
+        "image_footnote": [],
+        "content": "",
+        "bbox": [
+            155,
+            80,
+            816,
+            247
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "text",
+        "text": "43VQAv2 (Goyal et al., 2017) datasets, as well as on the image 41.captioning task on COCO dataset. Appendix C.3 includes 41the evaluation details on these tasks that require fine-grained 39IoUvisual understanding and/or reasoning. ",
+        "bbox": [
+            84,
+            305,
+            473,
+            367
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "text",
+        "text": "Table 5 shows that TC-JEPA outperforms the contrastive 37 35.6baselines CLIP and SPARC (with a fine-grained loss) on 35both captioning and VQA tasks. These results confirm IN-1k IN-21k the superior representation quality of our non-contrastive pretraining approach in the multimodal setting. ",
+        "bbox": [
+            84,
+            373,
+            475,
+            450
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "text",
+        "text": "5.3. Analysis ",
+        "text_level": 1,
+        "bbox": [
+            86,
+            465,
+            179,
+            481
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "text",
+        "text": "Ablations. Fig. 4 ablates the key components of our text conditioning method, in order to disentangle their contributions from using the text supervision itself. We first observe a big performance drop when TC-JEPA is trained without using the regularization terms $\\mathcal { L } _ { \\mathrm { s p a r s e } }$ and Lconsistency. Adding $\\mathcal { L } _ { \\mathrm { s p a r s e } }$ is particularly helpful because it helps to find useful patch-word similarities during text conditioning, leading to word-sensitive, semantic patch features that see a performance jump. $\\mathcal { L } _ { \\mathrm { c o n s i s t e n c y } }$ further improves by constraining the similarity consistency across different layers of the conditional feature predictor. Second, it can be seen that conditioning a single layer of the predictor significantly underperforms multi-layer conditioning. ",
+        "bbox": [
+            84,
+            489,
+            475,
+            686
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "text",
+        "text": "Finally, we compare our fine-grained conditioning method with popular conditioning methods that often use holistic text features (see method details in Appendix A). Fig. 4 shows the inferior performance of using cross attention and Adaptive Layer Normalization (AdaLN) (Xu et al., 2019; Bar et al., 2025), both conditioned on the caption-level text embeddings to modulate predictor layers. Their performance gap with TC-JEPA is especially apparent on the segmentation task. This is because conditioning at caption level, rather than word level, is unable to align patch features with fine-grained textual semantics, hence struggling with segmentation-like tasks that require local image understanding. Feature conditioning (Garrido et al., 2024; Zhou et al., 2025) the predictor inputs is further limited by single-layer ",
+        "bbox": [
+            84,
+            693,
+            475,
+            905
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "image",
+        "img_path": "images/c9b47047932aa0244c559e3879c73d6022428de5da424f7ef18574525a5b16c2.jpg",
+        "image_caption": [
+            "Figure 5. Visualizing text-conditioned feature prediction. We obtain sparse and semantic patch-word similarities (averaged across predictor layers) that are unsupervisedly learned to aid target patch feature prediction. This makes TC-JEPA achieve lower feature prediction error than I-JEPA, confirming that our text conditioner can indeed reduce prediction uncertainty. "
+        ],
+        "image_footnote": [],
+        "content": "",
+        "bbox": [
+            498,
+            301,
+            885,
+            638
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "text",
+        "text": "conditioning, achieving the lowest task performance. ",
+        "bbox": [
+            496,
+            762,
+            846,
+            777
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "text",
+        "text": "Prediction visualization. From Fig. 5 we observe that 1) although our text-conditioned predictor identifies unsupervised patch-word correspondences, they are semantically meaningful. 2) Such fine-grained text conditioning helps reduce feature prediction uncertainty (e.g., when predicting a dog sitting on a truck), leading to low prediction error, and more importantly, feature representations that are implicitly aligned with language. ",
+        "bbox": [
+            495,
+            784,
+            887,
+            906
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "header",
+        "text": "TC-JEPA ",
+        "bbox": [
+            450,
+            56,
+            517,
+            69
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "page_number",
+        "text": "8 ",
+        "bbox": [
+            480,
+            922,
+            491,
+            934
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "text",
+        "text": "6. Conclusion ",
+        "text_level": 1,
+        "bbox": [
+            86,
+            83,
+            204,
+            99
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "text",
+        "text": "In this paper, we introduce fine-grained text conditioning into the JEPA prediction task, which learns text-sensitive and semantically rich visual representations. We show our TC-JEPA method can reduce feature prediction uncertainty and hence improve training stability. When evaluated on various downstream tasks, TC-JEPA achieves strong performance with promising scaling properties. TC-JEPA can be also viewed as a predictive vision-language pretraining approach, which compares favorably to contrastive ones especially on dense prediction and vision-language tasks. ",
+        "bbox": [
+            84,
+            109,
+            475,
+            261
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "text",
+        "text": "Impact Statement ",
+        "text_level": 1,
+        "bbox": [
+            86,
+            280,
+            240,
+            296
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "text",
+        "text": "This paper proposes a visual representation learning method based on text-conditional feature prediction within images. One potential societal impact is that, when the pretraining data of either the images or conditioning texts present (unintentional) biases, our method could inherit those biases in learned feature representations. As a result, one may observe unfair or discriminative outcomes that are sub-optimal for AI-assisted applications. ",
+        "bbox": [
+            84,
+            305,
+            475,
+            426
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "text",
+        "text": "References ",
+        "text_level": 1,
+        "bbox": [
+            86,
+            446,
+            181,
+            460
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "list",
+        "sub_type": "ref_text",
+        "list_items": [
+            "Assran, M., Duval, Q., Misra, I., Bojanowski, P., Vincent, P., Rabbat, M., LeCun, Y., and Ballas, N. Self-supervised learning from images with a joint-embedding predictive architecture. In CVPR, 2023. ",
+            "Assran, M., Bardes, A., Fan, D., Garrido, Q., Howes, R., Komeili, M., Muckley, M., Rizvi, A., Roberts, C., Sinha, K., Zholus, A., Arnaud, S., Gejji, A., Martin, A., Robert Hogan, F., Dugas, D., Bojanowski, P., Khalidov, V., Labatut, P., Massa, F., Szafraniec, M., Krishnakumar, K., Li, Y., Ma, X., Chandar, S., Meier, F., LeCun, Y., Rabbat, M., and Ballas, N. V-JEPA 2: Self-supervised video models enable understanding, prediction and planning. arXiv preprint arXiv:2506.09985, 2025. ",
+            "Baevski, A., Hsu, W.-N., Xu, Q., Babu, A., Gu, J., and Auli, M. data2vec: A general framework for self-supervised learning in speech, vision and language. In ICML, 2022. ",
+            "Baldassarre, F., Szafraniec, M., Terver, B., Khalidov, V., Massa, F., LeCun, Y., Labatut, P., Seitzer, M., and Bojanowski, P. Back to the features: Dino as a foundation for video world models. arXiv preprint arXiv:2507.19468, 2025. ",
+            "Bao, H., Dong, L., Piao, S., and Wei, F. BEit: BERT pretraining of image transformers. In ICLR, 2022. ",
+            "Bar, A., Bordes, F., Shocher, A., Assran, M., Vincent, P., Ballas, N., Darrell, T., Globerson, A., and LeCun, Y. "
+        ],
+        "bbox": [
+            86,
+            469,
+            475,
+            905
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "list",
+        "sub_type": "ref_text",
+        "list_items": [
+            "Stochastic positional embeddings improve masked image modeling. In ICML, 2024. ",
+            "Bar, A., Zhou, G., Tran, D., Darrell, T., and LeCun, Y. Navigation world models. In CVPR, 2025. ",
+            "Bardes, A., Garrido, Q., Ponce, J., Rabbat, M., LeCun, Y., Assran, M., and Ballas, N. Revisiting feature prediction for learning visual representations from video. arXiv preprint arXiv:2404.08471, 2024. ",
+            "Beyer, L., Wan, B., Madan, G., Pavetic, F., Steiner, A., Kolesnikov, A., Pinto, A. S., Bugliarello, E., Wang, X., Yu, Q., Chen, L.-C., and Zhai, X. A study of autoregressive decoders for multi-tasking in computer vision. arXiv preprint arXiv:2303.17376, 2023. ",
+            "Bica, I., Ilic, A., Bauer, M., Erdogan, G., Bosnjak, M., ˇ Kaplanis, C., Gritsenko, A. A., Minderer, M., Blundell, C., Pascanu, R., and Mitrovic, J. Improving fine-grained understanding in image-text pre-training. In ICML, 2024. ",
+            "Caron, M., Touvron, H., Misra, I., Jegou, H., Mairal, J., ´ Bojanowski, P., and Joulin, A. Emerging properties in self-supervised vision transformers. In ICCV, 2021. ",
+            "Changpinyo, S., Sharma, P., Ding, N., and Soricut, R. Conceptual 12M: Pushing web-scale image-text pre-training to recognize long-tail visual concepts. In CVPR, 2021. ",
+            "Chen, H.-Y., Lai, J., Zhang, H., Wang, A., Eichner, M., You, K., Cao, M., Zhang, B., Yang, Y., and Gan, Z. Contrastive localized language-image pre-training. In ICML, 2025. ",
+            "Chen, L., Li, J., Dong, X., Zhang, P., He, C., Wang, J., Zhao, F., and Lin, D. ShareGPT4V: Improving large multimodal models with better captions. In ECCV, 2024. ",
+            "Chen, T., Kornblith, S., Swersky, K., Norouzi, M., and Hinton, G. Big self-supervised models are strong semisupervised learners. In NeurIPS, 2020. ",
+            "Chen, X., Xie, S., and He, K. An empirical study of training self-supervised vision transformers. arXiv preprint arXiv:2104.02057, 2021. ",
+            "Dai, W., Li, J., Li, D., Tiong, A., Zhao, J., Wang, W., Li, B., Fung, P., and Hoi, S. InstructBLIP: Towards generalpurpose vision-language models with instruction tuning. In NeurIPS, 2023. ",
+            "Darcet, T., Baldassarre, F., Oquab, M., Mairal, J., and Bojanowski, P. Cluster and predict latents patches for improved masked image modeling. arXiv preprint arXiv:2502.08769, 2025. ",
+            "Dong, X., Bao, J., Zheng, Y., Zhang, T., Chen, D., Yang, H., Zeng, M., Zhang, W., Yuan, L., Chen, D., Wen, F., and Yu, N. MaskCLIP: Masked self-distillation advances contrastive language-image pretraining. In CVPR, 2023. "
+        ],
+        "bbox": [
+            500,
+            84,
+            887,
+            905
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "header",
+        "text": "TC-JEPA ",
+        "bbox": [
+            450,
+            56,
+            517,
+            69
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "page_number",
+        "text": "9 ",
+        "bbox": [
+            480,
+            922,
+            491,
+            934
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "list",
+        "sub_type": "ref_text",
+        "list_items": [
+            "Dosovitskiy, A., Beyer, L., Kolesnikov, A., Weissenborn, D., Zhai, X., Unterthiner, T., Dehghani, M., Minderer, M., Heigold, G., Gelly, S., Uszkoreit, J., and Houlsby, N. An image is worth 16x16 words: Transformers for image recognition at scale. In ICLR, 2021. ",
+            "Everingham, M., Eslami, S. M., Gool, L., Williams, C. K., Winn, J., and Zisserman, A. The pascal visual object classes challenge: A retrospective. IJCV, 111(1):98–136, 2015. ",
+            "Fan, D., Tong, S., Zhu, J., Sinha, K., Liu, Z., Chen, X., Rabbat, M., Ballas, N., LeCun, Y., Bar, A., et al. Scaling language-free visual representation learning. In ICCV, 2025. ",
+            "Garrido, Q., Assran, M., Ballas, N., Bardes, A., Najman, L., and LeCun, Y. Learning and leveraging world models in visual representation learning. arXiv preprint arXiv:2403.00504, 2024. ",
+            "Goyal, P., Duval, Q., Reizenstein, J., Leavitt, M., Xu, M., Lefaudeux, B., Singh, M., Reis, V., Caron, M., Bojanowski, P., Joulin, A., and Misra, I. VISSL. https:// github.com/facebookresearch/vissl, 2021. ",
+            "Goyal, Y., Khot, T., Summers-Stay, D., Batra, D., and Parikh, D. Making the V in VQA matter: Elevating the role of image understanding in Visual Question Answering. In CVPR, 2017. ",
+            "Grill, J.-B., Strub, F., Altche, F., Tallec, C., Richemond, ´ P. H., Buchatskaya, E., Doersch, C., Pires, B. A., Guo, Z. D., Azar, M. G., Piot, B., Kavukcuoglu, K., Munos, R., and Valko, M. Bootstrap your own latent a new approach to self-supervised learning. In NeurIPS, 2020. ",
+            "He, K., Gkioxari, G., Dollar, P., and Girshick, R. Mask´ R-CNN. In ICCV, pp. 2980–2988, 2017. ",
+            "He, K., Chen, X., Xie, S., Li, Y., Dollar, P., and Girshick, ´ R. Masked autoencoders are scalable vision learners. In CVPR, 2022. ",
+            "Huang, C., Goh, H., Gu, J., and Susskind, J. MAST: Masked augmentation subspace training for generalizable selfsupervised priors. In ICLR, 2023. ",
+            "Hudson, D. A. and Manning, C. D. GQA: A new dataset for real-world visual reasoning and compositional question answering. In CVPR, 2019. ",
+            "Krizhevsky, A. Learning multiple layers of features from tiny images. Technical report, University of Toronto, 2009. ",
+            "Lavoie, S., Kirichenko, P., Ibrahim, M., Assran, M., Wilson, A. G., Courville, A., and Ballas, N. Modeling caption "
+        ],
+        "bbox": [
+            81,
+            80,
+            480,
+            909
+        ],
+        "page_idx": 9
+    },
+    {
+        "type": "list",
+        "sub_type": "ref_text",
+        "list_items": [
+            "diversity in contrastive vision-language pretraining. In ICML, 2024. ",
+            "Li, J., Selvaraju, R. R., Gotmare, A. D., Joty, S., Xiong, C., and Hoi, S. Align before fuse: Vision and language representation learning with momentum distillation. In NeurIPS, 2021. ",
+            "Li, J., Li, D., Xiong, C., and Hoi, S. BLIP: Bootstrapping language-image pre-training for unified vision-language understanding and generation. In ICML, 2022a. ",
+            "Li, L. H., Zhang, P., Zhang, H., Yang, J., Li, C., Zhong, Y., Wang, L., Yuan, L., Zhang, L., Hwang, J.-N., Chang, K.- W., and Gao, J. Grounded language-image pre-training. In CVPR, 2022b. ",
+            "Lin, T., Maire, M., Belongie, S. J., Hays, J., Perona, P., Ramanan, D., Dollar, P., and Zitnick, C. L. Microsoft ´ COCO: common objects in context. In ECCV, 2014. ",
+            "Littwin, E., Thilak, V., and Gopalakrishnan, A. Enhancing JEPAs with spatial conditioning: Robust and efficient representation learning. In NeurIPS SSL Workshop, 2024. ",
+            "Liu, H., Li, C., Li, Y., and Lee, Y. J. Improved baselines with visual instruction tuning. arXiv preprint arXiv:2310.03744, 2023. ",
+            "Loshchilov, I. and Hutter, F. Decoupled weight decay regularization. In ICLR, 2019. ",
+            "Naeem, M. F., Xian, Y., Zhai, X., Hoyer, L., Van Gool, L., and Tombari, F. SILC: Improving vision language pretraining with self-distillation. In ECCV, 2024. ",
+            "Oquab, M., Darcet, T., Moutakanni, T., Vo, H. V., Szafraniec, M., Khalidov, V., Fernandez, P., HAZIZA, D., Massa, F., El-Nouby, A., Assran, M., Ballas, N., Galuba, W., Howes, R., Huang, P.-Y., Li, S.-W., Misra, I., Rabbat, M., Sharma, V., Synnaeve, G., Xu, H., Jegou, H., Mairal, J., Labatut, P., Joulin, A., and Bojanowski, P. DINOv2: Learning robust visual features without supervision. TMLR, 2024. ISSN 2835-8856. ",
+            "Radford, A., Kim, J. W., Hallacy, C., Ramesh, A., Goh, G., Agarwal, S., Sastry, G., Askell, A., Mishkin, P., Clark, J., et al. Learning transferable visual models from natural language supervision. In ICML, 2021. ",
+            "Raffel, C., Shazeer, N., Roberts, A., Lee, K., Narang, S., Matena, M., Zhou, Y., Li, W., and Liu, P. J. Exploring the limits of transfer learning with a unified text-to-text transformer. JMLR, 21(140):1–67, 2020. ",
+            "Russakovsky, O., Deng, J., Su, H., Krause, J., Satheesh, S., Ma, S., Huang, Z., Karpathy, A., Khosla, A., Bernstein, M., Berg, A., and Fei-Fei, L. Imagenet large scale visual recognition challenge. IJCV, 115(3):211–252, 2015. "
+        ],
+        "bbox": [
+            498,
+            83,
+            888,
+            906
+        ],
+        "page_idx": 9
+    },
+    {
+        "type": "header",
+        "text": "TC-JEPA ",
+        "bbox": [
+            450,
+            56,
+            517,
+            69
+        ],
+        "page_idx": 9
+    },
+    {
+        "type": "page_number",
+        "text": "10 ",
+        "bbox": [
+            477,
+            922,
+            495,
+            934
+        ],
+        "page_idx": 9
+    },
+    {
+        "type": "list",
+        "sub_type": "ref_text",
+        "list_items": [
+            "Saharia, C., Chan, W., Saxena, S., Lit, L., Whang, J., Denton, E., Ghasemipour, S. K. S., Ayan, B. K., Mahdavi, S. S., Gontijo-Lopes, R., Salimans, T., Ho, J., Fleet, D. J., and Norouzi, M. Photorealistic text-to-image diffusion models with deep language understanding. In NeurIPS, 2022. ",
+            "Thomee, B., Shamma, D. A., Friedland, G., Elizalde, B., Ni, K., Poland, D., Borth, D., and Li, L.-J. YFCC100M: the new data in multimedia research. Commun. ACM, 59(2): 64–73, 2016. ",
+            "Tschannen, M., Gritsenko, A., Wang, X., Naeem, M. F., Alabdulmohsin, I., Parthasarathy, N., Evans, T., Beyer, L., Xia, Y., Mustafa, B., Henaff, O., Harmsen, J., ´ Steiner, A., and Zhai, X. SigLIP 2: Multilingual visionlanguage encoders with improved semantic understanding, localization, and dense features. arXiv preprint arXiv:2502.14786, 2025. ",
+            "Van Horn, G., Mac Aodha, O., Song, Y., Cui, Y., Sun, C., Shepard, A., Adam, H., Perona, P., and Belongie, S. The inaturalist species classification and detection dataset. In CVPR, 2018. ",
+            "Vedantam, R., Zitnick, C. L., and Parikh, D. CIDEr: Consensus-based image description evaluation. In CVPR, 2015. ",
+            "Venkataramanan, S., Pariza, V., Salehi, M., Knobel, L., Gidaris, S., Ramzi, E., Bursuc, A., and Asano, Y. M. Franca: Nested matryoshka clustering for scalable visual representation learning. arXiv preprint arXiv:2507.14137, 2025. ",
+            "Xiao, L., Yang, X., Lan, X., Wang, Y., and Xu, C. Towards visual grounding: A survey. TPAMI, pp. 1–20, 2025. ",
+            "Xiao, T., Liu, Y., Zhou, B., Jiang, Y., and Sun, J. Unified perceptual parsing for scene understanding. In ECCV, 2018. ",
+            "Xiao, T., Wang, X., Efros, A. A., and Darrell, T. What should not be contrastive in contrastive learning. In ICLR, 2021. ",
+            "Xu, H., Xie, S., Tan, X., Huang, P.-Y., Howes, R., Sharma, V., Li, S.-W., Ghosh, G., Zettlemoyer, L., and Feichtenhofer, C. Demystifying CLIP data. In ICLR, 2024. ",
+            "Xu, J., Sun, X., Zhang, Z., Zhao, G., and Lin, J. Understanding and improving layer normalization. In NeurIPS, 2019. ",
+            "Xu, J., De Mello, S., Liu, S., Byeon, W., Breuel, T., Kautz, J., and Wang, X. GroupViT: Semantic segmentation emerges from text supervision. In CVPR, 2022. "
+        ],
+        "bbox": [
+            81,
+            80,
+            480,
+            909
+        ],
+        "page_idx": 10
+    },
+    {
+        "type": "list",
+        "sub_type": "ref_text",
+        "list_items": [
+            "Yao, L., Huang, R., Hou, L., Lu, G., Niu, M., Xu, H., Liang, X., Li, Z., Jiang, X., and Xu, C. FILIP: Fine-grained interactive language-image pre-training. In ICLR, 2022. ",
+            "Yu, J., Wang, Z., Vasudevan, V., Yeung, L., Seyedhosseini, M., and Wu, Y. CoCa: Contrastive captioners are imagetext foundation models. TMLR, 2022. ISSN 2835-8856. ",
+            "Yuksekgonul, M., Bianchi, F., Kalluri, P., Jurafsky, D., and Zou, J. When and why vision-language models behave like bags-of-words, and what to do about it? In ICLR, 2023. ",
+            "Zhai, X., Mustafa, B., Kolesnikov, A., and Beyer, L. Sigmoid loss for language image pre-training. In ICCV, 2023. ",
+            "Zheng, K., Zhang, Y., Wu, W., Lu, F., Ma, S., Jin, X., Chen, W., and Shen, Y. DreamLIP: Language-image pre-training with long captions. In ECCV, 2024. ",
+            "Zhou, B., Lapedriza, A., Xiao, J., Torralba, A., and Oliva, A. Learning deep features for scene recognition using places database. In NeurIPS, 2014. ",
+            "Zhou, B., Zhao, H., Puig, X., Fidler, S., Barriuso, A., and Torralba, A. Scene parsing through ADE20K dataset. In CVPR, 2017. ",
+            "Zhou, G., Pan, H., LeCun, Y., and Pinto, L. DINO-WM: World models on pre-trained visual features enable zeroshot planning. In ICML, 2025. ",
+            "Zhou, J., Wei, C., Wang, H., Shen, W., Xie, C., Yuille, A., and Kong, T. iBOT: Image bert pre-training with online tokenizer. ICLR, 2022. "
+        ],
+        "bbox": [
+            498,
+            83,
+            887,
+            589
+        ],
+        "page_idx": 10
+    },
+    {
+        "type": "header",
+        "text": "TC-JEPA ",
+        "bbox": [
+            450,
+            56,
+            517,
+            69
+        ],
+        "page_idx": 10
+    },
+    {
+        "type": "page_number",
+        "text": "",
+        "bbox": [
+            477,
+            922,
+            493,
+            934
+        ],
+        "page_idx": 10
+    },
+    {
+        "type": "text",
+        "text": "A. Text Conditioning on Holistic Caption Embedding ",
+        "text_level": 1,
+        "bbox": [
+            84,
+            83,
+            535,
+            101
+        ],
+        "page_idx": 11
+    },
+    {
+        "type": "text",
+        "text": "In the main paper, we introduce a text conditioning method based on the word embedding sequence $t = [ t _ { 1 } , \\dots , t _ { S } ] \\in \\mathbb { R } ^ { d _ { t } \\times S }$ of a text caption sentence. In the literature, there are alternative conditioning methods that use the holistic caption embedding in various domains, e.g., (Lavoie et al., 2024; Saharia et al., 2022). The single vector representation of a caption is often obtained by average-pooling the word embeddings into $\\bar { t } \\in \\mathbb { R } ^ { d _ { t } }$ t . Here we list some strong conditioning baselines based on t¯. Note compared to t¯-based conditioning methods, conditioning on word sequence t has one key advantage: one can model the fine-grained correspondences between image patches and word tokens, akin to visual grounding. Such text-conditioned patch representations can thus play a better role in capturing fine-grained and semantic image details. ",
+        "bbox": [
+            84,
+            108,
+            888,
+            215
+        ],
+        "page_idx": 11
+    },
+    {
+        "type": "text",
+        "text": "Cross attention baseline. As a direct comparison, we implement cross attention over $\\bar { t } \\in \\mathbb { R } ^ { d _ { t } }$ at each layer. Following Eq. (2) and assuming one caption per image, we now have Attention $( q ^ { ( l ) } , K ^ { ( l ) } , V ^ { ( l ) } )$ with: ",
+        "bbox": [
+            84,
+            222,
+            887,
+            253
+        ],
+        "page_idx": 11
+    },
+    {
+        "type": "equation",
+        "text": "$$\nq ^ {(l)} = W _ {Q} ^ {(l)} \\cdot q, K ^ {(l)} = W _ {K} ^ {(l)} \\cdot \\bar {t}, V ^ {(l)} = W _ {V} ^ {(l)} \\cdot \\bar {t}, \\tag {5}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            310,
+            263,
+            885,
+            287
+        ],
+        "page_idx": 11
+    },
+    {
+        "type": "text",
+        "text": "where $\\boldsymbol { W } _ { Q } ^ { ( l ) } \\in \\mathbb { R } ^ { d \\times d } , \\boldsymbol { W } _ { K } ^ { ( l ) } \\in \\mathbb { R } ^ { d \\times d _ { t } }$ and $W _ { V } ^ { ( l ) } \\in \\mathbb { R } ^ { d \\times d _ { t } }$ are the learnable matrices at the ${ { l } ^ { t h } }$ layer. Note cross-attention is now computed between the image patch and entire caption sentence (not words). Therefore, this baseline can no longer capture the fine-grained patch-word correspondences, and we discard the sparsity $\\mathcal { L } _ { \\mathrm { s p a r s e } }$ and consistency Lconsistency constraints that are designed for regularizing patch-word similarities. In case of multiple captions with their caption embeddings $\\{ \\bar { t } ^ { n } \\} _ { n \\in [ 1 , N ] }$ , we similarly max-pool the independently conditioned patch features at each layer. ",
+        "bbox": [
+            84,
+            297,
+            888,
+            378
+        ],
+        "page_idx": 11
+    },
+    {
+        "type": "text",
+        "text": "Adaptive Layer Normalization (AdaLN). AdaLN (Xu et al., 2019; Bar et al., 2025) provides an efficient way to text condition the predictor $g _ { \\phi }$ on aggregated t¯. Specifically, we feed t¯to an AdaLN block to generate scale and shift coefficients that modulate the LayerNorm outputs of each predictor layer. $\\{ \\bar { t } ^ { n } \\}$ of different captions produce different modulation outputs at each layer, which is max-pooled again. The parameters of the AdaLN block are jointly learned with that of the predictor. ",
+        "bbox": [
+            84,
+            383,
+            888,
+            460
+        ],
+        "page_idx": 11
+    },
+    {
+        "type": "text",
+        "text": "Feature conditioning. Feature conditioning is frequently used as a simple conditioning method in the literature (Garrido et al., 2024; Zhou et al., 2025; Baldassarre et al., 2025). The idea is to add t¯as extra dimensions to the predictor input, i.e., $z _ { x _ { i } }$ for $i \\in B _ { x }$ and mask token $m _ { j }$ for $j \\in B _ { y }$ . Formally, the input features are updated as: ",
+        "bbox": [
+            84,
+            467,
+            887,
+            513
+        ],
+        "page_idx": 11
+    },
+    {
+        "type": "equation",
+        "text": "$$\nz _ {x _ {i}} \\leftarrow z _ {x _ {i}} + \\operatorname{MLP} \\left(\\text { LayerNorm } \\left([ z _ {x _ {i}}, \\bar {t} ]\\right)\\right),\n$$",
+        "text_format": "latex",
+        "bbox": [
+            356,
+            525,
+            643,
+            542
+        ],
+        "page_idx": 11
+    },
+    {
+        "type": "equation",
+        "text": "$$\nm _ {j} \\leftarrow m _ {j} + \\mathrm{MLP} (\\text { LayerNorm } ([ m _ {j}, \\bar {t} ])), \\tag {6}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            357,
+            544,
+            885,
+            561
+        ],
+        "page_idx": 11
+    },
+    {
+        "type": "text",
+        "text": "where the concatenated features (after LayerNorm) are fed into an MLP and then added back to the mask token (residual connection). To handle multiple text feature vectors $\\left\\{ \\hat t ^ { n } \\right\\}$ , we first perform feature conditioning with each $\\bar { t } ^ { n }$ using Eq. (6), and then max pool the multiple conditioned input features. ",
+        "bbox": [
+            84,
+            573,
+            888,
+            619
+        ],
+        "page_idx": 11
+    },
+    {
+        "type": "text",
+        "text": "Despite the simplicity, feature conditioning suffers from several drawbacks: 1) The increased feature dimensions require a larger model capacity for the predictor, which incurs non-negligible overhead in memory and compute. 2) Directly mixing features of different types (textual t¯ vs. image features $z _ { x _ { i } }$ vs. positional mask token $m _ { j } )$ complicates training. 3) The conditioning only happens at the predictor’s input level, and its influence can rapidly diminish as depth increases. ",
+        "bbox": [
+            84,
+            626,
+            888,
+            686
+        ],
+        "page_idx": 11
+    },
+    {
+        "type": "text",
+        "text": "B. Synthetic Image Captions ",
+        "text_level": 1,
+        "bbox": [
+            84,
+            705,
+            328,
+            723
+        ],
+        "page_idx": 11
+    },
+    {
+        "type": "text",
+        "text": "We follow (Zheng et al., 2024) and query ShareGPT4V (Chen et al., 2024) to generate image captions in a scalable way. Specifically, ShareGPT4V is queried with two prompts: 1) “Describe the image in short” that often generates succinct text descriptions in 1 to 2 captions (sentences) for a given image. 2) “Describe the image in detail” that generates a long list of detailed captions, each one often focusing on a different visual aspect. Note the text captions generated from the two prompts are all truncated or padded to the same length. Then we simply combine all these generated captions for each image, and treat them as synthetic image captions altogether. Fig. 7 shows the number of synthetic caption sentences per image for the four considered datasets in this paper. ",
+        "bbox": [
+            84,
+            731,
+            888,
+            838
+        ],
+        "page_idx": 11
+    },
+    {
+        "type": "text",
+        "text": "Fig. 6 exemplifies the synthetic image captions on IN-1k and YFCC15M datasets. We can see that different captions often capture different visual properties of the image, including but not limited to: 1) scene composition, 2) visual attributes of both foreground and background objects, and 3) spatial relationships or interactions between objects. These diverse text captions can model the richness of visual input, hence are suitable to guide the difficult JEPA prediction task at different ",
+        "bbox": [
+            84,
+            845,
+            888,
+            906
+        ],
+        "page_idx": 11
+    },
+    {
+        "type": "header",
+        "text": "TC-JEPA ",
+        "bbox": [
+            450,
+            56,
+            517,
+            69
+        ],
+        "page_idx": 11
+    },
+    {
+        "type": "page_number",
+        "text": "12 ",
+        "bbox": [
+            477,
+            922,
+            495,
+            934
+        ],
+        "page_idx": 11
+    },
+    {
+        "type": "image",
+        "img_path": "images/ceea09e9984be6ba3e1eee5c3c43ce653b29c1d39cd3e394b3a183eab08db95f.jpg",
+        "image_caption": [
+            "ImageNet-1k "
+        ],
+        "image_footnote": [],
+        "content": "",
+        "bbox": [
+            106,
+            83,
+            215,
+            146
+        ],
+        "page_idx": 12
+    },
+    {
+        "type": "text",
+        "text": "• A Cairn Terrier sits on a wooden oor with its tongue out. ",
+        "bbox": [
+            218,
+            85,
+            467,
+            95
+        ],
+        "page_idx": 12
+    },
+    {
+        "type": "text",
+        "text": "• In the heart of a cozy living room, a small Yorkshire Terrier sits attentively on a wooden oor. ",
+        "bbox": [
+            220,
+            95,
+            468,
+            116
+        ],
+        "page_idx": 12
+    },
+    {
+        "type": "text",
+        "text": "• The dog, with its light brown fur, is facing the camera, its tongue hanging out in a playful manner. ",
+        "bbox": [
+            220,
+            117,
+            465,
+            138
+        ],
+        "page_idx": 12
+    },
+    {
+        "type": "text",
+        "text": "• Its eyes, full of curiosity, are xed on the camera, as if it's eagerly waiting for a treat. ",
+        "bbox": [
+            220,
+            138,
+            468,
+            159
+        ],
+        "page_idx": 12
+    },
+    {
+        "type": "text",
+        "text": "• To the right of the dog, there's a bookshelf lled with various books and trinkets, adding a personal touch to the room. ",
+        "bbox": [
+            220,
+            160,
+            482,
+            180
+        ],
+        "page_idx": 12
+    },
+    {
+        "type": "text",
+        "text": "• On the left side of the image, a black speaker stands tall, ready to ll the room with music at a moment's notice. ",
+        "bbox": [
+            220,
+            181,
+            465,
+            200
+        ],
+        "page_idx": 12
+    },
+    {
+        "type": "text",
+        "text": "• In the background, a white door can be seen, suggesting an entrance or exit to this warm and inviting space. ",
+        "bbox": [
+            220,
+            202,
+            480,
+            223
+        ],
+        "page_idx": 12
+    },
+    {
+        "type": "text",
+        "text": "• The entire scene paints a picture of a typical day in the life of this adorable Yorkshire Terrier. ",
+        "bbox": [
+            220,
+            224,
+            472,
+            244
+        ],
+        "page_idx": 12
+    },
+    {
+        "type": "image",
+        "img_path": "images/03930ad3188e2bec413205126293f70af4b9ca53615485a3591b42338860352c.jpg",
+        "image_caption": [],
+        "image_footnote": [],
+        "content": "",
+        "bbox": [
+            495,
+            83,
+            604,
+            170
+        ],
+        "page_idx": 12
+    },
+    {
+        "type": "text",
+        "text": "• A man and woman hold two large red king crabs. ",
+        "bbox": [
+            607,
+            85,
+            823,
+            95
+        ],
+        "page_idx": 12
+    },
+    {
+        "type": "text",
+        "text": "• A man and a woman are standing on a sidewalk, each holding a large cray sh. ",
+        "bbox": [
+            609,
+            95,
+            877,
+            116
+        ],
+        "page_idx": 12
+    },
+    {
+        "type": "text",
+        "text": "• The man is dressed in a purple shirt and blue jeans, while the woman is wearing a gray shirt and blue jeans. ",
+        "bbox": [
+            609,
+            117,
+            872,
+            138
+        ],
+        "page_idx": 12
+    },
+    {
+        "type": "text",
+        "text": "• The cray sh they're holding are red and have eight legs. ",
+        "bbox": [
+            609,
+            138,
+            849,
+            148
+        ],
+        "page_idx": 12
+    },
+    {
+        "type": "text",
+        "text": "• Behind them, there's a white house with a red roof and a black car parked in the driveway. ",
+        "bbox": [
+            609,
+            148,
+            879,
+            169
+        ],
+        "page_idx": 12
+    },
+    {
+        "type": "text",
+        "text": "• The scene is set against a backdrop of trees and bushes. ",
+        "bbox": [
+            609,
+            170,
+            856,
+            180
+        ],
+        "page_idx": 12
+    },
+    {
+        "type": "text",
+        "text": "• The relative positions of the objects are such that the man and woman are in the foreground, the house and car are in the middle ground, and the trees and bushes form the background. ",
+        "bbox": [
+            609,
+            181,
+            880,
+            213
+        ],
+        "page_idx": 12
+    },
+    {
+        "type": "image",
+        "img_path": "images/be03800e0fd7244e760d4aaba8b088307f0b3266c6db3c209891255b0ef2fcfa.jpg",
+        "image_caption": [
+            "YFCC15M "
+        ],
+        "image_footnote": [],
+        "content": "",
+        "bbox": [
+            106,
+            253,
+            215,
+            311
+        ],
+        "page_idx": 12
+    },
+    {
+        "type": "text",
+        "text": "• A tall building with many windows and a pointed roof. ",
+        "bbox": [
+            218,
+            256,
+            452,
+            266
+        ],
+        "page_idx": 12
+    },
+    {
+        "type": "text",
+        "text": "• The image captures the striking architecture of the Cube Houses in Rotterdam, Netherlands. ",
+        "bbox": [
+            220,
+            267,
+            464,
+            287
+        ],
+        "page_idx": 12
+    },
+    {
+        "type": "text",
+        "text": "• The perspective is from a low angle, looking upwards towards the sky, emphasizing the unique geometric design of the buildings. ",
+        "bbox": [
+            220,
+            287,
+            473,
+            319
+        ],
+        "page_idx": 12
+    },
+    {
+        "type": "text",
+        "text": "• The houses are painted in a vibrant palette of yellow, blue, and gray, with some areas featuring red and white accents. ",
+        "bbox": [
+            220,
+            320,
+            475,
+            340
+        ],
+        "page_idx": 12
+    },
+    {
+        "type": "text",
+        "text": "• The most prominent structure is a tall, triangular building with a pointed roof, standing out against the backdrop of a cloudy sky. ",
+        "bbox": [
+            220,
+            342,
+            475,
+            372
+        ],
+        "page_idx": 12
+    },
+    {
+        "type": "text",
+        "text": "• The surrounding area is lush with green trees, adding a touch of nature to the urban landscape. ",
+        "bbox": [
+            220,
+            373,
+            459,
+            393
+        ],
+        "page_idx": 12
+    },
+    {
+        "type": "image",
+        "img_path": "images/542af12b7097d081b80ee17668178eae2df2623a73e6103d110c45b304aecf51.jpg",
+        "image_caption": [],
+        "image_footnote": [],
+        "content": "",
+        "bbox": [
+            495,
+            253,
+            604,
+            338
+        ],
+        "page_idx": 12
+    },
+    {
+        "type": "text",
+        "text": "• A little girl with curly hair is making sandcastles. ",
+        "bbox": [
+            612,
+            256,
+            821,
+            266
+        ],
+        "page_idx": 12
+    },
+    {
+        "type": "text",
+        "text": "• In the image, a young child with curly hair is the main subject. ",
+        "bbox": [
+            612,
+            267,
+            844,
+            287
+        ],
+        "page_idx": 12
+    },
+    {
+        "type": "text",
+        "text": "• The child is standing in front of a door, which is made of glass and has a black frame. ",
+        "bbox": [
+            612,
+            287,
+            857,
+            308
+        ],
+        "page_idx": 12
+    },
+    {
+        "type": "text",
+        "text": "• The child is wearing a blue shirt adorned with colorful cars, adding a playful touch to the scene. ",
+        "bbox": [
+            612,
+            309,
+            867,
+            329
+        ],
+        "page_idx": 12
+    },
+    {
+        "type": "text",
+        "text": "• The child's hands are raised to their face, with their ngers slightly curled, as if they are in the middle of an action or perhaps trying to catch something. ",
+        "bbox": [
+            612,
+            330,
+            866,
+            361
+        ],
+        "page_idx": 12
+    },
+    {
+        "type": "text",
+        "text": "• The child's expression is one of curiosity, suggesting they are engaged in an activity that has captured their interest. ",
+        "bbox": [
+            612,
+            362,
+            862,
+            383
+        ],
+        "page_idx": 12
+    },
+    {
+        "type": "text",
+        "text": "• The background of the image is relatively simple, with a brick wall visible behind the child. ",
+        "bbox": [
+            612,
+            383,
+            877,
+            402
+        ],
+        "page_idx": 12
+    },
+    {
+        "type": "text",
+        "text": "• The wall's texture contrasts with the smooth surface of the glass door, adding depth to the image. ",
+        "bbox": [
+            612,
+            405,
+            867,
+            426
+        ],
+        "page_idx": 12
+    },
+    {
+        "type": "chart",
+        "img_path": "images/47fbbb9b48b87bc2ec643585f861a914bd554aa744981039d38dc73ee9dd75c7.jpg",
+        "content": "",
+        "chart_caption": [
+            "Figure 6. Example synthetic image captions for IN-1k and YFCC15M datasets. "
+        ],
+        "chart_footnote": [],
+        "bbox": [
+            86,
+            491,
+            285,
+            609
+        ],
+        "page_idx": 12
+    },
+    {
+        "type": "chart",
+        "img_path": "images/cea45ae091035b9fd833e29ad93b49a563dfa77802af6bc787b1fe4cad0c5248.jpg",
+        "content": "",
+        "chart_caption": [],
+        "chart_footnote": [],
+        "bbox": [
+            289,
+            491,
+            486,
+            609
+        ],
+        "page_idx": 12
+    },
+    {
+        "type": "chart",
+        "img_path": "images/3eb91b9dbb83055080b67a99b7b968c1182d2a0ca006d87c5ab72b0361e0580b.jpg",
+        "content": "",
+        "chart_caption": [],
+        "chart_footnote": [],
+        "bbox": [
+            488,
+            491,
+            684,
+            609
+        ],
+        "page_idx": 12
+    },
+    {
+        "type": "chart",
+        "img_path": "images/594c2a918f4f949b620e102ce702274f7200160976306d11b566824a89934ef2.jpg",
+        "content": "",
+        "chart_caption": [
+            "Figure 7. Statistics of image captions (sentences) synthesized on different datasets. "
+        ],
+        "chart_footnote": [],
+        "bbox": [
+            687,
+            491,
+            885,
+            609
+        ],
+        "page_idx": 12
+    },
+    {
+        "type": "text",
+        "text": "image locations. Note there may be hallucinations in the generated captions. We rely on the attention mechanism in our text conditioning method to filter out noisy and image-irrelevant information in the generated captions. ",
+        "bbox": [
+            84,
+            678,
+            887,
+            709
+        ],
+        "page_idx": 12
+    },
+    {
+        "type": "text",
+        "text": "C. Training Details and Evaluations ",
+        "text_level": 1,
+        "bbox": [
+            84,
+            728,
+            390,
+            744
+        ],
+        "page_idx": 12
+    },
+    {
+        "type": "text",
+        "text": "C.1. Pretraining Details on ImageNet ",
+        "text_level": 1,
+        "bbox": [
+            84,
+            753,
+            349,
+            768
+        ],
+        "page_idx": 12
+    },
+    {
+        "type": "text",
+        "text": "Architectures. For the image encoder $f _ { \\theta } ,$ , we use standard Vision Transformer (ViT) architectures of varying capacities: ViT-B/16, ViT-L/16 and ViT-H/14. The predictor $g _ { \\phi }$ is a narrow ViT, with fixed embedding dimension 384 and the number of self-attention heads equal to that of $f _ { \\theta } .$ . The predictor depth is 6 for smaller encoder (ViT-B/16), or 12 for larger encoders ViT-L/16 and ViT-H/14. In either case, every predictor layer is text-conditioned by a light residual cross-attention layer, which is followed by a two-layer MLP network and LayerNorm. ",
+        "bbox": [
+            84,
+            777,
+            887,
+            853
+        ],
+        "page_idx": 12
+    },
+    {
+        "type": "text",
+        "text": "Masking strategy plays a key role for JEPA methods to learn semantic representations. We use the multi-block masking strategy in I-JEPA (Assran et al., 2023) to sample 1 context and 4 target blocks within each image using the same masking hyper-parameters. ",
+        "bbox": [
+            84,
+            859,
+            887,
+            906
+        ],
+        "page_idx": 12
+    },
+    {
+        "type": "header",
+        "text": "TC-JEPA ",
+        "bbox": [
+            450,
+            56,
+            514,
+            69
+        ],
+        "page_idx": 12
+    },
+    {
+        "type": "page_number",
+        "text": "13 ",
+        "bbox": [
+            477,
+            922,
+            495,
+            934
+        ],
+        "page_idx": 12
+    },
+    {
+        "type": "text",
+        "text": "Optimization. For pretraining on IN-1k, we use the AdamW optimizer (Loshchilov & Hutter, 2019) to jointly optimize the encoder, predictor and text conditioner. We generally follow the recipe of (Assran et al., 2023) including the fixed batch size 2048, max learning rate $1 0 ^ { - 3 }$ with a warmup and then cosine decay schedule, and weight decay linearly increased from 0.04 to 0.4. Tuning the learning rate and weight-decay schedules does not bring much benefit in our experiments. Instead, we found our properly regularized TC-JEPA objective makes JEPA learning robust when conditioned by text. We similarly train for 600 epochs for ViT-B/16 and ViT-L/16 encoders, and 300 epochs for ViT-H/14 encoder. All models are trained at resolution 224 × 224 pixels. ",
+        "bbox": [
+            84,
+            84,
+            887,
+            191
+        ],
+        "page_idx": 13
+    },
+    {
+        "type": "text",
+        "text": "For pretraining on IN-21k, we follow similar configs as mentioned above, except that we train the ViT-L/16 encoder for the equivalent of 1200 IN-1k epochs, and the ViT-H/14 encoder for the equivalent of 900 IN-1k epochs. ",
+        "bbox": [
+            84,
+            198,
+            887,
+            229
+        ],
+        "page_idx": 13
+    },
+    {
+        "type": "text",
+        "text": "C.2. Pretraining Details on Image-Text Datasets ",
+        "text_level": 1,
+        "bbox": [
+            84,
+            244,
+            421,
+            260
+        ],
+        "page_idx": 13
+    },
+    {
+        "type": "text",
+        "text": "Optimization. We further scale up the pretraining dataset and use the image-text dataset YFCC15M and the combined mixture of CC12M+YFCC15M. We follow similar configs for ImageNet pretraining as detailed in Section C.1, including the hyperparameters of batch size, learning rate and weight-decay. All models are trained at resolution 224 × 224 pixels. One modification we made is on the training epochs to accommodate the increased dataset size. Specifically, on YFCC15M or the combined CC12M+YFCC15M, we train the ViT-B/16 and ViT-L/14 image encoders for the same 50 epochs. This is close to the training schedules adopted for many compared vision-language models to enable fair comparisons. We adjust our warmup epochs to 10 accordingly. ",
+        "bbox": [
+            84,
+            268,
+            887,
+            376
+        ],
+        "page_idx": 13
+    },
+    {
+        "type": "text",
+        "text": "C.3. Evaluations ",
+        "text_level": 1,
+        "bbox": [
+            86,
+            391,
+            205,
+            404
+        ],
+        "page_idx": 13
+    },
+    {
+        "type": "text",
+        "text": "Linear classification. We use the exact linear probing recipes in (Assran et al., 2023) for evaluations on each of the classification datasets: IN-1k, CIFAR100, Places205 and iNat18. Concretely, we adopt the evaluation protocol from VISSL (Goyal et al., 2021) for linear probing with a frozen backbone. When evaluating methods like iBOT, DINO and MAE, their [cls] token representations are used for evaluation. While for methods of I-JEPA, StoP and our TC-JEPA, they are pretrained without a [cls] token. We use the target encoder of these methods, and utilize the average-pooled patch representation for linear evaluation. ",
+        "bbox": [
+            84,
+            414,
+            888,
+            505
+        ],
+        "page_idx": 13
+    },
+    {
+        "type": "text",
+        "text": "Object detection. We follow the experimental protocol of (Zhou et al., 2022) to evaluate the detection performance on COCO dataset with different ViT backbones: The ViT feature maps are scaled to 4 different sizes to be used in FPN (Feature Pyramid Network). Then Mask R-CNN (He et al., 2017) is fine-tuned with 1× schedule for 12 epochs, using the same fine-tuning hyperparameters. ",
+        "bbox": [
+            84,
+            512,
+            887,
+            574
+        ],
+        "page_idx": 13
+    },
+    {
+        "type": "text",
+        "text": "Semantic segmentation. We consider the two setups in (Zhou et al., 2022; Bao et al., 2022) for evaluation on ADE20k and Pascal VOC datasets. First is the linear evaluation protocol for an explicit measurement of patch representation quality. We train a linear classifier on top of the patch features of a frozen backbone to predict class logits. AdamW optimizer is used for hyperparameter sweep over the learning rate and weight decay. Second, we fine-tune the ViT model end-to-end using an UperNet (Xiao et al., 2018) segmentation head. We fine-tune on 512×512 resolution for 160k iterations using the suggested recipe (batchsize, learning rate and stochastic depth, etc). No multi-scale training and testing is used. ",
+        "bbox": [
+            84,
+            580,
+            887,
+            672
+        ],
+        "page_idx": 13
+    },
+    {
+        "type": "text",
+        "text": "Vision-language tasks. We evaluate the multimodal understanding capabilities of learned representations on image captioning and VQA tasks. For this, we freeze the visual encoder and train a LiT-Decoder (Beyer et al., 2023) on top in a multi-task setup. Concretely, a single 12-layer autoregressive decoder is trained on the frozen encoder, which learns a multi-task model for captioning and VQA. We carefully follow the official implementation and similarly use a unified image preprocessing across tasks. To ease multi-task training on different task data (COCO, GQA and VQAv2), we also use the task mixing strategies and task prompts for decoder conditioning. The same training hyperparameters are used, including the learning-rate, weight-decay, epochs, label smoothing and dropout. ",
+        "bbox": [
+            84,
+            678,
+            887,
+            787
+        ],
+        "page_idx": 13
+    },
+    {
+        "type": "text",
+        "text": "For comparing with different representation learning methods, we simply replace the respective visual encoder under the LiT-Decoder framework. At inference time, we use greedy decoding for the VQA tasks and beam search with 4 beams for captioning. The VQA tasks are evaluated in terms of accuracy, with only exact string matches counted as correct. We evaluate captioning performance in CIDEr score (Vedantam et al., 2015). ",
+        "bbox": [
+            84,
+            791,
+            887,
+            853
+        ],
+        "page_idx": 13
+    },
+    {
+        "type": "header",
+        "text": "TC-JEPA ",
+        "bbox": [
+            450,
+            56,
+            517,
+            69
+        ],
+        "page_idx": 13
+    },
+    {
+        "type": "page_number",
+        "text": "14 ",
+        "bbox": [
+            477,
+            922,
+            495,
+            934
+        ],
+        "page_idx": 13
+    },
+    {
+        "type": "image",
+        "img_path": "images/742988369d7e4f821abd83fb9c69a6c1f71359b1b76ac4b231fe85d569be0f2a.jpg",
+        "image_caption": [],
+        "image_footnote": [],
+        "content": "",
+        "bbox": [
+            91,
+            83,
+            344,
+            247
+        ],
+        "page_idx": 14
+    },
+    {
+        "type": "image",
+        "img_path": "images/ab6d5804f05da1463dec8b2bae6ee453d1c77d5e7033e4a507483fcbe149888d.jpg",
+        "image_caption": [],
+        "image_footnote": [],
+        "content": "",
+        "bbox": [
+            361,
+            83,
+            614,
+            250
+        ],
+        "page_idx": 14
+    },
+    {
+        "type": "image",
+        "img_path": "images/fcf8537d0e34e6af6edd81b78378884df9a6b9d7dffb402f7fbdaf25532f6e24.jpg",
+        "image_caption": [
+            "Figure 8. Model efficiency analysis. (a-b) Downstream performance vs. pretraining GPU hours on IN-1k. (c) Relative increase in FLOPS when comparing our TC-JEPA to I-JEPA baseline with increased encoder size. "
+        ],
+        "image_footnote": [],
+        "content": "",
+        "bbox": [
+            630,
+            83,
+            883,
+            236
+        ],
+        "page_idx": 14
+    },
+    {
+        "type": "table",
+        "img_path": "images/f90aecf03c711c22e4e2c39c4f4016959d0cfed4007d53bfe8e0c244cc6e5448.jpg",
+        "table_caption": [
+            "Table 6. Multi-caption fusion strategy: MaxPool (default) vs. alternatives when pretraining the ViT-L/16 encoder on IN-1k. "
+        ],
+        "table_footnote": [],
+        "table_body": "<table><tr><td>Fusion strategy</td><td>AvgPool</td><td>AttentionPool</td><td>MaxPool</td></tr><tr><td>IN-1k linear classification</td><td>79.3</td><td>79.5</td><td>79.6</td></tr><tr><td>ADE20k linear segmentation</td><td>38.4</td><td>39.0</td><td>38.8</td></tr></table>",
+        "bbox": [
+            269,
+            333,
+            704,
+            390
+        ],
+        "page_idx": 14
+    },
+    {
+        "type": "text",
+        "text": "D. Training Efficiency ",
+        "text_level": 1,
+        "bbox": [
+            84,
+            426,
+            274,
+            444
+        ],
+        "page_idx": 14
+    },
+    {
+        "type": "text",
+        "text": "The compute cost of I-JEPA baseline is dominated by the forward pass of image encoders $f _ { \\theta }$ and $f _ { \\bar { \\theta } }$ to produce the context and target patch representations. Feature prediction and loss computation is only based on a lightweight predictor $g _ { \\phi }$ . Note our TC-JEPA text conditions the predictor $g _ { \\phi }$ rather than bulky encoders. Hence the computational overhead introduced during pretraining is marginal. Also, text conditioning does not impact the inference stage, since only the encoder $f _ { \\theta }$ is used at test time while the predictor and text-conditioner are both discarded. ",
+        "bbox": [
+            83,
+            452,
+            887,
+            527
+        ],
+        "page_idx": 14
+    },
+    {
+        "type": "text",
+        "text": "Fig. 8 highlights the training efficiency of TC-JEPA using the example of IN-1k pretraining, when N = 8 text captions are used for each image. As can be seen from (a-b), TC-JEPA ’s training time is only slightly higher than I-JEPA for the same model size and training epochs, while having notable improvements on linear classification and segmentation performance. Interestingly, a large TC-JEPA model (ViT-L/16) outperforms the huge I-JEPA model (ViT-H/14) while requiring a significantly lower training time. Note the increased training time with text conditioned $g _ { \\phi }$ will become negligible as we scale up the size of encoder $f _ { \\theta } .$ . The same conclusion may be also made with respect to the FLOPS — see (c) for the relative increase in FLOPS when comparing TC-JEPA to I-JEPA baseline with increased encoder size. Finally in (a-b), when compared to the pixel reconstruction method MAE, TC-JEPA converges in roughly 5× fewer epochs, achieving significant compute savings and performance gains at the same time. ",
+        "bbox": [
+            83,
+            536,
+            887,
+            672
+        ],
+        "page_idx": 14
+    },
+    {
+        "type": "text",
+        "text": "E. Additional Ablations ",
+        "text_level": 1,
+        "bbox": [
+            84,
+            691,
+            289,
+            707
+        ],
+        "page_idx": 14
+    },
+    {
+        "type": "text",
+        "text": "Multi-caption fusion strategy. Table 6 compares different strategies to fuse the patch features conditioned by multiple text captions. We see that MaxPool consistently outperforms AvgPool since the former can better select the most useful text information for conditioning purposes. The AttentionPool strategy is on par with or slightly better than MaxPool, but is more costly with the extra parameters learned for attention pooling at every predictor layer. Hence MaxPool is chosen as our default fusion strategy due to its good performance-cost trade-off. ",
+        "bbox": [
+            83,
+            715,
+            887,
+            792
+        ],
+        "page_idx": 14
+    },
+    {
+        "type": "text",
+        "text": "Training stability analysis. We conduct this analysis via ablating the key hyper-parameters of the multi-block masking strategy used for pretraining — the context and target block scale. As mentioned in (Assran et al., 2023), the sampled context/target blocks for feature prediction could affect the semantic level of representations learned by the JEPA-style methods. Fig. 9 shows the ablation results across varying ranges of the context/target block scale. We use the IN-1k linear probing performance as a measure of representation quality. It can be seen that our TC-JEPA is much less sensitive to a wide range of block sizes than I-JEPA. This suggests that text conditioning makes JEPA methods more robust to learn semantic representations. ",
+        "bbox": [
+            83,
+            799,
+            887,
+            906
+        ],
+        "page_idx": 14
+    },
+    {
+        "type": "header",
+        "text": "TC-JEPA ",
+        "bbox": [
+            450,
+            56,
+            517,
+            69
+        ],
+        "page_idx": 14
+    },
+    {
+        "type": "page_number",
+        "text": "15 ",
+        "bbox": [
+            477,
+            922,
+            495,
+            934
+        ],
+        "page_idx": 14
+    },
+    {
+        "type": "image",
+        "img_path": "images/72bd25c92aaeb8bcf827a323f85bff5c44bb762ef117a62a8c80eec80212a4b0.jpg",
+        "image_caption": [],
+        "image_footnote": [],
+        "content": "",
+        "bbox": [
+            86,
+            80,
+            472,
+            250
+        ],
+        "page_idx": 15
+    },
+    {
+        "type": "image",
+        "img_path": "images/be3998901450dc8ccae163a5aa6787f2241ea8ef067752d78cdd8fc2583527e2.jpg",
+        "image_caption": [
+            "Figure 9. Training stability across different ranges of the context and target block scale used for multi-block masking during pretraining. Ablations are performed by pretraining the ViT-L/16 encoder on IN-1k. "
+        ],
+        "image_footnote": [],
+        "content": "",
+        "bbox": [
+            495,
+            80,
+            887,
+            250
+        ],
+        "page_idx": 15
+    },
+    {
+        "type": "chart",
+        "img_path": "images/b2cc13aa6b1cb85c3c19ac95c483c3bda2fd755240fc04aa79ed317d3379870b.jpg",
+        "content": "",
+        "chart_caption": [
+            "(a) Pretraining on IN-1k "
+        ],
+        "chart_footnote": [],
+        "bbox": [
+            86,
+            343,
+            284,
+            452
+        ],
+        "page_idx": 15
+    },
+    {
+        "type": "chart",
+        "img_path": "images/ca3f115f0c030ad3a5d6549e60506d0248778814fb92103d7af95f2327bfbbf8.jpg",
+        "content": "",
+        "chart_caption": [],
+        "chart_footnote": [],
+        "bbox": [
+            287,
+            343,
+            485,
+            452
+        ],
+        "page_idx": 15
+    },
+    {
+        "type": "chart",
+        "img_path": "images/0d5483ef13857998ca38034b5c94752eda6fd2d850f50f4bcdef1b3146b404a8.jpg",
+        "content": "",
+        "chart_caption": [
+            "(b) Pretraining on YFCC15M "
+        ],
+        "chart_footnote": [],
+        "bbox": [
+            488,
+            343,
+            684,
+            452
+        ],
+        "page_idx": 15
+    },
+    {
+        "type": "chart",
+        "img_path": "images/476bc34333d385221f8df3fd8fc426c31be484302280741432fcb95792dd9b5f.jpg",
+        "content": "",
+        "chart_caption": [],
+        "chart_footnote": [],
+        "bbox": [
+            687,
+            343,
+            885,
+            452
+        ],
+        "page_idx": 15
+    },
+    {
+        "type": "image",
+        "img_path": "images/ad7163d49e53af9f3bf1502ebad4352c2f46200b069bb0ed02dd5e8af9862a87.jpg",
+        "image_caption": [
+            "Figure 10. Sensitivity analysis of the loss coefficients λ and β in Eq. (4). We sweep over the loss coefficients by applying a varying multiplier r to them. Then we perform sensitivity analysis for pretraining the ViT-L/16 encoder on (a) IN-1k as well as (b) the image-text dataset YFCC15M (evaluated on two tasks). Stable convergence is observed when λ and $\\beta$ are scaled by $r \\in [ 0 . 5 , 2 . 5 ]$ , with the exact values picked for λ and β having limited influence on the final performance. "
+        ],
+        "image_footnote": [],
+        "content": "",
+        "bbox": [
+            269,
+            455,
+            720,
+            477
+        ],
+        "page_idx": 15
+    },
+    {
+        "type": "chart",
+        "img_path": "images/ccad4011639109d1f462daa5b0d51ef82362f5fa0d384f609410b743c55c1e77.jpg",
+        "content": "",
+        "chart_caption": [
+            "(a) Pretraining on IN-1k "
+        ],
+        "chart_footnote": [],
+        "bbox": [
+            86,
+            607,
+            287,
+            724
+        ],
+        "page_idx": 15
+    },
+    {
+        "type": "chart",
+        "img_path": "images/fd424adef8f8e5490549330358f749f4ecb3d0f68d5e70903dda5e518d0b8da0.jpg",
+        "content": "",
+        "chart_caption": [],
+        "chart_footnote": [],
+        "bbox": [
+            289,
+            607,
+            486,
+            724
+        ],
+        "page_idx": 15
+    },
+    {
+        "type": "chart",
+        "img_path": "images/71cb72b5f8aab6c63e71a3cabdf5cb89601db0f27db2c23fab1f661781d59e07.jpg",
+        "content": "",
+        "chart_caption": [
+            "(b) Pretraining on YFCC15M "
+        ],
+        "chart_footnote": [],
+        "bbox": [
+            488,
+            607,
+            684,
+            724
+        ],
+        "page_idx": 15
+    },
+    {
+        "type": "chart",
+        "img_path": "images/80712f51c51c189a1cce9cc583fad8c6087c98695b3d596bfa2d4d003be5eafe.jpg",
+        "content": "",
+        "chart_caption": [
+            "Figure 11. Sensitivity analysis of N, the number of randomly sampled text captions for TC-JEPA training. We perform the sensitivity analysis when pretraining the ViT-L/16 encoder on (a) IN-1k as well as (b) the image-text dataset YFCC15M (evaluated on two tasks). The default N is set to 8, after which performance saturates. "
+        ],
+        "chart_footnote": [],
+        "bbox": [
+            687,
+            607,
+            885,
+            724
+        ],
+        "page_idx": 15
+    },
+    {
+        "type": "text",
+        "text": "Sensitivity analysis of hyperparameters. Fig. 10 shows the ablation results on the loss coefficients λ and $\\beta ,$ when pretraining the ViT-L/16 encoder on either IN-1k or the image-text dataset YFCC15M. Performance is found robust to a wide range of loss coefficients. ",
+        "bbox": [
+            83,
+            806,
+            887,
+            853
+        ],
+        "page_idx": 15
+    },
+    {
+        "type": "text",
+        "text": "Fig. 11 shows the ablation results on the number of text captions N used for text conditioning during TC-JEPA training (on # captions per imageIN-1k or YFCC15M dataset using the ViT-L/16 encoder). We observe that performance saturates near $N = 8$ , which is set as our default value for a good trade-off between performance and compute cost. ",
+        "bbox": [
+            83,
+            859,
+            887,
+            906
+        ],
+        "page_idx": 15
+    },
+    {
+        "type": "header",
+        "text": "TC-JEPA ",
+        "bbox": [
+            450,
+            56,
+            517,
+            69
+        ],
+        "page_idx": 15
+    },
+    {
+        "type": "page_number",
+        "text": "16 ",
+        "bbox": [
+            477,
+            922,
+            495,
+            934
+        ],
+        "page_idx": 15
+    },
+    {
+        "type": "image",
+        "img_path": "images/536a61fec909ca846d132ceae97e22c498e318de75c699672ca3faf77bdb627e.jpg",
+        "image_caption": [],
+        "image_footnote": [],
+        "content": "",
+        "bbox": [
+            285,
+            84,
+            717,
+            104
+        ],
+        "page_idx": 16
+    },
+    {
+        "type": "image",
+        "img_path": "images/c8bc6f49e13fabf423acf966189ffee353ba2bc5ad9eedc2cc0a79b9578a0dfe.jpg",
+        "image_caption": [],
+        "image_footnote": [],
+        "content": "",
+        "bbox": [
+            246,
+            109,
+            485,
+            250
+        ],
+        "page_idx": 16
+    },
+    {
+        "type": "image",
+        "img_path": "images/26321f9dfcb972c4866ca85497b2538a6554ba26c94a1b90f50e4c654e2a0baf.jpg",
+        "image_caption": [
+            "Figure 12. Robustness to synthetic caption quality. We train the ViT-L/16 encoder on the YFCC15M dataset, which is enriched with synthetic captions of varying quality generated by different models (ShareGPT4V, LLaVA-1.5 and InstructBLIP). We compare downstream performance as a function of synthetic caption quantity N. We also compare with the baseline that uses only the N = 1 raw caption from YFCC15M for TC-JEPA training. "
+        ],
+        "image_footnote": [],
+        "content": "",
+        "bbox": [
+            488,
+            109,
+            723,
+            250
+        ],
+        "page_idx": 16
+    },
+    {
+        "type": "text",
+        "text": "Robustness to synthetic caption quality. In the main paper, we use ShareGPT4V to synthesize image captions for TC-JEPA training. Following (Zheng et al., 2024), we also experiment with using two other models to synthesize captions, based on LLaVA-1.5 (Liu et al., 2023) and InstructBLIP (Dai et al., 2023). These models generate captions of different quality and styles, and their outputs are usually shorter or less descriptive than those from the default ShareGPT4V model. Fig. 12 compares their text conditioning effects when pretraining ViT-L/16 encoder on the enriched YFCC15M dataset with varying N, the number of randomly sampled synthetic captions. ",
+        "bbox": [
+            84,
+            339,
+            887,
+            430
+        ],
+        "page_idx": 16
+    },
+    {
+        "type": "text",
+        "text": "\\# captions per imageWe observe that “weaker” captioning models lag far behind ShareGPT4V with small N (2 or 4), but significantly narrow the gap when N reaches 8 (default value) or larger. Note large N means there are more diverse captions to potentially cover different visual aspects that we can cross-attend to during text conditioning. In other words, our observations suggest that caption quantity/diversity matters most; and TC-JEPA is reasonably robust to the choice of captioning models and their captioning quality/style, as long as they can generate a sufficient number of captions with large diversity. When there are more than enough captions (e.g., N > 8) likely with noticeable noise or hallucinations, our text conditioner is able to filter out the noisy and irrelevant information via attention mechanism. ",
+        "bbox": [
+            84,
+            436,
+            887,
+            542
+        ],
+        "page_idx": 16
+    },
+    {
+        "type": "text",
+        "text": "Furthermore, Fig. 12 compares with the baseline that uses the raw, human-annotated caption from YFCC15M (N = 1). Results confirm the benefits of using diverse synthetic captions over short human annotations for text conditioning purposes. ",
+        "bbox": [
+            84,
+            550,
+            887,
+            582
+        ],
+        "page_idx": 16
+    },
+    {
+        "type": "header",
+        "text": "TC-JEPA ",
+        "bbox": [
+            450,
+            56,
+            517,
+            69
+        ],
+        "page_idx": 16
+    },
+    {
+        "type": "page_number",
+        "text": "17 ",
+        "bbox": [
+            477,
+            922,
+            495,
+            934
+        ],
+        "page_idx": 16
+    }
+]
