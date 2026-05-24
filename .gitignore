@@ -1,0 +1,9 @@
+staging_pdfs/
+preview-*.png
+_tmp_*.txt
+_mineru_*.json
+_mineru_*.log
+__pycache__/
+*.pyc
+.DS_Store
+Thumbs.db

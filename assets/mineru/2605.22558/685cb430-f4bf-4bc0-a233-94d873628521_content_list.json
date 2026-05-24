@@ -1,0 +1,1974 @@
+[
+    {
+        "type": "text",
+        "text": "GeoWeaver: Grounding Visual Tokens with Geometric Evidence before Scene Reasoning ",
+        "text_level": 1,
+        "bbox": [
+            173,
+            121,
+            825,
+            174
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "Deshui Miao1 Xingsen Huang4 Yameng Gu1 Xin Li1,2,3∗ Haijun Zhang1,2∗ Ming-Hsuan Yang5 ",
+        "bbox": [
+            277,
+            223,
+            723,
+            253
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "1Harbin Institute of Technology, Shenzhen 2Pengcheng Laboratory 3Pazhou Lab (Huangpu) 4Hainan University 5University of California at Merced ",
+        "bbox": [
+            215,
+            253,
+            781,
+            284
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "Abstract ",
+        "text_level": 1,
+        "bbox": [
+            459,
+            319,
+            537,
+            335
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "Spatio-temporal reasoning in vision-language models requires visual representations that preserve physical geometry rather than merely semantic appearance. Recent multimodal models incorporate geometric information through structural branches, 3D-aware supervision, reasoning-stage fusion, or long-horizon memory. While these approaches demonstrate the importance of geometry for spatial intelligence, they typically treat geometric cues as a shared signal across all visual tokens. We note that this overlooks a finer-grained challenge: different visual tokens require different geometric evidence depending on their spatial roles. To address this limitation, we introduce GeoWeaver, a pre-reasoning geometric grounding framework that treats geometry as a representational prerequisite for spatio-temporal reasoning. GeoWeaver constructs a multi-level geometry bank from a frozen geometry encoder and performs token-adaptive geometric evidence allocation, enabling each visual token to retrieve the most relevant geometric abstractions. The selected evidence is incorporated into visual tokens via a residual grounding operation prior to language modeling, yielding geometry-grounded representations for downstream reasoning. Extensive evaluations on spatial reasoning benchmarks demonstrate that GeoWeaver consistently enhances geometry-aware reasoning while retaining general multimodal capabilities. This indicates that geometric information yields the greatest benefit not as a late-fusion auxiliary signal but as a fundamental prerequisite that shapes the representational foundation on which large language models perform reasoning. All source code and models will be released at https://github.com/yahooo-m/GeoWeaver. ",
+        "bbox": [
+            228,
+            351,
+            767,
+            656
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "1 Introduction ",
+        "text_level": 1,
+        "bbox": [
+            171,
+            686,
+            313,
+            702
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "Understanding and reasoning about physical space is a fundamental capability for intelligent systems that must perceive, communicate, and act in the real world. Recent advances in large vision-language models (VLMs) significantly improve general visual understanding, enabling strong performance in image and video question answering, instruction follow-up, and multimodal reasoning. However, reliable spatio-temporal reasoning remains a major challenge. Tasks involving relative distance estimation, object layout understanding, temporal tracking of spatial relations, or grounding motion and direction in dynamic scenes continue to expose systematic failures that cannot be explained by language reasoning alone. ",
+        "bbox": [
+            169,
+            718,
+            826,
+            830
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "To address this limitation, recent studies increasingly incorporate spatial information into multimodal models, progressing from perception-side enhancement toward reasoning-oriented spatial modeling. As shown in Figure 1, early efforts strengthen visual representation by introducing explicit spatial or structural branches, allowing geometry-aware cues to complement semantics-dominated visual features [49, 62]. Building on this direction, representation-level approaches further adopt 3Daware supervision or geometry-oriented objectives to improve the structural sensitivity of visual tokens, suggesting that spatial reasoning depends not only on input design but also on the geometry encoded in intermediate representations. More recent geometry-enhanced MLLMs investigate how structural cues interact with language reasoning, either by injecting geometric features into the multimodal reasoning stack or by aligning spatial signals with hierarchical reasoning stages [11, 25]. Beyond single-instance reasoning, long-horizon spatial cognition extends the problem to continuous video streams, where predictive sensing, memory organization, and event-centric modeling support temporally persistent spatial understanding [56]. Despite these advances, existing approaches still largely treat geometry as an auxiliary signal introduced at specific stages of the pipeline, rather than as a prerequisite that shapes visual representations before language reasoning begins. ",
+        "bbox": [
+            169,
+            835,
+            826,
+            878
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "aside_text",
+        "text": "arXiv:2605.22558v1 [cs.CV] 21 May 2026 ",
+        "bbox": [
+            22,
+            272,
+            60,
+            724
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "page_footnote",
+        "text": "∗Corresponding authors. ",
+        "bbox": [
+            189,
+            887,
+            321,
+            901
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "footer",
+        "text": "Preprint. ",
+        "bbox": [
+            171,
+            924,
+            220,
+            936
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "image",
+        "img_path": "images/9d350668e5adb0d8b62efd2f20756d24f59c8645be44883b578151b88220cacc.jpg",
+        "image_caption": [],
+        "image_footnote": [],
+        "content": "",
+        "bbox": [
+            200,
+            90,
+            790,
+            167
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "image",
+        "img_path": "images/29e52722864918bc54c3cf5c99cef499bd9c407b5132990bee8cf4588a352b6d.jpg",
+        "image_caption": [
+            "(a) Comparison between pre-fusion methods, LLM-fusion methods, and our pre-reasoning grounding paradigm. "
+        ],
+        "image_footnote": [],
+        "content": "",
+        "bbox": [
+            199,
+            213,
+            316,
+            282
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "image",
+        "img_path": "images/411aa6ed92de9f46d89583a91d0af59c1e419fa83c4e876db0bcb7f278f7cbc3.jpg",
+        "image_caption": [],
+        "image_footnote": [],
+        "content": "",
+        "bbox": [
+            318,
+            214,
+            437,
+            282
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "image",
+        "img_path": "images/bc904e723e8a7916fd126120074803a12e27ca59295b6a8da365d7744a58d8eb.jpg",
+        "image_caption": [],
+        "image_footnote": [],
+        "content": "",
+        "bbox": [
+            437,
+            214,
+            555,
+            282
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "image",
+        "img_path": "images/5238ce8378f1c13703148b35f6835607a06ee2cf97eb298528fb03fc9339a141.jpg",
+        "image_caption": [],
+        "image_footnote": [],
+        "content": "",
+        "bbox": [
+            558,
+            214,
+            676,
+            282
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "image",
+        "img_path": "images/af80cc3b0e320098ef6620e16b8d9bb494c9631d96fce29355e89d4030b266ad.jpg",
+        "image_caption": [
+            "(b) Visualization of VGGT feature responses from different layers. ",
+            "Figure 1: Motivation and paradigm comparison of GeoWeaver. Top: Existing geometry-enhanced VLMs mainly introduce geometry through pre-fusion or LLM-side fusion, while GeoWeaver grounds visual tokens before language reasoning. Bottom: VGGT feature maps from different layers exhibit heterogeneous spatial responses, indicating that multi-layer geometry does not provide a uniform signal. This motivates our design of treating geometry features as a multi-level evidence bank. "
+        ],
+        "image_footnote": [],
+        "content": "",
+        "bbox": [
+            679,
+            214,
+            795,
+            282
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "text",
+        "text": "",
+        "bbox": [
+            169,
+            393,
+            826,
+            561
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "text",
+        "text": "This perspective leaves the representational role of geometry underexplored. We note that spatiotemporal reasoning depends not only on the availability of geometric cues, but also on whether visual tokens are geometry-grounded before entering the language model. Without such grounding, the decoder must jointly resolve visual geometry alignment and high-level relational reasoning. This entanglement pushes a perceptual grounding problem into the reasoning stack, reducing the reliability of spatial reasoning and blurring the division between perception and cognition. ",
+        "bbox": [
+            169,
+            566,
+            823,
+            650
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "text",
+        "text": "Motivated by this observation, we formulate spatio-temporal reasoning as a problem of pre-reasoning geometric grounding. Instead of injecting geometry after visual tokens are formed, we use geometry to shape representations before language decoding. Specifically, a frozen geometry encoder constructs a multi-level geometry bank that serves as a reservoir of structural evidence. Each visual token queries this bank and retrieves the geometric abstractions most relevant to its spatial role. The retrieved evidence is then injected into the visual representation, producing geometry-grounded visual tokens for the language model. This formulation shifts visual–geometric alignment from the reasoning stack to the perceptual interface, allowing the decoder to focus on relational and temporal reasoning over geometry-grounded representations. ",
+        "bbox": [
+            169,
+            656,
+            823,
+            781
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "text",
+        "text": "We instantiate this formulation through a token-adaptive evidence allocation mechanism. The mechanism aligns multi-level geometry tokens with visual tokens, predicts routing weights over geometry layers for each visual token, and applies sparse routing to select compact geometric evidence. As a result, the model avoids uniform exposure to all geometry layers and reduces interference from redundant structural signals. Extensive experiments show that GeoWeaver performs favorably against strong spatial reasoning models across multiple benchmarks while preserving general multimodal capability. Ablation studies further validate the importance of reasoning-relevant geometry layers and sparse evidence allocation, supporting the effectiveness of geometry-grounded visual representations for spatio-temporal reasoning. The main contributions of this work are: ",
+        "bbox": [
+            169,
+            786,
+            826,
+            912
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "page_number",
+        "text": "",
+        "bbox": [
+            493,
+            935,
+            503,
+            946
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "list",
+        "sub_type": "text",
+        "list_items": [
+            "• We revisit spatio-temporal reasoning from a representational perspective and identify the lack of geometry-grounded visual tokens as a key limitation of current VLMs. ",
+            "• We propose GeoWeaver, a geometric grounding framework that allocates token-specific geometric evidence from a multi-level geometry bank prior to language decoding. ",
+            "• We demonstrate consistent improvements on geometry-sensitive spatial reasoning benchmarks and show through ablations that both geometry-bank construction and evidence allocation are critical to the proposed grounding process. "
+        ],
+        "bbox": [
+            215,
+            90,
+            823,
+            198
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "2 Related Work ",
+        "text_level": 1,
+        "bbox": [
+            171,
+            215,
+            321,
+            231
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "Spatial Intelligence in MLLMs. Recent large multimodal models (MLLMs) [28, 2, 46, 27] show strong general-purpose visual understanding, but spatial reasoning in physical environments remains challenging. Recent benchmarks, including VSI-Bench [53], SPAR [59], BLINK [14], and Cambrian-S [56], evaluate this limitation through tasks involving depth, viewpoint, topology, and spatiotemporal relations [38, 15, 64]. These studies indicate that spatial intelligence is not merely a difficult subset of generic multimodal reasoning. Instead, it requires visual representations that preserve geometrysensitive evidence beyond semantics-dominated appearance cues. Our work follows this diagnosis, but focuses on the representation before reasoning: whether visual tokens are geometrically grounded when they enter the language model. ",
+        "bbox": [
+            169,
+            247,
+            826,
+            372
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "Data Scaling and Spatial Reasoning Supervision. Much effort improves spatial reasoning through data construction and specialized optimization. SpatialVLM [6], SPAR [59], and Cambrian-S [56] enlarge the supervision space with synthetic 3D scenes, physically grounded tasks, and long-horizon spatial cognition settings. Furthermore, VST [54], SpaceR [39], MindCube [57], SpatialLadder [25], and Spatial-SSRL [33] exploit structured tuning, reinforcement learning, and verifiable rewards to strengthen spatial reasoning behaviors. SenseNova-SI [4] further suggests that scaling text-based chain-of-thought alone brings limited gains, highlighting that spatial reasoning depends on more than language-side deliberation. These methods provide stronger supervision and optimization signals, while our work addresses a complementary question: how the visual representation should be organized before such reasoning takes place. ",
+        "bbox": [
+            169,
+            378,
+            823,
+            517
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "Geometry-Augmented Multimodal Modeling. A closely related direction incorporates explicit geometric priors into MLLMs. Some methods introduce external 3D inputs, such as point clouds or RGB-D signals, to connect language models with spatial structure [10, 65, 63]. More recently, feed-forward geometry encoders, including DUST3R [45, 20], CUT3R [44], and VGGT [43], provide dense geometric estimates from multi-view images or videos. Building on these encoders, Spatial-MLLM [49], VG-LLM [62], VLM-3R [11, 12], SSR [29], and related models [24] introduce geometry through structural branches, patch-level fusion, cross-attention, or rationale-guided integration. These approaches demonstrate the value of explicit geometry, but they primarily introduce geometric information as an additional signal after or alongside visual representations. In contrast, GeoWeaver uses geometry to ground visual tokens before language decoding, making geometric evidence part of the representation on which reasoning operates. ",
+        "bbox": [
+            169,
+            522,
+            826,
+            676
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "Multimodal Chain-of-Thought and Visual Intermediate Reasoning. Recent unified multimodal architectures [42, 9, 19] also motivate a line of work that externalizes intermediate reasoning through visual generation or transformation. For example, some methods render maze trajectories [51], imagine temporal transitions [22], or draw intermediate 2D geometric cues [21, 16]. Such visual intermediates help when the required transformation is difficult to express purely in text. However, spatio-temporal reasoning in real 3D scenes also requires dense geometric structure, viewpoint consistency, and continuous physical relations to remain available inside the representation. GeoWeaver does not externalize reasoning into generated visual artifacts; instead, it improves the visual tokens consumed by the language model through pre-reasoning geometric grounding. ",
+        "bbox": [
+            169,
+            680,
+            826,
+            806
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "3 Method ",
+        "text_level": 1,
+        "bbox": [
+            171,
+            825,
+            272,
+            840
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "Motivated by the observation that spatio-temporal reasoning requires geometrically grounded visual representations before language decoding, GeoWeaver adopts a ground-then-reason design that uses geometry to prepare visual tokens rather than treating them as a late fusion signal. This separates low-level visual–geometric alignment from high-level relational and temporal reasoning, allowing the language model to operate on geometry-ready representations. We first introduce the semantic and geometric feature extraction branches, then describe token-adaptive geometric grounding, and finally present language reasoning over grounded visual tokens and the training objective. ",
+        "bbox": [
+            169,
+            854,
+            823,
+            912
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "page_number",
+        "text": "3 ",
+        "bbox": [
+            493,
+            935,
+            503,
+            946
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "image",
+        "img_path": "images/ed3355dd07fff251346ec70423148172429126b696ac9ad114ee4c8db2e8b217.jpg",
+        "image_caption": [
+            "Figure 2: Overview of GeoWeaver. GeoWeaver treats geometry as a representational prerequisite rather than a late fusion signal. A frozen VGGT encoder provides a multi-layer geometry bank, from which each visual token adaptively retrieves sparse geometric evidence via query-conditioned compact geometric grounding before entering the Qwen LLM. This pre-reasoning grounding process converts semantic visual tokens into geometry-grounded visual tokens for spatio-temporal reasoning. "
+        ],
+        "image_footnote": [],
+        "content": "```mermaid\ngraph TD\n    A[\"Video Clip\"] --> B[\"Qwen Vision Encoder\"]\n    C[\"Video Clip\"] --> D[\"VGGT Geometry Encoder\"]\n    B --> E[\"Multi-layer Geometry Feature Bank\"]\n    D --> E\n    E --> F[\"GeoWeaver\"]\n    F --> G[\"Grounded Visual Tokens\"]\n    G --> H[\"Qwen LLM\"]\n    H --> I[\"Final Answer\"]\n    \n    subgraph Video Clips\n        J[\"Visual Tokens\"] --> K[\"T × Np × D\"]\n        L[\"...\"] --> M[\"T × Np × D\"]\n        N[\"...\"] --> O[\"T × Np × D\"]\n    end\n    \n    subgraph VGGT Canvas\n        P[\"Layer ℓ\"] --> Q[\"T × Np × Dz\"]\n        R[\"...\"]\n        S[\"...\"]\n        T[\"...\"]\n        U[\"...\"]\n    end\n    \n    subgraph Final Answers\n        V[\"Language Question\"]\n        W[\"If I am facing the dishwasher, is the refrigerator to my left,right,or back?\"]\n    end\n    \n    style Video Clips fill:#f9f,stroke:#333\n    style VGGT Canvas fill:#bbf,stroke:#333\n```",
+        "sub_type": "flowchart",
+        "bbox": [
+            174,
+            90,
+            823,
+            335
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "text",
+        "text": "",
+        "bbox": [
+            169,
+            441,
+            823,
+            484
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "text",
+        "text": "3.1 Overview ",
+        "text_level": 1,
+        "bbox": [
+            171,
+            508,
+            279,
+            522
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "text",
+        "text": "Given a sequence of input frames {Ik ∈ RH×W×3}Kk= $\\{ \\mathbf { I } _ { k } \\in \\mathbb { R } ^ { H \\times W \\times 3 } \\} _ { k = 1 } ^ { K }$ and a language instruction q, our framework consists of three stages: (1) a semantic visual branch extracts visual tokens from the base VLM, (2) a frozen geometry branch constructs a multi-level geometry bank from the same frames, and (3) a token-adaptive grounding stage allocates geometric evidence to visual tokens before language decoding. ",
+        "bbox": [
+            169,
+            537,
+            826,
+            609
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "text",
+        "text": "Visual branch. We build our method on top of a pretrained multimodal LLM. In our implementation, we use a Qwen3.5 VLM backbone, although the framework is model-agnostic. Given K input frames, the native vision encoder produces patch tokens, which are further processed by the model’s built-in token merger. Let ",
+        "bbox": [
+            169,
+            614,
+            826,
+            671
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "equation",
+        "text": "$$\n\\mathbf {V} \\in \\mathbb {R} ^ {(K N _ {p}) \\times D} \\tag {1}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            441,
+            681,
+            825,
+            699
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "text",
+        "text": "denote the resulting visual tokens, where $N _ { p }$ is the number of merged spatial tokens per frame and D is the hidden dimension expected by the language model. ",
+        "bbox": [
+            169,
+            715,
+            823,
+            744
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "text",
+        "text": "Geometry branch. In parallel, we use a frozen geometry encoder to extract explicit geometric priors from the same input frames. We adopt VGGT [43] as the geometry encoder. Rather than using only its final representation, we collect a contiguous set of deeper hidden states to form a multi-level geometry bank. Specifically, for each selected layer $l \\in S$ , we take the corresponding patch-token hidden state, discard non-patch tokens such as camera or register tokens, and obtain ",
+        "bbox": [
+            169,
+            750,
+            826,
+            820
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "equation",
+        "text": "$$\n\\mathbf {Z} ^ {(l)} \\in \\mathbb {R} ^ {(K N _ {v}) \\times D _ {\\mathrm{geo}}}, \\quad l \\in \\mathcal {S}, \\tag {2}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            388,
+            835,
+            825,
+            853
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "text",
+        "text": "where $N _ { v }$ is the number of raw geometry tokens per frame and $D _ { \\mathrm { g e o } }$ is the geometry feature dimension. In practice, we use the latter half of the geometry encoder layers (layers 12–23 in a 24-layer VGGT), which provide rich structural abstractions while preserving spatial detail. ",
+        "bbox": [
+            169,
+            869,
+            826,
+            912
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "page_number",
+        "text": "4 ",
+        "bbox": [
+            493,
+            935,
+            504,
+            946
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "text",
+        "text": "3.2 Token-Adaptive Geometric Grounding ",
+        "text_level": 1,
+        "bbox": [
+            171,
+            90,
+            483,
+            107
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "The core of our framework is a token-adaptive grounding process that injects geometric evidence into visual tokens before language decoding. The process consists of four steps: per-layer normalization, spatial alignment, shared projection, and query-conditioned sparse routing. ",
+        "bbox": [
+            169,
+            116,
+            826,
+            159
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "Per-layer normalization and spatial alignment. As shown in Fig. 1, geometry features from different layers exhibit distinct distributions and resolutions. We therefore normalize each selected geometry layer independently: ",
+        "bbox": [
+            169,
+            164,
+            823,
+            207
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "equation",
+        "text": "$$\n\\hat {\\mathbf {Z}} ^ {(l)} = \\mathrm{LN} \\left(\\mathbf {Z} ^ {(l)}\\right), \\quad l \\in \\mathcal {S}. \\tag {3}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            393,
+            213,
+            825,
+            238
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "Because the geometry branch and base VLM operate at different spatial scales, direct token-wise grounding is not feasible without alignment. To match the visual token resolution, we apply a $2 \\times 2$ spatial merge to the normalized geometry tokens, followed by a shared projector: ",
+        "bbox": [
+            169,
+            243,
+            823,
+            286
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "equation",
+        "text": "$$\n\\mathbf {G} ^ {(l)} = \\phi \\left(\\operatorname{Merge} _ {2 \\times 2} \\left(\\hat {\\mathbf {Z}} ^ {(l)}\\right)\\right), \\quad \\mathbf {G} ^ {(l)} \\in \\mathbb {R} ^ {(K N _ {p}) \\times D}, \\tag {4}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            312,
+            291,
+            825,
+            316
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "where $\\phi ( \\cdot )$ is a lightweight MLP shared across all geometry layers. After this step, all geometry layers are aligned to the same token resolution and hidden dimension as the visual tokens in Eq. 1. ",
+        "bbox": [
+            169,
+            321,
+            823,
+            351
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "Query-conditioned geometric evidence allocation. A key question is which geometric abstraction should be assigned to each visual token. Instead of exposing all tokens uniformly to every geometry layer, we let each visual token query the multi-level geometry bank. For the i-th visual token $\\mathbf { \\bar { v } } _ { i } \\in \\mathbb { R } ^ { \\bar { D } }$ , a lightweight router predicts its preference over the selected geometry layers: ",
+        "bbox": [
+            169,
+            357,
+            825,
+            412
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "equation",
+        "text": "$$\n\\mathbf {r} _ {i} = f _ {\\text { router }} (\\mathbf {v} _ {i}), \\quad \\mathbf {r} _ {i} \\in \\mathbb {R} ^ {| \\mathcal {S} |}. \\tag {5}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            390,
+            419,
+            825,
+            436
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "This design reflects our hypothesis that different visual regions require different geometric abstractions: local boundaries, depth discontinuities, and occlusion patterns need not depend on the same evidence as global layout or relational structure. ",
+        "bbox": [
+            169,
+            441,
+            826,
+            484
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "Compact geometric grounding. Not all geometry layers provide equally useful evidence for a given visual token. Aggregating the entire geometry bank introduces both relevant and weakly related structural cues, diluting token-specific grounding. We therefore adopt a compact evidence selection strategy that retains only the geometry layers with the highest token-conditioned evidence scores. Given routing logits $\\mathbf { r } _ { i } ,$ we compute layer weights as ",
+        "bbox": [
+            169,
+            489,
+            825,
+            560
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "equation",
+        "text": "$$\n\\boldsymbol {\\alpha} _ {i} = \\operatorname{Softmax} (\\mathcal {S} _ {T o p K} (\\mathbf {r} _ {i}, K))  , \\tag {6}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            388,
+            566,
+            825,
+            582
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "where $S _ { T o p K } ( \\cdot , K )$ keeps the K most relevant geometry layers and masks the remaining entries before normalization. ",
+        "bbox": [
+            169,
+            587,
+            823,
+            614
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "Given the aligned geometry bank $\\{ \\mathbf { G } ^ { ( l ) } \\} _ { l \\in \\mathcal { S } }$ , the geometric evidence assigned to token i is ",
+        "bbox": [
+            169,
+            621,
+            767,
+            638
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "equation",
+        "text": "$$\n\\mathbf {g} _ {i} = \\sum_ {l \\in \\mathcal {S}} \\alpha_ {i} ^ {(l)} \\mathbf {G} _ {i} ^ {(l)}, \\tag {7}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            433,
+            642,
+            825,
+            674
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "where $\\mathbf { G } _ { i } ^ { ( l ) }$ denotes the geometry token aligned with $\\mathbf { v } _ { i }$ in layer l. This operation aggregates multilayer geometry into compact token-specific evidence for residual grounding. ",
+        "bbox": [
+            169,
+            684,
+            826,
+            715
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "Residual grounding before reasoning. Finally, we inject the allocated geometric evidence into each visual token through a residual grounding operation: ",
+        "bbox": [
+            169,
+            719,
+            823,
+            750
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "equation",
+        "text": "$$\n\\mathbf {v} _ {i} ^ {\\prime} = \\mathbf {v} _ {i} + \\mathbf {W} _ {o} \\mathbf {g} _ {i}, \\tag {8}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            434,
+            753,
+            825,
+            770
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "where $\\mathbf { W } _ { o } \\in \\mathbb { R } ^ { D \\times D }$ is a projection matrix. We initialize $\\mathbf { W } _ { o }$ to zero so that the grounding branch begins as an identity mapping and gradually learns to reshape the visual representation during finetuning. Collecting all grounded visual tokens yields ",
+        "bbox": [
+            169,
+            773,
+            823,
+            818
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "equation",
+        "text": "$$\n\\mathbf {V} ^ {\\prime} = \\left[ \\mathbf {v} _ {1} ^ {\\prime}; \\dots ; \\mathbf {v} _ {K N _ {p}} ^ {\\prime} \\right] \\in \\mathbb {R} ^ {(K N _ {p}) \\times D}. \\tag {9}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            374,
+            823,
+            825,
+            844
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "This step distinguishes our framework from prior geometry-enhanced MLLMs. Rather than injecting geometry into the language model as an auxiliary signal, we use geometry to transform the representations over which the language model reasons. The result is a set of geometry-grounded visual tokens better suited for spatio-temporal reasoning. ",
+        "bbox": [
+            169,
+            854,
+            826,
+            912
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "page_number",
+        "text": "5 ",
+        "bbox": [
+            493,
+            935,
+            504,
+            946
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "table",
+        "img_path": "images/a822b0d3d10c1c3087ef3f913ea73aaf15aef2278bc48928c03523aeac696382.jpg",
+        "table_caption": [
+            "Table 1: Comparison on VSI-Bench [53]. Numerical answers are evaluated by MRA and multiplechoice answers by accuracy. All results follow the EASI protocol [5]. Best and second-best opensource results are bolded and underlined, respectively. "
+        ],
+        "table_footnote": [],
+        "table_body": "<table><tr><td rowspan=\"2\">Methods</td><td rowspan=\"2\">Avg.</td><td colspan=\"4\">Numerical Answer</td><td colspan=\"4\">Multiple-Choice Answer</td></tr><tr><td>Obj. Count</td><td>Abs. Dist.</td><td>Obj. Size</td><td>Room Size</td><td>Rel. Dist.</td><td>Rel. Dir.</td><td>Route Plan</td><td>Appr. Order</td></tr><tr><td>Human</td><td>79.2</td><td>94.3</td><td>47.0</td><td>60.4</td><td>45.9</td><td>94.7</td><td>95.8</td><td>95.8</td><td>100.0</td></tr><tr><td>Random Choice(Frequency)</td><td>34.0</td><td>62.1</td><td>32.0</td><td>29.9</td><td>33.1</td><td>25.1</td><td>47.9</td><td>28.4</td><td>25.2</td></tr><tr><td colspan=\"10\">Proprietary Models</td></tr><tr><td>Seed-1.6 [41]</td><td>49.9</td><td>43.5</td><td>34.4</td><td>66.1</td><td>52.8</td><td>55.1</td><td>35.7</td><td>44.3</td><td>68.0</td></tr><tr><td>Gemini-3-Pro [15]</td><td>52.5</td><td>38.0</td><td>37.8</td><td>72.7</td><td>44.1</td><td>59.9</td><td>55.7</td><td>45.9</td><td>66.0</td></tr><tr><td>Grok-4 [52]</td><td>47.9</td><td>37.2</td><td>33.0</td><td>60.8</td><td>45.4</td><td>53.1</td><td>39.7</td><td>47.4</td><td>66.8</td></tr><tr><td>GPT-5 [38]</td><td>55.0</td><td>53.3</td><td>34.5</td><td>73.3</td><td>47.5</td><td>63.7</td><td>48.7</td><td>50.3</td><td>68.9</td></tr><tr><td colspan=\"10\">Open-source General Models</td></tr><tr><td>Bagel-7B-MoT [9]</td><td>31.4</td><td>30.1</td><td>29.2</td><td>35.5</td><td>25.8</td><td>34.9</td><td>41.4</td><td>30.4</td><td>24.1</td></tr><tr><td>Qwen2.5-VL-7B-Instruct [3]</td><td>32.3</td><td>32.9</td><td>18.2</td><td>43.9</td><td>31.7</td><td>38.0</td><td>37.4</td><td>28.4</td><td>28.0</td></tr><tr><td>Qwen3-VL-8B-Instruct [7]</td><td>57.9</td><td>67.6</td><td>47.0</td><td>76.3</td><td>61.9</td><td>58.0</td><td>51.0</td><td>35.0</td><td>66.3</td></tr><tr><td>InternVL3-8B [66]</td><td>42.1</td><td>66.0</td><td>34.9</td><td>43.6</td><td>47.5</td><td>48.0</td><td>39.3</td><td>26.3</td><td>31.4</td></tr><tr><td colspan=\"10\">Open-source Spatial Intelligence Models</td></tr><tr><td>MindCube-3B [57]</td><td>17.2</td><td>12.9</td><td>22.8</td><td>4.3</td><td>23.5</td><td>20.3</td><td>15.7</td><td>16.0</td><td>22.5</td></tr><tr><td>SpatialLadder-3B [25]</td><td>44.9</td><td>62.2</td><td>35.4</td><td>62.0</td><td>41.4</td><td>45.6</td><td>46.5</td><td>27.3</td><td>38.5</td></tr><tr><td>Spatial-MLLM-4B [49]</td><td>46.3</td><td>66.7</td><td>38.1</td><td>63.6</td><td>35.5</td><td>40.4</td><td>48.2</td><td>33.0</td><td>44.3</td></tr><tr><td>SpaceR-7B [39]</td><td>41.5</td><td>44.5</td><td>24.7</td><td>53.5</td><td>37.3</td><td>41.9</td><td>46.1</td><td>29.3</td><td>54.8</td></tr><tr><td>VLM-3R-7B [11]</td><td>60.9</td><td>70.2</td><td>49.4</td><td>69.2</td><td>67.1</td><td>65.4</td><td>80.5</td><td>45.4</td><td>40.1</td></tr><tr><td>ViLaSR-7B [50]</td><td>44.6</td><td>58.1</td><td>33.9</td><td>61.4</td><td>28.9</td><td>45.1</td><td>46.5</td><td>29.9</td><td>53.2</td></tr><tr><td>VST-7B-SFT [54]</td><td>55.5</td><td>68.8</td><td>37.3</td><td>74.5</td><td>62.2</td><td>55.2</td><td>48.7</td><td>41.8</td><td>55.5</td></tr><tr><td>Cambrian-S-7B [56]</td><td>62.9</td><td>68.2</td><td>45.8</td><td>72.5</td><td>67.6</td><td>66.8</td><td>69.6</td><td>39.2</td><td>73.8</td></tr><tr><td>SpatialStack-5B [60]</td><td>67.5</td><td>71.0</td><td>55.6</td><td>69.1</td><td>68.2</td><td>67.3</td><td>84.1</td><td>41.2</td><td>83.5</td></tr><tr><td colspan=\"10\">Ours</td></tr><tr><td>GeoWeaver-5B</td><td>72.8 (+5.3)</td><td>83.2 (+12.2)</td><td>61.8 (+6.2)</td><td>76.8 (+7.7)</td><td>62.4</td><td>72.8 (+5.5)</td><td>83.5</td><td>56.3 (+15.1)</td><td>84.7 (+1.2)</td></tr><tr><td>GeoWeaver-10B</td><td>75.05 (+7.6)</td><td>84.3 (+13.3)</td><td>58.8 (+3.2)</td><td>83.8 (+14.7)</td><td>68.8 (+0.6)</td><td>73.5 (+6.2)</td><td>92.0 (+7.9)</td><td>55.0 (+13.8)</td><td>84.3 (+0.8)</td></tr></table>",
+        "bbox": [
+            181,
+            138,
+            812,
+            385
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "text",
+        "text": "3.3 Language Reasoning over Geometry-Grounded Tokens ",
+        "text_level": 1,
+        "bbox": [
+            171,
+            392,
+            596,
+            407
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "text",
+        "text": "After grounding, the visual tokens are concatenated with the text tokens derived from the instruction: ",
+        "bbox": [
+            169,
+            417,
+            823,
+            433
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "equation",
+        "text": "$$\n\\mathbf {H} _ {0} = \\left[ \\mathbf {V} ^ {\\prime}; \\mathbf {T} \\right], \\tag {10}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            446,
+            440,
+            823,
+            455
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "text",
+        "text": "where $\\mathbf { T } \\in \\mathbb { R } ^ { M \\times D }$ denotes the text-token embeddings. The resulting multimodal sequence is processed by the LLM decoder: ",
+        "bbox": [
+            169,
+            463,
+            823,
+            494
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "equation",
+        "text": "$$\n\\mathbf {H} _ {L} ^ {\\mathrm{llm}} = f _ {L} ^ {\\mathrm{llm}} \\left(f _ {L - 1} ^ {\\mathrm{llm}} \\left(\\dots f _ {1} ^ {\\mathrm{llm}} \\left(\\mathbf {H} _ {0}\\right)\\right)\\right), \\tag {11}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            377,
+            501,
+            825,
+            527
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "text",
+        "text": "where $f _ { i } ^ { \\mathrm { l l m } } ( \\cdot )$ denotes the j-th decoder block and $\\mathbf { H } _ { L } ^ { \\mathrm { l l m } }$ the final hidden states. Because grounding is completed before decoding, the LLM no longer needs to infer visual–geometric alignment during reasoning and can instead focus on higher-level relational and temporal reasoning over grounded representations. ",
+        "bbox": [
+            169,
+            536,
+            823,
+            592
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "text",
+        "text": "3.4 Optimization ",
+        "text_level": 1,
+        "bbox": [
+            171,
+            609,
+            305,
+            625
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "text",
+        "text": "We train the model using the standard next-token prediction objective [7]: ",
+        "bbox": [
+            169,
+            635,
+            656,
+            651
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "equation",
+        "text": "$$\n\\mathcal {L} _ {\\mathrm{ce}} (\\theta) = - \\sum_ {t = 1} ^ {| o |} \\log P _ {\\theta} \\left(o _ {t} \\mid o _ {<   t}, q, \\{\\mathbf {I} _ {k} \\} _ {k = 1} ^ {K}\\right), \\tag {12}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            344,
+            659,
+            825,
+            700
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "text",
+        "text": "where $o _ { t }$ denotes the t-th target answer token. During instruction tuning, we keep the geometry encoder frozen and jointly optimize the grounding module with the base multimodal model. In practice, we apply parameter-efficient finetuning to the language model while training the grounding layers with full parameters. No auxiliary geometric reconstruction or contrastive objectives are introduced; instead, the model learns to allocate and exploit geometric evidence purely through end-to-end supervision on downstream spatio-temporal reasoning tasks. ",
+        "bbox": [
+            169,
+            708,
+            823,
+            792
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "text",
+        "text": "4 Experiments ",
+        "text_level": 1,
+        "bbox": [
+            169,
+            811,
+            313,
+            829
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "text",
+        "text": "4.1 Experimental Setup ",
+        "text_level": 1,
+        "bbox": [
+            171,
+            843,
+            352,
+            859
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "text",
+        "text": "Benchmarks. We evaluate GeoWeaver on both specialized spatial reasoning benchmarks and general multimodal evaluation sets. For spatial reasoning, we report results on VSI-Bench [53], ReVSI [61], SPAR-Bench [59], ViewSpatial [23], BLINK [14], 3DSRBench [35], and EmbSpatial [10]. Among them, VSI-Bench provides a fine-grained diagnosis over eight subcategories, including four numericalanswer tasks (Object Count, Absolute Distance, Object Size, Room Size) and four multiple-choice tasks (Relative Distance, Relative Direction, Route Plan, Approaching Order). To examine whether the proposed grounding mechanism preserves general multimodal ability, we further evaluate on MMBench [31], Video-MME [13], BLINK, and TempCompass [32]. ",
+        "bbox": [
+            169,
+            869,
+            825,
+            912
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "page_number",
+        "text": "6 ",
+        "bbox": [
+            493,
+            936,
+            504,
+            946
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "table",
+        "img_path": "images/f1e7062d6aa2bd4e42fa50e1d8be5e652250b249e4298944e55ac1794a4ad8f3.jpg",
+        "table_caption": [
+            "Table 2: Comparison on ReVSI [61]. Baseline results follow the native inference frame settings reported by ReVSI, while GeoWeaver is evaluated under different frame budgets. All scores are reported as accuracy (%). The best and second-best results are bolded and underlined, respectively. "
+        ],
+        "table_footnote": [],
+        "table_body": "<table><tr><td rowspan=\"2\">Methods</td><td rowspan=\"2\">Frames</td><td rowspan=\"2\">Avg.</td><td colspan=\"4\">Numerical Question</td><td colspan=\"3\">Multiple-Choice Question</td></tr><tr><td>Obj. Count</td><td>Abs. Dist.</td><td>Obj. Size</td><td>Room Size</td><td>Rel. Dist.</td><td>Rel. Dir.</td><td>Route Plan</td></tr><tr><td>Cambrian-S-7B [56]</td><td>128</td><td>49.1</td><td>48.4</td><td>60.5</td><td>65.5</td><td>46.7</td><td>37.1</td><td>48.5</td><td>37.0</td></tr><tr><td>VST-7B-SFT [54]</td><td>4 FPS</td><td>46.4</td><td>35.4</td><td>52.6</td><td>67.9</td><td>47.2</td><td>49.2</td><td>36.9</td><td>35.4</td></tr><tr><td>SpaceR-7B [39]</td><td>32</td><td>30.5</td><td>30.7</td><td>34.5</td><td>52.0</td><td>18.6</td><td>22.8</td><td>34.5</td><td>20.2</td></tr><tr><td>Spatial-MLLM-4B-135k [49]</td><td>16</td><td>40.5</td><td>40.7</td><td>45.3</td><td>46.8</td><td>-</td><td>32.3</td><td>37.4</td><td>-</td></tr><tr><td>Spatial-MLLM-4B-820k [49]</td><td>16</td><td>40.9</td><td>41.5</td><td>40.0</td><td>53.1</td><td>-</td><td>30.7</td><td>39.2</td><td>-</td></tr><tr><td>VLM-3R-7B [11]</td><td>32</td><td>50.1</td><td>41.6</td><td>61.6</td><td>64.8</td><td>52.5</td><td>46.5</td><td>49.5</td><td>34.1</td></tr><tr><td colspan=\"10\">Ours</td></tr><tr><td rowspan=\"3\">GeoWeaver-5B</td><td>16</td><td>54.2 (+4.1)</td><td>38.6</td><td>61.1</td><td>62.8</td><td>-</td><td>61.4</td><td>47.0</td><td>-</td></tr><tr><td>32</td><td>54.9 (+4.8)</td><td>38.0</td><td>63.4</td><td>63.6</td><td>54.2</td><td>65.3</td><td>46.9</td><td>53.1</td></tr><tr><td>All</td><td>54.1 (+4.0)</td><td>38.6</td><td>61.3</td><td>62.2</td><td>53.7</td><td>63.8</td><td>46.1</td><td>53.1</td></tr><tr><td rowspan=\"3\">GeoWeaver-10B</td><td>16</td><td>57.4 (+7.3)</td><td>40.5</td><td>64.5</td><td>69.3</td><td>-</td><td>62.1</td><td>50.5</td><td>-</td></tr><tr><td>32</td><td>57.5 (+7.4)</td><td>42.6</td><td>66.8</td><td>69.8</td><td>50.9</td><td>64.4</td><td>52.4</td><td>55.4</td></tr><tr><td>All</td><td>57.3 (+7.2)</td><td>43.2</td><td>66.5</td><td>69.7</td><td>50.7</td><td>65.0</td><td>51.7</td><td>54.7</td></tr></table>",
+        "bbox": [
+            179,
+            133,
+            821,
+            291
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "table",
+        "img_path": "images/2a15f9950be9fb2dd34ad3cc058efd2e02e16be3ece604a9aff849f73bf4622d.jpg",
+        "table_caption": [
+            "Table 3: Spatial ability evaluation. Comparison with existing methods on spatial reasoning tasks. "
+        ],
+        "table_footnote": [],
+        "table_body": "<table><tr><td>Methods</td><td>VSI-Bench</td><td>SPAR-Bench</td><td>ViewSpatial</td><td>BLINK</td><td>3DSRBench</td><td>EmbSpatial</td><td>Overall</td></tr><tr><td>VLM-3R-7B [11]</td><td>60.7</td><td>42.4</td><td>40.5</td><td>52.3</td><td>51.5</td><td>68.2</td><td>52.6</td></tr><tr><td>MindCube-3B [57]</td><td>17.2</td><td>20.8</td><td>24.1</td><td>35.1</td><td>2.8</td><td>37.0</td><td>22.8</td></tr><tr><td>SpatialLadder-3B [25]</td><td>44.9</td><td>32.9</td><td>39.9</td><td>43.0</td><td>42.8</td><td>58.2</td><td>43.6</td></tr><tr><td>Spatial-MLLM-4B [49]</td><td>46.3</td><td>35.3</td><td>34.7</td><td>40.5</td><td>36.2</td><td>50.0</td><td>40.5</td></tr><tr><td>SpaceR-7B [39]</td><td>41.6</td><td>34.2</td><td>35.9</td><td>49.6</td><td>40.5</td><td>66.9</td><td>44.8</td></tr><tr><td>ViLaSR-7B [50]</td><td>44.6</td><td>37.4</td><td>35.7</td><td>51.4</td><td>46.6</td><td>67.3</td><td>47.2</td></tr><tr><td>Cambrian-S-7B [56]</td><td>62.9</td><td>37.9</td><td>41.3</td><td>37.9</td><td>45.0</td><td>72.8</td><td>49.6</td></tr><tr><td>GeoWeaver-5B</td><td>72.8 (+9.9)</td><td>69.2 (+26.8)</td><td>52.8 (+11.5)</td><td>58.1 (+5.8)</td><td>58.6 (+7.1)</td><td>77.5 (+4.7)</td><td>64.8 (+12.2)</td></tr></table>",
+        "bbox": [
+            173,
+            316,
+            823,
+            445
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "text",
+        "text": "",
+        "bbox": [
+            169,
+            460,
+            826,
+            531
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "text",
+        "text": "Metrics. For VSI-Bench, we follow the EASI protocol and report MRA for numerical-answer questions and accuracy for multiple-choice questions. For the remaining benchmarks, we report the standard score used by each benchmark. ",
+        "bbox": [
+            169,
+            536,
+            825,
+            579
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "text",
+        "text": "Implementation Details. We instantiate GeoWeaver on Qwen3.5 [7] multimodal LLMs with both 4B- and 9B-scale backbones, using the native vision encoder of each backbone to extract semantic visual tokens. For geometric grounding, we use a pretrained VGGT encoder as a frozen geometry branch. Each selected geometry layer is aligned to the visual-token resolution through a 2 × 2 spatial merge and projected into the LLM hidden space by a shared MLP. The grounding stage assigns compact geometric evidence to each visual token through token-conditioned layer selection, with two geometry layers selected by default. The selected evidence is injected into visual tokens through residual grounding, where the output projection is zero-initialized for stable finetuning. During training, the VGGT encoder remains frozen, while the grounding layers are fully optimized. For the base multimodal LLM, we adopt LoRA-based parameter-efficient finetuning for 9B configurations and full training for 4B MLLM. ",
+        "bbox": [
+            169,
+            584,
+            826,
+            737
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "text",
+        "text": "4.2 Main Results ",
+        "text_level": 1,
+        "bbox": [
+            171,
+            758,
+            305,
+            772
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "text",
+        "text": "Results on VSI-Bench. Table 1 reports detailed results on VSI-Bench. GeoWeaver-5B achieves 72.8 Avg., outperforming the strongest open-source baseline SpatialStack-5B by 5.3 points. Scaling to GeoWeaver-10B further improves the score to 75.05, yielding a 7.6-point gain. GeoWeaver shows clear improvements on geometry-sensitive categories, including object counting, object size estimation, relative direction, and route planning, indicating that token-level geometric grounding provides effective spatial evidence for both object-centric and navigation-oriented reasoning. Compared with proprietary and general-purpose VLMs such as GPT-5, Gemini-3-Pro, and Qwen3- VL-8B, GeoWeaver achieves substantially higher performance, suggesting that the gains come from geometry-grounded visual representations rather than stronger generic multimodal capacity. ",
+        "bbox": [
+            169,
+            786,
+            826,
+            912
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "page_number",
+        "text": "7 ",
+        "bbox": [
+            493,
+            935,
+            504,
+            946
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "table",
+        "img_path": "images/497f2dedde787e9588ac811dc6dfe8b0560ea7fb265290c0c540eb53e67c952d.jpg",
+        "table_caption": [
+            "Table 4: General Capabilities Evaluation. Our method maintains robust general multimodal and spatio-temporal reasoning capabilities, demonstrating no catastrophic forgetting. "
+        ],
+        "table_footnote": [],
+        "table_body": "<table><tr><td>Method</td><td>MMBench</td><td>Video-MME</td><td>BLINK</td><td>TempCompass</td><td>Overall</td></tr><tr><td>Qwen3.5-4B</td><td>83.25</td><td>62.44</td><td>61.12</td><td>66.84</td><td>68.41</td></tr><tr><td>SpatialStack-5B [60]</td><td>83.42</td><td>63.74</td><td>55.46</td><td>69.37</td><td>68.00</td></tr><tr><td>GeoWeaver-5B</td><td>83.33</td><td>64.80 (+1.06)</td><td>58.10 (+2.64)</td><td>69.69 (+0.32)</td><td>68.98 (+0.98)</td></tr></table>",
+        "bbox": [
+            187,
+            125,
+            820,
+            195
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "text",
+        "text": "Results on ReVSI. Table 2 evaluates GeoWeaver on ReVSI, a frame-aware spatial reasoning benchmark where the available visual evidence depends on the input frame budget. This setting stresses the ability to infer geometric relations from partial temporal observations, especially for distance estimation, relative relations, and route planning. GeoWeaver-5B achieves 54.9 average accuracy with 32 frames, and GeoWeaver-10B further improves the score to 57.5, outperforming prior spatial VLMs under their reported native frame settings. The strongest gains appear on relation- and navigation-oriented tasks, showing that token-specific geometric evidence helps the model recover spatial structure from limited frames. The 32-frame setting performs best overall, indicating that effective geometric grounding is more important than simply increasing the number of input frames. ",
+        "bbox": [
+            169,
+            214,
+            826,
+            339
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "text",
+        "text": "Results on spatial reasoning benchmarks. Table 3 compares GeoWeaver with representative spatial reasoning methods on six benchmarks. GeoWeaver achieves the best result on every benchmark and obtains a new overall score of 64.8, improving over the strongest prior method by 12.2 points. The improvement is especially large on SPAR-Bench (69.2, +26.8), where precise relational understanding and scene-level spatial structure are crucial. We also observe consistent gains on all spatial reasoning benchmarks. ",
+        "bbox": [
+            169,
+            345,
+            826,
+            429
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "text",
+        "text": "A notable pattern is that GeoWeaver improves not only on benchmarks emphasizing local spatial perception, but also on datasets requiring more compositional and viewpoint-aware reasoning. This broad improvement supports our central claim that the key bottleneck lies in the lack of geometrygrounded visual representations: once visual tokens are grounded with token-adaptive geometric evidence before decoding, the resulting representation becomes more effective across a diverse range of spatial reasoning settings. ",
+        "bbox": [
+            169,
+            434,
+            825,
+            518
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "text",
+        "text": "General capability evaluation. An important question is whether stronger spatial grounding comes at the cost of general multimodal ability. Table 4 shows that this is not the case. GeoWeaver achieves the best overall score of 68.98, improving over SpatialStack-5B by 0.98 points and also slightly surpassing the base Qwen3.5-4B model. In particular, GeoWeaver performs best on Video-MME (64.80), TempCompass (69.69), and obtains a stronger BLINK score than SpatialStack (58.10 vs. 55.46), while keeping MMBench essentially unchanged (83.33 vs. 83.42). These results indicate that pre-reasoning geometric grounding does not cause catastrophic forgetting. Instead, it improves spatio-temporal reasoning while preserving the broad multimodal competence of the original model. ",
+        "bbox": [
+            169,
+            523,
+            826,
+            636
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "text",
+        "text": "Discussion. Across all three evaluations, the results consistently support the same conclusion: the benefit of GeoWeaver does not come from simply injecting more geometry into the model, but from using geometry to reshape the visual representation before language reasoning begins. By converting raw multi-level geometric cues into geometry-grounded visual tokens, GeoWeaver yields stronger spatial reasoning performance without sacrificing general capability. This validates our view that geometry should serve as a representational prerequisite, rather than merely an auxiliary signal fused later in the reasoning stack. ",
+        "bbox": [
+            169,
+            641,
+            825,
+            739
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "text",
+        "text": "4.3 Ablations ",
+        "text_level": 1,
+        "bbox": [
+            171,
+            757,
+            281,
+            770
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "text",
+        "text": "Effect of geometry layer selection. Table 5 shows that geometry layer selection substantially affects grounding quality. Using the first 12 layers achieves 67.40 on VSI-Bench, while uniformly sampling 12 layers improves the score to 69.65. The latter 12 layers perform best with 72.80, indicating that deeper geometry features provide more reasoning-relevant structural abstractions. This result supports our motivation that geometry layers are heterogeneous and that spatio-temporal reasoning benefits from a geometry bank composed of more structured evidence. ",
+        "bbox": [
+            169,
+            782,
+            823,
+            867
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "text",
+        "text": "Effect of geometry bank size. We further study how many geometry layers should be included in the evidence bank. As shown in Table 5, using only 4 layers achieves 68.32, and increasing the bank size to 8 layers improves the score to 70.08. The default 12-layer bank performs best with 72.80. However, further enlarging the bank to 16 layers or all layers decreases the score to 72.12 and 71.60, respectively, which suggests that a small bank lacks sufficient geometric diversity, while an overly large bank introduces redundant or weakly related structural cues. Therefore, GeoWeaver benefits from a geometry bank that is expressive enough to cover multi-level spatial evidence but compact enough to avoid unnecessary interference. ",
+        "bbox": [
+            169,
+            883,
+            823,
+            912
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "page_number",
+        "text": "8 ",
+        "bbox": [
+            493,
+            935,
+            504,
+            946
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "table",
+        "img_path": "images/577360ebf10549afc72767dc983af08fcb88f0a9f203eea3a80914824b5205c2.jpg",
+        "table_caption": [
+            "Table 5: Ablation study on VSI-Bench. We analyze GeoWeaver from five aspects: geometry bank construction, geometry bank size, evidence compactness, evidence allocation granularity, and grounding position. "
+        ],
+        "table_footnote": [],
+        "table_body": "<table><tr><td rowspan=\"2\">Variant</td><td rowspan=\"2\">Avg.</td><td colspan=\"4\">Numerical Answer</td><td colspan=\"4\">Multiple-Choice Answer</td></tr><tr><td>Obj. Count</td><td>Abs. Dist.</td><td>Obj. Size</td><td>Room Size</td><td>Rel. Dist.</td><td>Rel. Dir.</td><td>Route Plan</td><td>Appr. Order</td></tr><tr><td colspan=\"10\">A. Geometry Bank Construction</td></tr><tr><td>First 12 Layers</td><td>67.40</td><td>81.37</td><td>50.70</td><td>77.00</td><td>54.89</td><td>64.50</td><td>73.38</td><td>50.00</td><td>78.67</td></tr><tr><td>Uniform 12 Layers</td><td>69.65</td><td>81.11</td><td>53.48</td><td>76.90</td><td>57.50</td><td>67.50</td><td>85.01</td><td>55.00</td><td>80.67</td></tr><tr><td>Latter 12 Layers</td><td>72.80</td><td>83.20</td><td>61.80</td><td>76.80</td><td>62.40</td><td>72.80</td><td>83.50</td><td>56.30</td><td>84.70</td></tr><tr><td colspan=\"10\">B. Geometry Bank Size</td></tr><tr><td>4 Layers</td><td>68.32</td><td>80.05</td><td>55.22</td><td>75.15</td><td>58.02</td><td>67.05</td><td>79.72</td><td>51.15</td><td>81.25</td></tr><tr><td>8 Layers</td><td>70.08</td><td>81.45</td><td>58.55</td><td>76.05</td><td>60.25</td><td>69.35</td><td>81.65</td><td>53.45</td><td>82.85</td></tr><tr><td>12 Layers</td><td>72.80</td><td>83.20</td><td>61.80</td><td>76.80</td><td>62.40</td><td>72.80</td><td>83.50</td><td>56.30</td><td>84.70</td></tr><tr><td>16 Layers</td><td>72.12</td><td>82.65</td><td>60.85</td><td>76.45</td><td>61.65</td><td>72.15</td><td>82.75</td><td>55.05</td><td>84.05</td></tr><tr><td>All Layers</td><td>71.60</td><td>82.30</td><td>60.10</td><td>76.30</td><td>61.20</td><td>71.50</td><td>82.40</td><td>54.60</td><td>83.80</td></tr><tr><td colspan=\"10\">C. Evidence Compactness</td></tr><tr><td>1 Selected Layer</td><td>71.69</td><td>81.94</td><td>60.25</td><td>76.37</td><td>59.77</td><td>73.50</td><td>83.27</td><td>53.75</td><td>84.67</td></tr><tr><td>2 Selected Layers</td><td>72.80</td><td>83.20</td><td>61.80</td><td>76.80</td><td>62.40</td><td>72.80</td><td>83.50</td><td>56.30</td><td>84.70</td></tr><tr><td>3 Selected Layers</td><td>72.54</td><td>83.03</td><td>61.35</td><td>76.68</td><td>63.41</td><td>73.00</td><td>83.18</td><td>55.00</td><td>84.67</td></tr><tr><td>4 Selected Layers</td><td>72.09</td><td>82.87</td><td>60.58</td><td>76.92</td><td>64.09</td><td>73.00</td><td>82.79</td><td>52.50</td><td>84.00</td></tr><tr><td colspan=\"10\">D. Evidence Allocation Granularity</td></tr><tr><td>Uniform Averaging</td><td>70.35</td><td>82.10</td><td>58.40</td><td>76.30</td><td>60.10</td><td>69.20</td><td>82.10</td><td>52.50</td><td>82.80</td></tr><tr><td>Global Layer Weights</td><td>71.28</td><td>82.50</td><td>59.80</td><td>76.50</td><td>61.10</td><td>70.40</td><td>82.60</td><td>54.10</td><td>83.40</td></tr><tr><td>Token-Adaptive Allocation</td><td>72.80</td><td>83.20</td><td>61.80</td><td>76.80</td><td>62.40</td><td>72.80</td><td>83.50</td><td>56.30</td><td>84.70</td></tr><tr><td colspan=\"10\">E. Grounding Position</td></tr><tr><td>Input-Level Fusion</td><td>68.10</td><td>78.20</td><td>54.60</td><td>74.10</td><td>58.30</td><td>66.20</td><td>79.10</td><td>49.00</td><td>80.40</td></tr><tr><td>Decoder-Side Fusion</td><td>70.45</td><td>80.10</td><td>57.30</td><td>75.40</td><td>60.20</td><td>68.70</td><td>81.60</td><td>52.50</td><td>82.00</td></tr><tr><td>Pre-Reasoning Grounding</td><td>72.80</td><td>83.20</td><td>61.80</td><td>76.80</td><td>62.40</td><td>72.80</td><td>83.50</td><td>56.30</td><td>84.70</td></tr></table>",
+        "bbox": [
+            202,
+            132,
+            792,
+            445
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "text",
+        "text": "",
+        "bbox": [
+            169,
+            448,
+            823,
+            532
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "text",
+        "text": "Effect of compact geometry grounding. We study how many geometry layers should be selected for each visual token. Selecting one layer obtains 71.69, while selecting two layers achieves the best score of 72.80. Increasing the number to three or four layers decreases the score to 72.54 and 72.09, respectively. These results suggest that a single layer lacks complementary evidence, whereas overly broad selection introduces redundant or weakly related cues. Thus, compact evidence selection provides a better balance between geometric diversity and noise suppression. ",
+        "bbox": [
+            169,
+            537,
+            823,
+            622
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "text",
+        "text": "Effect of evidence allocation granularity. We compare different strategies for assigning geometry evidence to visual tokens. Uniform averaging obtains 70.35, and global layer weighting improves the score to 71.28 by learning dataset-level layer preferences. Token-adaptive allocation further increases the score to 72.80, showing that a fixed aggregation strategy is insufficient for diverse spatial regions. This result validates the need to allocate geometry evidence according to token-specific spatial roles. ",
+        "bbox": [
+            169,
+            628,
+            823,
+            698
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "text",
+        "text": "Effect of grounding position. We evaluate where geometry should be introduced in the multimodal pipeline. Input-level fusion achieves 68.10, and decoder-side fusion reaches 70.45. In contrast, pre-reasoning grounding obtains 72.80, showing that geometry is most effective when it shapes visual tokens before language decoding. This comparison supports our central design: visual–geometric alignment should be resolved at the perceptual interface, allowing the language model to reason over geometry-ready representations. ",
+        "bbox": [
+            169,
+            703,
+            823,
+            787
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "text",
+        "text": "5 Conclusion ",
+        "text_level": 1,
+        "bbox": [
+            171,
+            809,
+            299,
+            824
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "text",
+        "text": "We present GeoWeaver, a pre-reasoning geometric grounding framework for spatio-temporal visionlanguage reasoning. GeoWeaver addresses the representational bottleneck of current VLMs by grounding visual tokens with geometric evidence before language decoding. Specifically, it constructs a multi-level geometry bank from a frozen geometry encoder and assigns compact, token-specific geometric evidence to visual tokens through adaptive evidence allocation. This design moves visual– geometric alignment to the perceptual interface and provides the language model with geometry-ready representations for relational and temporal reasoning. Experiments across multiple spatial reasoning benchmarks show that GeoWeaver performs favorably against strong general and spatially enhanced VLMs, while preserving general multimodal capability. Moreover, ablation studies validate the importance of reasoning-relevant geometry layers, token-adaptive evidence allocation, and compact geometric grounding. These results indicate that preparing visual representations before reasoning is a promising direction for geometry-aware multimodal intelligence. ",
+        "bbox": [
+            169,
+            842,
+            823,
+            912
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "page_number",
+        "text": "",
+        "bbox": [
+            493,
+            935,
+            503,
+            946
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "text",
+        "text": "",
+        "bbox": [
+            169,
+            90,
+            825,
+            189
+        ],
+        "page_idx": 9
+    },
+    {
+        "type": "text",
+        "text": "References ",
+        "text_level": 1,
+        "bbox": [
+            173,
+            217,
+            267,
+            233
+        ],
+        "page_idx": 9
+    },
+    {
+        "type": "list",
+        "sub_type": "ref_text",
+        "list_items": [
+            "[1] Xiang An, Yin Xie, Kaicheng Yang, Wenkang Zhang, Xiuwei Zhao, Zheng Cheng, Yirui Wang, Songcen Xu, Changrui Chen, Chunsheng Wu, Huajie Tan, Chunyuan Li, Jing Yang, Jie Yu, Xiyao Wang, Bin Qin, Yumeng Wang, Zizhen Yan, Ziyong Feng, Ziwei Liu, Bo Li, and Jiankang Deng. Llava-onevision-1.5: Fully open framework for democratized multimodal training. In arXiv, 2025. 16 ",
+            "[2] Shuai Bai, Yuxuan Cai, Ruizhe Chen, Keqin Chen, Xionghui Chen, Zesen Cheng, Lianghao Deng, Wei Ding, Chang Gao, Chunjiang Ge, et al. Qwen3-vl technical report. arXiv preprint arXiv:2511.21631, 2025. 3 ",
+            "[3] Shuai Bai, Keqin Chen, Xuejing Liu, Jialin Wang, Wenbin Ge, Sibo Song, Kai Dang, Peng Wang, Shijie Wang, Jun Tang, Humen Zhong, Yuanzhi Zhu, Mingkun Yang, Zhaohai Li, Jianqiang Wan, Pengfei Wang, Wei Ding, Zheren Fu, Yiheng Xu, Jiabo Ye, Xi Zhang, Tianbao Xie, Zesen Cheng, Hang Zhang, Zhibo Yang, Haiyang Xu, and Junyang Lin. Qwen2.5-vl technical report. arXiv preprint arXiv:2502.13923, 2025. 6, 16 ",
+            "[4] Zhongang Cai, Ruisi Wang, Chenyang Gu, Fanyi Pu, Junxiang Xu, Yubo Wang, Wanqi Yin, Zhitao Yang, Chen Wei, Qingping Sun, et al. Scaling spatial intelligence with multimodal foundation models. arXiv preprint arXiv:2511.13719, 2025. 3 ",
+            "[5] Zhongang Cai, Yubo Wang, Qingping Sun, Ruisi Wang, Chenyang Gu, Wanqi Yin, Zhiqian Lin, Zhitao Yang, Chen Wei, Xuanke Shi, Kewang Deng, Xiaoyang Han, Zukai Chen, Jiaqi Li, Xiangyu Fan, Hanming Deng, Lewei Lu, Bo Li, Ziwei Liu, Quan Wang, Dahua Lin, and Lei Yang. Holistic evaluation of multimodal llms on spatial intelligence. arXiv preprint arXiv:2508.13142, 2025. 6 ",
+            "[6] Boyuan Chen, Zhuo Xu, Sean Kirmani, Brain Ichter, Dorsa Sadigh, Leonidas Guibas, and Fei Xia. Spatialvlm: Endowing vision-language models with spatial reasoning capabilities. In Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition, pages 14455–14465, 2024. 3 ",
+            "[7] QwenLM Team (Alibaba Cloud). Qwen3-vl: Multimodal large language model series. https://github. com/QwenLM/Qwen3-VL, 2025. GitHub repository; accessed: 2025-11-14. 6, 7, 16 ",
+            "[8] Gheorghe Comanici, Eric Bieber, Mike Schaekermann, Ice Pasupat, Noveen Sachdeva, Inderjit Dhillon, Marcel Blistein, Ori Ram, Dan Zhang, Evan Rosen, et al. Gemini 2.5: Pushing the frontier with advanced reasoning, multimodality, long context, and next generation agentic capabilities. arXiv preprint arXiv:2507.06261, 2025. 16 ",
+            "[9] Chaorui Deng, Deyao Zhu, Kunchang Li, Chenhui Gou, Feng Li, Zeyu Wang, Shu Zhong, Weihao Yu, Xiaonan Nie, Ziang Song, Guang Shi, and Haoqi Fan. Emerging properties in unified multimodal pretraining. arXiv preprint arXiv:2505.14683, 2025. 3, 6 ",
+            "[10] Mengfei Du, Binhao Wu, Zejun Li, Xuan-Jing Huang, and Zhongyu Wei. Embspatial-bench: Benchmarking spatial understanding for embodied tasks with large vision-language models. In Proceedings of the 62nd Annual Meeting of the Association for Computational Linguistics (Volume 2: Short Papers), pages 346–355, 2024. 3, 6 ",
+            "[11] Zhiwen Fan, Jian Zhang, Renjie Li, Junge Zhang, Runjin Chen, Hezhen Hu, Kevin Wang, Huaizhi Qu, Dilin Wang, Zhicheng Yan, et al. Vlm-3r: Vision-language models augmented with instruction-aligned 3d reconstruction. arXiv preprint arXiv:2505.20279, 2025. 2, 3, 6, 7 ",
+            "[12] Zhiwen Fan, Jian Zhang, Renjie Li, Junge Zhang, Runjin Chen, Hezhen Hu, Kevin Wang, Huaizhi Qu, Shijie Zhou, Dilin Wang, et al. Vlm-3r: Vision-language models augmented with instruction-aligned 3d reconstruction. In Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition, 2026. 3 "
+        ],
+        "bbox": [
+            171,
+            236,
+            834,
+            914
+        ],
+        "page_idx": 9
+    },
+    {
+        "type": "page_number",
+        "text": "10 ",
+        "bbox": [
+            490,
+            935,
+            508,
+            946
+        ],
+        "page_idx": 9
+    },
+    {
+        "type": "list",
+        "sub_type": "ref_text",
+        "list_items": [
+            "[13] Chaoyou Fu, Yuhan Dai, Yongdong Luo, Lei Li, Shuhuai Ren, Renrui Zhang, Zihan Wang, Chenyu Zhou, Yunhang Shen, Mengdan Zhang, et al. Video-mme: The first-ever comprehensive evaluation benchmark of multi-modal llms in video analysis. In Proceedings of the IEEE/CVF conference on computer vision and pattern recognition, pages 24108–24118, 2025. 7 ",
+            "[14] Xingyu Fu, Yushi Hu, Bangzheng Li, Yu Feng, Haoyu Wang, Xudong Lin, Dan Roth, Noah A Smith, Wei-Chiu Ma, and Ranjay Krishna. Blink: Multimodal large language models can see but not perceive. In European Conference on Computer Vision, pages 148–166. Springer, 2024. 3, 6 ",
+            "[15] Gemini. Gemini 3 Pro Model Card. Technical report, Gemini, November 2025. Accessed: 2025-11-18. 3, 6 ",
+            "[16] Jiawei Gu, Yunzhuo Hao, Huichen Will Wang, Linjie Li, Michael Qizhe Shieh, Yejin Choi, Ranjay Krishna, and Yu Cheng. Thinkmorph: Emergent properties in multimodal interleaved chain-of-thought reasoning. arXiv preprint arXiv:2510.27492, 2025. 3 ",
+            "[17] Yuzhi Huang, Kairun Wen, Rongxin Gao, Dongxuan Liu, Yibin Lou, Jie Wu, Jing Xu, Jian Zhang, Zheng Yang, Yunlong Lin, Chenxin Li, Panwang Pan, Junbin Lu, Jingyan Jiang, Xinghao Ding, Yue Huang, and Zhi Wang. Thinking in dynamics: How multimodal large language models perceive, track, and reason dynamics in physical 4d world, 2026. 16 ",
+            "[18] Aaron Hurst, Adam Lerer, Adam P. Goucher, Adam Perelman, Aditya Ramesh, Aidan Clark, Adam J. Ostrow, Akila Welihinda, Alan Hayes, Alec Radford, et al. Gpt-4o system card. arXiv preprint arXiv:2410.21276, 2024. 16 ",
+            "[19] Yang Jiao, Haibo Qiu, Zequn Jie, Shaoxiang Chen, Jingjing Chen, Lin Ma, and Yu-Gang Jiang. Unitoken: Harmonizing multimodal understanding and generation through unified visual encoding. In Proceedings of the Computer Vision and Pattern Recognition Conference, pages 3600–3610, 2025. 3 ",
+            "[20] Vincent Leroy, Yohann Cabon, and Jérôme Revaud. Grounding image matching in 3d with mast3r. In European Conference on Computer Vision, pages 71–91. Springer, 2024. 3 ",
+            "[21] Ang Li, Charles Wang, Deqing Fu, Kaiyu Yue, Zikui Cai, Wang Bill Zhu, Ollie Liu, Peng Guo, Willie Neiswanger, Furong Huang, et al. Zebra-cot: A dataset for interleaved vision language reasoning. arXiv preprint arXiv:2507.16746, 2025. 3 ",
+            "[22] Chengzu Li, Wenshan Wu, Huanyu Zhang, Yan Xia, Shaoguang Mao, Li Dong, Ivan Vulic, and Furu Wei. ´ Imagine while reasoning in space: Multimodal visualization-of-thought. arXiv preprint arXiv:2501.07542, 2025. 3 ",
+            "[23] Dingming Li, Hongxing Li, Zixuan Wang, Yuchen Yan, Hang Zhang, Siqi Chen, Guiyang Hou, Shengpei Jiang, Wenqi Zhang, Yongliang Shen, et al. Viewspatial-bench: Evaluating multi-perspective spatial localization in vision-language models. arXiv preprint arXiv:2505.21500, 2025. 6 ",
+            "[24] Haoyuan Li, Qihang Cao, Tao Tang, Kun Xiang, Zihan Guo, Jianhua Han, Hang Xu, and Xiaodan Liang. Thinking with geometry: Active geometry integration for spatial reasoning. arXiv preprint arXiv:2602.06037, 2026. 3 ",
+            "[25] Hongxing Li, Dingming Li, Zixuan Wang, Yuchen Yan, Hang Wu, Wenqi Zhang, Yongliang Shen, Weiming Lu, Jun Xiao, and Yueting Zhuang. Spatialladder: Progressive training for spatial reasoning in vision-language models. arXiv preprint arXiv:2510.08531, 2025. 2, 3, 6, 7 ",
+            "[26] Hongxing Li, Dingming Li, Zixuan Wang, Yuchen Yan, Hang Wu, Wenqi Zhang, Yongliang Shen, Weiming Lu, Jun Xiao, and Yueting Zhuang. Spatialladder: Progressive training for spatial reasoning in vision-language models, 2025. 16 ",
+            "[27] Guoshan Liu, Bin Zhu, Yian Li, Jingjing Chen, Chong-Wah Ngo, and Yu-Gang Jiang. Enhancing action and ingredient modeling for semantically grounded recipe generation. arXiv preprint arXiv:2602.15862, 2026. 3 ",
+            "[28] Haotian Liu, Chunyuan Li, Qingyang Wu, and Yong Jae Lee. Visual instruction tuning. Advances in neural information processing systems, 36:34892–34916, 2023. 3 ",
+            "[29] Yang Liu, Ming Ma, Xiaomin Yu, Pengxiang Ding, Han Zhao, Mingyang Sun, Siteng Huang, and Donglin Wang. Ssr: Enhancing depth perception in vision-language models via rationale-guided spatial reasoning. arXiv preprint arXiv:2505.12448, 2025. 3 "
+        ],
+        "bbox": [
+            166,
+            87,
+            831,
+            914
+        ],
+        "page_idx": 10
+    },
+    {
+        "type": "page_number",
+        "text": "",
+        "bbox": [
+            490,
+            935,
+            506,
+            946
+        ],
+        "page_idx": 10
+    },
+    {
+        "type": "list",
+        "sub_type": "ref_text",
+        "list_items": [
+            "[30] Ye Liu, Zongyang Ma, Junfu Pu, Zhongang Qi, Yang Wu, Ying Shan, and Chang Wen Chen. Unipixel: Unified object referring and segmentation for pixel-level visual reasoning. arXiv preprint arXiv:2509.18094, 2025. 16 ",
+            "[31] Yuan Liu, Haodong Duan, Yuanhan Zhang, Bo Li, Songyang Zhang, Wangbo Zhao, Yike Yuan, Jiaqi Wang, Conghui He, Ziwei Liu, et al. Mmbench: Is your multi-modal model an all-around player? In European conference on computer vision, pages 216–233. Springer, 2024. 7 ",
+            "[32] Yuanxin Liu, Shicheng Li, Yi Liu, Yuxiang Wang, Shuhuai Ren, Lei Li, Sishuo Chen, Xu Sun, and Lu Hou. Tempcompass: Do video llms really understand videos? In Findings of the Association for Computational Linguistics: ACL 2024, pages 8731–8772, 2024. 7 ",
+            "[33] Yuhong Liu, Beichen Zhang, Yuhang Zang, Yuhang Cao, Long Xing, Xiaoyi Dong, Haodong Duan, Dahua Lin, and Jiaqi Wang. Spatial-ssrl: Enhancing spatial understanding via self-supervised reinforcement learning. arXiv preprint arXiv:2510.27606, 2025. 3 ",
+            "[34] Yuhong Liu, Beichen Zhang, Yuhang Zang, Yuhang Cao, Long Xing, Xiaoyi Dong, Haodong Duan, Dahua Lin, and Jiaqi Wang. Spatial-ssrl: Enhancing spatial understanding via self-supervised reinforcement learning. arXiv preprint arXiv:2510.27606, 2025. 16 ",
+            "[35] Wufei Ma, Haoyu Chen, Guofeng Zhang, Yu-Cheng Chou, Jieneng Chen, Celso de Melo, and Alan Yuille. 3dsrbench: A comprehensive 3d spatial reasoning benchmark. In Proceedings of the IEEE/CVF International Conference on Computer Vision, pages 6924–6934, 2025. 6 ",
+            "[36] Shehan Munasinghe, Hanan Gani, Wenqi Zhu, Jiale Cao, Eric Xing, Fahad Khan, and Salman Khan. Videoglamm: A large multimodal model for pixel-level visual grounding in videos. arXiv preprint arXiv:2411.04923, 2024. 16 ",
+            "[37] OpenAI. Gpt-5. https://openai.com/gpt-5/, 2025. Accessed: 2025-11-11. 16 ",
+            "[38] OpenAI. GPT-5 System Card. Technical report, OpenAI, August 2025. Accessed: 2025-08-10. 3, 6, 15 ",
+            "[39] Kun Ouyang, Yuanxin Liu, Haoning Wu, Yi Liu, Hao Zhou, Jie Zhou, Fandong Meng, and Xu Sun. Spacer: Reinforcing mllms in video spatial reasoning. arXiv preprint arXiv:2504.01805, 2025. 3, 6, 7, 15 ",
+            "[40] Kun Ouyang, Yuanxin Liu, Haoning Wu, Yi Liu, Hao Zhou, Jie Zhou, Fandong Meng, and Xu Sun. Spacer: Reinforcing mllms in video spatial reasoning. arXiv preprint arXiv:2504.01805, 2025. 16 ",
+            "[41] ByteDance Seed Team. Seed1.5-vl technical report. arXiv preprint arXiv:2505.07062, 2025. 6 ",
+            "[42] Chameleon Team. Chameleon: Mixed-modal early-fusion foundation models. arXiv preprint arXiv:2405.09818, 2024. 3 ",
+            "[43] Jianyuan Wang, Minghao Chen, Nikita Karaev, Andrea Vedaldi, Christian Rupprecht, and David Novotny. VGGT: Visual geometry grounded transformer. In Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition,, pages 5294–5306, 2025. 3, 4 ",
+            "[44] Qianqian Wang, Yifei Zhang, Aleksander Holynski, Alexei A Efros, and Angjoo Kanazawa. Continuous 3d perception model with persistent state. In Proceedings of the Computer Vision and Pattern Recognition Conference, pages 10510–10522, 2025. 3 ",
+            "[45] Shuzhe Wang, Vincent Leroy, Yohann Cabon, Boris Chidlovskii, and Jerome Revaud. Dust3r: Geometric 3d vision made easy. In Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition, pages 20697–20709, 2024. 3 ",
+            "[46] Weiyun Wang, Zhangwei Gao, Lixin Gu, Hengjun Pu, Long Cui, Xingguang Wei, Zhaoyang Liu, Linglin Jing, Shenglong Ye, Jie Shao, et al. Internvl3. 5: Advancing open-source multimodal models in versatility, reasoning, and efficiency. arXiv preprint arXiv:2508.18265, 2025. 3 ",
+            "[47] Weiyun Wang, Zhangwei Gao, Lixin Gu, Hengjun Pu, Long Cui, Xingguang Wei, Zhaoyang Liu, Linglin Jing, Shenglong Ye, Jie Shao, et al. Internvl3: Exploring advanced training and test-time recipes for open-source multimodal models. arXiv preprint arXiv:2504.10479, 2025. 16 ",
+            "[48] Weiyun Wang, Zhangwei Gao, Lixin Gu, Hengjun Pu, Long Cui, Xingguang Wei, Zhaoyang Liu, Linglin Jing, Shenglong Ye, Jie Shao, et al. Internvl3.5: Advancing open-source multimodal models in versatility, reasoning, and efficiency. arXiv preprint arXiv:2508.18265, 2025. 16 ",
+            "[49] Diankun Wu, Fangfu Liu, Yi-Hsin Hung, and Yueqi Duan. Spatial-mllm: Boosting mllm capabilities in visual-based spatial intelligence. arXiv preprint arXiv:2505.23747, 2025. 2, 3, 6, 7 "
+        ],
+        "bbox": [
+            166,
+            87,
+            831,
+            914
+        ],
+        "page_idx": 11
+    },
+    {
+        "type": "page_number",
+        "text": "",
+        "bbox": [
+            490,
+            935,
+            508,
+            946
+        ],
+        "page_idx": 11
+    },
+    {
+        "type": "list",
+        "sub_type": "ref_text",
+        "list_items": [
+            "[50] Junfei Wu, Jian Guan, Kaituo Feng, Qiang Liu, Shu Wu, Liang Wang, Wei Wu, and Tieniu Tan. Reinforcing spatial reasoning in vision-language models with interwoven thinking and visual drawing. arXiv preprint arXiv:2506.09965, 2025. 6, 7 ",
+            "[51] Wenshan Wu, Shaoguang Mao, Yadong Zhang, Yan Xia, Li Dong, Lei Cui, and Furu Wei. Mind’s eye of llms: visualization-of-thought elicits spatial reasoning in large language models. Advances in Neural Information Processing Systems, 37:90277–90317, 2024. 3 ",
+            "[52] xAI. Grok 4, 7 2025. Model announcement. 6 ",
+            "[53] Jihan Yang, Shusheng Yang, Anjali W Gupta, Rilyn Han, Li Fei-Fei, and Saining Xie. Thinking in space: How multimodal large language models see, remember, and recall spaces. In Proceedings of the Computer Vision and Pattern Recognition Conference, pages 10632–10643, 2025. 3, 6 ",
+            "[54] Rui Yang, Ziyu Zhu, Yanwei Li, Jingjia Huang, Shen Yan, Siyuan Zhou, Zhe Liu, Xiangtai Li, Shuangye Li, Wenqian Wang, Yi Lin, and Hengshuang Zhao. Visual spatial tuning. arXiv preprint arXiv:2511.05491, 2025. 3, 6, 7 ",
+            "[55] Rui Yang, Ziyu Zhu, Yanwei Li, Jingjia Huang, Shen Yan, Siyuan Zhou, Zhe Liu, Xiangtai Li, Shuangye Li, Wenqian Wang, Yi Lin, and Hengshuang Zhao. Visual spatial tuning. arXiv preprint arXiv:2511.05491, 2025. 16 ",
+            "[56] Shusheng Yang, Jihan Yang, Pinzhi Huang, Ellis Brown, Zihao Yang, Yue Yu, Shengbang Tong, Zihan Zheng, Yifan Xu, Muhan Wang, et al. Cambrian-s: Towards spatial supersensing in video. arXiv preprint arXiv:2511.04670, 2025. 2, 3, 6, 7 ",
+            "[57] Baiqiao Yin, Qineng Wang, Pingyue Zhang, Jianshu Zhang, Kangrui Wang, Zihan Wang, Jieyu Zhang, Keshigeyan Chandrasegaran, Han Liu, Ranjay Krishna, et al. Spatial mental modeling from limited views. In Proceedings of the IEEE/CVF International Conference on Computer Vision Workshop, 2025. 3, 6, 7 ",
+            "[58] Haobo Yuan, Xiangtai Li, Tao Zhang, Zilong Huang, Shilin Xu, Shunping Ji, Yunhai Tong, Lu Qi, Jiashi Feng, and Ming-Hsuan Yang. Sa2va: Marrying sam2 with llava for dense grounded understanding of images and videos. arXiv preprint arXiv:2501.04001, 2025. 16 ",
+            "[59] Jiahui Zhang, Yurui Chen, Yanpeng Zhou, Yueming Xu, Ze Huang, Jilin Mei, Junhui Chen, Yu-Jie Yuan, Xinyue Cai, Guowei Huang, et al. From flatland to space: Teaching vision-language models to perceive and reason in 3d. arXiv preprint arXiv:2503.22976, 2025. 3, 6, 15 ",
+            "[60] Jiang Zhang, Shijie Zhou, Bangya Liu, Achuta Kadambi, and Zhiwen Fan. Spatialstack: Layered geometrylanguage fusion for 3d vlm spatial reasoning. In Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition, 2026. 6, 8 ",
+            "[61] Yiming Zhang, Jiacheng Chen, Jiaqi Tan, Yongsen Mao, Wenhu Chen, and Angel X Chang. Revsi: Rebuilding visual spatial intelligence evaluation for accurate assessment of vlm 3d reasoning. arXiv preprint arXiv:2604.24300, 2026. 6, 7 ",
+            "[62] Duo Zheng, Shijia Huang, Yanyang Li, and Liwei Wang. Learning from videos for 3d world: Enhancing mllms with 3d vision geometry priors. arXiv preprint arXiv:2505.24625, 2025. 2, 3 ",
+            "[63] Duo Zheng, Shijia Huang, and Liwei Wang. Video-3d llm: Learning position-aware video representation for 3d scene understanding. In Proceedings of the Computer Vision and Pattern Recognition Conference, pages 8995–9006, 2025. 3 ",
+            "[64] Shijie Zhou, Alexander Vilesov, Xuehai He, Ziyu Wan, Shuwang Zhang, Aditya Nagachandra, Di Chang, Dongdong Chen, Xin Eric Wang, and Achuta Kadambi. Vlm4d: Towards spatiotemporal awareness in vision language models. In Proceedings of the IEEE/CVF international conference on computer vision, pages 8600–8612, 2025. 3 ",
+            "[65] Chenming Zhu, Tai Wang, Wenwei Zhang, Jiangmiao Pang, and Xihui Liu. Llava-3d: A simple yet effective pathway to empowering lmms with 3d capabilities. In Proceedings of the IEEE/CVF International Conference on Computer Vision, pages 4295–4305, 2025. 3 ",
+            "[66] Jinguo Zhu, Weiyun Wang, Zhe Chen, Zhaoyang Liu, Shenglong Ye, Lixin Gu, Hao Tian, Yuchen Duan, Weijie Su, Jie Shao, et al. Internvl3: Exploring advanced training and test-time recipes for open-source multimodal models. arXiv preprint arXiv:2504.10479, 2025. 6 "
+        ],
+        "bbox": [
+            166,
+            87,
+            831,
+            873
+        ],
+        "page_idx": 12
+    },
+    {
+        "type": "page_number",
+        "text": "",
+        "bbox": [
+            490,
+            935,
+            506,
+            946
+        ],
+        "page_idx": 12
+    },
+    {
+        "type": "text",
+        "text": "We provide additional details about the training and inference, as well as more experiments on various benchmarks and visualizations in Section A. Limitations are analyzed in Section B. ",
+        "bbox": [
+            169,
+            90,
+            823,
+            119
+        ],
+        "page_idx": 13
+    },
+    {
+        "type": "text",
+        "text": "A Additional Details and Results ",
+        "text_level": 1,
+        "bbox": [
+            171,
+            140,
+            465,
+            157
+        ],
+        "page_idx": 13
+    },
+    {
+        "type": "text",
+        "text": "This appendix provides additional details for GeoWeaver. We first describe the implementation and training settings of the 5B and 10B variants. We then report additional ReVSI results under different frame budgets and provide qualitative visualizations that motivate token-adaptive geometric evidence allocation. ",
+        "bbox": [
+            169,
+            172,
+            826,
+            229
+        ],
+        "page_idx": 13
+    },
+    {
+        "type": "text",
+        "text": "A.1 Implementation Details ",
+        "text_level": 1,
+        "bbox": [
+            171,
+            247,
+            380,
+            262
+        ],
+        "page_idx": 13
+    },
+    {
+        "type": "text",
+        "text": "Model configuration. GeoWeaver is instantiated with two model scales, denoted as GeoWeaver-5B and GeoWeaver-10B. Both variants use a Qwen3.5 as the base model and adopt the native vision encoder to extract semantic visual tokens. For geometric grounding, we use a pretrained VGGT encoder as the geometry branch and keep it frozen throughout training. Following the main paper, we collect the latter half of the VGGT hidden states to construct the multi-level geometry bank and discard non-patch tokens before evidence allocation. ",
+        "bbox": [
+            169,
+            273,
+            826,
+            356
+        ],
+        "page_idx": 13
+    },
+    {
+        "type": "text",
+        "text": "Grounding module. Each selected geometry layer is first normalized and spatially aligned to the visual-token resolution through a 2 × 2 spatial merge. A shared MLP then projects the aligned geometry tokens into the hidden space of the language model. During token-adaptive evidence allocation, each visual token predicts its layer preferences over the geometry bank and selects two geometry layers by default. The selected evidence is aggregated and injected into visual tokens through residual grounding. The output projection of the residual grounding branch is initialized to zero for stable optimization. ",
+        "bbox": [
+            169,
+            362,
+            823,
+            460
+        ],
+        "page_idx": 13
+    },
+    {
+        "type": "text",
+        "text": "Training strategy. The 5B variant is trained with full-parameter finetuning. The 10B variant is trained with LoRA-based parameter-efficient finetuning. For LoRA training, we use rank r = 64, scaling factor α = 128, and dropout 0.05. The learning rate and global batch size are kept unchanged between the 5B and 10B training settings. All experiments are conducted on 8 A100 GPUs (80GB). The model is optimized with the standard autoregressive next-token prediction objective, without auxiliary reconstruction, contrastive, or geometry-specific supervision losses. ",
+        "bbox": [
+            169,
+            465,
+            826,
+            551
+        ],
+        "page_idx": 13
+    },
+    {
+        "type": "table",
+        "img_path": "images/bd5d6963250720bc4f400d6527315917ee882d82ca99007c43f0e07feb7364fe.jpg",
+        "table_caption": [
+            "Table A: Implementation summary of GeoWeaver. The 5B variant uses full-parameter finetuning, while the 10B variant uses LoRA-based finetuning. The VGGT geometry encoder remains frozen in both settings. "
+        ],
+        "table_footnote": [],
+        "table_body": "<table><tr><td>Setting</td><td>GeoWeaver-5B</td><td>GeoWeaver-10B</td></tr><tr><td>Base model</td><td>Qwen3.5</td><td>Qwen3.5</td></tr><tr><td>Geometry encoder</td><td>Frozen VGGT</td><td>Frozen VGGT</td></tr><tr><td>Geometry layers</td><td>Latter half</td><td>Latter half</td></tr><tr><td>Geometry alignment</td><td>2 × 2 spatial merge</td><td>2 × 2 spatial merge</td></tr><tr><td>Selected geometry layers</td><td>2</td><td>2</td></tr><tr><td>Frames</td><td>8</td><td>8</td></tr><tr><td>Finetuning strategy</td><td>Full-parameter</td><td>LoRA</td></tr><tr><td>LoRA rank r</td><td>-</td><td>64</td></tr><tr><td>LoRA α</td><td>-</td><td>128</td></tr><tr><td>LoRA dropout</td><td>-</td><td>0.05</td></tr><tr><td>Learning rate</td><td>1e-5</td><td>1e-5</td></tr><tr><td>Global batch size</td><td>64</td><td>64</td></tr><tr><td>GPUs</td><td>8 A100</td><td>8 A100</td></tr></table>",
+        "bbox": [
+            282,
+            614,
+            715,
+            816
+        ],
+        "page_idx": 13
+    },
+    {
+        "type": "text",
+        "text": "A.2 Additional Results ",
+        "text_level": 1,
+        "bbox": [
+            171,
+            829,
+            346,
+            843
+        ],
+        "page_idx": 13
+    },
+    {
+        "type": "text",
+        "text": "ReVSI evaluates spatial reasoning under frame-aware settings, where the available visual evidence changes with the input frame budget. This protocol is suitable for evaluating whether a model can recover geometric relations from partial temporal observations. Table B reports GeoWeaver results under different frame budgets. ",
+        "bbox": [
+            169,
+            854,
+            823,
+            912
+        ],
+        "page_idx": 13
+    },
+    {
+        "type": "page_number",
+        "text": "14 ",
+        "bbox": [
+            490,
+            935,
+            508,
+            946
+        ],
+        "page_idx": 13
+    },
+    {
+        "type": "table",
+        "img_path": "images/2cbfa3a9bf1c0184e07b55e72e55a6e072ef96ca97fd01c234eee70277ad8930.jpg",
+        "table_caption": [
+            "Table B: Frame-budget analysis on ReVSI. All scores are reported as accuracy (%). The 16-frame setting does not include room size estimation or route planning. The best result in each column is highlighted in bold. ",
+            "Table C: Detailed results on SPAR-Bench. We follow the original SPAR-Bench table format and report the fine-grained scores of GeoWeaver-5B. GeoWeaver-5B achieves the best overall score and shows strong gains on medium- and high-level spatial reasoning, especially position matching, distance inference, object spatial relation reasoning, and spatial imagination. "
+        ],
+        "table_footnote": [],
+        "table_body": "<table><tr><td rowspan=\"2\">Methods</td><td rowspan=\"2\">Frames</td><td rowspan=\"2\">Avg.</td><td colspan=\"4\">Numerical Question</td><td colspan=\"3\">Multiple-Choice Question</td></tr><tr><td>Obj. Count</td><td>Abs. Dist.</td><td>Obj. Size</td><td>Room Size</td><td>Rel. Dist.</td><td>Rel. Dir.</td><td>Route Plan</td></tr><tr><td rowspan=\"4\">GeoWeaver-5B</td><td>16</td><td>54.2</td><td>38.6</td><td>61.1</td><td>62.8</td><td>-</td><td>61.4</td><td>47.0</td><td>-</td></tr><tr><td>32</td><td>54.9</td><td>38.0</td><td>63.4</td><td>63.6</td><td>54.2</td><td>65.3</td><td>46.9</td><td>53.1</td></tr><tr><td>64</td><td>53.6</td><td>38.7</td><td>62.3</td><td>62.8</td><td>52.1</td><td>61.6</td><td>45.7</td><td>51.6</td></tr><tr><td>All</td><td>54.1</td><td>38.6</td><td>61.3</td><td>62.2</td><td>53.7</td><td>63.8</td><td>46.1</td><td>53.1</td></tr><tr><td rowspan=\"4\">GeoWeaver-10B</td><td>16</td><td>57.4</td><td>40.5</td><td>64.5</td><td>69.3</td><td>-</td><td>62.1</td><td>50.5</td><td>-</td></tr><tr><td>32</td><td>57.5</td><td>42.6</td><td>66.8</td><td>69.8</td><td>50.9</td><td>64.4</td><td>52.4</td><td>55.4</td></tr><tr><td>64</td><td>56.9</td><td>42.4</td><td>65.7</td><td>69.6</td><td>50.7</td><td>65.0</td><td>51.8</td><td>53.0</td></tr><tr><td>All</td><td>57.3</td><td>43.2</td><td>66.5</td><td>69.7</td><td>50.7</td><td>65.0</td><td>51.7</td><td>54.7</td></tr></table>",
+        "bbox": [
+            176,
+            138,
+            818,
+            263
+        ],
+        "page_idx": 14
+    },
+    {
+        "type": "table",
+        "img_path": "images/308e29efd214166add3970ebb7090260f64521feb613797a76160e720f21289a.jpg",
+        "table_caption": [],
+        "table_footnote": [],
+        "table_body": "<table><tr><td rowspan=\"2\">Methods</td><td rowspan=\"2\">Rank</td><td rowspan=\"2\">Avg.</td><td rowspan=\"2\">Low</td><td colspan=\"7\">Low-Level Spatial Perception</td><td>Medium</td><td rowspan=\"2\" colspan=\"3\">Medium-level Spatial Reasoning</td><td colspan=\"3\">High</td><td colspan=\"8\">High-level Spatial Reasoning</td><td></td></tr><tr><td>Depth-OC</td><td>Depth-OC-MV</td><td>Depth-OO</td><td>Depth-OO-MV</td><td>Dist-OC</td><td>Dist-OC-MV</td><td>Dist-OO</td><td>Dist-OO-MV</td><td>PosMatch</td><td>CanMotion</td><td>ViewChgJ</td><td>High</td><td>Dist-OO</td><td>Dist-OO-MV</td><td>ObjRel-OC-MV</td><td>ObjRel-OO</td><td>ObjRel-OO-MV</td><td>Splmag-OC</td><td>Splmag-OC-MV</td><td>Splmag-OO</td></tr><tr><td>GPT-4a [38]</td><td>3</td><td>38.11</td><td>36.88</td><td>51.22</td><td>44.69</td><td>21.21</td><td>19.33</td><td>41.40</td><td>44.90</td><td>36.34</td><td>35.96</td><td>26.49</td><td>27.74</td><td>25.25</td><td>19.99</td><td>43.80</td><td>65.00</td><td>64.88</td><td>44.75</td><td>50.82</td><td>43.21</td><td>29.84</td><td>32.56</td><td>27.81</td><td>35.29</td><td></td></tr><tr><td>GPT-4b [39]</td><td>2</td><td>41.00</td><td>41.85</td><td>48.25</td><td>42.66</td><td>20.86</td><td>23.58</td><td>58.29</td><td>52.33</td><td>48.65</td><td>40.44</td><td>44.02</td><td>59.29</td><td>28.75</td><td>22.02</td><td>42.02</td><td>71.76</td><td>67.26</td><td>46.25</td><td>54.95</td><td>41.00</td><td>30.38</td><td>29.65</td><td>20.20</td><td>24.93</td><td></td></tr><tr><td>Doubao-1.5</td><td>1</td><td>41.74</td><td>33.24</td><td>34.89</td><td>37.22</td><td>25.24</td><td>21.40</td><td>35.04</td><td>34.99</td><td>40.58</td><td>36.57</td><td>47.36</td><td>55.73</td><td>39.00</td><td>29.47</td><td>49.49</td><td>74.71</td><td>69.64</td><td>35.75</td><td>70.33</td><td>47.65</td><td>35.95</td><td>33.14</td><td>35.76</td><td>42.86</td><td></td></tr><tr><td>SpaceB-7b [39]</td><td>4</td><td>37.55</td><td>30.90</td><td>36.14</td><td>35.16</td><td>15.40</td><td>19.25</td><td>40.13</td><td>35.07</td><td>36.97</td><td>29.16</td><td>31.93</td><td>38.68</td><td>40.00</td><td>17.23</td><td>45.61</td><td>62.35</td><td>61.61</td><td>52.25</td><td>51.92</td><td>46.81</td><td>37.90</td><td>36.05</td><td>24.83</td><td>34.17</td><td></td></tr><tr><td>InternVL2.5-Bro[59]</td><td>–</td><td>63.25</td><td>65.53</td><td>81.53</td><td>79.22</td><td>38.25</td><td>35.51</td><td>78.93</td><td>79.18</td><td>68.13</td><td>63.50</td><td>63.01</td><td>78.88</td><td>73.00</td><td>37.14</td><td>61.29</td><td>86.47</td><td>79.76</td><td>64.00</td><td>69.23</td><td>59.00</td><td>47.31</td><td>50.00</td><td>42.38</td><td>53.50</td><td></td></tr><tr><td>GeoWeaver-SB</td><td>1</td><td>#9.15</td><td>59.30</td><td>82.94</td><td>76.19</td><td>25.83</td><td>19.89</td><td>77.30</td><td>77.48</td><td>66.03</td><td>48.75</td><td>75.13</td><td>86.26</td><td>64.00</td><td>35.14</td><td>80.36</td><td>89.12</td><td>83.93</td><td>91.25</td><td>85.44</td><td>83.38</td><td>73.39</td><td>72.09</td><td>66.23</td><td>78.43</td><td></td></tr></table>",
+        "bbox": [
+            173,
+            328,
+            823,
+            377
+        ],
+        "page_idx": 14
+    },
+    {
+        "type": "text",
+        "text": "The 32-frame setting performs best overall for both model scales. GeoWeaver-5B reaches 54.9 average accuracy, while GeoWeaver-10B further improves the score to 57.5. Increasing the frame budget to 64 or all frames does not consistently improve performance, suggesting that moderate temporal coverage provides sufficient spatial context while reducing redundant visual evidence. The improvement from 5B to 10B further indicates that pre-reasoning geometric grounding benefits from a stronger language reasoning capacity. ",
+        "bbox": [
+            169,
+            388,
+            823,
+            473
+        ],
+        "page_idx": 14
+    },
+    {
+        "type": "text",
+        "text": "SPAR-Bench. Table C reports the detailed SPAR-Bench results following the original benchmark format. GeoWeaver-5B achieves a 69.15 overall score, outperforming the strongest reported baseline. The improvement is most evident on medium- and high-level reasoning tasks, including position matching, distance inference, object spatial relation reasoning, and spatial imagination. These results indicate that token-adaptive geometric evidence allocation is particularly effective when spatial reasoning requires object-level relations and structured scene understanding. ",
+        "bbox": [
+            169,
+            479,
+            825,
+            561
+        ],
+        "page_idx": 14
+    },
+    {
+        "type": "text",
+        "text": "Dyn-Bench. Table D reports category-level results on Dyn-Bench. GeoWeaver-5B achieves the best overall score of 61.3 among the compared models. The strongest gain appears on Object-Scene reasoning, where GeoWeaver reaches 77.1 and outperforms all listed baselines. This category requires modeling how objects interact with scene structure under dynamic visual changes, which aligns with our design of grounding visual tokens with token-specific geometric evidence. The results suggest that pre-reasoning geometric grounding is particularly effective for scene-anchored spatial-temporal reasoning. ",
+        "bbox": [
+            169,
+            577,
+            823,
+            675
+        ],
+        "page_idx": 14
+    },
+    {
+        "type": "text",
+        "text": "A.3 Additional Ablation Results ",
+        "text_level": 1,
+        "bbox": [
+            171,
+            691,
+            410,
+            705
+        ],
+        "page_idx": 14
+    },
+    {
+        "type": "text",
+        "text": "We provide detailed ablation results for geometry layer selection and evidence compactness. These results complement the main paper by showing how the construction and use of the geometry bank affect spatio-temporal reasoning. ",
+        "bbox": [
+            169,
+            718,
+            823,
+            760
+        ],
+        "page_idx": 14
+    },
+    {
+        "type": "text",
+        "text": "Table F studies how many geometry layers should be selected for each visual token. Selecting two layers achieves the best overall score of 72.80. Using one layer limits complementary evidence, while selecting three or four layers begins to introduce weakly related cues. Aggregating all layers further decreases the score to 71.28, confirming that dense use of the geometry bank weakens token-specific grounding. These results support compact evidence allocation rather than uniform aggregation over all geometry layers. ",
+        "bbox": [
+            169,
+            766,
+            823,
+            849
+        ],
+        "page_idx": 14
+    },
+    {
+        "type": "text",
+        "text": "Table E studies how the construction of the geometry bank affects GeoWeaver. Using the first 12 VGGT layers yields 67.40, while uniformly sampling 12 layers improves the score to 69.65. The latter 12 layers achieve the best overall performance of 72.80, with clear gains on absolute distance, room size, relative distance, route planning, and appearance order. This trend indicates that early geometry layers mainly provide local structural details, whereas later layers contain more reasoning-relevant geometric abstractions. The gap between uniform sampling and latter-layer selection further suggests that simply increasing layer diversity is not sufficient; the geometry bank should be composed of features that are better aligned with spatio-temporal reasoning. ",
+        "bbox": [
+            169,
+            854,
+            823,
+            912
+        ],
+        "page_idx": 14
+    },
+    {
+        "type": "page_number",
+        "text": "",
+        "bbox": [
+            490,
+            935,
+            508,
+            946
+        ],
+        "page_idx": 14
+    },
+    {
+        "type": "table",
+        "img_path": "images/d611b18c21152209bcb5020486c9e70a8ecaf5b6307136df56a60b2e1feed1ac.jpg",
+        "table_caption": [
+            "Table D: Category-level comparison on Dyn-Bench [17]. We aggregate the original Dyn-Bench subcategories into Inter-Object, Object-Scene, and Camera-Object groups following the benchmark [17]. Best and second-best results are bolded and underlined, respectively. "
+        ],
+        "table_footnote": [],
+        "table_body": "<table><tr><td>Methods</td><td>Inter-Object</td><td>Object-Scene</td><td>Camera-Object</td><td>Avg.</td></tr><tr><td colspan=\"5\">Proprietary Models</td></tr><tr><td>GPT-4o [18]</td><td>46.5</td><td>63.7</td><td>46.1</td><td>50.1</td></tr><tr><td>GPT-5 [37]</td><td>54.7</td><td>70.2</td><td>59.2</td><td>59.5</td></tr><tr><td>Gemini-2.5 Pro [8]</td><td>56.1</td><td>64.4</td><td>55.8</td><td>59.8</td></tr><tr><td colspan=\"5\">Open-source General Models</td></tr><tr><td>InternVL3-14B [47]</td><td>54.0</td><td>71.6</td><td>43.2</td><td>53.7</td></tr><tr><td>InternVL3.5-8B [48]</td><td>50.8</td><td>65.3</td><td>42.7</td><td>50.3</td></tr><tr><td>Qwen2.5-VL-7B [3]</td><td>50.8</td><td>69.9</td><td>42.1</td><td>51.6</td></tr><tr><td>LLaVA-OneVision-1.5-4B [1]</td><td>49.8</td><td>64.6</td><td>40.9</td><td>49.9</td></tr><tr><td>LLaVA-OneVision-1.5-8B [1]</td><td>54.0</td><td>73.1</td><td>43.2</td><td>53.8</td></tr><tr><td colspan=\"5\">Spatial MLLMs</td></tr><tr><td>SpaceR-7B [40]</td><td>56.2</td><td>72.7</td><td>48.6</td><td>56.5</td></tr><tr><td>VST-7B-RL [55]</td><td>56.3</td><td>74.4</td><td>45.7</td><td>55.7</td></tr><tr><td>Spatial-SSRL-7B [34]</td><td>47.5</td><td>69.4</td><td>36.7</td><td>45.9</td></tr><tr><td>SpatialLadder-3B [26]</td><td>52.0</td><td>72.7</td><td>44.0</td><td>53.6</td></tr><tr><td colspan=\"5\">Region-level MLLMs</td></tr><tr><td>UniPixel-3B [30]</td><td>54.6</td><td>73.2</td><td>46.3</td><td>55.4</td></tr><tr><td>UniPixel-7B [30]</td><td>56.4</td><td>75.4</td><td>50.1</td><td>58.1</td></tr><tr><td>VideoGLaMM [36]</td><td>35.0</td><td>37.4</td><td>23.3</td><td>30.7</td></tr><tr><td>Sa2VA-InternVL2.5-8B [58]</td><td>49.7</td><td>66.9</td><td>40.1</td><td>49.4</td></tr><tr><td>Sa2VA-InternVL3-14B [58]</td><td>52.7</td><td>72.3</td><td>43.8</td><td>53.6</td></tr><tr><td>Sa2VA-Qwen2.5-VL-7B [58, 3]</td><td>50.3</td><td>66.7</td><td>42.4</td><td>50.3</td></tr><tr><td>Sa2VA-Qwen3-VL-4B [58, 7]</td><td>48.8</td><td>67.5</td><td>40.8</td><td>49.8</td></tr><tr><td>GeoWeaver-5B</td><td>54.6</td><td>77.1</td><td>52.3</td><td>61.3</td></tr></table>",
+        "bbox": [
+            290,
+            138,
+            707,
+            421
+        ],
+        "page_idx": 15
+    },
+    {
+        "type": "table",
+        "img_path": "images/62aab5dc67bcb1ed690159b0109e0d6cda632ce4651607730a225e4b1409c7e0.jpg",
+        "table_caption": [
+            "Table E: Ablation on geometry layer selection. The latter 12 geometry layers provide the best overall performance. "
+        ],
+        "table_footnote": [],
+        "table_body": "<table><tr><td rowspan=\"2\">Geometry Layers</td><td rowspan=\"2\">Avg.</td><td colspan=\"4\">Numerical Answer</td><td colspan=\"4\">Multiple-Choice Answer</td></tr><tr><td>Obj. Count</td><td>Abs. Dist.</td><td>Obj. Size</td><td>Room Size</td><td>Rel. Dist.</td><td>Rel. Dir.</td><td>Route Plan</td><td>Appr. Order</td></tr><tr><td>First 12 Layers</td><td>67.40</td><td>81.37</td><td>50.70</td><td>77.00</td><td>54.89</td><td>64.50</td><td>73.38</td><td>50.00</td><td>78.67</td></tr><tr><td>Uniform 12 Layers</td><td>69.65</td><td>81.11</td><td>53.48</td><td>76.90</td><td>57.50</td><td>67.50</td><td>85.01</td><td>55.00</td><td>80.67</td></tr><tr><td>Latter 12 Layers</td><td>72.80</td><td>83.20</td><td>61.80</td><td>76.80</td><td>62.40</td><td>72.80</td><td>83.50</td><td>56.30</td><td>84.70</td></tr></table>",
+        "bbox": [
+            179,
+            472,
+            818,
+            537
+        ],
+        "page_idx": 15
+    },
+    {
+        "type": "text",
+        "text": "",
+        "bbox": [
+            169,
+            550,
+            823,
+            607
+        ],
+        "page_idx": 15
+    },
+    {
+        "type": "text",
+        "text": "A.3.1 Evidence Compactness ",
+        "text_level": 1,
+        "bbox": [
+            171,
+            623,
+            388,
+            638
+        ],
+        "page_idx": 15
+    },
+    {
+        "type": "text",
+        "text": "Figure A visualizes why compact geometric evidence is important for token-adaptive grounding. We select two representative ROIs from the same input image and plot their dense router probability distributions over geometry layers. The distributions are concentrated on a small number of layers rather than being uniformly spread across the entire geometry bank, indicating that each visual token only requires a compact subset of geometric evidence. We then fix one ROI as the reference token and construct grounded representations under different evidence budgets, including one, two, four, and all selected layers. The response maps show that using too few layers provides incomplete geometric evidence, while using too many layers introduces weakly related cues and produces more diffuse responses. In contrast, a compact budget yields a more focused and spatially consistent response. The layer indicators shown in each budget further connect the selected geometry layers with the resulting response patterns. This visualization supports the quantitative ablation in Table 5, where compact evidence allocation achieves the best overall performance. ",
+        "bbox": [
+            169,
+            648,
+            826,
+            815
+        ],
+        "page_idx": 15
+    },
+    {
+        "type": "text",
+        "text": "A.3.2 Geometry Layer Selection ",
+        "text_level": 1,
+        "bbox": [
+            171,
+            830,
+            410,
+            845
+        ],
+        "page_idx": 15
+    },
+    {
+        "type": "text",
+        "text": "To better understand how GeoWeaver allocates geometric evidence, we visualize the spatial distribution of geometry-layer preferences in Figure B. For each spatial location, we first take the top-k geometry layers according to the dense router scores, compute the average layer index of these candidates, and project the value back to the image plane as a heatmap. Thus, the visualization does not represent the probability of a single layer or the fraction of selected layers. Instead, it reflects the “center of mass” of the top candidate geometry layers at each location. Cooler regions indicate that the corresponding visual tokens prefer shallower geometry layers, which usually preserve more local and fine-grained structural details. Warmer regions indicate a stronger preference for deeper geometry layers, which tend to encode more global and semantically organized geometric abstractions. This visualization shows that geometry usage is spatially non-uniform: different image regions rely on different levels of geometric evidence, supporting our token-adaptive evidence allocation design. ",
+        "bbox": [
+            169,
+            854,
+            825,
+            912
+        ],
+        "page_idx": 15
+    },
+    {
+        "type": "page_number",
+        "text": "",
+        "bbox": [
+            490,
+            935,
+            508,
+            946
+        ],
+        "page_idx": 15
+    },
+    {
+        "type": "image",
+        "img_path": "images/d0ef0e87f11e7ccbdf45217f2ee680f402d2b4bc14ed23f586a0371a6cb4ebf7.jpg",
+        "image_caption": [],
+        "image_footnote": [],
+        "content": "",
+        "bbox": [
+            238,
+            89,
+            754,
+            287
+        ],
+        "page_idx": 16
+    },
+    {
+        "type": "table",
+        "img_path": "images/b9b2464d9e5d970b663c3e604c5c9a5534681f7ed103819e429bad7e4861d48f.jpg",
+        "table_caption": [
+            "Figure A: Visualization of evidence compactness. We select two representative ROIs and visualize their dense router probability distributions over geometry layers. The distributions concentrate on a small number of layers, suggesting that token-specific geometric evidence is naturally compact. We further compare grounded response maps under different evidence budgets by selecting one, two, four, or all geometry layers for a reference ROI. Too few layers provide incomplete evidence, whereas overly broad selection introduces weakly related geometry and leads to diffuse responses. Compact evidence selection produces a more focused and spatially consistent response, supporting our token-adaptive grounding design. ",
+            "Table F: Effect of evidence compactness. We vary the number of geometry layers selected for each visual token during token-adaptive evidence allocation. Compact evidence selection achieves the best overall performance, while aggregating all layers introduces weakly related geometric cues and reduces token-specific grounding quality. "
+        ],
+        "table_footnote": [],
+        "table_body": "<table><tr><td rowspan=\"2\">Selected Layers</td><td rowspan=\"2\">Avg.</td><td colspan=\"4\">Numerical Answer</td><td colspan=\"4\">Multiple-Choice Answer</td></tr><tr><td>Obj. Count</td><td>Abs. Dist.</td><td>Obj. Size</td><td>Room Size</td><td>Rel. Dist.</td><td>Rel. Dir.</td><td>Route Plan</td><td>Appr. Order</td></tr><tr><td>1 Layer</td><td>71.69</td><td>81.94</td><td>60.25</td><td>76.37</td><td>59.77</td><td>73.50</td><td>83.27</td><td>53.75</td><td>84.67</td></tr><tr><td>2 Layers</td><td>72.80</td><td>83.20</td><td>61.80</td><td>76.80</td><td>62.40</td><td>72.80</td><td>83.50</td><td>56.30</td><td>84.70</td></tr><tr><td>3 Layers</td><td>72.54</td><td>83.03</td><td>61.35</td><td>76.68</td><td>63.41</td><td>73.00</td><td>83.18</td><td>55.00</td><td>84.67</td></tr><tr><td>4 Layers</td><td>72.09</td><td>82.87</td><td>60.58</td><td>76.92</td><td>64.09</td><td>73.00</td><td>82.79</td><td>52.50</td><td>84.00</td></tr><tr><td>All Layers</td><td>71.28</td><td>82.50</td><td>59.80</td><td>76.50</td><td>61.10</td><td>70.40</td><td>82.60</td><td>54.10</td><td>83.40</td></tr></table>",
+        "bbox": [
+            179,
+            522,
+            818,
+            609
+        ],
+        "page_idx": 16
+    },
+    {
+        "type": "text",
+        "text": "",
+        "bbox": [
+            169,
+            656,
+            823,
+            753
+        ],
+        "page_idx": 16
+    },
+    {
+        "type": "text",
+        "text": "Figure C visualizes how the same ROI interacts with geometry features from different VGGT layers. For each layer, we take the geometry token at the ROI location as the query and compute its cosine similarity with all tokens in the same-layer feature map. The resulting heatmaps show clear layer-dependent responses. Earlier layers, such as L12, produce more localized activations around fine-grained regions and boundary-like structures. Intermediate layers, such as L16 and L18, expand the response to object-level structures and nearby spatial context. Later layers, such as L20 and L23, capture broader scene layout and more global spatial organization. This progression indicates that different geometry layers encode different types of geometric evidence, ranging from local details to global structural abstractions. The visualization supports our use of a multi-level geometry bank and motivates token-adaptive evidence allocation, since different visual tokens may require different geometry layers depending on their spatial roles. ",
+        "bbox": [
+            169,
+            758,
+            826,
+            912
+        ],
+        "page_idx": 16
+    },
+    {
+        "type": "page_number",
+        "text": "17 ",
+        "bbox": [
+            490,
+            935,
+            508,
+            946
+        ],
+        "page_idx": 16
+    },
+    {
+        "type": "image",
+        "img_path": "images/1673c466a07ab9cdb7e778ffc4dffd39aa8703ee9ee8e3b37d80b3b3dc40f1e4.jpg",
+        "image_caption": [],
+        "image_footnote": [],
+        "content": "Interior scene of a living room with two people watching TV, no visible text or symbols",
+        "sub_type": "natural_image",
+        "bbox": [
+            292,
+            88,
+            491,
+            200
+        ],
+        "page_idx": 17
+    },
+    {
+        "type": "image",
+        "img_path": "images/4caf4984f014b8a9536fbc930636a53ba2e755e4b5efdceeb5e2e04969c9b82e.jpg",
+        "image_caption": [],
+        "image_footnote": [],
+        "content": "Dense Fraction On Image\n1.00\n0.75\n0.50\n0.25\n0.00",
+        "sub_type": "text_image",
+        "bbox": [
+            509,
+            90,
+            728,
+            202
+        ],
+        "page_idx": 17
+    },
+    {
+        "type": "chart",
+        "img_path": "images/3e9f1ccbeb15e4be434dd3f55a1b6fe9b8bd87d044f88f80e2b85053f3ac853f.jpg",
+        "content": "| Category | Average Weight |\n| -------- | -------------- |\n| L12      | 0.06           |\n| L13      | 0.07           |\n| L14      | 0.07           |\n| L15      | 0.07           |\n| L16      | 0.07           |\n| L17      | 0.10           |\n| L18      | 0.08           |\n| L19      | 0.07           |\n| L20      | 0.07           |\n| L21      | 0.06           |\n| L22      | 0.07           |\n| L23      | 0.22           |",
+        "chart_caption": [],
+        "chart_footnote": [],
+        "sub_type": "bar",
+        "bbox": [
+            267,
+            203,
+            491,
+            320
+        ],
+        "page_idx": 17
+    },
+    {
+        "type": "chart",
+        "img_path": "images/d5247e9fab019b138917c806ebea7b776ac07a1a4b8def14461207cfbf453037.jpg",
+        "content": "Dense Top-k Fraction\n| Category | Top-k Fraction |\n|---|---|\n| L12 | 0.01 |\n| L13 | 0.04 |\n| L14 | 0.075 |\n| L15 | 0.105 |\n| L16 | 0.08 |\n| L17 | 0.16 |\n| L18 | 0.115 |\n| L19 | 0.08 |\n| L20 | 0.085 |\n| L21 | 0.015 |\n| L22 | 0.085 |\n| L23 | 0.165 |",
+        "chart_caption": [
+            "Figure B: Visualization of geometry-layer preference. For each spatial location, we compute the average layer index of the top-k geometry layers ranked by dense router scores and overlay it on the input image. Cooler colors indicate a preference for shallower, detail-oriented geometry layers, while warmer colors indicate a preference for deeper, more global geometry layers. The spatially varying pattern shows that different visual tokens require different levels of geometric evidence, supporting our token-adaptive grounding design. "
+        ],
+        "chart_footnote": [],
+        "sub_type": "bar",
+        "bbox": [
+            491,
+            203,
+            715,
+            320
+        ],
+        "page_idx": 17
+    },
+    {
+        "type": "image",
+        "img_path": "images/74c7b2aeb54a2ab728b9c36a7e622c3c086e373dbafaa5dfae37c4bb59cc92e9.jpg",
+        "image_caption": [
+            "Figure C: ROI-to-layer similarity visualization. Given the same ROI, we use the geometry token at the ROI location as a query and compute cosine similarity with all tokens in the same-layer geometry feature map. Different layers exhibit distinct response patterns: earlier layers focus more on local details and boundary-like structures, intermediate layers highlight object-level geometry and nearby context, and later layers capture broader scene layout. This layer-dependent behavior shows that geometry layers encode different types of spatial evidence, motivating the multi-level geometry bank and token-adaptive evidence allocation in GeoWeaver. "
+        ],
+        "image_footnote": [],
+        "content": "",
+        "bbox": [
+            189,
+            431,
+            803,
+            670
+        ],
+        "page_idx": 17
+    },
+    {
+        "type": "text",
+        "text": "B Limitations ",
+        "text_level": 1,
+        "bbox": [
+            171,
+            806,
+            305,
+            821
+        ],
+        "page_idx": 17
+    },
+    {
+        "type": "text",
+        "text": "GeoWeaver is designed as a modular grounding framework built on top of an external geometry encoder. This design allows the model to benefit from strong geometric priors without requiring additional 3D supervision, but it also means that further improvements may come from stronger or more domain-adaptive geometry encoders. In the current implementation, GeoWeaver uses hidden geometry features as the evidence bank, while explicit geometric states such as depth maps, point maps, or camera poses are not directly modeled. Incorporating these structured 3D representations may further benefit metric-scale reasoning and long-range spatial consistency. ",
+        "bbox": [
+            169,
+            842,
+            823,
+            912
+        ],
+        "page_idx": 17
+    },
+    {
+        "type": "page_number",
+        "text": "18 ",
+        "bbox": [
+            490,
+            935,
+            508,
+            946
+        ],
+        "page_idx": 17
+    },
+    {
+        "type": "text",
+        "text": "",
+        "bbox": [
+            171,
+            90,
+            823,
+            119
+        ],
+        "page_idx": 18
+    },
+    {
+        "type": "page_number",
+        "text": "19 ",
+        "bbox": [
+            490,
+            935,
+            508,
+            946
+        ],
+        "page_idx": 18
+    }
+]

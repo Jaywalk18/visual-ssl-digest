@@ -66,6 +66,19 @@ PAPERS = [
         "method": "feature-delta motion vector objective at projector level",
     },
     {
+        "id": "2605.22558",
+        "title": "GeoWeaver: Grounding Visual Tokens with Geometric Evidence before Scene Reasoning",
+        "short": "GeoWeaver",
+        "category": "Geometry-grounded VLM",
+        "priority": "P2",
+        "date": "2026-05-24",
+        "venue": "arXiv",
+        "url": "https://arxiv.org/abs/2605.22558",
+        "thesis": "几何不应该只在 reasoning 阶段后融合，它应该先改造视觉 token 的坐标感。",
+        "takeaway": "这篇不是 JEPA，而是 VLM 视觉 token grounding：冻结几何编码器的证据被分配给多层视觉 token。",
+        "method": "multi-level geometry bank + residual grounding before LLM reasoning",
+    },
+    {
         "id": "2605.21059",
         "title": "Multimodal LLMs under Pairwise Modalities",
         "short": "Pairwise Modalities",
@@ -77,18 +90,6 @@ PAPERS = [
         "thesis": "多模态模型不一定需要完整 joint tuples；只要模态图连通，pairwise supervision 可以成为可扩展替代品。",
         "takeaway": "这是本 MVP 的 MinerU 图文样例页：Fig.1 解释动机，Fig.2 解释共享/私有 latent 生成过程。",
         "method": "self-modal reconstruction + pairwise contrastive latent alignment",
-        "figures": [
-            {
-                "src": "../assets/mineru/2605.21059/images/fig1.jpg",
-                "label": "Fig. 1 · Pairwise supervision is the scalable object",
-                "caption": "Joint tuples are expensive; pairwise text-image, image-tactile, and text-3D data can form a connected modality graph.",
-            },
-            {
-                "src": "../assets/mineru/2605.21059/images/fig2.jpg",
-                "label": "Fig. 2 · Shared and modality-specific latent factors",
-                "caption": "The paper separates common causal factors from modality-private variables before alignment.",
-            },
-        ],
     },
 ]
 
@@ -101,6 +102,76 @@ def strip_md(text: str) -> str:
     text = re.sub(r"!\[[^\]]*]\([^)]+\)", "", text)
     text = re.sub(r"\[([^\]]+)]\(([^)]+)\)", r"\1", text)
     return text.replace("**", "").replace("`", "")
+
+
+def flatten_caption(value) -> str:
+    if not value:
+        return ""
+    if isinstance(value, list):
+        return " ".join(str(v).strip() for v in value if str(v).strip())
+    return str(value).strip()
+
+
+def content_list_path(pid: str) -> Path | None:
+    root = ROOT / "assets" / "mineru" / pid
+    paths = sorted(root.glob("*content_list.json"))
+    return paths[0] if paths else None
+
+
+def figures_for(pid: str, depth: int = 1, max_count: int = 2) -> list[dict]:
+    prefix = "../" * depth
+    fallback = {
+        "2605.21059": [
+            {
+                "src": f"{prefix}assets/mineru/2605.21059/images/fig1.jpg",
+                "label": "Fig. 1 · Pairwise supervision is the scalable object",
+                "caption": "Joint tuples are expensive; pairwise text-image, image-tactile, and text-3D data can form a connected modality graph.",
+            },
+            {
+                "src": f"{prefix}assets/mineru/2605.21059/images/fig2.jpg",
+                "label": "Fig. 2 · Shared and modality-specific latent factors",
+                "caption": "The paper separates common causal factors from modality-private variables before alignment.",
+            },
+        ]
+    }
+    path = content_list_path(pid)
+    if not path:
+        return fallback.get(pid, [])
+    try:
+        data = json.loads(path.read_text(encoding="utf-8"))
+    except Exception:
+        return fallback.get(pid, [])
+
+    selected = []
+    keywords = [
+        "figure 1", "figure 2", "overview", "architecture", "framework",
+        "pipeline", "illustration", "comparison", "model", "deltadirect",
+        "grounding", "conditioning",
+    ]
+    for item in data:
+        if item.get("type") != "image" or not item.get("img_path"):
+            continue
+        img_rel = str(item["img_path"]).replace("\\", "/")
+        img_path = ROOT / "assets" / "mineru" / pid / img_rel
+        if not img_path.exists():
+            continue
+        cap = flatten_caption(item.get("image_caption"))
+        blob = f"{cap} {img_rel}".lower()
+        score = img_path.stat().st_size / 1000
+        for idx, kw in enumerate(keywords):
+            if kw in blob:
+                score += 500 - idx * 20
+        # Avoid tiny fragments when a real method figure exists.
+        if img_path.stat().st_size < 6000:
+            score -= 120
+        selected.append({
+            "score": score,
+            "src": f"{prefix}assets/mineru/{pid}/{img_rel}",
+            "label": cap.split(". ")[0][:90] if cap else "MinerU extracted figure",
+            "caption": cap or "MinerU extracted figure without structured caption.",
+        })
+    selected.sort(key=lambda x: x["score"], reverse=True)
+    return [{k: v for k, v in fig.items() if k != "score"} for fig in selected[:max_count]] or fallback.get(pid, [])
 
 
 def md_table_rows(md: str, heading: str) -> list[list[str]]:
@@ -191,9 +262,14 @@ def shell(title: str, body: str, depth: int = 0, active: str = "") -> str:
 
 def paper_card(p: dict, depth: int = 0) -> str:
     prefix = "../" * depth
+    figs = figures_for(p["id"], depth, 1)
+    if figs:
+        thumb = f"""<img src="{e(figs[0]['src'])}" alt="{e(p['short'])} figure"><span>{e(p['priority'])}</span>"""
+    else:
+        thumb = f"""<span>{e(p['priority'])}</span><strong>{e(p['short'])}</strong><em>{e(p['venue'])}</em>"""
     return f"""<article class="paper-card" data-category="{e(p['category'])}" data-title="{e(p['title'].lower())}">
   <a class="paper-thumb paper-thumb-text" href="{prefix}papers/{p['id']}.html">
-    <span>{e(p['priority'])}</span><strong>{e(p['short'])}</strong><em>{e(p['venue'])}</em>
+    {thumb}
   </a>
   <div>
     <div class="paper-meta">{e(p['date'])} · {e(p['category'])} · {e(p['venue'])}</div>
@@ -212,12 +288,15 @@ def write_index(report_md: str) -> None:
         for row in summary[1:] if len(row) >= 2
     )
     hero = PAPERS[0]
+    hero_figs = figures_for(hero["id"], 0, 1)
+    hero_img = f'<figure class="hero-figure"><img src="{e(hero_figs[0]["src"])}" alt="{e(hero["short"])} figure"><figcaption>{e(hero_figs[0]["caption"][:180])}</figcaption></figure>' if hero_figs else ""
     cards = "\n".join(paper_card(p, 0) for p in PAPERS[:5])
     body = f"""<section class="hero-grid">
   <article class="lead-story">
     <div class="kicker">今日主线 · {e(hero['venue'])}</div>
     <h1>{e(hero['short'])}：JEPA 的不确定性开始交给语言处理</h1>
     <p class="dek">{e(hero['thesis'])}</p>
+    {hero_img}
     <div class="paper-actions"><a href="issues/2026-05-24.html">阅读 5 月 24 日速递</a><a href="papers/{hero['id']}.html">打开主文页</a></div>
   </article>
   <aside class="issue-brief">
@@ -244,7 +323,7 @@ def write_issue(report_md: str) -> None:
             for row in body_rows
         )
         table = f'<table class="compact-table"><thead><tr>{ths}</tr></thead><tbody>{trs}</tbody></table>'
-    cards = "\n".join(paper_card(p, 1) for p in PAPERS[:4])
+    cards = "\n".join(paper_card(p, 1) for p in PAPERS[:5])
     body = f"""<article class="paper-detail issue-detail">
   <div class="paper-main">
     <div class="kicker">Daily issue · 2026-05-24 · CCF A/B 会议优先</div>
@@ -269,10 +348,11 @@ def write_issue(report_md: str) -> None:
 
 def write_paper(p: dict) -> None:
     figs = ""
-    if p.get("figures"):
+    paper_figs = figures_for(p["id"], 1, 2)
+    if paper_figs:
         figs = "\n".join(
             f"""<figure class="full-fig"><img src="{e(fig['src'])}" alt="{e(fig['label'])}"><figcaption><b>{e(fig['label'])}</b>{e(fig['caption'])}</figcaption></figure>"""
-            for fig in p["figures"]
+            for fig in paper_figs
         )
     else:
         figs = f"""<aside class="marginalia"><b>图像状态</b> 这篇 MVP 先使用文字解读；接入每日 MinerU 批处理后，这里会自动替换为 pipeline / motivation 图。</aside>"""
@@ -295,7 +375,7 @@ def write_paper(p: dict) -> None:
       {figs}
       <h2>它真正改变的是训练信号，而不是榜单数字</h2>
       <p>{e(p['method'])}。这类工作值得被放在通用视觉自监督日报里，不是因为它一定立刻刷新所有 benchmark，而是因为它改变了模型“从哪里拿监督”的方式。</p>
-      <blockquote class="inline-quote">For the MVP, English quotes will be filled from MinerU full.md once the daily pipeline extracts this paper.</blockquote>
+      <blockquote class="inline-quote">MinerU full.md is now part of the source bundle for this page; the next pass will use it for paper-native English quotes and tighter argument writing.</blockquote>
       <h2>读这篇时要盯住的风险</h2>
       <p>当前页面是站点原型，细节还没有逐段引用 MinerU 全文。正式流程会把每篇论文的 abstract、method、caption 和关键表格放进页面生成上下文，并保留至少两段原文引文。</p>
       <h2>下一步怎么接进日报</h2>
@@ -347,9 +427,13 @@ def write_css() -> None:
 .section-heading h2{margin:0 0 8px;font-size:28px}
 .paper-list{display:grid;gap:18px}
 .paper-thumb-text{display:flex;flex-direction:column;justify-content:center;min-height:172px;background:#171717;color:#f7f3ea;text-decoration:none;padding:18px;border-radius:2px}
+.paper-thumb-text img{width:100%;height:172px;object-fit:cover;display:block;margin:-18px -18px 12px;width:calc(100% + 36px);max-width:none;border-bottom:1px solid rgba(255,255,255,.18)}
 .paper-thumb-text span{font-size:13px;color:#f2c14e}
 .paper-thumb-text strong{font-size:25px;line-height:1.05;margin:10px 0;font-family:Georgia,'Times New Roman',serif}
 .paper-thumb-text em{font-size:12px;color:#cfc7b7;font-style:normal}
+.hero-figure{margin:24px 0;border-top:1px solid #d8d0c3;border-bottom:1px solid #d8d0c3;padding:16px 0}
+.hero-figure img{width:100%;max-height:430px;object-fit:contain;background:#fff}
+.hero-figure figcaption{font-size:13px;line-height:1.45;color:#5f5b55;margin-top:8px}
 .issue-detail .paper-list{break-inside:avoid;column-span:all}
 .page-header{max-width:1500px;margin:32px auto;padding:0 24px;border-bottom:2px solid #111}
 .page-header h1{font-size:54px;line-height:1;margin:0 0 10px;font-family:Georgia,'Times New Roman',serif}

@@ -14,9 +14,13 @@
 .section-heading h2{margin:0 0 8px;font-size:28px}
 .paper-list{display:grid;gap:18px}
 .paper-thumb-text{display:flex;flex-direction:column;justify-content:center;min-height:172px;background:#171717;color:#f7f3ea;text-decoration:none;padding:18px;border-radius:2px}
+.paper-thumb-text img{width:100%;height:172px;object-fit:cover;display:block;margin:-18px -18px 12px;width:calc(100% + 36px);max-width:none;border-bottom:1px solid rgba(255,255,255,.18)}
 .paper-thumb-text span{font-size:13px;color:#f2c14e}
 .paper-thumb-text strong{font-size:25px;line-height:1.05;margin:10px 0;font-family:Georgia,'Times New Roman',serif}
 .paper-thumb-text em{font-size:12px;color:#cfc7b7;font-style:normal}
+.hero-figure{margin:24px 0;border-top:1px solid #d8d0c3;border-bottom:1px solid #d8d0c3;padding:16px 0}
+.hero-figure img{width:100%;max-height:430px;object-fit:contain;background:#fff}
+.hero-figure figcaption{font-size:13px;line-height:1.45;color:#5f5b55;margin-top:8px}
 .issue-detail .paper-list{break-inside:avoid;column-span:all}
 .page-header{max-width:1500px;margin:32px auto;padding:0 24px;border-bottom:2px solid #111}
 .page-header h1{font-size:54px;line-height:1;margin:0 0 10px;font-family:Georgia,'Times New Roman',serif}
