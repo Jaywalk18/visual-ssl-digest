@@ -1,0 +1,106 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>头版 · 通用视觉自监督研究报</title>
+  <link rel="stylesheet" href="assets/styles.css?v=20260524">
+  <link rel="stylesheet" href="assets/visual-ssl.css?v=20260524">
+</head>
+<body>
+  <header class="masthead">
+    <div class="masthead-kicker">Visual SSL Daily · GitHub Pages MVP · 2026-05-24</div>
+    <a class="masthead-title" href="index.html">通用视觉自监督研究报</a>
+    <div class="masthead-meta">
+      <span>图像表征 · VFM · JEPA · 视频预训练</span>
+      <span>CCF A/B 会议优先</span>
+      <span>MinerU 图文版试运行</span>
+    </div>
+  </header>
+  <nav class="site-nav" aria-label="主导航">
+    <a class="nav-link active" href="index.html">头版</a>
+<a class="nav-link" href="issues/2026-05-24.html">今日速递</a>
+<a class="nav-link" href="pages/catalog.html">论文目录</a>
+<a class="nav-link" href="pages/timeline.html">时间线</a>
+  </nav>
+  <main><section class="hero-grid">
+  <article class="lead-story">
+    <div class="kicker">今日主线 · ICML 2026 · CCF A</div>
+    <h1>TC-JEPA：JEPA 的不确定性开始交给语言处理</h1>
+    <p class="dek">文本条件不是给 I-JEPA 加一个 caption 头，而是在降低 masked feature prediction 的多解性。</p>
+    <div class="paper-actions"><a href="issues/2026-05-24.html">阅读 5 月 24 日速递</a><a href="papers/2605.03245.html">打开主文页</a></div>
+  </article>
+  <aside class="issue-brief">
+    <h2>快速摘要</h2>
+    <ul><li><b>今日最值得看</b><span>TC-JEPA：用文本条件降低 I-JEPA masked feature prediction 的不确定性，是今天最核心的视觉自监督/视觉语言预训练条目。</span></li><li><b>建议精读顺序</b><span>1）TC-JEPA；2）ResDreamer；3）Cambrian-P；4）Directional Motion Blindness / DeltaDirect；5）SWEET/GeoWeaver 扫读。</span></li><li><b>新增/更新/过滤数量</b><span>今日新增入库 10 条，其中核心推荐 8 条；重要状态补录 1 条；重复/状态更新 2 条；过滤/降权 10+ 条。</span></li><li><b>主要判断</b><span>今天不是单一纯图像 SSL 爆发，而是 JEPA/世界模型/初始化/视频几何监督几条线同时补强通用视觉表征。</span></li><li><b>会议/顶会动态</b><span>TC-JEPA、SWEET、ResDreamer 均有 ICML 2026 证据；BehaviorVLA 为 ICML 2026 Spotlight；DINOv3 已被 TMLR 接收但发布时间为 2026-05-15，不计入严格今日新增。</span></li><li><b>本地归档路径</b><span>H:\Desktop\visual_ssl_paper_reports\2026-05-24.md；同步文件 H:\Desktop\visual_ssl_paper_reports\latest.md。</span></li></ul>
+  </aside>
+</section>
+<section class="section-block">
+  <div class="section-heading"><h2>今日推荐论文</h2><a href="pages/catalog.html">全目录 →</a></div>
+  <div class="paper-list"><article class="paper-card" data-category="JEPA / VLM pretraining" data-title="text-conditional jepa for learning semantically rich visual representations">
+  <a class="paper-thumb paper-thumb-text" href="papers/2605.03245.html">
+    <span>P1</span><strong>TC-JEPA</strong><em>ICML 2026 · CCF A</em>
+  </a>
+  <div>
+    <div class="paper-meta">2026-05-24 · JEPA / VLM pretraining · ICML 2026 · CCF A</div>
+    <h3><a href="papers/2605.03245.html">Text-Conditional JEPA for Learning Semantically Rich Visual Representations</a></h3>
+    <p>视觉自监督和视觉语言预训练之间的边界被进一步打薄：它仍然预测 feature，不直接重建像素，也不完全依赖对比学习。</p>
+    <p class="card-tech"><b>方法：</b>caption-conditioned masked feature prediction with sparse cross-attention text conditioner</p>
+    <div class="paper-actions"><a href="papers/2605.03245.html">读图文页</a><a href="https://arxiv.org/abs/2605.03245">原文</a></div>
+  </div>
+</article>
+<article class="paper-card" data-category="World model / video SSL" data-title="self-supervised hierarchical visual reasoning with world model">
+  <a class="paper-thumb paper-thumb-text" href="papers/2605.17537.html">
+    <span>P1</span><strong>ResDreamer</strong><em>ICML 2026 · CCF A</em>
+  </a>
+  <div>
+    <div class="paper-meta">2026-05-24 · World model / video SSL · ICML 2026 · CCF A</div>
+    <h3><a href="papers/2605.17537.html">Self-supervised Hierarchical Visual Reasoning with World Model</a></h3>
+    <p>它把视频 SSL 的目标从重建下一帧推向重建“低层没有解释完的部分”。</p>
+    <p class="card-tech"><b>方法：</b>hierarchical residual world model for self-supervised visual foresight</p>
+    <div class="paper-actions"><a href="papers/2605.17537.html">读图文页</a><a href="https://arxiv.org/abs/2605.17537">原文</a></div>
+  </div>
+</article>
+<article class="paper-card" data-category="Video MLLM / geometry" data-title="cambrian-p: pose-grounded video understanding">
+  <a class="paper-thumb paper-thumb-text" href="papers/2605.22819.html">
+    <span>P1</span><strong>Cambrian-P</strong><em>arXiv</em>
+  </a>
+  <div>
+    <div class="paper-meta">2026-05-24 · Video MLLM / geometry · arXiv</div>
+    <h3><a href="papers/2605.22819.html">Cambrian-P: Pose-Grounded Video Understanding</a></h3>
+    <p>用伪位姿把跨帧 token 固定到共享空间，是视频 VFM/MLLM 很值得跟的结构化监督。</p>
+    <p class="card-tech"><b>方法：</b>learnable camera tokens + pose regression head for frame-level grounding</p>
+    <div class="paper-actions"><a href="papers/2605.22819.html">读图文页</a><a href="https://arxiv.org/abs/2605.22819">原文</a></div>
+  </div>
+</article>
+<article class="paper-card" data-category="Video diagnostics" data-title="which way did it move? directional motion blindness in video-llms">
+  <a class="paper-thumb paper-thumb-text" href="papers/2605.22823.html">
+    <span>P2</span><strong>DeltaDirect</strong><em>arXiv</em>
+  </a>
+  <div>
+    <div class="paper-meta">2026-05-24 · Video diagnostics · arXiv</div>
+    <h3><a href="papers/2605.22823.html">Which Way Did It Move? Directional Motion Blindness in Video-LLMs</a></h3>
+    <p>这类诊断比单纯刷视频 QA 更有价值，因为它定位了视觉表征到语言读出的断点。</p>
+    <p class="card-tech"><b>方法：</b>feature-delta motion vector objective at projector level</p>
+    <div class="paper-actions"><a href="papers/2605.22823.html">读图文页</a><a href="https://arxiv.org/abs/2605.22823">原文</a></div>
+  </div>
+</article>
+<article class="paper-card" data-category="Multimodal representation" data-title="multimodal llms under pairwise modalities">
+  <a class="paper-thumb paper-thumb-text" href="papers/2605.21059.html">
+    <span>P1</span><strong>Pairwise Modalities</strong><em>arXiv · MinerU figure demo</em>
+  </a>
+  <div>
+    <div class="paper-meta">2026-05-22 · Multimodal representation · arXiv · MinerU figure demo</div>
+    <h3><a href="papers/2605.21059.html">Multimodal LLMs under Pairwise Modalities</a></h3>
+    <p>这是本 MVP 的 MinerU 图文样例页：Fig.1 解释动机，Fig.2 解释共享/私有 latent 生成过程。</p>
+    <p class="card-tech"><b>方法：</b>self-modal reconstruction + pairwise contrastive latent alignment</p>
+    <div class="paper-actions"><a href="papers/2605.21059.html">读图文页</a><a href="https://arxiv.org/abs/2605.21059">原文</a></div>
+  </div>
+</article></div>
+</section></main>
+  <footer class="footer">
+    <div>原始日报继续同步飞书；本站用于图文归档和长读。</div>
+    <div class="muted">Generated 2026-05-24 · MinerU figures where available</div>
+  </footer>
+</body>
+</html>

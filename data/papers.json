@@ -1,0 +1,79 @@
+[
+  {
+    "id": "2605.03245",
+    "title": "Text-Conditional JEPA for Learning Semantically Rich Visual Representations",
+    "short": "TC-JEPA",
+    "category": "JEPA / VLM pretraining",
+    "priority": "P1",
+    "date": "2026-05-24",
+    "venue": "ICML 2026 · CCF A",
+    "url": "https://arxiv.org/abs/2605.03245",
+    "thesis": "文本条件不是给 I-JEPA 加一个 caption 头，而是在降低 masked feature prediction 的多解性。",
+    "takeaway": "视觉自监督和视觉语言预训练之间的边界被进一步打薄：它仍然预测 feature，不直接重建像素，也不完全依赖对比学习。",
+    "method": "caption-conditioned masked feature prediction with sparse cross-attention text conditioner"
+  },
+  {
+    "id": "2605.17537",
+    "title": "Self-supervised Hierarchical Visual Reasoning with World Model",
+    "short": "ResDreamer",
+    "category": "World model / video SSL",
+    "priority": "P1",
+    "date": "2026-05-24",
+    "venue": "ICML 2026 · CCF A",
+    "url": "https://arxiv.org/abs/2605.17537",
+    "thesis": "世界模型的价值不在 photorealistic rollouts，而在让残差层级逼出更抽象的动态 latent。",
+    "takeaway": "它把视频 SSL 的目标从重建下一帧推向重建“低层没有解释完的部分”。",
+    "method": "hierarchical residual world model for self-supervised visual foresight"
+  },
+  {
+    "id": "2605.22819",
+    "title": "Cambrian-P: Pose-Grounded Video Understanding",
+    "short": "Cambrian-P",
+    "category": "Video MLLM / geometry",
+    "priority": "P1",
+    "date": "2026-05-24",
+    "venue": "arXiv",
+    "url": "https://arxiv.org/abs/2605.22819",
+    "thesis": "相机位姿不只是下游几何任务标签，而可以成为视频理解模型的基础坐标系监督。",
+    "takeaway": "用伪位姿把跨帧 token 固定到共享空间，是视频 VFM/MLLM 很值得跟的结构化监督。",
+    "method": "learnable camera tokens + pose regression head for frame-level grounding"
+  },
+  {
+    "id": "2605.22823",
+    "title": "Which Way Did It Move? Directional Motion Blindness in Video-LLMs",
+    "short": "DeltaDirect",
+    "category": "Video diagnostics",
+    "priority": "P2",
+    "date": "2026-05-24",
+    "venue": "arXiv",
+    "url": "https://arxiv.org/abs/2605.22823",
+    "thesis": "Video-LLM 不是完全看不到运动，而是运动方向信号在 projector/LLM 接口处被错绑。",
+    "takeaway": "这类诊断比单纯刷视频 QA 更有价值，因为它定位了视觉表征到语言读出的断点。",
+    "method": "feature-delta motion vector objective at projector level"
+  },
+  {
+    "id": "2605.21059",
+    "title": "Multimodal LLMs under Pairwise Modalities",
+    "short": "Pairwise Modalities",
+    "category": "Multimodal representation",
+    "priority": "P1",
+    "date": "2026-05-22",
+    "venue": "arXiv · MinerU figure demo",
+    "url": "https://arxiv.org/abs/2605.21059",
+    "thesis": "多模态模型不一定需要完整 joint tuples；只要模态图连通，pairwise supervision 可以成为可扩展替代品。",
+    "takeaway": "这是本 MVP 的 MinerU 图文样例页：Fig.1 解释动机，Fig.2 解释共享/私有 latent 生成过程。",
+    "method": "self-modal reconstruction + pairwise contrastive latent alignment",
+    "figures": [
+      {
+        "src": "../assets/mineru/2605.21059/images/fig1.jpg",
+        "label": "Fig. 1 · Pairwise supervision is the scalable object",
+        "caption": "Joint tuples are expensive; pairwise text-image, image-tactile, and text-3D data can form a connected modality graph."
+      },
+      {
+        "src": "../assets/mineru/2605.21059/images/fig2.jpg",
+        "label": "Fig. 2 · Shared and modality-specific latent factors",
+        "caption": "The paper separates common causal factors from modality-private variables before alignment."
+      }
+    ]
+  }
+]
