@@ -9,7 +9,7 @@ from pathlib import Path
 
 ROOT = Path(r"H:\Desktop\visual_ssl_digest_site")
 REPORT_ROOT = Path(r"H:\Desktop\visual_ssl_paper_reports")
-CSS_VERSION = "20260524"
+CSS_VERSION = "20260524b"
 
 
 PAPERS = [
@@ -172,6 +172,106 @@ def figures_for(pid: str, depth: int = 1, max_count: int = 2) -> list[dict]:
         })
     selected.sort(key=lambda x: x["score"], reverse=True)
     return [{k: v for k, v in fig.items() if k != "score"} for fig in selected[:max_count]] or fallback.get(pid, [])
+
+
+def figure_by_caption(pid: str, depth: int, needle: str) -> dict | None:
+    prefix = "../" * depth
+    path = content_list_path(pid)
+    if not path:
+        return None
+    try:
+        data = json.loads(path.read_text(encoding="utf-8"))
+    except Exception:
+        return None
+    for item in data:
+        if item.get("type") != "image" or not item.get("img_path"):
+            continue
+        cap = flatten_caption(item.get("image_caption"))
+        if needle.lower() not in cap.lower():
+            continue
+        img_rel = str(item["img_path"]).replace("\\", "/")
+        img_path = ROOT / "assets" / "mineru" / pid / img_rel
+        if not img_path.exists():
+            continue
+        return {
+            "src": f"{prefix}assets/mineru/{pid}/{img_rel}",
+            "label": cap.split(". ")[0][:90] if cap else needle,
+            "caption": cap,
+        }
+    return None
+
+
+def render_fig(fig: dict, cls: str = "full-fig") -> str:
+    return f"""<figure class="{cls}"><img src="{e(fig['src'])}" alt="{e(fig['label'])}"><figcaption><b>{e(fig['label'])}</b>{e(fig['caption'])}</figcaption></figure>"""
+
+
+def tc_jepa_body(p: dict) -> str:
+    figs = [
+        figure_by_caption(p["id"], 1, "Figure 2"),
+        figure_by_caption(p["id"], 1, "Figure 5"),
+        figure_by_caption(p["id"], 1, "Figure 4"),
+        figure_by_caption(p["id"], 1, "Figure 8"),
+    ]
+    fig_html = "\n".join(render_fig(fig) for fig in figs if fig)
+    body = f"""<article class="paper-detail deep-read">
+  <div class="paper-main">
+    <div class="kicker">{e(p['category'])} · {e(p['priority'])} · {e(p['date'])}</div>
+    <h1 class="paper-headline">TC-JEPA：把 masked feature prediction 的不确定性，交给 caption 来收束</h1>
+    <p class="dek">这篇的重点不是“又做了一个图文预训练模型”，而是把 JEPA 的预测目标从纯视觉上下文变成 text-conditional feature prediction：测试时仍只用视觉 encoder，训练时用 caption 帮 predictor 学到更语义化的 patch 表征。</p>
+    <p class="byline"><strong>{e(p['title'])}</strong>　{e(p['venue'])}　<a href="{e(p['url'])}">原文链接</a></p>
+    <div class="paper-facts">
+      <span><b>编号</b>{e(p['id'])}</span>
+      <span><b>优先级</b>{e(p['priority'])}</span>
+      <span><b>类别</b>JEPA / vision-language SSL</span>
+      <span><b>训练信号</b>synthetic captions, feature prediction only</span>
+      <span><b>测试开销</b>丢弃 predictor 与 text conditioner</span>
+      <span><b>MinerU</b>正文、表格、Figure 2/4/5/8 已接入</span>
+    </div>
+    <div class="feature-body">
+      <p class="lead dropcap">先读这篇要从“为什么 I-JEPA 会不确定”开始，而不是从分数开始。I-JEPA 只拿可见 context patch 去预测 target patch feature，遮挡区域可能对应很多合理语义；TC-JEPA 的假设是 caption 能提供场景组成、属性和空间关系，把 target feature 的可行解空间变窄。</p>
+
+      <section class="reading-note">
+        <h2>一句话动机</h2>
+        <p>论文自己的问题定义很直接：masked positions have “large uncertainties”。TC-JEPA 不重建像素，也不做 CLIP 式全局对比，而是在 JEPA predictor 的多层里加入 word-token 级 cross-attention，让 patch feature 在训练时能被文字条件化。</p>
+      </section>
+
+      {fig_html}
+
+      <h2>方法拆解：它到底在哪里用文字</h2>
+      <ol class="method-steps">
+        <li><b>视觉骨架仍是 JEPA。</b>context encoder 处理可见 patch，target encoder 给出目标 patch feature，predictor 负责从 context 与 mask token 预测 target feature。</li>
+        <li><b>caption 不进最终 encoder。</b>每张图先用 ShareGPT4V 生成多句 caption，训练时随机采样默认 8 句；这些句子只服务于 predictor 的条件化。</li>
+        <li><b>T5 word embedding 替代 CLIP text encoder。</b>作者强调这里要保留自然语言组合与顺序信息，目标是 patch-word 细粒度对应，而不是全局图文 embedding 对齐。</li>
+        <li><b>多层 sparse cross-attention。</b>在 predictor 的多个层里，patch query 对 caption word sequence 做 cross-attention；每个 caption 分开条件化，再用 max-pooling 选出最有用的条件信号。</li>
+        <li><b>两个正则约束。</b>sparsity 让 patch-word 对应更集中，cross-layer consistency 让不同层的对应关系更稳定；Figure 4 的消融说明这两项不是装饰。</li>
+      </ol>
+
+      <h2>关键结果：更像“细粒度视觉表征”而不是 CLIP 替代品</h2>
+      <div class="stat-grid">
+        <div><b>IN-1k linear</b><span>TC-JEPA ViT-B/L/H: 75.8 / 79.6 / 80.4</span><em>I-JEPA 同尺度为 72.9 / 77.5 / 79.3。</em></div>
+        <div><b>ADE20k linear seg</b><span>CC27M ViT-L/16: 42.1 mIoU</span><em>超过 DINOv2-L/14 distilled on LVD-142M 的 41.8。</em></div>
+        <div><b>Dense transfer</b><span>COCO APb 55.2, ADE20k FT 55.7</span><em>在检测、分割上比 MIM baseline 更稳。</em></div>
+        <div><b>VLM downstream</b><span>COCO CIDEr 111.6, GQA 46.3, VQAv2 57.8</span><em>冻结视觉 encoder 后接 LiT-Decoder，优于 CLIP/SPARC baseline。</em></div>
+      </div>
+
+      <h2>为什么这对通用视觉自监督重要</h2>
+      <p>它给 JEPA 开了一条很实用的路：训练阶段可以借弱文本监督降低 feature prediction 的歧义，但最终部署仍保留纯视觉 encoder。这比“把所有东西都塞进图文对比学习”更接近自监督表征学习的核心问题，也更适合关注 dense prediction、patch-level semantics 和 video/image foundation model 的读者。</p>
+      <p>Figure 5 最值得细看：它不是只展示 attention 好看，而是把 patch-word similarity 和 prediction error 放在一起。若这个现象在更大数据和视频上成立，后续很可能出现 text-conditioned JEPA、motion-conditioned JEPA、depth/pose-conditioned JEPA 等一系列“条件化预测表征”路线。</p>
+
+      <h2>我会保留的疑问</h2>
+      <p>第一，caption 是 ShareGPT4V 合成的，强 captioner 本身带来的先验有多大还需要更干净的 ablation。第二，多 caption 的默认 N=8 已经接近饱和，但这会让预处理和数据资产成本上升。第三，它在 classification 上仍未完全替代强 augmentation/invariance SSL；真正的优势更集中在 segmentation、fine-grained grounding 和 VLM downstream。</p>
+
+      <h2>精读顺序</h2>
+      <p>建议先读 Figure 2 和方法 3.2/3.3，理解 word-level conditioner；再读 Table 1/3 与 Figure 4/5，判断收益来自哪里；最后扫 Appendix 的 compute、caption robustness 和 N sensitivity，确认它是不是能放进自己的预训练 pipeline。</p>
+    </div>
+  </div>
+  <aside class="paper-side">
+    <div class="side-box"><h4>本页图源</h4><p>图像来自 MinerU 对 PDF 的结构化抽取；当前优先展示 pipeline、prediction visualization、ablation 和 efficiency。</p></div>
+    <div class="side-box"><h4>核心判断</h4><dl><dt>相关性</dt><dd>P1，通用视觉自监督强相关</dd><dt>会议等级</dt><dd>ICML 2026，CCF A</dd><dt>读法</dt><dd>方法图优先，表格次之</dd></dl></div>
+    <div class="side-box"><h4>原文</h4><p><a href="{e(p['url'])}">{e(p['url'])}</a></p></div>
+  </aside>
+</article>"""
+    return shell(p["short"], body, 1)
 
 
 def md_table_rows(md: str, heading: str) -> list[list[str]]:
@@ -347,11 +447,14 @@ def write_issue(report_md: str) -> None:
 
 
 def write_paper(p: dict) -> None:
+    if p["id"] == "2605.03245":
+        (ROOT / "papers" / f"{p['id']}.html").write_text(tc_jepa_body(p), encoding="utf-8")
+        return
     figs = ""
     paper_figs = figures_for(p["id"], 1, 2)
     if paper_figs:
         figs = "\n".join(
-            f"""<figure class="full-fig"><img src="{e(fig['src'])}" alt="{e(fig['label'])}"><figcaption><b>{e(fig['label'])}</b>{e(fig['caption'])}</figcaption></figure>"""
+            render_fig(fig)
             for fig in paper_figs
         )
     else:
@@ -413,8 +516,10 @@ def write_timeline() -> None:
 def write_css() -> None:
     css = """
 .hero-grid{display:grid;grid-template-columns:minmax(0,1.45fr) minmax(320px,.55fr);gap:36px;align-items:stretch;margin:34px auto 42px;max-width:1500px;padding:0 24px}
+.masthead-meta{display:flex;flex-wrap:wrap;gap:8px 14px}
+.masthead-meta span:before{content:none!important}
 .lead-story{border-top:5px solid #111;padding-top:22px}
-.lead-story h1{font-size:clamp(42px,6vw,86px);line-height:.94;letter-spacing:0;margin:10px 0 18px;font-family:Georgia,'Times New Roman',serif}
+.lead-story h1{font-size:clamp(36px,4.5vw,62px);line-height:1.02;letter-spacing:0;margin:10px 0 18px;font-family:Georgia,'Times New Roman',serif;overflow-wrap:anywhere;word-break:break-word}
 .lead-story .dek{font-size:22px;line-height:1.45;max-width:880px;color:#30302d}
 .issue-brief{border:1px solid #d7d1c6;background:#f7f3ea;padding:22px}
 .issue-brief h2{margin:0 0 12px;font-size:22px}
@@ -426,14 +531,31 @@ def write_css() -> None:
 .section-heading{display:flex;align-items:end;justify-content:space-between;border-bottom:2px solid #111;margin-bottom:18px}
 .section-heading h2{margin:0 0 8px;font-size:28px}
 .paper-list{display:grid;gap:18px}
-.paper-thumb-text{display:flex;flex-direction:column;justify-content:center;min-height:172px;background:#171717;color:#f7f3ea;text-decoration:none;padding:18px;border-radius:2px}
-.paper-thumb-text img{width:100%;height:172px;object-fit:cover;display:block;margin:-18px -18px 12px;width:calc(100% + 36px);max-width:none;border-bottom:1px solid rgba(255,255,255,.18)}
-.paper-thumb-text span{font-size:13px;color:#f2c14e}
-.paper-thumb-text strong{font-size:25px;line-height:1.05;margin:10px 0;font-family:Georgia,'Times New Roman',serif}
-.paper-thumb-text em{font-size:12px;color:#cfc7b7;font-style:normal}
+.paper-card{align-items:start}
+.paper-card h3{margin-top:0}
+.paper-card .paper-actions{position:relative;z-index:2;margin-top:14px;display:flex;flex-wrap:wrap;gap:10px}
+.paper-card .paper-actions a{white-space:nowrap}
+.paper-thumb-text{display:block;min-height:0;background:#f7f3ea;color:#1f1f1d;text-decoration:none;padding:10px;border:1px solid #d8d0c3;border-radius:2px}
+.paper-thumb-text img{width:100%;height:auto;max-height:230px;object-fit:contain;display:block;margin:0;background:#fff;border:1px solid #e3dccf}
+.paper-thumb-text span{display:inline-block;margin-top:8px;font-size:13px;color:#8a2f21;font-weight:700}
+.paper-thumb-text strong{display:block;font-size:25px;line-height:1.05;margin:10px 0;font-family:Georgia,'Times New Roman',serif}
+.paper-thumb-text em{font-size:12px;color:#6b665f;font-style:normal}
 .hero-figure{margin:24px 0;border-top:1px solid #d8d0c3;border-bottom:1px solid #d8d0c3;padding:16px 0}
 .hero-figure img{width:100%;max-height:430px;object-fit:contain;background:#fff}
 .hero-figure figcaption{font-size:13px;line-height:1.45;color:#5f5b55;margin-top:8px}
+.deep-read .full-fig{margin:28px 0;padding:14px;background:#fbfaf6;border:1px solid #d8d0c3}
+.deep-read .full-fig img{width:100%;max-height:720px;object-fit:contain;background:#fff}
+.deep-read .feature-body{column-count:1;column-width:auto}
+.reading-note{border-left:5px solid #8a2f21;background:#f7f3ea;padding:16px 18px;margin:24px 0}
+.reading-note h2{margin-top:0}
+.method-steps{padding-left:22px;display:grid;gap:10px}
+.method-steps li{line-height:1.62}
+.stat-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px;margin:20px 0}
+.stat-grid div{border:1px solid #d8d0c3;background:#fff;padding:14px}
+.stat-grid b,.stat-grid span,.stat-grid em{display:block}
+.stat-grid b{color:#8a2f21;font-size:13px;text-transform:uppercase}
+.stat-grid span{font-size:20px;line-height:1.25;margin:6px 0}
+.stat-grid em{font-style:normal;color:#64605a;font-size:13px;line-height:1.45}
 .issue-detail .paper-list{break-inside:avoid;column-span:all}
 .page-header{max-width:1500px;margin:32px auto;padding:0 24px;border-bottom:2px solid #111}
 .page-header h1{font-size:54px;line-height:1;margin:0 0 10px;font-family:Georgia,'Times New Roman',serif}
@@ -442,7 +564,7 @@ def write_css() -> None:
 .timeline-day article{display:grid;grid-template-columns:70px 1fr 240px;gap:16px;border-bottom:1px solid #ddd;padding:12px 0}
 .timeline-day span{font-weight:700;color:#8a2f21}
 .timeline-day em{font-style:normal;color:#65615a}
-@media (max-width:900px){.hero-grid{grid-template-columns:1fr}.lead-story h1{font-size:44px}.timeline-day article{grid-template-columns:60px 1fr}.timeline-day em{grid-column:2}}
+@media (max-width:900px){.hero-grid{grid-template-columns:1fr;padding:0 12px;box-sizing:border-box;max-width:100%;width:100%;margin-left:0;margin-right:0}.lead-story h1{font-size:40px}.timeline-day article{grid-template-columns:60px 1fr}.timeline-day em{grid-column:2}.stat-grid{grid-template-columns:1fr}.paper-thumb-text img{max-height:260px}}
 """
     (ROOT / "assets" / "visual-ssl.css").write_text(css, encoding="utf-8")
 
