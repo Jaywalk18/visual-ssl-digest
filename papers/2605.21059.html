@@ -1,0 +1,63 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Pairwise Modalities · 通用视觉自监督研究报</title>
+  <link rel="stylesheet" href="../assets/styles.css?v=20260524">
+  <link rel="stylesheet" href="../assets/visual-ssl.css?v=20260524">
+</head>
+<body>
+  <header class="masthead">
+    <div class="masthead-kicker">Visual SSL Daily · GitHub Pages MVP · 2026-05-24</div>
+    <a class="masthead-title" href="../index.html">通用视觉自监督研究报</a>
+    <div class="masthead-meta">
+      <span>图像表征 · VFM · JEPA · 视频预训练</span>
+      <span>CCF A/B 会议优先</span>
+      <span>MinerU 图文版试运行</span>
+    </div>
+  </header>
+  <nav class="site-nav" aria-label="主导航">
+    <a class="nav-link" href="../index.html">头版</a>
+<a class="nav-link" href="../issues/2026-05-24.html">今日速递</a>
+<a class="nav-link" href="../pages/catalog.html">论文目录</a>
+<a class="nav-link" href="../pages/timeline.html">时间线</a>
+  </nav>
+  <main><article class="paper-detail">
+  <div class="paper-main">
+    <div class="kicker">Multimodal representation · P1 · 2026-05-22</div>
+    <h1 class="paper-headline">Pairwise Modalities：多模态模型不一定需要完整 joint tuples；只要模态图连通，pairwise supervision 可以成为可扩展替代品。</h1>
+    <p class="dek">这是本 MVP 的 MinerU 图文样例页：Fig.1 解释动机，Fig.2 解释共享/私有 latent 生成过程。</p>
+    <p class="byline"><strong>Multimodal LLMs under Pairwise Modalities</strong>　arXiv · MinerU figure demo　<a href="https://arxiv.org/abs/2605.21059">原文链接</a></p>
+    <div class="paper-facts">
+      <span><b>编号</b>2605.21059</span>
+      <span><b>优先级</b>P1</span>
+      <span><b>类别</b>Multimodal representation</span>
+      <span><b>会议</b>arXiv · MinerU figure demo</span>
+      <span><b>方法</b>self-modal reconstruction + pairwise contrastive latent alignment</span>
+      <span><b>来源</b>arXiv / OpenReview</span>
+    </div>
+    <div class="feature-body">
+      <p class="lead dropcap">先说结论。多模态模型不一定需要完整 joint tuples；只要模态图连通，pairwise supervision 可以成为可扩展替代品。 这是本 MVP 的 MinerU 图文样例页：Fig.1 解释动机，Fig.2 解释共享/私有 latent 生成过程。</p>
+      <figure class="full-fig"><img src="../assets/mineru/2605.21059/images/fig1.jpg" alt="Fig. 1 · Pairwise supervision is the scalable object"><figcaption><b>Fig. 1 · Pairwise supervision is the scalable object</b>Joint tuples are expensive; pairwise text-image, image-tactile, and text-3D data can form a connected modality graph.</figcaption></figure>
+<figure class="full-fig"><img src="../assets/mineru/2605.21059/images/fig2.jpg" alt="Fig. 2 · Shared and modality-specific latent factors"><figcaption><b>Fig. 2 · Shared and modality-specific latent factors</b>The paper separates common causal factors from modality-private variables before alignment.</figcaption></figure>
+      <h2>它真正改变的是训练信号，而不是榜单数字</h2>
+      <p>self-modal reconstruction + pairwise contrastive latent alignment。这类工作值得被放在通用视觉自监督日报里，不是因为它一定立刻刷新所有 benchmark，而是因为它改变了模型“从哪里拿监督”的方式。</p>
+      <blockquote class="inline-quote">For the MVP, English quotes will be filled from MinerU full.md once the daily pipeline extracts this paper.</blockquote>
+      <h2>读这篇时要盯住的风险</h2>
+      <p>当前页面是站点原型，细节还没有逐段引用 MinerU 全文。正式流程会把每篇论文的 abstract、method、caption 和关键表格放进页面生成上下文，并保留至少两段原文引文。</p>
+      <h2>下一步怎么接进日报</h2>
+      <p>每日自动化先筛出 P1/P2，再对 P1 论文跑 MinerU；有 pipeline 或 motivation 图的页面进入 GitHub Pages，飞书只发摘要与入口。</p>
+    </div>
+  </div>
+  <aside class="paper-side">
+    <div class="side-box"><h4>关键判断</h4><dl><dt>相关性</dt><dd>P1</dd><dt>类别</dt><dd>Multimodal representation</dd><dt>会议</dt><dd>arXiv · MinerU figure demo</dd></dl></div>
+    <div class="side-box"><h4>原文</h4><p><a href="https://arxiv.org/abs/2605.21059">https://arxiv.org/abs/2605.21059</a></p></div>
+  </aside>
+</article></main>
+  <footer class="footer">
+    <div>原始日报继续同步飞书；本站用于图文归档和长读。</div>
+    <div class="muted">Generated 2026-05-24 · MinerU figures where available</div>
+  </footer>
+</body>
+</html>

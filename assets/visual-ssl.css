@@ -1,0 +1,28 @@
+
+.hero-grid{display:grid;grid-template-columns:minmax(0,1.45fr) minmax(320px,.55fr);gap:36px;align-items:stretch;margin:34px auto 42px;max-width:1500px;padding:0 24px}
+.lead-story{border-top:5px solid #111;padding-top:22px}
+.lead-story h1{font-size:clamp(42px,6vw,86px);line-height:.94;letter-spacing:0;margin:10px 0 18px;font-family:Georgia,'Times New Roman',serif}
+.lead-story .dek{font-size:22px;line-height:1.45;max-width:880px;color:#30302d}
+.issue-brief{border:1px solid #d7d1c6;background:#f7f3ea;padding:22px}
+.issue-brief h2{margin:0 0 12px;font-size:22px}
+.issue-brief ul{list-style:none;margin:0;padding:0;display:grid;gap:12px}
+.issue-brief li{border-bottom:1px solid #ddd5c6;padding-bottom:10px}
+.issue-brief li b{display:block;font-size:13px;color:#7d2f24;text-transform:uppercase}
+.issue-brief li span{display:block;font-size:15px;line-height:1.5}
+.section-block{max-width:1500px;margin:0 auto;padding:0 24px 44px}
+.section-heading{display:flex;align-items:end;justify-content:space-between;border-bottom:2px solid #111;margin-bottom:18px}
+.section-heading h2{margin:0 0 8px;font-size:28px}
+.paper-list{display:grid;gap:18px}
+.paper-thumb-text{display:flex;flex-direction:column;justify-content:center;min-height:172px;background:#171717;color:#f7f3ea;text-decoration:none;padding:18px;border-radius:2px}
+.paper-thumb-text span{font-size:13px;color:#f2c14e}
+.paper-thumb-text strong{font-size:25px;line-height:1.05;margin:10px 0;font-family:Georgia,'Times New Roman',serif}
+.paper-thumb-text em{font-size:12px;color:#cfc7b7;font-style:normal}
+.issue-detail .paper-list{break-inside:avoid;column-span:all}
+.page-header{max-width:1500px;margin:32px auto;padding:0 24px;border-bottom:2px solid #111}
+.page-header h1{font-size:54px;line-height:1;margin:0 0 10px;font-family:Georgia,'Times New Roman',serif}
+.timeline-day{max-width:1100px;margin:28px auto;padding:0 24px}
+.timeline-day h2{border-bottom:2px solid #111;padding-bottom:8px}
+.timeline-day article{display:grid;grid-template-columns:70px 1fr 240px;gap:16px;border-bottom:1px solid #ddd;padding:12px 0}
+.timeline-day span{font-weight:700;color:#8a2f21}
+.timeline-day em{font-style:normal;color:#65615a}
+@media (max-width:900px){.hero-grid{grid-template-columns:1fr}.lead-story h1{font-size:44px}.timeline-day article{grid-template-columns:60px 1fr}.timeline-day em{grid-column:2}}

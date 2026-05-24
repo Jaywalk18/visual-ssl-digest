@@ -1,0 +1,62 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>TC-JEPA · 通用视觉自监督研究报</title>
+  <link rel="stylesheet" href="../assets/styles.css?v=20260524">
+  <link rel="stylesheet" href="../assets/visual-ssl.css?v=20260524">
+</head>
+<body>
+  <header class="masthead">
+    <div class="masthead-kicker">Visual SSL Daily · GitHub Pages MVP · 2026-05-24</div>
+    <a class="masthead-title" href="../index.html">通用视觉自监督研究报</a>
+    <div class="masthead-meta">
+      <span>图像表征 · VFM · JEPA · 视频预训练</span>
+      <span>CCF A/B 会议优先</span>
+      <span>MinerU 图文版试运行</span>
+    </div>
+  </header>
+  <nav class="site-nav" aria-label="主导航">
+    <a class="nav-link" href="../index.html">头版</a>
+<a class="nav-link" href="../issues/2026-05-24.html">今日速递</a>
+<a class="nav-link" href="../pages/catalog.html">论文目录</a>
+<a class="nav-link" href="../pages/timeline.html">时间线</a>
+  </nav>
+  <main><article class="paper-detail">
+  <div class="paper-main">
+    <div class="kicker">JEPA / VLM pretraining · P1 · 2026-05-24</div>
+    <h1 class="paper-headline">TC-JEPA：文本条件不是给 I-JEPA 加一个 caption 头，而是在降低 masked feature prediction 的多解性。</h1>
+    <p class="dek">视觉自监督和视觉语言预训练之间的边界被进一步打薄：它仍然预测 feature，不直接重建像素，也不完全依赖对比学习。</p>
+    <p class="byline"><strong>Text-Conditional JEPA for Learning Semantically Rich Visual Representations</strong>　ICML 2026 · CCF A　<a href="https://arxiv.org/abs/2605.03245">原文链接</a></p>
+    <div class="paper-facts">
+      <span><b>编号</b>2605.03245</span>
+      <span><b>优先级</b>P1</span>
+      <span><b>类别</b>JEPA / VLM pretraining</span>
+      <span><b>会议</b>ICML 2026 · CCF A</span>
+      <span><b>方法</b>caption-conditioned masked feature prediction with sparse cross-attention text conditioner</span>
+      <span><b>来源</b>arXiv / OpenReview</span>
+    </div>
+    <div class="feature-body">
+      <p class="lead dropcap">先说结论。文本条件不是给 I-JEPA 加一个 caption 头，而是在降低 masked feature prediction 的多解性。 视觉自监督和视觉语言预训练之间的边界被进一步打薄：它仍然预测 feature，不直接重建像素，也不完全依赖对比学习。</p>
+      <aside class="marginalia"><b>图像状态</b> 这篇 MVP 先使用文字解读；接入每日 MinerU 批处理后，这里会自动替换为 pipeline / motivation 图。</aside>
+      <h2>它真正改变的是训练信号，而不是榜单数字</h2>
+      <p>caption-conditioned masked feature prediction with sparse cross-attention text conditioner。这类工作值得被放在通用视觉自监督日报里，不是因为它一定立刻刷新所有 benchmark，而是因为它改变了模型“从哪里拿监督”的方式。</p>
+      <blockquote class="inline-quote">For the MVP, English quotes will be filled from MinerU full.md once the daily pipeline extracts this paper.</blockquote>
+      <h2>读这篇时要盯住的风险</h2>
+      <p>当前页面是站点原型，细节还没有逐段引用 MinerU 全文。正式流程会把每篇论文的 abstract、method、caption 和关键表格放进页面生成上下文，并保留至少两段原文引文。</p>
+      <h2>下一步怎么接进日报</h2>
+      <p>每日自动化先筛出 P1/P2，再对 P1 论文跑 MinerU；有 pipeline 或 motivation 图的页面进入 GitHub Pages，飞书只发摘要与入口。</p>
+    </div>
+  </div>
+  <aside class="paper-side">
+    <div class="side-box"><h4>关键判断</h4><dl><dt>相关性</dt><dd>P1</dd><dt>类别</dt><dd>JEPA / VLM pretraining</dd><dt>会议</dt><dd>ICML 2026 · CCF A</dd></dl></div>
+    <div class="side-box"><h4>原文</h4><p><a href="https://arxiv.org/abs/2605.03245">https://arxiv.org/abs/2605.03245</a></p></div>
+  </aside>
+</article></main>
+  <footer class="footer">
+    <div>原始日报继续同步飞书；本站用于图文归档和长读。</div>
+    <div class="muted">Generated 2026-05-24 · MinerU figures where available</div>
+  </footer>
+</body>
+</html>
