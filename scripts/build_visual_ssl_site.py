@@ -193,10 +193,10 @@ PAPERS = [
         "category": "Multimodal representation",
         "priority": "P1",
         "date": "2026-05-22",
-        "venue": "arXiv · MinerU figure demo",
+        "venue": "arXiv",
         "url": "https://arxiv.org/abs/2605.21059",
         "thesis": "多模态模型不一定需要完整 joint tuples；只要模态图连通，pairwise supervision 可以成为可扩展替代品。",
-        "takeaway": "这是本 MVP 的 MinerU 图文样例页：Fig.1 解释动机，Fig.2 解释共享/私有 latent 生成过程。",
+        "takeaway": "它把多模态表征学习的问题改写成模态图连通性问题，重点不在堆更多模态，而在证明 pairwise supervision 也能学习共享/私有 latent 结构。",
         "method": "self-modal reconstruction + pairwise contrastive latent alignment",
     },
 ]
@@ -517,7 +517,7 @@ def tc_jepa_body(p: dict) -> str:
     <div class="side-box"><h4>原文</h4><p><a href="{e(p['url'])}">{e(p['url'])}</a></p></div>
   </aside>
 </article>"""
-    return shell(p["short"], body, 1)
+    return shell(p["short"], body, 1, display_date=p["date"])
 
 
 def md_table_rows(md: str, heading: str) -> list[list[str]]:
@@ -808,8 +808,9 @@ def conference_widget(depth: int = 0) -> str:
 </aside>"""
 
 
-def shell(title: str, body: str, depth: int = 0, active: str = "") -> str:
+def shell(title: str, body: str, depth: int = 0, active: str = "", display_date: str | None = None) -> str:
     prefix = "../" * depth
+    page_date = display_date or CURRENT_DATE
     return f"""<!doctype html>
 <html lang="zh-CN">
 <head>
@@ -821,12 +822,12 @@ def shell(title: str, body: str, depth: int = 0, active: str = "") -> str:
 </head>
 <body>
   <header class="masthead">
-    <div class="masthead-kicker">Visual SSL Daily · GitHub Pages MVP · {e(CURRENT_DATE)}</div>
+    <div class="masthead-kicker">Visual SSL Research Report · {e(page_date)}</div>
     <a class="masthead-title" href="{prefix}index.html">通用视觉自监督研究报</a>
     <div class="masthead-meta">
       <span>图像表征 · VFM · JEPA · 视频预训练</span>
       <span>CCF A/B 会议优先</span>
-      <span>MinerU 图文版试运行</span>
+      <span>图文精读 · 方法图解</span>
     </div>
   </header>
   <nav class="site-nav" aria-label="主导航">
@@ -835,8 +836,8 @@ def shell(title: str, body: str, depth: int = 0, active: str = "") -> str:
   <main>{body}</main>
   {conference_widget(depth)}
   <footer class="footer">
-    <div>原始日报继续同步飞书；本站用于图文归档和长读。</div>
-    <div class="muted">Generated {e(CURRENT_DATE)} · MinerU figures where available</div>
+    <div>面向通用视觉自监督、视觉基础模型与多模态表征学习的每日研究报。</div>
+    <div class="muted">Issue {e(page_date)} · Curated readings and figure notes</div>
   </footer>
   <script>
   (() => {{
@@ -884,7 +885,8 @@ def write_index(report_md: str) -> None:
     summary = md_table_rows(report_md, "快速摘要")
     summary_html = "".join(
         f"<li><b>{e(row[0])}</b><span>{e(row[1])}</span></li>"
-        for row in summary[1:] if len(row) >= 2
+        for row in summary[1:]
+        if len(row) >= 2 and not any(term in row[0] for term in ("本地归档", "飞书", "同步"))
     )
     hero = PAPERS[0]
     hero_figs = figures_for(hero["id"], 0, 1)
@@ -932,7 +934,7 @@ def write_issue(report_md: str) -> None:
   <div class="paper-main">
     <div class="kicker">Daily issue · {e(CURRENT_DATE)} · CCF A/B 会议优先</div>
     <h1 class="paper-headline">{e(issue_title)}</h1>
-    <p class="dek">本页由每日 Markdown 速递和 MinerU 图文抽取自动生成，优先保留 CCF A/B、OpenReview 和 arXiv 中对通用视觉表征有帮助的工作。</p>
+    <p class="dek">本期聚焦通用视觉表征、视觉语言预训练与视频自监督中最值得跟进的论文，并保留 CCF A/B、OpenReview 与 arXiv 状态线索。</p>
     <div class="feature-body">
       <p class="lead dropcap">{e(route)}</p>
       <h2>论文索引</h2>
@@ -944,10 +946,37 @@ def write_issue(report_md: str) -> None:
   <aside class="paper-side">
     <div class="side-box"><h4>今日重点</h4><p>TextTeacher、MDM、EvoVid、Ablate-to-Validate。</p></div>
     <div class="side-box"><h4>会议口径</h4><p>只把 CCF A/B 放进主提醒；临近截止或 CCF C 仅记录。</p></div>
-    <div class="side-box"><h4>飞书文字版</h4><p><a href="https://www.feishu.cn/file/T684bdqYloXgmVxCV4ocxCm1nMc">latest.md →</a></p></div>
+    <div class="side-box"><h4>阅读重点</h4><p>先看 P1/P2 与方法图，再扫状态变化和边界案例。</p></div>
   </aside>
 </article>"""
     (ROOT / "issues" / f"{CURRENT_DATE}.html").write_text(shell(f"{CURRENT_DATE} 速递", body, 1, f"issues/{CURRENT_DATE}.html"), encoding="utf-8")
+
+
+def write_archive_issues() -> None:
+    dates = sorted({p["date"] for p in PAPERS if p["date"] != CURRENT_DATE}, reverse=True)
+    for day in dates:
+        issue_papers = [p for p in PAPERS if p["date"] == day]
+        if not issue_papers:
+            continue
+        lead = issue_papers[0]
+        cards = "\n".join(paper_card(p, 1) for p in issue_papers)
+        body = f"""<article class="paper-detail issue-detail">
+  <div class="paper-main">
+    <div class="kicker">Daily issue · {e(day)} · CCF A/B 会议优先</div>
+    <h1 class="paper-headline">{zh_date(day)}：{e(lead['short'])} 等视觉表征论文归档</h1>
+    <p class="dek">本页按日期归档近期论文，保留优先级、主题、来源与方法线索，方便回看同一批工作的研究脉络。</p>
+    <div class="feature-body">
+      <p class="lead dropcap">先读 {e(lead['short'])}。{e(lead['thesis'])} 其余论文按 P1/P2 与主题顺序扫读，重点看方法图、消融设置和是否能迁移到通用视觉表征。</p>
+      <h2>论文索引</h2>
+      <div class="paper-list issue-list">{cards}</div>
+    </div>
+  </div>
+  <aside class="paper-side">
+    <div class="side-box"><h4>阅读重点</h4><p>先看 P1/P2 与方法图，再扫状态变化和边界案例。</p></div>
+    <div class="side-box"><h4>会议口径</h4><p>主提醒只保留 CCF A/B；CCF C 与过期截止仅作状态记录。</p></div>
+  </aside>
+</article>"""
+        (ROOT / "issues" / f"{day}.html").write_text(shell(f"{day} 速递", body, 1, f"issues/{day}.html", display_date=day), encoding="utf-8")
 
 
 def write_paper(p: dict, report_md: str) -> None:
@@ -1011,12 +1040,12 @@ def write_paper(p: dict, report_md: str) -> None:
     <div class="side-box"><h4>原文</h4><p><a href="{e(p['url'])}">{e(p['url'])}</a></p></div>
   </aside>
 </article>"""
-    (ROOT / "papers" / f"{p['id']}.html").write_text(shell(p["short"], body, 1), encoding="utf-8")
+    (ROOT / "papers" / f"{p['id']}.html").write_text(shell(p["short"], body, 1, display_date=p["date"]), encoding="utf-8")
 
 
 def write_catalog() -> None:
     cards = "\n".join(paper_card(p, 1) for p in PAPERS)
-    body = f"""<section class="page-header"><h1>论文目录</h1><p>当前 MVP 收录 {len(PAPERS)} 篇样例；正式版会读取跨天去重 JSON 和每日筛选结果。</p></section><div class="paper-list">{cards}</div>"""
+    body = f"""<section class="page-header"><h1>论文目录</h1><p>收录近期通用视觉自监督、视觉基础模型与多模态表征学习论文，按日期、优先级与主题归档。</p></section><div class="paper-list">{cards}</div>"""
     (ROOT / "pages" / "catalog.html").write_text(shell("论文目录", body, 1, "pages/catalog.html"), encoding="utf-8")
 
 
@@ -1145,6 +1174,7 @@ def main() -> None:
     write_css()
     write_index(report_md)
     write_issue(report_md)
+    write_archive_issues()
     write_catalog()
     write_timeline()
     for p in PAPERS:

@@ -149,10 +149,10 @@
     "category": "Multimodal representation",
     "priority": "P1",
     "date": "2026-05-22",
-    "venue": "arXiv · MinerU figure demo",
+    "venue": "arXiv",
     "url": "https://arxiv.org/abs/2605.21059",
     "thesis": "多模态模型不一定需要完整 joint tuples；只要模态图连通，pairwise supervision 可以成为可扩展替代品。",
-    "takeaway": "这是本 MVP 的 MinerU 图文样例页：Fig.1 解释动机，Fig.2 解释共享/私有 latent 生成过程。",
+    "takeaway": "它把多模态表征学习的问题改写成模态图连通性问题，重点不在堆更多模态，而在证明 pairwise supervision 也能学习共享/私有 latent 结构。",
     "method": "self-modal reconstruction + pairwise contrastive latent alignment"
   }
 ]
