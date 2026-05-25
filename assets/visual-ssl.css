@@ -53,4 +53,17 @@
 .timeline-day article{display:grid;grid-template-columns:70px 1fr 240px;gap:16px;border-bottom:1px solid #ddd;padding:12px 0}
 .timeline-day span{font-weight:700;color:#8a2f21}
 .timeline-day em{font-style:normal;color:#65615a}
-@media (max-width:900px){.hero-grid{grid-template-columns:1fr;padding:0 12px;box-sizing:border-box;max-width:100%;width:100%;margin-left:0;margin-right:0}.lead-story h1{font-size:40px}.paper-card{grid-template-columns:1fr}.timeline-day article{grid-template-columns:60px 1fr}.timeline-day em{grid-column:2}.stat-grid{grid-template-columns:1fr}.paper-thumb.paper-thumb-text{aspect-ratio:16/10}}
+.conf-float{position:fixed;right:18px;bottom:18px;z-index:45;width:min(360px,calc(100vw - 32px));background:#fbfaf6;border:1px solid #d8d0c3;box-shadow:0 16px 36px rgba(31,31,29,.18);padding:12px}
+.conf-float details{margin:0}
+.conf-float summary{cursor:pointer;font-weight:700;color:#1f1f1d;list-style:none}
+.conf-float summary::-webkit-details-marker{display:none}
+.conf-list{display:grid;gap:8px;margin-top:10px}
+.conf-item{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:4px 10px;text-decoration:none;color:#1f1f1d;border-left:4px solid #b8afa1;background:#fff;padding:9px 10px}
+.conf-item b,.conf-item em,.conf-item small{display:block}
+.conf-item em{font-style:normal;font-size:12px;color:#6b665f;margin-top:2px}
+.conf-item strong{color:#5b5a56;font-size:13px;white-space:nowrap}
+.conf-item small{grid-column:1/-1;color:#6b665f;line-height:1.45}
+.conf-item.urgent{border-left-color:#8a2f21}
+.conf-item.urgent strong,.conf-item.soon strong{color:#8a2f21}
+.conf-item.past{opacity:.72}
+@media (max-width:900px){.hero-grid{grid-template-columns:1fr;padding:0 12px;box-sizing:border-box;max-width:100%;width:100%;margin-left:0;margin-right:0}.lead-story h1{font-size:40px}.paper-card{grid-template-columns:1fr}.timeline-day article{grid-template-columns:60px 1fr}.timeline-day em{grid-column:2}.stat-grid{grid-template-columns:1fr}.paper-thumb.paper-thumb-text{aspect-ratio:16/10}.conf-float{position:static;width:auto;margin:16px 12px;box-sizing:border-box}}
