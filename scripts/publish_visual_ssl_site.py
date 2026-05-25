@@ -125,6 +125,31 @@ def git_commit_and_push(date: str, push: bool) -> None:
         run(["git", "push"], cwd=SITE_ROOT)
 
 
+def validate_site_quality() -> None:
+    bad_patterns = [
+        r"MINERU EXTRACTED",
+        r"MinerU extracted figure without structured caption",
+        r"MinerU full\.md is now part of the source bundle",
+        r"当前页面是站点原型",
+        r"下一步怎么接进日报",
+        r"正式流程会把每篇论文",
+    ]
+    problems: list[str] = []
+    paper_paths = list((SITE_ROOT / "papers").glob("*.html"))
+    for path in paper_paths + list((SITE_ROOT / "issues").glob("*.html")) + [SITE_ROOT / "index.html"]:
+        if not path.exists():
+            continue
+        text = path.read_text(encoding="utf-8", errors="ignore")
+        for pattern in bad_patterns:
+            if re.search(pattern, text, flags=re.I):
+                problems.append(f"{path.relative_to(SITE_ROOT)} contains forbidden text: {pattern}")
+        if path in paper_paths and 'class="full-fig"' in text and 'class="fig-zh"' not in text and "TC-JEPA" not in text:
+            # Warn as a hard failure for generated paper pages: figure captions must be readable, not raw MinerU fallbacks.
+            problems.append(f"{path.relative_to(SITE_ROOT)} has figures without bilingual caption spans")
+    if problems:
+        raise SystemExit("Site quality check failed:\n" + "\n".join(f"- {p}" for p in problems[:20]))
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(description="Publish the daily Visual SSL GitHub Pages digest.")
     parser.add_argument("--date", help="Report date, e.g. 2026-05-25. Defaults to latest.md/header date.")
@@ -157,6 +182,7 @@ def main() -> None:
     scripts_dir.mkdir(exist_ok=True)
     shutil.copy2(GENERATOR, scripts_dir / "build_visual_ssl_site.py")
     shutil.copy2(Path(__file__), scripts_dir / "publish_visual_ssl_site.py")
+    validate_site_quality()
     git_commit_and_push(date, push=not args.no_push)
     print(f"published {date}: {len(papers)} indexed arXiv papers")
 
