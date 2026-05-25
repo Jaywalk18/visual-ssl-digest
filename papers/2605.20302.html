@@ -28,30 +28,33 @@
     <div class="kicker">Representation geometry · P3 · 2026-05-25</div>
     <h1 class="paper-headline">Neural Collapse by Design：监督对比学习和分类原型几何可以统一到单位超球面上的 prototype contrast。</h1>
     <p class="dek">偏理论和监督表征，但对理解 linear probe、原型、均匀性和表征几何有参考价值。</p>
-    <p class="byline"><strong>Neural Collapse by Design: Learning Class Prototypes on the Hypersphere</strong>　ICML 2026 · status update　<a href="https://arxiv.org/abs/2605.20302">原文链接</a></p>
+    <p class="byline"><strong>Neural Collapse by Design: Learning Class Prototypes on the Hypersphere</strong>　Panagiotis Koromilas, Theodoros Giannakopoulos, Mihalis A. Nicolaou, Yannis Panagakis。　arXiv 原始提交 2026-05-19；replacement listing 标注 ICML 2026；OpenReview 页面仍显示 2025-09-19 提交到 ICLR 2026、2026-02-11 修改。　<a href="https://arxiv.org/abs/2605.20302">原文链接</a></p>
     <div class="paper-facts">
       <span><b>编号</b>2605.20302</span>
       <span><b>优先级</b>P3</span>
       <span><b>类别</b>Representation geometry</span>
       <span><b>会议</b>ICML 2026 · status update</span>
-      <span><b>方法</b>prototype contrast with NTCE / NONL objectives on the hypersphere</span>
+      <span><b>方法</b>把 normalized softmax classifier learning 和 supervised contrastive learning 统一为单位超球面上的 prototype contrast，并提出 NTCE / NONL 来扩大负样本集合、解耦类内对齐与类间排斥。</span>
       <span><b>来源</b>arXiv / OpenReview</span>
     </div>
     <div class="feature-body">
       <p class="lead dropcap">先说结论。监督对比学习和分类原型几何可以统一到单位超球面上的 prototype contrast。 偏理论和监督表征，但对理解 linear probe、原型、均匀性和表征几何有参考价值。</p>
       <figure class="full-fig"><img src="../assets/mineru/2605.20302/images/d4ae0cbe68d8450e650400e37fe132a890dd122c012fa178336c3a9a10cb05f8.jpg" alt="Figure 1"><figcaption><b>Figure 1</b>Figure 1. Supervised learning as learning class prototypes on the hypersphere. (a) Cross-entropy with unconstrained features z, weights W, and biases b leaves radial degrees of freedom free, preventing convergence to NC. (b) SCL pretraining maps features onto $S ^ { d - 1 }$ via a projection head, producing representations that approach within-class collapse (NC1) and maximal between-class separation (NC2). (c) Standard practice discards the projection head and trains a linear probe on unconstrained z, reintroducing free ∥w∥ and b that destroy the NC geometry learned during pretraining. (d) We show that both paradigms learn class prototypes on the hypersphere, converging to the same simplex ETF. From classifier learning (CL): normalizing to $\bar { \mathcal { S } ^ { d - 1 } }$ and applying contrastive optimization (NTCE/NONL) yields learnable prototypes wˆ c that converge to class means (Theorem 4.1). From SCL: the class-mean prototypes µˆc are already the optimal classifier throughout training, making linear probing unnecessary (Theorem 4.2). Both paths achieve NC1–NC4 in theory and closely approximate it in practice, with $\hat { \mathbf { w } } _ { c } = \hat { \pmb { \mu } } _ { c }$ at the global optimum.</figcaption></figure>
 <figure class="full-fig"><img src="../assets/mineru/2605.20302/images/0acd63c9662f65123de2bccfe582f0e0508bff61f06bb7f2f3573c9a50d1d1db.jpg" alt="Figure 3"><figcaption><b>Figure 3</b>Figure 3. Validation Accuracy (%) Phase Diagrams. Classification accuracy on validation set. Higher values indicate better generalization performance. Each subplot shows the performance landscape across temperature and batch size hyperparameters for different loss functions: NormFace, NTCE, and NONL. Brighter regions indicate superior performance. White contour lines indicate iso-performance curves for detailed analysis. Red dashed contours highlight optimal parameter regions (top 10% performance). Scatter points represent individual experimental runs with performance-based sizing. Each dataset uses its own optimal colorbar range. Results originate from grid runs across temperature values in [0.07, 1.0] and batch sizes in 32, 64, 128, 256, 512, 1024, 2048.</figcaption></figure>
-      <h2>它真正改变的是训练信号，而不是榜单数字</h2>
-      <p>prototype contrast with NTCE / NONL objectives on the hypersphere。这类工作值得被放在通用视觉自监督日报里，不是因为它一定立刻刷新所有 benchmark，而是因为它改变了模型“从哪里拿监督”的方式。</p>
-      <blockquote class="inline-quote">MinerU full.md is now part of the source bundle for this page; the next pass will use it for paper-native English quotes and tighter argument writing.</blockquote>
-      <h2>读这篇时要盯住的风险</h2>
-      <p>当前页面是站点原型，细节还没有逐段引用 MinerU 全文。正式流程会把每篇论文的 abstract、method、caption 和关键表格放进页面生成上下文，并保留至少两段原文引文。</p>
-      <h2>下一步怎么接进日报</h2>
-      <p>每日自动化先筛出 P1/P2，再对 P1 论文跑 MinerU；有 pipeline 或 motivation 图的页面进入 GitHub Pages，飞书只发摘要与入口。</p>
+      <h2>核心问题</h2>
+      <p>如果后续读 DINO/CLIP/MAE 表征时关注“原型、均匀性、线性评估是否可靠”，这篇能提供理论语言。</p>
+      <h2>方法拆解</h2>
+      <p>把 normalized softmax classifier learning 和 supervised contrastive learning 统一为单位超球面上的 prototype contrast，并提出 NTCE / NONL 来扩大负样本集合、解耦类内对齐与类间排斥。</p>
+      <h2>主要贡献</h2>
+      <p>理论上说明 SCL 在 neural-collapse 条件下已经学到原型分类器，后置 linear probe 可能不是必要步骤。</p>
+      <h2>实验看点</h2>
+      <p>arXiv 摘要报告在 ImageNet-1K 等四个 benchmark 上提高准确率，neural-collapse 指标达到约 95% 以上，并带来迁移和鲁棒性收益。</p>
+      <h2>局限与读法</h2>
+      <p>它是监督/监督对比学习而非通用自监督预训练；更适合作为表征几何与评估协议参考。</p>
     </div>
   </div>
   <aside class="paper-side">
-    <div class="side-box"><h4>关键判断</h4><dl><dt>相关性</dt><dd>P3</dd><dt>类别</dt><dd>Representation geometry</dd><dt>会议</dt><dd>ICML 2026 · status update</dd></dl></div>
+    <div class="side-box"><h4>关键判断</h4><dl><dt>相关性</dt><dd>P3</dd><dt>类别</dt><dd>Representation geometry</dd><dt>会议</dt><dd>ICML 2026 · status update</dd><dt>读法</dt><dd>方法图优先，表格次之</dd></dl></div>
     <div class="side-box"><h4>原文</h4><p><a href="https://arxiv.org/abs/2605.20302">https://arxiv.org/abs/2605.20302</a></p></div>
   </aside>
 </article></main>

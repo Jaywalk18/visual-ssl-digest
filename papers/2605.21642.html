@@ -28,30 +28,33 @@
     <div class="kicker">VLM diagnostics · P2 · 2026-05-25</div>
     <h1 class="paper-headline">Ablate-to-Validate：很多连续视觉 thought token 的收益可能来自长度、锚点或正则，而不一定来自 token 内容本身。</h1>
     <p class="dek">这是一个诊断工具型论文：以后看 latent visual token 方法时，应该要求内容替换消融。</p>
-    <p class="byline"><strong>Ablate-to-Validate: Are Vision-Language Models Really Using Continuous Thought Tokens?</strong>　arXiv　<a href="https://arxiv.org/abs/2605.21642">原文链接</a></p>
+    <p class="byline"><strong>Ablate-to-Validate: Are Vision-Language Models Really Using Continuous Thought Tokens?</strong>　Tianyi Zhang, Mahtab Bigverdi, Ranjay Krishna。　arXiv v1 提交于 2026-05-20 UTC；本期为 late-discovered。　<a href="https://arxiv.org/abs/2605.21642">原文链接</a></p>
     <div class="paper-facts">
       <span><b>编号</b>2605.21642</span>
       <span><b>优先级</b>P2</span>
       <span><b>类别</b>VLM diagnostics</span>
       <span><b>会议</b>arXiv</span>
-      <span><b>方法</b>token replacement test for continuous and discrete visual thought tokens</span>
+      <span><b>方法</b>提出 Token Replacement Test，在固定 prompt、图像、token budget 和解码设置下，把中间连续/离散视觉 thought token 替换为 zero、random、first-repeat 或 oracle，检测性能是否真正依赖 token 内容。</span>
       <span><b>来源</b>arXiv / OpenReview</span>
     </div>
     <div class="feature-body">
       <p class="lead dropcap">先说结论。很多连续视觉 thought token 的收益可能来自长度、锚点或正则，而不一定来自 token 内容本身。 这是一个诊断工具型论文：以后看 latent visual token 方法时，应该要求内容替换消融。</p>
       <figure class="full-fig"><img src="../assets/mineru/2605.21642/images/8f1d0e2a7a6da9616c64eaa6a1b6a82248211d1f40273645baf4bdfce27f810d.jpg" alt="MinerU extracted figure"><figcaption><b>MinerU extracted figure</b>MinerU extracted figure without structured caption.</figcaption></figure>
 <figure class="full-fig"><img src="../assets/mineru/2605.21642/images/6fd71da51cf40792297540655b2c66d19e71e00b6bc0a1f4d1a2d220e7c91aae.jpg" alt="MinerU extracted figure"><figcaption><b>MinerU extracted figure</b>MinerU extracted figure without structured caption.</figcaption></figure>
-      <h2>它真正改变的是训练信号，而不是榜单数字</h2>
-      <p>token replacement test for continuous and discrete visual thought tokens。这类工作值得被放在通用视觉自监督日报里，不是因为它一定立刻刷新所有 benchmark，而是因为它改变了模型“从哪里拿监督”的方式。</p>
-      <blockquote class="inline-quote">MinerU full.md is now part of the source bundle for this page; the next pass will use it for paper-native English quotes and tighter argument writing.</blockquote>
-      <h2>读这篇时要盯住的风险</h2>
-      <p>当前页面是站点原型，细节还没有逐段引用 MinerU 全文。正式流程会把每篇论文的 abstract、method、caption 和关键表格放进页面生成上下文，并保留至少两段原文引文。</p>
-      <h2>下一步怎么接进日报</h2>
-      <p>每日自动化先筛出 P1/P2，再对 P1 论文跑 MinerU；有 pipeline 或 motivation 图的页面进入 GitHub Pages，飞书只发摘要与入口。</p>
+      <h2>核心问题</h2>
+      <p>对视觉自监督/多模态预训练很重要：如果模型引入中间视觉表征或 latent token，应同时报告内容替换消融，而不能只看最终准确率。</p>
+      <h2>方法拆解</h2>
+      <p>提出 Token Replacement Test，在固定 prompt、图像、token budget 和解码设置下，把中间连续/离散视觉 thought token 替换为 zero、random、first-repeat 或 oracle，检测性能是否真正依赖 token 内容。</p>
+      <h2>主要贡献</h2>
+      <p>指出不少带 latent visual token 的 VLM 准确率提升可能来自上下文长度、特殊 token anchoring 或训练正则，而不是 token 真正携带视觉信息。</p>
+      <h2>实验看点</h2>
+      <p>在 LLaVA-13B、Qwen2.5-VL-3B 以及 Mirage、Mull-Tokens、CoVT 等系统上，发现替换 token 后仍保留大部分收益。</p>
+      <h2>局限与读法</h2>
+      <p>它主要是诊断论文，不直接提出新的预训练模型；任务集中在相对深度推理和若干视觉推理 benchmark。</p>
     </div>
   </div>
   <aside class="paper-side">
-    <div class="side-box"><h4>关键判断</h4><dl><dt>相关性</dt><dd>P2</dd><dt>类别</dt><dd>VLM diagnostics</dd><dt>会议</dt><dd>arXiv</dd></dl></div>
+    <div class="side-box"><h4>关键判断</h4><dl><dt>相关性</dt><dd>P2</dd><dt>类别</dt><dd>VLM diagnostics</dd><dt>会议</dt><dd>arXiv</dd><dt>读法</dt><dd>方法图优先，表格次之</dd></dl></div>
     <div class="side-box"><h4>原文</h4><p><a href="https://arxiv.org/abs/2605.21642">https://arxiv.org/abs/2605.21642</a></p></div>
   </aside>
 </article></main>

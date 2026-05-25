@@ -41,17 +41,20 @@
       <p class="lead dropcap">先说结论。相机位姿不只是下游几何任务标签，而可以成为视频理解模型的基础坐标系监督。 用伪位姿把跨帧 token 固定到共享空间，是视频 VFM/MLLM 很值得跟的结构化监督。</p>
       <figure class="full-fig"><img src="../assets/mineru/2605.22819/images/196c276164ace0119f57c91eb40df268775cbcb87224bca763bc11611dc857ab.jpg" alt="Figure 2 | Cambrian-P Architecture Overview"><figcaption><b>Figure 2 | Cambrian-P Architecture Overview</b>Figure 2 | Cambrian-P Architecture Overview. Cambrian-P imposes minimal modifications to current MLLM architectures, introducing only learnable pose tokens and a lightweight pose head. These tokens are marked with stripes, which indicate they are only included in training. The pose tokens are appended to visual tokens, while positioned before text embeddings.</figcaption></figure>
 <figure class="full-fig"><img src="../assets/mineru/2605.22819/images/af83887eb5e0cbee26d62d3516d6cfaf1103057cafe3a2967327ef72e3008e63.jpg" alt="Figure 1 | Cambrian-P illustration in video QA"><figcaption><b>Figure 1 | Cambrian-P illustration in video QA</b>Figure 1 | Cambrian-P illustration in video QA. Cambrian-P equips the current video understanding paradigm with native camera pose prediction using an extra camera token per frame. Cambrian-P positions video frames into a shared spatial coordinate frame, then effectively models the underlying 3D world projected in video. Note that Cambrian-P only requires extra learnable pose tokens during training.</figcaption></figure>
-      <h2>它真正改变的是训练信号，而不是榜单数字</h2>
-      <p>learnable camera tokens + pose regression head for frame-level grounding。这类工作值得被放在通用视觉自监督日报里，不是因为它一定立刻刷新所有 benchmark，而是因为它改变了模型“从哪里拿监督”的方式。</p>
-      <blockquote class="inline-quote">MinerU full.md is now part of the source bundle for this page; the next pass will use it for paper-native English quotes and tighter argument writing.</blockquote>
-      <h2>读这篇时要盯住的风险</h2>
-      <p>当前页面是站点原型，细节还没有逐段引用 MinerU 全文。正式流程会把每篇论文的 abstract、method、caption 和关键表格放进页面生成上下文，并保留至少两段原文引文。</p>
-      <h2>下一步怎么接进日报</h2>
-      <p>每日自动化先筛出 P1/P2，再对 P1 论文跑 MinerU；有 pipeline 或 motivation 图的页面进入 GitHub Pages，飞书只发摘要与入口。</p>
+      <h2>核心问题</h2>
+      <p>它和通用视觉自监督的关系在于：相机位姿不只是下游几何任务标签，而可以成为视频理解模型的基础坐标系监督。</p>
+      <h2>方法拆解</h2>
+      <p>learnable camera tokens + pose regression head for frame-level grounding</p>
+      <h2>主要贡献</h2>
+      <p>用伪位姿把跨帧 token 固定到共享空间，是视频 VFM/MLLM 很值得跟的结构化监督。</p>
+      <h2>实验看点</h2>
+      <p>实验部分建议重点看两类证据：一是作者是否把方法收益和更强数据、更长训练、更大模型区分开；二是跨模型、跨数据或跨任务迁移是否还能保留同样趋势。</p>
+      <h2>局限与读法</h2>
+      <p>这篇论文的结论需要结合任务设置、训练数据规模和消融实验一起看；不要只凭单个指标判断它对通用视觉表征的价值。</p>
     </div>
   </div>
   <aside class="paper-side">
-    <div class="side-box"><h4>关键判断</h4><dl><dt>相关性</dt><dd>P1</dd><dt>类别</dt><dd>Video MLLM / geometry</dd><dt>会议</dt><dd>arXiv</dd></dl></div>
+    <div class="side-box"><h4>关键判断</h4><dl><dt>相关性</dt><dd>P1</dd><dt>类别</dt><dd>Video MLLM / geometry</dd><dt>会议</dt><dd>arXiv</dd><dt>读法</dt><dd>方法图优先，表格次之</dd></dl></div>
     <div class="side-box"><h4>原文</h4><p><a href="https://arxiv.org/abs/2605.22819">https://arxiv.org/abs/2605.22819</a></p></div>
   </aside>
 </article></main>
