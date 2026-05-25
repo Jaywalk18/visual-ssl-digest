@@ -4,12 +4,50 @@ import html
 import json
 import re
 import shutil
+from datetime import date, datetime
 from pathlib import Path
 
 
 ROOT = Path(r"H:\Desktop\visual_ssl_digest_site")
 REPORT_ROOT = Path(r"H:\Desktop\visual_ssl_paper_reports")
 CSS_VERSION = "20260525"
+CURRENT_DATE = "2026-05-25"
+
+
+CONFERENCE_REMINDERS = [
+    {
+        "name": "ACM MM 2026",
+        "ccf": "CCF A",
+        "track": "Open Source",
+        "deadline": "2026-05-28",
+        "url": "https://2026.acmmm.org/site/call-open-source.html",
+        "note": "非主会主赛道；适合工具/代码型贡献。",
+    },
+    {
+        "name": "ACM MM 2026",
+        "ccf": "CCF A",
+        "track": "Demo & Video",
+        "deadline": "2026-06-11",
+        "url": "https://2026.acmmm.org/site/important-dates.html",
+        "note": "主会已截稿；该项为 Demo/Video track。",
+    },
+    {
+        "name": "ACM MM 2026",
+        "ccf": "CCF A",
+        "track": "Workshop papers",
+        "deadline": "2026-07-16",
+        "url": "https://2026.acmmm.org/site/important-dates.html",
+        "note": "Workshop 投稿窗口。",
+    },
+    {
+        "name": "NeurIPS 2026",
+        "ccf": "CCF A",
+        "track": "Workshop contributions",
+        "deadline": "2026-08-29",
+        "url": "https://neurips.cc/Conferences/current/Dates",
+        "note": "主会已截稿；此处是 workshop contribution 建议日期。",
+    },
+]
 
 
 PAPERS = [
@@ -180,6 +218,47 @@ def strip_md(text: str) -> str:
     text = re.sub(r"!\[[^\]]*]\([^)]+\)", "", text)
     text = re.sub(r"\[([^\]]+)]\(([^)]+)\)", r"\1", text)
     return text.replace("**", "").replace("`", "")
+
+
+def arxiv_id_from_url(url: str) -> str | None:
+    match = re.search(r"arxiv\.org/(?:abs|pdf)/([0-9]{4}\.[0-9]{4,5})(?:v\d+)?", url)
+    return match.group(1) if match else None
+
+
+def first_md_link(text: str) -> tuple[str, str] | None:
+    match = re.search(r"\[([^\]]+)]\(([^)]+)\)", text)
+    if not match:
+        return None
+    return strip_md(match.group(1)).strip(), match.group(2).strip()
+
+
+def split_md_row(line: str) -> list[str]:
+    return [part.strip() for part in line.strip().strip("|").split("|")]
+
+
+def report_date_from_path(path: Path) -> str:
+    match = re.search(r"\d{4}-\d{2}-\d{2}", path.name)
+    if match:
+        return match.group(0)
+    return date.today().isoformat()
+
+
+def zh_date(date_str: str) -> str:
+    try:
+        parsed = date.fromisoformat(date_str)
+    except ValueError:
+        return date_str
+    return f"{parsed.month} 月 {parsed.day} 日"
+
+
+def latest_report_path() -> Path:
+    latest = REPORT_ROOT / "latest.md"
+    if latest.exists():
+        return latest
+    reports = sorted(REPORT_ROOT.glob("20??-??-??.md"), key=lambda p: p.name)
+    if not reports:
+        raise FileNotFoundError(f"No Markdown reports found under {REPORT_ROOT}")
+    return reports[-1]
 
 
 def flatten_caption(value) -> str:
@@ -411,6 +490,92 @@ def md_table_rows(md: str, heading: str) -> list[list[str]]:
     return rows
 
 
+def parse_paper_index(md: str, report_date: str) -> list[dict]:
+    marker = "## 论文索引"
+    start = md.find(marker)
+    if start < 0:
+        return []
+    lines = md[start:].splitlines()
+    rows: list[list[str]] = []
+    in_table = False
+    for line in lines:
+        if line.strip().startswith("|"):
+            parts = split_md_row(line)
+            if all(re.fullmatch(r":?-{3,}:?", p or "") for p in parts):
+                in_table = True
+                continue
+            rows.append(parts)
+            in_table = True
+        elif in_table:
+            break
+
+    if len(rows) < 2:
+        return []
+
+    parsed: list[dict] = []
+    for row in rows[1:]:
+        if len(row) < 5:
+            continue
+        priority, paper_cell, kind, relevance, reason = row[:5]
+        if "过滤" in priority:
+            continue
+        link = first_md_link(paper_cell)
+        if link:
+            title, url = link
+        else:
+            title = strip_md(paper_cell).strip()
+            url = ""
+        pid = arxiv_id_from_url(url) or re.sub(r"[^a-z0-9]+", "-", title.lower()).strip("-")[:48]
+        short = title.split(":")[0].strip()
+        if len(short) > 42:
+            short = " ".join(short.split()[:5]) or title[:24]
+        category = kind.replace("arXiv +", "").replace("arXiv 更新 +", "").strip()
+        if not category or category == "arXiv":
+            category = "Visual SSL / representation"
+        venue = kind.strip() or "arXiv"
+        if re.search(r"ICML|CVPR|NeurIPS|ICLR|ECCV|AAAI|ACL|TMLR|MM", kind, re.I):
+            venue = kind.strip()
+        method = strip_md(reason).strip().rstrip("。")
+        parsed.append(
+            {
+                "id": pid,
+                "title": title,
+                "short": short,
+                "category": category,
+                "priority": strip_md(priority).strip(),
+                "date": report_date,
+                "venue": venue,
+                "url": url or "#",
+                "thesis": method + "。" if method else "本期日报自动纳入的候选论文。",
+                "takeaway": method + "。" if method else f"{title} 是本期日报自动纳入的候选论文。",
+                "method": method or f"{relevance} relevance; see original report for details",
+            }
+        )
+    return parsed
+
+
+def merge_report_papers(report_papers: list[dict]) -> list[dict]:
+    if not report_papers:
+        return PAPERS
+    merged: list[dict] = []
+    seen: set[str] = set()
+    static_by_id = {p["id"]: p for p in PAPERS}
+    for p in report_papers:
+        richer = static_by_id.get(p["id"])
+        if richer:
+            item = dict(richer)
+            item["date"] = p["date"]
+            merged.append(item)
+        else:
+            merged.append(p)
+        seen.add(p["id"])
+    for p in PAPERS:
+        if p["id"] not in seen:
+            merged.append(p)
+            seen.add(p["id"])
+    return merged
+
+
 def section_text(md: str, heading: str, limit: int = 900) -> str:
     marker = f"## {heading}"
     start = md.find(marker)
@@ -433,7 +598,7 @@ def nav(depth: int = 0, active: str = "") -> str:
     prefix = "../" * depth
     items = [
         ("index.html", "头版"),
-        ("issues/2026-05-25.html", "今日速递"),
+        (f"issues/{CURRENT_DATE}.html", "今日速递"),
         ("pages/catalog.html", "论文目录"),
         ("pages/timeline.html", "时间线"),
     ]
@@ -441,6 +606,63 @@ def nav(depth: int = 0, active: str = "") -> str:
         f'<a class="nav-link{" active" if active == href else ""}" href="{prefix}{href}">{label}</a>'
         for href, label in items
     )
+
+
+def conference_widget(depth: int = 0) -> str:
+    try:
+        today = date.today()
+    except Exception:
+        today = datetime.now().date()
+    visible = []
+    later = []
+    for item in CONFERENCE_REMINDERS:
+        try:
+            deadline = date.fromisoformat(item["deadline"])
+        except ValueError:
+            continue
+        days = (deadline - today).days
+        if days < -7:
+            continue
+        if days < 0:
+            status = f"已过 {abs(days)} 天"
+            cls = "past"
+        elif days == 0:
+            status = "今天截止"
+            cls = "urgent"
+        elif days <= 7:
+            status = f"{days} 天内"
+            cls = "urgent"
+        elif days <= 31:
+            status = f"{days} 天内"
+            cls = "soon"
+        else:
+            status = f"{days} 天"
+            cls = ""
+        entry = (days, cls, status, item)
+        if days <= 31:
+            visible.append(entry)
+        else:
+            later.append(entry)
+    if not visible and later:
+        visible = later[:1]
+    visible.sort(key=lambda entry: entry[0])
+    if not visible:
+        return ""
+    rows = []
+    for _, cls, status, item in visible[:5]:
+        rows.append(
+            f"""<a class="conf-item {cls}" href="{e(item['url'])}">
+  <span><b>{e(item['name'])}</b><em>{e(item['ccf'])} · {e(item['track'])}</em></span>
+  <strong>{e(status)}</strong>
+  <small>{e(item['deadline'])} · {e(item['note'])}</small>
+</a>"""
+        )
+    return f"""<aside class="conf-float" aria-label="CCF A/B 截稿提醒">
+  <details open>
+    <summary>CCF A/B 截稿提醒</summary>
+    <div class="conf-list">{''.join(rows)}</div>
+  </details>
+</aside>"""
 
 
 def shell(title: str, body: str, depth: int = 0, active: str = "") -> str:
@@ -456,7 +678,7 @@ def shell(title: str, body: str, depth: int = 0, active: str = "") -> str:
 </head>
 <body>
   <header class="masthead">
-    <div class="masthead-kicker">Visual SSL Daily · GitHub Pages MVP · 2026-05-25</div>
+    <div class="masthead-kicker">Visual SSL Daily · GitHub Pages MVP · {e(CURRENT_DATE)}</div>
     <a class="masthead-title" href="{prefix}index.html">通用视觉自监督研究报</a>
     <div class="masthead-meta">
       <span>图像表征 · VFM · JEPA · 视频预训练</span>
@@ -468,9 +690,10 @@ def shell(title: str, body: str, depth: int = 0, active: str = "") -> str:
     {nav(depth, active)}
   </nav>
   <main>{body}</main>
+  {conference_widget(depth)}
   <footer class="footer">
     <div>原始日报继续同步飞书；本站用于图文归档和长读。</div>
-    <div class="muted">Generated 2026-05-25 · MinerU figures where available</div>
+    <div class="muted">Generated {e(CURRENT_DATE)} · MinerU figures where available</div>
   </footer>
 </body>
 </html>"""
@@ -513,7 +736,7 @@ def write_index(report_md: str) -> None:
     <h1>{e(hero['short'])}：{e(hero['thesis'].rstrip('。'))}</h1>
     <p class="dek">{e(hero['thesis'])}</p>
     {hero_img}
-    <div class="paper-actions"><a href="issues/2026-05-25.html">阅读 5 月 25 日速递</a><a href="papers/{hero['id']}.html">打开主文页</a></div>
+    <div class="paper-actions"><a href="issues/{CURRENT_DATE}.html">阅读 {zh_date(CURRENT_DATE)}速递</a><a href="papers/{hero['id']}.html">打开主文页</a></div>
   </article>
   <aside class="issue-brief">
     <h2>快速摘要</h2>
@@ -539,13 +762,14 @@ def write_issue(report_md: str) -> None:
             for row in body_rows
         )
         table = f'<table class="compact-table"><thead><tr>{ths}</tr></thead><tbody>{trs}</tbody></table>'
-    issue_papers = [p for p in PAPERS if p["date"] == "2026-05-25"]
+    issue_papers = [p for p in PAPERS if p["date"] == CURRENT_DATE]
     cards = "\n".join(paper_card(p, 1) for p in issue_papers)
+    issue_title = f"{zh_date(CURRENT_DATE)}：{PAPERS[0]['short']} 等视觉表征主线更新"
     body = f"""<article class="paper-detail issue-detail">
   <div class="paper-main">
-    <div class="kicker">Daily issue · 2026-05-25 · CCF A/B 会议优先</div>
-    <h1 class="paper-headline">5 月 25 日：语言教师、数据蒸馏与视频自演化补录</h1>
-    <p class="dek">今天不是新 arXiv 批次日；重点是补齐 Friday listing 和 search 漏项中对通用视觉表征最有启发的工作。</p>
+    <div class="kicker">Daily issue · {e(CURRENT_DATE)} · CCF A/B 会议优先</div>
+    <h1 class="paper-headline">{e(issue_title)}</h1>
+    <p class="dek">本页由每日 Markdown 速递和 MinerU 图文抽取自动生成，优先保留 CCF A/B、OpenReview 和 arXiv 中对通用视觉表征有帮助的工作。</p>
     <div class="feature-body">
       <p class="lead dropcap">{e(route)}</p>
       <h2>论文索引</h2>
@@ -560,7 +784,7 @@ def write_issue(report_md: str) -> None:
     <div class="side-box"><h4>飞书文字版</h4><p><a href="https://www.feishu.cn/file/T684bdqYloXgmVxCV4ocxCm1nMc">latest.md →</a></p></div>
   </aside>
 </article>"""
-    (ROOT / "issues" / "2026-05-25.html").write_text(shell("2026-05-25 速递", body, 1, "issues/2026-05-25.html"), encoding="utf-8")
+    (ROOT / "issues" / f"{CURRENT_DATE}.html").write_text(shell(f"{CURRENT_DATE} 速递", body, 1, f"issues/{CURRENT_DATE}.html"), encoding="utf-8")
 
 
 def write_paper(p: dict) -> None:
@@ -686,12 +910,27 @@ def write_css() -> None:
 .timeline-day article{display:grid;grid-template-columns:70px 1fr 240px;gap:16px;border-bottom:1px solid #ddd;padding:12px 0}
 .timeline-day span{font-weight:700;color:#8a2f21}
 .timeline-day em{font-style:normal;color:#65615a}
-@media (max-width:900px){.hero-grid{grid-template-columns:1fr;padding:0 12px;box-sizing:border-box;max-width:100%;width:100%;margin-left:0;margin-right:0}.lead-story h1{font-size:40px}.paper-card{grid-template-columns:1fr}.timeline-day article{grid-template-columns:60px 1fr}.timeline-day em{grid-column:2}.stat-grid{grid-template-columns:1fr}.paper-thumb.paper-thumb-text{aspect-ratio:16/10}}
+.conf-float{position:fixed;right:18px;bottom:18px;z-index:45;width:min(360px,calc(100vw - 32px));background:#fbfaf6;border:1px solid #d8d0c3;box-shadow:0 16px 36px rgba(31,31,29,.18);padding:12px}
+.conf-float details{margin:0}
+.conf-float summary{cursor:pointer;font-weight:700;color:#1f1f1d;list-style:none}
+.conf-float summary::-webkit-details-marker{display:none}
+.conf-list{display:grid;gap:8px;margin-top:10px}
+.conf-item{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:4px 10px;text-decoration:none;color:#1f1f1d;border-left:4px solid #b8afa1;background:#fff;padding:9px 10px}
+.conf-item b,.conf-item em,.conf-item small{display:block}
+.conf-item em{font-style:normal;font-size:12px;color:#6b665f;margin-top:2px}
+.conf-item strong{color:#5b5a56;font-size:13px;white-space:nowrap}
+.conf-item small{grid-column:1/-1;color:#6b665f;line-height:1.45}
+.conf-item.urgent{border-left-color:#8a2f21}
+.conf-item.urgent strong,.conf-item.soon strong{color:#8a2f21}
+.conf-item.past{opacity:.72}
+@media (max-width:900px){.hero-grid{grid-template-columns:1fr;padding:0 12px;box-sizing:border-box;max-width:100%;width:100%;margin-left:0;margin-right:0}.lead-story h1{font-size:40px}.paper-card{grid-template-columns:1fr}.timeline-day article{grid-template-columns:60px 1fr}.timeline-day em{grid-column:2}.stat-grid{grid-template-columns:1fr}.paper-thumb.paper-thumb-text{aspect-ratio:16/10}.conf-float{position:static;width:auto;margin:16px 12px;box-sizing:border-box}}
 """
     (ROOT / "assets" / "visual-ssl.css").write_text(css, encoding="utf-8")
 
 
 def main() -> None:
+    global CURRENT_DATE, PAPERS
+
     ROOT.mkdir(parents=True, exist_ok=True)
     for sub in ["assets", "issues", "papers", "pages", "data"]:
         (ROOT / sub).mkdir(exist_ok=True)
@@ -711,7 +950,11 @@ def main() -> None:
         if (src_img_dir / src).exists():
             shutil.copy2(src_img_dir / src, dst_img_dir / dst)
 
-    report_md = (REPORT_ROOT / "2026-05-25.md").read_text(encoding="utf-8")
+    report_path = latest_report_path()
+    report_md = report_path.read_text(encoding="utf-8")
+    header_date = re.search(r"\d{4}-\d{2}-\d{2}", report_md[:200])
+    CURRENT_DATE = header_date.group(0) if header_date else report_date_from_path(report_path)
+    PAPERS = merge_report_papers(parse_paper_index(report_md, CURRENT_DATE))
     (ROOT / "data" / "papers.json").write_text(json.dumps(PAPERS, ensure_ascii=False, indent=2), encoding="utf-8")
     (ROOT / ".nojekyll").write_text("", encoding="utf-8")
     write_css()
