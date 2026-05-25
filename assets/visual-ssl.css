@@ -15,7 +15,9 @@
 .section-heading{display:flex;align-items:end;justify-content:space-between;border-bottom:2px solid #111;margin-bottom:18px}
 .section-heading h2{margin:0 0 8px;font-size:28px}
 .paper-list{display:grid;gap:18px}
-.paper-card{align-items:start;grid-template-columns:minmax(380px,520px) minmax(0,1fr);gap:20px;padding:16px}
+.paper-card{align-items:start;grid-template-columns:minmax(380px,520px) minmax(0,1fr);gap:20px;padding:16px;position:relative;overflow:hidden;background:linear-gradient(135deg,rgba(255,255,255,.76),rgba(247,243,234,.58));border:1px solid rgba(216,208,195,.86);border-top:3px solid #8a2f21;border-radius:8px;box-shadow:0 14px 34px rgba(31,31,29,.08);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px)}
+.paper-card:before{content:"";position:absolute;inset:0;background:linear-gradient(120deg,rgba(255,255,255,.5),rgba(255,255,255,0) 42%);pointer-events:none}
+.paper-card>*{position:relative;z-index:1}
 .paper-card h3{margin-top:0}
 .paper-card .paper-actions{position:relative;z-index:2;margin-top:14px;display:flex;flex-wrap:wrap;gap:10px}
 .paper-card .paper-actions a{white-space:nowrap}
