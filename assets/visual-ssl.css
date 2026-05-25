@@ -54,6 +54,20 @@
 .paper-detail:not(.issue-detail):not(.deep-read) .feature-body li{margin:6px 0}
 .page-header{max-width:1500px;margin:32px auto;padding:0 24px;border-bottom:2px solid #111}
 .page-header h1{font-size:54px;line-height:1;margin:0 0 10px;font-family:Georgia,'Times New Roman',serif}
+.catalog-shell{max-width:1500px;margin:0 auto;padding:0 24px 48px}
+.catalog-tools{display:grid;gap:12px;margin:0 0 22px;padding:16px;background:linear-gradient(135deg,rgba(255,255,255,.8),rgba(247,243,234,.62));border:1px solid rgba(216,208,195,.9);border-radius:8px;box-shadow:0 12px 28px rgba(31,31,29,.06)}
+.catalog-search{width:100%;box-sizing:border-box;border:1px solid #d8d0c3;border-radius:6px;background:rgba(255,255,255,.82);padding:10px 12px;font:inherit;color:#1f1f1d}
+.catalog-search:focus{outline:2px solid rgba(138,47,33,.28);outline-offset:1px}
+.filter-row{display:flex;flex-wrap:wrap;gap:8px}
+.filter-pill{border:1px solid #d8d0c3;border-radius:999px;background:rgba(255,255,255,.72);color:#4f4b45;padding:7px 10px;font-size:13px;line-height:1;cursor:pointer}
+.filter-pill:hover{border-color:#8a2f21;color:#8a2f21}
+.filter-pill.is-active{background:#8a2f21;border-color:#8a2f21;color:#fff}
+.catalog-status{font-size:13px;color:#6b665f}
+.catalog-list{margin-top:0}
+.catalog-pager{display:flex;align-items:center;justify-content:center;gap:14px;margin-top:24px}
+.catalog-pager button{border:1px solid #d8d0c3;border-radius:6px;background:#fff;color:#1f1f1d;padding:8px 12px;cursor:pointer}
+.catalog-pager button:disabled{opacity:.42;cursor:not-allowed}
+.catalog-pager span{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;color:#6b665f}
 .timeline-day{max-width:1100px;margin:28px auto;padding:0 24px}
 .timeline-day h2{border-bottom:2px solid #111;padding-bottom:8px}
 .timeline-day article{display:grid;grid-template-columns:70px 1fr 240px;gap:16px;border-bottom:1px solid #ddd;padding:12px 0}
