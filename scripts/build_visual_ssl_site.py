@@ -586,6 +586,66 @@ def section_text(md: str, heading: str, limit: int = 900) -> str:
     return clean[:limit] + ("…" if len(clean) > limit else "")
 
 
+def norm_for_match(text: str) -> str:
+    return re.sub(r"[^a-z0-9]+", "", strip_md(text).lower())
+
+
+def detail_section(md: str, p: dict) -> str:
+    target = norm_for_match(p["title"])
+    short = norm_for_match(p["short"])
+    sections = list(re.finditer(r"^###\s+(.+?)\s*$", md, flags=re.M))
+    for idx, match in enumerate(sections):
+        heading = match.group(1)
+        normalized = norm_for_match(heading)
+        if not normalized:
+            continue
+        if target and (target in normalized or normalized in target):
+            start = match.end()
+        elif short and len(short) > 5 and short in normalized:
+            start = match.end()
+        else:
+            continue
+        end = sections[idx + 1].start() if idx + 1 < len(sections) else len(md)
+        next_major = md.find("\n## ", start, end)
+        if next_major >= 0:
+            end = next_major
+        return md[start:end].strip()
+    return ""
+
+
+def detail_fields(md: str, p: dict) -> dict[str, str]:
+    section = detail_section(md, p)
+    fields: dict[str, str] = {}
+    if not section:
+        return fields
+    current_key = ""
+    for raw in section.splitlines():
+        line = raw.strip()
+        if not line:
+            continue
+        match = re.match(r"-\s+\*\*([^*]+)\*\*[：:]\s*(.*)$", line)
+        if match:
+            current_key = strip_md(match.group(1)).strip()
+            fields[current_key] = strip_md(match.group(2)).strip()
+        elif current_key and (line.startswith("  ") or not line.startswith("- ")):
+            fields[current_key] = (fields[current_key] + " " + strip_md(line)).strip()
+    return fields
+
+
+def choose_field(fields: dict[str, str], *names: str) -> str:
+    for name in names:
+        if fields.get(name):
+            return fields[name]
+    return ""
+
+
+def paragraph(text: str) -> str:
+    text = strip_md(text).strip()
+    if not text:
+        return ""
+    return f"<p>{e(text)}</p>"
+
+
 def nav(depth: int = 0, active: str = "") -> str:
     prefix = "../" * depth
     items = [
@@ -797,10 +857,18 @@ def write_issue(report_md: str) -> None:
     (ROOT / "issues" / f"{CURRENT_DATE}.html").write_text(shell(f"{CURRENT_DATE} 速递", body, 1, f"issues/{CURRENT_DATE}.html"), encoding="utf-8")
 
 
-def write_paper(p: dict) -> None:
+def write_paper(p: dict, report_md: str) -> None:
     if p["id"] == "2605.03245":
         (ROOT / "papers" / f"{p['id']}.html").write_text(tc_jepa_body(p), encoding="utf-8")
         return
+    fields = detail_fields(report_md, p)
+    authors = choose_field(fields, "作者/机构", "作者")
+    date_info = choose_field(fields, "发布日期/会议信息", "会议信息")
+    method = choose_field(fields, "核心方法") or p["method"]
+    contribution = choose_field(fields, "主要贡献") or p["takeaway"]
+    experiment = choose_field(fields, "实验亮点")
+    limitation = choose_field(fields, "局限性") or "这篇论文的结论需要结合任务设置、训练数据规模和消融实验一起看；不要只凭单个指标判断它对通用视觉表征的价值。"
+    relevance = choose_field(fields, "为什么相关") or f"它和通用视觉自监督的关系在于：{p['thesis']}"
     figs = ""
     paper_figs = figures_for(p["id"], 1, 2)
     if paper_figs:
@@ -809,35 +877,41 @@ def write_paper(p: dict) -> None:
             for fig in paper_figs
         )
     else:
-        figs = f"""<aside class="marginalia"><b>图像状态</b> 这篇 MVP 先使用文字解读；接入每日 MinerU 批处理后，这里会自动替换为 pipeline / motivation 图。</aside>"""
+        figs = f"""<aside class="marginalia"><b>图像状态</b> 这篇暂未抽到足够稳定的 pipeline / motivation 图，因此正文以方法和实验解读为主。</aside>"""
+    author_line = f"　{e(authors)}" if authors else ""
+    date_line = f"　{e(date_info)}" if date_info else f"　{e(p['venue'])}"
+    experiment_html = paragraph(experiment) if experiment else "<p>实验部分建议重点看两类证据：一是作者是否把方法收益和更强数据、更长训练、更大模型区分开；二是跨模型、跨数据或跨任务迁移是否还能保留同样趋势。</p>"
     body = f"""<article class="paper-detail">
   <div class="paper-main">
     <div class="kicker">{e(p['category'])} · {e(p['priority'])} · {e(p['date'])}</div>
     <h1 class="paper-headline">{e(p['short'])}：{e(p['thesis'])}</h1>
     <p class="dek">{e(p['takeaway'])}</p>
-    <p class="byline"><strong>{e(p['title'])}</strong>　{e(p['venue'])}　<a href="{e(p['url'])}">原文链接</a></p>
+    <p class="byline"><strong>{e(p['title'])}</strong>{author_line}{date_line}　<a href="{e(p['url'])}">原文链接</a></p>
     <div class="paper-facts">
       <span><b>编号</b>{e(p['id'])}</span>
       <span><b>优先级</b>{e(p['priority'])}</span>
       <span><b>类别</b>{e(p['category'])}</span>
       <span><b>会议</b>{e(p['venue'])}</span>
-      <span><b>方法</b>{e(p['method'])}</span>
+      <span><b>方法</b>{e(method)}</span>
       <span><b>来源</b>arXiv / OpenReview</span>
     </div>
     <div class="feature-body">
       <p class="lead dropcap">先说结论。{e(p['thesis'])} {e(p['takeaway'])}</p>
       {figs}
-      <h2>它真正改变的是训练信号，而不是榜单数字</h2>
-      <p>{e(p['method'])}。这类工作值得被放在通用视觉自监督日报里，不是因为它一定立刻刷新所有 benchmark，而是因为它改变了模型“从哪里拿监督”的方式。</p>
-      <blockquote class="inline-quote">MinerU full.md is now part of the source bundle for this page; the next pass will use it for paper-native English quotes and tighter argument writing.</blockquote>
-      <h2>读这篇时要盯住的风险</h2>
-      <p>当前页面是站点原型，细节还没有逐段引用 MinerU 全文。正式流程会把每篇论文的 abstract、method、caption 和关键表格放进页面生成上下文，并保留至少两段原文引文。</p>
-      <h2>下一步怎么接进日报</h2>
-      <p>每日自动化先筛出 P1/P2，再对 P1 论文跑 MinerU；有 pipeline 或 motivation 图的页面进入 GitHub Pages，飞书只发摘要与入口。</p>
+      <h2>核心问题</h2>
+      <p>{e(relevance)}</p>
+      <h2>方法拆解</h2>
+      <p>{e(method)}</p>
+      <h2>主要贡献</h2>
+      <p>{e(contribution)}</p>
+      <h2>实验看点</h2>
+      {experiment_html}
+      <h2>局限与读法</h2>
+      <p>{e(limitation)}</p>
     </div>
   </div>
   <aside class="paper-side">
-    <div class="side-box"><h4>关键判断</h4><dl><dt>相关性</dt><dd>{e(p['priority'])}</dd><dt>类别</dt><dd>{e(p['category'])}</dd><dt>会议</dt><dd>{e(p['venue'])}</dd></dl></div>
+    <div class="side-box"><h4>关键判断</h4><dl><dt>相关性</dt><dd>{e(p['priority'])}</dd><dt>类别</dt><dd>{e(p['category'])}</dd><dt>会议</dt><dd>{e(p['venue'])}</dd><dt>读法</dt><dd>方法图优先，表格次之</dd></dl></div>
     <div class="side-box"><h4>原文</h4><p><a href="{e(p['url'])}">{e(p['url'])}</a></p></div>
   </aside>
 </article>"""
@@ -975,7 +1049,7 @@ def main() -> None:
     write_catalog()
     write_timeline()
     for p in PAPERS:
-        write_paper(p)
+        write_paper(p, report_md)
     print(f"Built site at {ROOT}")
 
 

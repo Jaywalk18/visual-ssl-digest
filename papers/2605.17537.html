@@ -41,17 +41,20 @@
       <p class="lead dropcap">先说结论。世界模型的价值不在 photorealistic rollouts，而在让残差层级逼出更抽象的动态 latent。 它把视频 SSL 的目标从重建下一帧推向重建“低层没有解释完的部分”。</p>
       <figure class="full-fig"><img src="../assets/mineru/2605.17537/images/a0dc7502024fce90d274bf56b1d2a65bd8aa32135e22d9fba5c9e8d60b8561c4.jpg" alt="Figure 1"><figcaption><b>Figure 1</b>Figure 1. Overview of ResDreamer a model base RL algorithm based on hierarchical world model. The left side shows the structure of enhanced visual observations. Adjacent world model layers communicate by residual and predictive signal within the enhanced observation. The right side shows the modules and training process of the k-th layer world model. The Encoder reads enhanced visual observations and gives the posterior $z _ { t . } ^ { k } .$ The dynamic predictor learns to estimate $z _ { t } ^ { k }$ with $\hat { z } _ { t } ^ { k }$ without accessing the observation. The sequence model updates internal state $h _ { t } ^ { k }$ by $z _ { t } ^ { k }$ . The Decoder reconstructs the observation signal which generates reconstruction loss and residual visual signal for upper layer.</figcaption></figure>
 <figure class="full-fig"><img src="../assets/mineru/2605.17537/images/95307a2067c8432ba36a0e594eb6acb12829c76b4fb0fd2f53ac8152713c36a1.jpg" alt="Figure 2"><figcaption><b>Figure 2</b>Figure 2. The information channel between world model layers is bidirectional. Only reconstruction error and modulated foresight images are transmitted between layers, with no gradients being passed. On one hand, each layer of the PPB generates predictions about the external world and transmits visual planning representations to lower layers. On the other hand, the PPB treats low-level residuals as self-supervised learning signals to obtain a more complete inner representation.</figcaption></figure>
-      <h2>它真正改变的是训练信号，而不是榜单数字</h2>
-      <p>hierarchical residual world model for self-supervised visual foresight。这类工作值得被放在通用视觉自监督日报里，不是因为它一定立刻刷新所有 benchmark，而是因为它改变了模型“从哪里拿监督”的方式。</p>
-      <blockquote class="inline-quote">MinerU full.md is now part of the source bundle for this page; the next pass will use it for paper-native English quotes and tighter argument writing.</blockquote>
-      <h2>读这篇时要盯住的风险</h2>
-      <p>当前页面是站点原型，细节还没有逐段引用 MinerU 全文。正式流程会把每篇论文的 abstract、method、caption 和关键表格放进页面生成上下文，并保留至少两段原文引文。</p>
-      <h2>下一步怎么接进日报</h2>
-      <p>每日自动化先筛出 P1/P2，再对 P1 论文跑 MinerU；有 pipeline 或 motivation 图的页面进入 GitHub Pages，飞书只发摘要与入口。</p>
+      <h2>核心问题</h2>
+      <p>它和通用视觉自监督的关系在于：世界模型的价值不在 photorealistic rollouts，而在让残差层级逼出更抽象的动态 latent。</p>
+      <h2>方法拆解</h2>
+      <p>hierarchical residual world model for self-supervised visual foresight</p>
+      <h2>主要贡献</h2>
+      <p>它把视频 SSL 的目标从重建下一帧推向重建“低层没有解释完的部分”。</p>
+      <h2>实验看点</h2>
+      <p>实验部分建议重点看两类证据：一是作者是否把方法收益和更强数据、更长训练、更大模型区分开；二是跨模型、跨数据或跨任务迁移是否还能保留同样趋势。</p>
+      <h2>局限与读法</h2>
+      <p>这篇论文的结论需要结合任务设置、训练数据规模和消融实验一起看；不要只凭单个指标判断它对通用视觉表征的价值。</p>
     </div>
   </div>
   <aside class="paper-side">
-    <div class="side-box"><h4>关键判断</h4><dl><dt>相关性</dt><dd>P1</dd><dt>类别</dt><dd>World model / video SSL</dd><dt>会议</dt><dd>ICML 2026 · CCF A</dd></dl></div>
+    <div class="side-box"><h4>关键判断</h4><dl><dt>相关性</dt><dd>P1</dd><dt>类别</dt><dd>World model / video SSL</dd><dt>会议</dt><dd>ICML 2026 · CCF A</dd><dt>读法</dt><dd>方法图优先，表格次之</dd></dl></div>
     <div class="side-box"><h4>原文</h4><p><a href="https://arxiv.org/abs/2605.17537">https://arxiv.org/abs/2605.17537</a></p></div>
   </aside>
 </article></main>

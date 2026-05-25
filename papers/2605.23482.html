@@ -28,30 +28,33 @@
     <div class="kicker">VLM dataset distillation · P1 · 2026-05-25</div>
     <h1 class="paper-headline">MDM：图文数据蒸馏不能只压缩样本，还要保留联合嵌入空间里的跨模态几何关系。</h1>
     <p class="dek">适合关注多模态预训练数据效率的人精读：它把合成图文对放进分布匹配和对齐保持问题里。</p>
-    <p class="byline"><strong>Multimodal Distribution Matching for Vision-Language Dataset Distillation</strong>　CVPR 2026　<a href="https://arxiv.org/abs/2605.23482">原文链接</a></p>
+    <p class="byline"><strong>Multimodal Distribution Matching for Vision-Language Dataset Distillation</strong>　Jongoh Jeong, Hoyong Kwon, Minseok Kim, Kuk-Jin Yoon。　arXiv 提交于 2026-05-22 UTC；arXiv comments 标注 accepted for publication at CVPR 2026。　<a href="https://arxiv.org/abs/2605.23482">原文链接</a></p>
     <div class="paper-facts">
       <span><b>编号</b>2605.23482</span>
       <span><b>优先级</b>P1</span>
       <span><b>类别</b>VLM dataset distillation</span>
       <span><b>会议</b>CVPR 2026</span>
-      <span><b>方法</b>geometric multimodal distribution matching for image-text dataset distillation</span>
+      <span><b>方法</b>提出 MDM，在数据、模型和损失三层做图文数据蒸馏：从联合嵌入空间聚类初始化合成图文对；按与预训练 anchor 的角度偏差插值多个微调 teacher；在单位超球面上匹配跨模态 agreement/discrepancy 方向的联合分布，并保留对称 contrastive learning。</span>
       <span><b>来源</b>arXiv / OpenReview</span>
     </div>
     <div class="feature-body">
       <p class="lead dropcap">先说结论。图文数据蒸馏不能只压缩样本，还要保留联合嵌入空间里的跨模态几何关系。 适合关注多模态预训练数据效率的人精读：它把合成图文对放进分布匹配和对齐保持问题里。</p>
       <figure class="full-fig"><img src="../assets/mineru/2605.23482/images/9cbfec280a9c4946c38cba6146c83c395b9612a6cf349a04afed554a1976b96f.jpg" alt="Figure 2"><figcaption><b>Figure 2</b>Figure 2. Overview of MDM. Our MDM method consists of (i) synthetic data initialization using k-means clustering, (ii) image-text model initialization using weight-space interpolation between a pretrained and N finetuned models, and (iii) multimodal distribution matching that minimizes geodesic kernel energy between real and synthetic pairs on the unit hypersphere.</figcaption></figure>
 <figure class="full-fig"><img src="../assets/mineru/2605.23482/images/794aa3825e7ff30dc0e04ed6346f51da57e5c11626ef8b4c3af0ef829c8ef5f2.jpg" alt="MDM: Compute Generalization Figure 1"><figcaption><b>MDM: Compute Generalization Figure 1</b>MDM: Compute Generalization Figure 1. Comparison between prior multimodal dataset distillation based on matching training trajectories (MTT, left) and our Multimodal Distribution Matching (MDM, right). While MTT replays image–text trajectories at high compute and storage cost, MDM directly matches the joint image–text distribution in the joint embedding space, yielding compact synthetic data with strong cross-architecture generalization under much lower distillation cost. The red arrow indicates the direction of gradient backpropagation.</figcaption></figure>
-      <h2>它真正改变的是训练信号，而不是榜单数字</h2>
-      <p>geometric multimodal distribution matching for image-text dataset distillation。这类工作值得被放在通用视觉自监督日报里，不是因为它一定立刻刷新所有 benchmark，而是因为它改变了模型“从哪里拿监督”的方式。</p>
-      <blockquote class="inline-quote">MinerU full.md is now part of the source bundle for this page; the next pass will use it for paper-native English quotes and tighter argument writing.</blockquote>
-      <h2>读这篇时要盯住的风险</h2>
-      <p>当前页面是站点原型，细节还没有逐段引用 MinerU 全文。正式流程会把每篇论文的 abstract、method、caption 和关键表格放进页面生成上下文，并保留至少两段原文引文。</p>
-      <h2>下一步怎么接进日报</h2>
-      <p>每日自动化先筛出 P1/P2，再对 P1 论文跑 MinerU；有 pipeline 或 motivation 图的页面进入 GitHub Pages，飞书只发摘要与入口。</p>
+      <h2>核心问题</h2>
+      <p>对通用视觉自监督/多模态预训练很相关：它关注“哪些图文对足以保持视觉-语言对齐”，可用于思考 CLIP/SigLIP 类训练的数据效率和样本选择。</p>
+      <h2>方法拆解</h2>
+      <p>提出 MDM，在数据、模型和损失三层做图文数据蒸馏：从联合嵌入空间聚类初始化合成图文对；按与预训练 anchor 的角度偏差插值多个微调 teacher；在单位超球面上匹配跨模态 agreement/discrepancy 方向的联合分布，并保留对称 contrastive learning。</p>
+      <h2>主要贡献</h2>
+      <p>把 multimodal dataset distillation 从简单样本压缩推进到“保留跨模态几何和对齐关系”的框架，目标是让小型合成图文集仍能训练出可迁移的图文检索模型。</p>
+      <h2>实验看点</h2>
+      <p>摘要报告在 image-text retrieval 与跨架构评估下，合成集能保持 multimodal semantics、降低蒸馏成本，并提升跨架构鲁棒性。</p>
+      <h2>局限与读法</h2>
+      <p>重点是数据蒸馏和图文检索，不是直接训练新的视觉 backbone；需要看合成图文对在更大规模 VLM 预训练和下游检测/分割中的外推性。</p>
     </div>
   </div>
   <aside class="paper-side">
-    <div class="side-box"><h4>关键判断</h4><dl><dt>相关性</dt><dd>P1</dd><dt>类别</dt><dd>VLM dataset distillation</dd><dt>会议</dt><dd>CVPR 2026</dd></dl></div>
+    <div class="side-box"><h4>关键判断</h4><dl><dt>相关性</dt><dd>P1</dd><dt>类别</dt><dd>VLM dataset distillation</dd><dt>会议</dt><dd>CVPR 2026</dd><dt>读法</dt><dd>方法图优先，表格次之</dd></dl></div>
     <div class="side-box"><h4>原文</h4><p><a href="https://arxiv.org/abs/2605.23482">https://arxiv.org/abs/2605.23482</a></p></div>
   </aside>
 </article></main>

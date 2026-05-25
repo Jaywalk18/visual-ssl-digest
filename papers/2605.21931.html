@@ -28,30 +28,33 @@
     <div class="kicker">Video SSL / self-evolution · P2 · 2026-05-25</div>
     <h1 class="paper-headline">EvoVid：未标注视频可以通过时间敏感问题生成和片段定位奖励构造自演化训练信号。</h1>
     <p class="dek">它把视频自监督和 Video-LLM 后训练接起来，值得和 V-JEPA、视频掩码建模放在一起看。</p>
-    <p class="byline"><strong>EvoVid: Temporal-Centric Self-Evolution for Video Large Language Models</strong>　arXiv　<a href="https://arxiv.org/abs/2605.21931">原文链接</a></p>
+    <p class="byline"><strong>EvoVid: Temporal-Centric Self-Evolution for Video Large Language Models</strong>　Shiqi Huang, Ziyue Wang, Zhongrong Zuo, Han Qiu, Qi She, Bihan Wen。　arXiv v1 日期 2026-05-21 UTC；本期为 late-discovered，不计严格 24h 新增。　<a href="https://arxiv.org/abs/2605.21931">原文链接</a></p>
     <div class="paper-facts">
       <span><b>编号</b>2605.21931</span>
       <span><b>优先级</b>P2</span>
       <span><b>类别</b>Video SSL / self-evolution</span>
       <span><b>会议</b>arXiv</span>
-      <span><b>方法</b>temporal-aware questioner reward and temporal-grounded solver reward</span>
+      <span><b>方法</b>构建 temporal-centric self-evolution，让 Video-LLM 直接从未标注视频中改进；引入 temporal-aware Questioner reward 和 temporal-grounded Solver reward，分别约束时间依赖问题生成与视频片段定位式自动监督。</span>
       <span><b>来源</b>arXiv / OpenReview</span>
     </div>
     <div class="feature-body">
       <p class="lead dropcap">先说结论。未标注视频可以通过时间敏感问题生成和片段定位奖励构造自演化训练信号。 它把视频自监督和 Video-LLM 后训练接起来，值得和 V-JEPA、视频掩码建模放在一起看。</p>
       <figure class="full-fig"><img src="../assets/mineru/2605.21931/images/df7072b85786da0639f171cab7a0be6053afde914b86af4e673e333245133635.jpg" alt="Figure 1: Comparison between supervised RL, VANILLA self-evolving frameworks, and EvoVid"><figcaption><b>Figure 1: Comparison between supervised RL, VANILLA self-evolving frameworks, and EvoVid</b>Figure 1: Comparison between supervised RL, VANILLA self-evolving frameworks, and EvoVid. Left: Supervised RL relies on human-annotated tasks and solutions to construct reward signals, making training costly and inherently bounded by human expertise. Middle: VANILLA self-evolving frameworks, primarily designed for static modalities, i.e., images, generate generic and often singleframe answerable questions, leading to temporally insensitive Questioner–Solver self-play. Right: EvoVid introduces video-based self-evolution through a temporal-aware Questioner and a temporalgrounded Solver, enabling temporal-centric self-evolution directly from raw, unannotated videos.</figcaption></figure>
 <figure class="full-fig"><img src="../assets/mineru/2605.21931/images/fad2bb2c1d74f896ca0737e389dfd0bc50b229e36d13810b7a9d0cf2a4587d99.jpg" alt="Figure 2: Overview of EvoVid"><figcaption><b>Figure 2: Overview of EvoVid</b>Figure 2: Overview of EvoVid. Questioner $\pi _ { Q }$ and Solver $\pi _ { S }$ co-evolve through two temporal-centric rewards. Questioner Training: with original and shuffled frames to derive t $\pi _ { S }$ frozen, tempora $\pi _ { Q }$ generates questions ware Questioner reward $\pi _ { S }$ responds usingolver Training: $r _ { \mathrm { t e m p } } ^ { Q }$ with $\pi _ { Q }$ frozen, the Questioner generates questions from a sampled $K$ -frame window, and $\pi _ { S }$ predicts both the answer and temporal segment, which is compared with the sampled window to derive the temporal-grounded Solver reward $r _ { \mathrm { t e m p } } ^ { S } .$ . Preliminary rewards are omitted for simplicity.</figcaption></figure>
-      <h2>它真正改变的是训练信号，而不是榜单数字</h2>
-      <p>temporal-aware questioner reward and temporal-grounded solver reward。这类工作值得被放在通用视觉自监督日报里，不是因为它一定立刻刷新所有 benchmark，而是因为它改变了模型“从哪里拿监督”的方式。</p>
-      <blockquote class="inline-quote">MinerU full.md is now part of the source bundle for this page; the next pass will use it for paper-native English quotes and tighter argument writing.</blockquote>
-      <h2>读这篇时要盯住的风险</h2>
-      <p>当前页面是站点原型，细节还没有逐段引用 MinerU 全文。正式流程会把每篇论文的 abstract、method、caption 和关键表格放进页面生成上下文，并保留至少两段原文引文。</p>
-      <h2>下一步怎么接进日报</h2>
-      <p>每日自动化先筛出 P1/P2，再对 P1 论文跑 MinerU；有 pipeline 或 motivation 图的页面进入 GitHub Pages，飞书只发摘要与入口。</p>
+      <h2>核心问题</h2>
+      <p>对通用视频预训练有启发：未标注视频可以通过时间扰动敏感性和片段定位构造自监督信号。</p>
+      <h2>方法拆解</h2>
+      <p>构建 temporal-centric self-evolution，让 Video-LLM 直接从未标注视频中改进；引入 temporal-aware Questioner reward 和 temporal-grounded Solver reward，分别约束时间依赖问题生成与视频片段定位式自动监督。</p>
+      <h2>主要贡献</h2>
+      <p>把自演化/self-play 式训练从静态图文任务推进到视频时间动态，降低对人工题解标注的依赖。</p>
+      <h2>实验看点</h2>
+      <p>摘要报告在 4 个 base model、6 个 benchmark 上相对基础模型和已有 self-evolving baseline 均有一致提升，并接近监督方法。</p>
+      <h2>局限与读法</h2>
+      <p>更偏 Video-LLM RL/后训练，不是经典 image SSL；需看 reward 是否真正提升视觉时序表征而非只优化问答行为。</p>
     </div>
   </div>
   <aside class="paper-side">
-    <div class="side-box"><h4>关键判断</h4><dl><dt>相关性</dt><dd>P2</dd><dt>类别</dt><dd>Video SSL / self-evolution</dd><dt>会议</dt><dd>arXiv</dd></dl></div>
+    <div class="side-box"><h4>关键判断</h4><dl><dt>相关性</dt><dd>P2</dd><dt>类别</dt><dd>Video SSL / self-evolution</dd><dt>会议</dt><dd>arXiv</dd><dt>读法</dt><dd>方法图优先，表格次之</dd></dl></div>
     <div class="side-box"><h4>原文</h4><p><a href="https://arxiv.org/abs/2605.21931">https://arxiv.org/abs/2605.21931</a></p></div>
   </aside>
 </article></main>

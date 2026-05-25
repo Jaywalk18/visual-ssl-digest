@@ -41,17 +41,20 @@
       <p class="lead dropcap">先说结论。多模态模型不一定需要完整 joint tuples；只要模态图连通，pairwise supervision 可以成为可扩展替代品。 这是本 MVP 的 MinerU 图文样例页：Fig.1 解释动机，Fig.2 解释共享/私有 latent 生成过程。</p>
       <figure class="full-fig"><img src="../assets/mineru/2605.21059/images/fig1.jpg" alt="Fig. 1 · Pairwise supervision is the scalable object"><figcaption><b>Fig. 1 · Pairwise supervision is the scalable object</b>Joint tuples are expensive; pairwise text-image, image-tactile, and text-3D data can form a connected modality graph.</figcaption></figure>
 <figure class="full-fig"><img src="../assets/mineru/2605.21059/images/fig2.jpg" alt="Fig. 2 · Shared and modality-specific latent factors"><figcaption><b>Fig. 2 · Shared and modality-specific latent factors</b>The paper separates common causal factors from modality-private variables before alignment.</figcaption></figure>
-      <h2>它真正改变的是训练信号，而不是榜单数字</h2>
-      <p>self-modal reconstruction + pairwise contrastive latent alignment。这类工作值得被放在通用视觉自监督日报里，不是因为它一定立刻刷新所有 benchmark，而是因为它改变了模型“从哪里拿监督”的方式。</p>
-      <blockquote class="inline-quote">MinerU full.md is now part of the source bundle for this page; the next pass will use it for paper-native English quotes and tighter argument writing.</blockquote>
-      <h2>读这篇时要盯住的风险</h2>
-      <p>当前页面是站点原型，细节还没有逐段引用 MinerU 全文。正式流程会把每篇论文的 abstract、method、caption 和关键表格放进页面生成上下文，并保留至少两段原文引文。</p>
-      <h2>下一步怎么接进日报</h2>
-      <p>每日自动化先筛出 P1/P2，再对 P1 论文跑 MinerU；有 pipeline 或 motivation 图的页面进入 GitHub Pages，飞书只发摘要与入口。</p>
+      <h2>核心问题</h2>
+      <p>它和通用视觉自监督的关系在于：多模态模型不一定需要完整 joint tuples；只要模态图连通，pairwise supervision 可以成为可扩展替代品。</p>
+      <h2>方法拆解</h2>
+      <p>self-modal reconstruction + pairwise contrastive latent alignment</p>
+      <h2>主要贡献</h2>
+      <p>这是本 MVP 的 MinerU 图文样例页：Fig.1 解释动机，Fig.2 解释共享/私有 latent 生成过程。</p>
+      <h2>实验看点</h2>
+      <p>实验部分建议重点看两类证据：一是作者是否把方法收益和更强数据、更长训练、更大模型区分开；二是跨模型、跨数据或跨任务迁移是否还能保留同样趋势。</p>
+      <h2>局限与读法</h2>
+      <p>这篇论文的结论需要结合任务设置、训练数据规模和消融实验一起看；不要只凭单个指标判断它对通用视觉表征的价值。</p>
     </div>
   </div>
   <aside class="paper-side">
-    <div class="side-box"><h4>关键判断</h4><dl><dt>相关性</dt><dd>P1</dd><dt>类别</dt><dd>Multimodal representation</dd><dt>会议</dt><dd>arXiv · MinerU figure demo</dd></dl></div>
+    <div class="side-box"><h4>关键判断</h4><dl><dt>相关性</dt><dd>P1</dd><dt>类别</dt><dd>Multimodal representation</dd><dt>会议</dt><dd>arXiv · MinerU figure demo</dd><dt>读法</dt><dd>方法图优先，表格次之</dd></dl></div>
     <div class="side-box"><h4>原文</h4><p><a href="https://arxiv.org/abs/2605.21059">https://arxiv.org/abs/2605.21059</a></p></div>
   </aside>
 </article></main>

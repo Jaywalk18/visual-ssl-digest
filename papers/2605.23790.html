@@ -28,30 +28,33 @@
     <div class="kicker">Event-camera SSL transfer · 扫读 · 2026-05-25</div>
     <h1 class="paper-headline">SEST：自监督 event Swin backbone 可以迁移到标注稀缺的事件相机 saliency prediction。</h1>
     <p class="dek">模态较专，适合作为自监督 backbone 迁移到异构视觉模态的扫读案例。</p>
-    <p class="byline"><strong>Exploring Deep Learning for Event-Based Saliency Prediction with a Transformer-Based Model</strong>　arXiv　<a href="https://arxiv.org/abs/2605.23790">原文链接</a></p>
+    <p class="byline"><strong>Exploring Deep Learning for Event-Based Saliency Prediction with a Transformer-Based Model</strong>　arXiv 提交于 2026-05-22 UTC；本期为 arXiv search late-discovered。　<a href="https://arxiv.org/abs/2605.23790">原文链接</a></p>
     <div class="paper-facts">
       <span><b>编号</b>2605.23790</span>
       <span><b>优先级</b>扫读</span>
       <span><b>类别</b>Event-camera SSL transfer</span>
       <span><b>会议</b>arXiv</span>
-      <span><b>方法</b>self-supervised event-based Swin Transformer plus lightweight saliency decoder</span>
+      <span><b>方法</b>提出 SEST，用 self-supervised pretrained event-based Swin Transformer 作为 backbone，接轻量 CNN decoder 预测动态 saliency maps，并用由 RGB saliency benchmark 生成的 N-DHF1K / N-UCF Sports 扩充 event saliency 数据。</span>
       <span><b>来源</b>arXiv / OpenReview</span>
     </div>
     <div class="feature-body">
       <p class="lead dropcap">先说结论。自监督 event Swin backbone 可以迁移到标注稀缺的事件相机 saliency prediction。 模态较专，适合作为自监督 backbone 迁移到异构视觉模态的扫读案例。</p>
       <figure class="full-fig"><img src="../assets/mineru/2605.23790/images/459559625b2c3209dcb8a5b1a39ba8993a24b7a60ef02785f58a822fdb7241c5.jpg" alt="Fig"><figcaption><b>Fig</b>Fig. 1. Overview of the proposed Swin Event-based Saliency Transformer (SEST) architecture.</figcaption></figure>
 <figure class="full-fig"><img src="../assets/mineru/2605.23790/images/4b7f14f53414726acd5d6e052312beda82e63063bfd808cb2dd25a82c9da241e.jpg" alt="Fig"><figcaption><b>Fig</b>Fig. 2. Illustration of qualitative results for three samples: UCF Sports Run-side-004 (rows 1-2), DHF1K 548 (rows 3-4), UCF Sports Swing-Bench-003 (rows 5-6).</figcaption></figure>
-      <h2>它真正改变的是训练信号，而不是榜单数字</h2>
-      <p>self-supervised event-based Swin Transformer plus lightweight saliency decoder。这类工作值得被放在通用视觉自监督日报里，不是因为它一定立刻刷新所有 benchmark，而是因为它改变了模型“从哪里拿监督”的方式。</p>
-      <blockquote class="inline-quote">MinerU full.md is now part of the source bundle for this page; the next pass will use it for paper-native English quotes and tighter argument writing.</blockquote>
-      <h2>读这篇时要盯住的风险</h2>
-      <p>当前页面是站点原型，细节还没有逐段引用 MinerU 全文。正式流程会把每篇论文的 abstract、method、caption 和关键表格放进页面生成上下文，并保留至少两段原文引文。</p>
-      <h2>下一步怎么接进日报</h2>
-      <p>每日自动化先筛出 P1/P2，再对 P1 论文跑 MinerU；有 pipeline 或 motivation 图的页面进入 GitHub Pages，飞书只发摘要与入口。</p>
+      <h2>核心问题</h2>
+      <p>适合作为“自监督 backbone 如何迁移到稀缺/异构视觉模态”的扫读案例，不建议排在 TextTeacher/MDM/EvoVid 前面。</p>
+      <h2>方法拆解</h2>
+      <p>提出 SEST，用 self-supervised pretrained event-based Swin Transformer 作为 backbone，接轻量 CNN decoder 预测动态 saliency maps，并用由 RGB saliency benchmark 生成的 N-DHF1K / N-UCF Sports 扩充 event saliency 数据。</p>
+      <h2>主要贡献</h2>
+      <p>把 event-native 自监督预训练带入事件相机 saliency prediction，在标注稀缺模态下验证自监督 backbone 的迁移收益。</p>
+      <h2>实验看点</h2>
+      <p>摘要报告 SEST 明显优于现有 event-based saliency 方法，并在真实 event camera 数据上有 zero-shot 可迁移性。</p>
+      <h2>局限与读法</h2>
+      <p>event camera 属于专用感知模态，和通用 RGB 图像表征仍有距离；主任务是 saliency prediction 而非通用 SSL benchmark。</p>
     </div>
   </div>
   <aside class="paper-side">
-    <div class="side-box"><h4>关键判断</h4><dl><dt>相关性</dt><dd>扫读</dd><dt>类别</dt><dd>Event-camera SSL transfer</dd><dt>会议</dt><dd>arXiv</dd></dl></div>
+    <div class="side-box"><h4>关键判断</h4><dl><dt>相关性</dt><dd>扫读</dd><dt>类别</dt><dd>Event-camera SSL transfer</dd><dt>会议</dt><dd>arXiv</dd><dt>读法</dt><dd>方法图优先，表格次之</dd></dl></div>
     <div class="side-box"><h4>原文</h4><p><a href="https://arxiv.org/abs/2605.23790">https://arxiv.org/abs/2605.23790</a></p></div>
   </aside>
 </article></main>
