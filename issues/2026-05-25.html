@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>论文目录 · 通用视觉自监督研究报</title>
+  <title>2026-05-25 速递 · 通用视觉自监督研究报</title>
   <link rel="stylesheet" href="../assets/styles.css?v=20260525">
   <link rel="stylesheet" href="../assets/visual-ssl.css?v=20260525">
 </head>
@@ -19,11 +19,21 @@
   </header>
   <nav class="site-nav" aria-label="主导航">
     <a class="nav-link" href="../index.html">头版</a>
-<a class="nav-link" href="../issues/2026-05-25.html">今日速递</a>
-<a class="nav-link active" href="../pages/catalog.html">论文目录</a>
+<a class="nav-link active" href="../issues/2026-05-25.html">今日速递</a>
+<a class="nav-link" href="../pages/catalog.html">论文目录</a>
 <a class="nav-link" href="../pages/timeline.html">时间线</a>
   </nav>
-  <main><section class="page-header"><h1>论文目录</h1><p>当前 MVP 收录 12 篇样例；正式版会读取跨天去重 JSON 和每日筛选结果。</p></section><div class="paper-list"><article class="paper-card" data-category="Language-guided visual representation" data-title="textteacher: what can language teach about images?">
+  <main><article class="paper-detail issue-detail">
+  <div class="paper-main">
+    <div class="kicker">Daily issue · 2026-05-25 · CCF A/B 会议优先</div>
+    <h1 class="paper-headline">5 月 25 日：语言教师、数据蒸馏与视频自演化补录</h1>
+    <p class="dek">今天不是新 arXiv 批次日；重点是补齐 Friday listing 和 search 漏项中对通用视觉表征最有启发的工作。</p>
+    <div class="feature-body">
+      <p class="lead dropcap">先读 TextTeacher，它直接讨论语言语义如何作为辅助目标塑造图像表征，且保持推理时纯视觉模型不变。随后读 MDM，它把数据蒸馏问题放进图文联合嵌入空间，适合关注多模态预训练数据效率的人精读。第三读 EvoVid，它把自演化训练从图像/文本扩展到未标注视频，是视频自监督和 Video-LLM 后训练之间的连接点。Ablate-to-Validate 适合作为诊断工具论文扫读，用来判断“连续视觉思维 token”是否真的携带视觉信息。Neural Collapse by Design 更偏理论/监督对比学习，可作为表征几何和 linear probe 评估习惯的背景更新。</p>
+      <h2>论文索引</h2>
+      <table class="compact-table"><thead><tr><th>优先级</th><th>论文</th><th>类型</th><th>相关性</th><th>一句话理由</th></tr></thead><tbody><tr><td>P1</td><td>TextTeacher: What Can Language Teach About Images?</td><td>arXiv + TMLR</td><td>高</td><td>冻结文本编码器作为训练期语义锚点，提升 ViT 图像表征与迁移。</td></tr><tr><td>P1</td><td>Multimodal Distribution Matching for Vision-Language Dataset Distillation</td><td>arXiv + CVPR 2026</td><td>高</td><td>在图文联合嵌入空间做几何感知分布匹配，压缩训练数据同时保持跨模态对齐。</td></tr><tr><td>P2</td><td>EvoVid: Temporal-Centric Self-Evolution for Video Large Language Models</td><td>arXiv</td><td>中高</td><td>从未标注视频构造时间奖励和自演化训练，贴近视频预训练/视频自监督。</td></tr><tr><td>P2</td><td>Ablate-to-Validate: Are VLMs Really Using Continuous Thought Tokens?</td><td>arXiv</td><td>中高</td><td>提供视觉 latent token 信息利用的标准化消融诊断。</td></tr><tr><td>P3</td><td>Neural Collapse by Design</td><td>arXiv 更新 + ICML 2026 标注</td><td>中</td><td>统一监督对比学习和分类原型几何，对表征评估有理论参考。</td></tr><tr><td>扫读</td><td>SEST event-based saliency</td><td>arXiv</td><td>中</td><td>使用自监督 event Swin backbone，迁移性有启发但模态较专。</td></tr><tr><td>过滤</td><td>LVDrive / H-Flow / Medical MV-FM / DINOv3 industrial transfer 等</td><td>arXiv</td><td>低到中</td><td>方法有启发，但自动驾驶、人体场景流、医学、工业检测等垂直域过强。</td></tr></tbody></table>
+      <h2>主线阅读</h2>
+      <div class="paper-list issue-list"><article class="paper-card" data-category="Language-guided visual representation" data-title="textteacher: what can language teach about images?">
   <a class="paper-thumb paper-thumb-text" href="../papers/2605.22098.html">
     <span>P1</span><strong>TextTeacher</strong><em>TMLR 2026</em>
   </a>
@@ -94,79 +104,15 @@
     <p class="card-tech"><b>方法：</b>self-supervised event-based Swin Transformer plus lightweight saliency decoder</p>
     <div class="paper-actions"><a href="../papers/2605.23790.html">读图文页</a><a href="https://arxiv.org/abs/2605.23790">原文</a></div>
   </div>
-</article>
-<article class="paper-card" data-category="JEPA / VLM pretraining" data-title="text-conditional jepa for learning semantically rich visual representations">
-  <a class="paper-thumb paper-thumb-text" href="../papers/2605.03245.html">
-    <img src="../assets/mineru/2605.03245/images/5ceb4d7d2d5e3cfe2efe79262205e252fccb946d687ad798ab297b8ea5cb9f10.jpg" alt="TC-JEPA figure"><span>P1</span>
-  </a>
-  <div>
-    <div class="paper-meta">2026-05-24 · JEPA / VLM pretraining · ICML 2026 · CCF A</div>
-    <h3><a href="../papers/2605.03245.html">Text-Conditional JEPA for Learning Semantically Rich Visual Representations</a></h3>
-    <p>视觉自监督和视觉语言预训练之间的边界被进一步打薄：它仍然预测 feature，不直接重建像素，也不完全依赖对比学习。</p>
-    <p class="card-tech"><b>方法：</b>caption-conditioned masked feature prediction with sparse cross-attention text conditioner</p>
-    <div class="paper-actions"><a href="../papers/2605.03245.html">读图文页</a><a href="https://arxiv.org/abs/2605.03245">原文</a></div>
+</article></div>
+    </div>
   </div>
-</article>
-<article class="paper-card" data-category="World model / video SSL" data-title="self-supervised hierarchical visual reasoning with world model">
-  <a class="paper-thumb paper-thumb-text" href="../papers/2605.17537.html">
-    <img src="../assets/mineru/2605.17537/images/a0dc7502024fce90d274bf56b1d2a65bd8aa32135e22d9fba5c9e8d60b8561c4.jpg" alt="ResDreamer figure"><span>P1</span>
-  </a>
-  <div>
-    <div class="paper-meta">2026-05-24 · World model / video SSL · ICML 2026 · CCF A</div>
-    <h3><a href="../papers/2605.17537.html">Self-supervised Hierarchical Visual Reasoning with World Model</a></h3>
-    <p>它把视频 SSL 的目标从重建下一帧推向重建“低层没有解释完的部分”。</p>
-    <p class="card-tech"><b>方法：</b>hierarchical residual world model for self-supervised visual foresight</p>
-    <div class="paper-actions"><a href="../papers/2605.17537.html">读图文页</a><a href="https://arxiv.org/abs/2605.17537">原文</a></div>
-  </div>
-</article>
-<article class="paper-card" data-category="Video MLLM / geometry" data-title="cambrian-p: pose-grounded video understanding">
-  <a class="paper-thumb paper-thumb-text" href="../papers/2605.22819.html">
-    <img src="../assets/mineru/2605.22819/images/196c276164ace0119f57c91eb40df268775cbcb87224bca763bc11611dc857ab.jpg" alt="Cambrian-P figure"><span>P1</span>
-  </a>
-  <div>
-    <div class="paper-meta">2026-05-24 · Video MLLM / geometry · arXiv</div>
-    <h3><a href="../papers/2605.22819.html">Cambrian-P: Pose-Grounded Video Understanding</a></h3>
-    <p>用伪位姿把跨帧 token 固定到共享空间，是视频 VFM/MLLM 很值得跟的结构化监督。</p>
-    <p class="card-tech"><b>方法：</b>learnable camera tokens + pose regression head for frame-level grounding</p>
-    <div class="paper-actions"><a href="../papers/2605.22819.html">读图文页</a><a href="https://arxiv.org/abs/2605.22819">原文</a></div>
-  </div>
-</article>
-<article class="paper-card" data-category="Video diagnostics" data-title="which way did it move? directional motion blindness in video-llms">
-  <a class="paper-thumb paper-thumb-text" href="../papers/2605.22823.html">
-    <img src="../assets/mineru/2605.22823/images/81d656cb264d88713433877f47910d305dcd5ec6c589acbff4d8da5a3b0458f5.jpg" alt="DeltaDirect figure"><span>P2</span>
-  </a>
-  <div>
-    <div class="paper-meta">2026-05-24 · Video diagnostics · arXiv</div>
-    <h3><a href="../papers/2605.22823.html">Which Way Did It Move? Directional Motion Blindness in Video-LLMs</a></h3>
-    <p>这类诊断比单纯刷视频 QA 更有价值，因为它定位了视觉表征到语言读出的断点。</p>
-    <p class="card-tech"><b>方法：</b>feature-delta motion vector objective at projector level</p>
-    <div class="paper-actions"><a href="../papers/2605.22823.html">读图文页</a><a href="https://arxiv.org/abs/2605.22823">原文</a></div>
-  </div>
-</article>
-<article class="paper-card" data-category="Geometry-grounded VLM" data-title="geoweaver: grounding visual tokens with geometric evidence before scene reasoning">
-  <a class="paper-thumb paper-thumb-text" href="../papers/2605.22558.html">
-    <img src="../assets/mineru/2605.22558/images/ed3355dd07fff251346ec70423148172429126b696ac9ad114ee4c8db2e8b217.jpg" alt="GeoWeaver figure"><span>P2</span>
-  </a>
-  <div>
-    <div class="paper-meta">2026-05-24 · Geometry-grounded VLM · arXiv</div>
-    <h3><a href="../papers/2605.22558.html">GeoWeaver: Grounding Visual Tokens with Geometric Evidence before Scene Reasoning</a></h3>
-    <p>这篇不是 JEPA，而是 VLM 视觉 token grounding：冻结几何编码器的证据被分配给多层视觉 token。</p>
-    <p class="card-tech"><b>方法：</b>multi-level geometry bank + residual grounding before LLM reasoning</p>
-    <div class="paper-actions"><a href="../papers/2605.22558.html">读图文页</a><a href="https://arxiv.org/abs/2605.22558">原文</a></div>
-  </div>
-</article>
-<article class="paper-card" data-category="Multimodal representation" data-title="multimodal llms under pairwise modalities">
-  <a class="paper-thumb paper-thumb-text" href="../papers/2605.21059.html">
-    <img src="../assets/mineru/2605.21059/images/fig1.jpg" alt="Pairwise Modalities figure"><span>P1</span>
-  </a>
-  <div>
-    <div class="paper-meta">2026-05-22 · Multimodal representation · arXiv · MinerU figure demo</div>
-    <h3><a href="../papers/2605.21059.html">Multimodal LLMs under Pairwise Modalities</a></h3>
-    <p>这是本 MVP 的 MinerU 图文样例页：Fig.1 解释动机，Fig.2 解释共享/私有 latent 生成过程。</p>
-    <p class="card-tech"><b>方法：</b>self-modal reconstruction + pairwise contrastive latent alignment</p>
-    <div class="paper-actions"><a href="../papers/2605.21059.html">读图文页</a><a href="https://arxiv.org/abs/2605.21059">原文</a></div>
-  </div>
-</article></div></main>
+  <aside class="paper-side">
+    <div class="side-box"><h4>今日重点</h4><p>TextTeacher、MDM、EvoVid、Ablate-to-Validate。</p></div>
+    <div class="side-box"><h4>会议口径</h4><p>只把 CCF A/B 放进主提醒；临近截止或 CCF C 仅记录。</p></div>
+    <div class="side-box"><h4>飞书文字版</h4><p><a href="https://www.feishu.cn/file/T684bdqYloXgmVxCV4ocxCm1nMc">latest.md →</a></p></div>
+  </aside>
+</article></main>
   <footer class="footer">
     <div>原始日报继续同步飞书；本站用于图文归档和长读。</div>
     <div class="muted">Generated 2026-05-25 · MinerU figures where available</div>

@@ -9,10 +9,88 @@ from pathlib import Path
 
 ROOT = Path(r"H:\Desktop\visual_ssl_digest_site")
 REPORT_ROOT = Path(r"H:\Desktop\visual_ssl_paper_reports")
-CSS_VERSION = "20260524b"
+CSS_VERSION = "20260525"
 
 
 PAPERS = [
+    {
+        "id": "2605.22098",
+        "title": "TextTeacher: What Can Language Teach About Images?",
+        "short": "TextTeacher",
+        "category": "Language-guided visual representation",
+        "priority": "P1",
+        "date": "2026-05-25",
+        "venue": "TMLR 2026",
+        "url": "https://arxiv.org/abs/2605.22098",
+        "thesis": "冻结文本编码器可以作为训练期语义锚点，推理时仍保留纯视觉模型。",
+        "takeaway": "今天最值得先读：它不是完整 CLIP 式预训练，而是把语言语义变成低成本的视觉表征塑形目标。",
+        "method": "frozen text encoder semantic anchors for image representation training",
+    },
+    {
+        "id": "2605.23482",
+        "title": "Multimodal Distribution Matching for Vision-Language Dataset Distillation",
+        "short": "MDM",
+        "category": "VLM dataset distillation",
+        "priority": "P1",
+        "date": "2026-05-25",
+        "venue": "CVPR 2026",
+        "url": "https://arxiv.org/abs/2605.23482",
+        "thesis": "图文数据蒸馏不能只压缩样本，还要保留联合嵌入空间里的跨模态几何关系。",
+        "takeaway": "适合关注多模态预训练数据效率的人精读：它把合成图文对放进分布匹配和对齐保持问题里。",
+        "method": "geometric multimodal distribution matching for image-text dataset distillation",
+    },
+    {
+        "id": "2605.21931",
+        "title": "EvoVid: Temporal-Centric Self-Evolution for Video Large Language Models",
+        "short": "EvoVid",
+        "category": "Video SSL / self-evolution",
+        "priority": "P2",
+        "date": "2026-05-25",
+        "venue": "arXiv",
+        "url": "https://arxiv.org/abs/2605.21931",
+        "thesis": "未标注视频可以通过时间敏感问题生成和片段定位奖励构造自演化训练信号。",
+        "takeaway": "它把视频自监督和 Video-LLM 后训练接起来，值得和 V-JEPA、视频掩码建模放在一起看。",
+        "method": "temporal-aware questioner reward and temporal-grounded solver reward",
+    },
+    {
+        "id": "2605.21642",
+        "title": "Ablate-to-Validate: Are Vision-Language Models Really Using Continuous Thought Tokens?",
+        "short": "Ablate-to-Validate",
+        "category": "VLM diagnostics",
+        "priority": "P2",
+        "date": "2026-05-25",
+        "venue": "arXiv",
+        "url": "https://arxiv.org/abs/2605.21642",
+        "thesis": "很多连续视觉 thought token 的收益可能来自长度、锚点或正则，而不一定来自 token 内容本身。",
+        "takeaway": "这是一个诊断工具型论文：以后看 latent visual token 方法时，应该要求内容替换消融。",
+        "method": "token replacement test for continuous and discrete visual thought tokens",
+    },
+    {
+        "id": "2605.20302",
+        "title": "Neural Collapse by Design: Learning Class Prototypes on the Hypersphere",
+        "short": "Neural Collapse by Design",
+        "category": "Representation geometry",
+        "priority": "P3",
+        "date": "2026-05-25",
+        "venue": "ICML 2026 · status update",
+        "url": "https://arxiv.org/abs/2605.20302",
+        "thesis": "监督对比学习和分类原型几何可以统一到单位超球面上的 prototype contrast。",
+        "takeaway": "偏理论和监督表征，但对理解 linear probe、原型、均匀性和表征几何有参考价值。",
+        "method": "prototype contrast with NTCE / NONL objectives on the hypersphere",
+    },
+    {
+        "id": "2605.23790",
+        "title": "Exploring Deep Learning for Event-Based Saliency Prediction with a Transformer-Based Model",
+        "short": "SEST",
+        "category": "Event-camera SSL transfer",
+        "priority": "扫读",
+        "date": "2026-05-25",
+        "venue": "arXiv",
+        "url": "https://arxiv.org/abs/2605.23790",
+        "thesis": "自监督 event Swin backbone 可以迁移到标注稀缺的事件相机 saliency prediction。",
+        "takeaway": "模态较专，适合作为自监督 backbone 迁移到异构视觉模态的扫读案例。",
+        "method": "self-supervised event-based Swin Transformer plus lightweight saliency decoder",
+    },
     {
         "id": "2605.03245",
         "title": "Text-Conditional JEPA for Learning Semantically Rich Visual Representations",
@@ -355,7 +433,7 @@ def nav(depth: int = 0, active: str = "") -> str:
     prefix = "../" * depth
     items = [
         ("index.html", "头版"),
-        ("issues/2026-05-24.html", "今日速递"),
+        ("issues/2026-05-25.html", "今日速递"),
         ("pages/catalog.html", "论文目录"),
         ("pages/timeline.html", "时间线"),
     ]
@@ -378,7 +456,7 @@ def shell(title: str, body: str, depth: int = 0, active: str = "") -> str:
 </head>
 <body>
   <header class="masthead">
-    <div class="masthead-kicker">Visual SSL Daily · GitHub Pages MVP · 2026-05-24</div>
+    <div class="masthead-kicker">Visual SSL Daily · GitHub Pages MVP · 2026-05-25</div>
     <a class="masthead-title" href="{prefix}index.html">通用视觉自监督研究报</a>
     <div class="masthead-meta">
       <span>图像表征 · VFM · JEPA · 视频预训练</span>
@@ -392,7 +470,7 @@ def shell(title: str, body: str, depth: int = 0, active: str = "") -> str:
   <main>{body}</main>
   <footer class="footer">
     <div>原始日报继续同步飞书；本站用于图文归档和长读。</div>
-    <div class="muted">Generated 2026-05-24 · MinerU figures where available</div>
+    <div class="muted">Generated 2026-05-25 · MinerU figures where available</div>
   </footer>
 </body>
 </html>"""
@@ -432,10 +510,10 @@ def write_index(report_md: str) -> None:
     body = f"""<section class="hero-grid">
   <article class="lead-story">
     <div class="kicker">今日主线 · {e(hero['venue'])}</div>
-    <h1>{e(hero['short'])}：JEPA 的不确定性开始交给语言处理</h1>
+    <h1>{e(hero['short'])}：{e(hero['thesis'].rstrip('。'))}</h1>
     <p class="dek">{e(hero['thesis'])}</p>
     {hero_img}
-    <div class="paper-actions"><a href="issues/2026-05-24.html">阅读 5 月 24 日速递</a><a href="papers/{hero['id']}.html">打开主文页</a></div>
+    <div class="paper-actions"><a href="issues/2026-05-25.html">阅读 5 月 25 日速递</a><a href="papers/{hero['id']}.html">打开主文页</a></div>
   </article>
   <aside class="issue-brief">
     <h2>快速摘要</h2>
@@ -461,12 +539,13 @@ def write_issue(report_md: str) -> None:
             for row in body_rows
         )
         table = f'<table class="compact-table"><thead><tr>{ths}</tr></thead><tbody>{trs}</tbody></table>'
-    cards = "\n".join(paper_card(p, 1) for p in PAPERS[:5])
+    issue_papers = [p for p in PAPERS if p["date"] == "2026-05-25"]
+    cards = "\n".join(paper_card(p, 1) for p in issue_papers)
     body = f"""<article class="paper-detail issue-detail">
   <div class="paper-main">
-    <div class="kicker">Daily issue · 2026-05-24 · CCF A/B 会议优先</div>
-    <h1 class="paper-headline">5 月 24 日：JEPA、世界模型与视频几何信号同时补强视觉表征</h1>
-    <p class="dek">今天不是纯图像 SSL 单点爆发，而是文本条件 JEPA、层级世界模型、位姿 grounding 和运动方向诊断共同推高通用视觉表征的边界。</p>
+    <div class="kicker">Daily issue · 2026-05-25 · CCF A/B 会议优先</div>
+    <h1 class="paper-headline">5 月 25 日：语言教师、数据蒸馏与视频自演化补录</h1>
+    <p class="dek">今天不是新 arXiv 批次日；重点是补齐 Friday listing 和 search 漏项中对通用视觉表征最有启发的工作。</p>
     <div class="feature-body">
       <p class="lead dropcap">{e(route)}</p>
       <h2>论文索引</h2>
@@ -476,12 +555,12 @@ def write_issue(report_md: str) -> None:
     </div>
   </div>
   <aside class="paper-side">
-    <div class="side-box"><h4>今日重点</h4><p>TC-JEPA、ResDreamer、Cambrian-P、DeltaDirect。</p></div>
+    <div class="side-box"><h4>今日重点</h4><p>TextTeacher、MDM、EvoVid、Ablate-to-Validate。</p></div>
     <div class="side-box"><h4>会议口径</h4><p>只把 CCF A/B 放进主提醒；临近截止或 CCF C 仅记录。</p></div>
     <div class="side-box"><h4>飞书文字版</h4><p><a href="https://www.feishu.cn/file/T684bdqYloXgmVxCV4ocxCm1nMc">latest.md →</a></p></div>
   </aside>
 </article>"""
-    (ROOT / "issues" / "2026-05-24.html").write_text(shell("2026-05-24 速递", body, 1, "issues/2026-05-24.html"), encoding="utf-8")
+    (ROOT / "issues" / "2026-05-25.html").write_text(shell("2026-05-25 速递", body, 1, "issues/2026-05-25.html"), encoding="utf-8")
 
 
 def write_paper(p: dict) -> None:
@@ -632,7 +711,7 @@ def main() -> None:
         if (src_img_dir / src).exists():
             shutil.copy2(src_img_dir / src, dst_img_dir / dst)
 
-    report_md = (REPORT_ROOT / "2026-05-24.md").read_text(encoding="utf-8")
+    report_md = (REPORT_ROOT / "2026-05-25.md").read_text(encoding="utf-8")
     (ROOT / "data" / "papers.json").write_text(json.dumps(PAPERS, ensure_ascii=False, indent=2), encoding="utf-8")
     (ROOT / ".nojekyll").write_text("", encoding="utf-8")
     write_css()
