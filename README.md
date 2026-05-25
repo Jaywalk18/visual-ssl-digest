@@ -9,7 +9,7 @@ https://jaywalk18.github.io/visual-ssl-digest/
 ## Current Shape
 
 - `index.html`: front page
-- `issues/2026-05-24.html`: daily issue page
+- `issues/2026-05-25.html`: latest daily issue page
 - `papers/*.html`: paper detail pages
 - `pages/catalog.html`: catalog
 - `pages/timeline.html`: timeline
@@ -47,6 +47,7 @@ After the existing Markdown/Feishu report finishes:
 
 ## Notes
 
-- The site now uses MinerU figures for TC-JEPA, ResDreamer, Cambrian-P, DeltaDirect, GeoWeaver, and Pairwise Modalities.
+- The latest issue is 2026-05-25. It is currently a text-first web issue; MinerU figure extraction has not yet been run for the 2026-05-25 papers.
+- The site uses MinerU figures for the 2026-05-24/older figure-rich pages: TC-JEPA, ResDreamer, Cambrian-P, DeltaDirect, GeoWeaver, and Pairwise Modalities.
 - Current generator is still an MVP: paper metadata is curated in Python. Next step is to load daily paper records from the dedupe JSON and Markdown reports.
 - Keep Feishu `latest.md` as the compact text push; use this site as the figure-rich archive.
