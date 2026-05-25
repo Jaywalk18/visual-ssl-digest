@@ -261,6 +261,33 @@ def flatten_caption(value) -> str:
     return str(value).strip()
 
 
+def zh_caption_for(en_caption: str, title: str) -> str:
+    clean = re.sub(r"\s+", " ", en_caption).strip()
+    lower = clean.lower()
+    if any(word in lower for word in ["overview", "framework", "pipeline", "architecture"]):
+        return f"这张图概括 {title} 的整体方法流程。阅读时先看模块之间传递的训练信号，再看作者如何把目标拆成可优化的子问题。"
+    if any(word in lower for word in ["ablation", "comparison", "results", "accuracy", "performance", "table"]):
+        return f"这张图/表用于判断 {title} 的实验收益来自哪里。重点看替换、消融或跨模型设置下趋势是否一致，而不是只看单个最高分。"
+    if any(word in lower for word in ["attention", "similarity", "grounding", "visualization"]):
+        return f"这张可视化用来解释 {title} 学到的中间表征或对齐关系。重点看它是否支持正文里的机制判断。"
+    return f"这张图来自 MinerU 对论文 PDF 的抽取。当前用于辅助理解 {title} 的方法或实验，请结合正文精读段落一起看。"
+
+
+def figure_label_from_caption(caption: str, fallback: str) -> str:
+    clean = re.sub(r"\s+", " ", caption).strip()
+    if not clean:
+        return fallback
+    match = re.match(r"((?:Figure|Fig\.?|Table)\s*\d+[A-Za-z]?)\.?\s*(.*)", clean, flags=re.I)
+    if match:
+        prefix = match.group(1).replace("Fig.", "Figure").replace("Fig", "Figure")
+        rest = match.group(2).strip()
+        if rest:
+            title = rest.split(". ")[0].strip()
+            return f"{prefix} · {title[:70]}"
+        return prefix
+    return clean.split(". ")[0][:90]
+
+
 def content_list_path(pid: str) -> Path | None:
     root = ROOT / "assets" / "mineru" / pid
     paths = sorted(root.glob("*content_list.json"))
@@ -274,12 +301,14 @@ def figures_for(pid: str, depth: int = 1, max_count: int = 2) -> list[dict]:
             {
                 "src": f"{prefix}assets/mineru/2605.21059/images/fig1.jpg",
                 "label": "Fig. 1 · Pairwise supervision is the scalable object",
-                "caption": "Joint tuples are expensive; pairwise text-image, image-tactile, and text-3D data can form a connected modality graph.",
+                "caption_en": "Joint tuples are expensive; pairwise text-image, image-tactile, and text-3D data can form a connected modality graph.",
+                "caption_zh": "这张图说明论文的核心动机：不一定要收集完整多模态 tuple，只要 pairwise supervision 形成连通的模态图，也能支撑共享表示学习。",
             },
             {
                 "src": f"{prefix}assets/mineru/2605.21059/images/fig2.jpg",
                 "label": "Fig. 2 · Shared and modality-specific latent factors",
-                "caption": "The paper separates common causal factors from modality-private variables before alignment.",
+                "caption_en": "The paper separates common causal factors from modality-private variables before alignment.",
+                "caption_zh": "这张图展示共享 latent 与模态私有变量的生成假设：先分离跨模态共有因素，再做 pairwise alignment，避免把私有噪声也强行对齐。",
             },
         ]
     }
@@ -312,27 +341,42 @@ def figures_for(pid: str, depth: int = 1, max_count: int = 2) -> list[dict]:
         "pipeline", "illustration", "comparison", "model", "deltadirect",
         "grounding", "conditioning",
     ]
+    title = next((p["short"] for p in PAPERS if p.get("id") == pid), "this paper")
     for item in data:
-        if item.get("type") != "image" or not item.get("img_path"):
+        if item.get("type") not in {"image", "chart"} or not item.get("img_path"):
             continue
         img_rel = str(item["img_path"]).replace("\\", "/")
         img_path = ROOT / "assets" / "mineru" / pid / img_rel
         if not img_path.exists():
             continue
-        cap = flatten_caption(item.get("image_caption"))
-        blob = f"{cap} {img_rel}".lower()
+        cap = (
+            flatten_caption(item.get("image_caption"))
+            or flatten_caption(item.get("chart_caption"))
+            or flatten_caption(item.get("table_caption"))
+        )
+        content = str(item.get("content") or "")
+        blob = f"{cap} {content} {img_rel}".lower()
         score = img_path.stat().st_size / 1000
+        if cap:
+            score += 220
+        if item.get("type") == "chart":
+            score += 180
         for idx, kw in enumerate(keywords):
             if kw in blob:
                 score += 500 - idx * 20
         # Avoid tiny fragments when a real method figure exists.
         if img_path.stat().st_size < 6000:
             score -= 120
+        if not cap and selected:
+            score -= 250
+        fallback_label = "Figure · Extracted visual evidence"
+        fallback_en = f"MinerU extracted this visual block without a structured caption. It is included only as supporting visual evidence for {title}; prefer figures with explicit captions when available."
         selected.append({
             "score": score,
             "src": f"{prefix}assets/mineru/{pid}/{img_rel}",
-            "label": cap.split(". ")[0][:90] if cap else "MinerU extracted figure",
-            "caption": cap or "MinerU extracted figure without structured caption.",
+            "label": figure_label_from_caption(cap, fallback_label),
+            "caption_en": cap or fallback_en,
+            "caption_zh": zh_caption_for(cap or fallback_en, title),
         })
     selected.sort(key=lambda x: x["score"], reverse=True)
     return [{k: v for k, v in fig.items() if k != "score"} for fig in selected[:max_count]] or fallback.get(pid, [])
@@ -844,7 +888,10 @@ def write_index(report_md: str) -> None:
     )
     hero = PAPERS[0]
     hero_figs = figures_for(hero["id"], 0, 1)
-    hero_img = f'<figure class="hero-figure"><img src="{e(hero_figs[0]["src"])}" alt="{e(hero["short"])} figure"><figcaption>{e(hero_figs[0]["caption"][:180])}</figcaption></figure>' if hero_figs else ""
+    hero_caption = ""
+    if hero_figs:
+        hero_caption = hero_figs[0].get("caption") or hero_figs[0].get("caption_zh") or hero_figs[0].get("caption_en") or hero_figs[0].get("label") or ""
+    hero_img = f'<figure class="hero-figure"><img src="{e(hero_figs[0]["src"])}" alt="{e(hero["short"])} figure"><figcaption>{e(hero_caption[:180])}</figcaption></figure>' if hero_figs else ""
     cards = "\n".join(paper_card(p, 0) for p in PAPERS[:5])
     body = f"""<section class="hero-grid">
   <article class="lead-story">
