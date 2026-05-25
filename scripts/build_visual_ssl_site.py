@@ -10,7 +10,7 @@ from pathlib import Path
 
 ROOT = Path(r"H:\Desktop\visual_ssl_digest_site")
 REPORT_ROOT = Path(r"H:\Desktop\visual_ssl_paper_reports")
-CSS_VERSION = "20260525d"
+CSS_VERSION = "20260525e"
 CURRENT_DATE = "2026-05-25"
 
 
@@ -283,6 +283,21 @@ def figures_for(pid: str, depth: int = 1, max_count: int = 2) -> list[dict]:
             },
         ]
     }
+    if pid == "2605.21642":
+        return [
+            {
+                "src": f"{prefix}assets/mineru/2605.21642/images/1be6853025daf7f1c0ddea23f8e0f0352225fb287accf6be05baeb6301a09169.jpg",
+                "label": "Figure 1 · Token Replacement Test",
+                "caption_en": "Overview of TRT. The test fixes the prompt, image, token budget, and decoding procedure, then replaces the intermediate thought-token span with identity, random, first-repeat, or oracle tokens to separate real content utilization from span-position and token-budget effects.",
+                "caption_zh": "TRT 的核心不是再训练一个模型，而是在推理时只替换中间 thought-token span。若模型真正读取 token 内容，random/zero 应明显掉点，oracle 应带来可解释收益；若几乎不变，收益更可能来自固定位置、额外 token budget 或训练正则。",
+            },
+            {
+                "src": f"{prefix}assets/mineru/2605.21642/images/c166965b7e312881d8f4ba3670107db69dd78ffc0cade63fc95b2c6591e56594.jpg",
+                "label": "Table/Figure · TRT results snapshot",
+                "caption_en": "A high-signal extracted result panel from the paper. Use it together with Tables 1-4: continuous depth spans often keep much of their utility under content replacement, while discrete depth tokens show larger drops under random replacement.",
+                "caption_zh": "这张结果图用于辅助读实验部分：连续 depth span 在替换内容后常常仍保留收益，说明模型可能没有充分消费 token 内容；离散 depth token 在 random replacement 下更容易掉点，更像真正的信息瓶颈。",
+            },
+        ][:max_count]
     path = content_list_path(pid)
     if not path:
         return fallback.get(pid, [])

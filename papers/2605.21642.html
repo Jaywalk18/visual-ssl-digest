@@ -4,8 +4,8 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Ablate-to-Validate · 通用视觉自监督研究报</title>
-  <link rel="stylesheet" href="../assets/styles.css?v=20260525d">
-  <link rel="stylesheet" href="../assets/visual-ssl.css?v=20260525d">
+  <link rel="stylesheet" href="../assets/styles.css?v=20260525e">
+  <link rel="stylesheet" href="../assets/visual-ssl.css?v=20260525e">
 </head>
 <body>
   <header class="masthead">
@@ -39,8 +39,8 @@
     </div>
     <div class="feature-body">
       <p class="lead dropcap">先说结论。很多连续视觉 thought token 的收益可能来自长度、锚点或正则，而不一定来自 token 内容本身。 这是一个诊断工具型论文：以后看 latent visual token 方法时，应该要求内容替换消融。</p>
-      <figure class="full-fig"><img src="../assets/mineru/2605.21642/images/8f1d0e2a7a6da9616c64eaa6a1b6a82248211d1f40273645baf4bdfce27f810d.jpg" alt="MinerU extracted figure"><figcaption><b>MinerU extracted figure</b>MinerU extracted figure without structured caption.</figcaption></figure>
-<figure class="full-fig"><img src="../assets/mineru/2605.21642/images/6fd71da51cf40792297540655b2c66d19e71e00b6bc0a1f4d1a2d220e7c91aae.jpg" alt="MinerU extracted figure"><figcaption><b>MinerU extracted figure</b>MinerU extracted figure without structured caption.</figcaption></figure>
+      <figure class="full-fig"><img src="../assets/mineru/2605.21642/images/1be6853025daf7f1c0ddea23f8e0f0352225fb287accf6be05baeb6301a09169.jpg" alt="Figure 1 · Token Replacement Test"><figcaption><b>Figure 1 · Token Replacement Test</b><span class="fig-en">Overview of TRT. The test fixes the prompt, image, token budget, and decoding procedure, then replaces the intermediate thought-token span with identity, random, first-repeat, or oracle tokens to separate real content utilization from span-position and token-budget effects.</span><span class="fig-zh">TRT 的核心不是再训练一个模型，而是在推理时只替换中间 thought-token span。若模型真正读取 token 内容，random/zero 应明显掉点，oracle 应带来可解释收益；若几乎不变，收益更可能来自固定位置、额外 token budget 或训练正则。</span></figcaption></figure>
+<figure class="full-fig"><img src="../assets/mineru/2605.21642/images/c166965b7e312881d8f4ba3670107db69dd78ffc0cade63fc95b2c6591e56594.jpg" alt="Table/Figure · TRT results snapshot"><figcaption><b>Table/Figure · TRT results snapshot</b><span class="fig-en">A high-signal extracted result panel from the paper. Use it together with Tables 1-4: continuous depth spans often keep much of their utility under content replacement, while discrete depth tokens show larger drops under random replacement.</span><span class="fig-zh">这张结果图用于辅助读实验部分：连续 depth span 在替换内容后常常仍保留收益，说明模型可能没有充分消费 token 内容；离散 depth token 在 random replacement 下更容易掉点，更像真正的信息瓶颈。</span></figcaption></figure>
       
       <h2>核心问题</h2>
       <p>这篇论文不是在提出一个更强的视觉 token 模块，而是在追问一个更基础的问题：VLM 加了连续/latent thought token 之后，准确率上涨到底是因为模型读懂了 token 内容，还是因为多了一段固定位置、额外 token budget 或训练正则？这个问题对视觉自监督和多模态预训练很关键，因为很多方法会把“中间视觉表征”包装成推理能力，但只报告最终 accuracy 很难证明这些中间表征真的被消费。</p>
