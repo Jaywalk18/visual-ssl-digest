@@ -10,7 +10,7 @@ from pathlib import Path
 
 ROOT = Path(r"H:\Desktop\visual_ssl_digest_site")
 REPORT_ROOT = Path(r"H:\Desktop\visual_ssl_paper_reports")
-CSS_VERSION = "20260525e"
+CSS_VERSION = "20260525f"
 CURRENT_DATE = "2026-05-25"
 
 
@@ -1112,6 +1112,7 @@ def write_css() -> None:
 .stat-grid em{font-style:normal;color:#64605a;font-size:13px;line-height:1.45}
 .issue-detail .paper-list{break-inside:avoid;column-span:all}
 .issue-detail .paper-headline{max-width:980px;font-size:clamp(31px,3.35vw,42px);line-height:1.16;text-wrap:pretty;word-break:normal;overflow-wrap:normal;line-break:loose}
+.paper-detail:not(.issue-detail) .paper-main > .dek{max-width:100%;width:100%;text-wrap:wrap;overflow-wrap:normal;word-break:normal;line-break:loose}
 .paper-detail:not(.issue-detail):not(.deep-read) .feature-body{column-count:1;column-gap:0;column-rule:none;max-width:900px}
 .paper-detail:not(.issue-detail):not(.deep-read) .feature-body > p,.paper-detail:not(.issue-detail):not(.deep-read) .feature-body > ul,.paper-detail:not(.issue-detail):not(.deep-read) .feature-body > ol{break-inside:auto}
 .paper-detail:not(.issue-detail):not(.deep-read) .feature-body li{margin:6px 0}
