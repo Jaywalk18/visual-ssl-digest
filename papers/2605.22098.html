@@ -4,8 +4,8 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>TextTeacher · 通用视觉自监督研究报</title>
-  <link rel="stylesheet" href="../assets/styles.css?v=20260525i">
-  <link rel="stylesheet" href="../assets/visual-ssl.css?v=20260525i">
+  <link rel="stylesheet" href="../assets/styles.css?v=20260525j">
+  <link rel="stylesheet" href="../assets/visual-ssl.css?v=20260525j">
 </head>
 <body>
   <header class="masthead">
@@ -39,8 +39,8 @@
     </div>
     <div class="feature-body">
       <p class="lead dropcap">先说结论。冻结文本编码器可以作为训练期语义锚点，推理时仍保留纯视觉模型。 今天最值得先读：它不是完整 CLIP 式预训练，而是把语言语义变成低成本的视觉表征塑形目标。</p>
-      <figure class="full-fig"><img src="../assets/mineru/2605.22098/images/796f4b605eb7353bca8a8ef837f3ee0f267b8109f7d1e28126a4ba69fb43728a.jpg" alt="Figureure 1 · : Setup of text-guided image-classification using TextTeacher: During "><figcaption><b>Figureure 1 · : Setup of text-guided image-classification using TextTeacher: During </b><span class="fig-en">Figure 1: Setup of text-guided image-classification using TextTeacher: During training, we use a frozen text encoder on image captions to inject with semantic knowledge into an image classifier. At inference time, we deploy a standard, unimodal vision model.</span><span class="fig-zh">这张图来自 MinerU 对论文 PDF 的抽取。当前用于辅助理解 TextTeacher 的方法或实验，请结合正文精读段落一起看。</span></figcaption></figure>
-<figure class="full-fig"><img src="../assets/mineru/2605.22098/images/84c80ea2b06c276dca33bcb710b781cc8efc20e06bab15fcbb647a460141759f.jpg" alt="Figureure 10 · : Most aligned and disaligned images for 6 random classes using ViT-B "><figcaption><b>Figureure 10 · : Most aligned and disaligned images for 6 random classes using ViT-B </b><span class="fig-en">Figure 10: Most aligned and disaligned images for 6 random classes using ViT-B trained with TextTeacher for 300 epochs. An aligned image is one where the text captions will output a large signal for a specific class. A disaligned image is an image of a class where the text caption produces a low signal for that class.</span><span class="fig-zh">这张图来自 MinerU 对论文 PDF 的抽取。当前用于辅助理解 TextTeacher 的方法或实验，请结合正文精读段落一起看。</span></figcaption></figure>
+      <figure class="full-fig"><img src="../assets/mineru/2605.22098/images/796f4b605eb7353bca8a8ef837f3ee0f267b8109f7d1e28126a4ba69fb43728a.jpg" alt="Figureure 1 · : Setup of text-guided image-classification using TextTeacher: During "><figcaption><b>Figureure 1 · : Setup of text-guided image-classification using TextTeacher: During </b><span class="fig-en">Figure 1: Setup of text-guided image-classification using TextTeacher: During training, we use a frozen text encoder on image captions to inject with semantic knowledge into an image classifier. At inference time, we deploy a standard, unimodal vision model.</span><span class="fig-zh">这张图来自论文 PDF 的结构化抽取。当前用于辅助理解 TextTeacher 的方法或实验，请结合正文精读段落一起看。</span></figcaption></figure>
+<figure class="full-fig"><img src="../assets/mineru/2605.22098/images/84c80ea2b06c276dca33bcb710b781cc8efc20e06bab15fcbb647a460141759f.jpg" alt="Figureure 10 · : Most aligned and disaligned images for 6 random classes using ViT-B "><figcaption><b>Figureure 10 · : Most aligned and disaligned images for 6 random classes using ViT-B </b><span class="fig-en">Figure 10: Most aligned and disaligned images for 6 random classes using ViT-B trained with TextTeacher for 300 epochs. An aligned image is one where the text captions will output a large signal for a specific class. A disaligned image is an image of a class where the text caption produces a low signal for that class.</span><span class="fig-zh">这张图来自论文 PDF 的结构化抽取。当前用于辅助理解 TextTeacher 的方法或实验，请结合正文精读段落一起看。</span></figcaption></figure>
       
       <h2>核心问题</h2>
       <p>对通用视觉自监督/表征学习很实用：它给了“在不改变视觉推理模型的情况下借助语言语义塑形表征”的简单路径，可作为 DINO/MAE/ViT 训练 recipe 的对照。</p>
@@ -56,6 +56,7 @@
     </div>
   </div>
   <aside class="paper-side">
+
     <div class="side-box"><h4>关键判断</h4><dl><dt>相关性</dt><dd>P1</dd><dt>类别</dt><dd>Language-guided visual representation</dd><dt>会议</dt><dd>TMLR 2026</dd><dt>读法</dt><dd>方法图优先，表格次之</dd></dl></div>
     <div class="side-box"><h4>原文</h4><p><a href="https://arxiv.org/abs/2605.22098">https://arxiv.org/abs/2605.22098</a></p></div>
   </aside>
