@@ -4,8 +4,8 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>ResDreamer · 通用视觉自监督研究报</title>
-  <link rel="stylesheet" href="../assets/styles.css?v=20260525b">
-  <link rel="stylesheet" href="../assets/visual-ssl.css?v=20260525b">
+  <link rel="stylesheet" href="../assets/styles.css?v=20260525c">
+  <link rel="stylesheet" href="../assets/visual-ssl.css?v=20260525c">
 </head>
 <body>
   <header class="masthead">
@@ -55,18 +55,14 @@
     <div class="side-box"><h4>原文</h4><p><a href="https://arxiv.org/abs/2605.17537">https://arxiv.org/abs/2605.17537</a></p></div>
   </aside>
 </article></main>
-  <aside class="conf-float" data-conf-reminder="2026-05-25" aria-label="CCF A/B 截稿提醒">
+  <aside class="conf-float" data-conf-reminder="2026-05-25-main-ddl" aria-label="CCF A/B 主投稿提醒">
   <button class="conf-close" type="button" aria-label="关闭会议提醒">×</button>
   <details open>
-    <summary>CCF A/B 截稿提醒</summary>
-    <div class="conf-list"><a class="conf-item urgent" href="https://2026.acmmm.org/site/call-open-source.html">
-  <span><b>ACM MM 2026</b><em>CCF A · Open Source</em></span>
-  <strong>3 天内</strong>
-  <small>2026-05-28 · 非主会主赛道；适合工具/代码型贡献。</small>
-</a><a class="conf-item soon" href="https://2026.acmmm.org/site/important-dates.html">
-  <span><b>ACM MM 2026</b><em>CCF A · Demo &amp; Video</em></span>
-  <strong>17 天内</strong>
-  <small>2026-06-11 · 主会已截稿；该项为 Demo/Video track。</small>
+    <summary>CCF A/B 主投稿提醒</summary>
+    <div class="conf-list"><a class="conf-item " href="https://github.com/ccfddl/ccf-deadlines/blob/main/conference/AI/aaai.yml">
+  <span><b>AAAI 2027</b><em>CCF A · Main paper submission</em></span>
+  <strong>63 天</strong>
+  <small>2026-07-27 · CCF DDL: abstract 2026-07-20；进入 1 个月窗口后重点提醒。</small>
 </a></div>
   </details>
 </aside>
@@ -78,7 +74,7 @@
   (() => {
     const box = document.querySelector('[data-conf-reminder]');
     if (!box) return;
-    const key = `visualSslConfReminderClosed:${box.dataset.confReminder || '2026-05-25'}`;
+    const key = `visualSslConfReminderClosed:${box.dataset.confReminder || '2026-05-25-main-ddl'}`;
     try {
       if (localStorage.getItem(key) === '1') box.hidden = true;
     } catch (err) {}
