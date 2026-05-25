@@ -5,7 +5,7 @@
 .lead-story{border-top:5px solid #111;padding-top:22px}
 .lead-story h1{font-size:clamp(36px,4.5vw,62px);line-height:1.02;letter-spacing:0;margin:10px 0 18px;font-family:Georgia,'Times New Roman',serif;overflow-wrap:anywhere;word-break:break-word}
 .lead-story .dek{font-size:22px;line-height:1.45;max-width:880px;color:#30302d}
-.issue-brief{border:1px solid #d7d1c6;background:#f7f3ea;padding:22px}
+.issue-brief{border:1px solid #d7d1c6;background:#f7f3ea;padding:22px;border-radius:8px;box-shadow:0 12px 28px rgba(31,31,29,.06)}
 .issue-brief h2{margin:0 0 12px;font-size:22px}
 .issue-brief ul{list-style:none;margin:0;padding:0;display:grid;gap:12px}
 .issue-brief li{border-bottom:1px solid #ddd5c6;padding-bottom:10px}
