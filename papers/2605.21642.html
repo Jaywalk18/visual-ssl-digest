@@ -4,8 +4,8 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Ablate-to-Validate · 通用视觉自监督研究报</title>
-  <link rel="stylesheet" href="../assets/styles.css?v=20260525i">
-  <link rel="stylesheet" href="../assets/visual-ssl.css?v=20260525i">
+  <link rel="stylesheet" href="../assets/styles.css?v=20260525j">
+  <link rel="stylesheet" href="../assets/visual-ssl.css?v=20260525j">
 </head>
 <body>
   <header class="masthead">
@@ -23,7 +23,7 @@
 <a class="nav-link" href="../pages/catalog.html">论文目录</a>
 <a class="nav-link" href="../pages/timeline.html">时间线</a>
   </nav>
-  <main><article class="paper-detail">
+  <main><article class="paper-detail deep-read">
   <div class="paper-main">
     <div class="kicker">VLM diagnostics · P2 · 2026-05-25</div>
     <h1 class="paper-headline">Ablate-to-Validate：很多连续视觉 thought token 的收益可能来自长度、锚点或正则，而不一定来自 token 内容本身。</h1>
@@ -42,9 +42,23 @@
       <figure class="full-fig"><img src="../assets/mineru/2605.21642/images/1be6853025daf7f1c0ddea23f8e0f0352225fb287accf6be05baeb6301a09169.jpg" alt="Figure 1 · Token Replacement Test"><figcaption><b>Figure 1 · Token Replacement Test</b><span class="fig-en">Overview of TRT. The test fixes the prompt, image, token budget, and decoding procedure, then replaces the intermediate thought-token span with identity, random, first-repeat, or oracle tokens to separate real content utilization from span-position and token-budget effects.</span><span class="fig-zh">TRT 的核心不是再训练一个模型，而是在推理时只替换中间 thought-token span。若模型真正读取 token 内容，random/zero 应明显掉点，oracle 应带来可解释收益；若几乎不变，收益更可能来自固定位置、额外 token budget 或训练正则。</span></figcaption></figure>
 <figure class="full-fig"><img src="../assets/mineru/2605.21642/images/c166965b7e312881d8f4ba3670107db69dd78ffc0cade63fc95b2c6591e56594.jpg" alt="Table/Figure · TRT results snapshot"><figcaption><b>Table/Figure · TRT results snapshot</b><span class="fig-en">A high-signal extracted result panel from the paper. Use it together with Tables 1-4: continuous depth spans often keep much of their utility under content replacement, while discrete depth tokens show larger drops under random replacement.</span><span class="fig-zh">这张结果图用于辅助读实验部分：连续 depth span 在替换内容后常常仍保留收益，说明模型可能没有充分消费 token 内容；离散 depth token 在 random replacement 下更容易掉点，更像真正的信息瓶颈。</span></figcaption></figure>
       
+      <section class="reading-note">
+        <h2>读前定位</h2>
+        <p><b>先把它当成评测协议。</b>这篇不是要发明更强的视觉 thought token，而是给所有 latent visual token 方法加一把尺：把中间 token 替换掉之后，性能是否还成立。</p>
+        <p><b>再看它的反直觉结论。</b>连续 token 的收益不一定来自 token 内容本身；在一些设置里，位置、长度、分布匹配或训练过程可能解释掉相当一部分收益。</p>
+      </section>
+
       <h2>核心问题</h2>
       <p>这篇论文不是在提出一个更强的视觉 token 模块，而是在追问一个更基础的问题：VLM 加了连续/latent thought token 之后，准确率上涨到底是因为模型读懂了 token 内容，还是因为多了一段固定位置、额外 token budget 或训练正则？这个问题对视觉自监督和多模态预训练很关键，因为很多方法会把“中间视觉表征”包装成推理能力，但只报告最终 accuracy 很难证明这些中间表征真的被消费。</p>
       <p>作者把问题收窄到可干预的形式：固定 prompt、图像、token 数量和解码过程，只替换中间 thought-token span。如果模型真的依赖其中的视觉信息，随机化或清零应该明显伤害性能，注入 oracle/ground-truth token 应该带来可解释收益；如果性能几乎不变，说明 token 更可能是位置锚点、预算扩容或训练脚手架。</p>
+
+      <h2>图表导读：先看哪几处</h2>
+      <ul class="method-steps">
+        <li><b>Figure 1</b> 先看 TRT 的操作边界：固定 prompt、图像和解码，只替换 thought-token span。</li>
+        <li><b>Table 1-2</b> 看连续 token 与离散 token 在 controlled depth setting 下是否真的携带内容。</li>
+        <li><b>Table 3-4</b> 看 random、distribution-matched random、first-repeat、oracle 之间的差异，判断收益来自内容还是形状。</li>
+        <li><b>系统测试</b> 再扫 Mirage、Mull-Tokens、CoVT：它们分别暴露出不同的内容依赖、分布依赖和 token 预算依赖。</li>
+      </ul>
 
       <h2>方法拆解</h2>
       <p>Token Replacement Test（TRT）是一组推理时替换实验，而不是新的训练目标。它把视觉 thought span 看成一个可替换对象，分别测试 identity re-injection、zero replacement、random replacement、distribution-matched random、first-repeat、count-matched variant 和 oracle/ground-truth injection。</p>
@@ -72,6 +86,8 @@
     </div>
   </div>
   <aside class="paper-side">
+    <div class="side-box"><h4>图表导读</h4><p>先看 Figure 1 的替换协议，再看 Table 1-4 和 Mirage / CoVT 的替换实验。</p></div>
+
     <div class="side-box"><h4>关键判断</h4><dl><dt>相关性</dt><dd>P2</dd><dt>类别</dt><dd>VLM diagnostics</dd><dt>会议</dt><dd>arXiv</dd><dt>读法</dt><dd>方法图优先，表格次之</dd></dl></div>
     <div class="side-box"><h4>原文</h4><p><a href="https://arxiv.org/abs/2605.21642">https://arxiv.org/abs/2605.21642</a></p></div>
   </aside>

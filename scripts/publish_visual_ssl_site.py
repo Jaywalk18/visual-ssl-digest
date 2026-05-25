@@ -144,19 +144,36 @@ def validate_site_quality() -> None:
         r"用于图文归档",
         r"每日 Markdown",
         r"自动生成",
+        r"MinerU\s*(?:对|图文|full|extracted)",
+        r"本页图源",
     ]
     problems: list[str] = []
     paper_paths = list((SITE_ROOT / "papers").glob("*.html"))
-    for path in paper_paths + list((SITE_ROOT / "issues").glob("*.html")) + [SITE_ROOT / "index.html"]:
+    issue_paths = list((SITE_ROOT / "issues").glob("*.html"))
+    page_paths = list((SITE_ROOT / "pages").glob("*.html"))
+    public_paths = paper_paths + issue_paths + page_paths + [SITE_ROOT / "index.html"]
+    for path in public_paths:
         if not path.exists():
             continue
         text = path.read_text(encoding="utf-8", errors="ignore")
         for pattern in bad_patterns:
             if re.search(pattern, text, flags=re.I):
                 problems.append(f"{path.relative_to(SITE_ROOT)} contains forbidden text: {pattern}")
-        if path in paper_paths and 'class="full-fig"' in text and 'class="fig-zh"' not in text and "TC-JEPA" not in text:
+        if path in paper_paths and 'class="full-fig"' in text and 'class="fig-zh"' not in text:
             # Warn as a hard failure for generated paper pages: figure captions must be readable, not raw MinerU fallbacks.
             problems.append(f"{path.relative_to(SITE_ROOT)} has figures without bilingual caption spans")
+        if path in paper_paths and 'class="paper-detail deep-read"' in text:
+            for required in ("读前定位", "图表导读"):
+                if required not in text:
+                    problems.append(f"{path.relative_to(SITE_ROOT)} deep-read page missing section: {required}")
+            if 'class="full-fig"' in text and ('class="fig-en"' not in text or 'class="fig-zh"' not in text):
+                problems.append(f"{path.relative_to(SITE_ROOT)} deep-read figures must include bilingual captions")
+    catalog = SITE_ROOT / "pages" / "catalog.html"
+    if catalog.exists():
+        catalog_text = catalog.read_text(encoding="utf-8", errors="ignore")
+        for marker in ('data-catalog-search', 'data-filter-group="category"', 'data-filter-group="priority"', 'data-filter-group="date"', 'data-catalog-pager', 'data-keywords='):
+            if marker not in catalog_text:
+                problems.append(f"pages/catalog.html missing catalog control marker: {marker}")
     if problems:
         raise SystemExit("Site quality check failed:\n" + "\n".join(f"- {p}" for p in problems[:20]))
 

@@ -4,8 +4,8 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>TC-JEPA · 通用视觉自监督研究报</title>
-  <link rel="stylesheet" href="../assets/styles.css?v=20260525i">
-  <link rel="stylesheet" href="../assets/visual-ssl.css?v=20260525i">
+  <link rel="stylesheet" href="../assets/styles.css?v=20260525j">
+  <link rel="stylesheet" href="../assets/visual-ssl.css?v=20260525j">
 </head>
 <body>
   <header class="masthead">
@@ -35,14 +35,15 @@
       <span><b>类别</b>JEPA / vision-language SSL</span>
       <span><b>训练信号</b>synthetic captions, feature prediction only</span>
       <span><b>测试开销</b>丢弃 predictor 与 text conditioner</span>
-      <span><b>MinerU</b>正文、表格、Figure 2/4/5/8 已接入</span>
+      <span><b>图表</b>方法、预测误差、消融与效率图</span>
     </div>
     <div class="feature-body">
       <p class="lead dropcap">先读这篇要从“为什么 I-JEPA 会不确定”开始，而不是从分数开始。I-JEPA 只拿可见 context patch 去预测 target patch feature，遮挡区域可能对应很多合理语义；TC-JEPA 的假设是 caption 能提供场景组成、属性和空间关系，把 target feature 的可行解空间变窄。</p>
 
       <section class="reading-note">
-        <h2>一句话动机</h2>
-        <p>论文自己的问题定义很直接：masked positions have “large uncertainties”。TC-JEPA 不重建像素，也不做 CLIP 式全局对比，而是在 JEPA predictor 的多层里加入 word-token 级 cross-attention，让 patch feature 在训练时能被文字条件化。</p>
+        <h2>读前定位</h2>
+        <p><b>先抓训练信号。</b>TC-JEPA 的核心不是给 I-JEPA 加一个语言标签头，而是把“预测被遮挡 patch feature”改成“在文字条件下预测被遮挡 patch feature”。测试时文字分支和 predictor 都会丢弃，留下的仍是纯视觉 encoder。</p>
+        <p><b>再抓边界。</b>它不是 CLIP 替代品，也不是像素重建路线；它更像一条条件化 JEPA 路线：借 caption 降低目标 feature 的歧义，同时保留 JEPA 对 dense representation 的偏好。</p>
       </section>
 
       <figure class="full-fig"><img src="../assets/mineru/2605.03245/images/5ceb4d7d2d5e3cfe2efe79262205e252fccb946d687ad798ab297b8ea5cb9f10.jpg" alt="Figure 2 · Text-conditioned JEPA predictor"><figcaption><b>Figure 2 · Text-conditioned JEPA predictor</b><span class="fig-en">TC-JEPA conditions the I-JEPA predictor g_phi on multiple captions. Patch features cross-attend to T5 word embeddings at several predictor layers, then max-pool across captions; L_sparse and L_consistency regularize patch-word similarities.</span><span class="fig-zh">TC-JEPA 不是把 caption 当作额外分类头，而是在 JEPA predictor 的多层里用词级 cross-attention 条件化 patch feature。多句 caption 分别提供条件信号，再通过 max-pooling 选择最有帮助的语义线索；稀疏和跨层一致性约束让 patch-word 对应更集中、更稳定。</span></figcaption></figure>
@@ -58,6 +59,14 @@
         <li><b>多层 sparse cross-attention。</b>在 predictor 的多个层里，patch query 对 caption word sequence 做 cross-attention；每个 caption 分开条件化，再用 max-pooling 选出最有用的条件信号。</li>
         <li><b>两个正则约束。</b>sparsity 让 patch-word 对应更集中，cross-layer consistency 让不同层的对应关系更稳定；Figure 4 的消融说明这两项不是装饰。</li>
       </ol>
+
+      <h2>图表导读：先看哪几张</h2>
+      <ul class="method-steps">
+        <li><b>Figure 2</b> 定义模型接口：caption 只进 predictor，多层 cross-attention 负责把词级语义写入 masked feature prediction。</li>
+        <li><b>Figure 5</b> 是最关键证据：它把 patch-word grounding 和 prediction error 放在一起，避免只展示漂亮 attention。</li>
+        <li><b>Figure 4</b> 用来判断收益来源：文字条件、稀疏约束、一致性约束、多层注入都要分开看。</li>
+        <li><b>Figure 8</b> 负责回答成本问题：收益是否值得额外 caption 与 text conditioner 训练成本。</li>
+      </ul>
 
       <h2>关键结果：更像“细粒度视觉表征”而不是 CLIP 替代品</h2>
       <div class="stat-grid">
@@ -79,7 +88,7 @@
     </div>
   </div>
   <aside class="paper-side">
-    <div class="side-box"><h4>本页图源</h4><p>图像来自 MinerU 对 PDF 的结构化抽取；当前优先展示 pipeline、prediction visualization、ablation 和 efficiency。</p></div>
+    <div class="side-box"><h4>图表导读</h4><p>先看 Figure 2/5，再看 Figure 4/8；分别对应方法接口、预测证据、组件消融和训练成本。</p></div>
     <div class="side-box"><h4>核心判断</h4><dl><dt>相关性</dt><dd>P1，通用视觉自监督强相关</dd><dt>会议等级</dt><dd>ICML 2026，CCF A</dd><dt>读法</dt><dd>方法图优先，表格次之</dd></dl></div>
     <div class="side-box"><h4>原文</h4><p><a href="https://arxiv.org/abs/2605.03245">https://arxiv.org/abs/2605.03245</a></p></div>
   </aside>

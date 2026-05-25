@@ -10,7 +10,7 @@ from pathlib import Path
 
 ROOT = Path(r"H:\Desktop\visual_ssl_digest_site")
 REPORT_ROOT = Path(r"H:\Desktop\visual_ssl_paper_reports")
-CSS_VERSION = "20260525i"
+CSS_VERSION = "20260525j"
 CURRENT_DATE = "2026-05-25"
 
 
@@ -270,7 +270,7 @@ def zh_caption_for(en_caption: str, title: str) -> str:
         return f"这张图/表用于判断 {title} 的实验收益来自哪里。重点看替换、消融或跨模型设置下趋势是否一致，而不是只看单个最高分。"
     if any(word in lower for word in ["attention", "similarity", "grounding", "visualization"]):
         return f"这张可视化用来解释 {title} 学到的中间表征或对齐关系。重点看它是否支持正文里的机制判断。"
-    return f"这张图来自 MinerU 对论文 PDF 的抽取。当前用于辅助理解 {title} 的方法或实验，请结合正文精读段落一起看。"
+    return f"这张图来自论文 PDF 的结构化抽取。当前用于辅助理解 {title} 的方法或实验，请结合正文精读段落一起看。"
 
 
 def figure_label_from_caption(caption: str, fallback: str) -> str:
@@ -370,7 +370,7 @@ def figures_for(pid: str, depth: int = 1, max_count: int = 2) -> list[dict]:
         if not cap and selected:
             score -= 250
         fallback_label = "Figure · Extracted visual evidence"
-        fallback_en = f"MinerU extracted this visual block without a structured caption. It is included only as supporting visual evidence for {title}; prefer figures with explicit captions when available."
+        fallback_en = f"This visual block was extracted from the paper PDF without a structured caption. It is included only as supporting visual evidence for {title}; prefer figures with explicit captions when available."
         selected.append({
             "score": score,
             "src": f"{prefix}assets/mineru/{pid}/{img_rel}",
@@ -471,14 +471,15 @@ def tc_jepa_body(p: dict) -> str:
       <span><b>类别</b>JEPA / vision-language SSL</span>
       <span><b>训练信号</b>synthetic captions, feature prediction only</span>
       <span><b>测试开销</b>丢弃 predictor 与 text conditioner</span>
-      <span><b>MinerU</b>正文、表格、Figure 2/4/5/8 已接入</span>
+      <span><b>图表</b>方法、预测误差、消融与效率图</span>
     </div>
     <div class="feature-body">
       <p class="lead dropcap">先读这篇要从“为什么 I-JEPA 会不确定”开始，而不是从分数开始。I-JEPA 只拿可见 context patch 去预测 target patch feature，遮挡区域可能对应很多合理语义；TC-JEPA 的假设是 caption 能提供场景组成、属性和空间关系，把 target feature 的可行解空间变窄。</p>
 
       <section class="reading-note">
-        <h2>一句话动机</h2>
-        <p>论文自己的问题定义很直接：masked positions have “large uncertainties”。TC-JEPA 不重建像素，也不做 CLIP 式全局对比，而是在 JEPA predictor 的多层里加入 word-token 级 cross-attention，让 patch feature 在训练时能被文字条件化。</p>
+        <h2>读前定位</h2>
+        <p><b>先抓训练信号。</b>TC-JEPA 的核心不是给 I-JEPA 加一个语言标签头，而是把“预测被遮挡 patch feature”改成“在文字条件下预测被遮挡 patch feature”。测试时文字分支和 predictor 都会丢弃，留下的仍是纯视觉 encoder。</p>
+        <p><b>再抓边界。</b>它不是 CLIP 替代品，也不是像素重建路线；它更像一条条件化 JEPA 路线：借 caption 降低目标 feature 的歧义，同时保留 JEPA 对 dense representation 的偏好。</p>
       </section>
 
       {fig_html}
@@ -491,6 +492,14 @@ def tc_jepa_body(p: dict) -> str:
         <li><b>多层 sparse cross-attention。</b>在 predictor 的多个层里，patch query 对 caption word sequence 做 cross-attention；每个 caption 分开条件化，再用 max-pooling 选出最有用的条件信号。</li>
         <li><b>两个正则约束。</b>sparsity 让 patch-word 对应更集中，cross-layer consistency 让不同层的对应关系更稳定；Figure 4 的消融说明这两项不是装饰。</li>
       </ol>
+
+      <h2>图表导读：先看哪几张</h2>
+      <ul class="method-steps">
+        <li><b>Figure 2</b> 定义模型接口：caption 只进 predictor，多层 cross-attention 负责把词级语义写入 masked feature prediction。</li>
+        <li><b>Figure 5</b> 是最关键证据：它把 patch-word grounding 和 prediction error 放在一起，避免只展示漂亮 attention。</li>
+        <li><b>Figure 4</b> 用来判断收益来源：文字条件、稀疏约束、一致性约束、多层注入都要分开看。</li>
+        <li><b>Figure 8</b> 负责回答成本问题：收益是否值得额外 caption 与 text conditioner 训练成本。</li>
+      </ul>
 
       <h2>关键结果：更像“细粒度视觉表征”而不是 CLIP 替代品</h2>
       <div class="stat-grid">
@@ -512,7 +521,7 @@ def tc_jepa_body(p: dict) -> str:
     </div>
   </div>
   <aside class="paper-side">
-    <div class="side-box"><h4>本页图源</h4><p>图像来自 MinerU 对 PDF 的结构化抽取；当前优先展示 pipeline、prediction visualization、ablation 和 efficiency。</p></div>
+    <div class="side-box"><h4>图表导读</h4><p>先看 Figure 2/5，再看 Figure 4/8；分别对应方法接口、预测证据、组件消融和训练成本。</p></div>
     <div class="side-box"><h4>核心判断</h4><dl><dt>相关性</dt><dd>P1，通用视觉自监督强相关</dd><dt>会议等级</dt><dd>ICML 2026，CCF A</dd><dt>读法</dt><dd>方法图优先，表格次之</dd></dl></div>
     <div class="side-box"><h4>原文</h4><p><a href="{e(p['url'])}">{e(p['url'])}</a></p></div>
   </aside>
@@ -707,9 +716,23 @@ def paragraph(text: str) -> str:
 
 def ablate_to_validate_reading_html() -> str:
     return """
+      <section class="reading-note">
+        <h2>读前定位</h2>
+        <p><b>先把它当成评测协议。</b>这篇不是要发明更强的视觉 thought token，而是给所有 latent visual token 方法加一把尺：把中间 token 替换掉之后，性能是否还成立。</p>
+        <p><b>再看它的反直觉结论。</b>连续 token 的收益不一定来自 token 内容本身；在一些设置里，位置、长度、分布匹配或训练过程可能解释掉相当一部分收益。</p>
+      </section>
+
       <h2>核心问题</h2>
       <p>这篇论文不是在提出一个更强的视觉 token 模块，而是在追问一个更基础的问题：VLM 加了连续/latent thought token 之后，准确率上涨到底是因为模型读懂了 token 内容，还是因为多了一段固定位置、额外 token budget 或训练正则？这个问题对视觉自监督和多模态预训练很关键，因为很多方法会把“中间视觉表征”包装成推理能力，但只报告最终 accuracy 很难证明这些中间表征真的被消费。</p>
       <p>作者把问题收窄到可干预的形式：固定 prompt、图像、token 数量和解码过程，只替换中间 thought-token span。如果模型真的依赖其中的视觉信息，随机化或清零应该明显伤害性能，注入 oracle/ground-truth token 应该带来可解释收益；如果性能几乎不变，说明 token 更可能是位置锚点、预算扩容或训练脚手架。</p>
+
+      <h2>图表导读：先看哪几处</h2>
+      <ul class="method-steps">
+        <li><b>Figure 1</b> 先看 TRT 的操作边界：固定 prompt、图像和解码，只替换 thought-token span。</li>
+        <li><b>Table 1-2</b> 看连续 token 与离散 token 在 controlled depth setting 下是否真的携带内容。</li>
+        <li><b>Table 3-4</b> 看 random、distribution-matched random、first-repeat、oracle 之间的差异，判断收益来自内容还是形状。</li>
+        <li><b>系统测试</b> 再扫 Mirage、Mull-Tokens、CoVT：它们分别暴露出不同的内容依赖、分布依赖和 token 预算依赖。</li>
+      </ul>
 
       <h2>方法拆解</h2>
       <p>Token Replacement Test（TRT）是一组推理时替换实验，而不是新的训练目标。它把视觉 thought span 看成一个可替换对象，分别测试 identity re-injection、zero replacement、random replacement、distribution-matched random、first-repeat、count-matched variant 和 oracle/ground-truth injection。</p>
@@ -1016,7 +1039,12 @@ def write_paper(p: dict, report_md: str) -> None:
       <h2>局限与读法</h2>
       <p>{e(limitation)}</p>
     """
-    body = f"""<article class="paper-detail">
+    article_class = "paper-detail deep-read" if p["id"] == "2605.21642" else "paper-detail"
+    side_intro = ""
+    if p["id"] == "2605.21642":
+        side_intro = """    <div class="side-box"><h4>图表导读</h4><p>先看 Figure 1 的替换协议，再看 Table 1-4 和 Mirage / CoVT 的替换实验。</p></div>
+"""
+    body = f"""<article class="{article_class}">
   <div class="paper-main">
     <div class="kicker">{e(p['category'])} · {e(p['priority'])} · {e(p['date'])}</div>
     <h1 class="paper-headline">{e(p['short'])}：{e(p['thesis'])}</h1>
@@ -1037,6 +1065,7 @@ def write_paper(p: dict, report_md: str) -> None:
     </div>
   </div>
   <aside class="paper-side">
+{side_intro}
     <div class="side-box"><h4>关键判断</h4><dl><dt>相关性</dt><dd>{e(p['priority'])}</dd><dt>类别</dt><dd>{e(p['category'])}</dd><dt>会议</dt><dd>{e(p['venue'])}</dd><dt>读法</dt><dd>方法图优先，表格次之</dd></dl></div>
     <div class="side-box"><h4>原文</h4><p><a href="{e(p['url'])}">{e(p['url'])}</a></p></div>
   </aside>
