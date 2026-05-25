@@ -10,7 +10,7 @@ from pathlib import Path
 
 ROOT = Path(r"H:\Desktop\visual_ssl_digest_site")
 REPORT_ROOT = Path(r"H:\Desktop\visual_ssl_paper_reports")
-CSS_VERSION = "20260525h"
+CSS_VERSION = "20260525i"
 CURRENT_DATE = "2026-05-25"
 
 
@@ -867,7 +867,8 @@ def paper_card(p: dict, depth: int = 0) -> str:
         thumb = f"""<img src="{e(figs[0]['src'])}" alt="{e(p['short'])} figure"><span>{e(p['priority'])}</span>"""
     else:
         thumb = f"""<span>{e(p['priority'])}</span><strong>{e(p['short'])}</strong><em>{e(p['venue'])}</em>"""
-    return f"""<article class="paper-card" data-category="{e(p['category'])}" data-title="{e(p['title'].lower())}">
+    keywords = " ".join([p["title"], p["short"], p["category"], p["priority"], p["date"], p["venue"], p["method"], p["takeaway"]]).lower()
+    return f"""<article class="paper-card" data-category="{e(p['category'])}" data-priority="{e(p['priority'])}" data-date="{e(p['date'])}" data-title="{e(p['title'].lower())}" data-keywords="{e(keywords)}">
   <a class="paper-thumb paper-thumb-text" href="{prefix}papers/{p['id']}.html">
     {thumb}
   </a>
@@ -1045,7 +1046,94 @@ def write_paper(p: dict, report_md: str) -> None:
 
 def write_catalog() -> None:
     cards = "\n".join(paper_card(p, 1) for p in PAPERS)
-    body = f"""<section class="page-header"><h1>论文目录</h1><p>收录近期通用视觉自监督、视觉基础模型与多模态表征学习论文，按日期、优先级与主题归档。</p></section><div class="paper-list">{cards}</div>"""
+    categories = sorted({p["category"] for p in PAPERS})
+    dates = sorted({p["date"] for p in PAPERS}, reverse=True)
+    priority_order = ["P1", "P2", "P3", "扫读", "状态补录"]
+    priorities = [value for value in priority_order if any(p["priority"] == value for p in PAPERS)]
+
+    def filter_buttons(values: list[str], group: str, all_label: str) -> str:
+        buttons = [f'<button class="filter-pill is-active" type="button" data-filter-value="all">{e(all_label)}</button>']
+        buttons.extend(
+            f'<button class="filter-pill" type="button" data-filter-value="{e(value)}">{e(value)}</button>'
+            for value in values
+        )
+        return f'<div class="filter-row" data-filter-group="{e(group)}">' + "".join(buttons) + "</div>"
+
+    catalog_script = """
+<script>
+(() => {
+  const root = document.querySelector('[data-catalog]');
+  if (!root) return;
+  const cards = Array.from(root.querySelectorAll('.paper-card'));
+  const search = root.querySelector('[data-catalog-search]');
+  const status = root.querySelector('[data-catalog-status]');
+  const pager = root.querySelector('[data-catalog-pager]');
+  const pageInfo = root.querySelector('[data-page-info]');
+  const prev = root.querySelector('[data-page-prev]');
+  const next = root.querySelector('[data-page-next]');
+  const state = { category: 'all', priority: 'all', date: 'all', query: '' };
+  const pageSize = 6;
+  let page = 1;
+
+  const matchCard = (card) => {
+    if (state.category !== 'all' && card.dataset.category !== state.category) return false;
+    if (state.priority !== 'all' && card.dataset.priority !== state.priority) return false;
+    if (state.date !== 'all' && card.dataset.date !== state.date) return false;
+    if (state.query && !(card.dataset.keywords || '').includes(state.query)) return false;
+    return true;
+  };
+
+  const render = () => {
+    const matched = cards.filter(matchCard);
+    const totalPages = Math.max(1, Math.ceil(matched.length / pageSize));
+    if (page > totalPages) page = totalPages;
+    cards.forEach((card) => { card.hidden = true; });
+    matched.slice((page - 1) * pageSize, page * pageSize).forEach((card) => { card.hidden = false; });
+    status.textContent = `${matched.length} 篇 · 第 ${page}/${totalPages} 页`;
+    pageInfo.textContent = `${page} / ${totalPages}`;
+    pager.hidden = matched.length <= pageSize;
+    prev.disabled = page <= 1;
+    next.disabled = page >= totalPages;
+  };
+
+  root.addEventListener('click', (event) => {
+    const button = event.target.closest('[data-filter-value]');
+    if (!button) return;
+    const group = button.closest('[data-filter-group]');
+    if (!group) return;
+    state[group.dataset.filterGroup] = button.dataset.filterValue;
+    group.querySelectorAll('.filter-pill').forEach((item) => item.classList.toggle('is-active', item === button));
+    page = 1;
+    render();
+  });
+
+  search.addEventListener('input', () => {
+    state.query = search.value.trim().toLowerCase();
+    page = 1;
+    render();
+  });
+  prev.addEventListener('click', () => { page -= 1; render(); });
+  next.addEventListener('click', () => { page += 1; render(); });
+  render();
+})();
+</script>"""
+    body = f"""<section class="page-header"><h1>论文目录</h1><p>收录近期通用视觉自监督、视觉基础模型与多模态表征学习论文，按日期、优先级与主题归档。</p></section>
+<section class="catalog-shell" data-catalog>
+  <div class="catalog-tools">
+    <input class="catalog-search" type="search" data-catalog-search placeholder="搜索标题、主题、方法" aria-label="搜索论文">
+    {filter_buttons(categories, "category", "全部主题")}
+    {filter_buttons(priorities, "priority", "全部优先级")}
+    {filter_buttons(dates, "date", "全部日期")}
+    <div class="catalog-status" data-catalog-status></div>
+  </div>
+  <div class="paper-list catalog-list">{cards}</div>
+  <nav class="catalog-pager" data-catalog-pager aria-label="目录分页">
+    <button type="button" data-page-prev>上一页</button>
+    <span data-page-info></span>
+    <button type="button" data-page-next>下一页</button>
+  </nav>
+</section>
+{catalog_script}"""
     (ROOT / "pages" / "catalog.html").write_text(shell("论文目录", body, 1, "pages/catalog.html"), encoding="utf-8")
 
 
@@ -1120,6 +1208,20 @@ def write_css() -> None:
 .paper-detail:not(.issue-detail):not(.deep-read) .feature-body li{margin:6px 0}
 .page-header{max-width:1500px;margin:32px auto;padding:0 24px;border-bottom:2px solid #111}
 .page-header h1{font-size:54px;line-height:1;margin:0 0 10px;font-family:Georgia,'Times New Roman',serif}
+.catalog-shell{max-width:1500px;margin:0 auto;padding:0 24px 48px}
+.catalog-tools{display:grid;gap:12px;margin:0 0 22px;padding:16px;background:linear-gradient(135deg,rgba(255,255,255,.8),rgba(247,243,234,.62));border:1px solid rgba(216,208,195,.9);border-radius:8px;box-shadow:0 12px 28px rgba(31,31,29,.06)}
+.catalog-search{width:100%;box-sizing:border-box;border:1px solid #d8d0c3;border-radius:6px;background:rgba(255,255,255,.82);padding:10px 12px;font:inherit;color:#1f1f1d}
+.catalog-search:focus{outline:2px solid rgba(138,47,33,.28);outline-offset:1px}
+.filter-row{display:flex;flex-wrap:wrap;gap:8px}
+.filter-pill{border:1px solid #d8d0c3;border-radius:999px;background:rgba(255,255,255,.72);color:#4f4b45;padding:7px 10px;font-size:13px;line-height:1;cursor:pointer}
+.filter-pill:hover{border-color:#8a2f21;color:#8a2f21}
+.filter-pill.is-active{background:#8a2f21;border-color:#8a2f21;color:#fff}
+.catalog-status{font-size:13px;color:#6b665f}
+.catalog-list{margin-top:0}
+.catalog-pager{display:flex;align-items:center;justify-content:center;gap:14px;margin-top:24px}
+.catalog-pager button{border:1px solid #d8d0c3;border-radius:6px;background:#fff;color:#1f1f1d;padding:8px 12px;cursor:pointer}
+.catalog-pager button:disabled{opacity:.42;cursor:not-allowed}
+.catalog-pager span{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;color:#6b665f}
 .timeline-day{max-width:1100px;margin:28px auto;padding:0 24px}
 .timeline-day h2{border-bottom:2px solid #111;padding-bottom:8px}
 .timeline-day article{display:grid;grid-template-columns:70px 1fr 240px;gap:16px;border-bottom:1px solid #ddd;padding:12px 0}
