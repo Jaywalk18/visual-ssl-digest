@@ -167,7 +167,8 @@
     <div class="paper-actions"><a href="../papers/2605.21059.html">读图文页</a><a href="https://arxiv.org/abs/2605.21059">原文</a></div>
   </div>
 </article></div></main>
-  <aside class="conf-float" aria-label="CCF A/B 截稿提醒">
+  <aside class="conf-float" data-conf-reminder="2026-05-25" aria-label="CCF A/B 截稿提醒">
+  <button class="conf-close" type="button" aria-label="关闭会议提醒">×</button>
   <details open>
     <summary>CCF A/B 截稿提醒</summary>
     <div class="conf-list"><a class="conf-item urgent" href="https://2026.acmmm.org/site/call-open-source.html">
@@ -185,5 +186,22 @@
     <div>原始日报继续同步飞书；本站用于图文归档和长读。</div>
     <div class="muted">Generated 2026-05-25 · MinerU figures where available</div>
   </footer>
+  <script>
+  (() => {
+    const box = document.querySelector('[data-conf-reminder]');
+    if (!box) return;
+    const key = `visualSslConfReminderClosed:${box.dataset.confReminder || '2026-05-25'}`;
+    try {
+      if (localStorage.getItem(key) === '1') box.hidden = true;
+    } catch (err) {}
+    const close = box.querySelector('.conf-close');
+    if (close) {
+      close.addEventListener('click', () => {
+        box.hidden = true;
+        try { localStorage.setItem(key, '1'); } catch (err) {}
+      });
+    }
+  })();
+  </script>
 </body>
 </html>
