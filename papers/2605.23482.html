@@ -41,6 +41,7 @@
       <p class="lead dropcap">先说结论。图文数据蒸馏不能只压缩样本，还要保留联合嵌入空间里的跨模态几何关系。 适合关注多模态预训练数据效率的人精读：它把合成图文对放进分布匹配和对齐保持问题里。</p>
       <figure class="full-fig"><img src="../assets/mineru/2605.23482/images/9cbfec280a9c4946c38cba6146c83c395b9612a6cf349a04afed554a1976b96f.jpg" alt="Figure 2"><figcaption><b>Figure 2</b>Figure 2. Overview of MDM. Our MDM method consists of (i) synthetic data initialization using k-means clustering, (ii) image-text model initialization using weight-space interpolation between a pretrained and N finetuned models, and (iii) multimodal distribution matching that minimizes geodesic kernel energy between real and synthetic pairs on the unit hypersphere.</figcaption></figure>
 <figure class="full-fig"><img src="../assets/mineru/2605.23482/images/794aa3825e7ff30dc0e04ed6346f51da57e5c11626ef8b4c3af0ef829c8ef5f2.jpg" alt="MDM: Compute Generalization Figure 1"><figcaption><b>MDM: Compute Generalization Figure 1</b>MDM: Compute Generalization Figure 1. Comparison between prior multimodal dataset distillation based on matching training trajectories (MTT, left) and our Multimodal Distribution Matching (MDM, right). While MTT replays image–text trajectories at high compute and storage cost, MDM directly matches the joint image–text distribution in the joint embedding space, yielding compact synthetic data with strong cross-architecture generalization under much lower distillation cost. The red arrow indicates the direction of gradient backpropagation.</figcaption></figure>
+      
       <h2>核心问题</h2>
       <p>对通用视觉自监督/多模态预训练很相关：它关注“哪些图文对足以保持视觉-语言对齐”，可用于思考 CLIP/SigLIP 类训练的数据效率和样本选择。</p>
       <h2>方法拆解</h2>
@@ -51,6 +52,7 @@
       <p>摘要报告在 image-text retrieval 与跨架构评估下，合成集能保持 multimodal semantics、降低蒸馏成本，并提升跨架构鲁棒性。</p>
       <h2>局限与读法</h2>
       <p>重点是数据蒸馏和图文检索，不是直接训练新的视觉 backbone；需要看合成图文对在更大规模 VLM 预训练和下游检测/分割中的外推性。</p>
+    
     </div>
   </div>
   <aside class="paper-side">

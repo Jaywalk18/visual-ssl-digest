@@ -41,6 +41,7 @@
       <p class="lead dropcap">先说结论。冻结文本编码器可以作为训练期语义锚点，推理时仍保留纯视觉模型。 今天最值得先读：它不是完整 CLIP 式预训练，而是把语言语义变成低成本的视觉表征塑形目标。</p>
       <figure class="full-fig"><img src="../assets/mineru/2605.22098/images/796f4b605eb7353bca8a8ef837f3ee0f267b8109f7d1e28126a4ba69fb43728a.jpg" alt="Figure 1: Setup of text-guided image-classification using TextTeacher: During training, we"><figcaption><b>Figure 1: Setup of text-guided image-classification using TextTeacher: During training, we</b>Figure 1: Setup of text-guided image-classification using TextTeacher: During training, we use a frozen text encoder on image captions to inject with semantic knowledge into an image classifier. At inference time, we deploy a standard, unimodal vision model.</figcaption></figure>
 <figure class="full-fig"><img src="../assets/mineru/2605.22098/images/84c80ea2b06c276dca33bcb710b781cc8efc20e06bab15fcbb647a460141759f.jpg" alt="Figure 10: Most aligned and disaligned images for 6 random classes using ViT-B trained wit"><figcaption><b>Figure 10: Most aligned and disaligned images for 6 random classes using ViT-B trained wit</b>Figure 10: Most aligned and disaligned images for 6 random classes using ViT-B trained with TextTeacher for 300 epochs. An aligned image is one where the text captions will output a large signal for a specific class. A disaligned image is an image of a class where the text caption produces a low signal for that class.</figcaption></figure>
+      
       <h2>核心问题</h2>
       <p>对通用视觉自监督/表征学习很实用：它给了“在不改变视觉推理模型的情况下借助语言语义塑形表征”的简单路径，可作为 DINO/MAE/ViT 训练 recipe 的对照。</p>
       <h2>方法拆解</h2>
@@ -51,6 +52,7 @@
       <p>对比 vision knowledge distillation 时，在相同 compute 下更准，或相近精度下更快；分析认为它更像早期训练阶段的 feature-space preconditioner。</p>
       <h2>局限与读法</h2>
       <p>仍依赖 caption 和冻结文本编码器质量；不是无监督/纯自监督，适合看作弱语言监督或训练期语义正则。</p>
+    
     </div>
   </div>
   <aside class="paper-side">

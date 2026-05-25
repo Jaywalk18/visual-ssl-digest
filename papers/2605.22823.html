@@ -41,6 +41,7 @@
       <p class="lead dropcap">先说结论。Video-LLM 不是完全看不到运动，而是运动方向信号在 projector/LLM 接口处被错绑。 这类诊断比单纯刷视频 QA 更有价值，因为它定位了视觉表征到语言读出的断点。</p>
       <figure class="full-fig"><img src="../assets/mineru/2605.22823/images/81d656cb264d88713433877f47910d305dcd5ec6c589acbff4d8da5a3b0458f5.jpg" alt="Figure 11: DeltaDirect restores the OOD motion direction concept vector magnitude across v"><figcaption><b>Figure 11: DeltaDirect restores the OOD motion direction concept vector magnitude across v</b>Figure 11: DeltaDirect restores the OOD motion direction concept vector magnitude across video-LLM backbones. For each backbone, we plot the direction concept vector magnitude on each OOD domain (Cutout-on-Syn, Primitive-on-Real, Cutout-on-Real) as a ratio to the same model’s source-domain Primitive-on-Syn magnitude. The green dashed line marks the Primitive-on-Syn reference at 1.0. The MODIRECT-INST baseline (gray) shows a clear magnitude deficit on every backbone, while DeltaDirect (blue) consistently narrows the gap. Qwen3-VL-4B exhibits the largest recovery, where DeltaDirect pushes every OOD ratio above the Primitive-on-Syn reference.</figcaption></figure>
 <figure class="full-fig"><img src="../assets/mineru/2605.22823/images/d608bd6e1ad38ba063d4a22ac3d34dd3fe13ece01c2d4325e231a19719f6343a.jpg" alt="Figure 14: Examples of MODIRECT-REALBENCH."><figcaption><b>Figure 14: Examples of MODIRECT-REALBENCH.</b>Figure 14: Examples of MODIRECT-REALBENCH.</figcaption></figure>
+      
       <h2>核心问题</h2>
       <p>它和通用视觉自监督的关系在于：Video-LLM 不是完全看不到运动，而是运动方向信号在 projector/LLM 接口处被错绑。</p>
       <h2>方法拆解</h2>
@@ -51,6 +52,7 @@
       <p>实验部分建议重点看两类证据：一是作者是否把方法收益和更强数据、更长训练、更大模型区分开；二是跨模型、跨数据或跨任务迁移是否还能保留同样趋势。</p>
       <h2>局限与读法</h2>
       <p>这篇论文的结论需要结合任务设置、训练数据规模和消融实验一起看；不要只凭单个指标判断它对通用视觉表征的价值。</p>
+    
     </div>
   </div>
   <aside class="paper-side">

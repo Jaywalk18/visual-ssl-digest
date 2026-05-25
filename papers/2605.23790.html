@@ -41,6 +41,7 @@
       <p class="lead dropcap">先说结论。自监督 event Swin backbone 可以迁移到标注稀缺的事件相机 saliency prediction。 模态较专，适合作为自监督 backbone 迁移到异构视觉模态的扫读案例。</p>
       <figure class="full-fig"><img src="../assets/mineru/2605.23790/images/459559625b2c3209dcb8a5b1a39ba8993a24b7a60ef02785f58a822fdb7241c5.jpg" alt="Fig"><figcaption><b>Fig</b>Fig. 1. Overview of the proposed Swin Event-based Saliency Transformer (SEST) architecture.</figcaption></figure>
 <figure class="full-fig"><img src="../assets/mineru/2605.23790/images/4b7f14f53414726acd5d6e052312beda82e63063bfd808cb2dd25a82c9da241e.jpg" alt="Fig"><figcaption><b>Fig</b>Fig. 2. Illustration of qualitative results for three samples: UCF Sports Run-side-004 (rows 1-2), DHF1K 548 (rows 3-4), UCF Sports Swing-Bench-003 (rows 5-6).</figcaption></figure>
+      
       <h2>核心问题</h2>
       <p>适合作为“自监督 backbone 如何迁移到稀缺/异构视觉模态”的扫读案例，不建议排在 TextTeacher/MDM/EvoVid 前面。</p>
       <h2>方法拆解</h2>
@@ -51,6 +52,7 @@
       <p>摘要报告 SEST 明显优于现有 event-based saliency 方法，并在真实 event camera 数据上有 zero-shot 可迁移性。</p>
       <h2>局限与读法</h2>
       <p>event camera 属于专用感知模态，和通用 RGB 图像表征仍有距离；主任务是 saliency prediction 而非通用 SSL benchmark。</p>
+    
     </div>
   </div>
   <aside class="paper-side">
