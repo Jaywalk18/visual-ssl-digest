@@ -41,6 +41,7 @@
       <p class="lead dropcap">先说结论。未标注视频可以通过时间敏感问题生成和片段定位奖励构造自演化训练信号。 它把视频自监督和 Video-LLM 后训练接起来，值得和 V-JEPA、视频掩码建模放在一起看。</p>
       <figure class="full-fig"><img src="../assets/mineru/2605.21931/images/df7072b85786da0639f171cab7a0be6053afde914b86af4e673e333245133635.jpg" alt="Figure 1: Comparison between supervised RL, VANILLA self-evolving frameworks, and EvoVid"><figcaption><b>Figure 1: Comparison between supervised RL, VANILLA self-evolving frameworks, and EvoVid</b>Figure 1: Comparison between supervised RL, VANILLA self-evolving frameworks, and EvoVid. Left: Supervised RL relies on human-annotated tasks and solutions to construct reward signals, making training costly and inherently bounded by human expertise. Middle: VANILLA self-evolving frameworks, primarily designed for static modalities, i.e., images, generate generic and often singleframe answerable questions, leading to temporally insensitive Questioner–Solver self-play. Right: EvoVid introduces video-based self-evolution through a temporal-aware Questioner and a temporalgrounded Solver, enabling temporal-centric self-evolution directly from raw, unannotated videos.</figcaption></figure>
 <figure class="full-fig"><img src="../assets/mineru/2605.21931/images/fad2bb2c1d74f896ca0737e389dfd0bc50b229e36d13810b7a9d0cf2a4587d99.jpg" alt="Figure 2: Overview of EvoVid"><figcaption><b>Figure 2: Overview of EvoVid</b>Figure 2: Overview of EvoVid. Questioner $\pi _ { Q }$ and Solver $\pi _ { S }$ co-evolve through two temporal-centric rewards. Questioner Training: with original and shuffled frames to derive t $\pi _ { S }$ frozen, tempora $\pi _ { Q }$ generates questions ware Questioner reward $\pi _ { S }$ responds usingolver Training: $r _ { \mathrm { t e m p } } ^ { Q }$ with $\pi _ { Q }$ frozen, the Questioner generates questions from a sampled $K$ -frame window, and $\pi _ { S }$ predicts both the answer and temporal segment, which is compared with the sampled window to derive the temporal-grounded Solver reward $r _ { \mathrm { t e m p } } ^ { S } .$ . Preliminary rewards are omitted for simplicity.</figcaption></figure>
+      
       <h2>核心问题</h2>
       <p>对通用视频预训练有启发：未标注视频可以通过时间扰动敏感性和片段定位构造自监督信号。</p>
       <h2>方法拆解</h2>
@@ -51,6 +52,7 @@
       <p>摘要报告在 4 个 base model、6 个 benchmark 上相对基础模型和已有 self-evolving baseline 均有一致提升，并接近监督方法。</p>
       <h2>局限与读法</h2>
       <p>更偏 Video-LLM RL/后训练，不是经典 image SSL；需看 reward 是否真正提升视觉时序表征而非只优化问答行为。</p>
+    
     </div>
   </div>
   <aside class="paper-side">

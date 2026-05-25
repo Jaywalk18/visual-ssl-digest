@@ -41,6 +41,7 @@
       <p class="lead dropcap">先说结论。几何不应该只在 reasoning 阶段后融合，它应该先改造视觉 token 的坐标感。 这篇不是 JEPA，而是 VLM 视觉 token grounding：冻结几何编码器的证据被分配给多层视觉 token。</p>
       <figure class="full-fig"><img src="../assets/mineru/2605.22558/images/ed3355dd07fff251346ec70423148172429126b696ac9ad114ee4c8db2e8b217.jpg" alt="Figure 2: Overview of GeoWeaver"><figcaption><b>Figure 2: Overview of GeoWeaver</b>Figure 2: Overview of GeoWeaver. GeoWeaver treats geometry as a representational prerequisite rather than a late fusion signal. A frozen VGGT encoder provides a multi-layer geometry bank, from which each visual token adaptively retrieves sparse geometric evidence via query-conditioned compact geometric grounding before entering the Qwen LLM. This pre-reasoning grounding process converts semantic visual tokens into geometry-grounded visual tokens for spatio-temporal reasoning.</figcaption></figure>
 <figure class="full-fig"><img src="../assets/mineru/2605.22558/images/af80cc3b0e320098ef6620e16b8d9bb494c9631d96fce29355e89d4030b266ad.jpg" alt="(b) Visualization of VGGT feature responses from different layers"><figcaption><b>(b) Visualization of VGGT feature responses from different layers</b>(b) Visualization of VGGT feature responses from different layers. Figure 1: Motivation and paradigm comparison of GeoWeaver. Top: Existing geometry-enhanced VLMs mainly introduce geometry through pre-fusion or LLM-side fusion, while GeoWeaver grounds visual tokens before language reasoning. Bottom: VGGT feature maps from different layers exhibit heterogeneous spatial responses, indicating that multi-layer geometry does not provide a uniform signal. This motivates our design of treating geometry features as a multi-level evidence bank.</figcaption></figure>
+      
       <h2>核心问题</h2>
       <p>它和通用视觉自监督的关系在于：几何不应该只在 reasoning 阶段后融合，它应该先改造视觉 token 的坐标感。</p>
       <h2>方法拆解</h2>
@@ -51,6 +52,7 @@
       <p>实验部分建议重点看两类证据：一是作者是否把方法收益和更强数据、更长训练、更大模型区分开；二是跨模型、跨数据或跨任务迁移是否还能保留同样趋势。</p>
       <h2>局限与读法</h2>
       <p>这篇论文的结论需要结合任务设置、训练数据规模和消融实验一起看；不要只凭单个指标判断它对通用视觉表征的价值。</p>
+    
     </div>
   </div>
   <aside class="paper-side">
