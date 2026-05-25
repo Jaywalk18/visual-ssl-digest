@@ -133,6 +133,17 @@ def validate_site_quality() -> None:
         r"当前页面是站点原型",
         r"下一步怎么接进日报",
         r"正式流程会把每篇论文",
+        r"GitHub Pages MVP",
+        r"当前 MVP",
+        r"试运行",
+        r"飞书文字版",
+        r"原始日报",
+        r"latest\.md",
+        r"本地归档路径",
+        r"Generated \d{4}",
+        r"用于图文归档",
+        r"每日 Markdown",
+        r"自动生成",
     ]
     problems: list[str] = []
     paper_paths = list((SITE_ROOT / "papers").glob("*.html"))

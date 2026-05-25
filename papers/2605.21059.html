@@ -9,12 +9,12 @@
 </head>
 <body>
   <header class="masthead">
-    <div class="masthead-kicker">Visual SSL Daily · GitHub Pages MVP · 2026-05-25</div>
+    <div class="masthead-kicker">Visual SSL Research Report · 2026-05-22</div>
     <a class="masthead-title" href="../index.html">通用视觉自监督研究报</a>
     <div class="masthead-meta">
       <span>图像表征 · VFM · JEPA · 视频预训练</span>
       <span>CCF A/B 会议优先</span>
-      <span>MinerU 图文版试运行</span>
+      <span>图文精读 · 方法图解</span>
     </div>
   </header>
   <nav class="site-nav" aria-label="主导航">
@@ -27,18 +27,18 @@
   <div class="paper-main">
     <div class="kicker">Multimodal representation · P1 · 2026-05-22</div>
     <h1 class="paper-headline">Pairwise Modalities：多模态模型不一定需要完整 joint tuples；只要模态图连通，pairwise supervision 可以成为可扩展替代品。</h1>
-    <p class="dek">这是本 MVP 的 MinerU 图文样例页：Fig.1 解释动机，Fig.2 解释共享/私有 latent 生成过程。</p>
-    <p class="byline"><strong>Multimodal LLMs under Pairwise Modalities</strong>　arXiv · MinerU figure demo　<a href="https://arxiv.org/abs/2605.21059">原文链接</a></p>
+    <p class="dek">它把多模态表征学习的问题改写成模态图连通性问题，重点不在堆更多模态，而在证明 pairwise supervision 也能学习共享/私有 latent 结构。</p>
+    <p class="byline"><strong>Multimodal LLMs under Pairwise Modalities</strong>　arXiv　<a href="https://arxiv.org/abs/2605.21059">原文链接</a></p>
     <div class="paper-facts">
       <span><b>编号</b>2605.21059</span>
       <span><b>优先级</b>P1</span>
       <span><b>类别</b>Multimodal representation</span>
-      <span><b>会议</b>arXiv · MinerU figure demo</span>
+      <span><b>会议</b>arXiv</span>
       <span><b>方法</b>self-modal reconstruction + pairwise contrastive latent alignment</span>
       <span><b>来源</b>arXiv / OpenReview</span>
     </div>
     <div class="feature-body">
-      <p class="lead dropcap">先说结论。多模态模型不一定需要完整 joint tuples；只要模态图连通，pairwise supervision 可以成为可扩展替代品。 这是本 MVP 的 MinerU 图文样例页：Fig.1 解释动机，Fig.2 解释共享/私有 latent 生成过程。</p>
+      <p class="lead dropcap">先说结论。多模态模型不一定需要完整 joint tuples；只要模态图连通，pairwise supervision 可以成为可扩展替代品。 它把多模态表征学习的问题改写成模态图连通性问题，重点不在堆更多模态，而在证明 pairwise supervision 也能学习共享/私有 latent 结构。</p>
       <figure class="full-fig"><img src="../assets/mineru/2605.21059/images/fig1.jpg" alt="Fig. 1 · Pairwise supervision is the scalable object"><figcaption><b>Fig. 1 · Pairwise supervision is the scalable object</b><span class="fig-en">Joint tuples are expensive; pairwise text-image, image-tactile, and text-3D data can form a connected modality graph.</span><span class="fig-zh">这张图说明论文的核心动机：不一定要收集完整多模态 tuple，只要 pairwise supervision 形成连通的模态图，也能支撑共享表示学习。</span></figcaption></figure>
 <figure class="full-fig"><img src="../assets/mineru/2605.21059/images/fig2.jpg" alt="Fig. 2 · Shared and modality-specific latent factors"><figcaption><b>Fig. 2 · Shared and modality-specific latent factors</b><span class="fig-en">The paper separates common causal factors from modality-private variables before alignment.</span><span class="fig-zh">这张图展示共享 latent 与模态私有变量的生成假设：先分离跨模态共有因素，再做 pairwise alignment，避免把私有噪声也强行对齐。</span></figcaption></figure>
       
@@ -47,7 +47,7 @@
       <h2>方法拆解</h2>
       <p>self-modal reconstruction + pairwise contrastive latent alignment</p>
       <h2>主要贡献</h2>
-      <p>这是本 MVP 的 MinerU 图文样例页：Fig.1 解释动机，Fig.2 解释共享/私有 latent 生成过程。</p>
+      <p>它把多模态表征学习的问题改写成模态图连通性问题，重点不在堆更多模态，而在证明 pairwise supervision 也能学习共享/私有 latent 结构。</p>
       <h2>实验看点</h2>
       <p>实验部分建议重点看两类证据：一是作者是否把方法收益和更强数据、更长训练、更大模型区分开；二是跨模型、跨数据或跨任务迁移是否还能保留同样趋势。</p>
       <h2>局限与读法</h2>
@@ -56,7 +56,7 @@
     </div>
   </div>
   <aside class="paper-side">
-    <div class="side-box"><h4>关键判断</h4><dl><dt>相关性</dt><dd>P1</dd><dt>类别</dt><dd>Multimodal representation</dd><dt>会议</dt><dd>arXiv · MinerU figure demo</dd><dt>读法</dt><dd>方法图优先，表格次之</dd></dl></div>
+    <div class="side-box"><h4>关键判断</h4><dl><dt>相关性</dt><dd>P1</dd><dt>类别</dt><dd>Multimodal representation</dd><dt>会议</dt><dd>arXiv</dd><dt>读法</dt><dd>方法图优先，表格次之</dd></dl></div>
     <div class="side-box"><h4>原文</h4><p><a href="https://arxiv.org/abs/2605.21059">https://arxiv.org/abs/2605.21059</a></p></div>
   </aside>
 </article></main>
@@ -72,8 +72,8 @@
   </details>
 </aside>
   <footer class="footer">
-    <div>原始日报继续同步飞书；本站用于图文归档和长读。</div>
-    <div class="muted">Generated 2026-05-25 · MinerU figures where available</div>
+    <div>面向通用视觉自监督、视觉基础模型与多模态表征学习的每日研究报。</div>
+    <div class="muted">Issue 2026-05-22 · Curated readings and figure notes</div>
   </footer>
   <script>
   (() => {

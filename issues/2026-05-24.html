@@ -4,35 +4,33 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>2026-05-24 速递 · 通用视觉自监督研究报</title>
-  <link rel="stylesheet" href="../assets/styles.css?v=20260524b">
-  <link rel="stylesheet" href="../assets/visual-ssl.css?v=20260524b">
+  <link rel="stylesheet" href="../assets/styles.css?v=20260525e">
+  <link rel="stylesheet" href="../assets/visual-ssl.css?v=20260525e">
 </head>
 <body>
   <header class="masthead">
-    <div class="masthead-kicker">Visual SSL Daily · GitHub Pages MVP · 2026-05-24</div>
+    <div class="masthead-kicker">Visual SSL Research Report · 2026-05-24</div>
     <a class="masthead-title" href="../index.html">通用视觉自监督研究报</a>
     <div class="masthead-meta">
       <span>图像表征 · VFM · JEPA · 视频预训练</span>
       <span>CCF A/B 会议优先</span>
-      <span>MinerU 图文版试运行</span>
+      <span>图文精读 · 方法图解</span>
     </div>
   </header>
   <nav class="site-nav" aria-label="主导航">
     <a class="nav-link" href="../index.html">头版</a>
-<a class="nav-link active" href="../issues/2026-05-24.html">今日速递</a>
+<a class="nav-link" href="../issues/2026-05-25.html">今日速递</a>
 <a class="nav-link" href="../pages/catalog.html">论文目录</a>
 <a class="nav-link" href="../pages/timeline.html">时间线</a>
   </nav>
   <main><article class="paper-detail issue-detail">
   <div class="paper-main">
     <div class="kicker">Daily issue · 2026-05-24 · CCF A/B 会议优先</div>
-    <h1 class="paper-headline">5 月 24 日：JEPA、世界模型与视频几何信号同时补强视觉表征</h1>
-    <p class="dek">今天不是纯图像 SSL 单点爆发，而是文本条件 JEPA、层级世界模型、位姿 grounding 和运动方向诊断共同推高通用视觉表征的边界。</p>
+    <h1 class="paper-headline">5 月 24 日：TC-JEPA 等视觉表征论文归档</h1>
+    <p class="dek">本页按日期归档近期论文，保留优先级、主题、来源与方法线索，方便回看同一批工作的研究脉络。</p>
     <div class="feature-body">
-      <p class="lead dropcap">先读 TC-JEPA，它直接站在 I-JEPA/Masked feature prediction 主线上，核心问题是“遮挡位置预测不确定性如何靠文本条件缓解”。第二读 ResDreamer，关注层级残差世界模型如何在纯自监督条件下学习动态视觉推理 latent。然后读 Cambrian-P 和 Directional Motion Blindness：前者把相机位姿变成视频 MLLM 的基础监督信号，后者诊断运动方向信号在视觉编码器到语言读出之间如何断裂。SWEET、GeoWeaver 和 Matching Principle 更适合作为方法库：分别对应可缩放初始化、几何 token grounding 和鲁棒表征损失理论。</p>
+      <p class="lead dropcap">先读 TC-JEPA。文本条件不是给 I-JEPA 加一个 caption 头，而是在降低 masked feature prediction 的多解性。 其余论文按 P1/P2 与主题顺序扫读，重点看方法图、消融设置和是否能迁移到通用视觉表征。</p>
       <h2>论文索引</h2>
-      <table class="compact-table"><thead><tr><th>优先级</th><th>论文</th><th>类型</th><th>相关性</th><th>一句话理由</th></tr></thead><tbody><tr><td>P1</td><td>Text-Conditional JEPA for Learning Semantically Rich Visual Representations</td><td>arXiv + ICML 2026</td><td>高</td><td>在 I-JEPA masked feature prediction 中引入文本条件，是最直接的视觉自监督/视觉语言预训练工作。</td></tr><tr><td>P1</td><td>Self-supervised Hierarchical Visual Reasoning with World Model</td><td>arXiv + ICML 2026</td><td>高</td><td>纯自监督层级世界模型，用残差重构逼出更抽象的视觉推理表征。</td></tr><tr><td>P1</td><td>Cambrian-P: Pose-Grounded Video Understanding</td><td>arXiv 新增</td><td>高</td><td>用伪位姿/位姿回归约束视频 MLLM，直接强化跨帧空间表征。</td></tr><tr><td>P2</td><td>Self-Supervised Weight Templates for Scalable Vision Model Initialization</td><td>arXiv + ICML 2026</td><td>高</td><td>把自监督目标从激活表征扩展到可缩放视觉模型初始化权重模板。</td></tr><tr><td>P2</td><td>Which Way Did It Move? Directional Motion Blindness in Video-LLMs</td><td>arXiv 新增</td><td>中高</td><td>诊断运动方向信号在视觉编码器到语言读出之间的断裂，并提出 projector 级运动向量目标。</td></tr><tr><td>P2</td><td>GeoWeaver</td><td>arXiv 新增</td><td>中高</td><td>把冻结几何编码器的多层证据分配给视觉 token，强调几何先于语言推理。</td></tr><tr><td>P3</td><td>Swift Sampling</td><td>arXiv 新增</td><td>中</td><td>训练免费地在视觉 latent trajectory 中选高信息帧，可作为视频预训练/评测采样模块。</td></tr><tr><td>P3</td><td>The Matching Principle</td><td>arXiv 新增</td><td>中</td><td>从几何/协方差角度统一 nuisance-robust representation learning 的损失设计。</td></tr><tr><td>状态补录</td><td>DINOv3</td><td>TMLR Accepted / OpenReview</td><td>高</td><td>不是今日新增，但属于通用视觉自监督基础模型的重要里程碑。</td></tr></tbody></table>
-      <h2>主线阅读</h2>
       <div class="paper-list issue-list"><article class="paper-card" data-category="JEPA / VLM pretraining" data-title="text-conditional jepa for learning semantically rich visual representations">
   <a class="paper-thumb paper-thumb-text" href="../papers/2605.03245.html">
     <img src="../assets/mineru/2605.03245/images/5ceb4d7d2d5e3cfe2efe79262205e252fccb946d687ad798ab297b8ea5cb9f10.jpg" alt="TC-JEPA figure"><span>P1</span>
@@ -71,7 +69,7 @@
 </article>
 <article class="paper-card" data-category="Video diagnostics" data-title="which way did it move? directional motion blindness in video-llms">
   <a class="paper-thumb paper-thumb-text" href="../papers/2605.22823.html">
-    <img src="../assets/mineru/2605.22823/images/81d656cb264d88713433877f47910d305dcd5ec6c589acbff4d8da5a3b0458f5.jpg" alt="DeltaDirect figure"><span>P2</span>
+    <img src="../assets/mineru/2605.22823/images/e0379ad71750a9c95b0af4a0f852eab58fca80bee734bb638bb69405e6b5fbbd.jpg" alt="DeltaDirect figure"><span>P2</span>
   </a>
   <div>
     <div class="paper-meta">2026-05-24 · Video diagnostics · arXiv</div>
@@ -96,14 +94,41 @@
     </div>
   </div>
   <aside class="paper-side">
-    <div class="side-box"><h4>今日重点</h4><p>TC-JEPA、ResDreamer、Cambrian-P、DeltaDirect。</p></div>
-    <div class="side-box"><h4>会议口径</h4><p>只把 CCF A/B 放进主提醒；临近截止或 CCF C 仅记录。</p></div>
-    <div class="side-box"><h4>飞书文字版</h4><p><a href="https://www.feishu.cn/file/T684bdqYloXgmVxCV4ocxCm1nMc">latest.md →</a></p></div>
+    <div class="side-box"><h4>阅读重点</h4><p>先看 P1/P2 与方法图，再扫状态变化和边界案例。</p></div>
+    <div class="side-box"><h4>会议口径</h4><p>主提醒只保留 CCF A/B；CCF C 与过期截止仅作状态记录。</p></div>
   </aside>
 </article></main>
+  <aside class="conf-float" data-conf-reminder="2026-05-25-main-ddl" aria-label="CCF A/B 主投稿提醒">
+  <button class="conf-close" type="button" aria-label="关闭会议提醒">×</button>
+  <details open>
+    <summary>CCF A/B 主投稿提醒</summary>
+    <div class="conf-list"><a class="conf-item " href="https://github.com/ccfddl/ccf-deadlines/blob/main/conference/AI/aaai.yml">
+  <span><b>AAAI 2027</b><em>CCF A · Main paper submission</em></span>
+  <strong>63 天</strong>
+  <small>2026-07-27 · CCF DDL: abstract 2026-07-20；进入 1 个月窗口后重点提醒。</small>
+</a></div>
+  </details>
+</aside>
   <footer class="footer">
-    <div>原始日报继续同步飞书；本站用于图文归档和长读。</div>
-    <div class="muted">Generated 2026-05-24 · MinerU figures where available</div>
+    <div>面向通用视觉自监督、视觉基础模型与多模态表征学习的每日研究报。</div>
+    <div class="muted">Issue 2026-05-24 · Curated readings and figure notes</div>
   </footer>
+  <script>
+  (() => {
+    const box = document.querySelector('[data-conf-reminder]');
+    if (!box) return;
+    const key = `visualSslConfReminderClosed:${box.dataset.confReminder || '2026-05-25-main-ddl'}`;
+    try {
+      if (localStorage.getItem(key) === '1') box.hidden = true;
+    } catch (err) {}
+    const close = box.querySelector('.conf-close');
+    if (close) {
+      close.addEventListener('click', () => {
+        box.hidden = true;
+        try { localStorage.setItem(key, '1'); } catch (err) {}
+      });
+    }
+  })();
+  </script>
 </body>
 </html>
