@@ -202,15 +202,53 @@ def figure_by_caption(pid: str, depth: int, needle: str) -> dict | None:
 
 
 def render_fig(fig: dict, cls: str = "full-fig") -> str:
-    return f"""<figure class="{cls}"><img src="{e(fig['src'])}" alt="{e(fig['label'])}"><figcaption><b>{e(fig['label'])}</b>{e(fig['caption'])}</figcaption></figure>"""
+    if fig.get("caption_en") or fig.get("caption_zh"):
+        caption = f"""<span class="fig-en">{e(fig.get('caption_en') or '')}</span><span class="fig-zh">{e(fig.get('caption_zh') or '')}</span>"""
+    else:
+        caption = e(fig["caption"])
+    return f"""<figure class="{cls}"><img src="{e(fig['src'])}" alt="{e(fig['label'])}"><figcaption><b>{e(fig['label'])}</b>{caption}</figcaption></figure>"""
+
+
+def tc_jepa_figure(pid: str, needle: str, label: str, caption_en: str, caption_zh: str) -> dict | None:
+    fig = figure_by_caption(pid, 1, needle)
+    if not fig:
+        return None
+    fig["label"] = label
+    fig["caption_en"] = caption_en
+    fig["caption_zh"] = caption_zh
+    return fig
 
 
 def tc_jepa_body(p: dict) -> str:
     figs = [
-        figure_by_caption(p["id"], 1, "Figure 2"),
-        figure_by_caption(p["id"], 1, "Figure 5"),
-        figure_by_caption(p["id"], 1, "Figure 4"),
-        figure_by_caption(p["id"], 1, "Figure 8"),
+        tc_jepa_figure(
+            p["id"],
+            "Figure 2",
+            "Figure 2 · Text-conditioned JEPA predictor",
+            "TC-JEPA conditions the I-JEPA predictor g_phi on multiple captions. Patch features cross-attend to T5 word embeddings at several predictor layers, then max-pool across captions; L_sparse and L_consistency regularize patch-word similarities.",
+            "TC-JEPA 不是把 caption 当作额外分类头，而是在 JEPA predictor 的多层里用词级 cross-attention 条件化 patch feature。多句 caption 分别提供条件信号，再通过 max-pooling 选择最有帮助的语义线索；稀疏和跨层一致性约束让 patch-word 对应更集中、更稳定。",
+        ),
+        tc_jepa_figure(
+            p["id"],
+            "Figure 5",
+            "Figure 5 · Patch-word grounding and prediction error",
+            "The visualization links sparse patch-word similarities with feature prediction quality. TC-JEPA's conditioned predictor produces lower target-patch error than plain I-JEPA on the shown masked regions.",
+            "这张图要看两件事：上半部分说明模型学到了稀疏的 patch-word 对应，下半部分比较 I-JEPA 与 TC-JEPA 的目标 patch 预测误差。作者想证明文字条件确实在降低被遮挡区域的预测不确定性，而不是只让 attention 图更好看。",
+        ),
+        tc_jepa_figure(
+            p["id"],
+            "Figure 4",
+            "Figure 4 · Ablation of text-conditioning components",
+            "The ablation separates the gains from text conditioning, sparsity regularization, consistency regularization, and multi-layer conditioning.",
+            "消融图用来判断收益来自哪里：只有 caption 不够，词级对应的稀疏约束、多层一致性以及多层 predictor 条件化都在贡献最终的分类和分割性能。",
+        ),
+        tc_jepa_figure(
+            p["id"],
+            "Figure 8",
+            "Figure 8 · Efficiency and scaling behavior",
+            "The efficiency plot compares downstream gains against pretraining compute. Because text conditioning is attached to the lightweight predictor, the added cost is smaller than modifying the visual encoder.",
+            "效率图的重点是成本位置：TC-JEPA 把文字条件加在较轻的 predictor 上，测试时还会丢弃 predictor 和 text conditioner，因此额外训练成本相对可控，主要收益体现在分割和细粒度任务。",
+        ),
     ]
     fig_html = "\n".join(render_fig(fig) for fig in figs if fig)
     body = f"""<article class="paper-detail deep-read">
@@ -545,6 +583,10 @@ def write_css() -> None:
 .hero-figure figcaption{font-size:13px;line-height:1.45;color:#5f5b55;margin-top:8px}
 .deep-read .full-fig{margin:28px 0;padding:14px;background:#fbfaf6;border:1px solid #d8d0c3}
 .deep-read .full-fig img{width:100%;max-height:720px;object-fit:contain;background:#fff}
+.deep-read .full-fig figcaption b{display:block;margin-bottom:8px;color:#8a2f21;font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:12px;letter-spacing:.08em;text-transform:uppercase}
+.deep-read .full-fig .fig-en,.deep-read .full-fig .fig-zh{display:block;font-size:14px;line-height:1.62}
+.deep-read .full-fig .fig-en{color:#4f4b45}
+.deep-read .full-fig .fig-zh{margin-top:6px;color:#1f1f1d}
 .deep-read .feature-body{column-count:1;column-width:auto}
 .reading-note{border-left:5px solid #8a2f21;background:#f7f3ea;padding:16px 18px;margin:24px 0}
 .reading-note h2{margin-top:0}

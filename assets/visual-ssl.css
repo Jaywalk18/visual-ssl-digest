@@ -29,6 +29,10 @@
 .hero-figure figcaption{font-size:13px;line-height:1.45;color:#5f5b55;margin-top:8px}
 .deep-read .full-fig{margin:28px 0;padding:14px;background:#fbfaf6;border:1px solid #d8d0c3}
 .deep-read .full-fig img{width:100%;max-height:720px;object-fit:contain;background:#fff}
+.deep-read .full-fig figcaption b{display:block;margin-bottom:8px;color:#8a2f21;font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:12px;letter-spacing:.08em;text-transform:uppercase}
+.deep-read .full-fig .fig-en,.deep-read .full-fig .fig-zh{display:block;font-size:14px;line-height:1.62}
+.deep-read .full-fig .fig-en{color:#4f4b45}
+.deep-read .full-fig .fig-zh{margin-top:6px;color:#1f1f1d}
 .deep-read .feature-body{column-count:1;column-width:auto}
 .reading-note{border-left:5px solid #8a2f21;background:#f7f3ea;padding:16px 18px;margin:24px 0}
 .reading-note h2{margin-top:0}
