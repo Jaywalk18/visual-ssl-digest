@@ -47,7 +47,7 @@ After the existing Markdown/Feishu report finishes:
 
 ## Notes
 
-- The latest issue is 2026-05-25. It is currently a text-first web issue; MinerU figure extraction has not yet been run for the 2026-05-25 papers.
+- The latest issue is 2026-05-25. MinerU figure extraction has been run for TextTeacher, MDM, EvoVid, Ablate-to-Validate, Neural Collapse by Design, and SEST.
 - The site uses MinerU figures for the 2026-05-24/older figure-rich pages: TC-JEPA, ResDreamer, Cambrian-P, DeltaDirect, GeoWeaver, and Pairwise Modalities.
 - Current generator is still an MVP: paper metadata is curated in Python. Next step is to load daily paper records from the dedupe JSON and Markdown reports.
 - Keep Feishu `latest.md` as the compact text push; use this site as the figure-rich archive.
