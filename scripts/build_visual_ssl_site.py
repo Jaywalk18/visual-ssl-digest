@@ -657,7 +657,8 @@ def conference_widget(depth: int = 0) -> str:
   <small>{e(item['deadline'])} · {e(item['note'])}</small>
 </a>"""
         )
-    return f"""<aside class="conf-float" aria-label="CCF A/B 截稿提醒">
+    return f"""<aside class="conf-float" data-conf-reminder="{e(CURRENT_DATE)}" aria-label="CCF A/B 截稿提醒">
+  <button class="conf-close" type="button" aria-label="关闭会议提醒">×</button>
   <details open>
     <summary>CCF A/B 截稿提醒</summary>
     <div class="conf-list">{''.join(rows)}</div>
@@ -695,6 +696,23 @@ def shell(title: str, body: str, depth: int = 0, active: str = "") -> str:
     <div>原始日报继续同步飞书；本站用于图文归档和长读。</div>
     <div class="muted">Generated {e(CURRENT_DATE)} · MinerU figures where available</div>
   </footer>
+  <script>
+  (() => {{
+    const box = document.querySelector('[data-conf-reminder]');
+    if (!box) return;
+    const key = `visualSslConfReminderClosed:${{box.dataset.confReminder || '{e(CURRENT_DATE)}'}}`;
+    try {{
+      if (localStorage.getItem(key) === '1') box.hidden = true;
+    }} catch (err) {{}}
+    const close = box.querySelector('.conf-close');
+    if (close) {{
+      close.addEventListener('click', () => {{
+        box.hidden = true;
+        try {{ localStorage.setItem(key, '1'); }} catch (err) {{}}
+      }});
+    }}
+  }})();
+  </script>
 </body>
 </html>"""
 
@@ -910,12 +928,14 @@ def write_css() -> None:
 .timeline-day article{display:grid;grid-template-columns:70px 1fr 240px;gap:16px;border-bottom:1px solid #ddd;padding:12px 0}
 .timeline-day span{font-weight:700;color:#8a2f21}
 .timeline-day em{font-style:normal;color:#65615a}
-.conf-float{position:fixed;right:18px;bottom:18px;z-index:45;width:min(360px,calc(100vw - 32px));background:#fbfaf6;border:1px solid #d8d0c3;box-shadow:0 16px 36px rgba(31,31,29,.18);padding:12px}
+.conf-float{position:fixed;right:18px;bottom:18px;z-index:45;width:min(360px,calc(100vw - 32px));background:#fbfaf6;border:1px solid #d8d0c3;border-radius:8px;box-shadow:0 16px 36px rgba(31,31,29,.18);padding:14px 42px 14px 14px}
 .conf-float details{margin:0}
 .conf-float summary{cursor:pointer;font-weight:700;color:#1f1f1d;list-style:none}
 .conf-float summary::-webkit-details-marker{display:none}
+.conf-close{position:absolute;right:10px;top:9px;width:24px;height:24px;border:1px solid #d8d0c3;border-radius:999px;background:#fff;color:#5f5b55;font-size:17px;line-height:20px;cursor:pointer;padding:0}
+.conf-close:hover{border-color:#8a2f21;color:#8a2f21}
 .conf-list{display:grid;gap:8px;margin-top:10px}
-.conf-item{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:4px 10px;text-decoration:none;color:#1f1f1d;border-left:4px solid #b8afa1;background:#fff;padding:9px 10px}
+.conf-item{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:4px 10px;text-decoration:none;color:#1f1f1d;border-left:4px solid #b8afa1;background:#fff;padding:9px 10px;border-radius:6px}
 .conf-item b,.conf-item em,.conf-item small{display:block}
 .conf-item em{font-style:normal;font-size:12px;color:#6b665f;margin-top:2px}
 .conf-item strong{color:#5b5a56;font-size:13px;white-space:nowrap}
