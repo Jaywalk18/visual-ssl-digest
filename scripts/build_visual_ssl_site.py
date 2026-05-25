@@ -10,7 +10,7 @@ from pathlib import Path
 
 ROOT = Path(r"H:\Desktop\visual_ssl_digest_site")
 REPORT_ROOT = Path(r"H:\Desktop\visual_ssl_paper_reports")
-CSS_VERSION = "20260525b"
+CSS_VERSION = "20260525c"
 CURRENT_DATE = "2026-05-25"
 
 
@@ -18,34 +18,26 @@ CONFERENCE_REMINDERS = [
     {
         "name": "ACM MM 2026",
         "ccf": "CCF A",
-        "track": "Open Source",
-        "deadline": "2026-05-28",
-        "url": "https://2026.acmmm.org/site/call-open-source.html",
-        "note": "非主会主赛道；适合工具/代码型贡献。",
-    },
-    {
-        "name": "ACM MM 2026",
-        "ccf": "CCF A",
-        "track": "Demo & Video",
-        "deadline": "2026-06-11",
-        "url": "https://2026.acmmm.org/site/important-dates.html",
-        "note": "主会已截稿；该项为 Demo/Video track。",
-    },
-    {
-        "name": "ACM MM 2026",
-        "ccf": "CCF A",
-        "track": "Workshop papers",
-        "deadline": "2026-07-16",
-        "url": "https://2026.acmmm.org/site/important-dates.html",
-        "note": "Workshop 投稿窗口。",
+        "track": "Main regular paper",
+        "deadline": "2026-04-01",
+        "url": "https://2026.acmmm.org/site/cfp-guidelines.html",
+        "note": "主会 regular paper 已截稿；不再用 workshop/demo/open-source 充当投稿提醒。",
     },
     {
         "name": "NeurIPS 2026",
         "ccf": "CCF A",
-        "track": "Workshop contributions",
-        "deadline": "2026-08-29",
-        "url": "https://neurips.cc/Conferences/current/Dates",
-        "note": "主会已截稿；此处是 workshop contribution 建议日期。",
+        "track": "Main paper",
+        "deadline": "2026-05-07",
+        "url": "https://ccf-cycle.vercel.app/conference/neurips",
+        "note": "主会 submission 已截稿；仅保留状态，不作为未来投稿窗口。",
+    },
+    {
+        "name": "AAAI 2027",
+        "ccf": "CCF A",
+        "track": "Main paper submission",
+        "deadline": "2026-07-27",
+        "url": "https://github.com/ccfddl/ccf-deadlines/blob/main/conference/AI/aaai.yml",
+        "note": "CCF DDL: abstract 2026-07-20；进入 1 个月窗口后重点提醒。",
     },
 ]
 
@@ -657,10 +649,10 @@ def conference_widget(depth: int = 0) -> str:
   <small>{e(item['deadline'])} · {e(item['note'])}</small>
 </a>"""
         )
-    return f"""<aside class="conf-float" data-conf-reminder="{e(CURRENT_DATE)}" aria-label="CCF A/B 截稿提醒">
+    return f"""<aside class="conf-float" data-conf-reminder="{e(CURRENT_DATE)}-main-ddl" aria-label="CCF A/B 主投稿提醒">
   <button class="conf-close" type="button" aria-label="关闭会议提醒">×</button>
   <details open>
-    <summary>CCF A/B 截稿提醒</summary>
+    <summary>CCF A/B 主投稿提醒</summary>
     <div class="conf-list">{''.join(rows)}</div>
   </details>
 </aside>"""
@@ -700,7 +692,7 @@ def shell(title: str, body: str, depth: int = 0, active: str = "") -> str:
   (() => {{
     const box = document.querySelector('[data-conf-reminder]');
     if (!box) return;
-    const key = `visualSslConfReminderClosed:${{box.dataset.confReminder || '{e(CURRENT_DATE)}'}}`;
+    const key = `visualSslConfReminderClosed:${{box.dataset.confReminder || '{e(CURRENT_DATE)}-main-ddl'}}`;
     try {{
       if (localStorage.getItem(key) === '1') box.hidden = true;
     }} catch (err) {{}}
