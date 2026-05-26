@@ -19,7 +19,7 @@
   </header>
   <nav class="site-nav" aria-label="主导航">
     <a class="nav-link" href="../index.html">头版</a>
-<a class="nav-link" href="../issues/2026-05-25.html">今日速递</a>
+<a class="nav-link" href="../issues/2026-05-26.html">今日速递</a>
 <a class="nav-link" href="../pages/catalog.html">论文目录</a>
 <a class="nav-link" href="../pages/timeline.html">时间线</a>
   </nav>
@@ -28,13 +28,13 @@
     <div class="kicker">Representation geometry · P3 · 2026-05-25</div>
     <h1 class="paper-headline">Neural Collapse by Design：监督对比学习和分类原型几何可以统一到单位超球面上的 prototype contrast。</h1>
     <p class="dek">偏理论和监督表征，但对理解 linear probe、原型、均匀性和表征几何有参考价值。</p>
-    <p class="byline"><strong>Neural Collapse by Design: Learning Class Prototypes on the Hypersphere</strong>　Panagiotis Koromilas, Theodoros Giannakopoulos, Mihalis A. Nicolaou, Yannis Panagakis。　arXiv 原始提交 2026-05-19；replacement listing 标注 ICML 2026；OpenReview 页面仍显示 2025-09-19 提交到 ICLR 2026、2026-02-11 修改。　<a href="https://arxiv.org/abs/2605.20302">原文链接</a></p>
+    <p class="byline"><strong>Neural Collapse by Design: Learning Class Prototypes on the Hypersphere</strong>　ICML 2026 · status update　<a href="https://arxiv.org/abs/2605.20302">原文链接</a></p>
     <div class="paper-facts">
       <span><b>编号</b>2605.20302</span>
       <span><b>优先级</b>P3</span>
       <span><b>类别</b>Representation geometry</span>
       <span><b>会议</b>ICML 2026 · status update</span>
-      <span><b>方法</b>把 normalized softmax classifier learning 和 supervised contrastive learning 统一为单位超球面上的 prototype contrast，并提出 NTCE / NONL 来扩大负样本集合、解耦类内对齐与类间排斥。</span>
+      <span><b>方法</b>prototype contrast with NTCE / NONL objectives on the hypersphere</span>
       <span><b>来源</b>arXiv / OpenReview</span>
     </div>
     <div class="feature-body">
@@ -43,15 +43,15 @@
 <figure class="full-fig"><img src="../assets/mineru/2605.20302/images/0acd63c9662f65123de2bccfe582f0e0508bff61f06bb7f2f3573c9a50d1d1db.jpg" alt="Figureure 3 · Validation Accuracy (%) Phase Diagrams"><figcaption><b>Figureure 3 · Validation Accuracy (%) Phase Diagrams</b><span class="fig-en">Figure 3. Validation Accuracy (%) Phase Diagrams. Classification accuracy on validation set. Higher values indicate better generalization performance. Each subplot shows the performance landscape across temperature and batch size hyperparameters for different loss functions: NormFace, NTCE, and NONL. Brighter regions indicate superior performance. White contour lines indicate iso-performance curves for detailed analysis. Red dashed contours highlight optimal parameter regions (top 10% performance). Scatter points represent individual experimental runs with performance-based sizing. Each dataset uses its own optimal colorbar range. Results originate from grid runs across temperature values in [0.07, 1.0] and batch sizes in 32, 64, 128, 256, 512, 1024, 2048.</span><span class="fig-zh">这张图/表用于判断 Neural Collapse by Design 的实验收益来自哪里。重点看替换、消融或跨模型设置下趋势是否一致，而不是只看单个最高分。</span></figcaption></figure>
       
       <h2>核心问题</h2>
-      <p>如果后续读 DINO/CLIP/MAE 表征时关注“原型、均匀性、线性评估是否可靠”，这篇能提供理论语言。</p>
+      <p>它和通用视觉自监督的关系在于：监督对比学习和分类原型几何可以统一到单位超球面上的 prototype contrast。</p>
       <h2>方法拆解</h2>
-      <p>把 normalized softmax classifier learning 和 supervised contrastive learning 统一为单位超球面上的 prototype contrast，并提出 NTCE / NONL 来扩大负样本集合、解耦类内对齐与类间排斥。</p>
+      <p>prototype contrast with NTCE / NONL objectives on the hypersphere</p>
       <h2>主要贡献</h2>
-      <p>理论上说明 SCL 在 neural-collapse 条件下已经学到原型分类器，后置 linear probe 可能不是必要步骤。</p>
+      <p>偏理论和监督表征，但对理解 linear probe、原型、均匀性和表征几何有参考价值。</p>
       <h2>实验看点</h2>
-      <p>arXiv 摘要报告在 ImageNet-1K 等四个 benchmark 上提高准确率，neural-collapse 指标达到约 95% 以上，并带来迁移和鲁棒性收益。</p>
+      <p>实验部分建议重点看两类证据：一是作者是否把方法收益和更强数据、更长训练、更大模型区分开；二是跨模型、跨数据或跨任务迁移是否还能保留同样趋势。</p>
       <h2>局限与读法</h2>
-      <p>它是监督/监督对比学习而非通用自监督预训练；更适合作为表征几何与评估协议参考。</p>
+      <p>这篇论文的结论需要结合任务设置、训练数据规模和消融实验一起看；不要只凭单个指标判断它对通用视觉表征的价值。</p>
     
     </div>
   </div>
@@ -61,13 +61,13 @@
     <div class="side-box"><h4>原文</h4><p><a href="https://arxiv.org/abs/2605.20302">https://arxiv.org/abs/2605.20302</a></p></div>
   </aside>
 </article></main>
-  <aside class="conf-float" data-conf-reminder="2026-05-25-main-ddl" aria-label="CCF A/B 主投稿提醒">
+  <aside class="conf-float" data-conf-reminder="2026-05-26-main-ddl" aria-label="CCF A/B 主投稿提醒">
   <button class="conf-close" type="button" aria-label="关闭会议提醒">×</button>
   <details open>
     <summary>CCF A/B 主投稿提醒</summary>
     <div class="conf-list"><a class="conf-item " href="https://github.com/ccfddl/ccf-deadlines/blob/main/conference/AI/aaai.yml">
   <span><b>AAAI 2027</b><em>CCF A · Main paper submission</em></span>
-  <strong>63 天</strong>
+  <strong>62 天</strong>
   <small>2026-07-27 · CCF DDL: abstract 2026-07-20；进入 1 个月窗口后重点提醒。</small>
 </a></div>
   </details>
@@ -80,7 +80,7 @@
   (() => {
     const box = document.querySelector('[data-conf-reminder]');
     if (!box) return;
-    const key = `visualSslConfReminderClosed:${box.dataset.confReminder || '2026-05-25-main-ddl'}`;
+    const key = `visualSslConfReminderClosed:${box.dataset.confReminder || '2026-05-26-main-ddl'}`;
     try {
       if (localStorage.getItem(key) === '1') box.hidden = true;
     } catch (err) {}

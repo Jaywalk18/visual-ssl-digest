@@ -19,7 +19,7 @@
   </header>
   <nav class="site-nav" aria-label="主导航">
     <a class="nav-link" href="../index.html">头版</a>
-<a class="nav-link" href="../issues/2026-05-25.html">今日速递</a>
+<a class="nav-link" href="../issues/2026-05-26.html">今日速递</a>
 <a class="nav-link" href="../pages/catalog.html">论文目录</a>
 <a class="nav-link" href="../pages/timeline.html">时间线</a>
   </nav>
@@ -28,13 +28,13 @@
     <div class="kicker">Language-guided visual representation · P1 · 2026-05-25</div>
     <h1 class="paper-headline">TextTeacher：冻结文本编码器可以作为训练期语义锚点，推理时仍保留纯视觉模型。</h1>
     <p class="dek">今天最值得先读：它不是完整 CLIP 式预训练，而是把语言语义变成低成本的视觉表征塑形目标。</p>
-    <p class="byline"><strong>TextTeacher: What Can Language Teach About Images?</strong>　Tobias Christian Nauen, Stanislav Frolov, Brian Bernhard Moser, Federico Raue, Ahmed Anwar, Andreas Dengel。　arXiv v1 提交于 2026-05-21 UTC；TMLR 2026。　<a href="https://arxiv.org/abs/2605.22098">原文链接</a></p>
+    <p class="byline"><strong>TextTeacher: What Can Language Teach About Images?</strong>　TMLR 2026　<a href="https://arxiv.org/abs/2605.22098">原文链接</a></p>
     <div class="paper-facts">
       <span><b>编号</b>2605.22098</span>
       <span><b>优先级</b>P1</span>
       <span><b>类别</b>Language-guided visual representation</span>
       <span><b>会议</b>TMLR 2026</span>
-      <span><b>方法</b>在图像分类训练中加入冻结文本编码器产生的语义锚点，用轻量投影把 caption/text embedding 注入为辅助目标；推理时仍然只保留纯视觉模型。</span>
+      <span><b>方法</b>frozen text encoder semantic anchors for image representation training</span>
       <span><b>来源</b>arXiv / OpenReview</span>
     </div>
     <div class="feature-body">
@@ -43,15 +43,15 @@
 <figure class="full-fig"><img src="../assets/mineru/2605.22098/images/84c80ea2b06c276dca33bcb710b781cc8efc20e06bab15fcbb647a460141759f.jpg" alt="Figureure 10 · : Most aligned and disaligned images for 6 random classes using ViT-B "><figcaption><b>Figureure 10 · : Most aligned and disaligned images for 6 random classes using ViT-B </b><span class="fig-en">Figure 10: Most aligned and disaligned images for 6 random classes using ViT-B trained with TextTeacher for 300 epochs. An aligned image is one where the text captions will output a large signal for a specific class. A disaligned image is an image of a class where the text caption produces a low signal for that class.</span><span class="fig-zh">这张图来自论文 PDF 的结构化抽取。当前用于辅助理解 TextTeacher 的方法或实验，请结合正文精读段落一起看。</span></figcaption></figure>
       
       <h2>核心问题</h2>
-      <p>对通用视觉自监督/表征学习很实用：它给了“在不改变视觉推理模型的情况下借助语言语义塑形表征”的简单路径，可作为 DINO/MAE/ViT 训练 recipe 的对照。</p>
+      <p>它和通用视觉自监督的关系在于：冻结文本编码器可以作为训练期语义锚点，推理时仍保留纯视觉模型。</p>
       <h2>方法拆解</h2>
-      <p>在图像分类训练中加入冻结文本编码器产生的语义锚点，用轻量投影把 caption/text embedding 注入为辅助目标；推理时仍然只保留纯视觉模型。</p>
+      <p>frozen text encoder semantic anchors for image representation training</p>
       <h2>主要贡献</h2>
-      <p>把“语言语义是否能改善视觉模型”拆成一个低开销训练目标，而不是完整 CLIP 式大规模多模态预训练；作者报告 ImageNet ViT 提升最高约 +2.7pp，迁移平均约 +1.0pp。</p>
+      <p>今天最值得先读：它不是完整 CLIP 式预训练，而是把语言语义变成低成本的视觉表征塑形目标。</p>
       <h2>实验看点</h2>
-      <p>对比 vision knowledge distillation 时，在相同 compute 下更准，或相近精度下更快；分析认为它更像早期训练阶段的 feature-space preconditioner。</p>
+      <p>实验部分建议重点看两类证据：一是作者是否把方法收益和更强数据、更长训练、更大模型区分开；二是跨模型、跨数据或跨任务迁移是否还能保留同样趋势。</p>
       <h2>局限与读法</h2>
-      <p>仍依赖 caption 和冻结文本编码器质量；不是无监督/纯自监督，适合看作弱语言监督或训练期语义正则。</p>
+      <p>这篇论文的结论需要结合任务设置、训练数据规模和消融实验一起看；不要只凭单个指标判断它对通用视觉表征的价值。</p>
     
     </div>
   </div>
@@ -61,13 +61,13 @@
     <div class="side-box"><h4>原文</h4><p><a href="https://arxiv.org/abs/2605.22098">https://arxiv.org/abs/2605.22098</a></p></div>
   </aside>
 </article></main>
-  <aside class="conf-float" data-conf-reminder="2026-05-25-main-ddl" aria-label="CCF A/B 主投稿提醒">
+  <aside class="conf-float" data-conf-reminder="2026-05-26-main-ddl" aria-label="CCF A/B 主投稿提醒">
   <button class="conf-close" type="button" aria-label="关闭会议提醒">×</button>
   <details open>
     <summary>CCF A/B 主投稿提醒</summary>
     <div class="conf-list"><a class="conf-item " href="https://github.com/ccfddl/ccf-deadlines/blob/main/conference/AI/aaai.yml">
   <span><b>AAAI 2027</b><em>CCF A · Main paper submission</em></span>
-  <strong>63 天</strong>
+  <strong>62 天</strong>
   <small>2026-07-27 · CCF DDL: abstract 2026-07-20；进入 1 个月窗口后重点提醒。</small>
 </a></div>
   </details>
@@ -80,7 +80,7 @@
   (() => {
     const box = document.querySelector('[data-conf-reminder]');
     if (!box) return;
-    const key = `visualSslConfReminderClosed:${box.dataset.confReminder || '2026-05-25-main-ddl'}`;
+    const key = `visualSslConfReminderClosed:${box.dataset.confReminder || '2026-05-26-main-ddl'}`;
     try {
       if (localStorage.getItem(key) === '1') box.hidden = true;
     } catch (err) {}

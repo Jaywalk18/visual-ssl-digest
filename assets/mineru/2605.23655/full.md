@@ -1,0 +1,898 @@
+# CVSearch: Empowering Multimodal LLMs with Cognitive Visual Search for High-Resolution Image Perception
+
+Liupeng Li 1 2 Haoqian Kang 1 Zhenyu Lu 2 3 Jinpeng Wang 1 Bin Chen 1 Ke Chen 2 Yaowei Wang 1 2
+
+# Abstract
+
+High-resolution (HR) image perception presents a key bottleneck for multimodal large language models (MLLMs). While visual search offers a promising solution, existing methods struggle with the trade-off between coverage and efficiency. Visual expert-assisted search is efficient but prone to blind spots when proposals fail, whereas scan-based search guarantees coverage at the cost of computational redundancy and semantic fragmentation. To address this dilemma, we introduce CVSearch, a training-free adaptive framework that dynamically schedules search strategies via an Assess-then-Search workflow. Specifically, CVSearch first invokes expertassisted search when global information is insufficient, and only triggers a novel semanticaware scanning mechanism upon failure. Distinct from rigid grid partitioning, this efficient scanning paradigm incorporates Semantic Guided Adaptive Patching to decompose images into semantically consistent regions, effectively mitigating object fragmentation. Furthermore, we devise a Dynamic Bottom-Up Search strategy driven by a Visual Complexity prior to enable efficient and precise iterative exploration of local details. Extensive experiments on HR benchmarks demonstrate that CVSearch achieves state-of-the-art accuracy while substantially improving search efficiency. Code is released at ICML26-CVSearch.
+
+![](images/bdf07f5473c8149ab0ecb74ae1e753257e54b2f7e329458ab25b3f4fae59edb7.jpg)
+
+<details>
+<summary>text_image</summary>
+
+What color is the statue at the top of the monument?
+What type of vehicle is the blue and white car?
+Is there a red car?
+</details>
+
+(a) Varying perceptual scales in real-world scenarios.
+
+<table><tr><td></td><td>Method</td><td></td><td></td><td></td><td>Efficiency</td></tr><tr><td>Direct Answer</td><td>-</td><td>✓</td><td>✘</td><td>✘</td><td>High</td></tr><tr><td>Visual Expert Assisted</td><td>DyFo</td><td>✓</td><td>✓</td><td>✘</td><td>Medium</td></tr><tr><td>Scan-based Search</td><td>RAP</td><td>✓</td><td>✓</td><td>✓</td><td>Low</td></tr></table>
+
+(b) Comparison of different visual search modes.
+
+![](images/e0900f6e18966e73348c54622fb8369cf85d0fccdfe081ffa462c47cbf5c7806.jpg)
+
+<details>
+<summary>bar</summary>
+
+| Dataset | ZoomEye Accuracy (%) | RAP Accuracy (%) | CVSearch (Ours) Accuracy (%) | ZoomEye Throughput | RAP Throughput | CVSearch (Ours) Throughput |
+| :--- | :--- | :--- | :--- | :--- | :--- | :--- |
+| HR-4K | 75 | 74 | 76 | 1.5 | 2.9 | 3.8 |
+| V* Bench | 85 | 86 | 89 | 1.5 | 2.9 | 3.8 |
+</details>
+
+(c) Performance comparison on HR benchmarks.   
+Figure 1. (a) Real-world HR image perception requires handling targets with distinct granularities. (b) Existing methods struggle to balance coverage and efficiency. Visual expert assisted methods lack sufficient coverage for tiny targets, while scan-based methods ensure coverage but suffer from low efficiency. (c) Built upon Qwen2.5-VL-7B, CVSearch achieves the best balance, delivering SOTA accuracy with competitive throughput.
+
+# 1. Introduction
+
+The integration of Large Language Models (LLMs) (Touvron et al., 2023; Team et al., 2024) with visual encoders (Radford et al., 2021; Zhai et al., 2023) has revolutionized multimodal understanding, giving birth to Multimodal LLMs (MLLMs) capable of sophisticated reasoning. Despite this progress, current MLLMs largely rely on fixedresolution processing schemes (Liu et al., 2024; Wang et al., 2024), which inevitably introduce a perceptual bottleneck. High-resolution (HR) images are aggressively downsampled, rendering the model blind to small objects and finegrained details essential for real-world tasks (Zhang et al., 2024a), as illustrated in Figure 1(a).
+
+To mitigate this limitation, recent research has branched into three paradigms: (1) Cropping-based paradigms (Li et al., 2024a;b;c) partition images into local crops. While this preserves details, it severs spatial coherence, causing semantic fragmentation where objects spanning crop boundaries are split into disjoint tokens. (2) HR Visual Encoder paradigms (Ge et al., 2024; Luo et al., 2025) inject highfrequency features via complex architectural modifications (hierarchical backbones or adapters) but struggle with varying aspect ratios. (3) Visual Search paradigms (Wu & Xie, 2024; Wang et al., 2025c; Shen et al., 2025; Lu et al., 2026a;b) represent a shift from passive processing to active perception, dynamically exploring relevant regions.
+
+While visual search offers a promising alternative, existing approaches face a stark dichotomy between efficiency and robustness (see Figure 1(b)). Visual Expert Assisted Search (e.g., SEAL (Wu & Xie, 2024), DyFo (Li et al., 2025a), V2-SAM (Pan et al., 2025)) leverages external vision experts for rapid localization. While efficient, these systems are fragile because their performance is upper-bounded by the expert’s capability. In scenarios involving tiny or occluded objects where the expert fails to generate accurate proposals, the MLLM is left with no fallback, leading to irreversible blind spots. Conversely, Scan-based Visual Search (e.g., RAP (Wang et al., 2025d), ZoomEye (Shen et al., 2025), DC2 (Wang et al., 2025c)) ensures exhaustive coverage through rigid grid scanning but is semanticagnostic. These methods suffer from two critical drawbacks. They waste computation on information-sparse backgrounds due to uniform resource allocation, incurring prohibitive latency, and their rigid grid-based partitioning fractures object semantics, undermining downstream reasoning. This dichotomy presents a critical challenge: How can we bridge the gap between the efficiency of expert guidance and the robustness of exhaustive search, without compromising semantic integrity?
+
+In this work, we propose CVSearch, a training-free framework that empowers MLLMs with cognitive, human-like visual search capabilities. Drawing inspiration from the cognitive process of human visual search (Wolfe et al., 2011; Li et al., 2025b), CVSearch implements a cognitive Assess-then-Search workflow, dynamically alternating between non-selective global perception (for gist extraction) and selective serial attention (for detailed scrutiny) based on task difficulty.
+
+To resolve the efficiency-robustness dilemma, CVSearch introduces a hierarchical framework underpinned by three key innovations. Firstly, we propose a Cognitive-Driven Adaptive Switching Mechanism to dynamically schedules search modes of varying complexity. This mechanism mimics human cognitive control by prioritizing efficient visual expert assisted search (powered by SAM 3 (Carion et al., 2025)) upon detecting insufficient global information. Crucially, instead of treating expert failure as a dead-end, the mechanism interprets it as a signal to activate the proposed Scene-aware Scanning mode, ensuring a seamless transition from rapid localization to comprehensive exploration. Secondly, within the Scene-aware Scanning phase, we introduce two complementary strategies to mitigate the limitations of conventional scanning. To address semantic fragmentation, we propose Semantic Guided Adaptive Patching (SGAP). Capitalizing on the insight (Zou et al., 2023; Fu et al., 2025) that deep visual features from the expert retain rich scene semantics even when explicit localization fails, SGAP clusters these features to partition the image into semantically coherent regions rather than rigid grids. Simultaneously, it quantifies a Visual Complexity Prior to identify and prune redundant background branches, focusing computation on high-entropy areas. Furthermore, to overcome the error propagation inherent in top-down methods, we devise a Dynamic Bottom-Up Search strategy. By initiating exploration from information-dense leaf nodes and aggregating evidence upwards, this strategy not only ensures robust evidence collection but also enables an iterative search mechanism, allowing the model to refine its focus and recover from initial search failures.
+
+Our contributions are summarized as follows:
+
+• Cognitive Hierarchical Framework: We present CVSearch, the first training-free framework to unify the efficiency of visual expert assisted search with the robustness of semantic-aware scanning via a cognitive, failureaware switching mechanism.   
+• Semantic-Preserving Granularity: We propose (SGAP), which repurposes visual expert features to construct semantically consistent image patches, overcoming the fragmentation of rigid grids.   
+• Robust Bottom-Up Exploration: We introduce a dynamic bottom-up search strategy that prevents error propagation inherent in top-down methods, significantly improving small object perception.   
+• SOTA Performance: Extensive experiments on HR benchmarks demonstrate that CVSearch achieves stateof-the-art accuracy while substantially improving search efficiency compared to scan-based baselines.
+
+# 2. Related Works
+
+# 2.1. High-Resolution Image Perception in MLLMs
+
+To bridge the gap between the limited input resolution of pre-trained vision encoders (e.g., 336 × 336) and real-world demands for fine-grained details, existing strategies primarily fall into three paradigms. Cropping-based methods (Li et al., 2024a;b;c) partition high-resolution (HR) images into fixed grids. While preserving local details, they suffer from the “semantic sawtooth” effect (Huang et al., 2024), where rigid partitioning fractures objects across patches, disrupting semantic coherence. Furthermore, being semantically agnostic, they incur computational redundancy by processing empty backgrounds equally with dense foregrounds. HR Visual Encoder (Ge et al., 2024; Luo et al., 2025) mitigate token explosion via hierarchical backbones (e.g., ConvNeXt (Woo et al., 2023)) or adaptors. However, they rely on global processing and lack the flexibility to selectively ignore irrelevant regions, often necessitating aggressive downsampling. Visual Search frameworks shift towards active perception. Some approaches (e.g., SEAL (Wu & Xie, 2024), DyFo (Li et al., 2025a)) leverage external experts for region proposal, while others (e.g., ZoomEye (Shen et al., 2025), RAP (Wang et al., 2025d)) employ tree-structured scanning. Despite progress, a critical trade-off remains: scan-based methods are robust but inefficient, while expert assisted methods are efficient but fragile upon expert failure. CVSearch resolves this dichotomy via a cognitive mechanism that intelligently switches between fast expert search and robust semantic-aware scanning, further enabled by bottom-up error correction.
+
+# 2.2. Cognitive Mechanisms of Visual Search
+
+Cognitive theories of human vision posit that visual search is not a unitary process but an interplay between two distinct pathways: a selective pathway and a nonselective pathway (Wolfe et al., 2011). The nonselective pathway rapidly extracts global gist in parallel to reject vast irrelevant regions. In contrast, the selective pathway performs serial, capacitylimited processing of specific objects guided by attentional templates (Wolfe, 2020). Crucially, attention deployment is governed by guidance factors (Wolfe & Horowitz, 2017). Among these, scene structure plays a dominant role, knowing that a “chimney” is likely on a “roof” enables efficient prioritization. CVSearch computationally instantiates this cognitive architecture. Our cognitive Assess-then-Search workflow mimics the progression from nonselective to selective attention, while Visual Complexity captures scene structure to dynamically prune the search space.
+
+# 3. Preliminary
+
+We consider a standard MLLM framework comprising a vision encoder V, a projector P, and an LLM F. Given an input image $\pmb { I } \in \mathbb { R } ^ { \bar { H } \times \bar { W } \times 3 }$ and a text query Q, the vision encoder extracts features Hv which are projected into visual tokens $Z _ { v } = \mathcal { P } ( H _ { v } )$ . Combined with text embeddings $Z _ { t } ,$ the model generates the response $Y = \{ y _ { 1 } , \dots , y _ { S } \}$ autoregressively. The probability of generating Y is factorized as:
+
+$$
+p (y _ {s} \mid I, Q) = \prod_ {i = 1} ^ {s - 1} \mathcal {F} (y _ {i} \mid y _ {<   i}, \mathbf {Z} _ {v}, \mathbf {Z} _ {t}), \tag {1}
+$$
+
+The perceptual capability of MLLMs is constrained by the resolution of $Z _ { v }$ (Tong et al., 2024). Naive resizing to fixed resolutions (e.g., 3362) (Liu et al., 2024) causes severe detail loss and distortion. To mitigate this, AnyRes mechanisms (Li et al., 2024a;b) decompose high-resolution (HR) images into flexible grids of local patches alongside a downsampled global view. While AnyRes preserves details, it incurs a prohibitive computational cost, as the sequence length of $\boldsymbol { Z _ { v } }$ scales linearly with the number of patches.
+
+Unlike AnyRes which ingests all patches in a single pass, visual search methods iteratively explore local regions to perceive fine-grained details. However, existing approaches face a critical trade-off. Visual Expert Assisted Search offers efficiency but is inherently fragile; its success relies entirely on external proposals, leaving the MLLM blind if the expert fails. Conversely, Scan-based Search ensure robustness via dense coverage but suffer from computational redundancy and semantic fragmentation due to rigid partitioning.
+
+# 4. Proposed Cognitive Visual Search
+
+# 4.1. Method Overview
+
+Drawing from human cognitive mechanisms that alternate between non-selective and selective attention, CVSearch adopts a cognitive Assess-then-Search workflow Figure 2(a). The process begins with a global assessment, akin to a human “glimpse.” If global information proves insufficient the system triggers Visual Expert-assisted Search for rapid localization. In cases the target remain elusive, it transitions to Scene-aware Scanning for fine-grained inspection. Crucially, a bidirectional feedback loop integrates these modes, enabling iterative refinement to capture tiny targets.
+
+# 4.2. Visual Expert Assisted Search
+
+CVSearch optimizes efficiency by bypassing search when the MLLM’s global perception is sufficient. The Visual Expert is activated solely when relevant information is elusive, serving as a rapid proposal mechanism to avoid unnecessary scanning costs.
+
+# 4.2.1. INFORMATION SUFFICIENCY ASSESSMENT
+
+We first quantify the sufficiency of the current visual context. Inspired by (Shen et al., 2025), we use the MLLM’s internal confidence in whether the current image I can answer the given query Q as the information sufficiency:
+
+$$
+c _ {q} (\boldsymbol {I}) = \mathcal {M} \left(" \text {Yes}" | p _ {q} (\boldsymbol {Q}), \boldsymbol {I}\right), \tag {2}
+$$
+
+where M represents the MLLM and $p _ { q } ( \cdot )$ represents the prompt (e.g., “Question: {Q}. Could you answer the question based on the available visual information? Answer Yes or $N o . \ ' )$ used to query the MLLM for calculating the confidence that the answer is $\mathbf { \Delta } ^ { \mathfrak { s } 6 } \mathbf { Y } \mathrm { e } \mathbf { s } ^ { \mathfrak { s } }$ . A higher $c _ { q } ( \pmb { I } )$ indicates that, for the MLLM, the current image I contains more sufficient information to answer the given query $Q .$ Consequently, When $c _ { q } ( I )$ exceeds the sufficiency threshold $\tau _ { q } ,$ the global view is deemed adequate for a direct answer response, bypassing fine-grained inspection.
+
+![](images/8b6f04d4126188bd5ccd62fa05a2d2ab811a273208369fba6bcbbebd66bdee90.jpg)  
+Figure 2. Illustration of the CVSearch framework. (a) Workflow. A cognitive Assess-then-Search mechanism triggers Visual Expert Search when global information is insufficient $( c _ { q } < \tau _ { q } )$ . Expert failure (proposals $B _ { e } = \varnothing )$ activates Scene-aware Scanning, which either yields visual evidence upon success or returns the optimal candidate for iterative search upon failure. (b) Visual Expert Search. This module parses queries to prompt a visual expert (SAM 3) for rapid proposals. On failure, extracted visual features are repurposed for the scanning phase. (c) Scene-aware Scanning. Semantic Guided Adaptive Patching partitions images into semantically coherent regions via adaptive clustering. Subsequently, Dynamic Bottom-Up Search prioritizes exploration from leaf nodes and aggregates evidence upwards. If the target remains unconfirmed, the optimal candidate from the first layer guides the next search iteration.
+
+# 4.2.2. VISUAL EXPERT PROPOSAL
+
+For queries unresolved by global image information, we employ a visual expert E to search for the key objects mentioned in the query. As shown in Figure 2(b), we adopt SAM 3 (Carion et al., 2025) as our visual expert. To enable concept-level prompting, we parse the query Q into a set of target objects $O = \{ o _ { 1 } , o _ { 2 } , \dotsb , o _ { m } \}$ . Specifically, we leverage the in-context capability from the LLM base of the MLLM to extract key objects from the query, falling back to SpaCy (Jugran et al., 2021) for noun phrase extraction if necessary. Querying $\mathcal { E } ( I , O )$ yields candidate bounding boxes $\scriptstyle B _ { e }$ and dense visual features ${ \pmb { H } } _ { e }$ .
+
+We further verify whether the proposed regions $\scriptstyle B _ { e }$ adequately cover the target objects in O. Specifically, this coverage is satisfied when the number of targets (across different categories) segmented by SAM 3 strictly matches the number of extracted target objects. If validated, the system crops I according to $\scriptstyle B _ { e }$ for answer generation. Conversely, if the visual expert fails to localize targets, which is a common failure mode for tiny or abstract objects, CVSearch triggers the Scene-aware Scanning phase, reusing the preextracted $\pmb { H _ { e } }$ to minimize computational overhead.
+
+# 4.3. Scene-aware Scanning
+
+Scan-based visual search methods (Shen et al., 2025; Wang et al., 2025c;d) improve retrieval via fine-grained exploration of local regions, serving as an effective means to compensate for the fragility of vision-expert-assisted search. However, existing scan-based methods partition images into rigid grids and perform top-down tree search without considering scene semantics, leading to substantial search resources being wasted on exploring target-irrelevant regions and correcting initial search errors. To address these issues, we propose scene-aware scanning, comprising Semantic Guided Adaptive Patching and Dynamic Bottom-up Search.
+
+# 4.3.1. SEMANTIC GUIDED ADAPTIVE PATCHING
+
+Standard grid-based partitioning often disrupts semantic integrity by cutting across object boundaries. As shown in Figure $2 ( \mathrm { c } )$ , we utilize the scene structure embedded in the visual feature ${ \pmb { H } } _ { e }$ as a prior for adaptive image patching. We first over-segment ${ \pmb { H } } _ { e }$ into N atomic superpixels $\pmb { A } = \{ a _ { 1 } , a _ { 2 } , \cdots , a _ { N } \}$ using Simple Linear Iterative Clustering (SLIC) (Achanta et al., 2012) on the feature space and construct a region adjacency graph G to encode connectivity. Subsequently, we partition these atoms into k semantic clusters via Agglomerative Clustering (Mullner ¨ , 2011) constrained by G. Each semantic cluster consists of spatially adjacent atoms, and the cluster boundary is converted into a region bounding box, which can be used for semantic-preserving image patching.
+
+The number of clusters k significantly impacts the quality of image patching, and the optimal k is scene-dependent. Adhering to the principle that high-quality patching must preserve clear semantic boundaries while minimizing region overlap, we optimize the optimal number of clusters $k ^ { * }$ within $[ k _ { \operatorname* { m i n } } , k _ { \operatorname* { m a x } } ]$ by minimizing the cost function $\displaystyle { \mathcal { L } } ( k ) \colon$ :
+
+$$
+\begin{array}{l} k ^ {*} = \arg \min _ {k \in [ k _ {\mathrm{min}}, k _ {\mathrm{max}} ]} \mathcal {L} (k), \\ \mathcal {L} (k) = \mathcal {L} _ {o} (\boldsymbol {B} _ {k}) - \mathcal {L} _ {s} (\boldsymbol {H} _ {a}, \boldsymbol {l} _ {k}), \\ \end{array}
+$$
+
+where $\mathcal { L } _ { o }$ penalizes spatial overlap among bounding boxes $B _ { k } = \{ b _ { 1 } , b _ { 2 } , \cdot \cdot \cdot , b _ { k } \}$ of all clusters, and $\mathcal { L } _ { s }$ is the silhouette score (Vardakas et al., 2024) measuring clustering quality. $H _ { a } = \{ h _ { 1 } , h _ { 2 } , \cdot \cdot \cdot , h _ { N } \}$ denotes atomic features derived from the visual feature ${ \pmb { H } } _ { e }$ , and $\boldsymbol { l } _ { k }$ are the clustering label corresponding to atomic features. Based on $k ^ { * }$ , the image is adaptively patched into $k ^ { * }$ semantic regions.
+
+# 4.3.2. DYNAMIC BOTTOM-UP SEARCH
+
+By recursively applying adaptive patching, we model the HR image I as an adaptive tree T with depth D. Each node at depth d, denoted as ${ n } _ { d , t }$ , represents a patch view ${ \cal I } _ { d , t }$ . Furthermore, we introduce a Visual Complexity score $c _ { v }$ to quantify the exploration value of an image patch. The $c _ { v }$ of an image patch ${ \cal I } _ { d , t }$ is defined as the degree of dispersion of its corresponding atomic features in the semantic direction, quantified by the average cosine similarity:
+
+$$
+c _ {v} (\boldsymbol {I} _ {d, t}) = \max (0, 1 - \frac {1}{| \boldsymbol {R} |} \sum_ {i \in \boldsymbol {R}} \cos \mathrm{im} (\boldsymbol {h} _ {i}, \bar {\boldsymbol {h}})), \tag {4}
+$$
+
+where $\bar { \pmb { h } } = \mathbb { E } _ { i \in { \pmb { R } } } [ { \pmb { h } } _ { i } ]$ represents the semantic centroid of the image patch derived from the expectation of atomic features, cosim(·, ·) denotes the cosine similarity, and R represents the set of atomic indices belonging to ${ \cal I } _ { d , t }$ t. A low $c _ { v }$ indicates high feature similarity within the image patch, suggesting that the region is more likely to be a background area with limited semantic information and thus lower exploration value. Conversely, a high $c _ { v }$ reflects low feature similarity in the image patch, indicating that the region is more likely to be a semantically rich foreground area with higher exploration value. To prioritize semantically rich regions, we prune T by discarding nodes with $c _ { v } < \tau _ { v }$ .
+
+Traditional hierarchical search methods (Shen et al., 2025; Wang et al., 2025c;d) traverses trees top-down (root-to-leaf). However, at the initial stage, models struggle to accurately perceive small objects, often resulting in erroneous search paths. As shown in Figure 2(c), we propose a Dynamic Bottom- $U p$ Search mechanism to robustly identify target objects. The search initiates at the deepest layer of nodes, which provide detailed local information to enhance the MLLM’s precision in perceiving small targets. If unsuccessful at this layer, the collected search information is aggregated and propagated to the layer containing the parent nodes, where the search continues.
+
+Within each layer, nodes are sorted by their priority values $c _ { x }$ to determine the order of node visitation. For each node ${ n } _ { d , t }$ , we adopt the MLLM to assess the existence confidence $c _ { o }$ of the target objects in $\boldsymbol { O } . \boldsymbol { c } _ { o }$ is calculated by Equation (2) with prompt $p _ { o } ( o _ { i } )$ (e.g., “Is there a $\left\{ o _ { i } \right\}$ in the image? Answer Yes or $N o . \ ' )$ and the image patch ${ \cal I } _ { d , t }$ . The priority value for a node is the weighted sum of the Visual Complex-$i t y$ score $c _ { v } .$ , the existence confidence $c _ { o } ,$ , and the priority value $c _ { x } ^ { * }$ aggregated from child nodes:
+
+$$
+c _ {x} = \alpha \cdot c _ {v} + \beta \cdot c _ {o} + \gamma \cdot c _ {x} ^ {*}, \tag {5}
+$$
+
+where $\alpha , \beta ,$ and γ are hyperparameter that balance the effects of different terms. For a node with child nodes, the value of $c _ { x } ^ { * }$ is the maximum priority value among its children, whereas for a node without child nodes, $c _ { x } ^ { * } = 0$ . The information sufficiency $c _ { q }$ of ranked nodes is calculated using Equation (2) to serve as the stopping criterion for the bottom-up search. For multi-target scenarios, we adopt the same setting as ZoomEye (Shen et al., 2025) and construct a decoupled query $Q _ { d } ( e . g .$ , “What is the appearance of the $\{ o _ { i } \} ^ { \prime } )$ for each target. For the search termination criterion, we adopt an adaptive sufficiency threshold $\tau _ { c u r r }$ instead of a static stopping rule. The search begins with a rigorous standard $( \tau _ { c u r r } = \tau _ { q } )$ to guarantee that easy samples are resolved with high certainty. For more challenging scenarios where the model may hesitate, $\tau _ { c u r r }$ gradually decays to permit valid but less confident predictions, ensuring the retrieval of subtle details. Crucially, this relaxation is bounded by a minimum threshold $\hat { \tau } _ { q } .$ , which serves as a safeguard to reject regions that lack sufficient semantic evidence for reasoning. The search terminates once $c _ { q }$ exceeds a predefined threshold $\tau _ { c u r r }$ . If the search proceeds to completion at depth $d = 1$ without meeting this condition, the top-ranked node from that layer is fed back to the visual expert as the candidate region for iterative search.
+
+# 5. Experiments
+
+# 5.1. Experimental Setup
+
+Datasets. We evaluate CVSearch on a comprehensive suite of high-resolution benchmarks. For HR-specific evaluation, we use V\* Bench (Wu & Xie, 2024) (avg. res. 2246×1582), which targets attribute recognition and spatial reasoning, and HR-Bench (Wang et al., 2025c), comprising 8K and 4K subsets for fine-grained single- and cross-instance perception. HR-Bench 4K is derived by cropping relevant regions from the 8K-resolution images in HR-Bench 8K. For General and Real-world evaluation, we employ MME-RealWorld-Lite (Zhang et al., 2024b) and TreeBench (Wang et al., 2025a). These manually curated benchmarks feature diverse real-world subtasks with high average resolutions $( \sim 2 0 0 0 \times 1 5 0 0 )$ . Additionally, we test on FineRS-4K (Zhang et al., 2025b), a specialized UAV-captured highresolution dataset for the perception and reasoning of ultrasmall objects.
+
+Table 1. Performance comparison of our CVSearch (integrated with several advances models) with existing works on high-resolution benchmarks. FSP: Fine-grained Single-instance Perception; FCP: Finegrained Cross-instance Perception. 
+
+<table><tr><td rowspan="2">Method</td><td colspan="3">V* Bench</td><td colspan="3">HR-Bench 4K</td><td colspan="3">HR-Bench 8K</td></tr><tr><td>Attribute</td><td>Spatial</td><td>Overall</td><td>FSP</td><td>FCP</td><td>Overall</td><td>FSP</td><td>FCP</td><td>Overall</td></tr><tr><td colspan="10">Closed-source MLLMs</td></tr><tr><td>GPT 4o (Hurst et al., 2024)</td><td>-</td><td>-</td><td>66.0</td><td>70.0</td><td>48.0</td><td>59.0</td><td>62.0</td><td>49.0</td><td>55.5</td></tr><tr><td>QWen-VL-max (Bai et al., 2023)</td><td>-</td><td>-</td><td>-</td><td>65.0</td><td>52.0</td><td>58.5</td><td>54.0</td><td>51.0</td><td>52.5</td></tr><tr><td colspan="10">Open-source MLLMs</td></tr><tr><td>LLaVA-v1.6-7B (Li et al., 2024b)</td><td>60.9</td><td>63.2</td><td>61.8</td><td>49.0</td><td>46.8</td><td>47.9</td><td>37.3</td><td>44.3</td><td>40.8</td></tr><tr><td>LLaVA-v1.6-13B (Li et al., 2024b)</td><td>60.0</td><td>64.5</td><td>61.8</td><td>49.8</td><td>41.3</td><td>45.5</td><td>38.0</td><td>38.3</td><td>38.1</td></tr><tr><td>LLaVA-v1.6-34B (Li et al., 2024b)</td><td>-</td><td>-</td><td>-</td><td>55.3</td><td>50.5</td><td>52.9</td><td>44.5</td><td>50.3</td><td>47.4</td></tr><tr><td>LLaVA-HR-X-7B (Luo et al., 2025)</td><td>51.3</td><td>64.5</td><td>56.5</td><td>57.8</td><td>46.3</td><td>52.0</td><td>42.0</td><td>41.3</td><td>41.6</td></tr><tr><td>LLaVA-HR-X-13B (Luo et al., 2025)</td><td>-</td><td>-</td><td>-</td><td>61.3</td><td>46.0</td><td>53.6</td><td>49.5</td><td>44.3</td><td>46.9</td></tr><tr><td>Qwen2.5-VL-32B (Bai et al., 2025)</td><td>83.5</td><td>89.5</td><td>85.9</td><td>89.3</td><td>60.3</td><td>74.8</td><td>86.5</td><td>56.8</td><td>71.6</td></tr><tr><td>Yi-VL-34B (Young et al., 2024)</td><td>-</td><td>-</td><td>-</td><td>46.0</td><td>42.8</td><td>44.4</td><td>39.5</td><td>38.5</td><td>39.0</td></tr><tr><td>InternVL3-38B (Zhu et al., 2025)</td><td>77.4</td><td>77.6</td><td>77.5</td><td>83.5</td><td>69.0</td><td>76.3</td><td>71.3</td><td>62.8</td><td>67.0</td></tr><tr><td colspan="10">Baseline and CVSearch</td></tr><tr><td>LLaVA-OV-7B (Li et al., 2024a)</td><td>75.7</td><td>75.0</td><td>75.4</td><td>72.0</td><td>54.0</td><td>63.0</td><td>67.3</td><td>52.3</td><td>59.8</td></tr><tr><td>-w/ CVSearch</td><td>95.7</td><td>85.5</td><td>91.6</td><td>89.5</td><td>61.8</td><td>75.6</td><td>89.0</td><td>60.5</td><td>74.8</td></tr><tr><td>Qwen2.5-VL-7B (Bai et al., 2025)</td><td>73.9</td><td>67.1</td><td>71.2</td><td>85.2</td><td>52.2</td><td>68.8</td><td>78.8</td><td>51.8</td><td>65.3</td></tr><tr><td>-w/ CVSearch</td><td>93.0</td><td>85.5</td><td>90.1</td><td>91.5</td><td>61.8</td><td>76.6</td><td>90.0</td><td>61.3</td><td>75.6</td></tr><tr><td>InternVL2.5-8B (Chen et al., 2024)</td><td>67.8</td><td>71.1</td><td>69.1</td><td>75.8</td><td>56.3</td><td>66.0</td><td>61.5</td><td>53.3</td><td>57.4</td></tr><tr><td>-w/ CVSearch</td><td>86.1</td><td>93.4</td><td>89.0</td><td>93.0</td><td>61.0</td><td>77.0</td><td>92.3</td><td>63.0</td><td>77.6</td></tr></table>
+
+Implementation Details. We select Qwen2.5-VL-7B (Bai et al., 2025), LLaVA-OV (OneVision)-7B (Li et al., 2024a), and InternVL2.5-8B (Chen et al., 2024) as baseline MLLMs. The information sufficiency threshold $\tau _ { q }$ is set to 0.9, the search termination threshold $\hat { \tau } _ { q }$ to 0.5, and the tree pruning threshold $\tau _ { v }$ to 0.4. The minimum and maximum numbers of clusters, $k _ { \mathrm { m i n } }$ and $k _ { \operatorname* { m a x } } .$ , are set to 4 and 8, respectively. The depth D of the adaptive image tree T is set to 2 for single-object cases $( m = 1 )$ and 3 for multi-object cases $( m > 1 )$ . The hyperparameters $\alpha , \beta ,$ and γ are set to 0.2, 0.4, and 0.4, respectively. All experiments are conducted on four NVIDIA A6000 GPUs, while inference speed evaluation is performed using a single GPU.
+
+# 5.2. Main Experimental Results
+
+Results on HR Benchmark. As shown in Table 1, integrating our CVSearch framework with various open-source MLLMs consistently yields substantial performance gains across all high-resolution benchmarks, underscoring its robust model-agnostic effectiveness. Our method significantly enhances both FSP and FCP tasks, achieving state-of-theart results on HR-Bench 4K and HR-Bench 8K. Notably, when applied to InternVL2.5-8B, CVSearch boosts overall accuracy by +20.2% on HR-Bench 8K and by +11.0 on HR-Bench 4K. On V\* Bench, CVSearch dramatically boosts performance as LLaVA-OV-7B improves from 75.4 to 91.6 and Qwen2.5-VL-7B reaches 90.1, rivaling much larger closed-source models. These results demonstrate that our method effectively empowers existing MLLMs with the capability to perceive high-resolution images more accurately.
+
+Compared with Visual Search Methods. We compare our proposed CVSearch against representative visual search paradigms, comprising expert-assisted methods (SEAL (Wu & Xie, 2024), DyFo (Li et al., 2025a)) and scan-based approaches (Zoom Eye (Shen et al., 2025), RAP (Wang et al., 2025d)). As shown in Table 2, our method consistently outperforms all baselines across all evaluated benchmarks. Specifically, while scanning-based methods like Zoom Eye and RAP offer improvements over the vanilla LLaVA-OV-7B, they still fall short of CVSearch, which achieves 91.6 on V\* Bench, surpassing the strong expert-assisted DyFo (81.2) by a wide margin. On high-resolution benchmarks, our method proves highly scalable, achieving state-of-theart scores of 77.0 on HR-Bench 4K and 77.6 on HR-Bench 8K with InternVL2.5-8B. These results highlight the clear advantage of our cognitive search mechanism compared to fixed scanning strategies or external expert dependency. More comparison results with other HR image processing methods can be found in the Appendix B.1.
+
+Table 2. Performance comparison between our CVSearch and other search-based method. 
+
+<table><tr><td>Method</td><td>V*</td><td>HR-4K</td><td>HR-8K</td></tr><tr><td>SEAL</td><td>75.4</td><td>-</td><td>-</td></tr><tr><td>DyFo</td><td>81.2</td><td>-</td><td>-</td></tr><tr><td>LLaVA-OV-7B</td><td>75.4</td><td>63.0</td><td>59.8</td></tr><tr><td>-w/ Zoom Eye</td><td> $\underline{90.6}$ </td><td>69.6</td><td>69.3</td></tr><tr><td>-w/ RAP</td><td>79.6</td><td>71.0</td><td>67.6</td></tr><tr><td>-w/ CVSearch</td><td>91.6</td><td>75.6</td><td>74.8</td></tr><tr><td>Qwen2.5-VL-7B</td><td>71.2</td><td>68.8</td><td>65.3</td></tr><tr><td>-w/ Zoom Eye</td><td>85.3</td><td>72.5</td><td>69.8</td></tr><tr><td>-w/ RAP</td><td>84.8</td><td>74.8</td><td> $\underline{76.0}$ </td></tr><tr><td>-w/ CVSearch</td><td>90.1</td><td> $\underline{76.6}$ </td><td>75.6</td></tr><tr><td>InternVL2.5-8B</td><td>69.1</td><td> $\underline{66.0}$ </td><td>57.4</td></tr><tr><td>-w/ Zoom Eye</td><td>84.8</td><td>75.1</td><td>73.6</td></tr><tr><td>-w/ RAP</td><td>88.5</td><td>76.0</td><td>74.0</td></tr><tr><td>-w/ CVSearch</td><td>89.0</td><td>77.0</td><td>77.6</td></tr></table>
+
+Table 3. Comparison of our CVSearch against the baseline MLLM on three general multimodal benchmarks. MME-RW-L stands for MME-RealWorld-Lite. 
+
+<table><tr><td>Method</td><td>MME-RW-L</td><td>TreeBench</td><td>FineRS-4K</td></tr><tr><td>LLaVA-OV-7B</td><td>43.7</td><td>37.3</td><td>72.0/49.7</td></tr><tr><td>-w/ CVSearch</td><td>48.8</td><td>38.8</td><td>77.4/61.2</td></tr><tr><td>Qwen2.5-VL-7B</td><td>42.3</td><td>37.0</td><td>80.4/59.1</td></tr><tr><td>-w/ CVSearch</td><td>46.7</td><td>40.7</td><td>82.5/58.3</td></tr><tr><td>InternVL2.5-8B</td><td>44.9</td><td>25.7</td><td>71.6/51.6</td></tr><tr><td>-w/ CVSearch</td><td>46.1</td><td>29.1</td><td>78.5/57.9</td></tr></table>
+
+Results on General Benchmarks. To assess the generalization capability of CVSearch in complex real-world scenarios, we evaluate it on three challenging multimodal benchmarks (Table 3). Note that for FineRS-4K, we provide accuracy metrics for both multiple-choice and open-ended visual question answering (MVQA/OVQA). As we can see, CVSearch yields consistent improvements across all baselines, demonstrating its robustness in handling complex visual reasoning tasks. Specifically, on MME-RealWorld-Lite and TreeBench, our method improves the reasoning accuracy of Qwen2.5-VL-7B by +4.4 and +3.7, respectively. A more pronounced advantage is observed on FineRS-4K, where identifying tiny objects is critical. CVSearch enables LLaVA-OV-7B to surge from 49.7 to 61.2 (+11.5) in the challenging OVQA setting, while also boosting InternVL2.5-8B to 78.5 in MVQA. These results confirm that the cognitive search mechanism of CVSearch effectively extends to complex, open-ended real-world scenarios.
+
+Table 4. Comparison of our CVSearch against the baseline MLLM with varying parameter sizes and generations. 
+
+<table><tr><td>Method</td><td>V*</td><td>HR-4K</td><td>HR-8K</td></tr><tr><td>Qwen2.5-VL-3B</td><td>77.0</td><td>65.9</td><td>62.9</td></tr><tr><td>-w/ CVSearch</td><td>91.1</td><td>70.5</td><td>67.3</td></tr><tr><td>Qwen3-VL-2B</td><td>79.1</td><td>71.3</td><td>67.8</td></tr><tr><td>-w/ CVSearch</td><td>92.2</td><td>74.0</td><td>73.6</td></tr><tr><td>Qwen3-VL-4B</td><td>89.5</td><td>76.3</td><td>71.6</td></tr><tr><td>-w/ CVSearch</td><td>93.7</td><td>77.4</td><td>75.1</td></tr><tr><td>Qwen3-VL-8B</td><td>88.0</td><td>79.1</td><td>74.5</td></tr><tr><td>-w/ CVSearch</td><td>91.6</td><td>79.5</td><td>76.5</td></tr><tr><td>Qwen3-VL-32B</td><td>86.9</td><td>76.5</td><td>70.9</td></tr><tr><td>-w/ CVSearch</td><td>89.5</td><td>80.3</td><td>78.4</td></tr></table>
+
+# 5.3. Model Analysis
+
+Scalability across Sizes and Generations. To investigate the scalability of our framework, we evaluate CVSearch on models with varying parameter sizes (ranging from 2B to 32B) and generations (Qwen2.5-VL vs. the latest Qwen3- VL). As shown in Table 4, our method consistently enhances performance across all model variants. For smaller models, the improvements are particularly substantial. For instance, on the V\* Bench, CVSearch boosts Qwen2.5-VL-3B by +14.1 and Qwen3-VL-2B by +13.1. Crucially, to address potential concerns regarding diminishing returns on more advanced backbones, we scale our evaluation up to Qwen3- VL-32B. Despite the powerful native perception capabilities of this large model, CVSearch continues to provide substantial gains, boosting performance by +7.5 on HR-8K, +3.8 on HR-4K, and +2.6 on V\*. This validates that our search mechanism effectively resolves high-resolution bottlenecks even for highly advanced MLLMs, serving as a scalable solution that benefits both resource-constrained deployment (on small models) and high-performance computing (on large models).
+
+Impact of Tree Depth. We investigate the influence of the search depth D on perception accuracy, as illustrated in Figure 3. Given that V\* Bench comprises single-object Attribute tasks (m = 1) and multi-object Spatial tasks (m = 2), we observe a clear correlation between target count and optimal depth. Specifically, Attribute tasks perform exceptionally well at depth 2, whereas Spatial tasks peak at depth 3. Furthermore, under current benchmark resolutions (up to 8K), extending the search to depth 4 offers negligible accuracy improvement but may incur penalties in both semantic integrity due to fragmentation and computational overhead due to increased search time. However, it is important to note that the optimal tree depth is inherently resolution-dependent. For ultra-high-resolution imagery (e.g., 16K and beyond), the massive search space renders $D = 3$ too coarse, making deeper search depths $( D \geq 4 )$ essential for capturing microscopic details. Crucially, extending to deeper levels does not lead to a cost explosion; our SGAP and Branch Pruning mechanisms aggressively filter irrelevant background nodes prior to MLLM inference, concentrating compute exclusively on high-value regions to balance ultra-fine extraction with practical efficiency. For our primary evaluation settings, rather than relying on a fixed global hyperparameter, we employ a rule-based dynamic routing strategy at the sample level. By explicitly setting the search depth to $D = 2$ for single objects and $D = 3$ for multiple objects, this target-conditioned design effectively navigates the trade-off to achieve superior accuracy without compromising efficiency.
+
+Table 5. Search efficiency comparison with expert-based and scan-based methods. We measure search efficiency by Throughput (samples per minute) on a single GPU using Qwen2.5-VL-7B. The Accuracy and Throughput are represented as Acc and Thr, respectively. 
+
+<table><tr><td rowspan="2">Visual Search Method</td><td colspan="2">V* Bench</td><td colspan="2">HR-Bench 4K</td><td colspan="2">HR-Bench 8K</td></tr><tr><td>Acc ↑</td><td>Thr ↑</td><td>Acc ↑</td><td>Thr ↑</td><td>Acc ↑</td><td>Thr ↑</td></tr><tr><td>Qwen2.5-VL-7B</td><td>71.2</td><td>8.30</td><td>68.8</td><td>7.62</td><td>65.3</td><td>7.62</td></tr><tr><td>-w/ Visual Expert (SAM 3)</td><td>84.3</td><td>3.60</td><td>71.9</td><td>5.59</td><td>68.1</td><td>5.30</td></tr><tr><td>-w/ Scan-based (Zoom Eye)</td><td>85.3</td><td>0.68</td><td>72.5</td><td>1.29</td><td>69.8</td><td>0.68</td></tr><tr><td>-w/ Scan-based (RAP)</td><td>84.8</td><td>0.66</td><td>74.8</td><td>1.22</td><td>76.0</td><td>0.58</td></tr><tr><td>-w/ CVSearch</td><td>90.1</td><td>1.02</td><td>76.6</td><td>3.77</td><td>75.6</td><td>1.92</td></tr></table>
+
+![](images/4e4eddaa8b6e689e591df9d7f9b13d72b21b3c55cc64e7b2e33a12bbdfbf06aa.jpg)
+
+<details>
+<summary>line</summary>
+
+| Image Tree Depth D | Attribute | Spatial | Overall |
+| ------------------ | --------- | ------- | ------- |
+| 1                  | 91.5      | 80.5    | 87.0    |
+| 2                  | 93.0      | 79.0    | 87.5    |
+| 3                  | 92.0      | 85.5    | 89.5    |
+| 4                  | 93.0      | 84.0    | 89.5    |
+| (2,3)              | 93.0      | 85.5    | 90.0    |
+</details>
+
+Figure 3. Impact of Image Tree Depth D on $V ^ { * }$ Bench performance. Evaluated with Qwen2.5-VL-7B, we compare fixed depths $( D = 1$ to 4) against our adaptive strategy, denoted as (2, 3).
+
+Visual Search Efficiency. To comprehensively evaluate the computational overhead, Table 5 presents a consolidated analysis of inference throughput (samples per minute). While CVSearch naturally introduces inference overhead compared to the vanilla model, it effectively overcomes the inherent limitations of both expert-assisted and scan-based
+
+![](images/8cc4f9d1d89eb3737d15f6de9f5e98d37c2edb231c11de17c743c5681d769710.jpg)
+
+<details>
+<summary>bar_line</summary>
+
+| Dataset | Direct Answer (%) | Expert-Search (%) | Scan-Search (%) |
+| :--- | :--- | :--- | :--- |
+| V* | 60 | 59 | 58 |
+| HR-4K | 46 | 32 | 31 |
+| HR-8K | 45 | 32 | 33 |
+</details>
+
+Figure 4. Performance analysis of different search modes. The bar chart (left axis) displays the usage frequency of each mode, while the scatter plot (right axis) reports the corresponding accuracy.
+
+paradigms. Compared to the lightweight expert-assisted approach (SAM 3), CVSearch delivers substantial accuracy improvements (e.g., +4.7% on HR-4K) while maintaining competitive throughput. More importantly, rather than making a speed-accuracy trade-off, our method strictly outperforms existing scan-based frameworks in both dimensions. It achieves significantly higher accuracy while being substantially faster. For instance, on the HR-Bench 4K, CVSearch achieves a throughput of 3.77, which is nearly 3× faster than Zoom Eye and RAP. This dual advantage in both efficiency and performance is directly attributable to our adaptive Cognitive Assess-then-Search workflow, which intelligently bypasses exhaustive scanning for samples with sufficient global information and restricts iterative search strictly to highly informative regions.
+
+Performance of Different Search Modes. Figure 4 analyzes the activation frequency and accuracy of each search mode within our Assess-then-Search workflow. We observe a distinct alignment between the selected mode and sample difficulty. The consistently high accuracy of Direct Answer and Expert-Search confirms that our mechanism effectively filters and resolves easy or salient samples, avoiding unnecessary computational costs. The Scan-Search focuses solely on hard examples that failed in earlier stages, resulting in lower accuracy.
+
+Table 6. Ablation study on our CVSearch components. We measure search efficiency, denoted as Thr, by Throughput (samples per minute) on a single GPU. The Accuracy is denoted as Acc. SGAP represents our proposed Semantic Guided Adaptive Patching. 
+
+<table><tr><td rowspan="2">Method</td><td colspan="2">V* Bench</td><td colspan="2">HR-Bench 4K</td><td colspan="2">HR-Bench 8K</td></tr><tr><td>Acc ↑</td><td>Thr ↑</td><td>Acc ↑</td><td>Thr ↑</td><td>Acc ↑</td><td>Thr ↑</td></tr><tr><td>Qwen2.5-VL-7B</td><td>71.2</td><td>8.30</td><td>68.8</td><td>7.62</td><td>65.3</td><td>7.62</td></tr><tr><td>-w/ SAM 3</td><td>84.3</td><td>3.60</td><td>71.9</td><td>5.59</td><td>68.1</td><td>5.30</td></tr><tr><td>-w/ SAM 3 + Rigid Grid + Top-down search</td><td>84.8</td><td>0.68</td><td>73.5</td><td>2.02</td><td>70.3</td><td>1.15</td></tr><tr><td>-w/ SAM 3 + SGAP + Top-down search</td><td>84.8</td><td>0.68</td><td>72.3</td><td>2.14</td><td>70.8</td><td>1.12</td></tr><tr><td>-w/ SAM 3 + SGAP + Bottom-up search</td><td>86.4</td><td>1.29</td><td>76.8</td><td>3.81</td><td>74.9</td><td>2.18</td></tr><tr><td>-w/ CVSearch</td><td>90.1</td><td>1.02</td><td>76.6</td><td>3.77</td><td>75.6</td><td>1.92</td></tr></table>
+
+Effectiveness of Key Components. We perform a progressive ablation study in Table 6 to validate the contribution of each module in CVSearch. First, incorporating SAM 3 improves the baseline V\* Bench accuracy by +13.1, establishing a strong foundation. Second, comparing scanning strategies, our proposed SGAP + Bottom-up search significantly outperforms the traditional “Rigid Grid + Top-down” baseline. It not only boosts HR-Bench 4K accuracy from 73.5 to 76.8 but also drastically reduces inference latency. This highlights the effectiveness of our semantic-aware patching and complexity-driven exploration in eliminating redundant calculations. Finally, the full CVSearch framework achieves the best overall performance across all benchmarks, validating the synergy of our cognitive architecture.
+
+Ablation studies on the information sufficiency threshold $\tau _ { q }$ are provided in Appendix B.2. Furthermore, Appendix C.1 demonstrates how our Semantic Guided Adaptive Patching strategy adaptively partitions images based on visual complexity. Subsequently, Appendix C.2 provides a detailed analysis of representative successful inference examples as well as typical failure cases to discuss the current capabilities and limitations of our approach.
+
+# 6. Conclusions
+
+In this paper, we present CVSearch, a novel training-free framework that resolves the efficiency-robustness dilemma in high-resolution visual perception for MLLMs. By reformulating visual search as an cognitive, hierarchical decisionmaking process, CVSearch effectively balances the computational overhead of exhaustive scanning with the reliability risks of expert dependency. Our core contributions, Semantic-Guided Adaptive Patching Dynamic Bottom-Up Search, facilitate semantic-preserving partitioning and robust iterative exploration. Extensive experiments validate that CVSearch achieves superior performance across diverse benchmarks while maintaining high inference efficiency. We hope this work inspires further research into cognitive visual strategies for fine-grained visual understanding.
+
+# Limitations
+
+While CVSearch demonstrates significant improvements in high-resolution visual search, we acknowledge two primary limitations. First, regarding computational efficiency, although our method is substantially faster than existing scanbased frameworks, the iterative search process inevitably makes it slower than the vanilla single-pass MLLM and the lightweight expert-assisted baselines. To further mitigate this latency, future work can focus on system-level acceleration, such as evaluating independent nodes at the same search depth in parallel via batched inference and integrating memory-efficient mechanisms like FlashAttention into the base model. Second, regarding the visual expert, our current experiments rely exclusively on SAM 3 to generate region proposals. Consequently, the generalization capability of the framework when integrated with different types of visual experts remains unexplored. Future research will investigate substituting or combining diverse visual foundation models to evaluate and enhance the system’s robustness and adaptability across various domains and task requirements.
+
+# Acknowledgements
+
+We sincerely thank the anonymous reviewers and chairs for their efforts and constructive suggestions, which have greatly helped us improve the manuscript. This work is supported in part by the National Natural Science Foundation of China under grants 62536003, 62521006, 624B2088 and 62576122, and by the project of Peng Cheng Laboratory (PCL2025A14).
+
+# Impact Statement
+
+Our work introduces CVSearch, a training-free framework that optimizes the trade-off between visual search efficiency and accuracy for multimodal large language models (MLLMs). Specifically, via an Assess-then-Search workflow, CVSearch adaptively prioritizes rapid inference modes by relying on global context or expert proposals, and only resorts to extensive scanning when necessary. Furthermore, by incorporating Semantic Guided Adaptive Patching and
+
+Dynamic Bottom-Up Search, the framework leverages scene semantics to significantly accelerate the scan-based exploration, enabling MLLMs to capture fine-grained details with minimal computational redundancy. We believe that by prioritizing adaptive resource allocation and the mitigation of computational redundancy, this work steers the field toward more efficient, scalable, and accessible high-resolution multimodal understanding.
+
+# References
+
+Achanta, R., Shaji, A., Smith, K., Lucchi, A., Fua, P., and Susstrunk, S. Slic superpixels compared to state-of-the-¨ art superpixel methods. IEEE transactions on pattern analysis and machine intelligence, 34(11):2274–2282, 2012.   
+Bai, J., Bai, S., Yang, S., Wang, S., Tan, S., Wang, P., Lin, J., Zhou, C., and Zhou, J. Qwen-vl: A versatile visionlanguage model for understanding, localization. Text Reading, and Beyond, 2:1, 2023.   
+Bai, S., Chen, K., Liu, X., Wang, J., Ge, W., Song, S., Dang, K., Wang, P., Wang, S., Tang, J., et al. Qwen2. 5-vl technical report. arXiv preprint arXiv:2502.13923, 2025.   
+Carion, N., Gustafson, L., Hu, Y.-T., Debnath, S., Hu, R., Suris, D., Ryali, C., Alwala, K. V., Khedr, H., Huang, A., et al. Sam 3: Segment anything with concepts. arXiv preprint arXiv:2511.16719, 2025.   
+Chen, Z., Wu, J., Wang, W., Su, W., Chen, G., Xing, S., Zhong, M., Zhang, Q., Zhu, X., Lu, L., et al. Internvl: Scaling up vision foundation models and aligning for generic visual-linguistic tasks. In Proceedings of the IEEE/CVF conference on computer vision and pattern recognition, pp. 24185–24198, 2024.   
+Fu, Y., Wang, R., Ren, B., Sun, G., Gong, B., Fu, Y., Paudel, D. P., Huang, X., and Van Gool, L. Objectrelator: Enabling cross-view object relation understanding across ego-centric and exo-centric perspectives. In Proceedings of the IEEE/CVF International Conference on Computer Vision, pp. 6530–6540, 2025.   
+Ge, C., Cheng, S., Wang, Z., Yuan, J., Gao, Y., Song, J., Song, S., Huang, G., and Zheng, B. Convllava: Hierarchical backbones as visual encoder for large multimodal models. arXiv preprint arXiv:2405.15738, 2024.   
+Huang, M., Liu, Y., Liang, D., Jin, L., and Bai, X. Minimonkey: Alleviating the semantic sawtooth effect for lightweight mllms via complementary image pyramid. arXiv preprint arXiv:2408.02034, 2024.   
+Hurst, A., Lerer, A., Goucher, A. P., Perelman, A., Ramesh, A., Clark, A., Ostrow, A., Welihinda, A., Hayes, A.,
+
+Radford, A., et al. Gpt-4o system card. arXiv preprint arXiv:2410.21276, 2024.   
+Jugran, S., Kumar, A., Tyagi, B. S., and Anand, V. Extractive automatic text summarization using spacy in python & nlp. In 2021 International conference on advance computing and innovative technologies in engineering (ICACITE), pp. 582–585. IEEE, 2021.   
+Li, B., Zhang, Y., Guo, D., Zhang, R., Li, F., Zhang, H., Zhang, K., Zhang, P., Li, Y., Liu, Z., et al. Llavaonevision: Easy visual task transfer. arXiv preprint arXiv:2408.03326, 2024a.   
+Li, F., Zhang, R., Zhang, H., Zhang, Y., Li, B., Li, W., Ma, Z., and Li, C. Llava-next-interleave: Tackling multiimage, video, and 3d in large multimodal models. arXiv preprint arXiv:2407.07895, 2024b.   
+Li, G., Xu, J., Zhao, Y., and Peng, Y. Dyfo: A trainingfree dynamic focus visual search for enhancing lmms in fine-grained visual understanding. In Proceedings of the Computer Vision and Pattern Recognition Conference, pp. 9098–9108, 2025a.   
+Li, K., Xu, Q., Qian, T., Fu, Y., Jiao, Y., and Wang, X. Clivis: Unleashing cognitive map through linguisticvisual synergy for embodied visual reasoning. arXiv preprint arXiv:2506.17629, 2025b.   
+Li, Z., Yang, B., Liu, Q., Ma, Z., Zhang, S., Yang, J., Sun, Y., Liu, Y., and Bai, X. Monkey: Image resolution and text label are important things for large multi-modal models. In proceedings of the IEEE/CVF conference on computer vision and pattern recognition, pp. 26763–26773, 2024c.   
+Liu, H., Li, C., Li, Y., and Lee, Y. J. Improved baselines with visual instruction tuning. In Proceedings of the IEEE/CVF conference on computer vision and pattern recognition, pp. 26296–26306, 2024.   
+Lu, Z., Li, L., Wang, J., Feng, Y., Chen, B., Chen, K., and Wang, Y. CoPRS: Learning positional prior from chainof-thought for reasoning segmentation. In The Fourteenth International Conference on Learning Representations, 2026a.   
+Lu, Z., Li, L., Wang, J., Kang, H., Feng, Y., Chen, K., and Wang, Y. Segcompass: Exploring interpretable alignment with sparse autoencoders for enhanced reasoning segmentation. arXiv preprint arXiv:2605.22658, 2026b.   
+Luo, G., Zhou, Y., Zhang, Y., Zheng, X., Sun, X., and Ji, R. Feast your eyes: Mixture-of-resolution adaptation for multimodal large language models. In The Thirteenth International Conference on Learning Representations, 2025.
+
+Mullner, D. Modern hierarchical, agglomerative clustering ¨ algorithms. arXiv preprint arXiv:1109.2378, 2011.   
+Pan, J., Wang, R., Qian, T., Mahdi, M., Fu, Y., Xue, X., Huang, X., Van Gool, L., Paudel, D. P., and Fu, Y. V2-sam: Marrying sam2 with multi-prompt experts for cross-view object correspondence. arXiv preprint arXiv:2511.20886, 2025.   
+Radford, A., Kim, J. W., Hallacy, C., Ramesh, A., Goh, G., Agarwal, S., Sastry, G., Askell, A., Mishkin, P., Clark, J., et al. Learning transferable visual models from natural language supervision. In International conference on machine learning, pp. 8748–8763. PmLR, 2021.   
+Shen, H., Zhao, K., Zhao, T., Xu, R., Zhang, Z., Zhu, M., and Yin, J. Zoomeye: Enhancing multimodal llms with human-like zooming capabilities through tree-based image exploration. In Proceedings of the 2025 Conference on Empirical Methods in Natural Language Processing, pp. 6613–6629, 2025.   
+Team, Q. et al. Qwen2 technical report. arXiv preprint arXiv:2407.10671, 2(3), 2024.   
+Tong, S., Liu, Z., Zhai, Y., Ma, Y., LeCun, Y., and Xie, S. Eyes wide shut? exploring the visual shortcomings of multimodal llms. In Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition, pp. 9568–9578, 2024.   
+Touvron, H., Martin, L., Stone, K., Albert, P., Almahairi, A., Babaei, Y., Bashlykov, N., Batra, S., Bhargava, P., Bhosale, S., et al. Llama 2: Open foundation and finetuned chat models. arXiv preprint arXiv:2307.09288, 2023.   
+Vardakas, G., Papakostas, I., and Likas, A. Deep clustering using the soft silhouette score: Towards compact and well-separated clusters. arXiv preprint arXiv:2402.00608, 2024.   
+Wang, H., Li, X., Huang, Z., Wang, A., Wang, J., Zhang, T., Zheng, J., Bai, S., Kang, Z., Feng, J., et al. Traceable evidence enhanced visual grounded reasoning: Evaluation and methodology. arXiv preprint arXiv:2507.07999, 2025a.   
+Wang, H., Su, A., Ren, W., Lin, F., and Chen, W. Pixel reasoner: Incentivizing pixel-space reasoning with curiosity-driven reinforcement learning. arXiv preprint arXiv:2505.15966, 2025b.   
+Wang, W., Lv, Q., Yu, W., Hong, W., Qi, J., Wang, Y., Ji, J., Yang, Z., Zhao, L., XiXuan, S., et al. Cogvlm: Visual expert for pretrained language models. Advances in Neural Information Processing Systems, 37:121475– 121499, 2024.
+
+Wang, W., Ding, L., Zeng, M., Zhou, X., Shen, L., Luo, Y., Yu, W., and Tao, D. Divide, conquer and combine: A training-free framework for high-resolution image perception in multimodal large language models. In Proceedings of the AAAI Conference on Artificial Intelligence, volume 39(8), pp. 7907–7915, 2025c.   
+Wang, W., Jing, Y., Ding, L., Wang, Y., Shen, L., Luo, Y., Du, B., and Tao, D. Retrieval-augmented perception: High-resolution image perception meets visual rag. In Forty-second International Conference on Machine Learning, 2025d.   
+Wolfe, J. M. Visual search: How do we find what we are looking for? Annual review of vision science, 6(1):539– 562, 2020.   
+Wolfe, J. M. and Horowitz, T. S. Five factors that guide attention in visual search. Nature human behaviour, 1(3): 0058, 2017.   
+Wolfe, J. M., Vo, M. L.-H., Evans, K. K., and Greene, ˜ M. R. Visual search in scenes involves selective and nonselective pathways. Trends in cognitive sciences, 15 (2):77–84, 2011.   
+Woo, S., Debnath, S., Hu, R., Chen, X., Liu, Z., Kweon, I. S., and Xie, S. Convnext v2: Co-designing and scaling convnets with masked autoencoders. In Proceedings of the IEEE/CVF conference on computer vision and pattern recognition, pp. 16133–16142, 2023.   
+Wu, P. and Xie, S. V\*: Guided visual search as a core mechanism in multimodal llms. In Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition, pp. 13084–13094, 2024.   
+Young, A., Chen, B., Li, C., Huang, C., Zhang, G., Zhang, G., Wang, G., Li, H., Zhu, J., Chen, J., et al. Yi: Open foundation models by 01. ai. arXiv preprint arXiv:2403.04652, 2024.   
+Zhai, X., Mustafa, B., Kolesnikov, A., and Beyer, L. Sigmoid loss for language image pre-training. In Proceedings of the IEEE/CVF international conference on computer vision, pp. 11975–11986, 2023.   
+Zhang, J., Khayatkhoei, M., Chhikara, P., and Ilievski, F. Mllms know where to look: Training-free perception of small visual details with multimodal llms. arXiv preprint arXiv:2502.17422, 2025a.   
+Zhang, L., Yu, J., Xiong, H., Hu, P., Zhuge, Y., Lu, H., and He, Y. Finers: Fine-grained reasoning and segmentation of small objects with reinforcement learning. arXiv preprint arXiv:2510.21311, 2025b.
+
+Zhang, Y., Liu, Y., Guo, Z., Zhang, Y., Yang, X., Zhang, X., Chen, C., Song, J., Zheng, B., Yao, Y., et al. Llava-uhd v2: an mllm integrating high-resolution semantic pyramid via hierarchical window transformer. arXiv preprint arXiv:2412.13871, 2024a.   
+Zhang, Y.-F., Zhang, H., Tian, H., Fu, C., Zhang, S., Wu, J., Li, F., Wang, K., Wen, Q., Zhang, Z., et al. Mmerealworld: Could your multimodal llm challenge highresolution real-world scenarios that are difficult for humans? arXiv preprint arXiv:2408.13257, 2024b.   
+Zheng, Z., Yang, M., Hong, J., Zhao, C., Xu, G., Yang, L., Shen, C., and Yu, X. Deepeyes: Incentivizing” thinking with images” via reinforcement learning. arXiv preprint arXiv:2505.14362, 2025.   
+Zhu, J., Wang, W., Chen, Z., Liu, Z., Ye, S., Gu, L., Tian, H., Duan, Y., Su, W., Shao, J., et al. Internvl3: Exploring advanced training and test-time recipes for open-source multimodal models. arXiv preprint arXiv:2504.10479, 2025.   
+Zou, A., Phan, L., Chen, S., Campbell, J., Guo, P., Ren, R., Pan, A., Yin, X., Mazeika, M., Dombrowski, A.-K., et al. Representation engineering: A top-down approach to ai transparency. arXiv preprint arXiv:2310.01405, 2023.
+
+# Appendix
+
+In this appendix, we provide comprehensive implementation details, extended experimental results, and case analyses to further support the contributions of CVSearch. The appendix is organized as follows:
+
+• Appendix A: Details the algorithmic implementation of our cognitive framework, including the algorithm workflow for the overall inference process, the Semantic Guided Adaptive Patching mechanism, and the Dynamic Bottom-Up Search strategy.   
+• Appendix B: Presents additional quantitative evaluations, including comparisons with a broader range of high-resolution image perception methods and an in-depth ablation study on the information sufficiency threshold $\tau _ { q } .$ , which governs the cognitive gating process.   
+• Appendix C: Provides qualitative analysis through extensive case studies and visualizations, demonstrating the effectiveness of our cognitive search process in complex scenarios.
+
+# A. Algorithm Implementation Details
+
+In this section, we provide the formal algorithms and detailed implementation steps for the key components that constitute the cognitive architecture of CVSearch.
+
+# A.1. Overall Cognitive Framework of CVSearch
+
+The cognitive inference process is outlined in Algorithm 1. Mirroring human cognitive control, the system first performs a Global Cognitive Assessment to evaluate information sufficiency $( c _ { q } > \tau _ { q } )$ . If the global gist is insufficient, it triggers the Visual Expert (E) to propose target regions. Upon expert failure, the method switches to Scene-aware Scanning (using Algorithm 2 and Algorithm 3). Crucially, a feedback loop enables iterative refinement, simulating the human “re-check” mechanism. In case where the bottom-up search concludes at depth 1 without meeting the sufficiency criteria, the top-ranked node from this layer is cropped and re-fed into the pipeline for further cognitive inspection.
+
+# A.2. Implementation of Semantic Guided Adaptive Patching
+
+Algorithm 2 details the construction of the adaptive image tree T . This process instantiates the system’s structural understanding of the scene. We initialize atomic superpixels using SLIC and build a Region Adjacency Graph. The optimal number of clusters $k ^ { * }$ is determined by minimizing the cost function L(k) (Eq. 3). Finally, we apply visual complexity pruning, retaining only nodes where $c _ { v }$ exceeds the threshold $\tau _ { v }$ to filter out non-informative background regions.
+
+# A.3. Implementation of Dynamic Bottom-Up Search
+
+Algorithm 3 describes the search strategy traversing from depth D to 1. In each layer, nodes are sorted by priority $c _ { x } \left( \operatorname { E q . } 5 \right)$ . To handle uncertainty in small object perception, To handle uncertainty in small object perception, we employ a dynamic termination threshold $\tau _ { c u r r }$ that decays from $\tau _ { q }$ to a lower bound $\hat { \tau } _ { q }$ as the search step increases. The algorithm returns FOUND if a definitive answer is reached, or the top-ranked node from the first layer for fallback refinement in the main framework.
+
+Algorithm 1 The Cognitive Inference Process of CVSearch   
+Require: Image I, Query Q, MLLM M, Visual Expert E (SAM 3)
+Require: Thresholds: $\tau_{q}$ (Sufficiency), $\hat{\tau}_{q}$ (Lower Bound), $\Delta\tau$ (Decay Step)
+Ensure: Response R
+1: Initialize: Current context $I_{curr} \leftarrow I$ , Iteration iter $\leftarrow 0$ 2: while iter < MAX_ITER do
+3: Phase 1: Global Cognitive Assessment
+4: Calculate sufficiency score $c_{q}(I_{curr})$ using Eq. 2.
+5: if $c_{q}(I_{curr}) > \tau_{q}$ then
+6: $R \leftarrow \mathcal{M}(I_{curr}, Q)$ {Global information is sufficient}
+7: return R
+8: end if
+9: Phase 2: Visual Expert-assisted Search
+10: Parse target objects $O = \{o_{1}, \ldots, o_{m}\}$ from Q.
+11: Generate proposals $B_{e}$ and features $H_{e}$ via $\mathcal{E}(I_{curr}, O)$ .
+12: if Verification( $B_{e}, O$ ) is Successful then
+13: $I_{crop} \leftarrow \text{Crop}(I_{curr}, B_{e})$ 14: $R \leftarrow \mathcal{M}(I_{crop}, Q)$ 15: return R
+16: else
+17: Phase 3: Scene-aware Scanning (SGAP & Dynamic Bottom-Up Search)
+18: Construct Adaptive Tree T using Algorithm 2 with $H_{e}$ .
+19: {Search for the best local region}
+20: Status, Node $\leftarrow$ Algorithm 3 (T, O, Q, $\tau_{q}, \hat{\tau}_{q}, \Delta\tau$ )
+21: if Status == FOUND then
+22: {Search successful: Answer based on the found region}
+23: $I_{final} \leftarrow \text{Crop}(I_{curr}, Node)$ 24: $R \leftarrow \mathcal{M}(I_{final}, Q)$ 25: return R
+26: else
+27: {Search inconclusive: Use best candidate for iterative refinement}
+28: $I_{curr} \leftarrow \text{Crop}(I_{curr}, Node)$ 29: iter $\leftarrow \text{iter} + 1$ 30: if Region too small then
+31: break{Stop if region is atomic}
+32: end if
+33: end if
+34: end if
+35: end while
+36: return $\mathcal{M}(I_{curr}, Q)$ {Fallback answer}
+
+Algorithm 2 Semantic Guided Adaptive Patching   
+Require: Visual Features $H_{e}$ , Clustering Range $[k_{\min}, k_{\max}]$ Ensure: Adaptive Image Tree T
+
+1: function BUILDTREE(H, d)
+
+2: Step 1: Atom Generation
+
+3: Generate N atomic superpixels A using SLIC on H.
+
+4: Construct Region Adjacency Graph G on A.
+
+5: Step 2: Adaptive Clustering Optimization
+
+6: $k^{*} \leftarrow k_{\min}, L_{\min} \leftarrow \infty$ 7: for $k = k_{\min}$ to $k_{\max}$ do
+
+8: Partition A into k clusters using Agglomerative Clustering on G.
+
+9: Calculate cost $\mathcal{L}(k) = \mathcal{L}_{o}(B_{k}) - \mathcal{L}_{s}(H_{a}, l_{k})$ (Eq. 3).
+
+10: if $\mathcal{L}(k) < \mathcal{L}_{\min}$ then
+
+11: $\mathcal{L}_{\min} \leftarrow \mathcal{L}(k), k^{*} \leftarrow k$ 12: end if
+
+13: end for
+
+14: Step 3: Node Construction & Pruning
+
+15: Partition current region into $k^{*}$ patches based on optimal clusters.
+
+16: for each patch view $I_{patch}$ do
+
+17: Calculate Visual Complexity $c_{v}(I_{patch})$ using Eq. 4.
+
+18: if $c_{v}(I_{patch}) \geq \tau_{v}$ then
+
+19: Add $I_{patch}$ as a node to T.
+
+20: Extract features $H_{sub}$ for $I_{patch}$ .
+
+21: BUILDTREE( $H_{sub}, d + 1$ ) {Recursive construction}
+
+22: end if
+
+23: end for
+
+24: end function
+
+25: Initialize root node with global feature $H_{e}$ .
+
+26: BUILDTREE( $H_{e}, 0$ )
+
+27: return T
+
+Algorithm 3 Dynamic Bottom-Up Search Strategy   
+Require: Image Tree T, Targets O, Query Q
+Require: Initial Threshold $\tau_{q}$ , Lower Bound $\hat{\tau}_{q}$ , Decay Step $\Delta\tau$ Ensure: Status, Candidate Node
+1: Initialize: Step counter $k_{step} \leftarrow 0$ 2: for depth d = D down to 1 do
+3: Step 1: Layer-wise Priority Calculation
+4: Get nodes $N_{d}$ in current layer d.
+5: for each node $n \in N_{d}$ do
+6: Calculate existence confidence $c_{o}$ for O using M.
+7: $c_{x}^{*} \leftarrow \max_{child \in Children(n)} c_{x}(child)$ (set 0 if leaf).
+8: Compute Priority $c_{x} = \alpha c_{v} + \beta c_{o} + \gamma c_{x}^{*}$ (Eq. 4).
+9: end for
+10: Sort $N_{d}$ by $c_{x}$ descending.
+11: Step 2: Dynamic Search within Layer
+12: for each node $n \in N_{d}$ do
+13: Calculate sufficiency $c_{q}(n)$ for Q (or decoupled $Q_{d}$ ).
+14: {Calculate dynamic threshold bounded by $\hat{\tau}_{q}$ }
+15: $\tau_{curr} \leftarrow \max(\tau_{q} - k_{step} \cdot \Delta\tau, \hat{\tau}_{q})$ 16: if $c_{q}(n) > \tau_{curr}$ then
+17: return FOUND, n {Target found, return for answering}
+18: else
+19: $k_{step} \leftarrow k_{step} + 1$ {Relax criteria for next attempt}
+20: end if
+21: end for
+22: {If not found in this layer, proceed to the parent layer (d - 1)}
+23: end for
+24: Step 3: Feedback Generation
+25: {Search exhausted without meeting sufficiency criteria}
+26: Get top-ranked node $n_{top}$ from Depth 1 (Root's children).
+27: return NOT_FOUND, $n_{top}$ {Return best guess for iterative refinement}
+
+Table 7. Performance comparison of our CVSearch and more HR image processing methods. 
+
+<table><tr><td rowspan="2">Method</td><td colspan="3">V* Bench</td><td colspan="3">HR-Bench 4K</td><td colspan="3">HR-Bench 8K</td></tr><tr><td>Attribute</td><td>Spatial</td><td>Overall</td><td>FSP</td><td>FCP</td><td>Overall</td><td>FSP</td><td>FCP</td><td>Overall</td></tr><tr><td>VisCrop (Zhang et al., 2025a)</td><td>-</td><td>-</td><td>62.3</td><td>-</td><td>-</td><td>46.3</td><td>-</td><td>-</td><td>35.8</td></tr><tr><td> $DC^2$  (Wang et al., 2025c)</td><td>49.6</td><td>59.2</td><td>51.6</td><td>45.3</td><td>37.0</td><td>41.1</td><td>36.5</td><td>33.3</td><td>34.9</td></tr><tr><td>Pixel-Reasoner (Wang et al., 2025b)</td><td>83.5</td><td>76.3</td><td>80.6</td><td>86.0</td><td>60.3</td><td>72.9</td><td>80.0</td><td>54.3</td><td>66.9</td></tr><tr><td>DeepEyes (Zheng et al., 2025)</td><td>91.3</td><td>88.2</td><td>90.1</td><td>91.3</td><td>59.0</td><td>75.1</td><td>86.8</td><td>58.5</td><td>72.6</td></tr><tr><td>LLaVA-OV-7B (Li et al., 2024a)</td><td>75.7</td><td>75.0</td><td>75.4</td><td>72.0</td><td>54.0</td><td>63.0</td><td>67.3</td><td>52.3</td><td>59.8</td></tr><tr><td>-w/CVSearch</td><td>95.7</td><td>85.5</td><td>91.6</td><td>89.5</td><td>61.8</td><td>75.6</td><td>89.0</td><td>60.5</td><td>74.8</td></tr><tr><td>Qwen2.5-VL-7B (Bai et al., 2025)</td><td>73.9</td><td>67.1</td><td>71.2</td><td>85.2</td><td>52.2</td><td>68.8</td><td>78.8</td><td>51.8</td><td>65.3</td></tr><tr><td>-w/CVSearch</td><td>93.0</td><td>85.5</td><td>90.1</td><td>91.5</td><td>61.8</td><td>76.8</td><td>90.0</td><td>61.3</td><td>75.6</td></tr><tr><td>InternVL2.5-8B (Chen et al., 2024)</td><td>67.8</td><td>71.1</td><td>69.1</td><td>75.8</td><td>56.3</td><td>66.0</td><td>61.5</td><td>53.3</td><td>57.4</td></tr><tr><td>-w/CVSearch</td><td>86.1</td><td>93.4</td><td>89.0</td><td>93.0</td><td>61.0</td><td>77.0</td><td>92.3</td><td>63.0</td><td>77.6</td></tr></table>
+
+# B. Additional Experimental Results
+
+We further extend the experimental evaluation presented in the main paper to demonstrate the robustness and superiority of our cognitive visual search method.
+
+# B.1. Comparison with Additional High-Resolution Image Processing Methods
+
+We extend our evaluation by comparing CVSearch with a broader range of recent high-resolution image perception methods reported in Table 7. DC2 (Wang et al., 2025c) is a train-free method that constructs an image tree and synthesizes textual descriptions from leaf patches up to the root to supplement visual information. VisCrop (Zhang et al., 2025a) is also a training-free method that re-feeds the region focused by the attention map to enable a “look again” mechanism. Pixel Reasoner (Wang et al., 2025b) and DeepEyes (Zheng et al., 2025) use curated reasoning trajectories and curiosity-driven reinforcement learning to learn zooming policies for fine-grained reasoning.
+
+Compared to $\mathrm { D C ^ { 2 } }$ and VisCrop, our method achieves a substantial advantage, which suggests that supplementing visual features with text summarization $\mathrm { ( D C ^ { 2 } ) }$ or relying on a single attention-based crop (VisCrop) is insufficient for capturing the intricate details required for fine-grained perception. Furthermore, compared to RL-based methods like DeepEyes and Pixel Reasoner, our training-free approach achieves superior accuracy. LLaVA-OV-7B with CVSearch reaches a $V ^ { * }$ Bench accuracy of 91.6, surpassing DeepEyes without requiring curated data or extensive training. This trend persists across HR-Bench 4K and HR-Bench 8K. By empowering general MLLMs solely through a dedicated inference-time cognitive search mechanism, CVSearch demonstrates that high-performance visual search can be achieved without the complexity and cost of reinforcement learning pipelines.
+
+# B.2. Ablation Study on Information Sufficiency Threshold $\tau _ { q }$
+
+We analyze the sensitivity of our cognitive Assess-then-Search mechanism to the threshold $\tau _ { q }$ in Figure 5. In Figure 5a, raising $\tau _ { q }$ serves as a stricter gatekeeper for the Direct Answer mode. We observe a monotonic decrease in direct responses and a corresponding increase in Expert and Scan searches. The results confirm that the model correctly interprets higher $\tau _ { q }$ as a demand for more visual evidence, effectively operationalizing cognitive gating. In Figure 5b, this cautious behavior translates into overall performance gains. Notably, the Direct Answer accuracy exhibits a slight non-monotonic trend as $\tau _ { q }$ rises. This fluctuation is a natural artifact of shifting sample distributions rather than poor calibration: as the threshold increases, many ”easy” queries are conservatively routed to search modules, temporarily concentrating overconfident errors in the shrinking direct answer pool. Crucially, the Direct Answer accuracy consistently remains high (above 91.6% across all thresholds), demonstrating that $\tau _ { q }$ reliably isolates simpler queries. Consequently, while the accuracy of Scan-Search remains relatively stable, the Overall system accuracy improves as $\tau _ { q }$ approaches 0.9. This confirms that suppressing uncertain direct answers and redirecting them to finer-grained search modes is crucial for maximizing performance on challenging benchmarks.
+
+![](images/7695a25e0ff4ff13dfdadf53d732eff7d1b67ad9e6d7435d2bace5eee11c969e.jpg)
+
+<details>
+<summary>line</summary>
+
+| Sufficiency Threshold τq | Direct Answer | Expert-Search | Scan-Search |
+| ------------------------ | ------------- | ------------- | ----------- |
+| 0.5                      | 17            | 31            | 52          |
+| 0.6                      | 14            | 33            | 53          |
+| 0.7                      | 11            | 35            | 54          |
+| 0.8                      | 6             | 38            | 55          |
+| 0.9                      | 3             | 40            | 56          |
+</details>
+
+(a) Search Mode Ratio
+
+![](images/f3a13e52673e7f0f87a6142aa604c17c0a0f0a374f6dbf36c166218ad994521c.jpg)
+
+<details>
+<summary>line</summary>
+
+| Sufficiency Threshold τq | Direct Answer | Expert-Search | Scan-Search | Overall |
+| ------------------------ | ------------- | ------------- | ----------- | ------- |
+| 0.5                      | 97.0          | 97.0          | 83.0        | 90.0    |
+| 0.6                      | 96.5          | 97.0          | 83.5        | 90.0    |
+| 0.7                      | 95.0          | 97.0          | 84.0        | 90.0    |
+| 0.8                      | 92.0          | 97.5          | 84.5        | 90.0    |
+| 0.9                      | 100.0         | 97.5          | 84.5        | 90.0    |
+</details>
+
+(b) Accuracy Comparison   
+Figure 5. Ablation study on the information sufficiency threshold $\tau _ { q }$ on $V ^ { * }$ Bench. Evaluated with Qwen2.5-VL-7B, we analyze (a) the usage ratio of different search modes and (b) their corresponding accuracy as $\tau _ { q }$ varies from 0.5 to 0.9.
+
+# C. Qualitative Analysis and Case Studies
+
+To provide intuitive insights into the operational mechanisms of CVSearch, this section presents qualitative visualizations on challenging samples. We first demonstrate how our Semantic Guided Adaptive Patching strategy adaptively partitions images based on visual complexity. Subsequently, we provide a detailed analysis of representative successful inference examples as well as typical failure cases to discuss the current capabilities and limitations of our approach.
+
+# C.1. Visualization of Semantic Guided Adaptive Patching
+
+In this subsection, we compare the image patching mechanisms of our Semantic Guided Adaptive Patching (SGAP) strategy against the methods employed by Zoom Eye (Shen et al., 2025) and RAP (Wang et al., 2025d). Figure 6, 7, 8, 9 visualize how these distinct paradigms partition high-resolution images across varying scenarios.
+
+Rigid Partitioning and Fragmentation. Existing methods typically rely on semantic-agnostic rules. Zoom Eye utilizes a hierarchical rigid partitioning scheme that divides images into fixed grid layouts, while RAP adopts a sliding window approach with a fixed patch size. As observed in the visualizations, these rigid strategies often sever objects at arbitrary positions. For example, the church in Figure 7 is shattered into numerous disjoint tokens by the dense patching of RAP, and the truck in Figure 8 is split centrally by the fixed grid of Zoom Eye. This disruption of spatial coherence forces the MLLM to reconstruct object semantics from fragmented pieces.
+
+Semantic-Preserving Adaptivity. In contrast, CVSearch leverages visual features to dynamically determine patch boundaries. Our SGAP mechanism groups regions based on semantic similarity to ensure patches naturally align with object contours rather than cutting through them. As shown in the visualizations, we present the first-layer results and highlight specific regions (red dashed boxes) to demonstrate the second-layer refinement. This approach effectively preserves the semantic integrity of targets while reducing token redundancy. Crucially, SGAP also provides a quantifiable Visual Complexity Score (annotated above each patch in the figures), which serves as an indicator to distinguish information-dense regions from redundant backgrounds. This metric drives the hierarchical process, guiding the model to intensively explore high-value areas while pruning low-complexity regions like the sky, effectively preserving semantic integrity while reducing token redundancy.
+
+# C.2. Success and Failure Case Analysis
+
+In this subsection, we conduct a qualitative analysis of CVSearch using the Qwen2.5-VL-7B backbone on the $\mathbf { V } ^ { * }$ Bench. We categorize the inference process into different scenarios to demonstrate how our Assess-then-Search workflow adaptively allocates computational resources based on visual difficulty.
+
+Adaptive Efficiency ( Figure 10). CVSearch effectively distinguishes task difficulty. For visually prominent targets (e.g., the cap), the Global Assessment module enables a Direct Answer, bypassing unnecessary searching. For small but perceptible objects in cluttered scenes (e.g., the stool), it triggers Visual Expert Assisted Search, utilizing SAM 3 for rapid localization without the overhead of full scanning.
+
+Robustness via Iterative Search (Figure 11). For extremely tiny targets where initial attempts fail, CVSearch employs an iterative cycle by feeding the optimal candidate region back into the Visual Expert. Figure 11 illustrates illustrates this process. In the “tissue box” case (Left), the Expert successfully localizes the target within the zoomed candidate. In the more challenging “helmet” case (Right), the Expert fails again even with the zoomed view, triggering the system to activate Scene-aware Scanning to meticulously capture the visual evidence via bottom-up exploration.
+
+Failure Analysis (Figure 12). We examine errors where localization succeeds but reasoning fails. Left (Hallucination): The Expert precisely locates the “SUV”, yet the MLLM misidentifies its color as “blue” (GT: Silver), revealing a misalignment between visual evidence and internal representation. Right (Ambiguity): Iterative search captures the “clock”, but the model describes the face (“white”) while the ground truth refers to the frame (“green”), highlighting challenges with multi-part object attributes.
+
+![](images/e35a210eb9b8d60ce476edcde19dbf84922c33f7ee5dda734aec654285f58202.jpg)
+
+<details>
+<summary>text_image</summary>
+
+LIBROS
+LIBROS
+</details>
+
+Original image
+
+![](images/aa961adfc737e6bea177a78a7d9af3672b0c3f8278e0d81a35cb175c2eac37a8.jpg)
+
+![](images/4cc76c7f948b51689b11fb34117273f8c2a070e439c3c6240526aad55f0cb58c.jpg)
+
+![](images/2fd4379a30a2f54e15a63a078295027f18178a4a305421b5571f60f81d8baa39.jpg)
+
+![](images/bf88fbd992dcc5b2218d21d481514ba097d7165b6a4a06bd54e8844ed9f6780e.jpg)
+
+![](images/ee4bba6fce663155bf1d7a6e6f003f28ba71a57928ed2faf2e499ce544ade918.jpg)
+
+![](images/82131526c4dcd0fb7521f85a05862ba994352283fa0e211c19f1a3b16e86d296.jpg)
+
+![](images/e0f7a465819c64ea48a2584985e2e03ae989bfafeb6aa9431dea7f473c24f2ff.jpg)
+
+![](images/999b8ca6126095117ffae93a3211ee129dbe1666738b8b575a0e45224544c196.jpg)  
+Zoom Eye
+
+![](images/f1bf651156f152bfe3c2d921803392188c00da75369af05eabf9ba244f9840e1.jpg)
+
+<details>
+<summary>natural_image</summary>
+
+Collage of street scenes including a person sitting on a bicycle, a green fence with flowers, and a 'LIE ROS' sign (no readable text or symbols in the scene itself)
+</details>
+
+RAP
+
+![](images/b0d92c2faea45b20677d98488e6ec234fc7ab4592aa1cd85c8c9d73052529121.jpg)
+
+![](images/e3699900739c3c341880b3aa362ca035d3008095046fa2e09603ef91868e88d2.jpg)
+
+![](images/d755b057b561f50660f0de490356549320443feac2ad468eec1fbee3aae7124e.jpg)
+
+<details>
+<summary>text_image</summary>
+
+0.95
+LIBROS
+LIBROS
+</details>
+
+0.49
+
+![](images/566cc6b356755a553a3dca84636f0072e2006152d75eb8e4dde04840310d0992.jpg)
+
+![](images/449fb58f5e67b25f1cc4a929edcab04347a14e7e6040a0af62b6091bea3a8dd6.jpg)
+
+![](images/1c532d37e57f9cff6a351aac3edbdfcc22e13937a7d53ded753228d9dcf15047.jpg)
+
+![](images/099754885f20420deec2324372a935a1f0a0613ed31f941a79ba7704990c321e.jpg)
+
+![](images/531bb91ab4160011eb962d7c1c2744498f1452fd3f6a7cd6827746be646ba484.jpg)  
+CVSearch (Ours)   
+Figure 6. Comparison of patching strategies on a text-rich scene. Zoom Eye and RAP impose rigid grids that sever the storefront sign (“LIBROS”) and the entrance, disrupting OCR and scene understanding. In contrast, our CVSearch adaptively partitions the image based on semantic coherence. The annotated values represent Visual Complexity Scores. The high visual complexity score (0.95) of the central storefront triggers a focused, boundary-preserving partition in the second layer (red dashed box), keeping the text and objects intact.
+
+![](images/377417be40b9f212395184956925cc63667c19dce37c4fb3af623ff08d201d3a.jpg)
+
+<details>
+<summary>natural_image</summary>
+
+Exterior view of a modern church with twin towers and glass windows under a clear blue sky (no signage or text visible)
+</details>
+
+Original image
+
+![](images/c659257d420a5bad52d98f6493c9e9bd496901bc119b4b47b880b8ce7a06769b.jpg)
+
+![](images/936b055bef48ea098fa9ab5cd5e4716f41ace2f8191c48b6988851be0e3b5fa6.jpg)
+
+![](images/b3821f11247e6b39d0bb2d17fc3e2e69a36b931859ace508cf4826d1b414d2ba.jpg)
+
+![](images/62eef0ea342c4a42ec54f0e51982855416e25a9ed6d1caa277faa953c9e2c6ef.jpg)
+
+![](images/67507c6fd7eb1936f7c619c5261fcfb3f2e3a02a48073d095f4143d11d482b96.jpg)
+
+![](images/5b81099613bbcc2d88a2142e0ec08bbfc2018c797dddb8800d6bdb6f66606e0e.jpg)
+
+![](images/ecc21e5db1ad4cd8c42777c70a2c749768e3e2eb8cd2bdaf7cfbd6408530c005.jpg)
+
+![](images/e0fd78252257f09015b9e6739810c256aa90604a2423077fbafd2118a59bc6f3.jpg)
+
+![](images/4ab55996cb2974ea191867ba43f9b70dc9fc0ee39f280b35b5ff719001ec9ed2.jpg)
+
+![](images/3a17fcd794050645b55bce313f97d0cdfc35920591ad53924ffa9c29f63168dd.jpg)
+
+![](images/9338c86914f51464c30234fc1476e2f18b34e697e3249d836d0b10a84775a387.jpg)
+
+![](images/0ce602d9aa7159bab2ee974d64862634ac58d2c18ec178f791488ec0ca95d764.jpg)  
+Zoom Eye
+
+![](images/27925865cc429dbe4a7979cacc31945d840db03789028245cd681d8b0f1f034e.jpg)
+
+<details>
+<summary>natural_image</summary>
+
+Exterior view of a white church with a cross symbol on the roof, surrounded by trees and open ground (no visible text or signage)
+</details>
+
+RAP
+
+![](images/9cef189f1dec970d0c943b0b7327c144d6cbef8bb3c68702ce13e199a88a1e64.jpg)
+
+<details>
+<summary>radar</summary>
+
+| Category | Value |
+|---|---|
+| 1 | 0.49 |
+| 2 | 0.77 |
+| 3 | 0.95 |
+| 4 | 0.88 |
+| 5 | 0.95 |
+| 6 | 0.47 |
+| 7 | 0.71 |
+| 8 | 0.64 |
+| 9 | 0.90 |
+| 10 | 0.90 |
+| 11 | 0.88 |
+| 12 | 0.68 |
+| 13 | 0.47 |
+| 14 | 0.90 |
+| 15 | 0.54 |
+</details>
+
+CVSearch (Ours)   
+Figure 7. Visualization of semantic preservation in architectural scenes. Rigid partitioning methods (Zoom Eye and RAP) fragment the continuous structure of the church into disjoint blocks, separating the spire from the nave. CVSearch effectively separates the foreground architecture from the low-complexity sky background (0.49). The annotated values represent Visual Complexity Scores. The adaptive patching respects the building’s geometry, ensuring the main structure is encapsulated within semantically consistent regions.
+
+![](images/45ae523f59b0e6e859c53cfeb373963180a69fba12f17465a08c810cf73d5809.jpg)
+
+<details>
+<summary>natural_image</summary>
+
+White semi-truck parked on a highway with trees and distant hills in the background (no visible text or symbols)
+</details>
+
+Original image
+
+![](images/bbc472e684ac36d817aaee461559cb0e42ce4d4549d591bb8956fc226ef1d304.jpg)
+
+![](images/1318ebc169ec46fe8c0b43423142949651f0ee1815a898fd72f309b869a00ad9.jpg)
+
+![](images/2465542e9f5bff93e626aff3ef1ed576f789fe6b50a15f32788ea902312f9ddb.jpg)
+
+![](images/de136db1521a07c64dd2b5d7fff24b6c79df298ab96dfc3bfa4111c57edae7e3.jpg)
+
+![](images/d42edc8d2e819496010a7083d9569a44229740d44f2b480eba227e138c5e3aca.jpg)
+
+![](images/3ba24eb557a58fde3e569f29b2176e1e5ec48957e6f52812a5a21c2dd696e827.jpg)
+
+![](images/f64a8de7f3e36cc1e9f93d42b60c32cd9188b45d72509f97c574d8c4342aadc0.jpg)
+
+![](images/482ab003bccf6f57ff4a215700e96b37bde941a35b1e4bdb8cefacfec5c1f1e7.jpg)
+
+![](images/56ed97162f2430f4b2457de7dd6bd4b48e7b535f45c825a2170f47922f180e9d.jpg)
+
+![](images/2cfcc998f946afc76b049ba888757b388310da092b46c5bc5a0ee25d55896306.jpg)
+
+![](images/181ede0a059aa284bd1490dcb0a8a98218b4544b949412a1872ee99838ffd5fd.jpg)
+
+![](images/f054b0b46133750794ad9eb1ea2b4514ba9e9f58e3d740ae293a25bfaad2b9c2.jpg)
+
+![](images/1608a47a96dc90ebd61fff8032a697a9356e951a8952bae2fb7f043a67af5512.jpg)
+
+<details>
+<summary>text_image</summary>
+
+0.49
+0.82
+0.61
+0.63
+0.95
+0.69
+0.81
+0.81
+0.81
+0.81
+0.81
+0.81
+0.81
+MAN
+</details>
+
+CVSearch (Ours)   
+Figure 8. Impact of patching on object integrity. In the Zoom Eye and RAP examples, the truck is arbitrarily sliced by grid lines, making it difficult to perceive the vehicle as a whole. CVSearch utilizes semantic clustering to maintain the integrity of the truck cabin and the surrounding environment. The annotated values represent Visual Complexity Scores. The resulting patches group the vehicle features together while separating them from the background trees, facilitating more accurate object recognition.
+
+![](images/a9bd4e8a881d471776dd7c5addddc0a56a07bbbf125cdffe495947c5ae7f9b78.jpg)
+
+<details>
+<summary>natural_image</summary>
+
+Exterior view of a residential area with old buildings and trees, no visible text or signage
+</details>
+
+Original image
+
+![](images/e9dc1419dd35bdd86e838b17446dfb803ddd5aa64186cd7e592c2ff2e68042e5.jpg)
+
+![](images/a030bc46ecbf810361f19d39aff7363d247f7c674850c90eb9116000407a3015.jpg)
+
+![](images/7f605633ebeba55049af650b96807c08ea4437b4e16212f2fa282818abe95fda.jpg)
+
+![](images/22ee7c77efe1f08866a9f91937c11afee00a09b7fb4b966061c35876e20fbd77.jpg)
+
+![](images/fb3d8276fd6ef14a124f2f5462401565516d869cda6aa0a6cefe1bc053e059e1.jpg)
+
+<details>
+<summary>natural_image</summary>
+
+Exterior view of a residential building with adjacent garden and paved path (no signage or text visible)
+</details>
+
+![](images/a1dbf90512a992e2563c5bf7a483d0f6d090bff17d7042c79156ebaaa467f77e.jpg)
+
+<details>
+<summary>natural_image</summary>
+
+Exterior view of a building under construction with exposed rebar and scaffolding, alongside a close-up of the ground-level structure (no visible text or symbols)
+</details>
+
+Zoom Eye
+
+![](images/60ec697aef42d60c67520f70a7f1548a783c9215b61b7185e0365c86c4043ff0.jpg)
+
+<details>
+<summary>natural_image</summary>
+
+Grid of outdoor scenes showing residential buildings, a paved path, and concrete pavement (no visible text or symbols)
+</details>
+
+RAP
+
+![](images/1849eedd15ede43e5b2ac15d4df51b1e68dff1b01cf190f88cca02e61df946d4.jpg)
+
+<details>
+<summary>text_image</summary>
+
+0.95
+0.49
+0.82
+0.55
+</details>
+
+CVSearch (Ours)
+
+![](images/389a1ec1f25da5772ddd55e6fc67cc821259bb5f1c90317961fdb985a5dffa6f.jpg)
+
+<details>
+<summary>natural_image</summary>
+
+Four-panel image showing exterior views of apartment buildings with visible awnings and a street scene (no text or symbols)
+</details>
+
+Figure 9. Comparison in cluttered scenarios. While rigid grids (Zoom Eye, RAP) indiscriminately divide the scene, CVSearch demonstrates superior flexibility. The annotated values represent Visual Complexity Scores. By calculating visual complexity scores to identify information-dense regions, our method ensures detailed scrutiny where necessary while pruning low-complexity background areas to maintain efficiency.
+
+![](images/4ee7733151be0fd55ff36ea1ee6960baf81e0ce106bd550f241412fc201a98e5.jpg)
+
+<details>
+<summary>natural_image</summary>
+
+Scenic landscape with a village nestled among green hills, featuring a red dotted line and two people in the foreground (no visible text or symbols)
+</details>
+
+Search Mode: Direct Answer
+
+Answer: The color of the man's cap is gray.
+
+![](images/4fcc859fa8915ec975355a29625180e55b84c6d8591ed0ffa7560a092f85c13b.jpg)
+
+Query: What is the color of the man's cap?   
+![](images/541529559580428526207100a5061a05500679526c29133b75d28beed38ad467.jpg)
+
+<details>
+<summary>natural_image</summary>
+
+Aerial view of a busy river market with multiple boats filled with produce and workers, no visible text or signage.
+</details>
+
+![](images/38e991ebed17d0493e3f63777e53d7418025e8a859caaaff794382141694d9ec.jpg)  
+Query: What is the material of the stool?
+
+Search Mode: Visual Expert Assisted Search
+
+Answer: The material of the stool is plastic.
+
+![](images/9c3d5b2011cf77fc9973324ecb1979826b00236a5e9ce34080904831795d01c2.jpg)  
+Figure 10. Adaptive search modes for efficiency. Left: For prominent targets, CVSearch employs Direct Answer to minimize latency.
+
+Right: For small objects, it activates Visual Expert Assisted Search for precise localization, avoiding the cost of exhaustive scanning.
+
+![](images/5073b8fd00b9a35030f1851e26d48458075beb787c6eb0e90aa76512897658e7.jpg)
+
+<details>
+<summary>natural_image</summary>
+
+White semi-truck parked on a road with trees and a red arrow pointing to the front window (no visible text or symbols)
+</details>
+
+![](images/fcc025557d02f7678bc5f380c774eb4ad1e588c0db4c4568bc478d0254a49d4a.jpg)  
+Query: What is the color of the tissue box?
+
+Search Mode: Scene-aware Scanning + Visual Expert Assisted Search   
+![](images/b70bb080ca1bc1c56ec9e22a33f45435b97cd18e44cb8a1dada8f37947796e13.jpg)  
+Iterative Search Candidate
+
+![](images/40ab892e0645efeeeaf344cf5f5ac7f5860bb0c9bfaae5c34fe23ceb34af2a3f.jpg)
+
+![](images/e07bca92bdeec51c451f13d8937d2ecfb291c30dddd4161ff73164a517c77c3b.jpg)  
+Candidate Regions   
+Answer: The color of the tissue box is blue.
+
+![](images/d418f06ef7b585e50547b1c140ccc6d42a697606c3d190dac8bd2ad01b3bbd36.jpg)
+
+<details>
+<summary>natural_image</summary>
+
+Exterior view of a residential street with old buildings and trees, no visible text or signage
+</details>
+
+Query: Is there a helmet?
+
+![](images/4b76bb6304b0bf7d328f86ec0b1fb65176f44d6732532787ab51376e2a0d7077.jpg)
+
+Search Mode: Scene-aware Scanning + Scene-aware Scanning   
+![](images/0d5c7be72040b8a0c1d9d08eac4d0a0ddbe86ad684fef021d9859cf978ff7fe2.jpg)  
+Iterative Search Candidate
+
+![](images/1603580fe949dd8db585e8c8848374664bfe1b2de26405acd2ca969587d3c880.jpg)
+
+![](images/7fda0f48dca8ed1e0dede08fad0c76eb3c17f47c31c94396e5192b543dfb259f.jpg)  
+Identified visual evidence   
+Answer: Yes, there is a green helmet.   
+Figure 11. Iterative Search for hard samples. When initial searches fail, the system zooms into the best candidate. Left: The enhanced resolution enables the Visual Expert to detect the “tissue box”. Right: For the extremely small “helmet”, the Expert fails again, but the fine-grained Scene-aware Scanning successfully captures the target in the second round.
+
+![](images/4bada23392c45497f9a7a6be9780c58e9ea5d5ea02d0e9722a708ff4033c579f.jpg)
+
+<details>
+<summary>natural_image</summary>
+
+Person pushing a stroller on a paved path near a lake, with trees and greenery in the background (no visible text or symbols)
+</details>
+
+![](images/04bbec5c274c5871d720b4d1c04f1e4a219b65d67c0f51477bc0cbb8c01649ae.jpg)
+
+Query: What is the color of the SUV car?   
+Ground Truth: Silver.   
+Search Mode: Visual Expert Assisted Search   
+Answer: The color of the SUV car is blue.   
+![](images/0ef131c1ca4f374b1f6cf31e59581ccaddaf404ec523905d187bd806ec9e2ccb.jpg)
+
+<details>
+<summary>text_image</summary>
+
+LIBROS
+LIBROS
+</details>
+
+![](images/b00e43f73f434c1a92341c6a8f5a03b3f459093baeac75be8229ee7b5dde6a69.jpg)  
+Query: What is the color of the clock?   
+Ground Truth: Green.
+
+Search Mode: Scene-aware Scanning + Scene-aware Scanning   
+![](images/782bd727bedf6836bddcf95b4e4d8eb84a69c095bef0798edc3389967e1e2d5b.jpg)  
+Iterative Search Candidate
+
+![](images/5b25bd4f4add0acb0990946df6142ac42519800938cd545aecab937318680cc8.jpg)
+
+![](images/b4d285d10d7f7a5555172d09b657badd7c7788f87653ab9d80622a789f959751.jpg)
+
+Candidate Regions   
+Answer: The color of the clock is white.   
+![](images/1fbf604c3b9f1f3d983566f22ecf6634b2692ad877108717de6a7c3b18aa8992.jpg)  
+Figure 12. Failures despite accurate localization. Left: MLLM hallucinates the car color despite correct expert cropping. Right: Answer diverges due to attribute ambiguity (describing the clock face instead of the frame).

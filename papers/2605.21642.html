@@ -19,7 +19,7 @@
   </header>
   <nav class="site-nav" aria-label="主导航">
     <a class="nav-link" href="../index.html">头版</a>
-<a class="nav-link" href="../issues/2026-05-25.html">今日速递</a>
+<a class="nav-link" href="../issues/2026-05-26.html">今日速递</a>
 <a class="nav-link" href="../pages/catalog.html">论文目录</a>
 <a class="nav-link" href="../pages/timeline.html">时间线</a>
   </nav>
@@ -28,13 +28,13 @@
     <div class="kicker">VLM diagnostics · P2 · 2026-05-25</div>
     <h1 class="paper-headline">Ablate-to-Validate：很多连续视觉 thought token 的收益可能来自长度、锚点或正则，而不一定来自 token 内容本身。</h1>
     <p class="dek">这是一个诊断工具型论文：以后看 latent visual token 方法时，应该要求内容替换消融。</p>
-    <p class="byline"><strong>Ablate-to-Validate: Are Vision-Language Models Really Using Continuous Thought Tokens?</strong>　Tianyi Zhang, Mahtab Bigverdi, Ranjay Krishna。　arXiv v1 提交于 2026-05-20 UTC；本期为 late-discovered。　<a href="https://arxiv.org/abs/2605.21642">原文链接</a></p>
+    <p class="byline"><strong>Ablate-to-Validate: Are Vision-Language Models Really Using Continuous Thought Tokens?</strong>　arXiv　<a href="https://arxiv.org/abs/2605.21642">原文链接</a></p>
     <div class="paper-facts">
       <span><b>编号</b>2605.21642</span>
       <span><b>优先级</b>P2</span>
       <span><b>类别</b>VLM diagnostics</span>
       <span><b>会议</b>arXiv</span>
-      <span><b>方法</b>提出 Token Replacement Test，在固定 prompt、图像、token budget 和解码设置下，把中间连续/离散视觉 thought token 替换为 zero、random、first-repeat 或 oracle，检测性能是否真正依赖 token 内容。</span>
+      <span><b>方法</b>token replacement test for continuous and discrete visual thought tokens</span>
       <span><b>来源</b>arXiv / OpenReview</span>
     </div>
     <div class="feature-body">
@@ -92,13 +92,13 @@
     <div class="side-box"><h4>原文</h4><p><a href="https://arxiv.org/abs/2605.21642">https://arxiv.org/abs/2605.21642</a></p></div>
   </aside>
 </article></main>
-  <aside class="conf-float" data-conf-reminder="2026-05-25-main-ddl" aria-label="CCF A/B 主投稿提醒">
+  <aside class="conf-float" data-conf-reminder="2026-05-26-main-ddl" aria-label="CCF A/B 主投稿提醒">
   <button class="conf-close" type="button" aria-label="关闭会议提醒">×</button>
   <details open>
     <summary>CCF A/B 主投稿提醒</summary>
     <div class="conf-list"><a class="conf-item " href="https://github.com/ccfddl/ccf-deadlines/blob/main/conference/AI/aaai.yml">
   <span><b>AAAI 2027</b><em>CCF A · Main paper submission</em></span>
-  <strong>63 天</strong>
+  <strong>62 天</strong>
   <small>2026-07-27 · CCF DDL: abstract 2026-07-20；进入 1 个月窗口后重点提醒。</small>
 </a></div>
   </details>
@@ -111,7 +111,7 @@
   (() => {
     const box = document.querySelector('[data-conf-reminder]');
     if (!box) return;
-    const key = `visualSslConfReminderClosed:${box.dataset.confReminder || '2026-05-25-main-ddl'}`;
+    const key = `visualSslConfReminderClosed:${box.dataset.confReminder || '2026-05-26-main-ddl'}`;
     try {
       if (localStorage.getItem(key) === '1') box.hidden = true;
     } catch (err) {}

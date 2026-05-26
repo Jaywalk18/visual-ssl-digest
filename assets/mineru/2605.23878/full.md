@@ -1,0 +1,395 @@
+# LaMo: Self-Supervised Latent Motion Priors for Physical Realism in Video Generation
+
+Bo Jiang1,∗, Depu Meng1, Yihan Hu1, Yichen Xie1,2,∗, Tianshuo Xu1,∗, Wei Zhan1,2,†
+
+1 Applied Intuition 2 University of California, Berkeley
+
+https://lamo-ai.github.io/
+
+# Abstract
+
+Modern video generators produce visually compelling clips but still struggle with physical and motion consistency, limiting their use as reliable world simulators. Existing remedies often rely on external simulators, teacher models, or curated physics-focused data. We explore a complementary self-supervised direction: extracting motion cues from the unlabeled videos already used to train video diffusion models. We propose LaMo, which formulates a latent motion prior over frame-to-frame latent changes conditioned on the current latent and prompt. This prior is exposed through two lightweight readouts: a macro motion drift used during training as a Motion Drift Loss, and a learned micro motion field used during sampling as Motion Prior Guidance. Both components are plug-andplay with existing video diffusion backbones, requiring no architectural or I/O changes. On VideoPhy and VideoPhy2, LaMo improves CogVideoX backbones and outperforms recent physics-aware baselines that use external supervision. On VBench, it preserves overall generation quality while improving motion-related dimensions. These results suggest that unlabeled video contains useful motion supervision for improving physical fidelity in modern video diffusion models.
+
+# 1 Introduction
+
+Video generation has advanced rapidly in recent years, with modern diffusion- and transformer-based models producing high-resolution, temporally coherent, and visually compelling videos [Wiedemer et al., 2025, Wan et al., 2025, Gao et al., 2025]. This progress has motivated a broader view of video generators as potential world simulators for spatial reasoning, embodied planning, and synthetic data generation [Agarwal et al., 2025, Bar et al., 2025, Hafner et al., 2025]. However, visual realism alone is insufficient for this goal: a useful world simulator must also capture how the physical world evolves over time, making physical and motion fidelity a central challenge for modern video generation.
+
+A persistent limitation of current video generators is that they often produce motion that appears plausible locally but violates basic physical regularities, such as gravity, contact, material interaction, or deformation consistency [Bansal et al., 2024, 2025, Wu et al., 2026]. This suggests a mismatch between the standard training objective and the desired notion of physical realism. The diffusion denoising loss supervises per-token reconstruction, but it does not explicitly target the frame-to-frame changes that define motion and physical evolution. As a result, temporal coherence can improve with scale, yet physically consistent dynamics remain difficult to guarantee.
+
+Recent methods address this issue by introducing additional sources of physical knowledge. Some approaches couple video generation with simulators or explicit dynamics models [Liu et al., 2026, Foo et al., 2026, Yuan et al., 2026], while others rely on physics-aware rewards, curated physics datasets, or distillation from auxiliary foundation models [Tan et al., 2026, Zhang et al., 2025b, Wang et al., 2025b]. These methods have shown promising improvements, but they also introduce external dependencies, domain-specific assumptions, or additional supervision. In contrast, largescale unlabeled video already contains rich evidence of how objects move, interact, and deform. This motivates a simpler question: can the motion signal already present in ordinary video data be extracted and reused to improve physical fidelity in video diffusion models?
+
+![](images/8d18271097d1542fbd95eb6d0a0e337d205f245fb044cc534db71f6e6c2dd133.jpg)  
+Figure 1: Existing approaches to physical realism rely on hand-crafted physics simulators (Col. 2) or on foundation-model teachers and curated physics-annotated corpora (Col. 3), while the vanilla diffusion objective is inherently dominant by per-frame appearance (Col. 1). LaMo (Col. 4) instead surfaces this missing motion signal self-supervised from the same raw video data, via a our proposed Motion Drift Loss at training and a lightweight Motion Prior Guidance at inference.
+
+We propose LaMo (Latent Motion Prior), a self-supervised framework that models physical and motion regularities through frame-to-frame latent changes. Given clean video latents z, we define the τ -step latent difference $\Delta _ { \tau } z : = z ^ { ( i + \tau ) } - z ^ { ( i ) }$ and formulate a latent motion prior $p ( \Delta _ { \tau } z \mid z , c )$ where c denotes the conditioning already used by the backbone. This prior requires no physical annotations, simulators, or teacher models: every pair of nearby frames in an unlabeled video provides a training signal.
+
+To make this prior usable in existing diffusion pipelines, LaMo exposes it through two lightweight readouts. First, a macro motion drift captures the channel-wise rate of latent change and is used during training as a Motion Drift Loss. Second, a learned micro motion field predicts spatially resolved latent changes and is used during sampling as Motion Prior Guidance. Both components are designed to preserve the original backbone architecture, input/output interface.
+
+Experiments on VideoPhy [Bansal et al., 2024], VideoPhy2 [Bansal et al., 2025], and VBench [Huang et al., 2024] show that LaMo improves physical and motion fidelity while maintaining general generation quality. Compared with recent physics-aware methods that use external supervision, LaMo achieves competitive or stronger results using only self-supervised signals from unlabeled video. These results suggest that latent motion differences provide a useful and minimally invasive source of supervision for improving physical realism in modern video diffusion models.
+
+Our contributions are summarized as follows:
+
+• Self-supervised latent motion prior. We formulate physical and motion regularities as a latent motion prior over frame-to-frame latent changes, which can be estimated directly from unlabeled video without simulators, physical annotations, or teacher models.   
+• Lightweight training and sampling readouts. We introduce a macro Motion Drift Loss for training and a micro Motion Prior Guidance for sampling, both of which preserve the backbone architecture and input/output interface.   
+• Improved physical fidelity with preserved general video quality. On VideoPhy and VideoPhy2, LaMo improves CogVideoX backbones and outperforms recent externally supervised physicsaware baselines; on VBench, it maintains overall video generation quality while improving motion-related metrics.
+
+# 2 Related Work
+
+Physical and Motion Fidelity in Video Generation. Recent diffusion- and transformer-based video generators have advanced substantially in text alignment, visual quality, and temporal coherence [Yang et al., 2024, Kong et al., 2024, Wan et al., 2025, Gao et al., 2025]. Yet high visual fidelity does not guarantee physically faithful dynamics: physics-oriented evaluations show frequent violations of gravity, contact, material interaction, deformation, and conservation-related commonsense [Bansal et al., 2024, 2025]. Motion-focused analyses similarly show that clips improving appearance need not improve temporal dynamics [Wu et al., 2026]. These findings make physical and motion fidelity a central bottleneck for reliable world simulation, which requires plausible temporal evolution rather than only plausible frames.
+
+Physics-Aware Video Generation. Existing attempts mostly inject additional physical or motion knowledge into the generator. One line grounds generation in explicit priors, using simulator-produced trajectories, reconstructed physical properties, physical simulation, dynamical equations, or learnable Newtonian dynamics as conditioning or generation signals [Wang et al., 2025a, Zhang et al., 2025a, Liu et al., 2026, Foo et al., 2026, Yuan et al., 2026]. Motion-aware objectives or inference-time guidance further compensate for appearance-oriented training objectives that under-emphasize motion coherence [Chefer et al., 2025]. These methods provide controllability for targeted phenomena, but reliance on solvers, material parameters, 3D reconstruction, scene-specific states, or specialized motion representations limits scalability to unconstrained videos, especially when such signals must be estimated before generation.
+
+A second line supplies physical knowledge through post-training objectives, curated data, or auxiliary foundation models. Reward- and preference-based methods enforce Newtonian constraints, collision rules, force-conditioned goals, VLM-derived preferences, or 3D consistency through RL-style finetuning [Le et al., 2025, Zhang et al., 2026, Gillman et al., 2026, Cai et al., 2025, Wang et al., 2026a]. WISA decomposes physical principles into textual, qualitative, and quantitative descriptors and injects them through Mixture-of-Physical-Experts attention trained on curated physics data [Wang et al., 2025b]. VideoREPA distills token-level physical relations from video foundation models into text-to-video diffusion transformers [Zhang et al., 2025b]. Other efforts align generation with VLM/VFM-derived physical cues, latent physical dynamics, or local physics annotations [Wang et al., 2026b, Shen et al., 2026, Satish et al., 2026, Pathak et al., 2026]. These methods are effective but still depend on external teachers, annotations, handcrafted rewards, simulator rollouts, or architectural components. In all cases, the physical signal is imported from an auxiliary source; we instead extract supervision from ordinary unlabeled videos already consumed by the generator.
+
+Self-Supervised Video Dynamics. Self-supervised video learning provides evidence that raw video contains rich dynamics supervision. Masked reconstruction methods such as VideoMAE learn transferable video representations from unlabeled clips, but primarily target recognition and representation transfer [Tong et al., 2022, Wang et al., 2023]. Latent predictive models offer a more direct connection to dynamics: V-JEPA, V-JEPA 2, and LeWorldModel predict masked spatiotemporal regions or compact latent states while encoding physical structure [Bardes et al., 2024, Assran et al., 2025, Maes et al., 2026]. Probing and counterfactual world-modeling studies further show that latent predictors can acquire intuitive physics and dynamics-relevant structures such as keypoints, flow, and segmentations [Garrido et al., 2025, Venkatesh et al., 2024]. Interactive world models such as Genie and VideoWorld demonstrate that unlabeled videos can support control, planning, and transferable task knowledge [Bruce et al., 2024, Ren et al., 2025, 2026]. However, these works mainly target representation learning, planning, or interactive rollout, so their dynamics knowledge is not directly consumed by high-fidelity text-to-video diffusion models; LaMo converts raw-video dynamics into direct training and sampling signals.
+
+# 3 Method
+
+We organize LaMo around the method overview’s data flow. First, §3.1 encodes raw videos into clean video latents and defines the latent motion prior over frame-to-frame latent changes. Second, §3.2 extracts the prior’s stable macro component and uses it as a training-time Motion Drift Loss. Third, §3.3 learns a spatially resolved micro motion field and applies it as sampling-time Motion Prior Guidance. Finally, §3.4 summarizes the full training and inference pipeline, including the added cost.
+
+![](images/31af1bf225bdc4cf90e2bc7cfa680dac1d064700c38fc5823e334047d0e225bc.jpg)
+
+<details>
+<summary>flowchart</summary>
+
+```mermaid
+graph TD
+    A["G.T. Video"] --> B["VAE"]
+    B --> C["VAE Latent"]
+    C --> D["Delta Latent"]
+    D --> E["Text Encoder"]
+    E --> F["Sailboat sailing across the sea ..."]
+    E --> G["Text"]
+    G --> H["Generated Video"]
+    
+    I["Macro Motion Drift"] --> J["Motion Drift Loss"]
+    J --> K["Diffusion Model"]
+    K --> L["Micro Motion Field"]
+    L --> M["Motion Prior Guidance"]
+    
+    N["[T - τ, C"]] --> O["Diffusion Loss"]
+    O --> K
+    P["Macro Motion Drift"] --> Q["Motion Drift Loss"]
+    Q --> K
+    R["Text Encoder"] --> S["Prompt conditioned"]
+    S --> L
+```
+</details>
+
+Figure 2: LaMo Overview. Frame-to-frame differences of clean VAE latents yield a self-supervised latent motion prior, exposed through two readouts: a macro motion drift used as a training-time Motion Drift Loss, and a lightweight learned micro motion field used at sampling as Motion Prior Guidance. Both share the backbone’s prompt conditioning and leave its architecture unchanged.
+
+# 3.1 Problem Setup and Latent Motion Encoding
+
+Notation. Let $x _ { 1 : T }$ be a video clip and $z _ { 1 : T } = \mathcal { E } ( x _ { 1 : T } ) \in \mathbb { R } ^ { T \times C \times H \times W }$ its latent encoded by a pretrained 3D causal $\operatorname { V A E } { \mathcal { E } }$ . We use $i \in \{ 1 , \ldots , T \}$ for the frame index and√ $t \in \{ 1 , \ldots , S \}$ for the diffusion timestep; $\bar { \alpha } _ { t } \in ( 0 , 1 ]$ is the cumulative noise schedule and $\sigma _ { t } : = \sqrt { 1 - \bar { \alpha } _ { t } }$ . We write c for any auxiliary conditioning the backbone already accepts. The diffusion forward process produces $z _ { t } ^ { ( i ) } = \sqrt { \bar { \alpha } _ { t } } \dot { z } _ { 0 } ^ { ( i ) } + \sigma _ { t } \epsilon ^ { ( i ) }$ , and the backbone is trained with the standard per-token denoising loss $\mathcal { L } _ { \mathrm { d e n o i s e } } = \mathbb { E } _ { t , z _ { 0 } , \epsilon } \bigl [ \| \epsilon _ { \theta } ( z _ { t } , t , c ) - \epsilon \| _ { 2 } ^ { 2 } \bigr ]$ . We write $\hat { x } _ { 0 } ( \hat { \epsilon } , z _ { t } , t )$ for the data-side projection of the model state, recoverable in closed form under either ϵ- or v-prediction.
+
+The latent change object. Physical and motion realism is a property of how latents change between frames, not of what each latent contains. We therefore take as the carrier of dynamics the τ -step latent change on clean latents,
+
+$$
+\Delta_ {\tau} z ^ {(i)} := z _ {0} ^ {(i + \tau)} - z _ {0} ^ {(i)} \in \mathbb {R} ^ {C \times H \times W}, \quad i \in \{1, \dots , T - \tau \}. \tag {1}
+$$
+
+The choice $\tau \in \mathbb { N }$ is a bandwidth knob: small τ probes high-frequency motion (and inherits shortrange encoder noise), large τ probes low-frequency drift.
+
+Latent motion prior. The standard denoising objective remains the main supervision for appearance and prompt-conditioned video synthesis, but it does not explicitly supervise the clean latent increment $\Delta _ { \tau } z$ that carries frame-to-frame motion. We therefore collect the motion signal available in unlabeled videos into a conditional prior,
+
+$$
+p (\Delta_ {\tau} z \mid z, c), \tag {2}
+$$
+
+where the conditioning variables are already present in the diffusion pipeline. This prior is selfsupervised: every pair of nearby frames in an ordinary training clip provides a sample of $\Delta _ { \tau } z$ , requiring no simulator state, physics annotation, or external teacher.
+
+Macro and micro readouts. We use the first moment of the prior,
+
+$$
+m (z, c) := \mathbb {E} [ \Delta_ {\tau} z \mid z, c ] \in \mathbb {R} ^ {C \times H \times W}, \tag {3}
+$$
+
+as the operational target of LaMo. It naturally separates into a spatially averaged macro component and a spatially resolved micro component. The macro drift is:
+
+$$
+\mu (z, c) := \mathbb {E} _ {H, W} [ m (z, c) ] \in \mathbb {R} ^ {C}, \tag {4}
+$$
+
+broadcastable over $H \times W$ , while the residual field describes where and how this drift is allocated across the scene. This split gives two complementary readouts:
+
+• Macro readout (motion drift). The channel-wise drift $\mu ( z , c )$ admits a parameter-free closedform estimator on any minibatch of clean clips, $\begin{array} { r } { \hat { \mu } = \frac { \hat { 1 } } { H W } \sum _ { h , w } \Delta _ { \tau } z } \end{array}$ . No predictor is fit; the empirical statistic is the prior at this granularity.
+
+• Micro readout (motion field). The full first moment is high-dimensional, so we model it by a small predictor $f _ { \phi } ( z , c ) \approx m ( z , c )$ trained on raw latent pairs.
+
+Although both readouts come from the same prior, their granularity and estimation stability make them better suited to different stages of the diffusion pipeline. The macro motion drift is parameterfree and stable at minibatch scale, making it a natural auxiliary target during backbone fine-tuning. At inference, however, it would provide only a spatially uniform correction, i.e., a single vector in $\mathbb { R } ^ { C }$ broadcast over $H \times W$ , and therefore cannot indicate where motion should occur. Conversely, the learned micro field captures spatially resolved motion, but using it as a training-time target would introduce an additional source of co-evolving supervision whose errors may interact with backbone optimization. We therefore use the macro readout as a training-time loss (§3.2) and the micro readout as an inference-time guidance term (§3.3), where the predictor is frozen and only steers the sampling trajectory. This stage-matched design is supported empirically in §4.3: replacing the channel-mean drift target with dense per-pixel motion supervision degrades both physical-fidelity axes relative to our method (Table 3).
+
+# 3.2 Macro Readout: Latent Motion Drift Loss
+
+We now derive the training-time Motion Drift Loss from the macro drift $\mu .$
+
+Anchor on ${ \hat { x } } _ { 0 }$ . We anchor the loss on ${ \hat { x } } _ { 0 }$ , the data-side projection of the model state and the very target that $\mathcal { L } _ { \mathrm { d e n o i s e } }$ optimizes, so that the auxiliary term composes additively without rescaling between timesteps; an analogous constraint on ϵˆ would change units between steps, while one placed on $z _ { t }$ would not depend on θ at all. The same anchor carries over to inference (§3.3) with the differentiation variable switched from θ to $\hat { \epsilon } ,$ a deliberate symmetry between the two stages. We write $\hat { \mu } ^ { ( i ) } : = \mathbb { E } _ { H , W } [ \hat { x } _ { 0 } ^ { ( i + \tau ) } - \hat { x } _ { 0 } ^ { ( i ) } ]$ and $\mu ^ { \star , ( i ) } : = \mathbb { E } _ { H , W } [ z _ { 0 } ^ { ( i + \tau ) } - z _ { 0 } ^ { ( i ) } ]$ − z 0 for the predicted and ground-truth drifts at frame index i.
+
+Lag choice. The lag τ controls the temporal bandwidth of the supervision. Adjacent-frame differences (τ =1) are sensitive to short-range VAE noise and small encoding jitter, while larger lags emphasize smoother low-frequency motion. We use τ=2 by default, which empirically provides a stable trade-off between local motion sensitivity and target noise.
+
+Scale-normalized L2. We seek a distance that decouples magnitude from direction error without introducing a free trade-off hyperparameter. The scale-normalized form:
+
+$$
+\mathcal {L} _ {\text { drift }} = \mathbb {E} _ {b, i} \left[ \frac {\| \hat {\mu} ^ {(i)} - \mu^ {\star , (i)} \| _ {2} ^ {2}}{\operatorname{sg} [ \| \mu^ {\star , (i)} \| _ {2} ^ {2} + \varepsilon ]} \right] \approx (r - 1) ^ {2} + 2 r (1 - \cos \vartheta), \tag {5}
+$$
+
+with $r : = \| \hat { \mu } \| / \| \mu ^ { \star } \|$ and $\vartheta : = \angle ( \hat { \mu } , \mu ^ { \star } )$ , reduces to the right-hand decomposition when $\varepsilon$ is negligible. The small constant ε prevents quiet clips from dominating the gradient when $\| \mu ^ { \star } \|$ is close to zero, while the stop-gradient $\mathrm { s g } [ \cdot ]$ keeps the denominator as a per-clip rescaling factor rather than a learnable target.
+
+Final training objective. At high noise levels $\scriptstyle { \hat { x } } _ { 0 }$ is dominated by ϵˆ and is uninformative about the data drift, so we damp the loss with a per-batch averaged schedule weight $w ( \sigma _ { t } ) : = \mathbb { E } _ { b } [ \bar { \alpha } _ { t , b } ]$ that vanishes at maximal noise. The final training objective is:
+
+$$
+\mathcal {L} _ {\text { train }} = \mathcal {L} _ {\text { denoise }} + \lambda_ {\text { drift }} \cdot w (\sigma_ {t}) \cdot \mathcal {L} _ {\text { drift }}, \tag {6}
+$$
+
+which is parameter-free apart from the scalar $\lambda _ { \mathrm { d r i f t } }$ and the numerical stabilizer ε. The schedule weight suppresses the auxiliary loss in the high-noise regime where $\scriptstyle { \hat { x } } _ { 0 }$ is unreliable, while the normalized denominator prevents low-motion clips from producing unstable gradients. By construction, ${ \mathcal { L } } _ { \mathrm { d r i f t } }$ constrains only the macro rate of latent change; the spatial allocation of motion is handled by the inference-time micro readout.
+
+# 3.3 Micro Readout: Motion Prior Guidance
+
+The micro readout $f _ { \phi }$ is consumed at sampling time as a CFG-style [Ho and Salimans, 2022] gradient on the noise prediction. We first describe the predictor itself, then justify why this signal is best applied in noise-prediction space rather than directly on the latent.
+
+Predictor and training. $f _ { \phi } : \mathbb { R } ^ { C \times H \times W } \times \mathbb { R } ^ { D _ { c } } \to \mathbb { R } ^ { C \times H \times W }$ is a small CNN (∼10M parameters, against ∼2–5B for the backbones we evaluate): an input projection, N conditioned residual blocks each terminating in an SE channel-recalibration unit [Hu et al., 2018], and an output projection, with the conditioning c (defined in §3.1) injected via FiLM. The output projection, the FiLM heads, and a learnable null-prompt parameter are zero-initialized, so $f _ { \phi }$ launches as the safe constant-zero predictor and the inference-time gradient is well-defined throughout early training.
+
+$f _ { \phi }$ is trained on clean ground truth latent pairs from the same dataset the backbone is trained on with an MSE-plus-cosine loss:
+
+$$
+\mathcal {L} _ {\phi} = \mathrm{MSE} \big (f _ {\phi} (z, c), \Delta_ {\tau} z \big) + \alpha \Big (1 - \cos \angle \big (f _ {\phi} (z, c), \Delta_ {\tau} z \big) \Big), \quad \alpha = 0. 5, \tag {7}
+$$
+
+that disentangles direction from magnitude at the spatial-field granularity. Two practicalities matter. (i) Diffusion-aligned input augmentation. At inference $f _ { \phi }$ is fed ${ \hat { x } } _ { 0 } .$ , which carries timestep-dependent residual noise rather than a clean latent; with probability $p _ { \mathrm { a u g } } = 0 . 5$ we therefore replace the input by $z + \sigma _ { t ^ { \prime } } \epsilon$ for $t ^ { \prime }$ sampled uniformly from the scheduler timestep grid, matching the sampling-time input distribution without modifying the diffusion forward process. (ii) Classifier-free training. With probability $p _ { \mathrm { d r o p } } = 0 . 2$ the prompt is replaced by the learnable null embedding, so $f _ { \phi }$ jointly learns conditional and unconditional behaviour and remains well-defined when no prompt is supplied at sampling time.
+
+Why guidance on ϵˆ rather than on $z _ { t }$ . We apply motion guidance to the noise prediction ϵˆ rather than directly editing the latent $z _ { t } \mathrm { : }$ editing $z _ { t }$ desynchronizes the sampler trajectory from the noise estimate used by the next update, whereas editing ϵˆ keeps the prior aligned with the diffusion update law. Appendix C provides the full rationale and ablation evidence.
+
+Guidance loss and inference rule. At sampling step s, after the standard CFG mix has produced $\hat { \epsilon } _ { \mathrm { C F G } }$ , we form the per-pair motion-consistency loss:
+
+$$
+\mathcal {L} _ {\text { guide }} = \frac {1}{T - \tau} \sum_ {i = 1} ^ {T - \tau} \left\| \hat {x} _ {0} ^ {(i)} + f _ {\phi} (\hat {x} _ {0} ^ {(i)}, c) - \hat {x} _ {0} ^ {(i + \tau)} \right\| _ {2} ^ {2}, \tag {8}
+$$
+
+which asks $\hat { x } _ { 0 } ^ { ( i + \tau ) }$ to be exactly one τ -step motion increment away from $\hat { x } _ { 0 } ^ { ( i ) }$ as predicted by $f _ { \phi } .$ . We then apply guidance only after the first $( 1 - \rho ) S$ sampling steps have elapsed (default $\rho = 0 . 8$ , indexing s from 0 at the high-noise end): early steps are dominated by appearance assembly where $\scriptstyle { \hat { x } } _ { 0 }$ is too noisy for $f _ { \phi }$ to be reliable, and gating guidance to the lower-noise window lets motion supervision act precisely when it can. The full inference rule is:
+
+$$
+\hat {\epsilon} _ {\text { guided }} = \hat {\epsilon} _ {\text { CFG }} - \lambda_ {\text { guide }} \cdot \mathbf {1} \left\{s \geq (1 - \rho) S \right\} \cdot \nabla_ {\hat {\epsilon}} \mathcal {L} _ {\text { guide }} \left(\hat {x} _ {0} (\hat {\epsilon}, z _ {t}, t), c\right), \tag {9}
+$$
+
+applied after the CFG mix so that the gradient is taken with respect to the prompt-consistent noise estimate. Eq. 9 adds a single forward-and-backward through the small CNN per sampling step; $f _ { \phi }$ is frozen and no architectural change to the scheduler or backbone is required. We refer to this update as Motion Prior Guidance, denoted $\mathcal { G } _ { \mathrm { m o t i o n } }$ .
+
+# 3.4 Full Pipeline and Cost
+
+We instantiate LaMo on top of the open-source CogVideoX [Yang et al., 2024] family. At training time, the diffusion backbone is fine-tuned with $\mathcal { L } _ { \mathrm { t r a i n } } \left( \mathrm { E q . } 6 \right)$ against a macro drift target read directly from each minibatch, while the micro motion-field predictor $f _ { \phi }$ is trained on clean latent pairs from the same video data via Eq. 7. Since $f _ { \phi }$ depends only on clean latents and prompt conditioning, not on the current backbone state, the two objectives can be optimized separately or in parallel.
+
+At inference time, the backbone architecture, input/output interface, and backbone parameter count are unchanged. The only added component is the frozen ∼10M-parameter predictor $f _ { \phi } ,$ , which contributes one lightweight forward-and-backward pass during the active guidance window of Eq. 9. Thus LaMo surfaces motion supervision from the same raw videos used for diffusion fine-tuning, without simulators, physical annotations, or foundation-model teachers, while keeping the pretrained video diffusion backbone itself intact.
+
+Table 1: VideoPhy results. SA measures semantic adherence and PC measures physical commonsense. Bold and underline denote the best and second-best values within each comparison block. 
+
+<table><tr><td rowspan="2">Methods</td><td rowspan="2">Extra Supervision</td><td colspan="2">Solid-Solid</td><td colspan="2">Solid-Fluid</td><td colspan="2">Fluid-Fluid</td><td colspan="2">Overall</td></tr><tr><td>SA</td><td>PC</td><td>SA</td><td>PC</td><td>SA</td><td>PC</td><td>SA</td><td>PC</td></tr><tr><td>CogVideoX-2B</td><td>-</td><td>49.6</td><td>13.3</td><td>71.2</td><td>28.1</td><td>60.0</td><td>50.9</td><td>60.5</td><td>25.6</td></tr><tr><td>DreamWorld-1.3B</td><td>VGGT, DINOv2</td><td>54.5</td><td>24.5</td><td>48.6</td><td>25.4</td><td>60.1</td><td>32.7</td><td>52.9</td><td>26.2</td></tr><tr><td>MoAlign-2B (paper)</td><td>VideoMAE</td><td>24.7</td><td>31.7</td><td>66.9</td><td>40.7</td><td>67.3</td><td>56.4</td><td>49.3</td><td>39.4</td></tr><tr><td>MoAlign-2B (reimpl.)</td><td>VideoMAE</td><td>54.6</td><td>18.3</td><td>73.5</td><td>31.9</td><td>66.2</td><td>55.7</td><td>64.5</td><td>30.1</td></tr><tr><td>VideoREPA-2B</td><td>VideoMAEv2</td><td>52.4</td><td>18.2</td><td>77.4</td><td>32.2</td><td>60.0</td><td>52.7</td><td>64.2</td><td>29.7</td></tr><tr><td>LaMo-2B (Ours)</td><td>Self-supervised</td><td>58.7</td><td>16.8</td><td>74.7</td><td>32.2</td><td>69.1</td><td>67.3</td><td>67.2</td><td>31.4</td></tr><tr><td>CogVideoX-5B</td><td>-</td><td>62.9</td><td>19.6</td><td>76.0</td><td>33.6</td><td>72.7</td><td>61.8</td><td>70.0</td><td>32.3</td></tr><tr><td>PhyT2V-5B</td><td>o1-preview</td><td>-</td><td>-</td><td>-</td><td>-</td><td>-</td><td>-</td><td>61</td><td>37</td></tr><tr><td>WISA-5B</td><td>Qwen2VL</td><td>-</td><td>-</td><td>-</td><td>-</td><td>-</td><td>-</td><td>67</td><td>38</td></tr><tr><td>PHANTOM-5B</td><td>V-JEPA2</td><td>-</td><td>-</td><td>-</td><td>-</td><td>-</td><td>-</td><td>47.5</td><td>37.9</td></tr><tr><td>MoAlign-5B (reimpl.)</td><td>VideoMAE</td><td>62.5</td><td>26.3</td><td>79.6</td><td>38.4</td><td>78.0</td><td>76.2</td><td>72.2</td><td>39.4</td></tr><tr><td>VideoREPA-5B</td><td>VideoMAEv2</td><td>58.0</td><td>28.0</td><td>82.9</td><td>39.0</td><td>80.0</td><td>74.5</td><td>72.1</td><td>40.1</td></tr><tr><td>LaMo-5B (Ours)</td><td>Self-supervised</td><td>62.9</td><td>26.6</td><td>80.8</td><td>41.1</td><td>78.2</td><td>78.2</td><td>73.0</td><td>41.0</td></tr></table>
+
+Table 2: Key component ablation. ${ \mathcal { L } } _ { \mathrm { d r i f t } } ;$ motion drift loss; $\mathcal { G } _ { \mathrm { m o t i o n } } \colon$ motion prior guidance. 
+
+<table><tr><td>Component</td><td>SA</td><td>PC</td></tr><tr><td>Baseline</td><td>64.8</td><td>35.2</td></tr><tr><td> $+ \mathcal{L}_{\text{drift}}$  only</td><td>71.8</td><td>39.0</td></tr><tr><td> $+ \mathcal{G}_{\text{motion}}$  only</td><td>68.9</td><td>38.4</td></tr><tr><td>LaMo (full)</td><td>73.0</td><td>41.0</td></tr></table>
+
+Table 3: Design choice ablation. 
+
+<table><tr><td>Variant</td><td>SA</td><td>PC</td></tr><tr><td>Dense motion loss</td><td>64.2</td><td>34.6</td></tr><tr><td>Raw L2 motion loss</td><td>67.3</td><td>36.1</td></tr><tr><td>Adj-frame lag ( $\tau=1$ )</td><td> $\underline{68.0}$ </td><td>37.5</td></tr><tr><td>Direct latent edit ( $z_t$ )</td><td>62.8</td><td>31.6</td></tr><tr><td>No predictor aug.</td><td>66.4</td><td> $\underline{37.6}$ </td></tr><tr><td>LaMo (Ours)</td><td>73.0</td><td>41.0</td></tr></table>
+
+Table 4: Quantitative Results on the VideoPhy2 benchmark. 
+
+<table><tr><td>Methods</td><td>SA</td><td>PC</td></tr><tr><td>CogVideoX-2B</td><td>21.0</td><td>68.0</td></tr><tr><td>PHANTOM-5B</td><td>27.8</td><td>71.7</td></tr><tr><td>MoAlign-2B (paper)</td><td>28.8</td><td>75.0</td></tr><tr><td>MoAlign-2B (reimpl.)</td><td>24.6</td><td>73.1</td></tr><tr><td>VideoREPA-2B</td><td>21.0</td><td>72.5</td></tr><tr><td>LaMo-2B (Ours)</td><td>25.4</td><td>75.4</td></tr></table>
+
+# 4 Experiments
+
+# 4.1 Experimental Setup
+
+We evaluate on VideoPhy [Bansal et al., 2024], VideoPhy2 [Bansal et al., 2025], and VBench [Huang et al., 2024]. VideoPhy/VideoPhy2 report Semantic Adherence (SA) and Physical Commonsense (PC), while VBench measures general video quality and motion-related dimensions. We fine-tune CogVideoX [Yang et al., 2024] backbones on OpenVid [Nan et al., 2024] following VideoREPA’s protocol [Zhang et al., 2025b], without physics annotations, simulator rollouts, or external teacher signals. Full training and inference details are provided in Appendix B.
+
+# 4.2 Main Results
+
+VideoPhy. Table 1 evaluates whether LaMo improves physical fidelity without sacrificing semantic adherence. Relative to CogVideoX-2B, LaMo-2B improves the overall score from 60.5/25.6 to 67.2/31.4 SA/PC, a gain of +6.7 SA and +5.8 PC. It also improves over the reproduced 2B physicsaware baselines on the overall SA/PC pair, while using only self-supervised video signals. At the larger scale, LaMo-5B improves CogVideoX-5B from 70.0/32.3 to 73.0/41.0, and is slightly higher than VideoREPA-5B on both overall axes (72.1/40.1). The largest PC gains appear in the Fluid–Fluid category, where LaMo reaches 67.3 PC at 2B and 78.2 PC at 5B. This category involves less rigid, harder-to-script dynamics, so the improvement is consistent with our goal of extracting motion regularities from ordinary video rather than relying on hand-specified physics supervision.
+
+VideoPhy2. On the more challenging VideoPhy2 benchmark (Table 4), which targets a broader and harder distribution of physics-laden prompts, LaMo-2B reaches 25.4 SA / 75.4 PC, improving over the CogVideoX-2B baseline by +4.4 SA / +7.4 PC and over the strongest prior 2B competitor, VideoREPA-2B (21.0/72.5), by +4.4 SA / +2.9 PC. Notably, LaMo-2B also surpasses PHANTOM-
+
+Table 5: Results on VBench. LaMo improves all reported dimensions over CogVideoX, indicating that the motion prior preserves general video quality while strengthening motion and spatial consistency. 
+
+<table><tr><td>Method</td><td>Motion Smooth.</td><td>Multi. Obj.</td><td>Obj.Class</td><td>Overall Consist.</td><td>Scene</td><td>Spatial Relation.</td><td>Temp.Flicker.</td><td>Quality Score</td><td>Semantic Score</td><td>Total Score</td></tr><tr><td>CogVideoX</td><td>97.6</td><td>50.4</td><td>78.7</td><td>25.0</td><td>40.3</td><td>52.3</td><td>97.3</td><td>80.5</td><td>68.7</td><td>78.2</td></tr><tr><td>LaMo (Ours)</td><td>98.2</td><td>51.6</td><td>82.0</td><td>25.7</td><td>42.6</td><td>62.2</td><td>98.4</td><td>81.9</td><td>70.7</td><td>79.6</td></tr></table>
+
+![](images/f64388a3f14cc4f81bc24d02a414028e4d72912ce494f5324fdd2e470d0a6dad.jpg)  
+Figure 3: Qualitative comparisons on physics-heavy prompts. For each prompt, frames from CogVideoX and LaMo are shown. LaMo better couples action to effect in the causal lighting example, produces coherent wave and mixing patterns for fluid motion, aligns object impact with splash dynamics in the teapot scene, and preserves continuous articulated motion for the figure skater.
+
+5B (27.8/71.7) on PC despite being less than half its size, while approaching its SA score. These results indicate that the gains observed on VideoPhy generalize to a markedly more demanding and diverse distribution of physical phenomena.
+
+VBench. Table 5 checks whether the physics-oriented objective harms general generation quality. LaMo improves the CogVideoX Total Score from 78.2 to 79.6, with gains in both Quality (80.5 → 81.9) and Semantic (68.7 → 70.7). The largest motion-related change is Spatial Relationship (52.3 → 62.2), while Motion Smoothness and Temporal Flickering also increase slightly. Since all reported VBench dimensions move upward in this comparison, the results suggest that the latent motion prior improves physical and spatial consistency without an observed trade-off in the measured general-quality metrics.
+
+# 4.3 Ablation Study
+
+Effect of each component. Table 2 ablates the two core components of LaMo on VideoPhy. Starting from the baseline at 64.8 SA / 35.2 PC, the training-time Motion Drift Loss alone improves to 71.8/39.0 (+7.0/+3.8), showing that a macro latent-change target already improves physical fidelity without modifying sampling. The inference-time Motion Prior Guidance alone reaches 68.9/38.4 (+4.1/+3.2), indicating that the frozen motion-field predictor also contributes useful spatial motion structure. Combining both readouts gives the best result, 73.0/41.0, higher than either single component on both SA and PC; this supports our stage-matching argument that macro drift anchors the global latent-change rate during training, while micro guidance allocates that change spatially during sampling.
+
+Validating individual design choices. Table 3 validates the main design choices by replacing each with the corresponding alternative. On the drift side, dense per-pixel supervision (64.2/34.6), raw L2 (67.3/36.1), and adjacent-frame lag τ =1 (68.0/37.5) all trail the full method (73.0/41.0), supporting the channel-mean target, scale-normalized loss, and τ=2 lag. On the guidance side, direct latent editing of $z _ { t }$ drops to 62.8/31.6, below the baseline, while removing predictor augmentation gives
+
+![](images/e892c1eac927a9cb80a054ce08094f7fbe80a07cd56107297435886db16ab4c5.jpg)
+
+<details>
+<summary>natural_image</summary>
+
+Four-panel image showing a sand swing on a wooden frame, with close-up of liquid being poured into a glass container (no text or symbols visible)
+</details>
+
+Generated Video Frame
+
+![](images/9a2bff9dc2d52bfeeaf505c164f37c75e34cb60db72ee720ba15966cc5c6c649.jpg)
+
+<details>
+<summary>natural_image</summary>
+
+Thermal imaging of a hot metal component showing heat distribution across four panels (no text or symbols visible)
+</details>
+
+Motion Drift Heatmap   
+Motion Field Heatmap   
+Figure 4: Interpretability of LaMo’s latent motion readouts. For each clip, we show two sampled frames, followed by the Motion Drift Heatmap and Motion Field Heatmap. The drift heatmap captures macro latent-change directions supervised by Ldrift, while the field heatmap reflects the spatial response of the learned predictor f ϕ in $\mathcal { G } _ { \mathrm { m o t i o n } } .$ , computed as described in Appendix A. Both consistently focus on physically active regions, such as a swinging object or flowing milk, indicating that the self-supervised latent motion prior concentrates on areas of interaction and motion.
+
+66.4/37.6; these results support noise-space guidance and diffusion-aligned predictor training rather than post-hoc alternatives.
+
+# 4.4 Qualitative Analysis
+
+Qualitative comparisons. Figure 3 compares generated frame sequences on prompts that stress causal state change, fluid dynamics, object-fluid impact, and articulated human motion. CogVideoX often preserves plausible static appearance, but its temporal evolution is weakly tied to the physical event described by the prompt: the turn-on action does not reliably induce a consistent illumination change, milk entering coffee produces only limited wave propagation or mixing, the teapot shows unstable contact and spill dynamics, and the spinning skater exhibits anatomically implausible leg configurations in which the two legs become twisted and entangled across frames. In contrast, LaMo better couples each visible action to its physical consequence: the ceiling light turns on as the hand interacts with the fixture, the milk stream generates coherent circular waves and mixing patterns, the teapot impact produces a localized splash and spill, and the skater executes a continuous body trajectory on the ice while preserving consistent body structure throughout the spin.
+
+Heatmap interpretability. Figure 4 examines whether the two latent-motion readouts focus on the regions responsible for these dynamics. The macro motion drift heatmap and the micro motion field heatmap both concentrate on physically active regions, such as the moving swing and the milk stream, rather than spreading uniformly over the scene. This localization indicates that the latent motion prior identifies where interaction and motion occur, supporting the qualitative observation that LaMo improves event-level dynamics rather than merely changing frame appearance. Appendix A details the exact heatmap computation.
+
+# 5 Conclusions and Limitations
+
+Conclusions. We presented LaMo, a self-supervised framework that extracts a latent motion prior from ordinary video and exposes it as a training-time Motion Drift Loss and sampling-time Motion Prior Guidance. Without simulators, teacher models, or physics annotations, LaMo improves physical fidelity on VideoPhy and VideoPhy2 while preserving general generation quality on VBench.
+
+Limitations. LaMo encourages plausible latent motion but is not a constraint-satisfying simulator. Its gains are bounded by the coverage of the video data and by the granularity of VideoPhy-style model-judged metrics, which do not isolate contact, deformation, fluids, conservation, or long-horizon stability. Future work should pair latent motion priors with targeted physical measurements and integrate them more directly into large-scale pretraining.
+
+# References
+
+Niket Agarwal, Arslan Ali, Maciej Bala, Yogesh Balaji, Erik Barker, Tiffany Cai, Prithvijit Chattopadhyay, Yongxin Chen, Yin Cui, Yifan Ding, et al. Cosmos world foundation model platform for physical ai. arXiv preprint arXiv:2501.03575, 2025.   
+Mido Assran, Adrien Bardes, David Fan, Quentin Garrido, Russell Howes, Matthew Muckley, Ammar Rizvi, Claire Roberts, Koustuv Sinha, Artem Zholus, et al. V-jepa 2: Self-supervised video models enable understanding, prediction and planning. arXiv preprint arXiv:2506.09985, 2025.   
+Hritik Bansal, Zongyu Lin, Tianyi Xie, Zeshun Zong, Michal Yarom, Yonatan Bitton, Chenfanfu Jiang, Yizhou Sun, Kai-Wei Chang, and Aditya Grover. Videophy: Evaluating physical commonsense for video generation. arXiv preprint arXiv:2406.03520, 2024.   
+Hritik Bansal, Clark Peng, Yonatan Bitton, Roman Goldenberg, Aditya Grover, and Kai-Wei Chang. Videophy-2: A challenging action-centric physical commonsense evaluation in video generation. arXiv preprint arXiv:2503.06800, 2025.   
+Amir Bar, Gaoyue Zhou, Danny Tran, Trevor Darrell, and Yann LeCun. Navigation world models. In CVPR, 2025.   
+Adrien Bardes, Quentin Garrido, Jean Ponce, Xinlei Chen, Michael Rabbat, Yann LeCun, Mahmoud Assran, and Nicolas Ballas. Revisiting feature prediction for learning visual representations from video. arXiv preprint arXiv:2404.08471, 2024.   
+Jake Bruce, Michael D Dennis, Ashley Edwards, Jack Parker-Holder, Yuge Shi, Edward Hughes, Matthew Lai, Aditi Mavalankar, Richie Steigerwald, Chris Apps, et al. Genie: Generative interactive environments. In ICML, 2024.   
+Yuanhao Cai, Kunpeng Li, Menglin Jia, Jialiang Wang, Junzhe Sun, Feng Liang, Weifeng Chen, Felix Juefei-Xu, Chu Wang, Ali Thabet, et al. Phygdpo: Physics-aware groupwise direct preference optimization for physically consistent text-to-video generation. arXiv preprint arXiv:2512.24551, 2025.   
+Hila Chefer, Uriel Singer, Amit Zohar, Yuval Kirstain, Adam Polyak, Yaniv Taigman, Lior Wolf, and Shelly Sheynin. Videojam: Joint appearance-motion representations for enhanced motion generation in video models. arXiv preprint arXiv:2502.02492, 2025.   
+Lin Geng Foo, Mark He Huang, Alexandros Lattas, Stylianos Moschoglou, Thabo Beeler, and Christian Theobalt. Physical simulator in-the-loop video generation. In CVPR, 2026.   
+Yu Gao, Haoyuan Guo, Tuyen Hoang, Weilin Huang, Lu Jiang, Fangyuan Kong, Huixia Li, Jiashi Li, Liang Li, Xiaojie Li, et al. Seedance 1.0: Exploring the boundaries of video generation models. arXiv preprint arXiv:2506.09113, 2025.   
+Quentin Garrido, Nicolas Ballas, Mahmoud Assran, Adrien Bardes, Laurent Najman, Michael Rabbat, Emmanuel Dupoux, and Yann LeCun. Intuitive physics understanding emerges from self-supervised pretraining on natural videos. arXiv preprint arXiv:2502.11831, 2025.   
+Nate Gillman, Yinghua Zhou, Zitian Tang, Evan Luo, Arjan Chakravarthy, Daksh Aggarwal, Michael Freeman, Charles Herrmann, and Chen Sun. Goal force: Teaching video models to accomplish physics-conditioned goals. arXiv preprint arXiv:2601.05848, 2026.   
+Danijar Hafner, Jurgis Pasukonis, Jimmy Ba, and Timothy Lillicrap. Mastering diverse control tasks through world models. Nature, pages 1–7, 2025.   
+Jonathan Ho and Tim Salimans. Classifier-free diffusion guidance. arXiv preprint arXiv:2207.12598, 2022.   
+Edward J Hu, Yelong Shen, Phillip Wallis, Zeyuan Allen-Zhu, Yuanzhi Li, Shean Wang, Liang Wang, Weizhu Chen, et al. Lora: Low-rank adaptation of large language models. In ICLR, 2022.   
+Jie Hu, Li Shen, and Gang Sun. Squeeze-and-excitation networks. In CVPR, 2018.
+
+Ziqi Huang, Yinan He, Jiashuo Yu, Fan Zhang, Chenyang Si, Yuming Jiang, Yuanhan Zhang, Tianxing Wu, Qingyang Jin, Nattapol Chanpaisit, et al. Vbench: Comprehensive benchmark suite for video generative models. In CVPR, 2024.   
+Weijie Kong, Qi Tian, Zijian Zhang, Rox Min, Zuozhuo Dai, Jin Zhou, Jiangfeng Xiong, Xin Li, Bo Wu, Jianwei Zhang, et al. Hunyuanvideo: A systematic framework for large video generative models. arXiv preprint arXiv:2412.03603, 2024.   
+Minh-Quan Le, Yuanzhi Zhu, Vicky Kalogeiton, and Dimitris Samaras. What about gravity in video generation? post-training newton’s laws with verifiable rewards. arXiv preprint arXiv:2512.00425, 2025.   
+Wei Liu, Ziyu Chen, Zizhang Li, Yue Wang, Hong-Xing Yu, and Jiajun Wu. Realwonder: Real-time physical action-conditioned video generation. arXiv preprint arXiv:2603.05449, 2026.   
+Lucas Maes, Quentin Le Lidec, Damien Scieur, Yann LeCun, and Randall Balestriero. Leworldmodel: Stable end-to-end joint-embedding predictive architecture from pixels. arXiv preprint arXiv:2603.19312, 2026.   
+Kepan Nan, Rui Xie, Penghao Zhou, Tiehan Fan, Zhenheng Yang, Zhijie Chen, Xiang Li, Jian Yang, and Ying Tai. Openvid-1m: A large-scale high-quality dataset for text-to-video generation. arXiv preprint arXiv:2407.02371, 2024.   
+Saurabh Pathak, Elahe Arani, Mykola Pechenizkiy, and Bahram Zonooz. Physvid: Physics aware local conditioning for generative video models. In CVPR, 2026.   
+Zhongwei Ren, Yunchao Wei, Xun Guo, Yao Zhao, Bingyi Kang, Jiashi Feng, and Xiaojie Jin. Videoworld: Exploring knowledge learning from unlabeled videos. In CVPR, 2025.   
+Zhongwei Ren, Yunchao Wei, Xiao Yu, Guixun Luo, Yao Zhao, Bingyi Kang, Jiashi Feng, and Xiaojie Jin. Videoworld 2: Learning transferable knowledge from real-world videos. arXiv preprint arXiv:2602.10102, 2026.   
+Siddarth Nilol Kundur Satish, Devesh Jaiswal, Hongyu Chen, and Abhishek Bakshi. Physvideogenerator: Towards physically aware video generation via latent physics guidance. arXiv preprint arXiv:2601.03665, 2026.   
+Ying Shen, Jerry Xiong, Tianjiao Yu, and Ismini Lourentzou. Phantom: Physics-infused video generation via joint modeling of visual and latent physical dynamics. In CVPR, 2026.   
+Boming Tan, Xiangdong Zhang, Ning Liao, Yuqing Zhang, Shaofeng Zhang, Xue Yang, Qi Fan, and Yanyong Zhang. Dreamworld: Unified world modeling in video generation. arXiv preprint arXiv:2603.00466, 2026.   
+Zhan Tong, Yibing Song, Jue Wang, and Limin Wang. Videomae: Masked autoencoders are dataefficient learners for self-supervised video pre-training. In NeurIPS, 2022.   
+Rahul Venkatesh, Honglin Chen, Kevin Feigelis, Daniel M Bear, Khaled Jedoui, Klemen Kotar, Felix Binder, Wanhee Lee, Sherry Liu, Kevin A Smith, et al. Understanding physical dynamics with counterfactual world modeling. In ECCV, 2024.   
+Team Wan, Ang Wang, Baole Ai, Bin Wen, Chaojie Mao, Chen-Wei Xie, Di Chen, Feiwu Yu, Haiming Zhao, Jianxiao Yang, et al. Wan: Open and advanced large-scale video generative models. arXiv preprint arXiv:2503.20314, 2025.   
+Chen Wang, Chuhao Chen, Yiming Huang, Zhiyang Dou, Yuan Liu, Jiatao Gu, and Lingjie Liu. Physctrl: Generative physics for controllable and physics-grounded video generation. In NeurIPS, 2025a.   
+Jing Wang, Ao Ma, Ke Cao, Jun Zheng, Zhanjie Zhang, Jiasong Feng, Shanyuan Liu, Yuhang Ma, Bo Cheng, Dawei Leng, et al. Wisa: World simulator assistant for physics-aware text-to-video generation. arXiv preprint arXiv:2503.08153, 2025b.   
+Limin Wang, Bingkun Huang, Zhiyu Zhao, Zhan Tong, Yinan He, Yi Wang, Yali Wang, and Yu Qiao. Videomae v2: Scaling video masked autoencoders with dual masking. In CVPR, 2023.
+
+Weijie Wang, Xiaoxuan He, Youping Gu, Yifan Yang, Zeyu Zhang, Yefei He, Yanbo Ding, Xirui Hu, Donny Y. Chen, Zhiyuan He, Yuqing Yang, and Bohan Zhuang. World-r1: Reinforcing 3d constraints for text-to-video generation. arXiv preprint arXiv:2604.24764, 2026a.   
+Zijun Wang, Panwen Hu, Jing Wang, Terry Jingchen Zhang, Yuhao Cheng, Long Chen, Yiqiang Yan, Zutao Jiang, Hanhui Li, and Xiaodan Liang. Prophy: Progressive physical alignment for dynamic world simulation. In CVPR, 2026b.   
+Thaddäus Wiedemer, Yuxuan Li, Paul Vicol, Shixiang Shane Gu, Nick Matarese, Kevin Swersky, Been Kim, Priyank Jaini, and Robert Geirhos. Video models are zero-shot learners and reasoners. arXiv preprint arXiv:2509.20328, 2025.   
+Xindi Wu, Despoina Paschalidou, Jun Gao, Antonio Torralba, Laura Leal-Taixé, Olga Russakovsky, Sanja Fidler, and Jonathan Lorraine. Motion attribution for video generation. arXiv preprint arXiv:2601.08828, 2026.   
+Zhuoyi Yang, Jiayan Teng, Wendi Zheng, Ming Ding, Shiyu Huang, Jiazheng Xu, Yuanming Yang, Wenyi Hong, Xiaohan Zhang, Guanyu Feng, et al. Cogvideox: Text-to-video diffusion models with an expert transformer. arXiv preprint arXiv:2408.06072, 2024.   
+Yu Yuan, Xijun Wang, Tharindu Wickremasinghe, Zeeshan Nadir, Bole Ma, and Stanley H Chan. Newtongen: Physics-consistent and controllable text-to-video generation via neural newtonian dynamics. In ICLR, 2026.   
+Haoze Zhang, Tianyu Huang, Zichen Wan, Xiaowei Jin, Hongzhi Zhang, Hui Li, and Wangmeng Zuo. Physchoreo: Physics-controllable video generation with part-aware semantic grounding. arXiv preprint arXiv:2511.20562, 2025a.   
+Qiyuan Zhang, Biao Gong, Shuai Tan, Zheng Zhang, Yujun Shen, Xing Zhu, Yuyuan Li, Kelu Yao, Chunhua Shen, and Changqing Zou. Physrvg: Physics-aware unified reinforcement learning for video generative models. arXiv preprint arXiv:2601.11087, 2026.   
+Xiangdong Zhang, Jiaqi Liao, Shaofeng Zhang, Fanqing Meng, Xiangpeng Wan, Junchi Yan, and Yu Cheng. Videorepa: Learning physics for video generation through relational alignment with foundation models. In NeurIPS, 2025b.
+
+# A Heatmap Computation for Figure 4
+
+We compute the two heatmaps in Figure 4 on the same generated latent trajectory so that the macro and micro readouts are visualized at the same physical event. Let $z \in \mathbb { R } ^ { \tilde { 1 } \times T \times \tilde { C } \times H \times W }$ denote the clean video latent produced for a prompt c, and let $\tau = 2$ be the same temporal lag used in training. For each valid latent frame index t, we compute
+
+$$
+\Delta_ {t} = z ^ {(t + \tau)} - z ^ {(t)}, \quad b _ {t} = \frac {1}{H W} \sum_ {h, w} \Delta_ {t} (:, h, w) \in \mathbb {R} ^ {C}, \tag {10}
+$$
+
+where $b _ { t }$ is the empirical macro drift vector for that frame pair. We choose the visualization index
+
+$$
+t ^ {\star} = \arg \max _ {t} \| b _ {t} \| _ {2}, \tag {11}
+$$
+
+which selects the latent frame pair with the strongest macro motion. The RGB frame shown in the first column is the decoded video frame corresponding to t⋆ under the VAE temporal compression.
+
+Motion Drift Heatmap. The Motion Drift Heatmap visualizes how strongly each spatial cell’s latent change aligns with the macro drift direction. For the selected frame pair, we compute
+
+$$
+R _ {\text { drift }} (h, w) = \frac {| \langle \Delta_ {t ^ {\star}} (: , h , w) , b _ {t ^ {\star}} \rangle |}{\| b _ {t ^ {\star}} \| _ {2} + \varepsilon}. \tag {12}
+$$
+
+This quantity is parameter-free: it is the per-pixel projection of the observed latent difference onto the channel-mean drift direction supervised by ${ \mathcal { L } } _ { \mathrm { d r i f t } }$ . Taking the absolute value visualizes motion energy regardless of the sign of the projection.
+
+Motion Field Heatmap. The Motion Field Heatmap visualizes the spatial response of the learned predictor $f _ { \phi } . \ \mathrm { A }$ direct norm $\| f _ { \phi } ( z ^ { ( t ^ { \star } ) } , c ) ( : , h , w ) \| _ { 2 }$ is often dense because a CNN predictor can produce a non-zero default response even in static background regions. We therefore subtract a no-motion baseline. Specifically, we form a temporally averaged static latent
+
+$$
+z _ {\text { static }} = \frac {1}{T} \sum_ {t = 1} ^ {T} z ^ {(t)}, \tag {13}
+$$
+
+and compute
+
+$$
+R _ {\text { field }} (h, w) = \left\| f _ {\phi} (z ^ {(t ^ {\star})}, c) (:, h, w) - f _ {\phi} (z _ {\text { static }}, c) (:, h, w) \right\| _ {2}. \tag {14}
+$$
+
+The static baseline averages out temporal motion while preserving the scene content and prompt conditioning. Subtracting the predictor’s response on this baseline cancels the dense CNN noise floor and isolates the motion-specific response induced by the frame at t⋆.
+
+# B Experimental Setup Details
+
+Benchmarks. VideoPhy [Bansal et al., 2024] contains 344 prompts spanning three interaction categories: Solid–Solid, Solid–Fluid, and Fluid–Fluid. VideoPhy and VideoPhy2 [Bansal et al., 2025] report Semantic Adherence (SA), measuring whether the generated content matches the prompt, and Physical Commonsense (PC), measuring whether the generated dynamics obey elementary physical regularities. VBench [Huang et al., 2024] evaluates general video generation quality along sixteen dimensions; in the main paper we report Quality, Semantic, and Total scores together with seven motion- and consistency-related sub-dimensions: Motion Smoothness, Temporal Flickering, Multiple Objects, Object Class, Overall Consistency, Scene, and Spatial Relationship.
+
+Training data. Following VideoREPA [Zhang et al., 2025b], we fine-tune all backbones on a clean subset of OpenVid [Nan et al., 2024]. LaMo-2B is trained on 32k clips and LaMo-5B on 64k clips, both filtered to 480p and 49 frames per clip. No physics annotations, simulator rollouts, or external teacher signals are used.
+
+Implementation details. We instantiate LaMo on CogVideoX-2B and CogVideoX-5B [Yang et al., 2024]. The 2B model is fully fine-tuned, while the 5B model uses LoRA [Hu et al., 2022] with rank
+
+128 and alpha 64. All experiments use 16 A100 GPUs, global batch size 32, and 2k optimizer steps. We set the latent-change lag to $\tau { = } 2$ and the Motion Drift Loss weight to $\lambda _ { \mathrm { d r i f t } } { = } 0 . 4$ . The motionfield predictor $f _ { \phi }$ has ∼10M parameters and is trained with diffusion-aligned input augmentation probability $p _ { \mathrm { a u g } } { = } 0 . 5$ and classifier-free dropout probability $p _ { \mathrm { d r o p } } { = } 0 . 2$ . At inference, Motion Prior Guidance uses $\bar { \lambda } _ { \mathrm { g u i d e } } { = } 2 5 . 0$ and active-window ratio $\rho { = } 0 . 8 .$ .
+
+# C Additional Details on Guidance Space
+
+A natural alternative to Eq. 9 is to apply the motion-consistency gradient directly to the latent $z _ { t } ,$ in the spirit of latent-space score editing. We avoid this choice because the diffusion sampler defines its latent update through ϵˆ and the noise schedule. An external edit on $z _ { t }$ therefore acts at the wrong scale for the current step, desynchronizing the latent trajectory chosen by the scheduler from the noise estimate expected by the next step. This mismatch can compound across sampling and visibly degrade sample quality.
+
+Editing $\scriptstyle { \hat { x } } _ { 0 }$ and then back-deriving ϵˆ through the inverse formula is also less suitable: it discards the correctly scaled noise estimate produced by the network and can accumulate numerical error across steps. In contrast, editing ϵˆ directly follows the same principle as classifier-free guidance, which corrects the score rather than editing the sampled trajectory. This keeps the motion prior aligned with the diffusion update law and gives a built-in time-dependent attenuation through √ $\hat { x } _ { 0 } \mathrm { : }$ : by the chain rule, the guidance prefactor scales as ${ \sigma _ { t } } / { \sqrt { \bar { \alpha } _ { t } } }$ for ϵ-prediction or $\sigma _ { t }$ for v-prediction, so the correction naturally shrinks as $\bar { \alpha } _ { t }  1$ .
+
+The ablation in Table 3 supports this design choice. The direct- $\cdot z _ { t }$ variant drops to 62.8 SA / 31.6 PC, below the unaugmented backbone, indicating that the sampler desynchronization is not only a numerical concern but also harmful to physical fidelity.
+
+# D Additional Qualitative Comparisons
+
+To further substantiate the qualitative observations in the main paper, Figure 5 shows four additional prompts that stress different physical regimes: solid–fluid interaction, deformable cloth, pliable material, and rigid-body angular motion. For each prompt, we generate videos with the CogVideoX baseline and with LaMo under the same prompt, seed, and sampler configuration, and visualize representative frames sampled at matched temporal positions. Across all four cases, the baseline tends to produce frames that look locally photorealistic but violate the elementary dynamics implied by the prompt, whereas LaMo produces sequences whose temporal evolution is more consistent with the underlying physical event.
+
+Apple falling into soup (solid–fluid). The prompt describes an apple dropping into a bowl of soup. The CogVideoX baseline depicts the apple resting on the surface of the liquid throughout the clip, without ever sinking, which violates buoyancy and gravity-driven inertia for an object of this density and size. LaMo, by contrast, produces a trajectory in which the apple breaks the liquid surface, displaces the soup with a localized splash, and then submerges, recovering the expected gravity- and contact-driven response of a solid–fluid impact event.
+
+Tablecloth spread on the table (deformable). The prompt describes a tablecloth being unfolded and spread onto a tabletop, a deformable-cloth scenario whose key dynamics are folding, lifting, and progressive coverage. The CogVideoX baseline collapses the temporal structure of this event: the tablecloth is already laid flat on the table from the very first frame, leaving no observable spreading motion. LaMo instead generates a sequence in which the cloth is initially held above the table and then progressively unfolds and settles onto the surface, producing a coherent deformation trajectory that respects the causal order described in the prompt.
+
+Clay pinched with metal tongs (pliable). The prompt requires modeling a pliable material under contact-driven deformation: a pair of metal tongs pinches a clay block, which should yield, deform, and retain a non-rigid imprint. The CogVideoX baseline tends to treat the clay as a near-rigid object: the tongs pass through or barely indent the material, and the clay’s shape remains essentially unchanged across frames. LaMo produces a markedly more material-consistent response: the clay deforms locally where the tongs make contact, the imprint persists across subsequent frames, and the global shape changes in a way that is consistent with plastic deformation rather than elastic recovery.
+
+![](images/77741f8c229edaf3c517b6d3837eb975fe6f4765060bd4869c3fb690441e30d0.jpg)  
+Figure 5: Additional qualitative comparisons between CogVideoX and LaMo on physics-heavy prompts. Each 2×2 block shows four prompts (top-left: Apple falling into the soup; top-right: Clay pinched with metal tongs; bottom-left: Tablecloth spread on the table; bottom-right: Coin spinning on the floor), with frames from CogVideoX in the top row and from LaMo in the bottom row of each block. CogVideoX often produces frames that look locally plausible but violate the underlying physical event (the apple stays floating instead of sinking; the tablecloth appears already laid down from the first frame; the clay stays nearly rigid under the tongs; the coin’s rotation axis flickers across frames). LaMo instead recovers gravity-driven sinking, an unfolding-then-settling cloth trajectory, persistent contact deformation of the clay, and a coherent rotation about a single axis for the coin.
+
+Coin spinning on the floor (solid). The prompt depicts a rigid-body angular dynamics phenomenon: a coin spinning on a flat surface, where the expected motion involves a stable rotation axis, gradual precession, and decreasing angular velocity due to friction. The CogVideoX baseline produces a coin whose orientation changes erratically across frames, with motion that does not correspond to a physically plausible rotation about a single axis. LaMo produces a more coherent angular trajectory in which the coin rotates about a consistent vertical axis with a smoothly evolving tilt, qualitatively matching the precession-and-decay pattern characteristic of a real spinning coin.
+
+Summary. Across solid–fluid interaction, deformable-cloth dynamics, pliable-material deformation, and rigid-body rotation, the baseline failures are consistently of the form “locally plausible appearance, dynamically inconsistent evolution”, while LaMo’s improvements concentrate on the temporal axis: gravity-driven sinking is restored, the spreading event regains its causal structure, contact deformation propagates through the right material, and angular motion follows a single consistent axis. These observations are consistent with the design of LaMo: the training-time Motion Drift Loss anchors the macro rate of latent change, while the inference-time Motion Prior Guidance allocates that change spatially during sampling, and together they target precisely the inter-frame dynamics that the standard per-token denoising objective leaves under-constrained.
+
+# E Additional Interpretability Visualizations
+
+We further visualize LaMo’s two latent motion readouts on two additional clips in Figure 6: a hammer striking a stone, and a water bottle rolling on a table. For each clip we follow exactly the heatmap protocol described in Appendix A: we select the latent frame pair t⋆ with the strongest macro drift $\| b _ { t ^ { \star } } \| _ { 2 }$ , decode the corresponding RGB frame, and then visualize (i) the Motion Drift Heatmap, defined as the per-pixel projection of the observed latent difference onto the macro drift direction supervised by $\bar { \mathcal { L } } _ { \mathrm { d r i f t } }$ , and (ii) the Motion Field Heatmap, defined as the norm of the learned predictor’s response on the selected frame minus its response on a temporally averaged static latent, which cancels the predictor’s dense background response and isolates the motion-specific signal.
+
+![](images/a2a94e322725d6640f2148248422af90632fcceb65afd4a4766ef78b202cf9bb.jpg)  
+Figure 6: Additional interpretability visualizations of LaMo’s latent motion readouts. For each clip, we show one sampled RGB frame, followed by the Motion Drift Heatmap and the Motion Field Heatmap, computed as in Appendix A. Top: hammer striking a stone. Bottom: water bottle rolling on a table. In both cases, the macro drift heatmap (supervised by ${ \mathcal { L } } _ { \mathrm { d r i f t } } )$ and the micro field heatmap (the response of the learned predictor $f _ { \phi }$ used in $\bar { \mathcal { G } } _ { \mathrm { m o t i o n } } )$ concentrate on the physically active region, namely the hammer head and impact point in the top row, and the moving bottle and its rolling trajectory in the bottom row, indicating that the self-supervised latent motion prior captures where motion actually occurs in each scene rather than spreading uniformly across frames.
+
+Hammer striking a stone. The first clip captures a high-impact contact event: the hammer accelerates downward and transfers momentum to the stone, while the rest of the scene remains essentially static. Both heatmaps concentrate their response on the hammer head and the contact region on the stone, rather than spreading uniformly over the frame. The Motion Drift Heatmap highlights the swinging trajectory of the hammer and the precise impact point, indicating that the macro drift direction $b _ { t ^ { \star } }$ ⋆ supervised by ${ \mathcal { L } } _ { \mathrm { d r i f t } }$ is dominated by the dynamics of this contact event. The Motion Field Heatmap localizes more sharply on the hammer head and the immediate impact region, consistent with the role of the spatially resolved micro readout: it captures where the macro motion is allocated within the scene.
+
+Water bottle rolling on a table. The second clip features extended translational and rolling motion: a water bottle moves laterally across a tabletop while the table and surrounding scene remain stationary. Both heatmaps focus on the bottle and its trajectory rather than on the static background. The Motion Drift Heatmap highlights the bottle along the overall direction of motion, while the Motion Field Heatmap exhibits more spatial detail along the bottle silhouette and its rolling path. This is consistent with the role of $f _ { \phi }$ as a spatially resolved readout of the motion field E $[ \Delta _ { \tau } \bar { z } \stackrel { \cdot } { | } z , c ]$ , which complements the coarser macro drift signal with finer spatial structure on the moving object.
+
+Discussion. Across both clips, the two heatmaps consistently focus on the physically active regions of the scene, namely the impact point in the hammer-stone clip and the rolling object in the bottle clip, rather than on the static background. This pattern matches the interpretability observations on the swinging-object and milk-stream examples reported in the main paper, and provides additional empirical support for the central claim of LaMo: the self-supervised latent motion prior, exposed through a macro motion drift target and a learned micro motion field, identifies and concentrates on the regions of the scene where motion and interaction actually occur, rather than treating the entire frame uniformly.
