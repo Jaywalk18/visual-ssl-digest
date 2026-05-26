@@ -26,7 +26,7 @@
   <main><article class="paper-detail">
   <div class="paper-main">
     <div class="kicker">Video diagnostics · P2 · 2026-05-24</div>
-    <h1 class="paper-headline">DeltaDirect：Video-LLM 不是完全看不到运动，而是运动方向信号在 projector/LLM 接口处被错绑。</h1>
+    <h1 class="paper-headline">DeltaDirect：它和通用视觉自监督的关系在于：Video-LLM 不是完全看不到运动，而是运动方向信号在 projector/LLM 接口处被错绑</h1>
     <p class="dek">这类诊断比单纯刷视频 QA 更有价值，因为它定位了视觉表征到语言读出的断点。</p>
     <p class="byline"><strong>Which Way Did It Move? Directional Motion Blindness in Video-LLMs</strong>　arXiv　<a href="https://arxiv.org/abs/2605.22823">原文链接</a></p>
     <div class="paper-facts">
@@ -38,7 +38,7 @@
       <span><b>来源</b>arXiv / OpenReview</span>
     </div>
     <div class="feature-body">
-      <p class="lead dropcap">先说结论。Video-LLM 不是完全看不到运动，而是运动方向信号在 projector/LLM 接口处被错绑。 这类诊断比单纯刷视频 QA 更有价值，因为它定位了视觉表征到语言读出的断点。</p>
+      <p class="lead dropcap">先说结论。它和通用视觉自监督的关系在于：Video-LLM 不是完全看不到运动，而是运动方向信号在 projector/LLM 接口处被错绑。 这类诊断比单纯刷视频 QA 更有价值，因为它定位了视觉表征到语言读出的断点。</p>
       <figure class="full-fig"><img src="../assets/mineru/2605.22823/images/e0379ad71750a9c95b0af4a0f852eab58fca80bee734bb638bb69405e6b5fbbd.jpg" alt="Figureure 1 · : Directional motion blindness in Video-LLMs"><figcaption><b>Figureure 1 · : Directional motion blindness in Video-LLMs</b><span class="fig-en">Figure 1: Directional motion blindness in Video-LLMs. (a) Given a simple synthetic video of a yellow circle moving from left to right, recent Video-LLMs correctly identify the object’s color but answer the wrong motion direction. (b) Across Video-LLMs, appearance recognition is high, yet signed motion direction accuracy remains much lower, often near chance.</span><span class="fig-zh">这张图/表用于判断 DeltaDirect 的实验收益来自哪里。重点看替换、消融或跨模型设置下趋势是否一致，而不是只看单个最高分。</span></figcaption></figure>
 <figure class="full-fig"><img src="../assets/mineru/2605.22823/images/81d656cb264d88713433877f47910d305dcd5ec6c589acbff4d8da5a3b0458f5.jpg" alt="Figureure 11 · : DeltaDirect restores the OOD motion direction concept vector magnitu"><figcaption><b>Figureure 11 · : DeltaDirect restores the OOD motion direction concept vector magnitu</b><span class="fig-en">Figure 11: DeltaDirect restores the OOD motion direction concept vector magnitude across video-LLM backbones. For each backbone, we plot the direction concept vector magnitude on each OOD domain (Cutout-on-Syn, Primitive-on-Real, Cutout-on-Real) as a ratio to the same model’s source-domain Primitive-on-Syn magnitude. The green dashed line marks the Primitive-on-Syn reference at 1.0. The MODIRECT-INST baseline (gray) shows a clear magnitude deficit on every backbone, while DeltaDirect (blue) consistently narrows the gap. Qwen3-VL-4B exhibits the largest recovery, where DeltaDirect pushes every OOD ratio above the Primitive-on-Syn reference.</span><span class="fig-zh">这张图来自论文 PDF 的结构化抽取。当前用于辅助理解 DeltaDirect 的方法或实验，请结合正文精读段落一起看。</span></figcaption></figure>
       

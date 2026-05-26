@@ -607,7 +607,7 @@ def parse_paper_index(md: str, report_date: str) -> list[dict]:
                 "venue": venue,
                 "url": url or "#",
                 "thesis": method + "。" if method else "本期日报自动纳入的候选论文。",
-                "takeaway": method + "。" if method else f"{title} 是本期日报自动纳入的候选论文。",
+                "takeaway": f"{strip_md(relevance).strip()}相关；详见方法、贡献和实验边界。" if relevance else f"{title} 是本期日报自动纳入的候选论文。",
                 "method": method or f"{relevance} relevance; see original report for details",
             }
         )
@@ -692,6 +692,8 @@ def detail_fields(md: str, p: dict) -> dict[str, str]:
         if not line:
             continue
         match = re.match(r"-\s+\*\*([^*]+)\*\*[：:]\s*(.*)$", line)
+        if not match:
+            match = re.match(r"-\s+([^：:*][^：:]{1,30})[：:]\s*(.*)$", line)
         if match:
             current_key = strip_md(match.group(1)).strip()
             fields[current_key] = strip_md(match.group(2)).strip()
@@ -712,6 +714,73 @@ def paragraph(text: str) -> str:
     if not text:
         return ""
     return f"<p>{e(text)}</p>"
+
+
+def first_sentence(text: str, limit: int = 110) -> str:
+    text = strip_md(text).strip()
+    if not text:
+        return ""
+    match = re.match(r"(.+?[。.!?])(?:\s|$)", text)
+    sentence = match.group(1) if match else text
+    if len(sentence) > limit:
+        sentence = sentence[:limit].rstrip() + "..."
+    return sentence
+
+
+def unique_sentence_join(*parts: str) -> str:
+    seen: set[str] = set()
+    out: list[str] = []
+    for part in parts:
+        clean = strip_md(part).strip()
+        if not clean:
+            continue
+        key = norm_for_match(clean)
+        if key in seen:
+            continue
+        seen.add(key)
+        out.append(clean)
+    return " ".join(out)
+
+
+def time_machine_reading_html(fields: dict[str, str], p: dict) -> str:
+    method = choose_field(fields, "核心方法") or p["method"]
+    contribution = choose_field(fields, "主要贡献") or p["takeaway"]
+    experiment = choose_field(fields, "实验亮点")
+    limitation = choose_field(fields, "局限性")
+    relevance = choose_field(
+        fields,
+        "与通用视觉自监督的关系",
+        "为什么相关",
+        "为什么与通用视觉自监督方向相关",
+        "与通用视觉 SSL 的相关性",
+    )
+    return f"""
+      <section class="reading-note">
+        <h2>读前定位</h2>
+        <p><b>先按“视频表征预训练目标”读。</b>这篇的核心不是再做一个视频生成或视频问答系统，而是把点轨迹当作可遮蔽、可重建的运动模态，让模型从运动连续性中学习可迁移表示。</p>
+        <p><b>再检查它是否真的通用。</b>重点看 zero-shot 任务覆盖、训练数据规模对照，以及收益是否来自 point-track 监督本身，而不是更强数据、更长训练或更大的 backbone。</p>
+      </section>
+
+      <h2>核心问题</h2>
+      <p>视频自监督长期夹在两类目标之间：重建像素容易学到低层纹理，图文对齐又容易被 caption 覆盖范围限制。TIME Machine 选择第三条路：直接让模型预测物体和区域随时间移动的轨迹，把 motion 当成比字幕更原生的视频监督信号。</p>
+      <p>因此它要回答的问题是：如果视觉系统只从点轨迹的时序结构中学习，是否能形成足够通用的 motion-centric representation，并迁移到不止一个视频理解任务。</p>
+
+      <h2>方法拆解</h2>
+      <p>{e(method)}</p>
+      <p>读方法时可以拆成三层：第一层是 point-track 抽取和表示格式，决定监督信号的噪声与覆盖；第二层是 MAE 式遮蔽比例、重建目标和时序上下文，决定模型是否学习运动规律而不是记忆局部插值；第三层是 TIME embedding 如何进入下游 zero-shot 或迁移评估，决定它是不是一个可复用表征。</p>
+
+      <h2>主要贡献</h2>
+      <p>{e(contribution)}</p>
+      <p>对通用视觉自监督更关键的是，它把“运动”从视频模型的辅助线索提升为主训练目标：不依赖人工标签，不依赖 caption，也不要求先把视频转成语义问答。这个设定适合和 V-JEPA、VideoMAE、masked feature prediction、world-model 预训练放在同一条谱系里比较。</p>
+
+      <h2>实验看点</h2>
+      {paragraph(experiment) or "<p>实验部分先看作者怎样做 zero-shot transfer，再看是否控制训练数据量、backbone 规模、训练步数和 point-track 质量。只要这些对照不完整，就不能把性能差异全部归因给 motion MAE 目标。</p>"}
+      <p>最值得抠的是两类消融：一是 mask/reconstruction 目标和普通视频 MAE、光流/轨迹预测之间的差异；二是跨数据、跨任务迁移是否仍保持趋势。如果只在运动显著的数据或任务上强，结论应收窄为 motion-biased representation，而不是完整通用视频表征。</p>
+
+      <h2>局限与读法</h2>
+      <p>{e(limitation or "point-track 质量、合成到真实视频的迁移、静态外观语义不足，是这条路线最需要警惕的三类边界。")}</p>
+      <p>{e(relevance or "它与通用视觉自监督的关系在于：把视频中的运动连续性变成可扩展预训练信号。")} 精读时建议先看方法图和数据构造，再看 zero-shot 表格，最后看消融；不要只拿一句“少 4 个数量级数据接近 SOTA”当结论。</p>
+    """
 
 
 def ablate_to_validate_reading_html() -> str:
@@ -1014,7 +1083,14 @@ def write_paper(p: dict, report_md: str) -> None:
     contribution = choose_field(fields, "主要贡献") or p["takeaway"]
     experiment = choose_field(fields, "实验亮点")
     limitation = choose_field(fields, "局限性") or "这篇论文的结论需要结合任务设置、训练数据规模和消融实验一起看；不要只凭单个指标判断它对通用视觉表征的价值。"
-    relevance = choose_field(fields, "为什么相关") or f"它和通用视觉自监督的关系在于：{p['thesis']}"
+    relevance = choose_field(
+        fields,
+        "为什么相关",
+        "与通用视觉自监督的关系",
+        "为什么与通用视觉自监督方向相关",
+        "与通用视觉 SSL 的相关性",
+        "与通用视觉 SSL 的关系",
+    ) or f"它和通用视觉自监督的关系在于：{p['thesis']}"
     figs = ""
     paper_figs = figures_for(p["id"], 1, 2)
     if paper_figs:
@@ -1027,7 +1103,12 @@ def write_paper(p: dict, report_md: str) -> None:
     author_line = f"　{e(authors)}" if authors else ""
     date_line = f"　{e(date_info)}" if date_info else f"　{e(p['venue'])}"
     experiment_html = paragraph(experiment) if experiment else "<p>实验部分建议重点看两类证据：一是作者是否把方法收益和更强数据、更长训练、更大模型区分开；二是跨模型、跨数据或跨任务迁移是否还能保留同样趋势。</p>"
-    reading_html = ablate_to_validate_reading_html() if p["id"] == "2605.21642" else f"""
+    if p["id"] == "2605.21642":
+        reading_html = ablate_to_validate_reading_html()
+    elif p["id"] == "2605.23045":
+        reading_html = time_machine_reading_html(fields, p)
+    else:
+        reading_html = f"""
       <h2>核心问题</h2>
       <p>{e(relevance)}</p>
       <h2>方法拆解</h2>
@@ -1039,6 +1120,9 @@ def write_paper(p: dict, report_md: str) -> None:
       <h2>局限与读法</h2>
       <p>{e(limitation)}</p>
     """
+    headline_thesis = first_sentence(relevance) or p["thesis"]
+    dek = first_sentence(contribution, 160) or p["takeaway"]
+    lead = unique_sentence_join(headline_thesis, dek)
     article_class = "paper-detail deep-read" if p["id"] == "2605.21642" else "paper-detail"
     side_intro = ""
     if p["id"] == "2605.21642":
@@ -1047,8 +1131,8 @@ def write_paper(p: dict, report_md: str) -> None:
     body = f"""<article class="{article_class}">
   <div class="paper-main">
     <div class="kicker">{e(p['category'])} · {e(p['priority'])} · {e(p['date'])}</div>
-    <h1 class="paper-headline">{e(p['short'])}：{e(p['thesis'])}</h1>
-    <p class="dek">{e(p['takeaway'])}</p>
+    <h1 class="paper-headline">{e(p['short'])}：{e(headline_thesis.rstrip('。'))}</h1>
+    <p class="dek">{e(dek)}</p>
     <p class="byline"><strong>{e(p['title'])}</strong>{author_line}{date_line}　<a href="{e(p['url'])}">原文链接</a></p>
     <div class="paper-facts">
       <span><b>编号</b>{e(p['id'])}</span>
@@ -1059,7 +1143,7 @@ def write_paper(p: dict, report_md: str) -> None:
       <span><b>来源</b>arXiv / OpenReview</span>
     </div>
     <div class="feature-body">
-      <p class="lead dropcap">先说结论。{e(p['thesis'])} {e(p['takeaway'])}</p>
+      <p class="lead dropcap">先说结论。{e(lead)}</p>
       {figs}
       {reading_html}
     </div>

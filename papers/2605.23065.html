@@ -26,32 +26,32 @@
   <main><article class="paper-detail">
   <div class="paper-main">
     <div class="kicker">ICIP 2026 · P3 · 2026-05-26</div>
-    <h1 class="paper-headline">Dithering Defense：冻结 DINOv2/PaliGemma 上的鲁棒性防御，属于 VFM 使用边界。</h1>
-    <p class="dek">冻结 DINOv2/PaliGemma 上的鲁棒性防御，属于 VFM 使用边界。</p>
-    <p class="byline"><strong>Dithering Defense</strong>　arXiv + ICIP 2026　<a href="https://arxiv.org/abs/2605.23065">原文链接</a></p>
+    <h1 class="paper-headline">Dithering Defense：DINOv2 等自监督 VFM 作为通用 frozen backbone 时，鲁棒性边界会直接影响下游可信度</h1>
+    <p class="dek">把鲁棒性测试从小模型/二值 dithering 扩到冻结视觉基础模型和多任务评估。</p>
+    <p class="byline"><strong>Dithering Defense</strong>　Yury Belousov, Brian Pulfer, Vitaliy Kinakh, Slava Voloshynovskiy。　arXiv + ICIP 2026　<a href="https://arxiv.org/abs/2605.23065">原文链接</a></p>
     <div class="paper-facts">
       <span><b>编号</b>2605.23065</span>
       <span><b>优先级</b>P3</span>
       <span><b>类别</b>ICIP 2026</span>
       <span><b>会议</b>arXiv + ICIP 2026</span>
-      <span><b>方法</b>冻结 DINOv2/PaliGemma 上的鲁棒性防御，属于 VFM 使用边界</span>
+      <span><b>方法</b>把多级 Floyd-Steinberg dithering 作为模型无关输入变换，用于削弱对 VFM 的对抗扰动，同时尽量保持语义内容。</span>
       <span><b>来源</b>arXiv / OpenReview</span>
     </div>
     <div class="feature-body">
-      <p class="lead dropcap">先说结论。冻结 DINOv2/PaliGemma 上的鲁棒性防御，属于 VFM 使用边界。 冻结 DINOv2/PaliGemma 上的鲁棒性防御，属于 VFM 使用边界。</p>
+      <p class="lead dropcap">先说结论。DINOv2 等自监督 VFM 作为通用 frozen backbone 时，鲁棒性边界会直接影响下游可信度。 把鲁棒性测试从小模型/二值 dithering 扩到冻结视觉基础模型和多任务评估。</p>
       <figure class="full-fig"><img src="../assets/mineru/2605.23065/images/b4ee9fd831a411b80833597003ff97b67f6cccc4220a7b6f28fab0ea190c3577.jpg" alt="Fig"><figcaption><b>Fig</b><span class="fig-en">Fig. S2. Clean mAP vs. SIA mAP trade-off on rOxford5k for Floyd–Steinberg dithering (K=2–20) across three DINOv2 sizes. Solid: FS + blur; dashed: FS only. Crosses (×): no defense (near-zero SIA mAP). The Pareto frontier shifts upward with model size; ViT-L achieves near-baseline clean and adversarial mAP simultaneously.</span><span class="fig-zh">这张图来自论文 PDF 的结构化抽取。当前用于辅助理解 Dithering Defense 的方法或实验，请结合正文精读段落一起看。</span></figcaption></figure>
 <figure class="full-fig"><img src="../assets/mineru/2605.23065/images/11780f226a4adff734f9f4a2d78f1036ef232389646fdd2d4cd05e0e315af1a1.jpg" alt="Fig"><figcaption><b>Fig</b><span class="fig-en">Fig. S1. Retrieval mAP (easy) on rOxford5k as a function of quantization levels K for three DINOv2 backbone sizes. Solid lines with circles: FS + blur; dashed lines with squares: FS without blur. Dotted horizontal lines: undefended baselines. Left: clean images. Right: under SIA attack. Larger models tolerate coarser quantization and show less clean degradation.</span><span class="fig-zh">这张图来自论文 PDF 的结构化抽取。当前用于辅助理解 Dithering Defense 的方法或实验，请结合正文精读段落一起看。</span></figcaption></figure>
       
       <h2>核心问题</h2>
-      <p>它和通用视觉自监督的关系在于：冻结 DINOv2/PaliGemma 上的鲁棒性防御，属于 VFM 使用边界。</p>
+      <p>DINOv2 等自监督 VFM 作为通用 frozen backbone 时，鲁棒性边界会直接影响下游可信度。</p>
       <h2>方法拆解</h2>
-      <p>冻结 DINOv2/PaliGemma 上的鲁棒性防御，属于 VFM 使用边界</p>
+      <p>把多级 Floyd-Steinberg dithering 作为模型无关输入变换，用于削弱对 VFM 的对抗扰动，同时尽量保持语义内容。</p>
       <h2>主要贡献</h2>
-      <p>冻结 DINOv2/PaliGemma 上的鲁棒性防御，属于 VFM 使用边界。</p>
+      <p>把鲁棒性测试从小模型/二值 dithering 扩到冻结视觉基础模型和多任务评估。</p>
       <h2>实验看点</h2>
-      <p>实验部分建议重点看两类证据：一是作者是否把方法收益和更强数据、更长训练、更大模型区分开；二是跨模型、跨数据或跨任务迁移是否还能保留同样趋势。</p>
+      <p>覆盖分类、分割、深度、检索、caption、VQA 六类任务；测试 DINOv2 和 PaliGemma；包含 PGD、MI-FGSM、SIA 和 straight-through adaptive attacker。</p>
       <h2>局限与读法</h2>
-      <p>这篇论文的结论需要结合任务设置、训练数据规模和消融实验一起看；不要只凭单个指标判断它对通用视觉表征的价值。</p>
+      <p>防御式输入变换不是预训练方法；强自适应攻击和真实分布漂移下仍需谨慎。</p>
     
     </div>
   </div>

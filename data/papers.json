@@ -8,9 +8,9 @@
     "date": "2026-05-26",
     "venue": "arXiv 新增",
     "url": "https://arxiv.org/abs/2605.23045",
-    "thesis": "用 point-track MAE 做视频自监督表示，直接命中“通用视频表征”。",
-    "takeaway": "用 point-track MAE 做视频自监督表示，直接命中“通用视频表征”。",
-    "method": "用 point-track MAE 做视频自监督表示，直接命中“通用视频表征”"
+    "thesis": "以点轨迹作为遮蔽和重建对象，把运动连续性变成视频预训练信号。",
+    "takeaway": "高相关；详见方法、贡献和实验边界。",
+    "method": "以点轨迹作为遮蔽和重建对象，把运动连续性变成视频预训练信号"
   },
   {
     "id": "2605.23878",
@@ -22,7 +22,7 @@
     "venue": "arXiv 新增 / 项目页",
     "url": "https://arxiv.org/abs/2605.23878",
     "thesis": "从无标注视频 latent change 中学习 motion prior，可迁移到视频预训练和世界模型。",
-    "takeaway": "从无标注视频 latent change 中学习 motion prior，可迁移到视频预训练和世界模型。",
+    "takeaway": "高相关；详见方法、贡献和实验边界。",
     "method": "从无标注视频 latent change 中学习 motion prior，可迁移到视频预训练和世界模型"
   },
   {
@@ -35,7 +35,7 @@
     "venue": "arXiv 新增",
     "url": "https://arxiv.org/abs/2605.23868",
     "thesis": "分析 DINO ViT 的 dense degradation，并用选择性 token mixing 提升密集预测。",
-    "takeaway": "分析 DINO ViT 的 dense degradation，并用选择性 token mixing 提升密集预测。",
+    "takeaway": "中高相关；详见方法、贡献和实验边界。",
     "method": "分析 DINO ViT 的 dense degradation，并用选择性 token mixing 提升密集预测"
   },
   {
@@ -48,7 +48,7 @@
     "venue": "arXiv 新增 / 项目页",
     "url": "https://arxiv.org/abs/2605.23892",
     "thesis": "视觉几何 Transformer 的 token 选择策略，对多视图/3D foundation model 效率有参考。",
-    "takeaway": "视觉几何 Transformer 的 token 选择策略，对多视图/3D foundation model 效率有参考。",
+    "takeaway": "中高相关；详见方法、贡献和实验边界。",
     "method": "视觉几何 Transformer 的 token 选择策略，对多视图/3D foundation model 效率有参考"
   },
   {
@@ -61,7 +61,7 @@
     "venue": "arXiv 新增",
     "url": "https://arxiv.org/abs/2605.22902",
     "thesis": "用 transcoder 追踪 VLM 中从图像 patch 到文本 token 的计算通路。",
-    "takeaway": "用 transcoder 追踪 VLM 中从图像 patch 到文本 token 的计算通路。",
+    "takeaway": "中高相关；详见方法、贡献和实验边界。",
     "method": "用 transcoder 追踪 VLM 中从图像 patch 到文本 token 的计算通路"
   },
   {
@@ -74,7 +74,7 @@
     "venue": "arXiv + CVPR 2026 Workshop",
     "url": "https://arxiv.org/abs/2605.22903",
     "thesis": "检验 VLM benchmark 是否真的依赖视觉证据，是视觉-语言表示评估的好诊断。",
-    "takeaway": "检验 VLM benchmark 是否真的依赖视觉证据，是视觉-语言表示评估的好诊断。",
+    "takeaway": "中高相关；详见方法、贡献和实验边界。",
     "method": "检验 VLM benchmark 是否真的依赖视觉证据，是视觉-语言表示评估的好诊断"
   },
   {
@@ -87,7 +87,7 @@
     "venue": "arXiv 新增 / ICML 列表出现",
     "url": "https://arxiv.org/abs/2605.23883",
     "thesis": "用程序生成几何任务补 dense grounding supervision，适合扫读数据构造思路。",
-    "takeaway": "用程序生成几何任务补 dense grounding supervision，适合扫读数据构造思路。",
+    "takeaway": "中相关；详见方法、贡献和实验边界。",
     "method": "用程序生成几何任务补 dense grounding supervision，适合扫读数据构造思路"
   },
   {
@@ -100,7 +100,7 @@
     "venue": "arXiv 新增",
     "url": "https://arxiv.org/abs/2605.23819",
     "thesis": "固定架构下比较生成式/判别式目标，对 SSL 目标函数取舍有启发。",
-    "takeaway": "固定架构下比较生成式/判别式目标，对 SSL 目标函数取舍有启发。",
+    "takeaway": "中相关；详见方法、贡献和实验边界。",
     "method": "固定架构下比较生成式/判别式目标，对 SSL 目标函数取舍有启发"
   },
   {
@@ -113,7 +113,7 @@
     "venue": "arXiv + ICIP 2026",
     "url": "https://arxiv.org/abs/2605.23065",
     "thesis": "冻结 DINOv2/PaliGemma 上的鲁棒性防御，属于 VFM 使用边界。",
-    "takeaway": "冻结 DINOv2/PaliGemma 上的鲁棒性防御，属于 VFM 使用边界。",
+    "takeaway": "中相关；详见方法、贡献和实验边界。",
     "method": "冻结 DINOv2/PaliGemma 上的鲁棒性防御，属于 VFM 使用边界"
   },
   {
@@ -126,7 +126,7 @@
     "venue": "arXiv + ICML 2026",
     "url": "https://arxiv.org/abs/2605.23655",
     "thesis": "高分辨率 MLLM 的 adaptive visual search，偏推理系统但提示 token/patch 搜索趋势。",
-    "takeaway": "高分辨率 MLLM 的 adaptive visual search，偏推理系统但提示 token/patch 搜索趋势。",
+    "takeaway": "中相关；详见方法、贡献和实验边界。",
     "method": "高分辨率 MLLM 的 adaptive visual search，偏推理系统但提示 token/patch 搜索趋势"
   },
   {

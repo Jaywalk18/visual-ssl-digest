@@ -26,32 +26,32 @@
   <main><article class="paper-detail">
   <div class="paper-main">
     <div class="kicker">arXiv 新增 / 项目页 · P2 · 2026-05-26</div>
-    <h1 class="paper-headline">Good Token Hunting：视觉几何 Transformer 的 token 选择策略，对多视图/3D foundation model 效率有参考。</h1>
-    <p class="dek">视觉几何 Transformer 的 token 选择策略，对多视图/3D foundation model 效率有参考。</p>
-    <p class="byline"><strong>Good Token Hunting</strong>　arXiv 新增 / 项目页　<a href="https://arxiv.org/abs/2605.23892">原文链接</a></p>
+    <h1 class="paper-headline">Good Token Hunting：随着 VGGT/geometry foundation model 进入通用视觉 pipeline，token 预算和跨帧 token 覆盖会成为预训练和推理的共同瓶颈</h1>
+    <p class="dek">为多视图 3D/visual geometry transformer 提供简单通用的 token 选择框架。</p>
+    <p class="byline"><strong>Good Token Hunting</strong>　Shuhong Zheng, Michael Oechsle, Erik Sandström, Marie-Julie Rakotosaona, Federico Tombari, Igor Gilitschenski。　arXiv 新增 / 项目页　<a href="https://arxiv.org/abs/2605.23892">原文链接</a></p>
     <div class="paper-facts">
       <span><b>编号</b>2605.23892</span>
       <span><b>优先级</b>P2</span>
       <span><b>类别</b>arXiv 新增 / 项目页</span>
       <span><b>会议</b>arXiv 新增 / 项目页</span>
-      <span><b>方法</b>视觉几何 Transformer 的 token 选择策略，对多视图/3D foundation model 效率有参考</span>
+      <span><b>方法</b>限制 global attention 中每个 query 可交互的 key/value token；先做 inter-frame diversity selection，再做 layer-aware intra-frame entropy sparsification。</span>
       <span><b>来源</b>arXiv / OpenReview</span>
     </div>
     <div class="feature-body">
-      <p class="lead dropcap">先说结论。视觉几何 Transformer 的 token 选择策略，对多视图/3D foundation model 效率有参考。 视觉几何 Transformer 的 token 选择策略，对多视图/3D foundation model 效率有参考。</p>
+      <p class="lead dropcap">先说结论。随着 VGGT/geometry foundation model 进入通用视觉 pipeline，token 预算和跨帧 token 覆盖会成为预训练和推理的共同瓶颈。 为多视图 3D/visual geometry transformer 提供简单通用的 token 选择框架。</p>
       <figure class="full-fig"><img src="../assets/mineru/2605.23892/images/14007d2fd1171f1d683a5591dd8ce57b7cf50c548c05a0513554521e4f23504c.jpg" alt="Figureure 1 · : We accelerate visual geometry transformers via a two-stage hierarchi"><figcaption><b>Figureure 1 · : We accelerate visual geometry transformers via a two-stage hierarchi</b><span class="fig-en">Figure 1: We accelerate visual geometry transformers via a two-stage hierarchical token selection scheme: inter-frame selection followed by intra-frame selection. Our training-free method scales nearlinearly with the number of input frames, substantially improving the efficiency of visual geometry transformers with a comparable acceleration ratio with LiteVGGT [72], which requires costly full model training. Overall, our method achieves a superior trade-off between efficiency and accuracy.</span><span class="fig-zh">这张图/表用于判断 Good Token Hunting 的实验收益来自哪里。重点看替换、消融或跨模型设置下趋势是否一致，而不是只看单个最高分。</span></figcaption></figure>
 <figure class="full-fig"><img src="../assets/mineru/2605.23892/images/922b80520c24603f62edbf9e8df9d5c24f737f29641aec796281499ddfd69a5e.jpg" alt="Figureure 2 · : Pipeline of GoToHunt"><figcaption><b>Figureure 2 · : Pipeline of GoToHunt</b><span class="fig-en">Figure 2: Pipeline of GoToHunt. Token selection is performed in the K/V space prior to the global attention layers, to determine which key/value tokens each query token interacts with. Our approach follows a two-stage hierarchical design: inter-frame selection first conducts frame-level selection, while intra-frame selection subsequently discard more tokens within each selected frame.</span><span class="fig-zh">这张图概括 Good Token Hunting 的整体方法流程。阅读时先看模块之间传递的训练信号，再看作者如何把目标拆成可优化的子问题。</span></figcaption></figure>
       
       <h2>核心问题</h2>
-      <p>它和通用视觉自监督的关系在于：视觉几何 Transformer 的 token 选择策略，对多视图/3D foundation model 效率有参考。</p>
+      <p>随着 VGGT/geometry foundation model 进入通用视觉 pipeline，token 预算和跨帧 token 覆盖会成为预训练和推理的共同瓶颈。</p>
       <h2>方法拆解</h2>
-      <p>视觉几何 Transformer 的 token 选择策略，对多视图/3D foundation model 效率有参考</p>
+      <p>限制 global attention 中每个 query 可交互的 key/value token；先做 inter-frame diversity selection，再做 layer-aware intra-frame entropy sparsification。</p>
       <h2>主要贡献</h2>
-      <p>视觉几何 Transformer 的 token 选择策略，对多视图/3D foundation model 效率有参考。</p>
+      <p>为多视图 3D/visual geometry transformer 提供简单通用的 token 选择框架。</p>
       <h2>实验看点</h2>
-      <p>实验部分建议重点看两类证据：一是作者是否把方法收益和更强数据、更长训练、更大模型区分开；二是跨模型、跨数据或跨任务迁移是否还能保留同样趋势。</p>
+      <p>摘要称在 500 张图像场景中加速超过 85%，同时维持甚至提升 baseline 性能。</p>
       <h2>局限与读法</h2>
-      <p>这篇论文的结论需要结合任务设置、训练数据规模和消融实验一起看；不要只凭单个指标判断它对通用视觉表征的价值。</p>
+      <p>主要面向 multi-view 3D reconstruction，不直接提出新 SSL 目标；对 2D 图像表征预训练的迁移需要另测。</p>
     
     </div>
   </div>

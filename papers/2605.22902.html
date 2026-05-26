@@ -26,32 +26,32 @@
   <main><article class="paper-detail">
   <div class="paper-main">
     <div class="kicker">arXiv 新增 · P2 · 2026-05-26</div>
-    <h1 class="paper-headline">Transcoders Trace Visual Grounding：用 transcoder 追踪 VLM 中从图像 patch 到文本 token 的计算通路。</h1>
-    <p class="dek">用 transcoder 追踪 VLM 中从图像 patch 到文本 token 的计算通路。</p>
-    <p class="byline"><strong>Transcoders Trace Visual Grounding</strong>　arXiv 新增　<a href="https://arxiv.org/abs/2605.22902">原文链接</a></p>
+    <h1 class="paper-headline">Transcoders Trace Visual Grounding：多模态预训练不能只看对齐分数，还要知道视觉信息是否沿正确通路进入语言解码</h1>
+    <p class="dek">相比只分解静态 residual representation 的 Sparse Autoencoder，Transcoder 更关注功能性更新，因此更适合解释视觉-语言交互。</p>
+    <p class="byline"><strong>Transcoders Trace Visual Grounding</strong>　Dimitrios Damianos, Leon Voukoutis, Georgios Skyrianos, Vassilis Katsouros, Georgios Paraskevopoulos。　arXiv 新增　<a href="https://arxiv.org/abs/2605.22902">原文链接</a></p>
     <div class="paper-facts">
       <span><b>编号</b>2605.22902</span>
       <span><b>优先级</b>P2</span>
       <span><b>类别</b>arXiv 新增</span>
       <span><b>会议</b>arXiv 新增</span>
-      <span><b>方法</b>用 transcoder 追踪 VLM 中从图像 patch 到文本 token 的计算通路</span>
+      <span><b>方法</b>用 Transcoder 近似 MLP 子层，作为 layer-wise computation 的 causal proxy，追踪 image patch 到 token generation direction 的计算路径。</span>
       <span><b>来源</b>arXiv / OpenReview</span>
     </div>
     <div class="feature-body">
-      <p class="lead dropcap">先说结论。用 transcoder 追踪 VLM 中从图像 patch 到文本 token 的计算通路。 用 transcoder 追踪 VLM 中从图像 patch 到文本 token 的计算通路。</p>
+      <p class="lead dropcap">先说结论。多模态预训练不能只看对齐分数，还要知道视觉信息是否沿正确通路进入语言解码。 相比只分解静态 residual representation 的 Sparse Autoencoder，Transcoder 更关注功能性更新，因此更适合解释视觉-语言交互。</p>
       <figure class="full-fig"><img src="../assets/mineru/2605.22902/images/785311c6f79f31abbe407b3d8413d6f29a1a56802c963920be03a8a7b1af428b.jpg" alt="Figureure 10 · : Top-10 ablation comparison"><figcaption><b>Figureure 10 · : Top-10 ablation comparison</b><span class="fig-en">Figure 10: Top-10 ablation comparison</span><span class="fig-zh">这张图/表用于判断 Transcoders Trace Visual Grounding 的实验收益来自哪里。重点看替换、消融或跨模型设置下趋势是否一致，而不是只看单个最高分。</span></figcaption></figure>
 <figure class="full-fig"><img src="../assets/mineru/2605.22902/images/8ddd171f8c85fb0edc8d93549d88e12abd8b602744ad2ecd2b05abd268f9dac0.jpg" alt="Figureure 15 · : Top-5 FVG comparison"><figcaption><b>Figureure 15 · : Top-5 FVG comparison</b><span class="fig-en">Figure 15: Top-5 FVG comparison</span><span class="fig-zh">这张图/表用于判断 Transcoders Trace Visual Grounding 的实验收益来自哪里。重点看替换、消融或跨模型设置下趋势是否一致，而不是只看单个最高分。</span></figcaption></figure>
       
       <h2>核心问题</h2>
-      <p>它和通用视觉自监督的关系在于：用 transcoder 追踪 VLM 中从图像 patch 到文本 token 的计算通路。</p>
+      <p>多模态预训练不能只看对齐分数，还要知道视觉信息是否沿正确通路进入语言解码。</p>
       <h2>方法拆解</h2>
-      <p>用 transcoder 追踪 VLM 中从图像 patch 到文本 token 的计算通路</p>
+      <p>用 Transcoder 近似 MLP 子层，作为 layer-wise computation 的 causal proxy，追踪 image patch 到 token generation direction 的计算路径。</p>
       <h2>主要贡献</h2>
-      <p>用 transcoder 追踪 VLM 中从图像 patch 到文本 token 的计算通路。</p>
+      <p>相比只分解静态 residual representation 的 Sparse Autoencoder，Transcoder 更关注功能性更新，因此更适合解释视觉-语言交互。</p>
       <h2>实验看点</h2>
-      <p>实验部分建议重点看两类证据：一是作者是否把方法收益和更强数据、更长训练、更大模型区分开；二是跨模型、跨数据或跨任务迁移是否还能保留同样趋势。</p>
+      <p>在 Gemma 3-4B-IT 上，Transcoder attribution 在 patch ablation 下对 visually grounded tokens 的影响更强、更稳定；基于 circuit trace 的图特征预测 hallucination，AUC 0.68。</p>
       <h2>局限与读法</h2>
-      <p>这篇论文的结论需要结合任务设置、训练数据规模和消融实验一起看；不要只凭单个指标判断它对通用视觉表征的价值。</p>
+      <p>只在一个主要模型设置上验证；解释性指标与实际训练改进之间还隔一层。</p>
     
     </div>
   </div>

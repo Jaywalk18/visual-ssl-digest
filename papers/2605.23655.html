@@ -26,32 +26,32 @@
   <main><article class="paper-detail">
   <div class="paper-main">
     <div class="kicker">ICML 2026 · P3 · 2026-05-26</div>
-    <h1 class="paper-headline">CVSearch：高分辨率 MLLM 的 adaptive visual search，偏推理系统但提示 token/patch 搜索趋势。</h1>
-    <p class="dek">高分辨率 MLLM 的 adaptive visual search，偏推理系统但提示 token/patch 搜索趋势。</p>
-    <p class="byline"><strong>CVSearch</strong>　arXiv + ICML 2026　<a href="https://arxiv.org/abs/2605.23655">原文链接</a></p>
+    <h1 class="paper-headline">CVSearch：高分辨率视觉 token 如何被选择和路由，是下一阶段通用视觉表征扩展到细粒度场景的关键工程问题</h1>
+    <p class="dek">把高分辨率图像感知从固定网格切块，转成基于语义一致区域和视觉复杂度的动态搜索。</p>
+    <p class="byline"><strong>CVSearch</strong>　Liupeng Li, Haoqian Kang, Zhenyu Lu, Jinpeng Wang, Bin Chen, Ke Chen, Yaowei Wang。　arXiv + ICML 2026　<a href="https://arxiv.org/abs/2605.23655">原文链接</a></p>
     <div class="paper-facts">
       <span><b>编号</b>2605.23655</span>
       <span><b>优先级</b>P3</span>
       <span><b>类别</b>ICML 2026</span>
       <span><b>会议</b>arXiv + ICML 2026</span>
-      <span><b>方法</b>高分辨率 MLLM 的 adaptive visual search，偏推理系统但提示 token/patch 搜索趋势</span>
+      <span><b>方法</b>训练无关的 Assess-then-Search 工作流，先用 expert-assisted search，失败时触发 semantic-aware adaptive patching 和 bottom-up 局部搜索。</span>
       <span><b>来源</b>arXiv / OpenReview</span>
     </div>
     <div class="feature-body">
-      <p class="lead dropcap">先说结论。高分辨率 MLLM 的 adaptive visual search，偏推理系统但提示 token/patch 搜索趋势。 高分辨率 MLLM 的 adaptive visual search，偏推理系统但提示 token/patch 搜索趋势。</p>
+      <p class="lead dropcap">先说结论。高分辨率视觉 token 如何被选择和路由，是下一阶段通用视觉表征扩展到细粒度场景的关键工程问题。 把高分辨率图像感知从固定网格切块，转成基于语义一致区域和视觉复杂度的动态搜索。</p>
       <figure class="full-fig"><img src="../assets/mineru/2605.23655/images/8b6f04d4126188bd5ccd62fa05a2d2ab811a273208369fba6bcbbebd66bdee90.jpg" alt="Figureure 2 · Illustration of the CVSearch framework"><figcaption><b>Figureure 2 · Illustration of the CVSearch framework</b><span class="fig-en">Figure 2. Illustration of the CVSearch framework. (a) Workflow. A cognitive Assess-then-Search mechanism triggers Visual Expert Search when global information is insufficient $( c _ { q } &lt; \tau _ { q } )$ . Expert failure (proposals $B _ { e } = \varnothing )$ activates Scene-aware Scanning, which either yields visual evidence upon success or returns the optimal candidate for iterative search upon failure. (b) Visual Expert Search. This module parses queries to prompt a visual expert (SAM 3) for rapid proposals. On failure, extracted visual features are repurposed for the scanning phase. (c) Scene-aware Scanning. Semantic Guided Adaptive Patching partitions images into semantically coherent regions via adaptive clustering. Subsequently, Dynamic Bottom-Up Search prioritizes exploration from leaf nodes and aggregates evidence upwards. If the target remains unconfirmed, the optimal candidate from the first layer guides the next search iteration.</span><span class="fig-zh">这张图概括 CVSearch 的整体方法流程。阅读时先看模块之间传递的训练信号，再看作者如何把目标拆成可优化的子问题。</span></figcaption></figure>
 <figure class="full-fig"><img src="../assets/mineru/2605.23655/images/e0900f6e18966e73348c54622fb8369cf85d0fccdfe081ffa462c47cbf5c7806.jpg" alt="(c) Performance comparison on HR benchmarks"><figcaption><b>(c) Performance comparison on HR benchmarks</b><span class="fig-en">(c) Performance comparison on HR benchmarks. Figure 1. (a) Real-world HR image perception requires handling targets with distinct granularities. (b) Existing methods struggle to balance coverage and efficiency. Visual expert assisted methods lack sufficient coverage for tiny targets, while scan-based methods ensure coverage but suffer from low efficiency. (c) Built upon Qwen2.5-VL-7B, CVSearch achieves the best balance, delivering SOTA accuracy with competitive throughput.</span><span class="fig-zh">这张图/表用于判断 CVSearch 的实验收益来自哪里。重点看替换、消融或跨模型设置下趋势是否一致，而不是只看单个最高分。</span></figcaption></figure>
       
       <h2>核心问题</h2>
-      <p>它和通用视觉自监督的关系在于：高分辨率 MLLM 的 adaptive visual search，偏推理系统但提示 token/patch 搜索趋势。</p>
+      <p>高分辨率视觉 token 如何被选择和路由，是下一阶段通用视觉表征扩展到细粒度场景的关键工程问题。</p>
       <h2>方法拆解</h2>
-      <p>高分辨率 MLLM 的 adaptive visual search，偏推理系统但提示 token/patch 搜索趋势</p>
+      <p>训练无关的 Assess-then-Search 工作流，先用 expert-assisted search，失败时触发 semantic-aware adaptive patching 和 bottom-up 局部搜索。</p>
       <h2>主要贡献</h2>
-      <p>高分辨率 MLLM 的 adaptive visual search，偏推理系统但提示 token/patch 搜索趋势。</p>
+      <p>把高分辨率图像感知从固定网格切块，转成基于语义一致区域和视觉复杂度的动态搜索。</p>
       <h2>实验看点</h2>
-      <p>实验部分建议重点看两类证据：一是作者是否把方法收益和更强数据、更长训练、更大模型区分开；二是跨模型、跨数据或跨任务迁移是否还能保留同样趋势。</p>
+      <p>报告在 HR benchmark 上提升准确率并改善搜索效率。</p>
       <h2>局限与读法</h2>
-      <p>这篇论文的结论需要结合任务设置、训练数据规模和消融实验一起看；不要只凭单个指标判断它对通用视觉表征的价值。</p>
+      <p>更偏 MLLM 推理流程，不是视觉 encoder 预训练；收益依赖外部 MLLM 的局部理解能力。</p>
     
     </div>
   </div>

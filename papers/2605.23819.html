@@ -26,32 +26,32 @@
   <main><article class="paper-detail">
   <div class="paper-main">
     <div class="kicker">arXiv 新增 · P2 · 2026-05-26</div>
-    <h1 class="paper-headline">Not Too Generative, Not Too Discriminative：固定架构下比较生成式/判别式目标，对 SSL 目标函数取舍有启发。</h1>
-    <p class="dek">固定架构下比较生成式/判别式目标，对 SSL 目标函数取舍有启发。</p>
-    <p class="byline"><strong>Not Too Generative, Not Too Discriminative</strong>　arXiv 新增　<a href="https://arxiv.org/abs/2605.23819">原文链接</a></p>
+    <h1 class="paper-headline">Not Too Generative, Not Too Discriminative：对比学习、MIM、生成式预训练的取舍，本质上也在生成/判别轴上移动，这篇提供了目标函数层面的证据</h1>
+    <p class="dek">提出人类视觉对齐并非纯生成式或纯判别式最好，而是在二者之间存在 sweet spot。</p>
+    <p class="byline"><strong>Not Too Generative, Not Too Discriminative</strong>　Jorge Chang Ortega, Bastien Le Lan, Thomas Serre, Victor Boutin。　arXiv 新增　<a href="https://arxiv.org/abs/2605.23819">原文链接</a></p>
     <div class="paper-facts">
       <span><b>编号</b>2605.23819</span>
       <span><b>优先级</b>P2</span>
       <span><b>类别</b>arXiv 新增</span>
       <span><b>会议</b>arXiv 新增</span>
-      <span><b>方法</b>固定架构下比较生成式/判别式目标，对 SSL 目标函数取舍有启发</span>
+      <span><b>方法</b>用 Joint Energy-Based Models 在固定架构中连续插值生成式与判别式训练目标，隔离 objective 本身对视觉表征的影响。</span>
       <span><b>来源</b>arXiv / OpenReview</span>
     </div>
     <div class="feature-body">
-      <p class="lead dropcap">先说结论。固定架构下比较生成式/判别式目标，对 SSL 目标函数取舍有启发。 固定架构下比较生成式/判别式目标，对 SSL 目标函数取舍有启发。</p>
+      <p class="lead dropcap">先说结论。对比学习、MIM、生成式预训练的取舍，本质上也在生成/判别轴上移动，这篇提供了目标函数层面的证据。 提出人类视觉对齐并非纯生成式或纯判别式最好，而是在二者之间存在 sweet spot。</p>
       <figure class="full-fig"><img src="../assets/mineru/2605.23819/images/76ead67f3ad419f5ac3679d85d38cd0e1dd1064f34a87616575b25c4b37c0e64.jpg" alt="Figureure 20 · Percentage of shape or texture choice made per category for each model"><figcaption><b>Figureure 20 · Percentage of shape or texture choice made per category for each model</b><span class="fig-en">Figure 20. Percentage of shape or texture choice made per category for each model .</span><span class="fig-zh">这张图来自论文 PDF 的结构化抽取。当前用于辅助理解 Not Too Generative, Not Too Discriminative 的方法或实验，请结合正文精读段落一起看。</span></figcaption></figure>
 <figure class="full-fig"><img src="../assets/mineru/2605.23819/images/79b07250a3db63ce3719074f57cee677b2bd253d54787911df370defd39bdf9e.jpg" alt="d) 2000 dimensions Figure 10"><figcaption><b>d) 2000 dimensions Figure 10</b><span class="fig-en">d) 2000 dimensions Figure 10. Gloss accuracy vs. human correlation in experiments with different latent sizes.</span><span class="fig-zh">这张图/表用于判断 Not Too Generative, Not Too Discriminative 的实验收益来自哪里。重点看替换、消融或跨模型设置下趋势是否一致，而不是只看单个最高分。</span></figcaption></figure>
       
       <h2>核心问题</h2>
-      <p>它和通用视觉自监督的关系在于：固定架构下比较生成式/判别式目标，对 SSL 目标函数取舍有启发。</p>
+      <p>对比学习、MIM、生成式预训练的取舍，本质上也在生成/判别轴上移动，这篇提供了目标函数层面的证据。</p>
       <h2>方法拆解</h2>
-      <p>固定架构下比较生成式/判别式目标，对 SSL 目标函数取舍有启发</p>
+      <p>用 Joint Energy-Based Models 在固定架构中连续插值生成式与判别式训练目标，隔离 objective 本身对视觉表征的影响。</p>
       <h2>主要贡献</h2>
-      <p>固定架构下比较生成式/判别式目标，对 SSL 目标函数取舍有启发。</p>
+      <p>提出人类视觉对齐并非纯生成式或纯判别式最好，而是在二者之间存在 sweet spot。</p>
       <h2>实验看点</h2>
-      <p>实验部分建议重点看两类证据：一是作者是否把方法收益和更强数据、更长训练、更大模型区分开；二是跨模型、跨数据或跨任务迁移是否还能保留同样趋势。</p>
+      <p>覆盖 perceptual similarity、gloss perception、uncertainty、robustness、shape-texture conflict、feature attribution 等六类 human-alignment benchmark。</p>
       <h2>局限与读法</h2>
-      <p>这篇论文的结论需要结合任务设置、训练数据规模和消融实验一起看；不要只凭单个指标判断它对通用视觉表征的价值。</p>
+      <p>JEM objective 和人类对齐 benchmark 不能直接等同于通用下游能力；大规模 SSL 模型上的验证仍缺。</p>
     
     </div>
   </div>
