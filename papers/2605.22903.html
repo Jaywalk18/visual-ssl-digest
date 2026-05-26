@@ -26,32 +26,32 @@
   <main><article class="paper-detail">
   <div class="paper-main">
     <div class="kicker">CVPR 2026 Workshop · P2 · 2026-05-26</div>
-    <h1 class="paper-headline">Seeing without Looking：检验 VLM benchmark 是否真的依赖视觉证据，是视觉-语言表示评估的好诊断。</h1>
-    <p class="dek">检验 VLM benchmark 是否真的依赖视觉证据，是视觉-语言表示评估的好诊断。</p>
-    <p class="byline"><strong>Seeing without Looking</strong>　arXiv + CVPR 2026 Workshop　<a href="https://arxiv.org/abs/2605.22903">原文链接</a></p>
+    <h1 class="paper-headline">Seeing without Looking：视觉-语言自监督和多模态预训练越来越依赖 benchmark 判断表示质量，这篇提醒必须验证模型是否真正使用视觉 token</h1>
+    <p class="dek">把“benchmark accuracy”拆成是否依赖图像、依赖哪类视觉证据、内部 token 是否退化为相似表示等问题。</p>
+    <p class="byline"><strong>Seeing without Looking</strong>　Zixuan Lan, Luzhe Sun, Matthew R. Walter, Jiawei Zhou（机构以论文 PDF 为准）。　arXiv + CVPR 2026 Workshop　<a href="https://arxiv.org/abs/2605.22903">原文链接</a></p>
     <div class="paper-facts">
       <span><b>编号</b>2605.22903</span>
       <span><b>优先级</b>P2</span>
       <span><b>类别</b>CVPR 2026 Workshop</span>
       <span><b>会议</b>arXiv + CVPR 2026 Workshop</span>
-      <span><b>方法</b>检验 VLM benchmark 是否真的依赖视觉证据，是视觉-语言表示评估的好诊断</span>
+      <span><b>方法</b>系统移除或扰动视觉 token，结合局部遮挡、问题改写、答案空间扩展和层级 token geometry 分析，检查 VLM 分数是否真的来自视觉证据。</span>
       <span><b>来源</b>arXiv / OpenReview</span>
     </div>
     <div class="feature-body">
-      <p class="lead dropcap">先说结论。检验 VLM benchmark 是否真的依赖视觉证据，是视觉-语言表示评估的好诊断。 检验 VLM benchmark 是否真的依赖视觉证据，是视觉-语言表示评估的好诊断。</p>
+      <p class="lead dropcap">先说结论。视觉-语言自监督和多模态预训练越来越依赖 benchmark 判断表示质量，这篇提醒必须验证模型是否真正使用视觉 token。 把“benchmark accuracy”拆成是否依赖图像、依赖哪类视觉证据、内部 token 是否退化为相似表示等问题。</p>
       <figure class="full-fig"><img src="../assets/mineru/2605.22903/images/364878a96b2fa37c2aa281200fd7c17f2d19ca9fcc43d043d95950dba7650387.jpg" alt="Figureure 1 · We intervene on the input image at both global and entity levels while"><figcaption><b>Figureure 1 · We intervene on the input image at both global and entity levels while</b><span class="fig-en">Figure 1. We intervene on the input image at both global and entity levels while keeping the question fixed. Global-level interventions weaken overall visual evidence through token masking, noise blur, and black, whereas entity-level interventions manipulate the question-relevant region via black mask, black box, and entity swap. In this example, despite substantial degradation or alteration of the visual evidence, the model’s final answer can remain unchanged and still predict that a baseball glove is present.</span><span class="fig-zh">这张图来自论文 PDF 的结构化抽取。当前用于辅助理解 Seeing without Looking 的方法或实验，请结合正文精读段落一起看。</span></figcaption></figure>
 <figure class="full-fig"><img src="../assets/mineru/2605.22903/images/efcba8416040fec12a05574fd79fcd1c9a76f43abcf7b8bcf05a12395303318d.jpg" alt="Figureure 2 · Effect of random image token dropping on POPE accuracy"><figcaption><b>Figureure 2 · Effect of random image token dropping on POPE accuracy</b><span class="fig-en">Figure 2. Effect of random image token dropping on POPE accuracy. Even at 75% token removal, accuracy remains nearly unchanged, suggesting that high performance on this benchmark does not require complete visual representations.</span><span class="fig-zh">这张图/表用于判断 Seeing without Looking 的实验收益来自哪里。重点看替换、消融或跨模型设置下趋势是否一致，而不是只看单个最高分。</span></figcaption></figure>
       
       <h2>核心问题</h2>
-      <p>它和通用视觉自监督的关系在于：检验 VLM benchmark 是否真的依赖视觉证据，是视觉-语言表示评估的好诊断。</p>
+      <p>视觉-语言自监督和多模态预训练越来越依赖 benchmark 判断表示质量，这篇提醒必须验证模型是否真正使用视觉 token。</p>
       <h2>方法拆解</h2>
-      <p>检验 VLM benchmark 是否真的依赖视觉证据，是视觉-语言表示评估的好诊断</p>
+      <p>系统移除或扰动视觉 token，结合局部遮挡、问题改写、答案空间扩展和层级 token geometry 分析，检查 VLM 分数是否真的来自视觉证据。</p>
       <h2>主要贡献</h2>
-      <p>检验 VLM benchmark 是否真的依赖视觉证据，是视觉-语言表示评估的好诊断。</p>
+      <p>把“benchmark accuracy”拆成是否依赖图像、依赖哪类视觉证据、内部 token 是否退化为相似表示等问题。</p>
       <h2>实验看点</h2>
-      <p>实验部分建议重点看两类证据：一是作者是否把方法收益和更强数据、更长训练、更大模型区分开；二是跨模型、跨数据或跨任务迁移是否还能保留同样趋势。</p>
+      <p>在多种开源 VLM 上发现即使大量视觉 token 被移除，标准指标下降也可能很小；深层视觉 token 相似性上升可能解释细粒度视觉证据弱化。</p>
       <h2>局限与读法</h2>
-      <p>这篇论文的结论需要结合任务设置、训练数据规模和消融实验一起看；不要只凭单个指标判断它对通用视觉表征的价值。</p>
+      <p>它是诊断论文，不提供新的预训练目标；结论依赖所选 benchmark 和 VLM 家族。</p>
     
     </div>
   </div>

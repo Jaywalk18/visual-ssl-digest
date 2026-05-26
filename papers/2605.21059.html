@@ -26,7 +26,7 @@
   <main><article class="paper-detail">
   <div class="paper-main">
     <div class="kicker">Multimodal representation · P1 · 2026-05-22</div>
-    <h1 class="paper-headline">Pairwise Modalities：多模态模型不一定需要完整 joint tuples；只要模态图连通，pairwise supervision 可以成为可扩展替代品。</h1>
+    <h1 class="paper-headline">Pairwise Modalities：它和通用视觉自监督的关系在于：多模态模型不一定需要完整 joint tuples；只要模态图连通，pairwise supervision 可以成为可扩展替代品</h1>
     <p class="dek">它把多模态表征学习的问题改写成模态图连通性问题，重点不在堆更多模态，而在证明 pairwise supervision 也能学习共享/私有 latent 结构。</p>
     <p class="byline"><strong>Multimodal LLMs under Pairwise Modalities</strong>　arXiv　<a href="https://arxiv.org/abs/2605.21059">原文链接</a></p>
     <div class="paper-facts">
@@ -38,7 +38,7 @@
       <span><b>来源</b>arXiv / OpenReview</span>
     </div>
     <div class="feature-body">
-      <p class="lead dropcap">先说结论。多模态模型不一定需要完整 joint tuples；只要模态图连通，pairwise supervision 可以成为可扩展替代品。 它把多模态表征学习的问题改写成模态图连通性问题，重点不在堆更多模态，而在证明 pairwise supervision 也能学习共享/私有 latent 结构。</p>
+      <p class="lead dropcap">先说结论。它和通用视觉自监督的关系在于：多模态模型不一定需要完整 joint tuples；只要模态图连通，pairwise supervision 可以成为可扩展替代品。 它把多模态表征学习的问题改写成模态图连通性问题，重点不在堆更多模态，而在证明 pairwise supervision 也能学习共享/私有 latent 结构。</p>
       <figure class="full-fig"><img src="../assets/mineru/2605.21059/images/fig1.jpg" alt="Fig. 1 · Pairwise supervision is the scalable object"><figcaption><b>Fig. 1 · Pairwise supervision is the scalable object</b><span class="fig-en">Joint tuples are expensive; pairwise text-image, image-tactile, and text-3D data can form a connected modality graph.</span><span class="fig-zh">这张图说明论文的核心动机：不一定要收集完整多模态 tuple，只要 pairwise supervision 形成连通的模态图，也能支撑共享表示学习。</span></figcaption></figure>
 <figure class="full-fig"><img src="../assets/mineru/2605.21059/images/fig2.jpg" alt="Fig. 2 · Shared and modality-specific latent factors"><figcaption><b>Fig. 2 · Shared and modality-specific latent factors</b><span class="fig-en">The paper separates common causal factors from modality-private variables before alignment.</span><span class="fig-zh">这张图展示共享 latent 与模态私有变量的生成假设：先分离跨模态共有因素，再做 pairwise alignment，避免把私有噪声也强行对齐。</span></figcaption></figure>
       

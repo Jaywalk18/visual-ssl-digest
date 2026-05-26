@@ -26,7 +26,7 @@
   <main><article class="paper-detail">
   <div class="paper-main">
     <div class="kicker">World model / video SSL · P1 · 2026-05-24</div>
-    <h1 class="paper-headline">ResDreamer：世界模型的价值不在 photorealistic rollouts，而在让残差层级逼出更抽象的动态 latent。</h1>
+    <h1 class="paper-headline">ResDreamer：它和通用视觉自监督的关系在于：世界模型的价值不在 photorealistic rollouts，而在让残差层级逼出更抽象的动态 latent</h1>
     <p class="dek">它把视频 SSL 的目标从重建下一帧推向重建“低层没有解释完的部分”。</p>
     <p class="byline"><strong>Self-supervised Hierarchical Visual Reasoning with World Model</strong>　ICML 2026 · CCF A　<a href="https://arxiv.org/abs/2605.17537">原文链接</a></p>
     <div class="paper-facts">
@@ -38,7 +38,7 @@
       <span><b>来源</b>arXiv / OpenReview</span>
     </div>
     <div class="feature-body">
-      <p class="lead dropcap">先说结论。世界模型的价值不在 photorealistic rollouts，而在让残差层级逼出更抽象的动态 latent。 它把视频 SSL 的目标从重建下一帧推向重建“低层没有解释完的部分”。</p>
+      <p class="lead dropcap">先说结论。它和通用视觉自监督的关系在于：世界模型的价值不在 photorealistic rollouts，而在让残差层级逼出更抽象的动态 latent。 它把视频 SSL 的目标从重建下一帧推向重建“低层没有解释完的部分”。</p>
       <figure class="full-fig"><img src="../assets/mineru/2605.17537/images/a0dc7502024fce90d274bf56b1d2a65bd8aa32135e22d9fba5c9e8d60b8561c4.jpg" alt="Figureure 1 · Overview of ResDreamer a model base RL algorithm based on hierarchical"><figcaption><b>Figureure 1 · Overview of ResDreamer a model base RL algorithm based on hierarchical</b><span class="fig-en">Figure 1. Overview of ResDreamer a model base RL algorithm based on hierarchical world model. The left side shows the structure of enhanced visual observations. Adjacent world model layers communicate by residual and predictive signal within the enhanced observation. The right side shows the modules and training process of the k-th layer world model. The Encoder reads enhanced visual observations and gives the posterior $z _ { t . } ^ { k } .$ The dynamic predictor learns to estimate $z _ { t } ^ { k }$ with $\hat { z } _ { t } ^ { k }$ without accessing the observation. The sequence model updates internal state $h _ { t } ^ { k }$ by $z _ { t } ^ { k }$ . The Decoder reconstructs the observation signal which generates reconstruction loss and residual visual signal for upper layer.</span><span class="fig-zh">这张图概括 ResDreamer 的整体方法流程。阅读时先看模块之间传递的训练信号，再看作者如何把目标拆成可优化的子问题。</span></figcaption></figure>
 <figure class="full-fig"><img src="../assets/mineru/2605.17537/images/95307a2067c8432ba36a0e594eb6acb12829c76b4fb0fd2f53ac8152713c36a1.jpg" alt="Figureure 2 · The information channel between world model layers is bidirectional"><figcaption><b>Figureure 2 · The information channel between world model layers is bidirectional</b><span class="fig-en">Figure 2. The information channel between world model layers is bidirectional. Only reconstruction error and modulated foresight images are transmitted between layers, with no gradients being passed. On one hand, each layer of the PPB generates predictions about the external world and transmits visual planning representations to lower layers. On the other hand, the PPB treats low-level residuals as self-supervised learning signals to obtain a more complete inner representation.</span><span class="fig-zh">这张图来自论文 PDF 的结构化抽取。当前用于辅助理解 ResDreamer 的方法或实验，请结合正文精读段落一起看。</span></figcaption></figure>
       

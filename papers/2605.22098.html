@@ -26,7 +26,7 @@
   <main><article class="paper-detail">
   <div class="paper-main">
     <div class="kicker">Language-guided visual representation · P1 · 2026-05-25</div>
-    <h1 class="paper-headline">TextTeacher：冻结文本编码器可以作为训练期语义锚点，推理时仍保留纯视觉模型。</h1>
+    <h1 class="paper-headline">TextTeacher：它和通用视觉自监督的关系在于：冻结文本编码器可以作为训练期语义锚点，推理时仍保留纯视觉模型</h1>
     <p class="dek">今天最值得先读：它不是完整 CLIP 式预训练，而是把语言语义变成低成本的视觉表征塑形目标。</p>
     <p class="byline"><strong>TextTeacher: What Can Language Teach About Images?</strong>　TMLR 2026　<a href="https://arxiv.org/abs/2605.22098">原文链接</a></p>
     <div class="paper-facts">
@@ -38,7 +38,7 @@
       <span><b>来源</b>arXiv / OpenReview</span>
     </div>
     <div class="feature-body">
-      <p class="lead dropcap">先说结论。冻结文本编码器可以作为训练期语义锚点，推理时仍保留纯视觉模型。 今天最值得先读：它不是完整 CLIP 式预训练，而是把语言语义变成低成本的视觉表征塑形目标。</p>
+      <p class="lead dropcap">先说结论。它和通用视觉自监督的关系在于：冻结文本编码器可以作为训练期语义锚点，推理时仍保留纯视觉模型。 今天最值得先读：它不是完整 CLIP 式预训练，而是把语言语义变成低成本的视觉表征塑形目标。</p>
       <figure class="full-fig"><img src="../assets/mineru/2605.22098/images/796f4b605eb7353bca8a8ef837f3ee0f267b8109f7d1e28126a4ba69fb43728a.jpg" alt="Figureure 1 · : Setup of text-guided image-classification using TextTeacher: During "><figcaption><b>Figureure 1 · : Setup of text-guided image-classification using TextTeacher: During </b><span class="fig-en">Figure 1: Setup of text-guided image-classification using TextTeacher: During training, we use a frozen text encoder on image captions to inject with semantic knowledge into an image classifier. At inference time, we deploy a standard, unimodal vision model.</span><span class="fig-zh">这张图来自论文 PDF 的结构化抽取。当前用于辅助理解 TextTeacher 的方法或实验，请结合正文精读段落一起看。</span></figcaption></figure>
 <figure class="full-fig"><img src="../assets/mineru/2605.22098/images/84c80ea2b06c276dca33bcb710b781cc8efc20e06bab15fcbb647a460141759f.jpg" alt="Figureure 10 · : Most aligned and disaligned images for 6 random classes using ViT-B "><figcaption><b>Figureure 10 · : Most aligned and disaligned images for 6 random classes using ViT-B </b><span class="fig-en">Figure 10: Most aligned and disaligned images for 6 random classes using ViT-B trained with TextTeacher for 300 epochs. An aligned image is one where the text captions will output a large signal for a specific class. A disaligned image is an image of a class where the text caption produces a low signal for that class.</span><span class="fig-zh">这张图来自论文 PDF 的结构化抽取。当前用于辅助理解 TextTeacher 的方法或实验，请结合正文精读段落一起看。</span></figcaption></figure>
       
