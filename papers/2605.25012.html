@@ -39,7 +39,8 @@
     </div>
     <div class="feature-body">
       <p class="lead dropcap">先说结论。这是今天最核心条目，直接回答“视觉 SSL 如何同时支持理解和生成”。 把生成细节和判别语义放进同一 latent space，避免只做 MIM 时语义不足、只做 contrastive 时重建不足的问题。</p>
-      <aside class="marginalia"><b>图像状态</b> 这篇暂未抽到足够稳定的 pipeline / motivation 图，因此正文以方法和实验解读为主。</aside>
+      <figure class="full-fig"><img src="../assets/mineru/2605.25012/images/2f3067b80fefd2806437781c4f0a18d12c5bfd975048a82070b0e15a4d8110ab.jpg" alt="Figureure 1 · Linear probing and class-unconditional generation performance"><figcaption><b>Figureure 1 · Linear probing and class-unconditional generation performance</b><span class="fig-en">Figure 1. Linear probing and class-unconditional generation performance. Our approach, LEASE, advances the Unified SSL SoTA and defines a new Pareto-front for unified models.</span><span class="fig-zh">这张图/表用于判断 LEASE 的实验收益来自哪里。重点看替换、消融或跨模型设置下趋势是否一致，而不是只看单个最高分。</span></figcaption></figure>
+<figure class="full-fig"><img src="../assets/mineru/2605.25012/images/748227b82e300512d349ad386a2937c2c22525930274d4beeb6fede10acf810e.jpg" alt="Figureure 3 · Overview of LEASE"><figcaption><b>Figureure 3 · Overview of LEASE</b><span class="fig-en">Figure 3. Overview of LEASE. Visible generative tokens are encoded and placed into a reconstruction canvas for masked token prediction, forming the reconstruction objective. Parallelly, visible discriminative tokens are mapped to their codebook centroids, providing positives and neighbors for the codebook contrastive loss, where visible token embeddings and centroids are pulled together.</span><span class="fig-zh">这张图概括 LEASE 的整体方法流程。阅读时先看模块之间传递的训练信号，再看作者如何把目标拆成可优化的子问题。</span></figcaption></figure>
       
       <h2>核心问题</h2>
       <p>这是今天最核心条目，直接回答“视觉 SSL 如何同时支持理解和生成”。</p>

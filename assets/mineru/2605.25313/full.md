@@ -1,0 +1,470 @@
+# UWM-JEPA: Predictive World Models That Imagine in Belief Space
+
+Unitary density-matrix latent prediction for partially observable JEPA world models
+
+Santosh Kumar Radha1 ,\* Oktay Goktas1
+
+1AgentField AI, Toronto, Canada
+
+\*Correspondence: contact@santoshkumarradha.com, santosh@agentfield.ai
+
+Code: github.com/santoshkumarradha/uwm-jepa
+
+# Abstract
+
+World models for partially observed environments must imagine multiple compatible hidden futures and steer between them under counterfactual actions. Joint Embedding Predictive Architectures (JEPAs) do this in latent space, but a vector-valued latent has no internal structure for carrying the belief over hidden continuations through blind rollout. We introduce the Unitary World Model JEPA (UWM-JEPA), a JEPA world model with a density-matrix latent on a joint system–environment space and a learned unitary predictor. The construction preserves the joint-state spectrum exactly during rollout, so the predictor itself cannot dissipate the represented uncertainty.
+
+On a hidden-velocity indicator task requiring five-step forward simulation under a given action sequence with the target observation masked, UWM-JEPA reaches 0.77 accuracy and degrades monotonically as actions are perturbed; a parametermatched LSTM-JEPA trained under the same counterfactual-target objective and action head collapses to majority-class accuracy (0.53) under every action condition. Under blind rollout, UWM-JEPA loses fewer than ten points of probe ??2 at short horizons while vector-latent baselines lose forty-one and sixty-eight; both nevertheless tie on a held-out context probe, locating the separation in the predictor rather than the encoder. Action sensitivity itself requires training against counterfactual rather than teacher-forced targets, a finding that applies beyond the unitary parameterisation. For JEPA world models to imagine under partial observability, latent geometry and predictor dynamics matter, not frozen context-encoding capacity alone.
+
+# 1 Introduction
+
+JEPA-style world models predict in latent space rather than reconstruct observations. An online encoder maps an observed context to a latent representation, a predictor advances that latent forward, and a slowly moving target encoder supplies the future representation to match 1,2. The abstraction underlies I-JEPA 3, V-JEPA 4, and the broader JEPA programme 5, and it is closely related to non-contrastive SSL methods such as BYOL 1, SimSiam 6, DINO 7, VICReg 8, and Barlow Twins 9. By moving away from pixel- or token-level reconstruction, JEPAs cleanly separate representation learning from generative decoding, but they leave open a question that becomes central under partial observability: what geometry should the latent occupy when it must be imagined forward without new observations 10–13?
+
+Partial observability changes the object being predicted14. When the current observation history does not determine the hidden state, the future is not a single point in representation space. The same context supports several compatible hidden states, and the natural latent is a belief over those hidden variables rather than a deterministic embedding 14–17. A vector predictor trained against an EMA target can still drive the loss down, but the loss alone does not specify which uncertainty the latent should preserve, which should be averaged away, or how a counterfactual action should move the belief. We study a concrete alternative: a JEPA whose latent is a density matrix and whose predictor is a learned unitary on a joint system–environment space 18–20.
+
+The resulting model, the Unitary World Model JEPA (UWM-JEPA), produces a joint density matrix ???? from the online encoder and advances it by
+
+$$
+\hat {\rho} _ {t + k \mid t} = U ^ {k} \rho_ {t} (U ^ {\dagger}) ^ {k}. \tag {1}
+$$
+
+The training scaffold is JEPA-native: an EMA target encoder, a stop-gradient target, and a latent-space matching loss. Only the geometry of the predicted quantity changes. A density matrix represents a graded belief over latent configurations; unitary conjugation preserves the joint-state spectrum, purity, and von Neumann entropy exactly during blind rollout. We refer to this property as joint-state non-forgetting.
+
+The qualifier joint-state matters. The theorem applies to the full system–environment density matrix and does not, on its own, imply that the reduced system state remains linearly decodable after many steps or that UWM-JEPA encodes context better than a strong recurrent baseline. The empirical work in this paper measures what survives the two operations that matter for downstream use: partial trace to the system state and blind rollout through time.
+
+Counterfactual targets recover an action-sensitive predictor. Under a teacher-forced JEPA target the learned action term collapses to $\| H _ { 1 } \| / \| H _ { 0 } \| \approx 0 . 0 3$ , because the target encoder has already consumed the observed future and the predictor can match it without using the action. Replacing the target by a counterfactual simulator rollout restores the action term to $1 . 0 0 \pm 0 . 1 5$ , action perturbations move the predicted latent in the expected direction, and UWM-JEPA solves a hidden-velocity indicator task on which the matched LSTM-JEPA-CF configuration remains at majority-class accuracy. Additional LSTM-CF and supervised recurrent controls are reported in the supplement.
+
+The unitary predictor improves short-horizon imagination. When the latent is rolled forward without new observations, UWM-JEPA preserves target-nearness better than the vector predictors we tested. In future-latent retrieval, UWM-JEPA remains far above LSTM-JEPA models with plain and residual MLP predictors across $k \in \{ 1 , 3 , 5 , 1 0 \}$ . In teacher-versus-blind probing, UWM-JEPA loses less than ten points of $R ^ { 2 }$ at the intermediate horizons $k = 1$ and $k = 3$ , both shorter than the trained horizon $k = 5 ,$ , while LSTM-JEPA loses substantially more at those horizons and re-aligns near $k = 5$ . Beyond $k = 1 0$ , both models have low or negative blind probe scores, so long-horizon retention remains an open question rather than a settled claim.
+
+Context representation is a control. On the held-out linear probe used to measure context representation, UWM-JEPA and a parameter-matched LSTM-JEPA agree within seed noise: $R ^ { 2 } = 0 . 9 0 1 \pm 0 . 0 3 2$ versus $0 . 8 9 4 \pm 0 . 0 2 1$ over five seeds (Welch $p = 0 . 7 0 )$ . The density-matrix latent is not a stronger context encoder, so the behavioral separation is not explained by encoder quality.
+
+To our knowledge, UWM-JEPA is the first JEPA-family world model in which the latent is treated as an explicit belief over hidden continuations rather than a single representational point, and in which the predictor is constrained to evolve that belief without dissipating it during imagined rollout. The density-matrix latent, the unitary predictor, and the counterfactual action targets are the specific tools we use to instantiate this property, but the broader claim is about giving a JEPA latent a place to carry uncertainty and holding on to that uncertainty under prediction. Section 2 defines the model. Section 3 states the joint-state guarantee and its scope. Section 4 gives the main action-conditioned behavioral test, Section 5 tests blind rollout without new observations, and Section 6 establishes that these effects are not explained by a stronger context encoder. Collapse diagnostics and the claim-to-evidence audit are reported in the supplement.
+
+# 2 Belief-State JEPA
+
+UWM-JEPA modifies the predictor of a JEPA-family world model and leaves the surrounding training protocol unchanged. Given a partially observed sequence $O _ { \le t }$ , the online encoder $E _ { \theta }$ produces a joint density matrix
+
+$$
+\rho_ {t} \in \mathbb {C} ^ {d _ {\text { total }} \times d _ {\text { total }}}, \quad \rho_ {t} = \rho_ {t} ^ {\dagger}, \quad \rho_ {t} \succeq 0, \quad \operatorname{Tr} (\rho_ {t}) = 1, \tag {2}
+$$
+
+on a bipartite latent space $\mathcal { H } _ { \mathcal { T } } = \mathcal { H } _ { S } \otimes \mathcal { H } _ { \mathcal { E } } { } ^ { 1 8 , 1 9 }$ . All experiments use $d _ { \mathrm { s y s } } = 8 , d _ { \mathrm { e n v } } = 2$ , and $d _ { \mathrm { t o t a l } } = 1 6$ . The system factor is the part read by the JEPA loss and by downstream probes; the environment factor gives the model a register in which hidden modes and system–environment correlations can be carried during rollout. The practical readout is the reduced state $\rho _ { t } ^ { S } = \mathrm { T r } _ { \mathcal { E } } \rho _ { t } ^ { \ 1 8 }$ .
+
+The density-matrix constraints are enforced by construction. The initial state is maximally mixed on the joint space; each observation update sandwiches the current state by a positive system measurement operator lifted as $K ( o _ { t } ) \otimes I _ { \mathcal { E } }$ and then renormalises to unit trace; each prediction step is unitary conjugation. These operations preserve Hermiticity and positive semidefiniteness up to numerical symmetrisation, so the conditions in Equation (2) are an invariant of the recurrence rather than an unconstrained decoder output.
+
+The prediction operator is the central architectural choice. For a horizon ??, UWM-JEPA rolls the latent forward by unitary conjugation,
+
+$$
+P _ {k} \left(\rho_ {t}\right) = U ^ {k} \rho_ {t} \left(U ^ {\dagger}\right) ^ {k}, \quad U = \exp (- i H \Delta t), \quad H = H ^ {\dagger}. \tag {3}
+$$
+
+Blind rollout therefore traces the unitary orbit of the joint density matrix rather than an unconstrained vector trajectory. The target branch follows the usual JEPA construction: an EMA encoder $E _ { \xi }$ produces $\tilde { \rho } _ { t + k } = E _ { \xi } ( o _ { \leq t + k } )$ with stopgradient on the target parameters 1,2,6,7, $^ { 1 , 2 , 6 , 7 }$ ，
+
+$$
+\xi \leftarrow \tau \xi + (1 - \tau) \theta , \quad \nabla_ {\xi} \mathcal {L} _ {\mathrm{JEPA}} = 0. \tag {4}
+$$
+
+The loss is evaluated after reduction to the system factor and after a small projection head $g _ { \phi }$ . Writing $\hat { h } _ { t + k } \ =$ $g _ { \phi } ( \operatorname { T r } _ { \mathcal { E } } P _ { k } ( E _ { \theta } ( o _ { \leq t } ) ) )$ and $h _ { t + k } ^ { + } = g _ { \phi } ( \operatorname { T r } _ { \mathcal { E } } E _ { \xi } ( o _ { \leq t + k } ) )$ ), the objective is
+
+$$
+\mathcal {L} _ {\mathrm{JEPA}} = \left\| \hat {h} _ {t + k} - \operatorname{sg} \left[ h _ {t + k} ^ {+} \right] \right\| _ {F} ^ {2}. \tag {5}
+$$
+
+The model therefore exposes two readouts. The structural guarantee in the next section is exact on the joint state, while the learned objective and all downstream probes operate after partial trace and projection.
+
+Actions enter through an action-conditioned generator, $H ( a ) = H _ { 0 } + a H _ { 1 } { } ^ { 2 1 , 2 2 }$ , with rollout governed by the corresponding sequence of unitaries. The action experiments below compare teacher-forced and counterfactual targets while holding the JEPA scaffold fixed, isolating the target-construction effect from architectural changes to the predictor.
+
+# 3 Exact Non-Forgetting, Operational Memory
+
+The term without forgetting has a precise scope in this paper: the predictor channel is non-dissipative on the joint density matrix, even though individual downstream probes may not retain their accuracy at every horizon. For $P _ { k } ( \rho ) = U ^ { k } \rho ( U ^ { \dagger } ) ^ { k }$ , unitary conjugation preserves the joint spectrum and therefore every spectral functional of the joint state 18:
+
+$$
+\operatorname{spec} (P _ {k} (\rho)) = \operatorname{spec} (\rho),
+$$
+
+$$
+\mathrm{Tr} (P _ {k} (\rho) ^ {2}) = \mathrm{Tr} (\rho^ {2}), \tag {6}
+$$
+
+$$
+S (P _ {k} (\rho)) = S (\rho).
+$$
+
+These identities encode the structural reason the predictor cannot dissipate information during blind rollout 18,23. The implementation preserves these invariants to numerical precision over 30 rollout steps; the largest observed drift is below $2 . 4 \times 1 0 ^ { - 7 }$ (Supplementary Figure S1).
+
+![](images/338140205f28f9be7bb0f82490b1a7a9fc23bd28a0930ad6ab8552e54f213824.jpg)
+
+<details>
+<summary>flowchart</summary>
+
+```mermaid
+graph TD
+    A["Point Latent"] --> B["Current latent z_t"]
+    A --> C["Predicted latent ẑ_t+k"]
+    A --> D["Proposed R^d"]
+    E["Belief Latent"] --> F["evolved density U^k ρ_t U^†k"]
+    E --> G["ρ_t density matrix"]
+    H["isospectral evolution"] --> I["Action Steers"]
+    J["Deterministic"] --> K["Action Steers"]
+    L["Deterministic"] --> M["Action Steers"]
+    N["action"] --> O["Action Steers"]
+    P["a = -1"] --> Q["ρ_t"]
+    Q --> R["a = +1"]
+    S["a = 0"] --> T["ρ_t"]
+    T --> U["a = -1"]
+```
+</details>
+
+(a) Concept: point vs. belief latent.
+
+![](images/5903b9e65532dc48b82ab9f5f7a166e5c5bbf8599cd321f82102409e6051615b.jpg)
+
+<details>
+<summary>flowchart</summary>
+
+```mermaid
+graph TD
+    A["O_t NOW"] --> B["ENCODER E_θ"]
+    C["O_{t+k} FUTURE"] --> D["PREDICTOR U^k"]
+    E["a ACTION"] --> F["TARGET E_ξ"]
+    B --> F
+    D --> F
+    F --> G["L JEPA LOSS"]
+    H["STOP-GRADIENT sg"] -.-> F
+```
+</details>
+
+(b) Architecture: JEPA scaffold with unitary predictor.   
+Figure 1 From point latents to belief-structured imagination, and the architecture that realises it. (a) A standard vector-latent JEPA predicts a point in representation space. UWM-JEPA instead represents the latent as a density matrix and rolls it forward on an isospectral orbit. Under partial observability this gives the predictor a structured latent in which uncertainty and hidden modes can be carried through blind rollout; actions steer the unitary trajectory through $H ( a ) = H _ { 0 } + a H _ { 1 }$ . (b) The online encoder maps the current observation history to $\mid \rho _ { t } ;$ ; the predictor applies $U ^ { k } \rho _ { t } ( U ^ { \dagger } ) ^ { k }$ or an action-conditioned sequence $U ( a _ { t + k - 1 } ) \cdot \cdot \cdot U ( a _ { t } ) \rho _ { t } U ( a _ { t } ) ^ { \dagger } \cdot \cdot \cdot U ( a _ { t + k - 1 } ) ^ { \dagger }$ . The EMA target encoder supplies the stop-gradient future target, and the JEPA loss is evaluated after the system readout and projection.
+
+The qualification matters as much as the guarantee. The JEPA loss and the probes observe $\operatorname { T r } \varepsilon \rho$ through a projection rather than the full joint state, and partial trace is not unitary. Information can move into system–environment correlations and become inaccessible to a reduced-state linear probe while the joint state remains exactly non-dissipative. The paper therefore reports two levels of evidence: Equation (6) fixes the structural property of the predictor, and the blind-rollout experiments in Section 5 measure how much task-relevant information survives reduction, projection, and repeated prediction without new observations.
+
+The same geometry yields a useful diagnostic for what a unitary predictor can match on the full joint space. The spectrum-mismatch theorem in Section S1 states that
+
+$$
+\min _ {U \in \mathrm{U} (d _ {\text { total }})} \| U \rho U ^ {\dagger} - \sigma \| _ {F} ^ {2} = \| \lambda^ {\downarrow} (\rho) - \lambda^ {\downarrow} (\sigma) \| _ {2} ^ {2}. \tag {7}
+$$
+
+A unitary predictor can therefore match a full-state target exactly only when context and target density matrices are isospectral. The statement constrains the predictor’s orbit geometry on the joint state and does not transfer as a lower bound to the reduced and projected JEPA loss in Equation (5). In training, the online and EMA target encoders co-adapt, so the objective can become small by learning spectrum-compatible regions of latent space before the reduced/projected loss is evaluated. The full theorem, proof, and a numerical orbit visualisation appear in the supplement.
+
+# 4 Result I: Counterfactual Actions Require Counterfactual Targets
+
+An action-conditioned world model should change its imagined future when the action sequence changes. Under a teacher-forced JEPA objective the target encoder observes the trajectory that already contains the action’s effect, which admits an action-invariant solution in which the predictor matches the target without using the explicit action channel. We therefore separate two questions. Does the training target make the action pathway identifiable? Once the pathway is identified, does the imagined state support an action-dependent downstream readout?
+
+# 4.1 Action-Conditioned Predictor
+
+The static generator ?? is replaced by a linear actionconditioned family21
+
+$$
+H (a) = H _ {0} + a \cdot H _ {1}, \quad U (a) = \exp (- i H (a) \Delta t), \tag {8}
+$$
+
+with $H _ { 0 }$ and $H _ { 1 }$ learnable Hermitian parameters. Discretising $a ~ \in ~ \{ - 2 , - 1 , 0 , + 1 , + 2 \}$ allows the five matrices $U ( a )$ to be pre-computed for the action alphabet and gathered per sample per step. For an input sequence of actions $( a _ { t } , a _ { t + 1 } , \ldots )$ the rollout is $\begin{array} { r l } { \hat { \rho } _ { t + k } } & { { } = } \end{array}$ $U ( a _ { t + k - 1 } ) \cdots U ( a _ { t } ) \rho _ { t } U ( a _ { t } ) ^ { \dagger } \cdots U ( a _ { t + k - 1 } ) ^ { \dagger }$ , which uses the same two batched matrix multiplications per rollout step as the unconditioned predictor plus an $O ( | \mathcal { R } | d ^ { 3 } )$ matrixexponential precompute for the discrete action set 24,25.
+
+# 4.2 Teacher Forcing Makes Actions Inert
+
+The natural training target for Equation (8) is the teacherforced JEPA objective: at each step, match the EMA target $z _ { t + k } ^ { + } = E _ { \xi } ( x _ { \le t + k } )$ produced from the observed trajectory, which carries the true action history. Under this target, $\lVert H _ { 1 } \rVert / \lVert H _ { 0 } \rVert \approx 0 . 0 3$ at the end of training: the action channel is driven to near-zero magnitude and $U ( a ) \approx U ( 0 )$ for every discrete $^ { a . }$ . Because the observed trajectory already contains the action’s effect and the loss does not distinguish actionsensitive from action-invariant solutions, the predictor learns to reproduce the observed trajectory regardless of the action. Teacher forcing alone leaves the action pathway inert under a JEPA target.
+
+Table 1 Action perturbation controls on UWM-JEPA-CF. Mean ± std over three seeds. Correct actions give the smallest distance among test-time perturbations of the same trained model; wrong, shuffled, and negated actions increase it. The reversed sequence is a mild perturbation here, so the stronger action-ordering claim rests on the downstream indicator task. Across the same seeds, $\Vert \left[ H _ { 0 } , H _ { 1 } \right] \Vert / ( \Vert H _ { 0 } \Vert \Vert H _ { 1 } \Vert ) = 0 . 6 8 \pm 0 . 0 9$ . 
+
+<table><tr><td>Test-time action condition</td><td>HS distance to target</td></tr><tr><td>Correct actions</td><td> $0.0082 \pm 0.0012$ </td></tr><tr><td>Reversed sequence</td><td> $0.0090 \pm 0.0014$ </td></tr><tr><td>Base dynamics</td><td> $0.0096 \pm 0.0016$ </td></tr><tr><td>Wrong actions</td><td> $0.0114 \pm 0.0021$ </td></tr><tr><td>Shuffled actions</td><td> $0.0115 \pm 0.0020$ </td></tr><tr><td>Negated actions</td><td> $0.0132 \pm 0.0022$ </td></tr></table>
+
+# 4.3 Counterfactual Targets Restore Action Binding
+
+The fix is to replace the target by a simulator rollout under a freshly sampled counterfactual action sequence $\tilde { a } _ { t : t + k - 1 } { } ^ { 2 6 }$ Define
+
+$$
+\tilde {\rho} _ {t + k} ^ {+} = E _ {\xi} \left(x _ {\leq t} \| \operatorname{Sim} \left(s _ {t}, \tilde {a} _ {t: t + k - 1}\right)\right), \tag {9}
+$$
+
+where $\mathsf { S i m } \left( s _ { t } , \tilde { a } _ { t : t + k - 1 } \right)$ is the environment simulator advanced from the latent simulator state $s _ { t }$ under the counterfactual actions, and ∥ denotes concatenation of the observation history. The predictor is then trained to match $\tilde { \rho } _ { t + k } ^ { + }$ when fed $\tilde { a } _ { t : t + k - 1 }$ . Sampling ??˜ independently per batch makes two different action sequences map to two different targets, so any $H _ { 1 }$ that is too small incurs loss. The construction requires simulator-state access during training and is therefore a controlled test of counterfactual action binding rather than a recipe for raw video streams without a counterfactual data source.
+
+After training with the counterfactual target, $\| H _ { 1 } \| / \| H _ { 0 } \| =$ $1 . 0 0 \pm 0 . 1 5$ across three seeds: the two terms in Equation (8) become comparable in magnitude, as expected of a predictor that uses the action. We refer to this model below as UWM-JEPA-CF (the suffix CF marks counterfactual-target training) and to the matched recurrent baseline trained under the same protocol as LSTM-JEPA-CF.
+
+# 4.4 Action Control Battery
+
+To confirm that the UWM-JEPA-CF predictor actually uses the action channel (rather than achieving small loss by memorising action-averaged dynamics), we run action-perturbation controls at test time. Each condition reports the Hilbert– Schmidt distance from the final predicted state to the correct counterfactual target; smaller is better.
+
+Table 2 Hidden-velocity indicator accuracy. Values are mean ± std over three seeds. UWM-JEPA-CF degrades under action perturbations; the matched LSTM-JEPA-CF configuration stays at majority-class accuracy. 
+
+<table><tr><td>Condition</td><td>UWM-JEPA-CF</td><td>LSTM-JEPA-CF</td></tr><tr><td>Correct</td><td> $\mathbf{0.770} \pm \mathbf{0.011}$ </td><td> $0.530 \pm 0.000$ </td></tr><tr><td>No-action</td><td> $0.733 \pm 0.013$ </td><td> $0.530 \pm 0.000$ </td></tr><tr><td>Shuffled</td><td> $0.685 \pm 0.003$ </td><td> $0.530 \pm 0.000$ </td></tr><tr><td>Wrong</td><td> $0.639 \pm 0.034$ </td><td> $0.530 \pm 0.000$ </td></tr></table>
+
+# 4.5 Hidden-Velocity Indicator Task
+
+The counterfactual-target and perturbation results establish that UWM-JEPA-CF uses the action channel. The indicator task tests whether this translates into a downstream ability that is absent in the matched LSTM-JEPA-CF configuration evaluated in the main comparison.
+
+Task. The indicator is a binary classification: predict $y =$ ⊮[hidden velocity at $t + K > 0 ]$ with $K = 5$ . The observation at time $t + K$ is masked in the input (observation stride 3), so the answer cannot be read off an observed frame. The model must roll the latent ?? steps forward under the action sequence and read the sign of velocity from its own imagined state. The task therefore probes whether the action-conditioned predictor produces a state from which the hidden continuation is linearly decodable.
+
+Reading. Three findings emerge (Figure 2, Table 2). First, UWM-JEPA-CF solves the task above chance (0.770 with correct actions) and is action-sensitive: correct exceeds wrong by 13 percentage points, and the ordering across conditions (correct > no-action > shuffled > wrong) matches physical intuition, since a wrong action sequence injects the most incorrect velocity signal while no-action injects none and biases only mildly away from the true continuation. Second, the parameter-matched LSTM-JEPA-CF, trained on the same counterfactual JEPA objective with the same action head, is flat at 0.530 across all four action conditions: all three LSTM-JEPA-CF checkpoints predict class 0 for all 500 held-out examples under every action condition, against 265 class-0 and 235 class-1 ground-truth examples. Third, the scope of the claim is fixed: under the same JEPA+counterfactual protocol with matched parameter count, the LSTM variant fails this task while UWM-JEPA-CF solves it above chance and with the expected action-ordering.
+
+Additional LSTM-CF and supervised recurrent controls are reported in Section S3.
+
+# 5 Result II: Blind Rollout Tests Predictor Geometry
+
+The spectral theorem (Section 3) preserves the joint-state spectrum exactly but says nothing about whether useful reduced-state information survives a long imagined trajectory. This section measures how much of the target encoder’s representation is recoverable after ?? blind predictor steps, and compares UWM-JEPA against a parameter-matched LSTM-JEPA under a single protocol.
+
+Protocol. Training uses a partially observed CartPole-style spring benchmark with a JEPA objective (online encoder,
+
+![](images/538e4b0cfbb08a138e44aaca13c7aa438c1bb81c4ab728a1fe5780cc60a422a9.jpg)  
+Figure 2 Action-binding evidence. A: teacher-forced JEPA makes the action Hamiltonian nearly inert, while counterfactual targets recover an action term comparable to the base dynamics. B: action perturbation controls increase Hilbert–Schmidt distance to the counterfactual target. C: the hidden-velocity indicator is solved above chance by UWM-JEPA-CF, while the matched LSTM-JEPA-CF main-comparison configuration collapses to majority-class predictor.
+
+EMA target encoder, latent-space loss, stop-gradient on the target branch) 11,27. All models in this experiment are trained at horizon $k = 5 ,$ , so ?? = 1 and $k = 3$ test intermediate rollout coherence while $k = 1 0$ and $k = 2 0$ test extrapolation beyond the trained horizon. At evaluation time we fix a context $x _ { \leq t } ,$ obtain the predicted latent $\hat { z } _ { t + k } = P _ { k } ( E _ { \theta } ( x _ { \le t } ) )$ , and compare it against the target latent $z _ { t + k } ^ { + } = E _ { \xi } ( x _ { \le t + k } )$ . For each horizon $k \in \{ 1 , 3 , 5 , 1 0 , 2 0 \}$ a frozen linear probe maps latent to ground-truth hidden state and reports $R ^ { 2 2 8 }$ . The teacher $R ^ { 2 }$ scores the probe on $z _ { t + k } ^ { + }$ (the target encoder has seen the true observation at time $t + k )$ ; the blind $R ^ { 2 }$ scores it on $\hat { z } _ { t + k }$ (the predictor has seen no observations after ??). The retention metric is $\Delta R ^ { 2 } = R _ { \mathrm { t e a c h e r } } ^ { 2 } - R _ { \mathrm { b l i n d } } ^ { 2 }$ , the information lost relative to what was in principle recoverable at that horizon. All values are mean ± std across three seeds.
+
+Reading. UWM-JEPA shows strong short-horizon retention at ??=1 and ??=3, remains competitive at the trained horizon $k { = } 5 .$ , and degrades by long horizons (Figure 3, panel B; Table 3). Concretely, UWM’s $\Delta R ^ { 2 }$ is 0.023 at ??=1, 0.069 at $k { = } 3$ , and 0.091 at ??=5: blind rollout loses less than ten points of $R ^ { 2 }$ relative to what the target encoder extracts from the true observation at the same horizon. The matched LSTM-JEPA trained on the same objective29 has much larger $\Delta R ^ { 2 }$ at ??=1 and ??=3 (0.413 and 0.678), indicating that its intermediate blind states are poorly aligned with the target representation. The LSTM-JEPA re-aligns at ??=5, which is exactly the horizon used during training; this non-monotonicity is a property of the learned predictor and probe geometry rather than a physically monotone information curve. At ??=10 the UWM mean $\Delta R ^ { 2 }$ is slightly negative, within the reported seed variation, and by and negative bli $k { = } 2 0$ both model. The ratio $R _ { \mathrm { b l i n d } } ^ { 2 } / R _ { \mathrm { t e a c h e r } } ^ { 2 }$ acher probes is therefore not reported at ??=20, since dividing two noisy numbers near zero provides no additional signal.
+
+Short-horizon UWM-JEPA preserves target-nearness better than the parameter-matched LSTM-JEPA, tracks it at mid horizons, and loses the signal at long horizons that no tested predictor handles reliably. The retrieval panel reinforces the same separation: the UWM predictor improves futurelatent retrieval while the LSTM-JEPA models with plain and residual MLP predictors remain well below it. The pattern is consistent with the theorem, which constrains only the joint state, but does not follow from it.
+
+# 6 Result III: Context Is Not the Explanation
+
+The behavioural results above admit an alternative reading in which UWM-JEPA owes its separation to a stronger context encoder rather than to its predictor. The held-out probe in this section tests that reading directly. UWM-JEPA and a parameter-matched LSTM-JEPA agree within seed noise on the same probe, which locates the empirical separation in the predictor rather than in encoder quality.
+
+# 6.1 Held-out context probe
+
+We freeze each trained encoder, take the latent produced on a short context window, and fit a linear probe to predict the hidden velocity of the next step28. Training and evaluation splits are disjoint across trajectories and the probe is linear, so the metric reflects information in the encoder’s representation rather than downstream nonlinear capacity. Figure 4 reports five-seed results.
+
+The two top entries in Figure 4 sit within error of each other: UWM-JEPA at 0.901 ± 0.032, LSTM-JEPA at $0 . 8 9 4 \pm 0 . 0 2 1$ , with Welch $p = 0 . 7 0$ . A well-regularised recurrent encoder already recovers nearly all of the probe-accessible information about hidden velocity in this domain, so the density-matrix latent confers no context-probing advantage. The three non-recurrent baselines in the same figure (orthogonal 30,31, $\mathrm { G R U } ^ { 3 2 }$ and MLP at 0.246 ± 0.144, $0 . 1 9 3 \pm 0 . 2 9 3$ , and $0 . 0 1 8 \pm 0 . 0 3 2 )$ ) confirm that the probe discriminates: it places the two strong recurrent and density-matrix encoders together at the top and the weaker baselines well below them. The
+
+![](images/34bf396f446d39b2b83fb9a6708815322a083ae3d029a7aa6bab30b3dec5cbfe.jpg)
+
+<details>
+<summary>line</summary>
+
+| rollout horizon k | UWM unitary | LSTM MLP | LSTM residual |
+| ------------------ | ----------- | -------- | ------------- |
+| 1                  | 0.88        | 0.06     | 0.23          |
+| 3                  | 0.45        | 0.03     | 0.07          |
+| 5                  | 0.39        | 0.08     | 0.05          |
+| 10                 | 0.28        | 0.05     | 0.02          |
+</details>
+
+![](images/bccc7639b22efee46b2428b1421f6a3cffdbead333fc6a99c8151c2cc094b934.jpg)
+
+<details>
+<summary>line</summary>
+
+| rollout horizon k | UWM-JEPA | LSTM-JEPA |
+| ----------------- | -------- | --------- |
+| 1                 | 0.02     | 0.41      |
+| 3                 | 0.07     | 0.68      |
+| 5                 | 0.10     | 0.01      |
+| 10                | -0.02    | 0.06      |
+| 20                | 0.59     | 0.50      |
+</details>
+
+Figure 3 Blind-rollout evidence. A: top-1 retrieval accuracy for predicted future latents, comparing the UWM unitary predictor to LSTM-JEPA encoders with plain and residual MLP predictors. B: information lost under blind rollout, measured as $\Delta R ^ { 2 } = R _ { \mathrm { t e a c h e r } } ^ { 2 } - R _ { \mathrm { b l i n d } } ^ { 2 }$ for frozen probes. Lower is better. The dashed vertical line marks the trained horizon (?? = 5); horizons beyond it are extrapolations, not monotone information-theoretic forgetting curves. The shaded region marks the high-variance weak-teacher regime (?? ≥ 10). Together the two panels show that the context-probe tie in Figure 4 does not translate into matched predictor behaviour.
+
+Table 3 Blind-rollout information loss. $\Delta R ^ { 2 } = R _ { \mathrm { t e a c h e r } } ^ { 2 } - R _ { \mathrm { b l i n d } } ^ { 2 }$ , mean ± std over three seeds. Lower is better; the headline comparison is $k = 1 , 3$ , before the trained horizon. 
+
+<table><tr><td>Model</td><td>k=1</td><td>k=3</td><td>k=5</td><td>k=10</td><td>k=20</td></tr><tr><td>UWM</td><td> $\mathbf{0.023} \pm \mathbf{0.008}$ </td><td> $\mathbf{0.069} \pm \mathbf{0.026}$ </td><td> $0.091 \pm 0.044$ </td><td> $-0.042 \pm 0.086$ </td><td> $0.584 \pm 0.381$ </td></tr><tr><td>LSTM</td><td> $0.413 \pm 0.046$ </td><td> $0.678 \pm 0.179$ </td><td> $\mathbf{0.013} \pm \mathbf{0.062}$ </td><td> $0.062 \pm 0.067$ </td><td> $0.502 \pm 0.122$ </td></tr></table>
+
+![](images/fec50a0bfc7c9c4b566d9651a7ff013996b005dc49f929b43b3d52d27b5b602d.jpg)
+
+<details>
+<summary>bar</summary>
+
+| Model     | held-out probe R² |
+| --------- | ----------------- |
+| UWM       | 0.901             |
+| LSTM      | 0.894             |
+| Ortho-RNN | 0.246             |
+| GRU       | 0.193             |
+| MLP       | 0.018             |
+</details>
+
+Figure 4 Held-out linear-probe $R ^ { 2 }$ on hidden velocity (five seeds). UWM-JEPA $( 0 . 9 0 1 \pm 0 . 0 3 2 )$ and LSTM-JEPA $( 0 . 8 9 4 \pm 0 . 0 2 1 )$ are not significantly different (Welch $p = 0 . 7 0 )$ ). The density-matrix latent is not a win on context probing alone; the orthogonal, GRU, and MLP baselines fall far below.
+
+GRU variance is large, so its mean is not interpreted sharply; the relevant point is that the UWM–LSTM tie at the top reflects shared high probe quality, not a ceiling on the probe itself.
+
+Consequence. Since the context probe ties, the remaining experiments evaluate the predictor rather than the encoder. We test whether predicted future latents retrieve the right target latent, whether frozen probes retain hidden-state information after blind rollout, and whether counterfactual actions move the latent in the expected direction. Collapse diagnostics and anti-collapse sweeps are reported in the supplement; they confirm that the UWM-JEPA runs used here remain non-collapsed under the tested regularisation protocols but use different regulariser variants and checkpoint protocols, so they are not directly comparable to the five-seed context-probe numbers in Figure 4.
+
+# 7 Discussion and Scope
+
+UWM-JEPA is a JEPA-family world model whose latent is a density matrix and whose predictor is unitary on a system–environment space. This construction yields an exact non-dissipation property on the joint latent and, in the tested partially observable settings, improves intermediatehorizon blind rollout and counterfactual action-conditioned imagination. The architecture is not a universally stronger encoder, a general anti-collapse mechanism, or a competitive planner.
+
+The phrase belief state is used here in an operational sense: the latent is a density-matrix representation capable of carrying uncertainty and system–environment correlations through rollout. Calibrated posterior structure over the true hidden state would require a separate posterior-alignment experiment and is outside the present claims.
+
+The headline negative result is the context-probe tie. UWM-JEPA and LSTM-JEPA encode the observed prefix equally well on the held-out hidden-velocity probe, so the empirical advantage appears only when the latent is rolled forward without new observations or when actions are varied counterfactually. This separation organises the experiments around encoder quality, blind rollout, and action binding rather than around a single aggregate score.
+
+The non-forgetting theorem applies to the joint density matrix. Unitary conjugation preserves the spectrum, purity, and entropy of the joint state, but the downstream loss and probes see only the reduced and projected system state. Reduced-state information can move into correlations and become inaccessible to a linear probe even when the joint evolution is exactly reversible, so the operational memory curves in Figure 3 complement rather than duplicate the theorem; they measure what remains useful after the readout used by the actual JEPA objective. The JEPA predictors in that experiment are trained at horizon ?? = 5, so ?? = 1 and ?? = 3 probe intermediate rollout coherence and ?? > 5 probes extrapolation rather than a monotone information-theoretic forgetting curve.
+
+The action results establish counterfactual sensitivity rather than broad planning competence. Teacher-forced action JEPA leaves the action Hamiltonian nearly inert, whereas counterfactual targets recover an action term comparable to the base dynamics and yield an above-chance hiddenvelocity indicator with the expected degradation under wrong, shuffled, and no-action controls. The construction is evidence for action-conditioned imagination in this testbed, not for long-horizon planning, and not for alternative recurrent or Transformer objectives. The counterfactual training target also requires simulator access to construct alternate futures, which limits portability to settings where only passive videos or observation streams are available.
+
+Matched-baseline language refers to trainable parameter count rather than the number of coordinates in the latent state. A 16 × 16 density matrix carries more real degrees of freedom than a length-16 vector hidden state, even when the trainable encoder and predictor budgets are matched, which makes the context-probe tie in Figure 4 a central control: it shows that the main comparison is not explained by a better frozen context representation. The supplementary baseline ablations further separate target-encoder decodability from blind-rollout performance.
+
+The present experiments use structured partially observable oscillator and CartPole-style settings, and the present results do not extend to hidden Markov chains, ring-walker environments, or unstructured visual prediction. The current comparison set covers LSTM-JEPA models with plain and residual MLP predictors, GRU, orthogonal recurrent, and MLP baselines, with the recurrent families grounded in GRU32, orthogonal/unitary RNN30,31, and LSTM29 architectures. Learned Lie-algebra predictors 22, neural ODE predictors 33, state-space models 34,35, and Transformer predictors 36 remain natural future baselines. Within that scope, the contribution is a controlled demonstration that belief-state structure can separate context representation from rollouttime memory in a JEPA world model.
+
+Seed counts are asymmetric by design. The frozen context probe is reported over five seeds because it is the key negative control for encoder quality; blind-rollout and actionconditioned experiments are reported over three seeds because they require trained predictor or counterfactual-action checkpoints. Strong claims are confined to low-variance regions and seed counts appear in every relevant table caption.
+
+# References
+
+[1] Jean-Bastien Grill, Florian Strub, Florian Altché, Corentin Tallec, Pierre H Richemond, Elena Buchatskaya, Carl Doersch, Bernardo Ávila Pires, Zhaohan Daniel Guo, Mohammad Gheshlaghi Azar, et al. Bootstrap your own latent: A new approach to self-supervised learning. In Advances in Neural Information Processing Systems (NeurIPS), 2020.   
+[2] Antti Tarvainen and Harri Valpola. Mean teachers are better role models: Weight-averaged consistency targets improve semi-supervised deep learning results. In Advances in Neural Information Processing Systems (NeurIPS), volume 30, pages 1195–1204, 2017. URL https://arxiv.org/abs/1703. 01780.   
+[3] Mahmoud Assran, Quentin Duval, Ishan Misra, Piotr Bojanowski, Pascal Vincent, Michael Rabbat, Yann LeCun, and Nicolas Ballas. Self-supervised learning from images with a joint-embedding predictive architecture. In IEEE/CVF Conference on Computer Vision and Pattern Recognition (CVPR), 2023.   
+[4] Mahmoud Assran, Adrien Bardes, David Fan, Quentin Garrido, Russell Howes, Matthew Muckley, Ammar Rizvi, Claire Roberts, Koustuv Sinha, Artem Zholus, et al. Revisiting feature prediction for learning visual representations from video. arXiv preprint arXiv:2404.08471, 2024.   
+[5] Yann LeCun. A path towards autonomous machine intelligence. Technical Report, 2022. URL https:// openreview.net/forum?id=BZ5a1r-kVsf. Available at https://openreview.net/pdf?id=BZ5a1r-kVsf.   
+[6] Xinlei Chen and Kaiming He. Exploring simple siamese representation learning. In Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition (CVPR), pages 15750–15758, 2021. URL https://arxiv. org/abs/2011.10566.   
+[7] Mathilde Caron, Hugo Touvron, Ishan Misra, Hervé Jé- gou, Julien Mairal, Piotr Bojanowski, and Armand Joulin. Emerging properties in self-supervised vision transformers. In Proceedings of the IEEE/CVF International Conference on Computer Vision (ICCV), pages 9650–9660, 2021. URL https://arxiv.org/abs/2104.14294.   
+[8] Adrien Bardes, Jean Ponce, and Yann LeCun. VI-CReg: Variance-invariance-covariance regularization for selfsupervised learning. In International Conference on Learning Representations (ICLR), 2022.   
+[9] Jure Zbontar, Li Jing, Ishan Misra, Yann LeCun, and Stéphane Deny. Barlow twins: Self-supervised learning via redundancy reduction. In International Conference on Machine Learning (ICML), 2021.   
+[10] David Ha and Jürgen Schmidhuber. World models. arXiv preprint arXiv:1803.10122, 2018. URL https://arxiv. org/abs/1803.10122.   
+[11] Danijar Hafner, Timothy Lillicrap, Jimmy Ba, and Mohammad Norouzi. Dream to control: Learning behaviors by latent imagination. In International Conference on Learning Representations, 2020. URL https://arxiv.org/abs/1912.01603.
+
+[12] Danijar Hafner, Timothy Lillicrap, Mohammad Norouzi, and Jimmy Ba. Mastering Atari with discrete world models. In International Conference on Learning Representations (ICLR), 2021. URL https://arxiv.org/abs/2010.02193.   
+[13] Danijar Hafner, Jurgis Pasukonis, Jimmy Ba, and Timothy Lillicrap. Mastering diverse domains through world models. arXiv preprint arXiv:2301.04104, 2023. URL https:// arxiv.org/abs/2301.04104.   
+[14] Leslie Pack Kaelbling, Michael L Littman, and Anthony R Cassandra. Planning and acting in partially observable stochastic domains. Artificial Intelligence, 101(1-2):99–134, 1998. doi: 10.1016/S0004-3702(98)00023-X.   
+[15] Matthew Hausknecht and Peter Stone. Deep recurrent Qlearning for partially observable MDPs. In AAAI Fall Symposium on Sequential Decision Making for Intelligent Agents (AAAI-SDMIA15), 2015. URL https://arxiv.org/abs/ 1507.06527.   
+[16] Maximilian Igl, Luisa Zintgraf, Tuan Anh Le, Frank Wood, and Shimon Whiteson. Deep variational reinforcement learning for POMDPs. In Proceedings of the 35th International Conference on Machine Learning (ICML), pages 2117–2126, 2018. URL https://arxiv.org/abs/1806.02426.   
+[17] Peter Karkus, David Hsu, and Wee Sun Lee. QMDP-net: Deep learning for planning under partial observability. In Advances in Neural Information Processing Systems (NeurIPS), pages 4697–4707, 2017. URL https://arxiv.org/abs/1703. 06692.   
+[18] Michael A. Nielsen and Isaac L. Chuang. Quantum Computation and Quantum Information. Cambridge University Press, 10th anniversary edition, 2010.   
+[19] Heinz-Peter Breuer and Francesco Petruccione. The Theory of Open Quantum Systems. Oxford University Press, 2002.   
+[20] W. Forrest Stinespring. Positive functions on ??∗-algebras. Proceedings of the American Mathematical Society, 6(2): 211–216, 1955. doi: 10.1090/S0002-9939-1955-0069403-4.   
+[21] Haim Horowitz, Pooja Rao, and Santosh Kumar Radha. A quantum generative model for multi-dimensional time series using hamiltonian learning. arXiv preprint arXiv:2204.06150, 2022. URL https://arxiv.org/abs/2204.06150.   
+[22] Samuel Greydanus, Misko Dzamba, and Jason Yosinski. Hamiltonian neural networks. In Advances in Neural Information Processing Systems, volume 32, 2019. URL https://arxiv.org/abs/1906.01563.   
+[23] Jack S Baker, Haim Horowitz, Santosh Kumar Radha, Stenio Fernandes, Colin Jones, Noorain Noorani, Vladimir Skavysh, Philippe Lamontagne, and Barry C Sanders. Quantum variational rewinding for time series anomaly detection. arXiv preprint arXiv:2210.16438, 2022. URL https: //arxiv.org/abs/2210.16438.   
+[24] Junhyuk Oh, Xiaoxiao Guo, Honglak Lee, Richard L. Lewis, and Satinder Singh. Action-conditional video prediction using deep networks in Atari games. In Advances in Neural Information Processing Systems (NeurIPS), pages 2845–2853, 2015. URL https://arxiv.org/abs/1507.08750.   
+[25] Manuel Watter, Jost Tobias Springenberg, Joschka Boedecker, and Martin Riedmiller. Embed to control: A locally linear latent dynamics model for control from raw images. In Advances in Neural Information Processing Systems (NeurIPS), 2015. URL https://arxiv.org/abs/1506.07365.   
+[26] Lars Buesing, Theophane Weber, Yori Zwols, Sebastien Racanière, Arthur Guez, Jean-Baptiste Lespiau, and Nicolas Heess. Woulda, coulda, shoulda: Counterfactually-guided
+
+policy search. In International Conference on Learning Representations (ICLR), 2019. URL https://arxiv.org/abs/ 1811.06272.   
+[27] Danijar Hafner, Timothy Lillicrap, Ian Fischer, Ruben Villegas, David Ha, Honglak Lee, and James Davidson. Learning latent dynamics for planning from pixels. In International Conference on Machine Learning, pages 2555–2565, 2019.   
+[28] Guillaume Alain and Yoshua Bengio. Understanding intermediate layers using linear classifier probes. In International Conference on Learning Representations (ICLR) Workshop Track, 2017. URL https://arxiv.org/abs/1610.01644.   
+[29] Sepp Hochreiter and Jürgen Schmidhuber. Long short-term memory. Neural Computation, 9(8):1735–1780, 1997. doi: 10.1162/neco.1997.9.8.1735.   
+[30] Martin Arjovsky, Amar Shah, and Yoshua Bengio. Unitary evolution recurrent neural networks. In International Conference on Machine Learning, pages 1120–1128, 2016. URL https://arxiv.org/abs/1511.06464.   
+[31] Scott Wisdom, Thomas Powers, John R Hershey, Jonathan Le Roux, and Les Atlas. Full-capacity unitary recurrent neural networks. In Advances in Neural Information Processing Systems, volume 29, 2016.   
+[32] Kyunghyun Cho, Bart van Merrienboer, Caglar Gulcehre, Dzmitry Bahdanau, Fethi Bougares, Holger Schwenk, and Yoshua Bengio. Learning phrase representations using RNN encoder-decoder for statistical machine translation. In Proceedings of the Conference on Empirical Methods in Natural Language Processing, pages 1724–1734, 2014.   
+[33] Ricky T Q Chen, Yulia Rubanova, Jesse Bettencourt, and David Duvenaud. Neural ordinary differential equations. In Advances in Neural Information Processing Systems, volume 31, 2018. URL https://arxiv.org/abs/1806.07366.   
+[34] Albert Gu, Karan Goel, and Christopher Ré. Efficiently modeling long sequences with structured state spaces. In International Conference on Learning Representations, 2022. URL https://arxiv.org/abs/2111.00396.   
+[35] Albert Gu and Tri Dao. Mamba: Linear-time sequence modeling with selective state spaces. arXiv preprint arXiv:2312.00752, 2023. URL https://arxiv.org/abs/ 2312.00752.   
+[36] Ashish Vaswani, Noam Shazeer, Niki Parmar, Jakob Uszkoreit, Llion Jones, Aidan N. Gomez, Łukasz Kaiser, and Illia Polosukhin. Attention is all you need. In Advances in Neural Information Processing Systems, volume 30, 2017. URL https://arxiv.org/abs/1706.03762.   
+[37] Alan J. Hoffman and Helmut W. Wielandt. The variation of the spectrum of a normal matrix. Duke Mathematical Journal, 20(1):37–39, 1953.   
+[38] Olivier Roy and Martin Vetterli. The effective rank: A measure of effective dimensionality. In 2007 15th European Signal Processing Conference (EUSIPCO), pages 606–610. IEEE, 2007. URL https://ieeexplore.ieee.org/document/ 7098875.   
+[39] Aaron van den Oord, Yazhe Li, and Oriol Vinyals. Representation learning with contrastive predictive coding. arXiv preprint arXiv:1807.03748, 2018. URL https://arxiv.org/abs/ 1807.03748.
+
+# Data and Code Availability
+
+All code, data, and figure-generation scripts are available at https://github.com/santoshkumarradha/ uwm-jepa. The evidence figures in the paper are regenerated from the experiment outputs bundled in the experiments/data/ folder of that repository.
+
+# Supplementary Information
+
+UWM-JEPA: Predictive World Models That Imagine in Belief Space
+
+Santosh Kumar Radha and Oktay Goktas
+
+# S1 Spectrum-Mismatch Lower Bound
+
+A JEPA whose latent predictor is a unitary map on density matrices faces a structural obstruction that depends only on spectra. The closed-form lower bound below characterises the Hilbert–Schmidt training loss of such a predictor: the bound vanishes if and only if the context and target density matrices have identical spectra. The main text invokes this result as a structural diagnostic for the full joint-state unitary predictor. The practical training objective is reduced and projected, so the theorem does not transfer as an exact lower bound on the loss optimised in Equation (5).
+
+# S1.1 Setup
+
+Let $\mathcal { H } \cong \mathbb { C } ^ { d }$ with $d = d _ { \mathrm { t o t a l } }$ be the joint system–environment Hilbert space of the architecture introduced in Section $2 ^ { 1 8 , 1 9 }$ , and let $\mathrm { U } ( d )$ denote the group of ?? × ?? unitary matrices. For a Hermitian matrix $A \in \mathbb { C } ^ { d \times d }$ , write $\lambda ^ { \downarrow } ( A ) \in \mathbb { R } ^ { d }$ for its eigenvalue vector arranged in non-increasing order. The Hilbert–Schmidt (Frobenius) norm and inner product are $\langle A , B \rangle _ { F } = \operatorname { T r } ( A ^ { \dagger } B )$ and $\| A \| _ { F } = \sqrt { \mathrm { T r } ( A ^ { \dagger } A ) }$ . A JEPA training pair $( \rho _ { t } , \rho _ { t + k } ^ { + } )$ consists of a context density matrix $\rho _ { t } .$ , produced by the online encoder from observations $x _ { \leq t } .$ , and a target density matrix ${ \rho } _ { t + k } ^ { + } ,$ produced by the EMA target encoder from observations $x _ { \le t + k }$ . The predictor is a unitary $U ^ { k } \in \operatorname { U } ( d )$ obtained by ??-fold application of the one-step unitary in Equation (3), and the full-state matching loss is
+
+$$
+\mathcal {L} (U ^ {k}; \rho_ {t}, \rho_ {t + k} ^ {+}) = \left\| U ^ {k} \rho_ {t} (U ^ {k}) ^ {\dagger} - \rho_ {t + k} ^ {+} \right\| _ {F} ^ {2}. \tag {S1}
+$$
+
+# S1.2 Main theorem
+
+Theorem 1 (Spectrum-mismatch lower bound). Let $\rho , \sigma \in \mathbb { C } ^ { d \times d }$ be Hermitian, with sorted eigenvalue vectors $\lambda ^ { \downarrow } ( \rho ) , \lambda ^ { \downarrow } ( \sigma ) \in$ $\mathbb { R } ^ { d } .$ . Then
+
+$$
+\min _ {U \in \mathrm{U} (d)} \left\| U \rho U ^ {\dagger} - \sigma \right\| _ {F} ^ {2} = \left\| \lambda^ {\downarrow} (\rho) - \lambda^ {\downarrow} (\sigma) \right\| _ {2} ^ {2}, \tag {S2}
+$$
+
+and the minimum is attained at any $U ^ { \star } \in \operatorname { U } ( d )$ that maps a sorted eigenbasis of ?? to a sorted eigenbasis of ?? in matching order.
+
+Proof. Expand the Frobenius norm as $\operatorname { T r } ( \rho ^ { 2 } ) + \operatorname { T r } ( \sigma ^ { 2 } ) - 2 \operatorname { T r } ( U \rho U ^ { \dagger } \sigma )$ . The first two terms are unitary-invariant; minimising the whole is equivalent to maximising $\operatorname { T r } ( U \rho U ^ { \dagger } \sigma )$ , for which von Neumann’s trace inequality gives max?? $\operatorname { T r } ( U \rho U ^ { \dagger } \sigma ) =$ $\Sigma _ { i } \lambda _ { i } ^ { \downarrow } ( \rho ) \lambda _ { i } ^ { \downarrow } ( \sigma )$ , with equality when ?? aligns the sorted eigenbases. Substituting and collecting terms yields the squared $\ell _ { 2 }$ distance between sorted eigenvalue vectors. Thus the result follows from von Neumann’s trace inequality on the unitary orbit of $\rho$ under the Frobenius objective. It is closely related to Hoffman–Wielandt eigenvalue-stability bounds 37, but the optimisation used here is the unitary-orbit trace maximisation.
+
+# S1.3 Corollaries
+
+Two consequences specialise the theorem to JEPA training.
+
+Corollary 1 (Irreducible JEPA error). For every unitary predictor $U ^ { k } \in \operatorname { U } ( d )$ and every context/target pair $( \rho _ { t } , \rho _ { t + k } ^ { + } )$
+
+$$
+\mathcal {L} (U ^ {k}; \rho_ {t}, \rho_ {t + k} ^ {+}) \geq \left\| \lambda^ {\downarrow} (\rho_ {t}) - \lambda^ {\downarrow} (\rho_ {t + k} ^ {+}) \right\| _ {2} ^ {2}. \tag {S3}
+$$
+
+The right-hand side of (S3) depends only on spectra and is independent of $U ^ { k }$ . It therefore cannot be reduced by any training procedure that optimises only over $\mathrm { U } ( d )$ . We call this quantity the irreducible JEPA error of the pair $( \rho _ { t } , \rho _ { t + k } ^ { + } )$ .
+
+Corollary 2 (Orbit-projected target eliminates the floor). Let $\rho _ { t + k } ^ { + } = V _ { + } \Lambda _ { + } V _ { + } ^ { \dagger }$ be a spectral decomposition and let $\Lambda _ { t }$ contain the sorted eigenvalues of $\dot { \rho } _ { t }$ . The orbit-projected target
+
+$$
+\widetilde {\rho} _ {t + k} ^ {+} := V _ {+} \Lambda_ {t} V _ {+} ^ {\dagger} \tag {S4}
+$$
+
+has $\lambda ^ { \downarrow } ( \widetilde { \rho } _ { t + k } ^ { + } ) = \lambda ^ { \downarrow } ( \rho _ { t } )$ , so min?? ∥?? ??????† − ?? +??+?? ∥2?? = 0.
+
+Orbit projection is the minimal full-state target rewrite that makes the unitary matching problem reducible. Eigenvectors, which carry the direction of evolution the predictor must learn, are preserved; only the spectrum is replaced. The corollary is a mathematical diagnostic and does not claim that the practical reduced/projected objective implements orbit projection.
+
+![](images/2bbbefa8063c48d82c92b4f8d810f1de1282121f35a7aafc5f6fd9763ab843e5.jpg)  
+Figure S1 Joint-state invariant check. A trained UWM-JEPA predictor preserves spectrum, purity, and entropy under blind rollout to floating-point precision. The largest observed drift over 30 steps is below $2 . 4 \times 1 0 ^ { - 7 }$ , verifying the implemented unitary predictor rather than any downstream performance metric.
+
+# S1.4 Physical meaning
+
+Unitary conjugation is an isometry of Hermitian matrices in the Hilbert–Schmidt inner product, so the image $U ^ { k } \rho _ { t } ( U ^ { k } ) ^ { \dagger }$ lies on the unitary orbit of $\rho _ { t }$ , a submanifold of density-matrix space parametrised entirely by the spectrum $\lambda ^ { \downarrow } ( \rho _ { t } )$ . A generic target density matrix produced by encoding a future observation has a different spectrum, since the entropy of a realised trajectory is not the entropy of the uncertainty over trajectories, and therefore lies on a different orbit. Theorem 1 quantifies the gap: the closest the predictor’s output can get to such a target, over all unitaries, is the squared $\ell _ { 2 }$ distance between sorted spectra. Training over U(??) cannot reduce that floor.
+
+The corollaries describe full-state geometry. They imply nothing about the spectra of reduced system states or about retention of task variables by a downstream probe; those empirical questions are evaluated in the blind-rollout and action-binding experiments.
+
+# S1.5 Numerical invariant check
+
+# S2 Training Stability and Collapse
+
+JEPA-family objectives are non-contrastive: the encoder and predictor are trained to match a target network’s latent output, with no explicit repulsion between unrelated samples. The known failure mode is collapse, in which the encoder minimises the loss by mapping every input to the same point or to a low-rank subspace. A new JEPA predictor therefore needs evidence that it does not inherit or induce collapse. This section (i) explains why training loss alone is not a valid collapse diagnostic for the regularisers used in this literature, (ii) reports a seed-level collapse phase diagram on a held-out probe task, and (iii) runs a three-seed × six-variant sweep of anti-collapse protocols on UWM-JEPA.
+
+Training loss is not a collapse metric. $\mathrm { { V I C R e g } ^ { 8 } }$ , Barlow Twins 9, and log-determinant regularisers are hinge-like or barrier-like by construction. At the optimum the variance, cross-correlation, or spectral terms sit near their target boundary, so the total training loss plateaus close to a fixed non-zero value regardless of whether the encoder has collapsed, and collapsed and healthy encoders can produce training curves that look nearly identical. Following standard practice in the JEPA literature 1,3,4,6,7, collapse is diagnosed downstream: we freeze the encoder after training, fit a linear probe on a small supervised split, and report the probe’s coefficient of determination on a held-out split. A non-trivial held-out $R ^ { 2 }$ is direct evidence that the latent space retains task-relevant structure; a near-zero $R ^ { 2 }$ is direct evidence of representational collapse regardless of the training loss.
+
+Held-out collapse diagnostic. Figure S2 plots the two collapse diagnostics that are comparable across latent parameterisations: held-out linear-probe $R ^ { 2 }$ and covariance effective rank28,38. Each small point is one training seed; the large marker is the model mean. The shaded region marks the conservative failure rule used in the experiment $( R ^ { 2 } < 0 . 0 5$ or effective rank < 2). UWM-JEPA and LSTM-JEPA both sit in the high-probe, non-collapsed region; GRU fails primarily by low rank and MLP fails by near-zero probe performance despite non-trivial covariance rank. Pairwise latent distance was computed as an auxiliary diagnostic but is not plotted because its absolute scale is not comparable between density-matrix and vector latents.
+
+Anti-collapse protocols. To test whether UWM-JEPA’s stability is an artefact of one particular regulariser, we trained six variants of the UWM-JEPA objective across three seeds each and evaluated each with the same held-out linear probe. The variants are: none (stop-gradient target only), contrastive (InfoNCE-style negatives 39), ema\_only (EMA target network, no explicit regulariser), ema\_vicreg (EMA plus VICReg), ema\_barlow (EMA plus Barlow Twins), and ema\_logdet (EMA plus log-determinant penalty).
+
+Collapse diagnostic: rank must carry task information   
+![](images/cb85a91732a3508949e7f2c08e884ec3016ccadc0c20cb8d217967e08d75c73e.jpg)
+
+<details>
+<summary>scatter</summary>
+
+| Model       | effective rank of latent covariance | held-out probe R² |
+|-------------|-------------------------------------|-------------------|
+| LSTM        | 4                                   | 0.9               |
+| UWM         | 13                                  | 0.85              |
+| Ortho-RNN   | 6.5                                 | 0.35              |
+| GRU         | 1                                   | 0.2               |
+| MLP         | 6                                   | 0.0               |
+| collapse region | 6                                | 0.0               |
+</details>
+
+Figure S2 Collapse diagnostic on held-out data. Seed-level points compare covariance effective rank against linear-probe $R ^ { 2 }$ on hidden velocity. The shaded failure region is the conservative collapse rule used in this experiment $( R ^ { 2 } < 0 . 0 5$ or effective rank < $: 2 ) ^ { 3 8 }$ . UWM-JEPA and LSTM-JEPA both occupy the non-collapsed, high-probe region; the probe, not the training loss, is the primary collapse criterion.
+
+Table S1 Anti-collapse sweep on UWM-JEPA (three seeds per variant). Held-out linear-probe $R ^ { 2 }$ on hidden velocity, mean ± standard deviation. All six variants cross the conservative probe threshold on every seed; none of the runs collapsed. 
+
+<table><tr><td>Protocol</td><td>Probe  $R^{2}$  mean</td><td>Probe  $R^{2}$  std</td></tr><tr><td>none</td><td>0.975</td><td>0.003</td></tr><tr><td>contrastive</td><td>0.921</td><td>0.060</td></tr><tr><td>ema_only</td><td>0.975</td><td>0.003</td></tr><tr><td>ema_vicreg</td><td>0.979</td><td>0.001</td></tr><tr><td>ema_barlow</td><td>0.915</td><td>0.028</td></tr><tr><td>ema_logdet</td><td>0.969</td><td>0.008</td></tr></table>
+
+Scope of the claim. Every variant in Table S1 crosses the conservative probe threshold on every seed, and no run collapsed. The experiment therefore supports the narrow statement that UWM-JEPA remained non-collapsed under the tested protocols in this setting. Unitarity does not prevent collapse in general: the theorem in Section S1 preserves the spectrum of the joint system–environment state under blind rollout but does not prevent the encoder from mapping its input to a degenerate joint state in the first place. Across the regularisers the community typically uses to rule collapse out, the UWM-JEPA predictor does not re-introduce it.
+
+# S3 Additional Baseline Ablations
+
+The main action-binding result compares UWM-JEPA-CF to a parameter-matched LSTM-JEPA-CF configuration trained with the same counterfactual target. We also ran LSTM-CF ablations that vary recurrent state size and learning rate while leaving the counterfactual-JEPA target and indicator evaluation unchanged.
+
+Table S2 LSTM-CF tuning confirmation at the original 5k-step budget. Values are mean ± std over three seeds. Target accuracy reports the linear indicator readout on target-encoder latents; correct, wrong, no-action, and shuffled report the same readout after blind counterfactual rollout. Larger recurrent states improve target-latent decodability in some configurations, but do not yield a stable action-sensitive blind rollout. 
+
+<table><tr><td>Configuration</td><td>Target</td><td>Correct</td><td>Wrong</td><td>No-action</td><td>Shuffled</td></tr><tr><td> $h=12, \text{lr } 3\times 10^{-4}$ </td><td> $0.645 \pm 0.220$ </td><td> $0.531 \pm 0.001$ </td><td> $0.531 \pm 0.001$ </td><td> $0.530 \pm 0.000$ </td><td> $0.531 \pm 0.001$ </td></tr><tr><td> $h=32, \text{lr } 1\times 10^{-4}$ </td><td> $0.622 \pm 0.087$ </td><td> $0.527 \pm 0.006$ </td><td> $0.525 \pm 0.009$ </td><td> $0.525 \pm 0.009$ </td><td> $0.533 \pm 0.005$ </td></tr><tr><td> $h=63, \text{lr } 1\times 10^{-3}$ </td><td> $0.867 \pm 0.071$ </td><td> $0.479 \pm 0.079$ </td><td> $0.511 \pm 0.041$ </td><td> $0.504 \pm 0.045$ </td><td> $0.487 \pm 0.070$ </td></tr><tr><td> $h=255, \text{lr } 1\times 10^{-3}$ </td><td> $0.568 \pm 0.010$ </td><td> $0.470 \pm 0.000$ </td><td> $0.470 \pm 0.000$ </td><td> $0.470 \pm 0.000$ </td><td> $0.470 \pm 0.000$ </td></tr></table>
+
+The ℎ=63 row is the clearest diagnostic. The target latents support a high-accuracy linear indicator readout, but the blind rollout does not preserve that readout under the correct action sequence. The failure is therefore not simply absent target-state information in the recurrent encoder. It appears when the counterfactual-JEPA predictor is asked to carry that information forward without new observations.
+
+Table S3 Directly supervised recurrent positive control. Values are mean ± std over three seeds. The model receives the same context observations and action sequence, but is trained directly for the hidden-velocity indicator rather than through a JEPA latent target. 
+
+<table><tr><td>Configuration</td><td>Correct actions</td><td>Wrong actions</td></tr><tr><td>h=12</td><td>0.960 ± 0.000</td><td>0.867 ± 0.017</td></tr><tr><td>h=63</td><td>0.955 ± 0.015</td><td>0.839 ± 0.001</td></tr><tr><td>h=255</td><td>0.944 ± 0.002</td><td>0.848 ± 0.011</td></tr></table>
+
+The supervised control shows that action-conditioned recurrent models can solve the indicator when optimized directly for it. Together, Tables S2 and S3 locate the main-comparison failure in the tested counterfactual-JEPA latent rollout, not in the availability of action inputs or in recurrent capacity alone.
+
+We also evaluated a full-state linear probe that predicts both continuous position and hidden velocity. Across the three UWM-JEPA-CF seeds, blind-rollout full-state mean $R ^ { 2 }$ is $0 . 2 9 1 \pm 0 . 0 0 9$ and blind velocity-sign accuracy is $0 . 7 3 4 \pm 0 . 0 0 7$ . In the LSTM-CF confirmation runs, target encoders can be decodable while blind rollout remains near majority-class behavior; for example, the ℎ=63 confirmation gives target full-state mean $R ^ { 2 } = 0 . 8 4 5 { \scriptstyle \pm 0 . 1 2 5 }$ but blind velocity-sign accuracy $0 . 5 3 8 { \scriptstyle \pm 0 . 0 0 7 }$ . This broader probe supports the same interpretation as the binary indicator: the separation appears after blind rollout, not simply at the target-encoder representation.
+
+# S4 Claim-to-Evidence Audit
+
+Table S4 records the operational meaning of each major claim in the manuscript, the evidence supporting it, and the corresponding limitation, making the claim boundaries explicit for audit.
+
+Claim ladder. The claim hierarchy has eight rungs. (1) UWM-JEPA is a JEPA-family model (encoder, EMA target, latent loss, stop-gradient, frozen probes). (2) Its unitary predictor preserves joint-state spectral invariants under blind rollout (theorem and numerical check). (3) The exact guarantee does not transfer to useful reduced-state memory; long-horizon reduced retention is limited. (4) On context representation, UWM ties LSTM-JEPA (0.901 vs 0.894). (5) Under blind rollout, UWM preserves target-nearness better than the tested LSTM-JEPA MLP predictors at intermediate horizons. (6) Teacher-forced action JEPA ignores the action pathway $( \lVert H _ { 1 } \rVert / \lVert H _ { 0 } \rVert { \approx } 0 . 0 3 )$ ). (7) Counterfactual / internal-action targets induce action-sensitive dynamics $( \Vert H _ { 1 } \Vert / \Vert H _ { 0 } \Vert { = } 1 . 0 0 \pm 0 . 1 5$ with controls). (8) UWM-JEPA is a structured testbed for belief-state world models within the studied setting.
+
+Table S4 Claim-to-evidence map for UWM-JEPA. Each row binds a manuscript claim to an operational definition, the specific evidence backing it, and an explicit limitation. 
+
+<table><tr><td>Title phrase</td><td>Operational definition</td><td>Evidence</td><td>Limitation</td></tr><tr><td>UWM-JEPA</td><td>JEPA-family latent-target training with a density-matrix representation and a unitary predictor (encoder, EMA target, latent loss, stop-gradient, frozen probes).</td><td>Architecture &amp; loss specification (Section 2, Section S2); training dynamics in the collapse dashboard.</td><td>Not equivalent to V-JEPA; we claim JEPA-family membership, not method parity with any particular visual JEPA implementation.</td></tr><tr><td>Imagine</td><td>Blind, action-free latent rollout from a single observed prefix: predict  $z_{t+k}$  without access to  $o_{t+1},\ldots ,o_{t+k}$ .</td><td>Retrieval-at-horizon and  $\Delta R^2$  retention against matched LSTM-JEPA encoders with plain and residual MLP predictors.</td><td>Predictors trained at horizon k=5; k&lt;5 probes intermediate rollout coherence and k&gt;5 probes extrapolation. Other predictor families are not evaluated.</td></tr><tr><td>Without forgetting</td><td>(i) Exact preservation of joint-state spectral invariants under blind rollout (theorem); (ii) empirically measurable reduced-state retention.</td><td>Invariants numerical check (&lt; $10^{-7}$  drift over 30 steps); held-out probe;  $\Delta R^2$  retention at k=1-5.</td><td>Reduced-state retention degrades on longer horizons; the exact guarantee does not transfer undiminished to the probed subspace.</td></tr><tr><td>World model</td><td>Action-conditioned counterfactual prediction: swapping actions changes predicted latent trajectories in a controlled way.</td><td>Counterfactual H1/H0 ratio (1.00 ± 0.15), nonzero commutator, wrong-action / shuffled-action / no-action controls; hidden-velocity indicator task; LSTM-CF tuning and supervised positive-control ablations.</td><td>Planning micro-task is weak (3-5× over chance); no competitive-planner claim; counterfactual targets require simulator state access.</td></tr><tr><td>Not universal</td><td>UWM-JEPA is presented as a structured belief-state testbed, not as a general-purpose sequence model.</td><td>Held-out probe tie with LSTM-JEPA (0.901 vs 0.894); explicit scope statement.</td><td>Oscillator and CartPole-style settings only; no JEPA-native HMM or ring-walker claim.</td></tr></table>
