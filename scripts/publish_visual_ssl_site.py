@@ -90,7 +90,7 @@ def download_pdfs(papers: list[tuple[str, str, str]], date: str) -> Path:
     staging = SITE_ROOT / "staging_pdfs" / date
     staging.mkdir(parents=True, exist_ok=True)
     for arxiv_id, title, priority in papers:
-        if priority not in {"P1", "P2", "P3", "扫读"}:
+        if priority not in {"P0", "P1", "P2", "P3", "扫读"}:
             continue
         path = staging / f"{arxiv_id} - {safe_name(title)}.pdf"
         if path.exists() and path.stat().st_size > 100_000:
