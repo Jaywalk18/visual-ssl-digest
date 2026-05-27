@@ -1,0 +1,281 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>2026-05-27 速递 · 通用视觉自监督研究报</title>
+  <link rel="stylesheet" href="../assets/styles.css?v=20260525j">
+  <link rel="stylesheet" href="../assets/visual-ssl.css?v=20260525j">
+</head>
+<body>
+  <header class="masthead">
+    <div class="masthead-kicker">Visual SSL Research Report · 2026-05-27</div>
+    <a class="masthead-title" href="../index.html">通用视觉自监督研究报</a>
+    <div class="masthead-meta">
+      <span>图像表征 · VFM · JEPA · 视频预训练</span>
+      <span>CCF A/B 会议优先</span>
+      <span>图文精读 · 方法图解</span>
+    </div>
+  </header>
+  <nav class="site-nav" aria-label="主导航">
+    <a class="nav-link" href="../index.html">头版</a>
+<a class="nav-link active" href="../issues/2026-05-27.html">今日速递</a>
+<a class="nav-link" href="../pages/catalog.html">论文目录</a>
+<a class="nav-link" href="../pages/timeline.html">时间线</a>
+  </nav>
+  <main><article class="paper-detail issue-detail">
+  <div class="paper-main">
+    <div class="kicker">Daily issue · 2026-05-27 · CCF A/B 会议优先</div>
+    <h1 class="paper-headline">5 月 27 日：LEASE 等视觉表征主线更新</h1>
+    <p class="dek">本期聚焦通用视觉表征、视觉语言预训练与视频自监督中最值得跟进的论文，并保留 CCF A/B、OpenReview 与 arXiv 状态线索。</p>
+    <div class="feature-body">
+      <p class="lead dropcap">先读 LEASE，它是今天最贴近“通用视觉自监督”的新增：同时覆盖 masked token reconstruction、contrastive codebook alignment、统一理解和生成。然后读 DIVA，关注统一多模态模型里理解分支与生成分支的表示冲突，这和最近 RAE/representation tokenizer 方向强相关。第三步把 UWM-JEPA 与 3WM 放在一起读：一个从 latent belief dynamics 解释 JEPA 世界模型，另一个用物理图模型统一 3D 视觉任务。DUEL 和 MAGIC 是 VLM 侧的自监督/低监督训练信号与数据筛选，适合扫方法后决定是否追代码。CVQ、AFIP、Causal Route Gating、FG-CLIP 2 更偏 tokenization、诊断或对齐，可作为辅助材料。</p>
+      <h2>论文索引</h2>
+      <table class="compact-table"><thead><tr><th>优先级</th><th>论文</th><th>类型</th><th>相关性</th><th>一句话理由</th></tr></thead><tbody><tr><td>P0</td><td>LEASE: Learning from Semantic Dictionaries</td><td>arXiv + CVPR 2026</td><td>高</td><td>自监督 codebook + masked reconstruction + contrastive alignment，直接服务统一视觉表示与生成。</td></tr><tr><td>P0</td><td>DIVA</td><td>arXiv + ICML 2026</td><td>高</td><td>分析并利用统一多模态模型内部的理解/生成表示分歧。</td></tr><tr><td>P0</td><td>UWM-JEPA</td><td>arXiv</td><td>高</td><td>JEPA 世界模型中显式建模 belief-space latent dynamics，值得跟踪。</td></tr><tr><td>P0</td><td>Unified 3D Scene Understanding Through Physical World Modeling / OpenReview</td><td>ICLR 2026 Poster + arXiv</td><td>高</td><td>用同一物理世界模型统一深度、NVS、对象操控等 3D 视觉任务。</td></tr><tr><td>P1</td><td>DUEL</td><td>arXiv</td><td>中高</td><td>通过 Challenger/Solver 自博弈产生图像接地监督，减少人工标注依赖。</td></tr><tr><td>P1</td><td>MAGIC</td><td>arXiv</td><td>中高</td><td>用 VLM 内部视觉依赖和神经元签名做训练-free multimodal coreset。</td></tr><tr><td>P1</td><td>Channel-wise Vector Quantization</td><td>arXiv</td><td>中高</td><td>把图像 tokenization 从 patch token 改成 channel token，影响统一生成/表示建模。</td></tr><tr><td>P1</td><td>Nano World Models / Project</td><td>arXiv + Project</td><td>中高</td><td>更像可复现实验基座，适合做视频/world-model 预训练 baseline。</td></tr><tr><td>P2</td><td>Causal Route Gating</td><td>arXiv + ICML 2026 Spotlight</td><td>中</td><td>VLM 视觉/文本路由诊断，对“模型是否真用视觉表示”有参考价值。</td></tr><tr><td>P2</td><td>AFIP: Correcting Visual Blur</td><td>arXiv + ICML 2026</td><td>中</td><td>用注意力分散解释 hallucination，适合作为 VLM 视觉接地诊断补充。</td></tr><tr><td>P2</td><td>FG-CLIP 2</td><td>arXiv v3 + ICML 2026</td><td>中高</td><td>不是新论文，但 v3/ICML 状态更新，细粒度双语 VL 对齐值得扫。</td></tr><tr><td>P2</td><td>Residual Connections Harm Generative Representation Learning</td><td>arXiv update + CVPR 2026</td><td>高</td><td>MAE/diffusion 表示学习里 residual shortcut 对语义抽象的影响，状态更新。</td></tr><tr><td>P2</td><td>Reevaluating CLIP Intra-Modal Misalignment</td><td>arXiv update + CVPR 2026</td><td>中高</td><td>对 CLIP/DINO 表示差异的理论解释提出反证，适合校准常见假设。</td></tr><tr><td>P3</td><td>World Models as Group Actions</td><td>arXiv</td><td>中高</td><td>世界模型动作一致性的 latent regularization 与指标，扫读即可。</td></tr><tr><td>P3</td><td>Uncertainty-DTW for Visual Tokens</td><td>arXiv</td><td>中</td><td>视觉 token 对齐的概率式匹配工具，方法可迁移但不是 SSL 主线。</td></tr><tr><td>P3</td><td>CLIP-Guided SAM</td><td>arXiv</td><td>中</td><td>CLIP 语义注入 SAM encoder，偏下游分割但有低标注视觉表征价值。</td></tr><tr><td>P3</td><td>HCL-FF</td><td>arXiv + CVPR 2026</td><td>中低</td><td>forward-forward + hierarchical/supervised contrastive，想看替代训练范式时扫。</td></tr></tbody></table>
+      <h2>主线阅读</h2>
+      <div class="paper-list issue-list"><article class="paper-card" data-category="CVPR 2026" data-priority="P0" data-date="2026-05-27" data-title="lease: learning from semantic dictionaries" data-keywords="lease: learning from semantic dictionaries lease cvpr 2026 p0 2026-05-27 arxiv + cvpr 2026 自监督 codebook + masked reconstruction + contrastive alignment，直接服务统一视觉表示与生成 高相关；详见方法、贡献和实验边界。">
+  <a class="paper-thumb paper-thumb-text" href="../papers/2605.25012.html">
+    <span>P0</span><strong>LEASE</strong><em>arXiv + CVPR 2026</em>
+  </a>
+  <div>
+    <div class="paper-meta">2026-05-27 · CVPR 2026 · arXiv + CVPR 2026</div>
+    <h3><a href="../papers/2605.25012.html">LEASE: Learning from Semantic Dictionaries</a></h3>
+    <p>高相关；详见方法、贡献和实验边界。</p>
+    <p class="card-tech"><b>方法：</b>自监督 codebook + masked reconstruction + contrastive alignment，直接服务统一视觉表示与生成</p>
+    <div class="paper-actions"><a href="../papers/2605.25012.html">读图文页</a><a href="https://arxiv.org/abs/2605.25012">原文</a></div>
+  </div>
+</article>
+<article class="paper-card" data-category="ICML 2026" data-priority="P0" data-date="2026-05-27" data-title="diva" data-keywords="diva diva icml 2026 p0 2026-05-27 arxiv + icml 2026 分析并利用统一多模态模型内部的理解/生成表示分歧 高相关；详见方法、贡献和实验边界。">
+  <a class="paper-thumb paper-thumb-text" href="../papers/2605.25328.html">
+    <span>P0</span><strong>DIVA</strong><em>arXiv + ICML 2026</em>
+  </a>
+  <div>
+    <div class="paper-meta">2026-05-27 · ICML 2026 · arXiv + ICML 2026</div>
+    <h3><a href="../papers/2605.25328.html">DIVA</a></h3>
+    <p>高相关；详见方法、贡献和实验边界。</p>
+    <p class="card-tech"><b>方法：</b>分析并利用统一多模态模型内部的理解/生成表示分歧</p>
+    <div class="paper-actions"><a href="../papers/2605.25328.html">读图文页</a><a href="https://arxiv.org/abs/2605.25328">原文</a></div>
+  </div>
+</article>
+<article class="paper-card" data-category="Visual SSL / representation" data-priority="P0" data-date="2026-05-27" data-title="uwm-jepa" data-keywords="uwm-jepa uwm-jepa visual ssl / representation p0 2026-05-27 arxiv jepa 世界模型中显式建模 belief-space latent dynamics，值得跟踪 高相关；详见方法、贡献和实验边界。">
+  <a class="paper-thumb paper-thumb-text" href="../papers/2605.25313.html">
+    <span>P0</span><strong>UWM-JEPA</strong><em>arXiv</em>
+  </a>
+  <div>
+    <div class="paper-meta">2026-05-27 · Visual SSL / representation · arXiv</div>
+    <h3><a href="../papers/2605.25313.html">UWM-JEPA</a></h3>
+    <p>高相关；详见方法、贡献和实验边界。</p>
+    <p class="card-tech"><b>方法：</b>JEPA 世界模型中显式建模 belief-space latent dynamics，值得跟踪</p>
+    <div class="paper-actions"><a href="../papers/2605.25313.html">读图文页</a><a href="https://arxiv.org/abs/2605.25313">原文</a></div>
+  </div>
+</article>
+<article class="paper-card" data-category="ICLR 2026 Poster + arXiv" data-priority="P0" data-date="2026-05-27" data-title="unified 3d scene understanding through physical world modeling" data-keywords="unified 3d scene understanding through physical world modeling unified 3d scene understanding through iclr 2026 poster + arxiv p0 2026-05-27 iclr 2026 poster + arxiv 用同一物理世界模型统一深度、nvs、对象操控等 3d 视觉任务 高相关；详见方法、贡献和实验边界。">
+  <a class="paper-thumb paper-thumb-text" href="../papers/2605.24321.html">
+    <span>P0</span><strong>Unified 3D Scene Understanding Through</strong><em>ICLR 2026 Poster + arXiv</em>
+  </a>
+  <div>
+    <div class="paper-meta">2026-05-27 · ICLR 2026 Poster + arXiv · ICLR 2026 Poster + arXiv</div>
+    <h3><a href="../papers/2605.24321.html">Unified 3D Scene Understanding Through Physical World Modeling</a></h3>
+    <p>高相关；详见方法、贡献和实验边界。</p>
+    <p class="card-tech"><b>方法：</b>用同一物理世界模型统一深度、NVS、对象操控等 3D 视觉任务</p>
+    <div class="paper-actions"><a href="../papers/2605.24321.html">读图文页</a><a href="https://arxiv.org/abs/2605.24321">原文</a></div>
+  </div>
+</article>
+<article class="paper-card" data-category="Visual SSL / representation" data-priority="P1" data-date="2026-05-27" data-title="duel" data-keywords="duel duel visual ssl / representation p1 2026-05-27 arxiv 通过 challenger/solver 自博弈产生图像接地监督，减少人工标注依赖 中高相关；详见方法、贡献和实验边界。">
+  <a class="paper-thumb paper-thumb-text" href="../papers/2605.24794.html">
+    <span>P1</span><strong>DUEL</strong><em>arXiv</em>
+  </a>
+  <div>
+    <div class="paper-meta">2026-05-27 · Visual SSL / representation · arXiv</div>
+    <h3><a href="../papers/2605.24794.html">DUEL</a></h3>
+    <p>中高相关；详见方法、贡献和实验边界。</p>
+    <p class="card-tech"><b>方法：</b>通过 Challenger/Solver 自博弈产生图像接地监督，减少人工标注依赖</p>
+    <div class="paper-actions"><a href="../papers/2605.24794.html">读图文页</a><a href="https://arxiv.org/abs/2605.24794">原文</a></div>
+  </div>
+</article>
+<article class="paper-card" data-category="Visual SSL / representation" data-priority="P1" data-date="2026-05-27" data-title="magic" data-keywords="magic magic visual ssl / representation p1 2026-05-27 arxiv 用 vlm 内部视觉依赖和神经元签名做训练-free multimodal coreset 中高相关；详见方法、贡献和实验边界。">
+  <a class="paper-thumb paper-thumb-text" href="../papers/2605.26004.html">
+    <span>P1</span><strong>MAGIC</strong><em>arXiv</em>
+  </a>
+  <div>
+    <div class="paper-meta">2026-05-27 · Visual SSL / representation · arXiv</div>
+    <h3><a href="../papers/2605.26004.html">MAGIC</a></h3>
+    <p>中高相关；详见方法、贡献和实验边界。</p>
+    <p class="card-tech"><b>方法：</b>用 VLM 内部视觉依赖和神经元签名做训练-free multimodal coreset</p>
+    <div class="paper-actions"><a href="../papers/2605.26004.html">读图文页</a><a href="https://arxiv.org/abs/2605.26004">原文</a></div>
+  </div>
+</article>
+<article class="paper-card" data-category="Visual SSL / representation" data-priority="P1" data-date="2026-05-27" data-title="channel-wise vector quantization" data-keywords="channel-wise vector quantization channel-wise vector quantization visual ssl / representation p1 2026-05-27 arxiv 把图像 tokenization 从 patch token 改成 channel token，影响统一生成/表示建模 中高相关；详见方法、贡献和实验边界。">
+  <a class="paper-thumb paper-thumb-text" href="../papers/2605.26089.html">
+    <span>P1</span><strong>Channel-wise Vector Quantization</strong><em>arXiv</em>
+  </a>
+  <div>
+    <div class="paper-meta">2026-05-27 · Visual SSL / representation · arXiv</div>
+    <h3><a href="../papers/2605.26089.html">Channel-wise Vector Quantization</a></h3>
+    <p>中高相关；详见方法、贡献和实验边界。</p>
+    <p class="card-tech"><b>方法：</b>把图像 tokenization 从 patch token 改成 channel token，影响统一生成/表示建模</p>
+    <div class="paper-actions"><a href="../papers/2605.26089.html">读图文页</a><a href="https://arxiv.org/abs/2605.26089">原文</a></div>
+  </div>
+</article>
+<article class="paper-card" data-category="Project" data-priority="P1" data-date="2026-05-27" data-title="nano world models" data-keywords="nano world models nano world models project p1 2026-05-27 arxiv + project 更像可复现实验基座，适合做视频/world-model 预训练 baseline 中高相关；详见方法、贡献和实验边界。">
+  <a class="paper-thumb paper-thumb-text" href="../papers/2605.23993.html">
+    <span>P1</span><strong>Nano World Models</strong><em>arXiv + Project</em>
+  </a>
+  <div>
+    <div class="paper-meta">2026-05-27 · Project · arXiv + Project</div>
+    <h3><a href="../papers/2605.23993.html">Nano World Models</a></h3>
+    <p>中高相关；详见方法、贡献和实验边界。</p>
+    <p class="card-tech"><b>方法：</b>更像可复现实验基座，适合做视频/world-model 预训练 baseline</p>
+    <div class="paper-actions"><a href="../papers/2605.23993.html">读图文页</a><a href="https://arxiv.org/abs/2605.23993">原文</a></div>
+  </div>
+</article>
+<article class="paper-card" data-category="ICML 2026 Spotlight" data-priority="P2" data-date="2026-05-27" data-title="causal route gating" data-keywords="causal route gating causal route gating icml 2026 spotlight p2 2026-05-27 arxiv + icml 2026 spotlight vlm 视觉/文本路由诊断，对“模型是否真用视觉表示”有参考价值 中相关；详见方法、贡献和实验边界。">
+  <a class="paper-thumb paper-thumb-text" href="../papers/2605.24024.html">
+    <span>P2</span><strong>Causal Route Gating</strong><em>arXiv + ICML 2026 Spotlight</em>
+  </a>
+  <div>
+    <div class="paper-meta">2026-05-27 · ICML 2026 Spotlight · arXiv + ICML 2026 Spotlight</div>
+    <h3><a href="../papers/2605.24024.html">Causal Route Gating</a></h3>
+    <p>中相关；详见方法、贡献和实验边界。</p>
+    <p class="card-tech"><b>方法：</b>VLM 视觉/文本路由诊断，对“模型是否真用视觉表示”有参考价值</p>
+    <div class="paper-actions"><a href="../papers/2605.24024.html">读图文页</a><a href="https://arxiv.org/abs/2605.24024">原文</a></div>
+  </div>
+</article>
+<article class="paper-card" data-category="ICML 2026" data-priority="P2" data-date="2026-05-27" data-title="afip: correcting visual blur" data-keywords="afip: correcting visual blur afip icml 2026 p2 2026-05-27 arxiv + icml 2026 用注意力分散解释 hallucination，适合作为 vlm 视觉接地诊断补充 中相关；详见方法、贡献和实验边界。">
+  <a class="paper-thumb paper-thumb-text" href="../papers/2605.24602.html">
+    <span>P2</span><strong>AFIP</strong><em>arXiv + ICML 2026</em>
+  </a>
+  <div>
+    <div class="paper-meta">2026-05-27 · ICML 2026 · arXiv + ICML 2026</div>
+    <h3><a href="../papers/2605.24602.html">AFIP: Correcting Visual Blur</a></h3>
+    <p>中相关；详见方法、贡献和实验边界。</p>
+    <p class="card-tech"><b>方法：</b>用注意力分散解释 hallucination，适合作为 VLM 视觉接地诊断补充</p>
+    <div class="paper-actions"><a href="../papers/2605.24602.html">读图文页</a><a href="https://arxiv.org/abs/2605.24602">原文</a></div>
+  </div>
+</article>
+<article class="paper-card" data-category="arXiv v3 + ICML 2026" data-priority="P2" data-date="2026-05-27" data-title="fg-clip 2" data-keywords="fg-clip 2 fg-clip 2 arxiv v3 + icml 2026 p2 2026-05-27 arxiv v3 + icml 2026 不是新论文，但 v3/icml 状态更新，细粒度双语 vl 对齐值得扫 中高相关；详见方法、贡献和实验边界。">
+  <a class="paper-thumb paper-thumb-text" href="../papers/2510.10921.html">
+    <span>P2</span><strong>FG-CLIP 2</strong><em>arXiv v3 + ICML 2026</em>
+  </a>
+  <div>
+    <div class="paper-meta">2026-05-27 · arXiv v3 + ICML 2026 · arXiv v3 + ICML 2026</div>
+    <h3><a href="../papers/2510.10921.html">FG-CLIP 2</a></h3>
+    <p>中高相关；详见方法、贡献和实验边界。</p>
+    <p class="card-tech"><b>方法：</b>不是新论文，但 v3/ICML 状态更新，细粒度双语 VL 对齐值得扫</p>
+    <div class="paper-actions"><a href="../papers/2510.10921.html">读图文页</a><a href="https://arxiv.org/abs/2510.10921">原文</a></div>
+  </div>
+</article>
+<article class="paper-card" data-category="arXiv update + CVPR 2026" data-priority="P2" data-date="2026-05-27" data-title="residual connections harm generative representation learning" data-keywords="residual connections harm generative representation learning residual connections harm generative representation arxiv update + cvpr 2026 p2 2026-05-27 arxiv update + cvpr 2026 mae/diffusion 表示学习里 residual shortcut 对语义抽象的影响，状态更新 高相关；详见方法、贡献和实验边界。">
+  <a class="paper-thumb paper-thumb-text" href="../papers/2404.10947.html">
+    <span>P2</span><strong>Residual Connections Harm Generative Representation</strong><em>arXiv update + CVPR 2026</em>
+  </a>
+  <div>
+    <div class="paper-meta">2026-05-27 · arXiv update + CVPR 2026 · arXiv update + CVPR 2026</div>
+    <h3><a href="../papers/2404.10947.html">Residual Connections Harm Generative Representation Learning</a></h3>
+    <p>高相关；详见方法、贡献和实验边界。</p>
+    <p class="card-tech"><b>方法：</b>MAE/diffusion 表示学习里 residual shortcut 对语义抽象的影响，状态更新</p>
+    <div class="paper-actions"><a href="../papers/2404.10947.html">读图文页</a><a href="https://arxiv.org/abs/2404.10947">原文</a></div>
+  </div>
+</article>
+<article class="paper-card" data-category="arXiv update + CVPR 2026" data-priority="P2" data-date="2026-05-27" data-title="reevaluating clip intra-modal misalignment" data-keywords="reevaluating clip intra-modal misalignment reevaluating clip intra-modal misalignment arxiv update + cvpr 2026 p2 2026-05-27 arxiv update + cvpr 2026 对 clip/dino 表示差异的理论解释提出反证，适合校准常见假设 中高相关；详见方法、贡献和实验边界。">
+  <a class="paper-thumb paper-thumb-text" href="../papers/2603.16100.html">
+    <span>P2</span><strong>Reevaluating CLIP Intra-Modal Misalignment</strong><em>arXiv update + CVPR 2026</em>
+  </a>
+  <div>
+    <div class="paper-meta">2026-05-27 · arXiv update + CVPR 2026 · arXiv update + CVPR 2026</div>
+    <h3><a href="../papers/2603.16100.html">Reevaluating CLIP Intra-Modal Misalignment</a></h3>
+    <p>中高相关；详见方法、贡献和实验边界。</p>
+    <p class="card-tech"><b>方法：</b>对 CLIP/DINO 表示差异的理论解释提出反证，适合校准常见假设</p>
+    <div class="paper-actions"><a href="../papers/2603.16100.html">读图文页</a><a href="https://arxiv.org/abs/2603.16100">原文</a></div>
+  </div>
+</article>
+<article class="paper-card" data-category="Visual SSL / representation" data-priority="P3" data-date="2026-05-27" data-title="world models as group actions" data-keywords="world models as group actions world models as group actions visual ssl / representation p3 2026-05-27 arxiv 世界模型动作一致性的 latent regularization 与指标，扫读即可 中高相关；详见方法、贡献和实验边界。">
+  <a class="paper-thumb paper-thumb-text" href="../papers/2605.24578.html">
+    <span>P3</span><strong>World Models as Group Actions</strong><em>arXiv</em>
+  </a>
+  <div>
+    <div class="paper-meta">2026-05-27 · Visual SSL / representation · arXiv</div>
+    <h3><a href="../papers/2605.24578.html">World Models as Group Actions</a></h3>
+    <p>中高相关；详见方法、贡献和实验边界。</p>
+    <p class="card-tech"><b>方法：</b>世界模型动作一致性的 latent regularization 与指标，扫读即可</p>
+    <div class="paper-actions"><a href="../papers/2605.24578.html">读图文页</a><a href="https://arxiv.org/abs/2605.24578">原文</a></div>
+  </div>
+</article>
+<article class="paper-card" data-category="Visual SSL / representation" data-priority="P3" data-date="2026-05-27" data-title="uncertainty-dtw for visual tokens" data-keywords="uncertainty-dtw for visual tokens uncertainty-dtw for visual tokens visual ssl / representation p3 2026-05-27 arxiv 视觉 token 对齐的概率式匹配工具，方法可迁移但不是 ssl 主线 中相关；详见方法、贡献和实验边界。">
+  <a class="paper-thumb paper-thumb-text" href="../papers/2605.25110.html">
+    <span>P3</span><strong>Uncertainty-DTW for Visual Tokens</strong><em>arXiv</em>
+  </a>
+  <div>
+    <div class="paper-meta">2026-05-27 · Visual SSL / representation · arXiv</div>
+    <h3><a href="../papers/2605.25110.html">Uncertainty-DTW for Visual Tokens</a></h3>
+    <p>中相关；详见方法、贡献和实验边界。</p>
+    <p class="card-tech"><b>方法：</b>视觉 token 对齐的概率式匹配工具，方法可迁移但不是 SSL 主线</p>
+    <div class="paper-actions"><a href="../papers/2605.25110.html">读图文页</a><a href="https://arxiv.org/abs/2605.25110">原文</a></div>
+  </div>
+</article>
+<article class="paper-card" data-category="Visual SSL / representation" data-priority="P3" data-date="2026-05-27" data-title="clip-guided sam" data-keywords="clip-guided sam clip-guided sam visual ssl / representation p3 2026-05-27 arxiv clip 语义注入 sam encoder，偏下游分割但有低标注视觉表征价值 中相关；详见方法、贡献和实验边界。">
+  <a class="paper-thumb paper-thumb-text" href="../papers/2605.24807.html">
+    <span>P3</span><strong>CLIP-Guided SAM</strong><em>arXiv</em>
+  </a>
+  <div>
+    <div class="paper-meta">2026-05-27 · Visual SSL / representation · arXiv</div>
+    <h3><a href="../papers/2605.24807.html">CLIP-Guided SAM</a></h3>
+    <p>中相关；详见方法、贡献和实验边界。</p>
+    <p class="card-tech"><b>方法：</b>CLIP 语义注入 SAM encoder，偏下游分割但有低标注视觉表征价值</p>
+    <div class="paper-actions"><a href="../papers/2605.24807.html">读图文页</a><a href="https://arxiv.org/abs/2605.24807">原文</a></div>
+  </div>
+</article>
+<article class="paper-card" data-category="CVPR 2026" data-priority="P3" data-date="2026-05-27" data-title="hcl-ff" data-keywords="hcl-ff hcl-ff cvpr 2026 p3 2026-05-27 arxiv + cvpr 2026 forward-forward + hierarchical/supervised contrastive，想看替代训练范式时扫 中低相关；详见方法、贡献和实验边界。">
+  <a class="paper-thumb paper-thumb-text" href="../papers/2605.24797.html">
+    <span>P3</span><strong>HCL-FF</strong><em>arXiv + CVPR 2026</em>
+  </a>
+  <div>
+    <div class="paper-meta">2026-05-27 · CVPR 2026 · arXiv + CVPR 2026</div>
+    <h3><a href="../papers/2605.24797.html">HCL-FF</a></h3>
+    <p>中低相关；详见方法、贡献和实验边界。</p>
+    <p class="card-tech"><b>方法：</b>forward-forward + hierarchical/supervised contrastive，想看替代训练范式时扫</p>
+    <div class="paper-actions"><a href="../papers/2605.24797.html">读图文页</a><a href="https://arxiv.org/abs/2605.24797">原文</a></div>
+  </div>
+</article></div>
+    </div>
+  </div>
+  <aside class="paper-side">
+    <div class="side-box"><h4>今日重点</h4><p>TextTeacher、MDM、EvoVid、Ablate-to-Validate。</p></div>
+    <div class="side-box"><h4>会议口径</h4><p>只把 CCF A/B 放进主提醒；临近截止或 CCF C 仅记录。</p></div>
+    <div class="side-box"><h4>阅读重点</h4><p>先看 P1/P2 与方法图，再扫状态变化和边界案例。</p></div>
+  </aside>
+</article></main>
+  <aside class="conf-float" data-conf-reminder="2026-05-27-main-ddl" aria-label="CCF A/B 主投稿提醒">
+  <button class="conf-close" type="button" aria-label="关闭会议提醒">×</button>
+  <details open>
+    <summary>CCF A/B 主投稿提醒</summary>
+    <div class="conf-list"><a class="conf-item " href="https://github.com/ccfddl/ccf-deadlines/blob/main/conference/AI/aaai.yml">
+  <span><b>AAAI 2027</b><em>CCF A · Main paper submission</em></span>
+  <strong>61 天</strong>
+  <small>2026-07-27 · CCF DDL: abstract 2026-07-20；进入 1 个月窗口后重点提醒。</small>
+</a></div>
+  </details>
+</aside>
+  <footer class="footer">
+    <div>面向通用视觉自监督、视觉基础模型与多模态表征学习的每日研究报。</div>
+    <div class="muted">Issue 2026-05-27 · Curated readings and figure notes</div>
+  </footer>
+  <script>
+  (() => {
+    const box = document.querySelector('[data-conf-reminder]');
+    if (!box) return;
+    const key = `visualSslConfReminderClosed:${box.dataset.confReminder || '2026-05-27-main-ddl'}`;
+    try {
+      if (localStorage.getItem(key) === '1') box.hidden = true;
+    } catch (err) {}
+    const close = box.querySelector('.conf-close');
+    if (close) {
+      close.addEventListener('click', () => {
+        box.hidden = true;
+        try { localStorage.setItem(key, '1'); } catch (err) {}
+      });
+    }
+  })();
+  </script>
+</body>
+</html>
