@@ -39,7 +39,8 @@
     </div>
     <div class="feature-body">
       <p class="lead dropcap">先说结论。对大规模 VL 自监督/指令数据清洗非常实用，尤其适合避免低视觉依赖样本稀释视觉表征。 用视觉依赖、answer-token grounding sharpness 和 FFN skill signature 保留真正需要视觉的样本，减少冗余和语言捷径。</p>
-      <aside class="marginalia"><b>图像状态</b> 这篇暂未抽到足够稳定的 pipeline / motivation 图，因此正文以方法和实验解读为主。</aside>
+      <figure class="full-fig"><img src="../assets/mineru/2605.26004/images/3f69795b09cdca90288b7d820b82583773db1396317b603341d6f4f01684c005.jpg" alt="Figureure 2 · : Overview of MAGIC"><figcaption><b>Figureure 2 · : Overview of MAGIC</b><span class="fig-en">Figure 2: Overview of MAGIC. The method first extracts three forward-only intrinsic score signals from a pretrained VLM. It then filters weakly multimodal samples, builds a quality-based shortlist, partitions shortlisted samples into skill-signature buckets, and allocates the budget across buckets to construct the final coreset.</span><span class="fig-zh">这张图概括 MAGIC 的整体方法流程。阅读时先看模块之间传递的训练信号，再看作者如何把目标拆成可优化的子问题。</span></figcaption></figure>
+<figure class="full-fig"><img src="../assets/mineru/2605.26004/images/b828d899d691138b3a7a1f8f14b987d8a22728c08bc09ba7b6836b2a027537f3.jpg" alt="Figureure 1 · : MAGIC characterizes each training sample using three complementary s"><figcaption><b>Figureure 1 · : MAGIC characterizes each training sample using three complementary s</b><span class="fig-en">Figure 1: MAGIC characterizes each training sample using three complementary signals: Multimodal Gain; Bridging Relevance; and Skill Signature. These signals are combined to prioritize samples that are visually useful, strongly grounded, and behaviorally diverse for visual-language coreset selection.</span><span class="fig-zh">这张图来自论文 PDF 的结构化抽取。当前用于辅助理解 MAGIC 的方法或实验，请结合正文精读段落一起看。</span></figcaption></figure>
       
       <h2>核心问题</h2>
       <p>对大规模 VL 自监督/指令数据清洗非常实用，尤其适合避免低视觉依赖样本稀释视觉表征。</p>

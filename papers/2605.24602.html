@@ -39,7 +39,8 @@
     </div>
     <div class="feature-body">
       <p class="lead dropcap">先说结论。适合作为 VL 预训练模型视觉接地质量的诊断工具。 把 hallucination 与视觉注意力空间不一致、解码时 image-token attention 衰减联系起来。</p>
-      <aside class="marginalia"><b>图像状态</b> 这篇暂未抽到足够稳定的 pipeline / motivation 图，因此正文以方法和实验解读为主。</aside>
+      <figure class="full-fig"><img src="../assets/mineru/2605.24602/images/bb076d7934cd1ada0af4ea181d5d31216a6bc64beb56b7ea0f479302c4a1be8e.jpg" alt="Figureure 1 · Motivation illustration and overview of AFIP."><figcaption><b>Figureure 1 · Motivation illustration and overview of AFIP.</b><span class="fig-en">Figure 1. Motivation illustration and overview of AFIP.</span><span class="fig-zh">这张图概括 AFIP 的整体方法流程。阅读时先看模块之间传递的训练信号，再看作者如何把目标拆成可优化的子问题。</span></figcaption></figure>
+<figure class="full-fig"><img src="../assets/mineru/2605.24602/images/9213719d4e3780f19c14a2af5d2a0b41d1c561fb414536926ed15b7a3afeacad.jpg" alt="LLaVA-1.5-7b visual attention visualization while generating “blender” Figure 14"><figcaption><b>LLaVA-1.5-7b visual attention visualization while generating “blender” Figure 14</b><span class="fig-en">LLaVA-1.5-7b visual attention visualization while generating “blender” Figure 14. Qualitative comparison of visual attention maps before and after applying head-level attention distraction correction.</span><span class="fig-zh">这张图/表用于判断 AFIP 的实验收益来自哪里。重点看替换、消融或跨模型设置下趋势是否一致，而不是只看单个最高分。</span></figcaption></figure>
       
       <h2>核心问题</h2>
       <p>适合作为 VL 预训练模型视觉接地质量的诊断工具。</p>

@@ -1,0 +1,1239 @@
+# World Models as Group Actions
+
+Zijie Wang1,2 Wei Zhang3 Weiming Zhang3 Fanqi Zhang1
+
+Xiao Tan3 Yipeng Qin4 Guanbin Li1,2,5∗
+
+1Sun Yat-sen University 2Shenzhen Loop Area Institute 3Baidu Inc. 4Cardiff University 5Guangdong Key Laboratory of Big Data Analysis and Processing
+
+# Abstract
+
+Video world models have achieved strong visual realism, but this does not ensure that their dynamics are truly governed by actions. In this work, we argue that action faithfulness should be understood through the compositional structure of actions, which in many embodied settings follows a group structure (e.g., SE(2) for navigation). Based on this insight, we formalize action-conditioned world modeling as realizing a group action on the state space, providing a principled criterion for evaluating dynamics beyond visual quality. To operationalize this framework, we propose a unified approach that enforces identity, inverse, and composition consistency via latent-space regularization with synthesized supervision, avoiding additional data collection. We further introduce two metrics: Group-Action Consistency (GAC) and Group-Action Robustness (GAR), to evaluate structural correctness and rollout stability. Extensive experimental results show that our method consistently improves both GAC and GAR in state-of-the-art video world models without degrading perceptual quality.
+
+# 1 Introduction
+
+Video world models are expected to serve as action-conditioned simulators for planning [1, 2, 3], decision making [4, 5, 6], and embodied intelligence [7, 8, 9]. Recent diffusion-based video models have greatly improved visual realism and long-horizon coherence [10, 11, 12, 13]. However, visual realism alone does not ensure that a model behaves as a faithful simulator. A simulator must generate dynamics that are governed by actions, not merely correlated with them.
+
+In this work, we argue that the above-mentioned requirement can be understood through the compositional structure of actions. In many embodied settings, actions are not arbitrary inputs but correspond to transformations with well-defined algebraic properties. For instance, navigation actions can be interpreted as planar rigid motions, which form the Lie group SE(2). Such structure imposes fundamental constraints on valid dynamics: a null action should leave the state unchanged, an action followed by its inverse should cancel, and different decompositions of the same transformation should produce consistent outcomes. These properties are intrinsic to how actions govern state evolution, rather than artifacts of any specific model. Fig. 1 illustrates these consequences as observable conditions for action-faithful world modeling.
+
+Building on this perspective, we propose a novel theoretical framework that formalizes actionconditioned world modeling as realizing a group action of the action space on the underlying state space. It provides a general principle for action-conditioned world models whose actions induce structured transformations of the state, and we further instantiate it in the navigation setting of video world models, where the action space is grounded in SE(2) and the resulting structure can be directly analyzed through generated rollouts. This formulation introduces a new dimension for understanding and evaluating world models (beyond visual realism) by assessing whether their dynamics respect
+
+# Action-faithful world models should admit a group action.
+
+Identity, inverse consistency, and compatibility are observable conditions implied by the group-action formulation.
+
+(a) Identity   
+Zero action should preserve the current state.   
+![](images/b6e9daad0d37105ba804554267131d0a92188b4bea7a246efb712064d409bd75.jpg)
+
+(b) Inverse Consistency   
+An action followed by its inverse action should recover the state.   
+![](images/0023ecc3f249b08b4549b7286d96e48be52018929d9c1712497e3eef1fc5454b.jpg)
+
+<details>
+<summary>text_image</summary>
+
+a
+-a
+Recover
+</details>
+
+(c) Compatibility   
+Equivalent decompositions should induce compatible outcomes.   
+![](images/52b6216a7b3a22cffbd4cb85c4d50b9188495969c4cf1440ab5c59512e122e59.jpg)
+
+<details>
+<summary>flowchart</summary>
+
+```mermaid
+graph TD
+    A[" "] --> B[" "]
+    B --> C[" "]
+    C --> D[" "]
+    D --> E[" "]
+    E --> F[" "]
+    F --> G[" "]
+    G --> H[" "]
+    H --> I[" "]
+    I --> J[" "]
+    J --> K[" "]
+    K --> L[" "]
+    L --> M[" "]
+    M --> N[" "]
+    N --> O[" "]
+    O --> P[" "]
+    P --> Q[" "]
+    Q --> R[" "]
+    R --> S[" "]
+    S --> T[" "]
+    T --> U[" "]
+    U --> V[" "]
+    V --> W[" "]
+    W --> X[" "]
+    X --> Y[" "]
+    Y --> Z[" "]
+    Z --> A
+    style A fill:#fff,stroke:#000
+    style B fill:#fff,stroke:#000
+    style C fill:#fff,stroke:#000
+    style D fill:#fff,stroke:#000
+    style E fill:#fff,stroke:#000
+    style F fill:#fff,stroke:#000
+    style G fill:#fff,stroke:#000
+    style H fill:#fff,stroke:#000
+    style I fill:#fff,stroke:#000
+    style J fill:#fff,stroke:#000
+    style K fill:#fff,stroke:#000
+    style L fill:#fff,stroke:#000
+    style M fill:#fff,stroke:#000
+    style N fill:#fff,stroke:#000
+    style O fill:#fff,stroke:#000
+    style P fill:#fff,stroke:#000
+    style Q fill:#fff,stroke:#000
+    style R fill:#fff,stroke:#000
+    style S fill:#fff,stroke:#000
+    style T fill:#fff,stroke:#000
+    style U fill:#fff,stroke:#000
+    style V fill:#fff,stroke:#000
+    style W fill:#fff,stroke:#000
+    style X fill:#fff,stroke:#000
+    style Y fill:#fff,stroke:#000
+    style Z fill:#fff,stroke:#000
+```
+</details>
+
+NWM   
+Obvious Drift   
+![](images/4223748fe7e13935e0254c3dff1ba3cb89868ec6866095eaac24c62d25032a36.jpg)
+
+NWM   
+Incomplete Recovery   
+![](images/ec79cc8ad753fb899c2e483250f33adaf89433002453ed2beb29b04026e98398.jpg)
+
+<details>
+<summary>natural_image</summary>
+
+Diagram showing two identical frames of a house with blue arrows pointing to a central point, surrounded by greenery (no text or symbols)
+</details>
+
+NWM
+
+Endpoint Mismatch   
+![](images/6219148ad27e903ad9178c5070c9f278f6fec8efdaf76d847a38fbd688aca556.jpg)
+
+NWM+GA (Ours)   
+Reduced Drift   
+![](images/dedf3356d1032be7eb186d976d70d0723de17e277f384b98e515fa7da20408c5.jpg)  
+NWM+GA (Ours)   
+Improved Recovery
+
+NWM+GA (Ours)   
+Compatible Outcomes   
+![](images/9b4c2b7eaa420719f17d9864b78295cbe35aa50d88866f458cc095aa4517c67d.jpg)  
+Figure 1: Consequences of group-action-faithful dynamics. Identity, inverse consistency, and compatibility are observable conditions implied by the group-action formulation. Representative examples illustrate that GA regularization reduces zero-action drift, improves forward–inverse recovery, and yields more compatible outcomes under equivalent action decompositions.
+
+the underlying group action structure. Leveraging this perspective, we conduct a preliminary study on a recent state-of-the-art video world model, NWM [13]. Despite producing visually convincing rollouts, NWM exhibits clear violations of the group-action structure.
+
+To address this gap, we introduce a novel framework for enforcing and evaluating action-faithful dynamics under the proposed group-action formulation. Specifically, it addresses the challenges of computational cost and lack of group-action supervision by moving the regularization from explicit state-space to efficient latent-space, where identity, inverse, and composition consistency are enforced directly on latent representations of model rollouts. To enable this, the method synthesizes supervision signals from existing trajectories by constructing zero-action, forward-inverse, and compositionequivalent action segments, avoiding the need for additional data collection. Finally, it defines two complementary evaluation metrics: Group-Action Consistency (GAC), which measures violations of structural properties in recovered state space, and Group-Action Robustness (GAR), which quantifies rollout stability under stochastic generation. Together, these components form a unified training and evaluation pipeline that operationalizes group-action structure in modern video world models.
+
+Extensive experiments demonstrate that our framework consistently reduces both GAC and GAR errors across representative video world model backbones, while preserving perceptual generation quality. In summary, our contributions include:
+
+• Conceptually, we formalize action-conditioned world modeling as a group action, providing a principled perspective that characterizes action faithfulness through identity, inverse, and composition consistency.   
+• Practically, we propose a unified framework that enforces these group-action constraints via latent-space regularization with synthesized supervision, along with corresponding evaluation metrics.   
+• Extensive experiments show that our approach consistently improves local consistency and long-horizon rollout stability in state-of-the-art video world models, while maintaining visual generation quality.
+
+A comprehensive review of related work is provided in Appendix G.
+
+# 2 Group-Action Formulation of World Models
+
+A central challenge in learning world models is ensuring that predictions are structurally consistent with the underlying transformations induced by actions. Standard approaches typically optimize one-step prediction accuracy, treating actions as independent inputs. As a result, the learned dynamics may fail to respect the compositional structure inherent in many physical systems. Addressing this issue, we take a structured perspective and posit that, in many domains, actions possess an underlying algebraic structure, forming a group $G$ equipped with a composition law, identity element, and inverses. Rather than learning an unconstrained transition function, we require the world model $f _ { \theta } : S \times G \to S$ to realize a group action of $G$ on the state space:
+
+Theorem 1. Let G be a group with identity $e ,$ composition law $^ { \circ , }$ , and inverses $a ^ { - 1 }$ . Suppose the world model $f _ { \theta } : S \times G \to S$ satisfies, for all $s \in \bar { \mathcal { S } }$ and $a _ { 1 } , a _ { 2 } , a \in G$ ,
+
+$$
+f _ {\theta} (f _ {\theta} (s, a _ {1}), a _ {2}) = f _ {\theta} (s, a _ {1} \circ a _ {2}), \tag {1}
+$$
+
+$$
+f _ {\theta} (s, e) = s, \tag {2}
+$$
+
+$$
+\text {(Inverse consistency)} \quad f _ {\theta} (f _ {\theta} (s, a), a ^ {- 1}) = s. \tag {3}
+$$
+
+Then $f _ { \theta }$ defines a group action of G on S. In particular, for any finite sequence $a _ { 1 } , \dots , a _ { n } \in G $
+
+$$
+f _ {\theta} (\dots f _ {\theta} (f _ {\theta} (s, a _ {1}), a _ {2}) \dots , a _ {n}) = f _ {\theta} (s, a _ {1} \circ \dots \circ a _ {n}). \tag {4}
+$$
+
+Please see Appendix A for the proof of Theorem 1. Notably, in the video world models for embodied intelligence, actions often correspond to physical motions in the plane and can be naturally modeled as elements of the Lie group $\bar { S E ( 2 ) }$ :
+
+Corollary 1.1. $I f G = S E ( 2 )$ , then a group-action-faithful model preserves the algebraic structure of planar rigid motions, so that the recovered motion induced by a rollout is consistent with the composed ego-motion, up to stochastic generation and state-estimation error.
+
+In this case, the proposed formulation characterizes action faithfulness through consistency with planar rigid-motion composition.
+
+# 2.1 Instantiating Group Actions in Video World Models
+
+Video world models predict future observations conditioned on past observations and actions. Given an initial observation $\mathbf { o } _ { 0 }$ and an action sequence $\mathbf { a } _ { 1 : T } = ( \mathbf { a } _ { 1 } , \dots , \mathbf { a } _ { T } )$ , the model generates a rollout
+
+$$
+\mathbf {o} _ {1: T} \sim p _ {\theta} (\mathbf {o} _ {1: T} \mid \mathbf {o} _ {0}, \mathbf {a} _ {1: T}), \tag {5}
+$$
+
+where each observation $\mathbf { o } _ { t }$ is generated by an agent with state $\mathbf { s } _ { t }$ navigating in a given scene at time t. According to Theorem 1 and Corollary 1.1, this induces state dynamics of the agent in the form:
+
+$$
+\mathbf {s} _ {t + 1} = f _ {\theta} \left(\mathbf {s} _ {t}, \mathbf {a} _ {t}\right), \tag {6}
+$$
+
+where ${ \bf s } _ { t } = ( R _ { t } , { \bf p } _ { t } ) , R _ { t }$ is the rotation and $\mathbf { p } _ { t }$ is the translation; $\mathbf { a } _ { t } = ( \Delta x _ { t } , \Delta y _ { t } , \Delta \theta _ { t } )$ parameterizes a local planar ego-motion increment. Note that for clarity, we suppress stochasticity in the generation process and focus on the deterministic transition dynamics, as our goal is to characterize the structural properties of the underlying dynamics.
+
+Estimating Agent States from Observations. We estimate the agent state $\mathbf { s } _ { t }$ (Eq. 6) from observations $\mathbf { o } _ { t }$ using a pose estimator Φ(·):
+
+$$
+\mathbf {s} _ {1: T} = \Phi (\mathbf {o} _ {1: T}), \tag {7}
+$$
+
+Based on the recovered states, we define a distance metric in the state space as:
+
+$$
+d (\mathbf {s} _ {i}, \mathbf {s} _ {j}) = \| \mathbf {p} _ {i} - \mathbf {p} _ {j} \| _ {2} + \alpha d _ {R} (R _ {i}, R _ {j}), \tag {8}
+$$
+
+where $\mathbf { p } _ { i }$ and $R _ { i }$ denote the translation and rotation components of $\mathbf { s } _ { i } .$ , respectively, $d _ { R } ( \cdot , \cdot )$ measures rotational discrepancy, and α balances the contributions of translation and rotation.
+
+Instantiation of Group Action Conditions. Under the above ego-motion action parameterization, the composition law ◦ is operationally implemented by accumulating action increments over a segment, while the identity and inverse actions are represented by $\mathbf { e } = \mathbf { 0 }$ and $\mathbf { a } ^ { - 1 } = - \mathbf { a }$ , respectively. The relation between this operational form and exact $S E ( 2 )$ composition is discussed in Appendix A.4. Based on this structure, we instantiate the three group action conditions in Theorem 1 using the state distance defined in Eq. 8 as follows:
+
+• Compatibility: $d ( \mathbf { s } _ { T } ^ { A } , \mathbf { s } _ { T } ^ { B } ) = 0$ , where initial state $\mathbf { s } _ { 0 } ^ { A } = \mathbf { s } _ { 0 } ^ { B }$ , action sequence $\mathbf { a } _ { 1 : T } ^ { A } \neq \mathbf { a } _ { 1 : T } ^ { B }$ and their accumulated increments satisfy $\begin{array} { r } { \sum _ { t = 1 } ^ { T } \mathbf { a } _ { t } ^ { A } = \sum _ { t = 1 } ^ { T } \mathbf { a } _ { t } ^ { B } } \end{array}$ .   
+• Identity: $d ( \mathbf { s } _ { e } , \mathbf { s } ) = 0$ , where $\mathbf { s } _ { e } = f _ { \theta } ( \mathbf { s } , \mathbf { 0 } )$ .   
+• Inverse consistency: $d ( \mathbf { s } _ { i n v } , \mathbf { s } ) = 0$ , where $\mathbf { s } _ { i n v } = f _ { \theta } ( f _ { \theta } ( \mathbf { s } , \mathbf { a } ) , - \mathbf { a } )$ .
+
+![](images/71cbd290229f68aafd24e57a3ea60051ef22c962cab2cf6eb7a535ee59b697f1.jpg)
+
+<details>
+<summary>text_image</summary>
+
+Expected: Stable rollouts under identical actions.
+Same Initial
+Observation
+t=4
+t=8
+t=12
+t=16
++
+Identical
+Action Sequence
+Observed: Divergent motion under identical actions.
+Rollout 1
+t=4
+t=8
+t=12
+t=16
+Rollout 2
+t=4
+t=8
+t=12
+t=16
+Rollout 3
+t=4
+t=8
+t=12
+t=16
+(a) Rollout Instability
+</details>
+
+![](images/03009351e96bd9e95b0f332a96ea385d21a21bdf0ccc8d837d07461e8730f2a3.jpg)
+
+<details>
+<summary>text_image</summary>
+
+1) Identity Violation
+Expected: No motion
+a=0
+Observed: Drift
+a=0
+2) Inverse-consistency Violation
+Expected: Recovery
+a
+-a
+Observed: Offset
+a
+-a
+3) Compatibility Violation (a1+a2=a3+a4)
+a1+a2
+Expected: Compatible
+a3+a4
+Observed: Mismatch
+a3+a4
+(b) Local Group Action Violations
+</details>
+
+Figure 2: Preliminary evidence of action inconsistency. (a) Repeated stochastic rollouts from the same initial observation and identical action sequence exhibit divergent motion. (b) Controlled probes reveal violations of identity, inverse consistency, and compatibility, manifested as zero-action drift, incomplete inverse recovery, and endpoint mismatch under equivalent action decompositions.
+
+# 2.2 Do Native Video World Models Respect Group Action Structure?
+
+Despite the group action structure outlined above in Sec. 2.1, it remains unclear whether existing action-conditioned video world models, which primarily emphasize visual realism, respect this structure. To investigate this, we conduct preliminary experiments. As shown in Fig. 2, our results indicate that the state-of-the-art NWM [13] violates all three group action conditions (identity, inverse, and compatibility), even though the generated videos appear visually plausible. These findings reveal a clear gap between visual realism and dynamical consistency, motivating the development of methods to enforce such structure and systematic evaluation protocols to quantify adherence to group action properties in these video world models.
+
+# 3 Methodology
+
+The group-action formulation in Sec. 2 provides a principled state-space criterion for action-faithful world modeling, specifying the conditions required for rollouts to remain consistent with motion composition. In principle, these state-space conditions can be directly used as training objectives and evaluation metrics. However, doing so introduces two key challenges:
+
+• Computational cost: enforcing these constraints naively requires repeated rollout, decoding, and pose estimation, resulting in substantial computational overhead;   
+• Lack of supervision: there is no explicit training data corresponding to the identity, inverse, and compatibility conditions.
+
+To address these challenges, we develop a unified framework comprising three novel components: (1) we enforce group-action constraints as latent regularization, directly shaping the model’s internal transition dynamics without requiring explicit supervision (Sec. 3.1); (2) we synthesize group-action training signals from existing video world model datasets to approximate supervision for identity, inverse, and compatibility conditions (Sec. 3.2); (3) in addition, we introduce an evaluation protocol in the recovered state space to systematically quantify the extent to which world models adhere to group action structure (Sec. 3.3).
+
+# 3.1 Latent Group-Action Supervision
+
+The group-action conditions in Sec. 2.1 are defined over agent states. A straightforward training approach would therefore be to decode generated latents into image frames, estimate states with the pose estimator Φ, and compute group-action errors on the recovered trajectories. While conceptually faithful, this objective is impractical for optimization. It would repeatedly invoke the decoder and an external pose estimation module inside the multi-step rollout loop, leading to heavy computation and brittle gradient propagation. More critically, keeping this decode-and-estimate pipeline in the differentiable graph exceeds GPU memory for large video world models, making direct state-space optimization infeasible in our setting.
+
+To address this issue, we propose a training objective that operates directly in the latent space of video world models. Let $\phi _ { \mathrm { e n c } }$ denote the visual encoder. For an observation $\mathbf { o } _ { t } ,$ its latent representation is
+
+$$
+\mathbf {z} _ {t} = \phi_ {\mathrm{enc}} (\mathbf {o} _ {t}). \tag {9}
+$$
+
+Accordingly, we define the latent group-action training objective as follows.
+
+Latent Group-Action Training Objective. Let $D _ { z } ( \mathbf x , \mathbf y ) = \| \mathbf x - \mathbf y \| _ { 2 } ^ { 2 }$ denote the latent discrepancy. We design the three components of the training objective according to the group-action conditions (identity, inverse, and compatibility) as follows:
+
+$$
+\mathcal {L} _ {\mathrm{id}} = D _ {z} \left(\widehat {\mathbf {z}} ^ {\mathrm{id}}, \mathbf {z} _ {t}\right), \quad \mathcal {L} _ {\mathrm{inv}} = D _ {z} \left(\widehat {\mathbf {z}} ^ {\mathrm{inv}}, \mathbf {z} _ {t}\right), \quad \mathcal {L} _ {\mathrm{comp}} = D _ {z} \left(\widehat {\mathbf {z}} ^ {A}, \widehat {\mathbf {z}} ^ {B}\right), \tag {10}
+$$
+
+where the latent endpoints $\widehat { \mathbf { z } } ^ { \mathrm { i d } } , \widehat { \mathbf { z } } ^ { \mathrm { i n v } } , \widehat { \mathbf { z } } ^ { A }$ and $\widehat { \mathbf { z } } ^ { B }$ are defined as:
+
+$$
+\widehat {\mathbf {z}} ^ {\mathrm{id}} = \operatorname{End} _ {\theta} \left(\mathbf {z} _ {t}, \mathbf {u} ^ {\mathrm{id}}\right),
+$$
+
+$$
+\widehat {\mathbf {z}} ^ {\text { inv }} = \operatorname{End} _ {\theta} \left(\mathbf {z} _ {t}, \mathbf {u} ^ {\text { inv }}\right), \tag {11}
+$$
+
+$$
+\widehat {\mathbf {z}} ^ {A}, \widehat {\mathbf {z}} ^ {B} = \mathrm{End} _ {\theta} (\mathbf {z} _ {t}, \mathbf {u} ^ {A}), \mathrm{End} _ {\theta} (\mathbf {z} _ {t}, \mathbf {u} ^ {B}).
+$$
+
+where $\operatorname { E n d } _ { \theta } ( \mathbf { z } _ { t } , \cdot )$ denotes the latent endpoint obtained by rolling out the model from $\mathbf { z } _ { t }$ under a given action segment u using its native transition dynamics. The overall group-action objective is therefore defined as:
+
+$$
+\mathcal {L} _ {\mathrm{GA}} = \lambda_ {\mathrm{id}} \mathcal {L} _ {\mathrm{id}} + \lambda_ {\mathrm{inv}} \mathcal {L} _ {\mathrm{inv}} + \lambda_ {\mathrm{comp}} \mathcal {L} _ {\mathrm{comp}}, \tag {12}
+$$
+
+The revised diffusion training objective becomes:
+
+$$
+\mathcal {L} = \mathcal {L} _ {\text { diff }} + \lambda_ {\mathrm{GA}} \mathcal {L} _ {\mathrm{GA}}. \tag {13}
+$$
+
+Eq. 13 describes the full objective. To reduce the computation and memory cost of multiple freerunning rollouts, we sample one constraint type from {id, inv, comp} in each batch and optimize the corresponding stochastic estimate of Eq. 13. Here, ${ \mathcal { L } } _ { \mathrm { d i f f } }$ preserves visual realism, while $\mathcal { L } _ { \mathrm { G A } }$ regularizes latent dynamics. Existing video world model datasets do not contain paired trajectories that explicitly realize zero-motion preservation, forward–inverse cancellation, or alternative decompositions of the same local motion. Therefore, the corresponding group-action relations are synthesized from existing trajectories.
+
+Remark. The latent variables represent the internal rollout states from which future observations are generated. Constraining their evolution therefore regularizes the model transition before visual decoding. Although the group-action conditions are evaluated in recovered state space, their latentspace counterparts are constructed from the same algebraic relations: identity preservation, inverse cancellation, and local composition consistency. The latent objective should therefore be viewed as an efficient surrogate for state-space regularization, rather than an exact replacement. It encourages the internal rollout dynamics to follow the same structural relations that are later measured on recovered trajectories, while avoiding the memory-prohibitive decode-and-estimate loop during training.
+
+# 3.2 Group-Action Supervision Synthesis
+
+To address the lack of supervision described above, one approach is to collect additional trajectories that explicitly realize pauses, forward–inverse cycles, or multiple decompositions of the same local displacement. While such data would provide direct supervision, it is costly to acquire and difficult to scale. We therefore propose a novel strategy to synthesize group-action supervision from existing training trajectories by leveraging the algebraic operations of the action space. Specifically, given a trajectory from an existing dataset consisting of observations and actions:
+
+$$
+\left(\mathbf {o} _ {1: T}, \mathbf {a} _ {1: T - 1}\right), \tag {14}
+$$
+
+then, for any $1 \leq t < T - 1$ , we construct action segments $\mathbf { u } _ { 1 : l } ^ { \mathrm { i d } } , \mathbf { u } _ { 1 : 2 l } ^ { \mathrm { i n v } }$ and $( \mathbf { u } _ { 1 : l } ^ { A } , \mathbf { u } _ { 1 : l } ^ { B } )$ , where length l satisfies $t + l - 1 \leq T$ , used in Eq. 11 as follows.
+
+Identity Action Segment. The action segment for the identity condition should induce no state change and is implemented as a zero-action segment:
+
+$$
+\mathbf {u} _ {1: l} ^ {\mathrm{id}} = (\mathbf {0}, \dots , \mathbf {0}). \tag {15}
+$$
+
+As shown in Eq. 10, this condition enforces that executing the zero-action segment $\mathbf { u } _ { 1 : l } ^ { \mathrm { i d } }$ preserves the latent state, keeping the endpoint close to $\mathbf { z } _ { t }$ .
+
+Inverse Action Segment. The inverse condition requires a motion followed by its inverse to recover the starting state. Therefore, let $\mathbf { u } _ { 1 : l } = ( \mathbf { a } _ { t } , \ldots , \mathbf { a } _ { t + l - 1 } )$ be an action segment from the original trajectory, we construct the inverse action segment as a forward–inverse cycle:
+
+$$
+\mathbf {u} _ {1: 2 l} ^ {\text { inv }} = \left(\mathbf {u} _ {1: l}, \hat {\mathbf {u}} _ {1: l}\right) = \left(\mathbf {a} _ {t}, \dots , \mathbf {a} _ {t + l - 1}, - \mathbf {a} _ {t + l - 1}, \dots , - \mathbf {a} _ {t}\right), \tag {16}
+$$
+
+As shown in Eq. 10, the endpoint should also be close to $\mathbf { z } _ { t } .$ , as the inverse action segment cancels the forward action.
+
+Compatibility Action Segment. The compatibility condition requires that different decompositions of the same intended local motion yield compatible endpoints. Let $\mathbf { u } _ { 1 : l } ^ { A } = ( \mathbf { u } _ { 1 } ^ { A } , \ldots , \mathbf { u } _ { l } ^ { \dot { A } } )$ = $( \mathbf { a } _ { t } , \ldots , \mathbf { a } _ { t + l - 1 } )$ denote an action segment from the original trajectory. We construct an alternative decomposition $\mathbf { \ddot { u } } _ { 1 : l } ^ { B } = ( \mathbf { u } _ { 1 } ^ { B } , \ldots , \mathbf { u } _ { l } ^ { B } )$ that:
+
+$$
+\mathbf {u} _ {i} ^ {B} = w _ {i} \sum_ {j = 1} ^ {l} \mathbf {u} _ {j} ^ {A}, \quad i = 1, \dots , l. \tag {17}
+$$
+
+where $\mathbf { w } = ( w _ { 1 } , \dots , w _ { l } ) \sim \mathrm { D i r } ( \boldsymbol \alpha )$ are non-negative weights sampled from a Dirichlet distribution. By construction, the accumulated increments are identical:
+
+$$
+\sum_ {i = 1} ^ {l} \mathbf {u} _ {i} ^ {A} = \sum_ {i = 1} ^ {l} \mathbf {u} _ {i} ^ {B}. \tag {18}
+$$
+
+Accordingly, the loss in Eq. 10 enforces that rollouts from the same starting latent under $\mathbf { u } _ { 1 : l } ^ { A }$ and $\mathbf { u } _ { 1 : l } ^ { B }$ produce matching endpoints.
+
+# 3.3 Group-Action Metrics
+
+While group-action conditions are enforced in latent space during training, the resulting dynamics are ultimately assessed through motion in generated videos. We therefore evaluate in the recovered state space. Following the group-action conditions defined in Sec. 2.1, we introduce two complementary metrics: Group-Action Consistency (GAC), which measures violations of these conditions, and Group-Action Robustness (GAR), which assesses rollout stability under stochastic generation.
+
+Group-Action Consistency. Group-Action Consistency (GAC) measures the extent to which the recovered motion induced by generated rollouts satisfies the group-action conditions. Specifically, we construct a state-space analogue of Eq. 10 and evaluate each condition under a fixed family of controlled probe configurations. For identity and inverse consistency, a probe configuration is indexed by $( k , l )$ , where k denotes the number of inserted or evaluated segments and l denotes the length of each segment. For local composition consistency, the probe configuration is indexed by the local window length l. Within each configuration, errors are averaged over fixed valid starting positions and evaluation sequences, yielding configuration-level errors ∆(k,l)id , ∆(k,l)inv $\Delta _ { \mathrm { i d } } ^ { ( k , l ) } , \Delta _ { \mathrm { i n v } } ^ { ( k , l ) }$ , and $\Delta _ { \mathrm { c o m p } } ^ { ( l ) }$ . Detailed definitions of these configuration-level errors are provided in Appendix C.5. The reported component errors are obtained by averaging over the evaluated probe configurations:
+
+$$
+\bar {\Delta} _ {\mathrm{id}} = \frac {1}{| \mathcal {K} _ {\mathrm{id}} |} \sum_ {(k, l) \in \mathcal {K} _ {\mathrm{id}}} \Delta_ {\mathrm{id}} ^ {(k, l)}, \bar {\Delta} _ {\text {inv}} = \frac {1}{| \mathcal {K} _ {\text {inv}} |} \sum_ {(k, l) \in \mathcal {K} _ {\text {inv}}} \Delta_ {\text {inv}} ^ {(k, l)}, \bar {\Delta} _ {\text {comp}} = \frac {1}{| \mathcal {L} _ {\text {comp}} |} \sum_ {l \in \mathcal {L} _ {\text {comp}}} \Delta_ {\text {comp}} ^ {(l)}. \tag {19}
+$$
+
+These terms measure identity drift, inverse recovery error, and composition mismatch, respectively. The aggregated GAC error is defined as:
+
+$$
+\mathcal {E} _ {\mathrm{GAC}} = \frac {1}{3} \left(\bar {\Delta} _ {\mathrm{id}} + \bar {\Delta} _ {\mathrm{inv}} + \bar {\Delta} _ {\mathrm{comp}}\right), \tag {20}
+$$
+
+where a lower $\mathcal { E } _ { \mathrm { G A C } }$ indicates stronger adherence to the group-action conditions.
+
+Group-Action Robustness. Group-Action Robustness (GAR) measures the stability of motion under stochastic rollout generation. Given the same initial observation and identical action sequence, we sample N stochastic rollouts and recover their state trajectories $\{ \mathbf { s } _ { 1 : T } ^ { ( i ) } \} _ { i = : } ^ { N }$ s(i) }N 1. The GAR error is then defined as:
+
+$$
+\mathcal {E} _ {\mathrm{GAR}} = \frac {2}{N (N - 1)} \sum_ {1 \leq i <   j \leq N} \frac {1}{T} \sum_ {t = 1} ^ {T} d \big (\mathbf {s} _ {t} ^ {(i)}, \mathbf {s} _ {t} ^ {(j)} \big). \tag {21}
+$$
+
+where lower $\mathcal { E } _ { \mathrm { G A R } }$ indicates that repeated stochastic rollouts remain more consistent under the same action sequence.
+
+Additional details on free-running latent rollout, constraint synthesis and sampling, action-space approximations, and the practical per-batch training objective are provided in Appendix B.
+
+# 4 Experiments
+
+# 4.1 Experimental Setup
+
+Our experiments are conducted on the RECON [14], SCAND [15], and HuRoN [16] datasets, following the preprocessing protocol of NWM [13]. We report the main results on RECON, with additional results on SCAND and HuRoN provided in Appendix D. We use NWM [13] as the primary testbed and include DIAMOND [17] as an additional baseline. For GAC evaluation, we use a fixed set of controlled probes shared by all methods. For identity and inverse probes, configurations are indexed by the number of local segments k and the segment length l. Increasing k tests whether violations accumulate when the same local relation is applied repeatedly, while increasing l tests whether violations grow with the temporal extent of each segment. We vary one factor while fixing the other, using $k , \bar { l } \in \{ 1 , 3 , 5 \}$ for the main RECON analysis. For local composition probes, we vary the window length with $l \in \{ 2 , 4 , 6 \}$ , since the probe compares two decompositions of the same local motion. Within each configuration, errors are averaged over fixed valid starting positions and evaluation sequences. For GA training, the local rollout horizon is sampled from $l \sim \mathcal { U } \{ 1 , \dots , L \}$ with $L = 4$ by default, and one group-action constraint type is sampled per batch for efficiency. Evaluation is conducted using the metrics defined in Sec. 3.3. Additional details of dataset statistics, model adaptation, training hyper-parameters, pose recovery, GAC probe configurations, GAR rollout settings, and metric aggregation procedures are provided in Appendix C.
+
+Table 1: Group-Action Consistency (GAC) errors on the RECON dataset. Columns 2–4 report the individual error terms, and the last column reports the aggregated GAC error $E _ { \mathrm { G A C } }$ . “+GA” denotes applying the proposed GA regularization. $E _ { \mathrm { G A C } }$ is computed from the mean component errors. 
+
+<table><tr><td>Method</td><td> $\bar{\Delta}_{\text{id}} \downarrow$ </td><td> $\bar{\Delta}_{\text{inv}} \downarrow$ </td><td> $\bar{\Delta}_{\text{comp}} \downarrow$ </td><td> $\mathcal{E}_{\text{GAC}} \downarrow$ </td></tr><tr><td>DIAMOND [17]</td><td>2.47 ± 1.16</td><td>2.38 ± 1.08</td><td>1.12 ± 0.70</td><td>1.99</td></tr><tr><td>DIAMOND + GA</td><td>2.25 ± 1.03</td><td>2.16 ± 0.97</td><td>0.86 ± 0.55</td><td>1.76</td></tr><tr><td>NWM [13]</td><td>2.10 ± 0.99</td><td>2.29 ± 0.99</td><td>0.79 ± 0.52</td><td>1.73</td></tr><tr><td>NWM + GA</td><td>1.95 ± 0.86</td><td>1.95 ± 0.84</td><td>0.60 ± 0.40</td><td>1.50</td></tr></table>
+
+# 4.2 Group-Action Consistency Results
+
+Table 1 reports the Group-Action Consistency (GAC) errors on RECON. Compared with their GAregularized counterparts, both baseline models show consistently larger errors across identity, inverse, and local composition consistency. This indicates that strong visual rollout quality does not by itself guarantee adherence to the underlying group-action structure. Applying GA regularization reduces the aggregate GAC error for both DIAMOND and NWM, with gains observed across all three components. These results suggest that the proposed objective improves action-faithful dynamics beyond a single backbone architecture. Fig. 3 provides a probe-wise view of the same effect. Across most probe settings, GA regularization shifts the error curves downward and reduces the standard deviation indicated by the marker size. The improvement is particularly clear for inverse and local composition consistency, where errors tend to increase when the model must compose multiple action-conditioned transitions. For identity consistency, the curve is less monotonic because repeated or longer zero-action segments can reinforce the stationary condition, but larger settings impose a stricter preservation requirement across more pause locations or longer pause durations. Additional GAC results and probe-wise analysis are provided in Appendices D.2 and D.3.
+
+![](images/b5fedef7da427097acf2e5d99df09798722ce5be3d6df118cf6bec62268d3a4f.jpg)
+
+<details>
+<summary>line</summary>
+
+| Probe setting | vary l, fix k = 1 | vary k, fix l = 1 |
+| ------------- | ----------------- | ----------------- |
+| 1             | 2.1               | 2.0               |
+| 3             | 2.0               | 2.0               |
+| 5             | 2.2               | 2.1               |
+</details>
+
+![](images/c24d042f505119eafa362c34dd8521d078c231c37dd3ff008540f68c4ae23321.jpg)
+
+<details>
+<summary>line</summary>
+
+| Probe setting | vary l, fix k = 1 | vary k, fix l = 1 |
+| ------------- | ------------------ | ------------------ |
+| 1             | 1.9                | 1.6                |
+| 3             | 2.4                | 2.0                |
+| 5             | 2.5                | 2.4                |
+</details>
+
+![](images/cbde6b5f562036bca64c8af051eda7d94e47205abd93ffb28c8e49ae9a259981.jpg)
+
+<details>
+<summary>line</summary>
+
+| Probe setting | NWM   | NWM + GA |
+| ------------- | ----- | -------- |
+| 2             | 0.5   | 0.4      |
+| 4             | 0.85  | 0.65     |
+| 6             | 1.0   | 0.75     |
+</details>
+
+Figure 3: Group-Action Consistency (GAC) errors on RECON under different probe configurations. For identity and inverse probes, k and l denote the number and length of probed segments; for composition probes, l denotes the window length. Markers indicate mean errors, with size proportional to the standard deviation. Lower values indicate stronger group-action consistency.
+
+Table 2: Group-Action Robustness (GAR) errors on the RECON dataset. “Aligned” removes global pose drift before computing trajectory error, while “Non-aligned” measures raw trajectory deviation. 
+
+<table><tr><td rowspan="2">Method</td><td colspan="2">16 Frames</td><td colspan="2">64 Frames</td></tr><tr><td>Aligned ↓</td><td>Non-aligned ↓</td><td>Aligned ↓</td><td>Non-aligned ↓</td></tr><tr><td>DIAMOND [17]</td><td>0.44 ± 0.36</td><td>0.89 ± 0.58</td><td>0.93 ± 0.67</td><td>2.48 ± 1.91</td></tr><tr><td>DIAMOND + GA</td><td>0.37 ± 0.29</td><td>0.74 ± 0.49</td><td>0.76 ± 0.55</td><td>2.03 ± 1.46</td></tr><tr><td>NWM [13]</td><td>0.32 ± 0.26</td><td>0.65 ± 0.41</td><td>0.62 ± 0.44</td><td>1.52 ± 1.27</td></tr><tr><td>NWM + GA</td><td>0.26 ± 0.20</td><td>0.49 ± 0.35</td><td>0.46 ± 0.33</td><td>1.28 ± 0.82</td></tr></table>
+
+# 4.3 Group-Action Robustness Results
+
+Table 2 reports GAR errors on RECON, with additional results on SCAND and HuRoN provided in Appendix D.1. The errors are computed from repeated rollouts (N = 5) generated from the same initial observation and action sequence drawn from the test set. It can be observed that the baseline NWM exhibits clear horizon-dependent degradation. In particular, its non-aligned error increases from 0.65 at 16 frames to 1.52 at 64 frames, indicating that stochastic variations accumulate into substantial global trajectory drift over longer rollouts. In contrast, GA training consistently reduces GAR error across both horizons and alignment settings, with more pronounced improvements at 64 frames where accumulated transition errors are larger. The reduction in non-aligned error indicates that stochastic rollouts become more consistent in their global motion under the same action sequence, rather than only after trajectory alignment. Overall, these results demonstrate that the proposed GA regularization enhances robustness to stochastic rollout variability, especially over longer horizons.
+
+Table 3: Ablation of group-action constraints on RECON using NWM as the base model. Single-loss rows apply only the indicated group-action constraint. Full GA uses all three constraints. GAC reports local group-action consistency, while GAR reports rollout-level robustness at 64 frames. Lower is better. 
+
+<table><tr><td rowspan="2">Method</td><td colspan="4">GAC</td><td colspan="2">GAR 64 Frames</td></tr><tr><td> $\bar{\Delta}_{id} \downarrow$ </td><td> $\bar{\Delta}_{inv} \downarrow$ </td><td> $\bar{\Delta}_{comp} \downarrow$ </td><td> $\mathcal{E}_{GAC} \downarrow$ </td><td>Aligned  $\downarrow$ </td><td>Non-aligned  $\downarrow$ </td></tr><tr><td>Baseline</td><td>2.10 ± 0.99</td><td>2.29 ± 0.99</td><td>0.79 ± 0.52</td><td>1.73</td><td>0.62 ± 0.44</td><td>1.52 ± 1.27</td></tr><tr><td> $\mathcal{L}_{id}$ </td><td>1.93 ± 0.87</td><td>2.18 ± 0.96</td><td>0.79 ± 0.50</td><td>1.62</td><td>0.57 ± 0.41</td><td>1.44 ± 1.16</td></tr><tr><td> $\mathcal{L}_{inv}$ </td><td>2.03 ± 0.94</td><td>1.99 ± 0.85</td><td>0.73 ± 0.48</td><td>1.58</td><td>0.53 ± 0.38</td><td>1.38 ± 1.06</td></tr><tr><td> $\mathcal{L}_{comp}$ </td><td>2.06 ± 0.95</td><td>2.08 ± 0.90</td><td>0.62 ± 0.41</td><td>1.59</td><td>0.50 ± 0.35</td><td>1.33 ± 0.94</td></tr><tr><td>Full GA</td><td>1.95 ± 0.86</td><td>1.95 ± 0.84</td><td>0.60 ± 0.40</td><td>1.50</td><td>0.46 ± 0.33</td><td>1.28 ± 0.82</td></tr></table>
+
+# 4.4 Ablation Analysis
+
+Table 3 presents an ablation of the three group-action conditions defined in Eq. 10. Each individual condition improves over the NWM baseline in both GAC and GAR, indicating that identity preservation, inverse cancellation, and compatibility enforcement each address distinct failure modes in world model dynamics. The full objective achieves the best overall performance, suggesting that the three conditions are complementary. Notably, the GAC results show that improvements are not strictly confined to the directly targeted component: optimizing inverse or compatibility also reduces other errors, reflecting coupling among the conditions through shared rollout dynamics. The GAR ablation results further show that group-action consistency improvements translate into more stable repeated rollouts. Among the individual terms, the compatibility term yields the largest gains at longer horizons, consistent with its role in multi-step dynamics. Identity and inverse constraints also contribute by reducing stationary drift and residual motion after cancellation.
+
+Additional ablations on rollout span, loss weight, and free-running versus teacher-forced training are provided in Appendix E.
+
+![](images/f5faa9718f480c29d28868cf295be6f40ad5e23c9a9f8251623b67ed390966a1.jpg)
+
+![](images/18cd5975d2a44acc8610e820ed98298ead7dae9a69fd9f8fdb553b21aab08fb6.jpg)  
+Figure 4: Qualitative results for Group-Action Consistency (GAC) and Group-Action Robustness (GAR). (a) Representative examples of identity, inverse, and compatibility probes, where GA regularization improves local action consistency. (b) Repeated stochastic rollouts from the same initial observation and identical action sequence. Although visual appearance varies across samples, the GA-regularized model exhibits more consistent motion evolution.
+
+# 4.5 Qualitative Results
+
+Fig. 4 presents qualitative results for both evaluation metrics. For GAC, the GA-regularized model better preserves stationary observations under zero action, more accurately recovers after forward– inverse segments, and produces more consistent outcomes under locally equivalent decompositions. For GAR, although samples generated from the same initial observation and action sequence may still vary in appearance, their motion evolution remains more consistent. Overall, these results corroborate the quantitative findings, showing that the proposed constraints improve action faithfulness while maintaining visual realism. Additional qualitative examples are provided in Appendix F. A complementary image-quality evaluation in Appendix D.4 further shows that these consistency gains do not come at the cost of perceptual generation quality.
+
+# 5 Conclusion
+
+In this work, we argue that consistency with the compositional structure of actions provides a principled criterion for assessing action faithfulness in video world models beyond visual realism. By formalizing world modeling as a group action, we provide a principled framework to diagnose and understand failures of existing video world models. We further introduce a unified method to enforce these structural constraints in latent space, along with metrics that evaluate both group action consistency and rollout stability. Extensive experimental results show that our approach consistently improves action-consistent dynamics while preserving visual quality.
+
+# References
+
+[1] Chan Hee Song, Jiaman Wu, Clayton Washington, Brian M Sadler, Wei-Lun Chao, and Yu Su. Llm-planner: Few-shot grounded planning for embodied agents with large language models. In Proceedings of the IEEE/CVF international conference on computer vision, pages 2998–3009, 2023.   
+[2] Xiaodong Li, Guohui Tian, Yongcheng Cui, Xuyang Shao, and Zhiwei Wang. Grhp: Graphfused hierarchical planning for embodied long-horizon robotic task. Engineering Applications of Artificial Intelligence, 165:113413, 2026.   
+[3] Xiang Li, Ning Yan, and Masood Mortazavi. Embodied task planning via graph-informed action generation with large language model. arXiv preprint arXiv:2601.21841, 2026.   
+[4] Manling Li, Shiyu Zhao, Qineng Wang, Kangrui Wang, Yu Zhou, Sanjana Srivastava, Cem Gokmen, Tony Lee, Li E Li, Ruohan Zhang, et al. Embodied agent interface: Benchmarking llms for embodied decision making. Advances in Neural Information Processing Systems, 37:100428–100534, 2024.   
+[5] Shiduo Zhang, Zhe Xu, Peiju Liu, Xiaopeng Yu, Yuan Li, Qinghui Gao, Zhaoye Fei, Zhangyue Yin, Zuxuan Wu, Yu-Gang Jiang, et al. Vlabench: A large-scale benchmark for languageconditioned robotics manipulation with long-horizon reasoning tasks. In Proceedings of the IEEE/CVF International Conference on Computer Vision, pages 11142–11152, 2025.   
+[6] Wenlong Liang, Rui Zhou, Yang Ma, Bing Zhang, Songlin Li, Yijia Liao, and Ping Kuang. Large model empowered embodied ai: A survey on decision-making and embodied learning. arXiv preprint arXiv:2508.10399, 2025.   
+[7] Yang Liu, Xinshuai Song, Kaixuan Jiang, Weixing Chen, Jingzhou Luo, Guanbin Li, and Liang Lin. Meia: Multimodal embodied perception and interaction in unknown environments. arXiv preprint arXiv:2402.00290, 2024.   
+[8] Yang Liu, Weixing Chen, Yongjie Bai, Xiaodan Liang, Guanbin Li, Wen Gao, and Liang Lin. Aligning cyber space with physical world: A comprehensive survey on embodied ai. IEEE/ASME Transactions on Mechatronics, 2025.   
+[9] Kaixuan Jiang, Yang Liu, Weixing Chen, Jingzhou Luo, Ziliang Chen, Ling Pan, Guanbin Li, and Liang Lin. Beyond the destination: A novel benchmark for exploration-aware embodied question answering. In Proceedings of the IEEE/CVF International Conference on Computer Vision, pages 9091–9101, 2025.   
+[10] Jonathan Ho, Tim Salimans, Alexey Gritsenko, William Chan, Mohammad Norouzi, and David J Fleet. Video diffusion models. Advances in neural information processing systems, 35:8633–8646, 2022.   
+[11] Zhuoyi Yang, Jiayan Teng, Wendi Zheng, Ming Ding, Shiyu Huang, Jiazheng Xu, Yuanming Yang, Wenyi Hong, Xiaohan Zhang, Guanyu Feng, et al. Cogvideox: Text-to-video diffusion models with an expert transformer. arXiv preprint arXiv:2408.06072, 2024.   
+[12] Team Wan, Ang Wang, Baole Ai, Bin Wen, Chaojie Mao, Chen-Wei Xie, Di Chen, Feiwu Yu, Haiming Zhao, Jianxiao Yang, et al. Wan: Open and advanced large-scale video generative models. arXiv preprint arXiv:2503.20314, 2025.   
+[13] Amir Bar, Gaoyue Zhou, Danny Tran, Trevor Darrell, and Yann LeCun. Navigation world models. In Proceedings of the Computer Vision and Pattern Recognition Conference, pages 15791–15801, 2025.   
+[14] Dhruv Shah, Benjamin Eysenbach, Gregory Kahn, Nicholas Rhinehart, and Sergey Levine. Rapid exploration for open-world navigation with latent goal models. arXiv preprint arXiv:2104.05859, 2021.   
+[15] Haresh Karnan, Anirudh Nair, Xuesu Xiao, Garrett Warnell, Sören Pirk, Alexander Toshev, Justin Hart, Joydeep Biswas, and Peter Stone. Socially compliant navigation dataset (scand): A large-scale dataset of demonstrations for social navigation. IEEE Robotics and Automation Letters, 7(4):11807–11814, 2022.
+
+[16] Noriaki Hirose, Dhruv Shah, Ajay Sridhar, and Sergey Levine. Sacson: Scalable autonomous control for social navigation. IEEE Robotics and Automation Letters, 9(1):49–56, 2023.   
+[17] Eloi Alonso, Adam Jelley, Vincent Micheli, Anssi Kanervisto, Amos Storkey, Tim Pearce, and François Fleuret. Diffusion for world modeling: Visual details matter in atari. Advances in Neural Information Processing Systems, 37:58757–58791, 2024.   
+[18] Andreas Blattmann, Tim Dockhorn, Sumith Kulal, Daniel Mendelevitch, Maciej Kilian, Dominik Lorenz, Yam Levi, Zion English, Vikram Voleti, Adam Letts, et al. Stable video diffusion: Scaling latent video diffusion models to large datasets. arXiv preprint arXiv:2311.15127, 2023.   
+[19] Ilya Loshchilov and Frank Hutter. Decoupled weight decay regularization. arXiv preprint arXiv:1711.05101, 2017.   
+[20] Zachary Teed and Jia Deng. Droid-slam: Deep visual slam for monocular, stereo, and rgb-d cameras. Advances in neural information processing systems, 34:16558–16569, 2021.   
+[21] Richard Zhang, Phillip Isola, Alexei A Efros, Eli Shechtman, and Oliver Wang. The unreasonable effectiveness of deep features as a perceptual metric. In Proceedings of the IEEE conference on computer vision and pattern recognition, pages 586–595, 2018.   
+[22] Stephanie Fu, Netanel Tamir, Shobhita Sundaram, Lucy Chai, Richard Zhang, Tali Dekel, and Phillip Isola. Dreamsim: Learning new dimensions of human visual similarity using synthetic data. Advances in Neural Information Processing Systems, 36:50742–50768, 2023.   
+[23] Ajay Sridhar, Dhruv Shah, Catherine Glossop, and Sergey Levine. Nomad: Goal masked diffusion policies for navigation and exploration. In 2024 IEEE International Conference on Robotics and Automation (ICRA), pages 63–70. IEEE, 2024.   
+[24] Vaishnav Vaidheeswaran, Dilith Jayakody, Samruddhi Mulay, Anand Lo, Md Mahbub Alam, and Gabriel Spadon. Goal-conditioned reinforcement learning for data-driven maritime navigation. arXiv preprint arXiv:2509.01838, 2025.   
+[25] Wangtian Shen, Ziyang Meng, Jinming Ma, Mingliang Zhou, and Diyun Xiang. An efficient and multi-modal navigation system with one-step world model. arXiv preprint arXiv:2601.12277, 2026.   
+[26] Jing Gu, Eliana Stefani, Qi Wu, Jesse Thomason, and Xin Wang. Vision-and-language navigation: A survey of tasks, methods, and future directions. In Proceedings of the 60th Annual Meeting of the Association for Computational Linguistics (Volume 1: Long Papers), pages 7606–7623, 2022.   
+[27] Gengze Zhou, Yicong Hong, and Qi Wu. Navgpt: Explicit reasoning in vision-and-language navigation with large language models. In Proceedings of the AAAI Conference on Artificial Intelligence, volume 38, pages 7641–7649, 2024.   
+[28] Wei Xue, Mingcheng Li, Xuecheng Wu, Jingqun Tang, Dingkang Yang, and Lihua Zhang. Profocus: Proactive perception and focused reasoning in vision-and-language navigation. arXiv preprint arXiv:2603.05530, 2026.   
+[29] Wangtian Shen, Pengfei Gu, Haijian Qin, and Ziyang Meng. Effonav: An effective foundationmodel-based visual navigation approach in challenging environment. IEEE Robotics and Automation Letters, 2025.   
+[30] Michele Moriconi, Stefan Laible, and Carmine Recchiuto. Foundation-model-based action selection for behavior trees in navigation. In 2025 European Conference on Mobile Robots (ECMR), pages 1–7. IEEE, 2025.   
+[31] Muhammad Tayyab Khan and Ammar Waheed. Foundation model driven robotics: A comprehensive review. arXiv preprint arXiv:2507.10087, 2025.   
+[32] Dhruv Shah, Ajay Sridhar, Arjun Bhorkar, Noriaki Hirose, and Sergey Levine. Gnm: A general navigation model to drive any robot. In 2023 IEEE International Conference on Robotics and Automation (ICRA), pages 7226–7233. IEEE, 2023.
+
+[33] Dhruv Shah, Ajay Sridhar, Nitish Dashora, Kyle Stachowicz, Kevin Black, Noriaki Hirose, and Sergey Levine. Vint: A foundation model for visual navigation. arXiv preprint arXiv:2306.14846, 2023.   
+[34] Xinshuai Song, Weixing Chen, Yang Liu, Vincent Chan, Guanbin Li, and Liang Lin. Towards long-horizon vision-language navigation: Platform, benchmark and method. In Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition, 2025.   
+[35] Jiazhao Zhang, Anqi Li, Yunpeng Qi, Minghan Li, Jiahang Liu, Shaoan Wang, Haoran Liu, Gengze Zhou, Yuze Wu, Xingxing Li, et al. Embodied navigation foundation model. arXiv preprint arXiv:2509.12129, 2025.   
+[36] Zhangyang Qi, Zhixiong Zhang, Yizhou Yu, Jiaqi Wang, and Hengshuang Zhao. Vln-r1: Vision-language navigation via reinforcement fine-tuning. arXiv preprint arXiv:2506.17221, 2025.   
+[37] Teng Wang, Xinxin Zhao, Wenzhe Cai, and Changyin Sun. Imaginenav++: Prompting vision-language models as embodied navigator through scene imagination. arXiv preprint arXiv:2512.17435, 2025.   
+[38] Lazar Milikic, Manthan Patel, and Jonas Frey. Vld: Visual language goal distance for reinforcement learning navigation. arXiv preprint arXiv:2512.07976, 2025.   
+[39] Maeva Guerrier, Karthik Soma, Jana Pavlasek, and Giovanni Beltrame. Can vision foundation models navigate? zero-shot real-world evaluation and lessons learned. arXiv preprint arXiv:2603.25937, 2026.   
+[40] Fei Liu, Shichao Xie, Minghua Luo, Zedong Chu, Junjun Hu, Xiaolong Wu, and Mu Xu. Navforesee: A unified vision-language world model for hierarchical planning and dual-horizon navigation prediction. arXiv preprint arXiv:2512.01550, 2025.   
+[41] Danijar Hafner, Timothy Lillicrap, Jimmy Ba, and Mohammad Norouzi. Dream to control: Learning behaviors by latent imagination. arXiv preprint arXiv:1912.01603, 2019.   
+[42] Danijar Hafner, Jurgis Pasukonis, Jimmy Ba, and Timothy Lillicrap. Mastering diverse domains through world models. arXiv preprint arXiv:2301.04104, 2023.   
+[43] Masashi Okada and Tadahiro Taniguchi. Dreaming: Model-based reinforcement learning by latent imagination without reconstruction. In 2021 ieee international conference on robotics and automation (icra), pages 4209–4215. IEEE, 2021.   
+[44] Yao Mu, Yuzheng Zhuang, Bin Wang, Guangxiang Zhu, Wulong Liu, Jianyu Chen, Ping Luo, Shengbo Li, Chongjie Zhang, and Jianye Hao. Model-based reinforcement learning via imagination with derived memory. Advances in Neural Information Processing Systems, 34:9493–9505, 2021.   
+[45] Pengxuan Yang, Yupeng Zheng, Deheng Qian, Zebin Xing, Qichao Zhang, Linbo Wang, Yichen Zhang, Shaoyu Guo, Zhongpu Xia, Qiang Chen, et al. Dreamerad: Efficient reinforcement learning via latent world model for autonomous driving. arXiv preprint arXiv:2603.24587, 2026.   
+[46] Zhiyi Li, Peilin Wu, Xiaoshen Han, Ruojin Cai, and Yilun Du. 4d latent world model for robot planning. OpenReview preprint, 2026.   
+[47] Jonathan Ho, Ajay Jain, and Pieter Abbeel. Denoising diffusion probabilistic models. Advances in neural information processing systems, 33:6840–6851, 2020.   
+[48] Robin Rombach, Andreas Blattmann, Dominik Lorenz, Patrick Esser, and Björn Ommer. Highresolution image synthesis with latent diffusion models. In Proceedings of the IEEE/CVF conference on computer vision and pattern recognition, pages 10684–10695, 2022.   
+[49] Jonathan Ho, Tim Salimans, Alexey Gritsenko, William Chan, Mohammad Norouzi, and David J Fleet. Video diffusion models. Advances in neural information processing systems, 35:8633–8646, 2022.
+
+[50] Jonathan Ho, William Chan, Chitwan Saharia, Jay Whang, Ruiqi Gao, Alexey Gritsenko, Diederik P Kingma, Ben Poole, Mohammad Norouzi, David J Fleet, et al. Imagen video: High definition video generation with diffusion models. arXiv preprint arXiv:2210.02303, 2022.   
+[51] Andreas Blattmann, Robin Rombach, Huan Ling, Tim Dockhorn, Seung Wook Kim, Sanja Fidler, and Karsten Kreis. Align your latents: High-resolution video synthesis with latent diffusion models. In Proceedings of the IEEE/CVF conference on computer vision and pattern recognition, pages 22563–22575, 2023.   
+[52] Yuwei Guo, Ceyuan Yang, Anyi Rao, Zhengyang Liang, Yaohui Wang, Yu Qiao, Maneesh Agrawala, Dahua Lin, and Bo Dai. Animatediff: Animate your personalized text-to-image diffusion models without specific tuning. arXiv preprint arXiv:2307.04725, 2023.   
+[53] Zangwei Zheng, Xiangyu Peng, Tianji Yang, Chenhui Shen, Shenggui Li, Hongxin Liu, Yukun Zhou, Tianyi Li, and Yang You. Open-sora: Democratizing efficient video production for all. arXiv preprint arXiv:2412.20404, 2024.   
+[54] Siqiao Huang, Jialong Wu, Qixing Zhou, Shangchen Miao, and Mingsheng Long. Vid2world: Crafting video diffusion models to interactive world models. arXiv preprint arXiv:2505.14357, 2025.   
+[55] Seonghyeon Ye, Yunhao Ge, Kaiyuan Zheng, Shenyuan Gao, Sihyun Yu, George Kurian, Suneel Indupuru, You Liang Tan, Chuning Zhu, Jiannan Xiang, et al. World action models are zero-shot policies. arXiv preprint arXiv:2602.15922, 2026.   
+[56] Haoyi Zhu, Yifan Wang, Jianjun Zhou, Wenzheng Chang, Yang Zhou, Zizun Li, Junyi Chen, Chunhua Shen, Jiangmiao Pang, and Tong He. Aether: Geometric-aware unified world modeling. In Proceedings of the IEEE/CVF International Conference on Computer Vision, pages 8535– 8546, 2025.   
+[57] Yifei Dong, Fengyi Wu, Yilong Dai, Lingdong Kong, Guangyu Chen, Xu Zhu, Qiyu Hu, Tianyu Wang, Johnalbert Garnica, Feng Liu, et al. Language-conditioned world modeling for visual navigation. arXiv preprint arXiv:2603.26741, 2026.   
+[58] Mengjiao Yang, Yilun Du, Kamyar Ghasemipour, Jonathan Tompson, Dale Schuurmans, and Pieter Abbeel. Learning interactive real-world simulators. arXiv preprint arXiv:2310.06114, 1(2):6, 2023.   
+[59] Yifei Dong, Fengyi Wu, Guangyu Chen, Zhi-Qi Cheng, Qiyu Hu, Yuxuan Zhou, Jingdong Sun, Jun-Yan He, Qi Dai, and Alexander G Hauptmann. Unified world models: Memory-augmented planning and foresight for visual navigation. arXiv preprint arXiv:2510.08713, 2025.   
+[60] Yangcheng Yu, Xin Jin, Yu Shang, Xin Zhang, Haisheng Su, Wei Wu, and Yong Li. Mowm: Mixture-of-world-models for embodied planning via latent-to-pixel feature modulation. arXiv preprint arXiv:2509.21797, 2025.   
+[61] Angen Ye, Boyuan Wang, Chaojun Ni, Guan Huang, Guosheng Zhao, Hao Li, Hengtao Li, Jie Li, Jindi Lv, Jingyu Liu, et al. Gigaworld-policy: An efficient action-centered world–action model. arXiv preprint arXiv:2603.17240, 2026.   
+[62] Taiyi Su, Jian Zhu, Yaxuan Li, Chong Ma, Jianjun Zhang, Zitai Huang, Hanli Wang, and Yi Xu. Towards high-consistency embodied world model with multi-view trajectory videos. arXiv preprint arXiv:2511.12882, 2025.   
+[63] Yiran Qin, Zhelun Shi, Jiwen Yu, Xijun Wang, Enshen Zhou, Lijun Li, Zhenfei Yin, Xihui Liu, Lu Sheng, Jing Shao, et al. Worldsimbench: Towards video generation models as world simulators. arXiv preprint arXiv:2410.18072, 2024.   
+[64] Chun-Kai Fan, Xiaowei Chi, Xiaozhu Ju, Hao Li, Yong Bao, Yu-Kai Wang, Lizhang Chen, Zhiyuan Jiang, Kuangzhi Ge, Ying Li, et al. Wow, wo, val! a comprehensive embodied world model evaluation turing test. arXiv preprint arXiv:2601.04137, 2026.
+
+[65] Yu Shang, Zhuohang Li, Yiding Ma, Weikang Su, Xin Jin, Ziyou Wang, Lei Jin, Xin Zhang, Yinzhou Tang, Haisheng Su, et al. Worldarena: A unified benchmark for evaluating perception and functional utility of embodied world models. arXiv preprint arXiv:2602.08971, 2026.   
+[66] Ao Liang, Lingdong Kong, Tianyi Yan, Hongsi Liu, Wesley Yang, Ziqi Huang, Wei Yin, Jialong Zuo, Yixuan Hu, Dekai Zhu, et al. Worldlens: Full-spectrum evaluations of driving world models in real world. arXiv preprint arXiv:2512.10958, 2025.   
+[67] Yixuan Ye, Xuanyu Lu, Yuxin Jiang, Yuchao Gu, Rui Zhao, Qiwei Liang, Jiachun Pan, Fengda Zhang, Weijia Wu, and Alex Jinpeng Wang. Mind: Benchmarking memory consistency and action control in world models. arXiv preprint arXiv:2602.08025, 2026.   
+[68] Kewei Lian, Shaofei Cai, Yilun Du, and Yitao Liang. Toward memory-aided world models: Benchmarking via spatial consistency. arXiv preprint arXiv:2505.22976, 2025.   
+[69] Qimin Zhong, Hao Liao, Haiming Qin, Mingyang Zhou, Rui Mao, Wei Chen, and Naipeng Chao. Toward consistent world models with multi-token prediction and latent semantic enhancement. arXiv preprint arXiv:2604.06155, 2026.   
+[70] Zhen Li, Zian Meng, Shuwei Shi, Wenshuo Peng, Yuwei Wu, Bo Zheng, Chuanhao Li, and Kaipeng Zhang. Wildworld: A large-scale dataset for dynamic world modeling with actions and explicit state toward generative arpg. arXiv preprint arXiv:2603.23497, 2026.   
+[71] Han Yan, Zishang Xiang, Zeyu Zhang, and Hao Tang. Mwm: Mobile world models for action-conditioned consistent prediction. arXiv preprint arXiv:2603.07799, 2026.   
+[72] Bowen Jing, Hannes Stärk, Tommi Jaakkola, and Bonnie Berger. Generative modeling of molecular dynamics trajectories. Advances in Neural Information Processing Systems, 37:40534– 40564, 2024.   
+[73] Sarah Lewis, Tim Hempel, José Jiménez-Luna, Michael Gastegger, Yu Xie, Andrew YK Foong, Victor García Satorras, Osama Abdin, Bastiaan S Veeling, Iryna Zaporozhets, et al. Scalable emulation of protein equilibrium ensembles with generative deep learning. Science, 389(6761):eadv9817, 2025.   
+[74] Aditya Sengar, Jiying Zhang, Pierre Vandergheynst, and Patrick Barth. Beyond ensembles: Simulating all-atom protein dynamics in a learned latent space. arXiv preprint arXiv:2509.02196, 2025.   
+[75] Baoli Wang, Chenglin Wang, Jingyang Chen, Danlin Liu, Changzhi Sun, Jie Zhang, Kai Zhang, and Honglin Li. Conditional diffusion with locality-aware modal alignment for generating diverse protein conformational ensembles. Nature Machine Intelligence, pages 1–20, 2026.   
+[76] Kailong Zhao, Chenxiao Xiang, Bin Cheng, Yunyun Shen, Wenkai Wang, Shuyun Chen, Baoquan Su, Guijun Zhang, Zhenling Peng, and Jianyi Yang. Pathdiffusion: modeling protein folding pathway using evolution-guided diffusion. bioRxiv, pages 2026–01, 2026.   
+[77] Nathaniel Thomas, Tess Smidt, Steven Kearnes, Lusann Yang, Li Li, Kai Kohlhoff, and Patrick Riley. Tensor field networks: Rotation-and translation-equivariant neural networks for 3d point clouds. arXiv preprint arXiv:1802.08219, 2018.   
+[78] Vıctor Garcia Satorras, Emiel Hoogeboom, and Max Welling. E (n) equivariant graph neural networks. In International conference on machine learning, pages 9323–9332. PMLR, 2021.   
+[79] Emiel Hoogeboom, Vıctor Garcia Satorras, Clément Vignac, and Max Welling. Equivariant diffusion for molecule generation in 3d. In International conference on machine learning, pages 8867–8887. PMLR, 2022.   
+[80] Minkai Xu, Lantao Yu, Yang Song, Chence Shi, Stefano Ermon, and Jian Tang. Geodiff: A geometric diffusion model for molecular conformation generation. arXiv preprint arXiv:2203.02923, 2022.
+
+[81] Jason Yim, Brian L Trippe, Valentin De Bortoli, Emile Mathieu, Arnaud Doucet, Regina Barzilay, and Tommi Jaakkola. Se (3) diffusion model with application to protein backbone generation. In International Conference on Machine Learning, pages 40001–40039. PMLR, 2023.   
+[82] Gabriele Corso, Hannes Stärk, Bowen Jing, Regina Barzilay, and Tommi S. Jaakkola. Diffdock: Diffusion steps, twists, and turns for molecular docking. In International Conference on Learning Representations, 2023.
+
+# Appendix
+
+Appendix organization. This appendix provides supplementary material for the theoretical formulation, implementation details, evaluation protocol, additional results, ablations, qualitative examples, related work, and broader discussion. Appendix A gives the proof of the group-action formulation and clarifies its connection to SE(2) navigation. Appendix B details the latent rollout objective, constraint synthesis, action-space approximation, and the relation between latent training and recovered-state evaluation. Appendix C describes datasets, model variants, training setup, pose recovery, and metric protocols. Appendices D–F provide additional quantitative results, ablations, and qualitative examples. Appendix G reviews related work, and Appendix H discusses scope, broader implications, and limitations.
+
+# A Additional Details of the Group-Action Formulation
+
+This appendix provides additional details for the group-action formulation in Sec. 2. We first prove Theorem 1, then discuss why SE(2) is the natural group for planar navigation, and finally clarify how the exact group-action ideal is operationalized through local observable conditions in video world models.
+
+# A.1 Proof of Theorem 1
+
+Proof. We use the action-order convention adopted in Sec. 2, where applying $a _ { 1 }$ followed by $a _ { 2 }$ corresponds to the composed action $a _ { 1 } \circ a _ { 2 }$ . Under this convention, the compatibility condition
+
+$$
+f _ {\theta} (f _ {\theta} (s, a _ {1}), a _ {2}) = f _ {\theta} (s, a _ {1} \circ a _ {2}) \tag {22}
+$$
+
+and the identity condition
+
+$$
+f _ {\theta} (s, e) = s \tag {23}
+$$
+
+are exactly the axioms of a right group action of G on S. Therefore, $f _ { \theta }$ defines a group action under this convention.
+
+It remains to show the finite-sequence property. For n = 1, the statement is trivial. Assume that for some $n - 1$ ,
+
+$$
+f _ {\theta} \left(\dots f _ {\theta} \left(f _ {\theta} \left(s, a _ {1}\right), a _ {2}\right) \dots , a _ {n - 1}\right) = f _ {\theta} \left(s, a _ {1} \circ \dots \circ a _ {n - 1}\right). \tag {24}
+$$
+
+Applying $a _ { n }$ and using compatibility gives
+
+$$
+\begin{array}{l} f _ {\theta} \left(f _ {\theta} (s, a _ {1} \circ \dots \circ a _ {n - 1}), a _ {n}\right) \\ = f _ {\theta} (s, \left(a _ {1} \circ \dots \circ a _ {n - 1}\right) \circ a _ {n}) \\ = f _ {\theta} (s, a _ {1} \circ \dots \circ a _ {n}), \tag {25} \\ \end{array}
+$$
+
+where the last equality follows from associativity of the group operation. Thus, by induction,
+
+$$
+f _ {\theta} \left(\dots f _ {\theta} \left(f _ {\theta} (s, a _ {1}), a _ {2}\right) \dots , a _ {n}\right) = f _ {\theta} \left(s, a _ {1} \circ \dots \circ a _ {n}\right). \tag {26}
+$$
+
+The inverse condition follows from the group-action axioms. Indeed, for any $a \in G ,$ , compatibility and identity imply
+
+$$
+f _ {\theta} (f _ {\theta} (s, a), a ^ {- 1}) = f _ {\theta} (s, a \circ a ^ {- 1}) = f _ {\theta} (s, e) = s. \tag {27}
+$$
+
+We state inverse consistency explicitly in the main text because it is one of the most direct observable consequences of action cancellation in navigation rollouts. □
+
+# A.2 Why SE(2) for Navigation
+
+In embodied navigation, actions typically represent local ego-motion increments in the plane. An idealized planar motion can be written as an element of the special Euclidean group SE(2):
+
+$$
+g = (R, \mathbf {p}), \quad R \in S O (2), \quad \mathbf {p} \in \mathbb {R} ^ {2}, \tag {28}
+$$
+
+or equivalently as the homogeneous transformation
+
+$$
+G = \left[ \begin{array}{l l} R & \mathbf {p} \\ \mathbf {0} ^ {\top} & 1 \end{array} \right]. \tag {29}
+$$
+
+The group operation is rigid-motion composition:
+
+$$
+\left(R _ {1}, \mathbf {p} _ {1}\right) \circ \left(R _ {2}, \mathbf {p} _ {2}\right) = \left(R _ {1} R _ {2}, \mathbf {p} _ {1} + R _ {1} \mathbf {p} _ {2}\right). \tag {30}
+$$
+
+The identity element is
+
+$$
+e = (I, \mathbf {0}), \tag {31}
+$$
+
+and the inverse of a motion is
+
+$$
+(R, \mathbf {p}) ^ {- 1} = (R ^ {\top}, - R ^ {\top} \mathbf {p}). \tag {32}
+$$
+
+This group structure captures the algebraic relations that navigation actions should satisfy. A zero motion should preserve the state, a motion followed by its inverse should cancel, and a sequence of motions should have an effect determined by their composition. The group-action formulation in Sec. 2 uses this structure as the ideal state-space criterion for action-faithful world modeling.
+
+In practical video world models, actions are often represented by normalized local ego-motion increments such as
+
+$$
+\mathbf {a} _ {t} = \left(\Delta x _ {t}, \Delta y _ {t}, \Delta \theta_ {t}\right). \tag {33}
+$$
+
+The main text uses this ego-motion action parameterization to instantiate observable local consequences of the SE(2) group-action ideal. The exact action-space implementation used for training is described separately in Appendix B.
+
+# A.3 From Exact Group Action to Observable Local Conditions
+
+The group-action formulation defines an ideal state-space property. If the state st were directly observable and the transition map were deterministic, one could test whether
+
+$$
+f _ {\theta} (f _ {\theta} (s, a _ {1}), a _ {2}) = f _ {\theta} (s, a _ {1} \circ a _ {2}),
+$$
+
+$$
+f _ {\theta} (s, e) = s, \tag {34}
+$$
+
+$$
+f _ {\theta} (f _ {\theta} (s, a), a ^ {- 1}) = s,
+$$
+
+hold exactly. In stochastic video rollout, however, the underlying state is not directly observed. The model produces visual observations, and the induced motion must be recovered through an estimator Φ. Exact equality in the abstract state space is therefore not directly available as an evaluation target.
+
+The main paper consequently focuses on local observable consequences of the group-action ideal. The identity condition becomes zero-action preservation: a rollout under the neutral action should not introduce spurious motion. The inverse condition becomes recovery after cancellation: executing a motion and then its inverse should return to the starting state. The compatibility condition becomes local composition consistency: different short action decompositions with the same intended composed motion should induce compatible endpoints.
+
+These conditions are not introduced as task-specific heuristics. They are operational tests of whether the model-induced rollout preserves the basic algebraic consequences of planar motion composition. Their violations reveal failure modes that can remain hidden when evaluating only visual plausibility.
+
+# A.4 Scope of the Local Composition Approximation
+
+The group-action formulation is grounded in the SE(2) structure of planar rigid motions. Exact SE(2) composition is generally non-commutative: the effect of a translation followed by a rotation is not identical to the effect of the same rotation followed by the same translation. Therefore, the composition condition used in this paper should not be interpreted as assuming that SE(2) composition is commutative, nor as claiming that arbitrary trajectories with the same cumulative displacement are equivalent.
+
+Our use of composition consistency is a local operational approximation for short ego-motion windows. In the datasets and training setup considered here, actions are represented as normalized local ego-motion increments. For short windows with small rotations, redistributing the same intended local displacement provides a practical probe for whether the model is overly sensitive to the temporal realization of a local motion segment. The goal is not to replace the exact SE(2) operation with a globally valid additive rule. Rather, the approximation asks whether two short action decompositions with matched intended motion induce compatible endpoint states.
+
+This distinction is important for interpreting both the metric and the training objective. The composition probe should be read as a local consistency test for action-conditioned rollout, not as a statement that all trajectories with equal cumulative displacement should coincide. Accordingly, all composition probes are restricted to short windows, and the window lengths used in evaluation are chosen to remain within this local regime.
+
+# B Additional Details on Group-Action Training
+
+This appendix provides implementation details for the group-action training objective introduced in Sec. 3. We describe the free-running latent rollout setting, the synthesis of training constraints from existing trajectories, the action-space approximations used during training, the practical perbatch objective, and the relation between latent training and recovered-state evaluation. Evaluation protocols and metric aggregation are described separately in Appendix C.
+
+# B.1 Free-Running Latent Rollout
+
+The group-action objective is computed on latent endpoints generated by the model’s own rollout process. Starting from a sampled latent state $\mathbf { z } _ { t }$ , the model is rolled out under a synthesized action segment without injecting ground-truth observations inside the constrained interval. This setting matches the object being regularized, namely the action-conditioned transition induced by the model itself.
+
+There are two possible rollout paradigms for applying such constraints. Teacher-forced rollout supplies ground-truth visual context at intermediate steps, while free-running rollout lets the model condition on its own generated latent states. Since the identity, inverse, and composition conditions characterize how the learned transition behaves under self-composition, we adopt free-running latent rollout inside the constrained interval. This allows the group-action objective to act directly on the internal dynamics used during generation and exposes violations that teacher forcing may hide.
+
+For memory efficiency and training stability, gradients are propagated only through the sampled local interval. Latent states before the interval are detached from the computation graph. This truncated rollout is used as an optimization device and does not change the definition of the group-action constraints. We examine the effect of this free-running design in the ablation study.
+
+# B.2 Training Constraint Synthesis and Per-Batch Sampling
+
+For each training trajectory, a starting index t is sampled from valid temporal positions. The local rollout horizon is sampled as
+
+$$
+l \sim \mathcal {U} \{1, \dots , L \}, \tag {35}
+$$
+
+where L controls the maximum span over which a group-action constraint is imposed. Short horizons emphasize immediate transition behavior, while longer horizons expose errors that appear only after repeated transition composition. Unless otherwise specified, $L = 4$ is used in our experiments.
+
+Given the native local action segment $\mathbf { u } _ { 1 : l }$ defined in Sec. 3.2, the identity, inverse, and composition constraints can in principle all be evaluated for the same sampled segment. In practice, computing all three constraints in every batch increases memory and computation because each constraint requires a separate latent rollout. We therefore sample one constraint type per training batch. The active group-action loss is one of
+
+$$
+\mathcal {L} _ {\mathrm{GA}} ^ {(b)} \in \{\mathcal {L} _ {\mathrm{id}}, \mathcal {L} _ {\mathrm{inv}}, \mathcal {L} _ {\mathrm{comp}} \}. \tag {36}
+$$
+
+This corresponds to a stochastic realization of the full objective in Eq. 13: in each batch, only the sampled group-action term is activated, while the other two terms have zero effective weight. Equivalently, the per-batch objective can be written as
+
+$$
+\mathcal {L} = \mathcal {L} _ {\text { diff }} + \lambda \mathcal {L} _ {\mathrm{GA}} ^ {(b)}. \tag {37}
+$$
+
+Across training, this stochastic sampling exposes the model to all three group-action constraints while keeping the rollout-based objective tractable.
+
+# B.3 Action-Space Approximation for Training
+
+The theoretical formulation in Sec. 2 is defined in terms of the group operation of planar rigid motions. In the video world models considered in this work, however, actions are provided as normalized local ego-motion increments. The training constraints are therefore instantiated under this action parameterization, following the operational form used in Sec. 2.1.
+
+For the inverse constraint, let
+
+$$
+\mathbf {u} _ {1: l} = \left(\mathbf {a} _ {t}, \dots , \mathbf {a} _ {t + l - 1}\right) \tag {38}
+$$
+
+be a local action segment. The reverse part is constructed by reversing the temporal order and negating each normalized increment:
+
+$$
+\hat {\mathbf {u}} _ {1: l} = \left(- \mathbf {a} _ {t + l - 1}, \dots , - \mathbf {a} _ {t}\right). \tag {39}
+$$
+
+The full inverse training segment is then the forward–inverse cycle
+
+$$
+\mathbf {u} _ {1: 2 l} ^ {\text { inv }} = \left(\mathbf {u} _ {1: l}, \hat {\mathbf {u}} _ {1: l}\right) = \left(\mathbf {a} _ {t}, \dots , \mathbf {a} _ {t + l - 1}, - \mathbf {a} _ {t + l - 1}, \dots , - \mathbf {a} _ {t}\right). \tag {40}
+$$
+
+This implements the cancellation relation used by the inverse constraint under the normalized egomotion parameterization.
+
+For the composition constraint, exact equality under SE(2) composition would require composing rigid motions in the full group representation. Instead, consistent with the main text, we construct local composition probes by accumulating normalized action increments over short ego-motion windows. Given a segment $\dot { \mathbf { u } } _ { 1 : l } ^ { A }$ , the alternative segment $\mathbf { u } _ { 1 : l } ^ { B }$ B is constructed as in Eq. 17, and satisfies
+
+$$
+\sum_ {i = 1} ^ {l} \mathbf {u} _ {i} ^ {A} = \sum_ {i = 1} ^ {l} \mathbf {u} _ {i} ^ {B}. \tag {41}
+$$
+
+Thus, the two segments preserve the same accumulated increments while changing the temporal allocation of the intended local motion.
+
+This approximation is used only for local constraint synthesis. It should not be interpreted as replacing exact SE(2) composition with a globally valid additive rule. Rather, it provides an efficient way to construct alternative short-horizon decompositions from existing trajectories, enabling the model to be regularized against sensitivity to different temporal realizations of the same intended local motion.
+
+The Dirichlet redistribution in Eq. 17 controls the diversity of these alternative decompositions. The concentration parameter α determines how evenly the accumulated increments are distributed across the segment. Smaller values produce more uneven allocations, while larger values produce smoother redistributions.
+
+# B.4 Latent Training versus State-Space Evaluation
+
+Latent training and recovered-state evaluation serve different roles. The group-action objective is imposed in latent space because this is where the video world model composes its internal rollout dynamics before decoding future observations. Applying the same objective directly in recovered state space would require decoding generated frames and running an external pose estimator inside the training loop, which is computationally expensive and unstable for gradient-based optimization.
+
+Recovered-state evaluation is used because action faithfulness is ultimately a property of induced motion. Recovered trajectories provide an interpretable representation for measuring identity drift, inverse recovery error, composition mismatch, and repeated-rollout dispersion.
+
+The method does not assume that latent distance is identical to recovered-state distance. The latent losses and the recovered-state metrics are both derived from the same group-action conditions. The former provide a practical optimization signal, while the latter measure whether generated rollouts exhibit the expected motion-level consequences.
+
+# C Additional Experimental Details
+
+This appendix provides additional details for the experiments in Sec. 4. We describe the datasets, model variants, training setup, pose recovery, GAC evaluation protocol, GAC probe design and aggregation, and GAR rollout protocol.
+
+# C.1 Datasets
+
+Experiments are conducted on RECON [14], SCAND [15], and HuRoN [16], following the preprocessing and data split protocol of NWM [13]. Relative actions are derived from ground-truth pose differences and normalized so that action scales remain comparable across datasets.
+
+RECON. RECON is an outdoor robotics dataset collected using a Clearpath Jackal UGV platform. It contains approximately 40 hours of data across 9 open-world environments. Following NWM [13], 9,468 video segments are used for training and 2,367 video segments for testing. Its emphasis on long-range traversal in visually diverse open-world environments makes it particularly suitable for evaluating whether rollout instability accumulates over extended action sequences.
+
+SCAND. SCAND is a robotics dataset of socially compliant navigation demonstrations collected using a wheeled Clearpath Jackal and a legged Boston Dynamics Spot in both indoor and outdoor settings at UT Austin. The full dataset contains 8.7 hours of data, 138 trajectories, and 25 miles of demonstrations. Following NWM [13], 484 video segments are used for training and 121 video segments for testing. Compared with RECON, SCAND contains richer local interaction structure and denser socially conditioned motion variation, making it useful for evaluating whether local group-action consistency is preserved in socially complex settings.
+
+HuRoN. HuRoN is a robotics dataset of social navigation interactions collected using a Robot Roomba in indoor environments at UC Berkeley. The dataset contains more than 75 hours of data across 5 environments and includes over 4,000 human interactions. Following NWM [13], 2,451 video segments are used for training and 613 video segments for testing. Its emphasis on socially unobtrusive navigation makes it relevant for evaluating whether action-conditioned rollout remains stable in interaction-heavy and behaviorally sensitive environments.
+
+# C.2 Model Variants and Adaptation
+
+NWM [13] is used as the main testbed throughout the experiments. It is a representative diffusionbased navigation world model with stochastic action-conditioned rollout, making it suitable for studying whether explicit group-action constraints improve rollout stability. Following its default setting, a CDiT-XL backbone with approximately 1B parameters is used together with a 4-frame context window. Visual observations are tokenized using the Stable Diffusion VAE [18], following the design adopted in NWM.
+
+DIAMOND [17] is included as an additional action-conditioned world-model baseline. Since DIAMOND was originally introduced in a different domain, we adapt its public implementation to the embodied navigation setting using a training setup similar in spirit to NWM. This additional baseline is included to test whether the proposed GA framework generalizes beyond a single worldmodel architecture.
+
+# C.3 Training Setup
+
+Optimization is performed with AdamW [19]. For GA training, full fine-tuning is used and the initial learning rate is set to $1 \times 1 0 ^ { - 6 }$ . Training is conducted on 8 A800 GPUs with a per-GPU batch size of 1. Unless otherwise specified, the remaining optimization settings follow the corresponding base model as closely as possible. The group-action objective is applied only during fine-tuning. The maximum local rollout horizon is set to $L = 4$ by default. The group-action loss weight λ is selected from {0.1, 0.5, 1.0}, and $\lambda = 0 . 5$ is used by default. As described in Appendix B.2, one group-action constraint type is sampled in each training batch for efficiency.
+
+# C.4 Pose Recovery and Trajectory Alignment
+
+Generated videos are mapped to recovered state trajectories using the pose estimator Φ defined in Sec. 2.1, implemented with the off-the-shelf DROID-SLAM [20] toolkit. All motion-level errors are computed using the state distance $d ( \cdot , \cdot )$ in Eq. 8.
+
+For GAR evaluation, both aligned and non-aligned trajectory errors are reported. Aligned errors remove global pose drift before computing trajectory discrepancy, while non-aligned errors measure raw deviation in the recovered trajectory. The aligned setting emphasizes local trajectory shape, whereas the non-aligned setting additionally reflects global drift in position and heading.
+
+# C.5 GAC Evaluation Protocol
+
+This subsection specifies the evaluation configurations used to compute the Group-Action Consistency (GAC) error in Sec. 3.3. Generated videos are first mapped to recovered state trajectories using Φ. The main text defines $\Delta _ { \mathrm { i d } } , \Delta _ { \mathrm { i n v } }$ , and $\Delta _ { \mathrm { c o m p } }$ as the averaged errors for identity, inverse, and local composition consistency. Here we spell out the corresponding probe families.
+
+Identity evaluatioaction stream. Let $\mathcal { T } _ { \mathrm { i d } } ^ { ( k , l ) }$ T (k,l)id entity consistency is evaluated by inserting zero-action segments into the denote the set of evaluated zero-action segments, where k is the number identity drift is measured by comparing the recovered states before and after the zero-action interval:
+
+$$
+\Delta_ {\mathrm{id}} ^ {(k, l)} = \frac {1}{| \mathcal {T} _ {\mathrm{id}} ^ {(k , l)} |} \sum_ {t \in \mathcal {T} _ {\mathrm{id}} ^ {(k, l)}} d \left(\mathbf {s} _ {t + l} ^ {\mathrm{id}}, \mathbf {s} _ {t}\right). \tag {42}
+$$
+
+A larger value indicates stronger drift under the neutral action.
+
+Inverse evaluation. Inverse consistency is evaluated by executing a local action segment followed by its inverse sequence. Let $\mathcal { T } _ { \mathrm { i n v } } ^ { ( k , l ) }$ denote the set of evaluated forward–inverse segments, where k is the number of evaluated segments and l controls the temporal scale of each segment. The inverse recovery error is
+
+$$
+\Delta_ {\text { inv }} ^ {(k, l)} = \frac {1}{| \mathcal {T} _ {\text { inv }} ^ {(k , l)} |} \sum_ {t \in \mathcal {T} _ {\text { inv }} ^ {(k, l)}} d \left(\mathrm{s} _ {t, \text { rec }} ^ {\text { inv }}, \mathrm{s} _ {t}\right), \tag {43}
+$$
+
+where $\mathbf { s } _ { t , \mathrm { r e c } } ^ { \mathrm { i n v } }$ is the recovered state after executing the action segment and its inverse. A larger value indicates weaker inverse consistency.
+
+Composition evaluation. Local composition consistency is evaluated through alternative decompositions of the same local motion. Given a local action segment $\mathbf { a } _ { 1 : l : }$ , an alternative segment $\mathbf { b } _ { 1 : l }$ is constructed by redistributing the same cumulative displacement:
+
+$$
+\mathbf {b} _ {i} = w _ {i} \sum_ {j = 1} ^ {l} \mathbf {a} _ {j}, \quad \mathbf {w} \sim \operatorname{Dir} (\alpha), \tag {44}
+$$
+
+which satisfies
+
+$$
+\sum_ {i = 1} ^ {l} \mathbf {b} _ {i} = \sum_ {i = 1} ^ {l} \mathbf {a} _ {i}. \tag {45}
+$$
+
+This construction changes the temporal allocation of the local motion while preserving its cumulative displacement. The model is rolled out under the original segment and the recomposed segment. Let $\mathcal { T } _ { \mathrm { c o m p } } ^ { ( \bar { l } ) }$ denote the set of evaluated composition segments. The composition mismatch is
+
+$$
+\Delta_ {\mathrm{comp}} ^ {(l)} = \frac {1}{| \mathcal {T} _ {\mathrm{comp}} ^ {(l)} |} \sum_ {t \in \mathcal {T} _ {\mathrm{comp}} ^ {(l)}} d \left(\mathbf {s} _ {t + l} ^ {A}, \mathbf {s} _ {t + l} ^ {B}\right), \tag {46}
+$$
+
+whereA larg $\mathbf { s } _ { t + l } ^ { A }$ andlue $\mathbf { s } _ { t + l } ^ { B }$ are the recovered endpoint states under the original and recomposed segments.ates weaker local composition consistency.
+
+# C.6 GAC Probe Design and Metric Aggregation
+
+The GAC metric is implemented as a fixed controlled probe suite. All probe configurations are specified before evaluation and shared across methods, so the reported differences are not affected by method-specific probe selection. The probe suite evaluates local observable consequences of the group-action ideal at multiple difficulty levels.
+
+For identity and inverse consistency, each configuration is indexed by $( k , l )$ . The parameter k controls the number of inserted or evaluated local segments. It tests whether small violations accumulate when the same local group-action relation is applied repeatedly. The parameter l controls the temporal length of each segment. It tests whether the violation grows as the local rollout span becomes longer. In the main analysis, one factor is varied while the other is fixed, using $k , l \in \{ 1 , \bar { 3 } , 5 \}$ . This produces small, medium, and large local probes while keeping the evaluation interpretable. We do not use a dense grid over all (k, l) pairs because it would mix the two sources of difficulty and introduce redundant configurations.
+
+For local composition consistency, the probe compares two decompositions of the same local motion window. The natural scale parameter is therefore the window length l. We use $l \in \{ 2 , 4 , 6 \}$ to cover increasing local composition difficulty while staying within the short-horizon regime where the local composition approximation is intended to apply. The goal is not to claim that long-horizon trajectories with the same cumulative displacement are equivalent. Rather, the probe tests whether the model is overly sensitive to different temporal realizations of a short local motion.
+
+For each group-action condition, configuration-level errors are first averaged over fixed valid starting positions and evaluation sequences. The component errors are then averaged over the corresponding evaluation family:
+
+$$
+\bar {\Delta} _ {\mathrm{id}} = \frac {1}{| \mathcal {K} _ {\mathrm{id}} |} \sum_ {(k, l) \in \mathcal {K} _ {\mathrm{id}}} \Delta_ {\mathrm{id}} ^ {(k, l)}, \quad \bar {\Delta} _ {\mathrm{inv}} = \frac {1}{| \mathcal {K} _ {\mathrm{inv}} |} \sum_ {(k, l) \in \mathcal {K} _ {\mathrm{inv}}} \Delta_ {\mathrm{inv}} ^ {(k, l)}. \tag {47}
+$$
+
+For local composition consistency, we average over the evaluated window lengths:
+
+$$
+\bar {\Delta} _ {\text { comp }} = \frac {1}{| \mathcal {L} _ {\text { comp }} |} \sum_ {l \in \mathcal {L} _ {\text { comp }}} \Delta_ {\text { comp }} ^ {(l)}. \tag {48}
+$$
+
+The aggregate GAC error reported in the experiments is
+
+$$
+\mathcal {E} _ {\mathrm{GAC}} = \frac {1}{3} \left(\bar {\Delta} _ {\mathrm{id}} + \bar {\Delta} _ {\mathrm{inv}} + \bar {\Delta} _ {\mathrm{comp}}\right). \tag {49}
+$$
+
+This aggregation is well-defined because all components are measured using the same recoveredstate distance $d ( \cdot , \cdot )$ . Equal weighting avoids introducing a task-specific preference among identity preservation, inverse cancellation, and local composition consistency. We report both the aggregate score and the component errors, so changes in $\mathcal { E } _ { \mathrm { G A C } }$ can be traced to the corresponding local group-action conditions.
+
+# C.7 GAR Evaluation Protocol
+
+Group-Action Robustness (GAR) is evaluated under repeated stochastic rollouts conditioned on the same initial observation and identical action sequence. Unless otherwise specified, each model is $\{ \mathbf { s } _ { 1 : T } ^ { ( i ) } \} _ { i = 1 } ^ { N }$ $N = 5$ GAR error is computed using Eq. 21. Mean and standard deviation are reported acrossences. Both 16-frame and 64-frame horizons are evaluated to measure short-range and longer-range accumulation of rollout errors.
+
+# C.8 Assets and Licenses
+
+This work uses existing research datasets and model implementations, including RECON [14], SCAND [15], HuRoN [16], NWM [13], DIAMOND [17], and DROID-SLAM [20]. We credit the original creators through citation and use these assets for research purposes following their released terms and licenses. No new dataset is collected or redistributed in this work.
+
+# D Additional Quantitative Results
+
+This appendix provides supplementary quantitative results beyond the main RECON analysis in Sec. 4.
+
+# D.1 Additional GAR Results
+
+Table 4 reports additional GAR results on SCAND and HuRoN under repeated stochastic rollouts with identical initial observations and action sequences. The same evaluation protocol as in Sec. 4.3 is utilized on both datasets. On both SCAND and HuRoN, GA training reduces rollout dispersion for both DIAMOND and NWM, showing that the improvement in rollout-level robustness is not limited to the main RECON setting. The gains are consistently observed under both aligned and non-aligned evaluation, indicating improved local trajectory agreement as well as reduced global drift.
+
+Table 4: Additional Group-Action Robustness (GAR) results on SCAND and HuRoN under repeated stochastic rollouts with identical action sequences. Lower is better. “Aligned” removes global pose drift before computing trajectory error, while “Non-aligned” measures raw trajectory deviation. 
+
+<table><tr><td rowspan="2">Dataset</td><td rowspan="2">Method</td><td colspan="2">16 Frames</td><td colspan="2">64 Frames</td></tr><tr><td>Aligned ↓</td><td>Non-aligned ↓</td><td>Aligned ↓</td><td>Non-aligned ↓</td></tr><tr><td rowspan="4">SCAND</td><td>DIAMOND [17]</td><td>0.63 ± 0.42</td><td>1.24 ± 0.86</td><td>2.06 ± 1.31</td><td>6.42 ± 4.16</td></tr><tr><td>DIAMOND + GA</td><td>0.53 ± 0.35</td><td>1.03 ± 0.72</td><td>1.68 ± 1.05</td><td>5.28 ± 3.36</td></tr><tr><td>NWM [13]</td><td>0.46 ± 0.28</td><td>0.91 ± 0.64</td><td>1.45 ± 0.85</td><td>4.08 ± 2.69</td></tr><tr><td>NWM + GA</td><td>0.37 ± 0.23</td><td>0.72 ± 0.50</td><td>1.12 ± 0.68</td><td>3.39 ± 2.04</td></tr><tr><td rowspan="4">HuRoN</td><td>DIAMOND [17]</td><td>0.65 ± 0.23</td><td>1.37 ± 0.56</td><td>2.34 ± 0.92</td><td>7.36 ± 3.20</td></tr><tr><td>DIAMOND + GA</td><td>0.55 ± 0.19</td><td>1.13 ± 0.46</td><td>1.91 ± 0.75</td><td>6.04 ± 2.58</td></tr><tr><td>NWM [13]</td><td>0.47 ± 0.16</td><td>0.98 ± 0.35</td><td>1.70 ± 0.58</td><td>5.13 ± 2.22</td></tr><tr><td>NWM + GA</td><td>0.39 ± 0.13</td><td>0.77 ± 0.29</td><td>1.33 ± 0.47</td><td>4.15 ± 1.70</td></tr></table>
+
+# D.2 Additional GAC Results
+
+Table 5 reports aggregated GAC errors on SCAND and HuRoN. Component errors are averaged over the evaluated probe configurations, and $\mathcal { E } _ { \mathrm { G A C } }$ is computed as the mean of identity, inverse and composition errors. On both datasets, GA training reduces the aggregate GAC error for both DIAMOND and NWM. This supports the conclusion that the latent group-action objective improves local action faithfulness beyond the main RECON dataset and beyond a single backbone architecture.
+
+Table 5: Aggregated Group-Action Consistency (GAC) error on SCAND and HuRoN. Component errors are averaged over evaluated probe configurations. The last column reports $\mathcal { E } _ { \mathrm { G A C } }$ as the mean of the three component errors. Standard deviations are shown for component metrics. Lower is better. 
+
+<table><tr><td>Dataset</td><td>Method</td><td> $\bar{\Delta}_{id} \downarrow$ </td><td> $\bar{\Delta}_{inv} \downarrow$ </td><td> $\bar{\Delta}_{comp} \downarrow$ </td><td> $\mathcal{E}_{GAC} \downarrow$ </td></tr><tr><td rowspan="4">SCAND</td><td>DIAMOND [17]</td><td>6.12 ± 2.95</td><td>5.92 ± 2.81</td><td>3.56 ± 2.12</td><td>5.20</td></tr><tr><td>DIAMOND + GA</td><td>5.56 ± 2.71</td><td>5.43 ± 2.53</td><td>2.96 ± 1.82</td><td>4.65</td></tr><tr><td>NWM [13]</td><td>5.38 ± 2.63</td><td>5.51 ± 2.55</td><td>2.68 ± 1.61</td><td>4.52</td></tr><tr><td>NWM + GA</td><td>4.84 ± 2.32</td><td>4.67 ± 2.16</td><td>2.06 ± 1.31</td><td>3.86</td></tr><tr><td rowspan="4">HuRoN</td><td>DIAMOND [17]</td><td>7.08 ± 2.86</td><td>6.77 ± 2.91</td><td>3.31 ± 1.84</td><td>5.72</td></tr><tr><td>DIAMOND + GA</td><td>6.36 ± 2.66</td><td>6.08 ± 2.55</td><td>2.79 ± 1.50</td><td>5.08</td></tr><tr><td>NWM [13]</td><td>6.07 ± 2.48</td><td>6.39 ± 2.64</td><td>2.53 ± 1.37</td><td>5.00</td></tr><tr><td>NWM + GA</td><td>5.36 ± 2.25</td><td>5.49 ± 2.32</td><td>1.99 ± 1.15</td><td>4.28</td></tr></table>
+
+# D.3 Probe-wise Analysis of GAC Errors
+
+Fig. 3 provides a probe-wise view of GAC errors on RECON. The probe parameters are not intended to define a strictly monotonic difficulty scale. Instead, they expose complementary failure modes of group-action consistency, including repeated local relations, longer temporal extent, and alternative decompositions of the same local motion.
+
+For inverse consistency, errors tend to increase as the evaluated segment becomes longer or is repeated more times. This is expected because the model must compose a forward motion with its inverse and recover the starting state. Residual transition errors accumulated during the forward segment can therefore remain after cancellation. GA regularization consistently lowers the inverse error, indicating improved action cancellation under composed rollouts.
+
+For local composition consistency, longer windows lead to larger endpoint mismatch. Longer windows involve more transition steps and give two equivalent local decompositions more opportunities to diverge. The reduction after GA regularization shows that the model becomes less sensitive to the particular temporal decomposition of a local motion, which is the desired behavior under the group-action formulation.
+
+Identity consistency follows a less monotonic pattern. Repeated or longer zero-action segments can make the stationary condition more explicit, which may reduce mean drift in intermediate settings. At larger settings, however, the probe also imposes a stricter preservation requirement, since the model must remain static across more pause locations or longer pause durations. The increased error or variance in these cases suggests residual motion under extended zero-action rollouts, rather than exact realization of the identity transformation. GA regularization reduces identity errors in most settings, showing improved but still imperfect preservation under zero action.
+
+# D.4 Image-Quality Evaluation
+
+Table 6 reports image-quality metrics for generated rollouts on RECON. We evaluate LPIPS [21], DreamSim [22], and PSNR between generated frames and the corresponding ground-truth frames following NWM [13], using the same preprocessing and sampling pipeline across methods. This evaluation checks whether the gains in GAC and GAR come at the cost of visual prediction quality. All methods are evaluated under the same preprocessing, sampling, and metric-computation pipeline. The results show that GA regularization keeps image-quality metrics comparable to the base model. This suggests that the proposed objective improves action-conditioned dynamics without noticeably degrading perceptual or pixel-level generation quality.
+
+Table 6: Image-quality evaluation on RECON under the same evaluation pipeline. LPIPS and DreamSim measure perceptual dissimilarity, while PSNR measures pixel-level reconstruction quality. Lower is better for LPIPS and DreamSim, while higher is better for PSNR. 
+
+<table><tr><td>Method</td><td>LPIPS ↓</td><td>DreamSim ↓</td><td>PSNR ↑</td></tr><tr><td>NWM</td><td>0.386 ± 0.004</td><td>0.141 ± 0.002</td><td>13.86 ± 0.08</td></tr><tr><td>NWM + GA</td><td>0.364 ± 0.003</td><td>0.130 ± 0.002</td><td>14.29 ± 0.07</td></tr></table>
+
+# E Additional Ablation Studies
+
+This appendix provides supplementary ablation studies on RECON. We analyze the effect of the maximum rollout span, the group-action loss weight, and the training rollout paradigm.
+
+# E.1 Effect of Maximum Rollout Span
+
+Table 7 studies the effect of the maximum rollout span L used in group-action training. Increasing the rollout span generally improves GAR, indicating that enforcing group-action constraints over multi-step transitions is important for reducing accumulated rollout error. The performance becomes similar once L reaches a moderate range, with only marginal differences between L = 4 and L = 6. We therefore use L = 4 as the default setting, which offers a good balance between performance and training cost.
+
+Table 7: Effect of the maximum rollout span L used in group-action training on RECON. Lower is better. “Aligned” removes global pose drift before computing trajectory error, while “Non-aligned” measures raw trajectory deviation. 
+
+<table><tr><td rowspan="2">L</td><td colspan="2">16 Frames</td><td colspan="2">64 Frames</td></tr><tr><td>Aligned ↓</td><td>Non-aligned ↓</td><td>Aligned ↓</td><td>Non-aligned ↓</td></tr><tr><td>2</td><td>0.27 ± 0.22</td><td>0.53 ± 0.37</td><td>0.49 ± 0.36</td><td>1.35 ± 0.89</td></tr><tr><td>4</td><td>0.26 ± 0.20</td><td>0.49 ± 0.35</td><td>0.46 ± 0.33</td><td>1.28 ± 0.82</td></tr><tr><td>6</td><td>0.26 ± 0.21</td><td>0.50 ± 0.35</td><td>0.45 ± 0.33</td><td>1.29 ± 0.83</td></tr></table>
+
+# E.2 Effect of Group-Action Loss Weight
+
+Table 8 studies the effect of the group-action loss weight λ. Beyond hyperparameter sensitivity, this experiment tests whether the observed gain could be attributed simply to continued fine-tuning. The λ = 0 case corresponds to training under the same pipeline without group-action constraints. Its performance is almost unchanged relative to the baseline, showing only marginal variation. Introducing a nonzero group-action weight leads to clear improvements, with the best overall performance obtained at an intermediate setting. When λ becomes larger, the gain saturates slightly, suggesting that excessively strong group-action training may start to compete with the base diffusion objective.
+
+Table 8: Effect of the group-action loss weight λ on RECON. Lower is better. “Aligned” removes global pose drift before computing trajectory error, while “Non-aligned” measures raw trajectory deviation. 
+
+<table><tr><td rowspan="2">λ</td><td colspan="2">16 Frames</td><td colspan="2">64 Frames</td></tr><tr><td>Aligned ↓</td><td>Non-aligned ↓</td><td>Aligned ↓</td><td>Non-aligned ↓</td></tr><tr><td>Baseline</td><td>0.32 ± 0.26</td><td>0.65 ± 0.41</td><td>0.62 ± 0.44</td><td>1.52 ± 1.27</td></tr><tr><td>0</td><td>0.33 ± 0.23</td><td>0.61 ± 0.42</td><td>0.60 ± 0.44</td><td>1.47 ± 1.21</td></tr><tr><td>0.1</td><td>0.27 ± 0.21</td><td>0.52 ± 0.37</td><td>0.48 ± 0.35</td><td>1.34 ± 0.88</td></tr><tr><td>0.5</td><td>0.26 ± 0.20</td><td>0.49 ± 0.35</td><td>0.46 ± 0.33</td><td>1.28 ± 0.82</td></tr><tr><td>1.0</td><td>0.27 ± 0.20</td><td>0.50 ± 0.36</td><td>0.47 ± 0.34</td><td>1.31 ± 0.86</td></tr></table>
+
+# E.3 Teacher-Forcing versus Free-Running Training
+
+Table 9 compares two ways of applying group-action constraints during training. In the teacherforcing variant, the same constraints are constructed, but each transition is conditioned on ground-truth history rather than the model’s own previously generated states. In the free-running variant, the model rolls forward under its own generated latent states, and the group-action losses are imposed on the resulting rollout. The teacher-forcing variant improves over the baseline, indicating that the group-action relations are meaningful even when applied under locally corrected context. However, its gain remains consistently smaller than that of free-running training, especially at longer horizons. This supports the free-running latent rollout design discussed in Appendix B.1.
+
+Table 9: Teacher-forcing versus free-running group-action training on RECON. Lower is better. “Aligned” removes global pose drift before computing trajectory error, while “Non-aligned” measures raw trajectory deviation. 
+
+<table><tr><td rowspan="2">Training scheme</td><td colspan="2">16 Frames</td><td colspan="2">64 Frames</td></tr><tr><td>Aligned ↓</td><td>Non-aligned ↓</td><td>Aligned ↓</td><td>Non-aligned ↓</td></tr><tr><td>Baseline</td><td>0.32 ± 0.26</td><td>0.65 ± 0.41</td><td>0.62 ± 0.44</td><td>1.52 ± 1.27</td></tr><tr><td>GA w/ Teacher-Forcing</td><td>0.30 ± 0.24</td><td>0.60 ± 0.39</td><td>0.56 ± 0.40</td><td>1.43 ± 1.05</td></tr><tr><td>GA w/ Free-Running</td><td>0.26 ± 0.20</td><td>0.49 ± 0.35</td><td>0.46 ± 0.33</td><td>1.28 ± 0.82</td></tr></table>
+
+# F Additional Qualitative Results
+
+This appendix provides additional qualitative evidence for the two levels of evaluation used in the main paper. We first show failure cases of the baseline model, including weak rollout-level robustness under identical actions and local violations of the group-action conditions. We then provide additional examples after GA training, showing that the improvements measured by GAC and GAR are also visible in generated rollouts.
+
+![](images/9fe37d202542649ec052f5c160f516e75fc130d48dfc98fc4208768a591f36d8.jpg)
+
+<details>
+<summary>text_image</summary>
+
+Rollout 1
+t=4
+t=8
+t=12
+t=16
+Rollout 2
+Rollout 1
+Rollout 2
+</details>
+
+Figure 5: Additional qualitative examples of weak rollout-level robustness in the baseline NWM. Each example shows two stochastic rollouts generated from the same initial observation and identical action sequence. Although the frames can remain visually plausible, the induced motion may diverge over time.
+
+# F.1 Baseline Rollout Robustness Failures
+
+Figure 5 shows additional qualitative examples of weak rollout-level robustness in the baseline NWM. Each example compares two stochastic rollouts generated from the same initial observation and identical action sequence. Although individual frames remain visually plausible, the induced motion can diverge noticeably over time, leading to inconsistent trajectory behavior across repeated rollouts.
+
+These examples complement the GAR results in Sec. 4.3. They show that the dispersion measured by $\mathcal { E } _ { \mathrm { G A R } }$ is directly visible in generated sequences rather than being only a property of recovered trajectory metrics. The same behavior appears across multiple cases, consistent with the quantitative GAR results.
+
+1) Identity Consistency Violation   
+![](images/7b764442e53440c7eebf14284481779115ad5d65e51cac2646c26a1ff55bbaa7.jpg)
+
+<details>
+<summary>natural_image</summary>
+
+Interior view of a modern office hallway with curved walls and ceiling, showing interior lighting and no visible text or symbols.
+</details>
+
+![](images/5f7d62cb1d14e9a6e9e65895f45a4597976a5764447073dbdc05d29835d260aa.jpg)
+
+<details>
+<summary>natural_image</summary>
+
+Exterior view of a two-story building with utility poles and grassy foreground (no signage or text visible)
+</details>
+
+![](images/d9d893e825f37b26dab960099335c227020920d1991610b83fbd3cb2b490335d.jpg)
+
+<details>
+<summary>natural_image</summary>
+
+Two side-by-side fisheye images showing a grassy field with trees and distant buildings under cloudy sky (no text or symbols)
+</details>
+
+2) Inverse Consistency Violation   
+![](images/624495a7fa32f1f1cab551829320347e834d44234505e45e31937f72018c81ce.jpg)
+
+<details>
+<summary>natural_image</summary>
+
+Interior view of a modern, empty corridor with curved glass windows and illuminated doors (no visible text or symbols)
+</details>
+
+![](images/71636cd8dc97211b09735ff111732e840442f0c3d0c584a34cfe5d39d9c73cac.jpg)
+
+<details>
+<summary>natural_image</summary>
+
+Composite image showing three views of white houses on a grassy hillside under clear sky, labeled 'a' and '-a' (no text or symbols on buildings)
+</details>
+
+3) Composition Violation   
+![](images/bf177a0a476d9263e427055ae24ad0f48d23dd07f245c454884d5a301779fe29.jpg)
+
+<details>
+<summary>natural_image</summary>
+
+Exterior view of a rural residential area with houses and greenery under clear sky (no signage or text)
+</details>
+
+![](images/f3b58225537a655cb9c59b036e4a3c5f5edcb0e129eb427c028b260b3e5102e6.jpg)
+
+<details>
+<summary>natural_image</summary>
+
+Two-panel fisheye photo showing a residential building with trees and open ground, no visible text or symbols
+</details>
+
+![](images/6bf0698de99607887da91f475b9beebcb5d59605f9dbf33ddc60ddf2bbbd6e68.jpg)
+
+<details>
+<summary>natural_image</summary>
+
+Two side-by-side photos of a paved sidewalk with tree and street elements, no visible text or symbols
+</details>
+
+![](images/0f93a0c181f6767a4714fa4cdad7510acac67eab11a774fc96f3aa8326754716.jpg)
+
+<details>
+<summary>natural_image</summary>
+
+Side-by-side comparison of a modern building with grassy foreground and curved roof, labeled 'a3+a4' in top-left corner (no other text or symbols)
+</details>
+
+![](images/fea33924803243cc2c4148efe3cfdb532842a2f14937c664878820db9ddce228.jpg)
+
+<details>
+<summary>natural_image</summary>
+
+Two-panel image showing a modern building with trees and grass, labeled 'a3+a4' in the top left corner (no other text or symbols)
+</details>
+
+![](images/204a3e7760ff74d0fd5dbdb8ec0fb2dd7a69d7a875aa18c1d648025cc6172fd2.jpg)
+
+<details>
+<summary>natural_image</summary>
+
+Two side-by-side photos of a paved outdoor path with tree-lined streets and trees, no visible text or symbols.
+</details>
+
+Figure 6: Additional qualitative examples of local GAC failures in the baseline NWM. The figure includes representative cases for identity consistency, inverse consistency, and local composition consistency. Observed behaviors include drift under zero-action probes, incomplete recovery after forward–inverse action sequences, and mismatched outcomes under locally equivalent action decompositions.
+
+# F.2 Baseline Local GAC Failures
+
+Figure 6 shows additional qualitative examples of local GAC failures in the baseline NWM. The examples cover identity consistency, inverse consistency, and local composition consistency. They make the three local failure modes visible in generated rollouts, complementing the quantitative GAC errors in Sec. 4.2.
+
+For identity consistency, inserted zero-action segments do not reliably preserve the current state. Even when the action input indicates no motion, the generated rollout may still exhibit visible drift or viewpoint change. For inverse consistency, a local action segment followed by its inverse often fails to recover the starting state, leaving a residual offset after the forward–inverse sequence. For local composition consistency, locally equivalent action decompositions can lead to noticeably different rollout outcomes, indicating sensitivity to temporal realization beyond cumulative displacement alone.
+
+Together, these examples show that the local errors measured by $\Delta _ { \mathrm { i d } } , \Delta _ { \mathrm { i n v } }$ , and $\Delta _ { \mathrm { c o m p } }$ correspond to concrete failures in generated action-conditioned behavior. They also support the interpretation that poor rollout robustness is connected to violations of local group-action conditions.
+
+![](images/74363da35ba6ec5c2ac0d8f7426975ddc762a74faf83c714d5934c306a6aeb76.jpg)  
+Figure 7: Additional qualitative examples of repeated-rollout robustness after GA training. Each example shows stochastic rollouts generated from the same initial observation and identical action sequence. Although visual details may vary across samples, the induced motion remains more consistent.
+
+# F.3 Additional Qualitative Results after GA Training
+
+Figures 7 and 8 provide additional qualitative examples after GA training. Figure 7 shows repeated stochastic rollouts under identical initial observations and action sequences. Although individual samples may still differ in visual details, their motion evolution remains more consistent across rollouts. This complements the GAR improvements reported in Sec. 4.3 and Appendix D.1.
+
+Figure 8 shows representative local group-action behavior under identity, inverse, and composition transformations. The GA-trained model exhibits limited drift under zero action, approximate recovery after forward–inverse action sequences, and compatible outcomes under locally equivalent action decompositions. These examples complement the GAC improvements in Sec. 4.2 and Appendix D.2.
+
+Taken together, the qualitative results show both sides of the empirical story. The baseline model can generate visually plausible videos while violating local group-action conditions and diverging under repeated rollout. After GA training, the generated rollouts remain more consistent with the action-composition structure, and the improvement is visible not only in aggregate metrics but also in the generated sequences themselves.
+
+1) Improved Identity Consistency   
+![](images/ede5d138185e06d9445c3d18f2e01fd78d6fa6f26a75803dadb987c8b38babc9.jpg)
+
+<details>
+<summary>natural_image</summary>
+
+Side-by-side comparison of a modern building with trees on grass under blue sky, labeled 'a=0' in top-left corner (no other text or symbols)
+</details>
+
+![](images/9a70ad0ca405a428889dc1682a5ab1b6ee794ba69744bad230661bc7169cf1c9.jpg)
+
+<details>
+<summary>natural_image</summary>
+
+Two white arched structures on a grassy field under blue sky, one with 'a=0' label and arrow, the other showing no text or symbols.
+</details>
+
+![](images/c9c88beb4752996dd8d84e238f7c65daf3cc3d125c52d11e552d8aade402e96b.jpg)
+
+<details>
+<summary>natural_image</summary>
+
+Two side-by-side photos showing a field with wind turbines and utility poles under an overcast sky, labeled 'a=0' in the top-left corner (no other text or symbols)
+</details>
+
+2) Improved Inverse Consistency   
+![](images/7ab610d61e013806c553e5a09c0264d8214804d589396e3ab50516513984f74e.jpg)
+
+<details>
+<summary>natural_image</summary>
+
+Exterior view of a residential area with white houses and green fields under a clear sky (no signage or text visible)
+</details>
+
+![](images/645744be60a1ea6ea34ad5da6f693c863bf8755781a3db8a63c29ef644ae8f1e.jpg)
+
+<details>
+<summary>natural_image</summary>
+
+Interior hallway view with carpet and ceiling, showing two side-by-side camera lens adjustment (labeled 'a')
+</details>
+
+3) Improved Composition Consistency   
+![](images/fba3cfad0b562271d75675273881c4408163a41c8e2bbf2e6e0464a013c70120.jpg)
+
+<details>
+<summary>natural_image</summary>
+
+Two side-by-side fisheye images showing a grassy field with trees under a bright sky, no text or symbols visible.
+</details>
+
+![](images/86aa3234239986780a138c000ae7af9ae66d054c4b7ee1695df4ce86dfab634b.jpg)
+
+<details>
+<summary>natural_image</summary>
+
+Exterior view of a rural landscape with a white building and green fields, no visible text or symbols
+</details>
+
+![](images/9d9a65bf05f4e8afbb7101b2cec51c560f603ebd61e9662bdd67495f57877165.jpg)
+
+<details>
+<summary>text_image</summary>
+
+a1+a2
+</details>
+
+![](images/162adb0e2e128a89d4bda94d9f5c123252f2ff82f0d37ef2de4c1c710626962b.jpg)
+
+<details>
+<summary>natural_image</summary>
+
+Two-panel fisheye photo showing a grassy field with trees and distant buildings under a cloudy sky (no text or symbols)
+</details>
+
+![](images/179eba0306c45cb8823938eec5aba171fac7e2cc75a15d9912f607c9a4a382ff.jpg)
+
+<details>
+<summary>natural_image</summary>
+
+Exterior view of a rural landscape with houses and trees, no visible text or symbols
+</details>
+
+![](images/d58d4b9129445e75ccae70c37bb8552028043716d96c057fb4348f9a03c28456.jpg)
+
+<details>
+<summary>text_image</summary>
+
+a3+a4
+</details>
+
+Figure 8: Additional qualitative examples of local group-action behavior after GA training. The examples show reduced drift under zero action, approximate recovery under forward–inverse action sequences, and more compatible outcomes under locally equivalent action decompositions.
+
+# G Related Work
+
+# G.1 Visual Navigation and Embodied Action Prediction
+
+Learning-based visual navigation studies how agents select actions from visual observations, goals, or task specifications. This problem has been widely explored in goal-conditioned navigation [23, 24, 25], vision-and-language navigation [26, 27, 28], and foundation-model-based navigation [29, 30, 31]. Early learning-based approaches typically combined visual perception with policy learning for goal reaching or waypoint prediction. More recent methods increasingly adopt large-scale data, endto-end training, and expressive action distributions to improve generalization across scenes and embodiments. Representative examples include GNM [32] and ViNT [33], which learn generalizable visual navigation policies from diverse data, and NoMaD [23], which uses diffusion modeling to represent multi-modal navigation actions.
+
+Recent work further pushes navigation toward longer horizons, stronger semantic grounding, and broader task generalization. LH-VLN [34] studies long-horizon vision-language navigation with new benchmarks and evaluation protocols, while NavFoM [35] scales navigation modeling across tasks and embodiments. Large-model-based navigation methods have also become increasingly common. VLN-R1 [36] explores reinforcement fine-tuning for vision-language navigation, and ImagineNav++ [37] uses imagined future views and large vision-language models to improve planning and reasoning. Other recent methods investigate foundation-model-based action selection, goal-distance estimation, and proactive prediction for navigation [38, 39, 40].
+
+These methods are primarily policy-centric. Their main objective is to map observations, instructions, or goals to actions that complete a navigation task. The present work studies a different but complementary question. Rather than asking whether a model predicts a good action, it asks whether an action-conditioned world model produces rollouts whose induced dynamics remain faithful to the composition structure of the actions themselves. This distinction matters because a policy may be useful for goal reaching, and a generated rollout may appear visually plausible, while the underlying motion evolution still fails to preserve identity, inverse, and composition relations under repeated rollout. Our focus is therefore not visual navigation policy learning, but the structural action faithfulness of action-conditioned dynamics.
+
+# G.2 Latent and Diffusion-Based World Models
+
+The study of action-conditioned dynamics is closely related to model-based reinforcement learning, where learned transition models are used for planning, policy learning, and long-horizon decision making. Latent world models such as Dreamer and its successors [41, 42] demonstrate that imagined rollouts in a compact latent space can support efficient control across diverse domains. Related work studies reconstruction-free latent imagination [43], memory-augmented latent dynamics [44], and recent applications of latent world models to embodied planning and autonomous driving [45, 46]. These methods establish that learned latent dynamics can be useful for downstream control and planning, and they motivate the use of latent rollout as an efficient computational substrate.
+
+However, the objectives in model-based reinforcement learning are usually organized around control performance, sample efficiency, or planning utility. They do not explicitly ask whether the learned transition respects the algebraic relations of the action space. In contrast, the present work focuses on a structural property of the rollout dynamics themselves. The question is not only whether latent imagination is useful, but whether the action-conditioned transition remains compatible with the composition, identity, and inverse relations induced by physical motion.
+
+Modern visual world models are also shaped by the rapid development of diffusion-based image and video generation. Denoising diffusion models [47] and latent diffusion models [48] provide scalable foundations for high-fidelity visual synthesis. Video diffusion models extend this paradigm to temporal prediction and controllable motion, including early video diffusion work [49, 50], latent video generation [51], motion adaptation [52], Stable Video Diffusion [18], and large-scale video generators such as CogVideoX [11] and Open-Sora [53]. As these models improve in fidelity, duration, and temporal coherence, they become increasingly viable backbones for action-conditioned visual rollout.
+
+Several recent systems adapt pretrained or large-scale video diffusion models to interactive or embodied settings. Vid2World [54] transfers pretrained video diffusion models into interactive world models, while DreamZero [55] builds a world-action model on top of a pretrained video diffusion backbone. These systems reflect a broader trend: video generators are increasingly expected to function not only as visual synthesizers, but also as simulators conditioned on actions. The present work builds on this transition but targets a different property from perceptual quality. Visual fidelity, temporal smoothness, and controllability do not by themselves guarantee that generated motion is governed by the input actions. Our focus is therefore not generative realism alone, but whether learned rollout dynamics preserve the local observable consequences of action composition.
+
+# G.3 Embodied World Models for Navigation and Simulation
+
+World models approach embodied decision making by predicting future observations conditioned on candidate actions. This paradigm has a long history in model-based reinforcement learning, where latent dynamics models such as Dreamer [41, 42] support planning and policy learning through imagined rollouts. More recently, similar ideas have been extended to visual navigation and embodied simulation, where future-state generation is used not only for representation learning but also for planning, action selection, and counterfactual evaluation.
+
+Navigation World Models [13] show that controllable video generation can support action-conditioned rollout and planning in navigation. This line of work is especially relevant to our setting because navigation actions correspond to physical motion in the plane, making the structure of action composition directly meaningful. Recent work further broadens embodied world modeling through geometry-aware prediction, language-conditioned future modeling, general-purpose simulation, and action-centered world-action modeling. Aether [56] combines geometry-aware reconstruction, action-conditioned prediction, and visual planning in a unified framework. Language-conditioned world modeling for visual navigation [57] studies future prediction, language grounding, and action generation jointly. UniSim [58] explores large-scale video models as general-purpose embodied simulators. Other systems such as UniWM [59], NavForesee [40], MoWM [60], GigaWorld-Policy [61], DreamZero [55], and MTV-World [62] investigate unified world modeling, planning-oriented future imagination, or action-centered world-action modeling for embodied control.
+
+These studies demonstrate the promise of world models for embodied decision making. At the same time, visual plausibility and planning utility do not by themselves establish that learned dynamics faithfully follow actions. A model may generate realistic-looking futures and still allow the same action sequence to induce inconsistent motion across stochastic rollouts. It may also drift under zero action, fail to cancel a motion with its inverse, or produce incompatible endpoints under locally equivalent decompositions. The issue examined in the present work is therefore more specific than embodied world modeling in general. We ask whether action-conditioned rollout remains consistent with action composition, and how failures of this consistency appear as trajectory instability. This places the proposed framework between generative world modeling and dynamical consistency analysis.
+
+# G.4 Action Consistency and World-Model Evaluation
+
+As world models become more capable, their evaluation has expanded beyond perceptual metrics, reconstruction quality, and short-horizon prediction error. Recent work has begun to ask whether generated worlds are useful for downstream decision making and whether they remain reliable under interaction. WorldSimBench [63] evaluates predictive video models from perceptual and embodied perspectives, including action-level consistency in downstream tasks. WoW-World-Eval [64] studies embodied world models through perception, planning, prediction, generalization, and execution. WorldArena [65] highlights the gap between perceptual quality and embodied functional utility, while WorldLens [66] evaluates driving world models along multiple axes including action-following and downstream reliability. These benchmarks reflect an important shift from asking whether generated videos look realistic to asking whether they function as useful and reliable simulations.
+
+A closely related line of work focuses more directly on controllability, memory, and rollout reliability. MIND [67] evaluates action control and memory consistency in closed-loop rollouts. Toward Memory-Aided World Models [68] emphasizes spatial consistency under long-horizon navigation rollouts. Recent consistency-oriented world modeling work [69, 70] studies state alignment and action following beyond one-step prediction quality, while Mobile World Models [71] highlights the gap between visually plausible prediction and action-conditioned consistency and proposes strategies to improve multi-step rollout behavior. Together, these studies show growing awareness that visual realism is insufficient for world modeling, especially when generated rollouts are used for planning or decision making.
+
+The present work is aligned with this emerging direction but differs in how the problem is formulated. Existing evaluations often treat action consistency as a benchmark dimension, an action-following score, or a global rollout symptom. Such evaluations are valuable, but they do not explicitly formalize the local action relations that make long-horizon action-conditioned rollout stable. In contrast, this work asks which local relations should be preserved for a navigation world model to be action-faithful. The group-action view decomposes action consistency into identity preservation, inverse cancellation, and local composition consistency. These properties are not arbitrary probes; they are local observable consequences of the group action induced by planar ego-motion. The proposed GAC metric evaluates these local conditions, while GAR measures whether repeated stochastic rollouts remain robust under the same action sequence. This provides a structured explanation of why repeated rollouts can diverge even when generated frames remain visually plausible.
+
+# G.5 Positioning of the Proposed Work
+
+The proposed work is closest to embodied world modeling, action-conditioned video generation, and recent efforts on evaluating world-model consistency. Existing studies have begun to move beyond perceptual realism by measuring spatial coherence, memory consistency, action controllability, or trajectory-level stability. These directions reveal important failures of visually plausible simulators.
+
+Our work shares this motivation, but places a different criterion on action-conditioned dynamics: rather than treating trajectory inconsistency only as a rollout-level outcome, we ask whether the model preserves the local action-composition structure from which stable rollouts should arise.
+
+This criterion distinguishes the proposed framework from broad embodied world-model benchmarks and trajectory-consistency evaluations. Trajectory dispersion measures whether repeated stochastic rollouts under the same action sequence remain close in recovered state space, but it does not specify which relations of the action space are violated. We instead start from the group action of planar ego-motion and instantiate its local observable consequences through identity consistency, inverse consistency, and local composition consistency. GAC probes these local relations under controlled transformations, while GAR measures whether their preservation translates into rolloutlevel robustness.
+
+The contribution is therefore a group-action formulation of action faithfulness and its operationalization for visual world models. The same local conditions that support GAC are also converted into latent rollout constraints, providing a practical training signal that improves action-conditioned rollout stability without changing the backbone architecture. In this sense, the proposed work complements existing world-model evaluation efforts by connecting rollout-level instability to local action-composition structure and by showing that this structure can guide model improvement.
+
+# H Discussion on Scope, Broader Implications, and Impact
+
+The GA framework is intended as a structured criterion for action-faithful world modeling. This paper instantiates it in embodied navigation, where actions correspond to local ego-motion in the plane and are naturally tied to the composition structure of SE(2). Identity consistency, inverse consistency, and local composition consistency are therefore not task-specific heuristics, but observable consequences of the group-action ideal under the navigation action space. GAC evaluates whether these local consequences are preserved in recovered state space, while GAR measures whether repeated stochastic rollouts remain stable under the same initial observation and identical action sequence. Together, they separate local action-structure preservation from its rollout-level manifestation.
+
+The present instantiation is deliberately focused. It studies planar navigation actions, local ego-motion increments, and short-window composition probes because they provide a direct setting for testing action composition in video rollout. Other embodiments may call for richer action structures, such as exact SE(2) or SE(3) composition, non-holonomic constraints, contact dynamics, or embodimentspecific motion priors. Likewise, recovered trajectories provide an interpretable motion-level state representation, while future evaluations could incorporate geometry, semantic maps, object states, contact events, or task outcomes. The latent training objective follows the same scope: it provides a lightweight and architecture-agnostic way to encourage action-composition consistency, while leaving room for stronger instantiations through equivariant architectures, consistency-preserving latent transitions, planning-aware objectives, or closed-loop training.
+
+Beyond navigation, the same principle may apply to world-modeling problems in which the target system has known transformation structure. In robotics, autonomous driving, manipulation, and physical simulation, actions are often tied to rigid-body motion, contact, kinematic constraints, or interaction rules. These settings suggest direct extensions through richer motion groups, object-centric states, contact-aware transitions, or closed-loop action sequences. Scientific world models provide a more distant but instructive case, because their dynamics are often organized by explicit physical symmetries and constraints rather than by embodied control commands. Recent generative-simulation work has modeled molecular dynamics trajectories [72], protein equilibrium ensembles [73], all-atom protein dynamics in learned latent spaces [74], protein conformational ensembles [75], and folding pathways [76].
+
+These scientific systems do not share the same action space as navigation, but many are governed by transformations that play an analogous structural role. Rotational and translational symmetries are central to geometric deep learning for 3D structures [77, 78], while permutation invariance of identical particles or atoms is a basic requirement for molecular representations [78, 79]. These principles have also been incorporated into geometry-aware generative models for molecular conformations [80], protein backbones [81], and molecular docking [82]. The connection should therefore be understood as a guiding principle rather than a direct transfer of the navigation protocol. For each domain, the relevant states, transformations, and observable consistency probes would need to be defined according to the structure of the system.
+
+The broader impact of this work is primarily conceptual. It argues that action-conditioned world models should be viewed not only as video generators conditioned on action tokens, but as simulators whose generated dynamics should remain organized by the actions or transformations they receive. This adds a structural dimension to world-model evaluation beyond visual realism and task performance. The proposed metrics do not certify real-world deployment safety or replace closed-loop validation. Rather, they expose action-faithfulness failures that may remain hidden under perceptual metrics or short-horizon prediction losses, providing an additional lens for analyzing world models before they are used in planning, embodied evaluation, or simulation-based testing.

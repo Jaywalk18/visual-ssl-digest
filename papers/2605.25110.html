@@ -39,7 +39,8 @@
     </div>
     <div class="feature-body">
       <p class="lead dropcap">先说结论。它和通用视觉自监督的关系在于：视觉 token 对齐的概率式匹配工具，方法可迁移但不是 SSL 主线。 中相关；详见方法、贡献和实验边界。</p>
-      <aside class="marginalia"><b>图像状态</b> 这篇暂未抽到足够稳定的 pipeline / motivation 图，因此正文以方法和实验解读为主。</aside>
+      <figure class="full-fig"><img src="../assets/mineru/2605.25110/images/b3b5ed6cf18dbf059271a6d5bd9394ced278cb3d3bda9f81a6d9322893a01865.jpg" alt="0 0 20 40 60 (b) Synthetic Control Fig"><figcaption><b>0 0 20 40 60 (b) Synthetic Control Fig</b><span class="fig-en">0  0 20 40 60 (b) Synthetic Control Fig. 6. Comparison of barycenters computed with sDTW and uDTW on CBF and Synthetic Control. Uncertainty for uDTW is shown in red. Even with high γ (e.g., γ = 10.0), uDTW produces reasonable barycenters; higher γ smooths the barycenter but increases uncertainty.</span><span class="fig-zh">这张图/表用于判断 Uncertainty-DTW for Visual Tokens 的实验收益来自哪里。重点看替换、消融或跨模型设置下趋势是否一致，而不是只看单个最高分。</span></figcaption></figure>
+<figure class="full-fig"><img src="../assets/mineru/2605.25110/images/3e11e63d7d95427eac7e049ecd206ad1869b61deb46e53a2bb5ef202c15966fa.jpg" alt="(b) λ (where β = 10) Fig"><figcaption><b>(b) λ (where β = 10) Fig</b><span class="fig-en">(b) λ (where β = 10) Fig. 5. Interpolation between two time series (grey and black dashed) on the Gun Point dataset. The barycenter is obtained by minimizing an uncertaintyaware uDTW objective, where β penalizes high matching uncertainty and λ regularizes it toward unit variance. Compared to Euclidean (green) and sDTW (blue) barycenters, uDTW produces distinct interpolations by adaptively weighting alignments according to uncertainty.</span><span class="fig-zh">这张图来自论文 PDF 的结构化抽取。当前用于辅助理解 Uncertainty-DTW for Visual Tokens 的方法或实验，请结合正文精读段落一起看。</span></figcaption></figure>
       
       <h2>核心问题</h2>
       <p>它和通用视觉自监督的关系在于：视觉 token 对齐的概率式匹配工具，方法可迁移但不是 SSL 主线。</p>

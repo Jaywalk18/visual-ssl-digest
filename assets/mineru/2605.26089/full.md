@@ -1,0 +1,535 @@
+# Channel-wise Vector Quantization
+
+Wei Song1,2,3∗ Tianhang Wang1,3∗ Yitong Chen1,4 Tong Zhang6 Zuxuan Wu1,4 Ming Li3 Jiaqi Wang1,5† ‡ Kaicheng Yu2†
+
+1Shanghai Innovation Institute 2Westlake University 3Zhejiang University 4Fudan University 5JD.COM 6University of Chinese Academy of Sciences
+
+![](images/ce76257b49a348eaf500c6f911e6653ca36d7a70910955718b4bd215e250b4ce.jpg)
+
+<details>
+<summary>flowchart</summary>
+
+```mermaid
+graph TD
+    A["Image feature Ŷ"] --> B["(a) VQ"]
+    A --> C["(b) CVQ"]
+    B --> D["Zq"]
+    C --> E["Zq"]
+    D --> F["ID Embedding"]
+    E --> G["ID Embedding"]
+    F --> H["VQ Codebook"]
+    G --> I["CVQ Codebook"]
+    style A fill:#f9f,stroke:#333
+    style B fill:#ccf,stroke:#333
+    style C fill:#cfc,stroke:#333
+    style D fill:#ffc,stroke:#333
+    style E fill:#fcc,stroke:#333
+    style F fill:#cfc,stroke:#333
+    style G fill:#cfc,stroke:#333
+    style H fill:#cfc,stroke:#333
+    style I fill:#cfc,stroke:#333
+```
+</details>
+
+![](images/5d2ded2e4801a49b7de5f4d530d9636deb7e1bd6ecb2522e40c767dca1d1240d.jpg)
+
+<details>
+<summary>text_image</summary>
+
+Traditional VQ-based AR: generate patch by patch
+"a photo of an apple"
+CAR (ours): next channel prediction
+"a photo of an apple"
+"an image of a cute cat"
+"Fattoush Salad with Roasted Potatoes"
+</details>
+
+Figure 1: (Left) VQ vs. CVQ. Conventional VQ assigns an index to each 1×1×c patch feature vector, while CVQ assigns an index to each channel of the feature map. (Right) AR vs. CAR. Traditional autoregressive (AR) models generate images patch by patch in raster scan order (here, Emu3 [39]), whereas our channel-wise autoregressive (CAR) model generates images channel by channel. For example, given the prompt “a photo of an apple”, the model first sketches a red circular shape corresponding to the apple’s outline and dominant color, then progressively depicts its appearance, and finally adds fine-grained visual details such as specular highlights and yellow speckles.
+
+# Abstract
+
+We present Channel-wise Vector Quantization (CVQ), a novel image tokenization paradigm that replaces patch-wise tokens with channel-wise tokens. Unlike conventional vector quantization, which assigns a discrete token to each patch feature vector, CVQ quantizes each channel of the feature map. This formulation represents an image as discrete levels of visual details, rather than as a grid of spatial patches. Based on CVQ, we introduce a new visual autoregressive framework with “next-channel prediction”. Instead of rendering images patch by patch in raster order, our Channel-wise Auto-Regressive (CAR) model predicts image channels sequentially, producing progressively enriched visual details. Specifically, it first sketches global structure and then refines fine-grained attributes, akin to a human artist’s workflow. Empirically, we show that: (1) CVQ achieves 100% codebook utilization with a 16K+ codebook size without any bells and whistles, and substantially improves reconstruction quality over conventional VQ; and (2)
+
+# 1 Introduction
+
+Vector Quantization (VQ) [37, 9] is a fundamental technique for discretizing continuous image representations and serves as a cornerstone of discrete image generation [4, 31, 33]. However, since its introduction, the community has largely adhered to a patch-wise paradigm by default, where each index is assigned to represent a local 1×1×c feature vector, as illustrated in Fig. 1 (left).
+
+We argue that this long-standing convention imposes two major limitations. (1) Insufficient codebook usage, which leads to severe information loss and, consequently, poor reconstruction quality. While prior efforts have attempted to mitigate this issue [56, 57, 11], these works typically rely on complex tricks or extra parameters that increase structural complexity, or require token factorization [49, 31], which projects image features into a low-dimensional space for code index lookup. Such dimensionality reduction limits representational capacity [30] and substantially compromises token expressiveness [23]. (2) Not naturally suited to sequence-to-sequence modeling. Next-token prediction has achieved remarkable success in language models [1, 48], and the vision community seeks to mirror this success. However, language is inherently a 1D sequential signal (left-to-right), whereas images are spatial. Patch-wise tokenization discretizes images into 2D grids of tokens, which are then mechanically flattened into a 1D sequence to accommodate autoregressive (AR) learning (e.g., via raster scan or z-curve). This structural mismatch results in a suboptimal token ordering for unidirectional AR modeling [17, 26, 52], as it disrupts local spatial dependencies among neighboring tokens [35, 16]. Furthermore, as discussed in [54], the strong local spatial bias of patch tokens makes it difficult to impose an AR-friendly ordering on them (e.g., via nested dropout) [29].
+
+In this paper, we show that a simple change in the quantization axis naturally resolves both limitations. Specifically, we shift VQ from a patch-wise to a channel-wise formulation. Unlike standard VQ, which learns a discrete spatial codebook of patch-wise indices, our CVQ learns a discrete sequential codebook of channel-wise indices.
+
+Our motivation is intuitive: people typically draw by layering different levels of visual information to form a complete image. For example, when drawing an apple, an artist may first outline its overall shape and color tone before depicting finer details like the stem and speckles. Interestingly, as shown in Fig. 2, an autoencoder reflects a similar behavior by distributing different levels of visual information across channels, which jointly determine the final complete image.
+
+![](images/d249fed4ff09661e01496abc877476754ce3c17cf42dcf1200e2ae3105fb9d68.jpg)  
+Figure 2: We visualize several channel activation maps from our VQVAE encoder and ablate individual channels by zeroing them before reconstruction. Interestingly, removing a channel selectively alters the corresponding content in the reconstructed image, with effects ranging from global appearance (e.g., leaf color) to fine-grained structural (e.g., removing the apple stem).
+
+nal VQ, which discretizes spatial vectors at each x,y location, we channel. Since each channel tends to capture different aspects of ts an image as a 1D token sequence with progressively enriched entional VQ, which imposes an artificial spatial ordering on the spatial information within each token, as each channel encodes t, the resulting token sequence forms a clean 1D representation, y patch-based tokenization.
+
+On the other hand, as discussed in [56, 57], low codebook utilization in VQ arises from biased optimization dynamics, where only a small fraction of codebook vectors receive updates while the rest remain stagnant. We argue that this issue stems from the redundancy among image patches [14]. As analyzed in $\mathrm { F i g . 4 \ ( a ) }$ , for two images with similar textures, patch-wise partitioning produces highly overlapping embeddings, causing a large number of patch-wise embeddings within each training batch to be clustered to the same codebook indices (Fig. 4 (b)). Consequently, codebook updates concentrate on only a small subset of entries, eventually leading to dead codes and codebook collapse (Fig. 4 (c)). In contrast, partitioning features along the channel dimension yields more separable embeddings across images, resulting in broader codebook coverage and improved codebook utilization.
+
+In summary, our contributions are as follows:
+
+• We propose a novel image tokenization paradigm that represents an image as a 1D sequence of channels with progressively enriched visual content, rather than a 2D grid of spatial patches.   
+• We provide a new perspective on the design space of vector quantization, showing that a simple change in the quantization axis effectively mitigates codebook collapse without introducing additional modules or constraints.   
+• Based on CVQ, we reformulate autoregressive image generation as a progressive next-channel prediction framework, and show that, with simple nested dropout [29], the 1D channel sequence can form a more AR-friendly ordering compared to the 2D raster-scan ordering.
+
+# 2 Related Works
+
+Vector Quantization Vector quantization is essential for discretizing visual signals into tokens. VQ-VAE [37] first introduced a learnable codebook to obtain discrete latent representations. Building upon this, VQGAN [9] incorporates adversarial and perceptual losses to enhance image fidelity. RQ-VAE [21] and MoVQ [55] further reduce quantization error through multi-stage quantization and vector modulation. Despite these advances, low codebook utilization remains a central challenge in VQ. To mitigate this issue, ViT-VQGAN [49] proposes token factorization by projecting image features into a low-dimensional space for code index lookup. FSQ [25] and LFQ [50] extend this idea by quantizing representations into a small set of fixed values to prevent codebook collapse. However, such approaches substantially limit representational capacity [23, 30]. Recent works, including VQGAN-LC [56] and SimVQ [57], achieve higher codebook utilization through CLIPfeature initialization and learnable bases. However, these methods rely on more complex training pipelines and additional parameters compared to the original VQ architecture. IBQ [30] focuses on improving gradient propagation through index backpropagation and is orthogonal to our work. To the best of our knowledge, [47] is the only work that performs quantization along channels. However, it solely serves as an auxiliary component to support anytime sampling under computational constraints, and has not been systematically studied or evaluated as an independent vector quantization method. So far, dominant VQ methods remain patch-wise and thus inherit the limitations of 2D grid tokenization.
+
+Autoregressive Visual Generation Inspired by the success of Large Language Models (LLMs) [3, 1, 36, 48], autoregressive (AR) image generation has become a current research hotspot. Existing methods typically tokenize images into 2D grids using VQGAN-like models and flatten them into 1D raster-scan sequences, creating a structurally misaligned ordering for next-token prediction and limiting AR performance [31, 33, 39, 43]. On the other hand, VAR [35] proposes next-scale prediction, which tokenizes images into multi-scale 2D tokens with bidirectional modeling within each scale, achieving promising results. Infinity [12] further scales this approach to a much larger vocabulary size. However, VAR deviates from the standard next-token prediction paradigm of LLMs, and its multi-scale hierarchy relies on heuristic partitioning. Another line of works explores compact 1D visual tokenization. TiTok [51], SpectralAR [16] and Hita [54] aggregate image representations into 1D sequences via learnable queries, while FlexTok [2] and Semanticist [40] extend the detokenizer to diffusion models. However, these methods relies on additional modules, such as token aggregation modules and diffusion decoders [2, 40], leading to more complex architectures, potential information bottlenecks, and increased learning difficulty. In contrast, CVQ operates at a different conceptual level: its 1D structure arises directly from the quantization process, enabling a 1D token sequence without specialized architectural design while maintaining the standard next-token prediction paradigm.
+
+# 3 Method
+
+# 3.1 Channel-wise Vector Quantization
+
+Traditional VQ frameworks map continuous latent variables to a discrete spatial codebook. As shown in Fig. 3(a), given an input image $\mathcal { T } \in \mathbb { R } ^ { H \times W \times 3 }$ , it is encoded into a latent representation $\mathbf { Z } \in \mathbb { R } ^ { h \times w \times c }$ , where $h = H / f , w = W / f$ and f is the downsample ratio. In conventional VQ schemes, Z is treated as a collection of $M = h \times w$ spatial patch vectors, formulated as
+
+![](images/26d68e6643b8e4ea36d73c4a3034f7b58510a100f0491c0092a8f0701cbcad24.jpg)
+
+<details>
+<summary>flowchart</summary>
+
+```mermaid
+graph LR
+    A["Input I"] --> B["Encoder E"]
+    B --> C["Patch-wise Vector Quantization"]
+    C --> D["Decoder D"]
+    D --> E["Reconstructed T'"]
+    
+    subgraph Codebook Z
+        F["Codebook Z: ID: Embedding: idx=1 to idx=N; argmin_{z_i∈Z} ||ẑ - z_i||; Look up"]
+    end
+    
+    subgraph Decoder
+        G["Decoder D"]
+        H["Reconstructed T'"]
+    end
+    
+    style F fill:#f9f,stroke:#333
+    style G fill:#bbf,stroke:#333
+    style H fill:#bfb,stroke:#333
+    
+    note right of F: Poor codebook usage
+    note right of H: Poor reconstruction
+```
+</details>
+
+![](images/6eba0cafe9f50b97e359a7fcafe49866d5027e6417622d96f5a9db6810e27a73.jpg)
+
+<details>
+<summary>flowchart</summary>
+
+```mermaid
+graph TD
+    A["AR"] --> B["Pixel Space"]
+    A --> C["Token Space"]
+    B --> D["Patch by patch"]
+    C --> D
+    D --> E["LLM"]
+    E --> F["A photo of a salad"]
+    E --> G["h * w tokens"]
+    style E fill:#4CAF50,stroke:#333,stroke-width:2px
+```
+</details>
+
+![](images/6939bc4621d5830f42ab6b58a826ab55b95250cdb88a6b4035bc139ac424167c.jpg)
+
+<details>
+<summary>flowchart</summary>
+
+```mermaid
+graph LR
+    A["Input I"] --> B["Encoder E"]
+    B --> C["CVQ (ours) ẑ"]
+    C --> D["Channel-wise Vector Quantization h, w, c"]
+    D --> E["Codebook Z ID Embedding: id=1 to id=N; argmin_zq∈E ||ẑ - z_i||; Look up"]
+    E --> F["Decoder D"]
+    F --> G["recon. I'"]
+    style A fill:#f9f,stroke:#333
+    style G fill:#f9f,stroke:#333
+    subgraph CVQ (ours)
+        C
+        D
+        E
+        F
+    end
+    subgraph Channel-wise Vector Quantization
+        D
+        E
+        F
+    end
+    note right of E: 100% codebook usage
+    note right of G: Improved image quality
+```
+</details>
+
+![](images/0fef45a38345800bee99ebe855181612298a6ce9471f8d81c1cb92d41f0abc40.jpg)
+
+<details>
+<summary>flowchart</summary>
+
+```mermaid
+graph LR
+    A["From global attributes to detailed attributes"] --> B["CAR"]
+    B --> C["Pixel Space"]
+    B --> D["Token Space"]
+    B --> E["LLM"]
+    E --> F["A photo of a salad"]
+    E --> G["c tokens"]
+```
+</details>
+
+Figure 3: (a) Conventional VQ and standard autoregressive image generation. Conventional VQ assigns an index to each $1 \times 1 \times c$ patch feature vector, which causes poor codebook usage and reconstruction ability. Furthermore, standard AR models predict tokens patch by patch, which imposes inherent sequential constraints on 2D spatial modeling. (b) Proposed CVQ and CAR. Our CVQ assigns indices to each $h \times w \times 1$ channel feature vector, ensuring near-optimal 100% codebook usage and improved image quality. Building on this, the proposed CAR model predicts visual content hierarchically, progressing from global structures to fine details.
+
+$$
+\mathbf {Z} = \left[ \begin{array}{c c c c} \mathbf {z} ^ {(1, 1,:)} & \mathbf {z} ^ {(1, 2,:)} & \dots & \mathbf {z} ^ (1, w,:) \\ \mathbf {z} ^ {(2, 1,:)} & \mathbf {z} ^ {(2, 2,:)} & \dots & \mathbf {z} ^ (2, w,:) \\ \vdots & \vdots & \ddots & \vdots \\ \mathbf {z} ^ {(h, 1,:)} & \mathbf {z} ^ {(h, 2,:)} & \dots & \mathbf {z} ^ (h, w,:) \end{array} \right], \tag {1}
+$$
+
+where $\mathbf { z } ^ { ( i , j , : ) } \in \mathbb { R } ^ { 1 \times 1 \times c }$ denotes a spatial vector at the position $( i , j )$ . The quantization process involves a nearest-neighbor lookup within the codebook $\mathbf { \bar { \mathcal { C } } } _ { \mathrm { s p a t i a l } } = \{ \mathbf { e } _ { n } \} _ { n = 1 } ^ { N }$ , where N denotes the codebook size:
+
+$$
+\mathbf {z} _ {q} ^ {(i, j,:) \cdot)} = \underset {\mathbf {e} _ {n} \in \mathcal {C} _ {\text { spatial }}} {\operatorname{argmin}} \left\| \mathbf {z} ^ {(i, j,:) \cdot)} - \mathbf {e} _ {n} \right\| _ {2} ^ {2}. \tag {2}
+$$
+
+However, this conventional VQ paradigm typically suffers from codebook collapse, where only a small portion of the codebook receives gradient updates during training. [56, 57, 30].
+
+We argue that this issue stems from the similarity and repetition between image patches [14]. As illustrated in Fig. 4(a), the patch-wise partitioned embeddings from different images are heavily entangled, resulting in substantial overlap of codebook indices both within and across images (Fig. 4(b)). Such redundancy and recurrence cause patches to cluster around the same vectors during early training. This, in turn, leads to the “death” of other cluster centers, ultimately resulting in codebook collapse (Fig. 4(c)).
+
+In contrast to conventional VQ, CVQ introduces a distinct quantization mechanism, As shown in Fig. 3(b). The latent vector is seen as
+
+$$
+\mathbf {Z} = \left[ \mathbf {z} ^ {(:,:, 1)}, \mathbf {z} ^ {(:,:, 2)}, \dots , \mathbf {z} ^ {(:,:, c)} \right], \tag {3}
+$$
+
+where $\mathbf { z } ^ { ( : , : , k ) } \in \mathbb { R } ^ { h \times w \times 1 }$ denotes the kth channel of Z. For notational convenience, we denote $\mathbf { z } ^ { ( : , : , k ) }$ as $\mathbf { z } ^ { ( k ) }$ in the remainder of the paper. The quantization process is
+
+$$
+\mathbf {z} _ {q} ^ {(k)} = \underset {\mathbf {e} _ {n} \in \mathcal {C} _ {\text { channel }}} {\operatorname{argmin}} \left\| \mathbf {z} ^ {(k)} - \mathbf {e} _ {n} \right\| _ {2} ^ {2}, \tag {4}
+$$
+
+where $\mathcal { C } _ { \mathrm { c h a n n e l } }$ represents the channel-wise codebook comprising codewords $\mathbf { e } _ { n } \in \mathbb { R } ^ { h \times w \times 1 }$ . For the lookup of two-dimensional representations, we adopt a simple formulation based on the Frobenius norm, which is equivalent to flattening the matrix into a vector and performing a nearest-neighbor lookup. The forward pass is defined as
+
+![](images/c73b9f69e152ee3126f604837ba4abab8a41e12d9239c2cc234182f5fe9ee91a.jpg)
+
+<details>
+<summary>flowchart</summary>
+
+```mermaid
+graph TD
+    A["Img 0"] --> B["Image feature"]
+    C["Img 1"] --> D["Image feature"]
+    B --> E["t-SNE"]
+    D --> F["t-SNE"]
+    E --> G["Input Image"]
+    F --> H["Input Image"]
+    G --> I["Input Image"]
+    H --> J["Input Image"]
+    I --> K["Input Image"]
+    J --> L["Input Image"]
+    K --> M["Input Image"]
+    L --> N["Input Image"]
+    M --> O["Input Image"]
+    N --> P["Input Image"]
+    O --> Q["Input Image"]
+    P --> R["Input Image"]
+    Q --> S["Input Image"]
+    R --> T["Input Image"]
+    S --> U["Input Image"]
+    T --> V["Input Image"]
+    U --> W["Input Image"]
+    V --> X["Input Image"]
+    W --> Y["Input Image"]
+    X --> Z["Input Image"]
+    Y --> AA["Input Image"]
+    Z --> AB["Input Image"]
+```
+</details>
+
+Figure 4: (a) t-SNE visualization of embedding distributions. For images with similar appearances but distinct semantics. Patch-wise partitioned embeddings of the two images are highly intermingled within a shared distribution, whereas channel-wise partitioning produces clearly separable clusters. (b) t-SNE of codebook vectors used by each image. Patch similarity leads to significant intra- and inter-image overlap across codebook entries. In contrast, channel-wise embeddings are distributed over a broader range of codebook points, resulting in higher utilization. More results are provided in Appendix. A. (c) t-SNE of codebook entries used per training batch. Conventional VQ rapidly collapses to a small subset of outlier entries, while CVQ maintains high codebook utilization throughout the training process.
+
+$$
+\mathbf {z} _ {q} ^ {(k)} = \mathbf {z} ^ {(k)} + \operatorname{sg} [ \mathbf {e} _ {n} - \mathbf {z} ^ {(k)} ], \tag {5}
+$$
+
+where sg[·] denotes the stop-gradient operator. For the backward pass, CVQ utilizes the standard Straight-Through Estimator (STE) [37] approach, where gradients are copied directly from the quantized representation $\mathbf { z } _ { q }$ to the continuous latent z.
+
+Within the CVQ framework, each codebook index represents a global channel feature rather than a local spatial patch. As illustrated in Fig. 4(a), partitioning representations along the channel dimension yields features that are highly distinguishable across different images. This property promotes high codebook utilization and reduces overlap, as evidenced in Fig. 4(b). Consequently, the t-SNE visualization in Fig. 4(c) shows that CVQ activates a significantly larger portion of the codebook within each training batch (batch size = 64) compared to standard VQ.
+
+Tokenizer Training Following the standard VQGAN approach [9], the CVQ tokenizer is trained with a reconstruction objective comprising pixel-wise $\ell _ { 2 }$ loss, commitment loss, LPIPS loss [53], and adversarial loss with PatchGAN discriminator [18].
+
+# 3.2 Channel-wise Autoregressive Generation
+
+As illustrated in Fig. 3(b), we reformulate next-token prediction in autoregressive visual modeling by shifting from the traditional next-patch prediction paradigm to a Next-Channel Prediction (NCP) strategy, where the autoregressive unit is a channel rather than a patch token.
+
+Through the CVQ tokenizer, an image is represented as a 1D sequence of c discrete channel tokens, $\mathcal { X } = \{ x _ { i } \} _ { i = 1 } ^ { c }$ . Subsequently, the decoder-only transformer is trained autoregressively to predict the next channel token conditioned on the textual context. The autoregressive likelihood of the entire image is thus given by
+
+$$
+p (\mathcal {X}) = \prod_ {k = 1} ^ {c} p \left(x ^ {(k)} \mid x ^ {(<   k)}\right). \tag {6}
+$$
+
+To feed the channel tokens with dimension $h \times w$ into the transformer backbone, a two-layer MLP projector is applied to align their dimensionality with the LLM backbone.
+
+Since channels do not possess an inherent order, we apply nested channel dropout during the tokenizer training phase to establish an ordered coarse-to-fine sequence for AR training. Given a token sequence of length $c ,$ only the first $c _ { \mathrm { k e e p } }$ channels are retained, where $c _ { \mathrm { k e e p } } \in \{ 1 , \ldots , c \}$ is chosen randomly, while the remaining channels are masked to zero. This allows the model to learn a coarse-to-fine hierarchy [29], in which early channels capture global structure and later channels progressively encode finer details. We discuss the effect of the channel dropout strategy in Sec. 4.3. Additional details are provided in Appendix B.
+
+Table 1: Reconstruction performance of different VQ methods on ImageNet-1K. The vanilla form of CVQ consistently improves reconstruction fidelity over existing VQ-based methods across both 256- and 1024-token budgets, outperforming established baselines such as MoVQ and VQ-LC at comparable vocabulary scales. † denotes models we reproduced using the same training setup as our CVQ tokenizer. 
+
+<table><tr><td>VQ METHODS</td><td># Tokens</td><td>Ratio</td><td>Codebook Size</td><td>rFID ↓</td><td>SSIM↑</td><td>PSNR↑</td><td>Codebook Usage↑</td></tr><tr><td colspan="8">256 tokens</td></tr><tr><td>Vanilla VQ† [9]</td><td>16×16</td><td>16</td><td>16,384</td><td>4.84</td><td>0.542</td><td>19.93</td><td>4.5%</td></tr><tr><td>Dynamic VQ [15]</td><td>16×16</td><td>{8, 16, 32}</td><td>1,024</td><td>4.08</td><td>-</td><td>-</td><td>-</td></tr><tr><td>Dynamic VQ† [15]</td><td>16×16</td><td>{8, 16, 32}</td><td>16,384</td><td>3.62</td><td>0.558</td><td>20.07</td><td>5.2%</td></tr><tr><td>VQ-LC [56]</td><td>16×16</td><td>16</td><td>16,384</td><td>3.01</td><td>0.564</td><td>-</td><td>99.0%</td></tr><tr><td>VQ-LC [56]</td><td>16×16</td><td>16</td><td>100,000</td><td>2.62</td><td>0.589</td><td>-</td><td>99.0%</td></tr><tr><td>SimVQ† [57]</td><td>16×16</td><td>16</td><td>16,384</td><td>2.63</td><td>0.556</td><td>21.10</td><td>100.0%</td></tr><tr><td>Vanilla CVQ (ours)</td><td>256</td><td>16</td><td>16,384</td><td>2.60</td><td>0.565</td><td>20.94</td><td>100.0%</td></tr><tr><td colspan="8">1024 tokens</td></tr><tr><td>Vanilla VQ [9]</td><td>32×32</td><td>8</td><td>8,192</td><td>1.49</td><td>-</td><td>-</td><td>-</td></tr><tr><td>Vanilla VQ† [9]</td><td>32×32</td><td>8</td><td>16,384</td><td>1.32</td><td>0.692</td><td>23.35</td><td>2.8%</td></tr><tr><td>VQ w/ rotation trick [11]</td><td>32×32</td><td>8</td><td>16,384</td><td>1.10</td><td>-</td><td>-</td><td>27.0%</td></tr><tr><td>VQ-FC [49]</td><td>32×32</td><td>8</td><td>8,192</td><td>1.28</td><td>-</td><td>-</td><td>95.0%</td></tr><tr><td>VQ-LC [56]</td><td>32×32</td><td>8</td><td>100,000</td><td>1.29</td><td>0.716</td><td>-</td><td>99.5%</td></tr><tr><td>RVQ [21]</td><td>8×8×16</td><td>32</td><td>16,384</td><td>1.83</td><td>-</td><td>-</td><td>-</td></tr><tr><td>MoVQ [55]</td><td>16×16×4</td><td>16</td><td>1,024</td><td>1.12</td><td>0.673</td><td>22.42</td><td>-</td></tr><tr><td>MoVQ [55]</td><td>16×16×4</td><td>16</td><td>16,384</td><td>1.05</td><td>-</td><td>-</td><td>-</td></tr><tr><td>Vanilla CVQ (ours)</td><td>1024</td><td>16</td><td>16,384</td><td>0.88</td><td>0.723</td><td>25.02</td><td>100.0%</td></tr></table>
+
+# 4 Experiments
+
+This section provides a comprehensive experimental analysis of CVQ’s performance in downstream image reconstruction and generation tasks. To ensure a strictly fair comparison, we maintain dimensionality parity between CVQ and VQ baselines throughout our experiments. By setting $c = h \times w = 2 5 6$ , both methods operate with identical lookup complexity, memory usage, and training overhead.
+
+# 4.1 Visual Reconstruction
+
+Training Setup We train two versions of our vision tokenizer with 256 and 1024 dimensions, yielding 256 / 1024 tokens, respectively. Unless otherwise specified, we use a codebook size of 16,384. All models are trained on ImageNet-1K [8] at 256 × 256 resolution for 100 epochs. We use Adam $( \beta _ { 1 } = 0 . 5 , \beta _ { 2 } = 0 . 9 )$ with a learning rate of $1 \times 1 0 ^ { - 4 }$ , weight decay of $1 0 ^ { - 4 } .$ , and a global batch size of 256. We further extend CVQ to variable resolution in Appendix D.
+
+Main Results We measured reconstruction FID (rFID), PSNR, and SSIM on the ImageNet-1K (val). As shown in Table 1, compared to conventional VQ, whose codebook utilization collapses to only 4.5% when scaling the codebook size to 16,384, CVQ natively supports 100% codebook utilization without requiring any additional modifications. This outperforms prior VQ improvement methods such as VQGAN-FC, which require additional token factorization, and VQGAN-LC, which relies on initializing the codebook using features extracted from a pretrained CLIP model and introduces extra projector parameters. Consequently, CVQ demonstrates a remarkable and consistent improvement over traditional VQ-based methods across different token budgets. With 256 tokens, CVQ achieves an rFID of 2.60, significantly improving over vanilla VQGAN (4.99) and outperforming SimVQ (2.63) in reconstruction fidelity. Under the 1024-token setting, the improvement becomes more pronounced:
+
+Table 2: Quantitative comparison on text-to-image generation benchmarks. We categorize methods by attention mask into Bidirectional, Unidirectional, and Hybrid approaches. Bidirectional methods include diffusion and MaskGIT; unidirectional methods follow the standard AR paradigm of next-token prediction; while hybrid methods include the VAR family, which uses block-wise attention masks with full attention within each block. NPP, NSP, and NCP denote next-patch, next-scale, and next-channel prediction, respectively. Among them, only NPP and NCP follow the standard next-token prediction paradigm. † indicates results obtained with prompt rewriting or self-CoT. 
+
+<table><tr><td rowspan="2">Type</td><td rowspan="2">Methods</td><td rowspan="2"># Para.</td><td colspan="4">GenEval↑</td><td colspan="3">DPG↑</td></tr><tr><td>Two Obj.</td><td>Position</td><td>Color Attri.</td><td>Overall</td><td>Global</td><td>Relation</td><td>Overall</td></tr><tr><td colspan="10">Bidirectional</td></tr><tr><td rowspan="6">Diff.</td><td>SDXL [27]</td><td>2.6B</td><td>0.74</td><td>0.15</td><td>0.23</td><td>0.55</td><td>83.27</td><td>86.76</td><td>74.65</td></tr><tr><td>SD3 (d=38) [10]</td><td>8B</td><td>0.89</td><td>0.34</td><td>0.47</td><td>0.71</td><td>-</td><td>-</td><td>-</td></tr><tr><td>Lumina-Next [59]</td><td>1.7B</td><td>0.49</td><td>-</td><td>0.15</td><td>0.55</td><td>86.89</td><td>86.59</td><td>80.50</td></tr><tr><td>FLUX-dev [20]</td><td>12B</td><td>-</td><td>-</td><td>-</td><td>0.67</td><td>-</td><td>-</td><td>84.00</td></tr><tr><td>FLUX-schnell [20]</td><td>12B</td><td>-</td><td>-</td><td>-</td><td>0.71</td><td>-</td><td>-</td><td>84.80</td></tr><tr><td>SANA [44]</td><td>1.6B</td><td>0.77</td><td>-</td><td>0.47</td><td>0.66</td><td>-</td><td>91.90</td><td>84.80</td></tr><tr><td rowspan="2">Mask.</td><td>TiTok [51]</td><td>0.6B</td><td>-</td><td>-</td><td>-</td><td>0.49</td><td>-</td><td>-</td><td>-</td></tr><tr><td>TA-TiTok [19]</td><td>1.1B</td><td>0.58</td><td>0.13</td><td>0.34</td><td>0.55</td><td>-</td><td>-</td><td>-</td></tr><tr><td colspan="10">Hybrid</td></tr><tr><td rowspan="7">NSP*</td><td>VARGPT-1.1 [58]</td><td>9B</td><td>0.53</td><td>0.13</td><td>0.21</td><td>0.53</td><td>84.83</td><td>88.13</td><td>78.59</td></tr><tr><td>STAR [24]</td><td>1.7B</td><td>-</td><td>-</td><td>-</td><td>0.55</td><td>-</td><td>-</td><td>-</td></tr><tr><td>TokenFLow [28]</td><td>7B</td><td>0.72</td><td>0.45</td><td>0.42</td><td>0.63</td><td>78.72</td><td>85.22</td><td>73.38</td></tr><tr><td>HART [32]</td><td>0.7B</td><td>-</td><td>-</td><td>-</td><td>0.56</td><td>-</td><td>-</td><td>80.89</td></tr><tr><td>SWITTI [38]</td><td>3B</td><td>-</td><td>-</td><td>-</td><td>0.62</td><td>-</td><td>-</td><td>-</td></tr><tr><td>Infinity [12]</td><td>2B</td><td> $0.85^†$ </td><td> $0.49^†$ </td><td> $0.57^†$ </td><td> $0.73^†$ </td><td>93.11</td><td>90.76</td><td>83.46</td></tr><tr><td>InfinityStar [22]</td><td>8B</td><td> $0.90^†$ </td><td> $0.62^†$ </td><td> $0.67^†$ </td><td> $0.79^†$ </td><td>91.68</td><td>91.87</td><td>86.55</td></tr><tr><td colspan="10">Unidirectional</td></tr><tr><td rowspan="9">NPP*</td><td>LlamaGen [31]</td><td>0.8B</td><td>0.34</td><td>0.07</td><td>0.04</td><td>0.32</td><td>-</td><td>-</td><td>64.84</td></tr><tr><td>Chameleon [33]</td><td>7B</td><td>-</td><td>-</td><td>-</td><td>0.39</td><td>-</td><td>-</td><td>-</td></tr><tr><td>Emu3 [39]</td><td>8B</td><td> $0.81^†$ </td><td> $0.49^†$ </td><td> $0.45^†$ </td><td> $0.66^†$ </td><td>-</td><td>-</td><td>80.60</td></tr><tr><td>Lumina-mGPT [59]</td><td>7B</td><td>0.77</td><td>-</td><td>0.32</td><td>0.56</td><td>-</td><td>91.29</td><td>79.68</td></tr><tr><td>Janus [41]</td><td>1.3B</td><td>0.68</td><td>0.46</td><td>0.42</td><td>0.61</td><td>-</td><td>-</td><td>-</td></tr><tr><td>Liquid [42]</td><td>7B</td><td>0.73</td><td>0.17</td><td>0.37</td><td>0.55</td><td>-</td><td>-</td><td>-</td></tr><tr><td>UniTok [23]</td><td>7B</td><td>0.71</td><td>0.26</td><td>0.45</td><td>0.59</td><td>-</td><td>-</td><td>-</td></tr><tr><td>MUSE-VL [46]</td><td>7B</td><td>-</td><td>-</td><td>-</td><td> $0.57^†$ </td><td>-</td><td>-</td><td>-</td></tr><tr><td>NextStep-1 [34]</td><td>14B</td><td>-</td><td>-</td><td>-</td><td> $0.73^†$ </td><td>-</td><td>-</td><td>85.28</td></tr><tr><td rowspan="2">NCP*</td><td>CAR (4B)</td><td>4B</td><td>0.88</td><td>0.63</td><td>0.58</td><td>0.75</td><td>86.98</td><td>93.62</td><td>83.82</td></tr><tr><td>CAR (8B)</td><td>8B</td><td>0.92</td><td>0.66</td><td>0.66</td><td>0.79</td><td>89.40</td><td>94.16</td><td>86.72</td></tr></table>
+
+CVQ attains a lower rFID of 0.88 and a higher PSNR of 25.02 dB, surpassing strong baselines such as MoVQGAN (1.05 rFID) and VQGAN-LC (1.29 rFID).
+
+# 4.2 Visual Generation
+
+Training Recipe Our CAR models are initialized from the pre-trained Qwen3-4B/8B backbones [48]. The training process is conducted on 80M text-image pairs and is divided into two stages:
+
+• Stage I: To align the CVQ features with the LLM latent space, we employ a 2-layer MLP projector. This projector maps the 256-dimensional channel embeddings to the hidden dimension of the LLM backbones (2560 for the 4B model and 4096 for the 8B model). During this stage, only the MLP projector and the LLM head are optimized, while the LLM backbone remains frozen.   
+• Stage II: In the second stage, we perform end-to-end optimization across all parameters, including the MLP projector, the LLM backbone, and the LLM head. We list the data sources and training hyperparameters in the Appendix.
+
+Main Results As illustrated in Fig. 5, CAR produces progressively detailed image content as more channels are generated. As shown in Table 2, among unidirectional methods, CAR (4B) achieves competitive or superior performance compared with strong AR baselines such as NextStep-1 (14B) and Emu3 (8B). Scaling CAR to 8B further improves performance, reaching a GenEval score of 0.79 and a DPG overall score of 86.72, competitive with strong VAR methods such as Infinity and
+
+![](images/7871639084e8cd698305a9b1aea2705651e0809001de77eeb2cb2ee1a7360172.jpg)
+
+<details>
+<summary>bar</summary>
+
+CAR: next channel prediction
+| Image Type | 1 tokens | 4 tokens | 8 tokens | 16 tokens | 32 tokens | 64 tokens | 128 tokens | 256 tokens |
+| :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- |
+| A photo of a pizza | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 |
+| Green trees and a river with mountains and clouds in the background | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 |
+| A snowy mountain. | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 |
+| A lone figure, cloaked in a heavy mist, stands on an ancient cobblestone street... | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 |
+</details>
+
+Figure 5: The generation process of CAR.
+
+InfinityStar. These results suggest that CVQ provides an effective token ordering for AR learning while preserving a simple next-token prediction formulation. Qualitative results are shown in Fig. 6.
+
+In addition to semantic-alignment benchmarks, we report MJHQ-30K FID in Table 6. CAR achieves an FID of 6.42, outperforming both 1D masked-token baselines and the standard 2D-token baseline.
+
+# 4.3 Discussions
+
+Codebook Size and Usage As shown in Table 3, scaling up the codebook size leads to a severe decline in utilization for patch-wise VQ, dropping from 20.3% to 1.1%, with only marginal improvements in rFID. In contrast, CVQ maintains nearly 100% utilization, even at massive scales (up to 65,536). This enables CVQ to effectively leverage larger vocabularies for improved performance, reducing rFID from 3.64 to 2.32. Notably, such advantage becomes increasingly evident at scale: at a codebook size of 65K, CVQ achieves a 52% improvement in reconstruction fidelity over the VQ baseline, demonstrating promising scaling properties.
+
+Nested Dropout As shown in Table 4, CVQ without nested dropout exhibits weaker AR generation performance, as channel tokens do not possess an inherent order, whereas patch tokens still retain a natural spatial ordering despite suboptimal raster scanning. Yet, compared with 2D patch tokens, the 1D nature of channel-wise tokens makes it easy to impose a meaningful AR-friendly ordering. With a simple nested dropout strategy [29], CVQ learns a coarse-to-fine channel order, effectively improving AR performance while maintaining reconstruction quality. In contrast, such an ordering strategy is difficult to apply to 2D patch tokenization, as each patch token is strongly tied to local content and therefore cannot naturally represent a global coarse-to-fine progression. The implantation details of VQ w/ dropout is in Appendix. B.
+
+Table 3: Ablation on codebook usage across different codebook scales. Conventional VQ suffers from codebook collapse as the size increases, while CVQ maintains high utilization across all scales. This allows CVQ to effectively leverage larger vocabularies, achieving a rFID reduction of up to 52% compared to the VQ baseline. 
+
+<table><tr><td rowspan="2">Codebook Size</td><td colspan="2">VQ</td><td colspan="2">CVQ</td></tr><tr><td>Util. $^{\uparrow}$ </td><td>rFID $^{\downarrow}$ </td><td>Util. $^{\uparrow}$ </td><td>rFID $^{\downarrow}$ </td></tr><tr><td>1,024</td><td>20.3%</td><td>5.25</td><td>100% (+79.7)</td><td>3.64 $^{\downarrow}$ 31%</td></tr><tr><td>4,096</td><td>12.6%</td><td>4.99</td><td>100% (+87.4)</td><td>3.07 $^{\downarrow}$ 38%</td></tr><tr><td>16,384</td><td>4.5%</td><td>4.84</td><td>100% (+95.5)</td><td>2.60 $^{\downarrow}$ 46%</td></tr><tr><td>65,536</td><td>1.1%</td><td>4.86</td><td>96.1% (+95.0)</td><td>2.32 $^{\downarrow}$ 52%</td></tr></table>
+
+Table 4: Ablation on nested dropout. (1) Standard patch-wise VQ is incompatible with nested dropout; (2) nested channel dropout substantially improves CVQ’s generation performance (GenEval +0.12, DPG +9.38) while maintaining reconstruction quality, effectively inducing an ARfriendly channel ordering without sacrificing reconstruction fidelity. (Trained on a 60M subset.) 
+
+<table><tr><td rowspan="2">Method</td><td colspan="3">Recon.</td><td colspan="2">Generation</td></tr><tr><td>rFID $^{\downarrow}$ </td><td>SSIM $^{\uparrow}$ </td><td>PSNR $^{\uparrow}$ </td><td>GenEval $^{\uparrow}$ </td><td>DPG $^{\uparrow}$ </td></tr><tr><td>VQ w/o dropout</td><td>4.84</td><td>0.542</td><td>19.93</td><td>0.69</td><td>79.86</td></tr><tr><td>VQ w/ dropout</td><td>15.32</td><td>0.322</td><td>3.43</td><td>-</td><td>-</td></tr><tr><td>CVQ w/o dropout</td><td>2.60</td><td>0.565</td><td>20.94</td><td>0.62</td><td>72.76</td></tr><tr><td>CVQ w/ dropout</td><td>2.62</td><td>0.568</td><td>21.01</td><td>0.74 (+0.12)</td><td>82.14 (+9.38)</td></tr></table>
+
+![](images/5610fefe02a4e32e9e849c6376751ff045622c444365ddb9c02f378a39def530.jpg)
+
+<details>
+<summary>text_image</summary>
+
+Text
+Artistic
+Surrealistic
+Landscape
+Indoor
+Count
+Color
+</details>
+
+Figure 6: Qualitative results on text-to-image generation.
+
+Versus 1D Tokenizers While related in target, CVQ and existing 1D tokenizer works operate at different conceptual levels: the former is a quantization method, whereas the latter primarily focus on additional modifications at the model architecture level (e.g., via learnable queries [51, 19, 16] or diffusion decoders [2, 40, 13]). CVQ’s 1D structure arises directly from the quantization process itself, enabling a 1D token sequence without specialized model architectural design.
+
+Here, we provide a direct comparison with recent 1D tokenizers. Since these methods typically employ stronger training recipes, such as two-stage training, external proxy codes, or enhanced networks for LPIPS and GAN losses, we report results under both the standard VQGAN-style training protocol and a stronger TA-TiTok-style recipe in Table 5.
+
+Table 5: Comparison with representative 1D tokenizers. †: standard VQGAN-style recipe, ‡: two-stage recipe with decoder reinforcement [51], ∗: models reproduced with the official codebase. 
+
+<table><tr><td>Method</td><td>Diff. Dec.</td><td>rFID $^{\downarrow}$ </td><td>SSIM $^{\uparrow}$ </td><td>PSNR $^{\uparrow}$ </td></tr><tr><td>FlexTok [2]</td><td>√</td><td>4.20</td><td>-</td><td>-</td></tr><tr><td>FlexTok-1.4B [2]</td><td>√</td><td>1.45</td><td>0.465</td><td>18.53</td></tr><tr><td>SpectralAR $^{\dagger}$  [16]</td><td>✗</td><td>4.03</td><td>-</td><td>-</td></tr><tr><td>TiTok-64 $^{\dagger}$  [51]</td><td>✗</td><td>5.15</td><td>-</td><td>-</td></tr><tr><td>TiTok-256 $^{\dagger*}$  [51]</td><td>✗</td><td>3.84</td><td>0.542</td><td>19.92</td></tr><tr><td>CVQ $^{\dagger}$ </td><td>✗</td><td>2.60</td><td>0.565</td><td>20.94</td></tr><tr><td colspan="5">Same enhanced training recipe [19]</td></tr><tr><td>TA-TiTok-64 [19]</td><td>✗</td><td>2.43</td><td>-</td><td>-</td></tr><tr><td>TA-TiTok-128 [19]</td><td>✗</td><td>1.53</td><td>-</td><td>-</td></tr><tr><td>TiTok-64 [51]</td><td>✗</td><td>4.25</td><td>-</td><td>-</td></tr><tr><td>TiTok-128 [51]</td><td>✗</td><td>2.63</td><td>-</td><td>-</td></tr><tr><td>TiTok-256* [51]</td><td>✗</td><td>1.51</td><td>0.558</td><td>20.05</td></tr><tr><td>CVQ</td><td>✗</td><td>1.29</td><td>0.569</td><td>20.97</td></tr></table>
+
+Table 6: FID performance on MJHQ-30K. We further evaluate text-to-image generation fidelity across different methods on MJHQ-30K. 
+
+<table><tr><td>Method</td><td>Type</td><td>1D Token</td><td>Res.</td><td>FID $^{\downarrow}$ </td></tr><tr><td>SD-XL [27]</td><td>Diff.</td><td>✗</td><td>1024</td><td>9.55</td></tr><tr><td>PixArt [7]</td><td>Diff.</td><td>✗</td><td>512</td><td>6.14</td></tr><tr><td>FlowTok-H [13]</td><td>Diff.</td><td>√</td><td>256</td><td>7.15</td></tr><tr><td>Show-o [45]</td><td>Discrete Diff.</td><td>✗</td><td>256</td><td>14.99</td></tr><tr><td>TiTok [51]</td><td>Mask.</td><td>√</td><td>256</td><td>8.50</td></tr><tr><td>TA-TiTok [19]</td><td>Mask.</td><td>√</td><td>256</td><td>7.51</td></tr><tr><td>STAR [24]</td><td>NSP</td><td>✗</td><td>256</td><td>5.67</td></tr><tr><td>SWITTI [38]</td><td>NSP</td><td>✗</td><td>512</td><td>9.50</td></tr><tr><td>SWITTI [38]</td><td>NSP</td><td>✗</td><td>1024</td><td>8.10</td></tr><tr><td>LlamaGen [31]</td><td>NTP</td><td>✗</td><td>512</td><td>25.59</td></tr><tr><td>VILA-U [43]</td><td>NTP</td><td>✗</td><td>256</td><td>12.81</td></tr><tr><td>Janus [41]</td><td>NTP</td><td>✗</td><td>256</td><td>10.10</td></tr><tr><td>UniTok [23]</td><td>NTP</td><td>✗</td><td>256</td><td>7.46</td></tr><tr><td>MUSE-VL [46]</td><td>NTP</td><td>✗</td><td>256</td><td>7.73</td></tr><tr><td>CAR</td><td>NTP</td><td>√</td><td>256</td><td>6.42</td></tr></table>
+
+# 5 Conclusion and Future Works
+
+Conclusion In this work, we introduce CVQ, a simple yet effective quantization paradigm that discretizes images along the channel dimension. CVQ achieves high codebook utilization and high reconstruction fidelity without architectural modifications or auxiliary loss terms. Building upon CVQ, we proposed CAR, a generative framework that shifts the autoregressive paradigm from traditional spatial patch prediction to next-channel prediction. Our results highlight channel-wise tokens as a promising direction for autoregressive image generation and offer new insight into rethinking the fundamental unit of visual tokenization.
+
+Future Works Despite the encouraging results, several important directions remain for future work. First, CVQ can be naturally combined with recent advances in VQ, such as SimVQ [57] and IBQ [30], to further improve representational capacity. Second, the autoregressive formulation of CAR makes it a natural fit for unified vision models that jointly perform visual understanding and generation within a single architecture. Finally, extending the channel-wise quantization paradigm to the temporal dimension represents a promising direction for learning efficient and compact video representations.
+
+# References
+
+[1] Josh Achiam, Steven Adler, Sandhini Agarwal, Lama Ahmad, Ilge Akkaya, Florencia Leoni Aleman, Diogo Almeida, Janko Altenschmidt, Sam Altman, Shyamal Anadkat, et al. Gpt-4 technical report. arXiv preprint arXiv:2303.08774, 2023. 2, 3   
+[2] Roman Bachmann, Jesse Allardice, David Mizrahi, Enrico Fini, Oguzhan Fatih Kar, Elmira ˘ Amirloo, Alaaeldin El-Nouby, Amir Zamir, and Afshin Dehghan. Flextok: Resampling images into 1d token sequences of flexible length. In Forty-second International Conference on Machine Learning, 2025. URL https://openreview.net/forum?id=DgdOkUUBzf. 3, 9, 16   
+[3] Tom Brown, Benjamin Mann, Nick Ryder, Melanie Subbiah, Jared D Kaplan, Prafulla Dhariwal, Arvind Neelakantan, Pranav Shyam, Girish Sastry, Amanda Askell, et al. Language models are few-shot learners. Advances in neural information processing systems, 2020. 3   
+[4] Huiwen Chang, Han Zhang, Lu Jiang, Ce Liu, and William T Freeman. Maskgit: Masked generative image transformer. In Proceedings of the IEEE/CVF conference on computer vision and pattern recognition, pp. 11315–11325, 2022. 2   
+[5] Soravit Changpinyo, Piyush Sharma, Nan Ding, and Radu Soricut. Conceptual 12M: Pushing web-scale image-text pre-training to recognize long-tail visual concepts. In CVPR, 2021. 18   
+[6] Jiuhai Chen, Zhiyang Xu, Xichen Pan, Yushi Hu, Can Qin, Tom Goldstein, Lifu Huang, Tianyi Zhou, Saining Xie, Silvio Savarese, et al. Blip3-o: A family of fully open unified multimodal models-architecture, training and dataset. arXiv preprint arXiv:2505.09568, 2025. 18   
+[7] Junsong Chen, Jincheng Yu, Chongjian Ge, Lewei Yao, Enze Xie, Yue Wu, Zhongdao Wang, James Kwok, Ping Luo, Huchuan Lu, et al. Pixart-alpha: Fast training of diffusion transformer for photorealistic text-to-image synthesis. arXiv preprint arXiv:2310.00426, 2023. 9   
+[8] Jia Deng, Wei Dong, Richard Socher, Li-Jia Li, Kai Li, and Li Fei-Fei. Imagenet: A largescale hierarchical image database. In 2009 IEEE conference on computer vision and pattern recognition, pp. 248–255. Ieee, 2009. 6   
+[9] Patrick Esser, Robin Rombach, and Bjorn Ommer. Taming transformers for high-resolution image synthesis. In Proceedings of the IEEE/CVF conference on computer vision and pattern recognition, pp. 12873–12883, 2021. 2, 3, 5, 6   
+[10] Patrick Esser, Sumith Kulal, Andreas Blattmann, Rahim Entezari, Jonas Müller, Harry Saini, Yam Levi, Dominik Lorenz, Axel Sauer, Frederic Boesel, et al. Scaling rectified flow transformers for high-resolution image synthesis. In Forty-first International Conference on Machine Learning, 2024. 7   
+[11] Christopher Fifty, Ronald G Junkins, Dennis Duan, Aniketh Iyengar, Jerry W Liu, Ehsan Amid, Sebastian Thrun, and Christopher Ré. Restructuring vector quantization with the rotation trick. The Thirteenth International Conference on Learning Representations, 2025. 2, 6
+
+[12] Jian Han, Jinlai Liu, Yi Jiang, Bin Yan, Yuqi Zhang, Zehuan Yuan, Bingyue Peng, and Xiaobing Liu. Infinity: Scaling bitwise autoregressive modeling for high-resolution image synthesis. In Proceedings of the Computer Vision and Pattern Recognition Conference, pp. 15733–15744, 2025. 3, 7   
+[13] Ju He, Qihang Yu, Qihao Liu, and Liang-Chieh Chen. Flowtok: Flowing seamlessly across text and image tokens. In Proceedings of the IEEE/CVF International Conference on Computer Vision, pp. 16629–16640, 2025. 9   
+[14] Kaiming He and Jian Sun. Statistics of patch offsets for image completion. In European conference on computer vision, pp. 16–29. Springer, 2012. 2, 4   
+[15] Mengqi Huang, Zhendong Mao, Zhuowei Chen, and Yongdong Zhang. Towards accurate image coding: Improved autoregressive image generation with dynamic vector quantization. In Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition (CVPR), pp. 22596–22605, June 2023. 6   
+[16] Yuanhui Huang, Weiliang Chen, Wenzhao Zheng, Yueqi Duan, Jie Zhou, and Jiwen Lu. Spectralar: Spectral autoregressive visual generation. In Proceedings of the IEEE/CVF International Conference on Computer Vision (ICCV), 2025. 2, 3, 9   
+[17] Zhihao Huang, Xi Qiu, Yukuo Ma, Yifu Zhou, Junjie Chen, Hongyuan Zhang, Chi Zhang, and Xuelong Li. Nfig: multi-scale autoregressive image generation via frequency ordering. arXiv preprint arXiv:2503.07076, 2025. 2   
+[18] Phillip Isola, Jun-Yan Zhu, Tinghui Zhou, and Alexei A Efros. Image-to-image translation with conditional adversarial networks. In Proceedings of the IEEE conference on computer vision and pattern recognition, pp. 1125–1134, 2017. 5   
+[19] Dongwon Kim, Ju He, Qihang Yu, Chenglin Yang, Xiaohui Shen, Suha Kwak, and Liang-Chieh Chen. Democratizing text-to-image masked generative models with compact text-aware one-dimensional tokens. arXiv preprint arXiv:2501.07730, 2025. 7, 9   
+[20] Black Forest Labs. Flux. https://github.com/black-forest-labs/flux, 2024. 7   
+[21] Doyup Lee, Chiheon Kim, Saehoon Kim, Minsu Cho, and Wook-Shin Han. Autoregressive image generation using residual quantization. In Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition, pp. 11523–11532, 2022. 3, 6   
+[22] Jinlai Liu, Jian Han, Bin Yan, Hui Wu, Fengda Zhu, Xing Wang, Yi Jiang, Bingyue Peng, and Zehuan Yuan. Infinitystar: Unified spacetime autoregressive modeling for visual generation. arXiv preprint arXiv:2511.04675, 2025. 7   
+[23] Chuofan Ma, Yi Jiang, Junfeng Wu, Jihan Yang, Xin Yu, Zehuan Yuan, Bingyue Peng, and Xiaojuan Qi. Unitok: A unified tokenizer for visual generation and understanding. arXiv preprint arXiv:2502.20321, 2025. 2, 3, 7, 9   
+[24] Xiaoxiao Ma, Mohan Zhou, Tao Liang, Yalong Bai, Tiejun Zhao, Huaian Chen, and Yi Jin. Star: Scale-wise text-to-image generation via auto-regressive representations. arXiv preprint arXiv:2406.10797, 2024. 7, 9   
+[25] Fabian Mentzer, David Minnen, Eirikur Agustsson, and Michael Tschannen. Finite scalar quantization: VQ-VAE made simple. In The Twelfth International Conference on Learning Representations, 2024. URL https://openreview.net/forum?id=8ishA3LxN8. 3   
+[26] Ziqi Pang, Tianyuan Zhang, Fujun Luan, Yunze Man, Hao Tan, Kai Zhang, William T Freeman, and Yu-Xiong Wang. Randar: Decoder-only autoregressive visual generation in random orders. In Proceedings of the Computer Vision and Pattern Recognition Conference, pp. 45–55, 2025. 2   
+[27] Dustin Podell, Zion English, Kyle Lacey, Andreas Blattmann, Tim Dockhorn, Jonas Müller, Joe Penna, and Robin Rombach. Sdxl: Improving latent diffusion models for high-resolution image synthesis. The Twelfth International Conference on Learning Representations, 2024. 7, 9
+
+[28] Liao Qu, Huichao Zhang, Yiheng Liu, Xu Wang, Yi Jiang, Yiming Gao, Hu Ye, Daniel K Du, Zehuan Yuan, and Xinglong Wu. Tokenflow: Unified image tokenizer for multimodal understanding and generation. In Proceedings of the Computer Vision and Pattern Recognition Conference, 2025. 7   
+[29] Oren Rippel, Michael Gelbart, and Ryan Adams. Learning ordered representations with nested dropout. In International Conference on Machine Learning, pp. 1746–1754. PMLR, 2014. 2, 3, 6, 8, 16   
+[30] Fengyuan Shi, Zhuoyan Luo, Yixiao Ge, Yujiu Yang, Ying Shan, and Limin Wang. Scalable image tokenization with index backpropagation quantization. In Proceedings of the IEEE/CVF International Conference on Computer Vision, 2025. 2, 3, 4, 10   
+[31] Peize Sun, Yi Jiang, Shoufa Chen, Shilong Zhang, Bingyue Peng, Ping Luo, and Zehuan Yuan. Autoregressive model beats diffusion: Llama for scalable image generation. arXiv preprint arXiv:2406.06525, 2024. 2, 3, 7, 9   
+[32] Haotian Tang, Yecheng Wu, Shang Yang, Enze Xie, Junsong Chen, Junyu Chen, Zhuoyang Zhang, Han Cai, Yao Lu, and Song Han. Hart: Efficient visual generation with hybrid autoregressive transformer. The Thirteenth International Conference on Learning Representations, 2025. 7   
+[33] Chameleon Team. Chameleon: Mixed-modal early-fusion foundation models. arXiv preprint arXiv:2405.09818, 2024. 2, 3, 7   
+[34] NextStep Team, Chunrui Han, Guopeng Li, Jingwei Wu, Quan Sun, Yan Cai, Yuang Peng, Zheng Ge, Deyu Zhou, Haomiao Tang, Hongyu Zhou, Kenkun Liu, Ailin Huang, Bin Wang, Changxin Miao, Deshan Sun, En Yu, Fukun Yin, Gang Yu, Hao Nie, Haoran Lv, Hanpeng Hu, Jia Wang, Jian Zhou, Jianjian Sun, Kaijun Tan, Kang An, Kangheng Lin, Liang Zhao, Mei Chen, Peng Xing, Rui Wang, Shiyu Liu, Shutao Xia, Tianhao You, Wei Ji, Xianfang Zeng, Xin Han, Xuelin Zhang, Yana Wei, Yanming Xu, Yimin Jiang, Yingming Wang, Yu Zhou, Yucheng Han, Ziyang Meng, Binxing Jiao, Daxin Jiang, Xiangyu Zhang, and Yibo Zhu. Nextstep-1: Toward autoregressive image generation with continuous tokens at scale. arXiv preprint arXiv:2508.10711, 2025. 7   
+[35] Keyu Tian, Yi Jiang, Zehuan Yuan, Bingyue Peng, and Liwei Wang. Visual autoregressive modeling: Scalable image generation via next-scale prediction. Advances in neural information processing systems, 2024. 2, 3   
+[36] Hugo Touvron, Thibaut Lavril, Gautier Izacard, Xavier Martinet, Marie-Anne Lachaux, Timothée Lacroix, Baptiste Rozière, Naman Goyal, Eric Hambro, Faisal Azhar, et al. Llama: Open and efficient foundation language models. arXiv preprint arXiv:2302.13971, 2023. 3   
+[37] Aaron Van Den Oord, Oriol Vinyals, et al. Neural discrete representation learning. In Advances in Neural Information Processing Systems, 2017. 2, 3, 5   
+[38] Anton Voronov, Denis Kuznedelev, Mikhail Khoroshikh, Valentin Khrulkov, and Dmitry Baranchuk. Switti: Designing scale-wise transformers for text-to-image synthesis. In Proceedings of the Computer Vision and Pattern Recognition Conference, 2025. 7, 9   
+[39] Xinlong Wang, Xiaosong Zhang, Zhengxiong Luo, Quan Sun, Yufeng Cui, Jinsheng Wang, Fan Zhang, Yueze Wang, Zhen Li, Qiying Yu, et al. Emu3: Next-token prediction is all you need. arXiv preprint arXiv:2409.18869, 2024. 1, 3, 7   
+[40] Xin Wen, Bingchen Zhao, Ismail Elezi, Jiankang Deng, and Xiaojuan Qi. “Principal components” enable a new language of images. In IEEE/CVF International Conference on Computer Vision (ICCV), 2025. 3, 9, 16   
+[41] Chengyue Wu, Xiaokang Chen, Zhiyu Wu, Yiyang Ma, Xingchao Liu, Zizheng Pan, Wen Liu, Zhenda Xie, Xingkai Yu, Chong Ruan, et al. Janus: Decoupling visual encoding for unified multimodal understanding and generation. arXiv preprint arXiv:2410.13848, 2024. 7, 9
+
+[42] Junfeng Wu, Yi Jiang, Chuofan Ma, Yuliang Liu, Hengshuang Zhao, Zehuan Yuan, Song Bai, and Xiang Bai. Liquid: Language models are scalable and unified multi-modal generators. International Journal of Computer Vision, 2026. 7   
+[43] Yecheng Wu, Zhuoyang Zhang, Junyu Chen, Haotian Tang, Dacheng Li, Yunhao Fang, Ligeng Zhu, Enze Xie, Hongxu Yin, Li Yi, et al. Vila-u: a unified foundation model integrating visual understanding and generation. The Thirteenth International Conference on Learning Representations, 2025. 3, 9   
+[44] Enze Xie, Junsong Chen, Junyu Chen, Han Cai, Haotian Tang, Yujun Lin, Zhekai Zhang, Muyang Li, Ligeng Zhu, Yao Lu, et al. Sana: Efficient high-resolution image synthesis with linear diffusion transformers. The Thirteenth International Conference on Learning Representations, 2025. 7   
+[45] Jinheng Xie, Weijia Mao, Zechen Bai, David Junhao Zhang, Weihao Wang, Kevin Qinghong Lin, Yuchao Gu, Zhijie Chen, Zhenheng Yang, and Mike Zheng Shou. Show-o: One single transformer to unify multimodal understanding and generation. arXiv preprint arXiv:2408.12528, 2024. 9   
+[46] Rongchang Xie, Chen Du, Ping Song, and Chang Liu. Muse-vl: Modeling unified vlm through semantic discrete encoding. In Proceedings of the IEEE/CVF International Conference on Computer Vision, pp. 24135–24146, 2025. 7, 9   
+[47] Yilun Xu, Yang Song, Sahaj Garg, Linyuan Gong, Rui Shu, Aditya Grover, and Stefano Ermon. Anytime sampling for autoregressive models via ordered autoencoding. arXiv preprint arXiv:2102.11495, 2021. 3   
+[48] An Yang, Anfeng Li, Baosong Yang, Beichen Zhang, Binyuan Hui, Bo Zheng, Bowen Yu, Chang Gao, Chengen Huang, Chenxu Lv, et al. Qwen3 technical report. arXiv preprint arXiv:2505.09388, 2025. 2, 3, 7   
+[49] Jiahui Yu, Xin Li, Jing Yu Koh, Han Zhang, Ruoming Pang, James Qin, Alexander Ku, Yuanzhong Xu, Jason Baldridge, and Yonghui Wu. Vector-quantized image modeling with improved vqgan. In The Tenth International Conference on Learning Representations, 2022. 2, 3, 6   
+[50] Lijun Yu, Jose Lezama, Nitesh Bharadwaj Gundavarapu, Luca Versari, Kihyuk Sohn, David Minnen, Yong Cheng, Agrim Gupta, Xiuye Gu, Alexander G Hauptmann, Boqing Gong, Ming-Hsuan Yang, Irfan Essa, David A Ross, and Lu Jiang. Language model beats diffusion - tokenizer is key to visual generation. In The Twelfth International Conference on Learning Representations, 2024. URL https://openreview.net/forum?id=gzqrANCF4g. 3   
+[51] Qihang Yu, Mark Weber, Xueqing Deng, Xiaohui Shen, Daniel Cremers, and Liang-Chieh Chen. An image is worth 32 tokens for reconstruction and generation. Advances in Neural Information Processing Systems, 2024. 3, 7, 9   
+[52] Qihang Yu, Ju He, Xueqing Deng, Xiaohui Shen, and Liang-Chieh Chen. Randomized autoregressive visual generation. In Proceedings of the IEEE/CVF International Conference on Computer Vision, pp. 18431–18441, 2025. 2   
+[53] Richard Zhang, Phillip Isola, Alexei A Efros, Eli Shechtman, and Oliver Wang. The unreasonable effectiveness of deep features as a perceptual metric. In Proceedings of the IEEE conference on computer vision and pattern recognition, pp. 586–595, 2018. 5   
+[54] Anlin Zheng, Haochen Wang, Yucheng Zhao, Weipeng Deng, Tiancai Wang, Xiangyu Zhang, and Xiaojuan Qi. Holistic tokenizer for autoregressive image generation. In Proceedings of the IEEE/CVF International Conference on Computer Vision (ICCV), pp. 16916–16926, October 2025. 2, 3   
+[55] Chuanxia Zheng, Tung-Long Vuong, Jianfei Cai, and Dinh Phung. Movq: Modulating quantized vectors for high-fidelity image generation. Advances in Neural Information Processing Systems, 35:23412–23425, 2022. 3, 6
+
+[56] Lei Zhu, Fangyun Wei, Yanye Lu, and Dong Chen. Scaling the codebook size of vq-gan to 100,000 with a utilization rate of 99%. In Advances in Neural Information Processing Systems, 2024. 2, 3, 4, 6   
+[57] Yongxin Zhu, Bocheng Li, Yifei Xin, Zhihua Xia, and Linli Xu. Addressing representation collapse in vector quantized models with one linear layer. In Proceedings of the IEEE/CVF International Conference on Computer Vision, 2025. 2, 3, 4, 6, 10   
+[58] Xianwei Zhuang, Yuxin Xie, Yufan Deng, Dongchao Yang, Liming Liang, Jinghan Ru, Yuguo Yin, and Yuexian Zou. Vargpt-v1.1: Improve visual autoregressive large unified model via iterative instruction tuning and reinforcement learning. arXiv preprint arXiv:2504.02949, 2025. 7   
+[59] Le Zhuo, Ruoyi Du, Han Xiao, Yangguang Li, Dongyang Liu, Rongjie Huang, Wenze Liu, Xiangyang Zhu, Fu-Yun Wang, Zhanyu Ma, et al. Lumina-next: Making lumina-t2x stronger and faster with next-dit. Advances in Neural Information Processing Systems, 2024. 7
+
+# A More t-SNE Visualizations of Embedding Distributions.
+
+![](images/61ebd159bad42a860620d9c940d19c8d4f557709302a3f12ba7ecdd29de45d0e.jpg)
+
+<details>
+<summary>scatter</summary>
+
+| Image Group | Metric | Img 0 (cd/spread) | Img 1 (cd/spread) |
+|-------------|--------|-------------------|-------------------|
+| Img 0       | Patch-wise embedding | 0.10 | 1.58 |
+| Img 0       | Channel-wise embedding | 0.21 | 2.45 |
+| Img 1       | Patch-wise embedding | 0.0101 | 0.05 |
+| Img 1       | Channel-wise embedding | 0.3369 | 1.44 |
+| Img 1       | Patch-wise embedding | 0.26 | 2.22 |
+| Img 1       | Channel-wise embedding | 0.2747 | 1.20 |
+| Img 1       | Patch-wise embedding | 0.4333 | 1.97 |
+| Img 1       | Channel-wise embedding | 0.28 | 1.75 |
+</details>
+
+Figure 7: More visualizations of feature map channels
+
+# B Details and Analysis of the Nested Channel Dropout Strategy
+
+# B.1 Implementation Details of Nested Channel Dropout
+
+During the training phase, we introduce a structured dropout mechanism to enforce a coarse-to-fine hierarchy within the latent space. For a given latent representation $\mathbf { Z } \in \mathbb { R } ^ { h \times w \times c }$ , we define a truncated configuration where only the first $c _ { \mathrm { k e e p } }$ channels are retained, while the remaining $c - c _ { \mathrm { k e e p } }$ channels are masked (set to zero). This truncated latent, denoted as $\mathbf { Z } _ { \perp c _ { \mathrm { k e c p } } } .$ , effectively forces the model to compress the most critical visual information into the lower-indexed channels.
+
+The optimization objective for a specific channel configuration $c _ { \mathrm { k e e p } }$ is formulated as follows:
+
+$$
+\mathcal {L} _ {\text { nested }} \left(c _ {\text { keep }}\right) = \mathcal {L} _ {\text { recon }} \left(\mathbf {Z} _ {\perp c _ {\text { keep }}}\right) + \mathcal {L} _ {\text { quant }} \left(\mathbf {Z} _ {\perp c _ {\text { keep }}}\right) + \mathcal {L} _ {\text { lpips }} \left(\mathbf {Z} _ {\perp c _ {\text { keep }}}\right) + \lambda_ {\mathrm{GAN}} \left(c _ {\text { keep }}\right) \mathcal {L} _ {\mathrm{GAN}} \left(\mathbf {Z} _ {\perp c _ {\text { keep }}}\right), \tag {7}
+$$
+
+where ${ \mathcal { L } } _ { \mathrm { r e c o n } }$ and $\mathcal { L } _ { \mathrm { l p i p s } }$ denote the standard reconstruction and perceptual losses, respectively. The quantization loss ${ \mathcal { L } } _ { \mathrm { q u a n t } }$ is computed exclusively over the active $c _ { \mathrm { k e e p } }$ channels to ensure valid codebook mapping at reduced dimensions.
+
+A key challenge in training nested representations is that the discriminator often suffers from instability when operating on extremely sparse latent features, which can lead to unnatural artifacts in reconstructions using few channels. To mitigate this, we introduce an adaptive GAN weight λGAN governed by a sigmoid function:
+
+$$
+\lambda_ {\mathrm{GAN}} (c _ {\mathrm{keep}}) = \frac {\lambda_ {0}}{1 + e ^ {- \eta (c _ {\mathrm{keep}} - \frac {c}{2})}}, \tag {8}
+$$
+
+where $\eta = 0 . 0 5$ controls the transition smoothness, and $\lambda _ { 0 } = 1$ is the base GAN weight. This formulation ensures that the adversarial influence is gradually introduced as the channel capacity increases, preserving stable convergence for sparse configurations.
+
+To balance hierarchical representation learning with overall reconstruction fidelity, we adopt a stochastic training strategy. In each iteration, nested channel dropout is performed with probability α (the dropout ratio), where the number of active channels $c _ { \mathrm { k e e p } }$ is sampled from a discrete uniform distribution $\mathcal { U } ( 1 , c )$ . Conversely, with probability 1 − α, the model undergoes standard training using the full channel configuration. The resulting hybrid optimization objective is formulated as:
+
+Table 7: Ablation on nested channel dropout ratio. We evaluate the impact of varying the dropout ratio α on reconstruction fidelity and downstream text-to-image generation. While reconstruction performance remain stable across different ratios, generation performance improves significantly with the introduction of channel dropout, with comparable gains observed at $\alpha = 2 5 \%$ and $\alpha = 5 0 \%$ . 
+
+<table><tr><td rowspan="2">α</td><td colspan="3">Recon.</td><td colspan="2">Generation</td></tr><tr><td>rFID ↓</td><td>SSIM↑</td><td>PSNR↑</td><td>Geneval↑</td><td>DPG↑</td></tr><tr><td>0%</td><td>2.60</td><td>0.565</td><td>20.94</td><td>0.62</td><td>72.76</td></tr><tr><td>25%</td><td>2.62</td><td>0.568</td><td>21.01</td><td>0.74 (+0.12)</td><td>82.14 (+9.38)</td></tr><tr><td>50%</td><td>2.61</td><td>0.562</td><td>20.88</td><td>0.75 (+0.13)</td><td>81.96 (+9.20)</td></tr></table>
+
+$$
+\mathcal {L} _ {\text { sum }} = \alpha \cdot \mathbb {E} _ {c _ {\text { keep }} \sim \mathcal {U} (1, c)} [ \mathcal {L} _ {\text { nested }} (c _ {\text { keep }}) ] + (1 - \alpha) \mathcal {L} _ {\text { total }}, \tag {9}
+$$
+
+where $\mathcal { L } _ { \mathrm { t o t a l } }$ represents the loss under the complete channel configuration $( c _ { \mathrm { k e e p } } = c )$
+
+# B.2 Analysis of Nested Channel Dropout
+
+[29] demonstrates that a nested dropout strategy, which stochastically removes nested sets of hidden units, enforces an ordered representation where importance decreases with the dimension index. For semi-linear autoencoders (comprising a linear or sigmoidal encoder with a linear decoder) under $L _ { 2 }$ loss, they establish that: (i) its optimal solutions are a subset of standard autoencoder optima, preserving global performance (Theorem 1); (ii) the weight matrices must be commutative in their truncation and inversion (Theorem $2 ) ;$ and (iii) with an orthonormality constraint $( \Gamma ^ { T } \Gamma = \mathbb { I } _ { K } )$ , the model uniquely recovers the PCA solution (Theorem 3).
+
+However, these theoretical guarantees necessitate stringent conditions: the architecture must be semi-linear and optimized via $L _ { 2 }$ reconstruction loss. While the proposed unit sweeping technique fixes converged units to mitigate gradient decay at higher indices, its iterative nature remains computationally expensive for modern deep learning.
+
+Nevertheless, empirical evidence [2, 40] suggests that even with deeper architectures, complex loss functions, and advanced frameworks like diffusion models, randomly dropping tokens in a nested manner produces ordered representations that benefit AR generation without significant loss in expressivity. As shown in Table 7, reconstruction quality is preserved, indicating no degradation in representational capacity. Additionally, generative performance at 25% and 50% dropout exceeds the 0% baseline, suggesting that structured ordering facilitates AR generation, with similar results at 25% and 50% indicating that a moderate degree of nested order is sufficient.
+
+Dropout Ratio Table 7 illustrates the influence of the channel dropout ratio on both reconstruction and generation performance. We observe that reconstruction metrics remain stable across the tested range, with no significant degradation in rFID, SSIM, or PSNR as the dropout ratio increases from 0% to 50%. However, the generation capability is substantially enhanced by the introduction of dropout; specifically, the GenEval and DPG scores show a marked improvement when moving from 0% to 25%, increasing from 0.61 to 0.72 and 72.76 to 82.13, respectively. Further increasing the dropout ratio to 50% results in comparable generation performance to the 25% setting, suggesting that a moderate dropout ratio is sufficient to optimize the model’s generative robustness without sacrificing its reconstruction fidelity.
+
+# C Progressive Channel Analysis
+
+Finally, we analyze how reconstruction changes as more channels are revealed to the decoder. We progressively keep the first n channels and mask the remaining channels before decoding. Table 8 shows a clear coarse-to-fine trend. From 32 to 128 channels, rFID, SSIM, and PSNR all improve rapidly, indicating that early channels capture global appearance, object identity, and coarse structure. After 128 channels, rFID improvement slows down, while SSIM and PSNR continue to increase steadily. This indicates that later channels mainly refine local structure and high-frequency texture, providing quantitative evidence that channel-wise decomposition naturally organizes visual information from global semantics to fine details.
+
+Table 8: Reconstruction with progressively added channels. We keep only the first n channels before decoding. Early channels rapidly recover global appearance and semantic structure, while later channels mainly refine local structure and texture. 
+
+<table><tr><td># Channels</td><td>rFID ↓</td><td>SSIM↑</td><td>PSNR↑</td></tr><tr><td>32</td><td>30.24</td><td>0.410</td><td>16.96</td></tr><tr><td>64</td><td>11.84</td><td>0.472</td><td>18.38</td></tr><tr><td>96</td><td>6.91</td><td>0.506</td><td>19.21</td></tr><tr><td>128</td><td>4.05</td><td>0.524</td><td>19.82</td></tr><tr><td>160</td><td>3.46</td><td>0.533</td><td>20.17</td></tr><tr><td>192</td><td>3.03</td><td>0.539</td><td>20.39</td></tr><tr><td>224</td><td>2.88</td><td>0.542</td><td>20.55</td></tr><tr><td>256</td><td>2.63</td><td>0.568</td><td>21.01</td></tr></table>
+
+# D Variable-Resolution Extension
+
+In the main experiments, we keep a fixed 256 × 256 resolution setting to enable strictly controlled comparison with VQ, yielding codewords with a spatial size of $1 6 \times \bar { 1 6 }$ .
+
+Here, we show a simple practice that extends CVQ to variable resolutions with lightweight resampling modules before and after quantization: before lookup, a fixed set of learnable queries cross-attend features of arbitrary spatial size $( h \times w )$ to a fixed size $( h _ { 0 } \times w _ { 0 } ) ;$ after lookup, we dynamically generate $h \times w$ target queries to project the quantized channels back to the decoder’s desired spatial size. This plays a role analogous to the pre- and post-quantization projections commonly used in patch-wise VQ tokenizers, while preserving $\mathrm { C V Q } ^ { \bar { \cdot } } \mathrm { s }$ channel-token formulation.
+
+For variable-resolution training, we progressively scale input resolution from 256 to 512 and 1024. For patch-wise VQ, the embedding dim is fixed at 256, yielding token counts of 256, 1024, and 4096, respectively. For CVQ, we also fix the embedding dim to 256 $( 1 6 \times 1 6 )$ and control the token budget to the intermediate value of the VQ setting (i.e., 1024) for a fair comparison.
+
+Table 9: Variable-resolution reconstruction. CVQ is trained with a fixed codeword size and uses resolution-dependent resampling before and after quantization. 
+
+<table><tr><td>Method</td><td>Train Res.</td><td>Inference Res.</td><td>rFID ↓</td><td>PSNR ↑</td></tr><tr><td>VQ</td><td>256</td><td>256</td><td>4.84</td><td>19.93</td></tr><tr><td>CVQ</td><td>256</td><td>256</td><td>0.88</td><td>25.02</td></tr><tr><td>VQ</td><td>variable</td><td>256</td><td>4.97</td><td>19.56</td></tr><tr><td>CVQ</td><td>variable</td><td>256</td><td>0.92</td><td>24.96</td></tr><tr><td>VQ</td><td>variable</td><td>512</td><td>2.05</td><td>22.01</td></tr><tr><td>CVQ</td><td>variable</td><td>512</td><td>0.96</td><td>24.55</td></tr></table>
+
+Table 10: Resolution scaling under matched token budgets. When CVQ is allocated the same number of tokens as VQ at each resolution, its reconstruction quality also improves with resolution. 
+
+<table><tr><td>Method</td><td>Token Budget</td><td>Train Res.</td><td>Inference Res.</td><td>rFID ↓/ PSNR↑</td></tr><tr><td>VQ</td><td>256</td><td>variable</td><td>256</td><td>4.97 / 19.56</td></tr><tr><td>CVQ</td><td>256</td><td>variable</td><td>256</td><td>2.63 / 21.06</td></tr><tr><td>VQ</td><td>1024</td><td>variable</td><td>512</td><td>2.05 / 22.01</td></tr><tr><td>CVQ</td><td>1024</td><td>variable</td><td>512</td><td>0.96 / 24.55</td></tr></table>
+
+As shown in Table 9, CVQ generalizes across resolutions and consistently outperforms the corresponding VQ baseline. When the token budget is held fixed, CVQ may slightly trade reconstruction fidelity for efficiency at higher resolutions because each token must cover a larger spatial support. This is a controlled quality-efficiency trade-off rather than an inherent inability to model high-resolution images. As shown in Table 10, when CVQ is allocated the same token budget as VQ at each resolution, reconstruction quality improves with resolution and remains stronger than VQ.
+
+Discussion CVQ provides a practical advantage for autoregressive generation by decoupling token count from image resolution. While patch-wise methods exhibit quadratic token growth as the latent grid scales, CAR maintains nearly constant inference cost by keeping the channel sequence length fixed. Instead of increasing token count, CVQ encodes spatial resolution within each channel token.
+
+# E Hyperparameters and Data Source
+
+Our CAR training process consists of two stages. During Stage I, only the MLP projector and the LLM head are optimized with a learning rate of $1 \times 1 0 ^ { - 4 }$ , while the LLM backbone remains frozen. During Stage II, all components are trained with a learning rate of $2 \times 1 0 ^ { - 5 }$ . For both stages, we use the AdamW optimizer with $\beta _ { 1 } = 0 . 9 , \beta _ { 2 } = 0 . 9 6$ , and a weight decay of $1 \times 1 0 ^ { - 3 }$ .
+
+The training data includes a filtered subset of ImageNet-21K, LAION-Aesthetics-12M, CC12M [5], Megalith-10M 4, BLIP-3o-short [6], BLIP-3o-long [6], and a 6M in-house aesthetics dataset.

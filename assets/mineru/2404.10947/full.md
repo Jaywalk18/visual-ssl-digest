@@ -1,0 +1,465 @@
+# Residual Connections Harm Generative Representation Learning
+
+Xiao Zhang\*1,3 Ruoxi Jiang\*†1,2,4 William Gao1 Rebecca Willet1 Michael Maire1
+
+1University of Chicago 2Fudan University 3 Tencent 4 Shanghai Academy of AI for Science
+
+# Abstract
+
+We show that introducing a weighting factor to reduce the influence of identity shortcuts in residual networks significantly enhances semantic feature learning in generative representation learning frameworks, such as masked autoencoders (MAEs) and diffusion models. Our modification notably improves feature quality, raising ImageNet-1K K-Nearest Neighbor accuracy from 27.4% to 63.9% and linear probing accuracy from 67.8% to 72.7% for MAEs with a ViT-B/16 backbone, while also enhancing generation quality in diffusion models. This significant gap suggests that, while residual connection structure serves an essential role in facilitating gradient propagation, it may have a harmful side effect of reducing capacity for abstract learning by virtue of injecting an echo of shallower representations into deeper layers. We ameliorate this downside via a fixed formula for monotonically decreasing the contribution of identity connections as layer depth increases. Our design promotes the gradual development of feature abstractions, without impacting network trainability. Analyzing the representations learned by our modified residual networks, we find correlation between low effective feature rank and downstream task performance.
+
+# 1. Introduction
+
+Residual networks (ResNets) [25] define a connection structure that has achieved near-universal adoption into modern architectures for deep learning. At the time of their development, supervised learning (e.g., ImageNet [16] classification) was the driving force behind the evolution of convolutional neural network (CNN) architectures. Residual networks solved a key issue: CNNs constructed of more than approximately 20 convolutional layers in sequence became difficult to train, leading to shallower networks outperforming deeper ones, unless additional techniques, such as auxiliary outputs [61] or batch normalization [33], were employed. Both ResNets, and their predecessor, highway networks [59] provide elegant solutions to this trainability problem by endowing the network architecture with alternative shortcut pathways along which to propagate gradients. Highway networks present a more general formulation that modulates these shortcut connections with learned gating functions. However, given their sufficient empirical effectiveness, the simplicity of ResNet’s identity shortcuts makes them a preferred technique.
+
+While solving the gradient propagation issue, residual connections impose a specific functional form on the network; between residual connections, each layer (or block of layers) learns to produce an update slated to be added to its own input. This incremental functional form may influence the computational procedures learned by the network [23]. Alternatives to residual and highway networks exist that do not share this functional form, but implement other kinds of skip-connection scaffolding in order to assist gradient propagation [30, 40, 71]. Thus, shortcut pathways, rather than a specific form of skip connection, are the essential ingredient to enable the training of very deep networks. Nevertheless, nearly all modern large-scale models, including those based on the transformer architecture [64] incorporate the standard residual connection.
+
+This design choice holds, even as deep learning has shifted into an era driven by self-supervised training. The shift to self-supervision brings to the forefront new learning paradigms, including those based on contrastive [10, 11, 24, 26, 66], generative [22, 28, 36, 49, 56, 58], and autoencoding [27, 37, 42] objectives. Many systems in the generative and autoencoding paradigms rely on “encoderdecoder” architectures, often styled after the original U-Net [50], which contains additional long-range shortcuts between corresponding layers in mirrored symmetry about a central bottleneck. With representation learning as a goal, one typically desires that the middle bottleneck layer produce a feature embedding reflecting abstract semantic properties. The interaction of skip-connection scaffolding for gradient propagation with encoder-decoder architectures, self-supervised training objectives, and bottleneck representations has not been carefully reconsidered. This is a worrisome oversight, especially since, even in the supervised setting with standard classification architectures, prior work suggests that unweighted identity shortcuts may be a suboptimal design decision [18, 52]. Intuitively, identity shortcuts may not be entirely appropriate for capturing high-level, semantic features as they directly inject lowlevel, high-frequency details of inputs into outputs, potentially compromising feature abstraction. We explore this issue within generative learning frameworks, including masked autoencoders (MAEs) [27] and diffusion models [28], leading paradigms for self-supervised image representation learning and generation. Our experiments demonstrate that identity shortcuts significantly harm semantic feature learning in comparison to an alternative we propose: gradually decay the weight of the identity shortcut over the depth of the network, thereby reducing information flow through it (Figure 1). With increasing layer depth, our approach facilitates a smooth transition from a residual to a feed-forward architecture, while maintaining sufficient connectivity to train the network effectively. Unlike prior work on learned gating [59] or reweighting [52] mechanisms for residual connections, our method is a forced decay scheme governed by a single hyperparameter.
+
+![](images/abaafa41ec2568fd57dbca6fc00d85c136e5c90985dd75b9ce563a8396f1a2f7.jpg)
+
+<details>
+<summary>flowchart</summary>
+
+```mermaid
+graph LR
+    subgraph Residual Connections
+        direction TB
+        A["x_l"] --> B["f_{θ_l}(x_l)"]
+        B --> C["⊕"]
+        C --> D["f_{θ_{l+1}}(x_{l+1})"]
+        D --> E["⊕"]
+        E --> F["f_{θ_{l+2}}(x_{l+2})"]
+        F --> G["⊕"]
+        G --> H["x_{l+3}"]
+    end
+
+    subgraph Decayed Identity ShortCuts
+        direction TB
+        I["x_l"] --> J["f_{θ_l}(x_l)"]
+        J --> K["⊕"]
+        K --> L["f_{θ_{l+1}}(x_{l+1})"]
+        L --> M["⊕"]
+        M --> N["f_{θ_{l+2}}(x_{l+2})"]
+        N --> O["⊕"]
+        O --> P["x_{l+3}"]
+    end
+
+    style Residual Connections fill:#f9f,stroke:#333
+    style Decayed Identity ShortCuts fill:#ccf,stroke:#333
+```
+</details>
+
+Figure 1. Our decayed identity shortcuts introduce a depth-dependent scaling factor to shortcuts in a residual network, thereby modulating the contribution of preceding layers and fostering greater abstraction in deeper layers. A simple schema for controlling decay factor α suffices to improve feature learning in both MAEs and diffusion models, as well as diffusion model generation quality.
+
+A parallel motivation for our design stems from Huh et al. [32], who show that features from residual blocks have higher rank than those produced by comparative feedforward blocks. The smooth transition between residual and feed-forward behavior induced by our decay scheme regularizes deeper features toward exhibiting low-rank characteristics. Section 6 experimentally explores the correlation between our decayed identity shortcuts and low-rank feature representations. Figure 2 previews the corresponding improvements to feature learning. Our contributions are:
+
+We introduce decayed identity shortcuts, a simple architectural mechanism which enhances feature abstraction in masked autoencoders and diffusion models.   
+Our design within an MAE yields a substantial performance boost on ImageNet-1K [16]: achieving a linear probing accuracy of 72.7% (up from a baseline of 67.8%) and a K-Nearest Neighbor accuracy of 63.9%
+
+(an improvement from the baseline of 27.4%).
+
+• In diffusion models, our design improves both feature learning and generation quality.   
+• Smaller models with decayed identity shortcuts outper- form larger ones using standard residual connections.
+
+# 2. Related Work
+
+Self-supervised representation learning. Recent advancements [1, 38, 48, 49, 54, 62] in deep learning follow a common scaling law, in which a model’s performance consistently improves with its capacity and the size of the training data. This effect can be observed in large language models (LLMs), which are trained on vast amounts of internet text, enabling them to perform some tasks at a human level [41] and exhibit remarkable zero-shot capabilities [39]. These models are trained using next-token-prediction, allowing them to be trained without labeled data. In contrast, the progress of this scaling law in computer vision has largely depended on annotated data. For instance, the Segment Anything [38] leverages 1 billion human-annotated masks, and state-of-the-art image generators [48] require training on huge datasets of text-image pairs [53]. However, the vast volume of unlabeled visual data and desire for continued scaling motivates a transition to self-supervised learning.
+
+At present, two families of approaches to self-supervised visual representation learning appear particularly promising.
+
+Contrastive representation learning [10, 11, 24, 26, 66] achieves state-of-the-art performance in most downstream classification tasks by training discriminative models to maximize mutual information between differently augmented views of images. However, these approaches rely on extensive and intricate data augmentation pipelines, necessitating domain expertise for adaptation to new domains.
+
+Generative representation learning, via masked image modeling [6, 14, 27], which trains to reconstruct occluded pixels, or via diffusion denoising [28, 56, 57], which trains to reverse a process that mixes images with Gaussian noise, relying less on forming discriminative augmentations, learns to extract representations inherently along the generative process. Some hybrid approaches [31, 42, 70] combine both families. Despite advancements, neither has demonstrated the same scalability [55] as seen in LLMs. This challenge is additional motivation for reconsidering the foundations of self-supervised network architectures.
+
+![](images/2a5f986ddbdd77bf064ed82240b2597f4e724a61ec7794121dcc03be84ac3948.jpg)  
+Figure 2. We design decayed identity shortcuts (Figure 1), a variant of residual connections, to facilitate self-supervised representation learning in generative model. Compared to standard residual connections, our approach yields superior abstract semantic features (left, visualized using Zhang et al. [69]’s approach), whose leading components pop out object instances and classes. Quantitative evaluation shows our architecture encourages lower feature rank and learns better feature representation for both MAE and diffusion models (middle), along with enhanced generation quality for diffusion models (right). These improvements require no additional learnable parameters.
+
+Residual and skip-connection architectures. Highway networks [23] first propose an additive skip connection structure to provide a scaffolding for gradient propagation when training very deep (e.g., 100 layer) networks. Motivated by the gating mechanisms within LSTMs [29], this solution uses learned gating functions to weight each combination of identity and layer output branches. Residual networks [25] are a simplification that removes these learned coefficients. DenseNet [30] and FractalNet [40] demonstrate that access to gradient paths of multiple lengths is the core requirement of training scaffolding, by introducing skip-connection structures with other functional forms. DenseNet utilizes feature concatenation instead of addition, while FractalNet imposes a recursive tree-like architecture combining subnetworks of multiple depths.
+
+Zhu et al. [71] explore variants of ResNets and DenseNets with fewer points of combination between different internal paths, demonstrating that a sparser scaffolding structure may be more robust as network depth increases to thousands of layers. Savarese and Figueiredo [52] add a scalar gating functional to the layer output in residual networks, yielding a hybrid design between residual and highway networks; learning this scalar gating provides a consistent benefit to classification accuracy. Fischer et al. [18] develop a weighting scheme for residual connections based upon a sensitivity analysis of signal propagation within a ResNet. To date, none of these potential improvements has seen broad adoption.
+
+Low rank bias in neural networks. Over-parameterized neural networks exhibit surprising generalization capabilities, a finding seemingly in contradiction with classical machine learning theory [45]. This phenomenon implies the existence of some form of implicit regularization that prevents the model from overfitting. From the perspective of model parameterizations, Arora et al. [2] suggest that linear models with more layers tend to converge to minimal norm solutions. In the context of CNNs, Huh et al. [32] demonstrate that stacking more feed-forward layers compels the model to seek lower rank solutions, and Jing et al. [34] reinforce this finding by adding more layers to an autoencoder’s bottleneck, thereby creating a representation bottleneck. In vision transformers, Geshkovski et al. [20] examine the connection between attention blocks and mean-shift clustering [15], showing that repeated attention operations result in low-rank outputs. Moreover, Dong et al. [17] reveal that eliminating the shortcut connection from residual attention blocks causes features to degenerate to rank 1 structures doubly exponentially. From a different perspective, recent work [8, 46, 47] shows training algorithms implicitly induce low-rank behavior in neural networks. Radhakrishnan et al. [47] study the dimensionality reduction behavior of a recursive feature machine [46] and effectively verify performance on low-rank matrix recovery.
+
+# 3. Method
+
+In this section, we present the methodology for promoting a low-rank inductive bias using our proposed decay schema and discuss additional implementation strategies designed to stabilize the training process.
+
+# 3.1. Decayed Identity Shortcuts
+
+Feed-forward layers. Consider a neural network of L layers. For each layer l parameterized with θl, the operation of a feed-forward neural network can be described as:
+
+$$
+\boldsymbol {x} _ {l + 1} = f _ {\theta_ {l}} (\boldsymbol {x} _ {l}), \tag {1}
+$$
+
+where $\pmb { x } _ { l } \in \mathbb { R } ^ { d }$ represents the output from the preceding layer, and $f _ { \theta _ { l } }$ denotes the network block applied at the current layer. Although it is widely known that pure feedforward architectures are susceptible to vanishing gradients when building deeper models, Huh et al. [32] demonstrates that feed-forward modules offer implicit structural regularization, enabling deep models to generate abstract representations at bottlenecks.
+
+Residual connections. To address the optimization problem of vanishing gradients in deeper neural networks, ResNets [25] construct each layer as a residual function, resulting in a modification to Eq. 1:
+
+$$
+\boldsymbol {x} _ {l + 1} = \boldsymbol {x} _ {l} + f _ {\theta_ {l}} (\boldsymbol {x} _ {l}). \tag {2}
+$$
+
+This design builds shortcuts from input to output, allowing gradient magnitude to be preserved regardless of the depth of the model. However, a consequence of this design is that the output stays close to the input in practice [23], defeating the need to construct complex transformations over depth. The same phenomenon is also observed in highway networks [59], which adopt learnable gates $H _ { \phi } ( \pmb { x } ) \in [ 0 , 1 ] ^ { d }$ in both the residual and skip branches: $\pmb { x } _ { l + 1 } = H _ { \phi } ( \pmb { x } _ { l } ) \cdot \pmb { x } _ { l } + \left( 1 - H _ { \phi } ( \pmb { x } _ { l } ) \right) \cdot \pmb { f } _ { \theta _ { l } } ( \pmb { x } _ { l } )$ . Although this flexible design allows the model to build the abstraction level over depths, similar to feedforward networks, Srivastava et al. [60] finds $H _ { \phi } \approx 1$ for most units, suggesting the model prefers copying the input.
+
+Decayed identity shortcuts for unsupervised representation learning. Setting aside the optimization benefits brought by residual connections, we rethink the role of the residual connections from the viewpoint of representation learning. Abstraction can be viewed as invariance to local changes of input and is crucial to the disentanglement of the feature space [9]. Prior work suggests that a shortcut path of residual connections tends to preserve high-frequency finegrained input information [23], resulting in decreased feature abstraction. We hypothesize that this lack of abstraction harms the capability of the model to learn meaningful low-level features and that ensuring an abstract structure in the deeper layers of the neural network will help improve representation learning, especially for unsupervised tasks that often use indirect proxy objectives, such as pixel-wise reconstruction loss. Motivated by this hypothesis, we propose to downweight the contribution from the shortcut path:
+
+$$
+\boldsymbol {x} _ {l + 1} = \alpha_ {l} \boldsymbol {x} _ {l} + f _ {\theta_ {l}} (\boldsymbol {x} _ {l}), \tag {3}
+$$
+
+where $\alpha _ { l } \in [ 0 , 1 ]$ is a rescaling factor to the residual path, controlling the information flow through the skip connection. Fully expanding this relation for a network with L layers indexed from 1 to L, we have that:
+
+$$
+\boldsymbol {x} _ {L + 1} = \left(\prod_ {l = 1} ^ {L} \alpha_ {l}\right) \boldsymbol {x} _ {0} + \sum_ {l = 1} ^ {L - 1} \left(\prod_ {i = l + 1} ^ {L} \alpha_ {i}\right) f _ {\theta_ {l}} (\boldsymbol {x} _ {l}) + f _ {\theta_ {L}} (\boldsymbol {x} _ {L}). \tag {4}
+$$
+
+We see that the contribution of the input $\scriptstyle { \mathbf { { \mathit { x } } } } _ { 0 }$ is scaled by each $\alpha _ { l } \leq 1$ while each subsequent network block output $f _ { \theta _ { l } } ( { \pmb x } _ { l } )$ omits scaling factors up to $\alpha _ { l } .$ . Hence, the contribution of early features of the network is especially downweighted, preventing the network from passing fine-grained detailed information to the bottleneck $X _ { L + 1 }$ . During our experiments, we find the effective decay factor of the final layer, $\begin{array} { r } { \alpha _ { L } ^ { \mathrm { e f f } } = \prod _ { l = 1 } ^ { L } \alpha _ { l } } \end{array}$ , plays a critical role in deciding the optimal decay rate when varying the network depth L.
+
+Decay schema. Instead of specifying $\alpha _ { l }$ as a constant across all layers, we choose $\alpha _ { l }$ to be a function parameterized by the layer index l, where the contribution from the shortcut path is monotonically decreasing when l increases:
+
+$$
+\alpha_ {l} = 1 - \delta_ {\alpha} l, \tag {5}
+$$
+
+where δ := (1−αmin) , $\begin{array} { r } { \delta _ { \alpha } : = \frac { ( 1 - \alpha _ { \mathrm { m i n } } ) } { L } , \alpha _ { L } \equiv \alpha _ { \mathrm { m i n } } } \end{array}$ L is a minimum scaling factor applied at the final layer L. Our formulation brings two primary benefits. First, α , as a linear interpolation between 0 and 1, acts as a smooth transition between residual connections and feedforward layers, bringing us the optimization benefits from residual connections, while simultaneously encouraging the deeper layers to learn more abstract representations. Second, similar to the naive formulation, our method only introduces one extra hyperparameter $\alpha _ { \mathrm { { m i n } } } .$ which is not data-dependent and does not need to be learned.
+
+# 3.2. Implementation Strategy
+
+Skip connections for autoencoders. Since our method progressively decays the residual connections over network depth, it encourages the most abstract features to be learned by later layers. However, learning an abstract bottleneck is detrimental to the training objectives that aim for pixelwise reconstruction, as they necessitate the preservation of detailed information. To address this, we incorporate standard skip connections between the encoder and decoder, enabling the encoder to directly pass information from shallow layers to the decoder while learning increasingly abstract representations in the deeper encoder layers.
+
+Stabilizing training with residual zero initialization. The model exhibits rapid feature norm growth at the beginning of training for $\alpha _ { \mathrm { m i n } } \leq 0 . 7$ . We suspect that the model learns to amplify the output feature norm of $f _ { \boldsymbol { \theta } _ { l } } ( \boldsymbol { x } )$ to counteract the significant decay applied to the residual connection. This growth leads to training instability and negatively impacts training convergence. To address this issue, we follow the implementation of previous works [28] and initialize the weights of the final output layer in each $f _ { \theta _ { l } }$ to zero instead of using the original Xavier uniform initialization [21]. This approach enhances training stability by controlling the growth of feature norm, especially with smaller αmin.
+
+<table><tr><td>Method</td><td>FT</td><td>LP</td><td>KNN</td></tr><tr><td colspan="4">Contrastive representation learning</td></tr><tr><td>MoCo-v3[12]</td><td>83.2</td><td>76.7</td><td>66.6</td></tr><tr><td>DINO[10]</td><td>83.3</td><td>78.2</td><td>76.1</td></tr><tr><td>Con MIM [68]</td><td>83.7</td><td>39.3</td><td>-</td></tr><tr><td colspan="4">Generative representation learning</td></tr><tr><td>Data2Vec[4]</td><td>84.2</td><td>68.0</td><td>33.2</td></tr><tr><td>I-JEPA[3]</td><td>-</td><td>72.9</td><td>-</td></tr><tr><td>CAE[14]</td><td>83.8</td><td>70.4</td><td>51.4</td></tr><tr><td>ADDP(VIT-L) [63]</td><td>85.9</td><td>23.8</td><td>-</td></tr><tr><td>Latent MIM[65]</td><td>83.0</td><td>72.0</td><td>50.1</td></tr><tr><td>MAE[27]</td><td>83.6</td><td>67.8</td><td>27.4</td></tr><tr><td>MAE ( $\alpha_{\min} = 0.6$ )</td><td>82.9</td><td>72.7</td><td>63.9</td></tr></table>
+
+Table 1. Benchmark of representations on the ImageNet-1K with ViT-B. Evaluate learned features using standard evaluation protocols: linear probing (LP), fine-tuning (FT) and K-Nearest Neighbor (KNN). With only a simple architectural modification to MAE [27] and trained purely with pixel-wise reconstruction loss, we achieve 72.7% LP accuracy and 63.9% KNN accuracy, significantly narrowing down the gap between generative and contrastive representation learning frameworks
+
+# 4. Experiments on Masked Autoencoders
+
+For masked autoencoders (MAEs) [27], we replace the residual connections in the encoder’s MLP and attention blocks with decayed identity shortcuts. The MAE operates by accepting images with a random subset of pixels masked out and learning to recover the discarded pixels. Since the original MAE has twice the number of encoder layers as decoder layers, we build encoder-decoder skip connections by injecting output from every other encoder layer into the corresponding decoder layer. To match spatial dimensions, injected encoder features are combined with learnable masked tokens before channel-wise concatenation. The implementation details for the training and evaluation are shown in Section A. He et al. [27] show the desired representations appear at the end of encoder; we therefore apply our decaying schema only to the encoder.
+
+# 4.1. Representation Learning on ImageNet-1k
+
+We follow the default hyperparameters from MAE [27] to pretrain ImageNet-1K train split [16] and use the standard protocol to evaluate the learned representation with endto-end finetuning (FT), linear probing (LP) and K-Nearest Neighbour (KNN, K = 20), for image classification task. Please see the appendix for detailed experimental setups.
+
+We report the results in Table 1. In the top half of the table, we present methods that employ a contrastive loss. Although these methods produce the best probing accuracies, their success depends on a carefully designed data augmentation process, which may need to be tuned for each different data distribution. In the bottom half, we show several methods based on generative architecture. Our method simply extends MAE by constructing an implicit feature bottleneck and shows significant improvements over the MAE baselines for both linear probing (72.7% vs. 67.3%) and K-Nearest Neighbour (63.9% vs. 27.4%). outperforming Data2Vec, Latent MIM and CAE and giving a probing accuracy competitive with I-JEPA, without needing to use explicit feature alignment.
+
+<table><tr><td>Method</td><td>Train Iters</td><td>UNet</td><td>FID</td><td>IS</td></tr><tr><td>SiT-XL/2 (Baseline)</td><td>200k</td><td>False</td><td>25.2</td><td>-</td></tr><tr><td>SiT-XL/2 ( $\alpha_{\min} = 1.0$ )</td><td>200k</td><td>True</td><td>22.7</td><td>57.3</td></tr><tr><td>SiT-XL/2 ( $\alpha_{\min} = 0.8$ )</td><td>200k</td><td>True</td><td>14.2</td><td>79.7</td></tr><tr><td>SiT-XL/2 (Baseline)</td><td>400k</td><td>False</td><td>17.2</td><td>-</td></tr><tr><td>SiT-XL/2 ( $\alpha_{\min} = 1.0$ )</td><td>400k</td><td>True</td><td>16.5</td><td>74.8</td></tr><tr><td>SiT-XL/2 ( $\alpha_{\min} = 0.8$ )</td><td>400k</td><td>True</td><td>11.8</td><td>91.8</td></tr></table>
+
+Table 2. Class-conditional ImageNet-1k 256x256 Generation with SiT-XL/2 [44]. Our method significantly enhances the generation performance and the convergence speed. Comparison between ours $( \alpha _ { \mathrm { m i n } } = 0 . 8 )$ and UNet baseline $( \alpha _ { \mathrm { m i n } } = 1 . 0 )$ suggests the improvements are primarily from our decayed identity shortcuts rather than the encoder-decoder skip connections.
+
+End-to-end fine-tuning (FT), unlike linear probing which only trains a single linear layer, updates the entire network for image classification. Since the features can shift significantly from their pre-training state during end-to-end updating, we argue that this may not accurately reflect the quality of the learned representations. For example, DINO demonstrates superior performance in various downstream vision tasks compared to MAE, but its fine-tuning performance is worse than MAE. Similarly, ConMIM and ADDP exhibit poor linear probing performance, suggesting lower-quality representations, yet their fine-tuning performance surpasses that of contrastive learning methods. Nevertheless, we still provide the fine-tuning results for reference.
+
+# 4.2. Ablation Studies on ImageNet-100
+
+We conduct ablations on several properties of our framework on ImageNet-100. A summary of results can be found in Tables 3 and 4.
+
+Decay rate $\alpha _ { \mathrm { m i n } } .$ The only parameter of our framework is $\alpha _ { \mathrm { m i n } } ,$ the minimum scaling factor applied to the final layer. In Table 3,we show linear probing scores for varying values of $\alpha _ { \mathrm { { m i n } } }$ . We observe that $\alpha _ { \mathrm { m i n } } \in [ 0 . 6 , 0 . 7 ]$ works well for most cases. If $\alpha _ { \mathrm { { m i n } } }$ is too small, for example, $\alpha _ { \mathrm { m i n } } \leq 0 . 4 .$ , we observe that the training becomes unstable.
+
+Architecture size. In Table 3, we also run experiments over multiple architecture choices. We notice encoder depth L rather than feature dimension that influences the optimal choices of $\alpha _ { \mathrm { { m i n } } }$ and deeper models require larger $\alpha _ { \mathrm { { m i n } } }$ . We attribute this phenomenon to the cumulative decaying effect of the final layer, quantified as $\begin{array} { r } { \alpha _ { L } ^ { \mathrm { e f f } } = \prod _ { l = 1 } ^ { L } \alpha _ { l } } \end{array}$ . Heavy decaying would harm the optimization and selecting αmin such that $\alpha _ { L } ^ { \mathrm { e f f } } \in [ 1 \mathrm { e } { - } 3$ , 1e-2) yields the best performance.
+
+<table><tr><td>Feat. Dim.</td><td>Enc. Depth (L)</td><td colspan="5"> $\alpha_{\text{min}}$ </td><td colspan="4"> $\alpha_{L}^{\text{eff}}$ </td></tr><tr><td></td><td></td><td>0.6</td><td>0.7</td><td>0.8</td><td>0.9</td><td>1.0 (Baseline)</td><td>(0, 1e-3)</td><td>[1e-3, 1e-2)</td><td>[1e-2, 1e-1)</td><td>[1e-1, 1]]</td></tr><tr><td>384</td><td>12</td><td>78.5</td><td>78.1</td><td>75.2</td><td>73.5</td><td>69.2</td><td>-</td><td>78.5</td><td>78.1</td><td>75.2</td></tr><tr><td>768</td><td>12</td><td>83.6</td><td>81.8</td><td>79.8</td><td>79.2</td><td>76.5</td><td>-</td><td>83.6</td><td>81.8</td><td>79.8</td></tr><tr><td>1024</td><td>12</td><td>83.2</td><td>82.5</td><td>82.1</td><td>79.3</td><td>78.0</td><td>-</td><td>83.2</td><td>82.5</td><td>82.1</td></tr><tr><td>768</td><td>18</td><td>83.5</td><td>85.0</td><td>84.4</td><td>81.8</td><td>79.2</td><td>78.5</td><td>85.0</td><td>84.4</td><td>81.8</td></tr><tr><td>1024</td><td>24</td><td>84.3</td><td>86.0</td><td>84.5</td><td>84.3</td><td>81.4</td><td>82.4</td><td>86.0</td><td>-</td><td>84.3</td></tr></table>
+
+Table 3. Linear Probing accuracy of MAE on ImageNet-100 varying $\alpha _ { \mathrm { { m i n } } }$ and architecture. We show our method consistently improves the performance across all configurations. We notice the encoder depth rather than feature dimension influences the optimal $\alpha _ { \mathrm { { m i n } } }$ . We attribute this behavior to the scaling effect of the input data to encoder’s final layer, quantified as $\begin{array} { r } { \underline { { \alpha } } _ { L } ^ { \mathrm { e f f } } = \prod _ { l = 1 } ^ { L } \alpha _ { l } } \end{array}$ . Deeper model requires larger $\alpha _ { \mathrm { m i n } }$ to maintain a consistent cumulative decay effect and we find setting $\alpha _ { \mathrm { { m i n } } }$ such that $\alpha _ { L } ^ { \mathrm { e f f } } \in [ 1 \mathrm { e } { - 3 } ,$ 1e-2) works the best. With our strategy, smaller model (768 feat. dim + 12 layer) outperforms bigger one (1024 feat. dim $+ ~ 2 4$ layer) with standard residual connections.
+
+<table><tr><td> $\alpha_{\min}$ </td><td> $\alpha_l$  scheduler</td><td>UNet</td><td>LP</td></tr><tr><td>0.6</td><td>Linear</td><td>Yes</td><td>83.6</td></tr><tr><td>0.6</td><td>Linear</td><td>No</td><td>61.5</td></tr><tr><td>0.6</td><td>Cosine</td><td>Yes</td><td>82.8</td></tr><tr><td>0.7</td><td>Linear</td><td>Yes</td><td>81.8</td></tr><tr><td>0.7</td><td>Cosine</td><td>Yes</td><td>82.9</td></tr><tr><td>-</td><td>Learnable  $\alpha_l$ </td><td>Yes</td><td>79.5</td></tr></table>
+
+(a) Effect of Skip Connections and $\alpha _ { l }$ scheduler. Skip connection is critical for performance. The choice of schedulers has less impact and learnable αl is worse than pre-fixed $\alpha _ { l } .$
+
+<table><tr><td>Configurations</td><td>Decay Block</td><td> $\alpha_{\text{min}}$ </td><td>LP</td></tr><tr><td> $\boldsymbol{x}_{l+1} = \boldsymbol{x}_l + f_{\theta_l}(\boldsymbol{x}_l)$ </td><td>-</td><td>-</td><td>76.5</td></tr><tr><td> $\boldsymbol{x}_{l+1} = \boldsymbol{x}_l + \sqrt{0.5f_{\theta_l}(\boldsymbol{x}_l)}$ </td><td>MLP &amp; Atten.</td><td>-</td><td>76.9</td></tr><tr><td> $\boldsymbol{x}_{l+1} = \sqrt{0.5} (\boldsymbol{x}_l + f_{\theta_l}(\boldsymbol{x}_l))$ </td><td>MLP &amp; Atten.</td><td>-</td><td>82.6</td></tr><tr><td> $\boldsymbol{x}_{l+1} = \alpha_l \boldsymbol{x}_l + f_\theta (\boldsymbol{x}_l)$ </td><td>Atten.</td><td>0.6</td><td>79.3</td></tr><tr><td> $\boldsymbol{x}_{l+1} = \alpha_l \boldsymbol{x}_l + f_\theta (\boldsymbol{x}_l)$ </td><td>MLP</td><td>0.6</td><td>80.6</td></tr><tr><td> $\boldsymbol{x}_{l+1} = \alpha_l \boldsymbol{x}_l + f_\theta (\boldsymbol{x}_l)$ </td><td>MLP &amp; Atten.</td><td>0.6</td><td>83.6</td></tr></table>
+
+(b) Other Decay Schemas. We conduct ablations using a variety of scalings of the residual connection and observe that our design produces the best results.
+
+Table 4. Ablation experiments of MAE using ViT-B/16 in ImageNet-100. We ablate decay scheduler and architectural design with linear probing (LP) accuracy.
+
+Skip connections. Another critical design choice in our network is to include skip connections that are not in the original MAE. As discussed in Section 3.2, if the MAE does not use skip connections, the bottleneck layer must preserve all information to reconstruct the input image accurately. This is opposed to learn abstract representations at bottleneck. These contrary effects significantly degrade the representation learned by the model, leading to a 22.1% drop in the linear probing score, as we report in Table 4a.
+
+αl Scheduler. We use linear scheduler αl = 1 − (1−αmin) l $\alpha _ { l }$ $\begin{array} { r } { \alpha _ { l } = 1 - \frac { ( 1 - \alpha _ { \mathrm { m i n } } ) } { L } l } \end{array}$ as a default choice. In table 4a, we also experiment with a cosine scheduler but find it leads to worse performance for $\alpha _ { \mathrm { m i n } } = 0 . 6 , 0 . 7$ . Besides using a prefixed $\alpha _ { l }$ scheduler, we also experiment with a learnable $\alpha _ { l } .$ , which resembles the setup of highway network [59]. We show the learnable $\alpha _ { l }$ at each layer in Table6, appendix. From the table, we don’t find consistent patterns over network depth and the performance is worse than our predefined $\alpha _ { l }$ scheduler.
+
+Different decay schema. We also explore decay schema, with results summarized in Table 4b: (1) Scaling both branches of the residual blocks simultaneously by applying a constant factor, $\alpha = \sqrt { 0 . 5 }$ , to both x and $f _ { \boldsymbol { \theta } _ { l } } ( \boldsymbol { x } )$ . (2) Scaling only $f _ { \theta _ { l } }$ using the same constant factor, $\alpha = \sqrt { 0 . 5 }$ . (3) Applying our proposed schema exclusively to either the attention or MLP branch.
+
+Among these, (2) shows no significant improvement over the baseline, while (1) yields some improvement but still underperforms compared to our approach. By analyzing (1) and (2), we demonstrate that the representation gains are due to down-weighting the skip connection branch. Notably, recent diffusion models [35, 57] have employed (1) in their smaller convolutional neural network but don’t provide systemic analysis. However, applying decay only to the MLP or attention branch reduces the overall decaying effect across the network, resulting in lower performance compared to our schema, which achieves the best performance among the tested designs.
+
+# 4.3. Embedding Analysis
+
+We qualitatively evaluate the feature learning in Figure 3 and we adopt the pixel-wise embedding approaches proposed by Zhang et al. [69] to group the representations from the last layer of the encoder into a lower dimensional space. We use their default hyperparameters to cluster representations across COCO validation set and render the top 3 eigenvectors as RGB channels of images. From the visualization, ours learns abstract representation and the object from the same categories have similar color, indicating a global consistent semantic grouping. The baseline MAE, on the other hand, doesn’t show clearly global semantic patterns.
+
+We also benchmark the clustering quantitatively, following the postprocessing protocol [69] to produced unsupervised semantic segmentation and report the results as the mean intersection of union (mIoU). Ours (10.41 mIoU) achieve 6.31 mIoU improvement over baseline (4.10 mIoU), which support the visual comparison.
+
+![](images/cb4b2a90fe33ff2d97a799527c829516c971a85b3deee9fccf3a8371fe9e3726.jpg)
+
+<details>
+<summary>natural_image</summary>
+
+Collage of 16 diverse outdoor scenes including a school building, ski training, indoor setting, and ocean waves (no visible text or symbols)
+</details>
+
+(a) Input Image   
+![](images/3492bf8e4d72e0800fa929261668f28b103584092c087639d8a3a1f7ce6419be.jpg)
+
+<details>
+<summary>natural_image</summary>
+
+Grid of colorful thermal or weather photos showing outdoor scenes with no visible text or symbols
+</details>
+
+(b) MAE (4.1 mIoU)
+
+![](images/c0bbbcf430be40c8ff39c7f02f6faa147b7c0f14bb5bae820f2e315ec2e4c067.jpg)
+
+<details>
+<summary>natural_image</summary>
+
+Grid of 16 thermal or heat map-style images showing various scenes including trees, buildings, and a dog (no text or symbols)
+</details>
+
+(c) MAE (αmin = 0.6) (10.4 mIoU)   
+Figure 3. Visualize learned representations using Zhang et al. [69] without cherry-picking. We project the learned representations onto a 3-channel feature map, visualized as RGB images. Our method learns more abstract and semantically consistent representations. This visual comparison is further supported by benchmarking on unsupervised semantic segmentation tasks, where our approach achieves better results (10.4 mIoU) compared to the baseline MAE (4.1 mIoU) on COCO validation set.
+
+# 5. Experiments on Diffusion Models
+
+Diffusion models. We use U-ViT [5], a ViT-based diffusion model with skip connections between the encoder and decoder, and SiT-XL/2 [44] as the baseline for our diffusion model experiments. To adapt SiT-XL/2 to our design, we add skip connection from the first half of the layers to the corresponding second half of the layers. Unlike in MAE where we only apply decayed connections within the encoder, in diffusion models, we decay the skip connections till the last layer of the decoder, following the recent studies [7, 67] suggesting that diffusion models learn the best semantic representations near the decoder’s latter stages. While this design might be suboptimal, as the smallest decay factor may not align with the layers holding the best semantic representations, we demonstrate in practice that this simple approach effectively enhances both the learned representations and the quality of generated outputs.
+
+Experimental details. We utilize the default scheduler and sampler from U-ViT [5] and SiT-XL/2 [44] respectively. We train class-conditional diffusion model on ImageNet-100 and ImageNet-1k and we additionally train unconditional diffusion models on CIFAR-100 and ImageNet-100 without using image class labels to validate our design across tasks. For ImageNet-100 and ImageNet-1k, we follow the setup in latent diffusion models [49] by running the model in the latent space of a pretrained VAE, which maps input images with 256x256x3 to a 32x32x4 sampled latent space. In ablation experiments with U-ViT, We use U-ViT-Mid for ImageNet-100 and ImageNet-1K, and U-ViT-small for CIFAR-100. For model design and training details, please refer to Bao et al. [5].
+
+We evaluate the learned representations with linear probing and we train a linear classifier over the frozen representations. We report the results as the best configurations, including the choices of layer index and noise level, that yields the best performance.
+
+Results. We report our primary ImageNet-1k 256x256 class-conditional image generation performance with SiT-XL/2 in Table 2. Compared to baseline, we demonstrate significant improvement in FID: (11.8 v.s. 17.2). Further, comparing ours with SiT-XL/2 (αmin = 1.0) (11.8 v.s. 16.5) further validates that our improvements are primarily from our decay scheme rather than the encoder-deocder skip connection. Our simple design also shows significant convergence speed up where ours at 200K steps are substantially better than baseline at 400 steps (14.2 v.s. 17.2).
+
+Besides, we also provide ablation with U-ViT models across multiple dataset and experimental setup. We present our results in Table 5, where we demonstrate that replacing residual connections with our proposed decayed identity shortcuts consistently enhances representation quality and image generation across both datasets and tasks (conditional and unconditional generation). Notably, this improvement is achieved without introducing any additional learnable parameters. We provide the visualization of generated images in the appendix for qualitative comparisons (Figure 8).
+
+# 6. Discussion on Feature Rank
+
+In this section, we try to provide insights for the key question: How and why do residual connections impact the abstraction level of the deeper layers in a neural network? We delve deeper into how our design reinforces the low-rank bias of neural networks and try to connect our method to ideas in existing works [32]. To this end, we visualize the training dynamics of our method and analysis the feature rank of our approach to provide a holistic analysis.
+
+Low-rank simplicity bias. Huh et al. [32] investigate the low-rank simplicity bias in deeper feed-forward neural networks, which drives neural networks to find low-rank solutions. At the same time, they make an empirical observation that deeper residual networks do not show a similar rank contracting behavior.
+
+<table><tr><td></td><td>Model</td><td colspan="4">Linear Probing (Acc.)↑</td><td colspan="4">Generation quality (FID)↓</td></tr><tr><td>Dataset\αmin</td><td></td><td>1.0</td><td>0.8</td><td>0.7</td><td>0.6</td><td>1.0</td><td>0.8</td><td>0.7</td><td>0.6</td></tr><tr><td>CIFAR-100 (Uncon.)</td><td>U-ViT-Small</td><td>62.47</td><td>63.58</td><td>66.86</td><td>64.63</td><td>14.34</td><td>11.65</td><td>8.99</td><td>11.71</td></tr><tr><td>ImageNet-100 (Uncond.)</td><td>U-ViT-Mid</td><td>72.8</td><td>74.5</td><td>76.1</td><td>75.8</td><td>44.40</td><td>40.96</td><td>41.17</td><td>43.51</td></tr><tr><td>ImageNet-100 (Class Cond.)</td><td>U-ViT-Mid</td><td>-</td><td>-</td><td>-</td><td>-</td><td>6.93</td><td>5.75</td><td>5.11</td><td>4.98</td></tr><tr><td>ImageNet-1K (Class Cond.)</td><td>U-ViT-Mid</td><td>-</td><td>-</td><td>-</td><td>-</td><td>7.65</td><td>6.23</td><td>5.34</td><td>4.90</td></tr></table>
+
+Table 5. Ablation on image generation using U-ViT models. In diffusion models, we demonstrate that our proposed decayed identity shortcut (with $\alpha _ { \mathrm { m i n } } < 1 . 0 )$ enhances probing accuracy and generation quality across various configurations in both classes conditional and unconditional setups.
+
+![](images/2686ace9e1a33f84fe7704803990347aed56fe763faba1a1916a52c26ca6e3ad.jpg)  
+Figure 4. For MAE pretrained on ImageNet-100, we present visualizations of (a) the training dynamics of the effective rank for different values of $\alpha _ { \mathrm { m i n } } .$ , and (b) the linear probing accuracy for various $\alpha _ { \mathrm { { m i n } } }$ , demonstrating that a lower effective feature rank could potentially be associated with better performance.
+
+Effective rank. For analysis purpose, Huh et al. [32] quantify the rank of the learned representation using the effective rank, which is a continuous measure. For a matrix $\textbf { \textit { A } } \in \mathbb { R } ^ { m \times n }$ , the effective rank $\rho ( A )$ is defined as the Shannon entropy of the normalized singular values [51]: $\begin{array} { r } { \rho ( A ) = - \sum _ { i } ^ { \operatorname* { m i n } ( n , m ) } \bar { \sigma } _ { i } \log \bar { \sigma } _ { i } } \end{array}$ where $\bar { \sigma } _ { i } = { \sigma } _ { i } / \sum _ { j } { \sigma } _ { j }$ denotes the $i ^ { \mathrm { { t h } } }$ normalized singular value. Intuitively, $\rho ( A )$ is small when a few singular values dominate and large when singular values are evenly spread, hence giving a good continuous approximation for matrix rank. In the following subsections, we use the singular values from the covariance matrix Aθ of the last-layer features to compute $\rho ( A )$ , where $A _ { \theta } ( i , j )$ denotes the covariance of the learned class tokens for the $i ^ { \mathrm { { t h } } }$ and $j ^ { \mathrm { t h } }$ samples.
+
+Inspired by Huh et al. [32], we conjecture that the feature learning improvement of our method can potentially be attributed to the decayed identity shortcuts encouraging low-rank features at the bottleneck. In Figures 4a and 4b, we measure the training dynamics of the models (feature dimension 768 and encoder depth 12) in terms of accuracy and the effective rank, for different values of $\alpha _ { \mathrm { { m i n } } }$ . In early epochs, models with lower $\alpha _ { \mathrm { { m i n } } }$ tend to exhibit both lower effective rank and higher probing accuracy, supporting our hypothesis. As training progresses, the correlations between $\alpha _ { \mathrm { { m i n } } }$ and effective rank become less precise. We suspect this is due to the model’s effort to compensate for the decay factors with a large value. And we can still see that lower $\alpha _ { \mathrm { m i n } } = [ 0 . 5 \substack { - 0 . 6 } ]$ results in lower feature rank and better probing accuracy compared to $\alpha _ { \mathrm { m i n } } = [ 0 . 7 – 1 . 0 ]$ . We provide further analysis in Appendix B.3.
+
+# Compatibility with contrastive learning frameworks.
+
+Despite substantial improvement of applying our decayed identity shortcuts in generative models, we note that our approach does not easily extend to contrastive learning frameworks, where the low rank inductive bias conflicts with the training objectives, e.g., MoCov3 [13] include a universal repulsive term in the denominator to increase the feature rank. Rankme [19] confirms this by showing contrastive learning models prefer higher feature ranks.
+
+# 7. Conclusion
+
+Huh et al. [32] raise a key insight in their work – that how a neural network is parameterized matters for fitting the data – and investigate the inductive low-rank bias of stacking more linear layers in a network. In this work, we observe that the ubiquitous residual network [25] may not be the ideal network parametrization for representation learning and propose a modification of the shortcut path in residual blocks that significantly improves unsupervised representation learning. We explore the connection between our reparameterization of the residual connection and the effective rank of the learned features, finding a potential correlation between good representations and low-rank representations.
+
+Our work calls into question a fundamental design choice of neural networks that has been used in many modern architectures. By rethinking this choice, the door is open for further reparametrizations and improvements to unsupervised representation learning. The results we show provide a prompt for more extensive investigations into the connection between low effective rank and high-quality abstract representations.
+
+# 8. Acknowledgments
+
+We gratefully acknowledge the support of AFOSR FA9550- 18-1-0166, NSF DMS-2023109, DOE DE-SC0022232, the NSF-Simons AI-Institute for the Sky (SkAI) via grants NSF AST-2421845 and Simons Foundation MPS-AI-00010513, and the Margot and Tom Pritzker Science Foundation.
+
+# References
+
+[1] Josh Achiam, Steven Adler, Sandhini Agarwal, Lama Ahmad, Ilge Akkaya, Florencia Leoni Aleman, Diogo Almeida, Janko Altenschmidt, Sam Altman, Shyamal Anadkat, et al. GPT-4 technical report. arXiv:2303.08774, 2023. 2   
+[2] Sanjeev Arora, Nadav Cohen, Wei Hu, and Yuping Luo. Implicit regularization in deep matrix factorization. In NeurIPS, 2019. 3   
+[3] Mahmoud Assran, Quentin Duval, Ishan Misra, Piotr Bojanowski, Pascal Vincent, Michael Rabbat, Yann LeCun, and Nicolas Ballas. Self-supervised learning from images with a joint-embedding predictive architecture. In CVPR, 2023. 5   
+[4] Alexei Baevski, Wei-Ning Hsu, Qiantong Xu, Arun Babu, Jiatao Gu, and Michael Auli. Data2vec: A general framework for self-supervised learning in speech, vision and language. In ICML, 2022. 5   
+[5] Fan Bao, Shen Nie, Kaiwen Xue, Yue Cao, Chongxuan Li, Hang Su, and Jun Zhu. All are worth words: A ViT backbone for diffusion models. In CVPR, 2023. 7   
+[6] Hangbo Bao, Li Dong, Songhao Piao, and Furu Wei. BEiT: BERT pre-training of image transformers. In ICLR, 2022. 2   
+[7] Dmitry Baranchuk, Ivan Rubachev, Andrey Voynov, Valentin Khrulkov, and Artem Babenko. Label-efficient semantic segmentation with diffusion models. In ICLR, 2022. 7   
+[8] Daniel Beaglehole, Adityanarayanan Radhakrishnan, Parthe Pandit, and Mikhail Belkin. Mechanism of feature learning in convolutional neural networks. arXiv:2309.00570, 2023. 3   
+[9] Yoshua Bengio, Aaron Courville, and Pascal Vincent. Representation learning: A review and new perspectives. TPAMI, 2013. 4   
+[10] Mathilde Caron, Hugo Touvron, Ishan Misra, Herve J ´ egou, ´ Julien Mairal, Piotr Bojanowski, and Armand Joulin. Emerging properties in self-supervised vision transformers. In ICCV, 2021. 1, 2, 5   
+[11] Ting Chen, Simon Kornblith, Mohammad Norouzi, and Geoffrey Hinton. A simple framework for contrastive learning of visual representations. In ICML, 2020. 1, 2   
+[12] Xinlei Chen, Saining Xie, and Kaiming He. An empirical study of training self-supervised vision transformers. In ICCV, 2021. 5   
+[13] Xinlei Chen, Saining Xie, and Kaiming He. An empirical study of training self-supervised vision transformers. In ICCV, 2021. 8   
+[14] Xiaokang Chen, Mingyu Ding, Xiaodi Wang, Ying Xin, Shentong Mo, Yunhao Wang, Shumin Han, Ping Luo, Gang Zeng, and Jingdong Wang. Context autoencoder for selfsupervised representation learning. IJCV, 2024. 2, 5
+
+[15] Yizong Cheng. Mean shift, mode seeking, and clustering. TPAMI, 1995. 3   
+[16] Jia Deng, Wei Dong, Richard Socher, Li-Jia Li, Kai Li, and Li Fei-Fei. ImageNet: A large-scale hierarchical image database. In CVPR, 2009. 1, 2, 5   
+[17] Yihe Dong, Jean-Baptiste Cordonnier, and Andreas Loukas. Attention is not all you need: Pure attention loses rank doubly exponentially with depth. In ICML, 2021. 3   
+[18] Kirsten Fischer, David Dahmen, and Moritz Helias. Optimal signal propagation in ResNets through residual scaling. arXiv:2305.07715, 2023. 2, 3   
+[19] Quentin Garrido, Randall Balestriero, Laurent Najman, and Yann Lecun. Rankme: Assessing the downstream performance of pretrained self-supervised representations by their rank. In International conference on machine learning, pages 10929–10974. PMLR, 2023. 8   
+[20] Borjan Geshkovski, Cyril Letrouit, Yury Polyanskiy, and Philippe Rigollet. The emergence of clusters in self-attention dynamics. In NeurIPS, 2024. 3   
+[21] Xavier Glorot and Yoshua Bengio. Understanding the difficulty of training deep feedforward neural networks. In ICAIS, 2010. 4   
+[22] Ian Goodfellow, Jean Pouget-Abadie, Mehdi Mirza, Bing Xu, David Warde-Farley, Sherjil Ozair, Aaron Courville, and Yoshua Bengio. Generative adversarial nets. In NeurIPS, 2014. 1   
+[23] Klaus Greff, Rupesh K Srivastava, and Jurgen Schmidhuber. ¨ Highway and residual networks learn unrolled iterative estimation. In ICLR, 2017. 1, 3, 4   
+[24] Jean-Bastien Grill, Florian Strub, Florent Altche, Corentin ´ Tallec, Pierre Richemond, Elena Buchatskaya, Carl Doersch, Bernardo Avila Pires, Zhaohan Guo, Mohammad Gheshlaghi Azar, et al. Bootstrap your own latent: A new approach to self-supervised learning. In NeurIPS, 2020. 1, 2   
+[25] Kaiming He, Xiangyu Zhang, Shaoqing Ren, and Jian Sun. Deep residual learning for image recognition. In CVPR, 2016. 1, 3, 4, 8   
+[26] Kaiming He, Haoqi Fan, Yuxin Wu, Saining Xie, and Ross Girshick. Momentum contrast for unsupervised visual representation learning. In CVPR, 2020. 1, 2   
+[27] Kaiming He, Xinlei Chen, Saining Xie, Yanghao Li, Piotr Dollar, and Ross Girshick. Masked autoencoders are scalable´ vision learners. In CVPR, 2022. 1, 2, 5, 12   
+[28] Jonathan Ho, Ajay Jain, and Pieter Abbeel. Denoising diffusion probabilistic models. In NeurIPS, 2020. 1, 2, 4   
+[29] Sepp Hochreiter and Jurgen Schmidhuber. Long short-term ¨ memory. Neural Computation, 1997. 3   
+[30] Gao Huang, Zhuang Liu, Laurens Van Der Maaten, and Kilian Q Weinberger. Densely connected convolutional networks. In CVPR, 2017. 1, 3   
+[31] Zhicheng Huang, Xiaojie Jin, Chengze Lu, Qibin Hou, Ming-Ming Cheng, Dongmei Fu, Xiaohui Shen, and Jiashi Feng. Contrastive masked autoencoders are stronger vision learners. TPAMI, 2023. 3   
+[32] Minyoung Huh, Hossein Mobahi, Richard Zhang, Brian Cheung, Pulkit Agrawal, and Phillip Isola. The low-rank simplicity bias in deep networks. arXiv:2103.10427, 2021. 2, 3, 4, 7, 8
+
+[33] Sergey Ioffe and Christian Szegedy. Batch normalization: Accelerating deep network training by reducing internal covariate shift. In ICML, 2015. 1   
+[34] Li Jing, Jure Zbontar, and Yann LeCun. Implicit rankminimizing autoencoder. In NeurIPS, 2020. 3   
+[35] Tero Karras, Timo Aila, Samuli Laine, and Jaakko Lehtinen. Progressive growing of GANs for improved quality, stability, and variation. In ICLR, 2018. 6   
+[36] Tero Karras, Samuli Laine, and Timo Aila. A style-based generator architecture for generative adversarial networks. TPAMI, 2021. 1   
+[37] Diederik P Kingma and Max Welling. Auto-encoding variational bayes. arXiv:1312.6114, 2013. 1   
+[38] Alexander Kirillov, Eric Mintun, Nikhila Ravi, Hanzi Mao, Chloe Rolland, Laura Gustafson, Tete Xiao, Spencer Whitehead, Alexander C. Berg, Wan-Yen Lo, Piotr Dollar, and ´ Ross Girshick. Segment anything. arXiv:2304.02643, 2023. 2   
+[39] Takeshi Kojima, Shixiang Shane Gu, Machel Reid, Yutaka Matsuo, and Yusuke Iwasawa. Large language models are zero-shot reasoners. In NeurIPS, 2022. 2   
+[40] Gustav Larsson, Michael Maire, and Gregory Shakhnarovich. FractalNet: Ultra-deep neural networks without residuals. In ICLR, 2017. 1, 3   
+[41] Md Tahmid Rahman Laskar, M Saiful Bari, Mizanur Rahman, Md Amran Hossen Bhuiyan, Shafiq Joty, and Jimmy Xiangji Huang. A systematic study and comprehensive evaluation of ChatGPT on benchmark datasets. arXiv:2305.18486, 2023. 2   
+[42] Tianhong Li, Huiwen Chang, Shlok Mishra, Han Zhang, Dina Katabi, and Dilip Krishnan. MAGE: Masked generative encoder to unify representation learning and image synthesis. In CVPR, 2023. 1, 3   
+[43] Ilya Loshchilov and Frank Hutter. Decoupled weight decay regularization. In ICLR, 2019. 12   
+[44] Nanye Ma, Mark Goldstein, Michael S Albergo, Nicholas M Boffi, Eric Vanden-Eijnden, and Saining Xie. Sit: Exploring flow and diffusion-based generative models with scalable interpolant transformers. In European Conference on Computer Vision, pages 23–40. Springer, 2024. 5, 7   
+[45] Behnam Neyshabur, Zhiyuan Li, Srinadh Bhojanapalli, Yann LeCun, and Nathan Srebro. Towards understanding the role of over-parametrization in generalization of neural networks. In ICLR, 2019. 3   
+[46] Adityanarayanan Radhakrishnan, Daniel Beaglehole, Parthe Pandit, and Mikhail Belkin. Mechanism of feature learning in deep fully connected networks and kernel machines that recursively learn features. arXiv:2212.13881, 2022. 3   
+[47] Adityanarayanan Radhakrishnan, Mikhail Belkin, and Dmitriy Drusvyatskiy. Linear recursive feature machines provably recover low-rank matrices. arXiv:2401.04553, 2024. 3   
+[48] Aditya Ramesh, Mikhail Pavlov, Gabriel Goh, Scott Gray, Chelsea Voss, Alec Radford, Mark Chen, and Ilya Sutskever. Zero-shot text-to-image generation. In ICML, 2021. 2   
+[49] Robin Rombach, Andreas Blattmann, Dominik Lorenz, Patrick Esser, and Bjorn Ommer. High-resolution image syn- ¨ thesis with latent diffusion models. In CVPR, 2022. 1, 2, 7
+
+[50] Olaf Ronneberger, Philipp Fischer, and Thomas Brox. U-Net: Convolutional networks for biomedical image segmentation. In MICCAI, 2015. 1, 12   
+[51] Olivier Roy and Martin Vetterli. The effective rank: A measure of effective dimensionality. In ESPC, 2007. 8   
+[52] Pedro Savarese and Daniel Figueiredo. Residual gates: A simple mechanism for improved network optimization. In ICLR, 2017. 2, 3   
+[53] Christoph Schuhmann, Romain Beaumont, Richard Vencu, Cade Gordon, Ross Wightman, Mehdi Cherti, Theo Coombes, Aarush Katta, Clayton Mullis, Mitchell Wortsman, et al. LAION-5B: An open large-scale dataset for training next generation image-text models. In NeurIPS, 2022. 2   
+[54] Zhan Shi, Xu Zhou, Xipeng Qiu, and Xiaodan Zhu. Improving image captioning with better use of captions. In ACL, 2020. 2   
+[55] Mannat Singh, Quentin Duval, Kalyan Vasudev Alwala, Haoqi Fan, Vaibhav Aggarwal, Aaron Adcock, Armand Joulin, Piotr Dollar, Christoph Feichtenhofer, Ross Girshick, ´ et al. The effectiveness of MAE pre-pretraining for billionscale pretraining. arXiv:2303.13496, 2023. 3   
+[56] Jiaming Song, Chenlin Meng, and Stefano Ermon. Denoising diffusion implicit models. In ICLR, 2021. 1, 2   
+[57] Yang Song, Jascha Sohl-Dickstein, Diederik P Kingma, Abhishek Kumar, Stefano Ermon, and Ben Poole. Score-based generative modeling through stochastic differential equations. In ICLR, 2021. 2, 6   
+[58] Yang Song, Prafulla Dhariwal, Mark Chen, and Ilya Sutskever. Consistency models. In ICML, 2023. 1   
+[59] Rupesh Kumar Srivastava, Klaus Greff, and Jurgen Schmid- ¨ huber. Highway networks. arXiv:1505.00387, 2015. 1, 2, 4, 6   
+[60] Rupesh Kumar Srivastava, Klaus Greff, and Jurgen Schmid- ¨ huber. Training very deep networks. In NeurIPS, 2015. 4   
+[61] Christian Szegedy, Wei Liu, Yangqing Jia, Pierre Sermanet, Scott Reed, Dragomir Anguelov, Dumitru Erhan, Vincent Vanhoucke, and Andrew Rabinovich. Going deeper with convolutions. In CVPR, 2015. 1   
+[62] Gemini Team, Rohan Anil, Sebastian Borgeaud, Yonghui Wu, Jean-Baptiste Alayrac, Jiahui Yu, Radu Soricut, Johan Schalkwyk, Andrew M Dai, Anja Hauth, et al. Gemini: A family of highly capable multimodal models. arXiv:2312.11805, 2023. 2   
+[63] Changyao Tian, Chenxin Tao, Jifeng Dai, Hao Li, Ziheng Li, Lewei Lu, Xiaogang Wang, Hongsheng Li, Gao Huang, and Xizhou Zhu. ADDP: Learning general representations for image recognition and generation with alternating denoising diffusion process. In ICLR, 2024. 5   
+[64] Ashish Vaswani, Noam Shazeer, Niki Parmar, Jakob Uszkoreit, Llion Jones, Aidan N Gomez, Łukasz Kaiser, and Illia Polosukhin. Attention is all you need. In NeurIPS, 2017. 1   
+[65] Yibing Wei, Abhinav Gupta, and Pedro Morgado. Towards latent masked image modeling for self-supervised visual representation learning. arXiv preprint arXiv:2407.15837, 2024. 5   
+[66] Zhirong Wu, Yuanjun Xiong, Stella X Yu, and Dahua Lin. Unsupervised feature learning via non-parametric instance discrimination. In CVPR, 2018. 1, 2
+
+[67] Xingyi Yang and Xinchao Wang. Diffusion model as representation learner. In ICCV, 2023. 7   
+[68] Kun Yi, Yixiao Ge, Xiaotong Li, Shusheng Yang, Dian Li, Jianping Wu, Ying Shan, and Xiaohu Qie. Masked image modeling with denoising contrast. In ICLR, 2023. 5   
+[69] Xiao Zhang, David Yunis, and Michael Maire. Deciphering ‘what’ and ‘where’ visual pathways from spectral clustering of layer-distributed neural representations. In CVPR, 2024. 3, 6, 7   
+[70] Jinghao Zhou, Chen Wei, Huiyu Wang, Wei Shen, Cihang Xie, Alan Yuille, and Tao Kong. iBOT: Image BERT pretraining with online tokenizer. In ICLR, 2022. 3   
+[71] Ligeng Zhu, Ruizhi Deng, Michael Maire, Zhiwei Deng, Greg Mori, and Ping Tan. Sparsely aggregated convolutional networks. In ECCV, 2018. 1, 3
+
+# A. Training and Evaluation Details
+
+# A.1. Model training.
+
+Our training configurations primarily followed the guidelines established by He et al. [27]. In the ImageNet-1K experiment, our model was trained for 800 epochs, utilizing the AdamW [43] optimizer with a constant weight decay of 5e-2 for a batch size of 1024. We set the maximum learning rate to 6e-4. Initially, the learning rate started at 0 and linearly increased to its maximum over the first 40 epochs, after which it followed a cosine schedule to gradually decrease to zero by the end of the training period. It is worth noting that the learning rate per sample, or effective learning rate, in our setup matched that of He et al. [27], although our maximum learning rate was set lower due to our batch size being a quarter of theirs. We applied random resizing, cropping, and horizontal flipping during training as part of our augmentation scheme. To enhance the quality of the learned representations in most experiments, we employed the normalized pixel loss, as proposed by [27]. In the ImageNet-100 experiment, we employed the identical training configuration used in the ImageNet-1K experiments. We train our model with 4 NVIDIA A40 GPUs and a completed trianing usually takes 20 hours on ImageNet-100 and 200 hours on ImageNet-1k.
+
+# A.2. Evaluation with Linear Probing.
+
+For the ImageNet-1k dataset, we use the exact same evaluation protocols employed in He et al. [27], which includes random data augmentation.
+
+For the ImageNet-100 dataset, we employed a simpler evaluation protocol: We train the linear classifier with a batch size of 1024 for 200 epochs, where the learning rate starts at 1e-2 and then decays towards 0 using a cosine scheduler. During this evaluation, we do not apply any data augmentation.
+
+# A.3. Modified Architecture
+
+We present a visualization of our UNet transformer design, as outlined in Section 3.2, in Fig. 5. It’s important to note that decayed identity shortcuts are exclusively implemented within the encoder block. Additionally, we establish skip connections from alternating blocks in the encoder to the decoder, following the UNet [50] architecture’s design principles.
+
+# A.4. Learnable $\alpha _ { l }$ over network layers
+
+In the ablation study of learnable $\alpha _ { l }$ , we apply no additional regularization beyond standard weight decay to the model parameters. Table 6 presents the $\alpha _ { l }$ values for each layer. The results do not reveal any meaningful pattern across network depth.
+
+Encoder Block with Decayed Identity Shortcuts   
+![](images/ca284172717eaceeeb4bc77688c2b3da01828ac38779d628d00dbdce95a60946.jpg)
+
+<details>
+<summary>flowchart</summary>
+
+```mermaid
+graph TD
+    A["x_l"] --> B["Layer Norm"]
+    B --> C["Multi-Head Attention"]
+    C --> D["+"]
+    D --> E["Layer Norm"]
+    E --> F["MLP Block"]
+    F --> G["x_{l+2}"]
+    G --> H["α_l x_l"]
+    H --> I["α_{l+1} x_{l+1}"]
+    I --> J["+"]
+    J --> K["x_l+2"]
+```
+</details>
+
+Decoder Block   
+![](images/273ddf18d715d936a1760b23272ad10572119d1ff98a36e0c3a6a6836ff566fb.jpg)
+
+<details>
+<summary>flowchart</summary>
+
+```mermaid
+graph TD
+    A["x_l"] --> B["Layer Norm"]
+    B --> C["Multi-Head Attention"]
+    C --> D["⊕"]
+    D --> E["Layer Norm"]
+    E --> F["MLP Block"]
+    F --> G["⊕"]
+    G --> H["x_{l+2}"]
+    B --> I["x_l"]
+    E --> J["x_{l+1}"]
+    H --> K["x_{l+2}"]
+```
+</details>
+
+UNet Transformer   
+![](images/61440423c463835e460f94bccc191c8d418138c29c20e03fb0a3106d93e6e28f.jpg)
+
+<details>
+<summary>flowchart</summary>
+
+```mermaid
+graph TD
+    A["Encoder 1"] --> B["Decoder 8"]
+    C["Encoder 2"] --> D["Decoder 7"]
+    E["Encoder 3"] --> F["Decoder 6"]
+    G["Encoder 4"] --> H["Decoder 5"]
+    I["Encoder 5"] --> J["Decoder 4"]
+    K["Encoder 6"] --> L["Decoder 3"]
+    M["Encoder 7"] --> N["Decoder 2"]
+    O["Encoder 8"] --> P["Decoder 1"]
+    Q["Encoder 9"] --> R["Decoder 10"]
+    S["Encoder 10"] --> T["Decoder 11"]
+    U["Encoder 11"] --> V["Decoder 12"]
+```
+</details>
+
+Figure 5. We present our enhanced UNet Transformer architecture for Masked Auto-encoder. (1) Left: Our customized encoder blocks, equipped with our proposed decay identity shortcuts. (2) Middle: Standard transformer blocks as the decoder blocks. (3) Right: We incorporate the decay identity shortcuts exclusively within the encoder blocks of our UNet transformer and employ standard transformer blocks for the decoder. To support abstract representation learning at the bottleneck, $i . e . ,$ , the last layer of the Encoder 12, we adopt the UNet [50] architecture and create skip connections that transmit every other encoder feature directly to the decoder.
+
+# B. Further analysis
+
+# B.1. Reconstruction quality.
+
+![](images/5133b4be872d9ba31e9d09bf6da5d56c6a548428cf7bb04e24a77e0d7ff93cfa.jpg)
+
+<details>
+<summary>natural_image</summary>
+
+Grid of 20 grayscale images showing various human and animal subjects with no visible text or symbols
+</details>
+
+Figure 6. Qualitative comparison of images reconstructed by MAE with and without our method. We observe our method learns features with higher linear probing accuracy without compromising reconstruction quality. Row 1: ground truth test image. Row 2: images masked at 75%. Row 3: reconstructions with our method. Row 4: reconstructions with baseline MAE.
+
+We qualitatively evaluate test images reconstructed by an MAE using our framework and images reconstructed by the original MAE. We show the reconstructed images in Figure 6. While the focus of our work is entirely to improve the representations learned by an encoder, we observe that our framework does not harm the reconstructions. Hence, there is no qualitative tradeoff for our increase in linear probing accuracy.
+
+# B.2. Abstraction and Low-rank in the Supervised Setting
+
+In this experiment, we modify the standard ResNet-18 model to experiment with different depth models. By default, the ResNet-18 has a total of 8 residual blocks that are equally distributed into 4 layers. To increase model depth, we repeat residual blocks in the 3rd layer to obtain models varying between 8 and 16 total layers. At convergence, we observe that the models of different depths achieve a similar test accuracy. However, despite similar accuracies, in Figure $^ { 7 \mathrm { a . } }$ , which visualizes the effective rank over depth for different values of $\alpha _ { \mathrm { { m i n } } }$ , we see that the effective rank decreases over depth. Furthermore, smaller values of $\alpha _ { m i n }$ consistently lead to features with lower effective rank.
+
+<table><tr><td>Layer Index</td><td>1</td><td>2</td><td>3</td><td>4</td><td>5</td><td>6</td><td>7</td><td>8</td><td>9</td><td>10</td><td>11</td><td>12</td></tr><tr><td>Attention</td><td>0.993</td><td>0.947</td><td>0.982</td><td>0.766</td><td>0.992</td><td>0.795</td><td>0.988</td><td>0.849</td><td>0.998</td><td>0.723</td><td>0.811</td><td>0.488</td></tr><tr><td>FFN</td><td>0.989</td><td>0.926</td><td>0.961</td><td>0.620</td><td>0.961</td><td>0.442</td><td>0.711</td><td>0.322</td><td>0.810</td><td>0.475</td><td>0.637</td><td>0.353</td></tr></table>
+
+Table 6. Learnable αl values for different model layers. In contrast to our proposed linear scheduler, learnable αl does not exhibit a consistent decay pattern across network depth.
+
+![](images/3ac4f1f5409a438a084832bc05a17f1ba6832c482cc89a74dbbe7d550772e869.jpg)  
+(a) Effective rank of ResNet for different depths at the convergence of the training.   
+(b) Effective rank of ResNet over training epoch.   
+Figure 7. Dynamics of the feature rank in the supervised setup. We train ResNet models for a supervised classification task on a small subset of ImageNet. And visualize (a) effective rank across different depths at convergence and (b) training dynamics of effective rank over time for various $\alpha _ { \mathrm { { m i n } } }$ . In (a) we see that at convergence, our method consistently decreases the feature rank with various depth and, in (b), this pattern is also shown for standard ResNet model at every stage of training.
+
+Next, in Figure 7b, we try to verify our conjecture by visualizing the evolution of effective rank during training when choosing different $\alpha _ { \mathrm { { m i n } } }$ in our method. For this experiment, we choose to train the standard ResNet-18 using our decayed identity shortcuts. In this setup, we observe that the optimal choice of $\alpha _ { \mathrm { { m i n } } }$ slightly improves the test accuracy of the classification network: 94.4% with $\alpha _ { \operatorname* { m i n } } =$ 0.7 vs. 93.6% with $\alpha _ { \mathrm { m i n } } = 1 . 0$ . We observe that the effective rank of the final features decreases with decreasing $\alpha _ { \mathrm { { m i n } } }$ . This supports our hypothesis that (1) decayed identity shortcuts substantially decrease the rank of bottleneck features and (2) decreasing feature rank may help improve learned features.
+
+# B.3. Further analysis on low-rank property
+
+Consider a deep linear encoder with residual (skip) connections, $h _ { l + 1 } = \alpha _ { l } h _ { l } + W _ { l } h _ { l } = \left( \alpha _ { l } I + W _ { l } \right) h _ { l }$ , where $\alpha _ { l } \in ( 0 , 1 ]$ is a depth-dependent decay factor. The overall encoder mapping is $H = \left( \alpha _ { L - 1 } I + W _ { L - 1 } \right) \cdot \cdot \cdot \left( \alpha _ { 0 } I + W _ { 0 } \right)$ , a product of perturbed identity transformations. In the standard $\alpha _ { l } = 1$ case (ResNet), unweighted identity shortcuts cause the output to remain largely a copy of the input, reducing the need to learn complex transformations and yielding high-rank feature representations that preserve fine-grained input details. By contrast, decaying $\alpha _ { l } < 1$ gradually suppresses this direct copy effect. Expanding the recursion shows that the raw input contribution to $h _ { L }$ is scaled by the product $\textstyle \prod _ { i = 0 } ^ { L - 1 } \alpha _ { i }$ , whereas contributions involving deeper transformations $W _ { i }$ omit some of these factors. Thus, for a monotonically decreasing schedule $\left\{ \alpha _ { l } \right\}$ , the direct “identity” component Qi αi x vanishes exponentially with depth. Gradient-based training of deep linear networks is known to converge to minimal-norm solutions, which correspond to mappings with reduced effective rank. Decayed identity shortcuts recover this low-rank inductive bias by progressively weakening the high-rank “copy” component of residual connections, while still preserving the optimization benefits of skip connections for stable training.
+
+Moreover, the denoising (or masked) autoencoder objective accentuates the effect: since the input has noised (masked) entries, the encoder–decoder must rely on the most salient shared variations in the data (analogous to principal components) to infer missing content, rather than trivially forwarding local details. Thus, the encoder’s output covariance concentrates in a subspace spanned by a few significant singular vectors, and the normalized singular-value entropy is correspondingly low. In other words, the representation has low effective rank, which aligns with empirical observations that networks with decayed shortcuts learn features of lower rank that are associated with improved downstream performance.
+
+![](images/9f6935eddff34e2b823ae9126e23b7cf25b41435fe2691ca52d619a926037cf0.jpg)  
+Figure 8. Qualitative comparison of images generated by diffusion models. Our method, decayed identity shortcuts with $\alpha _ { \mathrm { m i n } } = 0 . 6 ,$ shows improved representation learning and produces higher-quality generated images compared to the baseline, which employs full residual connections $( \alpha _ { \mathrm { m i n } } = 1 . 0 )$ .
