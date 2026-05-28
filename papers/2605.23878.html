@@ -19,39 +19,39 @@
   </header>
   <nav class="site-nav" aria-label="主导航">
     <a class="nav-link" href="../index.html">头版</a>
-<a class="nav-link" href="../issues/2026-05-26.html">今日速递</a>
+<a class="nav-link" href="../issues/2026-05-28.html">今日速递</a>
 <a class="nav-link" href="../pages/catalog.html">论文目录</a>
 <a class="nav-link" href="../pages/timeline.html">时间线</a>
   </nav>
   <main><article class="paper-detail">
   <div class="paper-main">
     <div class="kicker">arXiv 新增 / 项目页 · P1 · 2026-05-26</div>
-    <h1 class="paper-headline">LaMo：它把“无标注视频中的运动”变成可复用监督信号，和视频基础模型、world simulator 的自监督预训练方向高度相关</h1>
-    <p class="dek">不依赖外部 simulator、teacher 或专门物理数据，就能把运动一致性信号插入现有视频生成 backbone。</p>
-    <p class="byline"><strong>LaMo</strong>　Bo Jiang, Depu Meng, Yihan Hu, Yichen Xie, Tianshuo Xu, Wei Zhan。　arXiv 新增 / 项目页　<a href="https://arxiv.org/abs/2605.23878">原文链接</a></p>
+    <h1 class="paper-headline">LaMo：它和通用视觉自监督的关系在于：从无标注视频 latent change 中学习 motion prior，可迁移到视频预训练和世界模型</h1>
+    <p class="dek">高相关；详见方法、贡献和实验边界。</p>
+    <p class="byline"><strong>LaMo</strong>　arXiv 新增 / 项目页　<a href="https://arxiv.org/abs/2605.23878">原文链接</a></p>
     <div class="paper-facts">
       <span><b>编号</b>2605.23878</span>
       <span><b>优先级</b>P1</span>
       <span><b>类别</b>arXiv 新增 / 项目页</span>
       <span><b>会议</b>arXiv 新增 / 项目页</span>
-      <span><b>方法</b>从视频 diffusion 训练用的无标注视频中提取 frame-to-frame latent change，学习 latent motion prior；训练时用 Motion Drift Loss，采样时用 Motion Prior Guidance。</span>
+      <span><b>方法</b>从无标注视频 latent change 中学习 motion prior，可迁移到视频预训练和世界模型</span>
       <span><b>来源</b>arXiv / OpenReview</span>
     </div>
     <div class="feature-body">
-      <p class="lead dropcap">先说结论。它把“无标注视频中的运动”变成可复用监督信号，和视频基础模型、world simulator 的自监督预训练方向高度相关。 不依赖外部 simulator、teacher 或专门物理数据，就能把运动一致性信号插入现有视频生成 backbone。</p>
+      <p class="lead dropcap">先说结论。它和通用视觉自监督的关系在于：从无标注视频 latent change 中学习 motion prior，可迁移到视频预训练和世界模型。 高相关；详见方法、贡献和实验边界。</p>
       <figure class="full-fig"><img src="../assets/mineru/2605.23878/images/31af1bf225bdc4cf90e2bc7cfa680dac1d064700c38fc5823e334047d0e225bc.jpg" alt="Figureure 2 · : LaMo Overview"><figcaption><b>Figureure 2 · : LaMo Overview</b><span class="fig-en">Figure 2: LaMo Overview. Frame-to-frame differences of clean VAE latents yield a self-supervised latent motion prior, exposed through two readouts: a macro motion drift used as a training-time Motion Drift Loss, and a lightweight learned micro motion field used at sampling as Motion Prior Guidance. Both share the backbone’s prompt conditioning and leave its architecture unchanged.</span><span class="fig-zh">这张图概括 LaMo 的整体方法流程。阅读时先看模块之间传递的训练信号，再看作者如何把目标拆成可优化的子问题。</span></figcaption></figure>
 <figure class="full-fig"><img src="../assets/mineru/2605.23878/images/8d18271097d1542fbd95eb6d0a0e337d205f245fb044cc534db71f6e6c2dd133.jpg" alt="Figureure 1 · : Existing approaches to physical realism rely on hand-crafted physics"><figcaption><b>Figureure 1 · : Existing approaches to physical realism rely on hand-crafted physics</b><span class="fig-en">Figure 1: Existing approaches to physical realism rely on hand-crafted physics simulators (Col. 2) or on foundation-model teachers and curated physics-annotated corpora (Col. 3), while the vanilla diffusion objective is inherently dominant by per-frame appearance (Col. 1). LaMo (Col. 4) instead surfaces this missing motion signal self-supervised from the same raw video data, via a our proposed Motion Drift Loss at training and a lightweight Motion Prior Guidance at inference.</span><span class="fig-zh">这张图来自论文 PDF 的结构化抽取。当前用于辅助理解 LaMo 的方法或实验，请结合正文精读段落一起看。</span></figcaption></figure>
       
       <h2>核心问题</h2>
-      <p>它把“无标注视频中的运动”变成可复用监督信号，和视频基础模型、world simulator 的自监督预训练方向高度相关。</p>
+      <p>它和通用视觉自监督的关系在于：从无标注视频 latent change 中学习 motion prior，可迁移到视频预训练和世界模型。</p>
       <h2>方法拆解</h2>
-      <p>从视频 diffusion 训练用的无标注视频中提取 frame-to-frame latent change，学习 latent motion prior；训练时用 Motion Drift Loss，采样时用 Motion Prior Guidance。</p>
+      <p>从无标注视频 latent change 中学习 motion prior，可迁移到视频预训练和世界模型</p>
       <h2>主要贡献</h2>
-      <p>不依赖外部 simulator、teacher 或专门物理数据，就能把运动一致性信号插入现有视频生成 backbone。</p>
+      <p>高相关；详见方法、贡献和实验边界。</p>
       <h2>实验看点</h2>
-      <p>在 VideoPhy/VideoPhy2 上改善 CogVideoX backbone，并在 VBench 保持整体生成质量同时提升运动相关维度。</p>
+      <p>实验部分建议重点看两类证据：一是作者是否把方法收益和更强数据、更长训练、更大模型区分开；二是跨模型、跨数据或跨任务迁移是否还能保留同样趋势。</p>
       <h2>局限与读法</h2>
-      <p>主要实验目标是视频生成物理真实感，不是下游识别/分割的表征评估；效果依赖已有 latent space 的质量。</p>
+      <p>这篇论文的结论需要结合任务设置、训练数据规模和消融实验一起看；不要只凭单个指标判断它对通用视觉表征的价值。</p>
     
     </div>
   </div>
@@ -61,13 +61,13 @@
     <div class="side-box"><h4>原文</h4><p><a href="https://arxiv.org/abs/2605.23878">https://arxiv.org/abs/2605.23878</a></p></div>
   </aside>
 </article></main>
-  <aside class="conf-float" data-conf-reminder="2026-05-26-main-ddl" aria-label="CCF A/B 主投稿提醒">
+  <aside class="conf-float" data-conf-reminder="2026-05-28-main-ddl" aria-label="CCF A/B 主投稿提醒">
   <button class="conf-close" type="button" aria-label="关闭会议提醒">×</button>
   <details open>
     <summary>CCF A/B 主投稿提醒</summary>
     <div class="conf-list"><a class="conf-item " href="https://github.com/ccfddl/ccf-deadlines/blob/main/conference/AI/aaai.yml">
   <span><b>AAAI 2027</b><em>CCF A · Main paper submission</em></span>
-  <strong>62 天</strong>
+  <strong>60 天</strong>
   <small>2026-07-27 · CCF DDL: abstract 2026-07-20；进入 1 个月窗口后重点提醒。</small>
 </a></div>
   </details>
@@ -80,7 +80,7 @@
   (() => {
     const box = document.querySelector('[data-conf-reminder]');
     if (!box) return;
-    const key = `visualSslConfReminderClosed:${box.dataset.confReminder || '2026-05-26-main-ddl'}`;
+    const key = `visualSslConfReminderClosed:${box.dataset.confReminder || '2026-05-28-main-ddl'}`;
     try {
       if (localStorage.getItem(key) === '1') box.hidden = true;
     } catch (err) {}

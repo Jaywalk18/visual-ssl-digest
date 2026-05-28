@@ -19,20 +19,18 @@
   </header>
   <nav class="site-nav" aria-label="主导航">
     <a class="nav-link" href="../index.html">头版</a>
-<a class="nav-link active" href="../issues/2026-05-26.html">今日速递</a>
+<a class="nav-link" href="../issues/2026-05-28.html">今日速递</a>
 <a class="nav-link" href="../pages/catalog.html">论文目录</a>
 <a class="nav-link" href="../pages/timeline.html">时间线</a>
   </nav>
   <main><article class="paper-detail issue-detail">
   <div class="paper-main">
     <div class="kicker">Daily issue · 2026-05-26 · CCF A/B 会议优先</div>
-    <h1 class="paper-headline">5 月 26 日：The TIME Machine 等视觉表征主线更新</h1>
-    <p class="dek">本期聚焦通用视觉表征、视觉语言预训练与视频自监督中最值得跟进的论文，并保留 CCF A/B、OpenReview 与 arXiv 状态线索。</p>
+    <h1 class="paper-headline">5 月 26 日：The TIME Machine 等视觉表征论文归档</h1>
+    <p class="dek">本页按日期归档近期论文，保留优先级、主题、来源与方法线索，方便回看同一批工作的研究脉络。</p>
     <div class="feature-body">
-      <p class="lead dropcap">今天建议先把 The TIME Machine 当主线精读：它直接提出用 point-track masked autoencoder 学视频运动表征，是最贴近通用视觉自监督的一篇。第二篇读 LaMo，它虽然服务于视频生成物理一致性，但关键点是从无标注视频中抽取 latent motion prior，和视频预训练/世界模型很近。随后扫读 Vision Transformers Need Better Token Interaction 与 Good Token Hunting，两篇都在回答“视觉 Transformer 里哪些 token 应该交互、哪些可以稀疏化”。VLM 方向的 Transcoders、Seeing without Looking、PGT 更像诊断和数据信号补充，适合作为视觉-语言自监督的评估/数据路线参考。</p>
+      <p class="lead dropcap">先读 The TIME Machine。以点轨迹作为遮蔽和重建对象，把运动连续性变成视频预训练信号。 其余论文按 P1/P2 与主题顺序扫读，重点看方法图、消融设置和是否能迁移到通用视觉表征。</p>
       <h2>论文索引</h2>
-      <table class="compact-table"><thead><tr><th>优先级</th><th>论文</th><th>类型</th><th>相关性</th><th>一句话理由</th></tr></thead><tbody><tr><td>P1</td><td>The TIME Machine</td><td>arXiv 新增</td><td>高</td><td>以点轨迹作为遮蔽和重建对象，把运动连续性变成视频预训练信号。</td></tr><tr><td>P1</td><td>LaMo</td><td>arXiv 新增 / 项目页</td><td>高</td><td>从无标注视频 latent change 中学习 motion prior，可迁移到视频预训练和世界模型。</td></tr><tr><td>P1</td><td>Vision Transformers Need Better Token Interaction</td><td>arXiv 新增</td><td>中高</td><td>分析 DINO ViT 的 dense degradation，并用选择性 token mixing 提升密集预测。</td></tr><tr><td>P2</td><td>Good Token Hunting</td><td>arXiv 新增 / 项目页</td><td>中高</td><td>视觉几何 Transformer 的 token 选择策略，对多视图/3D foundation model 效率有参考。</td></tr><tr><td>P2</td><td>Transcoders Trace Visual Grounding</td><td>arXiv 新增</td><td>中高</td><td>用 transcoder 追踪 VLM 中从图像 patch 到文本 token 的计算通路。</td></tr><tr><td>P2</td><td>Seeing without Looking</td><td>arXiv + CVPR 2026 Workshop</td><td>中高</td><td>检验 VLM benchmark 是否真的依赖视觉证据，是视觉-语言表示评估的好诊断。</td></tr><tr><td>P2</td><td>PGT</td><td>arXiv 新增 / ICML 列表出现</td><td>中</td><td>用程序生成几何任务补 dense grounding supervision，适合扫读数据构造思路。</td></tr><tr><td>P2</td><td>Not Too Generative, Not Too Discriminative</td><td>arXiv 新增</td><td>中</td><td>固定架构下比较生成式/判别式目标，对 SSL 目标函数取舍有启发。</td></tr><tr><td>P3</td><td>Dithering Defense</td><td>arXiv + ICIP 2026</td><td>中</td><td>冻结 DINOv2/PaliGemma 上的鲁棒性防御，属于 VFM 使用边界。</td></tr><tr><td>P3</td><td>CVSearch</td><td>arXiv + ICML 2026</td><td>中</td><td>高分辨率 MLLM 的 adaptive visual search，偏推理系统但提示 token/patch 搜索趋势。</td></tr></tbody></table>
-      <h2>主线阅读</h2>
       <div class="paper-list issue-list"><article class="paper-card" data-category="arXiv 新增" data-priority="P1" data-date="2026-05-26" data-title="the time machine" data-keywords="the time machine the time machine arxiv 新增 p1 2026-05-26 arxiv 新增 以点轨迹作为遮蔽和重建对象，把运动连续性变成视频预训练信号 高相关；详见方法、贡献和实验边界。">
   <a class="paper-thumb paper-thumb-text" href="../papers/2605.23045.html">
     <img src="../assets/mineru/2605.23045/images/06494bace7b77e26a59fc0293ca4ae08b315052acb9002e42c6d5787e48e7bf2.jpg" alt="The TIME Machine figure"><span>P1</span>
@@ -156,18 +154,17 @@
     </div>
   </div>
   <aside class="paper-side">
-    <div class="side-box"><h4>今日重点</h4><p>TextTeacher、MDM、EvoVid、Ablate-to-Validate。</p></div>
-    <div class="side-box"><h4>会议口径</h4><p>只把 CCF A/B 放进主提醒；临近截止或 CCF C 仅记录。</p></div>
     <div class="side-box"><h4>阅读重点</h4><p>先看 P1/P2 与方法图，再扫状态变化和边界案例。</p></div>
+    <div class="side-box"><h4>会议口径</h4><p>主提醒只保留 CCF A/B；CCF C 与过期截止仅作状态记录。</p></div>
   </aside>
 </article></main>
-  <aside class="conf-float" data-conf-reminder="2026-05-26-main-ddl" aria-label="CCF A/B 主投稿提醒">
+  <aside class="conf-float" data-conf-reminder="2026-05-28-main-ddl" aria-label="CCF A/B 主投稿提醒">
   <button class="conf-close" type="button" aria-label="关闭会议提醒">×</button>
   <details open>
     <summary>CCF A/B 主投稿提醒</summary>
     <div class="conf-list"><a class="conf-item " href="https://github.com/ccfddl/ccf-deadlines/blob/main/conference/AI/aaai.yml">
   <span><b>AAAI 2027</b><em>CCF A · Main paper submission</em></span>
-  <strong>62 天</strong>
+  <strong>60 天</strong>
   <small>2026-07-27 · CCF DDL: abstract 2026-07-20；进入 1 个月窗口后重点提醒。</small>
 </a></div>
   </details>
@@ -180,7 +177,7 @@
   (() => {
     const box = document.querySelector('[data-conf-reminder]');
     if (!box) return;
-    const key = `visualSslConfReminderClosed:${box.dataset.confReminder || '2026-05-26-main-ddl'}`;
+    const key = `visualSslConfReminderClosed:${box.dataset.confReminder || '2026-05-28-main-ddl'}`;
     try {
       if (localStorage.getItem(key) === '1') box.hidden = true;
     } catch (err) {}

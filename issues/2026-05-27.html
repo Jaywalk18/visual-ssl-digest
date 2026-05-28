@@ -19,20 +19,18 @@
   </header>
   <nav class="site-nav" aria-label="主导航">
     <a class="nav-link" href="../index.html">头版</a>
-<a class="nav-link active" href="../issues/2026-05-27.html">今日速递</a>
+<a class="nav-link" href="../issues/2026-05-28.html">今日速递</a>
 <a class="nav-link" href="../pages/catalog.html">论文目录</a>
 <a class="nav-link" href="../pages/timeline.html">时间线</a>
   </nav>
   <main><article class="paper-detail issue-detail">
   <div class="paper-main">
     <div class="kicker">Daily issue · 2026-05-27 · CCF A/B 会议优先</div>
-    <h1 class="paper-headline">5 月 27 日：LEASE 等视觉表征主线更新</h1>
-    <p class="dek">本期聚焦通用视觉表征、视觉语言预训练与视频自监督中最值得跟进的论文，并保留 CCF A/B、OpenReview 与 arXiv 状态线索。</p>
+    <h1 class="paper-headline">5 月 27 日：LEASE 等视觉表征论文归档</h1>
+    <p class="dek">本页按日期归档近期论文，保留优先级、主题、来源与方法线索，方便回看同一批工作的研究脉络。</p>
     <div class="feature-body">
-      <p class="lead dropcap">先读 LEASE，它是今天最贴近“通用视觉自监督”的新增：同时覆盖 masked token reconstruction、contrastive codebook alignment、统一理解和生成。然后读 DIVA，关注统一多模态模型里理解分支与生成分支的表示冲突，这和最近 RAE/representation tokenizer 方向强相关。第三步把 UWM-JEPA 与 3WM 放在一起读：一个从 latent belief dynamics 解释 JEPA 世界模型，另一个用物理图模型统一 3D 视觉任务。DUEL 和 MAGIC 是 VLM 侧的自监督/低监督训练信号与数据筛选，适合扫方法后决定是否追代码。CVQ、AFIP、Causal Route Gating、FG-CLIP 2 更偏 tokenization、诊断或对齐，可作为辅助材料。</p>
+      <p class="lead dropcap">先读 LEASE。自监督 codebook + masked reconstruction + contrastive alignment，直接服务统一视觉表示与生成。 其余论文按 P1/P2 与主题顺序扫读，重点看方法图、消融设置和是否能迁移到通用视觉表征。</p>
       <h2>论文索引</h2>
-      <table class="compact-table"><thead><tr><th>优先级</th><th>论文</th><th>类型</th><th>相关性</th><th>一句话理由</th></tr></thead><tbody><tr><td>P0</td><td>LEASE: Learning from Semantic Dictionaries</td><td>arXiv + CVPR 2026</td><td>高</td><td>自监督 codebook + masked reconstruction + contrastive alignment，直接服务统一视觉表示与生成。</td></tr><tr><td>P0</td><td>DIVA</td><td>arXiv + ICML 2026</td><td>高</td><td>分析并利用统一多模态模型内部的理解/生成表示分歧。</td></tr><tr><td>P0</td><td>UWM-JEPA</td><td>arXiv</td><td>高</td><td>JEPA 世界模型中显式建模 belief-space latent dynamics，值得跟踪。</td></tr><tr><td>P0</td><td>Unified 3D Scene Understanding Through Physical World Modeling / OpenReview</td><td>ICLR 2026 Poster + arXiv</td><td>高</td><td>用同一物理世界模型统一深度、NVS、对象操控等 3D 视觉任务。</td></tr><tr><td>P1</td><td>DUEL</td><td>arXiv</td><td>中高</td><td>通过 Challenger/Solver 自博弈产生图像接地监督，减少人工标注依赖。</td></tr><tr><td>P1</td><td>MAGIC</td><td>arXiv</td><td>中高</td><td>用 VLM 内部视觉依赖和神经元签名做训练-free multimodal coreset。</td></tr><tr><td>P1</td><td>Channel-wise Vector Quantization</td><td>arXiv</td><td>中高</td><td>把图像 tokenization 从 patch token 改成 channel token，影响统一生成/表示建模。</td></tr><tr><td>P1</td><td>Nano World Models / Project</td><td>arXiv + Project</td><td>中高</td><td>更像可复现实验基座，适合做视频/world-model 预训练 baseline。</td></tr><tr><td>P2</td><td>Causal Route Gating</td><td>arXiv + ICML 2026 Spotlight</td><td>中</td><td>VLM 视觉/文本路由诊断，对“模型是否真用视觉表示”有参考价值。</td></tr><tr><td>P2</td><td>AFIP: Correcting Visual Blur</td><td>arXiv + ICML 2026</td><td>中</td><td>用注意力分散解释 hallucination，适合作为 VLM 视觉接地诊断补充。</td></tr><tr><td>P2</td><td>FG-CLIP 2</td><td>arXiv v3 + ICML 2026</td><td>中高</td><td>不是新论文，但 v3/ICML 状态更新，细粒度双语 VL 对齐值得扫。</td></tr><tr><td>P2</td><td>Residual Connections Harm Generative Representation Learning</td><td>arXiv update + CVPR 2026</td><td>高</td><td>MAE/diffusion 表示学习里 residual shortcut 对语义抽象的影响，状态更新。</td></tr><tr><td>P2</td><td>Reevaluating CLIP Intra-Modal Misalignment</td><td>arXiv update + CVPR 2026</td><td>中高</td><td>对 CLIP/DINO 表示差异的理论解释提出反证，适合校准常见假设。</td></tr><tr><td>P3</td><td>World Models as Group Actions</td><td>arXiv</td><td>中高</td><td>世界模型动作一致性的 latent regularization 与指标，扫读即可。</td></tr><tr><td>P3</td><td>Uncertainty-DTW for Visual Tokens</td><td>arXiv</td><td>中</td><td>视觉 token 对齐的概率式匹配工具，方法可迁移但不是 SSL 主线。</td></tr><tr><td>P3</td><td>CLIP-Guided SAM</td><td>arXiv</td><td>中</td><td>CLIP 语义注入 SAM encoder，偏下游分割但有低标注视觉表征价值。</td></tr><tr><td>P3</td><td>HCL-FF</td><td>arXiv + CVPR 2026</td><td>中低</td><td>forward-forward + hierarchical/supervised contrastive，想看替代训练范式时扫。</td></tr></tbody></table>
-      <h2>主线阅读</h2>
       <div class="paper-list issue-list"><article class="paper-card" data-category="CVPR 2026" data-priority="P0" data-date="2026-05-27" data-title="lease: learning from semantic dictionaries" data-keywords="lease: learning from semantic dictionaries lease cvpr 2026 p0 2026-05-27 arxiv + cvpr 2026 自监督 codebook + masked reconstruction + contrastive alignment，直接服务统一视觉表示与生成 高相关；详见方法、贡献和实验边界。">
   <a class="paper-thumb paper-thumb-text" href="../papers/2605.25012.html">
     <img src="../assets/mineru/2605.25012/images/2f3067b80fefd2806437781c4f0a18d12c5bfd975048a82070b0e15a4d8110ab.jpg" alt="LEASE figure"><span>P0</span>
@@ -240,18 +238,17 @@
     </div>
   </div>
   <aside class="paper-side">
-    <div class="side-box"><h4>今日重点</h4><p>TextTeacher、MDM、EvoVid、Ablate-to-Validate。</p></div>
-    <div class="side-box"><h4>会议口径</h4><p>只把 CCF A/B 放进主提醒；临近截止或 CCF C 仅记录。</p></div>
     <div class="side-box"><h4>阅读重点</h4><p>先看 P1/P2 与方法图，再扫状态变化和边界案例。</p></div>
+    <div class="side-box"><h4>会议口径</h4><p>主提醒只保留 CCF A/B；CCF C 与过期截止仅作状态记录。</p></div>
   </aside>
 </article></main>
-  <aside class="conf-float" data-conf-reminder="2026-05-27-main-ddl" aria-label="CCF A/B 主投稿提醒">
+  <aside class="conf-float" data-conf-reminder="2026-05-28-main-ddl" aria-label="CCF A/B 主投稿提醒">
   <button class="conf-close" type="button" aria-label="关闭会议提醒">×</button>
   <details open>
     <summary>CCF A/B 主投稿提醒</summary>
     <div class="conf-list"><a class="conf-item " href="https://github.com/ccfddl/ccf-deadlines/blob/main/conference/AI/aaai.yml">
   <span><b>AAAI 2027</b><em>CCF A · Main paper submission</em></span>
-  <strong>61 天</strong>
+  <strong>60 天</strong>
   <small>2026-07-27 · CCF DDL: abstract 2026-07-20；进入 1 个月窗口后重点提醒。</small>
 </a></div>
   </details>
@@ -264,7 +261,7 @@
   (() => {
     const box = document.querySelector('[data-conf-reminder]');
     if (!box) return;
-    const key = `visualSslConfReminderClosed:${box.dataset.confReminder || '2026-05-27-main-ddl'}`;
+    const key = `visualSslConfReminderClosed:${box.dataset.confReminder || '2026-05-28-main-ddl'}`;
     try {
       if (localStorage.getItem(key) === '1') box.hidden = true;
     } catch (err) {}

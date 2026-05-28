@@ -3,13 +3,13 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>MAGIC · 通用视觉自监督研究报</title>
+  <title>Targeted Downstream-Agnostic Attack · 通用视觉自监督研究报</title>
   <link rel="stylesheet" href="../assets/styles.css?v=20260525j">
   <link rel="stylesheet" href="../assets/visual-ssl.css?v=20260525j">
 </head>
 <body>
   <header class="masthead">
-    <div class="masthead-kicker">Visual SSL Research Report · 2026-05-27</div>
+    <div class="masthead-kicker">Visual SSL Research Report · 2026-05-21</div>
     <a class="masthead-title" href="../index.html">通用视觉自监督研究报</a>
     <div class="masthead-meta">
       <span>图像表征 · VFM · JEPA · 视频预训练</span>
@@ -25,27 +25,26 @@
   </nav>
   <main><article class="paper-detail">
   <div class="paper-main">
-    <div class="kicker">Visual SSL / representation · P1 · 2026-05-27</div>
-    <h1 class="paper-headline">MAGIC：它和通用视觉自监督的关系在于：用 VLM 内部视觉依赖和神经元签名做训练-free multimodal coreset</h1>
+    <div class="kicker">Visual SSL / representation · 中高 · 2026-05-21</div>
+    <h1 class="paper-headline">Targeted Downstream-Agnostic Attack：它和通用视觉自监督的关系在于：检验 SSL/pretrained encoder 的跨下游 feature-level 脆弱性</h1>
     <p class="dek">中高相关；详见方法、贡献和实验边界。</p>
-    <p class="byline"><strong>MAGIC</strong>　arXiv　<a href="https://arxiv.org/abs/2605.26004">原文链接</a></p>
+    <p class="byline"><strong>Targeted Downstream-Agnostic Attack</strong>　arXiv　<a href="#">原文链接</a></p>
     <div class="paper-facts">
-      <span><b>编号</b>2605.26004</span>
-      <span><b>优先级</b>P1</span>
+      <span><b>编号</b>targeted-downstream-agnostic-attack</span>
+      <span><b>优先级</b>中高</span>
       <span><b>类别</b>Visual SSL / representation</span>
       <span><b>会议</b>arXiv</span>
-      <span><b>方法</b>用 VLM 内部视觉依赖和神经元签名做训练-free multimodal coreset</span>
+      <span><b>方法</b>检验 SSL/pretrained encoder 的跨下游 feature-level 脆弱性</span>
       <span><b>来源</b>arXiv / OpenReview</span>
     </div>
     <div class="feature-body">
-      <p class="lead dropcap">先说结论。它和通用视觉自监督的关系在于：用 VLM 内部视觉依赖和神经元签名做训练-free multimodal coreset。 中高相关；详见方法、贡献和实验边界。</p>
-      <figure class="full-fig"><img src="../assets/mineru/2605.26004/images/3f69795b09cdca90288b7d820b82583773db1396317b603341d6f4f01684c005.jpg" alt="Figureure 2 · : Overview of MAGIC"><figcaption><b>Figureure 2 · : Overview of MAGIC</b><span class="fig-en">Figure 2: Overview of MAGIC. The method first extracts three forward-only intrinsic score signals from a pretrained VLM. It then filters weakly multimodal samples, builds a quality-based shortlist, partitions shortlisted samples into skill-signature buckets, and allocates the budget across buckets to construct the final coreset.</span><span class="fig-zh">这张图概括 MAGIC 的整体方法流程。阅读时先看模块之间传递的训练信号，再看作者如何把目标拆成可优化的子问题。</span></figcaption></figure>
-<figure class="full-fig"><img src="../assets/mineru/2605.26004/images/b828d899d691138b3a7a1f8f14b987d8a22728c08bc09ba7b6836b2a027537f3.jpg" alt="Figureure 1 · : MAGIC characterizes each training sample using three complementary s"><figcaption><b>Figureure 1 · : MAGIC characterizes each training sample using three complementary s</b><span class="fig-en">Figure 1: MAGIC characterizes each training sample using three complementary signals: Multimodal Gain; Bridging Relevance; and Skill Signature. These signals are combined to prioritize samples that are visually useful, strongly grounded, and behaviorally diverse for visual-language coreset selection.</span><span class="fig-zh">这张图来自论文 PDF 的结构化抽取。当前用于辅助理解 MAGIC 的方法或实验，请结合正文精读段落一起看。</span></figcaption></figure>
+      <p class="lead dropcap">先说结论。它和通用视觉自监督的关系在于：检验 SSL/pretrained encoder 的跨下游 feature-level 脆弱性。 中高相关；详见方法、贡献和实验边界。</p>
+      <aside class="marginalia"><b>图像状态</b> 这篇暂未抽到足够稳定的 pipeline / motivation 图，因此正文以方法和实验解读为主。</aside>
       
       <h2>核心问题</h2>
-      <p>它和通用视觉自监督的关系在于：用 VLM 内部视觉依赖和神经元签名做训练-free multimodal coreset。</p>
+      <p>它和通用视觉自监督的关系在于：检验 SSL/pretrained encoder 的跨下游 feature-level 脆弱性。</p>
       <h2>方法拆解</h2>
-      <p>用 VLM 内部视觉依赖和神经元签名做训练-free multimodal coreset</p>
+      <p>检验 SSL/pretrained encoder 的跨下游 feature-level 脆弱性</p>
       <h2>主要贡献</h2>
       <p>中高相关；详见方法、贡献和实验边界。</p>
       <h2>实验看点</h2>
@@ -57,8 +56,8 @@
   </div>
   <aside class="paper-side">
 
-    <div class="side-box"><h4>关键判断</h4><dl><dt>相关性</dt><dd>P1</dd><dt>类别</dt><dd>Visual SSL / representation</dd><dt>会议</dt><dd>arXiv</dd><dt>读法</dt><dd>方法图优先，表格次之</dd></dl></div>
-    <div class="side-box"><h4>原文</h4><p><a href="https://arxiv.org/abs/2605.26004">https://arxiv.org/abs/2605.26004</a></p></div>
+    <div class="side-box"><h4>关键判断</h4><dl><dt>相关性</dt><dd>中高</dd><dt>类别</dt><dd>Visual SSL / representation</dd><dt>会议</dt><dd>arXiv</dd><dt>读法</dt><dd>方法图优先，表格次之</dd></dl></div>
+    <div class="side-box"><h4>原文</h4><p><a href="#">#</a></p></div>
   </aside>
 </article></main>
   <aside class="conf-float" data-conf-reminder="2026-05-28-main-ddl" aria-label="CCF A/B 主投稿提醒">
@@ -74,7 +73,7 @@
 </aside>
   <footer class="footer">
     <div>面向通用视觉自监督、视觉基础模型与多模态表征学习的每日研究报。</div>
-    <div class="muted">Issue 2026-05-27 · Curated readings and figure notes</div>
+    <div class="muted">Issue 2026-05-21 · Curated readings and figure notes</div>
   </footer>
   <script>
   (() => {

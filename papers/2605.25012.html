@@ -19,39 +19,39 @@
   </header>
   <nav class="site-nav" aria-label="主导航">
     <a class="nav-link" href="../index.html">头版</a>
-<a class="nav-link" href="../issues/2026-05-27.html">今日速递</a>
+<a class="nav-link" href="../issues/2026-05-28.html">今日速递</a>
 <a class="nav-link" href="../pages/catalog.html">论文目录</a>
 <a class="nav-link" href="../pages/timeline.html">时间线</a>
   </nav>
   <main><article class="paper-detail">
   <div class="paper-main">
     <div class="kicker">CVPR 2026 · P0 · 2026-05-27</div>
-    <h1 class="paper-headline">LEASE：这是今天最核心条目，直接回答“视觉 SSL 如何同时支持理解和生成”</h1>
-    <p class="dek">把生成细节和判别语义放进同一 latent space，避免只做 MIM 时语义不足、只做 contrastive 时重建不足的问题。</p>
-    <p class="byline"><strong>LEASE: Learning from Semantic Dictionaries</strong>　Imanol G. Estepa, Jesús M Rodríguez-de-Vera, Bhalaji Nagarajan, Petia Radeva；arXiv 摘要页未稳定列出机构。　arXiv + CVPR 2026　<a href="https://arxiv.org/abs/2605.25012">原文链接</a></p>
+    <h1 class="paper-headline">LEASE：它和通用视觉自监督的关系在于：自监督 codebook + masked reconstruction + contrastive alignment，直接服务统一视觉表示与生成</h1>
+    <p class="dek">高相关；详见方法、贡献和实验边界。</p>
+    <p class="byline"><strong>LEASE: Learning from Semantic Dictionaries</strong>　arXiv + CVPR 2026　<a href="https://arxiv.org/abs/2605.25012">原文链接</a></p>
     <div class="paper-facts">
       <span><b>编号</b>2605.25012</span>
       <span><b>优先级</b>P0</span>
       <span><b>类别</b>CVPR 2026</span>
       <span><b>会议</b>arXiv + CVPR 2026</span>
-      <span><b>方法</b>构造 paired generative-discriminative semantic codebook，在离散 token 空间中同时做 masked token reconstruction 和 codebook contrastive alignment。</span>
+      <span><b>方法</b>自监督 codebook + masked reconstruction + contrastive alignment，直接服务统一视觉表示与生成</span>
       <span><b>来源</b>arXiv / OpenReview</span>
     </div>
     <div class="feature-body">
-      <p class="lead dropcap">先说结论。这是今天最核心条目，直接回答“视觉 SSL 如何同时支持理解和生成”。 把生成细节和判别语义放进同一 latent space，避免只做 MIM 时语义不足、只做 contrastive 时重建不足的问题。</p>
+      <p class="lead dropcap">先说结论。它和通用视觉自监督的关系在于：自监督 codebook + masked reconstruction + contrastive alignment，直接服务统一视觉表示与生成。 高相关；详见方法、贡献和实验边界。</p>
       <figure class="full-fig"><img src="../assets/mineru/2605.25012/images/2f3067b80fefd2806437781c4f0a18d12c5bfd975048a82070b0e15a4d8110ab.jpg" alt="Figureure 1 · Linear probing and class-unconditional generation performance"><figcaption><b>Figureure 1 · Linear probing and class-unconditional generation performance</b><span class="fig-en">Figure 1. Linear probing and class-unconditional generation performance. Our approach, LEASE, advances the Unified SSL SoTA and defines a new Pareto-front for unified models.</span><span class="fig-zh">这张图/表用于判断 LEASE 的实验收益来自哪里。重点看替换、消融或跨模型设置下趋势是否一致，而不是只看单个最高分。</span></figcaption></figure>
 <figure class="full-fig"><img src="../assets/mineru/2605.25012/images/748227b82e300512d349ad386a2937c2c22525930274d4beeb6fede10acf810e.jpg" alt="Figureure 3 · Overview of LEASE"><figcaption><b>Figureure 3 · Overview of LEASE</b><span class="fig-en">Figure 3. Overview of LEASE. Visible generative tokens are encoded and placed into a reconstruction canvas for masked token prediction, forming the reconstruction objective. Parallelly, visible discriminative tokens are mapped to their codebook centroids, providing positives and neighbors for the codebook contrastive loss, where visible token embeddings and centroids are pulled together.</span><span class="fig-zh">这张图概括 LEASE 的整体方法流程。阅读时先看模块之间传递的训练信号，再看作者如何把目标拆成可优化的子问题。</span></figcaption></figure>
       
       <h2>核心问题</h2>
-      <p>这是今天最核心条目，直接回答“视觉 SSL 如何同时支持理解和生成”。</p>
+      <p>它和通用视觉自监督的关系在于：自监督 codebook + masked reconstruction + contrastive alignment，直接服务统一视觉表示与生成。</p>
       <h2>方法拆解</h2>
-      <p>构造 paired generative-discriminative semantic codebook，在离散 token 空间中同时做 masked token reconstruction 和 codebook contrastive alignment。</p>
+      <p>自监督 codebook + masked reconstruction + contrastive alignment，直接服务统一视觉表示与生成</p>
       <h2>主要贡献</h2>
-      <p>把生成细节和判别语义放进同一 latent space，避免只做 MIM 时语义不足、只做 contrastive 时重建不足的问题。</p>
+      <p>高相关；详见方法、贡献和实验边界。</p>
       <h2>实验看点</h2>
-      <p>ImageNet-1K 上报告 linear probing、unconditional generation、few-shot、transfer、robustness 均超过 MAGE/Sorcen 等统一模型；还能扩展到 conditional generation。</p>
+      <p>实验部分建议重点看两类证据：一是作者是否把方法收益和更强数据、更长训练、更大模型区分开；二是跨模型、跨数据或跨任务迁移是否还能保留同样趋势。</p>
       <h2>局限与读法</h2>
-      <p>依赖一次性 token/codebook 预计算；真实大规模多域数据、视频和密集任务上的泛化还要看后续代码与复现。</p>
+      <p>这篇论文的结论需要结合任务设置、训练数据规模和消融实验一起看；不要只凭单个指标判断它对通用视觉表征的价值。</p>
     
     </div>
   </div>
@@ -61,13 +61,13 @@
     <div class="side-box"><h4>原文</h4><p><a href="https://arxiv.org/abs/2605.25012">https://arxiv.org/abs/2605.25012</a></p></div>
   </aside>
 </article></main>
-  <aside class="conf-float" data-conf-reminder="2026-05-27-main-ddl" aria-label="CCF A/B 主投稿提醒">
+  <aside class="conf-float" data-conf-reminder="2026-05-28-main-ddl" aria-label="CCF A/B 主投稿提醒">
   <button class="conf-close" type="button" aria-label="关闭会议提醒">×</button>
   <details open>
     <summary>CCF A/B 主投稿提醒</summary>
     <div class="conf-list"><a class="conf-item " href="https://github.com/ccfddl/ccf-deadlines/blob/main/conference/AI/aaai.yml">
   <span><b>AAAI 2027</b><em>CCF A · Main paper submission</em></span>
-  <strong>61 天</strong>
+  <strong>60 天</strong>
   <small>2026-07-27 · CCF DDL: abstract 2026-07-20；进入 1 个月窗口后重点提醒。</small>
 </a></div>
   </details>
@@ -80,7 +80,7 @@
   (() => {
     const box = document.querySelector('[data-conf-reminder]');
     if (!box) return;
-    const key = `visualSslConfReminderClosed:${box.dataset.confReminder || '2026-05-27-main-ddl'}`;
+    const key = `visualSslConfReminderClosed:${box.dataset.confReminder || '2026-05-28-main-ddl'}`;
     try {
       if (localStorage.getItem(key) === '1') box.hidden = true;
     } catch (err) {}

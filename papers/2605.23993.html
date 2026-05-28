@@ -19,39 +19,39 @@
   </header>
   <nav class="site-nav" aria-label="主导航">
     <a class="nav-link" href="../index.html">头版</a>
-<a class="nav-link" href="../issues/2026-05-27.html">今日速递</a>
+<a class="nav-link" href="../issues/2026-05-28.html">今日速递</a>
 <a class="nav-link" href="../pages/catalog.html">论文目录</a>
 <a class="nav-link" href="../pages/timeline.html">时间线</a>
   </nav>
   <main><article class="paper-detail">
   <div class="paper-main">
     <div class="kicker">Project · P1 · 2026-05-27</div>
-    <h1 class="paper-headline">Nano World Models：可作为视频预训练和 predictive visual modeling 的可复现底座</h1>
-    <p class="dek">更像研究基础设施，而不是单点 SOTA；目标是让社区可控研究 world-model design choice。</p>
-    <p class="byline"><strong>Nano World Models</strong>　Siqiao Huang, Partha Kaushik, Michael Chen, Hengkai Pan, Omar Chehab, Fernando Moreno-Pino, Max Simchowitz；arXiv 摘要页未稳定列出机构。　arXiv + Project　<a href="https://arxiv.org/abs/2605.23993">原文链接</a></p>
+    <h1 class="paper-headline">Nano World Models：它和通用视觉自监督的关系在于：更像可复现实验基座，适合做视频/world-model 预训练 baseline</h1>
+    <p class="dek">中高相关；详见方法、贡献和实验边界。</p>
+    <p class="byline"><strong>Nano World Models</strong>　arXiv + Project　<a href="https://arxiv.org/abs/2605.23993">原文链接</a></p>
     <div class="paper-facts">
       <span><b>编号</b>2605.23993</span>
       <span><b>优先级</b>P1</span>
       <span><b>类别</b>Project</span>
       <span><b>会议</b>arXiv + Project</span>
-      <span><b>方法</b>围绕 diffusion forcing 搭建极简未来视频预测/world-model codebase，统一 generative objectives、model scales、action conditioning、latent observation spaces、datasets、evaluation protocols、long-horizon rollout。</span>
+      <span><b>方法</b>更像可复现实验基座，适合做视频/world-model 预训练 baseline</span>
       <span><b>来源</b>arXiv / OpenReview</span>
     </div>
     <div class="feature-body">
-      <p class="lead dropcap">先说结论。可作为视频预训练和 predictive visual modeling 的可复现底座。 更像研究基础设施，而不是单点 SOTA；目标是让社区可控研究 world-model design choice。</p>
+      <p class="lead dropcap">先说结论。它和通用视觉自监督的关系在于：更像可复现实验基座，适合做视频/world-model 预训练 baseline。 中高相关；详见方法、贡献和实验边界。</p>
       <figure class="full-fig"><img src="../assets/mineru/2605.23993/images/907574c0394c789c7bbf707325d33c36f02a5956890b5a6756381b8f4a8ac00d.jpg" alt="Data Figure 1: Overview"><figcaption><b>Data Figure 1: Overview</b><span class="fig-en">Data Figure 1: Overview. Nano World Models is a minimalist and modular framework for future video prediction and world modeling. It supports diverse environments and training data, encodes observations into latent spaces, and predicts future observations with a shared diffusion-forcing interface that can accommodate different objectives, model sizes, and action-conditioning mechanisms. The same model interface enables realtime simulation, test-time planning, and video-to-3D applications, while the project fully opensources code, model weights, and data to support reproducible study of world-model design choices.</span><span class="fig-zh">这张图概括 Nano World Models 的整体方法流程。阅读时先看模块之间传递的训练信号，再看作者如何把目标拆成可优化的子问题。</span></figcaption></figure>
 <figure class="full-fig"><img src="../assets/mineru/2605.23993/images/42062aa8906ab1c9063ea968c01f2e8ed1df5736c236b50afc063518c7ee4006.jpg" alt="Figureure 2 · : Qualitative rollouts across domains"><figcaption><b>Figureure 2 · : Qualitative rollouts across domains</b><span class="fig-en">Figure 2: Qualitative rollouts across domains. Representative ground-truth (GT) sequences and Nano World Models rollouts from Point Maze, Wall, Rope, Granular, PushT, and RT-1. The same dataset and environment interface exposes these domains to the training and sampling code, allowing grid-world navigation, simulated control, and robot-video prediction to be compared under a shared rollout format.</span><span class="fig-zh">这张图来自论文 PDF 的结构化抽取。当前用于辅助理解 Nano World Models 的方法或实验，请结合正文精读段落一起看。</span></figcaption></figure>
       
       <h2>核心问题</h2>
-      <p>可作为视频预训练和 predictive visual modeling 的可复现底座。</p>
+      <p>它和通用视觉自监督的关系在于：更像可复现实验基座，适合做视频/world-model 预训练 baseline。</p>
       <h2>方法拆解</h2>
-      <p>围绕 diffusion forcing 搭建极简未来视频预测/world-model codebase，统一 generative objectives、model scales、action conditioning、latent observation spaces、datasets、evaluation protocols、long-horizon rollout。</p>
+      <p>更像可复现实验基座，适合做视频/world-model 预训练 baseline</p>
       <h2>主要贡献</h2>
-      <p>更像研究基础设施，而不是单点 SOTA；目标是让社区可控研究 world-model design choice。</p>
+      <p>中高相关；详见方法、贡献和实验边界。</p>
       <h2>实验看点</h2>
-      <p>摘要覆盖 simple control environments、game simulation、real-robot data，并释放 code/config/eval/pretrained checkpoints。</p>
+      <p>实验部分建议重点看两类证据：一是作者是否把方法收益和更强数据、更长训练、更大模型区分开；二是跨模型、跨数据或跨任务迁移是否还能保留同样趋势。</p>
       <h2>局限与读法</h2>
-      <p>核心贡献偏工程与基准；如果只关注视觉 encoder 表示质量，需要等社区复现实验。</p>
+      <p>这篇论文的结论需要结合任务设置、训练数据规模和消融实验一起看；不要只凭单个指标判断它对通用视觉表征的价值。</p>
     
     </div>
   </div>
@@ -61,13 +61,13 @@
     <div class="side-box"><h4>原文</h4><p><a href="https://arxiv.org/abs/2605.23993">https://arxiv.org/abs/2605.23993</a></p></div>
   </aside>
 </article></main>
-  <aside class="conf-float" data-conf-reminder="2026-05-27-main-ddl" aria-label="CCF A/B 主投稿提醒">
+  <aside class="conf-float" data-conf-reminder="2026-05-28-main-ddl" aria-label="CCF A/B 主投稿提醒">
   <button class="conf-close" type="button" aria-label="关闭会议提醒">×</button>
   <details open>
     <summary>CCF A/B 主投稿提醒</summary>
     <div class="conf-list"><a class="conf-item " href="https://github.com/ccfddl/ccf-deadlines/blob/main/conference/AI/aaai.yml">
   <span><b>AAAI 2027</b><em>CCF A · Main paper submission</em></span>
-  <strong>61 天</strong>
+  <strong>60 天</strong>
   <small>2026-07-27 · CCF DDL: abstract 2026-07-20；进入 1 个月窗口后重点提醒。</small>
 </a></div>
   </details>
@@ -80,7 +80,7 @@
   (() => {
     const box = document.querySelector('[data-conf-reminder]');
     if (!box) return;
-    const key = `visualSslConfReminderClosed:${box.dataset.confReminder || '2026-05-27-main-ddl'}`;
+    const key = `visualSslConfReminderClosed:${box.dataset.confReminder || '2026-05-28-main-ddl'}`;
     try {
       if (localStorage.getItem(key) === '1') box.hidden = true;
     } catch (err) {}

@@ -19,26 +19,26 @@
   </header>
   <nav class="site-nav" aria-label="主导航">
     <a class="nav-link" href="../index.html">头版</a>
-<a class="nav-link" href="../issues/2026-05-26.html">今日速递</a>
+<a class="nav-link" href="../issues/2026-05-28.html">今日速递</a>
 <a class="nav-link" href="../pages/catalog.html">论文目录</a>
 <a class="nav-link" href="../pages/timeline.html">时间线</a>
   </nav>
   <main><article class="paper-detail">
   <div class="paper-main">
     <div class="kicker">arXiv 新增 · P1 · 2026-05-26</div>
-    <h1 class="paper-headline">The TIME Machine：这是今天最接近“新自监督视觉表示”的论文，尤其适合关注视频预训练和世界模型表征的人先读</h1>
-    <p class="dek">给出一条不依赖语言 caption、不直接靠外观语义的 video representation learning 路线，强调 motion 本身的可泛化性。</p>
-    <p class="byline"><strong>The TIME Machine</strong>　Mantas Skackauskas, Xinyue Hao, Laura Sevilla-Lara。　arXiv 新增　<a href="https://arxiv.org/abs/2605.23045">原文链接</a></p>
+    <h1 class="paper-headline">The TIME Machine：它和通用视觉自监督的关系在于：以点轨迹作为遮蔽和重建对象，把运动连续性变成视频预训练信号</h1>
+    <p class="dek">高相关；详见方法、贡献和实验边界。</p>
+    <p class="byline"><strong>The TIME Machine</strong>　arXiv 新增　<a href="https://arxiv.org/abs/2605.23045">原文链接</a></p>
     <div class="paper-facts">
       <span><b>编号</b>2605.23045</span>
       <span><b>优先级</b>P1</span>
       <span><b>类别</b>arXiv 新增</span>
       <span><b>会议</b>arXiv 新增</span>
-      <span><b>方法</b>把视频中的 point-tracks 作为中心模态，用 masked autoencoder 遮蔽并重建轨迹，从而学习 TIME（Temporally Informed Motion Embedding）表征。</span>
+      <span><b>方法</b>以点轨迹作为遮蔽和重建对象，把运动连续性变成视频预训练信号</span>
       <span><b>来源</b>arXiv / OpenReview</span>
     </div>
     <div class="feature-body">
-      <p class="lead dropcap">先说结论。这是今天最接近“新自监督视觉表示”的论文，尤其适合关注视频预训练和世界模型表征的人先读。 给出一条不依赖语言 caption、不直接靠外观语义的 video representation learning 路线，强调 motion 本身的可泛化性。</p>
+      <p class="lead dropcap">先说结论。它和通用视觉自监督的关系在于：以点轨迹作为遮蔽和重建对象，把运动连续性变成视频预训练信号。</p>
       <figure class="full-fig"><img src="../assets/mineru/2605.23045/images/06494bace7b77e26a59fc0293ca4ae08b315052acb9002e42c6d5787e48e7bf2.jpg" alt="Figureure 1 · : Model performance on SSv2 “Arrow of Time” task performance"><figcaption><b>Figureure 1 · : Model performance on SSv2 “Arrow of Time” task performance</b><span class="fig-en">Figure 1: Model performance on SSv2 “Arrow of Time” task performance. Our TIME model achieves “appearance-free” action classification performance on-par with state-of-theart V-JEPA2 model despite using several magnitudes less pre-training data.</span><span class="fig-zh">这张图/表用于判断 The TIME Machine 的实验收益来自哪里。重点看替换、消融或跨模型设置下趋势是否一致，而不是只看单个最高分。</span></figcaption></figure>
 <figure class="full-fig"><img src="../assets/mineru/2605.23045/images/4c633bba103bd7ed8838b35590607efe5f13714948c2c3a46ead0abbc7e28989.jpg" alt="Figureure 3 · : TIME Architecture"><figcaption><b>Figureure 3 · : TIME Architecture</b><span class="fig-en">Figure 3: TIME Architecture. Given a set of point trajectories, the model groups them into tubelets and encodes them into trajectory tokens using a tokenizer. During training, we mask 75% of the tokens and only the visible ones are passed through the encoder. A decoder then attempts to reconstruct the masked trajectory tokens from the encoder output. The training loss is computed only on the masked trajectories.</span><span class="fig-zh">这张图概括 The TIME Machine 的整体方法流程。阅读时先看模块之间传递的训练信号，再看作者如何把目标拆成可优化的子问题。</span></figcaption></figure>
       
@@ -53,20 +53,20 @@
       <p>因此它要回答的问题是：如果视觉系统只从点轨迹的时序结构中学习，是否能形成足够通用的 motion-centric representation，并迁移到不止一个视频理解任务。</p>
 
       <h2>方法拆解</h2>
-      <p>把视频中的 point-tracks 作为中心模态，用 masked autoencoder 遮蔽并重建轨迹，从而学习 TIME（Temporally Informed Motion Embedding）表征。</p>
+      <p>以点轨迹作为遮蔽和重建对象，把运动连续性变成视频预训练信号</p>
       <p>读方法时可以拆成三层：第一层是 point-track 抽取和表示格式，决定监督信号的噪声与覆盖；第二层是 MAE 式遮蔽比例、重建目标和时序上下文，决定模型是否学习运动规律而不是记忆局部插值；第三层是 TIME embedding 如何进入下游 zero-shot 或迁移评估，决定它是不是一个可复用表征。</p>
 
       <h2>主要贡献</h2>
-      <p>给出一条不依赖语言 caption、不直接靠外观语义的 video representation learning 路线，强调 motion 本身的可泛化性。</p>
+      <p>高相关；详见方法、贡献和实验边界。</p>
       <p>对通用视觉自监督更关键的是，它把“运动”从视频模型的辅助线索提升为主训练目标：不依赖人工标签，不依赖 caption，也不要求先把视频转成语义问答。这个设定适合和 V-JEPA、VideoMAE、masked feature prediction、world-model 预训练放在同一条谱系里比较。</p>
 
       <h2>实验看点</h2>
-      <p>论文摘要称在多类任务上 zero-shot 评估，使用最多少 4 个数量级训练数据仍接近 SOTA。</p>
+      <p>实验部分先看作者怎样做 zero-shot transfer，再看是否控制训练数据量、backbone 规模、训练步数和 point-track 质量。只要这些对照不完整，就不能把性能差异全部归因给 motion MAE 目标。</p>
       <p>最值得抠的是两类消融：一是 mask/reconstruction 目标和普通视频 MAE、光流/轨迹预测之间的差异；二是跨数据、跨任务迁移是否仍保持趋势。如果只在运动显著的数据或任务上强，结论应收窄为 motion-biased representation，而不是完整通用视频表征。</p>
 
       <h2>局限与读法</h2>
-      <p>point-track 质量和 synthetic motion 到真实视频的迁移是关键风险；外观细节与静态语义可能不是它的强项。</p>
-      <p>这是今天最接近“新自监督视觉表示”的论文，尤其适合关注视频预训练和世界模型表征的人先读。 精读时建议先看方法图和数据构造，再看 zero-shot 表格，最后看消融；不要只拿一句“少 4 个数量级数据接近 SOTA”当结论。</p>
+      <p>point-track 质量、合成到真实视频的迁移、静态外观语义不足，是这条路线最需要警惕的三类边界。</p>
+      <p>它与通用视觉自监督的关系在于：把视频中的运动连续性变成可扩展预训练信号。 精读时建议先看方法图和数据构造，再看 zero-shot 表格，最后看消融；不要只拿一句“少 4 个数量级数据接近 SOTA”当结论。</p>
     
     </div>
   </div>
@@ -76,13 +76,13 @@
     <div class="side-box"><h4>原文</h4><p><a href="https://arxiv.org/abs/2605.23045">https://arxiv.org/abs/2605.23045</a></p></div>
   </aside>
 </article></main>
-  <aside class="conf-float" data-conf-reminder="2026-05-26-main-ddl" aria-label="CCF A/B 主投稿提醒">
+  <aside class="conf-float" data-conf-reminder="2026-05-28-main-ddl" aria-label="CCF A/B 主投稿提醒">
   <button class="conf-close" type="button" aria-label="关闭会议提醒">×</button>
   <details open>
     <summary>CCF A/B 主投稿提醒</summary>
     <div class="conf-list"><a class="conf-item " href="https://github.com/ccfddl/ccf-deadlines/blob/main/conference/AI/aaai.yml">
   <span><b>AAAI 2027</b><em>CCF A · Main paper submission</em></span>
-  <strong>62 天</strong>
+  <strong>60 天</strong>
   <small>2026-07-27 · CCF DDL: abstract 2026-07-20；进入 1 个月窗口后重点提醒。</small>
 </a></div>
   </details>
@@ -95,7 +95,7 @@
   (() => {
     const box = document.querySelector('[data-conf-reminder]');
     if (!box) return;
-    const key = `visualSslConfReminderClosed:${box.dataset.confReminder || '2026-05-26-main-ddl'}`;
+    const key = `visualSslConfReminderClosed:${box.dataset.confReminder || '2026-05-28-main-ddl'}`;
     try {
       if (localStorage.getItem(key) === '1') box.hidden = true;
     } catch (err) {}

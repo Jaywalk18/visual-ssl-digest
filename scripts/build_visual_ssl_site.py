@@ -636,6 +636,24 @@ def merge_report_papers(report_papers: list[dict]) -> list[dict]:
     return merged
 
 
+def load_catalog_papers(current_report_path: Path, current_report_md: str, current_date: str) -> list[dict]:
+    report_papers = parse_paper_index(current_report_md, current_date)
+    seen_dates = {current_date}
+    for report_path in sorted(REPORT_ROOT.glob("20??-??-??.md"), key=lambda p: p.name, reverse=True):
+        report_date = report_date_from_path(report_path)
+        if report_date in seen_dates:
+            continue
+        try:
+            md = report_path.read_text(encoding="utf-8")
+        except UnicodeDecodeError:
+            md = report_path.read_text(encoding="utf-8-sig")
+        parsed = parse_paper_index(md, report_date)
+        if parsed:
+            report_papers.extend(parsed)
+            seen_dates.add(report_date)
+    return merge_report_papers(report_papers)
+
+
 def section_text(md: str, heading: str, limit: int = 900) -> str:
     marker = f"## {heading}"
     start = md.find(marker)
@@ -1395,7 +1413,7 @@ def main() -> None:
     report_md = report_path.read_text(encoding="utf-8")
     header_date = re.search(r"\d{4}-\d{2}-\d{2}", report_md[:200])
     CURRENT_DATE = header_date.group(0) if header_date else report_date_from_path(report_path)
-    PAPERS = merge_report_papers(parse_paper_index(report_md, CURRENT_DATE))
+    PAPERS = load_catalog_papers(report_path, report_md, CURRENT_DATE)
     (ROOT / "data" / "papers.json").write_text(json.dumps(PAPERS, ensure_ascii=False, indent=2), encoding="utf-8")
     (ROOT / ".nojekyll").write_text("", encoding="utf-8")
     write_css()
