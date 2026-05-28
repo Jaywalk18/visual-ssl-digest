@@ -1,0 +1,1426 @@
+[
+    {
+        "type": "text",
+        "text": "Q-GEOMEM: QUESTION-GUIDED GEOMETRIC MEMORY FOR VIDEO SPATIAL REASONING ",
+        "text_level": 1,
+        "bbox": [
+            129,
+            119,
+            867,
+            165
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "image",
+        "img_path": "images/7907594b4301a282bf6b342793bac8ca92c188592e09e3117f925e604d97ca27.jpg",
+        "image_caption": [],
+        "image_footnote": [],
+        "content": "Xianqiang Gao*1,2 Qizhi Chen*2 Delin Qu² Haoming Song²\nZhigang Wang² Bin Zhao²,³ Dong Wang² Xuelong Li⁴\n¹University of Science and Technology of China ²Shanghai AI Lab\n³Northwestern Polytechnical University ⁴TeleAI",
+        "sub_type": "text_image",
+        "bbox": [
+            267,
+            209,
+            733,
+            276
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "ABSTRACT ",
+        "text_level": 1,
+        "bbox": [
+            449,
+            295,
+            547,
+            309
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "Video spatial reasoning requires accumulating viewpoint-dependent evidence over time while retaining information useful to the question being asked. Existing spatial video-language models improve geometric perception and long-range context modeling, but often treat memory as a generic temporal cache, which can introduce redundant or irrelevant geometry and weaken long-horizon reasoning. We propose Q-GeoMem, a question-guided geometric memory framework for video spatial reasoning. Q-GeoMem injects camera-conditioned geometry into visual tokens and maintains two complementary memories: a Fine-Grained Context Bank for recent dense features and camera states, and a Semantic-Geometric Evidence Bank for compact long-range evidence. Each candidate frame is scored by the product of Q-Former-based question relevance and novelty with respect to the retained bank; this score is stored and reused during reading, while a capacity-based replacement rule keeps the bank compact. During reasoning, both memories are read before update and adaptively fused with the current frame representation. Experiments on VSI-Bench and VSTI-Bench show that Q-GeoMem achieves state-of-the-art performance among evaluated spatial reasoning models, validating the effectiveness of question-guided geometric memory. Ablations further verify the contribution of the proposed evidence scoring mechanism. ",
+        "bbox": [
+            169,
+            316,
+            826,
+            525
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "image",
+        "img_path": "images/9cfb2fb4a0163c30f37b124de66c1a13074d3e91cb8a54c4d95d56841a6dd26b.jpg",
+        "image_caption": [
+            "Figure 1: Motivation of Q-GeoMem. Egocentric indoor videos reveal spatial layout through partial, camera-dependent views, so long-horizon spatial reasoning depends on retaining the right evidence rather than simply storing more frames. For a question such as “How many chairs are in this room?”, FIFO-style memory may mix useful chair observations with irrelevant or repeated views. Q-GeoMem instead treats memory update as question-guided geometric evidence management: camera-conditioned geometry grounds frame features, question relevance identifies task-useful observations, and novelty discourages redundant long-range evidence. "
+        ],
+        "image_footnote": [],
+        "content": "Egocentric Indoor Video\nHow many chairs in this room?\nFilm Path\nCamera Pose\nCamera-Aware Geometry\nQuestion Relevance ↑\n1\n0\nQuestion\nMemory Novelty ↑\n(Novel But Irrelevant)\nFrame A\nFrame B\nFrame C\nFrame D\n(Redundant)\n(Useful)\n(Useful)\nQ-GeoMem: Write Relevant + Non-Redundant Spatial Evidence\nNaive Memory: FIFO Write Everything VS. Question-Guided Geometry-Aware Evidence Bank\nHigh\nnovelty\nSkip (novel but irrelevant)\nWrite (relevant & novel)\nSkip (irrelevant & redundant)\nSkip (relevant but redundant)\nLow\nlow question relevance High\nThere are four chairs in the room.\nQuestion-Guided Adaptive Accumulation\nGeometry & Memory Aware Writing",
+        "sub_type": "text_image",
+        "bbox": [
+            158,
+            535,
+            841,
+            801
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "aside_text",
+        "text": "arXiv:2605.27318v1 [cs.CV] 26 May 2026 ",
+        "bbox": [
+            22,
+            272,
+            60,
+            724
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "page_footnote",
+        "text": "∗Equal contribution ",
+        "bbox": [
+            135,
+            898,
+            253,
+            911
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "1 Introduction ",
+        "text_level": 1,
+        "bbox": [
+            112,
+            89,
+            253,
+            104
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "text",
+        "text": "Memory turns observation into understanding. Perception alone offers only fleeting fragments of the world, while understanding and reasoning emerge from retaining what has been seen, integrating it with new evidence and preserving a coherent representation of the scene. This requirement is especially important in video spatial reasoning, where object relations, camera motion, distances, and directions are revealed gradually from viewpoint-dependent visual evidence. ",
+        "bbox": [
+            109,
+            121,
+            883,
+            176
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "text",
+        "text": "Recent progress in video spatial reasoning has been driven by stronger benchmarks and increasingly spatially grounded video-language models. Benchmarks such as [25, 27], together with spatial-temporal evaluation suites such as [15, 11], show that video-based spatial intelligence requires more than short-range perception: models must preserve viewpointdependent observations, integrate geometric cues over time, and reason about order, distance, and direction from partial visual evidence. In response, recent methods have advanced along three directions: geometry-grounded perception and fusion [32, 7, 31, 13], spatial reasoning supervision and curricula [18, 14], and memory-augmented temporal reasoning [17, 19, 24, 28, 20]. Together, these methods improve how spatial evidence is perceived, trained, and retained. ",
+        "bbox": [
+            109,
+            183,
+            883,
+            282
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "text",
+        "text": "Despite this progress, a central difficulty remains only partially solved: what spatial evidence should be remembered, in what representation, and under what update criterion. Geometry-enhanced methods have improved how spatial evidence is formed. VLM-3R [7] aligns monocular videos with instruction-aligned 3D reconstruction, grounding video reasoning in reconstructive 3D priors. SpaceMind [31] shows that camera-guided fusion is more effective than naive multimodal fusion. However, these methods mainly improve evidence formation or fusion, while leaving open how evidence should be retained for a specific question. Memory-oriented methods address temporal retention more directly. VLM2 [17] demonstrates that persistent memory is valuable for long-horizon spatial reasoning, yet prior memory-augmented designs often use memory primarily as a repository of generic history rather than explicitly deciding, before writing, whether a candidate observation is relevant to the question and complementary to existing evidence. A similar gap appears in broader long-video methods [19, 24, 28, 20], which maintain history but are not designed around camera-conditioned spatial evidence. As a result, current systems can preserve more temporal context without necessarily preserving the evidence that is most useful for the spatial question being asked. ",
+        "bbox": [
+            109,
+            286,
+            883,
+            454
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "text",
+        "text": "We argue that this coupling between question relevance, geometric reliability, and memory update is the missing piece. In video spatial reasoning, memory should not be a passive cache appended after perception. Instead, it should function as a question-guided evidence manager: camera-conditioned geometry improves the reliability of each observation, the question determines which observations are useful, and novelty with respect to existing memory discourages storing redundant evidence. The key challenge is therefore not simply to remember more video, but to construct a compact memory that retains sufficient visual-spatial evidence for answering the question. ",
+        "bbox": [
+            109,
+            459,
+            883,
+            542
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "text",
+        "text": "Motivated by this perspective, we propose Q-GeoMem, a memory-centric architecture for video spatial reasoning. Q-GeoMem injects camera-conditioned geometry into visual tokens to obtain spatially grounded frame features, then maintains two complementary memory banks. The Fine-Grained Context Bank (FGCB) keeps recent dense features and camera states for local, view-dependent details, while the Semantic-Geometric Evidence Bank (SGEB) stores compact long-range evidence scored by Q-Former-based question relevance and novelty relative to the retained bank. During reasoning, both banks are read before update and adaptively fused into the current feature; the stored evidence score is also reused for read-time modulation and capacity-based replacement. ",
+        "bbox": [
+            109,
+            547,
+            883,
+            647
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "text",
+        "text": "Our contributions are three-fold: ",
+        "bbox": [
+            112,
+            652,
+            328,
+            665
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "list",
+        "sub_type": "text",
+        "list_items": [
+            "• We introduce a memory-centric formulation of video spatial reasoning, in which camera-conditioned geometry, question relevance, and novelty jointly determine what evidence should be retained. ",
+            "• We propose Q-GeoMem, a unified architecture that combines camera-guided geometry fusion, a Fine-Grained Context Bank for recent dense evidence, a Semantic-Geometric Evidence Bank for compact long-range evidence, and adaptive fusion of memory readouts. ",
+            "• Extensive experiments and ablations show that selecting memory entries by both question relevance and novelty yields a more effective memory mechanism for video spatial reasoning. "
+        ],
+        "bbox": [
+            156,
+            678,
+            879,
+            787
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "text",
+        "text": "2 Related Work ",
+        "text_level": 1,
+        "bbox": [
+            112,
+            809,
+            264,
+            825
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "text",
+        "text": "MLLM for Video Understanding and Reasoning. Recent video MLLMs have advanced from short-clip perception toward longer-horizon reasoning by improving how temporally distributed evidence is selected and organized before answering. A common trend is to replace uniform frame sampling with question- or task-aware frame selection [3, 8, 21], showing that only a small subset of frames is often necessary for reliable reasoning. Beyond frame selection, [1] introduces task-aware hierarchical querying to capture temporal structure at multiple granularities, enabling stronger long-range reasoning without relying on a separate external memory module. These methods significantly strengthen general video understanding by improving temporal evidence acquisition and organization. However, they are primarily developed for generic video tasks, and therefore do not explicitly address how question relevance should interact with camera-conditioned spatial evidence in video spatial reasoning. ",
+        "bbox": [
+            109,
+            840,
+            883,
+            912
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "header",
+        "text": "A PREPRINT ",
+        "bbox": [
+            802,
+            44,
+            880,
+            55
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "page_number",
+        "text": "",
+        "bbox": [
+            493,
+            935,
+            504,
+            946
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "text",
+        "text": "",
+        "bbox": [
+            109,
+            90,
+            883,
+            148
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "Geometry-Augmented Video Spatial Reasoning. Recent work on video spatial reasoning increasingly grounds videolanguage models in geometry, camera motion, and reconstruction priors. [32] injects 3D geometric priors extracted from videos into multimodal LLMs, showing that explicit 3D cues substantially improve spatial reasoning. [7] further aligns monocular videos with instruction-aligned 3D reconstruction, demonstrating that reconstructive priors can effectively support video spatial reasoning without requiring specialized sensors or pre-built maps. These works establish a strong direction in which spatial reasoning is improved by making geometry available to video MLLMs. ",
+        "bbox": [
+            109,
+            152,
+            883,
+            238
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "More recent methods move from simply exposing geometry to actively controlling how geometry is used. [18] shows that stronger spatially targeted supervision and reinforcement-style training can significantly enhance spatial reasoning performance. [14] emphasizes progressive curricula for improving spatial competence. [31] demonstrates that cameraguided modality fusion is much more effective than shallow multimodal concatenation, while [13] further shows the importance of actively selecting geometry rather than indiscriminately fusing it. Taken together, these methods strongly improve how spatial evidence is formed, selected, or fused. Yet they leave more open the complementary question that is central to our work: how such evidence should be retained over time as question-relevant memory. ",
+        "bbox": [
+            109,
+            242,
+            883,
+            340
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "Memory-Augmented Video Understanding. For long-horizon video reasoning, recent memory-based methods can be roughly grouped by what is carried across time. A first group maintains explicit historical stores, where selected observations are preserved in an addressable memory and updated online [24, 9, 28, 6]. A second group represents history as latent recurrent state rather than an explicit bank, allowing temporally accumulated context to be propagated in a bounded hidden form [23]. A third group, which is much more limited but especially relevant to our setting, designs memory specifically for spatial reasoning over video. A representative example is [17], which introduces both working memory and episodic memory for long-horizon video spatial reasoning and shows that persistent memory substantially benefits VSI-style tasks. ",
+        "bbox": [
+            109,
+            345,
+            883,
+            458
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "These methods make clear that memory is indispensable once reasoning depends on temporally scattered evidence. However, they also reveal a limitation that is particularly important in our setting: generic memory does not guarantee useful memory. Explicit memory systems can preserve more history, but may store redundant or question-irrelevant observations; latent recurrent systems can be more compact, but may under-specify which visual-spatial evidence should be retained. In video spatial reasoning, this issue is amplified because memory must preserve not only temporal context, but also viewpoint-dependent geometric evidence. Our method is motivated by this gap: instead of treating memory as a generic temporal accumulator, we make question-guided evidence selection and camera-aware spatial calibration explicit parts of the memory update pipeline. ",
+        "bbox": [
+            109,
+            463,
+            883,
+            575
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "3 Method ",
+        "text_level": 1,
+        "bbox": [
+            112,
+            598,
+            212,
+            614
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "3.1 Overview ",
+        "text_level": 1,
+        "bbox": [
+            112,
+            630,
+            220,
+            643
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "Given a monocular video and a question, Q-GeoMem builds a question-guided, geometry-aware memory for video spatial reasoning. We first calibrate each frame’s visual tokens with camera and geometry cues, then maintain a question-conditioned memory of past evidence, and finally fuse the current observation with retrieved evidence for answer generation. The memory is split into a Fine-Grained Context Bank (FGCB) that preserves recent dense features for short-range details, and a Semantic-Geometric Evidence Bank (SGEB) that stores compact question-relevant evidence for long-range reasoning. We describe geometry fusion in Sec. 3.2, memory construction in Sec. 3.3, and adaptive fusion in Sec. 3.4. ",
+        "bbox": [
+            109,
+            657,
+            883,
+            755
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "3.2 Camera-Guided Geometry Fusion ",
+        "text_level": 1,
+        "bbox": [
+            112,
+            773,
+            393,
+            789
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "Before memory construction, we fuse visual tokens with camera-conditioned geometry, following the camera-guided fusion of SpaceMind [31] so that both FGCB and SGEB operate on spatially grounded features. The motivation is that the same geometric observation may support different spatial relations under different camera states. ",
+        "bbox": [
+            109,
+            801,
+            883,
+            844
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "For frame $t ,$ let $f _ { v , t } \\in \\mathbb { R } ^ { N _ { v } \\times d } , f _ { g , t } \\in \\mathbb { R } ^ { N _ { g } \\times d _ { g } }$ , and $f _ { c , t } \\in \\mathbb { R } ^ { 1 \\times d _ { g } }$ denote the visual, geometry, and camera tokens, where $f _ { c , t }$ is broadcast along $N _ { g }$ when needed. We condition the geometry on the camera token and predict a geometry-only reliability gate: ",
+        "bbox": [
+            111,
+            849,
+            883,
+            892
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "equation",
+        "text": "$$\n\\mathbf {b} _ {g} = \\mathrm{MLP} _ {b} \\left(\\left[ W _ {g} ^ {g} f _ {g, t}; W _ {c} ^ {g} f _ {c, t} \\right]\\right), \\quad \\mathbf {r} _ {g} = \\sigma \\left(\\mathrm{MLP} _ {r} \\left(W _ {g} ^ {g} f _ {g, t}\\right)\\right), \\tag {1}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            287,
+            896,
+            883,
+            914
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "header",
+        "text": "A PREPRINT ",
+        "bbox": [
+            802,
+            44,
+            880,
+            55
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "page_number",
+        "text": "3 ",
+        "bbox": [
+            493,
+            935,
+            503,
+            946
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "image",
+        "img_path": "images/dcff467d5428041d2d4e4624313e203cfb6f5f7d1cb709cb7a35888d8a7100ab.jpg",
+        "image_caption": [
+            "(a) Camera-Guided Geometry Fusion "
+        ],
+        "image_footnote": [],
+        "content": "```mermaid\ngraph TD\n    A[\"CrossAttn\"] --> B[\"query\"]\n    A --> C[\"key value\"]\n    A --> D[\"MM Adapter\"]\n    A --> E[\"CGGF\"]\n    D --> F[\"2D Visual Encoder\"]\n    E --> G[\"3D Geometry Encoder\"]\n    F --> H[\"monocular video frames\"]\n    G --> H\n    style A fill:#f9f,stroke:#333\n    style H fill:#bbf,stroke:#333\n```",
+        "sub_type": "flowchart",
+        "bbox": [
+            140,
+            93,
+            401,
+            385
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "image",
+        "img_path": "images/0f90848dd2b155a8e66578bbe6ff57a9965a18f10791fa1158d5bbbdd461485f.jpg",
+        "image_caption": [
+            "(b) Question-Guided Geometric Memory ",
+            "Figure 2: Overview of the proposed framework. Camera-guided geometry fusion first injects spatial cues into frame tokens. The Fine-Grained Context Bank preserves recent detailed visual evidence, while the Semantic-Geometric Evidence Bank stores compact pooled fused features. Question-conditioned write scores are computed by considering both the current question and the existing evidence bank, enabling memory-aware evidence reading and writing. "
+        ],
+        "image_footnote": [],
+        "content": "```mermaid\ngraph TD\n    subgraph Fine-Grained Context Bank (FGCB)\n        A[\"Camera Δf_c,t,u\"] --> B[\"Context Read\"]\n        C[\"FGCB Bank F_{t-1}\"] --> D[\"f_{h,1} f_{h,2} ... f_{h,u} f_{c,u}\"]\n        D --> E[\"K,V\"]\n        E --> B\n        B --> F[\"R_t^F\"]\n    end\n\n    subgraph Semantic-Geometric Evidence Bank (SGEB)\n        G[\"Evidence Read\"] --> H[\"R_t^S\"]\n        I[\"SGEB Bank S_{t-1}\"] --> J[\"e1 e2 ... e_u w_u\"]\n        J --> K[\"K,V\"]\n        K --> L[\"stored w_u: bias (+), scale (-)\"]\n        M[\"Memory Update\"] --> N[\"Q-Former\"]\n        O[\"relevance r_t\"] --> P[\"×\"]\n        Q[\"novelty v_t\"] --> P\n        P --> R[\"w_t\"]\n        R --> S[\"+\"]\n        T[\"How many chairs are in this room?\"] --> U[\"+\"]\n    end\n```",
+        "sub_type": "flowchart",
+        "bbox": [
+            418,
+            93,
+            857,
+            385
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "text",
+        "text": "where $[ \\cdot ; \\cdot ]$ denotes channel-wise concatenation (with the frame-level camera feature broadcast along $N _ { g } ) , \\mathbf { b } _ { g } \\in$ $\\mathbb { R } ^ { N _ { g } \\times d } , \\mathbf { r } _ { q } \\in \\mathbb { R } ^ { N _ { g } \\times 1 }$ , and projection matrices with superscript g are learnable projections for geometry fusion. The visual stream then attends to the camera-conditioned geometry representation to obtain a geometry residual: ",
+        "bbox": [
+            111,
+            503,
+            883,
+            547
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "equation",
+        "text": "$$\n\\hat {f} _ {h, t} = \\operatorname{Attn} \\left(W _ {q} ^ {g} f _ {v, t}, W _ {k} ^ {g} f _ {g, t} + \\mathbf {b} _ {g}, \\left(W _ {v} ^ {g} f _ {g, t} + \\mathbf {b} _ {g}\\right) \\odot \\mathbf {r} _ {g}\\right), \\tag {2}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            297,
+            553,
+            883,
+            573
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "text",
+        "text": "where $\\hat { f } _ { h , t } \\in \\mathbb R ^ { N _ { v } \\times d }$ . Finally, a camera-conditioned SwiGLU-style channel gate controls how strongly the geometry residual is injected into the visual features: ",
+        "bbox": [
+            111,
+            578,
+            883,
+            607
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "equation",
+        "text": "$$\n\\mathbf {g} _ {c} = \\text { SwiGLU } \\left(W _ {c, v} ^ {g} f _ {c, t}\\right), \\tag {3}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            410,
+            612,
+            883,
+            630
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "equation",
+        "text": "$$\nf _ {h, t} = f _ {v, t} + \\mathbf {g} _ {c} \\odot W _ {o} ^ {g} \\hat {f} _ {h, t}, \\tag {4}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            403,
+            633,
+            883,
+            652
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "text",
+        "text": "where $\\mathbf { g } _ { c } \\in \\mathbb { R } ^ { 1 \\times d }$ is broadcast over tokens and $f _ { h , t } \\in \\mathbb { R } ^ { N _ { v } \\times d }$ . The geometry-aware feature $f _ { h , t }$ is shared by both memory branches in Sec. 3.3. ",
+        "bbox": [
+            111,
+            657,
+            882,
+            686
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "text",
+        "text": "3.3 Q-GeoMem ",
+        "text_level": 1,
+        "bbox": [
+            112,
+            702,
+            236,
+            715
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "text",
+        "text": "Over the geometry-aware features $f _ { h , t } , \\mathrm { Q - G e o M e m }$ maintains two complementary memory branches. The Fine-Grained Context Bank (FGCB) preserves recent dense features for short-range details, while the Semantic-Geometric Evidence Bank (SGEB) stores compact question-relevant evidence for long-range reasoning. ",
+        "bbox": [
+            111,
+            727,
+            883,
+            771
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "text",
+        "text": "In SGEB, a pretrained Q-Former estimates question relevance and the pooled geometry-aware representation is compared with the bank to compute novelty. The two terms are multiplied into a per-frame evidence score that is stored with each entry and reused during reading, so that question-irrelevant or redundant evidence contributes less to subsequent reads; the bank is kept at a fixed capacity by replacing the entry with the lowest relevance–novelty product when full. ",
+        "bbox": [
+            111,
+            775,
+            883,
+            844
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "text",
+        "text": "3.3.1 Fine-Grained Context Bank ",
+        "text_level": 1,
+        "bbox": [
+            112,
+            859,
+            361,
+            872
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "text",
+        "text": "The Fine-Grained Context Bank (FGCB) provides short-range dense context by reading recent fused features and camera variation before the current frame is written. At step t, with context window size τ , we maintain a window-based ",
+        "bbox": [
+            111,
+            883,
+            883,
+            912
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "header",
+        "text": "A PREPRINT ",
+        "bbox": [
+            802,
+            44,
+            882,
+            55
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "page_number",
+        "text": "4 ",
+        "bbox": [
+            493,
+            936,
+            503,
+            946
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "text",
+        "text": "memory: ",
+        "bbox": [
+            112,
+            92,
+            176,
+            104
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "equation",
+        "text": "$$\n\\mathcal {F} _ {t - 1} = \\left[ \\left(f _ {h, u}, f _ {c, u}\\right) \\right] _ {u = \\max (1, t - \\tau)} ^ {t - 1}, \\tag {5}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            379,
+            104,
+            883,
+            125
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "where u indexes the recent past frames retained in the buffer. ",
+        "bbox": [
+            111,
+            127,
+            514,
+            142
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "Memory read. Viewpoint changes play an important role in tasks such as camera displacement or movement direction. To modulate the readout by how the current viewpoint differs from each historical entry, we use u to index each retained past frame and compute a per-entry camera-feature difference, which modulates the keys and values in the memory read: ",
+        "bbox": [
+            109,
+            156,
+            885,
+            210
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "equation",
+        "text": "$$\n\\Delta f _ {c, t, u} = f _ {c, t} - f _ {c, u},\n$$",
+        "text_format": "latex",
+        "bbox": [
+            423,
+            209,
+            573,
+            224
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "equation",
+        "text": "$$\nb _ {t, u} = \\mathrm{MLP} _ {b} ^ {\\mathcal {F}} \\left(\\Delta f _ {c, t, u}\\right), \\quad a _ {t, u} = \\sigma \\left(\\mathrm{MLP} _ {a} ^ {\\mathcal {F}} \\left(\\Delta f _ {c, t, u}\\right)\\right), \\tag {6}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            313,
+            220,
+            883,
+            246
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "where $b _ { t , u } , a _ { t , u } \\in \\mathbb { R }$ are scalars associated with history entry u. The FGCB readout is then computed as cameramodulated attention over the concatenated historical features: ",
+        "bbox": [
+            109,
+            250,
+            885,
+            277
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "equation",
+        "text": "$$\nR _ {t} ^ {\\mathcal {F}} = \\operatorname{Attn} \\left(W _ {q} ^ {\\mathcal {F}} f _ {h, t}, W _ {k} ^ {\\mathcal {F}} \\left[ f _ {h, u} \\right] _ {\\mathcal {F} _ {t - 1}} + \\left[ b _ {t, u} \\right] _ {\\mathcal {F} _ {t - 1}}, \\left(W _ {v} ^ {\\mathcal {F}} \\left[ f _ {h, u} \\right] _ {\\mathcal {F} _ {t - 1}}\\right) \\odot \\left[ a _ {t, u} \\right] _ {\\mathcal {F} _ {t - 1}}\\right), \\tag {7}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            218,
+            282,
+            883,
+            303
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "where $R _ { t } ^ { \\mathcal { F } } \\in \\mathbb R ^ { N _ { v } \\times d }$ , the bracketed tensors concatenate all FGCB entries in temporal order, and projection matrices with superscript $\\mathcal { F }$ are learnable projections for FGCB. ",
+        "bbox": [
+            109,
+            309,
+            883,
+            339
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "Memory write. After reading, FGCB appends $( f _ { h , t } , f _ { c , t } )$ and discards the oldest entry when the buffer exceeds τ . This sliding buffer preserves fine-grained geometry-aware visual features that support local spatial relations and view-dependent details. ",
+        "bbox": [
+            111,
+            353,
+            883,
+            396
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "3.3.2 Semantic-Geometric Evidence Bank ",
+        "text_level": 1,
+        "bbox": [
+            112,
+            410,
+            418,
+            424
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "SGEB stores a fixed-size bank of compact semantic-geometric entries with capacity K. At step t, let $\\boldsymbol { { \\cal { K } } } _ { t - 1 } \\subseteq$ $\\{ 1 , \\ldots , t - 1 \\}$ denote the indices of past frames currently retained in the bank, with $| \\bar { \\mathcal Ḋ K Ḍ } _ { t - 1 } | \\leq K$ , so that each $u \\in \\mathcal { K } _ { t - 1 }$ refers to one stored entry. We maintain ",
+        "bbox": [
+            112,
+            433,
+            883,
+            474
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "equation",
+        "text": "$$\n\\mathcal {S} _ {t - 1} = \\left[ \\left(e _ {u}, r _ {u}, \\nu_ {u}, w _ {u}\\right) \\right] _ {u \\in \\mathcal {K} _ {t - 1}}, \\tag {8}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            385,
+            482,
+            883,
+            500
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "where $\\boldsymbol { e } _ { u } \\in \\mathbb { R } ^ { M \\times d }$ is the pooled semantic-geometric entry extracted from frame $u , r _ { u } \\in \\mathbb { R }$ is its question-relevance score, $\\nu _ { u } \\in \\mathbb { R }$ is its novelty score, and $w _ { u } = r _ { u } \\nu _ { u }$ is the resulting evidence score. ",
+        "bbox": [
+            109,
+            507,
+            883,
+            537
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "Evidence score. We score each candidate frame by multiplying its question relevance with its novelty relative to the existing memory, which discourages repeatedly storing redundant evidence. Let $e _ { t } = \\mathrm { P o o l } ( f _ { h , t } )$ denote the compact semantic-geometric entry obtained by spatially pooling the current geometry-aware feature. For the current frame $t ,$ a pretrained Q-Former Q provides semantic cues for question relevance, and SGEB compares $e _ { t }$ with the retained entries $\\mathbf { \\bar { \\{ } }  e _ { u } \\} _ { u \\in \\mathcal { K } _ { t - 1 } }$ to estimate novelty: ",
+        "bbox": [
+            111,
+            550,
+            883,
+            622
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "equation",
+        "text": "$$\nr _ {t} = \\lambda_ {r} \\operatorname{sim} (\\mathcal {Q} (f _ {v, t}), \\bar {q}), \\tag {9}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            375,
+            628,
+            883,
+            646
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "equation",
+        "text": "$$\n\\nu_ {t} = \\lambda_ {\\nu} \\left(1 - \\max _ {u \\in \\mathcal {K} _ {t - 1}} \\mathrm{sim} (e _ {t}, e _ {u})\\right), \\tag {10}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            375,
+            648,
+            883,
+            681
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "where $\\bar { q } \\in \\mathbb { R } ^ { d }$ is the pooled question feature obtained from the text branch of $\\mathcal { Q } , \\lambda _ { r } , \\lambda _ { \\nu }$ are scalar hyperparameters, and $r _ { t } , \\nu _ { t } \\in$ R denote question relevance and novelty, respectively. Similarities for novelty are normalized to [0, 1]; when the bank is empty, we set $\\nu _ { t } = \\lambda _ { \\nu }$ . We feed Q with the uncalibrated $f _ { v , t }$ so as not to perturb its pretrained input distribution, while injecting geometric structure through the novelty term over the calibrated entry $e _ { t }$ . The evidence score is then defined as ",
+        "bbox": [
+            109,
+            689,
+            885,
+            758
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "equation",
+        "text": "$$\nw _ {t} = r _ {t} \\nu_ {t}, \\tag {11}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            460,
+            758,
+            883,
+            773
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "where a larger $w _ { t }$ indicates that frame t is both more question-relevant and less redundant with the existing memory. ",
+        "bbox": [
+            109,
+            777,
+            874,
+            792
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "Memory read. At step t, SGEB reads from the existing bank $S _ { t - 1 }$ before any update. The current fused feature queries the stored pooled semantic-geometric entries $\\{ e _ { u } \\} _ { u \\in \\mathcal K _ { t - 1 } }$ , while the stored evidence scores $\\{ w _ { u } \\} _ { u \\in \\mathcal { K } _ { t } }$ −1 act as per-entry read modulation signals: ",
+        "bbox": [
+            109,
+            806,
+            883,
+            849
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "equation",
+        "text": "$$\nR _ {t} ^ {\\mathcal {S}} = \\operatorname{Attn} \\left(W _ {q} ^ {\\mathcal {S}} f _ {h, t}, W _ {k} ^ {\\mathcal {S}} [ e _ {u} ] _ {u \\in \\mathcal {K} _ {t - 1}} + [ w _ {u} ] _ {u \\in \\mathcal {K} _ {t - 1}}, \\left(W _ {v} ^ {\\mathcal {S}} [ e _ {u} ] _ {u \\in \\mathcal {K} _ {t - 1}}\\right) \\odot [ w _ {u} ] _ {u \\in \\mathcal {K} _ {t - 1}}\\right), \\tag {12}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            205,
+            854,
+            883,
+            875
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "where $R _ { t } ^ { S } \\in \\mathbb { R } ^ { N _ { v } \\times d } , [ \\cdot ] _ { u \\in \\mathcal { K } _ { t - 1 } }$ denotes token-wise concatenation over the $| \\mathcal { K } _ { t - 1 } |$ SGEB entries, and projection matrices with superscript $s$ are learnable projections for SGEB. ",
+        "bbox": [
+            109,
+            882,
+            883,
+            912
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "header",
+        "text": "A PREPRINT ",
+        "bbox": [
+            800,
+            44,
+            880,
+            55
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "page_number",
+        "text": "",
+        "bbox": [
+            493,
+            935,
+            503,
+            946
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "table",
+        "img_path": "images/1c4af831b598a307fe4892cd08f7805c9dfb97b5606bcbeb11684c8294f7b06d.jpg",
+        "table_caption": [
+            "Table 1: Evaluation on VSI-Bench [25]. We compare proprietary VLMs, open-source video VLMs, specialized spatial reasoning models, and spatial-memory models across eight spatial tasks covering numerical and multiple-choice questions. Best and second-best results within each model category are highlighted. Q-GeoMem achieves the best average score among the compared non-human models and shows consistent gains over VLM-3R, indicating that question-guided geometric memory improves the retention of task-relevant spatial evidence. "
+        ],
+        "table_footnote": [],
+        "table_body": "<table><tr><td rowspan=\"2\">Methods</td><td rowspan=\"2\">Avg.</td><td colspan=\"4\">Numerical Question</td><td colspan=\"4\">Multiple-Choice Question</td></tr><tr><td>Obj. Cnt.</td><td>Abs. Dist.</td><td>Obj. Size</td><td>Room Size</td><td>Rel. Dist.</td><td>Rel. Dir.</td><td>Route Plan</td><td>Appr. Order</td></tr><tr><td colspan=\"10\">Proprietary Models (API)</td></tr><tr><td>GPT-4o [10]</td><td>34.0</td><td>46.2</td><td>5.3</td><td>43.8</td><td>38.2</td><td>37.0</td><td>41.3</td><td>31.5</td><td>28.5</td></tr><tr><td>Gemini-1.5 Flash [22]</td><td>42.1</td><td>49.8</td><td>30.8</td><td>53.5</td><td>54.4</td><td>37.7</td><td>41.0</td><td>31.5</td><td>37.8</td></tr><tr><td>Gemini-1.5 Pro [22]</td><td>45.4</td><td>56.2</td><td>30.9</td><td>64.1</td><td>43.6</td><td>51.3</td><td>46.3</td><td>36.0</td><td>34.6</td></tr><tr><td colspan=\"10\">Open-sourced VLMs</td></tr><tr><td>LLaVA-NeXT-Video-7B [30]</td><td>35.6</td><td>48.5</td><td>14.0</td><td>47.8</td><td>24.2</td><td>43.5</td><td>42.4</td><td>34.0</td><td>30.6</td></tr><tr><td>LLaVA-NeXT-Video-72B [30]</td><td>40.9</td><td>48.9</td><td>22.8</td><td>57.4</td><td>35.3</td><td>42.4</td><td>36.7</td><td>35.0</td><td>48.6</td></tr><tr><td>Qwen2.5VL-7B [2]</td><td>33.0</td><td>40.9</td><td>14.8</td><td>43.4</td><td>10.7</td><td>38.6</td><td>38.5</td><td>33.0</td><td>29.8</td></tr><tr><td>LLaVA-OneVision-7B [12]</td><td>32.4</td><td>47.7</td><td>20.2</td><td>47.4</td><td>12.3</td><td>42.5</td><td>35.2</td><td>29.4</td><td>24.4</td></tr><tr><td>LLaVA-OneVision-72B [12]</td><td>40.2</td><td>43.5</td><td>23.9</td><td>57.6</td><td>37.5</td><td>42.5</td><td>39.9</td><td>32.5</td><td>44.6</td></tr><tr><td>InternVL3-78B [33]</td><td>48.5</td><td>71.2</td><td>53.7</td><td>44.4</td><td>39.5</td><td>55.9</td><td>39.5</td><td>28.9</td><td>54.5</td></tr><tr><td colspan=\"10\">Specialized Spatial Reasoning Models</td></tr><tr><td>VG LLM-8B [32]</td><td>50.7</td><td>67.9</td><td>37.7</td><td>58.6</td><td>62.0</td><td>46.6</td><td>40.7</td><td>32.4</td><td>59.2</td></tr><tr><td>VST-7B [26]</td><td>60.6</td><td>72.0</td><td>44.4</td><td>74.3</td><td>68.3</td><td>59.7</td><td>55.8</td><td>44.9</td><td>65.2</td></tr><tr><td>VLM-3R-7B [7]</td><td>60.9</td><td>70.2</td><td>49.4</td><td>69.2</td><td>67.1</td><td>65.4</td><td>80.5</td><td>45.4</td><td>40.1</td></tr><tr><td colspan=\"10\">Spatial Memory Enhanced Models</td></tr><tr><td> $VLM^2$ -7B [17]</td><td>68.8</td><td>72.5</td><td>59.6</td><td>70.8</td><td>69.9</td><td>69.0</td><td>87.8</td><td>52.6</td><td>68.3</td></tr><tr><td>Q-GeoMem (Ours)</td><td>70.1</td><td>76.3</td><td>54.5</td><td>76.7</td><td>76.3</td><td>71.4</td><td>85.5</td><td>46.9</td><td>73.4</td></tr><tr><td>Improvement over VLM-3R</td><td>+9.2</td><td>+6.1</td><td>+5.1</td><td>+7.5</td><td>+9.2</td><td>+6.0</td><td>+5.0</td><td>+1.5</td><td>+33.3</td></tr></table>",
+        "bbox": [
+            117,
+            169,
+            879,
+            467
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "text",
+        "text": "Memory write. After reading, the candidate entry is presented to the bank. While $| { \\cal { K } } _ { t - 1 } | < { \\cal { K } }$ , the candidate is appended and novelty scores in the bank are refreshed. Once the bank is full, we form the candidate set $\\mathcal { C } _ { t } = \\mathcal { K } _ { t - 1 } \\cup \\{ t \\}$ , recompute each entry’s novelty within $\\mathcal { C } _ { t } ,$ and drop ",
+        "bbox": [
+            109,
+            479,
+            883,
+            522
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "equation",
+        "text": "$$\nu ^ {\\star} = \\arg \\min _ {u \\in \\mathcal {C} _ {t}} r _ {u} \\nu_ {u}. \\tag {13}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            428,
+            529,
+            883,
+            550
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "text",
+        "text": "If $u ^ { \\star } = t ,$ the candidate is discarded; otherwise, the lowest-scoring stored entry is evicted and the candidate is inserted. The relevance–novelty product w therefore affects both capacity-based replacement and subsequent memory reading (Eq. (12)). ",
+        "bbox": [
+            109,
+            556,
+            883,
+            599
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "text",
+        "text": "3.4 Adaptive Fusion ",
+        "text_level": 1,
+        "bbox": [
+            112,
+            614,
+            269,
+            630
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "text",
+        "text": "We fuse the memory readouts into the current feature with channel-wise gates conditioned on mean-pooled summaries (denoted by bars, where each summary is pooled along the token dimension to $\\mathbb { R } ^ { 1 \\times d } )$ : ",
+        "bbox": [
+            109,
+            640,
+            883,
+            670
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "equation",
+        "text": "$$\n\\begin{array}{l} \\mathbf {g} _ {t} ^ {\\mathcal {F}} = \\sigma \\left(\\mathrm{MLP} _ {g} ^ {\\mathcal {F}} \\left(\\left[ \\bar {f} _ {h, t}; \\bar {R} _ {t} ^ {\\mathcal {F}}; \\bar {R} _ {t} ^ {\\mathcal {S}} \\right]\\right)\\right), \\quad \\mathbf {g} _ {t} ^ {\\mathcal {S}} = \\sigma \\left(\\mathrm{MLP} _ {g} ^ {\\mathcal {S}} \\left(\\left[ \\bar {f} _ {h, t}; \\bar {R} _ {t} ^ {\\mathcal {F}}; \\bar {R} _ {t} ^ {\\mathcal {S}} \\right]\\right)\\right), \\tag {14} \\\\ \\tilde {f} _ {h, t} = f _ {h, t} + \\mathbf {g} _ {t} ^ {\\mathcal {F}} \\odot R _ {t} ^ {\\mathcal {F}} + \\mathbf {g} _ {t} ^ {\\mathcal {S}} \\odot R _ {t} ^ {\\mathcal {S}}. \\\\ \\end{array}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            253,
+            674,
+            883,
+            715
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "text",
+        "text": "where $\\mathbf { g } _ { t } ^ { \\mathcal { F } } , \\mathbf { g } _ { t } ^ { S } \\in \\mathbb { R } ^ { 1 \\times d }$ are token-broadcast gates, and $\\{ \\tilde { f } _ { h , t } \\} _ { t = 1 } ^ { T }$ is provided to the multimodal LLM. ",
+        "bbox": [
+            109,
+            722,
+            771,
+            739
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "text",
+        "text": "4 Experiments ",
+        "text_level": 1,
+        "bbox": [
+            112,
+            758,
+            253,
+            775
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "text",
+        "text": "4.1 Implementation Details ",
+        "text_level": 1,
+        "bbox": [
+            112,
+            789,
+            316,
+            804
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "text",
+        "text": "Training details. Q-GeoMem is built on LLaVA-NeXT-Video-7B and follows the VLM-3R [7] training recipe for video preprocessing, frame sampling, instruction tuning, optimization, and geometry/camera feature extraction. We train on VLM3R-Data and VICA-322K using the same one-epoch LoRA fine-tuning protocol as VLM-3R unless otherwise specified. Specifically, we use LoRA fine-tuning with rank 128 and alpha 256, per-device batch size 1, gradient accumulation steps 8, learning rate $2 \\times 1 0 ^ { - 5 }$ , weight decay 0, warmup ratio 0.03, and a cosine learning-rate schedule. Training uses BF16 and TF32 precision, DeepSpeed ZeRO stage 2, and gradient checkpointing. Following VLM-3R, we use CUT3R as the spatial tower, select all spatial features with feature dimension 768, keep the spatial tower frozen, and tune the fusion block and multimodal MLP adapter. For Q-GeoMem-specific hyperparameters, we set the FGCB context window to $\\tau = 4$ , the SGEB capacity to $K = 3 2$ , and the number of pooled semantic-geometric tokens per frame to $M = 7 \\times 7$ . The question-relevance and novelty weights $\\lambda _ { r } , \\lambda _ { \\nu }$ are scalar hyperparameters tuned on a held-out split, while the camera-modulation and adaptive-fusion gates are learned end-to-end together with the rest of the model. Training takes approximately 25 hours on 16 H200 GPUs. ",
+        "bbox": [
+            109,
+            813,
+            883,
+            912
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "header",
+        "text": "A PREPRINT ",
+        "bbox": [
+            802,
+            44,
+            882,
+            55
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "page_number",
+        "text": "6 ",
+        "bbox": [
+            493,
+            936,
+            504,
+            946
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "table",
+        "img_path": "images/1eb5a11f56fb3ba4e703662c7c49ce08f50cf8c35fe81c9b27294dbbdfe756d8.jpg",
+        "table_caption": [
+            "Table 2: Evaluation on VSTI-Bench [25]. We compare representative proprietary models, open-source video VLMs, and specialized spatial reasoning models on five temporally evolving spatial tasks involving camera-object distance, camera displacement, camera movement direction, object-object relative position, and camera-object relative distance. Best and second-best results within each model category are highlighted. Q-GeoMem achieves the best average score among non-human models, showing the benefit of coupling camera-aware memory readout with question-guided evidence writing. "
+        ],
+        "table_footnote": [],
+        "table_body": "<table><tr><td rowspan=\"2\">Methods</td><td rowspan=\"2\">Avg.</td><td colspan=\"2\">Numerical Question</td><td colspan=\"4\">Multiple-Choice Question</td></tr><tr><td>Cam-Obj Abs. Dist.</td><td>Cam. Displace.</td><td>Cam. Mov. Dir.</td><td>Obj-Obj Rel. Pos.</td><td>Cam-Obj Rel. Dist.</td><td></td></tr><tr><td colspan=\"8\">Proprietary Models (API)</td></tr><tr><td>GPT-4o [10]</td><td>38.2</td><td>29.5</td><td>23.4</td><td>37.3</td><td>58.1</td><td>42.5</td><td></td></tr><tr><td>Gemini-1.5 Flash [22]</td><td>32.1</td><td>28.5</td><td>20.9</td><td>24.4</td><td>52.6</td><td>33.9</td><td></td></tr><tr><td colspan=\"8\">Open-sourced VLMs</td></tr><tr><td>LLaVA-NeXT-Video-7B [30]</td><td>40.0</td><td>28.2</td><td>1.8</td><td>49.8</td><td>64.7</td><td>55.6</td><td></td></tr><tr><td>LLaVA-OneVision-7B [12]</td><td>41.7</td><td>29.9</td><td>19.3</td><td>47.5</td><td>62.1</td><td>49.8</td><td></td></tr><tr><td>LongVA-7B [29]</td><td>32.3</td><td>13.5</td><td>5.1</td><td>43.7</td><td>57.9</td><td>41.2</td><td></td></tr><tr><td>InternVL2-8B [5]</td><td>43.5</td><td>32.9</td><td>13.5</td><td>48.0</td><td>68.0</td><td>55.0</td><td></td></tr><tr><td>LongVILA-8B [4]</td><td>30.5</td><td>20.0</td><td>11.6</td><td>35.4</td><td>52.3</td><td>33.4</td><td></td></tr><tr><td>VILA-1.5-8B [16]</td><td>37.3</td><td>30.1</td><td>27.3</td><td>42.2</td><td>50.4</td><td>36.7</td><td></td></tr><tr><td>VILA-1.5-40B [16]</td><td>38.2</td><td>28.2</td><td>15.7</td><td>28.8</td><td>65.4</td><td>53.0</td><td></td></tr><tr><td>LLaVA-NeXT-Video-72B [30]</td><td>44.0</td><td>32.3</td><td>10.5</td><td>48.1</td><td>78.3</td><td>50.9</td><td></td></tr><tr><td colspan=\"8\">Specialized Spatial Reasoning Models</td></tr><tr><td>VLM-3R-7B [7]</td><td>58.8</td><td>39.4</td><td>39.6</td><td>60.6</td><td>86.5</td><td>68.6</td><td></td></tr><tr><td> $VLM^2$ -7B [17]</td><td>65.3</td><td>43.1</td><td>44.1</td><td>76.8</td><td>87.7</td><td>74.9</td><td></td></tr><tr><td>Q-GeoMem (Ours)</td><td>67.0</td><td>40.0</td><td>44.7</td><td>84.3</td><td>91.2</td><td>74.8</td><td></td></tr></table>",
+        "bbox": [
+            117,
+            181,
+            879,
+            426
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "text",
+        "text": "",
+        "bbox": [
+            111,
+            439,
+            883,
+            508
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "text",
+        "text": "Benchmarks and metrics. We evaluate Q-GeoMem on two video spatial reasoning benchmarks that directly test the evidence-retention behavior targeted by our method. VSI-Bench [25] covers eight spatial tasks, including object counting, metric distance and size estimation, relative relation reasoning, route planning, and appearance order. These tasks require the model to accumulate viewpoint-dependent evidence over time rather than relying on a single salient frame. VSTI-Bench [25] further emphasizes temporally evolving spatial reasoning under camera motion, including camera displacement, camera movement direction, camera-object distance, and object-object relations. This benchmark is closely aligned with our camera-modulated memory design, which explicitly models how camera variations affect the usefulness of historical evidence. Following the official protocols, we report task-level scores and the average score across tasks. For the analysis setting denoted as VSTI-Bench†, we evaluate out of domain: the evaluated model is not trained on the VLM-3R VSTI training set. ",
+        "bbox": [
+            111,
+            523,
+            883,
+            661
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "text",
+        "text": "Baseline methods. We compare with representative proprietary VLMs, open-source video VLMs, and spatially specialized video-language models. The proprietary and open-source models test whether general-purpose video understanding is sufficient for spatial reasoning, while specialized models such as VG LLM, VST, VLM-3R, and $\\mathrm { { V L M ^ { 2 } } }$ incorporate geometry, spatial supervision, or memory mechanisms. This comparison isolates whether question-guided geometric memory provides benefits beyond stronger backbones, geometry-aware representations, or generic memory storage. ",
+        "bbox": [
+            111,
+            676,
+            883,
+            758
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "text",
+        "text": "4.2 Results ",
+        "text_level": 1,
+        "bbox": [
+            112,
+            773,
+            205,
+            787
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "text",
+        "text": "VSI-Bench. Tab. 1 reports the main comparison on VSI-Bench. Q-GeoMem achieves an average score of 70.1, outperforming the strongest spatial-memory baseline VLM2-7B by 1.3 points and exceeding VLM-3R-7B by 9.2 points. The improvements are concentrated on tasks that depend on accumulated and non-redundant spatial evidence, including object counting, object-size estimation, room-size estimation, relative distance, and appearance order. In particular, the large gain on appearance order over VLM-3R indicates that Q-GeoMem better preserves temporally distributed observations that are easy to overwrite or dilute in a generic video representation. These results support our central claim: memory for video spatial reasoning should select question-relevant and geometrically complementary evidence, rather than simply expanding the temporal context. ",
+        "bbox": [
+            111,
+            800,
+            883,
+            912
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "header",
+        "text": "A PREPRINT ",
+        "bbox": [
+            802,
+            44,
+            880,
+            55
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "page_number",
+        "text": "7 ",
+        "bbox": [
+            493,
+            935,
+            503,
+            946
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "table",
+        "img_path": "images/d5a4826b836713ee369107c7b89db7baa4705250d2630720d3e70eebd2ad94c5.jpg",
+        "table_caption": [
+            "Table 3: Core component ablation on VSI-Bench. Starting from the LLaVA-NeXT-Video-7B baseline, we progressively add camera-guided geometry fusion (CGGF), FGCB (Fine-Grained Context Bank), and SGEB (Semantic-Geometric Evidence Bank). The full model obtains the strongest average performance, indicating that cameraconditioned geometry, short-range dense memory, and long-range semantic-geometric evidence selection provide complementary benefits. "
+        ],
+        "table_footnote": [],
+        "table_body": "<table><tr><td rowspan=\"2\">Methods</td><td rowspan=\"2\">Avg.</td><td colspan=\"4\">Numerical Question</td><td colspan=\"4\">Multiple-Choice Question</td></tr><tr><td>Obj. Cnt.</td><td>Abs. Dist.</td><td>Obj. Size</td><td>Room Size</td><td>Rel. Dist.</td><td>Rel. Dir.</td><td>Route Plan</td><td>Appr. Order</td></tr><tr><td>LLaVA-NeXT-Video-7B (Baseline)</td><td>64.83</td><td>71.91</td><td>51.47</td><td>75.38</td><td>70.56</td><td>67.32</td><td>72.09</td><td>42.27</td><td>67.64</td></tr><tr><td>Baseline + CGGF</td><td>67.28</td><td>72.07</td><td>56.13</td><td>74.49</td><td>72.43</td><td>68.17</td><td>81.47</td><td>45.36</td><td>68.12</td></tr><tr><td>Baseline + CGGF + FGCB</td><td>67.92</td><td>71.70</td><td>55.97</td><td>75.47</td><td>73.75</td><td>66.48</td><td>84.62</td><td>46.91</td><td>68.45</td></tr><tr><td>Baseline + CGGF + FGCB + SGEB</td><td>70.10</td><td>76.30</td><td>54.50</td><td>76.70</td><td>76.30</td><td>71.40</td><td>85.50</td><td>46.90</td><td>73.40</td></tr></table>",
+        "bbox": [
+            117,
+            166,
+            879,
+            253
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "table",
+        "img_path": "images/26720270cfaf45ae822cdf0913ca45aac82476ffae91f80130da41e1fefe9728.jpg",
+        "table_caption": [
+            "Table 4: Ablation of FGCB read modulation. We disable SGEB to isolate the effect of Camera-∆ in FGCB readout. The variant without Camera-∆ degenerates the per-entry bias and gate to $b _ { t , u } = 0$ and $a _ { t , u } = 1$ , recovering a vanilla cross-attention over the buffer. Results are reported by video length on VSI-Bench and VSTI-Bench†, where the dagger denotes out-of-domain evaluation without training on the VLM-3R VSTI training set. Camera-feature variation improves both benchmarks, supporting its role as an effective modulation signal for local viewpoint-dependent memory reading. "
+        ],
+        "table_footnote": [],
+        "table_body": "<table><tr><td rowspan=\"2\">Model</td><td colspan=\"4\">VSI-Bench</td><td colspan=\"4\"> $VSTI-Bench^†$ </td></tr><tr><td>Avg.</td><td>Short</td><td>Mid</td><td>Long</td><td>Avg.</td><td>Short</td><td>Mid</td><td>Long</td></tr><tr><td>Q-GeoMem (w/o SGEB) w/o Camera- $\\Delta$ </td><td>66.57</td><td>68.91</td><td>67.66</td><td>64.50</td><td>51.17</td><td>51.08</td><td>51.39</td><td>51.60</td></tr><tr><td>Q-GeoMem (w/o SGEB)</td><td>67.92 (+1.35)</td><td>70.55 (+1.64)</td><td>69.43 (+1.77)</td><td>65.33 (+0.83)</td><td>52.24 (+1.07)</td><td>53.25 (+2.17)</td><td>52.16 (+0.77)</td><td>52.32 (+0.72)</td></tr></table>",
+        "bbox": [
+            112,
+            352,
+            879,
+            405
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "text",
+        "text": "VSTI-Bench. For this setting, we additionally fine-tune Q-GeoMem on the VSTI training data and evaluate temporal spatial reasoning under changing camera viewpoints. As shown in Tab. 2, Q-GeoMem obtains an average score of 67.0, improving over $\\mathrm { V L M ^ { 2 }  – 7 B }$ by 1.7 points and VLM-3R-7B by 8.2 points. The advantage is most evident on camera-sensitive and temporally evolving tasks: Q-GeoMem achieves the best non-human performance on camera displacement, camera movement direction, and object-object relative position. The 84.3 score on camera movement direction is particularly relevant to our design, since the task requires comparing the current observation against earlier camera-conditioned evidence rather than recognizing static object content alone. These results show that camera-aware memory readout and question-guided evidence writing are complementary for temporal spatial reasoning. ",
+        "bbox": [
+            109,
+            422,
+            883,
+            536
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "text",
+        "text": "4.3 Analysis ",
+        "text_level": 1,
+        "bbox": [
+            112,
+            555,
+            215,
+            569
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "text",
+        "text": "Ablation studies. We analyze Q-GeoMem from three perspectives: the contribution of each architectural component, the effect of camera-feature variation as a memory-read modulation signal, and the design of SGEB writing. The goal is to verify whether the gains in Tabs. 1 and 2 come from the proposed memory mechanism rather than from a single stronger module. ",
+        "bbox": [
+            109,
+            582,
+            883,
+            638
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "text",
+        "text": "Core components. Tab. 3 isolates the contribution of each main component on VSI-Bench. Adding camera-guided geometry fusion improves the baseline from 64.83 to 67.28, confirming that geometry is more useful when calibrated by camera state before memory construction. Introducing FGCB further raises the average to 67.92, mainly by improving tasks that benefit from recent fine-grained visual context, such as relative direction and route planning. The full model with both FGCB and SGEB reaches 70.10, giving a 5.27-point improvement over the baseline. Compared with the +CGGF+FGCB variant, the strongest gains from adding SGEB appear on object counting, room-size estimation, relative distance, and appearance order, suggesting that SGEB contributes most when the answer depends on retaining complementary evidence across a longer temporal horizon. ",
+        "bbox": [
+            109,
+            656,
+            883,
+            768
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "text",
+        "text": "Effect of camera modulation. Tab. 4 studies whether camera-feature variations are effective modulation signals for FGCB readout. To isolate this factor, SGEB is disabled in both variants. Using Camera-∆ improves VSI-Bench from 66.57 to 67.92 and VSTI-Bench† from 51.17 to 52.24. Here VSTI-Bench† denotes an out-of-domain evaluation in which the tested model has not been trained on the VLM-3R VSTI training set. Fig. 3(a) provides a finer-grained view: camera modulation consistently improves short, mid, and long videos on VSTI-Bench†, with the largest gain on short videos. For the camera movement direction subset, the gains are especially clear on short and mid videos, while the effect is not evident on long videos. This pattern is consistent with our motivation: camera variation is most useful for local viewpoint transitions, whereas long videos require additional long-range evidence selection beyond local camera modulation alone. ",
+        "bbox": [
+            109,
+            786,
+            883,
+            910
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "header",
+        "text": "A PREPRINT ",
+        "bbox": [
+            802,
+            44,
+            880,
+            55
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "page_number",
+        "text": "8 ",
+        "bbox": [
+            493,
+            935,
+            503,
+            946
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "image",
+        "img_path": "images/a41b977fd7d5ef6712b7b81f18dffa7d713873b6bd8f98679715e237779dd55b.jpg",
+        "image_caption": [],
+        "image_footnote": [],
+        "content": "",
+        "bbox": [
+            117,
+            90,
+            848,
+            224
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "table",
+        "img_path": "images/6ec62d090216cf54fd6911699d659ce66fcabce03494bfe4fa62486b8c42f1b5.jpg",
+        "table_caption": [
+            "(a) VSTI-Bench† across video length and camera motion. (b) VSI-Bench across video length and memory strategy. ",
+            "Figure 3: Length-based memory diagnostics. (a) Camera-∆ modulation improves FGCB readout on VSTI-Bench†, especially for short videos and camera movement direction, while its effect is limited on long videos. (b) The proposed SGEB design outperforms FIFO memory on VSI-Bench, with larger gains as the video length increases. ",
+            "Table 5: Ablation of SGEB entry scoring. With FGCB using Camera-∆, we ablate the two components of the SGEB evidence score $w _ { t } = r _ { t } \\nu _ { t } .$ , which is reused during reading. When both components are disabled, no per-entry differentiation is applied $( w _ { u } \\equiv 1 ) $ ; enabling only novelty or only relevance moderately improves over this no-bias baseline, while multiplying the two yields the best average. This indicates that question relevance and novelty are complementary signals for prioritizing which stored entries contribute most during reading. "
+        ],
+        "table_footnote": [],
+        "table_body": "<table><tr><td rowspan=\"2\">relevance</td><td rowspan=\"2\">novelty</td><td rowspan=\"2\">Avg.</td><td colspan=\"4\">Numerical Question</td><td colspan=\"4\">Multiple-Choice Question</td></tr><tr><td>Obj. Cnt.</td><td>Abs. Dist.</td><td>Obj. Size</td><td>Room Size</td><td>Rel. Dist.</td><td>Rel. Dir.</td><td>Route Plan</td><td>Appr. Order</td></tr><tr><td></td><td></td><td>68.7</td><td>71.8</td><td>57.3</td><td>75.5</td><td>73.75</td><td>70.4</td><td>85.3</td><td>46.4</td><td>68.9</td></tr><tr><td></td><td>√</td><td>68.9</td><td>71.9</td><td>57.1</td><td>75.4</td><td>73.3</td><td>71.0</td><td>85.2</td><td>46.9</td><td>70.7</td></tr><tr><td>√</td><td></td><td>69.3</td><td>72.6</td><td>56.6</td><td>75.4</td><td>73.4</td><td>70.7</td><td>85.9</td><td>48.5</td><td>71.4</td></tr><tr><td>√</td><td>√</td><td>70.1</td><td>76.3</td><td>54.5</td><td>76.7</td><td>76.3</td><td>71.4</td><td>85.5</td><td>46.9</td><td>73.4</td></tr></table>",
+        "bbox": [
+            127,
+            392,
+            864,
+            502
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "text",
+        "text": "SGEB memory design. Tab. 5 evaluates the two terms used for SGEB entry scoring. Using only novelty or only question relevance improves the average score only moderately, whereas multiplying both reaches 70.1. This indicates that neither criterion alone is sufficient: question relevance prevents irrelevant frames from entering the bank, while novelty discourages repeatedly storing evidence already represented by existing entries. Fig. 3(b) further shows that the proposed SGEB design is more effective than FIFO memory, especially as video length increases. The advantage on long videos supports the core argument of Q-GeoMem: long-horizon spatial reasoning benefits from a compact evidence bank that writes complementary, question-relevant observations instead of treating memory as a chronological cache. ",
+        "bbox": [
+            109,
+            518,
+            883,
+            630
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "text",
+        "text": "5 Conclusion ",
+        "text_level": 1,
+        "bbox": [
+            112,
+            652,
+            240,
+            667
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "text",
+        "text": "We presented Q-GeoMem, a question-guided geometric memory framework for video spatial reasoning. The key idea is to treat memory as an evidence selection mechanism rather than a generic temporal cache: camera-conditioned geometry calibrates frame representations, FGCB preserves recent dense evidence for local viewpoint-dependent reasoning, and SGEB stores compact long-range evidence according to both question relevance and novelty. Experiments on VSI-Bench and VSTI-Bench show that this design improves spatial reasoning over strong geometry-aware and memorybased baselines, particularly on tasks that require retaining temporally distributed observations or reasoning about camera-induced changes. Ablation studies further indicate that camera-feature modulation benefits short-range memory reading, while jointly modeling relevance and novelty is important for writing useful long-range evidence. These findings suggest that effective video spatial reasoning depends not only on stronger visual representations, but also on deciding what spatial evidence should be remembered for the question at hand. ",
+        "bbox": [
+            109,
+            684,
+            883,
+            824
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "text",
+        "text": "References ",
+        "text_level": 1,
+        "bbox": [
+            112,
+            844,
+            209,
+            859
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "ref_text",
+        "text": "[1] Shehreen Azad, Vibhav Vineet, and Yogesh Singh Rawat. HierarQ: Task-aware hierarchical Q-former for enhanced video understanding. In 2025 IEEE/CVF Conference on Computer Vision and Pattern Recognition (CVPR), pages 8545–8556, 2025. ",
+        "bbox": [
+            120,
+            869,
+            883,
+            911
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "header",
+        "text": "A PREPRINT ",
+        "bbox": [
+            802,
+            44,
+            882,
+            55
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "page_number",
+        "text": "9 ",
+        "bbox": [
+            493,
+            935,
+            504,
+            946
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "list",
+        "sub_type": "ref_text",
+        "list_items": [
+            "[2] Shuai Bai, Keqin Chen, Xuejing Liu, Jialin Wang, Wenbin Ge, Sibo Song, Kai Dang, Peng Wang, Shijie Wang, Jun Tang, Humen Zhong, Yuanzhi Zhu, Mingkun Yang, Zhaohai Li, Jianqiang Wan, Pengfei Wang, Wei Ding, Zheren Fu, Yiheng Xu, Jiabo Ye, Xi Zhang, Tianbao Xie, Zesen Cheng, Hang Zhang, Zhibo Yang, Haiyang Xu, and Junyang Lin. Qwen2.5-VL technical report. arXiv:2502.13923, 2025. ",
+            "[3] Shyamal Buch, Arsha Nagrani, Anurag Arnab, and Cordelia Schmid. Flexible frame selection for efficient video reasoning. In 2025 IEEE/CVF Conference on Computer Vision and Pattern Recognition (CVPR), pages 29071–29082, 2025. ",
+            "[4] Yukang Chen, Fuzhao Xue, Dacheng Li, Qinghao Hu, Ligeng Zhu, Xiuyu Li, Yunhao Fang, Haotian Tang, Shang Yang, Zhijian Liu, Ethan He, Hongxu Yin, Pavlo Molchanov, Jan Kautz, Linxi Fan, Yuke Zhu, Yao Lu, and Song Han. LongVILA: Scaling long-context visual language models for long videos. arXiv:2408.10188, 2024. ",
+            "[5] Zhe Chen, Weiyun Wang, Hao Tian, Shenglong Ye, Zhangwei Gao, Erfei Cui, Wenwen Tong, Kongzhi Hu, Jiapeng Luo, Zheng Ma, Ji Ma, Jiaqi Wang, Xiaoyi Dong, Hang Yan, Hewei Guo, Conghui He, Botian Shi, Zhenjiang Jin, Chao Xu, Bin Wang, Xingjian Wei, Wei Li, Wenjian Zhang, Bo Zhang, Pinlong Cai, Licheng Wen, Xiangchao Yan, Min Dou, Lewei Lu, Xizhou Zhu, Tong Lu, Dahua Lin, Yu Qiao, Jifeng Dai, and Wenhai Wang. How far are we to GPT-4V? Closing the gap to commercial multimodal models with open-source suites. arXiv:2404.16821, 2024. ",
+            "[6] Anxhelo Diko, Tinghuai Wang, Wassim Swaileh, Shiyan Sun, and Ioannis Patras. ReWind: Understanding long videos with instructed learnable memory. arXiv:2411.15556, 2025. ",
+            "[7] Zhiwen Fan, Jian Zhang, Renjie Li, Junge Zhang, Runjin Chen, Hezhen Hu, Kevin Wang, Huaizhi Qu, Dilin Wang, Zhicheng Yan, Hongyu Xu, Justin Theiss, Tianlong Chen, Jiachen Li, Zhengzhong Tu, Zhangyang Wang, and Rakesh Ranjan. VLM-3R: Vision-Language Models Augmented with Instruction-Aligned 3D Reconstruction. arXiv:2505.20279, 2025. ",
+            "[8] Kai Hu, Feng Gao, Xiaohan Nie, Peng Zhou, Son Tran, Tal Neiman, Lingyun Wang, Mubarak Shah, Raffay Hamid, Bing Yin, and Trishul Chilimbi. M-LLM based video frame selection for efficient video understanding. In 2025 IEEE/CVF Conference on Computer Vision and Pattern Recognition (CVPR), pages 13702–13712, 2025. ",
+            "[9] Zhenpeng Huang, Xinhao Li, Jiaqi Li, Jing Wang, Xiangyu Zeng, Cheng Liang, Tao Wu, Xi Chen, Liang Li, and Limin Wang. Online video understanding: OVBench and VideoChat-online. In 2025 IEEE/CVF Conference on Computer Vision and Pattern Recognition (CVPR), pages 3328–3338, 2025. ",
+            "[10] Aaron Hurst, Adam Lerer, Adam P Goucher, Adam Perelman, Aditya Ramesh, Aidan Clark, AJ Ostrow, Akila Welihinda, Alan Hayes, Alec Radford, et al. Gpt-4o system card. arXiv preprint arXiv:2410.21276, 2024. ",
+            "[11] Mengdi Jia, Zekun Qi, Shaochen Zhang, Wenyao Zhang, Xinqiang Yu, Jiawei He, He Wang, and Li Yi. OmniSpatial: Towards comprehensive spatial reasoning benchmark for vision language models. arXiv:2506.03135, 2026. ",
+            "[12] Bo Li, Yuanhan Zhang, Dong Guo, Renrui Zhang, Feng Li, Hao Zhang, Kaichen Zhang, Peiyuan Zhang, Yanwei Li, Ziwei Liu, and Chunyuan Li. Llava-onevision: Easy visual task transfer. arXiv preprint arXiv:2408.03326, 2024. ",
+            "[13] Haoyuan Li, Qihang Cao, Tao Tang, Kun Xiang, Zihan Guo, Jianhua Han, Hang Xu, and Xiaodan Liang. Thinking with Geometry: Active Geometry Integration for Spatial Reasoning. arXiv:2602.06037, 2026. ",
+            "[14] Hongxing Li, Dingming Li, Zixuan Wang, Yuchen Yan, Hang Wu, Wenqi Zhang, Yongliang Shen, Weiming Lu, Jun Xiao, and Yueting Zhuang. SpatialLadder: Progressive training for spatial reasoning in vision-language models. arXiv:2510.08531, 2025. ",
+            "[15] Yun Li, Yiming Zhang, Tao Lin, Xiangrui Liu, Wenxiao Cai, Zheng Liu, and Bo Zhao. STI-Bench: Are MLLMs Ready for Precise Spatial-Temporal World Understanding? arXiv:2503.23765, 2025. ",
+            "[16] Ji Lin, Hongxu Yin, Wei Ping, Yao Lu, Pavlo Molchanov, Andrew Tao, Huizi Mao, Jan Kautz, Mohammad Shoeybi, and Song Han. VILA: On pre-training for visual language models. arXiv:2312.07533, 2024. ",
+            "[17] Zuntao Liu, Yi Du, Taimeng Fu, Shaoshu Su, Cherie Ho, and Chen Wang. Vision-Language Memory for Spatial Reasoning. arXiv:2511.20644, 2025. ",
+            "[18] Kun Ouyang, Yuanxin Liu, Haoning Wu, Yi Liu, Hao Zhou, Jie Zhou, Fandong Meng, and Xu Sun. SpaceR: Reinforcing MLLMs in video spatial reasoning. arXiv:2504.01805, 2025. ",
+            "[19] Rui Qian, Xiaoyi Dong, Pan Zhang, Yuhang Zang, Shuangrui Ding, Dahua Lin, and Jiaqi Wang. Streaming long video understanding with large language models. Advances in Neural Information Processing Systems, 37: 119336–119360, 2024. "
+        ],
+        "bbox": [
+            107,
+            85,
+            892,
+            914
+        ],
+        "page_idx": 9
+    },
+    {
+        "type": "header",
+        "text": "A PREPRINT ",
+        "bbox": [
+            802,
+            44,
+            880,
+            55
+        ],
+        "page_idx": 9
+    },
+    {
+        "type": "page_number",
+        "text": "10 ",
+        "bbox": [
+            488,
+            935,
+            506,
+            946
+        ],
+        "page_idx": 9
+    },
+    {
+        "type": "list",
+        "sub_type": "ref_text",
+        "list_items": [
+            "[20] Rui Qian, Shuangrui Ding, Xiaoyi Dong, Pan Zhang, Yuhang Zang, Yuhang Cao, Dahua Lin, and Jiaqi Wang. Dispider: Enabling video LLMs with active real-time interaction via disentangled perception, decision, and reaction. In Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition, pages 24045–24055, 2025. ",
+            "[21] Xi Tang, Jihao Qiu, Lingxi Xie, Yunjie Tian, Jianbin Jiao, and Qixiang Ye. Adaptive Keyframe Sampling for Long Video Understanding. arXiv:2502.21271, 2025. ",
+            "[22] Gemini Team, Petko Georgiev, Ving Ian Lei, Ryan Burnell, Libin Bai, Anmol Gulati, Garrett Tanzer, Damien Vincent, Zhufeng Pan, Shibo Wang, et al. Gemini 1.5: Unlocking multimodal understanding across millions of tokens of context. arXiv preprint arXiv:2403.05530, 2024. ",
+            "[23] Yuxuan Wang, Yiqi Song, Cihang Xie, Yang Liu, and Zilong Zheng. VideoLLaMB: Long Streaming Video Understanding with Recurrent Memory Bridges. arXiv:2409.01071, 2025. ",
+            "[24] Haomiao Xiong, Zongxin Yang, Jiazuo Yu, Yunzhi Zhuge, Lu Zhang, Jiawen Zhu, and Huchuan Lu. Streaming video understanding and multi-round interaction with memory-enhanced knowledge. arXiv:2501.13468, 2025. ",
+            "[25] Jihan Yang, Shusheng Yang, Anjali W. Gupta, Rilyn Han, Li Fei-Fei, and Saining Xie. Thinking in Space: How Multimodal Large Language Models See, Remember, and Recall Spaces. In 2025 IEEE/CVF Conference on Computer Vision and Pattern Recognition (CVPR), pages 10632–10643, 2025. ",
+            "[26] Rui Yang, Ziyu Zhu, Yanwei Li, Jingjia Huang, Shen Yan, Siyuan Zhou, Zhe Liu, Xiangtai Li, Shuangye Li, Wenqian Wang, Yi Lin, and Hengshuang Zhao. Visual spatial tuning. arXiv:2511.05491, 2025. ",
+            "[27] Sihan Yang, Runsen Xu, Yiman Xie, Sizhe Yang, Mo Li, Jingli Lin, Chenming Zhu, Xiaochen Chen, Haodong Duan, Xiangyu Yue, Dahua Lin, Tai Wang, and Jiangmiao Pang. MMSI-Bench: A Benchmark for Multi-Image Spatial Intelligence. arXiv:2505.23764, 2025. ",
+            "[28] Haoji Zhang, Yiqin Wang, Yansong Tang, Yong Liu, Jiashi Feng, and Xiaojie Jin. Flash-VStream: Efficient real-time understanding for long video streams. In Proceedings of the IEEE/CVF International Conference on Computer Vision, pages 21059–21069, 2025. ",
+            "[29] Peiyuan Zhang, Kaichen Zhang, Bo Li, Guangtao Zeng, Jingkang Yang, Yuanhan Zhang, Ziyue Wang, Haoran Tan, Chunyuan Li, and Ziwei Liu. Long context transfer from language to vision. arXiv:2406.16852, 2024. ",
+            "[30] Yuanhan Zhang, Bo Li, Haotian Liu, Yong Jae Lee, Liangke Gui, Di Fu, Jiashi Feng, Ziwei Liu, and Chunyuan Li. Llava-next: A strong zero-shot video understanding model. LLaVA Blog, https://llava-vl.github.io/ blog/2024-04-30-llava-next-video, 2024. ",
+            "[31] Ruosen Zhao, Zhikang Zhang, Jialei Xu, Jiahao Chang, Dong Chen, Lingyun Li, Weijian Sun, and Zizhuang Wei. SpaceMind: Camera-Guided Modality Fusion for Spatial Reasoning in Vision-Language Models. arXiv:2511.23075, 2025. ",
+            "[32] Duo Zheng, Shijia Huang, Yanyang Li, and Liwei Wang. Learning from Videos for 3D World: Enhancing MLLMs with 3D Vision Geometry Priors. arXiv:2505.24625, 2025. ",
+            "[33] Jinguo Zhu, Weiyun Wang, Zhe Chen, Zhaoyang Liu, Shenglong Ye, Lixin Gu, Hao Tian, Yuchen Duan, Weijie Su, Jie Shao, et al. Internvl3: Exploring advanced training and test-time recipes for open-source multimodal models. arXiv preprint arXiv:2504.10479, 2025. "
+        ],
+        "bbox": [
+            107,
+            85,
+            892,
+            672
+        ],
+        "page_idx": 10
+    },
+    {
+        "type": "header",
+        "text": "A PREPRINT ",
+        "bbox": [
+            802,
+            44,
+            882,
+            55
+        ],
+        "page_idx": 10
+    },
+    {
+        "type": "page_number",
+        "text": "11 ",
+        "bbox": [
+            488,
+            935,
+            506,
+            946
+        ],
+        "page_idx": 10
+    }
+]

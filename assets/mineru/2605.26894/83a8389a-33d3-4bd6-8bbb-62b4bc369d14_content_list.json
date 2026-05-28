@@ -1,0 +1,2746 @@
+[
+    {
+        "type": "text",
+        "text": "SIMPC: Learning Self-Induced Mirror-Point Consistency for Unsupervised Point Cloud Denoising ",
+        "text_level": 1,
+        "bbox": [
+            194,
+            109,
+            779,
+            156
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "Chengwei Zhang 1 Xueyi Zhang 2 Tao Jiang 1 Xinhao Xu 1 Wenjie Li 1 Fubo Zhang 1 Longyong Chen 1 ",
+        "bbox": [
+            111,
+            198,
+            854,
+            215
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "Abstract ",
+        "text_level": 1,
+        "bbox": [
+            241,
+            242,
+            320,
+            258
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "In point clouds, noise directly perturbs point coordinates that encode both spatial location and geometry, making one-to-one correspondence construction more challenging than in images. Existing methods impose statistical mappings across noisy variants via noise or optimal transport, but suffer from correspondence ambiguity. In this work, we propose Self-Induced Mirror-Point Consistency (SIMPC) to learn deterministic correspondences between points and the underlying surface in an unsupervised manner. For each noisy point, SIMPC generates a mirror-point on the opposite side of the underlying surface, guided by geometric priors during the denoising process. By encouraging consistency between the denoising targets of the original point and its mirror counterpart, SIMPC effectively localizes the position of underlying surface. Extensive experiments on synthetic and real-world datasets demonstrate that SIMPC significantly outperforms state-of-theart unsupervised methods and surpasses several strong supervised counterparts. ",
+        "bbox": [
+            117,
+            268,
+            444,
+            602
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "1. Introduction ",
+        "text_level": 1,
+        "bbox": [
+            86,
+            633,
+            217,
+            650
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "Point clouds are a fundamental 3D representation but are often croupted by noise in real-world acquisition, which degrades the performance of downstream tasks such as surface reconstruction and semantic understanding (Huang et al., 2024; Ren et al., 2022). Consequently, point cloud denoising is widely adopted as a preprocessing step to recover geometric structures and improve the robustness of representation extraction (Li et al., 2024; Sun et al., 2023). ",
+        "bbox": [
+            84,
+            660,
+            475,
+            781
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "1National Key Laboratory of Microwave Imaging, Aerospace Information Research Institute, Chinese Academy of Sciences, Beijing, China 2School of Computing, National University of Singapore, Singapore. Correspondence to: Longyong Chen <chenly@aircas.ac.cn>. ",
+        "bbox": [
+            84,
+            789,
+            473,
+            854
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "Proceedings of the $\\it 4 3 ^ { r d }$ International Conference on Machine Learning, Seoul, South Korea. PMLR 306, 2026. Copyright 2026 by the author(s). ",
+        "bbox": [
+            84,
+            864,
+            473,
+            905
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "Despite notable progress, supervised point cloud denoising methods heavily depend on paired noisy-clean data, which are commonly synthesized from CAD models. Building such datasets requires substantial manual effort to increase training data diversity, thereby ensuring generalization across different geometries and scenes (Chen et al., 2022a). By contrast, modern LiDAR systems can continuously acquire large-scale noisy point clouds from diverse environments. This practical advantage naturally motivates unsupervised point cloud denoising, which seeks to learn denoising without relying on paired supervision. ",
+        "bbox": [
+            496,
+            243,
+            887,
+            411
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "For 2D images, as in Fig 1(a), multiple corrupted observations admit pixel-wise correspondences, such that noisy values at the same pixel location across different observations can be regarded as random realizations drawn from a distribution centered at a clean pixel value. In contrast, point clouds do not admit fixed spatial indexing, and noise perturbs point coordinates that encode both location and geometry, breaking correspondence consistency across noisy observations. Hence, the pixel-wise assumptions of unsupervised image denoising do not apply to point clouds. ",
+        "bbox": [
+            496,
+            417,
+            888,
+            569
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "Recent unsupervised point cloud denoising methods leverage statistical mappings across noisy variants and can be broadly categorized into: (1) Noise-based methods (e.g., Noise4Denoise (Wang et al., 2024b), Noise2Score3D (Wei et al., 2025)), as in Fig 1(b), generate noisier variants by injecting random noise and learn an inverse noise mapping to regress toward a cleaner state. However, the induced correspondences are purely driven by stochastic noise and are not explicitly pointing to the target surface. (2) EMD-based methods (e.g., NoiseMap (Ma et al., 2023), U-CAN (Zhou et al., 2025a)), as in Fig 1(c), employ Earth Mover’s Distance to impose optimal transport between denoised outputs and noisy variants, yielding more structured correspondences than noise-based methods. Nevertheless, such transport operates at the point-set distribution level and does not explicitly encourage point-level consistency with target surface. Consequently, the resulting mappings suffer from correspondence ambiguity, where points with one-to-one correspondence across noisy variants are not guaranteed to represent different observations of the same target surface. ",
+        "bbox": [
+            496,
+            575,
+            888,
+            878
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "To address this challenge, we propose Self-Induced Mirror-",
+        "bbox": [
+            496,
+            885,
+            887,
+            901
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "aside_text",
+        "text": "arXiv:2605.26894v1 [cs.CV] 26 May 2026 ",
+        "bbox": [
+            22,
+            272,
+            60,
+            724
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "page_number",
+        "text": "1 ",
+        "bbox": [
+            480,
+            922,
+            491,
+            934
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "image",
+        "img_path": "images/795800e64ea7908f275ca01847e0e302d1aee686a7f25353ceec4724661e62a3.jpg",
+        "image_caption": [
+            "Figure 1. An illustration of the differences between image and point cloud denoising. Points w/ and w/o darker outlines indicate different noisy variants. For images, pixel-based indexing in (a) enables establishing correspondences between noisy variants associated with the same ground truth. Existing point cloud denoising methods, such as (b) Noise-based and (c) EMD-based approaches, establish ambiguous correspondences. By contrast, our proposed (d) SIMPC extracts geometric priors during the denoising process to generate mirror-points with deterministic correspondences, and further localizes the position of the underlying surface by learning consistent denoising targets. "
+        ],
+        "image_footnote": [],
+        "content": "```mermaid\ngraph TD\n    subgraph Image Denoising\n        A1[\"Pixel-Based\"]\n        A2[\"Image Denoising\"]\n        A3[\"Image Denoising\"]\n        A4[\"Image Denoising\"]\n        A5[\"Image Denoising\"]\n    end\n\n    subgraph Point Cloud Denoising\n        B1[\"Noise-Based\"]\n        B2[\"EMD-Based\"]\n        B3[\"EMD-Based\"]\n        B4[\"SIMPC (Ours)\"]\n    end\n\n    subgraph SIMPC (Ours)\n        C1[\"Noisy Pixel/Point\"]\n        C2[\"Graph Edge\"]\n        C3[\"Extended Path\"]\n        C4[\"Denoised Pixel/Point\"]\n        C5[\"Denoising Path\"]\n        C6[\"Additional Noise\"]\n        C7[\"Ambiguous Correspondence\"]\n        C8[\"Deterministic Correspondence\"]\n    end\n\n    style Image Denoising fill:#f9f,stroke:#333\n    style Point Cloud Denoising fill:#bbf,stroke:#333\n```",
+        "sub_type": "flowchart",
+        "bbox": [
+            91,
+            83,
+            883,
+            256
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "text",
+        "text": "Point Consistency (SIMPC), a novel unsupervised framework that learns deterministic one-to-one correspondences. The key insight of SIMPC is to establish correspondences that are self-induced from a single noisy point, as in Fig 1(d), rather than matching from independently sampled noisy observations. Specifically, SIMPC introduces a Mirror-Point Generation Module (MPGM) to extract geometric priors during denoising, which encode a coarse localization of the target surface. Based on these priors, a mirror-point is generated on the opposite side of the target surface, forming a deterministic correspondence between points associated with the same target surface, while exhibiting different neighboring noise states. We further introduce a Mirror-Point Consistency Loss (MPCL) to encourage consistency between the denoising targets of the original point and its mirror counterpart, enabling SIMPC to produce more accurate and stable denoising outputs. Extensive experiments on synthetic datasets with both Gaussian and non-Gaussian noise, as well as on more challenging real-world noisy datasets, demonstrate that SIMPC consistently outperforms state-ofthe-art unsupervised point cloud denoising methods and even surpasses several strong supervised counterparts. ",
+        "bbox": [
+            83,
+            335,
+            478,
+            667
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "text",
+        "text": "Our main contributions are summarized as follows: ",
+        "bbox": [
+            84,
+            675,
+            426,
+            690
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "list",
+        "sub_type": "text",
+        "list_items": [
+            "• We propose SIMPC, a novel unsupervised point cloud denoising framework that establishes deterministic oneto-one correspondences between noisy points associated with the same target surface. ",
+            "• We design MPGM to extract geometric priors during denoising for generating self-induced mirror counterparts of original points, and introduce MPCL to encourage consistent denoising targets between the point pairs. ",
+            "• Extensive experiments demonstrate that SIMPC achieves state-of-the-art performance among unsupervised methods on both synthetic and real-world datasets, and even surpasses several strong supervised approaches. "
+        ],
+        "bbox": [
+            91,
+            705,
+            475,
+            906
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "text",
+        "text": "2. Related Work ",
+        "text_level": 1,
+        "bbox": [
+            496,
+            334,
+            638,
+            349
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "text",
+        "text": "2.1. Supervised Point Cloud Denoising ",
+        "text_level": 1,
+        "bbox": [
+            496,
+            359,
+            769,
+            376
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "text",
+        "text": "Supervised methods rely on clean point clouds to learn denoising, thereby achieving high-quality denoising results. In practice, existing approaches either denoise the entire point cloud by treating points independently (de Silva Edirimuni et al., 2023a; Rakotosaona et al., 2020; Wang et al., 2024a; Wei et al., 2024; Zhang et al., 2020), or split the input into local patches (de Silva Edirimuni et al., 2023b; 2024; Guo et al., 2025; Luo & Hu, 2021) for parallel processing. Within these frameworks, denoising can be realized through point resampling (Li & Sheng, 2023; Luo & Hu, 2020; Wang et al., 2023), displacement prediction (de Silva Edirimuni et al., 2023b; Luo & Hu, 2021), or direct coordinate regression (Mao et al., 2022; 2024). Correspondingly, supervision signals are exploited in various forms, including constraining denoising vectors (Chen et al., 2024; de Silva Edirimuni et al., 2023b; Liu et al., 2025; Vogel et al., 2025; Zhou et al., 2025b), or directly minimizing similarity metrics between denoised and clean point clouds, e.g., the Chamfer Distance (Chen et al., 2022b; Guo et al., 2025; Zhang et al., 2024) and the Earth Mover’s Distance (Luo & Hu, 2020; Mao et al., 2022; 2024). Moreover, iterative denoising is a prevalent paradigm for progressively removing residual noise, leading to more convergent results. Specifically, some approaches stack multiple denoising blocks and feed the output into subsequent iterations (Chen et al., 2024; de Silva Edirimuni et al., 2023b). Building upon this, alternative approaches further model the denoising process in a latent space to achieve more stable denoising (Wei et al., 2024; Zhang et al., 2024). Despite these advances, supervised methods exhibit significant performance degradation under limited training data (Chen et al., 2022a). ",
+        "bbox": [
+            495,
+            383,
+            888,
+            852
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "header",
+        "text": "SIMPC: Learning Self-Induced Mirror-Point Consistency for Unsupervised Point Cloud Denoising ",
+        "bbox": [
+            174,
+            56,
+            797,
+            70
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "page_number",
+        "text": "2 ",
+        "bbox": [
+            480,
+            922,
+            491,
+            934
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "text",
+        "text": "2.2. Unsupervised Point Cloud Denoising ",
+        "text_level": 1,
+        "bbox": [
+            84,
+            84,
+            375,
+            101
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "Unsupervised point cloud denoising is primarily inspired by advances in unsupervised image denoising, which eliminate the need for clean supervision by exploiting statistical properties of noise (Batson & Royer, 2019; Huang et al., 2021; Krull et al., 2019; Lehtinen et al., 2018). In an early stage, several attempts leverage density-based priors to learn the position of the target surface (Hermosilla et al., 2019; Luo & Hu, 2020; 2021). However, the stability of density estimation is fundamentally hindered by the sparsity and discreteness of point clouds. As a result, recent methods increasingly focus on learning statistical mappings across noisy variants. Among them, noise-based approaches, such as Noise4Denoise (Wang et al., 2024b) and Noise2Score3D (Wei et al., 2025), generate noisier variants by injecting random noise and learn inverse denoising mappings toward cleaner states. During inference, these methods extend the predicted denoising vectors to approach the target surface by either fixed (Moran et al., 2020) or target-adaptive (Kim & Ye, 2021) scaling. Nevertheless, such noise-driven extrapolation relies on assumptions about noise intensity or distribution, which are often unavailable in real-world point clouds, leading to unstable denoising behavior and degraded performance (Huang et al., 2021). Beyond noise-based strategies, another line of research explores optimal transport to align noisy observations with denoised outputs. Specifically, NoiseMap (Ma et al., 2023; Zhou et al., 2024) fits per-instance signed distance functions using EMD-based local correspondences, but suffers from severe overfitting, high computational cost, and limited generalization due to instance-wise optimization. Furthermore, U-CAN (Zhou et al., 2025a) encourages consistency across denoised outputs from different noisy inputs, yet still struggles to accurately localize the underlying surface. ",
+        "bbox": [
+            84,
+            108,
+            478,
+            609
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "3. One-to-One Point Correspondence ",
+        "text_level": 1,
+        "bbox": [
+            84,
+            626,
+            401,
+            643
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "Given a 3D shape or scene S, we consider multiple corrupted observations $\\mathcal { X } = \\{ \\mathcal { X } ^ { m } \\in \\mathbb { R } ^ { N \\times 3 } \\ | \\ m \\in [ 1 , M ] \\}$ , sampled from S under a noise level σ, where M denotes the number of observations and N is the number of points. In this setting, existing methods typically establish oneto-one point correspondences across different observations to enable unsupervised point cloud denoising. According to the mechanism used to construct such correspondences, these methods can be broadly categorized into two types: Noise-based and EMD-based methods. ",
+        "bbox": [
+            84,
+            652,
+            477,
+            801
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "3.1. Noise-based methods ",
+        "text_level": 1,
+        "bbox": [
+            84,
+            819,
+            266,
+            834
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "Noise-based methods construct a noisier point cloud by injecting an additional random noise vector u $\\sim \\mathcal { N } ( \\mathbf { 0 } , \\Delta \\sigma )$ into a noisy point cloud $\\mathcal { X } _ { a } \\in \\mathcal { X } .$ , yielding $\\hat { { \\mathscr X } } _ { a } = { \\mathscr X } _ { a } + { \\mathbf u }$ , whose noise level is increased accordingly. Subsequently, the denoiser parameters θ are optimized to predict the inverse noise vector −u as: ",
+        "bbox": [
+            84,
+            843,
+            477,
+            905
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "",
+        "bbox": [
+            496,
+            84,
+            888,
+            113
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "equation",
+        "text": "$$\n\\min _ {\\theta} \\operatorname{MSE} \\left(D (\\hat {\\mathcal {X}} _ {a}), - \\mathbf {u}\\right), \\tag {1}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            599,
+            123,
+            885,
+            150
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "where D(·) produces a point-wise denoising vector, and $\\mathrm { M S E } ( \\cdot , \\cdot )$ denotes the mean squared error. Through the one-to-one correspondence established by the inverse noise vector, the model learns a statistical mapping from a highernoise state to a lower-noise state. ",
+        "bbox": [
+            496,
+            160,
+            887,
+            234
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "3.2. EMD-based methods ",
+        "text_level": 1,
+        "bbox": [
+            496,
+            252,
+            678,
+            266
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "In contrast, EMD-based methods introduce denoised point clouds as intermediate states and establish point-wise correspondences across different noisy observations by minimizing the Earth Mover’s Distance (EMD). Specifically, given two noisy point clouds $\\mathscr { X } _ { a } , \\mathscr { X } _ { b } \\in \\mathscr { X }$ , the optimization objective is formulated as: ",
+        "bbox": [
+            495,
+            276,
+            888,
+            367
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "equation",
+        "text": "$$\n\\begin{array}{l} \\min _ {\\theta} \\left(\\underbrace {\\operatorname{EMD} \\left(\\mathcal {X} _ {a} + D \\left(\\mathcal {X} _ {a}\\right) , \\mathcal {X} _ {b}\\right) + \\operatorname{EMD} \\left(\\mathcal {X} _ {b} + D \\left(\\mathcal {X} _ {b}\\right) , \\mathcal {X} _ {a}\\right)} _ {\\text { Noise   -   to   -   Noise   Matching }} + \\right. \\\\ \\underbrace {\\operatorname{EMD} \\left(\\mathcal {X} _ {a} + D \\left(\\mathcal {X} _ {a}\\right) , \\mathcal {X} _ {b} + D \\left(\\mathcal {X} _ {b}\\right)\\right)} _ {\\text { Denoising   Consistency }}), \\tag {2} \\\\ \\end{array}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            511,
+            377,
+            887,
+            470
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "where EMD(·, ·) computes the optimal transport cost between two point clouds. The Noise-to-Noise Matching term constrains the distribution of denoised point clouds and mitigates point collapse (Ma et al., 2023), while the Denoising Consistency term encourages consistent denoising results across different noisy observations (Zhou et al., 2025a). ",
+        "bbox": [
+            496,
+            472,
+            888,
+            564
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "4. Self-Induced Mirror-Point Consistency ",
+        "text_level": 1,
+        "bbox": [
+            496,
+            583,
+            846,
+            599
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "As illustrated in Fig. 2, our method follows the iterative denoising paradigm adopted in prior works (de Silva Edirimuni et al., 2023b; Wei et al., 2024; Zhang et al., 2024; Zhou et al., 2025a). Following prior work (Zhou et al., 2025a), we select two noisy variants as Xa, Xb ∈ X . We take X 0 ∈ RN×3 $\\mathcal { X } _ { a } , \\mathcal { X } _ { b } \\in \\mathcal { X }$ $\\mathcal { X } ^ { 0 } \\in \\mathbb { R } ^ { N \\times 3 }$ as the initial input to the network, where $\\mathcal { X } ^ { 0 } \\in \\{ \\mathcal { X } _ { a } , \\mathcal { X } _ { b } \\}$ . Each noisy variant is processed independently. ",
+        "bbox": [
+            495,
+            608,
+            888,
+            715
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "4.1. Encoder ",
+        "text_level": 1,
+        "bbox": [
+            496,
+            731,
+            589,
+            744
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "We first employ an encoder to extract initial point-wise features from the input noisy point cloud $\\mathcal { X } ^ { 0 } = \\{ \\boldsymbol { x } _ { i } ^ { 0 } \\} _ { i = 1 } ^ { N }$ . As illustrated on the left side of Fig. 2, the encoder is implemented as a T -layer DGCNN (de Silva Edirimuni et al., 2024; Wang et al., 2019) with $T = 3$ , equipped with skip connections across graph convolution layers. At the t-th graph convolution layer, we denote the point-wise feature set as $G ^ { t } = \\{ g _ { i } ^ { t } \\} _ { i = 1 } ^ { N }$ . We initialize the features with point coordinates, i.e., $G ^ { 0 } = \\mathcal { X } ^ { 0 }$ , and progressively lift the feature dimension through the encoder. Given the point-wise feature $g _ { i } ^ { t } ,$ , we construct a dynamic neighborhood in the feature space as $\\mathcal { N } _ { i } ^ { t } = \\mathrm { K N N } ( g _ { i } ^ { t } , G ^ { t } , k )$ with $k = 3 2$ , which contains the k nearest neighbors of point i. We then update the point-wise feature over the dynamic graph: ",
+        "bbox": [
+            495,
+            753,
+            888,
+            906
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "header",
+        "text": "SIMPC: Learning Self-Induced Mirror-Point Consistency for Unsupervised Point Cloud Denoising ",
+        "bbox": [
+            174,
+            56,
+            797,
+            71
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "page_number",
+        "text": "3 ",
+        "bbox": [
+            480,
+            922,
+            491,
+            934
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "image",
+        "img_path": "images/856cbdc6597c8656d5cfe3521d8a3491723d6f78691cb212e2d2f27ae220d716.jpg",
+        "image_caption": [
+            "Figure 2. An illustration of the proposed Self-Induced Mirror-Point Consistency (SIMPC) framework. Given two noisy point clouds, we perform iterative denoising using shared denoiser blocks. Unlike previous approaches that establish relationships across noisy variants through noise injection or EMD-based alignment, we employ the Chamfer Distance to provide a basic similarity constraint between variants. Furthermore, within each variant, we introduce a Mirror-Point Generation Module (MPGM) and Mirror-Point Consistency Loss (MPCL) to learn deterministic one-to-one correspondences. "
+        ],
+        "image_footnote": [],
+        "content": "```mermaid\ngraph TD\n    A[\"Noisy Point Cloud: X⁰\"] --> B[\"Encoder\"]\n    B --> C[\"Denoised Point Cloud: X⁰\"]\n    D[\"Noisy Point Cloud: X⁰\"] --> E[\"Encoder\"]\n    E --> F[\"Denoised Point Cloud: X⁰\"]\n    G[\"Demodates: DGCNN\"] --> H[\"DGCNN\"]\n    H --> I[\"C\"]\n    I --> J[\"DGCNN\"]\n    K[\"Demodates: Denoiser Block\"] --> L[\"Denoiser Block\"]\n    L --> M[\"MPGM\"]\n    M --> N[\"MSE\"]\n    N --> O[\"L_MPC^L\"]\n    O --> P[\"MSE\"]\n    Q[\"CD\"] <--> R[\"L_SR^1\"]\n    R <--> S[\"CD\"]\n    S --> T[\"CD\"]\n    T --> U[\"CD\"]\n    U --> V[\"MPGM\"]\n    V --> W[\"MSE\"]\n    W --> X[\"L_MPC^L\"]\n    X --> Y[\"MSE\"]\n    Z[\"Self-Induced Mirror-Point Consistency\"] --> AA[\"Demodates: Denoiser Block\"]\n    AA --> AB[\"Denoised Point Cloud: X⁰\"]\n    AC[\"Demodes: Denoiser Block\"] --> AD[\"Denoiser Block\"]\n    AD --> AE[\"MPGM\"]\n    AE --> AF[\"MSE\"]\n    AF --> AG[\"L_MPC^L\"]\n    AG --> AH[\"MSE\"]\n    AI[\"Demodes: Denoiser Block\"] --> AJ[\"Denoiser Block\"]\n    AJ --> AK[\"Denoised Point Cloud: X⁰\"]\n```",
+        "sub_type": "flowchart",
+        "bbox": [
+            94,
+            80,
+            875,
+            300
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "text",
+        "text": "",
+        "bbox": [
+            84,
+            397,
+            475,
+            458
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "equation",
+        "text": "$$\ng _ {i} ^ {t + 1} = h (g _ {i} ^ {t}) + \\sum_ {j \\in \\mathcal {N} _ {i} ^ {t}} h \\big ([ g _ {i} ^ {t} \\parallel (g _ {j} ^ {t} - g _ {i} ^ {t}) ] \\big), \\tag {3}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            142,
+            469,
+            473,
+            503
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "text",
+        "text": "where $[ \\cdot \\parallel \\cdot ]$ denotes feature concatenation and $h ( \\cdot )$ is parameterized by an MLP. After T layers, we obtain the encoded point-wise features $U ^ { 0 } = \\{ u _ { i } ^ { 0 } \\bar  \\} _ { i = 1 } ^ { N } \\in \\mathbb { R } ^ { N \\times C }$ , where we set $\\bar { U } ^ { 0 } = G ^ { T }$ , u0i is the initial feature of point i, and $C = 2 5 6$ is the feature dimension. ",
+        "bbox": [
+            84,
+            516,
+            475,
+            590
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "text",
+        "text": "4.2. Denoiser Block ",
+        "text_level": 1,
+        "bbox": [
+            84,
+            608,
+            225,
+            622
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "text",
+        "text": "Point Self Attention. We first apply a Point Self-Attention (PSA) layer (Pan et al., 2021) to refine point-wise features and enhance local geometric perception. At the l-th denoiser block, given the point-wise feature $u _ { i } \\in U ^ { l }$ and its corresponding coordinate $x _ { i } \\in \\mathcal { X } ^ { l }$ , we construct a neighborhood index set as $\\hat { \\mathcal { N } } _ { i } = \\mathrm { K N N } ( x _ { i } , \\mathcal { X } ^ { l } , k )$ , which contains the k nearest neighbors of point i and their associated features $u _ { j } , ~ j \\in \\hat { \\mathcal { N } } _ { i }$ . The attention weights are computed as: ",
+        "bbox": [
+            84,
+            631,
+            475,
+            753
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "equation",
+        "text": "$$\n\\alpha_ {i j} = h \\left(\\left[ h \\left(u _ {i}\\right), \\left\\{h \\left(u _ {j}\\right) \\right\\} _ {j \\in \\hat {\\mathcal {N}} _ {i}} \\right]\\right), \\tag {4}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            169,
+            763,
+            473,
+            792
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "text",
+        "text": "and the aggregated feature is obtained by: ",
+        "bbox": [
+            84,
+            800,
+            362,
+            816
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "equation",
+        "text": "$$\nf _ {i} = \\sum_ {j \\in \\hat {\\mathcal {N}} _ {i}} \\alpha_ {i j} \\odot h (u _ {j}), \\tag {5}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            200,
+            827,
+            473,
+            862
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "text",
+        "text": "where $F ^ { l } = \\{ f _ { i } \\} _ { i = 1 } ^ { N } \\in \\mathbb { R } ^ { N \\times C }$ denotes the refined feature at the l-th block, and ⊙ indicates element-wise multiplication. The above process can be compactly formalized as: ",
+        "bbox": [
+            84,
+            875,
+            475,
+            906
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "text",
+        "text": "",
+        "bbox": [
+            496,
+            397,
+            838,
+            412
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "equation",
+        "text": "$$\nf _ {i} = \\mathrm{PSA} \\left(u _ {i}, \\left\\{u _ {j} \\right\\} _ {j \\in \\hat {\\mathcal {N}} _ {i}}\\right). \\tag {6}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            602,
+            421,
+            885,
+            440
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "text",
+        "text": "The output feature $F ^ { l }$ of the PSA layer in the current denoiser block is then fed as the input feature of the next denoiser block, i.e., $U ^ { l + 1 } = F ^ { l }$ . ",
+        "bbox": [
+            496,
+            449,
+            887,
+            494
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "text",
+        "text": "Decoder. At the l-th denoiser block, the decoder takes the point-wise feature $f _ { i }$ as input. It consists of a sequence of fully connected layers interleaved with ReLU activations. The decoder outputs a point-wise denoising vector as: ",
+        "bbox": [
+            496,
+            502,
+            887,
+            563
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "equation",
+        "text": "$$\nd _ {i} = \\mathrm{Dec} (f _ {i}). \\tag {7}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            640,
+            571,
+            885,
+            588
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "text",
+        "text": "where $d _ { i } \\in \\mathbb { R } ^ { 3 }$ denotes the denoising vector, which is normalized by a tanh activation and used to update the point coordinate at the current block. ",
+        "bbox": [
+            496,
+            597,
+            887,
+            641
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "text",
+        "text": "Denoising Process. At the l-th denoiser block, the point coordinates are further refined based on the output of the previous block X l−1 = {xl−1i }Ni=1 $\\mathcal { X } ^ { l - 1 } = \\{ x _ { i } ^ { l - 1 } \\} _ { i = 1 } ^ { N }$ as: ",
+        "bbox": [
+            496,
+            650,
+            885,
+            696
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "equation",
+        "text": "$$\nx _ {i} ^ {l} = x _ {i} ^ {l - 1} + d _ {i} ^ {l}. \\tag {8}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            635,
+            702,
+            885,
+            720
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "text",
+        "text": "By iteratively applying the above denoising blocks, we obtain a point cloud sequence $\\mathcal { D } = \\{ \\mathcal { X } ^ { 0 } , \\mathcal { X } ^ { 1 } , \\ldots , \\mathcal { X } ^ { L } \\}$ , where L denotes the number of denoiser blocks, which is set to $L = 2$ in our implementation to balance computational cost and denoising performance. Here, $\\mathcal { X } ^ { 0 }$ is the original noisy point cloud, and $\\mathcal { X } ^ { l } , 1 \\le l \\le L$ , is the denoised point cloud at the l-th stage. ",
+        "bbox": [
+            496,
+            729,
+            887,
+            835
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "text",
+        "text": "4.3. Mirror-Point Generation Module ",
+        "text_level": 1,
+        "bbox": [
+            496,
+            851,
+            763,
+            864
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "text",
+        "text": "To establish deterministic one-to-one correspondences, we introduce a Mirror-Point Generation Module (MPGM), whose architecture is illustrated in Fig. 3. Instead of constructing correspondences across different noisy observations, MPGM operates on each noisy point individually and generates self-induced mirror counterparts guided by the denoising process. At the l-th denoiser block, we treat $x _ { i }$ as a noisy seed point together with its corresponding denoising vector $d _ { i } ,$ , and first obtain a normally denoised seed point as $\\hat { x } _ { i } = x _ { i } + w _ { 1 } d _ { i }$ , where $w _ { 1 } = 1$ controls the standard denoising strength. To construct a mirror counterpart on the opposite side of the underlying surface, we further extend the denoising vector with a larger scaling factor w2 > w1 and obtain the generated mirror-point as $\\tilde { x } _ { i } = x _ { i } + w _ { 2 } d _ { i } ,$ where we set $w _ { 2 } = 2$ to ensure geometric symmetry. In the appendix, we provide a theoretical analysis of the deterministic and geometric symmetry design. This generated mirror-point ${ \\tilde { x } } _ { i }$ is expected to lie on the opposite side of the underlying surface and thus serves as the mirror input of $x _ { i } .$ Based on the new coordinate ${ \\tilde { x } } _ { i } .$ , we recompute its local neighborhood in the original noisy point cloud (excluding the original noisy point $x _ { i } )$ as $\\tilde { \\mathcal { N } } _ { i } = \\mathrm { \\bar { K N N } } ( \\tilde { x } _ { i } , \\mathcal { X } ^ { l } \\setminus \\{ x _ { i } \\} , k )$ . Using the same point-wise feature $u _ { i }$ and the features of its mirror neighbors $\\{ u _ { j } \\} _ { j \\in \\tilde { \\mathcal { N } } _ { i } }$ , we apply the PSA operator to obtain the refined mirror feature: ",
+        "bbox": [
+            496,
+            875,
+            887,
+            905
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "header",
+        "text": "SIMPC: Learning Self-Induced Mirror-Point Consistency for Unsupervised Point Cloud Denoising ",
+        "bbox": [
+            174,
+            56,
+            797,
+            70
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "page_number",
+        "text": "4 ",
+        "bbox": [
+            480,
+            922,
+            491,
+            934
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "image",
+        "img_path": "images/a24451c6269486c66f85062dcb39c9cea7686b25fae97fa03de2c31df3f8df2c.jpg",
+        "image_caption": [
+            "Figure 3. An illustration of the Mirror-Point Generation Module. Given a noisy and denoised seed point $x _ { i }$ and $\\hat { x } _ { i }$ , we extend the denoising vector to generate a mirror-point $\\tilde { x } _ { i }$ on the opposite side of the underlying surface. We then apply PSA and the decoder to perform denoising under the new neighborhood and obtain the denoised mirror-point $\\textstyle { \\bar { x } } _ { i }$ . Finally, for the two points $\\hat { x } _ { i }$ and $\\bar { x } _ { i }$ with deterministic correspondence, we encourage consistency between them to facilitate more accurate learning of the underlying surface. "
+        ],
+        "image_footnote": [],
+        "content": "```mermaid\ngraph TD\n    subgraph_Upper_Denoise_Denoise_Denoise_Block[\"Denoiser Block\"]\n        A1[\"Noisy Seed Point: x_i\"] --> B1[\"d_i\"]\n        B1 --> C1[\"×\"]\n        C1 --> D1[\"+\"]\n        D1 --> E1[\"Denoised Seed Point: x̂_i\"]\n        C1 --> F1[\"×\"]\n        F1 --> G1[\"+\"]\n        G1 --> H1[\"Denoised Mirror-Point: x̂_i\"]\n        C1 --> I1[\"w_1\"]\n        I1 --> J1[\"×\"]\n        J1 --> K1[\"+\"]\n        K1 --> L1[\"Denoised Seed Point: x̂_i\"]\n        C1 --> M1[\"w_2\"]\n        M1 --> N1[\"×\"]\n        N1 --> O1[\"+\"]\n        O1 --> P1[\"Denoised Mirror-Point: x̂_i\"]\n    end\n\n    subgraph_Lower_Denoise_Denoise_Decoder[\"PSA\"]\n        P1 --> Q[\"Decoder\"]\n        Q --> R[\"d̃_i\"]\n        R --> S[\"+\"]\n        S --> T[\"Denoised Mirror-Point: x̂_i\"]\n    end\n\n    style Upper_Denoise_Denoise_Block fill:#f9f,stroke:#333\n    style Lower_Denoise_Denoise_Decoder fill:#bbf,stroke:#333\n    style Upper_Denoise_Denoise_Block fill:#dfd,stroke:#333\n    style Lower_Denoise_Denoise_Decoder fill:#dfd,stroke:#333\n```",
+        "sub_type": "flowchart",
+        "bbox": [
+            91,
+            84,
+            467,
+            251
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "",
+        "bbox": [
+            84,
+            383,
+            475,
+            731
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "equation",
+        "text": "$$\n\\tilde {f} _ {i} = \\mathrm{PSA} \\big ([ u _ {i} \\tilde {x} _ {i} ], \\{[ u _ {j}, x _ {j} ] \\} _ {j \\in \\tilde {\\mathcal {N}} _ {i}} \\big). \\tag {9}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            161,
+            737,
+            473,
+            758
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "The refined mirror feature $\\tilde { f } _ { i }$ is then fed into the decoder to predict the denoising vector of the mirror-point: ",
+        "bbox": [
+            84,
+            766,
+            473,
+            797
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "equation",
+        "text": "$$\n\\tilde {d} _ {i} = \\mathrm{Dec} (\\tilde {f} _ {i}), \\tag {10}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            230,
+            803,
+            473,
+            823
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "and the final denoised mirror-point is obtained as $\\bar { x } _ { i } = \\tilde { x } _ { i } +$ $\\ddot { d } _ { i }$ . Through the above procedure, we obtain two denoised points ${ \\hat { x } } _ { i }$ and $\\bar { x } _ { i }$ that are self-induced from the same noisy observation and are deterministically associated with the same underlying surface location. ",
+        "bbox": [
+            84,
+            829,
+            475,
+            906
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "4.4. Mirror-Point Consistency Loss ",
+        "text_level": 1,
+        "bbox": [
+            496,
+            84,
+            746,
+            99
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "We then calculate the Mirror-Point Consistency Loss (MPCL) between the denoised seed point ${ \\hat { x } } _ { i }$ and denoised mirror-point $\\bar { x } _ { i }$ as: ",
+        "bbox": [
+            496,
+            108,
+            885,
+            152
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "equation",
+        "text": "$$\n\\mathcal {L} _ {\\mathrm{MPC}} = \\sum_ {i = 1} ^ {N} \\| \\hat {x} _ {i} - \\bar {x} _ {i} \\| _ {2} ^ {2}, \\tag {11}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            602,
+            162,
+            885,
+            204
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "which encourages the denoising targets of each noisy seed point and its mirror counterpart to converge to a common target surface. In the appendix, we provide a theoretical analysis showing how MPCL promotes consistent denoising targets for accurate surface localization. ",
+        "bbox": [
+            496,
+            212,
+            885,
+            287
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "4.5. Overall Objective ",
+        "text_level": 1,
+        "bbox": [
+            496,
+            304,
+            655,
+            320
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "The overall training objective integrates the proposed mirrorpoint consistency loss with a Chamfer Distance-based similarity regularization. The total loss is defined as: ",
+        "bbox": [
+            496,
+            327,
+            887,
+            373
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "equation",
+        "text": "$$\n\\mathcal {L} _ {\\text { total }} = \\sum_ {l = 1} ^ {L} \\left(\\mathcal {L} _ {\\mathrm{MPC}} ^ {l} + \\mathcal {L} _ {\\mathrm{SR}} ^ {l}\\right), \\tag {12}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            586,
+            381,
+            885,
+            422
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "where the mirror-point consistency loss $\\mathcal { L } _ { \\mathrm { M P C } } ^ { l }$ construct deterministic one-to-one correspondence between points, while $\\mathcal { L } _ { \\mathrm { S R } } ^ { l }$ provides coarse similarity regularization at the point-set level. Specifically, $\\mathcal { L } _ { \\mathrm { S R } } ^ { l }$ is formulated as: ",
+        "bbox": [
+            496,
+            433,
+            885,
+            494
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "equation",
+        "text": "$$\n\\mathcal {L} _ {\\mathrm{SR}} ^ {l} = C D (\\mathcal {X} _ {a} ^ {l}, \\mathcal {X} _ {b} ^ {l}) + C D (\\mathcal {X} _ {a} ^ {l - 1}, \\mathcal {X} _ {b} ^ {l}) + C D (\\mathcal {X} _ {b} ^ {l - 1}, \\mathcal {X} _ {a} ^ {l}), \\tag {13}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            496,
+            501,
+            885,
+            534
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "where $\\mathcal { X } ^ { l }$ belongs to the corresponding point cloud sequence ${ \\mathcal { D } } ,$ and $C D ( \\cdot , \\cdot )$ denotes the Chamfer distance. ",
+        "bbox": [
+            496,
+            534,
+            885,
+            565
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "5. Experiments ",
+        "text_level": 1,
+        "bbox": [
+            496,
+            584,
+            629,
+            602
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "5.1. Experimental Setup ",
+        "text_level": 1,
+        "bbox": [
+            496,
+            609,
+            669,
+            626
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "Training Data. We construct the synthetic training set based on the 40 training shapes from the PUNet (Yu et al., 2018) dataset. Following prior unsupervised denoising protocols (Luo & Hu, 2021; Zhou et al., 2025a), we exclusively use noisy point clouds with Gaussian noise injected at scales ranging from 0.5% to 2% of the bounding sphere radius. ",
+        "bbox": [
+            495,
+            633,
+            887,
+            726
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "Testing Data. We evaluate on 20 test shapes from PUNet (Yu et al., 2018) and 10 shapes from PCNet (Rakotosaona et al., 2020) provided by Score (Luo & Hu, 2021), under 10K and 50K resolutions with Gaussian noise at scales of 1%, 2%, and 3%. We further conduct robustness evaluation on PUNet with four types of non-Gaussian noise following (Chen et al., 2022a). In addition, we report results on real-world datasets, including Paris-Rue-Madame (Serna et al., 2014) and Kinect (Wang et al., 2016). ",
+        "bbox": [
+            495,
+            731,
+            887,
+            868
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "Implementation Details. All experiments are implemented in PyTorch 2.0.0 with CUDA 11.8 and executed on a single ",
+        "bbox": [
+            496,
+            875,
+            885,
+            906
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "header",
+        "text": "SIMPC: Learning Self-Induced Mirror-Point Consistency for Unsupervised Point Cloud Denoising ",
+        "bbox": [
+            174,
+            56,
+            797,
+            71
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "page_number",
+        "text": "5 ",
+        "bbox": [
+            480,
+            922,
+            491,
+            934
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "table",
+        "img_path": "images/55693b48d9064a90605c4c8bfe59789a5c76edeb33438aa22642cd265056c276.jpg",
+        "table_caption": [
+            "Table 1. Denoising results of different methods on PUNet (Yu et al., 2018) under Gaussian noise. Both CD and P2M distances are multiplied by $\\mathrm { 1 0 ^ { 5 } } .$ . For each column, the top-3 results among unsupervised methods are highlighted with 1st. , 2nd. , and 3rd. . "
+        ],
+        "table_footnote": [],
+        "table_body": "<table><tr><td colspan=\"3\">#Points</td><td colspan=\"7\">10K Points</td><td colspan=\"5\">50K Points</td></tr><tr><td colspan=\"3\">Noise Level</td><td colspan=\"2\">1% Noise</td><td colspan=\"2\">2% Noise</td><td colspan=\"2\">3% Noise</td><td colspan=\"2\">1% Noise</td><td colspan=\"2\">2% Noise</td><td colspan=\"2\">3% Noise</td></tr><tr><td>Type</td><td>Method</td><td>Venue</td><td> $CD\\downarrow$ </td><td> $P2M\\downarrow$ </td><td> $CD\\downarrow$ </td><td> $P2M\\downarrow$ </td><td> $CD\\downarrow$ </td><td> $P2M\\downarrow$ </td><td> $CD\\downarrow$ </td><td> $P2M\\downarrow$ </td><td> $CD\\downarrow$ </td><td> $P2M\\downarrow$ </td><td> $CD\\downarrow$ </td><td> $P2M\\downarrow$ </td></tr><tr><td rowspan=\"5\">Optim.</td><td>Jet (Cazals &amp; Pouget, 2005)</td><td>CAGD 05</td><td>27.12</td><td>6.13</td><td>41.55</td><td>13.47</td><td>62.62</td><td>29.21</td><td>8.51</td><td>2.07</td><td>24.32</td><td>14.03</td><td>57.88</td><td>42.67</td></tr><tr><td>Bilateral (Digne &amp; De Franchis, 2017)</td><td>IPL 17</td><td>36.46</td><td>13.42</td><td>50.07</td><td>20.18</td><td>69.98</td><td>35.57</td><td>8.77</td><td>2.34</td><td>23.76</td><td>13.89</td><td>63.04</td><td>47.30</td></tr><tr><td>MRPCA (Mattei &amp; Castrodad, 2017)</td><td>CGF 17</td><td>29.72</td><td>9.22</td><td>37.28</td><td>11.17</td><td>50.09</td><td>19.63</td><td>6.69</td><td>0.99</td><td>20.08</td><td>10.03</td><td>57.75</td><td>40.81</td></tr><tr><td>GLR (Zeng et al., 2019)</td><td>TIP 19</td><td>29.59</td><td>10.52</td><td>37.73</td><td>13.06</td><td>49.09</td><td>21.14</td><td>6.96</td><td>1.61</td><td>15.87</td><td>8.30</td><td>38.39</td><td>27.07</td></tr><tr><td>Lowrank (Lu et al., 2020)</td><td>TVCG 20</td><td>36.89</td><td>12.87</td><td>79.38</td><td>43.70</td><td>133.82</td><td>90.28</td><td>18.69</td><td>9.99</td><td>50.48</td><td>37.58</td><td>98.35</td><td>81.14</td></tr><tr><td rowspan=\"8\">Sup.</td><td>DeepPSR (Chen et al., 2022a)</td><td>TPAMI 22</td><td>23.53</td><td>3.06</td><td>33.50</td><td>7.34</td><td>40.72</td><td>12.38</td><td>6.49</td><td>0.76</td><td>9.97</td><td>2.96</td><td>13.44</td><td>5.31</td></tr><tr><td>IPFN (de Silva Edirimuni et al., 2023b)</td><td>CVPR 23</td><td>20.56</td><td>2.18</td><td>30.43</td><td>5.55</td><td>42.41</td><td>13.76</td><td>6.05</td><td>0.59</td><td>8.03</td><td>1.82</td><td>19.71</td><td>10.12</td></tr><tr><td>PathNet (Wei et al., 2024)</td><td>TPAMI 24</td><td>26.72</td><td>5.84</td><td>39.73</td><td>12.99</td><td>45.24</td><td>24.04</td><td>7.16</td><td>1.24</td><td>11.40</td><td>4.10</td><td>18.75</td><td>9.52</td></tr><tr><td>PD-Refiner (Zhang et al., 2024)</td><td>ACM MM 24</td><td>17.54</td><td>1.66</td><td>24.44</td><td>4.49</td><td>30.77</td><td>9.13</td><td>4.66</td><td>0.45</td><td>6.53</td><td>1.64</td><td>12.28</td><td>5.75</td></tr><tr><td>StraightPCF (de Silva Edirimuni et al., 2024)</td><td>CVPR 24</td><td>18.70</td><td>2.39</td><td>26.44</td><td>6.04</td><td>32.87</td><td>11.26</td><td>5.62</td><td>1.11</td><td>7.65</td><td>2.66</td><td>13.07</td><td>6.48</td></tr><tr><td>PD-LTS (Mao et al., 2024)</td><td>CVPR 24</td><td>17.81</td><td>1.82</td><td>24.41</td><td>4.70</td><td>34.33</td><td>11.98</td><td>4.70</td><td>0.54</td><td>6.46</td><td>1.82</td><td>18.52</td><td>10.67</td></tr><tr><td>ASDN (Guo et al., 2025)</td><td>AAAI 25</td><td>18.80</td><td>2.19</td><td>25.81</td><td>5.15</td><td>30.79</td><td>9.46</td><td>5.15</td><td>0.69</td><td>6.76</td><td>1.88</td><td>13.04</td><td>6.55</td></tr><tr><td>HybridPF (Edirimuni et al., 2025)</td><td>Arxiv 25</td><td>18.30</td><td>2.10</td><td>25.50</td><td>5.20</td><td>32.30</td><td>11.10</td><td>4.90</td><td>0.60</td><td>7.00</td><td>2.00</td><td>12.70</td><td>6.10</td></tr><tr><td rowspan=\"6\">Unsup.</td><td>TotalDn (Hermosilla et al., 2019)</td><td>ICCV 19</td><td>33.90</td><td>8.26</td><td>72.51</td><td>34.85</td><td>133.85</td><td>87.40</td><td>10.24</td><td>3.14</td><td>27.22</td><td>15.67</td><td>74.74</td><td>57.29</td></tr><tr><td>DMR-U (Luo &amp; Hu, 2020)</td><td>ACM MM 20</td><td>53.13</td><td>25.22</td><td>64.55</td><td>33.17</td><td>81.34</td><td>46.47</td><td>12.26</td><td>5.21</td><td>21.38</td><td>12.51</td><td>24.96</td><td>15.20</td></tr><tr><td>Score-U (Luo &amp; Hu, 2021)</td><td>ICCV 21</td><td>31.07</td><td>8.88</td><td>46.75</td><td>18.29</td><td>72.25</td><td>37.62</td><td>9.18</td><td>2.65</td><td>24.39</td><td>14.11</td><td>53.03</td><td>38.41</td></tr><tr><td>Noise2Score3D (Wei et al., 2025)</td><td>ICCV 25</td><td>28.48</td><td>11.06</td><td>41.90</td><td>18.18</td><td>55.83</td><td>29.47</td><td>8.33</td><td>4.61</td><td>15.32</td><td>9.70</td><td>24.34</td><td>17.04</td></tr><tr><td>U-CAN (Zhou et al., 2025a)</td><td>NeurIPS 25</td><td>24.97</td><td>11.05</td><td>32.34</td><td>12.55</td><td>36.66</td><td>18.42</td><td>8.35</td><td>6.09</td><td>9.75</td><td>6.75</td><td>24.79</td><td>18.63</td></tr><tr><td>SIMPC (Ours)</td><td></td><td>20.25</td><td>3.60</td><td>28.82</td><td>7.13</td><td>34.42</td><td>13.85</td><td>5.81</td><td>1.02</td><td>8.33</td><td>3.38</td><td>12.58</td><td>6.45</td></tr></table>",
+        "bbox": [
+            101,
+            80,
+            874,
+            323
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "table",
+        "img_path": "images/62cf3ad1e1cc98d807a62e14078046702707e782fe84a2ff2ed5bd470c949065.jpg",
+        "table_caption": [
+            "Table 2. Denoising results of different methods on PCNet (Rakotosaona et al., 2020) under Gaussian noise. Both CD and P2M distances are multiplied by $\\mathrm { 1 0 ^ { 5 } }$ . For each column, the top-3 results among unsupervised methods are highlighted with 1st. , 2nd. , and 3rd. . "
+        ],
+        "table_footnote": [],
+        "table_body": "<table><tr><td colspan=\"5\">#Points</td><td colspan=\"5\">10K Points</td><td colspan=\"5\">50K Points</td></tr><tr><td colspan=\"3\">Noise Level</td><td colspan=\"2\">1% Noise</td><td colspan=\"2\">2% Noise</td><td colspan=\"2\">3% Noise</td><td colspan=\"2\">1% Noise</td><td colspan=\"2\">2% Noise</td><td colspan=\"2\">3% Noise</td></tr><tr><td>Type</td><td>Method</td><td>Venue</td><td> $CD\\downarrow$ </td><td> $P2M\\downarrow$ </td><td> $CD\\downarrow$ </td><td> $P2M\\downarrow$ </td><td> $CD\\downarrow$ </td><td> $P2M\\downarrow$ </td><td> $CD\\downarrow$ </td><td> $P2M\\downarrow$ </td><td> $CD\\downarrow$ </td><td> $P2M\\downarrow$ </td><td> $CD\\downarrow$ </td><td> $P2M\\downarrow$ </td></tr><tr><td rowspan=\"4\">Optim.</td><td>Jet (Cazals &amp; Pouget, 2005)</td><td>CAGD 05</td><td>30.32</td><td>8.30</td><td>52.98</td><td>13.72</td><td>76.50</td><td>22.27</td><td>10.91</td><td>1.80</td><td>25.82</td><td>7.00</td><td>57.87</td><td>21.44</td></tr><tr><td>Bilateral (Digne &amp; De Franchis, 2017)</td><td>IPL 17</td><td>43.20</td><td>13.51</td><td>61.71</td><td>16.46</td><td>82.95</td><td>23.92</td><td>11.72</td><td>1.98</td><td>24.78</td><td>6.34</td><td>60.77</td><td>21.89</td></tr><tr><td>MRPCA (Mattei &amp; Castrodad, 2017)</td><td>CGF 17</td><td>33.23</td><td>9.31</td><td>48.74</td><td>11.78</td><td>65.02</td><td>16.76</td><td>9.66</td><td>1.40</td><td>21.53</td><td>4.78</td><td>55.70</td><td>19.76</td></tr><tr><td>GLR (Zeng et al., 2019)</td><td>TIP 19</td><td>33.99</td><td>9.56</td><td>52.74</td><td>11.46</td><td>72.49</td><td>16.74</td><td>9.64</td><td>1.34</td><td>20.15</td><td>4.17</td><td>44.88</td><td>13.06</td></tr><tr><td rowspan=\"7\">Sup.</td><td>DeepPSR (Chen et al., 2022a)</td><td>TPAMI 22</td><td>28.73</td><td>7.83</td><td>47.57</td><td>11.18</td><td>60.31</td><td>16.19</td><td>10.10</td><td>1.46</td><td>15.15</td><td>3.40</td><td>20.93</td><td>5.73</td></tr><tr><td>IterativePFN (de Silva Edirimuni et al., 2023b)</td><td>CVPR 23</td><td>26.20</td><td>7.00</td><td>44.40</td><td>10.10</td><td>60.30</td><td>15.60</td><td>9.10</td><td>1.40</td><td>12.50</td><td>2.40</td><td>25.30</td><td>7.20</td></tr><tr><td>PathNet (Wei et al., 2024)</td><td>TPAMI 24</td><td>30.03</td><td>8.65</td><td>41.05</td><td>14.22</td><td>56.63</td><td>22.39</td><td>9.91</td><td>1.48</td><td>14.92</td><td>3.15</td><td>23.10</td><td>5.95</td></tr><tr><td>PD-Refiner (Zhang et al., 2024)</td><td>ACM MM 24</td><td>28.26</td><td>5.69</td><td>40.09</td><td>8.68</td><td>49.33</td><td>12.05</td><td>8.18</td><td>1.04</td><td>11.71</td><td>2.20</td><td>19.95</td><td>4.84</td></tr><tr><td>StraightPCF (de Silva Edirimuni et al., 2024)</td><td>CVPR 24</td><td>27.50</td><td>5.40</td><td>40.50</td><td>7.90</td><td>49.20</td><td>10.90</td><td>8.80</td><td>1.40</td><td>11.70</td><td>2.60</td><td>18.20</td><td>4.50</td></tr><tr><td>PD-LTS (Mao et al., 2024)</td><td>CVPR 24</td><td>28.40</td><td>5.40</td><td>41.50</td><td>8.30</td><td>53.40</td><td>12.60</td><td>8.40</td><td>1.30</td><td>12.10</td><td>2.50</td><td>20.20</td><td>5.30</td></tr><tr><td>HybridPF (Edirimuni et al., 2025)</td><td>Arxiv 25</td><td>27.90</td><td>4.70</td><td>39.70</td><td>7.00</td><td>49.90</td><td>11.20</td><td>7.90</td><td>1.00</td><td>11.20</td><td>2.00</td><td>19.10</td><td>4.80</td></tr><tr><td rowspan=\"4\">Unsup.</td><td>DMR-U (Luo &amp; Hu, 2020)</td><td>ACM MM 20</td><td>94.61</td><td>45.84</td><td>108.77</td><td>51.39</td><td>126.39</td><td>58.02</td><td>21.85</td><td>7.46</td><td>33.18</td><td>11.99</td><td>56.16</td><td>22.07</td></tr><tr><td>Score-U (Luo &amp; Hu, 2021)</td><td>ICCV 21</td><td>42.32</td><td>12.61</td><td>60.34</td><td>17.63</td><td>103.02</td><td>43.79</td><td>12.34</td><td>2.22</td><td>24.92</td><td>6.60</td><td>39.28</td><td>11.74</td></tr><tr><td>Noise2Score3D (Wei et al., 2025)</td><td>ICCV 25</td><td>35.23</td><td>10.37</td><td>67.30</td><td>19.64</td><td>93.04</td><td>31.50</td><td>15.75</td><td>3.55</td><td>31.32</td><td>9.42</td><td>48.83</td><td>18.22</td></tr><tr><td>SIMPC (Ours)</td><td></td><td>32.10</td><td>6.57</td><td>43.18</td><td>8.69</td><td>53.33</td><td>12.48</td><td>8.86</td><td>1.07</td><td>13.40</td><td>2.41</td><td>18.62</td><td>4.15</td></tr></table>",
+        "bbox": [
+            101,
+            359,
+            874,
+            556
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "text",
+        "text": "NVIDIA GeForce RTX 4090 GPU. We train the network using the Adam optimizer with a learning rate of $1 \\times 1 0 ^ { - 4 }$ for 100 epochs and a batch size of 16. We evaluate denoising performance using Chamfer Distance (CD) and Point-to-Mesh (P2M) distance (Ravi et al., 2020). ",
+        "bbox": [
+            84,
+            606,
+            475,
+            681
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "text",
+        "text": "Compared Methods. We compare SIMPC with representative optimization-based methods (e.g., GLR (Zeng et al., 2019)), supervised methods (e.g., PD-Refiner (Zhang et al., 2024) and StraightPCF (de Silva Edirimuni et al., 2024)), and unsupervised methods (e.g., Noise2Score3D (Wei et al., 2025) and U-CAN (Zhou et al., 2025a)). ",
+        "bbox": [
+            84,
+            689,
+            475,
+            779
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "text",
+        "text": "5.2. Experiments on Synthetic Noise ",
+        "text_level": 1,
+        "bbox": [
+            84,
+            796,
+            341,
+            811
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "text",
+        "text": "Quantitative results on Gaussian noise for PUNet and PCNet are reported in Tab. 1 and Tab. 2, while results on four non-Gaussian noise for PUNet are presented in Tab. 3 and Tab. 7 (Appendix). Correspondingly, qualitative visualizations on both datasets are shown in Fig. 4 and Fig. 7 (Appendix). ",
+        "bbox": [
+            84,
+            820,
+            475,
+            896
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "text",
+        "text": "Optimization-based methods generally exhibit limited denoising capability and unstable performance across different noise intensities and resolutions. By contrast, supervised methods achieve stronger geometric fidelity by learning direct mappings toward the clean surface under explicit supervision. Among unsupervised methods, density-based approaches such as TotalDen, DMR-U, and Score-U often produce sub-optimal denoising results with noticeable residual noise, and their iterative processes tend to succumb to clustering artifacts. Meanwhile, statistical mapping-based methods such as Noise2Score3D and U-CAN exhibit relatively high P2M errors under comparable CD values, indicating that the denoised points are not well aligned with the target surface. In contrast, our proposed SIMPC establishes deterministic correspondences between noisy variants associated with the same target surface. As a result, it achieves superior performance over existing unsupervised methods, with more precise target surface alignment and substantially reduced residual noise. ",
+        "bbox": [
+            495,
+            606,
+            887,
+            892
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "header",
+        "text": "SIMPC: Learning Self-Induced Mirror-Point Consistency for Unsupervised Point Cloud Denoising ",
+        "bbox": [
+            174,
+            56,
+            797,
+            70
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "page_number",
+        "text": "6 ",
+        "bbox": [
+            480,
+            922,
+            491,
+            934
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "table",
+        "img_path": "images/f5bc1f16d2adea8725f1a7b92f9c7c3b82079916f8e0625f3400be85a5aad79b.jpg",
+        "table_caption": [
+            "Table 3. Denoising results of different methods on PUNet (Yu et al., 2018) under non-Gaussian noise. Both CD and P2M distances are multiplied by 105. For each column, the top-3 results among unsupervised methods are highlighted with 1st. , 2nd. , and 3rd. . "
+        ],
+        "table_footnote": [],
+        "table_body": "<table><tr><td colspan=\"4\">#Points</td><td colspan=\"5\">10K Points</td><td colspan=\"6\">50K Points</td></tr><tr><td colspan=\"3\">Noise Level</td><td colspan=\"2\">1% noise</td><td colspan=\"2\">2% noise</td><td colspan=\"2\">3% noise</td><td colspan=\"2\">1% noise</td><td colspan=\"2\">2% noise</td><td colspan=\"2\">3% noise</td></tr><tr><td colspan=\"2\">Type</td><td>Methods</td><td> $CD\\downarrow$ </td><td> $P2M\\downarrow$ </td><td> $CD\\downarrow$ </td><td> $P2M\\downarrow$ </td><td> $CD\\downarrow$ </td><td> $P2M\\downarrow$ </td><td> $CD\\downarrow$ </td><td> $P2M\\downarrow$ </td><td> $CD\\downarrow$ </td><td> $P2M\\downarrow$ </td><td> $CD\\downarrow$ </td><td> $P2M\\downarrow$ </td></tr><tr><td rowspan=\"6\">Laplacian</td><td rowspan=\"3\">Sup.</td><td>PD-Refiner (Zhang et al., 2024)</td><td>20.62</td><td>2.66</td><td>28.96</td><td>7.94</td><td>42.48</td><td>17.93</td><td>5.28</td><td>0.85</td><td>8.89</td><td>3.16</td><td>21.86</td><td>13.33</td></tr><tr><td>PD-LTS (Mao et al., 2024)</td><td>20.85</td><td>2.84</td><td>28.67</td><td>8.25</td><td>51.77</td><td>26.55</td><td>5.31</td><td>0.96</td><td>9.80</td><td>4.28</td><td>44.76</td><td>34.71</td></tr><tr><td>StraightPCF (de Silva Edirimuni et al., 2024)</td><td>21.86</td><td>3.44</td><td>30.38</td><td>9.45</td><td>47.98</td><td>23.75</td><td>6.07</td><td>1.39</td><td>9.81</td><td>4.32</td><td>27.95</td><td>19.61</td></tr><tr><td rowspan=\"3\">Unsup.</td><td>Score-U (Luo &amp; Hu, 2021)</td><td>36.94</td><td>11.87</td><td>61.69</td><td>29.88</td><td>98.92</td><td>58.90</td><td>12.41</td><td>4.76</td><td>35.13</td><td>23.63</td><td>60.30</td><td>43.36</td></tr><tr><td>Noise2Score3D (Wei et al., 2025)</td><td>43.08</td><td>17.43</td><td>80.66</td><td>46.86</td><td>125.06</td><td>84.68</td><td>20.33</td><td>11.31</td><td>48.47</td><td>35.63</td><td>85.73</td><td>70.64</td></tr><tr><td>SIMPC (Ours)</td><td>23.65</td><td>4.78</td><td>33.37</td><td>10.98</td><td>41.91</td><td>19.59</td><td>6.81</td><td>1.78</td><td>10.07</td><td>4.48</td><td>25.16</td><td>16.72</td></tr><tr><td rowspan=\"6\">Discrete</td><td rowspan=\"3\">Sup.</td><td>PD-Refiner (Zhang et al., 2024)</td><td>6.13</td><td>0.75</td><td>15.34</td><td>1.50</td><td>19.49</td><td>2.56</td><td>3.24</td><td>0.12</td><td>4.25</td><td>0.37</td><td>5.12</td><td>0.83</td></tr><tr><td>PD-LTS (Mao et al., 2024)</td><td>6.45</td><td>0.86</td><td>15.63</td><td>1.58</td><td>19.85</td><td>2.76</td><td>3.37</td><td>0.16</td><td>4.29</td><td>0.40</td><td>5.15</td><td>0.90</td></tr><tr><td>StraightPCF (de Silva Edirimuni et al., 2024)</td><td>6.55</td><td>1.03</td><td>16.82</td><td>2.50</td><td>21.04</td><td>3.97</td><td>3.86</td><td>0.50</td><td>5.32</td><td>1.30</td><td>6.01</td><td>1.80</td></tr><tr><td rowspan=\"3\">Unsup.</td><td>Score-U (Luo &amp; Hu, 2021)</td><td>23.44</td><td>7.57</td><td>29.79</td><td>8.71</td><td>57.72</td><td>29.39</td><td>5.79</td><td>0.82</td><td>8.56</td><td>2.21</td><td>14.53</td><td>5.07</td></tr><tr><td>Noise2Score3D (Wei et al., 2025)</td><td>11.84</td><td>3.02</td><td>28.33</td><td>8.96</td><td>39.10</td><td>16.71</td><td>6.49</td><td>1.96</td><td>12.25</td><td>6.37</td><td>19.78</td><td>12.36</td></tr><tr><td>SIMPC (Ours)</td><td>8.02</td><td>1.89</td><td>17.83</td><td>3.21</td><td>22.27</td><td>4.72</td><td>3.74</td><td>0.32</td><td>5.08</td><td>0.82</td><td>6.34</td><td>1.57</td></tr></table>",
+        "bbox": [
+            104,
+            80,
+            874,
+            273
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "image",
+        "img_path": "images/1434abc66686923219001ffab11a017e468075ec48c6e2cd9a1ccca9aaf5efb4.jpg",
+        "image_caption": [
+            "Figure 4. Visual results for 50K-resolution shapes from the PCNet and PUNet datasets under 3% Gaussian noise relative to the bounding sphere radius. Point colors represent the point-wise P2M distance, where orange indicates larger errors and blue denotes cleaner regions. "
+        ],
+        "image_footnote": [],
+        "content": "Elk\nNoisy\nIPFN\nPathNet\nDMR-U\nScore-U\nClean\nPD-Refiner\nStraightPCF\nNoise2Score3D\nSIMPC (Ours)\nColumn\nNoisy\nIPFN\nPathNet\nDMR-U\nScore-U\nClean\nPD-Refiner\nStraightPCF\nNoise2Score3D\nSIMPC (Ours)\nSupervised Methods\nUnsupervised Methods",
+        "sub_type": "text_image",
+        "bbox": [
+            107,
+            320,
+            867,
+            667
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "text",
+        "text": "5.3. Experiments on Real-World Noise ",
+        "text_level": 1,
+        "bbox": [
+            84,
+            715,
+            357,
+            729
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "text",
+        "text": "Qualitative results on the Paris-Rue-Madame dataset are shown in Fig. 5, and those on the Kinect dataset are shown in Fig. 6 and Fig. 8 (Appendix). Quantitative results on the Kinect dataset are reported in Tab. 5. ",
+        "bbox": [
+            84,
+            739,
+            473,
+            800
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "text",
+        "text": "Overall, supervised methods exhibit stable denoising on realworld scans, producing smooth surfaces. Among unsupervised methods, DMR-U leaves noticeable residual noise and surface discontinuities, while Score-U often converges to linear structures, leading to severe clustering artifacts. Meanwhile, Noise2Score3D provide only marginal noise suppres-",
+        "bbox": [
+            84,
+            806,
+            475,
+            898
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "text",
+        "text": "sion and fail to accurately align noisy points to the underlying surface. In contrast, our proposed SIMPC demonstrates satisfactory generalization on real-world datasets in both quantitative and qualitative evaluations. ",
+        "bbox": [
+            496,
+            715,
+            887,
+            776
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "text",
+        "text": "5.4. Ablation Study ",
+        "text_level": 1,
+        "bbox": [
+            496,
+            792,
+            637,
+            808
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "text",
+        "text": "We further conduct ablation studies on the loss design and the extent of denoising vector extension, as shown in Fig. 5. ",
+        "bbox": [
+            496,
+            816,
+            887,
+            847
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "text",
+        "text": "Loss Type. We first investigate the effect of different loss design strategies. When only the Chamfer Distance LSR(CD) is used to provide a coarse similarity constraint, the denoising performance drops significantly as the noise intensity increases. Introducing the Earth Mover’s Distance $\\mathcal { L } _ { \\mathrm { S R ( E M D ) } }$ to impose an ambiguous one-to-one correspondence improves the denoising capability compared with $\\mathcal { L } _ { \\mathrm { S R ( C D ) } }$ , yet still suffers from inaccurate surface localization. In contrast, our proposed $\\mathcal { L } _ { \\mathrm { M P C } }$ establishes deterministic surface correspondences, enabling accurate surface localization and achieving the best denoising performance, highlighting the necessity of learning deterministic correspondences for effective unsupervised denoising. ",
+        "bbox": [
+            496,
+            854,
+            888,
+            900
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "header",
+        "text": "SIMPC: Learning Self-Induced Mirror-Point Consistency for Unsupervised Point Cloud Denoising ",
+        "bbox": [
+            174,
+            56,
+            797,
+            70
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "page_number",
+        "text": "7 ",
+        "bbox": [
+            480,
+            922,
+            491,
+            934
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "image",
+        "img_path": "images/e03a6928e94f119b74c58090995bdd0607ba6185868ad6defe659c7affb508fb.jpg",
+        "image_caption": [],
+        "image_footnote": [],
+        "content": "Noisy\nIPFN\nPathNet\nDMR-U\nScore-U\nPD-Refiner\nStraightPCF\nNoise2Score3D\nSIMPC (Ours)\nSupervised Methods\nUnsupervised Methods",
+        "sub_type": "text_image",
+        "bbox": [
+            130,
+            80,
+            846,
+            273
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "image",
+        "img_path": "images/09d3c10a399722bba5451b5f9926bbdac51106b26cd3e6c10ec0c2092b09a48a.jpg",
+        "image_caption": [
+            "Figure 5. Visual results for a real scan and zoom-in views of several objects from the Paris-Rue-Madame dataset (Serna et al., 2014). Supervised and unsupervised methods, including our proposed SIMPC, are highlighted in red and green, respectively. ",
+            "Figure 6. Visual results for a real scan and zoom-in views of several surface regions from the Kinect dataset (Wang et al., 2016). Supervised and unsupervised methods, including our proposed SIMPC, are highlighted in red and green, respectively. "
+        ],
+        "image_footnote": [],
+        "content": "Noisy\nClean\nIPFN\nPathNet\nPD-Refiner\nStraightPCF\nSupervised Methods\nDMR-U\nScore-U\nNoise2Score3D\nSIMPC (Ours)\nUnsupervised Methods\nClean\nNoisy",
+        "sub_type": "text_image",
+        "bbox": [
+            89,
+            311,
+            883,
+            441
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "table",
+        "img_path": "images/f4a562594d1710000d03014008522df5056231ea9ffd9d8ada1392159efce343.jpg",
+        "table_caption": [
+            "Table 4. Denoising comparison in Kinect dataset (Wang et al., 2016). For each column, the top-3 results among unsupervised methods are highlighted with 1st. , 2nd. , and 3rd. . "
+        ],
+        "table_footnote": [],
+        "table_body": "<table><tr><td>Type</td><td>Method</td><td> $CD\\downarrow$ </td><td> $P2M\\downarrow$ </td></tr><tr><td rowspan=\"4\">Sup.</td><td>IPFN (de Silva Edirimuni et al., 2023b)</td><td>14.92</td><td>7.99</td></tr><tr><td>PathNet (Wei et al., 2024)</td><td>14.20</td><td>7.38</td></tr><tr><td>PD-Refiner (Zhang et al., 2024)</td><td>14.34</td><td>7.61</td></tr><tr><td>StraightPCF (de Silva Edirimuni et al., 2024)</td><td>13.46</td><td>7.39</td></tr><tr><td rowspan=\"4\">Unsup.</td><td>DMR-U (Luo &amp; Hu, 2020)</td><td>45.18</td><td>23.38</td></tr><tr><td>Score-U (Luo &amp; Hu, 2021)</td><td>15.85</td><td>7.33</td></tr><tr><td>Noise2Score3D (Wei et al., 2025)</td><td>15.25</td><td>8.11</td></tr><tr><td>SIMPC (Ours)</td><td>13.01</td><td>6.35</td></tr></table>",
+        "bbox": [
+            133,
+            489,
+            426,
+            585
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "text",
+        "text": "",
+        "bbox": [
+            84,
+            641,
+            475,
+            792
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "text",
+        "text": "Extension Distance. Furthermore, we study the influence of different scaling factors w2 that control the extent of denoising vector extension for mirror-point generation. The results show that using the geometric symmetry design yields the better performance. By contrast, the other non-symmetry settings lead to sub-optimal results due to residual perturbations during denoising training. ",
+        "bbox": [
+            84,
+            799,
+            475,
+            906
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "table",
+        "img_path": "images/816582e0447e03d9baa586d638ca7b52d61fa9a842edef8084e1be26429e8183.jpg",
+        "table_caption": [
+            "Table 5. Denoising results of different ablation settings on PUNet (Yu et al., 2018) under Gaussian noise. Both CD and P2M distances are multiplied by 105. "
+        ],
+        "table_footnote": [],
+        "table_body": "<table><tr><td colspan=\"4\">#Points</td><td colspan=\"4\">10K Points</td></tr><tr><td colspan=\"2\">Noise Level</td><td colspan=\"2\">1% Noise</td><td colspan=\"2\">2% Noise</td><td colspan=\"2\">3% Noise</td></tr><tr><td colspan=\"2\">Ablation Settings</td><td> $CD\\downarrow$ </td><td> $P2M\\downarrow$ </td><td> $CD\\downarrow$ </td><td> $P2M\\downarrow$ </td><td> $CD\\downarrow$ </td><td> $P2M\\downarrow$ </td></tr><tr><td rowspan=\"3\">Loss Type</td><td> $\\mathcal{L}_{\\text{SR(CD)}}$ </td><td>18.91</td><td>2.47</td><td>37.84</td><td>13.91</td><td>65.73</td><td>36.20</td></tr><tr><td> $\\mathcal{L}_{\\text{SR(EMD)}}$ </td><td>26.54</td><td>7.64</td><td>31.88</td><td>12.41</td><td>41.04</td><td>18.87</td></tr><tr><td> $\\mathcal{L}_{\\text{MPC}} + \\mathcal{L}_{\\text{SR(CD)}}$ </td><td>20.25</td><td>3.60</td><td>28.82</td><td>7.13</td><td>34.42</td><td>13.85</td></tr><tr><td rowspan=\"3\">Extend Dist</td><td>Near ( $w_2 = 1.5$ )</td><td>20.77</td><td>4.06</td><td>29.31</td><td>7.68</td><td>35.10</td><td>14.55</td></tr><tr><td>Symmetry ( $w_2 = 2$ )</td><td>20.25</td><td>3.60</td><td>28.82</td><td>7.13</td><td>34.42</td><td>13.85</td></tr><tr><td>Far ( $w_2 = 2.5$ )</td><td>21.39</td><td>4.84</td><td>30.13</td><td>8.54</td><td>36.33</td><td>15.25</td></tr></table>",
+        "bbox": [
+            513,
+            489,
+            870,
+            590
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "text",
+        "text": "6. Conclusion ",
+        "text_level": 1,
+        "bbox": [
+            496,
+            643,
+            616,
+            659
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "text",
+        "text": "We propose Self-Induced Mirror-Point Consistency (SIMPC) to learn deterministic correspondences between points and the underlying surface in an unsupervised manner. The key insight of SIMPC is to establish correspondences between points associated with the same target surface by leveraging geometric priors extracted during the denoising process, rather than matching variants across independently sampled noisy observations. With such deterministic correspondences, SIMPC is able to more accurately localize the underlying surface from noisy point clouds. We evaluate SIMPC on both synthetic datasets and real-world scanned data under various noise conditions. Extensive experimental results demonstrate that SIMPC consistently achieves stateof-the-art performance among unsupervised methods and even surpasses several strong supervised counterparts. ",
+        "bbox": [
+            495,
+            670,
+            887,
+            898
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "header",
+        "text": "SIMPC: Learning Self-Induced Mirror-Point Consistency for Unsupervised Point Cloud Denoising ",
+        "bbox": [
+            174,
+            56,
+            797,
+            70
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "page_number",
+        "text": "8 ",
+        "bbox": [
+            480,
+            922,
+            491,
+            934
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "text",
+        "text": "Impact Statement ",
+        "text_level": 1,
+        "bbox": [
+            86,
+            83,
+            240,
+            99
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "text",
+        "text": "This paper presents work whose goal is to advance the field of machine learning. There are many potential societal consequences of our work, none of which we feel must be specifically highlighted here. ",
+        "bbox": [
+            84,
+            109,
+            473,
+            170
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "text",
+        "text": "Acknowledgments ",
+        "text_level": 1,
+        "bbox": [
+            86,
+            189,
+            243,
+            207
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "text",
+        "text": "This work is supported by the National Key Research and Development Program of China (Distributed Polarization 3D Imaging Radar System Technology, No. 2022YFB3901601). ",
+        "bbox": [
+            84,
+            214,
+            475,
+            275
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "text",
+        "text": "References ",
+        "text_level": 1,
+        "bbox": [
+            86,
+            294,
+            181,
+            311
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "list",
+        "sub_type": "ref_text",
+        "list_items": [
+            "Batson, J. and Royer, L. Noise2self: Blind denoising by self-supervision. In International conference on machine learning, pp. 524–533. PMLR, 2019. 3 ",
+            "Cazals, F. and Pouget, M. Estimating differential quantities using polynomial fitting of osculating jets. Computer aided geometric design, 22(2):121–146, 2005. 6 ",
+            "Chen, H., Du, B., Luo, S., and Hu, W. Deep point set resampling via gradient fields. IEEE Transactions on Pattern Analysis and Machine Intelligence, 45(3):2913– 2930, 2022a. 1, 2, 5, 6 ",
+            "Chen, H., Wei, Z., Li, X., Xu, Y., Wei, M., and Wang, J. Repcd-net: Feature-aware recurrent point cloud denoising network. International Journal of Computer Vision, 130 (3):615–629, 2022b. 2 ",
+            "Chen, W., Fan, H., Jiang, Q., Huang, C., and Yang, Y. Progressive point cloud denoising with cross-stage crosscoder adaptive edge graph convolution network. In Proceedings of the 32nd ACM International Conference on Multimedia, pp. 6578–6587, 2024. 2 ",
+            "de Silva Edirimuni, D., Lu, X., Li, G., and Robles-Kelly, A. Contrastive learning for joint normal estimation and point cloud filtering. IEEE Transactions on Visualization and Computer Graphics, 30(8):4527–4541, 2023a. 2 ",
+            "de Silva Edirimuni, D., Lu, X., Shao, Z., Li, G., Robles-Kelly, A., and He, Y. Iterativepfn: True iterative point cloud filtering. In Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition, pp. 13530–13539, 2023b. 2, 3, 6, 8, 12 ",
+            "de Silva Edirimuni, D., Lu, X., Li, G., Wei, L., Robles-Kelly, A., and Li, H. Straightpcf: Straight point cloud filtering. In Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition, pp. 20721– 20730, 2024. 2, 3, 6, 7, 8, 12, 14 "
+        ],
+        "bbox": [
+            86,
+            316,
+            475,
+            888
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "list",
+        "sub_type": "ref_text",
+        "list_items": [
+            "Digne, J. and De Franchis, C. The bilateral filter for point clouds. Image Processing On Line, 7:278–287, 2017. 6 ",
+            "Edirimuni, D. d. S., Lu, X., Mian, A. S., Wei, L., Li, G., Schaefer, S., and He, Y. Hybrid long and short range flows for point cloud filtering. arXiv preprint arXiv:2508.08542, 2025. 6 ",
+            "Guo, C., Zhou, W., Liu, Z., and He, Y. You should learn to stop denoising on point clouds in advance. In Proceedings of the AAAI Conference on Artificial Intelligence, volume 39, pp. 3212–3219, 2025. 2, 6 ",
+            "Hermosilla, P., Ritschel, T., and Ropinski, T. Total denoising: Unsupervised learning of 3d point cloud cleaning. In Proceedings of the IEEE/CVF international conference on computer vision, pp. 52–60, 2019. 3, 6 ",
+            "Huang, T., Li, S., Jia, X., Lu, H., and Liu, J. Neighbor2neighbor: Self-supervised denoising from single noisy images. In Proceedings of the IEEE/CVF conference on computer vision and pattern recognition, pp. 14781–14790, 2021. 3 ",
+            "Huang, Z., Wen, Y., Wang, Z., Ren, J., and Jia, K. Surface reconstruction from point clouds: A survey and a benchmark. IEEE transactions on pattern analysis and machine intelligence, 2024. 1 ",
+            "Kim, K. and Ye, J. C. Noise2score: tweedie’s approach to self-supervised image denoising without clean images. Advances in Neural Information Processing Systems, 34: 864–874, 2021. 3 ",
+            "Krull, A., Buchholz, T.-O., and Jug, F. Noise2void-learning denoising from single noisy images. In Proceedings of the IEEE/CVF conference on computer vision and pattern recognition, pp. 2129–2137, 2019. 3 ",
+            "Lehtinen, J., Munkberg, J., Hasselgren, J., Laine, S., Karras, T., Aittala, M., and Aila, T. Noise2noise: Learning image restoration without clean data. arXiv preprint arXiv:1803.04189, 2018. 3 ",
+            "Li, X., Lu, J., Ding, H., Sun, C., Zhou, J. T., and Chee, Y. M. Pointcvar: Risk-optimized outlier removal for robust 3d point cloud classification. In Proceedings of the AAAI Conference on Artificial Intelligence, volume 38, pp. 21340–21348, 2024. 1 ",
+            "Li, Y. and Sheng, H. A single-stage point cloud cleaning network for outlier removal and denoising. Pattern Recognition, 138:109366, 2023. 2 ",
+            "Liu, Z., Huang, Z., Pan, M., and He, Y. Deterministic point cloud diffusion for denoising. IEEE Transactions on Visualization and Computer Graphics, 2025. 2 "
+        ],
+        "bbox": [
+            498,
+            83,
+            887,
+            890
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "header",
+        "text": "SIMPC: Learning Self-Induced Mirror-Point Consistency for Unsupervised Point Cloud Denoising ",
+        "bbox": [
+            174,
+            56,
+            797,
+            71
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "page_number",
+        "text": "9 ",
+        "bbox": [
+            480,
+            922,
+            491,
+            934
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "list",
+        "sub_type": "ref_text",
+        "list_items": [
+            "Lu, X., Schaefer, S., Luo, J., Ma, L., and He, Y. Low rank matrix approximation for 3d geometry filtering. IEEE transactions on visualization and computer graphics, 28 (4):1835–1847, 2020. 6 ",
+            "Luo, S. and Hu, W. Differentiable manifold reconstruction for point cloud denoising. In Proceedings of the 28th ACM international conference on multimedia, pp. 1330– 1338, 2020. 2, 3, 6, 8, 12, 14 ",
+            "Luo, S. and Hu, W. Score-based point cloud denoising. In Proceedings of the IEEE/CVF international conference on computer vision, pp. 4583–4592, 2021. 2, 3, 5, 6, 7, 8, 12 ",
+            "Ma, B., Liu, Y.-S., and Han, Z. Learning signed distance functions from noisy 3d point clouds via noise to noise mapping. In International Conference on Machine Learning (ICML), 2023. 1, 3 ",
+            "Mao, A., Du, Z., Wen, Y.-H., Xuan, J., and Liu, Y.-J. Pdflow: A point cloud denoising framework with normalizing flows. In European Conference on Computer Vision, pp. 398–415. Springer, 2022. 2 ",
+            "Mao, A., Yan, B., Ma, Z., and He, Y. Denoising point clouds in latent space via graph convolution and invertible neural network. In Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition, pp. 5768– 5777, 2024. 2, 6, 7, 12 ",
+            "Mattei, E. and Castrodad, A. Point cloud denoising via moving rpca. In Computer Graphics Forum, volume 36, pp. 123–137. Wiley Online Library, 2017. 6 ",
+            "Moran, N., Schmidt, D., Zhong, Y., and Coady, P. Noisier2noise: Learning to denoise from unpaired noisy data. In Proceedings of the IEEE/CVF conference on computer vision and pattern recognition, pp. 12064–12072, 2020. 3 ",
+            "Pan, L., Chen, X., Cai, Z., Zhang, J., Zhao, H., Yi, S., and Liu, Z. Variational relational point completion network. In Proceedings of the IEEE/CVF conference on computer vision and pattern recognition, pp. 8524–8533, 2021. 4 ",
+            "Rakotosaona, M.-J., La Barbera, V., Guerrero, P., Mitra, N. J., and Ovsjanikov, M. Pointcleannet: Learning to denoise and remove outliers from dense point clouds. In Computer graphics forum, volume 39, pp. 185–203. Wiley Online Library, 2020. 2, 5, 6 ",
+            "Ravi, N., Reizenstein, J., Novotny, D., Gordon, T., Lo, W.-Y., Johnson, J., and Gkioxari, G. Accelerating 3d deep learning with pytorch3d. arXiv preprint arXiv:2007.08501, 2020. 6 "
+        ],
+        "bbox": [
+            81,
+            80,
+            480,
+            883
+        ],
+        "page_idx": 9
+    },
+    {
+        "type": "list",
+        "sub_type": "ref_text",
+        "list_items": [
+            "Ren, J., Pan, L., and Liu, Z. Benchmarking and analyzing point cloud classification under corruptions. In International Conference on Machine Learning, pp. 18559– 18575. PMLR, 2022. 1 ",
+            "Serna, A., Marcotegui, B., Goulette, F., and Deschaud, J.-E. Paris-rue-madame database: a 3d mobile laser scanner dataset for benchmarking urban detection, segmentation and classification methods. In 4th international conference on pattern recognition, applications and methods ICPRAM 2014, 2014. 5, 8 ",
+            "Sun, J., Wang, J., Nie, W., Yu, Z., Mao, Z., and Xiao, C. A critical revisit of adversarial robustness in 3d point cloud recognition with diffusion-driven purification. In International Conference on Machine Learning, pp. 33100– 33114. PMLR, 2023. 1 ",
+            "Vogel, M., Tateno, K., Pollefeys, M., Tombari, F., Rakotosaona, M.-J., and Engelmann, F. P2p-bridge: Diffusion bridges for 3d point cloud denoising. In European Conference on Computer Vision, pp. 184–201. Springer, 2025. 2 ",
+            "Wang, J., Lu, X., Wang, M., Hou, F., and He, Y. Learning implicit fields for point cloud filtering. IEEE Transactions on Visualization and Computer Graphics, 2024a. 2 ",
+            "Wang, P.-S., Liu, Y., and Tong, X. Mesh denoising via cascaded normal regression. ACM Trans. Graph., 35(6): 232–1, 2016. 5, 8, 13 ",
+            "Wang, W., Pan, W., Liu, X., Su, K., Rolfe, B., and Lu, X. Random screening-based feature aggregation for point cloud denoising. Computers & Graphics, 116:64–72, 2023. 2 ",
+            "Wang, W., Liu, X., Zhou, H., Wei, L., Deng, Z., Murshed, M., and Lu, X. Noise4denoise: Leveraging noise for unsupervised point cloud denoising. Computational Visual Media, 10(4):659–669, 2024b. 1, 3 ",
+            "Wang, Y., Sun, Y., Liu, Z., Sarma, S. E., Bronstein, M. M., and Solomon, J. M. Dynamic graph cnn for learning on point clouds. ACM Transactions on Graphics (tog), 38 (5):1–12, 2019. 3 ",
+            "Wei, X., Wang, Y., XU, A., Zhu, L., Sun, D., Li, K., Li, Y., and Qin, Q. Noise2score3d: Tweedie’s approach for unsupervised point cloud denoising. arXiv preprint arXiv:2503.09283, 2025. 1, 3, 6, 7, 8, 12, 14 ",
+            "Wei, Z., Chen, H., Nan, L., Wang, J., Qin, J., and Wei, M. Pathnet: Path-selective point cloud denoising. IEEE Transactions on Pattern Analysis and Machine Intelligence, 46(6):4426–4442, 2024. 2, 3, 6, 8, 12 "
+        ],
+        "bbox": [
+            495,
+            80,
+            888,
+            883
+        ],
+        "page_idx": 9
+    },
+    {
+        "type": "header",
+        "text": "SIMPC: Learning Self-Induced Mirror-Point Consistency for Unsupervised Point Cloud Denoising ",
+        "bbox": [
+            174,
+            56,
+            797,
+            71
+        ],
+        "page_idx": 9
+    },
+    {
+        "type": "page_number",
+        "text": "10 ",
+        "bbox": [
+            477,
+            922,
+            495,
+            934
+        ],
+        "page_idx": 9
+    },
+    {
+        "type": "list",
+        "sub_type": "ref_text",
+        "list_items": [
+            "Yu, L., Li, X., Fu, C.-W., Cohen-Or, D., and Heng, P.-A. Punet: Point cloud upsampling network. In 2018 IEEE/CVF Conference on Computer Vision and Pattern Recognition, pp. 2790–2799, 2018. doi: 10.1109/CVPR.2018.00295. 5, 6, 7, 8, 12, 14 ",
+            "Zeng, J., Cheung, G., Ng, M., Pang, J., and Yang, C. 3d point cloud denoising using graph laplacian regularization of a low dimensional manifold model. IEEE Transactions on Image Processing, 29:3474–3489, 2019. 6 ",
+            "Zhang, C., Zhang, X., Yue, X., Lao, M., Jiang, T., Wang, J., Zhang, F., and Chen, L. Pd-refiner: An underlying surface inheritance refiner with adaptive edge-aware supervision for point cloud denoising. In Proceedings of the 32nd ACM International Conference on Multimedia, pp. 3381– 3390, 2024. 2, 3, 6, 7, 8, 12 ",
+            "Zhang, D., Lu, X., Qin, H., and He, Y. Pointfilter: Point cloud filtering via encoder-decoder modeling. IEEE "
+        ],
+        "bbox": [
+            86,
+            84,
+            478,
+            366
+        ],
+        "page_idx": 10
+    },
+    {
+        "type": "list",
+        "sub_type": "ref_text",
+        "list_items": [
+            "Transactions on Visualization and Computer Graphics, 27(3):2015–2027, 2020. 2 ",
+            "Zhou, J., Ma, B., Liu, Y.-S., and Han, Z. Fast learning of signed distance functions from noisy point clouds via noise to noise mapping. IEEE transactions on pattern analysis and machine intelligence, 46(12):8936–8953, 2024. 3 ",
+            "Zhou, J., Shi, X., Song, H., Fang, Y., Liu, Y.-S., and Han, Z. U-can: Unsupervised point cloud denoising with consistency-aware noise2noise matching. arXiv preprint arXiv:2510.25210, 2025a. 1, 3, 5, 6 ",
+            "Zhou, Q., Yang, W., Fei, B., Xu, J., Zhang, R., Liu, K., Luo, Y., and He, Y. 3dmambaipf: A state space model for iterative point cloud filtering via differentiable rendering. In Proceedings of the AAAI Conference on Artificial Intelligence, volume 39, pp. 10843–10851, 2025b. 2 "
+        ],
+        "bbox": [
+            500,
+            80,
+            890,
+            359
+        ],
+        "page_idx": 10
+    },
+    {
+        "type": "header",
+        "text": "SIMPC: Learning Self-Induced Mirror-Point Consistency for Unsupervised Point Cloud Denoising ",
+        "bbox": [
+            174,
+            56,
+            797,
+            71
+        ],
+        "page_idx": 10
+    },
+    {
+        "type": "page_number",
+        "text": "",
+        "bbox": [
+            477,
+            922,
+            493,
+            934
+        ],
+        "page_idx": 10
+    },
+    {
+        "type": "text",
+        "text": "A. Appendix ",
+        "text_level": 1,
+        "bbox": [
+            86,
+            83,
+            196,
+            99
+        ],
+        "page_idx": 11
+    },
+    {
+        "type": "text",
+        "text": "A.1. Runtimes and Parameters ",
+        "text_level": 1,
+        "bbox": [
+            86,
+            109,
+            305,
+            125
+        ],
+        "page_idx": 11
+    },
+    {
+        "type": "text",
+        "text": "We compare SIMPC with previous state-of-the-art point cloud denoising methods in terms of runtime and the number of parameters. The results are reported in Tab. 6. Overall, SIMPC achieves comparable runtime and parameter complexity to existing methods. ",
+        "bbox": [
+            84,
+            133,
+            887,
+            178
+        ],
+        "page_idx": 11
+    },
+    {
+        "type": "table",
+        "img_path": "images/d4b1dd9e87b9022759fd1ab8247396246228819886fc724874b3685b388f99a7.jpg",
+        "table_caption": [
+            "Table 6. Runtimes of state-of-the-art methods on one object with 10K points and 2% Gaussian noise, from the PUNet dataset. "
+        ],
+        "table_footnote": [],
+        "table_body": "<table><tr><td>Type</td><td>Method</td><td>Time (s)↓</td><td>Para (M)↓</td></tr><tr><td rowspan=\"4\">Sup.</td><td>IPFN (de Silva Edirimuni et al., 2023b)</td><td>4.89</td><td>3.20</td></tr><tr><td>PathNet (Wei et al., 2024)</td><td>11.10</td><td>15.61</td></tr><tr><td>PD-Refiner (Zhang et al., 2024)</td><td>1.41</td><td>15.11</td></tr><tr><td>StraightPCF (de Silva Edirimuni et al., 2024)</td><td>1.46</td><td>0.53</td></tr><tr><td rowspan=\"4\">Unsup.</td><td>DMR-U (Luo &amp; Hu, 2020)</td><td>0.43</td><td>0.23</td></tr><tr><td>Score-U (Luo &amp; Hu, 2021)</td><td>1.18</td><td>0.19</td></tr><tr><td>Noise2Score3D (Wei et al., 2025)</td><td>0.14</td><td>24.38</td></tr><tr><td>SIMPC (Ours)</td><td>1.01</td><td>0.63</td></tr></table>",
+        "bbox": [
+            282,
+            189,
+            692,
+            311
+        ],
+        "page_idx": 11
+    },
+    {
+        "type": "text",
+        "text": "A.2. Additional Results on Non-Gaussian Noise ",
+        "text_level": 1,
+        "bbox": [
+            84,
+            359,
+            418,
+            373
+        ],
+        "page_idx": 11
+    },
+    {
+        "type": "text",
+        "text": "We further report quantitative comparisons on the PUNet dataset under two additional non-Gaussian synthetic noise types, namely Anisotropic and Uniform noise. The results are summarized in Tab. 7. SIMPC achieves satisfactory generalization across different noise distributions. ",
+        "bbox": [
+            84,
+            383,
+            888,
+            426
+        ],
+        "page_idx": 11
+    },
+    {
+        "type": "table",
+        "img_path": "images/26a1dd700b435d8e6611ff0d817c312ed66ab277ce926f288881189195aab71d.jpg",
+        "table_caption": [
+            "Table 7. Denoising results of different methods on PUNet (Yu et al., 2018) under non-Gaussian noise. Both CD and P2M distances are multiplied by 105. For each column, the top-3 results among unsupervised methods are highlighted with 1st. , 2nd. , and 3rd. . "
+        ],
+        "table_footnote": [],
+        "table_body": "<table><tr><td colspan=\"3\">#Points</td><td colspan=\"6\">10K Points</td><td colspan=\"6\">50K Points</td></tr><tr><td colspan=\"3\">Noise Level</td><td colspan=\"2\">1% noise</td><td colspan=\"2\">2% noise</td><td colspan=\"2\">3% noise</td><td colspan=\"2\">1% noise</td><td colspan=\"2\">2% noise</td><td colspan=\"2\">3% noise</td></tr><tr><td colspan=\"2\">Type</td><td>Methods</td><td> $CD\\downarrow$ </td><td> $P2M\\downarrow$ </td><td> $CD\\downarrow$ </td><td> $P2M\\downarrow$ </td><td> $CD\\downarrow$ </td><td> $P2M\\downarrow$ </td><td> $CD\\downarrow$ </td><td> $P2M\\downarrow$ </td><td> $CD\\downarrow$ </td><td> $P2M\\downarrow$ </td><td> $CD\\downarrow$ </td><td> $P2M\\downarrow$ </td></tr><tr><td rowspan=\"6\">Anisotropic</td><td rowspan=\"3\">Sup.</td><td>PD-Refiner (Zhang et al., 2024)</td><td>17.41</td><td>1.76</td><td>24.70</td><td>4.80</td><td>33.43</td><td>11.28</td><td>4.66</td><td>0.45</td><td>6.97</td><td>1.98</td><td>18.20</td><td>10.42</td></tr><tr><td>PD-LTS (Mao et al., 2024)</td><td>17.62</td><td>1.85</td><td>24.91</td><td>5.07</td><td>40.52</td><td>16.78</td><td>4.70</td><td>0.52</td><td>7.04</td><td>2.19</td><td>25.18</td><td>16.08</td></tr><tr><td>StraightPCF (de Silva Edirimuni et al., 2024)</td><td>18.54</td><td>2.50</td><td>26.43</td><td>6.21</td><td>36.77</td><td>14.37</td><td>5.62</td><td>1.12</td><td>8.06</td><td>3.06</td><td>19.16</td><td>11.32</td></tr><tr><td rowspan=\"3\">Unsup.</td><td>Score-U (Luo &amp; Hu, 2021)</td><td>32.02</td><td>9.34</td><td>47.58</td><td>18.40</td><td>81.73</td><td>45.02</td><td>9.44</td><td>2.53</td><td>23.26</td><td>13.01</td><td>37.79</td><td>23.11</td></tr><tr><td>Noise2Score3D (Wei et al., 2025)</td><td>32.77</td><td>10.46</td><td>58.14</td><td>27.17</td><td>81.87</td><td>45.87</td><td>13.87</td><td>6.16</td><td>29.30</td><td>18.55</td><td>48.12</td><td>35.29</td></tr><tr><td>SIMPC (Ours)</td><td>20.12</td><td>3.68</td><td>29.35</td><td>7.57</td><td>35.39</td><td>14.28</td><td>5.77</td><td>1.13</td><td>8.52</td><td>3.56</td><td>18.84</td><td>11.44</td></tr><tr><td rowspan=\"6\">Uniform</td><td rowspan=\"3\">Sup.</td><td>PD-Refiner (Zhang et al., 2024)</td><td>6.12</td><td>0.76</td><td>17.11</td><td>1.52</td><td>21.65</td><td>2.62</td><td>3.63</td><td>0.12</td><td>4.54</td><td>0.37</td><td>5.34</td><td>0.89</td></tr><tr><td>PD-LTS (Mao et al., 2024)</td><td>6.43</td><td>0.84</td><td>17.34</td><td>1.59</td><td>21.83</td><td>2.74</td><td>3.69</td><td>0.15</td><td>4.59</td><td>0.44</td><td>5.82</td><td>1.27</td></tr><tr><td>StraightPCF (de Silva Edirimuni et al., 2024)</td><td>6.57</td><td>1.04</td><td>18.51</td><td>2.59</td><td>23.78</td><td>4.46</td><td>4.21</td><td>0.51</td><td>5.66</td><td>1.37</td><td>6.97</td><td>2.40</td></tr><tr><td rowspan=\"3\">Unsup.</td><td>Score-U (Luo &amp; Hu, 2021)</td><td>23.82</td><td>7.63</td><td>31.37</td><td>8.85</td><td>58.21</td><td>29.07</td><td>6.00</td><td>0.80</td><td>8.86</td><td>2.05</td><td>15.56</td><td>5.29</td></tr><tr><td>Noise2Score3D (Wei et al., 2025)</td><td>12.18</td><td>3.30</td><td>31.80</td><td>9.12</td><td>43.01</td><td>15.22</td><td>7.34</td><td>1.78</td><td>12.53</td><td>4.87</td><td>18.32</td><td>9.21</td></tr><tr><td>SIMPC (Ours)</td><td>8.10</td><td>1.92</td><td>19.78</td><td>3.43</td><td>25.02</td><td>4.94</td><td>4.10</td><td>0.32</td><td>5.56</td><td>0.86</td><td>7.06</td><td>1.92</td></tr></table>",
+        "bbox": [
+            104,
+            438,
+            874,
+            632
+        ],
+        "page_idx": 11
+    },
+    {
+        "type": "text",
+        "text": "A.3. Additional Visual Results ",
+        "text_level": 1,
+        "bbox": [
+            86,
+            700,
+            299,
+            714
+        ],
+        "page_idx": 11
+    },
+    {
+        "type": "text",
+        "text": "We also provide additional qualitative denoising results on more objects from the PUNet, PCNet, and Kinect datasets. The visual comparisons are shown in Fig. 7 and Fig. 8. As can be observed, our method achieves more effective residual noise suppression and produces smoother surfaces across different datasets. ",
+        "bbox": [
+            84,
+            724,
+            887,
+            768
+        ],
+        "page_idx": 11
+    },
+    {
+        "type": "header",
+        "text": "SIMPC: Learning Self-Induced Mirror-Point Consistency for Unsupervised Point Cloud Denoising ",
+        "bbox": [
+            174,
+            56,
+            797,
+            71
+        ],
+        "page_idx": 11
+    },
+    {
+        "type": "page_number",
+        "text": "12 ",
+        "bbox": [
+            477,
+            922,
+            495,
+            934
+        ],
+        "page_idx": 11
+    },
+    {
+        "type": "image",
+        "img_path": "images/2746ce0c45f4555f65bad30038c20f6ba96826cf71caa344284608859e774c92.jpg",
+        "image_caption": [
+            "Figure 7. Visual results for 50K resolution shapes from the PCNet and PUNet dataset with 3% Gaussian noise on the bounding sphere radius. Point colors represent the point-wise P2M distance, where orange indicates larger errors and blue denotes cleaner regions. "
+        ],
+        "image_footnote": [],
+        "content": "Noisy\nIPFN\nPathNet\nDMR-U\nScore-U\nClean\nPD-Refiner\nStraightPCF\nNoise2Score3D\nSIMPC (Ours)\nNoisy\nIPFN\nPathNet\nDMR-U\nScore-U\nClean\nPD-Refiner\nStraightPCF\nNoise2Score3D\nSIMPC (Ours)\nSupervised Methods\nUnsupervised Methods",
+        "sub_type": "text_image",
+        "bbox": [
+            106,
+            152,
+            867,
+            492
+        ],
+        "page_idx": 12
+    },
+    {
+        "type": "image",
+        "img_path": "images/ab03a0b8552a6d60ee26c71842d8ed218907638745d03b7c974af82bc8d8c322.jpg",
+        "image_caption": [
+            "Figure 8. Visual results for a real scan and zoom-in views of several surface regions from the Kinect dataset (Wang et al., 2016). Supervised and unsupervised methods, including our proposed SIMPC, are highlighted in red and green, respectively. "
+        ],
+        "image_footnote": [],
+        "content": "Noisy\nClean\nIPFN\nPathNet\nPD-Refiner\nStraightPCF\nSupervised Methods\nDMR-U\nScore-U\nNoise2Score3D\nSIMPC (Ours)\nUnsupervised Methods\nNoisy\nClean",
+        "sub_type": "text_image",
+        "bbox": [
+            89,
+            676,
+            885,
+            797
+        ],
+        "page_idx": 12
+    },
+    {
+        "type": "header",
+        "text": "SIMPC: Learning Self-Induced Mirror-Point Consistency for Unsupervised Point Cloud Denoising ",
+        "bbox": [
+            174,
+            56,
+            797,
+            70
+        ],
+        "page_idx": 12
+    },
+    {
+        "type": "page_number",
+        "text": "13 ",
+        "bbox": [
+            477,
+            922,
+            495,
+            934
+        ],
+        "page_idx": 12
+    },
+    {
+        "type": "text",
+        "text": "A.4. Limitation and Generalization Boundary ",
+        "text_level": 1,
+        "bbox": [
+            86,
+            85,
+            410,
+            99
+        ],
+        "page_idx": 13
+    },
+    {
+        "type": "table",
+        "img_path": "images/bf8f117f3af0d6eeaa26384f50413833769db42afcee39d711b6b4c21a8aed5a.jpg",
+        "table_caption": [
+            "Table 8. Denoising results of extremely sparse point clouds settings on PUNet (Yu et al., 2018) under Gaussian noise. Both CD and P2M distances are multiplied by 105. "
+        ],
+        "table_footnote": [],
+        "table_body": "<table><tr><td colspan=\"3\">#Points</td><td colspan=\"4\">5K Points</td></tr><tr><td>Noise Level</td><td colspan=\"2\">1% Noise</td><td colspan=\"2\">2% Noise</td><td colspan=\"2\">3% Noise</td></tr><tr><td>Methods</td><td> $CD\\downarrow$ </td><td> $P2M\\downarrow$ </td><td> $CD\\downarrow$ </td><td> $P2M\\downarrow$ </td><td> $CD\\downarrow$ </td><td> $P2M\\downarrow$ </td></tr><tr><td>Noise2Score3D (Wei et al., 2025)</td><td>50.31</td><td>17.15</td><td>69.36</td><td>26.83</td><td>88.03</td><td>45.32</td></tr><tr><td>SIMPC (Ours)</td><td>42.85</td><td>11.89</td><td>58.04</td><td>15.77</td><td>68.06</td><td>21.18</td></tr><tr><td>StraightPCF (de Silva Edirimuni et al., 2024)</td><td>33.48</td><td>6.37</td><td>53.39</td><td>12.47</td><td>64.19</td><td>19.32</td></tr></table>",
+        "bbox": [
+            218,
+            116,
+            754,
+            210
+        ],
+        "page_idx": 13
+    },
+    {
+        "type": "text",
+        "text": "The generalization boundaries of SIMPC mainly lie in a slight performance degradation when handling extremely sparse point clouds and a mild smoothing effect on sharp geometric structures. We evaluate SIMPC and other methods on extremely sparse point clouds, as shown in Tab. 8. Compared with the supervised method (StraightPCF (de Silva Edirimuni et al., 2024)), the performance gap of SIMPC slightly increases under this setting. Nevertheless, SIMPC still achieves clear improvements over previous unsupervised methods such as Noise2Score3D (Wei et al., 2025). In addition, SIMPC achieves performance comparable to supervised methods in flat regions. However, for sharp geometric structures, it exhibits slight smoothing compared to supervised approaches. This is mainly due to the absence of ground-truth geometric details, which are typically leveraged in supervised denoising frameworks. ",
+        "bbox": [
+            84,
+            265,
+            888,
+            387
+        ],
+        "page_idx": 13
+    },
+    {
+        "type": "text",
+        "text": "A.5. A Manifold-Based View of Mirror-Point Consistency ",
+        "text_level": 1,
+        "bbox": [
+            84,
+            402,
+            488,
+            417
+        ],
+        "page_idx": 13
+    },
+    {
+        "type": "text",
+        "text": "Setup and notation. Let $\\mathcal { X } = \\{ x _ { i } \\} _ { i = 1 } ^ { N } \\subset \\mathbb { R } ^ { 3 }$ be a given noisy point cloud (a single observation), where N is the number of points and $x _ { i } \\in \\mathbb { R } ^ { 3 }$ denotes the i-th noisy point. We model the underlying clean surface as a compact $C ^ { 2 }$ two-dimensional manifold $\\mathcal { M } \\subset \\mathbb { R } ^ { 3 }$ (Luo & Hu, 2020). For any point $x \\in \\mathbb { R } ^ { 3 }$ , we define its Euclidean distance to the surface as dist $\\begin{array} { r } { ( x , \\mathcal { M } ) = \\operatorname* { m i n } _ { y \\in \\mathcal { M } } \\| x - y \\| _ { 2 } } \\end{array}$ . For each $x _ { i }$ considered in the following analysis, its nearest-point projection onto M is produced by ",
+        "bbox": [
+            84,
+            425,
+            888,
+            502
+        ],
+        "page_idx": 13
+    },
+    {
+        "type": "equation",
+        "text": "$$\ng _ {i} = \\Pi (x _ {i}) = \\arg \\min _ {y \\in \\mathcal {M}} \\| x _ {i} - y \\| _ {2}, \\tag {14}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            357,
+            505,
+            885,
+            527
+        ],
+        "page_idx": 13
+    },
+    {
+        "type": "text",
+        "text": "where $\\Pi ( \\cdot )$ denotes the closest-point projection operator, and $g _ { i } \\in \\mathcal { M }$ is regarded as the ideal surface target associated with the noisy point $x _ { i }$ . When the closest point is unique and M is $C ^ { 2 }$ , the displacement $x _ { i } - g _ { i }$ is orthogonal to the tangent plane $T _ { g _ { i } } { \\mathcal { M } } , { \\mathrm { i . e . , } } x _ { i } - g _ { i } \\perp T _ { g _ { i } } { \\mathcal { M } }$ , and is therefore colinear with the surface normal at $g _ { i }$ . Let $n ( g _ { i } ) \\in \\mathbb { R } ^ { 3 }$ be a unit normal vector of M at $g _ { i }$ , and let $T _ { g _ { i } } { \\mathcal { M } }$ be the tangent plane at $g _ { i }$ , which specify the normal and tangential directions used to model local denoising uncertainty. ",
+        "bbox": [
+            84,
+            537,
+            887,
+            617
+        ],
+        "page_idx": 13
+    },
+    {
+        "type": "text",
+        "text": "Local neighborhoods and denoising updates. For each point $x _ { i } ~ \\in ~ { \\mathcal { X } } ,$ denote its k-NN index set by $\\begin{array} { r l } { \\mathcal { N } _ { i } } & { { } = } \\end{array}$ $\\mathrm { K N N } ( x _ { i } , \\mathcal { X } , k )$ . Based on the local neighborhood ${ \\mathcal { N } } _ { i }$ , the denoising process predicts a point-wise displacement (denoising vector) $d _ { i } \\in \\mathbb { R } ^ { 3 }$ for $x _ { i }$ . The denoised seed point is then obtained by the residual update ",
+        "bbox": [
+            84,
+            633,
+            887,
+            680
+        ],
+        "page_idx": 13
+    },
+    {
+        "type": "equation",
+        "text": "$$\n\\hat {x} _ {i} = x _ {i} + w _ {1} d _ {i}, \\quad w _ {1} = 1. \\tag {15}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            379,
+            693,
+            885,
+            709
+        ],
+        "page_idx": 13
+    },
+    {
+        "type": "text",
+        "text": "Following MPGM, we further extend the displacement to generate a mirror input ",
+        "bbox": [
+            84,
+            724,
+            619,
+            739
+        ],
+        "page_idx": 13
+    },
+    {
+        "type": "equation",
+        "text": "$$\n\\tilde {x} _ {i} = x _ {i} + w _ {2} d _ {i}, \\quad w _ {2} > w _ {1}, \\tag {16}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            372,
+            755,
+            885,
+            770
+        ],
+        "page_idx": 13
+    },
+    {
+        "type": "text",
+        "text": "and recompute its neighborhood $\\tilde { \\mathcal { N } } _ { i } = \\mathrm { K N N } ( \\tilde { x } _ { i } , \\mathcal { X } \\setminus \\{ x _ { i } \\} , k )$ . Intuitively, since $\\mathcal { L } _ { \\mathrm { S R } }$ encourages $d _ { i }$ to point toward the local surface, extrapolating with a larger step $w _ { 2 } > w _ { 1 }$ tends to move $\\tilde { x } _ { i }$ beyond the local surface patch, yielding a shifted (often complementary) neighborhood for the second denoising pass. Applying the same denoising procedure at $\\tilde { x } _ { i }$ under $\\tilde { \\mathcal { N } } _ { i }$ yields a mirror displacement $\\tilde { d } _ { i } \\in \\mathbb { R } ^ { 3 }$ and the denoised mirror point ",
+        "bbox": [
+            84,
+            784,
+            887,
+            845
+        ],
+        "page_idx": 13
+    },
+    {
+        "type": "equation",
+        "text": "$$\n\\bar {x} _ {i} = \\tilde {x} _ {i} + \\tilde {d} _ {i}. \\tag {17}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            431,
+            858,
+            885,
+            876
+        ],
+        "page_idx": 13
+    },
+    {
+        "type": "text",
+        "text": "Consequently, each noisy seed $x _ { i }$ deterministically induces a paired output $( \\hat { x } _ { i } , \\bar { x } _ { i } )$ . ",
+        "bbox": [
+            84,
+            890,
+            635,
+            906
+        ],
+        "page_idx": 13
+    },
+    {
+        "type": "header",
+        "text": "SIMPC: Learning Self-Induced Mirror-Point Consistency for Unsupervised Point Cloud Denoising ",
+        "bbox": [
+            174,
+            56,
+            797,
+            71
+        ],
+        "page_idx": 13
+    },
+    {
+        "type": "page_number",
+        "text": "14 ",
+        "bbox": [
+            477,
+            922,
+            495,
+            934
+        ],
+        "page_idx": 13
+    },
+    {
+        "type": "text",
+        "text": "Statistical model of the denoising landing region. We model the landing position of each denoised point as a random variable whose distribution captures residual bias and uncertainty induced by local geometry and neighborhood variations. For a given $x _ { i }$ , we assume the seed landing $\\hat { x } _ { i }$ follows an anisotropic Gaussian distribution whose covariance is structured along the local tangential and normal directions at the associated surface location $g _ { i }$ . Concretely, let ${ \\hat { n } } _ { i } = n ( g _ { i } )$ and $\\hat { T _ { i } } = T _ { g _ { i } } \\mathcal { M }$ , then ",
+        "bbox": [
+            84,
+            85,
+            888,
+            160
+        ],
+        "page_idx": 14
+    },
+    {
+        "type": "equation",
+        "text": "$$\n\\hat {x} _ {i} \\sim \\mathcal {N} \\left(\\hat {\\mu} _ {i}, \\hat {\\Sigma} _ {i, \\parallel} + \\hat {\\sigma} _ {i, \\perp} ^ {2} \\hat {n} _ {i} \\hat {n} _ {i} ^ {\\top}\\right), \\tag {18}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            372,
+            161,
+            885,
+            180
+        ],
+        "page_idx": 14
+    },
+    {
+        "type": "text",
+        "text": "where $\\hat { \\mu } _ { i } \\in { \\mathbb { R } ^ { 3 } }$ is the mean landing position, $\\hat { \\Sigma } _ { i , \\parallel } \\succeq 0$ models the tangential uncertainty (supported on the tangent subspace $\\hat { T } _ { i } )$ , and $\\hat { \\sigma } _ { i , \\perp } ^ { 2 }$ models the normal uncertainty along $\\hat { n } _ { i } .$ . Since the $\\mathcal { L } _ { \\mathrm { S R } }$ term provides a coarse-grained similarity regularization that encourages denoised outputs to move toward the underlying surface, the seed mean landing position is closer to $\\mathcal { M }$ than the noisy observation, i.e., ",
+        "bbox": [
+            84,
+            186,
+            888,
+            250
+        ],
+        "page_idx": 14
+    },
+    {
+        "type": "equation",
+        "text": "$$\n\\operatorname{dist} \\left(\\hat {\\mu} _ {i}, \\mathcal {M}\\right) \\leq \\operatorname{dist} \\left(x _ {i}, \\mathcal {M}\\right). \\tag {19}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            383,
+            251,
+            885,
+            267
+        ],
+        "page_idx": 14
+    },
+    {
+        "type": "text",
+        "text": "The mirror landing $\\bar { x } _ { i }$ follows the same distributional form as in Eq. (18), but with branch-specific parameters $\\bar { \\mu } _ { i } \\in { \\mathbb { R } ^ { 3 } }$ , $\\bar { \\Sigma } _ { i , \\parallel } \\succeq 0$ , and $\\bar { \\sigma } _ { i , \\perp } ^ { 2 }$ , defined under the same local frame $\\bar { n } _ { i } = n ( g _ { i } )$ and $\\bar { T } _ { i } = T _ { g _ { i } } { \\mathcal { M } }$ , which capture the mean landing position and the tangential/normal uncertainties induced by the mirror neighborhood. ",
+        "bbox": [
+            84,
+            273,
+            888,
+            320
+        ],
+        "page_idx": 14
+    },
+    {
+        "type": "text",
+        "text": "From displacement extension to a coupled sequence of landing distributions. Starting from a noisy seed point $x _ { i }$ , MPGM induces a coupled sequence of (partly stochastic) landings through displacement extension and neighborhood re-sampling. For clarity, we summarize the induced transition as the following chain: ",
+        "bbox": [
+            84,
+            335,
+            888,
+            380
+        ],
+        "page_idx": 14
+    },
+    {
+        "type": "equation",
+        "text": "$$\nx _ {i} \\xrightarrow {\\text { d   e   n   o   i   s   e   w   i   t   h } w _ {1}} \\hat {x} _ {i} \\sim \\mathcal {N} \\left(\\hat {\\mu} _ {i}, \\hat {\\Sigma} _ {i}\\right) \\xrightarrow {\\text { e   x   t   e   n   d } \\left(w _ {2} > w _ {1}\\right)} \\tilde {x} _ {i} = x _ {i} + w _ {2} d _ {i} \\xrightarrow {\\text { d   e   n   o   i   s   e   u   n   d   e   r } \\bar {\\mathcal {N}} _ {i}} \\bar {x} _ {i} \\sim \\mathcal {N} \\left(\\bar {\\mu} _ {i}, \\bar {\\Sigma} _ {i}\\right), \\tag {20}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            145,
+            393,
+            885,
+            417
+        ],
+        "page_idx": 14
+    },
+    {
+        "type": "text",
+        "text": "where $\\hat { \\Sigma } _ { i } = \\hat { \\Sigma } _ { i , \\parallel } + \\hat { \\sigma } _ { i , \\perp } ^ { 2 } \\hat { n } _ { i } \\hat { n } _ { i } ^ { \\top }$ and $\\bar { \\Sigma } _ { i } = \\bar { \\Sigma } _ { i , \\parallel } + \\bar { \\sigma } _ { i , \\perp } ^ { 2 } \\bar { n } _ { i } \\bar { n } _ { i } ^ { \\top }$ follow the structured form introduced in Eq. (18) (and implicitly depend on the neighborhood and the scaling factors, e.g., w1). The intermediate point ${ \\tilde { x } } _ { i }$ is generated from $( x _ { i } , d _ { i } )$ , while its neighborhood is recomputed at $\\tilde { x } _ { i }$ , which makes the subsequent mirror landing $\\bar { x } _ { i }$ exhibit branch-specific statistics. In particular, $\\hat { x } _ { i }$ and $\\bar { x } _ { i }$ form a paired output induced from the same seed $x _ { i }$ via the shared displacement $d _ { i }$ . ",
+        "bbox": [
+            84,
+            426,
+            888,
+            491
+        ],
+        "page_idx": 14
+    },
+    {
+        "type": "text",
+        "text": "Under the geometric setup, $x _ { i }$ admits an associated ideal surface target $g _ { i } = \\Pi ( x _ { i } ) \\in \\mathcal { M }$ . With a mild locality condition $( \\mathrm { i . e . }$ , the mirror construction stays within the same local surface patch associated with $g _ { i } )$ , it is natural to view the seed and mirror branches as producing two stochastic estimators of a shared surface-consistent target in the neighborhood of $g _ { i }$ , while allowing different biases and uncertainties due to the neighborhood change induced by $\\tilde { x } _ { i }$ . Therefore, MPCL does not attempt to align two point sets globally; instead, it leverages the coupled chain in Eq. (20) to extract point-wise information about the shared surface target by directly reducing the discrepancy between the paired terminal samples $( \\hat { x } _ { i } , \\bar { x } _ { i } )$ . ",
+        "bbox": [
+            84,
+            496,
+            888,
+            588
+        ],
+        "page_idx": 14
+    },
+    {
+        "type": "text",
+        "text": "MPCL as distribution alignment, variance contraction, and surface-target consistency. Our mirror-point consistency loss (MPCL) enforces point-wise consistency between the paired landings: ",
+        "bbox": [
+            84,
+            603,
+            888,
+            635
+        ],
+        "page_idx": 14
+    },
+    {
+        "type": "equation",
+        "text": "$$\n\\mathcal {L} _ {\\mathrm{MPC}} = \\sum_ {i = 1} ^ {N} \\left\\| \\hat {x} _ {i} - \\bar {x} _ {i} \\right\\| _ {2} ^ {2}. \\tag {21}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            393,
+            645,
+            885,
+            686
+        ],
+        "page_idx": 14
+    },
+    {
+        "type": "text",
+        "text": "Define the random difference $\\Delta _ { i } = \\hat { x } _ { i } - \\bar { x } _ { i }$ . Conditioned on the same seed $x _ { i }$ , a standard second-moment expansion yields ",
+        "bbox": [
+            84,
+            696,
+            887,
+            713
+        ],
+        "page_idx": 14
+    },
+    {
+        "type": "equation",
+        "text": "$$\n\\mathbb {E} \\left[ \\| \\Delta_ {i} \\| _ {2} ^ {2} \\mid x _ {i} \\right] = \\left\\| \\hat {\\mu} _ {i} - \\bar {\\mu} _ {i} \\right\\| _ {2} ^ {2} + \\operatorname{Tr} \\left(\\hat {\\Sigma} _ {i} + \\bar {\\Sigma} _ {i} - 2 \\Sigma_ {i, \\times}\\right), \\tag {22}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            294,
+            723,
+            885,
+            750
+        ],
+        "page_idx": 14
+    },
+    {
+        "type": "text",
+        "text": "where $\\hat { \\Sigma } _ { i } = \\hat { \\Sigma } _ { i , \\parallel } + \\hat { \\sigma } _ { i . \\parallel } ^ { 2 } \\hat { n } _ { i } \\hat { n } _ { i } ^ { \\top }$ and $\\bar { \\Sigma } _ { i } = \\bar { \\Sigma } _ { i , \\parallel } + \\bar { \\sigma } _ { i , \\perp } ^ { 2 } \\bar { n } _ { i } \\bar { n } _ { i } ^ { \\top }$ denote the full covariances of the seed and mirror landings, respectively, and $\\Sigma _ { i , \\times } \\stackrel {  } { = } \\mathrm { C o v } ( \\hat { x } _ { i } , \\bar { x } _ { i } \\mid x _ { i } )$ is their cross-covariance. Eq. (22) shows that minimizing MPCL simultaneously (i) reduces the discrepancy between the landing means via $\\| \\hat { \\mu } _ { i } - \\bar { \\mu } _ { i } \\| _ { 2 } ^ { 2 }$ and (ii) suppresses the combined uncertainty through the covariance trace term. Since the mirror branch is evaluated under a changed neighborhood around ${ \\tilde { x } } _ { i }$ , the two landings are generally not perfectly correlated, which limits $\\Sigma _ { i , \\times }$ and makes MPCL effective in controlling $\\mathrm { T r } ( \\hat { \\Sigma } _ { i } + \\bar { \\Sigma } _ { i } )$ . ",
+        "bbox": [
+            84,
+            760,
+            888,
+            839
+        ],
+        "page_idx": 14
+    },
+    {
+        "type": "text",
+        "text": "To connect this alignment to surface localization, recall that $g _ { i } = \\Pi ( x _ { i } )$ represents the ideal surface target associated with $x _ { i }$ . Under the landing model and the coarse-grained similarity regularization (Eq. (19)), both $\\hat { \\mu } _ { i }$ and $\\bar { \\mu } _ { i }$ are encouraged to lie in a local region closer to M than $x _ { i }$ . Then the mean-alignment term $\\| \\hat { \\mu } _ { i } - \\bar { \\mu } _ { i } \\| _ { 2 } ^ { 2 }$ promotes a shared surface-consistent estimate within the same local patch around $g _ { i } \\colon$ : when two stochastic estimators tied to the same underlying target are forced to consistent, the consistent point is constrained to remain near M (due to the similarity regularization), while reducing the ambiguity of where on M the point should land. Meanwhile, the uncertainty suppression term contracts the landing regions, making the paired outputs concentrate more tightly around the shared surface-consistent location. Consequently, MPGM provides a point-wise pairing $( \\hat { x } _ { i } , \\bar { x } _ { i } )$ for each noisy seed $x _ { i }$ , and MPCL enforces their consistency, thereby establishing a consistent relation between two variants that correspond to the same underlying surface target and facilitating more accurate localization of $g _ { i }$ through distribution alignment and variance contraction. ",
+        "bbox": [
+            84,
+            845,
+            888,
+            906
+        ],
+        "page_idx": 14
+    },
+    {
+        "type": "header",
+        "text": "SIMPC: Learning Self-Induced Mirror-Point Consistency for Unsupervised Point Cloud Denoising ",
+        "bbox": [
+            174,
+            56,
+            797,
+            71
+        ],
+        "page_idx": 14
+    },
+    {
+        "type": "page_number",
+        "text": "15 ",
+        "bbox": [
+            477,
+            922,
+            495,
+            934
+        ],
+        "page_idx": 14
+    },
+    {
+        "type": "text",
+        "text": "",
+        "bbox": [
+            84,
+            85,
+            888,
+            176
+        ],
+        "page_idx": 15
+    },
+    {
+        "type": "text",
+        "text": "A.6. Deterministic and Geometric Symmetry Design of Mirror-Point Consistency ",
+        "text_level": 1,
+        "bbox": [
+            84,
+            191,
+            653,
+            208
+        ],
+        "page_idx": 15
+    },
+    {
+        "type": "text",
+        "text": "we further discuess the deterministic and geometric symmetry design by the analytical framework of SIMPC. ",
+        "bbox": [
+            84,
+            215,
+            803,
+            231
+        ],
+        "page_idx": 15
+    },
+    {
+        "type": "text",
+        "text": "Case (1): Symmetry and deterministic correspondence for GT surface ",
+        "text_level": 1,
+        "bbox": [
+            84,
+            238,
+            576,
+            253
+        ],
+        "page_idx": 15
+    },
+    {
+        "type": "text",
+        "text": "For a noisy seed point $x _ { i } ,$ , let $s _ { i } \\in S$ denote its corresponding target point on the underlying clean surface $s ,$ and let the noise be written as $x _ { i } = s _ { i } + n _ { i }$ . At the current denoising stage, let the denoiser output a point-wise denoising vector $d _ { i } = \\mathcal { D } ( x _ { i } )$ , so that the normally denoised seed point is ${ \\hat { x } } _ { i } = x _ { i } + d _ { i }$ . We further construct a mirror-point by extending the denoising vector $\\tilde { x } _ { i } = x _ { i } + 2 d _ { i }$ , and denote its denoised mirror-point by $\\bar { x } _ { i } = \\tilde { x } _ { i } + \\tilde { d } _ { i }$ . ",
+        "bbox": [
+            84,
+            261,
+            887,
+            321
+        ],
+        "page_idx": 15
+    },
+    {
+        "type": "text",
+        "text": "The Mirror-Point Consistency Loss is then ",
+        "bbox": [
+            84,
+            329,
+            367,
+            343
+        ],
+        "page_idx": 15
+    },
+    {
+        "type": "equation",
+        "text": "$$\n\\mathcal {L} _ {\\mathrm{MPC}} = \\mathbb {E} \\left[ | \\hat {x} _ {i} - \\bar {x} _ {i} | ^ {2} \\right].\n$$",
+        "text_format": "latex",
+        "bbox": [
+            401,
+            343,
+            570,
+            362
+        ],
+        "page_idx": 15
+    },
+    {
+        "type": "text",
+        "text": "Through Taylor expansion, we can approximate the denoised seed point and the denoised mirror-point around the target surface point $s _ { i } { : }$ ",
+        "bbox": [
+            84,
+            375,
+            888,
+            405
+        ],
+        "page_idx": 15
+    },
+    {
+        "type": "equation",
+        "text": "$$\n\\hat {x} _ {i} = s _ {i} + \\frac {\\partial \\hat {x} _ {i}}{\\partial x _ {i}} \\cdot n _ {i} + \\mathcal {O} (n _ {i} ^ {2}),\n$$",
+        "text_format": "latex",
+        "bbox": [
+            385,
+            405,
+            584,
+            436
+        ],
+        "page_idx": 15
+    },
+    {
+        "type": "equation",
+        "text": "$$\n\\bar {x} _ {i} = s _ {i} - \\frac {\\partial \\hat {x} _ {i}}{\\partial x _ {i}} \\cdot n _ {i} + \\mathcal {O} (n _ {i} ^ {2}).\n$$",
+        "text_format": "latex",
+        "bbox": [
+            385,
+            441,
+            583,
+            474
+        ],
+        "page_idx": 15
+    },
+    {
+        "type": "text",
+        "text": "Substituting the approximations, we get ",
+        "bbox": [
+            84,
+            487,
+            351,
+            502
+        ],
+        "page_idx": 15
+    },
+    {
+        "type": "equation",
+        "text": "$$\n\\hat {x} _ {i} - \\bar {x} _ {i} \\approx 2 * \\frac {\\partial \\hat {x} _ {i}}{\\partial x _ {i}} \\cdot n _ {i}.\n$$",
+        "text_format": "latex",
+        "bbox": [
+            403,
+            500,
+            565,
+            532
+        ],
+        "page_idx": 15
+    },
+    {
+        "type": "text",
+        "text": "With further Taylor expansion, the loss function can be simplified as ",
+        "bbox": [
+            84,
+            544,
+            537,
+            559
+        ],
+        "page_idx": 15
+    },
+    {
+        "type": "equation",
+        "text": "$$\n\\mathcal {L} _ {\\mathrm{MPC}} \\approx 4 * \\left| \\frac {\\partial \\hat {x} _ {i}}{\\partial x _ {i}} \\cdot n _ {i} \\right| ^ {2}.\n$$",
+        "text_format": "latex",
+        "bbox": [
+            398,
+            571,
+            571,
+            607
+        ],
+        "page_idx": 15
+    },
+    {
+        "type": "text",
+        "text": "Through the consistency loss $\\mathcal { L } _ { \\mathrm { M P C } }$ , we optimize the network such that ",
+        "bbox": [
+            84,
+            625,
+            558,
+            640
+        ],
+        "page_idx": 15
+    },
+    {
+        "type": "equation",
+        "text": "$$\n\\frac {\\partial \\hat {x} _ {i}}{\\partial x _ {i}} \\cdot n _ {i} \\rightarrow 0,\n$$",
+        "text_format": "latex",
+        "bbox": [
+            436,
+            651,
+            535,
+            681
+        ],
+        "page_idx": 15
+    },
+    {
+        "type": "text",
+        "text": "which implies that the denoising process becomes locally insensitive to symmetric perturbations around the same target surface point. ",
+        "bbox": [
+            84,
+            693,
+            885,
+            722
+        ],
+        "page_idx": 15
+    },
+    {
+        "type": "text",
+        "text": "Through the consistency loss $\\mathcal { L } _ { \\mathrm { M P C } }$ , we optimize the network D such that ∂xi $\\frac { \\partial \\hat { x } _ { i } } { \\partial x _ { i } } \\cdot n _ { i }$ is driven towards zero, which means that the output ${ \\hat { x } } _ { i }$ tends to: ",
+        "bbox": [
+            84,
+            729,
+            887,
+            760
+        ],
+        "page_idx": 15
+    },
+    {
+        "type": "equation",
+        "text": "$$\n\\begin{array}{l} \\hat {x} _ {i} = \\mathcal {D} (x _ {i}) = \\mathcal {D} (s _ {i} + n _ {i}) \\\\ = \\mathcal {D} (s _ {i}) + \\frac {\\partial \\hat {x} _ {i}}{\\partial x _ {i}} \\cdot n _ {i} + \\mathcal {O} (n _ {i} ^ {2}) \\\\ \\approx \\mathcal {D} (s _ {i}). \\\\ \\end{array}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            387,
+            761,
+            584,
+            838
+        ],
+        "page_idx": 15
+    },
+    {
+        "type": "text",
+        "text": "Under the ideal assumption that the denoiser has learned the geometric prior of the underlying surface, we further have $\\mathcal { D } ( s _ { i } ) \\approx s _ { i }$ . ",
+        "bbox": [
+            84,
+            852,
+            885,
+            883
+        ],
+        "page_idx": 15
+    },
+    {
+        "type": "text",
+        "text": "Thus, the final denoised output satisfies $\\hat { x } _ { i } \\approx s _ { i }$ , and similarly $\\bar { x } _ { i } \\approx s _ { i }$ . ",
+        "bbox": [
+            84,
+            890,
+            553,
+            906
+        ],
+        "page_idx": 15
+    },
+    {
+        "type": "header",
+        "text": "SIMPC: Learning Self-Induced Mirror-Point Consistency for Unsupervised Point Cloud Denoising ",
+        "bbox": [
+            174,
+            56,
+            797,
+            71
+        ],
+        "page_idx": 15
+    },
+    {
+        "type": "page_number",
+        "text": "16 ",
+        "bbox": [
+            477,
+            922,
+            495,
+            934
+        ],
+        "page_idx": 15
+    },
+    {
+        "type": "text",
+        "text": "Therefore, the denoised seed point and its mirror counterpart converge to the same target surface point: ",
+        "bbox": [
+            84,
+            85,
+            761,
+            101
+        ],
+        "page_idx": 16
+    },
+    {
+        "type": "equation",
+        "text": "$$\n\\hat {x} _ {i} \\approx \\bar {x} _ {i} \\approx s _ {i} \\in \\mathcal {S}.\n$$",
+        "text_format": "latex",
+        "bbox": [
+            421,
+            109,
+            550,
+            125
+        ],
+        "page_idx": 16
+    },
+    {
+        "type": "text",
+        "text": "In summary, the favorable convergence of SIMPC relies on two key conditions: deterministic correspondence and symmetry with respect to the same target surface. MPCL primarily suppresses the noise-sensitive component and drives both outputs toward a shared clean surface point. This behavior is consistent with the maximum-likelihood assumption in score-based denoising, where the ground-truth location is inferred unsupervised from noisy observations; under zero-mean Gaussian noise, this typically corresponds to the underlying clean surface. ",
+        "bbox": [
+            84,
+            142,
+            887,
+            218
+        ],
+        "page_idx": 16
+    },
+    {
+        "type": "text",
+        "text": "Case (2): Ambiguous correspondence with inconsistent denoising targets ",
+        "text_level": 1,
+        "bbox": [
+            84,
+            224,
+            594,
+            242
+        ],
+        "page_idx": 16
+    },
+    {
+        "type": "text",
+        "text": "The derivation in Case (1) is based on the fact that the two points in the consistency pair correspond to the same underlying surface target. If the correspondence is ambiguous (constructed by noise-based or EMD-based methods), the two noisy points no longer share the same clean target. Let the paired points be associated with two different surface points $s _ { i } ^ { ( 1 ) }$ and s(2) $s _ { i } ^ { ( 2 ) }$ and independent noise condition, with ",
+        "bbox": [
+            84,
+            248,
+            887,
+            314
+        ],
+        "page_idx": 16
+    },
+    {
+        "type": "equation",
+        "text": "$$\nx _ {i} ^ {(1)} = s _ {i} ^ {(1)} + n _ {i} ^ {(1)}, \\qquad x _ {i} ^ {(2)} = s _ {i} ^ {(2)} + n _ {i} ^ {(2)}, \\qquad s _ {i} ^ {(1)} \\neq s _ {i} ^ {(2)}.\n$$",
+        "text_format": "latex",
+        "bbox": [
+            282,
+            320,
+            687,
+            344
+        ],
+        "page_idx": 16
+    },
+    {
+        "type": "text",
+        "text": "Then their denoised outputs can be approximated as ",
+        "bbox": [
+            84,
+            349,
+            431,
+            364
+        ],
+        "page_idx": 16
+    },
+    {
+        "type": "equation",
+        "text": "$$\n\\hat {x} _ {i} ^ {(1)} = s _ {i} ^ {(1)} + \\frac {\\partial \\hat {x} _ {i} ^ {(1)}}{\\partial x _ {i} ^ {(1)}} \\cdot n _ {i} ^ {(1)} + \\mathcal {O} ((n _ {i} ^ {(1)}) ^ {2}),\n$$",
+        "text_format": "latex",
+        "bbox": [
+            346,
+            373,
+            622,
+            414
+        ],
+        "page_idx": 16
+    },
+    {
+        "type": "equation",
+        "text": "$$\n\\hat {x} _ {i} ^ {(2)} = s _ {i} ^ {(2)} + \\frac {\\partial \\hat {x} _ {i} ^ {(2)}}{\\partial x _ {i} ^ {(2)}} \\cdot n _ {i} ^ {(2)} + \\mathcal {O} ((n _ {i} ^ {(2)}) ^ {2}).\n$$",
+        "text_format": "latex",
+        "bbox": [
+            346,
+            421,
+            622,
+            460
+        ],
+        "page_idx": 16
+    },
+    {
+        "type": "text",
+        "text": "Their difference becomes ",
+        "bbox": [
+            84,
+            464,
+            256,
+            478
+        ],
+        "page_idx": 16
+    },
+    {
+        "type": "equation",
+        "text": "$$\n\\hat {x} _ {i} ^ {(1)} - \\hat {x} _ {i} ^ {(2)} \\approx (s _ {i} ^ {(1)} - s _ {i} ^ {(2)}) + \\frac {\\partial \\hat {x} _ {i} ^ {(1)}}{\\partial x _ {i} ^ {(1)}} \\cdot n _ {i} ^ {(1)} - \\frac {\\partial \\hat {x} _ {i} ^ {(2)}}{\\partial x _ {i} ^ {(2)}} \\cdot n _ {i} ^ {(2)}.\n$$",
+        "text_format": "latex",
+        "bbox": [
+            290,
+            474,
+            679,
+            516
+        ],
+        "page_idx": 16
+    },
+    {
+        "type": "text",
+        "text": "Compared with Case (1), there now exists an intrinsic target inconsistency term $( s _ { i } ^ { ( 1 ) } - s _ { i } ^ { ( 2 ) } )$ that does not vanish even if the denoiser perfectly suppresses the noise-sensitive terms, making the problem fundamentally ill-posed due to the lack of a unique underlying target. Therefore, minimizing the pairwise consistency loss no longer uniquely drives the outputs toward a shared clean surface point, but instead forces the network to compromise between inconsistent targets. This introduces an irreducible bias in the optimization objective and leads to biased and unstable convergence. ",
+        "bbox": [
+            84,
+            521,
+            888,
+            599
+        ],
+        "page_idx": 16
+    },
+    {
+        "type": "text",
+        "text": "Case (3): Non-symmetric perturbation under deterministic target. ",
+        "text_level": 1,
+        "bbox": [
+            84,
+            606,
+            549,
+            621
+        ],
+        "page_idx": 16
+    },
+    {
+        "type": "text",
+        "text": "Here, we consider the non-symmetric case as $\\tilde { n } _ { i } = - n _ { i } + \\delta _ { i }$ , where $\\delta _ { i }$ denotes the deviation from ideal mirror symmetry. ",
+        "bbox": [
+            84,
+            628,
+            883,
+            643
+        ],
+        "page_idx": 16
+    },
+    {
+        "type": "text",
+        "text": "Substituting $\\tilde { n } _ { i } = - n _ { i } + \\delta _ { i }$ into Taylor expansion around the same target surface point $s _ { i } .$ , we obtain ",
+        "bbox": [
+            84,
+            651,
+            746,
+            666
+        ],
+        "page_idx": 16
+    },
+    {
+        "type": "equation",
+        "text": "$$\n\\hat {x} _ {i} - \\bar {x} _ {i} = \\frac {\\partial \\hat {x} _ {i}}{\\partial x _ {i}} \\cdot n _ {i} - \\frac {\\partial \\bar {x} _ {i}}{\\partial \\tilde {x} _ {i}} \\cdot (- n _ {i} + \\delta_ {i}) + \\mathcal {O} (n _ {i} ^ {2}, \\tilde {n} _ {i} ^ {2}),\n$$",
+        "text_format": "latex",
+        "bbox": [
+            305,
+            672,
+            665,
+            705
+        ],
+        "page_idx": 16
+    },
+    {
+        "type": "text",
+        "text": "which can be simplified as ",
+        "bbox": [
+            84,
+            712,
+            264,
+            727
+        ],
+        "page_idx": 16
+    },
+    {
+        "type": "equation",
+        "text": "$$\n\\hat {x} _ {i} - \\bar {x} _ {i} \\approx \\left(\\frac {\\partial \\hat {x} _ {i}}{\\partial x _ {i}} + \\frac {\\partial \\bar {x} _ {i}}{\\partial \\tilde {x} _ {i}}\\right) \\cdot n _ {i} - \\frac {\\partial \\bar {x} _ {i}}{\\partial \\tilde {x} _ {i}} \\cdot \\delta_ {i}.\n$$",
+        "text_format": "latex",
+        "bbox": [
+            344,
+            724,
+            625,
+            758
+        ],
+        "page_idx": 16
+    },
+    {
+        "type": "text",
+        "text": "Compared with Case (1), where ideal symmetry removes target ambiguity and isolates a pure first-order noise-sensitive term, which can then be suppressed by MPCL, the additional residual term ",
+        "bbox": [
+            84,
+            768,
+            887,
+            799
+        ],
+        "page_idx": 16
+    },
+    {
+        "type": "equation",
+        "text": "$$\n- \\frac {\\partial \\bar {x} _ {i}}{\\partial \\tilde {x} _ {i}} \\cdot \\delta_ {i}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            450,
+            806,
+            521,
+            839
+        ],
+        "page_idx": 16
+    },
+    {
+        "type": "text",
+        "text": "cannot be eliminated, as it directly depends on the asymmetry error $\\delta _ { i }$ from mirror symmetry, introducing an irreducible perturbation in the objective. This theoretically shows that non-optimal or learnable $w _ { 2 }$ is unfavorable for convergence, as it may be break symmetry and be affected by local uncertainty, degrading convergence compared to the deterministic symmetric setting in Case (1). ",
+        "bbox": [
+            84,
+            845,
+            888,
+            906
+        ],
+        "page_idx": 16
+    },
+    {
+        "type": "header",
+        "text": "SIMPC: Learning Self-Induced Mirror-Point Consistency for Unsupervised Point Cloud Denoising ",
+        "bbox": [
+            174,
+            56,
+            797,
+            71
+        ],
+        "page_idx": 16
+    },
+    {
+        "type": "page_number",
+        "text": "17 ",
+        "bbox": [
+            477,
+            922,
+            495,
+            934
+        ],
+        "page_idx": 16
+    }
+]

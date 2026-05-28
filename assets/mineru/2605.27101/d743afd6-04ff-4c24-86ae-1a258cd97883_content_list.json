@@ -1,0 +1,1640 @@
+[
+    {
+        "type": "text",
+        "text": "Pop-Up Distractions Reveal Bag-of-Events Behavior in Video Large Language Models ",
+        "text_level": 1,
+        "bbox": [
+            149,
+            89,
+            848,
+            130
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "Oscar Chew∗,1 Serhii Honcharenko∗,1 Qian-Hui Chen2 ",
+        "bbox": [
+            247,
+            146,
+            749,
+            162
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "Patricia Lu3 Dishant Zaveri1 Khoa D. Doan4 Kuan-Hao Huang1 ",
+        "bbox": [
+            201,
+            162,
+            794,
+            180
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "1Texas A&M University 2National Taiwan University ",
+        "bbox": [
+            273,
+            180,
+            724,
+            196
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "3Stanford University 4VinUniversity ",
+        "bbox": [
+            342,
+            196,
+            653,
+            212
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "{oscarchew,serhii,khhuang}@tamu.edu ",
+        "bbox": [
+            322,
+            214,
+            677,
+            229
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "Abstract ",
+        "text_level": 1,
+        "bbox": [
+            260,
+            260,
+            339,
+            275
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "A key capability for video understanding is reliably linking subjects to events across time, yet whether Video Large Language Models (VideoLLMs) actually achieve this remains unclear. In this work, we introduce DISTRAC-TIONBENCH to evaluate whether VideoLLMs can robustly link subjects and events in the presence of unrelated video segments. Through controlled interventions, such as inserting short advertisement clips into longer videos, we show that VideoLLMs frequently hallucinate interactions between entities from different segments, incorrectly attributing actions from injected advertisements to subjects in the main video. We characterize this systematic hallucination as bag-of-events (BoE) behavior, where models process videos as collections of events rather than temporally structured sequences. Evaluating 11 popular VideoLLMs, we find that all models exhibit substantial BoE behavior. Our findings suggest that VideoLLMs lack reliable mechanisms for temporal grounding and motivate the development of models with more robust subject-event association. ",
+        "bbox": [
+            141,
+            284,
+            460,
+            626
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "1 Introduction ",
+        "text_level": 1,
+        "bbox": [
+            114,
+            634,
+            258,
+            649
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "While VideoLLMs have recently achieved improving performance on long-video understanding (Wu et al., 2024; Zhou et al., 2025; Fu et al., 2025), it remains unclear whether these models truly understand videos as temporally grounded sequences. That is, models must also determine which subjects participate in which events across time. For example, in Figure 1, if a documentary about Neil deGrasse Tyson contains a McDonald’s advertisement, it is trivial for humans to not infer that Tyson is eating McDonald’s. However, we find current VideoLLMs often make precisely this type of error. ",
+        "bbox": [
+            112,
+            659,
+            489,
+            851
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "To systematically evaluate this behavior, we introduce DistractionBench, a benchmark for evaluating subject-event association under both synthetic ",
+        "bbox": [
+            112,
+            853,
+            489,
+            901
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "image",
+        "img_path": "images/3e7ff3360afa279500e226bcf01d7461313b33fc80a604c3ff2f701206d7bf4f.jpg",
+        "image_caption": [
+            "Q: Is Neil deGrasse Tyson having McDonald's in this video? Video LLM: Yes ",
+            "Figure 1: VideoLLMs conflate the injected advertisement (top) with the main video content (bottom), hallucinating that Neil deGrasse Tyson is eating McDonald’s despite no frame showing him eating anything. "
+        ],
+        "image_footnote": [],
+        "content": "McDonald's\nKANONAS\n#1",
+        "sub_type": "text_image",
+        "bbox": [
+            522,
+            260,
+            867,
+            401
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "and real-world distractions, including injected clips and naturally occurring sponsored segments. We test the latest VideoLLMs such as Abouelenin et al. (2025); Bai et al. (2025) and show that models frequently mix events across disjoint segments and hallucinate interactions between unrelated entities. We term this failure mode bag-of-events and further distinguish it from general hallucination and misunderstanding using Yes-bias and No-bias control questions. This limitation is important because reliable video understanding fundamentally depends on preserving temporal and entity-level associations. In real-world videos, unrelated content often appears alongside the main narrative, including advertisements, sponsor segments, or cutaway scenes. ",
+        "bbox": [
+            507,
+            527,
+            884,
+            769
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "Our study on bag-of-events is also motivated by compositional limitations in VLMs. Prior work has shown that CLIP models exhibit bag-of-words behavior, the frequent errors in associating objects with the attributes (Yuksekgonul et al., 2023). Here, we show an analogous failure that emerges along the temporal dimension in VideoLLMs. ",
+        "bbox": [
+            507,
+            771,
+            884,
+            883
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "We summarize our contributions as follows: ",
+        "bbox": [
+            527,
+            887,
+            855,
+            901
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "• We identify bag-of-events (BoE) behavior, ",
+        "bbox": [
+            532,
+            904,
+            882,
+            921
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "aside_text",
+        "text": "arXiv:2605.27101v1 [cs.CV] 26 May 2026 ",
+        "bbox": [
+            21,
+            284,
+            60,
+            709
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "page_footnote",
+        "text": "∗ denotes equal contributions. ",
+        "bbox": [
+            141,
+            906,
+            326,
+            920
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "page_number",
+        "text": "1 ",
+        "bbox": [
+            494,
+            942,
+            502,
+            954
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "image",
+        "img_path": "images/49c38008a9eb7a1037d59361dcc4d2cdd112d2b5c152fbbeb8e5c49a935adcf8.jpg",
+        "image_caption": [
+            "InjectedAds "
+        ],
+        "image_footnote": [
+            "Q1 (BoE): Does SpongeBob watch a TV in the main video? ",
+            "Q2 (Yes-bias): Does SpongeBob play a saxophone in the main video? ",
+            "Q3 (No-bias): Does SpongeBob wear a tuxedo in the main video? "
+        ],
+        "content": "Three-panel cartoon character scene with a surprised face, a vehicle, and a snowy landscape (no text or symbols)",
+        "sub_type": "natural_image",
+        "bbox": [
+            171,
+            99,
+            450,
+            143
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "image",
+        "img_path": "images/d183346433c4ef2f76e887864057fdfdda8848254af783fbc20f91d5c3d22f85.jpg",
+        "image_caption": [
+            "Concat-Easy "
+        ],
+        "image_footnote": [
+            "Q1 (BoE): Is the person in a gray polo shirt throwing the hammer? ",
+            "Q2 (Yes-bias): Is the person in a gray polo shirt typing? ",
+            "Q3 (No-bias): Is the person in a gray polo shirt practicing archery? "
+        ],
+        "content": "",
+        "bbox": [
+            218,
+            209,
+            405,
+            253
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "image",
+        "img_path": "images/9c8ad98b1ca5d4b10cc5d0bbc4945212669bcb677e804d97db7fd807987f1b33.jpg",
+        "image_caption": [
+            "NaturalAds "
+        ],
+        "image_footnote": [
+            "Q1 (BoE): Is Gordon Ramsay promoting ExpressVPN in this video? ",
+            "Q2 (Yes-bias): Is Gordon Ramsay promoting BetterHelp in this video? ",
+            "Q3 (No-bias): Is Gordon Ramsay cooking fried rice in this video? "
+        ],
+        "content": "Three-panel video frame showing a man in a studio with three women, each with a filmstrip icon and a QR code overlay.",
+        "sub_type": "text_image",
+        "bbox": [
+            544,
+            99,
+            823,
+            143
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "image",
+        "img_path": "images/fa3fff1a2c125f9f7a390ec3a25ebe6b75b4f946b7085c47542b5ee90d65b60a.jpg",
+        "image_caption": [
+            "Concat-Hard "
+        ],
+        "image_footnote": [
+            "Q1 (BoE): Is the man in a white top playing the cello? ",
+            "Q2 (Yes-bias): Is the man in a white top cleaning? ",
+            "Q3 (No-bias): Is the man in a white top boxing a punching bag? "
+        ],
+        "content": "Four-panel photo collage showing a person in a gym, a person on exercise, a woman speaking, and a baby crawling (no visible text or symbols)",
+        "sub_type": "natural_image",
+        "bbox": [
+            509,
+            209,
+            858,
+            253
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "text",
+        "text": "Figure 2: Overview of the four subtasks in DistractionBench. We evaluate VideoLLMs using three question types: Bag-of-Events (BoE), Yes-bias, and No-bias questions. Green and red boxes highlight the content from the main video and the distraction segment respectively. Grey text denotes concepts that do not appear anywhere in the video. ",
+        "bbox": [
+            112,
+            312,
+            882,
+            356
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "text",
+        "text": "where VideoLLMs hallucinate interactions by misassociating subjects and events across disjoint video segments. ",
+        "bbox": [
+            152,
+            380,
+            485,
+            428
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "list",
+        "sub_type": "text",
+        "list_items": [
+            "• We introduce DISTRACTIONBENCH, a benchmark for evaluating subject-event association under controlled and realistic distractions. ",
+            "• We evaluate 11 popular VideoLLMs and show that the BoE behavior is widespread across models and settings. "
+        ],
+        "bbox": [
+            139,
+            432,
+            487,
+            533
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "text",
+        "text": "2 Related Work ",
+        "text_level": 1,
+        "bbox": [
+            112,
+            546,
+            270,
+            560
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "text",
+        "text": "Hallucinations in Video LLMs Recent benchmarks have revealed that VideoLLMs suffer from various hallucinations, including nonexistent objects, temporal inconsistencies, event-level errors, over-reliance on language priors or commonsense (Guan et al., 2024; Li et al., 2025b; Rawal et al., 2025; Zhang et al., 2024; Li et al., 2026). While these works show that VideoLLMs often generate content not supported by the video, they mainly evaluate whether models hallucinate visual content, and do not examine whether models can correctly associate subjects with events across time. Related to our work, the preprint ELV-Halluc (Lu et al., 2025) shows that models can make errors when aggregating information across contexts with similar semantics in long videos. Our work differs by revealing a more profound failure mode: VideoLLMs can conflate content across segments even when the segments are semantically unrelated. ",
+        "bbox": [
+            112,
+            573,
+            489,
+            879
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "text",
+        "text": "Video Needle in a Haystack Video Needle-ina-Haystack benchmarks evaluate whether Vide-",
+        "bbox": [
+            112,
+            889,
+            489,
+            921
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "table",
+        "img_path": "images/526e3df1ee778636055483d27056f63faaa0c3492452843a93078d3adef57b73.jpg",
+        "table_caption": [
+            "Table 1: DistractionBench has longer videos and a larger number of questions compared to these existing QAbased hallucination benchmarks with real-world videos. "
+        ],
+        "table_footnote": [],
+        "table_body": "<table><tr><td>Benchmark</td><td>#Vid</td><td>Avg. Sec</td><td>#QA</td></tr><tr><td>HallusionBench (Guan et al., 2024)</td><td>20</td><td>&lt; 4</td><td>1,129</td></tr><tr><td>VideoHallucer (Wang et al., 2024)</td><td>948</td><td>85.6</td><td>1,800</td></tr><tr><td>EventHallusion (Zhang et al., 2024)</td><td>397</td><td>11.2</td><td>711</td></tr><tr><td>DistractionBench (Ours)</td><td>1,306</td><td>474.7</td><td>6,618</td></tr></table>",
+        "bbox": [
+            510,
+            378,
+            880,
+            467
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "text",
+        "text": "oLLMs can retrieve and reason about inserted “needle” information in long videos (Zhao et al., 2025; Zhou et al., 2025). Our goal is complementary but fundamentally different. That is, we study whether an inserted needle or naturally occurring distraction corrupts the understanding of the main video. ",
+        "bbox": [
+            507,
+            546,
+            882,
+            643
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "text",
+        "text": "3 DISTRACTIONBENCH for VideoLLMs ",
+        "text_level": 1,
+        "bbox": [
+            507,
+            659,
+            873,
+            674
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "text",
+        "text": "3.1 Benchmark Construction ",
+        "text_level": 1,
+        "bbox": [
+            507,
+            687,
+            756,
+            702
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "text",
+        "text": "As shown in Figure 2, we construct four subtasks for this benchmark: INJECTEDADS, CONCAT-EASY, CONCAT-HARD, and NATURALADS. IN-JECTEDADS and the CONCAT subtasks are easily automated and scalable, while NATURALADS provides the most realistic, gold-standard humanannotated evaluation data. ",
+        "bbox": [
+            507,
+            711,
+            884,
+            821
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "text",
+        "text": "For each video, we create three types of questions: (1) BoE questions: questions combining a subject appearing in the main video with an object appearing only in the injected or advertisement segment (e.g., “Is Neil deGrasse Tyson having McDonald’s?”); (2) Yes-bias questions: questions combining the same subject with an unrelated object absent from the entire video (e.g., “Is Neil deGrasse Tyson having ramen?”); and (3) No-bias questions: questions asking about a fact that does appear in the video (e.g., “Is Neil deGrasse Tyson explaining concepts of black holes?”). Both BoE and Yes-bias questions probe hallucinations in VideoLLMs. BoE questions test whether VideoLLMs can robustly associate subjects with events across time, while Yes-bias questions serve as a control for general affirmative-response bias, where models may tend to answer “Yes” regardless of visual evidence, as observed by Li et al. (2023). No-bias questions provide the opposite control direction. Rather than measuring hallucination, they evaluate whether VideoLLMs fail to understand the video content or exhibit a tendency toward denial. ",
+        "bbox": [
+            507,
+            825,
+            884,
+            921
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "page_number",
+        "text": "2 ",
+        "bbox": [
+            492,
+            942,
+            505,
+            954
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "table",
+        "img_path": "images/c1591c378ff8a0c224ea043fae5a4439bbfa2d30dd05e0da76c4ff148737ef3e.jpg",
+        "table_caption": [
+            "Table 2: Hallucination rates (Bag-of-Events and Yes-bias) and misunderstanding rates (No-bias) across different subtasks. The larger hallucination rates are bolded. The results show significantly higher hallucination rates attributable to event mixing than to Yes-bias. Lower values are better for all metrics. "
+        ],
+        "table_footnote": [],
+        "table_body": "<table><tr><td rowspan=\"2\">Model</td><td colspan=\"3\">INJECTEDADS</td><td colspan=\"3\">CONCAT-EASY</td><td colspan=\"3\">CONCAT-HARD</td><td colspan=\"3\">NATURALADS</td></tr><tr><td>BoE</td><td>Yes-bias</td><td>No-bias</td><td>BoE</td><td>Yes-bias</td><td>No-bias</td><td>BoE</td><td>Yes-bias</td><td>No-bias</td><td>BoE</td><td>Yes-bias</td><td>No-bias</td></tr><tr><td>Random</td><td>50.00</td><td>50.00</td><td>50.00</td><td>50.00</td><td>50.00</td><td>50.00</td><td>50.00</td><td>50.00</td><td>50.00</td><td>50.00</td><td>50.00</td><td>50.00</td></tr><tr><td>GPT-5.5 Agent Baseline $^{2}$ </td><td>5.12</td><td>2.39</td><td>15.69</td><td>5.23</td><td>1.33</td><td>3.89</td><td>5.89</td><td>1.67</td><td>4.00</td><td>4.03</td><td>1.39</td><td>5.37</td></tr><tr><td>GPT-5.4-mini Agent Baseline</td><td>5.53</td><td>1.18</td><td>18.36</td><td>4.82</td><td>0.60</td><td>8.85</td><td>10.71</td><td>1.36</td><td>13.07</td><td>4.05</td><td>0.68</td><td>19.05</td></tr><tr><td>Human Baseline $^{3}$ </td><td>0.00</td><td>0.00</td><td>0.00</td><td>3.33</td><td>0.00</td><td>3.33</td><td>3.33</td><td>0.00</td><td>10.00</td><td>0.00</td><td>0.00</td><td>0.00</td></tr><tr><td>Aria</td><td>17.97</td><td>9.41</td><td>0.78</td><td>18.00</td><td>5.22</td><td>12.33</td><td>25.11</td><td>5.22</td><td>11.33</td><td>17.33</td><td>6.67</td><td>1.33</td></tr><tr><td>LLaVA-Video 7B</td><td>36.71</td><td>16.80</td><td>1.17</td><td>17.00</td><td>10.67</td><td>3.56</td><td>25.33</td><td>11.78</td><td>4.00</td><td>50.00</td><td>20.67</td><td>0.67</td></tr><tr><td>LLaVA-OneVision 0.5B</td><td>36.73</td><td>17.48</td><td>16.08</td><td>61.67</td><td>18.44</td><td>33.44</td><td>44.44</td><td>17.00</td><td>55.00</td><td>59.33</td><td>44.00</td><td>50.67</td></tr><tr><td>LLaVA-OneVision 7B</td><td>39.84</td><td>10.94</td><td>3.13</td><td>34.67</td><td>7.56</td><td>5.00</td><td>38.44</td><td>4.67</td><td>9.89</td><td>34.67</td><td>7.33</td><td>3.33</td></tr><tr><td>Molmo2 4B</td><td>51.56</td><td>20.70</td><td>0.78</td><td>23.22</td><td>13.78</td><td>1.56</td><td>27.00</td><td>13.56</td><td>2.89</td><td>42.67</td><td>10.00</td><td>2.00</td></tr><tr><td>Molmo2 8B</td><td>13.00</td><td>3.30</td><td>5.95</td><td>7.78</td><td>3.11</td><td>11.11</td><td>7.33</td><td>2.22</td><td>14.33</td><td>16.00</td><td>7.33</td><td>10.00</td></tr><tr><td>Qwen3-VL 8B</td><td>3.54</td><td>3.56</td><td>19.60</td><td>6.78</td><td>0.67</td><td>24.78</td><td>5.78</td><td>0.33</td><td>28.56</td><td>1.33</td><td>0.67</td><td>36.67</td></tr><tr><td>Qwen3.5 9B</td><td>10.55</td><td>5.37</td><td>13.33</td><td>16.22</td><td>10.44</td><td>10.89</td><td>41.67</td><td>31.89</td><td>34.00</td><td>18.67</td><td>10.00</td><td>19.33</td></tr><tr><td>Gemma4 31B</td><td>3.52</td><td>1.95</td><td>9.77</td><td>6.22</td><td>4.44</td><td>7.33</td><td>6.22</td><td>4.11</td><td>9.56</td><td>7.33</td><td>0.67</td><td>9.33</td></tr><tr><td>Phi4-Multimodal 5.6B</td><td>62.75</td><td>40.87</td><td>3.14</td><td>62.67</td><td>18.67</td><td>15.11</td><td>64.56</td><td>34.56</td><td>9.89</td><td>57.33</td><td>22.67</td><td>1.33</td></tr><tr><td>InternVL3.5 8B</td><td>14.84</td><td>3.52</td><td>6.80</td><td>8.33</td><td>4.67</td><td>5.89</td><td>12.00</td><td>2.22</td><td>6.00</td><td>28.00</td><td>6.00</td><td>7.33</td></tr><tr><td>Mean</td><td>26.46</td><td>12.17</td><td>7.32</td><td>23.87</td><td>8.88</td><td>11.91</td><td>27.08</td><td>11.60</td><td>16.86</td><td>30.24</td><td>12.36</td><td>12.91</td></tr></table>",
+        "bbox": [
+            122,
+            80,
+            878,
+            316
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "",
+        "bbox": [
+            112,
+            393,
+            487,
+            665
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "Next, we briefly describe the goal of each subtask. Detailed data and questions construction procedures are deferred to Appendix B. ",
+        "bbox": [
+            112,
+            667,
+            489,
+            715
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "INJECTEDADS We randomly pair one video from a long-video dataset (MLVU; Zhou et al. (2025)) with one video from an advertisement dataset (AdsQA; Long et al. (2025)). The ads clip is substantially shorter than the main video, mimicking the behavior of real-world commercial ads. This subtask contains 256 videos and 768 QA pairs. ",
+        "bbox": [
+            112,
+            719,
+            489,
+            832
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "CONCAT-EASY To control for video length and ads position, we sample and concatenate two videos from UCF101 (Soomro et al., 2012), an established action recognition dataset. This subtask contains 450 videos and 2,700 QA pairs. ",
+        "bbox": [
+            112,
+            841,
+            487,
+            873
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "",
+        "bbox": [
+            507,
+            392,
+            882,
+            441
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "CONCAT-HARD The construction is similar to CONCAT-EASY, except we concatenate five videos and select two segments among the actions to probe concept mixing in a more complex setting. This subtask contains 450 videos and 2,700 QA pairs. ",
+        "bbox": [
+            507,
+            449,
+            882,
+            529
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "NATURALADS To evaluate the most realistic setting, we collect real YouTube videos containing sponsored ads integrated by the content creators and manually written questions for each video. Unlike the synthetic INJECTEDADS setting, realworld videos exhibit naturally varying advertisement positions and durations (Appendix C). This subtask contains 150 videos and 450 QA pairs. ",
+        "bbox": [
+            507,
+            538,
+            884,
+            667
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "3.2 Dataset Statistics ",
+        "text_level": 1,
+        "bbox": [
+            507,
+            677,
+            690,
+            690
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "Table 1 shows the overall statistics of DISTRAC-TIONBENCH compared with other QA-based hallucination evaluation benchmark for VideoLLMs. Our benchmark has larger number of videos and QA pairs. We also have a longer video length which poses greater challenge for VideoLLMs. ",
+        "bbox": [
+            507,
+            697,
+            882,
+            793
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "3.3 Metrics ",
+        "text_level": 1,
+        "bbox": [
+            507,
+            804,
+            616,
+            818
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "Following Li et al. (2023); Wang et al. (2024), we define the occurrence of BoE and Yes-bias based on whether the VideoLLM output contains “Yes” in the response. Similarly, for No-bias questions, we check whether the output contains “No”. We report occurrence rates as percentages. ",
+        "bbox": [
+            507,
+            824,
+            884,
+            921
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "page_footnote",
+        "text": "2Snapshot ver. 2026-03-17 and Snapshot ver. 2026-04-23 3Due to the large number of questions, we have to sample 270 questions for human. ",
+        "bbox": [
+            112,
+            881,
+            487,
+            921
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "page_number",
+        "text": "3 ",
+        "bbox": [
+            492,
+            942,
+            504,
+            954
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "chart",
+        "img_path": "images/6be117b094757bf1b288c1c2a34eff86aa0889aa5ff33b5b930750c968bdfde0.jpg",
+        "content": "| Distance | No-bias | Yes-bias | Bag-of-event |\n| -------- | ------- | -------- | ------------ |\n| 1        | 5       | 5        | 57           |\n| 2        | 5       | 5        | 59           |\n| 3        | 5       | 10       | 44           |\n| 4        | 5       | 5        | 33           |",
+        "chart_caption": [
+            "Figure 3: Error rates by temporal distance. BoE errors is higher when the segments are closer. "
+        ],
+        "chart_footnote": [],
+        "sub_type": "line",
+        "bbox": [
+            146,
+            83,
+            455,
+            219
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "text",
+        "text": "4 Experiments ",
+        "text_level": 1,
+        "bbox": [
+            112,
+            288,
+            260,
+            305
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "text",
+        "text": "In this section, we aim to answer the following questions: RQ1: Do VideoLLMs exhibit Bag-of-Events? RQ2: How does the position of distractions affect BoE behavior? RQ3: How does the number of sampled frames affect BoE behavior? ",
+        "bbox": [
+            112,
+            315,
+            487,
+            395
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "text",
+        "text": "4.1 Evaluation Setup ",
+        "text_level": 1,
+        "bbox": [
+            112,
+            409,
+            295,
+            425
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "text",
+        "text": "Models We test VideoLLMs across families and sizes including Aria 23.9B (Li et al., 2024), LLaVA-Video 7B (Zhang et al., 2025), LLaVA-OneVision 0.5B&7B (Li et al., 2025a), Molmo2 4B&8B (Deitke et al., 2025), Qwen3VL 8B, Qwen3.5 9B (Bai et al., 2025), Gemma4 31B (Team et al., 2024), Phi4-Multimodal (Abouelenin et al., 2025) and InternVL3.5 8B (Wang et al., 2025). ",
+        "bbox": [
+            112,
+            431,
+            487,
+            558
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "text",
+        "text": "Frame Sampling For each model, we use the maximum number of frames supported by that model. The supported frame range from 8 to 256 frames across models. The exact numbers of frames used are provided in Appendix A. We adopt uniform frame sampling as the default strategy. For models with less frames (8, 16, 32), we additionally enforce that at least 25% of the sampled frames are drawn from the advertisement segment, since uniform sampling may otherwise miss the ads segment entirely, especially when the video is long. ",
+        "bbox": [
+            112,
+            571,
+            487,
+            749
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "text",
+        "text": "RQ1: BoE Behavior in VideoLLMs Tables 2 shows hallucination rates for BoE and general affirmative (Yes-bias) responses. Across all subtasks, BoE hallucinations occur more substantially than Yes-bias for all models. These results suggest that BoE is real and the hallucinations primarily stem from cross-segment temporal mixing rather than a general tendency to answer “Yes”. Models with lower BoE generally exhibit higher Nobias, suggesting that no VideoLLM is truly robust under this benchmark yet. Many VideoLLMs including very recent models (e.g., Phi4-Multimodal, LLaVA-OneVision, LLaVA-Video) follow the original LLaVA design, using a frozen CLIP-ViT backbone with a projection layer attached to an LLM. This family is efficient, but it tends to represent a video as a bag of visual facts rather than explicitly binding who did what when. This series of models is exactly among the worst in the list. ",
+        "bbox": [
+            112,
+            760,
+            489,
+            921
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "chart",
+        "img_path": "images/c440c3b4814d10433ce0f23189497f0459ebe90266324497f991be723225ae22.jpg",
+        "content": "| Number of Frames | No-bias | Yes-bias | Bag-of-event |\n| ---------------- | ------- | -------- | ------------ |\n| 816              | 50      | 10       | 20           |\n| 32               | 45      | 12       | 20           |\n| 64               | 45      | 10       | 18           |\n| 128              | 30      | 12       | 15           |\n| 256              | 20      | 10       | 18           |",
+        "chart_caption": [
+            "Figure 4: Error rates by number of frames. BoE errors do not decrease with increased number of frames. "
+        ],
+        "chart_footnote": [],
+        "sub_type": "line",
+        "bbox": [
+            541,
+            83,
+            850,
+            219
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "text",
+        "text": "",
+        "bbox": [
+            507,
+            287,
+            884,
+            431
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "text",
+        "text": "RQ2: Effect of Distraction Positions CONCAT-HARD allows us to systematically control the positions of distraction as well as the distance to the required visual evidence in the main video. Take LLaVA-OneVision-7B as an example, in Figure 3, BoE are higher when the relevant concept is closer, while Yes-bias and No-bias are less affected by distance. This highlights the uniqueness of BoE. Results for more models are presented in Appendix E. ",
+        "bbox": [
+            507,
+            439,
+            884,
+            586
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "text",
+        "text": "RQ3: Effect of the Number of Frames A common belief is that VideoLLMs always perform better with more frames. While this is true for general understanding (No-bias) questions, we show in Figure 4 for Qwen 3.5 9B (supporting 8 to 256 frames) that this trend does not hold for BoE, highlighting the difficulty of our BoE benchmark. Results for more models are presented in Appendix F. ",
+        "bbox": [
+            507,
+            594,
+            882,
+            722
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "text",
+        "text": "5 Conclusion ",
+        "text_level": 1,
+        "bbox": [
+            507,
+            734,
+            640,
+            750
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "text",
+        "text": "In this paper, we identify bag-of-events behavior, a failure mode where VideoLLMs hallucinate interactions by incorrectly associating subjects and events across disjoint video segments. We propose DistractionBench for evaluating subject-event association. Through controlled experiments, we find these hallucinations are primarily caused by temporal event mixing rather than a general affirmative bias. We hope our benchmark motivates research on temporally grounded video understanding. ",
+        "bbox": [
+            507,
+            760,
+            882,
+            921
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "page_number",
+        "text": "4 ",
+        "bbox": [
+            492,
+            942,
+            504,
+            954
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "text",
+        "text": "6 Limitations ",
+        "text_level": 1,
+        "bbox": [
+            114,
+            84,
+            250,
+            98
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "Due to computational constraints, we were unable to benchmark very large VideoLLMs. e.g., models in the 70B parameter range. Nevertheless, our evaluation covers a diverse set of recent VideoLLMs across multiple architectures and model scales. ",
+        "bbox": [
+            112,
+            109,
+            489,
+            189
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "References ",
+        "text_level": 1,
+        "bbox": [
+            115,
+            215,
+            213,
+            230
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "list",
+        "sub_type": "ref_text",
+        "list_items": [
+            "Abdelrahman Abouelenin, Atabak Ashfaq, Adam Atkinson, Hany Awadalla, Nguyen Bach, Jianmin Bao, Alon Benhaim, Martin Cai, Vishrav Chaudhary, Congcong Chen, and 1 others. 2025. Phi-4-mini technical report: Compact yet powerful multimodal language models via mixture-of-loras. arXiv preprint arXiv:2503.01743. ",
+            "Shuai Bai, Yuxuan Cai, Ruizhe Chen, Keqin Chen, Xionghui Chen, Zesen Cheng, Lianghao Deng, Wei Ding, Chang Gao, Chunjiang Ge, and 1 others. 2025. Qwen3-vl technical report. arXiv preprint arXiv:2511.21631. ",
+            "Matt Deitke, Christopher Clark, Sangho Lee, Rohun Tripathi, Yue Yang, Jae Sung Park, Mohammadreza Salehi, Niklas Muennighoff, Kyle Lo, Luca Soldaini, and 1 others. 2025. Molmo and pixmo: Open weights and open data for state-of-the-art vision-language models. In Proceedings of the Computer Vision and Pattern Recognition Conference, pages 91–104. ",
+            "Chaoyou Fu, Yuhan Dai, Yongdong Luo, Lei Li, Shuhuai Ren, Renrui Zhang, Zihan Wang, Chenyu Zhou, Yunhang Shen, Mengdan Zhang, and 1 others. 2025. Video-mme: The first-ever comprehensive evaluation benchmark of multi-modal llms in video analysis. In Proceedings of the Computer Vision and Pattern Recognition Conference, pages 24108– 24118. ",
+            "Tianrui Guan, Fuxiao Liu, Xiyang Wu, Ruiqi Xian, Zongxia Li, Xiaoyu Liu, Xijun Wang, Lichang Chen, Furong Huang, Yaser Yacoob, and 1 others. 2024. Hallusionbench: an advanced diagnostic suite for entangled language hallucination and visual illusion in large vision-language models. In Proceedings of the IEEE/CVF conference on computer vision and pattern recognition, pages 14375–14385. ",
+            "Aaron Hurst, Adam Lerer, Adam P Goucher, Adam Perelman, Aditya Ramesh, Aidan Clark, AJ Ostrow, Akila Welihinda, Alan Hayes, Alec Radford, and 1 others. 2024. Gpt-4o system card. arXiv preprint arXiv:2410.21276. ",
+            "Glenn Jocher, Jing Qiu, and Ayush Chaurasia. 2023. Ultralytics YOLO. ",
+            "Bo Li, Yuanhan Zhang, Dong Guo, Renrui Zhang, Feng Li, Hao Zhang, Kaichen Zhang, Peiyuan Zhang, Yanwei Li, Ziwei Liu, and Chunyuan Li. 2025a. LLaVAonevision: Easy visual task transfer. Transactions on Machine Learning Research. "
+        ],
+        "bbox": [
+            115,
+            237,
+            489,
+            920
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "list",
+        "sub_type": "ref_text",
+        "list_items": [
+            "Chaoyu Li, Eun Woo Im, and Pooyan Fazli. 2025b. Vidhalluc: Evaluating temporal hallucinations in multimodal large language models for video understanding. In Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition, pages 13723–13733. ",
+            "Dongxu Li, Yudong Liu, Haoning Wu, Yue Wang, Zhiqi Shen, Bowen Qu, Xinyao Niu, Fan Zhou, Chengen Huang, Yanpeng Li, and 1 others. 2024. Aria: An open multimodal native mixture-of-experts model. arXiv preprint arXiv:2410.05993. ",
+            "Yifan Li, Yifan Du, Kun Zhou, Jinpeng Wang, Xin Zhao, and Ji-Rong Wen. 2023. Evaluating object hallucination in large vision-language models. In Proceedings of the 2023 Conference on Empirical Methods in Natural Language Processing, pages 292–305, Singapore. Association for Computational Linguistics. ",
+            "Zongxia Li, Xiyang Wu, Guangyao Shi, Yubin Qin, Hongyang Du, Tianyi Zhou, Dinesh Manocha, and Jordan Boyd-Graber. 2026. Videohallu: Evaluating and mitigating multi-modal hallucinations on synthetic video understanding. Advances in Neural Information Processing Systems, 38:76046–76078. ",
+            "Xinwei Long, Kai Tian, Peng Xu, Guoli Jia, Jingxuan Li, Sa Yang, Yihua Shao, Kaiyan Zhang, Che Jiang, Hao Xu, and 1 others. 2025. Adsqa: Towards advertisement video understanding. In Proceedings of the IEEE/CVF International Conference on Computer Vision, pages 23396–23407. ",
+            "Hao Lu, Jiahao Wang, Yaolun Zhang, Ruohui Wang, Xuanyu Zheng, Yepeng Tang, Dahua Lin, and Lewei Lu. 2025. Elv-halluc: Benchmarking semantic aggregation hallucinations in long video understanding. arXiv preprint arXiv:2508.21496. ",
+            "Ruchit Rawal, Reza Shirkavand, Heng Huang, Gowthami Somepalli, and Tom Goldstein. 2025. Argus: Hallucination and omission evaluation in videollms. In Proceedings of the IEEE/CVF International Conference on Computer Vision, pages 20280– 20290. ",
+            "Khurram Soomro, Amir Roshan Zamir, and Mubarak Shah. 2012. Ucf101: A dataset of 101 human actions classes from videos in the wild. arXiv preprint arXiv:1212.0402. ",
+            "Gemma Team, Thomas Mesnard, Cassidy Hardin, Robert Dadashi, Surya Bhupatiraju, Shreya Pathak, Laurent Sifre, Morgane Rivière, Mihir Sanjay Kale, Juliette Love, and 1 others. 2024. Gemma: Open models based on gemini research and technology. arXiv preprint arXiv:2403.08295. ",
+            "Weiyun Wang, Zhangwei Gao, Lixin Gu, Hengjun Pu, Long Cui, Xingguang Wei, Zhaoyang Liu, Linglin Jing, Shenglong Ye, Jie Shao, and 1 others. 2025. Internvl3.5: Advancing open-source multimodal models in versatility, reasoning, and efficiency. arXiv preprint arXiv:2508.18265. "
+        ],
+        "bbox": [
+            510,
+            85,
+            884,
+            920
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "page_number",
+        "text": "5 ",
+        "bbox": [
+            492,
+            942,
+            504,
+            954
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "list",
+        "sub_type": "ref_text",
+        "list_items": [
+            "Yuxuan Wang, Yueqian Wang, Dongyan Zhao, Cihang Xie, and Zilong Zheng. 2024. Videohallucer: Evaluating intrinsic and extrinsic hallucinations in large video-language models. arXiv preprint arXiv:2406.16338. ",
+            "Haoning Wu, Dongxu Li, Bei Chen, and Junnan Li. 2024. Longvideobench: A benchmark for longcontext interleaved video-language understanding. In The Thirty-eight Conference on Neural Information Processing Systems Datasets and Benchmarks Track. ",
+            "Mert Yuksekgonul, Federico Bianchi, Pratyusha Kalluri, Dan Jurafsky, and James Zou. 2023. When and why vision-language models behave like bags-of-words, and what to do about it? In The Eleventh International Conference on Learning Representations. ",
+            "Jiacheng Zhang, Yang Jiao, Shaoxiang Chen, Na Zhao, Zhiyu Tan, Hao Li, Xingjun Ma, and Jingjing Chen. 2024. Eventhallusion: Diagnosing event hallucinations in video llms. arXiv preprint arXiv:2409.16597. ",
+            "Yuanhan Zhang, Jinming Wu, Wei Li, Bo Li, Zejun MA, Ziwei Liu, and Chunyuan Li. 2025. LLaVAvideo: Video instruction tuning with synthetic data. Transactions on Machine Learning Research. ",
+            "Zijia Zhao, Haoyu Lu, Yuqi Huo, Yifan Du, Tongtian Yue, Longteng Guo, Bingning Wang, weipeng chen, and Jing Liu. 2025. Needle in a video haystack: A scalable synthetic evaluator for video MLLMs. In The Thirteenth International Conference on Learning Representations. ",
+            "Junjie Zhou, Yan Shu, Bo Zhao, Boya Wu, Zhengyang Liang, Shitao Xiao, Minghao Qin, Xi Yang, Yongping Xiong, Bo Zhang, and 1 others. 2025. Mlvu: Benchmarking multi-task long video understanding. In Proceedings of the Computer Vision and Pattern Recognition Conference, pages 13691–13701. "
+        ],
+        "bbox": [
+            107,
+            80,
+            499,
+            639
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "page_number",
+        "text": "6 ",
+        "bbox": [
+            492,
+            942,
+            504,
+            954
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "table",
+        "img_path": "images/8b6e646cefeee0f4a7bf1e46930fb3e99a318194cdfc285e7e1f50e801af25d4.jpg",
+        "table_caption": [
+            "Table 3: Number of input frames used for each evaluated VideoLLM. "
+        ],
+        "table_footnote": [],
+        "table_body": "<table><tr><td>Model</td><td>Number of Frames</td></tr><tr><td>Aria</td><td>256</td></tr><tr><td>LLaVA-Video 7B</td><td>64</td></tr><tr><td>LLaVA-OneVision 0.5B</td><td>32</td></tr><tr><td>LLaVA-OneVision 7B</td><td>32</td></tr><tr><td>Molmo2 4B</td><td>256</td></tr><tr><td>Molmo2 8B</td><td>256</td></tr><tr><td>Qwen3-VL 8B</td><td>256</td></tr><tr><td>Qwen3.5 9B</td><td>256</td></tr><tr><td>Gemma4 31B</td><td>32</td></tr><tr><td>Phi4-Multimodal 5.6B</td><td>64</td></tr><tr><td>InternVL3.5 8B</td><td>64</td></tr><tr><td>GPT5.5</td><td>16</td></tr><tr><td>GPT5.4-mini</td><td>16</td></tr></table>",
+        "bbox": [
+            119,
+            80,
+            484,
+            325
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "text",
+        "text": "A VideoLLMs Configurations ",
+        "text_level": 1,
+        "bbox": [
+            114,
+            387,
+            391,
+            405
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "text",
+        "text": "The exact number of freames for every VideoLLM is listed in Table 3. Also, we use a fixed prompt template for each question: ",
+        "bbox": [
+            112,
+            413,
+            487,
+            462
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "text",
+        "text": "First, think step-by-step about the events in the video. Then, provide your final answer enclosed in XML tags exactly like this: \"<answer>Yes</answer> or <answer>No</answer>.\" Question: question ",
+        "bbox": [
+            139,
+            479,
+            465,
+            561
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "text",
+        "text": "B Detailed Data Construction Procedure ",
+        "text_level": 1,
+        "bbox": [
+            112,
+            590,
+            482,
+            606
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "text",
+        "text": "B.1 INJECTEDADS ",
+        "text_level": 1,
+        "bbox": [
+            114,
+            617,
+            282,
+            632
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "text",
+        "text": "This subtask combines automated video pairing with human-authored questions. ",
+        "bbox": [
+            112,
+            638,
+            485,
+            671
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "text",
+        "text": "B.1.1 Video Pairing ",
+        "text_level": 1,
+        "bbox": [
+            114,
+            680,
+            285,
+            695
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "text",
+        "text": "We sample 256 long-form videos from MLVU (Zhou et al., 2025) and pair each with one randomly sampled advertisement clip from AdsQA (Long et al., 2025). The advertisement is inserted at a uniformly sampled position within the main video, mimicking real-world commercial placements. We manually filter pairings in which the advertised product or service overlaps closely with concepts already present in the main video, to avoid trivial topical confusion. ",
+        "bbox": [
+            112,
+            699,
+            487,
+            859
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "text",
+        "text": "B.1.2 Human Question Authoring ",
+        "text_level": 1,
+        "bbox": [
+            112,
+            870,
+            398,
+            885
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "text",
+        "text": "The 768 questions are authored by four human annotators. The BoE and Yes-bias questions were divided among three annotators; the No-bias questions were divided between two annotators. ",
+        "bbox": [
+            112,
+            889,
+            489,
+            921
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "text",
+        "text": "",
+        "bbox": [
+            507,
+            84,
+            884,
+            115
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "text",
+        "text": "The annotators followed a common workflow. Each annotator opened the assigned video, located the advertisement insertion point, and reviewed the surrounding main-video and advertisement context before writing the three questions. All questions are grounded directly in what is visible in the video: the BoE question pairs a subject from the main video with an object that appears only in the advertisement; the Yes-bias question pairs the same subject with an unrelated object absent from both the main video and the advertisement segment; and the No-bias question targets a fact verifiably present in the main video. ",
+        "bbox": [
+            507,
+            116,
+            885,
+            325
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "text",
+        "text": "B.2 CONCAT-EASY and CONCAT-HARD ",
+        "text_level": 1,
+        "bbox": [
+            507,
+            336,
+            843,
+            350
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "text",
+        "text": "To ensure reproducibility, we detail the step-bystep synthesis pipeline for the CONCAT-EASY and CONCAT-HARD subtasks. The pipeline consists of three main phases: human-centric video filtering, LLM-based visual attribute annotation, and constrained video composition. ",
+        "bbox": [
+            507,
+            356,
+            882,
+            453
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "text",
+        "text": "B.2.1 Human-Centric Video Filtering ",
+        "text_level": 1,
+        "bbox": [
+            507,
+            461,
+            821,
+            476
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "text",
+        "text": "To minimize ambiguity and eliminate background noise, we filter the original UCF101 (Soomro et al., 2012) dataset to retain videos with clear human actions. We deploy an off-the-shelf YOLOv8n (Jocher et al., 2023) object detection model across all video frames. A video is retained only if it consistently contains exactly one detected person. This filtering step ensures that the subsequent questionanswering pairs can unambiguously target a single, distinct actor without interference from multiperson interactions or empty scenes. ",
+        "bbox": [
+            507,
+            480,
+            882,
+            657
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "text",
+        "text": "B.2.2 LLM-Based Visual Attribute Annotation ",
+        "text_level": 1,
+        "bbox": [
+            507,
+            665,
+            800,
+            696
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "text",
+        "text": "For each filtered video, we uniformly sample frames and use gpt-4o (Hurst et al., 2024) to annotate the actor’s fine-grained visual appearance and action verbs. To maintain high instructionfollowing quality, we separate the appearance description from the action verb. The exact system prompt used for this annotation process is structured as shown in Figure 5. ",
+        "bbox": [
+            507,
+            700,
+            885,
+            829
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "text",
+        "text": "B.2.3 Constrained Video Composition ",
+        "text_level": 1,
+        "bbox": [
+            507,
+            838,
+            823,
+            854
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "text",
+        "text": "We synthesize the final video streams by concatenating selected clips under strict combinatorial constraints. For both subtasks, the target dataset size is 450 videos. To control for confounding variables, three foundational rules apply to both configurations. First, all concatenated clips within a sample must share identical spatial dimensions to avoid resolution artifacts. Second, to mitigate language priors due to gender bias, we match main actors of the same annotated gender within each sample whenever possible. Third, each distinct target action category pair can be combined at most once to maximize action diversity. ",
+        "bbox": [
+            507,
+            857,
+            882,
+            921
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "page_number",
+        "text": "",
+        "bbox": [
+            492,
+            942,
+            504,
+            953
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "code",
+        "sub_type": "code",
+        "code_caption": [
+            "System Prompt for Video Annotation "
+        ],
+        "code_body": "```txt\nYou are a professional video annotator. I will provide {len(base64_frames)} frames from a video. The action category is: \"{clean_action}\". \n```",
+        "bbox": [
+            132,
+            114,
+            863,
+            140
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "code",
+        "sub_type": "code",
+        "code_caption": [
+            "Task: "
+        ],
+        "code_body": "```txt\nAnalyze the main actor (person1). I need to form a question later: \"Is the [person_identity] [action_ing]?\" \n```",
+        "bbox": [
+            134,
+            164,
+            843,
+            178
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "code",
+        "sub_type": "code",
+        "code_caption": [
+            "Rules for Fields: "
+        ],
+        "code_body": "```txt\n1. person_identity: ONLY describe appearance (e.g., gender, age, clothing color/type, hair, accessories). STRICTLY FORBIDDEN: Do not use any action verbs or state what they are doing.\nExample: \"man in a red t-shirt\", \"child with blonde hair\". \n```",
+        "bbox": [
+            149,
+            202,
+            863,
+            237
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "code",
+        "sub_type": "code",
+        "code_caption": [],
+        "code_body": "```txt\n2. action_ing: Transform \" {clean_action}\" into a natural present participle phrase (-ing). It should fit perfectly in: \"Is the person [action_ing]?\" Use possessive pronouns if natural.\nExample: \"brushing his teeth\", \"playing her guitar\". \n```",
+        "bbox": [
+            149,
+            247,
+            863,
+            284
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "code",
+        "sub_type": "code",
+        "code_caption": [],
+        "code_body": "```txt\n3. tags: Use \"Attribute-Object\" pairs for appearance only. \n```",
+        "bbox": [
+            149,
+            293,
+            512,
+            307
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "code",
+        "sub_type": "code",
+        "code_caption": [
+            "Output STRICTLY in JSON format: ",
+            "Figure 5: The structured prompt utilized for GPT-4o video attribute annotation. "
+        ],
+        "code_body": "```json\n{\n    \"person\": {\n    \"person_identity\": \"short description of appearance only\",\n    \"action_ing\": \"action in -ing form\",\n    \"tags\": [\"male-gender\", \"white-shirt\"]\n    },\n} \n```",
+        "bbox": [
+            132,
+            335,
+            633,
+            419
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "text",
+        "text": "",
+        "bbox": [
+            112,
+            483,
+            487,
+            627
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "text",
+        "text": "CONCAT-EASY Composition The CONCAT-EASY subtask evaluates straightforward chronological stitching by concatenating two randomly sampled videos sequentially. This process enforces strict temporal alignment, requiring the duration difference between the two clips to be exactly zero (∆t = 0). To ensure a balanced data distribution, each unique video from the filtered pool can be used at most twice across the subtask. ",
+        "bbox": [
+            112,
+            638,
+            487,
+            781
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "text",
+        "text": "CONCAT-HARD Composition The CONCAT-HARD subtask introduces temporal complexity to probe concept mixing. For each sample, we select two target videos and three filler videos featuring completely different action categories. These five clips are randomly shuffled, with the positional gap between the two target videos uniformly distributed between 1 and 4 segments. We allow a relaxed temporal alignment where the maximum duration variance between any two clips is capped at $\\Delta t \\le 0 . 0 5$ seconds. Each target video can be used a maximum of twice, while each filler video can be reused up to three times across the subtask. ",
+        "bbox": [
+            112,
+            791,
+            489,
+            921
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "text",
+        "text": "",
+        "bbox": [
+            507,
+            483,
+            882,
+            564
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "text",
+        "text": "Finally, all selected segments are seamlessly concatenated using FFmpeg, and the corresponding question-answer pairs are generated via our predefined template configurations. ",
+        "bbox": [
+            507,
+            577,
+            884,
+            642
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "text",
+        "text": "B.3 NATURALADS",
+        "text_level": 1,
+        "bbox": [
+            509,
+            697,
+            672,
+            711
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "text",
+        "text": "We first identify YouTube content creators who regularly include sponsored segments in their videos. Using videos collected from these creators, human annotators follow the guidelines shown below to construct the questions. Note that due to copyright restrictions, we will not release the videos in this subtask. Instead, we will release only the associated video IDs, questions, timestamps and frame sampling scripts for transparency and reproducibility. Researchers may independently collect the videos using these IDs for research purposes. ",
+        "bbox": [
+            507,
+            744,
+            884,
+            921
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "page_number",
+        "text": "8 ",
+        "bbox": [
+            492,
+            942,
+            504,
+            954
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "chart",
+        "img_path": "images/7f626b6d39018aa2938ace22422a5857b9a1b1a4933744c561ac559430fc2140.jpg",
+        "content": "| Ad Duration (seconds) | Count |\n| --------------------- | ----- |\n| 20-30                 | 3     |\n| 30-40                 | 1     |\n| 40-50                 | 4     |\n| 50-60                 | 21    |\n| 60-70                 | 56    |\n| 70-80                 | 33    |\n| 80-90                 | 15    |\n| 90-100                | 11    |\n| 100-110               | 3     |\n| 110-120               | 2     |\n| 120-130               | 1     |\n| 130-140               | 1     |",
+        "chart_caption": [],
+        "chart_footnote": [],
+        "sub_type": "histogram",
+        "bbox": [
+            122,
+            85,
+            484,
+            237
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "chart",
+        "img_path": "images/713f25564bdfd700dd9b92db0eb586395fb3e5bc51b5469d9f1754e0755cb04c.jpg",
+        "content": "| Relative Position | Count |\n| :--- | :--- |\n| 0.0 | 5 |\n| 0.1 | 12 |\n| 0.2 | 19 |\n| 0.3 | 23 |\n| 0.4 | 27 |\n| 0.5 | 10 |\n| 0.6 | 5 |\n| 0.7 | 3 |\n| 0.8 | 9 |\n| 0.9 | 37 |\n| 1.0 | 37 |",
+        "chart_caption": [
+            "Figure 6: Characteristics of NATURALADS. Left: Ad durations in seconds. Right: Relative ad positions; "
+        ],
+        "chart_footnote": [],
+        "sub_type": "histogram",
+        "bbox": [
+            517,
+            85,
+            875,
+            236
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "text",
+        "text": "boe question: A question that intentionally mixes concepts from the main video and the advertisement segment. ",
+        "bbox": [
+            139,
+            296,
+            460,
+            344
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "list",
+        "sub_type": "text",
+        "list_items": [
+            "• This question should describe an event that does not actually occur in the video. ",
+            "• Expected answer: No "
+        ],
+        "bbox": [
+            161,
+            355,
+            460,
+            430
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "text",
+        "text": "irrelevant question: A modified version of the boe question, where the advertisementrelated concept is replaced with an unrelated concept. ",
+        "bbox": [
+            139,
+            441,
+            462,
+            505
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "text",
+        "text": "• Expected answer: No ",
+        "bbox": [
+            161,
+            516,
+            339,
+            532
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "text",
+        "text": "understanding question: A modified version of the boe question such that the described event actually occurs in the video. ",
+        "bbox": [
+            139,
+            543,
+            462,
+            590
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "text",
+        "text": "• Expected answer: Yes ",
+        "bbox": [
+            161,
+            602,
+            344,
+            618
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "text",
+        "text": "C Characteristics of NaturalAds ",
+        "text_level": 1,
+        "bbox": [
+            114,
+            642,
+            413,
+            657
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "text",
+        "text": "Figure 6 summarizes the characteristics of NATU-RALADS. Most sponsorship segments last around one to two minutes, with the highest density between roughly 60 and 90 seconds. Unlike IN-JECTEDADS, where the ads relative position is drawn uniformly, the relative position of real sponsored segments are not uniformly distributed. Many ads appear near the end, while another substantial portion appears around the middle. ",
+        "bbox": [
+            112,
+            670,
+            489,
+            815
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "text",
+        "text": "D Human Evaluation Protocol ",
+        "text_level": 1,
+        "bbox": [
+            114,
+            829,
+            394,
+            844
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "text",
+        "text": "Each video was independently evaluated by three annotators who were blinded to the study’s purpose and the rationale behind the questions. They were given only the following instruction: “Watch each ",
+        "bbox": [
+            112,
+            857,
+            487,
+            921
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "chart",
+        "img_path": "images/050447a7dfc67e81ee0eef4642b52613fbbaaa3a8a5dd89bbc01510996ec3630.jpg",
+        "content": "| Distance | No-bias | Yes-bias | Bag-of-event |\n| -------- | ------- | -------- | ------------ |\n| 1        | 2.0     | 10.0     | 29.0         |\n| 2        | 4.0     | 12.0     | 26.0         |\n| 3        | 2.0     | 15.0     | 24.0         |\n| 4        | 3.0     | 10.0     | 16.0         |",
+        "chart_caption": [
+            "Figure 7: Molmo2 4B: Error Rates by temporal distance "
+        ],
+        "chart_footnote": [],
+        "sub_type": "line",
+        "bbox": [
+            514,
+            288,
+            875,
+            444
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "text",
+        "text": "video, then answer all the questions in its group (listed in Column C). For each question, type 1 (Yes) or 0 (No) in the answer column. You can watch videos however you want – skip, speed up, or rewatch, as long as you think you are properly answering the question.”. The final prediction for the human baseline is determined by the majority vote among the three human annotators. The protocol was designed in this way to help minimize expectation bias and ensure that annotator judgments reflect the natural perceptual content of the videos. ",
+        "bbox": [
+            507,
+            497,
+            884,
+            689
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "text",
+        "text": "E Effect of the Position of Distractions ",
+        "text_level": 1,
+        "bbox": [
+            507,
+            702,
+            858,
+            717
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "text",
+        "text": "We further present the results of Molmo2 4B and Qwen3.5 9B in this section. As shown in Figure 7 and Figure 8, the overall trend remains consistent. BoE decreases as the distance between the visual evidence and the distraction increases. ",
+        "bbox": [
+            507,
+            728,
+            882,
+            806
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "page_number",
+        "text": "9 ",
+        "bbox": [
+            492,
+            942,
+            505,
+            954
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "chart",
+        "img_path": "images/914c7ea7743f0d153cc2452cb7b01999eff2d976836fadb3484ed61b1bb941ef.jpg",
+        "content": "| Distance | No-bias | Yes-bias | Bag-of-event |\n| -------- | ------- | -------- | ------------ |\n| 1        | 33      | 32       | 41           |\n| 2        | 40      | 32       | 41           |\n| 3        | 21      | 33       | 38           |\n| 4        | 23      | 29       | 36           |",
+        "chart_caption": [
+            "Qwen3.5 9B Error Rate by Distance and Question Type ",
+            "Figure 8: Qwen3.5 9B: Error Rates by temporal distance "
+        ],
+        "chart_footnote": [],
+        "sub_type": "line",
+        "bbox": [
+            117,
+            96,
+            472,
+            239
+        ],
+        "page_idx": 9
+    },
+    {
+        "type": "text",
+        "text": "F Effect of the Number of Frames ",
+        "text_level": 1,
+        "bbox": [
+            112,
+            297,
+            426,
+            313
+        ],
+        "page_idx": 9
+    },
+    {
+        "type": "text",
+        "text": "Here, we present the results of more models, LLaVA-OneVision 7B and Molmo2-4B, on NATU-RALADS. As shown in Figure 10 and 9, the overall trend remains consistent with the findings in the main text: No-bias decreases as the number of frames increases, while Yes-bias and BoE can even increase due to the exposure of more distractions. ",
+        "bbox": [
+            112,
+            323,
+            489,
+            435
+        ],
+        "page_idx": 9
+    },
+    {
+        "type": "chart",
+        "img_path": "images/a082c1985cf42357c273238a346bc1bb75d77d95daa1661bb5af297fb0b1281e.jpg",
+        "content": "| Number of Frames | No-bias | Yes-bias | Bag-of-event |\n| ---------------- | ------- | -------- | ------------ |\n| 8                | 21.5    | 7.5      | 27.0         |\n| 16               | 9.0     | 7.0      | 24.5         |\n| 32               | 3.5     | 7.5      | 35.0         |",
+        "chart_caption": [
+            "LLaVA-OneVision 7B: Error Rate by Number of Frames ",
+            "Figure 9: LLaVA-OneVision 7B: Error rates by number of frames. "
+        ],
+        "chart_footnote": [],
+        "sub_type": "line",
+        "bbox": [
+            117,
+            460,
+            475,
+            605
+        ],
+        "page_idx": 9
+    },
+    {
+        "type": "chart",
+        "img_path": "images/164973686ac923e04dd671a0364f5c0891055ad020ff8c469849cce087150886.jpg",
+        "content": "| Number of Frames | No-bias | Yes-bias | Bag-of-event |\n| ---------------- | ------- | -------- | ------------ |\n| 816              | 15      | 7        | 24           |\n| 32               | 4       | 12       | 35           |\n| 64               | 3       | 9        | 40           |\n| 128              | 2       | 12       | 39           |\n| 256              | 2       | 10       | 43           |",
+        "chart_caption": [
+            "Molmo2 4B: Error Rate by Number of Frames ",
+            "Figure 10: Molmo2-4B: Error rates by number of frames. "
+        ],
+        "chart_footnote": [],
+        "sub_type": "line",
+        "bbox": [
+            117,
+            688,
+            482,
+            837
+        ],
+        "page_idx": 9
+    },
+    {
+        "type": "page_number",
+        "text": "10 ",
+        "bbox": [
+            489,
+            941,
+            510,
+            954
+        ],
+        "page_idx": 9
+    }
+]
