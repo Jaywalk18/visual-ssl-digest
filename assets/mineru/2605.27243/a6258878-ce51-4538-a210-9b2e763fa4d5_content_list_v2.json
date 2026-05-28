@@ -1,0 +1,4462 @@
+[
+    [
+        {
+            "type": "title",
+            "content": {
+                "title_content": [
+                    {
+                        "type": "text",
+                        "content": "Can Retrieval Heads See Images? Multimodal Retrieval Heads in Long-Context Vision-Language Models "
+                    }
+                ],
+                "level": 1
+            },
+            "bbox": [
+                159,
+                85,
+                836,
+                124
+            ]
+        },
+        {
+            "type": "paragraph",
+            "content": {
+                "paragraph_content": [
+                    {
+                        "type": "text",
+                        "content": "Aaron Branson Cigres Li1,∗, Zhaowei Wang1,∗, Yu Zhao2, Yiming Du4 Haobo Li1, Xiyu Ren1, Ginny Wong5, Simon See5, Lishu Luo6 Haodong Duan4, Pasquale Minervini2,3, Yangqiu Song1 "
+                    }
+                ]
+            },
+            "bbox": [
+                201,
+                136,
+                801,
+                186
+            ]
+        },
+        {
+            "type": "paragraph",
+            "content": {
+                "paragraph_content": [
+                    {
+                        "type": "text",
+                        "content": "1HKUST 2University of Edinburgh 3Miniml.AI 4CUHK 5NVAITC, NVIDIA, Santa Clara, USA 6Tsinghua University abcli@connect.ust.hk {zwanggy, yqsong}@cse.ust.hk "
+                    }
+                ]
+            },
+            "bbox": [
+                211,
+                187,
+                786,
+                237
+            ]
+        },
+        {
+            "type": "title",
+            "content": {
+                "title_content": [
+                    {
+                        "type": "text",
+                        "content": "Abstract "
+                    }
+                ],
+                "level": 1
+            },
+            "bbox": [
+                260,
+                261,
+                339,
+                275
+            ]
+        },
+        {
+            "type": "paragraph",
+            "content": {
+                "paragraph_content": [
+                    {
+                        "type": "text",
+                        "content": "Large vision-language models increasingly rely on long-context modeling to reason over documents, hour-level videos, and long-horizon agent trajectories, requiring them to locate relevant evidence across interleaved text and images. Prior work has studied this behavior using retrieval heads in large language models, but its copy-based criterion does not directly apply when evidence appears in images. We introduce a multimodal retrieval head detection method that scores attention from question tokens to textual or visual evidence. With this method, we show that multimodal retrieval heads are sparse, intrinsic, and causally important: only 4.4–10.2% of attention heads account for 50% of the positive retrieval-score mass, and masking the top-5% selected heads drops MMLongBench-Doc from 48.2% to 5.7% and SlideVQA from 71.2% to 8.9%, while random-head masking is far less damaging. Further analysis shows that these heads are partly shared across modalities yet remain dynamic within each modality, with image retrieval heads changing more than text retrieval heads as context length and haystack modality change. Without further training, we find that these heads can also be used directly to rank visually rich documents: on MMDocIR, Qwen3-VL-8B selected-head scoring improves Recall@1 by 7.7/7.4 macro/micro points for page retrieval and 6.3/6.8 points for layout retrieval over the strongest reported baseline.1 "
+                    }
+                ]
+            },
+            "bbox": [
+                141,
+                287,
+                460,
+                741
+            ]
+        },
+        {
+            "type": "title",
+            "content": {
+                "title_content": [
+                    {
+                        "type": "text",
+                        "content": "1 Introduction "
+                    }
+                ],
+                "level": 1
+            },
+            "bbox": [
+                114,
+                753,
+                258,
+                768
+            ]
+        },
+        {
+            "type": "paragraph",
+            "content": {
+                "paragraph_content": [
+                    {
+                        "type": "text",
+                        "content": "Recent long-context vision-language models (LVLMs) extend the context window to interleaved text-image inputs with tens to hundreds of thousands of tokens (Bai et al., 2025b,a; Gemma Team, 2025), enabling applications over long visually rich documents (Wang et al., 2025), hour-level "
+                    }
+                ]
+            },
+            "bbox": [
+                112,
+                778,
+                487,
+                875
+            ]
+        },
+        {
+            "type": "chart",
+            "content": {
+                "image_source": {
+                    "path": "images/8851aedbec293428448ef05df53cba9111d21b85fcd6ae33c239649839f170f8.jpg"
+                },
+                "content": "| Context length | Image needle Depth (%) | Text needle Depth (%) |\n| -------------- | ---------------------- | --------------------- |\n| 8K             | 0                      | 0                     |\n| 32K            | 0                      | 0                     |\n| 56K            | 0                      | 0                     |\n| 80K            | 0                      | 0                     |\n| 104K           | 0                      | 0                     |\n| 128K           | 0                      | 0                     |",
+                "chart_caption": [
+                    {
+                        "type": "text",
+                        "content": "Figure 1: Removing multimodal retrieval heads causally disrupts MM-NIAH text- and image-needle retrieval. We evaluate Qwen3-VL-8B (Bai et al., 2025a) on MM-NIAH (Wang et al., 2024b) across multiple context lengths and needle depths. "
+                    }
+                ],
+                "chart_footnote": []
+            },
+            "sub_type": "heatmap",
+            "bbox": [
+                519,
+                263,
+                873,
+                458
+            ]
+        },
+        {
+            "type": "paragraph",
+            "content": {
+                "paragraph_content": [
+                    {
+                        "type": "text",
+                        "content": "videos (Fu et al., 2025), and long-horizon agent trajectories (Geng et al., 2025). Effective use of such long multimodal contexts requires locating task-relevant evidence across interleaved text and images. In large language models (LLMs), this evidence-location behavior has been studied through retrieval heads, where Wu et al. (2025b) identifies attention heads that copy answer spans from needle token-by-token during Needle-in-a-Haystack tasks (NIAH, Kamradt, 2023). "
+                    }
+                ]
+            },
+            "bbox": [
+                507,
+                550,
+                882,
+                709
+            ]
+        },
+        {
+            "type": "paragraph",
+            "content": {
+                "paragraph_content": [
+                    {
+                        "type": "text",
+                        "content": "However, in multimodal prompts, the evidence may be encoded visually rather than as prompt text, such as in charts, tables, or photos. The LVLMs may therefore use visual evidence to generate the answer without copying any text span from the prompt, so the copy-paste criterion may not directly apply in this setting. "
+                    }
+                ]
+            },
+            "bbox": [
+                507,
+                711,
+                882,
+                824
+            ]
+        },
+        {
+            "type": "paragraph",
+            "content": {
+                "paragraph_content": [
+                    {
+                        "type": "text",
+                        "content": "To identify retrieval heads in LVLMs, we introduce multimodal retrieval heads (MMRetHeads), defined as attention heads that have a high average question-to-evidence attention mass. For each head, we compute this score by summing the postsoftmax attention from each question token to all tokens within the annotated needle spans, and then averaging the resulting mass over question tokens (Sec. 3.2). These evidence spans may correspond to text tokens or images mapped to visual tokens. We use the MM-NIAH dataset (Wang et al., 2024b, 2025) to detect multimodal retrieval heads, which comprises four distinct tasks (i.e., text retrieval, image retrieval, rendered-text retrieval, and identicalimage retrieval) with standardized context lengths for controlled experiments (Sec. 3.1). Each example consists of a long interleaved text-image haystack containing many distractor passages or images and a single question-relevant needle, the evidence item needed to answer the question. "
+                    }
+                ]
+            },
+            "bbox": [
+                507,
+                824,
+                882,
+                921
+            ]
+        },
+        {
+            "type": "page_aside_text",
+            "content": {
+                "page_aside_text_content": [
+                    {
+                        "type": "text",
+                        "content": "arXiv:2605.27243v1 [cs.CV] 26 May 2026 "
+                    }
+                ]
+            },
+            "bbox": [
+                21,
+                284,
+                60,
+                709
+            ]
+        },
+        {
+            "type": "page_footnote",
+            "content": {
+                "page_footnote_content": [
+                    {
+                        "type": "text",
+                        "content": "*Equal contribution. "
+                    }
+                ]
+            },
+            "bbox": [
+                137,
+                882,
+                262,
+                894
+            ]
+        },
+        {
+            "type": "page_footnote",
+            "content": {
+                "page_footnote_content": [
+                    {
+                        "type": "text",
+                        "content": "1Code and data are available at https://github.com/ ab-cli/MMRetHead. "
+                    }
+                ]
+            },
+            "bbox": [
+                115,
+                895,
+                487,
+                919
+            ]
+        },
+        {
+            "type": "page_number",
+            "content": {
+                "page_number_content": [
+                    {
+                        "type": "text",
+                        "content": "1 "
+                    }
+                ]
+            },
+            "bbox": [
+                494,
+                942,
+                502,
+                954
+            ]
+        }
+    ],
+    [
+        {
+            "type": "paragraph",
+            "content": {
+                "paragraph_content": []
+            },
+            "bbox": [
+                112,
+                84,
+                489,
+                309
+            ]
+        },
+        {
+            "type": "paragraph",
+            "content": {
+                "paragraph_content": [
+                    {
+                        "type": "text",
+                        "content": "We characterize the behavior of retrieval heads in LVLMs and identify the following core properties. Sparsity (Sec. 4): we find that a very small fraction of heads accounts for the vast majority of the retrieval score mass. Causality (Sec. 5): ablating these sparse heads severely degrades multimodal long-context retrieval and downstream reasoning, causing the model to hallucinate evidence or explicitly state that the needed context is missing, while zeroing out random heads has minimal impact. Preservation (Fig. 4): we show that high-scoring multimodal retrieval heads are largely identical to those in their respective base models, suggesting these mechanisms are inherited from pretraining rather than developed during subsequent visionlanguage adaptation. Modality specificity and dynamic adaptation (Sec. 6): we find that text and image modalities share a common set of retrieval heads, while also relying on distinct, modalityspecific ones; this division of labor dynamically adapts to the evidence format, for example, OCRlike evidence in rendered-text retrieval predominantly recruits text-retrieval structures despite the input being visually encoded. "
+                    }
+                ]
+            },
+            "bbox": [
+                115,
+                310,
+                489,
+                694
+            ]
+        },
+        {
+            "type": "paragraph",
+            "content": {
+                "paragraph_content": [
+                    {
+                        "type": "text",
+                        "content": "We further demonstrate the causality and utility of our identified multimodal retrieval heads by applying them to solve multimodal document retrieval tasks (Sec. 7). We evaluate both page retrieval, where candidates are document pages and the goal is to rank the page containing the evidence, and layout retrieval, where candidates are finer-grained regions within pages, and the goal is to rank the evidence region. For each candidate page or layout region, we aggregate question-tocandidate attention through the retrieval heads by summing post-softmax attention from question tokens to candidate tokens, averaging over question tokens, and then averaging over heads. Using this score to rank candidates, the retriever outperforms strong reported baselines on both tasks. "
+                    }
+                ]
+            },
+            "bbox": [
+                112,
+                696,
+                489,
+                921
+            ]
+        },
+        {
+            "type": "paragraph",
+            "content": {
+                "paragraph_content": []
+            },
+            "bbox": [
+                507,
+                84,
+                882,
+                116
+            ]
+        },
+        {
+            "type": "title",
+            "content": {
+                "title_content": [
+                    {
+                        "type": "text",
+                        "content": "2 Related Work "
+                    }
+                ],
+                "level": 1
+            },
+            "bbox": [
+                509,
+                127,
+                665,
+                142
+            ]
+        },
+        {
+            "type": "paragraph",
+            "content": {
+                "paragraph_content": [
+                    {
+                        "type": "text",
+                        "content": "Retrieval heads in language models. Prior work shows that attention heads can implement various language-model functions, including in-context completion via induction heads (Olsson et al., 2022) and repeated-token modulation via copysuppression heads (McDougall et al., 2024). Recent work (Wu et al., 2025b) detects retrieval heads using copy-paste behavior (i.e., literal token matching) during answer generation. However, such behavior may not generalize to broader long-context tasks beyond literal matching (Modarressi et al.); other work therefore detects retrieval heads directly from attention scores (Zhang et al., 2025). In this work, we study whether similar attention-scorebased retrieval heads can be detected in LVLMs when the needle is visual. "
+                    }
+                ]
+            },
+            "bbox": [
+                507,
+                146,
+                885,
+                403
+            ]
+        },
+        {
+            "type": "paragraph",
+            "content": {
+                "paragraph_content": [
+                    {
+                        "type": "text",
+                        "content": "VLM attention and interpretability. VLM attention has been used to analyze cross-modal alignment, grounding, and hallucination (Aflalo et al., 2022; Huang et al., 2024; Wu et al., 2025a; Kang et al., 2025; Bi et al., 2025), though raw attention is not by itself a causal explanation (Jain and Wallace, 2019; Serrano and Smith, 2019). In this work, we study retrieval heads in LVLMs by examining whether specific attention heads concentrate attention from task-question tokens to annotated multimodal needles. "
+                    }
+                ]
+            },
+            "bbox": [
+                507,
+                412,
+                885,
+                588
+            ]
+        },
+        {
+            "type": "paragraph",
+            "content": {
+                "paragraph_content": [
+                    {
+                        "type": "text",
+                        "content": "Multimodal long-context and retrieval. Recent work on long-context vision-language models (Wang et al., 2026) has introduced comprehensive evaluations spanning multimodal document VQA (Wang et al., 2025), multimodal NIAH (Wang et al., 2024b), and long-term memory (Ren et al., 2026), such as MMLong-Bench (Wang et al., 2025). For multimodal document VQA, prior work often uses retrieval modules to score candidate pages or passages (Robertson and Zaragoza, 2009; Karpukhin et al., 2020; Izacard et al., 2022; Khattab and Zaharia, 2020; Ma et al., 2024; Faysse et al., 2025). In contrast, we ask whether an LVLM’s multimodal retrieval heads can directly rank candidate pages or layout units. "
+                    }
+                ]
+            },
+            "bbox": [
+                507,
+                596,
+                885,
+                839
+            ]
+        },
+        {
+            "type": "title",
+            "content": {
+                "title_content": [
+                    {
+                        "type": "text",
+                        "content": "3 Detecting Multimodal Retrieval Heads "
+                    }
+                ],
+                "level": 1
+            },
+            "bbox": [
+                507,
+                848,
+                875,
+                865
+            ]
+        },
+        {
+            "type": "title",
+            "content": {
+                "title_content": [
+                    {
+                        "type": "text",
+                        "content": "3.1 Detection data "
+                    }
+                ],
+                "level": 1
+            },
+            "bbox": [
+                509,
+                868,
+                670,
+                883
+            ]
+        },
+        {
+            "type": "paragraph",
+            "content": {
+                "paragraph_content": [
+                    {
+                        "type": "text",
+                        "content": "MM-NIAH (Wang et al., 2024b) provides a multimodal counterpart to text-only needle-in-"
+                    }
+                ]
+            },
+            "bbox": [
+                507,
+                889,
+                882,
+                921
+            ]
+        },
+        {
+            "type": "page_number",
+            "content": {
+                "page_number_content": [
+                    {
+                        "type": "text",
+                        "content": "2 "
+                    }
+                ]
+            },
+            "bbox": [
+                492,
+                942,
+                505,
+                954
+            ]
+        }
+    ],
+    [
+        {
+            "type": "title",
+            "content": {
+                "title_content": [
+                    {
+                        "type": "text",
+                        "content": "Multimodal Retrieval Heads "
+                    }
+                ],
+                "level": 1
+            },
+            "bbox": [
+                141,
+                87,
+                418,
+                105
+            ]
+        },
+        {
+            "type": "chart",
+            "content": {
+                "image_source": {
+                    "path": "images/9f79ba9c6ab2642a6adf7f829fba2da17174a65d37584b070e3da5c5aaf70ddb.jpg"
+                },
+                "content": "| Period | Distractors | Evidence | Question |\n|--------|-------------|----------|----------|\n| During the annual report ... | Low | Low | Low |\n| Answer-bearing image/text | High | Low | Low |\n| ... appendix notes | Low | Low | Low |",
+                "chart_caption": [
+                    {
+                        "type": "text",
+                        "content": "Figure 2: Schematic of MMRetHead detection. For each attention head, we score the post-softmax attention from question tokens to annotated task-relevant evidence spans. These evidence spans may correspond to text tokens or visual tokens, allowing the scoring framework to detect retrieval heads across multimodal inputs. "
+                    }
+                ],
+                "chart_footnote": []
+            },
+            "sub_type": "bar",
+            "bbox": [
+                139,
+                116,
+                875,
+                199
+            ]
+        },
+        {
+            "type": "paragraph",
+            "content": {
+                "paragraph_content": [
+                    {
+                        "type": "text",
+                        "content": "a-haystack tasks (Kamradt, 2023), evaluating whether LVLMs can retrieve needles from long webpage-based haystacks with interleaved text and images. Here, we use the reprocessed version of MM-NIAH from MMLongBench (Wang et al., 2025), which standardizes context lengths for tighter control across the 8K–128K settings. In our setting, the haystack is the full multimodal context, consisting of many distractor texts or images. The needle is the single task-relevant evidence inserted at a controlled depth in that context. An LVLM is then asked a query whose answer requires retrieving this needle. Specifically, we use text and image retrieval from MM-NIAH, covering both textual and visual needles. "
+                    }
+                ]
+            },
+            "bbox": [
+                112,
+                287,
+                487,
+                526
+            ]
+        },
+        {
+            "type": "paragraph",
+            "content": {
+                "paragraph_content": [
+                    {
+                        "type": "text",
+                        "content": "In text retrieval, the needle is a short factual text snippet, such as \"The beacon over the hill is a lighthouse,\" hidden among multimodal distractors, and the model must answer the question, such as “What is the beacon over the hill?” In image retrieval, the visual needle is an image embedded inside a larger haystack image, and the model must match it to the correct candidate option image. We further introduce a new rendered-text retrieval task and identical image retrieval variants to separate OCR-like text retrieval and visual presence/absence verification. In rendered-text retrieval, the same text needle used in the text retrieval task is rendered into an image, allowing us to test whether visually encoded text recruits text-like or image-like retrieval heads. In identical image retrieval, the needle image is no longer embedded in another haystack image, and the model must determine whether it appears in the haystack, further covering OCR scenarios and augmenting the image-retrieval setting. "
+                    }
+                ]
+            },
+            "bbox": [
+                112,
+                530,
+                489,
+                852
+            ]
+        },
+        {
+            "type": "title",
+            "content": {
+                "title_content": [
+                    {
+                        "type": "text",
+                        "content": "3.2 Attention-Based Retrieval Score "
+                    }
+                ],
+                "level": 1
+            },
+            "bbox": [
+                112,
+                866,
+                413,
+                881
+            ]
+        },
+        {
+            "type": "paragraph",
+            "content": {
+                "paragraph_content": [
+                    {
+                        "type": "text",
+                        "content": "We define multimodal retrieval heads (MMRet-Heads) as attention heads with a high average question-to-evidence attention mass. "
+                    }
+                ]
+            },
+            "bbox": [
+                112,
+                889,
+                487,
+                921
+            ]
+        },
+        {
+            "type": "paragraph",
+            "content": {
+                "paragraph_content": []
+            },
+            "bbox": [
+                507,
+                288,
+                781,
+                302
+            ]
+        },
+        {
+            "type": "paragraph",
+            "content": {
+                "paragraph_content": [
+                    {
+                        "type": "text",
+                        "content": "We write each example as "
+                    },
+                    {
+                        "type": "equation_inline",
+                        "content": "\\ x ~ = ~ ( C , q , G _ { x } )"
+                    },
+                    {
+                        "type": "text",
+                        "content": ", where C is the long interleaved text-image context serving as the haystack, q is the task query, and "
+                    },
+                    {
+                        "type": "equation_inline",
+                        "content": "G _ { x } = \\{ g _ { i } \\} _ { i = 1 } ^ { m _ { x } }"
+                    },
+                    {
+                        "type": "text",
+                        "content": "is the set of task-relevant needle spans, with "
+                    },
+                    {
+                        "type": "equation_inline",
+                        "content": "g _ { i } = ( s _ { i } , e _ { i } )"
+                    },
+                    {
+                        "type": "text",
+                        "content": "denoting a token interval in the tokenized context. As shown in Fig. 2, we define an attention-based retrieval score for each attention head by aggregating attention from question tokens to tokens inside all task-relevant evidence spans: "
+                    }
+                ]
+            },
+            "bbox": [
+                507,
+                303,
+                884,
+                463
+            ]
+        },
+        {
+            "type": "equation_interline",
+            "content": {
+                "math_content": "S _ {h} (x) = \\frac {1}{| q |} \\sum_ {t _ {q} \\in q} \\sum_ {g _ {i} \\in G _ {x}} \\sum_ {t = s _ {i}} ^ {e _ {i}} A _ {t _ {q} \\rightarrow t} ^ {h}, \\tag {1}",
+                "math_type": "latex",
+                "image_source": {
+                    "path": "images/8aa0cd3a12db063916ca6cee26d3fba33718fb96f91f601dc98b85218eeebf22.jpg"
+                }
+            },
+            "bbox": [
+                564,
+                470,
+                882,
+                513
+            ]
+        },
+        {
+            "type": "paragraph",
+            "content": {
+                "paragraph_content": [
+                    {
+                        "type": "text",
+                        "content": "where "
+                    },
+                    {
+                        "type": "equation_inline",
+                        "content": "A ^ { h }"
+                    },
+                    {
+                        "type": "text",
+                        "content": "denotes the model’s post-softmax attention score for attention head h. "
+                    }
+                ]
+            },
+            "bbox": [
+                507,
+                520,
+                882,
+                551
+            ]
+        },
+        {
+            "type": "paragraph",
+            "content": {
+                "paragraph_content": [
+                    {
+                        "type": "text",
+                        "content": "Then, we average the retrieval score for each attention head over all examples. We use this formula following prior work on QRHead (Zhang et al., 2025), but adapt it to multimodal long-context inputs and show that it can identify MMRetHead in subsequent sections. "
+                    }
+                ]
+            },
+            "bbox": [
+                507,
+                552,
+                882,
+                649
+            ]
+        },
+        {
+            "type": "title",
+            "content": {
+                "title_content": [
+                    {
+                        "type": "text",
+                        "content": "3.3 Null-Question Calibration "
+                    }
+                ],
+                "level": 1
+            },
+            "bbox": [
+                507,
+                659,
+                761,
+                674
+            ]
+        },
+        {
+            "type": "paragraph",
+            "content": {
+                "paragraph_content": [
+                    {
+                        "type": "text",
+                        "content": "In practice, Chen et al. (2025) show that raw attention scores may contain question-independent biases, with certain tokens or input positions receiving high attention scores regardless of the question. Following this work, we also use null-question calibration to measure the change in attention caused by the actual question. "
+                    }
+                ]
+            },
+            "bbox": [
+                507,
+                680,
+                884,
+                791
+            ]
+        },
+        {
+            "type": "paragraph",
+            "content": {
+                "paragraph_content": [
+                    {
+                        "type": "text",
+                        "content": "Specifically, we keep the same haystack and evidence spans as the original example, but replace the task question with an uninformative null question "
+                    },
+                    {
+                        "type": "equation_inline",
+                        "content": "q _ { \\emptyset }"
+                    },
+                    {
+                        "type": "text",
+                        "content": ", implemented as the fixed text string "
+                    },
+                    {
+                        "type": "equation_inline",
+                        "content": "\\mathbf { \\bar { s } } { \\mathbf { \\bar { N } } } / { \\mathbf { A } } ^ { \\prime } { \\mathbf { \\bar { s } } }"
+                    },
+                    {
+                        "type": "text",
+                        "content": "in the same prompt slot. For "
+                    },
+                    {
+                        "type": "equation_inline",
+                        "content": "x = ( C , q , g )"
+                    },
+                    {
+                        "type": "text",
+                        "content": ", "
+                    },
+                    {
+                        "type": "equation_inline",
+                        "content": "S _ { h } ^ { \\mathrm { n u l l } } ( x )"
+                    },
+                    {
+                        "type": "text",
+                        "content": "denotes the score computed on "
+                    },
+                    {
+                        "type": "equation_inline",
+                        "content": "x _ { \\emptyset }"
+                    },
+                    {
+                        "type": "text",
+                        "content": "= "
+                    },
+                    {
+                        "type": "equation_inline",
+                        "content": "( C , q _ { \\emptyset } , g )"
+                    },
+                    {
+                        "type": "text",
+                        "content": ". Then, the calibrated score is computed as "
+                    },
+                    {
+                        "type": "equation_inline",
+                        "content": "S _ { h } ^ { \\mathrm { c a l } } ( x ) = S _ { h } ( x ) - S _ { h } ^ { \\mathrm { n u l l } } ( x )"
+                    },
+                    {
+                        "type": "text",
+                        "content": ". "
+                    }
+                ]
+            },
+            "bbox": [
+                507,
+                793,
+                882,
+                922
+            ]
+        },
+        {
+            "type": "page_number",
+            "content": {
+                "page_number_content": []
+            },
+            "bbox": [
+                492,
+                942,
+                502,
+                953
+            ]
+        }
+    ],
+    [
+        {
+            "type": "title",
+            "content": {
+                "title_content": [
+                    {
+                        "type": "text",
+                        "content": "3.4 Implementation Details "
+                    }
+                ],
+                "level": 1
+            },
+            "bbox": [
+                112,
+                84,
+                346,
+                99
+            ]
+        },
+        {
+            "type": "paragraph",
+            "content": {
+                "paragraph_content": [
+                    {
+                        "type": "text",
+                        "content": "We detect MMRetHeads across six LVLMs: Qwen2.5-VL (7B, 32B) (Bai et al., 2025b), Qwen3- VL (8B, 32B) (Bai et al., 2025a), Gemma3 (12B, 27B) (Gemma Team, 2025). For each model, we run the four MM-NIAH tasks at five context lengths: 8K, 16K, 32K, 64K, and 128K. Each detection condition uses 20 unique question-evidence examples, with each item evaluated at 6 needle-depth positions. We provide full details of the samplesize stability tests in Sec. C. Attention heads are ranked by calibrated retrieval scores, and the top 5% of heads are selected for the following experiments. Selecting the top 5% follows the ratio reported in prior work Wu et al. (2025b). Since Gemma3 models (Gemma Team, 2025) use hybrid attention with sliding-window attention, we consider only global-attention layers that can perform long-range retrieval. "
+                    }
+                ]
+            },
+            "bbox": [
+                112,
+                105,
+                490,
+                395
+            ]
+        },
+        {
+            "type": "title",
+            "content": {
+                "title_content": [
+                    {
+                        "type": "text",
+                        "content": "4 Basic Properties of MMRetHeads "
+                    }
+                ],
+                "level": 1
+            },
+            "bbox": [
+                112,
+                405,
+                438,
+                422
+            ]
+        },
+        {
+            "type": "paragraph",
+            "content": {
+                "paragraph_content": [
+                    {
+                        "type": "text",
+                        "content": "We first test whether MMRetHeads exhibit three basic properties established in prior retrieval head work: sparsity, intrinsicity, and dynamic activation (Wu et al., 2025b). "
+                    }
+                ]
+            },
+            "bbox": [
+                112,
+                430,
+                487,
+                494
+            ]
+        },
+        {
+            "type": "paragraph",
+            "content": {
+                "paragraph_content": [
+                    {
+                        "type": "text",
+                        "content": "Sparsity We define a sparsity metric as the minimum fraction of heads required to explain 50% of the positive calibrated retrieval score mass. Calibrated scores can be negative when the null question attends more to the evidence spans than the task question, so this metric focuses on positive excess question-induced attention. The score-mass sparsity metric is: "
+                    }
+                ]
+            },
+            "bbox": [
+                112,
+                502,
+                489,
+                632
+            ]
+        },
+        {
+            "type": "equation_interline",
+            "content": {
+                "math_content": "\\rho_ {0. 5} = \\frac {1}{| \\mathcal {H} |} \\min \\left\\{k: \\sum_ {i = 1} ^ {k} s _ {(i)} \\geq 0. 5 \\sum_ {h \\in \\mathcal {H}} s _ {h} \\right\\},",
+                "math_type": "latex",
+                "image_source": {
+                    "path": "images/54a5bf3bb922e6ddc0f7e5fdd9f2cd44844e81b21449189858e97ba64d6f1224.jpg"
+                }
+            },
+            "bbox": [
+                126,
+                638,
+                473,
+                683
+            ]
+        },
+        {
+            "type": "paragraph",
+            "content": {
+                "paragraph_content": [
+                    {
+                        "type": "text",
+                        "content": "where H is the full model attention-head set and "
+                    },
+                    {
+                        "type": "equation_inline",
+                        "content": "s _ { h } = \\operatorname* { m a x } ( \\bar { s } _ { h } , 0 )"
+                    },
+                    {
+                        "type": "text",
+                        "content": ". s¯h is the calibrated detection-set average, and "
+                    },
+                    {
+                        "type": "equation_inline",
+                        "content": "s _ { ( 1 ) } \\geq \\cdot \\cdot \\cdot \\geq s _ { ( | \\mathcal { H } | ) }"
+                    },
+                    {
+                        "type": "text",
+                        "content": "are sorted positive score masses. "
+                    }
+                ]
+            },
+            "bbox": [
+                112,
+                687,
+                487,
+                751
+            ]
+        },
+        {
+            "type": "paragraph",
+            "content": {
+                "paragraph_content": [
+                    {
+                        "type": "text",
+                        "content": "Fig. 3 confirms that MMRetHeads are sparse: averaged over all context lengths, only 4.4–10.2% of attention heads account for 50% of the positive score mass across tested LVLMs and MM-NIAH tasks. "
+                    }
+                ]
+            },
+            "bbox": [
+                112,
+                753,
+                489,
+                831
+            ]
+        },
+        {
+            "type": "paragraph",
+            "content": {
+                "paragraph_content": [
+                    {
+                        "type": "text",
+                        "content": "Intrinsicity Wu et al. (2025b) show that retrieval heads are largely established during pretraining, with later SFT producing only minor changes. Here, we test both Qwen3-VL-8B and Gemma3- 12B to verify whether this claim still holds for LVLMs. For Qwen3, we test whether text retrieval heads are preserved during multimodal adaptation by comparing Qwen3-8B (Yang et al., 2025) with Qwen3-VL-8B (Bai et al., 2025a). For Gemma3, we test intrinsicity more directly by comparing pretrained Gemma3-12B-PT with instruction finetuned Gemma3-12B-IT (Gemma Team, 2025). To support text-only Qwen3-8B, we use 128 examples from Natural Questions (Kwiatkowski et al., 2019) following the QRHead (Zhang et al., 2025). "
+                    }
+                ]
+            },
+            "bbox": [
+                112,
+                841,
+                490,
+                921
+            ]
+        },
+        {
+            "type": "chart",
+            "content": {
+                "image_source": {
+                    "path": "images/58c608abf5028254a5d542dd8445b8805ca667928421f74bd95e8cba11f29708.jpg"
+                },
+                "content": "| | Qwen2.5 7B | Qwen2.5 32B | Qwen3 8B | Qwen3 32B | Gemma3 12B | Gemma3 27B |\n|---|---|---|---|---|---|---|\n| Text | 5.8 | 5.2 | 5.6 | 4.4 | 6.1 | 4.4 |\n| Image | 7.8 | 8.3 | 6.7 | 6.0 | 6.6 | 5.0 |\n| Rendered text | 6.4 | 6.6 | 7.2 | 5.4 | 7.2 | 5.1 |\n| Identical image | 10.2 | 7.9 | 8.2 | 5.3 | 8.0 | 8.0 |",
+                "chart_caption": [
+                    {
+                        "type": "text",
+                        "content": "Figure 3: Retrieval-score mass concentration. Each cell shows the percentage of heads needed to cover 50% of positive calibrated retrieval mass; darker cells indicate stronger concentration. "
+                    }
+                ],
+                "chart_footnote": []
+            },
+            "sub_type": "heatmap",
+            "bbox": [
+                527,
+                82,
+                860,
+                200
+            ]
+        },
+        {
+            "type": "chart",
+            "content": {
+                "image_source": {
+                    "path": "images/bec412c504573e0d2221b35b0d5787f7e512d18ce12896074f8e64d8af15406c.jpg"
+                },
+                "content": "",
+                "chart_caption": [
+                    {
+                        "type": "text",
+                        "content": "Figure 4: Top-5% text-retrieval heads in Qwen3-VL-8B. Blue heads are preserved from Qwen3-8B, while orange heads newly enter the top-5% set after vision-language training. We also show the effect of SFT on Gemma3- 12B in Sec. E. "
+                    }
+                ],
+                "chart_footnote": []
+            },
+            "sub_type": "heatmap",
+            "bbox": [
+                544,
+                272,
+                845,
+                424
+            ]
+        },
+        {
+            "type": "paragraph",
+            "content": {
+                "paragraph_content": []
+            },
+            "bbox": [
+                507,
+                510,
+                884,
+                671
+            ]
+        },
+        {
+            "type": "paragraph",
+            "content": {
+                "paragraph_content": [
+                    {
+                        "type": "text",
+                        "content": "Fig. 4 and Fig. 13 shows that high-scoring text retrieval heads remain concentrated at the same layer/head locations: 46 of 58 Qwen3-VL-8B top-5% heads and 34 of 39 Gemma3-12B-IT top-5% heads are shared with their preceding versions. This high intersection indicates that text retrieval heads are intrinsic, being preserved through visionlanguage adaptation in Qwen3-VL-8B and instruction tuning in Gemma3-12B rather than newly formed during later adaptation. "
+                    }
+                ]
+            },
+            "bbox": [
+                507,
+                671,
+                885,
+                833
+            ]
+        },
+        {
+            "type": "paragraph",
+            "content": {
+                "paragraph_content": [
+                    {
+                        "type": "text",
+                        "content": "Dynamic activations Prior work (Wu et al., 2025b) has shown that retrieval heads are dynamically activated, with some heads appearing only in specific contexts and others appearing consistently across contexts. Here, we examine context length as one factor driving this variation in MMRetHeads. Fig. 5 shows a substantial decrease in intersection heads detected in short and long-context settings. At 128K, only 60% of image retrieval heads, 70% of identical-image retrieval heads, 71% of text retrieval heads, and 76% of rendered-text retrieval heads remain shared with the head set detected at the 8K setting. This suggests that retrieval head selection is context-length sensitive, with image retrieval heads showing the largest change across lengths. Furthermore, Fig. 6 shows a clear layerdistribution change between heads detected only at 8K setting and heads detected only at 128K setting of image retrieval. The heads unique to the 8K setting are concentrated more in earlier layers, with a mean layer of 33.1, whereas the heads unique to the 128K setting shift toward later layers, with a mean layer of 52.4. This suggests that shorter-context retrieval can rely more on earlier representations, while longer-context retrieval may require representations that have undergone more layer-wise processing. "
+                    }
+                ]
+            },
+            "bbox": [
+                507,
+                841,
+                885,
+                921
+            ]
+        },
+        {
+            "type": "page_number",
+            "content": {
+                "page_number_content": [
+                    {
+                        "type": "text",
+                        "content": "4 "
+                    }
+                ]
+            },
+            "bbox": [
+                492,
+                942,
+                505,
+                954
+            ]
+        }
+    ],
+    [
+        {
+            "type": "chart",
+            "content": {
+                "image_source": {
+                    "path": "images/d2f25b15bb7a1d4a09afb0aa09853b9c417a2c83c4063d7c1c6125f554d102dd.jpg"
+                },
+                "content": "| MMRetrievalHead Overlap at Different Context Length | Text  | Rendered-text | Image | Identical image |\n| --------------------------------------------------- | ----- | ------------- | ----- | --------------- |\n| 8K&16K                                              | 93    | 94            | 88    | 92              |\n| 8K&32K                                              | 87    | 88            | 80    | 82              |\n| 8K&64K                                              | 81    | 82            | 66    | 73              |\n| 8K&128K                                             | 71    | 76            | 60    | 70              |",
+                "chart_caption": [
+                    {
+                        "type": "text",
+                        "content": "Figure 5: Context-length sensitivity of retrieval-head selection. Curves show the overlap between top-5% heads selected at 8K and those selected at longer contexts, averaged over six LVLMs. We find that image-retrieval heads are less stable. "
+                    }
+                ],
+                "chart_footnote": []
+            },
+            "sub_type": "line",
+            "bbox": [
+                147,
+                86,
+                450,
+                227
+            ]
+        },
+        {
+            "type": "paragraph",
+            "content": {
+                "paragraph_content": []
+            },
+            "bbox": [
+                112,
+                313,
+                489,
+                668
+            ]
+        },
+        {
+            "type": "title",
+            "content": {
+                "title_content": [
+                    {
+                        "type": "text",
+                        "content": "5 Causal Role in Multimodal NIAH, Long-Context, and Reasoning Tasks "
+                    }
+                ],
+                "level": 1
+            },
+            "bbox": [
+                112,
+                683,
+                460,
+                717
+            ]
+        },
+        {
+            "type": "paragraph",
+            "content": {
+                "paragraph_content": [
+                    {
+                        "type": "text",
+                        "content": "We remove the detected attention heads from LVLMs by applying a zero mask to their postsoftmax attention weights, and evaluate whether retrieval performance degrades. We apply the mask during both prompt prefill and answer decoding because this setting causes much stronger degradation than decode-only masking, indicating that retrieval also occurs while the model processes the haystack and question before generation. We provide more detail of this in Sec. D. We mainly present results on Qwen3-VL-8B. We first intervene in MM-NIAH, where synthetic examples pro-"
+                    }
+                ]
+            },
+            "bbox": [
+                112,
+                728,
+                489,
+                921
+            ]
+        },
+        {
+            "type": "chart",
+            "content": {
+                "image_source": {
+                    "path": "images/0bc521bf8f6814ce93bbeda3def8652905c5a485342a83606b7f0dec527f316f.jpg"
+                },
+                "content": "| Layer | Head | Category       |\n|-------|------|----------------|\n| 0     | 0    | Shared         |\n| 0     | 8    | 8K-specific    |\n| 0     | 40   | Shared         |\n| 0     | 56   | 8K-specific    |\n| 8     | 0    | Shared         |\n| 8     | 8    | 8K-specific    |\n| 8     | 40   | Shared         |\n| 8     | 56   | 8K-specific    |\n| 16    | 0    | Shared         |\n| 16    | 8    | 8K-specific    |\n| 16    | 40   | Shared         |\n| 16    | 56   | 8K-specific    |\n| 24    | 0    | Shared         |\n| 24    | 8    | 8K-specific    |\n| 24    | 40   | Shared         |\n| 24    | 56   | 8K-specific    |\n| 32    | 0    | Shared         |\n| 32    | 8    | 8K-specific    |\n| 32    | 40   | Shared         |\n| 32    | 56   | 8K-specific    |\n| 40    | 0    | Shared         |\n| 40    | 8    | 8K-specific    |\n| 40    | 40   | Shared         |\n| 40    | 56   | 8K-specific    |\n| 48    | 0    | Shared         |\n| 48    | 8    | 8K-specific    |\n| 48    | 40   | Shared         |\n| 48    | 56   | 8K-specific    |\n| 56    | 0    | Shared         |\n| 56    | 8    | 8K-specific    |\n| 56    | 40   | Shared         |\n| 56    | 56   | 8K-specific    |",
+                "chart_caption": [
+                    {
+                        "type": "text",
+                        "content": "Figure 6: Layer distribution of Qwen3-VL-32B imageretrieval heads at 8K and 128K. Blue heads are shared; orange and green mark 8K- and 128K-specific heads; context-specific heads show different layer distributions. "
+                    }
+                ],
+                "chart_footnote": []
+            },
+            "sub_type": "scatter",
+            "bbox": [
+                536,
+                87,
+                857,
+                242
+            ]
+        },
+        {
+            "type": "paragraph",
+            "content": {
+                "paragraph_content": [
+                    {
+                        "type": "text",
+                        "content": "vide known evidence spans and controlled context lengths, then test whether the detected heads remain important beyond the detection setting by masking them on Long Document VQA and multimodal reasoning benchmarks. "
+                    }
+                ]
+            },
+            "bbox": [
+                507,
+                325,
+                884,
+                406
+            ]
+        },
+        {
+            "type": "title",
+            "content": {
+                "title_content": [
+                    {
+                        "type": "text",
+                        "content": "5.1 Head Masking on MM-NIAH "
+                    }
+                ],
+                "level": 1
+            },
+            "bbox": [
+                507,
+                420,
+                789,
+                435
+            ]
+        },
+        {
+            "type": "paragraph",
+            "content": {
+                "paragraph_content": [
+                    {
+                        "type": "text",
+                        "content": "Causal effects on MM-NIAH. Fig. 1 summarizes MM-NIAH causal masking results for Qwen3- VL-8B across context lengths and evidence depths. For each task, we mask the top 5% retrieval heads detected at the 128K context length, which corresponds to 58 heads for Qwen3-VL-8B. As a control, we mask 58 randomly chosen attention heads. In both text and image retrieval settings, masking retrieval heads causes severe retrieval failures across all context-length and needle-depth settings, showing that the detected heads are causally important rather than only correlated with evidence locations. "
+                    }
+                ]
+            },
+            "bbox": [
+                507,
+                442,
+                884,
+                634
+            ]
+        },
+        {
+            "type": "paragraph",
+            "content": {
+                "paragraph_content": [
+                    {
+                        "type": "text",
+                        "content": "Cross-length causal transfer. Fig. 5 shows that the retrieval head sets detected at different context lengths only partially intersect. We therefore ask whether this context-length variation weakens their causal role, or whether heads detected at one length remain functionally important at other lengths. Fig. 7 shows that the causal effect transfers in both directions. On the long context tasks, from 100K to 131K, masking either the 8K-detected heads reduces image retrieval accuracy to 0.0%, and reduces text retrieval accuracy to 9.1%. Conversely, on the shorter context tasks (8K to 35K), masking the 128K-detected heads degrades both image and text retrieval accuracy to 0.0%. These results show that, although the selected head sets vary with context length, heads detected at one length can remain causally important at other lengths. "
+                    }
+                ]
+            },
+            "bbox": [
+                507,
+                646,
+                884,
+                921
+            ]
+        },
+        {
+            "type": "page_number",
+            "content": {
+                "page_number_content": [
+                    {
+                        "type": "text",
+                        "content": "5 "
+                    }
+                ]
+            },
+            "bbox": [
+                492,
+                942,
+                504,
+                954
+            ]
+        }
+    ],
+    [
+        {
+            "type": "chart",
+            "content": {
+                "image_source": {
+                    "path": "images/50c180a67ba85bcba77813260ae20e8180e1a766ab4a67e1fe7a1c1dea58adca.jpg"
+                },
+                "content": "| Context range | Image needle - 8K heads (%) | Image needle - 128K heads (%) | Image needle - Random heads (%) | Text needle - 8K heads (%) | Text needle - 128K heads (%) | Text needle - Random heads (%) |\n|---|---|---|---|---|---|---|\n| 8-35K | 22.0 | 0.0 | 87.0 | 100.0 | 0.0 | 100.0 |\n| 38-66K | 14.0 | 0.0 | 35.0 | 98.0 | 12.0 | 98.0 |\n| 69-97K | 9.0 | 0.0 | 18.0 | 82.0 | 2.0 | 82.0 |\n| 100-131K | 9.1 | 0.0 | 9.9 | 61.2 | 0.0 | 61.2 |",
+                "chart_caption": [
+                    {
+                        "type": "text",
+                        "content": "Figure 7: Cross-length causal transfer. Masking heads detected at 8K or 128K degrades MM-NIAH performance across other context lengths, showing that retrieval heads remain causally important beyond their detection length. "
+                    }
+                ],
+                "chart_footnote": []
+            },
+            "sub_type": "line",
+            "bbox": [
+                124,
+                86,
+                478,
+                241
+            ]
+        },
+        {
+            "type": "title",
+            "content": {
+                "title_content": [
+                    {
+                        "type": "text",
+                        "content": "5.2 Long-Document VQA Masking "
+                    }
+                ],
+                "level": 1
+            },
+            "bbox": [
+                112,
+                335,
+                406,
+                351
+            ]
+        },
+        {
+            "type": "paragraph",
+            "content": {
+                "paragraph_content": [
+                    {
+                        "type": "text",
+                        "content": "We next evaluate Long Document VQA using the 128K context-length MMLongBench-Doc and SlideVQA subsets from MMLongBench (Wang et al., 2025). We mask the union of retrieval heads detected from the four MM-NIAH tasks introduced in Sec. 3.1, using their 128K detection settings. Fig. 8 shows that masking these retrieval heads sharply reduces MMLongBench-Doc score from 48.2% to 5.7% and SlideVQA score from 71.2% to 8.9%. In contrast, masking randomly chosen attention heads is less damaging, leaving scores of 32.2% and 52.6%, respectively. These results show that retrieval heads identified in controlled MM-NIAH tasks remain causally important on Long Document VQA tasks beyond the detection setting. "
+                    }
+                ]
+            },
+            "bbox": [
+                112,
+                356,
+                489,
+                598
+            ]
+        },
+        {
+            "type": "title",
+            "content": {
+                "title_content": [
+                    {
+                        "type": "text",
+                        "content": "5.3 Reasoning Benchmark Masking "
+                    }
+                ],
+                "level": 1
+            },
+            "bbox": [
+                112,
+                609,
+                413,
+                626
+            ]
+        },
+        {
+            "type": "paragraph",
+            "content": {
+                "paragraph_content": [
+                    {
+                        "type": "text",
+                        "content": "For broader downstream masking, we evaluate Qwen3-VL-8B on MMMU (Yue et al., 2024a), MMMU-Pro (Yue et al., 2024b), MathVision (Wang et al., 2024a), and MathVista (Lu et al., 2024). We mask the union of retrieval heads detected from the four 128K MM-NIAH task settings in Sec. 3.1. We also compare direct-answer prompting with chain-of-thought (CoT) prompting (Wei et al., 2022). "
+                    }
+                ]
+            },
+            "bbox": [
+                112,
+                631,
+                489,
+                775
+            ]
+        },
+        {
+            "type": "paragraph",
+            "content": {
+                "paragraph_content": [
+                    {
+                        "type": "text",
+                        "content": "As shown in Fig. 9, masking MMRetHeads causes much larger accuracy drops than masking randomly chosen heads. Across the four benchmarks, direct-answer accuracy drops by an average of 24.3 points, while CoT accuracy drops by an average of 38.8 points, showing that heads detected on controlled MM-NIAH tasks remain causally important for downstream multimodal reasoning. Furthermore, the larger CoT drop suggests that multi-step reasoning relies more heavily on repeated grounding, though it may also reflect longer masked-decoding trajectories. With CoT prompting, the model outputs intermediate reasoning, allowing us to inspect failure modes when retrieval heads are masked. We find several recurring failures. Some failures indicate disrupted access to the relevant evidence. For example, in an MMMU-Pro thermodynamics problem, the masked model states that there is “Not enough information provided” even though the needed diagram is included in the prompt. In other cases, it hallucinates supporting content or extracts the wrong information. Prompt-output examples are provided in Sec. B. "
+                    }
+                ]
+            },
+            "bbox": [
+                112,
+                776,
+                489,
+                921
+            ]
+        },
+        {
+            "type": "chart",
+            "content": {
+                "image_source": {
+                    "path": "images/ef103bde118c2b3aef58199f7004ed9f7d7a8821639479acdbff684fabf480e5.jpg"
+                },
+                "content": "| Dataset | Task score (%) |\n| :--- | :--- |\n| MMLongBench-Doc - No masking | 48.0 |\n| MMLongBench-Doc - Retrieval heads | 5.7 |\n| MMLongBench-Doc - Random heads | 32.2 |\n| SlideVQA - No masking | 71.0 |\n| SlideVQA - Retrieval heads | 8.9 |\n| SlideVQA - Random heads | 52.6 |",
+                "chart_caption": [
+                    {
+                        "type": "text",
+                        "content": "Figure 8: Causal effect on 128K Long Document VQA category of MMLongBench. Masking retrieval heads detected on 128K MM-NIAH degrades MMLongBench-Doc and SlideVQA far more than random masking. "
+                    }
+                ],
+                "chart_footnote": []
+            },
+            "sub_type": "bar",
+            "bbox": [
+                534,
+                86,
+                857,
+                200
+            ]
+        },
+        {
+            "type": "paragraph",
+            "content": {
+                "paragraph_content": []
+            },
+            "bbox": [
+                507,
+                272,
+                884,
+                499
+            ]
+        },
+        {
+            "type": "title",
+            "content": {
+                "title_content": [
+                    {
+                        "type": "text",
+                        "content": "6 Modality-Specific Retrieval Head "
+                    }
+                ],
+                "level": 1
+            },
+            "bbox": [
+                507,
+                508,
+                831,
+                526
+            ]
+        },
+        {
+            "type": "paragraph",
+            "content": {
+                "paragraph_content": [
+                    {
+                        "type": "text",
+                        "content": "We test whether MMRetHeads are shared across retrieval tasks by measuring the intersection between the detected head sets for text and image retrieval, and for text and rendered-text retrieval. For two top-5% head sets "
+                    },
+                    {
+                        "type": "equation_inline",
+                        "content": "\\mathcal { H } _ { A }"
+                    },
+                    {
+                        "type": "text",
+                        "content": "and "
+                    },
+                    {
+                        "type": "equation_inline",
+                        "content": "\\mathcal { H } _ { B }"
+                    },
+                    {
+                        "type": "text",
+                        "content": "of equal size, we report their intersection as "
+                    },
+                    {
+                        "type": "equation_inline",
+                        "content": "| \\mathcal { H } _ { A } \\cap \\mathcal { H } _ { B } | / | \\mathcal { H } _ { A } |"
+                    },
+                    {
+                        "type": "text",
+                        "content": "|, i.e., the fraction of heads in one set that also appear in the other. The ratio is symmetric in A and B, since "
+                    },
+                    {
+                        "type": "equation_inline",
+                        "content": "\\vert \\mathcal { H } _ { A } \\vert = \\vert \\mathcal { H } _ { B } \\vert"
+                    },
+                    {
+                        "type": "text",
+                        "content": ", "
+                    }
+                ]
+            },
+            "bbox": [
+                507,
+                533,
+                884,
+                678
+            ]
+        },
+        {
+            "type": "paragraph",
+            "content": {
+                "paragraph_content": [
+                    {
+                        "type": "text",
+                        "content": "We then test whether retrieval heads are sensitive to the modality ratio of the haystack. For this analysis, we use the MM-NIAH text retrieval and image retrieval tasks, preserve the answer-bearing needle entries, and vary only haystack. Text are grouped into units of esimated 500 tokens using a characterlength heuristic, where one token is approximated four characters, while each image is treated as one unit. Vision-token counts are model-dependent: Gemma3 uses roughly 256 vision tokens per image, while Qwen3-VL and Qwen2.5-VL use dynamic image tokenization, with averages of about 209 and 270 vision tokens per image in our sampled composition runs, respectively. We then sample 128 units per example and set the target image-unit ratio to "
+                    }
+                ]
+            },
+            "bbox": [
+                507,
+                680,
+                884,
+                921
+            ]
+        },
+        {
+            "type": "page_number",
+            "content": {
+                "page_number_content": [
+                    {
+                        "type": "text",
+                        "content": "6 "
+                    }
+                ]
+            },
+            "bbox": [
+                492,
+                942,
+                505,
+                954
+            ]
+        }
+    ],
+    [
+        {
+            "type": "image",
+            "content": {
+                "image_source": {
+                    "path": "images/5a5473abfb63cd2d365ae196cd24c5f9f0382ff13f43428bc705c75a78a9207b.jpg"
+                },
+                "content": "",
+                "image_caption": [
+                    {
+                        "type": "text",
+                        "content": "Figure 9: Qwen3-VL-8B accuracy on multimodal reasoning. We compare no masking, retrieval head masking, and random head masking across direct-answer and CoT prompting. Masking our retrieval heads causes substantially larger accuracy drops. "
+                    }
+                ],
+                "image_footnote": []
+            },
+            "bbox": [
+                124,
+                86,
+                480,
+                330
+            ]
+        },
+        {
+            "type": "paragraph",
+            "content": {
+                "paragraph_content": [
+                    {
+                        "type": "text",
+                        "content": "0, 0.1, 0.2, or 0.4, corresponding to 0, 13, 26, or 51 image units out of 128. "
+                    }
+                ]
+            },
+            "bbox": [
+                112,
+                424,
+                487,
+                456
+            ]
+        },
+        {
+            "type": "paragraph",
+            "content": {
+                "paragraph_content": [
+                    {
+                        "type": "text",
+                        "content": "Text and image retrieval use partially distinct heads. Fig. 10 shows that text and image retrieval heads are partially shared but not identical. Across six LVLMs and five context lengths, the intersection between the top-5% text and image retrieval head sets ranges from 0.18 to 0.64, with an average intersection of 0.51. This suggests both modalityagnostic and modality-specific retrieval heads. "
+                    }
+                ]
+            },
+            "bbox": [
+                112,
+                466,
+                489,
+                595
+            ]
+        },
+        {
+            "type": "paragraph",
+            "content": {
+                "paragraph_content": [
+                    {
+                        "type": "text",
+                        "content": "Rendered-text retrieval preserves text-retrieval structure. Fig. 10 also shows that rendered-text retrieval is much closer to text retrieval than to ordinary image retrieval. Across six LVLMs and five context lengths, text/rendered-text head intersection ranges from 0.5 to 0.92, with an average intersection of 0.79. This is much higher than the 0.51 average intersection between text and image retrieval. This suggests that retrieval heads are sensitive not only to the raw input channel, but even more to the content being retrieved. "
+                    }
+                ]
+            },
+            "bbox": [
+                112,
+                605,
+                489,
+                782
+            ]
+        },
+        {
+            "type": "paragraph",
+            "content": {
+                "paragraph_content": [
+                    {
+                        "type": "text",
+                        "content": "Haystack text-image ratio induces modalityaware head dynamics. Fig. 11 shows that retrieval head selection is sensitive to the text-image ratio of the haystack. As images make up a larger share of the haystack, with the image ratio increasing from 0 to 0.4, the intersection with the head set detected in the all-text haystack decreases for both text and image retrieval. The decrease is much larger for image retrieval. When the image ratio is 0.4, the mean intersection across the three models is 0.87 for text retrieval, and 0.72 for image retrieval. This pattern suggests that the detected heads depend not only on the target evidence modality but also on the haystack’s modality. For image retrieval, the stronger decrease in intersection suggests that the model recruits more modality-specific heads when haystack images create additional visual noise. "
+                    }
+                ]
+            },
+            "bbox": [
+                112,
+                791,
+                490,
+                921
+            ]
+        },
+        {
+            "type": "image",
+            "content": {
+                "image_source": {
+                    "path": "images/13b72aca7e03548875563ef6bd11f7c38e54c9ee5efc42c2ca7aabe469c4e405.jpg"
+                },
+                "content": "",
+                "image_caption": [],
+                "image_footnote": []
+            },
+            "bbox": [
+                517,
+                86,
+                873,
+                296
+            ]
+        },
+        {
+            "type": "chart",
+            "content": {
+                "image_source": {
+                    "path": "images/b8e9a4aa5a6b674398ced958b176468deb1ff8ba68df48cbbfc1476d7fc9dee8.jpg"
+                },
+                "content": "| Image ratio | Qwen2.5 7B | Qwen3 8B | Gemma3 12B |\n| ----------- | ---------- | -------- | ---------- |\n| 0.0         | 100        | 100      | 100        |\n| 0.1         | 92         | 98       | 95         |\n| 0.2         | 82         | 96       | 96         |\n| 0.4         | 72         | 95       | 95         |",
+                "chart_caption": [
+                    {
+                        "type": "text",
+                        "content": "Figure 10: Retrieval-task sensitivity of retrieval-head selection at context lengths from 8K to 128K. Light-blue curves compare text and image retrieval tasks, while dark-blue curves compare text and rendered-text retrieval; we find that rendered-text retrieval consistently overlaps more with text retrieval. "
+                    }
+                ],
+                "chart_footnote": []
+            },
+            "sub_type": "line",
+            "bbox": [
+                514,
+                395,
+                700,
+                507
+            ]
+        },
+        {
+            "type": "chart",
+            "content": {
+                "image_source": {
+                    "path": "images/779e06cba5324b0ebe03a0641d7d3f30aeb6c8fe127ef891abd11abfdc717b11.jpg"
+                },
+                "content": "| Image ratio | Line 1 | Line 2 | Line 3 |\n| ----------- | ------ | ------ | ------ |\n| 0.0         | 81     | 81     | 81     |\n| 0.1         | 77     | 77     | 77     |\n| 0.2         | 77     | 77     | 77     |\n| 0.4         | 58     | 58     | 58     |",
+                "chart_caption": [
+                    {
+                        "type": "text",
+                        "content": "Figure 11: Sensitivity to the haystack image ratio. Each curve shows the intersection between the top-5% heads detected at a given image ratio and those detected in the all-text haystack setting. Both text and image retrieval heads change as the image ratio increases. "
+                    }
+                ],
+                "chart_footnote": []
+            },
+            "sub_type": "line",
+            "bbox": [
+                724,
+                395,
+                877,
+                507
+            ]
+        },
+        {
+            "type": "paragraph",
+            "content": {
+                "paragraph_content": []
+            },
+            "bbox": [
+                507,
+                596,
+                884,
+                755
+            ]
+        },
+        {
+            "type": "title",
+            "content": {
+                "title_content": [
+                    {
+                        "type": "text",
+                        "content": "7 Multimodal Document Re-Ranking "
+                    }
+                ],
+                "level": 1
+            },
+            "bbox": [
+                507,
+                771,
+                848,
+                788
+            ]
+        },
+        {
+            "type": "paragraph",
+            "content": {
+                "paragraph_content": [
+                    {
+                        "type": "text",
+                        "content": "We apply the selected retrieval heads to multimodal document re-ranking, where the goal is to rank candidate pages or layout regions by whether they contain the evidence needed to answer a question, and find that this method outperforms strong baselines. "
+                    }
+                ]
+            },
+            "bbox": [
+                507,
+                797,
+                884,
+                878
+            ]
+        },
+        {
+            "type": "paragraph",
+            "content": {
+                "paragraph_content": [
+                    {
+                        "type": "text",
+                        "content": "Method and Calibration Given a selected retrieval head set "
+                    },
+                    {
+                        "type": "equation_inline",
+                        "content": "\\mathcal { H } _ { \\mathrm { s e l } } ."
+                    },
+                    {
+                        "type": "text",
+                        "content": ", a question q, and candidate units "
+                    },
+                    {
+                        "type": "equation_inline",
+                        "content": "D = \\{ d _ { i } \\} _ { i = 1 } ^ { n }"
+                    },
+                    {
+                        "type": "text",
+                        "content": ", we compute a retrieval score by aggregating question-to-candidate attention through the selected heads. We define the retrieval head score "
+                    },
+                    {
+                        "type": "equation_inline",
+                        "content": "R ( d _ { i } \\mid q ; \\mathcal { H } _ { \\mathrm { s e l } } )"
+                    },
+                    {
+                        "type": "text",
+                        "content": "for candidate units "
+                    },
+                    {
+                        "type": "equation_inline",
+                        "content": "d _ { i }"
+                    },
+                    {
+                        "type": "text",
+                        "content": "as: "
+                    }
+                ]
+            },
+            "bbox": [
+                507,
+                889,
+                884,
+                921
+            ]
+        },
+        {
+            "type": "page_number",
+            "content": {
+                "page_number_content": []
+            },
+            "bbox": [
+                492,
+                942,
+                504,
+                953
+            ]
+        }
+    ],
+    [
+        {
+            "type": "paragraph",
+            "content": {
+                "paragraph_content": []
+            },
+            "bbox": [
+                112,
+                84,
+                487,
+                162
+            ]
+        },
+        {
+            "type": "equation_interline",
+            "content": {
+                "math_content": "R = \\frac {1}{| \\mathcal {H} _ {\\mathrm{sel}} |} \\sum_ {h \\in \\mathcal {H} _ {\\mathrm{sel}}} \\frac {1}{| q |} \\sum_ {t _ {q} \\in q} \\sum_ {t _ {d} \\in d _ {i}} A _ {t _ {q} \\rightarrow t _ {d}} ^ {h}. \\tag {2}",
+                "math_type": "latex",
+                "image_source": {
+                    "path": "images/4c97f218205950f3b8e6c8f54380251abb8d40f35efd629732a2a460419b24e1.jpg"
+                }
+            },
+            "bbox": [
+                142,
+                177,
+                487,
+                216
+            ]
+        },
+        {
+            "type": "paragraph",
+            "content": {
+                "paragraph_content": [
+                    {
+                        "type": "text",
+                        "content": "We also apply the null-question calibration in this experiment. Candidate units are then ranked using the null-calibrated retrieval score as a relevance metric (Chen et al., 2025). "
+                    }
+                ]
+            },
+            "bbox": [
+                112,
+                230,
+                485,
+                293
+            ]
+        },
+        {
+            "type": "paragraph",
+            "content": {
+                "paragraph_content": [
+                    {
+                        "type": "text",
+                        "content": "Re-Ranking Performance Multimodal document re-ranking requires retrieving evidence from visually rich documents whose evidence may appear as rendered text, images, or layout-dependent structure. For example, in a manual, answering a question may require interpreting an illustrated step, while in a research report, the relevant evidence may be a reported percentage in a chart. "
+                    }
+                ]
+            },
+            "bbox": [
+                112,
+                307,
+                487,
+                435
+            ]
+        },
+        {
+            "type": "paragraph",
+            "content": {
+                "paragraph_content": [
+                    {
+                        "type": "text",
+                        "content": "To construct a retriever, we use the selected retrieval heads in Qwen3-VL-8B and Gemma3-12B, detected at 128K context length. We evaluate our LVLM-based retriever on MMDocIR (Dong et al., 2025) at both the page and layout levels. Page-level retrieval ranks document pages, while layout-level retrieval ranks detected layout elements within pages, such as text blocks, headings, equations, tables, figures, or charts, using bounding-box evidence annotations. To keep inputs within the LVLM context window, we cap page retrieval at 200 pages per forward pass, scoring each 200-page group separately for longer documents; for layout retrieval, we cap each forward pass at 50 images. "
+                    }
+                ]
+            },
+            "bbox": [
+                112,
+                438,
+                487,
+                662
+            ]
+        },
+        {
+            "type": "paragraph",
+            "content": {
+                "paragraph_content": [
+                    {
+                        "type": "text",
+                        "content": "As shown in Table 1, the retriever built from Qwen3-VL-8B selected retrieval heads achieves the best MMDocIR performance among the compared methods at both page and layout levels.2 For page retrieval, the retriever reaches 64.7 macro and 64.5 micro Recall@1, improving over the strongest reported baseline, Col-Phi3, by 7.7 and 7.4 percentage points, respectively. For layout retrieval, it reaches 39.0 macro and 39.3 micro Recall@1, improving over the strongest reported baseline, Col-Pali, by 6.3 and 6.8 percentage points. Full Recall@k results are provided in Table 2. These results show that attention from the selected retrieval heads provides a usable relevance signal for realistic multimodal document retrieval. "
+                    }
+                ]
+            },
+            "bbox": [
+                112,
+                664,
+                487,
+                872
+            ]
+        },
+        {
+            "type": "table",
+            "content": {
+                "image_source": {
+                    "path": "images/c843f106b326d14ac13f0c57ba2dca9aa6359a2888fe5da78a0d83f7a2717fde.jpg"
+                },
+                "table_caption": [
+                    {
+                        "type": "text",
+                        "content": "Table 1: MMDocIR Recall@1 summary. We evaluate our retriever built on Qwen3-VL-8B and report macro/micro Recall@1 for page- and layout-level retrieval, with deltas against the strongest reported baseline. We compare with thirteen strong baselines in Sec. A. MMRetHeads achieves the best performance in both settings. "
+                    }
+                ],
+                "table_footnote": [],
+                "html": "<table><tr><td>Method</td><td>Macro R@1</td><td>Micro R@1</td><td> $\\Delta$  vs. baseline</td></tr><tr><td colspan=\"4\">Page-Level</td></tr><tr><td>DSEwiki-ss</td><td>48.0</td><td>47.5</td><td>-</td></tr><tr><td>DSEdocmatix</td><td>50.2</td><td>50.1</td><td>-</td></tr><tr><td>ColPali</td><td>53.0</td><td>52.7</td><td>-</td></tr><tr><td>DPR-Phi3MMDocIR</td><td>54.1</td><td>53.7</td><td>-</td></tr><tr><td>Col-Phi3MMDocIR</td><td>57.0</td><td>57.1</td><td>-</td></tr><tr><td>All-head</td><td>61.8</td><td>61.2</td><td>+4.8/+4.1</td></tr><tr><td>MMRetHeads (ours)</td><td>64.7</td><td>64.5</td><td>+7.7/+7.4</td></tr><tr><td colspan=\"4\">Layout-Level</td></tr><tr><td>DSEwiki-ss</td><td>28.2</td><td>29.2</td><td>-</td></tr><tr><td>DSEdocmatix</td><td>27.9</td><td>29.1</td><td>-</td></tr><tr><td>ColPali</td><td>32.7</td><td>32.5</td><td>-</td></tr><tr><td>DPR-Phi3MMDocIR</td><td>29.5</td><td>30.2</td><td>-</td></tr><tr><td>Col-Phi3MMDocIR</td><td>31.1</td><td>31.6</td><td>-</td></tr><tr><td>MMRetHeads (ours)</td><td>39.0</td><td>39.3</td><td>+6.3/+6.8</td></tr></table>",
+                "table_type": "complex_table",
+                "table_nest_level": 1
+            },
+            "bbox": [
+                524,
+                80,
+                868,
+                313
+            ]
+        },
+        {
+            "type": "paragraph",
+            "content": {
+                "paragraph_content": []
+            },
+            "bbox": [
+                507,
+                439,
+                882,
+                470
+            ]
+        },
+        {
+            "type": "paragraph",
+            "content": {
+                "paragraph_content": [
+                    {
+                        "type": "text",
+                        "content": "Finally, to test whether the gains come from selected retrieval heads rather than generic LVLM attention, we add a baseline where all attention heads are used to compute retrieval scores. For Qwen3-VL-8B, aggregating all attention heads still outperforms the strongest listed page baseline, but selected retrieval heads improve over all-head attention by 2.9 macro Recall@1 points and 3.2 micro Recall@1 points, with smaller gains at Recall@3 and Recall@5. "
+                    }
+                ]
+            },
+            "bbox": [
+                507,
+                474,
+                882,
+                633
+            ]
+        },
+        {
+            "type": "title",
+            "content": {
+                "title_content": [
+                    {
+                        "type": "text",
+                        "content": "8 Conclusions "
+                    }
+                ],
+                "level": 1
+            },
+            "bbox": [
+                507,
+                651,
+                648,
+                665
+            ]
+        },
+        {
+            "type": "paragraph",
+            "content": {
+                "paragraph_content": [
+                    {
+                        "type": "text",
+                        "content": "This work shows that LVLMs contain multimodal retrieval heads, a compact set of attention heads whose question-to-evidence attention identifies relevant multimodal evidence. These heads are sparse and dependent on context length and modality, and partly shared across text and image retrieval. Masking retrieval heads causally disrupts Long Document VQA and downstream multimodal reasoning. Beyond intervention, we show that those multimodal retrieval heads are also useful for downstream tasks: aggregating selected-head attention provides a strong retriever for ranking visually rich documents. Overall, we hope this work provides a useful lens for studying multimodal long-context and inspires more interpretability study of LVLMs. "
+                    }
+                ]
+            },
+            "bbox": [
+                505,
+                678,
+                882,
+                921
+            ]
+        },
+        {
+            "type": "page_footnote",
+            "content": {
+                "page_footnote_content": [
+                    {
+                        "type": "text",
+                        "content": "2Recall@1 measures whether the top-ranked candidate contains the annotated evidence; macro Recall@1 averages across domains, micro across all questions. "
+                    }
+                ]
+            },
+            "bbox": [
+                112,
+                882,
+                487,
+                921
+            ]
+        },
+        {
+            "type": "page_number",
+            "content": {
+                "page_number_content": [
+                    {
+                        "type": "text",
+                        "content": "8 "
+                    }
+                ]
+            },
+            "bbox": [
+                492,
+                942,
+                504,
+                954
+            ]
+        }
+    ],
+    [
+        {
+            "type": "title",
+            "content": {
+                "title_content": [
+                    {
+                        "type": "text",
+                        "content": "Limitations "
+                    }
+                ],
+                "level": 1
+            },
+            "bbox": [
+                114,
+                84,
+                220,
+                98
+            ]
+        },
+        {
+            "type": "paragraph",
+            "content": {
+                "paragraph_content": [
+                    {
+                        "type": "text",
+                        "content": "Our analysis uses attention scores as a proxy for retrieval-oriented heads. Masking shows strong behavioral effects, but a full circuit-level account would also need to test MLPs, residual-stream pathways, and non-selected heads. "
+                    }
+                ]
+            },
+            "bbox": [
+                112,
+                110,
+                487,
+                187
+            ]
+        },
+        {
+            "type": "paragraph",
+            "content": {
+                "paragraph_content": [
+                    {
+                        "type": "text",
+                        "content": "Detected head sets may depend on context length, detection dataset, and language. The MM-NIAH tasks cover only English examples up to 128K context length. They also do not cover all real multimodal retrieval settings, such as dense documents, OCR-heavy pages, charts, diagrams, or multi-image reasoning. The analysis covers two decoder-only LVLM families with vision-token inputs, so the findings may not generalize to crossattention LVLMs, other tokenizers, or different vision encoders. "
+                    }
+                ]
+            },
+            "bbox": [
+                112,
+                190,
+                489,
+                365
+            ]
+        },
+        {
+            "type": "paragraph",
+            "content": {
+                "paragraph_content": [
+                    {
+                        "type": "text",
+                        "content": "The retrieval head-based retriever requires access to internal attention weights and can be more expensive than embedding-based retrieval because it runs LVLM forward passes over candidate context. Our evaluation does not fully test latency, memory cost, or index-time/query-time trade-offs. In settings with many repeated queries over a fixed corpus, embedding or late-interaction retrievers are likely to remain preferable. Future work should compare deployment cost and retrieval quality directly. "
+                    }
+                ]
+            },
+            "bbox": [
+                112,
+                368,
+                489,
+                544
+            ]
+        },
+        {
+            "type": "title",
+            "content": {
+                "title_content": [
+                    {
+                        "type": "text",
+                        "content": "Ethical Considerations "
+                    }
+                ],
+                "level": 1
+            },
+            "bbox": [
+                114,
+                557,
+                315,
+                571
+            ]
+        },
+        {
+            "type": "paragraph",
+            "content": {
+                "paragraph_content": [
+                    {
+                        "type": "text",
+                        "content": "This paper utilizes several publicly available datasets, including MM-NIAH (Wang et al., 2024b), MMLongBench (Wang et al., 2025), Natural Questions (Kwiatkowski et al., 2019), MMMU (Yue et al., 2024a), MMMU-Pro (Yue et al., 2024b), MathVision (Wang et al., 2024a), MathVista (Lu et al., 2024), and MMDocIR (Dong et al., 2025), which are accessible to the research community under MIT, MIT, CC BY-SA 3.0, Apache 2.0, Apache 2.0, MIT, CC BY-SA 4.0, and Apache 2.0 licenses, respectively. All data are derived from previously released open-source benchmarks, and we use them solely for non-commercial research evaluation in accordance with their respective terms. The data do not contain personally identifying information beyond what is already public in the source corpora, so our work does not raise additional privacy concerns regarding specific entities. "
+                    }
+                ]
+            },
+            "bbox": [
+                112,
+                583,
+                489,
+                872
+            ]
+        },
+        {
+            "type": "paragraph",
+            "content": {
+                "paragraph_content": [
+                    {
+                        "type": "text",
+                        "content": "Our experiments involve the use of Qwen2.5-VL (Bai et al., 2025b), Qwen3-VL (Bai et al., 2025a), and Gemma3 (Gemma Team, 2025), released under the Apache 2.0, Apache 2.0, and Gemma Terms of Use, respectively, so the same risks from LVLM research are also applicable to this work. "
+                    }
+                ]
+            },
+            "bbox": [
+                112,
+                873,
+                489,
+                921
+            ]
+        },
+        {
+            "type": "paragraph",
+            "content": {
+                "paragraph_content": []
+            },
+            "bbox": [
+                507,
+                84,
+                882,
+                131
+            ]
+        },
+        {
+            "type": "title",
+            "content": {
+                "title_content": [
+                    {
+                        "type": "text",
+                        "content": "Acknowledgements "
+                    }
+                ],
+                "level": 1
+            },
+            "bbox": [
+                509,
+                146,
+                680,
+                162
+            ]
+        },
+        {
+            "type": "paragraph",
+            "content": {
+                "paragraph_content": [
+                    {
+                        "type": "text",
+                        "content": "The authors of this paper were supported by the National Key Research and Development Program of China (2025YFE0200500), the ITSP Platform Research Project (ITS/189/23FP) from ITC of Hong Kong, SAR, China, and the AoE (AoE/E-601/24- N), the RIF (R6021-20) and the GRF (16205322) from RGC of Hong Kong, SAR, China. We also thank the NVIDIA AI Technology Center (NVAITC) for the support and additional funding. "
+                    }
+                ]
+            },
+            "bbox": [
+                507,
+                173,
+                884,
+                319
+            ]
+        },
+        {
+            "type": "title",
+            "content": {
+                "title_content": [
+                    {
+                        "type": "text",
+                        "content": "References "
+                    }
+                ],
+                "level": 1
+            },
+            "bbox": [
+                510,
+                347,
+                608,
+                361
+            ]
+        },
+        {
+            "type": "list",
+            "content": {
+                "list_type": "reference_list",
+                "list_items": [
+                    {
+                        "item_type": "text",
+                        "item_content": [
+                            {
+                                "type": "text",
+                                "content": "Estelle Aflalo, Meng Du, Shao-Yen Tseng, Yongfei Liu, Chenfei Wu, Nan Duan, and Vasudev Lal. 2022. VL-InterpreT: An Interactive Visualization Tool for Interpreting Vision-Language Transformers. In Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition, pages 21406–21415. "
+                            }
+                        ]
+                    },
+                    {
+                        "item_type": "text",
+                        "item_content": [
+                            {
+                                "type": "text",
+                                "content": "Shuai Bai, Yuxuan Cai, Ruizhe Chen, Keqin Chen, Xionghui Chen, Zesen Cheng, Lianghao Deng, Wei Ding, Chang Gao, Chunjiang Ge, Wenbin Ge, Zhifang Guo, Qidong Huang, Jie Huang, Fei Huang, Binyuan Hui, Shutong Jiang, Zhaohai Li, Mingsheng Li, and 45 others. 2025a. Qwen3-VL Technical Report. Preprint, arXiv:2511.21631. "
+                            }
+                        ]
+                    },
+                    {
+                        "item_type": "text",
+                        "item_content": [
+                            {
+                                "type": "text",
+                                "content": "Shuai Bai, Keqin Chen, Xuejing Liu, Jialin Wang, Wenbin Ge, Sibo Song, Kai Dang, Peng Wang, Shijie Wang, Jun Tang, Humen Zhong, Yuanzhi Zhu, Mingkun Yang, Zhaohai Li, Jianqiang Wan, Pengfei Wang, Wei Ding, Zheren Fu, Yiheng Xu, and 9 others. 2025b. Qwen2.5-VL Technical Report. Preprint, arXiv:2502.13923. "
+                            }
+                        ]
+                    },
+                    {
+                        "item_type": "text",
+                        "item_content": [
+                            {
+                                "type": "text",
+                                "content": "Jing Bi, Junjia Guo, Yunlong Tang, Lianggong Bruce Wen, Zhang Liu, Bingjie Wang, and Chenliang Xu. 2025. Unveiling Visual Perception in Language Models: An Attention Head Analysis Approach. In Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition, pages 4135–4144. "
+                            }
+                        ]
+                    },
+                    {
+                        "item_type": "text",
+                        "item_content": [
+                            {
+                                "type": "text",
+                                "content": "Shijie Chen, Bernal Jiménez Gutiérrez, and Yu Su. 2025. Attention in Large Language Models Yields Efficient Zero-Shot Re-Rankers. In International Conference on Learning Representations. "
+                            }
+                        ]
+                    },
+                    {
+                        "item_type": "text",
+                        "item_content": [
+                            {
+                                "type": "text",
+                                "content": "Kuicai Dong, Yujing Chang, Derrick Goh Xin Deik, Dexun Li, Ruiming Tang, and Yong Liu. 2025. MMDocIR: Benchmarking Multimodal Retrieval for Long Documents. In Proceedings of the 2025 Conference on Empirical Methods in Natural Language Processing, pages 30971–31005, Suzhou, China. Association for Computational Linguistics. "
+                            }
+                        ]
+                    }
+                ]
+            },
+            "bbox": [
+                507,
+                370,
+                885,
+                922
+            ]
+        },
+        {
+            "type": "page_number",
+            "content": {
+                "page_number_content": [
+                    {
+                        "type": "text",
+                        "content": "9 "
+                    }
+                ]
+            },
+            "bbox": [
+                492,
+                942,
+                504,
+                953
+            ]
+        }
+    ],
+    [
+        {
+            "type": "list",
+            "content": {
+                "list_type": "reference_list",
+                "list_items": [
+                    {
+                        "item_type": "text",
+                        "item_content": [
+                            {
+                                "type": "text",
+                                "content": "Manuel Faysse, Hugues Sibille, Tony Wu, Bilel Omrani, Gautier Viaud, Celine Hudelot, and Pierre Colombo. 2025. ColPali: Efficient Document Retrieval with Vision Language Models. In International Conference on Learning Representations. "
+                            }
+                        ]
+                    },
+                    {
+                        "item_type": "text",
+                        "item_content": [
+                            {
+                                "type": "text",
+                                "content": "Chaoyou Fu, Yuhan Dai, Yongdong Luo, Lei Li, Shuhuai Ren, Renrui Zhang, Zihan Wang, Chenyu Zhou, Yunhang Shen, Mengdan Zhang, and 1 others. 2025. Video-mme: The first-ever comprehensive evaluation benchmark of multi-modal llms in video analysis. In Proceedings of the IEEE/CVF conference on computer vision and pattern recognition, pages 24108–24118. "
+                            }
+                        ]
+                    },
+                    {
+                        "item_type": "text",
+                        "item_content": [
+                            {
+                                "type": "text",
+                                "content": "Gemma Team. 2025. Gemma 3 Technical Report. Preprint, arXiv:2503.19786. "
+                            }
+                        ]
+                    },
+                    {
+                        "item_type": "text",
+                        "item_content": [
+                            {
+                                "type": "text",
+                                "content": "Xinyu Geng, Peng Xia, Zhen Zhang, Xinyu Wang, Qiuchen Wang, Ruixue Ding, Chenxi Wang, Jialong Wu, Yida Zhao, Kuan Li, and 1 others. 2025. Webwatcher: Breaking new frontier of vision-language deep research agent. arXiv preprint arXiv:2508.05748. "
+                            }
+                        ]
+                    },
+                    {
+                        "item_type": "text",
+                        "item_content": [
+                            {
+                                "type": "text",
+                                "content": "Qidong Huang, Xiaoyi Dong, Pan Zhang, Bin Wang, Conghui He, Jiaqi Wang, Dahua Lin, Weiming Zhang, and Nenghai Yu. 2024. OPERA: Alleviating Hallucination in Multi-Modal Large Language Models via Over-Trust Penalty and Retrospection-Allocation. In Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition, pages 13418–13427. "
+                            }
+                        ]
+                    },
+                    {
+                        "item_type": "text",
+                        "item_content": [
+                            {
+                                "type": "text",
+                                "content": "Gautier Izacard, Mathilde Caron, Lucas Hosseini, Sebastian Riedel, Piotr Bojanowski, Armand Joulin, and Edouard Grave. 2022. Unsupervised Dense Information Retrieval with Contrastive Learning. Transactions on Machine Learning Research. "
+                            }
+                        ]
+                    },
+                    {
+                        "item_type": "text",
+                        "item_content": [
+                            {
+                                "type": "text",
+                                "content": "Sarthak Jain and Byron C. Wallace. 2019. Attention is not Explanation. In Proceedings of the 2019 Conference of the North American Chapter of the Association for Computational Linguistics: Human Language Technologies, pages 3543–3556. Association for Computational Linguistics. "
+                            }
+                        ]
+                    },
+                    {
+                        "item_type": "text",
+                        "item_content": [
+                            {
+                                "type": "text",
+                                "content": "Greg Kamradt. 2023. Needle In A Haystack – Pressure Testing LLMs. GitHub repository. "
+                            }
+                        ]
+                    },
+                    {
+                        "item_type": "text",
+                        "item_content": [
+                            {
+                                "type": "text",
+                                "content": "Seil Kang, Jinyeong Kim, Junhyeok Kim, and Seong Jae Hwang. 2025. Your Large Vision-Language Model Only Needs A Few Attention Heads For Visual Grounding. In Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition, pages 9339–9350. "
+                            }
+                        ]
+                    },
+                    {
+                        "item_type": "text",
+                        "item_content": [
+                            {
+                                "type": "text",
+                                "content": "Vladimir Karpukhin, Barlas Oguz, Sewon Min, Patrick Lewis, Ledell Wu, Sergey Edunov, Danqi Chen, and Wen-tau Yih. 2020. Dense Passage Retrieval for Open-Domain Question Answering. In Proceedings of the 2020 Conference on Empirical Methods in Natural Language Processing, pages 6769–6781. Association for Computational Linguistics. "
+                            }
+                        ]
+                    }
+                ]
+            },
+            "bbox": [
+                107,
+                80,
+                495,
+                925
+            ]
+        },
+        {
+            "type": "list",
+            "content": {
+                "list_type": "reference_list",
+                "list_items": [
+                    {
+                        "item_type": "text",
+                        "item_content": [
+                            {
+                                "type": "text",
+                                "content": "Omar Khattab and Matei Zaharia. 2020. ColBERT: Efficient and Effective Passage Search via Contextualized Late Interaction over BERT. In Proceedings of the 43rd International ACM SIGIR Conference on Research and Development in Information Retrieval, pages 39–48. ACM. "
+                            }
+                        ]
+                    },
+                    {
+                        "item_type": "text",
+                        "item_content": [
+                            {
+                                "type": "text",
+                                "content": "Tom Kwiatkowski, Jennimaria Palomaki, Olivia Redfield, Michael Collins, Ankur Parikh, Chris Alberti, Danielle Epstein, Illia Polosukhin, Jacob Devlin, Kenton Lee, Kristina Toutanova, Llion Jones, Matthew Kelcey, Ming-Wei Chang, Andrew M. Dai, Jakob Uszkoreit, Quoc Le, and Slav Petrov. 2019. Natural Questions: A Benchmark for Question Answering Research. Transactions of the Association for Computational Linguistics, 7:452–466. "
+                            }
+                        ]
+                    },
+                    {
+                        "item_type": "text",
+                        "item_content": [
+                            {
+                                "type": "text",
+                                "content": "Pan Lu, Hritik Bansal, Tony Xia, Jiacheng Liu, Chunyuan Li, Hannaneh Hajishirzi, Hao Cheng, Kai-Wei Chang, Michel Galley, and Jianfeng Gao. 2024. MathVista: Evaluating Mathematical Reasoning of Foundation Models in Visual Contexts. In International Conference on Learning Representations. "
+                            }
+                        ]
+                    },
+                    {
+                        "item_type": "text",
+                        "item_content": [
+                            {
+                                "type": "text",
+                                "content": "Xueguang Ma, Sheng-Chieh Lin, Minghan Li, Wenhu Chen, and Jimmy Lin. 2024. Unifying Multimodal Retrieval via Document Screenshot Embedding. In Proceedings of the 2024 Conference on Empirical Methods in Natural Language Processing, pages 6492–6505, Miami, Florida, USA. Association for Computational Linguistics. "
+                            }
+                        ]
+                    },
+                    {
+                        "item_type": "text",
+                        "item_content": [
+                            {
+                                "type": "text",
+                                "content": "Callum Stuart McDougall, Arthur Conmy, Cody Rushing, Thomas McGrath, and Neel Nanda. 2024. Copy Suppression: Comprehensively Understanding a Motif in Language Model Attention Heads. In Proceedings of the 7th BlackboxNLP Workshop: Analyzing and Interpreting Neural Networks for NLP, pages 337–363, Miami, Florida, US. Association for Computational Linguistics. "
+                            }
+                        ]
+                    },
+                    {
+                        "item_type": "text",
+                        "item_content": [
+                            {
+                                "type": "text",
+                                "content": "Ali Modarressi, Hanieh Deilamsalehy, Franck Dernoncourt, Trung Bui, Ryan A Rossi, Seunghyun Yoon, and Hinrich Schuetze. Nolima: Long-context evaluation beyond literal matching. In Forty-second International Conference on Machine Learning. "
+                            }
+                        ]
+                    },
+                    {
+                        "item_type": "text",
+                        "item_content": [
+                            {
+                                "type": "text",
+                                "content": "Catherine Olsson, Nelson Elhage, Neel Nanda, Nicholas Joseph, Nova DasSarma, Tom Henighan, Ben Mann, Amanda Askell, Yuntao Bai, Anna Chen, Tom Conerly, Dawn Drain, Deep Ganguli, Zac Hatfield-Dodds, Danny Hernandez, Scott Johnston, Andy Jones, Jackson Kernion, Liane Lovitt, and 7 others. 2022. Incontext Learning and Induction Heads. Transformer Circuits Thread. "
+                            }
+                        ]
+                    },
+                    {
+                        "item_type": "text",
+                        "item_content": [
+                            {
+                                "type": "text",
+                                "content": "Xiyu Ren, Zhaowei Wang, Yiming Du, Zhongwei Xie, Chi Liu, Xinlin Yang, Haoyue Feng, Wenjun Pan, Tianshi Zheng, Baixuan Xu, and 1 others. 2026. Memlens: Benchmarking multimodal longterm memory in large vision-language models. arXiv preprint arXiv:2605.14906. "
+                            }
+                        ]
+                    },
+                    {
+                        "item_type": "text",
+                        "item_content": [
+                            {
+                                "type": "text",
+                                "content": "Stephen Robertson and Hugo Zaragoza. 2009. The Probabilistic Relevance Framework: BM25 and Be-"
+                            }
+                        ]
+                    }
+                ]
+            },
+            "bbox": [
+                507,
+                80,
+                887,
+                922
+            ]
+        },
+        {
+            "type": "page_number",
+            "content": {
+                "page_number_content": []
+            },
+            "bbox": [
+                489,
+                942,
+                509,
+                954
+            ]
+        }
+    ],
+    [
+        {
+            "type": "list",
+            "content": {
+                "list_type": "reference_list",
+                "list_items": [
+                    {
+                        "item_type": "text",
+                        "item_content": [
+                            {
+                                "type": "text",
+                                "content": "yond. Foundations and Trends in Information Retrieval, 3(4):333–389. "
+                            }
+                        ]
+                    },
+                    {
+                        "item_type": "text",
+                        "item_content": [
+                            {
+                                "type": "text",
+                                "content": "Sofia Serrano and Noah A. Smith. 2019. Is Attention Interpretable? In Proceedings of the 57th Annual Meeting of the Association for Computational Linguistics, pages 2931–2951. Association for Computational Linguistics. "
+                            }
+                        ]
+                    },
+                    {
+                        "item_type": "text",
+                        "item_content": [
+                            {
+                                "type": "text",
+                                "content": "Ke Wang, Junting Pan, Weikang Shi, Zimu Lu, Houxing Ren, Aojun Zhou, Mingjie Zhan, and Hongsheng Li. 2024a. Measuring Multimodal Mathematical Reasoning with MATH-Vision Dataset. In Advances in Neural Information Processing Systems. Datasets and Benchmarks Track. "
+                            }
+                        ]
+                    },
+                    {
+                        "item_type": "text",
+                        "item_content": [
+                            {
+                                "type": "text",
+                                "content": "Weiyun Wang, Shuibo Zhang, Yiming Ren, Yuchen Duan, Tiantong Li, Shuo Liu, Mengkang Hu, Zhe Chen, Kaipeng Zhang, Lewei Lu, Xizhou Zhu, Ping Luo, Yu Qiao, Jifeng Dai, Wenqi Shao, and Wenhai Wang. 2024b. Needle In A Multimodal Haystack. In Advances in Neural Information Processing Systems. Datasets and Benchmarks Track. "
+                            }
+                        ]
+                    },
+                    {
+                        "item_type": "text",
+                        "item_content": [
+                            {
+                                "type": "text",
+                                "content": "Zhaowei Wang, Lishu Luo, Haodong Duan, Weiwei Liu, Sijin Wu, Ji Luo, Shen Yan, Shuai Peng, Sihang Yuan, Chaoyi Huang, and 1 others. 2026. Training long-context vision-language models effectively with generalization beyond 128k context. arXiv preprint arXiv:2605.13831. "
+                            }
+                        ]
+                    },
+                    {
+                        "item_type": "text",
+                        "item_content": [
+                            {
+                                "type": "text",
+                                "content": "Zhaowei Wang, Wenhao Yu, Xiyu Ren, Jipeng Zhang, Yu Zhao, Rohit Saxena, Liang Cheng, Ginny Wong, Simon See, Pasquale Minervini, Yangqiu Song, and Mark Steedman. 2025. MMLongBench: Benchmarking Long-Context Vision-Language Models Effectively and Thoroughly. In Advances in Neural Information Processing Systems. Spotlight. "
+                            }
+                        ]
+                    },
+                    {
+                        "item_type": "text",
+                        "item_content": [
+                            {
+                                "type": "text",
+                                "content": "Jason Wei, Xuezhi Wang, Dale Schuurmans, Maarten Bosma, Brian Ichter, Fei Xia, Ed Chi, Quoc V. Le, and Denny Zhou. 2022. Chain-of-Thought Prompting Elicits Reasoning in Large Language Models. In Advances in Neural Information Processing Systems, volume 35, pages 24824–24837. "
+                            }
+                        ]
+                    },
+                    {
+                        "item_type": "text",
+                        "item_content": [
+                            {
+                                "type": "text",
+                                "content": "Size Wu, Sheng Jin, Wenwei Zhang, Lumin Xu, Wentao Liu, Wei Li, and Chen Change Loy. 2025a. F-LMM: Grounding Frozen Large Multimodal Models. In Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition, pages 24710–24721. "
+                            }
+                        ]
+                    },
+                    {
+                        "item_type": "text",
+                        "item_content": [
+                            {
+                                "type": "text",
+                                "content": "Wenhao Wu, Yizhong Wang, Guangxuan Xiao, Hao Peng, and Yao Fu. 2025b. Retrieval Head Mechanistically Explains Long-Context Factuality. In International Conference on Learning Representations. "
+                            }
+                        ]
+                    },
+                    {
+                        "item_type": "text",
+                        "item_content": [
+                            {
+                                "type": "text",
+                                "content": "An Yang, Anfeng Li, Baosong Yang, Beichen Zhang, Binyuan Hui, Bo Zheng, Bowen Yu, Chang Gao, Chengen Huang, Chenxu Lv, Chujie Zheng, Dayiheng Liu, Fan Zhou, Fei Huang, Feng Hu, Hao Ge, Haoran Wei, Huan Lin, Jialong Tang, and 41 others. 2025. Qwen3 Technical Report. Preprint, arXiv:2505.09388. "
+                            }
+                        ]
+                    }
+                ]
+            },
+            "bbox": [
+                109,
+                83,
+                490,
+                920
+            ]
+        },
+        {
+            "type": "list",
+            "content": {
+                "list_type": "reference_list",
+                "list_items": [
+                    {
+                        "item_type": "text",
+                        "item_content": [
+                            {
+                                "type": "text",
+                                "content": "Xiang Yue, Yuansheng Ni, Kai Zhang, Tianyu Zheng, Ruoqi Liu, Ge Zhang, Samuel Stevens, Dongfu Jiang, Weiming Ren, Yuxuan Sun, Cong Wei, Botao Yu, Ruibin Yuan, Renliang Sun, Ming Yin, Boyuan Zheng, Zhenzhu Yang, Yibo Liu, Wenhao Huang, and 3 others. 2024a. MMMU: A Massive Multidiscipline Multimodal Understanding and Reasoning Benchmark for Expert AGI. In Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition, pages 9556–9567. "
+                            }
+                        ]
+                    }
+                ]
+            },
+            "bbox": [
+                510,
+                85,
+                884,
+                217
+            ]
+        },
+        {
+            "type": "list",
+            "content": {
+                "list_type": "reference_list",
+                "list_items": [
+                    {
+                        "item_type": "text",
+                        "item_content": [
+                            {
+                                "type": "text",
+                                "content": "Xiang Yue, Tianyu Zheng, Yuansheng Ni, Yubo Wang, Kai Zhang, Shengbang Tong, Yuxuan Sun, Botao Yu, Ge Zhang, Huan Sun, Yu Su, Wenhu Chen, and Graham Neubig. 2024b. MMMU-Pro: A More Robust Multi-discipline Multimodal Understanding Benchmark. Preprint, arXiv:2409.02813. "
+                            }
+                        ]
+                    }
+                ]
+            },
+            "bbox": [
+                510,
+                225,
+                884,
+                305
+            ]
+        },
+        {
+            "type": "list",
+            "content": {
+                "list_type": "reference_list",
+                "list_items": [
+                    {
+                        "item_type": "text",
+                        "item_content": [
+                            {
+                                "type": "text",
+                                "content": "Wuwei Zhang, Fangcong Yin, Howard Yen, Danqi Chen, and Xi Ye. 2025. Query-Focused Retrieval Heads Improve Long-Context Reasoning and Re-Ranking. In Proceedings of the 2025 Conference on Empirical Methods in Natural Language Processing, pages 23791–23805, Suzhou, China. Association for Computational Linguistics. "
+                            }
+                        ]
+                    }
+                ]
+            },
+            "bbox": [
+                510,
+                313,
+                884,
+                407
+            ]
+        },
+        {
+            "type": "page_number",
+            "content": {
+                "page_number_content": [
+                    {
+                        "type": "text",
+                        "content": "11 "
+                    }
+                ]
+            },
+            "bbox": [
+                489,
+                942,
+                507,
+                954
+            ]
+        }
+    ],
+    [
+        {
+            "type": "title",
+            "content": {
+                "title_content": [
+                    {
+                        "type": "text",
+                        "content": "A MMDocIR Detailed Retrieval Results "
+                    }
+                ],
+                "level": 1
+            },
+            "bbox": [
+                112,
+                83,
+                475,
+                99
+            ]
+        },
+        {
+            "type": "title",
+            "content": {
+                "title_content": [
+                    {
+                        "type": "text",
+                        "content": "A.1 Full Recall@k results "
+                    }
+                ],
+                "level": 1
+            },
+            "bbox": [
+                112,
+                110,
+                332,
+                124
+            ]
+        },
+        {
+            "type": "paragraph",
+            "content": {
+                "paragraph_content": [
+                    {
+                        "type": "text",
+                        "content": "We provide the full MMDocIR page- and layoutlevel Recall@k results in Table 2. "
+                    }
+                ]
+            },
+            "bbox": [
+                112,
+                131,
+                487,
+                162
+            ]
+        },
+        {
+            "type": "title",
+            "content": {
+                "title_content": [
+                    {
+                        "type": "text",
+                        "content": "A.2 Domain Breakdown "
+                    }
+                ],
+                "level": 1
+            },
+            "bbox": [
+                112,
+                177,
+                321,
+                192
+            ]
+        },
+        {
+            "type": "paragraph",
+            "content": {
+                "paragraph_content": [
+                    {
+                        "type": "text",
+                        "content": "We provide the MMDocIR domain-level Recall@1 results in Table 3. "
+                    }
+                ]
+            },
+            "bbox": [
+                112,
+                199,
+                485,
+                229
+            ]
+        },
+        {
+            "type": "title",
+            "content": {
+                "title_content": [
+                    {
+                        "type": "text",
+                        "content": "B Downstream Failure Case Prompts and Outputs "
+                    }
+                ],
+                "level": 1
+            },
+            "bbox": [
+                112,
+                244,
+                485,
+                278
+            ]
+        },
+        {
+            "type": "paragraph",
+            "content": {
+                "paragraph_content": [
+                    {
+                        "type": "text",
+                        "content": "We provide representative prompt-output examples for downstream failure cases. Image payloads are represented as <image>. Outputs are excerpts from Qwen3-VL-8B CoT generations under masking of the selected multimodal retrieval heads; bracketed notes mark author truncation. "
+                    }
+                ]
+            },
+            "bbox": [
+                112,
+                288,
+                485,
+                382
+            ]
+        },
+        {
+            "type": "title",
+            "content": {
+                "title_content": [
+                    {
+                        "type": "text",
+                        "content": "B.1 Reporting Lack of Information "
+                    }
+                ],
+                "level": 1
+            },
+            "bbox": [
+                112,
+                398,
+                406,
+                413
+            ]
+        },
+        {
+            "type": "paragraph",
+            "content": {
+                "paragraph_content": [
+                    {
+                        "type": "text",
+                        "content": "MMMU-Pro: validation_Energy_and_Power_25 "
+                    }
+                ]
+            },
+            "bbox": [
+                112,
+                420,
+                394,
+                451
+            ]
+        },
+        {
+            "type": "title",
+            "content": {
+                "title_content": [
+                    {
+                        "type": "text",
+                        "content": "Prompt. "
+                    }
+                ],
+                "level": 1
+            },
+            "bbox": [
+                114,
+                457,
+                183,
+                470
+            ]
+        },
+        {
+            "type": "paragraph",
+            "content": {
+                "paragraph_content": [
+                    {
+                        "type": "text",
+                        "content": "A gas-turbine power plant operates on the simple Brayton cycle between the pressure limits of 100 and 1600 kPa. The working fluid is air, which enters the compressor at 40°C at a rate of 850 m^3/min and leaves the turbine at 650°C. Using variable specific heats for air and assuming a compressor isentropic efficiency of 85 percent and a turbine isentropic efficiency of 88 percent, determine (1) the net power output and (2) the back work ratio.<image> "
+                    }
+                ]
+            },
+            "bbox": [
+                112,
+                482,
+                485,
+                558
+            ]
+        },
+        {
+            "type": "title",
+            "content": {
+                "title_content": [
+                    {
+                        "type": "text",
+                        "content": "Options: "
+                    }
+                ],
+                "level": 1
+            },
+            "bbox": [
+                112,
+                568,
+                164,
+                577
+            ]
+        },
+        {
+            "type": "list",
+            "content": {
+                "list_type": "text_list",
+                "list_items": [
+                    {
+                        "item_type": "text",
+                        "item_content": [
+                            {
+                                "type": "text",
+                                "content": "A. (1) 6200 kW, (2) 0.516 B. (1) 6100 kW, (2) 0.526 "
+                            }
+                        ]
+                    },
+                    {
+                        "item_type": "text",
+                        "item_content": [
+                            {
+                                "type": "text",
+                                "content": "C. (1) 6081 kW, (2) 0.536 "
+                            }
+                        ]
+                    },
+                    {
+                        "item_type": "text",
+                        "item_content": [
+                            {
+                                "type": "text",
+                                "content": "D. (1) 6150 kW, (2) 0.556 "
+                            }
+                        ]
+                    },
+                    {
+                        "item_type": "text",
+                        "item_content": [
+                            {
+                                "type": "text",
+                                "content": "E. (1) 5900 kW, (2) 0.456 "
+                            }
+                        ]
+                    },
+                    {
+                        "item_type": "text",
+                        "item_content": [
+                            {
+                                "type": "text",
+                                "content": "F. (1) 6001 kW, (2) 0.436 "
+                            }
+                        ]
+                    },
+                    {
+                        "item_type": "text",
+                        "item_content": [
+                            {
+                                "type": "text",
+                                "content": "G. (1) 6000 kW, (2) 0.546 "
+                            }
+                        ]
+                    },
+                    {
+                        "item_type": "text",
+                        "item_content": [
+                            {
+                                "type": "text",
+                                "content": "H. (1) 6050 kW, (2) 0.446 "
+                            }
+                        ]
+                    },
+                    {
+                        "item_type": "text",
+                        "item_content": [
+                            {
+                                "type": "text",
+                                "content": "I. (1) 6181 kW, (2) 0.536 "
+                            }
+                        ]
+                    }
+                ]
+            },
+            "bbox": [
+                115,
+                577,
+                265,
+                659
+            ]
+        },
+        {
+            "type": "title",
+            "content": {
+                "title_content": [
+                    {
+                        "type": "text",
+                        "content": "Output. "
+                    }
+                ],
+                "level": 1
+            },
+            "bbox": [
+                114,
+                675,
+                179,
+                690
+            ]
+        },
+        {
+            "type": "paragraph",
+            "content": {
+                "paragraph_content": [
+                    {
+                        "type": "text",
+                        "content": "The question appears to be asking for a step-by-step solution to a thermodynamics problem involving a Brayton cycle with variable specific heats and efficiencies. However, the provided text does not contain enough information to determine the exact answer without additional context or clarification. "
+                    }
+                ]
+            },
+            "bbox": [
+                112,
+                701,
+                485,
+                749
+            ]
+        },
+        {
+            "type": "paragraph",
+            "content": {
+                "paragraph_content": [
+                    {
+                        "type": "text",
+                        "content": "The problem involves calculating the net power output of a gas turbine engine, which requires knowing the specific heat capacities, the temperature difference between the inlet and outlet, and the efficiency of the turbine. Without more information, it is not possible to determine the exact value of the net power output. "
+                    }
+                ]
+            },
+            "bbox": [
+                112,
+                757,
+                485,
+                815
+            ]
+        },
+        {
+            "type": "paragraph",
+            "content": {
+                "paragraph_content": [
+                    {
+                        "type": "text",
+                        "content": "Therefore, the answer is: Not enough information provided. "
+                    }
+                ]
+            },
+            "bbox": [
+                112,
+                822,
+                457,
+                833
+            ]
+        },
+        {
+            "type": "paragraph",
+            "content": {
+                "paragraph_content": [
+                    {
+                        "type": "text",
+                        "content": "Final Answer: Not enough information to determine the exact value of the net power output. "
+                    }
+                ]
+            },
+            "bbox": [
+                112,
+                841,
+                463,
+                860
+            ]
+        },
+        {
+            "type": "paragraph",
+            "content": {
+                "paragraph_content": [
+                    {
+                        "type": "text",
+                        "content": "The masked model treats visually supplied problem data as missing, producing an abstention-style answer despite the diagram being part of the prompt. "
+                    }
+                ]
+            },
+            "bbox": [
+                112,
+                873,
+                487,
+                921
+            ]
+        },
+        {
+            "type": "title",
+            "content": {
+                "title_content": [
+                    {
+                        "type": "text",
+                        "content": "B.2 Rejecting the Provided Options "
+                    }
+                ],
+                "level": 1
+            },
+            "bbox": [
+                509,
+                84,
+                805,
+                99
+            ]
+        },
+        {
+            "type": "title",
+            "content": {
+                "title_content": [
+                    {
+                        "type": "text",
+                        "content": "MMMU: validation_Pharmacy_27 Prompt. "
+                    }
+                ],
+                "level": 1
+            },
+            "bbox": [
+                509,
+                105,
+                791,
+                141
+            ]
+        },
+        {
+            "type": "paragraph",
+            "content": {
+                "paragraph_content": [
+                    {
+                        "type": "text",
+                        "content": "The manufacture of compound F requires five separate chemical reactions. The initial reactant, compound A, is converted to compound B, compound B is converted to compound C, and so on. The diagram below summarizes the steps in the manufacture of compound F, including the percent yield for each step. Provide the missing quantities or missing percent yields. Assume that the reactant and product in each step react in a one-to-one mole ratio. <image> "
+                    }
+                ]
+            },
+            "bbox": [
+                507,
+                149,
+                877,
+                227
+            ]
+        },
+        {
+            "type": "title",
+            "content": {
+                "title_content": [
+                    {
+                        "type": "text",
+                        "content": "Options: "
+                    }
+                ],
+                "level": 1
+            },
+            "bbox": [
+                509,
+                235,
+                559,
+                244
+            ]
+        },
+        {
+            "type": "list",
+            "content": {
+                "list_type": "text_list",
+                "list_items": [
+                    {
+                        "item_type": "text",
+                        "item_content": [
+                            {
+                                "type": "text",
+                                "content": "A. 20.0%,0.50 mol,0.05 mol,20.0% "
+                            }
+                        ]
+                    },
+                    {
+                        "item_type": "text",
+                        "item_content": [
+                            {
+                                "type": "text",
+                                "content": "B. 30.0%,0.50 mol,0.05 mol,20.0% "
+                            }
+                        ]
+                    },
+                    {
+                        "item_type": "text",
+                        "item_content": [
+                            {
+                                "type": "text",
+                                "content": "C. 40.0%,0.50 mol,0.05 mol,20.0% "
+                            }
+                        ]
+                    },
+                    {
+                        "item_type": "text",
+                        "item_content": [
+                            {
+                                "type": "text",
+                                "content": "D. 50.0%,0.50 mol,0.05 mol,20.0% "
+                            }
+                        ]
+                    }
+                ]
+            },
+            "bbox": [
+                510,
+                244,
+                702,
+                281
+            ]
+        },
+        {
+            "type": "title",
+            "content": {
+                "title_content": [
+                    {
+                        "type": "text",
+                        "content": "Output. "
+                    }
+                ],
+                "level": 1
+            },
+            "bbox": [
+                509,
+                294,
+                576,
+                310
+            ]
+        },
+        {
+            "type": "paragraph",
+            "content": {
+                "paragraph_content": [
+                    {
+                        "type": "text",
+                        "content": "None of the options provided are correct. The question is asking for the percent yield of a reaction, which is not directly related to the given information. The percent yield is calculated by dividing the actual yield by the theoretical yield and multiplying by 100. In this case, the actual yield is 0.50 mol, and the theoretical yield is 1.00 mol. Therefore, the percent yield is 50%. The correct answer is 50%. "
+                    }
+                ]
+            },
+            "bbox": [
+                507,
+                319,
+                880,
+                388
+            ]
+        },
+        {
+            "type": "paragraph",
+            "content": {
+                "paragraph_content": [
+                    {
+                        "type": "text",
+                        "content": "Final Answer: 50% "
+                    }
+                ]
+            },
+            "bbox": [
+                509,
+                395,
+                615,
+                405
+            ]
+        },
+        {
+            "type": "paragraph",
+            "content": {
+                "paragraph_content": [
+                    {
+                        "type": "text",
+                        "content": "The masked model extracts a partial calculation but loses the option-grounded structure of the visual reaction chain. "
+                    }
+                ]
+            },
+            "bbox": [
+                507,
+                419,
+                880,
+                464
+            ]
+        },
+        {
+            "type": "title",
+            "content": {
+                "title_content": [
+                    {
+                        "type": "text",
+                        "content": "B.3 Wrong Information Extraction "
+                    }
+                ],
+                "level": 1
+            },
+            "bbox": [
+                507,
+                479,
+                801,
+                494
+            ]
+        },
+        {
+            "type": "title",
+            "content": {
+                "title_content": [
+                    {
+                        "type": "text",
+                        "content": "MathVista: testmini_494 "
+                    }
+                ],
+                "level": 1
+            },
+            "bbox": [
+                509,
+                500,
+                719,
+                514
+            ]
+        },
+        {
+            "type": "title",
+            "content": {
+                "title_content": [
+                    {
+                        "type": "text",
+                        "content": "Prompt. "
+                    }
+                ],
+                "level": 1
+            },
+            "bbox": [
+                510,
+                521,
+                579,
+                536
+            ]
+        },
+        {
+            "type": "paragraph",
+            "content": {
+                "paragraph_content": [
+                    {
+                        "type": "text",
+                        "content": "Hint: Please answer the question requiring an integer answer and provide the final value, e.g., 1, 2, 3, at the end. Question: Move the ruler to measure the length of the line to the nearest centimeter. The line is about (_) centimeters long. <image> "
+                    }
+                ]
+            },
+            "bbox": [
+                507,
+                545,
+                878,
+                592
+            ]
+        },
+        {
+            "type": "title",
+            "content": {
+                "title_content": [
+                    {
+                        "type": "text",
+                        "content": "Output. "
+                    }
+                ],
+                "level": 1
+            },
+            "bbox": [
+                509,
+                606,
+                576,
+                621
+            ]
+        },
+        {
+            "type": "paragraph",
+            "content": {
+                "paragraph_content": [
+                    {
+                        "type": "text",
+                        "content": "The question seems to be asking for a measurement based on a ruler or scale, but the provided text does not contain enough information to determine the length of the line segment. The line is too short to be measured accurately, and the ruler is not long enough to measure the entire length of the line. Therefore, the answer is 0 cm. "
+                    }
+                ]
+            },
+            "bbox": [
+                507,
+                631,
+                870,
+                689
+            ]
+        },
+        {
+            "type": "paragraph",
+            "content": {
+                "paragraph_content": [
+                    {
+                        "type": "text",
+                        "content": "Final Answer: 0 cm "
+                    }
+                ]
+            },
+            "bbox": [
+                509,
+                697,
+                620,
+                707
+            ]
+        },
+        {
+            "type": "paragraph",
+            "content": {
+                "paragraph_content": [
+                    {
+                        "type": "text",
+                        "content": "The masked model fails to ground the measurement request in the image and invents a textual reason for returning zero. "
+                    }
+                ]
+            },
+            "bbox": [
+                507,
+                721,
+                880,
+                768
+            ]
+        },
+        {
+            "type": "title",
+            "content": {
+                "title_content": [
+                    {
+                        "type": "text",
+                        "content": "B.4 Hallucinated Evidence "
+                    }
+                ],
+                "level": 1
+            },
+            "bbox": [
+                507,
+                780,
+                734,
+                794
+            ]
+        },
+        {
+            "type": "title",
+            "content": {
+                "title_content": [
+                    {
+                        "type": "text",
+                        "content": "MathVision: test_1656 "
+                    }
+                ],
+                "level": 1
+            },
+            "bbox": [
+                509,
+                802,
+                700,
+                816
+            ]
+        },
+        {
+            "type": "title",
+            "content": {
+                "title_content": [
+                    {
+                        "type": "text",
+                        "content": "Prompt. "
+                    }
+                ],
+                "level": 1
+            },
+            "bbox": [
+                510,
+                822,
+                579,
+                837
+            ]
+        },
+        {
+            "type": "paragraph",
+            "content": {
+                "paragraph_content": [
+                    {
+                        "type": "text",
+                        "content": "James wrote a different integer from 1 to 9 in each cell of a table. He then calculated the sum of the integers in each of the rows and in each of the columns of the table. Five of his answers were 12, 13, 15, 16 and 17, in some order. What was his sixth answer? <image> "
+                    }
+                ]
+            },
+            "bbox": [
+                507,
+                846,
+                880,
+                895
+            ]
+        },
+        {
+            "type": "title",
+            "content": {
+                "title_content": [
+                    {
+                        "type": "text",
+                        "content": "Output. "
+                    }
+                ],
+                "level": 1
+            },
+            "bbox": [
+                509,
+                904,
+                576,
+                920
+            ]
+        },
+        {
+            "type": "page_number",
+            "content": {
+                "page_number_content": [
+                    {
+                        "type": "text",
+                        "content": "12 "
+                    }
+                ]
+            },
+            "bbox": [
+                489,
+                941,
+                509,
+                954
+            ]
+        }
+    ],
+    [
+        {
+            "type": "table",
+            "content": {
+                "image_source": {
+                    "path": "images/98974d0b5567e1a4de34480e4ecfa3284b7eaab6278b004bed2661cafe9c62bc.jpg"
+                },
+                "table_caption": [
+                    {
+                        "type": "text",
+                        "content": "Table 2: Full MMDocIR page and layout Recall@k results under macro domain averaging and micro query averaging. Baseline rows are reported numbers from the MMDocIR benchmark paper; selected-head and all-head rows are our runs. Bold marks the best direct retrieval or attention row. "
+                    }
+                ],
+                "table_footnote": [],
+                "html": "<table><tr><td rowspan=\"2\">Page method</td><td rowspan=\"2\">Scoring</td><td colspan=\"3\">Macro</td><td colspan=\"3\">Micro</td></tr><tr><td>R@1</td><td>R@3</td><td>R@5</td><td>R@1</td><td>R@3</td><td>R@5</td></tr><tr><td>DPR</td><td>VLM-text</td><td>27.2</td><td>46.3</td><td>57.8</td><td>26.9</td><td>46.2</td><td>57.8</td></tr><tr><td>ColBERT</td><td>VLM-text</td><td>45.8</td><td>64.9</td><td>72.3</td><td>44.9</td><td>64.8</td><td>72.3</td></tr><tr><td>BGE</td><td>VLM-text</td><td>40.6</td><td>59.7</td><td>68.4</td><td>39.6</td><td>59.6</td><td>68.5</td></tr><tr><td>E5</td><td>VLM-text</td><td>40.8</td><td>60.3</td><td>69.1</td><td>39.5</td><td>59.3</td><td>67.9</td></tr><tr><td>Contriever</td><td>VLM-text</td><td>40.9</td><td>60.6</td><td>69.2</td><td>39.7</td><td>59.7</td><td>68.3</td></tr><tr><td>GTE</td><td>VLM-text</td><td>38.9</td><td>58.7</td><td>67.6</td><td>37.9</td><td>58.3</td><td>67.2</td></tr><tr><td> $DSE_{wiki-ss}$ </td><td>Image</td><td>48.0</td><td>70.6</td><td>78.5</td><td>47.5</td><td>71.4</td><td>79.2</td></tr><tr><td> $DSE_{docmatix}$ </td><td>Image</td><td>50.2</td><td>71.4</td><td>79.5</td><td>50.1</td><td>71.8</td><td>80.1</td></tr><tr><td>ColPali</td><td>Image</td><td>53.0</td><td>74.7</td><td>80.8</td><td>52.7</td><td>75.0</td><td>81.0</td></tr><tr><td>DPR-Phi3MMDocIR</td><td>Image</td><td>54.1</td><td>73.5</td><td>81.1</td><td>53.7</td><td>74.3</td><td>81.8</td></tr><tr><td>Col-Phi3MMDocIR</td><td>Image</td><td>57.0</td><td>76.3</td><td>82.2</td><td>57.1</td><td>76.8</td><td>83.0</td></tr><tr><td>Qwen3-VL-8B all-head attention</td><td>LVLM attn.</td><td>61.8</td><td>81.2</td><td>87.5</td><td>61.2</td><td>81.2</td><td>87.7</td></tr><tr><td>Gemma3-12B all-global attention</td><td>LVLM attn.</td><td>49.4</td><td>71.0</td><td>78.6</td><td>50.0</td><td>70.8</td><td>78.9</td></tr><tr><td>Qwen3-VL-8B selected heads</td><td>LVLM attn.</td><td>64.7</td><td>83.8</td><td>88.9</td><td>64.5</td><td>83.6</td><td>88.9</td></tr><tr><td>Gemma3-12B selected heads</td><td>LVLM attn.</td><td>51.8</td><td>73.4</td><td>80.2</td><td>52.4</td><td>73.4</td><td>80.7</td></tr><tr><td rowspan=\"2\">Layout method</td><td rowspan=\"2\">Scoring</td><td colspan=\"3\">Macro</td><td colspan=\"3\">Micro</td></tr><tr><td>R@1</td><td>R@5</td><td>R@10</td><td>R@1</td><td>R@5</td><td>R@10</td></tr><tr><td>DPR</td><td>VLM-text</td><td>19.3</td><td>39.8</td><td>49.5</td><td>19.2</td><td>40.4</td><td>50.5</td></tr><tr><td>ColBERT</td><td>VLM-text</td><td>31.3</td><td>54.4</td><td>61.9</td><td>31.4</td><td>56.0</td><td>63.7</td></tr><tr><td>BGE</td><td>VLM-text</td><td>28.3</td><td>51.8</td><td>60.3</td><td>29.0</td><td>53.2</td><td>62.4</td></tr><tr><td>E5</td><td>VLM-text</td><td>26.7</td><td>51.1</td><td>60.4</td><td>26.4</td><td>51.8</td><td>61.2</td></tr><tr><td>Contriever</td><td>VLM-text</td><td>28.3</td><td>51.7</td><td>60.4</td><td>28.9</td><td>53.0</td><td>62.2</td></tr><tr><td>GTE</td><td>VLM-text</td><td>26.1</td><td>51.3</td><td>60.7</td><td>27.1</td><td>52.3</td><td>62.2</td></tr><tr><td> $DSE_{wiki-ss}$ </td><td>Image</td><td>28.2</td><td>50.2</td><td>58.5</td><td>29.2</td><td>52.1</td><td>61.1</td></tr><tr><td> $DSE_{docmatix}$ </td><td>Image</td><td>27.9</td><td>49.8</td><td>57.5</td><td>29.1</td><td>51.9</td><td>59.9</td></tr><tr><td>ColPali</td><td>Image</td><td>32.7</td><td>54.0</td><td>62.0</td><td>32.5</td><td>54.3</td><td>63.2</td></tr><tr><td>DPR-Phi3MMDocIR</td><td>Image</td><td>29.5</td><td>51.6</td><td>60.2</td><td>30.2</td><td>53.9</td><td>62.8</td></tr><tr><td>Col-Phi3MMDocIR</td><td>Image</td><td>31.1</td><td>52.3</td><td>61.1</td><td>31.6</td><td>54.5</td><td>63.3</td></tr><tr><td>Qwen3-VL-8B selected heads</td><td>LVLM attn.</td><td>39.0</td><td>64.9</td><td>74.2</td><td>39.3</td><td>67.1</td><td>76.6</td></tr><tr><td>Gemma3-12B selected heads</td><td>LVLM attn.</td><td>28.2</td><td>55.2</td><td>64.7</td><td>27.6</td><td>55.2</td><td>66.1</td></tr></table>",
+                "table_type": "complex_table",
+                "table_nest_level": 1
+            },
+            "bbox": [
+                203,
+                80,
+                796,
+                526
+            ]
+        },
+        {
+            "type": "paragraph",
+            "content": {
+                "paragraph_content": [
+                    {
+                        "type": "text",
+                        "content": "We are told that James wrote down the numbers 1 through 9 in a 3x3 grid, and then computed the sum of the numbers in each row, column, and diagonal. The problem asks for the sum of the numbers in the diagonals. "
+                    }
+                ]
+            },
+            "bbox": [
+                112,
+                607,
+                487,
+                646
+            ]
+        },
+        {
+            "type": "paragraph",
+            "content": {
+                "paragraph_content": [
+                    {
+                        "type": "text",
+                        "content": "Let’s denote the grid as follows: "
+                    }
+                ]
+            },
+            "bbox": [
+                112,
+                653,
+                310,
+                665
+            ]
+        },
+        {
+            "type": "paragraph",
+            "content": {
+                "paragraph_content": [
+                    {
+                        "type": "text",
+                        "content": "Row 1: 1, 2, 3, 4, 5, 6, 7, 8, 9 "
+                    }
+                ]
+            },
+            "bbox": [
+                114,
+                671,
+                307,
+                683
+            ]
+        },
+        {
+            "type": "paragraph",
+            "content": {
+                "paragraph_content": [
+                    {
+                        "type": "text",
+                        "content": "Row 2: 10, 11, 12, 13, 14, 15, 16, 17, 18 "
+                    }
+                ]
+            },
+            "bbox": [
+                114,
+                690,
+                359,
+                701
+            ]
+        },
+        {
+            "type": "paragraph",
+            "content": {
+                "paragraph_content": [
+                    {
+                        "type": "text",
+                        "content": "Row 3: 19, 20, 21, 22, 23, 24, 25, 26, 27 "
+                    }
+                ]
+            },
+            "bbox": [
+                114,
+                709,
+                359,
+                720
+            ]
+        },
+        {
+            "type": "paragraph",
+            "content": {
+                "paragraph_content": [
+                    {
+                        "type": "text",
+                        "content": "[Output continues by hallucinating many additional rows and values not present in the prompt.] "
+                    }
+                ]
+            },
+            "bbox": [
+                112,
+                727,
+                465,
+                747
+            ]
+        },
+        {
+            "type": "paragraph",
+            "content": {
+                "paragraph_content": [
+                    {
+                        "type": "text",
+                        "content": "The masked model fails to stay grounded to the visual table, expanding a 1–9 grid into invented rows and values. "
+                    }
+                ]
+            },
+            "bbox": [
+                112,
+                753,
+                485,
+                800
+            ]
+        },
+        {
+            "type": "title",
+            "content": {
+                "title_content": [
+                    {
+                        "type": "text",
+                        "content": "B.5 Declaring Inconsistencies "
+                    }
+                ],
+                "level": 1
+            },
+            "bbox": [
+                114,
+                812,
+                361,
+                827
+            ]
+        },
+        {
+            "type": "title",
+            "content": {
+                "title_content": [
+                    {
+                        "type": "text",
+                        "content": "MathVision: test_2714 "
+                    }
+                ],
+                "level": 1
+            },
+            "bbox": [
+                114,
+                832,
+                307,
+                847
+            ]
+        },
+        {
+            "type": "title",
+            "content": {
+                "title_content": [
+                    {
+                        "type": "text",
+                        "content": "Prompt. "
+                    }
+                ],
+                "level": 1
+            },
+            "bbox": [
+                114,
+                852,
+                184,
+                866
+            ]
+        },
+        {
+            "type": "paragraph",
+            "content": {
+                "paragraph_content": [
+                    {
+                        "type": "text",
+                        "content": "Two congruent squares, $ABCD$ and $PQRS$, have side length $15$. They overlap to form the $15$ by $25$ rectangle $AQRD$ shown. What percent of the area of rectangle $AQRD$ is shaded? "
+                    }
+                ]
+            },
+            "bbox": [
+                112,
+                872,
+                482,
+                902
+            ]
+        },
+        {
+            "type": "paragraph",
+            "content": {
+                "paragraph_content": [
+                    {
+                        "type": "text",
+                        "content": "<image> "
+                    }
+                ]
+            },
+            "bbox": [
+                114,
+                909,
+                159,
+                919
+            ]
+        },
+        {
+            "type": "title",
+            "content": {
+                "title_content": [
+                    {
+                        "type": "text",
+                        "content": "Output. "
+                    }
+                ],
+                "level": 1
+            },
+            "bbox": [
+                509,
+                604,
+                576,
+                619
+            ]
+        },
+        {
+            "type": "paragraph",
+            "content": {
+                "paragraph_content": [
+                    {
+                        "type": "text",
+                        "content": "The problem as stated contains inconsistencies and lacks clarity. Let’s break this down carefully. "
+                    }
+                ]
+            },
+            "bbox": [
+                507,
+                652,
+                843,
+                671
+            ]
+        },
+        {
+            "type": "paragraph",
+            "content": {
+                "paragraph_content": [
+                    {
+                        "type": "text",
+                        "content": "We are told that two congruent rectangles, each of area 100, are placed side by side, and their total area is 200. The question is asking for the area of the shaded region, which is the union of the two rectangles. "
+                    }
+                ]
+            },
+            "bbox": [
+                507,
+                680,
+                878,
+                719
+            ]
+        },
+        {
+            "type": "paragraph",
+            "content": {
+                "paragraph_content": [
+                    {
+                        "type": "text",
+                        "content": "But wait — this is not possible. The shaded region is the union of the two rectangles, and the total area is 100. So the shaded area is 100. "
+                    }
+                ]
+            },
+            "bbox": [
+                507,
+                726,
+                880,
+                756
+            ]
+        },
+        {
+            "type": "paragraph",
+            "content": {
+                "paragraph_content": [
+                    {
+                        "type": "text",
+                        "content": "But that’s not right. Let’s go back. "
+                    }
+                ]
+            },
+            "bbox": [
+                507,
+                763,
+                722,
+                774
+            ]
+        },
+        {
+            "type": "paragraph",
+            "content": {
+                "paragraph_content": [
+                    {
+                        "type": "text",
+                        "content": "Actually, the problem is asking for the area of the shaded region, which is the area of the rectangle minus the area of the unshaded region. "
+                    }
+                ]
+            },
+            "bbox": [
+                507,
+                782,
+                865,
+                812
+            ]
+        },
+        {
+            "type": "paragraph",
+            "content": {
+                "paragraph_content": [
+                    {
+                        "type": "text",
+                        "content": "[Output continues with repeated restarts and inconsistent inferred quantities.] "
+                    }
+                ]
+            },
+            "bbox": [
+                509,
+                819,
+                848,
+                840
+            ]
+        },
+        {
+            "type": "paragraph",
+            "content": {
+                "paragraph_content": [
+                    {
+                        "type": "text",
+                        "content": "The masked model loses the geometric constraints from the figure and repeatedly reinterprets the shapes and areas. "
+                    }
+                ]
+            },
+            "bbox": [
+                507,
+                873,
+                880,
+                921
+            ]
+        },
+        {
+            "type": "page_number",
+            "content": {
+                "page_number_content": [
+                    {
+                        "type": "text",
+                        "content": "13 "
+                    }
+                ]
+            },
+            "bbox": [
+                489,
+                941,
+                509,
+                954
+            ]
+        }
+    ],
+    [
+        {
+            "type": "table",
+            "content": {
+                "image_source": {
+                    "path": "images/89ec1fc34518a2563b977c7ce6c43156fd70f31949c095ec0d5b82f1bff7440d.jpg"
+                },
+                "table_caption": [
+                    {
+                        "type": "text",
+                        "content": "Table 3: MMDocIR domain-level Recall@1. “Best baseline” is the strongest non-selected-head baseline among the MMDocIR rows; “Qwen3-VL-8B” is the selected-head retriever. "
+                    }
+                ],
+                "table_footnote": [],
+                "html": "<table><tr><td>Domain</td><td>Page best baseline</td><td>Page Qwen3-VL-8B</td><td>Layout best baseline</td><td>Layout Qwen3-VL-8B</td></tr><tr><td>Research report</td><td>58.9</td><td>61.5</td><td>23.4</td><td>36.4</td></tr><tr><td>Admin/industry</td><td>51.8</td><td>60.3</td><td>22.1</td><td>32.2</td></tr><tr><td>Tutorial/workshop</td><td>58.6</td><td>65.1</td><td>37.5</td><td>40.9</td></tr><tr><td>Academic paper</td><td>61.3</td><td>70.3</td><td>35.2</td><td>42.0</td></tr><tr><td>Brochure</td><td>57.3</td><td>63.6</td><td>28.9</td><td>29.3</td></tr><tr><td>Financial report</td><td>50.7</td><td>56.3</td><td>32.1</td><td>34.3</td></tr><tr><td>Guidebook</td><td>63.8</td><td>68.8</td><td>24.1</td><td>33.0</td></tr><tr><td>Government</td><td>61.3</td><td>71.7</td><td>52.6</td><td>49.4</td></tr><tr><td>Laws</td><td>64.4</td><td>72.3</td><td>54.5</td><td>52.3</td></tr><tr><td>News</td><td>54.0</td><td>56.9</td><td>44.5</td><td>40.1</td></tr></table>",
+                "table_type": "simple_table",
+                "table_nest_level": 1
+            },
+            "bbox": [
+                247,
+                80,
+                752,
+                241
+            ]
+        },
+        {
+            "type": "title",
+            "content": {
+                "title_content": [
+                    {
+                        "type": "text",
+                        "content": "B.6 Asking for More Information "
+                    }
+                ],
+                "level": 1
+            },
+            "bbox": [
+                114,
+                305,
+                391,
+                321
+            ]
+        },
+        {
+            "type": "title",
+            "content": {
+                "title_content": [
+                    {
+                        "type": "text",
+                        "content": "MathVision: test_1989 "
+                    }
+                ],
+                "level": 1
+            },
+            "bbox": [
+                114,
+                326,
+                305,
+                341
+            ]
+        },
+        {
+            "type": "title",
+            "content": {
+                "title_content": [
+                    {
+                        "type": "text",
+                        "content": "Prompt. "
+                    }
+                ],
+                "level": 1
+            },
+            "bbox": [
+                114,
+                346,
+                184,
+                361
+            ]
+        },
+        {
+            "type": "paragraph",
+            "content": {
+                "paragraph_content": [
+                    {
+                        "type": "text",
+                        "content": "Lancelot has drawn a closed path on a cuboid and unfolded it into a net. Which of the nets shown could not be the net of Lancelot's cuboid? <image> "
+                    }
+                ]
+            },
+            "bbox": [
+                112,
+                370,
+                470,
+                401
+            ]
+        },
+        {
+            "type": "paragraph",
+            "content": {
+                "paragraph_content": [
+                    {
+                        "type": "text",
+                        "content": "Options: "
+                    }
+                ]
+            },
+            "bbox": [
+                114,
+                407,
+                164,
+                418
+            ]
+        },
+        {
+            "type": "list",
+            "content": {
+                "list_type": "text_list",
+                "list_items": [
+                    {
+                        "item_type": "text",
+                        "item_content": [
+                            {
+                                "type": "text",
+                                "content": "A. A "
+                            }
+                        ]
+                    },
+                    {
+                        "item_type": "text",
+                        "item_content": [
+                            {
+                                "type": "text",
+                                "content": "B. B "
+                            }
+                        ]
+                    },
+                    {
+                        "item_type": "text",
+                        "item_content": [
+                            {
+                                "type": "text",
+                                "content": "D. D "
+                            }
+                        ]
+                    },
+                    {
+                        "item_type": "text",
+                        "item_content": [
+                            {
+                                "type": "text",
+                                "content": "E. E "
+                            }
+                        ]
+                    }
+                ]
+            },
+            "bbox": [
+                115,
+                419,
+                142,
+                463
+            ]
+        },
+        {
+            "type": "title",
+            "content": {
+                "title_content": [
+                    {
+                        "type": "text",
+                        "content": "Output. "
+                    }
+                ],
+                "level": 1
+            },
+            "bbox": [
+                114,
+                478,
+                179,
+                493
+            ]
+        },
+        {
+            "type": "paragraph",
+            "content": {
+                "paragraph_content": [
+                    {
+                        "type": "text",
+                        "content": "None of the provided options match the description. The question seems to be asking for a net of a cube or rectangular prism, but the options are not clearly defined. Please provide more context or clarify the question. "
+                    }
+                ]
+            },
+            "bbox": [
+                112,
+                502,
+                482,
+                542
+            ]
+        },
+        {
+            "type": "paragraph",
+            "content": {
+                "paragraph_content": [
+                    {
+                        "type": "text",
+                        "content": "The masked model behaves as if the option images were unavailable, asking for clarification rather than selecting among the visual candidates. "
+                    }
+                ]
+            },
+            "bbox": [
+                112,
+                551,
+                485,
+                599
+            ]
+        },
+        {
+            "type": "title",
+            "content": {
+                "title_content": [
+                    {
+                        "type": "text",
+                        "content": "C Detection stability of 20-sample subsets "
+                    }
+                ],
+                "level": 1
+            },
+            "bbox": [
+                112,
+                611,
+                485,
+                629
+            ]
+        },
+        {
+            "type": "paragraph",
+            "content": {
+                "paragraph_content": [
+                    {
+                        "type": "text",
+                        "content": "We report detection-stability results across independent 20-sample subsets in Table 4. "
+                    }
+                ]
+            },
+            "bbox": [
+                112,
+                638,
+                487,
+                670
+            ]
+        },
+        {
+            "type": "table",
+            "content": {
+                "image_source": {
+                    "path": "images/caf2d212f1f72b8cfd095816139116d433c4feba0ee9db7ae752fd1902ee915d.jpg"
+                },
+                "table_caption": [],
+                "table_footnote": [],
+                "html": "<table><tr><td>Task</td><td>Qwen3-VL-8B</td><td>Gemma3-12B</td></tr><tr><td>Text</td><td>94.83%</td><td>92.31%</td></tr><tr><td>Image</td><td>85.06%</td><td>96.58%</td></tr><tr><td>Rendered-text</td><td>94.83%</td><td>98.29%</td></tr><tr><td>Identical image</td><td>94.83%</td><td>95.73%</td></tr></table>",
+                "table_type": "simple_table",
+                "table_nest_level": 1
+            },
+            "bbox": [
+                139,
+                675,
+                463,
+                752
+            ]
+        },
+        {
+            "type": "paragraph",
+            "content": {
+                "paragraph_content": [
+                    {
+                        "type": "text",
+                        "content": "Table 4: Detection stability across independent 20- sample subsets. For each task and model, we select top-5% heads from three disjoint detection subsets, compute the three pairwise selected-head intersections, and report the mean shared-head count. "
+                    }
+                ]
+            },
+            "bbox": [
+                112,
+                762,
+                487,
+                833
+            ]
+        },
+        {
+            "type": "title",
+            "content": {
+                "title_content": [
+                    {
+                        "type": "text",
+                        "content": "D Decode-only and Prefill-Plus-Decode Masking Comparison "
+                    }
+                ],
+                "level": 1
+            },
+            "bbox": [
+                112,
+                846,
+                468,
+                879
+            ]
+        },
+        {
+            "type": "paragraph",
+            "content": {
+                "paragraph_content": [
+                    {
+                        "type": "text",
+                        "content": "We compare decode-only and prefill-plus-decoding masking in Fig. 12. "
+                    }
+                ]
+            },
+            "bbox": [
+                112,
+                889,
+                485,
+                921
+            ]
+        },
+        {
+            "type": "chart",
+            "content": {
+                "image_source": {
+                    "path": "images/6c7d555dc9b22e4caeea4f9d23f2cf57b64e901a14555fccba7192e131a9fd28.jpg"
+                },
+                "content": "| Layer | Preserved | New |\n|-------|-----------|-----|\n| 12    | 4         | 0   |\n| 18    | 7         | 0   |\n| 24    | 5         | 1   |\n| 30    | 8         | 0   |\n| 36    | 5         | 1   |\n| 42    | 8         | 0   |",
+                "chart_caption": [],
+                "chart_footnote": []
+            },
+            "sub_type": "bar_stacked",
+            "bbox": [
+                521,
+                309,
+                873,
+                489
+            ]
+        },
+        {
+            "type": "chart",
+            "content": {
+                "image_source": {
+                    "path": "images/733cd058c0099f5714da78b210996e281196a92c3e0fb0b08b8447e8aa4e830b.jpg"
+                },
+                "content": "| Masking type | Image needle Accuracy (%) | Text needle Accuracy (%) |\n|---|---|---|\n| Decode-only | 42.8 | |\n| Prefill+ Decode | 0.0 | |\n| Decode-only | 99.8 | |\n| Prefill+ Decode | 2.9 | |",
+                "chart_caption": [
+                    {
+                        "type": "text",
+                        "content": "Figure 13: Top-5% text-retrieval heads in Gemma3- 12B-IT. Blue heads are preserved from Gemma3-12B-PT, while orange heads newly enter the top-5% set after vision-language training. "
+                    }
+                ],
+                "chart_footnote": []
+            },
+            "sub_type": "bar",
+            "bbox": [
+                521,
+                582,
+                872,
+                700
+            ]
+        },
+        {
+            "type": "paragraph",
+            "content": {
+                "paragraph_content": [
+                    {
+                        "type": "text",
+                        "content": "Figure 12: Decode-only versus prefill-plus-decoding masking on controlled MM-NIAH. Bars show mean accuracy under top-58 retrieval head masking, averaged across the same context-length and needle-depth grid used in Fig. 1. The stronger degradation under prefillplus-decoding masking indicates that retrieval heads are important while the model processes the prompt, not only during answer generation. "
+                    }
+                ]
+            },
+            "bbox": [
+                507,
+                715,
+                882,
+                831
+            ]
+        },
+        {
+            "type": "title",
+            "content": {
+                "title_content": [
+                    {
+                        "type": "text",
+                        "content": "E Additional Results on the Intrinsic Properties of Retrieval Heads "
+                    }
+                ],
+                "level": 1
+            },
+            "bbox": [
+                507,
+                845,
+                843,
+                879
+            ]
+        },
+        {
+            "type": "paragraph",
+            "content": {
+                "paragraph_content": [
+                    {
+                        "type": "text",
+                        "content": "We show the intrinsic property of the multimodal retrieval heads of Gemma3-12B in Fig. 13. "
+                    }
+                ]
+            },
+            "bbox": [
+                507,
+                889,
+                880,
+                921
+            ]
+        },
+        {
+            "type": "page_number",
+            "content": {
+                "page_number_content": [
+                    {
+                        "type": "text",
+                        "content": "14 "
+                    }
+                ]
+            },
+            "bbox": [
+                489,
+                942,
+                510,
+                954
+            ]
+        }
+    ],
+    [
+        {
+            "type": "title",
+            "content": {
+                "title_content": [
+                    {
+                        "type": "text",
+                        "content": "F Computational Resources and Model "
+                    }
+                ],
+                "level": 1
+            },
+            "bbox": [
+                112,
+                83,
+                470,
+                99
+            ]
+        },
+        {
+            "type": "paragraph",
+            "content": {
+                "paragraph_content": [
+                    {
+                        "type": "text",
+                        "content": "We use Qwen2.5-VL (7B, 32B) (Bai et al., 2025b), Qwen3-VL (8B, 32B) (Bai et al., 2025a), Gemma3 (12B, 27B) (Gemma Team, 2025). All experiments were conducted on NVIDIA A100 GPUs. "
+                    }
+                ]
+            },
+            "bbox": [
+                112,
+                109,
+                489,
+                174
+            ]
+        },
+        {
+            "type": "title",
+            "content": {
+                "title_content": [
+                    {
+                        "type": "text",
+                        "content": "G Implementation Details "
+                    }
+                ],
+                "level": 1
+            },
+            "bbox": [
+                112,
+                185,
+                357,
+                200
+            ]
+        },
+        {
+            "type": "paragraph",
+            "content": {
+                "paragraph_content": [
+                    {
+                        "type": "text",
+                        "content": "We use the Hugging Face Transformers library to load all evaluated LVLM checkpoints and to access per-head post-softmax attention weights, which form the basis of our retrieval-score computation, head masking, and re-ranking pipelines. Model weights, tokenizers, and preprocessing follow each checkpoint’s default Hugging Face configuration; no additional fine-tuning or training is performed. "
+                    }
+                ]
+            },
+            "bbox": [
+                112,
+                210,
+                489,
+                338
+            ]
+        },
+        {
+            "type": "title",
+            "content": {
+                "title_content": [
+                    {
+                        "type": "text",
+                        "content": "H Declaration of LLM Usage "
+                    }
+                ],
+                "level": 1
+            },
+            "bbox": [
+                112,
+                351,
+                386,
+                368
+            ]
+        },
+        {
+            "type": "paragraph",
+            "content": {
+                "paragraph_content": [
+                    {
+                        "type": "text",
+                        "content": "We used LLMs as writing assistants for paper polishing and routine refactoring of plotting scripts: (i) prose passes for clarity and concision; (ii) LaTeX formatting suggestions; and (iii) minor refactoring of plotting scripts. LLMs were not used to design experiments, derive theoretical results, or generate numerical results. "
+                    }
+                ]
+            },
+            "bbox": [
+                112,
+                376,
+                489,
+                488
+            ]
+        },
+        {
+            "type": "page_number",
+            "content": {
+                "page_number_content": [
+                    {
+                        "type": "text",
+                        "content": "15 "
+                    }
+                ]
+            },
+            "bbox": [
+                489,
+                941,
+                510,
+                954
+            ]
+        }
+    ]
+]

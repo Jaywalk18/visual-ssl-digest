@@ -39,7 +39,8 @@
     </div>
     <div class="feature-body">
       <p class="lead dropcap">先说结论。虽然不是无标签 SSL，但它直指视觉 token 表征学习瓶颈：VLM 的“看见”不应只靠文本答案反向传播。 把 fine-grained visual grounding 从“答案文本监督”推进到“视觉 token 级监督”，给 VLM 后训练提供了一种更直接的视觉信号。</p>
-      <aside class="marginalia"><b>图像状态</b> 这篇暂未抽到足够稳定的 pipeline / motivation 图，因此正文以方法和实验解读为主。</aside>
+      <figure class="full-fig"><img src="../assets/mineru/2605.26656/images/888fb520239524f7addbe6c66503ce41cb88b4dd321ded68b1f32c739def3d7a.jpg" alt="Figureure 1 · : An example of visual logits in Qwen3-VL-2B showing the top-20 tokens"><figcaption><b>Figureure 1 · : An example of visual logits in Qwen3-VL-2B showing the top-20 tokens</b><span class="fig-en">Figure 1: An example of visual logits in Qwen3-VL-2B showing the top-20 tokens at the final image patch of each word. Numbers indicate rank; punctuation and meaningless characters are removed. This observation inspires us to supervise visual tokens using the words in the image patches.</span><span class="fig-zh">这张图来自论文 PDF 的结构化抽取。当前用于辅助理解 DV-SFT 的方法或实验，请结合正文精读段落一起看。</span></figcaption></figure>
+<figure class="full-fig"><img src="../assets/mineru/2605.26656/images/a6eea0a2a687eb07e0e7e6ca45b481f49c965e6412d15078407ea420008b1510.jpg" alt="Figureure 2 · : Diagram of DV-SFT"><figcaption><b>Figureure 2 · : Diagram of DV-SFT</b><span class="fig-en">Figure 2: Diagram of DV-SFT. The training procedure of DV-SFT is identical to that of standard SFT, where all tokens are trained end-to-end on the next-token prediction task. The difference lies in the fact that a significant portion of visual tokens have valid labels.</span><span class="fig-zh">这张图来自论文 PDF 的结构化抽取。当前用于辅助理解 DV-SFT 的方法或实验，请结合正文精读段落一起看。</span></figcaption></figure>
       
       <h2>核心问题</h2>
       <p>虽然不是无标签 SSL，但它直指视觉 token 表征学习瓶颈：VLM 的“看见”不应只靠文本答案反向传播。</p>
