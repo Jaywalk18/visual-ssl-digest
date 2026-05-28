@@ -19,39 +19,39 @@
   </header>
   <nav class="site-nav" aria-label="主导航">
     <a class="nav-link" href="../index.html">头版</a>
-<a class="nav-link" href="../issues/2026-05-27.html">今日速递</a>
+<a class="nav-link" href="../issues/2026-05-28.html">今日速递</a>
 <a class="nav-link" href="../pages/catalog.html">论文目录</a>
 <a class="nav-link" href="../pages/timeline.html">时间线</a>
   </nav>
   <main><article class="paper-detail">
   <div class="paper-main">
     <div class="kicker">ICLR 2026 Poster + arXiv · P0 · 2026-05-27</div>
-    <h1 class="paper-headline">Unified 3D Scene Understanding Through：是“通用视觉世界模型”方向的会议确认条目，适合和 JEPA/video world model 一起读</h1>
-    <p class="dek">将多个 3D 视觉任务从独立训练目标简化为同一个世界模型里的不同条件推理路径。</p>
-    <p class="byline"><strong>Unified 3D Scene Understanding Through Physical World Modeling</strong>　Wanhee Lee, Klemen Kotar, Rahul Mysore Venkatesh, Jared Watrous, Honglin Chen, Khai Loong Aw, Daniel L. K. Yamins；OpenReview 页面显示 Stanford/OpenAI 相关作者信息。　ICLR 2026 Poster + arXiv　<a href="https://arxiv.org/abs/2605.24321">原文链接</a></p>
+    <h1 class="paper-headline">Unified 3D Scene Understanding Through：它和通用视觉自监督的关系在于：用同一物理世界模型统一深度、NVS、对象操控等 3D 视觉任务</h1>
+    <p class="dek">高相关；详见方法、贡献和实验边界。</p>
+    <p class="byline"><strong>Unified 3D Scene Understanding Through Physical World Modeling</strong>　ICLR 2026 Poster + arXiv　<a href="https://arxiv.org/abs/2605.24321">原文链接</a></p>
     <div class="paper-facts">
       <span><b>编号</b>2605.24321</span>
       <span><b>优先级</b>P0</span>
       <span><b>类别</b>ICLR 2026 Poster + arXiv</span>
       <span><b>会议</b>ICLR 2026 Poster + arXiv</span>
-      <span><b>方法</b>把 RGB、optical flow、camera pose 等多模态场景元素作为概率图模型节点，通过不同 inference pathway 统一 NVS、depth、object manipulation 等任务。</span>
+      <span><b>方法</b>用同一物理世界模型统一深度、NVS、对象操控等 3D 视觉任务</span>
       <span><b>来源</b>arXiv / OpenReview</span>
     </div>
     <div class="feature-body">
-      <p class="lead dropcap">先说结论。是“通用视觉世界模型”方向的会议确认条目，适合和 JEPA/video world model 一起读。 将多个 3D 视觉任务从独立训练目标简化为同一个世界模型里的不同条件推理路径。</p>
+      <p class="lead dropcap">先说结论。它和通用视觉自监督的关系在于：用同一物理世界模型统一深度、NVS、对象操控等 3D 视觉任务。 高相关；详见方法、贡献和实验边界。</p>
       <figure class="full-fig"><img src="../assets/mineru/2605.24321/images/8f0d97b921b896b92ceaa61bc5f9b1fa2d103edec08176f94ffe2185ab79ff58.jpg" alt="Optical Flow as Target: Depth Estimation Figure 2: Flexible inference pathways across moda"><figcaption><b>Optical Flow as Target: Depth Estimation Figure 2: Flexible inference pathways across moda</b><span class="fig-en">Optical Flow as Target: Depth Estimation Figure 2: Flexible inference pathways across modalities. Our framework allows us to flexibly construct inference pathways for 3D scene understanding. Using optical flow tokens as conditioning, the model performs image editing by generating the next RGB frame. Conversely, when optical flow tokens serve as the prediction target, the model enables depth estimation by predicting the next flow field from a single RGB image and in-plane camera motion input.</span><span class="fig-zh">这张图概括 Unified 3D Scene Understanding Through 的整体方法流程。阅读时先看模块之间传递的训练信号，再看作者如何把目标拆成可优化的子问题。</span></figcaption></figure>
 <figure class="full-fig"><img src="../assets/mineru/2605.24321/images/0c880110d1e18759c1e7efd20a996805492ffb5068c677711fa47aa8d104d383.jpg" alt="Figureure 1 · : Local random access sequence modeling"><figcaption><b>Figureure 1 · : Local random access sequence modeling</b><span class="fig-en">Figure 1: Local random access sequence modeling. Our modeling framework has three key components: (a) a local patch quantizer trained based on a small convolutional autoencoder; (b) a video serialization process based on a ”pointer-content representation”, which allows arbitrary ordering of the patches during training and generation; and (c) an LLM-like autoregressive transformer to predict the contents of the next patch, trained in random sequence order.</span><span class="fig-zh">这张图概括 Unified 3D Scene Understanding Through 的整体方法流程。阅读时先看模块之间传递的训练信号，再看作者如何把目标拆成可优化的子问题。</span></figcaption></figure>
       
       <h2>核心问题</h2>
-      <p>是“通用视觉世界模型”方向的会议确认条目，适合和 JEPA/video world model 一起读。</p>
+      <p>它和通用视觉自监督的关系在于：用同一物理世界模型统一深度、NVS、对象操控等 3D 视觉任务。</p>
       <h2>方法拆解</h2>
-      <p>把 RGB、optical flow、camera pose 等多模态场景元素作为概率图模型节点，通过不同 inference pathway 统一 NVS、depth、object manipulation 等任务。</p>
+      <p>用同一物理世界模型统一深度、NVS、对象操控等 3D 视觉任务</p>
       <h2>主要贡献</h2>
-      <p>将多个 3D 视觉任务从独立训练目标简化为同一个世界模型里的不同条件推理路径。</p>
+      <p>高相关；详见方法、贡献和实验边界。</p>
       <h2>实验看点</h2>
-      <p>摘要报告无需 task-specific finetuning 即可在 NVS 和 3D object manipulation 上超过专用基线，并支持组合式几何推理。</p>
+      <p>实验部分建议重点看两类证据：一是作者是否把方法收益和更强数据、更长训练、更大模型区分开；二是跨模型、跨数据或跨任务迁移是否还能保留同样趋势。</p>
       <h2>局限与读法</h2>
-      <p>偏 3D/交互式视觉，和纯 2D 图像 SSL 仍有距离；训练数据组合与计算成本需要关注。</p>
+      <p>这篇论文的结论需要结合任务设置、训练数据规模和消融实验一起看；不要只凭单个指标判断它对通用视觉表征的价值。</p>
     
     </div>
   </div>
@@ -61,13 +61,13 @@
     <div class="side-box"><h4>原文</h4><p><a href="https://arxiv.org/abs/2605.24321">https://arxiv.org/abs/2605.24321</a></p></div>
   </aside>
 </article></main>
-  <aside class="conf-float" data-conf-reminder="2026-05-27-main-ddl" aria-label="CCF A/B 主投稿提醒">
+  <aside class="conf-float" data-conf-reminder="2026-05-28-main-ddl" aria-label="CCF A/B 主投稿提醒">
   <button class="conf-close" type="button" aria-label="关闭会议提醒">×</button>
   <details open>
     <summary>CCF A/B 主投稿提醒</summary>
     <div class="conf-list"><a class="conf-item " href="https://github.com/ccfddl/ccf-deadlines/blob/main/conference/AI/aaai.yml">
   <span><b>AAAI 2027</b><em>CCF A · Main paper submission</em></span>
-  <strong>61 天</strong>
+  <strong>60 天</strong>
   <small>2026-07-27 · CCF DDL: abstract 2026-07-20；进入 1 个月窗口后重点提醒。</small>
 </a></div>
   </details>
@@ -80,7 +80,7 @@
   (() => {
     const box = document.querySelector('[data-conf-reminder]');
     if (!box) return;
-    const key = `visualSslConfReminderClosed:${box.dataset.confReminder || '2026-05-27-main-ddl'}`;
+    const key = `visualSslConfReminderClosed:${box.dataset.confReminder || '2026-05-28-main-ddl'}`;
     try {
       if (localStorage.getItem(key) === '1') box.hidden = true;
     } catch (err) {}

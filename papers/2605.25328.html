@@ -19,39 +19,39 @@
   </header>
   <nav class="site-nav" aria-label="主导航">
     <a class="nav-link" href="../index.html">头版</a>
-<a class="nav-link" href="../issues/2026-05-27.html">今日速递</a>
+<a class="nav-link" href="../issues/2026-05-28.html">今日速递</a>
 <a class="nav-link" href="../pages/catalog.html">论文目录</a>
 <a class="nav-link" href="../pages/timeline.html">时间线</a>
   </nav>
   <main><article class="paper-detail">
   <div class="paper-main">
     <div class="kicker">ICML 2026 · P0 · 2026-05-27</div>
-    <h1 class="paper-headline">DIVA：与 RAE、RepTok、MAGE 类方向同一问题域，值得作为 unified visual representation 的重点读物</h1>
-    <p class="dek">把理解/生成的冲突从“互相伤害”转化为“互相增强”，给统一 UMM 训练提供了一个表示分解视角。</p>
-    <p class="byline"><strong>DIVA</strong>　Renjie Lu, Xulong Zhang, Xiaoyang Qu, Shangfei Wang, Jianzong Wang；arXiv 摘要页未稳定列出机构。　arXiv + ICML 2026　<a href="https://arxiv.org/abs/2605.25328">原文链接</a></p>
+    <h1 class="paper-headline">DIVA：它和通用视觉自监督的关系在于：分析并利用统一多模态模型内部的理解/生成表示分歧</h1>
+    <p class="dek">高相关；详见方法、贡献和实验边界。</p>
+    <p class="byline"><strong>DIVA</strong>　arXiv + ICML 2026　<a href="https://arxiv.org/abs/2605.25328">原文链接</a></p>
     <div class="paper-facts">
       <span><b>编号</b>2605.25328</span>
       <span><b>优先级</b>P0</span>
       <span><b>类别</b>ICML 2026</span>
       <span><b>会议</b>arXiv + ICML 2026</span>
-      <span><b>方法</b>先诊断统一多模态模型中生成分支偏细粒度重建、理解分支偏语义不变性的 representation divergence，再用 DIVA 将 visual representation 分解为 shared/unique components，并通过互信息估计控制跨分支信息流。</span>
+      <span><b>方法</b>分析并利用统一多模态模型内部的理解/生成表示分歧</span>
       <span><b>来源</b>arXiv / OpenReview</span>
     </div>
     <div class="feature-body">
-      <p class="lead dropcap">先说结论。与 RAE、RepTok、MAGE 类方向同一问题域，值得作为 unified visual representation 的重点读物。 把理解/生成的冲突从“互相伤害”转化为“互相增强”，给统一 UMM 训练提供了一个表示分解视角。</p>
+      <p class="lead dropcap">先说结论。它和通用视觉自监督的关系在于：分析并利用统一多模态模型内部的理解/生成表示分歧。</p>
       <figure class="full-fig"><img src="../assets/mineru/2605.25328/images/89fac8e86545e019773f0c296f67f56864fed5e37dd9ab65685be47d592df8a4.jpg" alt="Figureure 3 · Overview of the self-improved mutual reinforcement (DIVA) pipeline"><figcaption><b>Figureure 3 · Overview of the self-improved mutual reinforcement (DIVA) pipeline</b><span class="fig-en">Figure 3. Overview of the self-improved mutual reinforcement (DIVA) pipeline. We propose a post-training paradigm that explicitly align the shared information, while preserve the integrity of unique information between the understanding and generation flows. Both flows are constructed base on the same sample pair to ensure the shared anchor.</span><span class="fig-zh">这张图概括 DIVA 的整体方法流程。阅读时先看模块之间传递的训练信号，再看作者如何把目标拆成可优化的子问题。</span></figcaption></figure>
 <figure class="full-fig"><img src="../assets/mineru/2605.25328/images/6509fbde6970d58568936deaf203e7566f76dc80165d24f55f22dfed5649c9f1.jpg" alt="(c)Frequency Analysis Figure 2"><figcaption><b>(c)Frequency Analysis Figure 2</b><span class="fig-en">(c)Frequency Analysis Figure 2. Visualization of the representation divergence and synergy. (a) shows the severe conflicts occurs in the shallow and deep layers while the mitigation is observed in the middle layers. Meantime, based on the two information flows that are described in Sec. 3.1, the effective rank between different flows increases in the middle layers and decrease again in the deep layers as presented in (b). And we conduct a frequency analysis in (c) to explore the distinct preferences for information extraction and modeling between understanding and generation branches. The discovery of these phenomena forms the basis of DIVA.</span><span class="fig-zh">这张可视化用来解释 DIVA 学到的中间表征或对齐关系。重点看它是否支持正文里的机制判断。</span></figcaption></figure>
       
       <h2>核心问题</h2>
-      <p>与 RAE、RepTok、MAGE 类方向同一问题域，值得作为 unified visual representation 的重点读物。</p>
+      <p>它和通用视觉自监督的关系在于：分析并利用统一多模态模型内部的理解/生成表示分歧。</p>
       <h2>方法拆解</h2>
-      <p>先诊断统一多模态模型中生成分支偏细粒度重建、理解分支偏语义不变性的 representation divergence，再用 DIVA 将 visual representation 分解为 shared/unique components，并通过互信息估计控制跨分支信息流。</p>
+      <p>分析并利用统一多模态模型内部的理解/生成表示分歧</p>
       <h2>主要贡献</h2>
-      <p>把理解/生成的冲突从“互相伤害”转化为“互相增强”，给统一 UMM 训练提供了一个表示分解视角。</p>
+      <p>高相关；详见方法、贡献和实验边界。</p>
       <h2>实验看点</h2>
-      <p>摘要报告 visual understanding 提升 7.82%、generation 提升 8.46%，并公开代码地址。</p>
+      <p>实验部分建议重点看两类证据：一是作者是否把方法收益和更强数据、更长训练、更大模型区分开；二是跨模型、跨数据或跨任务迁移是否还能保留同样趋势。</p>
       <h2>局限与读法</h2>
-      <p>核心收益可能依赖具体 UMM 架构和任务组合；互信息估计的稳定性、额外训练开销需要复现确认。</p>
+      <p>这篇论文的结论需要结合任务设置、训练数据规模和消融实验一起看；不要只凭单个指标判断它对通用视觉表征的价值。</p>
     
     </div>
   </div>
@@ -61,13 +61,13 @@
     <div class="side-box"><h4>原文</h4><p><a href="https://arxiv.org/abs/2605.25328">https://arxiv.org/abs/2605.25328</a></p></div>
   </aside>
 </article></main>
-  <aside class="conf-float" data-conf-reminder="2026-05-27-main-ddl" aria-label="CCF A/B 主投稿提醒">
+  <aside class="conf-float" data-conf-reminder="2026-05-28-main-ddl" aria-label="CCF A/B 主投稿提醒">
   <button class="conf-close" type="button" aria-label="关闭会议提醒">×</button>
   <details open>
     <summary>CCF A/B 主投稿提醒</summary>
     <div class="conf-list"><a class="conf-item " href="https://github.com/ccfddl/ccf-deadlines/blob/main/conference/AI/aaai.yml">
   <span><b>AAAI 2027</b><em>CCF A · Main paper submission</em></span>
-  <strong>61 天</strong>
+  <strong>60 天</strong>
   <small>2026-07-27 · CCF DDL: abstract 2026-07-20；进入 1 个月窗口后重点提醒。</small>
 </a></div>
   </details>
@@ -80,7 +80,7 @@
   (() => {
     const box = document.querySelector('[data-conf-reminder]');
     if (!box) return;
-    const key = `visualSslConfReminderClosed:${box.dataset.confReminder || '2026-05-27-main-ddl'}`;
+    const key = `visualSslConfReminderClosed:${box.dataset.confReminder || '2026-05-28-main-ddl'}`;
     try {
       if (localStorage.getItem(key) === '1') box.hidden = true;
     } catch (err) {}

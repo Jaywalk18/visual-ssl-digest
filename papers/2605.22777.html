@@ -3,13 +3,13 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Transcoders Trace Visual Grounding · 通用视觉自监督研究报</title>
+  <title>DecQ · 通用视觉自监督研究报</title>
   <link rel="stylesheet" href="../assets/styles.css?v=20260525j">
   <link rel="stylesheet" href="../assets/visual-ssl.css?v=20260525j">
 </head>
 <body>
   <header class="masthead">
-    <div class="masthead-kicker">Visual SSL Research Report · 2026-05-26</div>
+    <div class="masthead-kicker">Visual SSL Research Report · 2026-05-23</div>
     <a class="masthead-title" href="../index.html">通用视觉自监督研究报</a>
     <div class="masthead-meta">
       <span>图像表征 · VFM · JEPA · 视频预训练</span>
@@ -25,29 +25,28 @@
   </nav>
   <main><article class="paper-detail">
   <div class="paper-main">
-    <div class="kicker">arXiv 新增 · P2 · 2026-05-26</div>
-    <h1 class="paper-headline">Transcoders Trace Visual Grounding：它和通用视觉自监督的关系在于：用 transcoder 追踪 VLM 中从图像 patch 到文本 token 的计算通路</h1>
-    <p class="dek">中高相关；详见方法、贡献和实验边界。</p>
-    <p class="byline"><strong>Transcoders Trace Visual Grounding</strong>　arXiv 新增　<a href="https://arxiv.org/abs/2605.22902">原文链接</a></p>
+    <div class="kicker">arXiv 新增 · P0 · 2026-05-23</div>
+    <h1 class="paper-headline">DecQ：它和通用视觉自监督的关系在于：直接改进 frozen VFM/RAE tokenizer 的细节重建与生成质量</h1>
+    <p class="dek">高相关；详见方法、贡献和实验边界。</p>
+    <p class="byline"><strong>DecQ</strong>　arXiv 新增　<a href="https://arxiv.org/abs/2605.22777">原文链接</a></p>
     <div class="paper-facts">
-      <span><b>编号</b>2605.22902</span>
-      <span><b>优先级</b>P2</span>
+      <span><b>编号</b>2605.22777</span>
+      <span><b>优先级</b>P0</span>
       <span><b>类别</b>arXiv 新增</span>
       <span><b>会议</b>arXiv 新增</span>
-      <span><b>方法</b>用 transcoder 追踪 VLM 中从图像 patch 到文本 token 的计算通路</span>
+      <span><b>方法</b>直接改进 frozen VFM/RAE tokenizer 的细节重建与生成质量</span>
       <span><b>来源</b>arXiv / OpenReview</span>
     </div>
     <div class="feature-body">
-      <p class="lead dropcap">先说结论。它和通用视觉自监督的关系在于：用 transcoder 追踪 VLM 中从图像 patch 到文本 token 的计算通路。 中高相关；详见方法、贡献和实验边界。</p>
-      <figure class="full-fig"><img src="../assets/mineru/2605.22902/images/785311c6f79f31abbe407b3d8413d6f29a1a56802c963920be03a8a7b1af428b.jpg" alt="Figureure 10 · : Top-10 ablation comparison"><figcaption><b>Figureure 10 · : Top-10 ablation comparison</b><span class="fig-en">Figure 10: Top-10 ablation comparison</span><span class="fig-zh">这张图/表用于判断 Transcoders Trace Visual Grounding 的实验收益来自哪里。重点看替换、消融或跨模型设置下趋势是否一致，而不是只看单个最高分。</span></figcaption></figure>
-<figure class="full-fig"><img src="../assets/mineru/2605.22902/images/8ddd171f8c85fb0edc8d93549d88e12abd8b602744ad2ecd2b05abd268f9dac0.jpg" alt="Figureure 15 · : Top-5 FVG comparison"><figcaption><b>Figureure 15 · : Top-5 FVG comparison</b><span class="fig-en">Figure 15: Top-5 FVG comparison</span><span class="fig-zh">这张图/表用于判断 Transcoders Trace Visual Grounding 的实验收益来自哪里。重点看替换、消融或跨模型设置下趋势是否一致，而不是只看单个最高分。</span></figcaption></figure>
+      <p class="lead dropcap">先说结论。它和通用视觉自监督的关系在于：直接改进 frozen VFM/RAE tokenizer 的细节重建与生成质量。 高相关；详见方法、贡献和实验边界。</p>
+      <aside class="marginalia"><b>图像状态</b> 这篇暂未抽到足够稳定的 pipeline / motivation 图，因此正文以方法和实验解读为主。</aside>
       
       <h2>核心问题</h2>
-      <p>它和通用视觉自监督的关系在于：用 transcoder 追踪 VLM 中从图像 patch 到文本 token 的计算通路。</p>
+      <p>它和通用视觉自监督的关系在于：直接改进 frozen VFM/RAE tokenizer 的细节重建与生成质量。</p>
       <h2>方法拆解</h2>
-      <p>用 transcoder 追踪 VLM 中从图像 patch 到文本 token 的计算通路</p>
+      <p>直接改进 frozen VFM/RAE tokenizer 的细节重建与生成质量</p>
       <h2>主要贡献</h2>
-      <p>中高相关；详见方法、贡献和实验边界。</p>
+      <p>高相关；详见方法、贡献和实验边界。</p>
       <h2>实验看点</h2>
       <p>实验部分建议重点看两类证据：一是作者是否把方法收益和更强数据、更长训练、更大模型区分开；二是跨模型、跨数据或跨任务迁移是否还能保留同样趋势。</p>
       <h2>局限与读法</h2>
@@ -57,8 +56,8 @@
   </div>
   <aside class="paper-side">
 
-    <div class="side-box"><h4>关键判断</h4><dl><dt>相关性</dt><dd>P2</dd><dt>类别</dt><dd>arXiv 新增</dd><dt>会议</dt><dd>arXiv 新增</dd><dt>读法</dt><dd>方法图优先，表格次之</dd></dl></div>
-    <div class="side-box"><h4>原文</h4><p><a href="https://arxiv.org/abs/2605.22902">https://arxiv.org/abs/2605.22902</a></p></div>
+    <div class="side-box"><h4>关键判断</h4><dl><dt>相关性</dt><dd>P0</dd><dt>类别</dt><dd>arXiv 新增</dd><dt>会议</dt><dd>arXiv 新增</dd><dt>读法</dt><dd>方法图优先，表格次之</dd></dl></div>
+    <div class="side-box"><h4>原文</h4><p><a href="https://arxiv.org/abs/2605.22777">https://arxiv.org/abs/2605.22777</a></p></div>
   </aside>
 </article></main>
   <aside class="conf-float" data-conf-reminder="2026-05-28-main-ddl" aria-label="CCF A/B 主投稿提醒">
@@ -74,7 +73,7 @@
 </aside>
   <footer class="footer">
     <div>面向通用视觉自监督、视觉基础模型与多模态表征学习的每日研究报。</div>
-    <div class="muted">Issue 2026-05-26 · Curated readings and figure notes</div>
+    <div class="muted">Issue 2026-05-23 · Curated readings and figure notes</div>
   </footer>
   <script>
   (() => {

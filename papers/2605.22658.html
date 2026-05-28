@@ -3,13 +3,13 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Dithering Defense · 通用视觉自监督研究报</title>
+  <title>SegCompass · 通用视觉自监督研究报</title>
   <link rel="stylesheet" href="../assets/styles.css?v=20260525j">
   <link rel="stylesheet" href="../assets/visual-ssl.css?v=20260525j">
 </head>
 <body>
   <header class="masthead">
-    <div class="masthead-kicker">Visual SSL Research Report · 2026-05-26</div>
+    <div class="masthead-kicker">Visual SSL Research Report · 2026-05-23</div>
     <a class="masthead-title" href="../index.html">通用视觉自监督研究报</a>
     <div class="masthead-meta">
       <span>图像表征 · VFM · JEPA · 视频预训练</span>
@@ -25,27 +25,26 @@
   </nav>
   <main><article class="paper-detail">
   <div class="paper-main">
-    <div class="kicker">ICIP 2026 · P3 · 2026-05-26</div>
-    <h1 class="paper-headline">Dithering Defense：它和通用视觉自监督的关系在于：冻结 DINOv2/PaliGemma 上的鲁棒性防御，属于 VFM 使用边界</h1>
+    <div class="kicker">CVPR 2026 + arXiv · P3 · 2026-05-23</div>
+    <h1 class="paper-headline">SegCompass：它和通用视觉自监督的关系在于：SAE 连接 CoT 与视觉 token，偏分割但 SAE 对齐机制可迁移</h1>
     <p class="dek">中相关；详见方法、贡献和实验边界。</p>
-    <p class="byline"><strong>Dithering Defense</strong>　arXiv + ICIP 2026　<a href="https://arxiv.org/abs/2605.23065">原文链接</a></p>
+    <p class="byline"><strong>SegCompass</strong>　CVPR 2026 + arXiv　<a href="https://arxiv.org/abs/2605.22658">原文链接</a></p>
     <div class="paper-facts">
-      <span><b>编号</b>2605.23065</span>
+      <span><b>编号</b>2605.22658</span>
       <span><b>优先级</b>P3</span>
-      <span><b>类别</b>ICIP 2026</span>
-      <span><b>会议</b>arXiv + ICIP 2026</span>
-      <span><b>方法</b>冻结 DINOv2/PaliGemma 上的鲁棒性防御，属于 VFM 使用边界</span>
+      <span><b>类别</b>CVPR 2026 + arXiv</span>
+      <span><b>会议</b>CVPR 2026 + arXiv</span>
+      <span><b>方法</b>SAE 连接 CoT 与视觉 token，偏分割但 SAE 对齐机制可迁移</span>
       <span><b>来源</b>arXiv / OpenReview</span>
     </div>
     <div class="feature-body">
-      <p class="lead dropcap">先说结论。它和通用视觉自监督的关系在于：冻结 DINOv2/PaliGemma 上的鲁棒性防御，属于 VFM 使用边界。 中相关；详见方法、贡献和实验边界。</p>
-      <figure class="full-fig"><img src="../assets/mineru/2605.23065/images/b4ee9fd831a411b80833597003ff97b67f6cccc4220a7b6f28fab0ea190c3577.jpg" alt="Fig"><figcaption><b>Fig</b><span class="fig-en">Fig. S2. Clean mAP vs. SIA mAP trade-off on rOxford5k for Floyd–Steinberg dithering (K=2–20) across three DINOv2 sizes. Solid: FS + blur; dashed: FS only. Crosses (×): no defense (near-zero SIA mAP). The Pareto frontier shifts upward with model size; ViT-L achieves near-baseline clean and adversarial mAP simultaneously.</span><span class="fig-zh">这张图来自论文 PDF 的结构化抽取。当前用于辅助理解 Dithering Defense 的方法或实验，请结合正文精读段落一起看。</span></figcaption></figure>
-<figure class="full-fig"><img src="../assets/mineru/2605.23065/images/11780f226a4adff734f9f4a2d78f1036ef232389646fdd2d4cd05e0e315af1a1.jpg" alt="Fig"><figcaption><b>Fig</b><span class="fig-en">Fig. S1. Retrieval mAP (easy) on rOxford5k as a function of quantization levels K for three DINOv2 backbone sizes. Solid lines with circles: FS + blur; dashed lines with squares: FS without blur. Dotted horizontal lines: undefended baselines. Left: clean images. Right: under SIA attack. Larger models tolerate coarser quantization and show less clean degradation.</span><span class="fig-zh">这张图来自论文 PDF 的结构化抽取。当前用于辅助理解 Dithering Defense 的方法或实验，请结合正文精读段落一起看。</span></figcaption></figure>
+      <p class="lead dropcap">先说结论。它和通用视觉自监督的关系在于：SAE 连接 CoT 与视觉 token，偏分割但 SAE 对齐机制可迁移。 中相关；详见方法、贡献和实验边界。</p>
+      <aside class="marginalia"><b>图像状态</b> 这篇暂未抽到足够稳定的 pipeline / motivation 图，因此正文以方法和实验解读为主。</aside>
       
       <h2>核心问题</h2>
-      <p>它和通用视觉自监督的关系在于：冻结 DINOv2/PaliGemma 上的鲁棒性防御，属于 VFM 使用边界。</p>
+      <p>它和通用视觉自监督的关系在于：SAE 连接 CoT 与视觉 token，偏分割但 SAE 对齐机制可迁移。</p>
       <h2>方法拆解</h2>
-      <p>冻结 DINOv2/PaliGemma 上的鲁棒性防御，属于 VFM 使用边界</p>
+      <p>SAE 连接 CoT 与视觉 token，偏分割但 SAE 对齐机制可迁移</p>
       <h2>主要贡献</h2>
       <p>中相关；详见方法、贡献和实验边界。</p>
       <h2>实验看点</h2>
@@ -57,8 +56,8 @@
   </div>
   <aside class="paper-side">
 
-    <div class="side-box"><h4>关键判断</h4><dl><dt>相关性</dt><dd>P3</dd><dt>类别</dt><dd>ICIP 2026</dd><dt>会议</dt><dd>arXiv + ICIP 2026</dd><dt>读法</dt><dd>方法图优先，表格次之</dd></dl></div>
-    <div class="side-box"><h4>原文</h4><p><a href="https://arxiv.org/abs/2605.23065">https://arxiv.org/abs/2605.23065</a></p></div>
+    <div class="side-box"><h4>关键判断</h4><dl><dt>相关性</dt><dd>P3</dd><dt>类别</dt><dd>CVPR 2026 + arXiv</dd><dt>会议</dt><dd>CVPR 2026 + arXiv</dd><dt>读法</dt><dd>方法图优先，表格次之</dd></dl></div>
+    <div class="side-box"><h4>原文</h4><p><a href="https://arxiv.org/abs/2605.22658">https://arxiv.org/abs/2605.22658</a></p></div>
   </aside>
 </article></main>
   <aside class="conf-float" data-conf-reminder="2026-05-28-main-ddl" aria-label="CCF A/B 主投稿提醒">
@@ -74,7 +73,7 @@
 </aside>
   <footer class="footer">
     <div>面向通用视觉自监督、视觉基础模型与多模态表征学习的每日研究报。</div>
-    <div class="muted">Issue 2026-05-26 · Curated readings and figure notes</div>
+    <div class="muted">Issue 2026-05-23 · Curated readings and figure notes</div>
   </footer>
   <script>
   (() => {
