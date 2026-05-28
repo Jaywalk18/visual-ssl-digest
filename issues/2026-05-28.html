@@ -1,0 +1,269 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>2026-05-28 速递 · 通用视觉自监督研究报</title>
+  <link rel="stylesheet" href="../assets/styles.css?v=20260525j">
+  <link rel="stylesheet" href="../assets/visual-ssl.css?v=20260525j">
+</head>
+<body>
+  <header class="masthead">
+    <div class="masthead-kicker">Visual SSL Research Report · 2026-05-28</div>
+    <a class="masthead-title" href="../index.html">通用视觉自监督研究报</a>
+    <div class="masthead-meta">
+      <span>图像表征 · VFM · JEPA · 视频预训练</span>
+      <span>CCF A/B 会议优先</span>
+      <span>图文精读 · 方法图解</span>
+    </div>
+  </header>
+  <nav class="site-nav" aria-label="主导航">
+    <a class="nav-link" href="../index.html">头版</a>
+<a class="nav-link active" href="../issues/2026-05-28.html">今日速递</a>
+<a class="nav-link" href="../pages/catalog.html">论文目录</a>
+<a class="nav-link" href="../pages/timeline.html">时间线</a>
+  </nav>
+  <main><article class="paper-detail issue-detail">
+  <div class="paper-main">
+    <div class="kicker">Daily issue · 2026-05-28 · CCF A/B 会议优先</div>
+    <h1 class="paper-headline">5 月 28 日：SPHERE-JEPA 等视觉表征主线更新</h1>
+    <p class="dek">本期聚焦通用视觉表征、视觉语言预训练与视频自监督中最值得跟进的论文，并保留 CCF A/B、OpenReview 与 arXiv 状态线索。</p>
+    <div class="feature-body">
+      <p class="lead dropcap">先读 SPHERE-JEPA，因为它直接回答 JEPA/SSL 表示空间应当满足什么几何约束，且给出了 ImageNet linear probe 级别的经验信号。随后把 Gemini Embedding 2 和 OmniRetriever 放在一起读：前者代表闭源大规模统一多模态 embedding，后者用 fusion-as-teacher distillation 走相对开放的 AVT 检索路线。第三步读 DV-SFT 与 FoundObj，它们分别把监督/奖励更直接地落到视觉 token 或自监督 foundation features 上。JLT 和 JetViT 值得作为生成式 latent 表征与高分辨率 VFM 部署的辅助精读；Q-GeoMem、Visual Thinking、GARD、MRT、O-MARC、SIMPC 和 VideoLLM 诊断建议扫方法图与实验表。</p>
+      <h2>论文索引</h2>
+      <table class="compact-table"><thead><tr><th>优先级</th><th>论文</th><th>类型</th><th>相关性</th><th>一句话理由</th></tr></thead><tbody><tr><td>P0</td><td>SPHERE-JEPA: Spherical Prediction with Homogeneous Embeddings</td><td>arXiv</td><td>高</td><td>从表示几何解释 JEPA/SSL，直接讨论 hyperspherical uniformity 与 ImageNet linear probe。</td></tr><tr><td>P0</td><td>Gemini Embedding 2: A Native Multimodal Embedding Model from Gemini</td><td>arXiv</td><td>高</td><td>原生视频/音频/图像/文本统一 embedding，代表大模型路线里的多模态表征基座。</td></tr><tr><td>P0</td><td>DV-SFT: Direct Vision Supervision for Fine-Grained Visual Understanding</td><td>arXiv</td><td>高</td><td>把监督直接打到 visual tokens 上，解决 MLLM 中视觉 token 只被文本 loss 间接优化的问题。</td></tr><tr><td>P0</td><td>FoundObj: Self-supervised Foundation Models as Rewards for Label-free 3D Object Segmentation</td><td>arXiv + ICML 2026</td><td>高</td><td>用自监督 2D/3D foundation models 作为 reward，做无场景标注 3D object discovery。</td></tr><tr><td>P1</td><td>OmniRetriever: Any-to-Any Audio-Video-Text Retrieval via Fusion-as-Teacher Distillation</td><td>arXiv</td><td>中高</td><td>teacher-fusion distillation 学任意 audio/video/text 检索 embedding，与 Gemini Embedding 2 形成对照。</td></tr><tr><td>P1</td><td>JLT: Clean-Latent Prediction in Latent Diffusion Transformers</td><td>arXiv</td><td>中高</td><td>说明 latent diffusion 的预测目标是表示几何选择，不只是 x/epsilon/v 的代数互换。</td></tr><tr><td>P1</td><td>JetViT: Efficient High-Resolution Vision Transformer with Post-Training Attention Search</td><td>arXiv + CVPR 2026 Findings</td><td>中高</td><td>不重训地把 DINOv3/DepthAnythingV2 这类高分辨率 VFM 加速，影响通用视觉基础模型部署。</td></tr><tr><td>P1</td><td>FAST-GOAL: Fast and Efficient Global-local Object Alignment Learning</td><td>arXiv + IEEE TIP 2026</td><td>中高</td><td>面向 CLIP 长文本/局部区域不足，做 global-local 图文对齐微调。</td></tr><tr><td>P2</td><td>Q-GeoMem: Question-Guided Geometric Memory for Video Spatial Reasoning</td><td>arXiv</td><td>中</td><td>把问题相关性和相机几何写入视频 memory，对 Video-LLM temporal grounding 有参考价值。</td></tr><tr><td>P2</td><td>How and What to Imagine? Visual Thinking in Unified Multimodal Models for Cross-View Spatial Reasoning</td><td>arXiv</td><td>中</td><td>研究统一多模态模型是否真正使用生成的中间视觉思考图。</td></tr><tr><td>P2</td><td>The Rescue Effect: Spatio-Semantic Early Exit Bypasses Quantization Collapse in CLIP</td><td>arXiv</td><td>中</td><td>揭示 INT8 CLIP 的 joint embedding 方向会在深层量化噪声中坍塌。</td></tr><tr><td>P2</td><td>Geometry-Aware Representation Denoising for Robust Multi-view 3D Reconstruction</td><td>arXiv</td><td>中</td><td>在 3D reconstruction 模型特征空间做 diffusion denoising，体现“修特征而非修像素”的路线。</td></tr><tr><td>P3</td><td>MRT: Masked Region Transformer for Layered Image Generation and Editing at Scale</td><td>arXiv + CVPR 2026</td><td>中</td><td>20B masked region diffusion，把选择性 token masking 用在多层透明图像生成/编辑。</td></tr><tr><td>P3</td><td>O-MARC: Omni Memory-Augmented Compression Distillation for Efficient Video Understanding</td><td>arXiv</td><td>中</td><td>对长 audio-video token 序列做 memory compression 和 distillation。</td></tr><tr><td>P3</td><td>SIMPC: Learning Self-Induced Mirror-Point Consistency for Unsupervised Point Cloud Denoising</td><td>arXiv + ICML 2026</td><td>中</td><td>无监督 3D 点云去噪中的 mirror-point consistency，几何 SSL 信号明确但任务较专。</td></tr><tr><td>扫读</td><td>Pop-Up Distractions Reveal Bag-of-Events Behavior in Video Large Language Models</td><td>arXiv</td><td>中</td><td>VideoLLM temporal grounding 诊断：模型可能把视频当事件袋而非时序结构。</td></tr></tbody></table>
+      <h2>主线阅读</h2>
+      <div class="paper-list issue-list"><article class="paper-card" data-category="Visual SSL / representation" data-priority="P0" data-date="2026-05-28" data-title="sphere-jepa: spherical prediction with homogeneous embeddings" data-keywords="sphere-jepa: spherical prediction with homogeneous embeddings sphere-jepa visual ssl / representation p0 2026-05-28 arxiv 从表示几何解释 jepa/ssl，直接讨论 hyperspherical uniformity 与 imagenet linear probe 高相关；详见方法、贡献和实验边界。">
+  <a class="paper-thumb paper-thumb-text" href="../papers/2605.26900.html">
+    <img src="../assets/mineru/2605.26900/images/fe99affe48150a2341eb38a6b63477f237116cd3b5ef785f45850a1fb910e867.jpg" alt="SPHERE-JEPA figure"><span>P0</span>
+  </a>
+  <div>
+    <div class="paper-meta">2026-05-28 · Visual SSL / representation · arXiv</div>
+    <h3><a href="../papers/2605.26900.html">SPHERE-JEPA: Spherical Prediction with Homogeneous Embeddings</a></h3>
+    <p>高相关；详见方法、贡献和实验边界。</p>
+    <p class="card-tech"><b>方法：</b>从表示几何解释 JEPA/SSL，直接讨论 hyperspherical uniformity 与 ImageNet linear probe</p>
+    <div class="paper-actions"><a href="../papers/2605.26900.html">读图文页</a><a href="https://arxiv.org/abs/2605.26900">原文</a></div>
+  </div>
+</article>
+<article class="paper-card" data-category="Visual SSL / representation" data-priority="P0" data-date="2026-05-28" data-title="gemini embedding 2: a native multimodal embedding model from gemini" data-keywords="gemini embedding 2: a native multimodal embedding model from gemini gemini embedding 2 visual ssl / representation p0 2026-05-28 arxiv 原生视频/音频/图像/文本统一 embedding，代表大模型路线里的多模态表征基座 高相关；详见方法、贡献和实验边界。">
+  <a class="paper-thumb paper-thumb-text" href="../papers/2605.27295.html">
+    <img src="../assets/mineru/2605.27295/images/02d5b573fd2c54d4810a1d8150fb016f102aee7be2cee6be4524efa33a17b710.jpg" alt="Gemini Embedding 2 figure"><span>P0</span>
+  </a>
+  <div>
+    <div class="paper-meta">2026-05-28 · Visual SSL / representation · arXiv</div>
+    <h3><a href="../papers/2605.27295.html">Gemini Embedding 2: A Native Multimodal Embedding Model from Gemini</a></h3>
+    <p>高相关；详见方法、贡献和实验边界。</p>
+    <p class="card-tech"><b>方法：</b>原生视频/音频/图像/文本统一 embedding，代表大模型路线里的多模态表征基座</p>
+    <div class="paper-actions"><a href="../papers/2605.27295.html">读图文页</a><a href="https://arxiv.org/abs/2605.27295">原文</a></div>
+  </div>
+</article>
+<article class="paper-card" data-category="Visual SSL / representation" data-priority="P0" data-date="2026-05-28" data-title="dv-sft: direct vision supervision for fine-grained visual understanding" data-keywords="dv-sft: direct vision supervision for fine-grained visual understanding dv-sft visual ssl / representation p0 2026-05-28 arxiv 把监督直接打到 visual tokens 上，解决 mllm 中视觉 token 只被文本 loss 间接优化的问题 高相关；详见方法、贡献和实验边界。">
+  <a class="paper-thumb paper-thumb-text" href="../papers/2605.26656.html">
+    <span>P0</span><strong>DV-SFT</strong><em>arXiv</em>
+  </a>
+  <div>
+    <div class="paper-meta">2026-05-28 · Visual SSL / representation · arXiv</div>
+    <h3><a href="../papers/2605.26656.html">DV-SFT: Direct Vision Supervision for Fine-Grained Visual Understanding</a></h3>
+    <p>高相关；详见方法、贡献和实验边界。</p>
+    <p class="card-tech"><b>方法：</b>把监督直接打到 visual tokens 上，解决 MLLM 中视觉 token 只被文本 loss 间接优化的问题</p>
+    <div class="paper-actions"><a href="../papers/2605.26656.html">读图文页</a><a href="https://arxiv.org/abs/2605.26656">原文</a></div>
+  </div>
+</article>
+<article class="paper-card" data-category="ICML 2026" data-priority="P0" data-date="2026-05-28" data-title="foundobj: self-supervised foundation models as rewards for label-free 3d object segmentation" data-keywords="foundobj: self-supervised foundation models as rewards for label-free 3d object segmentation foundobj icml 2026 p0 2026-05-28 arxiv + icml 2026 用自监督 2d/3d foundation models 作为 reward，做无场景标注 3d object discovery 高相关；详见方法、贡献和实验边界。">
+  <a class="paper-thumb paper-thumb-text" href="../papers/2605.27178.html">
+    <img src="../assets/mineru/2605.27178/images/d3041c850935bde78640e096a47095187966b386234f56aca358206d628a6922.jpg" alt="FoundObj figure"><span>P0</span>
+  </a>
+  <div>
+    <div class="paper-meta">2026-05-28 · ICML 2026 · arXiv + ICML 2026</div>
+    <h3><a href="../papers/2605.27178.html">FoundObj: Self-supervised Foundation Models as Rewards for Label-free 3D Object Segmentation</a></h3>
+    <p>高相关；详见方法、贡献和实验边界。</p>
+    <p class="card-tech"><b>方法：</b>用自监督 2D/3D foundation models 作为 reward，做无场景标注 3D object discovery</p>
+    <div class="paper-actions"><a href="../papers/2605.27178.html">读图文页</a><a href="https://arxiv.org/abs/2605.27178">原文</a></div>
+  </div>
+</article>
+<article class="paper-card" data-category="Visual SSL / representation" data-priority="P1" data-date="2026-05-28" data-title="omniretriever: any-to-any audio-video-text retrieval via fusion-as-teacher distillation" data-keywords="omniretriever: any-to-any audio-video-text retrieval via fusion-as-teacher distillation omniretriever visual ssl / representation p1 2026-05-28 arxiv teacher-fusion distillation 学任意 audio/video/text 检索 embedding，与 gemini embedding 2 形成对照 中高相关；详见方法、贡献和实验边界。">
+  <a class="paper-thumb paper-thumb-text" href="../papers/2605.26641.html">
+    <img src="../assets/mineru/2605.26641/images/7962636a621cf482569129a5875d25118c49d6e392d975665d5c18b8d81c7cbf.jpg" alt="OmniRetriever figure"><span>P1</span>
+  </a>
+  <div>
+    <div class="paper-meta">2026-05-28 · Visual SSL / representation · arXiv</div>
+    <h3><a href="../papers/2605.26641.html">OmniRetriever: Any-to-Any Audio-Video-Text Retrieval via Fusion-as-Teacher Distillation</a></h3>
+    <p>中高相关；详见方法、贡献和实验边界。</p>
+    <p class="card-tech"><b>方法：</b>teacher-fusion distillation 学任意 audio/video/text 检索 embedding，与 Gemini Embedding 2 形成对照</p>
+    <div class="paper-actions"><a href="../papers/2605.26641.html">读图文页</a><a href="https://arxiv.org/abs/2605.26641">原文</a></div>
+  </div>
+</article>
+<article class="paper-card" data-category="Visual SSL / representation" data-priority="P1" data-date="2026-05-28" data-title="jlt: clean-latent prediction in latent diffusion transformers" data-keywords="jlt: clean-latent prediction in latent diffusion transformers jlt visual ssl / representation p1 2026-05-28 arxiv 说明 latent diffusion 的预测目标是表示几何选择，不只是 x/epsilon/v 的代数互换 中高相关；详见方法、贡献和实验边界。">
+  <a class="paper-thumb paper-thumb-text" href="../papers/2605.27102.html">
+    <img src="../assets/mineru/2605.27102/images/8b0d4994d7dcb704d12ca49c784550371185875ae443be52b71d988754bf63c1.jpg" alt="JLT figure"><span>P1</span>
+  </a>
+  <div>
+    <div class="paper-meta">2026-05-28 · Visual SSL / representation · arXiv</div>
+    <h3><a href="../papers/2605.27102.html">JLT: Clean-Latent Prediction in Latent Diffusion Transformers</a></h3>
+    <p>中高相关；详见方法、贡献和实验边界。</p>
+    <p class="card-tech"><b>方法：</b>说明 latent diffusion 的预测目标是表示几何选择，不只是 x/epsilon/v 的代数互换</p>
+    <div class="paper-actions"><a href="../papers/2605.27102.html">读图文页</a><a href="https://arxiv.org/abs/2605.27102">原文</a></div>
+  </div>
+</article>
+<article class="paper-card" data-category="CVPR 2026 Findings" data-priority="P1" data-date="2026-05-28" data-title="jetvit: efficient high-resolution vision transformer with post-training attention search" data-keywords="jetvit: efficient high-resolution vision transformer with post-training attention search jetvit cvpr 2026 findings p1 2026-05-28 arxiv + cvpr 2026 findings 不重训地把 dinov3/depthanythingv2 这类高分辨率 vfm 加速，影响通用视觉基础模型部署 中高相关；详见方法、贡献和实验边界。">
+  <a class="paper-thumb paper-thumb-text" href="../papers/2605.26636.html">
+    <span>P1</span><strong>JetViT</strong><em>arXiv + CVPR 2026 Findings</em>
+  </a>
+  <div>
+    <div class="paper-meta">2026-05-28 · CVPR 2026 Findings · arXiv + CVPR 2026 Findings</div>
+    <h3><a href="../papers/2605.26636.html">JetViT: Efficient High-Resolution Vision Transformer with Post-Training Attention Search</a></h3>
+    <p>中高相关；详见方法、贡献和实验边界。</p>
+    <p class="card-tech"><b>方法：</b>不重训地把 DINOv3/DepthAnythingV2 这类高分辨率 VFM 加速，影响通用视觉基础模型部署</p>
+    <div class="paper-actions"><a href="../papers/2605.26636.html">读图文页</a><a href="https://arxiv.org/abs/2605.26636">原文</a></div>
+  </div>
+</article>
+<article class="paper-card" data-category="IEEE TIP 2026" data-priority="P1" data-date="2026-05-28" data-title="fast-goal: fast and efficient global-local object alignment learning" data-keywords="fast-goal: fast and efficient global-local object alignment learning fast-goal ieee tip 2026 p1 2026-05-28 arxiv + ieee tip 2026 面向 clip 长文本/局部区域不足，做 global-local 图文对齐微调 中高相关；详见方法、贡献和实验边界。">
+  <a class="paper-thumb paper-thumb-text" href="../papers/2605.26615.html">
+    <span>P1</span><strong>FAST-GOAL</strong><em>arXiv + IEEE TIP 2026</em>
+  </a>
+  <div>
+    <div class="paper-meta">2026-05-28 · IEEE TIP 2026 · arXiv + IEEE TIP 2026</div>
+    <h3><a href="../papers/2605.26615.html">FAST-GOAL: Fast and Efficient Global-local Object Alignment Learning</a></h3>
+    <p>中高相关；详见方法、贡献和实验边界。</p>
+    <p class="card-tech"><b>方法：</b>面向 CLIP 长文本/局部区域不足，做 global-local 图文对齐微调</p>
+    <div class="paper-actions"><a href="../papers/2605.26615.html">读图文页</a><a href="https://arxiv.org/abs/2605.26615">原文</a></div>
+  </div>
+</article>
+<article class="paper-card" data-category="Visual SSL / representation" data-priority="P2" data-date="2026-05-28" data-title="q-geomem: question-guided geometric memory for video spatial reasoning" data-keywords="q-geomem: question-guided geometric memory for video spatial reasoning q-geomem visual ssl / representation p2 2026-05-28 arxiv 把问题相关性和相机几何写入视频 memory，对 video-llm temporal grounding 有参考价值 中相关；详见方法、贡献和实验边界。">
+  <a class="paper-thumb paper-thumb-text" href="../papers/2605.27318.html">
+    <span>P2</span><strong>Q-GeoMem</strong><em>arXiv</em>
+  </a>
+  <div>
+    <div class="paper-meta">2026-05-28 · Visual SSL / representation · arXiv</div>
+    <h3><a href="../papers/2605.27318.html">Q-GeoMem: Question-Guided Geometric Memory for Video Spatial Reasoning</a></h3>
+    <p>中相关；详见方法、贡献和实验边界。</p>
+    <p class="card-tech"><b>方法：</b>把问题相关性和相机几何写入视频 memory，对 Video-LLM temporal grounding 有参考价值</p>
+    <div class="paper-actions"><a href="../papers/2605.27318.html">读图文页</a><a href="https://arxiv.org/abs/2605.27318">原文</a></div>
+  </div>
+</article>
+<article class="paper-card" data-category="Visual SSL / representation" data-priority="P2" data-date="2026-05-28" data-title="how and what to imagine? visual thinking in unified multimodal models for cross-view spatial reasoning" data-keywords="how and what to imagine? visual thinking in unified multimodal models for cross-view spatial reasoning how and what to imagine? visual ssl / representation p2 2026-05-28 arxiv 研究统一多模态模型是否真正使用生成的中间视觉思考图 中相关；详见方法、贡献和实验边界。">
+  <a class="paper-thumb paper-thumb-text" href="../papers/2605.27310.html">
+    <img src="../assets/mineru/2605.27310/images/a8c3561623a916a667b5b62f8cf3f2b64b3287aec64c62515d7cd329cf0abb9c.jpg" alt="How and What to Imagine? figure"><span>P2</span>
+  </a>
+  <div>
+    <div class="paper-meta">2026-05-28 · Visual SSL / representation · arXiv</div>
+    <h3><a href="../papers/2605.27310.html">How and What to Imagine? Visual Thinking in Unified Multimodal Models for Cross-View Spatial Reasoning</a></h3>
+    <p>中相关；详见方法、贡献和实验边界。</p>
+    <p class="card-tech"><b>方法：</b>研究统一多模态模型是否真正使用生成的中间视觉思考图</p>
+    <div class="paper-actions"><a href="../papers/2605.27310.html">读图文页</a><a href="https://arxiv.org/abs/2605.27310">原文</a></div>
+  </div>
+</article>
+<article class="paper-card" data-category="Visual SSL / representation" data-priority="P2" data-date="2026-05-28" data-title="the rescue effect: spatio-semantic early exit bypasses quantization collapse in clip" data-keywords="the rescue effect: spatio-semantic early exit bypasses quantization collapse in clip the rescue effect visual ssl / representation p2 2026-05-28 arxiv 揭示 int8 clip 的 joint embedding 方向会在深层量化噪声中坍塌 中相关；详见方法、贡献和实验边界。">
+  <a class="paper-thumb paper-thumb-text" href="../papers/2605.26415.html">
+    <img src="../assets/mineru/2605.26415/images/5f909b90b8aef9d5a6a07509778b1f4fd890435b943b0eddef64f00e00c12401.jpg" alt="The Rescue Effect figure"><span>P2</span>
+  </a>
+  <div>
+    <div class="paper-meta">2026-05-28 · Visual SSL / representation · arXiv</div>
+    <h3><a href="../papers/2605.26415.html">The Rescue Effect: Spatio-Semantic Early Exit Bypasses Quantization Collapse in CLIP</a></h3>
+    <p>中相关；详见方法、贡献和实验边界。</p>
+    <p class="card-tech"><b>方法：</b>揭示 INT8 CLIP 的 joint embedding 方向会在深层量化噪声中坍塌</p>
+    <div class="paper-actions"><a href="../papers/2605.26415.html">读图文页</a><a href="https://arxiv.org/abs/2605.26415">原文</a></div>
+  </div>
+</article>
+<article class="paper-card" data-category="Visual SSL / representation" data-priority="P2" data-date="2026-05-28" data-title="geometry-aware representation denoising for robust multi-view 3d reconstruction" data-keywords="geometry-aware representation denoising for robust multi-view 3d reconstruction geometry-aware representation denoising for robust visual ssl / representation p2 2026-05-28 arxiv 在 3d reconstruction 模型特征空间做 diffusion denoising，体现“修特征而非修像素”的路线 中相关；详见方法、贡献和实验边界。">
+  <a class="paper-thumb paper-thumb-text" href="../papers/2605.26230.html">
+    <img src="../assets/mineru/2605.26230/images/304cae2e8b8271a2b6f95a7e8d2bcb3da4dc83a975603f0e09b457124191cc17.jpg" alt="Geometry-Aware Representation Denoising for Robust figure"><span>P2</span>
+  </a>
+  <div>
+    <div class="paper-meta">2026-05-28 · Visual SSL / representation · arXiv</div>
+    <h3><a href="../papers/2605.26230.html">Geometry-Aware Representation Denoising for Robust Multi-view 3D Reconstruction</a></h3>
+    <p>中相关；详见方法、贡献和实验边界。</p>
+    <p class="card-tech"><b>方法：</b>在 3D reconstruction 模型特征空间做 diffusion denoising，体现“修特征而非修像素”的路线</p>
+    <div class="paper-actions"><a href="../papers/2605.26230.html">读图文页</a><a href="https://arxiv.org/abs/2605.26230">原文</a></div>
+  </div>
+</article>
+<article class="paper-card" data-category="CVPR 2026" data-priority="P3" data-date="2026-05-28" data-title="mrt: masked region transformer for layered image generation and editing at scale" data-keywords="mrt: masked region transformer for layered image generation and editing at scale mrt cvpr 2026 p3 2026-05-28 arxiv + cvpr 2026 20b masked region diffusion，把选择性 token masking 用在多层透明图像生成/编辑 中相关；详见方法、贡献和实验边界。">
+  <a class="paper-thumb paper-thumb-text" href="../papers/2605.27235.html">
+    <img src="../assets/mineru/2605.27235/images/26207f7ab8b70069ef9056863ed5a7fd0c1e7cdc4a21cdad7b79f0a3e7c32ced.jpg" alt="MRT figure"><span>P3</span>
+  </a>
+  <div>
+    <div class="paper-meta">2026-05-28 · CVPR 2026 · arXiv + CVPR 2026</div>
+    <h3><a href="../papers/2605.27235.html">MRT: Masked Region Transformer for Layered Image Generation and Editing at Scale</a></h3>
+    <p>中相关；详见方法、贡献和实验边界。</p>
+    <p class="card-tech"><b>方法：</b>20B masked region diffusion，把选择性 token masking 用在多层透明图像生成/编辑</p>
+    <div class="paper-actions"><a href="../papers/2605.27235.html">读图文页</a><a href="https://arxiv.org/abs/2605.27235">原文</a></div>
+  </div>
+</article>
+<article class="paper-card" data-category="Visual SSL / representation" data-priority="P3" data-date="2026-05-28" data-title="o-marc: omni memory-augmented compression distillation for efficient video understanding" data-keywords="o-marc: omni memory-augmented compression distillation for efficient video understanding o-marc visual ssl / representation p3 2026-05-28 arxiv 对长 audio-video token 序列做 memory compression 和 distillation 中相关；详见方法、贡献和实验边界。">
+  <a class="paper-thumb paper-thumb-text" href="../papers/2605.26584.html">
+    <img src="../assets/mineru/2605.26584/images/b2411251735dceefa6778e52bfa9dc3d0dccb55a004aafbb31a47ca82fffb517.jpg" alt="O-MARC figure"><span>P3</span>
+  </a>
+  <div>
+    <div class="paper-meta">2026-05-28 · Visual SSL / representation · arXiv</div>
+    <h3><a href="../papers/2605.26584.html">O-MARC: Omni Memory-Augmented Compression Distillation for Efficient Video Understanding</a></h3>
+    <p>中相关；详见方法、贡献和实验边界。</p>
+    <p class="card-tech"><b>方法：</b>对长 audio-video token 序列做 memory compression 和 distillation</p>
+    <div class="paper-actions"><a href="../papers/2605.26584.html">读图文页</a><a href="https://arxiv.org/abs/2605.26584">原文</a></div>
+  </div>
+</article>
+<article class="paper-card" data-category="ICML 2026" data-priority="P3" data-date="2026-05-28" data-title="simpc: learning self-induced mirror-point consistency for unsupervised point cloud denoising" data-keywords="simpc: learning self-induced mirror-point consistency for unsupervised point cloud denoising simpc icml 2026 p3 2026-05-28 arxiv + icml 2026 无监督 3d 点云去噪中的 mirror-point consistency，几何 ssl 信号明确但任务较专 中相关；详见方法、贡献和实验边界。">
+  <a class="paper-thumb paper-thumb-text" href="../papers/2605.26894.html">
+    <span>P3</span><strong>SIMPC</strong><em>arXiv + ICML 2026</em>
+  </a>
+  <div>
+    <div class="paper-meta">2026-05-28 · ICML 2026 · arXiv + ICML 2026</div>
+    <h3><a href="../papers/2605.26894.html">SIMPC: Learning Self-Induced Mirror-Point Consistency for Unsupervised Point Cloud Denoising</a></h3>
+    <p>中相关；详见方法、贡献和实验边界。</p>
+    <p class="card-tech"><b>方法：</b>无监督 3D 点云去噪中的 mirror-point consistency，几何 SSL 信号明确但任务较专</p>
+    <div class="paper-actions"><a href="../papers/2605.26894.html">读图文页</a><a href="https://arxiv.org/abs/2605.26894">原文</a></div>
+  </div>
+</article>
+<article class="paper-card" data-category="Visual SSL / representation" data-priority="扫读" data-date="2026-05-28" data-title="pop-up distractions reveal bag-of-events behavior in video large language models" data-keywords="pop-up distractions reveal bag-of-events behavior in video large language models pop-up distractions reveal bag-of-events behavior visual ssl / representation 扫读 2026-05-28 arxiv videollm temporal grounding 诊断：模型可能把视频当事件袋而非时序结构 中相关；详见方法、贡献和实验边界。">
+  <a class="paper-thumb paper-thumb-text" href="../papers/2605.27101.html">
+    <span>扫读</span><strong>Pop-Up Distractions Reveal Bag-of-Events Behavior</strong><em>arXiv</em>
+  </a>
+  <div>
+    <div class="paper-meta">2026-05-28 · Visual SSL / representation · arXiv</div>
+    <h3><a href="../papers/2605.27101.html">Pop-Up Distractions Reveal Bag-of-Events Behavior in Video Large Language Models</a></h3>
+    <p>中相关；详见方法、贡献和实验边界。</p>
+    <p class="card-tech"><b>方法：</b>VideoLLM temporal grounding 诊断：模型可能把视频当事件袋而非时序结构</p>
+    <div class="paper-actions"><a href="../papers/2605.27101.html">读图文页</a><a href="https://arxiv.org/abs/2605.27101">原文</a></div>
+  </div>
+</article></div>
+    </div>
+  </div>
+  <aside class="paper-side">
+    <div class="side-box"><h4>今日重点</h4><p>TextTeacher、MDM、EvoVid、Ablate-to-Validate。</p></div>
+    <div class="side-box"><h4>会议口径</h4><p>只把 CCF A/B 放进主提醒；临近截止或 CCF C 仅记录。</p></div>
+    <div class="side-box"><h4>阅读重点</h4><p>先看 P1/P2 与方法图，再扫状态变化和边界案例。</p></div>
+  </aside>
+</article></main>
+  <aside class="conf-float" data-conf-reminder="2026-05-28-main-ddl" aria-label="CCF A/B 主投稿提醒">
+  <button class="conf-close" type="button" aria-label="关闭会议提醒">×</button>
+  <details open>
+    <summary>CCF A/B 主投稿提醒</summary>
+    <div class="conf-list"><a class="conf-item " href="https://github.com/ccfddl/ccf-deadlines/blob/main/conference/AI/aaai.yml">
+  <span><b>AAAI 2027</b><em>CCF A · Main paper submission</em></span>
+  <strong>60 天</strong>
+  <small>2026-07-27 · CCF DDL: abstract 2026-07-20；进入 1 个月窗口后重点提醒。</small>
+</a></div>
+  </details>
+</aside>
+  <footer class="footer">
+    <div>面向通用视觉自监督、视觉基础模型与多模态表征学习的每日研究报。</div>
+    <div class="muted">Issue 2026-05-28 · Curated readings and figure notes</div>
+  </footer>
+  <script>
+  (() => {
+    const box = document.querySelector('[data-conf-reminder]');
+    if (!box) return;
+    const key = `visualSslConfReminderClosed:${box.dataset.confReminder || '2026-05-28-main-ddl'}`;
+    try {
+      if (localStorage.getItem(key) === '1') box.hidden = true;
+    } catch (err) {}
+    const close = box.querySelector('.conf-close');
+    if (close) {
+      close.addEventListener('click', () => {
+        box.hidden = true;
+        try { localStorage.setItem(key, '1'); } catch (err) {}
+      });
+    }
+  })();
+  </script>
+</body>
+</html>

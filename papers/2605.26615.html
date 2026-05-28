@@ -1,0 +1,96 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>FAST-GOAL · 通用视觉自监督研究报</title>
+  <link rel="stylesheet" href="../assets/styles.css?v=20260525j">
+  <link rel="stylesheet" href="../assets/visual-ssl.css?v=20260525j">
+</head>
+<body>
+  <header class="masthead">
+    <div class="masthead-kicker">Visual SSL Research Report · 2026-05-28</div>
+    <a class="masthead-title" href="../index.html">通用视觉自监督研究报</a>
+    <div class="masthead-meta">
+      <span>图像表征 · VFM · JEPA · 视频预训练</span>
+      <span>CCF A/B 会议优先</span>
+      <span>图文精读 · 方法图解</span>
+    </div>
+  </header>
+  <nav class="site-nav" aria-label="主导航">
+    <a class="nav-link" href="../index.html">头版</a>
+<a class="nav-link" href="../issues/2026-05-28.html">今日速递</a>
+<a class="nav-link" href="../pages/catalog.html">论文目录</a>
+<a class="nav-link" href="../pages/timeline.html">时间线</a>
+  </nav>
+  <main><article class="paper-detail">
+  <div class="paper-main">
+    <div class="kicker">IEEE TIP 2026 · P1 · 2026-05-28</div>
+    <h1 class="paper-headline">FAST-GOAL：如果要跟踪 CLIP/SigLIP 后续对齐路线，这篇是“全局-局部对象对齐”方向的可读样本</h1>
+    <p class="dek">针对 CLIP 预训练多为短 caption 的问题，让图文表征能处理更长、更细的对象级描述。</p>
+    <p class="byline"><strong>FAST-GOAL: Fast and Efficient Global-local Object Alignment Learning</strong>　Hyungyu Choi , Young Kyun Jang , Chanho Eom　arXiv + IEEE TIP 2026　<a href="https://arxiv.org/abs/2605.26615">原文链接</a></p>
+    <div class="paper-facts">
+      <span><b>编号</b>2605.26615</span>
+      <span><b>优先级</b>P1</span>
+      <span><b>类别</b>IEEE TIP 2026</span>
+      <span><b>会议</b>arXiv + IEEE TIP 2026</span>
+      <span><b>方法</b>Fast Local Image-Sentence Matching 提取局部图像区域并匹配句子，Token Similarity-based Learning 对齐图像 patch token 与区域文本 embedding；同时构建 GLIT100k。</span>
+      <span><b>来源</b>arXiv / OpenReview</span>
+    </div>
+    <div class="feature-body">
+      <p class="lead dropcap">先说结论。如果要跟踪 CLIP/SigLIP 后续对齐路线，这篇是“全局-局部对象对齐”方向的可读样本。 针对 CLIP 预训练多为短 caption 的问题，让图文表征能处理更长、更细的对象级描述。</p>
+      <aside class="marginalia"><b>图像状态</b> 这篇暂未抽到足够稳定的 pipeline / motivation 图，因此正文以方法和实验解读为主。</aside>
+      
+      <h2>核心问题</h2>
+      <p>如果要跟踪 CLIP/SigLIP 后续对齐路线，这篇是“全局-局部对象对齐”方向的可读样本。</p>
+      <h2>方法拆解</h2>
+      <p>Fast Local Image-Sentence Matching 提取局部图像区域并匹配句子，Token Similarity-based Learning 对齐图像 patch token 与区域文本 embedding；同时构建 GLIT100k。</p>
+      <h2>主要贡献</h2>
+      <p>针对 CLIP 预训练多为短 caption 的问题，让图文表征能处理更长、更细的对象级描述。</p>
+      <h2>实验看点</h2>
+      <p>摘要称在长文本图文理解、局部对齐和下游任务上优于现有 VLM adaptation 方法，并强调训练效率。</p>
+      <h2>局限与读法</h2>
+      <p>仍属于有监督/弱监督图文微调；局部描述来自 caption 派生，可能继承 caption 偏差。</p>
+    
+    </div>
+  </div>
+  <aside class="paper-side">
+
+    <div class="side-box"><h4>关键判断</h4><dl><dt>相关性</dt><dd>P1</dd><dt>类别</dt><dd>IEEE TIP 2026</dd><dt>会议</dt><dd>arXiv + IEEE TIP 2026</dd><dt>读法</dt><dd>方法图优先，表格次之</dd></dl></div>
+    <div class="side-box"><h4>原文</h4><p><a href="https://arxiv.org/abs/2605.26615">https://arxiv.org/abs/2605.26615</a></p></div>
+  </aside>
+</article></main>
+  <aside class="conf-float" data-conf-reminder="2026-05-28-main-ddl" aria-label="CCF A/B 主投稿提醒">
+  <button class="conf-close" type="button" aria-label="关闭会议提醒">×</button>
+  <details open>
+    <summary>CCF A/B 主投稿提醒</summary>
+    <div class="conf-list"><a class="conf-item " href="https://github.com/ccfddl/ccf-deadlines/blob/main/conference/AI/aaai.yml">
+  <span><b>AAAI 2027</b><em>CCF A · Main paper submission</em></span>
+  <strong>60 天</strong>
+  <small>2026-07-27 · CCF DDL: abstract 2026-07-20；进入 1 个月窗口后重点提醒。</small>
+</a></div>
+  </details>
+</aside>
+  <footer class="footer">
+    <div>面向通用视觉自监督、视觉基础模型与多模态表征学习的每日研究报。</div>
+    <div class="muted">Issue 2026-05-28 · Curated readings and figure notes</div>
+  </footer>
+  <script>
+  (() => {
+    const box = document.querySelector('[data-conf-reminder]');
+    if (!box) return;
+    const key = `visualSslConfReminderClosed:${box.dataset.confReminder || '2026-05-28-main-ddl'}`;
+    try {
+      if (localStorage.getItem(key) === '1') box.hidden = true;
+    } catch (err) {}
+    const close = box.querySelector('.conf-close');
+    if (close) {
+      close.addEventListener('click', () => {
+        box.hidden = true;
+        try { localStorage.setItem(key, '1'); } catch (err) {}
+      });
+    }
+  })();
+  </script>
+</body>
+</html>

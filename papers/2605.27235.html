@@ -1,0 +1,97 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>MRT · 通用视觉自监督研究报</title>
+  <link rel="stylesheet" href="../assets/styles.css?v=20260525j">
+  <link rel="stylesheet" href="../assets/visual-ssl.css?v=20260525j">
+</head>
+<body>
+  <header class="masthead">
+    <div class="masthead-kicker">Visual SSL Research Report · 2026-05-28</div>
+    <a class="masthead-title" href="../index.html">通用视觉自监督研究报</a>
+    <div class="masthead-meta">
+      <span>图像表征 · VFM · JEPA · 视频预训练</span>
+      <span>CCF A/B 会议优先</span>
+      <span>图文精读 · 方法图解</span>
+    </div>
+  </header>
+  <nav class="site-nav" aria-label="主导航">
+    <a class="nav-link" href="../index.html">头版</a>
+<a class="nav-link" href="../issues/2026-05-28.html">今日速递</a>
+<a class="nav-link" href="../pages/catalog.html">论文目录</a>
+<a class="nav-link" href="../pages/timeline.html">时间线</a>
+  </nav>
+  <main><article class="paper-detail">
+  <div class="paper-main">
+    <div class="kicker">CVPR 2026 · P3 · 2026-05-28</div>
+    <h1 class="paper-headline">MRT：作为“masked token/region + generative visual representation”的工程放大案例，值得扫读</h1>
+    <p class="dek">把 masked modeling 思想迁移到可编辑图像生成系统，强调层级内容、透明通道和局部区域控制。</p>
+    <p class="byline"><strong>MRT: Masked Region Transformer for Layered Image Generation and Editing at Scale</strong>　Zhicong Tang , Zhao Zhang , Jingye Chen , Mohan Zhou , Yifan Pu , Yuchi Liu , Yalong Bai , Ethan Smith , Yuhui Yuan　arXiv + CVPR 2026　<a href="https://arxiv.org/abs/2605.27235">原文链接</a></p>
+    <div class="paper-facts">
+      <span><b>编号</b>2605.27235</span>
+      <span><b>优先级</b>P3</span>
+      <span><b>类别</b>CVPR 2026</span>
+      <span><b>会议</b>arXiv + CVPR 2026</span>
+      <span><b>方法</b>统一 text-to-layers、image-to-layers、layers-to-layers 三个任务，利用 masked region diffusion 和 overflow-aware canvas layer 处理可编辑透明层。</span>
+      <span><b>来源</b>arXiv / OpenReview</span>
+    </div>
+    <div class="feature-body">
+      <p class="lead dropcap">先说结论。作为“masked token/region + generative visual representation”的工程放大案例，值得扫读。 把 masked modeling 思想迁移到可编辑图像生成系统，强调层级内容、透明通道和局部区域控制。</p>
+      <figure class="full-fig"><img src="../assets/mineru/2605.27235/images/26207f7ab8b70069ef9056863ed5a7fd0c1e7cdc4a21cdad7b79f0a3e7c32ced.jpg" alt="Figureure 19 · Inference efficiency comparison between MRT and Qwen-Image-Layered"><figcaption><b>Figureure 19 · Inference efficiency comparison between MRT and Qwen-Image-Layered</b><span class="fig-en">Figure 19. Inference efficiency comparison between MRT and Qwen-Image-Layered. (a) Latency scaling with number of layers. MRT maintains near-constant latency (∼5s) while Qwen-Image-Layered scales linearly, resulting in up to 108.5× speedup at ∼20 layers. (b) MRT inference time vs. token count on H200 and B200 GPUs, demonstrating linear scaling behavior. (c) Peak GPU memory consumption across varying layer configurations. The shaded region indicates the baseline memory allocated to model weights. MRT reduces memory consumption by $1 0 . 5 \times  2 3 . 6 \times$ , with efficiency gains scaling proportionally with layer numbers. All reported results are conducted over 100 samples on single GPU with identical layer numbers. Figure 20. Image-to-layers comparison. Each panel’s top-left shows the composed image with decomposed layers. Our method outperforms all baselines. Lovart shows poor decomposition quality, RoboNeo exhibits artifacts, LayerD and Qwen-Image-Layered produce overly grouped layers. Top-left: composed image with layers. (Best viewed zoomed in)</span><span class="fig-zh">这张图/表用于判断 MRT 的实验收益来自哪里。重点看替换、消融或跨模型设置下趋势是否一致，而不是只看单个最高分。</span></figcaption></figure>
+<figure class="full-fig"><img src="../assets/mineru/2605.27235/images/5c5edcc7bfdd89c91df3e0318eb9dafccc82b7f152d3fb975f34be47aa0d13f2.jpg" alt="Figureure 12 · Image-to-Layers Results on Designs Generated with Nano-Banana-Pro (3/3"><figcaption><b>Figureure 12 · Image-to-Layers Results on Designs Generated with Nano-Banana-Pro (3/3</b><span class="fig-en">Figure 12. Image-to-Layers Results on Designs Generated with Nano-Banana-Pro (3/3): Comparison with Qwen-Image-Layered</span><span class="fig-zh">这张图/表用于判断 MRT 的实验收益来自哪里。重点看替换、消融或跨模型设置下趋势是否一致，而不是只看单个最高分。</span></figcaption></figure>
+      
+      <h2>核心问题</h2>
+      <p>作为“masked token/region + generative visual representation”的工程放大案例，值得扫读。</p>
+      <h2>方法拆解</h2>
+      <p>统一 text-to-layers、image-to-layers、layers-to-layers 三个任务，利用 masked region diffusion 和 overflow-aware canvas layer 处理可编辑透明层。</p>
+      <h2>主要贡献</h2>
+      <p>把 masked modeling 思想迁移到可编辑图像生成系统，强调层级内容、透明通道和局部区域控制。</p>
+      <h2>实验看点</h2>
+      <p>摘要称训练于 1000 万以上多语设计样本，并通过 diffusion distillation 实现 8-step 实时多层生成。</p>
+      <h2>局限与读法</h2>
+      <p>重心是设计/编辑生成系统，和视觉表征学习间接相关；20B 规模也让复现门槛较高。</p>
+    
+    </div>
+  </div>
+  <aside class="paper-side">
+
+    <div class="side-box"><h4>关键判断</h4><dl><dt>相关性</dt><dd>P3</dd><dt>类别</dt><dd>CVPR 2026</dd><dt>会议</dt><dd>arXiv + CVPR 2026</dd><dt>读法</dt><dd>方法图优先，表格次之</dd></dl></div>
+    <div class="side-box"><h4>原文</h4><p><a href="https://arxiv.org/abs/2605.27235">https://arxiv.org/abs/2605.27235</a></p></div>
+  </aside>
+</article></main>
+  <aside class="conf-float" data-conf-reminder="2026-05-28-main-ddl" aria-label="CCF A/B 主投稿提醒">
+  <button class="conf-close" type="button" aria-label="关闭会议提醒">×</button>
+  <details open>
+    <summary>CCF A/B 主投稿提醒</summary>
+    <div class="conf-list"><a class="conf-item " href="https://github.com/ccfddl/ccf-deadlines/blob/main/conference/AI/aaai.yml">
+  <span><b>AAAI 2027</b><em>CCF A · Main paper submission</em></span>
+  <strong>60 天</strong>
+  <small>2026-07-27 · CCF DDL: abstract 2026-07-20；进入 1 个月窗口后重点提醒。</small>
+</a></div>
+  </details>
+</aside>
+  <footer class="footer">
+    <div>面向通用视觉自监督、视觉基础模型与多模态表征学习的每日研究报。</div>
+    <div class="muted">Issue 2026-05-28 · Curated readings and figure notes</div>
+  </footer>
+  <script>
+  (() => {
+    const box = document.querySelector('[data-conf-reminder]');
+    if (!box) return;
+    const key = `visualSslConfReminderClosed:${box.dataset.confReminder || '2026-05-28-main-ddl'}`;
+    try {
+      if (localStorage.getItem(key) === '1') box.hidden = true;
+    } catch (err) {}
+    const close = box.querySelector('.conf-close');
+    if (close) {
+      close.addEventListener('click', () => {
+        box.hidden = true;
+        try { localStorage.setItem(key, '1'); } catch (err) {}
+      });
+    }
+  })();
+  </script>
+</body>
+</html>

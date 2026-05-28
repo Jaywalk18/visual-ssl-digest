@@ -1,0 +1,97 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Gemini Embedding 2 · 通用视觉自监督研究报</title>
+  <link rel="stylesheet" href="../assets/styles.css?v=20260525j">
+  <link rel="stylesheet" href="../assets/visual-ssl.css?v=20260525j">
+</head>
+<body>
+  <header class="masthead">
+    <div class="masthead-kicker">Visual SSL Research Report · 2026-05-28</div>
+    <a class="masthead-title" href="../index.html">通用视觉自监督研究报</a>
+    <div class="masthead-meta">
+      <span>图像表征 · VFM · JEPA · 视频预训练</span>
+      <span>CCF A/B 会议优先</span>
+      <span>图文精读 · 方法图解</span>
+    </div>
+  </header>
+  <nav class="site-nav" aria-label="主导航">
+    <a class="nav-link" href="../index.html">头版</a>
+<a class="nav-link" href="../issues/2026-05-28.html">今日速递</a>
+<a class="nav-link" href="../pages/catalog.html">论文目录</a>
+<a class="nav-link" href="../pages/timeline.html">时间线</a>
+  </nav>
+  <main><article class="paper-detail">
+  <div class="paper-main">
+    <div class="kicker">Visual SSL / representation · P0 · 2026-05-28</div>
+    <h1 class="paper-headline">Gemini Embedding 2：多模态 embedding 正在成为视觉表征的外部接口；它对“通用视觉表征是否还能独立于文本/音频/视频存在”这个问题很有参考价值</h1>
+    <p class="dek">把 image/text/video/audio 检索与分类放进同一表示空间，避免为不同模态维护多套 encoder 和对齐层。</p>
+    <p class="byline"><strong>Gemini Embedding 2: A Native Multimodal Embedding Model from Gemini</strong>　Madhuri Shanbhogue , Zhe Li , Shanfeng Zhang , Gustavo Hernández Ábrego , Shih-Cheng Huang , Aashi Jain , Daniel Salz , Sonam Goenka , Chaitra Hegde , Ji Ma , Feiyang Chen , Jiaxing Wu , Tanmaya Dabral , Babak Samari , Kevin Poulet , Daniel Cer , Kaifeng Chen , Paul Suganathan , Hui Hui , Jovan Andonov , Philippe Schlattner , Jay Han , Iftekhar Naim , Wing Lowe , Vladimir Pchelin , Albert Yang , Yi-Ting Chen , Zhongli Ding , Grace Zhang , Georg Heigold , Yichang Chen , Antoine Reveillon , Brendan Mccloskey , Wenlei Zhou , Dahun Kim , Rui Meng , Emma Wang , Jack Zheng , Halley Fede , Zhen Yang , Keegan Mosley , Brian Potetz , Sahil Dua , Henrique Schechter Vera , Shen Gao , Hesen Zhang , Andreas Hess , Hengxuan Ying , Alberto Montes , Karan Gill , Min Choi , Sebastian Russo , Anja Hauth , Jinhyuk Lee , Michael Boratko , Megan Barnes , Vikram Rao , Claudiu Musat , Cyril Allauzen , Ehsan Variani , Shankar Kumar , Tom Bagby , Junyi Jiao , Yang Gu , Tengxin Li , Ayush Agrawal , Roberto Santana , Dev Nath , Stephen Karukas , Shuoxuan Han , Lucia Loher , Alice Twu , Nidhi Vyas , Siddharth Bhai , Frank Palma Gomez , Wangyuan Zhang , Chaoren Liu , Jizheng Yang , Steve Qiu , Shijie Zhang , Sujay Kulkarni , Sascha Rothe , Sean Nakamoto , Raphael Hoffmann , Zach Gleicher , Yunhsuan Sung , Qin Yin , Tom Duerig , Mojtaba Seyedhosseini　arXiv　<a href="https://arxiv.org/abs/2605.27295">原文链接</a></p>
+    <div class="paper-facts">
+      <span><b>编号</b>2605.27295</span>
+      <span><b>优先级</b>P0</span>
+      <span><b>类别</b>Visual SSL / representation</span>
+      <span><b>会议</b>arXiv</span>
+      <span><b>方法</b>以 Gemini 多模态能力为底座，面向任意交错输入组合学习统一 embedding；训练采用大规模 contrastive learning 与多任务、多阶段配方。</span>
+      <span><b>来源</b>arXiv / OpenReview</span>
+    </div>
+    <div class="feature-body">
+      <p class="lead dropcap">先说结论。多模态 embedding 正在成为视觉表征的外部接口；它对“通用视觉表征是否还能独立于文本/音频/视频存在”这个问题很有参考价值。 把 image/text/video/audio 检索与分类放进同一表示空间，避免为不同模态维护多套 encoder 和对齐层。</p>
+      <figure class="full-fig"><img src="../assets/mineru/2605.27295/images/02d5b573fd2c54d4810a1d8150fb016f102aee7be2cee6be4524efa33a17b710.jpg" alt="Figureure 1 · | Conceptual overview of the Gemini Embedding 2 workflow"><figcaption><b>Figureure 1 · | Conceptual overview of the Gemini Embedding 2 workflow</b><span class="fig-en">Figure 1 | Conceptual overview of the Gemini Embedding 2 workflow. The model natively processes heterogeneous inputs—text, images, video, audio, documents, and their combinations—mapping them into a single, unified high-dimensional vector space where cross-modal semantic relationships are preserved.</span><span class="fig-zh">这张图概括 Gemini Embedding 2 的整体方法流程。阅读时先看模块之间传递的训练信号，再看作者如何把目标拆成可优化的子问题。</span></figcaption></figure>
+<figure class="full-fig"><img src="../assets/mineru/2605.27295/images/a09bbf2889f4c8e9d2002f63ea432b1f0e2ceb34613c208d4d5469b6d285c321.jpg" alt="Figureure 2 · | Gemini Embedding 2 shows strong performance across multimodal retrie"><figcaption><b>Figureure 2 · | Gemini Embedding 2 shows strong performance across multimodal retrie</b><span class="fig-en">Figure 2 | Gemini Embedding 2 shows strong performance across multimodal retrieval tasks spanning image, text, video, and document modalities.</span><span class="fig-zh">这张图/表用于判断 Gemini Embedding 2 的实验收益来自哪里。重点看替换、消融或跨模型设置下趋势是否一致，而不是只看单个最高分。</span></figcaption></figure>
+      
+      <h2>核心问题</h2>
+      <p>多模态 embedding 正在成为视觉表征的外部接口；它对“通用视觉表征是否还能独立于文本/音频/视频存在”这个问题很有参考价值。</p>
+      <h2>方法拆解</h2>
+      <p>以 Gemini 多模态能力为底座，面向任意交错输入组合学习统一 embedding；训练采用大规模 contrastive learning 与多任务、多阶段配方。</p>
+      <h2>主要贡献</h2>
+      <p>把 image/text/video/audio 检索与分类放进同一表示空间，避免为不同模态维护多套 encoder 和对齐层。</p>
+      <h2>实验看点</h2>
+      <p>摘要列出 MSCOCO R@1 62.9、VATEX NDCG@10 68.8、MTEB multilingual 69.9、MTEB Code 84.0，并强调跨专业领域 zero-shot 稳定性。</p>
+      <h2>局限与读法</h2>
+      <p>论文更像系统级模型报告，训练数据组成、负样本构造、模型大小和可复现实验细节需要读正文确认；闭源模型也限制外部消融。</p>
+    
+    </div>
+  </div>
+  <aside class="paper-side">
+
+    <div class="side-box"><h4>关键判断</h4><dl><dt>相关性</dt><dd>P0</dd><dt>类别</dt><dd>Visual SSL / representation</dd><dt>会议</dt><dd>arXiv</dd><dt>读法</dt><dd>方法图优先，表格次之</dd></dl></div>
+    <div class="side-box"><h4>原文</h4><p><a href="https://arxiv.org/abs/2605.27295">https://arxiv.org/abs/2605.27295</a></p></div>
+  </aside>
+</article></main>
+  <aside class="conf-float" data-conf-reminder="2026-05-28-main-ddl" aria-label="CCF A/B 主投稿提醒">
+  <button class="conf-close" type="button" aria-label="关闭会议提醒">×</button>
+  <details open>
+    <summary>CCF A/B 主投稿提醒</summary>
+    <div class="conf-list"><a class="conf-item " href="https://github.com/ccfddl/ccf-deadlines/blob/main/conference/AI/aaai.yml">
+  <span><b>AAAI 2027</b><em>CCF A · Main paper submission</em></span>
+  <strong>60 天</strong>
+  <small>2026-07-27 · CCF DDL: abstract 2026-07-20；进入 1 个月窗口后重点提醒。</small>
+</a></div>
+  </details>
+</aside>
+  <footer class="footer">
+    <div>面向通用视觉自监督、视觉基础模型与多模态表征学习的每日研究报。</div>
+    <div class="muted">Issue 2026-05-28 · Curated readings and figure notes</div>
+  </footer>
+  <script>
+  (() => {
+    const box = document.querySelector('[data-conf-reminder]');
+    if (!box) return;
+    const key = `visualSslConfReminderClosed:${box.dataset.confReminder || '2026-05-28-main-ddl'}`;
+    try {
+      if (localStorage.getItem(key) === '1') box.hidden = true;
+    } catch (err) {}
+    const close = box.querySelector('.conf-close');
+    if (close) {
+      close.addEventListener('click', () => {
+        box.hidden = true;
+        try { localStorage.setItem(key, '1'); } catch (err) {}
+      });
+    }
+  })();
+  </script>
+</body>
+</html>

@@ -1,0 +1,3163 @@
+[
+    {
+        "type": "text",
+        "text": "FoundObj: Self-supervised Foundation Models as Rewards forSem Label-free 3D Object Segmentation ",
+        "text_level": 1,
+        "bbox": [
+            169,
+            109,
+            803,
+            156
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "Zihui Zhang \\* 1 2 Zhixuan Sun \\* 1 2 Yafei Yang 1 2 Jinxi Li 1 2 Jiahao Chen 1 2 Bo Yang 1 2Discovery ",
+        "bbox": [
+            168,
+            198,
+            800,
+            215
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "Abstract ",
+        "text_level": 1,
+        "bbox": [
+            241,
+            242,
+            320,
+            258
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "We address the challenging task of 3D object segmentation in complex scene point clouds without relying on any scene-level human annotations during training. Existing methods are typically constrained to identifying simple objects, primarily due to insufficient object priors in the learning process. In this paper, we present FoundObj, a novel framework featuring a superpoint-based object discovery agent that incrementally merges suitable neighboring superpoints, guided by our innovative semantic and geometric reward modules. These modules synergistically leverage semantic and geometric priors from self-supervised 2D/3D foundation models, providing complementary feedback to the object discovery agent and enabling robust identification of multi-class objects through reinforcement learning. Extensive experiments on diverse benchmarks demonstrate that our approach consistently outperforms existing baselines. Notably, our method exhibits strong generalization in zero-shot and long-tail scenarios, underscoring its potential for scalable, label-free 3D object segmentation. Code is available at https: //github.com/vLAR-group/FoundObj ",
+        "bbox": [
+            116,
+            268,
+            444,
+            645
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "1. Introduction ",
+        "text_level": 1,
+        "bbox": [
+            86,
+            676,
+            217,
+            691
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "Discovering objects in 3D scenes is crucial for enabling machines to interact with the physical world, supporting a wide range of emerging applications such as autonomous driving and embodied AI. Most existing approaches (Kolodiazhnyi et al., 2024; Han et al., 2025) rely heavily on dense or sparse human labels in 3D data, or on paired multi-modal data such ",
+        "bbox": [
+            84,
+            702,
+            475,
+            794
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "\\*Equal contribution 1Shenzhen Research Institute, The Hong Kong Polytechnic University; 2vLAR Group, The Hong Kong Polytechnic University. ",
+        "bbox": [
+            84,
+            803,
+            473,
+            840
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": ". Correspondence to: Bo Yang <bo.yang@polyu.edu.hk>. ",
+        "bbox": [
+            101,
+            840,
+            450,
+            854
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "Proceedings of the $\\it 4 3 ^ { r d }$ International Conference on Machine Learning, Seoul, South Korea. PMLR 306, 2026. Copyright 2026 by the author(s). ",
+        "bbox": [
+            84,
+            864,
+            473,
+            905
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "image",
+        "img_path": "images/d3041c850935bde78640e096a47095187966b386234f56aca358206d628a6922.jpg",
+        "image_caption": [
+            "Figure 1. Overview of our method. "
+        ],
+        "image_footnote": [],
+        "content": "```mermaid\ngraph TD\n    A[\"Object Discovery Agent\"] --> B[\"Semantic Reward Module\"]\n    A --> C[\"Geometric Reward Module\"]\n    B --> D[\"DINOv2\"]\n    C --> E[\"TRELLIS\"]\n```",
+        "sub_type": "flowchart",
+        "bbox": [
+            498,
+            239,
+            883,
+            358
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "as 2D images or text. While achieving impressive progress in closed- and open-vocabulary 3D object segmentation, these methods require substantial annotation effort, making it challenging to scale up. ",
+        "bbox": [
+            496,
+            380,
+            887,
+            441
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "To eliminate the dependency on manual annotations, one line of recent methods, such as UnScene3D (Rozenberszki et al., 2024) and Part2Object (Shi et al., 2024), leverages self-supervised foundation models like DINO/v2 (Caron et al., 2021; Oquab et al., 2024) to generate high-quality semantic features projected into 3D space for object discovery. While showing encouraging results in point clouds, they often struggle to accurately separate individual 3D objects belonging to the same category, primarily due to the absence of object geometric priors in DINO/v2. Another line of recent methods, such as EFEM (Lei et al., 2023), GrabS (Zhang et al., 2025c), and its variant EvObj (Chen et al., 2026a), utilizes object reconstruction models to provide fine-grained 3D geometric priors for object identification in point clouds. Despite achieving promising performance on chair objects, they fail to discover multi-category objects with rich semantic relationships against their surroundings. ",
+        "bbox": [
+            495,
+            448,
+            888,
+            705
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "These limitations highlight a fundamental challenge in labelfree 3D object segmentation: defining what constitutes an object. Cognitive science studies (Biederman, 1987; Chiou & Ralph, 2016) suggest that object perception can be understood from two complementary aspects: geometry and semantics. Geometry characterizes object shape and structural properties, while semantics conveys the identity and meaning that distinguish one object from its surroundings. Building on this insight, we propose a new method for 3D object discovery that fully leverages semantic and geometric priors derived from existing self-supervised 2D/3D foundation models which have shown excellent results in various downstream tasks (Gui et al., 2024; Li et al., 2024). As illustrated in Figure 1, our approach comprises three key components: (1) an object discovery agent that incrementally identifies object candidates in a spatially bottom-up manner; (2) a semantic reward module that provides feedback to the agent from existing self-supervised 2D foundation models like DINOv2 (Oquab et al., 2024); and (3) a geometric reward module that supplies feedback from 3D object-centric foundation models like TRELLIS (Xiang et al., 2025). ",
+        "bbox": [
+            495,
+            712,
+            888,
+            905
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "aside_text",
+        "text": "arXiv:2605.27178v1 [cs.CV] 26 May 2026 ",
+        "bbox": [
+            22,
+            272,
+            60,
+            724
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "page_number",
+        "text": "1 ",
+        "bbox": [
+            480,
+            922,
+            491,
+            934
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "image",
+        "img_path": "images/55db1232b4e8ff4015b9f603648e4f8add8dc9cb07a999a4fae5dc6399d732e5.jpg",
+        "image_caption": [
+            "Figure 2. Given a complex indoor 3D scene, our method can not only distinguish multiple neighboring chairs, but also successfully identify a flat cabinet against the wall, whereas baselines fail in one aspect or another. "
+        ],
+        "image_footnote": [],
+        "content": "",
+        "bbox": [
+            98,
+            75,
+            875,
+            178
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "text",
+        "text": "",
+        "bbox": [
+            84,
+            212,
+            475,
+            332
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "text",
+        "text": "For the object discovery agent, given an input 3D scene point cloud, it begins with a seed superpoint and expands its spatial size by selectively merging suitable neighboring superpoints. This continues until the agent is recognized as having identified a valid object candidate, as determined by the two reward modules. Our approach is broadly inspired by the recent agent-based method GrabS (Zhang et al., 2025c), which utilizes a dynamic cylinder as the agent but is limited to discovering single-class objects. In contrast, our method employs a superpoint-based agent that discovers 3D objects in a bottom-up manner, enabling the identification of objects with diverse spatial scales and structures. ",
+        "bbox": [
+            84,
+            340,
+            475,
+            521
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "text",
+        "text": "The semantic and geometric reward modules are designed to provide complementary feedback to the object discovery agent, returning positive rewards when the merged superpoints are likely to form a valid object according to semantic and geometric priors, and negative rewards otherwise. To achieve this, the semantic reward module employs a new semantic consistency cut approach, ensuring that object candidates, which are exhibiting consistent semantic representations relative to their surroundings, receive positive rewards. Meanwhile, the geometric reward module utilizes a novel geometric center consistency verification mechanism, granting positive rewards to object candidates whose geometric centers demonstrate coherence. These two modules together allow us to discover multi-class 3D objects in complex point clouds through reinforcement learning (RL), without requiring human annotations during training. ",
+        "bbox": [
+            84,
+            529,
+            475,
+            772
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "text",
+        "text": "Figure 2 shows qualitative results from an indoor 3D scene. By leveraging the semantic and geometric priors from powerful foundation models as rewards, our method, named FoundObj, accurately discovers 3D objects, offering a distinct advantage over approaches that rely solely on semantic or geometric priors. It not only effectively separates similar objects (e.g., chairs) within the same semantic class, but also successfully discovers semantically complex objects (e.g., a cabinet on the wall) that are often overlooked by baseline methods. Our main contributions are: ",
+        "bbox": [
+            84,
+            777,
+            478,
+            900
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "text",
+        "text": "",
+        "bbox": [
+            496,
+            212,
+            885,
+            241
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "list",
+        "sub_type": "text",
+        "list_items": [
+            "• We propose a new superpoint-based agent to discover objects by expanding their spatial sizes in a bottom-up manner, enabling the identification of diverse object shapes. ",
+            "• We introduce semantic and geometric reward modules that leverage rich priors from powerful foundation models, enabling the agent to be optimized without the need for human annotations in training. ",
+            "• We demonstrate state-of-the-art object segmentation performance across multiple 3D scene benchmarks, consistently surpassing all baselines. "
+        ],
+        "bbox": [
+            496,
+            258,
+            887,
+            414
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "text",
+        "text": "2. Related Works ",
+        "text_level": 1,
+        "bbox": [
+            496,
+            434,
+            645,
+            450
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "text",
+        "text": "3D Object Segmentation with 3D Supervision: Thanks to per-point human annotations in 3D datasets such as Scan-Net (Dai et al., 2017) and S3DIS (Armeni et al., 2017), significant progress has been made in segmenting 3D objects using both bottom-up clustering methods (Wang et al., 2018; Chen et al., 2021; Han et al., 2020; Vu et al., 2022), top-down detection approaches (Yang et al., 2019; Yi et al., 2019; Hou et al., 2019; He et al., 2021; Shin et al., 2024), and Transformer-based methods (Lu et al., 2023a; Lai et al., 2023; Schult et al., 2023; Sun et al., 2023; Kolodiazhnyi et al., 2024). To reduce annotation costs, a range of weakly supervised methods have been developed, enabling the segmentation of 3D objects with various forms of sparse supervision, including 3D bounding boxes (Chibane et al., 2022; Deng et al., 2025; Tang et al., 2022; Yoo et al., 2025) and object centers (Griffiths et al., 2020). Although these methods achieve strong performance on public benchmarks, they rely heavily on expensive human annotations, which limit their scalability in practical 3D applications. ",
+        "bbox": [
+            495,
+            460,
+            888,
+            748
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "text",
+        "text": "3D Object Segmentation with Multimodal Supervision: With the advancement of multimodal large models such as CLIP (Radford et al., 2021), SAM (Kirillov et al., 2023; Carion et al., 2025), and LLaVA (Liu et al., 2023a), numerous subsequent methods (Ha & Song, 2022; Takmaz et al., 2023; Liu et al., 2023b; Lu et al., 2023b; Guo et al., 2024; Huang et al., 2024; Nguyen et al., 2024; Roh et al., 2024; Yan et al., 2024; Yin et al., 2024; Boudjoghra et al., 2025; Nguyen et al., 2025; Jung et al., 2025; Zhao et al., 2025a; Wang et al., 2025; Lee et al., 2025; Zhou et al., 2025; Liu et al., ",
+        "bbox": [
+            495,
+            753,
+            887,
+            905
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "header",
+        "text": "FoundObj: Self-supervised Foundation Models as Rewards for Label-free 3D Object Segmentation ",
+        "bbox": [
+            174,
+            56,
+            797,
+            70
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "page_number",
+        "text": "2 ",
+        "bbox": [
+            480,
+            922,
+            491,
+            934
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "image",
+        "img_path": "images/414cb8ef089b2a83af43836a929922cc68efd0e6629daa055f80ea8af91a5e14.jpg",
+        "image_caption": [],
+        "image_footnote": [],
+        "content": "```mermaid\ngraph TD\n    A[\"Space\"] --> B[\"Per-Point Features\"]\n    B --> C[\"Superpoints\"]\n    C --> D[\"f1\"]\n    C --> E[\"fK\"]\n    F[\"SparseCony\"] --> B\n    G[\"u1\"] --> C\n    H[\"uK\"] --> C\n```",
+        "sub_type": "flowchart",
+        "bbox": [
+            98,
+            77,
+            410,
+            178
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "image",
+        "img_path": "images/2e97cffc1e33eed8873874b3d8d95451cdf9fa51e8aa7e0a1c9223954a804eb3.jpg",
+        "image_caption": [
+            "STEP #0: Initial Superpoint Construction ",
+            "STEP #1: Seed Superpoint Selection "
+        ],
+        "image_footnote": [],
+        "content": "```mermaid\ngraph TD\n    A[\"Robot\"] --> B[\"πseed Seed Policy Network\"]\n    B --> C[\"Seed Superpoint S0\"]\n```",
+        "sub_type": "flowchart",
+        "bbox": [
+            98,
+            196,
+            416,
+            284
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "image",
+        "img_path": "images/60425e8720cafe0ba55987e8768ae54b1794c40a0e014d085cee7bd6e70e34cc.jpg",
+        "image_caption": [
+            "STEP #2: Neighboring Superpoint Merging ",
+            "Figure 3. Workflow of our object discovery agent. Given an input 3D scene composed of initial superpoints, our object discovery agent begins by selecting a seed superpoint and then progressively merges neighboring superpoints, guided by feedback from geometric and semantic reward modules based on self-supervised 2D/3D foundation models. "
+        ],
+        "image_footnote": [],
+        "content": "```mermaid\ngraph TD\n    A[\"Semantic Reward\"] --> B[\"DINOv2\"]\n    B --> C[\"π_merge Merge Policy Network\"]\n    C --> D[\"S0\"]\n    D --> E[\"TRELLIS\"]\n    E --> F[\"ReWARD -1\"]\n    F --> G[\"π_merge Merge Policy Network\"]\n    G --> H[\"TRELLIS\"]\n    H --> I[\"ReWARD +10\"]\n    I --> J[\"ReWARD +10\"]\n    J --> K[\"Geometric Reward\"]\n    K --> L[\"TRELLIS\"]\n    L --> M[\"ReWARD -1\"]\n    M --> N[\"TRELLIS\"]\n    N --> O[\"ReWARD +10\"]\n    O --> P[\"ReWARD +10\"]\n    P --> Q[\"ReWARD +10\"]\n    Q --> R[\"ReWARD +10\"]\n    R --> S[\"ReWARD +10\"]\n    S --> T[\"ReWARD +10\"]\n    T --> U[\"ReWARD +10\"]\n    U --> V[\"ReWARD +10\"]\n    V --> W[\"ReWARD +10\"]\n    W --> X[\"ReWARD +10\"]\n    X --> Y[\"ReWARD +10\"]\n```",
+        "sub_type": "flowchart",
+        "bbox": [
+            421,
+            77,
+            875,
+            279
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "2025; Mei et al., 2025; Huang et al., 2026; Cao et al., 2023) have been introduced to project pretrained 2D visual and/or −vision-language features into 3D space for object discovery, enabling the identification of open-vocabulary objects. While demonstrating impressive cross-modal transfer capabilities and generalization to open-world scenarios, they still rely heavily on extensive human annotations, such as image masks, captions, or aligned image-text pairs. This dependency ultimately limits their applicability in real-world scenarios where human labels are scarce or unavailable. ",
+        "bbox": [
+            84,
+            353,
+            475,
+            505
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "3D Object Segmentation without Supervision: To eliminate the need for manual annotations of 3D scenes during training, one line of unsupervised methods groups 3D points using various heuristic signals, such as surface normals, colors, or motion patterns (Baur et al., 2021; Song & Yang, 2022; 2024; Zhang et al., 2023a; 2024; Ren et al., 2026). While effective, these approaches are often limited to discovering simple objects, such as cars. Another line of methods (Rozenberszki et al., 2024; Shi et al., 2024; Wang et al., 2023) projects self-supervised 2D features, such as those from DINO/v2, into 3D space, followed by point grouping. Although these methods can discover objects from multiple categories, they often struggle to distinguish between similar objects within the same category due to the inherent lack of objectness in self-supervised 2D features, as also revealed in (Yang et al., 2025). More recently, works such as GrabS (Zhang et al., 2025c) and its variant EvObj(Chen et al., 2026a), and EFEM (Lei et al., 2023) have leveraged geometric priors from object-centric reconstruction or generation models to discover objects in point clouds. While showing promising results, they are typically limited to single-class objects and are unable to identify diverse object shapes in complex environments, primarily due to the absence of semantic priors in their pipelines. ",
+        "bbox": [
+            84,
+            512,
+            475,
+            876
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "3. FoundObj ",
+        "text_level": 1,
+        "bbox": [
+            496,
+            352,
+            609,
+            369
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "Our framework consists of a superpoint-based object discovery agent (Section 3.1), together with geometric and semantic reward modules (Sections 3.2&3.3) which derive feedback from existing 2D/3D foundation models. The latter two reward modules provide supervision signals to optimize the agent for discovering object candidates on 3D scene point clouds without needing human labels in training. ",
+        "bbox": [
+            496,
+            378,
+            888,
+            484
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "3.1. Object Discovery Agent ",
+        "text_level": 1,
+        "bbox": [
+            496,
+            501,
+            697,
+            516
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "As illustrated by Figure 3, this agent aims to identify suitable regions as object candidates, which will be scored by our two reward modules. Unlike the recent work GrabS (Zhang et al., 2025c) which adopts a dynamic cylinder as the agent and therefore is limited to identifying simple objects, we instead introduce a new dynamic superpoint-based agent which is highly flexible to identify any irregular object shapes. This is achieved through the following steps. ",
+        "bbox": [
+            495,
+            523,
+            888,
+            645
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "Step #0: Initial Superpoint Construction: Given an input 3D scene point cloud P , we first partition raw points into K initial superpoints, denoted by $\\{ { \\pmb u } _ { 1 } \\cdot \\cdot \\cdot { \\pmb u } _ { k } \\cdot \\cdot \\cdot { \\pmb u } _ { K } \\}$ via Felzenswalb algorithm (Felzenszwalb & Huttenlocher, 2004). These small-sized superpoints are compact representations of the input 3D scene, enabling object discovery to be performed over K regions rather than raw points, significantly reducing the exploration space for the agent. ",
+        "bbox": [
+            495,
+            652,
+            888,
+            773
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "In parallel, we feed the raw point cloud P into an existing 3D backbone SparseConv (Graham et al., 2018), denoted by gbone (not pre-trained), extracting per-point features. For the K initial superpoints, we then average out per-point features within each superpoint, obtaining the corresponding K superpoint features, denoted by $\\left\\{ { \\pmb f } _ { 1 } \\cdot \\cdot \\cdot { \\pmb f } _ { k } \\cdot \\cdot \\cdot { \\pmb f } _ { K } \\right\\}$ . These initial superpoints will be selected and gradually merged into larger ones via the subsequent Steps #1&#2. ",
+        "bbox": [
+            495,
+            781,
+            888,
+            902
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "header",
+        "text": "FoundObj: Self-supervised Foundation Models as Rewards for Label-free 3D Object Segmentation ",
+        "bbox": [
+            174,
+            56,
+            797,
+            70
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "page_number",
+        "text": "3 ",
+        "bbox": [
+            480,
+            922,
+            491,
+            934
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "Step #1: Seed Superpoint Selection: To discover object candidates in point cloud P , our agent is designed to firstly select a seed superpoint out of $K$ as the starting point. In particular, we feed all superpoint features into a seed policy network $\\pi _ { s e e d } .$ , which consists of self-attention blocks with an MLP layer followed by a softmax function, directly predicting a soft onehot code, denoted by $p _ { s e e d } \\in \\mathbb { R } ^ { K \\times 1 }$ . ",
+        "bbox": [
+            84,
+            84,
+            475,
+            190
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "equation",
+        "text": "$$\n\\boldsymbol {p} _ {\\text { seed }} = \\boldsymbol {\\pi} _ {\\text { seed }} \\left(\\left[ \\boldsymbol {f} _ {1} \\cdot \\cdot \\boldsymbol {f} _ {k} \\cdot \\cdot \\boldsymbol {f} _ {K} \\right]\\right) \\tag {1}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            173,
+            190,
+            473,
+            208
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "text",
+        "text": "The actual seed superpoint $s _ { 0 }$ is then sampled from pseed, and its feature vector is retrieved and denoted by $f _ { \\mathrm { 0 } }$ . ",
+        "bbox": [
+            84,
+            212,
+            475,
+            244
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "text",
+        "text": "Step #2: Neighboring Superpoint Merging: For the seed superpoint $s _ { 0 } ,$ our agent then learns to select and merge some of its neighboring superpoints, getting a larger and larger superpoint which is expected to be a valid object over time. This is achieved as follows: ",
+        "bbox": [
+            84,
+            250,
+            475,
+            325
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "text",
+        "text": "• Gathering All Neighboring Superpoints: For the seed superpoint $\\mathbf { { s } } _ { 0 } ,$ we gather all its $Q$ neighboring superpoints, denoted by $\\bigl \\{ \\pmb { s } _ { 0 } ^ { 1 } \\cdot \\cdot \\cdot \\pmb { s } _ { 0 } ^ { q } \\cdot \\cdot \\cdot \\pmb { s } _ { 0 } ^ { Q } \\bigr \\}$ . For simplicity, we define neighboring superpoints as those within a minimum Euclidean distance of 0.1m. These Q neighboring superpoints are a subset of the remaining $( K - 1 )$ superpoints in point cloud P . Natually, we also retrieve the corresponding neighboring superpoint features, denoted by $\\bar { \\{ f _ { 0 } ^ { 1 } \\cdot \\cdot \\cdot \\bar { f _ { 0 } ^ { q } } \\cdot \\cdot \\cdot \\cdot } f _ { 0 } ^ { Q } \\}$ . ",
+        "bbox": [
+            86,
+            328,
+            475,
+            465
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "text",
+        "text": "• Merging Neighboring Superpoints: Now, our agent needs to learn which neighboring superpoints should be merged into the seed superpoint $s _ { 0 }$ , such that the new superpoint is more likely to be an object candidate, $i . e .$ , receiving higher rewards afterwards. To achieve this, we feed the seed and its neighboring superpoint features into a merge policy network $\\pi _ { m e r g e }$ , which consists of self-attention blocks with an MLP layer followed by a sigmoid function, predicting the merging probability $\\pmb { p } _ { m e r g e } \\in \\mathbb { R } ^ { Q \\times 1 }$ for $Q$ neighbors: ",
+        "bbox": [
+            86,
+            467,
+            475,
+            616
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "equation",
+        "text": "$$\n\\boldsymbol {p} _ {\\text { merge }} = \\boldsymbol {\\pi} _ {\\text { merge }} \\left(\\boldsymbol {f} _ {0}, \\left[ \\boldsymbol {f} _ {0} ^ {1} \\dots \\boldsymbol {f} _ {0} ^ {q} \\dots \\boldsymbol {f} _ {0} ^ {Q} \\right]\\right) \\tag {2}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            145,
+            613,
+            473,
+            631
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "text",
+        "text": "We then sample a subset of neighbors according to the learned policy $p _ { m e r g e }$ and merge them into the seed superpoint $s _ { 0 } ,$ obtaining a larger superpoint which is regarded as an object candidate, denoted by $\\scriptstyle { \\pmb { s } } _ { 1 }$ . ",
+        "bbox": [
+            96,
+            636,
+            475,
+            696
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "text",
+        "text": "This merging process is repeated for multiple rounds until the agent is terminated by the latter reward modules or reaches a predefined maximum round $T ,$ , generating a sequence of object candidates, denoted by: $\\left\\{ \\pmb { s } _ { 0 } , \\pmb { s } _ { 1 } \\cdot \\cdot \\cdot \\pmb { s } _ { t } \\cdot \\cdot \\cdot \\pmb { s } _ { T } \\right\\}$ . In each round, the obtained superpoint $( i . e .$ , object candidate) will be fed into our geometric and semantic reward modules discussed below. Details of the backbone ${ \\mathbf { } } _ { g _ { b o n e } } ,$ the seed and merging policy networks $\\pi _ { s e e d }$ and $\\pi _ { m e r g e }$ are in Appendix A. ",
+        "bbox": [
+            84,
+            699,
+            475,
+            837
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "text",
+        "text": "3.2. Geometric Reward Module ",
+        "text_level": 1,
+        "bbox": [
+            84,
+            851,
+            310,
+            866
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "text",
+        "text": "For an object candidate $\\mathbf { } _ { s _ { t } , }$ , this module aims to verify whether it is geometrically coherent. Thanks to the advancement of object-centric foundation models for 3D object reconstruction and generation, such as TRELLIS (Xiang et al., 2025) and Hunyuan3D (Lai et al., 2025) pretrained on multiple large-scale 3D object datasets like ObjaverseXL (Deitke et al., 2023), high-quality 3D object shape representations are effectively learned via VAE technique. To fully leverage these object geometry priors, we propose a new geometric center consistency verification mechanism to compute a reward for the candidate $\\mathbf { \\boldsymbol { s } } _ { t }$ as follows. ",
+        "bbox": [
+            84,
+            875,
+            475,
+            905
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "image",
+        "img_path": "images/4bf8fe0f8c75831c760ec645f4c1b373496dbb7d31ff2533f5ea64be0b4fcc5e.jpg",
+        "image_caption": [
+            "Figure 4. An illustration of Object Center Field. "
+        ],
+        "image_footnote": [],
+        "content": "O m ∈ ℝ³\nO ∈ ℝ^M×3\nO m\nv_c = o_c - o_m\nO_c",
+        "sub_type": "text_image",
+        "bbox": [
+            519,
+            82,
+            866,
+            184
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "text",
+        "text": "",
+        "bbox": [
+            496,
+            214,
+            887,
+            349
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "text",
+        "text": "Learning an Object Center Field: Since the pretrained 3D object foundation model often consists of an auto-encoder which cannot be directly used for scoring a candidate like $\\mathbf { } _ { s _ { t } } .$ , we propose to extend the pretrained foundation encoder by adding an additional object center field as a head, with inspiration from unMORE (Yang et al., 2025). ",
+        "bbox": [
+            496,
+            357,
+            885,
+            448
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "text",
+        "text": "As illustrated in Figure 4, for a 3D object O with M points, denoted by $\\left\\{ o _ { 1 } \\cdots o _ { m } \\cdot \\cdot \\cdot o _ { M } \\right\\}$ and each point is represented by xyz coordinates, its object center field is defined to indicate the direction ${ \\pmb v } _ { m }$ of each point pointing to the object centroid $\\mathbf { \\delta } _ { o , \\dag }$ mathematically as follows: ",
+        "bbox": [
+            496,
+            455,
+            887,
+            531
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "equation",
+        "text": "$$\n\\boldsymbol {v} _ {m} = \\boldsymbol {o} _ {c} - \\boldsymbol {o} _ {m}, \\quad \\boldsymbol {o} _ {c} = \\frac {1}{M} \\sum_ {m = 1} ^ {M} \\boldsymbol {o} _ {m} \\tag {3}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            568,
+            536,
+            885,
+            578
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "text",
+        "text": "Given the pretrained encoder from TRELLIS, we add a Transformer decoder as a head to regress the defined object center field for any query point o. We train this network, denoted by $\\mathbf { \\mathscr { g } } _ { c e n t e r : }$ on two object datasets ABO (Collins et al., 2022) and 3D-Future (Fu et al., 2021) with an $\\ell _ { 2 }$ loss between the predicted center field and precomputed ground truth. Once well-trained, $\\mathbf { \\phi } _ { g _ { c e n t e r } }$ is used to verify the geometry quality of any object candidate like $\\mathbf { } _  \\mathbf { } \\mathbf { } \\mathbf { } \\mathbf { } \\mathbf { } \\mathbf { } \\mathbf { } \\mathbf { } \\mathbf { } \\mathbf { } \\mathbf { } \\mathbf { } \\mathbf { } \\mathbf { } \\mathbf { } \\mathbf { } \\mathbf { } \\mathbf { } \\mathbf { } \\mathbf { } \\mathbf { } \\mathbf { } \\mathbf { } \\mathbf { } \\mathbf { } \\mathbf { } \\mathbf { } \\mathbf { } \\mathbf { } \\mathbf { } \\mathbf { } \\mathbf { } \\mathbf { } \\mathbf { } \\mathbf { } \\mathbf { } \\mathbf { } \\mathbf { } \\mathbf { } \\mathbf { } \\mathbf { } \\mathbf { } \\mathbf { } \\mathbf { } \\mathbf { } \\mathbf { } \\mathbf { } \\mathbf { } \\mathbf { } \\mathbf { } \\mathbf { } \\mathbf { } \\mathbf { } \\mathbf { } \\mathbf { } \\mathbf { } \\mathbf { } \\mathbf { } \\mathbf { } \\mathbf { } \\mathbf { } \\mathbf { } \\mathbf { } \\mathbf { } \\mathbf { } \\mathbf { } \\mathbf { } \\mathbf { } \\mathbf { } \\mathbf { } \\mathbf { } \\mathbf { } \\mathbf { } \\mathbf { } \\mathbf { } \\mathbf { } \\mathbf { } \\mathbf { } \\mathbf { } \\mathbf { } \\mathbf { } \\mathbf { } \\mathbf { } \\mathbf { } \\mathbf { } \\mathbf { } \\mathbf { } \\mathbf { } \\mathbf { } \\mathbf { } \\mathbf { } \\mathbf { } \\mathbf { } \\mathbf { } \\mathbf { } \\mathbf { } \\mathbf { } \\mathbf { } \\mathbf { } \\mathbf { } \\mathbf { } \\mathbf { } \\mathbf { } \\mathbf { } \\mathbf { } \\mathbf { } \\mathbf { } \\mathbf { } \\mathbf { } \\mathbf { } \\mathbf { } \\mathbf { } \\mathbf { } \\mathbf { } \\mathbf { } \\mathbf { } \\mathbf { } \\mathbf { } \\mathbf { } \\mathbf { } \\mathbf { } \\mathbf { } \\mathbf { } \\mathbf { } \\mathbf { } \\mathbf { } \\mathbf { } \\mathbf { } \\mathbf { } \\mathbf { } \\mathbf { } \\mathbf { } \\mathbf { } \\mathbf { } \\mathbf { } \\mathbf { } \\mathbf { } \\mathbf { } \\mathbf { } \\mathbf { } \\mathbf { } \\mathbf \\mathbf { } \\mathbf { } \\mathbf { } \\mathbf { } \\mathbf \\mathbf { } \\mathbf { } \\mathbf \\mathbf { } \\mathbf { } \\mathbf \\mathbf { } \\mathbf { } \\mathbf \\mathbf { } \\mathbf \\mathbf { } \\mathbf { } \\mathbf \\mathbf { } \\mathbf \\mathbf { } \\mathbf \\mathbf { } \\mathbf \\mathbf { } \\mathbf $ . ",
+        "bbox": [
+            496,
+            588,
+            887,
+            710
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "text",
+        "text": "Verifying Center Consistency: Given a candidate $\\mathbf { } _ { s _ { t } , }$ we directly feed it into our pretrained $\\begin{array} { r } { g _ { c e n t e r } , } \\end{array}$ estimating its corresponding center field, denoted by ${ \\mathbf { } } v _ { t }$ . Intuitively, if the candidate $\\mathbf { \\Delta } _ { \\mathbf { \\mathcal { S } } _ { t } }$ is a valid object, its center field should point to a single center, meaning that $\\left( \\boldsymbol { s } _ { t } + \\boldsymbol { v } _ { t } \\right)$ will collapse to an extremely dense and dominant cluster. Otherwise, $\\left( \\boldsymbol { s } _ { t } + \\boldsymbol { v } _ { t } \\right)$ would instead have multiple or sparser clusters. ",
+        "bbox": [
+            496,
+            715,
+            887,
+            823
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "text",
+        "text": "Leveraging this property, we apply the DBSCAN clustering algorithm (Ester et al., 1996) to $\\left( \\boldsymbol { s } _ { t } + \\boldsymbol { v } _ { t } \\right)$ . If DBSCAN identifies a dominant cluster that covers at least $\\alpha = 3 0 \\%$ of all points in the candidate $\\mathbf { } _  \\mathbf { } \\mathbf { } \\mathbf { } \\mathbf { } \\mathbf { } \\mathbf { } \\mathbf { } \\mathbf { } \\mathbf { } \\mathbf { } \\mathbf { } \\mathbf { } \\mathbf { } \\mathbf { } \\mathbf { } \\mathbf { } \\mathbf { } \\mathbf { } \\mathbf { } \\mathbf { } \\mathbf { } \\mathbf { } \\mathbf { } \\mathbf { } \\mathbf { } \\mathbf { } \\mathbf { } \\mathbf { } \\mathbf { } \\mathbf { } \\mathbf { } \\mathbf { } \\mathbf { } \\mathbf { } \\mathbf { } \\mathbf { } \\mathbf { } \\mathbf { } \\mathbf { } \\mathbf { } \\mathbf { } \\mathbf { } \\mathbf { } \\mathbf { } \\mathbf { } \\mathbf { } \\mathbf { } \\mathbf { } \\mathbf { } \\mathbf { } \\mathbf { } \\mathbf { } \\mathbf { } \\mathbf { } \\mathbf { } \\mathbf { } \\mathbf { } \\mathbf { } \\mathbf { } \\mathbf { } \\mathbf { } \\mathbf { } \\mathbf { } \\mathbf { } \\mathbf { } \\mathbf { } \\mathbf { } \\mathbf { } \\mathbf { } \\mathbf { } \\mathbf { } \\mathbf { } \\mathbf { } \\mathbf { } \\mathbf { } \\mathbf { } \\mathbf { } \\mathbf { } \\mathbf { } \\mathbf { } \\mathbf { } \\mathbf { } \\mathbf { } \\mathbf { } \\mathbf { } \\mathbf { } \\mathbf { } \\mathbf { } \\mathbf { } \\mathbf { } \\mathbf { } \\mathbf { } \\mathbf { } \\mathbf { } \\mathbf { } \\mathbf { } \\mathbf { } \\mathbf { } \\mathbf { } \\mathbf { } \\mathbf { } \\mathbf { } \\mathbf { } \\mathbf { } \\mathbf { } \\mathbf { } \\mathbf { } \\mathbf { } \\mathbf { } \\mathbf { } \\mathbf { } \\mathbf { } \\mathbf { } \\mathbf { } \\mathbf { } \\mathbf { } \\mathbf { } \\mathbf { } \\mathbf { } \\mathbf { } \\mathbf { } \\mathbf { } \\mathbf { } \\mathbf { } \\mathbf { } \\mathbf { } \\mathbf { } \\mathbf { } \\mathbf { } \\mathbf { } \\mathbf { } \\mathbf { } \\mathbf { } \\mathbf { } \\mathbf { } \\mathbf { } \\mathbf { } \\mathbf { } \\mathbf { } \\mathbf { } \\mathbf { } \\mathbf \\mathbf { } \\mathbf { } \\mathbf { } \\mathbf { } \\mathbf \\mathbf { } \\mathbf { } \\mathbf \\mathbf { } \\mathbf { } \\mathbf \\mathbf { } \\mathbf { } \\mathbf \\mathbf { } \\mathbf \\mathbf { } \\mathbf { } \\mathbf \\mathbf { } \\mathbf \\mathbf { } \\mathbf \\mathbf { } \\mathbf \\mathbf { } \\mathbf $ within a radius of $r = 0 . 0 5$ , we assign a reward of $+ 1 0$ to the object discovery agent. ",
+        "bbox": [
+            496,
+            830,
+            888,
+            906
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "header",
+        "text": "FoundObj: Self-supervised Foundation Models as Rewards for Label-free 3D Object Segmentation ",
+        "bbox": [
+            174,
+            56,
+            797,
+            71
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "page_number",
+        "text": "4 ",
+        "bbox": [
+            480,
+            922,
+            491,
+            934
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "image",
+        "img_path": "images/d4f32acf2f35ca816c15de297f3f0a41d22a23a7e02d252cf919dd8befa5748d.jpg",
+        "image_caption": [
+            "Figure 5. An illustration of Semantic Consistency Cut. "
+        ],
+        "image_footnote": [],
+        "content": "",
+        "bbox": [
+            88,
+            80,
+            475,
+            194
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "Otherwise, a negative reward of −1 is given. Details of object center field $\\mathbf { g } _ { c e n t e r }$ and training are in Appendix B. ",
+        "bbox": [
+            84,
+            223,
+            475,
+            255
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "3.3. Semantic Reward Module ",
+        "text_level": 1,
+        "bbox": [
+            84,
+            271,
+            302,
+            285
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "Geometric cues alone are often insufficient for object identification, especially in the presence of visual occlusions or cluttered backgrounds. In such cases, semantic context becomes crucial for distinguishing objects. For example, a door may be geometrically similar to a wall, but visual contrast can help delineate the boundary between them. Similarly, a chair that is largely occluded by a table may still be identified through its co-occurrence with other pieces of furniture in the scene. With this insight, this module aims to further leverage semantic priors emerging from selfsupervised 2D foundation models to provide feedback for the object candidate $\\mathbf { } _  \\mathbf { } \\mathbf { } \\mathbf { } \\mathbf { } \\mathbf { } \\mathbf { } \\mathbf { } \\mathbf { } \\mathbf { } \\mathbf { } \\mathbf { } \\mathbf { } \\mathbf { } \\mathbf { } \\mathbf { } \\mathbf { } \\mathbf { } \\mathbf { } \\mathbf { } \\mathbf { } \\mathbf { } \\mathbf { } \\mathbf { } \\mathbf { } \\mathbf { } \\mathbf { } \\mathbf { } \\mathbf { } \\mathbf { } \\mathbf { } \\mathbf { } \\mathbf { } \\mathbf { } \\mathbf { } \\mathbf { } \\mathbf { } \\mathbf { } \\mathbf { } \\mathbf { } \\mathbf { } \\mathbf { } \\mathbf { } \\mathbf { } \\mathbf { } \\mathbf { } \\mathbf { } \\mathbf { } \\mathbf { } \\mathbf { } \\mathbf { } \\mathbf { } \\mathbf { } \\mathbf { } \\mathbf { } \\mathbf { } \\mathbf { } \\mathbf { } \\mathbf { } \\mathbf { } \\mathbf { } \\mathbf { } \\mathbf { } \\mathbf { } \\mathbf { } \\mathbf { } \\mathbf { } \\mathbf { } \\mathbf { } \\mathbf { } \\mathbf { } \\mathbf { } \\mathbf { } \\mathbf { } \\mathbf { } \\mathbf { } \\mathbf { } \\mathbf { } \\mathbf { } \\mathbf { } \\mathbf { } \\mathbf { } \\mathbf { } \\mathbf { } \\mathbf { } \\mathbf { } \\mathbf { } \\mathbf { } \\mathbf { } \\mathbf { } \\mathbf { } \\mathbf { } \\mathbf { } \\mathbf { } \\mathbf { } \\mathbf { } \\mathbf { } \\mathbf { } \\mathbf { } \\mathbf { } \\mathbf { } \\mathbf { } \\mathbf { } \\mathbf { } \\mathbf { } \\mathbf { } \\mathbf { } \\mathbf { } \\mathbf { } \\mathbf { } \\mathbf { } \\mathbf { } \\mathbf { } \\mathbf { } \\mathbf { } \\mathbf { } \\mathbf { } \\mathbf { } \\mathbf { } \\mathbf { } \\mathbf { } \\mathbf { } \\mathbf { } \\mathbf { } \\mathbf { } \\mathbf { } \\mathbf { } \\mathbf { } \\mathbf { } \\mathbf { } \\mathbf { } \\mathbf { } \\mathbf { } \\mathbf { } \\mathbf { } \\mathbf { } \\mathbf { } \\mathbf { } \\mathbf { } \\mathbf { } \\mathbf { } \\mathbf { } \\mathbf \\mathbf { } \\mathbf { } \\mathbf { } \\mathbf { } \\mathbf \\mathbf { } \\mathbf { } \\mathbf \\mathbf { } \\mathbf { } \\mathbf \\mathbf { } \\mathbf { } \\mathbf \\mathbf { } \\mathbf \\mathbf { } \\mathbf { } \\mathbf \\mathbf { } \\mathbf \\mathbf { } \\mathbf \\mathbf { } \\mathbf \\mathbf { } \\mathbf $ . ",
+        "bbox": [
+            84,
+            294,
+            475,
+            474
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "Given a pretrained DINOv2 model, we utilize the input 3D scene point cloud P along with its associated 2D images, which are commonly available in practice. Following the approach of UnScene3D (Rozenberszki et al., 2024), we project 2D image features into 3D space using depth images. For each point in P , if multiple feature vectors are projected onto it, we simply average them. The resulting point features derived from DINOv2 then serve as semantic features of the 3D scene P . To calculate a reward for the object candidate $s _ { t } ,$ we propose a new semantic consistency cut approach. ",
+        "bbox": [
+            84,
+            482,
+            473,
+            633
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "Semantic Consistency Cut: As illustrated in Figure 5, we assume the candidate $\\mathbf { \\boldsymbol { s } } _ { t }$ is formed by merging a total of J initial superpoints over discovery as discussed in Section 3.1, whereas the entire 3D scene point cloud P has K initial superpoints. For each initial superpoint, we first compute its semantic features by averaging the projected per-point DINOv2 features. Then, we construct a pair-wise semantic similarity matrix, denoted by $\\mathcal { S } \\in \\mathbb { R } ^ { K \\times K }$ , through calculating the cosine similarity between any two superpoints of the entire scene P . In the meantime, we also construct a binary adjacency matrix, denoted by $\\mathcal { A } \\in \\mathbb { R } ^ { K \\times K }$ , where $\\mathcal { A } _ { i j } = 1$ represents that the $i ^ { t h }$ and $j ^ { t h }$ initial superpoints are spatially adjacent, also based on a minimum Euclidean distance of 0.1m as used in Section 3.1. Then, the resulting matrix (S ∗ A) represents the joint spatial and semantic similarity of all initial superpoints of the 3D scene P . ",
+        "bbox": [
+            84,
+            641,
+            475,
+            883
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "To measure the semantic consistency of the object candidate $s _ { t } ,$ which can be represented by a one-hot mask $O _ { t } \\in \\mathbb { R } ^ { K \\times 1 }$ , inspired by NCut (Shi & Malik, 2000), we regard this mask as a cut against the entire 3D scene. We then calculate the cut cost as follows: ",
+        "bbox": [
+            84,
+            890,
+            475,
+            905
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "",
+        "bbox": [
+            496,
+            84,
+            885,
+            143
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "equation",
+        "text": "$$\n\\mathcal {C} = \\mathcal {C} _ {\\text { boundary }} / \\mathcal {C} _ {\\text { vol }} \\tag {4}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            622,
+            148,
+            885,
+            165
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "where $\\mathcal { C } _ { b o u n d a r y }$ denotes the sum of joint spatial and semantic similarity scores along the boundary of $\\mathbf { \\boldsymbol { s } } _ { t }$ , whereas $\\mathcal { C } _ { v o l }$ denotes the sum of joint similarity scores within $\\mathbf { } s _ { t } .$ . Intuitively, a higher cost C indicates that the candidate $\\mathbf { } _  \\mathbf { } \\mathbf { } \\mathbf { } \\mathbf { } \\mathbf { } \\mathbf { } \\mathbf { } \\mathbf { } \\mathbf { } \\mathbf { } \\mathbf { } \\mathbf { } \\mathbf { } \\mathbf { } \\mathbf { } \\mathbf { } \\mathbf { } \\mathbf { } \\mathbf { } \\mathbf { } \\mathbf { } \\mathbf { } \\mathbf { } \\mathbf { } \\mathbf { } \\mathbf { } \\mathbf { } \\mathbf { } \\mathbf { } \\mathbf { } \\mathbf { } \\mathbf { } \\mathbf { } \\mathbf { } \\mathbf { } \\mathbf { } \\mathbf { } \\mathbf { } \\mathbf { } \\mathbf { } \\mathbf { } \\mathbf { } \\mathbf { } \\mathbf { } \\mathbf { } \\mathbf { } \\mathbf { } \\mathbf { } \\mathbf { } \\mathbf { } \\mathbf { } \\mathbf { } \\mathbf { } \\mathbf { } \\mathbf { } \\mathbf { } \\mathbf { } \\mathbf { } \\mathbf { } \\mathbf { } \\mathbf { } \\mathbf { } \\mathbf { } \\mathbf { } \\mathbf { } \\mathbf { } \\mathbf { } \\mathbf { } \\mathbf { } \\mathbf { } \\mathbf { } \\mathbf { } \\mathbf { } \\mathbf { } \\mathbf { } \\mathbf { } \\mathbf { } \\mathbf { } \\mathbf { } \\mathbf { } \\mathbf { } \\mathbf { } \\mathbf { } \\mathbf { } \\mathbf { } \\mathbf { } \\mathbf { } \\mathbf { } \\mathbf { } \\mathbf { } \\mathbf { } \\mathbf { } \\mathbf { } \\mathbf { } \\mathbf { } \\mathbf { } \\mathbf { } \\mathbf { } \\mathbf { } \\mathbf { } \\mathbf { } \\mathbf { } \\mathbf { } \\mathbf { } \\mathbf { } \\mathbf { } \\mathbf { } \\mathbf { } \\mathbf { } \\mathbf { } \\mathbf { } \\mathbf { } \\mathbf { } \\mathbf { } \\mathbf { } \\mathbf { } \\mathbf { } \\mathbf { } \\mathbf { } \\mathbf { } \\mathbf { } \\mathbf { } \\mathbf { } \\mathbf { } \\mathbf { } \\mathbf { } \\mathbf { } \\mathbf { } \\mathbf { } \\mathbf { } \\mathbf { } \\mathbf { } \\mathbf { } \\mathbf { } \\mathbf { } \\mathbf { } \\mathbf { } \\mathbf { } \\mathbf { } \\mathbf { } \\mathbf { } \\mathbf \\mathbf { } \\mathbf { } \\mathbf { } \\mathbf { } \\mathbf \\mathbf { } \\mathbf { } \\mathbf \\mathbf { } \\mathbf { } \\mathbf \\mathbf { } \\mathbf { } \\mathbf \\mathbf { } \\mathbf \\mathbf { } \\mathbf { } \\mathbf \\mathbf { } \\mathbf \\mathbf { } \\mathbf \\mathbf { } \\mathbf \\mathbf { } \\mathbf $ is more similar to its spatial context, suggesting it should receive a lower reward. Otherwise, a lower cost implies that the candidate is more semantically distinct from its background, deserving a higher reward. ",
+        "bbox": [
+            495,
+            170,
+            887,
+            292
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "In our experiments, instead of choosing a fixed cost threshold, we maintain a cost bank that stores the top 20 lowest costs for each 3D scene during training. A reward of +10 is given to object candidates in the bank, and −1 to others. More details of the cost cut calculation are in Appendix C. ",
+        "bbox": [
+            495,
+            299,
+            887,
+            375
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "3.4. Training and Test ",
+        "text_level": 1,
+        "bbox": [
+            496,
+            391,
+            655,
+            405
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "Given an input 3D scene point cloud, the agent continuously generates object candidates during discovery, while two reward modules assign scores based on foundational geometric and semantic priors. To fully leverage both priors, we retain the higher reward from the two modules for each candidate. During each discovery trajectory, once an object candidate receives a reward of +10, the agent terminates, indicating that a valid object has been discovered. ",
+        "bbox": [
+            495,
+            414,
+            887,
+            536
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "The agent is trained using the standard PPO loss. Exactly following GrabS (Zhang et al., 2025c), we collect discovered object masks that receive positive rewards as pseudo labels. Lastly, we train a separate 3D object segmentation network using the Mask3D (Schult et al., 2023). For efficiency during benchmark testing, we utilize this separately trained segmentation network. More details are in D. ",
+        "bbox": [
+            495,
+            542,
+            887,
+            648
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "4. Experiments ",
+        "text_level": 1,
+        "bbox": [
+            496,
+            667,
+            629,
+            686
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "Datasets: We evaluate our method on two real-world indoor benchmarks and one long-tail benchmark. (1) ScanNet (Dai et al., 2017) is a challenging RGB-D reconstructed dataset with heavy occlusions, sensor noise, and incomplete geometry, containing 1,201 scenes for training and 312 scenes for validation. (2) S3DIS (Armeni et al., 2017) is another large-scale indoor dataset with greater spatial variability, consisting of six areas that cover diverse room layouts and scene scales. (3) ScanNet200 (Rozenberszki et al., 2022) shares the same scans as ScanNet but provides a finer-grained label space with 200 categories. According to its official protocol, object categories are grouped into head (66), common (68), and tail (66), enabling a stricter evaluation under long-tailed category distributions. ",
+        "bbox": [
+            495,
+            694,
+            887,
+            905
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "header",
+        "text": "FoundObj: Self-supervised Foundation Models as Rewards for Label-free 3D Object Segmentation ",
+        "bbox": [
+            174,
+            56,
+            797,
+            70
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "page_number",
+        "text": "5 ",
+        "bbox": [
+            480,
+            922,
+            491,
+            934
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "image",
+        "img_path": "images/cc2025ef42aebaff0a80f92b0ea663fea9a4f798aa6facb57233d968be96e693.jpg",
+        "image_caption": [],
+        "image_footnote": [],
+        "content": "Interior view of a damaged industrial building with exposed steel beams and debris (no visible text or symbols)",
+        "sub_type": "natural_image",
+        "bbox": [
+            91,
+            80,
+            218,
+            167
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "image",
+        "img_path": "images/f867161fb5b8bd7abb434d3a8723137f5f52b056e1d7e4ffe5ceeeb1fc2f6484.jpg",
+        "image_caption": [],
+        "image_footnote": [],
+        "content": "3D rendered interior of a room with colorful furniture and a red circle highlighting a specific area (no text or symbols visible)",
+        "sub_type": "natural_image",
+        "bbox": [
+            225,
+            80,
+            349,
+            166
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "image",
+        "img_path": "images/c23b5d99e3fd75014645522b07d03d9d515ef2f90ec70d5ddc2f85dd9ac9be00.jpg",
+        "image_caption": [],
+        "image_footnote": [],
+        "content": "3D rendered interior of a room with colorful furniture and a red circle highlighting a specific area (no text or symbols visible)",
+        "sub_type": "natural_image",
+        "bbox": [
+            354,
+            80,
+            478,
+            166
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "image",
+        "img_path": "images/0e236515f152b712e4a5f33f1d12633022c2809ffb64031d9b7372e943aa6961.jpg",
+        "image_caption": [],
+        "image_footnote": [],
+        "content": "Colorful 3D-printed toy blocks arranged in a grid, with one block highlighted by a red circle (no text or symbols visible)",
+        "sub_type": "natural_image",
+        "bbox": [
+            486,
+            80,
+            609,
+            166
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "image",
+        "img_path": "images/26b0939d6c6263dc0d25b5a4d426b2f32c11e0f30ab75abf107cdc0dbd5310d0.jpg",
+        "image_caption": [],
+        "image_footnote": [],
+        "content": "3D rendered model of a building interior with colored blocks and a red circle highlighting a specific area (no text or symbols)",
+        "sub_type": "natural_image",
+        "bbox": [
+            616,
+            80,
+            741,
+            166
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "image",
+        "img_path": "images/d36fa386be4a276e82531d13a7c7165967286d6922215917bb382c8e33505ae3.jpg",
+        "image_caption": [],
+        "image_footnote": [],
+        "content": "3D architectural floor plan with colored blocks and a red circle highlighting a specific area (no text or symbols)",
+        "sub_type": "natural_image",
+        "bbox": [
+            746,
+            80,
+            870,
+            166
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "image",
+        "img_path": "images/850ca43f7947ac3c38f5ad6ec085a3acc1eb51a466e471e375e2ac7195e6b8a6.jpg",
+        "image_caption": [
+            "Input Point Cloud "
+        ],
+        "image_footnote": [],
+        "content": "Interior view of a damaged room with exposed furniture and debris (no visible text or symbols)",
+        "sub_type": "natural_image",
+        "bbox": [
+            89,
+            167,
+            220,
+            257
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "image",
+        "img_path": "images/d15c926dbaa3e92bf470b1f75e0da3103ed19de279e6806387bf9c84b308affe.jpg",
+        "image_caption": [
+            "GrabS "
+        ],
+        "image_footnote": [],
+        "content": "3D rendered model of a vehicle or toy interior with colored blocks and a highlighted green box (no text or symbols visible)",
+        "sub_type": "natural_image",
+        "bbox": [
+            222,
+            167,
+            352,
+            257
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "image",
+        "img_path": "images/46376ebb148a6041319936d53d2dea1f0e41260115648780f709a46291431e78.jpg",
+        "image_caption": [
+            "UnScene3D "
+        ],
+        "image_footnote": [],
+        "content": "3D rendered interior view of a vehicle with colored blocks and a highlighted blue box (no text or symbols visible)",
+        "sub_type": "natural_image",
+        "bbox": [
+            352,
+            167,
+            483,
+            257
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "image",
+        "img_path": "images/6d8307fdc4192749a07109fe3b089fc91b4d832240e8a7bddf15e9a77ed0df83.jpg",
+        "image_caption": [
+            "Part2Object "
+        ],
+        "image_footnote": [],
+        "content": "Colorful 3D-rendered interior scene with no visible text or symbols, featuring a red circle highlighting a specific area (no text or symbols present)",
+        "sub_type": "natural_image",
+        "bbox": [
+            485,
+            167,
+            614,
+            257
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "image",
+        "img_path": "images/9959dd27198d58d70febbbc0031de9abf564729cd530bb575eb1c80e5a1e53ec.jpg",
+        "image_caption": [
+            "Ours "
+        ],
+        "image_footnote": [],
+        "content": "3D rendered interior model of a building with colored blocks and a highlighted green space (no text or symbols)",
+        "sub_type": "natural_image",
+        "bbox": [
+            616,
+            167,
+            746,
+            257
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "image",
+        "img_path": "images/aa131d544b671c6f0f26b17bc8a3d68922eaf21184ce9afde7f9f69f3c1c9e0d.jpg",
+        "image_caption": [
+            "Ground Truth ",
+            "Figure 6. Qualitative results on the ScanNet dataset. Red circles highlight the differences. "
+        ],
+        "image_footnote": [],
+        "content": "3D rendered model of a mechanical assembly with colored blocks and a highlighted blue component (no text or symbols visible)",
+        "sub_type": "natural_image",
+        "bbox": [
+            751,
+            167,
+            883,
+            257
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "text",
+        "text": "Baselines: We compare FoundObj with the following representative unsupervised 3D object segmentation methods that leverage either pretrained 2D priors or 3D object-centric priors. (1) UnScene3D (Rozenberszki et al., 2024) leverages pretrained CSC (Fang et al., 2023) and DINO (Caron et al., 2021) features to generate pseudo masks for training a 3D segmentation network, and we report the results using its official checkpoints of three variants. (2) Part2Object (Shi et al., 2024) projects pixel-level pseudo masks derived from DINOv2 features into 3D to obtain object segments. (3) EFEM (Lei et al., 2023) learns object priors from ShapeNet (Chang et al., 2015) and performs scene-level object segmentation via an EM-style optimization procedure. (4) GrabS (Zhang et al., 2025c) formulates unsupervised 3D object segmentation as a two-stage pipeline with an object prior network and a scene exploration agent, but the original method trains the object-prior network only on chair objects. ",
+        "bbox": [
+            84,
+            294,
+            475,
+            551
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "text",
+        "text": "Metrics: Following baselines, we also report class-agnostic object segmentation performance using the standard Average Precision (AP) protocol on ScanNet-style benchmarks (Dai et al., 2017). We report AP at IoU thresholds of 25% (AP@25), 50% (AP@50), and the averaged AP over IoU thresholds from 50% to 95% with a step size of 5% (AP). ",
+        "bbox": [
+            84,
+            559,
+            475,
+            650
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "text",
+        "text": "4.1. Evaluation on ScanNet ",
+        "text_level": 1,
+        "bbox": [
+            84,
+            666,
+            279,
+            680
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "text",
+        "text": "We train our whole pipeline on the ScanNet training set. Following the benchmarking protocol of ScanNet, all methods are evaluated on the ScanNet validation set against ground truth object masks under the established 18-class setting. The training and validation splits are kept identical for all baselines and our FoundObj, ensuring a fair comparison. ",
+        "bbox": [
+            84,
+            689,
+            475,
+            781
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "text",
+        "text": "Additionally, recent 3D self-supervised models such as Concerto (Zhang et al., 2025a) have shown strong capability in extracting scene-level semantics. To provide a more comprehensive evaluation, we construct additional baselines by fusing these 3D foundation model features with 2D DINOv2 features and subsequently applying the NCut algorithm as used in the UnScene3D pipeline. ",
+        "bbox": [
+            84,
+            787,
+            475,
+            893
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "text",
+        "text": "Results & Analysis: Table 1 and Figure 6 present the quantitative and qualitative results, respectively. Our method consistently outperforms all unsupervised baselines by a large margin. In particular, existing methods struggle to adequately segment objects, frequently missing objects or oversegmenting them into fragments. In contrast, our FoundObj produces more coherent and complete object masks, demonstrating the effectiveness of the geometric and semantic prior modules for object discovery in complex indoor scenes. ",
+        "bbox": [
+            496,
+            294,
+            888,
+            431
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "text",
+        "text": "Compared with self-supervised baselines, our model also surpasses them by a clear margin. Notably, the fusion of TRELLIS and DINOv2 features obtains only 16.4 in AP score, as TRELLIS is trained on isolated object-level 3D data rather than 3D scenes. Therefore, its features are outof-domain when directly applied to scene data. Additional qualitative results are provided in Appendix E. ",
+        "bbox": [
+            495,
+            438,
+            887,
+            544
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "table",
+        "img_path": "images/1517ffa4c6f8ca64c3337d2a0c00dc4fcd572a66a8eb71c7e46976df9f92badc.jpg",
+        "table_caption": [
+            "Table 1. Quantitative results on 18 object categories of our method and baselines on the ScanNet validation set (Dai et al., 2017). "
+        ],
+        "table_footnote": [],
+        "table_body": "<table><tr><td>Methods</td><td>AP</td><td>AP@50</td><td>AP@25</td></tr><tr><td colspan=\"4\">Supervised:</td></tr><tr><td>Mask3D (Schult et al., 2023)</td><td>61.2</td><td>83.0</td><td>93.0</td></tr><tr><td colspan=\"4\">Unsupervised:</td></tr><tr><td>EFEM (Lei et al., 2023)</td><td>8.0</td><td>16.7</td><td>22.3</td></tr><tr><td>GrabS (Zhang et al., 2025c)</td><td>14.0</td><td>27.2</td><td>39.4</td></tr><tr><td>UnScene3D-CSC (Rozenberszki et al., 2024)</td><td>16.2</td><td>32.2</td><td>57.6</td></tr><tr><td>UnScene3D-DINO (Rozenberszki et al., 2024)</td><td>17.7</td><td>35.6</td><td>62.2</td></tr><tr><td>UnScene3D (Rozenberszki et al., 2024)</td><td>18.5</td><td>37.8</td><td>63.7</td></tr><tr><td>Part2Object (Shi et al., 2024)</td><td>19.6</td><td>38.4</td><td>64.9</td></tr><tr><td colspan=\"4\">Self-supervised features followed by NCut:</td></tr><tr><td>Concerto</td><td>18.2</td><td>38.4</td><td>71.6</td></tr><tr><td>Concerto+DINOv2</td><td>19.8</td><td>41.2</td><td>72.2</td></tr><tr><td>TRELLIS+DINOv2</td><td>16.4</td><td>36.8</td><td>66.7</td></tr><tr><td>FoundObj (Ours)</td><td>24.2</td><td>46.2</td><td>74.7</td></tr></table>",
+        "bbox": [
+            501,
+            587,
+            885,
+            797
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "text",
+        "text": "4.2. Evaluation on S3DIS and ScanNet200 ",
+        "text_level": 1,
+        "bbox": [
+            496,
+            806,
+            794,
+            820
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "text",
+        "text": "Following the existing unsupervised methods Part2Object (Shi et al., 2024) and GrabS (Zhang et al., 2025c), we evaluate our method on S3DIS and ScanNet200 datasets by directly reusing our model well-trained on ScanNet, assessing the cross-dataset generalization ability. ",
+        "bbox": [
+            495,
+            829,
+            887,
+            905
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "header",
+        "text": "FoundObj: Self-supervised Foundation Models as Rewards for Label-free 3D Object Segmentation ",
+        "bbox": [
+            174,
+            56,
+            797,
+            70
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "page_number",
+        "text": "6 ",
+        "bbox": [
+            480,
+            922,
+            491,
+            934
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "text",
+        "text": "Results on S3DIS: As shown in Tables 2 and 3, and Figure 7, our FoundObj consistently achieves the best performance under both the Area-5 and 6-fold evaluation protocols. These results demonstrate our strong zero-shot object segmentation capabilities, indicating that our learned object patterns generalize well across datasets with novel scene layouts. Most notably, FoundObj achieves performance comparable to Mask3D (Schult et al., 2023), which is trained with human annotations, highlighting the significant potential of unsupervised 3D learning. ",
+        "bbox": [
+            84,
+            84,
+            475,
+            236
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "text",
+        "text": "Results on ScanNet200: On the more challenging Scan-Net200 benchmark, which features a long-tailed data distribution, our method achieves clear improvements over all unsupervised baselines, as shown in Table 4 and Figure 8. This further demonstrates that FoundObj is able to identify a wider variety of objects and more effectively handle longtailed distribution. Collectively, these cross-dataset results highlight the strong generalization ability of our method in both zero-shot and long-tail settings. More qualitative and quantitative results are provided in Appendix F&G. ",
+        "bbox": [
+            84,
+            243,
+            477,
+            395
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "table",
+        "img_path": "images/863686ad35dd0ff47304de80f481b80fa84062608b5f14553d1823e295d33477.jpg",
+        "table_caption": [
+            "Table 2. Quantitative results of our method and baselines on the S3DIS-Area5. "
+        ],
+        "table_footnote": [],
+        "table_body": "<table><tr><td>Methods</td><td>AP</td><td>AP@50</td><td>AP@25</td></tr><tr><td colspan=\"4\">Supervised:</td></tr><tr><td>Mask3D (Schult et al., 2023)</td><td>13.0</td><td>22.3</td><td>37.5</td></tr><tr><td colspan=\"4\">Unsupervised:</td></tr><tr><td>GrabS (Zhang et al., 2025c)</td><td>3.7</td><td>6.1</td><td>9.3</td></tr><tr><td>UnScene3D-CSC (Rozenberszki et al., 2024)</td><td>8.0</td><td>14.8</td><td>32.2</td></tr><tr><td>UnScene3D-DINO (Rozenberszki et al., 2024)</td><td>7.0</td><td>13.6</td><td>32.3</td></tr><tr><td>UnScene3D (Rozenberszki et al., 2024)</td><td>8.9</td><td>17.3</td><td>35.9</td></tr><tr><td>Part2Object (Shi et al., 2024)</td><td>10.4</td><td>22.5</td><td>45.4</td></tr><tr><td>FoundObj (Ours)</td><td>12.8</td><td>24.0</td><td>45.4</td></tr></table>",
+        "bbox": [
+            89,
+            433,
+            473,
+            575
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "table",
+        "img_path": "images/22ba106f7da39fe12e698a2a1bd3ab19bde43620f23435401ab1783538373ec4.jpg",
+        "table_caption": [
+            "Table 3. Quantitative results of our method and baselines on the S3DIS 6-fold. "
+        ],
+        "table_footnote": [],
+        "table_body": "<table><tr><td>Methods</td><td>AP</td><td>AP@50</td><td>AP@25</td></tr><tr><td colspan=\"4\">Supervised:</td></tr><tr><td>Mask3D (Schult et al., 2023)</td><td>11.8</td><td>20.7</td><td>34.8</td></tr><tr><td colspan=\"4\">Unsupervised:</td></tr><tr><td>GrabS (Zhang et al., 2025c)</td><td>3.2</td><td>5.5</td><td>9.4</td></tr><tr><td>UnScene3D-CSC (Rozenberszki et al., 2024)</td><td>7.0</td><td>14.8</td><td>31.8</td></tr><tr><td>UnScene3D-DINO (Rozenberszki et al., 2024)</td><td>6.2</td><td>14.1</td><td>35.5</td></tr><tr><td>UnScene3D (Rozenberszki et al., 2024)</td><td>8.1</td><td>17.4</td><td>37.5</td></tr><tr><td>Part2Object (Shi et al., 2024)</td><td>8.6</td><td>16.5</td><td>45.2</td></tr><tr><td>FoundObj (Ours)</td><td>11.4</td><td>24.0</td><td>45.7</td></tr></table>",
+        "bbox": [
+            89,
+            612,
+            473,
+            753
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "text",
+        "text": "4.3. Ablation Study ",
+        "text_level": 1,
+        "bbox": [
+            86,
+            768,
+            225,
+            784
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "text",
+        "text": "We conduct the following ablation studies on the ScanNet validation set to analyze the effectiveness of each component in FoundObj, with results summarized in Table 5. ",
+        "bbox": [
+            84,
+            792,
+            473,
+            838
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "text",
+        "text": "\\- Effect of Geometric and Semantic Reward Modules: We evaluate the impact of the two reward modules. In particular, we either 1) remove the geometric reward module or 2) remove the semantic reward module to optimize our object discovery agent. We can see that it leads to a substantial performance drop, indicating that both priors are essential for object identification. Notably, removing the semantic reward module results in a larger drop. We hypothesize that DINOv2 features tend to be more discriminative than 3D priors as it is trained on a much larger dataset. ",
+        "bbox": [
+            83,
+            845,
+            475,
+            905
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "table",
+        "img_path": "images/dd364b27b559d981748c2c83925626b1595699a60a645c9bd83d885c03ee7a7b.jpg",
+        "table_caption": [
+            "Table 4. Quantitative results of our method and baselines on the ScanNet200 validation set. "
+        ],
+        "table_footnote": [],
+        "table_body": "<table><tr><td>Methods</td><td>AP</td><td>AP@50</td><td>AP@25</td></tr><tr><td colspan=\"4\">Supervised:</td></tr><tr><td>Mask3D (Schult et al., 2023)</td><td>26.9</td><td>36.2</td><td>41.4</td></tr><tr><td colspan=\"4\">Unsupervised:</td></tr><tr><td>EFEM (Lei et al., 2023)</td><td>4.6</td><td>9.8</td><td>13.9</td></tr><tr><td>GrabS (Zhang et al., 2025c)</td><td>7.5</td><td>13.2</td><td>25.6</td></tr><tr><td>UnScene3D-CSC (Rozenberszki et al., 2024)</td><td>10.3</td><td>20.9</td><td>42.6</td></tr><tr><td>UnScene3D-DINO (Rozenberszki et al., 2024)</td><td>11.5</td><td>23.9</td><td>47.3</td></tr><tr><td>UnScene3D (Rozenberszki et al., 2024)</td><td>12.8</td><td>25.7</td><td>49.1</td></tr><tr><td>Part2Object (Shi et al., 2024)</td><td>15.2</td><td>31.2</td><td>57.1</td></tr><tr><td>FoundObj (Ours)</td><td>18.1</td><td>35.3</td><td>62.8</td></tr></table>",
+        "bbox": [
+            501,
+            109,
+            885,
+            266
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "table",
+        "img_path": "images/554f72d3b85d39809b6bb90868b80884064c6da434cdf23b47f69e4ba0ffa058.jpg",
+        "table_caption": [
+            "Table 5. The AP scores of all ablated settings on the validation set of ScanNet based on our full FoundObj. "
+        ],
+        "table_footnote": [],
+        "table_body": "<table><tr><td></td><td>AP(%)</td><td>AP@50(%)</td><td>AP@25(%)</td></tr><tr><td colspan=\"4\">Reward Modules:</td></tr><tr><td>(1) Removing Geometric Reward Module</td><td>19.5</td><td>40.2</td><td>72.7</td></tr><tr><td>(2) Removing Semantic Reward Module</td><td>15.3</td><td>37.2</td><td>67.6</td></tr><tr><td colspan=\"4\">DBSCAN Density in Geometric Reward Module:</td></tr><tr><td>(3)  $r = 0.02$ </td><td>21.9</td><td>43.6</td><td>76.8</td></tr><tr><td>(4)  $r = 0.05$ </td><td>24.2</td><td>46.2</td><td>74.7</td></tr><tr><td>(5)  $r = 0.1$ </td><td>22.5</td><td>43.6</td><td>72.5</td></tr><tr><td>(6)  $\\alpha = 20\\%$ </td><td>22.1</td><td>43.7</td><td>74.2</td></tr><tr><td>(7)  $\\alpha = 30\\%$ </td><td>24.2</td><td>46.2</td><td>74.7</td></tr><tr><td>(8)  $\\alpha = 40\\%$ </td><td>21.8</td><td>44.2</td><td>75.4</td></tr><tr><td colspan=\"4\">Threshold for Identifying Neighboring Superpoints:</td></tr><tr><td>(9)  $d = 0.05$ </td><td>23.0</td><td>45.9</td><td>74.8</td></tr><tr><td>(10)  $d = 0.1$ </td><td>24.2</td><td>46.2</td><td>74.7</td></tr><tr><td>(11)  $d = 0.2$ </td><td>21.4</td><td>43.2</td><td>74.9</td></tr><tr><td colspan=\"4\">Mask Bank Storage:</td></tr><tr><td>(12) 10</td><td>20.9</td><td>41.8</td><td>72.1</td></tr><tr><td>(13) 20</td><td>24.2</td><td>46.2</td><td>74.7</td></tr><tr><td>(14) 30</td><td>22.9</td><td>44.7</td><td>73.6</td></tr><tr><td>(15) 40</td><td>21.1</td><td>41.4</td><td>73.3</td></tr><tr><td>FoundObj (The Full Framework)</td><td>24.2</td><td>46.2</td><td>74.7</td></tr></table>",
+        "bbox": [
+            501,
+            311,
+            883,
+            537
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "text",
+        "text": "",
+        "bbox": [
+            495,
+            558,
+            885,
+            650
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "text",
+        "text": "\\- Sensitivity to DBSCAN Density: We further study the sensitivity of the geometric reward to the DBSCAN parameters. As shown in Table 5, setting the radius to 0.05 yields the best performance. A smaller radius makes the density threshold overly strict, making the agent less likely to identify valid objects, while a larger radius leads to the detection of many incorrect objects. Similarly, the point ratio α achieves the best performance at 30%, whereas lower or higher values weaken the geometric prior. Overall, our model is robust to variations in density. ",
+        "bbox": [
+            493,
+            656,
+            887,
+            808
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "text",
+        "text": "\\- Spatial Neighboring Threshold: We also ablate the spatial adjacency threshold d used for constructing the neighboring superpoints. As shown, d = 0.1 achieves the best performance. A stricter threshold may incorrectly separate superpoints due to occlusions, while a larger threshold can result in object masks that are not spatially connected. ",
+        "bbox": [
+            493,
+            814,
+            888,
+            906
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "header",
+        "text": "FoundObj: Self-supervised Foundation Models as Rewards for Label-free 3D Object Segmentation ",
+        "bbox": [
+            174,
+            56,
+            797,
+            70
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "page_number",
+        "text": "7 ",
+        "bbox": [
+            480,
+            922,
+            491,
+            934
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "image",
+        "img_path": "images/ec9086a16936d4a038d61983803601ad3327fe5a7147cb1180fae0f85cabb957.jpg",
+        "image_caption": [],
+        "image_footnote": [],
+        "content": "",
+        "bbox": [
+            86,
+            80,
+            883,
+            263
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "image",
+        "img_path": "images/d18ed779894cc9bf73cea264485ca138856523b5d93ae594e5a5dd6e79a74a34.jpg",
+        "image_caption": [
+            "Figure 7. Qualitative results on the S3DIS dataset. Red circles highlight the differences. "
+        ],
+        "image_footnote": [],
+        "content": "Interior view of a cluttered room with scattered furniture and debris (no visible text or symbols)",
+        "sub_type": "natural_image",
+        "bbox": [
+            91,
+            290,
+            223,
+            383
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "image",
+        "img_path": "images/ff8aac4f36512a26a4c167047fe00e19caf0d44e4d7b50c3c411fd3da2e0d7c9.jpg",
+        "image_caption": [
+            "Input Point Cloud "
+        ],
+        "image_footnote": [],
+        "content": "Interior view of a dimly lit room with furniture and debris (no visible text or symbols)",
+        "sub_type": "natural_image",
+        "bbox": [
+            91,
+            386,
+            225,
+            473
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "image",
+        "img_path": "images/40eac0d4f367d5343e9918c8c6a939b033b38ce975f0eb6b491cab9c8f1a5e1c.jpg",
+        "image_caption": [],
+        "image_footnote": [],
+        "content": "3D rendered model of a toy car interior with colorful blocks and a red circle highlighting a specific object (no text or symbols present)",
+        "sub_type": "natural_image",
+        "bbox": [
+            228,
+            291,
+            359,
+            382
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "image",
+        "img_path": "images/470ff869f79754963b25460b6d01397ee5ade839c7cb04ec67e2bb696e35396f.jpg",
+        "image_caption": [
+            "GrabS "
+        ],
+        "image_footnote": [],
+        "content": "3D rendered model of a modular structure with colored blocks and a red circle highlighting a specific section (no text or symbols)",
+        "sub_type": "natural_image",
+        "bbox": [
+            228,
+            387,
+            361,
+            472
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "image",
+        "img_path": "images/7c7a9f8811138da2f119fa739773b835268bdea915413a1d911551a140780d8c.jpg",
+        "image_caption": [],
+        "image_footnote": [],
+        "content": "3D rendered model of colorful plastic crates arranged in a gray container, with one box highlighted by a red circle (no text or symbols visible)",
+        "sub_type": "natural_image",
+        "bbox": [
+            364,
+            291,
+            493,
+            382
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "image",
+        "img_path": "images/723f08313efb20dc6c19f3a7b83b9bde7ed1ca1f0d3c95fee36b398326bd3f0d.jpg",
+        "image_caption": [
+            "UnScene3D "
+        ],
+        "image_footnote": [],
+        "content": "Colorful 3D-rendered object with a highlighted square (no text or symbols)",
+        "sub_type": "natural_image",
+        "bbox": [
+            364,
+            387,
+            493,
+            472
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "image",
+        "img_path": "images/512ace4247bd2c31b9aecabce599e370892c0189227f38ee61ea33f54fa8fb0e.jpg",
+        "image_caption": [],
+        "image_footnote": [],
+        "content": "Colorful 3D-printed toy blocks arranged in a grid, with one highlighted by a red circle (no text or symbols visible)",
+        "sub_type": "natural_image",
+        "bbox": [
+            500,
+            291,
+            625,
+            382
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "image",
+        "img_path": "images/998ffe1f49e68a544c9c4c74098b566857a8401a9202a8f4f0b13569681a1f39.jpg",
+        "image_caption": [
+            "Part2Object "
+        ],
+        "image_footnote": [],
+        "content": "Colorful 3D-rendered abstract structure with a red circle highlighting a specific area (no text or symbols)",
+        "sub_type": "natural_image",
+        "bbox": [
+            493,
+            387,
+            625,
+            473
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "image",
+        "img_path": "images/8339f5e3432e84b737dc13a4fb996378b71039949ebfc2a22130fe0c3abd8142.jpg",
+        "image_caption": [],
+        "image_footnote": [],
+        "content": "3D rendered model of a colorful plastic or plastic container with no visible text or symbols",
+        "sub_type": "natural_image",
+        "bbox": [
+            630,
+            291,
+            759,
+            383
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "image",
+        "img_path": "images/1b01253216c823e054a6a5974261f72e0eabb00b9adcc2a1a4d3eaf7643cc622.jpg",
+        "image_caption": [
+            "Ours "
+        ],
+        "image_footnote": [],
+        "content": "3D rendered model of a room with colored walls and a highlighted green space (no text or symbols)",
+        "sub_type": "natural_image",
+        "bbox": [
+            625,
+            387,
+            756,
+            473
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "image",
+        "img_path": "images/409d50ba00c7904e45bc3a5cb7441c16f3e326b36915cb1cf8656dfe2565f17a.jpg",
+        "image_caption": [],
+        "image_footnote": [],
+        "content": "3D rendered interior of a modular furniture or storage unit with colored blocks and a highlighted green object (no text or symbols visible)",
+        "sub_type": "natural_image",
+        "bbox": [
+            759,
+            291,
+            885,
+            382
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "image",
+        "img_path": "images/98f2370f1ae9e75747a0a9ab8f121d6fd74671ef90940c13f2b0bada6201c612.jpg",
+        "image_caption": [
+            "Ground Truth ",
+            "Figure 8. Qualitative results on the ScanNet200 dataset. Red circles highlight the differences. "
+        ],
+        "image_footnote": [],
+        "content": "3D rendered interior model of a room with colored blocks and a red circle highlighting a specific area (no text or symbols)",
+        "sub_type": "natural_image",
+        "bbox": [
+            756,
+            387,
+            885,
+            472
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "table",
+        "img_path": "images/403d2d9efa12d690b8819918b3739a3684b8c3251cb94a602c5790c8a4526fcd.jpg",
+        "table_caption": [
+            "Table 6. Controlled comparisons under DINO-only, TRELLISonly, and DINO+TRELLIS settings on the ScanNet validation set. "
+        ],
+        "table_footnote": [],
+        "table_body": "<table><tr><td>Methods</td><td>AP</td><td>AP@50</td><td>AP@25</td></tr><tr><td colspan=\"4\">DINO-only:</td></tr><tr><td>UnScene3D (Rozenberszki et al., 2024)</td><td>17.7</td><td>35.6</td><td>65.2</td></tr><tr><td>Part2Object (Shi et al., 2024)</td><td>19.6</td><td>38.4</td><td>64.9</td></tr><tr><td>FoundObj (Ours)</td><td>19.5</td><td>40.2</td><td>72.7</td></tr><tr><td colspan=\"4\">TRELLIS-only:</td></tr><tr><td>UnScene3D (Rozenberszki et al., 2024)</td><td>10.1</td><td>24.5</td><td>56.3</td></tr><tr><td>Part2Object (Shi et al., 2024)</td><td>12.6</td><td>29.5</td><td>65.1</td></tr><tr><td>FoundObj (Ours)</td><td>15.3</td><td>37.2</td><td>67.6</td></tr><tr><td colspan=\"4\">DINO+TRELLIS:</td></tr><tr><td>UnScene3D (Rozenberszki et al., 2024)</td><td>15.3</td><td>33.2</td><td>68.5</td></tr><tr><td>Part2Object (Shi et al., 2024)</td><td>17.7</td><td>37.5</td><td>70.9</td></tr><tr><td>FoundObj (Ours)</td><td>24.2</td><td>46.2</td><td>74.7</td></tr></table>",
+        "bbox": [
+            89,
+            541,
+            470,
+            718
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "text",
+        "text": "\\- Semantic Cost Bank Size: Lastly, we analyze the effect of semantic cost bank size. Storing the top 20 lowest costs consistently yields the best results. A smaller bank size causes the agent to repeatedly identify only salient objects, limiting exploration diversity, whereas a larger size allows lower-quality candidates to slip in. ",
+        "bbox": [
+            83,
+            729,
+            475,
+            820
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "text",
+        "text": "4.4. Necessity of the RL-based Object Discovery Agent ",
+        "text_level": 1,
+        "bbox": [
+            84,
+            835,
+            468,
+            852
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "text",
+        "text": "A key question is whether the improvement of FoundObj comes merely from using additional 3D foundation models compared with baselines e.g., Part2Object (Shi et al., ",
+        "bbox": [
+            84,
+            859,
+            475,
+            905
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "text",
+        "text": "2024) and UnScene3D (Rozenberszki et al., 2024), or from the proposed RL-based discovery mechanism that effectively exploits object-level priors. To answer this, we apply the 3D foundation model TRELLIS to scene-level point clouds and evaluate the baselines under three settings: using DINOv1/v2 features exclusively, using TRELLIS features exclusively, and using a concatenation of both. ",
+        "bbox": [
+            496,
+            516,
+            887,
+            622
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "text",
+        "text": "As shown in Table 6, when only DINO features are used, FoundObj achieves performance comparable to DINObased clustering baselines, indicating that the agent does not merely act as a simple alternative to clustering algorithms. In contrast, under the TRELLIS-only and DINO+TRELLIS settings, FoundObj consistently outperforms the UnScene3D and Part2Object variants, demonstrating that the RL-based agent is essential for effectively leveraging 3D object-level priors. ",
+        "bbox": [
+            496,
+            628,
+            888,
+            766
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "text",
+        "text": "4.5. Pseudo Mask Quality and Error Propagation ",
+        "text_level": 1,
+        "bbox": [
+            496,
+            782,
+            846,
+            797
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "text",
+        "text": "Since our segmentation network is trained from pseudo masks discovered by the RL agent, we further analyze the quality of these pseudo-labels and their effect on the final Mask3D training. As shown in Table 7, without any cleaning or filtering, the discovered pseudo masks achieve 13.8 in AP score on the ScanNet training set, indicating that the agent can already discover meaningful object masks before training the final segmentation network. ",
+        "bbox": [
+            495,
+            805,
+            885,
+            896
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "header",
+        "text": "FoundObj: Self-supervised Foundation Models as Rewards for Label-free 3D Object Segmentation ",
+        "bbox": [
+            174,
+            56,
+            797,
+            70
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "page_number",
+        "text": "8 ",
+        "bbox": [
+            480,
+            922,
+            491,
+            934
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "table",
+        "img_path": "images/8cb6cc8597a289b0a13e930498b80fce241a440412a449d6a1914d0294168584.jpg",
+        "table_caption": [
+            "Table 7. Pseudo-label quality and error propagation on ScanNet. "
+        ],
+        "table_footnote": [],
+        "table_body": "<table><tr><td></td><td>AP</td><td>AP@50</td><td>AP@25</td></tr><tr><td>Pseudo masks</td><td>13.8</td><td>28.1</td><td>56.6</td></tr><tr><td>Mask3D w/ pseudo masks</td><td>24.2</td><td>46.2</td><td>74.7</td></tr><tr><td>Mask3D w/ filtered masks</td><td>37.0</td><td>59.7</td><td>83.3</td></tr></table>",
+        "bbox": [
+            119,
+            97,
+            442,
+            159
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "table",
+        "img_path": "images/48b86de1ddb40d9c547b9677ab98324ff9a03552320d52602820785efd3ec160.jpg",
+        "table_caption": [
+            "Table 8. Open-vocabulary instance segmentation results on the ScanNet validation set. "
+        ],
+        "table_footnote": [],
+        "table_body": "<table><tr><td>Methods</td><td>AP</td><td>AP@50</td><td>AP@25</td></tr><tr><td colspan=\"4\">Supervised:</td></tr><tr><td>Mask3D w/ OpenScene (Peng et al., 2023)</td><td>11.7</td><td>15.2</td><td>17.8</td></tr><tr><td>OpenIns3D (Nguyen et al., 2024)</td><td>23.7</td><td>29.4</td><td>32.8</td></tr><tr><td>OpenMask3D (Takmaz et al., 2023)</td><td>15.4</td><td>19.9</td><td>23.1</td></tr><tr><td colspan=\"4\">Unsupervised:</td></tr><tr><td>FoundObj (Ours)</td><td>6.7</td><td>12.7</td><td>16.4</td></tr></table>",
+        "bbox": [
+            89,
+            210,
+            470,
+            323
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "text",
+        "text": "",
+        "bbox": [
+            84,
+            352,
+            473,
+            383
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "text",
+        "text": "To quantify the impact of pseudo mask noise, for each discovered pseudo mask, we compute its IoU with the corresponding ground-truth object mask. If the IoU is higher than 50%, we replace the pseudo mask with the matched groundtruth mask; otherwise, we discard it. We then train Mask3D from scratch using these cleaned labels. As reported in Table 7, the resulting model achieves 37.0 in AP score on ScanNet val set, which is 12.8 points higher than training with our original pseudo masks. This confirms that pseudo mask errors are indeed propagated to the final segmentation network. Nevertheless, despite using noisy pseudo masks without any cleaning, FoundObj still substantially outperforms previous unsupervised methods. ",
+        "bbox": [
+            84,
+            388,
+            475,
+            585
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "text",
+        "text": "4.6. Extended to Open-vocabulary Segmentation ",
+        "text_level": 1,
+        "bbox": [
+            84,
+            603,
+            426,
+            618
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "text",
+        "text": "Although FoundObj is designed for class-agnostic object discovery, it can be naturally extended to open-vocabulary 3D object segmentation by assigning the discovered object masks with vision-language features. Specifically, after training, FoundObj predicts object masks for each 3D scene. We then extract OpenSeg (Ghiasi et al., 2022) features for each 3D point and average the point-wise features within each predicted mask. Finally, we compute the cosine similarity between mask features and the text embeddings of candidate class names to assign a semantic label. ",
+        "bbox": [
+            84,
+            626,
+            473,
+            777
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "text",
+        "text": "We evaluate this extension on the ScanNet validation set. As shown in Table 8, although there remains a gap to fully supervised open-vocabulary methods, it is worth emphasizing that they rely on fully supervised training to obtain object masks, whereas FoundObj generates object masks without any human annotations. These results suggest that FoundObj provides a promising label-free object mask generator for open-vocabulary 3D scene understanding. ",
+        "bbox": [
+            84,
+            784,
+            475,
+            906
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "text",
+        "text": "4.7. Analysis on Object Discovery Agent ",
+        "text_level": 1,
+        "bbox": [
+            496,
+            84,
+            781,
+            99
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "text",
+        "text": "In this section, we provide a detailed analysis of the agent’s behavior. Specifically, during training, we evaluate both the number and accuracy of discovered object candidates. A discovered object is considered accurate if its mask achieves an IoU greater than 50% with a matched ground truth object. We further distinguish newly discovered objects, defined as those not identified in any previous epoch, to characterize the agent’s exploration dynamics over time. All evaluations are conducted on the ScanNet training set. ",
+        "bbox": [
+            495,
+            108,
+            885,
+            243
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "text",
+        "text": "As shown in Table 9, the agent discovers an increasing number of objects throughout training, eventually reaching convergence. The accuracy of discovered object candidates also improves initially and gradually stabilizes at around 40%. Meanwhile, the number of newly discovered objects decreases over time, further indicating convergence. Additionally, the accuracy of newly discovered objects declines in later epochs, suggesting that the most salient objects are identified early, while subsequent exploration targets more challenging cases. Overall, the agent demonstrates a coarse-to-fine, progressive exploration behavior, automatically discovering a diverse range of object shapes over time. ",
+        "bbox": [
+            495,
+            251,
+            887,
+            434
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "table",
+        "img_path": "images/83016be518188bdc11af8a5655525d4c3559b1e9e4f0309db5acc9a495812814.jpg",
+        "table_caption": [
+            "Table 9. The number and accuracy of object candidates discovered by the agent after different training epochs. "
+        ],
+        "table_footnote": [],
+        "table_body": "<table><tr><td>Epochs</td><td>50</td><td>100</td><td>150</td><td>200</td><td>250</td><td>300</td></tr><tr><td>Number of Obj</td><td>10408</td><td>11362</td><td>11599</td><td>11750</td><td>11775</td><td>11810</td></tr><tr><td>Accuracy of Obj (%)</td><td>26.6</td><td>30.5</td><td>35.7</td><td>37.8</td><td>40.1</td><td>40.3</td></tr><tr><td>Number of New Obj</td><td>10408</td><td>4342</td><td>2479</td><td>2117</td><td>1147</td><td>1374</td></tr><tr><td>Accuracy of New Obj (%)</td><td>26.6</td><td>16.8</td><td>15.6</td><td>14.0</td><td>12.3</td><td>10.3</td></tr></table>",
+        "bbox": [
+            501,
+            472,
+            879,
+            549
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "text",
+        "text": "5. Conclusion ",
+        "text_level": 1,
+        "bbox": [
+            496,
+            561,
+            616,
+            578
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "text",
+        "text": "In this paper, we present FoundObj, a novel method for effectively discovering a wide variety of 3D objects from complex real-world point clouds, without requiring humanlabeled 3D scenes. Our approach introduces a superpointbased object discovery agent, which learns to select a seed superpoint and then progressively expands its spatial size by merging suitable neighboring superpoints. By leveraging powerful self-supervised 2D/3D foundation models, our agent is guided by complementary reward modules that evaluate the semantic consistency and geometric coherence of each discovered object candidate. Extensive experiments demonstrate that FoundObj achieves state-of-the-art performance and strong generalization in zero-shot and long-tail settings, outperforming existing unsupervised methods. Ablation studies and agent analyses further validate the effectiveness and robustness of each component, highlighting the potential of label-free 3D object segmentation for scalable real-world applications. Future work will explore integrating FoundObj into 3D pipelines like RayletDF (Wei et al., 2025) to enable joint, label-free segmentation and surface reconstruction of point clouds. ",
+        "bbox": [
+            495,
+            588,
+            887,
+            905
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "header",
+        "text": "FoundObj: Self-supervised Foundation Models as Rewards for Label-free 3D Object Segmentation ",
+        "bbox": [
+            174,
+            56,
+            797,
+            70
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "page_number",
+        "text": "9 ",
+        "bbox": [
+            480,
+            922,
+            491,
+            934
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "text",
+        "text": "Acknowledgments: This work was supported in part by Research Grants Council of Hong Kong under Grants 15219125 & 15225522, and in part by National Natural Science Foundation of China under Grant 62271431. ",
+        "bbox": [
+            84,
+            85,
+            473,
+            145
+        ],
+        "page_idx": 9
+    },
+    {
+        "type": "text",
+        "text": "Impact Statements: This paper presents work whose goal is to advance the field of machine learning. There are many potential societal consequences of our work, none of which we feel must be specifically highlighted here. ",
+        "bbox": [
+            84,
+            152,
+            473,
+            213
+        ],
+        "page_idx": 9
+    },
+    {
+        "type": "text",
+        "text": "References ",
+        "text_level": 1,
+        "bbox": [
+            86,
+            232,
+            181,
+            248
+        ],
+        "page_idx": 9
+    },
+    {
+        "type": "list",
+        "sub_type": "ref_text",
+        "list_items": [
+            "Armeni, I., Sax, S., Zamir, A. R., and Savarese, S. Joint 2D-3D-Semantic Data for Indoor Scene Understanding. arXiv:1702.01105, 2017. 2, 5 ",
+            "Baur, S. A., Emmerichs, D. J., Moosmann, F., Pinggera, P., Ommer, B., and Geiger, A. SLIM: Self-Supervised LiDAR Scene Flow and Motion Segmentation. ICCV, 2021. 3 ",
+            "Biederman, I. Recognition-by-Components: A Theory of Human Image Understanding. Psychological Review, 1987. 1 ",
+            "Boudjoghra, M. E. A., Dai, A., Lahoud, J., Cholakkal, H., Anwer, R. M., Khan, S., and Khan, F. S. Open-YOLO 3D: Towards Fast and Accurate Open-Vocabulary 3D Instance Segmentation. ICLR, 2025. 2 ",
+            "Cao, Y., Yihan, Z., Xu, H., and Xu, D. Coda: Collaborative novel box discovery and cross-modal alignment for openvocabulary 3d object detection. NeurIPS, 2023. 3 ",
+            "Carion, N., Gustafson, L., Hu, Y.-T., Debnath, S., Hu, R., Suris, D., Ryali, C., Alwala, K. V., Khedr, H., Huang, A., Lei, J., Ma, T., Guo, B., Kalla, A., Marks, M., Greer, J., Wang, M., Sun, P., Radle, R., Afouras, T., Mavroudi, ¨ E., Xu, K., Wu, T.-H., Zhou, Y., Momeni, L., Hazra, R., Ding, S., Vaze, S., Porcher, F., Li, F., Li, S., Kamath, A., Cheng, H. K., Dollar, P., Ravi, N., Saenko, K., Zhang, P., ´ and Feichtenhofer, C. SAM 3: Segment Anything with Concepts. arXiv:2511.16719, 2025. 2 ",
+            "Caron, M., Touvron, H., Misra, I., Jegou, H., Mairal, J., ´ Bojanowski, P., and Joulin, A. Emerging Properties in Self-Supervised Vision Transformers. ICCV, 2021. 1, 6 ",
+            "Chang, A. X., Funkhouser, T., Guibas, L., Hanrahan, P., Huang, Q., Li, Z., Savarese, S., Savva, M., Song, S., Su, H., Xiao, J., Yi, L., and Yu, F. ShapeNet: An Information-Rich 3D Model Repository. arXiv:1512.03012, 2015. 6 ",
+            "Chen, J., Zhang, Z., Yang, Y., Li, J., Wei, S., Sun, Z., and Yang, B. EvObj: Learning Evolving Object-centric Representations for 3D Instance Segmentation without Scene Supervision. CVPR, 2026a. 1, 3 "
+        ],
+        "bbox": [
+            86,
+            256,
+            475,
+            905
+        ],
+        "page_idx": 9
+    },
+    {
+        "type": "ref_text",
+        "text": "Chen, J., Zhang, Z., Yang, Y., Li, J., Wei, S., Sun, Z., and Yang, B. Evobj: Learning evolving object-centric representations for 3d instance segmentation without scene supervision. CVPR, 2026b. 15 ",
+        "bbox": [
+            498,
+            84,
+            887,
+            145
+        ],
+        "page_idx": 9
+    },
+    {
+        "type": "ref_text",
+        "text": "Chen, S., Fang, J., Zhang, Q., Liu, W., and Wang, X. Hierarchical Aggregation for 3D Instance Segmentation. ICCV, 2021. 2 ",
+        "bbox": [
+            498,
+            155,
+            887,
+            200
+        ],
+        "page_idx": 9
+    },
+    {
+        "type": "ref_text",
+        "text": "Chibane, J., Engelmann, F., Tran, T. A., and Pons-Moll, G. Box2Mask: Weakly Supervised 3D Semantic Instance Segmentation Using Bounding Boxes. ECCV, 2022. 2 ",
+        "bbox": [
+            498,
+            210,
+            887,
+            257
+        ],
+        "page_idx": 9
+    },
+    {
+        "type": "ref_text",
+        "text": "Chiou, R. and Ralph, M. A. L. The anterior temporal cortex is a primary semantic source of top-down influences on object recognition. Cortex, 2016. 1 ",
+        "bbox": [
+            498,
+            268,
+            887,
+            313
+        ],
+        "page_idx": 9
+    },
+    {
+        "type": "ref_text",
+        "text": "Collins, J., Goel, S., Luthra, A., Xu, L., Deng, K., Zhang, X., Vicente, T. F. Y., Arora, H., Dideriksen, T., Guillaumin, M., and Malik, J. ABO: Dataset and Benchmarks for Real-World 3D Object Understanding. CVPR, 2022. 4, 14 ",
+        "bbox": [
+            498,
+            323,
+            887,
+            398
+        ],
+        "page_idx": 9
+    },
+    {
+        "type": "ref_text",
+        "text": "Contributors, S. Spconv: Spatially sparse convolution library. 2022. 14 ",
+        "bbox": [
+            498,
+            410,
+            887,
+            440
+        ],
+        "page_idx": 9
+    },
+    {
+        "type": "ref_text",
+        "text": "Dai, A., Chang, A. X., Savva, M., Halber, M., Funkhouser, T., and Nießner, M. ScanNet: Richly-annotated 3D Reconstructions of Indoor Scenes. CVPR, 2017. 2, 5, 6 ",
+        "bbox": [
+            498,
+            450,
+            887,
+            496
+        ],
+        "page_idx": 9
+    },
+    {
+        "type": "ref_text",
+        "text": "Deitke, M., Liu, R., Wallingford, M., Ngo, H., Michel, O., Kusupati, A., Fan, A., Laforte, C., Voleti, V., Gadre, S. Y., VanderBilt, E., Kembhavi, A., Vondrick, C., Gkioxari, G., Ehsani, K., Schmidt, L., and Farhadi, A. Objaverse-XL: A Universe of 10M+ 3D Objects. NeurIPS, 2023. 4 ",
+        "bbox": [
+            498,
+            507,
+            887,
+            583
+        ],
+        "page_idx": 9
+    },
+    {
+        "type": "ref_text",
+        "text": "Deng, Q., Hui, L., Xie, J., and Yang, J. Sketchy Boundingbox Supervision for 3D Instance Segmentation. CVPR, 2025. 2 ",
+        "bbox": [
+            498,
+            593,
+            887,
+            638
+        ],
+        "page_idx": 9
+    },
+    {
+        "type": "ref_text",
+        "text": "Ester, M., Kriegel, H.-P., Sander, J., and Xu, X. A densitybased algorithm for discovering clusters in large spatial databases with noise. KDD, 1996. 4 ",
+        "bbox": [
+            498,
+            650,
+            887,
+            695
+        ],
+        "page_idx": 9
+    },
+    {
+        "type": "ref_text",
+        "text": "Fang, Z., Li, X., Li, X., Buhmann, J. M., Loy, C. C., and Liu, M. Explore In-Context Learning for 3D Point Cloud Understanding. NeurIPS, 2023. 6 ",
+        "bbox": [
+            498,
+            705,
+            887,
+            751
+        ],
+        "page_idx": 9
+    },
+    {
+        "type": "ref_text",
+        "text": "Felzenszwalb, P. F. and Huttenlocher, D. P. Efficient Graph-Based Image Segmentation. IJCV, 2004. 3, 15 ",
+        "bbox": [
+            498,
+            762,
+            887,
+            792
+        ],
+        "page_idx": 9
+    },
+    {
+        "type": "ref_text",
+        "text": "Fu, H., Jia, R., Gao, L., Gong, M., Zhao, B., Maybank, S., and Tao, D. 3D-FUTURE: 3D Furniture shape with TextURE. IJCV, 2021. 4, 14 ",
+        "bbox": [
+            498,
+            803,
+            887,
+            848
+        ],
+        "page_idx": 9
+    },
+    {
+        "type": "ref_text",
+        "text": "Ghiasi, G., Gu, X., Cui, Y., and Lin, T.-Y. Scaling openvocabulary image segmentation with image-level labels. ECCV, 2022. 9 ",
+        "bbox": [
+            498,
+            859,
+            887,
+            904
+        ],
+        "page_idx": 9
+    },
+    {
+        "type": "header",
+        "text": "FoundObj: Self-supervised Foundation Models as Rewards for Label-free 3D Object Segmentation ",
+        "bbox": [
+            174,
+            56,
+            797,
+            71
+        ],
+        "page_idx": 9
+    },
+    {
+        "type": "page_number",
+        "text": "10 ",
+        "bbox": [
+            477,
+            922,
+            495,
+            934
+        ],
+        "page_idx": 9
+    },
+    {
+        "type": "list",
+        "sub_type": "ref_text",
+        "list_items": [
+            "Graham, B., Engelcke, M., and van der Maaten, L. 3D Semantic Segmentation with Submanifold Sparse Convolutional Networks. CVPR, 2018. 3 ",
+            "Griffiths, D., Boehm, J., and Ritschel, T. Finding Your (3D) Center: 3D Object Detection Using a Learned Loss. ECCV, 2020. 2 ",
+            "Gui, J., Chen, T., Zhang, J., Cao, Q., Sun, Z., Luo, H., and Tao, D. A Survey on Self-Supervised Learning: Algorithms, Applications, and Future Trends. TPAMI, 2024. 1 ",
+            "Guo, H., Zhu, H., Peng, S., Wang, Y., Shen, Y., Hu, R., and Zhou, X. SAM-guided Graph Cut for 3D Instance Segmentation. ECCV, 2024. 2 ",
+            "Ha, H. and Song, S. Semantic Abstraction: Open-World 3D Scene Understanding from 2D Vision-Language Models. CoRL, 2022. 2 ",
+            "Han, L., Zheng, T., Xu, L., and Fang, L. OccuSeg: Occupancy-aware 3D Instance Segmentation. CVPR, 2020. 2 ",
+            "Han, Z., Boudjoghra, M. E. A., Dong, J., Wang, J., and Anwer, R. M. All in One: Visual-Description-Guided Unified Point Cloud Segmentation. ICCV, 2025. 1 ",
+            "He, T., Shen, C., and van den Hengel, A. DyCo3D: Robust Instance Segmentation of 3D Point Clouds through Dynamic Convolution. CVPR, 2021. 2 ",
+            "Hou, J., Dai, A., and Nießner, M. 3D-SIS: 3D Semantic Instance Segmentation of RGB-D Scans. CVPR, 2019. 2 ",
+            "Huang, S.-Y., Choe, J., Wang, Y.-C. F., and Sun, C. OpenVoxel: Training-Free Grouping and Captioning Voxels for Open-Vocabulary 3D Scene Understanding. arXiv:2601.09575, 2026. 3 ",
+            "Huang, Z., Wu, X., Chen, X., Zhao, H., Zhu, L., and Lasenby, J. OpenIns3D: Snap and Lookup for 3D Openvocabulary Instance Segmentation. ECCV, 2024. 2 ",
+            "Jung, S., Zheng, J., Zhang, K., Qiao, N., Chen, A. Y. C., Xia, L., Liu, C., Sun, Y., Zeng, X., Huang, H.-W., Boots, B., Sun, M., and Kuo, C.-H. Details Matter for Indoor Open-vocabulary 3D Instance Segmentation. ICCV, 2025. 2 ",
+            "Kirillov, A., Mintun, E., Ravi, N., Mao, H., Rolland, C., Gustafson, L., Xiao, T., Whitehead, S., Berg, A. C., Lo, W.-Y., Dollar, P., and Girshick, R. Segment Anything. ´ ICCV, 2023. 2 ",
+            "Kolodiazhnyi, M., Vorontsova, A., Konushin, A., and Rukhovich, D. OneFormer3D: One Transformer for Unified Point Cloud Segmentation. CVPR, 2024. 1, 2 "
+        ],
+        "bbox": [
+            81,
+            80,
+            480,
+            909
+        ],
+        "page_idx": 10
+    },
+    {
+        "type": "list",
+        "sub_type": "ref_text",
+        "list_items": [
+            "Lai, X., Yuan, Y., Chu, R., Chen, Y., Hu, H., and Jia, J. Mask-Attention-Free Transformer for 3D Instance Segmentation. ICCV, 2023. 2 ",
+            "Lai, Z., Zhao, Y., Liu, H., Zhao, Z., Lin, Q., Shi, H., Yang, X., Yang, M., Yang, S., Feng, Y., Zhang, S., Huang, X., Luo, D., Yang, F., Yang, F., Wang, L., Liu, S., Tang, Y., Cai, Y., He, Z., Liu, T., Liu, Y., Jiang, J., Linus, Huang, J., and Guo, C. Hunyuan3D 2.5: Towards High-Fidelity 3D Assets Generation with Ultimate Details. arXiv:2506.16504, 2025. 4 ",
+            "Lee, J., Park, C., Choe, J., Wang, Y.-C. F., Kautz, J., Cho, M., and Choy, C. Mosaic3D: Foundation Dataset and Model for Open-Vocabulary 3D Segmentation. CVPR, 2025. 2 ",
+            "Lei, J., Deng, C., Schmeckpeper, K., Guibas, L., and Daniilidis, K. EFEM: Equivariant Neural Field Expectation Maximization for 3D Object Segmentation Without Scene Supervision. CVPR, 2023. 1, 3, 6, 7 ",
+            "Li, X., Zhang, Q., Kang, D., Cheng, W., Gao, Y., Zhang, J., Liang, Z., Liao, J., Cao, Y.-P., and Shan, Y. Advances in 3D Generation: A Survey. arXiv:2401.17807, 2024. 1 ",
+            "Liu, H., Li, C., Wu, Q., and Lee, Y. J. Visual Instruction Tuning. NeurIPS, 2023a. 2 ",
+            "Liu, T., Wang, Z., Liu, R., Wang, G., and Zhang, D. Towards 3D Objectness Learning in an Open World. NeurIPS, 2025. 2 ",
+            "Liu, Y., Kong, L., Cen, J., Chen, R., Zhang, W., Pan, L., Chen, K., and Liu, Z. Segment Any Point Cloud Sequences by Distilling Vision Foundation Models. NeurIPS, 2023b. 2 ",
+            "Lu, J., Deng, J., Wang, C., He, J., and Zhang, T. Query Refinement Transformer for 3D Instance Segmentation. ICCV, 2023a. 2 ",
+            "Lu, Y., Xu, C., Wei, X., Xie, X., Tomizuka, M., Keutzer, K., and Zhang, S. Open-Vocabulary Point-Cloud Object Detection without 3D Annotation. CVPR, 2023b. 2 ",
+            "Mei, G., Riz, L., Wang, Y., and Poiesi, F. Vocabulary-Free 3D Instance Segmentation with Vision-Language Assistant. 3DV, 2025. 3 ",
+            "Nguyen, P., Luu, M., Tran, A., Pham, C., and Nguyen, K. Any3DIS: Class-Agnostic 3D Instance Segmentation by 2D Mask Tracking. CVPR, 2025. 2 ",
+            "Nguyen, P. D. A., Ngo, T. D., Kalogerakis, E., Gan, C., Tran, A., Pham, C., and Nguyen, K. Open3DIS: Open-Vocabulary 3D Instance Segmentation with 2D Mask Guidance. CVPR, 2024. 2, 9 "
+        ],
+        "bbox": [
+            495,
+            80,
+            888,
+            905
+        ],
+        "page_idx": 10
+    },
+    {
+        "type": "header",
+        "text": "FoundObj: Self-supervised Foundation Models as Rewards for Label-free 3D Object Segmentation ",
+        "bbox": [
+            174,
+            56,
+            797,
+            71
+        ],
+        "page_idx": 10
+    },
+    {
+        "type": "page_number",
+        "text": "",
+        "bbox": [
+            477,
+            922,
+            493,
+            934
+        ],
+        "page_idx": 10
+    },
+    {
+        "type": "list",
+        "sub_type": "ref_text",
+        "list_items": [
+            "Oquab, M., Darcet, T., Moutakanni, T., Vo, H. V., Szafraniec, M., Khalidov, V., Fernandez, P., Haziza, D., Massa, F., El-nouby, A., Assran, M., Ballas, N., Galuba, W., Howes, R., Huang, P.-y., Li, S.-w., Misra, I., Rabbat, M., Sharma, V., Synnaeve, G., Xu, H., Jegou, H., and Mairal, J. DINOv2: Learning Robust Visual Features without Supervision. TMLR, 2024. 1, 2 ",
+            "Peng, S., Genova, K., Jiang, C., Tagliasacchi, A., Pollefeys, M., Funkhouser, T., et al. Openscene: 3d scene understanding with open vocabularies. CVPR, 2023. 9 ",
+            "Radford, A., Kim, J. W., Hallacy, C., Ramesh, A., Goh, G., Agarwal, S., Sastry, G., Askell, A., Mishkin, P., Clark, J., Krueger, G., and Sutskever, I. Learning Transferable Visual Models From Natural Language Supervision. ICML, 2021. 2 ",
+            "Ren, S., Zhang, C., Wang, S., Zhu, L., and Zhang, M. UCFSeg: Unsupervised 3D point cloud segmentation via multi-scale contextual feature learning. Digital Signal Processing, 2026. 3 ",
+            "Roh, W., Jung, H., Nam, G., Yeom, J., Park, H., Ho, S., and Sangpil, Y. Edge-Aware 3D Instance Segmentation Network with Intelligent Semantic Prior. CVPR, 2024. 2 ",
+            "Rozenberszki, D., Litany, O., and Dai, A. Language-Grounded Indoor 3D Semantic Segmentation in the Wild. ECCV, 2022. 5 ",
+            "Rozenberszki, D., Litany, O., and Dai, A. UnScene3D: Unsupervised 3D Instance Segmentation for Indoor Scenes. CVPR, 2024. 1, 3, 5, 6, 7, 8, 17, 18 ",
+            "Schult, J., Engelmann, F., Hermans, A., Litany, O., Tang, S., and Leibe, B. Mask3D: Mask Transformer for 3D Semantic Instance Segmentation. ICRA, 2023. 2, 5, 6, 7, 15, 17, 18 ",
+            "Shi, C., Zhang, Y., Yang, B., Tang, J., and Yang, S. Part2Object: Hierarchical Unsupervised 3D Instance Segmentation. ECCV, 2024. 1, 3, 6, 7, 8, 17, 18 ",
+            "Shi, J. and Malik, J. Normalized cuts and image segmentation. TPAMI, 2000. 5, 15 ",
+            "Shin, S., Zhou, K., Vankadari, M., Markham, A., and Trigoni, N. Spherical Mask: Coarse-to-Fine 3D Point Cloud Instance Segmentation with Spherical Representation. CVPR, 2024. 2 ",
+            "Song, Z. and Yang, B. OGC: Unsupervised 3D Object Segmentation from Rigid Dynamics of Point Clouds. NeurIPS, 2022. 3 ",
+            "Song, Z. and Yang, B. Unsupervised 3D Object Segmentation of Point Clouds by Geometry Consistency. TPAMI, 2024. 3 "
+        ],
+        "bbox": [
+            81,
+            80,
+            480,
+            906
+        ],
+        "page_idx": 11
+    },
+    {
+        "type": "list",
+        "sub_type": "ref_text",
+        "list_items": [
+            "Sun, J., Qing, C., Tan, J., and Xu, X. Superpoint Transformer for 3D Scene Instance Segmentation. AAAI, 2023. 2 ",
+            "Takmaz, A., Fedele, E., Sumner, R. W., Pollefeys, M., Tombari, F., and Engelmann, F. OpenMask3D: Open-Vocabulary 3D Instance Segmentation. NeurIPS, 2023. 2, 9 ",
+            "Tang, L., Hui, L., and Xie, J. Learning Inter-Superpoint Affinity for Weakly Supervised 3D Instance Segmentation. ACCV, 2022. 2 ",
+            "Vu, T., Kim, K., Luu, T. M., Nguyen, X. T., and Yoo, C. D. SoftGroup for 3D Instance Segmentation on Point Clouds. CVPR, 2022. 2 ",
+            "Wang, W., Yu, R., Huang, Q., and Neumann, U. SGPN: Similarity Group Proposal Network for 3D Point Cloud Instance Segmentation. CVPR, 2018. 2 ",
+            "Wang, Y., He, X., Peng, S., Lin, H., Bao, H., and Zhou, X. Autorecon: Automated 3d object discovery and reconstruction. CVPR, 2023. 3 ",
+            "Wang, Y., Jia, B., Zhu, Z., and Huang, S. Masked Point-Entity Contrast for Open-Vocabulary 3D Scene Understanding. CVPR, 2025. 2 ",
+            "Wei, S., Li, J., Yang, Y., Zhou, S., and Yang, B. RayletDF: Raylet Distance Fields for Generalizable 3D Surface Reconstruction from Point Clouds or Gaussians. ICCV, 2025. 9 ",
+            "Wu, S., Lin, Y., Zhang, F., Zeng, Y., Xu, J., Torr, P., Cao, X., and Yao, Y. Direct3d: Scalable image-to-3d generation via 3d latent diffusion transformer. NeurIPS, 2024. 16 ",
+            "Xiang, J., Lv, Z., Xu, S., Deng, Y., Wang, R., Zhang, B., Chen, D., Tong, X., and Yang, J. Structured 3D Latents for Scalable and Versatile 3D Generation. CVPR, 2025. 2, 4, 14, 16 ",
+            "Yan, M., Zhang, J., Zhu, Y., and Wang, H. MaskClustering: View Consensus based Mask Graph Clustering for Open-Vocabulary 3D Instance Segmentation. CVPR, 2024. 2 ",
+            "Yang, B., Wang, J., Clark, R., Hu, Q., Wang, S., Markham, A., and Trigoni, N. Learning Object Bounding Boxes for 3D Instance Segmentation on Point Clouds. NeurIPS, 2019. 2 ",
+            "Yang, Y., Zhang, Z., and Yang, B. unMORE: Unsupervised Multi-Object Segmentation via Center-Boundary Reasoning. ICML, 2025. 3, 4 ",
+            "Yi, L., Zhao, W., Wang, H., Sung, M., and Guibas, L. GSPN: Generative Shape Proposal Network for 3D Instance Segmentation in Point Cloud. CVPR, 2019. 2 "
+        ],
+        "bbox": [
+            498,
+            83,
+            888,
+            906
+        ],
+        "page_idx": 11
+    },
+    {
+        "type": "header",
+        "text": "FoundObj: Self-supervised Foundation Models as Rewards for Label-free 3D Object Segmentation ",
+        "bbox": [
+            174,
+            56,
+            797,
+            71
+        ],
+        "page_idx": 11
+    },
+    {
+        "type": "page_number",
+        "text": "12 ",
+        "bbox": [
+            477,
+            922,
+            495,
+            934
+        ],
+        "page_idx": 11
+    },
+    {
+        "type": "list",
+        "sub_type": "ref_text",
+        "list_items": [
+            "Yin, Y., Liu, Y., Xiao, Y., Cohen-Or, D., Huang, J., and Chen, B. SAI3D: Segment Any Instance in 3D Scenes. CVPR, 2024. 2 ",
+            "Yoo, Y., Kim, S., and Kim, C. BEEP3D: Box-Supervised End-to-End Pseudo-Mask Generation for 3D Instance Segmentation. arXiv:2510.12182, 2025. 2 ",
+            "Zhang, L., Yang, A. J., Xiong, Y., Casas, S., Yang, B., Ren, M., and Urtasun, R. Towards Unsupervised Object Detection from LiDAR Point Clouds. CVPR, 2023a. 3 ",
+            "Zhang, Y., Wu, X., Lao, Y., Wang, C., Tian, Z., Wang, N., and Zhao, H. Concerto: Joint 2d-3d self-supervised learning emerges spatial representations. NeurIPS, 2025a. 6 ",
+            "Zhang, Z., Yang, B., Wang, B., and Li, B. Growsp: Unsupervised semantic segmentation of 3d point clouds. CVPR, 2023b. 15 ",
+            "Zhang, Z., Ding, J., Jiang, L., Dai, D., and Xia, G.-S. Free-Point: Unsupervised Point Cloud Instance Segmentation. CVPR, 2024. 3 ",
+            "Zhang, Z., Dai, W., Wen, H., and Yang, B. Logosp: Localglobal grouping of superpoints for unsupervised semantic segmentation of 3d point clouds. CVPR, 2025b. 15 ",
+            "Zhang, Z., Yang, Y., Wen, H., and Yang, B. GrabS: Generative Embodied Agent for 3D Object Segmentation without Scene Supervision. ICLR, 2025c. 1, 2, 3, 5, 6, 7, 17, 18 ",
+            "Zhang, Z., Dai, W., Wang, B., Li, B., and Yang, B. Growsp++: Growing superpoints and primitives for unsupervised 3d semantic segmentation. TPAMI, 2026. 15 ",
+            "Zhao, J., Zhuo, J., Chen, J., and Ma, H. SAM2Object: Consolidating View Consistency via SAM2 for Zero-Shot 3D Instance Segmentation. CVPR, 2025a. 2 ",
+            "Zhao, Z., Lai, Z., Lin, Q., Zhao, Y., Liu, H., Yang, S., Feng, Y., Yang, M., Zhang, S., Yang, X., et al. Hunyuan3d 2.0: Scaling diffusion models for high resolution textured 3d assets generation. arXiv preprint arXiv:2501.12202, 2025b. 16 ",
+            "Zhou, M., He, C., Wang, R., and Chen, X. OV3D-CG: Openvocabulary 3D Instance Segmentation with Contextual Guidance. ICCV, 2025. 2 "
+        ],
+        "bbox": [
+            86,
+            83,
+            478,
+            800
+        ],
+        "page_idx": 12
+    },
+    {
+        "type": "header",
+        "text": "FoundObj: Self-supervised Foundation Models as Rewards for Label-free 3D Object Segmentation ",
+        "bbox": [
+            174,
+            56,
+            797,
+            71
+        ],
+        "page_idx": 12
+    },
+    {
+        "type": "page_number",
+        "text": "13 ",
+        "bbox": [
+            477,
+            922,
+            495,
+            934
+        ],
+        "page_idx": 12
+    },
+    {
+        "type": "text",
+        "text": "A. Details of Object Discovery Agent ",
+        "text_level": 1,
+        "bbox": [
+            84,
+            83,
+            397,
+            101
+        ],
+        "page_idx": 13
+    },
+    {
+        "type": "text",
+        "text": "Backbone Network. Our framework starts with a 3D scene backbone ${ \\mathbf { \\pm } } _ { g b o n e }$ to extract per-point features. We adopt the Res16UNet34C architecture from SparseConv as the backbone, which consists of four downsampling and upsampling stages to capture multi-scale geometric information. The backbone implementation is based on the SpConv library (Contributors, 2022). ",
+        "bbox": [
+            84,
+            109,
+            475,
+            214
+        ],
+        "page_idx": 13
+    },
+    {
+        "type": "text",
+        "text": "Policy Networks. Our framework includes two policy networks, namely the seed selection policy $\\pi _ { \\mathrm { s e e d } }$ and the neighbor merging policy $\\pi _ { \\mathrm { m e r g e } }$ . While sharing a similar design, the two policies differ in their configurations and outputs. ",
+        "bbox": [
+            84,
+            222,
+            475,
+            282
+        ],
+        "page_idx": 13
+    },
+    {
+        "type": "text",
+        "text": "The seed policy network $\\pi _ { \\mathrm { s e e d } }$ consists of a self-attention block followed by a feed-forward network (FFN) and a classification head with softmax activation. It takes all superpoint features within a 3D scene as input. After selfattention and FFN updates, the superpoint features are passed through an MLP and a softmax layer to produce a probability distribution over all superpoints, indicating the likelihood of each superpoint being selected as a seed. The hidden dimension is set to 128. ",
+        "bbox": [
+            84,
+            290,
+            475,
+            425
+        ],
+        "page_idx": 13
+    },
+    {
+        "type": "text",
+        "text": "The merge policy network $\\pi _ { \\mathrm { m e r g e } }$ is composed of three selfattention blocks with FFN layers. It takes as input the features of the current region and its neighboring superpoints. The updated features are then fed into an MLP followed by a sigmoid activation to predict the probability of each neighboring superpoint being merged into the current region. ",
+        "bbox": [
+            84,
+            434,
+            475,
+            525
+        ],
+        "page_idx": 13
+    },
+    {
+        "type": "text",
+        "text": "For both policies, we introduce a learnable value token that is concatenated with the superpoint features and jointly processed through the self-attention layers. The updated value token is finally passed to an MLP head to regress a scalar state-value estimate. Separate value tokens and value heads are used for $\\pi _ { \\mathrm { s e e d } }$ and πmerge. ",
+        "bbox": [
+            84,
+            532,
+            473,
+            625
+        ],
+        "page_idx": 13
+    },
+    {
+        "type": "text",
+        "text": "Reinforcement Learning Optimization. We adopt the Proximal Policy Optimization (PPO) algorithm to train the agent. For each trajectory, a reward of +10 is assigned if the current region satisfies either the geometric or semantic verification criteria, upon which the trajectory is terminated. Otherwise, a penalty of −1 is assigned. The maximum number of steps per trajectory is set to 5. ",
+        "bbox": [
+            84,
+            630,
+            475,
+            736
+        ],
+        "page_idx": 13
+    },
+    {
+        "type": "text",
+        "text": "Seed Range Sampling Strategy. Seed superpoint selection requires evaluating all superpoints in a scene, which is computationally expensive and may lead the policy to repeatedly select a few dominant superpoints. To alleviate this issue, we randomly crop a spherical region with a radius of 1 m from each scene during training and restrict seed selection to the superpoints within this region. The cropped region is resampled at every training epoch, promoting both efficiency and exploration diversity. ",
+        "bbox": [
+            84,
+            743,
+            475,
+            878
+        ],
+        "page_idx": 13
+    },
+    {
+        "type": "text",
+        "text": "B. Details of Geometric Reward Module ",
+        "text_level": 1,
+        "bbox": [
+            496,
+            83,
+            836,
+            99
+        ],
+        "page_idx": 13
+    },
+    {
+        "type": "text",
+        "text": "Network Architecture: The Object Center Field Network comprises an encoder and a decoder with details as follows: ",
+        "bbox": [
+            496,
+            109,
+            885,
+            138
+        ],
+        "page_idx": 13
+    },
+    {
+        "type": "text",
+        "text": "For the encoder, we adopt the 3D shape encoder proposed in the VAE of TRELLIS (Xiang et al., 2025), which consists of 13 layers of 3D convolutional layers. Input point clouds are first voxelized into a resolution of $6 4 ^ { 3 }$ grid, which is then fed into the encoder to generate a resolution of $1 6 ^ { 3 }$ voxel latent representation. Each voxel in this grid is associated with a 512-dimensional feature vector, encoding the 3D shape information. We directly load their well-trained model weights and freeze the encoder parameters. ",
+        "bbox": [
+            496,
+            147,
+            885,
+            282
+        ],
+        "page_idx": 13
+    },
+    {
+        "type": "text",
+        "text": "For the decoder, a self-attention block is first employed to refine the feature representations extracted by TREL-LIS. Subsequently, a cross-attention block takes the refined features as input to output center-offset vectors. Notably, arbitrary query points can be fed into this cross-attention block to obtain their corresponding predicted center-offset vectors. The position embedding for query points adopts the standard Fourier embedding. Both the self-attention and cross-attention blocks are configured with a consistent feature dimension of 512. ",
+        "bbox": [
+            496,
+            290,
+            885,
+            440
+        ],
+        "page_idx": 13
+    },
+    {
+        "type": "text",
+        "text": "Date Preparation: The Object Center Field Network is trained on 3D object datasets: ABO (Collins et al., 2022) and 3D-Future (Fu et al., 2021). We additionally create random non-object fragments during training and enforce zero-vector predictions for their points $( i . e . , \\mathrm { \\bf ~ \\nabla } v _ { m } \\mathrm { \\bf ~ = ~ } { \\bf 0 } ) .$ improving the discriminability and robustness of the Center Field in cluttered 3D scenes. The data preparation pipeline for training samples is detailed as follows: ",
+        "bbox": [
+            496,
+            449,
+            885,
+            569
+        ],
+        "page_idx": 13
+    },
+    {
+        "type": "text",
+        "text": "First, each object mesh from the two datasets undergoes random rotation and normalization to stay within a unit cube. To simulate real-world scenarios, we append a vertical plane mesh (simulating a wall) and a horizontal plane mesh (simulating a floor) to the normalized object. Furthermore, 70% of the training samples are augmented with additional object meshes sampled randomly from the same datasets to construct multi-object scenarios. ",
+        "bbox": [
+            496,
+            577,
+            885,
+            698
+        ],
+        "page_idx": 13
+    },
+    {
+        "type": "text",
+        "text": "After creating the object meshes, we randomly select 12 views to render depth maps. The camera pitch angle for these views ranges from -30^\\circ to +30^\\circ , and the camera is positioned 2 units away from the origin. From the rendered depth maps, 2–4 views are randomly chosen for reprojection into point clouds, which are then concatenated as partial object point clouds and used as the input to the Object Center Field Network during training. The supervision signal is precomputed as the offset from each point in the input object to the center of the object mesh. For the input non-object points, we simply set their supervision as all-zero vectors. ",
+        "bbox": [
+            496,
+            705,
+            885,
+            872
+        ],
+        "page_idx": 13
+    },
+    {
+        "type": "header",
+        "text": "FoundObj: Self-supervised Foundation Models as Rewards for Label-free 3D Object Segmentation ",
+        "bbox": [
+            174,
+            56,
+            797,
+            70
+        ],
+        "page_idx": 13
+    },
+    {
+        "type": "page_number",
+        "text": "14 ",
+        "bbox": [
+            477,
+            922,
+            495,
+            934
+        ],
+        "page_idx": 13
+    },
+    {
+        "type": "text",
+        "text": "C. Details of Semantic Reward Module ",
+        "text_level": 1,
+        "bbox": [
+            84,
+            83,
+            416,
+            99
+        ],
+        "page_idx": 14
+    },
+    {
+        "type": "text",
+        "text": "Given the per-superpoint DINOv2 features for a 3D scene, we aim to design a criterion to measure whether an arbitrary mask is semantically distinctive. Inspired by NCut (Shi & Malik, 2000), we introduce a graph-cut cost as our semantic reward criterion. ",
+        "bbox": [
+            84,
+            109,
+            475,
+            184
+        ],
+        "page_idx": 14
+    },
+    {
+        "type": "text",
+        "text": "Specifically, we build a weighted spatial graph over K superpoints, where each node corresponds to a superpoint and is associated with a DINOv2 feature. The affinity matrix considers both semantic similarity and spatial connectivity. The semantic similarity matrix $\\dot { \\boldsymbol { S } } \\in \\mathbb { R } ^ { \\bar { K } \\times K }$ is computed using pair-wise cosine similarity between superpoints. The spatial connectivity matrix $\\mathcal { A } \\in \\mathbb { R } ^ { K \\times K }$ encodes superpoint adjacency, where $A _ { i j } = 1$ indicates that the $i ^ { t h }$ and $j ^ { t h }$ superpoints are spatially adjacent. The final affinity matrix is computed as ",
+        "bbox": [
+            84,
+            191,
+            475,
+            343
+        ],
+        "page_idx": 14
+    },
+    {
+        "type": "equation",
+        "text": "$$\n\\mathcal {W} = \\mathcal {S} * \\mathcal {A}. \\tag {5}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            235,
+            348,
+            473,
+            364
+        ],
+        "page_idx": 14
+    },
+    {
+        "type": "text",
+        "text": "Given a binary mask $O _ { t } \\in \\mathbb { R } ^ { K \\times 1 }$ , we treat it as a candidate solution of the graph cut problem and partition the superpoints into two disjoint sets $O _ { t }$ and $\\bar { O } _ { t }$ . We then compute the semantic cost following NCut (Shi & Malik, 2000): ",
+        "bbox": [
+            84,
+            382,
+            475,
+            444
+        ],
+        "page_idx": 14
+    },
+    {
+        "type": "equation",
+        "text": "$$\n\\mathrm{cost} (O _ {t}) = \\frac {\\mathrm{cut} (O _ {t} , \\bar {O} _ {t})}{\\mathrm{vol} (O _ {t})}, \\tag {6}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            192,
+            453,
+            473,
+            488
+        ],
+        "page_idx": 14
+    },
+    {
+        "type": "text",
+        "text": "where ",
+        "bbox": [
+            89,
+            501,
+            135,
+            513
+        ],
+        "page_idx": 14
+    },
+    {
+        "type": "equation",
+        "text": "$$\n\\operatorname{cut} (O _ {t}, \\bar {O} _ {t}) = \\sum_ {i \\in O _ {t}} \\sum_ {j \\in \\bar {O} _ {t}} \\mathcal {W} _ {i j}, \\quad \\operatorname{vol} (O _ {t}) = \\sum_ {i \\in O _ {t}} \\sum_ {j} \\mathcal {W} _ {i j}. \\tag {7}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            86,
+            518,
+            473,
+            566
+        ],
+        "page_idx": 14
+    },
+    {
+        "type": "text",
+        "text": "Here, $\\operatorname { c u t } ( O _ { t } , \\bar { O } _ { t } )$ , denoted as $\\mathcal { C } _ { \\mathrm { b o u n d a r y } }$ , measures the semantic similarity of superpoint pairs across the boundary of $O _ { t } .$ , while $\\mathrm { v o l } ( O _ { t } )$ , denoted as $\\mathcal { C } _ { \\mathrm { v o l } }$ , captures the internal semantic consistency within $O _ { t }$ . ",
+        "bbox": [
+            84,
+            585,
+            475,
+            647
+        ],
+        "page_idx": 14
+    },
+    {
+        "type": "text",
+        "text": "In computation, the cut term can be expressed in matrix form using the affinity matrix W and the binary mask $O _ { t }$ : ",
+        "bbox": [
+            84,
+            654,
+            473,
+            685
+        ],
+        "page_idx": 14
+    },
+    {
+        "type": "equation",
+        "text": "$$\n\\operatorname{cut} (O _ {t}, \\bar {O} _ {t}) = O _ {t} ^ {\\top} \\mathcal {W} (1 - O _ {t}), \\tag {8}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            173,
+            696,
+            473,
+            715
+        ],
+        "page_idx": 14
+    },
+    {
+        "type": "text",
+        "text": "Similarly, the volume term can be calculated as: ",
+        "bbox": [
+            84,
+            731,
+            403,
+            744
+        ],
+        "page_idx": 14
+    },
+    {
+        "type": "equation",
+        "text": "$$\n\\operatorname{vol} \\left(O _ {t}\\right) = O _ {t} ^ {\\top} \\mathcal {W} \\mathbf {1}, \\tag {9}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            212,
+            760,
+            473,
+            777
+        ],
+        "page_idx": 14
+    },
+    {
+        "type": "text",
+        "text": "where $\\mathbf { 1 } \\in \\mathbb { R } ^ { K \\times 1 }$ is an all-one vector. ",
+        "bbox": [
+            84,
+            791,
+            334,
+            806
+        ],
+        "page_idx": 14
+    },
+    {
+        "type": "text",
+        "text": "Intuitively, this cost penalizes separating semantically similar superpoints across the boundary, while favoring regions that are internally consistent and well separated from their surrounding context. Therefore, a lower cost indicates stronger semantic objectness for the candidate region and serves as a semantic prior for object discovery. ",
+        "bbox": [
+            84,
+            814,
+            475,
+            906
+        ],
+        "page_idx": 14
+    },
+    {
+        "type": "text",
+        "text": "D. Details of Training and Test ",
+        "text_level": 1,
+        "bbox": [
+            496,
+            83,
+            758,
+            99
+        ],
+        "page_idx": 14
+    },
+    {
+        "type": "text",
+        "text": "For the PPO training of policy networks, we constrain the maximum change ratio between the previous and current policy distributions to 20% to prevent unstable updates. We employ generalized advantage estimation (GAE) instead of vanilla advantage regression, with the GAE parameter $\\lambda = 0 . 9$ and the discount factor $\\gamma = 0 . 9$ . To encourage exploration, an entropy regularization term is applied to the action distributions. The overall loss consists of the PPO-Clip loss, the value regression loss, and the entropy loss, with corresponding coefficients set to 1, 1, and 0.1, respectively. We use the Adam optimizer with a learning rate of 1e-4 throughout training. ",
+        "bbox": [
+            496,
+            109,
+            885,
+            290
+        ],
+        "page_idx": 14
+    },
+    {
+        "type": "text",
+        "text": "For training the segmentation network Mask3D (Schult et al., 2023), we collect all discovered object candidate masks from agent training as pseudo-labels. The training loss is the same as the vanilla Mask3D, which consists of a binary cross-entropy and dice loss for mask supervision, a cross-entropy loss for mask classification, and another binary cross-entropy for object-background classification, with weights of 2, 5, and 2. The voxel size of SparseConv is 2cm, and shares the same backbone as ${ \\mathbf { \\pm } } _ { g b o n e }$ . The optimizer is AdamW with a learning rate of 1e-4 in all training epochs. ",
+        "bbox": [
+            496,
+            297,
+            887,
+            450
+        ],
+        "page_idx": 14
+    },
+    {
+        "type": "text",
+        "text": "After training, we directly use the well-trained Mask3D to do inference. The usage of superpoints is also adopted, inspired by a line of 3D unsupervised works (Zhang et al., 2023b; 2025b; 2026; Chen et al., 2026b). ",
+        "bbox": [
+            496,
+            455,
+            887,
+            516
+        ],
+        "page_idx": 14
+    },
+    {
+        "type": "text",
+        "text": "E. Evaluation on ScanNet ",
+        "text_level": 1,
+        "bbox": [
+            496,
+            536,
+            718,
+            551
+        ],
+        "page_idx": 14
+    },
+    {
+        "type": "text",
+        "text": "We train our model on the ScanNet training set for 300 epochs with a batch size of 5. We use the superpoints provided by Felzenswalb algorithm (Felzenszwalb & Huttenlocher, 2004). Figure 9 provides additional qualitative comparisons with baseline methods on the ScanNet dataset. The optimizer is AdamW with a learning rate of 1e-4 in all training epochs. ",
+        "bbox": [
+            496,
+            561,
+            885,
+            667
+        ],
+        "page_idx": 14
+    },
+    {
+        "type": "text",
+        "text": "F. Evaluation on S3DIS ",
+        "text_level": 1,
+        "bbox": [
+            496,
+            686,
+            697,
+            703
+        ],
+        "page_idx": 14
+    },
+    {
+        "type": "text",
+        "text": "Tabs. 11 to 16 show the results of cross-dataset validation on each area of S3DIS. Figure 10 gives more qualitative comparisons. ",
+        "bbox": [
+            496,
+            713,
+            885,
+            758
+        ],
+        "page_idx": 14
+    },
+    {
+        "type": "text",
+        "text": "G. Evaluation on ScanNet200 ",
+        "text_level": 1,
+        "bbox": [
+            496,
+            777,
+            748,
+            792
+        ],
+        "page_idx": 14
+    },
+    {
+        "type": "text",
+        "text": "ScanNet200 is a more challenging benchmark; we also resume the well-trained checkpoint on ScanNet to validate the segmentation performances on this long-trial dataset. Figure 11 shows more qualitative results. ",
+        "bbox": [
+            496,
+            804,
+            885,
+            864
+        ],
+        "page_idx": 14
+    },
+    {
+        "type": "header",
+        "text": "FoundObj: Self-supervised Foundation Models as Rewards for Label-free 3D Object Segmentation ",
+        "bbox": [
+            174,
+            56,
+            797,
+            71
+        ],
+        "page_idx": 14
+    },
+    {
+        "type": "page_number",
+        "text": "15 ",
+        "bbox": [
+            477,
+            922,
+            495,
+            934
+        ],
+        "page_idx": 14
+    },
+    {
+        "type": "image",
+        "img_path": "images/1aa08645415e48e249b5229fbb5b28de4188c7883b8e2aefec693d75fa61549a.jpg",
+        "image_caption": [
+            "Figure 9. More qualitative results on ScanNet. "
+        ],
+        "image_footnote": [],
+        "content": "",
+        "bbox": [
+            86,
+            80,
+            888,
+            487
+        ],
+        "page_idx": 15
+    },
+    {
+        "type": "text",
+        "text": "H. Computational Overhead ",
+        "text_level": 1,
+        "bbox": [
+            84,
+            517,
+            328,
+            534
+        ],
+        "page_idx": 15
+    },
+    {
+        "type": "text",
+        "text": "We also analyze the computational overhead of FoundObj. Our framework consists of three main components. Training the Geometric Reward Module takes 13 hours and uses 16.4 GB GPU memory. The Semantic Reward Module does not require training, while extracting multi-view DINOv2 features and projecting them onto 3D point clouds takes 7 hours and 6.9 GB GPU memory. Training the object discovery agent together with the Mask3D segmentation network takes 35 hours and 14.9 GB of GPU memory. In total, FoundObj requires 55 hours of training on a single RTX 3090 GPU with an AMD R9 7950X CPU. ",
+        "bbox": [
+            84,
+            542,
+            475,
+            708
+        ],
+        "page_idx": 15
+    },
+    {
+        "type": "text",
+        "text": "For comparison, Part2Object requires 44 hours in total, including feature extraction, pseudo-label construction, and segmentation network training. UnScene3D requires 39 hours in total. Therefore, FoundObj introduces 11 and 16 additional training hours compared with Part2Object and UnScene3D, respectively. However, this extra cost brings clear improvements of 4.6 AP, 7.8 AP@50, and 9.8 AP@25 over the strongest baseline on ScanNet. Moreover, all methods use the same Mask3D architecture at inference time, so FoundObj has the same inference speed as the baselines, averaging 0.092 seconds per ScanNet scene. This shows that the additional computation is limited to training and ",
+        "bbox": [
+            84,
+            715,
+            475,
+            898
+        ],
+        "page_idx": 15
+    },
+    {
+        "type": "table",
+        "img_path": "images/f84620c15870bb994b4a0c5a3e19323f872bdd8bbfda5f0231d6c3c7ffd73da5.jpg",
+        "table_caption": [
+            "Table 10. Segmentation performance on the ScanNet validation set with different 3D foundation models. "
+        ],
+        "table_footnote": [],
+        "table_body": "<table><tr><td>3D Foundation Models</td><td>AP</td><td>AP@50</td><td>AP@25</td></tr><tr><td>Hunyuan3D 2.0 (Zhao et al., 2025b)</td><td>24.3</td><td>46.1</td><td>75.6</td></tr><tr><td>Direct3D (Wu et al., 2024)</td><td>22.5</td><td>44.9</td><td>76.0</td></tr><tr><td>TRELLIS (Xiang et al., 2025)</td><td>24.2</td><td>46.2</td><td>74.7</td></tr></table>",
+        "bbox": [
+            501,
+            542,
+            883,
+            606
+        ],
+        "page_idx": 15
+    },
+    {
+        "type": "text",
+        "text": "does not affect deployment efficiency. ",
+        "bbox": [
+            496,
+            633,
+            750,
+            648
+        ],
+        "page_idx": 15
+    },
+    {
+        "type": "text",
+        "text": "I. More 3D Object Foundation Models ",
+        "text_level": 1,
+        "bbox": [
+            496,
+            667,
+            823,
+            685
+        ],
+        "page_idx": 15
+    },
+    {
+        "type": "text",
+        "text": "For the geometric foundation model, we further verify that other mainstream 3D object foundation models, such as Hunyuan3D 2.0 (Zhao et al., 2025b) and Direct3D (Wu et al., 2024), can also be substitutes for TRELLIS. Specifically, we use their encoders to train the Center Field module and then train the object segmentation network. The results in the attached Table 10 show that our framework is not tied to a specific foundation model and generalizes well across different choices. ",
+        "bbox": [
+            495,
+            693,
+            887,
+            828
+        ],
+        "page_idx": 15
+    },
+    {
+        "type": "header",
+        "text": "FoundObj: Self-supervised Foundation Models as Rewards for Label-free 3D Object Segmentation ",
+        "bbox": [
+            174,
+            56,
+            797,
+            70
+        ],
+        "page_idx": 15
+    },
+    {
+        "type": "page_number",
+        "text": "16 ",
+        "bbox": [
+            477,
+            922,
+            495,
+            934
+        ],
+        "page_idx": 15
+    },
+    {
+        "type": "image",
+        "img_path": "images/f001cc09e2f31bd122bd0ca61d5ac7329ae1b0c227a672ca0d0e03b412005ca5.jpg",
+        "image_caption": [],
+        "image_footnote": [],
+        "content": "",
+        "bbox": [
+            84,
+            80,
+            890,
+            510
+        ],
+        "page_idx": 16
+    },
+    {
+        "type": "table",
+        "img_path": "images/69cb1bae978d233fb4f34e1684268b9656efbb074c71bb67e78bff8a8a24123d.jpg",
+        "table_caption": [
+            "Figure 10. More qualitative results on S3DIS. ",
+            "Table 11. Quantitative results of our method and baselines on the S3DIS-Area1. "
+        ],
+        "table_footnote": [],
+        "table_body": "<table><tr><td>Methods</td><td>AP</td><td>AP@50</td><td>AP@25</td></tr><tr><td colspan=\"4\">Supervised:</td></tr><tr><td>Mask3D (Schult et al., 2023)</td><td>10.2</td><td>18.6</td><td>33.8</td></tr><tr><td colspan=\"4\">Unsupervised:</td></tr><tr><td>GrabS (Zhang et al., 2025c)</td><td>3.1</td><td>5.6</td><td>10.5</td></tr><tr><td>UnScene3D-CSC (Rozenberszki et al., 2024)</td><td>7.9</td><td>16.2</td><td>36.6</td></tr><tr><td>UnScene3D-DINO (Rozenberszki et al., 2024)</td><td>6.3</td><td>17.6</td><td>37.6</td></tr><tr><td>UnScene3D (Rozenberszki et al., 2024)</td><td>9.0</td><td>19.9</td><td>40.1</td></tr><tr><td>Part2Object (Shi et al., 2024)</td><td>8.3</td><td>20.9</td><td>47.5</td></tr><tr><td>FoundObj (Ours)</td><td>11.9</td><td>25.7</td><td>48.0</td></tr></table>",
+        "bbox": [
+            89,
+            573,
+            473,
+            715
+        ],
+        "page_idx": 16
+    },
+    {
+        "type": "table",
+        "img_path": "images/edee7268e621cfd40bcf41e4bdf4d07f94fa0200f69199dd7a39c45df95c3db6.jpg",
+        "table_caption": [
+            "Table 12. Quantitative results of our method and baselines on the S3DIS-Area2. "
+        ],
+        "table_footnote": [],
+        "table_body": "<table><tr><td>Methods</td><td>AP</td><td>AP@50</td><td>AP@25</td></tr><tr><td colspan=\"4\">Supervised:</td></tr><tr><td>Mask3D (Schult et al., 2023)</td><td>6.1</td><td>12.4</td><td>24.1</td></tr><tr><td colspan=\"4\">Unsupervised:</td></tr><tr><td>GrabS (Zhang et al., 2025c)</td><td>0.9</td><td>2.0</td><td>5.7</td></tr><tr><td>UnScene3D-CSC (Rozenberszki et al., 2024)</td><td>2.9</td><td>8.0</td><td>10.7</td></tr><tr><td>UnScene3D-DINO (Rozenberszki et al., 2024)</td><td>1.8</td><td>5.6</td><td>19.9</td></tr><tr><td>UnScene3D (Rozenberszki et al., 2024)</td><td>3.1</td><td>7.8</td><td>23.4</td></tr><tr><td>Part2Object (Shi et al., 2024)</td><td>4.3</td><td>10.6</td><td>28.3</td></tr><tr><td>FoundObj (Ours)</td><td>5.4</td><td>12.9</td><td>30.5</td></tr></table>",
+        "bbox": [
+            89,
+            756,
+            473,
+            902
+        ],
+        "page_idx": 16
+    },
+    {
+        "type": "table",
+        "img_path": "images/10a8ea42a78543996b8f2dded6bfc521b146fee76ff37042060387833423a1f6.jpg",
+        "table_caption": [
+            "Table 13. Quantitative results of our method and baselines on the S3DIS-Area3. "
+        ],
+        "table_footnote": [],
+        "table_body": "<table><tr><td>Methods</td><td>AP</td><td>AP@50</td><td>AP@25</td></tr><tr><td colspan=\"4\">Supervised:</td></tr><tr><td>Mask3D (Schult et al., 2023)</td><td>15.2</td><td>24.3</td><td>40.3</td></tr><tr><td colspan=\"4\">Unsupervised:</td></tr><tr><td>GrabS (Zhang et al., 2025c)</td><td>4.8</td><td>7.0</td><td>10.1</td></tr><tr><td>UnScene3D-CSC (Rozenberszki et al., 2024)</td><td>8.5</td><td>17.0</td><td>36.9</td></tr><tr><td>UnScene3D-DINO (Rozenberszki et al., 2024)</td><td>8.0</td><td>16.5</td><td>38.7</td></tr><tr><td>UnScene3D (Rozenberszki et al., 2024)</td><td>9.7</td><td>19.5</td><td>41.9</td></tr><tr><td>Part2Object (Shi et al., 2024)</td><td>10.5</td><td>24.7</td><td>48.8</td></tr><tr><td>FoundObj (Ours)</td><td>12.6</td><td>26.5</td><td>51.6</td></tr></table>",
+        "bbox": [
+            501,
+            573,
+            885,
+            715
+        ],
+        "page_idx": 16
+    },
+    {
+        "type": "table",
+        "img_path": "images/2095dad64e947ca6f476a68d2ce52345d0402d628ea3ed74abdf866119b51c61.jpg",
+        "table_caption": [
+            "Table 14. Quantitative results of our method and baselines on the S3DIS-Area4. "
+        ],
+        "table_footnote": [],
+        "table_body": "<table><tr><td>Methods</td><td>AP</td><td>AP@50</td><td>AP@25</td></tr><tr><td colspan=\"4\">Supervised:</td></tr><tr><td>Mask3D (Schult et al., 2023)</td><td>12.7</td><td>22.7</td><td>38.1</td></tr><tr><td colspan=\"4\">Unsupervised:</td></tr><tr><td>GrabS (Zhang et al., 2025c)</td><td>2.3</td><td>4.5</td><td>8.9</td></tr><tr><td>UnScene3D-CSC (Rozenberszki et al., 2024)</td><td>5.7</td><td>14.0</td><td>36.1</td></tr><tr><td>UnScene3D-DINO (Rozenberszki et al., 2024)</td><td>6.1</td><td>14.2</td><td>35.9</td></tr><tr><td>UnScene3D (Rozenberszki et al., 2024)</td><td>7.8</td><td>17.8</td><td>39.9</td></tr><tr><td>Part2Object (Shi et al., 2024)</td><td>8.2</td><td>21.4</td><td>48.2</td></tr><tr><td>FoundObj (Ours)</td><td>12.2</td><td>27.5</td><td>49.0</td></tr></table>",
+        "bbox": [
+            501,
+            757,
+            885,
+            902
+        ],
+        "page_idx": 16
+    },
+    {
+        "type": "header",
+        "text": "FoundObj: Self-supervised Foundation Models as Rewards for Label-free 3D Object Segmentation ",
+        "bbox": [
+            174,
+            56,
+            797,
+            70
+        ],
+        "page_idx": 16
+    },
+    {
+        "type": "page_number",
+        "text": "17 ",
+        "bbox": [
+            477,
+            922,
+            495,
+            935
+        ],
+        "page_idx": 16
+    },
+    {
+        "type": "image",
+        "img_path": "images/353f4ec046dc734bac09b52fe5d6f70c2903288b61991502ecded221fad14283.jpg",
+        "image_caption": [],
+        "image_footnote": [],
+        "content": "",
+        "bbox": [
+            91,
+            80,
+            888,
+            494
+        ],
+        "page_idx": 17
+    },
+    {
+        "type": "table",
+        "img_path": "images/ea3deeaeaf92d09345ec28760d8bbc4f13fd3cb5fac9686ec195e1e03a3c2e3b.jpg",
+        "table_caption": [
+            "Figure 11. More qualitative results on ScanNet200. ",
+            "Table 15. Quantitative results of our method and baselines on the S3DIS-Area5. "
+        ],
+        "table_footnote": [],
+        "table_body": "<table><tr><td>Methods</td><td>AP</td><td>AP@50</td><td>AP@25</td></tr><tr><td colspan=\"4\">Supervised:</td></tr><tr><td>Mask3D (Schult et al., 2023)</td><td>13.0</td><td>22.3</td><td>37.5</td></tr><tr><td colspan=\"4\">Unsupervised:</td></tr><tr><td>GrabS (Zhang et al., 2025c)</td><td>3.7</td><td>6.1</td><td>9.3</td></tr><tr><td>UnScene3D-CSC (Rozenberszki et al., 2024)</td><td>8.0</td><td>14.8</td><td>32.2</td></tr><tr><td>UnScene3D-DINO (Rozenberszki et al., 2024)</td><td>7.0</td><td>13.6</td><td>32.3</td></tr><tr><td>UnScene3D (Rozenberszki et al., 2024)</td><td>8.9</td><td>17.3</td><td>35.9</td></tr><tr><td>Part2Object (Shi et al., 2024)</td><td>10.4</td><td>22.5</td><td>45.4</td></tr><tr><td>FoundObj (Ours)</td><td>12.8</td><td>24.0</td><td>45.4</td></tr></table>",
+        "bbox": [
+            91,
+            561,
+            473,
+            704
+        ],
+        "page_idx": 17
+    },
+    {
+        "type": "table",
+        "img_path": "images/187d280d84f87001a8e3fda7efc706934ec040e18252227a610f454fe791fc52.jpg",
+        "table_caption": [
+            "Table 16. Quantitative results of our method and baselines on the S3DIS-Area6. "
+        ],
+        "table_footnote": [],
+        "table_body": "<table><tr><td>Methods</td><td>AP</td><td>AP@50</td><td>AP@25</td></tr><tr><td colspan=\"4\">Supervised:</td></tr><tr><td>Mask3D (Schult et al., 2023)</td><td>13.6</td><td>23.9</td><td>34.8</td></tr><tr><td colspan=\"4\">Unsupervised:</td></tr><tr><td>GrabS (Zhang et al., 2025c)</td><td>4.3</td><td>7.5</td><td>11.8</td></tr><tr><td>UnScene3D-CSC (Rozenberszki et al., 2024)</td><td>9.0</td><td>18.6</td><td>38.6</td></tr><tr><td>UnScene3D-DINO (Rozenberszki et al., 2024)</td><td>7.8</td><td>16.8</td><td>48.3</td></tr><tr><td>UnScene3D (Rozenberszki et al., 2024)</td><td>10.1</td><td>22.0</td><td>43.7</td></tr><tr><td>Part2Object (Shi et al., 2024)</td><td>9.8</td><td>24.2</td><td>53.0</td></tr><tr><td>FoundObj (Ours)</td><td>13.5</td><td>27.6</td><td>49.6</td></tr></table>",
+        "bbox": [
+            91,
+            753,
+            473,
+            897
+        ],
+        "page_idx": 17
+    },
+    {
+        "type": "header",
+        "text": "FoundObj: Self-supervised Foundation Models as Rewards for Label-free 3D Object Segmentation ",
+        "bbox": [
+            174,
+            56,
+            797,
+            70
+        ],
+        "page_idx": 17
+    },
+    {
+        "type": "page_number",
+        "text": "",
+        "bbox": [
+            478,
+            922,
+            493,
+            934
+        ],
+        "page_idx": 17
+    }
+]

@@ -1,0 +1,97 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Geometry-Aware Representation Denoising for Robust · 通用视觉自监督研究报</title>
+  <link rel="stylesheet" href="../assets/styles.css?v=20260525j">
+  <link rel="stylesheet" href="../assets/visual-ssl.css?v=20260525j">
+</head>
+<body>
+  <header class="masthead">
+    <div class="masthead-kicker">Visual SSL Research Report · 2026-05-28</div>
+    <a class="masthead-title" href="../index.html">通用视觉自监督研究报</a>
+    <div class="masthead-meta">
+      <span>图像表征 · VFM · JEPA · 视频预训练</span>
+      <span>CCF A/B 会议优先</span>
+      <span>图文精读 · 方法图解</span>
+    </div>
+  </header>
+  <nav class="site-nav" aria-label="主导航">
+    <a class="nav-link" href="../index.html">头版</a>
+<a class="nav-link" href="../issues/2026-05-28.html">今日速递</a>
+<a class="nav-link" href="../pages/catalog.html">论文目录</a>
+<a class="nav-link" href="../pages/timeline.html">时间线</a>
+  </nav>
+  <main><article class="paper-detail">
+  <div class="paper-main">
+    <div class="kicker">Visual SSL / representation · P2 · 2026-05-28</div>
+    <h1 class="paper-headline">Geometry-Aware Representation Denoising for Robust：它是“foundation model feature space can be the restoration space”的代表，适合扫读方法图</h1>
+    <p class="dek">把鲁棒 3D 重建从输入清洗转移到表示空间去噪，说明预训练 3D 特征可作为恢复与几何一致性的中间基底。</p>
+    <p class="byline"><strong>Geometry-Aware Representation Denoising for Robust Multi-view 3D Reconstruction</strong>　Jin Hyeon Kim , Jaeeun Lee , Claire Kim , Kyoungjin Oh , Paul Hyunbin Cho , Jaewon Min , Yeji Choi , Jihye Park , Hyunhee Park , Minkyu Park , Seungryong Kim　arXiv　<a href="https://arxiv.org/abs/2605.26230">原文链接</a></p>
+    <div class="paper-facts">
+      <span><b>编号</b>2605.26230</span>
+      <span><b>优先级</b>P2</span>
+      <span><b>类别</b>Visual SSL / representation</span>
+      <span><b>会议</b>arXiv</span>
+      <span><b>方法</b>GARD 在 feed-forward 3D reconstruction model 的 geometry-aware feature space 中做 diffusion-based multi-view restoration，并用额外 RGB decoder 同时恢复图像质量。</span>
+      <span><b>来源</b>arXiv / OpenReview</span>
+    </div>
+    <div class="feature-body">
+      <p class="lead dropcap">先说结论。它是“foundation model feature space can be the restoration space”的代表，适合扫读方法图。 把鲁棒 3D 重建从输入清洗转移到表示空间去噪，说明预训练 3D 特征可作为恢复与几何一致性的中间基底。</p>
+      <figure class="full-fig"><img src="../assets/mineru/2605.26230/images/304cae2e8b8271a2b6f95a7e8d2bcb3da4dc83a975603f0e09b457124191cc17.jpg" alt="Figureure 3 · : Overview of the GARD framework"><figcaption><b>Figureure 3 · : Overview of the GARD framework</b><span class="fig-en">Figure 3: Overview of the GARD framework. (a) The GARD denoiser $ { \boldsymbol { S } } _ { \theta } ( \cdot )$ is learned within the representation space of a frozen multi-view encoder [29] to restore degraded intermediate representations $\mathbf { z } _ { \mathrm { d e g } } ^ { K }$ into restored representations $\mathbf { z } _ { \mathrm { r e s } } ^ { K }$ before they are propagated through the remaining encoder layers. The restored representations $\mathcal { Z } _ { \mathrm { r e s } }$ are then decoded by their respective decoders to produce geometry predictions and restored RGB images. (b) The GARD denoiser is optimized using an interpolated flow matching loss together with an attention alignment loss, which jointly learns the mapping from degraded to clean feature representations while preserving geometric consistency through explicit alignment of attention maps. (c) The GARD denoiser adopts a multi-view latent diffusion architecture [71], comprising a DDT encoder [60] and a DDT wide decoder, with global attention layers inserted to enable multi-view modeling, thereby facilitating global context aggregation and reconstruction of high-dimensional multi-view representations.</span><span class="fig-zh">这张图概括 Geometry-Aware Representation Denoising for Robust 的整体方法流程。阅读时先看模块之间传递的训练信号，再看作者如何把目标拆成可优化的子问题。</span></figcaption></figure>
+<figure class="full-fig"><img src="../assets/mineru/2605.26230/images/9cfd1542c3cf3efb7eaf209f72046853b55011f324694be7baa7ca8066fa45d9.jpg" alt="Figureure 2 · : Comparison of restoration denoising spaces"><figcaption><b>Figureure 2 · : Comparison of restoration denoising spaces</b><span class="fig-en">Figure 2: Comparison of restoration denoising spaces. (a) A restore-then-reconstruct pipeline first performs pixel-space restoration prior to 3D reconstruction. However, performing restoration in a single-view setting [69, 6, 5] or within a heavily compressed VAE-based latent space [34, 23] fails to preserve cross-view consistency and fine-grained geometric details, which often results in suboptimal geometric reconstruction. (b) In contrast, our Geometry-Aware Representation Denoising (GARD) operates on geometry-aware latent representations within a feed-forward reconstruction model, enabling the joint recovery of restored images and consistent 3D geometry across views.</span><span class="fig-zh">这张图概括 Geometry-Aware Representation Denoising for Robust 的整体方法流程。阅读时先看模块之间传递的训练信号，再看作者如何把目标拆成可优化的子问题。</span></figcaption></figure>
+      
+      <h2>核心问题</h2>
+      <p>它是“foundation model feature space can be the restoration space”的代表，适合扫读方法图。</p>
+      <h2>方法拆解</h2>
+      <p>GARD 在 feed-forward 3D reconstruction model 的 geometry-aware feature space 中做 diffusion-based multi-view restoration，并用额外 RGB decoder 同时恢复图像质量。</p>
+      <h2>主要贡献</h2>
+      <p>把鲁棒 3D 重建从输入清洗转移到表示空间去噪，说明预训练 3D 特征可作为恢复与几何一致性的中间基底。</p>
+      <h2>实验看点</h2>
+      <p>摘要称在 Depth Anything 3 benchmark 上验证 degraded multi-view reconstruction 的有效性。</p>
+      <h2>局限与读法</h2>
+      <p>核心任务是 3D reconstruction robustness；对 2D 分类/检索/分割这类通用评估的迁移尚未明确。</p>
+    
+    </div>
+  </div>
+  <aside class="paper-side">
+
+    <div class="side-box"><h4>关键判断</h4><dl><dt>相关性</dt><dd>P2</dd><dt>类别</dt><dd>Visual SSL / representation</dd><dt>会议</dt><dd>arXiv</dd><dt>读法</dt><dd>方法图优先，表格次之</dd></dl></div>
+    <div class="side-box"><h4>原文</h4><p><a href="https://arxiv.org/abs/2605.26230">https://arxiv.org/abs/2605.26230</a></p></div>
+  </aside>
+</article></main>
+  <aside class="conf-float" data-conf-reminder="2026-05-28-main-ddl" aria-label="CCF A/B 主投稿提醒">
+  <button class="conf-close" type="button" aria-label="关闭会议提醒">×</button>
+  <details open>
+    <summary>CCF A/B 主投稿提醒</summary>
+    <div class="conf-list"><a class="conf-item " href="https://github.com/ccfddl/ccf-deadlines/blob/main/conference/AI/aaai.yml">
+  <span><b>AAAI 2027</b><em>CCF A · Main paper submission</em></span>
+  <strong>60 天</strong>
+  <small>2026-07-27 · CCF DDL: abstract 2026-07-20；进入 1 个月窗口后重点提醒。</small>
+</a></div>
+  </details>
+</aside>
+  <footer class="footer">
+    <div>面向通用视觉自监督、视觉基础模型与多模态表征学习的每日研究报。</div>
+    <div class="muted">Issue 2026-05-28 · Curated readings and figure notes</div>
+  </footer>
+  <script>
+  (() => {
+    const box = document.querySelector('[data-conf-reminder]');
+    if (!box) return;
+    const key = `visualSslConfReminderClosed:${box.dataset.confReminder || '2026-05-28-main-ddl'}`;
+    try {
+      if (localStorage.getItem(key) === '1') box.hidden = true;
+    } catch (err) {}
+    const close = box.querySelector('.conf-close');
+    if (close) {
+      close.addEventListener('click', () => {
+        box.hidden = true;
+        try { localStorage.setItem(key, '1'); } catch (err) {}
+      });
+    }
+  })();
+  </script>
+</body>
+</html>

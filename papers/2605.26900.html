@@ -1,0 +1,97 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>SPHERE-JEPA · 通用视觉自监督研究报</title>
+  <link rel="stylesheet" href="../assets/styles.css?v=20260525j">
+  <link rel="stylesheet" href="../assets/visual-ssl.css?v=20260525j">
+</head>
+<body>
+  <header class="masthead">
+    <div class="masthead-kicker">Visual SSL Research Report · 2026-05-28</div>
+    <a class="masthead-title" href="../index.html">通用视觉自监督研究报</a>
+    <div class="masthead-meta">
+      <span>图像表征 · VFM · JEPA · 视频预训练</span>
+      <span>CCF A/B 会议优先</span>
+      <span>图文精读 · 方法图解</span>
+    </div>
+  </header>
+  <nav class="site-nav" aria-label="主导航">
+    <a class="nav-link" href="../index.html">头版</a>
+<a class="nav-link" href="../issues/2026-05-28.html">今日速递</a>
+<a class="nav-link" href="../pages/catalog.html">论文目录</a>
+<a class="nav-link" href="../pages/timeline.html">时间线</a>
+  </nav>
+  <main><article class="paper-detail">
+  <div class="paper-main">
+    <div class="kicker">Visual SSL / representation · P0 · 2026-05-28</div>
+    <h1 class="paper-headline">SPHERE-JEPA：这是今天最贴近“通用视觉自监督”的论文：它不是只换一个预训练技巧，而是在问 JEPA/SSL 表示空间到底应该长成什么几何形状</h1>
+    <p class="dek">给出一个很清晰的 SSL 表示几何判断：如果下游近邻/核回归发生在球面或低维流形上，高斯各向同性并不一定是最优，均匀球面分布反而能降低局部估计偏差。</p>
+    <p class="byline"><strong>SPHERE-JEPA: Spherical Prediction with Homogeneous Embeddings</strong>　Léo Nicollier (CB, ATT), Max Dunitz (CB, ATT), Marc Pic (ATT), Pablo Musé (CB, IFUMI), Enric Meinhardt-Llopis (CMLA, CB), Gabriele Facciolo (CB)　arXiv　<a href="https://arxiv.org/abs/2605.26900">原文链接</a></p>
+    <div class="paper-facts">
+      <span><b>编号</b>2605.26900</span>
+      <span><b>优先级</b>P0</span>
+      <span><b>类别</b>Visual SSL / representation</span>
+      <span><b>会议</b>arXiv</span>
+      <span><b>方法</b>把 LeJEPA 的 Euclidean/Gaussian 表示假设推广到流形与球面分布，用 Cramer-Wold projection 约束 embedding 在 hypersphere 上趋于均匀。</span>
+      <span><b>来源</b>arXiv / OpenReview</span>
+    </div>
+    <div class="feature-body">
+      <p class="lead dropcap">先说结论。这是今天最贴近“通用视觉自监督”的论文：它不是只换一个预训练技巧，而是在问 JEPA/SSL 表示空间到底应该长成什么几何形状。 给出一个很清晰的 SSL 表示几何判断：如果下游近邻/核回归发生在球面或低维流形上，高斯各向同性并不一定是最优，均匀球面分布反而能降低局部估计偏差。</p>
+      <figure class="full-fig"><img src="../assets/mineru/2605.26900/images/fe99affe48150a2341eb38a6b63477f237116cd3b5ef785f45850a1fb910e867.jpg" alt="Figureure 2 · : Illustration of the Cramér–Wold characterization underlying SUSReg o"><figcaption><b>Figureure 2 · : Illustration of the Cramér–Wold characterization underlying SUSReg o</b><span class="fig-en">Figure 2: Illustration of the Cramér–Wold characterization underlying SUSReg on $\mathbb { S } ^ { 1 }$ . Top row: a mixture of von Mises–Fisher (vMF) distributions—the spherical analogue of Gaussian distributions—induces a non-uniform distribution with mass concentrated around a few directions. The resulting projections $X ^ { \top } a _ { 1 }$ and $X ^ { \top } a _ { 2 }$ deviate from the target density $\rho _ { 2 }$ . Bottom row: a uniform distribution on $\mathbb { S } ^ { 1 }$ yields projections that match $\rho _ { 2 }$ across directions. Histograms compare the distributions of $a ^ { \textsf { T } } X$ to the target density $\rho _ { 2 }$ (solid curve). Non-uniform representations (top) produce mismatched projections and are penalized by SUSReg, whereas uniform representations (bottom) satisfy the projection constraint and are therefore not penalized by SUSReg.</span><span class="fig-zh">这张图来自论文 PDF 的结构化抽取。当前用于辅助理解 SPHERE-JEPA 的方法或实验，请结合正文精读段落一起看。</span></figcaption></figure>
+<figure class="full-fig"><img src="../assets/mineru/2605.26900/images/13a27a5f3e549937ea8a1e1644eb1c0f110932945ef9b6360ddadc77aa550621.jpg" alt="Figureure 1 · : k-NN neighborhoods are density-biased"><figcaption><b>Figureure 1 · : k-NN neighborhoods are density-biased</b><span class="fig-en">Figure 1: k-NN neighborhoods are density-biased. (a) Empirical k-NN neighborhoods (k = 20) at two query points x1, x2: under a Gaussian distribution on $\mathbb { R } ^ { \hat { 2 } }$ , neighborhoods are not centered at the query point but are skewed toward regions of higher density, resulting in anisotropic and directionally biased neighborhoods. In contrast, for a uniform distribution on ${ \mathbb S } ^ { \mathbf { 1 } }$ the neighborhoods are centered and isotropic everywhere. (b) Analytic k-NN density: under a Gaussian distribution, the induced densities are position-dependent and anisotropic, whereas the uniform distribution on $S ^ { 1 }$ yields identical densities at every point, reflecting its intrinsic geometric symmetry.</span><span class="fig-zh">这张图来自论文 PDF 的结构化抽取。当前用于辅助理解 SPHERE-JEPA 的方法或实验，请结合正文精读段落一起看。</span></figcaption></figure>
+      
+      <h2>核心问题</h2>
+      <p>这是今天最贴近“通用视觉自监督”的论文：它不是只换一个预训练技巧，而是在问 JEPA/SSL 表示空间到底应该长成什么几何形状。</p>
+      <h2>方法拆解</h2>
+      <p>把 LeJEPA 的 Euclidean/Gaussian 表示假设推广到流形与球面分布，用 Cramer-Wold projection 约束 embedding 在 hypersphere 上趋于均匀。</p>
+      <h2>主要贡献</h2>
+      <p>给出一个很清晰的 SSL 表示几何判断：如果下游近邻/核回归发生在球面或低维流形上，高斯各向同性并不一定是最优，均匀球面分布反而能降低局部估计偏差。</p>
+      <h2>实验看点</h2>
+      <p>摘要报告 texture retrieval mAP 提升超过 6%，并在 ImageNet-1K ViT-B/14 linear probing 上比 LeJEPA 高 1.8 个百分点。</p>
+      <h2>局限与读法</h2>
+      <p>理论假设集中在 kNN/KRR 与球面/流形分布，是否能稳定扩展到更大 ViT、稠密预测和多模态预训练还需要复现。</p>
+    
+    </div>
+  </div>
+  <aside class="paper-side">
+
+    <div class="side-box"><h4>关键判断</h4><dl><dt>相关性</dt><dd>P0</dd><dt>类别</dt><dd>Visual SSL / representation</dd><dt>会议</dt><dd>arXiv</dd><dt>读法</dt><dd>方法图优先，表格次之</dd></dl></div>
+    <div class="side-box"><h4>原文</h4><p><a href="https://arxiv.org/abs/2605.26900">https://arxiv.org/abs/2605.26900</a></p></div>
+  </aside>
+</article></main>
+  <aside class="conf-float" data-conf-reminder="2026-05-28-main-ddl" aria-label="CCF A/B 主投稿提醒">
+  <button class="conf-close" type="button" aria-label="关闭会议提醒">×</button>
+  <details open>
+    <summary>CCF A/B 主投稿提醒</summary>
+    <div class="conf-list"><a class="conf-item " href="https://github.com/ccfddl/ccf-deadlines/blob/main/conference/AI/aaai.yml">
+  <span><b>AAAI 2027</b><em>CCF A · Main paper submission</em></span>
+  <strong>60 天</strong>
+  <small>2026-07-27 · CCF DDL: abstract 2026-07-20；进入 1 个月窗口后重点提醒。</small>
+</a></div>
+  </details>
+</aside>
+  <footer class="footer">
+    <div>面向通用视觉自监督、视觉基础模型与多模态表征学习的每日研究报。</div>
+    <div class="muted">Issue 2026-05-28 · Curated readings and figure notes</div>
+  </footer>
+  <script>
+  (() => {
+    const box = document.querySelector('[data-conf-reminder]');
+    if (!box) return;
+    const key = `visualSslConfReminderClosed:${box.dataset.confReminder || '2026-05-28-main-ddl'}`;
+    try {
+      if (localStorage.getItem(key) === '1') box.hidden = true;
+    } catch (err) {}
+    const close = box.querySelector('.conf-close');
+    if (close) {
+      close.addEventListener('click', () => {
+        box.hidden = true;
+        try { localStorage.setItem(key, '1'); } catch (err) {}
+      });
+    }
+  })();
+  </script>
+</body>
+</html>
