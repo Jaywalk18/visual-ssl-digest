@@ -1,0 +1,898 @@
+# Leveraging Visual Signals for Robust Token-Level Uncertainty in Vision–Language Generation
+
+Joseph Hoche
+
+AMIAD, Pôle Recherche, Palaiseau
+
+David Brellmann
+
+Safran Tech
+
+Gianni Franchi
+
+AMIAD, Pôle Recherche, Palaiseau
+
+# Abstract
+
+Uncertainty quantification (UQ) remains a critical challenge in Large Vision Language Models (LVLMs) for reliable predictions and real-world deployment. However, most existing methods are adapted from the LLM literature and primarily focus on the language modality, leaving the contribution of visual information to LVLM uncertainty largely underexplored. In this paper, we investigate how LVLMs process visual information and whether this process can be used to improve uncertainty estimation. By analyzing hidden representations after the integration of visual features during the generation process, we observe that high-confidence predictions rely more heavily on visual content than uncertain ones. Building on this insight, we propose Visual-Grounded Token UQ (VIG-TUQ), a training-free framework that explicitly incorporates visual grounding into uncertainty estimation by weighting token-level language uncertainty with visual grounding scores. We evaluate VIG-TUQ on multiple datasets and across diverse LVLM architectures, including early-fusion, late-fusion, and native-fusion models. Results indicate that our method often improves upon existing token-level uncertainty approaches. Code and data will be made available upon acceptance.
+
+# 1 Introduction
+
+Large Vision-Language Models (LVLMs) extend Large Language Models (LLMs) with visual perception and excel across a wide spectrum of multimodal tasks requiring visual and language understanding (OpenAI, 2024; Gemini, 2024; Guo et al., 2025; OpenAI, 2025; Novikov et al., 2025). Despite their impressive abilities, LVLMs are not yet reliable. In particular, they remain prone to hallucinations, i.e., they may generate incorrect, incomplete, fabricated, or misleading content that appears plausible (Ji et al., 2023; Liu et al., 2024a; Huang et al., 2025). Such behavior limits their use in safety-critical applications like autonomous driving (Gao et al., 2025), robotics (Han et al., 2025) or medicine (Jiang et al., 2024). A promising direction for improving deployment reliability is uncertainty quantification (UQ) to detect when generated content may be unreliable (Hernandez-Lobato & Adams, 2015; Gal & Ghahramani, 2016; Abdar et al., 2021). Prior works show promising results for UQ methods in the language setting for LLMs (Farquhar et al., 2024; Nikitin et al., 2024; Chen et al., 2024). Although these approaches can be extended to LVLMs (Zhang et al., 2024; Lau et al., 2025), their extension is not straightforward. LVLMs operate across multiple modalities and their uncertainty may stem from both linguistic and visual sources. Recent studies have highlighted the tendency of LVLMs to prioritize internal textual knowledge over external visual information (Lee et al., 2025a; Luo et al., 2025; Fu et al., 2025; Long et al., 2026). For instance, given an image depicting a blue orange and the question “what color is the orange?”, an LVLM may confidently answer “orange”, basing its answer on its parametric knowledge and language prior rather than on the actual visual input. This mismatch motivates the importance of developing specific approaches designed for LVLMs that explicitly capture and quantify the contribution of visual information to LVLM predictions.
+
+![](images/1d6b553fd8793ac566ddc6624139cee9fb7012d0329caa214e7d924bb2e9a4b4.jpg)
+
+<details>
+<summary>radar</summary>
+
+| Category       | Correct | Incorrect |
+| -------------- | ------- | --------- |
+| Qwen2.5-VL-7B  | 1.0     | 1.0       |
+| Qwen2.5-VL-3B  | 0.9     | 0.9       |
+| idefics-9B     | 0.8     | 0.8       |
+| idefics2-8B    | 0.7     | 0.7       |
+| Ilava-1.5-13B  | 0.6     | 0.6       |
+| Ilava-1.5-7B   | 0.5     | 0.5       |
+| Qwen3.5-2B     | 0.4     | 0.4       |
+</details>
+
+![](images/8696eb5d10840971ebf25f268528193834412d1736817d2a6c3dc0cfdc1e2e7b.jpg)
+
+<details>
+<summary>radar</summary>
+
+| Category       | Certain | Uncertain |
+| -------------- | ------- | --------- |
+| Qwen2.5-VL-7B  | 1.0     | 0.9       |
+| Qwen2.5-VL-3B  | 0.9     | 0.8       |
+| idefics-9B     | 0.8     | 0.7       |
+| idefics2-8B    | 0.9     | 0.6       |
+| Ilava-1.5-13B  | 0.8     | 0.7       |
+| Ilava-1.5-7B   | 0.9     | 0.8       |
+| Qwen3.5-2B     | 0.9     | 0.8       |
+</details>
+
+Figure 1: Correct / confident predictions depend more strongly on visual information than incorrect / uncertain ones. Radial values indicate the cosine distance between hidden representations from two forward passes: one with visual input and one without. Results are averaged on the OKVQA dataset (Marino et al., 2019). The cosine distance measures the model reliance on visual information, where larger values indicate a stronger influence of the image on the internal representation.
+
+In this paper, we investigate how LVLM process visual information during next-token prediction and whether this process can be leveraged to improve token-level uncertainty estimation. By analyzing hidden representations during generation, we observe that high-confidence predictions rely more heavily on visual content than uncertain ones (Figure 1). Building on this insight, we propose VIsual-Grounding Token Uncertainty Quantification (VIG-TUQ), a training-free uncertainty quantification framework for LVLMs. VIG-TUQ explicitly incorporates visual grounding into uncertainty estimation by weighting token-level language uncertainty with visual grounding scores (Figure 2). Specifically, VIG-TUQ quantifies the influence of visual content on next-token prediction using two complementary visual grounding strategies: (1) comparing next-token distributions with and without visual input, and (2) leveraging visual attention weights over image tokens. We hypothesize that tokens more strongly grounded in visual content play a greater role in uncertainty estimation. Our experimental results support this hypothesis and highlight the importance of combining multiple visual grounding signals, as their effectiveness can be model-dependent and capture distinct aspects of visual reasoning. Finally, our approach provides a fine-grained into which specific spans or entities contribute to the uncertainty, while remaining computationally efficient by avoiding reliance on external models or sampling.
+
+Contributions. This work makes the following key contributions: (1) We observe that LVLMs tend to be more confident when their predictions rely more strongly on visual input. (2) We introduce a new training-free uncertainty quantification framework that combines different complementary visual grounding scores to weight token-level uncertainty measures. We evaluate VIG-TUQ on multiple datasets and across diverse LVLM architectures, including early-fusion, late-fusion, and nativefusion models. Results show that our method often improves upon existing token-level uncertainty approaches and remain computationally efficient due to the absence of external models or sampling. (3) We analyze whether uncertainty is uniformly distributed across generated tokens or concentrated within a subset of informative tokens. Our findings indicate that visual information helps identify the tokens most relevant for uncertainty estimation, enabling more effective token selection in LVLMs for uncertainty estimation.
+
+# 2 Related work
+
+Several recent methods have been proposed to enhance reliability by estimating uncertainty in the predictions of LLMs and LVLMs. These methods are broadly categorized as follows (Kang et al., 2025): (1) logit-based methods, which directly use token probabilities/logits as uncertainty scores (Malinin & Gales, 2021b; Fomicheva et al., 2020); (2) semantic-based methods, which quantifies uncertainty by assessing the semantic consistency of multiple generated answers (Kuhn et al., 2023a; Farquhar et al., 2024; Zhang et al., 2024; Lin et al., 2024; Grewal et al., 2024; Lau et al., 2025; Joo & Cho, 2025); (3) verbalized-based methods, which estimate uncertainty by directly querying the LLM about the reliability of its own generations (Kadavath et al., 2022b; Yona et al., 2024; Xiong et al., 2024); and (4) internal-state-based methods, which analyze internal signals from LLMs after a single generation to estimate uncertainty, such as features at intermediate layers, attention weights, or other latent representations (Azaria & Mitchell, 2023; Orgad et al., 2025; Kim et al., 2025). Methods listed above may rely on external models (e.g., sentence embedding models (Grewal et al., 2024; Abdaljalil et al., 2025), NLI models (Fadeeva et al., 2024; Nikitin et al., 2024), instruction-tuned LLMs (Farquhar et al., 2024; Ji et al., 2025b)) or involve training dedicated models to estimate uncertainty (Fieback et al., 2024; Orgad et al., 2025; Hoche et al., 2025). In this paper, we propose a training-free hybrid approach to uncertainty estimation that combines a logit-based component to capture linguistic uncertainty with an internal-state-based component to incorporate visual uncertainty. By explicitly leveraging visual information while maintaining computational efficiency with a single-pass and token-level estimation, we introduce a multimodalaware approach designed for LVLMs. Additional technical details and relevant results from prior work are discussed throughout the paper.
+
+![](images/787fdd0dbdbb75b4e8626f079bb5d4dd8e13583230473409e708b300ee42a03d.jpg)
+
+<details>
+<summary>flowchart</summary>
+
+```mermaid
+graph TD
+    A["1) LVLM generation"] --> B["2) Generated answer tokens y1, y2, ..., yT"]
+    B --> C["3a) Distribution-based VG score"]
+    B --> D["3b) Attention-based VG score"]
+    C --> E["4a) Visual-grounding weight (per token yt)"]
+    C --> F["4b) Token entropy (per token yt)"]
+    E --> G["VIG-TUQ (token-level uncertainty)"]
+    F --> G
+    G --> H["5) VIG-TUQ (token-level uncertainty)"]
+    
+    subgraph Legend
+        I["VS: pθ(· | xv, xi, y<t)"]
+        J["VS: pθ(· | Ø, xi, y<t)"]
+    end
+    
+    subgraph Legend
+        K["Visual attention patch (|xv|), Text tokens (optional)"]
+        L["Sum over visual patches across heads at layer l"]
+        M["Attention-based VG score S^l_A(y_t, x)"]
+    end
+    
+    I --> N["Jensen-Shannon Divergence (JSD)"]
+    J --> N
+    K --> N
+    L --> N
+    M --> N
+    N --> O["S_{JSD}(y_t, x)"]
+    O --> P["⊕"]
+    P --> Q["Visual attention mass used when predicting token y_t: sum attention to visual patches across heads at layer l"]
+    Q --> R["Visual patches (|xv|)"]
+    Q --> S["Text tokens (optional)"]
+    R --> T["Sum over visual patches across heads at layer l"]
+    S --> T
+    T --> U["Attention-based VG score S^l_A(y_t, x)"]
+    U --> V["4a) Visual-grounding weight + αA S^l_A(y_t)"]
+    V --> W["VIG-TUQ(x) = ∑_{t=1}^T [αJSD S_JSD(y_t, x) + αA S^l_A(y_t, x)"] H(y_t, x)]
+    W --> X["5) VIG-TUQ (token-level uncertainty)"]
+```
+</details>
+
+Figure 2: Overview of the VIG-TUQ pipeline. VIG-TUQ weights token-level language uncertainty with visual grounding scores using two complementary strategies: a distribution-based score obtained from the Jensen–Shannon divergence between predictions with and without the image, and an attention-based score measuring the attention mass assigned to visual patches.
+
+# 3 Preliminaries
+
+Notations. Let $\mathcal { X } _ { v }$ denote the visual input space, $\mathcal { X } _ { l }$ the linguistic input space, and V the LVLM vocabulary. A multimodal input is depicted as $\pmb { x } = ( \pmb { x } _ { v } , \pmb { x } _ { l } )$ , where the visual component $\pmb { x } _ { v } \in \mathcal { X } _ { \tau }$ consists of a sequence of visual patches and the textual component $\pmb { x } _ { l } \in \mathcal { X } _ { l }$ consists of a sequence of textual tokens.
+
+An LVLM defines a parameterized function $f _ { \pmb \theta } : \mathcal { X } _ { v } \times \mathcal { X } _ { l }  \mathbb { R } ^ { d }$ to encode the visuallinguistic context into a latent representation. In practice, $f _ { \theta } ( \cdot , \cdot )$ typically includes a transformer decoder architecture, potentially combined with separate encoders for each modality (see Section 3.1). For a given multimodal input $\pmb { x } = ( \pmb { x } _ { v } , \pmb { x } _ { l } )$ , the model then autoregressively generates a token sequence $\mathbf { \boldsymbol { y } } = \left[ \mathbf { \boldsymbol { y } } _ { t } \right] _ { t = 1 } ^ { T }$ , where each token yt is sampled according to:
+
+$$
+p _ {\boldsymbol {\theta}} (\boldsymbol {y} _ {t} \mid \boldsymbol {x}, \boldsymbol {y} _ {<   t}) = \operatorname{softmax} \left(f _ {h} \left(f _ {\boldsymbol {\theta}} \left(\boldsymbol {x} _ {v}, [ \boldsymbol {x} _ {l} \mid \boldsymbol {y} _ {<   t} ]\right)\right)\right), \tag {1}
+$$
+
+where $f _ { h } : \mathbb { R } ^ { d }  \mathbb { R } ^ { | \nu | }$ denotes the output head that projects the latent representation to logits over the vocabulary V and $\pmb { y } _ { < t } = \left[ \pmb { y } _ { 1 } , \ldots , \pmb { y } _ { t - 1 } \right]$  depicts the previously generated tokens.
+
+# 3.1 Modality fusion strategies
+
+Given an input $\pmb { x } = ( \pmb { x } _ { v } , \pmb { x } _ { l } )$ , an LVLM can be described by the approach it uses to combine information from the visual modality $\pmb { x } _ { v } \in \mathcal { X } _ { v }$ and the textual modality $\pmb { x } _ { l } \in \mathcal { X } _ { l }$ within the parameterized function $f _ { \pmb \theta } : \mathcal { X } _ { v } \times \mathcal { X } _ { l }  \mathbb { R } ^ { \dot { d } }$ .
+
+Native fusion. In native fusion, the modalities are directly combined into a single representation before being processed by the transformer decoder architecture. In particular, the parametric function $f _ { \pmb \theta } : \mathcal { X } _ { v } \times \mathcal { X } _ { l }  \mathbb { R } ^ { d }$ is expressed as a composition $f _ { \theta } ~ = ~ \bar { f _ { L } } \circ f _ { L - 1 } \circ . . . \circ f _ { 1 } \circ f _ { 0 }$ , where $f _ { 0 } : \mathcal { X } _ { v } \times \mathcal { X } _ { l } \to \mathbb { R } ^ { d }$ is the input function and $\{ \bar { f } _ { i } : \mathbb { R } ^ { d }  \mathbb { R } ^ { d } \} _ { i = 1 } ^ { L }$ are L decoder transformer layers. The input function $f _ { 0 } ( \cdot , \cdot )$ processes image patches and text tokens independently as:
+
+$$
+f _ {0} (\boldsymbol {x} _ {v}, \boldsymbol {x} _ {l}) = \left[ E _ {v} (\boldsymbol {x} _ {v}) \mid E _ {l} (\boldsymbol {x} _ {l}) \right], \tag {2}
+$$
+
+where $E _ { v } ( \cdot )$ and $E _ { l } ( \cdot )$ map visual patches and language tokens to their embeddings via linear transformations. In these architectures, the model is trained end-to-end from scratch to learn multimodal representations natively within the transformer blocks. LVLM like Qwen models (Qwen Team, 2026) adopts a native fusion strategy.
+
+Early fusion. In early fusion, features from each modality are first extracted separately using dedicated encoders, and then integrated into a shared representation before being processed by the transformer decoder architecture. In particular, the parametric function $f _ { \pmb \theta } : \mathcal { X } _ { v } \times \bar { \mathcal { X } } _ { l } \stackrel { \left. } { \right. } \mathbb { R } ^ { d }$ is defined as a composition $f _ { \pmb \theta } = f _ { L } \circ f _ { L - 1 } \circ . . . \circ f _ { 1 } \circ f _ { 0 }$ , where $\{ f _ { i } : \mathbb { R } ^ { d } \to \mathbb { R } ^ { d } \} _ { i = 1 } ^ { \bar { L } ^ { - } }$ are L decoder transformer layers and $f _ { 0 } : \mathcal { X } _ { v } \times \mathcal { X } _ { l } \to \mathbb { R } ^ { d }$ is the input function defined as:
+
+$$
+f _ {0} (\boldsymbol {x} _ {v}, \boldsymbol {x} _ {l}) = m _ {0} \big (E _ {\boldsymbol {\theta} _ {v}} (\boldsymbol {x} _ {v}), E _ {l} (\boldsymbol {x} _ {l}) \big); \tag {3}
+$$
+
+with $m _ { 0 } ( \cdot , \cdot )$ a multimodal fusion module $( \mathrm { e . g . }$ , concatenation, linear layer, cross-attention layer); $E _ { \pmb { \theta } _ { v } } ( \cdot )$ a visual encoder with parameters θv (e.g., ViT, CNNs); and $E _ { l } ( \cdot )$ a text embedding function. Unlike native fusion, the visual encoder $E _ { \pmb { \theta } _ { v } } ( \cdot )$ is a pre-trained model that can be optimized independently. LVLMs like LLaVA (Liu et al., 2023) and Qwen-VL (Bai et al., 2024) adopt an early fusion approach. Further details on early fusion, fusion modules, and unimodal encoders can be found in (Li & Tang, 2024; An et al., 2025).
+
+Late fusion. Late fusion also starts with the extraction of unimodal features using dedicated encoders. However, unlike early fusion, the integration between modalities occurs within the intermediate representations of the transformer decoder architecture rather than before them. In particular, the parametric function $f _ { \pmb \theta } : \mathcal { X } _ { v } \times \mathcal { X } _ { l }  \mathbb { R } ^ { d }$ can be defined recursively over L layers as
+
+$$
+f _ {\boldsymbol {\theta}} (\boldsymbol {x} _ {v}, \boldsymbol {x} _ {l}) = f _ {L} (\boldsymbol {h} _ {L - 1}, \boldsymbol {x} _ {v}), \quad \text { where }
+$$
+
+$$
+\boldsymbol {h} _ {i} = f _ {i} \left(\boldsymbol {h} _ {i - 1}, \boldsymbol {x} _ {v}\right) = g _ {i} \left(m _ {i} \left(E _ {\boldsymbol {\theta} _ {v} ^ {(i)}} (\boldsymbol {x} _ {v}), \boldsymbol {h} _ {i - 1}\right)\right) \quad (1 \leq i \leq L) \tag {4}
+$$
+
+$$
+\boldsymbol {h} _ {0} = E _ {l} (\boldsymbol {x} _ {l});
+$$
+
+with $E _ { l } ( \cdot )$ a text embedding function. For each layer $i , g _ { i } : \mathbb { R } ^ { d }  \mathbb { R } ^ { d }$ depicts a transformer decoder layer, $m _ { i } ( \cdot , \cdot )$ denotes a multimodal fusion module (e.g., concatenation, linear layer, crossattention layer), and $E _ { \pmb { \theta } _ { \eta } ^ { ( i ) } } ( \cdot )$ is a visual encoder with parameters $\theta _ { v } ^ { ( i ) } \ ( \mathrm { e . g . }$ ., ViT, CNNs). Note that the vision modality is not necessarily integrated at every layer and the fusion module can simply preserve the hidden representation, i.e., $\bar { m } _ { i } \big ( E _ { \pmb { \theta } _ { \alpha } ^ { ( i ) } } ( { \pmb x } _ { v } ) , \mathbf { \bar { h } } _ { i } \big ) ^ { \top } = { \pmb h } _ { i }$ . Similarly to early fusion, visual encoders $E _ { \pmb { \theta } _ { v } ^ { ( i ) } } ( \cdot )$ are pre-trained models that can be optimized independently. LVLMs like IDEFICS (Laurençon et al., 2023) and Flamingo (Alayrac et al., 2022) adopt such approach. Further details on late fusion, fusion modules, and unimodal encoders can be found in (Li & Tang, 2024; An et al., 2025).
+
+# 3.2 Token-level UQ methods
+
+Given a multimodal input x, token-level UQ methods assign an uncertainty score $\mathbf { } _ { s _ { t } }$ to each generated token ${ \mathbf { } } _ { \mathbf { } } \mathbf { \mathbf { } } _ { \mathbf { } } \mathbf { \mathbf { } } _ { \mathbf { } } \mathbf { \mathbf { } } _ { \mathbf { } } \mathbf { \mathbf { } } _ { \mathbf { } } \mathbf { \mathbf { } } _ { \mathbf { } } \mathbf { \mathbf { } } _ { \mathbf { } } \mathbf { \mathbf { } } _ { \mathbf { } } \mathbf { \Xi } _ { \mathbf { } } \mathbf { \Lambda } _ { \mathbf { } } \mathbf { \Lambda } _ { \mathbf { } } \textbf { } _ { \mathbf { } } \textbf { } \textbf { } _ { \mathrm { } }$ (equation 1), with a higher score indicating greater uncertainty. The uncertainty score $s ( \cdot )$ for a generated sequence $\mathbf { \boldsymbol { y } } = [ \mathbf { \boldsymbol { y } } _ { t } ] _ { t = 1 } ^ { T }$ can be derived by aggregating the token-level scores of each token $\textstyle { y _ { t } , \mathrm { e . g . } }$ ., by averaging across tokens $\begin{array} { r } { s ( \pmb { y } ) = \frac { 1 } { T } \sum _ { t = 1 } ^ { T } \pmb { s } _ { t } } \end{array}$ or by taking their maximum $s ( { \pmb y } ) = \operatorname* { m a x } _ { t } { \pmb s } _ { t }$ .
+
+Negative Log-Likelihood (Log-Perplexity). A straightforward token-level uncertainty score is the token negative log-likelihood (Fomicheva et al., 2020; Malinin & Gales, 2021a):
+
+$$
+\operatorname{NLL} \left(\boldsymbol {y} _ {t}, \boldsymbol {x}, \boldsymbol {y} _ {<   t}\right) = - \log p _ {\boldsymbol {\theta}} \left(\boldsymbol {y} _ {t} \mid \boldsymbol {x}, \boldsymbol {y} _ {<   t}\right). \tag {5}
+$$
+
+Token Entropy. Another common token-level score is the token entropy of the autoregressive distribution (Fomicheva et al., 2020; Malinin & Gales, 2021a):
+
+$$
+\mathcal {H} (\boldsymbol {y} \mid \boldsymbol {x}, \boldsymbol {y} _ {<   t}) = - \sum_ {\boldsymbol {y} \in \mathcal {V}} p _ {\boldsymbol {\theta}} (\boldsymbol {y} \mid \boldsymbol {x}, \boldsymbol {y} _ {<   t}) \log p _ {\boldsymbol {\theta}} (\boldsymbol {y} \mid \boldsymbol {x}, \boldsymbol {y} _ {<   t}). \tag {6}
+$$
+
+Claim-Conditioned Probability (CCP). CCP (Fadeeva tainty by measuring how much the top K token alternatives $\{ \boldsymbol { y } _ { t } ^ { k } \} _ { k = 1 } ^ { K }$ 4) estimates token-level uncer- contradict the generated token ${ \mathbf { } } _ { \pmb { y } _ { t } }$ using a Natural Language Inference (NLI) model:
+
+$$
+\operatorname{CCP} \left(\boldsymbol {y} _ {t}, \boldsymbol {x}, \boldsymbol {y} _ {<   t}\right) = - \log \frac {\sum_ {k : \mathrm{NLI} \left(\boldsymbol {y} _ {<   t} , \boldsymbol {y} _ {t} ^ {k} , \boldsymbol {y} _ {t}\right) = \text {entail}} p _ {\boldsymbol {\theta}} \left(\boldsymbol {y} _ {t} ^ {k} \mid \boldsymbol {x} , \boldsymbol {y} _ {<   t}\right)}{\sum_ {k : \mathrm{NLI} \left(\boldsymbol {y} _ {<   t} , \boldsymbol {y} _ {t} ^ {k} , \boldsymbol {y} _ {t}\right) \in \{\text {entail,contradict} \}} p _ {\boldsymbol {\theta}} \left(\boldsymbol {y} _ {t} ^ {k} \mid \boldsymbol {x} , \boldsymbol {y} _ {<   t}\right)}, \tag {7}
+$$
+
+where NLI(·) determines whether concatenating $\mathbf { \Delta } _ { \mathbf { \mathcal { Y } } _ { t } ^ { k } }$ with the preceding generated context $\scriptstyle { \mathbf { \mathscr { y } } } _ { < t }$ entails (semantic equivalence) or contradicts (different meaning) the generated content $\pmb { y } _ { < t } \cup \pmb { y } _ { t }$ .
+
+Token-Shifting Attention to more Relevant (Token-SAR). Token-SAR (Duan et al., 2024) defines a token-level uncertainty score by reweighting token likelihood with a semantic relevance factor as:
+
+$$
+\operatorname{Token-SAR} \left(\boldsymbol {y} _ {t}, \boldsymbol {x}, \boldsymbol {y} _ {<   t}\right) = - \log p _ {\boldsymbol {\theta}} \left(\boldsymbol {y} _ {t} \mid \boldsymbol {x}, \boldsymbol {y} _ {<   t}\right) \tilde {R} (\boldsymbol {x}, \boldsymbol {y}, \boldsymbol {y} _ {t}), \tag {8}
+$$
+
+where $\begin{array} { r } { \tilde { R } ( x , y , y _ { t } ) = R ( x , y , y _ { t } ) / \sum _ { i = 1 } ^ { T } R ( x , y , y _ { i } ) } \end{array}$ is the normalized relevance score with
+
+$$
+R (\boldsymbol {x}, \boldsymbol {y}, \boldsymbol {y} _ {t}) = 1 - \left| g (\boldsymbol {x} \cup \boldsymbol {y}, \boldsymbol {x} \cup \boldsymbol {y} \backslash \{\boldsymbol {y} _ {t} \}) \right|
+$$
+
+the relevance that quantifies how important ${ \mathbf { } } _ { \mathbf { } } \mathbf { \psi } _ { \mathbf { } } \mathbf { _ { } } \mathbf { \psi } _ { \mathbf { } } \mathbf { _ { } } \mathbf { \psi } _ { \mathbf { } } \mathbf { _ { } } \mathbf { \psi } _ { \mathbf { } } \mathbf { _ { } } \mathbf { \psi } _ { \mathbf { } } \mathbf { _ { } } \mathbf { \psi } _ { \mathbf { } } \mathbf { _ { } } \mathbf { \psi } _ { \mathbf { } \psi } \mathbf { _ { } } \textbf { } \psi _ { } \psi _ { } \left. \textbf { } \psi _ { } \mathbf { } \psi _ { } \textbf { } \right.$ is in reflecting the semantics of y by comparing the semantic change before and after removing this token and $g ( \cdot , \cdot )$ a similarity between two inputs on a scale of −1 to 1.
+
+# 4 Method
+
+In this section, we introduce VIsual-Grounding Token Uncertainty Quantification (VIG-TUQ), a training-free UQ framework for LVLMs that weights token-level language uncertainty with visual grounding scores. We first discuss our motivations (Section 4.1), then describe the visual grounding score used (Section 4.2), and finally introduce the proposed method (Section 4.3).
+
+# 4.1 Motivations
+
+A recent line of works highlights the tendency of LVLMs to prioritize internal textual knowledge over external visual information (Lee et al., 2025a; Luo et al., 2025; Fu et al., 2025; Long et al., 2026). This suggests that visual grounding could play a crucial role in identifying unreliable responses. To investigate this phenomenon and better understand the contribution of visual information to token generations, we conduct a pilot study on how LVLMs process visual information. Specifically, we compare hidden representations (via the cosine distance) obtained from two independent forward passes: one with visual evidence and without without it. This analysis is performed on generated sentences from the OKVQA dataset (Marino et al., 2019) across different LVLM architectures (Long et al., 2026) using greedy decoding with visual evidence. (further details are provided in Appendix F). Figure 1 summarizes our results and highlights that correct and confident predictions rely more on the visual content than incorrect and uncertain ones. Furthermore, experiments reported in Appendix C and Appendix F indicate that the extent to which visual information is processed depends on both the training setup and the model architecture (see Section 3). These observations motivate the introduction of multiple visual grounding scores to capture different aspects of visual understanding. Overall, our results suggest that tokens whose generation strongly depends on visual input are more informative and should therefore be assigned greater weight in uncertainty estimation. Building on this insight, we introduce diffrent visual grounding token-level strategies and our VIG-TUQ approach in the following sections.
+
+# 4.2 Visual grounding scores
+
+We propose two scoring strategies to measure how much an LVLM relies on its visual input when generating a token.
+
+Distribution-based scores. Given a multimodal input $\pmb { x } = ( \pmb { x } _ { v } , \pmb { x } _ { l } )$ , with visual content $\mathbf { \boldsymbol { x } } _ { v }$ and textual content $\mathbf { \Delta } _ { \mathbf { x } _ { l } } .$ , this approach quantifies the contribution of the visual input $\mathbf { \Delta } _ { \mathbf { \mathcal { X } } _ { v } }$ by measuring how much the next-token distribution changes when the visual information is removed. In particular, for each generated token ${ \mathbf { } } _ { \pmb { y } _ { t } }$ , we compare the original LVLM next-token distribution $p _ { \pmb { \theta } } ( \cdot \mid \pmb { x } _ { v } , \pmb { x } _ { l } , \pmb { y } _ { < t } )$ with the next-token distribution $p _ { \pmb { \theta } } ( \cdot \mid \emptyset , \pmb { x } _ { l } , \pmb { y } _ { < t } )$ ) when the visual information $\mathbf { \boldsymbol { x } } _ { v }$ is removed using the Jensen-Shannon divergence:
+
+$$
+d _ {t} (\boldsymbol {y}, \boldsymbol {x}) = \operatorname{JSD} \left(p _ {\boldsymbol {\theta}} (\cdot | \boldsymbol {x} _ {v}, \boldsymbol {x} _ {l}, \boldsymbol {y} _ {<   t}) \| p _ {\boldsymbol {\theta}} (\cdot | \varnothing , \boldsymbol {x} _ {l}, \boldsymbol {y} _ {<   t})\right). \tag {9}
+$$
+
+A larger value of $d _ { t } ( \pmb { y } , \pmb { x } )$ indicates that removing the visual input induces a stronger distributional shift when generating ${ \mathbf { } } _ { \mathbf { } } \mathbf { \psi } _ { \mathbf { } } \mathbf { _ { } } \mathbf { \psi } _ { \mathbf { } } \mathbf { _ { } } \mathbf { \psi } _ { \mathbf { } } \mathbf { _ { } } \mathbf { \psi } _ { \mathbf { } } \mathbf { _ { } } \mathbf { \psi } _ { \mathbf { } } \mathbf { _ { } } \mathbf { \psi } _ { \mathbf { } } \mathbf { _ { } } \mathbf { \psi } _ { \mathbf { } \psi } \mathbf { _ { } } \textbf { } \psi _ { } \psi _ { } \left. \textbf { } \psi _ { } \mathbf { } \psi _ { } \textbf { } \right.$ and thus a greater reliance on visual information. To obtain a relative tokenlevel importance score, we normalize the divergence values across all generated tokens: $S _ { \mathrm { J S D } } ( y _ { t } , \pmb { x } )$ , where
+
+$$
+S _ {\mathrm{JSD}} (\boldsymbol {y} _ {t}, \boldsymbol {x}) = \frac {d _ {t} (\boldsymbol {y} _ {t} , \boldsymbol {x})}{\sum_ {i = 1} ^ {T} d _ {t} (\boldsymbol {y} _ {i} , \boldsymbol {x})}. \tag {10}
+$$
+
+This normalized score captures the relative contribution of the visual input to each generated token $\mathbf { \mathscr { y } } _ { t }$ with respect to the full sequence.
+
+Attention-based Scores. The attention mechanism provides another way to estimate how much the visual content contributes to the next-token prediction. For instance, given a multimodal input $\pmb { x } = ( \pmb { x } _ { v } , \pmb { x } _ { l } )$ with a visual content $\scriptstyle { \mathbf { { \mathit { x } } } } _ { \mathit { v } }$ and a textual content xl, we could use the attention weight vector used for predicting the next token in the l-th layer and the h-th attention head that interacts with the visual content $\scriptstyle { \mathbf { { \mathit { x } } } } _ { \mathit { v } }$ :
+
+$$
+\boldsymbol {\alpha} _ {t} ^ {(l, h)} = \operatorname{softmax} \left(\frac {\boldsymbol {K} _ {t} ^ {(l , h)} \boldsymbol {q} _ {t} ^ {(l , h)}}{\sqrt {d _ {k}}}\right) \in [ 0, 1 ] ^ {N}, \tag {11}
+$$
+
+where $\pmb q ^ { ( l , h ) } \in \mathbb { R } ^ { d _ { k } }$ is the query vector corresponding to the last textual token in xl; ${ \pmb K } ^ { ( l , h ) } \in \mathbb { R } ^ { N \times d _ { k } }$ is the key matrix featuring the visual content $\mathbf { \boldsymbol { x } } _ { v }$ and possibly the textual content $\mathbf { \Delta } _ { \mathbf { \mathcal { X } } \mathbf { \Delta } _ { l } }$ (in the case of self-attention); $d _ { k }$ is the dimensionality of the key and query vectors; and N is the number of visual (and possibly textual) elements in ${ \pmb x } .$ We denote by $\alpha _ { t , v } ^ { ( l , \bar { h } ) }$ α(l,h)t,v the subset of attention weights interacting with visual tokens or patches. For cross-attention heads, $\pmb { \alpha } _ { t , v } ^ { ( l , h ) } = \pmb { \alpha } _ { t } ^ { ( l , h ) }$ α t , while for self-attention heads, α(l,h)t,v $\pmb { \alpha } _ { t , v } ^ { ( l , h ) } = [ \alpha _ { t , 1 } ^ { ( l , h ) } , \dots , \alpha _ { t , | \pmb { x } _ { v } | } ^ { ( l , h ) } ]$ [αt,1 h) , . . . , α(l,h)t,|xv|], where |xv| denotes the number of visual tokens or patches. We $\left| x _ { v } \right|$ then define the attention-based visual grounding score for token $y _ { t }$ at layer l as
+
+$$
+a _ {t} ^ {(l)} (\boldsymbol {y}, \boldsymbol {x}) = \frac {1}{H} \sum_ {h = 1} ^ {H} \sum_ {i = 1} ^ {| \boldsymbol {x} _ {v} |} \left[ \boldsymbol {\alpha} _ {t, v} ^ {(l, h)} \right] _ {i}, \tag {12}
+$$
+
+where H is the number of attention heads that interact with the visual content. A higher value of $a _ { t } ^ { ( l ) } ( \pmb { y } , \pmb { x } )$ indicates stronger dependency on the visual modality, whereas a lower value suggests that visual information contributes minimally to the next-token prediction at that layer. As for the distribution-based score, we normalize these raw attention scores across all generated tokens to obtain a relative token-level importance score $S _ { A } ^ { ( l ) } ( y _ { t } , \pmb { x } )$ , where
+
+$$
+S _ {A} (\boldsymbol {y} _ {t}, \boldsymbol {x}) = \frac {a _ {t} (\boldsymbol {y} _ {t} , \boldsymbol {x})}{\sum_ {i = 1} ^ {T} a _ {t} (\boldsymbol {y} _ {i} , \boldsymbol {x})}. \tag {13}
+$$
+
+This normalized score captures the relative contribution of token ${ \mathbf { } } _ { \pmb { y } _ { t } }$ to the overall visual attention mass in the generated answer.
+
+# 4.3 VIG-TUQ
+
+Our approach leverages visual grounding scores defined in Section 4.2 and combines them with token-level uncertainty scores. Our approach assumes that tokens more strongly grounded in visual content contribute more significantly to uncertainty estimation, as they are more likely to support factual claims in the generated output (see Section 5).
+
+Visual-grounding token UQ. We define VIG-TUQ as a UQ framework for LVLMs that weights token-level uncertainty scores with visual grounding scores. Specifically, given a multimodal input x and a generated answer $\mathbf { \boldsymbol { y } } = \left[ \mathbf { \boldsymbol { y } } _ { t } \right] _ { t = 1 } ^ { T }$ , we define a visual-grounded uncertainty score by combining the distribution-based visual grounding score $S _ { \mathrm { J S D } } ( \cdot , \cdot )$ (equation 10) and the attention-based visual grounding score S(l)A ( $S _ { A } ^ { ( l ) } ( \cdot , \cdot )$ A (equation 13) with the token entropy $\mathcal { H } ( \pmb { y } _ { t } \mid \pmb { x } )$ (equation 6), and summing over all generated tokens:
+
+$$
+\operatorname{VIG-TUQ} (\boldsymbol {x}) = \sum_ {t = 1} ^ {T} \left[ \alpha_ {\mathrm{JSD}} S _ {\mathrm{JSD}} \left(\boldsymbol {y} _ {t}, \boldsymbol {x}\right) + \alpha_ {A} S _ {A} ^ {(l)} \left(\boldsymbol {y} _ {t}, \boldsymbol {x}\right) \right] \mathcal {H} \left(\boldsymbol {y} _ {t} \mid \boldsymbol {x}\right), \tag {14}
+$$
+
+where $\alpha _ { \mathrm { J S D } } > 0$ and $\alpha _ { A } > 0$ are weighting hyperparameters, and l denotes the layer used to compute the attention-based visual grounding score $\bar { S } _ { A } ^ { ( i ) } ( \cdot , \cdot )$ . This formulation can be interpreted as a measure of predictive uncertainty that explicitly penalizes confidence not grounded in core visual evidence.
+
+# 5 Experiments
+
+# 5.1 Experimental setup
+
+Datasets and models. We evaluate our method across a range of visual question answering (VQA) tasks, datasets, and model architectures. Specifically, we conduct experiments on four benchmark datasets: ADVQA (Li et al., 2021), VQARAD (Lau et al., 2018), OKVQA (Marino et al., 2019), and VizWiz (Gurari et al., 2018). Our evaluation includes several recent LVLM architectures, namely Qwen2.5-VL-3B and Qwen2.5-VL-7B (Bai et al., 2025), Qwen3.5-2B (Qwen Team, 2026), llava1.5-7B, llava1.5-13B (Liu et al., 2024b), idefics-9B (Laurençon et al., 2023) and idefics2-8B (Laurençon et al., 2023). Additional details regarding the datasets, models, and experimental setup are provided in Appendix A.
+
+Evaluation metrics. Following prior work (Kuhn et al., 2023b; Farquhar et al., 2024; Janiak et al., 2025a; Lau et al., 2025), we evaluate uncertainty estimation methods using the AUROC metric (Hendrycks & Gimpel, 2017) and ECE (Guo et al., 2017). AUROC (Area Under the Receiver Operating Curve) measures the ability of an uncertainty score to distinguish between correct and incorrect model predictions. Higher values indicate better discrimination, with a perfect uncertainty estimator achieving a score of 1, while a random uncertainty measure yields an expected score of 0.5. ECE (Expected Calibration Error) quantifies how well predicted probabilities align with empirical accuracies, where lower values indicate better calibration. Additional details on the evaluation metrics are provided in Appendix A.
+
+Ground truth label. To evaluate the correctness of generated answers, we adopt an LLM-as-a-Judge approach, following the recommendation of (Janiak et al., 2025a). For each generated answer, the dataset provides a set of valid ground-truth responses. We use Llama-3.1-8B to determine whether the generated answer is semantically consistent with any of the provided ground-truth answers. This setup has been shown to be reliable and to exhibit strong agreement with human judgments (Janiak et al., 2025b).
+
+Baselines. We compare our method against several widely used token-level (TL) uncertainty baselines as well as two sample-diversity approaches, that are semantic-level (SL). For TL methods, we include Token Entropy (equation 6), Log-Perplexity (equation 5), Max-Prob (Fomicheva et al., 2020; Malinin & Gales, 2021a), CCP 7, and Token-SAR (equation 8). We also include results of SL methods like the Semantic Entropy (SE) (Kuhn et al., 2023b) and the Kernel Language Entropy (KLE) with a Matern kernel (Nikitin et al., 2024).
+
+# 5.2 Results
+
+Overall performance comparison. Tables 1 and 2 report the performance of the evaluated uncertainty estimation methods. Table 1 presents AUROC scores aggregated across LVLM architectures for each dataset, while Table 2 reports results aggregated across datasets for each model architecture. Across all datasets and models, VIG-TUQ consistently achieves higher AUROC scores than
+
+Table 1: VIG-TUQ improves AUROC compared to all token-level (TL) baselines and remains competitive with semantic-level (SL) baselines. Evaluation metrics for datasets averaged across all LVLM architectures. Bold values indicates best performance, underline values indicate the second-best among TL. 
+
+<table><tr><td rowspan="2" colspan="2"></td><td colspan="2">OKVQA</td><td colspan="2">VIZWIZ</td><td colspan="2">VQARAD</td><td colspan="2">ADVQA</td></tr><tr><td>AUROC↑</td><td>ECE ↓</td><td>AUROC↑</td><td>ECE↓</td><td>AUROC↑</td><td>ECE↓</td><td>AUROC↑</td><td>ECE↓</td></tr><tr><td rowspan="8">TL</td><td>Log-Perplexity</td><td>0,625</td><td>0,117</td><td>0,645</td><td>0,096</td><td>0,634</td><td>0,185</td><td>0,616</td><td>0,166</td></tr><tr><td>Token-Sar</td><td>0,592</td><td>0,139</td><td>0,589</td><td>0,127</td><td>0,614</td><td>0,181</td><td>0,568</td><td>0,171</td></tr><tr><td>CCP</td><td>0,628</td><td>0,119</td><td>0,640</td><td>0,104</td><td>0,617</td><td>0,157</td><td>0,631</td><td>0,127</td></tr><tr><td>Max-Prob</td><td>0,623</td><td>0,126</td><td>0,640</td><td>0,119</td><td>0,619</td><td>0,194</td><td>0,623</td><td>0,182</td></tr><tr><td>Token-Entropy</td><td>0,629</td><td>0,114</td><td>0,648</td><td>0,094</td><td>0,637</td><td>0,183</td><td>0,613</td><td>0,169</td></tr><tr><td>VIG-TUQ-A (ours)</td><td>0,649</td><td>0,104</td><td>0,675</td><td>0,086</td><td>0,655</td><td>0,181</td><td>0,631</td><td>0,159</td></tr><tr><td>VIG-TUQ-JSD (ours)</td><td>0,633</td><td>0,121</td><td>0,663</td><td>0,092</td><td>0,639</td><td>0,175</td><td>0,591</td><td>0,166</td></tr><tr><td>VIG-TUQ (ours)</td><td>0,655</td><td>0,104</td><td>0,678</td><td>0,089</td><td>0,681</td><td>0,173</td><td>0,632</td><td>0,157</td></tr><tr><td rowspan="2">SL</td><td>SE</td><td>0,669</td><td>0,078</td><td>0,648</td><td>0,061</td><td>0,644</td><td>0,168</td><td>0,636</td><td>0,194</td></tr><tr><td>KLE</td><td>0,691</td><td>0,077</td><td>0,681</td><td>0,064</td><td>0,652</td><td>0,168</td><td>0,648</td><td>0,193</td></tr></table>
+
+VIG-TUQ is as described in Eq14. VIG-TUQ-A and VIG-TUQ-JSD are variants using only one of the visual grounding criteria.
+
+Table 2: VIG-TUQ improves AUROC compared to all token-level (TL) baselines and remains competitive with semantic-level (SL) baselines. Evaluation metrics for LVLM architectures averaged across all vision datasets. Bold values indicates best performance. underline values indicate the second-best among TL. 
+
+<table><tr><td rowspan="2"></td><td rowspan="2">Method</td><td colspan="2">Qwen2.5-VL-3B</td><td colspan="2">Qwen2.5-VL-7B</td><td colspan="2">llava-1.5-13B</td><td colspan="2">llava-1.5-7B</td><td colspan="2">idefics2-8B</td><td colspan="2">idefics-9B</td><td colspan="2">Qwen3.5-2B</td></tr><tr><td>AUROC↑</td><td>ECE↓</td><td>AUROC↑</td><td>ECE↓</td><td>AUROC↑</td><td>ECE↓</td><td>AUROC↑</td><td>ECE↓</td><td>AUROC↑</td><td>ECE↓</td><td>AUROC↑</td><td>ECE↓</td><td>AUROC↑</td><td>ECE↓</td></tr><tr><td rowspan="8">TL</td><td>Log-Perplexity</td><td>0,653</td><td>0,128</td><td>0,622</td><td>0,164</td><td>0,646</td><td>0,139</td><td>0,630</td><td>0,135</td><td>0,624</td><td>0,148</td><td>0,625</td><td>0,157</td><td>0,615</td><td>0,111</td></tr><tr><td>Token-Sar</td><td>0,554</td><td>0,175</td><td>0,588</td><td>0,183</td><td>0,639</td><td>0,135</td><td>0,609</td><td>0,136</td><td>0,599</td><td>0,153</td><td>0,550</td><td>0,170</td><td>0,587</td><td>0,130</td></tr><tr><td>CCP</td><td>0,644</td><td>0,120</td><td>0,620</td><td>0,148</td><td>0,627</td><td>0,137</td><td>0,624</td><td>0,120</td><td>0,627</td><td>0,137</td><td>0,659</td><td>0,118</td><td>0,604</td><td>0,099</td></tr><tr><td>Max-Prob</td><td>0,643</td><td>0,150</td><td>0,616</td><td>0,172</td><td>0,625</td><td>0,163</td><td>0,623</td><td>0,159</td><td>0,617</td><td>0,162</td><td>0,656</td><td>0,164</td><td>0,611</td><td>0,112</td></tr><tr><td>Token-Entropy</td><td>0,651</td><td>0,126</td><td>0,622</td><td>0,164</td><td>0,650</td><td>0,140</td><td>0,632</td><td>0,133</td><td>0,627</td><td>0,146</td><td>0,629</td><td>0,154</td><td>0,616</td><td>0,109</td></tr><tr><td>VIG-TUQ-A (ours)</td><td>0,689</td><td>0,113</td><td>0,651</td><td>0,152</td><td>0,660</td><td>0,134</td><td>0,640</td><td>0,126</td><td>0,645</td><td>0,145</td><td>0,660</td><td>0,142</td><td>0,633</td><td>0,103</td></tr><tr><td>VIG-TUQ-JSD (ours)</td><td>0,652</td><td>0,124</td><td>0,611</td><td>0,160</td><td>0,656</td><td>0,135</td><td>0,652</td><td>0,126</td><td>0,647</td><td>0,145</td><td>0,575</td><td>0,167</td><td>0,614</td><td>0,108</td></tr><tr><td>VIG-TUQ (ours)</td><td>0,691</td><td>0,111</td><td>0,654</td><td>0,152</td><td>0,671</td><td>0,133</td><td>0,663</td><td>0,124</td><td>0,661</td><td>0,140</td><td>0,660</td><td>0,142</td><td>0,632</td><td>0,104</td></tr><tr><td rowspan="2">SL</td><td>SE</td><td>0,662</td><td>0,114</td><td>0,651</td><td>0,148</td><td>0,668</td><td>0,127</td><td>0,674</td><td>0,121</td><td>0,655</td><td>0,125</td><td>0,674</td><td>0,121</td><td>0,555</td><td>0,123</td></tr><tr><td>KLE</td><td>0,673</td><td>0,113</td><td>0,658</td><td>0,147</td><td>0,683</td><td>0,127</td><td>0,686</td><td>0,121</td><td>0,668</td><td>0,124</td><td>0,682</td><td>0,120</td><td>0,627</td><td>0,127</td></tr></table>
+
+VIG-TUQ is as described in Eq14, VIG-TUQ-A and VIG-TUQ-JSD are variants using only one of the visual grounding criteria.
+
+existing token-level baselines, demonstrating improved reliability while preserving the computational efficiency of single-pass uncertainty estimation. Although sample-diversity approaches such as SE and KLE still obtain slightly higher AUROC values in some cases, these methods require multiple generations and additional computations. Consequently, they incur a significantly higher inference cost compared to token-level approaches. Our results therefore highlight that VIG-TUQ provides a favorable trade-off between uncertainty estimation quality and computational efficiency.
+
+Visual grounding & informative tokens. Our approach is based on the assumption that visual grounding scores help identify the tokens most relevant for uncertainty estimation. We further hypothesize that the effectiveness of these scores is model-dependent and that they capture distinct aspects of visual reasoning. To test this hypothesis, we compute the sum of token entropy over the top k% of generated tokens. These tokens are selected according to either the attention-based score the the distribution-based score (equation 10), attention-based score (equation 13), or randomly from generated tokens. Additional details are provided in Appendix B. Results presented in Figure A.4 lead to three main observations. (1) Both visual grounding scores are effective token selectors, as they mostly outperform random selection across models and datasets; (2) Selecting only the most visually grounded tokens is generally more effective than considering all tokens; (3) The attention-based and distribution-based criteria perform better on different models and datasets, which confirm their complementary nature and motivate their combination in VIG-TUQ. Overall, these findings suggest that uncertainty is not uniformly distributed across the generated sequence and that only a subset of tokens carries the most informative signals for uncertainty quantification.
+
+Computational cost. We evaluate the efficiency of VIG-TUQ by comparing its average inference time with existing token-level UQ methods on OKVQA. Table 3 reports the average runtime for answer generation and uncertainty estimation under identical backbone models and hardware settings. Since all token-level methods share the same decoding procedure, generation time remains constant and any runtime differences arise only from the post-hoc UQ computation. Unlike CCP and Token-SAR, which depend on external models and thus introduce additional computational overhead,
+
+![](images/2ddde49206e11f82520e4a81bb2d4c418c895cc30e1b274c1970082a51957c7e.jpg)
+
+<details>
+<summary>bar</summary>
+
+| Model          | Top 10% | Top 20% | Top 30% | Top 40% | Top 50% | Top 60% | Top 70% | Top 80% | Top 90% | Top 100% | Random |
+| -------------- | ------- | ------- | ------- | ------- | ------- | ------- | ------- | ------- | ------- | -------- | ------ |
+| Qwen2.5-VL-3B  | 0.64    | 0.66    | 0.67    | 0.68    | 0.67    | 0.66    | 0.67    | 0.66    | 0.65    | 0.65     | 0.65   |
+| llava-1.5-7B   | 0.59    | 0.62    | 0.63    | 0.64    | 0.64    | 0.63    | 0.64    | 0.63    | 0.62    | 0.62     | 0.62   |
+| idefics2-8B    | 0.57    | 0.61    | 0.62    | 0.63    | 0.63    | 0.62    | 0.63    | 0.62    | 0.61    | 0.61     | 0.61   |
+</details>
+
+![](images/7d02717809ade73b1415e47ffc0e27a38ea30dfed5ddd4561a64d3bccba6cffc.jpg)
+
+<details>
+<summary>bar</summary>
+
+| Dataset        | Top 10% | Top 20% | Top 30% | Top 40% | Top 50% | Top 60% | Top 70% | Top 80% | Top 90% | Top 100% | Random |
+| -------------- | ------- | ------- | ------- | ------- | ------- | ------- | ------- | ------- | ------- | -------- | ------ |
+| Qwen2.5-VL-3B  | 0.62    | 0.64    | 0.66    | 0.67    | 0.67    | 0.66    | 0.67    | 0.66    | 0.66    | 0.66     | 0.66   |
+| llava-1.5-7B   | 0.63    | 0.64    | 0.65    | 0.65    | 0.65    | 0.64    | 0.65    | 0.64    | 0.64    | 0.64     | 0.64   |
+| idefics2-8B    | 0.63    | 0.65    | 0.65    | 0.65    | 0.65    | 0.64    | 0.65    | 0.64    | 0.64    | 0.64     | 0.64   |
+</details>
+
+Figure 3: Visual grounding scores help identify the tokens most relevant for uncertainty estimation. AUROC performance reported for the sum of top k% token entropies across different LVLM architectures. Top k% token entropies are selected according to either the attention-based score the the distribution-based score (equation 10), attention-based score (equation 13), or randomly from generated tokens (details in Appendix B). Gray bars correspond to a random token-selection baseline and averaged over 10 runs. All results are averaged across all datasets.
+
+Table 3: VIG-TUQ is computationally efficient. This table shows the average inference time for: answer generation and uncertainty quantification on the OKVQA dataset. 
+
+<table><tr><td>Model</td><td>Log-Perplexity</td><td>Max-Prob</td><td>Token-Entropy</td><td>CCP</td><td>Token-SAR</td><td>VIG-TUQ</td><td>KLE</td></tr><tr><td>Qwen2.5-3B</td><td>1.04s</td><td>0.99s</td><td>1.02s</td><td>3.31s</td><td>1.65s</td><td>1.32s</td><td>4.70s</td></tr><tr><td>llava-1.5-7B</td><td>0.85s</td><td>0.83s</td><td>0.81s</td><td>2.75s</td><td>1.13s</td><td>0.98s</td><td>4.90s</td></tr></table>
+
+VIG-TUQ is more efficient because it leverages only token probabilities and attention weights that are computed by the generation model itself. Although lightweight baselines such as Token-Entropy, Log-Perplexity, and Max-Prob remain slightly faster, VIG-TUQ incurs only minimal overhead while being substantially more efficient than other token-level UQ approaches.
+
+# 6 Conclusion
+
+In this paper, we present a token-level analysis of how reliance on visual evidence in LVMs affects uncertainty quantification. Our findings indicate that visual information helps identify the most relevant token for uncertainty quantification and underscore the importance of combining multiple visual grounding signals, as their effectiveness can vary across models and capture complementary aspects of visual reasoning. Building on these insights, we introduce Visual-Grounded Token UQ (VIG-TUQ), a training-free and computational efficient framework that explicitly incorporates visual grounding into uncertainty estimation by weighting token-level language uncertainty with visual grounding scores. Experiments on multiple datasets and across diverse LVLM architectures (including early-fusion, late-fusion, and native-fusion models) indicate that our method often improves upon existing token-level uncertainty approaches. We hope our work will encourage future research on vision-aware and fine-grained uncertainty quantification for LVLMs.
+
+Limitations. While our approach improves upon existing token-level uncertainty methods, semantic uncertainty techniques still achieve slightly higher AUROC scores in certain cases. Future work could explore hybrid approaches that integrate semantic uncertainty with visual grounding signals to leverage the strengths of both approaches. Additionally, our method is currently limited to white-box models as it requires access to internal representations.
+
+# References
+
+Samir Abdaljalil, Hasan Kurban, Parichit Sharma, Erchin Serpedin, and Rachad Atat. Sindex: Semantic inconsistency index for hallucination detection in llms. arXiv preprint arXiv:2503.05980, 2025.   
+Moloud Abdar, Farhad Pourpanah, Sadiq Hussain, Dana Rezazadegan, Li Liu, Mohammad Ghavamzadeh, Paul Fieguth, Xiaochun Cao, Abbas Khosravi, U. Rajendra Acharya, Vladimir Makarenkov, and Saeid Nahavandi. A review of uncertainty quantification in deep learning: Techniques, applications and challenges. IF, 2021.   
+Lukas Aichberger, Kajetan Schweighofer, and Sepp Hochreiter. Rethinking uncertainty estimation in natural language generation. arXiv preprint arXiv:2412.15176, 2024.   
+Jean-Baptiste Alayrac, Jeff Donahue, Pauline Luc, Antoine Miech, Iain Barr, Yana Hasson, Karel Lenc, Arthur Mensch, Katherine Millican, Malcolm Reynolds, et al. Flamingo: a visual language model for few-shot learning. Advances in neural information processing systems, 35:23716–23736, 2022.   
+FirstName Alpher. Frobnication. IEEE TPAMI, 12(1):234–778, 2002.   
+FirstName Alpher and FirstName Fotheringham-Smythe. Frobnication revisited. Journal of Foo, 13 (1):234–778, 2003.   
+FirstName Alpher and FirstName Gamow. Can a computer frobnicate? In CVPR, pp. 234–778, 2005.   
+FirstName Alpher, FirstName Fotheringham-Smythe, and FirstName Gamow. Can a machine frobnicate? Journal of Foo, 14(1):234–778, 2004.   
+Jisu An, Junseok Lee, Jeoungeun Lee, and Yongseok Son. Towards llm-centric multimodal fusion: A survey on integration strategies and techniques. arXiv preprint arXiv:2506.04788, 2025.   
+Erik Arakelyan, Zhaoqi Liu, and Isabelle Augenstein. Semantic sensitivities and inconsistent predictions: Measuring the fragility of NLI models. In Yvette Graham and Matthew Purver (eds.), Proceedings of the 18th Conference of the European Chapter of the Association for Computational Linguistics (Volume 1: Long Papers), pp. 432–444, St. Julian’s, Malta, March 2024. Association for Computational Linguistics. doi: 10.18653/v1/2024.eacl-long.27. URL https://aclanthology. org/2024.eacl-long.27/.   
+Amos Azaria and Tom Mitchell. The internal state of an LLM knows when it’s lying. In EMNLP, 2023.   
+Jinze Bai, Shuai Bai, Shusheng Yang, Shijie Wang, Sinan Tan, Peng Wang, Junyang Lin, Chang Zhou, and Jingren Zhou. Qwen-VL: A versatile vision-language model for understanding, localization, text reading, and beyond, 2024. URL https://openreview.net/forum?id=qrGjFJVl3m.   
+Shuai Bai, Keqin Chen, Xuejing Liu, Jialin Wang, Wenbin Ge, Sibo Song, Kai Dang, Peng Wang, Shijie Wang, Jun Tang, et al. Qwen2. 5-vl technical report. arXiv preprint arXiv:2502.13923, 2025.   
+Neil Band, Tim G. J. Rudner, Qixuan Feng, Angelos Filos, Zachary Nado, Mike Dusenberry, Ghassen Jerfel, Dustin Tran, and Yarin Gal. Benchmarking bayesian deep learning on diabetic retinopathy detection tasks. In NeurIPS Datasets and Benchmarks, 2021.   
+Anton Baumann, Rui Li, Marcus Klasson, Santeri Mentu, Shyamgopal Karthik, Zeynep Akata, Arno Solin, and Martin Trapp. Post-hoc probabilistic vision-language models. arXiv preprint arXiv:2412.06014, 2024.   
+Jakub Binkowski, Denis Janiak, Albert Sawczyn, Bogdan Gabrys, and Tomasz Jan Kajdanowicz. Hallucination detection in LLMs using spectral features of attention maps. In EMNLP, 2025.   
+Charles Blundell, Julien Cornebise, Koray Kavukcuoglu, and Daan Wierstra. Weight uncertainty in neural network. In ICML, 2015.
+
+Yapei Chang, Hangfeng He, and Dan Roth. Popqa: A question answering benchmark for evaluating the factual consistency of language models. In NAACL, 2023.   
+Chao Chen, Kai Liu, Ze Chen, Yi Gu, Yue Wu, Mingyuan Tao, Zhihang Fu, and Jieping Ye. INSIDE: LLMs’ internal states retain the power of hallucination detection. In ICLR, 2024.   
+Tiejin Chen, Xiaoou Liu, Longchao Da, Jia Chen, Vagelis Papalexakis, and Hua Wei. Uncertainty quantification of large language models through multi-dimensional responses. arXiv preprint arXiv:2502.16820, 2025.   
+Hyundong Justin Cho, Nicolaas Paul Jedema, Leonardo FR Ribeiro, Karishma Sharma, Pedro Szekely, Alessandro Moschitti, Ruben Janssen, and Jonathan May. Speechworthy instruction-tuned language models. In Proceedings of the 2024 Conference on Empirical Methods in Natural Language Processing, pp. 10652–10670, 2024.   
+Roi Cohen, May Hamri, Mor Geva, and Amir Globerson. LM vs LM: Detecting factual errors via cross examination. In EMNLP, 2023.   
+Roi Cohen, Konstantin Dobler, Eden Biran, and Gerard de Melo. I don't know: Explicit modeling of uncertainty with an [idk] token. In NeurIPS, 2024.   
+Wenliang Dai, Junnan Li, Dongxu Li, Anthony Tiong, Junqi Zhao, Weisheng Wang, Boyang Li, Pascale N Fung, and Steven Hoi. Instructblip: Towards general-purpose vision-language models with instruction tuning. Advances in neural information processing systems, 36:49250–49267, 2023.   
+Erik Daxberger, Agustinus Kristiadi, Alexander Immer, Runa Eschenhagen, Matthias Bauer, and Philipp Hennig. Laplace redux-effortless bayesian deep learning. In NeurIPS, 2021.   
+Jia Deng, Wei Dong, Richard Socher, Li-Jia Li, Kai Li, and Li Fei-Fei. Imagenet: A large-scale hierarchical image database. In CVPR, 2009.   
+Jinhao Duan, Hao Cheng, Shiqi Wang, Alex Zavalny, Chenan Wang, Renjing Xu, Bhavya Kailkhura, and Kaidi Xu. Shifting attention to relevance: Towards the predictive uncertainty quantification of free-form large language models. In Proceedings of the 62nd Annual Meeting of the Association for Computational Linguistics (Volume 1: Long Papers), pp. 5050–5063, 2024.   
+Nikita Durasov, Timur Bagautdinov, Pierre Baque, and Pascal Fua. Masksembles for uncertainty estimation. In Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition, pp. 13539–13548, 2021.   
+Davide Ettori, Nastaran Darabi, Sina Tayebati, Ranganath Krishnan, Mahesh Subedar, Omesh Tickoo, and Amit Ranjan Trivedi. Eigentrack: Spectral activation feature tracking for hallucination and out-of-distribution detection in llms and vlms. arXiv preprint arXiv:2509.15735, 2025.   
+Ekaterina Fadeeva, Aleksandr Rubashevskii, Artem Shelmanov, Sergey Petrakov, Haonan Li, Hamdy Mubarak, Evgenii Tsymbalov, Gleb Kuzmin, Alexander Panchenko, Timothy Baldwin, et al. Fact-checking the output of large language models via token-level uncertainty quantification. In Findings of the Association for Computational Linguistics: ACL 2024, pp. 9367–9385, 2024.   
+Sebastian Farquhar, Jannik Kossen, Lorenz Kuhn, and Yarin Gal. Detecting hallucinations in large language models using semantic entropy. Nature, 2024.   
+Manuel Faysse, Hugues Sibille, Tony Wu, Bilel Omrani, Gautier Viaud, Celine Hudelot, and Pierre Colombo. Colpali: Efficient document retrieval with vision language models. In The Thirteenth International Conference on Learning Representations, 2025. URL https://openreview.net/ forum?id=ogjBpZ8uSi.   
+Laura Fieback, Jakob Spiegelberg, and Hanno Gottschalk. Metatoken: Detecting hallucination in image descriptions by meta classification. arXiv preprint arXiv:2405.19186, 2024.
+
+Marina Fomicheva, Shuo Sun, Lisa Yankovskaya, Frédéric Blain, Francisco Guzmán, Mark Fishel, Nikolaos Aletras, Vishrav Chaudhary, and Lucia Specia. Unsupervised quality estimation for neural machine translation. Transactions of the Association for Computational Linguistics, 8: 539–555, 09 2020. ISSN 2307-387X. doi: 10.1162/tacl\_a\_00330. URL https://doi.org/10. 1162/tacl\_a\_00330.   
+Stanislav Fort, Huiyi Hu, and Balaji Lakshminarayanan. Deep ensembles: A loss landscape perspective. arXiv preprint arXiv:1912.02757, 2019.   
+Gianni Franchi, Andrei Bursuc, Emanuel Aldea, Séverine Dubuisson, and Isabelle Bloch. Tradi: Tracking deep neural network weight distributions. 2020.   
+Xingyu Fu, Yushi Hu, Bangzheng Li, Yu Feng, Haoyu Wang, Xudong Lin, Dan Roth, Noah A. Smith, Wei-Chiu Ma, and Ranjay Krishna. Blink: Multimodal large language models can see but not perceive. In Aleš Leonardis, Elisa Ricci, Stefan Roth, Olga Russakovsky, Torsten Sattler, and Gül Varol (eds.), Computer Vision – ECCV 2024, pp. 148–166, Cham, 2025. Springer Nature Switzerland.   
+Firas Gabetni, Giuseppe Curci, Andrea Pilzer, Subhankar Roy, Elisa Ricci, and Gianni Franchi. Ensembling pruned attention heads for uncertainty-aware efficient transformers. arXiv preprint arXiv:2510.18358, 2025.   
+Yarin Gal and Zoubin Ghahramani. Dropout as a bayesian approximation: Representing model uncertainty in deep learning. In ICML, 2016.   
+Mudasir A Ganaie, Minghui Hu, Ashwani Kumar Malik, Muhammad Tanveer, and Ponnuthurai N Suganthan. Ensemble deep learning: A review. Engineering Applications of Artificial Intelligence, 115:105151, 2022.   
+Haoxiang Gao, Zhongruo Wang, Yaqian Li, Kaiwen Long, Ming Yang, and Yiqing Shen. A survey for foundation models in autonomous driving. In 2025 6th International Conference on Computer Vision and Data Mining (ICCVDM), pp. 63–71. IEEE, 2025.   
+Xiang Gao, Jiaxin Zhang, Lalla Mouatadid, and Kamalika Das. SPUQ: Perturbation-based uncertainty quantification for large language models. In EACL, 2024.   
+Timur Garipov, Pavel Izmailov, Dmitrii Podoprikhin, Dmitry P Vetrov, and Andrew G Wilson. Loss surfaces, mode connectivity, and fast ensembling of dnns. Advances in neural information processing systems, 31, 2018.   
+Gemini. Gemini 1.5: Unlocking multimodal understanding across millions of tokens of context, 2024. URL https://arxiv.org/abs/2403.05530.   
+Ethan Goan and Clinton Fookes. Bayesian neural networks: An introduction and survey. In Case Studies in Applied Bayesian Data Science: CIRM Jean-Morlet Chair, Fall 2018, pp. 45–87. Springer, 2020.   
+Yashvir S Grewal, Edwin V Bonilla, and Thang D Bui. Improving uncertainty quantification in large language models via semantic embeddings. arXiv preprint arXiv:2410.22685, 2024.   
+Chuan Guo, Geoff Pleiss, Yu Sun, and Kilian Q Weinberger. On calibration of modern neural networks. In ICML, 2017.   
+Daya Guo, Dejian Yang, Haowei Zhang, Junxiao Song, Peiyi Wang, Qihao Zhu, Runxin Xu, Ruoyu Zhang, Shirong Ma, Xiao Bi, et al. Deepseek-r1 incentivizes reasoning in llms through reinforcement learning. Nature, 2025.   
+Danna Gurari, Qing Li, Abigale J Stangl, Anhong Guo, Chi Lin, Kristen Grauman, Jiebo Luo, and Jeffrey P Bigham. Vizwiz grand challenge: Answering visual questions from blind people. In CVPR, 2018.   
+Xiaofeng Han, Shunpeng Chen, Zenghuang Fu, Zhe Feng, Lue Fan, Dong An, Changwei Wang, Li Guo, Weiliang Meng, Xiaopeng Zhang, et al. Multimodal fusion and vision-language models: A survey for robot vision. Information Fusion, pp. 103652, 2025.
+
+Pengcheng He, Xiaodong Liu, Jianfeng Gao, and Weizhu Chen. Deberta: Decoding-enhanced bert with disentangled attention. arXiv preprint arXiv:2006.03654, 2020.   
+Pengcheng He, Xiaodong Liu, Jianfeng Gao, and Weizhu Chen. {DEBERTA}: {DECODING}- {enhanced} {bert} {with} {disentangled} {attention}. In International Conference on Learning Representations, 2021. URL https://openreview.net/forum?id=XPZIaotutsD.   
+Dan Hendrycks and Kevin Gimpel. A baseline for detecting misclassified and out-of-distribution examples in neural networks. In ICLR, 2017.   
+Jose Miguel Hernandez-Lobato and Ryan Adams. Probabilistic backpropagation for scalable learning of bayesian neural networks. In ICML, 2015.   
+Joseph Hoche, Andrei Bursuc, David Brellmann, Gilles Louppe, Pavel Izmailov, Angela Yao, and Gianni Franchi. Improving semantic uncertainty quantification in lvlms with semantic gaussian processes. arXiv preprint arXiv:2512.14177, 2025.   
+Jeremy Howard. Imagenette: A smaller subset of 10 easily classified classes from imagenet. https: //github.com/fastai/imagenette, 2019.   
+Lei Huang, Weijiang Yu, Weitao Ma, Weihong Zhong, Zhangyin Feng, Haotian Wang, Qianglong Chen, Weihua Peng, Xiaocheng Feng, Bing Qin, and Ting Liu. A survey on hallucination in large language models: Principles, taxonomy, challenges, and open questions. TIS, 2025.   
+Pavel Izmailov, Wesley J Maddox, Polina Kirichenko, Timur Garipov, Dmitry Vetrov, and Andrew Gordon Wilson. Subspace inference for bayesian deep learning. In Uncertainty in Artificial Intelligence, pp. 1169–1179. PMLR, 2020.   
+Pavel Izmailov, Sharad Vikram, Matthew D Hoffman, and Andrew Gordon Gordon Wilson. What are bayesian neural network posteriors really like? In International conference on machine learning, pp. 4629–4640. PMLR, 2021.   
+Denis Janiak, Jakub Binkowski, Albert Sawczyn, Bogdan Gabrys, Ravid Shwartz-Ziv, and Tomasz Jan Kajdanowicz. The illusion of progress: Re-evaluating hallucination detection in LLMs. In EMNLP, 2025a.   
+Denis Janiak, Jakub Binkowski, Albert Sawczyn, Bogdan Gabrys, Ravid Shwartz-Ziv, and Tomasz Jan Kajdanowicz. The illusion of progress: Re-evaluating hallucination detection in llms. In Proceedings of the 2025 Conference on Empirical Methods in Natural Language Processing, pp. 34716–34733, 2025b.   
+Ziwei Ji, Nayeon Lee, Rita Frieske, Tiezheng Yu, Dan Su, Yan Xu, Etsuko Ishii, Ye Jin Bang, Andrea Madotto, and Pascale Fung. Survey of hallucination in natural language generation. CS, 2023.   
+Ziwei Ji, Lei Yu, Yeskendir Koishekenov, Yejin Bang, Anthony Hartshorn, Alan Schelten, Cheng Zhang, Pascale Fung, and Nicola Cancedda. Calibrating verbal uncertainty as a linear feature to reduce hallucinations. arXiv preprint arXiv:2503.14477, 2025a.   
+Ziwei Ji, Lei Yu, Yeskendir Koishekenov, Yejin Bang, Anthony Hartshorn, Alan Schelten, Cheng Zhang, Pascale Fung, and Nicola Cancedda. Calibrating verbal uncertainty as a linear feature to reduce hallucinations. In Christos Christodoulopoulos, Tanmoy Chakraborty, Carolyn Rose, and Violet Peng (eds.), Proceedings of the 2025 Conference on Empirical Methods in Natural Language Processing, pp. 3769–3793, Suzhou, China, November 2025b. Association for Computational Linguistics. ISBN 979-8-89176-332-6. doi: 10.18653/v1/2025.emnlp-main.187. URL https: //aclanthology.org/2025.emnlp-main.187/.   
+Yixing Jiang, Jesutofunmi A Omiye, Cyril Zakka, Michael Moor, Haiwen Gui, Shayan Alipour, Seyed Shahabeddin Mousavi, Jonathan H Chen, Pranav Rajpurkar, and Roxana Daneshjou. Evaluating general vision-language models for clinical medicine. MedRxiv, pp. 2024–04, 2024.   
+Minsuh Joo and Hyunsoo Cho. Cleanse: Uncertainty estimation approach using clustering-based semantic consistency in LLMs. In ACL Workshops, 2025.
+
+Mandar Joshi, Eunsol Choi, Daniel S. Weld, and Luke Zettlemoyer. Triviaqa: A large scale distantly supervised challenge dataset for reading comprehension. In ACL, 2017.   
+Saurav Kadavath, Tom Conerly, Amanda Askell, Tom Henighan, Dawn Drain, Ethan Perez, Nicholas Schiefer, Zac Hatfield-Dodds, Nova DasSarma, Eli Tran-Johnson, et al. Language models (mostly) know what they know. arXiv preprint arXiv:2207.05221, 2022a.   
+Saurav Kadavath, Tom Conerly, Amanda Askell, Tom Henighan, Dawn Drain, Ethan Perez, Nicholas Schiefer, Zac Hatfield-Dodds, Nova DasSarma, Eli Tran-Johnson, et al. Language models (mostly) know what they know. arXiv preprint arXiv:2207.05221, 2022b.   
+Adam Tauman Kalai, Ofir Nachum, Santosh S. Vempala, and Edwin Zhang. Why language models hallucinate, 2025. URL https://arxiv.org/abs/2509.04664.   
+Sungmin Kang, Yavuz Faruk Bakman, Duygu Nur Yaldiz, Baturalp Buyukates, and Salman Avestimehr. Uncertainty quantification for hallucination detection in large language models: Foundations, methodology, and future directions, 2025. URL https://arxiv.org/abs/2510.12040.   
+Hazel Kim, Tom A. Lamb, Adel Bibi, Philip Torr, and Yarin Gal. Detecting LLM hallucination through layer-wise information deficiency: Analysis of ambiguous prompts and unanswerable questions. In Christos Christodoulopoulos, Tanmoy Chakraborty, Carolyn Rose, and Violet Peng (eds.), Proceedings of the 2025 Conference on Empirical Methods in Natural Language Processing, pp. 32310–32322, Suzhou, China, November 2025. Association for Computational Linguistics. ISBN 979-8-89176-332-6. doi: 10.18653/v1/2025.emnlp-main.1644. URL https: //aclanthology.org/2025.emnlp-main.1644/.   
+Jannik Kossen, Jiatong Han, Muhammed Razzak, Lisa Schut, Shreshth Malik, and Yarin Gal. Semantic entropy probes: Robust and cheap hallucination detection in llms. arXiv preprint arXiv:2406.15927, 2024.   
+Alex Krizhevsky, Geoffrey Hinton, et al. Learning multiple layers of features from tiny images. 2009.   
+Lorenz Kuhn, Yarin Gal, and Sebastian Farquhar. Semantic uncertainty: Linguistic invariances for uncertainty estimation in natural language generation. In ICLR, 2023a.   
+Lorenz Kuhn, Yarin Gal, and Sebastian Farquhar. Semantic uncertainty: Linguistic invariances for uncertainty estimation in natural language generation. In ICLR, 2023b.   
+Balaji Lakshminarayanan, Alexander Pritzel, and Charles Blundell. Simple and scalable predictive uncertainty estimation using deep ensembles. In NeurIPS, 2017.   
+FirstName LastName. The frobnicatable foo filter, 2014a. Face and Gesture submission ID 324. Supplied as supplemental material fg324.pdf.   
+FirstName LastName. Frobnication tutorial, 2014b. Supplied as supplemental material tr.pdf.   
+Gregory Kang Ruey Lau, Hieu Dao, Nicole Kan Hui Lin, and Bryan Kian Hsiang Low. Uncertainty quantification for multimodal large language models with coherence-adjusted semantic volume, 2025. URL https://openreview.net/forum?id=c9TWeKZQR4.   
+Jason J Lau, Soumya Gayen, Asma Ben Abacha, and Dina Demner-Fushman. A dataset of clinically generated visual questions and answers about radiology images. Scientific data, 2018.   
+Hugo Laurençon, Lucile Saulnier, Léo Tronchon, Stas Bekman, Amanpreet Singh, Anton Lozhkov, Thomas Wang, Siddharth Karamcheti, Alexander Rush, Douwe Kiela, et al. Obelics: An open web-scale filtered dataset of interleaved image-text documents. Advances in Neural Information Processing Systems, 36:71683–71702, 2023.   
+Hugo Laurençon, Léo Tronchon, Matthieu Cord, and Victor Sanh. What matters when building vision-language models? In NeurIPS, 2024.   
+Olivier Laurent, Adrien Lafage, Enzo Tartaglione, Geoffrey Daniel, Jean-Marc Martinez, Andrei Bursuc, and Gianni Franchi. Packed-ensembles for efficient uncertainty estimation. arXiv preprint arXiv:2210.09184, 2022.
+
+Olivier Laurent, Emanuel Aldea, and Gianni Franchi. A symmetry-aware exploration of bayesian neural network posteriors. arXiv preprint arXiv:2310.08287, 2023.   
+Kang-il Lee, Minbeom Kim, Seunghyun Yoon, Minsung Kim, Dongryeol Lee, Hyukhun Koh, and Kyomin Jung. VLind-bench: Measuring language priors in large vision-language models. In Luis Chiruzzo, Alan Ritter, and Lu Wang (eds.), Findings of the Association for Computational Linguistics: NAACL 2025, pp. 4129–4144, Albuquerque, New Mexico, April 2025a. Association for Computational Linguistics. ISBN 979-8-89176-195-7. doi: 10.18653/v1/2025.findings-naacl. 231. URL https://aclanthology.org/2025.findings-naacl.231/.   
+Sungjae Lee, Hoyoung Kim, Jeongyeon Hwang, Eunhyeok Park, and Jungseul Ok. Efficient latent semantic clustering for scaling test-time computation of llms, 2025b. URL https://arxiv.org/ abs/2506.00344.   
+Patrick Lewis, Ethan Perez, Aleksandra Piktus, Fabio Petroni, Vladimir Karpukhin, Naman Goyal, Heinrich Küttler, Mike Lewis, Wen-tau Yih, Tim Rocktäschel, Sebastian Riedel, and Douwe Kiela. Retrieval-augmented generation for knowledge-intensive nlp tasks. In NeurIPS, 2020.   
+Junnan Li, Dongxu Li, Silvio Savarese, and Steven Hoi. Blip-2: Bootstrapping language-image pre-training with frozen image encoders and large language models. In International conference on machine learning, pp. 19730–19742. PMLR, 2023a.   
+Kenneth Li, Oam Patel, Fernanda Viégas, Hanspeter Pfister, and Martin Wattenberg. Inference-time intervention: Eliciting truthful answers from a language model. In NeurIPS, 2023b.   
+Linjie Li, Jie Lei, Zhe Gan, and Jingjing Liu. Adversarial vqa: A new benchmark for evaluating the robustness of vqa models. In ICCV, 2021.   
+Songtao Li and Hao Tang. Multimodal alignment and fusion: A survey. arXiv preprint arXiv:2411.17040, 2024.   
+Xiaomin Li, Zhou Yu, Ziji Zhang, Yingying Zhuang, Swair Shah, Narayanan Sadagopan, and Anurag Beniwal. Semantic volume: Quantifying and detecting both external and internal uncertainty in llms. arXiv preprint arXiv:2502.21239, 2025.   
+Stephanie Lin, Jacob Hilton, and Owain Evans. Teaching models to express their uncertainty in words. TMLR, 2022.   
+Zhen Lin, Shubhendu Trivedi, and Jimeng Sun. Generating with confidence: Uncertainty quantification for black-box large language models. TMLR, 2024.   
+Hanchao Liu, Wenyuan Xue, Yifei Chen, Dapeng Chen, Xiutian Zhao, Ke Wang, Liping Hou, Rongjun Li, and Wei Peng. A survey on hallucination in large vision-language models. arXiv preprint arXiv:2402.00253, 2024a.   
+Haotian Liu, Chunyuan Li, Qingyang Wu, and Yong Jae Lee. Visual instruction tuning. In A. Oh, T. Naumann, A. Globerson, K. Saenko, M. Hardt, and S. Levine (eds.), Advances in Neural Information Processing Systems, volume 36, pp. 34892–34916. Curran Associates, Inc., 2023. URL https://proceedings.neurips.cc/paper\_files/paper/2023/file/ 6dcf277ea32ce3288914faf369fe6de0-Paper-Conference.pdf.   
+Haotian Liu, Chunyuan Li, Yuheng Li, and Yong Jae Lee. Improved baselines with visual instruction tuning. In CVPR, 2024b.   
+Jeremiah Liu, Zi Lin, Shreyas Padhy, Dustin Tran, Tania Bedrax Weiss, and Balaji Lakshminarayanan. Simple and principled uncertainty estimation with deterministic deep learning via distance awareness. Advances in neural information processing systems, 33:7498–7512, 2020.   
+Lin Long, Changdae Oh, Seongheon Park, and Sharon Li. Understanding language prior of LVLMs by contrasting chain-of-embedding. In The Fourteenth International Conference on Learning Representations, 2026. URL https://openreview.net/forum?id=wnTnwWKu72.   
+Tiange Luo, Ang Cao, Gunhee Lee, Justin Johnson, and Honglak Lee. Probing visual language priors in VLMs. In Forty-second International Conference on Machine Learning, 2025. URL https://openreview.net/forum?id=bhTBirS0qi.
+
+Huan Ma, Jiadong Pan, Jing Liu, Yan Chen, Joey Tianyi Zhou, Guangyu Wang, Qinghua Hu, Hua Wu, Changqing Zhang, and Haifeng Wang. Semantic energy: Detecting llm hallucination beyond entropy. arXiv preprint arXiv:2508.14496, 2025.   
+David JC MacKay. Probable networks and plausible predictions-a review of practical bayesian methods for supervised neural networks. Network: computation in neural systems, 1995.   
+David John Cameron Mackay. Bayesian methods for adaptive models. CalTech, 1992.   
+Wesley J Maddox, Pavel Izmailov, Timur Garipov, Dmitry P Vetrov, and Andrew Gordon Wilson. A simple baseline for bayesian uncertainty in deep learning. NeurIPS, 2019.   
+Andrey Malinin and Mark Gales. Uncertainty estimation in autoregressive structured prediction. In ICLR, 2021a.   
+Andrey Malinin and Mark Gales. Uncertainty estimation in autoregressive structured prediction. In International Conference on Learning Representations, 2021b. URL https://openreview. net/forum?id=jN5y-zb5Q7m.   
+Potsawee Manakul, Adian Liusie, and Mark Gales. SelfCheckGPT: Zero-resource black-box hallucination detection for generative large language models. In EMNLP, 2023.   
+Kenneth Marino, Mohammad Rastegari, Ali Farhadi, and Roozbeh Mottaghi. Ok-vqa: A visual question answering benchmark requiring external knowledge. In CVPR, 2019.   
+Kevin P Murphy. Machine learning: a probabilistic perspective. MIT press, 2012.   
+Kenton Murray and David Chiang. Correcting length bias in neural machine translation. In MT, 2018.   
+Radford M Neal. Bayesian learning for neural networks. Springer Science & Business Media, 2012.   
+Dang Nguyen, Ali Payani, and Baharan Mirzasoleiman. Beyond semantic entropy: Boosting LLM uncertainty quantification with pairwise semantic similarity. In ACL, 2025.   
+Alexander Nikitin, Jannik Kossen, Yarin Gal, and Pekka Marttinen. Kernel language entropy: Fine-grained uncertainty quantification for llms from semantic similarities. In NeurIPS, 2024.   
+Alexander Novikov, Ngân Vu, Marvin Eisenberger, Emilien Dupont, Po-Sen Huang, Adam Zsolt Wag- ˜ ner, Sergey Shirobokov, Borislav Kozlovskii, Francisco JR Ruiz, Abbas Mehrabian, et al. Alphaevolve: A coding agent for scientific and algorithmic discovery. arXiv preprint arXiv:2506.13131, 2025.   
+OpenAI. Gpt-4 technical report, 2024. URL https://arxiv.org/abs/2303.08774.   
+OpenAI. gpt-oss-120b and gpt-oss-20b model card, 2025. URL https://arxiv.org/abs/2508. 10925.   
+Maxime Oquab, Timothée Darcet, Théo Moutakanni, Huy Vo, Marc Szafraniec, Vasil Khalidov, Pierre Fernandez, Daniel Haziza, Francisco Massa, Alaaeldin El-Nouby, et al. Dinov2: Learning robust visual features without supervision. arXiv preprint arXiv:2304.07193, 2023.   
+Hadas Orgad, Michael Toker, Zorik Gekhman, Roi Reichart, Idan Szpektor, Hadas Kotek, and Yonatan Belinkov. LLMs know more than they show: On the intrinsic representation of LLM hallucinations. In ICLR, 2025.   
+Janis Postels, Hermann Blum, Yannick Strümpler, Cesar Cadena, Roland Siegwart, Luc Van Gool, and Federico Tombari. The hidden uncertainty in a neural networks activations. arXiv preprint arXiv:2012.03082, 2020.   
+Janis Postels, Mattia Segu, Tao Sun, Luca Sieber, Luc Van Gool, Fisher Yu, and Federico Tombari. On the practicality of deterministic epistemic uncertainty. arXiv preprint arXiv:2107.00649, 2021.   
+Xin Qiu and Risto Miikkulainen. Semantic density: Uncertainty quantification for large language models through confidence measurement in semantic space. In NeurIPS, 2024.
+
+Qwen Team. Qwen3.5: Towards native multimodal agents, February 2026. URL https://qwen. ai/blog?id=qwen3.5.   
+Carl Edward Rasmussen and Christopher K. I. Williams. Gaussian Processes for Machine Learning. The MIT Press, 2005.   
+Nils Reimers and Iryna Gurevych. Sentence-bert: Sentence embeddings using siamese bert-networks. arXiv preprint arXiv:1908.10084, 2019.   
+Jie Ren, Jiaming Luo, Yao Zhao, Kundan Krishna, Mohammad Saleh, Balaji Lakshminarayanan, and Peter J Liu. Out-of-distribution detection and selective generation for conditional language models. In ICLR, 2023.   
+Hippolyt Ritter, Aleksandar Botev, and David Barber. A scalable laplace approximation for neural networks. In ICLR, 2018.   
+Bernhard Schölkopf and Alexander J Smola. Learning with kernels: support vector machines, regularization, optimization, and beyond. MIT press, 2002.   
+Ola Shorinwa, Zhiting Mei, Justin Lidard, Allen Z. Ren, and Anirudha Majumdar. A survey on uncertainty quantification of large language models: Taxonomy, open research challenges, and future directions. ACM Comput. Surv., 58(3), September 2025. ISSN 0360-0300. doi: 10.1145/3744238. URL https://doi.org/10.1145/3744238.   
+Ravid Shwartz-Ziv, Randall Balestriero, Kenji Kawaguchi, Tim G. J. Rudner, and Yann LeCun. An information theory perspective on variance-invariance-covariance regularization. In NeurIPS, 2023.   
+Oscar Skean, Md Rifat Arefin, Dan Zhao, Niket Nikul Patel, Jalal Naghiyev, Yann LeCun, and Ravid Shwartz-Ziv. Layer by layer: Uncovering hidden representations in language models. In ICML, 2025.   
+Gaurang Sriramanan, Siddhant Bharti, Vinu Sankar Sadasivan, Shoumik Saha, Priyatham Kattakinda, and Soheil Feizi. Llm-check: Investigating detection of hallucinations in large language models. In NeurIPS, 2024.   
+Meta team. The llama 3 herd of models, 2024. URL https://arxiv.org/abs/2407.21783.   
+Joost Van Amersfoort, Lewis Smith, Yee Whye Teh, and Yarin Gal. Uncertainty estimation using a single deep deterministic neural network. In International conference on machine learning, pp. 9690–9700. PMLR, 2020.   
+Roman Vashurin, Ekaterina Fadeeva, Artem Vazhentsev, Lyudmila Rvanova, Daniil Vasilev, Akim Tsvigun, Sergey Petrakov, Rui Xing, Abdelrahman Sadallah, Kirill Grishchenkov, et al. Benchmarking uncertainty quantification methods for large language models with lm-polygraph. Transactions of the Association for Computational Linguistics, 13:220–248, 2025.   
+Haoran Wei, Yaofeng Sun, and Yukun Li. Deepseek-ocr: Contexts optical compression. arXiv preprint arXiv:2510.18234, 2025.   
+Yeming Wen, Dustin Tran, and Jimmy Ba. Batchensemble: an alternative approach to efficient ensemble and lifelong learning, 2020.   
+Christopher KI Williams and Carl Edward Rasmussen. Gaussian processes for machine learning, volume 2. MIT press Cambridge, MA, 2006.   
+Andrew G Wilson and Pavel Izmailov. Bayesian deep learning and a probabilistic perspective of generalization. Advances in neural information processing systems, 33:4697–4708, 2020.   
+Thomas Wolf, Lysandre Debut, Victor Sanh, Julien Chaumond, Clement Delangue, Anthony Moi, Pierric Cistac, Tim Rault, Rémi Louf, Morgan Funtowicz, Joe Davison, Sam Shleifer, Patrick von Platen, Clara Ma, Yacine Jernite, Julien Plu, Canwen Xu, Teven Le Scao, Sylvain Gugger, Mariama Drame, Quentin Lhoest, and Alexander M. Rush. Transformers: State-of-the-art natural language processing. In Proceedings of the 2020 Conference on Empirical Methods in Natural Language Processing: System Demonstrations, pp. 38–45, Online, October 2020. Association for Computational Linguistics. URL https://www.aclweb.org/anthology/2020.emnlp-demos.6.
+
+Miao Xiong, Zhiyuan Hu, Xinyang Lu, YIFEI LI, Jie Fu, Junxian He, and Bryan Hooi. Can LLMs express their uncertainty? an empirical evaluation of confidence elicitation in LLMs. In The Twelfth International Conference on Learning Representations, 2024. URL https://openreview.net/ forum?id=gjeQKFxFpZ.   
+Ziwei Xu, Sanjay Jain, and Mohan Kankanhalli. Hallucination is inevitable: An innate limitation of large language models, 2025. URL https://arxiv.org/abs/2401.11817.   
+Gal Yona, Roee Aharoni, and Mor Geva. Can large language models faithfully express their intrinsic uncertainty in words? arXiv preprint arXiv:2405.16908, 2024.   
+Ruiyang Zhang, Hu Zhang, and Zhedong Zheng. Vl-uncertainty: Detecting hallucination in large vision-language model via uncertainty estimation, 2024. URL https://arxiv.org/abs/2411. 11919.   
+Tunyu Zhang, Haizhou Shi, Yibin Wang, Hengyi Wang, Xiaoxiao He, Zhuowei Li, Haoxian Chen, Ligong Han, Kai Xu, Huan Zhang, et al. Token-level uncertainty estimation for large language model reasoning. arXiv preprint arXiv:2505.11737, 2025.   
+Lianmin Zheng, Wei-Lin Chiang, Ying Sheng, Siyuan Zhuang, Zhanghao Wu, Yonghao Zhuang, Zi Lin, Zhuohan Li, Dacheng Li, Eric Xing, Hao Zhang, Joseph E Gonzalez, and Ion Stoica. Judging llm-as-a-judge with mt-bench and chatbot arena. In A. Oh, T. Naumann, A. Globerson, K. Saenko, M. Hardt, and S. Levine (eds.), Advances in Neural Information Processing Systems, volume 36, pp. 46595–46623. Curran Associates, Inc., 2023. URL https://proceedings.neurips.cc/paper\_files/paper/2023/file/ 91f18a1287b398d378ef22505bf41832-Paper-Datasets\_and\_Benchmarks.pdf.   
+Zhanghao Zhouyin and Ding Liu. Understanding neural networks with logarithm determinant entropy estimator. arXiv preprint arXiv:2105.03705, 2021.   
+Zhanghao Zhouyin and Ding Liu. Understanding neural networks with logarithm determinant entropy estimator. Neurocomputing, 2025.   
+Deyao Zhu, Jun Chen, Xiaoqian Shen, Xiang Li, and Mohamed Elhoseiny. MiniGPT-4: Enhancing vision-language understanding with advanced large language models. In The Twelfth International Conference on Learning Representations, 2024. URL https://openreview.net/forum?id= 1tZbq88f27.
+
+# Leveraging Visual Signals for Robust Token-Level Uncertainty in Vision–Language Generation –Supplementary Material–
+
+# A Experimental protocol
+
+# A.1 Datasets
+
+We evaluate VIG-TUQ on several Visual Question Answering (VQA) datasets: ADVQA (Li et al., 2021), which consists of a training set of 5, 000 samples and a test set of 2, 000 samples, both drawn from the original training set; VQARAD (Lau et al., 2018), which includes 2,000 samples from the original training set and 500 samples from the original test set; OKVQA (Marino et al., 2019), which contains 5,000 training samples drawn from the original training set and 2,000 test samples from the validation set; and VizWiz (Gurari et al., 2018), which contains 5,000 training samples and 2,000 test samples drawn from the original training set.
+
+# A.2 Models
+
+We evaluate VIG-TUQ on widely used Large Vision Language Models (LVLMs). In particular, we conduct experiments on Qwen2.5-VL-3B and Qwen2.5-VL-7B (Bai et al., 2025), Qwen3.5- 2B (Qwen Team, 2026), LLava1.5-7B, LLava1.5-13B (Liu et al., 2024b), idefics-9B (Laurençon et al., 2023) and idefics2-8B (Laurençon et al., 2023). We include models with different architectures to cover the range of modality fusion strategies discussed in Section 3.1 and to analyze how these fusion strategies affect the visual grounding. In particular, llava, idefics2 and Qwen-VL models adopt a early fusion approach, while idefics-9B model rely on an late fusion approach and Qwen3.5 on a native fusion one.
+
+# A.3 Metrics
+
+AUROC. We assign a probability score to each example for belonging to the positive class (positive reflects that the LVLM is certain about its answer). Area Under the ROC Curve (AUROC) (Hendrycks & Gimpel, 2017) measures how well these scores rank true positives above true negatives. It is the chance that a randomly chosen positive example receives a higher score than a randomly chosen negative one. Higher AUROC means better class separation.
+
+ECE. Expected Calibration Error (ECE) (Guo et al., 2017) measures how well a model’s predicted confidence aligns with its empirical accuracy. A low ECE indicates that the model is well calibrated, meaning that predictions made with confidence c are correct approximately c fraction of the time. Conversely, a high ECE indicates miscalibration, for example when the model is systematically overconfident or underconfident. Since ECE is defined for confidence scores in [0, 1], we first normalize all UQ scores to this range before computing ECE.
+
+# B Token selection analysis
+
+In Section 5, to evaluate whether visual grounding scores help identify the tokens most relevant for uncertainty estimation, we conduct a token selection experiment. For each generated answer $\pmb { y } = [ \pmb { y } _ { 1 } , \dotsc , \pmb { y } _ { T } ]$ , we rank token entropies $\mathcal { H } ( \pmb { y } _ { t } \mid \pmb { x } )$ (equation 6) according to either the distributionbased grounding score $S _ { \mathrm { J S D } } ( \pmb { y } _ { t } , \pmb { x } )$ (equation 10) or the attention-based grounding score $S _ { A } ^ { ( l ) } ( { \pmb y } _ { t } , { \pmb x } )$ (equation 13). We then retain only the top k% of token entropies according to each criterion and compute an overall uncertainty score by summing the selected token entropy values. We also repeat the same procedure using a random subset of k% generated tokens instead of visually grounded tokens. To reduce the bias of this random selection, random token selection is repeated 10 times for each model, dataset, and value of k and we report the AUROC average. Figure A.4 depicts results across different LVLM architectures.
+
+![](images/1b00234da96c7fd2e1162d8660d39d823ffde99568973882324c30f0728f6e93.jpg)
+
+<details>
+<summary>bar</summary>
+
+| Model           | Top 10% | Top 20% | Top 30% | Top 40% | Top 50% | Top 60% | Top 70% | Top 80% | Top 90% | Top 100% | Random |
+| --------------- | ------- | ------- | ------- | ------- | ------- | ------- | ------- | ------- | ------- | -------- | ------ |
+| Qwen2.5-VL-3B   | 0.65    | 0.66    | 0.67    | 0.68    | 0.69    | 0.70    | 0.71    | 0.72    | 0.73    | 0.74     | 0.75   |
+| Qwen2.5-VL-7B   | 0.64    | 0.65    | 0.66    | 0.67    | 0.68    | 0.69    | 0.70    | 0.71    | 0.72    | 0.73     | 0.74   |
+| liava1.5-13B     | 0.58    | 0.60    | 0.62    | 0.64    | 0.66    | 0.68    | 0.70    | 0.72    | 0.74    | 0.76     | 0.78   |
+| liava1.5-7B      | 0.60    | 0.62    | 0.64    | 0.66    | 0.68    | 0.70    | 0.72    | 0.74    | 0.76    | 0.78     | 0.80   |
+| idelics2-8B      | 0.57    | 0.61    | 0.63    | 0.65    | 0.67    | 0.69    | 0.71    | 0.73    | 0.75    | 0.77     | 0.79   |
+| idelics-9B       | 0.61    | 0.63    | 0.65    | 0.67    | 0.69    | 0.71    | 0.73    | 0.75    | 0.77    | 0.79     | 0.81   |
+| Qwen3.5-2B      | 0.62    | 0.64    | 0.66    | 0.68    | 0.70    | 0.72    | 0.74    | 0.76    | 0.78    | 0.80     | 0.82   |
+</details>
+
+![](images/80c0b003ddbc048bbf238b68aa5b554ba346e294b5b017221cec1305a9778a1c.jpg)
+
+<details>
+<summary>bar</summary>
+
+| Model           | Top 10% | Top 20% | Top 30% | Top 40% | Top 50% | Top 60% | Top 70% | Top 80% | Top 90% | Top 100% | Random |
+| --------------- | ------- | ------- | ------- | ------- | ------- | ------- | ------- | ------- | ------- | -------- | ------ |
+| Qwen2.5-VL-3B   | 0.61    | 0.65    | 0.66    | 0.66    | 0.66    | 0.66    | 0.66    | 0.66    | 0.66    | 0.66     | 0.66   |
+| Qwen2.5-VL-7B   | 0.58    | 0.61    | 0.62    | 0.62    | 0.62    | 0.62    | 0.62    | 0.62    | 0.62    | 0.62     | 0.62   |
+| llava-1.5-13B    | 0.63    | 0.65    | 0.66    | 0.66    | 0.66    | 0.66    | 0.66    | 0.66    | 0.66    | 0.66     | 0.66   |
+| llava-1.5-7B     | 0.64    | 0.65    | 0.66    | 0.66    | 0.66    | 0.66    | 0.66    | 0.66    | 0.66    | 0.66     | 0.66   |
+| ideffcs-2.8B     | 0.59    | 0.63    | 0.64    | 0.64    | 0.64    | 0.64    | 0.64    | 0.64    | 0.64    | 0.64     | 0.64   |
+| ideffcs-9B       | 0.55    | 0.59    | 0.61    | 0.61    | 0.61    | 0.61    | 0.61    | 0.61    | 0.61    | 0.61     | 0.61   |
+| Qwen3.5-2B       | 0.58    | 0.61    | 0.62    | 0.62    | 0.62    | 0.62    | 0.62    | 0.62    | 0.62    | 0.62     | 0.62   |
+</details>
+
+Figure A.4: Visual grounding scores help identify the tokens most relevant for uncertainty estimation. AUROC performance reported for the sum of top k% token entropies across different LVLM architectures. Top k% token entropies are selected according to either the attention-based score the the distribution-based score (equation 10), attention-based score (equation 13), or randomly from generated tokens. Gray bars correspond to a random token-selection baseline and averaged over 10 runs. All results are averaged across all datasets.
+
+![](images/d8ca8b04397dbef73bf385b0d9325b95cc6b502f30ab7d4baea9d596e8014005.jpg)
+
+<details>
+<summary>line</summary>
+
+| Relative Network Depth | idefics-9B | idefics2-8B | Ilava-1.5-7B | Ilava-1.5-13B | Qwen2.5-VL-3B | Qwen3.5-2B | Qwen2.5-VL-7B |
+| ---------------------- | ---------- | ----------- | ------------ | ------------- | ------------- | ----------- | ------------- |
+| 0.0                    | 0.0        | 0.0         | 0.0          | 0.0           | 0.0           | 0.0         | 0.0           |
+| 0.1                    | 0.3        | 0.2         | 0.2          | 0.2           | 0.18          | 0.2         | 0.2           |
+| 0.2                    | 0.4        | 0.2         | 0.25         | 0.25          | 0.18          | 0.3         | 0.25          |
+| 0.3                    | 0.45       | 0.25        | 0.25         | 0.28          | 0.18          | 0.3         | 0.25          |
+| 0.4                    | 0.47       | 0.3         | 0.28         | 0.3           | 0.18          | 0.3         | 0.28          |
+| 0.5                    | 0.48       | 0.3         | 0.25         | 0.3           | 0.18          | 0.3         | 0.3           |
+| 0.6                    | 0.47       | 0.3         | 0.28         | 0.3           | 0.18          | 0.3         | 0.3           |
+| 0.7                    | 0.45       | 0.3         | 0.3          | 0.3           | 0.18          | 0.3         | 0.3           |
+| 0.8                    | 0.42       | 0.35        | 0.3          | 0.3           | 0.18          | 0.3         | 0.3           |
+| 0.9                    | 0.4        | 0.38        | 0.35         | 0.3           | 0.17          | 0.3         | 0.3           |
+| 1.0                    | 0.3        | 0.38        | 0.25         | 0.29          | 0.17          | 0.3         | 0.17          |
+</details>
+
+Figure A.5: CKA similarity between LVLM hidden states and reference vision features across normalized network depth. For each model, we compare layer-wise hidden representations to the final-layer representation of a frozen vision encoder. Higher CKA values indicate stronger alignment with the original visual representation. The late-fusion model idefics-9B exhibits the highest visual alignment across much of the network, consistent with architectures that continue to inject visual information throughout the transformer layers.
+
+# C Additional experiments
+
+Impact of LVLM architecture. Figure A.5 aims to analyze how different LVLM architectures use visual information across their layers. To do so, we compute the Centered Kernel Alignment (CKA) similarity between the hidden representations of each LVLM (on OKVQA) and the final-layer features of a reference vision encoder, DINOv2 (Oquab et al., 2023). We use DINOv2 as a reference because it is trained for visual representation learning and captures strong image features across many vision tasks. As a result, it provides a useful proxy for purely visual information. We therefore measure how similar LVLM representations are to these visual features. For each LVLM, we extract hidden states across all transformer layers and compare them to the reference visual features. Because the evaluated models have different numbers of layers, we normalize layer indices to a relative depth scale from 0.0, corresponding to the embedding layer, to 1.0, corresponding to the final transformer layer. This enables a direct comparison of where visual information is most strongly reflected across architectures.
+
+The resulting plot shows how closely each model’s internal representations align with the original visual features as generation progresses through the network. High CKA similarity indicates that the model representation remains strongly related to the visual encoder representation, whereas lower similarity suggests a shift toward language- or task-specific representations. We observe that idefics-9B, the only late-fusion architecture in this comparison, exhibits the strongest similarity to the reference vision encoder. This behavior is consistent with its architectural design: unlike early-fusion models, which inject visual features mainly before the language-model layers, late-fusion models continue to integrate visual components throughout the network, leading to stronger visual alignment at intermediate or deeper layers.
+
+# D Complete results
+
+In this section, we present the detailed performance of all UQ methods across datasets and models described in Appendix A. Table A.4 reports the AUROC scores achieved by each method on every dataset and LVLM architecture.
+
+Comparision with token-level UQ methods. VIG-TUQ consistently outperforms conventional token-level uncertainty metrics, including Log-Perplexity, Max-Prob, Token-Entropy, CCP, and Token-SAR. For instance, on the OKVQA dataset, VIG-TUQ achieves the highest AUROC score. Similar trends are observed for VQARAD and ADVQA, where VIG-TUQ ranks among the topperforming methods. These results confirm that integrating multiple importance scores and visual grounding scores improves the performance of token-level UQ methods.
+
+Comparison with consistency-based methods. Semantic Entropy (SE) (Farquhar et al., 2024) and Kernel Language Entropy (KLE) (Nikitin et al., 2024) achieve slightly higher AUROC on certain datasets. This behavior is expected as these methods estimate uncertainty by measuring the semantic consistency of generated responses, which provides a more comprehensive assessment of uncertainty across the entire generated content. However, these methods require multiple sampling, which also makes them significantly more expensive at inference time (see Table 3). In contrast, our approach requires only a single or two samplings and therefore remains much more efficient while still maintaining competitive performance.
+
+Effect across datasets. We also observe that the performance of UQ methods varies across datasets. For instance, VIG-TUQ clearly outperforms on OKVQA and VQARAD, which require stronger reasoning and better exploitation of the visual content, which makes reliable uncertainty estimation more challenging. On VizWiz, the improvements are still visible but slightly smaller. This dataset contains real-world images with visual noise, which can make the visual grounding more difficult for all models.
+
+Effect across model architectures. The benefits of VIG-TUQ are consistent across different LVLM architectures. This suggests that VIG-TUQ is not tied to a specific architecture and can be effectively applied across a wide range of multimodal architectures.
+
+# E Hyperparameters
+
+The hyperparameters used in VIG-TUQ are reported in Table A.6. They are selected on a small training split for each dataset–model combination. To limit the search space and avoid overfitting to the validation setting, we impose a strict constraint on the weighting coefficients: both αJSD and $\alpha _ { A }$ are restricted to integer values in [0, 5]. This deliberately coarse search is intended to ensure that the performance gains of VIG-TUQ do not rely on extensive hyperparameter tuning. The selected hyperparameters show that some model- and dataset-specific adaptation is beneficial. This is consistent with the token selection analysis in Figure A.4, where the attention-based and distribution-based visual grounding scores do not perform best in the same settings. For example, for llava-1.5-7B on VQARAD, VIG-TUQ relies only on the distribution-based score, whereas for Qwen3.5-2B on OKVQA, it relies only on the attention-based score. Nevertheless, in most model–dataset combinations, both scores receive nonzero weights, suggesting that the two grounding criteria provide complementary information for uncertainty quantification.
+
+Table A.4: VIG-TUQ outperforms token-level UQ baselines. Evaluation metrics for LVLM architectures across all datasets and models. 
+
+<table><tr><td colspan="2"></td><td>Qwen2_5-VL-3B AUROC↑</td><td>Qwen2_5-VL-3B ECE↓</td><td>Qwen2_5-VL-7B AUROC↑</td><td>Qwen2_5-VL-7B ECE↓</td><td>llava-1_5-13B AUROC↑</td><td>llava-1_5-13B ECE↓</td><td>llava-1_5-7B AUROC↑</td><td>llava-1_5-7B ECE↓</td><td>idefics2-8B AUROC↑</td><td>idefics2-8B ECE↓</td><td>idefics-9B AUROC↑</td><td>idefics-9B ECE↓</td><td>Qwen3_5-2B AUROC↑</td><td>Qwen3_5-2B ECE↓</td></tr><tr><td rowspan="8">OKVQA</td><td>Log-Perplexity</td><td>0.610</td><td>0.110</td><td>0.594</td><td>0.108</td><td>0.635</td><td>0.137</td><td>0.634</td><td>0.116</td><td>0.637</td><td>0.146</td><td>0.605</td><td>0.104</td><td>0.649</td><td>0.070</td></tr><tr><td>Token-Sar</td><td>0.551</td><td>0.158</td><td>0.580</td><td>0.115</td><td>0.639</td><td>0.145</td><td>0.637</td><td>0.112</td><td>0.603</td><td>0.159</td><td>0.524</td><td>0.157</td><td>0.600</td><td>0.111</td></tr><tr><td>CCP</td><td>0.607</td><td>0.111</td><td>0.611</td><td>0.087</td><td>0.614</td><td>0.167</td><td>0.612</td><td>0.136</td><td>0.647</td><td>0.170</td><td>0.662</td><td>0.065</td><td>0.625</td><td>0.046</td></tr><tr><td>Max-Prob</td><td>0.592</td><td>0.151</td><td>0.608</td><td>0.111</td><td>0.611</td><td>0.147</td><td>0.609</td><td>0.152</td><td>0.634</td><td>0.138</td><td>0.644</td><td>0.105</td><td>0.649</td><td>0.068</td></tr><tr><td>Token-Entropy</td><td>0.609</td><td>0.108</td><td>0.601</td><td>0.100</td><td>0.641</td><td>0.136</td><td>0.638</td><td>0.114</td><td>0.642</td><td>0.145</td><td>0.608</td><td>0.096</td><td>0.651</td><td>0.067</td></tr><tr><td>VIG-TU-QA (ours)</td><td>0.657</td><td>0.076</td><td>0.620</td><td>0.091</td><td>0.644</td><td>0.135</td><td>0.651</td><td>0.104</td><td>0.664</td><td>0.143</td><td>0.645</td><td>0.070</td><td>0.652</td><td>0.072</td></tr><tr><td>VIG-TU-QJSD (ours)</td><td>0.652</td><td>0.081</td><td>0.606</td><td>0.099</td><td>0.649</td><td>0.138</td><td>0.646</td><td>0.111</td><td>0.669</td><td>0.147</td><td>0.545</td><td>0.171</td><td>0.633</td><td>0.074</td></tr><tr><td>VIG-TUQ (ours)</td><td>0.664</td><td>0.067</td><td>0.620</td><td>0.091</td><td>0.657</td><td>0.136</td><td>0.656</td><td>0.107</td><td>0.674</td><td>0.145</td><td>0.645</td><td>0.070</td><td>0.652</td><td>0.072</td></tr><tr><td rowspan="2"></td><td>SE</td><td>0.669</td><td>0.041</td><td>0.647</td><td>0.080</td><td>0.690</td><td>0.076</td><td>0.708</td><td>0.075</td><td>0.702</td><td>0.110</td><td>0.706</td><td>0.035</td><td>0.529</td><td>0.099</td></tr><tr><td>KLE</td><td>0.682</td><td>0.035</td><td>0.654</td><td>0.078</td><td>0.700</td><td>0.074</td><td>0.716</td><td>0.069</td><td>0.715</td><td>0.110</td><td>0.701</td><td>0.030</td><td>0.643</td><td>0.112</td></tr><tr><td rowspan="8">VIZWIZ</td><td>Log-Perplexity</td><td>0.690</td><td>0.086</td><td>0.634</td><td>0.130</td><td>0.651</td><td>0.076</td><td>0.667</td><td>0.073</td><td>0.635</td><td>0.102</td><td>0.612</td><td>0.119</td><td>0.633</td><td>0.078</td></tr><tr><td>Token-Sar</td><td>0.525</td><td>0.183</td><td>0.561</td><td>0.180</td><td>0.635</td><td>0.080</td><td>0.628</td><td>0.074</td><td>0.597</td><td>0.131</td><td>0.576</td><td>0.125</td><td>0.591</td><td>0.109</td></tr><tr><td>CCP</td><td>0.665</td><td>0.120</td><td>0.613</td><td>0.155</td><td>0.638</td><td>0.096</td><td>0.655</td><td>0.059</td><td>0.639</td><td>0.129</td><td>0.655</td><td>0.062</td><td>0.615</td><td>0.084</td></tr><tr><td>Max-Prob</td><td>0.664</td><td>0.104</td><td>0.614</td><td>0.131</td><td>0.637</td><td>0.135</td><td>0.660</td><td>0.127</td><td>0.632</td><td>0.119</td><td>0.652</td><td>0.129</td><td>0.631</td><td>0.087</td></tr><tr><td>Token-Entropy</td><td>0.686</td><td>0.086</td><td>0.638</td><td>0.126</td><td>0.662</td><td>0.077</td><td>0.673</td><td>0.069</td><td>0.639</td><td>0.088</td><td>0.618</td><td>0.172</td><td>0.632</td><td>0.074</td></tr><tr><td>VIG-TU-QA (ours)</td><td>0.722</td><td>0.084</td><td>0.680</td><td>0.102</td><td>0.674</td><td>0.074</td><td>0.686</td><td>0.054</td><td>0.664</td><td>0.096</td><td>0.640</td><td>0.113</td><td>0.667</td><td>0.065</td></tr><tr><td>VIG-TU-QJSD (ours)</td><td>0.721</td><td>0.085</td><td>0.680</td><td>0.113</td><td>0.646</td><td>0.082</td><td>0.679</td><td>0.054</td><td>0.659</td><td>0.109</td><td>0.603</td><td>0.117</td><td>0.660</td><td>0.069</td></tr><tr><td>VIG-TUQ (ours)</td><td>0.727</td><td>0.085</td><td>0.685</td><td>0.106</td><td>0.672</td><td>0.073</td><td>0.691</td><td>0.057</td><td>0.668</td><td>0.109</td><td>0.640</td><td>0.113</td><td>0.669</td><td>0.061</td></tr><tr><td rowspan="2"></td><td>SE</td><td>0.694</td><td>0.035</td><td>0.675</td><td>0.118</td><td>0.657</td><td>0.039</td><td>0.676</td><td>0.020</td><td>0.644</td><td>0.067</td><td>0.673</td><td>0.062</td><td>0.521</td><td>0.084</td></tr><tr><td>KLE</td><td>0.716</td><td>0.036</td><td>0.687</td><td>0.118</td><td>0.689</td><td>0.042</td><td>0.699</td><td>0.028</td><td>0.672</td><td>0.066</td><td>0.699</td><td>0.065</td><td>0.616</td><td>0.089</td></tr><tr><td rowspan="8">VOARAD</td><td>Log-Perplexity</td><td>0.666</td><td>0.173</td><td>0.647</td><td>0.253</td><td>0.659</td><td>0.215</td><td>0.602</td><td>0.217</td><td>0.599</td><td>0.172</td><td>0.686</td><td>0.155</td><td>0.611</td><td>0.123</td></tr><tr><td>Token-Sar</td><td>0.611</td><td>0.168</td><td>0.638</td><td>0.252</td><td>0.655</td><td>0.215</td><td>0.587</td><td>0.220</td><td>0.600</td><td>0.169</td><td>0.595</td><td>0.151</td><td>0.628</td><td>0.107</td></tr><tr><td>CCP</td><td>0.661</td><td>0.141</td><td>0.653</td><td>0.230</td><td>0.608</td><td>0.196</td><td>0.593</td><td>0.186</td><td>0.588</td><td>0.113</td><td>0.657</td><td>0.136</td><td>0.589</td><td>0.138</td></tr><tr><td>Max-Prob</td><td>0.674</td><td>0.161</td><td>0.649</td><td>0.251</td><td>0.617</td><td>0.227</td><td>0.600</td><td>0.212</td><td>0.569</td><td>0.196</td><td>0.664</td><td>0.189</td><td>0.611</td><td>0.123</td></tr><tr><td>Token-Entropy</td><td>0.669</td><td>0.167</td><td>0.639</td><td>0.256</td><td>0.657</td><td>0.223</td><td>0.602</td><td>0.211</td><td>0.605</td><td>0.166</td><td>0.695</td><td>0.153</td><td>0.624</td><td>0.117</td></tr><tr><td>VIG-TU-QA (ours)</td><td>0.713</td><td>0.164</td><td>0.677</td><td>0.254</td><td>0.672</td><td>0.215</td><td>0.678</td><td>0.211</td><td>0.687</td><td>0.174</td><td>0.736</td><td>0.152</td><td>0.634</td><td>0.107</td></tr><tr><td>VIG-TU-QJSD (ours)</td><td>0.616</td><td>0.185</td><td>0.540</td><td>0.270</td><td>0.689</td><td>0.213</td><td>0.670</td><td>0.200</td><td>0.665</td><td>0.140</td><td>0.636</td><td>0.148</td><td>0.631</td><td>0.103</td></tr><tr><td>VIG-TUQ (ours)</td><td>0.713</td><td>0.164</td><td>0.677</td><td>0.254</td><td>0.693</td><td>0.213</td><td>0.670</td><td>0.200</td><td>0.659</td><td>0.144</td><td>0.736</td><td>0.152</td><td>0.641</td><td>0.111</td></tr><tr><td rowspan="2"></td><td>SE</td><td>0.685</td><td>0.168</td><td>0.632</td><td>0.197</td><td>0.630</td><td>0.258</td><td>0.659</td><td>0.246</td><td>0.611</td><td>0.125</td><td>0.669</td><td>0.145</td><td>0.651</td><td>0.082</td></tr><tr><td>KLE</td><td>0.679</td><td>0.169</td><td>0.630</td><td>0.198</td><td>0.644</td><td>0.259</td><td>0.678</td><td>0.247</td><td>0.620</td><td>0.126</td><td>0.666</td><td>0.144</td><td>0.679</td><td>0.078</td></tr><tr><td rowspan="8">ADVQN</td><td>Log-Perplexity</td><td>0.647</td><td>0.142</td><td>0.614</td><td>0.165</td><td>0.638</td><td>0.128</td><td>0.617</td><td>0.133</td><td>0.625</td><td>0.171</td><td>0.599</td><td>0.250</td><td>0.566</td><td>0.172</td></tr><tr><td>Token-Sar</td><td>0.531</td><td>0.191</td><td>0.574</td><td>0.187</td><td>0.628</td><td>0.102</td><td>0.582</td><td>0.135</td><td>0.627</td><td>0.155</td><td>0.506</td><td>0.249</td><td>0.531</td><td>0.195</td></tr><tr><td>CCP</td><td>0.643</td><td>0.109</td><td>0.603</td><td>0.119</td><td>0.649</td><td>0.088</td><td>0.637</td><td>0.100</td><td>0.634</td><td>0.134</td><td>0.663</td><td>0.207</td><td>0.588</td><td>0.128</td></tr><tr><td>Max-Prob</td><td>0.642</td><td>0.184</td><td>0.594</td><td>0.196</td><td>0.636</td><td>0.142</td><td>0.624</td><td>0.144</td><td>0.633</td><td>0.194</td><td>0.665</td><td>0.234</td><td>0.554</td><td>0.171</td></tr><tr><td>Token-Entropy</td><td>0.642</td><td>0.145</td><td>0.612</td><td>0.173</td><td>0.639</td><td>0.124</td><td>0.614</td><td>0.138</td><td>0.624</td><td>0.175</td><td>0.594</td><td>0.246</td><td>0.556</td><td>0.177</td></tr><tr><td>VIG-TU-QA (ours)</td><td>0.665</td><td>0.129</td><td>0.627</td><td>0.162</td><td>0.651</td><td>0.114</td><td>0.624</td><td>0.143</td><td>0.644</td><td>0.166</td><td>0.617</td><td>0.233</td><td>0.577</td><td>0.168</td></tr><tr><td>VIG-TU-QJSD (ours)</td><td>0.620</td><td>0.146</td><td>0.617</td><td>0.156</td><td>0.642</td><td>0.109</td><td>0.613</td><td>0.138</td><td>0.594</td><td>0.182</td><td>0.515</td><td>0.232</td><td>0.531</td><td>0.186</td></tr><tr><td>VIG-TUQ (ours)</td><td>0.663</td><td>0.129</td><td>0.633</td><td>0.155</td><td>0.662</td><td>0.111</td><td>0.633</td><td>0.130</td><td>0.642</td><td>0.164</td><td>0.617</td><td>0.233</td><td>0.567</td><td>0.173</td></tr><tr><td rowspan="2"></td><td>SE</td><td>0.601</td><td>0.214</td><td>0.651</td><td>0.195</td><td>0.695</td><td>0.135</td><td>0.652</td><td>0.141</td><td>0.662</td><td>0.197</td><td>0.650</td><td>0.243</td><td>0.517</td><td>0.229</td></tr><tr><td>KLE</td><td>0.614</td><td>0.213</td><td>0.660</td><td>0.194</td><td>0.701</td><td>0.132</td><td>0.651</td><td>0.139</td><td>0.666</td><td>0.196</td><td>0.662</td><td>0.242</td><td>0.568</td><td>0.230</td></tr></table>
+
+Hyperparameter sensitivity and tuning requirements. As discussed above, VIG-TUQ requires only a lightweight hyperparameter search. To avoid relying on extensive tuning, we restrict the weighting coefficients αJSD and $\alpha _ { A }$ to integer values in $\{ 0 , \ldots , 5 \}$ , and tune them together with the attention layer l on a small training split. Table ${ \mathrm { A . 5 } }$ reports the selected hyperparameters when varying the number of training examples $\bar { K }$ . We observe that stable and competitive hyperparameters can already be obtained with as few as K = 100 examples. In several cases, such as Idefics-9B on OKVQA and VQARAD, the selected configuration remains identical across different values of $K$ . Even when the selected coefficients vary, as for Qwen2.5-VL-3B on OKVQA, the resulting AUROC remains nearly unchanged. These results suggest that VIG-TUQis not overly sensitive to the exact hyperparameter choice and does not require large validation sets or fine-grained tuning to achieve strong performance.
+
+# F Analysis of visual influence on hidden representations
+
+In this section, we examine how the internal representations of an LVLM change when visual input is removed. In particular, we compare the hidden representations obtained during normal generation with those obtained when the image is replaced by a blank input.
+
+LVLM. Let $\pmb { x } = ( \pmb { x } _ { v } , \pmb { x } _ { l } )$ be a multimodal input with a visual content $\mathbf { x } _ { \imath }$ and a textual content xl. As described in Section 3, an LVLM defines a parameterized function $f _ { \pmb \theta } : \mathcal { X } _ { v } \times \mathcal { X } _ { l }  \mathbb { R } ^ { d }$ to encode the visual-linguistic context into a latent representation. In particular, the parametric function $f _ { \pmb \theta } : \mathcal { X } _ { v } \times \mathcal { X } _ { l }  \mathbb { R } ^ { d }$ can be defined recursively over L layers as
+
+$$
+f _ {\boldsymbol {\theta}} (\boldsymbol {x} _ {v}, \boldsymbol {x} _ {l}) = f _ {L} (\boldsymbol {h} _ {L - 1}, \boldsymbol {x} _ {v}), \quad \text { where }
+$$
+
+$$
+\boldsymbol {h} _ {i} = f _ {i} \left(\boldsymbol {h} _ {i - 1}, \boldsymbol {x} _ {v}\right) = g _ {i} \left(m _ {i} \left(E _ {i} \left(\boldsymbol {x} _ {v}\right), \boldsymbol {h} _ {i - 1}\right)\right) \quad (1 \leq i \leq L)
+$$
+
+$$
+\boldsymbol {h} _ {0} = E _ {l} (\boldsymbol {x} _ {l});
+$$
+
+with $E _ { l } ( \cdot )$ a text embedding function. For each layer $i , g _ { i } : \mathbb { R } ^ { d }  \mathbb { R } ^ { d }$ depicts a transformer decoder layer, $m _ { i } ( \cdot , \cdot )$ denotes a multimodal fusion module (e.g., concatenation, linear layer, cross-attention layer), and $\dot { E } _ { i } ( \cdot )$ is a visual encoder (e.g., ViT, CNNs, identity function).
+
+Visual influence analysis problem. Our goal is to measure how much the hidden representations change at each layer l when the visual component $\mathbf { \boldsymbol { x } } _ { v }$ is removed. To this end, we examine the internal representations of the LVLM that rely only on the textual component $\mathbf { \Delta } _ { \mathbf { \mathcal { X } } l }$ defined as
+
+$$
+\boldsymbol {h} _ {i} ^ {\prime} = f _ {i} \left(\boldsymbol {h} _ {i - 1}, \varnothing\right) = g _ {i} \left(m _ {i} \left(\varnothing , \boldsymbol {h} _ {i - 1} ^ {\prime}\right)\right) \quad (1 \leq i \leq L) \tag {15}
+$$
+
+$$
+\boldsymbol {h} _ {0} ^ {\prime} = E _ {l} (\boldsymbol {x} _ {l}); \tag {16}
+$$
+
+Table A.5: Hyperparameter tuning stability under limited training data. For each model–dataset pair, we tune the discrete weighting coefficients αJSD, $\alpha _ { A } \in \{ 0 , \ldots , 5 \}$ and the attention layer l using only K training examples. The selected hyperparameters and resulting AUROC/ECE remain stable even for small values of K, indicating that VIG-TUQrequires only lightweight tuning and is robust to small hyperparameter variations. 
+
+<table><tr><td></td><td>Dataset</td><td>K</td><td>AUROC↑</td><td>ECE↓</td><td> $\alpha_{\text{JSD}}$ </td><td> $\alpha_A$ </td><td>l</td></tr><tr><td rowspan="8">idefics-9B</td><td>OKVQA</td><td>1000</td><td>0,645</td><td>0,159</td><td>0</td><td>1</td><td>16</td></tr><tr><td>OKVQA</td><td>500</td><td>0,645</td><td>0,159</td><td>0</td><td>1</td><td>16</td></tr><tr><td>OKVQA</td><td>200</td><td>0,645</td><td>0,159</td><td>0</td><td>1</td><td>16</td></tr><tr><td>OKVQA</td><td>100</td><td>0,645</td><td>0,159</td><td>0</td><td>1</td><td>16</td></tr><tr><td>VQARAD</td><td>1000</td><td>0,736</td><td>0,447</td><td>0</td><td>1</td><td>17</td></tr><tr><td>VQARAD</td><td>500</td><td>0,730</td><td>0,375</td><td>1</td><td>4</td><td>16</td></tr><tr><td>VQARAD</td><td>200</td><td>0,736</td><td>0,447</td><td>0</td><td>1</td><td>17</td></tr><tr><td>VQARAD</td><td>100</td><td>0,736</td><td>0,447</td><td>0</td><td>1</td><td>17</td></tr><tr><td rowspan="8">Qwen2.5-VL-3B</td><td>OKVQA</td><td>1000</td><td>0,664</td><td>0,040</td><td>1</td><td>4</td><td>7</td></tr><tr><td>OKVQA</td><td>500</td><td>0,664</td><td>0,014</td><td>3</td><td>4</td><td>7</td></tr><tr><td>OKVQA</td><td>200</td><td>0,664</td><td>0,032</td><td>1</td><td>3</td><td>7</td></tr><tr><td>OKVQA</td><td>100</td><td>0,664</td><td>0,014</td><td>3</td><td>4</td><td>7</td></tr><tr><td>VQARAD</td><td>1000</td><td>0,713</td><td>0,127</td><td>0</td><td>1</td><td>6</td></tr><tr><td>VQARAD</td><td>500</td><td>0,713</td><td>0,127</td><td>0</td><td>1</td><td>6</td></tr><tr><td>VQARAD</td><td>200</td><td>0,713</td><td>0,127</td><td>0</td><td>1</td><td>6</td></tr><tr><td>VQARAD</td><td>100</td><td>0,713</td><td>0,127</td><td>0</td><td>1</td><td>6</td></tr></table>
+
+Table A.6 
+
+<table><tr><td></td><td colspan="3">Qwen2.5-VL-3B</td><td colspan="3">Qwen2.5-VL-7B</td><td colspan="3">llava-1.5-13B</td><td colspan="3">llava-1.5-7B</td><td colspan="3">idefics2-8B</td><td colspan="3">idefics-9B</td><td colspan="3">Qwen3.5-2B</td></tr><tr><td>Dataset</td><td> $\alpha_{\text{JSD}}$ </td><td> $\alpha_A$ </td><td>l</td><td> $\alpha_{\text{JSD}}$ </td><td> $\alpha_A$ </td><td>l</td><td> $\alpha_{\text{JSD}}$ </td><td> $\alpha_A$ </td><td>l</td><td> $\alpha_{\text{JSD}}$ </td><td> $\alpha_A$ </td><td>l</td><td> $\alpha_{\text{JSD}}$ </td><td> $\alpha_A$ </td><td>l</td><td> $\alpha_{\text{JSD}}\; \alpha_A$ </td><td>l</td><td> $\alpha_{\text{JSD}}$ </td><td> $\alpha_A$ </td><td>l</td><td></td></tr><tr><td>OKVQA</td><td>1</td><td>4</td><td>7</td><td>0</td><td>1</td><td>4</td><td>2</td><td>3</td><td>6</td><td>2</td><td>3</td><td>16</td><td>1</td><td>4</td><td>29</td><td>0</td><td>1</td><td>16</td><td>0</td><td>1</td><td>5</td></tr><tr><td>VIZWIZ</td><td>3</td><td>1</td><td>9</td><td>2</td><td>3</td><td>15</td><td>1</td><td>4</td><td>16</td><td>3</td><td>4</td><td>8</td><td>1</td><td>1</td><td>20</td><td>0</td><td>1</td><td>14</td><td>1</td><td>3</td><td>5</td></tr><tr><td>VQARAD</td><td>0</td><td>1</td><td>6</td><td>0</td><td>1</td><td>6</td><td>3</td><td>1</td><td>3</td><td>1</td><td>0</td><td>18</td><td>3</td><td>2</td><td>0</td><td>0</td><td>1</td><td>17</td><td>1</td><td>1</td><td>5</td></tr><tr><td>ADVQA</td><td>1</td><td>4</td><td>7</td><td>1</td><td>3</td><td>4</td><td>1</td><td>4</td><td>6</td><td>1</td><td>3</td><td>4</td><td>1</td><td>4</td><td>1</td><td>0</td><td>1</td><td>14</td><td>1</td><td>3</td><td>0</td></tr></table>
+
+To quantify the difference between these two embeddings at each layer i, we compute the cosine distance between $\boldsymbol { h } _ { i }$ and $ { \boldsymbol { h } } _ { i } ^ { \prime }$ at each layer. This distance reflects how much the model relies on visual information, where a larger value means that the image exerts a stronger influence on the internal representation. For each generated answer, we extract the hidden state corresponding to the last token at every layer. We then compute the cosine distance between the two representations and average the results across all samples of the dataset.
+
+Analysis wrt prediction certainty. Figure A.6 shows the evolution of this distance across layers for certain and uncertain predictions. Several models are evaluated, including idefics2-8B, idefics-9B llava-1.5-13B, llava-1.5-7B, Qwen2.5-VL-3B, Qwen2.5-VL-7B and Qwen3.5- 2B, all evaluated on OKVQA data-set. For all models, we observe that the distance between the two representations is larger for certain predictions than for uncertain ones. This means that when the model is confident about its answer, the internal representation changes more when the image is removed. In other words, confident predictions tend to rely more on visual information. Another observation is that the distance generally increases in deeper layers of the network. This suggests that the influence of visual information becomes stronger in later stages of the Transformer.
+
+Analysis wrt prediction correctness. Figure A.7 compares the distance between representations for correct and incorrect predictions. For all models, we also observe that the distance between the two representations is larger for correct predictions than for incorrect ones. This indicates that when the model produces the right answer, its internal representation is more strongly affected by removing the image. In other words, correct predictions tend to rely more on visual information.
+
+![](images/8ea8b748abd55823a7cab9d56e35a0548cb38738e40e95be6207baef30d4f0b6.jpg)
+
+<details>
+<summary>line</summary>
+
+| Layer | Average (All) | Certain | Uncertain |
+|-------|---------------|---------|-----------|
+| 0     | 0.020         | 0.020   | 0.020     |
+| 5     | 0.040         | 0.040   | 0.040     |
+| 10    | 0.060         | 0.060   | 0.060     |
+| 15    | 0.070         | 0.080   | 0.060     |
+| 20    | 0.065         | 0.075   | 0.060     |
+| 25    | 0.060         | 0.065   | 0.055     |
+| 30    | 0.055         | 0.055   | 0.050     |
+</details>
+
+(a) idefics-9B
+
+![](images/155e77ef915d306df96eac8242bd5dbec58b36f340ce4aee613f6764a92650c0.jpg)
+
+<details>
+<summary>line</summary>
+
+| Layer | Average (All) | Certain | Uncertain |
+|-------|---------------|---------|-----------|
+| 0     | 0.015         | 0.015   | 0.015     |
+| 5     | 0.020         | 0.025   | 0.020     |
+| 10    | 0.025         | 0.030   | 0.025     |
+| 15    | 0.055         | 0.065   | 0.050     |
+| 20    | 0.045         | 0.045   | 0.045     |
+| 25    | 0.040         | 0.040   | 0.040     |
+| 30    | 0.035         | 0.035   | 0.035     |
+| 35    | 0.035         | 0.035   | 0.035     |
+| 40    | 0.035         | 0.035   | 0.035     |
+</details>
+
+(b) llava1.5-13B
+
+![](images/bd63149574bf21e11ef63b467e4947125cae517ba390ecd9bb772f48e64a75f2.jpg)
+
+<details>
+<summary>line</summary>
+
+| Layer | Average (All) | Certain | Uncertain |
+|-------|---------------|---------|-----------|
+| 0     | 0.000         | 0.000   | 0.000     |
+| 5     | 0.015         | 0.018   | 0.016     |
+| 10    | 0.025         | 0.035   | 0.028     |
+| 15    | 0.035         | 0.048   | 0.038     |
+| 20    | 0.032         | 0.042   | 0.035     |
+| 25    | 0.030         | 0.033   | 0.031     |
+| 30    | 0.031         | 0.034   | 0.032     |
+</details>
+
+(c) llava1.5-7B
+
+![](images/2e41c0cf4b3d9b1dfe05e8a607958291a4fa83caca9a24726a9f2d776e8635d2.jpg)
+
+<details>
+<summary>line</summary>
+
+| Layer | Average (All) | Certain | Uncertain |
+|-------|---------------|---------|-----------|
+| 0     | 0.000         | 0.000   | 0.000     |
+| 5     | 0.010         | 0.015   | 0.012     |
+| 10    | 0.045         | 0.050   | 0.048     |
+| 15    | 0.060         | 0.065   | 0.062     |
+| 20    | 0.085         | 0.090   | 0.088     |
+| 25    | 0.075         | 0.085   | 0.082     |
+| 30    | 0.065         | 0.075   | 0.072     |
+| 35    | 0.045         | 0.055   | 0.052     |
+| 40    | 0.025         | 0.035   | 0.032     |
+</details>
+
+(d) Qwen2.5-VL-3B
+
+![](images/a11bef21c9bd68e064a3f8a9e4d336cf2a2e626ab96d27e0f990083668c9fd41.jpg)
+
+<details>
+<summary>line</summary>
+
+| Layer | Average (All) | Certain | Uncertain |
+|-------|---------------|---------|-----------|
+| 0     | 0.000         | 0.000   | 0.000     |
+| 5     | 0.010         | 0.010   | 0.010     |
+| 10    | 0.030         | 0.030   | 0.030     |
+| 15    | 0.050         | 0.050   | 0.050     |
+| 20    | 0.080         | 0.080   | 0.080     |
+| 25    | 0.040         | 0.040   | 0.040     |
+</details>
+
+(e) Qwen2.5-VL-7B
+
+![](images/b923036e768afe3f46ea2756ddf6ac00941890c859fe07d0bf018a4d7da156ca.jpg)
+
+<details>
+<summary>line</summary>
+
+| Layer | Average (All) | Certain | Uncertain |
+|-------|---------------|---------|-----------|
+| 0     | 0.000         | 0.000   | 0.000     |
+| 5     | 0.030         | 0.030   | 0.030     |
+| 10    | 0.045         | 0.045   | 0.045     |
+| 15    | 0.040         | 0.040   | 0.040     |
+| 20    | 0.055         | 0.055   | 0.055     |
+| 21    | 0.060         | 0.060   | 0.060     |
+</details>
+
+(f) Qwen3.5-2B
+
+![](images/31691d5773eb26c3478f1f39029258ba968c3d726a986d2d603e128b23aa45f3.jpg)
+
+<details>
+<summary>line</summary>
+
+| Layer | Average (All) | Certain | Uncertain |
+|-------|---------------|---------|-----------|
+| 0     | 0.000         | 0.000   | 0.000     |
+| 5     | 0.000         | 0.000   | 0.000     |
+| 10    | 0.050         | 0.050   | 0.050     |
+| 15    | 0.125         | 0.175   | 0.100     |
+| 20    | 0.150         | 0.215   | 0.110     |
+| 25    | 0.145         | 0.210   | 0.105     |
+| 30    | 0.125         | 0.150   | 0.075     |
+</details>
+
+(g) idefics2-8B   
+Figure A.6: Layer-wise distance between hidden states from the original generation pass and the teacher-forced pass with a masked image. The curves show the average similarity across layers for certain and uncertain samples for different LVLM architectures.
+
+The separation between correct and incorrect predictions is generally slightly smaller than the one observed between certain and uncertain predictions, suggesting that visual reliance is more directly reflected in model confidence than in correctness. As in the certainty analysis, the distance also tends to increase in deeper layers of the network, indicating that visual information has a stronger influence in later Transformer layers.
+
+Additional details on the spider plot. Figure 1 provides a compact aggregation of the layer-wise analyses reported in Figures A.6 and A.7. To summarize each comparison in the spider plot, we select the layer at which the absolute gap between the two group-wise mean curves is maximal. This selected layer corresponds to the dashed vertical line in Figures A.7 and A.6. We then extract the two group values at this layer, jointly normalize them within the corresponding comparison, and use them as the radial values for the associated model in Figure 1. Thus, each spoke in Figure 1 summarizes, for one model, the strongest layer-wise separation between the two groups, with larger polygon separation indicating that the image-induced representation shift is more discriminative of correctness or certainty.
+
+![](images/04814a0bbd3b03cb80380a41d765ce39faa65c1d6a9d2aaada5d323b81271937.jpg)
+
+<details>
+<summary>line</summary>
+
+| Layer | Average (All) | Correct | Incorrect |
+|-------|---------------|---------|-----------|
+| 0     | 0.025         | 0.025   | 0.025     |
+| 5     | 0.005         | 0.005   | 0.005     |
+| 10    | 0.035         | 0.035   | 0.035     |
+| 15    | 0.060         | 0.060   | 0.060     |
+| 20    | 0.065         | 0.065   | 0.065     |
+| 25    | 0.055         | 0.055   | 0.055     |
+| 30    | 0.045         | 0.045   | 0.045     |
+</details>
+
+(a) idefics-9B
+
+![](images/74e4a4daa116e4a8bdc957692f2411ee450b7f7265dac49974d4e8e97f1e8177.jpg)
+
+<details>
+<summary>line</summary>
+
+| Layer | Average (All) | Correct | Incorrect |
+|-------|---------------|---------|-----------|
+| 0     | 0.015         | 0.015   | 0.015     |
+| 5     | 0.020         | 0.020   | 0.020     |
+| 10    | 0.025         | 0.025   | 0.025     |
+| 15    | 0.060         | 0.060   | 0.055     |
+| 20    | 0.055         | 0.055   | 0.050     |
+| 25    | 0.045         | 0.045   | 0.040     |
+| 30    | 0.040         | 0.040   | 0.035     |
+| 35    | 0.035         | 0.035   | 0.030     |
+| 40    | 0.035         | 0.035   | 0.030     |
+</details>
+
+(b) llava1.5-13B
+
+![](images/9742d6688c7292d6b77e35e7f02b95e4cf4e5c09df32afbd1dd9d4cdde990853.jpg)
+
+<details>
+<summary>line</summary>
+
+| Layer | Average (All) | Correct | Incorrect |
+|-------|---------------|---------|----------|
+| 0     | 0.000         | 0.000   | 0.000    |
+| 5     | 0.015         | 0.015   | 0.015    |
+| 10    | 0.030         | 0.030   | 0.030    |
+| 15    | 0.040         | 0.040   | 0.035    |
+| 20    | 0.045         | 0.045   | 0.040    |
+| 25    | 0.035         | 0.035   | 0.030    |
+| 30    | 0.035         | 0.035   | 0.030    |
+</details>
+
+(c) llava1.5-7B
+
+![](images/e15bdf08806132e6e82b195c4ac1201e676d0a3bcb5d4a8c63f4047d57d16296.jpg)
+
+<details>
+<summary>line</summary>
+
+| Layer | Average (All) | Correct | Incorrect |
+|-------|---------------|---------|----------|
+| 0     | 0.000         | 0.000   | 0.000    |
+| 5     | 0.010         | 0.010   | 0.010    |
+| 10    | 0.040         | 0.040   | 0.040    |
+| 15    | 0.060         | 0.060   | 0.060    |
+| 20    | 0.070         | 0.070   | 0.070    |
+| 25    | 0.080         | 0.080   | 0.080    |
+| 30    | 0.070         | 0.070   | 0.070    |
+| 35    | 0.020         | 0.020   | 0.020    |
+</details>
+
+(d) Qwen2.5-VL-3B
+
+![](images/6be328a2cfab9876aad12a4f4487b1ec6f91a774dcf581e9ef9a52f1ca3aeafe.jpg)
+
+<details>
+<summary>line</summary>
+
+| Layer | Average (All) | Correct | Incorrect |
+|-------|---------------|---------|-----------|
+| 0     | 0.000         | 0.000   | 0.000     |
+| 5     | 0.010         | 0.010   | 0.010     |
+| 10    | 0.030         | 0.030   | 0.030     |
+| 15    | 0.050         | 0.050   | 0.050     |
+| 20    | 0.080         | 0.080   | 0.080     |
+| 25    | 0.060         | 0.060   | 0.040     |
+</details>
+
+(e) Qwen2.5-VL-7B
+
+![](images/c5d7bdac6e7f93a58fa4b2a73625645bf4079ddd7321c2483c1f0a3b365ecf13.jpg)
+
+<details>
+<summary>line</summary>
+
+| Layer | Average (All) | Correct | Incorrect |
+|-------|---------------|---------|-----------|
+| 0     | 0.000         | 0.000   | 0.000     |
+| 5     | 0.030         | 0.030   | 0.030     |
+| 10    | 0.045         | 0.045   | 0.045     |
+| 15    | 0.040         | 0.040   | 0.040     |
+| 20    | 0.060         | 0.060   | 0.060     |
+| 25    | 0.045         | 0.045   | 0.045     |
+</details>
+
+(f) Qwen3.5-2B
+
+![](images/b155630a06b4011c75bd4cd39c9bed040a49b9da751a7dc7d3e74035f40e9461.jpg)
+
+<details>
+<summary>line</summary>
+
+| Layer | Average (All) | Correct | Incorrect |
+|-------|---------------|---------|-----------|
+| 0     | 0.000         | 0.000   | 0.000     |
+| 5     | 0.005         | 0.005   | 0.005     |
+| 10    | 0.050         | 0.050   | 0.050     |
+| 15    | 0.125         | 0.125   | 0.125     |
+| 20    | 0.150         | 0.150   | 0.1375    |
+| 25    | 0.145         | 0.145   | 0.125     |
+| 30    | 0.125         | 0.125   | 0.100     |
+</details>
+
+(g) idefics2-8B   
+Figure A.7: Layer-wise distance between hidden states from the original generation pass and the teacher-forced pass with a masked image. The curves show the average similarity across layers for correct and incorrect samples for different LVLM architectures.

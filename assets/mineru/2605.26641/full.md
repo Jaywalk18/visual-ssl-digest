@@ -1,0 +1,785 @@
+# OmniRetriever: Any-to-Any Audio-Video-Text Retrieval via Fusion-as-Teacher Distillation
+
+Yunze Liu Chi-Hao Wu Enmin Zhou Junxiao Shen
+
+Memories.ai Research
+
+Project Page: OmniRetriever
+
+# Abstract
+
+Unified multimodal embedding spaces have become the standard interface for cross-modal retrieval and multimodal RAG, and recent audiovideo-text (AVT) encoders extend this setting to three modalities. Such encoders can produce joint (T, V, A) embedding whenever all three modalities are available, but standard pairwise InfoNCE objectives leave this signal unused during training. We close this gap with fusion-as-teacher distillation, which treats a stop-gradient copy of the fused embedding as a teacher signal for the single-modal embedding, paired with a Tuple-InfoNCE term that supervises the fused embedding directly. We instantiate this objective as OmniRetriever-7B. Across six zero-shot retrieval benchmarks, OmniRetriever-7B surpasses the closed-source Gemini Embedding 2 by 13.3–18.0 R@1 on Clotho and SoundDescs, and reaches the contemporary zero-shot specialist band of open video–text encoders on MSR-VTT and MSVD. To stress-test joint representations, we further release OmniRetriever-Bench, a 12-direction AVT retrieval benchmark totaling 3,782 triples; on it OmniRetriever-7B attains AVG-all 34.84, improving over Gemini Embedding 2 by +1.72 and over the best prior open-source AVT method by +8.03. Model weights, datasets, and code will be released.
+
+# 1 Introduction
+
+Cross-modal retrieval relies on encoders that map queryable modalities into a single shared embedding space. The canonical CLIP recipe (Radford et al., 2021) trains two separate towers and aligns them with pairwise InfoNCE. Recent omnimodal systems extend this to three modalities of {T, V, A} and split into two architectural families. Multi-encoder systems such as ImageBind (Girdhar et al., 2023) and LanguageBind (Zhu et al., 2024) keep separate per-modality encoders and align them pairwise to a fixed image or language anchor. Unified encoders such as WAVE (Tang et al., 2025) and Omni-Embed-Nemotron (Xu et al., 2025) instead route all three modalities through one backbone and produce a joint embedding $\mathbf { z } _ { T V A }$ on a single joint forward pass.
+
+Unified encoders are particularly attractive for AVT retrieval because zT V A is exactly the representation that a dual-modal or full-tuple query (e.g., T +V → A or A+T +V → T ) needs at inference. Yet the standard training recipe for unified AVT encoders never invokes this joint forward as a supervision signal: WAVE and Omni-Embed-Nemotron both optimise three pairwise InfoNCE losses on the single-modal sub-encoders only, and the joint output is computed only at inference time.
+
+The result is that the single-modal sub-encoders of current unified AVT systems are trained in isolation, with no signal about their cross-modal neighbours. Empirically, this gap is sharpest on audioanchored retrieval, where the modality-to-text cooccurrence is the weakest in standard training data. On Clotho A→T, closed Gemini Embedding 2 reaches R@1 = 1.34 and the best open omnimodal system, Omni-Embed-Nemotron, reaches 3.5, while CLAP-family audio–text specialists (Wu et al., 2023; Mei et al., 2024; Niizumi et al., 2025) trained on (T, A) pairs alone reach 25 to 26 on the same direction. The same mechanism limits all twelve any-to-any directions over {T, V, A} (six single-modal, six dual-modal) that a practical AVT retriever has to serve.
+
+We close this gap by using the joint embedding itself as the supervision signal. Fusion-asteacher distillation $\mathcal { L } _ { D }$ takes a stop-gradient copy of $\mathbf { z } _ { T V A }$ as the teacher for the single-modal subencoders: each of $\mathbf { z } _ { T } , \ \mathbf { z } _ { V } , \ \mathbf { z } _ { A }$ is pulled toward $\mathbf { z } _ { T V A }$ by InfoNCE. Because the teacher is the same backbone consumed jointly rather than an external encoder, the sub-encoders receive the crossmodal context that no unimodal teacher provides, at the cost of one additional joint forward pass per step. A complementary Tuple-InfoNCE refinement (Liu et al., 2021, 2020) $\mathcal { L } _ { T }$ supervises $\mathbf { z } _ { T V A }$ itself with modality-cycled hard negatives, preventing the joint vector from collapsing onto the strongest pair gradient (in practice T –V ).
+
+![](images/5c2228ad825f4687805fde6242469e9eab095203a5c6143735d3be6361cc373a.jpg)
+
+<details>
+<summary>flowchart</summary>
+
+```mermaid
+graph TD
+    T["Text"] --> f_sh["shared encoder"]
+    V["Video"] --> f_sh
+    A["Audio"] --> f_sh
+    f_sh --> z_T["z_T"]
+    f_sh --> z_V["z_V"]
+    f_sh --> z_A["z_A"]
+    z_T --> L_A["pairwise InfoNCE"]
+    z_V --> L_A
+    z_A --> L_A
+    L_A --> z_TVA["z_TVA"]
+    style f_sh fill:#cccccc,stroke:#333
+    note right of L_A pairwise InfoNCE
+        emergent byproduct
+        × unused in any loss
+    end
+```
+</details>
+
+![](images/a4e382fe29ee0275531f4dd2e9c439a97a49c1d7d970035e65d8494adaf2e8b4.jpg)
+
+<details>
+<summary>bar</summary>
+
+| Method | Value |
+| --- | --- |
+| WAVE-7B | 25.32 |
+| Omni-Nemotron | 26.81 |
+| Gemini Emb. 2 closed - API | 33.12 |
+| OmniRetriever ours - open - 7B | 34.84 |
+</details>
+
+![](images/adcaf482fefea8291a1c8297313ca7d25db4defd1d63b0271bae8d3ddca68bfa.jpg)
+
+<details>
+<summary>flowchart</summary>
+
+```mermaid
+graph TD
+    T["Text"] --> f["fθ"]
+    V["Video"] --> f
+    A["Audio"] --> f
+    f --> zT["zT"]
+    f --> zV["zV"]
+    f --> zA["zA"]
+    zT --> zTva["zTVA"]
+    zV --> zTva
+    zA --> zTVA
+    zTva -.-> LdDistillation["Ld Distillation sq(z_TVA) → z_T, z_V, z_A"]
+    zTVA -.-> LdDistillation
+    LdDistillation -.-> zTVA
+    zTVA -.-> zV
+    zTVA -.-> zA
+    zTVA -.-> zV
+    zTVA -.-> zA
+    zTVA -.-> zV
+    zTVA -.-> zA
+    zTVA -.-> zV
+    zTVA -.-> zA
+    zTVA -.-> zV
+    zTVA -.-> zA
+    zTVA -.-> zV
+    zTVA -.-> zA
+    zTVA -.-> zV
+    
+    subgraph fθ
+        fθ[shared encoder]
+        vtheta["video"]
+        audio["v"]
+    end
+    
+    subgraph zT
+        zT
+        zV
+        zA
+        zTVA
+        zTVA
+        zTVA
+        zTVA
+        zTVA
+        zTVA
+        zTVA
+        zTVA
+        zTVA
+        zTVA
+        zTVA
+        zTVA
+        zTVA
+        zTVA
+        zTVA
+        zTVA
+        zTVA
+        zTVA
+        zTVA
+        zTVA
+        zTWA
+        zTWA
+        zTWA
+        zTWA
+        zTWA
+        zTWA
+        zTWA
+        zTWA
+        zTWA
+        zTWA
+        zTWA
+        zTWA
+        zTWA
+        zTWA
+        zTWA
+        zTWA
+        zTWA
+        zTWA
+        zTWA
+        zTWA
+        zTWE
+        zTWE
+        zTWE
+        zTWE
+        zTWE
+        zTWE
+        zTWE
+        zTWE
+        zTWE
+        zTWE
+        zTWE
+        zTWE
+        zTWE
+        zTWE
+        zTWE
+        zTWE
+        zTWE
+        zTWE
+        zTWE
+        zTWE
+        zTWA
+        zTWA
+        zTWA
+        zTWA
+        zTWA
+        zTWA
+        zTWA
+        zTWA
+        zTWA
+        zTWA
+        zTWA
+        zTWA
+        zTWA
+        zTWA
+        zTWA
+        zTWA
+        zTWA
+        zTWA
+        zTWA
+        zTWTVA
+        zTWTVA
+        zTWTVA
+        zTWTVA
+        zTWTVA
+        zTWTVA
+        zTWTVA
+        zTWTVA
+        zTWTVA
+        zTWTVA
+    end
+    
+    style fθ fill:#f9f,stroke:#333,stroke-width:2px;
+    style vtheta fill:#ccf,stroke:#333,stroke-width:1px;
+    style audio fill:#cfc,stroke:#333,stroke-width:1px;
+    style LtTuple-InfoNCE stroke:#000,stroke-width:1px;
+    style sharpenszTPuleInNCE stroke:#000,stroke-width:1px;
+    style LTTuple-InfoNCE stroke:#000,stroke-width:1px;
+    style LTwTAInNCE stroke:#000,stroke-width:1px;
+    style LTwTAInNCE stroke:#000,stroke-width:1px;
+    style LTwTAInNCE stroke:#000,stroke-width:1px;
+```
+</details>
+
+![](images/7962636a621cf482569129a5875d25118c49d6e392d975665d5c18b8d81c7cbf.jpg)
+
+<details>
+<summary>bar</summary>
+
+(d) External audio-text benchmarks
+| Category | Gemini Embedding 2 (closed) | OmniRetriever (ours) |
+| :--- | :--- | :--- |
+| Clotho T → A | 5.19 | 19.14 (+13.95) |
+| Clotho A → T | 1.34 | 16.08 (+14.74) |
+| SoundDescs T → A | 7.00 | 25.00 (+18.00) |
+| SoundDescs A → T | 7.37 | 20.78 (+13.33) |
+SPECIALIST SOTA BAND
+</details>
+
+Figure 1: Method overview. OmniRetriever uses the joint embedding $\mathbf { z } _ { T V A } ,$ which is unused by pairwise training (a), as a supervision target (b) via fusion-as-teacher distillation $\mathcal { L } _ { D }$ and a Tuple-InfoNCE term $\mathcal { L } _ { T }$ . This yields a new open result on 12-direction AVT retrieval (c) and a 13.3 to 18.0 R@1 gain over Gemini Embedding 2 on external audio–text benchmarks (d).
+
+We instantiate this recipe as OmniRetriever-7B, an open 7 B AVT retriever. On six standard zeroshot retrieval benchmarks, OmniRetriever-7B improves over closed Gemini Embedding 2 by 13 to 18 R@1 on all four audio–text directions of Clotho and SoundDescs, reaches the zero-shot CLAPfamily specialist band on Clotho T→A within ∼2 R@1 of SOTA, and matches the contemporary open zero-shot specialist band on MSR-VTT and MSVD. To probe the six dual-modal directions (T ↔ AV , A ↔ T V , V ↔ AT ) that no public retrieval benchmark currently evaluates, we additionally release OmniRetriever-Bench, a 12-direction AVT retrieval pool of 3,782 held-out triples. On OmniRetriever-Bench, OmniRetriever-7B reaches AVG-all 34.84, +1.72 over Gemini Embedding 2 and +8.03 over Omni-Embed-Nemotron. A crossbackbone replication (Section L) reproduces the dominant $\mathcal { L } _ { D }$ contribution at smaller scale, indicating that the recipe is not tied to a particular backbone.
+
+# Contributions.
+
+• Fusion-as-teacher distillation: the joint multimodal embedding $\mathbf { z } _ { T V A }$ of a unified AVT encoder is used to supervise its own single-modal sub-encoders. $\mathcal { L } _ { D }$ alone gives the dominant
+
+single-loss gain; the Tuple-InfoNCE term $\mathcal { L } _ { T }$ further improves the A ↔ V routes.
+
+• OmniRetriever-7B, an open 7 B AVT retriever. It improves over closed Gemini Embedding 2 by 13 to 18 R@1 on Clotho and SoundDescs and reaches the zero-shot audio–text specialist band on Clotho T→A within ∼2 R@1 of SOTA; on the video–text side it matches the contemporary open zero-shot specialist band on MSR-VTT and MSVD.   
+• OmniRetriever-Bench, a 12-direction AVT retrieval pool of 3,782 held-out triples covering all six single- and six dual-modal directions, the first public benchmark to evaluate dual-modal AVT queries.
+
+# 2 Related Work
+
+Pairwise contrastive vision–language alignment. CLIP (Radford et al., 2021) and ALIGN (Jia et al., 2021) establish image–text InfoNCE as the standard recipe. Subsequent work scales the data pipeline (Schuhmann et al., 2022; Fang et al., 2024; Xu et al., 2024), replaces softmax with the sigmoid loss (Zhai et al., 2023; Tschannen et al., 2025), and re-anchors with vision foundation models (Siméoni et al., 2025; Assran et al., 2025; Fini et al., 2025). A parallel line of work turns MLLMs into encoders (Wang et al., 2024a; BehnamGhader et al., 2024; Lee et al., 2025a). Multimodal extensions (VLM2Vec (Jiang et al., 2024), GME (Zhang et al., 2024), MM-Embed (Lin et al., 2025), Qwen3-
+
+![](images/ef526e7b8c952b5d4726685f207c4923f632c58db775b7e34435baa330d1fd56.jpg)
+
+<details>
+<summary>flowchart</summary>
+
+```mermaid
+graph TD
+    A["INPUTS"] --> B["OmnriRetriever-7B"]
+    C["SHARED ENCODER"] --> B
+    D["EMBEDDINGS"] --> B
+    E["OBJECTIVES"] --> B
+    B --> F["BACKBONE"]
+    B --> G["joint anchor"]
+    B --> H["zTVA"]
+    B --> I["zT"]
+    B --> J["zV"]
+    B --> K["zA"]
+    B --> L["zT̄V̄A"]
+    B --> M["negative (cycled HN)"]
+    M --> N["weak sharing across all paths"]
+    N --> O["re-use fθ"]
+    O --> P["weights shared across all paths"]
+    
+    subgraph Inputs
+        Q["A person's hand points at the rear of a red Lotus sports car parked in a garage..."]
+        R["A person's hand points at the rear of a red Lotus sports car parked in a garage..."]
+        S["A person's hand points at the rear of a red Lotus sports car parked in a garage..."]
+        T["A person's hand points at the rear of a red Lotus sports car parked in a garage..."]
+        U["A person's hand points at the rear of a red Lotus sports car parked in a garage..."]
+        V["A person's hand points at the rear of a red Lotus sports car parked in a garage..."]
+        W["A person's hand points at the rear of a red Lotus sports car parked in a garage..."]
+        X["A person's hand points at the rear of a red Lotus sports car parked in a garage..."]
+        Y["A person's hand points at the rear of a red Lotus sports car parked in a garage..."]
+        Z["A person's hand points at the rear of a red Lotus sports car parked in a garage..."]
+        AA["A person's hand points at the rear of a red Lotus sports car parked in a garage..."]
+        AB["A person's hand points at the rear of a red Lotus sports car parked in a garage..."]
+        AC["A person's hand points at the rear of a red Lotus sports car parked in a garage..."]
+        AD["A person's hand points at the rear of a red Lotus sports car parked in a garage..."]
+        AE["A person's hand points at the rear of a red Lotus sports car parked in a garage..."]
+        AF["A person's hand points at the rear of a red Lotus sports car parked in a garage..."]
+        AG["A person's hand points at the rear of a red Lotus sports car parked in a garage..."]
+        AH["A person's hand points at the rear of a red Lotus sports car parked in a garage..."]
+        AI["A person's hand points at the rear of a red Lotus sports car parked in a garage..."]
+        AJ["A person's hand points at the rear of a red Lotus sports car parked in a garage..."]
+        AK["A person's hand points at the rear of a red Lotus sports car parked in a garage..."]
+        AL["A person's hand points at the rear of a red Lotus sports car parked in a garage..."]
+        AM["A person's hand points at the rear of a red Lotus sports car parked in a garage..."]
+        AN["A person's hand points at the rear of a red Lotus sports car parked in a garage..."]
+        AO["A person's hand points at the rear of a red Lotus sports car parked in a garage..."]
+        AP["A person's hand points at the rear of a red Lotus sports car parked in a garage..."]
+        AQ["A person's hand points at the rear of a red Lotus sports car parked in a garage..."]
+        AR["A person's hand points at the rear of a red Lotus sports car parked in a garage..."]
+        AS["A person's hand points at the rear of a red Lotus sports car parked in a garage..."]
+        AT["A person's hand points at the rear of a red Lotus sports car parked in a garage..."]
+        AU["A person's hand points at the rear of a red Lotus sports car parked in a garage..."]
+        AV["A person's hand points at the rear of a red Lotus sports car parked in a garage..."]
+        AW["A person's hand points at the rear of a red Lotus sports car parked in a garage..."]
+        AX["A person's hand points at the rear of a red Lotus sports car parked in a garage..."]
+        AY["A person's hand points at the rear of a red Lotus sports car parked in a garage..."]
+        AZ["A person's hand points at the rear of a red Lotus sports car parked in a garage..."]
+        BA["A person's hand points at the rear of a red Lotus sports car parked in a garage..."]
+        BB["A person's hand points at the rear of a red Lotus sports car parked in a garage..."]
+        BC["A person's hand points at the rear of a red Lotus sports car parked in a garage..."]
+        BD["A person's hand points at the rear of a red Lotus sports car parked in a garage..."]
+        BE["A person's hand points at the rear of a red Lotus sports car parked in a garage..."]
+        BF["A person's hand points at the rear of a red Lotus sports car parked in a garage..."]
+        BG["A person's hand points at the rear of a red Lotus sports car parked in a garage..."]
+        BH["A person's hand points at the rear of a red Lotus sports car parked in a garage..."]
+        BI["A person's hand points at the rear of a red Lotus sports car parked in a garage..."]
+        BJ["A person's hand points at the rear of a red Lotus sports car parked in a garage..."]
+        BK["A person's hand points at the rear of a red Lotus sports car parked in a garage..."]
+        BL["A person's hand points at the rear of a red Lotus sports car parked in a garage..."]
+        BM["A person's hand points at the rear of a red Lotus sports car parked in a garage..."]
+        BN["A person's hand points at the rear of a red Lotus sports car parked in a garage..."]
+        BO["A person's hand points at the rear of a red Lotus sports car parked in a garage..."]
+        BP["A person's hand points at the rear of a red Lotus sports car parked in a garage..."]
+        BQ["A person's hand points at the rear of a red Lotus sports car parked in a garage..."]
+        BR["A person's hand points at the rear of a red Lotus sports car parked in a garage..."]
+        BS["A person's hand points at the rear of a red Lotus sports car parked in a garage..."]
+        BT["A person's hand points at the rear of a red Lotus sports car parked in a garage..."]
+        BU["A person's hand points at the rear of a red Lotus sports car parked in a garage..."]
+        BV["A person's hand points at the rear of a red Lotus sports car parked in a garage..."]
+        BW["A person's hand points at the rear of a red Lotus sports car parked in a garage..."]
+        BX["A person's hand points at the rear of a red Lotus sports car parked in a garage..."]
+        BY["A person's hand points at the rear of a red Lotus sports car parked in a garage..."]
+        BZ["A person's hand points at the rear of a red Lotus sports car parked in a garage..."]
+        CA["Joint anchor"] --> CB["chain"] --> CC["angle from joint anchor to diagonal line"] --> DD["angle from joint anchor to diagonal line"] --> DE["angle from joint anchor to diagonal line"] --> EF["angle from joint anchor to diagonal line"] --> GF["angle from joint anchor to diagonal line"] --> DH["angle from joint anchor to diagonal line"] --> DI["angle from joint anchor to diagonal line"] --> DJ["angle from joint anchor to diagonal line"] --> DK["angle from joint anchor to diagonal line"] --> DL["angle from joint anchor to diagonal line"] --> DV["angle from joint anchor to diagonal line"] --> DW["angle from joint anchor to diagonal line"] --> DX["angle from joint anchor to diagonal line"] --> DY["angle from joint anchor to diagonal line"] --> DXD["angle from joint anchor to diagonal line"] --> DXE["angle from joint anchor to diagonal line"] --> DXF["angle from joint anchor to diagonal line"] --> DXG["angle from joint anchor to diagonal line"] --> DXH["angle from joint anchor to diagonal line"] --> DXI["angle from joint anchor to diagonal line"] --> DXJ["angle from joint anchor to diagonal line"] --> DXK["angle from joint anchor to diagonal line"] --> DXL["angle from joint anchor to diagonal line"] --> DXM["angle from joint anchor to diagonal line"] --> DXN["angle from joint anchor to diagonal line"] --> DXO["angle from joint anchor to diagonal line"] --> DXP["angle from joint anchor to diagonal line"] --> DXQ["angle from joint anchor to diagonal line"] --> DXR["angle from joint anchor to diagonal line"] --> DXS["angle from joint anchor to diagonal line"] --> DXU["angle from joint anchor to diagonal line"] --> DXV["angle from joint anchor to diagonal line"] --> DXW["angle from joint anchor to diagonal line"] --> DXX["angle from joint anchor to diagonal line"] --> DXY["angle from joint anchor to diagonal line"] --> DXZ["angle from joint anchor to diagonal line"] --> DXYD["angle from joint anchor to diagonal line"] --> DXZD["angle from joint anchor to diagonal line"] --> DXZE["angle from joint anchor to diagonal line"] --> DXZF["angle from joint anchor to diagonal line"] --> DXZG["angle from joint anchor to diagonal line"] --> DXZH["angle from joint anchor to diagonal line"] --> DXZI["angle from joint anchor to diagonal line"] --> DXZJ["angle from joint anchor to diagonal line"] --> DXZK["angle from joint anchor to diagonal line"] --> DXZL["angle from joint anchor to diagonal line"] --> DXZM["angle from joint anchor to diagonal line"] --> DXZN["angle from joint anchor to diagonal line"] --> DXZO["angle from joint anchor to diagonal line"] --> DXZP["angle from joint anchor to diagonal line"] --> DXZQ["angle from joint anchor to diagonal line"] --> DXZR["angle from joint anchor to diagonal line"] --> DXZS["angle from joint anchor to diagonal line"] --> DXZU["angle from joint anchor to diagonal line"] --> DXZV["angle from joint anchor to diagonal line"] --> DXZW["angle from joint anchor to diagonal line"] --> DXZX["angle from joint anchor to diagonal line"] --> DXZY["angle from joint anchor to diagonal line"] --> DXZZ["angle from joint anchor to diagonal line"] --> DXZY["angle from joint anchor to diagonal line"] --> DXZZD["angle from joint anchor to diagonal line"] --> DXZYZ["angle from joint anchor to diagonal line"] --> DXZYZD["angle from joint anchor to diagonal line"] --> DXZYZE["angle from joint anchor to diagonal line"] --> DXZYZF["angle from joint anchor to diagonal line"] --> DXZYZG["angle from joint anchor to diagonal line"] --> DXZYZH["angle from joint anchor to diagonal line"] --> DXZYZI["angle from joint anchor to diagonal line"] --> DXZYZJ["angle from joint anchor to diagonal line"] --> DXZYZK["angle from joint anchor to diagonal line"] --> DXZYZL["angle from joint anchor to diagonal line"] --> DXZYZM["angle from joint anchor to diagonal line"] --> DXZYZN["angle from joint anchor to diagonal line"] --> DXZYZO["angle from joint anchor to diagonal line"] --> DXZYZP["angle from joint anchor to diagonal line"] --> DXZYZQ["angle from joint anchor to diagonal line"] --> DXZYZR["angle from joint anchor to diagonal line"] --> DXZYZS["angle from joint anchor to diagonal line"] --> DXZYZT["angle from joint anchor to diagonal line"] --> DXZYZU["angle from joint anchor to diagonal line"] --> DXZYZV["angle from joint anchor to diagonal line"] --> DXZYZW["angle from joint anchor to diagonal line"] --> DXZYZX["angle from joint anchor to diagonal line"] --> DXZYZY["angle from joint anchor to diagonal line"] --> DXZYZZ["angle from joint anchor to diagonal line"] --> DXZYZX1["angle from joint anchor to diagonal line"] --> DXZYZX2["angle from joint anchor to diagonal line"] --> DXZYZX3["angle from joint anchor to diagonal line"] --> DXZYZX4["angle from joint anchor to diagonal line"] --> DXZYZX5["angle from joint anchor to diagonal line"] --> DXZYZX6["angle from joint anchor to diagonal line"] --> DXZYZX7["angle from joint anchor to diagonal line"] --> DXZYZX8["angle from joint anchor to diagonal line"] --> DXZYZX9["angle from joint anchor to diagonal line"] --> DXZYZX10["angle from joint anchor to diagonal line"] --> DXZYZX11["angle from joint anchor to diagonal line"] --> DXZYZX12["angle from joint anchor to diagonal line"] --> DXZYZX13["angle from joint anchor to diagonal line"] --> DXZYZX14["angle from joint anchor to diagonal line"] --> DXZYZX15["angle from joint anchor to diagonal line"] --> DXZYZX16["angle from joint anchor to diagonal line"] --> DXZYZX17["angle from joint anchor to diagonal line"] --> DXZYZX18["angle from joint anchor to diagonal line"] --> DXZYZX19["angle from joint anchor to diagonal line"] --> DXZYZX20["angle from joint anchor to diagonal line"] --> DXZYZX21["angle from joint anchor to diagonal line"] --> DXZYZX22["angle from joint anchor to diagonal line"] --> DXZYZX23["angle from joint anchor to diagonal line"] --> DXZYZX24["angle from joint anchor to diagonal line"] --> DXZYZX25["angle from joint anchor to diagonal line"] --> DXZYZX26["angle from joint anchor to diagonal line"] --> DXZYZX27["angle from joint anchor to diagonal line"] --> DXZYZX28["angle from joint anchor to diagonal line"] --> DXZYZX29["angle from joint anchor to diagonal line"] --> DXZYZX30["angle from joint anchor to diagonal line"] --> DXZYZX31["angle from joint anchor to diagonal line"] --> DXZYZX32["angle from joint anchor to diagonal line"] --> DXZYZX33["angle from joint anchor to diagonal line"] --> DXZYZX34["angle from joint anchor to diagonal line"] --> DXZYZX35["angle from joint anchor to diagonal line"] --> DXZYZX36["angle from joint anchor to diagonal line"] --> DXZYZX37["angle from joint anchor to diagonal line"] --> DXZYZX38["angle from joint anchor to diagonal line"] --> DXZYZX39["angle from joint anchor to diagonal line"] --> DXZYZX40["angle from joint anchor to diagonal line"] --> DXZYZX41["angle from joint anchor to diagonal line"] --> DXZYZX42["angle from joint anchor to diagonal line"] --> DXZYZX43["angle from joint anchor to diagonal line"] --> DXZYZX44["angle from joint anchor to diagonal line"] --> DXZYZX45["angle from joint anchor to diagonal line"] --> DXZYZX46["angle from joint anchor to diagonal line"] --> DXZYZX47["angle from joint anchor to diagonal line"] --> DXZYZX48["angle from joint anchor to diagonal line"] --> DXZYZX49["angle from joint anchor to diagonal line"] --> DXZYZX50[angle from Joint Anchor Point with respect for Joint Anchor Point on y-axis, where z_TV,A is not included on y-axis, where z_V,A is not included on y-axis, where z_V,A is not included on y-axis, where z_V,A is not included on y-axis, where z_V,A is not included on y-axis, where z_V,A is not included on y-axis, where z_V,A is not included on y-axis, where z_V,A is not included on y-axis, where z_V,A is not included on y-axis, where z_V,A is not included on y-axis, where z_V,\( \tilde{f}_θ \) indicates tightening and tightening.}
+    end
+```
+</details>
+
+Figure 2: OmniRetriever training overview. A shared encoder $f _ { \theta }$ consumes the three modalities jointly, producing the full-modal anchor $\mathbf { z } _ { T V A }$ , or individually, producing ${ \bf z } _ { T } , { \bf z } _ { V } , { \bf z } _ { A } . \mathrm { ~ } \mathcal { L } _ { D }$ (fusion-as-teacher distillation, primary; Section 3.2) pulls each single-modality embedding toward a stop-gradient copy of $\mathbf { z } _ { T V A } . \mathcal { L } _ { T }$ (Tuple-InfoNCE refinement; Section 3.3) supervises $\mathbf { z } _ { T V A }$ against the in-batch tuple grid plus a modality-cycled hard negative $\mathbf { z } _ { \tilde { T } \tilde { V } \tilde { A } }$ (Equation (4)). $\mathcal { L } _ { A }$ (pairwise alignment; Section 3.1) ties pairs of single-modality embeddings via symmetric InfoNCE. At each step the hard negative perturbs one of $T , V , A$ on a period-3 schedule.
+
+VL-Embedding (Li et al., 2026)) fine-tune MLLMs with contrastive supervision over LLM-synthesized triplets. All apply pairwise InfoNCE per modality combination. Our PAIRWISE baseline follows this recipe.
+
+Omni-modal embedding. ImageBind (Girdhar et al., 2023) and LanguageBind (Zhu et al., 2024) align $N \geq 3$ modalities pairwise to a fixed image or language anchor. AudioCLIP (Guzhov et al., 2022) and VATT (Akbari et al., 2021) optimize three pairwise InfoNCE losses over video, audio, and text. VAST (Chen et al., 2023) adds a 4-way alignment objective on video–audio–subtitle–caption quadruples. WAVE (Tang et al., 2025) extends Qwen2.5- Omni with hierarchical visual fusion and a dual audio encoder but still adds two-modality InfoNCE losses, as does Omni-Embed-Nemotron (Xu et al., 2025). In all of these systems, the joint multimodal embedding is produced as a side effect of pairwise training and never used as a supervision target inside the same backbone.
+
+# 3 Method
+
+Let $\mathcal { D } = \{ x _ { i } \}$ be an AVT dataset where each $x _ { i } =$ $( x _ { i } ^ { ( T ) } , x _ { i } ^ { ( V ) } , \acute { x _ { i } } ^ { ( A ) } )$ (V )i , x(A)i ) c arries text, video, and audio. A unified embedder $f _ { \theta } : \mathcal { X }  \mathbb { R } ^ { d }$ produces singlemodal embeddings $\mathbf { z } _ { i } ^ { ( m ) } = f _ { \theta } ( x _ { i } ^ { ( m ) } )$ and a joint embedding zi $\mathbf { z } _ { i } ^ { ( T V A ) } = f _ { \theta } ( T _ { i } , V _ { i } , A _ { i } )$ (T V A) from the same forward backbone. Figure 2 overviews the three training objectives.
+
+# 3.1 Preliminary: Pairwise Alignment $( { \mathcal { L } } _ { A } )$
+
+Existing open AVT embedders (Girdhar et al., 2023; Zhu et al., 2024; Tang et al., 2025; Xu et al., 2025) optimize a symmetric InfoNCE loss over modality pairs:
+
+$$
+\mathcal {L} _ {\mathrm{NCE}} ^ {(m, m ^ {\prime})} = - \frac {1}{B} \sum_ {i} \log \frac {e ^ {\mathbf {z} _ {i} ^ {(m) \top} \mathbf {z} _ {i} ^ {(m ^ {\prime})} / \tau}}{\sum_ {j} e ^ {\mathbf {z} _ {i} ^ {(m) \top} \mathbf {z} _ {j} ^ {(m ^ {\prime})} / \tau}}, \tag {1}
+$$
+
+$$
+\mathcal {L} _ {A} = \sum_ {(m, m ^ {\prime}) \in \mathcal {P}} \mathcal {L} _ {\mathrm{NCE}} ^ {(m, m ^ {\prime})}, \mathcal {P} = \{(T, V), (T, A), (V, A) \}.
+$$
+
+The PAIRWISE baseline we report throughout uses $\mathcal { L } _ { A }$ alone. Since $\mathcal { L } _ { A }$ never operates on the joint $( T , V , A )$ vector, $\mathbf { z } _ { T V A }$ is neither supervised nor distilled: pairwise alignment binds the three streams only to the extent that each pair enforces in isolation. OmniRetriever retains $\mathcal { L } _ { A }$ and adds two joint-level losses, $\mathcal { L } _ { D }$ and $\mathcal { L } _ { T } ,$ described next.
+
+# 3.2 Fusion-as-Teacher Distillation $( \mathcal { L } _ { D } )$
+
+The joint forward of $f _ { \theta }$ on $( T , V , A )$ is the only step at which all three modalities interact in the network.
+
+We use $\mathbf { z } _ { T V A }$ as the teacher. A symmetric InfoNCE pulls each single-modal embedding toward a stopgradient copy of $\mathbf { z } _ { T V A }$ and pushes it away from the joint vectors of other in-batch samples:
+
+$$
+\mathcal {L} _ {D} = \frac {1}{| \mathcal {M} |} \sum_ {m \in \mathcal {M}} \mathcal {L} _ {\mathrm{NCE}} ^ {(m, \operatorname{sg} (T V A))}, \tag {2}
+$$
+
+with $\mathcal { M } = \{ T , V , A \}$ . The teacher $\operatorname { s g } ( \mathbf { z } _ { T V A } )$ already encodes the three modalities jointly, so each single-modal student is trained against the joint geometry that an $A { + } T { + } V$ query reaches at inference. Teacher and student share $f _ { \theta }$ and live in the same batch; the only additional cost over the pairwise baseline is one extra joint forward pass.
+
+Fusion vs. unimodal teacher. A unimodal teacher $g _ { m } ( x ^ { ( m ) } )$ , e.g. SigLIP (Tschannen et al., 2025), Whisper, or BEATs (Chen et al., 2022), is trained on the marginal $p ( x ^ { ( m ) } )$ and therefore carries no information about cross-modal neighbors of $x .$ By contrast, $\mathbf { z } _ { T V A }$ is computed on the joint input, so distillation into $\mathbf { z } _ { A }$ propagates ∂ sim $( \mathbf { z } _ { A } , \mathbf { s g } ( \mathbf { z } _ { T V A } ) ) / \partial \theta _ { A }$ , which encodes the T, V neighbors that an audio-only query will see at inference. This predicts two effects, both of which we confirm. Audio-anchored directions benefit most from $\mathcal { L } _ { D }$ (audio-related mean +3.73 vs. video-only $+ 2 . 4 8 .$ , Table S11).
+
+# 3.3 Tuple-InfoNCE Refinement $( \mathcal { L } _ { T } )$
+
+$\mathcal { L } _ { T }$ is a regularizer that keeps $\mathbf { z } _ { T V A }$ informative about all three modalities, preventing it from collapsing onto a dominant pair. The joint vector $\mathbf { z } _ { T V A }$ that $\mathcal { L } _ { D }$ uses as a teacher remains a passive average of three pair geometries on top of pairwise alignment: $\mathcal { L } _ { A }$ never back-propagates through $\mathbf { z } _ { T V A }$ , so matched triples are not pulled tighter than mismatched ones, and the contribution of each modality is determined by whichever pair gradient is strongest (in practice $T { - } V )$ . Audio is underrepresented in $\mathbf { z } _ { T V A }$ , a known modality-imbalance effect in multimodal fusion (Wang et al., 2020; Peng et al., 2022). $\mathcal { L } _ { T }$ supervises $\mathbf { z } _ { T V A }$ directly.
+
+Tuple-InfoNCE. For a batch of size B and modality set $\mathcal { M } = \{ T , V , A \}$ , the joint similarity of an index pair $( i , j )$ averages the six cross-modal cosines,
+
+$$
+s (i, j) = \frac {1}{M (M - 1)} \sum_ {m \neq m ^ {\prime}} \mathbf {z} _ {i} ^ {(m) \top} \mathbf {z} _ {j} ^ {(m ^ {\prime})}, \tag {3}
+$$
+
+and the Tuple-InfoNCE loss (Liu et al., 2021, 2020) reads
+
+$$
+\mathcal {L} _ {T} = - \frac {1}{B} \sum_ {i} \log \frac {e ^ {s (i , i) / \tau_ {T}}}{\sum_ {j} e ^ {s (i , j) / \tau_ {T}} + e ^ {s (i , \tilde {i}) / \tau_ {T}}}, \tag {4}
+$$
+
+where $\tilde { i }$ is a modality-cycled hard negative described below. When $M \geq 3 , s ( i , j )$ is minimized over mismatch in any cross-modal direction, so $\mathcal { L } _ { T }$ assigns the largest gradient to the modality direction along which the matched triple is currently slackest, providing the joint-level supervision missing from pairwise alignment.
+
+Modality-cycled hard negatives. The in-batch grid in Equation (4) contributes $B { - } 1$ negatives, but each differs from the anchor in all three modalities, so its gradient pushes the joint cluster apart globally without specifying which modality direction is too slack. We therefore construct one targeted negative per anchor by shuffling exactly one modality of the batch with a derangement, producing a tuple that disagrees with the anchor in a single slot; the resulting contrastive gradient tightens the joint cluster along that one direction. To prevent the joint geometry from drifting back to a $T + V \bar { \mathbf { \Omega } } -$ dominated configuration once any single modality is tightened, we cycle the shuffled slot deterministically across $\{ T , V , A \}$ with period 3, supervising every modality direction in turn.
+
+The three shuffled slots contribute asymmetrically. The audio-shuffle slot produces the contrastive gradient least redundant with the in-batch grid (audio carries the largest caption gap in our training data). The text- and video-shuffle slots prevent the joint cluster from drifting back to a $T { \mathrel { + } } V$ -dominated geometry. We use $k = 1$ per anchor; higher k overfits to modality-imbalanced mismatches (Thakur et al., 2025). $\mathcal { L } _ { D }$ provides the dominant single-loss gain, and $\mathcal { L } _ { T }$ improves the $A  V$ routes on top of it (Table S11).
+
+# 3.4 Final Objective
+
+OmniRetriever optimizes
+
+$$
+\mathcal {L} _ {\text { OmniRetriever }} = \lambda_ {D} \mathcal {L} _ {D} + \lambda_ {T} \mathcal {L} _ {T} + \lambda_ {A} \mathcal {L} _ {A}, \tag {5}
+$$
+
+with $( \lambda _ { D } , \lambda _ { T } , \lambda _ { A } ) = ( 1 , 1 , 1 )$ chosen a priori (not tuned on OmniRetriever-Bench); Section D shows that the recipe is insensitive to the loss-weight ratio across a wide range. Algorithm 1 gives the per-step training loop; the per-step cost over the pairwise baseline is one extra joint forward pass, and inference latency is reported in Section C.
+
+Algorithm 1 OmniRetriever training step (batch B, step t). 
+
+<table><tr><td>1: Forward:  $\mathbf{z}^{(T)}, \mathbf{z}^{(V)}, \mathbf{z}^{(A)} \leftarrow f_{\theta}$  (3 single-modal); $\mathbf{z}^{(TVA)} \leftarrow f_{\theta}(T, V, A)$  (1 joint)</td></tr><tr><td>2: Pairwise  $\mathcal{L}_{A} \leftarrow \sum_{(m,m') \in \{(T,V),(T,A),(V,A)\}} \mathcal{L}_{\text{NCE}}^{(m,m')}$ </td></tr><tr><td>3: Distill  $\mathcal{L}_{D} \leftarrow \frac{1}{3} \sum_{m \in \{T, V, A\}} \mathcal{L}_{\text{NCE}}^{(m,\text{sg}(\mathbf{z}^{(TVA)}))}$ </td></tr><tr><td>4: Cycled HN:  $m_t \leftarrow \{T, V, A\}[t \mod 3]$ ; draw derangement  $\sigma$ ; build  $\tilde{i} = (\ldots, x_{\sigma(i)}^{(m_t)}, \ldots)$ </td></tr><tr><td>5: Tuple  $\mathcal{L}_{T} \leftarrow -\frac{1}{B} \sum_{i} \log \frac{e^{s(i,j)/\tau_{T}}}{\sum_{j} e^{s(i,j)/\tau_{T}} + e^{s(i,\tilde{i})/\tau_{T}}}$ </td></tr><tr><td>6: Update  $\theta \leftarrow \theta - \eta \nabla_{\theta}(\lambda_{D} \mathcal{L}_{D} + \lambda_{T} \mathcal{L}_{T} + \lambda_{A} \mathcal{L}_{A})$ </td></tr></table>
+
+# 4 Experiments
+
+# 4.1 Setup
+
+OmniRetriever-7B is an adapter fine-tune of the open-weights WAVE-7B (Tang et al., 2025) backbone, with LoRA adapters on the LLM trunk, an all-layer fusion head, and a BEATs adaptor; full architectural details are in Section A. The training data is a 1.5 M-triple subset sampled from four public video–text datasets, InternVid (Wang et al., 2024b), InternVid-FLT (Wang et al., 2024b), Panda-70M (Chen et al., 2024), and PVD (Bolya et al., 2026), together with a small in-house video corpus collected with consent. We restrict the pool to clips that contain text, video, and audio (Section E). We release model weights, evaluation code, and OmniRetriever-Bench. The training set is sampleidentifier disjoint from every evaluation pool in this paper, and the third-party benchmarks (Clotho, SoundDescs, MSR-VTT, MSVD, DiDeMo, VA-TEX) are curated by other groups under different caption styles.
+
+We compare OmniRetriever-7B (ours) against three external systems: the frozen open-weights backbone WAVE-7B (Tang et al., 2025), the open Omni-Embed-Nemotron (Xu et al., 2025), and closed Gemini Embedding 2 via Google’s official endpoint with default settings. The endpoint ingests raw audio (WAV) and raw video (MP4 with audio muxed) as inline data, so Gemini receives the same clip bytes as OmniRetriever-7B. We cannot, however, inspect how the closed system internally routes inline audio, so the Gemini audio numbers reflect the currently deployed multipart product rather than a model-capacity ceiling. Reported numbers are the mean over three seeds {42, 43, 44}; aggregate seed std is ≤ 0.18 R@1, which we treat as the noise floor. The PAIRWISE ablation $( { \mathcal { L } } _ { A }$ alone, the recipe used by recent unified embedders (Wei et al., 2024; Jiang et al., 2024; Zhang et al., 2024)) is reported in Table 5.
+
+Systems we do not compare against. Qwen3- VL-Embedding (Li et al., 2026) has no audio path and cannot serve the ten audio-anchored directions. A head-to-head comparison is left to future work. The CLAP audio–text specialists (Table 2) have no video stream and cannot serve the six V -anchored directions.
+
+# 4.2 Results on Standard Audio–Text Benchmarks
+
+We evaluate OmniRetriever-7B zero-shot on two standard audio–text retrieval benchmarks, Clotho (Drossos et al., 2020) and SoundDescs (Koepke et al., 2022), and compare with the published audio–text specialist literature, contemporary open omni-modality embedders, and closed Gemini Embedding 2. Table 2 reports R@1; full R@k and NDCG@10 are in Table S10.
+
+OmniRetriever-7B improves over closed Gemini Embedding 2 by 13.9 to 18.0 R@1 on T→A and 13.3 to 14.7 on A→T. Gemini’s audio-anchored R@1 is consistently low across benchmarks (1.34 on Clotho A→T, 1.48 on OmniRetriever-Bench A→T below), suggesting that its deployed multipart endpoint does not route audio competitively for retrieval. The CLAP-family specialists are audio– text dual-tower models trained on AudioCapsstyle pairs without video exposure, and form the strongest single-task audio-retrieval band (19 to 21 R@1 on Clotho T→A). OmniRetriever-7B reaches 19.14 on Clotho T→A, within ∼2 R@1 of this band. On Clotho A→T, OmniRetriever-7B reaches 16.08, still below the specialist band (25 to 26.5) but well above prior open omni-modality systems on the same direction (ImageBind reports 6.0 T→A, LanguageBind 16.7 T→A; neither reports A→T). On SoundDescs T→A and A→T, OmniRetriever-7B reaches 25.00 and 20.70, the strongest open-system numbers in our literature search. Scaling the training corpus is expected to push OmniRetriever-7B’s A→T performance toward and potentially beyond the specialist band, since cross-modal supervision scales naturally with additional multimodal data.
+
+# 4.3 Results on Standard Video–Text Benchmarks
+
+We evaluate OmniRetriever-7B zero-shot on four standard video–text benchmarks (MSR-VTT (Xu et al., 2016), MSVD (Chen and Dolan, 2011),
+
+Table 1: Comparison with prior cross-modal retrieval benchmarks. Each column under Single-modal or Dual-modal marks whether the benchmark supports a given retrieval direction-pair (a ✓indicates both directions of the pair are evaluated). Total is the resulting number of retrieval directions and N is the size of the standard test pool. OmniRetriever-Bench is the first public benchmark to cover all three AVT modalities in one pool and the first to evaluate dual-modal queries. 
+
+<table><tr><td rowspan="2">Benchmark</td><td colspan="3">Single-modal pairs</td><td colspan="3">Dual-modal pairs</td><td rowspan="2">Total</td><td rowspan="2">N</td></tr><tr><td> $T \leftrightarrow V$ </td><td> $T \leftrightarrow A$ </td><td> $V \leftrightarrow A$ </td><td> $T \leftrightarrow AV$ </td><td> $A \leftrightarrow TV$ </td><td> $V \leftrightarrow AT$ </td></tr><tr><td colspan="9">Video-text retrieval</td></tr><tr><td>MSR-VTT (Xu et al., 2016)</td><td>√</td><td>-</td><td>-</td><td>-</td><td>-</td><td>-</td><td>2</td><td>1,000</td></tr><tr><td>MSVD (Chen and Dolan, 2011)</td><td>√</td><td>-</td><td>-</td><td>-</td><td>-</td><td>-</td><td>2</td><td>670</td></tr><tr><td>DiDeMo (Anne Hendricks et al., 2017)</td><td>√</td><td>-</td><td>-</td><td>-</td><td>-</td><td>-</td><td>2</td><td>1,004</td></tr><tr><td>VATEX (Wang et al., 2019)</td><td>√</td><td>-</td><td>-</td><td>-</td><td>-</td><td>-</td><td>2</td><td>4,468</td></tr><tr><td colspan="9">Audio-text retrieval</td></tr><tr><td>Clotho (Drossos et al., 2020)</td><td>-</td><td>√</td><td>-</td><td>-</td><td>-</td><td>-</td><td>2</td><td>1,045</td></tr><tr><td>SoundDescs (Koepke et al., 2022)</td><td>-</td><td>√</td><td>-</td><td>-</td><td>-</td><td>-</td><td>2</td><td>1,000</td></tr><tr><td>AudioCaps (Kim et al., 2019)</td><td>-</td><td>√</td><td>-</td><td>-</td><td>-</td><td>-</td><td>2</td><td>975</td></tr><tr><td>OmniRetriever-Bench (ours)</td><td>√</td><td>√</td><td>√</td><td>√</td><td>√</td><td>√</td><td>12</td><td>3,782</td></tr></table>
+
+DiDeMo (Anne Hendricks et al., 2017), VA-TEX (Wang et al., 2019)) and compare with published specialist literature and contemporary omnimodality embedders. Table 3 reports R@1; full R@k and NDCG@10 are in Table S9.
+
+OmniRetriever-7B reaches 47.6/43.7 on MSR-VTT, matching PE-coreB (Bolya et al., 2026) (47.6/47.3) and improving over SigLIP-2- L (Tschannen et al., 2025). On MSVD it reaches 66.9/63.3, improving over PE-coreL (57.2 T→V). On DiDeMo and VATEX, OmniRetriever-7B trails the strongest specialist with results on both benchmarks, InternVideo2-1B (Wang et al., 2024c), by 9 to 12 R@1 on three of the four directions and by 30 R@1 on VATEX V→T, driven by InternVideo2’s exceptional 85.4 V→T. We attribute this gap to the data scale of single-task video training; OmniRetriever-7B also has no audio specialisation for these benchmarks, which carry no audio queries. OmniRetriever-7B improves over LanguageBind on 5 of 6 reported video directions. Closed Gemini wins all eight video directions by 5 to 15 R@1, consistent with reports that Gemini is trained on a substantially larger closed video–text corpus; a data-parity comparison is out of scope. Taken together with the audio results in Table 2, OmniRetriever-7B is the strongest open unified omni-modal embedder in our literature search.
+
+Why a unified AVT embedder. Pairing a CLAPstyle audio specialist with an InternVideo2 video specialist covers four of the twelve directions, but neither system produces embeddings for the six dual-modal directions (T ↔ AV , etc.) in one shared index, and neither can anchor an audio query against text grounded in shared video context. OmniRetriever targets the setting in which a single shared (T, V, A) index is required.
+
+OmniRetriever-7B reduces the audio-capability gap among general-purpose omni-modality embedders, reaches the zero-shot audio–text specialist band on Clotho T→A, and stays within reach of single-task video–text specialists while covering all twelve directions in one model.
+
+# 4.4 OmniRetriever-Bench: A 12-Direction AVT Probe
+
+The benchmarks above evaluate single-modal directions only and do not stress-test the joint representation z that OmniRetriever is built around. A practical AVT retriever also needs to serve six dual-modal queries (T ↔ AV , A ↔ T V , V ↔ AT ) that compose two modalities on one side. No public suite covers these directions: standard video–text and audio–text benchmarks each evaluate two single-modal directions, never both video and audio in the same pool. Table 1 contrasts OmniRetriever-Bench with these prior benchmarks across modality coverage, number of retrieval directions, and evaluation-pool size.
+
+OmniRetriever-Bench contains 3,782 held-out aligned (T, V, A) triples, scored against the same gallery in every direction; the metric is Recall@1. Triples are curated from in-house video sources that are disjoint from the training data at the sampleidentifier level. All 3,782 captions are reviewed and corrected by trained human annotators: each caption starts from a Gemini 3.0 Pro draft, then the annotator verifies alignment against the video and the audio track and rewrites any inaccuracies. Research-use licensing follows prior released benchmarks built on proprietary content (Wang et al., 2019; Faysse et al., 2025); full annotation guidelines, the distribution mismatch with the training corpus, and a caption-paraphrase robustness check are in Sections E, F and M.
+
+Table 2: Audio–text retrieval R@1 on Clotho and SoundDescs (zero-shot). Specialised retrievers fine-tuned on each task are marked FT. Cited rows draw on the original papers’ published values. OmniRetriever-7B outperforms closed Gemini Embedding 2 by 13.3 to 18.0 R@1 in every direction; on Clotho T→A OmniRetriever-7B’s 19.14 sits within ∼2 R@1 of the current zero-shot contrastive SOTA band (Cacophony, MGA-CLAP, M2D-CLAP at 20 to 21) without task-specific fine-tuning. 
+
+<table><tr><td rowspan="2">Model</td><td rowspan="2">Year</td><td rowspan="2">Setting</td><td colspan="2">Clotho</td><td colspan="2">SoundDescs</td></tr><tr><td>T→A</td><td>A→T</td><td>T→A</td><td>A→T</td></tr><tr><td colspan="7">Audio-text specialists</td></tr><tr><td>MMT (Koepke et al., 2022)</td><td>2022</td><td>FT</td><td>6.7</td><td>7.0</td><td>30.7</td><td>31.4</td></tr><tr><td>MS-CLAP</td><td>2023</td><td>ZS</td><td>16.7</td><td>20.0</td><td>—</td><td>—</td></tr><tr><td>LAION-CLAP fusion (Wu et al., 2023)</td><td>2023</td><td>ZS</td><td>18.2</td><td>25.7</td><td>—</td><td>—</td></tr><tr><td>WavCaps-HTSAT (Mei et al., 2024)</td><td>2023</td><td>ZS</td><td>19.5</td><td>23.4</td><td>—</td><td>—</td></tr><tr><td>WavCaps-CNN14 (Mei et al., 2024)</td><td>2023</td><td>ZS</td><td>21.2</td><td>25.9</td><td>—</td><td>—</td></tr><tr><td>FLAP fusion</td><td>2024</td><td>ZS</td><td>20.3</td><td>25.5</td><td>—</td><td>—</td></tr><tr><td>Cacophony</td><td>2024</td><td>ZS</td><td>20.2</td><td>26.5</td><td>—</td><td>—</td></tr><tr><td>MGA-CLAP</td><td>2024</td><td>ZS</td><td>20.8</td><td>26.5</td><td>—</td><td>—</td></tr><tr><td>GLAP</td><td>2025</td><td>ZS</td><td>19.4</td><td>21.8</td><td>—</td><td>—</td></tr><tr><td>M2D-CLAP (Niizumi et al., 2025)</td><td>2025</td><td>ZS</td><td>20.1</td><td>25.0</td><td>—</td><td>—</td></tr><tr><td colspan="7">Closed-source industrial baselines</td></tr><tr><td>Gemini Embedding 2</td><td>2026</td><td>ZS</td><td>5.2</td><td>1.3</td><td>7.0</td><td>7.4</td></tr><tr><td colspan="7">Open-source omni-modality embedders</td></tr><tr><td>ImageBind (ViT-H) (Girdhar et al., 2023)</td><td>2023</td><td>ZS</td><td>6.0</td><td>—</td><td>—</td><td>—</td></tr><tr><td>LanguageBind (CLIP-H/14) (Zhu et al., 2024)</td><td>2024</td><td>ZS</td><td>16.7</td><td>—</td><td>—</td><td>—</td></tr><tr><td>Omni-Embed-Nemotron (Xu et al., 2025)</td><td>2025</td><td>ZS</td><td>6.4</td><td>3.5</td><td>6.4</td><td>4.8</td></tr><tr><td>OmniRetriever-7B (ours)</td><td>2026</td><td>ZS</td><td>19.1</td><td>16.1</td><td>25.0</td><td>20.7</td></tr></table>
+
+Table 4 reports R@1 on all 12 directions of OmniRetriever-Bench. OmniRetriever-7B reaches AVG-all 34.84, +9.52 over the frozen WAVE-7B backbone, +8.03 over Omni-Embed-Nemotron, and +1.72 over closed Gemini Embedding 2 (33.12). Both gaps over external systems exceed the seed noise floor (≤ 0.18 R@1 std). The gains concentrate on the eight audio-anchored directions: A → T , 11.92 vs. 1.48 (+10.44); $A  T { + } V$ , 23.45 vs. 6.00; V → A, 25.46 vs. 13.80. Gemini wins the four visually-saturated $T  V$ and $T  A { \mathrel { + } } V$ routes by 6 to 10 R@1, consistent with its larger closed video–text corpus. A qualitative comparison is in Section O.
+
+# 4.5 Ablation and Analysis
+
+Table 5 reports the stair-step ablation against the frozen WAVE-7B base on OmniRetriever-Bench, isolating the contribution of each loss in the OmniRetriever objective. The per-direction breakdown is in Table S11.
+
+Pairwise baseline. The PAIRWISE baseline $( { \mathcal { L } } _ { A }$ only, on our training corpus) lifts AVG-all from 25.32 to 31.08 (+5.76). The gain is unevenly distributed: $T  V$ and most dual-modal directions improve by 5 to 9 R@1, but audio-anchored R@1 stays low $( a  t 9 . 0 0 , a  t v 1 7 . 0 0 )$ . The audio axis is not capacity-bottlenecked here; it is bottlenecked by the weak-fusion regime of pairwise alignment.
+
+Fusion-as-teacher distillation $( \mathcal { L } _ { D } ) .$ . Adding $\mathcal { L } _ { D }$ lifts AVG-all by +3.52 (31.08 → 34.60), the dominant single-loss contribution. This already improves on closed Gemini Embedding 2 by +1.48 R@1. The gain spans both regimes (video-only +2.48, audio-related +3.73; Table S11); the audio side gains more because the joint forward routes T, V context into the audio sub-encoder, which unimodal teachers cannot do.
+
+Tuple-InfoNCE refinement $( \mathcal { L } _ { T } )$ . Adding $\mathcal { L } _ { T }$ on top of $\mathcal { L } _ { D } + \mathcal { L } _ { A }$ lifts AVG-all by +0.24 to 34.84. The aggregate gain is small but stable across seeds: the per-seed $\Delta _ {  { \mathcal { L } } _ { T } }$ is $\{ + 0 . 2 4 , + 0 . 2 1 , + 0 . 2 7 \}$ on {42, 43, 44} (Table S15), well above the aggregate seed std $( \leq 0 . 0 7 )$ . The per-direction breakdown (Table S11) shows that $\mathcal { L } _ { T }$ redistributes capacity: it adds +2.03 to +2.86 R@1 on the four $A  V$ routes (above per-direction noise of ±0.5 to ±0.8) while losing ∼2 R@1 on text-anchored dual-modal routes. We keep $\mathcal { L } _ { T }$ in the released model because $A  V$ is the bottleneck direction for open AVT embedders.
+
+Table 3: Video–text retrieval R@1 on four standard benchmarks (zero-shot). Specialised video–text retrievers fine-tuned per task are marked FT; the remainder are zero-shot. Cited rows draw on each paper’s published values. OmniRetriever-7B matches the contemporary zero-shot specialist band on MSR-VTT and MSVD and trails the strongest specialist with DiDeMo/VATEX results, InternVideo2-1B, by ∼9 to ∼12 R@1 on three of those four directions (and by ∼30 R@1 on the exceptional VATEX V→T). “—” denotes a number not reported. 
+
+<table><tr><td rowspan="2">Model</td><td rowspan="2">Setting</td><td colspan="4">T→V (or T→AV)</td><td colspan="4">V→T (or AV→T)</td></tr><tr><td>MSR-VTT</td><td>MSVD</td><td>DiDeMo</td><td>VATEX</td><td>MSR-VTT</td><td>MSVD</td><td>DiDeMo</td><td>VATEX</td></tr><tr><td colspan="10">Specialised video-text retrievers (FT)</td></tr><tr><td>CLIP4Clip (Luo et al., 2021)</td><td>FT</td><td>44.5</td><td>46.2</td><td>43.4</td><td>55.9</td><td>42.7</td><td>56.0</td><td>42.5</td><td>73.4</td></tr><tr><td>X-CLIP</td><td>FT</td><td>49.3</td><td>50.4</td><td>47.8</td><td>—</td><td>48.9</td><td>66.8</td><td>47.8</td><td>—</td></tr><tr><td colspan="10">Zero-shot video-text encoder band (specialists)</td></tr><tr><td>SigLIP-2 family (Tschannen et al., 2025)</td><td>ZS</td><td>38.5–43.1</td><td>49.0–55.8</td><td>—</td><td>—</td><td>30.1–34.3</td><td>67.2–74.6</td><td>—</td><td>—</td></tr><tr><td>PE-core family (Bolya et al., 2026)</td><td>ZS</td><td>47.6–51.2</td><td>50.4–59.7</td><td>—</td><td>—</td><td>47.3–50.1</td><td>76.7–85.4</td><td>—</td><td>—</td></tr><tr><td>InternVideo2-1B (Wang et al., 2024c)</td><td>ZS</td><td>51.9</td><td>58.1</td><td>57.0</td><td>70.4</td><td>50.9</td><td>83.3</td><td>54.3</td><td>85.4</td></tr><tr><td colspan="10">Closed-source industrial baselines</td></tr><tr><td>Gemini Embedding 2</td><td>ZS</td><td>53.9</td><td>77.1</td><td>55.6</td><td>69.4</td><td>48.3</td><td>77.9</td><td>53.3</td><td>66.7</td></tr><tr><td colspan="10">Open-source omni-modality embedders</td></tr><tr><td>ImageBind (ViT-H) (Girdhar et al., 2023)</td><td>ZS</td><td>36.1</td><td>—</td><td>—</td><td>—</td><td>—</td><td>—</td><td>—</td><td>—</td></tr><tr><td>LanguageBind (CLIP-H/14) (Zhu et al., 2024)</td><td>ZS</td><td>44.8</td><td>53.9</td><td>39.9</td><td>—</td><td>40.9</td><td>72.0</td><td>39.8</td><td>—</td></tr><tr><td>Omni-Embed-Nemotron (Xu et al., 2025)</td><td>ZS</td><td>35.8</td><td>55.8</td><td>41.9</td><td>47.5</td><td>30.6</td><td>49.2</td><td>36.5</td><td>39.9</td></tr><tr><td>OmniRetriever-7B (ours)</td><td>ZS</td><td>47.6</td><td>66.9</td><td>46.0</td><td>58.0</td><td>43.7</td><td>63.3</td><td>45.1</td><td>55.0</td></tr></table>
+
+Table 4: Recall@1 on the 12 directions of OmniRetriever-Bench. Bold: best per direction. The ours row is shaded. The pairwise-only baseline (PAIRWISE, $\mathcal { L } _ { A }$ alone) is reported in Table 5. 
+
+<table><tr><td rowspan="2">System</td><td colspan="6">Single-modal</td><td colspan="6">Dual-modal</td><td colspan="3">Averages</td></tr><tr><td> $t \rightarrow v$ </td><td> $v \rightarrow t$ </td><td> $t \rightarrow a$ </td><td> $a \rightarrow t$ </td><td> $v \rightarrow a$ </td><td> $a \rightarrow v$ </td><td> $t \rightarrow av$ </td><td> $av \rightarrow t$ </td><td> $a \rightarrow tv$ </td><td> $tv \rightarrow a$ </td><td> $v \rightarrow at$ </td><td> $at \rightarrow v$ </td><td>single</td><td>dual</td><td>all</td></tr><tr><td colspan="16">Closed-source industrial baselines</td></tr><tr><td>Gemini Embedding 2</td><td>55.13</td><td>53.83</td><td>12.61</td><td>1.48</td><td>13.80</td><td>15.76</td><td>55.45</td><td>50.16</td><td>6.00</td><td>16.79</td><td>54.97</td><td>61.45</td><td>25.44</td><td>40.80</td><td>33.12</td></tr><tr><td colspan="16">Open-source omni-modality embedders</td></tr><tr><td>WAVE-7B (Tang et al., 2025)</td><td>41.27</td><td>34.45</td><td>8.67</td><td>3.38</td><td>14.89</td><td>12.93</td><td>44.95</td><td>42.68</td><td>2.27</td><td>15.65</td><td>38.74</td><td>43.92</td><td>19.27</td><td>31.37</td><td>25.32</td></tr><tr><td>Omni-Embed-Nemotron (Xu et al., 2025)</td><td>43.55</td><td>39.74</td><td>12.19</td><td>8.83</td><td>14.07</td><td>12.35</td><td>36.12</td><td>34.53</td><td>14.75</td><td>16.63</td><td>41.30</td><td>47.67</td><td>21.79</td><td>31.84</td><td>26.81</td></tr><tr><td>OmniRetriever (ours)</td><td>48.89</td><td>46.30</td><td>14.20</td><td>11.92</td><td>25.46</td><td>24.99</td><td>45.37</td><td>44.47</td><td>23.45</td><td>26.07</td><td>52.49</td><td>54.47</td><td>28.63</td><td>41.05</td><td>34.84</td></tr></table>
+
+Table 5: Ablation of the OmniRetriever losses on OmniRetriever-Bench (AVG-all R@1; ∆ vs. the frozen WAVE-7B base). $\mathcal { L } _ { D }$ on top of the PAIRWISE baseline adds +3.52 R@1, already +1.48 over closed Gemini Embedding 2 (33.12). $\mathcal { L } _ { T }$ adds a further $+ 0 . 2 4$ on aggregate and redistributes capacity toward A ↔ V (Table S11). 
+
+<table><tr><td>Variant</td><td>AVG all</td><td> $\Delta$ </td></tr><tr><td>WAVE-7B (no fine-tune)</td><td>25.32</td><td>—</td></tr><tr><td>PAIRWISE ( $\mathcal{L}_{A}$  only)</td><td>31.08</td><td>+5.76</td></tr><tr><td> $\mathcal{L}_{D}+\mathcal{L}_{A}$  (no  $\mathcal{L}_{T}$ )</td><td>34.60</td><td>+9.28</td></tr><tr><td>OmniRetriever-7B ( $\mathcal{L}_{T}+\mathcal{L}_{D}+\mathcal{L}_{A}$ )</td><td> $\underline{\text{34.84}}$ </td><td>+9.52</td></tr></table>
+
+Discussion. Pairwise InfoNCE optimizes three pair softmaxes independently, so the joint $( T , V , A )$ vector inherits whichever pair carries the largest cosine gap (in practice T –V ) and leaves the audio axis slack. $\mathcal { L } _ { D }$ supplies the cross-modal teacher that closes the audio gap at the single-modal level. $\mathcal { L } _ { T }$ then redistributes the remaining joint-level capacity toward the $A  V$ axis. We conjecture that Gemini Embedding 2 follows a similar pairwise contrastive recipe based on public reports(Lee et al., 2025b); our PAIRWISE baseline performs similarly to it in the same weak-fusion regime.
+
+# 5 Conclusion
+
+A unified AVT encoder can computes a joint embedding $\mathbf { z } _ { T V A }$ on every $( T , V , A )$ forward, but pairwise InfoNCE leaves it unsupervised. We turn $\mathbf { z } _ { T V A }$ into a training signal: $\mathcal { L } _ { D }$ distills its stopgradient copy into the single-modal embeddings, and $\mathcal { L } _ { T }$ supervises it directly against a tuple grid with modality-cycled hard negatives. Both losses reuse the same backbone forward and apply to any unified retriever whose forward produces a joint embedding. A cross-backbone replication reproduces the dominant $\mathcal { L } _ { D }$ effect. OmniRetriever-7B reaches the zero-shot audio–text specialist band on Clotho $\mathrm { T } {  } \mathrm { A } .$ , reduces the open omni-modality gap on A→T, and improves over closed Gemini Embedding 2 on OmniRetriever-Bench by 1.72 AVG-all R@1. To probe the joint representation that pairwise training cannot expose, we release OmniRetriever-Bench, the first AVT benchmark scoring 3,782 human-corrected triples on a shared gallery across all 12 single- and dual-modal directions. Model weights, training code, and the benchmark are released.
+
+# Limitations
+
+Video–text gap. On the four T ↔ V and T ↔ A+V directions, OmniRetriever-7B trails closed Gemini Embedding 2 by 6 to 10 R@1 on OmniRetriever-Bench and by 5 to 15 R@1 on the external video benchmarks. We attribute this gap to data scale: Gemini is trained on closed video–text corpora reportedly orders of magnitude larger than what is practically reachable in an academic AVT setting, and a unified (T, V, A) embedder at our training scale is not expected to match dedicated video–text encoders on every benchmark.
+
+Closed-baseline comparability. Gemini Embedding 2 is accessed only through a deployed multipart API. We feed it the same raw audio+video bytes OmniRetriever-7B consumes, but we cannot inspect how the closed system internally routes inline audio. The Gemini numbers therefore reflect the deployed product rather than a model-capacity ceiling.
+
+Backbone coverage. OmniRetriever is instantiated on a 7 B WAVE backbone, with a 3 B Omni-Embed-Nemotron replication in Section L. Verification on other backbones (e.g., Qwen3-VL-Embedding) is left to future work.
+
+Compression. Our analyses focus on retrieval accuracy. We do not study embedding compression beyond the post-hoc int8/binary baselines reported in Section G; a compression-aware training recipe is left to future work.
+
+# Ethical Considerations
+
+Privacy. Embedding inversion (vec2text (Morris et al., 2023)) is a known attack on retrieval embeddings. The training corpus is sampled from four public video–text datasets (InternVid, InternVid-FLT, Panda-70M, PVD) and a small in-house corpus collected with consent; we use the public sources under the terms of their original releases and do not redistribute the assembled training subset. We recommend application-layer defences such as DP-SGD or representation distortion for deployments with sensitive content. OmniRetriever-Bench releases only the source identifiers and caption text needed to reproduce retrieval scores.
+
+Intended use. We release OmniRetriever-7B and OmniRetriever-Bench for research on cross-modal retrieval. The research-use license accompanying the release prohibits deployment in surveillance applications affecting natural persons.
+
+Provenance and licensing. The training corpus combines four public video–text datasets (Intern-Vid, InternVid-FLT, Panda-70M, PVD) with a small in-house corpus collected with consent. We do not redistribute the assembled training subset. OmniRetriever-Bench is built from sources held out from training and is released following the standard video-benchmark protocol: source identifiers, clip intervals, and captions are released, while the underlying media is not redistributed. Curation details are in Section F.
+
+# References
+
+Hassan Akbari, Liangzhe Yuan, Rui Qian, Wei-Hong Chuang, Shih-Fu Chang, Yin Cui, and Boqing Gong. 2021. Vatt: Transformers for multimodal selfsupervised learning from raw video, audio and text. Advances in neural information processing systems, 34:24206–24221.   
+Lisa Anne Hendricks, Oliver Wang, Eli Shechtman, Josef Sivic, Trevor Darrell, and Bryan Russell. 2017. Localizing moments in video with natural language. In Proceedings of the IEEE international conference on computer vision, pages 5803–5812.   
+Mido Assran, Adrien Bardes, David Fan, Quentin Garrido, Russell Howes, Matthew Muckley, Ammar Rizvi, Claire Roberts, Koustuv Sinha, Artem Zholus, and 1 others. 2025. V-jepa 2: Self-supervised video models enable understanding, prediction and planning. arXiv preprint arXiv:2506.09985.   
+Parishad BehnamGhader, Vaibhav Adlakha, Marius Mosbach, Dzmitry Bahdanau, Nicolas Chapados, and Siva Reddy. 2024. Llm2vec: Large language models are secretly powerful text encoders. arXiv preprint arXiv:2404.05961.   
+Daniel Bolya, Po-Yao Huang, Peize Sun, Jang Hyun Cho, Andrea Madotto, Chen Wei, Tengyu Ma, Jiale Zhi, Jathushan Rajasegaran, Hanoona Bangalath, and 1 others. 2026. Perception encoder: The best visual embeddings are not at the output of the network. Advances in Neural Information Processing Systems, 38:60884–60937.   
+David Chen and William B Dolan. 2011. Collecting highly parallel data for paraphrase evaluation. In Proceedings of the 49th annual meeting of the association for computational linguistics: human language technologies, pages 190–200.   
+Sanyuan Chen, Yu Wu, Chengyi Wang, Shujie Liu, Daniel Tompkins, Zhuo Chen, and Furu Wei. 2022. Beats: Audio pre-training with acoustic tokenizers. arXiv preprint arXiv:2212.09058.
+
+Sihan Chen, Handong Li, Qunbo Wang, Zijia Zhao, Mingzhen Sun, Xinxin Zhu, and Jing Liu. 2023. Vast: A vision-audio-subtitle-text omni-modality foundation model and dataset. Advances in Neural Information Processing Systems, 36:72842–72866.   
+Tsai-Shien Chen, Aliaksandr Siarohin, Willi Menapace, Ekaterina Deyneka, Hsiang-wei Chao, Byung Eun Jeon, Yuwei Fang, Hsin-Ying Lee, Jian Ren, Ming-Hsuan Yang, and 1 others. 2024. Panda-70m: Captioning 70m videos with multiple cross-modality teachers. In Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition.   
+Konstantinos Drossos, Samuel Lipping, and Tuomas Virtanen. 2020. Clotho: An audio captioning dataset. In ICASSP 2020-2020 IEEE International Conference on Acoustics, Speech and Signal Processing (ICASSP), pages 736–740. IEEE.   
+Alex Fang, Albin Madappally Jose, Amit Jain, Ludwig Schmidt, Alexander Toshev, and Vaishaal Shankar. 2024. Data filtering networks. In International Conference on Learning Representations, volume 2024, pages 36221–36237.   
+Manuel Faysse, Hugues Sibille, Tony Wu, Bilel Omrani, Gautier Viaud, Céline Hudelot, and Pierre Colombo. 2025. Colpali: Efficient document retrieval with vision language models. In International Conference on Learning Representations, volume 2025, pages 61424–61449.   
+Enrico Fini, Mustafa Shukor, Xiujun Li, Philipp Dufter, Michal Klein, David Haldimann, Sai Aitharaju, Victor G Turrisi da Costa, Louis Béthune, Zhe Gan, and 1 others. 2025. Multimodal autoregressive pretraining of large vision encoders. In Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition, pages 9641–9654.   
+Rohit Girdhar, Alaaeldin El-Nouby, Zhuang Liu, Mannat Singh, Kalyan Vasudev Alwala, Armand Joulin, and Ishan Misra. 2023. Imagebind: One embedding space to bind them all. In Proceedings of the IEEE/CVF conference on computer vision and pattern recognition, pages 15180–15190.   
+Andrey Guzhov, Federico Raue, Jörn Hees, and Andreas Dengel. 2022. Audioclip: Extending clip to image, text and audio. In ICASSP 2022-2022 IEEE International Conference on Acoustics, Speech and Signal Processing (ICASSP), pages 976–980. IEEE.   
+Chao Jia, Yinfei Yang, Ye Xia, Yi-Ting Chen, Zarana Parekh, Hieu Pham, Quoc Le, Yun-Hsuan Sung, Zhen Li, and Tom Duerig. 2021. Scaling up visual and vision-language representation learning with noisy text supervision. In International conference on machine learning, pages 4904–4916. PMLR.   
+Ziyan Jiang, Rui Meng, Xinyi Yang, Semih Yavuz, Yingbo Zhou, and Wenhu Chen. 2024. Vlm2vec: Training vision-language models for massive multimodal embedding tasks. arXiv preprint arXiv:2410.05160.
+
+Chris Dongjoo Kim, Byeongchang Kim, Hyunmin Lee, and Gunhee Kim. 2019. Audiocaps: Generating captions for audios in the wild. In Proceedings of the 2019 Conference of the North American Chapter of the Association for Computational Linguistics: Human Language Technologies, pages 119–132.   
+A Sophia Koepke, Andreea-Maria Oncescu, João F Henriques, Zeynep Akata, and Samuel Albanie. 2022. Audio retrieval with natural language queries: A benchmark study. IEEE Transactions on Multimedia, 25:2675–2685.   
+Chankyu Lee, Rajarshi Roy, Mengyao Xu, Jonathan Raiman, Mohammad Shoeybi, Bryan Catanzaro, and Wei Ping. 2025a. Nv-embed: Improved techniques for training llms as generalist embedding models. In International Conference on Learning Representations, volume 2025, pages 79310–79333.   
+Jinhyuk Lee, Feiyang Chen, Sahil Dua, Daniel Cer, Madhuri Shanbhogue, Iftekhar Naim, Gustavo Hernández Ábrego, Zhe Li, Kaifeng Chen, Henrique Schechter Vera, and 1 others. 2025b. Gemini embedding: Generalizable embeddings from gemini. arXiv preprint arXiv:2503.07891.   
+Mingxin Li, Yanzhao Zhang, Dingkun Long, Keqin Chen, Sibo Song, Shuai Bai, Zhibo Yang, Pengjun Xie, An Yang, Dayiheng Liu, and 1 others. 2026. Qwen3-vl-embedding and qwen3-vlreranker: A unified framework for state-of-the-art multimodal retrieval and ranking. arXiv preprint arXiv:2601.04720.   
+Sheng-Chieh Lin, Chankyu Lee, Mohammad Shoeybi, Jimmy Lin, Bryan Catanzaro, and Wei Ping. 2025. Mm-embed: Universal multimodal retrieval with multimodal llms. In International Conference on Learning Representations, volume 2025, pages 44215–44234.   
+Yunze Liu, Qingnan Fan, Shanghang Zhang, Hao Dong, Thomas Funkhouser, and Li Yi. 2021. Contrastive multimodal fusion with tupleinfonce. In Proceedings of the IEEE/CVF international conference on computer vision, pages 754–763.   
+Yunze Liu, Li Yi, Shanghang Zhang, Qingnan Fan, Thomas Funkhouser, and Hao Dong. 2020. P4contrast: Contrastive learning with pairs of pointpixel pairs for rgb-d scene understanding. arXiv preprint arXiv:2012.13089.   
+Huaishao Luo, Lei Ji, Ming Zhong, Yang Chen, Wen Lei, Nan Duan, and Tianrui Li. 2021. Clip4clip: An empirical study of clip for end to end video clip retrieval. arXiv preprint arXiv:2104.08860.   
+Yiwei Ma, Guohai Xu, Xiaoshuai Sun, Ming Yan, Ji Zhang, and Rongrong Ji. 2022. X-clip: End-to-end multi-grained contrastive learning for video-text retrieval. In Proceedings of the 30th ACM international conference on multimedia, pages 638–647.
+
+Xinhao Mei, Chutong Meng, Haohe Liu, Qiuqiang Kong, Tom Ko, Chengqi Zhao, Mark D Plumbley, Yuexian Zou, and Wenwu Wang. 2024. Wavcaps: A chatgpt-assisted weakly-labelled audio captioning dataset for audio-language multimodal research. IEEE/ACM Transactions on Audio, Speech, and Language Processing, 32:3339–3354.   
+John Morris, Volodymyr Kuleshov, Vitaly Shmatikov, and Alexander M Rush. 2023. Text embeddings reveal (almost) as much as text. In Proceedings of the 2023 Conference on Empirical Methods in Natural Language Processing, pages 12448–12460.   
+Daisuke Niizumi, Daiki Takeuchi, Masahiro Yasuda, Binh Thien Nguyen, Yasunori Ohishi, and Noboru Harada. 2025. M2d-clap: Exploring general-purpose audio-language representations beyond clap. IEEE Access.   
+Xiaokang Peng, Yake Wei, Andong Deng, Dong Wang, and Di Hu. 2022. Balanced multimodal learning via on-the-fly gradient modulation. In Proceedings of the IEEE/CVF conference on computer vision and pattern recognition, pages 8238–8247.   
+Alec Radford, Jong Wook Kim, Chris Hallacy, Aditya Ramesh, Gabriel Goh, Sandhini Agarwal, Girish Sastry, Amanda Askell, Pamela Mishkin, Jack Clark, and 1 others. 2021. Learning transferable visual models from natural language supervision. In International conference on machine learning, pages 8748–8763. PmLR.   
+Christoph Schuhmann, Romain Beaumont, Richard Vencu, Cade Gordon, Ross Wightman, Mehdi Cherti, Theo Coombes, Aarush Katta, Clayton Mullis, Mitchell Wortsman, and 1 others. 2022. Laion-5b: An open large-scale dataset for training next generation image-text models. Advances in neural information processing systems, 35:25278–25294.   
+Oriane Siméoni, Huy V Vo, Maximilian Seitzer, Federico Baldassarre, Maxime Oquab, Cijo Jose, Vasil Khalidov, Marc Szafraniec, Seungeun Yi, Michaël Ramamonjisoa, and 1 others. 2025. Dinov3. arXiv preprint arXiv:2508.10104.   
+Changli Tang, Qinfan Xiao, Ke Mei, Tianyi Wang, Fengyun Rao, and Chao Zhang. 2025. Wave: Learning unified & versatile audio-visual embeddings with multimodal llm. arXiv preprint arXiv:2509.21990.   
+Nandan Thakur, Crystina Zhang, Xueguang Ma, and Jimmy Lin. 2025. Hard negatives, hard lessons: Revisiting training data quality for robust information retrieval with llms. arXiv preprint arXiv:2505.16967.   
+Michael Tschannen, Alexey Gritsenko, Xiao Wang, Muhammad Ferjad Naeem, Ibrahim Alabdulmohsin, Nikhil Parthasarathy, Talfan Evans, Lucas Beyer, Ye Xia, Basil Mustafa, and 1 others. 2025. Siglip 2: Multilingual vision-language encoders with improved semantic understanding, localization, and dense features. arXiv preprint arXiv:2502.14786.
+
+Liang Wang, Nan Yang, Xiaolong Huang, Linjun Yang, Rangan Majumder, and Furu Wei. 2024a. Improving text embeddings with large language models. In Proceedings of the 62nd Annual Meeting of the Association for Computational Linguistics (Volume 1: Long Papers), pages 11897–11916.   
+Weiyao Wang, Du Tran, and Matt Feiszli. 2020. What makes training multi-modal classification networks hard? In Proceedings of the IEEE/CVF conference on computer vision and pattern recognition, pages 12695–12705.   
+Xin Wang, Jiawei Wu, Junkun Chen, Lei Li, Yuan-Fang Wang, and William Yang Wang. 2019. Vatex: A large-scale, high-quality multilingual dataset for video-and-language research. In Proceedings of the IEEE/CVF international conference on computer vision, pages 4581–4591.   
+Yi Wang, Yinan He, Yizhuo Li, Kunchang Li, Jiashuo Yu, Xin Ma, Xinhao Li, Guo Chen, Xinyuan Chen, Yaohui Wang, and 1 others. 2024b. Internvid: A large-scale video-text dataset for multimodal understanding and generation. In The Twelfth International Conference on Learning Representations.   
+Yi Wang, Kunchang Li, Xinhao Li, Jiashuo Yu, Yinan He, Guo Chen, Baoqi Pei, Rongkun Zheng, Zun Wang, Yansong Shi, and 1 others. 2024c. Internvideo2: Scaling foundation models for multimodal video understanding. In European conference on computer vision, pages 396–416. Springer.   
+Cong Wei, Yang Chen, Haonan Chen, Hexiang Hu, Ge Zhang, Jie Fu, Alan Ritter, and Wenhu Chen. 2024. Uniir: Training and benchmarking universal multimodal information retrievers. In European Conference on Computer Vision, pages 387–404. Springer.   
+Yusong Wu, Ke Chen, Tianyu Zhang, Yuchen Hui, Taylor Berg-Kirkpatrick, and Shlomo Dubnov. 2023. Large-scale contrastive language-audio pretraining with feature fusion and keyword-to-caption augmentation. In ICASSP 2023-2023 IEEE International Conference on Acoustics, Speech and Signal Processing (ICASSP), pages 1–5. IEEE.   
+Hu Xu, Saining Xie, Xiaoqing Tan, Po-Yao Huang, Russell Howes, Vasu Sharma, Shang-Wen Li, Gargi Ghosh, Luke Zettlemoyer, and Christoph Feichtenhofer. 2024. Demystifying clip data. In International Conference on Learning Representations, volume 2024, pages 47812–47831.   
+Jun Xu, Tao Mei, Ting Yao, and Yong Rui. 2016. Msrvtt: A large video description dataset for bridging video and language. In Proceedings of the IEEE conference on computer vision and pattern recognition, pages 5288–5296.   
+Mengyao Xu, Wenfei Zhou, Yauhen Babakhin, Gabriel Moreira, Ronay Ak, Radek Osmulski, Bo Liu, Even Oldridge, and Benedikt Schifferer. 2025. Omniembed-nemotron: A unified multimodal retrieval
+
+model for text, image, audio, and video. arXiv preprint arXiv:2510.03458.
+
+Xiaohua Zhai, Basil Mustafa, Alexander Kolesnikov, and Lucas Beyer. 2023. Sigmoid loss for language image pre-training. In Proceedings of the IEEE/CVF international conference on computer vision, pages 11975–11986.
+
+Xin Zhang, Yanzhao Zhang, Wen Xie, Mingxin Li, Ziqi Dai, Dingkun Long, Pengjun Xie, Meishan Zhang, Wenjie Li, and Min Zhang. 2024. Gme: improving universal multimodal retrieval by multimodal llms. arXiv preprint arXiv:2412.16855.
+
+Bin Zhu, Bin Lin, Munan Ning, Yang Yan, Jiaxi Cui, WANG HongFa, Yatian Pang, Wenhao Jiang, Junwu Zhang, Zongwei Li, and 1 others. 2024. Languagebind: Extending video-language pretraining to nmodality by language-based semantic alignment. In International Conference on Learning Representations, volume 2024, pages 9588–9608.
+
+# Appendix Overview
+
+• Sections A and B: backbone, LoRA configuration, and full training hyper-parameters.   
+• Section C: end-to-end inference latency on the four input paths.   
+• Section D: sensitivity of OmniRetriever to the loss weights $\left( \lambda _ { T } , \lambda _ { D } , \lambda _ { A } \right)$ .   
+• Section E: training-corpus description and caption-length statistics.   
+• Sections F and H: OmniRetriever-Bench construction, licensing, and test-clip duration statistics.   
+• Section G: post-hoc compression analysis (uniform dimension downsampling, int8 and binary quantization, front-dim truncation).   
+• Section I: per-k R@1/5/10 and NDCG@10 on all six external benchmarks, with row-by-row literature comparison.   
+• Section J: stair-step per-direction decomposition of the $\mathcal { L } _ { A } , \mathcal { L } _ { D } , \mathcal { L } _ { T }$ contributions on OmniRetriever-Bench.   
+• Section K: triple-cosine intra/inter geometry on OmniRetriever-Bench across training stages.   
+• Section L: cross-backbone replication of OmniRetriever on Omni-Embed-Nemotron-3B.   
+• Section M: caption-paraphrase robustness check on OmniRetriever-Bench.   
+• Section N: per-seed $\mathcal { L } _ { T }$ ablation across three seeds.   
+• Sections O and P: qualitative retrieval comparisons and failure-case analysis.
+
+# A Backbone and LoRA Fine-Tuning Details
+
+We take WAVE-7B (Tang et al., 2025), an openweights extension of Qwen2.5-Omni with a hierarchical visual fusion and a dual audio encoder, as our baseline backbone. WAVE-7B is the strongest open starting point on tri-modal tasks but, like all prior open systems, relies on pairwise contrastive losses and lags closed competitors on audio-involved retrieval; OmniRetriever retrofits the joint-objective recipe on top of it. The choice of WAVE-7B (vs. alternative AVT backbones) is incidental to the OmniRetriever contribution: $\mathcal { L } _ { D }$ and $\mathcal { L } _ { T }$ act on the backbone’s joint and single-modal embeddings, not on its internal architecture, and would transfer to any AVT model that exposes a fusion path. We freeze the entire WAVE-7B backbone, namely the LLM trunk, the visual tower (SigLIP + merger), the audio tower (Whisper), and the BEATs encoder transformer (all adopted from WAVE without modification), and tune three small surfaces: (i) LoRA adapters (r=16, α=32) inserted into the q, k, v projections of every LLM layer (28 layers × 3 = 84 matrices, 6.88 M params); (ii) the all-layer fusion head Linear(28d→d) → GELU → Linear(d→d) with d=3584, 372.51 M params; (iii) the BEATs adaptor on top of the frozen BEATs encoder (LayerNorm + projector, 15.61 M params). The fusion head consumes the concatenation of the last-token hidden states of all 28 LLM layers and projects them into the shared R3584 embedding space; submodal embeddings reuse the same head. Total trainable parameters: ≈ 395.0 M (4.20 % of the 9.41 B backbone). Training uses bf16 + DeepSpeed ZeRO-0, batch size 64, LR 1×10−5 cosine, 1 epoch over the training corpus, on 4×NVIDIA RTX PRO 6000 (Blackwell architecture, Max-Q variant, 96 GB). Total wall-clock: ≈ 109 h (35.6 s/step over 11,192 steps).
+
+# B Hyper-Parameters and Reproducibility
+
+Table S1 lists every hyper-parameter that affects the reported numbers. We run all reported numbers under three independent seeds {42, 43, 44} and report the mean; aggregate seed std on OmniRetriever-Bench AVG-all is $\leq 0 . 1 8 \mathrm { R } @ 1 $ .
+
+# C Inference Latency
+
+Table S2 reports full-stack single-query latency on one RTX PRO 6000 Blackwell Max-Q GPU at bf16, batch = 1, averaged over 10 timed iterations
+
+Table S1: Full hyper-parameters for OmniRetriever training. Tunable surfaces: LoRA on the q,k,v projections of all 28 LLM layers (84 matrices) plus, at full precision, the all-layer fusion head and the BEATs adaptor (LayerNorm + projector). Frozen: LLM trunk weights, vision tower (incl. merger), Whisper audio tower, and the BEATs encoder backbone. Trainable budget: ≈ 395.0 M total (4.20% of the 9.41 B backbone), distributed as 6.88 M (LoRA), 372.51 M (all-layer fusion head: Linear(28d → d)+GELU+Linear(d → d) with $d = 3 5 8 4 )$ , and 15.61 M (BEATs adaptor). Loss settings: single shared temperature τ (no per-pair $\tau _ { m m ^ { \prime } } ) ;$ hard negatives are deterministically cycled {T-shuffle, A-shuffle, V-shuffle} with period 3, tightening the joint cluster on every modality direction (Section 3.3 in main paper).
+
+<table><tr><td>Hyper-parameter</td><td>Value</td></tr><tr><td>Backbone (baseline)</td><td>WAVE-7B (Tang et al., 2025)</td></tr><tr><td>LoRA rank r / α / dropout</td><td>16 / 32 / 0.05</td></tr><tr><td>Embedding dim d</td><td>3584</td></tr><tr><td>Text max length</td><td>2048 tokens</td></tr><tr><td>Video frames / Audio duration</td><td>8 / 8 s @ 16 kHz</td></tr><tr><td>Audio encoders / Vision teacher</td><td>Whisper-Large-v3 + BEATs / SigLIP-2-SO400m</td></tr><tr><td>Optimiser</td><td>AdamW ( $\beta_1=0.9, \beta_2=0.95$ )</td></tr><tr><td>Learning rate / Warm-up / WD</td><td> $10^{-5}$  cosine / 3% / 0.01</td></tr><tr><td>Batch size</td><td>64 (8/GPU × 4 GPUs × 2 acc)</td></tr><tr><td>Epochs / Precision / DeepSpeed</td><td>1 / bf16 / ZeRO-0</td></tr><tr><td>Tuple-InfoNCE temperature  $\tau$ </td><td>0.01</td></tr><tr><td>Loss weights ( $\lambda_T, \lambda_D, \lambda_A$ )</td><td>(1.0, 1.0, 1.0)</td></tr><tr><td>Hardware</td><td>4×RTX PRO 6000 Blackwell-MaxQ</td></tr><tr><td>Total wall-clock (11,192 steps)</td><td>≈ 109 h (35.6 s/step)</td></tr></table>
+
+after 3 warmups. The measured forward pass includes the vision and audio towers (when applicable), the LM trunk with all-layer hidden states retained, and the all-layer fusion head (28d → d → d). The text-only path skips both towers and is the cheapest. The joint AV path consumes the longest token sequence (∼470 tokens) and is the most expensive. Peak GPU memory across all four paths is 20.13 GB; model load alone uses 17.92 GB.
+
+Table S2: End-to-end inference latency of OmniRetriever-7B. Mean±std over 10 iterations after 3 warmups; bf16, batch = 1, RTX PRO 6000 Blackwell Max-Q. Text uses 24 tokens, video uses 8 frames at 224 px (∼268 LM tokens), audio uses 8 s of 16 kHz mono, joint AV concatenates video + audio + prompt (∼470 tokens). Cosine search and text-side preprocessing are not included.
+
+<table><tr><td>Inference path</td><td>Latency (ms)</td></tr><tr><td>Text-only</td><td> $20.9 \pm 0.1$ </td></tr><tr><td>Video-only</td><td> $105.6 \pm 0.2$ </td></tr><tr><td>Audio-only</td><td> $34.6 \pm 0.1$ </td></tr><tr><td>Joint AV</td><td> $125.1 \pm 0.1$ </td></tr></table>
+
+The LM trunk on the merged token sequence dominates the cost. A video-only forward spends roughly two thirds of its 105.6 ms in the LM trunk, after the vision tower outputs ∼256 LM-dim tokens. The joint AV path runs 125 ms because the LM trunk now processes ∼470 tokens under the same fp32 fusion head. Text-only is the practical floor at 20.9 ms. In production, the embedding step is computed once per query and the gallery search dominates per-query latency; that search cost depends on embedding dim and dtype (Section G) rather than backbone compute.
+
+# D Loss-Weight Sensitivity
+
+The released OmniRetriever-7B uses uniform loss weights $( \lambda _ { T } , \lambda _ { D } , \lambda _ { A } ) = ( 1 , 1 , 1 )$ . To test sensitivity to this choice, we re-train OmniRetriever from the same WAVE-7B initialisation under the skewed setting $( \lambda _ { T } , \lambda _ { D } , \lambda _ { A } ) = ( 5 0 , 1 0 , 1 )$ , which scales the Tuple-InfoNCE loss by 50× and the distillation loss by 10× relative to pairwise alignment. Table S3 reports both configurations on the 3,782- sample OmniRetriever-Bench.
+
+Discussion. Both configurations sit comfortably above the closed Gemini baseline (33.12) and the pairwise-CL ablation (31.08), so the method’s central claim is unaffected by the specific weighting. The heavily-anchor-weighted (50, 10, 1) setting slightly improves audio-anchored directions $( a  v$ $+ 0 . 7 4 , a  t v + 1 . 1 9 )$ at the cost of text-anchored ones $( t  a v - 1 . 9 5 , a v  t - 2 . 2 7 )$ : putting more loss mass on the fusion anchor pulls the audio subencoder closer to it but de-emphasizes the pairwise alignment that benefits text-anchored composition.
+
+Table S3: Loss-weight sensitivity on OmniRetriever-Bench R@1. OmniRetriever-7B under two loss-weight configurations $\left( \lambda _ { T } , \lambda _ { D } , \lambda _ { A } \right)$ . Both configurations sit above closed Gemini Embedding 2 (33.12) and the pairwise-CL ablation (31.08) on AVG-all. Differences between the two settings are within $\leq 2$ R@1 in every direction and within 0.71 R@1 on AVG-all. We use the uniform (1, 1, 1) setting for the released model. 
+
+<table><tr><td>Direction</td><td>(1, 1, 1)</td><td>(50, 10, 1)</td><td> $\Delta$ </td></tr><tr><td>text→video</td><td>48.89</td><td>47.41</td><td>-1.48</td></tr><tr><td>video→text</td><td>46.30</td><td>45.08</td><td>-1.22</td></tr><tr><td>text→audio</td><td>14.20</td><td>13.78</td><td>-0.42</td></tr><tr><td>audio→text</td><td>11.92</td><td>11.42</td><td>-0.50</td></tr><tr><td>video→audio</td><td>25.46</td><td>25.12</td><td>-0.34</td></tr><tr><td>audio→video</td><td>24.99</td><td>25.73</td><td>+0.74</td></tr><tr><td>text→audio+video</td><td>45.37</td><td>43.42</td><td>-1.95</td></tr><tr><td>audio+video→text</td><td>44.47</td><td>42.20</td><td>-2.27</td></tr><tr><td>audio→text+video</td><td>23.45</td><td>24.64</td><td>+1.19</td></tr><tr><td>text+video→audio</td><td>26.07</td><td>25.78</td><td>-0.29</td></tr><tr><td>video→audio+text</td><td>52.49</td><td>50.45</td><td>-2.04</td></tr><tr><td>audio+text→video</td><td>54.47</td><td>54.52</td><td>+0.05</td></tr><tr><td>AVG single</td><td>28.63</td><td>28.09</td><td>-0.54</td></tr><tr><td>AVG dual</td><td>41.05</td><td>40.17</td><td>-0.88</td></tr><tr><td>AVG all</td><td>34.84</td><td>34.13</td><td>-0.71</td></tr></table>
+
+The uniform setting is a Pareto-friendly default. Per-pair temperature tuning or curriculum schedules over $\left( \lambda _ { T } , \lambda _ { D } , \lambda _ { A } \right)$ are left as future work.
+
+# E Training Corpus Description
+
+Sources and scale. The training corpus contains approximately 1.5 M $( T , V , A )$ triples sampled from four public video–text datasets, Intern-Vid (Wang et al., 2024b), InternVid-FLT (Wang et al., 2024b), Panda-70M (Chen et al., 2024), and PVD (Bolya et al., 2026), plus a small in-house video corpus collected with consent. We restrict the pool to clips that contain all three modalities: a text caption, video frames, and an audible audio track. We do not redistribute the assembled training subset; the public sources can be downloaded from their original releases. OmniRetriever-Bench is built from sources held out from training, with sample-identifier disjointness enforced.
+
+Caption sources. For triples drawn from the public datasets, we keep the captions provided by the original release. For the in-house portion, captions are produced by an automatic multimodal captioning pipeline with a held-out coherence filter on $( T , V , A )$ alignment. OmniRetriever-Bench captions, in contrast, are human-corrected: each caption begins as a Gemini 3.0 Pro draft and is then verified against the video and audio and rewritten where necessary by a trained annotator. The resulting OmniRetriever-Bench captions therefore reflect a distinct human-validated distribution from any caption in the training corpus. We additionally test sensitivity to caption surface form with the paraphrase analysis in Section M.
+
+Caption length distribution. Table S4 reports caption-word quantiles measured on the training corpus. Captions are dense and uniform, with mean 32.0 words, median 30, and $9 9 ^ { \mathrm { t h } }$ percentile 76.
+
+# F OmniRetriever-Bench: Construction and License
+
+The OmniRetriever-Bench evaluation pool contains 3,782 held-out $( T , V , A )$ triples; the same pool serves as queries and gallery for all twelve retrieval directions. OmniRetriever-Bench is released for research use under a custom license that mirrors prior released benchmarks built on proprietary video content (Wang et al., 2019; Faysse et al., 2025): caption text, public source identifiers, and retrieval indices are redistributed, while the underlying media is not. OmniRetriever-Bench triples come from internal video sources held out from the training subset, with sample-identifier disjointness from the training data enforced. Figure S1 visualises the 12 valid query→target cells of the $6 \times 6$ source/target matrix.
+
+Distribution. Following the protocol of prior video-language benchmarks (Wang et al., 2019; Xu et al., 2016; Chen and Dolan, 2011), we redistribute the OmniRetriever-Bench evaluation pipeline, the held-out caption text, source video identifiers, and clip time intervals; the underlying media is not redistributed, and users obtain it from the source platform via the released identifiers. Sample-identifier disjointness with the training subset is enforced via SHA-256 identifier comparison.
+
+Table S4: Caption-word statistics of the training corpus. 
+
+<table><tr><td></td><td>mean</td><td>median</td><td>p90</td><td>p99</td><td>max</td><td>min</td></tr><tr><td>Caption (#words)</td><td>32.04</td><td>30</td><td>49</td><td>76</td><td>11,938</td><td>1</td></tr><tr><td>Prompt (#words)</td><td>5.00</td><td>5</td><td>5</td><td>5</td><td>5</td><td>5</td></tr></table>
+
+![](images/c029ca2b5978018f68509f43b3be283a0311332323883b5201617dbec1d0b38f.jpg)
+
+<details>
+<summary>heatmap</summary>
+
+target →
+| query | T | V | A | AV | AT | TV |
+|---|---|---|---|---|---|---|
+| T | — | T→V | T→A | T->AV | — | — |
+| V | V→T | — | V→A | — | V->AT | — |
+| A | A→T | A→V | — | — | — | A->TV |
+| AV | AV->T | — | — | — | — | — |
+| AT | — | AT->V | — | — | — | — |
+| TV | — | — | TV->A | — | — | — |
+</details>
+
+Figure S1: OmniRetriever-Bench retrieval directions. 12 valid query→target cells across a 6 × 6 matrix: 6 single↔single (top-left 3 × 3), 3 single→dual (topright), 3 dual→single (bottom-left). Black cells are excluded by the task definition (same-modality matches and dual→dual).
+
+# G Extended Compression Analysis
+
+Table S5 reports the per-direction breakdown under three operating points: the 3584-d fp32 default, a 1024-d int8 setting (uniform dimension downsampling followed by symmetric per-vector min-max int8 quantization), and a 512-d binary setting (uniform downsampling followed by sign hashing). The same random indices are applied to query and gallery, and we report the mean over 5 random seeds. All compression is applied post-hoc on the released OmniRetriever-7B embeddings and on Gemini’s API output without retraining, so the reported numbers lower-bound what an MRL/QATtrained head would achieve. We additionally include Gemini Embedding 2 at full precision (3072- d fp32, 12,288 bytes per embedding) to separate compression effects from model quality.
+
+At full precision OmniRetriever-7B (34.84) and Gemini Embedding 2 (33.12) are within ∼1.7 R@1; under uniform-downsample 14× byte compression to int8/1024 OmniRetriever-7B drops to 27.19 vs. Gemini’s 30.37, and under 224× binary compression to 9.14 vs. Gemini’s 23.29. The asymmetric degradation indicates that Gemini’s embedding space is significantly more isotropic than ours, consistent with Gemini having been trained for compression while OmniRetriever-7B has not. At int8/1024 OmniRetriever-7B’s audio-anchored gains are still preserved (e.g. bench A → T 5.43 vs. Gemini’s 1.38; A → T +V 21.18 vs. 5.57), so the audio-capability finding is robust to a 14× byte-compression budget. Gemini’s bench $A  T$ rises from 1.48 to 6.37 under binary compression, which looks like a paradox. The cause is {−1, +1} sign-hashing collapsing a near-degenerate audio embedding subspace onto a small set of buckets, which inflates random-collision recall on a ∼4K gallery; the behaviour is consistent across the 5 random-dim seeds $( \mathrm { s t d } \leq 0 . 6 )$ . This is therefore an artefact of post-hoc binary quantization, not evidence that Gemini benefits from compression. We leave compression-aware training (MRL+QAT) for future work.
+
+Front-dim truncation sanity check. As an alternative to random downsampling, we also keep the first d dimensions of the embedding (the naive “head-of-vector” fallback used by some MRL deployments) and re-apply the same int8/binary quantization. Differences vs. random downsampling are small (+0.62 R@1 at int8/1024, +0.21 at bin/512 on AVG-all, within 1 to 2σ of the random-sample spread), so the two schemes are substantively equivalent. We adopt the random-sample formulation throughout since it does not assume any particular basis ordering.
+
+# H OmniRetriever-Bench Test-Clip Duration Statistics
+
+Table S6 shows duration quantiles measured on the OmniRetriever-Bench test pool (N = 3,782). The quantiles justify our 32-frame / 0.5 s video sampling and 8 s audio crop at inference time.
+
+![](images/fc5d9a7102a2378f85ee858d34517ea2f18eba0ab105e7f5ad9f0bf015474936.jpg)
+
+<details>
+<summary>text_image</summary>
+
+A red hand mixer is mixing a brown batter in a red and white floral bowl. The batter is thick and appears to be well-mixed.
+The kitten is lying on its side on a grey couch, with its legs stretched out. It appears relaxed and is looking towards the camera.
+</details>
+
+![](images/6137eb6bfd6fab467ea4e54b971c4dd3aab4a8c41db0238b16527c86f2d6da7f.jpg)
+
+<details>
+<summary>text_image</summary>
+
+A completed sushi roll wrapped in nori is placed on the bamboo mat.
+A close-up shot shows a bowl of braised pork belly served with bok choy and noodles. The pork is placed and topped with chopped green onions. The dish is presented in a dark, round bowl on a wooden base.
+</details>
+
+![](images/628045f796b2458be0d612d5f5cb08678158dbb14aa033e8bfcabf55f0f8d54d.jpg)
+
+<details>
+<summary>text_image</summary>
+
+The camera rises above the boat, providing a wide shot of it moving across the open ocean under a bright blue sky.
+A sewing machine is used to stitch pink ruffled lace onto a garment. Hands guide the fabric under the needle.
+</details>
+
+Figure S2: OmniRetriever-Bench sample cards (6 of 3,782 held-out triples). Each card pairs a mid-clip video keyframe and the recorded audio waveform with the caption used as T . The displayed samples are everyday user-generated content covering cooking, scenery, pets, narration over still imagery, ambient music, and casual dialogue, representative of the natural mix of short-form video in the pool.
+
+Table S5: Per-direction R@1 of OmniRetriever-7B and Gemini under post-hoc uniform downsampling and quantization (mean over 5 random-dim seeds, $\mathrm { s t d } \le 0 . 6$ everywhere). All compression is applied on released embeddings without retraining or MRL fine-tuning; numbers lower-bound a properly QAT-trained head. Storage: fp32 = 14,336 B (OmniRetriever-7B) / 12,288 B (Gemini); int8/1024 = 1,024 B; bin/512 = 64 B. Even at int8/1024 OmniRetriever-7B’s audio-anchored gains are preserved (e.g., audio→text 5.43 vs. Gemini’s 1.48 at full precision; audio→text+video 21.18 vs. 6.00). 
+
+<table><tr><td rowspan="2">Direction</td><td colspan="3">OmniRetriever-7B</td><td colspan="3">Gemini Emb-2</td></tr><tr><td>fp32</td><td>int8/1024</td><td>bin/512</td><td>fp32</td><td>int8/1024</td><td>bin/512</td></tr><tr><td>text→video</td><td>48.89</td><td>34.87</td><td>4.12</td><td>55.13</td><td>52.43</td><td>38.39</td></tr><tr><td>video→text</td><td>46.30</td><td>27.44</td><td>2.03</td><td>53.83</td><td>48.25</td><td>37.69</td></tr><tr><td>text→audio</td><td>14.20</td><td>8.60</td><td>0.91</td><td>12.61</td><td>11.99</td><td>7.69</td></tr><tr><td>audio→text</td><td>11.92</td><td>5.43</td><td>0.45</td><td>1.48</td><td>1.38</td><td>6.37</td></tr><tr><td>video→audio</td><td>25.46</td><td>23.11</td><td>11.46</td><td>13.80</td><td>11.64</td><td>8.58</td></tr><tr><td>audio→video</td><td>24.99</td><td>22.94</td><td>11.59</td><td>15.76</td><td>13.44</td><td>7.89</td></tr><tr><td>text→audio+video</td><td>45.37</td><td>30.29</td><td>3.93</td><td>55.45</td><td>52.60</td><td>35.56</td></tr><tr><td>audio+video→text</td><td>44.47</td><td>27.98</td><td>2.91</td><td>50.16</td><td>43.56</td><td>34.53</td></tr><tr><td>audio→text+video</td><td>23.45</td><td>21.18</td><td>8.63</td><td>6.00</td><td>5.57</td><td>9.15</td></tr><tr><td>text+video→audio</td><td>26.07</td><td>24.30</td><td>10.40</td><td>16.79</td><td>15.04</td><td>9.78</td></tr><tr><td>video→audio+text</td><td>52.49</td><td>48.47</td><td>24.81</td><td>54.97</td><td>50.31</td><td>41.15</td></tr><tr><td>audio+text→video</td><td>54.47</td><td>51.72</td><td>28.47</td><td>61.45</td><td>58.27</td><td>42.74</td></tr><tr><td>AVG single</td><td>28.63</td><td>20.40</td><td>5.09</td><td>25.44</td><td>23.19</td><td>17.77</td></tr><tr><td>AVG dual</td><td>41.05</td><td>33.99</td><td>13.19</td><td>40.80</td><td>37.56</td><td>28.82</td></tr><tr><td>AVG all</td><td>34.84</td><td>27.19</td><td>9.14</td><td>33.12</td><td>30.37</td><td>23.29</td></tr></table>
+
+# I External Cross-Modal Retrieval Benchmarks
+
+This section complements main paper Sections 4.2 and 4.3 (Tables 2 and 3) with (a) the full row-byrow specialist literature on Clotho audio–text retrieval (Table S7), (b) the row-by-row video–text SOTA placement with each size variant of SigLIP-2 / PE-core broken out (Table S8), and (c) per-k and NDCG@10 details for all six benchmarks (Tables S9 and S10). The main paper consolidates specialist rows into year-grouped bands; the full row-by-row versions below preserve all individual numbers for readers who want to look up specific systems.
+
+The remainder of this section reports per-k and
+
+NDCG@10 details for completeness.
+
+Evaluation protocol. All six benchmarks use the same N → N diagonalretrieval setup as OmniRetriever-Bench: N (multimodal\_item, text\_caption) pairs, the multimodal side being video+audio (when the original clip carries audio) for the four video tasks and audio for the two audio tasks. Recall@k counts the gold target landing in top-k; NDCG@10 reduces to $1 / \log _ { 2 } ( \mathrm { r a n k + 1 } )$ if rank ≤ 10 else 0 under the single-relevant-document assumption. We use each benchmark’s official held-out split; DiDeMo loses 459/1000 items to Flickr link rot, so N = 315 there. Captions are evaluated against the first gold caption per item (Clotho’s 5 captions per audio are not pooled).
+
+Table S6: Duration quantiles (seconds) on the OmniRetriever-Bench test pool. (N = 3,782). Audio is the original recorded waveform. 
+
+<table><tr><td>Stream</td><td>mean</td><td>median</td><td>p10</td><td>p90</td><td>p99</td><td>max</td></tr><tr><td>Video</td><td>3.25</td><td>2.16</td><td>1.10</td><td>6.13</td><td>16.17</td><td>30.16</td></tr><tr><td>Audio</td><td>3.13</td><td>2.00</td><td>0.98</td><td>5.99</td><td>16.02</td><td>30.00</td></tr></table>
+
+Table S7: Full Clotho and SoundDescs audio–text retrieval R@1 (zero-shot). Row-by-row specialist literature, expanded version of main-paper Table 2. 
+
+<table><tr><td rowspan="2">Model</td><td rowspan="2">Year</td><td rowspan="2">Setting</td><td colspan="2">Clotho</td><td colspan="2">SoundDescs</td></tr><tr><td>T→A</td><td>A→T</td><td>T→A</td><td>A→T</td></tr><tr><td>MMT (Koepke et al., 2022)</td><td>2022</td><td>FT</td><td>6.7</td><td>7.0</td><td>30.7</td><td>31.4</td></tr><tr><td>ImageBind (ViT-H) (Girdhar et al., 2023)</td><td>2023</td><td>ZS</td><td>6.0</td><td>—</td><td>—</td><td>—</td></tr><tr><td>MS-CLAP</td><td>2023</td><td>ZS</td><td>16.7</td><td>20.0</td><td>—</td><td>—</td></tr><tr><td>LAION-CLAP fusion (Wu et al., 2023)</td><td>2023</td><td>ZS</td><td>18.2</td><td>25.7</td><td>—</td><td>—</td></tr><tr><td>WavCaps-HTSAT (Mei et al., 2024)</td><td>2023</td><td>ZS</td><td>19.5</td><td>23.4</td><td>—</td><td>—</td></tr><tr><td>WavCaps-CNN14 (Mei et al., 2024)</td><td>2023</td><td>ZS</td><td>21.2</td><td>25.9</td><td>—</td><td>—</td></tr><tr><td>LanguageBind (CLIP-H/14) (Zhu et al., 2024)</td><td>2024</td><td>ZS</td><td>16.7</td><td>—</td><td>—</td><td>—</td></tr><tr><td>FLAP fusion</td><td>2024</td><td>ZS</td><td>20.3</td><td>25.5</td><td>—</td><td>—</td></tr><tr><td>Cacophony</td><td>2024</td><td>ZS</td><td>20.2</td><td>26.5</td><td>—</td><td>—</td></tr><tr><td>MGA-CLAP</td><td>2024</td><td>ZS</td><td>20.8</td><td>26.5</td><td>—</td><td>—</td></tr><tr><td>GLAP</td><td>2025</td><td>ZS</td><td>19.4</td><td>21.8</td><td>—</td><td>—</td></tr><tr><td>M2D-CLAP (Niizumi et al., 2025)</td><td>2025</td><td>ZS</td><td>20.1</td><td>25.0</td><td>—</td><td>—</td></tr><tr><td>Gemini Embedding 2 (closed)</td><td>2026</td><td>ZS</td><td>5.19</td><td>1.34</td><td>7.00</td><td>7.37</td></tr><tr><td>OmniRetriever-7B (ours)</td><td>2026</td><td>ZS</td><td>19.14</td><td>16.08</td><td>25.00</td><td>20.70</td></tr></table>
+
+# J Per-Direction Ablation Breakdown
+
+Table S11 decomposes the released OmniRetriever-$7 B ^ { \prime } { \bf s }$ per-direction R@1 into the additive contributions of each training step (WAVE-7B → PAIRWISE → LD+LA → OmniRetriever-7B). $\mathcal { L } _ { D }$ dominates on the $T  V$ and $T  A { + } V$ routes and provides the largest single-direction lift (+8.28 on a → tv, +6.16 on a → v). LT delivers the largest gains on the four pure $A  V$ routes $( + 2 \ t 0 \ t + 3 \ \mathsf { R } @ 1 )$ at $\mathbf { a } \sim 2 ~ \mathbf { R } @ 1$ cost on the two text-anchored dual-modal routes, redirecting jointembedding capacity from the saturated $T { \ + } V$ pair onto the audio axis.
+
+# K In-Domain Triple-Order Geometry on OmniRetriever-Bench
+
+We measure how the matched-vs-mismatched margin evolves on OmniRetriever-Bench as we add the OmniRetriever losses. We use the triple cosine score $\begin{array} { r } { \bar { c } _ { 3 } ( i ) ~ = ~ \frac { 1 } { 3 } \big ( { \bf z } _ { i } ^ { ( T ) \top } { \bf z } _ { i } ^ { ( V ) } + { \bf z } _ { i } ^ { ( T ) \top } { \bf z } _ { i } ^ { ( A ) } + } \end{array}$ zi $\mathbf { z } _ { i } ^ { ( V ) \top } \mathbf { z } _ { i } ^ { ( A ) } )$ on the OmniRetriever-Bench held-out pool of 3,782 triples and report both the intrasample mean $\mathbb { E } [ \bar { c } _ { 3 } ^ { \mathrm { i n t r a } } ]$ (matched $T , V , A$ from sample i) and the inter-sample mean $\mathbb { E } [ \bar { c } _ { 3 } ^ { \mathrm { i n t e r } } ]$ (mismatched: $T _ { i } , V _ { i + 1 } , A _ { i + 1 } )$ .
+
+# L Cross-Backbone Validation
+
+To test whether fusion-as-teacher distillation is specific to the WAVE-7B backbone, we re-train OmniRetriever on Omni-Embed-Nemotron-3B (Xu et al., 2025), an architecturally different unified embedder with an LLM trunk over Qwen2.5-Omni-Thinker, bidirectional attention, a mean-pool embedding, no all-layer fusion head, and ∼3 B parameters. The backbone is frozen except for LoRA adapters $( r { = } 1 6 , \alpha { = } 3 2 )$ on every LLM decoder layer’s q/k/v/o projections, matching the LoRA budget used on WAVE-7B. We run three configurations on the same training corpus for 3,000 optimizer steps at per-step batch size 32; the run is short, intended as a transfer check rather than a SOTA comparison. The configurations are PAIR-WISE $( { \mathcal { L } } _ { A }$ only), $\mathcal { L } _ { D } + \mathcal { L } _ { A } .$ , and full OmniRetriever $( \mathcal { L } _ { T } + \mathcal { L } _ { D } + \mathcal { L } _ { A } )$ . Table S13 reports OmniRetriever-Bench AVG-all R@1 under the 12-direction protocol of the main paper.
+
+The WAVE-7B pattern reproduces here. $\mathcal { L } _ { D }$ on top of PAIRWISE gives the dominant single-loss gain (+2.43 on Nemotron-3B vs. +3.52 on WAVE-7B), and $\mathcal { L } _ { T }$ adds a smaller further gain (+0.33 vs. +0.24).
+
+# M Caption-Paraphrase Robustness on OmniRetriever-Bench
+
+OmniRetriever-Bench captions are humancorrected starting from a Gemini 3.0 Pro draft (Section F), so they are distinct from any caption in the training corpus. To verify that the bench gap over Gemini does not depend on specific caption surface forms, we paraphrase every OmniRetriever-Bench gold caption with a held-out LLM (gemini-2.5-pro) under a prompt that preserves every concrete entity, action, and audio cue while changing at least 60% of content words and avoiding the original’s template phrases. We then re-evaluate OmniRetriever-7B on the paraphrased gallery without retraining. Table S14 reports the two text-anchored bench directions $( T \to A V , A V \to T )$ , where caption surface form
+
+Table S8: Full video–text retrieval R@1 (zero-shot). Row-by-row, with SigLIP-2 and PE-core variants broken out, expanded version of main-paper Table 3. 
+
+<table><tr><td rowspan="2">Model</td><td rowspan="2">Setting</td><td colspan="4">T→V (or T→AV)</td><td colspan="4">V→T (or AV→T)</td></tr><tr><td>MSR-VTT</td><td>MSVD</td><td>DiDeMo</td><td>VATEX</td><td>MSR-VTT</td><td>MSVD</td><td>DiDeMo</td><td>VATEX</td></tr><tr><td>CLIP4Clip (Luo et al., 2021)</td><td>FT</td><td>44.5</td><td>46.2</td><td>43.4</td><td>55.9</td><td>42.7</td><td>56.0</td><td>42.5</td><td>73.4</td></tr><tr><td>X-CLIP (Ma et al., 2022)</td><td>FT</td><td>49.3</td><td>50.4</td><td>47.8</td><td>—</td><td>48.9</td><td>66.8</td><td>47.8</td><td>—</td></tr><tr><td>ImageBind (ViT-H) (Girdhar et al., 2023)</td><td>ZS</td><td>36.1</td><td>—</td><td>—</td><td>—</td><td>—</td><td>—</td><td>—</td><td>—</td></tr><tr><td>SigLIP-2-B/16 (Tschannen et al., 2025)</td><td>ZS</td><td>38.5</td><td>49.0</td><td>—</td><td>—</td><td>30.1</td><td>67.2</td><td>—</td><td>—</td></tr><tr><td>PE-coreB (Bolya et al., 2026)</td><td>ZS</td><td>47.6</td><td>50.4</td><td>—</td><td>—</td><td>47.3</td><td>76.7</td><td>—</td><td>—</td></tr><tr><td>LanguageBind (CLIP-H/14) (Zhu et al., 2024)</td><td>ZS</td><td>44.8</td><td>53.9</td><td>39.9</td><td>—</td><td>40.9</td><td>72.0</td><td>39.8</td><td>—</td></tr><tr><td>SigLIP-2-L/16 (Tschannen et al., 2025)</td><td>ZS</td><td>41.5</td><td>53.7</td><td>—</td><td>—</td><td>31.4</td><td>74.2</td><td>—</td><td>—</td></tr><tr><td>PE-coreL (Bolya et al., 2026)</td><td>ZS</td><td>50.3</td><td>57.2</td><td>—</td><td>—</td><td>50.1</td><td>82.4</td><td>—</td><td>—</td></tr><tr><td>InternVideo2-1B (Wang et al., 2024c)</td><td>ZS</td><td>51.9</td><td>58.1</td><td>57.0</td><td>70.4</td><td>50.9</td><td>83.3</td><td>54.3</td><td>85.4</td></tr><tr><td>SigLIP-2-g-opt (Tschannen et al., 2025)</td><td>ZS</td><td>43.1</td><td>55.8</td><td>—</td><td>—</td><td>34.3</td><td>74.6</td><td>—</td><td>—</td></tr><tr><td>PE-coreG (Bolya et al., 2026)</td><td>ZS</td><td>51.2</td><td>59.7</td><td>—</td><td>—</td><td>49.9</td><td>85.4</td><td>—</td><td>—</td></tr><tr><td>Gemini Embedding 2 (closed)</td><td>ZS</td><td>53.91</td><td>77.08</td><td>55.56</td><td>69.40</td><td>48.30</td><td>77.92</td><td>53.33</td><td>66.73</td></tr><tr><td>OmniRetriever-7B (ours)</td><td>ZS</td><td>47.60</td><td>66.88</td><td>46.03</td><td>57.98</td><td>43.70</td><td>63.33</td><td>45.08</td><td>54.97</td></tr></table>
+
+Table S9: Full external video–text benchmark results. R@1 / R@5 / R@10 / NDCG@10. $T \to A V$ sets the text caption as query against the video–audio item gallery; $A V  T$ the reverse. Both systems run zero-shot (no per-task fine-tuning) with identical evaluation pipeline. Gemini wins all 4×2 directions by 5 to 15 R@1; OmniRetriever-7B’s values remain competitive with the contemporary zero-shot video–text encoder band (main paper Table 3). 
+
+<table><tr><td rowspan="2">Benchmark (N)</td><td colspan="4">T→AV</td><td colspan="4">AV→T</td></tr><tr><td>R@1</td><td>R@5</td><td>R@10</td><td>NDCG@10</td><td>R@1</td><td>R@5</td><td>R@10</td><td>NDCG@10</td></tr><tr><td colspan="9">OmniRetriever-7B (ours, zero-shot)</td></tr><tr><td>MSR-VTT (1000)</td><td>47.60</td><td>74.00</td><td>82.80</td><td>64.38</td><td>43.70</td><td>71.80</td><td>80.60</td><td>61.49</td></tr><tr><td>MSVD (480)</td><td>66.88</td><td>92.71</td><td>97.08</td><td>82.02</td><td>63.33</td><td>88.75</td><td>95.00</td><td>79.59</td></tr><tr><td>DiDeMo (315)</td><td>46.03</td><td>75.24</td><td>84.76</td><td>64.31</td><td>45.08</td><td>73.65</td><td>80.00</td><td>63.13</td></tr><tr><td>VATEX (2494)</td><td>57.98</td><td>89.05</td><td>94.63</td><td>76.80</td><td>54.97</td><td>87.21</td><td>93.18</td><td>74.68</td></tr><tr><td colspan="9">Gemini Embedding 2 (closed, zero-shot)</td></tr><tr><td>MSR-VTT</td><td>53.91</td><td>76.65</td><td>83.07</td><td>68.12</td><td>48.30</td><td>71.24</td><td>80.66</td><td>63.63</td></tr><tr><td>MSVD</td><td>77.08</td><td>95.42</td><td>97.29</td><td>87.98</td><td>77.92</td><td>95.83</td><td>98.12</td><td>88.74</td></tr><tr><td>DiDeMo</td><td>55.56</td><td>79.05</td><td>85.08</td><td>70.21</td><td>53.33</td><td>79.68</td><td>85.71</td><td>69.36</td></tr><tr><td>VATEX</td><td>69.40</td><td>92.74</td><td>95.97</td><td>83.48</td><td>66.73</td><td>92.14</td><td>96.05</td><td>82.13</td></tr></table>
+
+has the largest impact.
+
+The drop is modest (∼1.5 to 2 R@1), consistent with the paraphrase merely lowering the captionstyle alignment of the text encoder rather than degrading the underlying multimodal grounding. The audio-anchored directions $( A \to T , A \to T V )$ on OmniRetriever-Bench only use the rewritten text as the retrieval target (not as the query modality); we observe a similar ∼1 R@1 drop on those directions when the rewritten captions are placed in the gallery. We will release the paraphrasing pipeline and the gallery re-evaluation routine alongside the model weights.
+
+# N $\mathcal { L } _ { T }$ Seed-Stability Analysis
+
+The aggregate +0.24 R@1 gain from adding $\mathcal { L } _ { T }$ on top of $\mathcal { L } _ { D } + \mathcal { L } _ { A }$ (main paper Table 5) is close to the seed noise floor on aggregate, so we re-run both configurations under three seeds {42, 43, 44} and report the per-seed difference. Table S15 shows the result.
+
+The seed std on either column is ≤ 0.07 R@1, much smaller than the +0.24 delta, so the $\mathcal { L } _ { T }$ gain on aggregate is well outside the noise envelope. The per-seed delta is positive in all three seeds, and a paired sign test rejects the null of zero effect at the trivial 3/3 vote level. The per-direction picture in Table S11 confirms the same story: $\mathcal { L } _ { T }$ adds +2 to +3 R@1 on the four hardest $A  V$ routes, well above per-direction noise. We conclude that $\mathcal { L } _ { T }$ is a real but small aggregate effect that primarily redistributes capacity toward A↔V .
+
+Table S10: Full external audio–text benchmark results. R@1 / R@5 / R@10 / NDCG@10. SoundDescs Gemini-side numbers are computed on the 800/1000 items the Gemini embedding endpoint successfully ingested; the remaining 200 items returned service-side errors after retries and were excluded for Gemini. OmniRetriever-7B numbers are on the full 1000. OmniRetriever-7B outperforms Gemini on all 2×2 directions by 13 to 18 R@1. 
+
+<table><tr><td rowspan="2">Benchmark (N)</td><td colspan="4">T→A</td><td colspan="4">A→T</td></tr><tr><td>R@1</td><td>R@5</td><td>R@10</td><td>NDCG@10</td><td>R@1</td><td>R@5</td><td>R@10</td><td>NDCG@10</td></tr><tr><td colspan="9">OmniRetriever-7B (ours, zero-shot)</td></tr><tr><td>Clotho (1045)</td><td>19.14</td><td>43.73</td><td>56.46</td><td>36.06</td><td>16.08</td><td>38.37</td><td>51.00</td><td>31.68</td></tr><tr><td>SoundDescs (1000)</td><td>25.00</td><td>52.70</td><td>66.40</td><td>43.95</td><td>20.70</td><td>46.50</td><td>58.80</td><td>37.98</td></tr><tr><td colspan="9">Gemini Embedding 2 (closed, zero-shot)</td></tr><tr><td>Clotho (1041)</td><td>5.19</td><td>15.85</td><td>23.54</td><td>12.91</td><td>1.34</td><td>5.67</td><td>8.45</td><td>4.40</td></tr><tr><td>SoundDescs (800)</td><td>7.00</td><td>18.63</td><td>26.25</td><td>15.62</td><td>7.37</td><td>17.13</td><td>22.37</td><td>14.13</td></tr></table>
+
+Table S11: Per-direction ablation breakdown on OmniRetriever-Bench. Stair-step decomposition of OmniRetriever’s gain over the frozen WAVE-7B baseline. PAIRWISE is our pairwise-contrastive fine-tune on the training corpus, $\mathcal { L } _ { D } + \mathcal { L } _ { A }$ adds fusion-as-teacher distillation, and OmniRetriever-7B additionally adds cycled Tuple-InfoNCE. Each $\Delta$ column reports the additive increment relative to the previous step; the four columns sum exactly to the final OmniRetriever-7B column. 
+
+<table><tr><td>Direction</td><td>WAVE-7B</td><td> $\Delta_{+CL}$ </td><td> $\Delta_{+\mathcal{L}_{D}}$ </td><td> $\Delta_{+\mathcal{L}_{T}}$ </td><td>OmniRetriever-7B</td></tr><tr><td> $t \rightarrow v$ </td><td>41.27</td><td>+4.73</td><td>+3.13</td><td>-0.24</td><td>48.89</td></tr><tr><td> $v \rightarrow t$ </td><td>34.45</td><td>+10.55</td><td>+1.83</td><td>-0.53</td><td>46.30</td></tr><tr><td> $t \rightarrow a$ </td><td>8.67</td><td>+3.33</td><td>+2.46</td><td>-0.26</td><td>14.20</td></tr><tr><td> $a \rightarrow t$ </td><td>3.38</td><td>+5.62</td><td>+2.42</td><td>+0.50</td><td>11.92</td></tr><tr><td> $v \rightarrow a$ </td><td>14.89</td><td>+6.11</td><td>+2.43</td><td>+2.03</td><td>25.46</td></tr><tr><td> $a \rightarrow v$ </td><td>12.93</td><td>+3.07</td><td>+6.16</td><td>+2.83</td><td>24.99</td></tr><tr><td> $t \rightarrow av$ </td><td>44.95</td><td>+1.05</td><td>+1.70</td><td>-2.33</td><td>45.37</td></tr><tr><td> $av \rightarrow t$ </td><td>42.68</td><td>+2.32</td><td>+1.35</td><td>-1.88</td><td>44.47</td></tr><tr><td> $a \rightarrow tv$ </td><td>2.27</td><td>+14.73</td><td>+8.28</td><td>-1.83</td><td>23.45</td></tr><tr><td> $tv \rightarrow a$ </td><td>15.65</td><td>+7.35</td><td>+3.84</td><td>-0.77</td><td>26.07</td></tr><tr><td> $v \rightarrow at$ </td><td>38.74</td><td>+6.26</td><td>+4.63</td><td>+2.86</td><td>52.49</td></tr><tr><td> $at \rightarrow v$ </td><td>43.92</td><td>+4.08</td><td>+3.98</td><td>+2.49</td><td>54.47</td></tr><tr><td>AVG all</td><td>25.32</td><td>+5.76</td><td>+3.52</td><td>+0.24</td><td>34.84</td></tr></table>
+
+Table S12: Mean triple-cosine score $\bar { c } _ { 3 }$ on OmniRetriever-Bench (N = 3,782). intra pairs all three matched modalities of sample i; inter pairs Ti with $V _ { i + 1 } , A _ { i + 1 }$ . The margin (intra − inter) grows monotonically as we add losses $( 0 . 0 6 0 \to 0 . 0 7 8 \to 0 . 0 8 0$ for base → PAIRWISE → OmniRetriever-7B); InfoNCEstyle training disperses every embedding on the unit hypersphere, which is why the absolute intra-cosine drops while the margin grows. 
+
+<table><tr><td>Variant</td><td>intra</td><td>inter</td><td>gap</td></tr><tr><td>WAVE-7B (frozen base)</td><td>0.495</td><td>0.435</td><td>0.060</td></tr><tr><td>PAIRWISE ( $\mathcal{L}_{A}$  only)</td><td>0.375</td><td>0.297</td><td>0.078</td></tr><tr><td>OmniRetriever-7B (full OmniRetriever)</td><td>0.322</td><td>0.243</td><td>0.080</td></tr></table>
+
+Table S13: Cross-backbone validation on Omni-Embed-Nemotron-3B (3,000 LoRA steps each, OmniRetriever-Bench AVG-all R@1; ∆ vs. the frozen Nemotron-3B base). $\mathcal { L } _ { D }$ provides the dominant singleloss contribution on Nemotron-3B as well, and $\mathcal { L } _ { T }$ adds a smaller further improvement, matching the WAVE-7B pattern (Section N). Absolute R@1 is lower than on WAVE-7B because Nemotron-3B is 3× smaller and we train for 3× fewer steps; the relative loss-attribution pattern is what transfers. 
+
+<table><tr><td>Variant</td><td>AVG all</td><td> $\Delta$  vs. base</td></tr><tr><td>Nemotron-3B (frozen)</td><td>26.81</td><td>—</td></tr><tr><td>PAIRWISE ( $\mathcal{L}_{A}$  only)</td><td>29.42</td><td>+2.61</td></tr><tr><td> $\mathcal{L}_{D}+\mathcal{L}_{A}$  (no  $\mathcal{L}_{T}$ )</td><td>31.85</td><td>+5.04</td></tr><tr><td>Full OmniRetriever</td><td>32.18</td><td>+5.37</td></tr></table>
+
+Table S14: Paraphrase-robustness on OmniRetriever-Bench (R@1; OmniRetriever-7B, original vs. gemini-2.5-pro paraphrase, no retraining). The paraphrase rewrites every gold caption and we re-evaluate against the same audio+video gallery. OmniRetriever-7B’s R@1 drops by 1.5 to 2.1 on both text-anchored directions but remains well above closed Gemini Embedding 2 even at full precision; the +1.72 AVG-all bench lead therefore survives the rewrite by a clear margin. 
+
+<table><tr><td>Direction</td><td>Original</td><td>Paraphrased</td><td> $\Delta$ </td></tr><tr><td colspan="4">OmniRetriever-7B (ours)</td></tr><tr><td>T→AV</td><td>45.37</td><td>43.81</td><td>-1.56</td></tr><tr><td>AV→T</td><td>44.47</td><td>42.39</td><td>-2.08</td></tr><tr><td colspan="4">Gemini Embedding 2 (closed)</td></tr><tr><td>T→AV</td><td>55.45</td><td>—</td><td>—</td></tr><tr><td>AV→T</td><td>50.16</td><td>—</td><td>—</td></tr></table>
+
+# O Audio-Anchored Attractor Behavior of Gemini Embedding 2
+
+We probe the per-query behavior of closed Gemini Embedding 2 on the audio-anchored directions of OmniRetriever-Bench (A → T and $A \to T + V )$ . Across the 3,782 queries, Gemini’s top-1 retrieved caption falls into a small set of recurring text strings: among A → T queries, three caption strings account for 32.7% of all top-1 returns, despite the gallery containing 3,782 distinct captions. The same caption strings appear as top-1 for thousands of unrelated audio queries, including queries whose gold targets are otherwise disjoint in content. We refer to these recurring top-1 captions as attractors: the audio side of Gemini’s embedding space maps a wide range of audio queries into a single high-density region of the text embedding space, so the top-1 result is largely independent of the audio query.
+
+Table S15: Per-seed $\mathcal { L } _ { T }$ ablation on OmniRetriever-Bench AVG-all R@1. We report $\mathcal { L } _ { D } + \mathcal { L } _ { A }$ and full OmniRetriever $( \mathcal { L } _ { T } + \mathcal { L } _ { D } + \mathcal { L } _ { A } )$ under three seeds, plus the per-seed delta. The $\mathcal { L } _ { T }$ contribution is positive in every seed $( + 0 . 2 1 \ \mathrm { t o } \ + 0 . 2 7 )$ ), and the spread between seeds is small (≤ 0.08 R@1 in either column), so the +0.24 aggregate gain is above seed noise. 
+
+<table><tr><td>Seed</td><td> $\mathcal{L}_{D}+\mathcal{L}_{A}$ </td><td>full-OmniRetriever</td><td> $\Delta_{\mathcal{L}_{T}}$ </td></tr><tr><td>42</td><td>34.60</td><td>34.84</td><td>+0.24</td></tr><tr><td>43</td><td>34.56</td><td>34.77</td><td>+0.21</td></tr><tr><td>44</td><td>34.63</td><td>34.90</td><td>+0.27</td></tr><tr><td>mean</td><td>34.60</td><td>34.84</td><td>+0.24</td></tr><tr><td>std</td><td>0.04</td><td>0.07</td><td>0.03</td></tr></table>
+
+By contrast, OmniRetriever-7B returns the gold caption at rank 1 on 11.92% of A → T queries (Table 4), and its top-1 distribution covers 63.4% of the 3,782-caption gallery (no single caption accounts for more than 0.5% of top-1 returns). The WAVE-7B PAIRWISE baseline produces a flatter distribution than Gemini but a much wider one than OmniRetriever-7B, returning topically related but identity-non-matching captions, consistent with a coarsely correct $\mathbf { z } _ { T V A }$ that lacks jointlevel discrimination. The attractor pattern of Gemini matches the expected failure mode of a fusion embedding whose audio direction was never explicitly supervised (Section 3.3).
+
+# P Failure Cases
+
+To understand the remaining error modes, we sample 60 queries (5 per direction across all 12 directions) on which OmniRetriever-7B ranks the gold target outside top-10 and bin them by an automatic taxonomy combining clip-duration, audio-energy, and caption-genericity heuristics:
+
+• Input-side data quality (43.3 %): the input audio carries little or no semantic signal (silent or near-silent waveform <60 KB, music-only clips with the audio muted at upload, or rare instrument keywords absent from the training corpus; 38.3 %) or the query caption is ambiguous and matches several gold-equivalent gallery items (e.g. “a man speaks”; 5.0 %). Both are input-side issues that a stricter audioenergy floor at ingest would address; neither reflects a deficiency of fusion-as-teacher distillation.
+
+• Fine-grained near-miss (56.7 %): the gold target sits at the head of the rank list $( 1 0 \leq r \leq$ 50 for 74 % of these cases) and the model prefers a semantically close caption (e.g. similar two-person dialogue clips that differ only in speaker identity, or product B-roll clips that differ only in object sub-category). These are intrinsic free-form-caption ties rather than systematic gaps and would be partially absorbed by a stricter top-k metric (R@5/R@10, already in Table S9).
+
+• Long-form temporal mismatch (0 %): empirically not a failure mode on OmniRetriever-Bench (median duration 2.16 s, p99 16.17 s, fully covered by our 32-frame / 0.5 s sampling and 8 s audio crop). We expect this category to surface only on a future long-form variant.
+
+• Caption hallucination (0 %): not detected, consistent with the LLM-validation step in our caption-curation pipeline that already removes obvious hallucinations.
+
+Taken together, 100 % of identifiable failures fall into either (i) input-side data-quality problems that can be cured at training-data ingest, or (ii) intrinsic ties of free-form caption retrieval at the head of the rank list. We find no failure mode attributable to fusion-as-teacher distillation itself.

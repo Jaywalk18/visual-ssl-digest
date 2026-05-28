@@ -1,0 +1,466 @@
+[
+    {
+        "type": "text",
+        "text": "Towards Controllable Image Generation through Representation-Conditioned Diffusion Models ",
+        "text_level": 1,
+        "bbox": [
+            99,
+            64,
+            899,
+            130
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "Nithesh Chandher Karthikeyan∗, Jonas Unger∗, and Gabriel Eilertsen∗ ",
+        "bbox": [
+            250,
+            148,
+            742,
+            162
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "∗Linkoping University, Norrk ¨ oping, Sweden ¨ ",
+        "bbox": [
+            344,
+            162,
+            652,
+            177
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "Email: {nithesh.chandher.karthikeyan, jonas.unger, gabriel.eilertsen}@liu.se ",
+        "bbox": [
+            236,
+            177,
+            759,
+            192
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "Abstract—Diffusion models have emerged as powerful tools for high-quality image generation and editing, but guiding these models to produce specific outputs remains a challenge. Conventional approaches rely on conditioning mechanisms, such as text prompts or semantic maps, which require extensively annotated datasets. In this preliminary work, we explore diffusion models conditioned on representations from a pre-trained self-supervised model. The selfconditioning mechanism not only improves the quality of unconditional image generation, but also provides a representation space that can be used to control the generation. We explore this conditioning space by identifying directions of variations, and demonstrate promising properties in terms of smoothness and disentanglement. ",
+        "bbox": [
+            87,
+            234,
+            487,
+            401
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "I. INTRODUCTION ",
+        "text_level": 1,
+        "bbox": [
+            218,
+            410,
+            356,
+            423
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "Diffusion models have transformed the field of generative modeling, offering a powerful alternative to previous models, such as Generative Adversarial Networks (GANs) [1], for high-quality image synthesis and editing. However, GANs provide a well-structured and disentangled latent space, facilitating precise modifications of finegrained image details while preserving unrelated attributes [2], [3], [4]. In contrast, formulating a comparable latent space in diffusion models remains a challenging research problem. Over the years, various approaches have been explored to address this challenge, including inversion into the text-conditioning space [5], manipulation of activations of the denoising model [6], [7], and joint learning of a semantically meaningful latent space [8]. ",
+        "bbox": [
+            87,
+            428,
+            485,
+            626
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "Recently, representation-conditioning has been demonstrated for the purpose of improving the quality of unconditional generation, by providing guidance through selfsupervision from extracted image representations [9]. We see this as a promising direction not only for improving unconditional generation but also for providing a latent space that can be used for controllable generation. However, to our knowledge, representation-conditioned diffusion models have not previously been thoroughly tested for this purpose. Thus, in this paper we present initial experiments on controlling diffusion models through a pre-trained image representation space. ",
+        "bbox": [
+            87,
+            627,
+            485,
+            797
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "II. RELATED WORK ",
+        "text_level": 1,
+        "bbox": [
+            213,
+            804,
+            363,
+            819
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "Text Conditioning: Conventional methods for conditioning diffusion models involve using text prompts, bounding boxes, or semantic maps as input [10]. Textual Inversion [11] maps a semantic or concept from a few images to a unique word token, whereas DreamBooth [12] achieves a similar goal by fine-tuning the Imagen model with a few reference images. Custom Diffusion [13] learns multiple concepts by fine-tuning the cross-attention blocks in the diffusion model. However, these methods are highly dependent on effective prompt engineering, which can be limiting when achieving precise control over intricate details and may struggle to adapt to unstructured datasets. ",
+        "bbox": [
+            87,
+            822,
+            485,
+            909
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "image",
+        "img_path": "images/2ba832905284a571a2b1238df345ad436d4475fecefd7443be132a4dfb14eabf.jpg",
+        "image_caption": [
+            "Fig. 1. The Representation Conditioned Diffusion Model consists of two parts: (a) a pre-trained self-supervised encoder (DINO in our case) maps the image distribution to a representation distribution, and (b) a denoising U-Net maps a noise distribution to the image distribution, conditioned on the representation distribution from (a). "
+        ],
+        "image_footnote": [],
+        "content": "```mermaid\ngraph TD\n    A[\"Image Distribution\"] --> B[\"Pre-Trained DINO\"]\n    B --> C[\"Representation Distribution\"]\n    D[\"Noise Distribution\"] --> E[\"Representation Distribution\"]\n    E --> F[\"Denoising U-Net\"]\n    F --> G[\"D\"]\n    G --> H[\"Image Distribution\"]\n    I[\"Trainable\"] --> J[\"Frozen\"]\n    K[\"Image\"] --> L[\"Frozen\"]\n```",
+        "sub_type": "flowchart",
+        "bbox": [
+            532,
+            236,
+            884,
+            404
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "",
+        "bbox": [
+            505,
+            495,
+            904,
+            582
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "H-Space Manipulations: Kwon et al. [6] identifies a latent space based on activations of the denoising model over various timesteps. This semantic latent space, known as H-space, is utilized to discover interpretable and disentangled directions [7]. In contrast, our goal is to establish a well-structured latent space that enables direct sampling and controlled generation. ",
+        "bbox": [
+            505,
+            582,
+            905,
+            681
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "Representation Conditioning: Early research on Representation Conditioned Diffusion Models (RCDM) investigate how much information from the input image is preserved in the generated output when conditioned on its representation [14]. Representation Conditioned Generation (RCG) [9] uses representations from a selfsupervised model to condition an image generator. However, it introduces an additional layer by training a representation generator for conditioning, enabling fully unsupervised image generation. Diffusion Autoencoders (Diffusion AEs) [8] employ an explicit semantic encoder that learns some representation from the training images, alongside a conditional DDIM that acts both as a stochastic encoder and decoder. However, unlike RCG, Diffusion AEs do not provide the same quality improvement in unconditional generation. ",
+        "bbox": [
+            505,
+            681,
+            907,
+            910
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "aside_text",
+        "text": "arXiv:2605.27343v1 [cs.CV] 26 May 2026 ",
+        "bbox": [
+            21,
+            284,
+            60,
+            709
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "table",
+        "img_path": "images/463cc8b210230ca69288aabf0f2e594317efeee052250c2050f67ce94cd7c278.jpg",
+        "table_caption": [],
+        "table_footnote": [],
+        "table_body": "<table><tr><td rowspan=\"2\">Methods</td><td rowspan=\"2\">Reference Prompt A/Image A</td><td colspan=\"10\">α</td><td>Reference Prompt B/Image B</td></tr><tr><td>0.0</td><td>0.1</td><td>0.2</td><td>0.3</td><td>0.4</td><td>0.5</td><td>0.6</td><td>0.7</td><td>0.8</td><td>0.9</td><td>1.0</td></tr><tr><td>Stable Diffusion</td><td>&quot;A dog wearing a hat&quot;</td><td><img src=\"images/1a9358d6fa3dfa87483db9e434fd525ed4855fb01c82067b97aeb8fb35b0b786.jpg\"/></td><td></td><td><img src=\"images/9f567516e2b6f61e30468c55989b8a05cf46b717297e7e7d1db1249a8f50fcc3.jpg\"/></td><td></td><td><img src=\"images/2a24b4201fe78be9a719d3c2380df579e04cea3c5abd673c43d2f3c70f1a46d0.jpg\"/></td><td></td><td><img src=\"images/2be73551ddc1cfc3ea9f9f73730ee09180f53a090e44e28f44e01af7ed03c65a.jpg\"/></td><td></td><td><img src=\"images/fca5cf4481e17f11e1d74b7f00d735dac451038968dc54cc3e048028286403bf.jpg\"/></td><td></td><td><img src=\"images/8bfc4953ee9f6fbce2ed469088caad1191f4029ac6c775fb3fa93882c8ce36d6.jpg\"/></td></tr><tr><td>Diffusion Inversion</td><td><img src=\"images/4ed44b13f9f1d948567e6cbe3d3a520af24bad5329652edebfc6b3744bf777d1.jpg\"/></td><td><img src=\"images/e5e00f7bdf081f4451af48a7e462c070fb1c5f2210f94ce8ae3bbb08b8eba0f6.jpg\"/></td><td></td><td><img src=\"images/f5820909f6b84858ed83409ac17ee7331a57bab338c4c68c850c16487d22490c.jpg\"/></td><td></td><td><img src=\"images/d7b44a57a0ca3f617116ff600aa592f014b2ebbc1facb71cd7a57355c9e27f42.jpg\"/></td><td></td><td><img src=\"images/a5f7b2497ea93ef58a636a4f7220ae498262d3685d5c57a44aa9cb2640cd6d80.jpg\"/></td><td></td><td><img src=\"images/39652978a79dc85b99c6ea83908ffcd850bc807002e33eff32d70275a140d812.jpg\"/></td><td></td><td><img src=\"images/9bc227ae0e295460c4131adcffd344e4d18ad8ce4c0b33067e9979c6c94e70eb.jpg\"/></td></tr><tr><td>RCDM</td><td><img src=\"images/219b88754d0d75676323469f9ae8b89abf210b8000725d5753598ff80dc94739.jpg\"/></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr></table>",
+        "bbox": [
+            132,
+            65,
+            860,
+            196
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "text",
+        "text": "III. METHOD ",
+        "text_level": 1,
+        "bbox": [
+            236,
+            255,
+            339,
+            268
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "text",
+        "text": "Training a Representation Conditioned Diffusion Model (RCDM) can be broken down into two stages: First, images are mapped to a lower-dimensional space using a pre-trained Self-Supervised Learning (SSL) encoder. Then, a diffusion model is trained while conditioning on these representations (see Figure 1). In this work, we adapt the method from [9], which uses the MoCo v3 encoder and the MAGE generator, to generation through the latent diffusion model (LDM) [10] conditioned on DINO representations [15]. That is, denoising in the LDM latent space is guided by the information provided by an image’s DINO representation. While it is possible to train a separate representation generator for fully unconditioned generation, in this work we perform experiments on representations from a separate test dataset. ",
+        "bbox": [
+            89,
+            273,
+            485,
+            487
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "text",
+        "text": "A. Data and Training Setup ",
+        "text_level": 1,
+        "bbox": [
+            89,
+            495,
+            290,
+            510
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "text",
+        "text": "For the experiments, two datasets were used: (a) LSUN Churches [16] and (b) Celeb-A [17]. The pre-trained DINO encoder [15] extracts 768-dimensional representations from these datasets. For image compression in LDM, a pre-trained VAE model with KL-divergence loss [18] was used, and RCDMs were trained for each dataset using a conditional de-noising U-Net. ",
+        "bbox": [
+            89,
+            514,
+            485,
+            613
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "text",
+        "text": "IV. PROPERTIES OF THE REPRESENTATION SPACE",
+        "text_level": 1,
+        "bbox": [
+            107,
+            621,
+            468,
+            636
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "text",
+        "text": "In this section, we perform experiments to validate the effectiveness of using the representation space for controllable image generation. ",
+        "bbox": [
+            89,
+            640,
+            485,
+            683
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "text",
+        "text": "A. Perturbation and Interpolation ",
+        "text_level": 1,
+        "bbox": [
+            89,
+            692,
+            329,
+            706
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "text",
+        "text": "Given a representation vector C, we sample a noise vector $\\epsilon \\sim \\mathcal { N } ( 0 , 1 )$ and perturb the representation vector according to $\\hat { \\mathcal { C } } = \\mathcal { C } + \\lambda \\epsilon .$ , where λ controls the perturbation strength. Figure 3 shows the generated images at different perturbation strengths for two methods: Diffusion Inversion [5], trained on the STL-10 dataset [19] and RCDM, trained on LSUN-Churches [16]. At higher noise levels $( \\lambda > 0 . 4 )$ , Diffusion Inversion exhibits significant quality degradation, while RCDM modifies image content while maintaining image quality and consistency. ",
+        "bbox": [
+            89,
+            709,
+            485,
+            851
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "text",
+        "text": "We can also perform interpolations in the representation space. Given two representation vectors $\\mathcal { C } _ { 1 }$ and $\\mathcal { C } _ { 2 } .$ , a new vector can be obtained by $\\hat { \\mathcal { C } } = \\alpha \\mathcal { C } _ { 1 } + ( 1 - \\alpha ) \\mathcal { C } _ { 2 }$ . The resulting image generated from $\\hat { \\mathcal { C } }$ will exhibit features of ",
+        "bbox": [
+            89,
+            852,
+            485,
+            909
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "table",
+        "img_path": "images/32dd66a267b4bc7002cfffa36a5023c56efc19fda83c8c3f1efbe1649c318567.jpg",
+        "table_caption": [
+            "Fig. 3. Images generated by perturbing the embedding vector $\\hat { \\mathcal { C } }$ (from the reference image) using Gaussian noise with varying strength λ. "
+        ],
+        "table_footnote": [],
+        "table_body": "<table><tr><td rowspan=\"2\">Methods</td><td rowspan=\"2\">Reference Image</td><td colspan=\"5\">λ</td></tr><tr><td>0.0</td><td>0.1</td><td>0.2</td><td>0.4</td><td>0.6</td></tr><tr><td rowspan=\"2\">Diffusion Inversion</td><td><img src=\"images/af84d821a975c524d51762153ba12cc94b82ddb938b46f0e24f9365e8175913c.jpg\"/></td><td><img src=\"images/d4a6459ec2fa518ec32ca56b183805c2f55f5a7bfaa940484596744bd1730751.jpg\"/></td><td></td><td><img src=\"images/9218424e77102f9a38fa3dc84a00447d80c3d615790382219a1239762b93acd9.jpg\"/></td><td></td><td><img src=\"images/1185221e2f5d460b6c5952ba81ae170b904526a31114dc0316fa4d97a7fe025d.jpg\"/></td></tr><tr><td><img src=\"images/5a9b488fc4d9d4e0ae39a5b6b6a2ef045a0ee2c924869d2a033f23bd08eb596f.jpg\"/></td><td><img src=\"images/d4d0ee55f1b9f0848893d386b98c10d9b18e95a4a329b9ddd61806235accb5b4.jpg\"/></td><td></td><td><img src=\"images/48a6f846938b1973f6b4cd645e3dca475bd1f1c46b4b1ede10ec810dd44c962b.jpg\"/></td><td></td><td><img src=\"images/0f0cfb6828535e50df07b0bb3550ca8c4fd91a68b0ae0b27a96d27cec5b4ec16.jpg\"/></td></tr><tr><td rowspan=\"2\">RCDM</td><td><img src=\"images/df55fdbf1b1b2bfc16143c4d1be9c0216124c8754d18d1d03e2473d2fab99fcf.jpg\"/></td><td><img src=\"images/c8f3088f0b0d22f37ecb49ad406a480512e99df7ea63e5bfd9391cd23325ca73.jpg\"/></td><td></td><td><img src=\"images/7b81aa7c48c1e2d2a145ac2c8b278855c8310ac7fe36a64165bbf7763b67566a.jpg\"/></td><td></td><td><img src=\"images/492a1735d52fbdfb905a7688df81a63a27159aeff7b64f51fdb2db8fb7ddcf58.jpg\"/></td></tr><tr><td><img src=\"images/b280b2c7b31a49b06f1cf26746b89e120554f3117b4b7e97aeb1bf5dd0cf777c.jpg\"/></td><td><img src=\"images/e79d46070de7823c0c39e04860c158658bdcf6c5ddcf9ef1f9b9386090ba349e.jpg\"/></td><td></td><td><img src=\"images/4532231edc027873f152adb161db6f91feff2bb433e91cc36dbc5a24ec218e8a.jpg\"/></td><td></td><td><img src=\"images/f7bcd1522a8686292d79b3d6331d88c88a857ea65c08e8ac6e125346f8305b15.jpg\"/></td></tr></table>",
+        "bbox": [
+            521,
+            258,
+            907,
+            423
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "text",
+        "text": "both input images, with the influence of each determined by the interpolation factor α. Figure 2 shows the images generated at different interpolation strengths for three methods. In Stable Diffusion [10], two text embeddings are extracted from separate text prompts using CLIP, and the generated images represent interpolations between these embeddings. For Diffusion Inversion and RCDM, images are produced by interpolating between two learned embeddings or representations (in the case of RCDM). The results indicate that RCDM provides a semantically smoother transition between reference images. In Diffusion Inversion the images become indistinguishable in the middle, while for Stable Diffusion a sudden transition between images is observed for α values 0.5-0.6. ",
+        "bbox": [
+            507,
+            485,
+            905,
+            684
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "text",
+        "text": "B. Semantic Directions ",
+        "text_level": 1,
+        "bbox": [
+            509,
+            693,
+            675,
+            706
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "text",
+        "text": "a) Supervised Semantic Directions: In a supervised setting with access to image annotations, identifying semantic directions in the representation space of RCDM becomes more direct. Figure 4 (a) illustrates examples of discovering meaningful directions in the representation space of RCDM trained on the Celeb-A dataset. To add an attribute like blonde hair (as shown in the figure 4 (a)) to a reference image, the mean representation of all faces with blonde hair is computed and added to the reference image, enabling the desired feature modification. However, correlations present in the dataset can influence image generation. For example, adding the bald attribute may also unintentionally alter the gender to male, as the dataset contain a higher proportion of bald male images. ",
+        "bbox": [
+            507,
+            709,
+            905,
+            910
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "chart",
+        "img_path": "images/5417fbe61bc613ce68bf38d8a075897a225c625f45e7883ecc86737e93ea9f9c.jpg",
+        "content": "Adding Mean of Attribute Cluster\n| Reference Image | Blonde Hair | Glasses | Wearing Hat | Bald | Moustache |\n| :--- | :--- | :--- | :--- | :--- | :--- |\n| 1 | 0.85 | 0.85 | 0.85 | 0.85 | 0.85 |\n| 2 | 0.85 | 0.85 | 0.85 | 0.85 | 0.85 |\n| 3 | 0.85 | 0.85 | 0.85 | 0.85 | 0.85 |\n| 4 | 0.85 | 0.85 | 0.85 | 0.85 | 0.85 |\n| 5 | 0.85 | 0.85 | 0.85 | 0.85 | 0.85 |\n| 6 | 0.85 | 0.85 | 0.85 | 0.85 | 0.85 |\n| 7 | 0.85 | 0.85 | 0.85 | 0.85 | 0.85 |\n| 8 | 0.85 | 0.85 | 0.85 | 0.85 | 0.85 |\n| 9 | 0.85 | 0.85 | 0.85 | 0.85 | 0.85 |\n| 10 | 0.85 | 0.85 | 0.85 | 0.85 | 0.85 |\na) Supervised Semantic Directions",
+        "chart_caption": [],
+        "chart_footnote": [],
+        "sub_type": "other",
+        "bbox": [
+            139,
+            63,
+            505,
+            219
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "chart",
+        "img_path": "images/cd6596beec8c138a60db55b79e1b0bc3039037491f41ec858a15aff01b03c8bb.jpg",
+        "content": "Kth Principal Component with α = -25\n| Reference Image | 3 | 4 | 6 | 9 |\n| :--- | :--- | :--- | :--- | :--- |\n| 1 | 0 | 0 | 0 | 0 |\n| 2 | 0 | 0 | 0 | 0 |\n| 3 | 0 | 0 | 0 | 0 |\n| 4 | 0 | 0 | 0 | 0 |\n| 5 | 0 | 0 | 0 | 0 |\n| 6 | 0 | 0 | 0 | 0 |\n| 7 | 0 | 0 | 0 | 0 |\n| 8 | 0 | 0 | 0 | 0 |\n| 9 | 0 | 0 | 0 | 0 |\nb) Unsupervised Semantic Directions",
+        "chart_caption": [
+            "Fig. 4. Images generated by identifying semantic directions within the representation space of diffusion models. (a) supervised approach using the mean representation of a given attribute, (b) unsupervised approach which uses PCA to discover semantic directions. "
+        ],
+        "chart_footnote": [],
+        "sub_type": "other",
+        "bbox": [
+            509,
+            63,
+            830,
+            219
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "b) Unsupervised Semantic Directions: Identifying interpretable directions in the representation space becomes challenging in an unsupervised setting. Hark ¨ onen ¨ et al. [4] addressed this issue by applying Principal Component Analysis (PCA) to manipulate generated images along meaningful attributes. We use a similar approach in the representation-conditioning space, perturbing representations according to $\\hat { \\mathcal { C } } = \\mathcal { C } + \\alpha V _ { K }$ , where $V _ { K }$ is the K:th principal component and α is a scaling factor controlling the strength of the modification. Figure 4 (b) presents the results for RCDM trained on Celeb-A with different components K and a fixed α value of −25. While these initial results do not show the same amount of disentanglement and interpretability as compared to GANs [4], there are variations that suggest it could be possible to utilize unsupervised discovery of directions in the representation space. For example, we can see variations in terms of the size of forehead (K=3), short hair (K=4), background color (K=6), and long hair (K=9). ",
+        "bbox": [
+            87,
+            271,
+            485,
+            542
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "V. CONCLUSION ",
+        "text_level": 1,
+        "bbox": [
+            226,
+            548,
+            351,
+            561
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "In this work, we have demonstrated that representationconditioned diffusion models exhibit promising properties in the conditioning space, including smoothness and a certain degree of disentanglement. These characteristics suggest that representation conditioning is a compelling approach for improving both the quality and controllability of diffusion models. For future work, representations could be adapted to improve disentanglement, and the results could be used in applications such as controlled generation in unconditional diffusion models for image editing and training data augmentation. ",
+        "bbox": [
+            87,
+            565,
+            487,
+            722
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "REFERENCES ",
+        "text_level": 1,
+        "bbox": [
+            238,
+            728,
+            337,
+            741
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "list",
+        "sub_type": "ref_text",
+        "list_items": [
+            "[1] I. Goodfellow, J. Pouget-Abadie, M. Mirza, B. Xu, D. Warde-Farley, S. Ozair, A. Courville, and Y. Bengio, “Generative adversarial networks,” Communications of the ACM, vol. 63, no. 11, pp. 139–144, 2020. ",
+            "[2] Y. Shen, J. Gu, X. Tang, and B. Zhou, “Interpreting the latent space of gans for semantic face editing,” in Proceedings of the IEEE/CVF conference on computer vision and pattern recognition, 2020, pp. 9243–9252. ",
+            "[3] R. Abdal, Y. Qin, and P. Wonka, “Image2stylegan: How to embed images into the stylegan latent space?” in Proceedings of the IEEE/CVF international conference on computer vision, 2019, pp. 4432–4441. ",
+            "[4] E. Hark¨ onen, A. Hertzmann, J. Lehtinen, and S. Paris, “Ganspace:¨ Discovering interpretable gan controls,” Advances in neural information processing systems, vol. 33, pp. 9841–9850, 2020. "
+        ],
+        "bbox": [
+            97,
+            747,
+            487,
+            909
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "list",
+        "sub_type": "ref_text",
+        "list_items": [
+            "[5] Y. Zhou, H. Sahak, and J. Ba, “Training on thin air: Improve image classification with generated data,” arXiv preprint arXiv:2305.15316, 2023. ",
+            "[6] M. Kwon, J. Jeong, and Y. Uh, “Diffusion models already have a semantic latent space,” arXiv preprint arXiv:2210.10960, 2022. ",
+            "[7] R. Haas, I. Huberman-Spiegelglas, R. Mulayoff, S. Graßhof, S. S. Brandt, and T. Michaeli, “Discovering interpretable directions in the semantic latent space of diffusion models,” in 2024 IEEE 18th International Conference on Automatic Face and Gesture Recognition (FG). IEEE, 2024, pp. 1–9. ",
+            "[8] K. Preechakul, N. Chatthee, S. Wizadwongsa, and S. Suwajanakorn, “Diffusion autoencoders: Toward a meaningful and decodable representation,” in Proceedings of the IEEE/CVF conference on computer vision and pattern recognition, 2022, pp. 10 619–10 629. ",
+            "[9] T. Li, D. Katabi, and K. He, “Return of unconditional generation: A self-supervised representation generation method,” Advances in Neural Information Processing Systems, vol. 37, pp. 125 441– 125 468, 2025. ",
+            "[10] R. Rombach, A. Blattmann, D. Lorenz, P. Esser, and B. Ommer, “High-resolution image synthesis with latent diffusion models,” in Proceedings of the IEEE/CVF conference on computer vision and pattern recognition, 2022, pp. 10 684–10 695. ",
+            "[11] R. Gal, Y. Alaluf, Y. Atzmon, O. Patashnik, A. H. Bermano, G. Chechik, and D. Cohen-Or, “An image is worth one word: Personalizing text-to-image generation using textual inversion,” arXiv preprint arXiv:2208.01618, 2022. ",
+            "[12] N. Ruiz, Y. Li, V. Jampani, Y. Pritch, M. Rubinstein, and K. Aberman, “Dreambooth: Fine tuning text-to-image diffusion models for subject-driven generation,” in Proceedings of the IEEE/CVF conference on computer vision and pattern recognition, 2023, pp. 22 500–22 510. ",
+            "[13] N. Kumari, B. Zhang, R. Zhang, E. Shechtman, and J.-Y. Zhu, “Multi-concept customization of text-to-image diffusion,” in Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition, 2023, pp. 1931–1941. ",
+            "[14] F. Bordes, R. Balestriero, and P. Vincent, “High fidelity visualization of what your self-supervised representation knows about,” arXiv preprint arXiv:2112.09164, 2021. ",
+            "[15] M. Caron, H. Touvron, I. Misra, H. Jegou, J. Mairal, P. Bo- ´ janowski, and A. Joulin, “Emerging properties in self-supervised vision transformers,” in Proceedings of the IEEE/CVF international conference on computer vision, 2021, pp. 9650–9660. ",
+            "[16] F. Yu, A. Seff, Y. Zhang, S. Song, T. Funkhouser, and J. Xiao, “Lsun: Construction of a large-scale image dataset using deep learning with humans in the loop,” arXiv preprint arXiv:1506.03365, 2015. ",
+            "[17] Z. Liu, P. Luo, X. Wang, and X. Tang, “Large-scale celebfaces attributes (celeba) dataset,” Retrieved August, vol. 15, no. 2018, p. 11, 2018. ",
+            "[18] A. Van Den Oord, O. Vinyals et al., “Neural discrete representation learning,” Advances in neural information processing systems, vol. 30, 2017. ",
+            "[19] A. Coates, A. Ng, and H. Lee, “An analysis of single-layer networks in unsupervised feature learning,” in Proceedings of the fourteenth international conference on artificial intelligence and statistics. JMLR Workshop and Conference Proceedings, 2011, pp. 215–223. "
+        ],
+        "bbox": [
+            510,
+            271,
+            910,
+            894
+        ],
+        "page_idx": 2
+    }
+]
