@@ -1161,13 +1161,13 @@ def write_catalog() -> None:
     cards = "\n".join(paper_card(p, 1) for p in PAPERS)
     categories = sorted({p["category"] for p in PAPERS})
     dates = sorted({p["date"] for p in PAPERS}, reverse=True)
-    priority_order = ["P1", "P2", "P3", "扫读", "状态补录"]
+    priority_order = ["P0", "P1", "P2", "P3", "扫读", "状态补录"]
     priorities = [value for value in priority_order if any(p["priority"] == value for p in PAPERS)]
 
     def filter_buttons(values: list[str], group: str, all_label: str) -> str:
-        buttons = [f'<button class="filter-pill is-active" type="button" data-filter-value="all">{e(all_label)}</button>']
+        buttons = [f'<button class="filter-pill is-active" type="button" data-filter-value="all" aria-pressed="true">{e(all_label)}</button>']
         buttons.extend(
-            f'<button class="filter-pill" type="button" data-filter-value="{e(value)}">{e(value)}</button>'
+            f'<button class="filter-pill" type="button" data-filter-value="{e(value)}" aria-pressed="false">{e(value)}</button>'
             for value in values
         )
         return f'<div class="filter-row" data-filter-group="{e(group)}">' + "".join(buttons) + "</div>"
@@ -1188,6 +1188,11 @@ def write_catalog() -> None:
   const pageSize = 6;
   let page = 1;
 
+  const setCardVisible = (card, visible) => {
+    card.hidden = !visible;
+    card.style.display = visible ? '' : 'none';
+  };
+
   const matchCard = (card) => {
     if (state.category !== 'all' && card.dataset.category !== state.category) return false;
     if (state.priority !== 'all' && card.dataset.priority !== state.priority) return false;
@@ -1200,8 +1205,8 @@ def write_catalog() -> None:
     const matched = cards.filter(matchCard);
     const totalPages = Math.max(1, Math.ceil(matched.length / pageSize));
     if (page > totalPages) page = totalPages;
-    cards.forEach((card) => { card.hidden = true; });
-    matched.slice((page - 1) * pageSize, page * pageSize).forEach((card) => { card.hidden = false; });
+    const visible = new Set(matched.slice((page - 1) * pageSize, page * pageSize));
+    cards.forEach((card) => { setCardVisible(card, visible.has(card)); });
     status.textContent = `${matched.length} 篇 · 第 ${page}/${totalPages} 页`;
     pageInfo.textContent = `${page} / ${totalPages}`;
     pager.hidden = matched.length <= pageSize;
@@ -1215,7 +1220,11 @@ def write_catalog() -> None:
     const group = button.closest('[data-filter-group]');
     if (!group) return;
     state[group.dataset.filterGroup] = button.dataset.filterValue;
-    group.querySelectorAll('.filter-pill').forEach((item) => item.classList.toggle('is-active', item === button));
+    group.querySelectorAll('.filter-pill').forEach((item) => {
+      const active = item === button;
+      item.classList.toggle('is-active', active);
+      item.setAttribute('aria-pressed', active ? 'true' : 'false');
+    });
     page = 1;
     render();
   });
