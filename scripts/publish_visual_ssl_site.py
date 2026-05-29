@@ -90,9 +90,20 @@ def parse_arxiv_papers(markdown: str) -> list[tuple[str, str, str]]:
 def download_pdfs(papers: list[tuple[str, str, str]], date: str) -> Path:
     staging = SITE_ROOT / "staging_pdfs" / date
     staging.mkdir(parents=True, exist_ok=True)
-    for arxiv_id, title, priority in papers:
-        if priority not in {"P0", "P1", "P2", "P3", "扫读"}:
-            continue
+    selected = [
+        (arxiv_id, title, priority)
+        for arxiv_id, title, priority in papers
+        if priority in {"P0", "P1", "P2", "P3", "扫读"}
+    ]
+    expected_paths = {
+        staging / f"{arxiv_id} - {safe_name(title)}.pdf"
+        for arxiv_id, title, _ in selected
+    }
+    for existing in staging.glob("*.pdf"):
+        if existing not in expected_paths:
+            existing.unlink(missing_ok=True)
+
+    for arxiv_id, title, priority in selected:
         path = staging / f"{arxiv_id} - {safe_name(title)}.pdf"
         if path.exists() and path.stat().st_size > 100_000:
             print(f"skip existing PDF: {path.name}")
@@ -103,6 +114,38 @@ def download_pdfs(papers: list[tuple[str, str, str]], date: str) -> Path:
         with urllib.request.urlopen(request, timeout=90) as response:
             path.write_bytes(response.read())
     return staging
+
+
+def is_pdf_preview_fallback(root: Path) -> bool:
+    img_dir = root / "images"
+    if not img_dir.exists():
+        return False
+    image_files = [p for p in img_dir.iterdir() if p.is_file()]
+    if len(image_files) != 1 or image_files[0].name != "page_preview.jpg":
+        return False
+    content = "\n".join(
+        path.read_text(encoding="utf-8", errors="ignore")
+        for path in root.glob("*content_list.json")
+    )
+    return "First-page visual preview" in content or "full figure extraction is pending" in content
+
+
+def remove_pdf_preview_fallbacks(papers: list[tuple[str, str, str]]) -> None:
+    mineru_root = (SITE_ROOT / "assets" / "mineru").resolve()
+    removed = 0
+    for arxiv_id, _, priority in papers:
+        if priority not in {"P0", "P1", "P2", "P3", "扫读"}:
+            continue
+        root = SITE_ROOT / "assets" / "mineru" / arxiv_id
+        if not root.exists() or not is_pdf_preview_fallback(root):
+            continue
+        resolved = root.resolve()
+        if mineru_root not in resolved.parents:
+            raise RuntimeError(f"Refusing to remove unexpected path: {resolved}")
+        shutil.rmtree(resolved)
+        removed += 1
+    if removed:
+        print(f"removed {removed} PDF preview fallback(s) before MinerU extraction")
 
 
 def cleanup_mineru_json(papers: list[tuple[str, str, str]]) -> None:
@@ -255,6 +298,7 @@ def main() -> None:
     if not args.no_mineru:
         staging = download_pdfs(papers, date)
         if MINERU_BATCH.exists():
+            remove_pdf_preview_fallbacks(papers)
             run([sys.executable, str(MINERU_BATCH), "--in", str(staging), "--out", str(SITE_ROOT / "assets" / "mineru")])
             cleanup_mineru_json(papers)
         else:
