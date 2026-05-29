@@ -19,39 +19,39 @@
   </header>
   <nav class="site-nav" aria-label="主导航">
     <a class="nav-link" href="../index.html">头版</a>
-<a class="nav-link" href="../issues/2026-05-28.html">今日速递</a>
+<a class="nav-link" href="../issues/2026-05-29.html">今日速递</a>
 <a class="nav-link" href="../pages/catalog.html">论文目录</a>
 <a class="nav-link" href="../pages/timeline.html">时间线</a>
   </nav>
   <main><article class="paper-detail">
   <div class="paper-main">
     <div class="kicker">Visual SSL / representation · P2 · 2026-05-28</div>
-    <h1 class="paper-headline">The Rescue Effect：对通用视觉表征很实用：部署压缩可能改变 embedding 几何，不能只看分类头指标</h1>
-    <p class="dek">说明 CLIP 量化失败不是普通分类器式精度掉点，而是 multimodal embedding cosine direction 被扰动。</p>
-    <p class="byline"><strong>The Rescue Effect: Spatio-Semantic Early Exit Bypasses Quantization Collapse in CLIP</strong>　Kahyeon Nam , Hyesong Choi　arXiv　<a href="https://arxiv.org/abs/2605.26415">原文链接</a></p>
+    <h1 class="paper-headline">The Rescue Effect：它和通用视觉自监督的关系在于：揭示 INT8 CLIP 的 joint embedding 方向会在深层量化噪声中坍塌</h1>
+    <p class="dek">中相关；详见方法、贡献和实验边界。</p>
+    <p class="byline"><strong>The Rescue Effect: Spatio-Semantic Early Exit Bypasses Quantization Collapse in CLIP</strong>　arXiv　<a href="https://arxiv.org/abs/2605.26415">原文链接</a></p>
     <div class="paper-facts">
       <span><b>编号</b>2605.26415</span>
       <span><b>优先级</b>P2</span>
       <span><b>类别</b>Visual SSL / representation</span>
       <span><b>会议</b>arXiv</span>
-      <span><b>方法</b>定义 Quantization-Induced Representation Collapse，并用 Layer-wise Representation-Aware Early Exit、patch-token 平均和多特征 gate 绕过噪声饱和深层。</span>
+      <span><b>方法</b>揭示 INT8 CLIP 的 joint embedding 方向会在深层量化噪声中坍塌</span>
       <span><b>来源</b>arXiv / OpenReview</span>
     </div>
     <div class="feature-body">
-      <p class="lead dropcap">先说结论。对通用视觉表征很实用：部署压缩可能改变 embedding 几何，不能只看分类头指标。 说明 CLIP 量化失败不是普通分类器式精度掉点，而是 multimodal embedding cosine direction 被扰动。</p>
+      <p class="lead dropcap">先说结论。它和通用视觉自监督的关系在于：揭示 INT8 CLIP 的 joint embedding 方向会在深层量化噪声中坍塌。 中相关；详见方法、贡献和实验边界。</p>
       <figure class="full-fig"><img src="../assets/mineru/2605.26415/images/5f909b90b8aef9d5a6a07509778b1f4fd890435b943b0eddef64f00e00c12401.jpg" alt="Figureure 1 · : Layer-wise noise dynamics in INT8 ViT-B/32 CLIP"><figcaption><b>Figureure 1 · : Layer-wise noise dynamics in INT8 ViT-B/32 CLIP</b><span class="fig-en">Figure 1: Layer-wise noise dynamics in INT8 ViT-B/32 CLIP. The noise-to-signal ratio remains low in early layers and rises sharply after Layer 8, reaching 52% at Layer 11. This transition motivates Layer 8 as the earliest reliable exit point, beyond which quantization noise begins to dominate the semantic signal.</span><span class="fig-zh">这张图来自论文 PDF 的结构化抽取。当前用于辅助理解 The Rescue Effect 的方法或实验，请结合正文精读段落一起看。</span></figcaption></figure>
 <figure class="full-fig"><img src="../assets/mineru/2605.26415/images/8c2c92fb85b5789689810e0e89d3c691e28ca31d32d2b0fb0f79c0890d3aba9e.jpg" alt="(b)Exit Distribution (Optimized) Figure 2: (a) FLOPs–accuracy Pareto frontier of LRA-EE ac"><figcaption><b>(b)Exit Distribution (Optimized) Figure 2: (a) FLOPs–accuracy Pareto frontier of LRA-EE ac</b><span class="fig-en">(b)Exit Distribution (Optimized) Figure 2: (a) FLOPs–accuracy Pareto frontier of LRA-EE across configurations. Unlike conventional EE, the frontier ascends in both axes simultaneously. (b) Per-layer exit distribution of the optimized LRA-EE configuration. Layer 8 accommodates 10.1% of samples, with the majority routed through Layers 10–11 and full-depth inference.</span><span class="fig-zh">这张图/表用于判断 The Rescue Effect 的实验收益来自哪里。重点看替换、消融或跨模型设置下趋势是否一致，而不是只看单个最高分。</span></figcaption></figure>
       
       <h2>核心问题</h2>
-      <p>对通用视觉表征很实用：部署压缩可能改变 embedding 几何，不能只看分类头指标。</p>
+      <p>它和通用视觉自监督的关系在于：揭示 INT8 CLIP 的 joint embedding 方向会在深层量化噪声中坍塌。</p>
       <h2>方法拆解</h2>
-      <p>定义 Quantization-Induced Representation Collapse，并用 Layer-wise Representation-Aware Early Exit、patch-token 平均和多特征 gate 绕过噪声饱和深层。</p>
+      <p>揭示 INT8 CLIP 的 joint embedding 方向会在深层量化噪声中坍塌</p>
       <h2>主要贡献</h2>
-      <p>说明 CLIP 量化失败不是普通分类器式精度掉点，而是 multimodal embedding cosine direction 被扰动。</p>
+      <p>中相关；详见方法、贡献和实验边界。</p>
       <h2>实验看点</h2>
-      <p>INT8 CLIP ViT-B/32 上摘要称 ImageNet-1K zero-shot Top-1 从 58.72% 提到 61.16%，同时 FLOPs 降 13.4%。</p>
+      <p>实验部分建议重点看两类证据：一是作者是否把方法收益和更强数据、更长训练、更大模型区分开；二是跨模型、跨数据或跨任务迁移是否还能保留同样趋势。</p>
       <h2>局限与读法</h2>
-      <p>只覆盖 INT8 CLIP ViT-B/32 级别实验；对 SigLIP、大模型、多语言检索和视频 embedding 仍需验证。</p>
+      <p>这篇论文的结论需要结合任务设置、训练数据规模和消融实验一起看；不要只凭单个指标判断它对通用视觉表征的价值。</p>
     
     </div>
   </div>
@@ -61,13 +61,13 @@
     <div class="side-box"><h4>原文</h4><p><a href="https://arxiv.org/abs/2605.26415">https://arxiv.org/abs/2605.26415</a></p></div>
   </aside>
 </article></main>
-  <aside class="conf-float" data-conf-reminder="2026-05-28-main-ddl" aria-label="CCF A/B 主投稿提醒">
+  <aside class="conf-float" data-conf-reminder="2026-05-29-main-ddl" aria-label="CCF A/B 主投稿提醒">
   <button class="conf-close" type="button" aria-label="关闭会议提醒">×</button>
   <details open>
     <summary>CCF A/B 主投稿提醒</summary>
     <div class="conf-list"><a class="conf-item " href="https://github.com/ccfddl/ccf-deadlines/blob/main/conference/AI/aaai.yml">
   <span><b>AAAI 2027</b><em>CCF A · Main paper submission</em></span>
-  <strong>60 天</strong>
+  <strong>59 天</strong>
   <small>2026-07-27 · CCF DDL: abstract 2026-07-20；进入 1 个月窗口后重点提醒。</small>
 </a></div>
   </details>
@@ -80,7 +80,7 @@
   (() => {
     const box = document.querySelector('[data-conf-reminder]');
     if (!box) return;
-    const key = `visualSslConfReminderClosed:${box.dataset.confReminder || '2026-05-28-main-ddl'}`;
+    const key = `visualSslConfReminderClosed:${box.dataset.confReminder || '2026-05-29-main-ddl'}`;
     try {
       if (localStorage.getItem(key) === '1') box.hidden = true;
     } catch (err) {}

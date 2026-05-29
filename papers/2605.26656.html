@@ -19,39 +19,39 @@
   </header>
   <nav class="site-nav" aria-label="主导航">
     <a class="nav-link" href="../index.html">头版</a>
-<a class="nav-link" href="../issues/2026-05-28.html">今日速递</a>
+<a class="nav-link" href="../issues/2026-05-29.html">今日速递</a>
 <a class="nav-link" href="../pages/catalog.html">论文目录</a>
 <a class="nav-link" href="../pages/timeline.html">时间线</a>
   </nav>
   <main><article class="paper-detail">
   <div class="paper-main">
     <div class="kicker">Visual SSL / representation · P0 · 2026-05-28</div>
-    <h1 class="paper-headline">DV-SFT：虽然不是无标签 SSL，但它直指视觉 token 表征学习瓶颈：VLM 的“看见”不应只靠文本答案反向传播</h1>
-    <p class="dek">把 fine-grained visual grounding 从“答案文本监督”推进到“视觉 token 级监督”，给 VLM 后训练提供了一种更直接的视觉信号。</p>
-    <p class="byline"><strong>DV-SFT: Direct Vision Supervision for Fine-Grained Visual Understanding</strong>　Jianfei Zhao , Feng Zhang , Xin Sun , Chong Feng , Bing Wang , Zhixing Tan　arXiv　<a href="https://arxiv.org/abs/2605.26656">原文链接</a></p>
+    <h1 class="paper-headline">DV-SFT：它和通用视觉自监督的关系在于：把监督直接打到 visual tokens 上，解决 MLLM 中视觉 token 只被文本 loss 间接优化的问题</h1>
+    <p class="dek">高相关；详见方法、贡献和实验边界。</p>
+    <p class="byline"><strong>DV-SFT: Direct Vision Supervision for Fine-Grained Visual Understanding</strong>　arXiv　<a href="https://arxiv.org/abs/2605.26656">原文链接</a></p>
     <div class="paper-facts">
       <span><b>编号</b>2605.26656</span>
       <span><b>优先级</b>P0</span>
       <span><b>类别</b>Visual SSL / representation</span>
       <span><b>会议</b>arXiv</span>
-      <span><b>方法</b>利用 OCR 场景中的视觉 patch 与文字对应关系，自动给每个 visual token 标注对应 word，并仍用 next-token prediction 训练，不加 decoder 或额外 forward。</span>
+      <span><b>方法</b>把监督直接打到 visual tokens 上，解决 MLLM 中视觉 token 只被文本 loss 间接优化的问题</span>
       <span><b>来源</b>arXiv / OpenReview</span>
     </div>
     <div class="feature-body">
-      <p class="lead dropcap">先说结论。虽然不是无标签 SSL，但它直指视觉 token 表征学习瓶颈：VLM 的“看见”不应只靠文本答案反向传播。 把 fine-grained visual grounding 从“答案文本监督”推进到“视觉 token 级监督”，给 VLM 后训练提供了一种更直接的视觉信号。</p>
+      <p class="lead dropcap">先说结论。它和通用视觉自监督的关系在于：把监督直接打到 visual tokens 上，解决 MLLM 中视觉 token 只被文本 loss 间接优化的问题。 高相关；详见方法、贡献和实验边界。</p>
       <figure class="full-fig"><img src="../assets/mineru/2605.26656/images/888fb520239524f7addbe6c66503ce41cb88b4dd321ded68b1f32c739def3d7a.jpg" alt="Figureure 1 · : An example of visual logits in Qwen3-VL-2B showing the top-20 tokens"><figcaption><b>Figureure 1 · : An example of visual logits in Qwen3-VL-2B showing the top-20 tokens</b><span class="fig-en">Figure 1: An example of visual logits in Qwen3-VL-2B showing the top-20 tokens at the final image patch of each word. Numbers indicate rank; punctuation and meaningless characters are removed. This observation inspires us to supervise visual tokens using the words in the image patches.</span><span class="fig-zh">这张图来自论文 PDF 的结构化抽取。当前用于辅助理解 DV-SFT 的方法或实验，请结合正文精读段落一起看。</span></figcaption></figure>
 <figure class="full-fig"><img src="../assets/mineru/2605.26656/images/a6eea0a2a687eb07e0e7e6ca45b481f49c965e6412d15078407ea420008b1510.jpg" alt="Figureure 2 · : Diagram of DV-SFT"><figcaption><b>Figureure 2 · : Diagram of DV-SFT</b><span class="fig-en">Figure 2: Diagram of DV-SFT. The training procedure of DV-SFT is identical to that of standard SFT, where all tokens are trained end-to-end on the next-token prediction task. The difference lies in the fact that a significant portion of visual tokens have valid labels.</span><span class="fig-zh">这张图来自论文 PDF 的结构化抽取。当前用于辅助理解 DV-SFT 的方法或实验，请结合正文精读段落一起看。</span></figcaption></figure>
       
       <h2>核心问题</h2>
-      <p>虽然不是无标签 SSL，但它直指视觉 token 表征学习瓶颈：VLM 的“看见”不应只靠文本答案反向传播。</p>
+      <p>它和通用视觉自监督的关系在于：把监督直接打到 visual tokens 上，解决 MLLM 中视觉 token 只被文本 loss 间接优化的问题。</p>
       <h2>方法拆解</h2>
-      <p>利用 OCR 场景中的视觉 patch 与文字对应关系，自动给每个 visual token 标注对应 word，并仍用 next-token prediction 训练，不加 decoder 或额外 forward。</p>
+      <p>把监督直接打到 visual tokens 上，解决 MLLM 中视觉 token 只被文本 loss 间接优化的问题</p>
       <h2>主要贡献</h2>
-      <p>把 fine-grained visual grounding 从“答案文本监督”推进到“视觉 token 级监督”，给 VLM 后训练提供了一种更直接的视觉信号。</p>
+      <p>高相关；详见方法、贡献和实验边界。</p>
       <h2>实验看点</h2>
-      <p>摘要称 DV-SFT 在 3 个域内和 4 个域外 benchmark 上稳定优于标准 SFT，并提升多模态 alignment efficiency。</p>
+      <p>实验部分建议重点看两类证据：一是作者是否把方法收益和更强数据、更长训练、更大模型区分开；二是跨模型、跨数据或跨任务迁移是否还能保留同样趋势。</p>
       <h2>局限与读法</h2>
-      <p>监督构造依赖 OCR/文字可见场景，能否扩展到自然图像细粒度物体、关系和几何 token 仍是关键问题。</p>
+      <p>这篇论文的结论需要结合任务设置、训练数据规模和消融实验一起看；不要只凭单个指标判断它对通用视觉表征的价值。</p>
     
     </div>
   </div>
@@ -61,13 +61,13 @@
     <div class="side-box"><h4>原文</h4><p><a href="https://arxiv.org/abs/2605.26656">https://arxiv.org/abs/2605.26656</a></p></div>
   </aside>
 </article></main>
-  <aside class="conf-float" data-conf-reminder="2026-05-28-main-ddl" aria-label="CCF A/B 主投稿提醒">
+  <aside class="conf-float" data-conf-reminder="2026-05-29-main-ddl" aria-label="CCF A/B 主投稿提醒">
   <button class="conf-close" type="button" aria-label="关闭会议提醒">×</button>
   <details open>
     <summary>CCF A/B 主投稿提醒</summary>
     <div class="conf-list"><a class="conf-item " href="https://github.com/ccfddl/ccf-deadlines/blob/main/conference/AI/aaai.yml">
   <span><b>AAAI 2027</b><em>CCF A · Main paper submission</em></span>
-  <strong>60 天</strong>
+  <strong>59 天</strong>
   <small>2026-07-27 · CCF DDL: abstract 2026-07-20；进入 1 个月窗口后重点提醒。</small>
 </a></div>
   </details>
@@ -80,7 +80,7 @@
   (() => {
     const box = document.querySelector('[data-conf-reminder]');
     if (!box) return;
-    const key = `visualSslConfReminderClosed:${box.dataset.confReminder || '2026-05-28-main-ddl'}`;
+    const key = `visualSslConfReminderClosed:${box.dataset.confReminder || '2026-05-29-main-ddl'}`;
     try {
       if (localStorage.getItem(key) === '1') box.hidden = true;
     } catch (err) {}
