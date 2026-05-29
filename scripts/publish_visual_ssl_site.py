@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import argparse
+import json
 import re
 import shutil
 import subprocess
@@ -114,6 +115,60 @@ def cleanup_mineru_json(papers: list[tuple[str, str, str]]) -> None:
                 path.unlink(missing_ok=True)
 
 
+def ensure_pdf_preview_images(papers: list[tuple[str, str, str]], date: str) -> None:
+    try:
+        import fitz  # type: ignore
+    except Exception as exc:
+        print(f"PDF preview fallback unavailable: {exc}", file=sys.stderr)
+        return
+
+    staging = SITE_ROOT / "staging_pdfs" / date
+    if not staging.exists():
+        return
+
+    created = 0
+    for arxiv_id, title, priority in papers:
+        if priority not in {"P0", "P1", "P2", "P3", "扫读"}:
+            continue
+        root = SITE_ROOT / "assets" / "mineru" / arxiv_id
+        img_dir = root / "images"
+        has_images = img_dir.exists() and any(img_dir.iterdir())
+        has_content = any(root.glob("*content_list.json"))
+        if has_images and has_content:
+            continue
+
+        matches = sorted(staging.glob(f"{arxiv_id} - *.pdf"))
+        if not matches:
+            continue
+
+        img_dir.mkdir(parents=True, exist_ok=True)
+        img_path = img_dir / "page_preview.jpg"
+        content_path = root / f"{arxiv_id}_content_list.json"
+        try:
+            doc = fitz.open(str(matches[0]))
+            page = doc.load_page(0)
+            pix = page.get_pixmap(matrix=fitz.Matrix(1.6, 1.6), alpha=False)
+            pix.save(str(img_path))
+            doc.close()
+        except Exception as exc:
+            print(f"PDF preview failed for {arxiv_id}: {exc}", file=sys.stderr)
+            continue
+
+        content = [
+            {
+                "type": "image",
+                "img_path": "images/page_preview.jpg",
+                "image_caption": [f"First-page visual preview for {title}."],
+                "content": "Generated from the paper PDF as a stable visual preview while full figure extraction is pending.",
+            }
+        ]
+        content_path.write_text(json.dumps(content, ensure_ascii=False, indent=2), encoding="utf-8")
+        created += 1
+
+    if created:
+        print(f"created {created} PDF preview image fallback(s)")
+
+
 def git_commit_and_push(date: str, push: bool) -> None:
     status = subprocess.check_output(["git", "status", "--porcelain"], cwd=str(SITE_ROOT), text=True)
     if not status.strip():
@@ -205,6 +260,7 @@ def main() -> None:
         else:
             print(f"MinerU batch script missing: {MINERU_BATCH}", file=sys.stderr)
 
+    ensure_pdf_preview_images(papers, date)
     run([sys.executable, str(GENERATOR)])
     scripts_dir = SITE_ROOT / "scripts"
     scripts_dir.mkdir(exist_ok=True)
