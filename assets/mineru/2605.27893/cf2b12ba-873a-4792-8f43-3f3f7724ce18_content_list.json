@@ -1,0 +1,1505 @@
+[
+    {
+        "type": "text",
+        "text": "SIGMA: Bridging Structural and Distributional Gaps for Vision Foundation Model Adaptation ",
+        "text_level": 1,
+        "bbox": [
+            228,
+            140,
+            774,
+            186
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "Lingyu Xiong, Jinjin Shi⋆, Xuran Xu, Cong Luo, Runyu Shi, and Ying Huang ",
+        "bbox": [
+            218,
+            212,
+            781,
+            229
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "Xiaomi Corporation ",
+        "bbox": [
+            431,
+            239,
+            570,
+            255
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "Abstract. Vision Foundation Models (VFMs) have demonstrated impressive representational capabilities. However, adapting them to downstream tasks via full fine-tuning incurs prohibitive computational and storage overhead. Parameter-Efficient Fine-Tuning (PEFT) has emerged as a compelling alternative, aiming to achieve performance parity with full fine-tuning at minimal training costs. Nonetheless, applying PEFT to VFMs for dense prediction tasks remains challenging due to the structural and distributional gaps. To bridge these gaps, we propose Scale-Integrated Global Modulation Adapter (SIGMA), a novel lightweight PEFT method, which consists of two modules: scale-adaptive fusion and semantic modulation. Specifically, the scale-adaptive fusion module is utilized to bridge structural gaps by enhancing the extraction of multigranularity visual information. Furthermore, SIGMA introduces semantic modulation on the fusion features to perform global feature alignment to further eliminate the distribution gap. This design facilitates unified spatial and distributional adaptation, requiring only 1.72% trainable parameters relative to the VFM backbone. Comprehensive experiments across various downstream dense tasks and multiple VFM backbones demonstrate that SIGMA achieves consistent and superior performance over state-of-the-art PEFT methods. ",
+        "bbox": [
+            259,
+            295,
+            743,
+            574
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "Keywords: Vision Foundation Models · Parameter-Efficient Fine-Tuning · Scale-Adaptive Fusion · Semantic Modulation ",
+        "bbox": [
+            261,
+            587,
+            746,
+            614
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "1 Introduction ",
+        "text_level": 1,
+        "bbox": [
+            215,
+            643,
+            375,
+            659
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "The rapid evolution of Vision Transformers [9, 12, 13, 30] has fueled the rise of Vision Foundation Models (VFMs) [14, 32, 38, 43], which are trained on massive datasets with diverse pre-training objectives. Self-supervised approaches such as DINOv2 [32] leverage self-distillation on curated data to produce robust, general-purpose visual features. Vision-language contrastive methods, notably by SigLIP2 [43], align visual and textual representations for open-vocabulary understanding. Meanwhile, Segment Anything Model (SAM) [38] establishes a promptable segmentation paradigm trained on billion-scale annotated data. These models encode rich visual knowledge that holds considerable promise for downstream dense prediction tasks, including object detection [19,39,42,54], semantic segmentation [15, 31, 46, 51], and depth estimation [35, 37, 48]. However, directly deploying VFMs with frozen backbones suffers from inferior performance on these tasks [6]. While fully fine-tuning both the backbone and task-spefic head can improve performance, It demands prohibitive computational overhead and substantial training period. Moreover, maintaining a fully fine-tuned VFM for each downstream task is inherently inefficient and impractical in terms of storage and deployment. ",
+        "bbox": [
+            212,
+            676,
+            787,
+            815
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "aside_text",
+        "text": "arXiv:2605.27893v1 [cs.CV] 27 May 2026 ",
+        "bbox": [
+            22,
+            272,
+            60,
+            724
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "page_footnote",
+        "text": "⋆ Corresponding author ",
+        "bbox": [
+            218,
+            825,
+            382,
+            839
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "chart",
+        "img_path": "images/0caeb25b69fc710c08fc614995a8b78d97b7d3fac5eab321183a42d76831259e.jpg",
+        "content": "| Model          | Parameters (M) | COCO mAP (%) |\n| -------------- | -------------- | ------------ |\n| Fixed          | 0              | 50.2         |\n| BitFit         | 0              | 51.1         |\n| AdaptFormer    | 1.2            | 51.4         |\n| LoRA           | 2.4            | 52.6         |\n| Adapter        | 2.8            | 53.0         |\n| VFM-Adapter    | 2.9            | 53.1         |\n| LoRand         | 3.7            | 52.4         |\n| Partial-1      | 7.0            | 52.3         |\n| SIGMA          | 1.5            | 53.8         |",
+        "chart_caption": [
+            "Performance vs.Efficiency on COCO and ADE20K "
+        ],
+        "chart_footnote": [],
+        "sub_type": "scatter",
+        "bbox": [
+            218,
+            169,
+            500,
+            333
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "chart",
+        "img_path": "images/68696396050ac116cf8bba9663fdf17653d0d176c98982e8b12410a4cf207ef6.jpg",
+        "content": "| Model        | Parameters (M) | ADE20K mIoU (%) |\n| ------------ | -------------- | --------------- |\n| BitFit       | 0              | 52.3            |\n| Fixed        | 0              | 51.7            |\n| AdaptFormer  | 1              | 54.7            |\n| VFM-Adapter  | 2.8            | 55.1            |\n| LoRA         | 2.4            | 52.4            |\n| Adapter      | 2.4            | 53.8            |\n| LoRand       | 3.7            | 54.7            |\n| Partial-1    | 7.1            | 53.4            |\n| SIGMA (Ours) | 1.5            | 56.5            |",
+        "chart_caption": [
+            "Fig. 1: Comparison of our method with other tuning methods on representative visual tasks. SIGMA (orange star) significantly outperforms existing PEFT methods, achieving state-of-the-art performance with only 1.48M trainable parameters. "
+        ],
+        "chart_footnote": [],
+        "sub_type": "scatter",
+        "bbox": [
+            501,
+            171,
+            784,
+            333
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "text",
+        "text": "",
+        "bbox": [
+            212,
+            425,
+            787,
+            546
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "text",
+        "text": "Parameter-Efficient Fine-Tuning (PEFT) [17,18,49,52] has become the dominant paradigm for adapting foundation models, requiring only a small fraction of parameters to be updated while achieving performance comparable to full fine-tuning. These representative approaches include Adapter [17], which inserts bottleneck layers into Transformer blocks; LoRA [18], which introduces low-rank matrices into attention layers. While these methods have achieved remarkable success in image classification and natural language processing, adapting VFMs for dense visual prediction remains challenging. We identify two gaps in directly applying existing PEFT methods to VFMs: a structural gap and a distributional gap. These gaps fundamentally limit their performance for dense prediction tasks. ",
+        "bbox": [
+            212,
+            549,
+            787,
+            715
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "text",
+        "text": "The first is a structural gap: most existing PEFT methods originate from the natural language processing community, where adaptation operates on 1D token sequences through linear projections. Adapter and AdaptFormer [4] employ fully-connected bottleneck layers that process each token independently, while LoRA constrains weight updates to low-rank matrices that likewise lack spatial awareness. However, dense prediction tasks demand fine-grained spatial understanding. Without explicit mechanisms to capture 2D spatial locality and multi-scale context, these linear adapters are inherently ill-suited for dense visual tasks. Furthermore, the low-rank constraint in LoRA further limits the model’s representational capacity for dense pixel-level predictions [6]. ",
+        "bbox": [
+            212,
+            719,
+            787,
+            840
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "page_number",
+        "text": "2 ",
+        "bbox": [
+            217,
+            114,
+            228,
+            126
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "header",
+        "text": "Xiong. et al. ",
+        "bbox": [
+            271,
+            114,
+            354,
+            128
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "text",
+        "text": "",
+        "bbox": [
+            214,
+            146,
+            782,
+            176
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "The second is a distributional gap: VFMs are pre-trained on massive and diverse datasets (e.g., LVD-142M for DINOv2), and the resulting feature statistics, including the mean and variance of intermediate representations, inevitably diverge from those of specific downstream domains. Existing adapters lack explicit mechanisms to correct this statistical mismatch. Instead, they must implicitly learn distribution alignment within limited parameter budgets. While SSF [27] has shown that feature modulation can partially bridge this gap, applying such modulation alone proves insufficient for dense prediction, where features must be spatially and semantically aligned across multiple scales. ",
+        "bbox": [
+            212,
+            184,
+            787,
+            319
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "To simultaneously bridge both gaps, we propose SIGMA (Scale-Integrated Global Modulation Adapter), a novel PEFT framework specifically designed for adapting VFMs to dense prediction tasks. SIGMA integrates two synergistic components within a unified architecture. First, a Scale-Adaptive Fusion module employs multi-scale depth-wise convolutions followed by point-wise aggregation. This design incorporates local spatial inductive biases, enabling the adapter to capture multi-scale spatial features essential for dense prediction. Second, a Semantic Modulation mechanism generates content-adaptive affine parameters that explicitly refine the feature statistics at each processing stage, aligning the pre-trained representations with the downstream distribution. Crucially, the two components are tightly coupled: the modulation operates on each convolution filter’s output, enabling joint spatial-distributional adaptation at every scale. ",
+        "bbox": [
+            212,
+            327,
+            787,
+            508
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "The entire module introduces only 1.48M trainable parameters, less than half of LoRand [49], and is seamlessly inserted after both the multi-head attention and feed-forward network in each Transformer block. To validate the generality and superiority of our proposed method, we evaluate SIGMA on three representative VFMs across common dense prediction tasks, including object detection, semantic segmentation, and depth estimation. Extensive experiments demonstrate the superiority and generalization of our approach, as depicted in Fig. 1. In summary, our contributions are summarized as follows: ",
+        "bbox": [
+            212,
+            515,
+            787,
+            635
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "list",
+        "sub_type": "text",
+        "list_items": [
+            "– We identify and analyze the structural and distributional gaps that limit the generalization of existing PEFT methods when adapting VFMs to dense prediction tasks, providing principled motivation for vision-specific adapter design. ",
+            "– We propose SIGMA, a novel method that integrates scale-adaptive fusion and semantic modulation to jointly address both gaps with only 1.48M trainable parameters. ",
+            "– Extensive experimental results demonstrate that SIGMA outperforms stateof-the-art methods on dense prediction tasks, including object detection, semantic segmentation, and depth estimation. "
+        ],
+        "bbox": [
+            225,
+            674,
+            784,
+            839
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "header",
+        "text": "SIGMA ",
+        "bbox": [
+            676,
+            114,
+            730,
+            126
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "page_number",
+        "text": "3 ",
+        "bbox": [
+            774,
+            114,
+            785,
+            126
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "2 Related Work ",
+        "text_level": 1,
+        "bbox": [
+            215,
+            143,
+            387,
+            160
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "text",
+        "text": "2.1 Vision Foundation Models ",
+        "text_level": 1,
+        "bbox": [
+            215,
+            176,
+            478,
+            191
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "text",
+        "text": "The evolution of vision backbones from Convolutional Neural Networks [16, 25] to Vision Transformers [12, 30] has facilitated the training of foundation models with unprecedented scale and capability. Current Vision Foundation Models (VFMs) can be categorized by their pre-training objectives: self-supervised learning and vision-language pre-training. self-supervised approaches, such as BEiT [2], MAE [14], and iBOT [56], reconstruct masked patches from visible ones, encouraging the model to learn context-aware representations. DINOv2 [32] further advances self-supervised learning by training on the large-scale curated LVD-142M dataset, producing general-purpose features that perform well on visual tasks. In parallel, vision-language pre-training has evolved toward efficiency and scalability [26,41,44]. While CLIP [34] established the contrastive paradigm, SigLIP [53] improves the efficiency of contrastive pre-training by replacing softmax normalization with a pairwise sigmoid loss. Its successor, SigLIP2 [43], further enhances this paradigm by incorporating dynamic resolution adaptation and self-distillation for improved open-vocabulary performance. Furthermore, Segment Anything Model (SAM) [24, 38] introduces a promptable segmentation framework trained on the billion-scale SA-1B dataset, enabling strong zero-shot generalization through point or box prompts. However, we empirically find that applying these models to dense prediction tasks such as object detection often suffer from inferior performance when the backbone is kept frozen. Consequently, parameter-efficient fine-tuning is essential for adapting these models to downstream tasks. ",
+        "bbox": [
+            212,
+            202,
+            787,
+            534
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "text",
+        "text": "2.2 Parameter-Efficient Fine-Tuning ",
+        "text_level": 1,
+        "bbox": [
+            215,
+            556,
+            529,
+            573
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "text",
+        "text": "Parameter-Efficient Fine-Tuning (PEFT) aims to adapt pre-trained models to downstream tasks by updating only a small fraction of parameters [17,18,49,52]. Existing approaches can be classified into three categories: parameter subset tuning, additive modules, and low-rank adaptations. Parameter subset methods tune specific components of the original backbone. BitFit [52] demonstrates that updating only the bias terms can achieve competitive performance. Similarly, Partial-1 [50] fine-tunes only the last Transformer block, serving as a strong baseline for transfer learning. Additive methods introduce extra learnable parameters into the backbone. The canonical Adapter [17] inserts bottleneck layers sequentially within Transformer blocks. Tailored for vision tasks, AdaptFormer [4] employs a parallel bottleneck structure to better preserve visual features. Inspired by NLP prompting, Visual Prompt Tuning (VPT) [23] prepends learnable tokens to the input sequence to guide the frozen backbone. Finally, low-rank adaptation methods assume that weight updates lie in a lowdimensional subspace. LoRA [18] introduces trainable low-rank matrices into attention layers while keeping the pre-trained weights frozen. LoRand [49] employs a shared low-rank parameter decomposition strategy specifically optimized for dense prediction tasks, enabling competitive performance in detection and segmentation. ARC [11] introduces adaptive rank control to dynamically allocate parameter budgets across layers based on sensitivity. Despite this diversity, most existing PEFT methods remain rooted in NLP design principles, relying on linear transformations that process tokens as 1D sequences. This renders them structurally agnostic to the 2D spatial locality and multi-scale context that are critical for dense prediction. Unlike existing methods, our work introduces scaleadaptive fusion and feature modulation modules into the tuning architecture, explicitly bridging the structural and distributional gaps. ",
+        "bbox": [
+            212,
+            583,
+            787,
+            843
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "page_number",
+        "text": "4 ",
+        "bbox": [
+            217,
+            114,
+            228,
+            126
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "header",
+        "text": "Xiong. et al. ",
+        "bbox": [
+            271,
+            114,
+            354,
+            128
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "image",
+        "img_path": "images/bde4fc65b60fedd8171b46dd5d8bcbbec2f9eb97add1247eae9468fc54e045c3.jpg",
+        "image_caption": [
+            "Fig. 2: Overview of the proposed SIGMA tuning framework. Left: We add SIGMA layer after MHA and FFN in each Transformer block. The proposed method freezes the parameters of the original pre-trained layers and only updates the parameters within SIGMA layer. Right: The details of SIGMA layer. The process begins with LayerNorm and down-projection. Multi-scale and aggregation filters then sequentially process the features, while a Semantic Modulation module concurrently generates scale and shift signals to modulate these filters. The output is then processed with an activation function and up-projection to the original space. Four residual connections are included to improve adaptability. "
+        ],
+        "image_footnote": [],
+        "content": "```mermaid\ngraph TD\n    subgraph Transformer Block\n        A[\"SIGMA Layer\"] --> B[\"2×Feed-Forward Layer\"]\n        B --> C[\"Layer Norm\"]\n        C --> D[\"SIGMA Layer\"]\n        D --> E[\"MHA\"]\n        E --> F[\"Layer Norm\"]\n    end\n\n    subgraph Sigma Layer\n        G[\"Up Projection\"] --> H[\"GeLU\"]\n        H --> I[\"1×1 PW\"]\n        I --> J[\"A\"]\n        J --> K[\"β₁ ← γ₁\"]\n        J --> L[\"β₂ ← γ₂\"]\n        J --> M[\"β₃ ← γ₃\"]\n        K --> N[\"3×3 DW\"]\n        L --> O[\"5×5 DW\"]\n        M --> P[\"7×7 DW\"]\n        N --> Q[\"Down Projection\"]\n        O --> Q\n        P --> Q\n        Q --> R[\"Layer Norm\"]\n    end\n\n    S[\"Depthwise Convolution\"] --> H\n    T[\"Pointwise Convolution\"] --> H\n    U[\"A\"] --> J\n    V[\"Scaling and Shifting\"] --> W[\"Semantic Modulation\"]\n    style A fill:#f9f,stroke:#333\n    style B fill:#bbf,stroke:#333\n    style D fill:#bfb,stroke:#333\n    style E fill:#bfb,stroke:#333\n    style F fill:#bfb,stroke:#333\n    style G fill:#ff9,stroke:#333\n    style H fill:#ff9,stroke:#333\n    style I fill:#ff9,stroke:#333\n    style J fill:#ff9,stroke:#333\n    style K fill:#ff9,stroke:#333\n    style L fill:#ff9,stroke:#333\n    style M fill:#ff9,stroke:#333\n    style N fill:#ff9,stroke:#333\n    style O fill:#ff9,stroke:#333\n    style P fill:#ff9,stroke:#333\n    style Q fill:#ff9,stroke:#333\n    style R fill:#ff9,stroke:#333\n```",
+        "sub_type": "flowchart",
+        "bbox": [
+            235,
+            146,
+            767,
+            506
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "",
+        "bbox": [
+            212,
+            703,
+            787,
+            840
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "header",
+        "text": "SIGMA ",
+        "bbox": [
+            676,
+            114,
+            730,
+            126
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "page_number",
+        "text": "5 ",
+        "bbox": [
+            774,
+            116,
+            785,
+            126
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "2.3 Feature Modulation ",
+        "text_level": 1,
+        "bbox": [
+            215,
+            146,
+            426,
+            159
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "text",
+        "text": "Modulating intermediate features is a canonical strategy in deep learning to regulate representation distributions. The most fundamental form lies in normalization layers, such as Batch Normalization (BN) [21], Layer Normalization (LN) [1], and Group Normalization (GN) [45]. These methods typically standardize features and subsequently apply learnable affine transformations to enhance training stability and generalization. Beyond stabilization, feature modulation has been extensively explored for conditional control and information fusion. In the realm of image generation, AdaIN [20] and Self-Modulation [5] dynamically generate affine parameters from latent codes to inject style information into the synthesis process. Similarly, STN [22] introduces a learnable module to explicitly modulate the spatial geometry of feature maps. In vision-language scenarios, mechanisms like Conditional BN [10] and FiLM [33] are widely adopted to modulate visual features based on linguistic inputs, effectively fusing multimodal information. More recently, this paradigm has been adapted for efficient fine-tuning. Unlike standard normalization, which aims for convergence within a single task, SSF [27] leverages linear modulation to bridge the distribution gap between pre-training and downstream tasks. By inserting lightweight scaling factors after existing operations, it achieves parameter efficiency without being restricted to normalization layers. However, SSF and related approaches apply modulation globally without accounting for the multi-scale spatial structure in dense prediction tasks. In contrast, SIGMA integrates feature modulation with scale-adaptive fusion, generating scale-adaptive scale and shift parameters that control the distribution of output features. This design enables simultaneous spatial and distributional adaptation within a single module. ",
+        "bbox": [
+            212,
+            167,
+            787,
+            531
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "text",
+        "text": "3 Method ",
+        "text_level": 1,
+        "bbox": [
+            215,
+            550,
+            328,
+            566
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "text",
+        "text": "In this section, we present our proposed method in detail. We first revisit the differences between full fine-tuning and adapter tuning in Sec. 3.1. Subsequently, we provide a comprehensive description of our methodology, explaining the key components and mechanisms in Sec. 3.2. Finally, we conduct a parameter analysis to demonstrate the efficiency of our approach in Sec. 3.3. ",
+        "bbox": [
+            212,
+            579,
+            787,
+            656
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "text",
+        "text": "3.1 Preliminary and Notation ",
+        "text_level": 1,
+        "bbox": [
+            215,
+            674,
+            475,
+            688
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "text",
+        "text": "Given a pre-trained Vision Transformer (or Backbone) parameterized by Θ, let $\\boldsymbol { x } \\in \\mathbb { R } ^ { N \\times d }$ denote the input features of a specific layer, where N is the sequence length and d is the hidden dimension. ",
+        "bbox": [
+            212,
+            695,
+            785,
+            739
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "text",
+        "text": "Full fine-tuning serves as the standard paradigm for adapting pre-trained models to downstream tasks. In this setting, we initialize the model with the pre-trained weights $\\theta _ { p r e }$ and update all parameters during training. Formally, the optimization objective is: ",
+        "bbox": [
+            212,
+            741,
+            785,
+            801
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "equation",
+        "text": "$$\n\\Theta^ {*} = \\arg \\min _ {\\Theta} \\sum_ {(x, y) \\in \\mathcal {D}} \\mathcal {L} (f (x; \\Theta), y), \\tag {1}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            377,
+            809,
+            785,
+            842
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "page_number",
+        "text": "6 ",
+        "bbox": [
+            217,
+            114,
+            228,
+            126
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "header",
+        "text": "Xiong. et al. ",
+        "bbox": [
+            271,
+            114,
+            354,
+            128
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "text",
+        "text": "where D represents the downstream dataset and L is the loss function. While full fine-tuning typically achieves superior performance, it is computationally expensive and parameter-inefficient, as the dimension of gradients $\\varDelta _ { \\Theta } \\mathcal { L }$ scales with the entire model size. ",
+        "bbox": [
+            212,
+            146,
+            782,
+            205
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "text",
+        "text": "Adapter Tuning freezes the pre-trained backbone and introduces a small set of learnable parameters. Formally, we define the model parameters as a tuple (Θ, W), where Θ represents the pre-trained weights and W denotes the newly introduced adapter parameters. Unlike full fine-tuning, the pre-trained parameters are kept frozen, and the training objective is reformulated as: ",
+        "bbox": [
+            214,
+            208,
+            784,
+            282
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "equation",
+        "text": "$$\n\\mathcal {W} ^ {*} = \\arg \\min _ {\\mathcal {W}} \\sum_ {(x, y) \\in \\mathcal {D}} \\mathcal {L} (f (x; \\Theta , \\mathcal {W}), y). \\tag {2}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            364,
+            297,
+            785,
+            330
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "text",
+        "text": "3.2 SIGMA ",
+        "text_level": 1,
+        "bbox": [
+            215,
+            357,
+            326,
+            369
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "text",
+        "text": "Although typical Linear Adapter and LoRA have shown great promise, they face specific challenges when applied to dense prediction tasks. First, VFMs are typically pre-trained on massive general datasets. It is difficult to effectively transfer these pre-trained representations to the specific distributions of downstream tasks using only simple linear layers. Second, the original Adapter and LoRA were designed for NLP and lack the structural inductive biases to process spatial visual information effectively. Third, prior work such as VFM-Adapter [6] suggests that the low-rank assumption in LoRA restricts the model’s capacity for dense pixel-level predictions. To address these issues, we propose two key strategies, which are illustrated in Fig. 2. First, we introduce local inductive biases specifically tailored for dense prediction, which will be detailed in the Scale-Adaptive Fusion section. Second, to bridge the distribution gap, we employ learnable scale and shift operations to modulate the output features, aligning them with the downstream data distribution. ",
+        "bbox": [
+            212,
+            388,
+            787,
+            599
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "text",
+        "text": "Scale-Adaptive Fusion. To achieve superior performance in dense prediction tasks, it requires model to handle objects of varying scales while capturing spatial context across different regions. Therefore, we introduce scale-adaptive filters designed to extract and aggregate multi-scale semantic features. Instead of standard convolutions, which incur high computational costs, we employ Depth-wise (DW) convolutions to process the features efficiently. Specifically, let $x _ { 0 }$ denote the original input and $x _ { r }$ denote the input features after down-projection. We employ three parallel DW convolutions with kernel sizes of $3 \\times 3 , 5 \\times 5$ , and $7 \\times 7$ to extract spatial features at different receptive fields. These multi-scale features are then aggregated through a 1 × 1 Point-wise (PW) convolution. To preserve the feature identity and facilitate gradient flow, a residual connection is added between the DW and PW layers. The above steps can be formulated as: ",
+        "bbox": [
+            212,
+            628,
+            787,
+            809
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "equation",
+        "text": "$$\nx _ {r} = \\text { Down } (| x _ {0} | _ {L N}), \\tag {3}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            429,
+            825,
+            784,
+            840
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "header",
+        "text": "SIGMA ",
+        "bbox": [
+            676,
+            114,
+            730,
+            126
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "page_number",
+        "text": "7 ",
+        "bbox": [
+            774,
+            114,
+            785,
+            126
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "equation",
+        "text": "$$\nx _ {m s} = x _ {r} + \\operatorname{avg} \\left(\\sum_ {k \\in \\{3, 5, 7 \\}} \\mathrm{DWConv} _ {k} \\left(x _ {r}\\right)\\right), \\tag {4}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            351,
+            162,
+            785,
+            196
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "equation",
+        "text": "$$\nx _ {a g g} = x _ {m s} + \\mathrm{PWConv} (x _ {m s}), \\tag {5}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            395,
+            220,
+            785,
+            234
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "text",
+        "text": "where $\\lvert \\cdot \\rvert _ { L N }$ denotes LayerNorm, Down(·) denotes down-projection, DWConv(·), PWConv(·) denote depth-wise and point-wise convolution, respectively. Finally, the fused features pass through a GeLU activation function and an up-projection to restore the original dimension d. The overall computation process is formulated as: ",
+        "bbox": [
+            214,
+            247,
+            802,
+            321
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "equation",
+        "text": "$$\nx = x _ {0} + \\operatorname{Up} (\\mathrm{GeLU} (x _ {a g g})), \\tag {6}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            405,
+            329,
+            785,
+            345
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "text",
+        "text": "where $x _ { a g g }$ denotes the aggregated features after PW convolution, $\\mathrm { U p } ( \\cdot )$ denotes up-projection, and GeLU(·) denotes GeLU activation. ",
+        "bbox": [
+            214,
+            356,
+            785,
+            387
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "text",
+        "text": "Semantic Modulation. Another fundamental challenge in adapting VFMs is the distribution discrepancy between the pre-training datasets and the downstream tasks. The feature statistics learned during pre-training often misalign with the downstream data distribution. Inspired by feature modulation techniques, we employ a scaling and shifting modulation mechanism to bridge this gap. We introduce learnable scale γ and shift $\\beta$ parameters that modulate the extracted features toward the downstream distribution. As illustrated in Fig. 2, the Semantic Modulation module operates immediately after the down-projection layer, dynamically generating four groups of affine parameters. These parameters modulate the outputs of the three DW convolutions and the final 1 × 1 PW convolution. Let $x _ { r }$ denote the down-projected input. The modulation parameters are generated through a linear projection $\\mathcal { P } \\colon$ ",
+        "bbox": [
+            214,
+            417,
+            787,
+            599
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "equation",
+        "text": "$$\n\\left[ \\gamma_ {k}, \\beta_ {k} \\right] _ {k \\in \\{3, 5, 7, p w \\}} = \\mathcal {P} (x _ {r}), \\tag {7}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            403,
+            614,
+            785,
+            631
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "text",
+        "text": "where $\\gamma _ { k }$ and $\\beta _ { k }$ denote the scale and shift parameters for k-th convolution. We define the modulation operation for a feature map $F$ as Mod $\\begin{array} { r } { ( F , \\gamma , \\beta ) = \\gamma \\odot F + \\beta } \\end{array}$ . The complete modulation and fusion process is formulated as: ",
+        "bbox": [
+            214,
+            645,
+            787,
+            691
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "equation",
+        "text": "$$\n\\hat {x} _ {d w} = \\operatorname{avg} \\left(\\sum_ {k \\in \\{3, 5, 7 \\}} \\operatorname{Mod} \\left(\\mathrm{DWConv} _ {k} \\left(x _ {r}\\right), \\gamma_ {k}, \\beta_ {k}\\right)\\right), \\tag {8}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            323,
+            705,
+            785,
+            739
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "equation",
+        "text": "$$\n\\hat {x} _ {p w} = \\mathrm{Mod} (\\mathrm{PWConv} (\\hat {x} _ {d w}), \\gamma_ {p w}, \\beta_ {p w}), \\tag {9}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            366,
+            766,
+            785,
+            782
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "text",
+        "text": "By explicitly adjusting the feature statistics at multiple stages, SIGMA effectively aligns the pre-trained representation space with the downstream task distribution. ",
+        "bbox": [
+            214,
+            794,
+            787,
+            839
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "page_number",
+        "text": "8 ",
+        "bbox": [
+            217,
+            114,
+            228,
+            126
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "header",
+        "text": "Xiong. et al. ",
+        "bbox": [
+            271,
+            114,
+            354,
+            128
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "text",
+        "text": "3.3 Complexity Analysis ",
+        "text_level": 1,
+        "bbox": [
+            215,
+            146,
+            433,
+            161
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "text",
+        "text": "In this section, we analyze the parameter efficiency of our proposed method. The parameters of SIGMA are primarily derived from the Layer Normalization (LN), Down and Up projection layers, Depth-wise (DW) convolutions, Point-wise(PW) convolutions, and the Semantic Modulation layer. Let the input feature be denoted as $\\boldsymbol { x } \\in \\mathbb { R } ^ { N \\times d }$ , where N is the sequence length and d is the hidden dimension. We set the bottleneck dimension as r(where $r \\ll d )$ . The down-projection and up-projection layers contribute $2 d r + d + r$ parameters. The LN introduces 2d learnable parameters. We employ three parallel DW convolutions with kernel sizes of $3 \\times 3 , 5 \\times 5 .$ , and $7 \\times 7$ operating in the bottleneck dimension. This contributes $( 3 ^ { 2 } + 5 ^ { 2 } + 7 ^ { 2 } ) = 8 3 r$ parameters. An internal PW convolution is used for feature aggregation, adding $r ^ { 2 }$ parameters. The modulation module generates four groups of modulation weights (scale and shift). With a projection mapping, this contributes approximately $8 r ^ { 2 }$ parameters. The total parameters of each SIGMA module are: ",
+        "bbox": [
+            212,
+            170,
+            787,
+            380
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "equation",
+        "text": "$$\n9 r ^ {2} + (2 d + 8 4) r + 3 d \\tag {10}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            424,
+            381,
+            785,
+            398
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "text",
+        "text": "To maximize parameter efficiency, we set the bottleneck dimension $r = 3 2$ . Since $r \\ll d \\ ( \\mathrm { e . g . , } \\ d = 7 6 8$ in ViT), the quadratic term $r ^ { 2 }$ remains small, and the complexity is dominated by the linear term dr, ensuring the adapter remains lightweight. ",
+        "bbox": [
+            212,
+            402,
+            787,
+            464
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "text",
+        "text": "4 Experiments ",
+        "text_level": 1,
+        "bbox": [
+            215,
+            486,
+            375,
+            503
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "text",
+        "text": "We conduct sufficient experiments on multiple representative dense visual tasks to demonstrate the superiority of SIGMA. This section includes experimental setup, main results, and ablation studies. ",
+        "bbox": [
+            212,
+            516,
+            785,
+            561
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "text",
+        "text": "4.1 Experimental Setup ",
+        "text_level": 1,
+        "bbox": [
+            215,
+            583,
+            428,
+            598
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "text",
+        "text": "Dataset. We evaluate our method on three downstream dense prediction tasks using standard benchmarks and frameworks. For object detection, we utilize the MS-COCO 2017 dataset [28]. We adopt the DETR framework [3,29], training on the train2017 split and reporting mean Average Precision (mAP) on the val2017 split. For semantic segmentation, experiments are conducted on the ADE20K dataset [55] with 150 categories. We employ Mask2Former [7] implemented in MMSegmentation [8] as the segmentation head, reporting mean Intersection over Union (mIoU) on the validation set. For depth estimation, we use the NYUv2 dataset [40]. Based on the DPT framework [36,47], we evaluate the model using Root Mean Squared Error (RMSE) on the standard test split. ",
+        "bbox": [
+            212,
+            607,
+            787,
+            758
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "text",
+        "text": "Pretrained Backbone. Our experiments are conducted on three distinct vision transformer backbones to ensure broad applicability, including DINOv2, SigLIP2, and SAM. Unless otherwise stated, we use the ViT-Base variant for all backbones to ensure a fair comparison of parameter efficiency. ",
+        "bbox": [
+            212,
+            779,
+            787,
+            840
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "header",
+        "text": "SIGMA ",
+        "bbox": [
+            676,
+            114,
+            730,
+            126
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "page_number",
+        "text": "9 ",
+        "bbox": [
+            774,
+            116,
+            785,
+            126
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "text",
+        "text": "Baselines. We benchmark our proposed approach against recent state-of-theart methods. ",
+        "bbox": [
+            215,
+            146,
+            782,
+            175
+        ],
+        "page_idx": 9
+    },
+    {
+        "type": "list",
+        "sub_type": "text",
+        "list_items": [
+            "– Full tuning: Updates all parameters of the backbone and the head end-toend. ",
+            "– Fixed: Freezes the pre-trained backbone and only updates the task-specific head. ",
+            "– BitFit [52]: Fine-tunes only the bias terms of the backbone while keeping the rest frozen. ",
+            "– Partial-1 [50]: Updates only the last transformer block of the backbone. ",
+            "– LoRA [18]: Injects trainable low-rank matrices into the attention layers to approximate weight updates. ",
+            "– Adapter [17]: Inserts sequential bottleneck modules into the transformer layers. ",
+            "– AdaptFormer [4]: Adopts a parallel adapter architecture with a scaling factor in each MLP layer. ",
+            "– LoRand [49]: Inserts LoRand layers after MHA/FFN layers in each transformer block. ",
+            "– VFM-Adapter [6]: Leverages a HyperNetwork to dynamically synthesize convolutional parameters of the adapter for each transformer block. "
+        ],
+        "bbox": [
+            215,
+            191,
+            789,
+            473
+        ],
+        "page_idx": 9
+    },
+    {
+        "type": "text",
+        "text": "Implementation Details. Unlike hierarchical models, DINOv2 and SigLIP2 are based on the plain, non-hierarchical Vision Transformer architecture, which produces single-scale feature maps. However, dense prediction heads (e.g., DETR and Mask2Former) typically require multi-scale inputs. To address this, we construct a multi-scale feature pyramid based on the feature maps from the last layer of the backbone. These features are upsampled or downsampled through convolutions to serve as inputs for the task-specific decoders. ",
+        "bbox": [
+            212,
+            505,
+            784,
+            609
+        ],
+        "page_idx": 9
+    },
+    {
+        "type": "text",
+        "text": "For COCO dataset, Input images are processed using random cropping and resizing to a unified scale of $6 4 0 \\times 6 4 0$ . We use the AdamW optimizer with an initial learning rate of $1 \\times 1 0 ^ { - 4 }$ and weight decay of 0.05. The model is trained for 30 epochs with a linear warmup of 1000 steps. The learning rate is decayed by a factor of 10 at the 25th epoch. The total batch size is set to 32. For ADE20k, we follow the standard Mask2Former configuration provided by the MMSegmentation toolkit. The models are trained for 160k iterations with a total batch size of 16. For NYUv2, Input images are resized to a resolution of 640×480. We optimize the model using AdamW with a learning rate of $1 . 5 \\times 1 0 ^ { - 4 }$ and weight decay of 0.01. The training spans 20 epochs with a total batch size of 16. Experiments for object detection and semantic segmentation are conducted on 8 × NVIDIA Tesla A800 GPUs, while depth estimation tasks are performed on a single NVIDIA Tesla A800 GPU. Unless otherwise specified, the task-specific heads (e.g., the DETR decoder) are trained from scratch while the backbone is tuned according to each respective setting. ",
+        "bbox": [
+            212,
+            613,
+            785,
+            840
+        ],
+        "page_idx": 9
+    },
+    {
+        "type": "page_number",
+        "text": "10 ",
+        "bbox": [
+            217,
+            114,
+            235,
+            126
+        ],
+        "page_idx": 9
+    },
+    {
+        "type": "header",
+        "text": "Xiong. et al. ",
+        "bbox": [
+            271,
+            114,
+            354,
+            128
+        ],
+        "page_idx": 9
+    },
+    {
+        "type": "table",
+        "img_path": "images/15118d97a165f57054f19f1f4030ae6110804266a29e6db610e90eb4d198108d.jpg",
+        "table_caption": [
+            "Table 1: Quantitative comparison on the COCO object detection benchmark across DINOv2, SigLIP2, and SAM backbones. SIGMA consistently achieves the highest mAP among parameter-efficient methods while using significantly fewer trainable parameters than other competitive baselines like LoRand and VFM-Adapter. "
+        ],
+        "table_footnote": [],
+        "table_body": "<table><tr><td>Backbone</td><td>Method</td><td>Trained Params</td><td>mAP</td><td> $\\text{mAP}_{50}$ </td><td> $AP_s$ </td><td> $AP_m$ </td><td> $AP_l$ </td></tr><tr><td rowspan=\"10\">DINOv2</td><td>Full tuning</td><td>85.70M</td><td>55.7</td><td>75.8</td><td>34.4</td><td>60.5</td><td>75.8</td></tr><tr><td>Fixed</td><td>0.00M</td><td>50.6</td><td>71.8</td><td>29.8</td><td>54.8</td><td>70.8</td></tr><tr><td>BitFit</td><td>0.10M</td><td>51.2</td><td>71.8</td><td>30.5</td><td>55.4</td><td>71.6</td></tr><tr><td>Partial-1</td><td>7.09M</td><td>52.6</td><td>73.4</td><td>31.8</td><td>57.1</td><td>72.6</td></tr><tr><td>LoRA</td><td>2.36M</td><td>52.2</td><td>72.7</td><td>31.5</td><td>56.6</td><td>72.5</td></tr><tr><td>Adapter</td><td>2.38M</td><td>52.7</td><td>73.5</td><td>32.1</td><td>57.2</td><td>72.9</td></tr><tr><td>AdaptFormer</td><td>1.19M</td><td>51.8</td><td>72.6</td><td>31.2</td><td>56.1</td><td>72.2</td></tr><tr><td>LoRand</td><td>3.59M</td><td>52.7</td><td>73.4</td><td>32.1</td><td>57.3</td><td>73.1</td></tr><tr><td>VFM-Adapter</td><td>2.78M</td><td>53.2</td><td>73.8</td><td>32.6</td><td>57.7</td><td>73.6</td></tr><tr><td>SIGMA</td><td>1.48M</td><td>54.4</td><td>74.6</td><td>33.5</td><td>59.2</td><td>74.3</td></tr><tr><td rowspan=\"10\">SigLIP2</td><td>Full tuning</td><td>86.43M</td><td>54.6</td><td>74.8</td><td>33.6</td><td>59.2</td><td>74.6</td></tr><tr><td>Fixed</td><td>0.00M</td><td>50.2</td><td>71.2</td><td>28.6</td><td>54.4</td><td>70.2</td></tr><tr><td>BitFit</td><td>0.10M</td><td>51.1</td><td>72.1</td><td>29.4</td><td>55.2</td><td>71.0</td></tr><tr><td>Partial-1</td><td>7.09M</td><td>52.4</td><td>73.1</td><td>30.6</td><td>56.8</td><td>72.4</td></tr><tr><td>LoRA</td><td>2.36M</td><td>52.2</td><td>72.9</td><td>30.8</td><td>56.7</td><td>72.1</td></tr><tr><td>Adapter</td><td>2.38M</td><td>52.7</td><td>73.4</td><td>31.2</td><td>57.3</td><td>72.7</td></tr><tr><td>AdaptFormer</td><td>1.19M</td><td>51.4</td><td>72.5</td><td>30.2</td><td>56.4</td><td>71.3</td></tr><tr><td>LoRand</td><td>3.59M</td><td>52.5</td><td>73.1</td><td>30.9</td><td>57.2</td><td>72.5</td></tr><tr><td>VFM-Adapter</td><td>2.78M</td><td>53.1</td><td>73.6</td><td>31.5</td><td>57.8</td><td>73.0</td></tr><tr><td>SIGMA</td><td>1.48M</td><td>53.8</td><td>74.2</td><td>32.1</td><td>58.7</td><td>73.7</td></tr><tr><td rowspan=\"10\">SAM</td><td>Full tuning</td><td>85.80M</td><td>52.6</td><td>73.6</td><td>31.8</td><td>56.8</td><td>72.8</td></tr><tr><td>Fixed</td><td>0.00M</td><td>48.3</td><td>69.2</td><td>27.8</td><td>52.1</td><td>69.4</td></tr><tr><td>BitFit</td><td>0.10M</td><td>48.8</td><td>69.4</td><td>28.3</td><td>52.7</td><td>69.8</td></tr><tr><td>Partial-1</td><td>7.09M</td><td>49.5</td><td>70.5</td><td>29.1</td><td>53.4</td><td>70.7</td></tr><tr><td>LoRA</td><td>2.36M</td><td>49.4</td><td>70.4</td><td>28.8</td><td>53.3</td><td>70.6</td></tr><tr><td>Adapter</td><td>2.38M</td><td>49.3</td><td>70.2</td><td>28.6</td><td>53.2</td><td>70.6</td></tr><tr><td>AdaptFormer</td><td>1.19M</td><td>50.2</td><td>71.2</td><td>29.4</td><td>54.3</td><td>71.5</td></tr><tr><td>LoRand</td><td>3.59M</td><td>49.6</td><td>70.6</td><td>29.0</td><td>53.8</td><td>70.8</td></tr><tr><td>VFM-Adapter</td><td>2.78M</td><td>50.3</td><td>71.4</td><td>29.5</td><td>54.5</td><td>71.6</td></tr><tr><td>SIGMA</td><td>1.48M</td><td>51.4</td><td>72.6</td><td>30.7</td><td>55.4</td><td>72.5</td></tr></table>",
+        "bbox": [
+            277,
+            212,
+            720,
+            720
+        ],
+        "page_idx": 10
+    },
+    {
+        "type": "text",
+        "text": "4.2 Main Results ",
+        "text_level": 1,
+        "bbox": [
+            215,
+            738,
+            372,
+            752
+        ],
+        "page_idx": 10
+    },
+    {
+        "type": "text",
+        "text": "Superior Performance Across Diverse Vision Tasks. Tab. 1, Tab. 2, and Tab. 3 show the results of objection, semantic segmentation, and depth estimation, respectively. SIGMA achieves the best performance among all PEFT methods across all tasks and backbones. On COCO object detection with DINOv2, SIGMA achieves 54.4 mAP, outperforming VFM-Adapter (53.2) by 1.2 mAP, and both LoRand and Adapter (52.7) by 1.7 mAP. The gap widens further for methods relying solely on linear transformations: LoRA (52.2) and AdaptFormer (51.8) trail by 2.2 and 2.6 mAP, respectively. Parameter subset methods such as BitFit (51.2) and Partial-1 (52.6) also underperform, since tuning only bias terms or a single block provides limited capacity for spatial adaptation. Notably, even VFM-Adapter, which introduces convolutional parameters through a HyperNetwork, falls behind SIGMA by 1.2 mAP on DINOv2 and 1.1 mAP on SAM, indicating that dynamically generated convolutions without explicit distributional alignment remain insufficient for dense prediction. These trends hold consistently across other tasks. On ADE20K segmentation (Tab. 2), SIGMA surpasses VFM-Adapter by 1.28, 0.76, and 1.22 mIoU on DINOv2, SigLIP2, and SAM, respectively. On NYUv2 depth estimation (Tab. 3), SIGMA reduces RMSE by 0.022, 0.011, and 0.009 over the strongest baseline on each backbone. ",
+        "bbox": [
+            212,
+            763,
+            787,
+            840
+        ],
+        "page_idx": 10
+    },
+    {
+        "type": "header",
+        "text": "SIGMA ",
+        "bbox": [
+            676,
+            114,
+            730,
+            126
+        ],
+        "page_idx": 10
+    },
+    {
+        "type": "page_number",
+        "text": "",
+        "bbox": [
+            767,
+            116,
+            784,
+            126
+        ],
+        "page_idx": 10
+    },
+    {
+        "type": "table",
+        "img_path": "images/c32d81b36e054e3cede93ddb7f044496766fc88ba7fc0723bca8394147da0cc4.jpg",
+        "table_caption": [
+            "Table 2: Quantitative results of semantic segmentation on the ADE20K dataset. We report three metrics: mIoU (mean Intersection over Union), mAcc (mean Accuracy), and aAcc (average Accuracy). SIGMA outperforms state-of-the-art PEFT baselines across multiple backbones. "
+        ],
+        "table_footnote": [],
+        "table_body": "<table><tr><td rowspan=\"2\">Method</td><td colspan=\"3\">DINOv2</td><td colspan=\"3\">SigLIP2</td><td colspan=\"3\">SAM</td></tr><tr><td>mIoU</td><td>mAcc</td><td>aAcc</td><td>mIoU</td><td>mAcc</td><td>aAcc</td><td>mIoU</td><td>mAcc</td><td>aAcc</td></tr><tr><td>Full tuning</td><td>57.10</td><td>70.50</td><td>85.50</td><td>55.89</td><td>69.10</td><td>84.85</td><td>49.54</td><td>61.45</td><td>82.35</td></tr><tr><td>Fixed</td><td>51.60</td><td>67.80</td><td>83.70</td><td>51.66</td><td>66.54</td><td>83.04</td><td>45.72</td><td>59.32</td><td>81.21</td></tr><tr><td>BitFit</td><td>52.45</td><td>67.62</td><td>84.63</td><td>52.71</td><td>67.93</td><td>84.21</td><td>46.28</td><td>59.6</td><td>81.35</td></tr><tr><td>Partial-1</td><td>53.43</td><td>67.63</td><td>84.57</td><td>53.56</td><td>67.26</td><td>84.12</td><td>47.18</td><td>60.10</td><td>81.55</td></tr><tr><td>LoRA</td><td>52.47</td><td>67.60</td><td>84.23</td><td>52.47</td><td>66.31</td><td>83.67</td><td>46.36</td><td>59.65</td><td>81.40</td></tr><tr><td>Adapter</td><td>53.76</td><td>67.92</td><td>84.46</td><td>53.77</td><td>67.07</td><td>84.35</td><td>46.52</td><td>59.75</td><td>81.45</td></tr><tr><td>Adaptformer</td><td>54.68</td><td>68.18</td><td>84.63</td><td>53.81</td><td>67.77</td><td>84.41</td><td>46.64</td><td>59.8</td><td>81.48</td></tr><tr><td>Lorand</td><td>54.72</td><td>68.25</td><td>84.34</td><td>53.84</td><td>67.42</td><td>84.53</td><td>47.05</td><td>60.05</td><td>81.52</td></tr><tr><td>VFM-Adapter</td><td>55.14</td><td>68.50</td><td>84.85</td><td>54.36</td><td>67.85</td><td>84.45</td><td>47.36</td><td>60.25</td><td>81.60</td></tr><tr><td>Ours</td><td>56.42</td><td>69.28</td><td>85.06</td><td>55.12</td><td>68.23</td><td>84.72</td><td>48.58</td><td>61.1</td><td>81.95</td></tr></table>",
+        "bbox": [
+            253,
+            212,
+            750,
+            407
+        ],
+        "page_idx": 11
+    },
+    {
+        "type": "text",
+        "text": "",
+        "bbox": [
+            212,
+            439,
+            787,
+            636
+        ],
+        "page_idx": 11
+    },
+    {
+        "type": "text",
+        "text": "Trade-Off in Performance and Efficiency. SIGMA achieves superior results with only 1.48M trainable parameters, substantially fewer than most competing methods. Compared to LoRand (3.59M), SIGMA uses 2.4× fewer parameters yet outperforms it by 1.7 mAP on detection, 1.7 mIoU on segmentation, and 0.022 RMSE on depth estimation. Relative to VFM-Adapter (2.78M), SIGMA reduces the parameter count by 47% while consistently delivering higher accuracy across all tasks. Even Partial-1, which tunes 7.09M parameters (roughly 4.8× more than SIGMA), only reaches 52.6 mAP on DINOv2 detection compared to 54.4 for SIGMA. Such results underscore the effectiveness of our architectural design, confirming that the improvements stem from the synergistic integration of multi-scale spatial filters and distributional modulation instead of increased model capacity. ",
+        "bbox": [
+            212,
+            657,
+            787,
+            840
+        ],
+        "page_idx": 11
+    },
+    {
+        "type": "page_number",
+        "text": "12 ",
+        "bbox": [
+            217,
+            114,
+            235,
+            126
+        ],
+        "page_idx": 11
+    },
+    {
+        "type": "header",
+        "text": "Xiong. et al. ",
+        "bbox": [
+            271,
+            114,
+            354,
+            128
+        ],
+        "page_idx": 11
+    },
+    {
+        "type": "table",
+        "img_path": "images/d7d8e885eacc243d23bf187595236b1ecf902f6e33e7a9d3b80ec55e4236cc5e.jpg",
+        "table_caption": [
+            "Table 3: Quantitative comparison of depth estimation on the NYUv2 dataset. SIGMA achieves the highest accuracy (δ1) and lowest error (AbsRel, RMSE) among PEFT methods, effectively narrowing the gap with full fine-tuning. "
+        ],
+        "table_footnote": [],
+        "table_body": "<table><tr><td rowspan=\"2\">Method</td><td colspan=\"3\">DINOv2</td><td colspan=\"3\">SigLIP2</td><td colspan=\"3\">SAM</td></tr><tr><td> $\\delta_1 \\uparrow$ </td><td>AbsRel↓</td><td>RMSE↓</td><td> $\\delta_1 \\uparrow$ </td><td>AbsRel↓</td><td>RMSE↓</td><td> $\\delta_1 \\uparrow$ </td><td>AbsRel↓</td><td>RMSE↓</td></tr><tr><td>Full tuning</td><td>0.968</td><td>0.068</td><td>0.245</td><td>0.947</td><td>0.078</td><td>0.294</td><td>0.925</td><td>0.088</td><td>0.321</td></tr><tr><td>Fixed</td><td>0.942</td><td>0.082</td><td>0.292</td><td>0.930</td><td>0.089</td><td>0.322</td><td>0.895</td><td>0.115</td><td>0.351</td></tr><tr><td>BitFit</td><td>0.945</td><td>0.080</td><td>0.290</td><td>0.931</td><td>0.089</td><td>0.321</td><td>0.902</td><td>0.108</td><td>0.347</td></tr><tr><td>Partial-1</td><td>0.952</td><td>0.076</td><td>0.282</td><td>0.931</td><td>0.089</td><td>0.321</td><td>0.908</td><td>0.102</td><td>0.345</td></tr><tr><td>LoRA</td><td>0.949</td><td>0.076</td><td>0.284</td><td>0.934</td><td>0.087</td><td>0.317</td><td>0.912</td><td>0.098</td><td>0.344</td></tr><tr><td>Adapter</td><td>0.948</td><td>0.078</td><td>0.286</td><td>0.929</td><td>0.089</td><td>0.321</td><td>0.910</td><td>0.099</td><td>0.346</td></tr><tr><td>Adaptformer</td><td>0.947</td><td>0.078</td><td>0.287</td><td>0.931</td><td>0.089</td><td>0.321</td><td>0.912</td><td>0.098</td><td>0.345</td></tr><tr><td>Lorand</td><td>0.954</td><td>0.075</td><td>0.281</td><td>0.934</td><td>0.088</td><td>0.318</td><td>0.915</td><td>0.096</td><td>0.344</td></tr><tr><td>VFM-Adapter</td><td>0.952</td><td>0.076</td><td>0.284</td><td>0.931</td><td>0.089</td><td>0.323</td><td>0.917</td><td>0.094</td><td>0.343</td></tr><tr><td>Ours</td><td>0.963</td><td>0.072</td><td>0.259</td><td>0.941</td><td>0.083</td><td>0.307</td><td>0.918</td><td>0.092</td><td>0.334</td></tr></table>",
+        "bbox": [
+            215,
+            199,
+            797,
+            395
+        ],
+        "page_idx": 12
+    },
+    {
+        "type": "table",
+        "img_path": "images/2baab15cb52058a8ca7d839c5d5b74ac1ccfa52394cedae0aa1e85ae234563f9.jpg",
+        "table_caption": [
+            "Table 4: Ablation of different intermediate dimensions "
+        ],
+        "table_footnote": [],
+        "table_body": "<table><tr><td>Dimensions</td><td>Params</td><td>mAP</td><td> $\\text{mAP}_{50}$ </td></tr><tr><td>16</td><td>0.72M</td><td>53.2</td><td>73.5</td></tr><tr><td>32</td><td>1.48M</td><td>54.4</td><td>74.6</td></tr><tr><td>64</td><td>3.25M</td><td>54.5</td><td>74.6</td></tr><tr><td>128</td><td>7.82M</td><td>54.2</td><td>74.3</td></tr></table>",
+        "bbox": [
+            225,
+            449,
+            483,
+            536
+        ],
+        "page_idx": 12
+    },
+    {
+        "type": "table",
+        "img_path": "images/efc173647041467841536d8aaafc8b3e8bbd3fb9df2f5e54f85da8c0cc3774e2.jpg",
+        "table_caption": [
+            "Table 5: Performance results of under different Configurations. "
+        ],
+        "table_footnote": [],
+        "table_body": "<table><tr><td>Configuration</td><td>mAP</td><td> $\\text{mAP}_{50}$ </td></tr><tr><td>w/o Scale-Adaptive Fusion</td><td>52.2</td><td>73.0</td></tr><tr><td>w/o Semantic Modulation</td><td>53.6</td><td>74.1</td></tr><tr><td>All pipeline</td><td>54.4</td><td>74.6</td></tr></table>",
+        "bbox": [
+            500,
+            455,
+            787,
+            529
+        ],
+        "page_idx": 12
+    },
+    {
+        "type": "text",
+        "text": "Universal Adaptability to Diverse Foundation Models. SIGMA exhibits consistent superiority across backbones with diverse pre-training paradigms: selfsupervised distillation (DINOv2), vision-language contrastive learning (SigLIP2), and promptable geometric modeling (SAM). On SAM, all PEFT methods suffer from inferior performance due to the domain gap between pre-training and downstream tasks. Nevertheless, SIGMA still outperforms VFM-Adapter by 1.1 mAP on detection, 1.22 mIoU on segmentation, and 0.009 RMSE on depth estimation. SIGMA performs well on all three benchmarks, spanning localization (object detection), pixel-level classification (semantic segmentation), and continuous regression (depth estimation). These results demonstrate that the dual-gap problem is a universal challenge in PEFT. By addressing this, SIGMA’s spatialdistributional co-adaptation mechanism overcomes a fundamental limitation of existing PEFT methods, enabling consistent state-of-the-art performance across all tested backbones and tasks. ",
+        "bbox": [
+            212,
+            565,
+            787,
+            776
+        ],
+        "page_idx": 12
+    },
+    {
+        "type": "text",
+        "text": "Bridging the Gap to Full Fine-Tuning. SIGMA substantially narrows the performance gap between PEFT methods and full fine-tuning. On DINOv2 detection, the gap between the Fixed baseline and full tuning is 5.1 mAP; SIGMA reduces this to only 1.3 mAP, recovering 74.5% of the full tuning gain while updating less than 1.7% of backbone parameters. On ADE20K segmentation with DINOv2, SIGMA achieves 56.42 mIoU compared to 57.10 for full tuning, leaving a margin of only 0.68 mIoU, which is notably smaller than the 1.96 mIoU gap left by VFM-Adapter. On NYUv2 depth estimation with DINOv2, SIGMA reaches a $\\delta _ { 1 }$ accuracy of 0.963 versus 0.968 for full tuning, a difference of merely 0.005. These results indicate that SIGMA effectively addresses the distributional and structural gaps that prevent lightweight adapters from matching full tuning performance. ",
+        "bbox": [
+            214,
+            794,
+            787,
+            840
+        ],
+        "page_idx": 12
+    },
+    {
+        "type": "header",
+        "text": "SIGMA ",
+        "bbox": [
+            676,
+            114,
+            730,
+            126
+        ],
+        "page_idx": 12
+    },
+    {
+        "type": "page_number",
+        "text": "13 ",
+        "bbox": [
+            767,
+            114,
+            785,
+            126
+        ],
+        "page_idx": 12
+    },
+    {
+        "type": "text",
+        "text": "",
+        "bbox": [
+            212,
+            146,
+            787,
+            282
+        ],
+        "page_idx": 13
+    },
+    {
+        "type": "text",
+        "text": "4.3 Ablation Studies ",
+        "text_level": 1,
+        "bbox": [
+            215,
+            309,
+            401,
+            321
+        ],
+        "page_idx": 13
+    },
+    {
+        "type": "text",
+        "text": "In Tab. 4, we investigate the impact of the intermediate dimension on model performance to determine the optimal trade-off between accuracy and efficiency. Increasing the intermediate dimension from 16 to 32 achieves a substantial improvement, boosting mAP by 1.2 points (53.2 to 54.4) and m $\\mathrm { A P _ { 5 0 } }$ by 1.1 points. However, further increasing the training parameters yields only marginal improvements. Doubling the parameters to 3.25M (dimension 64) results in a negligible mAP gain of 0.1, while further increasing to 128 leads to a slight performance degradation (54.2 mAP). These results indicate that a dimension of 32 effectively captures the necessary semantic information without introducing the redundancy and overfitting risks. ",
+        "bbox": [
+            212,
+            338,
+            787,
+            488
+        ],
+        "page_idx": 13
+    },
+    {
+        "type": "text",
+        "text": "The contribution of each architectural component is validated in Tab. 5. The removal of Scale-Adaptive Fusion module triggers the most substantial performance degradation, with mAP dropping from 54.4 to 52.2. This 2.2-point decline highlights the fundamental importance of the filtering mechanism in handling multi-scale features for dense prediction tasks. Furthermore, removing the Semantic Modulation module results in a 0.8 point decrease in mAP (53.6), confirming its necessity for semantic alignment. The superior performance of the complete pipeline demonstrates that these components function synergistically to maximize the adaptation capability of the pre-trained model. ",
+        "bbox": [
+            212,
+            489,
+            787,
+            625
+        ],
+        "page_idx": 13
+    },
+    {
+        "type": "text",
+        "text": "5 Conclusion ",
+        "text_level": 1,
+        "bbox": [
+            215,
+            652,
+            359,
+            667
+        ],
+        "page_idx": 13
+    },
+    {
+        "type": "text",
+        "text": "In this paper, we present SIGMA, a novel parameter-efficient fine-tuning method designed to bridge the gap between large vision foundation models and downstream dense prediction tasks. By integrating Scale-Adaptive Fusion and Semantic Modulation modules, our approach achieves state-of-the-art performance across object detection, semantic segmentation, and depth estimation benchmarks while significantly reducing parameter overhead with only 1.72% trainable backbone parameters. Extensive experiments and ablation studies on multiple backbones, including DINOv2, SAM, and SigLIP2, demonstrate the method’s superior generalization and robustness, establishing SIGMA as a highly efficient and scalable solution for training foundation models in vision tasks. ",
+        "bbox": [
+            212,
+            688,
+            787,
+            839
+        ],
+        "page_idx": 13
+    },
+    {
+        "type": "page_number",
+        "text": "14 ",
+        "bbox": [
+            217,
+            114,
+            235,
+            126
+        ],
+        "page_idx": 13
+    },
+    {
+        "type": "header",
+        "text": "Xiong. et al. ",
+        "bbox": [
+            271,
+            114,
+            354,
+            128
+        ],
+        "page_idx": 13
+    },
+    {
+        "type": "text",
+        "text": "Acknowledgments ",
+        "text_level": 1,
+        "bbox": [
+            217,
+            143,
+            392,
+            162
+        ],
+        "page_idx": 14
+    },
+    {
+        "type": "text",
+        "text": "This paper uses the MS-COCO dataset (https://cocodataset.org/, annotations under CC BY 4.0, images under respective Flickr Creative Commons licenses), the ADE20K dataset (https://ade20k.csail.mit.edu/, images for non-commercial research use only, annotations under BSD 3-Clause License), and the NYUv2 dataset (https://cs.nyu.edu/\\~fergus/datasets/nyu\\_depth\\_v2. html). The authors confirm that the use of all the above datasets in this paper is solely for academic research purposes and has not been used for any commercial activities. We gratefully acknowledge the creators and maintainers of these datasets for making them available to the research community. ",
+        "bbox": [
+            212,
+            176,
+            787,
+            313
+        ],
+        "page_idx": 14
+    },
+    {
+        "type": "text",
+        "text": "References ",
+        "text_level": 1,
+        "bbox": [
+            215,
+            335,
+            321,
+            353
+        ],
+        "page_idx": 14
+    },
+    {
+        "type": "list",
+        "sub_type": "ref_text",
+        "list_items": [
+            "1. Ba, J.L., Kiros, J.R., Hinton, G.E.: Layer normalization. arXiv preprint arXiv:1607.06450 (2016) ",
+            "2. Bao, H., Dong, L., Piao, S., Wei, F.: Beit: Bert pre-training of image transformers. arXiv preprint arXiv:2106.08254 (2021) ",
+            "3. Carion, N., Massa, F., Synnaeve, G., Usunier, N., Kirillov, A., Zagoruyko, S.: Endto-end object detection with transformers. In: European conference on computer vision. pp. 213–229. Springer (2020) ",
+            "4. Chen, S., Ge, C., Tong, Z., Wang, J., Song, Y., Wang, J., Luo, P.: Adaptformer: Adapting vision transformers for scalable visual recognition. Advances in Neural Information Processing Systems 35, 16664–16678 (2022) ",
+            "5. Chen, T., Lucic, M., Houlsby, N., Gelly, S.: On self modulation for generative adversarial networks. arXiv preprint arXiv:1810.01365 (2018) ",
+            "6. Chen, Z., Zeng, Y., Chen, Z., Gao, H., Chen, L., Liu, J., Zhao, F.: Vfm-adapter: Adapting visual foundation models for dense prediction with dynamic hybrid operation mapping. In: Proceedings of the AAAI Conference on Artificial Intelligence. vol. 39, pp. 2385–2393 (2025) ",
+            "7. Cheng, B., Misra, I., Schwing, A.G., Kirillov, A., Girdhar, R.: Masked-attention mask transformer for universal image segmentation. In: Proceedings of the IEEE/CVF conference on computer vision and pattern recognition. pp. 1290–1299 (2022) ",
+            "8. Contributors, M.: MMSegmentation: Openmmlab semantic segmentation toolbox and benchmark. https://github.com/open-mmlab/mmsegmentation (2020) ",
+            "9. Darcet, T., Oquab, M., Mairal, J., Bojanowski, P.: Vision transformers need registers. arXiv preprint arXiv:2309.16588 (2023) ",
+            "10. De Vries, H., Strub, F., Mary, J., Larochelle, H., Pietquin, O., Courville, A.C.: Modulating early visual processing by language. Advances in neural information processing systems 30 (2017) ",
+            "11. Dong, W., Yan, D., Lin, Z., Wang, P.: Efficient adaptation of large vision transformer via adapter re-composing. Advances in Neural Information Processing Systems 36, 52548–52567 (2023) ",
+            "12. Dosovitskiy, A., Beyer, L., Kolesnikov, A., Weissenborn, D., Zhai, X., Unterthiner, T., Dehghani, M., Minderer, M., Heigold, G., Gelly, S., et al.: An image is worth 16x16 words: Transformers for image recognition at scale. arXiv preprint arXiv:2010.11929 (2020) "
+        ],
+        "bbox": [
+            212,
+            363,
+            790,
+            843
+        ],
+        "page_idx": 14
+    },
+    {
+        "type": "header",
+        "text": "SIGMA ",
+        "bbox": [
+            676,
+            114,
+            730,
+            126
+        ],
+        "page_idx": 14
+    },
+    {
+        "type": "page_number",
+        "text": "15 ",
+        "bbox": [
+            767,
+            116,
+            785,
+            126
+        ],
+        "page_idx": 14
+    },
+    {
+        "type": "list",
+        "sub_type": "ref_text",
+        "list_items": [
+            "13. Fan, H., Xiong, B., Mangalam, K., Li, Y., Yan, Z., Malik, J., Feichtenhofer, C.: Multiscale vision transformers. In: Proceedings of the IEEE/CVF international conference on computer vision. pp. 6824–6835 (2021) ",
+            "14. He, K., Chen, X., Xie, S., Li, Y., Dollár, P., Girshick, R.: Masked autoencoders are scalable vision learners. In: Proceedings of the IEEE/CVF conference on computer vision and pattern recognition. pp. 16000–16009 (2022) ",
+            "15. He, K., Gkioxari, G., Dollár, P., Girshick, R.: Mask r-cnn. In: Proceedings of the IEEE international conference on computer vision. pp. 2961–2969 (2017) ",
+            "16. He, K., Zhang, X., Ren, S., Sun, J.: Deep residual learning for image recognition. In: Proceedings of the IEEE conference on computer vision and pattern recognition. pp. 770–778 (2016) ",
+            "17. Houlsby, N., Giurgiu, A., Jastrzebski, S., Morrone, B., De Laroussilhe, Q., Gesmundo, A., Attariyan, M., Gelly, S.: Parameter-efficient transfer learning for nlp. In: International conference on machine learning. pp. 2790–2799. PMLR (2019) ",
+            "18. Hu, E.J., Shen, Y., Wallis, P., Allen-Zhu, Z., Li, Y., Wang, S., Wang, L., Chen, W., et al.: Lora: Low-rank adaptation of large language models. International Conference on Learning Representations 1(2), 3 (2022) ",
+            "19. Huang, S., Lu, Z., Cun, X., Yu, Y., Zhou, X., Shen, X.: Deim: Detr with improved matching for fast convergence. In: Proceedings of the computer vision and pattern recognition conference. pp. 15162–15171 (2025) ",
+            "20. Huang, X., Belongie, S.: Arbitrary style transfer in real-time with adaptive instance normalization. In: Proceedings of the IEEE international conference on computer vision. pp. 1501–1510 (2017) ",
+            "21. Ioffe, S., Szegedy, C.: Batch normalization: Accelerating deep network training by reducing internal covariate shift. In: International conference on machine learning. pp. 448–456. pmlr (2015) ",
+            "22. Jaderberg, M., Simonyan, K., Zisserman, A., et al.: Spatial transformer networks. Advances in neural information processing systems 28 (2015) ",
+            "23. Jia, M., Tang, L., Chen, B.C., Cardie, C., Belongie, S., Hariharan, B., Lim, S.N.: Visual prompt tuning. In: European conference on computer vision. pp. 709–727. Springer (2022) ",
+            "24. Kirillov, A., Mintun, E., Ravi, N., Mao, H., Rolland, C., Gustafson, L., Xiao, T., Whitehead, S., Berg, A.C., Lo, W.Y., et al.: Segment anything. In: Proceedings of the IEEE/CVF international conference on computer vision. pp. 4015–4026 (2023) ",
+            "25. Krizhevsky, A., Sutskever, I., Hinton, G.E.: Imagenet classification with deep convolutional neural networks. Advances in neural information processing systems 25 (2012) ",
+            "26. Li, Y., Fan, H., Hu, R., Feichtenhofer, C., He, K.: Scaling language-image pretraining via masking. In: Proceedings of the IEEE/CVF conference on computer vision and pattern recognition. pp. 23390–23400 (2023) ",
+            "27. Lian, D., Zhou, D., Feng, J., Wang, X.: Scaling & shifting your features: A new baseline for efficient model tuning. Advances in Neural Information Processing Systems 35, 109–123 (2022) ",
+            "28. Lin, T.Y., Maire, M., Belongie, S., Hays, J., Perona, P., Ramanan, D., Dollár, P., Zitnick, C.L.: Microsoft coco: Common objects in context. In: European conference on computer vision. pp. 740–755. Springer (2014) ",
+            "29. Lin, Y., Yuan, Y., Zhang, Z., Li, C., Zheng, N., Hu, H.: Detr does not need multiscale or locality design. In: Proceedings of the IEEE/CVF International Conference on Computer Vision. pp. 6545–6554 (2023) "
+        ],
+        "bbox": [
+            210,
+            142,
+            789,
+            843
+        ],
+        "page_idx": 15
+    },
+    {
+        "type": "page_number",
+        "text": "16 ",
+        "bbox": [
+            217,
+            114,
+            235,
+            126
+        ],
+        "page_idx": 15
+    },
+    {
+        "type": "header",
+        "text": "Xiong. et al. ",
+        "bbox": [
+            271,
+            114,
+            354,
+            128
+        ],
+        "page_idx": 15
+    },
+    {
+        "type": "list",
+        "sub_type": "ref_text",
+        "list_items": [
+            "30. Liu, Z., Lin, Y., Cao, Y., Hu, H., Wei, Y., Zhang, Z., Lin, S., Guo, B.: Swin transformer: Hierarchical vision transformer using shifted windows. In: Proceedings of the IEEE/CVF international conference on computer vision. pp. 10012–10022 (2021) ",
+            "31. Long, J., Shelhamer, E., Darrell, T.: Fully convolutional networks for semantic segmentation. In: Proceedings of the IEEE conference on computer vision and pattern recognition. pp. 3431–3440 (2015) ",
+            "32. Oquab, M., Darcet, T., Moutakanni, T., Vo, H., Szafraniec, M., Khalidov, V., Fernandez, P., Haziza, D., Massa, F., El-Nouby, A., et al.: Dinov2: Learning robust visual features without supervision. arXiv preprint arXiv:2304.07193 (2023) ",
+            "33. Perez, E., Strub, F., De Vries, H., Dumoulin, V., Courville, A.: Film: Visual reasoning with a general conditioning layer. In: Proceedings of the AAAI conference on artificial intelligence. vol. 32 (2018) ",
+            "34. Radford, A., Kim, J.W., Hallacy, C., Ramesh, A., Goh, G., Agarwal, S., Sastry, G., Askell, A., Mishkin, P., Clark, J., et al.: Learning transferable visual models from natural language supervision. In: International conference on machine learning. pp. 8748–8763. PmLR (2021) ",
+            "35. Ranftl, R., Bochkovskiy, A., Koltun, V.: Vision transformers for dense prediction. In: Proceedings of the IEEE/CVF international conference on computer vision. pp. 12179–12188 (2021) ",
+            "36. Ranftl, R., Bochkovskiy, A., Koltun, V.: Vision transformers for dense prediction. In: Proceedings of the IEEE/CVF international conference on computer vision. pp. 12179–12188 (2021) ",
+            "37. Ranftl, R., Lasinger, K., Hafner, D., Schindler, K., Koltun, V.: Towards robust monocular depth estimation: Mixing datasets for zero-shot cross-dataset transfer. IEEE transactions on pattern analysis and machine intelligence 44(3), 1623–1637 (2020) ",
+            "38. Ravi, N., Gabeur, V., Hu, Y.T., Hu, R., Ryali, C., Ma, T., Khedr, H., Rädle, R., Rolland, C., Gustafson, L., et al.: Sam 2: Segment anything in images and videos. arXiv preprint arXiv:2408.00714 (2024) ",
+            "39. Redmon, J., Divvala, S., Girshick, R., Farhadi, A.: You only look once: Unified, real-time object detection. In: Proceedings of the IEEE conference on computer vision and pattern recognition. pp. 779–788 (2016) ",
+            "40. Silberman, N., Hoiem, D., Kohli, P., Fergus, R.: Indoor segmentation and support inference from rgbd images. In: European conference on computer vision. pp. 746– 760. Springer (2012) ",
+            "41. Sun, Q., Fang, Y., Wu, L., Wang, X., Cao, Y.: Eva-clip: Improved training techniques for clip at scale. arXiv preprint arXiv:2303.15389 (2023) ",
+            "42. Tan, M., Pang, R., Le, Q.V.: Efficientdet: Scalable and efficient object detection. In: Proceedings of the IEEE/CVF conference on computer vision and pattern recognition. pp. 10781–10790 (2020) ",
+            "43. Tschannen, M., Gritsenko, A., Wang, X., Naeem, M.F., Alabdulmohsin, I., Parthasarathy, N., Evans, T., Beyer, L., Xia, Y., Mustafa, B., et al.: Siglip 2: Multilingual vision-language encoders with improved semantic understanding, localization, and dense features. arXiv preprint arXiv:2502.14786 (2025) ",
+            "44. Vasu, P.K.A., Pouransari, H., Faghri, F., Vemulapalli, R., Tuzel, O.: Mobileclip: Fast image-text models through multi-modal reinforced training. In: Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition. pp. 15963–15974 (2024) ",
+            "45. Wu, Y., He, K.: Group normalization. In: Proceedings of the European conference on computer vision (ECCV). pp. 3–19 (2018) "
+        ],
+        "bbox": [
+            210,
+            142,
+            789,
+            843
+        ],
+        "page_idx": 16
+    },
+    {
+        "type": "header",
+        "text": "SIGMA ",
+        "bbox": [
+            676,
+            114,
+            730,
+            126
+        ],
+        "page_idx": 16
+    },
+    {
+        "type": "page_number",
+        "text": "17 ",
+        "bbox": [
+            767,
+            114,
+            785,
+            126
+        ],
+        "page_idx": 16
+    },
+    {
+        "type": "list",
+        "sub_type": "ref_text",
+        "list_items": [
+            "46. Xiao, T., Liu, Y., Zhou, B., Jiang, Y., Sun, J.: Unified perceptual parsing for scene understanding. In: Proceedings of the European conference on computer vision (ECCV). pp. 418–434 (2018) ",
+            "47. Yang, L., Kang, B., Huang, Z., Xu, X., Feng, J., Zhao, H.: Depth anything: Unleashing the power of large-scale unlabeled data. In: Proceedings of the IEEE/CVF conference on computer vision and pattern recognition. pp. 10371–10381 (2024) ",
+            "48. Yang, L., Kang, B., Huang, Z., Zhao, Z., Xu, X., Feng, J., Zhao, H.: Depth anything v2. Advances in Neural Information Processing Systems 37, 21875–21911 (2024) ",
+            "49. Yin, D., Yang, Y., Wang, Z., Yu, H., Wei, K., Sun, X.: 1% vs 100%: Parameterefficient low rank adapter for dense predictions. In: Proceedings of the IEEE/CVF conference on computer vision and pattern recognition. pp. 20116–20126 (2023) ",
+            "50. Yosinski, J., Clune, J., Bengio, Y., Lipson, H.: How transferable are features in deep neural networks? Advances in neural information processing systems 27 (2014) ",
+            "51. Yu, C., Wang, J., Peng, C., Gao, C., Yu, G., Sang, N.: Bisenet: Bilateral segmentation network for real-time semantic segmentation. In: Proceedings of the European conference on computer vision (ECCV). pp. 325–341 (2018) ",
+            "52. Zaken, E.B., Goldberg, Y., Ravfogel, S.: Bitfit: Simple parameter-efficient finetuning for transformer-based masked language-models. In: Proceedings of the 60th Annual Meeting of the Association for Computational Linguistics (Volume 2: Short Papers). pp. 1–9 (2022) ",
+            "53. Zhai, X., Mustafa, B., Kolesnikov, A., Beyer, L.: Sigmoid loss for language image pre-training. In: Proceedings of the IEEE/CVF international conference on computer vision. pp. 11975–11986 (2023) ",
+            "54. Zhao, Y., Lv, W., Xu, S., Wei, J., Wang, G., Dang, Q., Liu, Y., Chen, J.: Detrs beat yolos on real-time object detection. In: Proceedings of the IEEE/CVF conference on computer vision and pattern recognition. pp. 16965–16974 (2024) ",
+            "55. Zhou, B., Zhao, H., Puig, X., Fidler, S., Barriuso, A., Torralba, A.: Scene parsing through ade20k dataset. In: Proceedings of the IEEE conference on computer vision and pattern recognition. pp. 633–641 (2017) ",
+            "56. Zhou, J., Wei, C., Wang, H., Shen, W., Xie, C., Yuille, A., Kong, T.: ibot: Image bert pre-training with online tokenizer. arXiv preprint arXiv:2111.07832 (2021) "
+        ],
+        "bbox": [
+            210,
+            142,
+            789,
+            579
+        ],
+        "page_idx": 17
+    },
+    {
+        "type": "page_number",
+        "text": "18 ",
+        "bbox": [
+            217,
+            114,
+            235,
+            126
+        ],
+        "page_idx": 17
+    },
+    {
+        "type": "header",
+        "text": "Xiong. et al. ",
+        "bbox": [
+            271,
+            114,
+            354,
+            128
+        ],
+        "page_idx": 17
+    }
+]

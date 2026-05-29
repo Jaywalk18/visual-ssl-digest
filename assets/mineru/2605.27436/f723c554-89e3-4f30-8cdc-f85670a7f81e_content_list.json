@@ -1,0 +1,1776 @@
+[
+    {
+        "type": "text",
+        "text": "RE-TRIANGLE: Does TRIANGLE Enable Multimodal Alignment Beyond Cosine Similarity in Retrieval? ",
+        "text_level": 1,
+        "bbox": [
+            94,
+            99,
+            903,
+            151
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "Arijit Ghosh∗ ",
+        "bbox": [
+            241,
+            162,
+            352,
+            178
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "arijit.ghosh@student.uva.nl ",
+        "bbox": [
+            204,
+            179,
+            392,
+            193
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "University of Amsterdam ",
+        "bbox": [
+            212,
+            194,
+            383,
+            208
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "Amsterdam, The Netherlands ",
+        "bbox": [
+            197,
+            210,
+            397,
+            223
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "Chiranjeev Bindra∗ ",
+        "bbox": [
+            218,
+            237,
+            374,
+            253
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "chiranjeev.bindra@student.uva.nl ",
+        "bbox": [
+            184,
+            255,
+            411,
+            268
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "University of Amsterdam ",
+        "bbox": [
+            210,
+            268,
+            383,
+            282
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "Amsterdam, The Netherlands ",
+        "bbox": [
+            197,
+            284,
+            395,
+            297
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "Abstract ",
+        "text_level": 1,
+        "bbox": [
+            83,
+            306,
+            156,
+            321
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "Multimodal alignment is critical for bridging the semantic gap in information retrieval. However, traditional pairwise strategies introduce a geometric blind spot: while they align anchor modalities (e.g., text) with others, they lack constraints to enforce mutual consistency between peripheral modalities (e.g., video and audio). The TRIANGLE framework addresses this by minimizing the area of modality triplets on a hypersphere to enforce holistic alignment. In this reproducibility study, we verify the robustness of this geometric objective for retrieval tasks. We confirm that TRIANGLE outperforms pairwise baselines in zero-shot settings, achieving Recall@1 gains of up to +8.7 points, though benefits are domain-dependent. However, we fail to reproduce the reported learning-from-scratch results. Analysis using a synthetic toy dataset attributes this to instability when jointly optimizing geometric alignment with Data-Text Matching (DTM) loss. Furthermore, we find that cosine regularization primarily stabilizes text-to-video retrieval, and fine-tuning with domain supervision amplifies geometric benefits but reduces cross-dataset generalization. Our findings support the efficacy of geometric alignment while highlighting critical optimization sensitivities.1 ",
+        "bbox": [
+            81,
+            325,
+            483,
+            602
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "CCS Concepts ",
+        "text_level": 1,
+        "bbox": [
+            83,
+            618,
+            202,
+            633
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "• Information systems → Multimedia and multimodal retrieval. ",
+        "bbox": [
+            83,
+            637,
+            483,
+            664
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "Keywords ",
+        "text_level": 1,
+        "bbox": [
+            83,
+            680,
+            169,
+            695
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "Multimodal retrieval, Contrastive Learning, Multimodal IR, Trimodal alignment ",
+        "bbox": [
+            81,
+            698,
+            483,
+            727
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "list",
+        "sub_type": "text",
+        "list_items": [
+            "∗All authors contributed equally to this research. ",
+            "1Code available at https://github.com/ARIJIT00171/RE-TRIANGLE "
+        ],
+        "bbox": [
+            81,
+            755,
+            395,
+            789
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "image",
+        "img_path": "images/840b9008a94a9fe0a10fd00130d00f9510d99c327006136b9827c8893babde97.jpg",
+        "image_caption": [],
+        "image_footnote": [],
+        "content": "",
+        "bbox": [
+            84,
+            818,
+            158,
+            840
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "This work is licensed under a Creative Commons Attribution 4.0 International License. ",
+        "bbox": [
+            83,
+            840,
+            482,
+            852
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "SIGIR ’26, Melbourne, VIC, Australia ",
+        "bbox": [
+            84,
+            853,
+            253,
+            862
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "© 2026 Copyright held by the owner/author(s). ",
+        "bbox": [
+            84,
+            864,
+            303,
+            875
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "ACM ISBN 979-8-4007-2599-9/2026/07 ",
+        "bbox": [
+            84,
+            875,
+            264,
+            883
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "https://doi.org/10.1145/3805712.3808552 ",
+        "bbox": [
+            84,
+            883,
+            272,
+            895
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "Aritra Bandyopadhyay∗ aritra.bandyopadhyay@student.uva.nl University of Amsterdam Amsterdam, The Netherlands ",
+        "bbox": [
+            570,
+            162,
+            830,
+            223
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "Jingfen Qiao∗† ",
+        "bbox": [
+            637,
+            234,
+            756,
+            253
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "j.qiao@uva.nl ",
+        "bbox": [
+            651,
+            255,
+            746,
+            268
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "University of Amsterdam ",
+        "bbox": [
+            614,
+            270,
+            785,
+            282
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "Amsterdam, The Netherlands ",
+        "bbox": [
+            599,
+            284,
+            797,
+            297
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "ACM Reference Format: ",
+        "text_level": 1,
+        "bbox": [
+            514,
+            309,
+            661,
+            321
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "Arijit Ghosh, Aritra Bandyopadhyay, Chiranjeev Bindra, and Jingfen Qiao. 2026. RE-TRIANGLE: Does TRIANGLE Enable Multimodal Alignment Beyond Cosine Similarity in Retrieval?. In Proceedings of the 49th International ACM SIGIR Conference on Research and Development in Information Retrieval (SIGIR ’26), July 20–24, 2026, Melbourne, VIC, Australia. ACM, New York, NY, USA, 10 pages. https://doi.org/10.1145/3805712.3808552 ",
+        "bbox": [
+            513,
+            321,
+            915,
+            398
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "1 Introduction ",
+        "text_level": 1,
+        "bbox": [
+            514,
+            411,
+            650,
+            425
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "chart",
+        "img_path": "images/fe10a0eff0dce89fb228877ab9f61e1ed611abc058a0b194187bb55fc37c3997.jpg",
+        "content": "| Point | x    | y    | z    |\n|-------|------|------|------|\n| V1    | 0.0  | 0.0  | 1.0  |\n| T1    | 0.0  | 0.0  | 1.0  |\n| A1    | 0.0  | 0.0  | 0.5  |",
+        "chart_caption": [
+            "Figure 1: TRIANGLE loss aims to minimize the Triangle area formed by the embedding vectors on a unit hypersphere between three modalities - Video (V1), Audio (A1) and Text(T1). "
+        ],
+        "chart_footnote": [],
+        "sub_type": "surface_3d",
+        "bbox": [
+            529,
+            458,
+            895,
+            700
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "Multimodal alignment is a fundamental challenge in Multimodal Information Retrieval, where the goal is to bridge the semantic gap between multiple co-occurrent signals. This field was revolutionized by foundational dual-encoder models like CLIP [18] and ALIGN [12], which leverage pairwise contrastive learning to align images and text. Following this paradigm, numerous works have focused on refining alignment mechanics [21, 24] or extending the architecture to specific modality pairs, such as audio-text in ",
+        "bbox": [
+            511,
+            784,
+            913,
+            896
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "aside_text",
+        "text": "arXiv:2605.27436v1 [cs.IR] 22 May 2026 ",
+        "bbox": [
+            22,
+            276,
+            58,
+            719
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "CLAP [8], video-text in CLIP4Clip [15], and point cloud-text in PointCLIP [25]. This approach has been scaled to more than two modalities by selecting a central anchor and aligning all other representations to it one by one, such as ImageBind [11] and VAST [3]. ",
+        "bbox": [
+            81,
+            106,
+            480,
+            162
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "text",
+        "text": "However, this pairwise alignment introduces a significant geometric blind spot [5]. While the anchor modality aligns with others, there is no explicit constraint ensuring that peripheral modalities (e.g., Video and Audio) are effectively aligned with one another. Similarly, fusion-based methods [3] reduce the tri-modal problem back to a pairwise objective (Fused Vector vs. Text), effectively masking the fine-grained geometric structure of the latent space. Recent efforts to model the joint distribution of ?? modalities, such as Symile [19] (optimizing total correlation) and GRAM [6] (minimizing Gramian volume), offer theoretical alternatives. Yet, these often suffer from computational instability or the \"vanishing volume\" problem in high dimensions, failing to outperform specialized baselines in tri-modal tasks. ",
+        "bbox": [
+            81,
+            162,
+            482,
+            340
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "text",
+        "text": "To address this, [5] proposed TRIANGLE: TRI-modAl Neural Geometric LEarning. Rather than relying on independent 2D projections via cosine similarity, TRIANGLE computes a similarity measure directly in the higher-dimensional space spanned by three modality embeddings. This similarity is defined by the area of the triangle formed by the three modality embeddings lying on a unit hypersphere, replacing the standard cosine similarity metric. By minimizing this triangle area, the model encourages a holistic, joint alignment among all three modalities simultaneously. The authors claim this approach provides a reliable, interpretable metric for modality alignment and achieves state-of-the-art results, improving the performance of cosine-based methods by up to 9 points in Recall@1 ",
+        "bbox": [
+            81,
+            342,
+            482,
+            521
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "text",
+        "text": "Despite the theoretical elegance and reported performance gains of the TRIANGLE objective, its practical robustness and generalizability require independent verification. In this paper, we present a comprehensive reproducibility study motivated by three core research objectives: ",
+        "bbox": [
+            81,
+            536,
+            483,
+            604
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "list",
+        "sub_type": "text",
+        "list_items": [
+            "• RQ1 (Alignment Effectiveness in Multimodal Retrieval): Can a tri-modal geometric objective outperform independent pairwise alignment in multimodal retrieval tasks? ",
+            "• RQ2 (Out of domain performance): Can the pre-trained tri-modal geometric objective effectively adapt to out-ofdomain distributions through continuous fine-tuning? ",
+            "• RQ3 (Effectiveness of Learning from Scratch): Does trimodal geometric objective also helps when training from scratch? ",
+            "• RQ4 (Interpretability of Triangle Similarity): Does the triangle area provide a consistent and geometrically unambiguous indicator of modality alignment during training and inference? "
+        ],
+        "bbox": [
+            109,
+            614,
+            485,
+            792
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "text",
+        "text": "In response to these questions, we present the following findings: ",
+        "bbox": [
+            83,
+            803,
+            480,
+            818
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "list",
+        "sub_type": "text",
+        "list_items": [
+            "• We corroborate the original finding that the tri-modal geometric objective outperforms independent pairwise alignment in zero-shot retrieval tasks across diverse datasets. ",
+            "• We extend the evaluation to YouCook2 [26] to test if the tri-modal geometric objective holds up in out-of-domain "
+        ],
+        "bbox": [
+            109,
+            825,
+            482,
+            895
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "text",
+        "text": "video retrieval. We find that the objective is highly domainsensitive, significantly underperforming in the unseen homogeneous YouCook2 domain compared to the baselines. ",
+        "bbox": [
+            552,
+            106,
+            915,
+            148
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "list",
+        "sub_type": "text",
+        "list_items": [
+            "• Investigating the reproducibility issues for the learning-thespace-from-scratch experiment by curating a small toy dataset consisting of geometric shapes for a controlled study. ",
+            "• Our qualitative analysis validates the Triangle area as an interpretable similarity metric. Our visualizations reveal that while text and video align closely, audio remains geometrically distant, explaining the model’s uneven cross-modal performance . "
+        ],
+        "bbox": [
+            540,
+            148,
+            916,
+            258
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "text",
+        "text": "2 Overview of Triangle Alignment ",
+        "text_level": 1,
+        "bbox": [
+            514,
+            271,
+            808,
+            286
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "text",
+        "text": "2.1 Preliminaries: Pairwise Alignment ",
+        "text_level": 1,
+        "bbox": [
+            514,
+            290,
+            841,
+            306
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "text",
+        "text": "Conventional multimodal retrieval relies on maximizing pairwise cosine similarity between an anchor (e.g., Text) and other modalities (e.g., Audio/Video). Formally, given a batch size ?? and a temperature parameter ??, the symmetric pairwise contrastive loss between embeddings ?? and ?? is computed in Equation 1. ",
+        "bbox": [
+            513,
+            309,
+            915,
+            378
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "equation",
+        "text": "$$\n\\mathcal {L} _ {\\text { Pair }} = - \\frac {1}{2 B} \\sum_ {(x, y)} \\sum_ {i = 1} ^ {B} \\log \\frac {\\exp \\left(\\mathbf {x} _ {i} ^ {\\top} \\mathbf {y} _ {i} / \\tau\\right)}{\\sum_ {j = 1} ^ {B} \\exp \\left(\\mathbf {x} _ {i} ^ {\\top} \\mathbf {y} _ {j} / \\tau\\right)} \\tag {1}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            578,
+            388,
+            911,
+            426
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "text",
+        "text": "where the outer summation iterates over the directional pairs (??, ??) ∈ {(a, t), (t, a), (v, t), (t, v)}. The t, a, and v denote the normalized embeddings for text, audio, and video, respectively. In this setting, the peripheral relationships (e.g., Audio-Video) are not explicitly optimized. To address this, VAST aggregates video v and audio a representations into a unified vector via a MLP fusion layer, and the contrastive loss is applied between this single fused vector and the text. However, this approach collapses the distinct geometric structure of the individual modalities into a single point before alignment. ",
+        "bbox": [
+            513,
+            428,
+            915,
+            566
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "text",
+        "text": "2.2 Geometric Tri-modal Alignment ",
+        "text_level": 1,
+        "bbox": [
+            514,
+            578,
+            823,
+            594
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "text",
+        "text": "To address the limitations of the independent pairwise alignment, TRIANGLE proposed to align three modalities concurrently by maintaining their distinct positions in the joint latent space, and posits that the area of this triangle serves as a superior similarity metric. Specifically, it utilizes three backbone encoders to map different modality inputs into x, y, and z embeddings of fixed dimensionality. These vectors are normalized to the unit norm, constraining them to lie on the surface of a unit hypersphere. ",
+        "bbox": [
+            511,
+            597,
+            913,
+            708
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "text",
+        "text": "Triangle Area Similarity. As illustrated in Figure 1 (and further detailed in Figure 4), the extremities of the three embedding vectors define the vertices of a triangle. Let u = x − y and w = x − z are two triangle sides computed among the three embeddings x, y, and z of the three modalities. The alignment similarity ?? is derived from the triangle area, augmented by a pairwise regularization term, as shown in Equation 2. ",
+        "bbox": [
+            513,
+            708,
+            913,
+            805
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "equation",
+        "text": "$$\nA = \\frac {1}{2} \\sqrt {\\langle \\mathbf {u} , \\mathbf {u} \\rangle \\langle \\mathbf {w} , \\mathbf {w} \\rangle - \\langle \\mathbf {u} , \\mathbf {w} \\rangle^ {2}} - \\alpha \\cos \\theta_ {x y} \\tag {2}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            584,
+            814,
+            911,
+            840
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "text",
+        "text": "where⟨·, ·⟩ is the dot product. The first term represents the geometric area, which minimizes only when all three vectors are proximal. The second term is a regularization factor where cos $\\theta _ { x y }$ is the cosine similarity between the specific modality pair (??, ??) in the retrieval task. This ensures that while the triplet geometry is optimized, the task-relevant pairwise alignment is explicitly encouraged preventing the optimization from drifting into geometric configurations that satisfy the area constraint but degrade pairwise retrieval. ",
+        "bbox": [
+            513,
+            840,
+            915,
+            896
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "header",
+        "text": "SIGIR ’26, July 20–24, 2026, Melbourne, VIC, Australia ",
+        "bbox": [
+            84,
+            75,
+            341,
+            87
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "header",
+        "text": "Arijit Ghosh, Aritra Bandyopadhyay, Chiranjeev Bindra, and Jingfen Qiao ",
+        "bbox": [
+            563,
+            75,
+            913,
+            87
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "text",
+        "text": "",
+        "bbox": [
+            81,
+            106,
+            480,
+            175
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "2.3 Tri-modal Optimization Objectives ",
+        "text_level": 1,
+        "bbox": [
+            83,
+            189,
+            410,
+            205
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "TRIANGLE adapts the standard contrastive objective by replacing the cosine similarity measure with the negative triangle area metric defined above. The loss function minimizes this area for positive triplets (pulling all three modalities together) while maximizing it for negative triplets. The optimization objective consists of two directional components: Data-to-Text $\\left( \\mathcal { L } _ { D 2 T } \\right)$ and Text-to-Data $\\left( \\mathcal { L } _ { T 2 D } \\right)$ , where Data refers to the paired audio-video input. ",
+        "bbox": [
+            81,
+            207,
+            483,
+            305
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "equation",
+        "text": "$$\n\\mathcal {L} _ {D 2 T} = - \\frac {1}{B} \\sum_ {i = 1} ^ {B} \\log \\frac {\\exp (- A (t _ {i} , v _ {i} , a _ {i}) / \\tau)}{\\sum_ {j = 1} ^ {K} \\exp (- A (t _ {j} , v _ {i} , a _ {i}) / \\tau)} \\tag {3}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            142,
+            319,
+            482,
+            357
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "equation",
+        "text": "$$\n\\mathcal {L} _ {T 2 D} = - \\frac {1}{B} \\sum_ {i = 1} ^ {B} \\log \\frac {\\exp (- A (t _ {i} , v _ {i} , a _ {i}) / \\tau)}{\\sum_ {j = 1} ^ {K} \\exp (- A (t _ {i} , v _ {j} , a _ {j}) / \\tau)} \\tag {4}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            142,
+            367,
+            482,
+            404
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "To further refine the alignment, a Data-Text Matching loss $( \\mathcal { L } _ { D T M } )$ is employed. This binary classification objective predicts the probability $\\phi _ { d t m }$ that a text caption matches the corresponding audiovideo features using a cross-attention mechanism: ",
+        "bbox": [
+            81,
+            407,
+            486,
+            463
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "equation",
+        "text": "$$\n\\mathcal {L} _ {D T M} = \\mathbb {E} _ {(t, v, a) \\sim (T, V, A)} [ y \\log p _ {d t m} + (1 - y) \\log (1 - p _ {d t m}) ] \\tag {5}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            96,
+            484,
+            480,
+            502
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "The final total loss LTOT is a weighted combination of the geometric contrastive losses and the matching loss: ",
+        "bbox": [
+            83,
+            508,
+            483,
+            536
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "equation",
+        "text": "$$\n\\mathcal {L} _ {\\mathrm{TOT}} = \\frac {1}{2} \\left(\\mathcal {L} _ {\\mathrm{D2T}} + \\mathcal {L} _ {\\mathrm{T2D}}\\right) + \\lambda \\mathcal {L} _ {\\mathrm{DTM}}. \\tag {6}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            171,
+            550,
+            482,
+            575
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "3 Reproducibility and Replicability ",
+        "text_level": 1,
+        "bbox": [
+            83,
+            585,
+            385,
+            602
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "In this section, we address RQ1 and RQ2 by reproducing and replicating the experimental setup of the original study to verify its claims regarding the effectiveness of multimodal retrieval and learning efficiency. Firstly, we validate the model’s multimodal retrieval effectiveness by evaluating it on the datasets mentioned in the original paper and extending the evaluation and training to a new dataset with different domain. Secondly, we assess its learning effectiveness and efficiency by training the model entirely from scratch. Additionally, while the original paper relied exclusively on Recall to measure performance, our study extensively evaluates ranking capability using broader metrics such as nDCG@10 and MRR@10. To ensure a strictly fair comparison, we also re-evaluate the VAST and a cosine similarity baseline on the exact same datasets used for the TRIANGLE experiments, which used backbones similar to TRIANGLE but used different alignment objectives and similarity measurement methods. The COSINE baseline in Tables 1 and 3 uses the same pretrained TRIANGLE encoders and computes retrieval scores via pairwise cosine similarity between text, audio, and video embeddings, without TRIANGLE area scoring. This isolates the effect of the similarity function, separating representation learning from geometric alignment. ",
+        "bbox": [
+            81,
+            604,
+            482,
+            896
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "3.1 Replication of Multimodal Retrieval Effectiveness ",
+        "text_level": 1,
+        "bbox": [
+            514,
+            104,
+            854,
+            136
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "Experiment setup. In this setting, we utilize the pre-trained TRI-ANGLE checkpoint released by the authors. This model uses BERT-Base [7] for text, BEATS [4] for audio, and EVA-CLIP-ViT-G [20] for video. These backbones were pre-trained on a subset of 150k video-audio-text triplets sampled from the VAST-27M dataset with TRIANGLE optimization objective. We evaluate this model across a diverse set of multimodal retrieval benchmarks, including video and audio retrieval. For video retrieval, we replicate the evaluation on MSR-VTT [23], DiDeMo [1], ActivityNet [2], and VATEX [22] datasets. To assess domain generalization, we extend the evaluation to YouCook2, a dataset of instructional cooking videos that serves as a stress test for the model. For audio retrieval, we utilize the AudioCaps [14] dataset and extend the original experimental scope to include the inverse audio-to-text task. The detailed statistics of all evaluation datasets are summarized in Table 7. ",
+        "bbox": [
+            511,
+            140,
+            913,
+            348
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "Claim 1: Effectiveness of Three-modal Alignment in Video Retrieval. The video retrieval task comprises two subtasks: Text-to-Video (retrieving the most relevant video given a natural language query) and Video-to-Text (retrieving the most relevant caption given a video). ",
+        "bbox": [
+            511,
+            361,
+            913,
+            430
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "We successfully reproduced the results for both zero-shot video retrieval subtasks and extended the evaluation to a new dataset, YouCook2. Our results (Table 1) largely confirm the main claims of the TRIANGLE paper. On MSR-VTT, ActivityNet, and VATEX, TRIANGLE consistently outperforms VAST across both retrieval directions and in all reported metrics. These results support the claim that jointly leveraging text, video, and audio through a tri-modal alignment objective can improve downstream retrieval performance compared to pairwise baselines. Notably, scores on ActivityNet are substantial, with improvements of up to +8.7% Recall@1 for Textto-Video retrieval and +12.1% for Video-to-Text retrieval, indicating that the triangle area objective is particularly effective in aligning modality in diverse and long videos. ",
+        "bbox": [
+            511,
+            431,
+            913,
+            611
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "However, our extended analysis reveals that the effectiveness of geometric alignment is not universal. On DiDeMo, while TRIAN-GLE improves Recall@1, it shows negligible gains or slight drops in deeper ranking metrics (nDCG@10, RR@10). This indicates that while the objective effectively pushes the ground truth to the top, it does not uniformly improve the semantic ordering of the remaining candidates. ",
+        "bbox": [
+            511,
+            611,
+            913,
+            705
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "Most critically, TRIANGLE significantly underperforms VAST on other domain of dataset YouCook2, suffering major drops across all metrics. In the zero-shot setting, TRIANGLE achieves only 14.0 R@1 (T2V) compared to VAST’s 33.9. A similar degradation is observed for Video-to-Text retrieval (24.2 vs 37.7 R@1). Unlike MSR-VTT and ActivityNet, which contain diverse web-scale content, YouCook2 consists of short, instructional cooking videos with repetitive visual contexts (e.g., similar kitchen scenes) and verb-centric procedural language. This suggests that the learned tri-modal alignment geometry is sensitive to domain-specific semantics and may not preserve retrieval robustness under distribution shift. ",
+        "bbox": [
+            511,
+            707,
+            913,
+            859
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "To investigate whether this failure stems from domain mismatch rather than the objective design itself, we fine-tuned TRIANGLE on YouCook2 (Table 2). This domain-specific optimization yields substantial improvements over the zero-shot TRIANGLE model (pretrained on VAST subset), increasing Text-to-Video R@1 from 14.0 to 33.15 and Video-to-Text R@1 from 24.2 to 33.18. This confirms that the tri-modal objective retains the capacity to adapt to instructional data when explicitly supervised. ",
+        "bbox": [
+            513,
+            859,
+            913,
+            888
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "header",
+        "text": "RE-TRIANGLE: Does TRIANGLE Enable Multimodal Alignment Beyond Cosine Similarity in Retrieval? ",
+        "bbox": [
+            83,
+            75,
+            566,
+            87
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "header",
+        "text": "SIGIR ’26, July 20–24, 2026, Melbourne, VIC, Australia ",
+        "bbox": [
+            656,
+            75,
+            913,
+            85
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "table",
+        "img_path": "images/f389b6747ac423476333ba07280505bd15e81e33b47de837c097cc5479821355.jpg",
+        "table_caption": [
+            "Table 1: Zero-Shot Video Retrieval Results. We report the original paper’s Recall@1 (R@1) alongside our reproduced results for both Text-to-Video (T2V) and Video-to-Text (V2T) tasks. In addition to R@1, we report Recall@10, nDCG@10, and Reciprocal Rank@10 (RR) to assess ranking quality. Δ indicates the improvement of TRIANGLE (with ???????? ) over our reproduced VAST baseline. ∗ indicates statistically significant differences between TRIANGLE (with ????????) and VAST under a two-tailed paired permutation test (?? < 0.01). "
+        ],
+        "table_footnote": [],
+        "table_body": "<table><tr><td rowspan=\"2\">Dataset / Method</td><td colspan=\"2\">Original</td><td colspan=\"4\">Reproduced (Text → Video)</td><td colspan=\"4\">Reproduced (Video → Text)</td></tr><tr><td>R@1 (T2V)</td><td>R@1 (V2T)</td><td>R@1</td><td>R@10</td><td>nDCG@10</td><td>RR@10</td><td>R@1</td><td>R@10</td><td>nDCG@10</td><td>RR@10</td></tr><tr><td colspan=\"11\">MSR-VTT</td></tr><tr><td>COSINE</td><td>-</td><td>-</td><td>44.8</td><td>82.1</td><td>62.7</td><td>56.5</td><td>38.1</td><td>77.7</td><td>56.8</td><td>50.3</td></tr><tr><td>VAST</td><td>49.3</td><td>43.7</td><td>51.0</td><td>74.0</td><td>62.4</td><td>58.7</td><td>52.8</td><td>77.0</td><td>64.9</td><td>61.0</td></tr><tr><td>TRIANGLE</td><td>55.2</td><td>52.5</td><td>54.4*</td><td>81.3</td><td>67.5*</td><td>63.2*</td><td>54.6</td><td>82.7*</td><td>68.5*</td><td>64.0*</td></tr><tr><td>Δ w.r.t VAST</td><td>+5.9</td><td>+8.8</td><td>+3.4</td><td>+7.3</td><td>+5.1</td><td>+4.5</td><td>+1.8</td><td>+5.7</td><td>+3.6</td><td>+3.0</td></tr><tr><td colspan=\"11\">DiDeMo</td></tr><tr><td>COSINE</td><td>-</td><td>-</td><td>38.5</td><td>71.4</td><td>54.5</td><td>49.1</td><td>37.4</td><td>71.1</td><td>53.5</td><td>48.0</td></tr><tr><td>VAST</td><td>49.5</td><td>48.2</td><td>50.6</td><td>78.2</td><td>64.5</td><td>60.0</td><td>51.4</td><td>78.5</td><td>64.9</td><td>60.6</td></tr><tr><td>TRIANGLE</td><td>54.9</td><td>53.1</td><td>51.7*</td><td>75.6</td><td>63.6</td><td>59.7</td><td>51.5*</td><td>78.9*</td><td>64.8</td><td>60.2</td></tr><tr><td>Δ w.r.t VAST</td><td>+5.4</td><td>+4.9</td><td>+1.1</td><td>-2.6</td><td>-0.9</td><td>-0.3</td><td>+0.1</td><td>+0.4</td><td>-0.1</td><td>-0.4</td></tr><tr><td colspan=\"11\">ActivityNet</td></tr><tr><td>COSINE</td><td>-</td><td>-</td><td>45.8</td><td>84.7</td><td>64.5</td><td>58.1</td><td>39.5</td><td>80.6</td><td>58.9</td><td>52.1</td></tr><tr><td>VAST</td><td>51.4</td><td>46.8</td><td>49.8</td><td>81.0</td><td>65.1</td><td>60.0</td><td>46.7</td><td>75.0</td><td>60.6</td><td>56.0</td></tr><tr><td>TRIANGLE</td><td>59.7</td><td>54.1</td><td>58.5*</td><td>87.3*</td><td>72.8*</td><td>68.1*</td><td>58.8*</td><td>88.6*</td><td>73.5*</td><td>68.7*</td></tr><tr><td>Δ w.r.t VAST</td><td>+8.3</td><td>+7.3</td><td>+8.7</td><td>+6.3</td><td>+7.7</td><td>+8.1</td><td>+12.1</td><td>+13.6</td><td>+12.9</td><td>+12.7</td></tr><tr><td colspan=\"11\">VATEX</td></tr><tr><td>COSINE</td><td>-</td><td>-</td><td>75.2</td><td>98.1</td><td>87.9</td><td>84.5</td><td>69.9</td><td>97.4</td><td>84.5</td><td>80.3</td></tr><tr><td>VAST</td><td>80.0</td><td>77.3</td><td>79.2</td><td>95.8</td><td>88.2</td><td>85.7</td><td>77.1</td><td>95.4</td><td>87.2</td><td>84.4</td></tr><tr><td>TRIANGLE</td><td>83.9</td><td>80.9</td><td>82.0*</td><td>98.1*</td><td>90.9*</td><td>88.5*</td><td>82.2*</td><td>98.7*</td><td>91.3*</td><td>88.9*</td></tr><tr><td>Δ w.r.t VAST</td><td>+3.9</td><td>+3.6</td><td>+2.8</td><td>+2.3</td><td>+2.7</td><td>+2.8</td><td>+5.1</td><td>+3.3</td><td>+4.1</td><td>+4.5</td></tr><tr><td colspan=\"11\">YouCook2</td></tr><tr><td>COSINE</td><td>-</td><td>-</td><td>11.2</td><td>39.5</td><td>23.6</td><td>18.8</td><td>8.7</td><td>32.3</td><td>19.0</td><td>14.9</td></tr><tr><td>VAST</td><td>-</td><td>-</td><td>33.9</td><td>54.1</td><td>43.8</td><td>40.6</td><td>37.7</td><td>66.1</td><td>51.4</td><td>46.7</td></tr><tr><td>TRIANGLE</td><td>-</td><td>-</td><td>14.0</td><td>24.6</td><td>19.2</td><td>17.4</td><td>24.2</td><td>46.9</td><td>35.1</td><td>31.3</td></tr><tr><td>Δ w.r.t VAST</td><td>-</td><td>-</td><td>-19.9</td><td>-29.5</td><td>-24.6</td><td>-23.2</td><td>-13.5</td><td>-19.2</td><td>-16.3</td><td>-15.4</td></tr></table>",
+        "bbox": [
+            158,
+            188,
+            839,
+            577
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "text",
+        "text": "",
+        "bbox": [
+            81,
+            597,
+            482,
+            680
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "text",
+        "text": "However, this adaptation comes at a high cost in generalization. As shown in Table 2, fine-tuning on YouCook2 leads to severe degradation in zero-shot performance on MSR-VTT and DiDeMo. On MSR-VTT, Text-to-Video R@1 drops from 54.4 to 24.43 (29.97 points), while on DiDeMo it drops from 51.7 to 16.75 (34.95 points). The degradation is even more noticeable in deeper ranking metrics such as R@10 and nDCG@10. This suggests that domain-specific fine-tuning of the tri-modal geometric objective reorients the embedding space toward instructional semantics, disrupting previously learned cross-modal geometry. ",
+        "bbox": [
+            81,
+            680,
+            482,
+            818
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "text",
+        "text": "These results reveal a trade-off between domain-specific adaptation and global alignment stability. While the tri-modal objective can specialize effectively to instructional data, it does not preserve previously learned cross-domain alignment structure. ",
+        "bbox": [
+            81,
+            819,
+            482,
+            875
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "text",
+        "text": "Claim 2: Effectiveness of Three-modal Alignment in Audio Retrieval To verify if the geometric benefits extend beyond video, we investigated audio-text and text-audio alignment using AudioCaps [14]. ",
+        "bbox": [
+            511,
+            597,
+            913,
+            652
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "text",
+        "text": "We successfully reproduced the Text-to-Audio results (Table 3). While the gap in Recall@10 is smaller than originally reported, TRIANGLE shows significant improvements in ranking quality (nDCG and RR) compared to VAST. Furthermore, our extension to the inverse task (Audio-to-Text) yields similar improvement margins (Table 3). This symmetry is a crucial finding: it confirms that the TRIANGLE objective does not just over-fit to a specific direction (e.g., T→A) but creates a genuinely holistic latent space where text, video, and audio are mutually accessible. ",
+        "bbox": [
+            511,
+            652,
+            913,
+            777
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "text",
+        "text": "Answers to RQ1 and RQ2: Our findings confirm that a trimodal geometric objective significantly outperforms independent pairwise alignment in zero-shot settings, provided the target domain exhibits sufficient multimodal diversity. However, this advantage is not universal; in specialized or highly homogeneous domains, geometric alignment may be superseded by fusion-based methods. ",
+        "bbox": [
+            511,
+            777,
+            913,
+            873
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "header",
+        "text": "SIGIR ’26, July 20–24, 2026, Melbourne, VIC, Australia ",
+        "bbox": [
+            84,
+            75,
+            341,
+            87
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "header",
+        "text": "Arijit Ghosh, Aritra Bandyopadhyay, Chiranjeev Bindra, and Jingfen Qiao ",
+        "bbox": [
+            563,
+            75,
+            913,
+            87
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "table",
+        "img_path": "images/c5dfc1b3ae7696e6d83372a3bd46ff605e33577489e38dde0134b78c6c4e4c8d.jpg",
+        "table_caption": [
+            "Table 2: Effect of fine-tuning TRIANGLE on YouCook2. The table evaluates both the in-domain and out-of-domain dataset. Absolute drops and improvements are computed with respect to the pretrained TRIANGLE model before fine-tuning. "
+        ],
+        "table_footnote": [],
+        "table_body": "<table><tr><td rowspan=\"2\">Method</td><td colspan=\"4\">Text → Video (T2V)</td><td colspan=\"4\">Video → Text (V2T)</td></tr><tr><td>R@1</td><td>R@10</td><td>nDCG@10</td><td>RR@10</td><td>R@1</td><td>R@10</td><td>nDCG@10</td><td>RR@10</td></tr><tr><td colspan=\"9\">In-Domain (YouCook2)</td></tr><tr><td>TRIANGLE w/o  $L_{DTM}$ </td><td>9.17</td><td>39.53</td><td>22.32</td><td>17.07</td><td>10.10</td><td>43.34</td><td>24.80</td><td>19.10</td></tr><tr><td>TRIANGLE with  $L_{DTM}$ </td><td>33.15</td><td>62.48</td><td>47.44</td><td>42.69</td><td>33.18</td><td>63.79</td><td>47.96</td><td>42.96</td></tr><tr><td>Impr. w.r.t pretrained</td><td>+19.15</td><td>+37.88</td><td>+28.24</td><td>+25.29</td><td>+8.98</td><td>+16.89</td><td>+12.86</td><td>+11.66</td></tr><tr><td colspan=\"9\">Out-of-Domain (MSR-VTT)</td></tr><tr><td>TRIANGLE with  $L_{DTM}$  (After FT)</td><td>24.43</td><td>34.16</td><td>29.20</td><td>27.62</td><td>33.82</td><td>57.01</td><td>45.03</td><td>41.24</td></tr><tr><td>Abs. Drop (pts)</td><td>-29.97</td><td>-47.14</td><td>-38.30</td><td>-35.58</td><td>-20.78</td><td>-25.69</td><td>-23.47</td><td>-22.76</td></tr><tr><td colspan=\"9\">Out-of-Domain (DiDeMo)</td></tr><tr><td>TRIANGLE with  $L_{DTM}$  (After FT)</td><td>16.75</td><td>25.48</td><td>21.24</td><td>19.86</td><td>27.18</td><td>48.35</td><td>37.57</td><td>34.12</td></tr><tr><td>Abs. Drop (pts)</td><td>-34.95</td><td>-50.12</td><td>-42.36</td><td>-39.84</td><td>-24.32</td><td>-30.55</td><td>-27.23</td><td>-26.08</td></tr></table>",
+        "bbox": [
+            168,
+            145,
+            826,
+            349
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "Furthermore, while the pretrained tri-modal objective can successfully adapt to out-of-domain distributions via explicit finetuning, this adaptation incurs a severe cost to generalization. The fine-tuned model suffers catastrophic forgetting, exhibiting a drastic collapse in zero-shot performance on previously strong and diverse benchmarks like MSR-VTT and DiDeMo. Consequently, although tri-modal geometric alignment demonstrates strong domainspecific adaptability, it fundamentally lacks the ability to preserve its global cross-modal geometry under continuous fine-tuning. ",
+        "bbox": [
+            81,
+            368,
+            483,
+            494
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "image",
+        "img_path": "images/1bba33e3b69df33e9ec686237f7952e07eb192be271f41be22390ebf6c891dcf.jpg",
+        "image_caption": [
+            "Figure 2: Example of a video frame from the toy dataset consisting of video-audio-text triplets. Video consists of several colored shapes moving across a black background, and the text is a simple textual description (\"This video contains 3 shapes: magenta ring, yellow star, red nonagon.\"). "
+        ],
+        "image_footnote": [],
+        "content": "Simple graphic with a red circle, pink ring, and yellow star on black background (no text or symbols)",
+        "sub_type": "natural_image",
+        "bbox": [
+            84,
+            532,
+            480,
+            767
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "3.2 Replication of Learning Effectiveness of Efficiency ",
+        "text_level": 1,
+        "bbox": [
+            514,
+            367,
+            885,
+            400
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "Experimental Setup We investigate the model’s ability to learn the multimodal latent space without prior knowledge by initializing all encoders randomly. This is conducted in two controlled settings: We first train on the MSR-VTT dataset using the hyperparameter configuration (Table 5): batch size of 64, AdamW optimizer with a learning rate of $1 e ^ { - 4 }$ , and weight decay of 0.01 for 79, 249 training steps. Inputs are sampled as 4 video frames and 1 audio frame per clip. To diagnose optimization stability, we also synthesize a controlled toy dataset of 9,000 aligned triplets as shown in Figure 2. This dataset comprises short video clips of moving geometric shapes, synthetic descriptive speech (without music or sound effects), and corresponding text subtitles. This simplified environment allows us to decouple the impact of the alignment loss from the complexity of real-world data. ",
+        "bbox": [
+            511,
+            402,
+            913,
+            595
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "Claim 3: Efficient Learning from Scratch While the previous experiments focus on using pretrained models for evaluating retrieval performance, this experiment examines the ability of TRIAN-GLE to learn a multimodal embedding space entirely from scratch. All modality encoders are randomly initialized without any prior pretraining, allowing us to directly assess the model’s capacity to learn cross-modal representations solely from the target dataset’s distribution. ",
+        "bbox": [
+            511,
+            595,
+            913,
+            705
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "The original paper investigated this by training TRIANGLE from scratch on the MSR-VTT dataset for text-to-audio/video (T2AV) and audio/video-to-text (AV2T) retrieval tasks. The results of our reproduction attempts are shown in Table 4. Our experiments found that the results align with the paper only if we start from the checkpoint (pretrained on a subset of 150k samples randomly selected from the VAST27M dataset). For standard pre-trained checkpoint initialization from HuggingFace, the scores are low, especially for the DTM module. This observation is consistent with the original paper, which mentions that the DTM is computed by passing visual and audio tokens through cross-attention layers in the text encoder (BERT-based model). Since BERT is an encoder-only model, these cross-attention layers are not present in the original HuggingFace checkpoint. They must be separately added, resulting in random initialization of the cross-attention module. This limits DTM performance when training from scratch and results in low scores. ",
+        "bbox": [
+            511,
+            707,
+            913,
+            888
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "header",
+        "text": "RE-TRIANGLE: Does TRIANGLE Enable Multimodal Alignment Beyond Cosine Similarity in Retrieval? ",
+        "bbox": [
+            83,
+            75,
+            566,
+            87
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "header",
+        "text": "SIGIR ’26, July 20–24, 2026, Melbourne, VIC, Australia ",
+        "bbox": [
+            656,
+            75,
+            913,
+            85
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "table",
+        "img_path": "images/ce3357c73f7b1d08600efe60c4d693a4500b452ee8e253ab9ec007cf1a41d6e7.jpg",
+        "table_caption": [
+            "Table 3: Zero-Shot Audio Retrieval Results on AudioCaps. Comparison of Text-to-Audio (T2A) and Audio-to-Text (A2T) performance. We report the original paper’s scores alongside our reproduced and extended results. TRIANGLE (with $L _ { D T M } )$ shows consistent improvements over VAST in both retrieval directions across most metrics. ∗ denotes statistically significant improvements of TRIANGLE over the VAST baseline under a two-tailed paired permutation test $( p < 0 . 0 1 )$ . "
+        ],
+        "table_footnote": [],
+        "table_body": "<table><tr><td rowspan=\"2\">Method</td><td colspan=\"2\">Original (Paper)</td><td colspan=\"4\">Reproduced (Text → Audio)</td><td colspan=\"4\">Extended (Audio → Text)</td></tr><tr><td>R@1 (T2A)</td><td>R@10 (T2A)</td><td>R@1</td><td>R@10</td><td>nDCG@10</td><td>RR@10</td><td>R@1</td><td>R@10</td><td>nDCG@10</td><td>RR@10</td></tr><tr><td>COSINE</td><td>-</td><td>-</td><td>26.75</td><td>66.94</td><td>45.29</td><td>38.54</td><td>25.65</td><td>66.26</td><td>44.78</td><td>38.07</td></tr><tr><td>VAST</td><td>32.1</td><td>65.4</td><td>25.65</td><td>71.47</td><td>47.08</td><td>39.48</td><td>29.22</td><td>73.25</td><td>49.95</td><td>42.62</td></tr><tr><td>TRIANGLE</td><td>32.2</td><td>77.1</td><td>32.92*</td><td>71.47</td><td>50.68</td><td>44.18*</td><td>32.37</td><td>74.90</td><td>51.88</td><td>44.72</td></tr><tr><td>Impr. vs VAST</td><td>+0.1</td><td>+11.7</td><td>+7.27</td><td>0.00</td><td>+3.60</td><td>+4.70</td><td>+3.15</td><td>+1.65</td><td>+1.93</td><td>+2.10</td></tr></table>",
+        "bbox": [
+            147,
+            174,
+            849,
+            292
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "table",
+        "img_path": "images/29fde98de5424d508860eca58e6d7edcfa2e07e07e927fd152d7b25431811b0b.jpg",
+        "table_caption": [
+            "Table 4: Learning from Scratch results on MSR-VTT. Comparison of reported vs. reproduced results for retrieval in both directions (T2AV and AV2T). We experimented with two initializations of weights, one from the 150k VAST27M pre-trained checkpoint (PT Weights) and the other without those weights. We observe that the former achieve scores consistent with those reported in the paper. "
+        ],
+        "table_footnote": [],
+        "table_body": "<table><tr><td rowspan=\"3\">Method</td><td>w/ PT Weights</td><td colspan=\"6\">Text → Audio/Video (T2AV)</td><td colspan=\"6\">Audio/Video → Text (AV2T)</td></tr><tr><td></td><td colspan=\"2\">Original</td><td colspan=\"4\">Reproduced</td><td colspan=\"2\">Original</td><td colspan=\"4\">Reproduced</td></tr><tr><td></td><td>R@1</td><td>R@10</td><td>R@1</td><td>R@10</td><td>nDCG</td><td>RR</td><td>R@1</td><td>R@10</td><td>R@1</td><td>R@10</td><td>nDCG</td><td>RR</td></tr><tr><td>VAST</td><td>-</td><td>36.5</td><td>79.3</td><td>1.36</td><td>17.65</td><td>7.58</td><td>4.63</td><td>35.5</td><td>77.3</td><td>0.90</td><td>15.05</td><td>6.36</td><td>4.55</td></tr><tr><td>TRIANGLE w/o  $L_{DTM}$ </td><td>NO</td><td>-</td><td>-</td><td>8.14</td><td>42.19</td><td>23.05</td><td>17.19</td><td>-</td><td>-</td><td>9.62</td><td>47.51</td><td>26.44</td><td>19.94</td></tr><tr><td>TRIANGLE w/o  $L_{DTM}$ </td><td>YES</td><td>33.3</td><td>74.4</td><td>29.86</td><td>74.2</td><td>50.21</td><td>42.74</td><td>40.4</td><td>81.7</td><td>36.65</td><td>80.09</td><td>57.21</td><td>50.03</td></tr><tr><td>TRIANGLE with  $L_{DTM}$ </td><td>NO</td><td>-</td><td>-</td><td>1.81</td><td>18.44</td><td>8.07</td><td>5.03</td><td>-</td><td>-</td><td>1.58</td><td>19.68</td><td>8.54</td><td>5.26</td></tr><tr><td>TRIANGLE with  $L_{DTM}$ </td><td>YES</td><td>39.4</td><td>81.8</td><td>47.51</td><td>84.5</td><td>65.84</td><td>59.89</td><td>41.9</td><td>80.0</td><td>47.51</td><td>84.16</td><td>65.69</td><td>59.81</td></tr></table>",
+        "bbox": [
+            133,
+            375,
+            864,
+            534
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "table",
+        "img_path": "images/64c4dca6c188e1844464039473c006e40d9d0bb1c7d1904e1c7397d7aa9a3832.jpg",
+        "table_caption": [
+            "Table 5: Hyperparameter configuration for the replication of the learning from scratch experiments "
+        ],
+        "table_footnote": [],
+        "table_body": "<table><tr><td>Setting</td><td>MSR-VTT</td></tr><tr><td>Batch size</td><td>64</td></tr><tr><td>Optimizer</td><td>AdamW</td></tr><tr><td>Learning rate</td><td> $1 \\times 10^{-4}$ </td></tr><tr><td>Weight decay</td><td>0.01</td></tr><tr><td>Training steps</td><td>79,249</td></tr><tr><td>Video frames per clip</td><td>4</td></tr><tr><td>Audio frames per clip</td><td>1</td></tr><tr><td>Dataset size</td><td>10000</td></tr></table>",
+        "bbox": [
+            166,
+            592,
+            400,
+            722
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "text",
+        "text": "",
+        "bbox": [
+            81,
+            743,
+            482,
+            784
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "text",
+        "text": "To systematically investigate this reproduction gap and the negative impact of ${ \\cal L } _ { D T M } ,$ we conducted a controlled experiment by training TRIANGLE and VAST from scratch on a synthetically generated toy dataset. The dataset was designed to be minimal yet multimodal, comprising video, audio, and text inputs. The video modality consisted of short clips depicting geometric shapes with varying colours and numbers of sides, moving and rotating across a plain background. The audio modality contained synthetic speech ",
+        "bbox": [
+            81,
+            785,
+            482,
+            896
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "text",
+        "text": "describing the visual content in a single sentence, while the text modality provided a corresponding textual description of the same scene. In total, we generated 9,000 aligned video–audio–text triplets to evaluate whether TRIANGLE and VAST could successfully learn joint embeddings from scratch in a simplified setting. ",
+        "bbox": [
+            511,
+            554,
+            913,
+            623
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "text",
+        "text": "Retrieval results for this controlled setting are reported in Table 6. TRIANGLE trained without the $L _ { D T M }$ objective substantially outperforms both VAST and TRIANGLE variants that include ???????? . This suggests that the TRIANGLE loss alone is sufficient to learn a meaningful multimodal embedding space when training from scratch on simple datasets, whereas the inclusion of $L _ { D T M }$ may require further pretraining for the $L _ { D T M }$ loss to converge. Availability of the exact number of training steps used in the learning from scratch experiments from the original paper may help in reducing the $L _ { D T M }$ loss further. ",
+        "bbox": [
+            511,
+            623,
+            913,
+            761
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "text",
+        "text": "Answer to RQ3: While the trimodal geometric objective does help in training the embedding space from scratch, the reproduced results fall significantly short of those reported in the original paper. Furthermore, the $L _ { D T M }$ objective appears to hinder optimization in the absence of pretrained encoders. Therefore, while TRIANGLE demonstrates theoretical capacity for efficient learning from scratch, its practical effectiveness is strongly dependent on training stability and potentially undisclosed experimental details. ",
+        "bbox": [
+            511,
+            761,
+            913,
+            872
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "header",
+        "text": "SIGIR ’26, July 20–24, 2026, Melbourne, VIC, Australia ",
+        "bbox": [
+            83,
+            75,
+            341,
+            87
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "header",
+        "text": "Arijit Ghosh, Aritra Bandyopadhyay, Chiranjeev Bindra, and Jingfen Qiao ",
+        "bbox": [
+            563,
+            75,
+            913,
+            87
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "table",
+        "img_path": "images/7260bd598192fb8f36f40396425bb1dd9383a4346ade4a9ff88749985f58702b.jpg",
+        "table_caption": [
+            "Table 6: Toy dataset retrieval performance for learning from scratch using TRIANGLE and VAST. Notably, TRIANGLE without ???????? performs better than TRIANGLE with ???????? . "
+        ],
+        "table_footnote": [],
+        "table_body": "<table><tr><td rowspan=\"2\">Method</td><td colspan=\"4\">Text → Video/Audio (T2AV)</td><td colspan=\"4\">Audio/Video → Text (AV2T)</td></tr><tr><td>R@1</td><td>R@10</td><td>nDCG@10</td><td>RR@10</td><td>R@1</td><td>R@10</td><td>nDCG@10</td><td>RR@10</td></tr><tr><td>VAST</td><td>3.4</td><td>5.2</td><td>4.4</td><td>4.1</td><td>3.0</td><td>4.6</td><td>3.91</td><td>3.67</td></tr><tr><td>TRIANGLE w/o  $L_{DTM}$ </td><td>72.5</td><td>100.0</td><td>88.8</td><td>84.9</td><td>73.2</td><td>100.0</td><td>88.9</td><td>85.1</td></tr><tr><td>TRIANGLE with  $L_{DTM}$ </td><td>0.1</td><td>8.7</td><td>3.2</td><td>1.6</td><td>0.1</td><td>9.7</td><td>3.6</td><td>1.8</td></tr></table>",
+        "bbox": [
+            102,
+            146,
+            890,
+            229
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "chart",
+        "img_path": "images/b6824df0e9b27296d50f9e5396dc1e02bd4c2b42349f1e382729da7825bd91fd.jpg",
+        "content": "| Metric | MSR-VTT | DiDeMo | ActivityNet | VATEX | YouCook2 |\n| :--- | :--- | :--- | :--- | :--- | :--- |\n| R@1 | +0.11 | +0.60 | +0.59 | +0.11 | +7.64 |\n| R@10 | +1.81 | +2.51 | +2.02 | +0.32 | +16.41 |\n| RR@10 | +0.84 | +0.87 | +1.04 | +0.18 | +10.29 |\n| nDCG@10 | +1.09 | +1.27 | +1.27 | +0.21 | +11.76 |",
+        "chart_caption": [
+            "(a) Text → Video retrieval "
+        ],
+        "chart_footnote": [],
+        "sub_type": "heatmap",
+        "bbox": [
+            86,
+            244,
+            480,
+            353
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "chart",
+        "img_path": "images/befd7fdf9d70aca3e61a3b6a634c6222f3077229525dce691930afdf17718142.jpg",
+        "content": "| | MSR-VTT | DiDeMo | ActivityNet | VATEX | YouCook2 |\n|---|---|---|---|---|---|\n| R@1 | +0.34 | +0.60 | +0.13 | +0.00 | -0.15 |\n| R@10 | +1.02 | +0.90 | +0.21 | +0.00 | +0.11 |\n| RR@10 | +0.52 | +0.68 | +0.14 | -0.00 | -0.08 |\n| nDCG@10 | +0.64 | +0.74 | +0.15 | -0.00 | -0.04 |",
+        "chart_caption": [
+            "(b) Video → Text retrieval ",
+            "Figure 3: Performance gain on adding cosine regularization (Δ = TRIANGLE with cosine regularization − TRIANGLE without cosine regularization). "
+        ],
+        "chart_footnote": [],
+        "sub_type": "heatmap",
+        "bbox": [
+            516,
+            244,
+            910,
+            352
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "text",
+        "text": "4 Insights: Regularization and Interpretability ",
+        "text_level": 1,
+        "bbox": [
+            81,
+            436,
+            473,
+            452
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "text",
+        "text": "Although our main results already include extensions such as additional ranking metrics and evaluation on YouCook2, this section focuses on two specific analyses that directly relate to claims made in the original TRIANGLE paper but are not fully supported by experimental evidence. First, we examine the effect of cosine regularization, which is described in the paper as an important component for stability in downstream retrieval tasks but is not explicitly implemented in the provided codebase. Second, we analyze the interpretability of the triangle-area metric, a property claimed by the authors but not supported visually through qualitative examples. These analyses are not intended to improve performance, but rather to examine how different components of the method influence retrieval outcomes. ",
+        "bbox": [
+            81,
+            455,
+            482,
+            633
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "text",
+        "text": "Effect of Cosine Regularization Figure 3 shows the effect of adding cosine regularization (?? = 1) to the TRIANGLE objective for zero-shot video–text retrieval. ",
+        "bbox": [
+            81,
+            635,
+            482,
+            675
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "text",
+        "text": "For Text-to-Video retrieval, cosine regularization consistently improves performance across most datasets, with particularly large gains on YouCook2 across all metrics. This indicates that constraining the angle between text and video embeddings is helpful when text is used to retrieve videos, as it reduces cases where the triangle area is small, even though the embedding vectors point in different directions. In contrast, for video-to-text retrieval, the effect of cosine regularization is much smaller. We observed only minor improvements on MSR-VTT, DiDeMo, and ActivityNet, and no noticeable changes on VATEX and YouCook2. This suggests that video embeddings already provide strong semantic information for retrieving text, with less angular inconsistencies. Overall, cosine regularization mainly improves text-to-video retrieval and acts as a stabilizing complement to the triangle-area objective. ",
+        "bbox": [
+            81,
+            676,
+            482,
+            869
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "text",
+        "text": "Geometric Interpretability of the Triangle Loss Claim 4 of the original paper states that TRIANGLE is an interpretable metric for modality alignment. However, the original paper does not include any qualitative examples or visualization diagrams to substantiate these claims. Our reproducibility study further investigates this claim by extracting the multimodal text, video, and audio vectors from the backbone encoders in TRIANGLE and visualizing them by reducing their dimensionality to 3 using PCA. The visualization results are shown in Figure 4. ",
+        "bbox": [
+            511,
+            436,
+            913,
+            561
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "text",
+        "text": "Figures 4a and 4b show case multimodal vectors of two examples from the MSR-VTT dataset plotted on the hypersphere in 3D. Figure 4c showcases a negative example where the text modality of the first example is swapped with the text modality of the second example. As expected, the positive examples have a smaller area and are much more aligned than the negative example, which has a much larger area. Additionally, we observe that TRIANGLE effectively aligns the text and video modalities, as evidenced by their spatial proximity in the projected space. However, the audio embeddings remain comparatively distant from both text and video embeddings. This pattern suggests that, even on relatively structured datasets such as MSR-VTT, TRIANGLE encounters difficulty in jointly aligning the audio modality with the other modalities. The geometric visualization thus reveals modality-specific alignment disparities that are not apparent from retrieval metrics alone. ",
+        "bbox": [
+            511,
+            563,
+            913,
+            768
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "text",
+        "text": "Figures 4d and 4e show two positive examples from YouCook2 which is a much more complicated multimodal dataset. Interestingly, the positive examples of YouCook2 have a much larger triangle area than the positive examples of MSR-VTT. This mismatch across modalities suggests that TRIANGLE may face greater challenges in jointly aligning all modalities in more complex multimodal datasets. ",
+        "bbox": [
+            511,
+            770,
+            913,
+            866
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "text",
+        "text": "Answer to RQ4: Yes, the triangle area provides a consistent and geometrically unambiguous indicator of modality alignment. ",
+        "bbox": [
+            513,
+            867,
+            913,
+            895
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "header",
+        "text": "RE-TRIANGLE: Does TRIANGLE Enable Multimodal Alignment Beyond Cosine Similarity in Retrieval? ",
+        "bbox": [
+            83,
+            75,
+            566,
+            87
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "header",
+        "text": "SIGIR ’26, July 20–24, 2026, Melbourne, VIC, Australia ",
+        "bbox": [
+            656,
+            75,
+            913,
+            85
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "chart",
+        "img_path": "images/fde20bf8b99f2608fb4abec8500497833bb17722ddb9c8842e005d383a47f4ce.jpg",
+        "content": "| Point | x    | y    | z    |\n|-------|------|------|------|\n| V1    | 0.0  | 0.0  | 1.0  |\n| A1    | 0.5  | 0.5  | 0.5  |",
+        "chart_caption": [
+            "(a) MSR-VTT positive example 1 (\"spongebob is showing memories of him with mr\") with area 1.02 "
+        ],
+        "chart_footnote": [],
+        "sub_type": "line",
+        "bbox": [
+            91,
+            114,
+            344,
+            281
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "chart",
+        "img_path": "images/d22a37f2ca5107eee59a844dac1c5e9372f3e2da570b30f69141501024aabe44.jpg",
+        "content": "| Point | x    | y    |\n|-------|------|------|\n| V2    | 0.0  | 0.0  |\n| T1    | 0.0  | 0.0  |\n| A2    | -0.5 | -0.5 |",
+        "chart_caption": [
+            "(b) MSR-VTT positive example 2 (\"a man in a flying contraption crashes in a field”) with area 0.91 "
+        ],
+        "chart_footnote": [],
+        "sub_type": "scatter",
+        "bbox": [
+            385,
+            117,
+            599,
+            268
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "chart",
+        "img_path": "images/46be753e7fe136ac41b9e72e8227c6afc9f0295d4a92dd0fa3ee6f7a4b0ade3a.jpg",
+        "content": "| Point | x    | y    | z    |\n|-------|------|------|------|\n| V1    | 0.0  | 1.0  | 1.0  |\n| A1    | 0.5  | 0.5  | 0.5  |\n| T2    | -0.5 | -0.5 | -0.5 |",
+        "chart_caption": [
+            "(c) MSR-VTT negative example (text modality of positive example 1 swapped with that of positive example 2) with area 1.77 "
+        ],
+        "chart_footnote": [],
+        "sub_type": "line",
+        "bbox": [
+            651,
+            106,
+            890,
+            266
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "chart",
+        "img_path": "images/f061bc9a31cce6f36ce5fac6fc17fb53cdd26b1b1967180bc953254292f18261.jpg",
+        "content": "| Point | x    | y    | z    |\n|-------|------|------|------|\n| A3    | 0.2  | -0.4 | -0.5 |\n| T3    | 0.3  | 0.3  | 0.3  |\n| V3    | 0.4  | 0.1  | 0.1  |",
+        "chart_caption": [
+            "(d) YouCook2 positive example 1 (\"mash a bowl of chickpeas using a fork\") with area 1.24 "
+        ],
+        "chart_footnote": [],
+        "sub_type": "radar",
+        "bbox": [
+            248,
+            344,
+            460,
+            489
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "chart",
+        "img_path": "images/9edb3a4875376da5e66fa092a20c360e18bb7bb40411c8b812f63a7abe8551ef.jpg",
+        "content": "| Point | x    | y    | z    |\n|-------|------|------|------|\n| A4    | 0.2  | -0.6 | -0.7 |\n| T4    | 0.8  | 0.3  | 0.4  |\n| V4    | 0.9  | 0.2  | 0.1  |",
+        "chart_caption": [
+            "(e) YouCook2 positive example 2 (\"beat the dough on the table\") with area 1.28 ",
+            "Figure 4: Geometric interpretation of TRIANGLE-based multimodal alignment across datasets. Subcaptions state the video descriptions (text modality). Each plot visualizes the embeddings of Audio (A), Video (V), and Text (T) extracted from TRIANGLE’s backbone encoders, projected into 3D using PCA, and shown on a hypersphere. Small triangle areas indicate stronger multimodal alignment, while larger areas reflect weaker or misaligned modality representations. Negative examples have higher area values and are less aligned than positive examples. Positive examples from more complicated datasets like YouCook2 are less aligned than those from simpler datasets like MSR-VTT. "
+        ],
+        "chart_footnote": [],
+        "sub_type": "radar",
+        "bbox": [
+            537,
+            352,
+            723,
+            489
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "text",
+        "text": "Our interpretability experiments support RQ4 and allow us to delve deeper into the reasons for some of the shortcomings of TRIANGLE. But, it is important to note that the triangle area provides relative geometric interpretability per query rather than an absolute, universal threshold for relevance. The optimal area signifying alignment is inherently dataset-dependent, as evidenced by the larger baseline areas observed in complex instructional domains like YouCook2 compared to MSR-VTT. ",
+        "bbox": [
+            81,
+            652,
+            482,
+            763
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "text",
+        "text": "5 Discussion ",
+        "text_level": 1,
+        "bbox": [
+            83,
+            780,
+            204,
+            794
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "text",
+        "text": "Our reproducibility results support the core claims made by the original authors. Claims 1 and 3 were strongly supported by the experiments presented in the original paper, and our study successfully reproduces these findings. In particular, we confirm that TRIANGLE establishes a new state-of-the-art for zero-shot videotext and audio-text tasks by ensuring holistic modality alignment. While Claim 2 was not properly substantiated with visual evidence ",
+        "bbox": [
+            81,
+            797,
+            482,
+            896
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "text",
+        "text": "in the original paper, our experiments in Section 4 validate that the triangle area provides an interpretable metric for modality alignment. Furthermore, we extend the original evaluation by reporting ranking-aware retrieval metrics such as nDCG and RR, which account for the ordering of retrieved items. Across these metrics, TRIANGLE consistently outperforms VAST, indicating that its multimodal alignment improves not only top-rank retrieval but also the overall relevance and quality of the ranked results. ",
+        "bbox": [
+            511,
+            652,
+            915,
+            763
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "text",
+        "text": "However, our reproducibility work highlights critical limitations. We were unable to reproduce the results for the learning-fromscratch experiments in Section 3.2 using the authors’ original codebase. The inability to minimize the $\\mathcal { L } _ { D T M }$ during training suggests a potential optimization bottleneck or a high sensitivity to default hyperparameter configurations, which warrants deeper investigation. Moreover, VAST consistently outperformed TRIANGLE on the YouCook2 dataset for zero-shot video retrieval tasks (Section 3.1). This dataset-dependent behavior indicates that the effectiveness of triangle-based alignment is sensitive to domain characteristics not fully captured by Recall@1 alone. A plausible explanation is that YouCook2 consists exclusively of instructional cooking videos, resulting in a highly homogeneous domain where fine-grained visual cues are critical. In such settings, text descriptions and audio signals may only partially reflect the underlying visual content, making zero-shot geometric alignment particularly challenging. ",
+        "bbox": [
+            511,
+            763,
+            915,
+            888
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "header",
+        "text": "SIGIR ’26, July 20–24, 2026, Melbourne, VIC, Australia ",
+        "bbox": [
+            84,
+            75,
+            341,
+            85
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "header",
+        "text": "Arijit Ghosh, Aritra Bandyopadhyay, Chiranjeev Bindra, and Jingfen Qiao ",
+        "bbox": [
+            563,
+            75,
+            913,
+            87
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "table",
+        "img_path": "images/03286ccedce2b76dd198281b8989e224ca07e6ecf5f78011f3fe14bb6e4dabe4.jpg",
+        "table_caption": [
+            "Table 7: Statistical overview of the evaluation dataset. "
+        ],
+        "table_footnote": [],
+        "table_body": "<table><tr><td>Dataset</td><td>Size</td><td>Avg. Length</td><td>Text Length</td><td>Source</td><td>Domain</td><td>Example Text Query</td></tr><tr><td colspan=\"7\">Video-Text Retrieval</td></tr><tr><td>MSR-VTT</td><td>10,000</td><td>14.5s</td><td>~9 words</td><td>Web videos</td><td>Open</td><td>“A man extinguishes a fire outside.”</td></tr><tr><td>ActivityNet</td><td>19,811</td><td>~118s</td><td>~13 words</td><td>YouTube</td><td>Complex daily activities</td><td>“They continue working out in the room.”</td></tr><tr><td>DiDeMo</td><td>997</td><td>27.5s</td><td>131–169 chars</td><td>Flickr</td><td>Open (localized moments)</td><td>“The glare of a bright light.”</td></tr><tr><td>VATEX</td><td>944</td><td>~15s</td><td>~15 words</td><td>Kinetics-600 [13]</td><td>Open</td><td>“A young child receives a haircut from an adult.”</td></tr><tr><td>YouCook2</td><td>2,736</td><td>~5.3 min</td><td>~9 words</td><td>YouTube</td><td>Cooking (instructional)</td><td>“Add oil and cook the egg.”</td></tr><tr><td colspan=\"7\">Audio-Text Retrieval</td></tr><tr><td>AudioCaps</td><td>2,475</td><td>~10s</td><td>~9 words</td><td>AudioSet [10]</td><td>Open</td><td>“Someone has a hiccup while typing.”</td></tr><tr><td colspan=\"7\">Synthetic / Controlled Evaluation</td></tr><tr><td>Toy Shapes</td><td>9,000</td><td>12s</td><td>~10 words</td><td>Synthetic</td><td>Moving colored shapes</td><td>“This video contains 2 shapes: red star, blue circle.”</td></tr></table>",
+        "bbox": [
+            91,
+            132,
+            903,
+            310
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "text",
+        "text": "",
+        "bbox": [
+            81,
+            329,
+            480,
+            426
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "text",
+        "text": "In contrast, VAST employs fusion-based mechanisms that explicitly integrate complementary information across modalities. These learned interactions may help compensate for weak text and audio signals by providing rich semantics to the joint representation. This hypothesis aligns with our interpretability analysis (Section 4), which demonstrates that TRIANGLE struggles to tightly align modalities on YouCook2. Together, these observations suggest that while geometric alignment is highly effective in diverse opendomain settings, fusion-based approaches may be more robust for specialized, domain-specific datasets in zero-shot scenarios. ",
+        "bbox": [
+            81,
+            426,
+            482,
+            565
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "text",
+        "text": "Finally, our analysis of cosine regularization shows that it predominantly improves text-to-video retrieval in cases where the TRIANGLE area alone does not enforce complete alignment, while having minimal impact on video-to-text retrieval. This suggests that text queries, being inherently more abstract, benefit significantly more from explicit angular constraints than richer visual embeddings do. ",
+        "bbox": [
+            81,
+            565,
+            482,
+            662
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "text",
+        "text": "6 Related Works ",
+        "text_level": 1,
+        "bbox": [
+            83,
+            710,
+            235,
+            724
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "text",
+        "text": "Multimodal retrieval has primarily been addressed using contrastive dual-encoder architectures that align pairs of modalities within a shared embedding space. CLIP [18] and ALIGN [12] established this paradigm at scale by training image–text models with cosine-based InfoNCE objectives on large datasets. This formulation has since been extended to other modality pairs, including audio–text alignment in CLAP [8], video–text retrieval in CLIP4Clip [15], and point cloud–text alignment in PointCLIP [25]. Additional works have focused on refining alignment mechanisms and improving representation quality [21, 24]. While highly effective, these methods fundamentally optimize pairwise similarity and do not explicitly enforce higher-order consistency across more than two modalities. To scale contrastive learning to multimodal settings, anchorbased strategies have become common. Approaches such as Image-Bind [11] and VAST [3] learn a unified embedding space by aligning multiple modalities to a shared anchor, typically text. This design enables flexible integration of heterogeneous inputs and has shown strong empirical performance. However, because each modality is aligned independently to the anchor, the relationship between non-anchor modalities (e.g., audio and vision) is only indirectly constrained. ",
+        "bbox": [
+            81,
+            729,
+            482,
+            895
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "text",
+        "text": "",
+        "bbox": [
+            511,
+            329,
+            913,
+            453
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "text",
+        "text": "Recent work has explored geometric formulations to explicitly model joint multimodal structure. Symile [19] optimizes total correlation to capture higher-order dependencies across modalities, while GRAM [6] proposes minimizing the Gramian volume spanned by modality embeddings to encourage joint collapse in representation space. TRIANGLE [5] adopts a related geometric perspective but specializes to tri-modal alignment, defining similarity as the area formed by three modality embeddings on a unit hypersphere. By directly minimizing this area, TRIANGLE enforces a single joint objective across all three modalities rather than decomposing the problem into independent pairwise constraints. ",
+        "bbox": [
+            511,
+            454,
+            913,
+            608
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "text",
+        "text": "7 Conclusion ",
+        "text_level": 1,
+        "bbox": [
+            514,
+            628,
+            638,
+            641
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "text",
+        "text": "In this reproducibility study, we examined the TRIANGLE framework to verify its core claims. Our results confirm that trianglebased geometric alignment can improve retrieval performance over pairwise objectives in zero-shot retrieval settings. Importantly, our analysis also reveals crucial dataset- and direction-dependent effects, demonstrating that the benefits of tri-modal alignment are not uniform across all scenarios. Through comprehensive evaluations with ranking-aware metrics, cosine regularization analysis, and interpretability experiments, we provide a nuanced understanding of when and why TRIANGLE is effective. However, our study also highlights several limitations in the original codebase, most notably the inability to reliably reproduce the learning-from-scratch results reported in the original work. Overall, this work largely supports the efficacy of geometric alignment objectives for multimodal retrieval, while emphasizing the need for careful evaluation across diverse datasets and retrieval settings. Furthermore, evaluating geometric alignment frameworks on broader domains, such as visual document retrieval [9, 16, 17], remains a promising direction. ",
+        "bbox": [
+            511,
+            646,
+            913,
+            896
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "header",
+        "text": "RE-TRIANGLE: Does TRIANGLE Enable Multimodal Alignment Beyond Cosine Similarity in Retrieval? ",
+        "bbox": [
+            83,
+            75,
+            566,
+            87
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "header",
+        "text": "SIGIR ’26, July 20–24, 2026, Melbourne, VIC, Australia ",
+        "bbox": [
+            656,
+            75,
+            913,
+            85
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "text",
+        "text": "Acknowledgments ",
+        "text_level": 1,
+        "bbox": [
+            84,
+            104,
+            238,
+            121
+        ],
+        "page_idx": 9
+    },
+    {
+        "type": "text",
+        "text": "This work was initially developed in the context of the Information Retrieval 2 (IR2) course at the University of Amsterdam. We express our sincere gratitude to Dr. Mohammad Alian Nejadi and Dr. Panagiotis Efstratiadis for their guidance and support. ",
+        "bbox": [
+            81,
+            125,
+            482,
+            181
+        ],
+        "page_idx": 9
+    },
+    {
+        "type": "text",
+        "text": "References ",
+        "text_level": 1,
+        "bbox": [
+            84,
+            191,
+            176,
+            204
+        ],
+        "page_idx": 9
+    },
+    {
+        "type": "list",
+        "sub_type": "ref_text",
+        "list_items": [
+            "[1] Lisa Anne Hendricks, Oliver Wang, Eli Shechtman, Josef Sivic, Trevor Darrell, and Bryan Russell. 2017. Localizing moments in video with natural language. In Proceedings of the IEEE international conference on computer vision. 5803–5812. ",
+            "[2] Fabian Caba Heilbron, Victor Escorcia, Bernard Ghanem, and Juan Carlos Niebles. 2015. Activitynet: A large-scale video benchmark for human activity understanding. In Proceedings of the ieee conference on computer vision and pattern recognition. 961–970. ",
+            "[3] Sihan Chen, Handong Li, Qunbo Wang, Zijia Zhao, Mingzhen Sun, Xinxin Zhu, and Jing Liu. 2023. Vast: A vision-audio-subtitle-text omni-modality foundation model and dataset. Advances in Neural Information Processing Systems 36 (2023), 72842–72866. ",
+            "[4] Sanyuan Chen, Yu Wu, Chengyi Wang, Shujie Liu, Daniel Tompkins, Zhuo Chen, Wanxiang Che, Xiangzhan Yu, and Furu Wei. 2023. BEATs: Audio Pre-Training with Acoustic Tokenizers. In Proceedings of the 40th International Conference on Machine Learning (Proceedings of Machine Learning Research, Vol. 202), Andreas Krause, Emma Brunskill, Kyunghyun Cho, Barbara Engelhardt, Sivan Sabato, and Jonathan Scarlett (Eds.). PMLR, 5178–5193. https://proceedings.mlr.press/v202/ chen23ag.html ",
+            "[5] Giordano Cicchetti, Eleonora Grassucci, and Danilo Comminiello. 2026. A triangle enables multimodal alignment beyond cosine similarity. Advances in Neural Information Processing Systems 38 (2026), 112004–112022. ",
+            "[6] Giordano Cicchetti, Eleonora Grassucci, Luigi Sigillo, and Danilo Comminiello. 2025. Gramian multimodal representation learning and alignment. In International Conference on Learning Representations, Vol. 2025. 42128–42149. ",
+            "[7] Jacob Devlin, Ming-Wei Chang, Kenton Lee, and Kristina Toutanova. 2019. Bert: Pre-training of deep bidirectional transformers for language understanding. In Proceedings of the 2019 conference of the North American chapter of the association for computational linguistics: human language technologies, volume 1 (long and short papers). 4171–4186. ",
+            "[8] Benjamin Elizalde, Soham Deshmukh, Mahmoud Al Ismail, and Huaming Wang. 2023. Clap learning audio concepts from natural language supervision. In ICASSP 2023-2023 IEEE International Conference on Acoustics, Speech and Signal Processing (ICASSP). IEEE, 1–5. ",
+            "[9] Manuel Faysse, Hugues Sibille, Tony Wu, Bilel Omrani, Gautier Viaud, Céline Hudelot, and Pierre Colombo. 2025. ColPali: Efficient Document Retrieval with Vision Language Models. In The Thirteenth International Conference on Learning Representations. https://proceedings.iclr.cc/paper\\_files/paper/2025/hash/ 99e9e141aafc314f76b0ca3dd66898b3-Abstract-Conference.html ",
+            "[10] Jort F Gemmeke, Daniel PW Ellis, Dylan Freedman, Aren Jansen, Wade Lawrence, R Channing Moore, Manoj Plakal, and Marvin Ritter. 2017. Audio set: An ontology and human-labeled dataset for audio events. In 2017 IEEE international conference on acoustics, speech and signal processing (ICASSP). IEEE, 776–780. ",
+            "[11] Rohit Girdhar, Alaaeldin El-Nouby, Zhuang Liu, Mannat Singh, Kalyan Vasudev Alwala, Armand Joulin, and Ishan Misra. 2023. ImageBind: One Embedding Space To Bind Them All. In Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition (CVPR). 15180–15190. ",
+            "[12] Chao Jia, Yinfei Yang, Ye Xia, Yi-Ting Chen, Zarana Parekh, Hieu Pham, Quoc Le, Yun-Hsuan Sung, Zhen Li, and Tom Duerig. 2021. Scaling up visual and visionlanguage representation learning with noisy text supervision. In International "
+        ],
+        "bbox": [
+            83,
+            205,
+            486,
+            704
+        ],
+        "page_idx": 9
+    },
+    {
+        "type": "list",
+        "sub_type": "ref_text",
+        "list_items": [
+            "conference on machine learning. PMLR, 4904–4916. ",
+            "[13] Will Kay, Joao Carreira, Karen Simonyan, Brian Zhang, Chloe Hillier, Sudheendra Vijayanarasimhan, Fabio Viola, Tim Green, Trevor Back, Paul Natsev, et al. 2017. The kinetics human action video dataset. arXiv preprint arXiv:1705.06950 (2017). ",
+            "[14] Chris Dongjoo Kim, Byeongchang Kim, Hyunmin Lee, and Gunhee Kim. 2019. Audiocaps: Generating captions for audios in the wild. In Proceedings of the 2019 Conference of the North American Chapter of the Association for Computational Linguistics: Human Language Technologies, Volume 1 (Long and Short Papers). 119–132. ",
+            "[15] Huaishao Luo, Lei Ji, Ming Zhong, Yang Chen, Wen Lei, Nan Duan, and Tianrui Li. 2022. CLIP4Clip: An empirical study of CLIP for end to end video clip retrieval and captioning. Neurocomput. 508, C (Oct. 2022), 293–304. doi:10.1016/j.neucom. 2022.07.028 ",
+            "[16] Xueguang Ma, Sheng-Chieh Lin, Minghan Li, Wenhu Chen, and Jimmy Lin. 2024. Unifying multimodal retrieval via document screenshot embedding. In Proceedings of the 2024 Conference on Empirical Methods in Natural Language Processing. 6492–6505. ",
+            "[17] Jingfen Qiao, Jia-Huei Ju, Xinyu Ma, Evangelos Kanoulas, and Andrew Yates. 2025. Reproducibility, Replicability, and Insights into Visual Document Retrieval with Late Interaction. In Proceedings of the 48th International ACM SIGIR Conference on Research and Development in Information Retrieval (Padua, Italy) (SIGIR ’25). Association for Computing Machinery, New York, NY, USA, 3335–3345. doi:10. 1145/3726302.3730285 ",
+            "[18] Alec Radford, Jong Wook Kim, Chris Hallacy, Aditya Ramesh, Gabriel Goh, Sandhini Agarwal, Girish Sastry, Amanda Askell, Pamela Mishkin, Jack Clark, et al. 2021. Learning transferable visual models from natural language supervision. In International conference on machine learning. PmLR, 8748–8763. ",
+            "[19] Adriel Saporta, Aahlad Manas Puli, Mark Goldstein, and Rajesh Ranganath. 2024. Contrasting with Symile: Simple Model-Agnostic Representation Learning for Unlimited Modalities. Advances in Neural Information Processing Systems 37 (2024), 56919–56957. ",
+            "[20] Quan Sun, Yuxin Fang, Ledell Wu, Xinlong Wang, and Yue Cao. 2023. Eva-clip: Improved training techniques for clip at scale. arXiv preprint arXiv:2303.15389 (2023). ",
+            "[21] Toshimitsu Uesaka, Taiji Suzuki, Yuhta Takida, Chieh-Hsin Lai, Naoki Murata, and Yuki Mitsufuji. 2025. Weighted Point Set Embedding for Multimodal Contrastive Learning Toward Optimal Similarity Metric. In International Conference on Learning Representations, Y. Yue, A. Garg, N. Peng, F. Sha, and R. Yu (Eds.), Vol. 2025. 32997–33018. https://proceedings.iclr.cc/paper\\_files/paper/2025/file/ 514b48017505dc778c6db2d845cbbe24-Paper-Conference.pdf ",
+            "[22] Xin Wang, Jiawei Wu, Junkun Chen, Lei Li, Yuan-Fang Wang, and William Yang Wang. 2019. Vatex: A large-scale, high-quality multilingual dataset for videoand-language research. In Proceedings of the IEEE/CVF international conference on computer vision. 4581–4591. ",
+            "[23] Jun Xu, Tao Mei, Ting Yao, and Yong Rui. 2016. Msr-vtt: A large video description dataset for bridging video and language. In Proceedings of the IEEE conference on computer vision and pattern recognition. 5288–5296. ",
+            "[24] Xiaohua Zhai, Basil Mustafa, Alexander Kolesnikov, and Lucas Beyer. 2023. Sigmoid Loss for Language Image Pre-Training. In Proceedings of the IEEE/CVF International Conference on Computer Vision (ICCV). 11975–11986. ",
+            "[25] Renrui Zhang, Ziyu Guo, Wei Zhang, Kunchang Li, Xupeng Miao, Bin Cui, Yu Qiao, Peng Gao, and Hongsheng Li. 2022. Pointclip: Point cloud understanding by clip. In Proceedings of the IEEE/CVF conference on computer vision and pattern recognition. 8552–8562. ",
+            "[26] Luowei Zhou, Chenliang Xu, and Jason Corso. 2018. Towards automatic learning of procedures from web instructional videos. In Proceedings of the AAAI conference on artificial intelligence, Vol. 32. "
+        ],
+        "bbox": [
+            509,
+            107,
+            916,
+            683
+        ],
+        "page_idx": 9
+    },
+    {
+        "type": "header",
+        "text": "SIGIR ’26, July 20–24, 2026, Melbourne, VIC, Australia ",
+        "bbox": [
+            84,
+            75,
+            341,
+            87
+        ],
+        "page_idx": 9
+    },
+    {
+        "type": "header",
+        "text": "Arijit Ghosh, Aritra Bandyopadhyay, Chiranjeev Bindra, and Jingfen Qiao ",
+        "bbox": [
+            563,
+            75,
+            913,
+            87
+        ],
+        "page_idx": 9
+    }
+]

@@ -1,0 +1,2577 @@
+[
+    {
+        "type": "text",
+        "text": "Proprio: Latent Self-Scoring and Inference-Time Refinement for Physically Plausible Video Generation ",
+        "text_level": 1,
+        "bbox": [
+            174,
+            122,
+            823,
+            174
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "Mariam Hassan 1, Kaouther Messaoud 2, Wuyang Li 1, Alexandre Alahi 1 ",
+        "bbox": [
+            238,
+            224,
+            756,
+            239
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "1 École Polytechnique Fédérale de Lausanne (EPFL), 2 Télécom Paris, IP Paris Project Page: https://vita-epfl.github.io/Proprio/ ",
+        "bbox": [
+            238,
+            239,
+            759,
+            271
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "image",
+        "img_path": "images/56abad1340be1fe189d67715a1bf5b4f6bdcf1c98e7bddb2e52f6f772bc226a0.jpg",
+        "image_caption": [
+            "Figure 1: Proprio enables a video generator to evaluate and improve its own generation. Left: qualitative refinement comparisons for TurboWan2.2. Right: Proprio computes a latent self-score from the model’s denoising residual and uses it for either sample selection or inference-time refinement. "
+        ],
+        "image_footnote": [],
+        "content": "```mermaid\ngraph TD\n    A[\"Image-to-Video\"] --> B[\"Text-to-Video\"]\n    B --> C[\"Self-Scoring and Refining\"]\n    C --> D[\"Refine: Update initial noise to reduce the score\"]\n    C --> E[\"Select: Pick latent with best score\"]\n    D --> F[\"Latent Video Generator\"]\n    E --> G[\"Latent Video Generator\"]\n    F --> H[\"Initial Noise\"]\n    G --> I[\"High Score (Worse)\"]\n    H --> J[\"Low Score (better)\"]\n    I --> K[\"Text-to-Video\"]\n    J --> L[\"Text-to-Video\"]\n```",
+        "sub_type": "flowchart",
+        "bbox": [
+            174,
+            284,
+            823,
+            459
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "Abstract ",
+        "text_level": 1,
+        "bbox": [
+            459,
+            523,
+            539,
+            540
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "Modern video generative models produce visually impressive results, yet frequently violate basic physical principles. We propose Proprio, a training-free framework that enables a frozen video generator to assess and improve the physical plausibility of its own outputs. Inspired by proprioception, the biological sense of one’s own movement, Proprio treats the model’s flow residual under controlled latent perturbations as a self-scoring signal. Samples that are better explained by the generator’s learned dynamics induce smaller and more stable residuals. We aggregate this signal across timesteps and perturbations, focus it on motion-relevant regions with a dynamic spatiotemporal mask, and use it for best-of-N search, gradient-based self-refinement, or both. Across text-to-video and image-to-video benchmarks, Proprio consistently improves physical plausibility, outperforming VLM-based scoring, and external world-model baselines in several settings. With TurboWan2.2, Proprio improves Physics-IQ from 32.2 to 37.5 (+16.5%) and VideoPhy2-hard physical commonsense from 45.6 to 55.0 (+20.6%). Human evaluation further shows that raters prefer Proprio-selected or refined videos for physical plausibility in roughly two-thirds of comparisons. These results suggest that frozen video generators contain actionable internal signals for evaluating and improving the physical plausibility of their own outputs. ",
+        "bbox": [
+            228,
+            555,
+            769,
+            806
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "1 Introduction ",
+        "text_level": 1,
+        "bbox": [
+            171,
+            829,
+            313,
+            845
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "Diffusion models [14, 25] have achieved remarkable progress, emerging as dominant paradigms for high-fidelity video generation [8, 1, 34]. Despite their impressive visual quality, these models still struggle to maintain physical plausibility, often producing videos that violate basic real-world constraints. Such failures not only limit perceptual realism but also undermine the utility of these models as reliable world models for downstream applications such as robotics, planning, and simulation. ",
+        "bbox": [
+            169,
+            859,
+            826,
+            905
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "aside_text",
+        "text": "arXiv:2605.28230v1 [cs.CV] 27 May 2026 ",
+        "bbox": [
+            22,
+            272,
+            60,
+            724
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "footer",
+        "text": "Preprint. ",
+        "bbox": [
+            171,
+            924,
+            220,
+            936
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "",
+        "bbox": [
+            169,
+            90,
+            823,
+            119
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "text",
+        "text": "To address this, existing efforts typically rely on external sources of feedback to provide physical assessment and supervision. Some work inject physical structure through curated datasets, physical priors, or differentiable simulation [35, 24]. Another line of work guides generation using external evaluators, including vision-language models, or pretrained latent world models such as V-JEPA [37, 9, 43, 41, 3, 7]. These methods provide useful signals for selecting physically plausible generations and have shown promising results in improving physical realism. ",
+        "bbox": [
+            169,
+            126,
+            826,
+            209
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "text",
+        "text": "While effective, this external-feedback paradigm faces two key limitations. (1) External evaluators introduce their own biases and failures: VLMs struggle to assess physical plausibility because their judgments are often entangled with text-image alignment objectives and visual appearance [29]. Pretrained world models provide a more dynamics-oriented signal, but operate on decoded videos and map them into their own representation space, creating a representation mismatch with the generator’s latent space. (2) Misalignment with the generator’s internal dynamics: external evaluators are trained with different training objectives, so their feedback is not directly aligned with the generator’s sampling process and may miss generator-specific inconsistencies across denoising steps. ",
+        "bbox": [
+            169,
+            215,
+            826,
+            327
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "text",
+        "text": "These limitations motivate an intrinsic perspective on physical plausibility: Can a video generator leverage its own denoising dynamics as a self-contained signal for producing more physically plausible videos? Here, denoising dynamics refers to the model-predicted update direction at each noise level. We focus on its prediction error, which we call the flow residual: the discrepancy between the predicted denoising or velocity direction and the target induced by a controlled perturbation. ",
+        "bbox": [
+            169,
+            332,
+            823,
+            402
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "text",
+        "text": "Conceptually, the flow residual can be interpreted as an approximate likelihood signal [20], providing inherent cues for assessing physical validity, as previously explored in curated simulated video pairs [40]. In contrast, we reinterpret this likelihood-preference signal as a generator-native objective. Since video generators are trained on large-scale real video datasets, their learned distributions implicitly capture regularities of real-world dynamics. It is therefore natural to treat consistency with such learned dynamics as an intrinsic proxy for physical plausibility. Empirically, we test this intuition with a small-scale diagnostic check. Given a set of real videos, we pair each video with a generated counterpart that exhibits a physical failure using a video model, and compare their residual scores under that model (see Appendix A.1). In 82.2% of the pairs, the residual signal prefers the ground-truth video over the model’s own physically implausible generation, suggesting the model’s internal denoising dynamics can distinguish natural video dynamics from its own failure cases. ",
+        "bbox": [
+            169,
+            407,
+            826,
+            561
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "text",
+        "text": "Motivated by this, we propose Proprio, a generator-native, training-free framework that converts internal denoising signals into an internal proxy for physical plausibility. Inspired by proprioception, the biological ability to sense one’s motion without external observation, Proprio enables a frozen video generator to assess and improve its own outputs. Specifically, we define a noise-conditioned selfconsistency signal based on the model’s denoising residual under controlled latent perturbations. We robustly estimate the score by aggregating residuals across multiple timesteps with inverse-variance weighting, which downweights noisy estimates, and by applying a dynamic spatiotemporal mask to emphasize motion-relevant regions where physical failures occur. Beyond scoring, Proprio uses the score as a self-refinement objective. It refines generations by backpropagating through the frozen sampler and updating the initial noise to produce a more internally consistent video. ",
+        "bbox": [
+            169,
+            566,
+            826,
+            705
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "text",
+        "text": "We evaluate Proprio in three inference-time strategies: best-of-N search, self-refinement, and hybrid search-and-refine approach (see Fig. 1). For image-to-video (I2V) and text-to-video (T2V) generation, Proprio improves physical accuracy over VLM-based, and outperforms external pretrained worldmodel in several settings. These results suggest that a frozen video generator can be used to generate videos and to guide selection and refinement of its outputs. Our contributions are as follows: ",
+        "bbox": [
+            169,
+            710,
+            826,
+            781
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "text",
+        "text": "• Generator-native self-scoring: We introduce Proprio, a training-free framework that reuses a frozen generator’s denoising residual as an intrinsic score for physical plausibility. ",
+        "bbox": [
+            215,
+            792,
+            823,
+            819
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "text",
+        "text": "• Inference-time self-alignment: We turn this score into an optimization objective for a frozen generator, refining its outputs by updating only the initial noise, and optionally combine this refinement with best-of-N selection. ",
+        "bbox": [
+            215,
+            824,
+            823,
+            863
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "text",
+        "text": "• Empirical validation: We demonstrate consistent gains on I2V and T2V physics benchmarks, showing that a single frozen generator can act as both sampler and self-evaluator, guiding selection and refinement toward more physically plausible dynamics. ",
+        "bbox": [
+            215,
+            869,
+            823,
+            910
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "page_number",
+        "text": "",
+        "bbox": [
+            493,
+            935,
+            504,
+            946
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "image",
+        "img_path": "images/e751823f7ff4d3b80ba808270df95b39487345c6871b196fed25835cf7330e8e.jpg",
+        "image_caption": [
+            "Figure 2: Proprio method overview. For a generated latent video, Proprio computes a per-video self-scoring signal by perturbing the latent at multiple timesteps, measuring denoising residuals with the frozen generator, weighting timesteps by inverse variance, and emphasizing informative motion regions with a dynamic spatiotemporal mask. The resulting score can either be used for ranking and selection, self-refining or both. The VAE encoder is omitted for brevity. "
+        ],
+        "image_footnote": [],
+        "content": "```mermaid\ngraph TD\n    A[\"Latent z₀\"] --> B[\"Conditions c\"]\n    C[\"Variance Weighting wₜ\"] --> D[\"Score S(x)\"]\n    E[\"Dynamic Mask M\"] --> D\n    F[\"Multi-step Perturbation ε₀ε₁...εₙ t=0.3T t=0.4T ... t=0.6T zₜ=z₀+εσₜ\"] --> G[\"Latent Video Generator\"]\n    H[\"Lermotion Lₘₒₜᵢₒₜ\"] --> D\n    I[\"Lₑglobal Lₗₒₐₗ\"] --> G\n    J[\"Shared Model\"] --> G\n    K[\"Latent Update Latent Video Generator\"] --> L[\"Refine (μ,σ) to minimize S and L_KL\"]\n    M[\"Vae Decoder\"] --> L\n    N[\"N Candidate Latents Rank by S(x)\"] --> O[\"Initial noise parameters ζ₀~N(0,I) ζₖ=μ+σ·ζ₀ μ,σ\"]\n    P[\"Score and Regularisation ℒ=S(ζₖ)+βL_KL\"] --> Q[\"Adam update for μ,σ\"]\n    R[\"Physically Plausible Video\"] --> S[\"Output\"]\n```",
+        "sub_type": "flowchart",
+        "bbox": [
+            174,
+            93,
+            823,
+            294
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "2 Related Work ",
+        "text_level": 1,
+        "bbox": [
+            171,
+            401,
+            321,
+            416
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "Physical plausibility in video generation. Recent video generative models [8, 6, 19, 34, 36, 38, 12, 31] have achieved impressive visual fidelity, yet they still frequently violate basic physical principles [18, 29]. Previous work explored three lines of work to solve problem. The first improves physical fidelity during training by introducing physics-aware data, supervision, or learning objectives [35, 9, 35]. The second incorporates explicit physical structure or simulation into the generation process [24]. The final approach addresses the problem at inference time through external guidance, for example using VLM-based planning or reward signals from pretrained world models. VLIPP and GPT4motion use a VLM as physics reward [37, 26], while WMReward uses VJEPA-2 as an external latent world model to provide rewards for search and guided sampling [41]. ",
+        "bbox": [
+            169,
+            431,
+            826,
+            556
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "Inference-time alignment for image generation. Inference-time alignment for diffusion models can be categorized into search-based optimization-based methods. Search-based approaches improve alignment by exploring multiple denoising trajectories and selecting or resampling candidates according to a reward, including Best-of-N selection, SMC-style resampling, and value-based decoding [21, 22, 27, 44, 16]. Optimization-based approaches directly modify the sampling trajectory or noise variables to increase the target reward, for example through reward guidance or direct noise optimization [33, 11, 39, 2, 10]. Collectively, these works show that substantial gains can be obtained at test time without retraining the generator. However, they typically rely on externally defined reward models or prompt-alignment objectives. ",
+        "bbox": [
+            169,
+            563,
+            826,
+            688
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "Latent reward modeling. Recent work has explored training video generation models as latent reward models, motivated by the limitations of VLM-based evaluators. In particular, learning rewards models by directly training on noisy latent states has been shown to better match latentspace generation and avoid the overhead of pixel-space VLM rewards [23, 28, 30]. Alternatively, LikePhys [40] curates a synthetic benchmark and evaluates models using preference Plausibility Preference Error (PPE) metric on curated valid-invalid video pairs. Unlike these approaches, which either train dedicated latent reward models or depend on curated simulated pairs, our method directly reuses the frozen generator’s own denoising residual as a self-score for physical plausibility. ",
+        "bbox": [
+            169,
+            694,
+            826,
+            806
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "3 Method ",
+        "text_level": 1,
+        "bbox": [
+            171,
+            824,
+            272,
+            839
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "We introduce Proprio, a training-free inference-time framework with two complementary stages: self-scoring and self-refinement (see Fig. 2). Self-scoring asks whether a generated latent video is consistent with the frozen generator’s learned dynamics: samples that the model can explain under controlled perturbations should induce smaller and more stable flow residuals. Since large video generators are trained on natural video dynamics, this learned-flow consistency can serve as an intrinsic proxy for physical plausibility. Self-refinement then uses this score as an objective to improve a sample by updating only a structured parameterization of its initial sampling noise. ",
+        "bbox": [
+            169,
+            854,
+            823,
+            912
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "page_number",
+        "text": "",
+        "bbox": [
+            493,
+            936,
+            503,
+            946
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "",
+        "bbox": [
+            169,
+            90,
+            823,
+            133
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "text",
+        "text": "The self-scoring signal is built from four components. (1) We perturb each generated latent at multiple scheduler timesteps and noise realizations, probing the sample across different noise regimes. (2) We measure the model’s flow prediction residual, reusing the generator’s own training objective as a self-consistency signal. (3) We optionally apply a dynamic spatiotemporal mask to focus the score on motion-relevant regions. (4) We aggregate residuals across timesteps with inverse-variance weighting, giving more weight to reliable estimates and downweighting perturbation-sensitive ones. The resulting score supports three inference-time modes: best-of-N search, self-refinement, and hybrid search-and-refine. We briefly review the flow-matching formulation in Appendix F. ",
+        "bbox": [
+            169,
+            138,
+            826,
+            251
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "text",
+        "text": "3.1 Flow Prediction under Scheduler Perturbations ",
+        "text_level": 1,
+        "bbox": [
+            171,
+            267,
+            542,
+            280
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "text",
+        "text": "Let c denote the conditioning input (e.g., text prompt or input image). Let $z _ { 0 } \\in \\mathbb { R } ^ { T \\times H \\times W \\times C }$ denote the latent representation of a generated video $x _ { 0 }$ . We consider a pretrained video generator with parameters θ, which predicts a velocity (flow) field ",
+        "bbox": [
+            169,
+            291,
+            823,
+            335
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "equation",
+        "text": "$$\n\\hat {v} _ {\\theta}: \\mathbb {R} ^ {T \\times H \\times W \\times C} \\times \\mathcal {T} \\times \\mathcal {C} \\rightarrow \\mathbb {R} ^ {T \\times H \\times W \\times C}, \\tag {1}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            346,
+            339,
+            825,
+            359
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "text",
+        "text": "where T denotes the set of scheduler timesteps. ",
+        "bbox": [
+            169,
+            364,
+            485,
+            378
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "text",
+        "text": "Modern video generators define perturbations through a scheduler rather than a fixed analytical path. Given a timestep $t \\in \\mathcal T$ and noise $\\epsilon \\sim \\mathcal { N } ( 0 , I )$ , we construct a perturbed latent ",
+        "bbox": [
+            169,
+            386,
+            825,
+            414
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "equation",
+        "text": "$$\nz _ {t} = \\mathcal {P} (z _ {0}, \\epsilon , t), \\tag {2}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            441,
+            421,
+            825,
+            438
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "text",
+        "text": "where P denotes the forward perturbation process. ",
+        "bbox": [
+            169,
+            444,
+            506,
+            459
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "text",
+        "text": "The model predicts a flow field $\\hat { v } _ { \\theta } ( z _ { t } , t , c )$ , which is trained to match a target transport of the form ",
+        "bbox": [
+            169,
+            464,
+            815,
+            479
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "equation",
+        "text": "$$\nv ^ {\\star} (z _ {0}, \\epsilon) \\approx \\epsilon - z _ {0}. \\tag {3}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            431,
+            486,
+            825,
+            502
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "text",
+        "text": "This corresponds to the standard velocity parameterization and enforces local consistency of the learned transport under perturbations of real data. ",
+        "bbox": [
+            169,
+            508,
+            823,
+            537
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "text",
+        "text": "3.2 Intrinsic Self-Scoring via Flow Residuals ",
+        "text_level": 1,
+        "bbox": [
+            171,
+            553,
+            496,
+            568
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "text",
+        "text": "Given a latent sample $z _ { \\mathrm { 0 } }$ , we probe its consistency by sampling ϵ and evaluating the model at perturbed states $z _ { t }$ . We define the flow residual ",
+        "bbox": [
+            169,
+            579,
+            823,
+            606
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "equation",
+        "text": "$$\nr (z _ {0}, \\epsilon , t; c) = \\hat {v} _ {\\theta} (z _ {t}, t, c) - v ^ {\\star} (z _ {0}, \\epsilon), \\tag {4}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            370,
+            614,
+            825,
+            631
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "text",
+        "text": "and the per-timestep score ",
+        "bbox": [
+            171,
+            637,
+            346,
+            651
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "equation",
+        "text": "$$\n\\ell_ {t} (z _ {0}, \\epsilon ; c) = \\| r (z _ {0}, \\epsilon , t; c) \\| _ {2} ^ {2}. \\tag {5}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            397,
+            648,
+            825,
+            667
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "text",
+        "text": "This quantity corresponds to the flow-matching regression error evaluated at $z _ { 0 } .$ , providing a local surrogate for alignment with the learned data distribution. Intuitively, it measures how consistently the learned transport explains the sample under perturbations: samples near well-modeled regions yield small residuals, while deviations from the learned distribution produce larger discrepancies. ",
+        "bbox": [
+            169,
+            676,
+            823,
+            734
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "text",
+        "text": "Dynamic Spatiotemporal Masking. The score $\\ell _ { t }$ aggregates errors across the entire latent volume, including large static regions that are less informative for physical plausibility. To focus the signal on informative motion regions, we introduce a dynamic spatiotemporal mask $\\dot { M } \\in [ 0 , 1 ] ^ { T \\times H \\times \\bigstar }$ . ",
+        "bbox": [
+            169,
+            738,
+            825,
+            781
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "text",
+        "text": "Let u index spatiotemporal locations. Refer to Appendix D for mask details. The masked score is ",
+        "bbox": [
+            169,
+            786,
+            810,
+            801
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "equation",
+        "text": "$$\n\\ell_ {t} ^ {\\text { motion }} (z _ {0}, \\epsilon ; c) = \\frac {\\sum_ {u} M _ {u} \\| r _ {u} (z _ {0} , \\epsilon , t ; c) \\| _ {2} ^ {2}}{\\sum_ {u} M _ {u} + \\delta}, \\tag {6}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            346,
+            808,
+            825,
+            842
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "text",
+        "text": "where $\\delta > 0$ ensures numerical stability. ",
+        "bbox": [
+            169,
+            848,
+            439,
+            864
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "text",
+        "text": "This can be interpreted as importance weighting over spatiotemporal regions, emphasizing locations with higher expected relevance to motion and physical interactions, thereby improving sensitivity to physically meaningful deviations. ",
+        "bbox": [
+            169,
+            869,
+            823,
+            912
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "page_number",
+        "text": "4 ",
+        "bbox": [
+            493,
+            935,
+            504,
+            946
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "text",
+        "text": "Multi-Perturbation, Multi-Timestep Estimation. A single evaluation of $\\ell _ { t }$ is sensitive to both timestep and noise. We therefore aggregate across multiple perturbations and timesteps. ",
+        "bbox": [
+            169,
+            90,
+            823,
+            119
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "Let $\\mathcal { T } = \\{ t _ { 1 } , \\ldots , t _ { K } \\}$ and $\\epsilon ^ { ( n ) } \\sim \\mathcal { N } ( 0 , I )$ for $n = 1 , \\ldots , N$ . For each timestep $t _ { k } .$ , we compute ",
+        "bbox": [
+            169,
+            126,
+            803,
+            143
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "equation",
+        "text": "$$\n\\mu_ {k} = \\frac {1}{N} \\sum_ {n = 1} ^ {N} \\ell_ {t _ {k}} (z _ {0}, \\epsilon^ {(n)}; c), \\tag {7}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            398,
+            148,
+            825,
+            191
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "equation",
+        "text": "$$\nv _ {k} = \\frac {1}{N} \\sum_ {n = 1} ^ {N} \\left(\\ell_ {t _ {k}} (z _ {0}, \\epsilon^ {(n)}; c) - \\mu_ {k}\\right) ^ {2}. \\tag {8}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            369,
+            199,
+            825,
+            239
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "The mean $\\mu _ { k }$ estimates the residual strength at timestep $t _ { k }$ , while the variance $v _ { k }$ measures how stable that estimate is across perturbations. This separates the magnitude of the inconsistency from the reliability of the measurement. ",
+        "bbox": [
+            169,
+            250,
+            823,
+            291
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "Variance-Weighted Aggregation. Different timesteps can provide signals of different reliability: some noise levels expose meaningful inconsistencies, while others produce residuals that are highly sensitive to the sampled perturbation. We therefore weight timestep estimates by inverse variance: ",
+        "bbox": [
+            169,
+            297,
+            825,
+            339
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "equation",
+        "text": "$$\nw _ {k} = \\frac {1}{v _ {k} + \\varepsilon}, \\quad \\tilde {w} _ {k} = \\frac {w _ {k}}{\\sum_ {j = 1} ^ {K} w _ {j}}, \\tag {9}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            382,
+            345,
+            825,
+            383
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "where $\\varepsilon > 0$ is a small constant for numerical stability. ",
+        "bbox": [
+            169,
+            388,
+            534,
+            404
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "We use $v _ { k }$ to measure the stability of the score at timestep $t _ { k } \\mathrm { : }$ larger $v _ { k }$ indicates that the score is more sensitive to the perturbation noise. Inverse-variance weighting therefore assigns higher weight to more stable timesteps and lower weight to noisier ones. ",
+        "bbox": [
+            169,
+            409,
+            823,
+            452
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "The final score is ",
+        "bbox": [
+            171,
+            457,
+            289,
+            470
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "equation",
+        "text": "$$\nS (z _ {0}; c) = \\sum_ {k = 1} ^ {K} \\tilde {w} _ {k} \\mu_ {k}. \\tag {10}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            421,
+            468,
+            825,
+            510
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "For the motion-aware variant, we define $S _ { \\mathrm { m o t i o n } }$ analogously using $\\ell _ { t } ^ { \\mathrm { m o t i o n } }$ , and optionally combine both: ",
+        "bbox": [
+            169,
+            521,
+            823,
+            547
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "equation",
+        "text": "$$\nS _ {\\text { hybrid }} (z _ {0}; c) = \\lambda S _ {\\text { global }} (z _ {0}; c) + (1 - \\lambda) S _ {\\text { motion }} (z _ {0}; c), \\tag {11}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            307,
+            549,
+            825,
+            566
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "where $\\lambda \\in [ 0 , 1 ]$ . The global score preserves broad sample consistency, while the motion-aware score emphasizes dynamic regions; the hybrid score balances these two views. ",
+        "bbox": [
+            169,
+            566,
+            823,
+            595
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "3.3 Inference-Time Selection and Refinement ",
+        "text_level": 1,
+        "bbox": [
+            171,
+            612,
+            501,
+            626
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "The Proprio score defines a generator-native objective over samples. It can therefore be used not only for selection, but also for refinement: rather than simply choosing the lowest-scoring candidate, we can directly optimize the sampling noise to reduce the score. We thus propose an inference-time self-refinement procedure that updates the initial noise while keeping the generator fixed. ",
+        "bbox": [
+            169,
+            638,
+            825,
+            694
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "The Proprio score defines a generator-native objective over samples. Given candidates $\\{ z _ { 0 } ^ { ( i ) } \\}$ , we select $\\hat { i } = \\arg \\operatorname* { m i n } _ { i } S ( z _ { 0 } ^ { ( i ) } ; c )$ . This provides a simple test-time scaling mechanism: generate multiple candidates and keep the one that is most internally consistent according to the frozen generator. ",
+        "bbox": [
+            169,
+            702,
+            823,
+            750
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "Beyond selection, the same score can be used for self-refinement. Instead of modifying the generator weights, we optimize a structured parameterization of the initial sampling noise. Let $\\zeta _ { 0 } \\sim \\mathcal { N } ( 0 , I )$ denote the base noise. We introduce per-channel parameters $\\boldsymbol { \\mu } \\in \\mathbb { R } ^ { C }$ and $\\bar { \\sigma } \\in \\mathbb { R } _ { + } ^ { C }$ , and define ",
+        "bbox": [
+            169,
+            755,
+            825,
+            799
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "equation",
+        "text": "$$\n\\zeta = \\mu + \\sigma \\odot \\zeta_ {0}, \\tag {12}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            439,
+            805,
+            825,
+            821
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "where $\\boldsymbol { \\mu } \\in \\mathbb { R } ^ { C }$ and $\\sigma \\in \\mathbb { R } _ { + } ^ { C }$ . We denote by $z _ { 0 } ( \\zeta ; c )$ the latent generated from noise $\\zeta$ under conditioning c. ",
+        "bbox": [
+            169,
+            825,
+            823,
+            856
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "We optimize ",
+        "bbox": [
+            171,
+            861,
+            259,
+            876
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "equation",
+        "text": "$$\n\\mathcal {L} (\\mu , \\sigma) = S (z _ {0} (\\zeta ; c); c) + \\beta \\mathcal {L} _ {\\mathrm{KL}}, \\tag {13}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            382,
+            875,
+            825,
+            892
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "where $\\begin{array} { r } { \\mathcal { L } _ { \\mathrm { K L } } = \\frac { 1 } { C } \\sum _ { d = 1 } ^ { C } \\frac { 1 } { 2 } \\left( \\mu _ { d } ^ { 2 } + \\sigma _ { d } ^ { 2 } - 1 - 2 \\log \\sigma _ { d } \\right) } \\end{array}$ ",
+        "bbox": [
+            169,
+            893,
+            519,
+            914
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "page_number",
+        "text": "5 ",
+        "bbox": [
+            493,
+            935,
+            504,
+            946
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "table",
+        "img_path": "images/979af807dfdbeef3705e026474b55392d573639d07bd6dff88bb31361057981c.jpg",
+        "table_caption": [
+            "Table 1: Inference-time search on VideoPhy2. We report Semantic Adherence (SA), Physical Commonsense (PC), and Joint accuracy on the standard and hard splits. Higher is better. "
+        ],
+        "table_footnote": [],
+        "table_body": "<table><tr><td rowspan=\"3\">Method</td><td colspan=\"6\">Wan2.2 5B</td><td colspan=\"6\">Turbo Wan14B</td><td colspan=\"6\">Hunyuan Video</td></tr><tr><td colspan=\"3\">Standard</td><td colspan=\"3\">Hard</td><td colspan=\"3\">Standard</td><td colspan=\"3\">Hard</td><td colspan=\"3\">Standard</td><td colspan=\"3\">Hard</td></tr><tr><td>SA</td><td>PC</td><td>Joint</td><td>SA</td><td>PC</td><td>Joint</td><td>SA</td><td>PC</td><td>Joint</td><td>SA</td><td>PC</td><td>Joint</td><td>SA</td><td>PC</td><td>Joint</td><td>SA</td><td>PC</td><td>Joint</td></tr><tr><td>Random</td><td>65.4</td><td>58.1</td><td>48.6</td><td>31.7</td><td>44.4</td><td>19.4</td><td>67.2</td><td>68.3</td><td>56.1</td><td>32.2</td><td>47.8</td><td>23.3</td><td>61.1</td><td>75.0</td><td>50.0</td><td>29.4</td><td>61.1</td><td>20.0</td></tr><tr><td>Qwen 7B [4]</td><td>67.0</td><td>63.7</td><td>52.0</td><td>35.0</td><td>42.2</td><td>18.9</td><td>65.6</td><td>69.4</td><td>55.0</td><td>32.8</td><td>46.1</td><td>22.2</td><td>61.7</td><td>78.3</td><td>52.8</td><td>31.7</td><td>64.4</td><td>23.9</td></tr><tr><td>WMReward [41]</td><td>62.2</td><td>66.1</td><td>51.1</td><td>33.9</td><td>47.8</td><td>20.6</td><td>63.9</td><td>73.3</td><td>53.9</td><td>30.0</td><td>53.9</td><td>20.0</td><td>57.2</td><td>78.3</td><td>48.3</td><td>27.2</td><td>70.0</td><td>21.7</td></tr><tr><td>Ours -  $S_{global}$ </td><td>67.6</td><td>64.8</td><td>52.5</td><td>30.0</td><td>50.0</td><td>18.9</td><td>65.9</td><td>73.7</td><td>56.4</td><td>33.3</td><td>53.3</td><td>22.2</td><td>56.7</td><td>77.2</td><td>46.1</td><td>25.0</td><td>70.8</td><td>18.8</td></tr><tr><td>Ours -  $S_{motion}$ </td><td>66.5</td><td>68.2</td><td>55.3</td><td>34.4</td><td>51.7</td><td>23.3</td><td>64.8</td><td>74.3</td><td>55.9</td><td>33.9</td><td>57.8</td><td>23.9</td><td>58.3</td><td>79.4</td><td>50.6</td><td>22.9</td><td>70.8</td><td>18.8</td></tr><tr><td>Ours -  $S_{hybrid}$ </td><td>66.5</td><td>69.8</td><td>55.3</td><td>33.3</td><td>52.8</td><td>22.8</td><td>64.2</td><td>74.9</td><td>56.4</td><td>33.3</td><td>58.3</td><td>23.9</td><td>58.9</td><td>78.3</td><td>50.6</td><td>28.9</td><td>71.7</td><td>25.0</td></tr></table>",
+        "bbox": [
+            173,
+            125,
+            823,
+            252
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "text",
+        "text": "The Gaussian-affine parameterization gives refinement enough flexibility to improve the sample while keeping the optimized noise close to the generator’s original Gaussian prior. Starting from µ = 0 and σ = 1, we optimize (µ, log σ) with Adam for a small number of steps while keeping the generator fixed. In practice, we return the sample achieving the lowest unregularized Proprio score during optimization. The full algorithm is provided in Appendix C. ",
+        "bbox": [
+            169,
+            277,
+            823,
+            349
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "text",
+        "text": "4 Experiments ",
+        "text_level": 1,
+        "bbox": [
+            169,
+            368,
+            313,
+            386
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "text",
+        "text": "We evaluate Proprio in three inference-time settings: search, refinement, and search-and-refine (Sec. 3). Experiments are conducted on both text-to-video (T2V) and image-to-video (I2V) generation, using VideoPhy2 [5] and Physics-IQ [29], respectively, two benchmarks designed to assess physical plausibility and reasoning in generated videos. We include additional experiments in Appendix A. ",
+        "bbox": [
+            169,
+            398,
+            826,
+            455
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "text",
+        "text": "Benchmarks For T2V, we use VideoPhy2 [5], which reports three metrics: Semantic Adherence (SA), Physical Commonsense (PC), and Joint (SA=1 and PC=1). We follow the default evaluation protocol where scores greater than or equal to 4 are mapped to 1 and all others to 0. Following previous works [17], we randomly sample 360 prompts equally across standard and hard set. For I2V, we use Physics-IQ [29], which directly reports a physics score. ",
+        "bbox": [
+            169,
+            460,
+            826,
+            532
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "text",
+        "text": "Baselines. For search, we compare against (i) random selection, (ii) a VLM-based scorer using Qwen-7B [4], and (iii) WMReward [41], which ranks samples using VJEPA2 surprise scores. We follow their official implementation, scoring full video frames and selecting the lowest surprisescore sample using Vjepa2-G. For refinement, we compare against WMReward’s guidance-based optimization method using the recommended guidance of 0.005 and update frequency of 5. ",
+        "bbox": [
+            169,
+            537,
+            826,
+            608
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "text",
+        "text": "Implementation details. Unless otherwise stated, we generate 16 candidate samples per prompt. For fair comparison, all methods score the same candidate set. Experiments are run on 2 H100 GPUs. We use each model’s default frame rate: 24 FPS for Wan2.2 and Hunyuan Video 1.5, and 16 FPS for Turbo Wan2.2. Refer to Appendix E for more details. ",
+        "bbox": [
+            169,
+            613,
+            826,
+            670
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "text",
+        "text": "4.1 Improving Generation via Inference-Time Search ",
+        "text_level": 1,
+        "bbox": [
+            169,
+            685,
+            558,
+            700
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "text",
+        "text": "We evaluate inference-time scaling by generating 16 candidate samples and selecting the best one using Proprio. We conduct experiments across three video models, Wan2.2 5B [34], TurboDiffusion Wan2.2 14B [42], and Hunyuan Video 1.5 [36], in both (T2V) and (I2V) settings. ",
+        "bbox": [
+            169,
+            710,
+            823,
+            753
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "text",
+        "text": "Text-to-Video. As shown in Table 1, Proprio consistently outperforms random selection and the VLM-based scorer on VideoPhy2, while WMReward remains a stronger baseline than Qwen-7B. Across models, Qwen-7B provides limited benefit: although it occasionally improves semantic adherence (SA), these gains do not translate into stronger physical commonsense (PC) or joint performance, consistent with prior observations [41]. Compared to WMReward, Proprio achieves further improvements in most settings, particularly on PC and joint metrics. We observe a clear tradeoff between SA and PC: global scoring tends to better preserve SA, whereas motion-aware and hybrid scoring more strongly improve physical consistency. Among these, the hybrid variant is the most robust, consistently achieving the best balance between SA and PC and the strongest joint performance. While improving physical plausibility can reduce SA, Proprio exhibits a milder tradeoff than prior approaches, with smaller SA degradation relative to the gains in PC and joint scores. Overall, these results indicate that generator-native self-scoring provides a more effective signal for selecting physically plausible T2V samples than generic VLM-based evaluation, and is competitive with or stronger than WMReward. ",
+        "bbox": [
+            169,
+            758,
+            826,
+            912
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "page_number",
+        "text": "6 ",
+        "bbox": [
+            493,
+            936,
+            504,
+            946
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "text",
+        "text": "",
+        "bbox": [
+            169,
+            90,
+            823,
+            133
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "text",
+        "text": "Image-to-Video. As shown in Table 2, the I2V setting exhibits a different trend. The motion and hybrid variants of Proprio perform similarly, with motion-based scoring slightly stronger sometimes. This is consistent with the fact that I2V candidates are anchored to the same input image and are therefore already semantically aligned, making motion dynamics the primary factors distinguishing samples. While WMReward performs strongly across models, Proprio slightly improves over it on Wan2.2 5B and Turbo and achieves the best overall result on Hunyuan Video with the motionaware score. Overall, these results show that generator-native self-scoring provides a strong and competitive criterion for selecting physically plausible I2V generations. ",
+        "bbox": [
+            169,
+            138,
+            500,
+            277
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "table",
+        "img_path": "images/582de6eb0ab8582ffa8b7c349e5c258c64a15ae5b94165f3c0674cc5563e05b7.jpg",
+        "table_caption": [
+            "Table 2: Inference-time search results on Physics-IQ across three models. Higher is better. "
+        ],
+        "table_footnote": [],
+        "table_body": "<table><tr><td>Method</td><td>Wan2.2 5B</td><td>Turbo</td><td>Hunyuan Video</td></tr><tr><td>Random</td><td>29.45</td><td>31.25</td><td>31.63</td></tr><tr><td>Qwen 7B [4]</td><td>28.51</td><td>31.32</td><td>32.23</td></tr><tr><td>WMReward [41]</td><td>32.40</td><td>34.67</td><td>34.75</td></tr><tr><td>Ours -  $S_{global}$ </td><td>31.47</td><td>34.48</td><td>33.73</td></tr><tr><td>Ours -  $S_{motion}$ </td><td>32.25</td><td>34.65</td><td>36.09</td></tr><tr><td>Ours -  $S_{hybrid}$ </td><td>32.46</td><td>35.13</td><td>35.13</td></tr></table>",
+        "bbox": [
+            524,
+            180,
+            805,
+            275
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "text",
+        "text": "",
+        "bbox": [
+            169,
+            277,
+            826,
+            320
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "text",
+        "text": "4.2 Refining Generations with Inference-Time Optimization ",
+        "text_level": 1,
+        "bbox": [
+            171,
+            337,
+            604,
+            353
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "text",
+        "text": "We evaluate inference-time refinement using Proprio as the optimization signal. To make gradientbased optimization tractable, we use a distilled model (TurboDiffusion Wan 14B) and backpropagate through a reduced number of denoising steps (4 instead of 50), significantly lowering computational cost while preserving a useful refinement signal. We conduct experiments in both text-to-video (T2V) and image-to-video (I2V) settings on the VideoPhy2 [5] and Physics-IQ [29] benchmarks. ",
+        "bbox": [
+            169,
+            363,
+            826,
+            434
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "text",
+        "text": "As shown in Table 3, Proprio consistently improves over the base model and outperforms WMReward, with the largest gains observed when combining search and refinement. Refinement alone already yields meaningful improvements, and initializing from better candidates (via search) and then refining them leads to consistently stronger results, indicating that Proprio benefits from both selection and optimization. On Physics-IQ, the motion variant is the strongest, meaning that motion-focused refinement is very effective for I2V physical plausibility. On VideoPhy2, the hybrid score typically yields the strongest physical consistency on the standard split, while both motion and hybrid variants substantially improve performance on the hard split. Across settings, the most consistent gains are observed on physical commonsense (PC), indicating that refinement primarily improves physical realism. Overall, these results demonstrate that Proprio provides an effective optimization signal for challenging physical reasoning tasks, with motion-aware scoring particularly beneficial for I2V and hybrid scoring offering the most robust improvements for T2V. ",
+        "bbox": [
+            169,
+            439,
+            826,
+            604
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "text",
+        "text": "4.3 Human evaluation ",
+        "text_level": 1,
+        "bbox": [
+            171,
+            623,
+            344,
+            636
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "text",
+        "text": "To complement benchmark-based evaluation, we conduct a pairwise human evaluation study to test whether Proprio’s self-score agrees with human judgments. We sample 64 video pairs for search and refinement settings for both T2V and I2V, and collect 330 responses. In the search setting, each pair compares a low-score and highscore Proprio sample for the same condition; in refinement, each pair compares a Proprio-refined video with its unrefined baseline. As shown in Fig. 3, human preferences align well with Proprio on physical plausibility. Raters prefer the lower-score sample in 67.3% of search comparisons and the Proprio-refined sample in 66.7% of refinement comparisons. The effect is weaker for visual quality, where Proprio-selected or refined videos are preferred in roughly half of comparisons and the remaining votes are split between the baseline and no preference. This suggests that Proprio primarily improves perceived physical plausibility while largely preserving visual quality. Additional preference results and visual quality evaluation using VBench [15] are provided in Appendix A. ",
+        "bbox": [
+            169,
+            648,
+            545,
+            883
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "text",
+        "text": "",
+        "bbox": [
+            169,
+            883,
+            823,
+            912
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "chart",
+        "img_path": "images/6759dad03584b095f19221a8f2931258edf4213de68655322159a2be5755976a.jpg",
+        "content": "| Category | Ours (%) | Base. (%) | No Preference (%) |\n| :--- | :--- | :--- | :--- |\n| Search - Physical | 67.3 | 20.1 | 12.6 |\n| Search - Visual | 47.8 | 22.0 | 30.2 |\n| Refinement - Physical | 66.7 | 21.6 | 11.7 |\n| Refinement - Visual | 49.1 | 22.2 | 28.7 |",
+        "chart_caption": [
+            "Figure 3: Human preference assessing visual quality and physical plausibility. "
+        ],
+        "chart_footnote": [],
+        "sub_type": "bar_stacked",
+        "bbox": [
+            578,
+            650,
+            795,
+            829
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "page_number",
+        "text": "7 ",
+        "bbox": [
+            493,
+            935,
+            504,
+            946
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "table",
+        "img_path": "images/27f6a8c811685a6eefefed65f8eeef437f209f83efd9816ef11bd4b2cbc9db4e.jpg",
+        "table_caption": [
+            "Table 3: Inference-time refinement on Turbo Wan2.2. We report Physics-IQ and the VideoPhy2 breakdown on the standard and hard subsets. Higher is better. "
+        ],
+        "table_footnote": [
+            "∗ self reproduced. G indicates guidance "
+        ],
+        "table_body": "<table><tr><td rowspan=\"2\">Method</td><td colspan=\"2\">Physics-IQ</td><td colspan=\"5\">VideoPhy2</td></tr><tr><td>Score</td><td>SA</td><td>Standard PC</td><td>Joint</td><td>SA</td><td>Hard PC</td><td>Joint</td></tr><tr><td>Turbo Wan2.2</td><td>32.2</td><td>65.6</td><td>67.2</td><td>55.0</td><td>31.1</td><td>45.6</td><td>19.4</td></tr><tr><td colspan=\"8\">Refinement only</td></tr><tr><td>+ WMReward ( $\\mathcal{G}$ )* [41]</td><td>32.4</td><td>67.3</td><td>67.2</td><td>55.6</td><td>32.8</td><td>45.0</td><td>21.7</td></tr><tr><td>+ Proprio ( $\\nabla S_{global}$ )</td><td>34.6</td><td>65.4</td><td>68.2</td><td>54.2</td><td>29.4</td><td>43.9</td><td>20.0</td></tr><tr><td>+ Proprio ( $\\nabla S_{motion}$ )</td><td>35.8</td><td>65.4</td><td>69.3</td><td>54.2</td><td>32.2</td><td>47.2</td><td>20.6</td></tr><tr><td>+ Proprio ( $\\nabla S_{hybrid}$ )</td><td>34.9</td><td>65.6</td><td>71.7</td><td>54.4</td><td>32.2</td><td>50.6</td><td>21.1</td></tr><tr><td colspan=\"8\">Search (BoN4) + refinement</td></tr><tr><td>+ WMReward ( $\\mathcal{G}$ + BoN4)* [41]</td><td>34.7</td><td>64.4</td><td>67.2</td><td>51.1</td><td>32.8</td><td>48.9</td><td>19.4</td></tr><tr><td>+ Proprio ( $\\nabla S_{global}$ + BoN4)</td><td>36.7</td><td>64.4</td><td>71.7</td><td>54.4</td><td>29.4</td><td>54.4</td><td>21.1</td></tr><tr><td>+ Proprio ( $\\nabla S_{motion}$ + BoN4)</td><td>37.4</td><td>66.1</td><td>71.7</td><td>52.8</td><td>29.7</td><td>54.3</td><td>21.1</td></tr><tr><td>+ Proprio ( $\\nabla S_{hybrid}$ + BoN4)</td><td>37.1</td><td>63.9</td><td>73.3</td><td>51.1</td><td>31.1</td><td>55.0</td><td>21.1</td></tr><tr><td colspan=\"8\">Search (BoN8) + refinement</td></tr><tr><td>+ WMReward ( $\\mathcal{G}$ + BoN8)* [41]</td><td>35.5</td><td>66.7</td><td>68.9</td><td>52.8</td><td>30.6</td><td>52.2</td><td>21.1</td></tr><tr><td>+ Proprio ( $\\nabla S_{motion}$ + BoN8)</td><td>37.5</td><td>65.0</td><td>73.3</td><td>55.6</td><td>31.7</td><td>54.4</td><td>23.3</td></tr><tr><td>+ Proprio ( $\\nabla S_{hybrid}$ + BoN8)</td><td>37.3</td><td>66.1</td><td>74.4</td><td>57.8</td><td>29.6</td><td>54.2</td><td>20.7</td></tr></table>",
+        "bbox": [
+            225,
+            125,
+            772,
+            386
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "text",
+        "text": "5 Ablation Studies ",
+        "text_level": 1,
+        "bbox": [
+            171,
+            422,
+            344,
+            438
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "text",
+        "text": "Effect of noise levels for scoring. As shown in Fig. 4 and Table 5, the most informative scoring signal arises from an intermediate noise regime, rather than from very low or very high noise levels. On Physics-IQ, both global $S _ { \\mathrm { g l o b a l } }$ and motion aware $S _ { \\mathrm { m o t i o n } }$ scoring improve substantially when evaluation is restricted to mid-noise timesteps, while performance degrades at the extremes. A similar pattern holds on VideoPhy2: aggregating scores over the full noise range yields the highest semantic adherence (SA), but significantly weaker physical commonsense (PC) and joint performance. In contrast, restricting evaluation to mid-noise timesteps improves PC and produces the strongest joint scores. These results indicate that extreme noise levels yield less reliable or less informative signals, whereas mid-noise perturbations provide the most discriminative signal for physical plausibility. ",
+        "bbox": [
+            169,
+            455,
+            826,
+            582
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "text",
+        "text": "Effect of variance weighting. Table 5 shows that inverse-variance weighting improves score aggregation by emphasizing timesteps with more stable residual estimates. This effect is most pronounced for the motion score, where variance weighting increases PC from 66.48 to 68.16, yielding the best overall PC result. Gains for the global score are smaller but consistent, indicating that not all timesteps contribute equally reliable information. These results highlight that effective selfscoring depends not only on selecting an appropriate noise regime, but also on weighting timesteps according to their stability. In practice, combining mid-noise with variance-weighted motion scoring provides the strongest and most robust performance. We note that this effect is significantly weaker on distilled models, where variance weighting yields only marginal improvements (see Appendix A.4). ",
+        "bbox": [
+            169,
+            585,
+            826,
+            713
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "text",
+        "text": "Dynamic masking strategy. We explore different setups for the motion-based masking. Table 4 compares three dynamic masking variants for optimization. The motion mask is the default introduced in Sec. 3. The textaware mask derives motion from cross-attention, making it explicitly prompt-grounded, while the attentionbased mask uses self-attention feature changes as an internal proxy for motion, similar to [32]. ",
+        "bbox": [
+            169,
+            717,
+            486,
+            840
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "table",
+        "img_path": "images/39875b922150aefe3807f864620bbedf7f058439261b0ba13a380f54c9c035d2.jpg",
+        "table_caption": [
+            "Table 4: Dynamic masking strategies for optimization on Turbo Wan2.2. "
+        ],
+        "table_footnote": [],
+        "table_body": "<table><tr><td rowspan=\"2\">Masking</td><td rowspan=\"2\">Physics-IQ Score</td><td colspan=\"3\">VideoPhy2 Standard</td></tr><tr><td>SA</td><td>PC</td><td>Joint</td></tr><tr><td>Motion</td><td>35.8</td><td>65.36</td><td>69.27</td><td>54.19</td></tr><tr><td>Attention-based</td><td>34.10</td><td>63.33</td><td>68.33</td><td>52.22</td></tr><tr><td>Textaware</td><td>33.04</td><td>66.66</td><td>65.56</td><td>53.33</td></tr></table>",
+        "bbox": [
+            496,
+            758,
+            831,
+            838
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "text",
+        "text": "Additional details are provided in Appendix D. All three variants provide useful dynamic signals, but exhibit distinct tradeoffs. The motion mask achieves the strongest overall performance, with the best Physics-IQ score and the highest PC and joint scores on VideoPhy2, indicating that direct motion cues are the most reliable signal in this setting. The textaware mask yields the highest semantic adherence (SA), suggesting that prompt-grounded masking better preserves semantic alignment, but at some cost to physical consistency. The attention-based variant remains competitive but is slightly weaker. Overall, these results show that Proprio is compatible with multiple forms of dynamic masking, and that the choice of mask controls the tradeoff between semantic adherence and physical consistency. ",
+        "bbox": [
+            169,
+            842,
+            825,
+            912
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "page_number",
+        "text": "8 ",
+        "bbox": [
+            493,
+            935,
+            504,
+            946
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "chart",
+        "img_path": "images/e21d01916aff3ff8b661878a7b0e92ef8aafb0696b597aa2dca2c2e6cc08003d.jpg",
+        "content": "| Noise Level (ratio of sampling steps) | PhysIQ Global | PhysIQ Mtion | Random Selection |\n| ------------------------------------ | ------------- | ------------ | ---------------- |\n| 0.1                                  | 28.5          | 28.0         | 29.0             |\n| 0.2                                  | 30.5          | 31.0         | 29.0             |\n| 0.3                                  | 30.5          | 30.5         | 29.0             |\n| 0.4                                  | 31.5          | 32.5         | 29.0             |\n| 0.5                                  | 30.5          | 31.5         | 29.0             |\n| 0.6                                  | 32.0          | 32.0         | 29.0             |\n| 0.7                                  | 31.0          | 31.5         | 29.0             |\n| 0.8                                  | 30.0          | 31.0         | 29.0             |\n| 0.9                                  | 31.5          | 30.5         | 29.0             |",
+        "chart_caption": [
+            "Figure 4: Effect of noise levels at different timestep ranges on Physics-IQ for Wan2.2 5b. "
+        ],
+        "chart_footnote": [],
+        "sub_type": "line",
+        "bbox": [
+            174,
+            88,
+            467,
+            229
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "table",
+        "img_path": "images/0f59cbd0680de8e7c05794330d18737b150fac8a468145b35f7caa76b3461182.jpg",
+        "table_caption": [
+            "Table 5: Effect of aggregating scores at different noise levels and with variance weighting on scoring for VideoPhy2 (standard) with Wan2.2 5B. "
+        ],
+        "table_footnote": [],
+        "table_body": "<table><tr><td rowspan=\"2\">Range</td><td rowspan=\"2\">Method</td><td colspan=\"3\">VideoPhy2</td></tr><tr><td>SA</td><td>PC</td><td>Joint</td></tr><tr><td rowspan=\"2\">All noise(0.2–0.8)</td><td> $S_{global}$ </td><td>71.66</td><td>60.56</td><td>51.66</td></tr><tr><td> $S_{motion}$ </td><td>69.44</td><td>61.66</td><td>51.11</td></tr><tr><td rowspan=\"4\">Mid noise(0.3–0.6)</td><td> $S_{global}$ </td><td>67.04</td><td>64.25</td><td>51.40</td></tr><tr><td> $S_{motion}$ </td><td>67.03</td><td>66.48</td><td>56.42</td></tr><tr><td> $S_{global} + var$ </td><td>67.59</td><td>64.80</td><td>52.51</td></tr><tr><td> $S_{motion} + var$ </td><td>66.48</td><td>68.16</td><td>55.31</td></tr></table>",
+        "bbox": [
+            500,
+            90,
+            807,
+            215
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "text",
+        "text": "",
+        "bbox": [
+            169,
+            297,
+            823,
+            340
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "text",
+        "text": "6 Discussion ",
+        "text_level": 1,
+        "bbox": [
+            171,
+            366,
+            294,
+            382
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "text",
+        "text": "Importance of mid-level noise. Our ablations in Section 5 show that the most informative selfscoring signal arises at intermediate noise levels. At very low noise, the perturbed latent remains too close to the original sample, making the residual largely local and less sensitive to higher-level violations of physical plausibility. At very high noise, much of the sample-specific structure is lost, so predictions are driven more by the model’s generic prior and become less discriminative. Mid-level noise provides the best balance: it preserves enough structure for the score to remain sample-specific while perturbing the latent enough to reveal inconsistencies in spatiotemporal dynamics. This explains the stronger PC and joint performance of mid-noise evaluation relative to low or high-noise regimes. ",
+        "bbox": [
+            169,
+            400,
+            826,
+            512
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "text",
+        "text": "Inference scaling versus inference refinement. Comparing search and refinement reveals a clear dependence on the generation setting. In T2V, search is particularly effective because samples from the same prompt exhibit substantial scene and motion diversity, making selection from a larger candidate pool highly beneficial. This aligns with prior works [13] discussing the diversityperformance tradeoff in T2V. In contrast, I2V candidates are anchored to the same input image, reducing semantic diversity and leaving motion quality as the primary source of variation. As a result, the advantage of large-scale search diminishes, and the gap between search and refinement narrows. In this regime, motion-aware refinement becomes effective even with a smaller search budget. Overall, these results indicate that scaling search is more important for T2V, whereas in I2V the marginal benefit of additional diversity is lower and refinement plays a stronger role. ",
+        "bbox": [
+            169,
+            518,
+            826,
+            657
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "text",
+        "text": "7 Conclusion and Limitations ",
+        "text_level": 1,
+        "bbox": [
+            171,
+            681,
+            437,
+            698
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "text",
+        "text": "We introduced Proprio, a generator-native inference-time framework for improving physical plausibility in video generation. By reusing the frozen generator’s own denoising dynamics as an intrinsic self-scoring signal, Proprio enables both search and refinement without external reward models. Across text-to-video and image-to-video benchmarks, Proprio consistently improves physical plausibility and provides a strong alternative to external evaluators. Proprio is inherently limited by the knowledge encoded in the base generator: it cannot recover dynamics that the model has not learned. In addition, like other inference-time scaling methods, Proprio increases inference cost by requiring additional candidate scoring, search, or refinement steps. Our refinement experiments also rely on distilled models for computational tractability, and scaling gradient-based refinement to larger, non-distilled generators remains challenging due to the cost of backpropagation through long denoising trajectories. An important direction for future work is therefore the development of more efficient scoring and refinement. Overall, our results suggest a shift in perspective for video generation: rather than relying solely on external supervision or auxiliary reward models, future systems may increasingly exploit generator-internal signals for self-evaluation and self-alignment. ",
+        "bbox": [
+            169,
+            717,
+            826,
+            912
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "page_number",
+        "text": "9 ",
+        "bbox": [
+            493,
+            935,
+            504,
+            946
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "text",
+        "text": "8 Acknowledgments ",
+        "text_level": 1,
+        "bbox": [
+            171,
+            89,
+            359,
+            107
+        ],
+        "page_idx": 9
+    },
+    {
+        "type": "text",
+        "text": "This work was supported as part of the Swiss AI Initiative by a grant from the Swiss National Supercomputing Centre (CSCS) under project ID a144. Kaouther Messaoud is supported by Hi! PARIS and ANR/France 2030 program. ",
+        "bbox": [
+            169,
+            119,
+            826,
+            162
+        ],
+        "page_idx": 9
+    },
+    {
+        "type": "text",
+        "text": "References ",
+        "text_level": 1,
+        "bbox": [
+            173,
+            180,
+            267,
+            196
+        ],
+        "page_idx": 9
+    },
+    {
+        "type": "list",
+        "sub_type": "ref_text",
+        "list_items": [
+            "[1] Arslan Ali, Junjie Bai, Maciej Bala, Yogesh Balaji, Aaron Blakeman, Tiffany Cai, Jiaxin Cao, Tianshi Cao, Elizabeth Cha, Yu-Wei Chao, et al. World simulation with video foundation models for physical ai. arXiv preprint arXiv:2511.00062, 2025. ",
+            "[2] Reyhane Askari Hemmat, Melissa Hall, Alicia Sun, Candace Ross, Michal Drozdzal, and Adriana Romero-Soriano. Improving geo-diversity of generated images with contextualized vendi score guidance. In Proceedings of the European Conference on Computer Vision (ECCV), 2024. ",
+            "[3] Mido Assran, Adrien Bardes, David Fan, Quentin Garrido, Russell Howes, Matthew Muckley, Ammar Rizvi, Claire Roberts, Koustuv Sinha, Artem Zholus, et al. V-jepa 2: Self-supervised video models enable understanding, prediction and planning. arXiv preprint arXiv:2506.09985, 2025. ",
+            "[4] Shuai Bai, Yuxuan Cai, Ruizhe Chen, Keqin Chen, Xionghui Chen, Zesen Cheng, Lianghao Deng, Wei Ding, Chang Gao, Chunjiang Ge, et al. Qwen3-vl technical report. arXiv preprint arXiv:2511.21631, 2025. ",
+            "[5] Hritik Bansal, Clark Peng, Yonatan Bitton, Roman Goldenberg, Aditya Grover, and Kai-Wei Chang. Videophy-2: A challenging action-centric physical commonsense evaluation in video generation. arXiv preprint arXiv:2503.06800, 2025. ",
+            "[6] Omer Bar-Tal, Hila Chefer, Omer Tov, Charles Herrmann, Roni Paiss, Shiran Zada, Ariel Ephrat, Junhwa Hur, Guanghui Liu, Amit Raj, Yuanzhen Li, Michael Rubinstein, Tomer Michaeli, Oliver Wang, Deqing Sun, Tali Dekel, and Inbar Mosseri. Lumiere: A space-time diffusion model for video generation. arXiv preprint arXiv:2401.12945, 2024. ",
+            "[7] Adrien Bardes, Quentin Garrido, Jean Ponce, Xinlei Chen, Michael Rabbat, Yann LeCun, Mahmoud Assran, and Nicolas Ballas. Revisiting feature prediction for learning visual representations from video. arXiv preprint arXiv:2404.08471, 2024. ",
+            "[8] Tim Brooks, William Peebles, Aditya Ramesh, et al. Video generation models as world simulators. OpenAI technical report, 2024. Online; accessed from OpenAI. ",
+            "[9] Yuanhao Cai, Kunpeng Li, Menglin Jia, Jialiang Wang, Junzhe Sun, Feng Liang, Weifeng Chen, Felix Juefei-Xu, Chu Wang, Ali Thabet, et al. Phygdpo: Physics-aware groupwise direct preference optimization for physically consistent text-to-video generation. arXiv preprint arXiv:2512.24551, 2025. ",
+            "[10] Nicola Dall’Asen, Xiaofeng Zhang, Reyhane Askari Hemmat, Melissa Hall, Jakob Verbeek, Adriana Romero-Soriano, and Michal Drozdzal. Increasing the utility of synthetic images through chamfer guidance. arXiv preprint arXiv:2508.10631, 2025. ",
+            "[11] Xiefan Guo, Jinlin Liu, Miaomiao Cui, Jiankai Li, Hongyu Yang, and Di Huang. Initno: Boosting text-toimage diffusion models via initial noise optimization. In Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition (CVPR), 2024. ",
+            "[12] Yoav HaCohen, Nisan Chiprut, Benny Brazowski, Daniel Shalem, Dudu Moshe, Eitan Richardson, Eran Levin, Guy Shiran, Nir Zabari, Ori Gordon, Poriya Panet, Sapir Weissbuch, Victor Kulikov, Yaki Bitterman, Zeev Melumian, and Ofir Bibi. Ltx-video: Realtime video latent diffusion. arXiv preprint arXiv:2501.00103, 2025. ",
+            "[13] Mariam Hassan, Bastien Van Delft, Wuyang Li, and Alexandre Alahi. Factorized video generation: Decoupling scene construction and temporal synthesis in text-to-video diffusion models. arXiv preprint arXiv:2512.16371, 2025. ",
+            "[14] Jonathan Ho, Ajay Jain, and Pieter Abbeel. Denoising diffusion probabilistic models. Advances in neural information processing systems, 33:6840–6851, 2020. ",
+            "[15] Ziqi Huang, Yinan He, Jiashuo Yu, Fan Zhang, Chenyang Si, Yuming Jiang, Yuanhan Zhang, Tianxing Wu, Qingyang Jin, Nattapol Chanpaisit, Yaohui Wang, Xinyuan Chen, Limin Wang, Dahua Lin, Yu Qiao, and Ziwei Liu. VBench: Comprehensive benchmark suite for video generative models. In Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition, 2024. "
+        ],
+        "bbox": [
+            173,
+            199,
+            828,
+            914
+        ],
+        "page_idx": 9
+    },
+    {
+        "type": "page_number",
+        "text": "10 ",
+        "bbox": [
+            490,
+            935,
+            509,
+            946
+        ],
+        "page_idx": 9
+    },
+    {
+        "type": "list",
+        "sub_type": "ref_text",
+        "list_items": [
+            "[16] Vineet Jain, Kusha Sareen, Mohammad Pedramfar, and Siamak Ravanbakhsh. Diffusion tree sampling: Scalable inference-time alignment of diffusion models. In Second Workshop on Test-Time Adaptation: Putting Updates to the Test! at ICML 2025. ",
+            "[17] Sangwon Jang, Taekyung Ki, Jaehyeong Jo, Saining Xie, Jaehong Yoon, and Sung Ju Hwang. Self-refining video sampling. arXiv preprint arXiv:2601.18577, 2026. ",
+            "[18] Bingyi Kang, Yang Yue, Rui Lu, Zhijie Lin, Yang Zhao, Kaixin Wang, Gao Huang, and Jiashi Feng. How far is video generation from world model: A physical law perspective. In International Conference on Machine Learning, pages 28991–29017. PMLR, 2025. ",
+            "[19] Dan Kondratyuk, Lijun Yu, Xin Zhao, Mingxing Meng, Chenlin Yan, Alexandre Drouin, Maor Yi, Lijian Luo, Liangyu Gui, Zhenyao Wang, Wilson Sean, Cordelia Schmid, David Ross, Kihyuk Sohn, and Lu Jiang. Videopoet: A large language model for zero-shot video generation. In Proceedings of the 41st International Conference on Machine Learning, pages 25105–25124, 2024. ",
+            "[20] Alexander C Li, Mihir Prabhudesai, Shivam Duggal, Ellis Brown, and Deepak Pathak. Your diffusion model is secretly a zero-shot classifier. In Proceedings of the IEEE/CVF International Conference on Computer Vision, pages 2206–2217, 2023. ",
+            "[21] Xiner Li, Yulai Zhao, Chenyu Wang, Gabriele Scalia, Gokcen Eraslan, Surag Nair, Tommaso Biancalani, Shuiwang Ji, Aviv Regev, Sergey Levine, and Masatoshi Uehara. Derivative-free guidance in continuous and discrete diffusion models with soft value-based decoding. arXiv preprint arXiv:2408.08252, 2024. ",
+            "[22] Xiner Li, Masatoshi Uehara, Xingyu Su, Gabriele Scalia, Tommaso Biancalani, Aviv Regev, Sergey Levine, and Shuiwang Ji. Dynamic search for inference-time alignment in diffusion models. arXiv preprint arXiv:2503.02039, 2025. ",
+            "[23] Gongye Liu, Bo Yang, Yida Zhi, Zhizhou Zhong, Lei Ke, Didan Deng, Han Gao, Yongxiang Huang, Kaihao Zhang, Hongbo Fu, et al. Beyond vlm-based rewards: Diffusion-native latent reward modeling. arXiv preprint arXiv:2602.11146, 2026. ",
+            "[24] Shaowei Liu, Zhongzheng Ren, Saurabh Gupta, and Shenlong Wang. Physgen: Rigid-body physicsgrounded image-to-video generation. In European Conference on Computer Vision, pages 360–378. Springer, 2024. ",
+            "[25] Xingchao Liu, Chengyue Gong, and Qiang Liu. Flow straight and fast: Learning to generate and transfer data with rectified flow. In The Eleventh International Conference on Learning Representations (ICLR), 2023. ",
+            "[26] Jiaxi Lv, Yi Huang, Mingfu Yan, Jiancheng Huang, Jianzhuang Liu, Yifan Liu, Yafei Wen, Xiaoxin Chen, and Shifeng Chen. Gpt4motion: Scripting physical motions in text-to-video generation via blender-oriented gpt planning. In Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition Workshops, 2024. ",
+            "[27] Nanye Ma, Shangyuan Tong, Haolin Jia, Hexiang Hu, Yu-Chuan Su, Mingda Zhang, Xuan Yang, Yandong Li, Tommi Jaakkola, Xuhui Jia, and Saining Xie. Scaling inference time compute for diffusion models. In Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition (CVPR), pages 2523–2534, 2025. ",
+            "[28] Xiaoyue Mi, Wenqing Yu, Jiesong Lian, Shibo Jie, Ruizhe Zhong, Zijun Liu, Guozhen Zhang, Zixiang Zhou, Zhiyong Xu, Yuan Zhou, et al. Video generation models are good latent reward models. arXiv preprint arXiv:2511.21541, 2025. ",
+            "[29] Saman Motamed, Laura Culp, Kevin Swersky, Priyank Jaini, and Robert Geirhos. Do generative video models understand physical principles? In Proceedings of the IEEE/CVF Winter Conference on Applications of Computer Vision, pages 948–958, 2026. ",
+            "[30] Felipe Nuti, Tim Franzmeyer, and João F Henriques. Extracting reward functions from diffusion models. Advances in Neural Information Processing Systems, 36:50196–50220, 2023. ",
+            "[31] Adam Polyak, Yossi Adi, Leshem Choshen, Tavi Halperin, Tovi Ventura, Xi Zhang, Boliang Wang, Peng Yin, Dong Xu, Shir Gur, et al. Movie gen: A cast of media foundation models. arXiv preprint arXiv:2410.13720, 2024. ",
+            "[32] Alexander Pondaven, Aliaksandr Siarohin, Sergey Tulyakov, Philip Torr, and Fabio Pizzati. Video motion transfer with diffusion transformers. In Proceedings of the Computer Vision and Pattern Recognition Conference, pages 22911–22921, 2025. "
+        ],
+        "bbox": [
+            166,
+            87,
+            831,
+            914
+        ],
+        "page_idx": 10
+    },
+    {
+        "type": "page_number",
+        "text": "",
+        "bbox": [
+            490,
+            935,
+            506,
+            946
+        ],
+        "page_idx": 10
+    },
+    {
+        "type": "list",
+        "sub_type": "ref_text",
+        "list_items": [
+            "[33] Zhiwei Tang, Jiangweizhi Peng, Jiasheng Tang, Mingyi Hong, Fan Wang, and Tsung-Hui Chang. Inferencetime alignment of diffusion models with direct noise optimization. In Forty-second International Conference on Machine Learning. ",
+            "[34] Team Wan, Ang Wang, Baole Ai, Bin Wen, Chaojie Mao, Chen-Wei Xie, Di Chen, Feiwu Yu, Haiming Zhao, Jianxiao Yang, et al. Wan: Open and advanced large-scale video generative models. arXiv preprint arXiv:2503.20314, 2025. ",
+            "[35] Jing Wang, Ao Ma, Ke Cao, Jun Zheng, Jiasong Feng, Zhanjie Zhang, Wanyuan Pang, and Xiaodan Liang. Wisa: World simulator assistant for physics-aware text-to-video generation. In The Thirty-ninth Annual Conference on Neural Information Processing Systems. ",
+            "[36] Bing Wu, Chang Zou, Changlin Li, Duojun Huang, Fang Yang, Hao Tan, Jack Peng, Jianbing Wu, Jiangfeng Xiong, Jie Jiang, et al. Hunyuanvideo 1.5 technical report. arXiv preprint arXiv:2511.18870, 2025. ",
+            "[37] Xindi Yang, Baolu Li, Yiming Zhang, Zhenfei Yin, Lei Bai, Liqian Ma, Zhiyong Wang, Jianfei Cai, Tien-Tsin Wong, Huchuan Lu, et al. Vlipp: Towards physically plausible video generation with vision and language informed physical prior. In Proceedings of the IEEE/CVF International Conference on Computer Vision, pages 12360–12370, 2025. ",
+            "[38] Zhuoyi Yang, Jiayan Teng, Wendi Zheng, Ming Ding, Shiyu Huang, Jiazheng Xu, Yuanming Yang, Wenyi Hong, Xiaohan Zhang, Guanyu Feng, et al. Cogvideox: Text-to-video diffusion models with an expert transformer. arXiv preprint arXiv:2408.06072, 2024. ",
+            "[39] Haotian Ye, Haowei Lin, Jiaqi Han, Minkai Xu, Sheng Liu, Yitao Liang, Jianzhu Ma, James Zou, and Stefano Ermon. Tfg: Unified training-free guidance for diffusion models. In Advances in Neural Information Processing Systems, 2024. ",
+            "[40] Jianhao Yuan, Fabio Pizzati, Francesco Pinto, Lars Kunze, Ivan Laptev, Paul Newman, Philip Torr, and Daniele De Martini. Likephys: Evaluating intuitive physics understanding in video diffusion models via likelihood preference. arXiv preprint arXiv:2510.11512, 2025. ",
+            "[41] Jianhao Yuan, Xiaofeng Zhang, Felix Friedrich, Nicolas Beltran-Velez, Melissa Hall, Reyhane Askari-Hemmat, Xiaochuang Han, Nicolas Ballas, Michal Drozdzal, and Adriana Romero-Soriano. Inference-time physics alignment of video generative models with latent world models. arXiv preprint arXiv:2601.10553, 2026. ",
+            "[42] Jintao Zhang, Kaiwen Zheng, Kai Jiang, Haoxu Wang, Ion Stoica, Joseph E Gonzalez, Jianfei Chen, and Jun Zhu. Turbodiffusion: Accelerating video diffusion models by 100-200 times. arXiv preprint arXiv:2512.16093, 2025. ",
+            "[43] Xiangdong Zhang, Jiaqi Liao, Shaofeng Zhang, Fanqing Meng, Xiangpeng Wan, Junchi Yan, and Yu Cheng. Videorepa: Learning physics for video generation through relational alignment with foundation models. In The Thirty-ninth Annual Conference on Neural Information Processing Systems, . ",
+            "[44] XiangCheng Zhang, Haowei Lin, Haotian Ye, James Zou, Jianzhu Ma, Yitao Liang, and Yilun Du. Inference-time scaling of diffusion models through classical search. In NeurIPS 2025 Workshop on Structured Probabilistic Inference {\\&} Generative Modeling, . "
+        ],
+        "bbox": [
+            165,
+            87,
+            831,
+            674
+        ],
+        "page_idx": 11
+    },
+    {
+        "type": "page_number",
+        "text": "",
+        "bbox": [
+            490,
+            935,
+            508,
+            946
+        ],
+        "page_idx": 11
+    },
+    {
+        "type": "text",
+        "text": "A Additional experiments and ablations ",
+        "text_level": 1,
+        "bbox": [
+            171,
+            89,
+            524,
+            107
+        ],
+        "page_idx": 12
+    },
+    {
+        "type": "text",
+        "text": "A.1 Diagnostic Study: Preference for natural video dynamics ",
+        "text_level": 1,
+        "bbox": [
+            171,
+            119,
+            612,
+            137
+        ],
+        "page_idx": 12
+    },
+    {
+        "type": "text",
+        "text": "To test whether the self-score captures a useful preference for natural video dynamics, we conduct a small but highly curated diagnostic check on Physics-IQ. We select 45 distinct scenarios from Physics-IQ and use their ground-truth videos as physically plausible references. For each case, we construct a matched physical-failure example using Turbo Wan2.2, either by prompting the model toward a specific implausible behavior or by generating multiple samples and selecting one with a clear physics violation. We manually curate these pairs so that the generated counterpart remains visually and semantically close to the reference where possible, while the main intended difference is physical plausibility. The physical failures include, unrealistic collisons, rigid objects changing shapes, unrealistic shadows, liquid dynamics, unrealistic falls, wrong reaction to magnet and more. We then score both the ground-truth video and the generated failure using the same Turbo Wan2.2 model with the motion Proprio loss, and compare which video is preferred by the self-score. ",
+        "bbox": [
+            169,
+            146,
+            826,
+            299
+        ],
+        "page_idx": 12
+    },
+    {
+        "type": "text",
+        "text": "The ground-truth video is preferred in 82.2% of pairs (37/45), suggesting that the generator-native residual tends to favor natural video dynamics over the model’s own physically implausible generations. This study is intended only as a diagnostic sanity check supporting our interpretation that learned-distribution consistency can serve as a useful proxy for physical plausibility. We show examples of the curated pairs in Figures 11 and 12. ",
+        "bbox": [
+            169,
+            304,
+            826,
+            376
+        ],
+        "page_idx": 12
+    },
+    {
+        "type": "text",
+        "text": "A.2 Visual Quality ",
+        "text_level": 1,
+        "bbox": [
+            171,
+            390,
+            318,
+            405
+        ],
+        "page_idx": 12
+    },
+    {
+        "type": "text",
+        "text": "To assess whether the gains in physical plausibility come at the expense of visual quality, we additionally evaluate the generated videos on VBench [15]. As shown in Table 6, Proprio does not degrade perceptual quality across either T2V or I2V. Subject consistency, background consistency, motion smoothness, aesthetic quality, and imaging quality remain close to the baseline across refinement, search, and search+refinement settings. In some cases, these metrics slightly improve, suggesting that Proprio’s physical-plausibility gains are not obtained by sacrificing visual quality. Overall, these results indicate that the improvements in physical plausibility obtained by Proprio do not come at the cost of perceptual video quality, and may in some cases slightly improve it. ",
+        "bbox": [
+            169,
+            415,
+            826,
+            527
+        ],
+        "page_idx": 12
+    },
+    {
+        "type": "table",
+        "img_path": "images/2ddef38dadac0ea67835c5d8543d774af2593612e683194e3eb8f97dd3c7edb5.jpg",
+        "table_caption": [
+            "Table 6: VBench quality metrics for Turbo Wan2.2 under baseline sampling, Proprio refinement (∇), search (BoN), and search + refinement (∇ + BoN). "
+        ],
+        "table_footnote": [],
+        "table_body": "<table><tr><td>Method</td><td>Subject Consistency</td><td>Background Consistency</td><td>Motion Smoothness</td><td>Aesthetic Quality</td><td>Imaging Quality</td></tr><tr><td colspan=\"6\">VideoPhy2 (T2V)</td></tr><tr><td>Turbo Wan2.2</td><td>0.92</td><td>0.92</td><td>0.99</td><td>0.51</td><td>0.67</td></tr><tr><td>+ Proprio(∇)</td><td>0.93</td><td>0.93</td><td>0.98</td><td>0.51</td><td>0.68</td></tr><tr><td>+ Proprio(BoN)</td><td>0.95</td><td>0.95</td><td>0.99</td><td>0.54</td><td>0.68</td></tr><tr><td>+ Proprio(∇ + BoN)</td><td>0.93</td><td>0.93</td><td>0.98</td><td>0.52</td><td>0.68</td></tr><tr><td colspan=\"6\">PhysicsIQ (I2V)</td></tr><tr><td>Turbo Wan2.2</td><td>0.95</td><td>0.96</td><td>0.99</td><td>0.49</td><td>0.66</td></tr><tr><td>+ Proprio(∇)</td><td>0.95</td><td>0.96</td><td>0.99</td><td>0.49</td><td>0.66</td></tr><tr><td>+ Proprio(BoN)</td><td>0.95</td><td>0.96</td><td>0.99</td><td>0.48</td><td>0.68</td></tr><tr><td>+ Proprio(∇ + BoN)</td><td>0.96</td><td>0.96</td><td>0.99</td><td>0.49</td><td>0.66</td></tr></table>",
+        "bbox": [
+            210,
+            575,
+            787,
+            752
+        ],
+        "page_idx": 12
+    },
+    {
+        "type": "text",
+        "text": "A.3 Time Comparison ",
+        "text_level": 1,
+        "bbox": [
+            171,
+            773,
+            344,
+            791
+        ],
+        "page_idx": 12
+    },
+    {
+        "type": "text",
+        "text": "Table 7 compares the runtime overhead of Proprio and WMReward relative to baseline generation. Proprio is particularly efficient in I2V, where refinement adds only limited overhead and remains substantially cheaper than WMReward guidance, both with and without search. In T2V, the runtime gap is smaller: Proprio refinement is comparable in cost to WMReward guidance, while Proprio search+refinement becomes the most expensive setting because it combines candidate selection with gradient-based refinement. However, it is important to note that inference-time scaling in general requires an increase in compute to search for the best generation and the time required scales linearly with number of samples used for the search. ",
+        "bbox": [
+            169,
+            800,
+            826,
+            912
+        ],
+        "page_idx": 12
+    },
+    {
+        "type": "page_number",
+        "text": "13 ",
+        "bbox": [
+            490,
+            935,
+            508,
+            946
+        ],
+        "page_idx": 12
+    },
+    {
+        "type": "table",
+        "img_path": "images/14e46a8b1d4ceec7e33eefe4825cd3f9e6fbbe74eb66505a428f694bdfefd04f.jpg",
+        "table_caption": [
+            "Table 7: Runtime comparison of Proprio and WMReward in I2V and T2V settings using Turbo Wan. We report average runtime in seconds and relative runtime normalized to the baseline. We use one sample generation for this experiment across 3 runs. Numbers increase linearly with samples. "
+        ],
+        "table_footnote": [],
+        "table_body": "<table><tr><td>Domain</td><td>Method</td><td>Time (s)</td><td> $\\times$  Time</td></tr><tr><td rowspan=\"5\">I2V</td><td>Baseline</td><td>37.54  $\\pm$  0.06</td><td>1.00</td></tr><tr><td>Ours  $\\nabla$ </td><td>49.11  $\\pm$  0.25</td><td>1.31</td></tr><tr><td>Ours (BON +  $\\nabla$ )</td><td>67.59  $\\pm$  0.11</td><td>1.80</td></tr><tr><td>WMReward [41]  $\\mathcal{G}$ </td><td>87.35  $\\pm$  4.46</td><td>2.33</td></tr><tr><td>WMReward [41] (BON +  $\\mathcal{G}$ )</td><td>92.24  $\\pm$  0.44</td><td>2.46</td></tr><tr><td rowspan=\"5\">T2V</td><td>Baseline</td><td>14.36  $\\pm$  0.18</td><td>1.00</td></tr><tr><td>Ours $\\nabla$ </td><td>29.72  $\\pm$  0.05</td><td>2.07</td></tr><tr><td>Ours (BON +  $\\nabla$ )</td><td>49.67  $\\pm$  0.06</td><td>3.46</td></tr><tr><td>WMReward [41]  $\\mathcal{G}$ </td><td>30.38  $\\pm$  7.48</td><td>2.12</td></tr><tr><td>WMReward [41] (BON +  $\\mathcal{G}$ )</td><td>37.69  $\\pm$  4.63</td><td>2.62</td></tr></table>",
+        "bbox": [
+            292,
+            140,
+            707,
+            301
+        ],
+        "page_idx": 13
+    },
+    {
+        "type": "text",
+        "text": "A.4 Effect of variance on distilled model ",
+        "text_level": 1,
+        "bbox": [
+            171,
+            327,
+            467,
+            340
+        ],
+        "page_idx": 13
+    },
+    {
+        "type": "text",
+        "text": "Table 8 shows that variance weighting has only a limited effect on the distilled Turbo model. On Physics-IQ, using variance weighting does not improve performance and in fact leads to slightly lower scores for the global and combined variants, while leaving the dynamic variant unchanged. A similar pattern appears on VideoPhy2 where the differences are small across all three variants, and only minor shifts between semantic adherence and physical consistency. In particular, variance weighting slightly improves PC for the global and combined variants, but these gains are offset by lower SA or joint performance, and the dynamic variant is nearly unchanged. This contrasts with the non-distilled Wan model, where variance weighting provides clearer gains. One possible explanation is that distillation compresses the denoising trajectory into fewer steps, making the timestep-wise residual estimates more uniform in reliability. We therefore, do not use variance weighting for optimization setting as it’s done on the distilled model. ",
+        "bbox": [
+            169,
+            354,
+            826,
+            507
+        ],
+        "page_idx": 13
+    },
+    {
+        "type": "table",
+        "img_path": "images/5614691f06cbd87ea225d70c003fad03d4a8316a36f8f7ed86a0cb348b0e0df3.jpg",
+        "table_caption": [
+            "Table 8: Effect of variance weighting on the distilled Turbo model. "
+        ],
+        "table_footnote": [],
+        "table_body": "<table><tr><td rowspan=\"2\">Variant</td><td colspan=\"2\">Physics-IQ</td><td colspan=\"6\">VideoPhy2 Standard</td></tr><tr><td>w/o variance</td><td>w/ variance</td><td>SA w/o variance</td><td>PC</td><td>Joint</td><td>SA w/ variance</td><td>PC</td><td>Joint</td></tr><tr><td> $S$ </td><td>34.5</td><td>34.3</td><td>66.7</td><td>73.3</td><td>58.9</td><td>65.9</td><td>73.7</td><td>56.4</td></tr><tr><td> $S_{motion}$ </td><td>34.6</td><td>34.6</td><td>65.0</td><td>74.4</td><td>56.7</td><td>64.8</td><td>74.3</td><td>55.9</td></tr><tr><td> $S_{hybrid}$ </td><td>35.1</td><td>34.6</td><td>64.4</td><td>74.4</td><td>56.1</td><td>64.2</td><td>74.9</td><td>56.4</td></tr></table>",
+        "bbox": [
+            254,
+            542,
+            743,
+            643
+        ],
+        "page_idx": 13
+    },
+    {
+        "type": "text",
+        "text": "A.5 Motion-stratified results ",
+        "text_level": 1,
+        "bbox": [
+            171,
+            676,
+            385,
+            691
+        ],
+        "page_idx": 13
+    },
+    {
+        "type": "text",
+        "text": "While motion is an important aspect of physical plausibility, its magnitude alone is not a proxy for physical correctness. A physically plausible video may contain little motion when the scene demands it, whereas an implausible generation may contain excessive or inconsistent motion. We therefore evaluate whether Proprio improves physical plausibility among samples with comparable motion magnitude. We compute a motion magnitude score per video and split videos into quartiles within each dataset for TurboWan2.2. The low-motion bin contains videos up to the 33rd percentile, the medium-motion bin contains videos between the 33rd and 67th percentiles, and the high-motion bin contains videos above the 67th percentile. This data-adaptive binning avoids arbitrary thresholds and enables fair within-dataset comparisons across motion regimes. As shown in Table 9, Proprio-selected samples generally improve benchmark performance within motion bins. On Physics-IQ, Proprio outperforms random selection, with particularly large gains in the low- and high-motion regimes. On VideoPhy2, Proprio improves the PC metric in the low- and medium-motion bins and remains comparable in the high-motion bin. These results indicate that Proprio’s gains are not explained solely by changes in motion magnitude; instead, the score continues to identify more physically plausible generations among videos with similar motion levels. ",
+        "bbox": [
+            169,
+            704,
+            826,
+            912
+        ],
+        "page_idx": 13
+    },
+    {
+        "type": "page_number",
+        "text": "14 ",
+        "bbox": [
+            490,
+            935,
+            508,
+            946
+        ],
+        "page_idx": 13
+    },
+    {
+        "type": "table",
+        "img_path": "images/ca39ea7dca438f0a0b71564040b28972ddf307d33a962364ab637a492d83a607.jpg",
+        "table_caption": [
+            "Table 9: Motion-stratified benchmark control. Within each motion bin, we compare Proprio samples against random samples. For Physics-IQ, we report benchmark score; for VideoPhy2, we report PC metric. Positive ∆ indicates Proprio-selected samples outperform random samples. "
+        ],
+        "table_footnote": [],
+        "table_body": "<table><tr><td>Benchmark</td><td>Motion bin</td><td>Proprio</td><td>Random</td><td> $\\Delta$ </td></tr><tr><td rowspan=\"3\">Physics-IQ</td><td>Low</td><td>32.0</td><td>24.8</td><td>+7.2</td></tr><tr><td>Medium</td><td>33.0</td><td>33.0</td><td>+0.0</td></tr><tr><td>High</td><td>41.0</td><td>33.6</td><td>+7.4</td></tr><tr><td rowspan=\"3\">VideoPhy2</td><td>Low</td><td>81.9</td><td>70.8</td><td>+11.1</td></tr><tr><td>Medium</td><td>78.9</td><td>77.4</td><td>+1.5</td></tr><tr><td>High</td><td>58.0</td><td>59.4</td><td>-1.4</td></tr></table>",
+        "bbox": [
+            325,
+            138,
+            674,
+            250
+        ],
+        "page_idx": 14
+    },
+    {
+        "type": "text",
+        "text": "A.6 Human Evaluation ",
+        "text_level": 1,
+        "bbox": [
+            171,
+            287,
+            349,
+            301
+        ],
+        "page_idx": 14
+    },
+    {
+        "type": "text",
+        "text": "We conduct a human evaluation with overall results presented in Sec 4.3 but we provide more results in this section. Figure 5 provides the human evaluation results split by generation setting. The trend is consistent across both I2V and T2V: voters prefer Proprio for physical plausibility in the majority of comparisons, with 67.9% preference in I2V and 66.3% in T2V. This suggests that Proprio’s improvements are perceived by humans in both conditional imageto-video and text-to-video settings. For visual quality, the pattern is more mode-dependent. In I2V, most annotators report no preference, which is expected because both videos are anchored by the same input image and therefore often share very similar scene content and appearance. In T2V, visual preferences are more decisive, with 55.3% favoring Proprio, likely because generated scenes can differ more substantially in terms of composition. Overall, the human study indicates that Proprio’s main benefit is improved perceived physical plausibility, while visual quality is generally preserved and sometimes preferred. ",
+        "bbox": [
+            169,
+            319,
+            486,
+            623
+        ],
+        "page_idx": 14
+    },
+    {
+        "type": "text",
+        "text": "",
+        "bbox": [
+            169,
+            623,
+            620,
+            638
+        ],
+        "page_idx": 14
+    },
+    {
+        "type": "chart",
+        "img_path": "images/19cf94ee83d33ccc519feaf4d2c1bd2e20c3a35c0b6a5bd6a1d742619e0782ea.jpg",
+        "content": "| Category | Physical | Visual |\n| -------- | -------- | ------ |\n| I2V - Ours | 67.9% | 39.3% |\n| I2V - Base. | 17.1% | 15.7% |\n| I2V - No preference | 15.0% | 45.0% |\n| T2V - Ours | 66.3% | 55.3% |\n| T2V - Base. | 23.7% | 26.8% |\n| T2V - No preference | 10.0% | 17.9% |",
+        "chart_caption": [
+            "Figure 5: Human preference results split by generation setting. "
+        ],
+        "chart_footnote": [],
+        "sub_type": "bar_stacked",
+        "bbox": [
+            521,
+            340,
+            800,
+            575
+        ],
+        "page_idx": 14
+    },
+    {
+        "type": "text",
+        "text": "We additionally provide a screenshot example of the study with full instructions given to participants in figure 6. Participants volunteered to answer the questions with no compensation. No personal data were collected, only answers to the questions of study. ",
+        "bbox": [
+            169,
+            643,
+            823,
+            686
+        ],
+        "page_idx": 14
+    },
+    {
+        "type": "text",
+        "text": "B Additional Discussion ",
+        "text_level": 1,
+        "bbox": [
+            171,
+            719,
+            392,
+            734
+        ],
+        "page_idx": 14
+    },
+    {
+        "type": "text",
+        "text": "Semantic Adherence - Physical Commonsense tradeoff. Improving physical plausibility in T2V is inherently multi-objective: candidates that faithfully realize complex prompts may involve difficult interactions and therefore be more prone to physical errors, while physically safer generations may simplify the requested action or reduce interaction complexity. This has also been observed in prior works [41]. While Proprio exhibits similar tradeoff, some preserve semantic adherence better; for example $S _ { \\mathrm { g l o b a l } }$ generally preserves SA better while its improvement on physics commonsense is slightly less than $S _ { \\mathrm { m o t i o n } }$ as seen in Section 4. Similarly, the text-aware dynamic mask in Section 5 better preserves semantic adherence, at the cost of slightly weaker physical improvements. In practice, the choice of score can therefore be matched to the application: $S _ { \\mathrm { g l o b a l } }$ is preferable when prompt fidelity is critical, $S _ { \\mathrm { m o t i o n } }$ when physical dynamics are the main concern, and $S _ { \\mathrm { h y b r i d } }$ as a balanced default for improving physical plausibility while maintaining semantic alignment. ",
+        "bbox": [
+            169,
+            758,
+            826,
+            912
+        ],
+        "page_idx": 14
+    },
+    {
+        "type": "page_number",
+        "text": "",
+        "bbox": [
+            490,
+            935,
+            508,
+            946
+        ],
+        "page_idx": 14
+    },
+    {
+        "type": "image",
+        "img_path": "images/3d1e968e6df65913db78c196bc3bafaed407ef2bdaa3e504843a5ec3c4ef0c35.jpg",
+        "image_caption": [
+            "Figure 6: A screenshot from the human evaluation study showing full instructions and layout used. "
+        ],
+        "image_footnote": [],
+        "content": "Physical plausibility\n• Watch both videos and choose the one that is relatively better in terms of physical realism.\n• Sometimes both videos may be imperfect, but please select the one with better physics than the other.\n• Pay attention to object motion, interactions, and overall realism.\nVisual quality\n• Choose the video with better visual quality.\n• Focus on overall visual appearance and rendering quality.\nParticipant ID: d1e9x23-194e-45cb-b2cc-d6f446b7d52\nWhich video is more physically plausible?\n• Left  Right  No preference\nWhich video has better visual quality?\n• Left  Right  No preference",
+        "sub_type": "text_image",
+        "bbox": [
+            192,
+            99,
+            763,
+            328
+        ],
+        "page_idx": 15
+    },
+    {
+        "type": "text",
+        "text": "C More Details on optimization ",
+        "text_level": 1,
+        "bbox": [
+            171,
+            398,
+            455,
+            416
+        ],
+        "page_idx": 15
+    },
+    {
+        "type": "text",
+        "text": "Algorithm 1 summarizes the self-refinement procedure used in Sec. 3. Starting from the original sampling seed, we optimize a Gaussian-affine reparameterization of the initial noise, $\\zeta = \\mu + \\sigma \\odot \\zeta _ { 0 }$ , while keeping the video generator fixed. At each iteration, the current noise is used to generate a latent sample $z _ { 0 } ( \\zeta ; c )$ , which is evaluated with the Proprio score together with a KL regularizer that keeps the refined noise close to the standard Gaussian prior. The optimization is performed over $( \\mu , \\log \\sigma )$ using Adam, and the final output is the sample achieving the lowest unregularized Proprio score during refinement. This parameterization constrains the update to a structured family of perturbations, which stabilizes optimization and reduces drift away from the generator’s original sampling distribution. ",
+        "bbox": [
+            169,
+            436,
+            826,
+            561
+        ],
+        "page_idx": 15
+    },
+    {
+        "type": "code",
+        "sub_type": "algorithm",
+        "code_caption": [
+            "Algorithm 1 Proprio Self-Refinement Algorithm "
+        ],
+        "code_body": "1: Sample base noise $\\zeta_0\\sim \\mathcal{N}(0,I)$ from the initial seed.   \n2: Initialize $\\mu \\leftarrow \\mathbf{0}$ and $\\log \\sigma \\leftarrow \\mathbf{0}$ 3: for $n = 1$ to $N$ do   \n4: $\\sigma \\leftarrow \\exp (\\log \\sigma)$ 5: $\\zeta \\leftarrow \\mu +\\sigma \\odot \\zeta_0$ 6: Generate latent sample $z_{0}(\\zeta ;c)$ with the frozen generator   \n7: Evaluate Proprio score $S(z_0(\\zeta ;c);c)$ 8: Compute $\\mathcal{L}_{\\mathrm{KL}} = \\frac{1}{C}\\sum_{d = 1}^{C}\\frac{1}{2}\\left(\\mu_d^2 +\\sigma_d^2 -1 - 2\\log \\sigma_d\\right)$ 9: Form the optimization objective $\\mathcal{L}(\\mu ,\\sigma) = S(z_0(\\zeta ;c);c) + \\beta \\mathcal{L}_{\\mathrm{KL}}$ 10: Update $(\\mu ,\\log \\sigma)$ with Adam (optional gradient clipping)   \n11: end for   \n12: return the sample $z_0(\\zeta^\\star ;c)$ achieving the lowest unregularized Proprio score $S(z_0(\\zeta ;c);c)$ during optimization ",
+        "bbox": [
+            173,
+            606,
+            826,
+            887
+        ],
+        "page_idx": 15
+    },
+    {
+        "type": "page_number",
+        "text": "",
+        "bbox": [
+            490,
+            935,
+            509,
+            946
+        ],
+        "page_idx": 15
+    },
+    {
+        "type": "text",
+        "text": "D Dynamic masking strategies ",
+        "text_level": 1,
+        "bbox": [
+            171,
+            89,
+            444,
+            107
+        ],
+        "page_idx": 16
+    },
+    {
+        "type": "text",
+        "text": "We consider three dynamic masking strategies in ablations 5, each designed to emphasize regions that are most informative for physical plausibility. All three produce a spatiotemporal saliency volume $S \\in \\mathbb { R } ^ { T \\times H \\times W }$ that is later converted into the latent dynamic mask used for scoring and refinement. The variants differ only in how this saliency volume is estimated. ",
+        "bbox": [
+            171,
+            121,
+            826,
+            176
+        ],
+        "page_idx": 16
+    },
+    {
+        "type": "text",
+        "text": "Motion mask. The motion mask is derived from temporal changes in the generated samples. Given a sequence of spatiotemporal features or decoded frames $\\{ Y _ { t } \\} _ { t = 1 } ^ { T }$ , we compute framewise motion maps using a temporal difference operator, ",
+        "bbox": [
+            169,
+            191,
+            823,
+            234
+        ],
+        "page_idx": 16
+    },
+    {
+        "type": "equation",
+        "text": "$$\nD _ {t} = \\phi (Y _ {t}, Y _ {t - 1}), \\tag {14}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            434,
+            243,
+            825,
+            258
+        ],
+        "page_idx": 16
+    },
+    {
+        "type": "text",
+        "text": "where ϕ measures local temporal change. The resulting maps are normalized and projected onto the latent grid to obtain a latent saliency volume $S _ { \\mathrm { m o t i o n } }$ . Intuitively, this mask highlights regions with significant temporal variation, thereby emphasizing object motion, interaction changes, and potential dynamic inconsistencies. ",
+        "bbox": [
+            169,
+            267,
+            823,
+            323
+        ],
+        "page_idx": 16
+    },
+    {
+        "type": "text",
+        "text": "Textaware mask. The textaware mask derives motion from cross-attention, making it explicitly prompt-grounded. For selected transformer layers and probe timesteps, we extract the cross-attention affinity between latent query tokens and prompt tokens, average over the relevant text tokens, and reshape the result into a spatiotemporal affinity map ",
+        "bbox": [
+            169,
+            339,
+            823,
+            393
+        ],
+        "page_idx": 16
+    },
+    {
+        "type": "equation",
+        "text": "$$\nA _ {t} \\in \\mathbb {R} ^ {H \\times W \\times T}. \\tag {15}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            439,
+            401,
+            825,
+            420
+        ],
+        "page_idx": 16
+    },
+    {
+        "type": "text",
+        "text": "We then convert this affinity into a motion-like signal by measuring its temporal variation, ",
+        "bbox": [
+            169,
+            428,
+            763,
+            443
+        ],
+        "page_idx": 16
+    },
+    {
+        "type": "equation",
+        "text": "$$\nS _ {\\text { text }} (t) = \\left| A _ {t} - A _ {t - 1} \\right|, \\tag {16}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            418,
+            450,
+            825,
+            467
+        ],
+        "page_idx": 16
+    },
+    {
+        "type": "text",
+        "text": "which highlights regions whose prompt-conditioned attention changes over time. In this way, the mask focuses on dynamic regions that are both visually active and semantically relevant to the text prompt. ",
+        "bbox": [
+            169,
+            474,
+            823,
+            518
+        ],
+        "page_idx": 16
+    },
+    {
+        "type": "text",
+        "text": "Attention-based mask. The attention-based mask uses internal self-attention feature changes as a proxy for motion, similar in spirit to prior work using attention dynamics as an internal motion signal [32]. For selected self-attention layers, we extract latent query and key features at consecutive timesteps and measure their temporal similarity at each spatial location. Let $q _ { t } ( h , w )$ and $k _ { t - 1 } ( h , w )$ denote the corresponding features. We define the saliency as ",
+        "bbox": [
+            169,
+            532,
+            825,
+            602
+        ],
+        "page_idx": 16
+    },
+    {
+        "type": "equation",
+        "text": "$$\nS _ {\\text { attn }} (t, h, w) = \\operatorname{ReLU} \\left(1 - \\cos \\left(q _ {t} (h, w), k _ {t - 1} (h, w)\\right)\\right). \\tag {17}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            310,
+            609,
+            825,
+            628
+        ],
+        "page_idx": 16
+    },
+    {
+        "type": "text",
+        "text": "Locations whose internal features change more strongly over time therefore receive higher saliency. Unlike the other mask variants, this masking uses the model’s own internal temporal feature evolution as a learned motion proxy. ",
+        "bbox": [
+            169,
+            633,
+            826,
+            678
+        ],
+        "page_idx": 16
+    },
+    {
+        "type": "text",
+        "text": "Summary. The three masking strategies reflect different notions of dynamic saliency: the motion mask uses explicit visible motion, the textaware mask emphasizes prompt-grounded temporal changes, and the attention-based mask uses internal self-attention feature changes as a model-centric proxy for motion. As shown in Table 4, all three provide useful dynamic signals, but induce different tradeoffs between semantic adherence and physical consistency. ",
+        "bbox": [
+            169,
+            691,
+            826,
+            763
+        ],
+        "page_idx": 16
+    },
+    {
+        "type": "text",
+        "text": "E More Implementation Details ",
+        "text_level": 1,
+        "bbox": [
+            171,
+            782,
+            455,
+            800
+        ],
+        "page_idx": 16
+    },
+    {
+        "type": "text",
+        "text": "Unless otherwise stated, Proprio scoring is computed in latent space over a fixed set of scheduler timesteps sampled from the mid-noise regime, using multiple perturbation samples per timestep and inverse-variance weighting across timesteps. For refinement, we backpropagate through a reduced number of denoising steps while keeping the generator frozen, and optimize only the Gaussian-affine parameters of the initial noise. Our default motion score uses the motion-based spatiotemporal mask described in Sec. 3, which is fixed during scoring and refinement unless otherwise specified. For hybrid search-and-refinement, all methods use the same candidate pool before refinement. ",
+        "bbox": [
+            169,
+            814,
+            825,
+            912
+        ],
+        "page_idx": 16
+    },
+    {
+        "type": "page_number",
+        "text": "17 ",
+        "bbox": [
+            490,
+            935,
+            508,
+            946
+        ],
+        "page_idx": 16
+    },
+    {
+        "type": "text",
+        "text": "Table 10 summarizes the optimization hyperparameters used for Proprio self-refinement. Unless otherwise stated, we optimize the Gaussian-affine noise parameters for 10 steps using Adam with a learning rate of $2 \\times 1 0 ^ { - 3 }$ . We apply gradient clipping for stability and use a small KL regularization term to keep the optimized noise close to the standard Gaussian prior. For score estimation during refinement, we average over 4 noise samples per timestep, which provides a more stable optimization signal while keeping the computational cost manageable. In all experiments, $\\mu$ and $\\sigma$ are calculated per channel. ",
+        "bbox": [
+            169,
+            90,
+            823,
+            188
+        ],
+        "page_idx": 17
+    },
+    {
+        "type": "table",
+        "img_path": "images/0390bd9ea531ec86a0c7897abccde0e6e19e63178451768602bb8c6f05abfa48.jpg",
+        "table_caption": [
+            "Table 10: Optimization hyperparameters used for Proprio self-refinement. "
+        ],
+        "table_footnote": [],
+        "table_body": "<table><tr><td>Hyperparameter</td><td>Value</td></tr><tr><td>Optimization steps (K)</td><td>10</td></tr><tr><td>Learning rate</td><td> $2 \\times 10^{-3}$ </td></tr><tr><td>Gradient clipping</td><td> $3 \\times 10^{-4}$ </td></tr><tr><td>KL regularization weight ( $\\beta$ )</td><td> $5 \\times 10^{-3}$ </td></tr><tr><td>Number of noise samples per timestep</td><td>4</td></tr></table>",
+        "bbox": [
+            334,
+            224,
+            661,
+            320
+        ],
+        "page_idx": 17
+    },
+    {
+        "type": "text",
+        "text": "For all experiments, we use 4 mid-noise levels linearly spaced between 0.3-0.6 of the sampling steps. For non-distilled models, variance weighting is used by using 4 random iterations per noise level and calculating variance in prediction. For the hybrid loss, $\\lambda = 0 . 2$ is used for all models. ",
+        "bbox": [
+            169,
+            339,
+            823,
+            383
+        ],
+        "page_idx": 17
+    },
+    {
+        "type": "text",
+        "text": "F Flow Matching Background ",
+        "text_level": 1,
+        "bbox": [
+            171,
+            401,
+            442,
+            419
+        ],
+        "page_idx": 17
+    },
+    {
+        "type": "text",
+        "text": "Flow matching formulates generation as learning a time-dependent vector field that transports a simple base distribution to the data distribution in latent space. Let $z _ { 1 }$ denote a clean video latent and let $z _ { 0 } \\sim \\mathcal { N } ( 0 , I )$ denote a Gaussian noise sample. A continuous path between noise and data is defined by ",
+        "bbox": [
+            169,
+            431,
+            823,
+            487
+        ],
+        "page_idx": 17
+    },
+    {
+        "type": "equation",
+        "text": "$$\nz _ {t} = (1 - t) z _ {0} + t z _ {1}, \\quad t \\in [ 0, 1 ], \\tag {18}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            374,
+            487,
+            823,
+            503
+        ],
+        "page_idx": 17
+    },
+    {
+        "type": "text",
+        "text": "with corresponding target velocity ",
+        "bbox": [
+            171,
+            506,
+            400,
+            522
+        ],
+        "page_idx": 17
+    },
+    {
+        "type": "equation",
+        "text": "$$\nv ^ {\\star} \\left(z _ {0}, z _ {1}\\right) = z _ {1} - z _ {0}. \\tag {19}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            424,
+            527,
+            825,
+            544
+        ],
+        "page_idx": 17
+    },
+    {
+        "type": "text",
+        "text": "A conditional generator $\\hat { v } _ { \\theta } ( z _ { t } , t , c )$ is then trained to predict this transport field by minimizing ",
+        "bbox": [
+            169,
+            550,
+            787,
+            566
+        ],
+        "page_idx": 17
+    },
+    {
+        "type": "equation",
+        "text": "$$\n\\mathcal {L} _ {\\mathrm{FM}} = \\mathbb {E} _ {z _ {1}, z _ {0}, t} \\left[ \\| \\hat {v} _ {\\theta} (z _ {t}, t, c) - (z _ {1} - z _ {0}) \\| _ {2} ^ {2} \\right]. \\tag {20}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            343,
+            571,
+            825,
+            599
+        ],
+        "page_idx": 17
+    },
+    {
+        "type": "text",
+        "text": "In practice, modern video generators implement this perturbation through a scheduler rather than an explicit analytic path, so we write the noisy latent more generally as ",
+        "bbox": [
+            169,
+            604,
+            823,
+            635
+        ],
+        "page_idx": 17
+    },
+    {
+        "type": "equation",
+        "text": "$$\nz _ {t} = \\mathcal {P} (z _ {1}, \\epsilon , t), \\quad \\epsilon \\sim \\mathcal {N} (0, I), \\tag {21}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            380,
+            640,
+            825,
+            656
+        ],
+        "page_idx": 17
+    },
+    {
+        "type": "text",
+        "text": "and the corresponding target transport under the standard velocity parameterization as ",
+        "bbox": [
+            169,
+            662,
+            736,
+            679
+        ],
+        "page_idx": 17
+    },
+    {
+        "type": "equation",
+        "text": "$$\nv ^ {\\star} (z _ {1}, \\epsilon) \\approx \\epsilon - z _ {1}. \\tag {22}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            433,
+            685,
+            825,
+            700
+        ],
+        "page_idx": 17
+    },
+    {
+        "type": "text",
+        "text": "At inference time, sampling starts from Gaussian noise and iteratively applies the learned vector field across timesteps to produce a latent video. In our method, we reuse this same flow-prediction objective at test time: by evaluating how well the frozen model predicts its target transport on perturbed generated samples, we obtain an intrinsic signal for ranking and refinement. ",
+        "bbox": [
+            169,
+            708,
+            823,
+            763
+        ],
+        "page_idx": 17
+    },
+    {
+        "type": "text",
+        "text": "G Extended related work ",
+        "text_level": 1,
+        "bbox": [
+            171,
+            782,
+            401,
+            799
+        ],
+        "page_idx": 17
+    },
+    {
+        "type": "text",
+        "text": "Physical plausibility in video generation. Recent video generative models [8, 6, 19, 34, 36, 38, 12, 31, 29, 18, 29] have achieved impressive visual fidelity and temporal coherence, but multiple recent studies show that strong perceptual quality does not imply strong physical understanding or physically consistent dynamics. Diagnostic works such as Physics-IQ and related physical-law evaluations highlight persistent failures in collisions, object interactions, support relations, and generalization of physical behavior, suggesting that current video generators often reproduce surface realism without reliably capturing underlying physical structure [29, 18, 29]. Existing approaches to address this problem largely fall into three groups. A first line of work improves physical fidelity during training by introducing physics-aware data, supervision, or learning objectives, for example through physics-focused pretraining, preference optimization, or curated physics-aware corpora [35, 9]. A second line of work incorporates explicit physical structure or simulation into the generation process itself. For example, PhysGen uses rigid-body simulation to ground image-to-video generation, while GPT4Motion leverages GPT-4 to script Blender-based physical motions before video synthesis [24, 26]. A third line of work addresses physical plausibility at inference time through external guidance. VLIPP uses a vision-language model as a coarse motion planner with physics-aware reasoning, and WMReward uses VJEPA-2 as an external latent world model to score candidates and guide sampling toward physically plausible videos [37, 41]. Compared with these approaches, our method does not introduce external simulators, planners, or world-model rewards; instead, it reuses the frozen generator’s own latent residual dynamics as a generator-native self-scoring signal for inference-time ranking and refinement. ",
+        "bbox": [
+            169,
+            813,
+            825,
+            912
+        ],
+        "page_idx": 17
+    },
+    {
+        "type": "page_number",
+        "text": "18 ",
+        "bbox": [
+            490,
+            935,
+            508,
+            946
+        ],
+        "page_idx": 17
+    },
+    {
+        "type": "text",
+        "text": "",
+        "bbox": [
+            169,
+            90,
+            826,
+            272
+        ],
+        "page_idx": 18
+    },
+    {
+        "type": "text",
+        "text": "Inference-time alignment for diffusion models. Inference-time alignment methods for diffusion models can be grouped into two broad families: search-based methods and optimization-based methods. Search-based methods improve alignment by spending additional compute on candidate exploration, trajectory branching, or resampling, followed by reward or value-based selection. This includes Best-of-N style inference-time scaling, value-based decoding, and dynamic search or resampling procedures that explicitly trade off exploration and exploitation during denoising [21, 22, 27]. Optimization-based methods instead directly modify the sampling trajectory or the underlying noise variables to improve a target objective. In particular, DNO optimizes injected noise online during the denoising process with respect to a reward [33], while InitNO optimizes the initial latent using attention-derived prompt-alignment criteria and a distribution-preserving regularizer [11]. More generally, training-free guidance methods steer diffusion trajectories at test time using external objectives without retraining the generator [39, 2, 10]. Collectively, these works show that large gains can be achieved at inference time alone, without changing model weights. However, they typically depend on externally defined rewards, alignment heuristics, or verifier signals. In contrast, Proprio uses a generator-native objective: it scores and refines samples directly through the frozen video generator’s own latent residual dynamics, avoiding external reward models. ",
+        "bbox": [
+            169,
+            287,
+            826,
+            508
+        ],
+        "page_idx": 18
+    },
+    {
+        "type": "text",
+        "text": "Reward extraction from diffusion models. A broader line of work has explored whether diffusion models contain reward-like information that can be extracted or repurposed. In decision-making, Nuti et al. [30] define a relative reward function between a base and an expert diffusion model, and learn an auxiliary reward network by aligning its gradient to the difference in the two models’ outputs. Their setting is primarily offline RL and control, but it provides an early indication that diffusion dynamics may encode preference-relevant structure beyond standard sample generation. ",
+        "bbox": [
+            169,
+            523,
+            826,
+            608
+        ],
+        "page_idx": 18
+    },
+    {
+        "type": "text",
+        "text": "Latent reward modeling for generation. More recent work has studied this question directly in image and video generation, arguing that rewards should be modeled in latent space rather than inherited from pixel-space VLM evaluators. Learning rewards directly on noisy latent states has been shown to better align with latent-space generation and reduce the overhead of external evaluation [23, 28]. Relatedly, LikePhys [40] evaluates intuitive physics understanding in video diffusion models by comparing denoising losses on curated valid–invalid simulator-generated pairs and summarizing the preference with a Plausibility Preference Error (PPE) metric. In contrast, Proprio does not train a separate reward model, does not learn from pairs of diffusion models, and does not require curated valid–invalid physics pairs. Instead, it directly reuses the frozen generator’s own residual under controlled perturbations as a training-free inference-time self-scoring signal for ranking and refinement. ",
+        "bbox": [
+            169,
+            623,
+            826,
+            776
+        ],
+        "page_idx": 18
+    },
+    {
+        "type": "text",
+        "text": "H Broader and societal impact. ",
+        "text_level": 1,
+        "bbox": [
+            171,
+            796,
+            450,
+            813
+        ],
+        "page_idx": 18
+    },
+    {
+        "type": "text",
+        "text": "This work aims to improve the physical plausibility of generated videos, which may benefit applications such as robotics, simulation, and world modeling. More physically consistent video generation could make generative models more useful for studying agent behavior, planning, training embodied systems, and building controllable environments for decision-making and reasoning. At the same time, improving the realism of synthetic video also carries risks. More plausible generated videos may be harder to distinguish from real footage and could be misused for deception, misinformation, or other forms of misleading synthetic media. While we acknowledge these risks, our work is intended purely for academic research, and any examples produced in this work will be clearly labeled as synthetic. We hope this research contributes to safer and more controllable generative systems, while encouraging continued work on safeguards, transparency, and responsible deployment. ",
+        "bbox": [
+            169,
+            828,
+            826,
+            912
+        ],
+        "page_idx": 18
+    },
+    {
+        "type": "page_number",
+        "text": "19 ",
+        "bbox": [
+            490,
+            935,
+            508,
+            946
+        ],
+        "page_idx": 18
+    },
+    {
+        "type": "text",
+        "text": "",
+        "bbox": [
+            169,
+            90,
+            823,
+            148
+        ],
+        "page_idx": 19
+    },
+    {
+        "type": "text",
+        "text": "I Additional qualitative results ",
+        "text_level": 1,
+        "bbox": [
+            171,
+            166,
+            447,
+            184
+        ],
+        "page_idx": 19
+    },
+    {
+        "type": "text",
+        "text": "Figures 7 and 8 as well as figures 9 and 10 show additional qualitative results for T2V and I2V settings respectively. We compare baseline performance on TurboWan2.2 with the optimized version highlighting the improvement in physics plausibility of the generations. We summarize the prompts used with the videos above the figures. We additionally provide full videos comparison in our website for better comparison on the dynamics as described in Appendix ??. ",
+        "bbox": [
+            169,
+            196,
+            823,
+            268
+        ],
+        "page_idx": 19
+    },
+    {
+        "type": "page_number",
+        "text": "20 ",
+        "bbox": [
+            488,
+            935,
+            509,
+            948
+        ],
+        "page_idx": 19
+    },
+    {
+        "type": "image",
+        "img_path": "images/95f07d3cbb27be8eab13ece6cf61455f57a025e74682906714ee920f6a887a22.jpg",
+        "image_caption": [
+            "Figure 7: Overall qualitative results comparing our Proprio method against baseline TurboWan2.2. Visual examples from Proprio showing that our method produces more physically plausible generations for the T2V setting. "
+        ],
+        "image_footnote": [],
+        "content": "A potter applies a thin layer of slip to a clay bowl\nTurbo Wan\nProprio\nA person punching boxing bag\nWooden beam broken in two\nA crane gently lifts a pallet of bricks\nTurbo Wan\nProprio\nA child's toy hammer smashes a small plastic egg\nA hoverboard rider performs a 360-degree spin\nTurbo Wan\nProprio",
+        "sub_type": "text_image",
+        "bbox": [
+            176,
+            95,
+            821,
+            417
+        ],
+        "page_idx": 20
+    },
+    {
+        "type": "image",
+        "img_path": "images/a80b606591b73e01a6c764cf7b40b3f3f1219ecad5c86f4c4cb3fe8e66210460.jpg",
+        "image_caption": [
+            "Figure 8: Overall qualitative results comparing our Proprio method against baseline TurboWan2.2. Visual examples from Proprio showing that our method produces more physically plausible generations for the T2V setting. "
+        ],
+        "image_footnote": [],
+        "content": "A person uses a skateboard to perform a somersault trick\nA potter uses a sponge to gently remove excess water\nTurbo Wan\nProprio\nA paint roller is used to apply a coat of brown paint\nTwo jetski race side-by-side\nTurbo Wan\nProprio\nThe Segway travels a short distance, delivering the package\nA rolling pin flattens a sphere of cookie dough into a disc\nTurbo Wan\nProprio",
+        "sub_type": "text_image",
+        "bbox": [
+            176,
+            510,
+            823,
+            828
+        ],
+        "page_idx": 20
+    },
+    {
+        "type": "page_number",
+        "text": "21 ",
+        "bbox": [
+            488,
+            935,
+            506,
+            946
+        ],
+        "page_idx": 20
+    },
+    {
+        "type": "image",
+        "img_path": "images/373ade5dbbf6827688042f657600a5a364200cf5c9082727c85fbb6f88b6b628.jpg",
+        "image_caption": [
+            "Figure 9: Overall qualitative results comparing our Proprio method against baseline TurboWan2.2. Visual examples from Proprio showing that our method produces more physically plausible generations for the I2V setting. "
+        ],
+        "image_footnote": [],
+        "content": "A tennis ball attached to a magnet and string is\nhanging in front of a mirror\nTurbo Wan\nProprio\nA woven basket is hanging from a rope with a strong magnet.\nAn orange tennis ball is placed on a table beneath it.\nTurbo Wan\nProprio\nAn orange ball rolls out of a black pipe that is sitting on the\ntable towards the right side\nA teapot on a rotating display base that rotates\nin front of a mirror\nA yellow mug is placed on a rotating turntable\nthat rotates illuminated by a spotlight\nA 30lb kettlebell resting on a wooden table next to a mirror.\nA tennis ball rolls towards the kettlebell\nTurbo Wan\nProprio",
+        "sub_type": "text_image",
+        "bbox": [
+            176,
+            89,
+            823,
+            420
+        ],
+        "page_idx": 21
+    },
+    {
+        "type": "image",
+        "img_path": "images/2954361b39ae190c26e7d4993f2c23a7665b6ad62d2c8f76a4e34c3e1b53efdd.jpg",
+        "image_caption": [
+            "Figure 10: Overall qualitative results comparing our Proprio method against baseline TurboWan2.2. Visual examples from Proprio showing that our method produces more physically plausible generations for the I2V setting. "
+        ],
+        "image_footnote": [],
+        "content": "A teapot is placed on a wooden table. a piece of silk fabric is lowered on the teapot to cover it.\nTurbo Wan\nProprio\nA yellow mug and a blue wooden block are placed on a rotating turntable that rotates\nTurbo Wan\nProprio\nA pink block is being lowered towards a simple structure made of colorful blocks resembling a gate.\nA knife is slicing through the tangerine.\nTurbo Wan\nProprio\nA potato is held by a grabber tool and dropped into a tall glass containing blue liquid\nAir is being pumped in the balloon",
+        "sub_type": "text_image",
+        "bbox": [
+            176,
+            527,
+            821,
+            854
+        ],
+        "page_idx": 21
+    },
+    {
+        "type": "page_number",
+        "text": "22 ",
+        "bbox": [
+            488,
+            935,
+            509,
+            946
+        ],
+        "page_idx": 21
+    },
+    {
+        "type": "image",
+        "img_path": "images/0b58a032cecce40ce333556c063cd88cd160f3d8c2250216737adcb3e2a04f41.jpg",
+        "image_caption": [
+            "Figure 11: Correctly preferred diagnostic examples. Each pair shows a ground-truth Physics-IQ video and a generated Turbo Wan2.2 sample with a visible physical failure. These examples are drawn from the subset where the dynamic Proprio self-score correctly prefers the ground-truth video, illustrating that the generator-native residual can favor natural video dynamics over physically implausible generations. "
+        ],
+        "image_footnote": [],
+        "content": "Ground truth\nGenerated Failure\nGround truth\nGenerated Failure\nGround truth\nGenerated Failure\nGround truth\nGenerated Failure\nGround truth\nGenerated Failure\nGenerated Failure",
+        "sub_type": "text_image",
+        "bbox": [
+            174,
+            87,
+            823,
+            529
+        ],
+        "page_idx": 22
+    },
+    {
+        "type": "page_number",
+        "text": "23 ",
+        "bbox": [
+            488,
+            935,
+            508,
+            946
+        ],
+        "page_idx": 22
+    },
+    {
+        "type": "image",
+        "img_path": "images/238cd8ecc3ebe0b704590f526a6bb9b37768b633ac6c759b8d26b2baca5f37fb.jpg",
+        "image_caption": [
+            "Figure 12: Correctly preferred diagnostic examples. Each pair shows a ground-truth Physics-IQ video and a generated Turbo Wan2.2 sample with a visible physical failure. These examples are drawn from the subset where the Proprio self-score correctly prefers the ground-truth video, illustrating that the generator-native residual can favor natural video dynamics over its own physically implausible generations. "
+        ],
+        "image_footnote": [],
+        "content": "Ground truth\nGenerated Failure\nGround truth\nGenerated Failure\nGround truth\nGenerated Failure\nGround truth\nGenerated Failure\nGround truth\nGenerated Failure",
+        "sub_type": "text_image",
+        "bbox": [
+            174,
+            87,
+            826,
+            530
+        ],
+        "page_idx": 23
+    },
+    {
+        "type": "page_number",
+        "text": "24 ",
+        "bbox": [
+            488,
+            935,
+            509,
+            946
+        ],
+        "page_idx": 23
+    }
+]

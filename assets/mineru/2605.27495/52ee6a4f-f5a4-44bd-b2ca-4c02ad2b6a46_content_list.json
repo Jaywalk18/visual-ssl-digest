@@ -1,0 +1,685 @@
+[
+    {
+        "type": "text",
+        "text": "Representation-Conditioned Diffusion Models for Guided Training Data Generation ",
+        "text_level": 1,
+        "bbox": [
+            250,
+            130,
+            750,
+            174
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "Nithesh Chandher Karthikeyan, Jonas Unger, Gabriel Eilertsen Linkoping University ¨ ",
+        "bbox": [
+            250,
+            203,
+            746,
+            239
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "{nithesh.chandher.karthikeyan, jonas.unger, gabriel.eilertsen}@liu.se ",
+        "bbox": [
+            191,
+            241,
+            799,
+            256
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "Abstract ",
+        "text_level": 1,
+        "bbox": [
+            246,
+            291,
+            326,
+            306
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "Data availability remains a critical bottleneck in many deep learning applications. Large-scale datasets are often expensive to collect, curate and annotate, which can limit the scalability and applicability of supervised learning methods. In this work, we evaluate the classification performance of models trained on synthetic image datasets produced by generative deep learning. In particular, we use latent diffusion models conditioned on learned representations from DINOv2, DINOv3, and CLIP. Our results demonstrates that this representation-conditioned formulation significantly outperforms class-conditioned generation by a large margin (+10.76 p.p. top-1 accuracy on ImageNet100), by improving sample quality and mode coverage. Furthermore, by scaling the size of the synthetic dataset, we are able to outperform a classifier trained on the real data (+2.0 p.p. top-1 accuracy). ",
+        "bbox": [
+            88,
+            325,
+            482,
+            566
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "We also demonstrate how generated images can be used for augmentation purposes, outperforming classical augmentation methods, and how the conditioning space can be used for sample filtering to further improve training value. Collectively, these findings highlight that representationconditioned diffusion models provide a promising approach for augmenting, complementing, or potentially replacing real-world datasets in large-scale visual learning tasks. ",
+        "bbox": [
+            86,
+            568,
+            482,
+            690
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "1. Introduction ",
+        "text_level": 1,
+        "bbox": [
+            89,
+            720,
+            220,
+            736
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "With continuous advancements in deep learning, there is a constant demand for larger and diverse training datasets. At the same time, generative modeling has experienced significant progress over the last decade, particularly with the emergence of diffusion models [7, 17]. These developments have sparked a growing interest in using these models to expand training datasets via synthetic data generation, e.g., by steering or fine-tuning a general pre-trained text-to-image model [1, 6, 18]. ",
+        "bbox": [
+            89,
+            747,
+            482,
+            883
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "In this paper, we focus on the most challenging scenario for generative dataset synthesis. Specifically, we assume that (1) only the target dataset is available, preventing the use of existing text-to-image models, (2) the downstream model is trained exclusively on the generated dataset (without access to real images), and (3) no additional annotations, such as text prompts, are available to guide generation. Unlike conventional data augmentation, where augmented images only introduce variations to the real samples, training solely on synthetic dataset requires the generative model to capture the full diversity of the real data distribution. Further, this scenario is also relevant in situations where sharing of real data are restricted due to privacy concerns, such as in medical imaging. ",
+        "bbox": [
+            109,
+            885,
+            482,
+            901
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "",
+        "bbox": [
+            511,
+            292,
+            903,
+            489
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "Text-to-image diffusion models can produce high quality and diverse samples, with their performance largely benefiting from guidance provided by text prompts, in addition to large models and training dataset. To increase the quality and diversity without text guidance, we consider representation-conditioned diffusion models (RCDMs) [2, 8, 10]. In RCDMs, guidance is provided from extracted representations of each image, which has been demonstrated to significantly increase the quality of generation as compared to unconditioned or class-conditioned generation [10]. In this work, we evaluate how these improvements translate to the case of training data generation. ",
+        "bbox": [
+            511,
+            492,
+            905,
+            672
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "We provide experiments with a representationconditioned latent diffusion model [14] trained on ImageNet100, which is a challenging dataset due to its diversity and relatively limited size. We demonstrate that RCDMs show great promise for synthetic dataset generation, surpassing the class-conditioned generation by a large margin. Furthermore, by scaling the size of the synthetic dataset, we are able to outperform the model trained only on the real dataset. We see this as quite remarkable evidence for the promise of RCDMs and using generative deep learning for training data synthesis. ",
+        "bbox": [
+            511,
+            676,
+            905,
+            843
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "In summary, we present the following contributions: ",
+        "text_level": 1,
+        "bbox": [
+            511,
+            852,
+            857,
+            867
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "• We evaluate the classification performance of models trained on synthetic datasets generated by RCDMs, investigating the impact of dataset size and representation used for conditioning (DINOv2 [11], DINOv3 [16], and CLIP [12]). ",
+        "bbox": [
+            511,
+            869,
+            903,
+            900
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "aside_text",
+        "text": "arXiv:2605.27495v1 [cs.CV] 26 May 2026 ",
+        "bbox": [
+            22,
+            272,
+            60,
+            724
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "image",
+        "img_path": "images/e49a715824f236b8c31d69cfd50f4c4b9c00162aabbd3e52967a42a169086bdd.jpg",
+        "image_caption": [
+            "Figure 1. Overall pipeline of the methodology, which consist of two parts: (a) Synthetic Data Generation using Representation Conditioned Diffusion Model (RCDM) and (b) Classifier Based Evaluation for Comparative analysis. "
+        ],
+        "image_footnote": [],
+        "content": "```mermaid\ngraph TD\n    A[\"Image Distribution\"] --> B[\"Pre-Trained Encoder\"]\n    B --> C[\"Representation Distribution\"]\n    C --> D[\"Condition\"]\n    D --> E[\"Denoising U-Net\"]\n    E --> F[\"D\"]\n    F --> G[\"Synthetic ImageNet100\"]\n    \n    H[\"Noise Maps\"] --> E\n    \n    I[\"Trainable\"] --> G\n    J[\"Frozen\"] --> G\n    \n    K[\"ImageNet100\"] --> L[\"ResNet-50\"]\n    M[\"Synthetic ImageNet100\"] --> N[\"ResNet-50\"]\n    O[\"Model Evaluation\"] --> P[\"Output\"]\n```",
+        "sub_type": "flowchart",
+        "bbox": [
+            98,
+            85,
+            903,
+            296
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "text",
+        "text": "",
+        "bbox": [
+            102,
+            361,
+            482,
+            406
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "list",
+        "sub_type": "text",
+        "list_items": [
+            "• We show that, by scaling the synthetic dataset, RCDMs can surpass the performance of models trained solely on real data, highlighting their potential for large-scale dataset generation. ",
+            "• We further demonstrate that RCDM generated images are effective for data augmentation, outperforming classical techniques such as RandAugment [4] and MixUp [19], and how the representation space used for conditioning allows simple sample filtering. "
+        ],
+        "bbox": [
+            89,
+            406,
+            482,
+            542
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "text",
+        "text": "While this work demonstrates a first case study of using RCDMs for dataset generation, the results open up for many possibilities in future research, for improving or replacing datasets by means of generative synthesis. ",
+        "bbox": [
+            89,
+            550,
+            483,
+            611
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "text",
+        "text": "2. Method ",
+        "text_level": 1,
+        "bbox": [
+            89,
+            627,
+            181,
+            642
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "text",
+        "text": "In this section, we describe the pipeline used for generation and validation of synthetic training data. The pipeline consists of two main stages: synthetic data generation using Representation Conditioned Diffusion Models (RCDMs) and evaluation using a classifier. Figure 1 illustrates the overall workflow, which is described in detail in the following subsections. ",
+        "bbox": [
+            89,
+            652,
+            483,
+            758
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "text",
+        "text": "2.1. Synthetic Data Generation using RCDM ",
+        "text_level": 1,
+        "bbox": [
+            89,
+            771,
+            437,
+            787
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "text",
+        "text": "Training the RCDM involves two stages. First, input images are projected into a lower-dimensional representation space using a pre-trained encoder. Second, a latent diffusion model (LDM) [14] is trained using these representations as conditioning signals [9]. ",
+        "bbox": [
+            89,
+            794,
+            482,
+            869
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "text",
+        "text": "For the experiments, we train three RCDM models conditioned on representations extracted from the image encoder of CLIP [12] (also called unCLIP [13]), DI-NOv2 [11], and DINOv3 [16]. Specifically, we use the CLS token embeddings from the DINOv2 ViT-B/14 and DINOv3 ViT-B/16 architectures, each producing 768- dimensional representations, and embeddings from CLIP ViT-B/32 with a dimensionality of 512. Training is performed on the ImageNet-100 dataset, a subset of ImageNet containing 100 classes [15]. The dataset contains 130k images, all resized to a resolution of 256×256. Each model was trained for 125 epochs with a batch size of 16, resulting in approximately 1.16 million training steps. ",
+        "bbox": [
+            89,
+            869,
+            483,
+            901
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "text",
+        "text": "",
+        "bbox": [
+            511,
+            359,
+            906,
+            527
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "text",
+        "text": "For sampling, we use the Denoising Diffusion Probabilistic Model (DDPM) [7] with 100 inference steps. To increase dataset diversity beyond the original 130k images, images are generated using different random seeds, each corresponding to a distinct latent noise initialization. This produces diverse images while preserving semantic content through representation conditioning [9]. ",
+        "bbox": [
+            511,
+            529,
+            906,
+            635
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "text",
+        "text": "2.2. Classifier Based Evaluation ",
+        "text_level": 1,
+        "bbox": [
+            513,
+            648,
+            761,
+            664
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "text",
+        "text": "To evaluate the quality of the synthetic ImageNet-100 data in relation to the real dataset, we train separate classifiers on the real and synthetic datasets using the ResNet-50 [5] architecture. This evaluation measures how effectively models trained on synthetic data can learn discriminative features comparable to those learned from real data. ",
+        "bbox": [
+            511,
+            672,
+            905,
+            763
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "text",
+        "text": "The training procedure follows the standard configuration used for training ResNet-50 on ImageNet in the ImageNet Large Scale Visual Recognition Challenge (ILSVRC). Specifically, the classifier is trained using the same architectural setup, data preprocessing pipeline, and optimization strategy adopted in ILSVRC. By maintaining an identical training configuration across both datasets, the comparison provides a consistent and fair assessment of the representational quality and class-discriminative structure present in the generated synthetic images. ",
+        "bbox": [
+            511,
+            763,
+            906,
+            900
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "text",
+        "text": "",
+        "bbox": [
+            91,
+            90,
+            367,
+            107
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "3. Results ",
+        "text_level": 1,
+        "bbox": [
+            89,
+            125,
+            176,
+            138
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "This section presents the experimental evaluation of the proposed framework. We assess the quality and usefulness of the generated synthetic images using quantitative downstream classification experiments on the ImageNet-100 dataset. ",
+        "bbox": [
+            89,
+            150,
+            482,
+            224
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "3.1. Synthetic Dataset Scaling ",
+        "text_level": 1,
+        "bbox": [
+            89,
+            239,
+            321,
+            257
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "In this experiment, we investigate whether the performance gap between classifiers trained on real and synthetic data can be reduced using synthetic datasets generated by RCDMs, and further analyze this by scaling the synthetic dataset beyond the size of the real dataset to evaluate the impact of increased scale and diversity on downstream classification performance. ",
+        "bbox": [
+            89,
+            262,
+            482,
+            367
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "For this evaluation, we train classifiers based on the ResNet50 architecture under multiple training datasets. The baseline model is trained on the real ImageNet100 dataset, which achieves a Top-1 accuracy of 77.26% and a Top-5 accuracy of 93.38%. In addition, three classifiers are trained on synthetic datasets generated using RCDMs conditioned on representations extracted from DINOv2, DI-NOv3, and CLIP. As an additional baseline for synthetic data generation, we include a class-conditioned latent diffusion model (Cond-LDM [14]), which generates images conditioned solely on class labels. ",
+        "bbox": [
+            89,
+            369,
+            482,
+            535
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "The results shown in Figure 2 demonstrate that classifiers trained on synthetic datasets generated using representations from DINOv2 and DINOv3 outperform the baseline model trained on real data when the dataset size is increased to three times the size of the real dataset. The best result is obtained using the dataset generated with DINOv2 representations, achieving 79.26% Top-1 accuracy, when the dataset is scaled to four times the size of the real dataset. The dataset generated with DINOv3 representations performs comparably, reaching 78.8% Top-1 accuracy at the same scale. Although the synthetic dataset generated using CLIP representations does not exceed the baseline accuracy, it achieves a competitive Top-1 accuracy of 76.3% at four times the size of the real dataset and has the potential to surpass the baseline score based on the observed trend. ",
+        "bbox": [
+            89,
+            537,
+            482,
+            763
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "Another notable observation is the superior performance of datasets generated using RCDMs compared to the classconditioned diffusion baseline. The classifier trained on data generated by Cond-LDM achieves a highest Top-1 accuracy of 68.5%, leaving a significant gap relative to the baseline model trained on real data. This highlights the importance of rich semantic conditioning via pre-trained vision encoders, which enables the diffusion model to better capture the underlying structure of the data distribution. ",
+        "bbox": [
+            89,
+            763,
+            482,
+            900
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "table",
+        "img_path": "images/e3f26a65379bf0c4c15afaa2ed388399428e0347c12cfbd59bfbd498e37d735e.jpg",
+        "table_caption": [
+            "Table 1. Classification performance comparison on ImageNet100 with different synthetic datasets and sample filtering strategies. "
+        ],
+        "table_footnote": [],
+        "table_body": "<table><tr><td>Experiment</td><td>Size</td><td>Top-1 (%)</td><td>Top-5 (%)</td></tr><tr><td>Baseline</td><td>1.0</td><td>77.26</td><td>93.38</td></tr><tr><td>DINOv2-ResNet50</td><td>1.0</td><td>69.40</td><td>89.52</td></tr><tr><td>DINOv3-ResNet50</td><td>1.0</td><td>70.02</td><td>90.56</td></tr><tr><td>CLIP-ResNet50</td><td>1.0</td><td>67.26</td><td>88.38</td></tr><tr><td>Sample Filtering (DINOv2)</td><td>1.0</td><td>69.98</td><td>90.14</td></tr><tr><td>Sample Filtering (DINOv3)</td><td>1.0</td><td>71.10</td><td>90.10</td></tr><tr><td>Sample Filtering (CLIP)</td><td>1.0</td><td>66.22</td><td>88.16</td></tr></table>",
+        "bbox": [
+            519,
+            128,
+            901,
+            268
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "3.2. Filtering in Representation Space ",
+        "text_level": 1,
+        "bbox": [
+            511,
+            295,
+            805,
+            313
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "To study the effect of filtering in representation space, we first generate synthetic datasets of twice the size of the real dataset using RCDMs conditioned on DINOv2, DINOv3, and CLIP. The generated images are then mapped back to the representation space, where class centroids are computed. For each class, the 25% nearest and 25% farthest representations are removed, retaining only the middle samples. The corresponding images form a filtered dataset with the same size as the real dataset. As shown in Table 1, this filtering achieves slight improvements over using unfiltered synthetic data, although a noticeable gap to the realdata baseline remains. Nevertheless, this result suggests that representation-space filtering can be a promising sampling strategy, which is difficult to attain in other generative frameworks such as text-to-image models. ",
+        "bbox": [
+            511,
+            318,
+            906,
+            546
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "3.3. Data Augmentation vs Synthetic Data ",
+        "text_level": 1,
+        "bbox": [
+            511,
+            558,
+            838,
+            574
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "To further assess the effectiveness of the generated synthetic datasets for data augmentation, we compare their performance with traditional data augmentation techniques. Along with the baseline, we evaluate classifiers trained using common augmentation strategies including AutoAug [3], RandAug [4], Mixup [19], and ME-ADA [20]. These methods are known to improve generalization by increasing the diversity of the training data through transformations applied directly to real images. ",
+        "bbox": [
+            511,
+            580,
+            905,
+            717
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "As shown in Table 2, traditional augmentation techniques significantly improve the performance of the baseline model. In particular, Mixup achieves the highest Top-1 accuracy of 81.58%, followed closely by AutoAug with 81.28%. RandAug and ME-ADA also provide improvements over the baseline, reaching 79.88% and 80.14% Top-1 accuracy, respectively. ",
+        "bbox": [
+            511,
+            718,
+            905,
+            824
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "Classifiers trained on real data augmented with synthetic images generated by RCDMs achieve comparable or superior performance to standard augmentation methods. In particular, adding synthetic data generated with DINOv2 representations (twice the size of real dataset, marked as x2 in Table 2) achieves the best result with 82.22% Top-1 and 95.86% Top-5 accuracy, outperforming all evaluated augmentation strategies. Synthetic data generated using DINOv3 and CLIP representations also achieve competitive results, highlighting the effectiveness of representationconditioned diffusion for providing an alternative to conventional data augmentation methods. ",
+        "bbox": [
+            511,
+            825,
+            905,
+            900
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "chart",
+        "img_path": "images/7e3643b242728ee8b51de4c8d821ffbaf66bc4eeaee0350e735a1b68869a6ac3.jpg",
+        "content": "| Size | DINOv2 | unCLIP | DI   |\n|------|--------|--------|------|\n| 0.5  | 61.0   | 57.0   | 58.0 |\n| 1.0  | 69.0   | 67.0   | 70.0 |\n| 1.5  | 74.0   | 71.0   | 74.0 |\n| 2.0  | 76.0   | 74.0   | 76.0 |\n| 2.5  | 77.0   | 74.0   | 76.0 |\n| 3.0  | 78.0   | 75.0   | 78.0 |\n| 3.5  | 79.0   | 74.0   | 76.0 |\n| 4.0  | 80.0   | 76.0   | 79.0 |",
+        "chart_caption": [],
+        "chart_footnote": [],
+        "sub_type": "line",
+        "bbox": [
+            98,
+            90,
+            491,
+            324
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "chart",
+        "img_path": "images/1f8278b9990c9b990d6814e466efd0bb6e885e40aed5700a7ad73c7f2a7a1fe6.jpg",
+        "content": "| Size | Cond-LDM | Baseline |\n|------|----------|----------|\n| 0.5  | 75.0     | 93.5     |\n| 1.0  | 80.5     | 93.5     |\n| 1.5  | 86.5     | 93.5     |\n| 2.0  | 85.5     | 93.5     |\n| 2.5  | 87.5     | 93.5     |\n| 3.0  | 88.5     | 93.5     |\n| 3.5  | 88.5     | 93.5     |\n| 4.0  | 89.5     | 93.5     |",
+        "chart_caption": [
+            "Figure 2. Scaling synthetic datasets for classifier training. Top-1 (left) and Top-5 (right) accuracy of a ResNet-50 trained on synthetic ImageNet-100 datasets generated using representation-conditioned diffusion models with DINOv2, DINOv3, and CLIP representations, compared to a class-conditioned LDM baseline and ResNet-50 trained on real ImageNet100 baseline. "
+        ],
+        "chart_footnote": [],
+        "sub_type": "line",
+        "bbox": [
+            496,
+            90,
+            898,
+            324
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "table",
+        "img_path": "images/7a9b0aa232385ee5ab7d99417dfd3074412de14585698a59939f19b531913a2b.jpg",
+        "table_caption": [
+            "Table 2. Classification performance comparison on ImageNet100 using different data augmentation methods and synthetic datasets generated by representation conditioned diffusion models. "
+        ],
+        "table_footnote": [],
+        "table_body": "<table><tr><td>Experiment</td><td>Size</td><td>Top-1 (%)</td><td>Top-5 (%)</td></tr><tr><td>Baseline</td><td>1.0</td><td>77.26</td><td>93.38</td></tr><tr><td>AutoAug</td><td>1.0</td><td>81.28</td><td>95.54</td></tr><tr><td>RandAug</td><td>1.0</td><td>79.88</td><td>95.14</td></tr><tr><td>Mixup</td><td>1.0</td><td>81.58</td><td>95.54</td></tr><tr><td>ME-ADA</td><td>1.0</td><td>80.14</td><td>94.62</td></tr><tr><td>Baseline + DINOv2</td><td>2.0</td><td>81.90</td><td>95.80</td></tr><tr><td>Baseline + DINOv3</td><td>2.0</td><td>81.08</td><td>95.36</td></tr><tr><td>Baseline + CLIP</td><td>2.0</td><td>81.78</td><td>95.30</td></tr><tr><td>Baseline + Cond-LDM</td><td>2.0</td><td>79.62</td><td>94.58</td></tr><tr><td>Baseline + x2 DINOv2</td><td>3.0</td><td>82.22</td><td>95.86</td></tr><tr><td>Baseline + x2 DINOv3</td><td>3.0</td><td>81.70</td><td>95.76</td></tr><tr><td>Baseline + x2 CLIP</td><td>3.0</td><td>80.74</td><td>95</td></tr><tr><td>Baseline + x2 Cond-LDM</td><td>3.0</td><td>80.68</td><td>94.94</td></tr></table>",
+        "bbox": [
+            91,
+            460,
+            483,
+            683
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "text",
+        "text": "",
+        "bbox": [
+            89,
+            709,
+            483,
+            815
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "text",
+        "text": "4. Discussion and Conclusion ",
+        "text_level": 1,
+        "bbox": [
+            89,
+            829,
+            339,
+            845
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "text",
+        "text": "We have demonstrated how RCDMs can pose as a powerful training data generation engine, which can be used to produce purely synthetic datasets or for augmentation purposes. The representation conditioning provides an effective self-supervised guidance mechanism for increasing quality and diversity, similar to how text prompts guide textto-image models, and we have demonstrated that this improvement translates to improved training data value. In particular, representations from DINO-based encoders provide strong semantic conditioning signals that help reduce the domain gap between real and synthetic data and significantly improve the usefulness of generated datasets for downstream classification tasks. By scaling the size of a purely synthetic ImageNet100 dataset we are able to outperform training on the real images, which is a promising achievement for generative training data synthesis considering the complexity of the dataset. Despite the recent progress in generative deep learning, until now it has been difficult to reach similar or better performance compared to training on real data. For example, a class-conditioned diffusion model is still far behind, and representation conditioning provides a promising strategy for increasing training value. ",
+        "bbox": [
+            89,
+            854,
+            483,
+            902
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "text",
+        "text": "",
+        "bbox": [
+            511,
+            409,
+            906,
+            710
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "text",
+        "text": "We see many possible directions for future research using RCDMs for training data generation. Most centrally, there are many possibilities in improving the sampling of RCDMs through the representation space used for conditioning. For example, it is possible to transform representations to further improve training value, e.g., by performing interpolation, hard example mining or MixUp in this space. Also, while in general RCDMs provide high sample quality, there are still some low-quality generations such that a mechanism for removing outliers would likely improve the synthetic dataset. Additionally, further experiments are required for verifying the performance of RCDMs for training data generation on other datasets and under different data ",
+        "bbox": [
+            511,
+            719,
+            908,
+            900
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "text",
+        "text": "availability scenarios. ",
+        "bbox": [
+            91,
+            90,
+            236,
+            104
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "References ",
+        "text_level": 1,
+        "bbox": [
+            91,
+            118,
+            187,
+            133
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "list",
+        "sub_type": "ref_text",
+        "list_items": [
+            "[1] Shekoofeh Azizi, Simon Kornblith, Chitwan Saharia, Mohammad Norouzi, and David J. Fleet. Synthetic data from diffusion models improves imagenet classification. Transactions on Machine Learning Research, 2023. 1 ",
+            "[2] Florian Bordes, Randall Balestriero, and Pascal Vincent. High fidelity visualization of what your self-supervised representation knows about. arXiv preprint arXiv:2112.09164, 2021. 1 ",
+            "[3] Ekin D Cubuk, Barret Zoph, Dandelion Mane, Vijay Vasudevan, and Quoc V Le. Autoaugment: Learning augmentation policies from data. arXiv preprint arXiv:1805.09501, 2018. 3 ",
+            "[4] Ekin D Cubuk, Barret Zoph, Jonathon Shlens, and Quoc V Le. Randaugment: Practical automated data augmentation with a reduced search space. In Proceedings of the IEEE/CVF conference on computer vision and pattern recognition workshops, pages 702–703, 2020. 2, 3 ",
+            "[5] Kaiming He, Xiangyu Zhang, Shaoqing Ren, and Jian Sun. Deep residual learning for image recognition. In Proceedings of the IEEE conference on computer vision and pattern recognition, pages 770–778, 2016. 2 ",
+            "[6] Ruifei He, Shuyang Sun, Xin Yu, Chuhui Xue, Wenqing Zhang, Philip Torr, Song Bai, and XIAOJUAN QI. Is synthetic data from generative models ready for image recognition? In The Eleventh International Conference on Learning Representations, 2023. 1 ",
+            "[7] Jonathan Ho, Ajay Jain, and Pieter Abbeel. Denoising diffusion probabilistic models. Advances in neural information processing systems, 33:6840–6851, 2020. 1, 2 ",
+            "[8] Guillermo Jimenez-Perez, Pedro Osorio, Josef Cersovsky, ´ Javier Montalt-Tordera, Jens Hooge, Steffen Vogler, and Sadegh Mohammadi. Dino-diffusion: Scaling medical diffusion models via self-supervised pre-training. In Annual Conference on Medical Image Understanding and Analysis, pages 257–274. Springer, 2025. 1 ",
+            "[9] Nithesh Chandher Karthikeyan, Jonas Unger, and Gabriel Eilertsen. Evaluating representation conditioned diffusion models: A comparative study of representation encoders. Available at SSRN 5772685, 2025. 2 ",
+            "[10] Tianhong Li, Dina Katabi, and Kaiming He. Return of unconditional generation: A self-supervised representation generation method. Advances in Neural Information Processing Systems, 37:125441–125468, 2024. 1 ",
+            "[11] Maxime Oquab, Timothee Darcet, Th ´ eo Moutakanni, Huy ´ Vo, Marc Szafraniec, Vasil Khalidov, Pierre Fernandez, Daniel Haziza, Francisco Massa, Alaaeldin El-Nouby, et al. Dinov2: Learning robust visual features without supervision. arXiv preprint arXiv:2304.07193, 2023. 2 ",
+            "[12] Alec Radford, Jong Wook Kim, Chris Hallacy, Aditya Ramesh, Gabriel Goh, Sandhini Agarwal, Girish Sastry, Amanda Askell, Pamela Mishkin, Jack Clark, et al. Learning transferable visual models from natural language supervision. In International conference on machine learning, pages 8748–8763. PmLR, 2021. 2 "
+        ],
+        "bbox": [
+            89,
+            140,
+            486,
+            901
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "list",
+        "sub_type": "ref_text",
+        "list_items": [
+            "[13] Aditya Ramesh, Prafulla Dhariwal, Alex Nichol, Casey Chu, and Mark Chen. Hierarchical text-conditional image generation with clip latents. arXiv preprint arXiv:2204.06125, 1 (2):3, 2022. 2 ",
+            "[14] Robin Rombach, Andreas Blattmann, Dominik Lorenz, Patrick Esser, and Bjorn Ommer. High-resolution image ¨ synthesis with latent diffusion models. In Proceedings of the IEEE/CVF conference on computer vision and pattern recognition, pages 10684–10695, 2022. 1, 2, 3 ",
+            "[15] Olga Russakovsky, Jia Deng, Hao Su, Jonathan Krause, Sanjeev Satheesh, Sean Ma, Zhiheng Huang, Andrej Karpathy, Aditya Khosla, Michael Bernstein, et al. Imagenet large scale visual recognition challenge. International journal of computer vision, 115(3):211–252, 2015. 2 ",
+            "[16] Oriane Simeoni, Huy V Vo, Maximilian Seitzer, Federico ´ Baldassarre, Maxime Oquab, Cijo Jose, Vasil Khalidov, Marc Szafraniec, Seungeun Yi, Michael Ramamonjisoa, ¨ et al. Dinov3. arXiv preprint arXiv:2508.10104, 2025. 2 ",
+            "[17] Jascha Sohl-Dickstein, Eric Weiss, Niru Maheswaranathan, and Surya Ganguli. Deep unsupervised learning using nonequilibrium thermodynamics. In International conference on machine learning, pages 2256–2265. pmlr, 2015. 1 ",
+            "[18] Brandon Trabucco, Kyle Doherty, Max A Gurinas, and Ruslan Salakhutdinov. Effective data augmentation with diffusion models. In The Twelfth International Conference on Learning Representations, 2024. 1 ",
+            "[19] Hongyi Zhang, Moustapha Cisse, Yann N Dauphin, and David Lopez-Paz. mixup: Beyond empirical risk minimization. arXiv preprint arXiv:1710.09412, 2017. 2, 3 ",
+            "[20] Long Zhao, Ting Liu, Xi Peng, and Dimitris Metaxas. Maximum-entropy adversarial data augmentation for improved generalization and robustness. Advances in Neural Information Processing Systems, 33:14435–14447, 2020. 3 "
+        ],
+        "bbox": [
+            509,
+            88,
+            908,
+            560
+        ],
+        "page_idx": 4
+    }
+]

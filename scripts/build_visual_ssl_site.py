@@ -264,6 +264,8 @@ def flatten_caption(value) -> str:
 def zh_caption_for(en_caption: str, title: str) -> str:
     clean = re.sub(r"\s+", " ", en_caption).strip()
     lower = clean.lower()
+    if "first-page visual preview" in lower or "full figure extraction is pending" in lower:
+        return f"这是 {title} 的 PDF 首页预览兜底图，不是 MinerU 结构化抽取出的论文图表。正式抽图完成后应优先展示方法图、实验图或表格。"
     if any(word in lower for word in ["overview", "framework", "pipeline", "architecture"]):
         return f"这张图概括 {title} 的整体方法流程。阅读时先看模块之间传递的训练信号，再看作者如何把目标拆成可优化的子问题。"
     if any(word in lower for word in ["ablation", "comparison", "results", "accuracy", "performance", "table"]):
