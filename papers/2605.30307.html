@@ -39,7 +39,8 @@
     </div>
     <div class="feature-body">
       <p class="lead dropcap">先说结论。视觉基础模型需要更强的 region-level 与 3D-aware grounding，GR3D 提供了可参考的系统设计。 把 grounded 2D perception 与 3D inference 组合成可解释空间推理流程。</p>
-      <aside class="marginalia"><b>图像状态</b> 这篇暂未抽到足够稳定的 pipeline / motivation 图，因此正文以方法和实验解读为主。</aside>
+      <figure class="full-fig"><img src="../assets/mineru/2605.30307/images/6922caac368b3129a78b779ae3a7dd01199cba1d1ce70193bf0008eb43cb99fe.jpg" alt="Figureure 2 · Method overview"><figcaption><b>Figureure 2 · Method overview</b><span class="fig-en">Figure 2. Method overview. GR3D builds on Region-VLMs by adding streaming region insertion for visual Chain-of-Thought reasoning. During CoT, the model repeatedly predicts a region, extracts its visual embedding, and reinserts a region token into the text sequence, enabling step-by-step spatial reasoning with dynamically refreshed visual cues.</span><span class="fig-zh">这张图概括 Grounded 3D-Aware Spatial Vision-Language Modeling 的整体方法流程。阅读时先看模块之间传递的训练信号，再看作者如何把目标拆成可优化的子问题。</span></figcaption></figure>
+<figure class="full-fig"><img src="../assets/mineru/2605.30307/images/0b6a7af999ed7d81a30a9b3a4a561684302bcc4ca4ae7fa31095a1e8b0c97ba5.jpg" alt="Figureure 6 · Qualitative comparison on 3D object detection between our model and Qw"><figcaption><b>Figureure 6 · Qualitative comparison on 3D object detection between our model and Qw</b><span class="fig-en">Figure 6. Qualitative comparison on 3D object detection between our model and Qwen3-VL 8B [45]. Our model produces more accurate 3D bounding boxes with fewer missed objects, demonstrating stronger spatial grounding and detection reliability.</span><span class="fig-zh">这张图/表用于判断 Grounded 3D-Aware Spatial Vision-Language Modeling 的实验收益来自哪里。重点看替换、消融或跨模型设置下趋势是否一致，而不是只看单个最高分。</span></figcaption></figure>
       
       <h2>核心问题</h2>
       <p>视觉基础模型需要更强的 region-level 与 3D-aware grounding，GR3D 提供了可参考的系统设计。</p>
