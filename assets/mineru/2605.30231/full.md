@@ -1,0 +1,722 @@
+# Beyond 3D VQAs: Injecting 3D Spatial Priors into Vision-Language Models for Enhanced Geometric Reasoning
+
+Chun-Hsiao Yeh1,2∗, Shengyi Qian1, Manchen Wang1, Yi Ma2,3, Joseph Tighe1, Fanyi Xiao1
+
+1FAIR at Meta, 2UC Berkeley, 3HKU
+
+∗The work was done during CHY’s internship at FAIR.
+
+Vision-Language Models (VLMs) often struggle with robust 3D spatial reasoning. Prevailing methods that rely on fine-tuning with 3D visual question-answering (VQA) datasets may overfit dataset-specific biases, while integrating specialized 3D visual encoders is often inflexible and cumbersome. In this paper, we argue that genuine spatial understanding should emerge from learning fundamental geometric priors, not only from high-level VQA supervision. We propose GASP (Geometric-Aware Spatial Priors), a framework that injects these priors directly into the LLM’s transformer layers. GASP employs a small correspondence head, applied as a deep supervision signal across all layers, and is trained with a dual objective leveraging ground-truth geometry from large-scale video scenes: a contrastive loss on ground-truth point correspondences enforces 2D view-invariance, while a depth consistency supervision resolves 3D geometric ambiguities. Our analysis first provides a diagnostic showing that standard VLMs’ internal correspondence matching accuracy is very low (often below 5%). We then demonstrate that our training substantially improves this behavior, boosting peak layer-wise correspondence to over 70% and maintaining over 85% temporal robustness while baselines remain below 5%. These internal improvements translate to significant gains on downstream spatial benchmarks including +18.2% on All-Angles Bench and +29.0% on VSI-Bench, all without training on any 3D VQA data. Our findings indicate that learning from fundamental geometric priors is a promising and generalizable pathway towards VLMs with more reliable 3D spatial reasoning.
+
+Date: May 28, 2026
+
+Project Page: https://danielchyeh.github.io/GASP/
+
+WMeta
+
+# 1 Introduction
+
+The ability to perform robust spatial reasoning is a cornerstone of artificial intelligence, enabling agents to understand, navigate, and interact with the complex real world [41, 43]. In recent years, Vision-Language Models (VLMs) have demonstrated remarkable capabilities in multimodal understanding and reasoning [1, 3, 8, 21, 28, 45], yet their grasp of spatial concepts remains a significant challenge [11, 20, 26, 31, 36, 63]. A dominant paradigm to address this limitation involves fine-tuning these models on extensive 3D visual question-answering (VQA) datasets [9, 37, 44, 51, 53, 54, 64, 69]. Although effective to some extent, post-training strategies such as supervised fine-tuning (SFT) and reinforcement learning (RL) on these VQA pairs often encourage models to learn superficial correlations and memorize dataset-specific biases, leading to poor generalization on unseen scenarios. For example, as the experiments
+
+shown in [44], specialized models like VILASR [54], SpatialMLLM [53], and VG-LLM [67] show huge performance boosts on in-domain benchmark like VSI-Bench [60] after fine-tuning. However, these models show a consistent performance drop on out-of-domain spatial benchmarks such as MMSI-Bench [61], STI-Bench [29], and SpaceVista [44]. An alternative line of works [12, 53, 67] seek to extract 3D spatial information by integrating specialized visual encoders such as the VGGT [49] model, or by using direct 3D inputs like point clouds [7], pre-segmented objects [19, 52] or BEV maps [39]. However, this path presents significant practical limitations. These pre-trained spatial encoders are cumbersome, increasing model size and inference latency. Furthermore, they must typically be used “as is” (i.e., with frozen weights) because their specialized 3D training data and pipelines are incompatible with standard VLM training. This creates a challenging integration problem, forcing the model to align its native visual representations with these rigid, pre-computed 3D features.
+
+Learning with Geometric-Aware Spatial Priors (GASP)   
+![](images/9379428f24975631dc7459e2cea953bcb4bd1c5c2b87a697fc2762d9c96f9c65.jpg)
+
+<details>
+<summary>flowchart</summary>
+
+```mermaid
+graph TD
+    A["Large Language Model (LLM)"] --> B["Correspondence Head"]
+    B --> C["Visual Encoder"]
+    C --> D["3D Scenes (Point Tracks + Depth Map)"]
+    D --> E["Training Only"]
+    F["General VQA"] --> C
+    G["Multi-Dataset Joint Training"] --> C
+    H["Correspondence Supervision"] -.-> C
+    I["Q: Please describe the scene in video. A: A person is playing keyboard."] --> C
+```
+</details>
+
+![](images/459239042d8b597437000e304ddf4f9dd37dd81765fe0adda1f87f11d960cd8c.jpg)
+
+<details>
+<summary>flowchart</summary>
+
+```mermaid
+graph TD
+    A["Large Language Model (LLM)"] --> B["Visual Encoder"]
+    B --> C["3D VQA Fine-turning"]
+    D["Q: What is distance of Microwave from camera position in frame 1? A: 0.8 m"] --> E["Q: Which side of Microwave from pillow in frame 1? left or right? A: left side"]
+    E --> F["Output Image"]
+```
+</details>
+
+Figure 1 Top: Our proposed framework (GASP) learns geometric consistency by injecting the correspondence head into the LLM, supervised by 3D spatial priors. Bottom: Standard spatial VLMs rely on fine-tuning with 3D VQA datasets, which often leads to memorizing data-specific biases. Note that our GASP requires no 3D prior input and processes as a standard VLM during inference.
+
+In this work, we depart from both of these prevailing paradigms. We argue that robust spatial intelligence emerges from learning the fundamental perceptual signals of 3D geometry. We hypothesize that true spatial understanding is underpinned by the ability to establish visual correspondences across changing viewpoints. Rather than teaching a model to associate text with visual patterns, our goal is to teach it the underlying geometric consistency of the world itself. Learning this object constancy encourages the model to build an internal, view-invariant representation [27, 34, 38], providing a more generalizable foundation for downstream spatial reasoning tasks.
+
+To this end, we propose GASP (Geometric-Aware Spatial Priors), a novel training framework designed to directly inject geometric priors into the LLM transformer layers of the VLM’s backbone shown in Figure 1. Our method introduces a lightweight correspondence head inserted across all transformer layers to receive deep supervision signal. This forces geometric consistency to be maintained at every stage of the model’s feature representation. This head is trained with a dual objective leveraging ground-truth geometric priors from the large-scale video scenes [30]: First, a contrastive learning objective on point correspondence data across frames teaches the model the core principle of object constancy, forcing it to learn view-invariant 2D representations. Second, a depth consistency loss leverages ground-truth depth maps as a crucial geometric regularizer to resolve 3D ambiguities (i.e., foreground-background matching confusion) through matching depth values. Crucially, this correspondence head is only active during the training phase and is discarded entirely for inference.
+
+We validate the effectiveness of our approach through extensive ablation experiments. We provide a novel visual correspondence matching analysis for VLM’s backbones, and reveal that GASP dramatically improves the VLM’s internal geometric representations, in terms of both the significantly improved correspondence matching scores, as well as its capability to maintain robust matching across long temporal range. Moreover, we also demonstrate that these internal improvements generalize to high-level reasoning. Our GASP achieves significant performance gains on downstream spatial reasoning benchmarks by improving camera pose estimation by +18.2% on the All-Angles Bench [62], object counting by +29.0% on VSI-Bench [60], and multi-view reasoning by +15.0% on BLINK [15]. Our contributions are summarized as follows:
+
+• We introduce GASP, a novel framework that injects geometric priors directly into the LLM’s transformer layers. GASP uses a deep supervision signal across all layers and is trained with a dual point correspondence and depth consistency to resolve 3D ambiguities.
+
+• We provide a detailed correspondence analysis of VLM backbones including Qwen2.5-VL-7B [3], LLaVA-NeXT-Video-7B [65], revealing that our GASP framework boosts peak layer-wise correspondence matching accuracy from very low values (below 5%) to over 70% and maintains over 85% temporal robustness, while baselines remain under 5%.
+
+• We demonstrate that our geometrically grounded model, trained without any 3D VQA data, improves internal visual correspondence with strong temporal robustness and achieves substantial gains over baselines on downstream spatial reasoning benchmarks, with only minor changes in general video QA performance.
+
+Our findings suggest that learning from visual correspondence is a promising and generalizable path towards VLMs with more reliable 3D spatial reasoning.
+
+# 2 Related Works
+
+3D-Aware VLMs. Recent efforts have focused on enabling MLLMs to understand 3D scenes [7, 14, 17– 19, 23, 39, 52, 59, 68]. A dominant approach processes explicit 3D data, such as point cloud features [7] or pre-segmented 3D objects [19, 52]. Another strategy projects multi-view images [56] into explicit spatial representations, like voxel space [68] or BEV maps [39]. Other work uses dual-encoder architectures or grounding agents to fuse 3D geometry features with 2D semantic features [12, 58, 67]. A common thread is their reliance on explicit 3D data, which poses a significant alignment challenge, as the LLM must integrate a new, rigid feature stream. In contrast, our work proposes a more lightweight alternative, avoiding explicit 3D data inputs and dualencoder fusion. We instead inject geometric priors directly into the intermediate layers of the existing LLM backbone to find 3D consistency within its own representations.
+
+Spatial Reasoning in VLMs. VLMs face significant challenges in complex spatial reasoning [6, 9, 12, 37, 44, 51, 53, 54, 67, 69]. Catalyzed by benchmarks like VSI-Bench [60], a dominant paradigm emerged: creating large-scale, 3D-related VQA datasets [12, 37, 44, 51, 64] to fuel specialized models [12, 53, 54, 67] via finetuning. This reliance may encourage VLMs to learn superficial correlations and memorize dataset-specific biases, leading to poor generalization. In contrast, our work departs from this VQA-based supervision, instead injecting fundamental geometric priors (correspondence and depth consistency) directly into the VLM’s internal representations.
+
+# 3 Preliminaries: Self-Attention in VLMs
+
+Modern VLMs process a sequence of visual tokens, $V \in \mathbb { R } ^ { N \times d }$ , and language tokens, $L \in \mathbb { R } ^ { M \times d }$ , by concatenating them into a unified input sequence $X = \mathrm { C o n c a t } ( V , L ) \in \mathbb { R } ^ { ( N + M ) \times d }$ , which is fed into the LLM backbone. Within each transformer layer, this sequence X is projected into queries Q, keys K, and values V . The core scaled dot-product attention mechanism computes an output Z:
+
+$$
+Z = \text { Attention } (Q, K, V) = \text { Softmax } \left(\frac {Q K ^ {T}}{\sqrt {d _ {k}}}\right) V \tag {1}
+$$
+
+Here, Q, K, $V \in \mathbb { R } ^ { ( N + M ) \times d _ { k } }$ , and $Q K ^ { T }$ is the similarity matrix representing scores between all token pairs. To analyze spatial reasoning, we partition the query and key matrices based on their origin:
+
+$$
+Q = \operatorname{Concat} (Q _ {V}, Q _ {L}), \quad K = \operatorname{Concat} (K _ {V}, K _ {L}) \tag {2}
+$$
+
+where $Q _ { V } , K _ { V }$ are projections of visual tokens and $Q _ { L } , K _ { L }$ are projections of language tokens. Consequently, the attention similarity matrix $S = Q K ^ { T }$ deconstructs into four distinct quadrants:
+
+$$
+S = Q K ^ {T} = \binom {Q _ {V}} {Q _ {L}} \left( \begin{array}{c c} K _ {V} ^ {T} & K _ {L} ^ {T} \end{array} \right) = \left( \begin{array}{c c} Q _ {V} K _ {V} ^ {T} & Q _ {V} K _ {L} ^ {T} \\ Q _ {L} K _ {V} ^ {T} & Q _ {L} K _ {L} ^ {T} \end{array} \right) \tag {3}
+$$
+
+These quadrants represent visual self-attention $( Q _ { V } K _ { V } ^ { T } )$ , language self-attention, and cross-modal attention. We are primarily interested in the visual self-attention matrix, $Q _ { V } K _ { V } ^ { T }$ , as analyzing this QKmatching provides a direct window into the model’s learned spatio-temporal correspondence which is most relevant to geometric reasoning.
+
+To this end, we pose a direct hypothesis: genuine high-level spatial understanding in VLMs can be unlocked by explicitly learning their internal visual selfattention representations $( Q _ { V } K _ { V } ^ { T } )$ to be geometrically consistent. This mirrors findings in video diffusion models, where QK-matching is a key metric for temporal consistency [22, 35]. Therefore, we posit that by explicitly training the $Q _ { V } K _ { V } ^ { T }$ representations to be geometrically aware, we can inject a robust inductive bias that is essential for high-level spatial understanding.
+
+# 4 Learning Geometric Correspondence
+
+Building on our hypothesis, we posit this $Q _ { V } K _ { V } ^ { T }$ deficiency does not stem from the visual encoder alone, but from the core LLM, which lacks a robust 3D geometric inductive bias from its pre-training with the web-scale text corpora that lack fine-grained 3D geometric information. We argue that 3D VQA finetuning encourages memorizing superficial correlations rather than learning geometric principles, leading to poor generalization (Figure 3). To address this, we depart from QA-based supervision and instead directly inject a geometric inductive bias into the LLM transformer layers. Our core idea is to teach the model object permanence by supervising its internal visual representations, using a correspondence head trained with both ground-truth point correspondence and depth supervision.
+
+![](images/ea15670a7137dd30884ccced8d0f74aeae18e64329895888f8b3b365528d2ad8.jpg)
+
+<details>
+<summary>flowchart</summary>
+
+```mermaid
+graph TD
+    A["General VQA"] --> B["3D Scenes"]
+    B --> C["Visual Encoder"]
+    C --> D["Large Language Model (LLM)"]
+    D --> E["Language Modeling Loss (L_LM)"]
+    E --> F["LLM Backbone with Geometric-Aware Spatial Priors (GASP)"]
+    F --> G["transformer block"]
+    G --> H["self-attention"]
+    H --> I["FFN"]
+    I --> J["transformer block"]
+    J --> K["transformer block"]
+    K --> L["Correspondence Head"]
+    L --> M["Visual Correspondence Loss (L_corr) + Depth Consistency Loss (L_depth)"]
+    M --> N["Point Tracks + Depth"]
+    N --> O["3D Scenes"]
+    O --> P["Multi-Dataset Joint Training"]
+    style A fill:#f9f,stroke:#333
+    style B fill:#f9f,stroke:#333
+    style C fill:#ccf,stroke:#333
+    style D fill:#cfc,stroke:#333
+    style E fill:#fcc,stroke:#333
+    style F fill:#ffc,stroke:#333
+    style G fill:#fcc,stroke:#333
+    style H fill:#cff,stroke:#333
+    style I fill:#ffc,stroke:#333
+    style J fill:#fcc,stroke:#333
+    style K fill:#fcc,stroke:#333
+    style L fill:#ffc,stroke:#333
+    style M fill:#fcc,stroke:#333
+```
+</details>
+
+Figure 2 Injecting the Geometric-Aware Spatial Priors (GASP) into VLMs. Standard approaches rely on fine-tuning with 3D VQA datasets, which may encourage memorizing dataset-specific biases. We instead insert a small correspondence head into the intermediate layers of the LLM backbone. During the training phase, this head is supervised by visual correspondence and depth consistency signals derived from ground-truth point tracks and depth maps. At inference, the head is discarded and the model processes inputs (e.g., VQA) as a standard VLM, without any auxiliary 3D input. Note that the 3D scene example shown is from EgoHumans [24] for illustration; our training data is sourced from DL3DV [30].
+
+# 4.1 View-Invariant Visual Correspondence
+
+We augment a standard VLM, denoted by the function Φ, by attaching a lightweight correspondence head, $\mathcal { H } _ { c } ,$ to the output of an intermediate LLM transformer block at layer l. This head takes as input the sequence of visual tokens from that layer, $V ^ { ( l ) } =$ {v(l)i }Ni=1 $\{ \mathbf { v } _ { i } ^ { ( l ) } \} _ { i = 1 } ^ { \bar { N } } \in \mathbb { R } ^ { N \times d }$ =1 . The correspondence head is a lightweight 2-layer MLP that projects these generalpurpose features into a lower-dimensional embedding space optimized for correspondence matching. Specifically, the first layer projects from $d  2 d _ { e m b }$ with GELU activation, and the second layer projects from $2 d _ { e m b }  d _ { e m b }$ . To provide a strong inductive bias while minimizing disruption to pre-trained representations, we initialize $\mathcal { H } _ { c } ^ { \ , } \mathrm { s }$ weights via SVD decomposition of the pre-trained query projection matrix from the same layer. Formally:
+
+$$
+\mathbf {E} = \mathcal {H} _ {c} (V ^ {(l)}) \tag {4}
+$$
+
+where $\textbf { E } = \ \{ \mathbf { e } _ { i } \} _ { i = 1 } ^ { N } \ \in \ \mathbb { R } ^ { N \times { d _ { e m b } } }$ is the set of correspondence-aware embeddings. This design minimally alters the base VLM architecture while enabling direct supervision of its internal geometric understanding.
+
+We leverage ground-truth point correspondences [30] as our supervisory signal. For an anchor point $\mathbf { p } _ { i } ^ { a }$ in a source frame $^ { a , }$ , its corresponding point $\mathbf { p } _ { i } ^ { b }$ in a target frame b provides the positive sample. All other points $\{ \mathbf { p } _ { k } ^ { b } \} _ { k \neq i }$ in the target frame form the negative set. We employ the InfoNCE contrastive loss [25] to train the correspondence head. We choose contrastive learning over regression-based objectives (e.g., direct coordinate prediction) because it learns view-invariant embeddings rather than view-specific coordinates, scales naturally with diverse negative samples, and is well-suited for the high-dimensional feature space where exact coordinate regression would be poorly calibrated. Following standard practice, we use $\langle \mathbf { u } , \mathbf { v } \rangle$ to denote the dot product between two L2- normalized embeddings (i.e., their cosine similarity). The loss for a single anchor embedding $\mathbf { e } _ { i } ^ { a }$ is defined as:
+
+$$
+\mathcal {L} _ {i} = - \log \frac {\exp (\langle \mathbf {e} _ {i} ^ {a} , \mathbf {e} _ {i} ^ {b} \rangle / \tau)}{\exp (\langle \mathbf {e} _ {i} ^ {a} , \mathbf {e} _ {i} ^ {b} \rangle / \tau) + \sum_ {k \neq i} \exp (\langle \mathbf {e} _ {i} ^ {a} , \mathbf {e} _ {k} ^ {b} \rangle / \tau)} \tag {5}
+$$
+
+where $\tau$ is temperature hyperparameter. The full correspondence loss, ${ \mathcal { L } } _ { \mathrm { c o r r } } ,$ is the average over all anchor points.
+
+# 4.2 Depth-Aware 3D Consistency
+
+Beyond 2D visual correspondence, we incorporate 3D geometric supervision. Our objective is not to train a high-fidelity depth prediction head [49, 50], but to learn robust depth consistency across frames. We therefore do not regress depth values directly; instead, we use depth as a supervisory signal to align geometrically valid correspondences and enforce 3D consistency.
+
+Concretely, for each anchor point $\mathbf { p } _ { i } ^ { a }$ in frame $^ { a , }$ we derive a soft matching distribution $\mathbf { A } _ { i j }$ over candidate patches in frame b by normalizing the similarity scores
+
+![](images/46330c2b01e3f0df896cdfef1152da0b13dcd97f756fe7210a7e969cf919a7e0.jpg)
+
+<details>
+<summary>line</summary>
+
+| LLM layer (l) | Ours - Full Model | Ours - ℓ₀₀₀ Only | LLaVA-Next-Video Baseline |
+| ------------- | ----------------- | ---------------- | ------------------------- |
+| 0             | 0.0               | 0.0              | 0.0                       |
+| 5             | 0.0               | 0.0              | 0.0                       |
+| 10            | 0.2               | 0.1              | 0.05                      |
+| 15            | 0.3               | 0.2              | 0.08                      |
+| 20            | 0.5               | 0.4              | 0.1                       |
+| 25            | 0.6               | 0.5              | 0.15                      |
+| 30            | 0.2               | 0.1              | 0.05                      |
+</details>
+
+![](images/37b6cdde1c9dc0056cfda8ac945810660eca9575232f87cd610c0647dd300a17.jpg)
+
+<details>
+<summary>line</summary>
+
+| LLM layer (l) | LLaVA-Next-Video Baseline | Ours - ε₀₀ Only | Ours - Full Model |
+| ------------- | ------------------------- | --------------- | ----------------- |
+| 0             | 0.0                       | 0.0             | 0.0               |
+| 5             | -0.1                      | 0.2             | 0.3               |
+| 10            | -0.2                      | 0.4             | 0.5               |
+| 15            | -0.1                      | 0.5             | 0.6               |
+| 20            | 0.0                       | 0.4             | 0.5               |
+| 25            | 0.1                       | 0.3             | 0.4               |
+| 30            | 0.2                       | 0.2             | 0.3               |
+</details>
+
+![](images/5dd17fd5664ad7ca265afe26d0a63c79fa3b438458f6342fb86412dfb70df23e.jpg)
+
+<details>
+<summary>line</summary>
+
+| Frame Distance (Δt) | Ours - Full Model | Ours - Ccorr Only | LLaVA-Next-Video Baseline |
+| ------------------- | ----------------- | ----------------- | ------------------------- |
+| 1                   | 1.0               | 1.0               | 1.0                       |
+| 2                   | 1.0               | 1.0               | 0.8                       |
+| 3                   | 1.0               | 1.0               | 0.4                       |
+| 4                   | 1.0               | 1.0               | 0.2                       |
+| 5                   | 1.0               | 1.0               | 0.1                       |
+| 6                   | 1.0               | 1.0               | 0.05                      |
+| 7                   | 1.0               | 1.0               | 0.02                      |
+| 8                   | 1.0               | 1.0               | 0.01                      |
+| 9                   | 1.0               | 1.0               | 0.01                      |
+| 10                  | 1.0               | 1.0               | 0.01                      |
+| 11                  | 1.0               | 1.0               | 0.01                      |
+| 12                  | 1.0               | 1.0               | 0.01                      |
+| 13                  | 1.0               | 1.0               | 0.01                      |
+| 14                  | 1.0               | 1.0               | 0.01                      |
+| 15                  | 1.0               | 1.0               | 0.01                      |
+| 16                  | 1.0               | 1.0               | 0.01                      |
+| 17                  | 1.0               | 1.0               | 0.01                      |
+| 18                  | 1.0               | 1.0               | 0.01                      |
+| 19                  | 1.0               | 1.0               | 0.01                      |
+| 20                  | 1.0               | 1.0               | 0.01                      |
+| 21                  | 1.0               | 1.0               | 0.01                      |
+| 22                  | 1.0               | 1.0               | 0.01                      |
+| 23                  | 1.0               | 1.0               | 0.01                      |
+| 24                  | 1.0               | 1.0               | 0.01                      |
+</details>
+
+![](images/69046e55b0ddd73387cd77fa8aca0d1789227adda29ca97260b6663845f4db76.jpg)
+
+<details>
+<summary>line</summary>
+
+| LLM layer (t) | Ours - Full Model | Ours - ℓ₀₀₀ Only | Qwen2.5-VL Baseline |
+| ------------- | ----------------- | ---------------- | ------------------- |
+| 0             | 0.0               | 0.0              | 0.0                 |
+| 5             | 0.1               | 0.1              | 0.05                |
+| 10            | 0.2               | 0.2              | 0.08                |
+| 15            | 0.4               | 0.3              | 0.1                 |
+| 20            | 0.5               | 0.4              | 0.1                 |
+| 25            | 0.6               | 0.5              | 0.1                 |
+| 27            | 0.7               | 0.6              | 0.1                 |
+</details>
+
+![](images/a5490e45fe402d1bff6025ee290e8063b56fcb4cb9a42540277039b90636cebe.jpg)
+
+<details>
+<summary>line</summary>
+
+| LLM layer (r) | Qwen2.5-VL Baseline | Ours - ε_LAV Only | Ours - Full Model |
+| ------------- | ------------------- | ----------------- | ----------------- |
+| 0             | 0.0                 | 0.0               | 0.0               |
+| 5             | -0.1                | 0.1               | 0.1               |
+| 10            | -0.2                | 0.3               | 0.4               |
+| 15            | -0.1                | 0.5               | 0.6               |
+| 20            | -0.2                | 0.6               | 0.7               |
+| 25            | -0.1                | 0.5               | 0.6               |
+</details>
+
+![](images/9f69cddef1e336ccad2dd2e4dea26108a6b578ba405fbea19e62b6000a287a0f.jpg)
+
+<details>
+<summary>line</summary>
+
+| Frame Distance (Δt) | Ours - Full Model | Ours - £corr Only | Qwen2.5-VL Baseline |
+| ------------------- | ----------------- | ----------------- | ------------------- |
+| 1                   | 1.0               | 1.0               | 1.0                 |
+| 2                   | 0.98              | 0.98              | 0.6                 |
+| 3                   | 0.97              | 0.97              | 0.4                 |
+| 4                   | 0.96              | 0.96              | 0.3                 |
+| 5                   | 0.95              | 0.95              | 0.2                 |
+| 6                   | 0.94              | 0.94              | 0.2                 |
+| 7                   | 0.93              | 0.93              | 0.2                 |
+| 8                   | 0.92              | 0.92              | 0.2                 |
+| 9                   | 0.91              | 0.91              | 0.2                 |
+| 10                  | 0.90              | 0.90              | 0.2                 |
+| 11                  | 0.89              | 0.89              | 0.2                 |
+| 12                  | 0.88              | 0.88              | 0.2                 |
+| 13                  | 0.87              | 0.87              | 0.2                 |
+| 14                  | 0.86              | 0.86              | 0.2                 |
+| 15                  | 0.85              | 0.85              | 0.2                 |
+| 16                  | 0.84              | 0.84              | 0.2                 |
+| 17                  | 0.83              | 0.83              | 0.2                 |
+| 18                  | 0.82              | 0.82              | 0.2                 |
+| 19                  | 0.81              | 0.81              | 0.2                 |
+| 20                  | 0.80              | 0.80              | 0.2                 |
+| 21                  | 0.79              | 0.79              | 0.2                 |
+| 22                  | 0.78              | 0.78              | 0.2                 |
+| 23                  | 0.77              | 0.77              | 0.2                 |
+| 24                  | 0.76              | 0.76              | 0.2                 |
+</details>
+
+Figure 3 Analysis of visual correspondence learning. On LLaVA-NeXT-Video-7B (top row) and $\mathrm { Q w e n 2 . 5 - V L - 7 B }$ (bottom row). We compare (a, d) layer-wise correspondence matching accuracy (PCK), (b, e) confidence-accuracy correlation $( \rho )$ , and (c, f) temporal robustness for our proposed GASP models against the baselines. Shaded regions indicate standard deviation across 200 test sequences.
+
+from the contrastive loss:
+
+$$
+\mathbf {A} _ {i j} = \frac {\exp (\langle \mathbf {e} _ {i} ^ {a} , \mathbf {e} _ {j} ^ {b} \rangle / \tau)}{\sum_ {k = 1} ^ {N _ {\mathrm{cand}}} \exp (\langle \mathbf {e} _ {i} ^ {a} , \mathbf {e} _ {k} ^ {b} \rangle / \tau)} \tag {6}
+$$
+
+where $\mathbf { A } _ { i j }$ represents the model’s belief that anchor point i corresponds to candidate patch $j ,$ and $N _ { \mathrm { c a n d } }$ denotes the total number of candidate patches. Note that we directly reuse the similarity computations from Equation 5 to ensure computational efficiency.
+
+Using these soft matching weights, we compute the expected depth for the anchor point in the target frame as a weighted average over all candidate patches:
+
+$$
+\hat {d} _ {i} ^ {b} = \sum_ {j = 1} ^ {N _ {\text { cand }}} \mathbf {A} _ {i j} \cdot d _ {j} ^ {b} \tag {7}
+$$
+
+where $d _ { j } ^ { b }$ is the depth value at candidate patch $j$ in frame b. Note that this weighted summation is a standard Soft-Argmax formulation [47] that computes the expected depth $\mathbb { E } _ { j \sim { \bf A } _ { i } } [ d _ { j } ^ { b } ]$ under the matching distribution, making the index selection differentiable with respect to the correspondence embeddings. To obtain robust depth estimates, we apply average pooling over the spatial region corresponding to each patch in the depth map.
+
+The depth consistency loss then measures the discrepancy between this expected depth and the groundtruth depth at the corresponding point in frame b:
+
+$$
+\mathcal {L} _ {\text { depth }} = \frac {1}{N _ {\text { valid }}} \sum_ {i \in \text { valid }} \frac {\left| d _ {i} ^ {b} - \hat {d} _ {i} ^ {b} \right|}{d _ {i} ^ {b} + \hat {d} _ {i} ^ {b} + \epsilon} \tag {8}
+$$
+
+where $d _ { i } ^ { b }$ is the ground-truth depth of point i at its corresponding location $\mathbf { p } _ { i } ^ { b }$ in frame b (obtained from the point correspondence annotation), and the summation is over points with sufficient visibility and confidence scores. The relative formulation makes the loss scale-invariant to enable it to handle scenes with varying depth ranges without requiring per-scene normalization.
+
+The gradient from this loss flows back through the soft matching weights A to the correspondence embeddings E. Crucially, $\mathcal { L } _ { d e p t h }$ acts as a discriminative geometric regularizer rather than a depth estimator. To illustrate, consider two visually identical objects: one in the foreground and one in the background. A standard contrastive loss might incorrectly match them based on texture alone, since their visual embeddings are similar. However, because their depths differ $( d _ { f g } \neq d _ { b g } )$ , the depth consistency loss penalizes this match, forcing the model to learn context-aware representations that distinguish visually similar instances at different spatial locations. More generally, visually similar patches that reside at different depths in the 3D scene are forced to have lower feature similarity, as they are not valid correspondences. This geometric regularization complements the contrastive loss, resolving ambiguities in scenarios with repetitive textures or foreground-background confusion.
+
+Our final training objective combines the LLM loss $\mathcal { L } _ { \mathrm { L M } }$ with these dual geometric supervision signals:
+
+$$
+\mathcal {L} _ {\text { total }} = \mathcal {L} _ {\mathrm{LM}} + \lambda_ {c} \mathcal {L} _ {\text { corr }} + \lambda_ {d} \mathcal {L} _ {\text { depth }} \tag {9}
+$$
+
+where $\lambda _ { c }$ and $\lambda _ { d }$ are weighting coefficients. This multi-task formulation enables the VLM to jointly optimize for language, 2D correspondence, and 3D depth consistency. By explicitly injecting these complementary geometric priors, we teach the model to develop geometrically-grounded visual representations without relying on 3D VQA datasets.
+
+# 5 Experiments
+
+In this section, we detail our experiments including implementation specifics, training dataset, correspondence analysis, and compares our method to state-ofthe-art approaches across multiple spatial reasoning benchmarks.
+
+# 5.1 Implementation Details
+
+Our model is initialized from the pre-trained Qwen2.5- VL-7B [3] and LLaVA-NeXT-Video-7B [65]. We attach our correspondence head, $\mathcal { H } _ { c } ,$ to all 28 or 32 layers of their LLM backbones, initializing its weights from the pre-trained query projection weights via SVD. The entire model is then fine-tuned with a LoRA rank of 512. We train using the AdamW optimizer with a cosine learning rate schedule (peak 1e-4) and a 4x higher differential rate for the $\mathcal { H } _ { c }$ head’s contrastive loss. For stability and efficiency, we use a gradient norm clipping of 1.0, bfloat16 mixed-precision, and gradient checkpointing. For our contrastive loss, we adopt negative patches from all frames except the anchor patch to maximize diversity. Training requires approximately 10 hours on 32 H200 GPUs.
+
+# 5.2 Training Datasets
+
+Our model was trained using DL3DV [30] and LLaVA-Video-178K [66], to inject geometric awareness while preserving foundational language capabilities. Geometric supervision comes from a large-scale point correspondence dataset curated from the VGGT [49] training collection. To generate diverse sequences with rich motion parallax, we first sample an anchor frame index $t _ { a }$ from a video $\mathcal { V } ~ = ~ \{ I _ { t } \} _ { t = 1 } ^ { T _ { m a x } }$ Subsequently, a full sequence of F frames is constructed by sampling the remaining $F - 1$ frame indices, $\{ t _ { k } \} _ { k = 2 } ^ { F } ,$ , uniformly from a local temporal window $[ t _ { a } - R , t _ { a } + R ]$ around the anchor. The sequence length $F$ is randomly chosen from 8 to 24, and the window radius R is set to 48. This strategy results in ≈1.75M sequences. We generate groundtruth correspondences on both coarse $( 8 \times 8 )$ and fine (24 × 24) grids for each sequence. To prevent catastrophic forgetting, we interleave this geometric data with the LLaVA-Video-178K instruction tuning dataset for joint training.
+
+# 5.3 Visual Correspondence Evaluation
+
+To validate our core hypothesis (the baseline VLMs fail due to the lack of a strong internal geometric representation), we conduct a detailed internal analysis. We first move beyond downstream VQA scores to evaluate the model’s internal representations along three critical dimensions: (1) layer-wise correspondence matching, (2) confidence-accuracy correlation, and (3) temporal robustness. These analyses compare our GASP - full model $( \mathcal { L } _ { c o r r } + \mathcal { L } _ { d e p t h } )$ and GASP - correspondence-only $( \mathcal { L } _ { c o r r } )$ against pre-trained baselines: Qwen2.5-VL-7B and LLaVA-NeXT-Video-7B. Results are summarized in Figure 3.
+
+Evaluation Setup and Metrics. We curate a held-out test set by randomly sampling 200 video sequences from DL3DV [30], explicitly excluded from training. Each sequence is annotated with dense ground-truth point correspondences on $8 \times 8$ grids across 8 frames. We design three evaluation metrics as follows:
+
+1) Layer-wise Correspondence Matching. Inspired from DiffTrack [35], we evaluate matching precision using the percentage of correct keypoints (PCK) metric. We extract motion tracks from the internal similarity matrices (Section 3). From a given LLM layer l, let ${ \bf F } _ { Q } ^ { 1 } = \{ { \bf f } _ { i , Q } ^ { \mathrm { i } } \} _ { i = 1 } ^ { H W } \in \mathrm { ~ \mathbb { R } ^ { H W \times d } ~ }$ be the flattened query descriptors from frame 1, and $\mathbf { F } _ { K } ^ { k } = \{ \mathbf { f } _ { j , K } ^ { k } \} _ { j = 1 } ^ { H W } \in$ RHW×d be the flattened key descriptors from frame k. We compute the pairwise cosine similarity matrix $\mathbf { S } ^ { 1 , k }$ :
+
+$$
+S _ {i j} ^ {1, k} = \frac {\mathbf {f} _ {i , Q} ^ {1} \cdot \left(\mathbf {f} _ {j , K} ^ {k}\right) ^ {T}}{\| \mathbf {f} _ {i , Q} ^ {1} \| _ {2} \| \mathbf {f} _ {j , K} ^ {k} \| _ {2}} \tag {10}
+$$
+
+Given $N _ { \mathrm { { p t s } } }$ query points $\{ \mathbf { p } _ { i } ^ { 1 } \} _ { i = 1 } ^ { N _ { p t s } }$ , we find their corresponding locations $\{ \mathbf { p } _ { i } ^ { k } \}$ in frame k by applying an argmax operation over the similarity matrix:
+
+$$
+\mathbf {p} _ {i} ^ {k} = \underset {\mathbf {p} \in \Omega_ {k}} {\operatorname{argmax}} \left(S ^ {1, k} (\mathbf {p} _ {i} ^ {1}, \mathbf {p})\right) \tag {11}
+$$
+
+where $\mathbf { p } _ { i } ^ { 1 }$ are the query coordinates and $\Omega _ { k }$ is the feature grid’s spatial domain. The full predicted track $\mathcal { T } _ { i }$ is constructed by concatenating and upscaling these positions:
+
+$$
+\mathcal {T} _ {i} = \text { Interpolate } \left(\text { Concat } (\mathbf {p} _ {i} ^ {1}, \mathbf {p} _ {i} ^ {2}, \ldots , \mathbf {p} _ {i} ^ {F})\right) \tag {12}
+$$
+
+A predicted point $\mathbf { p } _ { i } ^ { k }$ is correct if its Euclidean distance to the ground-truth $\mathbf { p } _ { i } ^ { \mathrm { g t } , k }$ gt,k is within an error threshold of $\delta \ : = \ : 2$ feature patches. We compute PCK for each LLM layer to identify which layers encode geometric correspondences.
+
+2) Confidence-Accuracy Correlation. We assess whether the model’s confidence is calibrated with its actual correctness by computing the Pearson correlation coefficientdictions, we corre $\rho .$ For a given layer ℓ withe the confidence scores $\{ c _ { i } \} _ { i = 1 } ^ { N }$ (maximum attention probability) with the binary correctness labels $\{ y _ { i } \} _ { i = 1 } ^ { \bar { N } } ~ ( y _ { i } = \bar { 1 }$ if PCK@2, 0 otherwise):
+
+$$
+\rho_ {\ell} = \frac {\sum_ {i = 1} ^ {N} (c _ {i} - \bar {c}) (y _ {i} - \bar {y})}{\sqrt {\sum_ {i = 1} ^ {N} (c _ {i} - \bar {c}) ^ {2}} \sqrt {\sum_ {i = 1} ^ {N} (y _ {i} - \bar {y}) ^ {2}}}. \tag {13}
+$$
+
+A positive correlation $( \rho \mathrm { ~  ~ { ~ > ~ } ~ } 0 )$ indicates wellcalibrated predictions where higher confidence corresponds to higher accuracy. Negative correlation $( \rho < 0 )$ is a statistical signature of systematic miscalibration, providing a quantitative diagnosis of positional bias where the model confidently predicts incorrect matches.
+
+3) Temporal Robustness. To measure robustness across temporal gaps, we evaluate PCK at varying frame distances $\Delta t { } ~ \in { } ~ \{ 1 , 2 , \ldots , 2 4 \}$ , where $\Delta t$ denotes the temporal offset between matched frames. We plot normalized performance: $Y ( \Delta t ) =$ $\mathrm { P C K } ( \Delta t ) / \mathrm { P C K } ( \Delta t = 1 )$ . This normalization anchors all models to 1.0 at the shortest distance, enabling fair comparison of degradation rates.
+
+Comparative Analysis. We summarized our findings of three metrics in analysis (Figure 3) as follows:
+
+(i) Layer-wise Matching (Figure 3a, d): Baseline models (blue) achieve near-zero PCK, confirming their lack of geometric awareness. Our methods (green, red) significantly improve matching accuracy globally, peaking in middle-to-deep layers (20–25 for LLaVA, 25–28 for Qwen2.5-VL). The GASP full model (red) consistently outperforms the correspondence-only model (green), validating the effectiveness of our depth consistency supervision.
+
+(ii) Confidence-Accuracy Correlation (Figure 3b, e): This analysis diagnoses why baselines fail. Baselines exhibit a negative correlation $( \rho \approx - 0 . 2 2 )$ , a statistical signature of positional bias where higher confidence predicts incorrect matches. In stark contrast, our full model achieves strong positive correlation $( \rho \approx + 0 . 6 2 )$ , demonstrating a well-calibrated model that learns genuine geometric reasoning.
+
+(iii) Temporal Robustness (Figure 3c, f ): The baseline’s matching ability (blue) collapses, retaining $< 5 \%$ of its performance beyond an 8-frame gap. In contrast, our full model (red) exhibits graceful degradation, maintaining over 85% performance even at
+
+24-frame distances, demonstrating it learns temporalinvariant geometric features.
+
+# 5.4 Spatial Reasoning Benchmarks Evaluation
+
+Our analysis (Section 5.3) confirmed GASP improves internal geometric representations. The ultimate goal is translating this to superior high-level reasoning. We thus evaluate on downstream spatial VQA benchmarks to assess generalization for complex, languagebased spatial tasks.
+
+Evaluation Benchmarks. Our primary evaluation uses benchmarks designed for 3D and multi-view spatial understanding: All-Angles Bench [62] (varying viewpoints), VSI-Bench [60] (object permanence, relational reasoning), and the spatial subset of BLINK [15] (relative depth, multi-view perception). We select these benchmarks as they are designed to isolate ’pure’ geometric reasoning (e.g., viewpoint consistency) from the high-level semantic reasoning often confounded in 3D VQA datasets. The evaluation follows its standard protocol [60]. Second, to ensure our specialized training does not cause catastrophic forgetting, we evaluate on a suite of broad VQA benchmarks. This includes CV-Bench [48] (2D/3D tasks), as well as Video-MME [13], TempCompass [33], and NextQA [55] for holistic video and temporal understanding.
+
+Comparison Baselines. We compare our models against a wide range of state-of-the-art models including (1) General VLMs (e.g., GPT-4o, InternVL2.5) [3, 8, 16, 21, 28, 32, 45, 46, 48] and (2) 3D Spatial Reasoning VLMs (e.g., VG-LLM, VLM-3R) [6, 12, 40, 67]. To isolate the specific contribution of our geometric-aware training, our primary comparison is a controlled ablation. We establish our control models by fine-tuning the LLaVA-NeXT-Video-7B [65] and Qwen2.5-VL-7B [3] models on the generalpurpose LLaVA-Video 178K dataset [65]. Our models are trained on the exact same LLaVA-Video 178K dataset, but also include our proposed GASP geometric priors $( \mathcal { L } _ { c o r r }$ and $\mathcal { L } _ { d e p t h } )$ . This setup ensures that all observed performance gains are directly attributable to our geometric training paradigm, not just to the effects of continued SFT. Furthermore, to disentangle the effect of data exposure from our training objective, we include a “Fairness Baseline.” Using the same DL3DV point tracks as GASP, we construct a VQA dataset where the correspondence task is reformulated as explicit question-answer pairs by following [57, 64] (e.g., Which labeled point in Image-2 corresponds to the marked location in Image-1? or Predict the [x, y] coordinates of this point in Image-2.). This baseline is fine-tuned on the identical data mix (LLaVA-Video 178K + DL3DV VQA) with the same data quantity, isolating whether gains arise from data content or from GASP’s geometric objective.
+
+Table 1 Comparison with state-of-the-art VLMs on spatial reasoning benchmarks. We evaluate models on All-Angles Bench, VSI-Bench, and BLINK. Our GASP framework shows strong performance in spatial relation understanding and relative depth estimation. 
+
+<table><tr><td rowspan="2">Methods</td><td colspan="3">All-Angles Bench</td><td colspan="4">VSI-Bench</td><td colspan="3">BLINK</td></tr><tr><td>Cam. Pose Est.</td><td>Manip.</td><td>Rel. Dir.</td><td>Obj. Count</td><td>Route Plan</td><td>Rel. Dir.</td><td>Appear. Order</td><td>Spa. Rela.</td><td>Rel. Depth</td><td>Multi-View</td></tr><tr><td colspan="11">General VLMs</td></tr><tr><td>GPT-4o</td><td>27.3</td><td>41.4</td><td>40.9</td><td>46.2</td><td>31.5</td><td>41.3</td><td>28.5</td><td>76.9</td><td>64.5</td><td>60.2</td></tr><tr><td>Gemini-1.5-Pro</td><td>25.0</td><td>40.3</td><td>29.8</td><td>56.2</td><td>36.0</td><td>46.3</td><td>34.6</td><td>67.1</td><td>50.0</td><td>41.3</td></tr><tr><td>Cambrain-8B</td><td>8.5</td><td>30.7</td><td>30.4</td><td>7.0</td><td>29.9</td><td>30.9</td><td>26.2</td><td>74.8</td><td>51.6</td><td>36.8</td></tr><tr><td>InternVL2.5-4B</td><td>36.9</td><td>40.1</td><td>33.2</td><td>29.1</td><td>30.9</td><td>41.4</td><td>32.5</td><td>83.9</td><td>66.9</td><td>44.4</td></tr><tr><td>InternVL2.5-8B</td><td>31.8</td><td>43.7</td><td>34.1</td><td>16.9</td><td>28.8</td><td>41.1</td><td>34.7</td><td>89.5</td><td>77.4</td><td>44.4</td></tr><tr><td>InternVL2.5-78B</td><td>38.6</td><td>42.2</td><td>38.6</td><td>26.6</td><td>31.9</td><td>40.3</td><td>29.9</td><td>93.0</td><td>82.3</td><td>54.1</td></tr><tr><td>Qwen2.5-VL-32B</td><td>32.4</td><td>49.8</td><td>40.9</td><td>17.4</td><td>34.5</td><td>30.4</td><td>31.1</td><td>86.0</td><td>75.0</td><td>44.3</td></tr><tr><td>Qwen2.5-VL-72B</td><td>34.1</td><td>45.0</td><td>48.3</td><td>14.3</td><td>28.4</td><td>27.6</td><td>31.4</td><td>88.8</td><td>81.5</td><td>53.4</td></tr><tr><td>LLaVA-Onevision-7B</td><td>20.5</td><td>42.4</td><td>36.4</td><td>47.7</td><td>29.4</td><td>35.2</td><td>24.4</td><td>83.9</td><td>75.0</td><td>55.6</td></tr><tr><td>LLaVA-Onevision-72B</td><td>20.5</td><td>47.7</td><td>33.8</td><td>43.5</td><td>32.5</td><td>39.9</td><td>44.6</td><td>78.3</td><td>78.2</td><td>53.4</td></tr><tr><td colspan="11">3D Spatial Reasoning VLMs (Finetuning on 3D Related VQAs)</td></tr><tr><td>VG-LLM</td><td>16.5</td><td>30.0</td><td>26.9</td><td>67.9</td><td>32.4</td><td>40.7</td><td>59.2</td><td>84.3</td><td>77.2</td><td>50.8</td></tr><tr><td>AoTD</td><td>32.4</td><td>37.6</td><td>26.7</td><td>23.5</td><td>28.8</td><td>41.4</td><td>23.3</td><td>61.5</td><td>49.2</td><td>45.1</td></tr><tr><td>VLM-3R</td><td>22.7</td><td>35.9</td><td>30.9</td><td>70.2</td><td>45.4</td><td>80.5</td><td>40.1</td><td>48.3</td><td>47.6</td><td>50.1</td></tr><tr><td colspan="11">LLaVA-NeXT-Video-7B</td></tr><tr><td>SFT on LLaVA-Video 178K (Baseline)</td><td>22.7</td><td>39.9</td><td>24.7</td><td>23.5</td><td>24.7</td><td>32.4</td><td>11.5</td><td>53.1</td><td>44.4</td><td>42.1</td></tr><tr><td>+ SFT on DL3DV VQA dataset</td><td>19.8</td><td>38.1</td><td>28.2</td><td>21.4</td><td>25.1</td><td>31.8</td><td>9.2</td><td>54.5</td><td>44.0</td><td>42.5</td></tr><tr><td>+ GASP - Correspondence ( $\mathcal{L}_{corr}$ )</td><td>34.7</td><td>44.3</td><td>26.4</td><td>39.8</td><td>31.4</td><td>30.5</td><td>17.6</td><td>49.2</td><td>46.7</td><td>44.4</td></tr><tr><td>+ GASP - Full Model ( $\mathcal{L}_{corr} + \mathcal{L}_{depth}$ )</td><td>40.9</td><td>43.5</td><td>29.8</td><td>52.5</td><td>32.5</td><td>41.2</td><td>22.0</td><td>47.6</td><td>48.4</td><td>57.1</td></tr><tr><td> $\Delta$  Improvement</td><td>↑18.2</td><td>↑3.6</td><td>↑5.1</td><td>↑29.0</td><td>↑7.8</td><td>↑8.8</td><td>↑10.5</td><td>↓5.5</td><td>↑4.0</td><td>↑15.0</td></tr><tr><td colspan="11">Qwen2.5-VL-7B</td></tr><tr><td>SFT on LLaVA-Video 178K (Baseline)</td><td>34.1</td><td>41.3</td><td>36.9</td><td>33.8</td><td>26.8</td><td>34.3</td><td>26.5</td><td>80.2</td><td>78.9</td><td>41.5</td></tr><tr><td>+ SFT on DL3DV VQA dataset</td><td>31.5</td><td>41.5</td><td>36.2</td><td>33.2</td><td>27.1</td><td>34.3</td><td>25.3</td><td>81.0</td><td>78.1</td><td>42.0</td></tr><tr><td>+ GASP - Correspondence ( $\mathcal{L}_{corr}$ )</td><td>50.0</td><td>39.3</td><td>37.8</td><td>39.6</td><td>30.9</td><td>36.7</td><td>34.6</td><td>88.1</td><td>79.0</td><td>54.9</td></tr><tr><td>+ GASP - Full Model ( $\mathcal{L}_{corr} + \mathcal{L}_{depth}$ )</td><td>52.8</td><td>40.1</td><td>37.2</td><td>41.6</td><td>30.4</td><td>40.6</td><td>35.0</td><td>88.8</td><td>80.7</td><td>53.4</td></tr><tr><td> $\Delta$  Improvement</td><td>↑18.7</td><td>↓1.2</td><td>↑0.3</td><td>↑7.8</td><td>↑3.6</td><td>↑6.3</td><td>↑8.5</td><td>↑8.6</td><td>↑1.8</td><td>↑11.9</td></tr></table>
+
+Table 2 Comparison with VLMs on CV-Bench. We show progressive improvements of our GASP framework built on Qwen2.5-VL-7B. The best score is marked in bold in each column. 
+
+<table><tr><td rowspan="2">Methods</td><td colspan="5">CV-Bench</td></tr><tr><td>Overall</td><td>2D-count</td><td>2D-relation</td><td>3D-depth</td><td>3D-distance</td></tr><tr><td>SpaceQwen2.5VL-3B</td><td>51.4</td><td>62.2</td><td>45.4</td><td>45.4</td><td>50.0</td></tr><tr><td>Kimi-VL-3B-Thinking</td><td>57.5</td><td>60.5</td><td>79.1</td><td>43.5</td><td>44.0</td></tr><tr><td>Qwen2.5-VL-3B-Instruct</td><td>68.5</td><td>62.6</td><td>70.3</td><td>78.0</td><td>64.7</td></tr><tr><td>InternVL2.5-4B</td><td>74.1</td><td>68.0</td><td>79.9</td><td>80.7</td><td>69.2</td></tr><tr><td>LLaVA-OneVision-7B</td><td>73.2</td><td>69.2</td><td>77.9</td><td>81.7</td><td>65.0</td></tr><tr><td>Qwen2.5-VL-7B-Instruct</td><td>76.6</td><td>63.7</td><td>87.7</td><td>85.5</td><td>72.7</td></tr><tr><td>Cambrain-8B</td><td>62.2</td><td>60.7</td><td>81.7</td><td>55.0</td><td>50.5</td></tr><tr><td>LLaMA-3.2V-11B</td><td>58.2</td><td>59.0</td><td>55.9</td><td>67.3</td><td>50.5</td></tr><tr><td>LLaMA-3.2V-11B-CoT</td><td>72.8</td><td>59.1</td><td>78.9</td><td>78.8</td><td>78.0</td></tr><tr><td>LLaVA-1.5-13B</td><td>58.2</td><td>56.1</td><td>57.2</td><td>66.8</td><td>53.3</td></tr><tr><td>SpaceLLaVA-13B</td><td>58.2</td><td>56.1</td><td>57.2</td><td>66.8</td><td>53.3</td></tr><tr><td>Qwen2.5-VL-32B</td><td>79.7</td><td>68.9</td><td>80.8</td><td>86.5</td><td>85.8</td></tr><tr><td>LLaVA-OneVision-72B</td><td>79.7</td><td>70.2</td><td>89.2</td><td>82.5</td><td>79.0</td></tr><tr><td>Qwen2.5-VL-7B+ GASP - Correspondence ( $\mathcal{L}_{corr}$ )</td><td>79.4</td><td>68.0</td><td>88.1</td><td>86.6</td><td>78.6</td></tr><tr><td>+ GASP - Full Model ( $\mathcal{L}_{corr} + \mathcal{L}_{depth}$ )</td><td>79.8</td><td>68.2</td><td>88.3</td><td>87.3</td><td>79.2</td></tr></table>
+
+# 5.5 Benchmark Results
+
+Our GASP framework improves over the baselines on several spatial benchmarks in Table 1, with the largest gains on tasks directly related to the injected geometric priors. This provides evidence that learning from fundamental 3D priors can enhance high-level spatial reasoning. We highlight our findings as follows:
+
+Analysis of 3D Geometric Consistency. As shown in Table 1, our gains are most pronounced on the specific sub-tasks that are directly related to the geometric priors we inject. On the All-Angles Bench, which tests geometric consistency, our full model nearly doubles the Camera Pose Estimation score (e.g., 34.1%
+
+Table 3 Comparison on generic multimodal benchmarks. 
+
+<table><tr><td>Methods</td><td>Video-MME w/o sub.</td><td>Video-MME w/ sub.</td><td>Temp CompassMC</td><td>NextQA</td></tr><tr><td>LLaVA-NeXT-Video-7B (baseline)</td><td>40.8</td><td>40.3</td><td>50.1</td><td>59.4</td></tr><tr><td>+ GASP - Correspondence</td><td>42.3</td><td>41.6</td><td>53.7</td><td>62.8</td></tr><tr><td>+ GASP - Full Model</td><td>42.8</td><td>41.9</td><td>53.8</td><td>61.6</td></tr><tr><td>Qwen2.5-VL-7B (baseline)</td><td>60.6</td><td>59.3</td><td>68.4</td><td>76.6</td></tr><tr><td>+ GASP - Correspondence</td><td>62.6</td><td>61.2</td><td>71.5</td><td>78.4</td></tr><tr><td>+ GASP - Full Model</td><td>63.2</td><td>61.6</td><td>70.3</td><td>74.7</td></tr></table>
+
+to 52.8% for Qwen2.5-VL) and improves Relative Direction (e.g., 24.7% to 29.8% for LLaVA-NeXT). This directly validates that our training imbues the model with a robust understanding of viewpoint. Also, the DL3DV VQA baseline even degrades several key metrics compared to the SFT baseline (e.g., Camera Pose 22.7%→19.8%, Object Counting 23.5%→21.4% for LLaVA-NeXT). In contrast, GASP achieves 40.9% and 52.5% on these same metrics. This confirms that the improvements stem from the GASP geometric objective rather than data exposure, consistent with the overfitting patterns of VQA-based methods observed in Appendix.
+
+Analysis of Relational & Temporal Capability. This geometric understanding also improves abstract reasoning. On VSI-Bench, our model shows a dramatic improvement in Object Counting (e.g., 23.5% to 52.5% on VSI-Bench). This suggests that the viewinvariant features learned by our method help the model maintain object identity, preventing it from double-counting or missing objects across frames. This multi-view consistency is further validated on BLINK, where our framework provides the boost on the Multi-View task (e.g., 42.1% to 57.1% for
+
+Table 4 Ablation studies of the LoRA rank effect and correspondence head injection into LLM layers. 
+
+<table><tr><td>GASP - Full Model $(\mathcal{L}_{corr} + \mathcal{L}_{depth})$ </td><td>Avg. PCK</td><td>All-Angles Bench</td><td>VSI-Bench</td><td>BLINK</td></tr><tr><td colspan="5">Impact of LoRA Rank on Performance</td></tr><tr><td colspan="5">LLaVA-NeXT-Video-7B</td></tr><tr><td>LoRA Rank = 64</td><td>8.4</td><td>30.1</td><td>28.5</td><td>44.9</td></tr><tr><td>LoRA Rank = 128</td><td>13.7</td><td>32.6</td><td>30.6</td><td>45.8</td></tr><tr><td>LoRA Rank = 256</td><td>17.1</td><td>35.8</td><td>33.9</td><td>47.5</td></tr><tr><td>LoRA Rank = 512</td><td>26.2</td><td>38.1</td><td>37.1</td><td>51.0</td></tr><tr><td>LoRA Rank = 1024</td><td>28.6</td><td>37.2</td><td>34.8</td><td>48.7</td></tr><tr><td colspan="5">Qwen2.5-VL-7B</td></tr><tr><td>LoRA Rank = 64</td><td>18.2</td><td>38.5</td><td>37.3</td><td>70.2</td></tr><tr><td>LoRA Rank = 128</td><td>26.7</td><td>43.4</td><td>36.9</td><td>74.3</td></tr><tr><td>LoRA Rank = 256</td><td>28.8</td><td>41.8</td><td>35.5</td><td>73.5</td></tr><tr><td>LoRA Rank = 512</td><td>31.2</td><td>40.2</td><td>34.1</td><td>72.4</td></tr><tr><td>LoRA Rank = 1024</td><td>32.5</td><td>38.9</td><td>33.2</td><td>73.8</td></tr><tr><td colspan="5">Correspondence Head Injection into LLM Layers</td></tr><tr><td colspan="5">LLaVA-NeXT-Video-7B</td></tr><tr><td>Layer 10 - 18</td><td>21.7</td><td>34.8</td><td>35.9</td><td>47.7</td></tr><tr><td>Layer 18 - 25</td><td>25.1</td><td>37.5</td><td>35.2</td><td>49.5</td></tr><tr><td>Layer 25 - 32</td><td>25.8</td><td>39.1</td><td>36.5</td><td>49.3</td></tr><tr><td>All Layers (1 - 32)</td><td>26.2</td><td>38.1</td><td>37.1</td><td>51.0</td></tr><tr><td colspan="5">Qwen2.5-VL-7B</td></tr><tr><td>Layer 10 - 16</td><td>19.8</td><td>37.9</td><td>34.2</td><td>68.2</td></tr><tr><td>Layer 16 - 22</td><td>23.3</td><td>38.8</td><td>35.5</td><td>71.1</td></tr><tr><td>Layer 22 - 28</td><td>25.2</td><td>42.7</td><td>37.4</td><td>72.8</td></tr><tr><td>All Layers (1 - 28)</td><td>26.7</td><td>43.4</td><td>36.9</td><td>74.3</td></tr></table>
+
+LLaVA-NeXT), proving our model’s superior ability to correlate information across different perspectives.
+
+Analysis on General-Purpose Benchmarks. A natural concern is whether specialized geometric training harms general VQA capabilities. As presented in Table 3, we observe a modest trade-off: our Qwen2.5- VL-7B model with GASP loses 1.9% on NextQA (76.6% → 74.7%), but improves on temporal video benchmarks, including Video-MME (59.3% → 61.6%) and TempCompass (68.4% → 70.3%). We attribute these temporal gains to improved object permanence: video understanding requires maintaining persistent object identity across viewpoint changes, occlusions, and temporal gaps (e.g., Temporal Reasoning and Action Forecasting in Video-MME), which directly benefits from our view-invariant geometric representations learned through correspondence training. The modest drop on NextQA (1.9%) likely reflects a capacity trade-off: geometric specialization comes at a small cost to action-understanding tasks, which rely more on object semantics and temporal dynamics than on precise spatial localization. This suggests that GASP is best suited for applications where spatial geometry is primary (e.g., robotics, 3D reasoning) rather than action-centric understanding. Also, on the broad CV-Bench (Table 2), our model achieves an Overall score of 79.8%. Overall, GASP trades about 1–2% general VQA accuracy for consistent gains on spatial and temporal benchmarks.
+
+# 5.6 Ablation Studies
+
+We conduct ablation studies on two key hyperparameters for our GASP framework: the LoRA rank and the correspondence head (Hc) injection strategy, reported in Table 4.
+
+Impact of LoRA Rank. We analyze performance varying the LoRA rank from 64 to 1024. We find a clear trade-off: internal correspondence (Avg. PCK) generally scales with the rank, but downstream performance peaks earlier (512 for LLaVA, 128 for Qwen). This suggests that a higher Avg. PCK does not always lead to improved complex spatial benchmark reasoning. We hypothesize that with very high LoRA ranks, while it fits better for our geometric priors, may begin to harm foundational language capabilities.
+
+Correspondence Head Injection into LLM Layers. We target LLM layers rather than the visual encoder because spatial reasoning fundamentally requires sequence-level temporal binding. We then ablate where in the LLM the correspondence head is injected. While injecting at later layers (e.g., LLaVA ‘Layer 25-32‘), which contain richer semantic information, outperforms earlier layers, our key finding is that applying supervision across all layers (1-32 for LLaVA, 1-28 for Qwen) yields the best and most consistent performance. This result suggests that geometric consistency is fundamentally hierarchical: early layers must learn to match low-level visual features (edges, corners), middle layers must reason about object parts and boundaries, and deep layers must maintain semantic-geometric alignment. By supervising at all levels, we ensure that gradients from the geometric losses flow throughout the network, forcing each layer to contribute to view-invariant feature learning. If geometric supervision were only applied at deep layers, shallow layers might continue to learn view-dependent features, creating a representational bottleneck.
+
+# 6 Conclusion
+
+In this paper, we proposed GASP, a framework that injects fundamental geometric priors directly into the LLM’s transformer layers. Our analysis showed GASP corrects VLMs’ near-zero internal correspondence accuracy, boosting it to over 70%. These internal improvements generalize, achieving significant gains on downstream spatial benchmarks. We thus find learning from geometric priors is a promising and generalizable path toward spatially-intelligent VLMs. Current limitations include reliance on pseudo ground-truth depth and a modest trade-off on actioncentric tasks; future work could combine geometric priors with complementary VQA supervision and scale to larger model architectures.
+
+# References
+
+[1] Anthropic. Claude, 2024. 1   
+[2] Anurag Arnab, Mostafa Dehghani, Georg Heigold, Chen Sun, Mario Lučić, and Cordelia Schmid. Vivit: A video vision transformer. In Proceedings of the IEEE/CVF international conference on computer vision, pages 6836–6846, 2021. 17   
+[3] Shuai Bai, Keqin Chen, Xuejing Liu, Jialin Wang, Wenbin Ge, Sibo Song, Kai Dang, Peng Wang, Shijie Wang, Jun Tang, et al. Qwen2. 5-vl technical report. arXiv preprint arXiv:2502.13923, 2025. 1, 2, 6, 7, 14   
+[4] Gedas Bertasius, Heng Wang, and Lorenzo Torresani. Is space-time attention all you need for video understanding? In ICML, page 4, 2021. 17   
+[5] Ellis Brown, Jihan Yang, Shusheng Yang, Rob Fergus, and Saining Xie. Benchmark designers should" train on the test set" to expose exploitable non-visual shortcuts. arXiv preprint arXiv:2511.04655, 2025. 15   
+[6] Boyuan Chen, Zhuo Xu, Sean Kirmani, Brain Ichter, Dorsa Sadigh, Leonidas Guibas, and Fei Xia. Spatialvlm: Endowing vision-language models with spatial reasoning capabilities. In Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition, pages 14455–14465, 2024. 3, 7   
+[7] Sijin Chen, Xin Chen, Chi Zhang, Mingsheng Li, Gang Yu, Hao Fei, Hongyuan Zhu, Jiayuan Fan, and Tao Chen. Ll3da: Visual interactive instruction tuning for omni-3d understanding reasoning and planning. In Proceedings of the IEEE/CVF conference on computer vision and pattern recognition, pages 26428–26438, 2024. 1, 3   
+[8] Zhe Chen, Jiannan Wu, Wenhai Wang, Weijie Su, Guo Chen, Sen Xing, Muyan Zhong, Qinglong Zhang, Xizhou Zhu, Lewei Lu, et al. Internvl: Scaling up vision foundation models and aligning for generic visual-linguistic tasks. In Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition, pages 24185–24198, 2024. 1, 7   
+[9] Zhangquan Chen, Manyuan Zhang, Xinlei Yu, Xufang Luo, Mingze Sun, Zihao Pan, Yan Feng, Peng Pei, Xunliang Cai, and Ruqi Huang. Think with 3d: Geometric imagination grounded spatial reasoning from limited views. arXiv preprint arXiv:2510.18632, 2025. 1, 3   
+[10] Alexey Dosovitskiy, Lucas Beyer, Alexander Kolesnikov, Dirk Weissenborn, Xiaohua Zhai, Thomas Unterthiner, Mostafa Dehghani, Matthias Minderer, Georg Heigold, Sylvain Gelly, et al. An image is worth 16x16 words: Transformers for image recognition at scale. In International Conference on Learning Representations, 2021. 17   
+[11] Danny Driess, Fei Xia, Mehdi SM Sajjadi, Corey
+
+Lynch, Aakanksha Chowdhery, Ayzaan Wahid, Jonathan Tompson, Quan Vuong, Tianhe Yu, Wenlong Huang, et al. Palm-e: An embodied multimodal language model. In International Conference on Machine Learning (ICML), 2023. 1   
+[12] Zhiwen Fan, Jian Zhang, Renjie Li, Junge Zhang, Runjin Chen, Hezhen Hu, Kevin Wang, Huaizhi Qu, Dilin Wang, Zhicheng Yan, et al. Vlm-3r: Visionlanguage models augmented with instruction-aligned 3d reconstruction. arXiv preprint arXiv:2505.20279, 2025. 1, 3, 7   
+[13] Chaoyou Fu, Yuhan Dai, Yongdong Luo, Lei Li, Shuhuai Ren, Renrui Zhang, Zihan Wang, Chenyu Zhou, Yunhang Shen, Mengdan Zhang, et al. Videomme: The first-ever comprehensive evaluation benchmark of multi-modal llms in video analysis. In Proceedings of the Computer Vision and Pattern Recognition Conference, pages 24108–24118, 2025. 7   
+[14] Rao Fu, Jingyu Liu, Xilun Chen, Yixin Nie, and Wenhan Xiong. Scene-llm: Extending language model for 3d visual understanding and reasoning. arXiv preprint arXiv:2403.11401, 2024. 3   
+[15] Xingyu Fu, Yushi Hu, Bangzheng Li, Yu Feng, Haoyu Wang, Xudong Lin, Dan Roth, Noah A Smith, Wei-Chiu Ma, and Ranjay Krishna. Blink: Multimodal large language models can see but not perceive. In European Conference on Computer Vision, pages 148–166. Springer, 2024. 2, 7   
+[16] Aaron Grattafiori, Abhimanyu Dubey, Abhinav Jauhri, Abhinav Pandey, Abhishek Kadian, Ahmad Al-Dahle, Aiesha Letman, Akhil Mathur, Alan Schelten, Alex Vaughan, et al. The llama 3 herd of models. arXiv preprint arXiv:2407.21783, 2024. 7   
+[17] Yining Hong, Haoyu Zhen, Peihao Chen, Shuhong Zheng, Yilun Du, Zhenfang Chen, and Chuang Gan. 3d-llm: Injecting the 3d world into large language models. Advances in Neural Information Processing Systems, 36:20482–20494, 2023. 3   
+[18] Haifeng Huang, Yilun Chen, Zehan Wang, Rongjie Huang, Runsen Xu, Tai Wang, Luping Liu, Xize Cheng, Yang Zhao, Jiangmiao Pang, et al. Chatscene: Bridging 3d scene and large language models with object identifiers. Advances in Neural Information Processing Systems, 37:113991–114017, 2024.   
+[19] Jiangyong Huang, Silong Yong, Xiaojian Ma, Xiongkun Linghu, Puhao Li, Yan Wang, Qing Li, Song-Chun Zhu, Baoxiong Jia, and Siyuan Huang. An embodied generalist agent in 3d world. arXiv preprint arXiv:2311.12871, 2023. 1, 3   
+[20] Wenlong Huang, Pieter Abbeel, Deepak Pathak, and Igor Mordatch. Language models as zero-shot planners: Extracting actionable knowledge for embodied agents. In International conference on machine learning, pages 9118–9147. PMLR, 2022. 1
+
+[21] Aaron Hurst, Adam Lerer, Adam P Goucher, Adam Perelman, Aditya Ramesh, Aidan Clark, AJ Ostrow, Akila Welihinda, Alan Hayes, Alec Radford, et al. Gpt-4o system card. arXiv preprint arXiv:2410.21276, 2024. 1, 7   
+[22] Hyeonho Jeong, Chun-Hao P Huang, Jong Chul Ye, Niloy J Mitra, and Duygu Ceylan. Track4gen: Teaching video diffusion models to track points improves video generation. In Proceedings of the Computer Vision and Pattern Recognition Conference, pages 7276–7287, 2025. 3   
+[23] Baoxiong Jia, Yixin Chen, Huangyue Yu, Yan Wang, Xuesong Niu, Tengyu Liu, Qing Li, and Siyuan Huang. Sceneverse: Scaling 3d vision-language learning for grounded scene understanding. In European Conference on Computer Vision, pages 289–310. Springer, 2024. 3   
+[24] Rawal Khirodkar, Aayush Bansal, Lingni Ma, Richard Newcombe, Minh Vo, and Kris Kitani. Egohumans: An ego-centric 3d multi-human benchmark. In Proceedings of the IEEE/CVF International Conference on Computer Vision, pages 19807–19819, 2023. 4   
+[25] Prannay Khosla, Piotr Teterwak, Chen Wang, Aaron Sarna, Yonglong Tian, Phillip Isola, Aaron Maschinot, Ce Liu, and Dilip Krishnan. Supervised contrastive learning. Advances in neural information processing systems, 33:18661–18673, 2020. 4   
+[26] Moo Jin Kim, Karl Pertsch, Siddharth Karamcheti, Ted Xiao, Ashwin Balakrishna, Suraj Nair, Rafael Rafailov, Ethan Foster, Grace Lam, Pannag Sanketi, et al. Openvla: An open-source vision-languageaction model. arXiv preprint arXiv:2406.09246, 2024. 1   
+[27] Vincent Leroy, Yohann Cabon, and Jérôme Revaud. Grounding image matching in 3d with mast3r. In European Conference on Computer Vision, pages 71–91. Springer, 2024. 2   
+[28] Bo Li, Yuanhan Zhang, Dong Guo, Renrui Zhang, Feng Li, Hao Zhang, Kaichen Zhang, Yanwei Li, Ziwei Liu, and Chunyuan Li. Llava-onevision: Easy visual task transfer. arXiv preprint arXiv:2408.03326, 2024. 1, 7   
+[29] Yun Li, Yiming Zhang, Tao Lin, XiangRui Liu, Wenxiao Cai, Zheng Liu, and Bo Zhao. Sti-bench: Are mllms ready for precise spatial-temporal world understanding? arXiv preprint arXiv:2503.23765, 2025. 1, 16   
+[30] Lu Ling, Yichen Sheng, Zhi Tu, Wentian Zhao, Cheng Xin, Kun Wan, Lantao Yu, Qianyu Guo, Zixun Yu, Yawen Lu, et al. Dl3dv-10k: A largescale scene dataset for deep learning-based 3d vision. In Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition, pages 22160–22169, 2024. 2, 4, 6, 14
+
+[31] Fangchen Liu, Kuan Fang, Pieter Abbeel, and Sergey Levine. Moka: Open-vocabulary robotic manipulation through mark-based visual prompting. In First Workshop on Vision-Language Models for Navigation and Manipulation at ICRA 2024, 2024.   
+[32] Haotian Liu, Chunyuan Li, Yuheng Li, and Yong Jae Lee. Improved baselines with visual instruction tuning. In Proceedings of the IEEE Conference on Computer Vision and Pattern Recognition, pages 26296– 26306, 2024. 7   
+[33] Yuanxin Liu, Shicheng Li, Yi Liu, Yuxiang Wang, Shuhuai Ren, Lei Li, Sishuo Chen, Xu Sun, and Lu Hou. Tempcompass: Do video llms really understand videos? arXiv preprint arXiv:2403.00476, 2024. 7   
+[34] Mi Luo, Zihui Xue, Alex Dimakis, and Kristen Grauman. Viewpoint rosetta stone: Unlocking unpaired ego-exo videos for view-invariant representation learning. In Proceedings of the Computer Vision and Pattern Recognition Conference, pages 15802–15812, 2025. 2   
+[35] Jisu Nam, Soowon Son, Dahyun Chung, Jiyoung Kim, Siyoon Jin, Junhwa Hur, and Seungryong Kim. Emergent temporal correspondences from video diffusion transformers. arXiv preprint arXiv:2506.17220, 2025. 3, 6   
+[36] Dantong Niu, Yuvan Sharma, Giscard Biamby, Jerome Quenum, Yutong Bai, Baifeng Shi, Trevor Darrell, and Roei Herzig. Llarva: Vision-action instruction tuning enhances robot learning. arXiv preprint arXiv:2406.11815, 2024. 1   
+[37] Kun Ouyang, Yuanxin Liu, Haoning Wu, Yi Liu, Hao Zhou, Jie Zhou, Fandong Meng, and Xu Sun. Spacer: Reinforcing mllms in video spatial reasoning. arXiv preprint arXiv:2504.01805, 2025. 1, 3, 15   
+[38] Jungin Park, Jiyoung Lee, and Kwanghoon Sohn. Bootstrap your own views: Masked ego-exo modeling for fine-grained view-invariant video representations. In Proceedings of the Computer Vision and Pattern Recognition Conference, pages 13661–13670, 2025. 2   
+[39] Zhangyang Qi, Zhixiong Zhang, Ye Fang, Jiaqi Wang, and Hengshuang Zhao. Gpt4scene: Understand 3d scenes from videos with vision-language models. arXiv preprint arXiv:2501.01428, 2025. 1, 3   
+[40] Yudi Shi, Shangzhe Di, Qirui Chen, and Weidi Xie. Enhancing video-llm reasoning via agent-of-thoughts distillation. In Proceedings of the Computer Vision and Pattern Recognition Conference, pages 8523– 8533, 2025. 7   
+[41] Chan Hee Song, Jihyung Kil, Tai-Yu Pan, Brian M Sadler, Wei-Lun Chao, and Yu Su. One step at a time: Long-horizon vision-and-language navigation with milestones. In Proceedings of the IEEE/CVF conference on computer vision and pattern recognition, pages 15482–15491, 2022. 1
+
+[42] Jianlin Su, Yu Lu, Shengfeng Pan, Bo Wen, and Yunfeng Liu. Roformer: Enhanced transformer with rotary position embedding. Neurocomputing, 568: 127063, 2024. 17   
+[43] Alessandro Suglia, Qiaozi Gao, Jesse Thomason, Govind Thattai, and Gaurav Sukhatme. Embodied bert: A transformer model for embodied, languageguided visual task completion. arXiv preprint arXiv:2108.04927, 2021. 1   
+[44] Peiwen Sun, Shiqiang Lang, Dongming Wu, Yi Ding, Kaituo Feng, Huadai Liu, Zhen Ye, Rui Liu, Yun-Hui Liu, Jianan Wang, et al. Spacevista: All-scale visual spatial reasoning from mm to km. arXiv preprint arXiv:2510.09606, 2025. 1, 3, 16   
+[45] Gemini Team, Rohan Anil, Sebastian Borgeaud, Jean-Baptiste Alayrac, Jiahui Yu, Radu Soricut, Johan Schalkwyk, Andrew M Dai, Anja Hauth, Katie Millican, et al. Gemini: a family of highly capable multimodal models. arXiv preprint arXiv:2312.11805, 2023. 1, 7   
+[46] Kimi Team, Angang Du, Bohong Yin, Bowei Xing, Bowen Qu, Bowen Wang, Cheng Chen, Chenlin Zhang, Chenzhuang Du, Chu Wei, et al. Kimi-vl technical report. arXiv preprint arXiv:2504.07491, 2025. 7   
+[47] Zachary Teed and Jia Deng. RAFT: Recurrent allpairs field transforms for optical flow. In Eur. Conf. Comput. Vis., 2020. 5   
+[48] Peter Tong, Ellis Brown, Penghao Wu, Sanghyun Woo, Adithya Jairam Vedagiri IYER, Sai Charitha Akula, Shusheng Yang, Jihan Yang, Manoj Middepogu, Ziteng Wang, et al. Cambrian-1: A fully open, vision-centric exploration of multimodal llms. Advances in Neural Information Processing Systems, 37:87310–87356, 2024. 7   
+[49] Jianyuan Wang, Minghao Chen, Nikita Karaev, Andrea Vedaldi, Christian Rupprecht, and David Novotny. Vggt: Visual geometry grounded transformer. In Proceedings of the Computer Vision and Pattern Recognition Conference, pages 5294–5306, 2025. 1, 4, 6, 14   
+[50] Shuzhe Wang, Vincent Leroy, Yohann Cabon, Boris Chidlovskii, and Jerome Revaud. Dust3r: Geometric 3d vision made easy. In Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition, pages 20697–20709, 2024. 4   
+[51] Wentao Wang, Heqing Zou, Tianze Luo, Rui Huang, Yutian Zhao, Zhuochen Wang, Hansheng Zhang, Chengwei Qin, Yan Wang, Lin Zhao, et al. Videostr: Reinforcing mllms in video spatio-temporal reasoning with relation graph. arXiv preprint arXiv:2510.10976, 2025. 1, 3   
+[52] Zehan Wang, Haifeng Huang, Yang Zhao, Ziang Zhang, and Zhou Zhao. Chat-3d: Data-efficiently
+
+tuning large language model for universal dialogue of 3d scenes. arXiv preprint arXiv:2308.08769, 2023. 1, 3   
+[53] Diankun Wu, Fangfu Liu, Yi-Hsin Hung, and Yueqi Duan. Spatial-mllm: Boosting mllm capabilities in visual-based spatial intelligence. arXiv preprint arXiv:2505.23747, 2025. 1, 3   
+[54] Junfei Wu, Jian Guan, Kaituo Feng, Qiang Liu, Shu Wu, Liang Wang, Wei Wu, and Tieniu Tan. Reinforcing spatial reasoning in vision-language models with interwoven thinking and visual drawing. arXiv preprint arXiv:2506.09965, 2025. 1, 3, 15   
+[55] Junbin Xiao, Xindi Shang, Angela Yao, and Tat-Seng Chua. Next-qa: Next phase of question-answering to explaining temporal actions. In Proceedings of the IEEE/CVF conference on computer vision and pattern recognition, pages 9777–9786, 2021. 7   
+[56] Runsen Xu, Zhiwei Huang, Tai Wang, Yilun Chen, Jiangmiao Pang, and Dahua Lin. Vlm-grounder: A vlm agent for zero-shot 3d visual grounding. arXiv preprint arXiv:2410.13860, 2024. 3   
+[57] Runsen Xu, Weiyao Wang, Hao Tang, Xingyu Chen, Xiaodong Wang, Fu-Jen Chu, Dahua Lin, Matt Feiszli, and Kevin J Liang. Multi-spatialmllm: Multiframe spatial understanding with multi-modal large language models. arXiv preprint arXiv:2505.17015, 2025. 7   
+[58] Jianing Yang, Xuweiyi Chen, Shengyi Qian, Nikhil Madaan, Madhavan Iyengar, David F Fouhey, and Joyce Chai. Llm-grounder: Open-vocabulary 3d visual grounding with large language model as an agent. In 2024 IEEE International Conference on Robotics and Automation (ICRA), pages 7694–7701. IEEE, 2024. 3   
+[59] Jianing Yang, Xuweiyi Chen, Nikhil Madaan, Madhavan Iyengar, Shengyi Qian, David F Fouhey, and Joyce Chai. 3d-grand: A million-scale dataset for 3d-llms with better grounding and less hallucination. In Proceedings of the Computer Vision and Pattern Recognition Conference, pages 29501–29512, 2025. 3   
+[60] Jihan Yang, Shusheng Yang, Anjali W Gupta, Rilyn Han, Li Fei-Fei, and Saining Xie. Thinking in space: How multimodal large language models see, remember, and recall spaces. In Proceedings of the Computer Vision and Pattern Recognition Conference, pages 10632–10643, 2025. 1, 2, 3, 7, 15   
+[61] Sihan Yang, Runsen Xu, Yiman Xie, Sizhe Yang, Mo Li, Jingli Lin, Chenming Zhu, Xiaochen Chen, Haodong Duan, Xiangyu Yue, et al. Mmsi-bench: A benchmark for multi-image spatial intelligence. arXiv preprint arXiv:2505.23764, 2025. 1, 16   
+[62] Chun-Hsiao Yeh, Chenyu Wang, Shengbang Tong, Ta-Ying Cheng, Ruoyu Wang, Tianzhe Chu, Yuexiang Zhai, Yubei Chen, Shenghua Gao, and Yi
+
+Ma. Seeing from another perspective: Evaluating multi-view understanding in mllms. arXiv preprint arXiv:2504.15280, 2025. 2, 7   
+[63] Xiang Yue, Yuansheng Ni, Kai Zhang, Tianyu Zheng, Ruoqi Liu, Ge Zhang, Samuel Stevens, Dongfu Jiang, Weiming Ren, Yuxuan Sun, et al. Mmmu: A massive multi-discipline multimodal understanding and reasoning benchmark for expert agi. In Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition, pages 9556–9567, 2024. 1   
+[64] Jiahui Zhang, Yurui Chen, Yanpeng Zhou, Yueming Xu, Ze Huang, Jilin Mei, Junhui Chen, Yu-Jie Yuan, Xinyue Cai, Guowei Huang, et al. From flatland to space: Teaching vision-language models to perceive and reason in 3d. arXiv preprint arXiv:2503.22976, 2025. 1, 3, 7   
+[65] Yuanhan Zhang, Bo Li, haotian Liu, Yong jae Lee, Liangke Gui, Di Fu, Jiashi Feng, Ziwei Liu, and Chunyuan Li. Llava-next: A strong zero-shot video understanding model, 2024. 2, 6, 7, 14   
+[66] Yuanhan Zhang, Jinming Wu, Wei Li, Bo Li, Zejun Ma, Ziwei Liu, and Chunyuan Li. Video instruction tuning with synthetic data. arXiv preprint arXiv:2410.02713, 2024. 6   
+[67] Duo Zheng, Shijia Huang, Yanyang Li, and Liwei Wang. Learning from videos for 3d world: Enhancing mllms with 3d vision geometry priors. arXiv preprint arXiv:2505.24625, 2025. 1, 3, 7   
+[68] Chenming Zhu, Tai Wang, Wenwei Zhang, Jiangmiao Pang, and Xihui Liu. Llava-3d: A simple yet effective pathway to empowering lmms with 3d-awareness. arXiv preprint arXiv:2409.18125, 2024. 3   
+[69] Fangrui Zhu, Hanhui Wang, Yiming Xie, Jing Gu, Tianye Ding, Jianwei Yang, and Huaizu Jiang. Struct2d: A perception-guided framework for spatial reasoning in mllms. In The Thirty-ninth Annual Conference on Neural Information Processing Systems, 2025. 1, 3
+
+# Appendix
+
+# Overview
+
+In this supplementary material, we provide details on our geometric training data collection in Section $\mathrm { A } .$ . Next, we provide full implementation details, including the correspondence head architecture $( \mathcal { H } _ { c } )$ and all training hyperparameters, in Section B. Following this, we detail the evaluation protocol used to measure correspondence in both our model and the baselines in Section C. We then provide a quantitative analysis of the VSI-Bench dataset, exploring its inherent biases and the performance of SFT-trained models in Section D. We subsequently provide a brief theoretical overview of the gradient backpropagation from our geometric losses in Section E. Finally, we discuss the fundamental distinction between our learned geometric correspondence and standard rotary positional embeddings (RoPEs) in Section F.
+
+# A Training Dataset Collection
+
+We leverage the multi-view video sequences and depth maps from DL3DV [30] and follow the VGGT’s annotation recipe [49] to generate dense point correspondence annotations for training.
+
+For each scene, we use the provided camera intrinsics $K \in \mathbb { R } ^ { 3 \times 3 }$ and extrinsics $[ R | t ] \ \in \ \mathbb { R } ^ { 3 \times 4 }$ from COLMAP’s Structure-from-Motion reconstruction in DL3DV [30] and VGGT [49]. Given a query frame (frame 0) with depth map $\mathbf { \bar { \boldsymbol { D } } } _ { 0 } \in \mathbb { R } ^ { H \times \bar { \boldsymbol { W } } }$ , we backproject valid pixels to 3D world coordinates using ${ \bf p } _ { w } = { K } ^ { - 1 } D _ { 0 } ( u , v ) [ u , v , 1 ] ^ { T }$ , where $( u , v )$ denotes the pixel coordinate. These world points are then projected to subsequent frames using $\mathbf { p } _ { i } = K [ R _ { i } | t _ { i } ] \mathbf { p } _ { w }$ to establish correspondences. We validate each correspondence through depth consistency: a projected point is considered valid only if the depth difference satisfies $| D _ { p r o j } - D _ { m a p } | < 0 . 0 5 \times \operatorname* { m i n } ( D _ { p r o j } , D _ { m a p } )$ , where $D _ { p r o j }$ is the projected depth and $D _ { m a p }$ is the depth map value at the projected location. Also, we enforce a boundary margin of 4 pixels from image edges to avoid projection artifacts.
+
+To construct a balanced training signal, we sample both positive and negative correspondences. Positive tracks are sampled from validated 3D projections, prioritizing points that remain visible across multiple frames (at least 2 frames). We target $8 \times 8$ and $2 4 \times 2 4$ points per video frame and retain the top 50% of tracks ranked by visibility duration. Negative samples are generated by applying random spatial perturbations (within 50%).
+
+# B Additional Implementation Details
+
+Here, we provide the specific architectural and training details required for reproducibility.
+
+Correspondence Head (Hc) Architecture. The correspondence head $\mathcal { H } _ { c }$ is implemented as a 2-layer MLP consisting of a Linear layer that projects from hidden dimension $d _ { h }$ to $d _ { h } / 2$ , followed by GELU activation, and a second Linear layer projecting back to $d _ { h }$ . For our experiments, $d _ { h } = 3 5 8 4$ for Qwen2.5-VL-7B [3] and $d _ { h } = 4 0 9 6$ for LLaVA-NeXT-Video-7B [65]. The head is initialized using SVD decomposition of the query projection matrix $( \mathbf { W } _ { Q } )$ from the corresponding attention layer.
+
+Training Hyperparameters. We employ LoRA finetuning with rank $r = 5 1 2$ for LLaVA-NeXT-Video-7B and $r = 1 2 8$ for Qwen2.5-VL-7B, applied only to attention projection matrices $( W _ { Q } , W _ { K } , W _ { V } , W _ { O } )$ . The correspondence head is trained with full precision. We use cosine learning rate scheduling with 10% warmup over 3 epochs. For the loss function (Equation 9), we set the contrastive loss weight $\lambda _ { c } = 0 . 3$ and distance loss weight $\lambda _ { d } = 1 . 0$ .
+
+Joint Training Data Composition. Our joint training combines the DL3DV-derived 3D scene dataset (1.75M point correspondence annotations) with LLaVA-Video-178K (100K general video QA samples). This composition ensures the model maintains strong general video understanding capabilities while acquiring fine-grained spatial reasoning abilities.
+
+# C Correspondence Evaluation Protocol
+
+This section details the exact methodology used to compute correspondence accuracy (PCK) for both baseline models (LLaVA-NeXT-Video-7B, Qwen2.5- VL-7B) and our GASP models. For baseline models lacking explicit correspondence heads, we extract query states Q and key states K from each transformer layer during forward pass. Visual tokens are isolated by slicing the sequence from position $T _ { s }$ to $T _ { e }$ where $T _ { s }$ denotes the first visual token position and $T _ { e } = T _ { s } + N _ { f } \times N _ { p }$ with $N _ { f }$ being the number of frames and $N _ { p }$ the patches per frame. The extracted features are reshaped to $[ N _ { f } , N _ { p } , d _ { h } ]$ where $d _ { h }$ is the hidden dimension. For models employing Grouped-Query Attention (GQA), we average over attention heads to obtain $[ N _ { p } , \bar { d } ]$ where $\bar { d } = d _ { h } / n _ { h }$ . Given source frame features $\dot { Q } _ { 0 } \in \mathbb { R } ^ { N _ { p } \times \bar { d } }$ and target frame features $K _ { j } \in \mathbb { R } ^ { N _ { p } \times \bar { d } }$ for frame j, we compute the correspondence matrix using cosine similarity: $S = \mathrm { C o s i n e S i m } ( Q _ { 0 } , K _ { i } ^ { T } )$ , and the predicted target patch for source patch i is ${ \hat { p } } _ { i } = \arg \operatorname* { m a x } _ { j } S _ { i j }$ .
+
+Table 5 Analysis of VSI-Bench dataset bias. We compare the baseline models against themselves when provided with the dataset’s average object and room sizes as a textual "prior" in the prompt. Deltas for VLM-3R are shown relative to the LLaVA-NeXT-Video Baseline (7B&72B). 
+
+<table><tr><td>Task</td><td>Metric</td><td>Baseline (7B)</td><td>Baseline (7B) + Avg. Prior</td><td>Baseline (72B)</td><td>Baseline (72B) + Avg. Prior</td><td>VLM-3R</td></tr><tr><td>Object Size Estimation</td><td>MRA@.5:.95:.05</td><td>0.47</td><td> $0.64 (\Delta +0.17)$ </td><td>0.57</td><td> $0.65 (\Delta +0.08)$ </td><td> $0.69 (\Delta +0.22)$ </td></tr><tr><td>Room Size Estimation</td><td>MRA@.5:.95:.05</td><td>0.24</td><td> $0.38 (\Delta +0.14)$ </td><td>0.36</td><td> $0.46 (\Delta +0.10)$ </td><td> $0.67 (\Delta +0.43)$ </td></tr><tr><td>Object Abs Distance</td><td>MRA@.5:.95:.05</td><td>0.14</td><td> $0.61 (\Delta +0.47)$ </td><td>0.23</td><td> $0.57 (\Delta +0.34)$ </td><td> $0.49 (\Delta +0.36)$ </td></tr></table>
+
+We convert both ground-truth and predicted patch indices to 2D grid coordinates and compute the Euclidean distance $d = \| ( r _ { g t } , c _ { g t } ) - ( r _ { p r e d } , c _ { p r e d } ) \|$ 2 in patch space. We separately compute confidence on correct predictions $( d < 2 )$ versus incorrect predictions to obtain the calibration gap, which measures whether the model exhibits awareness of its prediction quality.
+
+# D Analysis of VSI-Bench Dataset Bias
+
+A potential criticism of high performance on benchmarks like VSI-Bench is that models may "hack" the benchmark by learning superficial dataset-specific biases (e.g., "all microwaves are 0.5m wide") rather than performing genuine 3D reasoning.
+
+Bias Hacking Experiment. To investigate the extent to which VSI-Bench scores can be "hacked" by exploiting dataset-level biases, we conducted an experiment using a text-based prior. We first quantified these biases by extracting the object and room sizes from the VSI-bench QAs and averaging them. This yielded a dictionary of average object sizes (e.g., ’sofa’: 181.30, ’bed’: 216.06) and an average room size of 20.5 square meters.
+
+Instead of a "bias-only" model, we provided these averaged values directly to the baseline VLMs as part of the input prompt, e.g., “The average room size is 20.5 square meters. Use this information to guide your estimate.” As shown in Table 5, this simple textual prior dramatically boosts performance. For example, the LLaVA-NeXT-Video-7B baseline’s "Object Abs Distance" score skyrockets from 0.14 to 0.61 (+0.47), and the LLaVA-NeXT-Video-72B model’s score jumps from 0.23 to 0.57 (+0.34). Notably, on this task, the baseline models with this simple prior (0.61 and 0.57) both significantly outperform the SFT-trained VLM-3R (0.49). This finding indicates that a significant portion of the benchmark’s challenge can be solved by exploiting these easily-averaged dataset statistics, rather than relying solely on complex, visual-based spatial reasoning.
+
+Our observation mirrors the recent findings [5] where they demonstrated that VSI-Bench contains pervasive non-visual shortcuts that allow models to bypass genuine visual reasoning. Their diagnostic “Test-set Stress-Test” revealed that statistical regularities in the answer distribution enable high performance even without visual input, a vulnerability our experiment empirically validates by explicitly exploiting these statistical priors.
+
+![](images/cbcc8822f5e7a7dbbf6f30facb3a8312d4de26d743432bf404a52b35b9165c0b.jpg)
+
+<details>
+<summary>heatmap</summary>
+
+| Method | MMSI-Bench | SPAR-Bench | VGI-Bench | STI-Bench | SpaceVista |
+| :--- | :--- | :--- | :--- | :--- | :--- |
+| SpaceR-7B | -5.6 | 4.5 | 14.2 | 4.9 | -7.7 |
+| VILASR-7B | -1.5 | 4.5 | 12.7 | -0.6 | -5.3 |
+| SpatialMLLM-4B | -3.7 | 7.4 | 4.0 | -2.6 | -6.8 |
+| VG LLM-4B | -2.3 | 1.6 | 1.7 | -3.8 | -2.2 |
+</details>
+
+Figure 4 Generalization Gap in 3D-VQA Fine-Tuning. We illustrate the performance change (∆%) of specialized spatial VLMs relative to their underlying pre-trained backbones across five distinct spatial benchmarks. While fine-tuning yields significant improvements on specific datasets (e.g., VSI-Bench, highlighted in red), it consistently leads to performance degradation (blue cells) on out-of-distribution benchmarks like MMSI-Bench and SpaceVista. This performance profile suggests that standard SFT strategies suffer from severe overfitting to dataset-specific biases, whereas genuine spatial understanding should generalize across domains.
+
+Generalization Analysis of 3D-VQA Models. To empirically validate the generalization limitations of standard 3D-VQA fine-tuning, we conduct a crossdataset performance analysis in Figure 4. We report the relative performance change (∆%) of state-ofthe-art spatial VLMs compared to their respective pre-trained base models (e.g., Qwen2.5-VL). A clear pattern of task-specific overfitting emerges: models like SpaceR-7B [37] and VILASR-7B [54] achieve substantial gains on VSI-Bench [60] (+14.2% and +12.7%), likely due to high similarity between their training mixtures and this specific benchmark.
+
+However, this comes at the cost of negative transfer on other spatial benchmarks. Notably, performance degrades significantly on MMSI-Bench [61], STI-Bench [29], and SpaceVista [44] (dropping by as much as -7.7%), indicating that these models are memorizing dataset-specific distributions rather than acquiring robust, generalized spatial reasoning. This stark contrast underscores the necessity of our GASP approach, which injects fundamental geometric priors to avoid such brittle memorization.
+
+# E Analysis of Gradient Backpropagation
+
+The total loss for our framework is $\mathcal { L } _ { t o t a l } = \mathcal { L } _ { L M } +$ $\lambda _ { c } \mathcal { L } _ { c o r r } + \lambda _ { d } \mathcal { L } _ { d e p t h }$ . The key to our method is how the geometric-aware gradients from $\mathcal { L } _ { c o r r }$ and $\mathcal { L } _ { d e p t h }$ backpropagate through the correspondence head to update the backbone’s parameters, specifically the Query (Q) and Key (K) projectors within the transformer layers.
+
+Formally, let $\theta ^ { ( l ) } = \{ W _ { Q } ^ { ( l ) } , W _ { K } ^ { ( l ) } , W _ { V } ^ { ( l ) } \}$ denote the transformer layer l. The visual tokens $V ^ { ( l ) }$ output by this layer serve as the input to our lightweight correspondence head $\mathcal { H } _ { c }$ . The gradient of the total loss with respect to the backbone weights $\theta ^ { ( l ) }$ can be decomposed as:
+
+$$
+\frac {\partial \mathcal {L} _ {\text { total }}}{\partial \theta^ {(l)}} = \underbrace {\frac {\partial \mathcal {L} _ {L M}}{\partial \theta^ {(l)}}} _ {\text { Language   Modeling }} + \underbrace {\lambda_ {c} \frac {\partial \mathcal {L} _ {\text { corr }}}{\partial \theta^ {(l)}} + \lambda_ {d} \frac {\partial \mathcal {L} _ {\text { depth }}}{\partial \theta^ {(l)}}} _ {\text { Geometric   Supervision }} \tag {14}
+$$
+
+We focus on the geometric term. Since the correspondence embeddings are defined as $E = \mathcal { H } _ { c } ( V ^ { ( l ) } )$ (Equation 4), the gradients flow via the chain rule:
+
+$$
+\frac {\partial \mathcal {L} _ {c o r r}}{\partial \theta^ {(l)}} = \frac {\partial \mathcal {L} _ {c o r r}}{\partial E} \cdot \frac {\partial \mathcal {H} _ {c} (V ^ {(l)})}{\partial V ^ {(l)}} \cdot \frac {\partial V ^ {(l)}}{\partial \theta^ {(l)}} \tag {15}
+$$
+
+The term ∂V (l) $\frac { \partial V ^ { ( l ) } } { \partial \theta ^ { ( l ) } }$ acts as a Gradient Bridge. Recall that self-attention is defined as $\begin{array} { r } { Z = \mathrm { S o f t m a x } ( \frac { Q K ^ { T } } { \sqrt { d _ { k } } } ) V = } \end{array}$ QKT√ A · V , where Q = X (l−1)W (l)Q $A \cdot V$ $Q = X ^ { ( l - 1 ) } W _ { Q } ^ { ( l ) } , K = X ^ { ( l - 1 ) } W _ { K } ^ { ( l ) }$ , K = X (l−1)W (l), $V ~ = ~ X ^ { ( l - 1 ) } W _ { V } ^ { ( l ) }$ , and $\begin{array} { r } { A \ = \ \mathrm { S o f t m a x } ( \frac { Q K ^ { T } } { \sqrt { d _ { k } } } ) } \end{array}$ QKT√ The output visual tokens are $V ^ { ( l ) } = Z + X ^ { ( l - 1 ) }$ . Applying the chain rule through the attention mechanism:
+
+$$
+\frac {\partial V ^ {(l)}}{\partial W _ {Q} ^ {(l)}} = \frac {\partial (A \cdot V)}{\partial A} \cdot \frac {\partial A}{\partial (Q K ^ {T})} \cdot \frac {\partial (Q K ^ {T})}{\partial Q} \cdot \frac {\partial Q}{\partial W _ {Q} ^ {(l)}} \tag {16}
+$$
+
+The key components are: $\begin{array} { r c l } { { \frac { \partial Q } { \partial W _ { Q } ^ { ( l ) } } } } & { { = } } & { { ( X ^ { ( l - 1 ) } ) ^ { T } } } \end{array}$ , $\begin{array} { l l l } { { { \frac { \partial ( Q K ^ { T } ) } { \partial Q } } } } & { { = } } & { { K } } \end{array}$ , the softmax Jacobian ∂Aij $\begin{array} { r l } { \frac { \partial A _ { i j } } { \partial S _ { k l } } } & { { } = } \end{array}$ ∂Skl
+
+Aij(δikδjl − Ail) where S = QKT√ , $A _ { i j } ( \delta _ { i k } \delta _ { j l } - A _ { i l } )$ $\begin{array} { r } { S = \frac { Q K ^ { T } } { \sqrt { d _ { k } } } } \end{array}$ and $\frac { \partial ( A \cdot V ) } { \partial A } = V ^ { T }$ ∂A Combining these, the gradient with respect to $W _ { Q } ^ { ( l ) }$ becomes:
+
+$$
+\frac {\partial \mathcal {L} _ {c o r r}}{\partial W _ {Q} ^ {(l)}} = (X ^ {(l - 1)}) ^ {T} \cdot \left[ \frac {1}{\sqrt {d _ {k}}} K \cdot \nabla_ {A} ^ {\text {softmax}} \cdot V \cdot \frac {\partial \mathcal {L} _ {c o r r}}{\partial V ^ {(l)}} \right] \tag {17}
+$$
+
+where $\nabla _ { A } ^ { \mathrm { s o f t m a x } } = \mathrm { d i a g } ( A ) ( I - { \bf 1 } A )$ is the softmax gradient term. Similarly, for W (l)K : $W _ { K } ^ { ( l ) }$
+
+$$
+\frac {\partial \mathcal {L} _ {c o r r}}{\partial W _ {K} ^ {(l)}} = (X ^ {(l - 1)}) ^ {T} \cdot \left[ \frac {1}{\sqrt {d _ {k}}} Q ^ {T} \cdot \nabla_ {A} ^ {\text { softmax }} \cdot V \cdot \frac {\partial \mathcal {L} _ {c o r r}}{\partial V ^ {(l)}} \right] \tag {18}
+$$
+
+Geometric Gradient Structure. The correspondence loss $\mathcal { L } _ { c o r r }$ is a contrastive objective over correspondence embeddings. For frames $\left( I _ { t } , I _ { t ^ { \prime } } \right)$ with matched points $( p _ { i } , p _ { j } )$ and embeddings $( e _ { i } , e _ { j } )$ :
+
+$$
+\mathcal {L} _ {\text { corr }} = - \log \frac {\exp (\text { sim } (e _ {i} , e _ {j}) / \tau)}{\sum_ {k \in \mathcal {N}} \exp (\text { sim } (e _ {i} , e _ {k}) / \tau)} \tag {19}
+$$
+
+where $\mathcal { N }$ includes positive and negative samples. The derivative is:
+
+$$
+\frac {\partial \mathcal {L} _ {\text { corr }}}{\partial e _ {i}} = \frac {1}{\tau} \left[ \sum_ {k \in \mathcal {N}} p _ {k} \cdot \frac {\partial \operatorname{sim} (e _ {i} , e _ {k})}{\partial e _ {i}} - \frac {\partial \operatorname{sim} (e _ {i} , e _ {j})}{\partial e _ {i}} \right] \tag {20}
+$$
+
+where $\begin{array} { r } { p _ { k } = \frac { \exp ( \sin ( e _ { i } , e _ { k } ) / \tau ) } { \sum _ { l } \exp ( \sin ( e _ { i } , e _ { l } ) / \tau ) } } \end{array}$ . This gradient pushes $e _ { i }$ towards its correspondence $e _ { j }$ while pulling away from negatives, creating view-invariance. Crucially, backpropagating through $\mathcal { H } _ { c }$ :
+
+$$
+\frac {\partial \mathcal {L} _ {c o r r}}{\partial V ^ {(l)}} = \left(\frac {\partial \mathcal {H} _ {c}}{\partial V ^ {(l)}}\right) ^ {T} \cdot \frac {\partial \mathcal {L} _ {c o r r}}{\partial E} \tag {21}
+$$
+
+produces a spatially localized gradient that differs fundamentally from the dense semantic gradient $\frac { \partial \mathcal { L } _ { L M } } { \partial V ^ { ( l ) } }$ . This teaches the attention mechanism to distinguish tokens by 3D spatial positions, not just semantic categories.
+
+Impact on Query-Key Similarity. The similarity between tokens i and j is:
+
+$$
+S _ {i j} = \frac {q _ {i} ^ {T} k _ {j}}{\sqrt {d _ {k}}} = \frac {x _ {i} ^ {T} W _ {Q} ^ {T} W _ {K} x _ {j}}{\sqrt {d _ {k}}} \tag {22}
+$$
+
+The gradient update due to $\mathcal { L } _ { c o r r }$ is:
+
+$$
+\Delta S _ {i j} = - \eta \lambda_ {c} \frac {\partial \mathcal {L} _ {c o r r}}{\partial S _ {i j}} = - \eta \lambda_ {c} \left[ \frac {\partial \mathcal {L} _ {c o r r}}{\partial V ^ {(l)}} \cdot \frac {\partial V ^ {(l)}}{\partial A} \cdot \frac {\partial A}{\partial S _ {i j}} \right] \tag {23}
+$$
+
+where η is the learning rate. This update increases $S _ { i j }$ for spatially corresponding tokens and decreases it for geometrically distinct tokens, even if semantically similar. Over training, the projector product $W _ { Q } ^ { T } W _ { K }$ learns to encode geometric correspondence:
+
+$$
+W _ {Q} ^ {T, (l)} W _ {K} ^ {(l)} \approx M _ {\mathrm{geo}} + M _ {\mathrm{sem}} \tag {24}
+$$
+
+where $M _ { \mathrm { g e o } }$ encodes geometric alignment (high values for corresponding 3D locations) and $M _ { \mathrm { s e m } }$ encodes semantic similarity (from $\mathcal { L } _ { L M } )$ . The geometric term emerges from the accumulated gradients:
+
+$$
+M _ {\mathrm{geo}} = \sum_ {t = 1} ^ {T} \eta \lambda_ {c} \left[ \frac {\partial \mathcal {L} _ {c o r r}}{\partial W _ {Q} ^ {(l)}} \right] ^ {T} \left[ \frac {\partial \mathcal {L} _ {c o r r}}{\partial W _ {K} ^ {(l)}} \right] \tag {25}
+$$
+
+Depth Consistency Regularization. The depth loss $\begin{array} { r c l } { \mathcal { L } _ { d e p t h } } & { = } & { \sum _ { i , j } A _ { i j } \ \cdot \ \mathcal { D } ( d _ { i } , d _ { j } ) } \end{array}$ penalizes depthinconsistent matches, where $\mathcal { D } ( \cdot , \cdot )$ measures depth discrepancy. The gradient is:
+
+$$
+\frac {\partial \mathcal {L} _ {d e p t h}}{\partial A _ {i j}} = \mathcal {D} (d _ {i}, d _ {j}) \tag {26}
+$$
+
+Backpropagating through softmax:
+
+$$
+\frac {\partial \mathcal {L} _ {d e p t h}}{\partial S _ {i j}} = \mathcal {D} (d _ {i}, d _ {j}) \cdot A _ {i j} (1 - A _ {i j}) \tag {27}
+$$
+
+The term $A _ { i j } ( 1 - A _ { i j } )$ amplifies gradients for midconfidence predictions $( A _ { i j } ~ \approx ~ 0 . 5 )$ , teaching the model to suppress geometrically invalid matches. This creates depth-aware projectors:
+
+$$
+\frac {\partial \mathcal {L} _ {\text { depth }}}{\partial W _ {Q} ^ {(l)}} = (X ^ {(l - 1)}) ^ {T} \cdot \left[ \frac {1}{\sqrt {d _ {k}}} K \cdot \operatorname{diag} (\mathcal {D}) \cdot \nabla_ {A} ^ {\text { softmax }} \cdot V \right] \tag {28}
+$$
+
+where diag(D) is a diagonal matrix of depth discrepancies. This modulates the attention mechanism to respect 3D boundaries, effectively learning:
+
+$$
+S _ {i j} ^ {\text { effective }} = \frac {x _ {i} ^ {T} W _ {Q} ^ {T} W _ {K} x _ {j}}{\sqrt {d _ {k}}} - \lambda_ {d} \cdot \mathcal {D} (d _ {i}, d _ {j}) + \text { noise } \tag {29}
+$$
+
+where the depth penalty is implicitly encoded in $W _ { Q } ^ { T } W _ { K }$ .
+
+QK Enhancement Mechanism. The correspondence head creates two synergistic effects. First, Geometric Subspace Alignment: the gradient update
+
+$$
+W _ {Q} ^ {(l)} \leftarrow W _ {Q} ^ {(l)} - \eta \lambda_ {c} \frac {\partial \mathcal {L} _ {c o r r}}{\partial W _ {Q} ^ {(l)}} \tag {30}
+$$
+
+incorporates K ·∇softmaxA ·V · ∂Lcorr∂V (l) ( $\begin{array} { r } { K \cdot \nabla _ { A } ^ { \mathrm { s o f t m a x } } \cdot V \cdot \frac { \partial \mathcal { L } _ { c o r r } } { \partial V ^ { ( l ) } } } \end{array}$ from Equation 4), which couples the current Key representations with geometric error signals. Over iterations, $W _ { Q }$ and $W _ { K }$ co-evolve:
+
+$$
+\langle W _ {Q} ^ {(l)} x _ {i}, W _ {K} ^ {(l)} x _ {j} \rangle \rightarrow \max \quad \text { if } (x _ {i}, x _ {j}) \text { corresponds } \tag {31}
+$$
+
+Second, Depth-Aware Pruning: the depth gradient (Equation 27) forces attention weights to respect 3D structure. The combined effect yields learned attention weights:
+
+$$
+A _ {i j} ^ {\text { learned }} = \operatorname{Softmax} \left(\frac {x _ {i} ^ {T} W _ {Q} ^ {T} W _ {K} x _ {j}}{\sqrt {d _ {k}}}\right) \tag {32}
+$$
+
+that are high for geometrically corresponding and depth-consistent token pairs, and low otherwise. Consequently, although $\mathcal { H } _ { c }$ is discarded at inference, these geometric priors are permanently baked into $\theta ^ { ( l ) }$ . The learned projectors $\bar { W } _ { Q } ^ { ( l ) }$ and $W _ { K } ^ { ( l ) }$ encode: (1) spatial correspondence, where tokens at corresponding 3D locations produce high $S _ { i j } ;$ (2) view invariance, where the QK space is invariant to perspective/lighting changes; (3) depth awareness, where attention respects 3D scene structure. This enables the standard VLM to perform robust spatial reasoning without auxiliary inputs, as the attention mechanism itself has been geometrically restructured. The correspondence head guides the backbone to internalize 3D-aware attention patterns.
+
+# F Relation to Positional Embeddings
+
+Rotary Positional Embeddings. Standard Vision Transformers (ViTs) and VLMs utilize Positional Embeddings (PEs), such as absolute learnable embeddings [10] or Rotary Positional Embeddings (RoPE) [42], to inject grid location information into the sequence. Similarly, Video Transformers often extend this to 3D-RoPEs [2, 4] by adding a temporal or depth dimension. However, these RoPEs provide only static coordinate information (e.g., "this token is at location $( x , y ) " )$ . They do not encode visual correspondence or object permanence. As evidenced in our main paper (Figure 3), the baseline models (Qwen2.5-VL and LLaVA-NeXT), which are already equipped with advanced RoPE, achieve near-zero correspondence accuracy. This empirically demonstrates that providing coordinate information via RoPE is insufficient for the model to learn that an object at location $( x _ { 1 } , y _ { 1 } )$ in Frame t is the same entity as the one at $( x _ { 2 } , y _ { 2 } )$ in Frame t + 1.
+
+Our GASP: From Coordinates to Correspondence. In contrast to RoPE, which is an input-level signal, GASP operates on the interaction mechanism $( Q K ^ { T } )$ ) of the model.
+
+• Content-Aware vs. Location-Aware: RoPE is content-agnostic; it is identical for a blank wall or a complex face. GASP, supervised by our contrastive loss $\mathcal { L } _ { c o r r }$ , forces the visual features to be content-aware. It ensures that the query representation of an object matches its key representation in another view, regardless of their disparate positional encodings.   
+• Implicit 3D Consistency vs. Explicit 3D Input: While approaches like 3D-RoPE require explicit 3D inputs (e.g., depth maps or point clouds) to encode geometry, GASP internalizes 3D consistency into the 2D weights of the LLM. By training with $\mathcal { L } _ { d e p t h }$ , our model learns to implicitly respect 3D boundaries (e.g., occlusion) using only 2D RGB inputs during inference.
+
+Therefore, GASP does not replace RoPE but complements it: RoPE provides the "where" within the image grid, while GASP teaches the "what" and "which" across the spatio-temporal manifold.

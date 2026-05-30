@@ -1,0 +1,525 @@
+# Improving CLIP Adaptation by Breaking Tail Alignment for Source-Free Cross-Domain Few-Shot Learning
+
+Shuai Yi 1 2 Yixiong ZouB 2 Yuhua LiB 2 Ruixuan LiB 2
+
+# Abstract
+
+Vision-Language Models (VLMs) such as CLIP demonstrate strong zero-shot generalization, but their performance significantly degrades in crossdomain scenarios with scarce target-domain training data (Cross-Domain Few-Shot Learning, CDFSL). In this paper, we focus on the targetdomain few-shot finetuning in the CLIP-based CDFSL task. Prevailing finetuning paradigms uniformly align all image patch tokens with their corresponding textual embeddings. However, we find a counterintuitive phenomenon: actively pushing away certain low-similarity image tokens, termed “tail tokens”, from their textual embeddings consistently improves target-domain performance. We delve into this phenomenon and provide a novel interpretation: under great domain shifts and scarce training data, the model can hardly extract semantic information from visual inputs; therefore, the common belief of alignment is valid only for tokens already containing sufficient semantic information; for tail tokens, forcing the alignment would lead to excessive overfitting to the scarce training, while breaking the alignment is more useful. Motivated by this, we propose Adaptive Tail-Head Alignment (ATHA), a novel fine-tuning strategy for CLIP that transforms the conventional uniform alignment paradigm to an adaptive alignment paradigm, with both alignment strengthening and weakening. Extensive experiments on four challenging CDFSL benchmarks validate our state-of-the-art performance. Our code is available at https://github.com/shuaiyi308/ATHA.
+
+1Institute of Artificial Intelligence, Huazhong University of Science and Technology, Wuhan, China 2School of Computer Science and Technology, Huazhong University of Science and Technology, Wuhan, China. Correspondence to: Yixiong Zou <yixiongz@hust.edu.cn>, Yuhua Li <idcliyuhua@hust.edu.cn>, Ruixuan Li <rxli@hust.edu.cn>.
+
+Proceedings of the $\it 4 3 ^ { r d }$ International Conference on Machine Learning, Seoul, South Korea. PMLR 306, 2026. Copyright 2026 by the author(s).
+
+![](images/af5804b897f8e8a1c67ca2b41bfd17ee2908cb0bf20bcf32012e5d4b27e96754.jpg)
+
+<details>
+<summary>flowchart</summary>
+
+```mermaid
+graph TD
+    A["Texts"] --> B["Selected Mechanism"]
+    B --> C["Tail tokens"]
+    D["Image"] --> B
+    E["Enlarge distance (break alignment)"] --> C
+```
+</details>
+
+(a)
+
+![](images/4898d139365c4c8949e8fcda80e6acb2f117dd73b92c7269305ade53744bcc6b.jpg)
+
+<details>
+<summary>bar</summary>
+
+| Category | Finetuned model | Push-away tail |
+| :--- | :--- | :--- |
+| CropDiseases | 0.96 | 0.98 |
+| EuroSAT | 0.91 | 0.94 |
+| ISIC | 0.50 | 0.52 |
+| ChestX | 0.23 | 0.27 |
+| Ave. | 0.65 | 0.68 |
+</details>
+
+(b)   
+Figure 1. The Counterintuitive Efficacy of Pushing Away Tail Tokens. (a) We identify tokens with the lowest semantic similarity to any class text (Tail Tokens) and increase their distance during target-domain few-shot finetuning. (b) We find that this operation consistently improves target-domain performance, contradicting the prevailing paradigm of vision-text alignment and validating our insight: in cross-domain adaptation, selective repulsion of harmful alignment is as crucial as strengthening useful ones.
+
+# 1. Introduction
+
+Vision-Language Models (VLMs) such as CLIP achieve remarkable zero-shot generalization by learning semantically aligned image-text representations through contrastive pretraining (Radford et al., 2021; Zhao et al., 2023). To adapt these models to downstream tasks, a prevalent paradigm is to strengthen the alignment between visual tokens (e.g., image patches) and their corresponding textual concepts during finetuning, where generally better alignment improves taskspecific representation (Xu et al., 2024a). This paradigm is also widely applied in Cross-Domain Few-Shot Learning (CDFSL) (Xu et al., 2024b), where the goal is to adapt the source-domain model to target domains with large domain shifts through only a few target-domain training samples.
+
+In this paper, we focus on the target-domain finetuning of the CLIP-based CDFSL task (Yi et al., 2025b), and find a counterintuitive phenomenon that challenges this prevailing alignment view: during target-domain few-shot fine-tuning, actively pushing away low-similarity image tokens from texts can consistently improve target-domain performance. As illustrated in Fig. 1a, our operation begins by identifying “Tail Tokens”, patches with the lowest semantic relevance to any target class, and is followed by subtracting text embeddings from less similar tail tokens, which serves as an effective way to reduce vision-text similarities. This operation leads to consistent performance gains across diverse target domains, surpassing standard fine-tuning (Fig. 1b). In other words, we find that explicitly breaking the alignment between tail tokens and text embeddings is beneficial, contrary to the common belief of alignment-oriented finetuning.
+
+We then delve into this phenomenon for an interpretation. Through extensive analysis, we find that during the targetdomain finetuning, forcing tail tokens to align with textual embeddings amplifies the overfitting to target-domain training data, represented as absorbing excessive training-dataspecific information and therefore reducing the similarity between source and target domains. Conversely, by strengthening the alignment of head tokens (patches with the highest semantic relevance to target classes), the overfitting is effectively reduced, leading to higher performance. This demonstrates that under great domain shifts and scarce training data, the model can hardly extract semantic information from visual inputs; therefore, if we simply force tokens with scarce semantic information (tail tokens) for alignment, the model cannot learn to align them in a rational way, but can only memorize them, leading to overfitting. In this case, breaking the alignment can conversely help the learning. In other words, for the target-domain finetuning in CDFSL, the common belief of alignment is valid only for tokens already containing sufficient semantic information (head tokens); for tail tokens, breaking the alignment is more useful.
+
+Based on this insight, we propose Adaptive Tail-Head Alignment (ATHA), a novel fine-tuning strategy for CLIP that transforms the conventional uniform alignment paradigm to an adaptive alignment paradigm. At its core, ATHA implements an adaptive alignment policy for tokens and layers: during forward propagation in every ViT block, it dynamically identifies and asymmetrically modulates visual tokens based on their semantic relevance to target classes. Specifically, head tokens are pulled closer to their corresponding text embeddings via layer-wise learnable addition of text embeddings, while tail tokens are pushed away from text embeddings by learnable subtraction of text embeddings. Extensive experiments on four challenging CDFSL benchmarks validate the efficacy of our approach.
+
+Our contributions are summarized as follows:
+
+• We identify and analyze a counterintuitive phenomenon in target-domain finetuning of CDFSL: actively pushing away certain image tokens from text embeddings improves target-domain performance, challenging the prevailing uniform alignment paradigm.   
+• We provide a novel interpretation, showing that for the target-domain finetuning in CDFSL, the common belief of alignment is valid only for tokens already containing sufficient semantic information (head tokens); for tail tokens, breaking the alignment is more useful.   
+• We propose a simple yet effective token- and layeradaptive alignment method that dynamically strengthens or suppresses token alignment via learnable scaling parameters to control adding or subtracting text embedding for effective manipulation of alignment.   
+• Extensive experiments validate our state-of-the-art performance across multiple benchmarks.
+
+# 2. Related Work
+
+Cross-Domain Few-Shot Learning (CDFSL) addresses the challenging scenario where models must rapidly adapt to novel target domains with only a handful of labeled examples (Tseng et al., 2020; Li et al., 2022). Existing approaches generally follow two paradigms: meta-learning methods (Fu et al., 2022; Hu & Ma, 2022) that train models through episodic tasks to acquire fast adaptation capabilities, and transfer learning methods (Zhou et al., 2023; Yi et al., 2025b) that enhance generalization during source pre-training. A particularly practical but difficult extension, Source-Free CDFSL (SF-CDFSL) (Xu et al., 2024b), prohibits access to source domain data during adaptation, placing exclusive emphasis on target-domain fine-tuning strategies. Recent studies have explored various fine-tuning approaches for vision-language models like CLIP in this setting (Zanella & Ben Ayed, 2024; Xu et al., 2024a; Yi et al., 2026), but typically follow the intuition that all image patches should be aligned with textual descriptions to bridge domain gaps. In contrast, we discover a counterintuitive phenomenon where actively pushing-away certain patches significantly improves performance, challenging this prevailing paradigm.
+
+Cross-modal alignment, which seeks to establish dense correspondences between local visual tokens and linguistic concepts, has become a pivotal direction for enhancing vision-language models. Representative works pursue this through various mechanisms: SPARse Fine-grained Contrastive Alignment (SPARC)(Bica et al., 2024) computes language-grouped vision embeddings as the weighted average of patches and obtains local alignment through a fine-grained sequence-wise loss; Patch Aligned Contrastive Learning (PACL)(Mukhoti et al., 2023) advances openvocabulary segmentation by aligning image patches with category embeddings via contrastive learning; and Contrastive Localized Pre-Training strengthens local correspondence through region-aware contrastive objectives (Chen et al., 2024). A fundamental premise across these methods is that comprehensive alignment of all relevant tokens universally improves representation. However, in CDFSL, this premise is critically challenged due to huge domain shift and scarce datasets. We find a novel phenomenon ignored by previous works: breaking the alignment of certain tokens leads to consistent performance gains in CDFSL, and propose a novel adaptive alignment method to deal with CDFSL problems.
+
+# 3. Why Breaking Tail Alignment Helps
+
+# 3.1. Preliminaries
+
+Source-Free Cross-Domain Few-Shot Learning: In this work, we focus on the target-domain finetuning of the cross-domain few-shot learning (CDFSL) task (source-free CDFSL)(Yazdanpanah & Moradi, 2022; Xu et al., 2024a). This task is defined over a target domain dataset $\mathcal { D } _ { T }$ . For finetuning and evaluation, we adopt the episodic paradigm: an episode E is constructed by first sampling N classes from $\mathcal { D } _ { T }$ , then drawing K labeled images per class to form the support set S, and sampling a disjoint set of M images from the same N classes to form the query set Q. This forms an N -way K-shot classification task(Oh et al., 2022; Li et al., 2022). The goal is to rapidly adapt a model using only the few labeled examples in $s$ and then predict the labels for samples in Q. Crucially, in the source-free setting(Xu et al., 2024b), no data from the pretraining (source) domain is accessible during this adaptation phase; the model must rely solely on its pretrained parameters (e.g., a CLIP model) and the few-shot support set S from the novel target domain.
+
+Token Alignment in CLIP Finetuning: For classification, a prompt template (e.g., “a photo of a class”) is used to generate textual descriptions for each class(Zhao et al., 2023). Let $\mathbf { r } _ { k }$ be the tokenized prompt for class k, the text encoder produces its embedding $\mathbf { t } _ { k } = F _ { t } ( \mathbf { r } _ { k } )$ . Similarly, each image $\mathbf { x } _ { i }$ is processed by the visual encoder $F _ { \imath }$ to obtain the normalized visual embedding $\mathbf { f } _ { i } = F _ { v } ( \mathbf { x } _ { i } )$ . The cross-entropy loss for the task defined over the image-text similarity scores is:
+
+$$
+\mathcal {L} _ {\text { cross }} = - \frac {1}{N} \sum_ {i} \log \frac {\exp (\text { sim } (\mathbf {f} _ {i} , \mathbf {t} _ {i}) / \tau)}{\sum_ {j} \exp (\text { sim } (\mathbf {f} _ {i} , \mathbf {t} _ {j}) / \tau)}, \tag {1}
+$$
+
+where sim $\begin{array} { r } { ( \mathbf { f } _ { i } , \mathbf { t } _ { j } ) = \frac { \mathbf { f } _ { i } ^ { \intercal } \mathbf { t } _ { j } } { | \mathbf { f } _ { i } | | \mathbf { t } _ { j } | } } \end{array}$ denotes cosine similarity and $\tau$ is the temperature coefficient.
+
+Pushing Away Patch Tokens in Vision Transformer: In CLIP’s Vision Transformer, an input image $\mathbf { x } \in \mathbb { R } ^ { H \times W \times 3 }$ is divided into L non-overlapping patches, each projected to a D-dimensional token. After adding the [CLS] token and positional embeddings, we obtain the initial visual token sequence $\mathbf { V } ^ { ( 0 ) } \in \overline { { \mathbb { R } } } ^ { ( L + 1 ) \times D }$ . Through $N _ { l }$ transformer layers, these tokens are transformed as $\begin{array} { r l } { \mathbf { V } ^ { ( l ) } } & { { } = } \end{array}$ TransformerBlock $\mathbf { \Xi } ^ { ( l ) } ( \mathbf { V } ^ { ( l - 1 ) } )$ , where $l \in [ 1 , N _ { l } ]$ . The final [CLS] token ${ \mathbf { v } } _ { \mathrm { C L S } } ^ { ( N _ { l } ) }$ is used for classification. During fine-tuning, a common practice is to align each patch token with textual embeddings, but we reveal this uniform alignment strategy is suboptimal under large domain gaps.
+
+Specifically, our pushing-away operation is conducted by
+
+$$
+v _ {t} ^ {\prime} = v _ {t} - \beta \cdot t, \tag {2}
+$$
+
+where $\beta$ is a hyperparameter, t is the closest class names to the tail token $v _ { t }$ . Since $\boldsymbol { v } _ { t } ^ { \prime } \cdot t = ( \boldsymbol { v } _ { t } - \boldsymbol { \beta } \cdot t ) \cdot t = \boldsymbol { v } _ { t } \cdot t - \boldsymbol { \beta }$ · $t ^ { 2 } < v _ { t } \cdot t$ , the vision-text similarity effectively decreases, breaking the tail token alignment1.
+
+# 3.2. How Pushing Away Tail Tokens Affects the Model
+
+In Fig. 1, our empirical finding demonstrates that actively repelling low-similarity tail tokens from text embeddings yields consistent gains in target-domain finetuning. To understand this phenomenon, we study the distribution of token-wise similarities by plotting the cosine similarity between each visual token (image patch) and its most relevant class text embedding on target-domain images.
+
+To this end, we systematically compare the vision-text similarity distributions across four critical models on all four benchmark datasets2: (1) the pretrained model, (2) the model fine-tuned under the standard paradigm, and (3) the model fine-tuned with only the tail token repulsion operation (”Push-away tail”). The comparative analysis, visualized in Fig. 2, reveals a clear narrative of alignment dynamics under domain shift.
+
+The pretrained model (Fig. 2a) exhibits an ideal multimodal alignment state in the source domain. Its similarity distribution shows a clear hierarchical structure: a few key tokens (head tokens) demonstrate high similarity to relevant class text embeddings, forming a distinct right peak, while the vast majority of tokens (tail tokens) maintain a low baseline similarity, forming a prominent left valley.
+
+When we transfer the pretrained model directly to the target domains (Fig. 2bcd), the distribution changes significantly, which becomes flatter and more concentrated, losing the sharp hierarchical structure observed in the source domain. This indicates that, due to the large domain shift, image tokens are generally less sensitive to the textual descriptions of target domain classes and lack discriminativity.
+
+![](images/2a12a0c0452034fe76977a4d409d008c9d8faf067a35a465ca1f87bb5b1d649c.jpg)  
+Figure 2. Vision-text similarity distribution of the pretrained CLIP model evaluated on the source domain, exhibiting an ideal, hierarchical structure where a few discriminative head tokens show high similarity to class texts, while the majority of tail tokens remain at a low similarity baseline. On the target domains, the pretrained model (transferred directly) shows a flat, less discriminative curve due to domain shift. Standard fine-tuning causes a global upward shift, pulling both head and tail tokens closer to text. The Pushaway-tail method suppresses the alignment of tail tokens while still enhancing head tokens, indicating that inhibiting the alignment of tail tokens contributes majorly to the performance gain.
+
+The model after standard fine-tuning (Fig. 2bcd) shows a markedly different distribution. The entire curve significantly moves upwards, indicating a global increase in visiontext similarity, not only pulling head tokens closer but also pulling tail tokens toward the text.
+
+In the ”Push-away tail” model (Fig. 2bcd), the distribution presents a hybrid characteristic. The left portion of the curve (representing tail tokens) is successfully suppressed and shifted back towards lower similarity compared to the standard fine-tuned model. Notably, the right part (head tokens) is not diminished; in fact, it shows a further upward shift compared to the pretrained model. This indicates that even by solely repelling tail tokens, the model can align head features while effectively restraining the tail tokens. In other words, inhibiting the alignment of tail tokens is a primary driver for the performance gain.
+
+# 3.3. Aligning Tail Tokens Leads to Overfitting
+
+Then, we study why aligning tail tokens harms the performance. As tail tokens represent tokens with the least similarity to the class texts, it is harder to pull these tokens close to texts compared with head tokens. Also, since domain shifts as well as scarce training data also prevent the model from learning effective patterns in target domains, we hypothesize that the model actually cannot learn to align tail tokens with texts at all, i.e., it just memorizes the tokens in the target-domain training data for forcely aligning tail tokens, leading to overfitting.
+
+![](images/1d153ac162c7557a339c6a61079f38d292d649c19a7d4e9188c3a7818b0a6676.jpg)
+
+<details>
+<summary>bar</summary>
+
+| Domain       | Pretrained model | Finetuned model | Push-away tail | Ours  |
+| ------------ | ---------------- | --------------- | -------------- | ----- |
+| CropDiseases | 0.55             | 0.07            | 0.08           | 0.16  |
+| EuroSAT      | 0.56             | 0.07            | 0.08           | 0.17  |
+| ISIC         | 0.49             | 0.06            | 0.07           | 0.24  |
+| ChestX       | 0.45             | 0.03            | 0.05           | 0.25  |
+| Ave.         | 0.51             | 0.06            | 0.07           | 0.21  |
+</details>
+
+Figure 3. Domain similarities by the CKA similarity, where lower similarity indicates more domain information. The abnormally low similarity validates that aligning tail tokens leads to overfitting.
+
+To verify this hypothesis, we follow (Kornblith et al., 2019) to use Centered Kernel Alignment (CKA) similarity to measure the domain similarity between the source and target domains, where higher similarity indicates lower domain discrepancy. If such overfitting really happens, features extracted by the model would contain excessive information specific to target-domain training data, leading to an abnormally low domain similarity3. Also, breaking tail alignment would increase such an abnormally low domain similarity.
+
+As shown in Fig. 3, we compare CKA similarities under three model configurations: (1) pre-trained model, (2) standard fine-tuned model, and (3) the model fine-tuned with only the tail token repulsion operation (“Push-away tail”). After standard fine-tuning, the CKA similarity decreases significantly, suggesting that tokens absorb substantial targetdomain information. With the “Push-away tail” method applied to break the tail alignment, the CKA similarity increases, verifying our hypothesis.
+
+Building on our earlier analysis, we further note that the head tokens are aligned in both the source domain and the “push-away tail” method, and this alignment correlates with improved performance on target domains. That is, although the domain shifts and scarce training data prevent the model from aligning vision and texts, since head tokens already contain sufficient semantic information (as they are closer to semantic texts), the model can still learn useful information during the finetuning, making the alignment of head tokens beneficial to the performance. This drives us to our conclusion: the common belief of alignment is valid only for tokens already containing sufficient semantic information (head tokens); for tail tokens, breaking the alignment is more useful.
+
+# 4. Method
+
+Driven by our finding that aligning all tokens can be detrimental under domain shift, we propose the Adaptive Tail-Head Alignment (ATHA) method. Unlike the prevalent uniform alignment strategies, ATHA introduces an asymmetric alignment policy to simultaneously enhance the visiontext alignment of Head Tokens and suppress that of Tail Tokens, encouraging the model to learn useful information during vision-text alignment while resisting overfitting.
+
+Inputs and Feature Preparation. Our method operates on the visual token sequence and class text embeddings within the CLIP framework. Given an input image $\mathbf { x } \in \mathbb { R } ^ { B \times C \times H \times W }$ , it is first divided into $L$ patches and processed through the vision transformer blocks and outputs a sequence of visual tokens for each layer l: $\mathbf { \widetilde { \Gamma } } [ \mathbf { v } _ { [ \mathrm { C L S } ] } ^ { ( l ) } ; \mathbf { v } _ { 1 } ^ { \hat { ( } l ) } ; \ldots ; \mathbf { v } _ { L } ^ { ( l ) } ] \in \mathbb { R } ^ { B \times ( L + 1 ) \times D }$ v re we primar- class names, ${ \bf V } ^ { ( l ) } =$ $\mathbf { V } _ { 1 : L } ^ { ( l ) }$ $\stackrel { \triangledown } { \mathbf { T } } \in \mathbb { R } ^ { N \times D _ { t } }$ text encoder and project them into the visual token space using CLIP’s pretrained visual projection matrix $\mathbf { W } _ { p } ;$ :
+
+$$
+\mathbf {T} ^ {\prime} = \text { LayerNorm } (\mathbf {T}) \mathbf {W} _ {p} ^ {\top} \in \mathbb {R} ^ {N \times D}. \tag {3}
+$$
+
+where $\mathbf { W } _ { p } \in \mathbb { R } ^ { D \times D _ { t } }$ is CLIP’s visual projection matrix, $\mathbf { T } ^ { \prime } \in \mathbb { R } ^ { K \times D }$ shares the same dimension as visual tokens, which is shared across all layers.
+
+Token-Text Similarity Calculation. Given visual tokens V(l) ∈ RB×L×D at layer l and projected text embeddings $\mathbf { V } ^ { ( l ) } \in \mathbb { R } ^ { B \times L \times D }$ $\mathbf { T } ^ { \prime } \in \mathbb { R } ^ { N \times D }$ for N classes, we compute the similarity:
+
+$$
+s _ {b, i, j} ^ {(l)} = \frac {\mathbf {v} _ {b , i} ^ {(l) ^ {\top}} \mathbf {t} _ {j} ^ {\prime}}{\| \mathbf {v} _ {b , i} ^ {(l)} \| \| \mathbf {t} _ {j} ^ {\prime} \|}, \quad \forall b \in [ 1, B ], i \in [ 1, L ], j \in [ 1, N ] \tag {4}
+$$
+
+For each visual token i in batch $b ,$ we find its maximum similarity to any class, smab,i $s _ { b , i } ^ { \mathrm { m a x , ( \it l ) } } = \mathrm { m a x } _ { j } s _ { b , i , j } ^ { ( l ) }$ , which serves as the proxy for its transferability.
+
+Discriminative Token Selection. We select tokens for asymmetric processing based on $s _ { b , i } ^ { \operatorname* { m a x } , ( l ) }$ max,(l)
+
+(1) Head Tokens $( \mathcal { T } _ { \mathbf { h e a d } } ^ { ( l ) } ) \colon$ The $\mathrm { t o p } { - } k _ { \mathrm { h e a d } }$ tokens with the largest smab,i $s _ { b , i } ^ { \operatorname* { m a x } , ( l ) }$ , where $k _ { \mathrm { h e a d } } = \lfloor L \cdot \rho \rfloor$ and $\rho \in \left( 0 , 1 \right)$ is the head ratio. These tokens likely encode transferable, class-discriminative patterns.   
+(2) Tail Tokens $( \mathbb { Z } _ { \mathbf { t a i l } } ^ { ( l ) } ) { : }$ The last $- r _ { \mathrm { t a i l } }$ tokens with the smallest smax,(l)b,i , where rtail = ⌊L · γ⌋ and γ ∈ (0, 1) is the tail ratio. $s _ { b , i } ^ { \operatorname* { m a x } , ( l ) }$ Sb,i $r _ { \mathrm { t a i l } } = \lfloor L \cdot \gamma \rfloor$ $\gamma \in ( 0 , 1 )$ These tokens are suspected to carry domain-specific noise or non-transferable features.
+
+Tokens not in either set remain unmodified. Asymmetric Token Alignment. We introduce two layerwise learnable parameters, $\alpha ^ { ( l ) }$ and $\beta ^ { ( l ) }$ , to adaptively control the strength of pulling and pushing, respectively.
+
+Head Token at position ify its most similar text $( b , i )$ wherdding $i \in$ $\mathcal { T } _ { \mathrm { h e a d } } ^ { ( l ) }$ $j ^ { + } =$ arg maxj s b,i,j $s _ { b , i , j } ^ { ( l ) }$
+
+$$
+\tilde {\mathbf {v}} _ {b, i} ^ {(l)} = \mathbf {v} _ {b, i} ^ {(l)} + \alpha^ {(l)} \cdot \mathbf {t} _ {j ^ {+}} ^ {\prime} \tag {5}
+$$
+
+(2) For each Tail Token at position $( b , i )$ where $i \in$ $\mathcal { T } _ { \mathrm { t a i l } } ^ { ( l ) }$ , we identify its least similar text embedding $\begin{array} { r l } { \displaystyle j ^ { - } = } & { { } } \end{array}$ arg minj s(l)b,i,j $s _ { b , i , j } ^ { ( l ) }$ and suppress it:
+
+$$
+\tilde {\mathbf {v}} _ {b, i} ^ {(l)} = \mathbf {v} _ {b, i} ^ {(l)} - \beta^ {(l)} \cdot \mathbf {t} _ {j ^ {-}} ^ {\prime} \tag {6}
+$$
+
+The complete token update at layer l can be summarized as:
+
+$$
+\tilde {\mathbf {v}} _ {b, i} ^ {(l)} = \left\{ \begin{array}{l l} \mathbf {v} _ {b, i} ^ {(l)} + \alpha^ {(l)} \cdot \mathbf {t} _ {j ^ {+}} ^ {\prime}, & \text { if } i \in \mathcal {I} _ {\text { head }} ^ {(l)} \quad (\text { Pull }) \\ \mathbf {v} _ {b, i} ^ {(l)} - \beta^ {(l)} \cdot \mathbf {t} _ {j ^ {-}} ^ {\prime}, & \text { if } i \in \mathcal {I} _ {\text { tail }} ^ {(l)} \quad (\text { Push }) \\ \mathbf {v} _ {b, i} ^ {(l)}, & \text { otherwise } \end{array} \right.
+$$
+
+The modified tokens $\tilde { \mathbf { V } } ^ { ( l ) }$ are then passed through the remaining components of the transformer block:
+
+$$
+\mathbf {V} ^ {(l + 1)} = \text { TransformerBlock } ^ {(l)} (\tilde {\mathbf {V}} ^ {(l)}) \tag {7}
+$$
+
+Optimization. The final classification is performed by computing similarity between the visual [CLS] token and text embeddings to compute the cross-entropy loss as Eq. 1.
+
+The parameters $\{ \alpha ^ { ( l ) } , \beta ^ { ( l ) } \}$ for every layer are optimized end-to-end with this standard cross-entropy loss, allowing the model to automatically learn the optimal intensity for strengthening head tokens and suppressing tail tokens per layer. This dynamic, discriminative alignment equips the model with a more robust mechanism for cross-domain few-shot finetuning than uniform alignment strategies.
+
+# 5. Experiments
+
+Datasets and Evaluation Protocol. Following the established benchmark for Cross-Domain Few-Shot Learning, we evaluate our method on four challenging target domains that exhibit significant distribution shifts from general source domains: CropDiseases (Mohanty et al., 2016), EuroSAT (Helber et al., 2019), ISIC2018 (Codella et al., 2019), and ChestX (Wang et al., 2017). We adopt the standard N-way K-shot evaluation protocol (with $N = 5 )$ , conducting 800 episodes for 1-shot and 400 episodes for 5-shot settings to ensure statistical reliability.
+
+Implementation Details. We use CLIP-ViT/B-16 (Radford et al., 2021) as our backbone. All experiments follow the source-free setting, where only the pre-trained model and target-domain few-shot support set are accessible. Following the LoRA (Low-Rank Adaptation) fine-tuning strategy (Hu et al., 2022), we freeze the backbone parameters and only train low-rank adaptation matrices, ensuring parameter-efficient adaptation. During fine-tuning, we employ a cross-entropy loss $\mathcal { L } _ { \mathrm { c r o s s } }$ and train for 100 epochs using the AdamW optimizer. Data augmentation includes standard random cropping and horizontal flipping.
+
+![](images/927f43b46f90303a187726bcb63d42c4848f52b83124ff2f20eaa5c90f99d509.jpg)
+
+<details>
+<summary>flowchart</summary>
+
+```mermaid
+graph TD
+    A["N-way Labels"] --> B["Textual Blocks"]
+    B --> C["Visual Block i"]
+    C --> D["ATHA"]
+    D --> E["Visual Block i+1"]
+    E --> F["L_cross"]
+    D --> G["× Wp^T"]
+    G --> H["Projected Text Features"]
+    H --> I["Head Tokens"]
+    I --> J["Image Tokens-Text Similarity Matrix"]
+    J --> K["Max Each Patch"]
+    K --> L["Sum Text Dim"]
+    L --> M["Tail Tokens"]
+    M --> N["Binary x α 0/α 0/α 0/α 0/β 0/β 0/β 0/β 0/β 0/β 0/β 0/β 0/β 0/β 0/β 0/β 0/β 0/β 0/β 0/β 0/β 0/β 0/β 0/β 0/β 0/β 0/β 0/β 0/β 0/α +"]
+    I --> O["Modified Features"]
+    O --> P["Output"]
+```
+</details>
+
+Figure 4. Overview of our Adaptive Tail-Head Alignment (ATHA) framework. Our method dynamically modulates visual tokens based on their semantic relevance to the target classes. At a given transformer layer, we compute the cosine similarity between each visual token and all class text embeddings. The $\mathrm { t o p } { - } k _ { \mathrm { h e a d } }$ tokens with the highest maximum similarity are identified as Head Tokens and are adaptively pulled closer to their most similar text embedding via a positive addition. Concurrently, the last- $\mathbf { \nabla } \cdot r _ { \mathrm { t a i l } }$ tokens with the lowest maximum similarity are identified as Tail Tokens and are pushed away from their least similar text embedding via a negative subtraction. Layer-wise learnable parameters $\boldsymbol { \alpha } ^ { ( l ) }$ and $\beta ^ { ( l ) }$ control the strength of these opposing operations.
+
+The core of our approach is the Adaptive Tail-Head Alignment (ATHA) mechanism. For each target transformer block l where ATHA is applied, we introduce two sets of layerwise learnable parameters: $\alpha ^ { ( l ) }$ to control the strength of pulling head tokens closer, and $\beta ^ { ( l ) }$ to control the strength of pushing tail tokens away. We initialize these parameters strategically to focus the initial learning signal: $\alpha ^ { ( 8 ) } = 0 . 8$ and $\bar { \alpha ^ { ( l ) } } = 0 . 0$ for other layers, $\beta ^ { ( l ) } = 0 . 0 1$ for all layers, allowing the model to first learn to enhance transferable features before adaptively learning to suppress noise. The token selection hyperparameters are set as $\rho = 0 . 1$ for the head token ratio and $\gamma = 0 . 1$ 1 for the tail token ratio.
+
+# 5.1. Comparison with State-of-the-Art Methods
+
+We compare our method against several recent CDFSL approaches(Zanella & Ben Ayed, 2024; Xu et al., 2024a;b; Yazdanpanah & Moradi, 2022; Yi et al., 2025b;a; Zou et al., a;b; Ma et al., 2024; Zou et al., 2024; Fu et al., 2023) under both 5-way 1-shot and 5-shot settings in all target datasets. As shown in Tab. 1, our method achieves the best average performance across both 1-shot and 5-shot settings, outperforming all current state-of-the-art works. Notably, on the challenging ISIC2018 dataset, ATHA surpasses the best previous method by 0.19% in 1-shot and 1.14% in 5- shot, demonstrating its robustness on domains with substantial distribution shifts. Furthermore, our method delivers the best or runner-up results on most individual datasets, with particularly strong gains on EuroSAT and CropDiseases. These results validate that our asymmetric alignment strategy effectively mitigates overfitting while preserving transferable features, leading to superior cross-domain finetuning performance.
+
+# 5.2. Analysis of Tail Token Repulsion
+
+A core claim of our method is that actively repelling tail tokens is essential for improving generalization in crossdomain few-shot learning. To validate this effect, we design a controlled experiment comparing three setups across all four benchmark datasets: (1) Baseline: standard finetuning without any token manipulation; (2) ”Push-away tail” model: a strategy that applies only the “push-away” operation to identified tail tokens, without enhancing head tokens; (3) ATHA: which simultaneously repels tail tokens and enhances head tokens. The results, summarized in Tab.2, reveal a critical finding.
+
+The experimental results show that the Push-away tail strategy improves performance across all four datasets, demonstrating the general importance of suppressing tail tokens during cross-domain finetuning. This finding directly supports our core argument: under domain shift, forcing alignment of all tokens introduces overfitting to the training data, and selectively breaking the alignment of tail tokens can effectively enhance the model’s learning in the cross-domain few-shot settings.
+
+Table 1. Comparison with state-of-the-art works by the 5-way 1-shot and 5-way 5-shot classification. 
+
+<table><tr><td>Method</td><td>Mark</td><td>Backbone</td><td>Shot</td><td>Source</td><td>Target</td><td>ISIC</td><td>EuroSAT</td><td>CropDiseases</td><td>ChestX</td><td>Ave.</td></tr><tr><td>StyleAdv-FT (Fu et al., 2023)</td><td>CVPR-23</td><td>ViT/DINO</td><td>1</td><td>✓</td><td>✓</td><td>33.99</td><td>74.93</td><td>84.11</td><td>22.92</td><td>53.99</td></tr><tr><td>FLoR (Zou et al., 2024)</td><td>CVPR-24</td><td>ViT/DINO</td><td>1</td><td>✓</td><td>✓</td><td>35.49</td><td>73.09</td><td>83.55</td><td>23.26</td><td>53.85</td></tr><tr><td>DAMIM (Ma et al., 2024)</td><td>AAAI-25</td><td>ViT/DINO</td><td>1</td><td>✓</td><td>✓</td><td>36.35</td><td>73.61</td><td>83.90</td><td>23.38</td><td>54.31</td></tr><tr><td>CD-CLS (Zou et al., b)</td><td>NeurIPS-24</td><td>ViT/DINO</td><td>1</td><td>✓</td><td>✓</td><td>35.56</td><td>74.97</td><td>84.53</td><td>23.39</td><td>54.62</td></tr><tr><td>AttnTemp (Zou et al., a)</td><td>NeurIPS-24</td><td>ViT/DINO</td><td>1</td><td>✓</td><td>✓</td><td>38.05</td><td>75.09</td><td>84.78</td><td>23.63</td><td>55.39</td></tr><tr><td>ReCIT (Yi et al., 2025b)</td><td>ICML-25</td><td>ViT/DINO</td><td>1</td><td>✓</td><td>✓</td><td>38.48</td><td>75.23</td><td>85.92</td><td>23.84</td><td>55.87</td></tr><tr><td>REAP (Yi et al., 2025a)</td><td>ICML-25</td><td>ViT/DINO</td><td>1</td><td>✓</td><td>✓</td><td>38.67</td><td>75.97</td><td>85.33</td><td>24.17</td><td>56.04</td></tr><tr><td>FN+VDB (Yazdanpanah &amp; Moradi, 2022)</td><td>CVPR-22</td><td>RN18</td><td>1</td><td>-</td><td>✓</td><td>32.96</td><td>69.67</td><td>79.68</td><td>22.64</td><td>51.24</td></tr><tr><td>IM-DCL (Xu et al., 2024b)</td><td>TIP-24</td><td>RN10</td><td>1</td><td>-</td><td>✓</td><td>38.13</td><td>77.14</td><td>84.37</td><td>23.98</td><td>55.91</td></tr><tr><td>StepSTP (Xu et al., 2024a)</td><td>TPAMI-25</td><td>ViT/CLIP</td><td>1</td><td>-</td><td>✓</td><td>32.97</td><td>70.01</td><td>84.84</td><td>22.84</td><td>52.68</td></tr><tr><td>CLIP-LoRA (Zanella &amp; Ben Ayed, 2024)</td><td>CVPRW-24</td><td>ViT/CLIP</td><td>1</td><td>-</td><td>✓</td><td>35.23</td><td>81.41</td><td>85.32</td><td>21.73</td><td>55.92</td></tr><tr><td>CLIP-LoRA + ATHA</td><td>Ours</td><td>ViT/CLIP</td><td>1</td><td>-</td><td>✓</td><td>38.86</td><td>82.56</td><td>87.99</td><td>24.00</td><td>58.35</td></tr><tr><td>StyleAdv-FT (Fu et al., 2023)</td><td>CVPR-23</td><td>ViT/DINO</td><td>5</td><td>✓</td><td>✓</td><td>51.23</td><td>90.12</td><td>95.99</td><td>26.97</td><td>66.08</td></tr><tr><td>FLoR (Zou et al., 2024)</td><td>CVPR-24</td><td>ViT/DINO</td><td>5</td><td>✓</td><td>✓</td><td>53.06</td><td>90.75</td><td>96.47</td><td>27.02</td><td>66.83</td></tr><tr><td>DAMIM (Ma et al., 2024)</td><td>AAAI-25</td><td>ViT/DINO</td><td>5</td><td>✓</td><td>✓</td><td>54.86</td><td>91.18</td><td>96.34</td><td>27.82</td><td>67.55</td></tr><tr><td>CD-CLS (Zou et al., b)</td><td>NeurIPS-24</td><td>ViT/DINO</td><td>5</td><td>✓</td><td>✓</td><td>54.69</td><td>91.53</td><td>96.27</td><td>27.66</td><td>67.54</td></tr><tr><td>AttnTemp (Zou et al., a)</td><td>NeurIPS-24</td><td>ViT/DINO</td><td>5</td><td>✓</td><td>✓</td><td>54.91</td><td>90.82</td><td>96.66</td><td>28.03</td><td>67.61</td></tr><tr><td>ReCIT (Yi et al., 2025b)</td><td>ICML-25</td><td>ViT/DINO</td><td>5</td><td>✓</td><td>✓</td><td>54.91</td><td>91.58</td><td>96.85</td><td>28.88</td><td>68.06</td></tr><tr><td>REAP (Yi et al., 2025a)</td><td>ICML-25</td><td>ViT/DINO</td><td>5</td><td>✓</td><td>✓</td><td>55.28</td><td>91.79</td><td>96.71</td><td>28.34</td><td>68.03</td></tr><tr><td>FN+VDB (Yazdanpanah &amp; Moradi, 2022)</td><td>CVPR-22</td><td>RN18</td><td>5</td><td>-</td><td>✓</td><td>47.48</td><td>87.31</td><td>94.63</td><td>25.55</td><td>64.74</td></tr><tr><td>IM-DCL (Xu et al., 2024b)</td><td>TIP-24</td><td>RN10</td><td>5</td><td>-</td><td>✓</td><td>52.74</td><td>89.47</td><td>95.73</td><td>28.93</td><td>66.72</td></tr><tr><td>StepSTP (Xu et al., 2024a)</td><td>TPAMI-25</td><td>ViT/CLIP</td><td>5</td><td>-</td><td>✓</td><td>52.12</td><td>89.40</td><td>96.01</td><td>26.36</td><td>65.97</td></tr><tr><td>CLIP-LoRA (Zanella &amp; Ben Ayed, 2024)</td><td>CVPRW-24</td><td>ViT/CLIP</td><td>5</td><td>-</td><td>✓</td><td>51.10</td><td>92.52</td><td>96.21</td><td>24.13</td><td>65.99</td></tr><tr><td>CLIP-LoRA + ATHA</td><td>Ours</td><td>ViT/CLIP</td><td>5</td><td>-</td><td>✓</td><td>56.42</td><td>93.41</td><td>97.62</td><td>26.67</td><td>68.53</td></tr></table>
+
+Table 2. Ablation study on ATHA under 5-way 5-shot setting. 
+
+<table><tr><td>Method</td><td>CropDisease</td><td>EuroSAT</td><td>ISIC2018</td><td>ChestX</td><td>Ave.</td></tr><tr><td>Baseline</td><td>96.21</td><td>92.52</td><td>51.10</td><td>24.13</td><td>65.99</td></tr><tr><td>+ Push-away tail</td><td>97.18</td><td>92.96</td><td>54.52</td><td>25.14</td><td>67.45</td></tr><tr><td>+ ATHA</td><td>97.62</td><td>93.41</td><td>56.42</td><td>26.67</td><td>68.53</td></tr><tr><td>(a) Loss constraint</td><td>96.19</td><td>92.64</td><td>53.68</td><td>24.53</td><td>66.76</td></tr><tr><td>(b) Average texts alignment</td><td>97.38</td><td>93.12</td><td>55.11</td><td>25.29</td><td>67.73</td></tr><tr><td>(c) Fixed α,β</td><td>97.49</td><td>93.26</td><td>56.16</td><td>26.12</td><td>68.26</td></tr></table>
+
+Table 3. Comparison with existing alignment methods under 5-way 5-shot setting. 
+
+<table><tr><td>Method</td><td>CropDisease</td><td>EuroSAT</td><td>ISIC2018</td><td>ChestX</td><td>Ave.</td></tr><tr><td>Baseline</td><td>96.21</td><td>92.52</td><td>51.10</td><td>24.13</td><td>65.99</td></tr><tr><td>+ PACL (Mukhoti et al., 2023)</td><td>96.22</td><td>92.48</td><td>50.55</td><td>24.14</td><td>65.85</td></tr><tr><td>+ SPARC (Bica et al., 2024)</td><td>95.69</td><td>91.14</td><td>51.21</td><td>24.17</td><td>65.55</td></tr><tr><td>+ ATHA</td><td>97.62</td><td>93.41</td><td>56.42</td><td>26.67</td><td>68.53</td></tr></table>
+
+Our analysis further reveals that enhancing head tokens simultaneously with repelling tail tokens yields better performance. Our ATHA outperforms the ”Push-away tail” model on all datasets. This indicates that while the “repulsion” operation alone can reduce overfitting, the ultimate performance ceiling relies on actively learning features. “Pushing away tail tokens” and “pulling closer head tokens” form a synergistic mechanism: the former “lightens the load” for the model by avoiding overfitting, while the latter “empowers” the model by explicitly strengthening its learning. This dynamic and discriminative recalibration of the token space is key to the robustness of our method in handling diverse domain shifts.
+
+# 5.3. Analysis of How ATHA Works
+
+We compute the token-text similarity distributions and CKA similarity of ATHA to analyze how it works. ATHA model achieves the most discriminative distribution in Fig. 2bcd. It combines and amplifies the desired effects: the alignment of tail tokens is strongly suppressed (left peak remains low), while the alignment of head tokens is dramatically enhanced. This demonstrates that ATHA successfully executes a dual strategy: it simultaneously pushes tail tokens away and pulls head tokens closer. The result in Fig. 3 shows a significant increase in CKA of ATHA compared to other models, validating its effectiveness against overfitting to the target-domain training data.
+
+# 5.4. Comparison with Existing Alignment Methods
+
+To validate the effectiveness of our work, we compare it with existing alignment methods. We list two representative alignment methods from our related work: PACL(Mukhoti et al., 2023) and SPARC(Bica et al., 2024). The results, presented in Tab.3, show that these methods not only underperform our approach but also yield an average performance lower than the baseline across four datasets. This comparison confirms that for few-shot fine-tuning under domain shift, our break alignment strategy is more effective than existing methods.
+
+# 5.5. Analysis of Direct Feature Modulation
+
+To validate our direct feature manipulation by adding or subtracting text embedding rather than conventional lossbased optimization, we design a ablation study comparing these two approaches of achieving discriminative alignment.
+
+Distinct from ATHA, which adds text embedding to head tokens and subtracts that to tail tokens to modify the features directly, the Loss constraint method uses explicit loss terms to achieve the same objective by $\mathcal { L } _ { p u l l }$ and $\mathcal { L } _ { p u s h }$ . One maximizes the similarity between head tokens and corresponding text embeddings, and another one minimizes the similarity between tail tokens and text embeddings. The total loss is $\mathcal { L } = \mathcal { L } _ { c l s } + \lambda _ { 1 } \mathcal { L } _ { p u l l } + \lambda _ { 2 } \mathcal { L } _ { p u s h }$ , where $\mathcal { L } _ { c l s }$ is the standard classification loss, and $\lambda _ { 1 } , \lambda _ { 2 }$ are balancing hyper parameters.
+
+The results, summarized in Tab.2a, reveal that using the loss function to constrain shows only marginal improvements over the baseline (+0.8% on average across datasets), despite requiring careful tuning of two additional hyperparameters $( \lambda _ { 1 } , \lambda _ { 2 } )$ . This indicates that optimizing token alignment indirectly through loss functions is inefficient; the gradient signals must propagate through multiple layers and compete with the primary classification objective, diluting their intended effect.
+
+We attribute this superiority to three factors: (1) Directness: Feature modulation operates immediately on the relevant representations without relying on gradient flow through deep networks; (2) Precision: We can exactly control which tokens are modified and by how much, whereas loss-based methods affect all parameters simultaneously; (3) Stability: Our method requires no additional hyperparameter tuning beyond the simple scaling factors α and $\beta ,$ which we find can be set consistently across domains.
+
+This ablation study confirms that our approach of direct feature modulation for alignment is not merely an alternative implementation but a fundamentally more effective strategy. By explicitly and immediately adjusting token embeddings toward or away from textual concepts, we provide the model with clear, unambiguous signals about which visual patterns to emphasize or ignore, a capability that conventional lossbased training struggles to replicate efficiently.
+
+# 5.6. Analysis of Selecting Text Strategies
+
+We conduct a critical ablation study to examine the core mechanism of our text integration method. Specifically, we compare two strategies for selecting the textual guidance to modify image tokens: (1) using only the text embedding of the most similar class (MaxSim) and the least similar class (MinSim), and (2) using a weighted average of all class text embeddings (WeightedAvg). The comparison is performed under the 5-way 5-shot setting, and the results are summarized in Tab.2b.
+
+Our method, which employs the MaxSim/MinSim strategy, demonstrates better performance than applying Average texts alignment(WeightedAvg strategy). For head tokens, MaxSim provides a stronger and clearer semantic pull towards a single, most-relevant class. Conversely, for tail tokens, subtracting the embedding of their least similar class creates a more decisive repulsive force, effectively enlarging the separation between tail patches and the most irrelevant class. The WeightedAvg strategy, which subtracts a blended textual vector, results in a weaker, less targeted repulsion.
+
+![](images/7afab200698c3a59a6304730eb2ed6a9add8dcd7d0ba72c57a8995a4d18f4c1f.jpg)
+
+<details>
+<summary>line</summary>
+
+| ρ    | Accuracy |
+| ---- | -------- |
+| 0.0  | 0.66     |
+| 0.1  | 0.68     |
+| 0.2  | 0.67     |
+| 0.3  | 0.64     |
+| 0.4  | 0.63     |
+| 0.5  | 0.62     |
+| 0.6  | 0.61     |
+| 0.7  | 0.60     |
+| 0.8  | 0.59     |
+| 0.9  | 0.57     |
+| 1.0  | 0.55     |
+</details>
+
+(a)
+
+![](images/41ff12f852655ee946838163e1144c9b2a7569b1222d3f871cfdd5e7f1350638.jpg)
+
+<details>
+<summary>line</summary>
+
+| γ    | Accuracy |
+| ---- | -------- |
+| 0.0  | 0.66     |
+| 0.1  | 0.685    |
+| 0.2  | 0.67     |
+| 0.3  | 0.66     |
+| 0.4  | 0.66     |
+| 0.5  | 0.66     |
+| 0.6  | 0.66     |
+| 0.7  | 0.66     |
+| 0.8  | 0.66     |
+| 0.9  | 0.66     |
+| 1.0  | 0.66     |
+</details>
+
+(b)   
+Figure 5. (a) Average performance sensitivity to the head token ratio $\rho .$ The model achieves robust and competitive accuracy when $\rho$ falls within 0.1–0.3, with the peak observed at $\rho = 0 . 1$ . This indicates that selecting a focused subset (10%–30%) of head tokens is optimal for adaptation. (b) Average performance sensitivity to the tail token ratio γ. Stable results are obtained when $\gamma$ is between 0.1 and 0.2, with the best performance at $\gamma = 0 . 1$ . This confirms that suppressing only a small proportion (10%–20%) of tail tokens is sufficient for effective domain alignment.
+
+This ablation validates the reasoning behind our design. The WeightedAvg strategy, while seemingly more nuanced, blurs the distinct semantic boundaries between classes. During finetuning, this can cause head tokens to absorb conflicting signals from multiple classes, and may not provide a strong enough directional signal to adequately push tail tokens away. Our MaxSim/MinSim strategy implements a clearer, more decisive rule: reinforce the strongest association, and repulse the weakest one, creating a sharper and more discriminative feature landscape, which is particularly crucial in the scarce data settings. The results confirm that a targeted, asymmetric alignment based on MaxSim/MinSim is more effective than a uniform blending of textual information for adapting CLIP under huge domain gaps.
+
+# 5.7. Ablation Studies and Analysis
+
+We conduct comprehensive ablation studies to validate parameters of our approach, using the 5-way 5-shot setting.
+
+Effect of Layer-wise Adaptive Scaling. We evaluate the importance of our layer-specific learnable parameters $\alpha ^ { ( l ) }$ by comparing against fixed scaling strategies. Tab. 2c shows that using a single fixed scaling parameter for all layers leads to suboptimal performance, while our learnable layer-wise parameters achieve the best results. This demonstrates that different layers benefit from different alignment strengths.
+
+Sensitivity to Hyperparameters. We investigate the sensitivity of our ATHA method to its core design hyperparameters: the head token selection ratio $\rho$ and the tail token selection ratio γ. As shown in Fig. $^ { 5 , }$ model performance remains robust across a wide range of $\rho$ and $\gamma$ values. Specifically, selecting 10%–30% of tokens as head tokens $( \rho \in [ 0 . 1 , 0 . 3 ] )$ )
+
+Table 4. Generalization across different backbones under 5-way 1-shot setting. 
+
+<table><tr><td>Backbone</td><td>CropDisease</td><td>EuroSAT</td><td>ISIC2018</td><td>ChestX</td><td>Ave.</td></tr><tr><td>CLIP (ViT-B/16)</td><td>85.32</td><td>81.41</td><td>35.23</td><td>21.73</td><td>55.92</td></tr><tr><td>+ ATHA</td><td>87.99</td><td>82.56</td><td>38.86</td><td>24.00</td><td>58.35</td></tr><tr><td>CLIP (ViT-L/14)</td><td>85.76</td><td>79.49</td><td>33.03</td><td>21.30</td><td>54.90</td></tr><tr><td>+ ATHA</td><td>86.82</td><td>80.07</td><td>38.03</td><td>22.67</td><td>56.90</td></tr><tr><td>SigLIP (Zhai et al., 2023)</td><td>80.99</td><td>68.09</td><td>28.90</td><td>21.33</td><td>49.83</td></tr><tr><td>+ ATHA</td><td>84.80</td><td>71.98</td><td>32.67</td><td>22.97</td><td>53.11</td></tr><tr><td>PEcore(Bolya et al., 2026)</td><td>87.14</td><td>77.80</td><td>39.34</td><td>21.97</td><td>56.61</td></tr><tr><td>+ ATHA</td><td>89.81</td><td>80.33</td><td>40.52</td><td>22.48</td><td>58.29</td></tr></table>
+
+and 5%–20% as tail tokens $( \gamma \in [ 0 . 0 5 , 0 . 2 ] )$ yields stable and competitive results, with the optimal configuration observed at $\rho = 0 . 1$ and $\gamma = 0 . 1$ .
+
+# 5.8. Generalization across Different Backbones
+
+To demonstrate that our ATHA mechanism is not tied to a specific visual encoder, we evaluate its effectiveness on four different backbones under the 5-way 1-shot setting: CLIP (ViT-B/16) (Radford et al., 2021), CLIP (ViT-L/14), SigLIP (Zhai et al., 2023), and PEcore (Bolya et al., 2026). All backbones are kept frozen and adapted via LoRA finetuning with or without our ATHA module. As shown in Tab. 4, ATHA consistently improves performance across all architectures and datasets, yielding an average gain of +2.43%, +2.00%, +3.28%, and +1.68% respectively. This strong backbone-agnostic generalizability confirms that our ATHA strategy captures a universal cross-domain adaptation principle, independent of the specific pre-training objective or architecture.
+
+# 5.9. Generalization across Fine-Tuning Frameworks
+
+Our ATHA module can be combined with various parameterefficient fine-tuning strategies. We integrate ATHA into three representative frameworks: CoOp (Zhou et al., 2022), MaPLe (Khattak et al., 2023), and LoRA (Hu et al., 2022), and evaluate them under the 5-way 5-shot setting. Tab. 5 shows that ATHA brings consistent and substantial improvements over the base methods, with average gains of +1.74%, +2.06%, and +2.54% respectively. Notably, the absolute improvement on the challenging ISIC2018 dataset reaches up to +5.32%. These results highlight the flexibility and broad applicability of our approach: regardless of whether the finetuning method learns input prompts (CoOp), deep prompt tokens (MaPLe), or low-rank weight updates (LoRA), ATHA’s token-level repulsion-and-attraction mechanism provides an orthogonal and complementary benefit.
+
+# 5.10. Choice of Similarity Metric
+
+The core of ATHA relies on measuring the similarity between image patch tokens and class text embeddings to select head and tail tokens. While CLIP is pre-trained with cosine similarity, other distance or dependency measures could also be used. We compare cosine similarity (Chen et al., 2020) against three alternatives: Euclidean distance (Vinyals et al., 2016), a learned bilinear metric (Sung et al., 2018) (trained on the support set), and mutual information (Belghazi et al., 2018) estimated via kernel density. As shown in Tab. 6, all metrics achieve comparable performance, with mutual information even giving a slightly higher result on ChestX. This demonstrates that ATHA is not sensitive to the specific choice of similarity measure; the core benefit stems from the selective repulsion and attraction mechanism itself. Nevertheless, cosine similarity yields the best average performance (68.53%) and aligns naturally with CLIP’s pre-training, so we adopt it as the default.
+
+Table 5. Generalization across different fine-tuning frameworks under 5-way 5-shot setting. 
+
+<table><tr><td>Fine-tuning Strategy</td><td>CropDisease</td><td>EuroSAT</td><td>ISIC2018</td><td>ChestX</td><td>Ave.</td></tr><tr><td>CoOp (Zhou et al., 2022)</td><td>91.88</td><td>83.22</td><td>43.36</td><td>22.69</td><td>60.29</td></tr><tr><td>+ ATHA</td><td>93.33</td><td>83.81</td><td>46.67</td><td>24.32</td><td>62.03</td></tr><tr><td>MaPLe (Khattak et al., 2023)</td><td>96.22</td><td>90.80</td><td>50.97</td><td>24.12</td><td>65.53</td></tr><tr><td>+ ATHA</td><td>96.93</td><td>92.02</td><td>55.91</td><td>25.49</td><td>67.59</td></tr><tr><td>LoRA (Hu et al., 2022)</td><td>96.21</td><td>92.52</td><td>51.10</td><td>24.13</td><td>65.99</td></tr><tr><td>+ ATHA</td><td>97.62</td><td>93.41</td><td>56.42</td><td>26.67</td><td>68.53</td></tr></table>
+
+Table 6. Comparison of different similarity metrics for token selection under 5-way 5-shot setting. 
+
+<table><tr><td>Distance Metric</td><td>CropDisease</td><td>EuroSAT</td><td>ISIC2018</td><td>ChestX</td><td>Ave.</td></tr><tr><td>Baseline</td><td>96.21</td><td>92.52</td><td>51.10</td><td>24.13</td><td>65.99</td></tr><tr><td>Euclidean distance</td><td>97.55</td><td>93.42</td><td>56.27</td><td>26.31</td><td>68.39</td></tr><tr><td>Learned metric</td><td>97.41</td><td>93.22</td><td>56.59</td><td>26.61</td><td>68.46</td></tr><tr><td>Mutual information</td><td>97.22</td><td>93.44</td><td>55.92</td><td>27.04</td><td>68.41</td></tr><tr><td>Cosine similarity</td><td>97.62</td><td>93.41</td><td>56.42</td><td>26.67</td><td>68.53</td></tr></table>
+
+# 6. Conclusion
+
+This paper identifies a counterintuitive phenomenon in target-domain finetuning of CDFSL: actively pushing away certain image tokens from text embeddings improves targetdomain performance, challenging the prevailing uniform alignment paradigm. We demonstrate that the common belief of alignment is valid only for tokens already containing sufficient semantic information (head tokens); for tail tokens, breaking the alignment is more useful. Based on this insight, we propose Adaptive Tail-Head Alignment (ATHA), which dynamically strengthens or suppresses token alignment via learnable scaling parameters to control adding or subtracting text embedding for effective manipulation of alignment. Extensive experiments validate our state-of-theart performance across multiple benchmarks. Future work will extend ATHA to other vision-language models beyond CLIP and explore its applicability to broader transfer learning scenarios, including domain generalization and few-shot class-incremental learning. Moreover, investigating adaptive token selection strategies that dynamically adjust ρ and γ per episode could further enhance robustness across diverse domain shifts.
+
+# Acknowledgments
+
+This work is supported by the National Natural Science Foundation of China under grants 62206102; the National Key Research and Development Program of China under grant 2024YFC3307900; the National Natural Science Foundation of China under grants 62436003, 62376103 and 62302184; Major Science and Technology Project of Hubei Province under grant 2025BAB011 and 2024BAA008; Hubei Science and Technology Talent Service Project under grant 2024DJC078; and Ant Group through CCF-Ant Research Fund. The computation is completed in the HPC Platform of Huazhong University of Science and Technology.
+
+# Impact Statement
+
+We introduce a CD-FSL method that dynamically strengthens or suppresses token alignment via learnable scaling parameters to control adding or subtracting text embedding for effective manipulation of alignment in the CLIP. This helps mitigate the domain gap and improves generalization to the target domain. Our approach is also applicable to other areas, such as domain generalization, domain adaptation, and few-shot class-incremental learning, where improving model transferability is a common challenge. While our evaluations focus on four distinct target domains, these may not encompass all potential real-world scenarios. Therefore, further evaluation across a wider range of target domains is needed to validate the approach in more realistic settings.
+
+# References
+
+Belghazi, M. I., Baratin, A., Rajeshwar, S., Ozair, S., Bengio, Y., Courville, A., and Hjelm, D. Mutual information neural estimation. In International conference on machine learning, pp. 531–540. PMLR, 2018.   
+Bica, I., Ilic, A., Bauer, M., Erdogan, G., Bo ´ snjak, M., ˇ Kaplanis, C., Gritsenko, A. A., Minderer, M., Blundell, C., Pascanu, R., et al. Improving fine-grained understanding in image-text pre-training. arXiv preprint arXiv:2401.09865, 2024.   
+Bolya, D., Huang, P.-Y., Sun, P., Cho, J. H., Madotto, A., Wei, C., Ma, T., Zhi, J., Rajasegaran, J., Bangalath, H., et al. Perception encoder: The best visual embeddings are not at the output of the network. Advances in Neural Information Processing Systems, 38:60884–60937, 2026.   
+Chen, H.-Y., Lai, Z., Zhang, H., Wang, X., Eichner, M., You, K., Cao, M., Zhang, B., Yang, Y., and Gan, Z. Contrastive localized language-image pre-training. arXiv preprint arXiv:2410.02746, 2024.   
+Chen, T., Kornblith, S., Norouzi, M., and Hinton, G. A
+
+simple framework for contrastive learning of visual representations. In International conference on machine learning, pp. 1597–1607. PmLR, 2020.
+
+Codella, N., Rotemberg, V., Tschandl, P., Celebi, M. E., Dusza, S., Gutman, D., Helba, B., Kalloo, A., Liopyris, K., Marchetti, M., Kittler, H., and Halpern, A. Skin lesion analysis toward melanoma detection 2018: A challenge hosted by the international skin imaging collaboration (isic), 2019.
+
+Fu, Y., Xie, Y., Fu, Y., Chen, J., and Jiang, Y.-G. Wavesan: Wavelet based style augmentation network for crossdomain few-shot learning, 2022.
+
+Fu, Y., Xie, Y., Fu, Y., and Jiang, Y.-G. Styleadv: Meta style adversarial training for cross-domain few-shot learning, 2023.
+
+Helber, P., Bischke, B., Dengel, A., and Borth, D. Eurosat: A novel dataset and deep learning benchmark for land use and land cover classification, 2019.
+
+Hu, E. J., Shen, Y., Wallis, P., Allen-Zhu, Z., Li, Y., Wang, S., Wang, L., Chen, W., et al. Lora: Low-rank adaptation of large language models. ICLR, 1(2):3, 2022.
+
+Hu, Y. and Ma, A. J. Adversarial feature augmentation for cross-domain few-shot classification, 2022.
+
+Khattak, M. U., Rasheed, H., Maaz, M., Khan, S., and Khan, F. S. Maple: Multi-modal prompt learning. In Proceedings of the IEEE/CVF conference on computer vision and pattern recognition, pp. 19113–19122, 2023.
+
+Kornblith, S., Norouzi, M., Lee, H., and Hinton, G. Similarity of neural network representations revisited. In International Conference on Machine Learning, pp. 3519–3529. PMLR, 2019.
+
+Li, P., Gong, S., Wang, C., and Fu, Y. Ranking distance calibration for cross-domain few-shot learning, 2022.
+
+Ma, R., Zou, Y., Li, Y., and Li, R. Reconstruction target matters in masked image modeling for cross-domain fewshot learning. arXiv preprint arXiv:2412.19101, 2024.
+
+Mohanty, S., Hughes, D., and Salathe, M. Using deep learn- ´ ing for image-based plant disease detection. Frontiers in Plant Science, 7(September), September 2016. ISSN 1664-462X. doi: 10.3389/fpls.2016.01419. Publisher Copyright: © 2016 Mohanty, Hughes and Salathe.´
+
+Mukhoti, J., Lin, T.-Y., Poursaeed, O., Wang, R., Shah, A., Torr, P. H., and Lim, S.-N. Open vocabulary semantic segmentation with patch aligned contrastive learning. In Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition, pp. 19413–19423, 2023.
+
+Oh, J., Kim, S., Ho, N., Kim, J.-H., Song, H., and Yun, S.-Y. Understanding cross-domain few-shot learning based on domain similarity and few-shot difficulty, 2022.   
+Radford, A., Kim, J. W., Hallacy, C., Ramesh, A., Goh, G., Agarwal, S., Sastry, G., Askell, A., Mishkin, P., Clark, J., et al. Learning transferable visual models from natural language supervision. In International conference on machine learning, pp. 8748–8763. PMLR, 2021.   
+Sung, F., Yang, Y., Zhang, L., Xiang, T., Torr, P. H., and Hospedales, T. M. Learning to compare: Relation network for few-shot learning. In Proceedings of the IEEE conference on computer vision and pattern recognition, pp. 1199–1208, 2018.   
+Tseng, H.-Y., Lee, H.-Y., Huang, J.-B., and Yang, M.-H. Cross-domain few-shot classification via learned featurewise transformation. In Proceedings of the International Conference on Learning Representations, 2020.   
+Vinyals, O., Blundell, C., Lillicrap, T., Kavukcuoglu, K., and Wierstra, D. Matching networks for one shot learning. In Proceedings of the International Conference on Neural Information Processing Systems, pp. 3637–3645, 2016.   
+Wang, X., Peng, Y., Lu, L., Lu, Z., Bagheri, M., and Summers, R. M. Chestx-ray8: Hospital-scale chest x-ray database and benchmarks on weakly-supervised classification and localization of common thorax diseases. In 2017 IEEE Conference on Computer Vision and Pattern Recognition (CVPR). IEEE, July 2017. doi: 10.1109/cvpr.2017.369. URL http://dx.doi.org/ 10.1109/CVPR.2017.369.   
+Xu, H., Liu, L., Liu, T., Zhi, S., Sun, S., and Cheng, M.- M. Step-wise distribution alignment guided style prompt tuning for source-free cross-domain few-shot learning. arXiv preprint arXiv:2411.10070, 2024a.   
+Xu, H., Liu, L., Zhi, S., Fu, S., Su, Z., Cheng, M.-M., and Liu, Y. Enhancing information maximization with distance-aware contrastive learning for source-free crossdomain few-shot learning. IEEE Transactions on Image Processing, 33:2058–2073, 2024b.   
+Yazdanpanah, M. and Moradi, P. Visual domain bridge: A source-free domain adaptation for cross-domain few-shot learning. In Proceedings of the IEEE/CVF conference on computer vision and pattern recognition, pp. 2868–2877, 2022.   
+Yi, S., Zou, Y., Li, Y., and Li, R. Random registers for cross-domain few-shot learning. arXiv preprint arXiv:2506.02843, 2025a.   
+Yi, S., Zou, Y., Li, Y., and Li, R. Revisiting continuity of image tokens for cross-domain few-shot learning. arXiv preprint arXiv:2506.03110, 2025b.
+
+Yi, S., Zou, Y., Li, Y., and Li, R. Addressing exacerbated attention sink for source-free cross-domain few-shot learning, 2026. URL https://arxiv.org/abs/2605. 25799.   
+Zanella, M. and Ben Ayed, I. Low-rank few-shot adaptation of vision-language models. In Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition, pp. 1593–1603, 2024.   
+Zhai, X., Mustafa, B., Kolesnikov, A., and Beyer, L. Sigmoid loss for language image pre-training. In Proceedings of the IEEE/CVF international conference on computer vision, pp. 11975–11986, 2023.   
+Zhao, Z., Liu, Y., Wu, H., Wang, M., Li, Y., Wang, S., Teng, L., Liu, D., Cui, Z., Wang, Q., et al. Clip in medical imaging: A comprehensive survey. arXiv preprint arXiv:2312.07353, 2023.   
+Zhou, F., Wang, P., Zhang, L., Wei, W., and Zhang, Y. Revisiting prototypical network for cross domain few-shot learning. In Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition (CVPR), pp. 20061–20070, June 2023.   
+Zhou, K., Yang, J., Loy, C. C., and Liu, Z. Learning to prompt for vision-language models. International journal of computer vision, 130(9):2337–2348, 2022.   
+Zou, Y., Ma, R., Li, Y., and Li, R. Attention temperature matters in vit-based cross-domain few-shot learning. In The Thirty-eighth Annual Conference on Neural Information Processing Systems, a.   
+Zou, Y., Yi, S., Li, Y., and Li, R. A closer look at the cls token for cross-domain few-shot learning. In The Thirty-eighth Annual Conference on Neural Information Processing Systems, b.   
+Zou, Y., Liu, Y., Hu, Y., Li, Y., and Li, R. Flatten longrange loss landscapes for cross-domain few-shot learning, 2024.
+
+# Appendix for Improving CLIP Adaptation by Breaking Tail Alignment for Source-Free Cross-Domain Few-Shot Learning
+
+# A. Datasets
+
+We evaluate our method on four widely-used CDFSL benchmarks that exhibit substantial domain shifts from the source domain of natural images.
+
+CropDiseases (Mohanty et al., 2016) is an agricultural dataset designed for plant disease classification, containing 43,456 high-resolution images across 38 disease categories. The images focus on close-up views of plant leaves, introducing a significant domain gap through their specialized content and detailed textures.
+
+EuroSAT (Helber et al., 2019) is a remote sensing dataset for land use and land cover classification, consisting of 27,000 satellite images divided into 10 classes. The aerial perspective and unique spectral characteristics of satellite imagery create a distinct visual domain compared to conventional photographs.
+
+ISIC2018 (Codella et al., 2019) is a medical dataset comprising 10,015 dermoscopic images for skin lesion analysis across 7 categories. The clinical imaging conditions and specialized visual patterns of skin lesions represent a substantial domain shift from everyday images.
+
+ChestX (Wang et al., 2017) is a medical radiology dataset containing 25,847 chest X-ray images spanning 7 thoracic conditions. The monochromatic modality, anatomical focus, and absence of natural scene elements result in the most pronounced domain gap among the evaluated datasets.
+
+These four datasets, spanning agriculture, remote sensing, dermatology, and radiology, provide diverse and challenging target domains with progressively increasing domain shifts from the source domain.
+
+# B. More similarity distribution
+
+All target domain similarity distribution in Fig.6 indicate that inhibiting the alignment of tail tokens contributes majorly to the performance gain.
+
+# C. Centered Kernel Alignment (CKA) Methodology
+
+We employ Centered Kernel Alignment (CKA) (Kornblith et al., 2019) to quantitatively measure the similarity between feature representations across different domains. CKA is a widely adopted metric for comparing neural network representations, particularly effective in analyzing cross-domain relationships.
+
+![](images/6f2bf088f0f43740ba31c3b692e563ac4b54f0ebdb27c6ca9dff8c5214bd0246.jpg)
+
+<details>
+<summary>line</summary>
+
+|        | Pretrained model | Finetuned model | Push-away tail | Ours |
+| ------ | ---------------- | --------------- | -------------- | ---- |
+| bottom | -0.2             | -0.1            | -0.3           | -0.1 |
+| top    | 0.1              | 0.2             | 0.3            | 0.4  |
+</details>
+
+![](images/64d50619ae410e5c8213b1c668f1da956a537f862fa5ec30e655e0c9e64b2000.jpg)
+
+<details>
+<summary>line</summary>
+
+| Model             | bottom | top   |
+| ----------------- | ------ | ----- |
+| Pretrained model  | -0.2   | 0.1   |
+| Finetuned model   | -0.1   | 0.2   |
+| Push-away tail    | 0.0    | 0.3   |
+| Ours              | 0.1    | 0.4   |
+</details>
+
+![](images/3628ab2ca2c23e5d547f5dcb412223dc52d431b1c88b276d5a8e321acfb509e6.jpg)
+
+<details>
+<summary>line</summary>
+
+| Model             | bottom | >top |
+| ----------------- | ------ | ---- |
+| Pretrained model  | -0.2   | 0.1  |
+| Finetuned model   | -0.1   | 0.3  |
+| Push-away tail    | 0.0    | 0.4  |
+| Ours              | 0.1    | 0.5  |
+</details>
+
+![](images/1fbf4762d9d40dc6e2e1bc22fc6c50fb526445dad1e5fc5211efbb887a98a8d5.jpg)
+
+<details>
+<summary>line</summary>
+
+|        | Pretrained model | Finetuned model | Push-away tail | Ours |
+| ------ | ---------------- | --------------- | -------------- | ---- |
+| bottom | -0.1             | -0.2            | -0.3           | -0.4 |
+| >top   | 0.0              | 0.1             | 0.2            | 0.3  |
+</details>
+
+Figure 6. On the target four domains, the pretrained model (transferred directly) shows a flat, less discriminative curve due to domain shift. Standard fine-tuning causes a global upward shift, pulling both head and tail tokens closer to text. The Push-away-tail method suppresses the alignment of tail tokens while still enhancing head tokens, indicating that inhibiting the alignment of tail tokens contributes majorly to the performance gain.
+
+Given two sets of feature representations $\ b { X } \in \mathbb { R } ^ { n \times d }$ and $Y \in \mathbb { R } ^ { n \times d }$ , we first compute their Gram matrices:
+
+$$
+K = X X ^ {\top}, \quad L = Y Y ^ {\top} \tag {8}
+$$
+
+which capture the pairwise similarity structure within each representation set. To eliminate the influence of feature means, we center these Gram matrices using:
+
+$$
+K _ {c} = H K H \tag {9}
+$$
+
+$$
+L _ {c} = H L H \tag {10}
+$$
+
+where $\begin{array} { r } { H = I _ { n } - \frac { 1 } { n } \mathbf { 1 } _ { n } \mathbf { 1 } _ { n } ^ { \top } } \end{array}$ is the centering matrix, with $I _ { n }$ being the identity matrix and ${ \bf 1 } _ { n }$ a vector of ones.
+
+The CKA similarity is then computed as the normalized inner product between the vectorized centered Gram matrices:
+
+$$
+\operatorname{CKA} (X, Y) = \frac {\left\langle \operatorname{vec} \left(K _ {c}\right) , \operatorname{vec} \left(L _ {c}\right) \right\rangle}{\| \operatorname{vec} \left(K _ {c}\right) \| \| \operatorname{vec} \left(L _ {c}\right) \|} = \frac {\operatorname{Tr} \left(K _ {c} L _ {c}\right)}{\sqrt {\operatorname{Tr} \left(K _ {c} ^ {2}\right) \operatorname{Tr} \left(L _ {c} ^ {2}\right)}} \tag {11}
+$$
+
+yielding values between 0 (completely dissimilar) and 1 (identical relational structures).
+
+In our analysis, CKA serves to quantify the domain distance between source and target representations. Higher CKA values indicate greater domain similarity and less domainspecific information in the features, while lower values suggest stronger domain shifts and more domain-characteristic representations. This metric provides crucial insights into the model’s generalization behavior and adaptation characteristics across diverse data distributions.
