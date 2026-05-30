@@ -19,39 +19,39 @@
   </header>
   <nav class="site-nav" aria-label="主导航">
     <a class="nav-link" href="../index.html">头版</a>
-<a class="nav-link" href="../issues/2026-05-29.html">今日速递</a>
+<a class="nav-link" href="../issues/2026-05-30.html">今日速递</a>
 <a class="nav-link" href="../pages/catalog.html">论文目录</a>
 <a class="nav-link" href="../pages/timeline.html">时间线</a>
   </nav>
   <main><article class="paper-detail">
   <div class="paper-main">
     <div class="kicker">arXiv cross-list · 扫读 · 2026-05-29</div>
-    <h1 class="paper-headline">OmniVerifier-M1：若未来用 verifier 作为 VLM/视觉模型训练反馈，结构化视觉 rationale 会影响表征学习方向</h1>
-    <p class="dek">把多模态 verifier 从只输出判断提升到能给结构化校准信号，避免完全依赖另一个 judge model。</p>
-    <p class="byline"><strong>OmniVerifier-M1: Multimodal Meta-Verifier with Explicit Structured Recalibration</strong>　Xinchen Zhang, Bowei Liu, Jiale Liu, Chufan Shi, Yizhen Zhang, Junhong Liu, Youliang Zhang, Zhiheng Li, Yujiu Yang, Ling Yang；机构以论文首页为准。　arXiv cross-list　<a href="https://arxiv.org/abs/2605.28805">原文链接</a></p>
+    <h1 class="paper-headline">OmniVerifier-M1：它和通用视觉自监督的关系在于：visual verifier 用结构化 meta-verification 和解耦 RL，偏验证器但影响 VLM 训练反馈</h1>
+    <p class="dek">中相关；详见方法、贡献和实验边界。</p>
+    <p class="byline"><strong>OmniVerifier-M1: Multimodal Meta-Verifier with Explicit Structured Recalibration</strong>　arXiv cross-list　<a href="https://arxiv.org/abs/2605.28805">原文链接</a></p>
     <div class="paper-facts">
       <span><b>编号</b>2605.28805</span>
       <span><b>优先级</b>扫读</span>
       <span><b>类别</b>arXiv cross-list</span>
       <span><b>会议</b>arXiv cross-list</span>
-      <span><b>方法</b>用 verifier 生成的结构化 rationale（如 bounding boxes）做 meta-verification feedback，并把 binary judgment 与 meta-verification 的 RL 目标解耦。</span>
+      <span><b>方法</b>visual verifier 用结构化 meta-verification 和解耦 RL，偏验证器但影响 VLM 训练反馈</span>
       <span><b>来源</b>arXiv / OpenReview</span>
     </div>
     <div class="feature-body">
-      <p class="lead dropcap">先说结论。若未来用 verifier 作为 VLM/视觉模型训练反馈，结构化视觉 rationale 会影响表征学习方向。 把多模态 verifier 从只输出判断提升到能给结构化校准信号，避免完全依赖另一个 judge model。</p>
+      <p class="lead dropcap">先说结论。它和通用视觉自监督的关系在于：visual verifier 用结构化 meta-verification 和解耦 RL，偏验证器但影响 VLM 训练反馈。 中相关；详见方法、贡献和实验边界。</p>
       <figure class="full-fig"><img src="../assets/mineru/2605.28805/images/5a0da0f383a81451cb489700acf3f6f2f80e03f6e9e0b91e2628a4f2cc4774bf.jpg" alt="Figureure 1 · : Pipeline of two key findings"><figcaption><b>Figureure 1 · : Pipeline of two key findings</b><span class="fig-en">Figure 1: Pipeline of two key findings. Left: the advantage of symbolic bounding boxes over textual explanations, enabling rule-based rewards to inherently prevent reward hacking and accelerate training. Right: the comparison between joint training and decoupled training.</span><span class="fig-zh">这张图概括 OmniVerifier-M1 的整体方法流程。阅读时先看模块之间传递的训练信号，再看作者如何把目标拆成可优化的子问题。</span></figcaption></figure>
 <figure class="full-fig"><img src="../assets/mineru/2605.28805/images/45c42cbe5bea787a4dca236cf2563fda163bb13a012613d6488b885ba322aae8.jpg" alt="Figureure 4 · : Pipeline of M1-TTS: a fine-grained agentic generation system for uni"><figcaption><b>Figureure 4 · : Pipeline of M1-TTS: a fine-grained agentic generation system for uni</b><span class="fig-en">Figure 4: Pipeline of M1-TTS: a fine-grained agentic generation system for unified multimodal models.</span><span class="fig-zh">这张图概括 OmniVerifier-M1 的整体方法流程。阅读时先看模块之间传递的训练信号，再看作者如何把目标拆成可优化的子问题。</span></figcaption></figure>
       
       <h2>核心问题</h2>
-      <p>若未来用 verifier 作为 VLM/视觉模型训练反馈，结构化视觉 rationale 会影响表征学习方向。</p>
+      <p>它和通用视觉自监督的关系在于：visual verifier 用结构化 meta-verification 和解耦 RL，偏验证器但影响 VLM 训练反馈。</p>
       <h2>方法拆解</h2>
-      <p>用 verifier 生成的结构化 rationale（如 bounding boxes）做 meta-verification feedback，并把 binary judgment 与 meta-verification 的 RL 目标解耦。</p>
+      <p>visual verifier 用结构化 meta-verification 和解耦 RL，偏验证器但影响 VLM 训练反馈</p>
       <h2>主要贡献</h2>
-      <p>把多模态 verifier 从只输出判断提升到能给结构化校准信号，避免完全依赖另一个 judge model。</p>
+      <p>中相关；详见方法、贡献和实验边界。</p>
       <h2>实验看点</h2>
-      <p>摘要称 OmniVerifier-M1 在视觉验证与细粒度错误定位上更稳健。</p>
+      <p>实验部分建议重点看两类证据：一是作者是否把方法收益和更强数据、更长训练、更大模型区分开；二是跨模型、跨数据或跨任务迁移是否还能保留同样趋势。</p>
       <h2>局限与读法</h2>
-      <p>偏 verifier/post-training feedback，不是视觉表征预训练；实际效果依赖标注或规则可验证的结构化输出。</p>
+      <p>这篇论文的结论需要结合任务设置、训练数据规模和消融实验一起看；不要只凭单个指标判断它对通用视觉表征的价值。</p>
     
     </div>
   </div>
@@ -61,13 +61,13 @@
     <div class="side-box"><h4>原文</h4><p><a href="https://arxiv.org/abs/2605.28805">https://arxiv.org/abs/2605.28805</a></p></div>
   </aside>
 </article></main>
-  <aside class="conf-float" data-conf-reminder="2026-05-29-main-ddl" aria-label="CCF A/B 主投稿提醒">
+  <aside class="conf-float" data-conf-reminder="2026-05-30-main-ddl" aria-label="CCF A/B 主投稿提醒">
   <button class="conf-close" type="button" aria-label="关闭会议提醒">×</button>
   <details open>
     <summary>CCF A/B 主投稿提醒</summary>
     <div class="conf-list"><a class="conf-item " href="https://github.com/ccfddl/ccf-deadlines/blob/main/conference/AI/aaai.yml">
   <span><b>AAAI 2027</b><em>CCF A · Main paper submission</em></span>
-  <strong>59 天</strong>
+  <strong>58 天</strong>
   <small>2026-07-27 · CCF DDL: abstract 2026-07-20；进入 1 个月窗口后重点提醒。</small>
 </a></div>
   </details>
@@ -80,7 +80,7 @@
   (() => {
     const box = document.querySelector('[data-conf-reminder]');
     if (!box) return;
-    const key = `visualSslConfReminderClosed:${box.dataset.confReminder || '2026-05-29-main-ddl'}`;
+    const key = `visualSslConfReminderClosed:${box.dataset.confReminder || '2026-05-30-main-ddl'}`;
     try {
       if (localStorage.getItem(key) === '1') box.hidden = true;
     } catch (err) {}

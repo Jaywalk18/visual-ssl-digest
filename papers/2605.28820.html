@@ -19,39 +19,39 @@
   </header>
   <nav class="site-nav" aria-label="主导航">
     <a class="nav-link" href="../index.html">头版</a>
-<a class="nav-link" href="../issues/2026-05-29.html">今日速递</a>
+<a class="nav-link" href="../issues/2026-05-30.html">今日速递</a>
 <a class="nav-link" href="../pages/catalog.html">论文目录</a>
 <a class="nav-link" href="../pages/timeline.html">时间线</a>
   </nav>
   <main><article class="paper-detail">
   <div class="paper-main">
     <div class="kicker">Visual SSL / representation · P0 · 2026-05-29</div>
-    <h1 class="paper-headline">From Pixels to Words --：如果 native VLM 成立，通用视觉表征可能不再只由独立 DINO/CLIP/ViT encoder 承担，而是在跨模态自回归模型内部直接形成</h1>
-    <p class="dek">把 VLM 设计从“强视觉 encoder + LLM 拼接”推进到 native one-vision 架构，系统分析何时早期视觉压缩会损失 OCR、空间和细粒度视觉信号。</p>
-    <p class="byline"><strong>From Pixels to Words -- Towards Native One-Vision Models at Scale</strong>　Haiwen Diao, Jiahao Wang, Penghao Wu, Yuhao Dong, Yuwei Niu, Yue Zhu, Zhongang Cai, Weichen Fan, Linjun Dai, Silei Wu, Xuanyu Zheng, Mingxuan Li, Yuanhan Zhang, Bo Li, Hanming Deng, Huchuan Lu, Quan Wang, Lei Yang, Lewei Lu, Dahua Lin, Ziwei Liu；机构以论文首页为准。　arXiv　<a href="https://arxiv.org/abs/2605.28820">原文链接</a></p>
+    <h1 class="paper-headline">From Pixels to Words --：它和通用视觉自监督的关系在于：原生 pixels-to-words one-vision 模型，直接挑战“预训练视觉 encoder + LLM adapter”的主流 VLM 拼接范式</h1>
+    <p class="dek">高相关；详见方法、贡献和实验边界。</p>
+    <p class="byline"><strong>From Pixels to Words -- Towards Native One-Vision Models at Scale</strong>　arXiv　<a href="https://arxiv.org/abs/2605.28820">原文链接</a></p>
     <div class="paper-facts">
       <span><b>编号</b>2605.28820</span>
       <span><b>优先级</b>P0</span>
       <span><b>类别</b>Visual SSL / representation</span>
       <span><b>会议</b>arXiv</span>
-      <span><b>方法</b>提出 NEO-ov，把图像、多图、视频帧和文本都放进统一序列中建模，不依赖外部视觉 encoder、adapter 或后融合；目标是在模型内部端到端学习 cross-frame 与 pixel-word correspondence。</span>
+      <span><b>方法</b>原生 pixels-to-words one-vision 模型，直接挑战“预训练视觉 encoder + LLM adapter”的主流 VLM 拼接范式</span>
       <span><b>来源</b>arXiv / OpenReview</span>
     </div>
     <div class="feature-body">
-      <p class="lead dropcap">先说结论。如果 native VLM 成立，通用视觉表征可能不再只由独立 DINO/CLIP/ViT encoder 承担，而是在跨模态自回归模型内部直接形成。 把 VLM 设计从“强视觉 encoder + LLM 拼接”推进到 native one-vision 架构，系统分析何时早期视觉压缩会损失 OCR、空间和细粒度视觉信号。</p>
+      <p class="lead dropcap">先说结论。它和通用视觉自监督的关系在于：原生 pixels-to-words one-vision 模型，直接挑战“预训练视觉 encoder + LLM adapter”的主流 VLM 拼接范式。 高相关；详见方法、贡献和实验边界。</p>
       <figure class="full-fig"><img src="../assets/mineru/2605.28820/images/105d0f6cafb3370d7c882813790efd313d9f895b65d1f6fcee0eafe4336091d7.jpg" alt="Figureure 1 · : Overview of the NEO-ov model"><figcaption><b>Figureure 1 · : Overview of the NEO-ov model</b><span class="fig-en">Figure 1: Overview of the NEO-ov model. Image or video inputs and text are encoded into token sequences via lightweight patch and word embeddings, then processed within a single decoder-only backbone composed of stacked native primitives, enabling efficient pixel–word and pixel–pixel alignment as well as spatial-temporal reasoning.</span><span class="fig-zh">这张图概括 From Pixels to Words -- 的整体方法流程。阅读时先看模块之间传递的训练信号，再看作者如何把目标拆成可优化的子问题。</span></figcaption></figure>
 <figure class="full-fig"><img src="../assets/mineru/2605.28820/images/3e13389612496021e25c5de96813727effb7b3fe87b7f9c3c01b2db9778c8692.jpg" alt="(2) Native Attention Figure 2: Overview of native rotary position embeddings and spatial-t"><figcaption><b>(2) Native Attention Figure 2: Overview of native rotary position embeddings and spatial-t</b><span class="fig-en">(2) Native Attention Figure 2: Overview of native rotary position embeddings and spatial-temporal attention. It unifies bidirectional spatial interactions within images with causal dependencies across text and video frames via T HW -aware frequency, channel, and index allocation, enabling unified modeling across single-image, multi-image, and video understanding.</span><span class="fig-zh">这张图概括 From Pixels to Words -- 的整体方法流程。阅读时先看模块之间传递的训练信号，再看作者如何把目标拆成可优化的子问题。</span></figcaption></figure>
       
       <h2>核心问题</h2>
-      <p>如果 native VLM 成立，通用视觉表征可能不再只由独立 DINO/CLIP/ViT encoder 承担，而是在跨模态自回归模型内部直接形成。</p>
+      <p>它和通用视觉自监督的关系在于：原生 pixels-to-words one-vision 模型，直接挑战“预训练视觉 encoder + LLM adapter”的主流 VLM 拼接范式。</p>
       <h2>方法拆解</h2>
-      <p>提出 NEO-ov，把图像、多图、视频帧和文本都放进统一序列中建模，不依赖外部视觉 encoder、adapter 或后融合；目标是在模型内部端到端学习 cross-frame 与 pixel-word correspondence。</p>
+      <p>原生 pixels-to-words one-vision 模型，直接挑战“预训练视觉 encoder + LLM adapter”的主流 VLM 拼接范式</p>
       <h2>主要贡献</h2>
-      <p>把 VLM 设计从“强视觉 encoder + LLM 拼接”推进到 native one-vision 架构，系统分析何时早期视觉压缩会损失 OCR、空间和细粒度视觉信号。</p>
+      <p>高相关；详见方法、贡献和实验边界。</p>
       <h2>实验看点</h2>
-      <p>摘要称 NEO-ov 与模块化 VLM 缩小差距，并在 fine-grained visual perception 上表现强；公开代码和模型集合有助于后续复现。</p>
+      <p>实验部分建议重点看两类证据：一是作者是否把方法收益和更强数据、更长训练、更大模型区分开；二是跨模型、跨数据或跨任务迁移是否还能保留同样趋势。</p>
       <h2>局限与读法</h2>
-      <p>不是纯视觉 SSL，而是大型 VLM 架构与训练配方；性能是否来自架构、数据规模还是训练 recipe，需要看消融与数据细节。</p>
+      <p>这篇论文的结论需要结合任务设置、训练数据规模和消融实验一起看；不要只凭单个指标判断它对通用视觉表征的价值。</p>
     
     </div>
   </div>
@@ -61,13 +61,13 @@
     <div class="side-box"><h4>原文</h4><p><a href="https://arxiv.org/abs/2605.28820">https://arxiv.org/abs/2605.28820</a></p></div>
   </aside>
 </article></main>
-  <aside class="conf-float" data-conf-reminder="2026-05-29-main-ddl" aria-label="CCF A/B 主投稿提醒">
+  <aside class="conf-float" data-conf-reminder="2026-05-30-main-ddl" aria-label="CCF A/B 主投稿提醒">
   <button class="conf-close" type="button" aria-label="关闭会议提醒">×</button>
   <details open>
     <summary>CCF A/B 主投稿提醒</summary>
     <div class="conf-list"><a class="conf-item " href="https://github.com/ccfddl/ccf-deadlines/blob/main/conference/AI/aaai.yml">
   <span><b>AAAI 2027</b><em>CCF A · Main paper submission</em></span>
-  <strong>59 天</strong>
+  <strong>58 天</strong>
   <small>2026-07-27 · CCF DDL: abstract 2026-07-20；进入 1 个月窗口后重点提醒。</small>
 </a></div>
   </details>
@@ -80,7 +80,7 @@
   (() => {
     const box = document.querySelector('[data-conf-reminder]');
     if (!box) return;
-    const key = `visualSslConfReminderClosed:${box.dataset.confReminder || '2026-05-29-main-ddl'}`;
+    const key = `visualSslConfReminderClosed:${box.dataset.confReminder || '2026-05-30-main-ddl'}`;
     try {
       if (localStorage.getItem(key) === '1') box.hidden = true;
     } catch (err) {}

@@ -19,39 +19,39 @@
   </header>
   <nav class="site-nav" aria-label="主导航">
     <a class="nav-link" href="../index.html">头版</a>
-<a class="nav-link" href="../issues/2026-05-29.html">今日速递</a>
+<a class="nav-link" href="../issues/2026-05-30.html">今日速递</a>
 <a class="nav-link" href="../pages/catalog.html">论文目录</a>
 <a class="nav-link" href="../pages/timeline.html">时间线</a>
   </nav>
   <main><article class="paper-detail">
   <div class="paper-main">
     <div class="kicker">arXiv cross-list · P3 · 2026-05-29</div>
-    <h1 class="paper-headline">RE-TRIANGLE：它提醒多模态表征几何不能只看单一 cosine 指标，alignment objective 的可复现性和稳定性很关键</h1>
-    <p class="dek">确认部分 zero-shot retrieval 场景 Recall@1 最高 +8.7，但也指出从零训练结果难复现，几何目标与 DTM loss 联合优化存在不稳定。</p>
-    <p class="byline"><strong>RE-TRIANGLE: Does TRIANGLE Enable Multimodal Alignment Beyond Cosine Similarity in Retrieval?</strong>　Arijit Ghosh, Aritra Bandyopadhyay, Chiranjeev Bindra, Jingfen Qiao；机构以论文首页为准。　arXiv cross-list　<a href="https://arxiv.org/abs/2605.27436">原文链接</a></p>
+    <h1 class="paper-headline">RE-TRIANGLE：它和通用视觉自监督的关系在于：复现实验检查 hypersphere triplet area 几何对齐是否稳健，适合和 VLM embedding 几何一起扫</h1>
+    <p class="dek">中相关；详见方法、贡献和实验边界。</p>
+    <p class="byline"><strong>RE-TRIANGLE: Does TRIANGLE Enable Multimodal Alignment Beyond Cosine Similarity in Retrieval?</strong>　arXiv cross-list　<a href="https://arxiv.org/abs/2605.27436">原文链接</a></p>
     <div class="paper-facts">
       <span><b>编号</b>2605.27436</span>
       <span><b>优先级</b>P3</span>
       <span><b>类别</b>arXiv cross-list</span>
       <span><b>会议</b>arXiv cross-list</span>
-      <span><b>方法</b>复现 TRIANGLE 的 hypersphere triplet-area multimodal alignment objective，检查其相对 pairwise cosine alignment 在 audio/video/text retrieval 中的稳定性。</span>
+      <span><b>方法</b>复现实验检查 hypersphere triplet area 几何对齐是否稳健，适合和 VLM embedding 几何一起扫</span>
       <span><b>来源</b>arXiv / OpenReview</span>
     </div>
     <div class="feature-body">
-      <p class="lead dropcap">先说结论。它提醒多模态表征几何不能只看单一 cosine 指标，alignment objective 的可复现性和稳定性很关键。 确认部分 zero-shot retrieval 场景 Recall@1 最高 +8.7，但也指出从零训练结果难复现，几何目标与 DTM loss 联合优化存在不稳定。</p>
+      <p class="lead dropcap">先说结论。它和通用视觉自监督的关系在于：复现实验检查 hypersphere triplet area 几何对齐是否稳健，适合和 VLM embedding 几何一起扫。 中相关；详见方法、贡献和实验边界。</p>
       <figure class="full-fig"><img src="../assets/mineru/2605.27436/images/fe10a0eff0dce89fb228877ab9f61e1ed611abc058a0b194187bb55fc37c3997.jpg" alt="Figureure 1 · : TRIANGLE loss aims to minimize the Triangle area formed by the embed"><figcaption><b>Figureure 1 · : TRIANGLE loss aims to minimize the Triangle area formed by the embed</b><span class="fig-en">Figure 1: TRIANGLE loss aims to minimize the Triangle area formed by the embedding vectors on a unit hypersphere between three modalities - Video (V1), Audio (A1) and Text(T1).</span><span class="fig-zh">这张图来自论文 PDF 的结构化抽取。当前用于辅助理解 RE-TRIANGLE 的方法或实验，请结合正文精读段落一起看。</span></figcaption></figure>
 <figure class="full-fig"><img src="../assets/mineru/2605.27436/images/1bba33e3b69df33e9ec686237f7952e07eb192be271f41be22390ebf6c891dcf.jpg" alt="Figureure 2 · : Example of a video frame from the toy dataset consisting of video-au"><figcaption><b>Figureure 2 · : Example of a video frame from the toy dataset consisting of video-au</b><span class="fig-en">Figure 2: Example of a video frame from the toy dataset consisting of video-audio-text triplets. Video consists of several colored shapes moving across a black background, and the text is a simple textual description (&quot;This video contains 3 shapes: magenta ring, yellow star, red nonagon.&quot;).</span><span class="fig-zh">这张图来自论文 PDF 的结构化抽取。当前用于辅助理解 RE-TRIANGLE 的方法或实验，请结合正文精读段落一起看。</span></figcaption></figure>
       
       <h2>核心问题</h2>
-      <p>它提醒多模态表征几何不能只看单一 cosine 指标，alignment objective 的可复现性和稳定性很关键。</p>
+      <p>它和通用视觉自监督的关系在于：复现实验检查 hypersphere triplet area 几何对齐是否稳健，适合和 VLM embedding 几何一起扫。</p>
       <h2>方法拆解</h2>
-      <p>复现 TRIANGLE 的 hypersphere triplet-area multimodal alignment objective，检查其相对 pairwise cosine alignment 在 audio/video/text retrieval 中的稳定性。</p>
+      <p>复现实验检查 hypersphere triplet area 几何对齐是否稳健，适合和 VLM embedding 几何一起扫</p>
       <h2>主要贡献</h2>
-      <p>确认部分 zero-shot retrieval 场景 Recall@1 最高 +8.7，但也指出从零训练结果难复现，几何目标与 DTM loss 联合优化存在不稳定。</p>
+      <p>中相关；详见方法、贡献和实验边界。</p>
       <h2>实验看点</h2>
-      <p>合成 toy dataset 用于分析不稳定来源；还观察到 cosine regularization 主要稳定 text-to-video retrieval。</p>
+      <p>实验部分建议重点看两类证据：一是作者是否把方法收益和更强数据、更长训练、更大模型区分开；二是跨模型、跨数据或跨任务迁移是否还能保留同样趋势。</p>
       <h2>局限与读法</h2>
-      <p>复现实验论文而非新模型；audio-video-text retrieval 和图像 SSL 有距离。</p>
+      <p>这篇论文的结论需要结合任务设置、训练数据规模和消融实验一起看；不要只凭单个指标判断它对通用视觉表征的价值。</p>
     
     </div>
   </div>
@@ -61,13 +61,13 @@
     <div class="side-box"><h4>原文</h4><p><a href="https://arxiv.org/abs/2605.27436">https://arxiv.org/abs/2605.27436</a></p></div>
   </aside>
 </article></main>
-  <aside class="conf-float" data-conf-reminder="2026-05-29-main-ddl" aria-label="CCF A/B 主投稿提醒">
+  <aside class="conf-float" data-conf-reminder="2026-05-30-main-ddl" aria-label="CCF A/B 主投稿提醒">
   <button class="conf-close" type="button" aria-label="关闭会议提醒">×</button>
   <details open>
     <summary>CCF A/B 主投稿提醒</summary>
     <div class="conf-list"><a class="conf-item " href="https://github.com/ccfddl/ccf-deadlines/blob/main/conference/AI/aaai.yml">
   <span><b>AAAI 2027</b><em>CCF A · Main paper submission</em></span>
-  <strong>59 天</strong>
+  <strong>58 天</strong>
   <small>2026-07-27 · CCF DDL: abstract 2026-07-20；进入 1 个月窗口后重点提醒。</small>
 </a></div>
   </details>
@@ -80,7 +80,7 @@
   (() => {
     const box = document.querySelector('[data-conf-reminder]');
     if (!box) return;
-    const key = `visualSslConfReminderClosed:${box.dataset.confReminder || '2026-05-29-main-ddl'}`;
+    const key = `visualSslConfReminderClosed:${box.dataset.confReminder || '2026-05-30-main-ddl'}`;
     try {
       if (localStorage.getItem(key) === '1') box.hidden = true;
     } catch (err) {}

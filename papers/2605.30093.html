@@ -1,0 +1,97 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Geometry Matters · 通用视觉自监督研究报</title>
+  <link rel="stylesheet" href="../assets/styles.css?v=20260525j">
+  <link rel="stylesheet" href="../assets/visual-ssl.css?v=20260525j">
+</head>
+<body>
+  <header class="masthead">
+    <div class="masthead-kicker">Visual SSL Research Report · 2026-05-30</div>
+    <a class="masthead-title" href="../index.html">通用视觉自监督研究报</a>
+    <div class="masthead-meta">
+      <span>图像表征 · VFM · JEPA · 视频预训练</span>
+      <span>CCF A/B 会议优先</span>
+      <span>图文精读 · 方法图解</span>
+    </div>
+  </header>
+  <nav class="site-nav" aria-label="主导航">
+    <a class="nav-link" href="../index.html">头版</a>
+<a class="nav-link" href="../issues/2026-05-30.html">今日速递</a>
+<a class="nav-link" href="../pages/catalog.html">论文目录</a>
+<a class="nav-link" href="../pages/timeline.html">时间线</a>
+  </nav>
+  <main><article class="paper-detail">
+  <div class="paper-main">
+    <div class="kicker">Visual SSL / representation · P1 · 2026-05-30</div>
+    <h1 class="paper-headline">Geometry Matters：DINO/SD 特征已是通用视觉基础设施，这篇展示如何用 3D 先验补它们的系统性短板</h1>
+    <p class="dek">指出 2D 预训练特征在对称面、重复部件和 3D 上不同但视觉相近区域会混淆；引入几何先验进行 post-training/feature refinement。</p>
+    <p class="byline"><strong>Geometry Matters: 3D Foundation Priors for Learning Semantic Correspondence</strong>　Artur Jesslen, Olaf Dünkel, Adam Kortylewski；机构以论文首页为准。　arXiv　<a href="https://arxiv.org/abs/2605.30093">原文链接</a></p>
+    <div class="paper-facts">
+      <span><b>编号</b>2605.30093</span>
+      <span><b>优先级</b>P1</span>
+      <span><b>类别</b>Visual SSL / representation</span>
+      <span><b>会议</b>arXiv</span>
+      <span><b>方法</b>用 SAM3D 估计物体几何和姿态，渲染 PartField descriptors 到图像平面，补充 DINO/Stable Diffusion features；用 geodesic distance 过滤 correspondence。</span>
+      <span><b>来源</b>arXiv / OpenReview</span>
+    </div>
+    <div class="feature-body">
+      <p class="lead dropcap">先说结论。DINO/SD 特征已是通用视觉基础设施，这篇展示如何用 3D 先验补它们的系统性短板。 指出 2D 预训练特征在对称面、重复部件和 3D 上不同但视觉相近区域会混淆；引入几何先验进行 post-training/feature refinement。</p>
+      <figure class="full-fig"><img src="../assets/mineru/2605.30093/images/21f138cbfaf6bda51fee0372387e315e67eca6166ad7087168159786ed07228f.jpg" alt="Figureure 2 · : Canonicalized 3D object reconstruction pipeline"><figcaption><b>Figureure 2 · : Canonicalized 3D object reconstruction pipeline</b><span class="fig-en">Figure 2: Canonicalized 3D object reconstruction pipeline. Given an image, we obtain an instance mask and a mesh from foundation models. We then refine the mesh pose via a two-phase render-andcompare optimization based on a distance-transform (DT) and a soft-IoU phase. Finally, we resolve the residual four-fold yaw ambiguity by rendering the mesh at eight known orientations and applying OrientAnything V2 with majority voting to select the canonical yaw correction $\Delta \psi ^ { * }$ .</span><span class="fig-zh">这张图概括 Geometry Matters 的整体方法流程。阅读时先看模块之间传递的训练信号，再看作者如何把目标拆成可优化的子问题。</span></figcaption></figure>
+<figure class="full-fig"><img src="../assets/mineru/2605.30093/images/a96a9549fffda649321dbad2f4c3bfe54cb61988b13b421e98b80e06cf07d1c4.jpg" alt="(c) SD+DINO+Partfield + Geodesic Filtering"><figcaption><b>(c) SD+DINO+Partfield + Geodesic Filtering</b><span class="fig-en">(c) SD+DINO+Partfield + Geodesic Filtering. Figure 1: 3D foundation priors improve both candidate generation and filtering of semantic correspondences. Existing zero-shot pipelines based on SD+DINO (a) suffer from left–right and repeated-part confusion, producing many incorrect matches. Adding our geodesic filter (b) removes wrong matches but is bottlenecked by feature quality, often leaving few surviving correspondences. Adding PartField features (c) yields dense and accurate correspondences even with large pose changes.</span><span class="fig-zh">这张图概括 Geometry Matters 的整体方法流程。阅读时先看模块之间传递的训练信号，再看作者如何把目标拆成可优化的子问题。</span></figcaption></figure>
+      
+      <h2>核心问题</h2>
+      <p>DINO/SD 特征已是通用视觉基础设施，这篇展示如何用 3D 先验补它们的系统性短板。</p>
+      <h2>方法拆解</h2>
+      <p>用 SAM3D 估计物体几何和姿态，渲染 PartField descriptors 到图像平面，补充 DINO/Stable Diffusion features；用 geodesic distance 过滤 correspondence。</p>
+      <h2>主要贡献</h2>
+      <p>指出 2D 预训练特征在对称面、重复部件和 3D 上不同但视觉相近区域会混淆；引入几何先验进行 post-training/feature refinement。</p>
+      <h2>实验看点</h2>
+      <p>摘要称 geometry-aware features 改善 semantic correspondence；重点看 SPair/PF-PASCAL 等 correspondence benchmark 和对 3D 重建失败的敏感性。</p>
+      <h2>局限与读法</h2>
+      <p>依赖 SAM3D/PartField 质量，流水线较重；更像特征增强而非端到端预训练。</p>
+    
+    </div>
+  </div>
+  <aside class="paper-side">
+
+    <div class="side-box"><h4>关键判断</h4><dl><dt>相关性</dt><dd>P1</dd><dt>类别</dt><dd>Visual SSL / representation</dd><dt>会议</dt><dd>arXiv</dd><dt>读法</dt><dd>方法图优先，表格次之</dd></dl></div>
+    <div class="side-box"><h4>原文</h4><p><a href="https://arxiv.org/abs/2605.30093">https://arxiv.org/abs/2605.30093</a></p></div>
+  </aside>
+</article></main>
+  <aside class="conf-float" data-conf-reminder="2026-05-30-main-ddl" aria-label="CCF A/B 主投稿提醒">
+  <button class="conf-close" type="button" aria-label="关闭会议提醒">×</button>
+  <details open>
+    <summary>CCF A/B 主投稿提醒</summary>
+    <div class="conf-list"><a class="conf-item " href="https://github.com/ccfddl/ccf-deadlines/blob/main/conference/AI/aaai.yml">
+  <span><b>AAAI 2027</b><em>CCF A · Main paper submission</em></span>
+  <strong>58 天</strong>
+  <small>2026-07-27 · CCF DDL: abstract 2026-07-20；进入 1 个月窗口后重点提醒。</small>
+</a></div>
+  </details>
+</aside>
+  <footer class="footer">
+    <div>面向通用视觉自监督、视觉基础模型与多模态表征学习的每日研究报。</div>
+    <div class="muted">Issue 2026-05-30 · Curated readings and figure notes</div>
+  </footer>
+  <script>
+  (() => {
+    const box = document.querySelector('[data-conf-reminder]');
+    if (!box) return;
+    const key = `visualSslConfReminderClosed:${box.dataset.confReminder || '2026-05-30-main-ddl'}`;
+    try {
+      if (localStorage.getItem(key) === '1') box.hidden = true;
+    } catch (err) {}
+    const close = box.querySelector('.conf-close');
+    if (close) {
+      close.addEventListener('click', () => {
+        box.hidden = true;
+        try { localStorage.setItem(key, '1'); } catch (err) {}
+      });
+    }
+  })();
+  </script>
+</body>
+</html>

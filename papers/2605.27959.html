@@ -19,39 +19,39 @@
   </header>
   <nav class="site-nav" aria-label="主导航">
     <a class="nav-link" href="../index.html">头版</a>
-<a class="nav-link" href="../issues/2026-05-29.html">今日速递</a>
+<a class="nav-link" href="../issues/2026-05-30.html">今日速递</a>
 <a class="nav-link" href="../pages/catalog.html">论文目录</a>
 <a class="nav-link" href="../pages/timeline.html">时间线</a>
   </nav>
   <main><article class="paper-detail">
   <div class="paper-main">
     <div class="kicker">arXiv cross-list · P2 · 2026-05-29</div>
-    <h1 class="paper-headline">ROVER：它说明 object-centric visual evidence 如何在 VLM 中被路由和复用，对未来通用视觉表征的“可查询性”有参考价值</h1>
-    <p class="dek">避免单纯裁剪 RoI 或注入 RoI features 导致全局场景和对象关系被削弱，同时降低多图、多对象推理上下文成本。</p>
-    <p class="byline"><strong>ROVER: Routing Object-Centric Visual Evidence for Grounded Multi-Image Reasoning</strong>　Guannan Lv, Ren Nie, Hongjian Dou；机构以论文首页为准。　arXiv cross-list　<a href="https://arxiv.org/abs/2605.27959">原文链接</a></p>
+    <h1 class="paper-headline">ROVER：它和通用视觉自监督的关系在于：object-centric evidence routing，把局部 grounding 证据压入可复用 visual working space</h1>
+    <p class="dek">中相关；详见方法、贡献和实验边界。</p>
+    <p class="byline"><strong>ROVER: Routing Object-Centric Visual Evidence for Grounded Multi-Image Reasoning</strong>　arXiv cross-list　<a href="https://arxiv.org/abs/2605.27959">原文链接</a></p>
     <div class="paper-facts">
       <span><b>编号</b>2605.27959</span>
       <span><b>优先级</b>P2</span>
       <span><b>类别</b>arXiv cross-list</span>
       <span><b>会议</b>arXiv cross-list</span>
-      <span><b>方法</b>每次 object grounding 预测后，ROVER 注入 step-specific token triplet，把当前 reasoning context、object-centric differential attention 和历史跨图证据路由进 visual working space。</span>
+      <span><b>方法</b>object-centric evidence routing，把局部 grounding 证据压入可复用 visual working space</span>
       <span><b>来源</b>arXiv / OpenReview</span>
     </div>
     <div class="feature-body">
-      <p class="lead dropcap">先说结论。它说明 object-centric visual evidence 如何在 VLM 中被路由和复用，对未来通用视觉表征的“可查询性”有参考价值。 避免单纯裁剪 RoI 或注入 RoI features 导致全局场景和对象关系被削弱，同时降低多图、多对象推理上下文成本。</p>
+      <p class="lead dropcap">先说结论。它和通用视觉自监督的关系在于：object-centric evidence routing，把局部 grounding 证据压入可复用 visual working space。 中相关；详见方法、贡献和实验边界。</p>
       <figure class="full-fig"><img src="../assets/mineru/2605.27959/images/ef38c7cac352b15493f5168c559c09126d7f2156bb69a0d2e6408ea21a5c08a7.jpg" alt="Figureure 3 · : Overview of ROVER"><figcaption><b>Figureure 3 · : Overview of ROVER</b><span class="fig-en">Figure 3: Overview of ROVER. (a) ROVER Pipeline. Triggered by each object grounding, ROVER injects a Link/Sift/Weave token triplet to route visual evidence through the VWS. The MLLM then autoregressively interleaves reasoning and subsequent grounding steps, concluding with a pure-text answer. (b) Sift via DiffAttn and VWS. Leveraging object-centric differential attention, Sift distills complementary visual context while suppressing irrelevant regions to populate the VWS with compact object-centric cues. (c) Weave over VWS. Via history-aware attention, Weave routes and integrates relevant evidence from previously grounded objects into the current reasoning state.</span><span class="fig-zh">这张图概括 ROVER 的整体方法流程。阅读时先看模块之间传递的训练信号，再看作者如何把目标拆成可优化的子问题。</span></figcaption></figure>
 <figure class="full-fig"><img src="../assets/mineru/2605.27959/images/9e87d6fca8d9b19de2f8281821ae3eb25a21a72a5dfb01a4618430c06fa16166.jpg" alt="Figureure 1 · : Comparison between our method and prior paradigms"><figcaption><b>Figureure 1 · : Comparison between our method and prior paradigms</b><span class="fig-en">Figure 1: Comparison between our method and prior paradigms. Compared to textual CoT and existing visual CoT approaches, ROVER preserves local object details while seamlessly routing evidence across objects and images. It is learnable, lightweight, and decoding-efficient by injecting a constant-length token triplet per grounding step, and exhibits strong transferability.</span><span class="fig-zh">这张图/表用于判断 ROVER 的实验收益来自哪里。重点看替换、消融或跨模型设置下趋势是否一致，而不是只看单个最高分。</span></figcaption></figure>
       
       <h2>核心问题</h2>
-      <p>它说明 object-centric visual evidence 如何在 VLM 中被路由和复用，对未来通用视觉表征的“可查询性”有参考价值。</p>
+      <p>它和通用视觉自监督的关系在于：object-centric evidence routing，把局部 grounding 证据压入可复用 visual working space。</p>
       <h2>方法拆解</h2>
-      <p>每次 object grounding 预测后，ROVER 注入 step-specific token triplet，把当前 reasoning context、object-centric differential attention 和历史跨图证据路由进 visual working space。</p>
+      <p>object-centric evidence routing，把局部 grounding 证据压入可复用 visual working space</p>
       <h2>主要贡献</h2>
-      <p>避免单纯裁剪 RoI 或注入 RoI features 导致全局场景和对象关系被削弱，同时降低多图、多对象推理上下文成本。</p>
+      <p>中相关；详见方法、贡献和实验边界。</p>
       <h2>实验看点</h2>
-      <p>摘要称集成到 Qwen2.5-VL-7B 后，MM-GCoT answer accuracy +4.8%、grounding accuracy +14.6%，VideoEspresso answer accuracy +8.6%。</p>
+      <p>实验部分建议重点看两类证据：一是作者是否把方法收益和更强数据、更长训练、更大模型区分开；二是跨模型、跨数据或跨任务迁移是否还能保留同样趋势。</p>
       <h2>局限与读法</h2>
-      <p>依赖 grounding prediction 和 SFT-to-GRPO pipeline；它优化的是推理流程，不是底层视觉 encoder 的无监督学习。</p>
+      <p>这篇论文的结论需要结合任务设置、训练数据规模和消融实验一起看；不要只凭单个指标判断它对通用视觉表征的价值。</p>
     
     </div>
   </div>
@@ -61,13 +61,13 @@
     <div class="side-box"><h4>原文</h4><p><a href="https://arxiv.org/abs/2605.27959">https://arxiv.org/abs/2605.27959</a></p></div>
   </aside>
 </article></main>
-  <aside class="conf-float" data-conf-reminder="2026-05-29-main-ddl" aria-label="CCF A/B 主投稿提醒">
+  <aside class="conf-float" data-conf-reminder="2026-05-30-main-ddl" aria-label="CCF A/B 主投稿提醒">
   <button class="conf-close" type="button" aria-label="关闭会议提醒">×</button>
   <details open>
     <summary>CCF A/B 主投稿提醒</summary>
     <div class="conf-list"><a class="conf-item " href="https://github.com/ccfddl/ccf-deadlines/blob/main/conference/AI/aaai.yml">
   <span><b>AAAI 2027</b><em>CCF A · Main paper submission</em></span>
-  <strong>59 天</strong>
+  <strong>58 天</strong>
   <small>2026-07-27 · CCF DDL: abstract 2026-07-20；进入 1 个月窗口后重点提醒。</small>
 </a></div>
   </details>
@@ -80,7 +80,7 @@
   (() => {
     const box = document.querySelector('[data-conf-reminder]');
     if (!box) return;
-    const key = `visualSslConfReminderClosed:${box.dataset.confReminder || '2026-05-29-main-ddl'}`;
+    const key = `visualSslConfReminderClosed:${box.dataset.confReminder || '2026-05-30-main-ddl'}`;
     try {
       if (localStorage.getItem(key) === '1') box.hidden = true;
     } catch (err) {}
