@@ -1,0 +1,97 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>LoMo · 通用视觉自监督研究报</title>
+  <link rel="stylesheet" href="../assets/styles.css?v=20260525j">
+  <link rel="stylesheet" href="../assets/visual-ssl.css?v=20260525j">
+</head>
+<body>
+  <header class="masthead">
+    <div class="masthead-kicker">Visual SSL Research Report · 2026-05-30</div>
+    <a class="masthead-title" href="../index.html">通用视觉自监督研究报</a>
+    <div class="masthead-meta">
+      <span>图像表征 · VFM · JEPA · 视频预训练</span>
+      <span>CCF A/B 会议优先</span>
+      <span>图文精读 · 方法图解</span>
+    </div>
+  </header>
+  <nav class="site-nav" aria-label="主导航">
+    <a class="nav-link" href="../index.html">头版</a>
+<a class="nav-link" href="../issues/2026-05-30.html">今日速递</a>
+<a class="nav-link" href="../pages/catalog.html">论文目录</a>
+<a class="nav-link" href="../pages/timeline.html">时间线</a>
+  </nav>
+  <main><article class="paper-detail">
+  <div class="paper-main">
+    <div class="kicker">Visual SSL / representation · P0 · 2026-05-30</div>
+    <h1 class="paper-headline">LoMo：它把“图文对齐”从全局 embedding 相似度推进到局部语义载体不变性，是多模态自监督很关键的失败模式</h1>
+    <p class="dek">提出 carrier sensitivity 问题：现有图文数据中“文本问、图像答”的角色偏置会让等价内容跨载体后性能骤降。</p>
+    <p class="byline"><strong>LoMo: Local Modality Substitution for Deeper Vision-Language Fusion</strong>　Feng Han, Zhixiong Zhang, Zheming Liang, Yibin Wang, Jiaqi Wang；机构以论文首页为准。　arXiv　<a href="https://arxiv.org/abs/2605.30265">原文链接</a></p>
+    <div class="paper-facts">
+      <span><b>编号</b>2605.30265</span>
+      <span><b>优先级</b>P0</span>
+      <span><b>类别</b>Visual SSL / representation</span>
+      <span><b>会议</b>arXiv</span>
+      <span><b>方法</b>构造局部 modality substitution：把问题文本或语义片段替换成渲染图像等价物，诊断模型是否真正对齐语义而不是依赖固定载体角色。</span>
+      <span><b>来源</b>arXiv / OpenReview</span>
+    </div>
+    <div class="feature-body">
+      <p class="lead dropcap">先说结论。它把“图文对齐”从全局 embedding 相似度推进到局部语义载体不变性，是多模态自监督很关键的失败模式。 提出 carrier sensitivity 问题：现有图文数据中“文本问、图像答”的角色偏置会让等价内容跨载体后性能骤降。</p>
+      <figure class="full-fig"><img src="../assets/mineru/2605.30265/images/585e0441196f46939c3d5515c1f888d48c399282b9c79443e5b762fb2a1f5f34.jpg" alt="(c) LoMo enhances cross-modal alignment"><figcaption><b>(c) LoMo enhances cross-modal alignment</b><span class="fig-en">(c) LoMo enhances cross-modal alignment. Figure 1: Current Vision-Language Models exhibit carrier sensitivity driven by an underlying modality gap. (a) Carrier sensitivity across VLMs. Simply shifting identical semantic content from a text format to a visual format (rendering standard questions as images) causes consistent and significant accuracy drops across state-of-the-art models. (b) The physical manifestation of the modality gap. By measuring the pairwise cross-modal distance between the original text and its rendered-image counterpart, we observe a strict monotonic trend, where greater representational distance between the two carriers corresponds to more severe accuracy degradation. (c) LoMo enhances cross-modal alignment. Our method shifts the cross-modal distance distribution markedly toward smaller values, reducing the average distance by 14.2% compared to Standard SFT and yielding tighter cross-carrier alignment.</span><span class="fig-zh">这张图/表用于判断 LoMo 的实验收益来自哪里。重点看替换、消融或跨模型设置下趋势是否一致，而不是只看单个最高分。</span></figcaption></figure>
+<figure class="full-fig"><img src="../assets/mineru/2605.30265/images/bee270e8f42990607179843a2fd1d2954f155cb4055483f2fb827d249098061b.jpg" alt="Figureure 2 · : Overview of LoMo"><figcaption><b>Figureure 2 · : Overview of LoMo</b><span class="fig-en">Figure 2: Overview of LoMo. LoMo reformulates a text-only instance into a text–image interleaved sequence through three stages. Structure-Aware Span Localization chunks the input in a formulaaware manner and selects a semantically coherent middle span as the target for visualization. Visual Rendering converts the target span into an image via content-aware routing between LaTeX and standard text renderers. The image is then perturbed by Perceptual Distortion and substituted back into the original position, forming a “text → visual carrier → text” instance.</span><span class="fig-zh">这张图概括 LoMo 的整体方法流程。阅读时先看模块之间传递的训练信号，再看作者如何把目标拆成可优化的子问题。</span></figcaption></figure>
+      
+      <h2>核心问题</h2>
+      <p>它把“图文对齐”从全局 embedding 相似度推进到局部语义载体不变性，是多模态自监督很关键的失败模式。</p>
+      <h2>方法拆解</h2>
+      <p>构造局部 modality substitution：把问题文本或语义片段替换成渲染图像等价物，诊断模型是否真正对齐语义而不是依赖固定载体角色。</p>
+      <h2>主要贡献</h2>
+      <p>提出 carrier sensitivity 问题：现有图文数据中“文本问、图像答”的角色偏置会让等价内容跨载体后性能骤降。</p>
+      <h2>实验看点</h2>
+      <p>摘要指出常见 caption/VQA/OCR/interleaved 数据集都存在载体角色不对称；应重点看替换粒度、不同 VLM 家族和训练数据消融。</p>
+      <h2>局限与读法</h2>
+      <p>更像诊断与数据偏置分析，不是完整 SSL 预训练算法；是否能形成可扩展训练目标要看作者给出的修正策略。</p>
+    
+    </div>
+  </div>
+  <aside class="paper-side">
+
+    <div class="side-box"><h4>关键判断</h4><dl><dt>相关性</dt><dd>P0</dd><dt>类别</dt><dd>Visual SSL / representation</dd><dt>会议</dt><dd>arXiv</dd><dt>读法</dt><dd>方法图优先，表格次之</dd></dl></div>
+    <div class="side-box"><h4>原文</h4><p><a href="https://arxiv.org/abs/2605.30265">https://arxiv.org/abs/2605.30265</a></p></div>
+  </aside>
+</article></main>
+  <aside class="conf-float" data-conf-reminder="2026-05-30-main-ddl" aria-label="CCF A/B 主投稿提醒">
+  <button class="conf-close" type="button" aria-label="关闭会议提醒">×</button>
+  <details open>
+    <summary>CCF A/B 主投稿提醒</summary>
+    <div class="conf-list"><a class="conf-item " href="https://github.com/ccfddl/ccf-deadlines/blob/main/conference/AI/aaai.yml">
+  <span><b>AAAI 2027</b><em>CCF A · Main paper submission</em></span>
+  <strong>58 天</strong>
+  <small>2026-07-27 · CCF DDL: abstract 2026-07-20；进入 1 个月窗口后重点提醒。</small>
+</a></div>
+  </details>
+</aside>
+  <footer class="footer">
+    <div>面向通用视觉自监督、视觉基础模型与多模态表征学习的每日研究报。</div>
+    <div class="muted">Issue 2026-05-30 · Curated readings and figure notes</div>
+  </footer>
+  <script>
+  (() => {
+    const box = document.querySelector('[data-conf-reminder]');
+    if (!box) return;
+    const key = `visualSslConfReminderClosed:${box.dataset.confReminder || '2026-05-30-main-ddl'}`;
+    try {
+      if (localStorage.getItem(key) === '1') box.hidden = true;
+    } catch (err) {}
+    const close = box.querySelector('.conf-close');
+    if (close) {
+      close.addEventListener('click', () => {
+        box.hidden = true;
+        try { localStorage.setItem(key, '1'); } catch (err) {}
+      });
+    }
+  })();
+  </script>
+</body>
+</html>

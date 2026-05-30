@@ -9,7 +9,7 @@
 </head>
 <body>
   <header class="masthead">
-    <div class="masthead-kicker">Visual SSL Research Report · 2026-05-29</div>
+    <div class="masthead-kicker">Visual SSL Research Report · 2026-05-30</div>
     <a class="masthead-title" href="index.html">通用视觉自监督研究报</a>
     <div class="masthead-meta">
       <span>图像表征 · VFM · JEPA · 视频预训练</span>
@@ -19,106 +19,106 @@
   </header>
   <nav class="site-nav" aria-label="主导航">
     <a class="nav-link active" href="index.html">头版</a>
-<a class="nav-link" href="issues/2026-05-29.html">今日速递</a>
+<a class="nav-link" href="issues/2026-05-30.html">今日速递</a>
 <a class="nav-link" href="pages/catalog.html">论文目录</a>
 <a class="nav-link" href="pages/timeline.html">时间线</a>
   </nav>
   <main><section class="hero-grid">
   <article class="lead-story">
     <div class="kicker">今日主线 · arXiv</div>
-    <h1>From Pixels to Words --：原生 pixels-to-words one-vision 模型，直接挑战“预训练视觉 encoder + LLM adapter”的主流 VLM 拼接范式</h1>
-    <p class="dek">原生 pixels-to-words one-vision 模型，直接挑战“预训练视觉 encoder + LLM adapter”的主流 VLM 拼接范式。</p>
-    <figure class="hero-figure"><img src="assets/mineru/2605.28820/images/105d0f6cafb3370d7c882813790efd313d9f895b65d1f6fcee0eafe4336091d7.jpg" alt="From Pixels to Words -- figure"><figcaption>这张图概括 From Pixels to Words -- 的整体方法流程。阅读时先看模块之间传递的训练信号，再看作者如何把目标拆成可优化的子问题。</figcaption></figure>
-    <div class="paper-actions"><a href="issues/2026-05-29.html">阅读 5 月 29 日速递</a><a href="papers/2605.28820.html">打开主文页</a></div>
+    <h1>Cycle Consistency in Video Object-Centric：自监督视频 object-centric learning，提出隐式 cycle consistency 避免 slot collapse，直接命中通用视频表征</h1>
+    <p class="dek">自监督视频 object-centric learning，提出隐式 cycle consistency 避免 slot collapse，直接命中通用视频表征。</p>
+    <figure class="hero-figure"><img src="assets/mineru/2605.30211/images/c53d06ea609303cbb255e9ab3fbfc8b1dc8f6dbdf82c17a77b425cec0892af26.jpg" alt="Cycle Consistency in Video Object-Centric figure"><figcaption>这张可视化用来解释 Cycle Consistency in Video Object-Centric 学到的中间表征或对齐关系。重点看它是否支持正文里的机制判断。</figcaption></figure>
+    <div class="paper-actions"><a href="issues/2026-05-30.html">阅读 5 月 30 日速递</a><a href="papers/2605.30211.html">打开主文页</a></div>
   </article>
   <aside class="issue-brief">
     <h2>快速摘要</h2>
-    <ul><li><b>今日最值得看</b><span>NEO-ov、VLM vs VGM spatial probing、Representation-Conditioned Diffusion、DiffPrune/AdaMerge；分别对应 native VLM 架构、视觉表征基座对比、DINO/CLIP 表征条件生成、视觉 token 压缩。</span></li><li><b>建议精读顺序</b><span>1) NEO-ov；2) Which Pretraining Paradigm Better Serves Spatial Intelligence；3) Representation-Conditioned Diffusion；4) DiffPrune + AdaMerge；5) SIGMA + Pix2Key；其余视觉推理/验证/理论更新扫读。</span></li><li><b>新增/更新/过滤数量</b><span>入选 16 条：P0 3、P1 4、P2 4、P3/扫读 5；其中 arXiv 新增/交叉新增 13，更新/会议状态变化 3；过滤或降级 24 条。</span></li><li><b>主要判断</b><span>今天的核心信号是“视觉表征如何进入大模型系统”：端到端 pixels-to-words、冻结特征 probing、表征条件合成数据、token 级预算控制，比单一 SSL loss 更值得跟。</span></li><li><b>会议/顶会动态</b><span>ICML 2026 官方索引继续出现视觉 SSL/VLM 条目：Pix2Key、Self-Prophetic Decoding、TC-JEPA、SWEET、ResDreamer、The Convergent Representation 等；已见条目只记状态，不重复推荐。</span></li></ul>
+    <ul><li><b>今日最值得看</b><span>Cycle Consistency in Video OCL、LoMo、GASP/Beyond 3D VQAs、GPIC；分别对应未标注视频对象绑定、跨模态载体不变性、3D 几何先验训练、开放图像预训练数据。</span></li><li><b>建议精读顺序</b><span>1) Cycle Consistency in Video OCL；2) LoMo；3) GASP；4) GPIC；5) TRACER + CLIP tail alignment；PARCEL/Geometry Matters/EarlyTom 作为 token 与几何表征配套阅读。</span></li><li><b>新增/更新/过滤数量</b><span>入选 15 条：P0 4、P1 4、P2 3、P3 2、扫读 2；arXiv 新增 15，会议状态合并 6，过滤/降级 18 条；未发现需要单独补报的 OpenReview 新接收状态。</span></li><li><b>主要判断</b><span>今天不再是单一 SSL loss 的日子，而是“视觉表征的结构接口”：object slots、carrier-invariant VLM fusion、3D spatial priors、token budget、数据语料与对比微调稳定性都在收敛到同一问题。</span></li><li><b>会议/顶会动态</b><span>CVPR 2026 相关：GASP、GR3D、EarlyTom；ICML 2026 相关：Veda、TRACER、CLIP tail alignment。会议信息来自 arXiv comments/CVF/OpenReview，和 arXiv 条目合并去重。</span></li></ul>
   </aside>
 </section>
 <section class="section-block">
   <div class="section-heading"><h2>今日推荐论文</h2><a href="pages/catalog.html">全目录 →</a></div>
-  <div class="paper-list"><article class="paper-card" data-category="Visual SSL / representation" data-priority="P0" data-date="2026-05-29" data-title="from pixels to words -- towards native one-vision models at scale" data-keywords="from pixels to words -- towards native one-vision models at scale from pixels to words -- visual ssl / representation p0 2026-05-29 arxiv 原生 pixels-to-words one-vision 模型，直接挑战“预训练视觉 encoder + llm adapter”的主流 vlm 拼接范式 高相关；详见方法、贡献和实验边界。">
-  <a class="paper-thumb paper-thumb-text" href="papers/2605.28820.html">
-    <img src="assets/mineru/2605.28820/images/105d0f6cafb3370d7c882813790efd313d9f895b65d1f6fcee0eafe4336091d7.jpg" alt="From Pixels to Words -- figure"><span>P0</span>
+  <div class="paper-list"><article class="paper-card" data-category="Visual SSL / representation" data-priority="P0" data-date="2026-05-30" data-title="cycle consistency in video object-centric learning" data-keywords="cycle consistency in video object-centric learning cycle consistency in video object-centric visual ssl / representation p0 2026-05-30 arxiv 自监督视频 object-centric learning，提出隐式 cycle consistency 避免 slot collapse，直接命中通用视频表征 高相关；详见方法、贡献和实验边界。">
+  <a class="paper-thumb paper-thumb-text" href="papers/2605.30211.html">
+    <img src="assets/mineru/2605.30211/images/c53d06ea609303cbb255e9ab3fbfc8b1dc8f6dbdf82c17a77b425cec0892af26.jpg" alt="Cycle Consistency in Video Object-Centric figure"><span>P0</span>
   </a>
   <div>
-    <div class="paper-meta">2026-05-29 · Visual SSL / representation · arXiv</div>
-    <h3><a href="papers/2605.28820.html">From Pixels to Words -- Towards Native One-Vision Models at Scale</a></h3>
+    <div class="paper-meta">2026-05-30 · Visual SSL / representation · arXiv</div>
+    <h3><a href="papers/2605.30211.html">Cycle Consistency in Video Object-Centric Learning</a></h3>
     <p>高相关；详见方法、贡献和实验边界。</p>
-    <p class="card-tech"><b>方法：</b>原生 pixels-to-words one-vision 模型，直接挑战“预训练视觉 encoder + LLM adapter”的主流 VLM 拼接范式</p>
-    <div class="paper-actions"><a href="papers/2605.28820.html">读图文页</a><a href="https://arxiv.org/abs/2605.28820">原文</a></div>
+    <p class="card-tech"><b>方法：</b>自监督视频 object-centric learning，提出隐式 cycle consistency 避免 slot collapse，直接命中通用视频表征</p>
+    <div class="paper-actions"><a href="papers/2605.30211.html">读图文页</a><a href="https://arxiv.org/abs/2605.30211">原文</a></div>
   </div>
 </article>
-<article class="paper-card" data-category="Visual SSL / representation" data-priority="P0" data-date="2026-05-29" data-title="which pretraining paradigm better serves spatial intelligence? an empirical comparison of vision-language and video generation models" data-keywords="which pretraining paradigm better serves spatial intelligence? an empirical comparison of vision-language and video generation models which pretraining paradigm better serves visual ssl / representation p0 2026-05-29 arxiv 用 frozen-feature probing 比较 vlm 与 vgm 表征，直接回答语义与几何信息分别从哪类预训练来 高相关；详见方法、贡献和实验边界。">
-  <a class="paper-thumb paper-thumb-text" href="papers/2605.28132.html">
-    <img src="assets/mineru/2605.28132/images/436972dad1e99285f157672bf20d749e5b1db031ea833f05e98e0389ef3e7cdf.jpg" alt="Which Pretraining Paradigm Better Serves figure"><span>P0</span>
+<article class="paper-card" data-category="Visual SSL / representation" data-priority="P0" data-date="2026-05-30" data-title="lomo: local modality substitution for deeper vision-language fusion" data-keywords="lomo: local modality substitution for deeper vision-language fusion lomo visual ssl / representation p0 2026-05-30 arxiv 用局部模态替换暴露 vlm 对文本/图像载体的表征不等价，适合指导视觉-语言自监督数据与目标设计 高相关；详见方法、贡献和实验边界。">
+  <a class="paper-thumb paper-thumb-text" href="papers/2605.30265.html">
+    <img src="assets/mineru/2605.30265/images/585e0441196f46939c3d5515c1f888d48c399282b9c79443e5b762fb2a1f5f34.jpg" alt="LoMo figure"><span>P0</span>
   </a>
   <div>
-    <div class="paper-meta">2026-05-29 · Visual SSL / representation · arXiv</div>
-    <h3><a href="papers/2605.28132.html">Which Pretraining Paradigm Better Serves Spatial Intelligence? An Empirical Comparison of Vision-Language and Video Generation Models</a></h3>
+    <div class="paper-meta">2026-05-30 · Visual SSL / representation · arXiv</div>
+    <h3><a href="papers/2605.30265.html">LoMo: Local Modality Substitution for Deeper Vision-Language Fusion</a></h3>
     <p>高相关；详见方法、贡献和实验边界。</p>
-    <p class="card-tech"><b>方法：</b>用 frozen-feature probing 比较 VLM 与 VGM 表征，直接回答语义与几何信息分别从哪类预训练来</p>
-    <div class="paper-actions"><a href="papers/2605.28132.html">读图文页</a><a href="https://arxiv.org/abs/2605.28132">原文</a></div>
+    <p class="card-tech"><b>方法：</b>用局部模态替换暴露 VLM 对文本/图像载体的表征不等价，适合指导视觉-语言自监督数据与目标设计</p>
+    <div class="paper-actions"><a href="papers/2605.30265.html">读图文页</a><a href="https://arxiv.org/abs/2605.30265">原文</a></div>
   </div>
 </article>
-<article class="paper-card" data-category="arXiv cross-list" data-priority="P0" data-date="2026-05-29" data-title="representation-conditioned diffusion models for guided training data generation" data-keywords="representation-conditioned diffusion models for guided training data generation representation-conditioned diffusion models for guided arxiv cross-list p0 2026-05-29 arxiv cross-list 用 dinov2/dinov3/clip 表征条件化扩散模型合成训练数据，把通用视觉表征变成数据生成控制变量 高相关；详见方法、贡献和实验边界。">
-  <a class="paper-thumb paper-thumb-text" href="papers/2605.27495.html">
-    <img src="assets/mineru/2605.27495/images/e49a715824f236b8c31d69cfd50f4c4b9c00162aabbd3e52967a42a169086bdd.jpg" alt="Representation-Conditioned Diffusion Models for Guided figure"><span>P0</span>
+<article class="paper-card" data-category="CVPR 2026 + arXiv" data-priority="P0" data-date="2026-05-30" data-title="beyond 3d vqas: injecting 3d spatial priors into vision-language models for enhanced geometric reasoning" data-keywords="beyond 3d vqas: injecting 3d spatial priors into vision-language models for enhanced geometric reasoning beyond 3d vqas cvpr 2026 + arxiv p0 2026-05-30 cvpr 2026 + arxiv gasp 用 contrastive correspondence 与 depth consistency 学几何先验，比单纯 3d vqa 微调更接近空间表征预训练 高相关；详见方法、贡献和实验边界。">
+  <a class="paper-thumb paper-thumb-text" href="papers/2605.30231.html">
+    <span>P0</span><strong>Beyond 3D VQAs</strong><em>CVPR 2026 + arXiv</em>
   </a>
   <div>
-    <div class="paper-meta">2026-05-29 · arXiv cross-list · arXiv cross-list</div>
-    <h3><a href="papers/2605.27495.html">Representation-Conditioned Diffusion Models for Guided Training Data Generation</a></h3>
+    <div class="paper-meta">2026-05-30 · CVPR 2026 + arXiv · CVPR 2026 + arXiv</div>
+    <h3><a href="papers/2605.30231.html">Beyond 3D VQAs: Injecting 3D Spatial Priors into Vision-Language Models for Enhanced Geometric Reasoning</a></h3>
     <p>高相关；详见方法、贡献和实验边界。</p>
-    <p class="card-tech"><b>方法：</b>用 DINOv2/DINOv3/CLIP 表征条件化扩散模型合成训练数据，把通用视觉表征变成数据生成控制变量</p>
-    <div class="paper-actions"><a href="papers/2605.27495.html">读图文页</a><a href="https://arxiv.org/abs/2605.27495">原文</a></div>
+    <p class="card-tech"><b>方法：</b>GASP 用 contrastive correspondence 与 depth consistency 学几何先验，比单纯 3D VQA 微调更接近空间表征预训练</p>
+    <div class="paper-actions"><a href="papers/2605.30231.html">读图文页</a><a href="https://arxiv.org/abs/2605.30231">原文</a></div>
   </div>
 </article>
-<article class="paper-card" data-category="Visual SSL / representation" data-priority="P1" data-date="2026-05-29" data-title="beyond surrogate gradients: fully differentiable token pruning for vision-language models" data-keywords="beyond surrogate gradients: fully differentiable token pruning for vision-language models beyond surrogate gradients visual ssl / representation p1 2026-05-29 arxiv diffprune 直接在 visual token representation 上学习可微信息节流，服务 vlm 计算预算 中高相关；详见方法、贡献和实验边界。">
-  <a class="paper-thumb paper-thumb-text" href="papers/2605.28051.html">
-    <img src="assets/mineru/2605.28051/images/cebc4688b80ddcd60f0c10356a396bcff7cb254546adb4ee0dd77cd70f16c0d4.jpg" alt="Beyond Surrogate Gradients figure"><span>P1</span>
+<article class="paper-card" data-category="dataset" data-priority="P0" data-date="2026-05-30" data-title="gpic: a giant permissive image corpus for visual generation" data-keywords="gpic: a giant permissive image corpus for visual generation gpic dataset p0 2026-05-30 arxiv + dataset 1 亿训练图像、vlm caption、许可友好与去重安全过滤，适合作为视觉生成/基础模型预训练数据源观察 高相关；详见方法、贡献和实验边界。">
+  <a class="paper-thumb paper-thumb-text" href="papers/2605.30341.html">
+    <img src="assets/mineru/2605.30341/images/989b42cb5b4f524246ac374d7ccacda8a49d1ffdc9ecd2773be1b0c2f7524a0e.jpg" alt="GPIC figure"><span>P0</span>
   </a>
   <div>
-    <div class="paper-meta">2026-05-29 · Visual SSL / representation · arXiv</div>
-    <h3><a href="papers/2605.28051.html">Beyond Surrogate Gradients: Fully Differentiable Token Pruning for Vision-Language Models</a></h3>
+    <div class="paper-meta">2026-05-30 · dataset · arXiv + dataset</div>
+    <h3><a href="papers/2605.30341.html">GPIC: A Giant Permissive Image Corpus for Visual Generation</a></h3>
+    <p>高相关；详见方法、贡献和实验边界。</p>
+    <p class="card-tech"><b>方法：</b>1 亿训练图像、VLM caption、许可友好与去重安全过滤，适合作为视觉生成/基础模型预训练数据源观察</p>
+    <div class="paper-actions"><a href="papers/2605.30341.html">读图文页</a><a href="https://arxiv.org/abs/2605.30341">原文</a></div>
+  </div>
+</article>
+<article class="paper-card" data-category="ICML 2026 + arXiv" data-priority="P1" data-date="2026-05-30" data-title="tracer: persistent regularization for robust multimodal finetuning" data-keywords="tracer: persistent regularization for robust multimodal finetuning tracer icml 2026 + arxiv p1 2026-05-30 icml 2026 + arxiv 从多模态 contrastive finetuning 理论解释 self-distillation，并提出 wma teacher 防止 ema collapse 中高相关；详见方法、贡献和实验边界。">
+  <a class="paper-thumb paper-thumb-text" href="papers/2605.29380.html">
+    <img src="assets/mineru/2605.29380/images/87b2d2501da86573dbd94e5f472b5adf4fda154b0ffa404fa6d19a32975fed1a.jpg" alt="TRACER figure"><span>P1</span>
+  </a>
+  <div>
+    <div class="paper-meta">2026-05-30 · ICML 2026 + arXiv · ICML 2026 + arXiv</div>
+    <h3><a href="papers/2605.29380.html">TRACER: Persistent Regularization for Robust Multimodal Finetuning</a></h3>
     <p>中高相关；详见方法、贡献和实验边界。</p>
-    <p class="card-tech"><b>方法：</b>DiffPrune 直接在 visual token representation 上学习可微信息节流，服务 VLM 计算预算</p>
-    <div class="paper-actions"><a href="papers/2605.28051.html">读图文页</a><a href="https://arxiv.org/abs/2605.28051">原文</a></div>
-  </div>
-</article>
-<article class="paper-card" data-category="arXiv cross-list" data-priority="P1" data-date="2026-05-29" data-title="adamerge: salience-aware adaptive token merging for training-free acceleration of vision transformers" data-keywords="adamerge: salience-aware adaptive token merging for training-free acceleration of vision transformers adamerge arxiv cross-list p1 2026-05-29 arxiv cross-list 训练-free vit token merging，把 token 重要性和层级冗余纳入合并决策 中高相关；详见方法、贡献和实验边界。">
-  <a class="paper-thumb paper-thumb-text" href="papers/2605.27465.html">
-    <img src="assets/mineru/2605.27465/images/0be6cccf6dd1e40e41be6a24a4ed1a39615bb53cc01eee51226fce75770581fc.jpg" alt="AdaMerge figure"><span>P1</span>
-  </a>
-  <div>
-    <div class="paper-meta">2026-05-29 · arXiv cross-list · arXiv cross-list</div>
-    <h3><a href="papers/2605.27465.html">AdaMerge: Salience-Aware Adaptive Token Merging for Training-Free Acceleration of Vision Transformers</a></h3>
-    <p>中高相关；详见方法、贡献和实验边界。</p>
-    <p class="card-tech"><b>方法：</b>训练-free ViT token merging，把 token 重要性和层级冗余纳入合并决策</p>
-    <div class="paper-actions"><a href="papers/2605.27465.html">读图文页</a><a href="https://arxiv.org/abs/2605.27465">原文</a></div>
+    <p class="card-tech"><b>方法：</b>从多模态 contrastive finetuning 理论解释 self-distillation，并提出 WMA teacher 防止 EMA collapse</p>
+    <div class="paper-actions"><a href="papers/2605.29380.html">读图文页</a><a href="https://arxiv.org/abs/2605.29380">原文</a></div>
   </div>
 </article></div>
 </section></main>
-  <aside class="conf-float" data-conf-reminder="2026-05-29-main-ddl" aria-label="CCF A/B 主投稿提醒">
+  <aside class="conf-float" data-conf-reminder="2026-05-30-main-ddl" aria-label="CCF A/B 主投稿提醒">
   <button class="conf-close" type="button" aria-label="关闭会议提醒">×</button>
   <details open>
     <summary>CCF A/B 主投稿提醒</summary>
     <div class="conf-list"><a class="conf-item " href="https://github.com/ccfddl/ccf-deadlines/blob/main/conference/AI/aaai.yml">
   <span><b>AAAI 2027</b><em>CCF A · Main paper submission</em></span>
-  <strong>59 天</strong>
+  <strong>58 天</strong>
   <small>2026-07-27 · CCF DDL: abstract 2026-07-20；进入 1 个月窗口后重点提醒。</small>
 </a></div>
   </details>
 </aside>
   <footer class="footer">
     <div>面向通用视觉自监督、视觉基础模型与多模态表征学习的每日研究报。</div>
-    <div class="muted">Issue 2026-05-29 · Curated readings and figure notes</div>
+    <div class="muted">Issue 2026-05-30 · Curated readings and figure notes</div>
   </footer>
   <script>
   (() => {
     const box = document.querySelector('[data-conf-reminder]');
     if (!box) return;
-    const key = `visualSslConfReminderClosed:${box.dataset.confReminder || '2026-05-29-main-ddl'}`;
+    const key = `visualSslConfReminderClosed:${box.dataset.confReminder || '2026-05-30-main-ddl'}`;
     try {
       if (localStorage.getItem(key) === '1') box.hidden = true;
     } catch (err) {}

@@ -19,39 +19,39 @@
   </header>
   <nav class="site-nav" aria-label="主导航">
     <a class="nav-link" href="../index.html">头版</a>
-<a class="nav-link" href="../issues/2026-05-29.html">今日速递</a>
+<a class="nav-link" href="../issues/2026-05-30.html">今日速递</a>
 <a class="nav-link" href="../pages/catalog.html">论文目录</a>
 <a class="nav-link" href="../pages/timeline.html">时间线</a>
   </nav>
   <main><article class="paper-detail">
   <div class="paper-main">
     <div class="kicker">Visual SSL / representation · P3 · 2026-05-29</div>
-    <h1 class="paper-headline">Proprio：它展示 latent dynamics residual 可作为无监督质量信号，和视频预训练/世界模型表征诊断有关</h1>
-    <p class="dek">不依赖外部 VLM/world model scorer，让生成模型用自己的 latent dynamics 对物理合理性自评分。</p>
-    <p class="byline"><strong>Proprio: Latent Self-Scoring and Inference-Time Refinement for Physically Plausible Video Generation</strong>　Mariam Hassan, Kaouther Messaoud, Wuyang Li, Alexandre Alahi；机构以论文首页为准。　arXiv　<a href="https://arxiv.org/abs/2605.28230">原文链接</a></p>
+    <h1 class="paper-headline">Proprio：它和通用视觉自监督的关系在于：冻结视频生成模型用 latent perturbation residual 自评分，体现生成模型内部表征的物理一致性信号</h1>
+    <p class="dek">中相关；详见方法、贡献和实验边界。</p>
+    <p class="byline"><strong>Proprio: Latent Self-Scoring and Inference-Time Refinement for Physically Plausible Video Generation</strong>　arXiv　<a href="https://arxiv.org/abs/2605.28230">原文链接</a></p>
     <div class="paper-facts">
       <span><b>编号</b>2605.28230</span>
       <span><b>优先级</b>P3</span>
       <span><b>类别</b>Visual SSL / representation</span>
       <span><b>会议</b>arXiv</span>
-      <span><b>方法</b>冻结视频生成模型，在受控 latent perturbation 下测量 flow residual；残差更小、更稳定的样本被视为更符合模型学习到的动态，并可用于 best-of-N 或 gradient-based self-refinement。</span>
+      <span><b>方法</b>冻结视频生成模型用 latent perturbation residual 自评分，体现生成模型内部表征的物理一致性信号</span>
       <span><b>来源</b>arXiv / OpenReview</span>
     </div>
     <div class="feature-body">
-      <p class="lead dropcap">先说结论。它展示 latent dynamics residual 可作为无监督质量信号，和视频预训练/世界模型表征诊断有关。 不依赖外部 VLM/world model scorer，让生成模型用自己的 latent dynamics 对物理合理性自评分。</p>
+      <p class="lead dropcap">先说结论。它和通用视觉自监督的关系在于：冻结视频生成模型用 latent perturbation residual 自评分，体现生成模型内部表征的物理一致性信号。 中相关；详见方法、贡献和实验边界。</p>
       <figure class="full-fig"><img src="../assets/mineru/2605.28230/images/e751823f7ff4d3b80ba808270df95b39487345c6871b196fed25835cf7330e8e.jpg" alt="Figureure 2 · : Proprio method overview"><figcaption><b>Figureure 2 · : Proprio method overview</b><span class="fig-en">Figure 2: Proprio method overview. For a generated latent video, Proprio computes a per-video self-scoring signal by perturbing the latent at multiple timesteps, measuring denoising residuals with the frozen generator, weighting timesteps by inverse variance, and emphasizing informative motion regions with a dynamic spatiotemporal mask. The resulting score can either be used for ranking and selection, self-refining or both. The VAE encoder is omitted for brevity.</span><span class="fig-zh">这张图概括 Proprio 的整体方法流程。阅读时先看模块之间传递的训练信号，再看作者如何把目标拆成可优化的子问题。</span></figcaption></figure>
 <figure class="full-fig"><img src="../assets/mineru/2605.28230/images/56abad1340be1fe189d67715a1bf5b4f6bdcf1c98e7bddb2e52f6f772bc226a0.jpg" alt="Figureure 1 · : Proprio enables a video generator to evaluate and improve its own ge"><figcaption><b>Figureure 1 · : Proprio enables a video generator to evaluate and improve its own ge</b><span class="fig-en">Figure 1: Proprio enables a video generator to evaluate and improve its own generation. Left: qualitative refinement comparisons for TurboWan2.2. Right: Proprio computes a latent self-score from the model’s denoising residual and uses it for either sample selection or inference-time refinement.</span><span class="fig-zh">这张图/表用于判断 Proprio 的实验收益来自哪里。重点看替换、消融或跨模型设置下趋势是否一致，而不是只看单个最高分。</span></figcaption></figure>
       
       <h2>核心问题</h2>
-      <p>它展示 latent dynamics residual 可作为无监督质量信号，和视频预训练/世界模型表征诊断有关。</p>
+      <p>它和通用视觉自监督的关系在于：冻结视频生成模型用 latent perturbation residual 自评分，体现生成模型内部表征的物理一致性信号。</p>
       <h2>方法拆解</h2>
-      <p>冻结视频生成模型，在受控 latent perturbation 下测量 flow residual；残差更小、更稳定的样本被视为更符合模型学习到的动态，并可用于 best-of-N 或 gradient-based self-refinement。</p>
+      <p>冻结视频生成模型用 latent perturbation residual 自评分，体现生成模型内部表征的物理一致性信号</p>
       <h2>主要贡献</h2>
-      <p>不依赖外部 VLM/world model scorer，让生成模型用自己的 latent dynamics 对物理合理性自评分。</p>
+      <p>中相关；详见方法、贡献和实验边界。</p>
       <h2>实验看点</h2>
-      <p>摘要称 TurboWan2.2 上 Physics-IQ 从 32.2 到 37.5，VideoPhy2-hard physical commonsense 从 45.6 到 55.0，人评也偏好 Proprio 输出。</p>
+      <p>实验部分建议重点看两类证据：一是作者是否把方法收益和更强数据、更长训练、更大模型区分开；二是跨模型、跨数据或跨任务迁移是否还能保留同样趋势。</p>
       <h2>局限与读法</h2>
-      <p>偏视频生成质量控制，不直接学习通用视觉 encoder；“模型自身觉得合理”可能仍继承生成模型偏差。</p>
+      <p>这篇论文的结论需要结合任务设置、训练数据规模和消融实验一起看；不要只凭单个指标判断它对通用视觉表征的价值。</p>
     
     </div>
   </div>
@@ -61,13 +61,13 @@
     <div class="side-box"><h4>原文</h4><p><a href="https://arxiv.org/abs/2605.28230">https://arxiv.org/abs/2605.28230</a></p></div>
   </aside>
 </article></main>
-  <aside class="conf-float" data-conf-reminder="2026-05-29-main-ddl" aria-label="CCF A/B 主投稿提醒">
+  <aside class="conf-float" data-conf-reminder="2026-05-30-main-ddl" aria-label="CCF A/B 主投稿提醒">
   <button class="conf-close" type="button" aria-label="关闭会议提醒">×</button>
   <details open>
     <summary>CCF A/B 主投稿提醒</summary>
     <div class="conf-list"><a class="conf-item " href="https://github.com/ccfddl/ccf-deadlines/blob/main/conference/AI/aaai.yml">
   <span><b>AAAI 2027</b><em>CCF A · Main paper submission</em></span>
-  <strong>59 天</strong>
+  <strong>58 天</strong>
   <small>2026-07-27 · CCF DDL: abstract 2026-07-20；进入 1 个月窗口后重点提醒。</small>
 </a></div>
   </details>
@@ -80,7 +80,7 @@
   (() => {
     const box = document.querySelector('[data-conf-reminder]');
     if (!box) return;
-    const key = `visualSslConfReminderClosed:${box.dataset.confReminder || '2026-05-29-main-ddl'}`;
+    const key = `visualSslConfReminderClosed:${box.dataset.confReminder || '2026-05-30-main-ddl'}`;
     try {
       if (localStorage.getItem(key) === '1') box.hidden = true;
     } catch (err) {}

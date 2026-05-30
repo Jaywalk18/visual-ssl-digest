@@ -19,20 +19,18 @@
   </header>
   <nav class="site-nav" aria-label="主导航">
     <a class="nav-link" href="../index.html">头版</a>
-<a class="nav-link active" href="../issues/2026-05-29.html">今日速递</a>
+<a class="nav-link" href="../issues/2026-05-30.html">今日速递</a>
 <a class="nav-link" href="../pages/catalog.html">论文目录</a>
 <a class="nav-link" href="../pages/timeline.html">时间线</a>
   </nav>
   <main><article class="paper-detail issue-detail">
   <div class="paper-main">
     <div class="kicker">Daily issue · 2026-05-29 · CCF A/B 会议优先</div>
-    <h1 class="paper-headline">5 月 29 日：From Pixels to Words -- 等视觉表征主线更新</h1>
-    <p class="dek">本期聚焦通用视觉表征、视觉语言预训练与视频自监督中最值得跟进的论文，并保留 CCF A/B、OpenReview 与 arXiv 状态线索。</p>
+    <h1 class="paper-headline">5 月 29 日：From Pixels to Words -- 等视觉表征论文归档</h1>
+    <p class="dek">本页按日期归档近期论文，保留优先级、主题、来源与方法线索，方便回看同一批工作的研究脉络。</p>
     <div class="feature-body">
-      <p class="lead dropcap">先读 NEO-ov，它把“是否还需要独立视觉 encoder”这个问题推到 native one-vision 架构层面，和传统 CLIP/DINO/ViT backbone 路线形成正面对比。随后读 Which Pretraining Paradigm Better Serves Spatial Intelligence?，它用 frozen-feature probes 对 VLM 与 video generation model 做语义、实例、几何三轴拆分，是判断“语言监督 vs 视频生成监督”的好入口。第三步读 Representation-Conditioned Diffusion，重点看 DINOv2/DINOv3/CLIP 表征如何作为合成训练数据的条件；这篇和数据引擎、SSL 特征可生成性强相关。DiffPrune 与 AdaMerge 建议一起读：一个训练可微视觉 token pruning，一个训练-free ViT token merging，都是通用视觉表征落地部署的关键。ROVER、Look on Demand、Self-Prophetic、OmniVerifier 等更偏 MLLM reasoning/post-training，读方法图和实验边界即可。</p>
+      <p class="lead dropcap">先读 From Pixels to Words --。原生 pixels-to-words one-vision 模型，直接挑战“预训练视觉 encoder + LLM adapter”的主流 VLM 拼接范式。 其余论文按 P1/P2 与主题顺序扫读，重点看方法图、消融设置和是否能迁移到通用视觉表征。</p>
       <h2>论文索引</h2>
-      <table class="compact-table"><thead><tr><th>优先级</th><th>论文</th><th>类型</th><th>相关性</th><th>一句话理由</th></tr></thead><tbody><tr><td>P0</td><td>From Pixels to Words -- Towards Native One-Vision Models at Scale</td><td>arXiv</td><td>高</td><td>原生 pixels-to-words one-vision 模型，直接挑战“预训练视觉 encoder + LLM adapter”的主流 VLM 拼接范式。</td></tr><tr><td>P0</td><td>Which Pretraining Paradigm Better Serves Spatial Intelligence? An Empirical Comparison of Vision-Language and Video Generation Models</td><td>arXiv</td><td>高</td><td>用 frozen-feature probing 比较 VLM 与 VGM 表征，直接回答语义与几何信息分别从哪类预训练来。</td></tr><tr><td>P0</td><td>Representation-Conditioned Diffusion Models for Guided Training Data Generation</td><td>arXiv cross-list</td><td>高</td><td>用 DINOv2/DINOv3/CLIP 表征条件化扩散模型合成训练数据，把通用视觉表征变成数据生成控制变量。</td></tr><tr><td>P1</td><td>Beyond Surrogate Gradients: Fully Differentiable Token Pruning for Vision-Language Models</td><td>arXiv</td><td>中高</td><td>DiffPrune 直接在 visual token representation 上学习可微信息节流，服务 VLM 计算预算。</td></tr><tr><td>P1</td><td>AdaMerge: Salience-Aware Adaptive Token Merging for Training-Free Acceleration of Vision Transformers</td><td>arXiv cross-list</td><td>中高</td><td>训练-free ViT token merging，把 token 重要性和层级冗余纳入合并决策。</td></tr><tr><td>P1</td><td>SIGMA: Bridging Structural and Distributional Gaps for Vision Foundation Model Adaptation</td><td>arXiv</td><td>中高</td><td>面向 dense prediction 的 VFM 参数高效适配，关注结构尺度差异和分布对齐。</td></tr><tr><td>P1</td><td>Pix2Key: Controllable Open-Vocabulary Retrieval with Semantic Decomposition and Self-Supervised Visual Dictionary Learning</td><td>ICML 2026 + arXiv status</td><td>中高</td><td>ICML 2026 官方索引确认；自监督视觉 dictionary 用于细粒度 composed image retrieval。</td></tr><tr><td>P2</td><td>ROVER: Routing Object-Centric Visual Evidence for Grounded Multi-Image Reasoning</td><td>arXiv cross-list</td><td>中</td><td>object-centric evidence routing，把局部 grounding 证据压入可复用 visual working space。</td></tr><tr><td>P2</td><td>Self-Prophetic Decoding to Unlock Visual Search in LVLMs</td><td>arXiv + ICML 2026</td><td>中</td><td>训练-free visual search decoding，用预训练 LVLM 单步能力修复后训练后的多步干扰。</td></tr><tr><td>P2</td><td>Look on Demand: A Cognitive Scheduling Framework for Visual Evidence Acquisition in Multimodal Reasoning</td><td>arXiv</td><td>中</td><td>让语言模型决定何时调用视觉感知模块，适合观察“视觉证据何时进入推理链”。</td></tr><tr><td>P2</td><td>Beyond Interpretability: When, Why, and How Sparse Autoencoders Enable Label-Free Visual Steering</td><td>arXiv update</td><td>中</td><td>在 CLIP image encoder 激活上训练 SAE 并做 label-free steering，连接可解释性与可操作视觉表征。</td></tr><tr><td>P3</td><td>Understanding Self-Supervised Learning via Latent Distribution Matching</td><td>arXiv update</td><td>中</td><td>将 SSL 统一为 alignment + latent entropy 的分布匹配视角，理论价值高但视觉实验需看正文。</td></tr><tr><td>P3</td><td>Proprio: Latent Self-Scoring and Inference-Time Refinement for Physically Plausible Video Generation</td><td>arXiv</td><td>中</td><td>冻结视频生成模型用 latent perturbation residual 自评分，体现生成模型内部表征的物理一致性信号。</td></tr><tr><td>P3</td><td>RE-TRIANGLE: Does TRIANGLE Enable Multimodal Alignment Beyond Cosine Similarity in Retrieval?</td><td>arXiv cross-list</td><td>中</td><td>复现实验检查 hypersphere triplet area 几何对齐是否稳健，适合和 VLM embedding 几何一起扫。</td></tr><tr><td>扫读</td><td>OmniVerifier-M1: Multimodal Meta-Verifier with Explicit Structured Recalibration</td><td>arXiv cross-list</td><td>中</td><td>visual verifier 用结构化 meta-verification 和解耦 RL，偏验证器但影响 VLM 训练反馈。</td></tr><tr><td>扫读</td><td>A self-supervised learning approach to deep filter banks for texture recognition</td><td>arXiv</td><td>中低</td><td>轻量卷积 autoencoder + Fisher pooling 的纹理 SSL，任务偏窄但可作为低算力 SSL 参考。</td></tr></tbody></table>
-      <h2>主线阅读</h2>
       <div class="paper-list issue-list"><article class="paper-card" data-category="Visual SSL / representation" data-priority="P0" data-date="2026-05-29" data-title="from pixels to words -- towards native one-vision models at scale" data-keywords="from pixels to words -- towards native one-vision models at scale from pixels to words -- visual ssl / representation p0 2026-05-29 arxiv 原生 pixels-to-words one-vision 模型，直接挑战“预训练视觉 encoder + llm adapter”的主流 vlm 拼接范式 高相关；详见方法、贡献和实验边界。">
   <a class="paper-thumb paper-thumb-text" href="../papers/2605.28820.html">
     <img src="../assets/mineru/2605.28820/images/105d0f6cafb3370d7c882813790efd313d9f895b65d1f6fcee0eafe4336091d7.jpg" alt="From Pixels to Words -- figure"><span>P0</span>
@@ -228,18 +226,17 @@
     </div>
   </div>
   <aside class="paper-side">
-    <div class="side-box"><h4>今日重点</h4><p>TextTeacher、MDM、EvoVid、Ablate-to-Validate。</p></div>
-    <div class="side-box"><h4>会议口径</h4><p>只把 CCF A/B 放进主提醒；临近截止或 CCF C 仅记录。</p></div>
     <div class="side-box"><h4>阅读重点</h4><p>先看 P1/P2 与方法图，再扫状态变化和边界案例。</p></div>
+    <div class="side-box"><h4>会议口径</h4><p>主提醒只保留 CCF A/B；CCF C 与过期截止仅作状态记录。</p></div>
   </aside>
 </article></main>
-  <aside class="conf-float" data-conf-reminder="2026-05-29-main-ddl" aria-label="CCF A/B 主投稿提醒">
+  <aside class="conf-float" data-conf-reminder="2026-05-30-main-ddl" aria-label="CCF A/B 主投稿提醒">
   <button class="conf-close" type="button" aria-label="关闭会议提醒">×</button>
   <details open>
     <summary>CCF A/B 主投稿提醒</summary>
     <div class="conf-list"><a class="conf-item " href="https://github.com/ccfddl/ccf-deadlines/blob/main/conference/AI/aaai.yml">
   <span><b>AAAI 2027</b><em>CCF A · Main paper submission</em></span>
-  <strong>59 天</strong>
+  <strong>58 天</strong>
   <small>2026-07-27 · CCF DDL: abstract 2026-07-20；进入 1 个月窗口后重点提醒。</small>
 </a></div>
   </details>
@@ -252,7 +249,7 @@
   (() => {
     const box = document.querySelector('[data-conf-reminder]');
     if (!box) return;
-    const key = `visualSslConfReminderClosed:${box.dataset.confReminder || '2026-05-29-main-ddl'}`;
+    const key = `visualSslConfReminderClosed:${box.dataset.confReminder || '2026-05-30-main-ddl'}`;
     try {
       if (localStorage.getItem(key) === '1') box.hidden = true;
     } catch (err) {}

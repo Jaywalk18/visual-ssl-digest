@@ -1,0 +1,257 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>2026-05-30 速递 · 通用视觉自监督研究报</title>
+  <link rel="stylesheet" href="../assets/styles.css?v=20260525j">
+  <link rel="stylesheet" href="../assets/visual-ssl.css?v=20260525j">
+</head>
+<body>
+  <header class="masthead">
+    <div class="masthead-kicker">Visual SSL Research Report · 2026-05-30</div>
+    <a class="masthead-title" href="../index.html">通用视觉自监督研究报</a>
+    <div class="masthead-meta">
+      <span>图像表征 · VFM · JEPA · 视频预训练</span>
+      <span>CCF A/B 会议优先</span>
+      <span>图文精读 · 方法图解</span>
+    </div>
+  </header>
+  <nav class="site-nav" aria-label="主导航">
+    <a class="nav-link" href="../index.html">头版</a>
+<a class="nav-link active" href="../issues/2026-05-30.html">今日速递</a>
+<a class="nav-link" href="../pages/catalog.html">论文目录</a>
+<a class="nav-link" href="../pages/timeline.html">时间线</a>
+  </nav>
+  <main><article class="paper-detail issue-detail">
+  <div class="paper-main">
+    <div class="kicker">Daily issue · 2026-05-30 · CCF A/B 会议优先</div>
+    <h1 class="paper-headline">5 月 30 日：Cycle Consistency in Video Object-Centric 等视觉表征主线更新</h1>
+    <p class="dek">本期聚焦通用视觉表征、视觉语言预训练与视频自监督中最值得跟进的论文，并保留 CCF A/B、OpenReview 与 arXiv 状态线索。</p>
+    <div class="feature-body">
+      <p class="lead dropcap">先读 Cycle Consistency in Video Object-Centric Learning，它是今天最贴近“通用视觉自监督”的条目：在未标注视频里学习对象槽并保持跨帧一致性。第二步读 LoMo 和 GASP，前者诊断视觉-语言训练数据的载体偏置，后者把 3D correspondence/depth consistency 变成 VLM 内部空间先验。随后读 GPIC，重点不是 baseline 分数，而是大规模开放许可图像数据、VLM caption、去重与安全过滤会怎样改变开放视觉基础模型训练。最后把 TRACER、CLIP tail alignment、PARCEL、Geometry Matters 串起来扫：它们分别处理多模态对比微调不遗忘、patch-token 对齐、token 压缩和 3D 几何增强。</p>
+      <h2>论文索引</h2>
+      <table class="compact-table"><thead><tr><th>优先级</th><th>论文</th><th>类型</th><th>相关性</th><th>一句话理由</th></tr></thead><tbody><tr><td>P0</td><td>Cycle Consistency in Video Object-Centric Learning</td><td>arXiv</td><td>高</td><td>自监督视频 object-centric learning，提出隐式 cycle consistency 避免 slot collapse，直接命中通用视频表征。</td></tr><tr><td>P0</td><td>LoMo: Local Modality Substitution for Deeper Vision-Language Fusion</td><td>arXiv</td><td>高</td><td>用局部模态替换暴露 VLM 对文本/图像载体的表征不等价，适合指导视觉-语言自监督数据与目标设计。</td></tr><tr><td>P0</td><td>Beyond 3D VQAs: Injecting 3D Spatial Priors into Vision-Language Models for Enhanced Geometric Reasoning</td><td>CVPR 2026 + arXiv</td><td>高</td><td>GASP 用 contrastive correspondence 与 depth consistency 学几何先验，比单纯 3D VQA 微调更接近空间表征预训练。</td></tr><tr><td>P0</td><td>GPIC: A Giant Permissive Image Corpus for Visual Generation</td><td>arXiv + dataset</td><td>高</td><td>1 亿训练图像、VLM caption、许可友好与去重安全过滤，适合作为视觉生成/基础模型预训练数据源观察。</td></tr><tr><td>P1</td><td>TRACER: Persistent Regularization for Robust Multimodal Finetuning</td><td>ICML 2026 + arXiv</td><td>中高</td><td>从多模态 contrastive finetuning 理论解释 self-distillation，并提出 WMA teacher 防止 EMA collapse。</td></tr><tr><td>P1</td><td>PARCEL: Pool-Anchored Resampling with Conditioned Elastic Queries for Efficient Vision-Language Understanding</td><td>arXiv</td><td>中高</td><td>把低频 layout anchor 与 elastic query 分工，关注 visual-token representation 在不同预算下如何保持空间与细节。</td></tr><tr><td>P1</td><td>Geometry Matters: 3D Foundation Priors for Learning Semantic Correspondence</td><td>arXiv</td><td>中高</td><td>用 3D foundation priors 补 DINO/Stable Diffusion 2D 特征的几何盲点，适合关注 foundation feature 后训练。</td></tr><tr><td>P1</td><td>Improving CLIP Adaptation by Breaking Tail Alignment for Source-Free Cross-Domain Few-Shot Learning</td><td>ICML 2026 + arXiv</td><td>中高</td><td>重新解释 CLIP patch-token 对齐：低语义 tail tokens 不应强行贴近文本，提示对比表征微调要更细粒度。</td></tr><tr><td>P2</td><td>EarlyTom: Early Token Compression Completes Fast Video Understanding</td><td>CVPR 2026 + arXiv</td><td>中</td><td>训练-free 地在视觉编码器内部早期压缩 video tokens，补足只在 LLM 前压缩的效率盲点。</td></tr><tr><td>P2</td><td>Deep Psychovisual Image Representations</td><td>arXiv</td><td>中</td><td>学习频域 psychovisual-style abstraction，提供可解释中间图像表征路线，和常规 CNN/ViT 堆叠形成互补。</td></tr><tr><td>P2</td><td>Learning Representations from 3D Gaussian Splats</td><td>arXiv</td><td>中</td><td>系统比较 3DGS 场景表示上的 latent representation、linear probing 与 clustering，连接 3D 表征与视图合成资产。</td></tr><tr><td>P3</td><td>Veda: Scalable Video Diffusion via Distilled Sparse Attention</td><td>ICML 2026 + arXiv</td><td>中</td><td>把 full attention 蒸馏成 tile-wise sparse attention，主要服务视频生成扩展，但可借鉴到视频预训练计算结构。</td></tr><tr><td>P3</td><td>Grounded 3D-Aware Spatial Vision-Language Modeling</td><td>CVPR 2026 + arXiv</td><td>中</td><td>GR3D 将显式/隐式 2D grounding 与 monocular 3D grounding 统一，偏 VLM 空间推理但对 grounding 表征有参考。</td></tr><tr><td>扫读</td><td>OccamToken: Efficient VLM Inference with Training-Free and Budget-Adaptive Token Pruning</td><td>arXiv</td><td>中低</td><td>用 register-anchored relative evidence testing 做训练-free token pruning，适合和 PARCEL/EarlyTom 对照扫读。</td></tr><tr><td>扫读</td><td>Why Far Looks Up: Probing Spatial Representation in Vision-Language Models</td><td>arXiv</td><td>中低</td><td>用最小 contrastive pairs 诊断 VLM embedding 的垂直-距离纠缠，是空间表征偏置分析。</td></tr></tbody></table>
+      <h2>主线阅读</h2>
+      <div class="paper-list issue-list"><article class="paper-card" data-category="Visual SSL / representation" data-priority="P0" data-date="2026-05-30" data-title="cycle consistency in video object-centric learning" data-keywords="cycle consistency in video object-centric learning cycle consistency in video object-centric visual ssl / representation p0 2026-05-30 arxiv 自监督视频 object-centric learning，提出隐式 cycle consistency 避免 slot collapse，直接命中通用视频表征 高相关；详见方法、贡献和实验边界。">
+  <a class="paper-thumb paper-thumb-text" href="../papers/2605.30211.html">
+    <img src="../assets/mineru/2605.30211/images/c53d06ea609303cbb255e9ab3fbfc8b1dc8f6dbdf82c17a77b425cec0892af26.jpg" alt="Cycle Consistency in Video Object-Centric figure"><span>P0</span>
+  </a>
+  <div>
+    <div class="paper-meta">2026-05-30 · Visual SSL / representation · arXiv</div>
+    <h3><a href="../papers/2605.30211.html">Cycle Consistency in Video Object-Centric Learning</a></h3>
+    <p>高相关；详见方法、贡献和实验边界。</p>
+    <p class="card-tech"><b>方法：</b>自监督视频 object-centric learning，提出隐式 cycle consistency 避免 slot collapse，直接命中通用视频表征</p>
+    <div class="paper-actions"><a href="../papers/2605.30211.html">读图文页</a><a href="https://arxiv.org/abs/2605.30211">原文</a></div>
+  </div>
+</article>
+<article class="paper-card" data-category="Visual SSL / representation" data-priority="P0" data-date="2026-05-30" data-title="lomo: local modality substitution for deeper vision-language fusion" data-keywords="lomo: local modality substitution for deeper vision-language fusion lomo visual ssl / representation p0 2026-05-30 arxiv 用局部模态替换暴露 vlm 对文本/图像载体的表征不等价，适合指导视觉-语言自监督数据与目标设计 高相关；详见方法、贡献和实验边界。">
+  <a class="paper-thumb paper-thumb-text" href="../papers/2605.30265.html">
+    <img src="../assets/mineru/2605.30265/images/585e0441196f46939c3d5515c1f888d48c399282b9c79443e5b762fb2a1f5f34.jpg" alt="LoMo figure"><span>P0</span>
+  </a>
+  <div>
+    <div class="paper-meta">2026-05-30 · Visual SSL / representation · arXiv</div>
+    <h3><a href="../papers/2605.30265.html">LoMo: Local Modality Substitution for Deeper Vision-Language Fusion</a></h3>
+    <p>高相关；详见方法、贡献和实验边界。</p>
+    <p class="card-tech"><b>方法：</b>用局部模态替换暴露 VLM 对文本/图像载体的表征不等价，适合指导视觉-语言自监督数据与目标设计</p>
+    <div class="paper-actions"><a href="../papers/2605.30265.html">读图文页</a><a href="https://arxiv.org/abs/2605.30265">原文</a></div>
+  </div>
+</article>
+<article class="paper-card" data-category="CVPR 2026 + arXiv" data-priority="P0" data-date="2026-05-30" data-title="beyond 3d vqas: injecting 3d spatial priors into vision-language models for enhanced geometric reasoning" data-keywords="beyond 3d vqas: injecting 3d spatial priors into vision-language models for enhanced geometric reasoning beyond 3d vqas cvpr 2026 + arxiv p0 2026-05-30 cvpr 2026 + arxiv gasp 用 contrastive correspondence 与 depth consistency 学几何先验，比单纯 3d vqa 微调更接近空间表征预训练 高相关；详见方法、贡献和实验边界。">
+  <a class="paper-thumb paper-thumb-text" href="../papers/2605.30231.html">
+    <span>P0</span><strong>Beyond 3D VQAs</strong><em>CVPR 2026 + arXiv</em>
+  </a>
+  <div>
+    <div class="paper-meta">2026-05-30 · CVPR 2026 + arXiv · CVPR 2026 + arXiv</div>
+    <h3><a href="../papers/2605.30231.html">Beyond 3D VQAs: Injecting 3D Spatial Priors into Vision-Language Models for Enhanced Geometric Reasoning</a></h3>
+    <p>高相关；详见方法、贡献和实验边界。</p>
+    <p class="card-tech"><b>方法：</b>GASP 用 contrastive correspondence 与 depth consistency 学几何先验，比单纯 3D VQA 微调更接近空间表征预训练</p>
+    <div class="paper-actions"><a href="../papers/2605.30231.html">读图文页</a><a href="https://arxiv.org/abs/2605.30231">原文</a></div>
+  </div>
+</article>
+<article class="paper-card" data-category="dataset" data-priority="P0" data-date="2026-05-30" data-title="gpic: a giant permissive image corpus for visual generation" data-keywords="gpic: a giant permissive image corpus for visual generation gpic dataset p0 2026-05-30 arxiv + dataset 1 亿训练图像、vlm caption、许可友好与去重安全过滤，适合作为视觉生成/基础模型预训练数据源观察 高相关；详见方法、贡献和实验边界。">
+  <a class="paper-thumb paper-thumb-text" href="../papers/2605.30341.html">
+    <img src="../assets/mineru/2605.30341/images/989b42cb5b4f524246ac374d7ccacda8a49d1ffdc9ecd2773be1b0c2f7524a0e.jpg" alt="GPIC figure"><span>P0</span>
+  </a>
+  <div>
+    <div class="paper-meta">2026-05-30 · dataset · arXiv + dataset</div>
+    <h3><a href="../papers/2605.30341.html">GPIC: A Giant Permissive Image Corpus for Visual Generation</a></h3>
+    <p>高相关；详见方法、贡献和实验边界。</p>
+    <p class="card-tech"><b>方法：</b>1 亿训练图像、VLM caption、许可友好与去重安全过滤，适合作为视觉生成/基础模型预训练数据源观察</p>
+    <div class="paper-actions"><a href="../papers/2605.30341.html">读图文页</a><a href="https://arxiv.org/abs/2605.30341">原文</a></div>
+  </div>
+</article>
+<article class="paper-card" data-category="ICML 2026 + arXiv" data-priority="P1" data-date="2026-05-30" data-title="tracer: persistent regularization for robust multimodal finetuning" data-keywords="tracer: persistent regularization for robust multimodal finetuning tracer icml 2026 + arxiv p1 2026-05-30 icml 2026 + arxiv 从多模态 contrastive finetuning 理论解释 self-distillation，并提出 wma teacher 防止 ema collapse 中高相关；详见方法、贡献和实验边界。">
+  <a class="paper-thumb paper-thumb-text" href="../papers/2605.29380.html">
+    <img src="../assets/mineru/2605.29380/images/87b2d2501da86573dbd94e5f472b5adf4fda154b0ffa404fa6d19a32975fed1a.jpg" alt="TRACER figure"><span>P1</span>
+  </a>
+  <div>
+    <div class="paper-meta">2026-05-30 · ICML 2026 + arXiv · ICML 2026 + arXiv</div>
+    <h3><a href="../papers/2605.29380.html">TRACER: Persistent Regularization for Robust Multimodal Finetuning</a></h3>
+    <p>中高相关；详见方法、贡献和实验边界。</p>
+    <p class="card-tech"><b>方法：</b>从多模态 contrastive finetuning 理论解释 self-distillation，并提出 WMA teacher 防止 EMA collapse</p>
+    <div class="paper-actions"><a href="../papers/2605.29380.html">读图文页</a><a href="https://arxiv.org/abs/2605.29380">原文</a></div>
+  </div>
+</article>
+<article class="paper-card" data-category="Visual SSL / representation" data-priority="P1" data-date="2026-05-30" data-title="parcel: pool-anchored resampling with conditioned elastic queries for efficient vision-language understanding" data-keywords="parcel: pool-anchored resampling with conditioned elastic queries for efficient vision-language understanding parcel visual ssl / representation p1 2026-05-30 arxiv 把低频 layout anchor 与 elastic query 分工，关注 visual-token representation 在不同预算下如何保持空间与细节 中高相关；详见方法、贡献和实验边界。">
+  <a class="paper-thumb paper-thumb-text" href="../papers/2605.30126.html">
+    <img src="../assets/mineru/2605.30126/images/dfaa6dc348850694ed0295febf0c943fcd5ce0ba3880cbe4878828d9839caf5a.jpg" alt="PARCEL figure"><span>P1</span>
+  </a>
+  <div>
+    <div class="paper-meta">2026-05-30 · Visual SSL / representation · arXiv</div>
+    <h3><a href="../papers/2605.30126.html">PARCEL: Pool-Anchored Resampling with Conditioned Elastic Queries for Efficient Vision-Language Understanding</a></h3>
+    <p>中高相关；详见方法、贡献和实验边界。</p>
+    <p class="card-tech"><b>方法：</b>把低频 layout anchor 与 elastic query 分工，关注 visual-token representation 在不同预算下如何保持空间与细节</p>
+    <div class="paper-actions"><a href="../papers/2605.30126.html">读图文页</a><a href="https://arxiv.org/abs/2605.30126">原文</a></div>
+  </div>
+</article>
+<article class="paper-card" data-category="Visual SSL / representation" data-priority="P1" data-date="2026-05-30" data-title="geometry matters: 3d foundation priors for learning semantic correspondence" data-keywords="geometry matters: 3d foundation priors for learning semantic correspondence geometry matters visual ssl / representation p1 2026-05-30 arxiv 用 3d foundation priors 补 dino/stable diffusion 2d 特征的几何盲点，适合关注 foundation feature 后训练 中高相关；详见方法、贡献和实验边界。">
+  <a class="paper-thumb paper-thumb-text" href="../papers/2605.30093.html">
+    <img src="../assets/mineru/2605.30093/images/21f138cbfaf6bda51fee0372387e315e67eca6166ad7087168159786ed07228f.jpg" alt="Geometry Matters figure"><span>P1</span>
+  </a>
+  <div>
+    <div class="paper-meta">2026-05-30 · Visual SSL / representation · arXiv</div>
+    <h3><a href="../papers/2605.30093.html">Geometry Matters: 3D Foundation Priors for Learning Semantic Correspondence</a></h3>
+    <p>中高相关；详见方法、贡献和实验边界。</p>
+    <p class="card-tech"><b>方法：</b>用 3D foundation priors 补 DINO/Stable Diffusion 2D 特征的几何盲点，适合关注 foundation feature 后训练</p>
+    <div class="paper-actions"><a href="../papers/2605.30093.html">读图文页</a><a href="https://arxiv.org/abs/2605.30093">原文</a></div>
+  </div>
+</article>
+<article class="paper-card" data-category="ICML 2026 + arXiv" data-priority="P1" data-date="2026-05-30" data-title="improving clip adaptation by breaking tail alignment for source-free cross-domain few-shot learning" data-keywords="improving clip adaptation by breaking tail alignment for source-free cross-domain few-shot learning improving clip adaptation by breaking icml 2026 + arxiv p1 2026-05-30 icml 2026 + arxiv 重新解释 clip patch-token 对齐：低语义 tail tokens 不应强行贴近文本，提示对比表征微调要更细粒度 中高相关；详见方法、贡献和实验边界。">
+  <a class="paper-thumb paper-thumb-text" href="../papers/2605.29776.html">
+    <span>P1</span><strong>Improving CLIP Adaptation by Breaking</strong><em>ICML 2026 + arXiv</em>
+  </a>
+  <div>
+    <div class="paper-meta">2026-05-30 · ICML 2026 + arXiv · ICML 2026 + arXiv</div>
+    <h3><a href="../papers/2605.29776.html">Improving CLIP Adaptation by Breaking Tail Alignment for Source-Free Cross-Domain Few-Shot Learning</a></h3>
+    <p>中高相关；详见方法、贡献和实验边界。</p>
+    <p class="card-tech"><b>方法：</b>重新解释 CLIP patch-token 对齐：低语义 tail tokens 不应强行贴近文本，提示对比表征微调要更细粒度</p>
+    <div class="paper-actions"><a href="../papers/2605.29776.html">读图文页</a><a href="https://arxiv.org/abs/2605.29776">原文</a></div>
+  </div>
+</article>
+<article class="paper-card" data-category="CVPR 2026 + arXiv" data-priority="P2" data-date="2026-05-30" data-title="earlytom: early token compression completes fast video understanding" data-keywords="earlytom: early token compression completes fast video understanding earlytom cvpr 2026 + arxiv p2 2026-05-30 cvpr 2026 + arxiv 训练-free 地在视觉编码器内部早期压缩 video tokens，补足只在 llm 前压缩的效率盲点 中相关；详见方法、贡献和实验边界。">
+  <a class="paper-thumb paper-thumb-text" href="../papers/2605.30010.html">
+    <img src="../assets/mineru/2605.30010/images/1209b98a92d1d17a13f359dcfee312ff62131aadb6f1842839b8fb0f613e9f98.jpg" alt="EarlyTom figure"><span>P2</span>
+  </a>
+  <div>
+    <div class="paper-meta">2026-05-30 · CVPR 2026 + arXiv · CVPR 2026 + arXiv</div>
+    <h3><a href="../papers/2605.30010.html">EarlyTom: Early Token Compression Completes Fast Video Understanding</a></h3>
+    <p>中相关；详见方法、贡献和实验边界。</p>
+    <p class="card-tech"><b>方法：</b>训练-free 地在视觉编码器内部早期压缩 video tokens，补足只在 LLM 前压缩的效率盲点</p>
+    <div class="paper-actions"><a href="../papers/2605.30010.html">读图文页</a><a href="https://arxiv.org/abs/2605.30010">原文</a></div>
+  </div>
+</article>
+<article class="paper-card" data-category="Visual SSL / representation" data-priority="P2" data-date="2026-05-30" data-title="deep psychovisual image representations" data-keywords="deep psychovisual image representations deep psychovisual image representations visual ssl / representation p2 2026-05-30 arxiv 学习频域 psychovisual-style abstraction，提供可解释中间图像表征路线，和常规 cnn/vit 堆叠形成互补 中相关；详见方法、贡献和实验边界。">
+  <a class="paper-thumb paper-thumb-text" href="../papers/2605.29260.html">
+    <span>P2</span><strong>Deep Psychovisual Image Representations</strong><em>arXiv</em>
+  </a>
+  <div>
+    <div class="paper-meta">2026-05-30 · Visual SSL / representation · arXiv</div>
+    <h3><a href="../papers/2605.29260.html">Deep Psychovisual Image Representations</a></h3>
+    <p>中相关；详见方法、贡献和实验边界。</p>
+    <p class="card-tech"><b>方法：</b>学习频域 psychovisual-style abstraction，提供可解释中间图像表征路线，和常规 CNN/ViT 堆叠形成互补</p>
+    <div class="paper-actions"><a href="../papers/2605.29260.html">读图文页</a><a href="https://arxiv.org/abs/2605.29260">原文</a></div>
+  </div>
+</article>
+<article class="paper-card" data-category="Visual SSL / representation" data-priority="P2" data-date="2026-05-30" data-title="learning representations from 3d gaussian splats" data-keywords="learning representations from 3d gaussian splats learning representations from 3d gaussian visual ssl / representation p2 2026-05-30 arxiv 系统比较 3dgs 场景表示上的 latent representation、linear probing 与 clustering，连接 3d 表征与视图合成资产 中相关；详见方法、贡献和实验边界。">
+  <a class="paper-thumb paper-thumb-text" href="../papers/2605.29549.html">
+    <img src="../assets/mineru/2605.29549/images/9435f09877d3892a98ca9429deb3edb92069d3341bc923dd3b4a1a6a42af4501.jpg" alt="Learning Representations from 3D Gaussian figure"><span>P2</span>
+  </a>
+  <div>
+    <div class="paper-meta">2026-05-30 · Visual SSL / representation · arXiv</div>
+    <h3><a href="../papers/2605.29549.html">Learning Representations from 3D Gaussian Splats</a></h3>
+    <p>中相关；详见方法、贡献和实验边界。</p>
+    <p class="card-tech"><b>方法：</b>系统比较 3DGS 场景表示上的 latent representation、linear probing 与 clustering，连接 3D 表征与视图合成资产</p>
+    <div class="paper-actions"><a href="../papers/2605.29549.html">读图文页</a><a href="https://arxiv.org/abs/2605.29549">原文</a></div>
+  </div>
+</article>
+<article class="paper-card" data-category="ICML 2026 + arXiv" data-priority="P3" data-date="2026-05-30" data-title="veda: scalable video diffusion via distilled sparse attention" data-keywords="veda: scalable video diffusion via distilled sparse attention veda icml 2026 + arxiv p3 2026-05-30 icml 2026 + arxiv 把 full attention 蒸馏成 tile-wise sparse attention，主要服务视频生成扩展，但可借鉴到视频预训练计算结构 中相关；详见方法、贡献和实验边界。">
+  <a class="paper-thumb paper-thumb-text" href="../papers/2605.30325.html">
+    <span>P3</span><strong>Veda</strong><em>ICML 2026 + arXiv</em>
+  </a>
+  <div>
+    <div class="paper-meta">2026-05-30 · ICML 2026 + arXiv · ICML 2026 + arXiv</div>
+    <h3><a href="../papers/2605.30325.html">Veda: Scalable Video Diffusion via Distilled Sparse Attention</a></h3>
+    <p>中相关；详见方法、贡献和实验边界。</p>
+    <p class="card-tech"><b>方法：</b>把 full attention 蒸馏成 tile-wise sparse attention，主要服务视频生成扩展，但可借鉴到视频预训练计算结构</p>
+    <div class="paper-actions"><a href="../papers/2605.30325.html">读图文页</a><a href="https://arxiv.org/abs/2605.30325">原文</a></div>
+  </div>
+</article>
+<article class="paper-card" data-category="CVPR 2026 + arXiv" data-priority="P3" data-date="2026-05-30" data-title="grounded 3d-aware spatial vision-language modeling" data-keywords="grounded 3d-aware spatial vision-language modeling grounded 3d-aware spatial vision-language modeling cvpr 2026 + arxiv p3 2026-05-30 cvpr 2026 + arxiv gr3d 将显式/隐式 2d grounding 与 monocular 3d grounding 统一，偏 vlm 空间推理但对 grounding 表征有参考 中相关；详见方法、贡献和实验边界。">
+  <a class="paper-thumb paper-thumb-text" href="../papers/2605.30307.html">
+    <span>P3</span><strong>Grounded 3D-Aware Spatial Vision-Language Modeling</strong><em>CVPR 2026 + arXiv</em>
+  </a>
+  <div>
+    <div class="paper-meta">2026-05-30 · CVPR 2026 + arXiv · CVPR 2026 + arXiv</div>
+    <h3><a href="../papers/2605.30307.html">Grounded 3D-Aware Spatial Vision-Language Modeling</a></h3>
+    <p>中相关；详见方法、贡献和实验边界。</p>
+    <p class="card-tech"><b>方法：</b>GR3D 将显式/隐式 2D grounding 与 monocular 3D grounding 统一，偏 VLM 空间推理但对 grounding 表征有参考</p>
+    <div class="paper-actions"><a href="../papers/2605.30307.html">读图文页</a><a href="https://arxiv.org/abs/2605.30307">原文</a></div>
+  </div>
+</article>
+<article class="paper-card" data-category="Visual SSL / representation" data-priority="扫读" data-date="2026-05-30" data-title="occamtoken: efficient vlm inference with training-free and budget-adaptive token pruning" data-keywords="occamtoken: efficient vlm inference with training-free and budget-adaptive token pruning occamtoken visual ssl / representation 扫读 2026-05-30 arxiv 用 register-anchored relative evidence testing 做训练-free token pruning，适合和 parcel/earlytom 对照扫读 中低相关；详见方法、贡献和实验边界。">
+  <a class="paper-thumb paper-thumb-text" href="../papers/2605.29657.html">
+    <img src="../assets/mineru/2605.29657/images/bedef6d393d8603dea15ef8e05effa67a44e9a2f573c8a0e91daeae067b8de22.jpg" alt="OccamToken figure"><span>扫读</span>
+  </a>
+  <div>
+    <div class="paper-meta">2026-05-30 · Visual SSL / representation · arXiv</div>
+    <h3><a href="../papers/2605.29657.html">OccamToken: Efficient VLM Inference with Training-Free and Budget-Adaptive Token Pruning</a></h3>
+    <p>中低相关；详见方法、贡献和实验边界。</p>
+    <p class="card-tech"><b>方法：</b>用 register-anchored relative evidence testing 做训练-free token pruning，适合和 PARCEL/EarlyTom 对照扫读</p>
+    <div class="paper-actions"><a href="../papers/2605.29657.html">读图文页</a><a href="https://arxiv.org/abs/2605.29657">原文</a></div>
+  </div>
+</article>
+<article class="paper-card" data-category="Visual SSL / representation" data-priority="扫读" data-date="2026-05-30" data-title="why far looks up: probing spatial representation in vision-language models" data-keywords="why far looks up: probing spatial representation in vision-language models why far looks up visual ssl / representation 扫读 2026-05-30 arxiv 用最小 contrastive pairs 诊断 vlm embedding 的垂直-距离纠缠，是空间表征偏置分析 中低相关；详见方法、贡献和实验边界。">
+  <a class="paper-thumb paper-thumb-text" href="../papers/2605.30161.html">
+    <img src="../assets/mineru/2605.30161/images/76534da7f8692c02132767654fc980b2623bb1e1c8c0643997d52a9645db5407.jpg" alt="Why Far Looks Up figure"><span>扫读</span>
+  </a>
+  <div>
+    <div class="paper-meta">2026-05-30 · Visual SSL / representation · arXiv</div>
+    <h3><a href="../papers/2605.30161.html">Why Far Looks Up: Probing Spatial Representation in Vision-Language Models</a></h3>
+    <p>中低相关；详见方法、贡献和实验边界。</p>
+    <p class="card-tech"><b>方法：</b>用最小 contrastive pairs 诊断 VLM embedding 的垂直-距离纠缠，是空间表征偏置分析</p>
+    <div class="paper-actions"><a href="../papers/2605.30161.html">读图文页</a><a href="https://arxiv.org/abs/2605.30161">原文</a></div>
+  </div>
+</article></div>
+    </div>
+  </div>
+  <aside class="paper-side">
+    <div class="side-box"><h4>今日重点</h4><p>TextTeacher、MDM、EvoVid、Ablate-to-Validate。</p></div>
+    <div class="side-box"><h4>会议口径</h4><p>只把 CCF A/B 放进主提醒；临近截止或 CCF C 仅记录。</p></div>
+    <div class="side-box"><h4>阅读重点</h4><p>先看 P1/P2 与方法图，再扫状态变化和边界案例。</p></div>
+  </aside>
+</article></main>
+  <aside class="conf-float" data-conf-reminder="2026-05-30-main-ddl" aria-label="CCF A/B 主投稿提醒">
+  <button class="conf-close" type="button" aria-label="关闭会议提醒">×</button>
+  <details open>
+    <summary>CCF A/B 主投稿提醒</summary>
+    <div class="conf-list"><a class="conf-item " href="https://github.com/ccfddl/ccf-deadlines/blob/main/conference/AI/aaai.yml">
+  <span><b>AAAI 2027</b><em>CCF A · Main paper submission</em></span>
+  <strong>58 天</strong>
+  <small>2026-07-27 · CCF DDL: abstract 2026-07-20；进入 1 个月窗口后重点提醒。</small>
+</a></div>
+  </details>
+</aside>
+  <footer class="footer">
+    <div>面向通用视觉自监督、视觉基础模型与多模态表征学习的每日研究报。</div>
+    <div class="muted">Issue 2026-05-30 · Curated readings and figure notes</div>
+  </footer>
+  <script>
+  (() => {
+    const box = document.querySelector('[data-conf-reminder]');
+    if (!box) return;
+    const key = `visualSslConfReminderClosed:${box.dataset.confReminder || '2026-05-30-main-ddl'}`;
+    try {
+      if (localStorage.getItem(key) === '1') box.hidden = true;
+    } catch (err) {}
+    const close = box.querySelector('.conf-close');
+    if (close) {
+      close.addEventListener('click', () => {
+        box.hidden = true;
+        try { localStorage.setItem(key, '1'); } catch (err) {}
+      });
+    }
+  })();
+  </script>
+</body>
+</html>
