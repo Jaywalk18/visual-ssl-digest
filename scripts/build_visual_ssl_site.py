@@ -1041,8 +1041,12 @@ def write_issue(report_md: str) -> None:
         )
         table = f'<table class="compact-table"><thead><tr>{ths}</tr></thead><tbody>{trs}</tbody></table>'
     issue_papers = [p for p in PAPERS if p["date"] == CURRENT_DATE]
-    cards = "\n".join(paper_card(p, 1) for p in issue_papers)
-    issue_title = f"{zh_date(CURRENT_DATE)}：{PAPERS[0]['short']} 等视觉表征主线更新"
+    if issue_papers:
+        cards = "\n".join(paper_card(p, 1) for p in issue_papers)
+        issue_title = f"{zh_date(CURRENT_DATE)}：{issue_papers[0]['short']} 等视觉表征主线更新"
+    else:
+        cards = '<p class="empty-state">今天没有通过去重与方向过滤的新论文；目录和首页继续保留最近一期可精读论文，便于回看。</p>'
+        issue_title = f"{zh_date(CURRENT_DATE)}：无新增通用视觉自监督论文"
     body = f"""<article class="paper-detail issue-detail">
   <div class="paper-main">
     <div class="kicker">Daily issue · {e(CURRENT_DATE)} · CCF A/B 会议优先</div>
@@ -1343,6 +1347,7 @@ def write_css() -> None:
 .stat-grid span{font-size:20px;line-height:1.25;margin:6px 0}
 .stat-grid em{font-style:normal;color:#64605a;font-size:13px;line-height:1.45}
 .issue-detail .paper-list{break-inside:avoid;column-span:all}
+.empty-state{border:1px solid #d7d1c6;background:#f7f3ea;padding:18px;border-radius:8px;color:#5f5b55}
 .issue-detail .paper-headline{max-width:980px;font-size:clamp(31px,3.35vw,42px);line-height:1.16;text-wrap:pretty;word-break:normal;overflow-wrap:normal;line-break:loose}
 .paper-detail:not(.issue-detail) .paper-main > .dek{max-width:100%;width:100%;text-wrap:wrap;overflow-wrap:normal;word-break:normal;line-break:loose}
 .paper-detail:not(.issue-detail):not(.deep-read) .feature-body{column-count:1;column-gap:0;column-rule:none;max-width:900px}

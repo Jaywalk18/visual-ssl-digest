@@ -19,39 +19,39 @@
   </header>
   <nav class="site-nav" aria-label="主导航">
     <a class="nav-link" href="../index.html">头版</a>
-<a class="nav-link" href="../issues/2026-05-30.html">今日速递</a>
+<a class="nav-link" href="../issues/2026-05-31.html">今日速递</a>
 <a class="nav-link" href="../pages/catalog.html">论文目录</a>
 <a class="nav-link" href="../pages/timeline.html">时间线</a>
   </nav>
   <main><article class="paper-detail">
   <div class="paper-main">
     <div class="kicker">ICML 2026 + arXiv · P1 · 2026-05-30</div>
-    <h1 class="paper-headline">Improving CLIP Adaptation by Breaking：CLIP 仍是通用视觉语言表征基座，微调时如何保护/重塑 patch-token 几何直接影响可迁移性</h1>
-    <p class="dek">挑战“所有 patch token 都应与文本语义对齐”的简单假设；提出 domain shift + few-shot 下语义 token 与噪声/尾部 token 要差异处理。</p>
-    <p class="byline"><strong>Improving CLIP Adaptation by Breaking Tail Alignment for Source-Free Cross-Domain Few-Shot Learning</strong>　Shuai Yi, Yixiong Zou, Yuhua Li, Ruixuan Li；机构以论文首页为准。　ICML 2026 + arXiv　<a href="https://arxiv.org/abs/2605.29776">原文链接</a></p>
+    <h1 class="paper-headline">Improving CLIP Adaptation by Breaking：它和通用视觉自监督的关系在于：重新解释 CLIP patch-token 对齐：低语义 tail tokens 不应强行贴近文本，提示对比表征微调要更细粒度</h1>
+    <p class="dek">中高相关；详见方法、贡献和实验边界。</p>
+    <p class="byline"><strong>Improving CLIP Adaptation by Breaking Tail Alignment for Source-Free Cross-Domain Few-Shot Learning</strong>　ICML 2026 + arXiv　<a href="https://arxiv.org/abs/2605.29776">原文链接</a></p>
     <div class="paper-facts">
       <span><b>编号</b>2605.29776</span>
       <span><b>优先级</b>P1</span>
       <span><b>类别</b>ICML 2026 + arXiv</span>
       <span><b>会议</b>ICML 2026 + arXiv</span>
-      <span><b>方法</b>在 source-free cross-domain few-shot CLIP adaptation 中识别 low-similarity tail tokens，并主动打破这些 token 与文本 embedding 的错误对齐。</span>
+      <span><b>方法</b>重新解释 CLIP patch-token 对齐：低语义 tail tokens 不应强行贴近文本，提示对比表征微调要更细粒度</span>
       <span><b>来源</b>arXiv / OpenReview</span>
     </div>
     <div class="feature-body">
-      <p class="lead dropcap">先说结论。CLIP 仍是通用视觉语言表征基座，微调时如何保护/重塑 patch-token 几何直接影响可迁移性。 挑战“所有 patch token 都应与文本语义对齐”的简单假设；提出 domain shift + few-shot 下语义 token 与噪声/尾部 token 要差异处理。</p>
+      <p class="lead dropcap">先说结论。它和通用视觉自监督的关系在于：重新解释 CLIP patch-token 对齐：低语义 tail tokens 不应强行贴近文本，提示对比表征微调要更细粒度。 中高相关；详见方法、贡献和实验边界。</p>
       <figure class="full-fig"><img src="../assets/mineru/2605.29776/images/4898d139365c4c8949e8fcda80e6acb2f117dd73b92c7269305ade53744bcc6b.jpg" alt="(b) Figure 1"><figcaption><b>(b) Figure 1</b><span class="fig-en">(b) Figure 1. The Counterintuitive Efficacy of Pushing Away Tail Tokens. (a) We identify tokens with the lowest semantic similarity to any class text (Tail Tokens) and increase their distance during target-domain few-shot finetuning. (b) We find that this operation consistently improves target-domain performance, contradicting the prevailing paradigm of vision-text alignment and validating our insight: in cross-domain adaptation, selective repulsion of harmful alignment is as crucial as strengthening useful ones.</span><span class="fig-zh">这张图/表用于判断 Improving CLIP Adaptation by Breaking 的实验收益来自哪里。重点看替换、消融或跨模型设置下趋势是否一致，而不是只看单个最高分。</span></figcaption></figure>
 <figure class="full-fig"><img src="../assets/mineru/2605.29776/images/927f43b46f90303a187726bcb63d42c4848f52b83124ff2f20eaa5c90f99d509.jpg" alt="Figureure 4 · Overview of our Adaptive Tail-Head Alignment (ATHA) framework"><figcaption><b>Figureure 4 · Overview of our Adaptive Tail-Head Alignment (ATHA) framework</b><span class="fig-en">Figure 4. Overview of our Adaptive Tail-Head Alignment (ATHA) framework. Our method dynamically modulates visual tokens based on their semantic relevance to the target classes. At a given transformer layer, we compute the cosine similarity between each visual token and all class text embeddings. The $\mathrm { t o p } { - } k _ { \mathrm { h e a d } }$ tokens with the highest maximum similarity are identified as Head Tokens and are adaptively pulled closer to their most similar text embedding via a positive addition. Concurrently, the last- $\mathbf { \nabla } \cdot r _ { \mathrm { t a i l } }$ tokens with the lowest maximum similarity are identified as Tail Tokens and are pushed away from their least similar text embedding via a negative subtraction. Layer-wise learnable parameters $\boldsymbol { \alpha } ^ { ( l ) }$ and $\beta ^ { ( l ) }$ control the strength of these opposing operations.</span><span class="fig-zh">这张图概括 Improving CLIP Adaptation by Breaking 的整体方法流程。阅读时先看模块之间传递的训练信号，再看作者如何把目标拆成可优化的子问题。</span></figcaption></figure>
       
       <h2>核心问题</h2>
-      <p>CLIP 仍是通用视觉语言表征基座，微调时如何保护/重塑 patch-token 几何直接影响可迁移性。</p>
+      <p>它和通用视觉自监督的关系在于：重新解释 CLIP patch-token 对齐：低语义 tail tokens 不应强行贴近文本，提示对比表征微调要更细粒度。</p>
       <h2>方法拆解</h2>
-      <p>在 source-free cross-domain few-shot CLIP adaptation 中识别 low-similarity tail tokens，并主动打破这些 token 与文本 embedding 的错误对齐。</p>
+      <p>重新解释 CLIP patch-token 对齐：低语义 tail tokens 不应强行贴近文本，提示对比表征微调要更细粒度</p>
       <h2>主要贡献</h2>
-      <p>挑战“所有 patch token 都应与文本语义对齐”的简单假设；提出 domain shift + few-shot 下语义 token 与噪声/尾部 token 要差异处理。</p>
+      <p>中高相关；详见方法、贡献和实验边界。</p>
       <h2>实验看点</h2>
-      <p>摘要称跨域少样本中 consistently improves target-domain performance；重点看 domain shift 强度、token 选择阈值和类间泛化。</p>
+      <p>实验部分建议重点看两类证据：一是作者是否把方法收益和更强数据、更长训练、更大模型区分开；二是跨模型、跨数据或跨任务迁移是否还能保留同样趋势。</p>
       <h2>局限与读法</h2>
-      <p>任务设定是少样本适配，不是预训练；方法可能依赖 CLIP 结构与 patch-level 可解释性。</p>
+      <p>这篇论文的结论需要结合任务设置、训练数据规模和消融实验一起看；不要只凭单个指标判断它对通用视觉表征的价值。</p>
     
     </div>
   </div>
@@ -61,13 +61,13 @@
     <div class="side-box"><h4>原文</h4><p><a href="https://arxiv.org/abs/2605.29776">https://arxiv.org/abs/2605.29776</a></p></div>
   </aside>
 </article></main>
-  <aside class="conf-float" data-conf-reminder="2026-05-30-main-ddl" aria-label="CCF A/B 主投稿提醒">
+  <aside class="conf-float" data-conf-reminder="2026-05-31-main-ddl" aria-label="CCF A/B 主投稿提醒">
   <button class="conf-close" type="button" aria-label="关闭会议提醒">×</button>
   <details open>
     <summary>CCF A/B 主投稿提醒</summary>
     <div class="conf-list"><a class="conf-item " href="https://github.com/ccfddl/ccf-deadlines/blob/main/conference/AI/aaai.yml">
   <span><b>AAAI 2027</b><em>CCF A · Main paper submission</em></span>
-  <strong>58 天</strong>
+  <strong>57 天</strong>
   <small>2026-07-27 · CCF DDL: abstract 2026-07-20；进入 1 个月窗口后重点提醒。</small>
 </a></div>
   </details>
@@ -80,7 +80,7 @@
   (() => {
     const box = document.querySelector('[data-conf-reminder]');
     if (!box) return;
-    const key = `visualSslConfReminderClosed:${box.dataset.confReminder || '2026-05-30-main-ddl'}`;
+    const key = `visualSslConfReminderClosed:${box.dataset.confReminder || '2026-05-31-main-ddl'}`;
     try {
       if (localStorage.getItem(key) === '1') box.hidden = true;
     } catch (err) {}

@@ -19,39 +19,39 @@
   </header>
   <nav class="site-nav" aria-label="主导航">
     <a class="nav-link" href="../index.html">头版</a>
-<a class="nav-link" href="../issues/2026-05-30.html">今日速递</a>
+<a class="nav-link" href="../issues/2026-05-31.html">今日速递</a>
 <a class="nav-link" href="../pages/catalog.html">论文目录</a>
 <a class="nav-link" href="../pages/timeline.html">时间线</a>
   </nav>
   <main><article class="paper-detail">
   <div class="paper-main">
     <div class="kicker">Visual SSL / representation · P1 · 2026-05-30</div>
-    <h1 class="paper-headline">PARCEL：视觉 token 是 VLM 中通用视觉表征的接口，压缩策略会直接决定哪些视觉信息进入语言模型</h1>
-    <p class="dek">指出纯空间压缩会 aliasing，纯 query 压缩会损失 spatial grounding；提出两类 token 分工来缓解表示冲突。</p>
-    <p class="byline"><strong>PARCEL: Pool-Anchored Resampling with Conditioned Elastic Queries for Efficient Vision-Language Understanding</strong>　Selim Kuzucu, Alessio Tonioni, Vasile Lup, Bernt Schiele, Federico Tombari, Muhammad Ferjad Naeem；机构以论文首页为准。　arXiv　<a href="https://arxiv.org/abs/2605.30126">原文链接</a></p>
+    <h1 class="paper-headline">PARCEL：它和通用视觉自监督的关系在于：把低频 layout anchor 与 elastic query 分工，关注 visual-token representation 在不同预算下如何保持空间与细节</h1>
+    <p class="dek">中高相关；详见方法、贡献和实验边界。</p>
+    <p class="byline"><strong>PARCEL: Pool-Anchored Resampling with Conditioned Elastic Queries for Efficient Vision-Language Understanding</strong>　arXiv　<a href="https://arxiv.org/abs/2605.30126">原文链接</a></p>
     <div class="paper-facts">
       <span><b>编号</b>2605.30126</span>
       <span><b>优先级</b>P1</span>
       <span><b>类别</b>Visual SSL / representation</span>
       <span><b>会议</b>arXiv</span>
-      <span><b>方法</b>建立 Pool-Anchored Resampling：spatial pool tokens 保留低频布局，conditioned elastic queries 汇聚细粒度非局部信息。</span>
+      <span><b>方法</b>把低频 layout anchor 与 elastic query 分工，关注 visual-token representation 在不同预算下如何保持空间与细节</span>
       <span><b>来源</b>arXiv / OpenReview</span>
     </div>
     <div class="feature-body">
-      <p class="lead dropcap">先说结论。视觉 token 是 VLM 中通用视觉表征的接口，压缩策略会直接决定哪些视觉信息进入语言模型。 指出纯空间压缩会 aliasing，纯 query 压缩会损失 spatial grounding；提出两类 token 分工来缓解表示冲突。</p>
+      <p class="lead dropcap">先说结论。它和通用视觉自监督的关系在于：把低频 layout anchor 与 elastic query 分工，关注 visual-token representation 在不同预算下如何保持空间与细节。 中高相关；详见方法、贡献和实验边界。</p>
       <figure class="full-fig"><img src="../assets/mineru/2605.30126/images/dfaa6dc348850694ed0295febf0c943fcd5ce0ba3880cbe4878828d9839caf5a.jpg" alt="Figureure 4 · | High-Level Overview of the PARCEL Architecture"><figcaption><b>Figureure 4 · | High-Level Overview of the PARCEL Architecture</b><span class="fig-en">Figure 4 | High-Level Overview of the PARCEL Architecture. PARCEL dynamically divides the labor of visual feature extraction into a unified pipeline. Uncompressed visual encoder features are first spatially pooled to create deterministic 2D Anchors that secure the low-frequency geometric layout. A supporting set of query tokens then undergoes Pool-Conditioned Query Resampling (PCQR). After interacting with the spatial anchors through PCQR, these queries act as Semantic Explorers …K &amp; V that extract complementary information from the raw visual features. The final concatenated repre-Budget-Aware  …  … sentation provides an effective budget-aware context to the language decoder.</span><span class="fig-zh">这张图概括 PARCEL 的整体方法流程。阅读时先看模块之间传递的训练信号，再看作者如何把目标拆成可优化的子问题。</span></figcaption></figure>
 <figure class="full-fig"><img src="../assets/mineru/2605.30126/images/c967d134d24a04d8e8e1c518b7f312901eae517c4d6e93d7358b4a5b3615a033.jpg" alt="(c) PARCEL (Ours) [Med.] … Figure 2 | High-Level Overview of MQT, ${ \bf { M } } ^ { 3 }$ "><figcaption><b>(c) PARCEL (Ours) [Med.] … Figure 2 | High-Level Overview of MQT, ${ \bf { M } } ^ { 3 }$ </b><span class="fig-en">(c) PARCEL (Ours) [Med.] … Figure 2 | High-Level Overview of MQT, ${ \bf { M } } ^ { 3 }$ [Med.] … and PARCEL (Ours). $\mathbb { M } ^ { 3 }$ compresses visual features through rigid spatial pooling, MQT uses elastic query tokens, and PARCEL combines spatial anchor [Low] …  [Low] … tokens with pool-conditioned query resampling, allowing it to compress more effectively.</span><span class="fig-zh">这张图概括 PARCEL 的整体方法流程。阅读时先看模块之间传递的训练信号，再看作者如何把目标拆成可优化的子问题。</span></figcaption></figure>
       
       <h2>核心问题</h2>
-      <p>视觉 token 是 VLM 中通用视觉表征的接口，压缩策略会直接决定哪些视觉信息进入语言模型。</p>
+      <p>它和通用视觉自监督的关系在于：把低频 layout anchor 与 elastic query 分工，关注 visual-token representation 在不同预算下如何保持空间与细节。</p>
       <h2>方法拆解</h2>
-      <p>建立 Pool-Anchored Resampling：spatial pool tokens 保留低频布局，conditioned elastic queries 汇聚细粒度非局部信息。</p>
+      <p>把低频 layout anchor 与 elastic query 分工，关注 visual-token representation 在不同预算下如何保持空间与细节</p>
       <h2>主要贡献</h2>
-      <p>指出纯空间压缩会 aliasing，纯 query 压缩会损失 spatial grounding；提出两类 token 分工来缓解表示冲突。</p>
+      <p>中高相关；详见方法、贡献和实验边界。</p>
       <h2>实验看点</h2>
-      <p>摘要强调 aggressive compression 下更稳；重点看 VQA/OCR/grounding 的保真曲线与 token budget sweep。</p>
+      <p>实验部分建议重点看两类证据：一是作者是否把方法收益和更强数据、更长训练、更大模型区分开；二是跨模型、跨数据或跨任务迁移是否还能保留同样趋势。</p>
       <h2>局限与读法</h2>
-      <p>效率架构多于新预训练目标；训练成本、不同视觉 encoder 兼容性和视频场景仍需验证。</p>
+      <p>这篇论文的结论需要结合任务设置、训练数据规模和消融实验一起看；不要只凭单个指标判断它对通用视觉表征的价值。</p>
     
     </div>
   </div>
@@ -61,13 +61,13 @@
     <div class="side-box"><h4>原文</h4><p><a href="https://arxiv.org/abs/2605.30126">https://arxiv.org/abs/2605.30126</a></p></div>
   </aside>
 </article></main>
-  <aside class="conf-float" data-conf-reminder="2026-05-30-main-ddl" aria-label="CCF A/B 主投稿提醒">
+  <aside class="conf-float" data-conf-reminder="2026-05-31-main-ddl" aria-label="CCF A/B 主投稿提醒">
   <button class="conf-close" type="button" aria-label="关闭会议提醒">×</button>
   <details open>
     <summary>CCF A/B 主投稿提醒</summary>
     <div class="conf-list"><a class="conf-item " href="https://github.com/ccfddl/ccf-deadlines/blob/main/conference/AI/aaai.yml">
   <span><b>AAAI 2027</b><em>CCF A · Main paper submission</em></span>
-  <strong>58 天</strong>
+  <strong>57 天</strong>
   <small>2026-07-27 · CCF DDL: abstract 2026-07-20；进入 1 个月窗口后重点提醒。</small>
 </a></div>
   </details>
@@ -80,7 +80,7 @@
   (() => {
     const box = document.querySelector('[data-conf-reminder]');
     if (!box) return;
-    const key = `visualSslConfReminderClosed:${box.dataset.confReminder || '2026-05-30-main-ddl'}`;
+    const key = `visualSslConfReminderClosed:${box.dataset.confReminder || '2026-05-31-main-ddl'}`;
     try {
       if (localStorage.getItem(key) === '1') box.hidden = true;
     } catch (err) {}

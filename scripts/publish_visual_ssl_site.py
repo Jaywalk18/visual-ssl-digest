@@ -288,14 +288,18 @@ def main() -> None:
     markdown = report.read_text(encoding="utf-8")
     date = report_date(report, markdown)
     papers = parse_arxiv_papers(markdown)
-    if not papers:
-        raise SystemExit("No arXiv paper links found in the paper index.")
     if args.dry_run:
-        for arxiv_id, title, priority in papers:
-            print(f"{date}\t{priority}\t{arxiv_id}\t{title}")
+        if papers:
+            for arxiv_id, title, priority in papers:
+                print(f"{date}\t{priority}\t{arxiv_id}\t{title}")
+        else:
+            print(f"{date}\tno indexed arXiv papers")
         return
 
-    if not args.no_mineru:
+    if not papers:
+        print(f"{date}: no indexed arXiv papers; skipping PDF download and MinerU extraction")
+
+    if papers and not args.no_mineru:
         staging = download_pdfs(papers, date)
         if MINERU_BATCH.exists():
             remove_pdf_preview_fallbacks(papers)

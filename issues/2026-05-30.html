@@ -19,20 +19,18 @@
   </header>
   <nav class="site-nav" aria-label="主导航">
     <a class="nav-link" href="../index.html">头版</a>
-<a class="nav-link active" href="../issues/2026-05-30.html">今日速递</a>
+<a class="nav-link" href="../issues/2026-05-31.html">今日速递</a>
 <a class="nav-link" href="../pages/catalog.html">论文目录</a>
 <a class="nav-link" href="../pages/timeline.html">时间线</a>
   </nav>
   <main><article class="paper-detail issue-detail">
   <div class="paper-main">
     <div class="kicker">Daily issue · 2026-05-30 · CCF A/B 会议优先</div>
-    <h1 class="paper-headline">5 月 30 日：Cycle Consistency in Video Object-Centric 等视觉表征主线更新</h1>
-    <p class="dek">本期聚焦通用视觉表征、视觉语言预训练与视频自监督中最值得跟进的论文，并保留 CCF A/B、OpenReview 与 arXiv 状态线索。</p>
+    <h1 class="paper-headline">5 月 30 日：Cycle Consistency in Video Object-Centric 等视觉表征论文归档</h1>
+    <p class="dek">本页按日期归档近期论文，保留优先级、主题、来源与方法线索，方便回看同一批工作的研究脉络。</p>
     <div class="feature-body">
-      <p class="lead dropcap">先读 Cycle Consistency in Video Object-Centric Learning，它是今天最贴近“通用视觉自监督”的条目：在未标注视频里学习对象槽并保持跨帧一致性。第二步读 LoMo 和 GASP，前者诊断视觉-语言训练数据的载体偏置，后者把 3D correspondence/depth consistency 变成 VLM 内部空间先验。随后读 GPIC，重点不是 baseline 分数，而是大规模开放许可图像数据、VLM caption、去重与安全过滤会怎样改变开放视觉基础模型训练。最后把 TRACER、CLIP tail alignment、PARCEL、Geometry Matters 串起来扫：它们分别处理多模态对比微调不遗忘、patch-token 对齐、token 压缩和 3D 几何增强。</p>
+      <p class="lead dropcap">先读 Cycle Consistency in Video Object-Centric。自监督视频 object-centric learning，提出隐式 cycle consistency 避免 slot collapse，直接命中通用视频表征。 其余论文按 P1/P2 与主题顺序扫读，重点看方法图、消融设置和是否能迁移到通用视觉表征。</p>
       <h2>论文索引</h2>
-      <table class="compact-table"><thead><tr><th>优先级</th><th>论文</th><th>类型</th><th>相关性</th><th>一句话理由</th></tr></thead><tbody><tr><td>P0</td><td>Cycle Consistency in Video Object-Centric Learning</td><td>arXiv</td><td>高</td><td>自监督视频 object-centric learning，提出隐式 cycle consistency 避免 slot collapse，直接命中通用视频表征。</td></tr><tr><td>P0</td><td>LoMo: Local Modality Substitution for Deeper Vision-Language Fusion</td><td>arXiv</td><td>高</td><td>用局部模态替换暴露 VLM 对文本/图像载体的表征不等价，适合指导视觉-语言自监督数据与目标设计。</td></tr><tr><td>P0</td><td>Beyond 3D VQAs: Injecting 3D Spatial Priors into Vision-Language Models for Enhanced Geometric Reasoning</td><td>CVPR 2026 + arXiv</td><td>高</td><td>GASP 用 contrastive correspondence 与 depth consistency 学几何先验，比单纯 3D VQA 微调更接近空间表征预训练。</td></tr><tr><td>P0</td><td>GPIC: A Giant Permissive Image Corpus for Visual Generation</td><td>arXiv + dataset</td><td>高</td><td>1 亿训练图像、VLM caption、许可友好与去重安全过滤，适合作为视觉生成/基础模型预训练数据源观察。</td></tr><tr><td>P1</td><td>TRACER: Persistent Regularization for Robust Multimodal Finetuning</td><td>ICML 2026 + arXiv</td><td>中高</td><td>从多模态 contrastive finetuning 理论解释 self-distillation，并提出 WMA teacher 防止 EMA collapse。</td></tr><tr><td>P1</td><td>PARCEL: Pool-Anchored Resampling with Conditioned Elastic Queries for Efficient Vision-Language Understanding</td><td>arXiv</td><td>中高</td><td>把低频 layout anchor 与 elastic query 分工，关注 visual-token representation 在不同预算下如何保持空间与细节。</td></tr><tr><td>P1</td><td>Geometry Matters: 3D Foundation Priors for Learning Semantic Correspondence</td><td>arXiv</td><td>中高</td><td>用 3D foundation priors 补 DINO/Stable Diffusion 2D 特征的几何盲点，适合关注 foundation feature 后训练。</td></tr><tr><td>P1</td><td>Improving CLIP Adaptation by Breaking Tail Alignment for Source-Free Cross-Domain Few-Shot Learning</td><td>ICML 2026 + arXiv</td><td>中高</td><td>重新解释 CLIP patch-token 对齐：低语义 tail tokens 不应强行贴近文本，提示对比表征微调要更细粒度。</td></tr><tr><td>P2</td><td>EarlyTom: Early Token Compression Completes Fast Video Understanding</td><td>CVPR 2026 + arXiv</td><td>中</td><td>训练-free 地在视觉编码器内部早期压缩 video tokens，补足只在 LLM 前压缩的效率盲点。</td></tr><tr><td>P2</td><td>Deep Psychovisual Image Representations</td><td>arXiv</td><td>中</td><td>学习频域 psychovisual-style abstraction，提供可解释中间图像表征路线，和常规 CNN/ViT 堆叠形成互补。</td></tr><tr><td>P2</td><td>Learning Representations from 3D Gaussian Splats</td><td>arXiv</td><td>中</td><td>系统比较 3DGS 场景表示上的 latent representation、linear probing 与 clustering，连接 3D 表征与视图合成资产。</td></tr><tr><td>P3</td><td>Veda: Scalable Video Diffusion via Distilled Sparse Attention</td><td>ICML 2026 + arXiv</td><td>中</td><td>把 full attention 蒸馏成 tile-wise sparse attention，主要服务视频生成扩展，但可借鉴到视频预训练计算结构。</td></tr><tr><td>P3</td><td>Grounded 3D-Aware Spatial Vision-Language Modeling</td><td>CVPR 2026 + arXiv</td><td>中</td><td>GR3D 将显式/隐式 2D grounding 与 monocular 3D grounding 统一，偏 VLM 空间推理但对 grounding 表征有参考。</td></tr><tr><td>扫读</td><td>OccamToken: Efficient VLM Inference with Training-Free and Budget-Adaptive Token Pruning</td><td>arXiv</td><td>中低</td><td>用 register-anchored relative evidence testing 做训练-free token pruning，适合和 PARCEL/EarlyTom 对照扫读。</td></tr><tr><td>扫读</td><td>Why Far Looks Up: Probing Spatial Representation in Vision-Language Models</td><td>arXiv</td><td>中低</td><td>用最小 contrastive pairs 诊断 VLM embedding 的垂直-距离纠缠，是空间表征偏置分析。</td></tr></tbody></table>
-      <h2>主线阅读</h2>
       <div class="paper-list issue-list"><article class="paper-card" data-category="Visual SSL / representation" data-priority="P0" data-date="2026-05-30" data-title="cycle consistency in video object-centric learning" data-keywords="cycle consistency in video object-centric learning cycle consistency in video object-centric visual ssl / representation p0 2026-05-30 arxiv 自监督视频 object-centric learning，提出隐式 cycle consistency 避免 slot collapse，直接命中通用视频表征 高相关；详见方法、贡献和实验边界。">
   <a class="paper-thumb paper-thumb-text" href="../papers/2605.30211.html">
     <img src="../assets/mineru/2605.30211/images/c53d06ea609303cbb255e9ab3fbfc8b1dc8f6dbdf82c17a77b425cec0892af26.jpg" alt="Cycle Consistency in Video Object-Centric figure"><span>P0</span>
@@ -216,18 +214,17 @@
     </div>
   </div>
   <aside class="paper-side">
-    <div class="side-box"><h4>今日重点</h4><p>TextTeacher、MDM、EvoVid、Ablate-to-Validate。</p></div>
-    <div class="side-box"><h4>会议口径</h4><p>只把 CCF A/B 放进主提醒；临近截止或 CCF C 仅记录。</p></div>
     <div class="side-box"><h4>阅读重点</h4><p>先看 P1/P2 与方法图，再扫状态变化和边界案例。</p></div>
+    <div class="side-box"><h4>会议口径</h4><p>主提醒只保留 CCF A/B；CCF C 与过期截止仅作状态记录。</p></div>
   </aside>
 </article></main>
-  <aside class="conf-float" data-conf-reminder="2026-05-30-main-ddl" aria-label="CCF A/B 主投稿提醒">
+  <aside class="conf-float" data-conf-reminder="2026-05-31-main-ddl" aria-label="CCF A/B 主投稿提醒">
   <button class="conf-close" type="button" aria-label="关闭会议提醒">×</button>
   <details open>
     <summary>CCF A/B 主投稿提醒</summary>
     <div class="conf-list"><a class="conf-item " href="https://github.com/ccfddl/ccf-deadlines/blob/main/conference/AI/aaai.yml">
   <span><b>AAAI 2027</b><em>CCF A · Main paper submission</em></span>
-  <strong>58 天</strong>
+  <strong>57 天</strong>
   <small>2026-07-27 · CCF DDL: abstract 2026-07-20；进入 1 个月窗口后重点提醒。</small>
 </a></div>
   </details>
@@ -240,7 +237,7 @@
   (() => {
     const box = document.querySelector('[data-conf-reminder]');
     if (!box) return;
-    const key = `visualSslConfReminderClosed:${box.dataset.confReminder || '2026-05-30-main-ddl'}`;
+    const key = `visualSslConfReminderClosed:${box.dataset.confReminder || '2026-05-31-main-ddl'}`;
     try {
       if (localStorage.getItem(key) === '1') box.hidden = true;
     } catch (err) {}
