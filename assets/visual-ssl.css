@@ -47,6 +47,7 @@
 .stat-grid span{font-size:20px;line-height:1.25;margin:6px 0}
 .stat-grid em{font-style:normal;color:#64605a;font-size:13px;line-height:1.45}
 .issue-detail .paper-list{break-inside:avoid;column-span:all}
+.empty-state{border:1px solid #d7d1c6;background:#f7f3ea;padding:18px;border-radius:8px;color:#5f5b55}
 .issue-detail .paper-headline{max-width:980px;font-size:clamp(31px,3.35vw,42px);line-height:1.16;text-wrap:pretty;word-break:normal;overflow-wrap:normal;line-break:loose}
 .paper-detail:not(.issue-detail) .paper-main > .dek{max-width:100%;width:100%;text-wrap:wrap;overflow-wrap:normal;word-break:normal;line-break:loose}
 .paper-detail:not(.issue-detail):not(.deep-read) .feature-body{column-count:1;column-gap:0;column-rule:none;max-width:900px}

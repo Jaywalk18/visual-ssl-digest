@@ -19,39 +19,39 @@
   </header>
   <nav class="site-nav" aria-label="主导航">
     <a class="nav-link" href="../index.html">头版</a>
-<a class="nav-link" href="../issues/2026-05-30.html">今日速递</a>
+<a class="nav-link" href="../issues/2026-05-31.html">今日速递</a>
 <a class="nav-link" href="../pages/catalog.html">论文目录</a>
 <a class="nav-link" href="../pages/timeline.html">时间线</a>
   </nav>
   <main><article class="paper-detail">
   <div class="paper-main">
     <div class="kicker">Visual SSL / representation · 扫读 · 2026-05-30</div>
-    <h1 class="paper-headline">OccamToken：作为 visual token 选择机制，它能帮助判断哪些 token 在预训练 VLM 表征中真正携带信息</h1>
-    <p class="dek">指出 attention sinks 和固定预算会让绝对排序脆弱；以相对证据测试替代。</p>
-    <p class="byline"><strong>OccamToken: Efficient VLM Inference with Training-Free and Budget-Adaptive Token Pruning</strong>　Geng Li, Guohao Chen, Ting Chen, Shilin Shan, Kuangji Zuo, Bofan Lyu, Tuo An, Gen Li；机构以论文首页为准。　arXiv　<a href="https://arxiv.org/abs/2605.29657">原文链接</a></p>
+    <h1 class="paper-headline">OccamToken：它和通用视觉自监督的关系在于：用 register-anchored relative evidence testing 做训练-free token pruning，适合和 PARCEL/EarlyTom 对照扫读</h1>
+    <p class="dek">中低相关；详见方法、贡献和实验边界。</p>
+    <p class="byline"><strong>OccamToken: Efficient VLM Inference with Training-Free and Budget-Adaptive Token Pruning</strong>　arXiv　<a href="https://arxiv.org/abs/2605.29657">原文链接</a></p>
     <div class="paper-facts">
       <span><b>编号</b>2605.29657</span>
       <span><b>优先级</b>扫读</span>
       <span><b>类别</b>Visual SSL / representation</span>
       <span><b>会议</b>arXiv</span>
-      <span><b>方法</b>不用绝对 top-K 重要性排序，而以 register tokens 为低信息参考，判断每个 visual token 是否提供额外证据，并自适应预算。</span>
+      <span><b>方法</b>用 register-anchored relative evidence testing 做训练-free token pruning，适合和 PARCEL/EarlyTom 对照扫读</span>
       <span><b>来源</b>arXiv / OpenReview</span>
     </div>
     <div class="feature-body">
-      <p class="lead dropcap">先说结论。作为 visual token 选择机制，它能帮助判断哪些 token 在预训练 VLM 表征中真正携带信息。 指出 attention sinks 和固定预算会让绝对排序脆弱；以相对证据测试替代。</p>
+      <p class="lead dropcap">先说结论。它和通用视觉自监督的关系在于：用 register-anchored relative evidence testing 做训练-free token pruning，适合和 PARCEL/EarlyTom 对照扫读。 中低相关；详见方法、贡献和实验边界。</p>
       <figure class="full-fig"><img src="../assets/mineru/2605.29657/images/bedef6d393d8603dea15ef8e05effa67a44e9a2f573c8a0e91daeae067b8de22.jpg" alt="(c) Adaptive token budget Figure 1 Motivation for relative comparison"><figcaption><b>(c) Adaptive token budget Figure 1 Motivation for relative comparison</b><span class="fig-en">(c) Adaptive token budget Figure 1 Motivation for relative comparison. (a) Register insertion suppresses attention sinks, yielding a less sink-dominated CLS→vision attention distribution and increasing $n _ { \mathrm { e f f } }$ from 42 to 281. (b) A fixed top-K cutoff corresponds to different evidence levels across samples, while relative cutoffs adapt to distributional variation. (c) OccamToken produces sample-adaptive token budgets through two-stage register-anchored pruning.</span><span class="fig-zh">这张图/表用于判断 OccamToken 的实验收益来自哪里。重点看替换、消融或跨模型设置下趋势是否一致，而不是只看单个最高分。</span></figcaption></figure>
 <figure class="full-fig"><img src="../assets/mineru/2605.29657/images/3107a2474b2232d08b1002043e7dea680e9e685af5e724764b78c7b209f60ed1.jpg" alt="Figureure 3 · Overview of OccamToken"><figcaption><b>Figureure 3 · Overview of OccamToken</b><span class="fig-en">Figure 3 Overview of OccamToken. Given an input image and a text query, our framework performs two-stage adaptive visual token pruning. Stage I AdapRP (Adaptive Redundancy Pruning): At the vision encoder output, a test-time register token absorbs attention sinks. The [CLS] token scores all visual tokens and the register token jointly; tokens scoring below $\lambda _ { 1 } \cdot s _ { 1 } ( r )$ are pruned, yielding an image-adaptive token budget. Stage II RegRP (Register-Anchored Relevance Pruning): Within the LLM, text tokens score the surviving visual tokens via max attention, while the register token’s mean text attention serves as a dynamic threshold. Tokens scoring below $\lambda _ { 2 } \cdot s _ { 2 } ( r )$ are removed, producing a query-adaptive final budget.</span><span class="fig-zh">这张图概括 OccamToken 的整体方法流程。阅读时先看模块之间传递的训练信号，再看作者如何把目标拆成可优化的子问题。</span></figcaption></figure>
       
       <h2>核心问题</h2>
-      <p>作为 visual token 选择机制，它能帮助判断哪些 token 在预训练 VLM 表征中真正携带信息。</p>
+      <p>它和通用视觉自监督的关系在于：用 register-anchored relative evidence testing 做训练-free token pruning，适合和 PARCEL/EarlyTom 对照扫读。</p>
       <h2>方法拆解</h2>
-      <p>不用绝对 top-K 重要性排序，而以 register tokens 为低信息参考，判断每个 visual token 是否提供额外证据，并自适应预算。</p>
+      <p>用 register-anchored relative evidence testing 做训练-free token pruning，适合和 PARCEL/EarlyTom 对照扫读</p>
       <h2>主要贡献</h2>
-      <p>指出 attention sinks 和固定预算会让绝对排序脆弱；以相对证据测试替代。</p>
+      <p>中低相关；详见方法、贡献和实验边界。</p>
       <h2>实验看点</h2>
-      <p>摘要主打 prefill 计算和 memory 降低；重点看 open-ended VQA、OCR 与小目标场景是否稳定。</p>
+      <p>实验部分建议重点看两类证据：一是作者是否把方法收益和更强数据、更长训练、更大模型区分开；二是跨模型、跨数据或跨任务迁移是否还能保留同样趋势。</p>
       <h2>局限与读法</h2>
-      <p>训练-free 剪枝不是新表征学习；偏推理系统。</p>
+      <p>这篇论文的结论需要结合任务设置、训练数据规模和消融实验一起看；不要只凭单个指标判断它对通用视觉表征的价值。</p>
     
     </div>
   </div>
@@ -61,13 +61,13 @@
     <div class="side-box"><h4>原文</h4><p><a href="https://arxiv.org/abs/2605.29657">https://arxiv.org/abs/2605.29657</a></p></div>
   </aside>
 </article></main>
-  <aside class="conf-float" data-conf-reminder="2026-05-30-main-ddl" aria-label="CCF A/B 主投稿提醒">
+  <aside class="conf-float" data-conf-reminder="2026-05-31-main-ddl" aria-label="CCF A/B 主投稿提醒">
   <button class="conf-close" type="button" aria-label="关闭会议提醒">×</button>
   <details open>
     <summary>CCF A/B 主投稿提醒</summary>
     <div class="conf-list"><a class="conf-item " href="https://github.com/ccfddl/ccf-deadlines/blob/main/conference/AI/aaai.yml">
   <span><b>AAAI 2027</b><em>CCF A · Main paper submission</em></span>
-  <strong>58 天</strong>
+  <strong>57 天</strong>
   <small>2026-07-27 · CCF DDL: abstract 2026-07-20；进入 1 个月窗口后重点提醒。</small>
 </a></div>
   </details>
@@ -80,7 +80,7 @@
   (() => {
     const box = document.querySelector('[data-conf-reminder]');
     if (!box) return;
-    const key = `visualSslConfReminderClosed:${box.dataset.confReminder || '2026-05-30-main-ddl'}`;
+    const key = `visualSslConfReminderClosed:${box.dataset.confReminder || '2026-05-31-main-ddl'}`;
     try {
       if (localStorage.getItem(key) === '1') box.hidden = true;
     } catch (err) {}

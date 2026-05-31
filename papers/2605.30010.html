@@ -19,39 +19,39 @@
   </header>
   <nav class="site-nav" aria-label="主导航">
     <a class="nav-link" href="../index.html">头版</a>
-<a class="nav-link" href="../issues/2026-05-30.html">今日速递</a>
+<a class="nav-link" href="../issues/2026-05-31.html">今日速递</a>
 <a class="nav-link" href="../pages/catalog.html">论文目录</a>
 <a class="nav-link" href="../pages/timeline.html">时间线</a>
   </nav>
   <main><article class="paper-detail">
   <div class="paper-main">
     <div class="kicker">CVPR 2026 + arXiv · P2 · 2026-05-30</div>
-    <h1 class="paper-headline">EarlyTom：视频基础模型的 token 预算是通用视觉表征落地的关键瓶颈，早期压缩会影响表征形成本身</h1>
-    <p class="dek">指出 vision encoding 本身是 TTFT 大头，已有后置 token pruning 留下很大加速空间。</p>
-    <p class="byline"><strong>EarlyTom: Early Token Compression Completes Fast Video Understanding</strong>　Hesong Wang, Xin Jin, Lu Lu, Chenhaowen Li, Jian Chen, Qiang Liu, Huan Wang；机构以论文首页为准。　CVPR 2026 + arXiv　<a href="https://arxiv.org/abs/2605.30010">原文链接</a></p>
+    <h1 class="paper-headline">EarlyTom：它和通用视觉自监督的关系在于：训练-free 地在视觉编码器内部早期压缩 video tokens，补足只在 LLM 前压缩的效率盲点</h1>
+    <p class="dek">中相关；详见方法、贡献和实验边界。</p>
+    <p class="byline"><strong>EarlyTom: Early Token Compression Completes Fast Video Understanding</strong>　CVPR 2026 + arXiv　<a href="https://arxiv.org/abs/2605.30010">原文链接</a></p>
     <div class="paper-facts">
       <span><b>编号</b>2605.30010</span>
       <span><b>优先级</b>P2</span>
       <span><b>类别</b>CVPR 2026 + arXiv</span>
       <span><b>会议</b>CVPR 2026 + arXiv</span>
-      <span><b>方法</b>在 Video-LLM 视觉编码器内部进行 early-stage token compression，目标是减少 time-to-first-token，而不是只在 encoder 之后压缩。</span>
+      <span><b>方法</b>训练-free 地在视觉编码器内部早期压缩 video tokens，补足只在 LLM 前压缩的效率盲点</span>
       <span><b>来源</b>arXiv / OpenReview</span>
     </div>
     <div class="feature-body">
-      <p class="lead dropcap">先说结论。视频基础模型的 token 预算是通用视觉表征落地的关键瓶颈，早期压缩会影响表征形成本身。 指出 vision encoding 本身是 TTFT 大头，已有后置 token pruning 留下很大加速空间。</p>
+      <p class="lead dropcap">先说结论。它和通用视觉自监督的关系在于：训练-free 地在视觉编码器内部早期压缩 video tokens，补足只在 LLM 前压缩的效率盲点。 中相关；详见方法、贡献和实验边界。</p>
       <figure class="full-fig"><img src="../assets/mineru/2605.30010/images/1209b98a92d1d17a13f359dcfee312ff62131aadb6f1842839b8fb0f613e9f98.jpg" alt="Figureure 1 · Left: This paper aims to improve the inference efficiency of video und"><figcaption><b>Figureure 1 · Left: This paper aims to improve the inference efficiency of video und</b><span class="fig-en">Figure 1. Left: This paper aims to improve the inference efficiency of video understanding based on video large language models (LLMs). Latency profiling suggests the major speed bottleneck lies in the vision encoder part instead of the LLM. Knowing this, we introduce EarlyTom, a training-free token compression method designed for the early stage (i.e., vision encoder) of video LLMs. EarlyTom features two core components: (1) early-stage visual token compression achieved via inner vision encoder frame merging, and (2) a spatial token selection strategy that further increases compression effectiveness without introducing bias. Right: Scatter plot illustrating the relationship between FLOPs and throughput, along with the average performance across four widely used video understanding benchmarks (MVBench, EgoSchema, LongVideoBench, and VideoMME) for several training-free state-of-the-art methods. EarlyTom achieves state-of-the-art performance while maintaining accuracy comparable to full-token methods.</span><span class="fig-zh">这张图/表用于判断 EarlyTom 的实验收益来自哪里。重点看替换、消融或跨模型设置下趋势是否一致，而不是只看单个最高分。</span></figcaption></figure>
 <figure class="full-fig"><img src="../assets/mineru/2605.30010/images/6984f8e65fe8278dc6346106cde8a3789276df474c2e3e4131ea2543719f9412.jpg" alt="(d) 25% token retention rate"><figcaption><b>(d) 25% token retention rate</b><span class="fig-en">(d) 25% token retention rate. Figure 8. Time-to-first-token (TTFT) comparison on the LLaVA-OneVision-0.5B model. We report the latency breakdown (vision encoding, token processing, LLM prefill, and system overhead) across different methods.</span><span class="fig-zh">这张图/表用于判断 EarlyTom 的实验收益来自哪里。重点看替换、消融或跨模型设置下趋势是否一致，而不是只看单个最高分。</span></figcaption></figure>
       
       <h2>核心问题</h2>
-      <p>视频基础模型的 token 预算是通用视觉表征落地的关键瓶颈，早期压缩会影响表征形成本身。</p>
+      <p>它和通用视觉自监督的关系在于：训练-free 地在视觉编码器内部早期压缩 video tokens，补足只在 LLM 前压缩的效率盲点。</p>
       <h2>方法拆解</h2>
-      <p>在 Video-LLM 视觉编码器内部进行 early-stage token compression，目标是减少 time-to-first-token，而不是只在 encoder 之后压缩。</p>
+      <p>训练-free 地在视觉编码器内部早期压缩 video tokens，补足只在 LLM 前压缩的效率盲点</p>
       <h2>主要贡献</h2>
-      <p>指出 vision encoding 本身是 TTFT 大头，已有后置 token pruning 留下很大加速空间。</p>
+      <p>中相关；详见方法、贡献和实验边界。</p>
       <h2>实验看点</h2>
-      <p>摘要称在保持精度可比的同时显著降低 TTFT；重点看 encoder 早期压缩对细粒度视频理解、OCR 和动作时序的损害。</p>
+      <p>实验部分建议重点看两类证据：一是作者是否把方法收益和更强数据、更长训练、更大模型区分开；二是跨模型、跨数据或跨任务迁移是否还能保留同样趋势。</p>
       <h2>局限与读法</h2>
-      <p>偏工程效率；训练-free 规则对不同视频 backbone 与长视频长度的稳定性要看正文。</p>
+      <p>这篇论文的结论需要结合任务设置、训练数据规模和消融实验一起看；不要只凭单个指标判断它对通用视觉表征的价值。</p>
     
     </div>
   </div>
@@ -61,13 +61,13 @@
     <div class="side-box"><h4>原文</h4><p><a href="https://arxiv.org/abs/2605.30010">https://arxiv.org/abs/2605.30010</a></p></div>
   </aside>
 </article></main>
-  <aside class="conf-float" data-conf-reminder="2026-05-30-main-ddl" aria-label="CCF A/B 主投稿提醒">
+  <aside class="conf-float" data-conf-reminder="2026-05-31-main-ddl" aria-label="CCF A/B 主投稿提醒">
   <button class="conf-close" type="button" aria-label="关闭会议提醒">×</button>
   <details open>
     <summary>CCF A/B 主投稿提醒</summary>
     <div class="conf-list"><a class="conf-item " href="https://github.com/ccfddl/ccf-deadlines/blob/main/conference/AI/aaai.yml">
   <span><b>AAAI 2027</b><em>CCF A · Main paper submission</em></span>
-  <strong>58 天</strong>
+  <strong>57 天</strong>
   <small>2026-07-27 · CCF DDL: abstract 2026-07-20；进入 1 个月窗口后重点提醒。</small>
 </a></div>
   </details>
@@ -80,7 +80,7 @@
   (() => {
     const box = document.querySelector('[data-conf-reminder]');
     if (!box) return;
-    const key = `visualSslConfReminderClosed:${box.dataset.confReminder || '2026-05-30-main-ddl'}`;
+    const key = `visualSslConfReminderClosed:${box.dataset.confReminder || '2026-05-31-main-ddl'}`;
     try {
       if (localStorage.getItem(key) === '1') box.hidden = true;
     } catch (err) {}
