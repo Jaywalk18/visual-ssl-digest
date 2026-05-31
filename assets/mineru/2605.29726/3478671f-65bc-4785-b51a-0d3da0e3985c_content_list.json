@@ -1,0 +1,1760 @@
+[
+    {
+        "type": "text",
+        "text": "SLAD : Shared LoRA Adapters for Task Specific Distillation ",
+        "text_level": 1,
+        "bbox": [
+            191,
+            130,
+            803,
+            151
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "Reda Bensaid1,2 Yassir Bendou1 Vincent Gripon1 Franc¸ois Leduc-Primeau2 1IMT Atlantique, Brest, France 2Polytechnique Montreal, Montr ´ eal, Canada ´ R reda.bensaid@imt-atlantique.fr ",
+        "bbox": [
+            178,
+            179,
+            816,
+            250
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "Abstract ",
+        "text_level": 1,
+        "bbox": [
+            246,
+            286,
+            326,
+            301
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "In the context of resource-constrained environments such as embedded systems, adapting reduced-size foundation models to downstream tasks has become increasingly popular. This has recently motivated the emerging setting of taskspecific distillation, where a larger and a smaller version of the same foundation model are both adapted to the same downstream task, with the goal of transferring knowledge from the former to the latter. Recent work has demonstrated the benefits of using a larger version of the same foundation model to assist the adaptation of a smaller one. Typically, the larger model (teacher) is first adapted via fine-tuning or linear probing before its knowledge is distilled into the smaller model (student). While fine-tuning the teacher often increases its performance, recent work showed that probing it leads to better knowledge distillation to the student. Our findings show that this is mainly due to a mis-alignment in feature representation between the teacher and the student which occurs during the fine-tuning of the teacher. Inspired from existing efforts to preserve previously learned knowledge, we first propose to leverage low-rank adaptation, resulting in better feature alignment and therefore better knowledge transfer. Drawing from this insight, we propose to further enhance the feature alignment, through a parameter-sharing strategy of the adapters between the two encoders during joint-training. Our proposed method SLAD shows a better feature alignment between the teacher and student which results in increased performance for not only the student but also for the teacher model while being 2× faster to train than fine-tuning. Through extensive experiments on multiple datasets of classification and segmentation tasks, we demonstrate the improved accuracy and transfer efficiency of our method achieving state-of-the-art performance in the task-specific distillation framework. ",
+        "bbox": [
+            86,
+            316,
+            483,
+            816
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "1. Introduction ",
+        "text_level": 1,
+        "bbox": [
+            91,
+            844,
+            220,
+            859
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "The rise of foundation models trained via self-supervised learning (SSL) has allowed significant advances in deep learning [13, 17, 36, 38], enabling the creation of versatile models capable of generalizing across a wide range of tasks. These models can often reach state-of-the-art performance when adapted to specific tasks through techniques such as fine-tuning, linear probing, or parameter-efficient fine-tuning (PEFT) [16, 31]. ",
+        "bbox": [
+            89,
+            869,
+            482,
+            901
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "",
+        "bbox": [
+            511,
+            287,
+            906,
+            378
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "However, in resource-constrained environments, such as embedded or edge devices, the high computational and memory requirements of large foundation models make their deployment impractical [46]. This motivates the use of smaller foundation models, which are increasingly made available through model compression techniques such as knowledge distillation [18]. Due to their limited capacity, these compact models are typically not trained from scratch but rather derived from larger models [36, 45, 48]. ",
+        "bbox": [
+            511,
+            380,
+            908,
+            517
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "Yet, compressing foundation models while preserving their versatility and performance remains a major challenge [36]. These models are designed to be general-purpose, encapsulating broad and diverse knowledge learned from their pre-training web-scale datasets. Reducing their size inherently limits their representational capacity, often leading to significant performance drops when adapting to downstream tasks like image classification or segmentation, the focus of this work. ",
+        "bbox": [
+            511,
+            518,
+            908,
+            654
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "This challenge has recently motivated the emerging setting of task-specific distillation, where a larger and a smaller version of the same foundation model are both adapted to the same downstream task, with the goal of transferring task-relevant knowledge from the teacher to the student. To mitigate this degradation, recent approaches have explored the use of larger foundation models to assist in the adaptation of their smaller counterparts, while discarding the large models at inference time. For instance, methods such as TinyBERT [24] in NLP and G2SD [20] in computer vision follow multi-stage pipelines involving fine-tuning the teacher model and subsequently distilling its knowledge into a student model. The teacher and student pair are typically pre-trained using the same routine and of different sizes [24, 34]. ",
+        "bbox": [
+            511,
+            656,
+            908,
+            883
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "Recently, Marrie et al. [34] showed that while fine tuning increases the performance of the teacher, it does not necessarily benefit the student during the distillation process, showing that a simple linear probing of the teacher results in better knowledge distillation. This indicates that a more expressive model does not automatically translate into a better teacher. However, although linear probing the teacher achieves better knowledge transfer, it remains a shallower model compared to fine-tuning the entire teacher on the task. This limits the teacher’s capacity to capture task specific information which is often better captured through fine-tuning [5, 25]. Hence, we ask ourselves the question: how can we train a more expressive teacher while ensuring better task-specific knowledge distillation for the student? ",
+        "bbox": [
+            531,
+            885,
+            903,
+            900
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "aside_text",
+        "text": "arXiv:2605.29726v1 [cs.CV] 28 May 2026 ",
+        "bbox": [
+            22,
+            272,
+            60,
+            724
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "chart",
+        "img_path": "images/26a34cbd9415912b0c22f5a08f55612fe0aee9bb191032303c4c946189b1e7c9.jpg",
+        "content": "| Method         | Training Time (hours) | Accuracy (%) |\n| -------------- | --------------------- | ------------ |\n| SLAD (ours)    | 5                     | 90.4         |\n| LoRA (ours)    | 8                     | 90.0         |\n| Probing*       | 8                     | 89.7         |\n| Fine-tuning*   | 10                    | 88.6         |",
+        "chart_caption": [
+            "Figure 1. Comparison of accuracy vs. training time for different methods on the CUB Dataset. \\* refer to methods from Marrie et al. [34] "
+        ],
+        "chart_footnote": [],
+        "sub_type": "scatter",
+        "bbox": [
+            98,
+            85,
+            482,
+            273
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "text",
+        "text": "",
+        "bbox": [
+            88,
+            356,
+            482,
+            566
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "text",
+        "text": "To do so, we start by performing an analysis on the feature alignment ([29]) between the teacher and the student. Our analysis reveals that fine-tuning the teacher results in a significant drop in feature alignment between the two models, indicating a potential harmful mismatch leading to less efficient distillation. This effect is well known in the continual learning literature, where fine-tuning may change the feature representations of the pre-trained model, resulting in catastrophic forgetting [27]. ",
+        "bbox": [
+            89,
+            568,
+            482,
+            704
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "text",
+        "text": "One common approach to balance the trade-off between catastrophic forgetting and downstream task performance consists in leveraging low-rank adapters [19] (LoRA). Inspired by previous efforts in this literature, we thus first propose to use LoRA adapters to improve feature alignment. This improvement in alignment is confirmed by our experiments and leads to improved performance after knowledge distillation, compared to both fine-tuning and linear probing. However, fine-tuning with LoRA does not explicitly enforce the feature alignment between the two models. ",
+        "bbox": [
+            89,
+            704,
+            482,
+            854
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "text",
+        "text": "In order to further enforce feature alignment, we propose to share the weights of the LoRA adapters between the teacher and the student encoders and to train them jointly. By sharing a subset of the teacher’s adapters with the student, we further enforce feature alignment throughout the two encoders. Thanks to this parameter-sharing strategy, SLAD achieves a better feature alignment, resulting in better performance through the knowledge distillation process. Our experiments reveal that our joint training strategy also benefits the teacher, allowing it to reach higher performance than a fully fine-tuned teacher. We thus obtain both a more expressive teacher and a better knowledge distiller. Additionally, by jointly training both encoders, SLAD can be performed in a single step, resulting in faster training times compared to popular alternatives. ",
+        "bbox": [
+            89,
+            854,
+            482,
+            901
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "text",
+        "text": "",
+        "bbox": [
+            511,
+            90,
+            903,
+            271
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "text",
+        "text": "Through extensive experiments on classification and segmentation tasks, we show the effectiveness of the proposed SLAD method, which achieves consistent gains over the existing state-of-the-art for task-specific distillation, with an absolute average improvement of 2.16% accuracy over the state-of-the-art classification benchmarks while being 2 times faster than the full-fine-tuning strategy (Figure 1). ",
+        "bbox": [
+            511,
+            273,
+            906,
+            378
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "text",
+        "text": "Summary of our contributions: ",
+        "text_level": 1,
+        "bbox": [
+            511,
+            401,
+            735,
+            415
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "list",
+        "sub_type": "text",
+        "list_items": [
+            "• We investigate why a fine-tuning of the teacher during the two-step task-specific distillation process results in worse knowledge distillation. Our analysis shows key insights on harmful feature misalignment between the teacher and the student that occurs during fine-tuning of the teacher. ",
+            "• Leveraging this insight, we propose to use low-rank adaptation techniques to achieve a better trade-off between capturing task-specific intrinsics and knowledge distillation. ",
+            "• We propose the SLAD method, which shares a subset of adapters of the teacher with the student while jointly training them. Through a wide range of experiments, SLAD achieves better knowledge distillation to the student while being significantly faster than the previous state-of-the-art on multiple classification and segmentation benchmarks. "
+        ],
+        "bbox": [
+            511,
+            417,
+            903,
+            657
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "text",
+        "text": "2. Related Work ",
+        "text_level": 1,
+        "bbox": [
+            511,
+            672,
+            653,
+            689
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "text",
+        "text": "This section first examines previous research on taskagnostic and task-specific distillation, then explores advancements in parameter-efficient fine-tuning (PEFT). ",
+        "bbox": [
+            511,
+            700,
+            903,
+            746
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "text",
+        "text": "2.1. Generic Knowledge Distillation ",
+        "text_level": 1,
+        "bbox": [
+            511,
+            757,
+            790,
+            773
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "text",
+        "text": "Knowledge Distillation (KD) is a widely adopted compression approach [14, 43] that transfers knowledge from a large ”teacher” model to a smaller ”student” model, allowing the student to achieve similar performance with significantly reduced complexity. The foundational work by Ba and Caruana [3], Hinton et al. [18] introduced soft-label distillation, where the student learns from both hard labels and softened teacher outputs. Building on this, numerous KD variations have emerged. FitNets [39], for example, incorporated intermediate supervision to transfer knowledge from hidden layers. Other methods have introduced distinct approaches: attention map distillation [47], relational distillation between data points [37], distribution-based distillation [21], and intermediate ”teacher assistants” to bridge the teacher-student gap [35]. However, these techniques often target task-specific models. With the recent rise of task-agnostic self-supervised learning (SSL) models, which can be adapted to various downstream tasks through simple methods like linear probing, there is a growing need for KD approaches that effectively leverages the knowledge of bigger SSL models while adapting the smaller models to downstream tasks. This distinction has led to the development of task-specific distillation methods, which differ from classical KD by adapting both teacher and student to the same downstream task rather than compressing a fixed, fully-trained teacher. ",
+        "bbox": [
+            511,
+            779,
+            903,
+            900
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "image",
+        "img_path": "images/ada4f9a09b7301103f675e46f9200dd0126adf0a11eec199e633eb32ca4ca210.jpg",
+        "image_caption": [],
+        "image_footnote": [],
+        "content": "```mermaid\ngraph TD\n    subgraph TwoSteps Distillation\n        A[\"Teacher\"] --> B[\"Head\"]\n        B --> C[\"p^t\"]\n        B --> D[\"p^gt\"]\n        C --> E[\"L_CE\"]\n    end\n    subgraph Step 1\n        F[\"Teacher\"] --> G[\"Head\"]\n        G --> H[\"p^t\"]\n        G --> I[\"p^gt\"]\n    end\n    subgraph Step 2\n        J[\"Teacher\"] --> K[\"Head\"]\n        K --> L[\"p^t\"]\n        K --> M[\"L_KD\"]\n        J --> N[\"Student\"]\n        N --> O[\"p^s\"]\n        N --> P[\"L_CE\"]\n    end\n```",
+        "sub_type": "flowchart",
+        "bbox": [
+            109,
+            85,
+            509,
+            467
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "image",
+        "img_path": "images/99e510e0aa93989004b33db8b7392a636863c06eaf3b51fcdda87ec752bdd33f.jpg",
+        "image_caption": [
+            "Figure 2. Overview of our SLAD method. (left) The two-step distillation introduced in Marrie et al. [34] where the teacher is first probed on the downstream task and then distilled into a student. (right) The SLAD method where the teacher and the student are trained jointly in one step while sharing their LoRA adapter weights. "
+        ],
+        "image_footnote": [],
+        "content": "```mermaid\ngraph TD\n    subgraph_SLAD[\"SLAD\"]\n        direction TB\n        A1[\"Student: d_s, d_s, A\"] -->|r| B1[\"Teacher: d_1, d_2, A, B\"]\n        A2[\"Teacher: d_1, d_2\"] -->|d_1 - d_s| B2[\"Teacher: d_1, d_2, A, B\"]\n        B1 -->|Shared| C1[\"Teacher\"]\n        B2 -->|Shared| C2[\"Teacher\"]\n    end\n\n    subgraph_Teacher[\"Teacher\"]\n        direction LR\n        W1[\"w\"] --> XHead[\"Head\"]\n        XHead --> pgt[\"p^gt\"]\n        XHead --> pt[\"p^t\"]\n        XHead --> ΔW[\"ΔW\"]\n        ΔW --> Head1[\"Head\"]\n        Head1 --> p̂s[\"p̂^s\"]\n        Head1 --> pgtp[\"p^gt\"]\n    end\n\n    subgraph_Student[\"Student\"]\n        direction LR\n        W2[\"w\"] --> XHead\n        XHead --> p̂s\n        XHead --> pgtp[\"p^gt\"]\n    end\n\n    style SLAD fill:#f9f9f9,stroke-dasharray: 5 5\n    style Teacher fill:#e6f7ff,stroke:#333\n    style Student fill:#e6f7ff,stroke:#333\n```",
+        "sub_type": "flowchart",
+        "bbox": [
+            514,
+            85,
+            887,
+            460
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "",
+        "bbox": [
+            88,
+            545,
+            485,
+            818
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "2.2. Task Specific Distillation ",
+        "text_level": 1,
+        "bbox": [
+            89,
+            830,
+            316,
+            848
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "Task-specific distillation has emerged as a key approach to tailor knowledge distillation for agnostic foundation models trained with self-supervised learning (SSL). TinyBERT [24] introduced this approach in NLP, followed by G2SD [20] in computer vision, both employing a two-step distillation process. First, a general distillation is applied to yield a smaller, foundation model from the teacher. Then, the teacher undergoes fine-tuning on a downstream task, followed by task-specific distillation. More recently, Marrie et al. [34] demonstrated that probing the teacher directly often yields better results than fine-tuning. Building on this, our method integrates LoRA adapters, enhancing model flexibility while preserving agnostic knowledge from pretraining. We further show that sharing these adapters between teacher and student models promotes better knowledge transfer, improving performance across both models. ",
+        "bbox": [
+            89,
+            854,
+            483,
+            902
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "",
+        "bbox": [
+            511,
+            545,
+            908,
+            743
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "2.3. Parameter Efficient Fine-Tuning ",
+        "text_level": 1,
+        "bbox": [
+            511,
+            756,
+            802,
+            772
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "To address the substantial costs of fine-tuning large models, particularly foundation models, parameter-efficient finetuning (PEFT) [16, 31] techniques have gained popularity by updating only a subset of the model’s weights (or dimensions) while keeping others frozen. Visual Prompt Tuning (VPT)[22] introduces additional tokens to the input patches and optimizes only these new tokens, while BitFit[4] restricts fine-tuning to bias terms. LayerNorm tuning [11, 26] proceeds by fine-tuning only the scale and bias parameters of the LayerNorm modules of the model. AdaptFormer [7] takes a similar approach, adding lightweight adapter layers trained exclusively for task-specific adjustments. Singular Value Fine-tuning(SVF) [40] starts by applying SVD decomposition to the model’s weights and then updates only the singular values of the weight matrices while keeping the rest frozen. ",
+        "bbox": [
+            511,
+            779,
+            908,
+            902
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "",
+        "bbox": [
+            89,
+            90,
+            483,
+            210
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "text",
+        "text": "Among PEFT approaches, Low-Rank Adaptation (LoRA)[19] stands out as a prominent method that inserts low-rank adapters parallel to the model weights, training only these adapters. LoRA has demonstrated strong performance across various domains and tasks. Recent studies [28] have explored layer-wise sharing of LoRA adapters. However, to the best of our knowledge, we are the first to investigate sharing LoRA adapters weights across different models, particularly within a knowledge distillation framework. ",
+        "bbox": [
+            89,
+            210,
+            483,
+            361
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "text",
+        "text": "3. Method ",
+        "text_level": 1,
+        "bbox": [
+            89,
+            375,
+            181,
+            390
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "text",
+        "text": "In this section, we first remind the reader with the two-step distillation proposed by Marrie et al. [34]. We then introduce our first contribution using LoRA for task-specific distillation before exposing the details of our proposed method SLAD which enhances knowledge transfer between the teacher and student models. ",
+        "bbox": [
+            89,
+            400,
+            483,
+            491
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "text",
+        "text": "3.1. Two-Step Distillation ",
+        "text_level": 1,
+        "bbox": [
+            89,
+            500,
+            290,
+            515
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "text",
+        "text": "We consider a downstream task $\\mathcal { D } _ { \\mathrm { t r a i n } } = \\{ \\mathbf { x } _ { i } , \\mathbf { y } _ { i } \\} _ { i = 1 } ^ { N }$ , where x are training images and y are the associated labels (either for classification or segmentation). Let $e _ { t }$ and $e _ { s }$ be two pretrained (agnostic) teacher and student encoders respectively. Task specific distillation as introduced in Marrie et al. [34] folds in two steps. First, a teacher model $f _ { t }$ is trained, where $f _ { t } ~ = ~ p _ { t } \\circ e _ { t }$ and $p _ { t }$ is an adaptation function, typically a linear head. The teacher is trained using the empirical risk minimization loss: ",
+        "bbox": [
+            89,
+            521,
+            483,
+            657
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "equation",
+        "text": "$$\n\\mathcal {L} _ {\\text { task }} (f _ {t}) = \\frac {1}{N} \\sum_ {i = 1} ^ {N} \\ell_ {\\text { task }} (f _ {t} (\\mathbf {x} _ {i}), \\mathbf {y} _ {i})  , \\tag {1}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            161,
+            662,
+            482,
+            705
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "text",
+        "text": "where $\\ell _ { \\mathrm { t a s k } }$ is typically the Cross-Entropy loss. ",
+        "bbox": [
+            109,
+            712,
+            416,
+            727
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "text",
+        "text": "The second step consists of training the student model $f _ { s } ~ = ~ p _ { s } \\circ e _ { s }$ using $\\mathcal { L } _ { \\mathrm { t a s k } } ( f _ { s } )$ alongside a divergence loss between the student’s predictions and the teacher’s: ",
+        "bbox": [
+            89,
+            728,
+            483,
+            772
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "equation",
+        "text": "$$\n\\mathcal {L} _ {\\mathrm{KD}} (f _ {s}) = \\alpha_ {s} \\underbrace {\\mathcal {L} _ {\\text { task }} (f _ {s})} _ {T = 1} + \\alpha_ {\\mathrm{KL}} T ^ {2} \\underbrace {D _ {\\mathrm{KL}} (f _ {s} , f _ {t})} _ {T > 1}, \\tag {2}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            117,
+            781,
+            482,
+            816
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "text",
+        "text": "where $T$ represents the softmax temperature, $D _ { \\mathrm { K L } }$ is the Kullback-Leibler (KL) divergence [30] and $( \\alpha _ { s } , \\alpha _ { \\mathrm { K L } } )$ are weighting hyperparameters. ",
+        "bbox": [
+            89,
+            824,
+            482,
+            869
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "text",
+        "text": "Here, one can envision multiple strategies to train the student and the teacher. For instance, during the adaptation of the teacher, the encoder $e _ { t }$ can either be frozen, commonly known as linear probing [1], or entirely fine-tuned. Experimental results in Marrie et al. [34] showed that while fine-tuning the teacher’s encoder yields better performance for the teacher on the downstream tasks, this results in a less efficient knowledge distillation for the student compared to freezing the encoder and learning the projection $p _ { t }$ alone. This means that although fine-tuning a teacher allows to capture more information on the downstream task, it does not translate to a better teacher for the student. ",
+        "bbox": [
+            89,
+            869,
+            483,
+            900
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "text",
+        "text": "",
+        "bbox": [
+            511,
+            90,
+            903,
+            241
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "text",
+        "text": "We argue that fine-tuning all the weights of the teacher in the first step leads to a mismatch in feature representations between the teacher and student encoders, resulting into a lower knowledge distillation compared to a frozen and taskagnostic teacher. This is commonly observed when finetuning a model on a dowstream task, often leading to catastrophic forgetting [27], modifying the intrinsic feature representations of the model. Our analysis in Figure 3 using Centered Kernel Alignment (CKA) [29] shows that finetuning all weights of the teacher results in worse alignment of the feature representations between the two encoders, when compared to other approaches including LoRA. This mismatch arguably hinders the knowledge distillation process. ",
+        "bbox": [
+            511,
+            242,
+            905,
+            450
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "text",
+        "text": "Although linear probing [1] the teacher, as suggested in Marrie et al. [34], achieves better knowledge distillation by preserving feature alignment between the two encoders, it does not capture the task-relevant knowledge compared to a fully fine-tuned model, resulting in a suboptimal knowledge transfer. In the following, we propose to design a solution that balances this trade-off. ",
+        "bbox": [
+            511,
+            453,
+            905,
+            558
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "text",
+        "text": "3.2. Task-Specific Distillation With Low Rank Adaptation (LoRA) ",
+        "text_level": 1,
+        "bbox": [
+            511,
+            568,
+            903,
+            599
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "text",
+        "text": "A recent approach to balance catastrophic forgetting and performance is through the use of low-rank adaptation [32, 44]. We thus propose to adapt first the teacher on the downstream task using LoRA adapters, and then distill knowledge on the student using LoRA adapters again. ",
+        "bbox": [
+            511,
+            604,
+            903,
+            680
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "text",
+        "text": "For a weight matrix $\\mathbf { W } _ { 0 } ~ \\in ~ \\mathbb { R } ^ { m \\times n }$ , LoRA introduces low-rank adapters $\\mathbf { A } \\in \\mathbb { R } ^ { m \\times r }$ and $\\mathbf { B } \\in \\mathbb { R } ^ { r \\times n }$ : ",
+        "bbox": [
+            511,
+            680,
+            903,
+            710
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "equation",
+        "text": "$$\n\\mathbf {W} = \\mathbf {W} _ {0} + \\Delta \\mathbf {W} = \\mathbf {W} _ {0} + \\mathbf {A B} \\tag {3}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            598,
+            737,
+            903,
+            753
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "text",
+        "text": "The teacher model is first trained on the task using LoRA, updating only the classifier weights and LoRA adapters. Subsequently, task-specific knowledge is distilled into the student model (also equipped with LoRA adapters and a classifier, with other parameters frozen) using Equation 2. ",
+        "bbox": [
+            511,
+            763,
+            905,
+            853
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "text",
+        "text": "This strategy allows the use of better adapters than linear probing without heavily disrupting the feature representation between the teacher and the student, as shown in Figure 3, hence allowing better knowledge distillation and better adaptation of the student model. ",
+        "bbox": [
+            511,
+            854,
+            905,
+            900
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "chart",
+        "img_path": "images/bb2426c759b8c65b7c5d4d1ebcb0ca9aeba19bf430db7f37c6f36e65a4cd6f50.jpg",
+        "content": "",
+        "chart_caption": [
+            "(a) Before adaptation CKA = 92.95% "
+        ],
+        "chart_footnote": [],
+        "sub_type": "heatmap",
+        "bbox": [
+            104,
+            103,
+            279,
+            236
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "chart",
+        "img_path": "images/ed710fefbefeee86aed5b9d0fff86a038a7d7b972fdabb39a355e9799a475f41.jpg",
+        "content": "|  | 0    | 10   | 20   | 30   | 40   |\n|---|------|------|------|------|------|\n| 0 | 0.5  | 0.6  | 0.7  | 0.8  | 0.9  |\n| 10| 0.4  | 0.5  | 0.6  | 0.7  | 0.8  |\n| 20| 0.3  | 0.4  | 0.5  | 0.6  | 0.7  |\n| 30| 0.2  | 0.3  | 0.4  | 0.5  | 0.6  |\n| 40| 0.1  | 0.2  | 0.3  | 0.4  | 0.5  |",
+        "chart_caption": [
+            "(b) Fine-tuning ∆CKA = 9.4% "
+        ],
+        "chart_footnote": [],
+        "sub_type": "heatmap",
+        "bbox": [
+            305,
+            103,
+            480,
+            236
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "chart",
+        "img_path": "images/f906952e280dcfb23256694d501521a8d202cb66f62a32d2476fd7d9328ac2ba.jpg",
+        "content": "| X  | Y  | Value |\n|----|----|-------|\n| 10 | 0  | 1     |\n| 10 | 10 | 1     |\n| 10 | 20 | 1     |\n| 10 | 30 | 1     |\n| 10 | 40 | 1     |\n| 20 | 0  | 1     |\n| 20 | 10 | 1     |\n| 20 | 20 | 1     |\n| 20 | 30 | 1     |\n| 20 | 40 | 1     |\n| 30 | 0  | 1     |\n| 30 | 10 | 1     |\n| 30 | 20 | 1     |\n| 30 | 30 | 1     |\n| 30 | 40 | 1     |\n| 40 | 0  | 1     |\n| 40 | 10 | 1     |\n| 40 | 20 | 1     |\n| 40 | 30 | 1     |\n| 40 | 40 | 1     |",
+        "chart_caption": [
+            "(c) LoRA ∆CKA = 5.1% "
+        ],
+        "chart_footnote": [],
+        "sub_type": "heatmap",
+        "bbox": [
+            511,
+            103,
+            687,
+            236
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "chart",
+        "img_path": "images/4c7fbe6b099706503bb10732937321a3bc5c7c40ee361404ba28787de02925cc.jpg",
+        "content": "| 0    | 10   | 20   | 30   | 40   |\n| ---- | ---- | ---- | ---- | ---- |\n| 0    | 0    | 0    | 0    | 0    |\n| 10   | 0    | 0    | 0    | 0    |\n| 20   | 0    | 0    | 0    | 0    |\n| 30   | 0    | 0    | 0    | 0    |\n| 40   | 0    | 0    | 0    | 0    |",
+        "chart_caption": [
+            "(d) SLAD ∆CKA = 3.71% ",
+            "Figure 3. Centered Kernel Alignment between representations of a teacher ViT-B and a student ViT-S on CUB dataset. We plot CKA similarities between all pairs of layers of the two encoders. (a) CKA of pre-trained backbones (before adaptation on the downstream task). (b-c-d) Difference of CKA before and after adaptations for different adaptation techniques. The initial mean CKA value across similar layers is 92.95%. When fully fine-tuning the teacher, the CKA value drops by 9.4%, on the other hand using LoRA only deteriorates the CKA by 5.09%. When sharing the weights of the LoRA adapters between the teacher and the student model, our method SLAD achieves a CKA of 89.65%, with a drop of 3.71% indicating better feature alignment during the distillation process, which benefits the knowledge distillation transfer. "
+        ],
+        "chart_footnote": [],
+        "sub_type": "heatmap",
+        "bbox": [
+            714,
+            103,
+            887,
+            236
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "",
+        "bbox": [
+            88,
+            406,
+            482,
+            436
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "While the use of LoRA adapters allows smaller degree of freedom for disruptive feature alignment between the two encoders, the distillation process is limited to the transfer of logits and therefore it does not necessarily enforce the feature alignment. In the following, we propose another strategy to further enforce feature alignment between the teacher and the student. ",
+        "bbox": [
+            88,
+            438,
+            482,
+            542
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "3.3. SLAD : Shared LoRA Weights ",
+        "text_level": 1,
+        "bbox": [
+            89,
+            556,
+            362,
+            573
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "One possible strategy to enforce the feature alignment during distillation is to use an additional consistency loss between the features of the teacher and the student as performed in Jiao et al. [24] for natural language processing. However, the teacher and student are typically of different sizes often resulting in different dimensionality of the features, which hinders a straightforward design of a consistency loss and would require learning an additional projection layer during the distillation process. ",
+        "bbox": [
+            88,
+            580,
+            482,
+            715
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "Instead, we build on the previously proposed LoRA adaptation technique. Given that the adaptation weights are initialized from scratch, we share these weights between the two encoders resulting in our final proposed method SLAD as depicted in Figure 2. Differences in the internal dimensions between the teacher and student encoders necessitate an adaptive approach to sharing: indeed, the LoRA adapters in the student model are smaller than those of the teacher. Therefore, we share only a subset of the teacher’s LoRA weights (Figure 4), matching the dimensions of the student adapters. ",
+        "bbox": [
+            88,
+            718,
+            482,
+            883
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "Given that the adaptation weights are shared between the teacher and the encoder, we propose to simultaneously train the two models on the task. Each model is optimized on the target using its respective classifier, while the teacher transfers knowledge to the student through a KL divergence loss. The overall loss function is defined as: ",
+        "bbox": [
+            109,
+            885,
+            482,
+            900
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "image",
+        "img_path": "images/6eb51e73a63b7f71544614f54dc278afb535497a856394e4cce4b852b98733fc.jpg",
+        "image_caption": [
+            "Figure 4. Overview of the sharing mechanism for SLAD: the teacher features with dimension dt go through LoRA adapters A and B while the student features with dimension $d _ { s } \\ \\leq \\ d _ { t }$ go through a subset of the LoRA adapters corresponding to the first ds dimensions. "
+        ],
+        "image_footnote": [],
+        "content": "```mermaid\ngraph LR\n    subgraph Student\n        A1[\"ds\"] --> A2[\"A\"]\n        A2 --> B1[\"B\"]\n        B1 --> D1[\"ds\"]\n    end\n    subgraph Teacher\n        E1[\"dt\"] --> E2[\"A\"]\n        E2 --> F1[\"r\"]\n        F1 --> G1[\"B\"]\n        G1 --> H1[\"dt\"]\n    end\n    A1 <-->|Shared| E1\n    A2 <-->|Shared| E2\n    A1 <-->|Shared| E2\n    style Student fill:#f9f,stroke:#333\n    style Teacher fill:#bbf,stroke:#333\n```",
+        "sub_type": "flowchart",
+        "bbox": [
+            514,
+            409,
+            906,
+            670
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "",
+        "bbox": [
+            511,
+            825,
+            906,
+            900
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "equation",
+        "text": "$$\n\\mathcal {L} _ {\\mathrm{SLAD}} = \\alpha_ {s} \\underbrace {\\mathcal {L} _ {\\text { task }} (f _ {s})} _ {T = 1} + \\alpha_ {t} \\underbrace {\\mathcal {L} _ {\\text { task }} (f _ {t})} _ {T = 1} + \\alpha_ {\\mathrm{KL}} T ^ {2} \\underbrace {D _ {\\mathrm{KL}} (f _ {s} , f _ {t})} _ {T > 1}, \\tag {4}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            89,
+            112,
+            491,
+            165
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "text",
+        "text": "where $( \\alpha _ { s } , \\alpha _ { t } , \\alpha _ { \\mathrm { K L } } )$ are weighting hyperparameters. ",
+        "bbox": [
+            89,
+            176,
+            436,
+            191
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "text",
+        "text": "This strategy enables the teacher to develop robust taskspecific representations while transferring this knowledge to the student adapters through both knowledge distillation and weight sharing. As a result, the student benefits from better feature alignment as depicted in Figure 3, resulting in better task-relevant representations and enhancing the effectiveness of the distillation process. ",
+        "bbox": [
+            89,
+            191,
+            483,
+            296
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "text",
+        "text": "Furthermore, this joint training not only refines the student’s ability to capture nuanced representations but also alleviates the need for a two-step distillation process enabling simultaneous teacher-student training and allowing for direct, one-step adaptation, making it both faster and more effective. We demonstrate the effectiveness of this approach in the next section. ",
+        "bbox": [
+            89,
+            297,
+            483,
+            402
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "text",
+        "text": "4. Experiments ",
+        "text_level": 1,
+        "bbox": [
+            89,
+            415,
+            222,
+            431
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "text",
+        "text": "4.1. Datasets ",
+        "text_level": 1,
+        "bbox": [
+            89,
+            440,
+            192,
+            455
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "text",
+        "text": "We evaluated our method on the same types of tasks as Marrie et al. [34], including fine-grained classification, and semantic segmentation. For fine-grained classification, we conducted experiments on CUB [42] with 200 bird species, FGVC Aircraft [33] with 100 aircraft classes, and DTD [8] with 47 texture classes. For semantic segmentation, we tested on Cityscapes [9, 10] with 19 classes. ",
+        "bbox": [
+            89,
+            462,
+            483,
+            568
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "text",
+        "text": "4.2. Implementation Details ",
+        "text_level": 1,
+        "bbox": [
+            89,
+            577,
+            307,
+            592
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "text",
+        "text": "4.2.1. Backbone Models ",
+        "text_level": 1,
+        "bbox": [
+            89,
+            599,
+            261,
+            612
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "text",
+        "text": "For our models, we utilize DINOv2 [36], with all models being Vision Transformers (ViT) [12]. Specifically, we use ViT-L with 300M parameters and ViT-B with 86M parameters as teacher models, and ViT-B and ViT-S with 21M parameters as student models. In our experimental setup, we therefore can assume that both the teacher and student are already trained in a task-agnostic manner. Our focus, as outlined above, is on adapting the student backbone model to downstream tasks. ",
+        "bbox": [
+            89,
+            617,
+            483,
+            753
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "text",
+        "text": "4.2.2. Prediction Head ",
+        "text_level": 1,
+        "bbox": [
+            89,
+            761,
+            250,
+            773
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "text",
+        "text": "Following [34], we employ a two-layer MLP as the prediction head for classification tasks and a linear head for segmentation, consisting of batch normalization followed by a convolutional layer with a kernel size of 1. For finegrained classification, we concatenate the CLS token from the last three blocks, while for segmentation, we use the patch embedding from the final block. Let $n _ { \\mathrm { i n } } ,$ nhidden, nout respectively denote the number of input, hidden and output neurons in the MLP, Following [34], we set √ $n _ { \\mathrm { h i d d e n } } = n _ { \\mathrm { i n } }$ for ViT-S and $n _ { \\mathrm { h i d d e n } } = \\sqrt { n _ { \\mathrm { i n } } \\times n _ { \\mathrm { o u t } } }$ for ViT-B and ViT-L. ",
+        "bbox": [
+            89,
+            779,
+            483,
+            901
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "text",
+        "text": "",
+        "bbox": [
+            511,
+            90,
+            905,
+            122
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "text",
+        "text": "4.2.3. Implementation Details ",
+        "text_level": 1,
+        "bbox": [
+            513,
+            130,
+            723,
+            145
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "text",
+        "text": "Training Procedure. We followed the training protocol outlined in [34]. However, due to the unavailability of their source code, we re-implemented their methodology. All models were trained for 30 epochs, except in the case of distillation from a probed teacher, where training was extended to 80 epochs, consistent with [34]. We employed the AdamW optimizer in conjunction with a cosine learning rate schedule. Hyperparameters such as learning rate and weight decay were selected via grid search based on validation performance. In scenarios where a validation set was not provided, we followed [34] and reserved 10% of the training data for validation. ",
+        "bbox": [
+            511,
+            148,
+            906,
+            330
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "text",
+        "text": "For the Cityscapes dataset, where test labels are not publicly available, we report results on the validation set and use 10% of the training data as a validation split. For knowledge distillation, we used a temperature of $T = 2$ and loss weights $( \\alpha _ { s } , \\alpha _ { \\mathrm { { K L } } } ) = ( 0 . 5 , 0 . 5 )$ . In LoRA-based training, we set the rank to $r = 1 6 ,$ , initializing the matrix A using Kaiming uniform initialization and the matrix B with zeros. LoRA was applied to the attention matrices QKV . ",
+        "bbox": [
+            511,
+            332,
+            905,
+            452
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "text",
+        "text": "In our shared training framework, SLAD, we used a uniform mapping function with equal weighting $( \\alpha _ { s } , \\alpha _ { t } , \\alpha _ { \\mathrm { { K L } } } ) \\ = \\ ( 1 , 1 , 1 )$ . We explore the effect of different mapping functions in the ablation study presented in Section 5.2.1. All experiments were conducted using three fixed random seeds, and we report averaged results. For evaluation, we report classification accuracy (acc) for fine-grained classification tasks and mean Intersection over Union (mIoU) for segmentation tasks. ",
+        "bbox": [
+            511,
+            453,
+            906,
+            589
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "text",
+        "text": "Data Augmentation. For fine-grained classification, we applied the following augmentations during training: Resize, CenterCrop, ColorJitter, and RandomHorizontalFlip. For validation and testing, we resized and center-cropped all images to $5 1 2 \\times 5 1 2$ from $6 4 0 ~ \\times ~ 6 4 0 .$ . For the Cityscapes dataset, training augmentations included RandomResize to $6 4 0 \\times 6 4 0 .$ , RandomCrop to $5 6 0 \\times 5 6 0$ , RandomHorizontalFlip, and RandomPhotometricDistortion. At validation and test time, we applied a sliding window approach with crops of $5 6 0 \\times 5 6 0$ and a stride of $s \\ = \\ 2 8 0$ . Following the recommendation of [6], we ensured that both teacher and student models received the same batch of images with identical data augmentations applied. ",
+        "bbox": [
+            511,
+            609,
+            906,
+            821
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "text",
+        "text": "4.3. Training Time ",
+        "text_level": 1,
+        "bbox": [
+            513,
+            832,
+            661,
+            848
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "text",
+        "text": "Beyond performance improvements, SLAD provides notable advantages in training efficiency. Conventional distillation typically follows a two-stage process: training the teacher for n epochs, followed by distillation into the student over an additional m epochs. Resulting in a total training budget of roughly n + m epochs. ",
+        "bbox": [
+            511,
+            854,
+            905,
+            901
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "table",
+        "img_path": "images/f86f550a94492ea17b518526ec690827b09776c81e1d7103b6d6b79659625b30.jpg",
+        "table_caption": [
+            "Table 1. Distillation/SLAD results of different teachers and different students of DINOv2 for fine-grained classification and semantic segmentation. We report accuracy for classification and mIoU for segmentation. Probing∗ refers to our re-implementation of the method proposed in Marrie et al. [34]. "
+        ],
+        "table_footnote": [],
+        "table_body": "<table><tr><td rowspan=\"2\">Student</td><td rowspan=\"2\">Teacher</td><td rowspan=\"2\">Method</td><td colspan=\"4\">Fine-grained classification (acc)</td><td>Semantic segmentation (mIoU)</td></tr><tr><td>CUB</td><td>Aircraft</td><td>DTD</td><td>Avg.</td><td>Cityscapes</td></tr><tr><td rowspan=\"3\">ViT-S</td><td rowspan=\"3\">ViT-B</td><td>Probing*</td><td>89.80</td><td>89.44</td><td>81.93</td><td>87.06</td><td>69.32</td></tr><tr><td>LoRA (ours)</td><td>90.01</td><td>91.82</td><td>84.71</td><td>88.85</td><td>72.75</td></tr><tr><td>SLAD (ours)</td><td>90.54</td><td>92.50</td><td>84.56</td><td>89.20</td><td>73.91</td></tr><tr><td rowspan=\"4\">ViT-S</td><td rowspan=\"4\">ViT-L</td><td>Probing</td><td>89.70</td><td>89.20</td><td>83.40</td><td>87.43</td><td>74.00</td></tr><tr><td>Probing*</td><td>89.61</td><td>90.10</td><td>81.61</td><td>87.11</td><td>72.42</td></tr><tr><td>LoRA (ours)</td><td>90.04</td><td>91.46</td><td>84.18</td><td>88.56</td><td>73.43</td></tr><tr><td>SLAD (ours)</td><td>90.44</td><td>92.44</td><td>84.24</td><td>89.04</td><td>73.97</td></tr><tr><td rowspan=\"3\">ViT-B</td><td rowspan=\"3\">ViT-L</td><td>Probing*</td><td>90.61</td><td>91.02</td><td>83.49</td><td>88.37</td><td>73.87</td></tr><tr><td>LoRA (ours)</td><td>91.41</td><td>93.25</td><td>86.58</td><td>90.41</td><td>77.06</td></tr><tr><td>SLAD (ours)</td><td>91.81</td><td>94.18</td><td>86.40</td><td>90.80</td><td>77.35</td></tr></table>",
+        "bbox": [
+            187,
+            142,
+            808,
+            321
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "text",
+        "text": "",
+        "bbox": [
+            88,
+            345,
+            480,
+            391
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "text",
+        "text": "SLAD, by contrast, performs joint optimization of the teacher and student within a single training phase of n epochs. Although each epoch is computationally heavier, due to forward and backward passes through both models, the total time is significantly reduced. ",
+        "bbox": [
+            88,
+            392,
+            480,
+            467
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "text",
+        "text": "For instance, on the Aircraft dataset, distillation from a ViT-B to a ViT-S using the standard pipeline takes approximately 8.3 hours (2.8 hours for teacher training and 5.5 hours for distillation over 30 epochs) on a A100 GPU. In contrast, SLAD completes joint training in just 5.6 hours, underscoring the substantial efficiency gains achieved by SLAD. Moreover, Marrie et al. [34] report using 80 epochs for distillation, which increases the total training time to 17.5 hours. ",
+        "bbox": [
+            89,
+            468,
+            482,
+            603
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "text",
+        "text": "4.4. Runtime Details. ",
+        "text_level": 1,
+        "bbox": [
+            89,
+            616,
+            256,
+            631
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "text",
+        "text": "The majority of our experiments were conducted on A100 GPUs with 40GB of RAM, while the remaining runs used V100 GPUs. The runtime varied significantly depending on the task and model size, for example, Probing with ViT-S on the CUB dataset took approximately 2 hours, whereas SLAD training between ViT-L and ViT-B on CUB required up to 12 hours. ",
+        "bbox": [
+            89,
+            638,
+            482,
+            744
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "text",
+        "text": "5. Results ",
+        "text_level": 1,
+        "bbox": [
+            89,
+            761,
+            176,
+            776
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "text",
+        "text": "5.1. Main Results ",
+        "text_level": 1,
+        "bbox": [
+            89,
+            786,
+            228,
+            801
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "text",
+        "text": "In Table 1, we report the performance across various classification and segmentation tasks. Distilling using LoRA consistently outperforms linear probing. This result shows that training the teacher using low-rank adaptation (LoRA) allows to achieve better knowledge distillation than previous state-of-the-art results [34]. ",
+        "bbox": [
+            89,
+            809,
+            482,
+            900
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "text",
+        "text": "Furthermore, our results highlight the effectiveness of the weight-sharing strategy, SLAD achieves state-of-the-art performance with an average increase of 2.71% accuracy on fine-grained classification tasks for the ViT-L to ViT-S setting. Furthermore, SLAD achieves state-of-the-art performance on Cityscapes, a semantic segmentation task compared to our re-implementation of probing. Additionaly, thanks to its joint training strategy, SLAD boosts existing benchmarks while being faster to train, as depicted in Figure 1. These results are consistent with our feature alignment analysis in Figure 3, where SLAD exhibits higher representational similarity between the teacher and student compared to both LoRA and fine-tuning. This supports our claim that improved feature alignment contributes to more effective knowledge distillation. ",
+        "bbox": [
+            511,
+            345,
+            906,
+            571
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "text",
+        "text": "5.2. Ablation Studies ",
+        "text_level": 1,
+        "bbox": [
+            511,
+            584,
+            679,
+            599
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "text",
+        "text": "5.2.1. Choice of Mapping Function ",
+        "text_level": 1,
+        "bbox": [
+            511,
+            607,
+            759,
+            623
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "text",
+        "text": "LoRA weight sharing between teacher and student models is performed at the layer (block) level. However, as the teacher and student may differ in depth (e.g., ViT-L has 24 blocks, while ViT-B and ViT-S have 12), a mapping function is required to align student blocks to teacher blocks. We consider three strategies: (1) First, where each student block is matched to the corresponding block in the first n teacher blocks (with n being the number of student blocks); (2) Last, where student blocks are matched to the last n teacher blocks; and (3) Even, where student blocks are mapped to uniformly spaced teacher blocks. In our setting (ViT-L to ViT-B/S), the even mapping corresponds to the function g(i) = 2i, where i is the student block index and g is the mapping function. ",
+        "bbox": [
+            511,
+            627,
+            906,
+            839
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "text",
+        "text": "Table 2 presents the performance of each block mapping strategy. We observe that the Even mapping yields the best results on CUB, while performing slightly worse on DTD. This variation suggests that different tasks may benefit from information located at different depths of the teacher model, consistent with findings in Jiao et al. [24]. Nonetheless, the overall performance gap between the three mappings remains small, indicating that model performance is relatively insensitive to the specific choice of mapping function. ",
+        "bbox": [
+            511,
+            839,
+            906,
+            900
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "table",
+        "img_path": "images/3e6aacfae77b6c8bc78f2bd5c7a728a97c7829fde8657f0b8648fd4401579a4f.jpg",
+        "table_caption": [
+            "Table 2. Accuracies of different mappings functions on the CUB, Aircraft, and DTD datasets. "
+        ],
+        "table_footnote": [],
+        "table_body": "<table><tr><td rowspan=\"2\">Student</td><td rowspan=\"2\">Teacher</td><td rowspan=\"2\">Mapping</td><td colspan=\"3\">Fine-grained classification (acc)</td></tr><tr><td>CUB</td><td>Aircraft</td><td>DTD</td></tr><tr><td rowspan=\"3\">ViT-S</td><td rowspan=\"3\">ViT-L</td><td>Even</td><td>90.44</td><td>92.44</td><td>84.24</td></tr><tr><td>First</td><td>90.32</td><td>92.64</td><td>84.29</td></tr><tr><td>Last</td><td>90.33</td><td>92.58</td><td>84.38</td></tr><tr><td rowspan=\"3\">ViT-B</td><td rowspan=\"3\">ViT-L</td><td>Even</td><td>91.81</td><td>94.18</td><td>86.40</td></tr><tr><td>First</td><td>91.81</td><td>93.95</td><td>86.67</td></tr><tr><td>Last</td><td>91.82</td><td>94.04</td><td>86.67</td></tr></table>",
+        "bbox": [
+            263,
+            127,
+            736,
+            277
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "table",
+        "img_path": "images/850ab1ddd1181a77af08b5415ad792cab217eefd208c77795c6b5261afcb80d9.jpg",
+        "table_caption": [
+            "Table 3. Teacher Performance in Fine-Grained Classification and Semantic Segmentation. Comparison between ViT-{B,L} models trained directly on downstream tasks and their performance when utilized as teacher models in SLAD. "
+        ],
+        "table_footnote": [],
+        "table_body": "<table><tr><td rowspan=\"2\">Model</td><td rowspan=\"2\">Method</td><td colspan=\"3\">Fine-grained classification (acc)</td><td>Semantic segmentation (mIoU)</td></tr><tr><td>CUB</td><td>Aircraft</td><td>DTD</td><td>Cityscapes</td></tr><tr><td rowspan=\"3\">ViT-B</td><td>Probing</td><td>90.29</td><td>87.35</td><td>83.76</td><td>69.54</td></tr><tr><td>LoRA</td><td>90.64</td><td>92.86</td><td>86.28</td><td>77.90</td></tr><tr><td>SLAD</td><td>91.50</td><td>93.50</td><td>86.17</td><td>75.45</td></tr><tr><td rowspan=\"4\">ViT-L</td><td>Probing</td><td>91.46</td><td>90.84</td><td>84.40</td><td>72.58</td></tr><tr><td>LoRA</td><td>91.78</td><td>94.32</td><td>87.23</td><td>79.99</td></tr><tr><td>SLAD(ViT-S)</td><td>92.21</td><td>94.96</td><td>87.21</td><td>77.61</td></tr><tr><td>SLAD(ViT-B)</td><td>92.57</td><td>95.14</td><td>87.52</td><td>79.02</td></tr></table>",
+        "bbox": [
+            238,
+            329,
+            761,
+            467
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "text",
+        "text": "",
+        "bbox": [
+            89,
+            491,
+            482,
+            568
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "text",
+        "text": "5.3. Teacher Performance ",
+        "text_level": 1,
+        "bbox": [
+            89,
+            578,
+            292,
+            593
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "text",
+        "text": "As shown in Table 3, the teacher trained with SLAD outperforms training with LoRA alone, with gains up to 0.8 % accuracy. This indicates that the teacher benefits from joint training with the student, even though the latter is a distilled version. This observation is consistent with Deep Mutual Learning (DML) [15, 49], where models collaboratively learn and improve together. We also find that SLAD with a stronger student (e.g., ViT-B) yields larger gains for the teacher than with a weaker one (e.g., ViT-S), suggesting that student capacity directly influences the teacher’s benefit. ",
+        "bbox": [
+            89,
+            601,
+            483,
+            767
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "text",
+        "text": "6. Limitations & Future Work ",
+        "text_level": 1,
+        "bbox": [
+            89,
+            782,
+            349,
+            800
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "text",
+        "text": "Based on our analysis, balancing expressivity of the teacher and knowledge distillation can be achieved through better feature alignment. While LoRA adapters enhances feature alignment compared to fine-tuning and expressivity compared to probing, its low-rank nature has been showed to be less flexible than a fully fine-tuned teacher [2]. In future work, we will explore how to enhance both expressivity and knowledge distillation of the teacher model, ensuring better knowledge transfer. Additionally, our insights on feature alignment offer multiple options for the choice of the shared layers as well as potential regularization losses to enhance the alignment allowing better knowledge transfer. ",
+        "bbox": [
+            89,
+            809,
+            483,
+            901
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "text",
+        "text": "",
+        "bbox": [
+            511,
+            491,
+            906,
+            583
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "text",
+        "text": "7. Conclusion ",
+        "text_level": 1,
+        "bbox": [
+            511,
+            595,
+            633,
+            611
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "text",
+        "text": "In this paper, we propose to investigate the existing two-step task-specific distillation process. Previous results showed that a probed teacher yields better distillation results on the student than a fully fine-tuned one. Our findings shows that balancing the expressivity of a teacher and its knowledge distillation can be achieved through better feature alignment between the teacher and the student. We propose different methods to enhance the alignment, showing significant improvements for task-specific distillation. Notably, leveraging low-rank adapters via parameter-sharing between the two encoders can further improve the state-of-the-art of task-specific distillation for both classification and semantic segmentation. ",
+        "bbox": [
+            511,
+            619,
+            908,
+            818
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "text",
+        "text": "References ",
+        "text_level": 1,
+        "bbox": [
+            91,
+            89,
+            187,
+            104
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "list",
+        "sub_type": "ref_text",
+        "list_items": [
+            "[1] Guillaume Alain and Yoshua Bengio. Understanding intermediate layers using linear classifier probes, 2017. 4 ",
+            "[2] Paul Albert, Frederic Z. Zhang, Hemanth Saratchandran, Cristian Rodriguez-Opazo, Anton van den Hengel, and Ehsan Abbasnejad. RandloRA: Full rank parameter-efficient fine-tuning of large models. In The Thirteenth International Conference on Learning Representations, 2025. 8 ",
+            "[3] Jimmy Ba and Rich Caruana. Do deep nets really need to be deep? In Advances in Neural Information Processing Systems. Curran Associates, Inc., 2014. 2 ",
+            "[4] Elad Ben Zaken, Yoav Goldberg, and Shauli Ravfogel. Bit-Fit: Simple parameter-efficient fine-tuning for transformerbased masked language-models. In Proceedings of the 60th Annual Meeting of the Association for Computational Linguistics (Volume 2: Short Papers), pages 1–9, Dublin, Ireland, 2022. Association for Computational Linguistics. 3 ",
+            "[5] Reda Bensaid, Vincent Gripon, Franc¸ois Leduc-Primeau, Lukas Mauch, Ghouthi Boukli Hacene, and Fabien Cardinaux. A novel benchmark for few-shot semantic segmentation in the era of foundation models, 2024. 2 ",
+            "[6] Lucas Beyer, Xiaohua Zhai, Amelie Royer, Larisa Markeeva, Rohan Anil, and Alexander Kolesnikov. Knowledge distillation: A good teacher is patient and consistent . In 2022 IEEE/CVF Conference on Computer Vision and Pattern Recognition (CVPR), pages 10915–10924, Los Alamitos, CA, USA, 2022. IEEE Computer Society. 6 ",
+            "[7] Shoufa Chen, Chongjian Ge, Zhan Tong, Jiangliu Wang, Yibing Song, Jue Wang, and Ping Luo. Adaptformer: Adapting vision transformers for scalable visual recognition. arXiv preprint arXiv:2205.13535, 2022. 4 ",
+            "[8] M. Cimpoi, S. Maji, I. Kokkinos, S. Mohamed, , and A. Vedaldi. Describing textures in the wild. In Proceedings of the IEEE Conf. on Computer Vision and Pattern Recognition (CVPR), 2014. 6 ",
+            "[9] Marius Cordts, Mohamed Omran, Sebastian Ramos, Timo Scharwachter, Markus Enzweiler, Rodrigo Benenson, Uwe¨ Franke, Stefan Roth, and Bernt Schiele. The cityscapes dataset. In CVPR Workshop on The Future of Datasets in Vision, 2015. 6 ",
+            "[10] Marius Cordts, Mohamed Omran, Sebastian Ramos, Timo Rehfeld, Markus Enzweiler, Rodrigo Benenson, Uwe Franke, Stefan Roth, and Bernt Schiele. The cityscapes dataset for semantic urban scene understanding. In Proc. of the IEEE Conference on Computer Vision and Pattern Recognition (CVPR), 2016. 6 ",
+            "[11] Thomas De Min, Massimiliano Mancini, Karteek Alahari, Xavier Alameda-Pineda, and Elisa Ricci. On the effectiveness of layernorm tuning for continual learning in vision transformers. In 2023 IEEE/CVF International Conference on Computer Vision Workshops (ICCVW), pages 3577–3586. IEEE, 2023. 3 ",
+            "[12] Alexey Dosovitskiy, Lucas Beyer, Alexander Kolesnikov, Dirk Weissenborn, Xiaohua Zhai, Thomas Unterthiner, Mostafa Dehghani, Matthias Minderer, Georg Heigold, Sylvain Gelly, Jakob Uszkoreit, and Neil Houlsby. An image is worth 16x16 words: Transformers for image recognition at "
+        ],
+        "bbox": [
+            89,
+            112,
+            486,
+            901
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "list",
+        "sub_type": "ref_text",
+        "list_items": [
+            "scale. In International Conference on Learning Representations, 2021. 6 ",
+            "[13] Yuxin Fang, Quan Sun, Xinggang Wang, Tiejun Huang, Xinlong Wang, and Yue Cao. Eva-02: A visual representation for neon genesis. Image and Vision Computing, 149:105171, 2024. 1 ",
+            "[14] Jianping Gou, Baosheng Yu, Stephen J. Maybank, and Dacheng Tao. Knowledge distillation: A survey. International Journal of Computer Vision, 129(6):1789–1819, 2021. 2 ",
+            "[15] Jianping Gou, Liyuan Sun, Baosheng Yu, Lan Du, Kotagiri Ramamohanarao, and Dacheng Tao. Collaborative knowledge distillation via multiknowledge transfer. IEEE Transactions on Neural Networks and Learning Systems, 35(5): 6718–6730, 2024. 8 ",
+            "[16] Zeyu Han, Chao Gao, Jinyang Liu, Jeff Zhang, and Sai Qian Zhang. Parameter-efficient fine-tuning for large models: A comprehensive survey. Transactions on Machine Learning Research, 2024. 1, 3 ",
+            "[17] Kaiming He, Xinlei Chen, Saining Xie, Yanghao Li, Piotr Dollar, and Ross Girshick. Masked autoencoders are scalable´ vision learners. In Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition (CVPR), pages 16000–16009, 2022. 1 ",
+            "[18] Geoffrey Hinton, Oriol Vinyals, and Jeff Dean. Distilling the knowledge in a neural network, 2015. 1, 2 ",
+            "[19] Edward J Hu, Yelong Shen, Phillip Wallis, Zeyuan Allen-Zhu, Yuanzhi Li, Shean Wang, Lu Wang, and Weizhu Chen. LoRA: Low-rank adaptation of large language models. In International Conference on Learning Representations, 2022. 2, 4 ",
+            "[20] Wei Huang, Zhiliang Peng, Li Dong, Furu Wei, Qixiang Ye, and Jianbin Jiao. Generic-to-specific distillation of masked autoencoders. IEEE Transactions on Circuits and Systems for Video Technology, 34(9):8779–8793, 2024. 1, 3 ",
+            "[21] Zehao Huang and Naiyan Wang. Like what you like: Knowledge distill via neuron selectivity transfer, 2017. 3 ",
+            "[22] Menglin Jia, Luming Tang, Bor-Chun Chen, Claire Cardie, Serge Belongie, Bharath Hariharan, and Ser-Nam Lim. Visual prompt tuning. In European Conference on Computer Vision (ECCV), 2022. 3 ",
+            "[23] Menglin Jia, Luming Tang, Bor-Chun Chen, Claire Cardie, Serge Belongie, Bharath Hariharan, and Ser-Nam Lim. Visual prompt tuning. In European Conference on Computer Vision (ECCV), 2022. 11 ",
+            "[24] Xiaoqi Jiao, Yichun Yin, Lifeng Shang, Xin Jiang, Xiao Chen, Linlin Li, Fang Wang, and Qun Liu. Tinybert: Distilling bert for natural language understanding, 2020. 1, 3, 5, 8 ",
+            "[25] Tommie Kerssies, Daan de Geus, and Gijs Dubbelman. How to benchmark vision foundation models for semantic segmentation? In Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition (CVPR) Workshops, 2024. 2 ",
+            "[26] Konwoo Kim, Michael Laskin, Igor Mordatch, and Deepak Pathak. How to adapt your large-scale vision-and-language model, 2022. 3 "
+        ],
+        "bbox": [
+            511,
+            90,
+            906,
+            900
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "list",
+        "sub_type": "ref_text",
+        "list_items": [
+            "[27] James Kirkpatrick, Razvan Pascanu, Neil Rabinowitz, Joel Veness, Guillaume Desjardins, Andrei A. Rusu, Kieran Milan, John Quan, Tiago Ramalho, Agnieszka Grabska-Barwinska, Demis Hassabis, Claudia Clopath, Dharshan Kumaran, and Raia Hadsell. Overcoming catastrophic forgetting in neural networks. Proceedings of the National Academy of Sciences, 114(13):3521–3526, 2017. 2, 4 ",
+            "[28] Dawid Jan Kopiczko, Tijmen Blankevoort, and Yuki M Asano. VeRA: Vector-based random matrix adaptation. In The Twelfth International Conference on Learning Representations, 2024. 4 ",
+            "[29] Simon Kornblith, Mohammad Norouzi, Honglak Lee, and Geoffrey Hinton. Similarity of neural network representations revisited. In Proceedings of the 36th International Conference on Machine Learning, pages 3519–3529. PMLR, 2019. 2, 4 ",
+            "[30] S. Kullback and R. A. Leibler. On Information and Sufficiency. The Annals of Mathematical Statistics, 22(1):79 – 86, 1951. 4 ",
+            "[31] Vladislav Lialin, Vijeta Deshpande, Xiaowei Yao, and Anna Rumshisky. Scaling down to scale up: A guide to parameterefficient fine-tuning, 2024. 1, 3 ",
+            "[32] Yan-Shuo Liang and Wu-Jun Li. Inflora: Interference-free low-rank adaptation for continual learning. In Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition (CVPR), pages 23638–23647, 2024. 4 ",
+            "[33] S. Maji, J. Kannala, E. Rahtu, M. Blaschko, and A. Vedaldi. Fine-grained visual classification of aircraft. Technical report, 2013. 6 ",
+            "[34] Juliette Marrie, Michael Arbel, Julien Mairal, and Diane Larlus. On good practices for task-specific distillation of large pretrained visual models. Transactions on Machine Learning Research, 2024. 1, 2, 3, 4, 6, 7 ",
+            "[35] Seyed-Iman Mirzadeh, Mehrdad Farajtabar, Ang Li, and Hassan Ghasemzadeh. Improved knowledge distillation via teacher assistant: Bridging the gap between student and teacher. arXiv preprint arXiv:1902.03393, 2019. 3 ",
+            "[36] Maxime Oquab, Timothee Darcet, Theo Moutakanni, Huy V. ´ Vo, Marc Szafraniec, Vasil Khalidov, Pierre Fernandez, Daniel Haziza, Francisco Massa, Alaaeldin El-Nouby, Russell Howes, Po-Yao Huang, Hu Xu, Vasu Sharma, Shang-Wen Li, Wojciech Galuba, Mike Rabbat, Mido Assran, Nicolas Ballas, Gabriel Synnaeve, Ishan Misra, Herve Jegou, Julien Mairal, Patrick Labatut, Armand Joulin, and Piotr Bojanowski. Dinov2: Learning robust visual features without supervision, 2023. 1, 6 ",
+            "[37] Wonpyo Park, Dongju Kim, Yan Lu, and Minsu Cho. Relational knowledge distillation. In Proceedings of the IEEE Conference on Computer Vision and Pattern Recognition, pages 3967–3976, 2019. 3 ",
+            "[38] Alec Radford, Jong Wook Kim, Chris Hallacy, Aditya Ramesh, Gabriel Goh, Sandhini Agarwal, Girish Sastry, Amanda Askell, Pamela Mishkin, Jack Clark, Gretchen Krueger, and Ilya Sutskever. Learning transferable visual models from natural language supervision. In Proceedings of the 38th International Conference on Machine Learning, pages 8748–8763. PMLR, 2021. 1 "
+        ],
+        "bbox": [
+            86,
+            88,
+            486,
+            902
+        ],
+        "page_idx": 9
+    },
+    {
+        "type": "list",
+        "sub_type": "ref_text",
+        "list_items": [
+            "[39] Adriana Romero, Nicolas Ballas, Samira Ebrahimi Kahou, Antoine Chassang, Carlo Gatta, and Yoshua Bengio. Fitnets: Hints for thin deep nets. In In Proceedings of ICLR, 2015. 3 ",
+            "[40] Yanpeng Sun, Qiang Chen, Xiangyu He, Jian Wang, Haocheng Feng, Junyu Han, Errui Ding, Jian Cheng, Zechao Li, and Jingdong Wang. Singular value fine-tuning: Fewshot segmentation requires few-parameters fine-tuning. In Advances in Neural Information Processing Systems, 2022. 4 ",
+            "[41] Yanpeng Sun, Qiang Chen, Xiangyu He, Jian Wang, Haocheng Feng, Junyu Han, Errui Ding, Jian Cheng, Zechao Li, and Jingdong Wang. Singular value fine-tuning: Few-shot segmentation requires few-parameters fine-tuning. 2022. 11 ",
+            "[42] C. Wah, S. Branson, P. Welinder, P. Perona, and S. Belongie. The caltech-ucsd birds-200-2011 dataset. Technical Report CNS-TR-2011-001, California Institute of Technology, 2011. 6 ",
+            "[43] Lin Wang and Kuk-Jin Yoon. Knowledge distillation and student-teacher learning for visual intelligence: A review and new outlooks. IEEE Transactions on Pattern Analysis and Machine Intelligence, 44(6):3048–3068, 2022. 2 ",
+            "[44] Martin Wistuba, Prabhu Teja S, Lukas Balles, and Giovanni Zappella. Continual learning with low rank adaptation. In NeurIPS 2023 Workshop on Distribution Shifts: New Frontiers with Foundation Models, 2024. 4 ",
+            "[45] Kan Wu, Jinnian Zhang, Houwen Peng, Mengchen Liu, Bin Xiao, Jianlong Fu, and Lu Yuan. Tinyvit: Fast pretraining distillation for small vision transformers. In European conference on computer vision (ECCV), 2022. 1 ",
+            "[46] Guanyu Xu, Zhiwei Hao, Yong Luo, Han Hu, Jianping An, and Shiwen Mao. DeViT: Decomposing Vision Transformers for Collaborative Inference in Edge Devices . IEEE Transactions on Mobile Computing, 23(05):5917– 5932, 2024. 1 ",
+            "[47] Sergey Zagoruyko and Nikos Komodakis. Paying more attention to attention: Improving the performance of convolutional neural networks via attention transfer. In International Conference on Learning Representations, 2017. 3 ",
+            "[48] Chaoning Zhang, Dongshen Han, Yu Qiao, Jung Uk Kim, Sung-Ho Bae, Seungkyu Lee, and Choong Seon Hong. Faster segment anything: Towards lightweight sam for mobile applications. arXiv preprint arXiv:2306.14289, 2023. 1 ",
+            "[49] Ying Zhang, Tao Xiang, Timothy M. Hospedales, and Huchuan Lu. Deep mutual learning. In Proceedings of the IEEE Conference on Computer Vision and Pattern Recognition (CVPR), 2018. 8 "
+        ],
+        "bbox": [
+            509,
+            88,
+            908,
+            770
+        ],
+        "page_idx": 9
+    },
+    {
+        "type": "text",
+        "text": "8. Additional Ablation Studies ",
+        "text_level": 1,
+        "bbox": [
+            89,
+            89,
+            349,
+            104
+        ],
+        "page_idx": 10
+    },
+    {
+        "type": "text",
+        "text": "8.1. Effect of LoRA Rank ",
+        "text_level": 1,
+        "bbox": [
+            89,
+            114,
+            290,
+            131
+        ],
+        "page_idx": 10
+    },
+    {
+        "type": "text",
+        "text": "We evaluate the sensitivity of SLAD to the rank r of the LoRA adapters on CUB (ViT-B → ViT-S). Results are reported in Table 4. ",
+        "bbox": [
+            89,
+            138,
+            482,
+            186
+        ],
+        "page_idx": 10
+    },
+    {
+        "type": "table",
+        "img_path": "images/8121856a62184610f0f6a69c5bc92cbc325c5b3b7bf8af9b28af7e22a3a6b502.jpg",
+        "table_caption": [
+            "Table 4. Effect of LoRA rank on performance. "
+        ],
+        "table_footnote": [],
+        "table_body": "<table><tr><td>Rank r</td><td>2</td><td>4</td><td>8</td><td>16</td></tr><tr><td>Accuracy (%)</td><td>90.59</td><td>90.63</td><td>90.51</td><td>90.59</td></tr></table>",
+        "bbox": [
+            117,
+            200,
+            457,
+            248
+        ],
+        "page_idx": 10
+    },
+    {
+        "type": "text",
+        "text": "We observe that performance remains stable across ranks, indicating that SLAD is not sensitive to the choice of r. ",
+        "bbox": [
+            89,
+            292,
+            483,
+            338
+        ],
+        "page_idx": 10
+    },
+    {
+        "type": "text",
+        "text": "8.2. Effect of Distillation Temperature ",
+        "text_level": 1,
+        "bbox": [
+            89,
+            359,
+            385,
+            376
+        ],
+        "page_idx": 10
+    },
+    {
+        "type": "text",
+        "text": "We analyze the impact of the temperature T used in the KL divergence term. Results are shown in Table 5 for CUB (ViT-B → ViT-S). ",
+        "bbox": [
+            89,
+            382,
+            483,
+            429
+        ],
+        "page_idx": 10
+    },
+    {
+        "type": "table",
+        "img_path": "images/88c5e067c8faff17e8ebe1c5de34dfb80e4620c461b9dd0cbd439340f6647d92.jpg",
+        "table_caption": [
+            "Table 5. Effect of temperature on distillation performance. "
+        ],
+        "table_footnote": [],
+        "table_body": "<table><tr><td>T</td><td>0.5</td><td>1</td><td>2</td><td>4</td><td>8</td></tr><tr><td>Accuracy (%)</td><td>89.66</td><td>89.99</td><td>90.59</td><td>91.11</td><td>90.82</td></tr></table>",
+        "bbox": [
+            91,
+            444,
+            488,
+            492
+        ],
+        "page_idx": 10
+    },
+    {
+        "type": "text",
+        "text": "Increasing the temperature improves performance up to $T = 4 ,$ , suggesting that softer teacher distributions provide richer supervision signals by exposing inter-class similarities. For very large values of T , performance slightly degrades due to over-smoothing of the distribution. ",
+        "bbox": [
+            89,
+            536,
+            483,
+            612
+        ],
+        "page_idx": 10
+    },
+    {
+        "type": "text",
+        "text": "8.3. Effect of Loss Weights ",
+        "text_level": 1,
+        "bbox": [
+            89,
+            632,
+            299,
+            648
+        ],
+        "page_idx": 10
+    },
+    {
+        "type": "text",
+        "text": "We evaluate different combinations of loss weights $\\left( \\alpha _ { K L } , \\alpha _ { t } , \\alpha _ { s } \\right)$ , corresponding to the KL divergence loss, teacher cross-entropy (CE) and student CE. Results are reported in Table 6 for CUB. ",
+        "bbox": [
+            89,
+            656,
+            483,
+            717
+        ],
+        "page_idx": 10
+    },
+    {
+        "type": "table",
+        "img_path": "images/fd33e521060416c6e42bda247928def9928573e38b0ef96f0f426429401cd682.jpg",
+        "table_caption": [
+            "Table 6. Effect of loss weighting on performance. "
+        ],
+        "table_footnote": [],
+        "table_body": "<table><tr><td>Weights</td><td>(1,1,1)</td><td>(2,1,1)</td><td>(1,2,2)</td><td>(4,1,1)</td><td>(2,2,1)</td><td>(4,2,1)</td></tr><tr><td>ViT-B → ViT-S</td><td>90.59</td><td>90.84</td><td>90.21</td><td>90.89</td><td>90.70</td><td>90.63</td></tr><tr><td>ViT-L → ViT-S</td><td>90.33</td><td>91.01</td><td>90.06</td><td>91.16</td><td>90.71</td><td>91.08</td></tr></table>",
+        "bbox": [
+            91,
+            733,
+            488,
+            781
+        ],
+        "page_idx": 10
+    },
+    {
+        "type": "text",
+        "text": "We observe that increasing the weight of the KL divergence term consistently improves performance, highlighting the importance of strong distillation supervision. However, maintaining task supervision for both teacher and student remains necessary for stable optimization. ",
+        "bbox": [
+            89,
+            824,
+            483,
+            902
+        ],
+        "page_idx": 10
+    },
+    {
+        "type": "text",
+        "text": "9. Additional Comparisons ",
+        "text_level": 1,
+        "bbox": [
+            513,
+            89,
+            743,
+            107
+        ],
+        "page_idx": 10
+    },
+    {
+        "type": "text",
+        "text": "9.1. Comparison with PEFT Methods ",
+        "text_level": 1,
+        "bbox": [
+            511,
+            121,
+            805,
+            138
+        ],
+        "page_idx": 10
+    },
+    {
+        "type": "text",
+        "text": "We compare SLAD with alternative parameter-efficient fine-tuning (PEFT) methods, including Singular Value Fine-tuning (SVF) [41] and Visual Prompt Tuning (VPT) [23], on CUB (ViT-L → ViT-S). Results are shown in Table 7. ",
+        "bbox": [
+            511,
+            151,
+            905,
+            227
+        ],
+        "page_idx": 10
+    },
+    {
+        "type": "table",
+        "img_path": "images/9612d7048a4fce505fe79e760b91716f50754dac80ac818ce96db682dad7a27c.jpg",
+        "table_caption": [
+            "Table 7. Comparison with alternative PEFT methods. "
+        ],
+        "table_footnote": [],
+        "table_body": "<table><tr><td>Method</td><td>SVF</td><td>VPT</td><td>LoRA</td><td>SLAD</td></tr><tr><td>Accuracy (%)</td><td>90.09</td><td>90.61</td><td>90.92</td><td>91.35</td></tr></table>",
+        "bbox": [
+            535,
+            252,
+            885,
+            300
+        ],
+        "page_idx": 10
+    },
+    {
+        "type": "text",
+        "text": "SLAD consistently outperforms alternative PEFT approaches. While LoRA already provides a good balance between adaptation capacity and feature preservation, SLAD further improves performance by explicitly coupling teacher and student through shared adapters. ",
+        "bbox": [
+            511,
+            358,
+            905,
+            436
+        ],
+        "page_idx": 10
+    },
+    {
+        "type": "text",
+        "text": "10. Additional Results ",
+        "text_level": 1,
+        "bbox": [
+            514,
+            477,
+            702,
+            494
+        ],
+        "page_idx": 10
+    },
+    {
+        "type": "text",
+        "text": "10.1. Training Efficiency ",
+        "text_level": 1,
+        "bbox": [
+            514,
+            508,
+            705,
+            526
+        ],
+        "page_idx": 10
+    },
+    {
+        "type": "text",
+        "text": "Standard task-specific distillation requires sequential training of teacher and student, whereas SLAD jointly trains both models in a single stage. ",
+        "bbox": [
+            511,
+            539,
+            905,
+            585
+        ],
+        "page_idx": 10
+    },
+    {
+        "type": "table",
+        "img_path": "images/58454e615a08b9a2bf2f8be5c1e03b583a65c0dd0b386bc002cd44350b21fc99.jpg",
+        "table_caption": [
+            "Table 8. Training time (in hours) for CUB dataset. "
+        ],
+        "table_footnote": [],
+        "table_body": "<table><tr><td>Setting</td><td>Probing</td><td>LoRA</td><td>SLAD</td></tr><tr><td>ViT-B → ViT-S</td><td>10.36</td><td>7.77</td><td>5.08</td></tr><tr><td>ViT-L → ViT-S</td><td>17.51</td><td>17.49</td><td>10.83</td></tr><tr><td>ViT-L → ViT-B</td><td>18.06</td><td>19.17</td><td>12.58</td></tr></table>",
+        "bbox": [
+            549,
+            614,
+            870,
+            691
+        ],
+        "page_idx": 10
+    },
+    {
+        "type": "text",
+        "text": "Although each epoch is slightly more expensive, SLAD reduces overall wall-clock time by approximately 30–40%, making it more efficient in practice. ",
+        "bbox": [
+            511,
+            747,
+            905,
+            792
+        ],
+        "page_idx": 10
+    },
+    {
+        "type": "text",
+        "text": "10.2. VTAB Natural Subset ",
+        "text_level": 1,
+        "bbox": [
+            513,
+            824,
+            728,
+            840
+        ],
+        "page_idx": 10
+    },
+    {
+        "type": "text",
+        "text": "We report additional results on Oxford Pets and Caltech101 using the same evaluation protocol. Results are presented in Table 9. ",
+        "bbox": [
+            511,
+            854,
+            905,
+            900
+        ],
+        "page_idx": 10
+    },
+    {
+        "type": "table",
+        "img_path": "images/400bc77871c8abc217d78ae4ac7e6712235b5b972f4627d951cf3fd4566d024b.jpg",
+        "table_caption": [
+            "Table 9. Results on VTAB natural datasets (Oxford Pets and Caltech101). "
+        ],
+        "table_footnote": [],
+        "table_body": "<table><tr><td>Student</td><td>Teacher</td><td>Method</td><td>Pets</td><td>Caltech101</td></tr><tr><td rowspan=\"3\">ViT-S</td><td rowspan=\"3\">ViT-B</td><td>Probing</td><td>95.48</td><td>98.10</td></tr><tr><td>LoRA</td><td>95.23</td><td>97.98</td></tr><tr><td>SLAD</td><td>95.64</td><td>98.39</td></tr><tr><td rowspan=\"3\">ViT-S</td><td rowspan=\"3\">ViT-L</td><td>Probing</td><td>95.23</td><td>98.21</td></tr><tr><td>LoRA</td><td>95.12</td><td>98.44</td></tr><tr><td>SLAD</td><td>95.53</td><td>98.27</td></tr><tr><td rowspan=\"3\">ViT-B</td><td rowspan=\"3\">ViT-L</td><td>Probing</td><td>95.94</td><td>98.16</td></tr><tr><td>LoRA</td><td>95.86</td><td>98.56</td></tr><tr><td>SLAD</td><td>96.08</td><td>98.16</td></tr></table>",
+        "bbox": [
+            104,
+            88,
+            470,
+            268
+        ],
+        "page_idx": 11
+    },
+    {
+        "type": "text",
+        "text": "On these datasets, performance is already near saturation for all methods, resulting in relatively small performance gaps. Nevertheless, SLAD remains consistently competitive and often improves over both probing and LoRA, demonstrating its effectiveness even in high-performance regimes. ",
+        "bbox": [
+            89,
+            327,
+            483,
+            417
+        ],
+        "page_idx": 11
+    }
+]

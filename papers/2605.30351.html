@@ -1,0 +1,97 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>VideoMLA · 通用视觉自监督研究报</title>
+  <link rel="stylesheet" href="../assets/styles.css?v=20260525j">
+  <link rel="stylesheet" href="../assets/visual-ssl.css?v=20260525j">
+</head>
+<body>
+  <header class="masthead">
+    <div class="masthead-kicker">Visual SSL Research Report · 2026-05-31</div>
+    <a class="masthead-title" href="../index.html">通用视觉自监督研究报</a>
+    <div class="masthead-meta">
+      <span>图像表征 · VFM · JEPA · 视频预训练</span>
+      <span>CCF A/B 会议优先</span>
+      <span>图文精读 · 方法图解</span>
+    </div>
+  </header>
+  <nav class="site-nav" aria-label="主导航">
+    <a class="nav-link" href="../index.html">头版</a>
+<a class="nav-link" href="../issues/2026-05-31.html">今日速递</a>
+<a class="nav-link" href="../pages/catalog.html">论文目录</a>
+<a class="nav-link" href="../pages/timeline.html">时间线</a>
+  </nav>
+  <main><article class="paper-detail">
+  <div class="paper-main">
+    <div class="kicker">Visual SSL / representation · P3 · 2026-05-31</div>
+    <h1 class="paper-headline">VideoMLA：如果后续视频 SSL 或世界模型依赖长时序 rollout，这类 cache/attention 设计会影响可训练上下文长度</h1>
+    <p class="dek">指出 pretrained video attention 本身并不低秩，但 MLA bottleneck 训练后仍可保持质量并显著压缩缓存。</p>
+    <p class="byline"><strong>VideoMLA: Low-Rank Latent KV Cache for Minute-Scale Autoregressive Video Diffusion</strong>　Hidir Yesiltepe, Jiazhen Hu, Tuna Han Salih Meral, Adil Kaan Akan, Kaan Oktay, Hoda Eldardiry, Pinar Yanardag　arXiv　<a href="https://arxiv.org/abs/2605.30351">原文链接</a></p>
+    <div class="paper-facts">
+      <span><b>编号</b>2605.30351</span>
+      <span><b>优先级</b>P3</span>
+      <span><b>类别</b>Visual SSL / representation</span>
+      <span><b>会议</b>arXiv</span>
+      <span><b>方法</b>把视频 diffusion 的 per-head KV cache 换成共享低秩 latent 与解耦 3D-RoPE positional key。</span>
+      <span><b>来源</b>arXiv / OpenReview</span>
+    </div>
+    <div class="feature-body">
+      <p class="lead dropcap">先说结论。如果后续视频 SSL 或世界模型依赖长时序 rollout，这类 cache/attention 设计会影响可训练上下文长度。 指出 pretrained video attention 本身并不低秩，但 MLA bottleneck 训练后仍可保持质量并显著压缩缓存。</p>
+      <figure class="full-fig"><img src="../assets/mineru/2605.30351/images/0255df1dc865fc49b8e91296a4334fd27c1fc09b93a7dfac74888f4d0848271e.jpg" alt="Figureure 1 · : Pretrained video diffusion attention is not low-rank, unlike in lang"><figcaption><b>Figureure 1 · : Pretrained video diffusion attention is not low-rank, unlike in lang</b><span class="fig-en">Figure 1: Pretrained video diffusion attention is not low-rank, unlike in language models. Singular value analysis of $[ W _ { K } ; W _ { V } ] \in \mathbb { R } ^ { 3 0 7 2 \times 1 5 3 6 }$ across the 30 transformer blocks of Wan2.1- T2V-1.3B. At $d _ { c } = 1 9 2$ , the median layer captures only $E _ { \mathrm { m e d } } = 0 . 4 5 8$ of the spectral energy, and the 99%-energy effective rank exceeds 1300 in every layer.</span><span class="fig-zh">这张可视化用来解释 VideoMLA 学到的中间表征或对齐关系。重点看它是否支持正文里的机制判断。</span></figcaption></figure>
+<figure class="full-fig"><img src="../assets/mineru/2605.30351/images/8eb3f23f60b9e1146527052c80e6702df3a7e997af8b234f3d3a67933e4472a7.jpg" alt="Figureure 2 · : The composed operator occupies its full rank-dc budget at every $d _"><figcaption><b>Figureure 2 · : The composed operator occupies its full rank-dc budget at every $d _</b><span class="fig-en">Figure 2: The composed operator occupies its full rank-dc budget at every $d _ { c }$ and every layer. Singular value analysis of the composed operator $M _ { \mathrm { l e a r n e d } } \ = \ [ \breve { W } _ { \uparrow } ^ { K } W _ { \downarrow } ^ { K V } ; \breve { W } _ { \uparrow } ^ { V } W _ { \downarrow } ^ { K V } ]$ for SVDinitialized VideoMLA students at $d _ { c } \in \{ 6 4 , 1 2 8 , 2 5 6 , 5 1 2 \}$ . (a) Median normalized spectra share a common envelope, truncated at $d _ { c } .$ (b) Cumulative spectral energy. (c) Layer-wise 99%-energy effective rank: $r _ { 0 . 9 9 } \approx 0 . 9 8 d _ { c }$ at every budget, uniformly across depth. The composed operator’s rank is determined by the architectural bottleneck, not by the spectral structure of the dense source.</span><span class="fig-zh">这张图来自论文 PDF 的结构化抽取。当前用于辅助理解 VideoMLA 的方法或实验，请结合正文精读段落一起看。</span></figcaption></figure>
+      
+      <h2>核心问题</h2>
+      <p>如果后续视频 SSL 或世界模型依赖长时序 rollout，这类 cache/attention 设计会影响可训练上下文长度。</p>
+      <h2>方法拆解</h2>
+      <p>把视频 diffusion 的 per-head KV cache 换成共享低秩 latent 与解耦 3D-RoPE positional key。</p>
+      <h2>主要贡献</h2>
+      <p>指出 pretrained video attention 本身并不低秩，但 MLA bottleneck 训练后仍可保持质量并显著压缩缓存。</p>
+      <h2>实验看点</h2>
+      <p>摘要称 KV memory 每 token 降低 92.7%，长视野 VBench 得分在评测模型中最好，并在 B200 上提升吞吐。</p>
+      <h2>局限与读法</h2>
+      <p>它是生成模型推理/训练效率工作，不是自监督表征目标；通用视觉相关性主要来自视频 foundation model 可扩展性。</p>
+    
+    </div>
+  </div>
+  <aside class="paper-side">
+
+    <div class="side-box"><h4>关键判断</h4><dl><dt>相关性</dt><dd>P3</dd><dt>类别</dt><dd>Visual SSL / representation</dd><dt>会议</dt><dd>arXiv</dd><dt>读法</dt><dd>方法图优先，表格次之</dd></dl></div>
+    <div class="side-box"><h4>原文</h4><p><a href="https://arxiv.org/abs/2605.30351">https://arxiv.org/abs/2605.30351</a></p></div>
+  </aside>
+</article></main>
+  <aside class="conf-float" data-conf-reminder="2026-05-31-main-ddl" aria-label="CCF A/B 主投稿提醒">
+  <button class="conf-close" type="button" aria-label="关闭会议提醒">×</button>
+  <details open>
+    <summary>CCF A/B 主投稿提醒</summary>
+    <div class="conf-list"><a class="conf-item " href="https://github.com/ccfddl/ccf-deadlines/blob/main/conference/AI/aaai.yml">
+  <span><b>AAAI 2027</b><em>CCF A · Main paper submission</em></span>
+  <strong>57 天</strong>
+  <small>2026-07-27 · CCF DDL: abstract 2026-07-20；进入 1 个月窗口后重点提醒。</small>
+</a></div>
+  </details>
+</aside>
+  <footer class="footer">
+    <div>面向通用视觉自监督、视觉基础模型与多模态表征学习的每日研究报。</div>
+    <div class="muted">Issue 2026-05-31 · Curated readings and figure notes</div>
+  </footer>
+  <script>
+  (() => {
+    const box = document.querySelector('[data-conf-reminder]');
+    if (!box) return;
+    const key = `visualSslConfReminderClosed:${box.dataset.confReminder || '2026-05-31-main-ddl'}`;
+    try {
+      if (localStorage.getItem(key) === '1') box.hidden = true;
+    } catch (err) {}
+    const close = box.querySelector('.conf-close');
+    if (close) {
+      close.addEventListener('click', () => {
+        box.hidden = true;
+        try { localStorage.setItem(key, '1'); } catch (err) {}
+      });
+    }
+  })();
+  </script>
+</body>
+</html>
