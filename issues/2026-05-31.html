@@ -26,14 +26,109 @@
   <main><article class="paper-detail issue-detail">
   <div class="paper-main">
     <div class="kicker">Daily issue · 2026-05-31 · CCF A/B 会议优先</div>
-    <h1 class="paper-headline">5 月 31 日：无新增通用视觉自监督论文</h1>
+    <h1 class="paper-headline">5 月 31 日：SLAD 等视觉表征主线更新</h1>
     <p class="dek">本期聚焦通用视觉表征、视觉语言预训练与视频自监督中最值得跟进的论文，并保留 CCF A/B、OpenReview 与 arXiv 状态线索。</p>
     <div class="feature-body">
-      <p class="lead dropcap">今天不需要强行新增论文。先把 2026-05-30 的 Cycle Consistency in Video Object-Centric Learning 精读完，重点看 implicit cycle consistency 如何避免 slot collapse，以及它是否能脱离合成/短视频设置。第二步读 LoMo 和 GASP：一个诊断 VLM 对局部语义载体的偏置，一个把 correspondence/depth consistency 变成 VLM 空间先验。最后扫 TRACER、PARCEL 和 CLIP tail alignment，把多模态微调稳定性、visual token budget 和 patch-token 对齐放在一起看。今天检索到的 OpenReview/ICRA 线索偏 VLA/机器人，不建议挤占通用视觉自监督精读时间。</p>
+      <p class="lead dropcap">先读 SLAD，因为它最接近“如何把大视觉 foundation model 的表征可靠蒸馏到小模型”这个主线。随后看 UniNote，重点不是广告业务，而是 contrastive SFT、RL ranking 和 Matryoshka embedding 如何共同塑造多模态向量空间。第三篇看 Geometry-Guided Foundation Features，用来理解 foundation features 在 3D/几何场景中需要哪些结构化补丁。minWM、VideoMLA、YoCausal 放在视频 world model 路线里扫读，关注训练链路、长上下文效率与因果评测；Geometric SRC 和 Dataset Worth 只需看方法动机与结论。</p>
       <h2>论文索引</h2>
-      <table class="compact-table"><thead><tr><th>优先级</th><th>论文</th><th>类型</th><th>相关性</th><th>一句话理由</th></tr></thead><tbody><tr><td>过滤/无新增</td><td>今日无新增通用视觉自监督论文</td><td>arXiv/OpenReview 状态检查</td><td>不计入新增</td><td>arXiv 最新公告仍为 2026-05-29；昨日已入库条目按 ID 去重，会议侧未发现强相关新状态。</td></tr></tbody></table>
+      <table class="compact-table"><thead><tr><th>优先级</th><th>论文</th><th>类型</th><th>相关性</th><th>一句话理由</th></tr></thead><tbody><tr><td>P1</td><td>SLAD : Shared LoRA Adapters for Task Specific Distillation</td><td>arXiv + CVPR Findings 2026</td><td>中高</td><td>共享 LoRA adapter 减轻 teacher/student 特征错位，适合关注蒸馏式视觉表征压缩。</td></tr><tr><td>P2</td><td>UniNote: A Unified Embedding Model for Multimodal Representation and Ranking</td><td>arXiv + KDD Ads Track 2026</td><td>中高</td><td>contrastive SFT + RL ranking + MRL 的多模态 embedding 方案，工业场景强但表征训练信号可迁移。</td></tr><tr><td>P2</td><td>Geometry-Guided Modeling of Foundation Features Enables Generalizable Object Shape Deformation Learning</td><td>arXiv + ICML 2026</td><td>中</td><td>把 foundation features 与模板拓扑、视角聚合结合，关注视觉基础特征如何承载几何泛化。</td></tr><tr><td>P2</td><td>minWM: A Full-Stack Open-Source Framework for Real-Time Interactive Video World Models</td><td>arXiv</td><td>中</td><td>把视频 foundation model 改造成可交互 world model 的完整训练链，含 AR 训练和 few-step distillation。</td></tr><tr><td>P3</td><td>VideoMLA: Low-Rank Latent KV Cache for Minute-Scale Autoregressive Video Diffusion</td><td>arXiv</td><td>中</td><td>研究视频基础模型长时序 attention/KV 压缩，对视频预训练效率有间接价值。</td></tr><tr><td>P3</td><td>YoCausal: How Far is Video Generation from World Model? A Causality Perspective</td><td>arXiv</td><td>中</td><td>用真实视频反转构造 causal counterfactual benchmark，适合评估视频 world model 是否学到动态因果。</td></tr><tr><td>P3</td><td>A Geometric View of SRC: Learning Representations for Stable Residual Inference</td><td>arXiv</td><td>中低</td><td>从 residual margin 与 span geometry 讨论表征稳定性，含 masked within-class self-expressiveness 目标。</td></tr><tr><td>扫读</td><td>How Much Is a Dataset Worth? Scaling Laws, the Vendi Score, and Matrix Spectral Functions</td><td>arXiv + data scaling</td><td>中低</td><td>用 ImageNet-scale 子集验证数据多样性/谱函数价值，作为视觉预训练数据筛选背景扫读。</td></tr></tbody></table>
       <h2>主线阅读</h2>
-      <div class="paper-list issue-list"><p class="empty-state">今天没有通过去重与方向过滤的新论文；目录和首页继续保留最近一期可精读论文，便于回看。</p></div>
+      <div class="paper-list issue-list"><article class="paper-card" data-category="CVPR Findings 2026" data-priority="P1" data-date="2026-05-31" data-title="slad : shared lora adapters for task specific distillation" data-keywords="slad : shared lora adapters for task specific distillation slad cvpr findings 2026 p1 2026-05-31 arxiv + cvpr findings 2026 共享 lora adapter 减轻 teacher/student 特征错位，适合关注蒸馏式视觉表征压缩 中高相关；详见方法、贡献和实验边界。">
+  <a class="paper-thumb paper-thumb-text" href="../papers/2605.29726.html">
+    <img src="../assets/mineru/2605.29726/images/26a34cbd9415912b0c22f5a08f55612fe0aee9bb191032303c4c946189b1e7c9.jpg" alt="SLAD figure"><span>P1</span>
+  </a>
+  <div>
+    <div class="paper-meta">2026-05-31 · CVPR Findings 2026 · arXiv + CVPR Findings 2026</div>
+    <h3><a href="../papers/2605.29726.html">SLAD : Shared LoRA Adapters for Task Specific Distillation</a></h3>
+    <p>中高相关；详见方法、贡献和实验边界。</p>
+    <p class="card-tech"><b>方法：</b>共享 LoRA adapter 减轻 teacher/student 特征错位，适合关注蒸馏式视觉表征压缩</p>
+    <div class="paper-actions"><a href="../papers/2605.29726.html">读图文页</a><a href="https://arxiv.org/abs/2605.29726">原文</a></div>
+  </div>
+</article>
+<article class="paper-card" data-category="KDD Ads Track 2026" data-priority="P2" data-date="2026-05-31" data-title="uninote: a unified embedding model for multimodal representation and ranking" data-keywords="uninote: a unified embedding model for multimodal representation and ranking uninote kdd ads track 2026 p2 2026-05-31 arxiv + kdd ads track 2026 contrastive sft + rl ranking + mrl 的多模态 embedding 方案，工业场景强但表征训练信号可迁移 中高相关；详见方法、贡献和实验边界。">
+  <a class="paper-thumb paper-thumb-text" href="../papers/2605.29287.html">
+    <img src="../assets/mineru/2605.29287/images/bcf4e659d82c99454cb23528452770190d4c312b9a1dc962669a5264aedd5da6.jpg" alt="UniNote figure"><span>P2</span>
+  </a>
+  <div>
+    <div class="paper-meta">2026-05-31 · KDD Ads Track 2026 · arXiv + KDD Ads Track 2026</div>
+    <h3><a href="../papers/2605.29287.html">UniNote: A Unified Embedding Model for Multimodal Representation and Ranking</a></h3>
+    <p>中高相关；详见方法、贡献和实验边界。</p>
+    <p class="card-tech"><b>方法：</b>contrastive SFT + RL ranking + MRL 的多模态 embedding 方案，工业场景强但表征训练信号可迁移</p>
+    <div class="paper-actions"><a href="../papers/2605.29287.html">读图文页</a><a href="https://arxiv.org/abs/2605.29287">原文</a></div>
+  </div>
+</article>
+<article class="paper-card" data-category="ICML 2026" data-priority="P2" data-date="2026-05-31" data-title="geometry-guided modeling of foundation features enables generalizable object shape deformation learning" data-keywords="geometry-guided modeling of foundation features enables generalizable object shape deformation learning geometry-guided modeling of foundation features icml 2026 p2 2026-05-31 arxiv + icml 2026 把 foundation features 与模板拓扑、视角聚合结合，关注视觉基础特征如何承载几何泛化 中相关；详见方法、贡献和实验边界。">
+  <a class="paper-thumb paper-thumb-text" href="../papers/2605.29661.html">
+    <img src="../assets/mineru/2605.29661/images/2b3ae7291a12bc8565738d8ed3dffb575741e38b63073ad01752cca30df7e677.jpg" alt="Geometry-Guided Modeling of Foundation Features figure"><span>P2</span>
+  </a>
+  <div>
+    <div class="paper-meta">2026-05-31 · ICML 2026 · arXiv + ICML 2026</div>
+    <h3><a href="../papers/2605.29661.html">Geometry-Guided Modeling of Foundation Features Enables Generalizable Object Shape Deformation Learning</a></h3>
+    <p>中相关；详见方法、贡献和实验边界。</p>
+    <p class="card-tech"><b>方法：</b>把 foundation features 与模板拓扑、视角聚合结合，关注视觉基础特征如何承载几何泛化</p>
+    <div class="paper-actions"><a href="../papers/2605.29661.html">读图文页</a><a href="https://arxiv.org/abs/2605.29661">原文</a></div>
+  </div>
+</article>
+<article class="paper-card" data-category="Visual SSL / representation" data-priority="P2" data-date="2026-05-31" data-title="minwm: a full-stack open-source framework for real-time interactive video world models" data-keywords="minwm: a full-stack open-source framework for real-time interactive video world models minwm visual ssl / representation p2 2026-05-31 arxiv 把视频 foundation model 改造成可交互 world model 的完整训练链，含 ar 训练和 few-step distillation 中相关；详见方法、贡献和实验边界。">
+  <a class="paper-thumb paper-thumb-text" href="../papers/2605.30263.html">
+    <img src="../assets/mineru/2605.30263/images/aee2645f4e82b01ad6c6e3c9a13d2c7feb12f3d033085669109f3788713cf3c9.jpg" alt="minWM figure"><span>P2</span>
+  </a>
+  <div>
+    <div class="paper-meta">2026-05-31 · Visual SSL / representation · arXiv</div>
+    <h3><a href="../papers/2605.30263.html">minWM: A Full-Stack Open-Source Framework for Real-Time Interactive Video World Models</a></h3>
+    <p>中相关；详见方法、贡献和实验边界。</p>
+    <p class="card-tech"><b>方法：</b>把视频 foundation model 改造成可交互 world model 的完整训练链，含 AR 训练和 few-step distillation</p>
+    <div class="paper-actions"><a href="../papers/2605.30263.html">读图文页</a><a href="https://arxiv.org/abs/2605.30263">原文</a></div>
+  </div>
+</article>
+<article class="paper-card" data-category="Visual SSL / representation" data-priority="P3" data-date="2026-05-31" data-title="videomla: low-rank latent kv cache for minute-scale autoregressive video diffusion" data-keywords="videomla: low-rank latent kv cache for minute-scale autoregressive video diffusion videomla visual ssl / representation p3 2026-05-31 arxiv 研究视频基础模型长时序 attention/kv 压缩，对视频预训练效率有间接价值 中相关；详见方法、贡献和实验边界。">
+  <a class="paper-thumb paper-thumb-text" href="../papers/2605.30351.html">
+    <img src="../assets/mineru/2605.30351/images/0255df1dc865fc49b8e91296a4334fd27c1fc09b93a7dfac74888f4d0848271e.jpg" alt="VideoMLA figure"><span>P3</span>
+  </a>
+  <div>
+    <div class="paper-meta">2026-05-31 · Visual SSL / representation · arXiv</div>
+    <h3><a href="../papers/2605.30351.html">VideoMLA: Low-Rank Latent KV Cache for Minute-Scale Autoregressive Video Diffusion</a></h3>
+    <p>中相关；详见方法、贡献和实验边界。</p>
+    <p class="card-tech"><b>方法：</b>研究视频基础模型长时序 attention/KV 压缩，对视频预训练效率有间接价值</p>
+    <div class="paper-actions"><a href="../papers/2605.30351.html">读图文页</a><a href="https://arxiv.org/abs/2605.30351">原文</a></div>
+  </div>
+</article>
+<article class="paper-card" data-category="Visual SSL / representation" data-priority="P3" data-date="2026-05-31" data-title="yocausal: how far is video generation from world model? a causality perspective" data-keywords="yocausal: how far is video generation from world model? a causality perspective yocausal visual ssl / representation p3 2026-05-31 arxiv 用真实视频反转构造 causal counterfactual benchmark，适合评估视频 world model 是否学到动态因果 中相关；详见方法、贡献和实验边界。">
+  <a class="paper-thumb paper-thumb-text" href="../papers/2605.30346.html">
+    <img src="../assets/mineru/2605.30346/images/61e057549a87a37b4aa46ac202e412d2c950331e97d27012a29a084deb38a440.jpg" alt="YoCausal figure"><span>P3</span>
+  </a>
+  <div>
+    <div class="paper-meta">2026-05-31 · Visual SSL / representation · arXiv</div>
+    <h3><a href="../papers/2605.30346.html">YoCausal: How Far is Video Generation from World Model? A Causality Perspective</a></h3>
+    <p>中相关；详见方法、贡献和实验边界。</p>
+    <p class="card-tech"><b>方法：</b>用真实视频反转构造 causal counterfactual benchmark，适合评估视频 world model 是否学到动态因果</p>
+    <div class="paper-actions"><a href="../papers/2605.30346.html">读图文页</a><a href="https://arxiv.org/abs/2605.30346">原文</a></div>
+  </div>
+</article>
+<article class="paper-card" data-category="Visual SSL / representation" data-priority="P3" data-date="2026-05-31" data-title="a geometric view of src: learning representations for stable residual inference" data-keywords="a geometric view of src: learning representations for stable residual inference a geometric view of src visual ssl / representation p3 2026-05-31 arxiv 从 residual margin 与 span geometry 讨论表征稳定性，含 masked within-class self-expressiveness 目标 中低相关；详见方法、贡献和实验边界。">
+  <a class="paper-thumb paper-thumb-text" href="../papers/2605.29673.html">
+    <span>P3</span><strong>A Geometric View of SRC</strong><em>arXiv</em>
+  </a>
+  <div>
+    <div class="paper-meta">2026-05-31 · Visual SSL / representation · arXiv</div>
+    <h3><a href="../papers/2605.29673.html">A Geometric View of SRC: Learning Representations for Stable Residual Inference</a></h3>
+    <p>中低相关；详见方法、贡献和实验边界。</p>
+    <p class="card-tech"><b>方法：</b>从 residual margin 与 span geometry 讨论表征稳定性，含 masked within-class self-expressiveness 目标</p>
+    <div class="paper-actions"><a href="../papers/2605.29673.html">读图文页</a><a href="https://arxiv.org/abs/2605.29673">原文</a></div>
+  </div>
+</article>
+<article class="paper-card" data-category="data scaling" data-priority="扫读" data-date="2026-05-31" data-title="how much is a dataset worth? scaling laws, the vendi score, and matrix spectral functions" data-keywords="how much is a dataset worth? scaling laws, the vendi score, and matrix spectral functions how much is a dataset data scaling 扫读 2026-05-31 arxiv + data scaling 用 imagenet-scale 子集验证数据多样性/谱函数价值，作为视觉预训练数据筛选背景扫读 中低相关；详见方法、贡献和实验边界。">
+  <a class="paper-thumb paper-thumb-text" href="../papers/2605.29448.html">
+    <img src="../assets/mineru/2605.29448/images/03554dc3843d6656b6ab7c614f510150a59c48297772fd6aaf9257f48b5a325e.jpg" alt="How Much Is a Dataset figure"><span>扫读</span>
+  </a>
+  <div>
+    <div class="paper-meta">2026-05-31 · data scaling · arXiv + data scaling</div>
+    <h3><a href="../papers/2605.29448.html">How Much Is a Dataset Worth? Scaling Laws, the Vendi Score, and Matrix Spectral Functions</a></h3>
+    <p>中低相关；详见方法、贡献和实验边界。</p>
+    <p class="card-tech"><b>方法：</b>用 ImageNet-scale 子集验证数据多样性/谱函数价值，作为视觉预训练数据筛选背景扫读</p>
+    <div class="paper-actions"><a href="../papers/2605.29448.html">读图文页</a><a href="https://arxiv.org/abs/2605.29448">原文</a></div>
+  </div>
+</article></div>
     </div>
   </div>
   <aside class="paper-side">

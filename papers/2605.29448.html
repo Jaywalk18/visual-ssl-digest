@@ -1,0 +1,97 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>How Much Is a Dataset · 通用视觉自监督研究报</title>
+  <link rel="stylesheet" href="../assets/styles.css?v=20260525j">
+  <link rel="stylesheet" href="../assets/visual-ssl.css?v=20260525j">
+</head>
+<body>
+  <header class="masthead">
+    <div class="masthead-kicker">Visual SSL Research Report · 2026-05-31</div>
+    <a class="masthead-title" href="../index.html">通用视觉自监督研究报</a>
+    <div class="masthead-meta">
+      <span>图像表征 · VFM · JEPA · 视频预训练</span>
+      <span>CCF A/B 会议优先</span>
+      <span>图文精读 · 方法图解</span>
+    </div>
+  </header>
+  <nav class="site-nav" aria-label="主导航">
+    <a class="nav-link" href="../index.html">头版</a>
+<a class="nav-link" href="../issues/2026-05-31.html">今日速递</a>
+<a class="nav-link" href="../pages/catalog.html">论文目录</a>
+<a class="nav-link" href="../pages/timeline.html">时间线</a>
+  </nav>
+  <main><article class="paper-detail">
+  <div class="paper-main">
+    <div class="kicker">data scaling · 扫读 · 2026-05-31</div>
+    <h1 class="paper-headline">How Much Is a Dataset：预训练越来越受数据配方控制，这篇能提醒不要把单一多样性指标当成无条件的数据价值指标</h1>
+    <p class="dek">给出避免重复 eigendecomposition 的快速 greedy update，并比较不同数据价值目标对下游性能的预测力。</p>
+    <p class="byline"><strong>How Much Is a Dataset Worth? Scaling Laws, the Vendi Score, and Matrix Spectral Functions</strong>　Jeff A. Bilmes, Gantavya Bhatt, Arnav M. Das　arXiv + data scaling　<a href="https://arxiv.org/abs/2605.29448">原文链接</a></p>
+    <div class="paper-facts">
+      <span><b>编号</b>2605.29448</span>
+      <span><b>优先级</b>扫读</span>
+      <span><b>类别</b>data scaling</span>
+      <span><b>会议</b>arXiv + data scaling</span>
+      <span><b>方法</b>把 Vendi Score、DPP 和一类 matrix spectral functions 放到 submodular data appraisal 框架中，并优化 ImageNet-1K 规模子集。</span>
+      <span><b>来源</b>arXiv / OpenReview</span>
+    </div>
+    <div class="feature-body">
+      <p class="lead dropcap">先说结论。预训练越来越受数据配方控制，这篇能提醒不要把单一多样性指标当成无条件的数据价值指标。 给出避免重复 eigendecomposition 的快速 greedy update，并比较不同数据价值目标对下游性能的预测力。</p>
+      <figure class="full-fig"><img src="../assets/mineru/2605.29448/images/03554dc3843d6656b6ab7c614f510150a59c48297772fd6aaf9257f48b5a325e.jpg" alt="(c) Side-by-side comparison of ImageNet-1K test performance for the highly valued green (l"><figcaption><b>(c) Side-by-side comparison of ImageNet-1K test performance for the highly valued green (l</b><span class="fig-en">(c) Side-by-side comparison of ImageNet-1K test performance for the highly valued green (left) points created using classbalanced partition matroid constrained submodular maximization on the facility location, red (middle) created using stratified random sampling to achieve class balance, and blue (right) class-balanced heuristic partition matroid constrained submodular minimization again on the same facility location function. These three plots show the same information as in Figure 27a but is expanded to three side-by-side plots for clarity. Figure 27: The results (top row) are the same as those presented in Figure 1 and the bottom row is expanded out to three side-by-side plots to show more details more clearly.</span><span class="fig-zh">这张图/表用于判断 How Much Is a Dataset 的实验收益来自哪里。重点看替换、消融或跨模型设置下趋势是否一致，而不是只看单个最高分。</span></figcaption></figure>
+<figure class="full-fig"><img src="../assets/mineru/2605.29448/images/74bc34c15a7ebc813b6793d1574d96c3d2c7b0949c52871b79c09bc369cd50fb.jpg" alt="(b) Low-value (low facility location score) subset (blue X in Figure 1 just for accordion)"><figcaption><b>(b) Low-value (low facility location score) subset (blue X in Figure 1 just for accordion)</b><span class="fig-en">(b) Low-value (low facility location score) subset (blue X in Figure 1 just for accordion) Figure 20: Accordion. Images in the high-value (high facility location score) subset (above left 8 × 8 grid, and green X in Figure 1) are canonical examples in which an accordion is clearly the, or at least a, central subject. In contrast, the low-value (low facility location score) subset (above right 8 × 8 grid, and blue X in Figure 1) contains many much more atypical images with confounding objects. For example the image in row 6 column 1, contains several other instruments and the accordion is hardly visible. In row 5, column 1, we see an entire band which includes guitar and people, and a better single label for that image might be “band” or “musical group” (which are not ImageNet-1K classes). Other images, such as the ones shown in row 8 column 7, row 8 column 8, and row 1 column 5, appear to not contain anything resembling the totality of the accordion “concept” at all and may simply be instances of label noise, or might be extreme closeups of the buttons in a button accordion, which are not visually similar to the more canonical or typical examples of what defines an accordion visually.</span><span class="fig-zh">这张图来自论文 PDF 的结构化抽取。当前用于辅助理解 How Much Is a Dataset 的方法或实验，请结合正文精读段落一起看。</span></figcaption></figure>
+      
+      <h2>核心问题</h2>
+      <p>预训练越来越受数据配方控制，这篇能提醒不要把单一多样性指标当成无条件的数据价值指标。</p>
+      <h2>方法拆解</h2>
+      <p>把 Vendi Score、DPP 和一类 matrix spectral functions 放到 submodular data appraisal 框架中，并优化 ImageNet-1K 规模子集。</p>
+      <h2>主要贡献</h2>
+      <p>给出避免重复 eigendecomposition 的快速 greedy update，并比较不同数据价值目标对下游性能的预测力。</p>
+      <h2>实验看点</h2>
+      <p>摘要称在多个数据集、固定大小/类平衡/训练预算设定下比较，发现 facility location 往往最好，过高 Vendi Score 可能不是好 proxy。</p>
+      <h2>局限与读法</h2>
+      <p>这是数据选择理论/算法，不是视觉自监督模型；与通用视觉的关系在数据管线而非模型结构。</p>
+    
+    </div>
+  </div>
+  <aside class="paper-side">
+
+    <div class="side-box"><h4>关键判断</h4><dl><dt>相关性</dt><dd>扫读</dd><dt>类别</dt><dd>data scaling</dd><dt>会议</dt><dd>arXiv + data scaling</dd><dt>读法</dt><dd>方法图优先，表格次之</dd></dl></div>
+    <div class="side-box"><h4>原文</h4><p><a href="https://arxiv.org/abs/2605.29448">https://arxiv.org/abs/2605.29448</a></p></div>
+  </aside>
+</article></main>
+  <aside class="conf-float" data-conf-reminder="2026-05-31-main-ddl" aria-label="CCF A/B 主投稿提醒">
+  <button class="conf-close" type="button" aria-label="关闭会议提醒">×</button>
+  <details open>
+    <summary>CCF A/B 主投稿提醒</summary>
+    <div class="conf-list"><a class="conf-item " href="https://github.com/ccfddl/ccf-deadlines/blob/main/conference/AI/aaai.yml">
+  <span><b>AAAI 2027</b><em>CCF A · Main paper submission</em></span>
+  <strong>57 天</strong>
+  <small>2026-07-27 · CCF DDL: abstract 2026-07-20；进入 1 个月窗口后重点提醒。</small>
+</a></div>
+  </details>
+</aside>
+  <footer class="footer">
+    <div>面向通用视觉自监督、视觉基础模型与多模态表征学习的每日研究报。</div>
+    <div class="muted">Issue 2026-05-31 · Curated readings and figure notes</div>
+  </footer>
+  <script>
+  (() => {
+    const box = document.querySelector('[data-conf-reminder]');
+    if (!box) return;
+    const key = `visualSslConfReminderClosed:${box.dataset.confReminder || '2026-05-31-main-ddl'}`;
+    try {
+      if (localStorage.getItem(key) === '1') box.hidden = true;
+    } catch (err) {}
+    const close = box.querySelector('.conf-close');
+    if (close) {
+      close.addEventListener('click', () => {
+        box.hidden = true;
+        try { localStorage.setItem(key, '1'); } catch (err) {}
+      });
+    }
+  })();
+  </script>
+</body>
+</html>

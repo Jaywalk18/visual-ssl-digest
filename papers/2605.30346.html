@@ -1,0 +1,97 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>YoCausal · 通用视觉自监督研究报</title>
+  <link rel="stylesheet" href="../assets/styles.css?v=20260525j">
+  <link rel="stylesheet" href="../assets/visual-ssl.css?v=20260525j">
+</head>
+<body>
+  <header class="masthead">
+    <div class="masthead-kicker">Visual SSL Research Report · 2026-05-31</div>
+    <a class="masthead-title" href="../index.html">通用视觉自监督研究报</a>
+    <div class="masthead-meta">
+      <span>图像表征 · VFM · JEPA · 视频预训练</span>
+      <span>CCF A/B 会议优先</span>
+      <span>图文精读 · 方法图解</span>
+    </div>
+  </header>
+  <nav class="site-nav" aria-label="主导航">
+    <a class="nav-link" href="../index.html">头版</a>
+<a class="nav-link" href="../issues/2026-05-31.html">今日速递</a>
+<a class="nav-link" href="../pages/catalog.html">论文目录</a>
+<a class="nav-link" href="../pages/timeline.html">时间线</a>
+  </nav>
+  <main><article class="paper-detail">
+  <div class="paper-main">
+    <div class="kicker">Visual SSL / representation · P3 · 2026-05-31</div>
+    <h1 class="paper-headline">YoCausal：视频 SSL/world model 若要作为通用动态表征，必须证明不只是拟合时序纹理，这篇提供了可复用的评测思路</h1>
+    <p class="dek">把“能生成视频”与“理解因果方向”拆开评估，避免只看 temporal statistics。</p>
+    <p class="byline"><strong>YoCausal: How Far is Video Generation from World Model? A Causality Perspective</strong>　You-Zhe Xie, Yu-Hsuan Li, Jie-Ying Lee, Kaipeng Zhang, Yu-Lun Liu, Zhixiang Wang　arXiv　<a href="https://arxiv.org/abs/2605.30346">原文链接</a></p>
+    <div class="paper-facts">
+      <span><b>编号</b>2605.30346</span>
+      <span><b>优先级</b>P3</span>
+      <span><b>类别</b>Visual SSL / representation</span>
+      <span><b>会议</b>arXiv</span>
+      <span><b>方法</b>基于 Violation of Expectation，用时间反转真实视频作为零成本 counterfactual，提出 RSI 与 CCI 两级指标。</span>
+      <span><b>来源</b>arXiv / OpenReview</span>
+    </div>
+    <div class="feature-body">
+      <p class="lead dropcap">先说结论。视频 SSL/world model 若要作为通用动态表征，必须证明不只是拟合时序纹理，这篇提供了可复用的评测思路。 把“能生成视频”与“理解因果方向”拆开评估，避免只看 temporal statistics。</p>
+      <figure class="full-fig"><img src="../assets/mineru/2605.30346/images/61e057549a87a37b4aa46ac202e412d2c950331e97d27012a29a084deb38a440.jpg" alt="Figureure 3 · Overview of the YoCausal evaluation framework"><figcaption><b>Figureure 3 · Overview of the YoCausal evaluation framework</b><span class="fig-en">Figure 3 Overview of the YoCausal evaluation framework. (a) Dataset Construction: We construct an infinitely extensible benchmark by using real-world videos from different domains. By applying zero-cost temporal reversal, we generate natural counterfactual pairs (forward $x ^ { f }$ and reverse $x ^ { r } )$ . (b) Level 1 Temporal Perception: Identical sampled noise ϵ is added to both sequences and compute their denoising losses. Reverse Surprise Index (RSI), quantifies the model’s perception of the arrow of time by measuring the proportion of instances where the reversed video has a higher loss $( \mathcal { L } _ { r } &gt; \mathcal { L } _ { f } )$ . (c) Level 2 Causality Disentanglement: To disentangle genuine causal cognition from statistical temporal biases, a Vision-Language Model (VLM) divides the dataset into causal $( \mathcal { D } _ { c } )$ and non-causal $( { \mathcal { D } } _ { n c } )$ subsets. The Level-2 metric, Causality Cognition Index (CCI), is computed as the difference in RSI between these subsets, isolating the model’s genuine causal cognition ability.</span><span class="fig-zh">这张图概括 YoCausal 的整体方法流程。阅读时先看模块之间传递的训练信号，再看作者如何把目标拆成可优化的子问题。</span></figcaption></figure>
+<figure class="full-fig"><img src="../assets/mineru/2605.30346/images/afd74482dfe1cba247ea932f9ed98d72f9efec0d375beb0663337eeea430ef2b.jpg" alt="Figureure 2 · Conceptual overview of YoCausal benchmark"><figcaption><b>Figureure 2 · Conceptual overview of YoCausal benchmark</b><span class="fig-en">Figure 2 Conceptual overview of YoCausal benchmark. We draw inspiration from the Violation of Expectation (VoE) paradigm in cognitive science. (Left) Infants show surprise when seeing videos played in reverse (bottom), violating their intuitive causal cognition [65] (99K). (Right) We transfer this paradigm to generative models: treating the learned data distribution as the model’s cognition, a causally-aware VDM should assign lower probability (higher denoising loss) to counterfactual reversed videos than to forward ones. This elegant analogy allows us to benchmark causal understanding using arbitrarily scalable real-world videos.</span><span class="fig-zh">这张图概括 YoCausal 的整体方法流程。阅读时先看模块之间传递的训练信号，再看作者如何把目标拆成可优化的子问题。</span></figcaption></figure>
+      
+      <h2>核心问题</h2>
+      <p>视频 SSL/world model 若要作为通用动态表征，必须证明不只是拟合时序纹理，这篇提供了可复用的评测思路。</p>
+      <h2>方法拆解</h2>
+      <p>基于 Violation of Expectation，用时间反转真实视频作为零成本 counterfactual，提出 RSI 与 CCI 两级指标。</p>
+      <h2>主要贡献</h2>
+      <p>把“能生成视频”与“理解因果方向”拆开评估，避免只看 temporal statistics。</p>
+      <h2>实验看点</h2>
+      <p>摘要称评测 13 个 SOTA video diffusion models，发现 arrow-of-time 感知不等于 causal cognition。</p>
+      <h2>局限与读法</h2>
+      <p>评测依赖 VLM 分层与 denoising loss 指标，不是训练方法；对视觉表征的帮助是诊断型。</p>
+    
+    </div>
+  </div>
+  <aside class="paper-side">
+
+    <div class="side-box"><h4>关键判断</h4><dl><dt>相关性</dt><dd>P3</dd><dt>类别</dt><dd>Visual SSL / representation</dd><dt>会议</dt><dd>arXiv</dd><dt>读法</dt><dd>方法图优先，表格次之</dd></dl></div>
+    <div class="side-box"><h4>原文</h4><p><a href="https://arxiv.org/abs/2605.30346">https://arxiv.org/abs/2605.30346</a></p></div>
+  </aside>
+</article></main>
+  <aside class="conf-float" data-conf-reminder="2026-05-31-main-ddl" aria-label="CCF A/B 主投稿提醒">
+  <button class="conf-close" type="button" aria-label="关闭会议提醒">×</button>
+  <details open>
+    <summary>CCF A/B 主投稿提醒</summary>
+    <div class="conf-list"><a class="conf-item " href="https://github.com/ccfddl/ccf-deadlines/blob/main/conference/AI/aaai.yml">
+  <span><b>AAAI 2027</b><em>CCF A · Main paper submission</em></span>
+  <strong>57 天</strong>
+  <small>2026-07-27 · CCF DDL: abstract 2026-07-20；进入 1 个月窗口后重点提醒。</small>
+</a></div>
+  </details>
+</aside>
+  <footer class="footer">
+    <div>面向通用视觉自监督、视觉基础模型与多模态表征学习的每日研究报。</div>
+    <div class="muted">Issue 2026-05-31 · Curated readings and figure notes</div>
+  </footer>
+  <script>
+  (() => {
+    const box = document.querySelector('[data-conf-reminder]');
+    if (!box) return;
+    const key = `visualSslConfReminderClosed:${box.dataset.confReminder || '2026-05-31-main-ddl'}`;
+    try {
+      if (localStorage.getItem(key) === '1') box.hidden = true;
+    } catch (err) {}
+    const close = box.querySelector('.conf-close');
+    if (close) {
+      close.addEventListener('click', () => {
+        box.hidden = true;
+        try { localStorage.setItem(key, '1'); } catch (err) {}
+      });
+    }
+  })();
+  </script>
+</body>
+</html>
