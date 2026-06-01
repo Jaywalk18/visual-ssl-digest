@@ -19,20 +19,18 @@
   </header>
   <nav class="site-nav" aria-label="主导航">
     <a class="nav-link" href="../index.html">头版</a>
-<a class="nav-link active" href="../issues/2026-05-31.html">今日速递</a>
+<a class="nav-link" href="../issues/2026-06-01.html">今日速递</a>
 <a class="nav-link" href="../pages/catalog.html">论文目录</a>
 <a class="nav-link" href="../pages/timeline.html">时间线</a>
   </nav>
   <main><article class="paper-detail issue-detail">
   <div class="paper-main">
     <div class="kicker">Daily issue · 2026-05-31 · CCF A/B 会议优先</div>
-    <h1 class="paper-headline">5 月 31 日：SLAD 等视觉表征主线更新</h1>
-    <p class="dek">本期聚焦通用视觉表征、视觉语言预训练与视频自监督中最值得跟进的论文，并保留 CCF A/B、OpenReview 与 arXiv 状态线索。</p>
+    <h1 class="paper-headline">5 月 31 日：SLAD 等视觉表征论文归档</h1>
+    <p class="dek">本页按日期归档近期论文，保留优先级、主题、来源与方法线索，方便回看同一批工作的研究脉络。</p>
     <div class="feature-body">
-      <p class="lead dropcap">先读 SLAD，因为它最接近“如何把大视觉 foundation model 的表征可靠蒸馏到小模型”这个主线。随后看 UniNote，重点不是广告业务，而是 contrastive SFT、RL ranking 和 Matryoshka embedding 如何共同塑造多模态向量空间。第三篇看 Geometry-Guided Foundation Features，用来理解 foundation features 在 3D/几何场景中需要哪些结构化补丁。minWM、VideoMLA、YoCausal 放在视频 world model 路线里扫读，关注训练链路、长上下文效率与因果评测；Geometric SRC 和 Dataset Worth 只需看方法动机与结论。</p>
+      <p class="lead dropcap">先读 SLAD。共享 LoRA adapter 减轻 teacher/student 特征错位，适合关注蒸馏式视觉表征压缩。 其余论文按 P1/P2 与主题顺序扫读，重点看方法图、消融设置和是否能迁移到通用视觉表征。</p>
       <h2>论文索引</h2>
-      <table class="compact-table"><thead><tr><th>优先级</th><th>论文</th><th>类型</th><th>相关性</th><th>一句话理由</th></tr></thead><tbody><tr><td>P1</td><td>SLAD : Shared LoRA Adapters for Task Specific Distillation</td><td>arXiv + CVPR Findings 2026</td><td>中高</td><td>共享 LoRA adapter 减轻 teacher/student 特征错位，适合关注蒸馏式视觉表征压缩。</td></tr><tr><td>P2</td><td>UniNote: A Unified Embedding Model for Multimodal Representation and Ranking</td><td>arXiv + KDD Ads Track 2026</td><td>中高</td><td>contrastive SFT + RL ranking + MRL 的多模态 embedding 方案，工业场景强但表征训练信号可迁移。</td></tr><tr><td>P2</td><td>Geometry-Guided Modeling of Foundation Features Enables Generalizable Object Shape Deformation Learning</td><td>arXiv + ICML 2026</td><td>中</td><td>把 foundation features 与模板拓扑、视角聚合结合，关注视觉基础特征如何承载几何泛化。</td></tr><tr><td>P2</td><td>minWM: A Full-Stack Open-Source Framework for Real-Time Interactive Video World Models</td><td>arXiv</td><td>中</td><td>把视频 foundation model 改造成可交互 world model 的完整训练链，含 AR 训练和 few-step distillation。</td></tr><tr><td>P3</td><td>VideoMLA: Low-Rank Latent KV Cache for Minute-Scale Autoregressive Video Diffusion</td><td>arXiv</td><td>中</td><td>研究视频基础模型长时序 attention/KV 压缩，对视频预训练效率有间接价值。</td></tr><tr><td>P3</td><td>YoCausal: How Far is Video Generation from World Model? A Causality Perspective</td><td>arXiv</td><td>中</td><td>用真实视频反转构造 causal counterfactual benchmark，适合评估视频 world model 是否学到动态因果。</td></tr><tr><td>P3</td><td>A Geometric View of SRC: Learning Representations for Stable Residual Inference</td><td>arXiv</td><td>中低</td><td>从 residual margin 与 span geometry 讨论表征稳定性，含 masked within-class self-expressiveness 目标。</td></tr><tr><td>扫读</td><td>How Much Is a Dataset Worth? Scaling Laws, the Vendi Score, and Matrix Spectral Functions</td><td>arXiv + data scaling</td><td>中低</td><td>用 ImageNet-scale 子集验证数据多样性/谱函数价值，作为视觉预训练数据筛选背景扫读。</td></tr></tbody></table>
-      <h2>主线阅读</h2>
       <div class="paper-list issue-list"><article class="paper-card" data-category="CVPR Findings 2026" data-priority="P1" data-date="2026-05-31" data-title="slad : shared lora adapters for task specific distillation" data-keywords="slad : shared lora adapters for task specific distillation slad cvpr findings 2026 p1 2026-05-31 arxiv + cvpr findings 2026 共享 lora adapter 减轻 teacher/student 特征错位，适合关注蒸馏式视觉表征压缩 中高相关；详见方法、贡献和实验边界。">
   <a class="paper-thumb paper-thumb-text" href="../papers/2605.29726.html">
     <img src="../assets/mineru/2605.29726/images/26a34cbd9415912b0c22f5a08f55612fe0aee9bb191032303c4c946189b1e7c9.jpg" alt="SLAD figure"><span>P1</span>
@@ -132,18 +130,17 @@
     </div>
   </div>
   <aside class="paper-side">
-    <div class="side-box"><h4>今日重点</h4><p>TextTeacher、MDM、EvoVid、Ablate-to-Validate。</p></div>
-    <div class="side-box"><h4>会议口径</h4><p>只把 CCF A/B 放进主提醒；临近截止或 CCF C 仅记录。</p></div>
     <div class="side-box"><h4>阅读重点</h4><p>先看 P1/P2 与方法图，再扫状态变化和边界案例。</p></div>
+    <div class="side-box"><h4>会议口径</h4><p>主提醒只保留 CCF A/B；CCF C 与过期截止仅作状态记录。</p></div>
   </aside>
 </article></main>
-  <aside class="conf-float" data-conf-reminder="2026-05-31-main-ddl" aria-label="CCF A/B 主投稿提醒">
+  <aside class="conf-float" data-conf-reminder="2026-06-01-main-ddl" aria-label="CCF A/B 主投稿提醒">
   <button class="conf-close" type="button" aria-label="关闭会议提醒">×</button>
   <details open>
     <summary>CCF A/B 主投稿提醒</summary>
     <div class="conf-list"><a class="conf-item " href="https://github.com/ccfddl/ccf-deadlines/blob/main/conference/AI/aaai.yml">
   <span><b>AAAI 2027</b><em>CCF A · Main paper submission</em></span>
-  <strong>57 天</strong>
+  <strong>56 天</strong>
   <small>2026-07-27 · CCF DDL: abstract 2026-07-20；进入 1 个月窗口后重点提醒。</small>
 </a></div>
   </details>
@@ -156,7 +153,7 @@
   (() => {
     const box = document.querySelector('[data-conf-reminder]');
     if (!box) return;
-    const key = `visualSslConfReminderClosed:${box.dataset.confReminder || '2026-05-31-main-ddl'}`;
+    const key = `visualSslConfReminderClosed:${box.dataset.confReminder || '2026-06-01-main-ddl'}`;
     try {
       if (localStorage.getItem(key) === '1') box.hidden = true;
     } catch (err) {}
