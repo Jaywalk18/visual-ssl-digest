@@ -1,0 +1,97 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Beyond Classification · 通用视觉自监督研究报</title>
+  <link rel="stylesheet" href="../assets/styles.css?v=20260525j">
+  <link rel="stylesheet" href="../assets/visual-ssl.css?v=20260525j">
+</head>
+<body>
+  <header class="masthead">
+    <div class="masthead-kicker">Visual SSL Research Report · 2026-06-01</div>
+    <a class="masthead-title" href="../index.html">通用视觉自监督研究报</a>
+    <div class="masthead-meta">
+      <span>图像表征 · VFM · JEPA · 视频预训练</span>
+      <span>CCF A/B 会议优先</span>
+      <span>图文精读 · 方法图解</span>
+    </div>
+  </header>
+  <nav class="site-nav" aria-label="主导航">
+    <a class="nav-link" href="../index.html">头版</a>
+<a class="nav-link" href="../issues/2026-06-01.html">今日速递</a>
+<a class="nav-link" href="../pages/catalog.html">论文目录</a>
+<a class="nav-link" href="../pages/timeline.html">时间线</a>
+  </nav>
+  <main><article class="paper-detail">
+  <div class="paper-main">
+    <div class="kicker">Visual SSL / representation · P2 · 2026-06-01</div>
+    <h1 class="paper-headline">Beyond Classification：真实视觉基础模型会持续接入新域，这篇关注如何不遗忘地更新跨模态 embedding</h1>
+    <p class="dek">指出分类增量方法在检索动态下收益有限，DAR 更适合跨视觉域连续更新。</p>
+    <p class="byline"><strong>Beyond Classification: Dynamic Adapter Routing for Continual Multimodal Retrieval</strong>　Alicja Dobrzeniecka, Filip Szatkowski, Sebastian Cygert, Szymon Lukasik, Bartlomiej Twardowski；机构信息 arXiv 元数据未列出。　arXiv　<a href="https://arxiv.org/abs/2605.31229">原文链接</a></p>
+    <div class="paper-facts">
+      <span><b>编号</b>2605.31229</span>
+      <span><b>优先级</b>P2</span>
+      <span><b>类别</b>Visual SSL / representation</span>
+      <span><b>会议</b>arXiv</span>
+      <span><b>方法</b>构建 Continual Multimodal Retrieval 评测，用 prototype-based routing 选择 adapters 并 model merging。</span>
+      <span><b>来源</b>arXiv / OpenReview</span>
+    </div>
+    <div class="feature-body">
+      <p class="lead dropcap">先说结论。真实视觉基础模型会持续接入新域，这篇关注如何不遗忘地更新跨模态 embedding。 指出分类增量方法在检索动态下收益有限，DAR 更适合跨视觉域连续更新。</p>
+      <figure class="full-fig"><img src="../assets/mineru/2605.31229/images/ff32d9a1eeb19d9ada7040a665d4c4aa8cdbda950544ee7d5dc84a6e017f607e.jpg" alt="Figureure 2 · : (left) Image-to-Text and (right) Text-to-Image Recall@1 performance "><figcaption><b>Figureure 2 · : (left) Image-to-Text and (right) Text-to-Image Recall@1 performance </b><span class="fig-en">Figure 2: (left) Image-to-Text and (right) Text-to-Image Recall@1 performance of various CL methods evaluated on the COCO and NoCaps datasets. DAR consistently outperforms alternative approaches on the held-out datasets throughout continual training on the task suite from Table 2, which highlights the efficacy of knowledge-sharing mechanisms in our method.</span><span class="fig-zh">这张图/表用于判断 Beyond Classification 的实验收益来自哪里。重点看替换、消融或跨模型设置下趋势是否一致，而不是只看单个最高分。</span></figcaption></figure>
+<figure class="full-fig"><img src="../assets/mineru/2605.31229/images/790e323cfca72e1281502026d2e68fb988713e18c666f9dab05cac43ce78ff5a.jpg" alt="Continual retrieval (task t+1) Figure 1: Conceptual difference between classification and "><figcaption><b>Continual retrieval (task t+1) Figure 1: Conceptual difference between classification and </b><span class="fig-en">Continual retrieval (task t+1) Figure 1: Conceptual difference between classification and retrieval in CL scenario. In classification, small perturbations may not affect the result as long as the sample remains within the class boundaries. In retrieval, even small perturbations can alter nearest neighbours and substantially affect retrieval rankings. We argue that continual retrieval requires dedicated evaluation protocols and methods, and introduce a new retrieval-focused benchmark and a novel, state-of-the-art method.</span><span class="fig-zh">这张图来自论文 PDF 的结构化抽取。当前用于辅助理解 Beyond Classification 的方法或实验，请结合正文精读段落一起看。</span></figcaption></figure>
+      
+      <h2>核心问题</h2>
+      <p>真实视觉基础模型会持续接入新域，这篇关注如何不遗忘地更新跨模态 embedding。</p>
+      <h2>方法拆解</h2>
+      <p>构建 Continual Multimodal Retrieval 评测，用 prototype-based routing 选择 adapters 并 model merging。</p>
+      <h2>主要贡献</h2>
+      <p>指出分类增量方法在检索动态下收益有限，DAR 更适合跨视觉域连续更新。</p>
+      <h2>实验看点</h2>
+      <p>摘要称 DAR 在 CMR 和 OOD 评测中优于 baselines。</p>
+      <h2>局限与读法</h2>
+      <p>更多是 retrieval adaptation，不是从头预训练。</p>
+    
+    </div>
+  </div>
+  <aside class="paper-side">
+
+    <div class="side-box"><h4>关键判断</h4><dl><dt>相关性</dt><dd>P2</dd><dt>类别</dt><dd>Visual SSL / representation</dd><dt>会议</dt><dd>arXiv</dd><dt>读法</dt><dd>方法图优先，表格次之</dd></dl></div>
+    <div class="side-box"><h4>原文</h4><p><a href="https://arxiv.org/abs/2605.31229">https://arxiv.org/abs/2605.31229</a></p></div>
+  </aside>
+</article></main>
+  <aside class="conf-float" data-conf-reminder="2026-06-01-main-ddl" aria-label="CCF A/B 主投稿提醒">
+  <button class="conf-close" type="button" aria-label="关闭会议提醒">×</button>
+  <details open>
+    <summary>CCF A/B 主投稿提醒</summary>
+    <div class="conf-list"><a class="conf-item " href="https://github.com/ccfddl/ccf-deadlines/blob/main/conference/AI/aaai.yml">
+  <span><b>AAAI 2027</b><em>CCF A · Main paper submission</em></span>
+  <strong>56 天</strong>
+  <small>2026-07-27 · CCF DDL: abstract 2026-07-20；进入 1 个月窗口后重点提醒。</small>
+</a></div>
+  </details>
+</aside>
+  <footer class="footer">
+    <div>面向通用视觉自监督、视觉基础模型与多模态表征学习的每日研究报。</div>
+    <div class="muted">Issue 2026-06-01 · Curated readings and figure notes</div>
+  </footer>
+  <script>
+  (() => {
+    const box = document.querySelector('[data-conf-reminder]');
+    if (!box) return;
+    const key = `visualSslConfReminderClosed:${box.dataset.confReminder || '2026-06-01-main-ddl'}`;
+    try {
+      if (localStorage.getItem(key) === '1') box.hidden = true;
+    } catch (err) {}
+    const close = box.querySelector('.conf-close');
+    if (close) {
+      close.addEventListener('click', () => {
+        box.hidden = true;
+        try { localStorage.setItem(key, '1'); } catch (err) {}
+      });
+    }
+  })();
+  </script>
+</body>
+</html>
