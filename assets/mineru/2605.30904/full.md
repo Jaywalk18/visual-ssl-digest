@@ -1,0 +1,676 @@
+# MergeTok: Unified Continuous and Discrete Visual Tokenization via Token Merging
+
+Luyuan Zhang⋆1 Siyuan Li⋆2,3 Zedong Wang4 Qingsong Xie †5 Cheng Tan6
+
+Anna Wang2 Yanhao Zhang5 Chen Chen5 Haonan Lu5 Haoqian Wang†1
+
+1Tsinghua University 2Westlake University 3Zhejiang University
+
+4Hong Kong University of Science and Technology 5OPPO
+
+6Shanghai AI Lab
+
+⋆Equal contribution. †Corresponding author.
+
+# Abstract
+
+Most visual tokenizers for image generation are bifurcated into two families with complementary limitations: continuous VAEs offer high-fidelity reconstruction but suffer from dense, entangled latents that are poorly suited for semantic control, whereas discrete VQ-based models enable autoregressive generation yet struggle with gradient sparsity, unstable training, and codebook collapse. In this work, we introduce MergeTok, a unified tokenizer that jointly optimizes continuous (VAE) and discrete (VQ) tokenizers within a encoder-decoder architecture, leveraging token merging techniques as a semantic bridge. By clustering similar tokens during encoding, MergeTok establishes a structural prior that provides dual supervision signals: (i) it imposes merged-token semantic alignment in the VAE branch, regularizing its latent space toward disentangled, semantic-aware representations; (ii) it derives group-wise constraints, promoting intra-group diversity and inter-group exclusivity that stabilize VQ training. MergeTok shows competitive reconstruction and generation performance on ImageNet-256, with substantially lower rFID than strong VAE and VQ models under matched token budgets, while producing semantically-organized token representations compatible with both autoregressive and diffusion generators. This shows that a single architecture can endow visual tokenizers with robust semantic organization and generator-friendly discreteness.
+
+# 1 Introduction
+
+Image generation has achieved remarkable success with both auto-regressive [9, 42] and diffusionbased paradigms [23]. These advances rely heavily on the underlying visual tokenizer, which is typically implemented as an auto-encoder that maps an image to a sequence of latent features and imposes a latent-space constraint to encode them either as continuous variables or discrete codes. Existing tokenizers are largely divided by the form of this latent constraint. VQ-based tokenizers such as VQ-VAE [30] quantize encoder outputs into discrete codebook indices, which naturally support sequence modeling with categorical distributions. VAE-based tokenizers, in contrast, map features to a continuous probabilistic latent space and favor reconstruction fidelity together with stable gradient propagation [13, 36]. It is widely believed that advances in the encoder and latent design of tokenizers are central to downstream generation, since these components largely determine token efficiency and semantic controllability [12, 14].
+
+Despite recent progress, both paradigms remain limited by structural weaknesses. (a) Continuous VAEbased tokenizers rely on a latent space that lacks intrinsic organization. Under strong compression, the encoder is driven to preserve fine-grained visual information in dense latent representations, where multiple semantic factors become entangled across latent components. As a result, the learned codes are often weakly disentangled and poorly factorized, which restricts controllable generation and makes it difficult to obtain compact representations that are both semantically structured and reconstruction-friendly. (b) discrete VQ tokenizers face a different bottleneck rooted in optimization. Since quantization is non-differentiable, training depends on approximate gradient propagation, which produces sparse and uneven updates to the codebook. Many codebook entries therefore receive little supervision, increasing the risk of collapse and reducing representation efficiency. These issues create a persistent tension among reconstruction fidelity, semantic structure, efficiency, and training stability.
+
+![](images/a251db59026e8abbdacbaf4968695118ac94995016784274846b72adcf115052.jpg)
+
+<details>
+<summary>text_image</summary>
+
+VQ Codebook
+N×d or 2^d×1
+Lookup	Replacing
+L×d	L×d
+</details>
+
+(a) Discrete Image Tokenizer
+
+![](images/03c1d78f58a956f1816a90cf60677bc83c50836e1eff9dc4f56d9d4ba6923a3e.jpg)
+
+<details>
+<summary>flowchart</summary>
+
+```mermaid
+graph TD
+    A["Re-parameterization"] --> B["Sampling"]
+    B --> C["Z-axis: L×d"]
+    B --> D["L×d"]
+    style A fill:#f9f,stroke:#333
+    style B fill:#ccf,stroke:#333
+    style C fill:#cfc,stroke:#333
+    style D fill:#fcc,stroke:#333
+```
+</details>
+
+(b) Continuous Image Tokenizer
+
+![](images/83054fa6b39beb25374a48ea2bbafe99c1277cb98d825d326afcb66387ca0851.jpg)
+
+<details>
+<summary>flowchart</summary>
+
+```mermaid
+graph TD
+    A["ToMe & Re-parameterize"] --> B["L×d"]
+    B --> C["K×d"]
+    C --> D["VQ lookup"]
+    D --> E["VQ Codebook"]
+    style A fill:#f9f,stroke:#333
+    style E fill:#bbf,stroke:#333
+```
+</details>
+
+(c) MergeTok Tokenizer (Ours)   
+Figure 1: (a) Discrete VQ. Features are quantized by nearest-neighbor codebook lookup, but codebook updates can be sparse. (b) Continuous VAE. Features are mapped to continuous Gaussian latents through reparameterization for stable reconstruction. (c) MergeTok. MergeTok adopts a dual-branch design to jointly optimize VAE and VQ tokenization. The VAE branch introduces online token merging to inject semantic structure into continuous latents, while the resulting token-similarity information is used to guide group-aware VQ quantization, improving discrete token learning.
+
+To overcome these limitations, we propose MergeTok, a unified tokenizer that jointly optimizes a VAE branch and a VQ branch, as illustrated in Fig. 1 (c). Our key observation is that token merging provides a natural semantic interface between continuous and discrete tokenization: when contentsimilar tokens are merged into groups, the resulting source map S can be reused as a structural prior for both branches. We exploit this in two complementary ways. First, we impose merged-token alignment to regularize the VAE latent space toward semantic-aware representations. Second, we use the induced clustering to guide group-aware VQ quantization, promoting within-group code diversity and cross-group exclusivity that stabilize codebook learning. Both branches share the encoder and decoder, are trained jointly under a unified objective, and output 256 tokens at the tokenizer interface. ToMe operates entirely inside the tokenizer’s training loop and is invisible to downstream generators, as detailed in Sec. 3.1. Experiments on ImageNet-256 demonstrate strong rFID and perceptual quality, consistently outperforming strong VAE-Only and VQ-Only baselines.
+
+Our contributions are summarized as follows:
+
+• A unified dual-branch tokenizer. We propose MergeTok, a tokenizer that jointly optimizes continuous and discrete latents under a single objective. By using token merging as the semantic connection between the two branches, the stability of VAE training and the structural advantages of VQ can reinforce each other in one encoder-decoder framework.   
+• Merge-aware training constraints. We introduce two simple yet effective objectives derived from the merging process: merged-token alignment, which improves semantic structure in the continuous latent space, and group-aware quantization, which stabilizes VQ training and improves codebook utilization.   
+• Granularity-aware merge ratio sampling. We employ discrete merge-ratio sampling during training so that the model is exposed to multiple token granularities. This enables unified tokenization with improved fidelity and efficiency across reconstruction and generation.
+
+# 2 Related Work
+
+Visual Tokenizers for Image Generation. Modern visual tokenizers convert images into discrete or continuous sequences to enable transformer-based generation. On the discrete side, VQ-based methods address gradient sparsity and codebook collapse through improved differentiability and scaling. IBQ [26] propagates gradients over full code distributions to maintain high code utilization, while LFQ [38] replaces vector lookups with binary indices to support very large vocabularies. SoftVQ-VAE [3] adopts soft categorical posteriors for differentiable training and strong compression.
+
+On the continuous side, DC-AE [4] combines residualized latents with staged training to sustain quality at extreme spatial downsampling, and REPA [41] aligns latent features to visual encoders to stabilize diffusion optimization and improve generative quality. Collectively, these advances expand vocabulary capacity, restore gradient flow, and impose semantic structure on visual representations.
+
+Unified Discrete and Continuous Visual Tokenizers. A growing line of work produces both discrete and continuous representations within a single tokenizer to leverage their complementary strengths. Wave-Particle [6] builds two parallel branches, a continuous VAE branch for reconstruction and a discrete VQ branch for generation, with partial parameter sharing. VAEVQ [35] introduces a variational prior into codebook learning so that discrete tokens inherit the regularity of continuous latent structure. TokenBridge [32] approaches unification from the generation side, encoding images into continuous tokens and subsequently discretizing them for autoregressive synthesis. MergeTok shares this goal but uses the token-merging source map as a structural interface coupling both branches through a shared encoder and decoder, serving as an alignment signal for the continuous branch and a grouping prior for the discrete branch. A detailed design comparison is provided in Appendix A.
+
+Unified Visual Tokenizers for Multimodal and Multi-Task Systems. Beyond generation, recent work designs tokenizers that serve both recognition and synthesis across multiple modalities. Uni-Tok [21] shows that multi-codebook quantization and wider embeddings mitigate the reconstructionsemantics conflict, yielding low rFID and strong zero-shot accuracy while enabling native generation in MLLMs. AToken [19] unifies images, video, and 3D in a single token space via a transformer with 4D positional encoding, achieving high-fidelity reconstruction and competitive downstream performance. SPAE [39] aligns vision with language by translating images into multi-scale lexical tokens consumable by frozen LLMs, enabling both understanding and token-level image synthesis. Similarly, MAGVIT-v2 [38] shows that with better visual tokens, GPT-style generators can rival or surpass diffusion models on standard benchmarks. These works illustrate that capacity scaling, multi-scale design, and language alignment enable a single tokenizer to support diverse tasks and modalities.
+
+Token Compression Techniques and Their Impact on Generative Models. A complementary line of work reduces sequence length to improve efficiency and robustness, particularly for autoregressive decoders where errors accumulate with depth. Adaptive-length tokenization [40] distills 2D patches into compact 1D sequences by allocating tokens according to content entropy, reducing unnecessary decoding steps. Fixed aggressive compression via tokenizers such as SoftVQ-VAE [3] and DC-AE [4] achieves tens of tokens per image with competitive fidelity. At inference time, ToMe [1] dynamically fuses redundant tokens to reduce compute and memory with negligible perceptual loss. Training-time designs such as MergeVQ [14] integrate merging into the encoder to form short, quantized sequences while retaining mechanisms to recover fine detail at decode time. Together, adaptive token counts and principled merging reduce step count and memory pressure while limiting error propagation. In contrast, MergeTok uses merging as a structural mechanism, with the source map serving as an interface between the continuous and discrete branches rather than as a compression strategy.
+
+# 3 Methods
+
+# 3.1 MergeTok Framework
+
+The continuous (VAE) and discrete (VQ) paradigms of visual tokenization are usually treated as alternatives, each with its own well-known weakness — entangled latents on the continuous side, and gradient sparsity with codebook collapse on the discrete side. Our key observation is that these two weaknesses are addressable by the same structural signal: a soft clustering of visually similar tokens. If such a clustering is available, it can regularize the continuous latent toward semantic groups while simultaneously partitioning the discrete codes for group-aware quantization. MergeTok turns this observation into an architecture: a dual-branch tokenizer in which token merging (ToMe) supplies the shared structural signal, as illustrated in Fig. 2.
+
+Given an input image $X \in \mathbb { R } ^ { H \times W \times 3 }$ , we encode it through a shared CNN encoder $\mathcal { E } _ { c } ( \cdot )$ , producing a feature map $Z \in \overline { { \mathbb { R } ^ { \frac { H } { f } \times \frac { W } { f } \times D } } }$ , where f is the downsampling factor and D the channel dimension.
+
+![](images/89e45e85b98897f4ff74cbbe0e0d6474eb492dd7170bd4832c8c80aec8563f5b.jpg)
+
+<details>
+<summary>flowchart</summary>
+
+```mermaid
+graph TD
+    A["X"] --> B["Encoder"]
+    B --> C["Lookup"]
+    C --> D["VQ Codebook"]
+    D --> E["Decoder"]
+    E --> F["\hat{X}^{(vae)}"]
+    D --> G["Replacing L×d"]
+    G --> H["VQ Branch"]
+    H --> I["Shared Parameters"]
+    J["Teacher (+ToMe)"] --> K["ToMe Encoder"]
+    K --> L["1 1 1 2 3 3"]
+    L --> M["Source map"]
+    M --> N["Unmerging"]
+    N --> O["L×d"]
+    O --> P["Decoder"]
+    P --> Q["\hat{X}^{(vq)}"]
+    K --> R["Alignment"]
+    R --> S["K×d"]
+    S --> T["Sampling"]
+    T --> U["Source map"]
+    U --> V["Unmerging"]
+    V --> W["L×d"]
+    W --> X["Decoder"]
+    X --> Y["\hat{X}^{(vq)}"]
+```
+</details>
+
+Figure 2: Overall Framework of MergeTok. We propose a dual-branch architecture that jointly optimizes continuous and discrete representations with shared encoder and decoder. (i) VAE Branch (Bottom) applies ToMe [1] to extract dense semantic tokens, which are aligned with a teacher model (also equipped with ToMe). The resulting source map is then employed to unmerge the groups back to the full lattice for reconstruction. (ii) VQ Branch (Top) inherits this source map to induce group-aware clustering, enforcing intra-group diversity and inter-group exclusivity constraints that stabilize the training of the discrete codebook.
+
+The map is reshaped into a token sequence $Z _ { L } = \mathcal { E } _ { c } ( X ) \in \mathbb { R } ^ { L \times D }$ with $\begin{array} { r } { L = \frac { H } { f } \cdot \frac { W } { f } } \end{array}$ , which serves as input to both the VAE and VQ branches.
+
+VAE Branch. The token sequence $Z _ { L }$ is fed into an attention-based encoder $\mathcal { E } _ { a } ( \cdot ; r )$ equipped with token-merging modules for further feature extraction, where $r \in ( 0 , 1 ]$ controls the token keep ratio over N layers. This produces a condensed representation $Z _ { K } ^ { ( \mathrm { v a e } ) } \in \mathbb { R } ^ { K \times D }$ with $K = \lfloor \kappa L \rfloor ( \mathrm { e . g . }$ $\kappa = r ^ { N } )$ , together with a binary source map S that records the assignment from the L pre-merge tokens to the K merged ones:
+
+$$
+Z _ {K} ^ {\text {(vae)}}, S = \mathcal {E} _ {a} (Z _ {L}; r, N). \tag {1}
+$$
+
+For reconstruction, we employ a hybrid VAE decoder $\mathcal { D } ^ { ( \mathrm { v a e } ) } ( \cdot )$ that jointly takes the merged tokens and the source map to recover pixel-space details, yielding $\hat { X } ^ { \mathrm { ( v a e ) } } = { \cal D } ^ { \mathrm { ( v a e ) } } \Big ( Z _ { K } ^ { \mathrm { ( v a e ) } } , S \Big )$ . We defer the implementation details to Sec. 3.2.
+
+VQ Branch. The VQ branch uses the same attention encoder $\mathcal { E } _ { a } ( \cdot )$ with the ToMe operation bypassed (equivalent to keeping all L tokens), preserving the full-length sequence:
+
+$$
+Z _ {L} ^ {\mathrm{(vq)}} = \mathcal {E} _ {a} (Z _ {L}; r = 0) \in \mathbb {R} ^ {L \times D}. \tag {2}
+$$
+
+We quantize each token $z _ { t } \in Z _ { L } ^ { ( \mathrm { v q } ) }$ with a codebook $\mathscr { C } = \{ c _ { j } \} _ { j = 1 } ^ { n }$ 1 via:
+
+$$
+\tilde {z} _ {t} = \mathcal {Q} (z _ {t}) = c _ {i ^ {*}}, \quad i ^ {*} = \arg \min _ {j \in \{1, \dots , n \}} \| z _ {t} - c _ {j} \| _ {2}, \tag {3}
+$$
+
+yielding $\tilde { Z } _ { L } ^ { ( \mathrm { v q ) } } = \{ \tilde { z } _ { t } \} _ { t = 1 } ^ { L }$ 1. During quantization, we further leverage the source map S produced by the VAE branch to impose group-aware guidance on code assignments and improve codebook learning. Finally, a hybrid VQ decoder reconstructs the image as $\hat { X } ^ { \mathrm { ( v q ) } } = \mathcal { D } ^ { \mathrm { ( v q ) } } \Big ( \tilde { Z } _ { L } ^ { \mathrm { ( v q ) } } \Big )$ . We defer the computation details to Sec. 3.3.
+
+The Role of Token Merging in MergeTok. Concretely, the shared structural signal takes the form of a source map S produced by ToMe inside the encoder. Unlike prior work that uses ToMe for inference-time acceleration or output-sequence compression [1], MergeTok integrates ToMe within the tokenizer’s training loop: in the VAE branch, S unmerges the K condensed tokens back to the full L-token lattice for reconstruction, while $Z _ { K } ^ { \mathrm { ( v a e ) } }$ is used for teacher alignment (Eq. 7); in the VQ branch, ToMe is bypassed and $S$ enters only as a regularization signal on codebook usage statistics (Eqs. 9–10). Consequently, the tokenizer outputs 256 tokens, and downstream generators such as LlamaGen, DiT, and SiT are agnostic to the internal merging structure.
+
+![](images/f59e79ab09b763902ddd3f9c6da618df7eb9813d474e65daec76a1f1c4ad707d.jpg)
+
+<details>
+<summary>text_image</summary>
+
+Original
+MergeTok (VAE) w/ ToMe
+MergeTok (VQ) w/o ToMe
+Raw Image	PCA-3	Reconstruction	PCA-3	Source Map	Reconstruction	PCA-3	Source Map
+</details>
+
+Figure 3: Semantic Condensing Effects. We visualize PCA-3 components of raw/reconstructed images and the corresponding ToMe source maps to show how MergeTok organizes visual information. The VAE branch is constrained by token-wise aggregation, yielding semantic separability comparable to discrete models. The VQ branch without ToMe shows inherent clustering due to quantization.
+
+# 3.2 Semantic Enhancement in VAE Branch
+
+Token Merging for Semantic Abstraction. We apply the token merging algorithm in ToMe as the fusion module in our attention encoder $\mathcal { E } _ { a } ( \cdot )$ . Concretely, $\mathcal { E } _ { a } ( \cdot )$ compresses the input sequence by merging the most similar tokens at each layer, controlled by a prescribed per-layer keep ratio $r \in ( 0 , 1 ]$ over N merging layers. Denoting the effective keep ratio by $\kappa = r ^ { N }$ (or more generally $\begin{array} { r } { \kappa = \prod _ { \ell = 1 } ^ { N } r _ { \ell } } \end{array}$ for layer-wise ratios $\{ r _ { \ell } \} )$ , the encoder outputs a condensed K-token representation $Z _ { K } ^ { ( \mathrm { v a e } ) } \in \mathbb { R } ^ { K \times D }$ ZK with $K = \lfloor \kappa L \rfloor$ , together with a source map $S \in \{ 1 , \dots , K \} ^ { 1 \times L }$ that records the assignment from original to merged tokens: the i-th entry $S [ \dot { i } ]$ specifies the merged index, $S [ i ] = k$ means the original token i is merged into the k-th token in Z(vae)K . For reconstruction, we convert the $Z _ { K } ^ { \mathrm { ( v a e ) } }$ source map S into a one-hot assignment matrix $A \in \{ 0 , 1 \} ^ { \dot { L } \times K }$ as:
+
+$$
+A _ {i, k} = \mathbf {1} [ S [ i ] = k ], \quad A \in \{0, 1 \} ^ {L \times K}. \tag {4}
+$$
+
+We then restore the original token layout via:
+
+$$
+\tilde {Z} _ {L} = A Z _ {K} ^ {\text {(vae)}} \in \mathbb {R} ^ {L \times D}. \tag {5}
+$$
+
+The recovered sequence $\tilde { Z } _ { L }$ is decoded into the pixel-space $\hat { X } ^ { \mathrm { ( v a e ) } } = { \cal D } ^ { \mathrm { ( v a e ) } } \Big ( Z _ { K } ^ { \mathrm { ( v a e ) } } , S \Big )$ . A more detailed computational example is provided in Appendix C.
+
+As such, the VAE branch discovers sample-wise semantic clusters at encoding time, decoupling high-frequency details and thereby preventing an overly dense latent space.
+
+Semantic Alignment at Matched Granularity. To regularize the VAE latent space, we align merged tokens with a frozen DINO-style teacher T configured with the same merging schedule $( r , N )$ . The teacher produces K semantic features $F _ { K } ^ { \left( \mathrm { t e a } \right) } \in \mathbb { R } ^ { K \times D _ { t } }$ , and we project the merged latents $Z _ { K } ^ { ( \mathrm { v a e } ) } \in \mathbb { R } ^ { K \times D _ { t } }$ ) ∈ RK×Dt via an alignment head Hali: $\mathcal { H } _ { \mathrm { a l i } }$
+
+$$
+F _ {K} ^ {\text {(tea)}} = \mathcal {T} (X; r, N), \quad \bar {Z} _ {K} = \mathcal {H} _ {\mathrm{ali}} \left(Z _ {K} ^ {\text {(vae)}}\right). \tag {6}
+$$
+
+We then compute the alignment loss $\mathcal { L } _ { \mathrm { a l i g n } }$ between the projected student features $\bar { Z } _ { K }$ and the teacher features $F _ { K } ^ { \mathrm { ( t e a ) } }$ using a similarity metric as cosine distance:
+
+$$
+\mathcal {L} _ {\text { align }} = \frac {1}{K} \sum_ {k = 1} ^ {K} \left\| \bar {Z} _ {K} [ k ] - F _ {K} ^ {(\mathrm{tea})} [ k ] \right\| _ {2} ^ {2}, \tag {7}
+$$
+
+where $\bar { Z } _ { K } [ k ]$ and $F _ { K } ^ { \mathrm { ( t e a ) } } [ k ]$ ] are the k-th merged token from the student and teacher, respectively.
+
+This alignment loss encourages VAE latent tokens to capture meaningful structure aligned with a teacher model. Rather than aligning only the [CLS] token, which overlook fine-grained semantics, or all patch tokens, which can be overly rigid, we align at the semantic level using merged tokens. This facilitates focus on global semantics while reducing sensitivity to irrelevant details, leading to more coherent latent representations for generation as shown in Fig. 3.
+
+![](images/77e56919fc1537a0016d7bf516df0b111e92a21ebdf2c3637d79f06d6b2a24b8.jpg)
+
+<details>
+<summary>other</summary>
+
+Original
+SoftVQVAE (64)
+GigaTok (256)
+#256 #192 #160 #128 #96 #64
+MergeTok w/ K* 
+VAE Branch
+VQ Branch
+</details>
+
+Figure 4: Reconstruction in both VQ and VAE branches across Token Granularities. We visualize reconstructions from both branches while sweeping the target sampling center $K ^ { * }$ controlled by merge ratio r from #256 (left) to #64 (right). It shows MergeTok’s robustness to varying compression rates. The red marker indicates the optimal kept-token count $( K ^ { * } = 1 2 8 )$ found during training.
+
+# 3.3 Improving VQ with VAE-Derived Group Priors
+
+The VAE branch improves VQ along two axes: (1) joint training routes continuous gradients through the shared encoder, alleviating the biased straight-through estimates of quantization (Eq. 3) and yielding more stable optimization (Appendix G.1–G.2); (2) the VAE-derived source map S serves as an online clustering prior that partitions the L VQ tokens into K semantic groups, enabling two group-aware regularizers: ${ \mathcal { L } } _ { \mathrm { d i v } }$ for intra-group diversity and ${ \mathcal { L } } _ { \mathrm { c o n s } }$ for inter-group exclusivity.
+
+As in Eq. 1 and Eq. 4, the VAE branch provides a source map S and its one-hot variant $A \in \{ 0 , 1 \} ^ { L \times K }$ , where $A _ { i , g } = 1$ indicates that the i-th original token belongs to group g. Let $q _ { i } \in \{ 1 , \ldots , n \}$ be the hard code index assigned to the i-th VQ token (codebook size n). As such, the group size is $\begin{array} { r } { N _ { g } = \sum _ { i = 1 } ^ { L } A _ { i , g } } \end{array}$ . We then summarize code usage within each group by a categorical distribution-th entry counts the fraction of tokens in group g assigned to code k: $p _ { g } \in \mathbb { R } ^ { n }$
+
+$$
+p _ {g, k} = \frac {1}{N _ {g}} \sum_ {i = 1} ^ {L} A _ {i, g} \mathbf {1} [ q _ {i} = k ], \quad k \in \{1, \dots , n \}. \tag {8}
+$$
+
+Since $\textstyle \sum _ { k = 1 } ^ { n } \mathbf { 1 } [ q _ { i } = k ] = 1$ for each token i, we have $\begin{array} { r } { \sum _ { k = 1 } ^ { n } p _ { g , k } = 1 , \mathrm { s o } p _ { g } } \end{array}$ is a valid probability distribution over code indices for group g.
+
+Intra-group Diversity Loss. To prevent a semantic group from collapsing to a single code, we maximize the entropy of $p _ { g } .$ Equivalently, we minimize the negative entropy:
+
+$$
+\mathcal {L} _ {\mathrm{div}} = - \sum_ {g = 1} ^ {K} H (p _ {g}) = \sum_ {g = 1} ^ {K} \sum_ {k = 1} ^ {n} p _ {g, k} \log p _ {g, k}. \tag {9}
+$$
+
+where $\begin{array} { r } { H ( p _ { g } ) = - \sum _ { k } p _ { g , k } } \end{array}$ log $p _ { g , k }$ is maximized when codes are used more evenly within group g, thus encouraging diverse-within code assignments and improving codebook utilization.
+
+Inter-group Consistency Loss. While ${ \mathcal { L } } _ { \mathrm { d i v } }$ encourages diversity within each group, we additionally enforce separation between groups by discouraging different groups from using the same codes. We measure the overlap between groups g and h by dot product of code-usage distributions: $\langle p _ { g } , p _ { h } \rangle =$ $\scriptstyle \sum _ { k = 1 } ^ { n } p _ { g , k } p _ { h , k }$ . This quantity is large when both groups place mass on the same set of codes, and small when they use disjoint code subsets. Aggregating this overlap over all group pairs yields:
+
+$$
+\mathcal {L} _ {\text { cons }} = \sum_ {\substack {g, h = 1 \\ g \neq h}} ^ {K} \sum_ {k = 1} ^ {n} p _ {g, k} p _ {h, k} = \sum_ {\substack {g, h = 1 \\ g \neq h}} ^ {K} \left\langle p _ {g}, p _ {h} \right\rangle . \tag{10}
+$$
+
+Minimizing ${ \mathcal { L } } _ { \mathrm { c o n s } }$ therefore drives different groups to specialize on different code subsets, yielding exclusive-between code usage and clearer inter-group separation.
+
+Together, these regularizers improve codebook utilization and prevent codebook collapse; corresponding statistics are reported in Appendix G.2.
+
+# 3.4 Training Strategies
+
+Total Learning Objective. We follow the classical training recipes of VAE and VQ tokenizers in our two branches. The VAE branch uses a standard objective $\mathcal { L } _ { \mathrm { V A E } }$ that combines pixel reconstruction $\mathcal { L } _ { \mathrm { v a e - r e c } } ,$ , perceptual similarity ${ \mathcal { L } } _ { \mathrm { p e r c } } ,$ a KL regularizer ${ \mathcal { L } } _ { \mathrm { K L } }$ on $q _ { \varphi } ( Z _ { K } ^ { ( \mathrm { v a e } ) } \mid X )$ , and an adversarial term $\mathcal { L } _ { \mathrm { g a n } } ^ { G }$ . The VQ branch is supervised by ${ \mathcal { L } } _ { \mathrm { V Q } }$ that combines reconstruction $\mathcal { L } _ { \mathrm { v q - r e c } } ,$ , codebook update $\mathcal { L } _ { \mathrm { c o d e b o o k } }$ , commitment ${ \mathcal { L } } _ { \mathrm { c o m } } .$ , and adversarial $\mathcal { L } _ { \mathrm { g a n } } ^ { G }$ losses. The total objective combines the two branches with our three merge-aware regularizers:
+
+$$
+\mathcal {L} _ {\text { total }} = \lambda_ {\mathrm{vae}} \mathcal {L} _ {\mathrm{VAE}} + \lambda_ {\mathrm{vq}} \mathcal {L} _ {\mathrm{VQ}} + \lambda_ {\mathrm{ali}} \mathcal {L} _ {\text { align }} + \lambda_ {\mathrm{div}} \mathcal {L} _ {\mathrm{div}} + \lambda_ {\mathrm{cons}} \mathcal {L} _ {\mathrm{cons}}, \tag {11}
+$$
+
+where $\mathcal { L } _ { \mathrm { a l i g n } } , \mathcal { L } _ { \mathrm { d i v } } , \mathcal { L } _ { \mathrm { c o n s } }$ are defined in Eqs. (7)–(10); loss weights are detailed in Sec. 4.
+
+Dynamic Sampling of Merge Ratios. To improve the robustness of the VAE decoder to varying token granularities, we perform dynamic sampling to the token merging ratio during training. Specifically, at each training step, we discretely sample the number of retained tokens $K \bar { \in } \{ k _ { 1 } , \bar { k _ { 2 } } \ldots , k _ { t } \}$ from a truncated Gaussian distribution with mean $\mu$ and standard deviation σ, written as:
+
+$$
+k \sim \text { Discrete- } \mathcal {N} (\mu = K ^ {*}, \sigma^ {2}), \quad \text { s.t.   } k \in \{k _ {1}, \dots , k _ {t} \}, \tag {12}
+$$
+
+where $K ^ { * }$ denotes a hyperparameter that approximates the dataset’s information density, and $\{ k _ { i } \}$ enumerates the admissible kept-token counts; σ controls the dispersion of the discrete Gaussian, and sampling is clipped to the valid set. The corresponding merge ratio is then computed by a scheduling function, r = merge\_ratio\_generator $( K , \beta )$ , which determines the merge ratio r given the retained token count K and a decay factor $\beta .$ This exposes the encoder to varied internal bottleneck widths during training, encouraging it to organize information that remains recoverable across multiple semantic granularities via the unmerge operation. As discussed in Sec. 3.1, this dynamic sampling acts purely as a training-time regularizer; the tokenizer always outputs 256 tokens. We show the reconstruction result of the VQ and VAE branch with different sampled merge ratios in Fig. 4, and the rFID and gFID of different methods with different remaining tokens in Fig. 5.
+
+![](images/f6be68e1f2ce2144951a88b9af32dd396d720007e1dc339739b2175567404f0d.jpg)
+
+<details>
+<summary>line</summary>
+
+| # Tokens | gFID (Stage-1) | gFID (Stage-2) | rFID (Stage-1) | rFID (Stage-2) |
+| -------- | -------------- | -------------- | -------------- | -------------- |
+| 64       | 4.0            | 3.5            | 1.0            | 1.5            |
+| 96       | 3.8            | 3.3            | 0.7            | 1.0            |
+| 128      | 3.8            | 3.3            | 0.5            | 0.7            |
+| 160      | 3.8            | 3.3            | 0.4            | 0.7            |
+| 192      | 3.8            | 3.3            | 0.3            | 0.7            |
+| 224      | 3.8            | 3.3            | 0.3            | 0.7            |
+| 256      | 3.8            | 3.3            | 0.3            | 0.7            |
+</details>
+
+Figure 5: Kept token number vs rFID/gFID. With $K ^ { * } = 1 2 8$ , MergeTok achieves competitive rFID and gFID.
+
+# 4 Experiments
+
+# 4.1 Experimental Protocol
+
+Evaluation axes. We design our experiments to evaluate MergeTok along three axes: reconstruction fidelity, representation quality, and downstream generation. This protocol directly tests whether a single tokenizer can serve both discrete autoregressive generation and continuous diffusion/flow generation while inducing semantic organization in the latent space, which is the central claim of a unified tokenizer.
+
+Tokenizer setup. We instantiate two parameterizations of MergeTok, denoted SB and BL. The SB variant uses a 19M-parameter attention encoder (6 blocks, 8 heads, dim 512) and an 86M-parameter decoder (6 blocks, 12 heads, dim 768). The BL variant scales the encoder to 86M and the decoder to 329M (24 blocks, 16 heads, dim 1024). A frozen DINOv2 ViT-B serves as the alignment teacher, and the VQ branch uses a codebook of size 16,384 with 8-dimensional code embeddings. During training, the merged-token count is sampled from $K \in \{ 9 6 , 1 2 8 , 1 6 0 , 1 9 2 , 2 2 4 , 2 5 6 \}$ centered at $K ^ { * } = 1 2 8$ ; at evaluation, $K = K ^ { * }$ for both branches and the tokenizer always emits 256 tokens. We emphasize that ToMe is an internal training-time mechanism of the tokenizer: downstream generators operate directly on the 256-token sequence without any merge-related modification, ensuring a controlled comparison against non-merge tokenizers. All MergeTok models are trained on ImageNet-1K at 256×256 for 200 epochs with batch size 256 using AdamW (lr 1e-4, cosine decay, $\beta _ { 1 } { = } 0 . 9 , \beta _ { 2 } { = } 0 . 9 5 )$ . The total objective weights the VQ, VAE, alignment, intra-group diversity, and inter-group consistency losses with coefficients 1.0, 1.0, 0.5, 0.05, 0.05, respectively.
+
+Table 1: System-level comparison of discrete tokenizers on ImageNet 256×256. We report rFID for reconstruction, linear probing accuracy (Lin.) for representation, and gFID/IS for class-conditional generation. ⋆: trained with frozen DINO discriminator. “CFG": classifier-free guidance. 
+
+<table><tr><td rowspan="2">TokenizerMethod</td><td rowspan="2">Ratio</td><td colspan="2">VQ Codebook</td><td colspan="2">Lin. rFID</td><td rowspan="2">GeneratorMethod</td><td rowspan="2" colspan="2">#Param. #Step</td><td colspan="2">w/o CFG</td><td colspan="2">w/ CFG</td></tr><tr><td>Type</td><td>#Tok.</td><td>#Code</td><td>Acc.</td><td>gFID↓</td><td>IS↑</td><td>gFID↓</td><td>IS↑</td></tr><tr><td>Taming-VQGAN [9]</td><td>16</td><td>2D VQ</td><td> $16^2$ </td><td> $2^{10}$ </td><td>- 7.94</td><td>Taming-Trans.</td><td>1.4B</td><td>256</td><td>15.78</td><td>78.3</td><td>-</td><td>-</td></tr><tr><td>ViT-VQGAN [37]</td><td>8</td><td>2D VQ</td><td> $32^2$ </td><td> $2^{13}$ </td><td>65.1 1.28</td><td>VIM-L</td><td>1.7B</td><td>1024</td><td>4.17</td><td>175.1</td><td>-</td><td>-</td></tr><tr><td>LlamaGen [27]</td><td>16</td><td>2D VQ</td><td> $16^2$ </td><td> $2^{14}$ </td><td>47.6 2.19</td><td>LlamaGen-L</td><td>343M</td><td>256</td><td>3.80</td><td>248.3</td><td>3.07</td><td>256.1</td></tr><tr><td>LlamaGen [27]</td><td>16</td><td>2D VQ</td><td> $16^2$ </td><td> $2^{14}$ </td><td>47.6 2.19</td><td>LlamaGen-XL</td><td>775M</td><td>256</td><td>3.39</td><td>227.1</td><td>2.62</td><td>244.1</td></tr><tr><td>LlamaGen [27]</td><td>16</td><td>2D VQ</td><td> $16^2$ </td><td> $2^{14}$ </td><td>47.6 2.19</td><td>LlamaGen-XXL</td><td>1.4B</td><td>256</td><td>-</td><td>-</td><td>2.34</td><td>253.9</td></tr><tr><td>OmniTokenizer [31]</td><td>16</td><td>2D VQ+VAE</td><td> $16^2$ </td><td> $2^{13}$ </td><td>- 1.11</td><td>GPT2</td><td>650M</td><td>256</td><td>7.45</td><td>146.7</td><td>-</td><td>-</td></tr><tr><td>VFMTok [45]</td><td>16</td><td>2D VQ</td><td> $16^2$ </td><td> $2^{14}$ </td><td>69.4 0.89</td><td>LlmaGen-B</td><td>111M</td><td>256</td><td>3.09</td><td>173.6</td><td>3.43</td><td>252.2</td></tr><tr><td>VFMTok [45]</td><td>16</td><td>2D VQ</td><td> $16^2$ </td><td> $2^{14}$ </td><td>69.4 0.89</td><td>LlmaGen-L</td><td>343M</td><td>256</td><td>2.11</td><td>230.1</td><td>2.75</td><td>278.8</td></tr><tr><td>UniTok* [21]</td><td>16</td><td>2D MSQ</td><td> $16^2$ </td><td> $2^{15}$ </td><td>70.8 0.41</td><td>LlamaGen-XXL</td><td>1.4B</td><td>256</td><td>2.51</td><td>216.7</td><td>2.77</td><td>227.5</td></tr><tr><td>OpenMAGVIT2 [20]</td><td>16</td><td>2D LFQ</td><td> $16^2$ </td><td> $2^{18}$ </td><td>- 1.17</td><td>LlamaGen-B</td><td>343M</td><td>256</td><td>3.08</td><td>258.3</td><td>-</td><td>-</td></tr><tr><td>OpenMAGVIT2 [20]</td><td>16</td><td>2D LFQ</td><td> $16^2$ </td><td> $2^{18}$ </td><td>- 1.17</td><td>LlamaGen-XL</td><td>1.5B</td><td>256</td><td>2.33</td><td>271.8</td><td>-</td><td>-</td></tr><tr><td>IBQ [26]</td><td>16</td><td>2D LFQ</td><td> $16^2$ </td><td> $2^{18}$ </td><td>- 1.00</td><td>LlamaGen-B</td><td>342M</td><td>64</td><td>2.88</td><td>254.7</td><td>-</td><td>-</td></tr><tr><td>IBQ [26]</td><td>16</td><td>2D LFQ</td><td> $16^2$ </td><td> $2^{18}$ </td><td>- 1.00</td><td>LlamaGen-XL</td><td>1.1B</td><td>64</td><td>2.14</td><td>279.0</td><td>-</td><td>-</td></tr><tr><td>FlowMo [25]</td><td>16</td><td>2D Diff.+LFQ</td><td> $16^2$ </td><td> $2^{18}$ </td><td>- 0.95</td><td>LlamaGen-B</td><td>397M</td><td>256</td><td>4.30</td><td>274.0</td><td>-</td><td>-</td></tr><tr><td>Titok-S-128 [40]</td><td>16</td><td>1D VQ</td><td>128</td><td> $2^{12}$ </td><td>46.6 1.71</td><td>MaskGIT-UViT-L</td><td>287M</td><td>8</td><td>4.61</td><td>166.7</td><td>2.50</td><td>278.7</td></tr><tr><td>Titok-B-64 [40]</td><td>16</td><td>1D VQ</td><td>64</td><td> $2^{12}$ </td><td>53.9 1.70</td><td>MaskGIT-VIT</td><td>177M</td><td>8</td><td>3.08</td><td>192.5</td><td>2.48</td><td>214.7</td></tr><tr><td>Titok-L-32 [40]</td><td>16</td><td>1D VQ</td><td>32</td><td> $2^{12}$ </td><td>60.0 2.21</td><td>MaskGIT-VIT</td><td>177M</td><td>8</td><td>3.15</td><td>173.0</td><td>2.77</td><td>199.8</td></tr><tr><td>MergeVQ-GR [14]</td><td>16</td><td>1D LFQ</td><td>144</td><td> $2^{18}$ </td><td>77.9 1.48</td><td>RandAR-L</td><td>343M</td><td>64</td><td>-</td><td>-</td><td>2.63</td><td>279.5</td></tr><tr><td>MergeVQ-GR [14]</td><td>16</td><td>1D LFQ</td><td>256</td><td> $2^{18}$ </td><td>77.9 1.12</td><td>MergeAR-L</td><td>343M</td><td>256</td><td>3.25</td><td>253.8</td><td>-</td><td>-</td></tr><tr><td>GigaTok-SB [33]</td><td>16</td><td>1D VQ</td><td>256</td><td> $2^{14}$ </td><td>61.5 0.89</td><td>LlamaGen-B</td><td>111M</td><td>256</td><td>-</td><td>-</td><td>3.83</td><td>233.3</td></tr><tr><td>GigaTok-BL* [33]</td><td>16</td><td>1D VQ</td><td>256</td><td> $2^{14}$ </td><td>64.1 0.51</td><td>LlamaGen-B</td><td>111M</td><td>256</td><td>-</td><td>-</td><td>3.33</td><td>265.4</td></tr><tr><td>GigaTok-BL [33]</td><td>16</td><td>1D VQ</td><td>256</td><td> $2^{14}$ </td><td>63.8 0.81</td><td>LlamaGen-XXL</td><td>1.4B</td><td>256</td><td>2.03</td><td>238.5</td><td>-</td><td>-</td></tr><tr><td>Hita [44]</td><td>16</td><td>1D VQ</td><td>569</td><td> $2^{14}$ </td><td>36.6 1.03</td><td>LlamaGen-B</td><td>111M</td><td>569</td><td>-</td><td>-</td><td>4.33</td><td>238.9</td></tr><tr><td>Hita [44]</td><td>16</td><td>1D VQ</td><td>569</td><td> $2^{14}$ </td><td>36.6 1.03</td><td>LlamaGen-L</td><td>343M</td><td>569</td><td>-</td><td>-</td><td>2.86</td><td>267.3</td></tr><tr><td>VAEVQ [35]</td><td>16</td><td>VAE+VQ</td><td>256</td><td> $2^{14}$ </td><td>- 1.14</td><td>LlamaGen-B</td><td>111M</td><td>256</td><td>4.68</td><td>-</td><td>-</td><td>-</td></tr><tr><td>MergeTok-SB</td><td>16</td><td>1D VAE+VQ</td><td>256</td><td> $2^{14}$ </td><td>73.8 0.97</td><td>LlamaGen-B</td><td>111M</td><td>256</td><td>3.92</td><td>182.7</td><td>3.37</td><td>245.7</td></tr><tr><td>MergeTok-BL*</td><td>16</td><td>1D VAE+VQ</td><td>256</td><td> $2^{14}$ </td><td>78.2 0.48</td><td>LlamaGen-B</td><td>111M</td><td>256</td><td>3.56</td><td>247.6</td><td>3.09</td><td>267.8</td></tr><tr><td>MergeTok-BL</td><td>16</td><td>1D VAE+VQ</td><td>256</td><td> $2^{14}$ </td><td>78.3 0.78</td><td>LlamaGen-XXL</td><td>1.4B</td><td>256</td><td>1.93</td><td>265.4</td><td>2.13</td><td>281.5</td></tr></table>
+
+Generator setup. We separate the downstream generators by branch. (i) VQ branch – discrete AR generation: we train LlamaGen-B (111M, 12 blocks, 12 heads) and LlamaGen-XXL (1.4B, 48 blocks, 24 heads) under a WSD scheduler with base learning rate $1 \times 1 0 ^ { - 4 }$ , decay ratio 0.2, and a 1-epoch warm-up. AdaLN [23] is not applied since it targets class-conditional setups. Batch sizes are 256 for B/L and 512 for XXL; all AR models are trained for 300 epochs on ImageNet-1K at 256×256. For CFG, we sweep the guidance scale with step 0.25 and report the lowest gFID obtained. (ii) VAE branch – continuous diffusion/flow generation: we adopt DiT and SiT as denoising models on ImageNet-1K at 256×256, both with patch size 1 and 1D absolute positional embeddings. The XL variants (675M) of DiT and SiT are trained for 3M steps; lighter ablations use SiT-L trained for 400K steps. Other hyperparameters follow each generator’s official configuration.
+
+Metrics. We report rFID for reconstruction fidelity, linear probing accuracy (Lin. Acc) for representation quality, and gFID/IS (with and without CFG) for class-conditional generation. To diagnose VQ codebook health we additionally examine codebook usage, dead-code (Collapse) rate, and perplexity (Appendix G.2). Metric definitions and probing protocols follow standard practice and are summarized in Appendix E.
+
+Fairness controls. All main results are evaluated on ImageNet-1K at 256×256. We compare against baselines under matched token budgets: the tokenizer interface is fixed at 256 tokens, downstream generators are not modified to exploit merging, and comparisons reuse the same generator family whenever available (e.g., MergeTok-BL vs. GigaTok-BL both with LlamaGen-XXL). For small gaps we use cautious wording (e.g., “slightly improves over”), and we do not claim improvements over baselines whose numbers we do not strictly dominate.
+
+# 4.2 Main Results on ImageNet-256
+
+Discrete tokenization: reconstruction. Under the same 256-token interface, MergeTok-BL achieves 0.78 rFID, slightly improving over GigaTok-BL at 0.81 and outperforming MergeVQ-
+
+Table 2: System-level comparison of continuous tokenizers on ImageNet 256×256. We report rFID for reconstruction, and gFID/IS for class-conditional generation. “CFG": classifier-free guidance. 
+
+<table><tr><td rowspan="2">Tokenizer Method</td><td rowspan="2">Type</td><td rowspan="2">#Tok.</td><td rowspan="2">Down. ratio</td><td rowspan="2">Tok. rFID↓</td><td rowspan="2">Generator Method</td><td rowspan="2">Training Epochs</td><td rowspan="2">#Param.</td><td colspan="2">w/o CFG</td><td colspan="2">w/ CFG</td></tr><tr><td>gFID↓</td><td>IS↑</td><td>gFID↓</td><td>IS↑</td></tr><tr><td>TiTok-BL-KL [40]</td><td>1D VAE</td><td>64</td><td>16</td><td>1.25</td><td>SiT-L/1</td><td>400</td><td>458M</td><td>23.35</td><td>54.7</td><td>-</td><td>-</td></tr><tr><td>MAR [16]</td><td>2D VQ</td><td>256</td><td>16</td><td>1.22</td><td>MAR-H/1</td><td>800</td><td>943M</td><td>2.35</td><td>227.8</td><td>1.55</td><td>303.7</td></tr><tr><td>SoftVQ-S*[3]</td><td>1D VQ</td><td>256</td><td>16</td><td>0.80</td><td>SiT-L/1</td><td>400</td><td>458M</td><td>9.21</td><td>93.6</td><td>-</td><td>-</td></tr><tr><td>SoftVQ-BL*[3]</td><td>1D VQ</td><td>64</td><td>16</td><td>0.65</td><td>DiT-XL/1</td><td>300</td><td>675M</td><td>6.53</td><td>131.9</td><td>3.11</td><td>268.3</td></tr><tr><td>SoftVQ-BL*[3]</td><td>1D VQ</td><td>64</td><td>16</td><td>0.65</td><td>SiT-XL/1</td><td>300</td><td>675M</td><td>5.80</td><td>143.5</td><td>1.88</td><td>287.9</td></tr><tr><td>SoftVQ-L*[3]</td><td>1D VQ</td><td>64</td><td>16</td><td>0.61</td><td>SiT-XL/1</td><td>300</td><td>675M</td><td>5.35</td><td>151.2</td><td>1.86</td><td>293.6</td></tr><tr><td>SD-VAE [13]</td><td>2D VAE</td><td> $32^2$ </td><td>8</td><td>0.61</td><td>DiT-XL/2</td><td>1400</td><td>675M</td><td>9.62</td><td>121.5</td><td>2.27</td><td>278.2</td></tr><tr><td>SD-VAE [13]</td><td>2D VAE</td><td> $32^2$ </td><td>8</td><td>0.61</td><td>SiT-XL/2</td><td>1400</td><td>675M</td><td>-</td><td>-</td><td>2.62</td><td>252.2</td></tr><tr><td>REPA [41]</td><td>2D VAE</td><td> $32^2$ </td><td>8</td><td>0.61</td><td>DiT-XL/2</td><td>800</td><td>675M</td><td>5.78</td><td>158.3</td><td>1.29</td><td>306.3</td></tr><tr><td>DC-AE-f32 [4]</td><td>2D VAE</td><td> $8^2$ </td><td>32</td><td>0.69</td><td>DiT-XL/1</td><td>500</td><td>675M</td><td>9.56</td><td>-</td><td>2.84</td><td>-</td></tr><tr><td>DC-AE-f32 [4]</td><td>2D VAE</td><td> $8^2$ </td><td>32</td><td>0.69</td><td>SiT-XL/1</td><td>500</td><td>675M</td><td>7.47</td><td>-</td><td>2.41</td><td>-</td></tr><tr><td>VAVAE [36]</td><td>2D VAE</td><td> $16^2$ </td><td>16</td><td>0.61</td><td>LightningDiT-XL/1</td><td>800</td><td>675M</td><td>2.17</td><td>205.6</td><td>1.35</td><td>295.3</td></tr><tr><td>RAE (DINOv2-S) [46]</td><td>1D VAE</td><td>256</td><td>16</td><td>0.49</td><td>DiT-XL/1</td><td>800</td><td>675M</td><td>1.87</td><td>209.7</td><td>1.41</td><td>309.4</td></tr><tr><td>MergeTok-BL</td><td>1D VAE+VQ</td><td>256</td><td>16</td><td>0.47</td><td>DiT-XL/1</td><td>800</td><td>675M</td><td>1.91</td><td>211.4</td><td>1.44</td><td>304.1</td></tr><tr><td>MergeTok-BL</td><td>1D VAE+VQ</td><td>256</td><td>16</td><td>0.47</td><td>SiT-XL/1</td><td>800</td><td>675M</td><td>1.79</td><td>217.6</td><td>1.29</td><td>311.7</td></tr></table>
+
+GR at 1.12 (Table 1). The SB variant reaches 0.97 rFID at a much smaller capacity. With the frozen DINO discriminator, MergeTok-BL⋆ reaches 0.48 rFID, marginally improving over GigaTok-BL⋆ at 0.51 under the same training protocol. UniTok⋆ achieves a lower 0.41 rFID but relies on multicodebook quantization, while MergeTok keeps a single 16,384-entry codebook; we therefore report this as a competitive result rather than a universal claim of reconstruction superiority.
+
+Discrete tokenization: representation. Reconstruction alone cannot reveal whether the tokenizer organizes semantics. Linear probing directly evaluates the discriminative structure of the learned token space (Table 1). MergeTok-BL attains 78.3% Lin. Acc, the highest among the listed discrete tokenizers, exceeding VFMTok (69.4%), UniTok⋆ (70.8%), GigaTok-BL (63.8%), and the concurrent merge-based MergeVQ-GR (77.9%). The SB variant improves over GigaTok-SB (61.5%) by 12.3 points, providing evidence that the ToMe-derived source map and merged-token alignment contribute to semantic organization rather than only pixel-level reconstruction.
+
+Discrete tokenization: AR generation. We test whether the discrete tokens produced by the VQ branch remain compatible with strong autoregressive generators. With LlamaGen-XXL, MergeTok-BL obtains 1.93 gFID without CFG and 2.13 with CFG, with IS of 265.4 and 281.5 respectively, surpassing GigaTok-BL paired with the same LlamaGen-XXL (2.03 gFID without CFG). The smaller SB+LlamaGen-B configuration delivers 3.92/3.37 gFID without/with CFG. These numbers support the hypothesis that the VQ branch is generator-friendly and does not require any merge-aware modification on the generator side.
+
+Continuous tokenization: reconstruction and diffusion/flow generation. On the continuous side (Table 2), MergeTok-BL achieves 0.47 rFID, marginally improving over RAE at 0.49 and outperforming SoftVQ-L (0.61), DC-AE-f32 (0.69), VAVAE (0.61), and SD-VAE (0.61). When paired with diffusion/flow generators, MergeTok-BL yields 1.91 gFID with DiT-XL/1 and 1.79 with SiT-XL/1; with CFG, SiT-XL/1 reaches 1.29 gFID, matching the best entry in the table. These results indicate that the VAE branch is not merely a reconstruction pathway but also provides a continuous token interface suitable for modern diffusion and flow generators.
+
+Takeaway. Tables 1 and 2 jointly support the claim that MergeTok is not just a high-rFID tokenizer: it provides a unified 256-token interface that simultaneously supports discrete AR generation, continuous diffusion/flow generation, and semantically structured representation learning under matched token budgets and matched generators.
+
+Extended evaluations in the appendix. Beyond the ImageNet-256 comparisons in Tables 1 and 2, Appendix F provides qualitative reconstruction and generation results for both branches, and Appendix H extends the evaluation to higher-resolution reconstruction at 512×512 and 1024×1024, class-conditional generation at 512×512, and a cross-domain MS-COCO reconstruction setting.
+
+Table 3: Component-level ablations on MergeTok-SB. Each sub-table targets one design question raised in Sec. 3.1–Sec. 3.4. All entries report VAE-rFID↓ / VQ-rFID↓ on ImageNet 256×256; the bottom row (bold) is the default MergeTok-SB configuration. (a) Progressive integration of the dual VAE/VQ branch, the ToMe-derived source map, and the merged-token alignment loss. (b) Loss objectives, where $\mathcal { L } _ { \mathrm { g r o u p } } = \mathcal { L } _ { \mathrm { d i v } } + \mathcal { L } _ { \mathrm { c o n s } } \left( \mathrm { E q s . ~ \partial ~ - ~ } \right) )$ and ${ \mathcal { L } } _ { \mathrm { e n t } }$ denotes the GigaTok-style entropy regularizer. (c) Granularity at which the alignment loss $\mathcal { L } _ { \mathrm { a l i g n } }$ is applied.   
+(a) Progressive component integration. 
+
+<table><tr><td>Configuration</td><td>VAE</td><td>VQ</td></tr><tr><td>GigaTok-SB (w/o Dist)</td><td>-</td><td>1.12</td></tr><tr><td>VAE only</td><td>0.81</td><td>-</td></tr><tr><td>Dual-branch (VQ+VAE)</td><td>0.83</td><td>1.06</td></tr><tr><td>+ ToMe-derived src. map</td><td>0.67</td><td>1.01</td></tr><tr><td>+ Merged-token align.</td><td>0.62</td><td>0.97</td></tr><tr><td>MergeTok-SB (full)</td><td>0.59</td><td>0.96</td></tr></table>
+
+(b) Loss component combinations. 
+
+<table><tr><td>Loss configuration</td><td>VAE</td><td>VQ</td></tr><tr><td> $\mathcal{L}_{\text{group only}}$ </td><td>0.78</td><td>1.01</td></tr><tr><td> $\mathcal{L}_{\text{align only}}$ </td><td>0.65</td><td>1.08</td></tr><tr><td> $\mathcal{L}_{\text{ent only}}$ </td><td>0.77</td><td>1.09</td></tr><tr><td> $\mathcal{L}_{\text{group}} + \mathcal{L}_{\text{align}} + \mathcal{L}_{\text{ent}}$ </td><td>0.62</td><td>1.02</td></tr><tr><td> $\mathcal{L}_{\text{group}} + \mathcal{L}_{\text{align}}$  (Ours)</td><td>0.59</td><td>0.97</td></tr></table>
+
+(c) Alignment granularity. 
+
+<table><tr><td>Granularity</td><td>VAE</td><td>VQ</td></tr><tr><td>No alignment</td><td>0.67</td><td>1.01</td></tr><tr><td>[CLS] only (1)</td><td>0.64</td><td>1.00</td></tr><tr><td>All patches (256)</td><td>0.62</td><td>0.98</td></tr><tr><td>Merged (128, Ours)</td><td>0.59</td><td>0.96</td></tr></table>
+
+These extended results complement the main comparisons by showing that the observed advantages are not limited to the default ImageNet-256 setting.
+
+# 4.3 Ablation Study
+
+Table 3 reports the main design-oriented ablations on MergeTok-SB, and Fig. 5 analyzes the effect of token granularity at $K ^ { * } \in [ 6 4 , 2 5 6 ]$ with the minimum near $K ^ { * } { = } 1 2 8$ , which we adopt in all main results. Appendix G further expands these ablations from four complementary perspectives: Appendix G.1 isolates the VQ branch, the VAE branch, and the full joint training; Appendix G.2 reports codebook-health diagnostics including usage, collapse rate, perplexity, active codes, dead codes, and entropy; Appendix G.3 evaluates the same variants across reconstruction, representation, and generation metrics; and Appendix G.4 replaces the ToMe-derived source map with alternative grouping strategies. Together, the main-paper and appendix ablations verify both the component-level necessity and the multi-metric robustness of MergeTok.
+
+Component integration. Table 3a follows the construction of MergeTok step by step. Starting from the GigaTok-SB VQ baseline (1.12 VQ-rFID), simply adding a parallel VAE branch reduces VQ-rFID only marginally to 1.06 and yields VAE-rFID 0.83, suggesting that joint training alone is insufficient. Introducing the ToMe-derived source map drops VAE-rFID to 0.67 and VQ-rFID to 1.01, indicating that content-adaptive grouping provides an effective semantic bottleneck shared by both branches. Adding the merged-token alignment loss further improves both metrics to 0.62/0.97, and the full model reaches 0.59/0.96. Note that the VQ branch’s forward path bypasses ToMe; the source map enters only as a structural signal that drives the group-aware losses. The fact that the VQ branch still improves under joint training is consistent with continuous gradients from the VAE branch flowing through the shared encoder.
+
+Loss objectives. Table 3b separates the roles of the merge-aware objectives. Among single-loss variants, $\mathcal { L } _ { \mathrm { a l i g n } }$ gives the best VAE result (0.65) while ${ \mathcal { L } } _ { \mathrm { g r o u p } } = { \mathcal { L } } _ { \mathrm { d i v } } + { \mathcal { L } } _ { \mathrm { c o n s } }$ gives the best VQ result (1.01), supporting the view that the two losses regularize complementary aspects of the unified tokenizer. Their combination achieves the best overall trade-off (0.59/0.97). Adding the GigaTokstyle entropy regularizer ${ \mathcal { L } } _ { \mathrm { e n t } }$ on top slightly worsens both branches (0.62/1.02), so we omit it from the default objective.
+
+Further ablations in the appendix. Beyond Table 3, we defer three additional ablation studies to the appendix: codebook-health diagnostics that evaluate MergeTok-SB on usage, active/dead codes, collapse rate, perplexity, and entropy (Appendix $_ { 0 . 2 ) ; }$ a multi-metric ablation jointly reporting rFID, PSNR, SSIM, linear probing accuracy, and AR/diffusion gFID (Appendix G.3); and a comparison against alternative grouping strategies (k-means, spatial grid, random, and no grouping) under matched group count K=128 (Appendix G.4). These studies extend the rFID-based conclusions in
+
+Table 3 to codebook stability, semantic representation, downstream generation, and the specificity of the ToMe-derived source map.
+
+# 5 Conclusion
+
+We introduce MergeTok, a unified visual tokenizer bridging continuous (VAE) and discrete (VQ) modeling via token merging. The merging provides a semantic conduit, enabling (i) merged-token alignment to regularize the VAE latent space; and (ii) group-aware quantization to stabilize VQ training and improve codebook utilization. A shared encoder-decoder is trained end-to-end with a single joint objective and light merge-ratio sampling. On ImageNet-1K at 256×256, MergeTok substantially improves rFID over continuous and discrete baselines, while producing 256-token sequences with strong semantic organization, suitable for both AR and diffusion generators. Ablations further show that the ToMe-derived grouping outperforms alternative clustering strategies (Appendix G.4). This shows that a unified architecture can be simultaneously semantics-aware and generator-friendly.
+
+# References
+
+[1] Daniel Bolya, Cheng-Yang Fu, Xiaoliang Dai, Peizhao Zhang, Christoph Feichtenhofer, and Judy Hoffman. Token merging: Your vit but faster. In International Conference on Learning Representations (ICLR), 2023. 3, 4   
+[2] Huiwen Chang, Han Zhang, Lu Jiang, Ce Liu, and William T. Freeman. Maskgit: Masked generative image transformer. In IEEE/CVF Conference on Computer Vision and Pattern Recognition (CVPR), 2022. 12   
+[3] Hao Chen, Ze Wang, Xiang Li, Ximeng Sun, Fangyi Chen, Jiang Liu, Jindong Wang, Bhiksha Raj, Zicheng Liu, and Emad Barsoum. Softvq-vae: Efficient 1-dimensional continuous tokenizer. In IEEE/CVF Conference on Computer Vision and Pattern Recognition (CVPR), 2025. 2, 3, 9, 12   
+[4] Junyu Chen, Han Cai, Junsong Chen, Enze Xie, Shang Yang, Haotian Tang, Muyang Li, Yao Lu, and Song Han. Deep compression autoencoder for efficient high-resolution diffusion models. In International Conference on Learning Representations (ICLR), 2025. 3, 9   
+[5] Liang Chen, Haozhe Zhao, Tianyu Liu, Shuai Bai, Junyang Lin, Chang Zhou, and Baobao Chang. An image is worth 1/2 tokens after layer 2: Plug-and-play inference acceleration for large vision-language models. ArXiv, abs/2403.06764, 2024. 2   
+[6] Yizhu Chen, Chen Ju, Zhicheng Wang, Shuai Xiao, Xu Chen, Jinsong Lan, Xiaoyong Zhu, and Ying Chen. Wave-particle (continuous-discrete) dualistic visual tokenization for unified understanding and generation. In ArXiv, 2025. 3, 2   
+[7] Prafulla Dhariwal and Alex Nichol. Diffusion models beat gans on image synthesis. ArXiv, abs/2105.05233, 2021. 7   
+[8] Alexey Dosovitskiy, Lucas Beyer, Alexander Kolesnikov, Dirk Weissenborn, Xiaohua Zhai, Thomas Unterthiner, Mostafa Dehghani, Matthias Minderer, Georg Heigold, Sylvain Gelly, Jakob Uszkoreit, and Neil Houlsby. An image is worth 16x16 words: Transformers for image recognition at scale. In International Conference on Learning Representations (ICLR), 2021. 6   
+[9] Patrick Esser, Robin Rombach, and Bjorn Ommer. Taming transformers for high-resolution image synthesis. In IEEE/CVF Conference on Computer Vision and Pattern Recognition (CVPR), pages 12873–12883, June 2021. 1, 8, 7, 12   
+[10] Gao et al. Vtbench: A standardized benchmark for visual tokenizers in autoregressive image generation. ArXiv, 2024. 3   
+[11] Kaiming He, Xinlei Chen, Saining Xie, Yanghao Li, Piotr Dollár, and Ross Girshick. Masked autoencoders are scalable vision learners. In IEEE/CVF Conference on Computer Vision and Pattern Recognition (CVPR), 2022. 7   
+[12] Dongwon Kim, Ju He, Qihang Yu, Chenglin Yang, Xiaohui Shen, Suha Kwak, and Liang-Chieh Chen. Democratizing text-to-image masked generative models with compact text-aware one-dimensional tokens. ArXiv, abs/2501.07730, 2025. 1   
+[13] Diederik P Kingma. Auto-encoding variational bayes. In International Conference on Learning Representations (ICLR), 2013. 1, 9, 12
+
+[14] Siyuan Li, Luyuan Zhang, Zedong Wang, Juanxi Tian, Cheng Tan, Zicheng Liu, Chang Yu, Qingsong Xie, Haonan Lu, Haoqian Wang, and Zhen Lei. Mergevq: A unified framework for visual generation and representation with disentangled token merging and quantization. In IEEE/CVF Conference on Computer Vision and Pattern Recognition (CVPR), 2025. 1, 3, 8, 2, 7   
+[15] Tianhong Li, Huiwen Chang, Shlok Kumar Mishra, Han Zhang, Dina Katabi, and Dilip Krishnan. Mage: Masked generative encoder to unify representation learning and image synthesis. In IEEE/CVF Conference on Computer Vision and Pattern Recognition (CVPR), 2023. 7   
+[16] Tianhong Li, Yonglong Tian, He Li, Mingyang Deng, and Kaiming He. Autoregressive image generation without vector quantization. In Conference on Neural Information Processing Systems (NeurIPS), 2024. 9   
+[17] Tsung-Yi Lin, Michael Maire, Serge Belongie, James Hays, Pietro Perona, Deva Ramanan, Piotr Dollár, and C. Lawrence Zitnick. Microsoft COCO: Common objects in context. In ECCV, 2014. 13   
+[18] Zeyu Liu, Zanlin Ni, Yeguo Hua, Xin Deng, Xiao Ma, Cheng Zhong, and Gao Huang. Coda: Repurposing continuous vaes for discrete tokenization. ArXiv, abs/2503.17760, 2025. 2   
+[19] Jiasen Lu, Liangchen Song, Mingze Xu, Byeongjoo Ahn, Yanjun Wang, Chen Chen, Afshin Dehghan, and Yinfei Yang. Atoken: A unified tokenizer for vision. ArXiv, abs/2509.14476, 2025. URL https: //api.semanticscholar.org/CorpusID:281394841. 3   
+[20] Zhuoyan Luo, Fengyuan Shi, Yixiao Ge, Yujiu Yang, Limin Wang, and Ying Shan. Open-magvit2: An opensource project toward democratizing auto-regressive visual generation. arXiv preprint arXiv:2409.04410, 2024. 8, 12   
+[21] Chuofan Ma, Yi Jiang, Junfeng Wu, Jihan Yang, Xin Yu, Zehuan Yuan, Bingyue Peng, and Xiaojuan Qi. Unitok: A unified tokenizer for visual generation and understanding. ArXiv, 2025. 3, 8, 2   
+[22] Nanye Ma, Mark Goldstein, Michael S Albergo, Nicholas M. Boffi, Eric Vanden-Eijnden, and Saining Xie. Sit: Exploring flow and diffusion-based generative models with scalable interpolant transformers. In European Conference on Computer Vision (ECCV), 2024. 6   
+[23] William S. Peebles and Saining Xie. Scalable diffusion models with transformers. In International Conference on Computer Vision (ICCV), pages 4172–4182, 2023. 1, 8, 6   
+[24] Robin Rombach, A. Blattmann, Dominik Lorenz, Patrick Esser, and Björn Ommer. High-resolution image synthesis with latent diffusion models. In IEEE/CVF Conference on Computer Vision and Pattern Recognition (CVPR), pages 10674–10685, 2022. 6   
+[25] Kyle Sargent, Kyle Hsu, Justin Johnson, Fei-Fei Li, and Jiajun Wu. Flow to the mode: Mode-seeking diffusion autoencoders for state-of-the-art image tokenization. In International Conference on Computer Vision (ICCV), 2025. 8   
+[26] Fengyuan Shi, Zhuoyan Luo, Yixiao Ge, Yujiu Yang, Ying Shan, and Limin Wang. Scalable image tokenization with index backpropagation quantization. arXiv preprint, 2024. 2, 8   
+[27] Peize Sun, Yi Jiang, Shoufa Chen, Shilong Zhang, Bingyue Peng, Ping Luo, and Zehuan Yuan. Autoregressive model beats diffusion: Llama for scalable image generation. In Conference on Neural Information Processing Systems (NeurIPS), 2024. 8, 6, 12   
+[28] Keyu Tian, Yi Jiang, Zehuan Yuan, Bingyue Peng, and Liwei Wang. Visual autoregressive modeling: Scalable image generation via next-scale prediction. In Conference on Neural Information Processing Systems (NeurIPS), 2024. 7   
+[29] Hugo Touvron, Matthieu Cord, Matthijs Douze, Francisco Massa, Alexandre Sablayrolles, and Herve Jegou. Training data-efficient image transformers & distillation through attention. In International Conference on Machine Learning (ICML), pages 10347–10357, 2021. 7   
+[30] Aäron van den Oord, Oriol Vinyals, and Koray Kavukcuoglu. Neural discrete representation learning. In ArXiv, 2017. 1   
+[31] Junke Wang, Yi Jiang, Zehuan Yuan, Binyue Peng, Zuxuan Wu, and Yu-Gang Jiang. Omnitokenizer: A joint image-video tokenizer for visual generation. arXiv preprint arXiv:2406.09399, 2024. 8   
+[32] Yuqing Wang, Zhijie Lin, Yao Teng, Yuanzhi Zhu, Shuhuai Ren, Jiashi Feng, and Xihui Liu. Bridging continuous and discrete tokens for autoregressive visual generation. In International Conference on Computer Vision (ICCV), 2025. 3
+
+[33] Tianwei Xiong, Jun Hao Liew, Zilong Huang, Jiashi Feng, and Xihui Liu. Gigatok: Scaling visual tokenizers to 3 billion parameters for autoregressive image generation. In International Conference on Computer Vision (ICCV), 2025. 8, 6, 9, 13   
+[34] Xu et al. Unitoken: Harmonizing multimodal understanding and generation through unified visual encoding. ArXiv, 2024. 3   
+[35] Sicheng Yang, Xing Hu, Qiang Wu, and Dawei Yang. Vaevq: Enhancing discrete visual tokenization through variational modeling. ArXiv, abs/2511.06863, 2025. 3, 8   
+[36] Jingfeng Yao and Xinggang Wang. Reconstruction vs. generation: Taming optimization dilemma in latent diffusion models. In IEEE/CVF Conference on Computer Vision and Pattern Recognition (CVPR), pages 15703–15712, 2025. 1, 9   
+[37] Jiahui Yu, Xin Li, Jing Yu Koh, Han Zhang, Ruoming Pang, James Qin, Alexander Ku, Yuanzhong Xu, Jason Baldridge, and Yonghui Wu. Vector-quantized image modeling with improved vqgan. arXiv preprint arXiv:2110.04627, 2021. 8   
+[38] Lijun Yu, Yong Cheng, Kihyuk Sohn, José Lezama, Han Zhang, Huiwen Chang, Alexander G Hauptmann, Ming-Hsuan Yang, Yuan Hao, Irfan Essa, et al. Magvit: Masked generative video transformer. In IEEE/CVF Conference on Computer Vision and Pattern Recognition (CVPR), pages 10459–10469, 2023. 2, 3   
+[39] Lijun Yu, Yong Cheng, Zhiruo Wang, Vivek Kumar, Wolfgang Macherey, Yanping Huang, David A. Ross, Irfan Essa, Yonatan Bisk, Ming Yang, Kevin P. Murphy, Alexander G. Hauptmann, and Lu Jiang. Spae: Semantic pyramid autoencoder for multimodal generation with frozen llms. In ArXiv, 2023. 3   
+[40] Qihang Yu, Mark Weber, Xueqing Deng, Xiaohui Shen, Daniel Cremers, and Liang-Chieh Chen. An image is worth 32 tokens for reconstruction and generation. In Conference on Neural Information Processing Systems (NeurIPS), 2024. 3, 8, 9, 12   
+[41] Sihyun Yu, Sangkyung Kwak, Huiwon Jang, Jongheon Jeong, Jonathan Huang, Jinwoo Shin, and Saining Xie. Representation alignment for generation: Training diffusion transformers is easier than you think. In International Conference on Learning Representations (ICLR), 2025. 3, 9   
+[42] Guiwei Zhang, Tianyu Zhang, Mohan Zhou, Yalong Bai, and Biye Li. V2flow: Unifying visual tokenization and large language model vocabularies for autoregressive image generation. ArXiv, abs/2503.07493, 2025. 1   
+[43] Zhao et al. Mingtok: A continuous unified tokenizer for autoregressive visual understanding and generation. ArXiv, 2024. 2   
+[44] Anlin Zheng, Haochen Wang, Yucheng Zhao, Weipeng Deng, Tiancai Wang, Xiangyu Zhang, and Xiaojuan Qi. Hita: Holistic tokenizer for autoregressive image generation. In International Conference on Computer Vision (ICCV), 2025. 8   
+[45] Anlin Zheng, Xin Wen, Xuanyang Zhang, Chuofan Ma, Tiancai Wang, Gang Yu, Xiangyu Zhang, and Xiaojuan Qi. Vision foundation models as effective visual tokenizers for autoregressive image generation. In Conference on Neural Information Processing Systems (NeurIPS), 2025. 8   
+[46] Boyang Zheng, Nanye Ma, Shengbang Tong, and Saining Xie. Diffusion transformers with representation autoencoders. ArXiv, abs/2510.11690, 2025. 9
+
+# Appendix for MergeTok
+
+# Roadmap
+
+The appendix is organized to follow the structure of the main paper, with each part providing deeper coverage of the corresponding main-text section.
+
+Part I – Extended Discussion (App. A–B, cited in §2) provides a structured design comparison with concurrent hybrid tokenizers (App. A) and discussion of recently proposed concurrent works (App. B), supplementing the Related Work section.
+
+Part II – Technical Details (App. C–D, cited in §3.1) derives the token merging mechanism in encoding (App. C) and the source map unmerging process with a worked example (App. D), establishing how S couples the continuous and discrete branches, supplementing the Methods section.
+
+Part III – Implementation Details (App. E) records full architectural specifications, training hyperparameters, and evaluation protocols for the tokenizer and downstream generators, supporting the experimental setup of §4.
+
+Part IV – Extended Experimental Results (App. F–H, cited in §4.3 and §4.2) presents additional visualizations (App. F), more ablation studies (App. G), and more results on benchmarks (App. H), expanding the experimental results of §4.
+
+# Part I | Extended Discussion
+
+Design comparison with concurrent hybrid tokenizers and discussion of recently proposed concurrent works.
+
+This part supplements the related-work discussion in §2 by positioning MergeTok with respect to concurrent and closely related tokenizer designs. Appendix A provides a structured comparison with hybrid or unified tokenizers along five axes – branch composition, role of token merging, generator compatibility, and VQ regularization. Appendix B discusses recently proposed concurrent works and clarifies how MergeTok differs in using the ToMe-derived source map S as an explicit bridge between the continuous and discrete branches.
+
+# A Design Comparison with Concurrent Hybrid Tokenizers
+
+Table A1 compares MergeTok with three concurrent works along five design axes: MergeVQ [14], Wave-Particle [6], and UniTok [21].
+
+Table A1: Design comparison with concurrent hybrid and unified tokenizers. 
+
+<table><tr><td>Design Axis</td><td>MergeVQ</td><td>Wave-Particle</td><td>UniTok</td><td>MergeTok (Ours)</td></tr><tr><td>Continuous Branch</td><td>—</td><td>KL-AE</td><td>—</td><td>KL-AE</td></tr><tr><td>Discrete Branch</td><td>LFQ</td><td>VQ</td><td>VQ</td><td>VQ</td></tr><tr><td>Role of Token Merging</td><td>Token Compression</td><td>—</td><td>—</td><td>Semantic Bridge</td></tr><tr><td>Generator</td><td>AR</td><td>AR</td><td>AR</td><td>AR + Diff</td></tr><tr><td>VQ Regularization</td><td>Entropy</td><td>—</td><td>—</td><td>Group Constraint Loss</td></tr></table>
+
+Three differences are worth noting. First, MergeVQ uses ToMe as a compression mechanism, producing variable-length quantized sequences, whereas MergeTok uses ToMe as a structural bridge: the source map S couples the continuous and discrete branches via alignment (Eq. 7) and group-aware regularization (Eqs. 9, 10), and the tokenizer always outputs a fixed 256-token sequence. Second, Wave-Particle builds two parallel branches with partial sharing but without a source-map interface, while MergeTok transfers S explicitly from the VAE branch to the VQ branch through a fully shared encoder and decoder. Third, UniTok targets AR generation only, whereas MergeTok simultaneously supports AR generation via the VQ branch and diffusion generation via the VAE branch within a single tokenizer. Codebook health diagnostics in Table A5 further confirm that MergeTok’s group constraint loss achieves high codebook utilization without enlarging codebook capacity.
+
+# B Discussion of Recently Proposed Concurrent Works
+
+Several recent or concurrent works share goals or mechanisms with MergeTok and merit explicit comparison.
+
+CODA [18] repurposes pretrained continuous VAEs into discrete tokenizers by applying post-hoc quantization rather than joint training. MergeTok differs in that both branches are trained jointly from scratch with a shared encoder, and the ToMe-derived source map S serves as an architectural bridge between the two branches.
+
+MGVQ [5] improves VQ tokenizers via multi-group quantization, decomposing a large codebook into coordinated subgroups to reduce collapse. Although the naming is similar, MGVQ’s grouping operates on the codebook side by decomposing the codebook into subspaces, whereas MergeTok’s grouping operates on the token side by using S to partition tokens into semantic groups for regularization. The two approaches are complementary and could in principle be combined.
+
+MingTok [43] proposes a continuous unified tokenizer for autoregressive understanding and generation. It shares MergeTok’s goal of unification but relies solely on continuous representations. MergeTok’s discrete branch and ToMe-bridged design provide an alternative path that retains compatibility with discrete AR generators such as LlamaGen without requiring continuous-only AR architectures.
+
+UniToken [34] combines discrete and continuous representations in a unified visual encoding for multimodal downstream tasks. In contrast, MergeTok’s discrete and continuous branches share the encoder and decoder and are coupled via S, whereas UniToken concatenates separately trained representations for downstream consumption.
+
+VTBench [10] provides a standardized benchmark for visual tokenizers in autoregressive image generation. Evaluation under the VTBench protocol would strengthen external validity; we plan to include such evaluation in a future revision.
+
+# Part II | Technical Details
+
+The token merging and unmerging mechanism that underpins MergeTok’s shared-encoder design.
+
+This part provides the technical details that support the method description in §3.1. Appendix C expands the token merging process used inside the VAE branch of the attention encoder, including the per-layer schedule and the log s size-aware attention correction. Appendix D works through a concrete source-map and unmerging example, showing how S and its one-hot matrix form A preserve token-to-group correspondence. Together, these details explain how the source map serves as the structural interface that couples the VAE and VQ branches.
+
+# C Token Merging in Encoding
+
+Following ToMe [1], MergeTok inserts a lightweight merge unit into each Transformer encoder block to progressively reduce the number of spatial tokens while preserving semantic content. Given the patch-token sequence $Z _ { L } \in \mathbb { R } ^ { L \times D }$ , ToMe performs merging in four steps:
+
+1. Evenly partition tokens into two sets A and B (e.g., by odd/even indices).   
+2. For each token in A, find its most similar token in B according to the current-layer attention features.   
+3. Select the top pairs for merging under a pre-defined schedule.   
+4. Aggregate features within each selected pair (e.g., by averaging) to form merged tokens.
+
+After one merge operation, the sequence length is reduced from L to K $( K < L )$ , producing a compressed sequence $Z _ { K } \in \mathbb { R } ^ { K \times D }$ that is fed into the next layer. Token similarity is computed using attention features from the current layer, typically the self-attention keys Key to match tokens across A and B. Since each merged token may represent multiple original tokens, ToMe tracks the token size s (the number of originals aggregated into a surviving token) and compensates its influence in self-attention by adding log s to the attention logits:
+
+$$
+\mathbf {A} = \text { softmax } \left(\frac {Q \operatorname{Key} ^ {\top}}{\sqrt {d}} + \log s\right), \tag {13}
+$$
+
+where Q and Key denote the query and key matrices, d is the attention head dimension, and s is broadcast to match the logits shape. Across layers, ToMe follows a merging schedule that controls how many pairs are merged, trading off efficiency and fidelity. In practice, we adopt a decreasing schedule (e.g., square decreasing) where the number of merges increases with depth to encourage stronger semantic abstraction at higher layers.
+
+# D Source Map for Token Unmerging
+
+In this section, we provide a concrete example to illustrate how token merging and the subsequent unmerging process can be expressed using the source map S and its one-hot matrix form A.
+
+As introduced in Sec. 3.1, the VAE branch performs token merging during encoding: it compresses the original length-L token sequence accompanied by a discrete source map $Z _ { L } ~ \in ~ \mathbb { R } ^ { L \times D }$ into a compact sequence  During decoding, the reco $Z _ { K } ^ { \left( \mathrm { v a e } \right) } \ \in \ \bar { \mathbb { R } } ^ { K \times D }$ ∈ RK×D , conditions on both $Z _ { K } ^ { \mathrm { ( v a e ) } }$ and S to recover the original structure. Each entry $S _ { i } \left( \mathrm { f o r } i = 1 , \dots , L \right)$ indicates the index of the merged token to which the i-th original token belongs.
+
+Example. Consider an example with $L = 5$ and $K = 3 . \mathrm { L e t }$ the original token sequence be denoted as $\boldsymbol { Z _ { L } } ^ { \bullet } = [ z _ { 1 } , z _ { 2 } , z _ { 3 } , z _ { 4 } , z _ { 5 } ] ^ { \intercal } \in \mathbb { R } ^ { 5 \times D }$ , where each $z _ { i } \in \mathbb { R } ^ { D }$ is a token embedding. Suppose the source map is given by:
+
+$$
+S = [ 0, 0, 1, 1, 2 ], \tag {14}
+$$
+
+indicating that the first two tokens are assigned to cluster 0, the next two to cluster 1, and the last token to cluster 2.
+
+This assignment can be encoded by a one-hot source matrix $A \in \{ 0 , 1 \} ^ { L \times K }$ , where each row i has a 1 in column $S _ { i }$ :
+
+$$
+A _ {i j} = \left\{ \begin{array}{l l} 1, & \text { if   } S _ {i} = j \\ 0, & \text { otherwise } \end{array} \right. \tag {15}
+$$
+
+For the given S, the source matrix becomes:
+
+$$
+A = \left( \begin{array}{c c c} 1 & 0 & 0 \\ 1 & 0 & 0 \\ 0 & 1 & 0 \\ 0 & 1 & 0 \\ 0 & 0 & 1 \end{array} \right) \in \{0, 1 \} ^ {5 \times 3} \tag {16}
+$$
+
+nal sequence  can be comp $Z _ { L }$ , the compressed sequence of merged tokensd by: $Z _ { K } = [ z _ { 0 } ^ { ( \mathrm { m } ) } , z _ { 1 } ^ { ( \mathrm { m } ) } , z _ { 2 } ^ { ( \mathrm { m } ) } ] ^ { \top } \in \mathbb { R } ^ { K \times D }$ = [z(m)0 , z
+
+$$
+Z _ {K} = A ^ {\top} Z _ {L} \tag {17}
+$$
+
+In this case:
+
+$$
+z _ {0} ^ {\mathrm{(m)}} = \frac {z _ {1} + z _ {2}}{2}, \quad z _ {1} ^ {\mathrm{(m)}} = \frac {z _ {3} + z _ {4}}{2}, \quad z _ {2} ^ {\mathrm{(m)}} = z _ {5} \tag {18}
+$$
+
+Unmerging. The reconstruction restores the token sequence layout by broadcasting each merged token back to its original positions:
+
+$$
+\hat {Z} _ {L} = A Z _ {K}. \tag {19}
+$$
+
+For this example:
+
+$$
+\hat {Z} _ {L} = A Z _ {K} = \left( \begin{array}{l l l} 1 & 0 & 0 \\ 1 & 0 & 0 \\ 0 & 1 & 0 \\ 0 & 1 & 0 \\ 0 & 0 & 1 \end{array} \right) \left( \begin{array}{l} (z _ {0} ^ {\mathrm{(m)}}) ^ {\top} \\ (z _ {1} ^ {\mathrm{(m)}}) ^ {\top} \\ (z _ {2} ^ {\mathrm{(m)}}) ^ {\top} \end{array} \right) = \left( \begin{array}{l} (z _ {0} ^ {\mathrm{(m)}}) ^ {\top} \\ (z _ {0} ^ {\mathrm{(m)}}) ^ {\top} \\ (z _ {1} ^ {\mathrm{(m)}}) ^ {\top} \\ (z _ {1} ^ {\mathrm{(m)}}) ^ {\top} \\ (z _ {2} ^ {\mathrm{(m)}}) ^ {\top} \end{array} \right) \tag {20}
+$$
+
+This demonstrates how the source map S and its matrix form A can be used to implement both token merging and unmerging using simple matrix multiplication. Beyond efficient aggregation and broadcasting, S and A retain the spatial correspondence between original and merged tokens. Each entry in S records the assignment of an original token to its semantic group, encoding its relative spatial location within the compressed representation. This spatial mapping enables a hybrid decoder architecture. After the semantic tokens $Z _ { K } ^ { \mathrm { ( v a e ) } }$ are decoded by a transformer decoder, the source map guides the unmerging process, distributing semantic content back to spatial positions in the form of ZˆL. A pixel-level decoder can then further refine $\hat { Z } _ { L }$ to reconstruct the image. The source map thus serves as a bridge between semantic representations and fine-grained spatial reconstructions.
+
+# Part III | Implementation Details
+
+Architectural specifications, training hyperparameters, and evaluation protocols for full reproducibility.
+
+Table A2: Implementation details and configuration of network architecture, hyperparameters of loss functions, and training settings for the two versions of MergeTok tokenizers on ImageNet-1K. 
+
+<table><tr><td>Settings</td><td>MegreTok-SB</td><td>MergeTok-BL</td></tr><tr><td>Channels</td><td>256</td><td>256</td></tr><tr><td>CNN Stage number</td><td>5</td><td>5</td></tr><tr><td>Channel multiplier</td><td>[1, 1, 2, 2, 4]</td><td>[1, 1, 2, 2, 4]</td></tr><tr><td>Encoder Attention Blocks</td><td>6</td><td>12</td></tr><tr><td>Encoder Attention Heads</td><td>8</td><td>12</td></tr><tr><td>Encoder Attention Dim</td><td>512</td><td>768</td></tr><tr><td>Decoder Attention Blocks</td><td>12</td><td>24</td></tr><tr><td>Decoder Attention Heads</td><td>12</td><td>16</td></tr><tr><td>Decoder Attention Dim</td><td>768</td><td>1024</td></tr><tr><td>Vocabulary size</td><td>16384</td><td>16384</td></tr><tr><td>Discriminator loss</td><td>0.5</td><td>0.5</td></tr><tr><td>Perceptual loss</td><td>1.0</td><td>1.0</td></tr><tr><td>VQ rec loss</td><td>1.0</td><td>1.0</td></tr><tr><td>VAE rec loss</td><td>1.0</td><td>1.0</td></tr><tr><td>Diversity loss</td><td>0.05</td><td>0.05</td></tr><tr><td>Consistency loss</td><td>0.05</td><td>0.05</td></tr><tr><td>Commitment loss</td><td>0.25</td><td>0.25</td></tr><tr><td>Alignment loss</td><td>0.5</td><td>0.5</td></tr><tr><td>Optimizer</td><td>AdamW</td><td>AdamW</td></tr><tr><td> $(\beta_1, \beta_2)$ </td><td>(0.9, 0.95)</td><td>(0.9, 0.95)</td></tr><tr><td>Weight decay</td><td>1e-4</td><td>0.0</td></tr><tr><td>Training epochs</td><td>200</td><td>200</td></tr><tr><td>Base learning rate</td><td>1e-4</td><td>1e-4</td></tr><tr><td>Batch size</td><td>256</td><td>256</td></tr><tr><td>LR scheduler</td><td>cosine_v2</td><td>cosine_v2</td></tr><tr><td>#Param. of Attn Encoder</td><td>19M</td><td>86M</td></tr><tr><td>#Param. of Attn Decoder</td><td>86M</td><td>329M</td></tr></table>
+
+# E Implementation Details
+
+MergeTok Models. We provide two parameter scales for the MergeTok tokenizer. Based on GigaTok [33], the SB configuration employs a small-size encoder coupled with a base-size decoder, while the BL configuration uses a base-size encoder and a large-size decoder. The detailed architectural specifications and training hyperparameters of both variants are reported in Table A2. For the autoregressive generator, we adopt Llama-Gen as the backbone architecture [27] and instantiate three model sizes, namely Base, Large, and XX-Large (XXL). Their parameter counts and experimental settings are summarized in Table A3. For the diffusion generator, we adopt SiT and DiT as the backbone [23, 22]. Our DiT and SiT generators closely follow the original architectural designs. For DiT, we adopt the standard Transformer-based diffusion backbone operating on 1D latent token sequences [24], using 1D absolute positional encodings [8] and keeping the depth, embedding dimension, number of attention heads, and MLP width identical to the corresponding DiT variants in the original work. Similarly, our SiT models reuse the same overall Transformer block structure as DiT while incorporating the shift-based operations introduced in the original SiT architecture, and are likewise applied to 1D latent token sequences with absolute positional encodings. Apart from adapting the input interface to our 1D latent representation, we do not introduce any additional architectural modifications to either DiT or SiT.
+
+Table A3: Configuration of discrete and continuous visual generators with MergeTok for image generation on ImageNet-1K. 
+
+<table><tr><td>Settings</td><td>LlamaGen-B</td><td>LlamaGen-L</td><td>LLamaGen-XXL</td><td>DiT-XL</td><td>SiT-XL</td></tr><tr><td>Attention heads</td><td>12</td><td>24</td><td>48</td><td>16</td><td>16</td></tr><tr><td>Input dim.</td><td>768</td><td>1024</td><td>1536</td><td colspan="2"> $16 \times 16 \times 4$ </td></tr><tr><td>Num. layers</td><td>12</td><td>24</td><td>1.4B</td><td>28</td><td>28</td></tr><tr><td>Dropout</td><td>0.1</td><td>0.1</td><td>0.1</td><td>0</td><td>0</td></tr><tr><td>Mask schedule</td><td>Arccos</td><td>Arccos</td><td>Arccos</td><td>-</td><td>-</td></tr><tr><td>Label smoothing</td><td>0.1</td><td>0.1</td><td>0.1</td><td>-</td><td>-</td></tr><tr><td>Sampler</td><td>-</td><td>-</td><td>-</td><td colspan="2">Euler-Maruyama</td></tr><tr><td>Gen. steps</td><td>256</td><td>256</td><td>256</td><td>250</td><td>250</td></tr><tr><td># Parameter</td><td>111M</td><td>343M</td><td>1.4B</td><td>675M</td><td>675M</td></tr><tr><td>Optimizer( $\beta_1, \beta_2$ )</td><td></td><td>AdamW(0.9, 0.95)</td><td></td><td colspan="2">AdamW(0.9, 0.999)</td></tr><tr><td>Weight decay</td><td>5e-2</td><td>5e-2</td><td>5e-2</td><td>0</td><td>0</td></tr><tr><td>Training epochs</td><td>300</td><td>300</td><td>300</td><td>400</td><td>400</td></tr><tr><td>Base learning rate</td><td> $1 \times 10^{-4}$ </td><td> $1 \times 10^{-4}$ </td><td> $1 \times 10^{-4}$ </td><td> $1 \times 10^{-4}$ </td><td> $1 \times 10^{-4}$ </td></tr><tr><td>Batch size</td><td>256</td><td>256</td><td>512</td><td>256</td><td>256</td></tr><tr><td>LR scheduler</td><td>WSD</td><td>WSD</td><td>WSD</td><td>-</td><td>-</td></tr></table>
+
+Evaluation of Representation. To measure the representation with semantics and contextual information, we follow previous self-supervised learning [11] and generative models [15, 14] to conduct the linear probing protocol, as shown in Table 1. The linear classification is performed upon the latent embedding space of trained encoders by fine-tuning a parameter-free BN layer and a linear layer for 90 epochs using the AdamW optimizer with a batch size of 1024. The basic learning rate is set to $1 \times 1 0 ^ { - 3 }$ and advanced augmentations and training strategies for modern architectures [29] will not be used.
+
+Evaluation of Generation. We evaluate the generative performance of MergeTok-based models on ImageNet-1K in 256×256 resolutions. As for reconstruction tasks, we follow VQGAN [9] to report the reconstruction Fréchet Inception Distance (rFID) computed on the 50K validation set with CenterCrop. It measures how well the hybrid latent representation preserves the image distribution. As for class-condition image generation, we strictly follow the setup and use the same reference batches of ADM [7] with their official implementation and evaluate on a single H20-96G GPU and tf32 precision. We report generation FID (gFID), Inception Score (IS), as well as Precision and Recall to jointly characterize fidelity and diversity of the samples. The gFID measures the feature distance between the distributions of real and generated images on the Inception-v3 embeddings under the multivariate Gaussian distributions. IS also uses the Inception-v3 network, but uses the softmaxnormalized logit for evaluation of the metric. Unless otherwise specified, all metrics are computed on 50K generated images and are compared against the ImageNet validation split. Following common practice [28], we report results both with and without classifier-free guidance (CFG). For settings using CFG, we sweep the guidance scale on a held-out subset of the validation set and select the scale that yields the lowest gFID for each generator configuration.
+
+# Part IV | Extended Experimental Results
+
+Ablations, codebook diagnostics, and extended evaluations validating MergeTok’s design choices.
+
+This part presents additional experimental evidence supporting the design choices and performance claims reported in the main paper. App. F provides further visualizations of reconstruction and generation quality. App. G reports additional ablation studies that isolate the contribution of individual components and examine alternative design choices. App. H extends the comparisons in §4.2 with reconstruction and generation experiments at higher resolutions and a cross-domain evaluation on MS-COCO.
+
+# F Visualization of Analysis
+
+This section provides qualitative evidence complementing the quantitative comparisons in §4.2. Whereas Tables 1 and 2 report reconstruction and generation metrics, the visualizations here show how the two branches behave at the image level: Fig. A1 compares VAE and VQ reconstructions from MergeTok-BL on ImageNet-256, and Fig. A2 shows class-conditional generation samples from DiT-XL and SiT-XL on the VAE branch and LlamaGen-XXL on the VQ branch. We additionally include a brief qualitative analysis of the dual-branch design and its effect on the learned representations.
+
+![](images/7c7b57d6131dcb096b50c785cc1b0d86c9c66a867813b4108a3c6a16a6e91ee8.jpg)  
+Figure A1: Visualization of reconstruction with the MergeTok-BL tokenizer on ImageNet-256. During inference time, we remove the ToMe modules employed during training from both the VAE and VQ branches to achieve the optimal reconstruction results.
+
+Visualization of Reconstruction and Generation. Fig. A1 shows reconstruction results of both branches of the MergeTok-BL tokenizer on ImageNet-1K at 256×256. Fig. A2 shows classconditional generation results using DiT-XL and SiT-XL on the VAE branch and LlamaGen-XXL on the VQ branch.
+
+Experimental Analysis. The dual-branch design addresses distinct limitations of VQ and VAE tokenizers. For the VQ branch, continuous gradient updates through the shared encoder alleviate gradient discontinuity in VQ optimization, and the group-constraints loss stabilizes codebook learning. For the VAE branch, semantic alignment with the DINOv2 teacher mitigates the disentanglement issues of standard VAEs while also facilitating more coherent clustering dynamics in the VQ codebook. The qualitative visualizations in Fig. 4 support these observations. With semantic alignment, the VAE reconstructions exhibit recognizable structures with clear features. In the VQ branch, the quantized feature maps display stronger semantic interpretability than the original features. Although the codebook lookup introduces slightly denser semantic patterns compared to the VAE branch, the resulting representations retain enhanced recognizability.
+
+![](images/1a535bac5a2d16f9a58e68447cf78582b5975dbd34e7cd340bf5c450d7c10a6e.jpg)
+
+<details>
+<summary>natural_image</summary>
+
+Collage of 20 diverse images including bird, animal, and wildlife in various settings (no text or symbols)
+</details>
+
+Figure A2: Visualization of class-conditional generation with different generators upon the MergeTok-BL tokenizer in ImageNet-256. Following REPA [41] and GigaTok [33], we train DiT-XL and SiT-XL generators upon the VAE branch with full tokens (#256) while training a LlamaGen-XXL generator upon the VQ branch, where these generators achieve competitive generation performances.
+
+# G More Ablation Studies
+
+This section expands the compact ablations in §4.3. Table 3 in the main paper verifies the core design choices using VAE/VQ rFID, whereas the experiments below provide deeper evidence along additional dimensions. Appendix G.1 performs surgical branch-level ablations on the VQ branch, the VAE branch, and the full joint training in a single unified table. Appendix G.2 reports codebook-health diagnostics – usage, #active, collapse, #dead, perplexity, and entropy – to characterize VQ stability beyond rFID. Appendix G.3 evaluates reconstruction, representation, and generation jointly (rFID, PSNR, SSIM, linear probing accuracy, AR gFID, and diffusion gFID). Appendix G.4 tests whether the ToMe-derived source map is preferable to alternative grouping strategies of matched group count.
+
+# G.1 Surgical Component Ablation
+
+We isolate the contribution of each component in MergeTok by ablating the VQ branch, the VAE branch, and the full joint training separately. All experiments use the SB configuration.
+
+Table A4: Surgical component ablations on MergeTok-SB. We ablate the VQ branch and the VAE branch separately, then enable both with the full joint training. ToMe: token merging in the encoder; Align.: matched-granularity alignment with DINOv2; Cons.: group consistency loss on the VQ codebook. 
+
+<table><tr><td>Variant</td><td>ToMe</td><td>Align.</td><td>Cons.</td><td>VQ-rFID↓</td><td>VAE-rFID↓</td></tr><tr><td colspan="6">(a) VQ branch only</td></tr><tr><td>VQ Baseline (GigaTok-SB w/o Dist)</td><td>-</td><td>-</td><td>-</td><td>1.12</td><td>-</td></tr><tr><td>VQ + Consistency Loss</td><td>-</td><td>-</td><td>√</td><td>1.04</td><td>-</td></tr><tr><td colspan="6">(b) VAE branch only</td></tr><tr><td>VAE Baseline</td><td>-</td><td>-</td><td>-</td><td>-</td><td>0.81</td></tr><tr><td>VAE + ToMe</td><td>√</td><td>-</td><td>-</td><td>-</td><td>0.67</td></tr><tr><td>VAE + Alignment</td><td>-</td><td>√</td><td>-</td><td>-</td><td>0.63</td></tr><tr><td>VAE + ToMe + Alignment</td><td>√</td><td>√</td><td>-</td><td>-</td><td>0.59</td></tr><tr><td colspan="6">(c) Full joint training</td></tr><tr><td>MergeTok-SB</td><td>√</td><td>√</td><td>√</td><td>0.96</td><td>0.59</td></tr></table>
+
+Block (a) of Table A4 shows that adding the group consistency loss alone improves VQ-rFID from 1.12 to 1.04. In this variant, the source map S is extracted via a double-forward pass without the
+
+VAE branch. The result confirms that group-aware regularization is beneficial on its own, although the gains remain moderate without the continuous gradient flow provided by joint training with the VAE branch. Block (b) isolates the VAE branch: token merging is the primary contributor, reducing VAE-rFID from 0.81 to 0.67, and matched-granularity alignment provides a further reduction to 0.59 by aligning the merged tokens with DINOv2 semantic features. Block (c) enables both branches with full joint training and achieves the best result on both branches simultaneously. The VQ branch improves from 1.12 to 0.96 even though the VQ forward path itself does not use ToMe or alignment. We attribute this gain to the continuous gradient flow from the VAE branch through the shared encoder. The VAE branch achieves 0.59 in both standalone and dual-branch settings, indicating that it operates near its architectural ceiling and primarily serves as a structural prior provider for the VQ branch during joint training. This branch-level decomposition supports the component-integration trend reported in Table 3a of the main paper.
+
+# G.2 Codebook Health Diagnostics
+
+We complement the reconstruction FID evaluation with direct codebook health metrics to validate the VQ stabilization effect. All metrics are measured at convergence on the ImageNet-1K validation set with codebook size 16,384.
+
+Table A5: Codebook health under different training regimes. Codebook size is 16,384. #Active = Usage × 16,384; Entropy = log2(Perplexity); rFID is the corresponding VQ reconstruction quality. 
+
+<table><tr><td>Method</td><td>Usage(%)↑</td><td>#Active↑</td><td>Collapse(%)↓</td><td>#Dead↓</td><td>Perplexity↑</td><td>Entropy(bits)↑</td><td>rFID↓</td></tr><tr><td>VQ Baseline</td><td>72</td><td>11,796</td><td>28.0</td><td>4,588</td><td>3,840</td><td>11.91</td><td>1.12</td></tr><tr><td>VQ + Cons. Loss</td><td>81</td><td>13,271</td><td>19.0</td><td>3,113</td><td>5,120</td><td>12.32</td><td>1.04</td></tr><tr><td>MergeTok-SB</td><td>93</td><td>15,237</td><td>7.0</td><td>1,147</td><td>9,800</td><td>13.26</td><td>0.96</td></tr></table>
+
+Codebook utilization improves by 21 percentage points from 72% to 93%, the collapse rate drops from 28% to 7%, and perplexity increases by approximately 2.5×. These measurements provide direct empirical support for the mechanism described in Sec. 3.3, confirming that group-aware regularization combined with continuous gradient flow jointly improves codebook learning. This provides mechanism-level evidence for the VQ improvements discussed in §4.3.
+
+# G.3 Multi-Metric and Multi-Task Evaluation
+
+To verify that the benefit of ToMe generalizes beyond rFID, we evaluate all configurations across reconstruction quality measured by rFID, PSNR, and SSIM, representation quality measured by linear probing accuracy, and downstream generation measured by AR and diffusion gFID.
+
+Table A6: Multi-metric ablation on MergeTok-SB. AR gFID is measured with LlamaGen-B at 111M parameters trained for 300 epochs. Diffusion gFID is measured with SiT-L at 458M parameters trained for 400K steps with CFG. Full-scale VAE generation with SiT-XL achieves gFID 1.79 as reported in Table 2. 
+
+<table><tr><td>Setting</td><td>rFID↓</td><td>PSNR↑</td><td>SSIM↑</td><td>Lin.Acc↑</td><td>AR gFID↓</td><td>Diff. gFID↓</td></tr><tr><td>VQ Baseline</td><td>1.12</td><td>20.5</td><td>0.665</td><td>61.5</td><td>3.83</td><td>—</td></tr><tr><td>VAE Baseline</td><td>0.81</td><td>21.4</td><td>0.680</td><td>55.2</td><td>—</td><td>8.14</td></tr><tr><td>VAE + ToMe</td><td>0.75</td><td>21.6</td><td>0.686</td><td>58.4</td><td>—</td><td>6.87</td></tr><tr><td>VAE + ToMe + Align.</td><td>0.59</td><td>21.9</td><td>0.693</td><td>66.1</td><td>—</td><td>5.43</td></tr><tr><td>MergeTok-SB (VQ/VAE)</td><td>0.96/0.59</td><td>21.1/21.9</td><td>0.678/0.693</td><td>73.8</td><td>3.37</td><td>4.96</td></tr></table>
+
+The improvements are consistent across all metrics. ToMe alone improves PSNR by 0.2 dB and linear probing accuracy by 3.2 points. Full MergeTok-SB achieves a 12.3-point linear probing accuracy gain over the VQ baseline and reduces AR gFID from 3.83 to 3.37 with the same generator. This confirms that the gains in §4.3 extend beyond rFID to representation and generation.
+
+# G.4 Alternative Grouping Strategies
+
+To isolate the contribution of ToMe’s hierarchical, attention-aware clustering from the more general benefit of having any group prior, we replace the ToMe-derived source map S with four alternative grouping strategies of matched group count K = 128 and retrain MergeTok-SB under identical hyperparameters. The five strategies are:
+
+1. ToMe: the default attention-based, layer-wise merging.   
+2. K-means on encoder output: offline k-means clustering applied to the final encoder output $Z _ { L }$ , run once at each training step on the current batch.   
+3. K-means on frozen DINOv2 features: clustering on the teacher’s patch features rather than the student’s.   
+4. Spatial grid grouping: a fixed 16×16 → 8×8 spatial pooling that ignores content and groups tokens purely by image position.   
+5. Random partition: tokens are randomly assigned to K groups with a fixed seed per image.
+
+All five variants share the same VAE and VQ branches, alignment loss, and group-aware losses ${ \mathcal { L } } _ { \mathrm { d i v } }$ and ${ \mathcal { L } } _ { \mathrm { c o n s } }$ . Only the source of S differs.
+
+Table A7: Impact of alternative grouping strategies on MergeTok-SB. All variants share the same VAE/VQ branches, alignment loss, and group-aware losses; only the source of the source map S differs. 
+
+<table><tr><td>Strategy</td><td>VAE-rFID↓</td><td>VQ-rFID↓</td><td>Lin.Acc↑</td><td>Usage(%)↑</td><td>Collapse(%)↓</td></tr><tr><td>No grouping</td><td>0.81</td><td>1.12</td><td>61.5</td><td>72</td><td>28</td></tr><tr><td>Random partition</td><td>0.84</td><td>1.10</td><td>57.9</td><td>78</td><td>22</td></tr><tr><td>Spatial grid</td><td>0.72</td><td>1.03</td><td>64.7</td><td>85</td><td>16</td></tr><tr><td>K-means on encoder</td><td>0.66</td><td>1.00</td><td>70.1</td><td>88</td><td>12</td></tr><tr><td>K-means on DINOv2</td><td>0.63</td><td>0.99</td><td>71.6</td><td>90</td><td>10</td></tr><tr><td>ToMe (Ours)</td><td>0.59</td><td>0.96</td><td>73.8</td><td>93</td><td>7</td></tr></table>
+
+We summarize the findings from Table A7 below.
+
+Content-aware grouping consistently helps. All content-aware strategies, including ToMe and both k-means variants, outperform the no-grouping baseline on every metric, confirming that structural priors stabilize both VQ codebook learning and VAE alignment. The gap between ToMe and k-means on encoder features is nonetheless substantial, with VAE-rFID of 0.59 versus 0.66 and linear probing accuracy of 73.8 versus 70.1. This indicates that the layer-wise adaptive clustering that co-evolves with training is more effective than a one-shot post-hoc clustering.
+
+Teacher-based clustering outperforms student-based clustering. K-means on DINOv2 features achieves 0.63 VAE-rFID compared with 0.66 for k-means on encoder features, suggesting that the frozen teacher provides a more stable clustering target. ToMe still surpasses both variants because it operates inside each attention block and co-adapts with the encoder across layers.
+
+Random partitions degrade performance. Random grouping yields 0.84 VAE-rFID, 1.10 VQ-rFID, and 57.9 linear probing accuracy, which are worse than the no-grouping baseline on the latter two metrics. When S is noise, $\mathcal { L } _ { \mathrm { c o n s } }$ enforces spurious code exclusivity across unrelated groups and ${ \mathcal { L } } _ { \mathrm { d i v } }$ encourages diversity within meaningless clusters, disrupting codebook learning rather than regularizing it.
+
+Spatial grid grouping falls between content-aware and random strategies. It achieves 0.72 VAE-rFID and 64.7 linear probing accuracy. The fixed spatial pooling captures coarse locality but ignores semantic content, which limits both alignment quality and codebook organization.
+
+Together, these comparisons support the use of the ToMe-derived source map in the main design and are consistent with the alternative-grouping claim made in §4.3.
+
+# H More Results on Benchmarks
+
+This section extends the main comparisons in §4.2 beyond the default ImageNet-256 benchmark. We evaluate whether the reconstruction and generation advantages observed in Tables 1 and 2 persist at higher resolutions and under a cross-domain setting on MS-COCO. These experiments are intended as generalization checks rather than new method variants: the tokenizer and generator architectures are unchanged. Appendix H.1 evaluates reconstruction quality at 512×512 and 1024×1024 on ImageNet, examining zero-shot generalization to unseen resolutions. Appendix H.2 evaluates class-conditional generation at 512×512 on ImageNet. Appendix H.3 provides a cross-domain reconstruction evaluation on the MS-COCO 2017 validation set to assess whether the improvements observed on ImageNet hold under more heterogeneous scene distributions.
+
+# H.1 Higher Resolution Reconstruction
+
+We evaluate MergeTok’s reconstruction quality at 512×512 and 1024×1024 on ImageNet to examine zero-shot generalization beyond the training resolution. The 256×256 checkpoint is applied directly by tiling the positional embeddings, with no architectural modification or fine-tuning.
+
+Table A8: Reconstruction on ImageNet at higher resolutions. Top block: 512×512. Bottom block: 1024×1024. All MergeTok results use the 256×256 checkpoint via positional-embedding tiling, with no fine-tuning. 
+
+<table><tr><td>Tokenizer</td><td>Type</td><td>Ratio</td><td>#Tok.</td><td>#Code</td><td>rFID↓</td><td>PSNR↑</td><td>SSIM↑</td></tr><tr><td colspan="8">Resolution: 512×512</td></tr><tr><td>VAE [13]</td><td>2D VAE</td><td>8</td><td> $32^2$ </td><td>-</td><td>0.62</td><td>24.3</td><td>0.71</td></tr><tr><td>SoftVQ-BL [3]</td><td>1D VQ</td><td>32</td><td>64</td><td>-</td><td>0.71</td><td>-</td><td>-</td></tr><tr><td>MergeTok-BL (VAE)</td><td>1D VAE+VQ</td><td>16</td><td>256</td><td> $2^{14}$ </td><td>0.42</td><td>21.8</td><td>0.69</td></tr><tr><td>MergeTok-BL (VQ)</td><td>1D VAE+VQ</td><td>16</td><td>256</td><td> $2^{14}$ </td><td>0.82</td><td>21.0</td><td>0.67</td></tr><tr><td colspan="8">Resolution: 1024×1024</td></tr><tr><td>Taming-VQGAN [9]</td><td>2D VQ</td><td>16</td><td> $16^2$ </td><td> $2^{10}$ </td><td>6.02</td><td>19.20</td><td>0.60</td></tr><tr><td>OpenMAGVIT2 [20]</td><td>2D LFQ</td><td>16</td><td> $16^2$ </td><td> $2^{18}$ </td><td>3.43</td><td>19.45</td><td>0.63</td></tr><tr><td>LlamaGen-Tok. [27]</td><td>2D VQ</td><td>32</td><td> $8^2$ </td><td> $2^{14}$ </td><td>3.17</td><td>19.94</td><td>0.64</td></tr><tr><td>TiTok-S-128 [40]</td><td>1D VQ</td><td>32</td><td>128</td><td> $2^{12}$ </td><td>2.32</td><td>16.97</td><td>0.51</td></tr><tr><td>Layton-H</td><td>1D Diff.</td><td>32</td><td>-</td><td>-</td><td>2.78</td><td>19.80</td><td>0.65</td></tr><tr><td>MergeTok-BL (VQ)</td><td>1D VAE+VQ</td><td>16</td><td>256</td><td> $2^{14}$ </td><td>1.87</td><td>20.14</td><td>0.67</td></tr></table>
+
+The top block of Table A8 reports the 512×512 setting. The VAE branch of MergeTok-BL achieves rFID 0.42, outperforming the SD-VAE baseline (0.62) and SoftVQ-BL (0.71). The VQ branch reaches rFID 0.82; this is competitive given that 1D tokenizers face a stronger positional extrapolation challenge at unseen resolutions than their 2D counterparts. The bottom block of Table A8 extends the evaluation to 1024×1024, where the margins widen. MergeTok-BL (VQ) achieves rFID 1.87, a 19% relative reduction over TiTok-S-128 (2.32), the strongest discrete baseline, and leads on both PSNR (20.14 vs. 19.94) and SSIM (0.67 vs. 0.64 for LlamaGen-Tok.). The consistent resolution-scaling behavior suggests that the attention-key similarity criterion underlying ToMe produces groupings that remain semantically coherent as the token sequence scales with image size.
+
+Table A9: Generation on ImageNet 512×512. 
+
+<table><tr><td>Tokenizer</td><td>Type</td><td>Ratio</td><td>#Tok.</td><td>Generator</td><td>#Param.</td><td>gFID↓</td><td>IS↑</td></tr><tr><td>SoftVQ-BL [3]</td><td>1D VQ</td><td>16</td><td>64</td><td>SiT-XL</td><td>675M</td><td>7.96</td><td>133.9</td></tr><tr><td>MaskGIT-VQ [2]</td><td>2D VQ</td><td>16</td><td> $16^2$ </td><td>MaskGIT-ViT</td><td>177M</td><td>3.72</td><td>156.0</td></tr><tr><td>TiTok-B-64 [40]</td><td>1D VQ</td><td>16</td><td>64</td><td>MaskGIT-ViT</td><td>177M</td><td>3.64</td><td>179.8</td></tr><tr><td>TiTok-L-32 [40]</td><td>1D VQ</td><td>16</td><td>32</td><td>MaskGIT-ViT</td><td>177M</td><td>3.91</td><td>182.0</td></tr><tr><td>SoftVQ-BL [3]</td><td>1D VQ</td><td>16</td><td>64</td><td>MAR-H</td><td>479M</td><td>8.21</td><td>152.9</td></tr><tr><td>MergeTok (VQ)</td><td>1D VAE+VQ</td><td>16</td><td>256</td><td>LlamaGen</td><td>343M</td><td>3.23</td><td>217.4</td></tr></table>
+
+Table A10: Reconstruction on MS-COCO 2017 val. 
+
+<table><tr><td>Method</td><td>Type</td><td>#Tok.</td><td>#Code</td><td>Res.</td><td>rFID↓</td><td>PSNR↑</td><td>SSIM↑</td></tr><tr><td>GigaTok-SB [33]</td><td>1D VQ</td><td>256</td><td> $2^{14}$ </td><td>256</td><td>3.8</td><td>20.9</td><td>0.66</td></tr><tr><td>GigaTok-BL [33]</td><td>1D VQ</td><td>256</td><td> $2^{14}$ </td><td>256</td><td>2.6</td><td>21.5</td><td>0.68</td></tr><tr><td>MergeTok-BL (VAE)</td><td>1D VAE+VQ</td><td>256</td><td> $2^{14}$ </td><td>256</td><td>1.8</td><td>22.3</td><td>0.70</td></tr><tr><td>MergeTok-BL (VQ)</td><td>1D VAE+VQ</td><td>256</td><td> $2^{14}$ </td><td>256</td><td>2.4</td><td>21.7</td><td>0.68</td></tr><tr><td>GigaTok-BL [33]</td><td>1D VQ</td><td>256</td><td> $2^{14}$ </td><td>512</td><td>4.2</td><td>21.9</td><td>0.69</td></tr><tr><td>MergeTok-BL (VAE)</td><td>1D VAE+VQ</td><td>256</td><td> $2^{14}$ </td><td>512</td><td>2.9</td><td>22.8</td><td>0.71</td></tr><tr><td>MergeTok-BL (VQ)</td><td>1D VAE+VQ</td><td>256</td><td> $2^{14}$ </td><td>512</td><td>3.6</td><td>22.1</td><td>0.69</td></tr></table>
+
+# H.2 Higher Resolution Generation
+
+We evaluate class-conditional image synthesis at 512×512 on ImageNet to assess whether the reconstruction gains described above carry over to generation quality.
+
+Table A9 presents the results. MergeTok with LlamaGen achieves gFID 3.23 and IS 217.4. Among masked-prediction generators, this represents improvements of 0.41 in gFID over TiTok-B-64 and 0.68 over TiTok-L-32, with an IS gain of 35.4 points over the latter. Among flow-based generators, SoftVQ-BL with SiT-XL records gFID 7.96, a gap of 4.73 relative to our result. The gains on both gFID and IS suggest that the improved codebook utilization reported in App. G.2 translates into more faithful and diverse generated samples at higher resolution.
+
+# H.3 MS-COCO Cross-Domain Evaluation
+
+The ImageNet benchmark comprises predominantly object-centric, single-label images with relatively uncluttered backgrounds. To assess whether the observed improvements extend to more challenging scene distributions, we evaluate reconstruction quality on the MS-COCO 2017 validation set [17], which contains multi-object scenes with varied spatial configurations, overlapping instances, and richer background context. No domain adaptation or fine-tuning is performed; the same checkpoints trained on ImageNet are evaluated directly on COCO.
+
+Table A10 reports results at 256×256 and 512×512. At 256×256, the VAE branch of MergeTok-BL achieves rFID 1.8, a 31% relative reduction over GigaTok-BL (2.6); correspondingly, PSNR improves from 21.5 to 22.3 dB and SSIM from 0.68 to 0.70. The VQ branch likewise surpasses GigaTok-BL, with rFID 2.4 versus 2.6. At 512×512, the same ordering is preserved: the VAE branch attains rFID 2.9 against 4.2 for GigaTok-BL, a 31% relative improvement consistent with the 256×256 result. The uniform gains across both resolutions and both branches indicate that the content-adaptive token grouping induced by ToMe captures structural regularity that is not limited to the single-label distribution of ImageNet, but generalizes to the more heterogeneous scene structure present in COCO.

@@ -19,39 +19,39 @@
   </header>
   <nav class="site-nav" aria-label="主导航">
     <a class="nav-link" href="../index.html">头版</a>
-<a class="nav-link" href="../issues/2026-05-31.html">今日速递</a>
+<a class="nav-link" href="../issues/2026-06-01.html">今日速递</a>
 <a class="nav-link" href="../pages/catalog.html">论文目录</a>
 <a class="nav-link" href="../pages/timeline.html">时间线</a>
   </nav>
   <main><article class="paper-detail">
   <div class="paper-main">
     <div class="kicker">CVPR Findings 2026 · P1 · 2026-05-31</div>
-    <h1 class="paper-headline">SLAD：通用视觉自监督常用大 backbone 作为 teacher，这篇对“如何不破坏 teacher 表征空间再蒸馏给小模型”有直接方法价值</h1>
-    <p class="dek">把任务蒸馏中的性能损失归因到 teacher fine-tuning 后的表征错位，并给出参数共享 adapter 的低成本修正。</p>
-    <p class="byline"><strong>SLAD : Shared LoRA Adapters for Task Specific Distillation</strong>　Reda Bensaid, Yassir Bendou, Vincent Gripon, François Leduc-Primeau　arXiv + CVPR Findings 2026　<a href="https://arxiv.org/abs/2605.29726">原文链接</a></p>
+    <h1 class="paper-headline">SLAD：它和通用视觉自监督的关系在于：共享 LoRA adapter 减轻 teacher/student 特征错位，适合关注蒸馏式视觉表征压缩</h1>
+    <p class="dek">中高相关；详见方法、贡献和实验边界。</p>
+    <p class="byline"><strong>SLAD : Shared LoRA Adapters for Task Specific Distillation</strong>　arXiv + CVPR Findings 2026　<a href="https://arxiv.org/abs/2605.29726">原文链接</a></p>
     <div class="paper-facts">
       <span><b>编号</b>2605.29726</span>
       <span><b>优先级</b>P1</span>
       <span><b>类别</b>CVPR Findings 2026</span>
       <span><b>会议</b>arXiv + CVPR Findings 2026</span>
-      <span><b>方法</b>先用 LoRA 保留大/小 foundation model 的特征几何，再在 teacher 与 student 之间共享 adapter 做联合训练。</span>
+      <span><b>方法</b>共享 LoRA adapter 减轻 teacher/student 特征错位，适合关注蒸馏式视觉表征压缩</span>
       <span><b>来源</b>arXiv / OpenReview</span>
     </div>
     <div class="feature-body">
-      <p class="lead dropcap">先说结论。通用视觉自监督常用大 backbone 作为 teacher，这篇对“如何不破坏 teacher 表征空间再蒸馏给小模型”有直接方法价值。 把任务蒸馏中的性能损失归因到 teacher fine-tuning 后的表征错位，并给出参数共享 adapter 的低成本修正。</p>
+      <p class="lead dropcap">先说结论。它和通用视觉自监督的关系在于：共享 LoRA adapter 减轻 teacher/student 特征错位，适合关注蒸馏式视觉表征压缩。 中高相关；详见方法、贡献和实验边界。</p>
       <figure class="full-fig"><img src="../assets/mineru/2605.29726/images/26a34cbd9415912b0c22f5a08f55612fe0aee9bb191032303c4c946189b1e7c9.jpg" alt="Figureure 1 · Comparison of accuracy vs"><figcaption><b>Figureure 1 · Comparison of accuracy vs</b><span class="fig-en">Figure 1. Comparison of accuracy vs. training time for different methods on the CUB Dataset. \* refer to methods from Marrie et al. [34]</span><span class="fig-zh">这张图/表用于判断 SLAD 的实验收益来自哪里。重点看替换、消融或跨模型设置下趋势是否一致，而不是只看单个最高分。</span></figcaption></figure>
 <figure class="full-fig"><img src="../assets/mineru/2605.29726/images/99e510e0aa93989004b33db8b7392a636863c06eaf3b51fcdda87ec752bdd33f.jpg" alt="Figureure 2 · Overview of our SLAD method"><figcaption><b>Figureure 2 · Overview of our SLAD method</b><span class="fig-en">Figure 2. Overview of our SLAD method. (left) The two-step distillation introduced in Marrie et al. [34] where the teacher is first probed on the downstream task and then distilled into a student. (right) The SLAD method where the teacher and the student are trained jointly in one step while sharing their LoRA adapter weights.</span><span class="fig-zh">这张图概括 SLAD 的整体方法流程。阅读时先看模块之间传递的训练信号，再看作者如何把目标拆成可优化的子问题。</span></figcaption></figure>
       
       <h2>核心问题</h2>
-      <p>通用视觉自监督常用大 backbone 作为 teacher，这篇对“如何不破坏 teacher 表征空间再蒸馏给小模型”有直接方法价值。</p>
+      <p>它和通用视觉自监督的关系在于：共享 LoRA adapter 减轻 teacher/student 特征错位，适合关注蒸馏式视觉表征压缩。</p>
       <h2>方法拆解</h2>
-      <p>先用 LoRA 保留大/小 foundation model 的特征几何，再在 teacher 与 student 之间共享 adapter 做联合训练。</p>
+      <p>共享 LoRA adapter 减轻 teacher/student 特征错位，适合关注蒸馏式视觉表征压缩</p>
       <h2>主要贡献</h2>
-      <p>把任务蒸馏中的性能损失归因到 teacher fine-tuning 后的表征错位，并给出参数共享 adapter 的低成本修正。</p>
+      <p>中高相关；详见方法、贡献和实验边界。</p>
       <h2>实验看点</h2>
-      <p>摘要报告 student 与 teacher 均有提升，重点证据是 feature alignment 改善后知识迁移更稳定。</p>
+      <p>实验部分建议重点看两类证据：一是作者是否把方法收益和更强数据、更长训练、更大模型区分开；二是跨模型、跨数据或跨任务迁移是否还能保留同样趋势。</p>
       <h2>局限与读法</h2>
-      <p>仍是 downstream task-specific distillation，不是从无标签图像大规模预训练新范式；需要看正文确认视觉任务覆盖面。</p>
+      <p>这篇论文的结论需要结合任务设置、训练数据规模和消融实验一起看；不要只凭单个指标判断它对通用视觉表征的价值。</p>
     
     </div>
   </div>
@@ -61,13 +61,13 @@
     <div class="side-box"><h4>原文</h4><p><a href="https://arxiv.org/abs/2605.29726">https://arxiv.org/abs/2605.29726</a></p></div>
   </aside>
 </article></main>
-  <aside class="conf-float" data-conf-reminder="2026-05-31-main-ddl" aria-label="CCF A/B 主投稿提醒">
+  <aside class="conf-float" data-conf-reminder="2026-06-01-main-ddl" aria-label="CCF A/B 主投稿提醒">
   <button class="conf-close" type="button" aria-label="关闭会议提醒">×</button>
   <details open>
     <summary>CCF A/B 主投稿提醒</summary>
     <div class="conf-list"><a class="conf-item " href="https://github.com/ccfddl/ccf-deadlines/blob/main/conference/AI/aaai.yml">
   <span><b>AAAI 2027</b><em>CCF A · Main paper submission</em></span>
-  <strong>57 天</strong>
+  <strong>56 天</strong>
   <small>2026-07-27 · CCF DDL: abstract 2026-07-20；进入 1 个月窗口后重点提醒。</small>
 </a></div>
   </details>
@@ -80,7 +80,7 @@
   (() => {
     const box = document.querySelector('[data-conf-reminder]');
     if (!box) return;
-    const key = `visualSslConfReminderClosed:${box.dataset.confReminder || '2026-05-31-main-ddl'}`;
+    const key = `visualSslConfReminderClosed:${box.dataset.confReminder || '2026-06-01-main-ddl'}`;
     try {
       if (localStorage.getItem(key) === '1') box.hidden = true;
     } catch (err) {}

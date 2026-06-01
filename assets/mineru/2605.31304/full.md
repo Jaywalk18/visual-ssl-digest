@@ -1,0 +1,1112 @@
+# Interpretability Without Tradeoffs: Disentangling Polysemanticity at Equal Predictive Performance
+
+Dogukan Ba ˘ gcı ˘ 1 Bernt Schiele 1 Simone Schaub-Meyer 2 3 Jonas Fischer 1 Robin Hesse 1
+
+1Max Planck Institute for Informatics, SIC
+
+2 Department of Computer Science, TU Darmstadt 3hessian.AI
+
+![](images/b34ccd3d3ac44a05110cebc55ff6848be56797202638a341cf1751b6c01b5b3a.jpg)
+
+<details>
+<summary>flowchart</summary>
+
+```mermaid
+graph TD
+    A["Input Layer L-1"] --> B["Disentangled units"]
+    C["Input Layer L+1"] --> D["Original unit"]
+    B --> E["ELUDe"]
+    D --> E
+    style B fill:#ffcccc,stroke:#333
+    style D fill:#ffcccc,stroke:#333
+    style E fill:#ffffff,stroke:#333
+```
+</details>
+
+![](images/0d963490b76b843d27827eed49154aca46261e37f8792e9deb9e012dfd49d30d.jpg)
+
+<details>
+<summary>text_image</summary>
+
+Disentangled units
+Original unit
+</details>
+
+Figure 1: ELUDe for interpretable disentanglement. ELUDe decomposes a polysemantic unit at layer L into more monosemantic sub-units by restructuring incoming weights so that each sub-unit captures only a specific semantic concept. The sum of all sub-units exactly recovers the original unit activation, ensuring perfect faithfulness. On the right, we provide a concrete example of this process by showing highly activating images for an actual neuron from the last layer of a DINOv2 model alongside its disentangled ELUDe sub-units. While the original neuron reacts to multiple semantically unrelated images, the disentangled units are more coherent and interpretable.
+
+# Abstract
+
+Deep neural networks (DNNs) are widely used, but interpreting what they actually learn remains difficult. A major obstacle is that individual neurons often encode multiple unrelated concepts, obscuring the decision process of the network. While prior work, such as sparse autoencoders, can separate these mixed signals into more meaningful, “monosemantic” features, this typically requires altering the model in ways that can degrade downstream performance. To overcome this, we introduce ELUDe (explicit, lossless, unsupervised disentanglement), a method for improving the interpretability of DNNs while preserving their functional equivalence. ELUDe breaks latent representations into clear, inspectable sub-units that behave like interpretable features, while guaranteeing that the model’s outputs remain exactly the same. It requires no explicit training, no labels, and can be applied to pretrained models. ELUDe works by reorganizing how information flows between layers, rerouting concept-specific contributions while preserving the original computation by construction. Across several vision models, including DINOv2 and supervised ViT-B/16, ELUDe improves interpretability, keeps downstream accuracy unchanged, runs efficiently, and supports practical uses such as steering model representations. In short, ELUDe offers interpretability (almost) without a tradeoff: clearer, scalable, and actionable model insights with no loss in performance.
+
+# 1 Introduction
+
+Large-scale machine learning models have achieved remarkable performance across a wide range of domains, from language [9] over vision [46] to scientific modeling [34]. Despite their success, these models remain difficult to understand and control, posing significant challenges for their deployment in safety-critical applications [5]. Issues such as hallucinations [33, 38], unsafe outputs [67, 76], and failures under distribution shift [27, 30] highlight the need for methods that provide insight into model internals and enable reliable intervention [3, 58].
+
+A central goal in this context is interpretability: understanding how models represent and process information. However, neural networks are complex systems, in which individual units (e.g., neurons or channels) do not correspond cleanly to human-interpretable concepts. Instead, they often exhibit polysemanticity, responding to multiple unrelated concepts [19]. This entanglement obscures the internal structure of representations and makes it difficult to attribute model behavior to specific components.
+
+![](images/57b9b4016b02c1d4acf51aded99d372575d85335cefc26c5a8077880648f8708.jpg)
+
+<details>
+<summary>line</summary>
+
+| Method          | Interpretability (↑) | Faithfulness (↑) |
+| --------------- | --------------------- | ------------------ |
+| DINOv2-B        | 0.35                  | 1.0                |
+| ESUD           | 0.65                  | 1.0                |
+| existing Pareto front | 0.45              | 0.9                |
+| MpSAE           | 0.50                  | 0.9                |
+| BatchTopK       | 0.55                  | 0.85               |
+| MSAE            | 0.45                  | 0.9                |
+| ASAE            | 0.45                  | 0.85               |
+</details>
+
+Figure 2: Interpretability-faithfulness tradeoff. We compare faithfulness and interpretability across disentanglement methods; marker size indicates the expansion factor. Existing approaches exhibit a clear Pareto front, where higher faithfulness typically comes at the cost of lower interpretability. In contrast, ELUDe improves interpretability without sacrificing faithfulness, substantially advancing the Pareto front. See Section 4.1 for experimental details and clearer descriptions of the metrics.
+
+To overcome this limitation, recent work has explored disentangling internal representations into more interpretable components, aiming for monosemanticity, where individual units correspond to distinct semantic concepts. In particular, approaches that construct new, interpretable units – such as sparse autoencoders (SAEs) [8, 32] and transcoders [18] – learn decompositions of activations into components that can be directly inspected and manipulated. However, existing approaches that construct explicit, interpretable units face a practical tradeoff between interpretability and faithfulness, as visualized in Figure 2. As they rely on learned decompositions, they introduce an approximation error, resulting in lossy representations that do not exactly preserve the original model’s behavior, limiting their applicability [24]. In contrast, approaches that preserve functional faithfulness typically either do not yield explicit disentanglements that support fine-grained manipulation [17, 45], or require supervised training [29], limiting their scalability.
+
+Contributions. In this work, we introduce ELUDe, a method that resolves this tradeoff by achieving an explicit, lossless, and unsupervised disentanglement – corresponding to interpretable and directly manipulable units (explicit), exact preservation of the original model’s behavior (lossless), and scalability without additional training or annotations (unsupervised). Our method identifies monosemantic components within polysemantic units by uncovering structure in previous-layer attributions and restructuring model connections to isolate these components into independent, function-preserving subunits (cf. Figure 1). Crucially, ELUDe introduces no approximation error: the disentangled model output is provably equivalent to the original. Hence, ELUDe can be applied without affecting model behavior, effectively providing improved interpretability without a tradeoff – in the sense that no downstream predictive performance is lost.
+
+We empirically demonstrate that our disentanglement is exactly faithful, preserving the original model function and producing identical outputs (up to numerical precision). At the same time, it achieves competitive interpretability scores for the disentangled subunits. We further evaluate our approach across multiple downstream tasks and show that its explicit and lossless nature enables fine-grained interventions, illustrated through feature steering in LLaVA-OneVision [36].
+
+# 2 Related Work
+
+Interpretability is a central concern for modern machine learning models, whose opaque nature can mask brittle behavior, biases, and failure modes. Existing interpretability approaches broadly split into two categories: inherently explainable models and post-hoc methods. The former methods consider interpretability already in the design process of the model [e.g., 4, 13, 35, 51, 69, 72, 75], improving transparency at the cost of architectural freedom and, often, reduced predictive performance [4, 40, 51]. Post-hoc methods instead aim to explain an existing model. Among the most popular approaches are attribution techniques [1, 7, 28, 31, 57, 59, 61] that highlight input regions or features most relevant for a particular output, and feature-visualization approaches [21, 25, 43, 73] that synthesize inputs that maximize a unit’s activation. While these methods excel at highlighting which features drive model activations, they rarely explain the model’s internal computation.
+
+Table 1: Properties of existing disentanglement approaches. We compare ELUDe (shaded) against representative SAE variants and prior disentanglement methods across five properties: stable (gives the same disentanglement on repeated runs), training-free (no additional parameters are trained), explicit (subunits can be inspected and modified directly, rather than only analyzed), lossless (the disentangled model produces exactly the same outputs as the original), and unsupervised (no class labels needed). ELUDe is the only method that satisfies all five. 
+
+<table><tr><td>Method</td><td>Stable</td><td>Training-free</td><td>Explicit</td><td>Lossless</td><td>Unsupervised</td></tr><tr><td>Vanilla SAE [8]</td><td>✕</td><td>✕</td><td>√</td><td>✕</td><td>√</td></tr><tr><td>TopK SAE [39]</td><td>✕</td><td>✕</td><td>√</td><td>✕</td><td>√</td></tr><tr><td>Archetypal SAE [22]</td><td>√</td><td>✕</td><td>√</td><td>✕</td><td>√</td></tr><tr><td>Matryoshka SAE [11]</td><td>✕</td><td>✕</td><td>√</td><td>✕</td><td>√</td></tr><tr><td>DNRwCV [45]</td><td>√</td><td>√</td><td>✕</td><td>√</td><td>√</td></tr><tr><td>PURE [17]</td><td>√</td><td>√</td><td>✕</td><td>√</td><td>√</td></tr><tr><td>DPCiCNN [29]</td><td>√</td><td>√</td><td>√</td><td>√</td><td>✕</td></tr><tr><td>ELUDe (ours)</td><td>√</td><td>√</td><td>√</td><td>√</td><td>√</td></tr></table>
+
+To account for this lack of deeper model understanding, mechanistic interpretability [3, 23, 41, 48, 50, 52, 58] stands out by aiming to reverse-engineer the internal computations of neural networks. By exposing the units, directions, and circuits that carry meaningful computation, it promises a level of understanding that even supports targeted intervention. For example, in steering [47, 64, 66, 71] internal activations are modified along identified concept directions to predictably shift model behavior at inference time, enabling fine-grained control over outputs without retraining. A central challenge in mechanistic interpretability is polysemanticity [19, 32, 44, 56]: individual units of modern neural networks frequently respond to multiple, semantically unrelated concepts rather than to a single coherent concept. This entanglement, often attributed to the superposition of more concepts than the layer has dimensions to allocate [19], makes it difficult to attribute, explain, or steer model behavior at the level of individual units.
+
+A growing body of work thus attempts to address polysemanticity by decomposing internal activations into more interpretable components. Sparse autoencoders (SAEs) [8, 10, 11, 14, 22, 32, 39, 53] train an overcomplete autoencoder to reconstruct activations as sparse combinations of learned features, and transcoders [18] extend this idea to mappings between layers. Both produce an explicit disentanglement and are unsupervised but introduce a learned approximation that does not exactly preserve the original model’s behavior. DNRwCV [45] and its successor PURE [17] instead disentangle polysemantic units virtually: DNRwCV by finding concept-aligned directions in the activation space and PURE by clustering input-side circuits. While both keep the model unchanged, they only yield “theoretical” decompositions rather than explicit ones; hence, many applications such as feature-visualization and steering cannot be applied directly on the disentangled representations. Finally, DPCiCNN [29] restructures the parameters of convolutional channels to produce explicit, function-preserving subunits, but requires supervision, introduces an uninterpretable residual neuron, and has so far been demonstrated only on convolutional architectures. Table 1 summarizes these approaches across the axes of being stable, training-free, explicit, lossless, and unsupervised.
+
+To conclude, existing SAE-based approaches enable explicit and scalable unsupervised disentanglement, but incur information loss. In contrast, lossless disentanglement methods either lack explicit disentanglement or do not scale to large vision foundation models, as they depend on supervision. Our method bridges this gap by providing an explicit, lossless, and unsupervised disentanglement.
+
+# 3 ELUDe: Explicit Lossless Unsupervised Disentanglement
+
+Given a probing dataset of N images $\mathcal { D } = \{ \mathbf { x } ^ { ( i ) } \} _ { i = 1 } ^ { N }$ without annotations, a pre-trained vision backbone $f ( \cdot )$ , and a layer of interest L, our goal is to improve interpretability by disentangling polysemantic activation units $a _ { u } \ : \left( e . g . \right.$ , channels or neurons) into multiple, more monosemantic units, as previewed in Figure 3. Crucially, this is achieved without altering the overall function of f (·).
+
+![](images/4ad3c46b55d8b1f554627224557009d65c4e7b2ede069ebf7bd67b09b9456f22.jpg)
+
+<details>
+<summary>natural_image</summary>
+
+Grid of 16 unrelated natural and urban photos including wildflowers, cars, birds, and nature scenes (no text or symbols)
+</details>
+
+Original Neuron 31
+
+![](images/b16fc61288b0af9e9768040729e56b93dda9b57df447099eb298a1e60a60f68d.jpg)  
+Artichokes
+
+![](images/2343a37450ab38a1c9c5d87af5ca2012ec4d841fe1763df7a2b72ef55a5fb73e.jpg)  
+Dogs
+
+![](images/251bcf10b9beb12a3502739e3fae327c38eccbf048f9385b2ee40a8ec5a7e6f0.jpg)  
+Dogs
+
+![](images/0868b7f827a50e96e5ff869b72c3098a8e199061f44fa9088a876a9066c9a889.jpg)  
+Fur coats
+
+![](images/ca025694910a2ac593e152fe0d4e5a290bc62d5fd6dee954f5ba27e2d053003e.jpg)  
+Marine animals
+
+![](images/1d090e0ddd059e840c4c61e413f9e8b63320b1828f832e2c8bc40176ea5b61ed.jpg)  
+Sand
+
+![](images/fe22e1a8c4b9d2144e5738437bd9a42453c6d131debf5bb1c9bde41b870be108.jpg)  
+Bookshelves
+
+![](images/d3620ae9691d995c6b0e7e3d16bbb53e265ae2e295182ced73af1e0f0954bd2d.jpg)  
+Dogs on bed   
+Figure 3: Qualitative examples. Top-activating images from the ImageNet-1k validation split for a polysemantic parent unit from the last layer of DINOv2-B/14 (yellow frame, left; top-16) and the 8 ELUDe subunits it decomposes into (pink frames, right; top-4 each). Labels are annotated by hand. Please refer to Section D for additional qualitative examples.
+
+Our method decomposes a potentially polysemantic unit into a set of more interpretable subunits whose weights form an additive partition of the original unit, ensuring that their aggregated activation is exactly equal to the original (cf. Figure 1). By leveraging contribution structure in the preceding layer, we first identify inputs that strongly activate the unit to characterize its behavior. We then analyze the corresponding contribution patterns in layer L−1 to uncover distinct groups of upstream units associated with different concepts. Using this structure, we disentangle the original unit into multiple subunits, each selectively connected to a concept-specific group of upstream units. Finally, we merge these subunits such that their aggregation exactly reconstructs the original unit’s activation, preserving the model’s function by construction.
+
+More specifically, our method consists of four steps, which are illustrated in Figure 4: (i) collecting the top-k activation instances $\mathcal { D } _ { u }$ from D for unit $a _ { u }$ that expose the concepts driving its activation (Section 3.1); (ii) clustering contribution patterns in layer $\bar { L } { - } 1$ to identify distinct concepts (Section 3.2); (iii) restructuring the weights between layers $L - 1$ and L to produce a new layer $L ^ { * }$ in which $a _ { u }$ is replaced by a set of subunits, each primarily connected to a concept-specific group of upstream units (Section 3.3); and (iv) merging the subunits to recover the original unit $a _ { u }$ (Section 3.4).
+
+# 3.1 Collection of the top-k activation instances
+
+We first collect the top-k activation instances from a probing dataset D that activate a unit of interest $a _ { u }$ in layer L most strongly, as illustrated in Figure 4 (1). This yields a set $\mathcal { D } _ { u }$ capturing the concepts for which $a _ { u }$ fires. The choice of the probing dataset D is task- and user-specific and defines the potential concepts that can be extracted; a common choice in related work [17, 45] is, e.g., the ImageNet-1k dataset [55]. Depending on the architecture, a single image can give rise to multiple activation instances. In CNNs, each spatial location in a feature map corresponds to a different receptive field, while in Vision Transformers (ViTs), each token (including patch tokens and the [CLS] token) represents a different part or summary of the image. Rather than aggregating these into a single activation per image, we treat each such spatial location or token as a separate activation instance.
+
+To simplify notation, we index all activation instances across the dataset by a single index $\ell \in$ $\{ 1 , \ldots , { \bar { M } } \}$ , where each ℓ corresponds to a specific pair $( i , p )$ of image index i and spatial location or token index $p ;$ M is the total number of activation instances across the dataset. Let $\mathbf { a } ^ { ( \ell ) } \in \mathbb { R } ^ { d _ { L } }$ denote the corresponding activation vector at target layer L, and let $a _ { u } ^ { ( \ell ) }$ be the activation of unit u for that instance. We then select the top-k activation instances:
+
+$$
+\mathcal {D} _ {u} = \left\{\ell \mid a _ {u} ^ {(\ell)} \in \operatorname{TopK} \left(\left\{a _ {u} ^ {(\ell^ {\prime})} \right\} _ {\ell^ {\prime}}, k\right) \right\}. \tag {1}
+$$
+
+Each $\ell \in \mathcal { D } _ { u }$ is associated with an underlying image $\mathbf { x } ^ { ( i ) }$ , which provides semantic context. If a unit is polysemantic, different concepts will appear in the image regions that activate it most strongly.
+
+(1) Collection of the top-k activation instances for unit u.   
+![](images/d82ddc356bc209c7323d8055f06df293e9880f71f302823fdc14a57a3c435c28.jpg)
+
+<details>
+<summary>flowchart</summary>
+
+```mermaid
+graph LR
+    A["x^(i) ∈ D"] --> B["f^(L)"]
+    B --> C["a_u^(ℓ)"]
+    C --> D["ℓ ∈ D_u"]
+    style A fill:#f9f,stroke:#333
+    style B fill:#ccf,stroke:#333
+    style C fill:#cfc,stroke:#333
+    style D fill:#fcc,stroke:#333
+```
+</details>
+
+(2) Unsupervised clustering of the contribution patterns.   
+![](images/1a7625268837f0e2ec8e2164fd602cee36672ed54a5f0b84c2cd6a13b68f706b.jpg)
+
+<details>
+<summary>flowchart</summary>
+
+```mermaid
+graph LR
+    A["Top-activation instances ℓ ∈ D_u"] --> B["Contributions c^(ℓ)"]
+    B --> C["Cluster representatives"]
+    subgraph Cluster Representatives
+        D["Q(ℓ) → c(ℓ) → a_u(ℓ)"] --> E["..."]
+        F["L-1"] --> G["L"]
+        H["L"] --> I["L"]
+        J["..."] --> K["..."]
+        L["..."] --> M["..."]
+        N["..."] --> O["..."]
+        P["..."] --> Q["..."]
+        R["..."] --> S["..."]
+        T["..."] --> U["..."]
+        V["..."] --> W["..."]
+        X["..."] --> Y["..."]
+        Z["..."] --> AA["..."]
+        AB["..."] --> AC["..."]
+        AD["..."] --> AE["..."]
+        AF["..."] --> AG["..."]
+        AH["..."] --> AI["..."]
+        AJ["..."] --> AK["..."]
+        AL["..."] --> AM["..."]
+        AN["..."] --> AO["..."]
+        AP["..."] --> AQ["..."]
+        AR["..."] --> AS["..."]
+        AT["..."] --> AU["..."]
+        AV["..."] --> AW["..."]
+        AX["..."] --> AY["..."]
+        AZ["..."] --> BA["..."]
+        BB["..."] --> BC["..."]
+        BD["..."] --> BE["..."]
+        BF["..."] --> BG["..."]
+        BH["..."] --> BI["..."]
+        BJ["..."] --> BK["..."]
+        BL["..."] --> BM["..."]
+        BN["..."] --> BO["..."]
+        BP["..."] --> BQ["..."]
+        BR["..."] --> BS["..."]
+        BT["..."] --> BU["..."]
+        BV["..."] --> BW["..."]
+        BX["..."] --> BY["..."]
+        BZ["..."] --> CA["..."]
+        CB["..."] --> CD["..."]
+        CE["..."] --> CF["..."]
+        CG["..."] --> CH["..."]
+        CI["..."] --> CJ["..."]
+        CK["..."] --> CL["..."]
+        CM["..."] --> CN["..."]
+        CO["..."] --> CP["..."]
+        COB["..."] --> CS["..."]
+        CX["..."] --> CY["..."]
+        CXB["..."] --> CYB["..."]
+        CYC["C cluster representatives"]
+    end
+```
+</details>
+
+(3) Disentangling through restructuring of the weights.   
+![](images/970468cfbbc0d2a61509c7fbd57700b4c61cd7a0ed548737024a2ead4c519fd3.jpg)
+
+<details>
+<summary>flowchart</summary>
+
+```mermaid
+graph TD
+    subgraph Polysemantic
+        A1["Blue Circle"] --> B1["Orange Circle"]
+        A2["Blue Circle"] --> B2["Orange Circle"]
+        A3["Blue Circle"] --> B3["Orange Circle"]
+        A4["Blue Circle"] --> B4["Orange Circle"]
+        A5["Blue Circle"] --> B5["Orange Circle"]
+        A6["Blue Circle"] --> B6["Orange Circle"]
+        A7["Blue Circle"] --> B7["Orange Circle"]
+        A8["Blue Circle"] --> B8["Orange Circle"]
+        A9["Blue Circle"] --> B9["Orange Circle"]
+        A10["Blue Circle"] --> B10["Orange Circle"]
+        A11["Blue Circle"] --> B11["Orange Circle"]
+        A12["Blue Circle"] --> B12["Orange Circle"]
+        A13["Blue Circle"] --> B13["Orange Circle"]
+        A14["Blue Circle"] --> B14["Orange Circle"]
+        A15["Blue Circle"] --> B15["Orange Circle"]
+        A16["Blue Circle"] --> B16["Orange Circle"]
+        A17["Blue Circle"] --> B17["Orange Circle"]
+        A18["Blue Circle"] --> B18["Orange Circle"]
+        A19["Blue Circle"] --> B19["Orange Circle"]
+        A20["Blue Circle"] --> B20["Orange Circle"]
+        A21["Blue Circle"] --> B21["Orange Circle"]
+        A22["Blue Circle"] --> B22["Orange Circle"]
+        A23["Blue Circle"] --> B23["Orange Circle"]
+        A24["Blue Circle"] --> B24["Orange Circle"]
+        A25["Blue Circle"] --> B25["Orange Circle"]
+        A26["Blue Circle"] --> B26["Orange Circle"]
+        A27["Blue Circle"] --> B27["Orange Circle"]
+        A28["Blue Circle"] --> B28["Orange Circle"]
+        A29["Blue Circle"] --> B29["Orange Circle"]
+        A30["Blue Circle"] --> B30["Orange Circle"]
+        A31["Blue Circle"] --> B31["Orange Circle"]
+        A32["Blue Circle"] --> B32["Orange Circle"]
+        A33["Blue Circle"] --> B33["Orange Circle"]
+        A34["Blue Circle"] --> B34["Orange Circle"]
+        A35["Blue Circle"] --> B35["Orange Circle"]
+        A36["Blue Circle"] --> B36["Orange Circle"]
+        A37["Blue Circle"] --> B37["Orange Circle"]
+        A38["Blue Circle"] --> B38["Orange Circle"]
+        A39["Blue Circle"] --> B39["Orange Circle"]
+        A40["Blue Circle"] --> B40["Orange Circle"]
+        A41["Blue Circle"] --> B41["Orange Circle"]
+        A42["Blue Circle"] --> B42["Orange Circle"]
+        A43["Blue Circle"] --> B43["Orange Circle"]
+        A44["Blue Circle"] --> B44["Orange Circle"]
+        A45["Blue Circle"] --> B45["Orange Circle"]
+        A46["Blue Circle"] --> B46["Orange Circle"]
+        A47["Blue Circle"] --> B47["Orange Circle"]
+        A48["Blue Circle"] --> B48["Orange Circle"]
+        A49["Blue Circle"] --> B49["Orange Circle"]
+        A50["Blue Circle"] --> B50["Orange Circle"]
+        A51["Blue Circle"] --> B51["Orange Circle"]
+        A52["Blue Circle"] --> B52["Orange Circle"]
+        A53["Blue Circle"] --> B53["Orange Circle"]
+        A54["Blue Circle"] --> B54["Orange Circle"]
+        A55["Blue Circle"] --> B55["Orange Circle"]
+        A56["Blue Circle"] --> B56["Orange Circle"]
+        A57["Blue Circle"] --> B57["Orange Circle"]
+        A58["Blue Circle"] --> B58["Orange Circle"]
+        A59["Blue Circle"] --> B59["Orange Circle"]
+        A60["Blue Circle"] --> B60["Orange Circle"]
+        A61["Blue Circle"] --> B61["Orange Circle"]
+        A62["Blue Circle"] --> B62["Orange Circle"]
+        A63["Blue Circle"] --> B63["Orange Circle"]
+        A64["Blue Circle"] --> B64["Orange Circle"]
+        A65["Blue Circle"] --> B65["Orange Circle"]
+        A66["Blue Circle"] --> B66["Orange Circle"]
+        A67["Blue Circle"] --> B67["Orange Circle"]
+        A68["Blue Circle"] --> B68["Orange Circle"]
+        A69["Blue Circle"] --> B69["Orange Circle"]
+        A70["Blue Circle"] --> B70["Orange Circle"]
+        A71["Blue Circle"] --> B71["Orange Circle"]
+        A72["Blue Circle"] --> B72["Orange Circle"]
+        A73["Blue Circle"] --> B73["Orange Circle"]
+        A74["Blue Circle"] --> B74["Orange Circle"]
+        A75["Blue Circle"] --> B75["Orange Circle"]
+        A76["Blue Circle"] --> B76["Orange Circle"]
+        A77["Blue Circle"] --> B77["Orange Circle"]
+        A78["Blue Circle"] --> B78["Orange Circle"]
+        A79["Blue Circle"] --> B79["Orange Circle"]
+        A80["Blue Circle"] --> B80["Orange Circle"]
+        A81["Blue Circle"] --> B81["Orange Circle"]
+        A82["Blue Circle"] --> B82["Orange Circle"]
+        A83["Blue Circle"] --> B83["Orange Circle"]
+        A84["Blue Circle"] --> B84["Orange Circle"]
+        A85["Blue Circle"] --> B85["Orange Circle"]
+        A86["Blue Circle"] --> B86["Orange Circle"]
+        A87["Blue Circle"] --> B87["Orange Circle"]
+        A88["Blue Circle"] --> B88["Orange Circle"]
+        A89["Blue Circle"] --> B89["Orange Circle"]
+        A90["Blue Circle"] --> B90["Orange Circle"]
+        A91["Blue Circle"] --> B91["Orange Circle"]
+        A92["Blue Circle"] --> B92["Orange Circle"]
+        A93["Blue Circle"] --> B93["Orange Circle"]
+        A94["Blue Circle"] --> B94["Orange Circle"]
+        A95["Blue Circle"] --> B95["Orange Circle"]
+        A96["Blue Circle"] --> B96["Orange Circle"]
+        A97["Blue Circle"] --> B97["Orange Circle"]
+        A98["Blue Circle"] --> B98["Orange Circle"]
+        A99["L-1"] <--> C
+    end
+    subgraph Disentangled
+    D
+    E
+    F
+    G
+    H
+    I
+    J
+    K
+    L
+    M
+    N
+    O
+    P
+    Q
+    R
+    S
+    T
+    U
+    V
+    W
+    X
+    Y
+    Z
+    AA
+    AB
+    AC
+    AD
+    AE
+    AF
+    AG
+    AH
+    AI
+    AJ
+    AK
+    AL
+    AM
+    AN
+    AO
+    AP
+    AQ
+    AR
+    AS
+    AT
+    AU
+    AV
+    AW
+    AX
+    AZ
+    BA
+    BB
+    BC
+    BD
+    BE
+    BF
+    BG
+    BH
+    BI
+    BJ
+    BK
+    BL
+    BM
+    BN
+    BO
+    BP
+    BPB
+    BPB
+```
+</details>
+
+(4) Merging.   
+![](images/9418fe6501f94b6e21ba00b94bc106489d9ca7e1c0bce953023a186961e66580.jpg)
+
+<details>
+<summary>flowchart</summary>
+
+```mermaid
+graph TD
+    A["Left Diagram: L-1 and L*"] --> B["Disentangled"]
+    C["Right Diagram: L-1 and L*"] --> D["Merged to recover original"]
+```
+</details>
+
+Figure 4: Overview of ELUDe. (1) Embed every image $\mathbf { x } ^ { ( i ) }$ in the dataset D through layer L and consider the resulting activation instances ℓ (e.g., spatial locations or tokens); select the top-k instances that activate unit u most strongly. (2) For each selected activation instance, compute a normalized contribution vector $\mathbf { c } ^ { ( \ell ) }$ from layer $L - 1 \mathrm { t o } a _ { u } ^ { ( \ell ) }$ , revealing which upstream units drive the activation. Cluster these contribution vectors into concept groups, yielding K clusters represented by $\tilde { \mathbf { r } } ^ { ( u , c ) }$ , one per concept encoded by $a \mathrm { . } \mathrm { . } \left( 3 \right)$ Replace $a _ { u }$ with K concept-specific units whose weights are constructed from the cluster representatives. (4) A summation operator reconstructs the original activation exactly.
+
+For example, as in Figure 1, a unit might respond to image regions of dogs, violins, and oceans – visualized in yellow ■, orange ■, and pink ■ in Figure 4.
+
+Focusing on these top-k activation instances allows us to concentrate on the regime where $a _ { u }$ is most active, while retaining a direct link to the underlying images that contain the relevant concepts. Higher values of k include a broader range of activation strengths and may capture a wider variety of concepts encoded by the unit. Such top-k set constructions have been proven successful in interpretability research. $E . g .$ , PURE [17] and O’Mahony et al. [45] both build similar reference sets before clustering, and maximally activating images are a common starting point in feature visualization more broadly [2, 6, 25, 43].
+
+# 3.2 Unsupervised clustering of the contribution patterns
+
+We now aim to identify the distinct concepts present in $\mathcal { D } _ { u } .$ . To this end, we follow a simple assumption that has been established in prior work [17, 29]: if two activation instances corresponding to distinct concepts activate the same unit in layer L, then different upstream circuits should have been used by the model. Instead of looking at the full circuits, common practice is to only consider the part of the circuit in layer $L - 1 \ [ 1 7 , 2 9 ]$ . Hence, for each of the selected activation instances ℓ, we now identify which units in the previous layer $L - 1$ were responsible for activating unit $a _ { u } ^ { ( \ell ) }$ of layer L. Concretely, we compute a contribution vector $\mathbf { c } ^ { ( \ell ) } \in \mathbb { R } ^ { d _ { L - 1 } }$ , where $d _ { L - 1 }$ is the number of units in layer $L - 1$ and each entry measures how much one of those units contributed to the pre-activation of $a _ { u } ^ { ( \ell ) }$ .
+
+Let $\mathbf { q } ^ { ( \ell ) } \in \mathbb { R } ^ { d _ { L - 1 } }$ denote the activation vector at the preceding layer $L - 1$ . Since the contribution of the activation vector $\mathbf { q } ^ { ( \ell ) } \in \mathbb { R } ^ { d _ { L - 1 } }$ in layer L−1 to the pre-activation $\tilde { a } _ { u } ^ { ( \ell ) }$ reduces to a linear transformation for convolutional layers or MLP layers in ViTs, i.e., $\tilde { a } _ { u } ^ { ( \ell ) } = \mathbf { W } _ { u } ^ { \top } \mathbf { q } ^ { ( \ell ) } + \mathbf { b }$ , we can compute the exact contribution via $\dot { \mathbf { c } } ^ { ( \ell ) } = \mathbf { W } _ { u } \odot \mathbf { q } ^ { ( \ell ) }$ where ⊙ denotes element-wise multiplication. We then $L _ { 2 } \cdot$ -normalize each contribution vector from all $\ell \in \mathcal { D } _ { u }$ so that clustering in the next step focuses on which upstream units were involved, rather than how strongly they contributed. Doing this for all k selected activation instances gives us the contribution set $\mathcal { C } ^ { ( u ) } = \{ \mathbf { \bar { c } } ^ { ( \ell ) } \ | \ \ell \in \mathcal { D } _ { u } \}$ for unit $a _ { u }$ .
+
+If unit $a _ { u }$ is polysemantic, activation instances corresponding to different concepts will produce contribution vectors pointing in different directions, since they are driven by different upstream units. Coming back to our example of a unit activating for image regions corresponding to dogs, violins, and oceans, we would expect three distinct contribution clusters corresponding to each of the concepts. Hence, we next group the contribution vectors into clusters, with each cluster corresponding to one concept that unit $a _ { u }$ responds to.
+
+We cluster $\mathcal { C } ^ { ( u ) }$ using HDBSCAN [12], a density-based clustering algorithm that finds groups of points that are tightly packed together while leaving sparse or ambiguous points unclustered. Crucially, in contrast to k-means clustering [26], used for example in PURE [17], HDBSCAN does not require specifying the number of clusters K in advance – it infers K directly from the data. It also assigns each point a membership probability $p ( \mathbf { c } ^ { ( \ell ) } ) \in [ 0 , 1 ]$ , reflecting how confidently it belongs to its cluster. Points that do not clearly belong to any cluster are marked as noise and left unassigned.
+
+For each cluster index $c \in [ 1 , \ldots , K ]$ , we compute a single representative direction $\tilde { \mathbf { r } } ^ { ( u , c ) }$ by taking a normalized membership-probability-weighted average of the contribution vectors in that cluster:
+
+$$
+\tilde {\mathbf {r}} ^ {(u, c)} = \frac {\mathbf {r} ^ {(u , c)}}{\| \mathbf {r} ^ {(u , c)} \| _ {2} + \epsilon}, \quad \text { where } \quad \mathbf {r} ^ {(u, c)} = \sum_ {\mathbf {c} ^ {(\ell)} \in \mathcal {C} ^ {(u, c)}} p (\mathbf {c} ^ {(\ell)})   \mathbf {c} ^ {(\ell)}. \tag {2}
+$$
+
+The representative $\tilde { \mathbf { r } } ^ { ( u , c ) }$ summarizes which upstream units are most responsible for cluster (or concept) c, and will be used in the next section to construct the new concept-specific weights. The above steps are illustrated in Figure 4 (2).
+
+# 3.3 Disentangling through restructuring of the weights
+
+We now realize the discovered clusters as explicit subunits in a new layer $L ^ { * }$ . The goal is to replace the polysemantic unit $a _ { u }$ with $K$ new subunits $\{ a _ { u } ^ { ( c ) } \} _ { c = 1 } ^ { K }$ , one per concept, such that each new subunit responds selectively to its own concept. At the same time, we ensure that the behavior of the network remains unchanged, yielding a faithful decomposition.
+
+Each concept subunit $a _ { u } ^ { ( c ) }$ gets its own incoming weight vector $\mathbf { w } ^ { ( u , c ) }$ and bias $b _ { u } ^ { ( c ) }$ , constructed from the original weight vector $\mathbf { W } _ { u } ,$ the original bias $b _ { u } ,$ and the cluster representative $\tilde { \mathbf { r } } ^ { ( u , c ) }$ . Specifically, for each upstream dimension $j$ in layer $L - 1$ , we check whether one group of concepts subunits clearly dominates the others in $\tilde { \mathbf { r } } _ { i } ^ { ( u , c ) }$ . If so, we assign that dimension exclusively to the winning group. If not, we treat it as shared and split the original weight equally across all concept subunits.
+
+Formally, a set of concept indices $S \subseteq \{ 1 , \ldots , K \}$ wins dimension $j$ if the minimum score among its subunits exceeds the score of every concept subunit outside the set by a multiplicative margin $\rho \in ( 0 , 1 ]$ :
+
+$$
+\rho \cdot \min _ {c \in S} | \tilde {r} _ {j} ^ {(u, c)} | > \max _ {c ^ {\prime} \notin S} | \tilde {r} _ {j} ^ {(u, c ^ {\prime})} |. \tag {3}
+$$
+
+If exactly one such set $S$ satisfies this, dimension $j$ is assigned exclusively to that set and its weight is distributed equally among the concepts subunits in S. If no set wins clearly, the weight is split equally across all $a _ { u } ^ { ( c ) }$ concept subunits:
+
+$$
+w _ {j} ^ {(u, c)} = \left\{ \begin{array}{l l} \frac {1}{| S |} W _ {u, j} & \text { if } c \in S \text { and } S \text { wins   dimension } j \text { exclusively }, \\ \frac {1}{K} W _ {u, j} & \text { otherwise }. \end{array} \right. \tag {4}
+$$
+
+By construction, the concept subunit weights always sum back to the original:
+
+$$
+\sum_ {c = 1} ^ {K} w _ {j} ^ {(u, c)} = W _ {u, j}. \tag {5}
+$$
+
+For each upstream dimension $j ,$ subunit c receives a fraction $w _ { j } ^ { ( u , c ) } / W _ { u , j }$ of the original weight. We split the bias in proportion to the average of these fractions across all $d _ { L - 1 }$ dimensions: $b _ { u } ^ { ( c ) } = \omega _ { c } b _ { u }$ with ωc = 1dL−1 $\begin{array} { r } { \omega _ { c } = \frac { 1 } { d _ { L - 1 } } \sum _ { j } w _ { j } ^ { ( u , c ) } / W _ { u , j } } \end{array}$ P j w(u,c)j / , so that $\textstyle \sum _ { c = 1 } ^ { K } b _ { u } ^ { ( c ) } = b _ { u }$ .
+
+The margin ρ controls how aggressively dimensions are assigned exclusively to a group. We select it automatically by searching over all values in $\{ 0 . 0 5 , 0 . 1 0 , \ldots , 1 . 0 0 \}$ and choosing the one for which each concept subunit activates most strongly on its own cluster and most weakly on the others.
+
+Returning to our example, we might find that the third unit from the top in the preceding layer $L - 1$ (■ in Figure 4) contributes particularly strongly on activation instances corresponding to oceans, and consequently, we connect it to the subunit corresponding to the ocean concept. Similarly, the fourth unit (bottom) in $L - 1$ has no particularly high contribution to any activation instances, so we connect it to all the subunits. The process is visualized in Figure 4 (3).
+
+# 3.4 Merging
+
+Because the disentangled weights and biases form an additive partition of the originals, the preactivations of the concept subunits sum exactly to the pre-activation of the original unit:
+
+$$
+\sum_ {c = 1} ^ {K} a _ {u} ^ {(c)} = a _ {u} \quad \text { for   all   inputs. } \tag {6}
+$$
+
+This allows us to directly reconstruct the original unit by summing the concept-specific subunits, ensuring that the overall function of the network remains unchanged, as illustrated in Figure 4 (4).
+
+# 4 Experiments
+
+We empirically evaluate ELUDe with a particular emphasis on the interpretability-faithfulness tradeoff (Section 4.1) and practical considerations, such as stability, steering, and generalization (Section 4.2).
+
+# 4.1 Interpretability and faithfulness
+
+We begin by studying the interpretability–faithfulness Pareto front of existing methods and our approach, previewed in Figure 2. Using two vision backbones and a broad set of SAE and transcoder baselines, we quantify interpretability and faithfulness and summarize the results in Table 2. For both properties, we use two complementary metrics: LLM Rank utilizes three VLLMs to judge which top-9 activating images of two units from competing disentanglement methods are more coherent, yielding a ranking over all methods. Monosemanticity score (MS-Score), in the spirit of [47], represents each image by its maximum-activation instance, selects the top 100 images per unit, and measures their similarity in the original embedding space of the layer to be disentangled. Accuracy measures the ImageNet-1k [55] classification accuracy of a classification head when the original representations are replaced by their reconstructions from the disentanglement method. $R ^ { 2 }$ measures the reconstruction quality of the reconstructed representation compared to the original representation. For more details on each metric please refer to Section B.
+
+Experimental setup. We focus on baseline methods that produce explicit disentanglements and can be applied without requiring annotated data. This restricts our comparison to sparse autoencoders (Vanilla [8], TopK [39], BatchTopK [10], JumpReLU [53], Matching Pursuit [14], Archetypal [22], Matryoshka [11]) and Transcoders [18]. We consider two vision backbones, a self-supervised DINOv2 [46] ViT-B/14 and a supervised ViT-B/16 [16, 60] trained on ImageNet-21k [15] and finetuned on ImageNet-1k [55]. We disentangle the final pre-activation-function representation in both models with an expansion factor of 8, i.e., the size of the disentangled representation relative to the original one. We use the ImageNet-1k training split as the probing dataset for all methods. To keep the activation cache tractable, we follow Pach et al. [47] and retain only 2 randomly-sampled tokens per image. This sampling is repeated three times, yielding three independent seeded token datasets on which each method is independently run; we report mean and standard deviation across the three runs. For the SAE and transcoder baselines, per-family hyperparameters are selected via a sweep using an equally-weighted average of normalized reconstruction quality and sparsity; details are in Section E.1. The ImageNet-1k evaluation split is used for assessing interpretability and faithfulness.
+
+Quantitative results. Consistent with the motivation outlined in Section 1, in Table 2 we observe a clear interpretability-faithfulness tradeoff among prior methods: while baseline approaches improve interpretability, they do so at the cost of reduced faithfulness, which may limit their applicability in settings where predictive performance is critical. In contrast, ELUDe recovers the original representation exactly, as indicated by the matching backbone accuracy and an $R ^ { 2 }$ score of 100%. At the same time, it reaches state-of-the-art interpretability scores across both metrics; a trend that extends to several other setups as shown in Table 6. This validates the central claim of our work, establishing ELUDe as a practical and reliable tool for understanding model behavior that delivers “interpretability without a tradeoff.”
+
+Table 2: Interpretability vs. faithfulness. We compare ELUDe (shaded) against various SAEs and a transcoder across two interpretability metrics and two faithfulness metrics on two vision backbones (self-supervised DINOv2-B/14 and supervised ViT-B/16) at expansion factor 8. We report mean and standard deviation across three seeded token datasets. Per backbone and metric, the best method is shown in bold and the second best is underlined. ELUDe simultaneously improves interpretability while preserving faithfulness exactly $( R ^ { 2 } = 1 0 0 \% )$ ), matching the backbone’s accuracy. 
+
+<table><tr><td rowspan="2">Model</td><td rowspan="2">Method</td><td colspan="2">Interpretability</td><td colspan="2">Faithfulness</td></tr><tr><td>LLM Rank (↓)</td><td>MS-Score (↑)</td><td>Accuracy (↑)</td><td> $R^2$ (↑)</td></tr><tr><td rowspan="10">ImageNet-21k ViT-B/16</td><td>Backbone only</td><td>8</td><td>36.42</td><td>85.1</td><td>100.00</td></tr><tr><td>Vanilla SAE</td><td>7</td><td>54.55 ± 0.06</td><td>85.01 ± 0.02</td><td>91.65 ± 0.02</td></tr><tr><td>TopK-SAE</td><td>4</td><td>54.49 ± 0.18</td><td>84.94 ± 0.02</td><td>87.00 ± 0.01</td></tr><tr><td>JumpReLU</td><td>10</td><td>31.82 ± 0.08</td><td>85.10 ± 0.01</td><td>99.99 ± 0.00</td></tr><tr><td>BatchTopK-SAE</td><td>6</td><td>53.56 ± 0.54</td><td>84.97 ± 0.03</td><td>87.76 ± 0.08</td></tr><tr><td>Matryoshka SAE</td><td>5</td><td>51.16 ± 0.22</td><td>85.00 ± 0.02</td><td>86.85 ± 0.02</td></tr><tr><td>Archetypal SAE</td><td>2</td><td>59.15 ± 3.99</td><td>84.88 ± 0.03</td><td>79.76 ± 0.57</td></tr><tr><td>Matching Pursuit</td><td>3</td><td>56.91 ± 0.12</td><td>85.03 ± 0.05</td><td>89.66 ± 0.07</td></tr><tr><td>Transcoder</td><td>9</td><td>46.31 ± 0.02</td><td>85.05 ± 0.03</td><td>93.54 ± 0.01</td></tr><tr><td>ELUDe (ours)</td><td>1</td><td>71.05 ± 0.06</td><td>85.10 ± 0.00</td><td>100.00 ± 0.00</td></tr><tr><td rowspan="10">DINOv2 ViT-B/14</td><td>Backbone only</td><td>7</td><td>36.2</td><td>84.3</td><td>100.00</td></tr><tr><td>Vanilla SAE</td><td>8</td><td>19.32 ± 0.26</td><td>77.63 ± 0.02</td><td>47.76 ± 0.05</td></tr><tr><td>TopK-SAE</td><td>6</td><td>47.63 ± 0.30</td><td>82.19 ± 0.07</td><td>88.58 ± 0.05</td></tr><tr><td>JumpReLU</td><td>10</td><td>22.59 ± 0.16</td><td>84.27 ± 0.02</td><td>99.97 ± 0.01</td></tr><tr><td>BatchTopK-SAE</td><td>4</td><td>50.64 ± 0.29</td><td>82.06 ± 0.14</td><td>89.15 ± 0.01</td></tr><tr><td>Matryoshka SAE</td><td>5</td><td>52.14 ± 0.13</td><td>82.13 ± 0.03</td><td>88.71 ± 0.02</td></tr><tr><td>Archetypal SAE</td><td>2</td><td>51.56 ± 0.52</td><td>81.26 ± 0.08</td><td>84.75 ± 0.07</td></tr><tr><td>Matching Pursuit</td><td>3</td><td>56.92 ± 0.13</td><td>82.86 ± 0.06</td><td>90.28 ± 0.01</td></tr><tr><td>Transcoder</td><td>9</td><td>50.36 ± 0.42</td><td>79.63 ± 0.91</td><td>83.10 ± 0.69</td></tr><tr><td>ELUDe (ours)</td><td>1</td><td>64.85 ± 0.52</td><td>84.29 ± 0.00</td><td>100.00 ± 0.00</td></tr></table>
+
+Qualitative examples. To complement the quantitative results, we qualitatively compare the topactivating images of a polysemantic unit – neuron 31 in the final layer of DINOv2-B/14 – and its ELUDe subunits. As shown in Figure 3, the original unit responds to a mix of concepts, whereas its subunits consistently capture single, interpretable concepts, indicating that the decomposition isolates semantically distinct components. Additional examples are provided in Section D.
+
+# 4.2 Practical considerations
+
+While the previous section focuses on our core claims, i.e., improved interpretability at equal predictive performance, this section studies some practical properties of our proposed method.
+
+Computational efficiency. Table 5 in Section C.2 reports ms/batch and peak GPU memory for ELUDe and all baselines at the same configuration as Section 4.1. ELUDe achieves 437.73 ms/batch, matching the range of SAE-type baselines (417.18–437.43 ms/batch). At the same time, ELUDe achieves the lowest peak GPU memory among all SAE-type methods at 577.49 MB, close to the original backbone (501.10 MB) and well below SAEs (5665–12114 MB) and the transcoder (15617 MB). The low memory footprint arises because ELUDe subunits can be merged with a cumulative sum operator instead of a fully connected decoder used by SAEs and the transcoder.
+
+Stability. A reliable disentanglement should extract similar concepts across different runs [22]. However, SAEs and transcoders have been shown to vary substantially across seeds [49]. Table 4 in Section C.1 quantifies this on DINOv2-B/14 at the same configuration as Section 4.1: we fix the seeded token dataset, run each method three times with different initialisation seeds, and measure pairwise cosine similarity between Hungarian-matched atoms averaged over all three seed pairs (higher = more stable) [22, 49]; see Section B.3 for details. ELUDe achieves the highest cross-init stability, even outperforming ASAE [22], an SAE variant particularly proposed for stability.
+
+![](images/521c00b08aa1d36c35a71e3cb8bb43b09b0d322448a45553b12870acc7a1c9d4.jpg)
+
+<details>
+<summary>natural_image</summary>
+
+Person in hooded suit sitting on red motorcycle with helmet and gear (no visible text or symbols)
+</details>
+
+<table><tr><td>Setting</td><td>Output caption</td></tr><tr><td>baseline</td><td>A black dog wearing a Harley Davidson bandana and sun-glasses sits on a red motorcycle.</td></tr><tr><td>−{dog}</td><td>A motorcycle with a man wearing a Harley Davidson bandana and sunglasses on it.</td></tr><tr><td>−{dog} + {biker}</td><td>A black and white motorcycle with a rider wearing sun-glasses and a bandana.</td></tr></table>
+
+Figure 5: Steering an ELUDe-disentangled LLaVA-OneVision. Captions generated under two interventions on layer 26 of the disentangled vision encoder, all using the same COCO image [37], prompt, and greedy decoder. “−” and “+” denote removing and adding the concept, respectively.
+
+Steering. A promising application of disentanglement is model steering, i.e., modifying outputs by intervening on concept-specific subunits. We qualitatively evaluate whether ELUDe enables such control by disentangling layer 26 of the vision backbone of LLaVA-OneVision [36]. We automatically assign concept labels to ELUDe subunits using CLIP-Dissect [42], enabling targeted suppression or activation. As shown in Figure 5, suppressing subunits associated with “dog” shifts the caption toward the rider, and further activating biker refines it. This demonstrates that ELUDe supports effective model steering. Additional details and examples are provided in Section C.3.
+
+Generalization. We view ELUDe as a general-purpose tool for improving interpretability across various vision backbones without sacrificing downstream performance. To validate this, we evaluate it along four axes of generalization: layer, backbone size, model family, and expansion factor. Results for the same metrics as in Table 2 for ELUDe and the four strongest baselines – Matching Pursuit [14], Archetypal [22], Matryoshka [11], and BatchTopK [10] SAEs – are reported in Table 6 of Section C.4. Across the board, our conclusions remain consistent: we achieve near-perfect faithfulness while maintaining competitive interpretability, often reaching state-of-the-art performance.
+
+Limitations. In this work, we focus on linear layers and 1 × 1 convolutions, which already covers a wide range of relevant layers; however, extending ELUDe to attention heads and other architectural components is left for future work. As the disentanglement is performed independently per neuron, subunits across different neurons may respond to the same concept, introducing redundancy at the layer level. This redundancy could be reduced in a post-processing step via correlation-based pruning if required by the application. Finally, while we demonstrate ELUDe on vision encoders and provide qualitative steering results on a vision-language model, a full quantitative evaluation on language models remains future work.
+
+# 5 Discussion
+
+In this work, we introduce ELUDe, a method for disentangling polysemantic units into more interpretable, monosemantic subunits. ELUDe leverages concept-specific structure in upstream circuits and restructures weights accordingly, ensuring that each subunit primarily connects to units in the preceding layer that respond to the corresponding concept. Crucially, the decomposition is constructed such that the sum of all subunits faithfully reconstructs the original neuron, enabling application without any loss in downstream predictive performance. Through a comprehensive empirical evaluation, we show that ELUDe achieves near-perfect faithfulness (up to numerical precision) while often outperforming existing methods in terms of interpretability. We further demonstrate improved stability compared to sparse autoencoders and transcoders, and provide qualitative evidence that ELUDe can be used for steering. Overall, we consider ELUDe a promising addition to the interpretability toolkit: to the best of our knowledge, it is the first explicit disentanglement method to achieve state-of-the-art interpretability at scale without trading off any predictive performance, making it a strong foundation for future research.
+
+# Acknowledgments
+
+We acknowledge support from the Max Planck Computing and Data Facility. SSM has been funded by the Deutsche Forschungsgemeinschaft (DFG, German Research Foundation) – project No. 529680848. Additionally, SSM has received funding from the DFG under Germany’s Excellence Strategy (EXC-3057/1 “Reasonable Artificial Intelligence”, Project No. 533677015).
+
+# References
+
+[1] R. Achtibat, S. M. V. Hatefi, M. Dreyer, A. Jain, T. Wiegand, S. Lapuschkin, and W. Samek. AttnLRP: Attention-aware layer-wise relevance propagation for transformers. In ICML, pages 135–168, 2024.   
+[2] D. Bau, B. Zhou, A. Khosla, A. Oliva, and A. Torralba. Network dissection: Quantifying interpretability of deep visual representations. In CVPR, pages 3319–3327, 2017.   
+[3] L. Bereska and S. Gavves. Mechanistic interpretability for AI safety - A review. TMLR, 2024.   
+[4] M. Böhle, M. Fritz, and B. Schiele. B-cos networks: Alignment is all we need for interpretability. In CVPR, pages 10319–10328, 2022.   
+[5] R. Bommasani, D. A. Hudson, E. Adeli, R. B. Altman, S. Arora, S. von Arx, M. S. Bernstein, J. Bohg, A. Bosselut, E. Brunskill, E. Brynjolfsson, S. Buch, D. Card, R. Castellon, N. S. Chatterji, A. S. Chen, K. Creel, J. Q. Davis, D. Demszky, C. Donahue, M. Doumbouya, E. Durmus, S. Ermon, J. Etchemendy, K. Ethayarajh, L. Fei-Fei, C. Finn, T. Gale, L. E. Gillespie, K. Goel, N. D. Goodman, S. Grossman, N. Guha, T. Hashimoto, P. Henderson, J. Hewitt, D. E. Ho, J. Hong, K. Hsu, J. Huang, T. Icard, S. Jain, D. Jurafsky, P. Kalluri, S. Karamcheti, G. Keeling, F. Khani, O. Khattab, P. W. Koh, M. S. Krass, R. Krishna, R. Kuditipudi, and et al. On the opportunities and risks of foundation models. arXiv:2108.07258 [cs.LG], 2021.   
+[6] J. Borowski, R. S. Zimmermann, J. Schepers, R. Geirhos, T. S. A. Wallis, M. Bethge, and W. Brendel. Exemplary natural images explain CNN activations better than state-of-the-art feature visualization. In ICLR, 2021.   
+[7] W. Bousselham, A. W. Boggust, S. Chaybouti, H. Strobelt, and H. Kuehne. LeGrad: An explainability method for vision transformers via feature formation sensitivity. In ICCV, pages 20336–20345, 2024.   
+[8] T. Bricken, A. Templeton, J. Batson, B. Chen, A. Jermyn, T. Conerly, N. Turner, C. Anil, C. Denison, A. Askell, R. Lasenby, Y. Wu, S. Kravec, N. Schiefer, T. Maxwell, N. Joseph, Z. Hatfield-Dodds, A. Tamkin, K. Nguyen, B. McLean, J. E. Burke, T. Hume, S. Carter, T. Henighan, and C. Olah. Towards monosemanticity: Decomposing language models with dictionary learning. Transformer Circuits Thread, 2023.   
+[9] T. B. Brown, B. Mann, N. Ryder, M. Subbiah, J. Kaplan, P. Dhariwal, A. Neelakantan, P. Shyam, G. Sastry, A. Askell, S. Agarwal, A. Herbert-Voss, G. Krueger, T. Henighan, R. Child, A. Ramesh, D. M. Ziegler, J. Wu, C. Winter, C. Hesse, M. Chen, E. Sigler, M. Litwin, S. Gray, B. Chess, J. Clark, C. Berner, S. McCandlish, A. Radford, I. Sutskever, and D. Amodei. Language models are few-shot learners. In NeurIPS, 2020.   
+[10] B. Bussmann, P. Leask, and N. Nanda. BatchTopK sparse autoencoders. In NeurIPS, 2024.   
+[11] B. Bussmann, N. Nabeshima, A. Karvonen, and N. Nanda. Learning multi-level features with matryoshka sparse autoencoders. In ICML, 2025.   
+[12] R. J. G. B. Campello, D. Moulavi, and J. Sander. Density-based clustering based on hierarchical density estimates. In PAKDD, pages 160–172, 2013.   
+[13] C. Chen, O. Li, D. Tao, A. Barnett, C. Rudin, and J. Su. This looks like that: Deep learning for interpretable image recognition. In NeurIPS, pages 8928–8939, 2019.   
+[14] V. Costa, T. Fel, E. S. Lubana, B. Tolooshams, and D. E. Ba. From flat to hierarchical: Extracting sparse representations with matching pursuit. In NeurIPS, 2025.
+
+[15] J. Deng, W. Dong, R. Socher, L. Li, K. Li, and L. Fei-Fei. ImageNet: A large-scale hierarchical image database. In CVPR, pages 248–255, 2009.   
+[16] A. Dosovitskiy, L. Beyer, A. Kolesnikov, D. Weissenborn, X. Zhai, T. Unterthiner, M. Dehghani, M. Minderer, G. Heigold, S. Gelly, J. Uszkoreit, and N. Houlsby. An image is worth 16x16 words: Transformers for image recognition at scale. In ICLR, 2021.   
+[17] M. Dreyer, E. Purelku, J. Vielhaben, W. Samek, and S. Lapuschkin. PURE: Turning polysemantic neurons into pure features by identifying relevant circuits. In CVPRW, pages 8212–8217, 2024.   
+[18] J. Dunefsky, P. Chlenski, and N. Nanda. Transcoders find interpretable LLM feature circuits. In NeurIPS, 2024.   
+[19] N. Elhage, T. Hume, C. Olsson, N. Schiefer, T. Henighan, S. Kravec, Z. Hatfield-Dodds, R. Lasenby, D. Drain, C. Chen, R. B. Grosse, S. McCandlish, J. Kaplan, D. Amodei, M. Wattenberg, and C. Olah. Toy models of superposition. Transformer Circuits Thread, 2022.   
+[20] S. Eslami, M. Gaiduk, M. Krimmel, L. Milliken, B. Wang, and D. Bykov. Diffusion-pretrained dense and contextual embeddings. arXiv:2602.11151 [cs.LG], 2026.   
+[21] T. Fel, T. Boissin, V. Boutin, A. M. Picard, P. Novello, J. Colin, D. Linsley, T. Rousseau, R. Cadène, L. Gardes, and T. Serre. Unlocking feature visualization for deeper networks with magnitude constrained optimization. In NeurIPS, 2023.   
+[22] T. Fel, E. S. Lubana, J. S. Prince, M. Kowal, V. Boutin, I. Papadimitriou, B. Wang, M. Wattenberg, D. E. Ba, and T. Konkle. Archetypal SAE: Adaptive and stable dictionary learning for concept extraction in large vision models. In ICML, 2025.   
+[23] J. Fischer, A. Olah, and J. Vreeken. What’s in the box? exploring the inner life of neural networks with robust rules. In ICML, 2021.   
+[24] L. Gao, T. D. la Tour, H. Tillman, G. Goh, R. Troll, A. Radford, I. Sutskever, J. Leike, and J. Wu. Scaling and evaluating sparse autoencoders. In ICLR, 2025.   
+[25] A. Gorgun, B. Schiele, and J. Fischer. VITAL: More understandable feature visualization through distribution alignment and relevant information flow. In ICCV, 2025.   
+[26] J. A. Hartigan and M. A. Wong. Algorithm as 136: A k-means clustering algorithm. Journal of the royal statistical society. series c (applied statistics), 28(1):100–108, 1979.   
+[27] D. Hendrycks, S. Basart, N. Mu, S. Kadavath, F. Wang, E. Dorundo, R. Desai, T. Zhu, S. Parajuli, M. Guo, D. Song, J. Steinhardt, and J. Gilmer. The many faces of robustness: A critical analysis of out-of-distribution generalization. In ICCV, pages 8320–8329, 2021.   
+[28] R. Hesse, S. Schaub-Meyer, and S. Roth. Fast axiomatic attribution for neural networks. In NeurIPS, pages 19513–19524, 2021.   
+[29] R. Hesse, J. Fischer, S. Schaub-Meyer, and S. Roth. Disentangling polysemantic channels in convolutional neural networks. In CVPRW, pages 4799–4803, 2025.   
+[30] R. Hesse, D. Bagci, B. Schiele, S. Schaub-Meyer, and S. Roth. Beyond accuracy: What matters in designing well-behaved image classification models? TMLR, 2026.   
+[31] R. Hesse, S. Schaub-Meyer, J. Hesse, B. Schiele, and S. Roth. What is missing? explaining neurons activated by absent concepts. In ICML, 2026.   
+[32] R. Huben, H. Cunningham, L. R. Smith, A. Ewart, and L. Sharkey. Sparse autoencoders find highly interpretable features in language models. In ICLR, 2024.   
+[33] Z. Ji, N. Lee, R. Frieske, T. Yu, D. Su, Y. Xu, E. Ishii, Y. Bang, A. Madotto, and P. Fung. Survey of hallucination in natural language generation. ACM Comput. Surv., 55(12):248:1–248:38, 2023.
+
+[34] J. Jumper, R. Evans, A. Pritzel, T. Green, M. Figurnov, O. Ronneberger, K. Tunyasuvunakool, R. Bates, A. Žídek, A. Potapenko, A. Bridgland, C. Meyer, S. A. A. Kohl, A. J. Ballard, A. Cowie, B. Romera-Paredes, S. Nikolov, R. Jain, J. Adler, T. Back, S. Petersen, D. Reiman, E. Clancy, M. Zielinski, M. Steinegger, M. Pacholska, T. Berghammer, S. Bodenstein, D. Silver, O. Vinyals, A. W. Senior, K. Kavukcuoglu, P. Kohli, and D. Hassabis. Highly accurate protein structure prediction with AlphaFold. Nature, 596(7873):583–589, 2021.   
+[35] P. W. Koh, T. Nguyen, Y. S. Tang, S. Mussmann, E. Pierson, B. Kim, and P. Liang. Concept bottleneck models. In ICML, pages 5338–5348, 2020.   
+[36] B. Li, Y. Zhang, D. Guo, R. Zhang, F. Li, H. Zhang, K. Zhang, P. Zhang, Y. Li, Z. Liu, and C. Li. LLaVA-OneVision: Easy visual task transfer. TMLR, 2025.   
+[37] T. Lin, M. Maire, S. J. Belongie, J. Hays, P. Perona, D. Ramanan, P. Dollár, and C. L. Zitnick. Microsoft COCO: Common objects in context. In ECCV, pages 740–755, 2014.   
+[38] H. Liu, W. Xue, Y. Chen, D. Chen, X. Zhao, K. Wang, L. Hou, R. Li, and W. Peng. A survey on hallucination in large vision-language models. arXiv:2402.00253 [cs.CV], 2024.   
+[39] A. Makhzani and B. J. Frey. k-sparse autoencoders. In ICLR, 2014.   
+[40] R. Maser, S. Gairola, S. Rao, and B. Schiele. Align once to explain: Feature alignment for scalable b-cosification of foundational vision transformers. In CVPR, pages 9869–9879, 2026.   
+[41] A. Mueller, J. Brinkmann, M. L. Li, S. Marks, K. Pal, N. Prakash, C. Rager, A. Sankaranarayanan, A. S. Sharma, J. Sun, E. Todd, D. Bau, and Y. Belinkov. The quest for the right mediator: Surveying mechanistic interpretability through the lens of causal mediation analysis. arXiv:2408.01416 [cs.LG], 2024.   
+[42] T. P. Oikarinen and T. Weng. Clip-dissect: Automatic description of neuron representations in deep vision networks. In ICLR, 2023.   
+[43] C. Olah, L. Schubert, and A. Mordvintsev. Feature visualization. Distill, 2017.   
+[44] C. Olah, N. Cammarata, L. Schubert, G. Goh, M. Petrov, and S. Carter. Zoom in: An introduction to circuits. Distill, 2020.   
+[45] L. O’Mahony, V. Andrearczyk, H. Müller, and M. Graziani. Disentangling neuron representations with concept vectors. In CVPRW, pages 3770–3775, 2023.   
+[46] M. Oquab, T. Darcet, T. Moutakanni, H. V. Vo, M. Szafraniec, V. Khalidov, P. Fernandez, D. Haziza, F. Massa, A. El-Nouby, M. Assran, N. Ballas, W. Galuba, R. Howes, P. Huang, S. Li, I. Misra, M. Rabbat, V. Sharma, G. Synnaeve, H. Xu, H. Jégou, J. Mairal, P. Labatut, A. Joulin, and P. Bojanowski. DINOv2: Learning robust visual features without supervision. TMLR, 2024.   
+[47] M. Pach, S. Karthik, Q. Bouniot, S. J. Belongie, and Z. Akata. Sparse autoencoders learn monosemantic features in vision-language models. In NeurIPS, 2025.   
+[48] A. Parchami-Araghi, S. Rao, J. Fischer, and B. Schiele. Fact: Faithful concept traces for explaining neural network decisions. In NeurIPS, 2025.   
+[49] G. Paulo and N. Belrose. Sparse autoencoders trained on the same data learn different features. ICLR, 2026.   
+[50] N. Pham, A. Jesslen, B. Schiele, A. Kortylewski, and J. Fischer. Interpretable 3D neural object volumes for robust conceptual reasoning. In ICLR, 2026.   
+[51] C. Qin, C. Venhoff, S. Joseph, F. Xiao, and S. Scherer. Sparse CLIP: Co-optimizing interpretability and performance in contrastive learning. ICLR, 2026.   
+[52] D. Rai, Y. Zhou, S. Feng, A. Saparov, and Z. Yao. A practical review of mechanistic interpretability for transformer-based language models. arXiv:2407.02646 [cs.AI], 2024.
+
+[53] S. Rajamanoharan, T. Lieberum, N. Sonnerat, A. Conmy, V. Varma, J. Kramár, and N. Nanda. Jumping ahead: Improving reconstruction fidelity with JumpReLU sparse autoencoders. arXiv:2407.14435 [cs.LG], 2024.   
+[54] N. Reimers and I. Gurevych. Sentence-BERT: Sentence embeddings using siamese BERTnetworks. In EMNLP-IJCNLP, pages 3980–3990, 2019.   
+[55] O. Russakovsky, J. Deng, H. Su, J. Krause, S. Satheesh, S. Ma, Z. Huang, A. Karpathy, A. Khosla, M. S. Bernstein, A. C. Berg, and L. Fei-Fei. ImageNet large scale visual recognition challenge. IJCV, 115(3):211–252, 2015.   
+[56] A. Scherlis, K. Sachan, A. S. Jermyn, J. Benton, and B. Shlegeris. Polysemanticity and capacity in neural networks. arXiv:2210.01892 [cs.NE], 2022.   
+[57] R. R. Selvaraju, M. Cogswell, A. Das, R. Vedantam, D. Parikh, and D. Batra. Grad-CAM: Visual explanations from deep networks via gradient-based localization. In ICCV, pages 618–626, 2017.   
+[58] L. Sharkey, B. Chughtai, J. Batson, J. Lindsey, J. Wu, L. Bushnaq, N. Goldowsky-Dill, S. Heimersheim, A. Ortega, J. I. Bloom, S. Biderman, A. Garriga-Alonso, A. Conmy, N. Nanda, J. Rumbelow, M. Wattenberg, N. Schoots, J. Miller, W. Saunders, E. J. Michaud, S. Casper, M. Tegmark, D. Bau, E. Todd, A. Geiger, M. Geva, J. Hoogland, D. Murfet, and T. McGrath. Open problems in mechanistic interpretability. TMLR, 2025.   
+[59] K. Simonyan, A. Vedaldi, and A. Zisserman. Deep inside convolutional networks: Visualising image classification models and saliency maps. In ICLRW, 2014.   
+[60] A. Steiner, A. Kolesnikov, X. Zhai, R. Wightman, J. Uszkoreit, and L. Beyer. How to train your ViT? Data, augmentation, and regularization in vision transformers. TMLR, 2022.   
+[61] M. Sundararajan, A. Taly, and Q. Yan. Axiomatic attribution for deep networks. In D. Precup and Y. W. Teh, editors, ICML, pages 3319–3328, 2017.   
+[62] G. Team. Gemma 3 technical report. arXiv:2503.19786 [cs.CL], 2025.   
+[63] Q. Team. Qwen3-VL technical report. arXiv:2505.09388 [cs.CL], 2025.   
+[64] A. Templeton, T. Conerly, J. Marcus, J. Lindsey, T. Bricken, B. Chen, A. Pearce, C. Citro, E. Ameisen, A. Jones, H. Cunningham, N. L. Turner, C. McDougall, M. MacDiarmid, C. D. Freeman, T. R. Sumers, E. Rees, J. Batson, A. Jermyn, S. Carter, C. Olah, and T. Henighan. Scaling monosemanticity: Extracting interpretable features from Claude 3 Sonnet. Transformer Circuits Thread, 2024.   
+[65] M. Tschannen, A. A. Gritsenko, X. Wang, M. F. Naeem, I. Alabdulmohsin, N. Parthasarathy, T. Evans, L. Beyer, Y. Xia, B. Mustafa, O. J. Hénaff, J. Harmsen, A. Steiner, and X. Zhai. SigLIP 2: Multilingual vision-language encoders with improved semantic understanding, localization, and dense features. arXiv:2502.14786 [cs.CV], 2025.   
+[66] A. M. Turner, L. Thiergart, G. Leech, D. Udell, J. J. Vazquez, U. Mini, and M. MacDiarmid. Steering language models with activation engineering. arXiv:2308.10248 [cs.CL], 2023.   
+[67] Y. Wang, H. Li, X. Han, P. Nakov, and T. Baldwin. Do-not-answer: A dataset for evaluating safeguards in LLMs. In EACL, 2024.   
+[68] R. Wightman. Pytorch image models, 2019.   
+[69] K. Wittenmayer, S. Rao, A. Parchami-Araghi, B. Schiele, and J. Fischer. CFM: Languagealigned concept foundation model for vision. arXiv:2601.13798 [cs.CV], 2026.   
+[70] S. Woo, S. Debnath, R. Hu, X. Chen, Z. Liu, I. S. Kweon, and S. Xie. ConvNeXt V2: Codesigning and scaling convnets with masked autoencoders. In CVPR, pages 16133–16142, 2023.
+
+[71] Z. Wu, A. Arora, A. Geiger, Z. Wang, J. Huang, D. Jurafsky, C. D. Manning, and C. Potts. AxBench: Steering llms? even simple baselines outperform sparse autoencoders. In ICML, 2025.   
+[72] M. Xue, Q. Huang, H. Zhang, J. Hu, J. Song, M. Song, and C. Jin. ProtoPFormer: Concentrating on prototypical parts in vision transformers for interpretable image recognition. In IJCAI, pages 1516–1524, 2024.   
+[73] H. Yin, P. Molchanov, J. M. Álvarez, Z. Li, A. Mallya, D. Hoiem, N. K. Jha, and J. Kautz. Dreaming to distill: Data-free knowledge transfer via deepinversion. In CVPR, pages 8712– 8721, 2020.   
+[74] V. Zaigrajew, H. Baniecki, and P. Biecek. Interpreting CLIP with hierarchical sparse autoencoders. In ICML, 2025.   
+[75] M. E. Zarlenga, P. Barbiero, G. Ciravegna, G. Marra, F. Giannini, M. Diligenti, Z. Shams, F. Precioso, S. Melacci, A. Weller, P. Lió, and M. Jamnik. Concept embedding models: Beyond the accuracy-explainability trade-off. In NeurIPS, 2022.   
+[76] Y. Zhang, J. Jia, X. Chen, A. Chen, Y. Zhang, J. Liu, K. Ding, and S. Liu. To generate or not? safety-driven unlearned diffusion models are still easy to generate unsafe images ... for now. In ECCV, pages 385–403, 2024.   
+[77] L. Zheng, W. Chiang, Y. Sheng, S. Zhuang, Z. Wu, Y. Zhuang, Z. Lin, Z. Li, D. Li, E. P. Xing, H. Zhang, J. E. Gonzalez, and I. Stoica. Judging LLM-as-a-judge with MT-bench and chatbot arena. In NeurIPS, 2023.   
+[78] J. Zhu, W. Wang, Z. Chen, Z. Liu, S. Ye, L. Gu, H. Tian, Y. Duan, W. Su, J. Shao, Z. Gao, E. Cui, X. Wang, Y. Cao, Y. Liu, X. Wei, H. Zhang, H. Wang, W. Xu, H. Li, J. Wang, N. Deng, S. Li, Y. He, T. Jiang, J. Luo, Y. Wang, C. He, B. Shi, X. Zhang, W. Shao, J. He, Y. Xiong, W. Qu, P. Sun, P. Jiao, H. Lv, L. Wu, K. Zhang, H. Deng, J. Ge, K. Chen, L. Wang, M. Dou, L. Lu, X. Zhu, T. Lu, D. Lin, Y. Qiao, J. Dai, and W. Wang. InternVL3: Exploring advanced training and test-time recipes for open-source multimodal models. arXiv:2504.10479 [cs.CV], 2025.
+
+# Appendix
+
+A Societal Impact 16
+
+B Metric Definitions 16
+
+B.1 LLM Rank . . . 16   
+B.2 Monosemanticity score . . . 17   
+B.3 Dictionary structure . . 18   
+B.4 Computational Efficiency . . . . 19
+
+C Results 19
+
+C.1 Stability . . . . 19   
+C.2 Computational Efficiency . . . 20   
+C.3 Steering . . . 20   
+C.4 Generalization . . . 21   
+C.5 Ablations . . 21
+
+D Additional Qualitative Examples 22
+
+E Implementation Details 22
+
+E.1 Hyperparameter sweep . . . 22   
+E.2 Compute hardware . . 23   
+E.3 Software stack . . 24   
+E.4 Datasets . . 24   
+E.5 Backbones . . 25   
+E.6 Per-backbone disentanglement configurations . . . 25   
+E.7 Clustering hyperparameters . . . 25   
+E.8 Seeds . . . 26
+
+# A Societal Impact
+
+Interpretability research of the kind presented here contributes to safer and more transparent AI: more monosemantic representations make it easier to audit models for spurious correlations, detect failure modes, and satisfy emerging regulatory requirements around model explainability. As with any interpretability method, however, a more precise understanding of feature structure could in principle assist adversarial attack design, and the concept-steering capability we demonstrate could be applied to manipulate model outputs in unintended ways. These risks are not unique to ELUDe and are shared by mechanistic interpretability research broadly; they do not require mitigation beyond standard responsible-use practices for ML research artifacts.
+
+# B Metric Definitions
+
+This section gives the detailed definition of every metric used in Section C.
+
+# B.1 LLM Rank
+
+The LLM Rank metric reported in Table 2 and Table 6 ranks methods by how often three vision– language model (VLM) judges, used as proxies for a human evaluator [77], prefer one method’s disentangled units over another’s in a pairwise coherence test. Each comparison shows two grids of top-activating images side by side and asks which is more coherent; methods are ranked by their consensus win rate across all such pairs.
+
+Grid construction. For each unit, we build a 3×3 grid of its top-9 most-activating images from the ImageNet-1k evaluation split, at 336×336 pixels per cell. For backbones that produce token sequences, each image’s activation score is the maximum unit activation across all tokens (matching the MS-Score convention; cf. Section B.2). Figure 6 shows one such grid.
+
+Judges. The three judges are Qwen3-VL-30B-A3B-Instruct [63] (Tongyi Qianwen license), Gemma-3-27B [62] (Gemma terms of use), and InternVL3-14B [78] (MIT). Each is served through vLLM with tensor\_parallel\_size = 1, max\_model\_len = 32 768, limit\_mm\_per\_prompt = {image: 2}, and a generation batch size of 64. Decoding is greedy: temperature = 0, max\_tokens = 256, with a fixed seed of 42 passed to vLLM’s SamplingParams.
+
+Pairwise presentation. For each pair of methods, we sample 50 unit-pair indices and present each pair as two side-by-side grids. To mitigate position bias, every pair is shown twice with grids A and B swapped. In Table 2,  102  = 45 method pairs × 50 unit-pair indices × 2 swap presentations × 3 seeded token datasets yields 13,500 pairwise judgments per VLM judge. In Table 6, the six methods compared (the four strongest baselines, ELUDe, and the original backbone) give  62 = 15 pairs and 4,500 judgments per VLM judge per generalization setting.
+
+Aggregation and confidence intervals. Each pair of grids has a consensus winner: the option chosen by the majority of the three judges. Each method has a consensus win rate: the fraction of pairs it wins, pooled across the three seeded token datasets. Methods are ranked by this rate, and we attach 95% confidence intervals by bootstrapping the pairwise comparisons 1,000 times. The ordinal LLM Rank in Table 2 is derived from these rates; the rates themselves and their intervals are listed in Table 3.
+
+Prompt. All three VLM judges receive the identical model-agnostic prompt:
+
+Each grid shows the 9 images that most strongly activate a neural network unit.
+
+A COHERENT unit captures a single, nameable concept: most images share a common object category, object part, color, texture, material, shape, or other visual or semantic attribute.
+
+An INCOHERENT unit shows images with no discernible shared property.
+
+![](images/e2bbd9deaf624a399f9fa365c264aa90fb29643bfd248c939243397ee32d3d0d.jpg)
+
+![](images/61baee2d5373a14871b1368139aca63bc01106b69b5ad09bcb8f1b893438925b.jpg)
+
+![](images/862ccae058e2ade42722aaf7a28b2b12301fefb0216f6b5f6dcd058757a3e8f0.jpg)
+
+![](images/5193683e187cd514915f352a73c2afed2c6014b6cc164a220c3808331b0b3606.jpg)
+
+![](images/3deaa51ec517b6a4d140a89c92ccd16b0be855abcb6478bd92fac1acda2a8e00.jpg)
+
+![](images/7038eebdaf41b39631ad6b9e09ab0be43d036fda812eec79b8f1c945d1bca376.jpg)
+
+![](images/5e4653c7715c6e50e9ba1e47cf54ddead698063f4d0d8d0f914f0692e86779fc.jpg)
+
+![](images/11efd46a0bed3fe33494cbd859245ca620d4e6ac604e798c1ee242ac3af2f7c4.jpg)
+
+![](images/789e401a35d3fe95396a4a3cb1499339c22ae86b1864efc43b2d121619aae00c.jpg)
+
+![](images/b54e602feb15fc60a08ebcb8f1ed928c15a28a41a4322aff370b68f54e313c93.jpg)
+
+![](images/74bb6f2a62807b41f28c2bdf317b736f424a997f1e541ac058be688e27d96229.jpg)
+
+![](images/b108fc2b1e31a194c988e405105e7a575fefe8763e7d1517851c265327f29a69.jpg)
+
+![](images/26a600631d9bd1051e94d952fa4b17029f588b439864ab4fd0f01448c89c9091.jpg)
+
+![](images/d766e922d4ad92e98c3d9b35dbba67e976e286401a922ef5409e06deb86f9b6a.jpg)
+
+![](images/7badad487a92ca7bc7e2f19a01a840f5d554c739d863df0b56060afdae44e722.jpg)
+
+![](images/055998037529fb7b3fbd4965baa23d6bb8c2465a4ea1544663401b46e9efea16.jpg)
+
+![](images/1bf9ecb5cf3823c1a9032ce3111310d3e51261831c4f21259d30f83765be218b.jpg)
+
+![](images/33f4aa61eadfb59b7f2a21ab42309e6d096ac0977a3cadfbaaecae5dcdf82afc.jpg)
+
+# InternVL3-14B (PICKS: LEFT)
+
+“Grid A captures the concept of small dogs. Most images in this grid show different breeds of small dogs, indicating a coherent theme centered around this category.”
+
+“Grid B is incoherent. The images show a variety of unrelated subjects, including a marine creature, a person in water, a dog, another marine creature, a fish, a sleeping kitten, a cat behind a fence, a roof, and a puppy. There is no single discernible shared property.”
+
+# Qwen3-VL-30B-A3B (PICKS: LEFT)
+
+“Grid A is coherent because all nine images feature dogs. Although the breeds, sizes, and settings vary, the unifying concept is the animal itself. The images show different dogs in various poses and environments, but the shared object category is clearly ’dog’.”
+
+“Grid B is incoherent because the images do not share a single, nameable concept. The images depict a wide variety of unrelated subjects: a dead crab, a person in water, a puppy, a sea cucumber, a fish, a sleeping kitten, a cougar, solar thermal tubes, and a puppy. There is no common object, color, texture, or semantic attribute that connects all nine images.”
+
+# Gemma-3-27B (PICKS: LEFT)
+
+“Grid A predominantly features images of small, fluffy dogs, with variations in breed and color, but a clear focus on canine features. There’s a strong visual similarity in terms of texture and general shape.”
+
+“Grid B is much more diverse, containing images of a sea lion, a person in a wetsuit, a puppy, a sea creature, a fish, a black puppy, a lion, bamboo, and another black puppy. There’s no obvious common theme or visual property linking these images.”
+
+# CONSENSUS: Left
+
+Figure 6: Example pairwise grid shown to a VLM judge. Each panel is a 3×3 collage of the top-9 most-activating images for one disentangled unit; two such panels from competing methods (left: ELUDe, right: Archetypal SAE) are placed side by side and the three judges select the more coherent grid. Beneath the grids each judge’s per-grid reasoning and the resulting consensus winner is shown. The example is from DINOv2-S/14.
+
+Grid A = first image. Grid B = second image.
+
+Describe what concept each grid captures (or why it seems incoherent), then state which is more coherent.
+
+Respond as JSON only:
+
+{"reasoning\_a": "...", "reasoning\_b": "...", "answer": "A" or "B"}
+
+# B.2 Monosemanticity score
+
+To complement the LLM-based coherence metric, we report a monosemanticity score (MS-Score) following Pach et al. [47], evaluated in the backbone’s own pre-disentanglement representation space rather than that of a fixed external vision model.
+
+Table 3: Per-method consensus win rate. Fraction of pairwise comparisons in which a method was declared the winner under the majority-of-three VLM consensus (ties dropped), pooled across the three seeded token datasets. These are the continuous values backing the ordinal LLM Rank in Table 2. Brackets give the 95% bootstrap confidence interval from 1,000 resamples of unit-pair comparisons. Same backbones, method order, and shading as Table 2. 
+
+<table><tr><td colspan="2"></td><td>Consensus win rate (%)</td><td>95% CI</td></tr><tr><td rowspan="10">ImageNet-21k ViT-B/16</td><td>Backbone only</td><td>38.74</td><td>[36.8, 40.6]</td></tr><tr><td>Vanilla SAE</td><td>47.85</td><td>[45.8, 49.7]</td></tr><tr><td>TopK-SAE</td><td>54.11</td><td>[52.2, 55.8]</td></tr><tr><td>JumpReLU</td><td>21.00</td><td>[19.5, 22.5]</td></tr><tr><td>BatchTopK-SAE</td><td>51.89</td><td>[50.1, 53.7]</td></tr><tr><td>Matryoshka SAE</td><td>52.07</td><td>[50.1, 53.9]</td></tr><tr><td>Archetypal SAE</td><td>61.19</td><td>[59.5, 63.1]</td></tr><tr><td>Matching Pursuit</td><td>57.56</td><td>[55.8, 59.4]</td></tr><tr><td>Transcoder</td><td>37.67</td><td>[35.9, 39.5]</td></tr><tr><td>ELUDe (ours)</td><td>77.93</td><td>[76.3, 79.4]</td></tr><tr><td rowspan="10">DINOv2 ViT-B/14</td><td>Backbone only</td><td>45.44</td><td>[43.0, 47.7]</td></tr><tr><td>Vanilla SAE</td><td>38.44</td><td>[36.2, 40.6]</td></tr><tr><td>TopK-SAE</td><td>48.94</td><td>[46.7, 51.4]</td></tr><tr><td>JumpReLU</td><td>29.39</td><td>[27.3, 31.5]</td></tr><tr><td>BatchTopK-SAE</td><td>58.33</td><td>[56.1, 60.4]</td></tr><tr><td>Matryoshka SAE</td><td>52.67</td><td>[50.2, 55.0]</td></tr><tr><td>Archetypal SAE</td><td>62.17</td><td>[59.9, 64.4]</td></tr><tr><td>Matching Pursuit</td><td>60.39</td><td>[57.9, 62.5]</td></tr><tr><td>Transcoder</td><td>37.22</td><td>[35.0, 39.6]</td></tr><tr><td>ELUDe (ours)</td><td>67.00</td><td>[64.9, 69.2]</td></tr></table>
+
+Top-K selection. For each unit, we rank all images in the ImageNet-1k evaluation split by the unit’s maximum activation across all spatial positions (or tokens, for ViTs), and keep the top K = 100. This limits the computation to concepts to which the unit strongly activates for.
+
+Per-image embedding. For each selected image, we localize the spatial position (or token) at which the unit attains its maximum activation, and extract the backbone’s representation at that position. We use the original (pre-disentanglement) backbone representation – the same activation space in which the units live – rather than a fixed external vision model. This ensures the metric only measures separability of concepts already encoded in the model, aligning the metric with the capabilities of any disentanglement method that operates on this backbone. Each embedding is ℓ2-normalised before scoring.
+
+Weight construction. Each image i is weighted by the unit’s activation at its chosen position, min–max normalised to [0, 1] using the activation range observed across the entire evaluation split. Higher-activating images contribute more.
+
+Score. Let $\{ ( e _ { i } , w _ { i } ) \} _ { i = 1 } ^ { K }$ 1 be the ℓ2-normalised embeddings and weights for the top-K images. The MS-Score is the weighted mean off-diagonal pairwise cosine similarity:
+
+$$
+\mathrm{MS} (u) = \frac {\left\| \sum_ {i} w _ {i} e _ {i} \right\| ^ {2} - \sum_ {i} w _ {i} ^ {2}}{\left(\sum_ {i} w _ {i}\right) ^ {2} - \sum_ {i} w _ {i} ^ {2}}. \tag {7}
+$$
+
+The score lies in [0, 1]: 1 corresponds to all top-K embeddings being identical (perfectly monosemantic), 0 to them being orthogonal in expectation. We report the metric as a percentage. Units that never activate on the evaluation split are excluded from the per-method aggregation.
+
+# B.3 Dictionary structure
+
+This subsection details the cross-init stability protocol used in Section 4.2, and defines two single-run dictionary-geometry metrics – effective rank and dictionary coherence – reported alongside it in Table 4, following Fel et al. [22].
+
+Setup. We assess every trainable baseline on DINOv2-B/14 at expansion factor 8, the same configuration as the headline run in Section 4.1. For each method we train three independent runs with initialization seeds {42, 7, 1024} on the same seeded token dataset, holding training data, hyperparameters, and optimization schedule fixed. ELUDe has no random initialization to vary, so we run it three times under identical inputs as well; any residual variation is attributable to numerical precision in the cuML HDBSCAN implementation. Dead concept vectors produced by ρ-selection (Section 3.3) are excluded from each run before any metric is computed.
+
+Stability. For each pair of runs we compute the Hungarian-matched mean cosine similarity between the two dictionaries, following Fel et al. [22]: a permutation π over atoms is chosen to maximise $\begin{array} { r } { \sum _ { n } \cos \bigl ( D _ { s _ { 1 } } ^ { ( n ) } , D _ { s _ { 2 } } ^ { ( \pi ( n ) ) } \bigr ) } \end{array}$ , and the per-atom average is reported. For SAEs and the transcoder, this matching runs once over the full decoder $D \in \mathbb { R } ^ { K \times d }$ . For ELUDe, the dictionary is structured as one block per parent neuron, $\{ D ^ { ( n ) } \in \mathbb { R } ^ { k _ { n } \times d } \} _ { n } ,$ , and the matching is performed per neuron and then averaged across neurons; because cuML HDBSCAN’s parallel MST construction is non-associative in floating point, the cluster counts $k _ { a }$ and $k _ { b }$ for the same neuron can differ slightly across runs, so for each neuron we match the first min $\left( k _ { a } , k _ { b } \right)$ atoms and subtract a penalty $| \boldsymbol { k _ { a } } - \boldsymbol { \bar { k } _ { b } } | / \operatorname* { m a x } ( k _ { a } , k _ { b } )$ that charges worst-case dissimilarity for the unmatched atoms. With three seeds we obtain ${ \binom { 3 } { 2 } } = 3$ pairs; the reported stability is the mean over the three pairs, in [0, 1] (higher = more stable).
+
+Effective rank. We report the entropy-based effective rank of each dictionary [22]: with singular values $\sigma _ { 1 } \geq \cdot \cdot \cdot \geq \sigma _ { K }$ of D and $\begin{array} { r } { p _ { i } = \sigma _ { i } / \sum _ { i } \sigma _ { j } , \operatorname { E R } ( D ) = \exp \bigl ( H ( p ) \bigr ) } \end{array}$ where H is the Shannon entropy. The score lies in $[ 1 , K ]$ ; higher values indicate atoms span more output directions. We average effective rank across the three runs of each method and report mean ± std.
+
+Dictionary coherence. We report dictionary coherence as defined in Fel et al. [22], computed via overcomplete.metrics.dictionary\_collinearity; values are in [0, 1] (reported as a percentage), with higher values indicating atoms are more mutually distinguishable. Like effective rank, coherence is averaged across the three runs of each method and reported $\mathrm { m e a n } \pm \mathrm { s t d }$ .
+
+# B.4 Computational Efficiency
+
+Protocol. Computational Efficiency is measured with a timing protocol inspired by timm [68]: per variant we run 100 warmup forward passes, synchronise the GPU, then time 500 benchmark iterations using per-iteration torch.cuda.Event timers and a final synchronise. We report two metrics as proxies for computational efficiency; ms per batch is the wall time divided by the number of iterations; peak GPU memory is reported via torch.cuda.max\_memory\_allocated() after a reset at the start of timing. All variants are timed at batch size 256 on a single H100, at the backbone’s native input resolution.
+
+Variant construction. For SAE and transcoder baselines, the disentangled layer of the backbone is left untouched and the SAE/transcoder forward computation is hooked in after it via output capture. For ELUDe we substitute the original Linear layer with its two-stage disentangled replacement: a disentangling Linear that projects to $\textstyle \sum _ { u } K _ { u }$ subunits, where $K _ { u }$ is the cluster count for unit u (cf. Sections 3.2 and 3.3), followed by a merger that sums each original unit’s $K _ { u }$ subunits back into one output channel,
+
+$$
+a _ {u} = \sum_ {c = 1} ^ {K _ {u}} a _ {u} ^ {(c)}, \tag {8}
+$$
+
+recovering the original output dimensionality $d _ { L }$ . The variant is timed on the same loaded backbone (the layer is hot-swapped in place), so the reported metrics reflects the cost of the disentangling/merging step alone. torch.compile is enabled.
+
+# C Results
+
+# C.1 Stability
+
+Table 4 reports the per-method cross-init stability, effective rank, and dictionary coherence on DINOv2-B/14. The analysis is in Section 4.2; the measurement protocol is in Section B.3.
+
+Table 4: Stability and dictionary geometry. Cross-init stability, effective rank, and coherence for all methods on DINOv2-B/14 at the same configuration as Section 4.1. Protocol details (Hungarian matching, the penalty for ELUDe’s variable cluster counts, dead-vector exclusion, and effectiverank/coherence averaging across the three seeded token datasets) are in Section B.3. Best per metric in bold, second best underlined. 
+
+<table><tr><td rowspan="2">Model</td><td rowspan="2">Method</td><td>Stability</td><td colspan="2">Dict. Geometry</td></tr><tr><td>Cross-Init Sim. (↑)</td><td>Eff. Rank (↑)</td><td>Coherence (↑)</td></tr><tr><td rowspan="9">DINOv2 ViT-B/14</td><td>Vanilla SAE</td><td> $13.32 \pm 0.0001$ </td><td> $\underline{755.0} \pm 0.05$ </td><td> $55.83 \pm 0.0713$ </td></tr><tr><td>TopK-SAE</td><td> $81.42 \pm 0.0044$ </td><td> $664.5 \pm 1.66$ </td><td> $97.10 \pm 0.0019$ </td></tr><tr><td>JumpReLU</td><td> $13.38 \pm 0.0001$ </td><td> $\underline{756.9} \pm 0.03$ </td><td> $69.18 \pm 0.0737$ </td></tr><tr><td>BatchTopK-SAE</td><td> $58.93 \pm 0.0029$ </td><td> $734.3 \pm 0.16$ </td><td> $99.64 \pm 0.0001$ </td></tr><tr><td>Matryoshka SAE</td><td> $50.77 \pm 0.0081$ </td><td> $729.6 \pm 0.23$ </td><td> $98.48 \pm 0.0150$ </td></tr><tr><td>Archetypal SAE</td><td> $\underline{86.85} \pm 0.0058$ </td><td> $500.8 \pm 16.46$ </td><td> $\mathbf{100} \pm 0.0000$ </td></tr><tr><td>Matching Pursuit</td><td> $\underline{78.08} \pm 0.0081$ </td><td> $659.5 \pm 0.00$ </td><td> $99.32 \pm 0.0005$ </td></tr><tr><td>Transcoder</td><td> $65.07 \pm 0.0088$ </td><td> $674.7 \pm 0.00$ </td><td> $97.89 \pm 0.0031$ </td></tr><tr><td>ELUDe (ours)</td><td> $\underline{93.34} \pm 0.0308$ </td><td> $739.6 \pm 0.06$ </td><td> $\mathbf{100} \pm 0.0000$ </td></tr></table>
+
+Table 5: Computational Efficiency. ms per batch and peak GPU memory for all methods on DINOv2-B/14 layer 11, batch size 256, single H100, torch.compile enabled, under the same configuration as Section 4.1. Input dim reflects what each method receives as input in order to disentangle the target layer. $\mathrm { M e a n s } \pm \mathrm { s t d }$ . over seeds; backbone included as a parameter-free reference. Full protocol: Section B.4. ELUDe matches SAE-class throughput while consuming only 15% more peak memory than the bare backbone – versus 11–31× more for SAE-based methods – because weight surgery introduces no runtime parameters. 
+
+<table><tr><td rowspan="2">Model</td><td rowspan="2">Method</td><td rowspan="2">Input dim</td><td colspan="2">Comp. Efficiency</td></tr><tr><td>ms/batch (↓)</td><td>Peak mem MB (↓)</td></tr><tr><td rowspan="10">DINOv2 ViT-B/14</td><td>Backbone only</td><td>N/A</td><td>380.83 ± 0.39</td><td>501.10 ± 0.61</td></tr><tr><td>Vanilla SAE</td><td>768</td><td>417.18 ± 1.16</td><td>5664.75 ± 0.00</td></tr><tr><td>TopK-SAE</td><td>768</td><td>426.10 ± 2.06</td><td>8694.34 ± 0.00</td></tr><tr><td>JumpReLU</td><td>768</td><td>422.59 ± 2.82</td><td>9081.85 ± 0.00</td></tr><tr><td>BatchTopK-SAE</td><td>768</td><td>427.95 ± 2.54</td><td>8678.56 ± 0.00</td></tr><tr><td>Matryoshka SAE</td><td>768</td><td>428.55 ± 1.82</td><td>8678.56 ± 0.00</td></tr><tr><td>Archetypal SAE</td><td>768</td><td>437.43 ± 2.24</td><td>10 066.29 ± 0.61</td></tr><tr><td>Matching Pursuit</td><td>768</td><td>1186.13 ± 4.93</td><td>12 114.26 ± 0.00</td></tr><tr><td>Transcoder</td><td>3072</td><td>720.60 ± 1.84</td><td>15 617.39 ± 0.00</td></tr><tr><td>ELUDe (ours)</td><td>3072</td><td>437.73 ± 4.22</td><td>577.49 ± 5.30</td></tr></table>
+
+# C.2 Computational Efficiency
+
+Table 5 reports per-method throughput and peak GPU memory on DINOv2-B/14 layer 11 at batch size 256 on a single H100, with the original backbone as reference. The analysis is in Section 4.2; the measurement protocol is in Section B.4.
+
+# C.3 Steering
+
+Implementation. We apply ELUDe at layer 26 of the LLaVA-OneVision [36] vision encoder; captions are decoded greedily. Each disentangled unit is assigned a text label offline via CLIP-Dissect [42] with its CLIP backbone replaced by SigLIP2-SO400M [65]. At steering time, the user nominates one or more concepts to amplify or suppress. Each concept is matched to the top-κ units whose labels are most similar to it – measured by cosine similarity of perplexity-ai/pplx-embed-v1- 0.6b [20] text representations computed via SentenceTransformer [54] – and the matched units are placed in an amplify set A or a suppress set S according to the user’s intent; units matched by both go to A. We then intercept the layer output and scale each selected unit’s activations by α (for u ∈ A) or $\gamma ( \operatorname { f o r } u \in S )$ , restricted to the ν image patches where that unit responds most strongly; all other units and patches are left unchanged.
+
+Results. Figure 5 in Section 4.2 reports a single steering intervention; Figures 7 to 10 extend the analysis to four additional scenes. The setup is identical throughout: ELUDe at layer 26, the same caption prompt, and greedy decoding. Hyperparameters $( \alpha , \gamma , \kappa , \nu )$ are not fixed across rows; each intervention is reported at a representative operating point selected per concept from a coarse grid sweep, with the chosen values listed in each figure caption. ‘−” and “+” denote removing and adding the concept, respectively. Two regularities recur across interventions: subject replacement requires moderate-to-large α together with mild $\gamma ,$ , while concept suppression is dominated by strong γ and is largely insensitive to α.
+
+![](images/bde96aa295479a5e2c1de100c2a96c3af5ec741d6d079769cc73dccab1a81ed2.jpg)
+
+<details>
+<summary>natural_image</summary>
+
+Yellow and blue train traveling on railway tracks with overhead traffic lights and a bridge structure (no visible text or symbols)
+</details>
+
+<table><tr><td>Setting</td><td>Caption</td></tr><tr><td>baseline</td><td>A yellow and blue train is traveling on tracks next to a building with graffiti.</td></tr><tr><td> $-\{train\}$ </td><td>A yellow and blue car is driving past a pile of graffiti.</td></tr><tr><td> $-\{train\} + \{bus\}$ </td><td>A red and yellow bus is driving down a street with a graffiti-covered wall in the background.</td></tr><tr><td> $-\{graffiti\} + \{clean\}$ </td><td>A red and yellow train is traveling down a track next to a clean brick wall.</td></tr></table>
+
+Figure 7: Steering example 2: independent foreground and background edits on the train scene. Settings $( \alpha , \gamma , \kappa , \nu )$ per row: train suppression $( 5 , - 5 0 , 5 0 , a \bar { l } p a t c h t o k e n s )$ ; train→bus $( 5 0 , - 2 , 1 0 0 , \bar { 5 } 0 )$ ; graffiti→clean $( 1 5 , - 1 5 , 2 0 0 , 5 0 )$ . The subject and the background style are modified from the same ELUDe layer without cross-interference, with the foreground edit preserving the graffiti wall and the background edit preserving the train.
+
+![](images/f59c0be276551adbb935d429130c1329dfbdcb8cfdecaec6167f3dff75d087ed.jpg)
+
+<details>
+<summary>natural_image</summary>
+
+A teddy bear sitting on a striped table in a shopping mall, with no visible text or symbols.
+</details>
+
+<table><tr><td>Setting</td><td>Caption</td></tr><tr><td>baseline</td><td>A large teddy bear sits on a chair in a shopping mall, surrounded by various signs and advertisements.</td></tr><tr><td> $-\{ \text{chair} \} + \{ \text{table} \}$ </td><td>A large teddy bear sits on a table, surrounded by a checkered tablecloth, in a shopping mall.</td></tr><tr><td> $-\{ \text{teddy} \} + \{ \text{dog} \}$ </td><td>A large, brown, dog-shaped object is displayed in a store, and a person is walking by in the background.</td></tr><tr><td> $-\{ \text{teddy} \}$ </td><td>A large, red, leather-textured bag is displayed on a stand in a store, with a man walking by in the background.</td></tr></table>
+
+Figure 8: Steering example 3: surface, subject, and suppression edits on the giant-teddy scene. Settings $( \alpha , \gamma , \kappa , \nu )$ per row: chair→table $( 5 , - 5 , 5 \bar { 0 } , 2 5 )$ ; teddy→dog $( 5 , - 5 0 , 1 0 0 , 5 0 )$ ; teddy suppression $( 5 , - 2 5 , 2 0 0 , 1 0 0 )$ . The seat-surface concept is separable from the toy, and the surrounding store context (stand, passers-by) is preserved under both subject substitution and pure suppression.
+
+# C.4 Generalization
+
+Table 6 reports per-method LLM Rank, MS-Score, downstream accuracy, and $R ^ { 2 }$ across four axes of generalization: layer, backbone size, model family, and expansion factor. The analysis is in Section 4.2; metric definitions are in Section B.
+
+# C.5 Ablations
+
+We ablate ELUDe’s clustering choices one hyperparameter at a time around the default configuration (HDBSCAN cluster\_selection\_method, min\_cluster\_size, min\_samples and UMAP prereduction), evaluated by MS-Score on DINOv2-B/14 layer 12. Because $R ^ { \bar { 2 } }$ and downstream accuracy are exact by construction regardless of clustering choices, MS-Score is the only informative metric. A random neuron disentanglement baseline confirms that the gains are driven by the structure in the attribution vectors, not the expansion factor alone. Results in Table 7 show ELUDe is robust across all axes. Table 7 reports MS-Score on DINOv2-B/14 for the ablation axes swept around the ELUDe baseline (HDBSCAN cluster-selection method, min\_cluster\_size, min\_samples, UMAP dimensionality reduction) at expansion factor 4. The analysis is in Section 4.2; the baseline clustering hyperparameters are listed in Section E.7.
+
+![](images/10fbc744ed22365ffda6b230aa59af9fff7363dd2cd2ac9390098b1e23c79576.jpg)
+
+<details>
+<summary>natural_image</summary>
+
+A small rodent in mid-air jumping on a green mat, with a person observing nearby (no text or symbols visible)
+</details>
+
+<table><tr><td>Setting</td><td>Caption</td></tr><tr><td>baseline</td><td>A dog is leaping in the air to catch a frisbee.</td></tr><tr><td> $-\{frisbee\} + \{ball\}$ </td><td>A dog is in mid-air with a red ball in its mouth, and a person is standing nearby.</td></tr><tr><td> $-\{frisbee, ball\} + \{jumping\}$ </td><td>A dog is jumping in the air with a red leash, and a man is watching from behind.</td></tr><tr><td> $-\{indoor\} + \{beach, park\}$ </td><td>A dog is in a playful mood, with a picture of a dog on a beach in the background.</td></tr></table>
+
+Figure 9: Steering example 4: object swap, object removal, and background transplant on the action shot. Settings $( \alpha , \gamma , \kappa , \nu )$ per row: frisbee→ball (15, −0.5, 200, allpatchtokens); frisbee/ball suppression with jumping insertion (25, −10, 50, 250); indoor→beach/park (25, −25, 200, 250). The dog and the leaping pose persist across all three rows, indicating that pose-related units are decoupled from both the held object and the background.
+
+![](images/1d12c20fc0a5da7750e30ca740b4bf68a49a83d71c5ed539b61695c2b06e405b.jpg)
+
+<details>
+<summary>natural_image</summary>
+
+Two tabby cats sleeping on a pink fabric surface, no text or symbols visible
+</details>
+
+<table><tr><td>Setting</td><td>Caption</td></tr><tr><td>baseline</td><td>Two cats are sleeping on a pink blanket, with remote controls nearby.</td></tr><tr><td> $-\{cat\} + \{baby\}$ </td><td>A sleeping baby and a sleeping adult are on a pink blanket, with a white and black toy on the adult&#x27;s stomach.</td></tr><tr><td> $-\{cat\} + \{bear\}$ </td><td>A red couch with two sleeping animals, a sleeping red panda and a sleeping brown and white cat, on it.</td></tr><tr><td> $-\{cat, blanket\}$ </td><td>Two dogs are lying on a red surface, one of them is sleeping.</td></tr></table>
+
+Figure 10: Steering example 5: subject substitution and a disentanglement boundary on the cats-on-blanket scene. Settings $( \alpha , \gamma , \kappa , \nu )$ per row: cat→baby $( 5 , - 1 0 , 2 0 0 , a l l p a t c h t o k e n s ) ;$ ; cat→bear $( 1 5 , - 1 0 , 1 0 0 , a l l p a t c h t o k e n s ) ;$ cat and blanket suppression $( 5 , - 1 5 , 5 0 , a l l p a t c h t o k e n s )$ . The cat→baby substitution preserves the blanket and the accompanying prop, while the cat→bear request returns a red panda and replaces only one of the two cats, marking the limit of the substitution at this operating point. Suppression alone re-renders the subjects with a different surface and species, mirroring the substitution behaviour on the train scene (Figure 7).
+
+# D Additional Qualitative Examples
+
+Figure 3 shows one representative ELUDe disentanglement on DINOv2-B/14 (an 8-way split). The number of subunits is not a fixed hyperparameter – HDBSCAN discovers it automatically per unit (cf. Section 3.2) and varies neuron-by-neuron depending on how many distinct concepts drive the unit’s activation. Some units produce a single cluster (effectively monosemantic already and not split further); others split into many. To illustrate the range we observe in practice, we show one representative example for each of $\dot { K } \in \{ 1 , 2 , 3 , 4 , 5 , 6 , 7 \}$ subunits in Figures 11 to 17. The format mirrors that of Figure 3: the left panel shows the top-16 activating images of the parent unit, and each pink panel on the right shows the top-4 activating images for one ELUDe subunit. Concept labels above each subunit panel are short human-assigned descriptions of the visible theme. All examples use the same configuration as Section 4.2: DINOv2-B/14, layer 12, TopK = 400k, seed 42.
+
+# E Implementation Details
+
+# E.1 Hyperparameter sweep
+
+Sparsity target and training budget. For each SAE and transcoder family, the target sparsity K (active features per token) is fixed at 20, following established practice in the SAE literature [14, 47, 74]; Archetypal SAE uses a sparsity ratio of 10% as in Fel et al. [22]. All baselines are trained for 50 epochs [14, 22].
+
+Per-family grid sweep. At the fixed sparsity above, we sweep the learning rate $\lambda \in \{ 1 0 ^ { - 4 } , 5$ · $1 0 ^ { - 4 } , 1 0 ^ { - 5 } \}$ and the dead-feature regularization weight $w _ { \mathrm { d e a d } } \in \mathrm { { \bar { \{ 1 0 ^ { - 5 } } , 1 0 ^ { - 4 } , 1 0 ^ { - 3 } } } \}$ (which scales a re-animation term $\begin{array} { r } { \frac { 1 } { \vert \mathcal { F } _ { \boldsymbol { \mathcal { E } } } \vert B } \sum _ { s } \sum _ { k \in \mathcal { F } _ { \boldsymbol { \mathcal { E } } } } \tilde { z } _ { s k } } \end{array}$ subtracted from the loss, where $\mathcal { F } _ { \emptyset }$ denotes batch-dead features and $\tilde { z } _ { s k }$ their pre-activations; maximizing this term encourages dormant features to activate) in all families. The Vanilla SAE additionally varies the $\ell _ { 1 } \cdot$ -sparsity weight $w _ { \ell _ { 1 } } \in \{ 1 0 ^ { - 3 } , 5 \cdot 1 0 ^ { - 3 } , 2$ · $1 0 ^ { - 2 } \}$ , and the JumpReLU SAE varies its sparsity-penalty weight $w _ { \mathrm { s p } } \in \{ 1 0 ^ { \overset { . } { - } 4 } , 1 0 ^ { - 3 } , 1 0 ^ { - 2 } \}$ , giving $3 ^ { 3 } = 2 7$ configurations each. The remaining families – TopK-SAE, BatchTopK-SAE, Matching Pursuit, Matryoshka ${ \mathrm { S A E } } ,$ and Archetypal SAE – sweep only $\lambda \times w _ { \mathrm { d e a d } } = 9$ configurations. In total this yields 99 configurations per (backbone, expansion factor). The Transcoder uses the Vanilla architecture and sweeps the same 27-cell $\lambda \times w _ { \ell _ { 1 } } \times w _ { \mathrm { d e a d } }$ grid as the Vanilla SAE. All sweep runs use a single fixed training seed and the first of the three seeded token datasets used in Section 4.1; the configuration selected per family is then applied to all three runs.
+
+![](images/22259a4b30d238d6432e9cbfd1fd6e2e9520c09bb202d864589a8deb6acbe7e9.jpg)
+
+<details>
+<summary>natural_image</summary>
+
+Grid of black-and-white photos showing various dog breeds and animals, including walking, sitting, and standing (no text or symbols visible)
+</details>
+
+Original Neuron 37
+
+Figure 11: $K = 1 \colon$ an already-monosemantic unit. HDBSCAN finds only a single cluster in the unit’s contribution-vector set, so ELUDe leaves the unit unchanged.   
+![](images/f1c70934f00ac665bdacc22418db8e6f042277e91e6a47b155b01291ef1c903e.jpg)
+
+<details>
+<summary>natural_image</summary>
+
+Grid of 16 nature and biological specimens including cradions, larvae, and fish (no text or labels visible)
+</details>
+
+Original Neuron 28
+
+![](images/191c5d25060d801833d3c342822547c3ea2b13d329a28907466d5764a6a7091f.jpg)
+
+<details>
+<summary>natural_image</summary>
+
+Collage of six photos showing various animal and food items including reptiles, arthropods, animals, and food (no visible text or symbols)
+</details>
+
+Large dogs   
+Figure 12: 2-way ELUDe decomposition. A polysemantic DINOv2-B/14 unit (yellow frame, left; top-16) decomposed by ELUDe into 2 subunits (pink frames, right; top-4 each).
+
+Selection criterion. For each candidate, we compute the equally-weighted average of normalized reconstruction quality and sparsity,
+
+$$
+s = \frac {1}{2} (1 - \widetilde {\mathrm{MSE}}) + \frac {1}{2} (1 - \widetilde {\mathrm{L} _ {0}}), \tag {9}
+$$
+
+where $\widetilde { \mathrm { M S E } }$ and $\widetilde { \mathrm { L } _ { 0 } }$ are min–max normalised within each family, and $\mathrm { L } _ { 0 }$ is the mean number of active features per token, divided by the total feature count ef · d before normalization. The configuration with the highest s is selected per family.
+
+# E.2 Compute hardware
+
+Different tasks run on different NVIDIA GPUs. The three vision–language judges of Section B.1 (Qwen3-VL-30B-A3B-Instruct, Gemma-3-27B, InternVL3-14B) are served via vLLM on H200 GPUs. ELUDe checkpoint generation – top-k activation collection, contribution-vector clustering, and weight restructuring – runs on H100 or A100 GPUs; a single full-pipeline ELUDe run on DINOv2- B/14 layer 12 at top- $\boldsymbol { \cdot } \boldsymbol { k } = 4 0 0 , 0 0 0$ takes approximately 26–30 hours on a single A100. This runtime reflects a conservative, unoptimized implementation: neurons are processed sequentially on a single GPU, top-k is set to 400,000 (the high end of our ablation range), and min\_cluster\_size= 1000 is chosen for cluster quality – reducing it substantially shortens runtime. The cost is one-time and offline; its effect on inference is minimal, as shown in Section C.2. SAE and transcoder training, together with the downstream evaluation pipeline (classification accuracy, MS-Score, R2 reconstruction), runs on L40S GPUs. The throughput benchmark runs exclusively on a single H100.
+
+![](images/0e4a0466d984d7ca7e9e159cb94a18a46facced92c787ee68a0e51f652da1fef.jpg)
+
+<details>
+<summary>natural_image</summary>
+
+Grid of 16 nature and environmental photos including butterflies, cars, cats, birds, and mammals (no text or symbols)
+</details>
+
+Original Neuron 321
+
+![](images/6a71f636c951f26dce14e07007ab2017d86e244fd04ce42d7d548db2cb6e7b2e.jpg)  
+Insects
+
+![](images/bc11bbca337366f3bbfce19bff361826f72d8800bf38baa39f903a3a449d5fd7.jpg)  
+Spiders
+
+![](images/1ad76185e0675f761f4464d4dcfb5e143e8aa21f4710819d80e8cdb8083b0a1b.jpg)  
+Spitz dogs
+
+Figure 13: 3-way ELUDe decomposition. A polysemantic DINOv2-B/14 unit (yellow frame, left; top-16) decomposed by ELUDe into 3 subunits (pink frames, right; top-4 each).   
+![](images/88a7e052d2b1b19eaf8bc91e3f4f0014a2f0e3e2e1ca8404f39058f4f7363c49.jpg)
+
+<details>
+<summary>natural_image</summary>
+
+Grid of 14 nature and wildlife photos including birds, pandas, monkeys, and animals (no text or symbols)
+</details>
+
+Original Neuron 286
+
+![](images/4c165dc9ba623910b76d9d4df94df7c2eae0b25ed975db235a7bfc4b774d86d1.jpg)  
+Long-haired dogs
+
+![](images/157daab6292e63fe27a1d405a61b0f665e12b545d177e46e539d2ccc1392d5b4.jpg)  
+Primates
+
+![](images/7ad19e261569d7748ec5e7b61ee0231d7652b2ae297eed3aabc618ae81502bc7.jpg)  
+Drum kits
+
+![](images/0057dc259f3e8892db4ff65f7a076762ddfc6cb55c81da3f1059e0674315ef12.jpg)  
+Insects   
+Figure 14: 4-way ELUDe decomposition. A polysemantic DINOv2-B/14 unit (yellow frame, left; top-16) decomposed by ELUDe into 4 subunits (pink frames, right; top-4 each).
+
+# E.3 Software stack
+
+The codebase is implemented in PyTorch 2.10.0 (BSD 3-Clause License) with torchvision 0.25.0 (MIT License). Backbone loading uses transformers 4.57.6 (Apache License 2.0), timm 1.0.26 [68] (Apache License 2.0), and torch.hub. Clustering uses hdbscan ≥ 0.8.40 [12] (MIT License), with cuML (RAPIDS) (Apache License 2.0) accelerating the same algorithm at scale (the source of the residual numerical non-determinism noted in Section C.1); both are installed separately and not part of the locked Python environment. The SAE and transcoder baselines reuse the implementations in the overcomplete library (MIT License). Auxiliary dependencies include scipy ≥ 1.15.3 (Hungarian matching) (BSD 3-Clause License), umap-learn ≥ 0.5.12 (one ablation axis) (BSD 3-Clause License), and sentence-transformers ≥ 5.1.1 [54] (Apache License 2.0). The VLM judges are served through vLLM (Apache License 2.0).
+
+# E.4 Datasets
+
+All methods use ImageNet-1k [55] (standard train/validation split) with each backbone’s native preprocessing pipeline; ImageNet-1k is used under its research-only terms.
+
+![](images/cc258b36c4212297fa0661dc9677285664968b1d10e0826cb9e6dfaf57b3d83f.jpg)
+
+<details>
+<summary>natural_image</summary>
+
+Grid of 12 photos showing animals and natural scenes including a piano, rock formations, and birds in various settings (no text or symbols)
+</details>
+
+Original Neuron 265
+
+![](images/89604e4bb3e45ca8e9cdfaec15c804e84c764a42f8d4ca4d56899e1e33083622.jpg)  
+Rotary phones
+
+![](images/dfdba51c19417fd53284385e4a4e6c5b32c69c27f63e0b87ea2c354c8c25aba1.jpg)  
+Badgers & skunks
+
+![](images/4db6ca35452e8d291eda8188a301ce17639268daabe2fb05b768e5e874460d03.jpg)  
+Graduation
+
+![](images/a130ebd7bf0835611eb408fe9d85b114c8b6d107b6e131fe72063739428b6374.jpg)  
+Beaches
+
+![](images/12df78d7525b09b5117960f9919204301879c32c078af971830293a6e3b158cc.jpg)  
+Hand planes
+
+Figure 15: 5-way ELUDe decomposition. A polysemantic DINOv2-B/14 unit (yellow frame, left; top-16) decomposed by ELUDe into 5 subunits (pink frames, right; top-4 each).   
+![](images/4e9b3d4855bccb9ac771606a6f086590f55820a01b0bee0cf75aab11c8f2e6b9.jpg)
+
+<details>
+<summary>natural_image</summary>
+
+Collage of various indoor and outdoor objects including a ship, kitchen cabinets, food containers, and decorative items (no visible text or symbols)
+</details>
+
+Original Neuron 45
+
+![](images/a589d0514259536a5ea20627da55684e0e9700ebfb639c92ecb6f8711858a3fa.jpg)
+
+![](images/83c72cd59244ecdd6e4a5552ea5a5a0f1f337f6778c93c814a0642d53ab3c684.jpg)  
+Vending machines
+
+![](images/b408d9ee352b0cacee341a498bc82a4813e27814c09766c0ce771de6e8849794.jpg)  
+Clownfish
+
+![](images/d0e03c221fa0b6ddb49b7f049598814acdfaa0a39b5a45b9d6a1fee5f390c750.jpg)  
+Beds
+
+![](images/af623b5e876398ea51627f1e722764727a24e811a8df9f6424d2574b12114779.jpg)  
+Office printers
+
+![](images/4f560f64f879ebbadb8dcf8ead34ba8d901af36cc6552c0985a583ea66d48636.jpg)  
+Lizards   
+Figure 16: 6-way ELUDe decomposition. A polysemantic DINOv2-B/14 unit (yellow frame, left; top-16) decomposed by ELUDe into 6 subunits (pink frames, right; top-4 each).
+
+# E.5 Backbones
+
+Table 8 lists each backbone in our model zoo, the source it is loaded from, the upstream identifier, and the license under which it is distributed.
+
+# E.6 Per-backbone disentanglement configurations
+
+The 1-indexed layer numbers used throughout the paper map to 0-indexed indices in our codebase as layer\_1idx − 1 (e.g. “layer 12” on DINOv2-B/14 is layer index 11).
+
+Matching the SAE expansion factor. For each experiment we first set the expansion factor for the SAE and transcoder baselines, then match it with ELUDe by adjusting either the TopK activation budget or the HDBSCAN min\_cluster\_size: smaller min\_cluster\_size yields more, smaller clusters and a higher effective expansion factor. SAEs and transcoders use a fixed expansion factor of 8 unless specified otherwise.
+
+Per-backbone settings. Table 9 lists the TopK and clustering deviations from the default (min\_cluster\_size = 1000, cluster\_selection\_method=leaf, min\_samples at the library default, no UMAP; Section E.7) for each (backbone, layer) configuration evaluated in Section 4.1 and Table 6.
+
+# E.7 Clustering hyperparameters
+
+ELUDe uses HDBSCAN [12] with cluster\_selection\_method=leaf, min\_cluster\_size = 1000, min\_samples at the library default, ARV unit-normalisation enabled, and no UMAP dimensionality reduction. The ablations in Section C.5 sweep each of these one at a time around this baseline.
+
+![](images/c7e9b36ad599435db18dde857bb9f30c64e4028f39ac19ab1d19f76f6ff78f74.jpg)
+
+<details>
+<summary>natural_image</summary>
+
+Grid of 16 unrelated images including sculptures, animals, and cultural scenes (no text or symbols visible)
+</details>
+
+Original Neuron 270
+
+![](images/079adfa0d265223e4624b94972b21e3720b14ba7dbe346a5d184a4c0f80d170d.jpg)
+
+<details>
+<summary>natural_image</summary>
+
+Six-panel image showing butterflies and mechanical tools, no text or symbols present
+</details>
+
+Hand planes
+
+![](images/9d6b14e984845771bdfdda8abc00fc95418fb3c95e0874f6b89d093e9f0ec90e.jpg)
+
+<details>
+<summary>natural_image</summary>
+
+Collage of six food and beverage photos including a table, cups, and a fork, with no visible text or symbols.
+</details>
+
+Desserts
+
+![](images/a3694bfb91b0cbca5feefefe82470d813a07a0d7dae8d470c1cc38b57c9b4775.jpg)
+
+<details>
+<summary>natural_image</summary>
+
+Collage of six photos showing chimpanzees and their close-ups, including animals in natural setting (no text or symbols)
+</details>
+
+Reptiles
+
+![](images/bfea06b973a548110eb1bdcd4060846e4a459c94daf714c318465f8e20039fd8.jpg)
+
+<details>
+<summary>natural_image</summary>
+
+Four-panel image showing elephant and rhino in natural settings (no text or symbols)
+</details>
+
+Figure 17: 7-way ELUDe decomposition. A polysemantic DINOv2-B/14 unit (yellow frame, left; top-16) decomposed by ELUDe into 7 subunits (pink frames, right; top-4 each).
+
+# E.8 Seeds
+
+For SAE and transcoder baselines, training initialisation uses seed 42 for the headline run and {7, 1024} for the cross-seed stability evaluation in Section 4.2. The three seeded token datasets of Section 4.1 use seeds {42, 123, 999}; these select random subsets of 2 tokens per ImageNet image and are independent of the SAE training seed.
+
+Table 6: Generalization. We compare ELUDe (shaded) against the four strongest baselines from Table 2 – Matching Pursuit, Archetypal SAE, Matryoshka SAE, and BatchTopK-SAE – across four axes of generalization: layer, backbone size, model family, and expansion factor. Metrics and formatting conventions match Table 2; the best method per axis and metric is shown in bold and the second best is underlined. 
+
+<table><tr><td rowspan="2">Axis</td><td rowspan="2">Method</td><td colspan="2">Interpretability</td><td colspan="2">Faithfulness</td></tr><tr><td>LLM Rank (↓)</td><td>MS-Score (↑)</td><td>Accuracy (↑)</td><td> $R^2$ (↑)</td></tr><tr><td rowspan="12">Layer</td><td>DINOv2 ViT-B/14 layer 10 (backbone only)</td><td>6</td><td>37.02</td><td>84.3</td><td>100</td></tr><tr><td>BatchTopK-SAE</td><td>2/3</td><td>51.58 ± 0.49</td><td>83.61 ± 0.05</td><td>81.66 ± 0.03</td></tr><tr><td>Matryoshka SAE</td><td>3</td><td>50.63 ± 0.44</td><td>83.61 ± 0.05</td><td>81.15 ± 0.08</td></tr><tr><td>Archetypal SAE</td><td>5</td><td>46.66 ± 0.13</td><td>81.33 ± 0.26</td><td>68.99 ± 0.03</td></tr><tr><td>Matching Pursuit</td><td>4</td><td>55.81 ± 0.07</td><td>83.89 ± 0.04</td><td>83.50 ± 0.12</td></tr><tr><td>ELUDe (ours)</td><td>1</td><td>70.00 ± 0.70</td><td>84.29 ± 0.00</td><td>100.00 ± 0.00</td></tr><tr><td>DINOv2 ViT-B/14 layer 11 (backbone only)</td><td>6</td><td>30.7</td><td>84.3</td><td>100</td></tr><tr><td>BatchTopK-SAE</td><td>2/3</td><td>43.92 ± 0.30</td><td>83.54 ± 0.07</td><td>83.22 ± 0.06</td></tr><tr><td>Matryoshka SAE</td><td>3</td><td>46.55 ± 0.43</td><td>83.61 ± 0.05</td><td>83.84 ± 0.03</td></tr><tr><td>Archetypal SAE</td><td>4</td><td>41.51 ± 0.35</td><td>81.77 ± 0.05</td><td>71.21 ± 0.13</td></tr><tr><td>Matching Pursuit</td><td>5</td><td>53.91 ± 0.16</td><td>83.89 ± 0.07</td><td>86.46 ± 0.06</td></tr><tr><td>ELUDe (ours)</td><td>1</td><td>63.54 ± 0.22</td><td>84.29 ± 0.00</td><td>100.00 ± 0.00</td></tr><tr><td rowspan="12">Size</td><td>DINOv2 ViT-S/14 (backbone only)</td><td>6</td><td>48.33</td><td>81.16</td><td>100</td></tr><tr><td>BatchTopK-SAE</td><td>3</td><td>68.08 ± 0.20</td><td>78.69 ± 0.14</td><td>87.24 ± 0.04</td></tr><tr><td>Matryoshka SAE</td><td>2/5</td><td>70.03 ± 0.33</td><td>78.93 ± 0.25</td><td>87.65 ± 0.02</td></tr><tr><td>Archetypal SAE</td><td>5</td><td>58.51 ± 0.38</td><td>77.44 ± 0.60</td><td>81.43 ± 0.05</td></tr><tr><td>Matching Pursuit</td><td>4</td><td>70.55 ± 0.18</td><td>79.25 ± 0.23</td><td>90.26 ± 0.08</td></tr><tr><td>ELUDe (ours)</td><td>1</td><td>73.31 ± 0.06</td><td>81.15 ± 0.00</td><td>100.00 ± 0.00</td></tr><tr><td>DINOv2 ViT-L/14 (backbone only)</td><td>6</td><td>30.06</td><td>86.12</td><td>100</td></tr><tr><td>BatchTopK-SAE</td><td>4</td><td>56.98 ± 0.24</td><td>84.48 ± 0.08</td><td>81.28 ± 0.15</td></tr><tr><td>Matryoshka SAE</td><td>1</td><td>59.03 ± 0.06</td><td>84.48 ± 0.09</td><td>81.15 ± 0.07</td></tr><tr><td>Archetypal SAE</td><td>2/5</td><td>60.04 ± 1.33</td><td>83.81 ± 0.10</td><td>74.35 ± 0.38</td></tr><tr><td>Matching Pursuit</td><td>5</td><td>61.41 ± 0.18</td><td>84.96 ± 0.07</td><td>83.10 ± 0.11</td></tr><tr><td>ELUDe (ours)</td><td>3</td><td>65.88 ± 0.79</td><td>86.12 ± 0.00</td><td>100.00 ± 0.00</td></tr><tr><td rowspan="12">Family</td><td>SigLIP2-B/16 (backbone only)</td><td>6</td><td>34.97</td><td>78.08</td><td>100.00</td></tr><tr><td>BatchTopK-SAE</td><td>3</td><td>44.83 ± 0.32</td><td>77.69 ± 0.02</td><td>93.69 ± 0.12</td></tr><tr><td>Matryoshka SAE</td><td>4</td><td>44.24 ± 0.31</td><td>77.73 ± 0.02</td><td>93.82 ± 0.05</td></tr><tr><td>Archetypal SAE</td><td>5</td><td>37.05 ± 0.59</td><td>74.44 ± 0.26</td><td>77.63 ± 0.10</td></tr><tr><td>Matching Pursuit</td><td>1</td><td>55.71 ± 0.22</td><td>77.94 ± 0.04</td><td>95.62 ± 0.02</td></tr><tr><td>ELUDe (ours)</td><td>2</td><td>67.98 ± 3.20</td><td>78.08 ± 0.00</td><td>100.00 ± 0.00</td></tr><tr><td>ConvNeXtV2-Base (backbone only)</td><td>6</td><td>8.74</td><td>86.74</td><td>100</td></tr><tr><td>BatchTopK-SAE</td><td>1</td><td>25.65 ± 0.12</td><td>86.70 ± 0.01</td><td>84.77 ± 0.06</td></tr><tr><td>Matryoshka SAE</td><td>3</td><td>23.44 ± 0.07</td><td>86.67 ± 0.01</td><td>84.42 ± 0.01</td></tr><tr><td>Archetypal SAE</td><td>5</td><td>17.35 ± 0.32</td><td>86.66 ± 0.02</td><td>73.85 ± 0.06</td></tr><tr><td>Matching Pursuit</td><td>2</td><td>30.43 ± 0.08</td><td>86.69 ± 0.01</td><td>84.03 ± 0.01</td></tr><tr><td>ELUDe (ours)</td><td>4</td><td>32.66 ± 0.09</td><td>86.74 ± 0.00</td><td>100.00 ± 0.00</td></tr><tr><td rowspan="12">Expansion Factor</td><td>DINOv2 ViT-B/14 layer 12 (backbone only) (EF4)</td><td>6</td><td>36.2</td><td>84.3</td><td>100.00</td></tr><tr><td>BatchTopK-SAE</td><td>5</td><td>53.67 ± 0.43</td><td>81.93 ± 0.01</td><td>87.96 ± 0.07</td></tr><tr><td>Matryoshka SAE</td><td>1</td><td>56.36 ± 0.60</td><td>81.97 ± 0.03</td><td>87.58 ± 0.04</td></tr><tr><td>Archetypal SAE</td><td>3</td><td>61.98 ± 1.47</td><td>81.03 ± 0.08</td><td>83.65 ± 0.10</td></tr><tr><td>Matching Pursuit</td><td>2</td><td>58.40 ± 0.12</td><td>82.51 ± 0.05</td><td>88.77 ± 0.01</td></tr><tr><td>ELUDe (ours)</td><td>4</td><td>62.72 ± 1.58</td><td>84.29 ± 0.00</td><td>100.00 ± 0.00</td></tr><tr><td>DINOv2 ViT-B/14 layer 12 (backbone only) (EF16)</td><td>6</td><td>36.2</td><td>84.3</td><td>100.00</td></tr><tr><td>BatchTopK-SAE</td><td>5</td><td>44.13 ± 0.91</td><td>82.16 ± 0.05</td><td>89.65 ± 0.06</td></tr><tr><td>Matryoshka SAE</td><td>4</td><td>47.48 ± 0.03</td><td>82.15 ± 0.05</td><td>89.38 ± 0.01</td></tr><tr><td>Archetypal SAE</td><td>2/3</td><td>43.03 ± 1.33</td><td>81.32 ± 0.11</td><td>85.26 ± 0.07</td></tr><tr><td>Matching Pursuit</td><td>3</td><td>55.35 ± 0.36</td><td>83.03 ± 0.02</td><td>91.37 ± 0.02</td></tr><tr><td>ELUDe (ours)</td><td>1</td><td>67.48 ± 1.42</td><td>84.29 ± 0.00</td><td>100.00 ± 0.00</td></tr></table>
+
+Table 7: Ablations at expansion factor 4. MS-Score on DINOv2-B/14 as we vary one ELUDe clustering hyperparameter at a time around the baseline (cluster\_selection\_method = leaf, min\_cluster\_size = 1000, min\_samples at the library default, ARV unit-normalisation enabled, no UMAP). Random Baseline partitions the original channels into random groups as a lower-bound control. Best per axis in bold. 
+
+<table><tr><td rowspan="2">Model</td><td rowspan="2">Ablation axis</td><td>Interpretability</td></tr><tr><td>MS-Score (↑)</td></tr><tr><td rowspan="10">DINOv2 ViT-B/14</td><td>Random Baseline</td><td>34.52 ± 0.11</td></tr><tr><td>EOM</td><td>60.13 ± 1.48</td></tr><tr><td>Min Cluster Size = 100</td><td>58.00 ± 0.40</td></tr><tr><td>Min Cluster Size = 250</td><td>58.09 ± 0.26</td></tr><tr><td>Min Cluster Size = 500</td><td>61.09 ± 3.57</td></tr><tr><td>Min Samples = 1</td><td>55.10 ± 0.48</td></tr><tr><td>Min Samples = 100</td><td>58.38 ± 2.72</td></tr><tr><td>Min Samples = 500</td><td>61.90 ± 2.62</td></tr><tr><td>UMAP</td><td>54.24 ± 0.57</td></tr><tr><td>ELUDe (ours)</td><td>62.72 ± 1.58</td></tr></table>
+
+Table 8: Backbones used in this work. 
+
+<table><tr><td>Backbone</td><td>Identifier</td><td>Source</td><td>License</td></tr><tr><td>DINOv2-S/B/L [46]</td><td>facebookresearch/dinov2 (vits14, vitb14, vitl14)</td><td>torch.hub</td><td>Apache-2.0</td></tr><tr><td>AugReg ViT-B/16 [16, 60]</td><td>vit_base_patch16_224.augreg_in21k_ft_in1k</td><td>timm</td><td>Apache-2.0</td></tr><tr><td>ConvNeXtV2-Base[70]</td><td>convnextv2_base.fcmae_ft_in22k_in1k</td><td>timm</td><td>MIT</td></tr><tr><td>SigLIP2-B/16[65]</td><td>google/siglip2-base-patch16-224</td><td>HuggingFace</td><td>Gemma terms</td></tr><tr><td>LLaVA-OneVision [36]</td><td>llava-hf/llava-onevision-qwen2-0.5b-ov-hf</td><td>HuggingFace</td><td>Apache-2.0</td></tr></table>
+
+Table 9: Per-backbone ELUDe configurations. Default clustering means min\_cluster\_size = 1000 with all other settings as in Section E.7. Effective EF is the per-neuron cluster count summed across neurons divided by the layer width, averaged over the three seeded token datasets. 
+
+<table><tr><td>Backbone</td><td>Layer</td><td>TopK</td><td>Clustering</td><td>Eff. EF</td></tr><tr><td>AugReg ViT-B/16</td><td>12</td><td>100k</td><td>default</td><td>7.49</td></tr><tr><td>DINOv2-B/14</td><td>12</td><td>400k</td><td>default</td><td>8</td></tr><tr><td>DINOv2-B/14</td><td>10</td><td>400k</td><td>default</td><td>8.01</td></tr><tr><td>DINOv2-B/14</td><td>11</td><td>200k</td><td>default</td><td>5.91</td></tr><tr><td>DINOv2-S/14</td><td>12</td><td>400k</td><td>default</td><td>8.1</td></tr><tr><td>DINOv2-L/14</td><td>23</td><td>400k</td><td>min_cluster_size = 500</td><td>7.90</td></tr><tr><td>SigLIP2-B/16</td><td>12</td><td>200k</td><td>default</td><td>7.51</td></tr><tr><td>ConvNeXtV2-B</td><td>last linear layer of the fourth stage</td><td>500k</td><td>default</td><td>7.58</td></tr><tr><td>DINOv2-B/14 (EF4)</td><td>12</td><td>60k</td><td>default</td><td>3.96</td></tr><tr><td>DINOv2-B/14 (EF16)</td><td>12</td><td>400k</td><td>min_cluster_size = 750</td><td>11.41</td></tr></table>

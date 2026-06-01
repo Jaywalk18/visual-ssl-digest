@@ -1,0 +1,173 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>2026-06-01 速递 · 通用视觉自监督研究报</title>
+  <link rel="stylesheet" href="../assets/styles.css?v=20260525j">
+  <link rel="stylesheet" href="../assets/visual-ssl.css?v=20260525j">
+</head>
+<body>
+  <header class="masthead">
+    <div class="masthead-kicker">Visual SSL Research Report · 2026-06-01</div>
+    <a class="masthead-title" href="../index.html">通用视觉自监督研究报</a>
+    <div class="masthead-meta">
+      <span>图像表征 · VFM · JEPA · 视频预训练</span>
+      <span>CCF A/B 会议优先</span>
+      <span>图文精读 · 方法图解</span>
+    </div>
+  </header>
+  <nav class="site-nav" aria-label="主导航">
+    <a class="nav-link" href="../index.html">头版</a>
+<a class="nav-link active" href="../issues/2026-06-01.html">今日速递</a>
+<a class="nav-link" href="../pages/catalog.html">论文目录</a>
+<a class="nav-link" href="../pages/timeline.html">时间线</a>
+  </nav>
+  <main><article class="paper-detail issue-detail">
+  <div class="paper-main">
+    <div class="kicker">Daily issue · 2026-06-01 · CCF A/B 会议优先</div>
+    <h1 class="paper-headline">6 月 1 日：Spatial-SSRL 等视觉表征主线更新</h1>
+    <p class="dek">本期聚焦通用视觉表征、视觉语言预训练与视频自监督中最值得跟进的论文，并保留 CCF A/B、OpenReview 与 arXiv 状态线索。</p>
+    <div class="feature-body">
+      <p class="lead dropcap">今天的 arXiv 近 24-48 小时窗口没有新的 cs.CV/cs.LG/cs.AI/stat.ML 相关提交，所以不要把今天当成“新预印本日”来读。先精读 Spatial-SSRL 和 Discrete Communication SSL：它们分别代表空间可验证自监督与离散码式视觉 SSL。第二层读 Self-Flow、InstAP 和 Self-Soupervision，重点看生成/多模态/模型合并如何反哺通用视觉表征。GT-SVJ、Continual Distillation 和 Var-JEPA 更适合扫读：前两篇偏视频评价和蒸馏维护，Var-JEPA 概念强但视觉实证弱。</p>
+      <h2>论文索引</h2>
+      <table class="compact-table"><thead><tr><th>优先级</th><th>论文</th><th>类型</th><th>相关性</th><th>一句话理由</th></tr></thead><tbody><tr><td>P0</td><td>Spatial-SSRL: Enhancing Spatial Understanding via Self-Supervised Reinforcement Learning</td><td>CVPR 2026 Open Access + arXiv</td><td>高</td><td>可验证空间 pretext 任务把视觉自监督、LVLM 后训练和空间表征学习直接连起来。</td></tr><tr><td>P0</td><td>Self-Supervised Learning as Discrete Communication</td><td>ICML 2026 Poster + arXiv</td><td>高</td><td>把 SSL 表征目标改写为离散通信，直接面向通用视觉 backbone。</td></tr><tr><td>P1</td><td>Self-Supervised Flow Matching for Scalable Multi-Modal Synthesis</td><td>ICML 2026 Poster + arXiv</td><td>高</td><td>将自监督表征学习内生化到 flow/生成预训练，适合和 RAE、REPA、DINO-latent 路线对读。</td></tr><tr><td>P1</td><td>InstAP: Instance-Aware Vision-Language Pre-Train for Spatial-Temporal Understanding</td><td>CVPR 2026 Open Access + arXiv</td><td>高</td><td>实例级图文对齐补足全局 CLIP 式预训练的局部/时序盲点。</td></tr><tr><td>P1</td><td>Self-Soupervision: Cooking Model Soups without Labels</td><td>ICML 2026 Poster + arXiv</td><td>中高</td><td>无标签 model soup 是低成本提升 SSL 模型鲁棒性和迁移性的工程路线。</td></tr><tr><td>P2</td><td>GT-SVJ: Generative-Transformer-Based Self-Supervised Video Judge For Efficient Video Reward Modeling</td><td>CVPR 2026 Open Access + arXiv 更新</td><td>中高</td><td>自监督视频 reward model 对视频预训练和时序表征有迁移启发，但主任务偏生成评价。</td></tr><tr><td>P2</td><td>Continual Distillation of Teachers from Different Domains</td><td>CVPR 2026 Open Access + arXiv</td><td>中高</td><td>无标签外部数据稳定跨域蒸馏，适合关注蒸馏式自监督和模型合并的人扫读。</td></tr><tr><td>P3</td><td>Var-JEPA: A Variational Formulation of the Joint-Embedding Predictive Architecture -- Bridging Predictive and Generative Self-Supervised Learning</td><td>ICML 2026 Poster + arXiv</td><td>中</td><td>理论相关但视觉证据弱，适合放在最后扫读。</td></tr></tbody></table>
+      <h2>主线阅读</h2>
+      <div class="paper-list issue-list"><article class="paper-card" data-category="CVPR 2026 Open Access + arXiv" data-priority="P0" data-date="2026-06-01" data-title="spatial-ssrl: enhancing spatial understanding via self-supervised reinforcement learning" data-keywords="spatial-ssrl: enhancing spatial understanding via self-supervised reinforcement learning spatial-ssrl cvpr 2026 open access + arxiv p0 2026-06-01 cvpr 2026 open access + arxiv 可验证空间 pretext 任务把视觉自监督、lvlm 后训练和空间表征学习直接连起来 高相关；详见方法、贡献和实验边界。">
+  <a class="paper-thumb paper-thumb-text" href="../papers/2510.27606.html">
+    <span>P0</span><strong>Spatial-SSRL</strong><em>CVPR 2026 Open Access + arXiv</em>
+  </a>
+  <div>
+    <div class="paper-meta">2026-06-01 · CVPR 2026 Open Access + arXiv · CVPR 2026 Open Access + arXiv</div>
+    <h3><a href="../papers/2510.27606.html">Spatial-SSRL: Enhancing Spatial Understanding via Self-Supervised Reinforcement Learning</a></h3>
+    <p>高相关；详见方法、贡献和实验边界。</p>
+    <p class="card-tech"><b>方法：</b>可验证空间 pretext 任务把视觉自监督、LVLM 后训练和空间表征学习直接连起来</p>
+    <div class="paper-actions"><a href="../papers/2510.27606.html">读图文页</a><a href="https://arxiv.org/abs/2510.27606">原文</a></div>
+  </div>
+</article>
+<article class="paper-card" data-category="ICML 2026 Poster + arXiv" data-priority="P0" data-date="2026-06-01" data-title="self-supervised learning as discrete communication" data-keywords="self-supervised learning as discrete communication self-supervised learning as discrete communication icml 2026 poster + arxiv p0 2026-06-01 icml 2026 poster + arxiv 把 ssl 表征目标改写为离散通信，直接面向通用视觉 backbone 高相关；详见方法、贡献和实验边界。">
+  <a class="paper-thumb paper-thumb-text" href="../papers/2602.09764.html">
+    <span>P0</span><strong>Self-Supervised Learning as Discrete Communication</strong><em>ICML 2026 Poster + arXiv</em>
+  </a>
+  <div>
+    <div class="paper-meta">2026-06-01 · ICML 2026 Poster + arXiv · ICML 2026 Poster + arXiv</div>
+    <h3><a href="../papers/2602.09764.html">Self-Supervised Learning as Discrete Communication</a></h3>
+    <p>高相关；详见方法、贡献和实验边界。</p>
+    <p class="card-tech"><b>方法：</b>把 SSL 表征目标改写为离散通信，直接面向通用视觉 backbone</p>
+    <div class="paper-actions"><a href="../papers/2602.09764.html">读图文页</a><a href="https://arxiv.org/abs/2602.09764">原文</a></div>
+  </div>
+</article>
+<article class="paper-card" data-category="ICML 2026 Poster + arXiv" data-priority="P1" data-date="2026-06-01" data-title="self-supervised flow matching for scalable multi-modal synthesis" data-keywords="self-supervised flow matching for scalable multi-modal synthesis self-supervised flow matching for scalable icml 2026 poster + arxiv p1 2026-06-01 icml 2026 poster + arxiv 将自监督表征学习内生化到 flow/生成预训练，适合和 rae、repa、dino-latent 路线对读 高相关；详见方法、贡献和实验边界。">
+  <a class="paper-thumb paper-thumb-text" href="../papers/2603.06507.html">
+    <span>P1</span><strong>Self-Supervised Flow Matching for Scalable</strong><em>ICML 2026 Poster + arXiv</em>
+  </a>
+  <div>
+    <div class="paper-meta">2026-06-01 · ICML 2026 Poster + arXiv · ICML 2026 Poster + arXiv</div>
+    <h3><a href="../papers/2603.06507.html">Self-Supervised Flow Matching for Scalable Multi-Modal Synthesis</a></h3>
+    <p>高相关；详见方法、贡献和实验边界。</p>
+    <p class="card-tech"><b>方法：</b>将自监督表征学习内生化到 flow/生成预训练，适合和 RAE、REPA、DINO-latent 路线对读</p>
+    <div class="paper-actions"><a href="../papers/2603.06507.html">读图文页</a><a href="https://arxiv.org/abs/2603.06507">原文</a></div>
+  </div>
+</article>
+<article class="paper-card" data-category="CVPR 2026 Open Access + arXiv" data-priority="P1" data-date="2026-06-01" data-title="instap: instance-aware vision-language pre-train for spatial-temporal understanding" data-keywords="instap: instance-aware vision-language pre-train for spatial-temporal understanding instap cvpr 2026 open access + arxiv p1 2026-06-01 cvpr 2026 open access + arxiv 实例级图文对齐补足全局 clip 式预训练的局部/时序盲点 高相关；详见方法、贡献和实验边界。">
+  <a class="paper-thumb paper-thumb-text" href="../papers/2604.08337.html">
+    <span>P1</span><strong>InstAP</strong><em>CVPR 2026 Open Access + arXiv</em>
+  </a>
+  <div>
+    <div class="paper-meta">2026-06-01 · CVPR 2026 Open Access + arXiv · CVPR 2026 Open Access + arXiv</div>
+    <h3><a href="../papers/2604.08337.html">InstAP: Instance-Aware Vision-Language Pre-Train for Spatial-Temporal Understanding</a></h3>
+    <p>高相关；详见方法、贡献和实验边界。</p>
+    <p class="card-tech"><b>方法：</b>实例级图文对齐补足全局 CLIP 式预训练的局部/时序盲点</p>
+    <div class="paper-actions"><a href="../papers/2604.08337.html">读图文页</a><a href="https://arxiv.org/abs/2604.08337">原文</a></div>
+  </div>
+</article>
+<article class="paper-card" data-category="ICML 2026 Poster + arXiv" data-priority="P1" data-date="2026-06-01" data-title="self-soupervision: cooking model soups without labels" data-keywords="self-soupervision: cooking model soups without labels self-soupervision icml 2026 poster + arxiv p1 2026-06-01 icml 2026 poster + arxiv 无标签 model soup 是低成本提升 ssl 模型鲁棒性和迁移性的工程路线 中高相关；详见方法、贡献和实验边界。">
+  <a class="paper-thumb paper-thumb-text" href="../papers/2602.02890.html">
+    <span>P1</span><strong>Self-Soupervision</strong><em>ICML 2026 Poster + arXiv</em>
+  </a>
+  <div>
+    <div class="paper-meta">2026-06-01 · ICML 2026 Poster + arXiv · ICML 2026 Poster + arXiv</div>
+    <h3><a href="../papers/2602.02890.html">Self-Soupervision: Cooking Model Soups without Labels</a></h3>
+    <p>中高相关；详见方法、贡献和实验边界。</p>
+    <p class="card-tech"><b>方法：</b>无标签 model soup 是低成本提升 SSL 模型鲁棒性和迁移性的工程路线</p>
+    <div class="paper-actions"><a href="../papers/2602.02890.html">读图文页</a><a href="https://arxiv.org/abs/2602.02890">原文</a></div>
+  </div>
+</article>
+<article class="paper-card" data-category="CVPR 2026 Open Access + arXiv 更新" data-priority="P2" data-date="2026-06-01" data-title="gt-svj: generative-transformer-based self-supervised video judge for efficient video reward modeling" data-keywords="gt-svj: generative-transformer-based self-supervised video judge for efficient video reward modeling gt-svj cvpr 2026 open access + arxiv 更新 p2 2026-06-01 cvpr 2026 open access + arxiv 更新 自监督视频 reward model 对视频预训练和时序表征有迁移启发，但主任务偏生成评价 中高相关；详见方法、贡献和实验边界。">
+  <a class="paper-thumb paper-thumb-text" href="../papers/2602.05202.html">
+    <span>P2</span><strong>GT-SVJ</strong><em>CVPR 2026 Open Access + arXiv 更新</em>
+  </a>
+  <div>
+    <div class="paper-meta">2026-06-01 · CVPR 2026 Open Access + arXiv 更新 · CVPR 2026 Open Access + arXiv 更新</div>
+    <h3><a href="../papers/2602.05202.html">GT-SVJ: Generative-Transformer-Based Self-Supervised Video Judge For Efficient Video Reward Modeling</a></h3>
+    <p>中高相关；详见方法、贡献和实验边界。</p>
+    <p class="card-tech"><b>方法：</b>自监督视频 reward model 对视频预训练和时序表征有迁移启发，但主任务偏生成评价</p>
+    <div class="paper-actions"><a href="../papers/2602.05202.html">读图文页</a><a href="https://arxiv.org/abs/2602.05202">原文</a></div>
+  </div>
+</article>
+<article class="paper-card" data-category="CVPR 2026 Open Access + arXiv" data-priority="P2" data-date="2026-06-01" data-title="continual distillation of teachers from different domains" data-keywords="continual distillation of teachers from different domains continual distillation of teachers from cvpr 2026 open access + arxiv p2 2026-06-01 cvpr 2026 open access + arxiv 无标签外部数据稳定跨域蒸馏，适合关注蒸馏式自监督和模型合并的人扫读 中高相关；详见方法、贡献和实验边界。">
+  <a class="paper-thumb paper-thumb-text" href="../papers/2605.04059.html">
+    <span>P2</span><strong>Continual Distillation of Teachers from</strong><em>CVPR 2026 Open Access + arXiv</em>
+  </a>
+  <div>
+    <div class="paper-meta">2026-06-01 · CVPR 2026 Open Access + arXiv · CVPR 2026 Open Access + arXiv</div>
+    <h3><a href="../papers/2605.04059.html">Continual Distillation of Teachers from Different Domains</a></h3>
+    <p>中高相关；详见方法、贡献和实验边界。</p>
+    <p class="card-tech"><b>方法：</b>无标签外部数据稳定跨域蒸馏，适合关注蒸馏式自监督和模型合并的人扫读</p>
+    <div class="paper-actions"><a href="../papers/2605.04059.html">读图文页</a><a href="https://arxiv.org/abs/2605.04059">原文</a></div>
+  </div>
+</article>
+<article class="paper-card" data-category="ICML 2026 Poster + arXiv" data-priority="P3" data-date="2026-06-01" data-title="var-jepa: a variational formulation of the joint-embedding predictive architecture -- bridging predictive and generative self-supervised learning" data-keywords="var-jepa: a variational formulation of the joint-embedding predictive architecture -- bridging predictive and generative self-supervised learning var-jepa icml 2026 poster + arxiv p3 2026-06-01 icml 2026 poster + arxiv 理论相关但视觉证据弱，适合放在最后扫读 中相关；详见方法、贡献和实验边界。">
+  <a class="paper-thumb paper-thumb-text" href="../papers/2603.20111.html">
+    <span>P3</span><strong>Var-JEPA</strong><em>ICML 2026 Poster + arXiv</em>
+  </a>
+  <div>
+    <div class="paper-meta">2026-06-01 · ICML 2026 Poster + arXiv · ICML 2026 Poster + arXiv</div>
+    <h3><a href="../papers/2603.20111.html">Var-JEPA: A Variational Formulation of the Joint-Embedding Predictive Architecture -- Bridging Predictive and Generative Self-Supervised Learning</a></h3>
+    <p>中相关；详见方法、贡献和实验边界。</p>
+    <p class="card-tech"><b>方法：</b>理论相关但视觉证据弱，适合放在最后扫读</p>
+    <div class="paper-actions"><a href="../papers/2603.20111.html">读图文页</a><a href="https://arxiv.org/abs/2603.20111">原文</a></div>
+  </div>
+</article></div>
+    </div>
+  </div>
+  <aside class="paper-side">
+    <div class="side-box"><h4>今日重点</h4><p>TextTeacher、MDM、EvoVid、Ablate-to-Validate。</p></div>
+    <div class="side-box"><h4>会议口径</h4><p>只把 CCF A/B 放进主提醒；临近截止或 CCF C 仅记录。</p></div>
+    <div class="side-box"><h4>阅读重点</h4><p>先看 P1/P2 与方法图，再扫状态变化和边界案例。</p></div>
+  </aside>
+</article></main>
+  <aside class="conf-float" data-conf-reminder="2026-06-01-main-ddl" aria-label="CCF A/B 主投稿提醒">
+  <button class="conf-close" type="button" aria-label="关闭会议提醒">×</button>
+  <details open>
+    <summary>CCF A/B 主投稿提醒</summary>
+    <div class="conf-list"><a class="conf-item " href="https://github.com/ccfddl/ccf-deadlines/blob/main/conference/AI/aaai.yml">
+  <span><b>AAAI 2027</b><em>CCF A · Main paper submission</em></span>
+  <strong>56 天</strong>
+  <small>2026-07-27 · CCF DDL: abstract 2026-07-20；进入 1 个月窗口后重点提醒。</small>
+</a></div>
+  </details>
+</aside>
+  <footer class="footer">
+    <div>面向通用视觉自监督、视觉基础模型与多模态表征学习的每日研究报。</div>
+    <div class="muted">Issue 2026-06-01 · Curated readings and figure notes</div>
+  </footer>
+  <script>
+  (() => {
+    const box = document.querySelector('[data-conf-reminder]');
+    if (!box) return;
+    const key = `visualSslConfReminderClosed:${box.dataset.confReminder || '2026-06-01-main-ddl'}`;
+    try {
+      if (localStorage.getItem(key) === '1') box.hidden = true;
+    } catch (err) {}
+    const close = box.querySelector('.conf-close');
+    if (close) {
+      close.addEventListener('click', () => {
+        box.hidden = true;
+        try { localStorage.setItem(key, '1'); } catch (err) {}
+      });
+    }
+  })();
+  </script>
+</body>
+</html>

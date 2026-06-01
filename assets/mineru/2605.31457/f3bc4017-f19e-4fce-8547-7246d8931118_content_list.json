@@ -1,0 +1,2854 @@
+[
+    {
+        "type": "text",
+        "text": "VisionPulse: Dynamic Visual Sparsity for Efficient Multimodal Reasoning ",
+        "text_level": 1,
+        "bbox": [
+            114,
+            109,
+            859,
+            132
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "Hengbo Xu 1 Shengjie Jin 1 Yanbiao Ma 1 Zhiwu Lu 1 ",
+        "bbox": [
+            289,
+            176,
+            679,
+            193
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "Abstract ",
+        "text_level": 1,
+        "bbox": [
+            241,
+            220,
+            318,
+            234
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "With the rapid advancement of large multimodal models (LMMs), inference-time overhead has become a key bottleneck for real-world deployment. Existing methods typically prune visual tokens at prefill, assuming the required visual evidence remains static during reasoning. However, we empirically show that visual evidence is strongly step-dependent: only a sparse subset of visual tokens is critical at each decoding step, and the critical set evolves across reasoning. Furthermore, we identify a coupled bottleneck where redundant visual context can steer the model toward query-irrelevant regions, lengthening the reasoning trace. Guided by these insights, we propose VisionPulse, a step-wise visual token pruning framework during reasoning. VisionPulse computes a lightweight visual attention mass to estimate the step-wise retention budget by exploiting its strong positive correlation with LMMs’ effective visual token usage and retain only the most critical tokens under this budget. By enforcing visual sparsity during reasoning, VisionPulse filters redundant visual context while preserving relevant visual evidence, shortening reasoning traces naturally. Extensive experiments show that VisionPulse only retains 5% of visual tokens per step with reasoning traces shortened by 11.2%, while keeping accuracy almost unchanged. ",
+        "bbox": [
+            117,
+            243,
+            444,
+            667
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "1. Introduction ",
+        "text_level": 1,
+        "bbox": [
+            86,
+            704,
+            217,
+            720
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "Large multimodal models (LMMs) (Jaech et al., 2024; Bai et al., 2025; Wang et al., 2025c) have recently achieved substantial progress in multimodal reasoning, enabling visioncentric, multi-step chain-of-thought (CoT) reasoning (Wang et al., 2025a; Yang et al., 2025d; Zhou et al., 2025; Wang ",
+        "bbox": [
+            84,
+            729,
+            475,
+            806
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "1Gaoling School of Artificial Intelligence, Renmin University of China, Beijing, China. Correspondence to: Zhiwu Lu <luzhiwu@ruc.edu.cn>. ",
+        "bbox": [
+            84,
+            815,
+            475,
+            854
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "Proceedings of the $\\it 4 3 ^ { r d }$ International Conference on Machine Learning, Seoul, South Korea. PMLR 306, 2026. Copyright 2026 by the author(s). ",
+        "bbox": [
+            84,
+            864,
+            473,
+            905
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "et al., 2025d; Sun et al., 2025; Dai et al., 2026) across tasks such as scientific problem solving, chart understanding, and embodied perception. However, as reasoning capabilities continue to improve, inference-time overhead has emerged as a primary bottleneck for real-world deployment (Kwon et al., 2023; Lin et al., 2024). ",
+        "bbox": [
+            496,
+            220,
+            885,
+            311
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "Under existing multimodal decoding paradigms, most LMMs (Li et al., 2024; Bai et al., 2025; Wang et al., 2025c; Yao et al., 2024) treat image and text tokens uniformly within a shared self-attention mechanism, where each decoding step computes interactions over the entire multimodal context. On the visual side, the strong performance of LMMs depends on fine-grained visual representations. As visual understanding demands grow, images and videos are represented more densely, resulting in substantially more visual tokens and higher computational cost. On the reasoning side, as LMMs become stronger multimodal reasoners, they are increasingly able to tackle complex, out-of-distribution tasks. Meanwhile, when faced with hard queries, LMMs typically generate longer multi-step reasoning traces, which expand the language context during decoding. Consequently, each decoding step must attend to both an expanding language context and a large visual token budget, leading to a sharp increase in inference overhead. ",
+        "bbox": [
+            496,
+            319,
+            888,
+            592
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "A natural question thus arises in multimodal reasoning: are all visual tokens and generated reasoning tokens equally necessary throughout the entire reasoning process? Prior studies (Wang et al., 2021; Liang et al., 2022; Yu et al., 2022) have noted that the information content in images is often sparse. Moreover, for a given query, only a limited subset of visual information is actually relevant, motivating a range of visual compression methods for efficient multimodal inference (Yang et al., 2025a; Chen et al., 2024b; Zhang et al., 2025d;a; Yang et al., 2025c). These methods typically perform compression at the prefill stage by selecting a fixed subset of visual tokens for subsequent decoding. While effective for direct-answer generation, this design implicitly assumes that the selected visual tokens remain relevant and unchanged throughout the reasoning process. ",
+        "bbox": [
+            496,
+            599,
+            887,
+            825
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "To examine this assumption for multimodal reasoning, we conduct an empirical analysis of multimodal reasoning models and focus on how visual tokens are utilized. Specifically, we quantify the aggregate attention allocated to visual to-",
+        "bbox": [
+            496,
+            832,
+            888,
+            893
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "aside_text",
+        "text": "arXiv:2605.31457v1 [cs.CV] 29 May 2026 ",
+        "bbox": [
+            22,
+            272,
+            60,
+            724
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "page_number",
+        "text": "1 ",
+        "bbox": [
+            480,
+            922,
+            491,
+            934
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "",
+        "bbox": [
+            112,
+            88,
+            130,
+            99
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "text",
+        "text": "Question: Where is the brown square vent relative to the door? ",
+        "bbox": [
+            143,
+            95,
+            452,
+            106
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "text",
+        "text": "Answer: So, let's look at the image. The door is on the right side of the image, with the beige color and the handle. The brown square vent is on the wooden shingle wall. Let's check the position. The vent is on the left side of the door, because the door is on the right, and the vent is part of the wall next to the door but to the left of it. Wait, the door is the beige part with the handle. The vent is on the wooden wall, which is adjacent to the door. So the vent is to the left of the door. Let's see the options. Option B says the brown square vent is to the left of the door. That seems correct. Option A says there's no vent, but there is a brown square vent. So A is wrong. C says right, but the vent is left. So B is correct. ",
+        "bbox": [
+            140,
+            109,
+            861,
+            167
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "image",
+        "img_path": "images/3f0aa8a480396755de5df78e7dc0cd405b0096296ba059abf7141349e6edd79b.jpg",
+        "image_caption": [
+            "Image "
+        ],
+        "image_footnote": [],
+        "content": "Exterior view of a tiled wall with a door and a small orange bracket, no visible text or symbols",
+        "sub_type": "natural_image",
+        "bbox": [
+            140,
+            185,
+            250,
+            284
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "chart",
+        "img_path": "images/84371928019cc291d9261bfcd1f8981be41a270fb7d173692e1d17c7aebb1eba.jpg",
+        "content": "| Generated Step | Visual Attention Mass |\n| -------------- | --------------------- |\n| 0              | ~0.1                  |\n| 25             | ~0.3                  |\n| 133            | ~0.2                  |",
+        "chart_caption": [],
+        "chart_footnote": [],
+        "sub_type": "line",
+        "bbox": [
+            253,
+            174,
+            844,
+            308
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "image",
+        "img_path": "images/037c03a34c65e1862370176369f6e2685d6464b14f17b86cceffe03d36fe101c.jpg",
+        "image_caption": [
+            "(b) ",
+            "So "
+        ],
+        "image_footnote": [],
+        "content": "Pixelated black-and-white QR code with two orange square annotations (no readable text or symbols)",
+        "sub_type": "natural_image",
+        "bbox": [
+            129,
+            330,
+            250,
+            443
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "image",
+        "img_path": "images/b192bca5d3195115a062ab96bea9d523832b4e7076457df2b41a3a9ede936825.jpg",
+        "image_caption": [
+            "Square "
+        ],
+        "image_footnote": [],
+        "content": "QR code image with two orange square markers highlighting specific regions",
+        "sub_type": "text_image",
+        "bbox": [
+            251,
+            330,
+            374,
+            441
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "image",
+        "img_path": "images/bd60941777bfa58f3ac677a1d72b7fef3aa70cee8acf711937338d73c7cef1dc.jpg",
+        "image_caption": [
+            "Handle "
+        ],
+        "image_footnote": [],
+        "content": "Pixelated black-and-white image with two orange square highlights, no visible text or symbols",
+        "sub_type": "natural_image",
+        "bbox": [
+            375,
+            330,
+            496,
+            443
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "image",
+        "img_path": "images/63f48d6333cc83eaf615d5aa401253cf4a0a2bae6f9b39d6bf9d2782ca82d2be.jpg",
+        "image_caption": [
+            ""
+        ],
+        "image_footnote": [],
+        "content": "Pixelated black background with scattered orange dots and two highlighted squares (no text or symbols)",
+        "sub_type": "natural_image",
+        "bbox": [
+            501,
+            330,
+            622,
+            443
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "image",
+        "img_path": "images/536b8131f2d26730123eeb05b37b85a3907c958aba92a0448e6294ec429722de.jpg",
+        "image_caption": [
+            "Square "
+        ],
+        "image_footnote": [],
+        "content": "Abstract pixelated pattern with brown and white dots on black background, no text or symbols present",
+        "sub_type": "natural_image",
+        "bbox": [
+            622,
+            330,
+            745,
+            443
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "image",
+        "img_path": "images/725275af40391c3cfdb2f9c5795fccdf12d64098fd1eb779dab7a3600f1e9f56.jpg",
+        "image_caption": [
+            "Handle ",
+            "Top 50% Visual Activation ",
+            "Top 10% Visual Activation ",
+            "Figure 1. Dynamic visual activations during multimodal reasoning. (a) Step-wise Visual attention mass over decoding. We measure the step-wise visual attention mass (total attention allocated to visual tokens) during reasoning. Visual evidence is strongly step-dependent: it remains negligible in text-dominated steps, but increases when the reasoning involves referenced entities (e.g., square, handle). (b) Visual attention heatmap at representative steps. Top-50% and top-10% visual-attention activation masks show that attention concentrates on regions corresponding to referenced entities at high-mass steps, but remains diffuse at low-mass steps. This indicates that the amount and the subset of critical visual tokens vary during reasoning. "
+        ],
+        "image_footnote": [],
+        "content": "Pixelated black-and-white image with two orange square markers and a brown circle, no visible text or symbols",
+        "sub_type": "natural_image",
+        "bbox": [
+            746,
+            330,
+            867,
+            443
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "text",
+        "text": "kens at each decoding step (i.e., visual attention mass) and analyze the corresponding attention heatmaps for representative decoding steps. As shown in Figure 1, the need for visual evidence is activated on demand as the reasoning state evolves. It is negligible in text-dominated steps but increases substantially when the model must ground specific visual entities. Moreover, LMM’s visual attention shifts across regions over time, indicating that the critical visual tokens vary during reasoning. Therefore, no single fixed subset can remain optimal throughout reasoning. ",
+        "bbox": [
+            84,
+            547,
+            475,
+            699
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "text",
+        "text": "These observations thus expose a fundamental mismatch in existing static pruning for efficient multimodal reasoning. Most prior methods fix a single visual subset once at the start of decoding, when the model generates the first token and allocates little attention mass to visual tokens, as shown in Figure 1. As a result, a fixed subset is inevitably misaligned with later demands: it may discard visual tokens that become crucial at subsequent steps that require visual evidence, while still preserving redundant context during text-dominated reasoning. This mismatch becomes particularly pronounced under aggressive retention, where early pruning errors cannot be corrected and may propagate through the entire reasoning process. ",
+        "bbox": [
+            84,
+            705,
+            475,
+            902
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "text",
+        "text": "Motivated by these observations, we propose VisionPulse, a training-free dynamic visual pruning framework for multimodal reasoning. Unlike prior methods (Chen et al., 2024b; Zhang et al., 2025d; Xing et al., 2024) that prune visual tokens once at prefill, VisionPulse performs step-wise visual token selection during reasoning, enabling the model to select critical visual tokens as the reasoning state evolves. Beyond preserving accuracy, we uncover a coupled bottleneck: retaining redundant visual context at every step steers LMMs toward query-irrelevant visual cues, yielding unnecessary and even sometimes harmful reasoning traces (see Section 5.3). Furthermore, we observe a strong positive correlation between visual attention mass and LMMs’ effective visual activation, which motivates a simple yet effective visual mass guided budgeting strategy. Specifically, Vision-Pulse uses this lightweight mass signal to set a per-step retention budget and retains only the most critical visual tokens under this budget. Extensive experiments on seven benchmarks demonstrate that VisionPulse achieves performance comparable to the full-token baseline under extreme visual token retention settings (10% and 5%), while reducing unnecessary generation length by 12.3% and 11.2%, substantially outperforming existing methods. ",
+        "bbox": [
+            495,
+            547,
+            888,
+            896
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "header",
+        "text": "VisionPulse: Dynamic Visual Sparsity for Efficient Multimodal Reasoning ",
+        "bbox": [
+            251,
+            56,
+            720,
+            70
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "page_number",
+        "text": "2 ",
+        "bbox": [
+            480,
+            922,
+            491,
+            934
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "text",
+        "text": "Our contributions are summarized as follows: 1) We empirically show that the need for visual evidence in multimodal reasoning is highly step-dependent, and the critical visual token set evolves over decoding steps. 2) We identify a coupled bottleneck in multimodal reasoning, where redundant visual context can steer LMMs to query-irrelevant regions and lengthen the reasoning trace. 3) We propose VisionPulse, a training-free dynamic visual token pruning framework that selects critical visual tokens at each decoding step via a lightweight visual mass signal. 4) Extensive experiments on seven benchmarks validate that VisionPulse mitigates redundant reasoning traces, improving efficiency while keeping accuracy almost unchanged. ",
+        "bbox": [
+            84,
+            84,
+            475,
+            282
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "2. Related Work ",
+        "text_level": 1,
+        "bbox": [
+            84,
+            297,
+            227,
+            314
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "Multimodal Reasoning Large Reasoning Models (Guo et al., 2025; Jaech et al., 2024; Team et al., 2025) improve performance by explicitly generating chain-of-thought (CoT), but stronger reasoning typically requires longer generated sequences and thus higher inference cost, especially on difficult problems (Muennighoff et al., 2025; Snell et al., 2024; Yeo et al., 2025). Efficient reasoning methods (Choi et al., 2025; Xia et al., 2025; Zhang et al., 2025b; Xiao et al., 2025; Yang et al., 2025b) therefore primary focus on more concise CoT generation while largely ignoring the contribution of visual tokens to inference cost. In contrast, we first study multimodal reasoning efficiency from a unified perspective and show that redundant visual context is doubly costly: it increases per-step attention computation and can also lengthen the reasoning trace. ",
+        "bbox": [
+            84,
+            324,
+            475,
+            551
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "Visual Compression Visual token redundancy is prevalent in LMMs: a single high-resolution image can yield thousands of tokens, and videos can scale to tens of thousands (Wang et al., 2025b; Wu et al., 2024). Existing pruning methods broadly fall into two categories: (1) compressing visual tokens using attention patterns from the vision encoder (Yang et al., 2025a;c; Shang et al., 2025; Arif et al., 2025; Liu et al., 2025), and (2) selecting a query-relevant subset at prefill (Chen et al., 2024b; Zhang et al., 2025d; Khaki et al., 2025; Zhang et al., 2025c). Despite these differences, most methods compress only once before decoding, implicitly assuming the retained subset remains sufficient throughout reasoning. In contrast, our analysis shows that visual reliance varies substantially across decoding steps, which directly motivates the design of VisionPulse. ",
+        "bbox": [
+            84,
+            558,
+            477,
+            785
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "3. Motivation ",
+        "text_level": 1,
+        "bbox": [
+            84,
+            801,
+            204,
+            816
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "3.1. Inference Cost Analysis of Multimodal Reasoning ",
+        "text_level": 1,
+        "bbox": [
+            84,
+            825,
+            465,
+            842
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "In multimodal reasoning, given a test query $q \\ : = \\ : \\{ p , v \\}$ , where p is the text prompt and v is the visual input (images or videos), LMMs integrate visual and textual information to generate an answer through multi-step reasoning. Under the standard KV-cache implementation, the model first processes the full input once to initialize the KV-cache (prefill stage), and then generates g tokens autoregressively while updating the KV-cache (decoding stage). We decompose the total floating-point operations (FLOPs) as follows: ",
+        "bbox": [
+            84,
+            849,
+            475,
+            896
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "",
+        "bbox": [
+            496,
+            84,
+            885,
+            175
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "equation",
+        "text": "$$\n\\begin{array}{l} \\mathcal {F} _ {\\text { total }} = \\mathcal {F} _ {\\text { pre }} + \\sum_ {t = 1} ^ {g} \\mathcal {F} _ {\\text { dec }} \\\\ \\approx L \\cdot \\left[ \\underbrace {(p + v) (8 d ^ {2} + 4 m d) + 4 d (p + v) ^ {2}} _ {\\text { Prefill   Stage }} \\right] \\tag {1} \\\\ + L \\cdot \\underbrace {\\sum_ {t = 1} ^ {g} \\left[ (8 d ^ {2} + 4 m d) + 4 d (p + v + t) \\right]} _ {\\text { Decoding   Stage }}, \\\\ \\end{array}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            509,
+            183,
+            887,
+            325
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "where L denotes the number of layers, d is the hidden dimension, m is the FFN intermediate size, and g is the number of generated tokens. Eq. 1 highlights a coupling inference burden between the reasoning length g and the initial multimodal context length $( p + v )$ . Unlike prefill which is performed once, decoding applies self-attention over a context growing from (p + v) to $( p + v + g )$ , the total cost scales as $O \\left( g ( p + v ) + g ^ { 2 } \\right)$ . In multimodal settings where the visual context often dominates the input length $( v \\gg p )$ , visual tokens introduce a large baseline cost per decoding step. As g increase, this results in significantly higher marginal costs compared to text-only models, making the visual context becoming a dominant factor in total end-to-end latency. ",
+        "bbox": [
+            496,
+            333,
+            888,
+            529
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "3.2. Dynamic Visual Attention in Multimodal Reasoning ",
+        "text_level": 1,
+        "bbox": [
+            496,
+            542,
+            885,
+            556
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "Given the redundancy in visual tokens, visual compression has emerged as a promising strategy for enhancing efficiency. Most existing methods adopt a static selection paradigm: they estimate token importance once at prefill and keep this fixed subset throughout decoding. This implicitly assumes that the visual evidence required for reasoning remains unchanged over time. We argue that this assumption is mismatched to multimodal reasoning, where the model’s reliance on visual evidence changes as the reasoning state evolves. To validate this, we visualize visual attention in Qwen3-VL-4B-Thinking during CoT reasoning as shown in Figure 1. Specifically, we quantify step-wise visual attention mass and examine visual attention heatmaps at representative steps, leading to three key observations. ",
+        "bbox": [
+            495,
+            566,
+            887,
+            777
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "First, visual reliance is strongly step-dependent rather than constant. As shown in Figure 1a, visual attention activates when LMM confirms visual details (such as handle), while diminishing significantly during steps dominated by textual reasoning (e.g., “Let’s check the options”). It indicate that visual evidence is dynamic and activated on demand as the reasoning state evolves. Second, the set of critical visual tokens varies during reasoning. When visual attention mass increases, the activated regions also shift with the current reasoning content. In Figure 1b, when the model generates entity-specific tokens (e.g., handle), attention explicitly concentrates on the corresponding region. In contrast, during prefill, the model focuses on generating the initial token (e.g., so in step 1), providing little semantic guidance for identifying the relevant regions. Consequently, selecting a single fixed visual subset at prefill is suboptimal: it may discard tokens that become important later, while retaining irrelevant context during low-reliance steps. ",
+        "bbox": [
+            495,
+            784,
+            888,
+            905
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "header",
+        "text": "VisionPulse: Dynamic Visual Sparsity for Efficient Multimodal Reasoning ",
+        "bbox": [
+            251,
+            56,
+            718,
+            70
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "page_number",
+        "text": "3 ",
+        "bbox": [
+            480,
+            922,
+            491,
+            934
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "",
+        "bbox": [
+            84,
+            85,
+            475,
+            236
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "text",
+        "text": "Third and critically, we identify a coupled bottleneck in multimodal reasoning. Maintaining the full visual context throughout decoding can bias the model toward generating unnecessary visual cues that contribute little to the reasoning process. For instance, in Figure 1, describing handle is irrelevant for judging the spatial relation between the door and the brown square. Such redundancy not only incurs avoidable computational overhead but also introduces visual noise that undermines the reliability of the reasoning. We provide a more comprehensive discussion of this phenomenon in Section 5.3. Overall, these observations motivate a dynamic pruning mechanism that aligns visual budgets with evolving reasoning demands, maximizing compression efficiency without compromising LMMs’ reasoning performance. ",
+        "bbox": [
+            84,
+            243,
+            477,
+            455
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "text",
+        "text": "4. VisionPulse ",
+        "text_level": 1,
+        "bbox": [
+            84,
+            474,
+            207,
+            489
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "text",
+        "text": "4.1. Overview Architecture ",
+        "text_level": 1,
+        "bbox": [
+            84,
+            500,
+            277,
+            513
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "text",
+        "text": "To mitigate the decoding-time bottleneck from redundant visual context, we propose VisionPulse, a training-free method for step-wise visual token pruning in multimodal reasoning. As shown in Figure 2, VisionPulse keeps only the most critical visual tokens at each step, enabling stepdependent selection during decoding. Furthermore, it uses a lightweight visual attention mass signal $M _ { \\mathrm { v i s } } ^ { t }$ to determine the step-wise retention budget $K _ { t } ,$ retaining the top- $K _ { t }$ visual tokens to form the pruned decoding context. We describe the details of each module below. ",
+        "bbox": [
+            84,
+            523,
+            475,
+            674
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "text",
+        "text": "4.2. Step-wise Visual Token Pruning ",
+        "text_level": 1,
+        "bbox": [
+            84,
+            689,
+            341,
+            704
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "text",
+        "text": "In multimodal reasoning, LMMs exhibit highly stepdependent visual dependencies during decoding rather than maintaining a constant focus. As a result, retaining the complete visual context at every decoding step imposes an unnecessary computation burden. Motivated by this, we adopt a step-wise pruning paradigm that performs adaptive pruning at every decoding step. ",
+        "bbox": [
+            84,
+            712,
+            475,
+            819
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "text",
+        "text": "Formally, let the visual token set be $X _ { v } = \\{ v _ { 1 } , v _ { 2 } , . . . , v _ { N } \\}$ . At each decoding step t, given the current query token $q _ { t }$ , our objective is to identify a critical subset $X _ { v } ^ { t } \\subseteq X _ { \\imath }$ and drop the remaining tokens. This fundamentally differs from static pruning methods, which estimate visual token importance ",
+        "bbox": [
+            84,
+            825,
+            475,
+            902
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "image",
+        "img_path": "images/8137f1c88333fdd4578978d4cb0544c1d1c82e7bcd9ab40ab9fc50bc2389a856.jpg",
+        "image_caption": [
+            "Figure 2. Overview of VisionPulse. At decoding step $t ,$ Vision-Pulse adaptively prunes visual tokens by computing a lightweight visual attention mass $M _ { \\mathrm { v i s } } ^ { t }$ to determine the step-wise budget ${ \\dot { K } } _ { t }$ , and retains the top- $K _ { t }$ tokens for decoding. Temperature scaling is used to enable adjustable compression ratios. "
+        ],
+        "image_footnote": [],
+        "content": "```mermaid\ngraph TD\n    A[\"Image\"] --> B[\"Reasoning Step t\"]\n    C[\"Text\"] --> B\n    B --> D[\"Visual Attention Mass M^t_vis\"]\n    D --> E[\"K_t = N_v * M^t_vis, X^t_v = Top-K_t(S^t_vis)\"]\n    E --> F[\"Step t {v2 v3 p1 p2 p3 g1 g2 ... gt-1} → gt\"]\n    F --> G[\"Answer\"]\n    G --> H[\"So, let's look at the image. The door is ..... Option B is Correct. The brown square vent is to the left of the door.\"]\n```",
+        "sub_type": "flowchart",
+        "bbox": [
+            498,
+            87,
+            885,
+            448
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "text",
+        "text": "once at prefill and keep a fixed subset throughout decoding. In contrast, we re-estimate token importance at every step to track the evolving reasoning focus. For simplicity, we follow FastV (Chen et al., 2024b) for importance estimation but recompute it at every decoding step t. Specifically, we compute the importance scores at layer $l _ { a }$ and start pruning from $l _ { a } .$ At the anchor layer $l _ { a } .$ , we aggregate attention probabilities over all heads to define the significance score for each visual token: ",
+        "bbox": [
+            496,
+            520,
+            885,
+            655
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "equation",
+        "text": "$$\nS _ {i} ^ {t} = \\frac {1}{H} \\sum_ {h = 1} ^ {H} A _ {t, h} ^ {(l _ {a})} (q _ {t}, v _ {i}), \\tag {2}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            596,
+            657,
+            885,
+            699
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "text",
+        "text": "where $A _ { t , h } ^ { ( l _ { a } ) } ( q _ { t } , v _ { i } )$ denotes the attention probability from the current query $q _ { t }$ to the visual key $v _ { i }$ at head h of layer $l _ { a }$ . This importance estimator is flexible and can be replaced by alternative scoring functions used in prior work (Xing et al., 2024; Yin et al., 2025). Notably, given $\\{ S _ { i } ^ { t } \\} _ { i = 1 } ^ { N }$ , instead of using a fixed retention ratio, we determine a step-specific retention budget $K _ { t }$ and retain Top- $K _ { t }$ visual tokens: ",
+        "bbox": [
+            496,
+            705,
+            887,
+            814
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "equation",
+        "text": "$$\nX _ {v} ^ {t} = \\{v _ {i} \\mid i \\in \\text { Top- } K _ {t} (\\{S _ {i} ^ {t} \\} _ {i = 1} ^ {N}) \\}. \\tag {3}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            566,
+            819,
+            885,
+            838
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "text",
+        "text": "4.3. Visual Mass Guided Dynamic Budget ",
+        "text_level": 1,
+        "bbox": [
+            496,
+            851,
+            792,
+            867
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "text",
+        "text": "A key challenge in step-wise visual token pruning is that a fixed retention ratio cannot accommodate the heterogeneous visual needs across decoding steps. Some steps require broad visual evidence, while others are largely languagedriven and only need minimal visual support. Furthermore, a larger visual attention does not necessarily imply a broader visual coverage: it could either concentrate on a few salient visual tokens or spread over many tokens. To motivate a step-wise budget, we first conduct an empirical analysis across decoding steps and find that the visual attention mass $M _ { \\mathrm { v i s } } ^ { t } - \\mathbf { a }$ scalar measuring how much attention probability is allocated to visual tokens at step t—is strongly correlated with the number of effectively activated visual tokens. ",
+        "bbox": [
+            496,
+            875,
+            885,
+            905
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "header",
+        "text": "VisionPulse: Dynamic Visual Sparsity for Efficient Multimodal Reasoning ",
+        "bbox": [
+            251,
+            56,
+            720,
+            70
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "page_number",
+        "text": "4 ",
+        "bbox": [
+            480,
+            922,
+            491,
+            934
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "text",
+        "text": "",
+        "bbox": [
+            84,
+            85,
+            475,
+            251
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "Concretely, to characterize how many visual tokens receive non-negligible attention, we define the active visual token count under a threshold δ as: ",
+        "bbox": [
+            84,
+            258,
+            473,
+            301
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "equation",
+        "text": "$$\nN _ {\\mathrm{act}} ^ {t} (\\delta) = \\left| \\left\\{i \\in \\{1, \\dots , N _ {v} \\} \\mid \\bar {A} _ {t} ^ {(l _ {a})} (q _ {t}, v _ {i}) > \\delta \\right\\} \\right|, \\tag {4}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            96,
+            309,
+            473,
+            335
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "where $N _ { v } = | X _ { v } |$ is the number of visual tokens. Meanwhile, we quantify the overall visual dependency at decoding step t by the visual attention mass: ",
+        "bbox": [
+            84,
+            344,
+            475,
+            388
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "equation",
+        "text": "$$\nm _ {t, h} ^ {\\text { vis }} = \\sum_ {i = 1} ^ {N _ {v}} A _ {t, h} ^ {(l _ {a})} (q _ {t}, v _ {i}), \\quad M _ {\\text { vis }} ^ {t} = \\frac {1}{H} \\sum_ {h = 1} ^ {H} m _ {t, h} ^ {\\text { vis }}. \\tag {5}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            96,
+            398,
+            473,
+            441
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "As shown in Figure 3, $M _ { \\mathrm { v i s } } ^ { t }$ exhibits a strong positive linear correlation with $N _ { \\mathrm { a c t } } ^ { t } ( \\delta )$ ) across decoding steps, and the trend remains consistent across a range of thresholds (Pearson r ranges from 0.82 to 0.95). This suggests that higher visual dependency tends to lift more tokens above non-negligible attention levels, instead of only amplifying attention on a few tokens. ",
+        "bbox": [
+            84,
+            450,
+            475,
+            556
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "Motivated by this observation, we use the visual attention mass as a lightweight predictor to allocate a step-wise retention budget. At decoding step t, we estimate $M _ { \\mathrm { v i s } } ^ { t }$ at the anchor layer $l _ { a }$ using a temperature-scaled attention distribution with $\\tau < 1$ , which enables controllable pruning ratios and suppresses the softmax long tail over $X _ { v } .$ . Specifically, we compute the temperature-scaled attention probability: ",
+        "bbox": [
+            84,
+            564,
+            475,
+            671
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "equation",
+        "text": "$$\nA _ {t, h} ^ {(l _ {a}, \\tau)} (q _ {t}, v _ {i}) = \\frac {\\exp \\left(Z _ {t , h} ^ {(l _ {a})} (q _ {t} , v _ {i}) / \\tau\\right)}{\\sum_ {j} \\exp \\left(Z _ {t , h} ^ {(l _ {a})} (q _ {t} , j) / \\tau\\right)}, \\tag {6}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            133,
+            679,
+            473,
+            731
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "where Zt,h $Z _ { t , h } ^ { ( l _ { a } ) } ( q _ { t } , v _ { i } )$ (la) denotes the pre-softmax attention logit and τ is the temperature. Using $A _ { t , h } ^ { ( l _ { a } , \\tau ) }$ , we compute the visual attention mass $M _ { \\mathrm { v i s } } ^ { t }$ following Equation (5). For vis budgeting, we adopt the head-max variant $M _ { v i s , m a x } ^ { t }$ when computing $K _ { t } .$ , yielding a conservative estimate that avoids under-budgeting visual-dominant heads (Kang et al., 2025; Wan et al., 2025). Finally, we predict the pruning budget directly from M tvis,max: $M _ { \\mathrm { v i s , m a x } } ^ { t }$ ",
+        "bbox": [
+            84,
+            741,
+            475,
+            873
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "equation",
+        "text": "$$\nK _ {t} = M _ {\\text { vis,max }} ^ {t} N _ {v}. \\tag {7}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            207,
+            882,
+            473,
+            901
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "chart",
+        "img_path": "images/f522ab8701cc430907cc592b1b2fa15080bbbd4ccb07248d43ec23446b7cc4d5.jpg",
+        "content": "| Threshold | r    |\n| --------- | ---- |\n| 0.0005    | 0.95 |\n| 0.001     | 0.94 |\n| 0.0015    | 0.87 |\n| 0.002     | 0.82 |",
+        "chart_caption": [
+            "Figure 3. Visual attention mass predicts the number of activated visual tokens. Scatter plot of visual attention mass $M _ { \\mathrm { v i s } } ^ { t }$ v.s. active visual token count $\\mathrm { \\mathit { N } } _ { \\mathrm { a c t } } ^ { t } ( \\delta )$ under different activation thresholds δ. Across thresholds, $M _ { \\mathrm { v i s } } ^ { t }$ shows a strong positive linear correlation with $N _ { \\mathrm { a c t } } ^ { t } ( \\delta )$ , supporting dynamic budget allocation. "
+        ],
+        "chart_footnote": [],
+        "sub_type": "scatter",
+        "bbox": [
+            501,
+            85,
+            882,
+            276
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "5. Experiments ",
+        "text_level": 1,
+        "bbox": [
+            496,
+            354,
+            629,
+            373
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "5.1. Experimental Setup ",
+        "text_level": 1,
+        "bbox": [
+            496,
+            381,
+            669,
+            396
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "To evaluate our method on general multimodal reasoning, we conduct experiments on seven widely adopted benchmarks (Masry et al., 2022; Yu et al., 2024; xAI, 2024; Qian et al., 2025; Wang et al., 2024; Mathew et al., 2022; Chen et al., 2024a). We compare our approach with three representative state-of-the-art visual token pruning methods: VisionZip (Yang et al., 2025a), FastV (Chen et al., 2024b), and LOOK-M (Wan et al., 2024). VisionZip selects visual tokens according to the visual attention extracted from the last layer of the visual encoder, and performs pruning before the prefill stage. FastV prunes visual tokens at an intermediate layer of the LMM during the prefill stage, where $l _ { a } = 1 7$ . LOOK-M performs KV-cache compression across all layers during prefill, preserving important tokens in a layer-wise manner. Despite differing in pruning granularity and application stage, these methods make a single static pruning decision and therefore overlook the step-dependent need for visual evidence during reasoning. For a controlled comparison, we build VisionPulse on top of FastV’s importance estimator (FastV-VP) and prune at the same layer. ",
+        "bbox": [
+            495,
+            404,
+            888,
+            708
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "5.2. Main Results ",
+        "text_level": 1,
+        "bbox": [
+            496,
+            723,
+            624,
+            737
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "We evaluate all methods under two aggressive settings with ∼10% and ∼5% visual token retention. For fair comparison, we clamp $K _ { t }$ to match the target average retention: (0.05N, 0.10N) for 10% and (0.01N, 0.05N) for 5%. ",
+        "bbox": [
+            496,
+            747,
+            887,
+            808
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "The results are shown in Table 1, where our method consistently achieves markedly better performance than existing approaches. Specifically, when using at most 5% visual tokens at each decoding step, our method preserves nearly 100% of the original performance. Even under the more extreme setting where only 1% of visual tokens are retained per step, the model still maintains 98.2% of the full-token performance. Moreover, unlike prior methods, we significantly shorten the reasoning trajectory while keeping the performance nearly unchanged. Compared to the full-token baseline, the average generation length is reduced by 12.3% and 11.2% under the two settings, respectively. In contrast, static pruning baselines degrade sharply, with average accuracy dropping by 24.5%–50.9% and generation length increasing by 18.3%–108.0% under aggressive retention. These results indicate that VisionPulse does not only reduce the number of visual tokens, but instead removes truly irrelevant visual information at each decoding step, consistently retaining only the tokens critical to sustain effective visual activation for the current reasoning stage. ",
+        "bbox": [
+            495,
+            814,
+            888,
+            905
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "header",
+        "text": "VisionPulse: Dynamic Visual Sparsity for Efficient Multimodal Reasoning ",
+        "bbox": [
+            251,
+            56,
+            720,
+            70
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "page_number",
+        "text": "5 ",
+        "bbox": [
+            480,
+            922,
+            491,
+            934
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "table",
+        "img_path": "images/33b2a91dd5d9cef2e745b20fafbbffed6ff69c022b688287de8d6deba022f3dc.jpg",
+        "table_caption": [
+            "Table 1. Main results under aggressive visual-token retention (Qwen3-VL Thinking 4B). We compare our FastV-VP with prior pruning methods across seven benchmarks. Each cell reports the absolute value (top; L = generated tokens, A = accuracy) and the relative change from the full-token baseline (bottom). Results are grouped by retention levels (retain ≤10% and ≤5% tokens). "
+        ],
+        "table_footnote": [],
+        "table_body": "<table><tr><td rowspan=\"2\">Method</td><td colspan=\"2\">CharXiv RQ</td><td colspan=\"2\">InfoVQA</td><td colspan=\"2\">ChartQA</td><td colspan=\"2\">MMStar</td><td colspan=\"2\">RealWorld QA</td><td colspan=\"2\">MMVet</td><td colspan=\"2\">MIA-Bench</td><td colspan=\"2\">Avg</td></tr><tr><td> $L \\downarrow$ </td><td> $A \\uparrow$ </td><td> $L \\downarrow$ </td><td> $A \\uparrow$ </td><td> $L \\downarrow$ </td><td> $A \\uparrow$ </td><td> $L \\downarrow$ </td><td> $A \\uparrow$ </td><td> $L \\downarrow$ </td><td> $A \\uparrow$ </td><td> $L \\downarrow$ </td><td> $A \\uparrow$ </td><td> $L \\downarrow$ </td><td> $A \\uparrow$ </td><td> $L\\downarrow$ </td><td> $A \\uparrow$ </td></tr><tr><td colspan=\"17\">Upper Bound (Retain 100% Tokens)</td></tr><tr><td>Baseline</td><td>4068.0</td><td>47.60</td><td>623.1</td><td>84.37</td><td>510.0</td><td>77.12</td><td>2058.5</td><td>72.47</td><td>678.0</td><td>72.81</td><td>1642.0</td><td>60.96</td><td>2231.3</td><td>93.44</td><td>1687.3</td><td>72.68</td></tr><tr><td colspan=\"17\">Retain  $\\leq$  10% Tokens</td></tr><tr><td>Visionzip</td><td>4986.2+22.6%</td><td>13.90-70.8%</td><td>2533.3+306.6%</td><td>22.66-73.1%</td><td>2039.7+299.9%</td><td>30.24-60.8%</td><td>2496.8+21.3%</td><td>51.53-28.9%</td><td>726.0+7.1%</td><td>59.08-18.9%</td><td>2346.7+42.9%</td><td>41.19-32.4%</td><td>3089.6+38.5%</td><td>88.14-5.7%</td><td>2602.6+54.2%</td><td>43.82-39.7%</td></tr><tr><td>FastV</td><td>5960.1+46.5%</td><td>12.70-73.3%</td><td>2963.6+375.6%</td><td>20.63-75.5%</td><td>1485.5+191.3%</td><td>16.28-78.9%</td><td>2275.3+10.5%</td><td>50.40-30.5%</td><td>575.8-15.1%</td><td>55.95-23.2%</td><td>3296.8+100.8%</td><td>28.12-53.9%</td><td>2714.9+21.7%</td><td>82.53-11.7%</td><td>2753.1+63.2%</td><td>38.09-47.6%</td></tr><tr><td>LOOK-M</td><td>5555.2+36.6%</td><td>19.80-58.4%</td><td>2694.1+332.4%</td><td>40.94-51.5%</td><td>2007.1+293.5%</td><td>57.68-25.2%</td><td>2090.6+1.6%</td><td>58.87-18.8%</td><td>481.8-28.9%</td><td>67.84-6.8%</td><td>2518.9+53.4%</td><td>50.05-17.9%</td><td>3376.1+51.3%</td><td>88.71-5.1%</td><td>2674.8+58.5%</td><td>54.84-24.5%</td></tr><tr><td>FastV-VP(Ours)</td><td>3770.7-7.3%</td><td>47.30-0.6%</td><td>530.7-14.8%</td><td>83.62-0.9%</td><td>422.9-17.1%</td><td>76.72-0.5%</td><td>1873.7-9.0%</td><td>72.20-0.4%</td><td>564.0-16.8%</td><td>73.20+0.5%</td><td>1329.8-19.0%</td><td>61.79+1.4%</td><td>1870.8-16.2%</td><td>93.99+0.6%</td><td>1480.4-12.3%</td><td>72.69+0.0%</td></tr><tr><td colspan=\"17\">Retain  $\\leq$  5% Tokens</td></tr><tr><td>Visionzip</td><td>3751.7-7.8%</td><td>12.30-74.2%</td><td>1468.5+135.7%</td><td>22.04-73.9%</td><td>957.3+87.7%</td><td>19.43-74.8%</td><td>2289.6+11.2%</td><td>44.93-38.0%</td><td>671.2-1.0%</td><td>52.02-28.6%</td><td>1918.1+16.8%</td><td>36.56-40.0%</td><td>2914.1+30.6%</td><td>87.88-6.0%</td><td>1995.8+18.3%</td><td>39.31-45.9%</td></tr><tr><td>FastV</td><td>4259.7+4.7%</td><td>11.60-75.6%</td><td>2239.7+259.4%</td><td>21.78-74.2%</td><td>1207.3+136.7%</td><td>12.88-83.3%</td><td>2040.4-0.9%</td><td>50.13-30.8%</td><td>613.3-9.5%</td><td>54.12-25.7%</td><td>2606.5+58.7%</td><td>24.27-60.2%</td><td>2342.2+5.0%</td><td>75.03-19.7%</td><td>2187.0+29.6%</td><td>35.69-50.9%</td></tr><tr><td>LOOK-M</td><td>6448.0+58.5%</td><td>17.20-63.9%</td><td>5511.1+784.5%</td><td>27.39-67.5%</td><td>2577.2+405.3%</td><td>28.80-62.7%</td><td>2265.4+10.1%</td><td>54.87-24.3%</td><td>573.0-15.5%</td><td>68.37-6.1%</td><td>2859.2+74.1%</td><td>35.05-42.5%</td><td>4329.3+94.0%</td><td>80.66-13.7%</td><td>3509.0+108.0%</td><td>44.62-38.6%</td></tr><tr><td>FastV-VP(Ours)</td><td>3645.1-10.4%</td><td>45.20-5.0%</td><td>665.0+6.7%</td><td>81.90-2.9%</td><td>510.0+0.0%</td><td>75.16-2.5%</td><td>1875.4-8.9%</td><td>70.53-2.7%</td><td>538.0-20.6%</td><td>72.54-0.4%</td><td>1456.2-11.3%</td><td>59.00-3.2%</td><td>1800.1-19.3%</td><td>95.09+1.8%</td><td>1498.5-11.2%</td><td>71.35-1.8%</td></tr></table>",
+        "bbox": [
+            89,
+            122,
+            890,
+            470
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "text",
+        "text": "",
+        "bbox": [
+            84,
+            488,
+            475,
+            699
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "text",
+        "text": "Furthermore, we observe that incorrect pruning strategies not only degrade performance but also unexpectedly increase reasoning cost substantially. Static methods (e.g., VisionZip, FastV, and LOOK-M) often remove critical tokens prematurely, forcing the model to compensate via longer reasoning generation, which both reduces accuracy and increases computational overhead. For example, LOOK-M incurs a 108% increase in average generation length, yet its accuracy still drops by 38.6%. In contrast, VisionPulse maintains shorter generations and stable performance even under extremely low visual retention. Even on vision-intensive tasks such as ChartQA, our method remains stable, with only a 2.5% performance drop under 5% visual-token retention. Overall, these results support our hypothesis that visual dependency varies throughout the reasoning process, and fixed-budget pruning strategies are inherently mismatched to this property. By using visual attention mass as a lightweight predictor, VisionPulse better tracks step-wise visual dependency and enables more efficient pruning. ",
+        "bbox": [
+            84,
+            705,
+            477,
+            902
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "text",
+        "text": "",
+        "bbox": [
+            496,
+            488,
+            888,
+            580
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "text",
+        "text": "5.3. The Coupled Bottleneck in Multimodal Reasoning ",
+        "text_level": 1,
+        "bbox": [
+            496,
+            594,
+            880,
+            609
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "text",
+        "text": "Beyond inference-time overhead, we observe a coupled bottleneck that affects both the length and reliability of multimodal reasoning. During decoding, LMMs remain exposed to abundant visual context even when the current step requires little visual evidence, which can steer the model toward query-irrelevant regions and induce redundant descriptions, thereby elongating the reasoning trace. ",
+        "bbox": [
+            495,
+            618,
+            888,
+            726
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "text",
+        "text": "As illustrated in Figures 1 and 4, this phenomenon not only lengthens reasoning traces but can also lead the model toward harmful reasoning paths. Specifically, in Figure 1a, the model elaborates on descriptive details (e.g., the handle and color of the door) that are irrelevant to the target reasoning. Furthermore, in Figure 4, an early description of the car biases subsequent inference, prompting the model to infer the traffic light state from the car’s motion instead of the signal itself. Such failure modes are unacceptable in safety-critical scenarios such as autonomous driving. Additional examples are provided in the Appendix. In contrast, step-wise ",
+        "bbox": [
+            495,
+            731,
+            888,
+            898
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "header",
+        "text": "VisionPulse: Dynamic Visual Sparsity for Efficient Multimodal Reasoning ",
+        "bbox": [
+            251,
+            56,
+            720,
+            70
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "page_number",
+        "text": "6 ",
+        "bbox": [
+            480,
+            922,
+            491,
+            935
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "image",
+        "img_path": "images/1aa89ac8ac473135bcd5ea14ad713a5d0f76af3cd79dd7a7d7d8581b49e40e8d.jpg",
+        "image_caption": [
+            "A. Test Query ",
+            "Question: Are the traffic lights green? "
+        ],
+        "image_footnote": [],
+        "content": "Night street scene with cars and pedestrians, no visible text or signage",
+        "sub_type": "natural_image",
+        "bbox": [
+            98,
+            108,
+            289,
+            205
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "text",
+        "text": "B. Baseline: Before Pruning (Visual Noise Interference) ",
+        "text_level": 1,
+        "bbox": [
+            310,
+            89,
+            594,
+            102
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "image",
+        "img_path": "images/81a3c03aa61e3c76bdb0ede470deda524374f03ec663e7279e515ed00c13d1f7.jpg",
+        "image_caption": [],
+        "image_footnote": [],
+        "content": "",
+        "bbox": [
+            764,
+            85,
+            787,
+            103
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "text",
+        "text": "Reasoning Error ",
+        "bbox": [
+            787,
+            90,
+            867,
+            101
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "text",
+        "text": "So, let's look at the traffic lights in the image. The traffic lights are the ones hanging over the road, right? In the picture, the traffic lights are showing red, I think. Because the cars are stopped, so the light must be red. Let me check again. The traffic lights are the ones with the orange lights? Wait, no, in the image, the traffic lights are the ones on the overhead gantry. They are lit up, but since the cars are stopped, it's probably red. So the answer would be B. No, because they are not green. ",
+        "bbox": [
+            305,
+            109,
+            879,
+            154
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "text",
+        "text": "C. Ours: After Pruning (Focused Reasoning) ",
+        "text_level": 1,
+        "bbox": [
+            310,
+            166,
+            540,
+            179
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "image",
+        "img_path": "images/bdbb905ee1cf189df17f19c8939f70bc3dc6ef781dbea32c67b89a62e1d242bf.jpg",
+        "image_caption": [],
+        "image_footnote": [],
+        "content": "",
+        "bbox": [
+            763,
+            162,
+            785,
+            179
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "text",
+        "text": "Correct Answer ",
+        "bbox": [
+            789,
+            167,
+            864,
+            176
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "text",
+        "text": "So, let's look at the image. The traffic lights are the ones hanging over the road. In the picture, the lights are red, right? Because they're showing red, which means stop. So the question is asking if they're green. Since they're red, the answer should be B. No. ",
+        "bbox": [
+            305,
+            185,
+            879,
+            218
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "table",
+        "img_path": "images/229a18ad80f5d39efae936b8693da1ac55e7615d6ceb523346b91122e5559445.jpg",
+        "table_caption": [
+            "Figure 4. Coupled bottleneck in multimodal reasoning. With full visual context (top), redundant visual tokens remain available throughout decoding and can draw attention to query-irrelevant cues, leading to unnecessary descriptions and even erroneous reasoning (e.g., inferring the traffic-light state from vehicles rather than the signal). With step-wise visual pruning (bottom), the model retains only query-relevant visual evidence for the current step, yielding more focused reasoning and correct prediction. ",
+            "Table 2. Ablation study on Qwen3-VL-Thinking-4B under aggressive retention (≤5%). We analyze the effect of different budget allocation strategies used for FastV-VP on three benchmarks. "
+        ],
+        "table_footnote": [],
+        "table_body": "<table><tr><td rowspan=\"2\">Method</td><td rowspan=\"2\">Avg Ret.</td><td colspan=\"2\">RealWorld QA</td><td colspan=\"2\">MMVet</td><td colspan=\"2\">MIA-Bench</td><td rowspan=\"2\">Avg L ↓</td><td rowspan=\"2\">Avg A ↑</td></tr><tr><td>L ↓</td><td>A ↑</td><td>L ↓</td><td>A ↑</td><td>L ↓</td><td>A ↑</td></tr><tr><td>Baseline</td><td>100%</td><td>678.0</td><td>72.81</td><td>1642.0</td><td>60.96</td><td>2231.3</td><td>93.44</td><td>1517.1</td><td>75.74</td></tr><tr><td colspan=\"10\">Retain ≤ 5% Tokens</td></tr><tr><td>FastV</td><td>5.0%</td><td>613.3-9.5%</td><td>54.12-25.7%</td><td>2606.5+58.7%</td><td>24.27-60.2%</td><td>2342.2+5.0%</td><td>75.03-19.7%</td><td>1853.9+22.2%</td><td>51.14-32.5%</td></tr><tr><td>FastV-VP(Fix Ratio)</td><td>1.0%</td><td>509.7-24.8%</td><td>71.90-1.3%</td><td>2913.4+77.4%</td><td>49.17-19.3%</td><td>2398.0+7.5%</td><td>92.03-1.5%</td><td>1940.4+27.9%</td><td>71.03-6.2%</td></tr><tr><td>FastV-VP(Fix Ratio)</td><td>5.0%</td><td>678.6+0.1%</td><td>72.81+0.0%</td><td>1557.7-5.1%</td><td>59.45-2.5%</td><td>1971.0-11.7%</td><td>93.22-0.2%</td><td>1402.4-7.6%</td><td>75.16-0.8%</td></tr><tr><td>FastV-VP(Random Budget)</td><td>3.0%</td><td>519.0-23.5%</td><td>69.28-4.9%</td><td>1820.9+10.9%</td><td>58.02-4.8%</td><td>2219.5-0.5%</td><td>91.49-2.1%</td><td>1519.8+0.2%</td><td>72.93-3.7%</td></tr><tr><td>FastV-VP(Dynamic Budget)</td><td>1.9%</td><td>538.0-20.6%</td><td>72.54-0.4%</td><td>1456.2-11.3%</td><td>59.00-3.2%</td><td>1800.1-19.3%</td><td>95.09+1.8%</td><td>1264.8-16.6%</td><td>75.54-0.3%</td></tr></table>",
+        "bbox": [
+            89,
+            316,
+            885,
+            555
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "text",
+        "text": "visual sparsification retains only the evidence required at each step, reducing redundant generations while preserving correctness. These observations support our claim that stepwise pruning paradigm better aligns the visual budget with evolving visual reliance during reasoning. ",
+        "bbox": [
+            84,
+            578,
+            475,
+            654
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "text",
+        "text": "5.4. Ablation Study ",
+        "text_level": 1,
+        "bbox": [
+            84,
+            670,
+            225,
+            686
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "text",
+        "text": "We conduct ablation studies to investigate the contribution of each component in VisionPulse. As shown in Table 2, both components of our method are effective and contribute to the overall gains. ",
+        "bbox": [
+            84,
+            694,
+            475,
+            755
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "text",
+        "text": "(1) Step-wise pruning is necessary: Under low retention, aligning pruning with the step-wise need for visual evidence is critical for both efficiency and correctness. Using FastV as a static baseline, fixed 5% retention leads to longer generations (+22.2%) and a large accuracy drop (-32.5%) in Table 2. This suggests that prefill-only pruning removes evidence required later, forcing the LMM to compensate with longer reasoning yet still failing to answer correctly. ",
+        "bbox": [
+            84,
+            761,
+            475,
+            882
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "text",
+        "text": "(2) Dynamic budgeting improves the trade-off: within ",
+        "bbox": [
+            84,
+            883,
+            473,
+            898
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "text",
+        "text": "FastV-VP, a fixed 1% budget causes a 6.2% accuracy drop with 27.9% longer generations, while a fixed 5% budget cannot adapt to step-wise variation and leaves redundant context in low-demand steps. In contrast, dynamic budgeting achieves a better balance, reducing length by 16.6% with negligible accuracy change (0.3%), and outperforms random budgeting in both length and accuracy. ",
+        "bbox": [
+            495,
+            578,
+            887,
+            685
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "text",
+        "text": "5.5. Generalization across different LMMs ",
+        "text_level": 1,
+        "bbox": [
+            496,
+            700,
+            799,
+            714
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "text",
+        "text": "We evaluate LMMs from different families and at different scales to verify VisionPulse’s generalization. Table 3 demonstrates that VisionPulse generalizes across different LMM backbones under 5% retention. On both Qwen3-VL-Thinking 8B and InternVL-3.5-Thinking 4B, FastV consistently degrades accuracy with increasing generation length (e.g., Avg A drops by 14.4% and 12.0%, while Avg L increases by 19.3% and 11.0%). In contrast, FastV-VP preserves accuracy while reducing generation length: it slightly improves Avg A (+0.2/+0.8%) with shorter Avg L (-7.9/- 12.4%), indicating stable gains across different LMMs. ",
+        "bbox": [
+            495,
+            723,
+            888,
+            890
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "header",
+        "text": "VisionPulse: Dynamic Visual Sparsity for Efficient Multimodal Reasoning ",
+        "bbox": [
+            251,
+            56,
+            720,
+            70
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "page_number",
+        "text": "7 ",
+        "bbox": [
+            480,
+            922,
+            491,
+            934
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "table",
+        "img_path": "images/dbe22ce8ecfd13826fccefa6c139cdabd47b41b1f09b47cc2b798a473ea5f06c.jpg",
+        "table_caption": [
+            "Table 3. Generalization across LMM backbones. The results of VisionPulse on RealWorldQA and MIA-Bench for different LMMs. FastV (Chen et al., 2024b) is included for comparision. "
+        ],
+        "table_footnote": [],
+        "table_body": "<table><tr><td rowspan=\"2\">Method</td><td colspan=\"2\">RealWorldQA</td><td colspan=\"2\">MIA-Bench</td><td rowspan=\"2\">Avg L↓</td><td rowspan=\"2\">Avg A↑</td></tr><tr><td>L↓</td><td>A↑</td><td>L↓</td><td>A↑</td></tr><tr><td colspan=\"7\">Qwen3-VL-Thinking 8B</td></tr><tr><td>Baseline</td><td>408.4</td><td>77.24</td><td>1325.2</td><td>94.19</td><td>866.8</td><td>85.72</td></tr><tr><td colspan=\"7\">Retain ≤ 5% Tokens</td></tr><tr><td rowspan=\"2\">FastV</td><td>348.1</td><td>57.52</td><td>1719.8</td><td>89.29</td><td>1033.95</td><td>73.41</td></tr><tr><td>-14.8%</td><td>-25.5%</td><td>+29.8%</td><td>-5.20%</td><td>+19.3%</td><td>-14.4%</td></tr><tr><td rowspan=\"2\">FastV-VP</td><td>400.0</td><td>76.60</td><td>1196.5</td><td>95.13</td><td>798.2</td><td>85.87</td></tr><tr><td>-2.1%</td><td>-0.8%</td><td>-9.7%</td><td>+1.0%</td><td>-7.9%</td><td>+0.2%</td></tr><tr><td colspan=\"7\">InternVL-3.5-Thinking 4B</td></tr><tr><td>Baseline</td><td>3707.5</td><td>54.38</td><td>1756.9</td><td>89.70</td><td>2732.2</td><td>72.04</td></tr><tr><td colspan=\"7\">Retain ≤ 5% Tokens</td></tr><tr><td rowspan=\"2\">FastV</td><td>3787.9</td><td>44.18</td><td>2274.5</td><td>82.63</td><td>3031.2</td><td>63.41</td></tr><tr><td>+2.2%</td><td>-18.8%</td><td>+29.5%</td><td>-7.9%</td><td>+11.0%</td><td>-12.0%</td></tr><tr><td rowspan=\"2\">FastV-VP</td><td>3246.5</td><td>55.16</td><td>1537.2</td><td>90.10</td><td>2391.9</td><td>72.63</td></tr><tr><td>-12.4%</td><td>+1.4%</td><td>-12.5%</td><td>+0.4%</td><td>-12.4%</td><td>+0.8%</td></tr></table>",
+        "bbox": [
+            91,
+            125,
+            473,
+            381
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "text",
+        "text": "5.6. Effect of Different Importance Estimators ",
+        "text_level": 1,
+        "bbox": [
+            84,
+            395,
+            410,
+            410
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "text",
+        "text": "VisionPulse is a general framework for pruning during multimodal reasoning, emphasizing step-wise visual budget allocation rather than a specific token-importance estimator. To validate this, we integrate VisionPulse with FastV (Chen et al., 2024b) and Pdrop (Xing et al., 2024), and consider an ablation variant (Ll) that performs layer-wise dynamic pruning (instead of token-level selection) for a direct comparison. We evaluate all three variants on RealWorldQA and MIA-Bench under two retention settings. ",
+        "bbox": [
+            84,
+            417,
+            475,
+            554
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "text",
+        "text": "As shown in Table 4, VisionPulse consistently improves the trade-off between efficiency and accuracy across different importance estimators. Under the 5% retention setting, FastV-VP achieves the best overall balance, reducing the average generation length by 19.6% while slightly improving accuracy, whereas Pdrop-VP achieves larger length reductions but incurs a modest accuracy drop. Notably, the layer-wise ablation Ll-VP achieves a comparable efficiency and accuracy trade-off as the token-level variant, suggesting that pushing the strategy to the layer level offers no clear advantage over token-level dynamic pruning. Overall, these results demonstrate that VisionPulse is compatible with different importance estimators, and that the primary gains stem from token-level dynamic budgeting. ",
+        "bbox": [
+            84,
+            561,
+            475,
+            773
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "text",
+        "text": "5.7. Efficiency Analysis ",
+        "text_level": 1,
+        "bbox": [
+            84,
+            781,
+            251,
+            796
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "text",
+        "text": "Beyond reducing the generated output length, VisionPulse improves inference efficiency through maintaining dynamic visual sparsity during decoding. Specifically, we compare the original dense attention with our dynamic visual sparse attention, and report the end-to-end latency under different context lengths. As shown in Figure 5, VisionPulse consistently achieves lower latency yielding up to 1.30× speedup over dense baseline. Overall, by explicitly aligning the visual budget with step-wise visual dependency, VisionPulse mitigates the coupled bottleneck in multimodal reasoning and delivers stable, practical end-to-end acceleration. ",
+        "bbox": [
+            84,
+            800,
+            475,
+            906
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "table",
+        "img_path": "images/fd31e0edcccfc2ef1a4d7cb7efbc41a66c9c6e2bec45e3f1c9e6fb9029edbabf.jpg",
+        "table_caption": [
+            "Table 4. Effect of different importance estimators. Results on RealWorldQA and MIA-Bench using different importance estimators within VisionPulse (VP). "
+        ],
+        "table_footnote": [],
+        "table_body": "<table><tr><td rowspan=\"2\">Method</td><td colspan=\"2\">RealWorldQA</td><td colspan=\"2\">MIA-Bench</td><td rowspan=\"2\">Avg L↓</td><td rowspan=\"2\">Avg A↑</td></tr><tr><td>L↓</td><td>A↑</td><td>L↓</td><td>A↑</td></tr><tr><td colspan=\"7\">Upper Bound (Retain 100% Tokens))</td></tr><tr><td>Baseline</td><td>678.0</td><td>72.81</td><td>2231.3</td><td>93.44</td><td>1454.7</td><td>83.12</td></tr><tr><td colspan=\"7\">Retain ≤ 10% Tokens</td></tr><tr><td rowspan=\"2\">FastV-VP</td><td>578.0</td><td>73.20</td><td>1870.8</td><td>93.99</td><td>1224.4</td><td>83.60</td></tr><tr><td>-14.7%</td><td>+0.5%</td><td>-16.2%</td><td>+0.6%</td><td>-15.8%</td><td>+0.6%</td></tr><tr><td rowspan=\"2\">Pdrop-VP</td><td>586.3</td><td>72.02</td><td>2081.7</td><td>93.98</td><td>1334.0</td><td>83.00</td></tr><tr><td>-13.5%</td><td>-1.1%</td><td>-6.7%</td><td>+0.6%</td><td>-8.3%</td><td>-0.1%</td></tr><tr><td rowspan=\"2\">Ll-VP</td><td>545.2</td><td>73.20</td><td>2045.1</td><td>93.42</td><td>1295.2</td><td>83.31</td></tr><tr><td>-19.6%</td><td>+0.5%</td><td>-8.3%</td><td>-0.0%</td><td>-11.0%</td><td>+0.2%</td></tr><tr><td colspan=\"7\">Retain ≤ 5% Tokens</td></tr><tr><td rowspan=\"2\">FastV-VP</td><td>538.0</td><td>72.54</td><td>1800.1</td><td>95.09</td><td>1169.0</td><td>83.82</td></tr><tr><td>-20.6%</td><td>-0.4%</td><td>-19.3%</td><td>+1.8%</td><td>-19.6%</td><td>+0.8%</td></tr><tr><td rowspan=\"2\">Pdrop-VP</td><td>471.2</td><td>71.63</td><td>1837.1</td><td>91.72</td><td>1154.2</td><td>81.68</td></tr><tr><td>-30.5%</td><td>-1.6%</td><td>-17.7%</td><td>-1.8%</td><td>-20.6%</td><td>-1.7%</td></tr><tr><td rowspan=\"2\">Ll-VP</td><td>571.5</td><td>73.85</td><td>1979.6</td><td>93.43</td><td>1275.6</td><td>83.64</td></tr><tr><td>-15.7%</td><td>+1.4%</td><td>-11.3%</td><td>-0.0%</td><td>-12.3%</td><td>+0.6%</td></tr></table>",
+        "bbox": [
+            503,
+            125,
+            883,
+            398
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "chart",
+        "img_path": "images/227a6c4a1a8aab07665f4edfd3c1cedb648ccb286cfd956931e0207e857e0de8.jpg",
+        "content": "| Category | Dense (%) | Sparse (%) | Value (×) |\n| :--- | :--- | :--- | :--- |\n| 1 | 8192 | 198.1 | 1.20 |\n| 2 | 239.2 | 364.1 | 1.24 |\n| 3 | 452.3 | 690.7 | 1.30 |\n| 4 | 894.3 | 32768 | 1.30 |",
+        "chart_caption": [
+            "Figure 5. End-to-end latency comparison of dense and sparse attention under different context lengths. We set the batch size to 8 and the generation length to 1k tokens. Numbers on the bars indicate the actual latency (s). "
+        ],
+        "chart_footnote": [],
+        "sub_type": "bar",
+        "bbox": [
+            514,
+            406,
+            874,
+            539
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "text",
+        "text": "",
+        "bbox": [
+            496,
+            602,
+            885,
+            662
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "text",
+        "text": "6. Conclusion ",
+        "text_level": 1,
+        "bbox": [
+            496,
+            672,
+            616,
+            688
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "text",
+        "text": "In this paper, we revisit visual token pruning and show that visual dependency during reasoning is inherently stepdependent. We further identify a coupled bottleneck where redundant visual context could steer LMM toward queryirrelevant regions, yielding longer and less reliable reasoning. To address these issues, we propose VisionPulse, a step-wise visual token pruning paradigm that estimates visual budget via a lightweight visual attention mass, and retains only critical visual tokens at each step. Experiments show that VisionPulse retains only 5% visual tokens per step with shortening reasoning traces, while keeping accuracy almost unchanged. These results establish VisionPulse as an extensible framework for test-time visual compression and for studying its interplay with multimodal CoT generation. ",
+        "bbox": [
+            495,
+            694,
+            887,
+            905
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "header",
+        "text": "VisionPulse: Dynamic Visual Sparsity for Efficient Multimodal Reasoning ",
+        "bbox": [
+            251,
+            56,
+            720,
+            70
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "page_number",
+        "text": "8 ",
+        "bbox": [
+            480,
+            922,
+            491,
+            934
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "text",
+        "text": "Impact Statement ",
+        "text_level": 1,
+        "bbox": [
+            86,
+            83,
+            240,
+            99
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "text",
+        "text": "This paper presents work whose goal is to advance the field of Machine Learning by enabling improved analysis and acceleration of complex reasoning in multimodal large language models. There are many potential societal consequences of our work, none which we feel must be specifically highlighted here. ",
+        "bbox": [
+            84,
+            109,
+            475,
+            200
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "text",
+        "text": "Acknowledgements ",
+        "text_level": 1,
+        "bbox": [
+            86,
+            219,
+            253,
+            237
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "text",
+        "text": "This work is partially supported by National Natural Science Foundation of China (62376274, 62437002). Zhiwu Lu is the corresponding author. ",
+        "bbox": [
+            84,
+            244,
+            475,
+            291
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "text",
+        "text": "References ",
+        "text_level": 1,
+        "bbox": [
+            86,
+            310,
+            181,
+            325
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "list",
+        "sub_type": "ref_text",
+        "list_items": [
+            "Arif, K. H. I., Yoon, J., Nikolopoulos, D. S., Vandierendonck, H., John, D., and Ji, B. HiRED: Attention-guided token dropping for efficient inference of high-resolution Vision-Language Models. In AAAI Conference on Artificial Intelligence (AAAI), pp. 1773–1781, 2025. ",
+            "Bai, S., Cai, Y., Chen, R., Chen, K., Chen, X., Cheng, Z., Deng, L., Ding, W., Gao, C., Ge, C., Ge, W., Guo, Z., Huang, Q., Huang, J., et al. Qwen3-VL technical report. arXiv preprint arXiv:2511.21631, 2025. ",
+            "Chen, L., Li, J., Dong, X., Zhang, P., Zang, Y., Chen, Z., Duan, H., Wang, J., Qiao, Y., Lin, D., et al. Are we on the right way for evaluating Large Vision-Language Models? Advances in Neural Information Processing Systems, 37: 27056–27087, 2024a. ",
+            "Chen, L., Zhao, H., Liu, T., Bai, S., Lin, J., Zhou, C., and Chang, B. An image is worth 1/2 tokens after layer 2: Plug-and-play inference acceleration for Large Vision-Language Models. In European Conference on Computer Vision (ECCV), pp. 19–35. Springer, 2024b. ",
+            "Choi, D., Lee, J., Tack, J., Song, W., Dingliwal, S., Jayanthi, S. M., Ganesh, B., Shin, J., Galstyan, A., and Bodapati, S. B. Think clearly: Improving reasoning via redundant token pruning. arXiv preprint arXiv:2507.08806, 4, 2025. ",
+            "Dai, Y., Ji, Y., Zhang, X., Wang, Y., Chu, X., and Lu, Z. Harder is better: Boosting mathematical reasoning via difficulty-aware GRPO and multi-aspect question reformulation. In International Conference on Learning Representations (ICLR), 2026. ",
+            "Duan, H., Yang, J., Qiao, Y., Fang, X., Chen, L., Liu, Y., Dong, X., Zang, Y., Zhang, P., Wang, J., et al. Vlmevalkit: An open-source toolkit for evaluating large multi-modality models. In ACM International Conference on Multimedia, pp. 11198–11201, 2024. "
+        ],
+        "bbox": [
+            86,
+            333,
+            478,
+            906
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "ref_text",
+        "text": "Guo, D., Yang, D., Zhang, H., Song, J., Zhang, R., Xu, R., Zhu, Q., Ma, S., Wang, P., Bi, X., et al. Deepseek-R1: Incentivizing reasoning capability in llms via reinforcement learning. arXiv preprint arXiv:2501.12948, 2025. ",
+        "bbox": [
+            498,
+            83,
+            888,
+            146
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "ref_text",
+        "text": "Jaech, A., Kalai, A., Lerer, A., Richardson, A., El-Kishky, A., Low, A., Helyar, A., Madry, A., Beutel, A., Carney, A., et al. Openai o1 system card. arXiv preprint arXiv:2412.16720, 2024. ",
+        "bbox": [
+            498,
+            156,
+            887,
+            215
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "ref_text",
+        "text": "Kang, S., Kim, J., Kim, J., and Hwang, S. J. See what you are told: Visual attention sink in Large Multimodal Models. In International Conference on Learning Representations (ICLR), 2025. ",
+        "bbox": [
+            498,
+            227,
+            887,
+            287
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "ref_text",
+        "text": "Khaki, S., Guo, J., Tang, J., Yang, S., Chen, Y., Plataniotis, K. N., Lu, Y., Han, S., and Liu, Z. SparseVILA: Decoupling visual sparsity for efficient VLM inference. In IEEE/CVF International Conference on Computer Vision (ICCV), pp. 23784–23794, 2025. ",
+        "bbox": [
+            498,
+            297,
+            887,
+            375
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "ref_text",
+        "text": "Kwon, W., Li, Z., Zhuang, S., Sheng, Y., Zheng, L., Yu, C. H., Gonzalez, J., Zhang, H., and Stoica, I. Efficient memory management for Large Language Model serving with pagedattention. In ACM Symposium on Operating Systems Principles (SOSP), pp. 611–626, 2023. ",
+        "bbox": [
+            498,
+            385,
+            887,
+            462
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "ref_text",
+        "text": "Li, B., Zhang, Y., Guo, D., Zhang, R., Li, F., Zhang, H., Zhang, K., Zhang, P., Li, Y., Liu, Z., et al. Llavaonevision: Easy visual task transfer. arXiv preprint arXiv:2408.03326, 2024. ",
+        "bbox": [
+            498,
+            472,
+            887,
+            532
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "ref_text",
+        "text": "Liang, Y., Ge, C., Tong, Z., Song, Y., Wang, J., and Xie, P. Not all patches are what you need: Expediting vision transformers via token reorganizations. arXiv preprint arXiv:2202.07800, 2022. ",
+        "bbox": [
+            498,
+            542,
+            887,
+            604
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "ref_text",
+        "text": "Lin, J., Tang, J., Tang, H., Yang, S., Chen, W.-M., Wang, W.-C., Xiao, G., Dang, X., Gan, C., and Han, S. AWQ: Activation-aware weight quantization for on-device LLM compression and acceleration. Proceedings of Machine Learning and Systems (MLSys), 6:87–100, 2024. ",
+        "bbox": [
+            498,
+            614,
+            887,
+            691
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "ref_text",
+        "text": "Liu, J., Du, F., Zhu, G., Lian, N., Li, J., and Chen, B. HiPrune: Training-free visual token pruning via hierarchical attention in Vision-Language Models. arXiv preprint arXiv:2508.00553, 2025. ",
+        "bbox": [
+            498,
+            700,
+            887,
+            762
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "ref_text",
+        "text": "Martins, A. and Astudillo, R. From softmax to sparsemax: A sparse model of attention and multi-label classification. In International Conference on Machine Learning (ICML), pp. 1614–1623, 2016. ",
+        "bbox": [
+            498,
+            772,
+            887,
+            834
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "ref_text",
+        "text": "Masry, A., Do, X. L., Tan, J. Q., Joty, S., and Hoque, E. ChartQA: A benchmark for question answering about charts with visual and logical reasoning. In Findings of ACL 2022, pp. 2263–2279, 2022. ",
+        "bbox": [
+            498,
+            844,
+            887,
+            906
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "header",
+        "text": "VisionPulse: Dynamic Visual Sparsity for Efficient Multimodal Reasoning ",
+        "bbox": [
+            251,
+            56,
+            720,
+            71
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "page_number",
+        "text": "9 ",
+        "bbox": [
+            480,
+            922,
+            491,
+            934
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "list",
+        "sub_type": "ref_text",
+        "list_items": [
+            "Mathew, M., Bagal, V., Tito, R., Karatzas, D., Valveny, E., and Jawahar, C. InfographicVQA. In IEEE/CVF Winter Conference on Applications of Computer Vision (WACV), pp. 1697–1706, 2022. ",
+            "Muennighoff, N., Yang, Z., Shi, W., Li, X. L., Fei-Fei, L., Hajishirzi, H., Zettlemoyer, L., Liang, P., Candes, E., and \\` Hashimoto, T. B. s1: Simple test-time scaling. In 2025 Conference on Empirical Methods in Natural Language Processing (EMNLP), pp. 20286–20332, 2025. ",
+            "Qian, Y., Ye, H., Fauconnier, J.-P., Grasch, P., Yang, Y., and Gan, Z. MIA-Bench: Towards better instruction following evaluation of Multimodal LLMs. In International Conference on Learning Representations (ICLR), 2025. ",
+            "Ren, J., Yu, C., Ma, X., Zhao, H., Yi, S., et al. Balanced meta-softmax for long-tailed visual recognition. Advances in Neural Information Processing Systems, 33: 4175–4186, 2020. ",
+            "Shang, Y., Cai, M., Xu, B., Lee, Y. J., and Yan, Y. Llavaprumerge: Adaptive token reduction for efficient Large Multimodal Models. In IEEE/CVF International Conference on Computer Vision (ICCV), pp. 22857–22867, 2025. ",
+            "Snell, C., Lee, J., Xu, K., and Kumar, A. Scaling LLM testtime compute optimally can be more effective than scaling model parameters. arXiv preprint arXiv:2408.03314, 2024. ",
+            "Sun, Z., Jing, D., and Lu, Z. CoTMR: Chain-of-thought multi-scale reasoning for training-free zero-shot composed image retrieval. In IEEE/CVF International Conference on Computer Vision (ICCV), pp. 22675–22684, 2025. ",
+            "Team, K., Du, A., Yin, B., Xing, B., Qu, B., Wang, B., Chen, C., Zhang, C., Du, C., Wei, C., et al. Kimi-VL technical report. arXiv preprint arXiv:2504.07491, 2025. ",
+            "Wan, Z., Wu, Z., Liu, C., Huang, J., Zhu, Z., Jin, P., Wang, L., and Yuan, L. Look-M: Look-once optimization in KV cache for efficient multimodal long-context inference. arXiv preprint arXiv:2406.18139, 2024. ",
+            "Wan, Z., Zhang, C., Yong, S., Ma, M. Q., Stepputtis, S., Morency, L.-P., Ramanan, D., Sycara, K., and Xie, Y. Only: One-layer intervention sufficiently mitigates hallucinations in large vision-language models. arXiv preprint arXiv:2507.00898, 2025. ",
+            "Wang, H., Qu, C., Huang, Z., Chu, W., Lin, F., and Chen, W. VL-Rethinker: Incentivizing self-reflection of Vision-Language Models with reinforcement learning. arXiv preprint arXiv:2504.08837, 2025a. "
+        ],
+        "bbox": [
+            81,
+            80,
+            480,
+            909
+        ],
+        "page_idx": 9
+    },
+    {
+        "type": "list",
+        "sub_type": "ref_text",
+        "list_items": [
+            "Wang, W., Ding, L., Zeng, M., Zhou, X., Shen, L., Luo, Y., Yu, W., and Tao, D. Divide, conquer and combine: A training-free framework for high-resolution image perception in Multimodal Large Language Models. In AAAI Conference on Artificial Intelligence (AAAI), pp. 7907– 7915, 2025b. ",
+            "Wang, W., Gao, Z., Gu, L., Pu, H., Cui, L., Wei, X., Liu, Z., Jing, L., Ye, S., Shao, J., et al. InternVL3.5: Advancing open-source multimodal models in versatility, reasoning, and efficiency. arXiv preprint arXiv:2508.18265, 2025c. ",
+            "Wang, Y., Huang, R., Song, S., Huang, Z., and Huang, G. Not all images are worth 16x16 words: Dynamic transformers for efficient image recognition. Advances in Neural Information Processing Systems, 34:11960– 11973, 2021. ",
+            "Wang, Y., Wu, S., Zhang, Y., Yan, S., Liu, Z., Luo, J., and Fei, H. Multimodal chain-of-thought reasoning: A comprehensive survey. arXiv preprint arXiv:2503.12605, 2025d. ",
+            "Wang, Z., Xia, M., He, L., Chen, H., Liu, Y., Zhu, R., Liang, K., Wu, X., Liu, H., Malladi, S., et al. CharXiv: Charting gaps in realistic chart understanding in Multimodal LLMs. Advances in Neural Information Processing Systems, 37: 113569–113697, 2024. ",
+            "Wu, H., Li, D., Chen, B., and Li, J. LongVideoBench: A benchmark for long-context interleaved video-language understanding, 2024. URL https://arxiv.org/ abs/2407.15754. ",
+            "xAI. RealworldQA, 2024. URL https: //huggingface.co/datasets/xai-org/ RealworldQA. ",
+            "Xia, H., Leong, C. T., Wang, W., Li, Y., and Li, W. TokenSkip: Controllable chain-of-thought compression in LLMs. arXiv preprint arXiv:2502.12067, 2025. ",
+            "Xiao, W., Gan, L., Dai, W., He, W., Huang, Z., Li, H., Shu, F., Yu, Z., Zhang, P., Jiang, H., et al. Fast-slow thinking for Large Vision-Language Model reasoning. arXiv preprint arXiv:2504.18458, 2025. ",
+            "Xing, L., Huang, Q., Dong, X., Lu, J., Zhang, P., Zang, Y., Cao, Y., He, C., Wang, J., Wu, F., et al. PyramidDrop: Accelerating your Large Vision-Language Models via pyramid visual redundancy reduction. arXiv preprint arXiv:2410.17247, 2024. ",
+            "Yang, S., Chen, Y., Tian, Z., Wang, C., Li, J., Yu, B., and Jia, J. VisionZip: Longer is better but not necessary in Vision Language Models. In IEEE/CVF Conference on Computer Vision and Pattern Recognition (CVPR), pp. 19792–19802, 2025a. "
+        ],
+        "bbox": [
+            495,
+            80,
+            888,
+            906
+        ],
+        "page_idx": 9
+    },
+    {
+        "type": "header",
+        "text": "VisionPulse: Dynamic Visual Sparsity for Efficient Multimodal Reasoning ",
+        "bbox": [
+            251,
+            56,
+            720,
+            71
+        ],
+        "page_idx": 9
+    },
+    {
+        "type": "page_number",
+        "text": "10 ",
+        "bbox": [
+            477,
+            922,
+            495,
+            934
+        ],
+        "page_idx": 9
+    },
+    {
+        "type": "list",
+        "sub_type": "ref_text",
+        "list_items": [
+            "Yang, S., Niu, Y., Liu, Y., Ye, Y., Lin, B., and Yuan, L. Look-Back: Implicit visual re-focusing in MLLM reasoning. arXiv preprint arXiv:2507.03019, 2025b. ",
+            "Yang, S., Xu, R., Cui, C., Wang, T., Lin, D., and Pang, J. Vflowopt: A token pruning framework for LMMs with visual information flow-guided optimization. In IEEE/CVF International Conference on Computer Vision (ICCV), pp. 23924–23934, 2025c. ",
+            "Yang, Y., He, X., Pan, H., Jiang, X., Deng, Y., Yang, X., Lu, H., Yin, D., Rao, F., Zhu, M., et al. R1-Onevision: Advancing generalized multimodal reasoning through crossmodal formalization. arXiv preprint arXiv:2503.10615, 2025d. ",
+            "Yao, Y., Yu, T., Zhang, A., Wang, C., Cui, J., Zhu, H., Cai, T., Li, H., Zhao, W., He, Z., et al. MiniCPM-V: A GPT-4V level MLLM on your phone. arXiv preprint arXiv:2408.01800, 2024. ",
+            "Yeo, E., Tong, Y., Niu, M., Neubig, G., and Yue, X. Demystifying long chain-of-thought reasoning in LLMs. arXiv preprint arXiv:2502.03373, 2025. ",
+            "Yin, H., Si, G., and Wang, Z. Lifting the veil on visual information flow in MLLMs: Unlocking pathways to faster inference. In IEEE/CVF Conference on Computer Vision and Pattern Recognition (CVPR), pp. 9382–9391, 2025. ",
+            "Yu, S., Chen, T., Shen, J., Yuan, H., Tan, J., Yang, S., Liu, J., and Wang, Z. Unified visual transformer compression. arXiv preprint arXiv:2203.08243, 2022. ",
+            "Yu, W., Yang, Z., Li, L., Wang, J., Lin, K., Liu, Z., Wang, X., and Wang, L. MM-Vet: Evaluating Large Multimodal Models for integrated capabilities. In International Conference on Machine Learning (ICML), pp. 57730–57754, 2024. ",
+            "Zhang, J., Khayatkhoei, M., Chhikara, P., and Ilievski, F. MLLMs know where to look: Training-free perception of small visual details with Multimodal LLMs. In International Conference on Learning Representations (ICLR), pp. 68194–68213, 2025a. ",
+            "Zhang, J., Lin, N., Hou, L., Feng, L., and Li, J. AdaptThink: Reasoning models can learn when to think. arXiv preprint arXiv:2505.13417, 2025b. ",
+            "Zhang, Q., Cheng, A., Lu, M., Zhang, R., Zhuo, Z., Cao, J., Guo, S., She, Q., and Zhang, S. Beyond text-visual attention: Exploiting visual cues for effective token pruning in VLMs. In IEEE/CVF International Conference on Computer Vision (ICCV), pp. 20857–20867, 2025c. "
+        ],
+        "bbox": [
+            86,
+            84,
+            478,
+            906
+        ],
+        "page_idx": 10
+    },
+    {
+        "type": "ref_text",
+        "text": "Zhang, Y., Fan, C.-K., Ma, J., Zheng, W., Huang, T., Cheng, K., Gudovskiy, D., Okuno, T., Nakata, Y., Keutzer, K., et al. SparseVLM: Visual token sparsification for efficient Vision-Language Model inference. In International Conference on Machine Learning (ICML), pp. 74840–74857, 2025d. Zhou, C., Wang, M., Ma, Y., Wu, C., Chen, W., Qian, Z., Liu, X., Zhang, Y., Wang, J., Xu, H., et al. From perception to cognition: A survey of vision-language interactive reasoning in Multimodal Large Language Models. arXiv preprint arXiv:2509.25373, 2025. ",
+        "bbox": [
+            498,
+            84,
+            887,
+            261
+        ],
+        "page_idx": 10
+    },
+    {
+        "type": "header",
+        "text": "VisionPulse: Dynamic Visual Sparsity for Efficient Multimodal Reasoning ",
+        "bbox": [
+            251,
+            56,
+            720,
+            71
+        ],
+        "page_idx": 10
+    },
+    {
+        "type": "page_number",
+        "text": "",
+        "bbox": [
+            477,
+            922,
+            493,
+            934
+        ],
+        "page_idx": 10
+    },
+    {
+        "type": "text",
+        "text": "A. Additional Analysis ",
+        "text_level": 1,
+        "bbox": [
+            86,
+            83,
+            279,
+            99
+        ],
+        "page_idx": 11
+    },
+    {
+        "type": "text",
+        "text": "A.1. Visual Attention Mass vs. Activated Token Coverage ",
+        "text_level": 1,
+        "bbox": [
+            84,
+            109,
+            488,
+            125
+        ],
+        "page_idx": 11
+    },
+    {
+        "type": "text",
+        "text": "Figure 6 extends Figure 1 with step-wise visualizations that link the visual attention mass $M _ { \\mathrm { v i s } } ^ { t }$ to the spatial coverage of activated visual tokens. When the reasoning step is primarily language-driven (e.g., so), $M _ { \\mathrm { v i s } } ^ { t }$ is low and activation is sparse, indicating that only a small fraction of visual tokens is needed. In contrast, during visually grounded steps (e.g., square), attention spreads over a broader set of tokens and higher-percentile activations cover substantially larger regions, accompanied by a clear increase in $M _ { \\mathrm { v i s } } ^ { t }$ . These examples qualitatively support our finding that $M _ { \\mathrm { v i s } } ^ { t }$ correlates with the number of effectively activated tokens, motivating mass-guided dynamic budgeting. ",
+        "bbox": [
+            84,
+            133,
+            887,
+            224
+        ],
+        "page_idx": 11
+    },
+    {
+        "type": "image",
+        "img_path": "images/ce5f57b7d2aec48df0350843444811afc2a36e95c12654ec301b707f540825a4.jpg",
+        "image_caption": [
+            "Figure 6. Visual attention mass vs. activated token coverage. We visualize step-wise visual activation at representative decoding steps. For each step, we show the regions covered by the top-50% and top-10% activated visual tokens, together with the corresponding visual attention mass $M _ { \\mathrm { v i s } } ^ { t }$ . The examples illustrate that larger $M _ { \\mathrm { v i s } } ^ { t }$ is accompanied by broader token activation, while low-mass steps exhibit sparse, localized activation. "
+        ],
+        "image_footnote": [],
+        "content": "",
+        "bbox": [
+            86,
+            239,
+            888,
+            412
+        ],
+        "page_idx": 11
+    },
+    {
+        "type": "text",
+        "text": "A.2. Effects of different Budgeting strategies ",
+        "text_level": 1,
+        "bbox": [
+            86,
+            497,
+            398,
+            512
+        ],
+        "page_idx": 11
+    },
+    {
+        "type": "text",
+        "text": "We study how different budgeting strategies affect step-wise retention under a controlled setting, using Top-p with $p = 0 . 1 0$ , Top-k with $k = 2 5 6$ , and temperature scaling $\\tau = 0 . 4 .$ . As shown in Figure 7, Top-k and Top-p strategies are poorly matched to the step-wise variation of visual dependency. Top-k allocates a constant budget across steps, and thus cannot increase retention when the model requires broader visual evidence, nor reduce retention when the step is largely language-driven. Interestingly, Top-p exhibit a trend opposite to the visual-attention variation: since softmax produces dense distributions with an inherent long tail (Ren et al., 2020; Martins & Astudillo, 2016), even low-visual-dependency steps can accumulate non-trivial probability mass over many tokens, causing Top-p to retain an unnecessarily large set and inflate the budget. In contrast, visual mass-guided budgeting directly tracks step-wise visual demand and yields a more stable retention behavior aligned with the visual reliance. ",
+        "bbox": [
+            84,
+            521,
+            887,
+            657
+        ],
+        "page_idx": 11
+    },
+    {
+        "type": "chart",
+        "img_path": "images/f994e46a0f19e019d9edbde9aac0dd1fabd421c605ca7e10f1df8ee998084d1d.jpg",
+        "content": "| Step | Original/visual attention | keep: Top-k | keep: Top-p |\n|------|-----------------------------|-------------|-------------|\n| 0    | 0.1                         | 0.2         | 0.3         |\n| 25   | 0.3                         | 0.2         | 0.4         |\n| 50   | 0.2                         | 0.2         | 0.5         |\n| 75   | 0.1                         | 0.2         | 0.6         |\n| 100  | 0.2                         | 0.2         | 0.7         |\n| 125  | 0.1                         | 0.2         | 0.8         |\n| 150  | 0.0                         | 0.2         | 0.9         |\n| 175  | 0.1                         | 0.2         | 1.0         |",
+        "chart_caption": [
+            "(a) Top-k/Top-p selection. "
+        ],
+        "chart_footnote": [],
+        "sub_type": "line",
+        "bbox": [
+            89,
+            674,
+            478,
+            810
+        ],
+        "page_idx": 11
+    },
+    {
+        "type": "chart",
+        "img_path": "images/5914649561466a051156ae1ee99b584365b5088c3360dc00b2d5e2c19823336f.jpg",
+        "content": "| Step | Original visual attention | keep: Visual Mass Budgeting |\n| ---- | ------------------------- | -------------------------- |\n| 0    | 0.0                       | 0.0                        |\n| 25   | 0.3                       | 0.8                        |\n| 50   | 0.2                       | 0.6                        |\n| 75   | 0.1                       | 0.4                        |\n| 100  | 0.2                       | 0.9                        |\n| 125  | 0.1                       | 0.7                        |\n| 150  | 0.0                       | 0.3                        |\n| 175  | 0.1                       | 0.8                        |",
+        "chart_caption": [
+            "(b) Visual-Mass guided selection. ",
+            "Figure 7. Budget and retention-ratio dynamics. We compare the step-wise retention behavior under different budgeting strategies. The blue curve shows the original visual attention mass, while the colored curves indicate the retained token ratio determined by (a) fixed Top-K/Top-p selection and (b) Visual-Mass budgeting. Visual-Mass budgeting tracks attention fluctuations more closely, allocating higher budgets at visually grounded steps and lower budgets at language-dominant steps. "
+        ],
+        "chart_footnote": [],
+        "sub_type": "line",
+        "bbox": [
+            496,
+            674,
+            883,
+            810
+        ],
+        "page_idx": 11
+    },
+    {
+        "type": "header",
+        "text": "VisionPulse: Dynamic Visual Sparsity for Efficient Multimodal Reasoning ",
+        "bbox": [
+            251,
+            56,
+            720,
+            70
+        ],
+        "page_idx": 11
+    },
+    {
+        "type": "page_number",
+        "text": "",
+        "bbox": [
+            477,
+            922,
+            495,
+            934
+        ],
+        "page_idx": 11
+    },
+    {
+        "type": "table",
+        "img_path": "images/ea8a86c820286f8f5a48d016d8729e6137db7797392529c9f9d030a7ab1904be.jpg",
+        "table_caption": [
+            "Table 5. Complementarity between prefill-stage token reduction and VisionPulse. Results are averaged over three benchmarks. FastV is applied with a prefill compression ratio of 0.5, and VisionPulse further performs step-wise token sparsification during decoding. "
+        ],
+        "table_footnote": [],
+        "table_body": "<table><tr><td>Method</td><td>Avg L ↓</td><td>Avg A ↑</td></tr><tr><td>FastV</td><td>2094.7</td><td>69.4</td></tr><tr><td>FastV + VisionPulse (≤ 10%)</td><td>1967.4</td><td>70.4</td></tr><tr><td>FastV + VisionPulse (≤ 5%)</td><td>1957.0</td><td>69.8</td></tr></table>",
+        "bbox": [
+            91,
+            183,
+            436,
+            263
+        ],
+        "page_idx": 12
+    },
+    {
+        "type": "chart",
+        "img_path": "images/eb2bd08eef29407d14a022764a21fb7ac193b15cde5c8673a91f1560d5b0cd95.jpg",
+        "content": "| Activation Threshold | MIA-Bench | MMVet | RealWorldQA |\n| -------------------- | --------- | ----- | ----------- |\n| 0.0005               | 0.4       | 0.4   | 0.6         |\n| 0.001                | 0.6       | 0.6   | 0.7         |\n| 0.0015               | 0.7       | 0.7   | 0.8         |\n| 0.002                | 0.8       | 0.8   | 0.9         |",
+        "chart_caption": [
+            "Figure 8. Proportion of never-activated visual tokens under different activation thresholds. Across MIA-Bench, MMVet, and RealWorldQA, many visual tokens remain inactive during decoding, indicating the existence of persistent visual redundancy during multimodal reasoning. "
+        ],
+        "chart_footnote": [],
+        "sub_type": "line",
+        "bbox": [
+            470,
+            85,
+            870,
+            224
+        ],
+        "page_idx": 12
+    },
+    {
+        "type": "text",
+        "text": "A.3. Complementarity with Prefill Pruning ",
+        "text_level": 1,
+        "bbox": [
+            84,
+            309,
+            388,
+            325
+        ],
+        "page_idx": 12
+    },
+    {
+        "type": "text",
+        "text": "Complementarity with prefill-stage token reduction. VisionPulse performs step-wise dynamic pruning during decoding rather than at the prefill stage, it naturally raises the question of whether it can be effectively combined with existing pruning methods applied during prefill. Since prefill-stage pruning removes globally redundant visual tokens before decoding, it may offer additional acceleration when coupled with our decoding-time dynamic visual sparsification. ",
+        "bbox": [
+            84,
+            333,
+            887,
+            393
+        ],
+        "page_idx": 12
+    },
+    {
+        "type": "text",
+        "text": "To examine this complementarity, we integrate FastV with VisionPulse and evaluate the combined method on MMVet, RealWorldQA, and MIA-Bench. Specifically, FastV is first applied during the prefill stage with a compression ratio of 0.5, after which VisionPulse performs step-wise visual token sparsification over the remaining visual tokens during decoding. The averaged results across the three datasets are reported in Table 5. FastV+VisionPulse consistently outperforms FastV alone, indicating that VisionPulse complements prefill-stage token reduction. This suggests that VisionPulse is orthogonal to static visual token pruning methods such as FastV and can be combined with them for additional efficiency improvements. ",
+        "bbox": [
+            84,
+            400,
+            888,
+            492
+        ],
+        "page_idx": 12
+    },
+    {
+        "type": "text",
+        "text": "Persistent visual redundancy during reasoning. Beyond verifying the complementarity between VisionPulse and prefill-stage pruning, we further examine the temporal behavior of visual token usage during decoding. Specifically, we explore whether some visual tokens remain consistently inactive throughout the reasoning process. For each visual token, we measure its attention activation across all decoding steps and regard it as persistently inactive if its activation remains below a threshold δ at every step. As shown in Figure 8, across different datasets and threshold choices, a substantial fraction of visual tokens are rarely or never activated during reasoning. This observation suggests that multimodal reasoning contains a persistent inactive visual subset, which in principle can be removed without affecting the reasoning process. However, existing one-shot prefill-stage pruning methods are not specifically designed to exploit this temporal structure. These methods make the pruning decision before decoding begins, relying primarily on an initial static estimate of token importance to determine the retained visual subset. As a result, the retained subset may still include visual tokens that remain inactive in later reasoning steps, while some discarded tokens may become relevant as the decoding process evolves. ",
+        "bbox": [
+            84,
+            508,
+            888,
+            676
+        ],
+        "page_idx": 12
+    },
+    {
+        "type": "text",
+        "text": "B. Implementation Details ",
+        "text_level": 1,
+        "bbox": [
+            84,
+            695,
+            310,
+            710
+        ],
+        "page_idx": 12
+    },
+    {
+        "type": "text",
+        "text": "B.1. Experimental Setup ",
+        "text_level": 1,
+        "bbox": [
+            84,
+            720,
+            261,
+            736
+        ],
+        "page_idx": 12
+    },
+    {
+        "type": "text",
+        "text": "We mainly evaluate VisionPulse on Qwen3-VL-Thinking-4B under aggressive visual-token retention. Unless otherwise stated, all results are obtained with decoding temperature 0.7 and a maximum generation length of 16,384 tokens. In Equation (6), we set the temperature scaling parameter τ to 0.4 for the 10% retention setting and to 0.1 for the 5% retention setting. For each benchmark, we follow the standard evaluation protocol and report accuracy (%) together with the average generation length L. All inference experiments are conducted on 8× NVIDIA A800 80GB GPUs. ",
+        "bbox": [
+            84,
+            744,
+            887,
+            820
+        ],
+        "page_idx": 12
+    },
+    {
+        "type": "text",
+        "text": "B.2. Datasets and Evaluation Protocols ",
+        "text_level": 1,
+        "bbox": [
+            84,
+            837,
+            359,
+            849
+        ],
+        "page_idx": 12
+    },
+    {
+        "type": "text",
+        "text": "We evaluate on seven multimodal reasoning benchmarks: CharXiv RQ (Wang et al., 2024), InfoVQA (Mathew et al., 2022), ChartQA (Masry et al., 2022), MMStar (Chen et al., 2024a), RealWorldQA (xAI, 2024), MMVet (Yu et al., 2024), and MIA-Bench (Qian et al., 2025). All evaluations are conducted with VlMEvalKit (Duan et al., 2024) using the default ",
+        "bbox": [
+            84,
+            859,
+            887,
+            905
+        ],
+        "page_idx": 12
+    },
+    {
+        "type": "header",
+        "text": "VisionPulse: Dynamic Visual Sparsity for Efficient Multimodal Reasoning ",
+        "bbox": [
+            251,
+            56,
+            720,
+            70
+        ],
+        "page_idx": 12
+    },
+    {
+        "type": "page_number",
+        "text": "13 ",
+        "bbox": [
+            477,
+            922,
+            495,
+            934
+        ],
+        "page_idx": 12
+    },
+    {
+        "type": "image",
+        "img_path": "images/7f4218eb41c4ea43e691f093f0d1c610ea9b480a96a2d083cc1df72fa495422d.jpg",
+        "image_caption": [
+            "A. Test Query ",
+            "Question: What color is the traffic light in this scene? "
+        ],
+        "image_footnote": [],
+        "content": "Riders on a multi-lane road with traffic lights and utility poles, no visible text or symbols",
+        "sub_type": "natural_image",
+        "bbox": [
+            109,
+            104,
+            289,
+            196
+        ],
+        "page_idx": 13
+    },
+    {
+        "type": "text",
+        "text": "B. Baseline: Before Pruning (Visual Noise Interference) ",
+        "text_level": 1,
+        "bbox": [
+            321,
+            90,
+            604,
+            103
+        ],
+        "page_idx": 13
+    },
+    {
+        "type": "image",
+        "img_path": "images/90d754b6a73c427aa876677fd819fa1f49d23104891a4d37d0e182bcb753ab15.jpg",
+        "image_caption": [],
+        "image_footnote": [],
+        "content": "",
+        "bbox": [
+            764,
+            88,
+            787,
+            104
+        ],
+        "page_idx": 13
+    },
+    {
+        "type": "text",
+        "text": "Reasoning Error ",
+        "bbox": [
+            789,
+            93,
+            867,
+            103
+        ],
+        "page_idx": 13
+    },
+    {
+        "type": "text",
+        "text": "So, let's look at the traffic lights in the image. The question is asking for the color of the traffic light. In the scene, there are traffic lights visible. Let's check their color. The traffic lights that are showing—since the cars are stopped, probably red. Wait, the cars are stopped, so the traffic light must be red. Let me confirm. The traffic lights at the intersection: the ones for the direction the cars are going (since they're stopped), so red. So the answer should be A. Red. ",
+        "bbox": [
+            316,
+            113,
+            877,
+            150
+        ],
+        "page_idx": 13
+    },
+    {
+        "type": "text",
+        "text": "C. Ours: After Pruning (Focused Reasoning) ",
+        "text_level": 1,
+        "bbox": [
+            321,
+            170,
+            550,
+            183
+        ],
+        "page_idx": 13
+    },
+    {
+        "type": "image",
+        "img_path": "images/4fa9292ade23b55e1b42ad905cca0bb03c99a326855f1856bd2d3439e63db8c9.jpg",
+        "image_caption": [],
+        "image_footnote": [],
+        "content": "",
+        "bbox": [
+            764,
+            167,
+            787,
+            183
+        ],
+        "page_idx": 13
+    },
+    {
+        "type": "text",
+        "text": "Correct Answer ",
+        "bbox": [
+            790,
+            171,
+            866,
+            181
+        ],
+        "page_idx": 13
+    },
+    {
+        "type": "text",
+        "text": "So, let's look at the image. The traffic lights are visible. In the scene, the traffic lights for the intersection—there are multiple traffic lights. Let's check their color. The red light is on, right? Because when the light is red, vehicles stop. So the color of the traffic light here is red. The options are A. Red, B. Green, C. Yellow. So the correct answer should be A. ",
+        "bbox": [
+            316,
+            189,
+            870,
+            218
+        ],
+        "page_idx": 13
+    },
+    {
+        "type": "chart",
+        "img_path": "images/e5236081171200e41404d50002a8200c2ce42cdf4551cb918f6244e10488e3c8.jpg",
+        "content": "| Year | Additional information |\n| ---- | --------------------- |\n| 2014 | 9%                    |\n| 2015 | 2%                    |\n| 2016 | 16%                   |\n| 2017 | 3%                    |\n| 2018 | 13.5%                 |\n| 2019 | 19.7%                 |\n| 2020*| 17.7%                 |",
+        "chart_caption": [
+            "Figure 9. Qualitative example of visual-noise interference on unnecessary reasoning. Given the same query, the full-context baseline is distracted by query-irrelevant visual cues (e.g., stopped cars) and produces an incorrect reasoning trace, whereas VisionPulse (C) prunes redundant visual tokens during decoding, focuses attention on the traffic light, and yields the correct answer. ",
+            "A. Test Query ",
+            "Question: What is the peak data point? "
+        ],
+        "chart_footnote": [],
+        "sub_type": "line",
+        "bbox": [
+            109,
+            301,
+            292,
+            396
+        ],
+        "page_idx": 13
+    },
+    {
+        "type": "text",
+        "text": "B. Baseline: Before Pruning (Visual Noise Interference) ",
+        "text_level": 1,
+        "bbox": [
+            321,
+            286,
+            606,
+            297
+        ],
+        "page_idx": 13
+    },
+    {
+        "type": "image",
+        "img_path": "images/b301d05ce3c46293c5971db8865a28bc877dd1d9bdf2f1417716d1eb7b9803ed.jpg",
+        "image_caption": [],
+        "image_footnote": [],
+        "content": "",
+        "bbox": [
+            733,
+            282,
+            763,
+            300
+        ],
+        "page_idx": 13
+    },
+    {
+        "type": "text",
+        "text": "Unnecessary reasoning ",
+        "bbox": [
+            764,
+            287,
+            872,
+            297
+        ],
+        "page_idx": 13
+    },
+    {
+        "type": "text",
+        "text": "Got it, let's look at the graph. The y-axis is the return on equity (ROE) ratio, and the x-axis is the years from 2014 to 2020. The peak is the highest point on the graph. Checking the values: 2014 is 8%, 2015 is 2%, 2016 is 10%, 2017 is 8%, 2018 is 13.8%, 2019 is 19.7%, 2020 is 15.7%. The highest value is 19.7% in 2019. So the peak data point is 19.7%. ",
+        "bbox": [
+            318,
+            311,
+            875,
+            340
+        ],
+        "page_idx": 13
+    },
+    {
+        "type": "text",
+        "text": "C. Ours: After Pruning (Focused Reasoning) ",
+        "text_level": 1,
+        "bbox": [
+            321,
+            366,
+            552,
+            378
+        ],
+        "page_idx": 13
+    },
+    {
+        "type": "image",
+        "img_path": "images/eeb1e4e819d2c2487ea83518ed3b73eab895282a2cd5aa33537322afa15a523b.jpg",
+        "image_caption": [],
+        "image_footnote": [],
+        "content": "",
+        "bbox": [
+            764,
+            362,
+            790,
+            378
+        ],
+        "page_idx": 13
+    },
+    {
+        "type": "text",
+        "text": "Correct Answer ",
+        "bbox": [
+            792,
+            367,
+            869,
+            376
+        ],
+        "page_idx": 13
+    },
+    {
+        "type": "text",
+        "text": "Got it, let's look at the graph. The peak data point is the highest value on the y-axis. The graph shows the return on equity (ROE) ratio over the years. The highest point is in 2019 with 19.7%. So the peak data point is 19.7%. ",
+        "bbox": [
+            316,
+            388,
+            877,
+            407
+        ],
+        "page_idx": 13
+    },
+    {
+        "type": "text",
+        "text": "Figure 10. Qualitative example of visual-noise interference on unnecessary reasoning. On chart-based queries, the full-context baseline (B) tends to produce verbose, query-irrelevant descriptions by enumerating many values in the plot, resulting in unnecessary reasoning and longer generation. In contrast, VisionPulse (C) prunes redundant visual context during decoding, keeps attention on the peak point required by the question, and answers correctly with a shorter, more focused reasoning trace. ",
+        "bbox": [
+            84,
+            426,
+            887,
+            479
+        ],
+        "page_idx": 13
+    },
+    {
+        "type": "text",
+        "text": "prompts and scoring rules. For LLM-judged benchmarks, we use GPT-4o for MIA-Bench and GPT-4o-mini for MMVet, CharXiv RQ, and MMStar. ",
+        "bbox": [
+            84,
+            505,
+            887,
+            536
+        ],
+        "page_idx": 13
+    },
+    {
+        "type": "text",
+        "text": "CharXiv RQ. CharXiv (Wang et al., 2024) is a realistic chart-understanding benchmark curated from scientific papers, comprising 2,323 natural charts with associated questions. It emphasizes fine-grained visual grounding and domain-specific comprehension, covering both descriptive chart reading and reasoning-intensive queries. We use the reasoning validation subset as CharXiv RQ to evaluate the performance of our method, follow the default CharXiv evaluation in VlMEvalKit. ",
+        "bbox": [
+            84,
+            542,
+            887,
+            604
+        ],
+        "page_idx": 13
+    },
+    {
+        "type": "text",
+        "text": "InfoVQA. InfoVQA (InfographicVQA) (Mathew et al., 2022) focuses on question answering over infographics that required methods to jointly reason over the document layout, textual content, graphical elements, and data visualizations. It contains 5,485 infographic images and 30,035 question–answer pairs, with diverse sources and strong layout/OCR dependence. InfoVQA is widely used to evaluate visual-dominant multimodal document understanding that requires integrating reading, layout cues, and visual symbols. We follow the default InfoVQA evaluation in VlMEvalKit. ",
+        "bbox": [
+            84,
+            611,
+            887,
+            686
+        ],
+        "page_idx": 13
+    },
+    {
+        "type": "text",
+        "text": "ChartQA. ChartQA (Masry et al., 2022) tests question answering about charts with both visual and logical reasoning, often requiring numerical comparison and aggregation grounded in chart elements. It includes 9.6K human-authored questions and 23.1K machine-generated questions focusing on logical and visual reasoning questions, which involve complex reasoning and visual references to charts. We follow the default ChartQA evaluation in VlMEvalKit. ",
+        "bbox": [
+            84,
+            694,
+            887,
+            755
+        ],
+        "page_idx": 13
+    },
+    {
+        "type": "text",
+        "text": "MMStar. MMStar (Chen et al., 2024a) is a vision-indispensable benchmark designed to reduce shortcut solving and ensure that visual evidence is necessary for answering. It comprises 1,500 human-curated challenge samples organized into 6 core capabilities and 18 fine-grained axes for diagnostic evaluation. Strict human review is involved to ensure each selected sample exhibits visual dependency, minimal data leakage, and requires advanced multi-modal capabilities for the solution. We follow the default MMStar evaluation in VlMEvalKit. ",
+        "bbox": [
+            84,
+            762,
+            887,
+            838
+        ],
+        "page_idx": 13
+    },
+    {
+        "type": "text",
+        "text": "RealWorldQA. RealWorldQA (xAI, 2024) evaluates real-world visual understanding with an emphasis on basic spatial and physical reasoning. The initial release contains over 700 images, each paired with a question and an easily verifiable answer, including anonymized vehicle-captured scenes. It is commonly used to test grounding in everyday real-world contexts rather than memorized or purely language-driven behavior. We follow the default RealWorldQA evaluation in VlMEvalKit. ",
+        "bbox": [
+            84,
+            845,
+            887,
+            906
+        ],
+        "page_idx": 13
+    },
+    {
+        "type": "header",
+        "text": "VisionPulse: Dynamic Visual Sparsity for Efficient Multimodal Reasoning ",
+        "bbox": [
+            251,
+            56,
+            720,
+            70
+        ],
+        "page_idx": 13
+    },
+    {
+        "type": "page_number",
+        "text": "14 ",
+        "bbox": [
+            477,
+            922,
+            495,
+            934
+        ],
+        "page_idx": 13
+    },
+    {
+        "type": "text",
+        "text": "A. Test Query ",
+        "text_level": 1,
+        "bbox": [
+            94,
+            88,
+            169,
+            99
+        ],
+        "page_idx": 14
+    },
+    {
+        "type": "image",
+        "img_path": "images/194ba3aedbd06ab64f6681f8521921dea1a8a94dc661f1a17b0abe08a6dc24c6.jpg",
+        "image_caption": [
+            "Question: Are we ascending or descending? "
+        ],
+        "image_footnote": [],
+        "content": "Street view with utility poles, residential buildings, and a vehicle on a road (no visible text or signage)",
+        "sub_type": "natural_image",
+        "bbox": [
+            107,
+            142,
+            290,
+            234
+        ],
+        "page_idx": 14
+    },
+    {
+        "type": "text",
+        "text": "B. Baseline: Before Pruning (Visual Noise Interference) ",
+        "text_level": 1,
+        "bbox": [
+            320,
+            90,
+            604,
+            103
+        ],
+        "page_idx": 14
+    },
+    {
+        "type": "image",
+        "img_path": "images/7c10680d61c0b47cbdde39098aa491b8db4f3156f87b7d0c41e74f4871c16ff0.jpg",
+        "image_caption": [],
+        "image_footnote": [],
+        "content": "",
+        "bbox": [
+            733,
+            89,
+            756,
+            104
+        ],
+        "page_idx": 14
+    },
+    {
+        "type": "text",
+        "text": "Unnecessary reasoning ",
+        "bbox": [
+            761,
+            92,
+            870,
+            102
+        ],
+        "page_idx": 14
+    },
+    {
+        "type": "text",
+        "text": "So, let's try to figure out if we're ascending or descending. The image shows a street with houses on both sides. On the right side, the houses are built on a slope, and the street seems to be going uphill. Wait, when you're driving, if the road is going up, you're ascending. But let's look at the perspective. The road in the image is a straight road, Wait, maybe the key is the direction but the houses on the right are higher up, and the left side has trees and a sidewalk of the road. If the road is sloping upward, then ascending. But how do we tell? Let's think about the view. If you're looking at the road, and the road is going up, then you're ascending. In the image, the road seems to be going up because the houses on the right are higher, and the road is inclined. Wait, but maybe it's the other way. Wait, no—if you're driving, and the road is going up, you're ascending. Let's check the options. The question is \"Are we ascending or descending?\" So we need to determine the direction of the road. Looking at the image, the road is a steep incline. Wait, actually, in the image, the road appears to be going uphill. Wait, but maybe not. Wait, let's think about the perspective. If the road is going up, then the cars in front would be going up. But in the image, there's a red car ahead. Wait, maybe the key is the slope. The right side has a hedge that's higher, so the road is going up. So if we're on the road, and the road is going up, then we're ascending. So the answer would be A. Ascending. ",
+        "bbox": [
+            315,
+            112,
+            880,
+            233
+        ],
+        "page_idx": 14
+    },
+    {
+        "type": "text",
+        "text": "C. Ours: After Pruning (Focused Reasoning) ",
+        "text_level": 1,
+        "bbox": [
+            320,
+            244,
+            550,
+            257
+        ],
+        "page_idx": 14
+    },
+    {
+        "type": "image",
+        "img_path": "images/c6aca83c281bcb79b84a3f42f27d74c7d508dff199ef0e317818e7ac535cc599.jpg",
+        "image_caption": [],
+        "image_footnote": [],
+        "content": "",
+        "bbox": [
+            763,
+            241,
+            787,
+            258
+        ],
+        "page_idx": 14
+    },
+    {
+        "type": "text",
+        "text": "Correct Answer ",
+        "bbox": [
+            790,
+            246,
+            866,
+            255
+        ],
+        "page_idx": 14
+    },
+    {
+        "type": "text",
+        "text": "So, let's look at the image. The road is a hill, and we need to figure out if we're going up or down. In the image, the perspective shows that the road is sloping upwards as we look towards the distance. Wait, but when you're driving, if the road is going up, you're ascending. Let me check the options. The question is \"Are we ascending or descending?\" So, if the road is going up, then ascending. Let's see the image: the road seems to be going uphill. So the answer should be A. Ascending. ",
+        "bbox": [
+            316,
+            265,
+            879,
+            301
+        ],
+        "page_idx": 14
+    },
+    {
+        "type": "text",
+        "text": "Figure 11. Qualitative example of redundant visual reasoning. In this example, the LMM identifies the correct reasoning direction early on, but is later distracted by query-irrelevant visual cues (e.g., buildings and trees), which triggers repetitive reasoning. As a result, it follows a prolonged trajectory before eventually returning to the same conclusion implied by its initial reasoning. ",
+        "bbox": [
+            84,
+            313,
+            885,
+            354
+        ],
+        "page_idx": 14
+    },
+    {
+        "type": "text",
+        "text": "MMVet. MMVet (Yu et al., 2024) is an open-ended benchmark designed to evaluate integrated vision-language skills on complicated multimodal tasks, such as recognition, OCR, spatial reasoning, knowledge, and arithmetic It contains 200 images and 218 questions, each annotated with the capabilities required for solving. We follow the default MMVet evaluation in VlMEvalKit. ",
+        "bbox": [
+            84,
+            359,
+            887,
+            421
+        ],
+        "page_idx": 14
+    },
+    {
+        "type": "text",
+        "text": "MIA-Bench. MIA-Bench (Qian et al., 2025) focuses on complex multimodal instruction following, emphasizing strict adherence to layered, constraint-heavy prompts in open-ended generation. It comprises 400 image–prompt pairs crafted to elicit instruction violations (e.g., formatting constraints, multi-part requirements, and compositional conditions). MIA-Bench is commonly used to evaluate controllability and instruction fidelity of MLLMs under complex prompts. We follow the default MIA-Bench evaluation in VlMEvalKit. ",
+        "bbox": [
+            84,
+            428,
+            887,
+            503
+        ],
+        "page_idx": 14
+    },
+    {
+        "type": "text",
+        "text": "C. More Qualitative Analysis for The Coupled Bottleneck in LMMs ",
+        "text_level": 1,
+        "bbox": [
+            84,
+            523,
+            653,
+            540
+        ],
+        "page_idx": 14
+    },
+    {
+        "type": "text",
+        "text": "In this section, we provide additional qualitative examples (Figures 9 to 11) to analyze how query-irrelevant visual evidence induces unnecessary reasoning and contributes to the coupled bottleneck in LMMs. ",
+        "bbox": [
+            84,
+            549,
+            885,
+            580
+        ],
+        "page_idx": 14
+    },
+    {
+        "type": "text",
+        "text": "D. More Qualitative Analysis of Different Pruning Paradigms ",
+        "text_level": 1,
+        "bbox": [
+            84,
+            599,
+            602,
+            616
+        ],
+        "page_idx": 14
+    },
+    {
+        "type": "text",
+        "text": "To provide a more intuitive qualitative analysis of different pruning paradigms, we visualize both the reasoning trajectories and the retained visual tokens under 5% visual token retention. As shown in Figure 12, static pruning methods struggle to preserve task-relevant visual information, making them inadequate for multimodal reasoning and often leading to incorrect predictions. In contrast, VisionPulse dynamically retains the visual tokens required at each reasoning step, thereby preserving critical information and enabling correct reasoning. This observation is also consistent with our discussion that, during the prefill stage, the model tends to prioritize generating the first token rather than acquiring all the visual evidence required for subsequent reasoning. ",
+        "bbox": [
+            84,
+            625,
+            887,
+            731
+        ],
+        "page_idx": 14
+    },
+    {
+        "type": "header",
+        "text": "VisionPulse: Dynamic Visual Sparsity for Efficient Multimodal Reasoning ",
+        "bbox": [
+            251,
+            56,
+            720,
+            70
+        ],
+        "page_idx": 14
+    },
+    {
+        "type": "page_number",
+        "text": "15 ",
+        "bbox": [
+            477,
+            922,
+            495,
+            934
+        ],
+        "page_idx": 14
+    },
+    {
+        "type": "image",
+        "img_path": "images/7cd07b0466ef1d16bea4090d63195c3dad755e4d7770d481d76b283feb115aa2.jpg",
+        "image_caption": [
+            "Test Query ",
+            "Question: Where is the brown square vent relative to the door? "
+        ],
+        "image_footnote": [],
+        "content": "Exterior view of a brick wall with a small circular opening, adjacent to a door (no text or symbols visible)",
+        "sub_type": "natural_image",
+        "bbox": [
+            117,
+            308,
+            259,
+            400
+        ],
+        "page_idx": 15
+    },
+    {
+        "type": "text",
+        "text": "Baseline ",
+        "text_level": 1,
+        "bbox": [
+            299,
+            287,
+            344,
+            297
+        ],
+        "page_idx": 15
+    },
+    {
+        "type": "text",
+        "text": "So, let‘s look at the image. The door is on the right side of the image, with the beige color and the handle. The brown square vent is on the wooden shingle wall. Let’s check the position. The vent is on the left side of the door, because the door is on the right, and the vent is part of the wall next to the door but to the left of it. Wait, the door is the beige part with the handle. The vent is on the wooden wall, which is adjacent to the door. So the vent is to the left of the door. Let‘s see the options. Option B says the brown square vent is to the left of the door. That seems correct. Option A says there's no vent, but there is a brown square vent. So A is wrong. C says right, but the vent is left. So B is correct. ",
+        "bbox": [
+            299,
+            306,
+            874,
+            358
+        ],
+        "page_idx": 15
+    },
+    {
+        "type": "text",
+        "text": "VisionPulse ",
+        "text_level": 1,
+        "bbox": [
+            299,
+            375,
+            361,
+            385
+        ],
+        "page_idx": 15
+    },
+    {
+        "type": "text",
+        "text": "So, let's look at the image. The door is on the right side of the picture. The brown square vent is on the wall to the left of the door. Let's check the options. Option B says the vent is to the left of the door. That matches. Option A says there's no vent, but there is one. Option C says right, which is wrong. So the answer is B. ",
+        "bbox": [
+            299,
+            396,
+            875,
+            425
+        ],
+        "page_idx": 15
+    },
+    {
+        "type": "image",
+        "img_path": "images/ef774ab0bd05a4a466449da436f0fd55966cd96eef4ee18e216917cf454c823b.jpg",
+        "image_caption": [
+            "Retained Visual Activation "
+        ],
+        "image_footnote": [],
+        "content": "Pixelated black background with scattered orange dots and a white square in the bottom-left corner (no text or symbols)",
+        "sub_type": "natural_image",
+        "bbox": [
+            117,
+            459,
+            261,
+            551
+        ],
+        "page_idx": 15
+    },
+    {
+        "type": "text",
+        "text": "VisionZip ",
+        "text_level": 1,
+        "bbox": [
+            299,
+            439,
+            351,
+            450
+        ],
+        "page_idx": 15
+    },
+    {
+        "type": "text",
+        "text": "So, let's look at the image. The question is about the brown square vent relative to the door. First, check if there's a brown square vent. The image shows a door on the right side, and the wall is covered with wooden shingles (brown). Wait, the options mention a \"brown square vent\"—but in the image, is there a vent? Let me check again. The image has a door with a doorknob, and the wall is shingles. There's no visible vent in the image. So option A says \"There is no brown square vent.\" That must be correct. Let me confirm: the options are A, B, C. The image doesn't show a vent, so A is the answer. ",
+        "bbox": [
+            299,
+            468,
+            874,
+            542
+        ],
+        "page_idx": 15
+    },
+    {
+        "type": "image",
+        "img_path": "images/6941482da3a59683e570260e807e3affc64bc1db5b9967c3e685923bba04f923.jpg",
+        "image_caption": [
+            "Retained visual tokens "
+        ],
+        "image_footnote": [],
+        "content": "Dark background with scattered small brown and white pixelated shapes, no text or symbols visible",
+        "sub_type": "natural_image",
+        "bbox": [
+            117,
+            588,
+            259,
+            680
+        ],
+        "page_idx": 15
+    },
+    {
+        "type": "text",
+        "text": "FastV ",
+        "text_level": 1,
+        "bbox": [
+            299,
+            568,
+            331,
+            577
+        ],
+        "page_idx": 15
+    },
+    {
+        "type": "text",
+        "text": "So, let's look at the image. The question is about the brown square vent's position relative to the door. First, I need to check if there's a brown square vent. The image shows a wall with a door on the right side. Wait, the door is on the right, and the vent—wait, is there a vent? Let me check again. The image has a door, and maybe a vent? Wait, the options say A is no vent. Let me see. The image: the door is on the right, and the left side of the image is the wall. Wait, maybe there's a vent on the wall. Wait, looking at the image, the door is on the right, and the wall to the left of the door— wait, no, the door is part of the wall. Wait, maybe the brown square vent is on the wall. Wait, the options: A says no vent. Let me check if there's a vent. The image shows a door, and the wall. Is there a square vent? Let's see. The image has a door, and the area around it. Wait, maybe the vent is not present. Wait, the options: A is no vent. Let me check again. The image: the door is on the right, and the left side of the image is the wall. Wait, maybe there's a vent. Wait, no, maybe there's no brown square vent. Wait, the image shows a door, and the wall. Let me look for a square vent. Hmm. Wait, maybe the vent is not visible. Wait, the options: A says there is no brown square vent. Let's confirm. The image: the door is on the right, and the wall. Is there a square vent? Let's see. The image has a door, and the wall. Maybe there's no vent. So option A would be correct. ",
+        "bbox": [
+            299,
+            588,
+            877,
+            679
+        ],
+        "page_idx": 15
+    },
+    {
+        "type": "text",
+        "text": "Figure 12. Visualization comparison of the reasoning trajectories of different visual token pruning methods. We further visualize the retained visual tokens of VisionZip (dominant tokens) and FastV under 5% visual token retention. ",
+        "bbox": [
+            84,
+            695,
+            883,
+            720
+        ],
+        "page_idx": 15
+    },
+    {
+        "type": "header",
+        "text": "VisionPulse: Dynamic Visual Sparsity for Efficient Multimodal Reasoning ",
+        "bbox": [
+            253,
+            56,
+            718,
+            70
+        ],
+        "page_idx": 15
+    },
+    {
+        "type": "page_number",
+        "text": "",
+        "bbox": [
+            478,
+            922,
+            495,
+            934
+        ],
+        "page_idx": 15
+    }
+]

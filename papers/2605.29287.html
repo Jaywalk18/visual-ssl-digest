@@ -19,39 +19,39 @@
   </header>
   <nav class="site-nav" aria-label="主导航">
     <a class="nav-link" href="../index.html">头版</a>
-<a class="nav-link" href="../issues/2026-05-31.html">今日速递</a>
+<a class="nav-link" href="../issues/2026-06-01.html">今日速递</a>
 <a class="nav-link" href="../pages/catalog.html">论文目录</a>
 <a class="nav-link" href="../pages/timeline.html">时间线</a>
   </nav>
   <main><article class="paper-detail">
   <div class="paper-main">
     <div class="kicker">KDD Ads Track 2026 · P2 · 2026-05-31</div>
-    <h1 class="paper-headline">UniNote：虽然不是纯视觉 SSL，但 contrastive multimodal embedding 与可变维度表征对通用图文预训练和检索评测都有参考价值</h1>
-    <p class="dek">把检索 embedding、细粒度 I2I ranking 和部署成本放进同一个训练/服务框架。</p>
-    <p class="byline"><strong>UniNote: A Unified Embedding Model for Multimodal Representation and Ranking</strong>　Jinghan Zhao, Wenwei Jin, Anqi Li, Jintao Tong, Luya Mo, Jiawei Li, Bin Li, Yao Hu　arXiv + KDD Ads Track 2026　<a href="https://arxiv.org/abs/2605.29287">原文链接</a></p>
+    <h1 class="paper-headline">UniNote：它和通用视觉自监督的关系在于：contrastive SFT + RL ranking + MRL 的多模态 embedding 方案，工业场景强但表征训练信号可迁移</h1>
+    <p class="dek">中高相关；详见方法、贡献和实验边界。</p>
+    <p class="byline"><strong>UniNote: A Unified Embedding Model for Multimodal Representation and Ranking</strong>　arXiv + KDD Ads Track 2026　<a href="https://arxiv.org/abs/2605.29287">原文链接</a></p>
     <div class="paper-facts">
       <span><b>编号</b>2605.29287</span>
       <span><b>优先级</b>P2</span>
       <span><b>类别</b>KDD Ads Track 2026</span>
       <span><b>会议</b>arXiv + KDD Ads Track 2026</span>
-      <span><b>方法</b>统一 embedding 与 ranking 两阶段训练：先用 contrastive SFT 建基础多模态向量，再用 RL 对内容相关性做排序对齐，并结合 Matryoshka Representation Learning。</span>
+      <span><b>方法</b>contrastive SFT + RL ranking + MRL 的多模态 embedding 方案，工业场景强但表征训练信号可迁移</span>
       <span><b>来源</b>arXiv / OpenReview</span>
     </div>
     <div class="feature-body">
-      <p class="lead dropcap">先说结论。虽然不是纯视觉 SSL，但 contrastive multimodal embedding 与可变维度表征对通用图文预训练和检索评测都有参考价值。 把检索 embedding、细粒度 I2I ranking 和部署成本放进同一个训练/服务框架。</p>
+      <p class="lead dropcap">先说结论。它和通用视觉自监督的关系在于：contrastive SFT + RL ranking + MRL 的多模态 embedding 方案，工业场景强但表征训练信号可迁移。 中高相关；详见方法、贡献和实验边界。</p>
       <figure class="full-fig"><img src="../assets/mineru/2605.29287/images/bcf4e659d82c99454cb23528452770190d4c312b9a1dc962669a5264aedd5da6.jpg" alt="Figureure 2 · : The training pipeline, where (a) presents the training data construc"><figcaption><b>Figureure 2 · : The training pipeline, where (a) presents the training data construc</b><span class="fig-en">Figure 2: The training pipeline, where (a) presents the training data construction strategy designed for item-to-item retrieval, including retrieval sample pairs and hard negative mining strategy; (b) represents the training stage 1: contrastive supervised fine-tuning (SFT); and (c) represents the training stage 2: relative rerank via reinforcement learning (RL).</span><span class="fig-zh">这张图概括 UniNote 的整体方法流程。阅读时先看模块之间传递的训练信号，再看作者如何把目标拆成可优化的子问题。</span></figcaption></figure>
 <figure class="full-fig"><img src="../assets/mineru/2605.29287/images/acc97a71d5060da197ec20887dceb6c99a13e692d3f9c10dd4a001383cf09b07.jpg" alt="Figureure 1 · : We propose UniNote, a unified retrieval-ranking framework specifical"><figcaption><b>Figureure 1 · : We propose UniNote, a unified retrieval-ranking framework specifical</b><span class="fig-en">Figure 1: We propose UniNote, a unified retrieval-ranking framework specifically designed for I2I retrieval, which is capable of encoding various modality inputs into a unified space with cross-modal alignment, localized retrieval, and relevance-aware ranking capabilities.</span><span class="fig-zh">这张图概括 UniNote 的整体方法流程。阅读时先看模块之间传递的训练信号，再看作者如何把目标拆成可优化的子问题。</span></figcaption></figure>
       
       <h2>核心问题</h2>
-      <p>虽然不是纯视觉 SSL，但 contrastive multimodal embedding 与可变维度表征对通用图文预训练和检索评测都有参考价值。</p>
+      <p>它和通用视觉自监督的关系在于：contrastive SFT + RL ranking + MRL 的多模态 embedding 方案，工业场景强但表征训练信号可迁移。</p>
       <h2>方法拆解</h2>
-      <p>统一 embedding 与 ranking 两阶段训练：先用 contrastive SFT 建基础多模态向量，再用 RL 对内容相关性做排序对齐，并结合 Matryoshka Representation Learning。</p>
+      <p>contrastive SFT + RL ranking + MRL 的多模态 embedding 方案，工业场景强但表征训练信号可迁移</p>
       <h2>主要贡献</h2>
-      <p>把检索 embedding、细粒度 I2I ranking 和部署成本放进同一个训练/服务框架。</p>
+      <p>中高相关；详见方法、贡献和实验边界。</p>
       <h2>实验看点</h2>
-      <p>摘要称在多种 I2I 任务上达到 SOTA，并已在小红书大规模部署，报告质量与成本收益。</p>
+      <p>实验部分建议重点看两类证据：一是作者是否把方法收益和更强数据、更长训练、更大模型区分开；二是跨模型、跨数据或跨任务迁移是否还能保留同样趋势。</p>
       <h2>局限与读法</h2>
-      <p>目标是工业内容平台检索，数据、负样本和 ranking reward 可能高度依赖业务分布。</p>
+      <p>这篇论文的结论需要结合任务设置、训练数据规模和消融实验一起看；不要只凭单个指标判断它对通用视觉表征的价值。</p>
     
     </div>
   </div>
@@ -61,13 +61,13 @@
     <div class="side-box"><h4>原文</h4><p><a href="https://arxiv.org/abs/2605.29287">https://arxiv.org/abs/2605.29287</a></p></div>
   </aside>
 </article></main>
-  <aside class="conf-float" data-conf-reminder="2026-05-31-main-ddl" aria-label="CCF A/B 主投稿提醒">
+  <aside class="conf-float" data-conf-reminder="2026-06-01-main-ddl" aria-label="CCF A/B 主投稿提醒">
   <button class="conf-close" type="button" aria-label="关闭会议提醒">×</button>
   <details open>
     <summary>CCF A/B 主投稿提醒</summary>
     <div class="conf-list"><a class="conf-item " href="https://github.com/ccfddl/ccf-deadlines/blob/main/conference/AI/aaai.yml">
   <span><b>AAAI 2027</b><em>CCF A · Main paper submission</em></span>
-  <strong>57 天</strong>
+  <strong>56 天</strong>
   <small>2026-07-27 · CCF DDL: abstract 2026-07-20；进入 1 个月窗口后重点提醒。</small>
 </a></div>
   </details>
@@ -80,7 +80,7 @@
   (() => {
     const box = document.querySelector('[data-conf-reminder]');
     if (!box) return;
-    const key = `visualSslConfReminderClosed:${box.dataset.confReminder || '2026-05-31-main-ddl'}`;
+    const key = `visualSslConfReminderClosed:${box.dataset.confReminder || '2026-06-01-main-ddl'}`;
     try {
       if (localStorage.getItem(key) === '1') box.hidden = true;
     } catch (err) {}
