@@ -1,0 +1,2068 @@
+[
+    {
+        "type": "text",
+        "text": "GT-SVJ: Generative-Transformer-Based Self-Supervised Video Judge For Efficient Video Reward Modeling ",
+        "text_level": 1,
+        "bbox": [
+            125,
+            128,
+            870,
+            176
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "Shivanshu Shekhar \\* University of Illinois Urbana-Champaign shekhar6@illinois.edu ",
+        "bbox": [
+            122,
+            203,
+            447,
+            255
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "Mehrab Tanjim Adobe Inc. ",
+        "bbox": [
+            153,
+            263,
+            279,
+            297
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "tanjim@adobe.com ",
+        "bbox": [
+            145,
+            303,
+            289,
+            316
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "Somdeb Sarkhel Adobe Inc. ",
+        "bbox": [
+            341,
+            263,
+            473,
+            297
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "sarkhel@adobe.com ",
+        "bbox": [
+            331,
+            303,
+            483,
+            315
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "Uttaran Bhattacharya Adobe Inc. ubhattac@adobe.com ",
+        "bbox": [
+            488,
+            203,
+            658,
+            255
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "Raghavendra Addanki Adobe Inc. raddanki@adobe.com ",
+        "bbox": [
+            696,
+            203,
+            874,
+            255
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "Tong Zhang University of Illinois Urbana-Champaign ",
+        "bbox": [
+            527,
+            263,
+            852,
+            299
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "tozhang@illinois.edu ",
+        "bbox": [
+            598,
+            303,
+            777,
+            315
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "Abstract ",
+        "text_level": 1,
+        "bbox": [
+            250,
+            351,
+            326,
+            367
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "Aligning video generative models with human preferences remains challenging: current approaches rely on Vision-Language Models (VLMs) for reward modeling, but these models struggle to capture subtle temporal dynamics. We propose a fundamentally different approach: repurposing video generative models, which are inherently designed to model temporal structure, as reward models. We present the Generative-Transformer-Based Self-Supervised Video Judge (GT-SVJ), a novel evaluation model that transforms state-of-the-art video generation models into powerful temporally-aware reward models. Our key insight is that generative models can be reformulated as energybased models (EBMs) that assign low energy to high-quality videos and high energy to degraded ones, enabling them to discriminate video quality with remarkable precision when trained via contrastive objectives. To prevent the model from exploiting superficial differences between real and generated videos, we design challenging synthetic negative videos through controlled latent-space perturbations: temporal slicing, feature swapping, and frame shuffling, which simulate realistic but subtle visual degradations. This forces the model to learn meaningful spatiotemporal features rather than trivial artifacts. GT-SVJ achieves stateof-the-art performance on GenAI-Bench and MonteBench using only 30K human-annotations: 6× to 65× fewer than existing VLM-based approaches. Project URL: https: //huggingface.co/sasuke-ss1/GT-SVJ. ",
+        "bbox": [
+            86,
+            383,
+            483,
+            792
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "1. Introduction ",
+        "text_level": 1,
+        "bbox": [
+            91,
+            820,
+            220,
+            835
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "Recent advancements in video generation have led to highly capable models that can synthesize visually compelling and ",
+        "bbox": [
+            89,
+            845,
+            482,
+            877
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "image",
+        "img_path": "images/26f7b717fd92a8b28de368b7907df60cb56653aaa98b9bff8315c37d947ba56c.jpg",
+        "image_caption": [
+            "Figure 1. GT-SVJ in action. Given two videos, our self-supervised model evaluates and ranks them on preferences, outperforming baselines on human preference alignment. "
+        ],
+        "image_footnote": [],
+        "content": "Prompt\nStatic camera, a glass ball rolls\non a smooth tabletop.\nOverlooking the street, pedestrians\nwalking on the road, soft lighting.\nVideo 1\nVideo 2\nGT-SVJ\nVisionReward\nVideo 2 > Video 1 ✓\nVideo 1 > Video 2 ✓\nVideo 1 > Video 2 ✗\nVideo 1 > Video 2 ✗\nVideo 1 > Video 2 ✗",
+        "sub_type": "text_image",
+        "bbox": [
+            558,
+            354,
+            864,
+            479
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "temporally coherent videos [3, 7, 14, 16, 17, 25, 26, 29]. These models demonstrate impressive fidelity, motion consistency, and scene understanding, marking a significant step toward general-purpose video synthesis. However, despite these achievements, aligning such models with nuanced human preferences remains significantly challenging. ",
+        "bbox": [
+            511,
+            565,
+            906,
+            656
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "Reinforcement Learning from Human Feedback (RLHF) [27], originally introduced to align large language models (LLMs) with human intent, has recently been extended to visual domains such as image and video generation [31, 32, 35, 39]. In the learning-from-feedback paradigm, a preference model is trained to capture human preferences of quality, realism, or faithfulness, which is then used to fine-tune the underlying generative model via reinforcement learning or direct preference optimization. ",
+        "bbox": [
+            511,
+            657,
+            906,
+            792
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "A key obstacle to learning human-preference alignment for videos is the lack of a reliable temporally-aware reward signal. Existing approaches for visual preference modeling typically fine-tune Video-Language Models (VLMs) [11, 23, 38] to predict preference scores from pairs of videos. However, these approaches inherently treat videos as collections of independent frames, relying on attention mechanisms to implicitly capture temporal structure. Their framecentric biases often lead to poor temporal sensitivity to subtle motion quality, temporal smoothness, or consistency across frames. Moreover, these methods rely on large-scale human preference annotations, which are expensive to collect and impede scalability. ",
+        "bbox": [
+            511,
+            795,
+            908,
+            901
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "aside_text",
+        "text": "arXiv:2602.05202v2 [cs.CV] 22 May 2026 ",
+        "bbox": [
+            22,
+            272,
+            60,
+            724
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "page_footnote",
+        "text": "\\*Work done while an intern at Adobe ",
+        "bbox": [
+            109,
+            887,
+            308,
+            898
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "page_number",
+        "text": "1 ",
+        "bbox": [
+            493,
+            924,
+            503,
+            935
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "",
+        "bbox": [
+            89,
+            90,
+            480,
+            181
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "text",
+        "text": "To address these limitations, we propose to repurpose a powerful state-of-the-art video generative model (CogVideoX [40]) as a temporally grounded reward model for human preferences. Unlike VLMs, modern video generative models are typically trained explicitly to model temporal dependencies through causal self-attention over latent video tokens. By fine-tuning a video generative model as a preference model, we obtain a reward function that consistently captures accurate motion dynamics and temporal coherence, resulting in superior alignment with human preferences. Our results show that generative models, when adapted appropriately, can outperform traditional VLMbased reward models across multiple preference benchmarks while requiring, on average, an order of magnitude less human preference data to match or improve the alignment accuracy with human preferences. ",
+        "bbox": [
+            89,
+            183,
+            482,
+            425
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "text",
+        "text": "However, naively fine-tuning a generative model for discrimination risks overfitting to limited preference data and learning superficial artifacts over meaningful temporal structure. To effectively build a preference-based video reward model, we introduce a self-supervised contrastive learning strategy that utilizes energy-based modeling to convert the base video generative model into a discriminative model that can efficiently contrast real and generated videos. To prevent learning trivial domain gaps in the energy landscapes between real and generated videos, we create additional challenging non-real videos by applying controlled perturbations (e.g., frame shuffling, temporal swaps) to the latent representations of real videos, resulting in weak degradations. The discriminative model, trained on real videos and these weak degradations, learns richer feature representations for subtle spatial and temporal inconsistencies. This leads to a more stable, data-efficient, and meaningful reward signal for downstream preference learning. ",
+        "bbox": [
+            89,
+            426,
+            482,
+            698
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "text",
+        "text": "In summary, we present a framework and a corresponding model, the Generative-Transformer-Based Self-Supervised Video Judge (GT-SVJ), for learning video preferences by combining the temporal understanding of video generative models with the granularity of contrastive selfsupervision (Fig. 1). Our contributions include: ",
+        "bbox": [
+            89,
+            699,
+            482,
+            789
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "list",
+        "sub_type": "text",
+        "list_items": [
+            "• A self-supervised contrastive learning framework that converts a video generative model to an energy-based discriminative model, improving reward consistency, stability, and data efficiency. ",
+            "• Demonstrating that fine-tuning a video generative model as a reward model yields superior temporal understanding and higher human preference prediction accuracy than ex-"
+        ],
+        "bbox": [
+            89,
+            795,
+            482,
+            900
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "text",
+        "text": "isting VLM-based approaches. ",
+        "bbox": [
+            526,
+            90,
+            732,
+            106
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "text",
+        "text": "• Achieving state-of-the-art performance for GT-SVJ on GenAI-Bench [15] and MonteBench [38], outperforming prior baselines by approximately 25% and 4% (with ties) and 3% and 8% (without ties) respectively, while remaining competitive on VideoReward-Bench [23], trailing the best model by only 4% (with ties) and 7% (without ties). Remarkably, our results are achieved using only 30K human-annotated videos: roughly 6× fewer than VideoReward and 65× fewer than VisionReward, demonstrating exceptional data efficiency. ",
+        "bbox": [
+            513,
+            106,
+            903,
+            257
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "text",
+        "text": "2. Related Work ",
+        "text_level": 1,
+        "bbox": [
+            513,
+            271,
+            653,
+            286
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "text",
+        "text": "Recent text-to-video generation models [17, 25, 26, 40] have achieved unprecedented realism, making reliable evaluation of motion quality and temporal consistency critical for further progress. ",
+        "bbox": [
+            511,
+            296,
+            903,
+            356
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "text",
+        "text": "Evaluating the quality of generated videos remains a fundamental challenge in advancing generative modeling, as it requires metrics that jointly assess spatial fidelity, temporal coherence, and alignment with human perception. Traditional frame-based metrics such as PSNR and SSIM are limited in this regard, since they evaluate individual frames independently and therefore fail to capture the temporal continuity that characterizes realistic videos [34]. To address this, video-level metrics such as the Fréchet Video Distance (FVD) [34] and VBench [13] were introduced, leveraging spatiotemporal features from pretrained action recognition models to produce distribution-based measures that correlate more closely with human preferences of overall video quality. Building upon these, the Fréchet Video Motion Distance (FVMD) [22] explicitly models motion by analyzing keypoint trajectories and their velocity and acceleration statistics, providing improved alignment with human assessments, particularly for videos involving complex or rapid movements, where prior metrics like FVD and VBench tend to over-penalize dynamism. ",
+        "bbox": [
+            511,
+            357,
+            903,
+            657
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "text",
+        "text": "These work highlights the increasing importance of motion-aware evaluation, especially as diffusion-based video generators produce outputs that are both highly realistic and rich in temporal dynamics. Beyond conventional quantitative metrics, evaluation frameworks inspired by natural language understanding, such as Auto-J [19] enable more flexible and context-sensitive assessments through free-form textual feedback. This paradigm is further advanced by LLM-as-a-judge methods [18], which incorporate multimodal reasoning to provide both numerical scores and explanatory justifications, making them well-suited for video quality assessment under preference-based settings. Nevertheless, as argued by [24], VLM-based judging systems can exhibit systematic biases or limited content comprehension, potentially undermining their reliability as objective evaluation tools. ",
+        "bbox": [
+            511,
+            659,
+            903,
+            900
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "page_number",
+        "text": "",
+        "bbox": [
+            493,
+            924,
+            503,
+            935
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "text",
+        "text": "Preference-based evaluation provides yet another perspective, incorporating direct human preferences into the evaluation process [11, 23, 36, 38]. By leveraging humanin-the-loop comparisons, such methods bridge the gap between automated metrics and subjective preference alignment, allowing video generation models to optimize perceptual and semantic quality simultaneously. More recently, Direct Preference Optimization (DPO) [30] and its diffusion-based variants [20, 32, 35, 39] have shown that generative models can be fine-tuned directly on preference pairs without the need for an explicit reward function. While these approaches have primarily focused on image generation, their principles extend naturally to video domains, where modeling user preferences over temporal smoothness and motion consistency is equally critical. ",
+        "bbox": [
+            89,
+            90,
+            483,
+            316
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "Prior efforts have established a broad foundation for video evaluation, spanning frame-level fidelity metrics, spatiotemporal measures, and VLM-based preference scoring. However, VLMs are inherently optimized for video understanding, not generation, making them ill-suited for capturing the fine-grained temporal structure that differentiates real and synthetic video dynamics; moreover, they often require large amounts of human-annotated data and can exhibit instability or bias. In contrast, our approach leverages a pretrained generative video model whose representations inherently capture motion, temporal causality, and fine-grained dynamics. As a result, its learned features provide a stronger and more temporally faithful backbone than those of VLM-based evaluators. Combined with our discriminative contrastive learning using challenging synthetic negatives, the model learns robust temporal cues with significantly less human supervision, yielding a more stable and genuinely video-grounded reward model. ",
+        "bbox": [
+            89,
+            316,
+            483,
+            590
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "3. Background ",
+        "text_level": 1,
+        "bbox": [
+            89,
+            604,
+            218,
+            622
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "We briefly cover relevant background on energy-based models and reward modeling. ",
+        "bbox": [
+            89,
+            630,
+            482,
+            660
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "3.1. Energy-Based Models ",
+        "text_level": 1,
+        "bbox": [
+            89,
+            671,
+            294,
+            686
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "Energy-Based Models (EBMs) [6] define a probability distribution over data samples $x \\in \\mathcal { X }$ through an unnormalized energy function $E _ { \\theta } : \\mathcal { X }  \\mathbb { R }$ parameterized by θ. The model assigns lower energy to more likely or desirable configurations and higher energy to unlikely ones. Formally, the probability of observing a sample x is expressed as ",
+        "bbox": [
+            89,
+            694,
+            483,
+            785
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "equation",
+        "text": "$$\nP _ {\\theta} (x) = \\frac {\\exp (- E _ {\\theta} (x))}{Z _ {\\theta}}, \\tag {1}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            202,
+            796,
+            482,
+            828
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "where $\\begin{array} { r } { Z _ { \\theta } ~ = ~ \\int \\exp ( - E _ { \\theta } ( x ) ) } \\end{array}$ dx is the partition function for normalization. Since $Z _ { \\theta }$ is often intractable, EBMs are typically trained by minimizing an approximate contrastive objective rather than maximizing the exact likelihood [33]. The contrastive loss encourages the model to assign lower energy to positive samples (real or preferred data) and higher energy to negative samples (non-preferred or perturbed data). A common formulation is ",
+        "bbox": [
+            89,
+            839,
+            483,
+            901
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "",
+        "bbox": [
+            511,
+            90,
+            905,
+            151
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "equation",
+        "text": "$$\n\\mathcal {L} _ {\\mathrm{EBM}} = \\mathbb {E} _ {x ^ {+} \\sim p _ {\\mathrm{data}}} [ E _ {\\theta} (x ^ {+}) ] - \\mathbb {E} _ {x ^ {-} \\sim p _ {\\mathrm{neg}}} [ E _ {\\theta} (x ^ {-}) ], \\tag {2}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            535,
+            162,
+            906,
+            181
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "where $x ^ { + }$ denotes samples from the target (real) distribution $p _ { \\mathrm { d a t a } }$ and x− denotes samples from the negatively perturbed or generated distribution $p _ { \\mathrm { n e g } }$ . In practice, $p _ { \\mathrm { n e g } }$ is often constructed following Langevin Dynamics to stably maintain proximity to the real data [1, 10, 37]. A regularization term is usually added [10] to make the training stable, such as: ",
+        "bbox": [
+            511,
+            191,
+            906,
+            282
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "equation",
+        "text": "$$\n\\mathcal {L} _ {2} = \\mathbb {E} _ {x ^ {+} \\sim p _ {\\mathrm{data}}} [ E _ {\\theta} (x ^ {+}) ^ {2} ] + \\mathbb {E} _ {x ^ {-} \\sim p _ {\\mathrm{neg}}} [ E _ {\\theta} (x ^ {-}) ^ {2} ]. \\tag {3}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            537,
+            292,
+            906,
+            311
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "Combining Eqs. (2) and (3), the contrastive loss is ",
+        "bbox": [
+            511,
+            321,
+            846,
+            337
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "equation",
+        "text": "$$\n\\mathcal {L} _ {\\text { contrast }} = \\mathcal {L} _ {\\mathrm{EBM}} + \\beta \\mathcal {L} _ {2}. \\tag {4}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            625,
+            349,
+            905,
+            364
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "In our context, this formulation aligns naturally with reward modeling for generative videos. Here, positive samples correspond to human-preferred or realistic video segments, while negative samples correspond to generated videos and perturbations (e.g., through slicing or feature swapping). Training the reward model under this contrastive objective encourages it to learn a discriminative energy landscape in both spatial and temporal aspects. ",
+        "bbox": [
+            511,
+            377,
+            905,
+            500
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "3.2. Reward Modeling ",
+        "text_level": 1,
+        "bbox": [
+            511,
+            507,
+            689,
+            523
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "Reward modeling aims to align model behavior with human preferences by learning a scalar reward function that reflects perceived quality or desirability [5, 9]. Given a dataset of paired comparisons $\\{ ( x _ { i } ^ { + } , x _ { i } ^ { - } ) \\}$ , where $\\boldsymbol { x } _ { i } ^ { + }$ is preferred over $\\boldsymbol { x } _ { i } ^ { - }$ , the goal is to train a function $r _ { \\phi } : \\mathcal { X } $ R such that $r _ { \\phi } ( x _ { i } ^ { + } ) > r _ { \\phi } ( x _ { i } ^ { - } )$ for all preference pairs. A probabilistic interpretation of preferences can be derived from the Bradley–Terry (BT) model [2], where the probability that sample $x _ { i } ^ { + }$ is preferred over $\\boldsymbol { x } _ { i } ^ { - }$ is modeled as ",
+        "bbox": [
+            511,
+            527,
+            906,
+            667
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "equation",
+        "text": "$$\nP (x _ {i} ^ {+} \\succ x _ {i} ^ {-}) = \\frac {\\exp (r _ {\\phi} (x _ {i} ^ {+}))}{\\exp (r _ {\\phi} (x _ {i} ^ {+})) + \\exp (r _ {\\phi} (x _ {i} ^ {-}))}. \\tag {5}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            540,
+            676,
+            906,
+            712
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "The reward model is trained to maximize the likelihood of observed preferences, leading to the loss ",
+        "bbox": [
+            511,
+            720,
+            906,
+            752
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "equation",
+        "text": "$$\n\\mathcal {L} _ {\\mathrm{BT}} = - \\mathbb {E} _ {(x ^ {+}, x ^ {-})} \\left[ \\log P (x ^ {+} \\succ x ^ {-}) \\right]. \\tag {6}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            578,
+            762,
+            906,
+            782
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "However, human preferences often include uncertainty or indifference between two samples. The Bradley–Terry with Ties (BTT) model [21] extends BT by incorporating an indifference probability controlled by a temperature-like parameter γ, as ",
+        "bbox": [
+            511,
+            791,
+            905,
+            868
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "equation",
+        "text": "$$\nP (x ^ {+} \\succ x ^ {-}) = \\frac {\\exp (r _ {\\phi} (x ^ {+}) / \\gamma)}{\\exp (r _ {\\phi} (x ^ {+}) / \\gamma) + \\exp (r _ {\\phi} (x ^ {-}) / \\gamma) + 1}. \\tag {7}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            527,
+            878,
+            905,
+            905
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "page_number",
+        "text": "3 ",
+        "bbox": [
+            493,
+            924,
+            503,
+            936
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "image",
+        "img_path": "images/84c4a9d3c8f71f62ca285d0d5285e6312147e2d4c11b4e944edad558af107f8f.jpg",
+        "image_caption": [
+            "Figure 2. Overview of the proposed GT-SVJ framework. The framework consists of two stages: (top) Training a discriminative model, where the video generative model (CogVideoX) is adapted using a contrastive energy-based objective with real, generated, and perturbed videos, and (middle and bottom) Training a reward model, where the discriminative model (DM) is aligned with human ratings through aspect-wise prediction (AWP) via regression (middle) followed by relative preference modeling (bottom). "
+        ],
+        "image_footnote": [],
+        "content": "```mermaid\ngraph TD\n    subgraph \"Training the Video Discriminative Model\"\n        A[\"Real\"] --> B[\"Autoencoder\"]\n        C[\"Generated\"] --> B\n        B --> D[\"Transf. Layers (initial third)\"]\n        D --> E[\"Transf. Layers (middle third)\"]\n        E --> F[\"Transf. Layers (last third)\"]\n        F --> G[\"z1...T\"]\n        G --> H[\"Latent-Space Perturbations\"]\n        H --> I[\"LoRA Adapters\"]\n        I --> J[\"MLP Block\"]\n        J --> K[\"Compressed Latents\"]\n        K --> L[\"L_contrast\"]\n    end\n\n    subgraph \"Training the Reward Model on Aspect-Wise Scores\"\n        M[\"Real\"] --> N[\"Autoencoder\"]\n        O[\"Generated\"] --> N\n        N --> P[\"Transf. Layers (initial third)\"]\n        P --> Q[\"Transf. Layers (middle third)\"]\n        Q --> R[\"Transf. Layers (last third)\"]\n        R --> S[\"Latents\"]\n        S --> T[\"LoRA Adapters\"]\n        T --> U[\"MLP Block\"]\n        U --> V[\"Aspect-Wise Scores\"]\n        V --> W[\"L_MSE\"]\n        W --> X[\"L_BT\"]\n    end\n\n    subgraph \"Training the Reward Model on Relative Preferences\"\n        Y[\"Real\"] --> Z[\"Autoencoder\"]\n        AA[\"Generated\"] --> Z\n        Z --> AB[\"Transf. Layers (initial third)\"]\n        AB --> AC[\"Transf. Layers (middle third)\"]\n        AC --> AD[\"Transf. Layers (last third)\"]\n        AD --> AE[\"Latents\"]\n        AE --> AF[\"LoRA Adapters\"]\n        AF --> AG[\"MLP Block\"]\n        AG --> AH[\"Aspect-Wise Scores\"]\n        AH --> AI[\"L_BT\"]\n        AI --> AJ[\"L_BT\"]\n    end\n\n    style A fill:#e6f3ff,stroke:#333\n    style C fill:#e6f3ff,stroke:#333\n    style M fill:#e6f3ff,stroke:#333\n    style Z fill:#e6f3ff,stroke:#333\n    style AA fill:#e6f3ff,stroke:#333\n    style Y fill:#e6f3ff,stroke:#333\n```",
+        "sub_type": "flowchart",
+        "bbox": [
+            174,
+            88,
+            823,
+            448
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "text",
+        "text": "This modification allows the model to better reflect ambiguous preferences or subtle perceptual differences. ",
+        "bbox": [
+            89,
+            542,
+            482,
+            573
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "text",
+        "text": "In the context of video generation, $r _ { \\phi } ( x )$ serves as a learned reward function that scores videos based on alignment with human preference. The BT/BTT formulations directly correspond to optimizing a discriminative reward model that can distinguish fine-grained perceptual and motion-level differences, and provide a principled objective for preference alignment tasks. ",
+        "bbox": [
+            89,
+            574,
+            483,
+            680
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "text",
+        "text": "4. The GT-SVJ Framework ",
+        "text_level": 1,
+        "bbox": [
+            89,
+            691,
+            326,
+            709
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "text",
+        "text": "The framework for our proposed Generative-Transformer-Based Self-Supervised Video Judge (GT-SVJ) model consists of training a discriminative model for real and non-real videos using self-supervised contrastive learning leveraging the EBM paradigm, followed by preference-tuning the discriminative model into a reward model that is aligned with human preferences. We use CogVideoX [40] as our backbone video generative model owing to its powerful video generation performance and easy reproducibility 1. Fig. 2 shows our overall framework. ",
+        "bbox": [
+            89,
+            718,
+            483,
+            867
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "text",
+        "text": "4.1. Training the Video Discriminative Model ",
+        "text_level": 1,
+        "bbox": [
+            511,
+            542,
+            864,
+            559
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "text",
+        "text": "We build our video discriminative model using some of the transformer layers of CogVideoX [40], followed by a lightweight MLP head to aggregate the spatiotemporal features into a single scalar representation per latent time step (Fig. 2 top). It takes in the latent space representations $z \\in { \\mathcal { Z } }$ of the input videos $x \\in \\mathcal { X }$ as given by the pretrained VAE encoder of CogVideoX. These latent representations reduce pixel-level redundancy and allow the discriminative model to focus on appearance and motion semantics. ",
+        "bbox": [
+            511,
+            566,
+            906,
+            700
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "text",
+        "text": "To adapt the CogVideoX architecture efficiently for contrastive learning, we employ LoRA adapters [12] on only the last third of its transformer layers, enabling low-rank finetuning with minimal additional parameters. We train the network using the contrastive energy-based formulation of Eq. (4), which aims to assign lower energy (higher scores) to real videos and higher energy (lower scores) to all nonreal videos. ",
+        "bbox": [
+            511,
+            703,
+            908,
+            821
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "text",
+        "text": "Perturbed Videos As Negative Samples. We note that only using model-generated videos as negative samples for contrastive learning tends to result in a trivial discrimination task, where the model learns superficial cues exploiting the domain gap between real and generated videos rather than meaningful spatial structure and temporal dynamics. To counter this, we introduce a more challenging contrastive learning strategy by crafting additional negative samples through controlled perturbations of the latent video representations. Specifically, for each video latent representation z, we randomly apply one of the five following manipulations designed to subtly distort the original spatiotemporal structure while preserving overall appearance. ",
+        "bbox": [
+            511,
+            825,
+            908,
+            902
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "page_footnote",
+        "text": "1We are aware of concurrent approaches such as ControlNeXt [28]. However, they are either not peer-reviewed or not easy to reproduce. ",
+        "bbox": [
+            89,
+            875,
+            482,
+            902
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "page_number",
+        "text": "4 ",
+        "bbox": [
+            493,
+            924,
+            504,
+            936
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "chart",
+        "img_path": "images/c415c8594c0f8f9ba3962832bcb882fc134a290cb2918a3f101a6af4c0448b14.jpg",
+        "content": "| Time Step | Energy Value |\n| --------- | ------------ |\n| 1         | -1.7         |\n| 2         | -2.2         |\n| 3         | -2.2         |\n| 4         | -2.2         |\n| 5         | -2.2         |\n| 6         | -2.2         |\n| 7         | -2.3         |\n| 8         | -2.3         |\n| 9         | -2.2         |\n| 10        | -2.1         |\n| 11        | -2.1         |\n| 12        | -2.1         |\n| 13        | -2.2         |",
+        "chart_caption": [],
+        "chart_footnote": [],
+        "sub_type": "line",
+        "bbox": [
+            96,
+            88,
+            356,
+            222
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "image",
+        "img_path": "images/b2bdd93acfc4e91f9c0f60b1483d3b62bd12dba0012ad9301835eedc4ec504e1.jpg",
+        "image_caption": [],
+        "image_footnote": [],
+        "content": "",
+        "bbox": [
+            107,
+            222,
+            186,
+            270
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "image",
+        "img_path": "images/a79d2f5bf3ef12da4066c8a708c66e75f1c25cb5a00c82357736548dbc5d6faa.jpg",
+        "image_caption": [],
+        "image_footnote": [],
+        "content": "",
+        "bbox": [
+            186,
+            222,
+            271,
+            270
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "image",
+        "img_path": "images/13800d52df9e8f2d7a1bd69db2a7fafa839a605fcd0b347d88e94ddd4ff2965a.jpg",
+        "image_caption": [
+            "(a) Real video. "
+        ],
+        "image_footnote": [],
+        "content": "",
+        "bbox": [
+            277,
+            222,
+            354,
+            270
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "chart",
+        "img_path": "images/8f0006c1a2911eb37d9f17bafaa628baace5f63918dc645ef7a73acf51e5edb3.jpg",
+        "content": "| Time Step | Energy Value |\n| --------- | ------------ |\n| 1         | -1.0         |\n| 2         | -1.3         |\n| 3         | -1.1         |\n| 4         | -1.05        |\n| 5         | -1.0         |\n| 6         | -1.0         |\n| 7         | -1.0         |\n| 8         | -1.0         |\n| 9         | -1.05        |\n| 10        | -1.0         |\n| 11        | -1.0         |\n| 12        | -1.0         |\n| 13        | -1.0         |",
+        "chart_caption": [],
+        "chart_footnote": [],
+        "sub_type": "line",
+        "bbox": [
+            370,
+            88,
+            630,
+            222
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "image",
+        "img_path": "images/09fd56a899b6cae0998fdff8386a2e9431db7ed34b27615cdd6cd6249e02ac5c.jpg",
+        "image_caption": [],
+        "image_footnote": [],
+        "content": "",
+        "bbox": [
+            383,
+            229,
+            460,
+            270
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "image",
+        "img_path": "images/0842226dbba41e028f2f19571a0725472f4f59343bd859dbdcb95a3471a81d89.jpg",
+        "image_caption": [],
+        "image_footnote": [],
+        "content": "",
+        "bbox": [
+            468,
+            229,
+            545,
+            270
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "image",
+        "img_path": "images/32a51b302652c01f9cbaa373e7db1ed8c006dd034091629b8f3aefdaab4ba838.jpg",
+        "image_caption": [
+            "(b) Video generated by CogVideoX [40]. "
+        ],
+        "image_footnote": [],
+        "content": "",
+        "bbox": [
+            553,
+            229,
+            630,
+            270
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "chart",
+        "img_path": "images/9293cd112a2fd4b6d200f5c77c5e16700f8d937159223b803ad7548b861b85b6.jpg",
+        "content": "| Time Step | Energy Value |\n| --------- | ------------ |\n| 1         | -1.0         |\n| 2         | -0.9         |\n| 3         | -0.85        |\n| 4         | -0.8         |\n| 5         | -0.75        |\n| 6         | -0.7         |\n| 7         | -0.75        |\n| 8         | -0.7         |\n| 9         | -0.65        |\n| 10        | -0.6         |\n| 11        | -0.6         |\n| 12        | -0.6         |\n| 13        | -0.55        |",
+        "chart_caption": [],
+        "chart_footnote": [],
+        "sub_type": "line",
+        "bbox": [
+            645,
+            89,
+            903,
+            222
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "image",
+        "img_path": "images/c45abbf286bcb87eea9ac8ca9e6a25876e1380189a3c55ff3ea4725ea3337d04.jpg",
+        "image_caption": [],
+        "image_footnote": [],
+        "content": "",
+        "bbox": [
+            658,
+            234,
+            736,
+            271
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "image",
+        "img_path": "images/386e2c243c959f153538301183a50fc86276dbc1e6a72544c775c86c28732935.jpg",
+        "image_caption": [],
+        "image_footnote": [],
+        "content": "",
+        "bbox": [
+            743,
+            236,
+            820,
+            271
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "image",
+        "img_path": "images/b831e115a880ebd981cfa10adfd70beca0e0218b3e451599b88082d303e162ab.jpg",
+        "image_caption": [
+            "(c) Video generated by OpenSora [42]. ",
+            "Figure 3. Illustration of energy trajectories predicted by our energy-based model. For the real video in (a), energy trajectory across the time steps is smooth and stable, indicating consistent temporal dynamics. In contrast, for the generated videos in (b) and (c), the energy values fluctuate erratically, reflecting spatial and temporal inconsistencies such as implausible scene lighting and motions. "
+        ],
+        "image_footnote": [],
+        "content": "",
+        "bbox": [
+            828,
+            236,
+            905,
+            271
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "",
+        "bbox": [
+            89,
+            366,
+            483,
+            488
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "Frame Shuffle. Given a latent representation $\\boldsymbol { z } = \\left\\{ \\boldsymbol { z } _ { t } \\right\\} _ { t = 1 } ^ { T }$ $\\boldsymbol { \\mathcal { T } } \\subset$ $\\{ 1 , \\ldots , T \\}$ and apply a random permutation Π : $\\mathcal { T }  \\mathcal { T } .$ . The modified representation z satisfies $\\widetilde { z } _ { t } = z _ { \\Pi ( t ) } \\forall t \\in \\mathcal { I }$ . e eThis disrupts temporal order while preserving per-frame appearance, requiring the model to detect violations of motion continuity and causal progression. ",
+        "bbox": [
+            89,
+            500,
+            483,
+            607
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "Frame Drop. We randomly sample a set of non-contiguous time steps I s.t. {1} ⊈ I, and replace each $z _ { t }$ for $t \\in$ I with its neighbor $z _ { t - 1 }$ . Thus, $\\widetilde { z } _ { t } = z _ { t - 1 } \\forall t \\in \\mathcal { T }$ . This mimics missing or duplicated frames commonly found in low-frame-rate or corrupted videos, encouraging robustness to irregular temporal sampling. ",
+        "bbox": [
+            89,
+            608,
+            483,
+            698
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "Noisy Segment Injection. We inject Gaussian noise to a random temporal slice $[ s , e ] , 1 \\leq s < e \\leq T$ such that ",
+        "bbox": [
+            89,
+            699,
+            483,
+            729
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "equation",
+        "text": "$$\n\\widetilde {z} _ {t} = z _ {t} + \\epsilon_ {t}, \\quad \\epsilon_ {t} \\sim \\mathcal {N} (0, \\sigma^ {2} I) \\quad \\forall t \\in [ s, e ].\n$$",
+        "text_format": "latex",
+        "bbox": [
+            133,
+            737,
+            437,
+            755
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "This localized corruption simulates sensor noise or compression artifacts, pushing the model to maintain global temporal coherence despite localized errors. ",
+        "bbox": [
+            89,
+            763,
+            482,
+            808
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "Patch Swap. We exchange a random spatial region Ω between two non-overlapping random temporal slices $[ t _ { 1 } , t _ { 1 } +$ τ ] and $[ t _ { 2 } , t _ { 2 } + \\tau ] , \\tau \\leq T / 2$ , such that $\\forall t \\in [ t _ { 1 } , t _ { 1 } + \\tau ]$ , ",
+        "bbox": [
+            89,
+            809,
+            482,
+            856
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "equation",
+        "text": "$$\n\\widetilde {z} _ {t} (x, y) = \\left\\{ \\begin{array}{l l} z _ {t _ {2} + (t - t _ {1})} (x, y), & (x, y) \\in \\Omega , \\\\ z _ {t} (x, y), & \\text { otherwise }. \\end{array} \\right.\n$$",
+        "text_format": "latex",
+        "bbox": [
+            138,
+            863,
+            429,
+            904
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "This perturbs object trajectories and motion consistency, requiring joint reasoning of spatial and temporal coherence. ",
+        "bbox": [
+            511,
+            366,
+            903,
+            396
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "Temporal Slice Swap. We choose two random nonoverlapping temporal slices $[ t _ { 1 } , t _ { 1 } + \\tau ]$ and $[ t _ { 2 } , t _ { 2 } + \\tau ]$ , $\\tau \\leq T / 2$ , and swap them, such that ",
+        "bbox": [
+            511,
+            397,
+            903,
+            441
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "equation",
+        "text": "$$\n\\widetilde {z} _ {t} = \\left\\{ \\begin{array}{l l} z _ {t _ {2} + (t - t _ {1})}, & t \\in [ t _ {1}, t _ {1} + \\tau ], \\\\ z _ {t _ {1} + (t - t _ {2})}, & t \\in [ t _ {2}, t _ {2} + \\tau ], \\\\ z _ {t}, & \\text { otherwise }. \\end{array} \\right.\n$$",
+        "text_format": "latex",
+        "bbox": [
+            584,
+            448,
+            830,
+            503
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "This disrupts mid- and large-scale temporal flow while preserving frame-level contents, forcing the model to detect implausible long-range dynamics. ",
+        "bbox": [
+            511,
+            508,
+            905,
+            554
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "Collectively, these perturbations force the discriminative model to accurately capture spatial structures (such as object appearances and positions) and temporal dynamics (such as object permanence and motion consistency) rather than relying on trivial cues and coarse, frame-level differences. Additionally, with probability p, we randomly truncate each video pair to varying lengths, preventing overfitting to fixed-duration inputs and promoting stronger generalization in downstream evaluation settings. ",
+        "bbox": [
+            511,
+            555,
+            905,
+            690
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "4.2. Reward Model From Discriminative Model ",
+        "text_level": 1,
+        "bbox": [
+            511,
+            696,
+            880,
+            712
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "Given the trained discriminative model, we build the reward model (Fig. 2, middle and bottom) that learns to align with human preferences through preference tuning. For the reward model architecture, we keep the trained LoRA adapters from the discriminative model on the same last third of the transformer layers of the CogVideoX backbone, and remove the discriminative model’s MLP head. We replace it with a new MLP head that takes in the latent representation from the transformer layers and outputs preference scores. Following the approach of VideoReward [23], we train an aspect-wise score predictor followed by a relative preference predictor. For the aspect-wise predictor (Fig. 2, middle), the output comprises a set of scalar values $q \\in \\mathbb { R } ^ { \\mathcal { Q } }$ , one for each aspect of video quality that requires alignment with human preferences, e.g., realism, smoothness, temporal coherence, and color consistency. We consider numeric scores for human preferences, such as the commonly-used 1 to 5 Likert scale values, and train the reward model end-to-end using a Mean Squared Error (MSE) loss to regress to the human scores. ",
+        "bbox": [
+            511,
+            719,
+            906,
+            900
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "page_number",
+        "text": "5 ",
+        "bbox": [
+            493,
+            924,
+            503,
+            935
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "table",
+        "img_path": "images/5897fe92899a40e2d16fd99725469118e6c645b02fe8162745aeab27ce447feb.jpg",
+        "table_caption": [
+            "Table 1. Video evaluation results on multiple video preference benchmark datasets. We report comparable or better performance in alignment accuracy with human preferences on all benchmark datasets. We also report the human-annotated dataset sizes (in number of samples) and backbone sizes (in number of trainable model parameters). We use the evaluation scheme of Deutsch et al. [8]. Bold: best, underline: second-best. Higher values are better for all columns. "
+        ],
+        "table_footnote": [],
+        "table_body": "<table><tr><td rowspan=\"2\">Method</td><td rowspan=\"2\">Human Dataset Size</td><td rowspan=\"2\">Backbone Size</td><td colspan=\"2\">GenAI-Bench [15]</td><td colspan=\"2\">MonteBench [38]</td><td colspan=\"2\">VideoReward-Bench [23]</td></tr><tr><td>w/ties</td><td>w/o ties</td><td>w/ties</td><td>w/o ties</td><td>w/ties</td><td>w/o ties</td></tr><tr><td>VideoScore [11]</td><td>37.6K</td><td>8B</td><td>49.03</td><td>71.69</td><td>49.10</td><td>54.90</td><td>41.80</td><td>50.22</td></tr><tr><td>VisionReward [38]</td><td>2000K</td><td>19B</td><td>51.56</td><td>72.41</td><td>64.00</td><td>72.10</td><td>56.77</td><td>67.59</td></tr><tr><td>VideoReward [23]</td><td>182K</td><td>2B</td><td>49.41</td><td>72.89</td><td>54.20</td><td>62.25</td><td>61.26</td><td>73.59</td></tr><tr><td>GT-SVJ</td><td>30.4K</td><td>2B</td><td>64.26</td><td>75.15</td><td>66.36</td><td>77.76</td><td>57.01</td><td>68.57</td></tr><tr><td>GT-SVJ (p=0)</td><td>30.4K</td><td>2B</td><td>49.36</td><td>62.41</td><td>62.79</td><td>76.12</td><td>55.42</td><td>65.37</td></tr><tr><td>GT-SVJ (No DM)</td><td>30.4K</td><td>2B</td><td>47.62</td><td>59.12</td><td>61.82</td><td>73.59</td><td>53.14</td><td>63.21</td></tr></table>",
+        "bbox": [
+            94,
+            88,
+            903,
+            224
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "text",
+        "text": "",
+        "bbox": [
+            88,
+            316,
+            480,
+            436
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "text",
+        "text": "Once the aspect-wise score predictor is trained, we introduce a lightweight linear head to map the aspect-wise scores to a scalar score for relative preferences (Fig. 2, bottom), and train it on pairwise human preferences under the Bradley-Terry loss (Eqs. (6) and (7)). This two-step procedure yields a stable, interpretable reward model that accurately reflects human perceptual preferences and is suitable for downstream RL and evaluation tasks. ",
+        "bbox": [
+            88,
+            438,
+            482,
+            556
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "text",
+        "text": "5. Experiments and Results ",
+        "text_level": 1,
+        "bbox": [
+            89,
+            571,
+            326,
+            589
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "text",
+        "text": "We provide the implementation details for both the discriminative and reward models under GT-SVJ and analyze the performance of these models and relevant ablations on large-scale benchmark datasets for video preference. ",
+        "bbox": [
+            89,
+            597,
+            483,
+            657
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "text",
+        "text": "5.1. Implementation Details ",
+        "text_level": 1,
+        "bbox": [
+            89,
+            667,
+            308,
+            683
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "text",
+        "text": "Discriminative Model. For all experiments of the discriminative model, we fix the LoRA rank r = 8 and scaling factor α = 8, providing a reasonable trade-off between parameter efficiency and representational capacity. The pretrained and frozen CogVideoX autoencoder compresses input videos of 4f + 1 frames into f + 1 latent frames. Because the CogVideoX autoencoder is causal, the latent representation at each time step depends on all preceding latents, making the resulting energy sequences interpretable as a measure of temporal perplexity. ",
+        "bbox": [
+            89,
+            688,
+            482,
+            839
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "text",
+        "text": "Training follows a contrastive energy-based objective ${ \\mathcal { L } } _ { \\mathrm { c o n t r a s t } }$ (Eq. (4)) with $\\beta ~ = ~ 0 . 2$ , where real videos are the positive samples and generated and perturbed videos are the negative samples. Our corpus contains approximately 20K real Internet-sourced videos (each cropped into 6-second segments) and 30K videos generated using various video generation models, including Gen3 [25], Luma Dream Machine [17], CogVideoX [40], OpenSora [42], and VideoCrafter2 [4]. Prompts are drawn from publicly available datasets such as VisionReward [38] and VideoReward [23]. These 50K videos require no human annotation, synthetic negatives are generated via perturbations (Sec. 4). Only reward modeling uses human-annotated data (30.4K videos). Further, we note that most current video preference datasets consist of video clips of uniform length, commonly 6 seconds. Models trained from scratch on such data often develop an implicit length bias, resulting in poor performance on videos of varying lengths. We mitigate this issue by training the discriminative model on videos of variable lengths, randomly slicing clips between 2 and 6 seconds and selecting clips shorter than 6 seconds with probability $p = 0 . 2 5$ . This exposes the model to a broader temporal distribution, enabling the learning of duration-invariant representations. ",
+        "bbox": [
+            89,
+            839,
+            483,
+            901
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "text",
+        "text": "",
+        "bbox": [
+            511,
+            316,
+            906,
+            618
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "text",
+        "text": "As illustrated in Fig. 3, real videos (Fig. 3a) maintain smooth, low-variance energy curves consistent with natural temporal continuity. Conversely, synthetic or perturbed videos (Figs. 3b and 3c) exhibit abrupt fluctuations, indicating irregular temporal transitions. This successfully aligns with our contrastive objective: assigning lower energy to temporally coherent sequences and higher energy to incoherent or unpredictable motion patterns. ",
+        "bbox": [
+            511,
+            623,
+            906,
+            744
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "text",
+        "text": "Reward Model. To train our reward model, we use Q = 21 video quality aspects corresponding to the 21 annotated attributes in the VisionReward [38] dataset. We train this reward model end-to-end using the train split of VisionReward and the mean squared error loss, $\\mathcal { L } _ { \\mathrm { M S E } }$ . Subsequently, an aggregation head maps the 21 predicted attributes to a single scalar reward score, which is then fine-tuned using preference supervision on the regression split. All reward-model experiments use LoRA adapters (rank $r = 8 ,$ $\\alpha = 8 )$ to enable parameter-efficient fine-tuning consistent with our discriminative setup. During pairwise preference training, we also truncate videos with probability $p = 0 . 2 .$ , assuming that the underlying preference is preserved after truncation. When truncation is applied, the video length is randomly reduced to a duration between 2 and 6 seconds. ",
+        "bbox": [
+            511,
+            750,
+            908,
+            901
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "page_number",
+        "text": "6 ",
+        "bbox": [
+            493,
+            925,
+            504,
+            936
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "chart",
+        "img_path": "images/6b0cd4593f54c17de4b1a658a165fdcab0891f5e4ee104987edc2a44f33d4d44.jpg",
+        "content": "| Training Steps | Initial Third | Middle Third | Last Third |\n| -------------- | ------------- | ------------ | ---------- |\n| 1K             | 0.076         | 0.076        | 0.076      |\n| 2K             | 0.065         | 0.064        | 0.063      |\n| 3K             | 0.062         | 0.059        | 0.060      |\n| 4K             | 0.060         | 0.058        | 0.059      |\n| 5K             | 0.059         | 0.057        | 0.058      |\n| 6K             | 0.058         | 0.056        | 0.057      |\n| 7K             | 0.058         | 0.056        | 0.057      |\n| 8K             | 0.057         | 0.055        | 0.056      |",
+        "chart_caption": [
+            "(a) Validation losses across LoRA placements. Applying LoRA to the middle third of the transformer achieves the lowest validation losses for aspect-wise score prediction of the reward model, indicating that mid-level representations are most amenable to efficient adaptation. "
+        ],
+        "chart_footnote": [],
+        "sub_type": "line",
+        "bbox": [
+            91,
+            89,
+            354,
+            202
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "chart",
+        "img_path": "images/d1c05040be92aca85ec1a1aeb6bd48531a943e09ad7ea01b46ed7f852c843d17.jpg",
+        "content": "| Training Steps | Initial Third | Middle Third | Last Third |\n| -------------- | ------------- | ------------ | ---------- |\n| 1K             | 0.68          | 0.70         | 0.69       |\n| 3K             | 0.70          | 0.73         | 0.72       |\n| 5K             | 0.72          | 0.74         | 0.74       |\n| 8K             | 0.73          | 0.75         | 0.75       |",
+        "chart_caption": [
+            "(b) Validation accuracies across LoRA placements. Applying LoRA to the middle third of the transformer also achieves the highest validation accuracies for relative preference predictions of the reward model. "
+        ],
+        "chart_footnote": [],
+        "sub_type": "line",
+        "bbox": [
+            366,
+            90,
+            630,
+            202
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "chart",
+        "img_path": "images/1b6f2afde69addeae9e2b8923bbb0b1a56709adfaec612072b2e22aa65c9053c.jpg",
+        "content": "| Time (hours) | Initial Third | Middle Third | Last Third |\n| ------------ | ------------- | ------------ | ---------- |\n| 0            | 0.68          | 0.70         | 0.69       |\n| 1            | 0.69          | 0.71         | 0.70       |\n| 2            | 0.70          | 0.72         | 0.71       |\n| 3            | 0.71          | 0.73         | 0.72       |\n| 4            | 0.72          | 0.74         | 0.73       |\n| 5            | 0.73          | 0.75         | 0.74       |\n| 6            | 0.74          | 0.75         | 0.74       |\n| 7            | 0.75          | 0.75         | 0.75       |\n| 8            | 0.75          | 0.75         | 0.75       |\n| 9            | 0.75          | 0.75         | 0.75       |\n| 10           | 0.75          | 0.75         | 0.75       |\n| 11           | 0.75          | 0.75         | 0.75       |\n| 12           | 0.75          | 0.75         | 0.75       |\n| 13           | 0.75          | 0.75         | 0.75       |\n| 14           | 0.75          | 0.75         | 0.75       |\n| 15           | 0.75          | 0.76         | 0.75       |\n| 16           | 0.75          | 0.76         | 0.75       |\n| 17           | 0.75          | 0.76         | 0.75       |\n| 18           | 0.75          | 0.76         | 0.75       |\n| 19           | 0.75          | 0.76         | 0.75       |",
+        "chart_caption": [
+            "(c) Validation accuracy vs time. While all configurations eventually converge, applying LoRA to later layers leads to faster convergence but slightly worse generalization, highlighting a trade-off between efficiency and representation depth. ",
+            "Figure 4. Effect of LoRA placement within the backbone transformer. We compare applying LoRA to the initial third, middle third, and last third of the transformer layers. The middle-layer configuration achieves the best overall performance, while the last-layer configuration provides faster training with minimal loss in accuracy. "
+        ],
+        "chart_footnote": [],
+        "sub_type": "line",
+        "bbox": [
+            640,
+            88,
+            903,
+            202
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "text",
+        "text": "",
+        "bbox": [
+            89,
+            359,
+            483,
+            434
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "text",
+        "text": "5.2. Benchmarks and Baselines ",
+        "text_level": 1,
+        "bbox": [
+            89,
+            446,
+            333,
+            462
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "text",
+        "text": "We evaluate GT-SVJ across three state-of-the-art video preference benchmarks: GenAI-Bench [15], MonteBench [38], and VideoReward-Bench [23], alongside their corresponding baseline models. GT-SVJ demonstrates strong generalization across all three datasets (Tab. 1). On GenAI-Bench, it surpasses previous baselines by 24.63% and 3.1% under the tie and no-tie settings, respectively. For MonteBench, we observe gains of 3.68% and 7.85% on the same evaluation metrics. On VideoReward-Bench, GT-SVJ ranks second, trailing the VideoReward model by roughly 5%. We attribute this gap to a distribution shift between VideoReward-Bench and the other benchmarks. The absence of public training data for this benchmark further limits direct alignment with its preference domain, making its evaluation setting uniquely challenging. ",
+        "bbox": [
+            89,
+            470,
+            483,
+            698
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "text",
+        "text": "5.3. Ablations ",
+        "text_level": 1,
+        "bbox": [
+            89,
+            709,
+            202,
+            724
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "text",
+        "text": "We perform several ablations to analyze the impacts of our proposed model components and training setups. ",
+        "bbox": [
+            89,
+            732,
+            482,
+            762
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "text",
+        "text": "Effect of LoRA Placement. We study the impact of applying LoRA adapters at different depths within the transformer architecture. While it is commonly assumed that adding LoRA to the final few layers is most effective, since these layers typically capture fine-grained details and taskspecific semantics, we observe some caveats. ",
+        "bbox": [
+            89,
+            763,
+            482,
+            853
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "text",
+        "text": "Our CogVideoX backbone contains 30 Transformer layers, which we group into three segments: the initial 10 layers (initial third), the middle 10 layers (middle third), and the final 10 layers (last third). As illustrated in Fig. 4, inserting LoRA adapters into the middle third yields the best results, achieving both the lowest validation loss and highest downstream accuracy. In comparison, adapting the last third layers performs slightly worse, indicating that midlevel features are particularly important for effective model adaptation. ",
+        "bbox": [
+            89,
+            854,
+            483,
+            900
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "text",
+        "text": "",
+        "bbox": [
+            511,
+            359,
+            905,
+            465
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "text",
+        "text": "Nevertheless, for our proposed model, we choose to apply LoRA to the last third of the transformer layers. As observed in Fig. 4c, this configuration offers approximately a 1.5× faster training speed while incurring only a marginal decrease in validation performance. Thus, it provides a practical trade-off between computational efficiency and performance. ",
+        "bbox": [
+            511,
+            469,
+            905,
+            575
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "text",
+        "text": "Effect of the Discriminative Model. We analyze the impact of the discriminative model on the performance of the reward model. Comparing GT-SVJ and GT-SVJ (no DM) in Tab. 1, we observe that the discriminative model leads to improvements of about 5% in the alignment accuracy. We further illustrate the improvements in Figs. 5a and 5b. Fig. 5a shows that using the discriminative model leads to lower validation losses and higher validation accuracies throughout training the aspect-wise predictor and the relative preferences, respectively, for the reward model. Our findings are consistent with insights from [41], which suggest that discriminative learning transforms generative representations into features better aligned for downstream discrimination tasks. Initializing the reward model with trained discriminative features provides a stronger inductive bias for learning effective reward predictors. ",
+        "bbox": [
+            511,
+            579,
+            905,
+            820
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "text",
+        "text": "Effect of Perturbed Videos as Negative Samples. To better understand the role of perturbed videos as negative samples, we perform an ablation study comparing GT-SVJ trained under two different regimes: (i) using real videos as positives and generated videos as negatives, and (ii) using our proposed perturbed videos as additional negatives alongside real and generated samples. ",
+        "bbox": [
+            511,
+            825,
+            905,
+            900
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "page_number",
+        "text": "7 ",
+        "bbox": [
+            493,
+            924,
+            503,
+            935
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "chart",
+        "img_path": "images/199978c6d43cc7ccf35927b8884bd4c5166a6f6e6051791c356baad4a11d710d.jpg",
+        "content": "| Training Steps | No Discriminative Model | With Discriminative Model |\n| -------------- | ------------------------ | -------------------------- |\n| 1K             | 0.076                    | 0.076                      |\n| 2K             | 0.064                    | 0.063                      |\n| 3K             | 0.060                    | 0.059                      |\n| 4K             | 0.059                    | 0.058                      |\n| 5K             | 0.058                    | 0.058                      |\n| 6K             | 0.058                    | 0.058                      |\n| 7K             | 0.057                    | 0.057                      |\n| 8K             | 0.056                    | 0.055                      |",
+        "chart_caption": [],
+        "chart_footnote": [],
+        "sub_type": "line",
+        "bbox": [
+            133,
+            89,
+            442,
+            222
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "chart",
+        "img_path": "images/be991aa1c00a19f38e7b61acf95f32a2f2a1e49625c107684a8ace476c30cd4b.jpg",
+        "content": "| Training Steps | No Discriminative Model | With Discriminative Model |\n| -------------- | ------------------------ | -------------------------- |\n| 0              | 0.68                     | 0.68                       |\n| 1K             | 0.69                     | 0.71                       |\n| 2K             | 0.70                     | 0.73                       |\n| 3K             | 0.71                     | 0.74                       |\n| 4K             | 0.72                     | 0.74                       |",
+        "chart_caption": [
+            "(a) Validation losses for aspect-wise predictor training. ",
+            "(b) Validation accuracies for relative preference training. ",
+            "Figure 5. Effect of the discriminative model. Initializing the reward model with the trained discriminative model leads to lower validation losses and higher validation accuracies throughout training. "
+        ],
+        "chart_footnote": [],
+        "sub_type": "line",
+        "bbox": [
+            133,
+            239,
+            442,
+            372
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "text",
+        "text": "",
+        "bbox": [
+            89,
+            487,
+            482,
+            517
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "text",
+        "text": "As shown in Fig. 6, our discriminative model trained solely on real and generated videos quickly converges to trivial solutions. The losses in these settings rapidly approach the soft lower bound imposed by the regularization constant (Fig. 6b), indicating that the model saturates early and fails to capture meaningful discriminative cues. This is also reflected in the average gradient norm, which initially spikes but then rapidly diminishes to near-zero values, suggesting a cessation of effective learning. ",
+        "bbox": [
+            89,
+            518,
+            482,
+            655
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "text",
+        "text": "In contrast, the introduction of perturbed videos as negatives substantially improves the learning dynamics. The gradient norms remain higher and more stable over training, implying that the model continues to refine its energy landscape. Further, the loss curve for the syntheticaugmented model decreases more gradually, demonstrating that the model benefits from a more challenging and informative contrastive objective. These results collectively indicate that synthetic perturbations enhance the model’s ability to learn fine-grained spatiotemporal features. ",
+        "bbox": [
+            89,
+            657,
+            482,
+            808
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "text",
+        "text": "Effect of Variable Video Lengths in Training. As shown in Tab. 1, GT-SVJ (which has $p = 0 . 2 5 )$ achieves 1 − 15% better alignment accuracy compared to GT-SVJ (p = 0), which is trained only with uniform-length video clips. Since GT-SVJ $( p = 0 )$ never observes very different-length (e.g., 2-second) clips during training, it fails to generalize to the diverse temporal distributions in video preferences. ",
+        "bbox": [
+            89,
+            810,
+            482,
+            901
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "chart",
+        "img_path": "images/7c972ff59765e32b72cf35493bf7f22ca4e04063990fa423539e4316211134af.jpg",
+        "content": "| Training Steps | No Perturbed Videos | With Perturbed Videos |\n| -------------- | ------------------- | --------------------- |\n| 0              | 0                   | 0                     |\n| 1K             | 12000               | 3000                  |\n| 2K             | 8000                | 16000                 |\n| 3K             | 6000                | 20000                 |\n| 4K             | 6000                | 14000                 |\n| 5K             | 4000                | 9000                  |\n| 6K             | 0                   | 12000                 |\n| 7K             | 2000                | 14000                 |\n| 8K             | 4000                | 16000                 |\n| 9K             | 0                   | 12000                 |",
+        "chart_caption": [
+            "(a) Average gradient norm during training for different data regimes. "
+        ],
+        "chart_footnote": [],
+        "sub_type": "line",
+        "bbox": [
+            555,
+            90,
+            864,
+            224
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "chart",
+        "img_path": "images/34d46c3f007b0448521ab5654506323112446d7dd34076e5a3592c808da21bfa.jpg",
+        "content": "| Training Steps | No Perturbed Videos | With Perturbed Videos |\n| -------------- | ------------------- | --------------------- |\n| 1K             | -1.5                | 0.0                   |\n| 2K             | -1.8                | -0.5                  |\n| 3K             | -2.0                | -0.8                  |\n| 4K             | -2.2                | -1.0                  |\n| 5K             | -2.5                | -1.2                  |\n| 6K             | -2.3                | -0.9                  |\n| 7K             | -2.1                | -0.7                  |\n| 8K             | -2.4                | -0.5                  |",
+        "chart_caption": [
+            "(b) Training loss curves under different data regimes. ",
+            "Figure 6. Effect of perturbed videos as negative samples. Our discriminative model, when trained only on real and generated videos, exhibits early saturation and vanishing gradients. In contrast, when perturbed videos are augmented as negative samples in training, the model maintains informative gradients and achieves smoother convergence. "
+        ],
+        "chart_footnote": [],
+        "sub_type": "line",
+        "bbox": [
+            555,
+            243,
+            864,
+            380
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "text",
+        "text": "",
+        "bbox": [
+            513,
+            527,
+            849,
+            542
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "text",
+        "text": "6. Conclusion ",
+        "text_level": 1,
+        "bbox": [
+            513,
+            569,
+            633,
+            584
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "text",
+        "text": "We have presented GT-SVJ, a data-efficient, self-supervised reward modeling framework that matches and surpasses alignment accuracy with human preferences compared to state-of-the-art VLM-based baselines on diverse benchmark datasets for video preference. GT-SVJ derives its performance primarily from our proposed discriminative model, which is trained to understand fine-grained spatial distortions and motion artifacts, and is then utilized to train our reward model. We further demonstrate the benefits of including our proposed method for crafting negative samples for the discriminative model through controlled perturbations of real videos, which improves gradient stability, prevents early convergence, and yields more reliable optimization behavior. However, unlike VLM-based evaluators, GT-SVJ does not inherently provide a conversational interface, which remains a limitation for interaction-heavy evaluation scenarios. We also aim to extend this framework to multimodal reward alignment settings and explore the impacts of incorporating prompts for video generation in the discriminative and reward models. ",
+        "bbox": [
+            511,
+            598,
+            906,
+            900
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "page_number",
+        "text": "8 ",
+        "bbox": [
+            493,
+            924,
+            503,
+            935
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "text",
+        "text": "7. Acknowledgment ",
+        "text_level": 1,
+        "bbox": [
+            91,
+            89,
+            261,
+            107
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "text",
+        "text": "This research used both Delta (NSF award OAC 2005572) and DeltaAI (NSF award OAC 2320345) advanced computing systems, and computing resources provided by Illinois Computes and NAIRR Pilot NAIRR250157. ",
+        "bbox": [
+            89,
+            114,
+            483,
+            176
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "text",
+        "text": "References ",
+        "text_level": 1,
+        "bbox": [
+            91,
+            190,
+            187,
+            205
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "list",
+        "sub_type": "ref_text",
+        "list_items": [
+            "[1] Michal Balcerak, Tamaz Amiranashvili, Antonio Terpin, Suprosanna Shit, Lea Bogensperger, Sebastian Kaltenbach, Petros Koumoutsakos, and Bjoern Menze. Energy matching: Unifying flow matching and energy-based models for generative modeling, 2025. 3 ",
+            "[2] Ralph Allan Bradley and Milton E. Terry. Rank analysis of incomplete block designs: I. the method of paired comparisons. Biometrika, 39(3/4):324–345, 1952. 3 ",
+            "[3] CapCut. Dreamina. https://dreamina.capcut. com/ai-tool/home, 2024. AI-tool for image and video generation. 1 ",
+            "[4] Haoxin Chen, Zangwei Zheng, Xiangyu Peng, Hang Chen, Jiahui Huang, et al. Videocrafter2: Overcoming data limitations for high-quality video diffusion models. arXiv preprint arXiv:2401.09047, 2024. 6 ",
+            "[5] Paul Christiano, Jan Leike, Tom B. Brown, Miljan Martic, Shane Legg, and Dario Amodei. Deep reinforcement learning from human preferences, 2023. 3 ",
+            "[6] Anna Dawid and Yann LeCun. Introduction to latent variable energy-based models: a path toward autonomous machine intelligence. Journal of Statistical Mechanics: Theory and Experiment, 2024(10):104011, 2024. 3 ",
+            "[7] Google DeepMind. Veo 3. https : / / aistudio . google.com/models/veo- 3, 2025. Text-to-video model generating 4–8 second clips with native audio. 1 ",
+            "[8] Daniel Deutsch, George Foster, and Markus Freitag. Ties matter: Meta-evaluating modern metrics with pairwise accuracy and tie calibration, 2023. 6 ",
+            "[9] Hanze Dong, Wei Xiong, Bo Pang, Haoxiang Wang, Han Zhao, Yingbo Zhou, Nan Jiang, Doyen Sahoo, Caiming Xiong, and Tong Zhang. Rlhf workflow: From reward modeling to online rlhf, 2024. 3 ",
+            "[10] Yilun Du and Igor Mordatch. Implicit generation and generalization in energy-based models, 2020. 3 ",
+            "[11] Xuan He, Dongfu Jiang, Ge Zhang, Max Ku, Achint Soni, Sherman Siu, Haonan Chen, Abhranil Chandra, Ziyan Jiang, Aaran Arulraj, Kai Wang, Quy Duc Do, Yuansheng Ni, Bohan Lyu, Yaswanth Narsupalli, Rongqi Fan, Zhiheng Lyu, Yuchen Lin, and Wenhu Chen. Videoscore: Building automatic metrics to simulate fine-grained human feedback for video generation, 2024. 1, 3, 6 ",
+            "[12] Edward J. Hu, Yelong Shen, Phillip Wallis, Zeyuan Allen-Zhu, Yuanzhi Li, Shean Wang, Lu Wang, and Weizhu Chen. Lora: Low-rank adaptation of large language models, 2021. 4 ",
+            "[13] Ziqi Huang, Yinan He, Jiashuo Yu, Fan Zhang, Chenyang Si, Yuming Jiang, Yuanhan Zhang, Tianxing Wu, Qingyang Jin, Nattapol Chanpaisit, Yaohui Wang, Xinyuan Chen, Limin "
+        ],
+        "bbox": [
+            89,
+            212,
+            486,
+            902
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "list",
+        "sub_type": "ref_text",
+        "list_items": [
+            "Wang, Dahua Lin, Yu Qiao, and Ziwei Liu. Vbench: Comprehensive benchmark suite for video generative models, 2023. 2 ",
+            "[14] Adobe Inc. Firefly. https://www.adobe.com/ products/firefly.html, 2024. Generative AI tool for image/video/audio creative workflows. 1 ",
+            "[15] Dongfu Jiang, Max Ku, Tianle Li, Yuansheng Ni, Shizhuo Sun, Rongqi Fan, and Wenhu Chen. Genai arena: An open evaluation platform for generative models. arXiv preprint arXiv:2406.04485, 2024. 2, 6, 7 ",
+            "[16] Kuaishou. Kling ai. https://klingai.kuaishou. com/, 2024. Video-generation model up to 1080p at 30fps. 1 ",
+            "[17] Luma Labs. Dream machine. https://lumalabs.ai/ dream-machine, 2024. AI model for generating highquality videos from text/images. 1, 2, 6 ",
+            "[18] Haitao Li, Qian Dong, Junjie Chen, Huixue Su, Yujia Zhou, Qingyao Ai, Ziyi Ye, and Yiqun Liu. Llms-as-judges: A comprehensive survey on llm-based evaluation methods, 2024. 2 ",
+            "[19] Junlong Li, Shichao Sun, Weizhe Yuan, Run-Ze Fan, Hai Zhao, and Pengfei Liu. Generative judge for evaluating alignment, 2023. 2 ",
+            "[20] Zhanhao Liang, Yuhui Yuan, Shuyang Gu, Bohan Chen, Tiankai Hang, Mingxi Cheng, Ji Li, and Liang Zheng. Aesthetic post-training diffusion models from generic preferences with step-by-step preference optimization, 2025. 3 ",
+            "[21] Jinsong Liu, Dongdong Ge, and Ruihao Zhu. Reward learning from preference with ties, 2024. 3 ",
+            "[22] Jiahe Liu, Youran Qu, Qi Yan, Xiaohui Zeng, Lele Wang, and Renjie Liao. Fréchet video motion distance: A metric for evaluating motion consistency in videos, 2024. 2 ",
+            "[23] Jie Liu, Gongye Liu, Jiajun Liang, Ziyang Yuan, Xiaokun Liu, Mingwu Zheng, Xiele Wu, Qiulin Wang, Menghan Xia, Xintao Wang, Xiaohong Liu, Fei Yang, Pengfei Wan, Di Zhang, Kun Gai, Yujiu Yang, and Wanli Ouyang. Improving video generation with human feedback, 2025. 1, 2, 3, 5, 6, 7 ",
+            "[24] Ming Liu and Wensheng Zhang. Is your video language model a reliable judge?, 2025. 2 ",
+            "[25] Runway ML. Gen-3. https://runwayml.com/, 2024. Next-generation foundation model for multimodal video/image generation. 1, 2, 6 ",
+            "[26] OpenAI. Sora 2. https://openai.com/index/ sora-2/, 2025. Video and audio generation model with synchronized sound and advanced world-simulation. 1, 2 ",
+            "[27] Long Ouyang, Jeff Wu, Xu Jiang, Diogo Almeida, Carroll L. Wainwright, Pamela Mishkin, Chong Zhang, Sandhini Agarwal, Katarina Slama, Alex Ray, John Schulman, Jacob Hilton, Fraser Kelton, Luke Miller, Maddie Simens, Amanda Askell, Peter Welinder, Paul Christiano, Jan Leike, and Ryan Lowe. Training language models to follow instructions with human feedback, 2022. 1 ",
+            "[28] Bohao Peng, Jian Wang, Yuechen Zhang, Wenbo Li, Ming-Chang Yang, and Jiaya Jia. Controlnext: Powerful and efficient control for image and video generation. arXiv preprint arXiv:2408.06070, 2024. 4 "
+        ],
+        "bbox": [
+            511,
+            88,
+            908,
+            901
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "page_number",
+        "text": "9 ",
+        "bbox": [
+            493,
+            924,
+            504,
+            936
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "list",
+        "sub_type": "ref_text",
+        "list_items": [
+            "[29] PixVerse. Pixverse. https://pixverse.ai/, 2024. AI video creation tool from text/photos. 1 ",
+            "[30] Rafael Rafailov, Archit Sharma, Eric Mitchell, Stefano Ermon, Christopher D. Manning, and Chelsea Finn. Direct preference optimization: Your language model is secretly a reward model, 2024. 3 ",
+            "[31] Shivanshu Shekhar and Tong Zhang. Rocm: Rlhf on consistency models, 2025. 1 ",
+            "[32] Shivanshu Shekhar, Shreyas Singh, and Tong Zhang. Seedpo: Self entropy enhanced direct preference optimization, 2025. 1, 3 ",
+            "[33] Yang Song and Diederik P. Kingma. How to train your energy-based models, 2021. 3 ",
+            "[34] Thomas Unterthiner, Sjoerd van Steenkiste, Karol Kurach, Raphael Marinier, Marcin Michalski, and Sylvain Gelly. Towards accurate generative models of video: A new metric & challenges, 2019. 2 ",
+            "[35] Bram Wallace, Meihua Dang, Rafael Rafailov, Linqi Zhou, Aaron Lou, Senthil Purushwalkam, Stefano Ermon, Caiming Xiong, Shafiq Joty, and Nikhil Naik. Diffusion model alignment using direct preference optimization, 2023. 1, 3 ",
+            "[36] Yibin Wang, Zhiyu Tan, Junyan Wang, Xiaomeng Yang, Cheng Jin, and Hao Li. Lift: Leveraging human feedback for text-to-video model alignment, 2025. 3 ",
+            "[37] Max Welling and Yee Whye Teh. Bayesian learning via stochastic gradient langevin dynamics. In Proceedings of the 28th International Conference on International Conference on Machine Learning, page 681–688, Madison, WI, USA, 2011. Omnipress. 3 ",
+            "[38] Jiazheng Xu, Yu Huang, Jiale Cheng, Yuanming Yang, Jiajun Xu, Yuan Wang, Wenbo Duan, Shen Yang, Qunlin Jin, Shurun Li, Jiayan Teng, Zhuoyi Yang, Wendi Zheng, Xiao Liu, Ming Ding, Xiaohan Zhang, Xiaotao Gu, Shiyu Huang, Minlie Huang, Jie Tang, and Yuxiao Dong. Visionreward: Fine-grained multi-dimensional human preference learning for image and video generation, 2025. 1, 2, 3, 6, 7 ",
+            "[39] Kai Yang, Jian Tao, Jiafei Lyu, Chunjiang Ge, Jiaxin Chen, Qimai Li, Weihan Shen, Xiaolong Zhu, and Xiu Li. Using human feedback to fine-tune diffusion models without any reward model, 2024. 1, 3 ",
+            "[40] Zhuoyi Yang, Jiayan Teng, Wendi Zheng, Ming Ding, Shiyu Huang, Jiazheng Xu, Yuanming Yang, Wenyi Hong, Xiaohan Zhang, Guanyu Feng, Da Yin, Yuxuan Zhang, Weihan Wang, Yean Cheng, Bin Xu, Xiaotao Gu, Yuxiao Dong, and Jie Tang. Cogvideox: Text-to-video diffusion models with an expert transformer, 2025. 2, 4, 5, 6 ",
+            "[41] Sihyun Yu, Sangkyung Kwak, Huiwon Jang, Jongheon Jeong, Jonathan Huang, Jinwoo Shin, and Saining Xie. Representation alignment for generation: Training diffusion transformers is easier than you think, 2025. 7 ",
+            "[42] Zangwei Zheng, Haoxin Chen, Jiahui Huang, Hang Chen, Yifan He, Xiangyu Peng, et al. Open-sora: Democratizing efficient video production for all. arXiv preprint arXiv:2412.20404, 2024. 5, 6 "
+        ],
+        "bbox": [
+            86,
+            88,
+            486,
+            857
+        ],
+        "page_idx": 9
+    },
+    {
+        "type": "page_number",
+        "text": "10 ",
+        "bbox": [
+            490,
+            924,
+            508,
+            936
+        ],
+        "page_idx": 9
+    },
+    {
+        "type": "text",
+        "text": "GT-SVJ: Generative-Transformer-Based Self-Supervised Video Judge For Efficient Video Reward Modeling ",
+        "text_level": 1,
+        "bbox": [
+            125,
+            85,
+            870,
+            130
+        ],
+        "page_idx": 10
+    },
+    {
+        "type": "text",
+        "text": "Supplementary Material ",
+        "bbox": [
+            380,
+            141,
+            614,
+            162
+        ],
+        "page_idx": 10
+    },
+    {
+        "type": "table",
+        "img_path": "images/00449b7b916da3ed0ebdde7f8b0b5cd3707f4f30a76990960c30d41736f2a12f.jpg",
+        "table_caption": [
+            "Table A.1. Sampling probabilities assigned to each perturbation type based on gradient-based difficulty analysis. Note that a fixed probability of 0.3 is reserved for contrasting real videos with model-generated videos, and hence the probabilities of perturbations for real videos sum to 0.7. "
+        ],
+        "table_footnote": [],
+        "table_body": "<table><tr><td rowspan=\"2\">Perturbation Type</td><td colspan=\"2\">Sampling Probability</td></tr><tr><td>Real Video</td><td>Generated Video</td></tr><tr><td>Temporal Slice Swap</td><td>0.04</td><td>0.05</td></tr><tr><td>Noisy Segments</td><td>0.10</td><td>0.15</td></tr><tr><td>Frame Shuffle</td><td>0.18</td><td>0.25</td></tr><tr><td>Frame Drop</td><td>0.18</td><td>0.25</td></tr><tr><td>Patch Swap</td><td>0.20</td><td>0.30</td></tr></table>",
+        "bbox": [
+            96,
+            176,
+            478,
+            296
+        ],
+        "page_idx": 10
+    },
+    {
+        "type": "text",
+        "text": "A. Perturbing Real Videos ",
+        "text_level": 1,
+        "bbox": [
+            89,
+            402,
+            316,
+            419
+        ],
+        "page_idx": 10
+    },
+    {
+        "type": "text",
+        "text": "To explicitly train our reward model to recognize subtle temporal and spatial inconsistencies in videos, we introduce a diverse set of perturbations that simulate realistic failure modes observed in video generative models. These perturbations are designed to degrade semantic coherence, temporal smoothness or visual fidelity while preserving overall structure – thereby creating hard negative samples that encourage the model to learn fine-grained consistency cues rather than relying on trivial artifacts. ",
+        "bbox": [
+            89,
+            428,
+            483,
+            537
+        ],
+        "page_idx": 10
+    },
+    {
+        "type": "text",
+        "text": "For training, each real video is paired with a randomly chosen perturbed counterpart produced through one of five operators: frame shuffle, frame drop, noisy segments, patch swap, or temporal slice swap. We show representative examples of these perturbations in the supplementary video supp\\_video\\_perturbations.mp4. ",
+        "bbox": [
+            89,
+            539,
+            483,
+            623
+        ],
+        "page_idx": 10
+    },
+    {
+        "type": "text",
+        "text": "A.1. Adaptive Perturbation Sampling ",
+        "text_level": 1,
+        "bbox": [
+            89,
+            632,
+            382,
+            648
+        ],
+        "page_idx": 10
+    },
+    {
+        "type": "text",
+        "text": "At each training step, rather than uniformly sampling negatives from all five types of perturbations to augment our training dataset, we assign a fixed probability of selection based on a perturbation’s relative difficulty, defined by how easily the discriminative model can learn to distinguish the perturbed sample in isolation. Difficulty is quantified through the magnitude of the gradient of the loss with respect to the model parameters when trained on a single perturbation type. Perturbations that induce lower initial gradients (i.e., are harder to detect) are sampled with higher probability to ensure sufficient exposure during training, while easier perturbations receive lower weights to avoid gradient domination early on (See Fig. A.1). ",
+        "bbox": [
+            89,
+            655,
+            482,
+            819
+        ],
+        "page_idx": 10
+    },
+    {
+        "type": "text",
+        "text": "Formally, let $\\mathcal { L } _ { p }$ denote the loss corresponding to perturbation type p, and let $\\nabla _ { \\boldsymbol { \\theta } } \\mathcal { L } _ { p }$ be the gradient with respect to model parameters θ. Then we obtain the sampling probability P for perturbation p based on ",
+        "bbox": [
+            89,
+            821,
+            482,
+            876
+        ],
+        "page_idx": 10
+    },
+    {
+        "type": "equation",
+        "text": "$$\n\\mathcal {P} (p) \\propto \\frac {1}{| \\nabla_ {\\theta} \\mathcal {L} _ {p} |}. \\tag {A.1}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            228,
+            876,
+            482,
+            905
+        ],
+        "page_idx": 10
+    },
+    {
+        "type": "chart",
+        "img_path": "images/03c2262a68bd626a771fd137afad21cb64be8a39eefecfca4e7d8cb36c9cbdf4.jpg",
+        "content": "| Training Steps | Frame Shuffle | Frame Drop | Noisy Segments | Patch Swap | Temporal Slice Swap | GT-SVJ (Ours) |\n| -------------- | ------------- | ---------- | -------------- | ---------- | ------------------- | ------------- |\n| 0              | 0             | 0          | 0              | 0          | 0                   | 0             |\n| 2K             | ~15000        | ~10000     | ~12000         | ~8000      | ~6000               | ~10000        |\n| 4K             | ~10000        | ~5000      | ~8000          | ~6000      | ~4000               | ~8000         |\n| 6K             | ~8000         | ~3000      | ~6000          | ~5000      | ~3000               | ~6000         |\n| 8K             | ~7000         | ~2000      | ~5000          | ~4000      | ~2000               | ~5000         |\n| 10K            | ~6000         | ~1500      | ~4000          | ~3500      | ~1500               | ~4500         |\n| 12K            | ~5000         | ~1000      | ~3500          | ~3000      | ~1000               | ~4000         |\n| 14K            | ~4500         | ~800       | ~3000          | ~2500      | ~800                | ~3500         |\n| 16K            | ~4000         | ~600       | ~2500          | ~2000      | ~600                | ~3000         |\n| 18K            | ~3500         | ~500       | ~2000          | ~1500      | ~500                | ~2500         |\n| 20K            | ~3000         | ~400       | ~1500          | ~1000      | ~400                | ~2000         |",
+        "chart_caption": [
+            "(a) Average gradient norm during training from using each perturbation type individually. "
+        ],
+        "chart_footnote": [],
+        "sub_type": "line",
+        "bbox": [
+            517,
+            179,
+            903,
+            345
+        ],
+        "page_idx": 10
+    },
+    {
+        "type": "chart",
+        "img_path": "images/1645ac14ee2490334b61ff68085e3d553215272899eb0c7dc573516249626deb.jpg",
+        "content": "| Training Steps | Frame Shuffle | Frame Drop | Noisy Segments | Patch Swap | Temporal Slice Swap | GT-SVJ (Ours) |\n| -------------- | ------------- | ---------- | -------------- | ---------- | ------------------- | ------------- |\n| 2K             | ~0.0          | ~-1.0      | ~0.0           | ~0.0       | ~0.0                | ~0.0          |\n| 4K             | ~-1.0         | ~-2.0      | ~-1.0          | ~-1.0      | ~-1.0               | ~-1.0         |\n| 6K             | ~-1.5         | ~-2.5      | ~-1.5          | ~-1.5      | ~-1.5               | ~-1.5         |\n| 8K             | ~-2.0         | ~-3.0      | ~-2.0          | ~-2.0      | ~-2.0               | ~-2.0         |\n| 10K            | ~-2.5         | ~-3.5      | ~-2.5          | ~-2.5      | ~-2.5               | ~-2.5         |\n| 12K            | ~-3.0         | ~-4.0      | ~-3.0          | ~-3.0      | ~-3.0               | ~-3.0         |\n| 14K            | ~-3.5         | ~-4.5      | ~-3.5          | ~-3.5      | ~-3.5               | ~-3.5         |\n| 16K            | ~-4.0         | ~-5.0      | ~-4.0          | ~-4.0      | ~-4.0               | ~-4.0         |\n| 18K            | ~-4.5         | ~-5.5      | ~-4.5          | ~-4.5      | ~-4.5               | ~-4.5         |",
+        "chart_caption": [
+            "(b) Training loss curves from using each perturbation type individually. ",
+            "Figure A.1. Effect of using each perturbation type individually to generate negative samples. We show the ease or difficulty of training the discriminative model when using each perturbation type individually. "
+        ],
+        "chart_footnote": [],
+        "sub_type": "line",
+        "bbox": [
+            517,
+            376,
+            905,
+            547
+        ],
+        "page_idx": 10
+    },
+    {
+        "type": "text",
+        "text": "In practice, we track the gradients for each perturbation type across independent training runs and quantify its effective difficulty based on the rate at which its gradient norm decays. Specifically, we monitor $\\lvert \\nabla _ { \\theta } \\mathcal { L } _ { p } \\left( t \\right)$ | over optimization steps and apply early stopping when the gradient norm falls below a small threshold ϵ = 1500, indicating saturation. The decay time ",
+        "bbox": [
+            511,
+            659,
+            905,
+            742
+        ],
+        "page_idx": 10
+    },
+    {
+        "type": "equation",
+        "text": "$$\n\\tau_ {p} = \\min \\{t: | \\nabla_ {\\theta} \\mathcal {L} _ {p} (t) | \\leq \\epsilon \\} \\tag {A.2}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            614,
+            751,
+            903,
+            767
+        ],
+        "page_idx": 10
+    },
+    {
+        "type": "text",
+        "text": "serves as a proxy for perturbation difficulty, where smaller values correspond to easier perturbations that are rapidly learned in isolation. ",
+        "bbox": [
+            511,
+            775,
+            903,
+            815
+        ],
+        "page_idx": 10
+    },
+    {
+        "type": "text",
+        "text": "We employ an inverse decay-based heuristic to determine perturbation sampling probabilities, assigning higher weights to distortions whose gradients decay more slowly over training. This design choice prevents harder-to-learn perturbations from being under-represented and ensures sustained exposure to challenging negative samples. After normalization, the resulting probabilities are fixed for the remainder of training to enable stability and reproducibility across runs. We report the empirically calibrated sampling distributions used for all experiments in Tab. A.1. ",
+        "bbox": [
+            511,
+            816,
+            905,
+            900
+        ],
+        "page_idx": 10
+    },
+    {
+        "type": "page_number",
+        "text": "1 ",
+        "bbox": [
+            493,
+            925,
+            503,
+            935
+        ],
+        "page_idx": 10
+    },
+    {
+        "type": "chart",
+        "img_path": "images/f7c5fa005a719e5f05fbf3a7b4fa0b2256bf6c589603aa7851e7083b73e8f952.jpg",
+        "content": "| Training Steps | No DM | With DM And No Perturbed Videos | With DM And Perturbed Videos (Ours) |\n| -------------- | ----- | -------------------------------- | ------------------------------------ |\n| 0              | 0.68  | 0.68                             | 0.68                                 |\n| 1K             | 0.69  | 0.71                             | 0.71                                 |\n| 2K             | 0.70  | 0.72                             | 0.73                                 |\n| 3K             | 0.71  | 0.72                             | 0.74                                 |\n| 4K             | 0.72  | 0.73                             | 0.74                                 |",
+        "chart_caption": [
+            "Figure A.2. Effect of using all types of perturbed videos in training the discriminative model (DM). We observe significantly faster convergence to 2-3% better validation alignment accuracies to human preferences. "
+        ],
+        "chart_footnote": [],
+        "sub_type": "line",
+        "bbox": [
+            93,
+            89,
+            480,
+            256
+        ],
+        "page_idx": 11
+    },
+    {
+        "type": "text",
+        "text": "",
+        "bbox": [
+            89,
+            349,
+            482,
+            392
+        ],
+        "page_idx": 11
+    },
+    {
+        "type": "text",
+        "text": "Although all perturbation types exhibit comparable peak gradient magnitudes during early training, we observe substantial variation in their gradient decay dynamics. Perturbations whose gradients vanish rapidly contribute limited long-term learning signals and are consequently down-weighted. In contrast, perturbations that maintain persistent gradients are prioritized, enforcing continuation of optimization and improved discriminative robustness. ",
+        "bbox": [
+            89,
+            392,
+            483,
+            489
+        ],
+        "page_idx": 11
+    },
+    {
+        "type": "text",
+        "text": "A.2. Impact on Learning ",
+        "text_level": 1,
+        "bbox": [
+            89,
+            497,
+            285,
+            513
+        ],
+        "page_idx": 11
+    },
+    {
+        "type": "text",
+        "text": "These perturbations collectively encourage the model to develop sensitivity to both spatial realism and temporal coherence. As shown in Fig. A.1, perturbation types that produce visually plausible yet semantically inconsistent videos lead to smoother loss curves but smaller gradients, justifying their greater difficulty and higher sampling frequency for data augmentation. This design effectively acts as a curriculum, guiding the model from easy-todetect artifacts toward more nuanced inconsistencies. ",
+        "bbox": [
+            89,
+            518,
+            483,
+            628
+        ],
+        "page_idx": 11
+    },
+    {
+        "type": "text",
+        "text": "We also show the collective benefits of using all the perturbations in training our discriminative model in Fig. A.2. Adding perturbed videos to training consistently leads to faster convergence to 2-3% better alignment accuracies with human preferences during inference. ",
+        "bbox": [
+            89,
+            630,
+            483,
+            699
+        ],
+        "page_idx": 11
+    },
+    {
+        "type": "text",
+        "text": "B. Qualitative Results ",
+        "text_level": 1,
+        "bbox": [
+            89,
+            713,
+            277,
+            729
+        ],
+        "page_idx": 11
+    },
+    {
+        "type": "text",
+        "text": "We show qualitative results of GT-SVJ and the different baselines on video preference in supp\\_video\\_results.mp4. We show the performance on human preference alignment for each method on five randomly selected video pairs from each of the three benchmark datasets, GenAI-Bench [15], MonteBench [38], and VideoReward-Bench [23]. ",
+        "bbox": [
+            89,
+            738,
+            483,
+            821
+        ],
+        "page_idx": 11
+    },
+    {
+        "type": "page_number",
+        "text": "2 ",
+        "bbox": [
+            493,
+            924,
+            504,
+            935
+        ],
+        "page_idx": 11
+    }
+]
