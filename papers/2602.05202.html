@@ -39,7 +39,8 @@
     </div>
     <div class="feature-body">
       <p class="lead dropcap">先说结论。它和通用视觉自监督的关系在于：自监督视频 reward model 对视频预训练和时序表征有迁移启发，但主任务偏生成评价。 用生成模型本身学习时间结构敏感的 reward/quality 表征，降低对 VLM 评价器和大量人类偏好标注的依赖。</p>
-      <aside class="marginalia"><b>图像状态</b> 这篇暂未抽到足够稳定的 pipeline / motivation 图，因此正文以方法和实验解读为主。</aside>
+      <figure class="full-fig"><img src="../assets/mineru/2602.05202/images/84c4a9d3c8f71f62ca285d0d5285e6312147e2d4c11b4e944edad558af107f8f.jpg" alt="Figureure 2 · Overview of the proposed GT-SVJ framework"><figcaption><b>Figureure 2 · Overview of the proposed GT-SVJ framework</b><span class="fig-en">Figure 2. Overview of the proposed GT-SVJ framework. The framework consists of two stages: (top) Training a discriminative model, where the video generative model (CogVideoX) is adapted using a contrastive energy-based objective with real, generated, and perturbed videos, and (middle and bottom) Training a reward model, where the discriminative model (DM) is aligned with human ratings through aspect-wise prediction (AWP) via regression (middle) followed by relative preference modeling (bottom).</span><span class="fig-zh">这张图概括 GT-SVJ 的整体方法流程。阅读时先看模块之间传递的训练信号，再看作者如何把目标拆成可优化的子问题。</span></figcaption></figure>
+<figure class="full-fig"><img src="../assets/mineru/2602.05202/images/26f7b717fd92a8b28de368b7907df60cb56653aaa98b9bff8315c37d947ba56c.jpg" alt="Figureure 1 · GT-SVJ in action"><figcaption><b>Figureure 1 · GT-SVJ in action</b><span class="fig-en">Figure 1. GT-SVJ in action. Given two videos, our self-supervised model evaluates and ranks them on preferences, outperforming baselines on human preference alignment.</span><span class="fig-zh">这张图来自论文 PDF 的结构化抽取。当前用于辅助理解 GT-SVJ 的方法或实验，请结合正文精读段落一起看。</span></figcaption></figure>
       
       <h2>核心问题</h2>
       <p>它和通用视觉自监督的关系在于：自监督视频 reward model 对视频预训练和时序表征有迁移启发，但主任务偏生成评价。</p>
