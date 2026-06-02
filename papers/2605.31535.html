@@ -19,39 +19,39 @@
   </header>
   <nav class="site-nav" aria-label="主导航">
     <a class="nav-link" href="../index.html">头版</a>
-<a class="nav-link" href="../issues/2026-06-01.html">今日速递</a>
+<a class="nav-link" href="../issues/2026-06-02.html">今日速递</a>
 <a class="nav-link" href="../pages/catalog.html">论文目录</a>
 <a class="nav-link" href="../pages/timeline.html">时间线</a>
   </nav>
   <main><article class="paper-detail">
   <div class="paper-main">
     <div class="kicker">project · P0 · 2026-06-01</div>
-    <h1 class="paper-headline">RayDer：视频自监督和几何一致性是通用视觉表征的重要来源，这篇给出可扩展训练范式</h1>
-    <p class="dek">把自监督 NVS 从多网络系统变成单模型 scaling 问题，证明真实视频可作为大规模几何监督来源。</p>
-    <p class="byline"><strong>RayDer: Scalable Self-Supervised Novel View Synthesis from Real-World Video</strong>　Ulrich Prestel, Stefan Andreas Baumann, Nick Stracke, Björn Ommer；机构信息 arXiv 元数据未列出。　arXiv + project　<a href="https://arxiv.org/abs/2605.31535">原文链接</a></p>
+    <h1 class="paper-headline">RayDer：它和通用视觉自监督的关系在于：把真实视频动态因素当成可吸收扰动，用单一 transformer 扩展自监督 NVS，并报告清晰 scaling 行为</h1>
+    <p class="dek">高相关；详见方法、贡献和实验边界。</p>
+    <p class="byline"><strong>RayDer: Scalable Self-Supervised Novel View Synthesis from Real-World Video</strong>　arXiv + project　<a href="https://arxiv.org/abs/2605.31535">原文链接</a></p>
     <div class="paper-facts">
       <span><b>编号</b>2605.31535</span>
       <span><b>优先级</b>P0</span>
       <span><b>类别</b>project</span>
       <span><b>会议</b>arXiv + project</span>
-      <span><b>方法</b>统一 feed-forward transformer 同时做相机估计、场景重建和渲染；最小动态状态吸收时变内容，静态 NVS 仍是目标。</span>
+      <span><b>方法</b>把真实视频动态因素当成可吸收扰动，用单一 transformer 扩展自监督 NVS，并报告清晰 scaling 行为</span>
       <span><b>来源</b>arXiv / OpenReview</span>
     </div>
     <div class="feature-body">
-      <p class="lead dropcap">先说结论。视频自监督和几何一致性是通用视觉表征的重要来源，这篇给出可扩展训练范式。 把自监督 NVS 从多网络系统变成单模型 scaling 问题，证明真实视频可作为大规模几何监督来源。</p>
+      <p class="lead dropcap">先说结论。它和通用视觉自监督的关系在于：把真实视频动态因素当成可吸收扰动，用单一 transformer 扩展自监督 NVS，并报告清晰 scaling 行为。 高相关；详见方法、贡献和实验边界。</p>
       <figure class="full-fig"><img src="../assets/mineru/2605.31535/images/2c62dbb937a248e57a02f2022ec56dd2dafab2508d40a465f4d5308cef1959b1.jpg" alt="(a) Camera Estimation same model (b) Novel View Synthesis Figure 8: Final Architecture Ove"><figcaption><b>(a) Camera Estimation same model (b) Novel View Synthesis Figure 8: Final Architecture Ove</b><span class="fig-en">(a) Camera Estimation same model (b) Novel View Synthesis Figure 8: Final Architecture Overview. RayDer unifies camera estimation (a) and novel view synthesis (b) in a single transformer backbone. Lightweight local intra-frame encoder and decoder layers handle high-resolution processing.</span><span class="fig-zh">这张图概括 RayDer 的整体方法流程。阅读时先看模块之间传递的训练信号，再看作者如何把目标拆成可优化的子问题。</span></figcaption></figure>
 <figure class="full-fig"><img src="../assets/mineru/2605.31535/images/4eb05c73a0659d45182f52187da4591a46d4ca738df70bc149e657134452c004.jpg" alt="Figureure 13 · : Learned Camera Geometry Scales with Data, Model Size, and Compute"><figcaption><b>Figureure 13 · : Learned Camera Geometry Scales with Data, Model Size, and Compute</b><span class="fig-en">Figure 13: Learned Camera Geometry Scales with Data, Model Size, and Compute. We track the four continuous camera pose errors – rotation and translation, each read out both via a probe on the camera tokens (RayZer [28] protocol; top rows) and via cross-scene transfer (XFactor [46] protocol; bottom rows) – as a function of training compute, evaluated zero-shot on DL3DV-10K [40]. Left: all errors decrease consistently with training data scale. Right: all errors decrease with model scale, with insufficient data again imposing a strong ceiling. Notably, there is no significant saturation at scale, indicating that further scaling will likely be beneficial.</span><span class="fig-zh">这张图来自论文 PDF 的结构化抽取。当前用于辅助理解 RayDer 的方法或实验，请结合正文精读段落一起看。</span></figcaption></figure>
       
       <h2>核心问题</h2>
-      <p>视频自监督和几何一致性是通用视觉表征的重要来源，这篇给出可扩展训练范式。</p>
+      <p>它和通用视觉自监督的关系在于：把真实视频动态因素当成可吸收扰动，用单一 transformer 扩展自监督 NVS，并报告清晰 scaling 行为。</p>
       <h2>方法拆解</h2>
-      <p>统一 feed-forward transformer 同时做相机估计、场景重建和渲染；最小动态状态吸收时变内容，静态 NVS 仍是目标。</p>
+      <p>把真实视频动态因素当成可吸收扰动，用单一 transformer 扩展自监督 NVS，并报告清晰 scaling 行为</p>
       <h2>主要贡献</h2>
-      <p>把自监督 NVS 从多网络系统变成单模型 scaling 问题，证明真实视频可作为大规模几何监督来源。</p>
+      <p>高相关；详见方法、贡献和实验边界。</p>
       <h2>实验看点</h2>
-      <p>跨模型尺寸和数据量报告 power-law scaling；多 benchmark 上 zero-shot open-set 表现接近监督方法。</p>
+      <p>实验部分建议重点看两类证据：一是作者是否把方法收益和更强数据、更长训练、更大模型区分开；二是跨模型、跨数据或跨任务迁移是否还能保留同样趋势。</p>
       <h2>局限与读法</h2>
-      <p>仍偏 NVS/几何渲染，不是 ImageNet 式通用分类表征；动态内容被当作 nuisance 而非显式 4D 建模。</p>
+      <p>这篇论文的结论需要结合任务设置、训练数据规模和消融实验一起看；不要只凭单个指标判断它对通用视觉表征的价值。</p>
     
     </div>
   </div>
@@ -61,13 +61,13 @@
     <div class="side-box"><h4>原文</h4><p><a href="https://arxiv.org/abs/2605.31535">https://arxiv.org/abs/2605.31535</a></p></div>
   </aside>
 </article></main>
-  <aside class="conf-float" data-conf-reminder="2026-06-01-main-ddl" aria-label="CCF A/B 主投稿提醒">
+  <aside class="conf-float" data-conf-reminder="2026-06-02-main-ddl" aria-label="CCF A/B 主投稿提醒">
   <button class="conf-close" type="button" aria-label="关闭会议提醒">×</button>
   <details open>
     <summary>CCF A/B 主投稿提醒</summary>
     <div class="conf-list"><a class="conf-item " href="https://github.com/ccfddl/ccf-deadlines/blob/main/conference/AI/aaai.yml">
   <span><b>AAAI 2027</b><em>CCF A · Main paper submission</em></span>
-  <strong>56 天</strong>
+  <strong>55 天</strong>
   <small>2026-07-27 · CCF DDL: abstract 2026-07-20；进入 1 个月窗口后重点提醒。</small>
 </a></div>
   </details>
@@ -80,7 +80,7 @@
   (() => {
     const box = document.querySelector('[data-conf-reminder]');
     if (!box) return;
-    const key = `visualSslConfReminderClosed:${box.dataset.confReminder || '2026-06-01-main-ddl'}`;
+    const key = `visualSslConfReminderClosed:${box.dataset.confReminder || '2026-06-02-main-ddl'}`;
     try {
       if (localStorage.getItem(key) === '1') box.hidden = true;
     } catch (err) {}

@@ -19,39 +19,39 @@
   </header>
   <nav class="site-nav" aria-label="主导航">
     <a class="nav-link" href="../index.html">头版</a>
-<a class="nav-link" href="../issues/2026-06-01.html">今日速递</a>
+<a class="nav-link" href="../issues/2026-06-02.html">今日速递</a>
 <a class="nav-link" href="../pages/catalog.html">论文目录</a>
 <a class="nav-link" href="../pages/timeline.html">时间线</a>
   </nav>
   <main><article class="paper-detail">
   <div class="paper-main">
     <div class="kicker">Visual SSL / representation · P2 · 2026-06-01</div>
-    <h1 class="paper-headline">Fixed-Point Masked Generative Modeling：MIM/MGM 是视觉自监督核心路线之一，这篇对低成本训练和表示稳定性有启发</h1>
-    <p class="dek">让 pretrained MGM 可短暂 fine-tune 成更省参数/显存的 FP-MGM。</p>
-    <p class="byline"><strong>Fixed-Point Masked Generative Modeling</strong>　Andrea Miele, Yiming Qin, Alba Carballo-Castro, Justin Deschenaux, Pascal Frossard；机构信息 arXiv 元数据未列出。　arXiv　<a href="https://arxiv.org/abs/2605.31215">原文链接</a></p>
+    <h1 class="paper-headline">Fixed-Point Masked Generative Modeling：它和通用视觉自监督的关系在于：把 masked generative modeling 的跨步隐藏状态一致性和自适应深度结合，含 ImageNette 图像实验</h1>
+    <p class="dek">中高相关；详见方法、贡献和实验边界。</p>
+    <p class="byline"><strong>Fixed-Point Masked Generative Modeling</strong>　arXiv　<a href="https://arxiv.org/abs/2605.31215">原文链接</a></p>
     <div class="paper-facts">
       <span><b>编号</b>2605.31215</span>
       <span><b>优先级</b>P2</span>
       <span><b>类别</b>Visual SSL / representation</span>
       <span><b>会议</b>arXiv</span>
-      <span><b>方法</b>用 fixed-point solver 替换部分 denoiser，并加入 cross-step consistency loss 与 three-state reuse。</span>
+      <span><b>方法</b>把 masked generative modeling 的跨步隐藏状态一致性和自适应深度结合，含 ImageNette 图像实验</span>
       <span><b>来源</b>arXiv / OpenReview</span>
     </div>
     <div class="feature-body">
-      <p class="lead dropcap">先说结论。MIM/MGM 是视觉自监督核心路线之一，这篇对低成本训练和表示稳定性有启发。 让 pretrained MGM 可短暂 fine-tune 成更省参数/显存的 FP-MGM。</p>
+      <p class="lead dropcap">先说结论。它和通用视觉自监督的关系在于：把 masked generative modeling 的跨步隐藏状态一致性和自适应深度结合，含 ImageNette 图像实验。 中高相关；详见方法、贡献和实验边界。</p>
       <figure class="full-fig"><img src="../assets/mineru/2605.31215/images/23cee05f419b1d16079c0d2874a06906dee8253a6b858d39992010d98eef7ff1.jpg" alt="Figureure 12 · : Checkpoint selection for the ${ \mathcal { L } } _ { \mathrm { C O N"><figcaption><b>Figureure 12 · : Checkpoint selection for the ${ \mathcal { L } } _ { \mathrm { C O N</b><span class="fig-en">Figure 12: Checkpoint selection for the ${ \mathcal { L } } _ { \mathrm { C O N S } }$ post-training stage. (Left) Generative perplexity across budgets improves rapidly during early consistency training, but later checkpoints over-sharpen the model, as reflected by collapsing entropy values shown in parentheses. Sampling is done without warm-start (e.g. no reuse) (Right) Validation perplexity is not monotonic: it first rises above the 15% threshold, then can decrease again at later checkpoints. Since these later decreases do not recover sample diversity, we use the first checkpoint whose validation perplexity exceeds the pre-LCONS value by 15% as our stopping rule. This empirically balances generation quality and sample diversity.</span><span class="fig-zh">这张图来自论文 PDF 的结构化抽取。当前用于辅助理解 Fixed-Point Masked Generative Modeling 的方法或实验，请结合正文精读段落一起看。</span></figcaption></figure>
 <figure class="full-fig"><img src="../assets/mineru/2605.31215/images/f17fec7019c2c6e5e1549c2a7b6225d13d1234489c4e9ad8d39069e0b2463ac7.jpg" alt="Figureure 11 · : Lagged logit analysis"><figcaption><b>Figureure 11 · : Lagged logit analysis</b><span class="fig-en">Figure 11: Lagged logit analysis. (Left) output-head-projected hidden-state changes decrease as the number of sampling steps increases, for both the baseline and the $\mathcal { L } _ { \mathrm { C O N S } }$ model. (Right) relative reduction in lagged logit KL from ${ \mathcal { L } } _ { \mathrm { C O N S } }$ compared to the baseline, measured between a student denoising step s and a cleaner future step $s + { \ell } .$ The consistency-trained model reduces lagged logit KL across lags and sampling-step settings, with the strongest gains at smaller lags.</span><span class="fig-zh">这张图来自论文 PDF 的结构化抽取。当前用于辅助理解 Fixed-Point Masked Generative Modeling 的方法或实验，请结合正文精读段落一起看。</span></figcaption></figure>
       
       <h2>核心问题</h2>
-      <p>MIM/MGM 是视觉自监督核心路线之一，这篇对低成本训练和表示稳定性有启发。</p>
+      <p>它和通用视觉自监督的关系在于：把 masked generative modeling 的跨步隐藏状态一致性和自适应深度结合，含 ImageNette 图像实验。</p>
       <h2>方法拆解</h2>
-      <p>用 fixed-point solver 替换部分 denoiser，并加入 cross-step consistency loss 与 three-state reuse。</p>
+      <p>把 masked generative modeling 的跨步隐藏状态一致性和自适应深度结合，含 ImageNette 图像实验</p>
       <h2>主要贡献</h2>
-      <p>让 pretrained MGM 可短暂 fine-tune 成更省参数/显存的 FP-MGM。</p>
+      <p>中高相关；详见方法、贡献和实验边界。</p>
       <h2>实验看点</h2>
-      <p>OpenWebText 上参数/训练/显存下降；ImageNette 上训练和显存约减半并提升 FID。</p>
+      <p>实验部分建议重点看两类证据：一是作者是否把方法收益和更强数据、更长训练、更大模型区分开；二是跨模型、跨数据或跨任务迁移是否还能保留同样趋势。</p>
       <h2>局限与读法</h2>
-      <p>跨模态方法，视觉只在 ImageNette 级别展示；大规模图像/视频还需验证。</p>
+      <p>这篇论文的结论需要结合任务设置、训练数据规模和消融实验一起看；不要只凭单个指标判断它对通用视觉表征的价值。</p>
     
     </div>
   </div>
@@ -61,13 +61,13 @@
     <div class="side-box"><h4>原文</h4><p><a href="https://arxiv.org/abs/2605.31215">https://arxiv.org/abs/2605.31215</a></p></div>
   </aside>
 </article></main>
-  <aside class="conf-float" data-conf-reminder="2026-06-01-main-ddl" aria-label="CCF A/B 主投稿提醒">
+  <aside class="conf-float" data-conf-reminder="2026-06-02-main-ddl" aria-label="CCF A/B 主投稿提醒">
   <button class="conf-close" type="button" aria-label="关闭会议提醒">×</button>
   <details open>
     <summary>CCF A/B 主投稿提醒</summary>
     <div class="conf-list"><a class="conf-item " href="https://github.com/ccfddl/ccf-deadlines/blob/main/conference/AI/aaai.yml">
   <span><b>AAAI 2027</b><em>CCF A · Main paper submission</em></span>
-  <strong>56 天</strong>
+  <strong>55 天</strong>
   <small>2026-07-27 · CCF DDL: abstract 2026-07-20；进入 1 个月窗口后重点提醒。</small>
 </a></div>
   </details>
@@ -80,7 +80,7 @@
   (() => {
     const box = document.querySelector('[data-conf-reminder]');
     if (!box) return;
-    const key = `visualSslConfReminderClosed:${box.dataset.confReminder || '2026-06-01-main-ddl'}`;
+    const key = `visualSslConfReminderClosed:${box.dataset.confReminder || '2026-06-02-main-ddl'}`;
     try {
       if (localStorage.getItem(key) === '1') box.hidden = true;
     } catch (err) {}

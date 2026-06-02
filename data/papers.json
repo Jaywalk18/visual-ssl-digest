@@ -1,5 +1,18 @@
 [
   {
+    "id": "",
+    "title": "本期无新增论文",
+    "short": "本期无新增论文",
+    "category": "空窗核验",
+    "priority": "-",
+    "date": "2026-06-02",
+    "venue": "空窗核验",
+    "url": "#",
+    "thesis": "最新公开入口仍是 2026-06-01 批次，已在上一份日报去重和收录。",
+    "takeaway": "-相关；详见方法、贡献和实验边界。",
+    "method": "最新公开入口仍是 2026-06-01 批次，已在上一份日报去重和收录"
+  },
+  {
     "id": "2605.31535",
     "title": "RayDer: Scalable Self-Supervised Novel View Synthesis from Real-World Video",
     "short": "RayDer",

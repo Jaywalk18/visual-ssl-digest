@@ -19,20 +19,18 @@
   </header>
   <nav class="site-nav" aria-label="主导航">
     <a class="nav-link" href="../index.html">头版</a>
-<a class="nav-link active" href="../issues/2026-06-01.html">今日速递</a>
+<a class="nav-link" href="../issues/2026-06-02.html">今日速递</a>
 <a class="nav-link" href="../pages/catalog.html">论文目录</a>
 <a class="nav-link" href="../pages/timeline.html">时间线</a>
   </nav>
   <main><article class="paper-detail issue-detail">
   <div class="paper-main">
     <div class="kicker">Daily issue · 2026-06-01 · CCF A/B 会议优先</div>
-    <h1 class="paper-headline">6 月 1 日：RayDer 等视觉表征主线更新</h1>
-    <p class="dek">本期聚焦通用视觉表征、视觉语言预训练与视频自监督中最值得跟进的论文，并保留 CCF A/B、OpenReview 与 arXiv 状态线索。</p>
+    <h1 class="paper-headline">6 月 1 日：RayDer 等视觉表征论文归档</h1>
+    <p class="dek">本页按日期归档近期论文，保留优先级、主题、来源与方法线索，方便回看同一批工作的研究脉络。</p>
     <div class="feature-body">
-      <p class="lead dropcap">先读 RayDer，它最贴近通用视觉自监督：用真实视频规模化训练单一 transformer，并把几何视图合成做成可观察 scaling 的自监督目标。第二读 How can embedding models bind concepts?，重点看它如何解释 CLIP 的 bag-of-concepts 行为，以及为什么组合泛化需要低复杂度 binding。第三读 Representation Forcing 和 VisionPulse，前者讨论统一多模态模型内部视觉表示如何替代外部 VAE，后者讨论推理时视觉 token 哪些真正有效。FP-MGM、VACSR、MergeTok 适合作为 masked modeling、图文相似度、视觉 tokenizer 三条支线细读；PEEK 和 ELUDe 用作视频帧选择与表征可解释性背景扫读。</p>
+      <p class="lead dropcap">先读 RayDer。把真实视频动态因素当成可吸收扰动，用单一 transformer 扩展自监督 NVS，并报告清晰 scaling 行为。 其余论文按 P1/P2 与主题顺序扫读，重点看方法图、消融设置和是否能迁移到通用视觉表征。</p>
       <h2>论文索引</h2>
-      <table class="compact-table"><thead><tr><th>优先级</th><th>论文</th><th>类型</th><th>相关性</th><th>一句话理由</th></tr></thead><tbody><tr><td>P0</td><td>RayDer: Scalable Self-Supervised Novel View Synthesis from Real-World Video</td><td>arXiv + project</td><td>高</td><td>把真实视频动态因素当成可吸收扰动，用单一 transformer 扩展自监督 NVS，并报告清晰 scaling 行为。</td></tr><tr><td>P1</td><td>How can embedding models bind concepts?</td><td>arXiv + ICML 2026</td><td>高</td><td>解释 CLIP 类图文 embedding 为什么像 bag-of-concepts，以及组合泛化需要怎样的低复杂度 binding。</td></tr><tr><td>P1</td><td>Representation Forcing for Bottleneck-Free Unified Multimodal Models</td><td>arXiv + project</td><td>高</td><td>把视觉表示从感知输出变成生成前的中间 token，让统一多模态模型少依赖外部 VAE latent。</td></tr><tr><td>P1</td><td>VisionPulse: Dynamic Visual Sparsity for Efficient Multimodal Reasoning</td><td>arXiv + ICML 2026</td><td>中高</td><td>关注 LMM 推理期间视觉 token 的动态有效性，和高分辨率/长上下文视觉表征压缩直接相关。</td></tr><tr><td>P2</td><td>Fixed-Point Masked Generative Modeling</td><td>arXiv</td><td>中高</td><td>把 masked generative modeling 的跨步隐藏状态一致性和自适应深度结合，含 ImageNette 图像实验。</td></tr><tr><td>P2</td><td>Variational Adapter for Cross-modal Similarity Representation</td><td>arXiv + ICML 2026 + OpenReview</td><td>中高</td><td>把图文相似度从二元匹配边界改成变分潜空间，缓解 false negatives 和跨域泛化问题。</td></tr><tr><td>P2</td><td>MergeTok: Unified Continuous and Discrete Visual Tokenization via Token Merging</td><td>arXiv</td><td>中高</td><td>统一连续 VAE 与离散 VQ 视觉 tokenizer，用 token merging 做语义桥。</td></tr><tr><td>P2</td><td>Beyond Classification: Dynamic Adapter Routing for Continual Multimodal Retrieval</td><td>arXiv</td><td>中</td><td>把 continual learning 从分类改到图文检索，并提出 adapter routing。</td></tr><tr><td>P3</td><td>PEEK: Picking Essential frames via Efficient Knowledge distillation</td><td>arXiv + code</td><td>中</td><td>用 teacher 视觉-语言模型蒸馏帧重要性，让轻量视觉模型在低帧预算下选关键帧。</td></tr><tr><td>P3</td><td>Interpretability Without Tradeoffs: Disentangling Polysemanticity At Equal Predictive Performance</td><td>arXiv</td><td>中</td><td>无需训练地重组 pretrained DINOv2/ViT 表征来分解 polysemanticity。</td></tr></tbody></table>
-      <h2>主线阅读</h2>
       <div class="paper-list issue-list"><article class="paper-card" data-category="project" data-priority="P0" data-date="2026-06-01" data-title="rayder: scalable self-supervised novel view synthesis from real-world video" data-keywords="rayder: scalable self-supervised novel view synthesis from real-world video rayder project p0 2026-06-01 arxiv + project 把真实视频动态因素当成可吸收扰动，用单一 transformer 扩展自监督 nvs，并报告清晰 scaling 行为 高相关；详见方法、贡献和实验边界。">
   <a class="paper-thumb paper-thumb-text" href="../papers/2605.31535.html">
     <img src="../assets/mineru/2605.31535/images/2c62dbb937a248e57a02f2022ec56dd2dafab2508d40a465f4d5308cef1959b1.jpg" alt="RayDer figure"><span>P0</span>
@@ -156,18 +154,17 @@
     </div>
   </div>
   <aside class="paper-side">
-    <div class="side-box"><h4>今日重点</h4><p>TextTeacher、MDM、EvoVid、Ablate-to-Validate。</p></div>
-    <div class="side-box"><h4>会议口径</h4><p>只把 CCF A/B 放进主提醒；临近截止或 CCF C 仅记录。</p></div>
     <div class="side-box"><h4>阅读重点</h4><p>先看 P1/P2 与方法图，再扫状态变化和边界案例。</p></div>
+    <div class="side-box"><h4>会议口径</h4><p>主提醒只保留 CCF A/B；CCF C 与过期截止仅作状态记录。</p></div>
   </aside>
 </article></main>
-  <aside class="conf-float" data-conf-reminder="2026-06-01-main-ddl" aria-label="CCF A/B 主投稿提醒">
+  <aside class="conf-float" data-conf-reminder="2026-06-02-main-ddl" aria-label="CCF A/B 主投稿提醒">
   <button class="conf-close" type="button" aria-label="关闭会议提醒">×</button>
   <details open>
     <summary>CCF A/B 主投稿提醒</summary>
     <div class="conf-list"><a class="conf-item " href="https://github.com/ccfddl/ccf-deadlines/blob/main/conference/AI/aaai.yml">
   <span><b>AAAI 2027</b><em>CCF A · Main paper submission</em></span>
-  <strong>56 天</strong>
+  <strong>55 天</strong>
   <small>2026-07-27 · CCF DDL: abstract 2026-07-20；进入 1 个月窗口后重点提醒。</small>
 </a></div>
   </details>
@@ -180,7 +177,7 @@
   (() => {
     const box = document.querySelector('[data-conf-reminder]');
     if (!box) return;
-    const key = `visualSslConfReminderClosed:${box.dataset.confReminder || '2026-06-01-main-ddl'}`;
+    const key = `visualSslConfReminderClosed:${box.dataset.confReminder || '2026-06-02-main-ddl'}`;
     try {
       if (localStorage.getItem(key) === '1') box.hidden = true;
     } catch (err) {}

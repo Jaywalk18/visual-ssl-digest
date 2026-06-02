@@ -19,39 +19,39 @@
   </header>
   <nav class="site-nav" aria-label="主导航">
     <a class="nav-link" href="../index.html">头版</a>
-<a class="nav-link" href="../issues/2026-06-01.html">今日速递</a>
+<a class="nav-link" href="../issues/2026-06-02.html">今日速递</a>
 <a class="nav-link" href="../pages/catalog.html">论文目录</a>
 <a class="nav-link" href="../pages/timeline.html">时间线</a>
   </nav>
   <main><article class="paper-detail">
   <div class="paper-main">
     <div class="kicker">ICML 2026 + OpenReview · P2 · 2026-06-01</div>
-    <h1 class="paper-headline">Variational Adapter for Cross-modal Similarity：图文自监督常受 false negative 和粗标注约束，这篇提供相似度空间层面的修正思路</h1>
-    <p class="dek">用正则与分布优化降低二元标注导致的错误梯度，覆盖 retrieval、domain/base-to-novel generalization。</p>
-    <p class="byline"><strong>Variational Adapter for Cross-modal Similarity Representation</strong>　WenZhang Wei, Zhipeng Gui, Dehua Peng, Tiandi Ye, Huayi Wu；机构信息 arXiv 元数据未列出。　arXiv + ICML 2026 + OpenReview　<a href="https://arxiv.org/abs/2605.30968">原文链接</a></p>
+    <h1 class="paper-headline">Variational Adapter for Cross-modal Similarity：它和通用视觉自监督的关系在于：把图文相似度从二元匹配边界改成变分潜空间，缓解 false negatives 和跨域泛化问题</h1>
+    <p class="dek">中高相关；详见方法、贡献和实验边界。</p>
+    <p class="byline"><strong>Variational Adapter for Cross-modal Similarity Representation</strong>　arXiv + ICML 2026 + OpenReview　<a href="https://arxiv.org/abs/2605.30968">原文链接</a></p>
     <div class="paper-facts">
       <span><b>编号</b>2605.30968</span>
       <span><b>优先级</b>P2</span>
       <span><b>类别</b>ICML 2026 + OpenReview</span>
       <span><b>会议</b>arXiv + ICML 2026 + OpenReview</span>
-      <span><b>方法</b>把 image-text matching 中的细粒度语义稀缺建模为 variational inference，构造 cross-modal similarity latent space。</span>
+      <span><b>方法</b>把图文相似度从二元匹配边界改成变分潜空间，缓解 false negatives 和跨域泛化问题</span>
       <span><b>来源</b>arXiv / OpenReview</span>
     </div>
     <div class="feature-body">
-      <p class="lead dropcap">先说结论。图文自监督常受 false negative 和粗标注约束，这篇提供相似度空间层面的修正思路。 用正则与分布优化降低二元标注导致的错误梯度，覆盖 retrieval、domain/base-to-novel generalization。</p>
+      <p class="lead dropcap">先说结论。它和通用视觉自监督的关系在于：把图文相似度从二元匹配边界改成变分潜空间，缓解 false negatives 和跨域泛化问题。 中高相关；详见方法、贡献和实验边界。</p>
       <figure class="full-fig"><img src="../assets/mineru/2605.30968/images/5a7db5201fba9f8984716b16ad963992bf1e9c51fea3d366fec3dc8eb4f04c4d.jpg" alt="Figureure 2 · Overview of our proposed model: Image and text features first interact"><figcaption><b>Figureure 2 · Overview of our proposed model: Image and text features first interact</b><span class="fig-en">Figure 2. Overview of our proposed model: Image and text features first interact through the Hadamard product to generate similarity vector representations, which are then input into a variational adapter composed of an encoder and a decoder. The encoder predicts the mean (µ) and log-variance $( \log \sigma ^ { 2 } )$ for each similarity vector, mapping the input to a Gaussian mixture latent distribution, where each Gaussian component is regularized to a standard normal distribution. Using the reparameterization trick, latent variables are sampled and subsequently reconstructed into a similarity matrix by the decoder. The model is optimized by minimizing the reconstruction loss $( \mathcal { L } _ { r e c o n } )$ between the predicted similarities and the binary labels, while a distributional optimization loss $( \mathcal { L } _ { \sigma } )$ is introduced to adaptively calibrate the uncertainty of the latent representations.</span><span class="fig-zh">这张图概括 Variational Adapter for Cross-modal Similarity 的整体方法流程。阅读时先看模块之间传递的训练信号，再看作者如何把目标拆成可优化的子问题。</span></figcaption></figure>
 <figure class="full-fig"><img src="../assets/mineru/2605.30968/images/942217a4d3eb60e066ccc5f131cef9f5ac51a90a65e158c0208a8222ed75f872.jpg" alt="Figureure 1 · Image-text pairs with varying levels of similarity"><figcaption><b>Figureure 1 · Image-text pairs with varying levels of similarity</b><span class="fig-en">Figure 1. Image-text pairs with varying levels of similarity. We computed the similarity of 40,000 sample pairs from the COCO Caption dataset and divided them into eight intervals in ascending order. From each interval, we randomly selected one image-text pair for visual presentation.</span><span class="fig-zh">这张可视化用来解释 Variational Adapter for Cross-modal Similarity 学到的中间表征或对齐关系。重点看它是否支持正文里的机制判断。</span></figcaption></figure>
       
       <h2>核心问题</h2>
-      <p>图文自监督常受 false negative 和粗标注约束，这篇提供相似度空间层面的修正思路。</p>
+      <p>它和通用视觉自监督的关系在于：把图文相似度从二元匹配边界改成变分潜空间，缓解 false negatives 和跨域泛化问题。</p>
       <h2>方法拆解</h2>
-      <p>把 image-text matching 中的细粒度语义稀缺建模为 variational inference，构造 cross-modal similarity latent space。</p>
+      <p>把图文相似度从二元匹配边界改成变分潜空间，缓解 false negatives 和跨域泛化问题</p>
       <h2>主要贡献</h2>
-      <p>用正则与分布优化降低二元标注导致的错误梯度，覆盖 retrieval、domain/base-to-novel generalization。</p>
+      <p>中高相关；详见方法、贡献和实验边界。</p>
       <h2>实验看点</h2>
-      <p>摘要称在 COCO/CxC/ECCV Caption、ImageNet variants 和 11 个 base-to-novel 数据集上改善泛化。</p>
+      <p>实验部分建议重点看两类证据：一是作者是否把方法收益和更强数据、更长训练、更大模型区分开；二是跨模型、跨数据或跨任务迁移是否还能保留同样趋势。</p>
       <h2>局限与读法</h2>
-      <p>仍是 adapter 式修正，不一定替代大规模 contrastive pretraining。</p>
+      <p>这篇论文的结论需要结合任务设置、训练数据规模和消融实验一起看；不要只凭单个指标判断它对通用视觉表征的价值。</p>
     
     </div>
   </div>
@@ -61,13 +61,13 @@
     <div class="side-box"><h4>原文</h4><p><a href="https://arxiv.org/abs/2605.30968">https://arxiv.org/abs/2605.30968</a></p></div>
   </aside>
 </article></main>
-  <aside class="conf-float" data-conf-reminder="2026-06-01-main-ddl" aria-label="CCF A/B 主投稿提醒">
+  <aside class="conf-float" data-conf-reminder="2026-06-02-main-ddl" aria-label="CCF A/B 主投稿提醒">
   <button class="conf-close" type="button" aria-label="关闭会议提醒">×</button>
   <details open>
     <summary>CCF A/B 主投稿提醒</summary>
     <div class="conf-list"><a class="conf-item " href="https://github.com/ccfddl/ccf-deadlines/blob/main/conference/AI/aaai.yml">
   <span><b>AAAI 2027</b><em>CCF A · Main paper submission</em></span>
-  <strong>56 天</strong>
+  <strong>55 天</strong>
   <small>2026-07-27 · CCF DDL: abstract 2026-07-20；进入 1 个月窗口后重点提醒。</small>
 </a></div>
   </details>
@@ -80,7 +80,7 @@
   (() => {
     const box = document.querySelector('[data-conf-reminder]');
     if (!box) return;
-    const key = `visualSslConfReminderClosed:${box.dataset.confReminder || '2026-06-01-main-ddl'}`;
+    const key = `visualSslConfReminderClosed:${box.dataset.confReminder || '2026-06-02-main-ddl'}`;
     try {
       if (localStorage.getItem(key) === '1') box.hidden = true;
     } catch (err) {}
