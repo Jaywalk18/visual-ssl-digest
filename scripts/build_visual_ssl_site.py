@@ -581,6 +581,8 @@ def parse_paper_index(md: str, report_date: str) -> list[dict]:
         priority, paper_cell, kind, relevance, reason = row[:5]
         if "过滤" in priority:
             continue
+        if strip_md(priority).strip() == "-" and "无新增" in strip_md(paper_cell):
+            continue
         link = first_md_link(paper_cell)
         if link:
             title, url = link
