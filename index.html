@@ -25,77 +25,77 @@
   </nav>
   <main><section class="hero-grid">
   <article class="lead-story">
-    <div class="kicker">今日主线 · arXiv + project</div>
-    <h1>RayDer：把真实视频动态因素当成可吸收扰动，用单一 transformer 扩展自监督 NVS，并报告清晰 scaling 行为</h1>
-    <p class="dek">把真实视频动态因素当成可吸收扰动，用单一 transformer 扩展自监督 NVS，并报告清晰 scaling 行为。</p>
-    <figure class="hero-figure"><img src="assets/mineru/2605.31535/images/2c62dbb937a248e57a02f2022ec56dd2dafab2508d40a465f4d5308cef1959b1.jpg" alt="RayDer figure"><figcaption>这张图概括 RayDer 的整体方法流程。阅读时先看模块之间传递的训练信号，再看作者如何把目标拆成可优化的子问题。</figcaption></figure>
-    <div class="paper-actions"><a href="issues/2026-06-02.html">阅读 6 月 2 日速递</a><a href="papers/2605.31535.html">打开主文页</a></div>
+    <div class="kicker">今日主线 · arXiv backfill</div>
+    <h1>Internalizing Temporal Consistency in Video：把跨帧一致性从显式 slot 对比损失改成模型结构和重建目标，最接近视频自监督表征</h1>
+    <p class="dek">把跨帧一致性从显式 slot 对比损失改成模型结构和重建目标，最接近视频自监督表征。</p>
+    <figure class="hero-figure"><img src="assets/mineru/2605.31508/images/5f63c51538eef9e73170b7b0995371e929dd15bb8d36968e86099b494295989a.jpg" alt="Internalizing Temporal Consistency in Video figure"><figcaption>这张图来自论文 PDF 的结构化抽取。当前用于辅助理解 Internalizing Temporal Consistency in Video 的方法或实验，请结合正文精读段落一起看。</figcaption></figure>
+    <div class="paper-actions"><a href="issues/2026-06-02.html">阅读 6 月 2 日速递</a><a href="papers/2605.31508.html">打开主文页</a></div>
   </article>
   <aside class="issue-brief">
     <h2>快速摘要</h2>
-    <ul><li><b>今日最值得看</b><span>无新增 P0/P1。arXiv 与会议公开入口仍指向昨天已覆盖的 2026-06-01 release，没有新的通用视觉自监督论文需要重复推荐。</span></li><li><b>建议精读顺序</b><span>今天不新增精读队列；继续按 2026-06-01 的 RayDer -&gt; Concept binding -&gt; Representation Forcing -&gt; VisionPulse 顺序读。</span></li><li><b>新增/更新/过滤数量</b><span>新增收录 0；状态更新 0；新增过滤 0；重复核验 cs.CV new 页 124 new + 23 cross-list + 96 replacement，均为 2026-06-01 公告批次。</span></li><li><b>主要判断</b><span>当前不是新 release 窗口，而是昨天 Mon 2026-06-01 arXiv 批次的延续；按去重规则不把同一批 2605.* 论文重复写入。</span></li><li><b>会议动态</b><span>ICML 2026 Downloads / OpenReview 公开搜索未发现今天新出现的 oral、spotlight、workshop 或接受状态变化。</span></li></ul>
+    <ul><li><b>今日最值得看</b><span>Internalizing Temporal Consistency in Video OCL。它是今天补录中最贴近视觉自监督的工作，用结构设计替代显式 slot 对比损失来学跨帧一致性。</span></li><li><b>建议精读顺序</b><span>Video OCL temporal consistency -&gt; SOCO -&gt; IC-VCO；随后扫读 Diversity Matters / iSAE / ReGuLaR，YARD 只看 register-token 解码思路。</span></li><li><b>新增/更新/过滤数量</b><span>arXiv 官方列表当前最新仍为 Mon 2026-06-01；复查 6 月 1 日批次 507 个唯一 ID；补录新增 7；会议状态合并 3；已知/过滤/降级 82。</span></li><li><b>主要判断</b><span>今天不是新的 arXiv 发布日，而是对昨天 RayDer-led 批次做 48 小时内补查；新增主线偏“对象/部件结构、视觉证据和表征可解释性”。</span></li><li><b>会议动态</b><span>ICML 2026 官方 Downloads 新合并 3 条：IC-VCO、Diversity Matters、Toward Identifiable Sparse Autoencoders，均为 Poster。</span></li></ul>
   </aside>
 </section>
 <section class="section-block">
   <div class="section-heading"><h2>今日推荐论文</h2><a href="pages/catalog.html">全目录 →</a></div>
-  <div class="paper-list"><article class="paper-card" data-category="project" data-priority="P0" data-date="2026-06-01" data-title="rayder: scalable self-supervised novel view synthesis from real-world video" data-keywords="rayder: scalable self-supervised novel view synthesis from real-world video rayder project p0 2026-06-01 arxiv + project 把真实视频动态因素当成可吸收扰动，用单一 transformer 扩展自监督 nvs，并报告清晰 scaling 行为 高相关；详见方法、贡献和实验边界。">
-  <a class="paper-thumb paper-thumb-text" href="papers/2605.31535.html">
-    <img src="assets/mineru/2605.31535/images/2c62dbb937a248e57a02f2022ec56dd2dafab2508d40a465f4d5308cef1959b1.jpg" alt="RayDer figure"><span>P0</span>
+  <div class="paper-list"><article class="paper-card" data-category="arXiv backfill" data-priority="P0" data-date="2026-06-02" data-title="internalizing temporal consistency in video object-centric learning without explicit regularization" data-keywords="internalizing temporal consistency in video object-centric learning without explicit regularization internalizing temporal consistency in video arxiv backfill p0 2026-06-02 arxiv backfill 把跨帧一致性从显式 slot 对比损失改成模型结构和重建目标，最接近视频自监督表征 高相关；详见方法、贡献和实验边界。">
+  <a class="paper-thumb paper-thumb-text" href="papers/2605.31508.html">
+    <img src="assets/mineru/2605.31508/images/5f63c51538eef9e73170b7b0995371e929dd15bb8d36968e86099b494295989a.jpg" alt="Internalizing Temporal Consistency in Video figure"><span>P0</span>
   </a>
   <div>
-    <div class="paper-meta">2026-06-01 · project · arXiv + project</div>
-    <h3><a href="papers/2605.31535.html">RayDer: Scalable Self-Supervised Novel View Synthesis from Real-World Video</a></h3>
+    <div class="paper-meta">2026-06-02 · arXiv backfill · arXiv backfill</div>
+    <h3><a href="papers/2605.31508.html">Internalizing Temporal Consistency in Video Object-Centric Learning without Explicit Regularization</a></h3>
     <p>高相关；详见方法、贡献和实验边界。</p>
-    <p class="card-tech"><b>方法：</b>把真实视频动态因素当成可吸收扰动，用单一 transformer 扩展自监督 NVS，并报告清晰 scaling 行为</p>
-    <div class="paper-actions"><a href="papers/2605.31535.html">读图文页</a><a href="https://arxiv.org/abs/2605.31535">原文</a></div>
+    <p class="card-tech"><b>方法：</b>把跨帧一致性从显式 slot 对比损失改成模型结构和重建目标，最接近视频自监督表征</p>
+    <div class="paper-actions"><a href="papers/2605.31508.html">读图文页</a><a href="https://arxiv.org/abs/2605.31508">原文</a></div>
   </div>
 </article>
-<article class="paper-card" data-category="ICML 2026" data-priority="P1" data-date="2026-06-01" data-title="how can embedding models bind concepts?" data-keywords="how can embedding models bind concepts? how can embedding models bind concepts? icml 2026 p1 2026-06-01 arxiv + icml 2026 解释 clip 类图文 embedding 为什么像 bag-of-concepts，以及组合泛化需要怎样的低复杂度 binding 高相关；详见方法、贡献和实验边界。">
-  <a class="paper-thumb paper-thumb-text" href="papers/2605.31503.html">
-    <img src="assets/mineru/2605.31503/images/2683302886279afb7caf90e56343d55882637fd16fa90df70db0531dfa2fcc1b.jpg" alt="How can embedding models bind concepts? figure"><span>P1</span>
+<article class="paper-card" data-category="project" data-priority="P1" data-date="2026-06-02" data-title="soco: benchmarking semantic object correspondence in vision foundation models" data-keywords="soco: benchmarking semantic object correspondence in vision foundation models soco project p1 2026-06-02 arxiv + project 用细粒度语义 correspondence 直接评估 dino/clip/sam 类视觉基础模型是否学到可迁移对象结构 高相关；详见方法、贡献和实验边界。">
+  <a class="paper-thumb paper-thumb-text" href="papers/2605.31597.html">
+    <img src="assets/mineru/2605.31597/images/678683846e20c0be0ed44b87ebca855a0564f5e0a573c03e761984447a440f3c.jpg" alt="SOCO figure"><span>P1</span>
   </a>
   <div>
-    <div class="paper-meta">2026-06-01 · ICML 2026 · arXiv + ICML 2026</div>
-    <h3><a href="papers/2605.31503.html">How can embedding models bind concepts?</a></h3>
+    <div class="paper-meta">2026-06-02 · project · arXiv + project</div>
+    <h3><a href="papers/2605.31597.html">SOCO: Benchmarking Semantic Object Correspondence in Vision Foundation Models</a></h3>
     <p>高相关；详见方法、贡献和实验边界。</p>
-    <p class="card-tech"><b>方法：</b>解释 CLIP 类图文 embedding 为什么像 bag-of-concepts，以及组合泛化需要怎样的低复杂度 binding</p>
-    <div class="paper-actions"><a href="papers/2605.31503.html">读图文页</a><a href="https://arxiv.org/abs/2605.31503">原文</a></div>
+    <p class="card-tech"><b>方法：</b>用细粒度语义 correspondence 直接评估 DINO/CLIP/SAM 类视觉基础模型是否学到可迁移对象结构</p>
+    <div class="paper-actions"><a href="papers/2605.31597.html">读图文页</a><a href="https://arxiv.org/abs/2605.31597">原文</a></div>
   </div>
 </article>
-<article class="paper-card" data-category="project" data-priority="P1" data-date="2026-06-01" data-title="representation forcing for bottleneck-free unified multimodal models" data-keywords="representation forcing for bottleneck-free unified multimodal models representation forcing for bottleneck-free unified project p1 2026-06-01 arxiv + project 把视觉表示从感知输出变成生成前的中间 token，让统一多模态模型少依赖外部 vae latent 高相关；详见方法、贡献和实验边界。">
-  <a class="paper-thumb paper-thumb-text" href="papers/2605.31604.html">
-    <img src="assets/mineru/2605.31604/images/7aacd22c315701c48c9d63685f97ce3d4c5c66e5cd35cdbada6ee45cb604c5f6.jpg" alt="Representation Forcing for Bottleneck-Free Unified figure"><span>P1</span>
+<article class="paper-card" data-category="ICML 2026 Poster" data-priority="P2" data-date="2026-06-02" data-title="learning from fine-grained visual discrepancies: mitigating multimodal hallucinations via in-context visual contrastive optimization" data-keywords="learning from fine-grained visual discrepancies: mitigating multimodal hallucinations via in-context visual contrastive optimization learning from fine-grained visual discrepancies icml 2026 poster p2 2026-06-02 arxiv + icml 2026 poster 把视觉负样本做成同上下文对比训练，关注 vlm 是否真的利用细粒度视觉证据 中高相关；详见方法、贡献和实验边界。">
+  <a class="paper-thumb paper-thumb-text" href="papers/2605.31312.html">
+    <img src="assets/mineru/2605.31312/images/525bb29f1309c1fe1448e37591fce6d143ebf5a35c7612731feab1bf0449eb46.jpg" alt="Learning from Fine-Grained Visual Discrepancies figure"><span>P2</span>
   </a>
   <div>
-    <div class="paper-meta">2026-06-01 · project · arXiv + project</div>
-    <h3><a href="papers/2605.31604.html">Representation Forcing for Bottleneck-Free Unified Multimodal Models</a></h3>
-    <p>高相关；详见方法、贡献和实验边界。</p>
-    <p class="card-tech"><b>方法：</b>把视觉表示从感知输出变成生成前的中间 token，让统一多模态模型少依赖外部 VAE latent</p>
-    <div class="paper-actions"><a href="papers/2605.31604.html">读图文页</a><a href="https://arxiv.org/abs/2605.31604">原文</a></div>
-  </div>
-</article>
-<article class="paper-card" data-category="ICML 2026" data-priority="P1" data-date="2026-06-01" data-title="visionpulse: dynamic visual sparsity for efficient multimodal reasoning" data-keywords="visionpulse: dynamic visual sparsity for efficient multimodal reasoning visionpulse icml 2026 p1 2026-06-01 arxiv + icml 2026 关注 lmm 推理期间视觉 token 的动态有效性，和高分辨率/长上下文视觉表征压缩直接相关 中高相关；详见方法、贡献和实验边界。">
-  <a class="paper-thumb paper-thumb-text" href="papers/2605.31457.html">
-    <img src="assets/mineru/2605.31457/images/8137f1c88333fdd4578978d4cb0544c1d1c82e7bcd9ab40ab9fc50bc2389a856.jpg" alt="VisionPulse figure"><span>P1</span>
-  </a>
-  <div>
-    <div class="paper-meta">2026-06-01 · ICML 2026 · arXiv + ICML 2026</div>
-    <h3><a href="papers/2605.31457.html">VisionPulse: Dynamic Visual Sparsity for Efficient Multimodal Reasoning</a></h3>
+    <div class="paper-meta">2026-06-02 · ICML 2026 Poster · arXiv + ICML 2026 Poster</div>
+    <h3><a href="papers/2605.31312.html">Learning from Fine-Grained Visual Discrepancies: Mitigating Multimodal Hallucinations via In-Context Visual Contrastive Optimization</a></h3>
     <p>中高相关；详见方法、贡献和实验边界。</p>
-    <p class="card-tech"><b>方法：</b>关注 LMM 推理期间视觉 token 的动态有效性，和高分辨率/长上下文视觉表征压缩直接相关</p>
-    <div class="paper-actions"><a href="papers/2605.31457.html">读图文页</a><a href="https://arxiv.org/abs/2605.31457">原文</a></div>
+    <p class="card-tech"><b>方法：</b>把视觉负样本做成同上下文对比训练，关注 VLM 是否真的利用细粒度视觉证据</p>
+    <div class="paper-actions"><a href="papers/2605.31312.html">读图文页</a><a href="https://arxiv.org/abs/2605.31312">原文</a></div>
   </div>
 </article>
-<article class="paper-card" data-category="Visual SSL / representation" data-priority="P2" data-date="2026-06-01" data-title="fixed-point masked generative modeling" data-keywords="fixed-point masked generative modeling fixed-point masked generative modeling visual ssl / representation p2 2026-06-01 arxiv 把 masked generative modeling 的跨步隐藏状态一致性和自适应深度结合，含 imagenette 图像实验 中高相关；详见方法、贡献和实验边界。">
-  <a class="paper-thumb paper-thumb-text" href="papers/2605.31215.html">
-    <img src="assets/mineru/2605.31215/images/23cee05f419b1d16079c0d2874a06906dee8253a6b858d39992010d98eef7ff1.jpg" alt="Fixed-Point Masked Generative Modeling figure"><span>P2</span>
+<article class="paper-card" data-category="ICML 2026 Poster" data-priority="P2" data-date="2026-06-02" data-title="diversity matters: revisiting test-time compute in vision-language models" data-keywords="diversity matters: revisiting test-time compute in vision-language models diversity matters icml 2026 poster p2 2026-06-02 arxiv + icml 2026 poster 分析 vlm 推理时 compute 为什么常失效，结论指向视觉-语言表征/输出多样性不足 中相关；详见方法、贡献和实验边界。">
+  <a class="paper-thumb paper-thumb-text" href="papers/2605.30713.html">
+    <img src="assets/mineru/2605.30713/images/151b4501e271bb5133b6e44938c448b80687fecfb9c944b8a4c83c71edaa0dd2.jpg" alt="Diversity Matters figure"><span>P2</span>
   </a>
   <div>
-    <div class="paper-meta">2026-06-01 · Visual SSL / representation · arXiv</div>
-    <h3><a href="papers/2605.31215.html">Fixed-Point Masked Generative Modeling</a></h3>
-    <p>中高相关；详见方法、贡献和实验边界。</p>
-    <p class="card-tech"><b>方法：</b>把 masked generative modeling 的跨步隐藏状态一致性和自适应深度结合，含 ImageNette 图像实验</p>
-    <div class="paper-actions"><a href="papers/2605.31215.html">读图文页</a><a href="https://arxiv.org/abs/2605.31215">原文</a></div>
+    <div class="paper-meta">2026-06-02 · ICML 2026 Poster · arXiv + ICML 2026 Poster</div>
+    <h3><a href="papers/2605.30713.html">Diversity Matters: Revisiting Test-Time Compute in Vision-Language Models</a></h3>
+    <p>中相关；详见方法、贡献和实验边界。</p>
+    <p class="card-tech"><b>方法：</b>分析 VLM 推理时 compute 为什么常失效，结论指向视觉-语言表征/输出多样性不足</p>
+    <div class="paper-actions"><a href="papers/2605.30713.html">读图文页</a><a href="https://arxiv.org/abs/2605.30713">原文</a></div>
+  </div>
+</article>
+<article class="paper-card" data-category="ICML 2026 Poster" data-priority="P3" data-date="2026-06-02" data-title="toward identifiable sparse autoencoders" data-keywords="toward identifiable sparse autoencoders toward identifiable sparse autoencoders icml 2026 poster p3 2026-06-02 arxiv + icml 2026 poster 不是视觉专属，但 sparse autoencoder 稳定性直接影响 dino/clip 等表征解释 中相关；详见方法、贡献和实验边界。">
+  <a class="paper-thumb paper-thumb-text" href="papers/2605.31245.html">
+    <img src="assets/mineru/2605.31245/images/4562eb51a8327b69ab5dacbbb5078ad2159ed44e898f87279f024483dbcb3226.jpg" alt="Toward Identifiable Sparse Autoencoders figure"><span>P3</span>
+  </a>
+  <div>
+    <div class="paper-meta">2026-06-02 · ICML 2026 Poster · arXiv + ICML 2026 Poster</div>
+    <h3><a href="papers/2605.31245.html">Toward Identifiable Sparse Autoencoders</a></h3>
+    <p>中相关；详见方法、贡献和实验边界。</p>
+    <p class="card-tech"><b>方法：</b>不是视觉专属，但 sparse autoencoder 稳定性直接影响 DINO/CLIP 等表征解释</p>
+    <div class="paper-actions"><a href="papers/2605.31245.html">读图文页</a><a href="https://arxiv.org/abs/2605.31245">原文</a></div>
   </div>
 </article></div>
 </section></main>

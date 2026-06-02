@@ -1,0 +1,1409 @@
+[
+    {
+        "type": "text",
+        "text": "Occam’s Razor: Internalizing Temporal Consistency in Video Object-Centric Learning without Explicit Regularization ",
+        "text_level": 1,
+        "bbox": [
+            108,
+            48,
+            888,
+            134
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "Rongzhen Zhao1 , Zhiyuan Li1 , Juho Kannala2,3 , and Joni Pajarinen 1 ",
+        "bbox": [
+            94,
+            169,
+            900,
+            191
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "1 Department of Electrical Engineering and Automation, Aalto University, Finland rongzhen.zhao@aalto.fi ",
+        "bbox": [
+            89,
+            204,
+            907,
+            240
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "2 Department of Computer Science, Aalto University, Finland ",
+        "bbox": [
+            191,
+            240,
+            803,
+            258
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "3 Center for Machine Vision and Signal Analysis, University of Oulu, Finland ",
+        "bbox": [
+            116,
+            258,
+            881,
+            276
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "Abstract. Video Object-Centric Learning (OCL) aims to represent objects as slot vectors and maintain their consistency across frames. Slot-Slot Contrastive (SSC) loss has become the cornerstone for state-of-theart (SOTA) video OCL methods. While highly effective, SSC relies on one-to-one object correspondence across frames and introduces an extra loss. Following Occam’s Razor, we propose a paradigm shift: temporal consistency is better enforced as an implicit model design rather than an explicit loss. To elegantly exclude SSC (xSSC), we introduce two quasizero-overhead synergistic mechanisms: (i) Chrono-Channel Decomposition (CCD) structurally disentangles slot representations along the channel dimension into static and dynamic sub-spaces, serving as an empirically unified information bottleneck; (ii) Cross-Temporal Reconstruction (CTR) stochastically reconstructs target features of either the current or previous time step by fusing current slots’ static channels and target slots’ dynamic channels, using a single standard OCL decoder with minor training adaptation. Thereby, the slot sets inherently learn temporal consistency by minimizing the standard reconstruction error alone. Extensive experiments show that integrating xSSC into leading baselines not only improves training efficiency but also establishes new SOTAs on video object discovery and recognition tasks. Furthermore, our PCA and gradient analyses confirm that objects’ time-invariant semantics and time-variant kinematics are encoded into the proposed subspaces. Our source code, model checkpoints and training logs are provided on https://github.com/Genera1Z/xSSC. ",
+        "bbox": [
+            142,
+            328,
+            849,
+            759
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "Keywords: Video Object-Centric Learning · Object Discovery · Object Recognition ",
+        "bbox": [
+            142,
+            775,
+            849,
+            811
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "1 Introduction ",
+        "text_level": 1,
+        "bbox": [
+            77,
+            847,
+            309,
+            866
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "With unsupervised video Object-Centric Learning (OCL) [6, 7], objects and the background in a video can be represented as slots, where each vector corresponds to an object, and maintained consistent across continuous frames. Such object-level representations provide a structured and interpretable abstraction of dynamic scenes, which has been shown to benefit downstream tasks including prediction, reasoning, dynamics modeling, planning, and decision-making [14]. Moreover, such representation learning paradigm is also cognitively plausible, as it aligns with how humans perceive and track entities over time [3]. ",
+        "bbox": [
+            72,
+            889,
+            920,
+            949
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "aside_text",
+        "text": "arXiv:2605.31508v1 [cs.CV] 29 May 2026 ",
+        "bbox": [
+            36,
+            204,
+            89,
+            788
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "",
+        "bbox": [
+            77,
+            55,
+            917,
+            152
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "text",
+        "text": "In recent years, the Slot-Slot Contrastive (SSC) loss [8] has significantly advanced state-of-the-art (SOTA) video OCL architectures. By elegantly utilizing objective InfoNCE [9] to pull together slots representing the same object across frames while pushing away different objects, SSC has established a high standard for temporal consistency in video OCL. Its robust explicit regularization has deeply influenced a lineage of strong SOTAs [8, 17, 19]. ",
+        "bbox": [
+            79,
+            156,
+            917,
+            273
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "text",
+        "text": "Despite its undeniable empirical success, relying on explicit contrastive matching inherently assumes a relatively stable one-to-one object correspondence across adjacent frames. In highly dynamic visual scenes where objects frequently occlude each other, disappear and reappear, such as in the MOVi-series datasets [5], these explicit constraints can become brittle bottlenecks. Previous noncontrastive attempts, such as VideoSAUR’s temporal similarity loss [16], suffer from similar narrow assumptions that object patches remain constantly visible in the subsequent frame. Furthermore, appending auxiliary explicit loss terms inevitably introduces hyperparameters and overhead [8, 16]. ",
+        "bbox": [
+            79,
+            274,
+            917,
+            450
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "text",
+        "text": "As shown in Figure 1, we propose a paradigm shift: temporal consistency is better enforced as an implicit model design rather than an explicit loss. We introduce xSSC (Excluding SSC) , demonstrating that the powerful temporal consistency pioneered by explicit InfoNCE regularization can be elegantly and completely internalized through two synergistic mechanisms: ",
+        "bbox": [
+            79,
+            453,
+            917,
+            549
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "text",
+        "text": "– Chrono-Channel Decomposition (CCD) physically disentangles the slot representations along the channel dimension into a static part (encoding timeinvariant object identity and appearance) and a dynamic part (encoding time-variant kinematic state and motion). Through extensive empirical investigation, we discover a unified optimal information bottleneck: strictly allocating a compact subspace (one-quarter of the total channels) to the dynamic features acts as a powerful regularizer across diverse datasets. This ratio aligns perfectly with the physical intuition that an object’s changing kinematic state operates on a much lower-dimensional manifold compared to its rich, persistent appearance. ",
+        "bbox": [
+            87,
+            575,
+            917,
+            770
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "text",
+        "text": "– Cross-Temporal Reconstruction (CTR) introduces a parameter-free temporal reconstruction task, to enforce this decomposition without explicit contrastive penalties. During training, the model must stochastically reconstruct features of either the current or the previous time step. Crucially, this is achieved by fusing the static channels of the current frame with the dynamic channels of the chosen target frame. Because the network is forced to use the current static channels to anchor identity across different time steps, it mathematically prevents the leakage of static features into the dynamic subspace. Furthermore, CTFB operates through a single, standard OCL de-",
+        "bbox": [
+            89,
+            773,
+            917,
+            947
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "image",
+        "img_path": "images/770bc180c292995b64ea468b03b2b8363ff33ea07d9fffe0dda35017f5fd6f5e.jpg",
+        "image_caption": [],
+        "image_footnote": [
+            "?? tsim temporal similarity loss ",
+            "?? slot-slot contrastive loss ",
+            "encoded featuresF ",
+            "S aggregated slots ",
+            "F' reconstructed features ",
+            "?? reconstruction loss "
+        ],
+        "content": "",
+        "bbox": [
+            77,
+            50,
+            924,
+            359
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "Fig. 1: Learning temporal consistency for video Object-Centric Learning (OCL) via implicit model design instead of explicit loss term. Mainstream video OCL methods adopt the encode-aggregate/transit-decode architecture [18], with minimizing the difference $\\mathcal { L } _ { \\mathrm { r e c o n } }$ between encoded features $\\pmb { F } _ { t }$ and decoded reconstruction $\\mathbf { } F _ { t } ^ { \\prime }$ as the primary supervision. (left) The temporal consistency of slots $\\{ S _ { t } \\} _ { t }$ is explicitly enforced (Section 3.1) by temporal similarity loss $\\mathcal { L } _ { \\mathrm { t s i m } }$ in VideoSAUR [16], or by slot-slot contrastive loss $\\mathcal { L } _ { \\mathrm { s s c } }$ in SlotContrast [8] and its followers [17, 19], causing extra overhead and hyper-parameters though. (right) We implicitly learn temporal consistency in our xSSC by randomly forcing either the static part of future slots $S _ { t + 1 }$ or current slots $S _ { t }$ , concatenated with the dynamic part of the current slots, to reconstruction current features $\\pmb { F } _ { t }$ , avoiding any extra prediction or loss (Sections 3.2 to 3.4). ",
+        "bbox": [
+            72,
+            370,
+            920,
+            567
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "coding head. Only minor yet quasi-zero-overhead adaptations are needed for training, while the inference is nothing more than a standard decoding. ",
+        "bbox": [
+            113,
+            608,
+            917,
+            647
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "Extensive experiments demonstrate that xSSC not only achieves higher training efficiency by dropping the SSC loss but also sets SOTA on highly dynamic video object discovery and recognition tasks. To rigorously validate our structural claims, we provide comprehensive explainability analyses. Temporal PCA trajectories and downstream MLP gradient attributions confirm that xSSC successfully disentangles objects’ time-invariant semantics and time-variant kinematics into our proposed sub-spaces. ",
+        "bbox": [
+            72,
+            661,
+            917,
+            796
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "In summary, our key contributions are: ",
+        "bbox": [
+            111,
+            798,
+            530,
+            816
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "list",
+        "sub_type": "text",
+        "list_items": [
+            "– A Paradigm Shift from Explicit Loss to Implicit Design: We propose xSSC, demonstrating that explicit temporal penalties like SSC can be elegantly and completely excluded from SOTA video OCL methods, adhering to Occam’s Razor. ",
+            "– Novel Synergistic Mechanisms: We introduce Chrono-Channel Decomposition (CCD) as an empirically unified information bottleneck, and Cross-"
+        ],
+        "bbox": [
+            89,
+            832,
+            917,
+            947
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "Temporal Reconstruction (CTR). Together, they inherently enforce temporal consistency using typical OCL decoding with zero overhead. ",
+        "bbox": [
+            113,
+            55,
+            917,
+            92
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "text",
+        "text": "SOTA Performance and Interpretability: Integrating xSSC into leading baselines consistently establishes new SOTAs. Furthermore, our PCA and gradient analyses explicitly confirm the encoding of objects’ time-invariant semantics and time-variant kinematics into the proposed sub-spaces. ",
+        "bbox": [
+            89,
+            95,
+            917,
+            173
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "text",
+        "text": "2 Related Work ",
+        "text_level": 1,
+        "bbox": [
+            75,
+            204,
+            331,
+            224
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "text",
+        "text": "2.1 Video Object-Centric Learning ",
+        "text_level": 1,
+        "bbox": [
+            75,
+            247,
+            523,
+            266
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "text",
+        "text": "Video Object-Centric Learning (OCL) aims to discover objects without supervision by extending image-level OCL into temporal. Early plain video OCL methods, such as STEVE [12], SAVi [6] and SAVi++ [4], roughly follow a standard framework: using an auto-encoder structure where slots transition over time and aggregate visual features to reconstruct the input frames in some format [18]. To improve object decomposition and association, methods like SAVi and SAVi++ reconstruct optical flow and depth targets as weak supervision. ",
+        "bbox": [
+            72,
+            279,
+            917,
+            416
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "text",
+        "text": "Recent advancements have largely focused on enhancing the transition and reconstruction modules to handle highly dynamic and real-world videos. For instance, VideoSAUR [16] attempts to capture temporal dynamics by predicting patch movement in the next frame. More recently, a powerful lineage of SOTA architectures has emerged, relying on an explicit regularization introduced in SlotContrast [8]. It is an elegant Slot-Slot Contrastive (SSC) loss, which has since been inherited by subsequent strong baseline methods like RandSF.Q [17] and SmoothSA [19]. While these contemporary methods achieve remarkable performance, they increasingly rely on adding auxiliary loss terms to the model. ",
+        "bbox": [
+            72,
+            417,
+            917,
+            591
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "text",
+        "text": "In contrast, our work takes a step back. We demonstrate that by intelligently restructuring the slot representations themselves, the complex architectural bloat of recent SOTAs can be elegantly bypassed, adhering to Occam’s Razor. ",
+        "bbox": [
+            72,
+            593,
+            917,
+            650
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "text",
+        "text": "2.2 Temporal Consistency ",
+        "text_level": 1,
+        "bbox": [
+            75,
+            681,
+            414,
+            700
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "text",
+        "text": "Maintaining temporal consistency, i.e., the ability to track object identities and states across continuous frames, is one of the fundamental challenges in video OCL. Historically, researchers have tackled this using various explicit mechanisms, such as sequential VAEs [15] or VQ-VAE [18], agglomerative clustering [1], or explicit memory buffers coupled with transformer predictors [21]. ",
+        "bbox": [
+            72,
+            715,
+            917,
+            811
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "text",
+        "text": "In the current landscape of Slot Attention-based [7] video OCL, methods enforce temporal consistency primarily through explicit regularization. VideoSAUR [16] proposes a time similarity loss. However, this explicitly assumes that object patches remain constantly visible in the subsequent frame, an assumption that severely degrades in highly dynamic datasets like MOVi-C/D/E [5] where objects frequently occlude or disappear. To avoid such narrow assumptions, Slot-Contrast [8] and its successors, e.g., RandSF.Q [17] and SmoothSA [19], employ the InfoNCE-style [9] SSC loss to explicitly pull slots that are in the same position of the same video sample close and push slots that are in different positions of the same or different samples apart across frames. ",
+        "bbox": [
+            72,
+            811,
+            917,
+            949
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "text",
+        "text": "",
+        "bbox": [
+            72,
+            55,
+            917,
+            113
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "While explicitly regularizing slot disparities is effective, we argue it is fundamentally a workaround. Instead of enforcing temporal consistency explicitly outside, our method foster such property implicitly inside. By stochastically predicting cross-temporal features using a static-dynamic channel split, our method achieves the goal through the standard reconstruction objective alone. ",
+        "bbox": [
+            72,
+            113,
+            917,
+            211
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "3 Proposed Method ",
+        "text_level": 1,
+        "bbox": [
+            75,
+            239,
+            387,
+            261
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "Adhering to the elegance of Occam’s Razor, we propose excluding the Slot-Slot Contrastive loss entirely (xSSC) from SOTA video OCL methods, as shown in Figure 1. This enforces temporal consistency in slot sets implicitly through model design, rather than explicitly through extra losses. ",
+        "bbox": [
+            72,
+            276,
+            917,
+            354
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "3.1 Preliminaries: Explicit Regularization Bottleneck ",
+        "text_level": 1,
+        "bbox": [
+            75,
+            382,
+            743,
+            401
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "Given a video, a Vision Foundation Model (VFM), like DINO-series [2, 10], encodes the t-th frame into features $\\pmb { F } _ { t } \\in \\mathbb { R } ^ { h \\times w \\times c }$ . ",
+        "bbox": [
+            72,
+            411,
+            917,
+            450
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "A plain video OCL method operates across all the frames of the video recurrently [18] as below: ",
+        "bbox": [
+            72,
+            450,
+            917,
+            489
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "equation",
+        "text": "$$\n\\boldsymbol {S} _ {t}, \\boldsymbol {A} _ {t} = \\phi_ {\\mathrm{a}} (\\boldsymbol {Q} _ {t}, \\boldsymbol {F} _ {t}) \\tag {1a}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            336,
+            504,
+            917,
+            523
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "equation",
+        "text": "$$\n\\boldsymbol {F} _ {t} ^ {\\prime} = \\phi_ {\\mathrm{d}} (\\boldsymbol {S} _ {t}) \\tag {1b}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            375,
+            528,
+            917,
+            547
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "equation",
+        "text": "$$\n\\mathcal {L} = \\mathcal {L} _ {\\text { recon }} = \\mathrm{MSE} (\\boldsymbol {F} _ {t} ^ {\\prime}, \\boldsymbol {F} _ {t}) \\tag {1c}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            384,
+            552,
+            917,
+            572
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "Aggregator $\\phi _ { \\mathrm { a } }$ , parameterized as a Slot Attention [7] module, aggregates current features $\\mathbf { } F _ { t }$ into current slots $S _ { t } \\in \\mathbb { R } ^ { s \\times c }$ , with previous slots’ transition as the query $Q _ { t }$ . The slot set $S _ { t }$ can be used to represent the visual scene as object-level feature vectors, while the corresponding attention maps $\\boldsymbol { A } _ { t } \\in \\mathbb { R } ^ { s \\times h \\times w }$ can be binarized as the byproduct segmentation masks of the objects and background. Decoder $\\phi _ { \\mathrm { d } }$ decodes $S _ { t }$ into reconstructed current feature $\\mathbf { { \\mathit { F } } } _ { t } ^ { \\prime }$ . The self-supervision signal comes from minimizing the reconstruction error $\\mathcal { L } _ { \\mathrm { r e c o n } }$ . ",
+        "bbox": [
+            72,
+            583,
+            917,
+            718
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "To enforce objects’ temporal consistency across frames, recent SOTAs heavily rely on explicit losses, such as VideoSAUR’s Temporal Similarity $\\mathcal { L } _ { \\mathrm { t s i m } }$ [16] or SlotContrast’s Slot-Slot Contrastive loss $\\mathcal { L } _ { \\mathrm { s s c } }$ [8]. ",
+        "bbox": [
+            72,
+            721,
+            917,
+            778
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "Temporal Similarity (TSim). VideoSAUR forces its decoder $\\phi _ { \\mathrm { d } } ^ { 1 }$ to additionally predict the future position $\\boldsymbol { P } _ { t + 1 } \\in \\mathbb { R } ^ { h \\times w }$ of patches in current features $\\mathbf { } F _ { t }$ for extra supervision signal that promotes temporal consistency: ",
+        "bbox": [
+            75,
+            778,
+            917,
+            837
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "equation",
+        "text": "$$\n\\boldsymbol {F} _ {t} ^ {\\prime}, \\boldsymbol {P} _ {t + 1} ^ {\\prime} = \\phi_ {\\mathrm{d}} ^ {1} (\\boldsymbol {S} _ {t}) \\tag {2a}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            336,
+            850,
+            917,
+            869
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "equation",
+        "text": "$$\n\\mathcal {L} = \\mathcal {L} _ {\\text { recon }} + \\lambda \\mathcal {L} _ {\\text { tsim }} \\tag {2b}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            406,
+            876,
+            917,
+            894
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "with $\\mathcal { L } _ { \\mathrm { t s i m } } = \\operatorname* { m e a n } _ { h , w } ( \\mathrm { C E } ( P _ { t + 1 } ^ { \\prime } , P _ { t + 1 } ) )$ (2c) ",
+        "bbox": [
+            184,
+            897,
+            917,
+            920
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "and $\\begin{array} { r } { P _ { t + 1 } = \\mathrm { a r g m a x } _ { h ^ { \\prime } , w ^ { \\prime } } ( \\mathrm { s i m i l a r i t y } _ { c } ( \\pmb { F } _ { t } , \\pmb { F } _ { t + 1 } ) ) } \\end{array}$ (2d) ",
+        "bbox": [
+            184,
+            923,
+            917,
+            944
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "where $P _ { t + 1 } ^ { \\prime } \\in \\mathbb { R } ^ { h \\times w \\times h ^ { \\prime } \\times w ^ { \\prime } }$ is predicted future patch position, where $h ^ { \\prime }$ and $w ^ { \\prime }$ are identical to h and w respectively. Pseudo-ground-truth future patch position $P _ { t + 1 }$ is naively indicated by the maximum similarity along dimension c between current features $\\pmb { F } _ { t }$ and future features $\\mathbf { \\Delta } _ { F + 1 }$ . ",
+        "bbox": [
+            75,
+            53,
+            920,
+            133
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "text",
+        "text": "Remark. The additional prediction of $P _ { t + 1 } ^ { \\prime }$ consumes extra computation both in space and time, so does the corresponding loss minimizing. The calculation of pseudo-ground-truth $P _ { { t + 1 } }$ actually assumes that patches in current frame are still visible in next frame. Thus minimizing $\\mathcal { L } _ { \\mathrm { t s i m } }$ can be harmful for learning on videos where objects have strong dynamic occlusion, disappearing and reappearing, e.g., MOVi-series datasets [5]. Please refer to Table 1 – VideoSAUR shows a significant gap from SlotContrast on especially MOVi-C/E. ",
+        "bbox": [
+            72,
+            134,
+            917,
+            269
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "text",
+        "text": "Slot-Slot Contrastive loss (SSC). SlotContrast adopts the plain model design and introduces an elegant contrastive loss that pull slots representing the same object close while pushing slots representing different object apart, based on an InfoNCE-style [9] regularization: ",
+        "bbox": [
+            72,
+            269,
+            917,
+            347
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "equation",
+        "text": "$$\n\\mathcal {L} = \\mathcal {L} _ {\\text {recon}} + \\lambda \\mathcal {L} _ {\\text {ssc}} \\tag {3a}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            423,
+            362,
+            912,
+            378
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "text",
+        "text": "with $\\mathcal { L } _ { \\mathrm { s s c } } = \\mathrm { I n f o N C E } _ { b , s } ( \\{ S _ { t } ^ { ( b ) } \\} _ { b } , \\{ S _ { t + 1 } ^ { ( b ) } \\} _ { b } )$ (3b)",
+        "bbox": [
+            215,
+            386,
+            912,
+            409
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "text",
+        "text": "where $\\{ S _ { t } ^ { ( b ) } \\} _ { b } \\in \\mathbb { R } ^ { b \\times s \\times c }$ is b slot sets in a batch, as the contrastive loss is calculated along both dimensions b and s. ",
+        "bbox": [
+            72,
+            424,
+            917,
+            463
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "text",
+        "text": "Remark. Compared with TSim, SSC is elegant both in model design and loss minimizing. It works effectively on different datasets and thus is inherited by the most recent strong SOTAs like RandSF.Q and SmoothSA. However, besides also introducing extra computation overhead, it relies on stable one-to-one object correspondence across adjacent frames. ",
+        "bbox": [
+            72,
+            465,
+            917,
+            560
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "text",
+        "text": "Our xSSC shifts the paradigm for learning temporal consistency from explicit loss terms to implicit model designs. It avoids computation overhead in both training and inference, as well as corresponding hyperparamters. It also replies on a minimal assumption that the current frame’s whole set of slots contains all the static information about the previous frame. ",
+        "bbox": [
+            72,
+            562,
+            917,
+            658
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "text",
+        "text": "3.2 Chrono-Channel Decomposition (CCD) ",
+        "text_level": 1,
+        "bbox": [
+            75,
+            686,
+            624,
+            705
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "text",
+        "text": "The fundamental philosophy of xSSC is that an object’s temporal presence consists of two physically distinct components: its persistent/static appearance and its changing/dynamic kinematics. The former component is used to foster temporal consistency while the latter preserves representation diversity. ",
+        "bbox": [
+            72,
+            715,
+            917,
+            793
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "text",
+        "text": "We formulate this by introducing Chrono-Channel Decomposition (CCD). Instead of treating each slot in the set $S _ { t }$ as a monolithic latent vector, we structurally disentangle it along the channel dimension into a static sub-space and a dynamic sub-space. Let $c _ { \\mathrm { s } }$ denote the channel boundary. The static part $S _ { t , : c _ { \\mathrm { s } } }$ encodes time-invariant object identity like semantics and texture, while the dynamic part $S _ { t , c _ { \\mathrm { s } } ; }$ encodes time-variant states like position, pose and motion. ",
+        "bbox": [
+            72,
+            793,
+            917,
+            910
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "text",
+        "text": "Crucially, CCD acts as an implicit information bottleneck. Since kinematic states operate on a significantly lower-dimensional manifold compared to rich visual semantics, we strictly constrain the dynamic channels (empirically, onequarter of the total channels, i.e., $\\textstyle c _ { \\mathrm { s } } = { \\frac { 3 } { 4 } } c )$ . This physical constraint prevents the network from redundantly memorizing visual features in the dynamic sub-space, forcing a clean disentanglement. Please refer to Section 4.4. ",
+        "bbox": [
+            72,
+            910,
+            917,
+            947
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "text",
+        "text": "",
+        "bbox": [
+            72,
+            56,
+            917,
+            134
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "text",
+        "text": "3.3 Cross-Temporal Reconstruction (CTR) ",
+        "text_level": 1,
+        "bbox": [
+            75,
+            165,
+            619,
+            186
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "text",
+        "text": "To enforce the structural disentanglement of CCD without any explicit contrastive penalties, we introduce a parameter-free training mechanism: Cross-Temporal Reconstruction (CTR). ",
+        "bbox": [
+            72,
+            200,
+            917,
+            256
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "text",
+        "text": "During training, instead of conventionally reconstructing current frame $\\mathbf { } F _ { t }$ , a typical decoder $\\phi _ { \\mathrm { d } }$ is tasked to stochastically reconstruct target features of either the current time step $( t _ { x } = t )$ or the previous $( t _ { x } = t - 1 )$ . To achieve this, we combine the current frame’s static properties with the target frame’s dynamic states. Formally, the decoder $\\phi _ { \\mathrm { d } }$ operates on synthesized slot $\\tilde { \\boldsymbol { S } } _ { t } \\in \\mathbb { R } ^ { s \\times c }$ : ",
+        "bbox": [
+            72,
+            258,
+            917,
+            356
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "equation",
+        "text": "$$\n\\boldsymbol {F} _ {t _ {x}} ^ {\\prime} = \\phi_ {\\mathrm{d}} (\\tilde {\\boldsymbol {S}} _ {t}) \\tag {4a}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            319,
+            373,
+            912,
+            393
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "text",
+        "text": "with $\\tilde { S } _ { t } = \\mathrm { c a t } _ { c } ( S _ { t , : c _ { \\mathrm { s } } } , S _ { t _ { x } , c _ { \\mathrm { s } } \\colon } ) \\oplus \\mathrm { c a t } _ { c } ( E _ { t - t _ { x } , : c _ { \\mathrm { s } } } , E _ { 0 , c _ { \\mathrm { s } } \\colon } )$ (4b) ",
+        "bbox": [
+            174,
+            400,
+            912,
+            421
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "text",
+        "text": "where $\\tilde { S } _ { t }$ are constructed via cross-temporal channel concatenation along with relative temporal embeddings $\\pmb { { E } } \\in \\mathbb { R } ^ { 2 \\times c }$ . ⊕ means appending relative time embeddings to slots. During inference, $t _ { x } \\equiv t$ , working as common decoding. ",
+        "bbox": [
+            72,
+            440,
+            917,
+            499
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "text",
+        "text": "3.4 Implicit Temporal Consistency via Standard Reconstruction ",
+        "text_level": 1,
+        "bbox": [
+            75,
+            530,
+            878,
+            549
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "text",
+        "text": "Through the synergy of CCD and CTR, xSSC perfectly internalizes temporal consistency. The final objective is super simple, returning to the purest form: ",
+        "bbox": [
+            72,
+            565,
+            917,
+            604
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "equation",
+        "text": "$$\n\\mathcal {L} = \\mathcal {L} _ {\\text {recon}} = \\operatorname{MSE} (\\boldsymbol {F} _ {t _ {x}} ^ {\\prime}, \\boldsymbol {F} _ {t _ {x}}) \\tag {5}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            351,
+            622,
+            912,
+            642
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "text",
+        "text": "Remark. By completely dropping explicit losses like $\\mathcal { L } _ { \\mathrm { t s i m } } ~ \\mathcal { L } _ { \\mathrm { s s c } }$ , we eliminate hyper-parameter tuning. Furthermore, CCD’s naive projection and channel group/concatenation is very light-wegiht; CTR utilizes a single standard OCL decoding head to produce the same volume of reconstruction as the plain decoding. Thus during both training and inference, quasi-zero computation overhead is introduced neither in space nor in time. ",
+        "bbox": [
+            72,
+            658,
+            917,
+            775
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "text",
+        "text": "4 Experiment ",
+        "text_level": 1,
+        "bbox": [
+            75,
+            808,
+            297,
+            830
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "text",
+        "text": "We extensively evaluate xSSC across unsupervised object discovery (Section 4.2), downstream object recognition (Section 4.3), and rigorously dissect its internal mechanisms through attribution and manipulation analyses (Section 4.4). To ensure absolute reproducibility, we use three standard random seeds, i.e., 42, 43 and 44, for any experiment item whenever possible. ",
+        "bbox": [
+            72,
+            850,
+            917,
+            949
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "image",
+        "img_path": "images/a04ff3f7cd75475fef580783831008db648c28f70c83724c2256ff47194630fa.jpg",
+        "image_caption": [
+            "Fig. 2: Object Discovery Visualization. "
+        ],
+        "image_footnote": [],
+        "content": "MOVi-C\nSlotContrast\n+xSSC\nMOVi-E\nRandSF.Q\n+xSSC\nYTVIS\nSmoothSA\n+xSSC",
+        "sub_type": "text_image",
+        "bbox": [
+            79,
+            50,
+            920,
+            320
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "text",
+        "text": "4.1 Experiment Setup and Unified Benchmark ",
+        "text_level": 1,
+        "bbox": [
+            75,
+            390,
+            665,
+            411
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "text",
+        "text": "Datasets. We evaluate on datasets exhibiting varying degrees of visual and temporal complexity. MOVi-C and MOVi-E 4 are synthetic datasets featuring complex object dynamics, with MOVi-E further introducing camera movements. YTVIS 5 represents real-world YouTube videos characterized by highly complex backgrounds, frequent occlusions, and diverse object categories. We use the High-Quality (HQ) version 6, which provides better segmentation annotations. ",
+        "bbox": [
+            72,
+            424,
+            917,
+            541
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "text",
+        "text": "Metrics. For object discovery, we utilize the standard segmentation metrics: Adjusted Rand Index (ARI) 7, Foreground ARI $\\left( \\mathrm { A R I _ { f g } } \\right)$ ), Mean Best Overlap (mBO) [13], and Mean Intersection over Union (mIoU) 8. For downstream object recognition, we report Top-1 and Top-3 classification accuracy, bounding box IoU (box IoU), and the number of matched objects (#match). ",
+        "bbox": [
+            75,
+            541,
+            920,
+            639
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "text",
+        "text": "Codebase and Fair Comparison. A critical issue in video OCL literature is that methods often report results using disjoint codebases, with different data augmentations, training schedules, input resolutions, VFM backbone sizes and so on. To ensure a strictly controlled and fair comparison, we conduct all experiments within a unified SOTA framework object-centric-bench 9 10. Many representative methods are reproduced with identical, advanced data augmentation and training recipes, even with model checkpoints and training logs for all random seeds available. Consequently, any performance delta in our experiments can be attributed to the claimed differences, rather than hyper-parameters. ",
+        "bbox": [
+            72,
+            640,
+            917,
+            756
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "page_footnote",
+        "text": "4 https://github.com/google-research/kubric/blob/main/challenges/movi ",
+        "bbox": [
+            79,
+            767,
+            803,
+            786
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "page_footnote",
+        "text": "5 https://youtube-vos.org/dataset/vis ",
+        "bbox": [
+            84,
+            786,
+            460,
+            804
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "page_footnote",
+        "text": "6 https://github.com/SysCV/vmt?tab=readme-ov-file#hq-ytvis-high-quality-videoinstance-segmentation-dataset ",
+        "bbox": [
+            82,
+            804,
+            900,
+            840
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "page_footnote",
+        "text": "7 https://scikit-learn.org/stable/modules/generated/sklearn.metrics.adjusted\\_rand score.html ",
+        "bbox": [
+            84,
+            840,
+            915,
+            874
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "page_footnote",
+        "text": "8 https://scikit-learn.org/stable/modules/generated/sklearn.metrics.jaccard\\_score.ht ml ",
+        "bbox": [
+            84,
+            874,
+            917,
+            910
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "page_footnote",
+        "text": "9 https://github.com/Genera1Z/RandSF.Q",
+        "bbox": [
+            84,
+            910,
+            513,
+            930
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "page_footnote",
+        "text": "10 https://github.com/Genera1Z/SmoothSA ",
+        "bbox": [
+            77,
+            930,
+            513,
+            947
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "text",
+        "text": "",
+        "bbox": [
+            72,
+            55,
+            920,
+            115
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "table",
+        "img_path": "images/4c23556856ab5354afa2c63ff31cda565066cba3b477b8ec35990651f70ac283.jpg",
+        "table_caption": [
+            "Table 1: Object Discovery. For all methods, we use DINOv2 ViT-S/14 [10] as the encoder, strong data augmentation [4], input solution 224×224. "
+        ],
+        "table_footnote": [],
+        "table_body": "<table><tr><td rowspan=\"2\"></td><td>ARI</td><td> $ARI_{fg}$ </td><td>mBO</td><td>mIoU</td><td>ARI</td><td> $ARI_{fg}$ </td><td>mBO</td><td>mIoU</td><td>ARI</td><td> $ARI_{fg}$ </td><td>mBO</td><td>mIoU</td></tr><tr><td colspan=\"2\">MOVi-C</td><td colspan=\"2\">#slot=11, conditional</td><td colspan=\"2\">MOVi-E</td><td colspan=\"2\">#slot=24, conditional</td><td colspan=\"2\">YTVIS-HQ</td><td colspan=\"2\">#slot=6, unconditional</td></tr><tr><td>VideoSAUR</td><td> $41.9_{1.1}$ </td><td> $53.3_{2.1}$ </td><td> $16.1_{0.4}$ </td><td> $14.8_{0.4}$ </td><td> $17.4_{2.5}$ </td><td> $34.6_{20.7}$ </td><td> $8.3_{4.9}$ </td><td> $7.5_{4.3}$ </td><td> $33.8_{0.7}$ </td><td> $49.2_{0.5}$ </td><td> $29.9_{0.4}$ </td><td> $29.7_{0.4}$ </td></tr><tr><td>SlotContrast</td><td> $64.6_{9.4}$ </td><td> $59.9_{5.3}$ </td><td> $27.7_{3.0}$ </td><td> $25.8_{2.9}$ </td><td> $29.9_{4.9}$ </td><td> $70.6_{3.8}$ </td><td> $20.7_{1.4}$ </td><td> $19.3_{1.2}$ </td><td> $37.2_{0.6}$ </td><td> $49.4_{1.1}$ </td><td> $33.0_{0.2}$ </td><td> $32.8_{0.1}$ </td></tr><tr><td>+xSSC</td><td> $65.8_{7.8}$ </td><td> $61.5_{4.9}$ </td><td> $28.3_{3.3}$ </td><td> $25.9_{2.8}$ </td><td> $34.0_{3.7}$ </td><td> $68.0_{2.9}$ </td><td> $21.9_{2.0}$ </td><td> $20.8_{2.2}$ </td><td> $39.3_{1.6}$ </td><td> $52.5_{1.8}$ </td><td> $35.1_{2.6}$ </td><td> $34.3_{1.0}$ </td></tr><tr><td>RandSF.Q</td><td> $65.4_{10.7}$ </td><td> $67.4_{2.1}$ </td><td> $29.2_{3.8}$ </td><td> $26.8_{3.7}$ </td><td> $30.5_{1.2}$ </td><td> $82.1_{3.1}$ </td><td> $23.0_{1.2}$ </td><td> $21.6_{1.4}$ </td><td> $40.1_{0.4}$ </td><td> $58.0_{1.0}$ </td><td> $37.6_{0.4}$ </td><td> $37.2_{0.4}$ </td></tr><tr><td>+xSSC</td><td> $68.4_{5.4}$ </td><td> $68.4_{4.5}$ </td><td> $30.8_{2.4}$ </td><td> $28.5_{2.0}$ </td><td> $43.9_{0.6}$ </td><td> $75.2_{1.2}$ </td><td> $26.7_{0.3}$ </td><td> $25.0_{0.3}$ </td><td> $41.8_{0.9}$ </td><td> $58.2_{1.3}$ </td><td> $39.5_{0.5}$ </td><td> $39.2_{0.5}$ </td></tr><tr><td>SmoothSA</td><td> $50.9_{1.6}$ </td><td> $69.0_{0.3}$ </td><td> $31.7_{0.8}$ </td><td> $30.2_{0.8}$ </td><td> $36.7_{0.6}$ </td><td> $73.6_{0.6}$ </td><td> $28.6_{0.1}$ </td><td> $27.4_{0.1}$ </td><td> $42.4_{0.8}$ </td><td> $63.0_{3.4}$ </td><td> $38.9_{0.7}$ </td><td> $38.3_{0.6}$ </td></tr><tr><td>+xSSC</td><td> $55.5_{0.3}$ </td><td> $72.2_{0.4}$ </td><td> $34.5_{0.3}$ </td><td> $33.3_{0.2}$ </td><td> $36.3_{1.4}$ </td><td> $74.5_{1.3}$ </td><td> $28.9_{0.7}$ </td><td> $27.7_{0.7}$ </td><td> $45.5_{1.4}$ </td><td> $61.4_{3.0}$ </td><td> $41.1_{0.4}$ </td><td> $40.4_{0.4}$ </td></tr></table>",
+        "bbox": [
+            77,
+            157,
+            924,
+            367
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "text",
+        "text": "4.2 Unsupervised Video Object Discovery ",
+        "text_level": 1,
+        "bbox": [
+            75,
+            517,
+            610,
+            539
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "text",
+        "text": "Setup. We seamlessly integrate our xSSC into three leading baselines, Slot-Contrast [8], RandSF.Q [17] and SmoothSA [19], strictly removing their explicit SSC losses. We also report results of VideoSAUR [16] as a reference point. We skip methods like SAVi [6] and SAVi++ [4], whose extra weak supervision based optical flow and depth is not fair for our baselines. We also skip methods like SOLV [1] and DIAS [20], whose slot pruning/merging technique is not fair for our baselines, which use fixed number of slots. ",
+        "bbox": [
+            72,
+            573,
+            917,
+            708
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "text",
+        "text": "Results. As shown in Table 1, replacing explicit contrastive losses with our implicit xSSC consistently establishes new SOTAs across all baselines and datasets under most metrics. Crucially, in highly dynamic scenes (MOVi-C/E) where objects frequently occlude or reappear, the rigid tracking assumptions of SSC’ explicit regularization become bottlenecks. By relaxing this constraint and aligning identities implicitly through the static sub-space, SlotContrast+xSSC, RandSF.Q+xSSC and SmoothSA+xSSC demonstrate consistent gains in all metrics, especially ARI, mBO and mIoU. Qualitative results are shown in Figure 2. Furthermore, as shown in Table 2, by excluding the dense explicit contrastive computation, xSSC practically improves training efficiency in both memory and throughput. This proves that Occam’s Razor holds: simpler, structural designs outperform complex loss engineering. ",
+        "bbox": [
+            72,
+            715,
+            920,
+            949
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "table",
+        "img_path": "images/77172921e1a2f08a5e8515f36abca0f5660e2b72328e5e353c3a5d5b0171f36e.jpg",
+        "table_caption": [
+            "Table 2: Training/Evalution Efficiency. "
+        ],
+        "table_footnote": [],
+        "table_body": "<table><tr><td rowspan=\"2\"></td><td colspan=\"2\">train GB/min</td><td colspan=\"2\">eval</td></tr><tr><td colspan=\"4\">YTVIS-HQ batchsize=8, RTX 3080, one epoch</td></tr><tr><td>SlotContrast</td><td>4.63</td><td>1.20</td><td>1.74</td><td>0.43</td></tr><tr><td>+xSSC</td><td>4.46</td><td>1.10</td><td>1.66</td><td>0.42</td></tr><tr><td>RandSF.Q</td><td>3.93</td><td>1.13</td><td>1.04</td><td>0.37</td></tr><tr><td>+xSSC</td><td>3.82</td><td>1.12</td><td>1.03</td><td>0.37</td></tr><tr><td>SmoothSA</td><td>3.97</td><td>1.08</td><td>1.04</td><td>0.40</td></tr><tr><td>+xSSC</td><td>3.95</td><td>1.10</td><td>1.03</td><td>0.40</td></tr></table>",
+        "bbox": [
+            79,
+            53,
+            476,
+            237
+        ],
+        "page_idx": 9
+    },
+    {
+        "type": "table",
+        "img_path": "images/1f71a43d536040bdbee69f69a981464b01d5bc77b6d82216270e16e62e97ad73.jpg",
+        "table_caption": [
+            "Table 3: Object Recognition. "
+        ],
+        "table_footnote": [],
+        "table_body": "<table><tr><td rowspan=\"2\"></td><td colspan=\"4\">cls Top-1/3 box IoU #match</td></tr><tr><td colspan=\"2\">YTVIS-HQ</td><td colspan=\"2\">freeze OCL + train MLP</td></tr><tr><td>SlotContrast</td><td> $85.8_{0.3}$ </td><td> $95.8_{0.4}$ </td><td> $51.5_{0.5}$ </td><td> $9249_{41}$ </td></tr><tr><td>+xSSC</td><td> $86.4_{1.2}$ </td><td> $95.4_{1.5}$ </td><td> $52.4_{0.6}$ </td><td> $9253_{58}$ </td></tr><tr><td>RandSF.Q</td><td> $90.5_{0.3}$ </td><td> $97.9_{0.3}$ </td><td> $50.6_{0.4}$ </td><td> $8979_{123}$ </td></tr><tr><td>+xSSC</td><td> $91.9_{0.5}$ </td><td> $97.9_{0.1}$ </td><td> $52.9_{0.7}$ </td><td> $9183_{34}$ </td></tr><tr><td>SmoothSA</td><td> $90.4_{0.2}$ </td><td> $97.6_{0.1}$ </td><td> $42.6_{1.4}$ </td><td> $8957_{34}$ </td></tr><tr><td>+xSSC</td><td> $91.4_{0.5}$ </td><td> $98.2_{0.0}$ </td><td> $43.5_{0.3}$ </td><td> $8777_{89}$ </td></tr></table>",
+        "bbox": [
+            486,
+            53,
+            912,
+            237
+        ],
+        "page_idx": 9
+    },
+    {
+        "type": "text",
+        "text": "4.3 Supervised Probing: Object Recognition ",
+        "text_level": 1,
+        "bbox": [
+            75,
+            310,
+            634,
+            331
+        ],
+        "page_idx": 9
+    },
+    {
+        "type": "text",
+        "text": "Setup. Object discovery merely measures spatial decomposition plus temporal association, while object recognition explicitly quantifies the semantic quality of the learned latent slots. Following standard protocols [11], we freeze the trained OCL models from Section 4.2 and train a lightweight two-layer MLP to predict class labels and bounding boxes via the classification and regression heads respectively, from the slot representations on the YTVIS-HQ dataset. ",
+        "bbox": [
+            72,
+            343,
+            917,
+            460
+        ],
+        "page_idx": 9
+    },
+    {
+        "type": "text",
+        "text": "Results. As shown in Table 3, models powered by xSSC consistently outperform their vanilla counterparts in Top-1/Top-3 accuracy and box IoU, under similar number of matched objects #match. We argue that the explicit SSC loss often forces slots to over-fit to instance-level low-level textures to satisfy the InfoNCE penalty. In contrast, xSSC explicitly allocates a static channel sub-space for identity, preventing dynamic noises (pose, location) from diluting the semantic features. This structural bottleneck ensures that the frozen slots provide a far more linearly separable latent space for downstream reasoning. ",
+        "bbox": [
+            72,
+            460,
+            917,
+            617
+        ],
+        "page_idx": 9
+    },
+    {
+        "type": "text",
+        "text": "4.4 Dissection: Static vs Dynamic Sub-spaces ",
+        "text_level": 1,
+        "bbox": [
+            75,
+            643,
+            648,
+            665
+        ],
+        "page_idx": 9
+    },
+    {
+        "type": "text",
+        "text": "To rigorously validate that with the help of CTR, CCD physically disentangles semantics and kinematics as claimed, we conduct three white-box analyses on the converged SmoothSA+xSSC model. The corresponding results of the SmoothSA basis model is included as a reference. ",
+        "bbox": [
+            72,
+            676,
+            917,
+            752
+        ],
+        "page_idx": 9
+    },
+    {
+        "type": "text",
+        "text": "Temporal PCA Trajectories. As shown in Figure 3 (left), we project the slots of a tracked object across a video into a 2D space using PCA. When projecting only the static channels, i.e., $\\{ S _ { t , : c _ { \\mathrm { s } } } \\} _ { t }$ , the trajectory collapses into a tightly bounded dense cluster. This confirms that time-invariant identity is successfully anchored. Conversely, projecting the dynamic channels, i.e., $\\{ S _ { t , c _ { \\mathrm { s } } : } \\} _ { t }$ , reveals a continuous, elongated trajectory. It effectively and intuitively maps the object’s spatial movement and kinematic state changes over time. ",
+        "bbox": [
+            72,
+            754,
+            917,
+            889
+        ],
+        "page_idx": 9
+    },
+    {
+        "type": "text",
+        "text": "Gradient Attribution in Object Recognition. As shown in Figure 3 (right), we compute the gradient magnitude from the downstream MLP back to the frozen slots. For the categorical classification head (relying on identity), most of the gradient attribution is heavily concentrated on the static channels. For the bounding box regression head (relying on spatial coordinates), the gradients distinctly shift, primarily activating the dynamic channels. This proves our proposed sub-spaces function exactly as an information bottleneck. ",
+        "bbox": [
+            75,
+            889,
+            917,
+            949
+        ],
+        "page_idx": 9
+    },
+    {
+        "type": "chart",
+        "img_path": "images/5f63c51538eef9e73170b7b0995371e929dd15bb8d36968e86099b494295989a.jpg",
+        "content": "| Time Step | dynamic#0 | dynamic#1 | dynamic#2 | dynamic#3 | dynamic#4 | dynamic#5 | dynamic#6 | static channels |\n|-----------|-----------|-----------|-----------|-----------|-----------|-----------|-----------|----------------|\n| 0         | 0.1       | 0.1       | 0.2       | -0.2      | 0.0       | 0.0       | 0.0       | 0.1            |\n| 50        | 0.1       | 0.1       | 0.2       | -0.2      | 0.0       | 0.0       | 0.0       | 0.1            |\n| 100       | 0.1       | 0.1       | 0.2       | -0.2      | 0.0       | 0.0       | 0.0       | 0.1            |\n| 150       | 0.1       | 0.1       | 0.2       | -0.2      | 0.0       | 0.0       | 0.0       | 0.1            |\n| 200       | 0.1       | 0.1       | 0.2       | -0.2      | 0.0       | 0.0       | 0.0       | 0.1            |\n| 250       | 0.1       | 0.1       | 0.2       | -0.2      | 0.0       | 0.0       | 0.0       | 0.1            |\n| 300       | 0.1       | 0.1       | 0.2       | -0.2      | 0.0       | 0.0       | 0.0       | 0.1            |\n| 350       | 0.1       | 0.1       | 0.2       | -0.2      | 0.0       | 0.0       | 0.0       | 0.1            |",
+        "chart_caption": [
+            "Fig. 3: (center ) A sample video with object discovery masks, 8 of 29 frames. (left) Temporal Trajectories: slots’ static part usually clusters while the dynamic part mostly disperses. Interestingly, the purple slot’s static part also spreads, due to its noisy feature aggregation, which jumps across frames. (right) Gradient Distribution: to classify the slot that aggregates the yellow area features, more gradients come from the static channels, which verifies our design that static channels capture more invariant semantics; Similarly, to regress the ape’s bounding box, more kinematics is needed. "
+        ],
+        "chart_footnote": [],
+        "sub_type": "line",
+        "bbox": [
+            87,
+            55,
+            917,
+            289
+        ],
+        "page_idx": 10
+    },
+    {
+        "type": "text",
+        "text": "",
+        "bbox": [
+            72,
+            463,
+            917,
+            541
+        ],
+        "page_idx": 10
+    },
+    {
+        "type": "text",
+        "text": "4.5 Ablation ",
+        "text_level": 1,
+        "bbox": [
+            75,
+            565,
+            251,
+            583
+        ],
+        "page_idx": 10
+    },
+    {
+        "type": "text",
+        "text": "Our ablation study is shown in Table 4. ",
+        "bbox": [
+            111,
+            593,
+            539,
+            611
+        ],
+        "page_idx": 10
+    },
+    {
+        "type": "text",
+        "text": "Effects of relative time embedding: with this is always better. Thus it is necessary to indicate the decoder what are the target to predict. ",
+        "bbox": [
+            72,
+            613,
+            917,
+            650
+        ],
+        "page_idx": 10
+    },
+    {
+        "type": "text",
+        "text": "Effects of dynamic channel ratio: A quarter is the best choice, compared with $\\begin{array} { l } { { \\frac { 1 } { 2 } } } \\end{array}$ and $\\frac { 1 } { 8 }$ . It performs consistently well on quite different datasets. ",
+        "bbox": [
+            75,
+            653,
+            917,
+            691
+        ],
+        "page_idx": 10
+    },
+    {
+        "type": "text",
+        "text": "Effects of reconstruction past or future: Reconstruction the past is better than the future. This is because the future slots are recurrently transitioned from the past thus they should contain the information about the past, which aligns with our assumption. ",
+        "bbox": [
+            72,
+            692,
+            917,
+            767
+        ],
+        "page_idx": 10
+    },
+    {
+        "type": "text",
+        "text": "Effects of probability of predicting the past: 50/50 is the best choice as it balances the learning of standard reconstruction and the ability to remember the past. ",
+        "bbox": [
+            72,
+            769,
+            917,
+            827
+        ],
+        "page_idx": 10
+    },
+    {
+        "type": "text",
+        "text": "5 Limitation and Future Work ",
+        "text_level": 1,
+        "bbox": [
+            75,
+            853,
+            537,
+            873
+        ],
+        "page_idx": 10
+    },
+    {
+        "type": "text",
+        "text": "While xSSC establishes a new paradigm for video object-centric learning by internalizing temporal consistency via structural design, it naturally inherits certain limitations from its purely reconstruction-driven nature. ",
+        "bbox": [
+            72,
+            889,
+            917,
+            947
+        ],
+        "page_idx": 10
+    },
+    {
+        "type": "table",
+        "img_path": "images/9c07906bf7789b82d34c3e292032020289fd7c76e17b84c8971348eab1d580b3.jpg",
+        "table_caption": [
+            "Table 4: Ablation Studies. "
+        ],
+        "table_footnote": [],
+        "table_body": "<table><tr><td>ARI+ARI $_{fg}$ +mBO+mIoU</td><td colspan=\"2\">relative t emb.</td><td colspan=\"3\">dynamic ratio</td><td colspan=\"2\">recon.</td><td colspan=\"3\">P(past)</td></tr><tr><td>YTVIS-HQ</td><td>with</td><td>without</td><td> $\\frac{1}{2}$ </td><td> $\\frac{1}{4}$ </td><td> $\\frac{1}{8}$ </td><td>past</td><td>future</td><td>0.1</td><td>0.5</td><td>0.9</td></tr><tr><td>RandSF.Q+xSSC</td><td> $178.7_{3.0}$ </td><td> $164.8_{9.7}$ </td><td> $176.3_{6.8}$ </td><td>-</td><td> $178.6_{6.2}$ </td><td>-</td><td> $174.2_{7.4}$ </td><td> $175.2_{9.3}$ </td><td>-</td><td> $170.6_{2.5}$ </td></tr><tr><td>SmoothSA+xSSC</td><td> $188.4_{4.7}$ </td><td> $169.3_{8.3}$ </td><td> $185.4_{8.2}$ </td><td>-</td><td> $187.6_{9.3}$ </td><td>-</td><td> $173.7_{8.2}$ </td><td> $184.6_{4.4}$ </td><td>-</td><td> $179.9_{6.5}$ </td></tr></table>",
+        "bbox": [
+            79,
+            53,
+            924,
+            159
+        ],
+        "page_idx": 11
+    },
+    {
+        "type": "text",
+        "text": "Firstly, relying solely on the plain reconstruction loss without explicit instancelevel push-away mechanics, which is intrinsically balanced in InfoNCE by the pull-close, the model may struggle in extremely ambiguous scenes featuring multiple visually identical instances. For example, given a swarm of identical uniform objects, the static sub-spaces might overly converge, burdening the dynamic channels to separate them spatially. ",
+        "bbox": [
+            72,
+            235,
+            924,
+            352
+        ],
+        "page_idx": 11
+    },
+    {
+        "type": "text",
+        "text": "Secondly, our static-dynamic decomposition implicitly assumes that an object’s identity lies in low-frequency static semantics. For things or stuff with highly dynamic intrinsic textures, e.g., flickering fire and rippling water, the compact dynamic sub-space may face bandwidth bottlenecks, leading to blurry reconstructions. ",
+        "bbox": [
+            72,
+            354,
+            920,
+            450
+        ],
+        "page_idx": 11
+    },
+    {
+        "type": "text",
+        "text": "Finally, addressing long-term re-identification, where objects are occluded for extended periods beyond the stochastic adjacent-frame window, remains an open challenge. Future work could explore integrating slot-based memory buffers into the static sub-space to anchor persistent identities across long-term occlusions, yet without sacrificing Occam’s Razor. ",
+        "bbox": [
+            72,
+            453,
+            917,
+            551
+        ],
+        "page_idx": 11
+    },
+    {
+        "type": "text",
+        "text": "6 Conclusion ",
+        "text_level": 1,
+        "bbox": [
+            75,
+            588,
+            288,
+            608
+        ],
+        "page_idx": 11
+    },
+    {
+        "type": "text",
+        "text": "In this work, we propose a paradigm shift for video Object-Centric Learning: robust temporal consistency is fundamentally better enforced as an implicit architectural property rather than an explicit external penalty. We demonstrate that the explicit SSC regularization and its rigid tracking assumptions, which have dominated recent state-of-the-art methods, can be elegantly and completely excluded. We achieve this via two quasi-zero-overhead synergistic mechanisms, Chrono-Channel Decomposition (CCD) and Cross-Temporal Reconstruction (CTR). Together, they compel the model to naturally internalize temporal correspondence by minimizing the standard reconstruction error alone. Extensive empirical evaluations and rigorous white-box analyses confirm that xSSC not only establishes new SOTA performance on highly dynamic video datasets but also yields profoundly interpretable latent sub-spaces. While resolving extremely ambiguous identical instances and long-term occlusions purely through reconstruction remains an open challenge, xSSC strictly adheres to Occam’s Razor. We successfully return video OCL to its purest form, providing high efficiency and elegant foundation for future research. ",
+        "bbox": [
+            72,
+            637,
+            920,
+            949
+        ],
+        "page_idx": 11
+    },
+    {
+        "type": "text",
+        "text": "References ",
+        "text_level": 1,
+        "bbox": [
+            77,
+            53,
+            237,
+            73
+        ],
+        "page_idx": 12
+    },
+    {
+        "type": "list",
+        "sub_type": "ref_text",
+        "list_items": [
+            "1. Aydemir, G., Xie, W., Güney, F.: Self-Supervised Object-Centric Learning for Videos. In: Advances in Neural Information Processing Systems (2023) ",
+            "2. Caron, M., Touvron, H., Misra, I., Jégou, H., Mairal, J., Bojanowski, P., Joulin, A.: Emerging Properties in Self-Supervised Vision Transformers. In: Proceedings of the IEEE/CVF international conference on computer vision. pp. 9650–9660 (2021) ",
+            "3. Cavanagh, P.: Visual Cognition. Vision Research 51(13), 1538–1551 (2011) ",
+            "4. Elsayed, G.F., Mahendran, A., van Steenkiste, S., Greff, K., Mozer, M.C., Kipf, T.: SAVi++: Towards End-to-End Object-Centric Learning from Real-World Videos. In: Advances in Neural Information Processing Systems (NeurIPS) (2022) ",
+            "5. Greff, K., Belletti, F., Beyer, L., Doersch, C., Du, Y., Duckworth, D., Fleet, D.J., Gnanapragasam, D., Golemo, F., Herrmann, C., et al.: Kubric: A Scalable Dataset Generator. In: Proceedings of the IEEE/CVF conference on computer vision and pattern recognition. pp. 3749–3761 (2022) ",
+            "6. Kipf, T., Elsayed, G.F., Mahendran, A., Stone, A., Sabour, S., Heigold, G., Jonschkowski, R., Dosovitskiy, A., Greff, K.: Conditional Object-Centric Learning from Video. In: International Conference on Learning Representations (ICLR) (2022) ",
+            "7. Locatello, F., Weissenborn, D., Unterthiner, T., Mahendran, A., Heigold, G., Uszkoreit, J., Dosovitskiy, A., Kipf, T.: Object-Centric Learning with Slot Attention. In: Larochelle, H., Ranzato, M., Hadsell, R., Balcan, M., Lin, H. (eds.) Advances in Neural Information Processing Systems. vol. 33, pp. 11525–11538. Curran Associates, Inc. (2020) ",
+            "8. Manasyan, A., Seitzer, M., Radovic, F., Martius, G., Zadaianchuk, A.: Temporally Consistent Object-Centric Learning by Contrasting Slots. In: Proceedings of the Computer Vision and Pattern Recognition Conference. pp. 5401–5411 (2025) ",
+            "9. Oord, A.v.d., Li, Y., Vinyals, O.: Representation Learning with Contrastive Predictive Coding. arXiv preprint arXiv:1807.03748 (2018) ",
+            "10. Oquab, M., Darcet, T., Moutakanni, T., Vo, H., Szafraniec, M., Khalidov, V., Fernandez, P., Haziza, D., Massa, F., El-Nouby, A., et al.: DINOv2: Learning Robust Visual Features without Supervision. Transactions on Machine Learning Research Journal (2024) ",
+            "11. Seitzer, M., Horn, M., Zadaianchuk, A., Zietlow, D., Xiao, T., Simon-Gabriel, C.J., He, T., Zhang, Z., Schölkopf, B., Brox, T., et al.: Bridging the Gap to Real-World Object-Centric Learning. In: The Eleventh International Conference on Learning Representations (2023) ",
+            "12. Singh, G., Wu, Y.F., Ahn, S.: Simple Unsupervised Object-Centric Learning for Complex and Naturalistic Videos. Advances in Neural Information Processing Systems 35, 18181–18196 (2022) ",
+            "13. Uijlings, J.R., Van De Sande, K.E., Gevers, T., Smeulders, A.W.: Selective Search for Object Recognition. International Journal of Computer Vision 104, 154–171 (2013) ",
+            "14. Wu, Z., Dvornik, N., Greff, K., Kipf, T., Garg, A.: SlotFormer: Unsupervised Visual Dynamics Simulation with Object-Centric Models. International Conference on Learning Representations (2023) ",
+            "15. Yu, H., Xu, W.: VONet: Unsupervised Video Object Learning With Parallel U-Net Attention and Object-wise Sequential VAE. In: The Twelfth International Conference on Learning Representations (2024) ",
+            "16. Zadaianchuk, A., Seitzer, M., Martius, G.: Object-Centric Learning for Real-World Videos by Predicting Temporal Feature Similarities. Advances in Neural Information Processing Systems 36 (2024) "
+        ],
+        "bbox": [
+            75,
+            87,
+            924,
+            949
+        ],
+        "page_idx": 12
+    },
+    {
+        "type": "list",
+        "sub_type": "ref_text",
+        "list_items": [
+            "17. Zhao, R., Li, J., Kannala, J., Pajarinen, J.: Predicting Video Slot Attention Queries from Random Slot-Feature Pairs. In: AAAI (2026) ",
+            "18. Zhao, R., Wang, V., Kannala, J., Pajarinen, J.: Vector-Quantized Vision Foundation Model for Object-Centric Learning. In: ACM Multimedia (2025) ",
+            "19. Zhao, R., Yang, W., Kannala, J., Pajarinen, J.: Smoothing Slot Attention Iterations and Recurrences. arXiv preprint arXiv:2508.05417 (2025) ",
+            "20. Zhao, R., Zhao, Y., Kannala, J., Pajarinen, J.: Slot Attention with Re-Initialization and Self-Distillation. In: ACM Multimedia (2025) ",
+            "21. Zhao, Z., Wang, J., Horn, M., Ding, Y., He, T., Bai, Z., Zietlow, D., Simon-Gabriel, C.J., Shuai, B., Tu, Z., et al.: Object-Centric Multiple Object Tracking. In: Proceedings of the IEEE/CVF international conference on computer vision. pp. 16601– 16611 (2023) "
+        ],
+        "bbox": [
+            72,
+            53,
+            924,
+            274
+        ],
+        "page_idx": 13
+    }
+]

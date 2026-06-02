@@ -1,0 +1,97 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Learning from Fine-Grained Visual Discrepancies · 通用视觉自监督研究报</title>
+  <link rel="stylesheet" href="../assets/styles.css?v=20260525j">
+  <link rel="stylesheet" href="../assets/visual-ssl.css?v=20260525j">
+</head>
+<body>
+  <header class="masthead">
+    <div class="masthead-kicker">Visual SSL Research Report · 2026-06-02</div>
+    <a class="masthead-title" href="../index.html">通用视觉自监督研究报</a>
+    <div class="masthead-meta">
+      <span>图像表征 · VFM · JEPA · 视频预训练</span>
+      <span>CCF A/B 会议优先</span>
+      <span>图文精读 · 方法图解</span>
+    </div>
+  </header>
+  <nav class="site-nav" aria-label="主导航">
+    <a class="nav-link" href="../index.html">头版</a>
+<a class="nav-link" href="../issues/2026-06-02.html">今日速递</a>
+<a class="nav-link" href="../pages/catalog.html">论文目录</a>
+<a class="nav-link" href="../pages/timeline.html">时间线</a>
+  </nav>
+  <main><article class="paper-detail">
+  <div class="paper-main">
+    <div class="kicker">ICML 2026 Poster · P2 · 2026-06-02</div>
+    <h1 class="paper-headline">Learning from Fine-Grained Visual Discrepancies：视觉-语言自监督和多模态预训练都受 visual grounding 限制，这篇提供了检验和强化细粒度视觉证据使用的训练信号</h1>
+    <p class="dek">把 hallucination 对齐从文本偏好转向细粒度视觉差异，强调模型必须区分局部视觉证据而不是走语言先验捷径。</p>
+    <p class="byline"><strong>Learning from Fine-Grained Visual Discrepancies: Mitigating Multimodal Hallucinations via In-Context Visual Contrastive Optimization</strong>　Haolin Deng, Xin Zou, Zhiwei Jin, Chen Chen, Haonan Lu, Xuming Hu；机构信息 arXiv 元数据未列出。　arXiv + ICML 2026 Poster　<a href="https://arxiv.org/abs/2605.31312">原文链接</a></p>
+    <div class="paper-facts">
+      <span><b>编号</b>2605.31312</span>
+      <span><b>优先级</b>P2</span>
+      <span><b>类别</b>ICML 2026 Poster</span>
+      <span><b>会议</b>arXiv + ICML 2026 Poster</span>
+      <span><b>方法</b>In-Context Visual Contrastive Optimization 把原图和精确语义扰动负图放进共享 multi-image context，避免传统 visual preference DPO 的 partition-function mismatch；再用 Visual Contrast Distillation 约束多图训练到单图推理的一致性。</span>
+      <span><b>来源</b>arXiv / OpenReview</span>
+    </div>
+    <div class="feature-body">
+      <p class="lead dropcap">先说结论。视觉-语言自监督和多模态预训练都受 visual grounding 限制，这篇提供了检验和强化细粒度视觉证据使用的训练信号。 把 hallucination 对齐从文本偏好转向细粒度视觉差异，强调模型必须区分局部视觉证据而不是走语言先验捷径。</p>
+      <figure class="full-fig"><img src="../assets/mineru/2605.31312/images/525bb29f1309c1fe1448e37591fce6d143ebf5a35c7612731feab1bf0449eb46.jpg" alt="Figureure 1 · Schematic comparison of preference optimization frameworks"><figcaption><b>Figureure 1 · Schematic comparison of preference optimization frameworks</b><span class="fig-en">Figure 1. Schematic comparison of preference optimization frameworks. (a) Standard DPO optimizes textual preferences (y vs. $y ^ { \prime } )$ while treating the image m merely as a static condition, lacking explicit supervision for visual grounding. (b) Visual Preference DPO attempts to introduce visual rejected samples by changing visual context, e.g. swapping the input images (m vs. m′). However, this approach suffers from a theoretical inconsistency: the partition functions $Z ( m , { \bar { x } } )$ and $Z ( m ^ { \prime } , x )$ do not eliminate, leading to a non-rigorous optimization objective. (c) In-Context VCO (Ours) places both the original and contrastive images within a shared context [m, m′] and applies an anchor prompt extension step to specify the target image for preference labels. This design ensures a theoretically rigorous objective by sharing the partition function. A visual contrast distillation objective is introduced to calibrate the standard single-image DPO optimization with multi-image visual contrastive signals during simultaneous training.</span><span class="fig-zh">这张图概括 Learning from Fine-Grained Visual Discrepancies 的整体方法流程。阅读时先看模块之间传递的训练信号，再看作者如何把目标拆成可优化的子问题。</span></figcaption></figure>
+<figure class="full-fig"><img src="../assets/mineru/2605.31312/images/c87a6d396a427204f02f0026f73014a85b592df32f5c5d89dcb17d8ade55e7a1.jpg" alt="Figureure 2 · Qualitative comparison of contrastive images"><figcaption><b>Figureure 2 · Qualitative comparison of contrastive images</b><span class="fig-en">Figure 2. Qualitative comparison of contrastive images. Synthetic baselines (yellow) exhibit global stylistic shifts, acting as coarsegrained negatives prone to shortcut learning. In contrast, our Contrastive Editing (green) performs surgical, localized interventions while better preserving the visual context, yielding fine-grained hard negatives that compel rigorous visual discrimination.</span><span class="fig-zh">这张图/表用于判断 Learning from Fine-Grained Visual Discrepancies 的实验收益来自哪里。重点看替换、消融或跨模型设置下趋势是否一致，而不是只看单个最高分。</span></figcaption></figure>
+      
+      <h2>核心问题</h2>
+      <p>视觉-语言自监督和多模态预训练都受 visual grounding 限制，这篇提供了检验和强化细粒度视觉证据使用的训练信号。</p>
+      <h2>方法拆解</h2>
+      <p>In-Context Visual Contrastive Optimization 把原图和精确语义扰动负图放进共享 multi-image context，避免传统 visual preference DPO 的 partition-function mismatch；再用 Visual Contrast Distillation 约束多图训练到单图推理的一致性。</p>
+      <h2>主要贡献</h2>
+      <p>把 hallucination 对齐从文本偏好转向细粒度视觉差异，强调模型必须区分局部视觉证据而不是走语言先验捷径。</p>
+      <h2>实验看点</h2>
+      <p>摘要称在五个 hallucination benchmark 上整体最好，并展示 hard negative editing 的贡献。</p>
+      <h2>局限与读法</h2>
+      <p>属于 VLM post-training/alignment，不是基础视觉 encoder 预训练；负样本构造质量会影响泛化。</p>
+    
+    </div>
+  </div>
+  <aside class="paper-side">
+
+    <div class="side-box"><h4>关键判断</h4><dl><dt>相关性</dt><dd>P2</dd><dt>类别</dt><dd>ICML 2026 Poster</dd><dt>会议</dt><dd>arXiv + ICML 2026 Poster</dd><dt>读法</dt><dd>方法图优先，表格次之</dd></dl></div>
+    <div class="side-box"><h4>原文</h4><p><a href="https://arxiv.org/abs/2605.31312">https://arxiv.org/abs/2605.31312</a></p></div>
+  </aside>
+</article></main>
+  <aside class="conf-float" data-conf-reminder="2026-06-02-main-ddl" aria-label="CCF A/B 主投稿提醒">
+  <button class="conf-close" type="button" aria-label="关闭会议提醒">×</button>
+  <details open>
+    <summary>CCF A/B 主投稿提醒</summary>
+    <div class="conf-list"><a class="conf-item " href="https://github.com/ccfddl/ccf-deadlines/blob/main/conference/AI/aaai.yml">
+  <span><b>AAAI 2027</b><em>CCF A · Main paper submission</em></span>
+  <strong>55 天</strong>
+  <small>2026-07-27 · CCF DDL: abstract 2026-07-20；进入 1 个月窗口后重点提醒。</small>
+</a></div>
+  </details>
+</aside>
+  <footer class="footer">
+    <div>面向通用视觉自监督、视觉基础模型与多模态表征学习的每日研究报。</div>
+    <div class="muted">Issue 2026-06-02 · Curated readings and figure notes</div>
+  </footer>
+  <script>
+  (() => {
+    const box = document.querySelector('[data-conf-reminder]');
+    if (!box) return;
+    const key = `visualSslConfReminderClosed:${box.dataset.confReminder || '2026-06-02-main-ddl'}`;
+    try {
+      if (localStorage.getItem(key) === '1') box.hidden = true;
+    } catch (err) {}
+    const close = box.querySelector('.conf-close');
+    if (close) {
+      close.addEventListener('click', () => {
+        box.hidden = true;
+        try { localStorage.setItem(key, '1'); } catch (err) {}
+      });
+    }
+  })();
+  </script>
+</body>
+</html>
