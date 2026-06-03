@@ -1,0 +1,97 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>T-CLIP · 通用视觉自监督研究报</title>
+  <link rel="stylesheet" href="../assets/styles.css?v=20260525j">
+  <link rel="stylesheet" href="../assets/visual-ssl.css?v=20260525j">
+</head>
+<body>
+  <header class="masthead">
+    <div class="masthead-kicker">Visual SSL Research Report · 2026-06-03</div>
+    <a class="masthead-title" href="../index.html">通用视觉自监督研究报</a>
+    <div class="masthead-meta">
+      <span>图像表征 · VFM · JEPA · 视频预训练</span>
+      <span>CCF A/B 会议优先</span>
+      <span>图文精读 · 方法图解</span>
+    </div>
+  </header>
+  <nav class="site-nav" aria-label="主导航">
+    <a class="nav-link" href="../index.html">头版</a>
+<a class="nav-link" href="../issues/2026-06-03.html">今日速递</a>
+<a class="nav-link" href="../pages/catalog.html">论文目录</a>
+<a class="nav-link" href="../pages/timeline.html">时间线</a>
+  </nav>
+  <main><article class="paper-detail">
+  <div class="paper-main">
+    <div class="kicker">Visual SSL / representation · 扫读 · 2026-06-03</div>
+    <h1 class="paper-headline">T-CLIP：对通用 CLIP/多模态预训练的启发在于“同一模态内部不同语义粒度如何解耦适配”</h1>
+    <p class="dek">指出热图像里全局场景和局部热签名在同一 embedding space 中冲突，给 CLIP 跨模态适配提供解耦思路。</p>
+    <p class="byline"><strong>T-CLIP: Enabling Thermal Perception for Contrastive Language-Image Pretraining</strong>　Tayeba Qazi, Ayush Maheshwari, Prerana Mukherjee, Brejesh Lall；机构信息 arXiv 元数据未列出。　arXiv　<a href="https://arxiv.org/abs/2606.00673">原文链接</a></p>
+    <div class="paper-facts">
+      <span><b>编号</b>2606.00673</span>
+      <span><b>优先级</b>扫读</span>
+      <span><b>类别</b>Visual SSL / representation</span>
+      <span><b>会议</b>arXiv</span>
+      <span><b>方法</b>构建 IR-Cap 热成像 captioning pipeline/dataset，并用 decoupled dual-LoRA 分别适配 CLIP 的 global scene context 与 object-level heat signatures。</span>
+      <span><b>来源</b>arXiv / OpenReview</span>
+    </div>
+    <div class="feature-body">
+      <p class="lead dropcap">先说结论。对通用 CLIP/多模态预训练的启发在于“同一模态内部不同语义粒度如何解耦适配”。 指出热图像里全局场景和局部热签名在同一 embedding space 中冲突，给 CLIP 跨模态适配提供解耦思路。</p>
+      <figure class="full-fig"><img src="../assets/mineru/2606.00673/images/23191be03ef98fde1355943faeb614018aa8305e013f06721e920517d4bdd802.jpg" alt="Image-text cosine similarity between matched thermal imagecaption pairs measures how well "><figcaption><b>Image-text cosine similarity between matched thermal imagecaption pairs measures how well </b><span class="fig-en">Image-text cosine similarity between matched thermal imagecaption pairs measures how well each model aligns a thermal image with its correct description in embedding space. Zero-shot CLIP (cosine similarity = 0.3449) shows insufficient thermal image-text alignment, resulting in negligible retrieval performance (R@1 = 0.003). Standard LoRA fine-tuning of CLIP on thermal data (Global LoRA) shows a marginal drop in cosine similarity (0.3449 → 0.3322) compared to zero-shot CLIP, reflecting instability when adapting a model trained on RGB data to the thermal domain, using only generic scene descriptions without explicit thermal supervision. T-CLIP, through decoupled dual-context alignment on physics-aware captions, achieves the strongest alignment (0.3716), corresponding to a 26× improvement in R@1 (0.003 → 0.078; Table 1). All pairwise differences are statistically significant $( p \ll 0 . 0 0 1$ , Welch t-test, n = 2252); p-values are unchanged after Benjamini-Hochberg correction (FDR = 0.05), confirming robustness to multiple comparison adjustment (appendix section A.1). Figure 1: Mean image-text cosine similarity of matched thermal image-caption pairs on the KAIST test set (Hwang et al., 2015) (n = 2252), reflecting the thermal perception gap in standard CLIP (Radford et al., 2021) and T-CLIP’s improvement.</span><span class="fig-zh">这张图/表用于判断 T-CLIP 的实验收益来自哪里。重点看替换、消融或跨模型设置下趋势是否一致，而不是只看单个最高分。</span></figcaption></figure>
+<figure class="full-fig"><img src="../assets/mineru/2606.00673/images/b0223b1c041b6d925f8c30b4816a33ef6a749751cde8c2c90a8915a17d2348ec.jpg" alt="FLIR Dataset Figure 11: Generated thermal image samples using captions from KAIST (Hwang e"><figcaption><b>FLIR Dataset Figure 11: Generated thermal image samples using captions from KAIST (Hwang e</b><span class="fig-en">FLIR Dataset Figure 11: Generated thermal image samples using captions from KAIST (Hwang et al., 2015), FLIR (FLIR Systems, 2025), and FMB (Liu et al., 2023). For each prompt, left: zero-shot SDXL (standard CLIP text encoder); right: T-CLIP + SDXL. The T-CLIP + SDXL model captures both global scene context and fine-grained object-level heat signatures.</span><span class="fig-zh">这张图来自论文 PDF 的结构化抽取。当前用于辅助理解 T-CLIP 的方法或实验，请结合正文精读段落一起看。</span></figcaption></figure>
+      
+      <h2>核心问题</h2>
+      <p>对通用 CLIP/多模态预训练的启发在于“同一模态内部不同语义粒度如何解耦适配”。</p>
+      <h2>方法拆解</h2>
+      <p>构建 IR-Cap 热成像 captioning pipeline/dataset，并用 decoupled dual-LoRA 分别适配 CLIP 的 global scene context 与 object-level heat signatures。</p>
+      <h2>主要贡献</h2>
+      <p>指出热图像里全局场景和局部热签名在同一 embedding space 中冲突，给 CLIP 跨模态适配提供解耦思路。</p>
+      <h2>实验看点</h2>
+      <p>摘要称在三个公开 thermal benchmark 上改善文本对齐。</p>
+      <h2>局限与读法</h2>
+      <p>明显偏 thermal sensing，不应作为通用视觉 SSL 主线；只适合看跨模态 alignment 设计。</p>
+    
+    </div>
+  </div>
+  <aside class="paper-side">
+
+    <div class="side-box"><h4>关键判断</h4><dl><dt>相关性</dt><dd>扫读</dd><dt>类别</dt><dd>Visual SSL / representation</dd><dt>会议</dt><dd>arXiv</dd><dt>读法</dt><dd>方法图优先，表格次之</dd></dl></div>
+    <div class="side-box"><h4>原文</h4><p><a href="https://arxiv.org/abs/2606.00673">https://arxiv.org/abs/2606.00673</a></p></div>
+  </aside>
+</article></main>
+  <aside class="conf-float" data-conf-reminder="2026-06-03-main-ddl" aria-label="CCF A/B 主投稿提醒">
+  <button class="conf-close" type="button" aria-label="关闭会议提醒">×</button>
+  <details open>
+    <summary>CCF A/B 主投稿提醒</summary>
+    <div class="conf-list"><a class="conf-item " href="https://github.com/ccfddl/ccf-deadlines/blob/main/conference/AI/aaai.yml">
+  <span><b>AAAI 2027</b><em>CCF A · Main paper submission</em></span>
+  <strong>54 天</strong>
+  <small>2026-07-27 · CCF DDL: abstract 2026-07-20；进入 1 个月窗口后重点提醒。</small>
+</a></div>
+  </details>
+</aside>
+  <footer class="footer">
+    <div>面向通用视觉自监督、视觉基础模型与多模态表征学习的每日研究报。</div>
+    <div class="muted">Issue 2026-06-03 · Curated readings and figure notes</div>
+  </footer>
+  <script>
+  (() => {
+    const box = document.querySelector('[data-conf-reminder]');
+    if (!box) return;
+    const key = `visualSslConfReminderClosed:${box.dataset.confReminder || '2026-06-03-main-ddl'}`;
+    try {
+      if (localStorage.getItem(key) === '1') box.hidden = true;
+    } catch (err) {}
+    const close = box.querySelector('.conf-close');
+    if (close) {
+      close.addEventListener('click', () => {
+        box.hidden = true;
+        try { localStorage.setItem(key, '1'); } catch (err) {}
+      });
+    }
+  })();
+  </script>
+</body>
+</html>

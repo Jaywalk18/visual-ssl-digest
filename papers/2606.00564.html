@@ -1,0 +1,97 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Decomposed On-Policy Distillation for Vision-Language · 通用视觉自监督研究报</title>
+  <link rel="stylesheet" href="../assets/styles.css?v=20260525j">
+  <link rel="stylesheet" href="../assets/visual-ssl.css?v=20260525j">
+</head>
+<body>
+  <header class="masthead">
+    <div class="masthead-kicker">Visual SSL Research Report · 2026-06-03</div>
+    <a class="masthead-title" href="../index.html">通用视觉自监督研究报</a>
+    <div class="masthead-meta">
+      <span>图像表征 · VFM · JEPA · 视频预训练</span>
+      <span>CCF A/B 会议优先</span>
+      <span>图文精读 · 方法图解</span>
+    </div>
+  </header>
+  <nav class="site-nav" aria-label="主导航">
+    <a class="nav-link" href="../index.html">头版</a>
+<a class="nav-link" href="../issues/2026-06-03.html">今日速递</a>
+<a class="nav-link" href="../pages/catalog.html">论文目录</a>
+<a class="nav-link" href="../pages/timeline.html">时间线</a>
+  </nav>
+  <main><article class="paper-detail">
+  <div class="paper-main">
+    <div class="kicker">ICML 2026 Spotlight · P1 · 2026-06-03</div>
+    <h1 class="paper-headline">Decomposed On-Policy Distillation for Vision-Language：多模态自监督/蒸馏越来越依赖视觉证据质量，这篇给出一个可迁移到预训练或对齐阶段的梯度诊断框架</h1>
+    <p class="dek">把 VLM 蒸馏从单一 teacher matching 改成可诊断的多目标优化问题，强调视觉 grounding 是瓶颈而不是附属指标。</p>
+    <p class="byline"><strong>Decomposed On-Policy Distillation for Vision-Language Reasoning: Steering Gradients for Visual Grounding</strong>　Hee Suk Yoon, Eunseop Yoon, Jaehyun Jang, SooHwan Eom, Ji Woo Hong, Mark Hasegawa-Johnson, Qi Dai, Chong Luo, Chang D. Yoo；机构信息 arXiv 元数据未列出。　arXiv + ICML 2026 Spotlight　<a href="https://arxiv.org/abs/2606.00564">原文链接</a></p>
+    <div class="paper-facts">
+      <span><b>编号</b>2606.00564</span>
+      <span><b>优先级</b>P1</span>
+      <span><b>类别</b>ICML 2026 Spotlight</span>
+      <span><b>会议</b>arXiv + ICML 2026 Spotlight</span>
+      <span><b>方法</b>数学上分解 on-policy distillation loss，发现语言先验梯度与视觉 grounding 梯度几乎正交；提出 Visual Gradient Steering，按视觉 grounding 目标主动调整优化方向。</span>
+      <span><b>来源</b>arXiv / OpenReview</span>
+    </div>
+    <div class="feature-body">
+      <p class="lead dropcap">先说结论。多模态自监督/蒸馏越来越依赖视觉证据质量，这篇给出一个可迁移到预训练或对齐阶段的梯度诊断框架。 把 VLM 蒸馏从单一 teacher matching 改成可诊断的多目标优化问题，强调视觉 grounding 是瓶颈而不是附属指标。</p>
+      <figure class="full-fig"><img src="../assets/mineru/2606.00564/images/51c27beeaf3f613c47206fe88046dbc3ed0e9301de0040c08ec98bce25b5a03b.jpg" alt="(c) Text-only Benchmark Figure 10"><figcaption><b>(c) Text-only Benchmark Figure 10</b><span class="fig-en">(c) Text-only Benchmark Figure 10. Impact of optimization steering across varying levels of visual dependency. Average accuracy comparison between Language Steering, Standard On-Policy Distillation, and Visual Gradient Steering. (a) On High-Visual Dependent benchmarks, prioritizing the visual subspace (VGS) significantly outperforms the baseline, whereas leaning on the language prior actively degrades performance. (b) On Low-Visual Dependent and (c) pure Text-Only benchmarks, performance remains uniform across all methods, confirming that VGS yields gains where visual grounding is the primary bottleneck without compromising the model’s core textual reasoning capabilities.</span><span class="fig-zh">这张图/表用于判断 Decomposed On-Policy Distillation for Vision-Language 的实验收益来自哪里。重点看替换、消融或跨模型设置下趋势是否一致，而不是只看单个最高分。</span></figcaption></figure>
+<figure class="full-fig"><img src="../assets/mineru/2606.00564/images/b7592089b9848607a2790eaa81a3a4f66588029a9be2fe17cc8e3fd119ba409b.jpg" alt="Generate Rollout from Student Policy Figure 2"><figcaption><b>Generate Rollout from Student Policy Figure 2</b><span class="fig-en">Generate Rollout from Student Policy Figure 2. Overview of Visual Gradient Steering (VGS). (Left) Given a multimodal query (Image I and Prompt x), we sample a rollout τ from the student policy and compute log-probabilities from both the student and teacher models under multimodal (I, x) and unimodal (x, text-only) contexts. (Middle) We decompose the standard monolithic objective into two distinct components: a Language Prior $( \mathcal { L } _ { \mathrm { L a n g } } )$ that matches the teacher’s text-only distribution, and a Visual Grounding objective $( \mathcal { L } _ { \mathrm { V i s } } )$ that targets a constructed distribution q∗T isolating the teacher’s visual information gain. (Right) Our geometric analysis reveals that standard distillation $( \mathcal { L } _ { \mathrm { { S t a n d a r d } } } )$ acts as a passive compromise between these often orthogonal objectives. VGS explicitly steers the gradient update toward the visual subspace $( \mathcal { L } _ { \mathrm { V i s } } )$ , prioritizing perceptual fidelity over generic language modeling.</span><span class="fig-zh">这张图概括 Decomposed On-Policy Distillation for Vision-Language 的整体方法流程。阅读时先看模块之间传递的训练信号，再看作者如何把目标拆成可优化的子问题。</span></figcaption></figure>
+      
+      <h2>核心问题</h2>
+      <p>多模态自监督/蒸馏越来越依赖视觉证据质量，这篇给出一个可迁移到预训练或对齐阶段的梯度诊断框架。</p>
+      <h2>方法拆解</h2>
+      <p>数学上分解 on-policy distillation loss，发现语言先验梯度与视觉 grounding 梯度几乎正交；提出 Visual Gradient Steering，按视觉 grounding 目标主动调整优化方向。</p>
+      <h2>主要贡献</h2>
+      <p>把 VLM 蒸馏从单一 teacher matching 改成可诊断的多目标优化问题，强调视觉 grounding 是瓶颈而不是附属指标。</p>
+      <h2>实验看点</h2>
+      <p>摘要称在多模态 reasoning 设置中标准蒸馏会走折中轨迹，而梯度 steering 能改善视觉 grounding 与 reasoning 表现。</p>
+      <h2>局限与读法</h2>
+      <p>主要是 VLM reasoning/post-training，不是纯视觉 encoder 预训练；收益依赖 teacher 与视觉监督信号的质量。</p>
+    
+    </div>
+  </div>
+  <aside class="paper-side">
+
+    <div class="side-box"><h4>关键判断</h4><dl><dt>相关性</dt><dd>P1</dd><dt>类别</dt><dd>ICML 2026 Spotlight</dd><dt>会议</dt><dd>arXiv + ICML 2026 Spotlight</dd><dt>读法</dt><dd>方法图优先，表格次之</dd></dl></div>
+    <div class="side-box"><h4>原文</h4><p><a href="https://arxiv.org/abs/2606.00564">https://arxiv.org/abs/2606.00564</a></p></div>
+  </aside>
+</article></main>
+  <aside class="conf-float" data-conf-reminder="2026-06-03-main-ddl" aria-label="CCF A/B 主投稿提醒">
+  <button class="conf-close" type="button" aria-label="关闭会议提醒">×</button>
+  <details open>
+    <summary>CCF A/B 主投稿提醒</summary>
+    <div class="conf-list"><a class="conf-item " href="https://github.com/ccfddl/ccf-deadlines/blob/main/conference/AI/aaai.yml">
+  <span><b>AAAI 2027</b><em>CCF A · Main paper submission</em></span>
+  <strong>54 天</strong>
+  <small>2026-07-27 · CCF DDL: abstract 2026-07-20；进入 1 个月窗口后重点提醒。</small>
+</a></div>
+  </details>
+</aside>
+  <footer class="footer">
+    <div>面向通用视觉自监督、视觉基础模型与多模态表征学习的每日研究报。</div>
+    <div class="muted">Issue 2026-06-03 · Curated readings and figure notes</div>
+  </footer>
+  <script>
+  (() => {
+    const box = document.querySelector('[data-conf-reminder]');
+    if (!box) return;
+    const key = `visualSslConfReminderClosed:${box.dataset.confReminder || '2026-06-03-main-ddl'}`;
+    try {
+      if (localStorage.getItem(key) === '1') box.hidden = true;
+    } catch (err) {}
+    const close = box.querySelector('.conf-close');
+    if (close) {
+      close.addEventListener('click', () => {
+        box.hidden = true;
+        try { localStorage.setItem(key, '1'); } catch (err) {}
+      });
+    }
+  })();
+  </script>
+</body>
+</html>

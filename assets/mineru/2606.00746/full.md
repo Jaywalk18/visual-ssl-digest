@@ -1,0 +1,1074 @@
+# Scaling Parallel Sequence Models to Foundation-Scale Vision Encoders
+
+Yitong Jiang1,2,† Hongjun Wang1,3,† Collin McCarthy1 Hanrong Ye1 David Wehr1 Xinhao Li4 Qi Dou2 Tianfan Xue2 Ka Chun Cheung1 Simon See1 Wonmin Byeon1 Ke Chen1 Kai Han3,\* Jinwei Gu1 Hongxu Yin1 Pavlo Molchanov1 Jan Kautz1 Sifei Liu1
+
+1 NVIDIA 2 The Chinese University of Hong Kong 3 The University of Hong Kong 4 University of California, San Diego
+
+Project page: https://jiangyitong.github.io/cgspn.github.io/
+
+# Abstract
+
+Vision foundation models are bottlenecked by the quadratic cost of self-attention, which caps usable resolution and inflates the price of large-scale pretraining. Subquadratic alternatives such as linear attention and state-space models lower this cost, but they serialize images into 1D token streams and discard the 2D spatial structure that vision relies on. Generalized Spatial Propagation Networks (GSPN) instead propagate context directly on the 2D grid through line-scan recurrences, achieving near-linear complexity and removing positional embeddings—making them a promising primitive for scalable vision. In practice, however, the operator has seen little use as a foundation-scale encoder. We present C-GSPN, a foundation-scale vision encoder built on 2D spatial propagation, realized through three improvements that together make the operator practical: (1) a fast GSPN kernel, (2) a more efficient ViT block, and (3) a more efficient training method.
+
+(1) A fast GSPN kernel (system efficiency). The original GSPN has good asymptotic complexity but a hardware-inefficient reference kernel. The fast GSPN kernel fuses thousands of per-step launches into a single warp-specialized CUDA kernel with shared-memory tiling, coalesced access, and a compact multi-channel propagation. It reaches over 90% of peak memory bandwidth, runs up to 40–52× faster than the original GSPN implementation, and is already strong as an operator on its own—matching transformer-level ImageNet accuracy and accelerating high-resolution text-to-image synthesis. But a fast kernel alone is not enough: per-layer overhead still dominates at scale, and a brand-new operator does not inherit pretrained attention weights, making from-scratch foundation training very costly.   
+(2) A more efficient attention block (architecture efficiency). C-GSPN performs the propagation in a compressed latent space with fused normalization, cutting per-layer cost while preserving accuracy and turning kernel-level speed into block- and model-level speed.   
+(3) A more efficient training method. Because the new architecture has no inheritable weights, C-GSPN is trained with a two-stage cross-operator distillation recipe—sublayer-wise alignment followed by end-to-end, two-tap feature distillation from an attention teacher—so a foundation-scale model can be obtained cheaply. Distilled with 600M image–text pairs, C-GSPN matches an isomorphic ViT baseline with 15% fewer parameters, improves ADE20K segmentation by +2.1%, transfers to high resolution with a fraction of the data needed from scratch, and delivers a 4× end-to-end block speedup at 2K with single-pass, tiling-free inference. Together, these three improvements help make 2D spatial propagation a practical basis for foundation-scale vision encoders.
+
+# Contents
+
+Introduction 3   
+2 Related Work 4   
+3 Background: 2D Spatial Propagation 5   
+4 Level 1: A Fast GSPN Kernel (Level 1: System Efficiency) 6
+
+4.1 A Single-Kernel Design 7   
+4.2 Compact Channel Propagation 7   
+4.3 Efficient CUDA Scaling under Large Block-Slice Loads 8   
+4.4 Why the Fast Kernel Is Not Enough 9
+
+5 Level 2: Architecture and Training Efficiency for Foundation Scale (C-GSPN) 9
+
+5.1 A More Efficient ViT Block: Latent-Space Propagation 10   
+5.2 Training a New Architecture Fast: Cross-Operator Distillation 11   
+5.3 High-Resolution Encoder Distillation 12
+
+6 Experiments 13
+
+6.1 Fast GSPN Kernel Efficiency 13   
+6.2 Fast GSPN (Operator) on Vision Tasks 14   
+6.3 C-GSPN System Efficiency 14   
+6.4 C-GSPN at Foundation Scale 15   
+6.5 Ablation Studies 16
+
+7 Limitations and Future Work 17
+
+8 Conclusion 18
+
+A GPU Hardware and Kernel Execution for 2D Linear Propagation 19   
+B Comprehensive Fast GSPN Comparison on ImageNet-1K 19   
+C Performance with Varying Batch and Channel Dimensions 19
+
+C.1 Optimization Analysis under a Large-Batch Configuration 19
+
+D Text-to-Image Generation 20   
+E Compressive Proxy Dimension as Low-Rank Approximation 21   
+F C-GSPN Implementation Details 21
+
+F.1 Pretraining . 21   
+F.2 End-to-End Distillation Training 21   
+F.3 Loss Composition and Balancing 22   
+F.4 Stability Practices 22   
+F.5 Replacing 1/9 of GSPN Blocks with Attention 23
+
+G Additional C-GSPN Results 23
+
+G.1 Multi-Resolution Distillation 23   
+G.2 More Latency and Throughput Analysis 23   
+G.3 Downstream Vision-Language Use 23
+
+(a) Fast GSPN kernel: up to 40–52× over GSPN   
+![](images/c1943a71742fbbc9203e3b5fc418e1ae9820551d2b0defdb1ea0602a858aa732.jpg)
+
+<details>
+<summary>line</summary>
+
+| Resolution (pixels per side) | SoftMax-Attn | Performer | Linformer | Mamba | GSPN | GSPN (Local) | fast GSPN (Ours) | fast GSPN-Local (Ours) |
+| ---------------------------- | ------------ | --------- | --------- | ----- | ---- | ------------ | ---------------- | ---------------------- |
+| 256                          | 100          | 1         | 1         | 1     | 1    | 1            | 1                | 1                      |
+| 1024                         | 1000         | 1         | 10        | 1     | 10   | 10           | 1                | 1                      |
+| 4096                         | 10000        | 100       | 100       | 10    | 100  | 100          | 10               | 10                     |
+| 16384                        | 100000       | 1000      | 1000      | 100   | 1000 | 1000         | 100              | 100                    |
+</details>
+
+(b) Foundation-scale encoder: faster & more accurate   
+![](images/c7c626af552a3e710e3e9ba0f82ecc598eea3254213d317b689b74d80ae6dd9a.jpg)
+
+<details>
+<summary>scatter</summary>
+
+| Model          | Training latency (s / 1000 iter) | ADE20K segmentation mIoU |
+| -------------- | -------------------------------- | ------------------------ |
+| C-GSPN-378     | ~50                              | 46.0                     |
+| C-GSPN-1K      | ~350                             | 45.8                     |
+| ViT-Distill-378 | ~50                              | 45.5                     |
+| ViT-Distill-1K | ~750                             | 44.0                     |
+</details>
+
+Figure 1: One method, C-GSPN, at two levels of efficiency. (a) System efficiency. The fast GSPN kernel turns the line scan into a single fused, warp-specialized CUDA kernel, running up to 40–52× faster than the original GSPN reference kernel across input configurations. (b) Architecture & training efficiency. Built on this fast kernel, C-GSPN’s compressed block and cross-operator distillation scale 2D spatial propagation to a foundation-scale vision encoder, achieving lower training latency and higher ADE20K segmentation accuracy than a distilled ViT at 378 and 1K resolutions (2.40× faster at 1K).
+
+# 1. Introduction
+
+Vision transformers underpin nearly every state-of-the-art vision foundation model: contrastive vision–language encoders such as CLIP (Radford et al., 2021) and SigLIP (Zhai et al., 2023), text-to-image diffusion backbones (Rombach et al., 2022), and modern detection and segmentation pipelines (Liu et al., 2024b; Kirillov et al., 2023) all rely on dense, token-wise self-attention to encode visual concepts. The defining weakness of this operator is its quadratic cost in the number of tokens. As resolution grows, token counts surge and attention dominates both memory and latency, so practical systems cap their inputs—SigLIP, for instance, limits images to 512 × 512—and the price of training large models climbs accordingly. Removing this bottleneck without sacrificing the visual quality of attention is a central problem for scaling vision foundation models.
+
+A long line of work makes attention subquadratic through token sparsity (Child et al., 2019), local windows (Liu et al., 2021; Dai et al., 2019), kernel/low-rank approximations (Katharopoulos et al., 2020; Choromanski et al., 2021), IO-aware exact attention (Dao et al., 2022), and state-space recurrences (Gu et al., 2021; Gu and Dao, 2023). Most of these methods, however, flatten the image into a structure-agnostic 1D sequence, discarding the 2D spatial coherence that is a crucial inductive bias for vision. Generalized Spatial Propagation Networks (GSPN) (Wang et al., 2025) take a different route: they replace 2D self-attention with a learnable line-scan propagation that moves information directly across the rows and columns of the grid. This reduces the effective sequence length to $O ( { \sqrt { N } } )$ for ?? pixels, removes the need for positional embeddings, and, notably, matches or surpasses attention accuracy in prior reports. This makes 2D spatial propagation a promising primitive for a scalable, structure-preserving vision encoder.
+
+Yet such encoders remain rare. To our knowledge, spatial propagation has seen little use as a practical foundation-scale vision model. We present C-GSPN, a foundation-scale vision encoder built on 2D spatial propagation, and our central message is that making this work requires improving efficiency at two distinct levels—the propagation primitive must be hardware-efficient (a system problem), and the architecture and its training must be efficient enough to actually reach foundation scale—which C-GSPN delivers through three improvements applied in sequence: (1) a fast GSPN kernel, (2) a more efficient ViT block, and (3) a more efficient training method. Kernel speed alone is necessary but not sufficient; the block and the training recipe are what carry it to foundation scale.
+
+(1) A fast GSPN kernel (Level 1: system efficiency). GSPN has good asymptotic complexity but a poorly-mapped reference kernel that launches a tiny CUDA kernel per column step, reaches only 3–8% of peak memory bandwidth, repeatedly streams hidden states through global memory, and slows down as channels grow because resident thread blocks saturate GPU concurrency; a modest 256 × 256 × 1024 input already exceeds 570 ms on an A100. C-GSPN’s first ingredient is a joint algorithm–system redesign of this kernel—the fast GSPN kernel—that (a) fuses all propagation steps into a single unified CUDA kernel, (b) introduces a compact multi-channel propagation that shares the propagation matrix and projects the scan into a low-dimensional proxy space to bound concurrency pressure, and (c) tunes the grid/block layout with shared-memory caching, coalesced access, 2D channel-parallel blocks, and stream concurrency. The fast GSPN kernel drives the 256 × 256 × 1024 case to 11.2 ms (52×) and a 1024 × 1024 × 8 input from 71.4 ms to 1.8 ms (40×) at over 90% of peak bandwidth, and is a strong operator in its own right—matching transformer-level ImageNet accuracy and accelerating high-resolution text-to-image synthesis.
+
+The bridge — why a fast kernel is still not enough. A fast primitive is necessary but does not yield a foundation-scale encoder. Two obstacles remain. First, even with a near-optimal scan, a propagation layer embedded in a ViT block still carries substantial non-propagation overhead (projections, residuals, normalization), which dominates end-to-end latency at the scales foundation encoders use—so kernel speedups do not translate into block-level or model-level speedups for free. Second, and more fundamentally, a foundation encoder must be trained: attention-based encoders are pretrained on tens of billions of pairs (e.g., SigLIP-v2 (Tschannen et al., 2025) uses 40B), and because spatial propagation is a new operator with no inheritable attention weights, training one from scratch at that scale is very costly. Efficiency therefore has to be solved again at the architecture and training levels.
+
+(2) A more efficient ViT block and (3) a more efficient training method (Level 2: architecture and training efficiency). C-GSPN resolves both obstacles. (2) The block. Guided by the kernel’s concurrency analysis—propagation latency is governed by the channel dimension—C-GSPN performs the propagation in a compressed latent space: it down-projects to a small set of latent channels, runs the four-directional fast scan there with a fused row-stochastic normalization kernel, and up-projects once, while stripping the inherited attention-era overhead. This cuts layer-level propagation latency by nearly 10× at high resolution with no loss of accuracy and yields a 13.7× speedup of the full GSPN layer at 1K. (3) The training. Because the block does not inherit attention weights, we make foundation-scale training cheap with a two-stage cross-operator distillation recipe: a sublayer-wise stage aligns each propagation sublayer with its teacher’s attention sublayer for a strong initialization, then end-to-end distillation with two supervision taps per block (post-propagation and post-block) and lightweight feature adaptors bridges the operator gap. Distilled from an attention teacher on 600M image–text pairs, C-GSPN matches an isomorphic ViT→ViT baseline with 15% fewer parameters (63.3 vs. 63.5 macro average), improves ADE20K segmentation by +2.1%, and—because propagation needs no positional embeddings—transfers to higher resolutions through a cheap upsampling self-distillation curriculum using a fraction of the data required to train from scratch. End to end, C-GSPN reduces ViT block latency by 2× at 1K and 4× at 2K with single-pass, tiling-free inference.
+
+# Contributions.
+
+• C-GSPN, a foundation-scale vision encoder built on 2D spatial propagation. To our knowledge, one of the first studies to scale a subquadratic, structure-preserving spatial operator to CLIP/SigLIP-style pretraining while preserving zero-shot ability and improving dense prediction—realized through three efficiency improvements below.   
+• (1) A fast GSPN kernel. A joint algorithm–system redesign of the propagation kernel (single fused kernel, compact multi-channel propagation, warp/shared-memory-aware execution) that reaches >90% of peak bandwidth and is 40–52× faster than the original GSPN reference kernel while preserving accuracy.   
+• (2) A more efficient ViT block. A compressed latent-space propagation block with fused normalization that removes inherited attention-era overhead and delivers large high-resolution block-level speedups.   
+• (3) A more efficient training method. A progressive, two-stage cross-operator distillation recipe (sublayer-wise alignment then dual-tap end-to-end distillation with feature adaptors) that makes foundation-scale, positionalembedding-free training and tiling-free high-resolution transfer affordable for an operator with no inheritable weights.   
+• Comprehensive evaluation spanning kernel profiling, ImageNet classification, text-to-image synthesis, and CLIPscale zero-shot, segmentation, and detection benchmarks, evaluating C-GSPN at three granularities against prior baselines (original GSPN, softmax/FlashAttention, ViT teachers).
+
+# 2. Related Work
+
+Efficient and subquadratic attention. Transformers (Vaswani, 2017) are foundational to modern vision and language models, but their ??(?? 2) cost in sequence length is a persistent efficiency barrier. IO-aware exact attention such as FlashAttention (Dao et al., 2022; Dao, 2024; Shah et al., 2024) fuses the attention pipeline and optimizes memory traffic to raise throughput, but its latency still scales quadratically with tokens at high resolution. Sparsity- and window-based designs (Longformer, BigBird, Swin) restrict attention to local windows plus a few global tokens for near-linear scaling, at the cost of sensitivity to the chosen sparsity pattern (Beltagy et al., 2020; Zaheer et al., 2020; Liu et al., 2021). Kernelized and low-rank approaches—Linear Transformers, Performer, Nyströmformer, Linformer—approximate the softmax to gain linear complexity, with accuracy that depends on the feature map, rank, or landmark scheme (Katharopoulos et al., 2020; Choromanski et al., 2021; Xiong et al., 2021; Wang et al., 2020). These methods reduce the asymptotic cost but, like most efficient-attention variants, treat the image as a 1D token stream.
+
+State-space and 1D/2D sequence models. Recurrent models—LSTMs (Hochreiter, 1997), GRUs (Chung et al., 2014), and 2D-LSTMs (Graves et al., 2007; Byeon et al., 2015)—process data through non-linear transitions but are limited by sequential execution and long-range gradient instability (Hochreiter, 1991; Pascanu et al., 2013). State-space models (SSMs) such as S4 (Gu et al., 2021) and Mamba (Gu and Dao, 2023) offer linear-time sequence operators with selective scanning, and several works adapt them to vision by linearizing 2D images into 1D scans (Nguyen et al., 2022; Baron et al., 2023; Zhu et al., 2024; Liu et al., 2024d; Li et al., 2024a). While efficient, this serialization compromises the spatial relationships that vision tasks depend on, and adapting 1D recurrences to high-resolution vision typically requires extra 2D inductive bias or hierarchical design.
+
+Spatial propagation networks. The Spatial Propagation Network (SPN) (Liu et al., 2017) pioneered learnable linear propagation on 2D data, initially as a refinement layer on top of CNNs for sparse-to-dense prediction. SPN’s sequential, single-direction processing limits efficiency and long-range reach. GSPN (Wang et al., 2025) advances this idea with parallel row/column-wise propagation in four directions, learning input-dependent affinities while maintaining stability and dense pairwise connectivity at $O ( { \sqrt { N } } )$ effective depth, and positions spatial propagation as a competitive alternative to ViT and Mamba backbones. Our work builds directly on GSPN: C-GSPN first makes its propagation kernel hardware-efficient, then scales the operator to foundation-model pretraining through an efficient ViT block and a cross-operator distillation recipe.
+
+Foundation-model and cross-operator distillation. Training vision foundation models from scratch is increasingly infeasible—recent vision–language encoders require tens of billions of image–text pairs and massive compute. A practical alternative transfers knowledge from strong pretrained attention encoders into more efficient students. Knowledge distillation is the standard mechanism: early work studied feature and attention transfer for CNNs (Zagoruyko and Komodakis, 2017), DeiT (Touvron et al., 2021) demonstrated ViT-to-ViT distillation at scale, and later studies provided guidance on intermediate supervision and layer alignment for stable transformer KD (Yang et al., 2022b). Beyond isomorphic pairs, distillation has been used across operator families—compressing attention-heavy models into subquadratic approximations (Bick et al., 2024) or distilling SSMs into transformer backbones (Li et al., 2025)—though usually at modest scale. We use distillation not for size compression but for cross-operator transfer from attention teachers to spatialpropagation students, via staged sublayer-wise initialization followed by end-to-end training, enabling foundation-scale, high-resolution encoders with a subquadratic core.
+
+# 3. Background: 2D Spatial Propagation
+
+We first establish the propagation operator and a single notation used throughout the paper. All parts of our method—the fast GSPN kernel (Sec. 4) and the compressed ViT block and training recipe (Sec. 5)—operate on this same primitive, so we introduce it once here. Throughout, an input feature map is $x \in \mathbb { R } ^ { B \times C \times H \times W }$ with batch size ??, channel count $C ,$ and spatial size $H \times W _ { : }$ ; we write ?? = ???? for the number of pixels/tokens. For naming, we use GSPN for the original method of Wang et al. (2025) and its reference CUDA kernel (the prior-work baseline), fast GSPN for our fast fused kernel (the first improvement, Sec. 4), and C-GSPN for our overall foundation-scale encoder—whose fast GSPN kernel, compressed block, and distillation recipe are the three improvements developed in this paper.
+
+Line-scan recurrence. GSPN performs 2D spatial modeling through row-by-row (or column-by-column) linear propagation: one spatial dimension is processed sequentially while all positions within each step are updated in parallel. Taking the top-to-bottom pass as an example, let $i \in [ 0 , H { - } 1 ]$ index rows and ?? index channels, with hidden state $h _ { i , : , c } \in \mathbb { R } ^ { W }$ , input row $\boldsymbol { x } _ { i , : , c } \in \mathbb { R } ^ { W }$ , an input-dependent scaling vector $\lambda _ { i , : , c } \in \mathbb { R } ^ { W }$ , and a propagation matrix $w _ { i , c } \in \mathbb { R } ^ { W \times W }$ . The per-row, per-channel recurrence is
+
+$$
+h _ {i,:,: c} = w _ {i, c} h _ {i - 1,:,: c} + \operatorname{Diag} \left(\lambda_ {i,:,: c}\right) x _ {i,:,: c}, \tag {1}
+$$
+
+with $h _ { 0 , : , c }$ initialized from $x _ { 0 , : , c , }$ and an output gating
+
+$$
+y _ {i,:, c} = u _ {i,:, c} \odot h _ {i,:, c}, \tag {2}
+$$
+
+where $u _ { i , : , c } \in \mathbb { R } ^ { W }$ is a learnable vector. All parameters ??, ??, and ?? are input-dependent.
+
+Stability and connectivity. To satisfy the Stability–Context Condition of Wang et al. (2025), each $w _ { i , c }$ is row-stochastic (its rows sum to one), which promotes numerical stability while still allowing long-range context. We parameterize this by normalizing the nonzero connections over the neighbor set $\mathcal { N } ( j )$ of position ?? in row ??:
+
+$$
+w _ {i, c} (j, k) = \frac {\sigma (\tilde {w} _ {i , c} (j , k))}{\sum_ {k ^ {\prime} \in \mathcal {N} (j)} \sigma (\tilde {w} _ {i , c} (j , k ^ {\prime}))}. \tag {3}
+$$
+
+With the common tridiagonal neighborhood $\mathcal { N } ( j ) = \{ j - 1 , j , j + 1 \}$ , each row of $w _ { i , c }$ has three nonzero entries, so every pixel connects to only three neighbors in the previous row (e.g., top-left, top-center, top-right). A single pass therefore connects pixels within a local region; running four complementary directional passes—top-to-bottom, bottom-to-top, left-to-right, right-to-left—yields dense pairwise connectivity across the image while learning only three coefficients per pixel per pass.
+
+Complexity and the attention analogy. A row pass requires $O ( H )$ sequential steps with all ?? positions computed in parallel (symmetrically ??(?? ) for a column pass), giving an effective sequential depth of $O ( \operatorname* { m a x } ( H , W ) ) = O ( { \sqrt { N } } )$ for a square map. Stacking the per-channel recurrence over all rows reveals the operator’s relationship to attention. Concatenating hidden states and inputs into vectors $H _ { v } , X _ { v }$ and writing $\Lambda _ { i }$ for the (block-diagonal) input scaling, Eq. (1) expands to a block lower-triangular form
+
+$$
+H _ {v} = \left[ \begin{array}{c c c c c} \Lambda_ {1} & 0 & \dots & \dots & 0 \\ w _ {2} \Lambda_ {1} & \Lambda_ {2} & 0 & \dots & 0 \\ w _ {3} w _ {2} \Lambda_ {1} & w _ {3} \Lambda_ {2} & \Lambda_ {3} & 0 & \dots \\ \vdots & \vdots & \vdots & \ddots & \vdots \\ (\prod_ {k = 2} ^ {L} w _ {k}) \Lambda_ {1} & (\prod_ {k = 3} ^ {L} w _ {k}) \Lambda_ {2} & \dots & w _ {L} \Lambda_ {L - 1} & \Lambda_ {L} \end{array} \right] X _ {v} = G X _ {v}, \tag {4}
+$$
+
+where each block $G _ { i j }$ specifies how input slice $x _ { j }$ contributes to output $h _ { i } .$ —directly analogous to an attention affinity matrix. The products $\textstyle \prod _ { \tau = j + 1 } ^ { i } w _ { \tau }$ ?? play the role of normalized affinities, while the $\Lambda _ { j }$ inject per-position value gating. This view, which the fast GSPN kernel makes explicit through channel-shared weights (Sec. 4), motivates treating spatial propagation as a drop-in, attention-like mixing operator.
+
+GPU execution model. Both contributions are co-designed with GPU hardware, so we briefly recall the relevant characteristics of modern NVIDIA GPUs (e.g., the A100). A CUDA kernel is launched as a grid of thread blocks; each block holds up to 1024 threads grouped into 32-thread warps, the basic scheduling unit on the 108 Streaming Multiprocessors (SMs). Throughput is maximized when occupancy—the fraction of active warps per SM—is high, subject to per-SM register and shared-memory limits. Crucially, each SM can host only a bounded number of resident blocks (up to 32 on the A100), so roughly $1 0 8 \times 3 2 \approx 3 { , } 5 0 0$ blocks run concurrently; once the workload exceeds this, additional blocks queue and latency grows. As we show next, the line scan’s mapping onto this model—one block per (??, ??, chunk) slice—is exactly what makes the naive GSPN kernel slow and what fast GSPN is designed to fix. A fuller GPU and kernel-execution primer is given in Sec. A.
+
+# 4. Level 1: A Fast GSPN Kernel (Level 1: System Efficiency)
+
+The first ingredient of C-GSPN makes the line-scan primitive of Sec. 3 fast on real hardware. This is the enabling foundation layer for the rest of the encoder (Sec. 5): without a hardware-efficient scan, architectural design alone is unlikely to make spatial propagation practical at scale. We begin from the original GSPN reference kernel to expose its bottlenecks, then present a joint algorithm–system redesign—the fast GSPN kernel—organized around three principles: (1) a single-kernel propagation scheme that eliminates redundant launches, (2) a compact channel propagation that shares weights and compresses the channel axis to relieve concurrency pressure, and (3) a CUDA execution layout that exploits shared memory, coalesced access, and stream-level parallelism. As we show in Sec. 6, the fast GSPN kernel is already a strong operator on its own; Sec. 4.4 then explains why these kernel-level wins, though necessary, are still not sufficient for a foundation-scale encoder—motivating the block and training improvements that follow.
+
+The GSPN baseline and its bottlenecks. GSPN maps the recurrence of Eq. (1) to CUDA by iterating sequentially over the propagation dimension (e.g., height ??) while parallelizing across the orthogonal dimension (width ?? ). To respect the sequential dependency along rows $i = 0 , \ldots , H { - } 1$ , it launches a separate, lightweight kernel for each step or small chunk (Fig. 2a). Within each kernel, computation is parallelized across width ?? , batch ??, and channels ?? by flattening them into a 1D grid of thread blocks (typically blockDim.x = 512). This design has three compounding inefficiencies:
+
+![](images/0837edc643ee3ab1c13c136b5d18a0dd96f1b20b43d2d0b3771926c717052825.jpg)  
+Figure 2: From the GSPN kernel to the fast GSPN kernel. (a) GSPN kernel: the original reference kernel launches a separate, lightweight kernel per image column, computing $h _ { i } ^ { c } = \omega _ { i } ^ { c } h _ { i - 1 } ^ { c } + \lambda _ { i } ^ { c } \odot x _ { i } ^ { c }$ and shuttling intermediate states ??, ??, ??, ??, Λ through global memory (HBM) every step, with no on-chip reuse—the bottleneck. (b) fast GSPN kernel: a single fused kernel runs the outer scan with an inner loop over columns, caching and reusing $h _ { i - 1 } ^ { c } , G _ { i }$ , and other temporaries on chip (cache/registers) to minimize HBM traffic.
+
+(i) the kernel-launch overhead from thousands of separate launches prevents the SMs from staying busy; (ii) every step reloads inputs $x ,$ previous hidden states $h _ { i - 1 , : , c } ,$ , weights $w _ { i , c } , \lambda _ { i , : , c } ,$ and writes outputs through global memory (HBM) with no on-chip reuse and poor coalescing; and (iii) the flat 1D mapping ignores warp-level scheduling, so locality and occupancy are poor and runtime grows with the channel count. Profiling confirms GSPN reaches only 3–8% of peak memory bandwidth, and $\mathrm { a 2 5 6 \times 2 5 6 \times 1 0 2 4 }$ input exceeds 570 ms on an A100—eroding much of the subquadratic advantage and motivating a single-kernel, shared-memory redesign.
+
+# 4.1. A Single-Kernel Design
+
+Kernel fusion. We consolidate the thousands of per-step launches into a single, unified CUDA kernel that processes the entire outer scan (e.g., all columns in a left-to-right pass) inside the kernel, while still parallelizing across batch, channels, and the orthogonal spatial axis (Fig. 2b). Eliminating the micro-launches alone yields an immediate, if modest, gain—fusing the multi-kernel pipeline into one kernel gives roughly a 1.2× speedup even before any memory or algorithmic optimization (Fig. 3)—and, more importantly, exposes the inner loop where hidden states can be reused on chip.
+
+Block and grid configuration. GSPN’s flat 1D grid (blockDim.x = 512) spreads threads linearly across combinations of batch $B ,$ channels $C ,$ height ??, and chunk index $k _ { \mathrm { c h u n k } } .$ , yielding poor locality and warp utilization. The fast GSPN kernel instead indexes the grid by the tuple (chunk, $b , c )$ , so each block owns one (chunk, $b , c )$ slice and processes a full spatial column along height. The grid contains $k _ { \mathrm { c h u n k } } \times B \times C$ blocks, realized as a 1D or 3D grid to respect CUDA’s per-axis limits, and is launched once. Each block uses up to 1024 threads along height: for $H \leq 1 0 2 4$ one thread handles one row at full occupancy, and for $H > 1 0 2 4$ threads stride over multiple rows. This mapping removes per-thread index-unpacking and improves cache locality and occupancy.
+
+# 4.2. Compact Channel Propagation
+
+Concurrency saturation. A key bottleneck in GSPN is GPU concurrency saturation: the number of active blocks is proportional to $k _ { \mathrm { c h u n k } } \times B \times C _ { \mathrm { \ i } }$ , and once it exceeds the hardware’s resident-block capacity (about 3–4K on an A100, Sec. 3), kernel time grows linearly as blocks queue. This is exactly why GSPN loses its near-constant scaling on high-dimensional feature maps with thousands of channels.
+
+Channel-shared weights and the attention view. To address this, the fast GSPN kernel introduces a compact multi-channel propagation that reduces effective channel concurrency while preserving expressive multi-channel behavior. Instead of a per-channel matrix $w _ { i , c }$ as in GSPN, it uses a single matrix $w _ { i } \in { \mathbb R } ^ { W \times W }$ shared across all channels for each column ??:
+
+$$
+h _ {i,:, c} = w _ {i} h _ {i - 1,:, c} + \operatorname{Diag} \left(\lambda_ {i,:, c}\right) x _ {i,:, c}. \tag {5}
+$$
+
+Here ???? governs spatial propagation along the column while $\lambda _ { i , : , c }$ preserves per-channel modulation. This sharply reduces the parameters for propagation while keeping the same functional structure: stacking all channels, the full recurrence $h _ { i } = W _ { i } h _ { i - 1 } + \Lambda _ { i } x _ { i }$ still holds, now with channel-shared $w _ { i }$ . Through the block lower-triangular expansion of $\operatorname { E q } .$ . (4), the shared $w _ { i }$ play the role of an attention-style affinity matrix over positions, while the channel-specific $\Lambda _ { j }$ act as value gating—so in the single-channel case the kernel is precisely an attention-like process with learnable spatial affinities, aligning the operator more closely with the attention it replaces.
+
+![](images/1bfc8860d6656943b4a33cf824be7268c1053073cc44e71027ea8821e34e8d17.jpg)
+
+<details>
+<summary>bar</summary>
+
+| Configuration | Forward Time (ms) |
+|---|---|
+| Baseline (GSPN-1) | 71.4 |
+| + Unified Kernel | 57.4 |
+| + Coalesced Memory Access | 2.4 |
+| + SRAM | 2.2 |
+| + 2D Thread Blocks | 2.1 |
+| + Compressive channels | 1.9 |
+| + GSPN-2 (Final) | 1.8 |
+× 40.0
+</details>
+
+Figure 3: Step-by-step optimization of the GSPN CUDA kernel. Each bar shows the cumulative reduction in forward time (ms) from the original GSPN baseline. The final fast GSPN kernel achieves a 40.0× speedup.
+
+Compressive proxy dimension. To further relieve saturation when $B \times C$ is large, the kernel compresses the channel axis before propagation. We project $x \in \mathbb { R } ^ { B \times C \times H \times W }$ to a proxy $x _ { \mathrm { p r o x y } } ~ \in ~ \mathbb { R } ^ { B \times C _ { \mathrm { p r o x y } } \times H \times W }$ with $C _ { \mathrm { p r o x y } } \ll C ~ ( \mathrm { e . g . } ,$ $C _ { \mathrm { p r o x y } } { = } 8 )$ , apply the same column-wise recurrence in the proxy space with the shared $w _ { i } ,$ and expand back to $C$ with a learned $1 \times 1$ projection. This reduces the grid from $k _ { \mathrm { c h u n k } } \times B \times C$ to $k _ { \mathrm { c h u n k } } \times B \times C _ { \mathrm { p r o x y } } ,$ shrinking the number of simultaneously scheduled slices and keeping the active-block count within the hardware concurrency regime. We choose $C _ { \mathrm { p r o x y } }$ to minimize the active-block budget and delay entry into the post-saturation, near-linear regime; even when very large ?? makes the plateau unavoidable, the compression still reduces queueing and improves SM utilization while preserving multi-channel expressiveness. We show in Sec. E that this proxy is effectively a low-rank factorization with minimal accuracy cost.
+
+# 4.3. Efficient CUDA Scaling under Large Block-Slice Loads
+
+The single-kernel design and compact propagation are complemented by CUDA-level optimizations—grid/block reconfiguration and on-chip memory strategies—that keep execution efficient even when the block count $k _ { \mathrm { c h u n k } } \times B \times C$ is large.
+
+Shared memory for hidden states. We cache the previous step’s hidden state $h _ { i - 1 }$ in on-chip shared memory to cut redundant HBM reads. Threads in a block cooperatively process a tile—a small subset of spatial positions or channel slices—and reuse the cached hidden state, lowering latency when accesses overlap along a column. The gain depends on configuration: it is largest when per-tile reuse is high and the shared-memory footprint fits per-block limits with few bank conflicts, and it diminishes when L1/L2 already covers the working set. We therefore enable shared-memory caching selectively and tune tile size and cSlice to balance reuse against occupancy.
+
+2D blocks for channel-parallel propagation. Building on the 1D block of Sec. 4.1, we add a second block dimension cSlice, so blockDim = (??, cSlice). Within a block, threadIdx.x indexes spatial positions along a column (up to ??) while threadIdx.y spans a small group of channel slices, letting one block process several channels of the same column in parallel. Aligning computation and memory access across both spatial and channel dimensions improves occupancy and reduces latency relative to the 1D layout.
+
+Coalesced memory access. We arrange ????, ℎ??, and ???? contiguously so that consecutive threads in a warp touch adjacent addresses when reading or writing. The hardware then coalesces per-thread transactions into wide memory operations, fully using bandwidth and eliminating the scattered, high-latency accesses of GSPN. This coalesced layout contributes the single largest CUDA-level speedup (Fig. 3).
+
+![](images/c66de2758c02e8b899ba5ced3ca4c2c42a32b0056eaa4945d818e6e44d4b34b2.jpg)
+
+<details>
+<summary>flowchart</summary>
+
+```mermaid
+graph TD
+    A["Block"] --> B["MLP"]
+    B --> C["Norm"]
+    C --> D["Sublayer"]
+    D --> E["Linear Projection"]
+    E --> F["Norm"]
+    F --> G["Block"]
+```
+</details>
+
+(a) Block / Layer / Sublayer
+
+![](images/b85c1c7ba272ed76c0d0772a97382866f9863205956aba8ebed06fbe3eca16b6.jpg)
+
+<details>
+<summary>flowchart</summary>
+
+```mermaid
+graph TD
+    A["Inner Layer Residual"] --> B["2D Propagation"]
+    B --> C["Weight Normalization"]
+    C --> D["Linear Projections"]
+    D --> E["ALP"]
+    E --> F["x"]
+    F --> G["ALP"]
+    G --> H["ALP"]
+    H --> I["x"]
+    I --> J["ALP"]
+    J --> K["ALP"]
+    K --> L["ALP"]
+    L --> M["x"]
+    M --> N["u"]
+    N --> O["Linear Projections"]
+    O --> P["ALP"]
+    P --> Q["ALP"]
+    Q --> R["ALP"]
+    R --> S["ALP"]
+    S --> T["x"]
+    T --> U["u"]
+    U --> V["Linear Projections"]
+    V --> W["u"]
+    W --> X["Linear Projections"]
+    X --> Y["u"]
+    Y --> Z["u"]
+    Z --> AA["u"]
+    AA --> AB["u"]
+    AB --> AC["u"]
+    AC --> AD["u"]
+    AD --> AE["u"]
+    AE --> AF["u"]
+    AF --> AG["u"]
+    AG --> AH["u"]
+    AH --> AI["u"]
+    AI --> AJ["u"]
+    AJ --> AK["u"]
+    AK --> AL["u"]
+    AL --> AM["u"]
+    AM --> AN["u"]
+    AN --> AO["u"]
+    AO --> AP["u"]
+    AP --> AQ["u"]
+    AQ --> AR["u"]
+    AR --> AS["u"]
+    AS --> AT["u"]
+    AT --> AU["u"]
+    AU --> AV["u"]
+    AV --> AW["u"]
+    AW --> AX["u"]
+    AX --> AY["u"]
+    AY --> AZ["u"]
+    AZ --> BA["u"]
+    BA --> BB["u"]
+    BB --> BC["u"]
+    BC --> BD["u"]
+    BD --> BE["u"]
+    BE --> BF["u"]
+    BF --> BG["u"]
+    BG --> BH["u"]
+    BH --> BI["u"]
+    BI --> BJ["u"]
+    BJ --> BK["u"]
+    BK --> BL["u"]
+    BL --> BM["u"]
+    BM --> BN["u"]
+    BN --> BO["u"]
+    BO --> BP["u"]
+    BP --> BQ["u"]
+    BQ --> BR["u"]
+    BR --> BS["u"]
+    BS --> BT["u"]
+    BT --> BU["u"]
+    BU --> BV["u"]
+    BV --> BW["u"]
+    BW --> BX["u"]
+    BX --> BY["u"]
+    BY --> BZ["u"]
+    BZ --> CA["u"]
+    CA --> CB["u"]
+    CB --> CC["u"]
+    CC --> CD["u"]
+    CD --> CE["u"]
+    CE --> CF["u"]
+    CF --> CG["u"]
+    CG --> CH["u"]
+    CH --> CI["u"]
+    CI --> CJ["u"]
+    CJ --> CK["u"]
+    CK --> CL["u"]
+    CL --> CM["u"]
+    CM --> CN["u"]
+    CN --> CO["u"]
+    CO --> CP["u"]
+    CP --> CQ["u"]
+    CQ --> CR["u"]
+    CR --> CS["u"]
+    CS --> CT["u"]
+    CT --> CU["u"]
+    CU --> CV["u"]
+    CV --> CW["u"]
+    CW --> CX["u"]
+    CX --> CY["u"]
+    CY --> CZ["u"]
+```
+</details>
+
+(b) GSPN layer (left) vs. C-GSPN layer (right)   
+![](images/e6117433bfcca5da5573744e66d0bb0c638eb2df1c9fe89f759166719ca53560.jpg)
+
+<details>
+<summary>flowchart</summary>
+
+```mermaid
+graph TD
+    A["C-GSPN Layer"] --> B["Compressed Latent Space"]
+    B --> C["Latent 2D Propagation"]
+    C --> D["Weight Normalization"]
+    D --> E["Down"]
+    E --> F["Channel Extension(Up)"]
+    F --> G["Linear Projections"]
+    H["ALP"] --> I["Linear Projections from Attention Template"]
+    I --> J["Down"]
+    J --> K["Channel Reduction(Down)"]
+    K --> L["Linear Projections"]
+    M["Up"] --> N["Channel Extension(Up)"]
+    N --> O["Linear Projections"]
+    P["Element-wise Addition"] --> Q["Up"]
+    R["Element-wise Multiplication"] --> S["Up"]
+    T["xc"] --> U["u"]
+    U --> V["w"]
+    V --> W["λ"]
+    W --> X["x"]
+    Y["y"] --> Z["Up"]
+    style A fill:#f9f,stroke:#333
+    style B fill:#ccf,stroke:#333
+    style C fill:#cfc,stroke:#333
+    style D fill:#fcc,stroke:#333
+    style E fill:#cff,stroke:#333
+    style F fill:#ffc,stroke:#333
+    style G fill:#fcc,stroke:#333
+    style H fill:#ffc,stroke:#333
+    style I fill:#fcc,stroke:#333
+    style J fill:#ffc,stroke:#333
+    style K fill:#fcc,stroke:#333
+    style L fill:#fcc,stroke:#333
+    style M fill:#fcc,stroke:#333
+    style N fill:#fcc,stroke:#333
+    style O fill:#fcc,stroke:#333
+```
+</details>
+
+Figure 4: C-GSPN architecture overview. (a) C-GSPN follows the ViT hierarchy of block ⊃ layer ⊃ sublayer, replacing only the attention layer. (b) The original GSPN layer operates in raw channel space and keeps the extra projections and residuals inherited from the attention template (Improvement 2’s target); C-GSPN propagates in a compressed latent space with fused row-stochastic normalization and removes the redundant projections/residuals, yielding a lighter, faster layer. For clarity, the final propagation pass at the end of the layer is omitted.
+
+Stream-based concurrency. For multi-directional propagation, the fast GSPN kernel runs each of the four directional passes on a separate, non-blocking CUDA stream, overlapping their execution to keep more SMs active—most effective when the passes have similar compute and memory footprints. When a grid dimension exceeds CUDA’s per-axis limit of 65,535, it automatically issues multiple launches with offset indexing without interrupting stream concurrency.
+
+# 4.4. Why the Fast Kernel Is Not Enough
+
+The fast GSPN kernel makes the propagation primitive fast—up to 52× over the original GSPN kernel at over 90% of peak bandwidth (Sec. 6)—and competitive on classification and generation. But a fast primitive does not, by itself, yield a foundation-scale vision encoder, for two reasons that the rest of the paper resolves. (i) Layer- and model-level overhead. Once the scan is this cheap, the surrounding non-propagation components of a ViT block—projections, residuals, and especially the sigmoid-based row-stochastic normalization—dominate end-to-end latency at the resolutions and channel widths foundation encoders use; a fast kernel alone does not translate into a fast block. (ii) Trainability of a new operator. A foundation encoder must be pretrained at large scale, yet spatial propagation is a new operator with no inheritable attention weights, so training one from scratch at CLIP/SigLIP scale is very costly. Efficiency must therefore be addressed again at the architecture and training levels. This is exactly the gap C-GSPN closes in Sec. 5.
+
+# 5. Level 2: Architecture and Training Efficiency for Foundation Scale (C-GSPN)
+
+Level 1 gave us a fast scan but, as Sec. 4.4 argued, not a foundation encoder: layer-level overhead still dominates at scale, and a new operator does not inherit attention weights, making cheap training difficult. C-GSPN is our second level of efficiency, and the headline contribution of the paper: a foundation-scale vision encoder that resolves both obstacles through architecture and training design. It has two pillars. (a) A more efficient ViT block (Sec. 5.1) runs the fast GSPN kernel of Sec. 4 inside a compressed latent space with fused normalization, so kernel-level speed finally translates into block- and model-level speed. (b) Fast training of a new architecture (Sec. 5.2) uses cross-operator distillation to obtain a foundation-scale model without the from-scratch cost that a non-inheritable operator would otherwise incur, with high-resolution transfer following the same recipe (Sec. 5.3). We align C-GSPN with the ViT structure and adopt consistent terminology: a sublayer is the latent-space 2D propagation unit, analogous to the scaled dot-product attention sublayer; a layer is a full C-GSPN layer (Fig. 4), paralleling a multi-head attention layer; and a block is a transformer block where the attention layer is replaced by a C-GSPN layer (Fig. 4).
+
+![](images/fd0bfbf242832404cbd084719de9c77a467cebbcd99d61ee9ce11d1b98ef556f.jpg)  
+Figure 5: Propagation sublayer latency, original GSPN vs. C-GSPN, under increasing channels (left) and batch size (right) at 1K resolution. Original GSPN spikes as ??/?? grow due to GPU concurrency limits; C-GSPN’s latent-space propagation remains flat, yielding large speedups.
+
+# 5.1. A More Efficient ViT Block: Latent-Space Propagation
+
+The compact-channel principle of the fast GSPN kernel (Sec. 4.2) suggests where the encoder’s cost lies. A raw GSPN sublayer propagates features independently across each of the ?? channels of $\boldsymbol { x } \in \mathbb { R } ^ { B \times C \times H \times W }$ , running the four directional scans of Eq. (1). Because each SM hosts only a bounded number of resident blocks, once ?? or ?? grows the excess slices serialize and latency spikes despite the theoretical parallelism. Fig. 5 illustrates this: propagation latency is flat at small $B / C$ but jumps sharply once concurrency saturates (e.g., a 11.57× increase when ?? grows from 288 to 576, and 7.76× when ?? grows from 8 to 16).
+
+Latent-space 2D propagation. To stay below the concurrency wall, C-GSPN moves propagation into a compressed latent space—the learned, end-to-end-trained analog of the kernel’s proxy compression. Let $s > 1$ be a compression factor and $C _ { c } = \lfloor C / s \rfloor$ the latent channel count. We introduce per-location (1 × 1 convolution) projections $P _ { \downarrow } : \mathbb { R } ^ { C }  \mathbb { R } ^ { C _ { c } }$ and $P _ { \uparrow } : \mathbb { R } ^ { C _ { c } }  \mathbb { R } ^ { C }$ :
+
+$$
+\mathbf {x} _ {c} = P _ {\downarrow} (\mathbf {x}) \in \mathbb {R} ^ {B \times C _ {c} \times H \times W}. \tag {6}
+$$
+
+Propagation parameters are generated directly in the latent channel space,
+
+$$
+u = L _ {u} (\mathbf {x} _ {c}), \quad \lambda = L _ {\lambda} (\mathbf {x} _ {c}), \quad \tilde {w} = L _ {w} (\mathbf {x} _ {c}), \tag {7}
+$$
+
+where $u , \lambda \in \mathbb { R } ^ { B \times C _ { c } \times H \times W }$ and $\tilde { w } \in \mathbb { R } ^ { B \times C _ { c } \times H \times W \times 3 }$ , and $L _ { u } , L _ { \lambda } , L _ { w }$ are $1 \times 1$ convolutions predicting per-position parameters. For a top-to-bottom pass and latent channel ??˜, the recurrence mirrors Eq. (1) but operates entirely on the latent channels with the row-stochastic normalization of Eq. (3):
+
+$$
+h _ {i,:,: \tilde {c}} = w _ {i, \tilde {c}} h _ {i - 1,:,: \tilde {c}} + \operatorname{Diag} \left(\lambda_ {i,:,: \tilde {c}}\right) x _ {c, i,:,: \tilde {c}}, \quad y _ {i,:,: \tilde {c}} = u _ {i,:,: \tilde {c}} \odot h _ {i,:,: \tilde {c}}. \tag {8}
+$$
+
+We run all four directional scans in latent space and up-project only once at the end:
+
+$$
+\mathbf {y} _ {c} = \operatorname{Prop} _ {2 \mathrm{D}} (\mathbf {x} _ {c}; u, \lambda , w), \quad \mathbf {y} = P _ {\uparrow} (\mathbf {y} _ {c}) \in \mathbb {R} ^ {B \times C \times H \times W}. \tag {9}
+$$
+
+This reduces the effective grid from $B { \times } C$ to $\boldsymbol { B } \times \boldsymbol { C } _ { c }$ , lowering per-SM pressure and avoiding serialization. At 1K resolution, latency stays nearly flat across channels and batch sizes; compared to the raw-space kernel, latent-space propagation attains 54.46× speedup at $C { = } 1 1 5 2$ and 55.74× at ??=32 (Fig. 5). Because ??˜ lives in the latent channels, the normalization of Eq. (3) is evaluated over $C _ { c }$ rather than ??, giving an additional 38.9× speedup in weight normalization.
+
+Non-propagation overhead reduction. Is the propagation sublayer really the bottleneck? For softmax attention at high resolution, yes; but GSPN’s propagation is already efficient, so at low and medium resolutions the runtime is dominated by the non-propagation components. At 1K, these parts cost 9.6× more latency than the core propagation (Fig. 6). We therefore strip overhead inherited from the attention-era template by removing (i) the inner-layer residual path around the propagation kernel, (ii) the linear projections inherited from attention, and (iii) the intermediate channel-extension projections that previously expanded channels before propagation. Cumulatively, these edits yield $\mathsf { a } \sim 5 . 5 \times$ reduction in overhead latency (Fig. 6).
+
+Fused CUDA normalization. We further optimize the sigmoid-based row-stochastic normalization (Eq. (3)) by fusing its sequence of operations—sigmoid activation, local reduction, clamping, and division—into a single custom CUDA kernel.
+
+![](images/f23cd508f9b5aca9e5d8605093a4b82e2c1162bc8abd9df5c936cb6e50524be9.jpg)
+
+<details>
+<summary>bar</summary>
+
+| Image Resolution | FlashAttention | GSPN | C-GSPN | Weight Normalization | Other Overhead | Attention/2D Propagation |
+| ---------------- | -------------- | ---- | ------ | -------------------- | -------------- | ------------------------ |
+| 378              | ~2             | ~18  | ~1     | ~2                   | ~2             | ~2                       |
+| 518              | ~4             | ~28  | ~1     | ~2                   | ~2             | ~2                       |
+| 770              | ~15            | ~60  | ~1     | ~5                   | ~5             | ~5                       |
+| 1036             | ~40            | ~90  | ~10    | ~10                  | ~10            | ~10                      |
+</details>
+
+![](images/4123e2fef75362fcafee0f5224d6b45ea4e5a949163a0bd1d34c09f4f617a4b9.jpg)
+
+<details>
+<summary>bar</summary>
+
+Overhead Reduction
+| Method | Overhead Latency (x) | Speed Up (x) |
+| :--- | :--- | :--- |
+| Original GSPN Overhead | 1.19 | |
+| Remove Linear Projections from Attention | 1.44 | |
+| Remove Inner Layer Residual | 3.21 | |
+| Remove Channel Extension Linear Propagations | 5.50 | Total Speed Up 5.50x |
+</details>
+
+Figure 6: Left: Block latency vs. image resolution (??=32, ??=1152); the original GSPN is dominated by weight normalization and other overhead at high resolution, which C-GSPN substantially reduces. Right: Overhead reduction at 1K from removing (1) additional linear projections, (2) the inner-layer residual, and (3) channel-extension projections; cumulative speedup ≈5.5×.
+
+Executing all steps in one pass eliminates intermediate memory traffic and launch overhead, giving a 2.15× speedup over PyTorch’s baseline. Combined with the latent-space structural reduction $\left( C \to C _ { c } ; { \mathrm { e } } . { \mathrm { g } } . , 1 1 5 2 \to 6 4 \right)$ , the effective cost of normalization drops by 83.68× at 1K resolution. Together, latent-space propagation, overhead removal, and fused normalization yield a 13.7× speedup of the full GSPN layer at 1K; full comparisons appear in Sec. 6.
+
+# 5.2. Training a New Architecture Fast: Cross-Operator Distillation
+
+The efficient block of Sec. 5.1 gives a fast forward operator, but a foundation encoder still has to be trained—and here the new architecture pays a hidden cost. Although GSPN (Wang et al., 2025) performs strongly on mid-scale tasks such as classification and generation, its use in foundation-scale vision models remains underexplored, and unlike a ViT student it does not inherit pretrained attention weights: spatial propagation and attention are different operators, so the usual shortcut of warm-starting from a released checkpoint is generally unavailable. Training from scratch at CLIP/SigLIP scale (tens of billions of pairs) is very costly, so the question becomes how to train this new architecture efficiently. We answer it by distilling from a pretrained quadratic-attention teacher into the GSPN-based student, aligning C-GSPN’s block design with a SigLIP-2-style ViT (Zhai et al., 2023). Cross-operator transfer is non-trivial: attention mixes tokens via explicit pairwise interactions, whereas GSPN attains global context through sequential local propagation that reduces the effective sequence length to ?? . This mismatch makes direct attention-weight transfer inappropriate and induces a feature-distribution gap. We address it with a progressive, two-stage scheme (Fig. 7) that makes foundation-scale training affordable.
+
+Stage 1: Sublayer-wise pretraining. We first align each C-GSPN propagation sublayer with its corresponding teacher attention sublayer. For block ??, both teacher and student take the output of the (??−1)-th teacher block as input:
+
+$$
+\mathbf {h} ^ {t, (0)} = \mathbf {x}, \quad \mathbf {h} ^ {t, (i)} = \text { TeacherBlock } ^ {(i)} \big (\mathbf {h} ^ {t, (i - 1)} \big). \tag {10}
+$$
+
+Given this shared input, we compute the sublayer features
+
+$$
+F ^ {s, (i)} = f _ {\mathrm{C-GSPN-prop}} ^ {(i)} \left(\mathbf {h} ^ {t, (i - 1)}\right), \quad F ^ {t, (i)} = f _ {\text { Attention }} ^ {(i)} \left(\mathbf {h} ^ {t, (i - 1)}\right), \tag {11}
+$$
+
+taken immediately after the student’s propagation sublayer and the teacher’s attention sublayer, and minimize a simple feature-alignment loss $\mathcal { L } _ { \mathrm { p r o p } } ^ { ( i ) } = \| F ^ { s , ( i ) } - F ^ { t , ( i ) } \| _ { 2 } ^ { 2 }$ . The teacher is frozen and gradients flow only through the student sublayer; each block is trained independently, without backpropagation across blocks, so every C-GSPN sublayer directly learns its paired attention sublayer’s representation. This parallel scheme stabilizes training and provides a strong initialization for end-to-end distillation.
+
+Stage 2: End-to-end distillation with dual taps. We then optimize end-to-end with two supervision taps per block. We call the feature after the propagation/attention sublayer post-propagation (PP) and the feature after the entire block (sublayer + MLP + norms) post-block (PB). The rationale is to decompose cross-operator transfer: PB supervision preserves the teacher’s block transformation, where the MLP is largely isomorphic across student and teacher, while PP supervision directly pressures the GSPN sublayer to reproduce the teacher’s attention-style mixing rather than letting the MLP absorb the mismatch. Let $V _ { \mathrm { P P } } ^ { s / t }$ and $V _ { \mathrm { P B } } ^ { s / t }$ denote student/teacher features at the two taps and ?? (·) the token-wise softmax. We combine MSE feature alignment with KL distribution matching:
+
+![](images/c37a761383650c781b3440417d25707ed6fb227657ce400ac779007245b0b600.jpg)
+
+<details>
+<summary>flowchart</summary>
+
+```mermaid
+graph TD
+    A["Student"] --> B["Linear Layer"]
+    B --> C["2D Propagation"]
+    C --> D["Layer Norm"]
+    D --> E["Gradient Stop"]
+    E --> F["Layer-wise Pretraining"]
+    F --> G["F^s Student Features"]
+    F --> H["F^t Teacher Features"]
+    I["Teacher"] --> J["ViT Block"]
+    J --> K["Layer Norm"]
+    K --> L["Attention"]
+    L --> M["Layer Norm"]
+    N["Post-Block Supervision"] --> O["Adapter"]
+    O --> P["Post-Propagation Supervision"]
+    P --> Q["Adapter"]
+    Q --> R["2D Propagation"]
+    R --> S["Layer Norm"]
+    T["C-GSPN Block"] --> U["Linear Layer"]
+    U --> V["2D Propagation"]
+    V --> W["Layer Norm"]
+    X["VLP_t"] --> Y["Layer Norm"]
+    Z["V̂_PB^t"] --> AA["Layer Norm"]
+    AB["P(V̂_PB^t)"] --> AC["Layer Norm"]
+    AD["P(V̂_PB^s)"] --> AE["Layer Norm"]
+    AF["P(V̂_PB^s)"] --> AG["Layer Norm"]
+    AH["Loss"] --> AI["Teacher Features"]
+    AJ["Loss"] --> AK["V̂_PP^t"]
+    AL["Loss"] --> AM["V̂_PP^s"]
+    AN["End to End Distillation"] --> AO["Adapter"]
+    AP["Student"] --> AQ["C-GSPN Block"]
+    AQ --> AR["MLP"]
+    AR --> AS["Layer Norm"]
+    AT["Post-Block Supervision"] --> AU["Adapter"]
+    AU --> AV["V̂_PP^s"]
+    AW["Post-Propagation Supervision"] --> AX["V̂_PP^s"]
+```
+</details>
+
+Figure 7: Two-stage cross-operator distillation (Improvement 3). Stage 1 (sublayer-wise): each C-GSPN propagation sublayer is aligned to the teacher’s attention sublayer from the shared block input, giving a strong initialization. Stage 2 (end-to-end): the full student is distilled with two supervision taps per block—post-propagation (PP) and post-block (PB)—through lightweight feature adaptors that bridge the propagation/attention feature gap. This avoids training the new operator from scratch at foundation scale.
+
+$$
+\mathcal {L} _ {\mathrm{PP}} = \operatorname{MSE} \left(\hat {V} _ {\mathrm{PP}} ^ {s}, V _ {\mathrm{PP}} ^ {t}\right) + \lambda_ {1} \mathrm{KL} \left(P \left(\hat {V} _ {\mathrm{PP}} ^ {s}\right) \| P \left(V _ {\mathrm{PP}} ^ {t}\right)\right), \tag {12}
+$$
+
+$$
+\mathcal {L} _ {\mathrm{PB}} = \operatorname{MSE} \left(\hat {V} _ {\mathrm{PB}} ^ {s}, V _ {\mathrm{PB}} ^ {t}\right) + \lambda_ {2} \operatorname{KL} \left(P \left(\hat {V} _ {\mathrm{PB}} ^ {s}\right) \| P \left(V _ {\mathrm{PB}} ^ {t}\right)\right), \tag {13}
+$$
+
+with total objective $\mathcal { L } _ { \mathrm { t o t a l } } = \alpha \mathcal { L } _ { \mathrm { P P } } + \beta \mathcal { L } _ { \mathrm { P B } }$ .
+
+Feature adaptors. Even with dual supervision, directly matching C-GSPN and ViT features is hard because the operators compute representations differently—propagation aggregates context sequentially while attention mixes all tokens at once—so raw-space comparison destabilizes training. We therefore insert lightweight feature adaptors (2-layer MLPs) before each tap that map the student features into an aligned space $( V _ { \mathrm { P P } } ^ { s } \to \hat { V } _ { \mathrm { P P } } ^ { s } , \ : V _ { \mathrm { P B } } ^ { s } \to \hat { V } _ { \mathrm { P B } } ^ { s }$ in Eq. (13)). By turning direct feature matching into learnable feature alignment, the adaptors stabilize optimization where the operator gap is largest (PP) and improve downstream accuracy (Sec. 6.5). Similar tap-supervision and staged cross-architecture principles have been validated in recent distillation work (Touvron et al., 2021; Yang et al., 2022b; Bick et al., 2024).
+
+A small attention budget helps. Finally, inspired by hybrid Mamba–Transformer designs such as MaTVLM (Li et al., 2025), we find that retaining a modest fraction of attention layers gives a better accuracy–latency trade-off than either pure attention or pure C-GSPN. We adopt a hybrid that replaces every ninth GSPN block with a standard attention block (a 3/27 ratio), injecting sparse pairwise mixing at regular depths while keeping the network subquadratic overall; we validate this in Sec. 6.5.
+
+# 5.3. High-Resolution Encoder Distillation
+
+High-resolution downstream tasks are usually handled by tiling (Liu et al., 2025, 2024a) because attention scales quadratically with resolution, but tiling adds engineering complexity, boundary artifacts, and loss of global context. C-GSPN instead maintains low latency at 1K–2K and supports single-pass inference without tiling (Sec. 6.3); crucially, since it uses no positional embeddings, moving to higher resolutions requires no architectural change—only adapted training.
+
+We study how to transfer low-resolution checkpoints to higher resolutions under limited compute, and find two challenges. First, naively transferring from a base resolution ??0 (e.g., 378) to a target ???? (e.g., 756) performs poorly; a resolution curriculum (Bai et al., 2023; Chen et al., 2023b,a; Li et al., 2024c) that gradually increases resolution (378 → 518 → 756) substantially improves results (80.4% vs. 70.2% under equal sample budgets). Second, contrastive supervision alone suffices for classification but fails to capture the fine-grained spatial detail needed for dense tasks. We therefore combine curriculum learning with upsampling self-distillation: at each step $k > 0$ the checkpoint from $r _ { k - 1 }$ is frozen as a teacher, its post-propagation and post-block features are bilinearly upsampled to $r _ { k } ,$ and they supervise the student at $r _ { k }$ with the dual objectives of Sec. 5.2:
+
+$$
+\tilde {V} _ {m} ^ {t, (k)} = \mathrm{Up} \bigl (V _ {m} ^ {t, (k - 1)} \bigr), \quad \tilde {V} _ {b} ^ {t, (k)} = \mathrm{Up} \bigl (V _ {b} ^ {t, (k - 1)} \bigr), \quad \mathcal {L} _ {\mathrm{hr}} ^ {(k)} = \alpha   \mathcal {L} _ {\mathrm{module}} ^ {(k)} + \beta   \mathcal {L} _ {\mathrm{block}} ^ {(k)}, \tag {14}
+$$
+
+where $\mathrm { U p } ( \cdot )$ is bilinear upsampling from $r _ { k - 1 } ~ { \mathrm { t o } } ~ r _ { k }$ and the per-tap losses follow the same MSE+KL form. Despite using approximate (upsampled) supervision, this staged self-distillation substantially improves dense-task performance while preserving C-GSPN’s global context modeling (Sec. 6), and requires only a small fraction of the data needed to train at high resolution from scratch.
+
+# 6. Experiments
+
+Our evaluation mirrors the paper’s two levels of efficiency and the end-to-end payoff. Level 1: we validate the fast GSPN kernel as a fast, accuracy-preserving primitive—a detailed profiling of the CUDA redesign (Sec. 6.1) followed by ImageNet classification and high-resolution text-to-image synthesis (Sec. 6.2)—confirming the operator is strong on its own. Level 2: we show the efficient block converts this kernel speed into block- and model-level speed (Sec. 6.3), and that cross-operator distillation yields a foundation-scale encoder with competitive zero-shot, segmentation, and detection quality at CLIP scale plus cheap high-resolution transfer (Sec. 6.4); ablations isolate the contribution of the block design and the training recipe (Sec. 6.5). Unless noted, all latency is measured on A100 GPUs.
+
+# 6.1. Fast GSPN Kernel Efficiency
+
+We profile the fast GSPN kernel across input configurations, analyzing memory throughput, cache behavior, and SM utilization, and isolate the contribution of each optimization. Throughout this subsection, the baseline is the original GSPN reference kernel.
+
+Step-by-step CUDA optimization. For a typical configuration (1024 × 1024 image, batch size $^ { 1 6 , }$ 8 channels), Fig. 3 quantifies each optimization term. The GSPN baseline takes 71.4 ms due to launch overhead and poor memory access. A single fused kernel (Sec. 4.1) removes the micro-launches for a 1.2× gain (57.4 ms); coalesced memory access (Sec. 4.3) maximizes bandwidth for a 23.9× jump (2.4 ms); a shared-memory cache for hidden states adds 1.1× (2.2 ms); 2D thread blocks add 1.1× (2.1 ms); and compressive channels (Sec. 4.2) add a final 1.1× (1.9 ms). The fully optimized fast GSPN kernel achieves a 40.0× cumulative speedup (1.8 ms). The relative impact of each term is workload-dependent; Sec. C.1 analyzes an alternative large-batch configuration where coalesced access remains dominant but shared-memory caching and 2D blocks become configuration-sensitive.
+
+Memory throughput. Tab. 1 reports Nsight Compute measurements: the fast GSPN kernel reaches near-theoretical global-memory throughput (∼93% on A100), stable across batch sizes and resolutions, whereas the original GSPN kernel achieves only 3–8% of peak and degrades as inputs grow.
+
+Table 1: Global memory throughput under typical input configurations on A100. Across input sizes, batch sizes, and channel counts representative of common deployments, the fast GSPN kernel consistently approaches peak bandwidth while the original GSPN kernel remains well below it. 
+
+<table><tr><td>Input Size</td><td>Batch</td><td>Channels</td><td>GSPN (orig.)</td><td>fast GSPN</td></tr><tr><td>32×32</td><td>32</td><td>196</td><td>114 GB/s (6.0%)</td><td>1832 GB/s (91.8%)</td></tr><tr><td>64×64</td><td>1</td><td>768</td><td>86 GB/s (4.5%)</td><td>1847 GB/s (92.3%)</td></tr><tr><td>64×64</td><td>1</td><td>1152</td><td>35 GB/s (2.1%)</td><td>1837 GB/s (92.0%)</td></tr><tr><td>64×64</td><td>1</td><td>32</td><td>125 GB/s (6.3%)</td><td>1830 GB/s (91.5%)</td></tr><tr><td>128×128</td><td>1</td><td>32</td><td>98 GB/s (4.9%)</td><td>1865 GB/s (93.3%)</td></tr><tr><td>256×256</td><td>1</td><td>64</td><td>76 GB/s (3.8%)</td><td>1842 GB/s (92.1%)</td></tr><tr><td>256×256</td><td>8</td><td>64</td><td>94 GB/s (4.7%)</td><td>1858 GB/s (92.9%)</td></tr><tr><td>512×512</td><td>1</td><td>128</td><td>64 GB/s (3.2%)</td><td>1840 GB/s (92.0%)</td></tr></table>
+
+Scaling with input size, batch, and channels. Fig. 8 (upper row) shows the fast GSPN kernel consistently outperforms the original GSPN kernel across resolutions at fixed batch/channels, with up to 36.8× (forward) and 25.3× (backward) speedups at 1024 × 1024; the gap widens with resolution. The lower row shows the regime critical for video generation and foundation vision towers: even as batch sizes reach 256 or channels reach 1024, fast GSPN sustains 2–4× speedups, e.g. a 27.4× forward and 48.6× backward speedup at 256 channels, with the channel-sharing scheme (Sec. 4.2) adding up to 1.5×. L1 cache and SM utilization. Profiling reveals that the L1 cache is highly effective for the fast GSPN kernel’s structured, coalesced access: with explicit shared-memory caching, L1 hit rates drop to near 0% (accesses served from shared memory) yet latency is comparable to relying on L1 (which shows ∼35% hit rates), so we keep shared memory for portability and determinism. SM occupancy approaches 100% for large batch/channel workloads but can fall to 20–30% for small inputs, where each independent chunk maps to a single block—pointing to further decomposition opportunities for low-workload regimes.
+
+![](images/73805ca88354f775b65406bd0f62f6f10086862a705ff5de890e3f1ce20d72b5.jpg)  
+Figure 8: Runtime comparison of the original GSPN kernel and the fast GSPN kernel. Forward and backward execution times (ms) across channel counts and configurations. The fast GSPN kernel greatly improves both passes across cases.
+
+# 6.2. Fast GSPN (Operator) on Vision Tasks
+
+Image classification. Tab. 2 compares ImageNet-1K accuracy across ConvNet, Transformer, and sequential (raster-scan) backbones. Here we evaluate fast GSPN as a classification operator/backbone (the fast GSPN kernel with its compact channel propagation), denoting its variants fast GSPN-T/S/B; the prior GSPN backbones (GSPN-T/S/B) are the baseline. For fast GSPN we share ???? across channels in all modules, set the compressive proxy dimension $C _ { \mathrm { p r o x y } } { = } 2$ (reallocating saved parameters to depth/width), add a Local Perception Unit at the start of each block and FFN, and apply MESA to curb overfitting. Fast GSPN-T reaches 83.0% with fewer parameters (24M vs. 30M) and lower cost (4.2G vs. 5.3G MACs) than GSPN-T, surpassing Vim-S (80.5%), VMamba-T (82.2%), and LocalVMamba-T (82.7%). Fast GSPN-S reaches 84.4% (+0.6% over GSPN-S at equal parameters), ahead of MambaOut-Small (84.1%) and UniFormer-B (83.9%); fast GSPN-B reaches 84.9% (+0.6% over GSPN-B) while reducing MACs (14.2G vs. 15.9G).
+
+Text-to-image generation. Integrated into Stable Diffusion XL with proxy compression to 1/8 of channels $( C _ { \mathrm { p r o x y } } { = } C / 8 )$ , fast GSPN accelerates high-resolution synthesis without degrading quality (Fig. 9). It achieves a 32× speedup over the SDXL baseline at 4K, and at 16K reduces inference time by 93× relative to the original GSPN’s 84× improvement, enabling 16K generation on a single A100.
+
+# 6.3. C-GSPN System Efficiency
+
+We benchmark C-GSPN against standard attention, FlashAttention, and the original GSPN at the propagation sublayer, the full layer, the complete transformer block (core + MLP + norms + residuals), and end-to-end throughput, at batch size 32 and 1152 channels (Tab. 3; more resolutions in Sec. G). Fig. 10 summarizes how these costs scale with resolution.
+
+Sublayer and block results. The original GSPN remains 55.3×–86.9× slower than C-GSPN at 1K–2K. FlashAttention needs over 500 ms per layer at 2K while C-GSPN’s sublayer stays at 0.46 ms—a ∼1000× gap. At the full block (including MLP, norms, residuals), FlashAttention exceeds 600 ms at 2K whereas C-GSPN completes in under 150 ms, a 4× end-to-end speedup, with single-pass inference and no tiling.
+
+Table 2: ImageNet-1K performance at resolution 2242. Colors denote backbone type: yellow for CNNs, orange for Transformers, and green for raster-scan (1D linear propagation) methods; the line-scan models—prior GSPN and our fast GSPN—are highlighted in blue. 
+
+<table><tr><td rowspan="2">Model</td><td rowspan="2">Backbone</td><td rowspan="2">Param (M)</td><td colspan="2">IN-1K</td><td rowspan="2">Model</td><td rowspan="2">Backbone</td><td rowspan="2">Param (M)</td><td colspan="2">IN-1K</td><td rowspan="2">Model</td><td rowspan="2">Backbone</td><td rowspan="2">Param (M)</td><td colspan="2">IN-1K</td></tr><tr><td colspan="2">MAC Acc (G) (%)</td><td colspan="2">MAC Acc (G) (%)</td><td colspan="2">MAC Acc (G) (%)</td></tr><tr><td>ConvNeXT-T Liu et al. (2022b)</td><td>CN</td><td>29</td><td>4.5</td><td>82.1</td><td>ConvNeXT-S Liu et al. (2022b)</td><td>CN</td><td>50</td><td>8.7</td><td>83.1</td><td>ConvNeXT-B Liu et al. (2022b)</td><td>CN</td><td>89</td><td>15.4</td><td>83.8</td></tr><tr><td>MambaOut-Tiny Yu and Wang (2024)</td><td>CN</td><td>27</td><td>4.5</td><td>82.7</td><td>CNFormer-S36 Yu et al. (2024)</td><td>CN</td><td>40</td><td>7.6</td><td>84.1</td><td>CNFormer-M36 Yu et al. (2024)</td><td>CN</td><td>57</td><td>12.8</td><td>84.5</td></tr><tr><td>DeiT-T Touvron et al. (2021)</td><td>TF</td><td>22</td><td>4.6</td><td>79.8</td><td>MogaNet-B Li et al. (2024b)</td><td>CN</td><td>44</td><td>9.9</td><td>84.3</td><td>MambaOut-Base Yu and Wang (2024)</td><td>CN</td><td>85</td><td>15.8</td><td>84.2</td></tr><tr><td>T2T-ViT-14 Yuan et al. (2021)</td><td>TF</td><td>22</td><td>4.8</td><td>81.5</td><td>InternImage-S Wang et al. (2022)</td><td>CN</td><td>50</td><td>8.0</td><td>84.2</td><td>SLaK-B Liu et al. (2023)</td><td>CN</td><td>95</td><td>17.1</td><td>84.0</td></tr><tr><td>Swin-T Liu et al. (2021)</td><td>TF</td><td>29</td><td>4.5</td><td>81.3</td><td>MambaOut-Small Yu and Wang (2024)</td><td>CN</td><td>48</td><td>9.0</td><td>84.1</td><td>DeiT-B Touvron et al. (2021)</td><td>TF</td><td>86</td><td>17.5</td><td>81.8</td></tr><tr><td>SwinV2-T Liu et al. (2022a)</td><td>TF</td><td>28</td><td>4.4</td><td>81.8</td><td>T2T-ViT-19 Yuan et al. (2021)</td><td>TF</td><td>39</td><td>8.5</td><td>81.9</td><td>T2T-ViT-24 Yuan et al. (2021)</td><td>TF</td><td>64</td><td>13.8</td><td>82.3</td></tr><tr><td>CSWin-T Dong et al. (2022)</td><td>TF</td><td>23</td><td>4.3</td><td>82.7</td><td>Focal-Small Yang et al. (2022a)</td><td>TF</td><td>51</td><td>9.1</td><td>83.5</td><td>Swin-B Liu et al. (2021)</td><td>TF</td><td>88</td><td>15.4</td><td>83.5</td></tr><tr><td>CoAtNet-0 Dai et al. (2021)</td><td>TF</td><td>25</td><td>4.2</td><td>81.6</td><td>BiFormer-B Zhu et al. (2023)</td><td>TF</td><td>57</td><td>9.8</td><td>84.3</td><td>SwinV2-B Liu et al. (2022a)</td><td>TF</td><td>88</td><td>15.1</td><td>84.6</td></tr><tr><td>Vim-S Zhu et al. (2024)</td><td>RS</td><td>26</td><td>5.1</td><td>80.5</td><td>NextViT-B Li et al. (2022a)</td><td>TF</td><td>45</td><td>8.3</td><td>83.2</td><td>CSwin-B Dong et al. (2022)</td><td>TF</td><td>78</td><td>15.0</td><td>84.2</td></tr><tr><td>VMamba-T Liu et al. (2024d)</td><td>RS</td><td>22</td><td>5.6</td><td>82.2</td><td>Twins-B Chu et al. (2021)</td><td>TF</td><td>56</td><td>8.3</td><td>83.1</td><td>MViTv2-B Li et al. (2022c)</td><td>TF</td><td>52</td><td>10.2</td><td>84.4</td></tr><tr><td>Mamba-2D-S Li et al. (2024a)</td><td>RS</td><td>24</td><td>-</td><td>81.7</td><td>MaxViT-Small Tu et al. (2022)</td><td>TF</td><td>69</td><td>11.7</td><td>84.4</td><td>CoAtNet-2 Dai et al. (2021)</td><td>TF</td><td>75</td><td>15.7</td><td>84.1</td></tr><tr><td>LocalVMamba-T Huang et al. (2024)</td><td>RS</td><td>26</td><td>5.7</td><td>82.7</td><td>Swin-S Liu et al. (2021)</td><td>TF</td><td>50</td><td>8.7</td><td>83.0</td><td>Vim-B Zhu et al. (2024)</td><td>RS</td><td>98</td><td>17.5</td><td>81.9</td></tr><tr><td>VRWKV-S Duan et al. (2024)</td><td>RS</td><td>24</td><td>4.6</td><td>80.1</td><td>SwinV2-S Liu et al. (2022a)</td><td>TF</td><td>50</td><td>8.5</td><td>83.8</td><td>VMamba-B Liu et al. (2024d)</td><td>RS</td><td>89</td><td>15.4</td><td>83.9</td></tr><tr><td>ViL-S Alkin et al. (2024)</td><td>RS</td><td>23</td><td>5.1</td><td>81.5</td><td>CoAtNet-1 Dai et al. (2021)</td><td>TF</td><td>42</td><td>8.4</td><td>83.3</td><td>Mamba-2D-B Li et al. (2024a)</td><td>RS</td><td>92</td><td>-</td><td>83.0</td></tr><tr><td>MambaVision-T Hatamizadeh et al. (2024)</td><td>RS</td><td>32</td><td>4.4</td><td>82.3</td><td>UniFormer-B Li et al. (2022b)</td><td>TF</td><td>50</td><td>8.3</td><td>83.9</td><td>VRWKV-B Duan et al. (2024)</td><td>RS</td><td>94</td><td>18.2</td><td>82.0</td></tr><tr><td></td><td></td><td></td><td></td><td></td><td>VMamba-S Liu et al. (2024d)</td><td>RS</td><td>44</td><td>11.2</td><td>83.5</td><td>ViL-B Alkin et al. (2024)</td><td>RS</td><td>89</td><td>18.6</td><td>82.4</td></tr><tr><td>GSPN-T</td><td>Line</td><td>30</td><td>5.3</td><td>83.0</td><td>MambaVision-S Hatamizadeh et al. (2024)</td><td>RS</td><td>50</td><td>7.5</td><td>83.3</td><td>MambaVision-B Hatamizadeh et al. (2024)</td><td>RS</td><td>98</td><td>15.0</td><td>84.2</td></tr><tr><td>Fast GSPN-T (Ours)</td><td>Line</td><td>24</td><td>4.2</td><td>83.0</td><td>GSPN-S</td><td>Line</td><td>50</td><td>9.0</td><td>83.8</td><td>GSPN-B</td><td>Line</td><td>89</td><td>15.9</td><td>84.3</td></tr><tr><td></td><td></td><td></td><td></td><td></td><td>Fast GSPN-S (Ours)</td><td>Line</td><td>50</td><td>9.2</td><td>84.4</td><td>Fast GSPN-B (Ours)</td><td>Line</td><td>89</td><td>14.2</td><td>84.9</td></tr></table>
+
+![](images/48de8032f82c031b98b5ecae57978257bd1b6ea2de8fee10cce170c590ff5a7f.jpg)
+
+<details>
+<summary>natural_image</summary>
+
+Collage of six futuristic and symbolic imagery including a fairy, a bottle, a camel, a bed, a bicycle, and a desert landscape (no text or symbols)
+</details>
+
+![](images/8147bc891ea9002e0dfc86a281d4f23027b80a44e1438936be24e44c9c508905.jpg)
+
+<details>
+<summary>bar</summary>
+
+| Image resolution | SDXL | GSPN-1 | GSPN-2 |
+| ---------------- | ---- | ------ | ------ |
+| 512              | 7    | 6      | 6      |
+| 768              | 9    | 8      | 8      |
+| 1k               | 12   | 11     | 11     |
+| 2k               | 24   | 22     | 22     |
+| 4k               | 29   | 32     | 32     |
+| 8k               | 42   | 50     | 50     |
+| 16k              | 84   | 93     | 93     |
+</details>
+
+Figure 9: Qualitative text-to-image results from our fast GSPN SDXL model. We enable generation up to 16K resolution on a single A100 while reducing inference time by up to 93×.
+
+# 6.4. C-GSPN at Foundation Scale
+
+We distill C-GSPN from a strong attention teacher (OpenCLIP ViT-SO/14 at 378) using only 600M image–text pairs—far less than training attention models from scratch (e.g., SigLIP-v2’s 40B). Under identical data/compute we compare three students: an isomorphic ViT→ViT (identical architecture), an original GSPN student, and our C-GSPN. We evaluate zero-shot classification (ImageNet Top-1/Top-5) (Russakovsky et al., 2015), segmentation (ADE20K-F, ADE20K, PASCAL) (Zhou et al., 2019; Everingham et al., 2010), and detection (COCO) (Lin et al., 2014).
+
+Foundation-scale quality. Despite 15% fewer parameters, C-GSPN matches the isomorphic ViT→ViT baseline (63.3 vs. 63.5 macro average), outperforms the original GSPN (62.7), and even exceeds the teacher on segmentation (+0.2% ADE20K) (Tab. 5). To our knowledge, this is among the first demonstrations that a subquadratic spatial operator can be scaled to CLIP-level pretraining while retaining competitive quality. Combined with Sec. 6.3, C-GSPN is a viable efficient alternative: 4.28× block-level speedup at high resolution while preserving task quality and enabling tiling-free single-pass inference.
+
+High-resolution transfer. Using a lightweight resolution curriculum of 3M samples (1M per stage, 378→518→756→ 1036) instead of full-scale training, the staged upsampling self-distillation of Sec. 5.3 improves ADE20K segmentation at 518 by +1.2 points over contrastive-only training and, at 1036, reaches a 2.40× training speedup over ViT-Distill (Tab. 4).
+
+![](images/29f4e0eced554cfc3a933af7fffc852515f1e9336d75d5da8e6eb4d87e03f119.jpg)
+
+<details>
+<summary>line</summary>
+
+| Resolution (pixels) per side | GSPN Latency per sublayer (ms) | Tiling Latency per sublayer (ms) | FlashAttention Latency per sublayer (ms) | C-GSPN Latency per sublayer (ms) |
+| ---------------------------- | ------------------------------ | -------------------------------- | ---------------------------------------- | ------------------------------- |
+| 378                          | ~10                            | ~10                              | ~10                                      | ~1                              |
+| 518                          | ~20                            | ~20                              | ~20                                      | ~2                              |
+| 770                          | ~40                            | ~40                              | ~40                                      | ~3                              |
+| 1036                         | ~60                            | ~60                              | ~60                                      | ~4                              |
+| 1554                         | ~80                            | ~80                              | ~80                                      | ~5                              |
+| 2058                         | ~100                           | ~100                             | ~100                                     | ~6                              |
+</details>
+
+![](images/d39ec0f5251838a957f48e1c3b8c8a1dc6c948c1459bb335ab694ecf3f14b6a4.jpg)
+
+<details>
+<summary>line</summary>
+
+| Resolution (pixels) per side | Attention | FlashAttention | GSPN | FlashAttention Tiling | C-GSPN-Ours |
+| ----------------------------- | --------- | -------------- | ---- | --------------------- | ----------- |
+| 378                           | 10        | 5              | 20   | 5                     | 5           |
+| 518                           | 30        | 10             | 40   | 10                    | 10          |
+| 770                           | 60        | 20             | 80   | 20                    | 20          |
+| 1036                          | 100       | 40             | 160  | 40                    | 40          |
+| 1554                          | 200       | 80             | 320  | 80                    | 80          |
+| 2058                          | 400       | 160            | 640  | 160                   | 160         |
+</details>
+
+Figure 10: Latency vs. resolution. Sublayer (left) and full-block (right) latency for attention, FlashAttention, the original GSPN, and C-GSPN. Attention-based cores scale quadratically and quickly become memory- or latency-bound, while C-GSPN’s latent-space propagation stays low and resolution-stable, translating its kernel-level gains (Improvement 1) into block-level gains (Improvement 2) at 1K–2K. 
+
+<table><tr><td rowspan="3"></td><td colspan="4">Sublayer latency (ms)</td><td colspan="4">Layer latency (ms)</td><td colspan="4">Block latency (ms)</td><td colspan="4">Throughput (img/s)</td></tr><tr><td colspan="2">1036</td><td colspan="2">2058</td><td colspan="2">1036</td><td colspan="2">2058</td><td colspan="2">1036</td><td colspan="2">2058</td><td colspan="2">1036</td><td colspan="2">2058</td></tr><tr><td>ms</td><td>×</td><td>ms</td><td>×</td><td>ms</td><td>×</td><td>ms</td><td>×</td><td>ms</td><td>×</td><td>ms</td><td>×</td><td>img/s</td><td>×</td><td>img/s</td><td>×</td></tr><tr><td>Attention</td><td>205.90</td><td>1143.89×</td><td>OOM</td><td>OOM</td><td>218.22</td><td>13.11×</td><td>OOM</td><td>OOM</td><td>238.18</td><td>6.51×</td><td>OOM</td><td>OOM</td><td>4.83</td><td>5.85×</td><td>OOM</td><td>OOM</td></tr><tr><td>FlashAttention</td><td>32.81</td><td>182.28×</td><td>504.73</td><td>1097.24×</td><td>44.31</td><td>2.66×</td><td>550.87</td><td>8.25×</td><td>68.93</td><td>1.88×</td><td>631.63</td><td>4.28×</td><td>16.89</td><td>1.67×</td><td>1.81</td><td>3.82×</td></tr><tr><td>GSPN</td><td>9.95</td><td>55.28×</td><td>OOM</td><td>OOM</td><td>113.16</td><td>6.80×</td><td>OOM</td><td>OOM</td><td>133.12</td><td>3.64×</td><td>OOM</td><td>OOM</td><td>6.53</td><td>4.33×</td><td>OOM</td><td>OOM</td></tr><tr><td>C-GSPN (ours)</td><td>0.18</td><td>1×</td><td>0.46</td><td>1×</td><td>16.64</td><td>1×</td><td>66.77</td><td>1×</td><td>36.60</td><td>1×</td><td>147.52</td><td>1×</td><td>28.28</td><td>1×</td><td>6.91</td><td>1×</td></tr></table>
+
+Table 3: Latency breakdown and throughput across resolutions (batch size 32). Sublayer: latent-space 2D propagation vs. scaled dot-product attention. Layer: a C-GSPN layer vs. a multi-head attention layer. Block: end-to-end transformer block. Right: block throughput (img/s). Shaded columns report how much faster C-GSPN is than each baseline. The propagation core is up to 1097× faster than dot-product attention at the sublayer and delivers a 4.28× end-to-end block speedup; throughput improves 1.67× and 3.82× over FlashAttention at 1036 and 2058.
+
+# 6.5. Ablation Studies
+
+We ablate the distillation stages and tap positions, feature adaptors, compression rate, and the attention budget (Fig. 11).
+
+(a) Distillation strategy. Stage-1 (sublayer-wise) aligns each propagation sublayer with its paired attention sublayer so the projections and MLP cannot absorb the operator gap, providing a strong initialization that persists through end-to-end training. In Stage-2, contrastive loss alone underperforms under limited compute; prior feature-distillation methods supervise only post-block features, but adding direct supervision on the raw propagation output (PP) before the MLP gives the sublayer a dedicated signal, improving accuracy by 3.1%.   
+(b) Adaptors. Lightweight MLP adaptors before each tap bridge the feature spaces and yield consistent gains across epochs.   
+(c) Compression rate. Comparing ratios 12/18/72, lower compression (more latent channels) improves capacity up to a point; reducing compression further yields little additional gain. Among these, ratio 18 gives the best accuracy–efficiency balance.   
+(d) Attention budget. Replacing 3/27 layers with attention consistently improves over pure C-GSPN: a small attention budget injects long-range pairwise mixing in a few layers while the rest retain efficient global propagation, avoiding quadratic cost throughout—a trend echoed in recent hybrid work (Waleffe et al., 2024; Basant et al., 2025).   
+(e) Overhead trade-off. Progressively removing the original GSPN’s non-propagation components—additional linear projections (LP), the inner-layer residual (ILR), and channel-extension projections (CELP)—cuts overhead by ∼5.5× at 1K (Fig. 6). Under an identical recipe, removing LP is nearly neutral, ILR incurs a small drop, and CELP causes the largest degradation. To recover capacity without losing the speedups, the 1/9-attention hybrid restores most accuracy while staying ≈3.9× faster at 2K than pure-attention baselines and exceeding the GSPN variant on all tasks, making it our best cost–quality operating point.
+
+<table><tr><td>Resolution</td><td>378</td><td>518</td><td>756</td><td>1036</td><td>Latency(1K)</td></tr><tr><td>ViT-Distill</td><td>45.5</td><td>-</td><td>-</td><td>44.1</td><td>765.9(s)</td></tr><tr><td>C-GSPN w/o KD</td><td>46.0</td><td>45.1</td><td>44.5</td><td>43.5</td><td>319.4(s)</td></tr><tr><td>C-GSPN w/ KD</td><td>46.0</td><td>46.3</td><td>46.2</td><td>45.8</td><td>(2.40× Speed up)</td></tr></table>
+
+Table 4: High-resolution transfer under limited compute. Segmentation accuracy (ADE20K) across increasing input resolutions; KD denotes our upsampling self-distillation. We also report eight-GPU parallel training latency at 1036 per 1000 iterations (batch size 1): C-GSPN yields a 2.40× speedup. 
+
+<table><tr><td rowspan="2">Method</td><td rowspan="2">Params.</td><td rowspan="2">Res.</td><td rowspan="2">Patches</td><td colspan="2">Classification</td><td colspan="3">Segmentation</td><td rowspan="2">Detection COCO</td><td rowspan="2">Avg.</td></tr><tr><td>Top-1</td><td>Top-5</td><td>ADE20K-F</td><td>ADE20K</td><td>Pascal</td></tr><tr><td>OpenCLIP SO/14 (teacher)</td><td>427M</td><td>378</td><td>729</td><td>84.1</td><td>97.4</td><td>42.8</td><td>45.8</td><td>77.5</td><td>47.7</td><td>64.6</td></tr><tr><td>ViT-Distill</td><td>427M</td><td>378</td><td>729</td><td>82.2</td><td>96.7</td><td>43.2</td><td>45.5</td><td>77.2</td><td>45.8</td><td>63.5</td></tr><tr><td>GSPN</td><td>477M</td><td>378</td><td>729</td><td>80.5</td><td>95.8</td><td>44.3</td><td>45.3</td><td>77.2</td><td>44.3</td><td>62.7</td></tr><tr><td>C-GSPN (ours)</td><td>365M</td><td>378</td><td>729</td><td>81.3</td><td>96.3</td><td>44.7</td><td>46.0</td><td>77.6</td><td>45.0</td><td>63.3</td></tr></table>
+
+Table 5: Comprehensive evaluation across vision tasks. OpenCLIP SO/14 is the teacher for all distilled models. Avg. is a macro average: mean(mean(Top-1, Top-5), mean(ADE20K-F, ADE20K, Pascal), COCO). ADE20K-F uses feature tokens as in EfficientViT (Cai et al., 2023); ADE20K uses feature and summary tokens as in TIPS (Maninis et al., 2025).
+
+![](images/2757cd99f329b64c483a87339ffbe263e99540e3b7de9f0500e2d60037c7f80e.jpg)  
+Figure 11: Ablations on training strategy and module structure. (a) Distillation: contrastive → +PB → +PB+PP (+adaptors); PP gives the largest gain, adaptors help, Stage-1 gives a strong start. (b) Adaptors consistently help. (c) Compression: among tested ratios, 18 gives the best observed performance–accuracy balance. (d) Hybrid: adding 3/27 attention layers improves accuracy while preserving speed. (e) Overhead trade-off: accuracy vs. latency at 1K; circle area encodes parameter count, and the 1/9-attention hybrid lies on a favorable cost–quality frontier.
+
+# 7. Limitations and Future Work
+
+Our design has clear boundaries that suggest concrete next steps. At the kernel level, the fast GSPN kernel’s gains shrink when the product of batch size and channel count (?? × ??) is small, since few resident blocks leave SMs underutilized (Sec. C); practical evaluation on long-context video remains underexplored, and the current operator lacks the CLS and register tokens that some ViT-based pipelines rely on, limiting drop-in use in models built around summary tokens. At the encoder level, C-GSPN accelerates the propagation sublayer so effectively that the feed-forward MLP becomes the dominant cost: profiling at batch size 32 shows the MLP accounts for 52% of block latency at resolutions ≥ 512. Our dense-prediction evaluations also focus on 378–1036 resolutions; pushing further would better expose the scaling advantage of a subquadratic core. Future work will target MLP compression, kernel fusion, and low-rank feed-forward variants, integrate summary/register tokens into the propagation block, and extend C-GSPN to video and multimodal long-context settings, where tiling-free, linear-time spatial propagation should be most valuable.
+
+# 8. Conclusion
+
+We set out to turn 2D spatial propagation—a subquadratic operator that, unlike most efficient-attention variants, preserves the spatial structure of images—into a practical foundation-scale vision encoder. The central lesson is that this requires winning efficiency at two levels, and that the first is necessary but not sufficient for the second. At the system level, the fast GSPN kernel reworks the line scan into a single warp-specialized CUDA kernel with compact, channel-shared propagation and careful shared-memory, coalescing, and stream concurrency, delivering up to 52× speedups over the original GSPN kernel at near-peak bandwidth and a strong standalone operator. But kernel speed alone leaves block-level overhead and, crucially, the from-scratch training cost of a non-inheritable operator unaddressed. C-GSPN closes this gap at the architecture and training levels: a compressed latent-space block turns the fast scan into a fast block, and a two-stage, dual-tap cross-operator distillation recipe makes foundation-scale training affordable without inheritable attention weights. The result is, to our knowledge, among the first subquadratic spatial operators scaled to CLIP-level pretraining—matching an isomorphic ViT with 15% fewer parameters, improving dense prediction, and enabling tiling-free high-resolution inference with 2–4× block-level speedups. Together, the two levels of efficiency help position 2D spatial propagation as a practical, hardware-efficient, and scalable basis for future vision foundation encoders.
+
+# A. GPU Hardware and Kernel Execution for 2D Linear Propagation
+
+Modern GPUs such as NVIDIA’s A100 expose parallelism through a hierarchical execution model of grids, thread blocks, and warps. A kernel is launched as a grid of thread blocks, each holding up to 1024 threads organized into 32-thread warps, the basic scheduling unit on the streaming multiprocessors (SMs; 108 on the A100). Warps execute in single-instruction, multiple-thread (SIMT) fashion, maximizing throughput when occupancy—the fraction of active warps per SM—is high, balanced against register usage (up to 65,536 per SM) and shared memory (up to 164 KB per SM).
+
+In 2D line-scan propagation (Wang et al., 2025; Liu et al., 2017), an input tensor of shape $B \times C \times H \times W$ is processed by sequential row or column updates with parallel computation within each step. The CUDA implementation maps spatial positions to threads while ?? and ?? define independent slices for concurrent processing; a 1D block configuration might use a fixed blockDim.x (e.g., 512) with grid size scaled by $B \times C \times H$ . This faces scalability limits with large $B \times C { : }$ each SM hosts at most 32 resident blocks, so once ?? × ?? exceeds the device capacity, excess slices serialize and runtime spikes despite the theoretical parallelism. C-GSPN—through its fast GSPN kernel (Sec. 4) and compressed block (Sec. 5)—is designed precisely to keep the active-block count within this regime.
+
+# B. Comprehensive Fast GSPN Comparison on ImageNet-1K
+
+Fig. S1 compares fast GSPN (Tiny/Small/Base) with leading CNN, Transformer, and SSM architectures on ImageNet-1K, focusing on Top-1 accuracy, throughput (images/second), and parameters at 2242. Taking the Tiny model as an example:
+
+• CNNs: ConvNeXt-T reaches 82.1% with 29M parameters, 4.5G FLOPs, and 1189 img/s; ConvNeXt-B reaches 83.8% at 89M/15.4G but only 435 img/s.   
+• Transformers: DeiT-S has 22M/4.6G, 79.8%, 1759 img/s; Swin-B (88M/15.4G) reaches 83.5% at 458 img/s.   
+• SSMs: VMamba-T gives 1686 img/s with 30M/4.9G at 82.6%; LocalVMamba-T uses 26M/5.7G for 82.7% but only 394 img/s.   
+• Fast GSPN-T (ours): 83.0% Top-1 with only 24M parameters and 3.6G FLOPs at 1544 img/s. Versus DeiT-S, +3.2% accuracy with 2M more parameters and 1G fewer FLOPs; versus VMamba-T, +0.4% accuracy with 6M fewer parameters and 1.3G fewer FLOPs at comparable throughput.
+
+Fast GSPN thus offers an excellent accuracy/size/efficiency trade-off, with strong throughput for its accuracy class.
+
+# C. Performance with Varying Batch and Channel Dimensions
+
+Fig. 8 (main paper) shows the fast GSPN kernel’s largest speedups arise when batch size or channel count is large. Fig. S2 examines when the full fast GSPN kernel optimizations (including shared-memory caching) begin to dominate, as a function of the ?? × ?? product—a key concern for visual-encoder training and video processing.
+
+Implications for model selection. The effectiveness of fast GSPN’s most advanced kernel optimizations, such as sharedmemory caching of hidden states, is magnified as the aggregate workload (?? × ??) increases; for very large effective batch sizes (large-scale training or high-throughput video), deploying the fully optimized fast GSPN kernel is critical. Conversely, when ?? ×?? is small, the difference between a lightweight kernel variant and the full fast GSPN kernel is modest, suggesting an adaptive strategy that selects the kernel configuration based on input dimensions and batch size.
+
+# C.1. Optimization Analysis under a Large-Batch Configuration
+
+While Fig. 3 analyzes a moderate configuration (1024 × 1024, batch 16, 8 channels), Fig. S3 examines a high-throughput scenario (1024 × 1024, batch 256, 1 channel), representative of batch video processing or multi-stream serving. The progression: GSPN baseline 143.7 ms; unified kernel 1.03× (139.2 ms); coalesced memory access 34.0× (4.1 ms, even larger than the 23.9× of the 8-channel case, since coalescing is critical at large batch); shared memory 0.9× (4.5 ms, a slight slowdown because with one channel the L1 cache already captures reuse and explicit SRAM management adds overhead); 2D thread blocks 1.0× (4.4 ms, neutral with a single channel); and compressive channels 1.1× (4.0 ms, with 3.9 ms after fine-tuning). The cumulative 36.8× speedup is comparable to the 40.0× of the main configuration, confirming fast GSPN generalizes across workloads while the relative importance of each optimization is configuration-dependent. Fig. S4 shows the complementary large-channel scenario (1024 × 1024, batch 1, 1152 channels): here compressive channels becomes the dominant optimization, achieving a 7.8× speedup (from 49.8 ms to 6.4 ms) by reducing the effective channel dimension
+
+![](images/e033753d3a5ea272f6c53778facae13fc76ae21ab85b0f25dae0f96b3232b4ec.jpg)
+
+<details>
+<summary>scatter</summary>
+
+| Model           | Throughput | ImageNet Top-1 Accuracy (%) |
+| --------------- | ---------- | --------------------------- |
+| GSPN            | ~550       | ~84.5                       |
+| VMamba          | ~550       | ~83.9                       |
+| ConVNeXt        | ~350       | ~83.8                       |
+| Swin            | ~350       | ~83.6                       |
+| LocalVMamba     | ~400       | ~82.7                       |
+| DeiT            | ~300       | ~81.8                       |
+| ViT-S           | ~800       | ~80.5                       |
+| S4ND_ViT_B      | ~400       | ~80.5                       |
+</details>
+
+Figure S1: Fast GSPN vs. state-of-the-art architectures on ImageNet-1K, analyzing the trade-off between accuracy, model size, and throughput. Fast GSPN is well suited to resource-constrained settings requiring both speed and accuracy.   
+![](images/1e2398c330780aa637fac483327e4c99c57a7ca112b076ba9eb350619b29dbfc.jpg)  
+Figure S2: Runtime comparison of the original GSPN kernel and the fast GSPN kernel across different batch size × channel products. Fast GSPN’s advantage grows markedly as ?? × ?? increases.
+
+8×, for an overall 151.4× speedup (863.2 ms → 5.7 ms). This validates that channel compression is especially impactful for wide feature maps common in vision transformers and diffusion models.
+
+# D. Text-to-Image Generation
+
+We evaluate fast GSPN on text-to-image generation against the original GSPN and several baselines on COCO at 1024 × 1024 (Tab. S1). The baseline is Stable Diffusion v1.5 (SD-v1.5) (Rombach et al., 2022); we also include Mamba (Gu and Dao, 2023), Mamba2 (Dao and Gu, 2024), and Linfusion (Liu et al., 2024c), for which text embeddings are treated as part of the visual token sequence.
+
+Fast GSPN attains FID 33.21 and CLIP-T 0.286, competitive with and close to SD-v1.5 (FID 32.71, CLIP-T 0.290) while inferring faster. Like the original GSPN, fast GSPN adapts to arbitrary resolutions without extra normalization for unseen sizes, since the Stability–Context property ensures stable long-range propagation—an advantage over Mamba and Linfusion, which require resolution-specific normalization.
+
+![](images/a4aa112fd577f0cc43a21617a8683fe706e9ee28d980258db9faa67ba23ed8ad.jpg)
+
+<details>
+<summary>bar</summary>
+
+| Category | Forward Time (ms) |
+| :--- | :--- |
+| Baseline (GSPN-1) | 143.7 |
+| + Unified Kernel | 139.2 |
+| + Coalesced Memory Access | 4.1 |
+| + SRAM | 4.5 |
+| + 2D Thread Blocks | 4.4 |
+| + Compressive channels | 4.0 |
+| + Stream-based Concurrency | 3.9 |
+| + GSPN-2 (Final) | 3.9 |
+× 1.03 × 34.0 × 0.9 × 1.0 × 1.1 × 1.03 × 36.8
+</details>
+
+Figure S3: Step-by-step CUDA optimization under a large-batch configuration $( 1 0 2 4 \times 1 0 2 4$ , batch 256, 1 channel). Cumulative reduction in forward time (ms); 36.8× speedup from the original GSPN (143.7 ms) to the fast GSPN kernel (3.9 ms).
+
+# E. Compressive Proxy Dimension as Low-Rank Approximation
+
+The compressive proxy strategy (Sec. 4.2) projects $\mathbf { X } \in \mathbb { R } ^ { B \times C \times H \times W }$ to a compressed space $\mathbf { X } _ { \mathrm { p r o x y } } \in \mathbb { R } ^ { B \times C _ { \mathrm { p r o x y } } \times H \times W }$ $( C _ { \mathrm { p r o x y } } \ll C )$ , applies propagation there, and projects back—analogous to low-rank factorization. It reduces the CUDA workload from $k _ { \mathrm { c h u n k } } \times B \times C$ slices to $k _ { \mathrm { c h u n k } } \times B \times C _ { \mathrm { p r o x y } }$ , preventing GPU saturation while preserving representational capacity. Tab. S2 reports an ablation on $C _ { \mathrm { p r o x y } }$ for fast GSPN-Tiny on ImageNet-1K.
+
+Table S2: Ablation on proxy dimension $C _ { \bf p r o x y }$ (Fast GSPN-Tiny, ImageNet-1K). 
+
+<table><tr><td> $C_{proxy}$ </td><td>Accuracy (%)</td><td>Throughput (img/s)</td></tr><tr><td>2</td><td>83.0</td><td>1544</td></tr><tr><td>4</td><td>83.0</td><td>1492</td></tr><tr><td>8</td><td>83.0</td><td>1387</td></tr><tr><td>16</td><td>82.9</td><td>1293</td></tr><tr><td>32</td><td>82.8</td><td>1106</td></tr></table>
+
+Accuracy degrades minimally (0.2% from $C _ { \mathrm { p r o x y } } { = } 3 2 \ \mathrm { t o } \ C _ { \mathrm { p r o x y } } { = } 2 )$ while throughput improves 1.4×. The aggressive 48:1 compression at $C _ { \mathrm { p r o x y } } { = } 2$ shows that GSPN propagation operates effectively in low-dimensional spaces, as spatial dependencies dominate over channel-wise ones.
+
+# F. C-GSPN Implementation Details
+
+# F.1. Pretraining
+
+Before end-to-end distillation, we run a lightweight pretraining stage to stabilize optimization and provide a strong initialization. We train on 5M image–text pairs sampled from DataComp (Gadre et al., 2023) using AdamW (Loshchilov, 2017) with learning rate 4 $\mathrm { : \times 1 0 ^ { - 5 } }$ , global batch size 1024, 300 warmup steps, and a linear decay schedule. Omitting this step leads to unstable early-epoch training and consistently lower downstream performance.
+
+# F.2. End-to-End Distillation Training
+
+For full-scale training we distill C-GSPN on 600M curated image–text pairs from DataComp, aligning the student to its teacher (OpenCLIP SO/14) through the staged supervision of Sec. 5.2. We adopt a sparse distillation strategy, supervising every ninth teacher block, and use AdamW with learning rate $4 \times 1 0 ^ { - 4 }$ , global batch size 8192, and a cosine schedule with 10,000 warmup steps.
+
+![](images/dcd0ec12c796d6c683d761efafba6fe785382eb8b36603390dbffe5daa47fb69.jpg)
+
+<details>
+<summary>bar</summary>
+
+| Configuration | Forward Time (ms) | Performance Change |
+|---|---|---|
+| Baseline (GSPN-1) | 863.2 | - |
+| + Unified Kernel | 846.3 | ←1.28 |
+| + Coalesced Memory Access | 52.7 | ←16.1 |
+| + SRAM | 50.1 | ←1.05 |
+| + 2D Thread Blocks | 49.8 | ←1.01 |
+| + Compressive channels | 6.4 | ←7.8 |
+| + Stream-based Concurrency | 5.7 | ←1.02 |
+| + GSPN-2 (Final) | 5.7 | ←1.0 |
+×151.4
+</details>
+
+Figure S4: Step-by-step CUDA optimization under a large-channel configuration $( 1 0 2 4 \times 1 0 2 4$ , batch 1, 1152 channels). The compressive channels term dominates (7.8×), for an overall 151.4× speedup (863.2 ms → 5.7 ms).
+
+Table S1: Generation on COCO at 1024 × 1024. Lower FID (↓) and higher CLIP-T (↑) are better. 
+
+<table><tr><td>Model</td><td>FID(↓)</td><td>CLIP-T(↑)</td></tr><tr><td>SD-v1.5 (baseline)</td><td>32.71</td><td>0.290</td></tr><tr><td>Mamba (Gu and Dao, 2023) (w/ norm)</td><td>50.30</td><td>0.263</td></tr><tr><td>Mamba2 (Dao and Gu, 2024) (w/ norm)</td><td>37.02</td><td>0.273</td></tr><tr><td>Linfusion (Liu et al., 2024c) (w/ norm)</td><td>36.33</td><td>0.285</td></tr><tr><td>GSPN</td><td>30.86</td><td>0.307</td></tr><tr><td>Fast GSPN (Ours)</td><td>33.21</td><td>0.286</td></tr></table>
+
+![](images/717e328dc7582bfabd44b407d6c93efd4ca4d6d6c355b115572197f96f9d77d7.jpg)  
+Figure S5: Fast GSPN vs. the original GSPN and baselines. Fast GSPN achieves a good trade-off between FID, CLIP-T, and inference time.
+
+# F.3. Loss Composition and Balancing
+
+The total distillation loss combines the two taps per block—post-propagation (PP) and post-block (PB):
+
+$$
+\mathcal {L} = \alpha \mathcal {L} _ {\mathrm{PP}} + \beta \mathcal {L} _ {\mathrm{PB}}, \tag {15}
+$$
+
+with each term combining MSE feature alignment and KL distribution matching (Eq. (13)). We set $\alpha = \beta = 0 . 5$ to balance PP and PB supervision, ensuring the propagation sublayer is constrained directly without being overshadowed by block-level matching, and $\lambda _ { 1 } = \lambda _ { 2 } = 7 / 3$ to balance MSE and KL. A lightweight 2-layer MLP adaptor is inserted before each tap (Sec. 5.2); the overall two-stage scheme is illustrated in Fig. 7 of the main text.
+
+# F.4. Stability Practices
+
+Sublayer-wise pretraining (Stage 1) provides consistent per-sublayer signals before end-to-end optimization (Stage 2). In ablations, removing either the adaptors or Stage 1 degrades stability and final accuracy.
+
+![](images/466a883f8c4f3d52336905672a3d15389fdf23e4186bc93301ef5703280313a5.jpg)
+
+<details>
+<summary>flowchart</summary>
+
+```mermaid
+graph TD
+    A["MLP"] -->|Post-Block| B["Feature Interpolation"]
+    B -->|Loss| C["LL"]
+    C --> D["LL"]
+    D --> E["LL"]
+    E --> F["LL"]
+    F --> G["LL"]
+    G --> H["LL"]
+    H --> I["LL"]
+    I --> J["LL"]
+    J --> K["LL"]
+    K --> L["LL"]
+    L --> M["LL"]
+    M --> N["LL"]
+    N --> O["LL"]
+    O --> P["LL"]
+    P --> Q["LL"]
+    Q --> R["LL"]
+    R --> S["LL"]
+    S --> T["LL"]
+    T --> U["LL"]
+    U --> V["LL"]
+    V --> W["LL"]
+    W --> X["LL"]
+    X --> Y["LL"]
+    Y --> Z["LL"]
+    Z --> AA["LL"]
+    AA --> AB["LL"]
+    AB --> AC["LL"]
+    AC --> AD["LL"]
+    AD --> AE["LL"]
+    AE --> AF["LL"]
+    AF --> AG["LL"]
+    AG --> AH["LL"]
+    AH --> AI["LL"]
+    AI --> AJ["LL"]
+    AJ --> AK["LL"]
+    AK --> AL["LL"]
+    AL --> AM["LL"]
+    AM --> AN["LL"]
+    AN --> AO["LL"]
+    AO --> AP["LL"]
+    AP --> AQ["LL"]
+    AQ --> AR["LL"]
+    AR --> AS["LL"]
+    AS --> AT["LL"]
+    AT --> AU["LL"]
+    AU --> AV["LL"]
+    AV --> AW["LL"]
+    AW --> AX["LL"]
+    AX --> AY["LL"]
+    AY --> AZ["LL"]
+    AZ --> BA["LL"]
+    BA --> BB["LL"]
+    BB --> BC["LL"]
+    BC --> BD["LL"]
+    BD --> BE["LL"]
+    BE --> BF["LL"]
+    BF --> BG["LL"]
+    BG --> BH["LL"]
+    BH --> BI["LL"]
+    BI --> BJ["LL"]
+    BJ --> BK["LL"]
+    BK --> BL["LL"]
+    BL --> BM["LL"]
+    BM --> BN["LL"]
+    BN --> BO["LL"]
+    BO --> BP["LL"]
+    BP --> BQ["LL"]
+    BQ --> BR["LL"]
+    BR --> BS["LL"]
+    BS --> BT["LL"]
+    BT --> BU["LL"]
+    BU --> BV["LL"]
+    BV --> BW["LL"]
+    BW --> BX["LL"]
+    BX --> BY["LL"]
+    BY --> BZ["LL"]
+    BZ --> CA["LL"]
+    CA --> CB["LL"]
+    CB --> CC["LL"]
+    CC --> CD["LL"]
+    CD --> CE["LL"]
+    CE --> CF["LL"]
+    CF --> CG["LL"]
+    CG --> CH["LL"]
+    CH --> CI["LL"]
+    CI --> CJ["LL"]
+    CJ --> CK["LL"]
+    CK --> CR["LL"]
+    CR --> CS["LL"]
+    CS --> CT["LL"]
+    CT --> CU["LL"]
+    CU --> CV["LL"]
+    CV --> CW["LL"]
+    CW --> CX["LL"]
+    CX --> CY["LL"]
+    CY --> CZ["LL"]
+```
+</details>
+
+Figure S6: High-resolution encoder distillation. A frozen low-resolution teacher supervises a higher-resolution student via upsampled features at two taps (post-propagation and post-block), with feature interpolation bridging resolutions, applied progressively in a resolution curriculum. See Sec. 5.3.
+
+# F.5. Replacing 1/9 of GSPN Blocks with Attention
+
+For the hybrid of Sec. 6.5, we start from the 27-block GSPN backbone and evenly interleave attention blocks through depth: every ninth GSPN block is replaced by a standard multi-head self-attention block with the same embedding dimension and MLP, yielding a 3/27 ≈ 1/9 attention ratio. This keeps depth and parameterization comparable while injecting sparse pairwise mixing at regular intervals, and is the variant reported as the “1/9-attention hybrid”.
+
+# G. Additional C-GSPN Results
+
+# G.1. Multi-Resolution Distillation
+
+We train a single C-GSPN model operating across multiple input resolutions without special positional embeddings, supervised by a low-resolution teacher. Tab. S3 shows the student maintains comparable ADE20K performance across 378, 448, and 518, indicating effective cross-scale transfer.
+
+<table><tr><td>Dataset</td><td>378-teacher</td><td>378-multires</td><td>448-multires</td><td>518-multires</td></tr><tr><td>ADE20K</td><td>46.0</td><td>45.8</td><td>45.8</td><td>45.9</td></tr></table>
+
+Table S3: Multi-resolution distillation on ADE20K (mIoU). A single multi-resolution student matches the single-resolution baseline.
+
+# G.2. More Latency and Throughput Analysis
+
+To complement Sec. 6.3, Tab. S4 reports end-to-end throughput at batch size 32 across three resolutions, and Tab. S5 decomposes latency into sublayer, layer, and full-block timings. The propagation sublayer remains stable while attention baselines quickly become memory- or latency-bound, with many configurations running out of memory (OOM) at high resolution.
+
+# G.3. Downstream Vision-Language Use
+
+We additionally pair the C-GSPN encoder with a Qwen2.5-3B language model and evaluate on VQA-style tasks (Tab. S6); C-GSPN closely matches the OpenCLIP encoder while offering substantially lower high-resolution latency.
+
+<table><tr><td rowspan="3">Method</td><td colspan="6">Model Throughput (img/s)</td></tr><tr><td colspan="2">518</td><td colspan="2">1554</td><td colspan="2">2590</td></tr><tr><td>img/s</td><td>×</td><td>img/s</td><td>×</td><td>img/s</td><td>×</td></tr><tr><td>Attention</td><td>49.42</td><td>2.28×</td><td>OOM</td><td>OOM</td><td>OOM</td><td>OOM</td></tr><tr><td>FlashAttention</td><td>104.06</td><td>1.08×</td><td>4.78</td><td>2.58×</td><td>0.78</td><td>5.32×</td></tr><tr><td>GSPN</td><td>25.53</td><td>4.42×</td><td>OOM</td><td>OOM</td><td>OOM</td><td>OOM</td></tr><tr><td>C-GSPN (ours)</td><td>112.91</td><td>1×</td><td>12.35</td><td>1×</td><td>4.15</td><td>1×</td></tr></table>
+
+Table S4: Model throughput (img/s) at batch size 32 across three resolutions. Shaded columns report the multiplicative gap vs. ours. C-GSPN maintains practical throughput at all resolutions while competing methods run out of memory or degrade sharply.
+
+<table><tr><td rowspan="3">Method</td><td colspan="6">Sublayer</td><td colspan="6">Layer</td><td colspan="6">Block</td></tr><tr><td colspan="2">518</td><td colspan="2">1554</td><td colspan="2">2590</td><td colspan="2">518</td><td colspan="2">1554</td><td colspan="2">2590</td><td colspan="2">518</td><td colspan="2">1554</td><td colspan="2">2590</td></tr><tr><td>ms</td><td>×</td><td>ms</td><td>×</td><td>ms</td><td>×</td><td>ms</td><td>×</td><td>ms</td><td>×</td><td>ms</td><td>×</td><td>ms</td><td>×</td><td>ms</td><td>×</td><td>ms</td><td>×</td></tr><tr><td>Attention</td><td>14.905</td><td>169.38×</td><td>OOM</td><td>OOM</td><td>OOM</td><td>OOM</td><td>17.919</td><td>4.06×</td><td>OOM</td><td>OOM</td><td>OOM</td><td>OOM</td><td>22.900</td><td>2.44×</td><td>OOM</td><td>OOM</td><td>OOM</td><td>OOM</td></tr><tr><td>FlashAttention</td><td>2.344</td><td>26.64×</td><td>164.696</td><td>550.82×</td><td>1259.135</td><td>1949.28×</td><td>5.160</td><td>1.17×</td><td>190.124</td><td>5.07×</td><td>1336.021</td><td>11.70×</td><td>10.141</td><td>1.08×</td><td>235.372</td><td>2.85×</td><td>1466.011</td><td>6.00×</td></tr><tr><td>GSPN</td><td>3.415</td><td>38.81×</td><td>OOM</td><td>OOM</td><td>OOM</td><td>OOM</td><td>30.391</td><td>6.89×</td><td>OOM</td><td>OOM</td><td>OOM</td><td>OOM</td><td>35.372</td><td>3.77×</td><td>OOM</td><td>OOM</td><td>OOM</td><td>OOM</td></tr><tr><td>C-GSPN (ours)</td><td>0.088</td><td>1×</td><td>0.299</td><td>1×</td><td>0.646</td><td>1×</td><td>4.413</td><td>1×</td><td>37.472</td><td>1×</td><td>114.170</td><td>1×</td><td>9.394</td><td>1×</td><td>82.720</td><td>1×</td><td>244.160</td><td>1×</td></tr></table>
+
+Table S5: Latency breakdown across architectural levels (batch size 32). Sublayer: core 2D propagation vs. attention sublayer; Layer: full layer; Block: complete transformer block (ms). Shaded columns report the multiplicative gap vs. ours. C-GSPN’s sublayer is up to 1949× faster than FlashAttention at 2590 and 6× faster on end-to-end block latency.
+
+<table><tr><td>VQA tasks</td><td>Seed-Img</td><td>VizWiz</td><td>MMMU</td></tr><tr><td>OpenCLIP+Qwen2.5-3B</td><td>72.9</td><td>55.5</td><td>24.4</td></tr><tr><td>C-GSPN+Qwen2.5-3B</td><td>72.1</td><td>55.8</td><td>24.2</td></tr></table>
+
+Table S6: Vision-language evaluation. C-GSPN as the vision encoder paired with Qwen2.5-3B.
+
+# References
+
+Benedikt Alkin, Maximilian Beck, Korbinian Pöppel, Sepp Hochreiter, and Johannes Brandstetter. Vision-lstm: xlstm as generic vision backbone. arXiv preprint arXiv: 2406.04303, 2024. 15   
+Jinze Bai, Shuai Bai, Shusheng Yang, Shijie Wang, Sinan Tan, Peng Wang, Junyang Lin, Chang Zhou, and Jingren Zhou. Qwen-vl: A versatile vision-language model for understanding, localization, text reading, and beyond. arXiv preprint arXiv:2308.12966, 2023. 12   
+Ethan Baron, Itamar Zimerman, and Lior Wolf. 2-d ssm: A general spatial layer for visual transformers. arXiv preprint arXiv:2306.06635, 2023. 5   
+Aarti Basant, Abhijit Khairnar, Abhijit Paithankar, Abhinav Khattar, Adi Renduchintala, Adithya Renduchintala, Aditya Malte, Akhiad Bercovich, Akshay Hazare, Alejandra Rico, et al. Nvidia nemotron nano 2: An accurate and efficient hybrid mamba-transformer reasoning model. arXiv preprint arXiv:2508.14444, 2025. 16   
+Iz Beltagy, Matthew E. Peters, and Arman Cohan. Longformer: The long-document transformer. arXiv:2004.05150, 2020. 5   
+Aviv Bick, Kevin Li, Eric Xing, J Zico Kolter, and Albert Gu. Transformers to ssms: Distilling quadratic knowledge to subquadratic models. Advances in Neural Information Processing Systems, 37:31788–31812, 2024. 5, 12   
+Wonmin Byeon, Thomas M Breuel, Federico Raue, and Marcus Liwicki. Scene labeling with lstm recurrent neural networks. In IEEE Conf. Comput. Vis. Pattern Recog., 2015. 5   
+Han Cai, Junyan Li, Muyan Hu, Chuang Gan, and Song Han. Efficientvit: Lightweight multi-scale attention for high-resolution dense prediction. In Proceedings of the IEEE/CVF International Conference on Computer Vision, pages 17302–17313, 2023. 17   
+Xi Chen, Josip Djolonga, Piotr Padlewski, Basil Mustafa, Soravit Changpinyo, Jialin Wu, Carlos Riquelme Ruiz, Sebastian Goodman, Xiao Wang, Yi Tay, et al. Pali-x: On scaling up a multilingual vision and language model. arXiv preprint arXiv:2305.18565, 2023a. 12   
+Xi Chen, Xiao Wang, Lucas Beyer, Alexander Kolesnikov, Jialin Wu, Paul Voigtlaender, Basil Mustafa, Sebastian Goodman, Ibrahim Alabdulmohsin, Piotr Padlewski, et al. Pali-3 vision language models: Smaller, faster, stronger. arXiv preprint arXiv:2310.09199, 2023b. 12   
+Rewon Child, Scott Gray, Alec Radford, and Ilya Sutskever. Generating long sequences with sparse transformers, 2019. URL https://arxiv.org/abs/1904.10509. 3   
+Krzysztof Choromanski, Valerii Likhosherstov, David Dohan, Xingyou Song, Andreea Gane, Tamas Sarlos, Peter Hawkins, Jared Davis, Afroz Mohiuddin, Lukasz Kaiser, et al. Rethinking attention with performers. In Int. Conf. Learn. Represent., 2021. 3, 5   
+Xiangxiang Chu, Zhi Tian, Yuqing Wang, Bo Zhang, Haibing Ren, Xiaolin Wei, Huaxia Xia, and Chunhua Shen. Twins: Revisiting the design of spatial attention in vision transformers. NeurIPS, 2021. 15   
+Junyoung Chung, Caglar Gulcehre, KyungHyun Cho, and Yoshua Bengio. Empirical evaluation of gated recurrent neural networks on sequence modeling. In NeurIPS, 2014. 5   
+Zihang Dai, Zhilin Yang, Yiming Yang, Jaime Carbonell, Quoc Le, and Ruslan Salakhutdinov. Transformer-XL: Attentive language models beyond a fixed-length context. In Anna Korhonen, David Traum, and Lluís Màrquez, editors, Proceedings of the 57th Annual Meeting of the Association for Computational Linguistics, pages 2978–2988, Florence, Italy, July 2019. Association for Computational Linguistics. doi: 10.18653/v1/P19-1285. URL https://aclanthology.org/P19-1285/. 3   
+Zihang Dai, Hanxiao Liu, Quoc V Le, and Mingxing Tan. Coatnet: Marrying convolution and attention for all data sizes. NeurIPS, 2021. 15
+
+Tri Dao. FlashAttention-2: Faster attention with better parallelism and work partitioning. In International Conference on Learning Representations (ICLR), 2024. 4   
+Tri Dao and Albert Gu. Transformers are ssms: Generalized models and efficient algorithms through structured state space duality. In Int. Conf. Mach. Learn., 2024. 20, 22   
+Tri Dao, Daniel Y. Fu, Stefano Ermon, Atri Rudra, and Christopher Ré. FlashAttention: Fast and memory-efficient exact attention with IO-awareness. In Advances in Neural Information Processing Systems (NeurIPS), 2022. 3, 4   
+Xiaoyi Dong, Jianmin Bao, Dongdong Chen, Weiming Zhang, Nenghai Yu, Lu Yuan, Dong Chen, and Baining Guo. Cswin transformer: A general vision transformer backbone with cross-shaped windows. In CVPR, 2022. 15   
+Yuchen Duan, Weiyun Wang, Zhe Chen, Xizhou Zhu, Lewei Lu, Tong Lu, Yu Qiao, Hongsheng Li, Jifeng Dai, and Wenhai Wang. Vision-rwkv: Efficient and scalable visual perception with rwkv-like architectures. arXiv preprint arXiv: 2403.02308, 2024. 15   
+Mark Everingham, Luc Van Gool, Christopher KI Williams, John Winn, and Andrew Zisserman. The pascal visual object classes (voc) challenge. International journal of computer vision, 88(2):303–338, 2010. 15   
+Samir Yitzhak Gadre, Gabriel Ilharco, Alex Fang, Jonathan Hayase, Georgios Smyrnis, Thao Nguyen, Ryan Marten, Mitchell Wortsman, Dhruba Ghosh, Jieyu Zhang, et al. Datacomp: In search of the next generation of multimodal datasets. Advances in Neural Information Processing Systems, 36:27092–27112, 2023. 21   
+Alex Graves, Santiago Fernández, and Jürgen Schmidhuber. Multi-dimensional recurrent neural networks. In International conference on artificial neural networks, 2007. 5   
+Albert Gu and Tri Dao. Mamba: Linear-time sequence modeling with selective state spaces. arXiv preprint arXiv:2312.00752, 2023. 3, 5, 20, 22   
+Albert Gu, Karan Goel, and Christopher Ré. Efficiently modeling long sequences with structured state spaces, 2021. 3, 5   
+Ali Hatamizadeh and Jan Kautz. Mambavision: A hybrid mamba-transformer vision backbone. arXiv preprint arXiv: 2407.08083, 2024. 15   
+S Hochreiter. Long short-term memory. Neural Computation MIT-Press, 1997. 5   
+Sepp Hochreiter. Untersuchungen zu dynamischen neuronalen netzen. Diploma, Technische Universität München, 1991. 5   
+Tao Huang, Xiaohuan Pei, Shan You, Fei Wang, Chen Qian, and Chang Xu. Localmamba: Visual state space model with windowed selective scan. arXiv preprint arXiv:2403.09338, 2024. 15   
+Angelos Katharopoulos, Apoorv Vyas, Nikolaos Pappas, and François Fleuret. Transformers are rnns: Fast autoregressive transformers with linear attention. In Int. Conf. Mach. Learn., 2020. 3, 5   
+Alexander Kirillov, Eric Mintun, Nikhila Ravi, Hanzi Mao, Chloe Rolland, Laura Gustafson, Tete Xiao, Spencer Whitehead, Alexander C Berg, Wan-Yen Lo, et al. Segment anything. In IEEE Conf. Comput. Vis. Pattern Recog., 2023. 3   
+Jiashi Li, Xin Xia, Wei Li, Huixia Li, Xing Wang, Xuefeng Xiao, Rui Wang, Min Zheng, and Xin Pan. Next-vit: Next generation vision transformer for efficient deployment in realistic industrial scenarios. arXiv preprint arXiv:2207.05501, 2022a. 15   
+Kunchang Li, Yali Wang, Peng Gao, Guanglu Song, Yu Liu, Hongsheng Li, and Yu Qiao. Uniformer: Unified transformer for efficient spatiotemporal representation learning. In Int. Conf. Learn. Represent., 2022b. 15   
+Shufan Li, Harkanwar Singh, and Aditya Grover. Mamba-nd: Selective state space modeling for multi-dimensional data. arXiv preprint arXiv:2402.05892, 2024a. 5, 15   
+Siyuan Li, Zedong Wang, Zicheng Liu, Cheng Tan, Haitao Lin, Di Wu, Zhiyuan Chen, Jiangbin Zheng, and Stan Z. Li. Moganet: Multi-order gated aggregation network. In Int. Conf. Learn. Represent., 2024b. 15
+
+Yanghao Li, Chao-Yuan Wu, Haoqi Fan, Karttikeya Mangalam, Bo Xiong, Jitendra Malik, and Christoph Feichtenhofer. Mvitv2: Improved multiscale vision transformers for classification and detection. In CVPR, 2022c. 15   
+Yingyue Li, Bencheng Liao, Wenyu Liu, and Xinggang Wang. Matvlm: Hybrid mamba-transformer for efficient vision-language modeling. In IEEE Conf. Comput. Vis. Pattern Recog., 2025. 5, 12   
+Zhang Li, Biao Yang, Qiang Liu, Zhiyin Ma, Shuo Zhang, Jingxu Yang, Yabo Sun, Yuliang Liu, and Xiang Bai. Monkey: Image resolution and text label are important things for large multi-modal models. In proceedings of the IEEE/CVF conference on computer vision and pattern recognition, pages 26763–26773, 2024c. 12   
+Tsung-Yi Lin, Michael Maire, Serge Belongie, James Hays, Pietro Perona, Deva Ramanan, Piotr Dollár, and C Lawrence Zitnick. Microsoft coco: Common objects in context. In Eur. Conf. Comput. Vis., 2014. 15   
+Haotian Liu, Chunyuan Li, Yuheng Li, Bo Li, Yuanhan Zhang, Sheng Shen, and Yong Jae Lee. Llavanext: Improved reasoning, ocr, and world knowledge, 2024a. 12   
+Shilong Liu, Zhaoyang Zeng, Tianhe Ren, Feng Li, Hao Zhang, Jie Yang, Qing Jiang, Chunyuan Li, Jianwei Yang, Hang Su, et al. Grounding dino: Marrying dino with grounded pre-training for open-set object detection. In Eur. Conf. Comput. Vis. Springer, 2024b. 3   
+Shiwei Liu, Tianlong Chen, Xiaohan Chen, Xuxi Chen, Qiao Xiao, Boqian Wu, Mykola Pechenizkiy, Decebal Mocanu, and Zhangyang Wang. More convnets in the 2020s: Scaling up kernels beyond 51x51 using sparsity. In Int. Conf. Learn. Represent., 2023. 15   
+Sifei Liu, Shalini De Mello, Jinwei Gu, Guangyu Zhong, Ming-Hsuan Yang, and Jan Kautz. Learning affinity via spatial propagation networks. NeurIPS, 2017. 5, 19   
+Songhua Liu, Weihao Yu, Zhenxiong Tan, and Xinchao Wang. Linfusion: 1 gpu, 1 minute, 16k image. arXiv preprint arXiv:2409.02097, 2024c. 20, 22   
+Yue Liu, Yunjie Tian, Yuzhong Zhao, Hongtian Yu, Lingxi Xie, Yaowei Wang, Qixiang Ye, and Yunfan Liu. Vmamba: Visual state space model. arXiv preprint arXiv:2401.10166, 2024d. 5, 15   
+Ze Liu, Yutong Lin, Yue Cao, Han Hu, Yixuan Wei, Zheng Zhang, Stephen Lin, and Baining Guo. Swin transformer: Hierarchical vision transformer using shifted windows. In Int. Conf. Comput. Vis., 2021. 3, 5, 15   
+Ze Liu, Han Hu, Yutong Lin, Zhuliang Yao, Zhenda Xie, Yixuan Wei, Jia Ning, Yue Cao, Zheng Zhang, Li Dong, Furu Wei, and Baining Guo. Swin transformer v2: Scaling up capacity and resolution. In IEEE Conf. Comput. Vis. Pattern Recog., 2022a. 15   
+Zhijian Liu, Ligeng Zhu, Baifeng Shi, Zhuoyang Zhang, Yuming Lou, Shang Yang, Haocheng Xi, Shiyi Cao, Yuxian Gu, Dacheng Li, et al. Nvila: Efficient frontier visual language models. In Proceedings of the Computer Vision and Pattern Recognition Conference, pages 4122–4134, 2025. 12   
+Zhuang Liu, Hanzi Mao, Chao-Yuan Wu, Christoph Feichtenhofer, Trevor Darrell, and Saining Xie. A convnet for the 2020s. In CVPR, 2022b. 15   
+I Loshchilov. Decoupled weight decay regularization. arXiv preprint arXiv:1711.05101, 2017. 21   
+Kevis-Kokitsi Maninis, Kaifeng Chen, Soham Ghosh, Arjun Karpur, Koert Chen, Ye Xia, Bingyi Cao, Daniel Salz, Guangxing Han, Jan Dlabal, Dan Gnanapragasam, Mojtaba Seyedhosseini, Howard Zhou, and André Araujo. TIPS: Text-Image Pretraining with Spatial Awareness. In ICLR, 2025. 17   
+Eric Nguyen, Karan Goel, Albert Gu, Gordon Downs, Preey Shah, Tri Dao, Stephen Baccus, and Christopher Ré. S4nd: Modeling images and videos as multidimensional signals with state spaces. In NeurIPS, 2022. 5   
+Razvan Pascanu, Tomas Mikolov, and Yoshua Bengio. On the difficulty of training recurrent neural networks. In Int. Conf. Mach. Learn., 2013. 5
+
+Alec Radford, Jong Wook Kim, Chris Hallacy, Aditya Ramesh, Gabriel Goh, Sandhini Agarwal, Girish Sastry, Amanda Askell, Pamela Mishkin, Jack Clark, et al. Learning transferable visual models from natural language supervision. In Int. Conf. Mach. Learn., 2021. 3   
+Robin Rombach, Andreas Blattmann, Dominik Lorenz, Patrick Esser, and Björn Ommer. High-resolution image synthesis with latent diffusion models. In IEEE Conf. Comput. Vis. Pattern Recog., pages 10684–10695, 2022. 3, 20   
+Olga Russakovsky, Jia Deng, Hao Su, Jonathan Krause, Sanjeev Satheesh, Sean Ma, Zhiheng Huang, Andrej Karpathy, Aditya Khosla, Michael Bernstein, Alexander C. Berg, and Li Fei-Fei. Imagenet large scale visual recognition challenge. Int. J. Comput. Vision, 115(3):211–252, December 2015. ISSN 0920-5691. doi: 10.1007/s11263-015-0816-y. URL https://doi.org/10.1007/s11263-015-0816-y. 15   
+Jay Shah, Ganesh Bikshandi, Ying Zhang, Vijay Thakkar, Pradeep Ramani, and Tri Dao. Flashattention-3: Fast and accurate attention with asynchrony and low-precision. NeurIPS, 2024. 4   
+Hugo Touvron, Matthieu Cord, Matthijs Douze, Francisco Massa, Alexandre Sablayrolles, and Hervé Jégou. Training data-efficient image transformers & distillation through attention. In ICML, 2021. 5, 12, 15   
+Michael Tschannen, Alexey Gritsenko, Xiao Wang, Muhammad Ferjad Naeem, Ibrahim Alabdulmohsin, Nikhil Parthasarathy, Talfan Evans, Lucas Beyer, Ye Xia, Basil Mustafa, Olivier Hénaff, Jeremiah Harmsen, Andreas Steiner, and Xiaohua Zhai. Siglip 2: Multilingual vision-language encoders with improved semantic understanding, localization, and dense features. arXiv preprint arXiv:2502.14786, 2025. 4   
+Zhengzhong Tu, Hossein Talebi, Han Zhang, Feng Yang, Peyman Milanfar, Alan Bovik, and Yinxiao Li. Maxvit: Multi-axis vision transformer. In ECCV, 2022. 15   
+A Vaswani. Attention is all you need. NeurIPS, 2017. 4   
+Roger Waleffe, Wonmin Byeon, Duncan Riach, Brandon Norick, Vijay Korthikanti, Tri Dao, Albert Gu, Ali Hatamizadeh, Sudhakar Singh, Deepak Narayanan, et al. An empirical study of mamba-based language models. arXiv preprint arXiv:2406.07887, 2024. 16   
+Hongjun Wang, Wonmin Byeon, Jiarui Xu, Jinwei Gu, Ka Chun Cheung, Xiaolong Wang, Kai Han, Jan Kautz, and Sifei Liu. Parallel sequence modeling via generalized spatial propagation network. In IEEE Conference on Computer Vision and Pattern Recognition (CVPR), 2025. 3, 5, 6, 11, 19   
+Sinong Wang, Belinda Z Li, Madian Khabsa, Han Fang, and Hao Ma. Linformer: Self-attention with linear complexity. arXiv preprint arXiv:2006.04768, 2020. 5   
+Wenhai Wang, Jifeng Dai, Zhe Chen, Zhenhang Huang, Zhiqi Li, Xizhou Zhu, Xiaowei Hu, Tong Lu, Lewei Lu, Hongsheng Li, et al. Internimage: Exploring large-scale vision foundation models with deformable convolutions. arXiv preprint arXiv:2211.05778, 2022. 15   
+Yunyang Xiong, Zhanpeng Zeng, Rudrasis Chakraborty, Mingxing Tan, Glenn Fung, Yin Li, and Vikas Singh. Nyströmformer: A nyström-based algorithm for approximating self-attention. In AAAI, 2021. 5   
+Jianwei Yang, Chunyuan Li, Xiyang Dai, and Jianfeng Gao. Focal modulation networks. NeurIPS, 2022a. 15   
+Zhendong Yang, Zhe Li, Ailing Zeng, Zexian Li, Chun Yuan, and Yu Li. Vitkd: Practical guidelines for vit feature knowledge distillation. arXiv preprint arXiv:2209.02432, 2022b. 5, 12   
+Weihao Yu and Xinchao Wang. Mambaout: Do we really need mamba for vision? arXiv preprint arXiv:2405.07992, 2024. 15   
+Weihao Yu, Chenyang Si, Pan Zhou, Mi Luo, Yichen Zhou, Jiashi Feng, Shuicheng Yan, and Xinchao Wang. Metaformer baselines for vision. IEEE Trans. Pattern Anal. Mach. Intell., 2024. 15
+
+Li Yuan, Yunpeng Chen, Tao Wang, Weihao Yu, Yujun Shi, Zi-Hang Jiang, Francis E.H. Tay, Jiashi Feng, and Shuicheng Yan. Tokens-to-token vit: Training vision transformers from scratch on imagenet. In Int. Conf. Comput. Vis., 2021. 15   
+Sergey Zagoruyko and Nikos Komodakis. Paying more attention to attention: Improving the performance of convolutional neural networks via attention transfer. In ICLR, 2017. 5   
+Manzil Zaheer, Guru Guruganesh, Kumar Avinava Dubey, Joshua Ainslie, Chris Alberti, Santiago Ontanon, Philip Pham, Anirudh Ravula, Qifan Wang, Li Yang, et al. Big bird: Transformers for longer sequences. Advances in neural information processing systems, 33:17283–17297, 2020. 5   
+Xiaohua Zhai, Basil Mustafa, Alexander Kolesnikov, and Lucas Beyer. Sigmoid loss for language image pre-training. In IEEE Conf. Comput. Vis. Pattern Recog., pages 11975–11986, 2023. 3, 11   
+Bolei Zhou, Hang Zhao, Xavier Puig, Tete Xiao, Sanja Fidler, Adela Barriuso, and Antonio Torralba. Semantic understanding of scenes through the ade20k dataset. International Journal of Computer Vision, 127(3):302–321, 2019. 15   
+Lei Zhu, Xinjiang Wang, Zhanghan Ke, Wayne Zhang, and Rynson Lau. Biformer: Vision transformer with bi-level routing attention. IEEE Conf. Comput. Vis. Pattern Recog., 2023. 15   
+Lianghui Zhu, Bencheng Liao, Qian Zhang, Xinlong Wang, Wenyu Liu, and Xinggang Wang. Vision mamba: Efficient visual representation learning with bidirectional state space model. arXiv preprint arXiv:2401.09417, 2024. 5, 15

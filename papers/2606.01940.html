@@ -1,0 +1,97 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>SCAPO · 通用视觉自监督研究报</title>
+  <link rel="stylesheet" href="../assets/styles.css?v=20260525j">
+  <link rel="stylesheet" href="../assets/visual-ssl.css?v=20260525j">
+</head>
+<body>
+  <header class="masthead">
+    <div class="masthead-kicker">Visual SSL Research Report · 2026-06-03</div>
+    <a class="masthead-title" href="../index.html">通用视觉自监督研究报</a>
+    <div class="masthead-meta">
+      <span>图像表征 · VFM · JEPA · 视频预训练</span>
+      <span>CCF A/B 会议优先</span>
+      <span>图文精读 · 方法图解</span>
+    </div>
+  </header>
+  <nav class="site-nav" aria-label="主导航">
+    <a class="nav-link" href="../index.html">头版</a>
+<a class="nav-link" href="../issues/2026-06-03.html">今日速递</a>
+<a class="nav-link" href="../pages/catalog.html">论文目录</a>
+<a class="nav-link" href="../pages/timeline.html">时间线</a>
+  </nav>
+  <main><article class="paper-detail">
+  <div class="paper-main">
+    <div class="kicker">Visual SSL / representation · P3 · 2026-06-03</div>
+    <h1 class="paper-headline">SCAPO：对象/部件/关节结构是通用视觉表征的重要组成，尤其适合补充 slot/OCL 与 3D 表征线索</h1>
+    <p class="dek">弱化对 dense labels、CAD templates 和多帧输入的依赖，直接从单个 3D observation 学 category-level articulated structure。</p>
+    <p class="byline"><strong>SCAPO: Self-Supervised Category-Level Articulated Pose Estimation from a Single 3D Observation</strong>　Can Zhang, Gim Hee Lee；机构信息 arXiv 元数据未列出。　arXiv　<a href="https://arxiv.org/abs/2606.01940">原文链接</a></p>
+    <div class="paper-facts">
+      <span><b>编号</b>2606.01940</span>
+      <span><b>优先级</b>P3</span>
+      <span><b>类别</b>Visual SSL / representation</span>
+      <span><b>会议</b>arXiv</span>
+      <span><b>方法</b>先用 SE(3)-equivariant vector-neuron autoencoder 对齐到 canonical space，再用 joint-aware blend-skinning 建模 part motion，通过 observed/canonical cycle reconstruction 和跨空间 alignment 学习。</span>
+      <span><b>来源</b>arXiv / OpenReview</span>
+    </div>
+    <div class="feature-body">
+      <p class="lead dropcap">先说结论。对象/部件/关节结构是通用视觉表征的重要组成，尤其适合补充 slot/OCL 与 3D 表征线索。 弱化对 dense labels、CAD templates 和多帧输入的依赖，直接从单个 3D observation 学 category-level articulated structure。</p>
+      <figure class="full-fig"><img src="../assets/mineru/2606.01940/images/3f497ff2a78349843bb463faa8e0a42cb03bcda5935b394599523465d55cb50b.jpg" alt="Figureure 1 · Our model maps articulated objects under arbitrary poses to global pos"><figcaption><b>Figureure 1 · Our model maps articulated objects under arbitrary poses to global pos</b><span class="fig-en">Figure 1. Our model maps articulated objects under arbitrary poses to global poses, canonical shapes, part segmentation and joint parameters in a self-supervised framework.</span><span class="fig-zh">这张图概括 SCAPO 的整体方法流程。阅读时先看模块之间传递的训练信号，再看作者如何把目标拆成可优化的子问题。</span></figcaption></figure>
+<figure class="full-fig"><img src="../assets/mineru/2606.01940/images/b37d685ba32cc9d19d259bc72c043dfe7abbe8335b2de2dc8f5b8c8d04386b63.jpg" alt="Figureure 2 · Our SCAPO framework"><figcaption><b>Figureure 2 · Our SCAPO framework</b><span class="fig-en">Figure 2. Our SCAPO framework. Stage 1 canonicalizes the input point cloud X using the global pose $\{ \mathbf { R } _ { g } , \mathbf { t } _ { g } \}$ predicted by a SE(3)- equivariant auto-encoder $( \Theta _ { E }$ and $\Theta _ { D } )$ . In Stage $2 , \Theta _ { J }$ takes as input the globally aligned shape $\mathbf { S _ { \mathrm { o b j } } }$ and the learnable canonical template $\mathbf { Y } _ { X }$ to estimate joint parameters and derive bone transformations. The affine-invariant features $\mathbf { Z } _ { x }$ are fed to $\Theta _ { K }$ and $\Theta _ { \Delta }$ to learn keypoints K and shape variance $\Delta S _ { x }$ . With the skinning weights W and bone transformations D, our blend skinning module reconstructs coherent articulated shapes across poses.</span><span class="fig-zh">这张图概括 SCAPO 的整体方法流程。阅读时先看模块之间传递的训练信号，再看作者如何把目标拆成可优化的子问题。</span></figcaption></figure>
+      
+      <h2>核心问题</h2>
+      <p>对象/部件/关节结构是通用视觉表征的重要组成，尤其适合补充 slot/OCL 与 3D 表征线索。</p>
+      <h2>方法拆解</h2>
+      <p>先用 SE(3)-equivariant vector-neuron autoencoder 对齐到 canonical space，再用 joint-aware blend-skinning 建模 part motion，通过 observed/canonical cycle reconstruction 和跨空间 alignment 学习。</p>
+      <h2>主要贡献</h2>
+      <p>弱化对 dense labels、CAD templates 和多帧输入的依赖，直接从单个 3D observation 学 category-level articulated structure。</p>
+      <h2>实验看点</h2>
+      <p>摘要强调可同时估计 canonical geometry、刚性部件和 joint parameters。</p>
+      <h2>局限与读法</h2>
+      <p>偏 3D articulated pose，数据和评测离通用图像预训练较远；需要看类别泛化范围。</p>
+    
+    </div>
+  </div>
+  <aside class="paper-side">
+
+    <div class="side-box"><h4>关键判断</h4><dl><dt>相关性</dt><dd>P3</dd><dt>类别</dt><dd>Visual SSL / representation</dd><dt>会议</dt><dd>arXiv</dd><dt>读法</dt><dd>方法图优先，表格次之</dd></dl></div>
+    <div class="side-box"><h4>原文</h4><p><a href="https://arxiv.org/abs/2606.01940">https://arxiv.org/abs/2606.01940</a></p></div>
+  </aside>
+</article></main>
+  <aside class="conf-float" data-conf-reminder="2026-06-03-main-ddl" aria-label="CCF A/B 主投稿提醒">
+  <button class="conf-close" type="button" aria-label="关闭会议提醒">×</button>
+  <details open>
+    <summary>CCF A/B 主投稿提醒</summary>
+    <div class="conf-list"><a class="conf-item " href="https://github.com/ccfddl/ccf-deadlines/blob/main/conference/AI/aaai.yml">
+  <span><b>AAAI 2027</b><em>CCF A · Main paper submission</em></span>
+  <strong>54 天</strong>
+  <small>2026-07-27 · CCF DDL: abstract 2026-07-20；进入 1 个月窗口后重点提醒。</small>
+</a></div>
+  </details>
+</aside>
+  <footer class="footer">
+    <div>面向通用视觉自监督、视觉基础模型与多模态表征学习的每日研究报。</div>
+    <div class="muted">Issue 2026-06-03 · Curated readings and figure notes</div>
+  </footer>
+  <script>
+  (() => {
+    const box = document.querySelector('[data-conf-reminder]');
+    if (!box) return;
+    const key = `visualSslConfReminderClosed:${box.dataset.confReminder || '2026-06-03-main-ddl'}`;
+    try {
+      if (localStorage.getItem(key) === '1') box.hidden = true;
+    } catch (err) {}
+    const close = box.querySelector('.conf-close');
+    if (close) {
+      close.addEventListener('click', () => {
+        box.hidden = true;
+        try { localStorage.setItem(key, '1'); } catch (err) {}
+      });
+    }
+  })();
+  </script>
+</body>
+</html>

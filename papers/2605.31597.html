@@ -19,39 +19,39 @@
   </header>
   <nav class="site-nav" aria-label="主导航">
     <a class="nav-link" href="../index.html">头版</a>
-<a class="nav-link" href="../issues/2026-06-02.html">今日速递</a>
+<a class="nav-link" href="../issues/2026-06-03.html">今日速递</a>
 <a class="nav-link" href="../pages/catalog.html">论文目录</a>
 <a class="nav-link" href="../pages/timeline.html">时间线</a>
   </nav>
   <main><article class="paper-detail">
   <div class="paper-main">
     <div class="kicker">project · P1 · 2026-06-02</div>
-    <h1 class="paper-headline">SOCO：通用视觉自监督的核心目标之一是学到可复用对象/部件结构，SOCO 能作为 DINO/MAE/CLIP 后续评测工具</h1>
-    <p class="dek">把视觉基础模型的“对象结构理解”从分类/检索分数转成跨图部件匹配问题，给 DINO、CLIP、SAM/LVLM 类模型提供统一细粒度评测。</p>
-    <p class="byline"><strong>SOCO: Benchmarking Semantic Object Correspondence in Vision Foundation Models</strong>　Olaf Dünkel, Basavaraj Sunagad, Haoran Wang, David T. Hoffmann, Christian Theobalt, Adam Kortylewski；机构信息 arXiv 元数据未列出。　arXiv + project　<a href="https://arxiv.org/abs/2605.31597">原文链接</a></p>
+    <h1 class="paper-headline">SOCO：它和通用视觉自监督的关系在于：用细粒度语义 correspondence 直接评估 DINO/CLIP/SAM 类视觉基础模型是否学到可迁移对象结构</h1>
+    <p class="dek">高相关；详见方法、贡献和实验边界。</p>
+    <p class="byline"><strong>SOCO: Benchmarking Semantic Object Correspondence in Vision Foundation Models</strong>　arXiv + project　<a href="https://arxiv.org/abs/2605.31597">原文链接</a></p>
     <div class="paper-facts">
       <span><b>编号</b>2605.31597</span>
       <span><b>优先级</b>P1</span>
       <span><b>类别</b>project</span>
       <span><b>会议</b>arXiv + project</span>
-      <span><b>方法</b>构造 Semantic Object Correspondence benchmark：覆盖 100 个类别、功能性 keypoint、跨实例和跨类别 correspondence 类型，并加入 keypoint language descriptions 以评估 LVLM 的细粒度部件理解。</span>
+      <span><b>方法</b>用细粒度语义 correspondence 直接评估 DINO/CLIP/SAM 类视觉基础模型是否学到可迁移对象结构</span>
       <span><b>来源</b>arXiv / OpenReview</span>
     </div>
     <div class="feature-body">
-      <p class="lead dropcap">先说结论。通用视觉自监督的核心目标之一是学到可复用对象/部件结构，SOCO 能作为 DINO/MAE/CLIP 后续评测工具。 把视觉基础模型的“对象结构理解”从分类/检索分数转成跨图部件匹配问题，给 DINO、CLIP、SAM/LVLM 类模型提供统一细粒度评测。</p>
+      <p class="lead dropcap">先说结论。它和通用视觉自监督的关系在于：用细粒度语义 correspondence 直接评估 DINO/CLIP/SAM 类视觉基础模型是否学到可迁移对象结构。 高相关；详见方法、贡献和实验边界。</p>
       <figure class="full-fig"><img src="../assets/mineru/2605.31597/images/678683846e20c0be0ed44b87ebca855a0564f5e0a573c03e761984447a440f3c.jpg" alt="Figureure 4 · : Per-task Pearson r across 37 vision models, with 95% bootstrap CIs"><figcaption><b>Figureure 4 · : Per-task Pearson r across 37 vision models, with 95% bootstrap CIs</b><span class="fig-en">Fig. 4: Per-task Pearson r across 37 vision models, with 95% bootstrap CIs. Left: SOC correlates with every downstream task more strongly than ImageNet kNN. Right: the SOC advantage $\varDelta r = r _ { \mathrm { S O C } } - r _ { \mathrm { k } }$ NN stays positive on all tasks and is preserved on a 17 subset only including models trained with dense SSL objectives.</span><span class="fig-zh">这张图来自论文 PDF 的结构化抽取。当前用于辅助理解 SOCO 的方法或实验，请结合正文精读段落一起看。</span></figcaption></figure>
 <figure class="full-fig"><img src="../assets/mineru/2605.31597/images/52919b4695ed976f2b23d91e1746d58d177d00e70dab95dea40ee3ef2f3265b2.jpg" alt="Fig"><figcaption><b>Fig</b><span class="fig-en">Fig. r5: Overview of the detection probe. The probe receives four intermediate feature maps from a pretrained frozen backbone, merges and upsamples them to produce a Detectron2-style feature pyramid $\{ p _ { 2 } , p _ { 3 } , p _ { 4 } , p _ { 5 } \}$ used by the 3D detection head.</span><span class="fig-zh">这张图概括 SOCO 的整体方法流程。阅读时先看模块之间传递的训练信号，再看作者如何把目标拆成可优化的子问题。</span></figcaption></figure>
       
       <h2>核心问题</h2>
-      <p>通用视觉自监督的核心目标之一是学到可复用对象/部件结构，SOCO 能作为 DINO/MAE/CLIP 后续评测工具。</p>
+      <p>它和通用视觉自监督的关系在于：用细粒度语义 correspondence 直接评估 DINO/CLIP/SAM 类视觉基础模型是否学到可迁移对象结构。</p>
       <h2>方法拆解</h2>
-      <p>构造 Semantic Object Correspondence benchmark：覆盖 100 个类别、功能性 keypoint、跨实例和跨类别 correspondence 类型，并加入 keypoint language descriptions 以评估 LVLM 的细粒度部件理解。</p>
+      <p>用细粒度语义 correspondence 直接评估 DINO/CLIP/SAM 类视觉基础模型是否学到可迁移对象结构</p>
       <h2>主要贡献</h2>
-      <p>把视觉基础模型的“对象结构理解”从分类/检索分数转成跨图部件匹配问题，给 DINO、CLIP、SAM/LVLM 类模型提供统一细粒度评测。</p>
+      <p>高相关；详见方法、贡献和实验边界。</p>
       <h2>实验看点</h2>
-      <p>摘要报告 VFM backbone 具有语义结构但跨相关类别迁移弱；LVLM 更擅长文本提示定位而非视觉参考匹配；correspondence 分数可预测 dense downstream task 表现。</p>
+      <p>实验部分建议重点看两类证据：一是作者是否把方法收益和更强数据、更长训练、更大模型区分开；二是跨模型、跨数据或跨任务迁移是否还能保留同样趋势。</p>
       <h2>局限与读法</h2>
-      <p>主要是 benchmark，不提出新的预训练目标；需要看 benchmark 标注偏差和是否覆盖真实开放世界物体长尾。</p>
+      <p>这篇论文的结论需要结合任务设置、训练数据规模和消融实验一起看；不要只凭单个指标判断它对通用视觉表征的价值。</p>
     
     </div>
   </div>
@@ -61,13 +61,13 @@
     <div class="side-box"><h4>原文</h4><p><a href="https://arxiv.org/abs/2605.31597">https://arxiv.org/abs/2605.31597</a></p></div>
   </aside>
 </article></main>
-  <aside class="conf-float" data-conf-reminder="2026-06-02-main-ddl" aria-label="CCF A/B 主投稿提醒">
+  <aside class="conf-float" data-conf-reminder="2026-06-03-main-ddl" aria-label="CCF A/B 主投稿提醒">
   <button class="conf-close" type="button" aria-label="关闭会议提醒">×</button>
   <details open>
     <summary>CCF A/B 主投稿提醒</summary>
     <div class="conf-list"><a class="conf-item " href="https://github.com/ccfddl/ccf-deadlines/blob/main/conference/AI/aaai.yml">
   <span><b>AAAI 2027</b><em>CCF A · Main paper submission</em></span>
-  <strong>55 天</strong>
+  <strong>54 天</strong>
   <small>2026-07-27 · CCF DDL: abstract 2026-07-20；进入 1 个月窗口后重点提醒。</small>
 </a></div>
   </details>
@@ -80,7 +80,7 @@
   (() => {
     const box = document.querySelector('[data-conf-reminder]');
     if (!box) return;
-    const key = `visualSslConfReminderClosed:${box.dataset.confReminder || '2026-06-02-main-ddl'}`;
+    const key = `visualSslConfReminderClosed:${box.dataset.confReminder || '2026-06-03-main-ddl'}`;
     try {
       if (localStorage.getItem(key) === '1') box.hidden = true;
     } catch (err) {}

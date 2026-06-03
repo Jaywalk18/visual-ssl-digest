@@ -19,39 +19,39 @@
   </header>
   <nav class="site-nav" aria-label="主导航">
     <a class="nav-link" href="../index.html">头版</a>
-<a class="nav-link" href="../issues/2026-06-02.html">今日速递</a>
+<a class="nav-link" href="../issues/2026-06-03.html">今日速递</a>
 <a class="nav-link" href="../pages/catalog.html">论文目录</a>
 <a class="nav-link" href="../pages/timeline.html">时间线</a>
   </nav>
   <main><article class="paper-detail">
   <div class="paper-main">
     <div class="kicker">Visual SSL / representation · P3 · 2026-06-02</div>
-    <h1 class="paper-headline">ReGuLaR：无标签视频里的对象持久性和跨帧一致性是通用视觉 SSL 的重要监督信号，这篇给出更干净的结构化实现</h1>
-    <p class="dek">把视频 object-centric learning 的时间一致性从额外 contrastive regularizer 迁移到结构性信息瓶颈和标准重建损失中，降低训练复杂度并减少对显式 correspondence 假设的依赖。</p>
-    <p class="byline"><strong>ReGuLaR: Relation-Grounded Latent Reasoning for Large Vision-Language Models</strong>　Rongzhen Zhao, Zhiyuan Li, Juho Kannala, Joni Pajarinen；机构信息 arXiv 元数据未列出。　arXiv　<a href="https://arxiv.org/abs/2605.30587">原文链接</a></p>
+    <h1 class="paper-headline">ReGuLaR：JEPA/非对比 SSL 的关键风险就是 collapse 和表征形状控制，这篇是今天最贴近通用视觉自监督训练目标的工作</h1>
+    <p class="dek">把 SIGReg 的分布匹配严谨性和 VICReg 的可调性合并到 JEPA 训练里，减少简单 isotropic Gaussian 约束过硬的问题。</p>
+    <p class="byline"><strong>ReGuLaR: Relation-Grounded Latent Reasoning for Large Vision-Language Models</strong>　Haiyu Wu, Randall Balestriero, Morgan Levine；机构信息 arXiv 元数据未列出。　arXiv　<a href="https://arxiv.org/abs/2605.30587">原文链接</a></p>
     <div class="paper-facts">
       <span><b>编号</b>2605.30587</span>
       <span><b>优先级</b>P3</span>
       <span><b>类别</b>Visual SSL / representation</span>
       <span><b>会议</b>arXiv</span>
-      <span><b>方法</b>在 slot 表征中用 Chrono-Channel Decomposition 将静态/动态信息拆到不同通道，再用 Cross-Temporal Reconstruction 让当前 slot 静态通道和目标帧动态通道重建特征。这样不再依赖 Slot-Slot Contrastive loss 的一对一跨帧匹配。</span>
+      <span><b>方法</b>用 Sliced-Wasserstein sketching 目标替换 VICReg 的 covariance 项，同时保留 variance/invariance 结构；核心是把“尺度”和“分布形状”解耦，给 collapse 状态也提供稳定梯度。</span>
       <span><b>来源</b>arXiv / OpenReview</span>
     </div>
     <div class="feature-body">
-      <p class="lead dropcap">先说结论。无标签视频里的对象持久性和跨帧一致性是通用视觉 SSL 的重要监督信号，这篇给出更干净的结构化实现。 把视频 object-centric learning 的时间一致性从额外 contrastive regularizer 迁移到结构性信息瓶颈和标准重建损失中，降低训练复杂度并减少对显式 correspondence 假设的依赖。</p>
+      <p class="lead dropcap">先说结论。JEPA/非对比 SSL 的关键风险就是 collapse 和表征形状控制，这篇是今天最贴近通用视觉自监督训练目标的工作。 把 SIGReg 的分布匹配严谨性和 VICReg 的可调性合并到 JEPA 训练里，减少简单 isotropic Gaussian 约束过硬的问题。</p>
       <figure class="full-fig"><img src="../assets/mineru/2605.30587/images/da791f60fd4fcaf86d2d2bd56a49b6e896a5a45f983a884efe44b71073a959fb.jpg" alt="Figureure 2 · : Overview of ReGuLaR"><figcaption><b>Figureure 2 · : Overview of ReGuLaR</b><span class="fig-en">Figure 2: Overview of ReGuLaR. ReGuLaR follows a thinking-then-answering process, where latent-space reasoning precedes final answer generation. At each latent reasoning step, the model focuses on one questionrelevant object pair and their relation, or on one object and its attribute. A training-time ReGFormer (Section 3.2) grounds each reasoning state in these critical visual structures, and is not required during inference.</span><span class="fig-zh">这张图概括 ReGuLaR 的整体方法流程。阅读时先看模块之间传递的训练信号，再看作者如何把目标拆成可优化的子问题。</span></figcaption></figure>
 <figure class="full-fig"><img src="../assets/mineru/2605.30587/images/dbf68b3fb0df89c401b80949923ae5f905d8dfccaf302d6a2d511bdeaf6fadfb.jpg" alt="Figureure 4 · : Performance comparison across 14 diverse tasks of the BLINK benchmar"><figcaption><b>Figureure 4 · : Performance comparison across 14 diverse tasks of the BLINK benchmar</b><span class="fig-en">Figure 4: Performance comparison across 14 diverse tasks of the BLINK benchmark.</span><span class="fig-zh">这张图/表用于判断 ReGuLaR 的实验收益来自哪里。重点看替换、消融或跨模型设置下趋势是否一致，而不是只看单个最高分。</span></figcaption></figure>
       
       <h2>核心问题</h2>
-      <p>无标签视频里的对象持久性和跨帧一致性是通用视觉 SSL 的重要监督信号，这篇给出更干净的结构化实现。</p>
+      <p>JEPA/非对比 SSL 的关键风险就是 collapse 和表征形状控制，这篇是今天最贴近通用视觉自监督训练目标的工作。</p>
       <h2>方法拆解</h2>
-      <p>在 slot 表征中用 Chrono-Channel Decomposition 将静态/动态信息拆到不同通道，再用 Cross-Temporal Reconstruction 让当前 slot 静态通道和目标帧动态通道重建特征。这样不再依赖 Slot-Slot Contrastive loss 的一对一跨帧匹配。</p>
+      <p>用 Sliced-Wasserstein sketching 目标替换 VICReg 的 covariance 项，同时保留 variance/invariance 结构；核心是把“尺度”和“分布形状”解耦，给 collapse 状态也提供稳定梯度。</p>
       <h2>主要贡献</h2>
-      <p>把视频 object-centric learning 的时间一致性从额外 contrastive regularizer 迁移到结构性信息瓶颈和标准重建损失中，降低训练复杂度并减少对显式 correspondence 假设的依赖。</p>
+      <p>把 SIGReg 的分布匹配严谨性和 VICReg 的可调性合并到 JEPA 训练里，减少简单 isotropic Gaussian 约束过硬的问题。</p>
       <h2>实验看点</h2>
-      <p>作者在多个视频 OCL 基线中集成 xSSC，报告训练效率提升和分割/追踪式评测收益；核心对比是有无显式 SSC loss。</p>
+      <p>摘要称 VISReg 线性可扩展，在低质量、长尾、低秩数据上更稳；ImageNet-1K 预训练取得 OOD SOTA，ImageNet-22K 预训练可接近使用 LVD-142M 的 DINOv2 OOD 表现。</p>
       <h2>局限与读法</h2>
-      <p>仍围绕 slot/object-centric 表征，不是大规模通用 ViT 预训练；效果依赖目标特征和视频数据中对象可分解性。</p>
+      <p>目前需要看完整消融确认 sketching 超参、投影数和 batch size 对大规模训练的敏感性；结果仍主要围绕分类/OOD 迁移。</p>
     
     </div>
   </div>
@@ -61,13 +61,13 @@
     <div class="side-box"><h4>原文</h4><p><a href="https://arxiv.org/abs/2605.30587">https://arxiv.org/abs/2605.30587</a></p></div>
   </aside>
 </article></main>
-  <aside class="conf-float" data-conf-reminder="2026-06-02-main-ddl" aria-label="CCF A/B 主投稿提醒">
+  <aside class="conf-float" data-conf-reminder="2026-06-03-main-ddl" aria-label="CCF A/B 主投稿提醒">
   <button class="conf-close" type="button" aria-label="关闭会议提醒">×</button>
   <details open>
     <summary>CCF A/B 主投稿提醒</summary>
     <div class="conf-list"><a class="conf-item " href="https://github.com/ccfddl/ccf-deadlines/blob/main/conference/AI/aaai.yml">
   <span><b>AAAI 2027</b><em>CCF A · Main paper submission</em></span>
-  <strong>55 天</strong>
+  <strong>54 天</strong>
   <small>2026-07-27 · CCF DDL: abstract 2026-07-20；进入 1 个月窗口后重点提醒。</small>
 </a></div>
   </details>
@@ -80,7 +80,7 @@
   (() => {
     const box = document.querySelector('[data-conf-reminder]');
     if (!box) return;
-    const key = `visualSslConfReminderClosed:${box.dataset.confReminder || '2026-06-02-main-ddl'}`;
+    const key = `visualSslConfReminderClosed:${box.dataset.confReminder || '2026-06-03-main-ddl'}`;
     try {
       if (localStorage.getItem(key) === '1') box.hidden = true;
     } catch (err) {}

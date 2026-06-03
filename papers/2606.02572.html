@@ -1,0 +1,97 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>VISReg · 通用视觉自监督研究报</title>
+  <link rel="stylesheet" href="../assets/styles.css?v=20260525j">
+  <link rel="stylesheet" href="../assets/visual-ssl.css?v=20260525j">
+</head>
+<body>
+  <header class="masthead">
+    <div class="masthead-kicker">Visual SSL Research Report · 2026-06-03</div>
+    <a class="masthead-title" href="../index.html">通用视觉自监督研究报</a>
+    <div class="masthead-meta">
+      <span>图像表征 · VFM · JEPA · 视频预训练</span>
+      <span>CCF A/B 会议优先</span>
+      <span>图文精读 · 方法图解</span>
+    </div>
+  </header>
+  <nav class="site-nav" aria-label="主导航">
+    <a class="nav-link" href="../index.html">头版</a>
+<a class="nav-link" href="../issues/2026-06-03.html">今日速递</a>
+<a class="nav-link" href="../pages/catalog.html">论文目录</a>
+<a class="nav-link" href="../pages/timeline.html">时间线</a>
+  </nav>
+  <main><article class="paper-detail">
+  <div class="paper-main">
+    <div class="kicker">Visual SSL / representation · P0 · 2026-06-03</div>
+    <h1 class="paper-headline">VISReg：JEPA/非对比 SSL 的关键风险就是 collapse 和表征形状控制，这篇是今天最贴近通用视觉自监督训练目标的工作</h1>
+    <p class="dek">把 SIGReg 的分布匹配严谨性和 VICReg 的可调性合并到 JEPA 训练里，减少简单 isotropic Gaussian 约束过硬的问题。</p>
+    <p class="byline"><strong>VISReg: Variance-Invariance-Sketching Regularization for JEPA training</strong>　Haiyu Wu, Randall Balestriero, Morgan Levine；机构信息 arXiv 元数据未列出。　arXiv　<a href="https://arxiv.org/abs/2606.02572">原文链接</a></p>
+    <div class="paper-facts">
+      <span><b>编号</b>2606.02572</span>
+      <span><b>优先级</b>P0</span>
+      <span><b>类别</b>Visual SSL / representation</span>
+      <span><b>会议</b>arXiv</span>
+      <span><b>方法</b>用 Sliced-Wasserstein sketching 目标替换 VICReg 的 covariance 项，同时保留 variance/invariance 结构；核心是把“尺度”和“分布形状”解耦，给 collapse 状态也提供稳定梯度。</span>
+      <span><b>来源</b>arXiv / OpenReview</span>
+    </div>
+    <div class="feature-body">
+      <p class="lead dropcap">先说结论。JEPA/非对比 SSL 的关键风险就是 collapse 和表征形状控制，这篇是今天最贴近通用视觉自监督训练目标的工作。 把 SIGReg 的分布匹配严谨性和 VICReg 的可调性合并到 JEPA 训练里，减少简单 isotropic Gaussian 约束过硬的问题。</p>
+      <figure class="full-fig"><img src="../assets/mineru/2606.02572/images/559377036e71303b5c758b8c3db8f052cc86a179d54b1620617e981a91c7be0a.jpg" alt="Figureure 2 · Embedding collapse prevention"><figcaption><b>Figureure 2 · Embedding collapse prevention</b><span class="fig-en">Figure 2. Embedding collapse prevention. We simulate the gradient $| | \nabla L | |$ of popular regularization methods under different collapse stages by changing the feature norm (r). We observe that when the model is collapsed, Barlow Twins (Zbontar et al., 2021) and VISReg provide a strong gradient to fix the collapse, whereas SIGReg (Balestriero &amp; LeCun, 2025) fails to do so.</span><span class="fig-zh">这张图来自论文 PDF 的结构化抽取。当前用于辅助理解 VISReg 的方法或实验，请结合正文精读段落一起看。</span></figcaption></figure>
+<figure class="full-fig"><img src="../assets/mineru/2606.02572/images/22e468bfb19c151163f7b53128b440ac62b96d55d8c83055716e8c924be16e23.jpg" alt="Figureure 6 · Linear probe accuracy in scaling the number of GPUs with the fixed K a"><figcaption><b>Figureure 6 · Linear probe accuracy in scaling the number of GPUs with the fixed K a</b><span class="fig-en">Figure 6. Linear probe accuracy in scaling the number of GPUs with the fixed K and D. This result indicates that scaling the number of GPUs can compensate for the insufficient $K { = } \textstyle { \frac { 1 } { 4 } } { \bar { D } }$ to a sufficient level. When using 8x more GPUs, the final accuracy matches the target accuracy of K=2D, which makes K a constant number possible when scaling the training.</span><span class="fig-zh">这张图/表用于判断 VISReg 的实验收益来自哪里。重点看替换、消融或跨模型设置下趋势是否一致，而不是只看单个最高分。</span></figcaption></figure>
+      
+      <h2>核心问题</h2>
+      <p>JEPA/非对比 SSL 的关键风险就是 collapse 和表征形状控制，这篇是今天最贴近通用视觉自监督训练目标的工作。</p>
+      <h2>方法拆解</h2>
+      <p>用 Sliced-Wasserstein sketching 目标替换 VICReg 的 covariance 项，同时保留 variance/invariance 结构；核心是把“尺度”和“分布形状”解耦，给 collapse 状态也提供稳定梯度。</p>
+      <h2>主要贡献</h2>
+      <p>把 SIGReg 的分布匹配严谨性和 VICReg 的可调性合并到 JEPA 训练里，减少简单 isotropic Gaussian 约束过硬的问题。</p>
+      <h2>实验看点</h2>
+      <p>摘要称 VISReg 线性可扩展，在低质量、长尾、低秩数据上更稳；ImageNet-1K 预训练取得 OOD SOTA，ImageNet-22K 预训练可接近使用 LVD-142M 的 DINOv2 OOD 表现。</p>
+      <h2>局限与读法</h2>
+      <p>目前需要看完整消融确认 sketching 超参、投影数和 batch size 对大规模训练的敏感性；结果仍主要围绕分类/OOD 迁移。</p>
+    
+    </div>
+  </div>
+  <aside class="paper-side">
+
+    <div class="side-box"><h4>关键判断</h4><dl><dt>相关性</dt><dd>P0</dd><dt>类别</dt><dd>Visual SSL / representation</dd><dt>会议</dt><dd>arXiv</dd><dt>读法</dt><dd>方法图优先，表格次之</dd></dl></div>
+    <div class="side-box"><h4>原文</h4><p><a href="https://arxiv.org/abs/2606.02572">https://arxiv.org/abs/2606.02572</a></p></div>
+  </aside>
+</article></main>
+  <aside class="conf-float" data-conf-reminder="2026-06-03-main-ddl" aria-label="CCF A/B 主投稿提醒">
+  <button class="conf-close" type="button" aria-label="关闭会议提醒">×</button>
+  <details open>
+    <summary>CCF A/B 主投稿提醒</summary>
+    <div class="conf-list"><a class="conf-item " href="https://github.com/ccfddl/ccf-deadlines/blob/main/conference/AI/aaai.yml">
+  <span><b>AAAI 2027</b><em>CCF A · Main paper submission</em></span>
+  <strong>54 天</strong>
+  <small>2026-07-27 · CCF DDL: abstract 2026-07-20；进入 1 个月窗口后重点提醒。</small>
+</a></div>
+  </details>
+</aside>
+  <footer class="footer">
+    <div>面向通用视觉自监督、视觉基础模型与多模态表征学习的每日研究报。</div>
+    <div class="muted">Issue 2026-06-03 · Curated readings and figure notes</div>
+  </footer>
+  <script>
+  (() => {
+    const box = document.querySelector('[data-conf-reminder]');
+    if (!box) return;
+    const key = `visualSslConfReminderClosed:${box.dataset.confReminder || '2026-06-03-main-ddl'}`;
+    try {
+      if (localStorage.getItem(key) === '1') box.hidden = true;
+    } catch (err) {}
+    const close = box.querySelector('.conf-close');
+    if (close) {
+      close.addEventListener('click', () => {
+        box.hidden = true;
+        try { localStorage.setItem(key, '1'); } catch (err) {}
+      });
+    }
+  })();
+  </script>
+</body>
+</html>

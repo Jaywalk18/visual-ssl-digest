@@ -1,0 +1,97 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>UR-JEPA · 通用视觉自监督研究报</title>
+  <link rel="stylesheet" href="../assets/styles.css?v=20260525j">
+  <link rel="stylesheet" href="../assets/visual-ssl.css?v=20260525j">
+</head>
+<body>
+  <header class="masthead">
+    <div class="masthead-kicker">Visual SSL Research Report · 2026-06-03</div>
+    <a class="masthead-title" href="../index.html">通用视觉自监督研究报</a>
+    <div class="masthead-meta">
+      <span>图像表征 · VFM · JEPA · 视频预训练</span>
+      <span>CCF A/B 会议优先</span>
+      <span>图文精读 · 方法图解</span>
+    </div>
+  </header>
+  <nav class="site-nav" aria-label="主导航">
+    <a class="nav-link" href="../index.html">头版</a>
+<a class="nav-link" href="../issues/2026-06-03.html">今日速递</a>
+<a class="nav-link" href="../pages/catalog.html">论文目录</a>
+<a class="nav-link" href="../pages/timeline.html">时间线</a>
+  </nav>
+  <main><article class="paper-detail">
+  <div class="paper-main">
+    <div class="kicker">Visual SSL / representation · P0 · 2026-06-03</div>
+    <h1 class="paper-headline">UR-JEPA：与 VISReg 构成一组：今天 JEPA 正则化主题从“分布匹配”走向“流形几何”，值得并读</h1>
+    <p class="dek">明确指出“全空间高斯”与 manifold hypothesis 的冲突，并给出面向低维嵌入流形的 JEPA 正则化目标。</p>
+    <p class="byline"><strong>UR-JEPA: Uniform Rectifiability as a Regularizer for Joint-Embedding Predictive Architectures</strong>　Triet M. Le；机构信息 arXiv 元数据未列出。　arXiv　<a href="https://arxiv.org/abs/2606.01443">原文链接</a></p>
+    <div class="paper-facts">
+      <span><b>编号</b>2606.01443</span>
+      <span><b>优先级</b>P0</span>
+      <span><b>类别</b>Visual SSL / representation</span>
+      <span><b>会议</b>arXiv</span>
+      <span><b>方法</b>把 LeJEPA/SIGReg 的 isotropic Gaussian embedding target 改为 uniform n-rectifiable measure，用 Gaussian-kernel smoothed Carleson square function 和 Jones beta-number 约束局部切空间维度。</span>
+      <span><b>来源</b>arXiv / OpenReview</span>
+    </div>
+    <div class="feature-body">
+      <p class="lead dropcap">先说结论。与 VISReg 构成一组：今天 JEPA 正则化主题从“分布匹配”走向“流形几何”，值得并读。 明确指出“全空间高斯”与 manifold hypothesis 的冲突，并给出面向低维嵌入流形的 JEPA 正则化目标。</p>
+      <figure class="full-fig"><img src="../assets/mineru/2606.01443/images/77b5edd2e4031db10c16eb9ffdb3a03671041f42db81bb649595bd1da4fe7fdf.jpg" alt="Figureure 1 · : Inet10 single-seed training at the headline configuration $( D = 3 2"><figcaption><b>Figureure 1 · : Inet10 single-seed training at the headline configuration $( D = 3 2</b><span class="fig-en">Figure 1: Inet10 single-seed training at the headline configuration $( D = 3 2 , n = 7 , K = 5 )$ : perepoch linear-probe test accuracy (left) and probe loss (right) across 800 epochs for $\mathrm { L e J E P A } ( \mathcal { L } ^ { \mathrm { S I G R e g } } )$ and $\mathrm { U R - J E P A } ( \mathcal { L } ^ { \mathrm { C G L T } } )$ . The figure complements the peak-accuracy summary of Table 1 by showing the full training dynamics underlying the +0.83 pp headline gap.</span><span class="fig-zh">这张图/表用于判断 UR-JEPA 的实验收益来自哪里。重点看替换、消融或跨模型设置下趋势是否一致，而不是只看单个最高分。</span></figcaption></figure>
+<figure class="full-fig"><img src="../assets/mineru/2606.01443/images/536c573dd645effc0c056b7aae9add968f047908b5c3e662d6e6d12fc73c4369.jpg" alt="Figureure 2 · : Per-epoch online linear-probe top-1 accuracy (left) and training-reg"><figcaption><b>Figureure 2 · : Per-epoch online linear-probe top-1 accuracy (left) and training-reg</b><span class="fig-en">Figure 2: Per-epoch online linear-probe top-1 accuracy (left) and training-regularizer loss $( \mathrm { r i g h t } )$ trajectories on Galaxy10 SDSS, for seed 0 and $D = 3 2$ . Six variants are shown at the matched recipe: $\mathrm { U R - J E P A } ( \mathcal { L } ^ { \mathrm { C G L T } } )$ , UR–JEPA $( \mathcal { L } ^ { \mathrm { C G L T , \partial l o g } } )$ , UR–JEPA $( \mathcal { L } ^ { \mathrm { C G L T } , \partial } )$ , LeJEPA $( \mathcal { L } ^ { \mathrm { S I G R e g } } )$ , UR– JEPA $( \mathcal L ^ { \beta , \gamma } )$ , and $\mathrm { U R - J E P A } ( \mathcal { L } ^ { \beta , \gamma , \tau } )$ . The figure complements Table 5 by showing the full training dynamics that the peak-accuracy summary collapses to a single number.</span><span class="fig-zh">这张图/表用于判断 UR-JEPA 的实验收益来自哪里。重点看替换、消融或跨模型设置下趋势是否一致，而不是只看单个最高分。</span></figcaption></figure>
+      
+      <h2>核心问题</h2>
+      <p>与 VISReg 构成一组：今天 JEPA 正则化主题从“分布匹配”走向“流形几何”，值得并读。</p>
+      <h2>方法拆解</h2>
+      <p>把 LeJEPA/SIGReg 的 isotropic Gaussian embedding target 改为 uniform n-rectifiable measure，用 Gaussian-kernel smoothed Carleson square function 和 Jones beta-number 约束局部切空间维度。</p>
+      <h2>主要贡献</h2>
+      <p>明确指出“全空间高斯”与 manifold hypothesis 的冲突，并给出面向低维嵌入流形的 JEPA 正则化目标。</p>
+      <h2>实验看点</h2>
+      <p>摘要报告在 Inet10 上 UR-JEPA(CGLT) 相比 LeJEPA 有正向增益，并强调更符合低维流形结构。</p>
+      <h2>局限与读法</h2>
+      <p>理论几何目标较强，工程可用性和在 ImageNet/视频 JEPA 等大规模视觉预训练上的收益还需要验证。</p>
+    
+    </div>
+  </div>
+  <aside class="paper-side">
+
+    <div class="side-box"><h4>关键判断</h4><dl><dt>相关性</dt><dd>P0</dd><dt>类别</dt><dd>Visual SSL / representation</dd><dt>会议</dt><dd>arXiv</dd><dt>读法</dt><dd>方法图优先，表格次之</dd></dl></div>
+    <div class="side-box"><h4>原文</h4><p><a href="https://arxiv.org/abs/2606.01443">https://arxiv.org/abs/2606.01443</a></p></div>
+  </aside>
+</article></main>
+  <aside class="conf-float" data-conf-reminder="2026-06-03-main-ddl" aria-label="CCF A/B 主投稿提醒">
+  <button class="conf-close" type="button" aria-label="关闭会议提醒">×</button>
+  <details open>
+    <summary>CCF A/B 主投稿提醒</summary>
+    <div class="conf-list"><a class="conf-item " href="https://github.com/ccfddl/ccf-deadlines/blob/main/conference/AI/aaai.yml">
+  <span><b>AAAI 2027</b><em>CCF A · Main paper submission</em></span>
+  <strong>54 天</strong>
+  <small>2026-07-27 · CCF DDL: abstract 2026-07-20；进入 1 个月窗口后重点提醒。</small>
+</a></div>
+  </details>
+</aside>
+  <footer class="footer">
+    <div>面向通用视觉自监督、视觉基础模型与多模态表征学习的每日研究报。</div>
+    <div class="muted">Issue 2026-06-03 · Curated readings and figure notes</div>
+  </footer>
+  <script>
+  (() => {
+    const box = document.querySelector('[data-conf-reminder]');
+    if (!box) return;
+    const key = `visualSslConfReminderClosed:${box.dataset.confReminder || '2026-06-03-main-ddl'}`;
+    try {
+      if (localStorage.getItem(key) === '1') box.hidden = true;
+    } catch (err) {}
+    const close = box.querySelector('.conf-close');
+    if (close) {
+      close.addEventListener('click', () => {
+        box.hidden = true;
+        try { localStorage.setItem(key, '1'); } catch (err) {}
+      });
+    }
+  })();
+  </script>
+</body>
+</html>

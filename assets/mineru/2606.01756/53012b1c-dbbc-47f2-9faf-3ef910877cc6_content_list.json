@@ -1,0 +1,2070 @@
+[
+    {
+        "type": "text",
+        "text": "EvoCut: Multi-Layer Evolution-Aware Visual Token Compression for Efficient Large Vision-Language Models ",
+        "text_level": 1,
+        "bbox": [
+            137,
+            79,
+            860,
+            118
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "Hongyu Lu1,2 Feng Zhang2,‡ Wenwei Jin2 Huanling Hu3 Pengfei Zhang1 Yao Hu2 Jiawei Li2,∗ Shikai Jiang1,∗ ",
+        "bbox": [
+            225,
+            124,
+            771,
+            158
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "1Harbin Institute of Technology 2Xiaohongshu 3Fudan University ",
+        "bbox": [
+            213,
+            159,
+            784,
+            175
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "24S021013@stu.hit.edu.cn, 22b921003@stu.hit.edu.cn ",
+        "bbox": [
+            245,
+            177,
+            751,
+            191
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "{zhangfeng4, wangdesheng}@xiaohongshu.com ",
+        "bbox": [
+            292,
+            193,
+            707,
+            208
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "hlhu24@m.fudan.edu.cn, wenwei1217.jin@gmail.com ",
+        "bbox": [
+            260,
+            209,
+            736,
+            224
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "yaoohu@gmail.com, jiangshikai@hit.edu.cn ",
+        "bbox": [
+            295,
+            227,
+            700,
+            241
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "Abstract ",
+        "text_level": 1,
+        "bbox": [
+            260,
+            260,
+            339,
+            275
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "Large vision-language models (LVLMs) achieve strong performance on image and video understanding tasks, but their inference efficiency is constrained by the large number of visual tokens produced by vision encoders. Most existing visual token compression methods estimate token importance from attention scores or representation properties at specific layers, overlooking how visual tokens evolve across the vision encoder. Such layer-specific criteria may provide incomplete importance estimates and limit performance preservation after compression. To address this issue, we analyze layer-wise visual token evolution directions and observe that tokens form multiple group evolution directions across vision-encoder layers. Our analysis further shows that informative tokens tend to exhibit persistent deviations from common group evolution directions. Based on this observation, we propose EvoCut, a training-free and attention-free visual token compression method that estimates token importance from multi-layer evolution deviation. Experimental results show that EvoCut can retain only 11.1% of the visual tokens on LLaVA-1.5-7B while preserving 94.4% of the average performance, demonstrating its effectiveness in balancing efficiency and accuracy. ",
+        "bbox": [
+            141,
+            288,
+            460,
+            700
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "1 Introduction ",
+        "text_level": 1,
+        "bbox": [
+            114,
+            712,
+            258,
+            727
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "Large vision-language models (LVLMs) extend large language models to image and video understanding, and have shown strong performance across multimodal tasks (Alayrac et al., 2022; Li et al., 2023b; Liu et al., 2023; Bai et al., 2023; Lin et al., 2023). However, processing visual inputs requires the vision encoder to produce a large number of visual tokens. For high-resolution images and videos, the token sequence can easily grow to hundreds or thousands of tokens before it is passed to the language model (Liu et al., 2024a; Bai et al., ",
+        "bbox": [
+            112,
+            738,
+            489,
+            915
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "image",
+        "img_path": "images/b72a3119737673161b6e88982017d113e4e8062fab8339b43d6015dffb3699bf.jpg",
+        "image_caption": [],
+        "image_footnote": [],
+        "content": "Two basketball players in Lakers and Golden State jerseys smiling at the camera (no visible text or symbols)",
+        "sub_type": "natural_image",
+        "bbox": [
+            512,
+            262,
+            665,
+            335
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "image",
+        "img_path": "images/0ca2daad896b9240d55883cf1eb92d69fd75cd4073a5f44632e40016473600d2.jpg",
+        "image_caption": [
+            "Describe this image. "
+        ],
+        "image_footnote": [],
+        "content": "",
+        "bbox": [
+            670,
+            261,
+            695,
+            311
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "The mage features two professindlbasketball players,one wearing a Lakers jersey and the other wearing a Golden State Warrors jersey. Theyare standing next toeachother,smiling and posing for a picture. ",
+        "bbox": [
+            707,
+            284,
+            873,
+            331
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "image",
+        "img_path": "images/75af0af58883eaaae7fef86fee281dfc9549c997dd035a01a6dd57c0c0b4b276.jpg",
+        "image_caption": [],
+        "image_footnote": [],
+        "content": "Two basketball players in a Lakers jersey at the Celtics court (no visible text or symbols)",
+        "sub_type": "natural_image",
+        "bbox": [
+            512,
+            342,
+            665,
+            414
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "image",
+        "img_path": "images/0ece15cdf4eff4834b1cf869295bccb586327b2c81703d2746880b29f011ae9d.jpg",
+        "image_caption": [],
+        "image_footnote": [],
+        "content": "",
+        "bbox": [
+            668,
+            341,
+            692,
+            412
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "image",
+        "img_path": "images/588263eb490da73c18bf560b02a1029af0a634e1f02988c829ab4caee0174a0e.jpg",
+        "image_caption": [],
+        "image_footnote": [],
+        "content": "Two basketball players in black uniforms with checkered jerseys, one wearing a 'JAKKA' jersey (no visible text or symbols on the players or background)",
+        "sub_type": "natural_image",
+        "bbox": [
+            699,
+            342,
+            878,
+            414
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "The image features two professional basketballplayers from the Golden State Warriors, Klay Thompson and Draymond Green, posing together for a photo. ",
+        "bbox": [
+            519,
+            418,
+            684,
+            455
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "The image features twoprofessional basketball players from the Golden State Warriors and the Los Angeles Lakers,both wearing their team uniforms. ",
+        "bbox": [
+            707,
+            420,
+            875,
+            456
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "Figure 1: Comparison between ApET and EvoCut. Red annotations indicate incorrect answers, while green annotations indicate correct answers. ",
+        "bbox": [
+            507,
+            470,
+            884,
+            513
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "2025). These visual tokens often dominate the prefilling cost and increase memory consumption, inference latency, and FLOPs. Therefore, reducing redundant visual tokens while preserving multimodal understanding ability is important for efficient LVLM deployment. ",
+        "bbox": [
+            507,
+            539,
+            884,
+            634
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "To reduce the inference cost of LVLMs, recent studies have explored visual token reduction and compression before or during language-model decoding (Chen et al., 2024a; Zhang et al., 2025; Yang et al., 2025; Shang et al., 2025; Ma et al., 2026; Wen et al., 2025; Jiang et al., 2025; Fan et al., 2025). Existing LVLM compression methods mainly estimate token importance from either attention responses or visual representations. Attentionbased methods prune or merge tokens based on attention scores, but these scores can be affected by positional bias and tend to concentrate on later token positions, as shown in Figure 2. They are also difficult to combine with efficient attention implementations such as FlashAttention (Dao et al., 2022; Dao, 2023). Representation-based methods avoid direct dependence on attention maps, but they often rely on single-layer features or local token relations. As shown in Figure 2, such layer-specific criteria can produce inconsistent importance estimates across different layers. These limitations suggest that many existing criteria provide only a partial view of token importance, making it difficult to consistently preserve informative visual tokens after compression. ",
+        "bbox": [
+            507,
+            636,
+            884,
+            910
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "aside_text",
+        "text": "arXiv:2606.01756v1 [cs.CV] 1 Jun 2026 ",
+        "bbox": [
+            21,
+            294,
+            60,
+            700
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "footer",
+        "text": "\\*Corresponding authors. ‡Project leader. ",
+        "bbox": [
+            112,
+            935,
+            373,
+            951
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "page_number",
+        "text": "1 ",
+        "bbox": [
+            494,
+            942,
+            502,
+            954
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "image",
+        "img_path": "images/29094efb3cf3cce85eb36f46f8ca2ae448cfbe9b4d6f38228ea1f5781c5ffd1f.jpg",
+        "image_caption": [
+            "Input Image "
+        ],
+        "image_footnote": [],
+        "content": "",
+        "bbox": [
+            122,
+            82,
+            240,
+            167
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "image",
+        "img_path": "images/91e7ea9ebd671c091abd46bccae470415b1781440f68185e28ad485270ec103e.jpg",
+        "image_caption": [
+            "Attention Map "
+        ],
+        "image_footnote": [],
+        "content": "",
+        "bbox": [
+            248,
+            83,
+            366,
+            167
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "image",
+        "img_path": "images/d64929e1e3b542ced02e27102bd6d59095285c53c704a056165000fbfabfebcc.jpg",
+        "image_caption": [
+            "Layer 3 V2Drop "
+        ],
+        "image_footnote": [],
+        "content": "",
+        "bbox": [
+            373,
+            83,
+            490,
+            167
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "image",
+        "img_path": "images/16a7d8c4f510146c24ce81a1be3713be35fbb2fc9269f3268f9d5c1c542d8240.jpg",
+        "image_caption": [
+            "Layer 23 V2Drop "
+        ],
+        "image_footnote": [],
+        "content": "",
+        "bbox": [
+            497,
+            83,
+            613,
+            167
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "image",
+        "img_path": "images/572c17d8d3163cee25fbb74ff5970008d3f42cc5ee67ec9524da00fcad81a229.jpg",
+        "image_caption": [
+            "Layer 3ApET "
+        ],
+        "image_footnote": [],
+        "content": "",
+        "bbox": [
+            620,
+            83,
+            737,
+            167
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "image",
+        "img_path": "images/cfffccf596059e8876cf1ccd00e7788631aaa0f36fc319c64e84e83312bca8c2.jpg",
+        "image_caption": [
+            "Layer 23 ApET "
+        ],
+        "image_footnote": [],
+        "content": "",
+        "bbox": [
+            742,
+            83,
+            860,
+            167
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "image",
+        "img_path": "images/1b405885ee3e0c7a83d7f285d79a7636ba6d33ac448d236eeb7c08fdf3d5020e.jpg",
+        "image_caption": [
+            "Figure 2: Visualization results show that attention scores are affected by positional bias, causing them to concentrate more on later tokens. Meanwhile, V2Drop and ApET produce inconsistent importance maps across different layers, suggesting that single-layer criteria can be unstable for identifying important visual tokens. "
+        ],
+        "image_footnote": [],
+        "content": "",
+        "bbox": [
+            860,
+            82,
+            880,
+            167
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "text",
+        "text": "",
+        "bbox": [
+            112,
+            261,
+            487,
+            388
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "text",
+        "text": "We argue that visual token importance should be estimated from its layer-wise evolution, rather than from a single-layer snapshot. To examine this hypothesis, we analyze token movements between adjacent vision-encoder layers and observe that visual tokens do not follow a single global evolution direction. Instead, they form multiple group evolution directions, and tokens that consistently deviate from these shared directions often correspond to visually informative regions. This observation suggests that persistent deviation from group evolution directions provides a useful signal for identifying important visual tokens. At the same time, single-layer deviation can be noisy, especially in deeper layers where token representations become highly mixed. Therefore, token importance should be modeled from cross-layer evolution behavior rather than from isolated layer-wise scores. ",
+        "bbox": [
+            112,
+            390,
+            487,
+            678
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "text",
+        "text": "Motivated by these observations, we propose EvoCut, a training-free and attention-free visual token compression method for LVLMs. EvoCut estimates token importance from layer-wise token evolution inside the vision encoder. For each layer transition, it measures the deviation between each token’s evolution direction and the group evolution directions, and accumulates the resulting scores across layers with a history-aware update. This multi-layer scoring allows EvoCut to retain tokens that consistently provide distinctive visual information, as shown in Figure 1. Since EvoCut does not rely on attention maps, it can be integrated into existing LVLMs and remains compatible with efficient attention operators. Our main contributions are summarized as follows: ",
+        "bbox": [
+            112,
+            680,
+            489,
+            921
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "text",
+        "text": "",
+        "bbox": [
+            509,
+            262,
+            714,
+            275
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "list",
+        "sub_type": "text",
+        "list_items": [
+            "• We investigate visual-token evolution across vision-encoder layers and observe that token movements follow multiple group evolution directions. We further observe that tokens with persistent deviations from these shared directions are more likely to correspond to informative visual regions. ",
+            "• Based on these observations, we propose Evo-Cut, a training-free and attention-free visual token compression method for LVLMs. EvoCut estimates token importance by measuring deviation from multiple group evolution directions and accumulating this signal across layers, avoiding reliance on single-layer importance estimates. ",
+            "• Experiments on image and video understanding tasks show that EvoCut consistently improves the performance-efficiency trade-off across multiple LVLM backbones. For example, EvoCut preserves 94.4% of the average performance on LLaVA-1.5-7B with only 64 visual tokens while achieving a 1.44× total-time speedup. "
+        ],
+        "bbox": [
+            507,
+            282,
+            885,
+            640
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "text",
+        "text": "2 Related Work ",
+        "text_level": 1,
+        "bbox": [
+            509,
+            650,
+            663,
+            665
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "text",
+        "text": "2.1 Large Vision-Language Models ",
+        "text_level": 1,
+        "bbox": [
+            509,
+            675,
+            801,
+            690
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "text",
+        "text": "Large Vision-Language Models (LVLMs) extend large language models (Brown et al., 2020; Touvron et al., 2023; OpenAI, 2023) to multimodal scenarios by incorporating visual encoders and projection modules. Most LVLMs build on Transformerbased (Vaswani et al., 2017) pretrained visual encoders such as ViT or CLIP to convert visual inputs into token sequences (Dosovitskiy et al., 2021; Radford et al., 2021). Typically, visual tokens are then mapped into the language model space, enabling the model to perform tasks such as visual question answering, image captioning, and multimodal reasoning. Models such as BLIP-2, InstructBLIP, MiniGPT-4, LLaVA, Qwen-VL, and ",
+        "bbox": [
+            507,
+            696,
+            884,
+            921
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "page_number",
+        "text": "2 ",
+        "bbox": [
+            492,
+            942,
+            504,
+            954
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "text",
+        "text": "InternVL have demonstrated the effectiveness of this paradigm across various vision-language tasks (Li et al., 2023b; Dai et al., 2023; Zhu et al., 2023; Liu et al., 2023; Bai et al., 2023; Chen et al., 2024b). Recent LVLMs further improve fine-grained visual understanding by supporting high-resolution images and long videos (Liu et al., 2024a; Bai et al., 2025; Li et al., 2023c; Zhang et al., 2023; Lin et al., 2023). However, the resulting visual tokens are often much more numerous than textual tokens, introducing substantial computational and memory overhead. This makes reducing redundant visual tokens while preserving multimodal reasoning ability a key problem for efficient LVLMs. ",
+        "bbox": [
+            112,
+            84,
+            492,
+            311
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "2.2 Visual Token Compression for LVLMs ",
+        "text_level": 1,
+        "bbox": [
+            112,
+            319,
+            465,
+            336
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "Existing visual token compression methods for LVLMs mainly estimate token importance from either attention responses or visual representations. Attention-based methods use visual self-attention, CLS-token attention, or text-to-vision attention to prune or merge visual tokens. For example, VisionZip compresses visual tokens based on CLStoken attention scores from the selected visionencoder layer used by the LVLM, which is typically the penultimate layer in LLaVA-style models (Yang et al., 2025). Although such methods are simple and effective, attention scores can be affected by positional bias and are difficult to combine with efficient attention operators such as FlashAttention (Dao et al., 2022; Dao, 2023). Representationbased methods avoid direct dependence on attention maps and instead identify redundant tokens from visual features, such as feature similarity, approximation error, token duplication, or local variation (Zhang et al., 2025; Ma et al., 2026; Wen et al., 2025). For instance, ApET reconstructs the original visual tokens with a compact set of basis tokens and uses the approximation error to measure token informativeness (Ma et al., 2026). However, many existing criteria still depend on layer-specific features or local token relations, which may provide only a partial estimate of token importance. These methods usually evaluate token importance from static features or local relationships, rather than explicitly modeling how each token changes between adjacent vision-encoder layers. In contrast, EvoCut models token importance from multi-layer evolution behavior and measures whether a token persistently deviates from multiple shared group evolution directions. ",
+        "bbox": [
+            112,
+            340,
+            490,
+            904
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "3 Method ",
+        "text_level": 1,
+        "bbox": [
+            509,
+            83,
+            613,
+            98
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "3.1 Preliminaries ",
+        "text_level": 1,
+        "bbox": [
+            509,
+            109,
+            662,
+            123
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "An LVLM turns visual content into a token sequence that can be consumed by a language model (Huang et al., 2023). Given an image or video, the vision encoder first extracts patch-level representations, and a projector maps these representations into the same embedding space as text tokens. We denote the resulting visual token sequence as V . Together with a textual instruction T , these visual tokens form the multimodal context used by the LLM to generate an answer autoregressively: ",
+        "bbox": [
+            507,
+            130,
+            885,
+            292
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "equation",
+        "text": "$$\ny _ {t} \\sim p _ {\\theta} (y _ {t} \\mid V, T, y _ {<   t}), \\tag {1}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            605,
+            303,
+            882,
+            321
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "where θ denotes the model parameters and $y _ { < t }$ denotes previously generated tokens. ",
+        "bbox": [
+            507,
+            332,
+            880,
+            365
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "3.2 Layer-wise Token Evolution Analysis ",
+        "text_level": 1,
+        "bbox": [
+            507,
+            376,
+            847,
+            391
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "To understand how visual tokens evolve inside the vision encoder, we analyze the layer-wise evolution direction of patch tokens between adjacent Transformer layers. Let $x _ { i } ^ { ( t ) } \\in \\mathbb { R } ^ { d }$ denote the hidden state of the i-th patch token at the t-th visionencoder layer. We define its layer-wise evolution direction from layer t − 1 to layer t as ",
+        "bbox": [
+            507,
+            395,
+            885,
+            511
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "equation",
+        "text": "$$\n\\vec {\\Delta} _ {i} ^ {(t)} = \\frac {x _ {i} ^ {(t)} - x _ {i} ^ {(t - 1)}}{\\| x _ {i} ^ {(t)} - x _ {i} ^ {(t - 1)} \\| _ {2}}. (2)\n$$",
+        "text_format": "latex",
+        "bbox": [
+            598,
+            521,
+            882,
+            565
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "Discovery of Group Evolution Directions. We use HDBSCAN (Campello et al., 2013) to cluster token evolution directions at each layer transition, since it can discover density-based direction groups without specifying the number of clusters. Each cluster is treated as a shared evolution direction followed by a group of tokens, and its group direction is defined as the normalized mean of all member directions. As shown in the right part of Figure 3, the number of clustered directions is small in shallow layers and increases in deeper layers on both POPE and TextVQA. This indicates that visual tokens do not evolve along a single global direction, but gradually split into multiple group evolution paths as the network deepens. ",
+        "bbox": [
+            507,
+            574,
+            885,
+            816
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "High-Deviation Tokens Correlate with Informative Regions. To study the properties of informative tokens during layer-wise evolution, we examine their deviations from group evolution directions. For each token, we compute its cosine deviation from the nearest group direction at each layer transition. As shown in the left part of Figure 3, tokens corresponding to informative regions, such as the license plate and airplane, maintain large deviations across multiple layers. More generally, high-deviation tokens tend to appear on distinct foreground objects, text regions, and small targets, suggesting that directional deviation is associated with informative visual content. ",
+        "bbox": [
+            507,
+            824,
+            885,
+            904
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "page_number",
+        "text": "3 ",
+        "bbox": [
+            492,
+            942,
+            504,
+            954
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "image",
+        "img_path": "images/12602539253f6aa6d696eea15756f6293155f958574f76e1ba90d7e8e8f35797.jpg",
+        "image_caption": [
+            "Figure 3: Visualization of multi-layer token evolution in LLaVA-1.5. (Left) Tokens with larger deviations from group evolution directions tend to correspond to visually informative regions. (Right) The number of clustered token evolution directions across vision-encoder layers on POPE and TextVQA, showing that token transitions form multiple group evolution directions. More results are provided in Appendix A.4. "
+        ],
+        "image_footnote": [],
+        "content": "",
+        "bbox": [
+            115,
+            80,
+            640,
+            235
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "text",
+        "text": "",
+        "bbox": [
+            112,
+            328,
+            487,
+            470
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "text",
+        "text": "Redundancy of Low-Deviation Tokens. In contrast, tokens that closely follow dominant group directions are mostly located in background regions, repetitive textures, or weakly informative edges. These tokens show highly predictable crosslayer behavior and carry less token-specific visual information for multimodal understanding. This complements the high-deviation cases and suggests that deviation from group directions can help distinguish informative tokens from less informative ones. ",
+        "bbox": [
+            112,
+            481,
+            489,
+            656
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "text",
+        "text": "Deviation Noise in Deeper Layers. We also observe that single-layer deviation becomes less reliable in deeper layers. As self-attention repeatedly aggregates global context, token representations become more mixed, and background tokens may show large deviations due to their association with foreground regions. This makes isolated layer-wise scores unstable and motivates accumulating deviation signals across multiple layer transitions. ",
+        "bbox": [
+            112,
+            667,
+            487,
+            810
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "text",
+        "text": "Overall, these observations suggest that token importance is better characterized by persistent deviation from group evolution directions than by a single-layer snapshot. This motivates EvoCut to score visual tokens using multi-layer evolution deviation. ",
+        "bbox": [
+            112,
+            812,
+            487,
+            906
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "text",
+        "text": "3.3 Evolution-Aware Token Compression ",
+        "text_level": 1,
+        "bbox": [
+            507,
+            326,
+            848,
+            343
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "text",
+        "text": "Building on the above observations, we propose EvoCut, a training-free visual token compression method that estimates token importance from multilayer evolution in the vision encoder. Instead of relying on a single-layer representation snapshot, EvoCut tracks how each visual token evolves across adjacent layers and identifies tokens whose evolution directions deviate from shared group evolution directions. As illustrated in Figure 4, EvoCut consists of three steps: group evolution modeling, evolution-deviation scoring, and multi-layer score accumulation. ",
+        "bbox": [
+            507,
+            348,
+            884,
+            539
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "text",
+        "text": "Group Evolution Modeling. Let $\\begin{array} { r l } { X ^ { ( \\ell ) } } & { { } = } \\end{array}$ $\\{ x _ { 1 } ^ { ( \\ell ) } , \\ldots , x _ { N } ^ { ( \\ell ) } \\}$ , x(ℓ)N } denote the vision-encoder hidden states at layer ℓ. For each adjacent layer pair, we compute the token evolution direction ∆⃗ (ℓ)i $\\vec { \\Delta } _ { i } ^ { ( \\ell ) }$ i using the normalized layer-wise difference in Equation 2. ",
+        "bbox": [
+            507,
+            548,
+            882,
+            633
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "text",
+        "text": "Since tokens may evolve along multiple shared directions, we cluster all token evolution directions for the transition from layer ℓ − 1 to layer ℓ with K-means. For simplicity and efficient inference, EvoCut uses a fixed number of clusters for all layer transitions. For each cluster, its center is computed as the mean of the assigned token evolution directions and then normalized to form a group evolution direction. EvoCut uses the M cluster centers as group evolution directions: ",
+        "bbox": [
+            507,
+            634,
+            882,
+            794
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "equation",
+        "text": "$$\n\\mathcal {U} ^ {(\\ell)} = \\{\\vec {u} _ {1} ^ {(\\ell)}, \\vec {u} _ {2} ^ {(\\ell)}, \\dots , \\vec {u} _ {M} ^ {(\\ell)} \\}. \\tag {3}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            584,
+            802,
+            882,
+            824
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "text",
+        "text": "These directions capture the dominant evolution directions shared by visual tokens at the current layer transition. ",
+        "bbox": [
+            507,
+            832,
+            880,
+            879
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "text",
+        "text": "Evolution-Deviation Scoring. For each token, EvoCut measures its deviation from the closest group evolution direction. We compute the best cosine alignment between ∆⃗ (ℓ)i $\\vec { \\Delta } _ { i } ^ { ( \\ell ) }$ and the direction set $\\mathcal { U } ^ { ( \\ell ) }$ : ",
+        "bbox": [
+            507,
+            889,
+            882,
+            919
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "page_number",
+        "text": "4 ",
+        "bbox": [
+            492,
+            942,
+            505,
+            954
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "image",
+        "img_path": "images/304b777971e6bdeb807239161fdf231942d4d3b43f6913109df5caeb6ea6fb40.jpg",
+        "image_caption": [
+            "Figure 4: Overview of EvoCut. EvoCut estimates visual token importance from multi-layer token evolution, measures deviation from multiple group evolution directions, aggregates scores across layers, and retains top-ranked visual tokens before the multimodal projector and LLM prefilling. "
+        ],
+        "image_footnote": [],
+        "content": "```mermaid\ngraph TD\n    A[\"Large Language Model\"] --> B[\"Textual tokens\"]\n    B --> C[\"EvoCut\"]\n    C --> D[\"Tokenizer\"]\n    D --> E[\"Vision Encoder\"]\n    E --> F[\"Question: How many cows can be seen in the image?\"]\n    \n    subgraph Input Layer\n        G[\"block L\"] --> H[\"score^L\"]\n        I[\"...\"] --> J[\"score^{l+1}\"]\n        K[\"block l+1\"] --> L[\"score^l+1\"]\n        M[\"block l\"] --> N[\"score^l\"]\n        O[\"...\"] --> P[\"score^1\"]\n        Q[\"block 1\"] --> R[\"score^1\"]\n    end\n    \n    subgraph Output Layer\n        S[\"for token i and layer l\"] --> T[\"evolution direction 2 u2\"]\n        U[\"evolution direction 3 u3\"] --> V[\"evolution direction 1 u1\"]\n        W[\"token direction Δl\"] --> X[\"score^l = α score^{l-1} + (1 - α) (1 - cos(Δl, u1))\"]\n    end\n```",
+        "sub_type": "flowchart",
+        "bbox": [
+            124,
+            80,
+            884,
+            292
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "",
+        "bbox": [
+            112,
+            368,
+            487,
+            416
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "equation",
+        "text": "$$\na _ {i} ^ {(\\ell)} = \\max _ {m} \\cos (\\vec {\\Delta} _ {i} ^ {(\\ell)}, \\vec {u} _ {m} ^ {(\\ell)}). (4)\n$$",
+        "text_format": "latex",
+        "bbox": [
+            194,
+            426,
+            487,
+            454
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "The layer-wise importance score is then defined as the directional deviation: ",
+        "bbox": [
+            112,
+            463,
+            487,
+            494
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "equation",
+        "text": "$$\nr _ {i} ^ {(\\ell)} = 1 - a _ {i} ^ {(\\ell)}. \\tag {5}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            238,
+            504,
+            487,
+            526
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "A larger score indicates stronger deviation from shared group evolution directions, suggesting that the token is more likely to contain distinctive visual information. ",
+        "bbox": [
+            112,
+            537,
+            487,
+            600
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "Multi-Layer Score Accumulation. To reduce the instability of single-layer estimates, EvoCut accumulates token scores across layer transitions with an exponential moving average: ",
+        "bbox": [
+            112,
+            609,
+            487,
+            675
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "equation",
+        "text": "$$\ns _ {i} ^ {(\\ell)} = \\alpha s _ {i} ^ {(\\ell - 1)} + (1 - \\alpha) r _ {i} ^ {(\\ell)}, \\tag {6}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            186,
+            684,
+            487,
+            708
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "where α controls the contribution of historical evolution information. After the final vision-encoder layer, EvoCut keeps the top-K patch tokens according to si and sends the compressed visual sequence to the multimodal projector. The complete pseudocode is provided in Appendix A.1. ",
+        "bbox": [
+            112,
+            719,
+            489,
+            815
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "4 Experiments ",
+        "text_level": 1,
+        "bbox": [
+            112,
+            827,
+            260,
+            843
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "4.1 Experimental Setup ",
+        "text_level": 1,
+        "bbox": [
+            112,
+            852,
+            317,
+            868
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "Models and Baselines. To validate the effectiveness and generality of the proposed method, we evaluate it on representative LVLM backbones covering both image and video understanding: LLaVA-1.5-7B, LLaVA-NeXT-7B, Qwen-2.5-VL-7B, and Video-LLaVA-7B (Liu et al., 2023, 2024a; Bai et al., 2025; Lin et al., 2023). These models cover fixed-length, high-resolution, dynamicresolution, and temporal visual-token settings. We compare against representative training-free visual token reduction methods covering attention-based and representation-based compression, including FastV, SparseVLM, PDrop, V2Drop, VisionZip, and ApET (Chen et al., 2024a; Zhang et al., 2025; Xing et al., 2025; Chen et al., 2026; Yang et al., 2025; Ma et al., 2026). ",
+        "bbox": [
+            112,
+            873,
+            489,
+            921
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "",
+        "bbox": [
+            507,
+            368,
+            884,
+            576
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "Implementation Details. All methods are evaluated under the standard inference configurations of their corresponding LVLMs without additional training or fine-tuning. Our method can be integrated into all evaluated backbones: it accumulates token-importance scores from intermediate visionencoder layers and applies token selection to the final vision-encoder output before the multimodal projector. For EvoCut, we start computing token importance from the middle of the vision encoder, i.e., layer 12 for LLaVA-1.5, LLaVA-NeXT, and Video-LLaVA, and layer 16 for Qwen-2.5-VL. The number of K-means clusters is set to M = 8, and the EMA decay factor is set to $\\alpha = 0 . 9 5$ for all experiments. All experiments are conducted on NVIDIA A800-80G GPUs. ",
+        "bbox": [
+            507,
+            585,
+            882,
+            843
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "4.2 Main Results ",
+        "text_level": 1,
+        "bbox": [
+            507,
+            852,
+            660,
+            866
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "Image understanding tasks. We evaluate Evo-Cut on LLaVA-1.5-7B, LLaVA-NeXT-7B, and Qwen-2.5-VL-7B during inference without additional training, covering fixed-resolution, highresolution, and dynamic-resolution visual encoding settings. For LLaVA-1.5-7B, Table 1 reports results on a broad set of image understanding benchmarks, including visual question answering, perception, hallucination evaluation, science reasoning, textrich understanding, and multimodal reasoning tasks (Goyal et al., 2017; Hudson and Manning, 2019; Singh et al., 2019; Lu et al., 2022; Fu et al., 2023; Li et al., 2023d; Liu et al., 2024b). EvoCut achieves the best normalized average performance under all token budgets, retaining 98.4%, 97.0%, and 94.4% of the vanilla performance with 192, 128, and 64 tokens, respectively. Under the most aggressive 64-token setting, EvoCut still outperforms the strongest baseline by 0.8 percentage points in average retention, with clear gains on MMB, MMBCN, ， VQAV2, TextVQA, and SEED. ",
+        "bbox": [
+            507,
+            873,
+            884,
+            921
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "page_number",
+        "text": "5 ",
+        "bbox": [
+            492,
+            942,
+            504,
+            954
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "table",
+        "img_path": "images/f2ada783f545846187ef2b21b986e32510d72d85bb9df4f46f9a5bbd50aba682.jpg",
+        "table_caption": [
+            "Table 1: Performance comparison on image understanding benchmarks with LLaVA-1.5-7B under different visual token budgets. Avg. reports the normalized average performance relative to the vanilla upper bound. "
+        ],
+        "table_footnote": [],
+        "table_body": "<table><tr><td>Method</td><td>GQA</td><td>MMB</td><td> $MMB^{CN}$ </td><td>MME</td><td>POPE</td><td>SQA</td><td> $VQA^{V2}$ </td><td> $VQA^{Text}$ </td><td>SEED</td><td>LLaVA-B</td><td>Avg.</td></tr><tr><td colspan=\"12\">Upper Bound, 576 Tokens (100%)</td></tr><tr><td>Vanilla</td><td>61.9</td><td>64.7</td><td>58.1</td><td>1862</td><td>85.9</td><td>69.5</td><td>78.5</td><td>58.2</td><td>59.3</td><td>66.9</td><td>100.0%</td></tr><tr><td colspan=\"12\">Retain 192 Tokens (↓66.7%)</td></tr><tr><td>FastV</td><td>52.7</td><td>61.2</td><td>57.0</td><td>1612</td><td>64.8</td><td>67.3</td><td>67.1</td><td>52.5</td><td>57.1</td><td>49.4</td><td>88.2%</td></tr><tr><td>SparseVLM</td><td>57.6</td><td>62.5</td><td>53.7</td><td>1721</td><td>83.6</td><td>69.1</td><td>75.6</td><td>56.1</td><td>55.8</td><td>66.1</td><td>95.7%</td></tr><tr><td>PDrop</td><td>57.3</td><td>63.2</td><td>56.8</td><td>1766</td><td>82.3</td><td>69.0</td><td>75.1</td><td>56.1</td><td>54.7</td><td>65.8</td><td>96.1%</td></tr><tr><td>VisionZip</td><td>59.3</td><td>63.0</td><td>57.3</td><td>1778</td><td>85.2</td><td>68.7</td><td>76.6</td><td>57.3</td><td>56.4</td><td>67.7</td><td>97.8%</td></tr><tr><td> $V^2Drop$ </td><td>58.5</td><td>63.7</td><td>56.6</td><td>1796</td><td>85.1</td><td>69.3</td><td>74.9</td><td>55.6</td><td>56.4</td><td>66.5</td><td>97.1%</td></tr><tr><td>ApET</td><td>60.2</td><td>63.4</td><td>57.9</td><td>1808</td><td>86.3</td><td>68.5</td><td>76.2</td><td>54.4</td><td>56.8</td><td>66.1</td><td>97.6%</td></tr><tr><td>EvoCut</td><td>60.2</td><td>64.2</td><td>57.6</td><td>1794</td><td>86.5</td><td>68.5</td><td>76.7</td><td>57.6</td><td>57.3</td><td>66.4</td><td>98.4%</td></tr><tr><td colspan=\"12\">Retain 128 Tokens (↓77.8%)</td></tr><tr><td>FastV</td><td>49.6</td><td>56.1</td><td>56.4</td><td>1490</td><td>59.6</td><td>60.2</td><td>61.8</td><td>50.6</td><td>55.9</td><td>52.0</td><td>83.8%</td></tr><tr><td>SparseVLM</td><td>56.0</td><td>60.0</td><td>51.1</td><td>1696</td><td>80.5</td><td>67.1</td><td>73.8</td><td>54.9</td><td>53.4</td><td>62.7</td><td>92.5%</td></tr><tr><td>PDrop</td><td>57.1</td><td>61.1</td><td>56.6</td><td>1644</td><td>82.3</td><td>68.4</td><td>72.9</td><td>54.8</td><td>53.3</td><td>61.9</td><td>93.6%</td></tr><tr><td>VisionZip</td><td>57.6</td><td>62.0</td><td>56.2</td><td>1759</td><td>83.2</td><td>68.9</td><td>75.6</td><td>56.8</td><td>54.9</td><td>64.8</td><td>95.9%</td></tr><tr><td> $V^2Drop$ </td><td>56.3</td><td>61.8</td><td>54.5</td><td>1712</td><td>80.9</td><td>68.8</td><td>72.1</td><td>53.8</td><td>53.8</td><td>62.9</td><td>93.4%</td></tr><tr><td>ApET</td><td>58.9</td><td>62.3</td><td>56.4</td><td>1801</td><td>86.1</td><td>68.7</td><td>75.1</td><td>53.9</td><td>54.7</td><td>64.2</td><td>96.1%</td></tr><tr><td>EvoCut</td><td>59.2</td><td>62.3</td><td>56.7</td><td>1790</td><td>85.7</td><td>68.7</td><td>76.2</td><td>57.1</td><td>55.2</td><td>65.1</td><td>97.0%</td></tr><tr><td colspan=\"12\">Retain 64 Tokens (↓88.9%)</td></tr><tr><td>FastV</td><td>46.1</td><td>48.0</td><td>52.7</td><td>1256</td><td>48.0</td><td>51.1</td><td>55.0</td><td>47.8</td><td>51.9</td><td>46.1</td><td>74.5%</td></tr><tr><td>SparseVLM</td><td>52.7</td><td>56.2</td><td>46.1</td><td>1505</td><td>75.1</td><td>62.2</td><td>68.2</td><td>51.8</td><td>51.1</td><td>57.5</td><td>85.7%</td></tr><tr><td>PDrop</td><td>47.5</td><td>58.8</td><td>50.5</td><td>1092</td><td>55.9</td><td>69.2</td><td>69.2</td><td>45.9</td><td>40.0</td><td>59.2</td><td>80.1%</td></tr><tr><td>VisionZip</td><td>55.1</td><td>60.1</td><td>55.3</td><td>1687</td><td>77.0</td><td>69.0</td><td>72.4</td><td>55.5</td><td>52.2</td><td>62.9</td><td>92.6%</td></tr><tr><td> $V^2Drop$ </td><td>50.5</td><td>55.2</td><td>49.7</td><td>1470</td><td>75.1</td><td>68.9</td><td>71.2</td><td>51.8</td><td>51.4</td><td>62.4</td><td>87.8%</td></tr><tr><td>ApET</td><td>56.9</td><td>61.2</td><td>54.4</td><td>1714</td><td>84.4</td><td>68.9</td><td>72.5</td><td>53.0</td><td>52.4</td><td>63.0</td><td>93.6%</td></tr><tr><td>EvoCut</td><td>56.6</td><td>61.8</td><td>56.0</td><td>1692</td><td>83.9</td><td>68.8</td><td>73.4</td><td>55.7</td><td>53.2</td><td>63.0</td><td>94.4%</td></tr></table>",
+        "bbox": [
+            119,
+            122,
+            877,
+            550
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "text",
+        "text": "",
+        "bbox": [
+            112,
+            574,
+            489,
+            863
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "text",
+        "text": "Tables 2 and 3 further show consistent gains on LLaVA-NeXT-7B and Qwen-2.5-VL-7B. On LLaVA-NeXT-7B, EvoCut obtains the best average retention under all token budgets, reaching 98.0%, 94.9%, and 91.4% when retaining 640, 320, and 160 tokens. The advantage becomes larger as the token budget decreases, suggesting that multilayer evolution information is particularly useful under aggressive compression. On Qwen-2.5-VL-7B, EvoCut improves the best competing average retention from 95.5% to 96.2% at the 20% token budget and from 90.5% to 91.7% at the 10% token budget. These results indicate that multi-layer evolution deviation provides a robust token-importance criterion across different LVLM visual encoding settings. ",
+        "bbox": [
+            112,
+            864,
+            489,
+            910
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "text",
+        "text": "",
+        "bbox": [
+            507,
+            574,
+            884,
+            783
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "text",
+        "text": "Video understanding tasks. We next apply Evo-Cut to Video-LLaVA-7B to evaluate whether the proposed criterion generalizes to video understanding, where each input contains substantially more visual tokens across multiple frames. We evaluate on TGIF-QA, MSVD-QA, and MSRVTT-QA (Jang et al., 2017; Chen and Dolan, 2011; Xu et al., 2016). Detailed dataset descriptions are provided ",
+        "bbox": [
+            507,
+            791,
+            884,
+            921
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "page_number",
+        "text": "6 ",
+        "bbox": [
+            492,
+            942,
+            505,
+            954
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "table",
+        "img_path": "images/1c80b8aa95357a7afaa1d9ab0414868d9e7a6361be9e7653f8cca3e9377471f1.jpg",
+        "table_caption": [
+            "Table 2: Main results on LLaVA-NeXT-7B. Avg. reports the normalized average performance relative to the vanilla upper bound. "
+        ],
+        "table_footnote": [],
+        "table_body": "<table><tr><td>Method</td><td>GQA</td><td>MMB</td><td> $MMB^{CN}$ </td><td>MME</td><td>POPE</td><td> $VQA^{V2}$ </td><td> $VQA^{Text}$ </td><td>Avg.</td></tr><tr><td colspan=\"9\">Upper Bound, 2880 Tokens (100%)</td></tr><tr><td>Vanilla</td><td>64.2</td><td>67.4</td><td>60.6</td><td>1851</td><td>86.5</td><td>81.8</td><td>61.3</td><td>100%</td></tr><tr><td colspan=\"9\">Retain 640 Tokens (↓ 77.8%)</td></tr><tr><td>PDrop</td><td>60.6</td><td>65.5</td><td>58.5</td><td>1781</td><td>83.7</td><td>78.3</td><td>57.4</td><td>95.8%</td></tr><tr><td>VisionZip</td><td>61.3</td><td>66.2</td><td>57.8</td><td>1787</td><td>85.9</td><td>79.1</td><td>60.2</td><td>97.1%</td></tr><tr><td>ApET</td><td>63.0</td><td>65.3</td><td>59.3</td><td>1815</td><td>87.2</td><td>79.2</td><td>57.9</td><td>97.6%</td></tr><tr><td>EvoCut</td><td>63.2</td><td>66.3</td><td>59.2</td><td>1804</td><td>86.3</td><td>79.2</td><td>59.7</td><td>98.0%</td></tr><tr><td colspan=\"9\">Retain 320 Tokens (↓ 88.9%)</td></tr><tr><td>PDrop</td><td>56.4</td><td>63.4</td><td>56.2</td><td>1663</td><td>77.6</td><td>73.5</td><td>54.4</td><td>90.4%</td></tr><tr><td>VisionZip</td><td>59.3</td><td>63.1</td><td>55.3</td><td>1702</td><td>82.1</td><td>76.2</td><td>58.9</td><td>93.3%</td></tr><tr><td>ApET</td><td>61.0</td><td>63.5</td><td>56.6</td><td>1783</td><td>85.6</td><td>75.8</td><td>54.4</td><td>94.2%</td></tr><tr><td>EvoCut</td><td>60.9</td><td>63.7</td><td>56.9</td><td>1743</td><td>85.8</td><td>76.4</td><td>57.9</td><td>94.9%</td></tr><tr><td colspan=\"9\">Retain 160 Tokens (↓ 94.4%)</td></tr><tr><td>PDrop</td><td>54.9</td><td>61.8</td><td>54.9</td><td>1513</td><td>72.3</td><td>70.2</td><td>52.7</td><td>86.4%</td></tr><tr><td>VisionZip</td><td>55.5</td><td>60.1</td><td>52.7</td><td>1628</td><td>74.8</td><td>71.4</td><td>56.2</td><td>88.0%</td></tr><tr><td>ApET</td><td>58.4</td><td>60.8</td><td>52.3</td><td>1680</td><td>82.6</td><td>72.7</td><td>53.8</td><td>90.1%</td></tr><tr><td>EvoCut</td><td>59.4</td><td>62.0</td><td>53.6</td><td>1653</td><td>82.2</td><td>73.0</td><td>57.3</td><td>91.4%</td></tr></table>",
+        "bbox": [
+            117,
+            136,
+            489,
+            351
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "table",
+        "img_path": "images/dda65eeed4e74f6a7bc0c3745c5f1aca9999cdb9f29d734d866623af50a235be.jpg",
+        "table_caption": [
+            "Table 4: Performance on video understanding tasks. The original number of visual tokens per video in Video-LLaVA is 2048, while all compression methods retain only 256 tokens. "
+        ],
+        "table_footnote": [],
+        "table_body": "<table><tr><td rowspan=\"2\">Method</td><td colspan=\"2\">TGIF</td><td colspan=\"2\">MSVD</td><td colspan=\"2\">MSRVTT</td><td colspan=\"2\">Avg.</td></tr><tr><td>Acc</td><td>Score</td><td>Acc</td><td>Score</td><td>Acc</td><td>Score</td><td>Acc</td><td>Score</td></tr><tr><td>Video-LLaVA</td><td>46.9</td><td>3.34</td><td>69.8</td><td>3.91</td><td>57.1</td><td>3.49</td><td>100%</td><td>100%</td></tr><tr><td rowspan=\"2\">FastV</td><td>44.2</td><td>3.29</td><td>60.3</td><td>3.72</td><td>40.6</td><td>3.18</td><td rowspan=\"2\">83.9%</td><td rowspan=\"2\">94.9%</td></tr><tr><td>94.2%</td><td>98.5%</td><td>86.4%</td><td>95.1%</td><td>77.1%</td><td>91.1%</td></tr><tr><td rowspan=\"2\">SparseVLM</td><td>45.9</td><td>3.32</td><td>68.6</td><td>3.90</td><td>32.9</td><td>3.02</td><td rowspan=\"2\">84.6%</td><td rowspan=\"2\">95.2%</td></tr><tr><td>98.9%</td><td>99.4%</td><td>98.3%</td><td>99.7%</td><td>57.6%</td><td>86.5%</td></tr><tr><td rowspan=\"2\">PDrop</td><td>40.3</td><td>3.21</td><td>61.5</td><td>3.74</td><td>41.8</td><td>3.19</td><td rowspan=\"2\">82.4%</td><td rowspan=\"2\">94.4%</td></tr><tr><td>85.9%</td><td>96.1%</td><td>88.1%</td><td>95.7%</td><td>73.2%</td><td>91.4%</td></tr><tr><td rowspan=\"2\">VisionZip</td><td>44.3</td><td>3.29</td><td>65.2</td><td>3.83</td><td>54.5</td><td>3.43</td><td rowspan=\"2\">94.4%</td><td rowspan=\"2\">98.2%</td></tr><tr><td>94.5%</td><td>98.5%</td><td>93.4%</td><td>98.0%</td><td>95.4%</td><td>98.3%</td></tr><tr><td rowspan=\"2\">EvoCut</td><td>46.4</td><td>3.34</td><td>69.2</td><td>3.93</td><td>55.8</td><td>3.46</td><td rowspan=\"2\">98.6%</td><td rowspan=\"2\">99.9%</td></tr><tr><td>98.9%</td><td>100%</td><td>99.1%</td><td>100.5%</td><td>97.7%</td><td>99.1%</td></tr></table>",
+        "bbox": [
+            117,
+            442,
+            485,
+            592
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "text",
+        "text": "in Appendix A.2. ",
+        "text_level": 1,
+        "bbox": [
+            112,
+            617,
+            245,
+            631
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "text",
+        "text": "As shown in Table 4, EvoCut retains 98.6% of the average accuracy and 99.9% of the average score while reducing the number of visual tokens per video from 2048 to 256. Compared with the strongest baseline, EvoCut improves average accuracy retention from 94.4% to 98.6% and average score retention from 98.2% to 99.9%. This shows that evolution-aware scoring remains effective when important visual evidence is distributed across both spatial and temporal dimensions. ",
+        "bbox": [
+            112,
+            632,
+            487,
+            791
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "text",
+        "text": "Efficiency Analysis. We also compare total inference time, prefilling time, and FLOPs to evaluate practical efficiency gains. As shown in Tables 5 and 6, EvoCut consistently reduces total inference time and prefilling latency under matched token budgets. On LLaVA-1.5-7B, EvoCut reduces the total evaluation time from 17:05 to 11:53 and the prefilling time from 102ms to 68.4ms, achieving 1.44× and 1.49× speedups, respectively. On LLaVA-NeXT-7B, EvoCut further achieves 2.90× total-time and 2.98× prefilling speedups. Although VisionZip obtains marginally lower TFLOPs, Evo-Cut achieves the lowest wall-clock latency on both backbones, indicating limited scoring overhead while effectively reducing the cost of subsequent multimodal inference. A detailed FLOPs analysis is presented in Appendix A.3. ",
+        "bbox": [
+            112,
+            802,
+            489,
+            913
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "table",
+        "img_path": "images/48936a4781141426a931b5edc35786b23abbc9e99b13acc8738397f0e1181a43.jpg",
+        "table_caption": [
+            "Table 3: Performance on Qwen-2.5-VL-7B for image understanding. The original number of visual tokens is dynamic, ranging from 256 to 2048. "
+        ],
+        "table_footnote": [],
+        "table_body": "<table><tr><td>Method</td><td>GQA</td><td>POPE</td><td>SQA</td><td>MME</td><td>MMB</td><td>Avg.</td></tr><tr><td colspan=\"7\">Upper Bound, 256–2048 Tokens (100%)</td></tr><tr><td>Vanilla</td><td>60.5</td><td>86.2</td><td>76.7</td><td>2327</td><td>83.3</td><td>100%</td></tr><tr><td colspan=\"7\">Retain 20% Tokens on Average (↓ 80%)</td></tr><tr><td>PDrop</td><td>55.1</td><td>78.4</td><td>70.9</td><td>2117</td><td>77.3</td><td>91.6%</td></tr><tr><td>VisionZip</td><td>56.8</td><td>82.4</td><td>76.3</td><td>2134</td><td>79.3</td><td>95.2%</td></tr><tr><td>ApET</td><td>57.0</td><td>83.6</td><td>75.5</td><td>2211</td><td>77.4</td><td>95.5%</td></tr><tr><td>EvoCut</td><td>57.1</td><td>83.4</td><td>76.7</td><td>2227</td><td>78.5</td><td>96.2%</td></tr><tr><td colspan=\"7\">Retain 10% Tokens on Average (↓ 90%)</td></tr><tr><td>PDrop</td><td>52.0</td><td>74.8</td><td>69.7</td><td>1886</td><td>73.6</td><td>86.6%</td></tr><tr><td>VisionZip</td><td>52.4</td><td>78.9</td><td>74.1</td><td>2003</td><td>75.6</td><td>90.3%</td></tr><tr><td>ApET</td><td>53.4</td><td>79.3</td><td>74.0</td><td>2030</td><td>73.8</td><td>90.5%</td></tr><tr><td>EvoCut</td><td>52.8</td><td>79.2</td><td>74.5</td><td>2124</td><td>75.8</td><td>91.7%</td></tr></table>",
+        "bbox": [
+            504,
+            136,
+            887,
+            351
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "text",
+        "text": "",
+        "bbox": [
+            507,
+            376,
+            882,
+            537
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "text",
+        "text": "Qualitative Analysis. Qualitative examples in Appendix A.5 show that EvoCut tends to retain tokens on foreground objects, text regions, and small targets, while filtering out background or repetitivetexture regions. This supports cross-layer evolution deviation as a useful signal for identifying informative visual tokens. ",
+        "bbox": [
+            507,
+            545,
+            882,
+            656
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "text",
+        "text": "4.3 Ablation Studies ",
+        "text_level": 1,
+        "bbox": [
+            507,
+            667,
+            687,
+            682
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "text",
+        "text": "Ablation studies examine three key design choices in EvoCut: the number of group evolution directions, the starting layer for score accumulation, and the EMA decay factor. All ablations are conducted on LLaVA-1.5-7B with 64 retained visual tokens unless otherwise specified. ",
+        "bbox": [
+            507,
+            688,
+            882,
+            784
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "text",
+        "text": "Effect of the number of evolution directions. To examine how the granularity of group evolution modeling affects token scoring, this ablation varies the number of group evolution directions M . As shown in Table 7, increasing M from 2 to 8 improves the normalized average performance from 91.8% to 95.0%, while further increasing it to 16 reduces the average to 93.5%. Accordingly, M = 8 is used as the default cluster number. This result supports our observation that visual tokens follow multiple evolution directions, while using too many directions may over-fragment shared directions and introduce noisy estimates. ",
+        "bbox": [
+            507,
+            791,
+            884,
+            921
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "page_number",
+        "text": "",
+        "bbox": [
+            492,
+            942,
+            504,
+            953
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "table",
+        "img_path": "images/426aba93424568e7755227a1d8c5dd51bb6bc3daa7b3d4329659798a8b78d3ac.jpg",
+        "table_caption": [
+            "Table 5: Efficiency analysis on LLaVA-1.5-7B using one NVIDIA A800 GPU on POPE. "
+        ],
+        "table_footnote": [],
+        "table_body": "<table><tr><td>Methods</td><td>Token</td><td>Total Time↓</td><td> $\\Delta \\uparrow$ </td><td>Prefilling Time↓</td><td> $\\Delta \\uparrow$ </td><td>TFLOPs</td></tr><tr><td>LLaVA-1.5-7B</td><td>576</td><td>17:05</td><td>1.00×</td><td>102ms</td><td>1.00×</td><td>8.82</td></tr><tr><td>+ FastV</td><td>64</td><td>15:32</td><td>1.10×</td><td>87.3ms</td><td>1.17×</td><td>2.26</td></tr><tr><td>+ SparseVLM</td><td>64</td><td>15:57</td><td>1.07×</td><td>90.1ms</td><td>1.13×</td><td>2.31</td></tr><tr><td>+ PDrop</td><td>64</td><td>12:56</td><td>1.32×</td><td>72.5ms</td><td>1.41×</td><td>2.16</td></tr><tr><td>+ VisionZip</td><td>64</td><td>12:10</td><td>1.40×</td><td>69.2ms</td><td>1.47×</td><td>2.03</td></tr><tr><td>+ V2Drop</td><td>64</td><td>12:30</td><td>1.37×</td><td>71.0ms</td><td>1.44×</td><td>2.12</td></tr><tr><td>+ ApET</td><td>64</td><td>12:02</td><td>1.42×</td><td>68.9ms</td><td>1.48×</td><td>2.09</td></tr><tr><td>+ EvoCut</td><td>64</td><td>11:53</td><td>1.44×</td><td>68.4ms</td><td>1.49×</td><td>2.04</td></tr></table>",
+        "bbox": [
+            117,
+            122,
+            489,
+            244
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "text",
+        "text": "",
+        "bbox": [
+            112,
+            268,
+            487,
+            348
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "table",
+        "img_path": "images/c5649dffeb58177ac1f4ef719250b162493e2c1053fe3257db2425409c3c3da3.jpg",
+        "table_caption": [
+            "Table 7: Ablation on the number of evolution directions. All variants retain 64 visual tokens on LLaVA-1.5-7B, and M = 8 is used as the default setting. "
+        ],
+        "table_footnote": [],
+        "table_body": "<table><tr><td>Variant</td><td>GQA</td><td>MMB</td><td>MME</td><td>POPE</td><td>SQA</td><td> $VQA^{Text}$ </td><td>Avg.</td></tr><tr><td>M=2</td><td>55.1</td><td>56.7</td><td>1640</td><td>82.6</td><td>67.7</td><td>53.9</td><td>91.8%</td></tr><tr><td>M=4</td><td>54.6</td><td>58.7</td><td>1676</td><td>82.2</td><td>68.2</td><td>55.1</td><td>92.9%</td></tr><tr><td>M=8</td><td>56.6</td><td>61.8</td><td>1692</td><td>83.9</td><td>68.8</td><td>55.7</td><td>95.0%</td></tr><tr><td>M=16</td><td>55.6</td><td>59.4</td><td>1662</td><td>83.0</td><td>67.8</td><td>55.9</td><td>93.5%</td></tr></table>",
+        "bbox": [
+            119,
+            414,
+            485,
+            483
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "text",
+        "text": "Effect of the starting layer. To study how much cross-layer history is needed for stable token scoring, this ablation varies the layer from which Evo-Cut starts accumulating token-importance scores. Table 8 shows that starting from layer 12 achieves the best MME and POPE scores and ties for the best TextVQA result, while keeping prefilling latency close to the fastest setting. Accordingly, the middle-layer setting is used as the default. This suggests that starting too early may include noisy low-level variations, whereas starting too late loses useful cross-layer evolution history. ",
+        "bbox": [
+            112,
+            501,
+            489,
+            694
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "table",
+        "img_path": "images/af196f11e49cbf1f4f439a37c09d16e8a11690ba72db381a5af0b1e65cc1b694.jpg",
+        "table_caption": [
+            "Table 8: Ablation on the starting layer for computing token importance. All variants retain 64 visual tokens on LLaVA-1.5-7B. "
+        ],
+        "table_footnote": [],
+        "table_body": "<table><tr><td>Variant</td><td>MME</td><td>POPE</td><td>SQA</td><td> $VQA^{Text}$ </td><td>Prefilling Time↓</td></tr><tr><td>Start at layer 1</td><td>1691</td><td>83.2</td><td>69.2</td><td>55.6</td><td>69.5ms</td></tr><tr><td>Start at layer 8</td><td>1684</td><td>82.6</td><td>68.4</td><td>55.7</td><td>68.9ms</td></tr><tr><td>Start at layer 12</td><td>1692</td><td>83.9</td><td>68.8</td><td>55.7</td><td>68.4ms</td></tr><tr><td>Start at layer 20</td><td>1636</td><td>82.5</td><td>68.2</td><td>55.2</td><td>67.7ms</td></tr></table>",
+        "bbox": [
+            117,
+            760,
+            485,
+            835
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "text",
+        "text": "Effect of EMA decay factor. To assess the effect of historical-score weighting, this ablation studies the EMA decay factor α for multi-layer score accumulation. As shown in Table 9, α = 0.95 achieves the best normalized average performance of 95.0% and obtains the best results on most reported benchmarks. Accordingly, α = 0.95 is adopted as the default EMA decay factor. This indicates that retaining sufficient history is important for stable token scoring, but overly slow updates may suppress informative changes from later layers. ",
+        "bbox": [
+            112,
+            853,
+            489,
+            917
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "table",
+        "img_path": "images/2cb04674494bfa51b8e5cc8b0797d7485e2550360ef9512c2af9c84dfc4a1e08.jpg",
+        "table_caption": [
+            "Table 6: Efficiency analysis on LLaVA-NeXT-7B using one NVIDIA A800 GPU on POPE. "
+        ],
+        "table_footnote": [],
+        "table_body": "<table><tr><td>Methods</td><td>Token</td><td>Total Time↓</td><td> $\\Delta \\uparrow$ </td><td>Prefilling Time↓</td><td> $\\Delta \\uparrow$ </td><td>TFLOPs</td></tr><tr><td>LLaVA-NeXT-7B</td><td>2880</td><td>35:16</td><td>1.00×</td><td>206ms</td><td>1.00×</td><td>31.03</td></tr><tr><td>+ FastV</td><td>160</td><td>28:27</td><td>1.24×</td><td>117ms</td><td>1.76×</td><td>7.35</td></tr><tr><td>+ SparseVLM</td><td>160</td><td>30:26</td><td>1.16×</td><td>136ms</td><td>1.51×</td><td>7.62</td></tr><tr><td>+ PDrop</td><td>160</td><td>13:45</td><td>2.56×</td><td>79.5ms</td><td>2.59×</td><td>6.78</td></tr><tr><td>+ VisionZip</td><td>160</td><td>12:32</td><td>2.81×</td><td>69.9ms</td><td>2.95×</td><td>4.72</td></tr><tr><td>+ V2Drop</td><td>160</td><td>12:51</td><td>2.74×</td><td>73.8ms</td><td>2.79×</td><td>5.22</td></tr><tr><td>+ ApET</td><td>160</td><td>12:24</td><td>2.84×</td><td>69.7ms</td><td>2.96×</td><td>4.79</td></tr><tr><td>+ EvoCut</td><td>160</td><td>12:10</td><td>2.90×</td><td>69.1ms</td><td>2.98×</td><td>4.74</td></tr></table>",
+        "bbox": [
+            507,
+            122,
+            878,
+            240
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "text",
+        "text": "",
+        "bbox": [
+            507,
+            268,
+            884,
+            381
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "table",
+        "img_path": "images/ce6c0d2964e9d68bd4661e4579be71caed24d4fcede8fc742bbce025a637fb05.jpg",
+        "table_caption": [
+            "Table 9: Ablation on the EMA decay factor α for multilayer evolution scores. All variants retain 64 visual tokens on LLaVA-1.5-7B. "
+        ],
+        "table_footnote": [],
+        "table_body": "<table><tr><td>Variant</td><td>GQA</td><td>MMB</td><td>MME</td><td>POPE</td><td>SQA</td><td> $VQA^{Text}$ </td><td>Avg.</td></tr><tr><td> $\\alpha = 0.80$ </td><td>54.2</td><td>58.7</td><td>1596</td><td>77.8</td><td>67.3</td><td>53.5</td><td>90.6%</td></tr><tr><td> $\\alpha = 0.90$ </td><td>55.2</td><td>60.4</td><td>1643</td><td>77.0</td><td>68.7</td><td>54.8</td><td>92.2%</td></tr><tr><td> $\\alpha = 0.95$ </td><td>56.6</td><td>61.8</td><td>1692</td><td>83.9</td><td>68.8</td><td>55.7</td><td>95.0%</td></tr><tr><td> $\\alpha = 0.97$ </td><td>56.9</td><td>61.4</td><td>1657</td><td>84.2</td><td>67.9</td><td>55.0</td><td>94.3%</td></tr></table>",
+        "bbox": [
+            512,
+            447,
+            878,
+            514
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "text",
+        "text": "5 Conclusion ",
+        "text_level": 1,
+        "bbox": [
+            507,
+            531,
+            640,
+            546
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "text",
+        "text": "In this paper, we observe that visual tokens follow multiple group evolution directions across visionencoder layers, and that tokens persistently deviating from these group directions tend to carry important information. Based on this insight, we propose EvoCut, a training-free visual token compression method. EvoCut first clusters token evolution directions, then scores tokens by their deviation from these group directions, and accumulates these scores across layers. Experiments on image and video understanding across multiple LVLM backbones demonstrate that EvoCut consistently outperforms existing training-free compression methods under various token budgets. ",
+        "bbox": [
+            507,
+            557,
+            884,
+            783
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "text",
+        "text": "Limitations ",
+        "text_level": 1,
+        "bbox": [
+            507,
+            794,
+            615,
+            809
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "text",
+        "text": "Although EvoCut achieves strong performance on image and video understanding tasks, it still has several limitations. First, EvoCut requires access to the internal hidden states of the vision encoder to compute token evolution directions and perform clustering. This makes it incompatible with closedsource or API-only LVLMs where the vision encoder is not exposed, limiting its applicability in scenarios where only black-box model access is available. Second, our experiments focus on representative image and video understanding benchmarks; future work can further evaluate EvoCut on longer videos, higher-resolution inputs, more diverse multimodal reasoning tasks, and a broader range of vision-encoder backbones. ",
+        "bbox": [
+            507,
+            819,
+            882,
+            916
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "page_number",
+        "text": "8 ",
+        "bbox": [
+            492,
+            942,
+            504,
+            954
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "text",
+        "text": "",
+        "bbox": [
+            112,
+            84,
+            492,
+            230
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "text",
+        "text": "Acknowledgments ",
+        "text_level": 1,
+        "bbox": [
+            114,
+            241,
+            280,
+            258
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "text",
+        "text": "This work is supported by the Natural Science Foundation of China under Grant No. 62305086, the China Postdoctoral Science Foundation under Grant No. 2023M740901, and the Natural Science Foundation of Heilongjiang Province of China under Grant No. LH2024F032. ",
+        "bbox": [
+            112,
+            265,
+            489,
+            361
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "text",
+        "text": "References ",
+        "text_level": 1,
+        "bbox": [
+            114,
+            388,
+            213,
+            403
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "list",
+        "sub_type": "ref_text",
+        "list_items": [
+            "Jean-Baptiste Alayrac, Jeff Donahue, Pauline Luc, Antoine Miech, Iain Barr, Yana Hasson, Karel Lenc, Arthur Mensch, Katherine Millican, Malcolm Reynolds, Roman Ring, Eliza Rutherford, Serkan Cabi, Tengda Han, Zhitao Gong, Sina Samangooei, Marianne Monteiro, Jacob L. Menick, Sebastian Borgeaud, and 8 others. 2022. Flamingo: A visual language model for few-shot learning. In Advances in Neural Information Processing Systems. ",
+            "Jinze Bai, Shuai Bai, Shusheng Yang, Shijie Wang, Sinan Tan, Peng Wang, Junyang Lin, Chang Zhou, and Jingren Zhou. 2023. Qwen-VL: A versatile vision-language model for understanding, localization, text reading, and beyond. arXiv preprint arXiv:2308.12966. ",
+            "Shuai Bai, Keqin Chen, Xuejing Liu, Jialin Wang, Wenbin Ge, Sibo Song, Kai Dang, Peng Wang, Shijie Wang, Jun Tang, Humen Zhong, Yuanzhi Zhu, Mingkun Yang, Zhaohai Li, Jianqiang Wan, Pengfei Wang, Wei Ding, Zheren Fu, Yiheng Xu, and 8 others. 2025. Qwen2.5-VL technical report. arXiv preprint arXiv:2502.13923. ",
+            "Tom B. Brown, Benjamin Mann, Nick Ryder, Melanie Subbiah, Jared Kaplan, Prafulla Dhariwal, Arvind Neelakantan, Pranav Shyam, Girish Sastry, Amanda Askell, Sandhini Agarwal, Ariel Herbert-Voss, Gretchen Krueger, Tom Henighan, Rewon Child, Aditya Ramesh, Daniel M. Ziegler, Jeffrey Wu, Clemens Winter, and 12 others. 2020. Language models are few-shot learners. In Advances in Neural Information Processing Systems. ",
+            "Ricardo J. G. B. Campello, Davoud Moulavi, and Jörg Sander. 2013. Density-based clustering based on hierarchical density estimates. In Advances in Knowledge Discovery and Data Mining, pages 160–172. Springer. "
+        ],
+        "bbox": [
+            115,
+            411,
+            489,
+            921
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "list",
+        "sub_type": "ref_text",
+        "list_items": [
+            "David L. Chen and William B. Dolan. 2011. Collecting highly parallel data for paraphrase evaluation. In Annual Meeting of the Association for Computational Linguistics. ",
+            "Junjie Chen, Xuyang Liu, Zichen Wen, Yiyu Wang, Siteng Huang, and Honggang Chen. 2026. Variationaware vision token dropping for faster large visionlanguage models. In IEEE/CVF Conference on Computer Vision and Pattern Recognition. ",
+            "Liang Chen, Haozhe Zhao, Tianyu Liu, Shuai Bai, Junyang Lin, Chang Zhou, and Baobao Chang. 2024a. An image is worth 1/2 tokens after layer 2: Plug-andplay inference acceleration for large vision-language models. In European Conference on Computer Vision. ",
+            "Zhe Chen, Jiannan Wu, Wenhai Wang, Weijie Su, Guo Chen, Sen Xing, Muyan Zhong, Qinglong Zhang, Xizhou Zhu, Lewei Lu, Bin Li, Ping Luo, Tong Lu, Yu Qiao, and Jifeng Dai. 2024b. InternVL: Scaling up vision foundation models and aligning for generic visual-linguistic tasks. In IEEE/CVF Conference on Computer Vision and Pattern Recognition, pages 24185–24198. ",
+            "Wenliang Dai, Junnan Li, Dongxu Li, Anthony Meng Huat Tiong, Junqi Zhao, Weisheng Wang, Boyang Li, Pascale Fung, and Steven C. H. Hoi. 2023. InstructBLIP: Towards general-purpose visionlanguage models with instruction tuning. In Advances in Neural Information Processing Systems. ",
+            "Tri Dao. 2023. FlashAttention-2: Faster attention with better parallelism and work partitioning. arXiv preprint arXiv:2307.08691. ",
+            "Tri Dao, Daniel Y. Fu, Stefano Ermon, Atri Rudra, and Christopher Ré. 2022. FlashAttention: Fast and memory-efficient exact attention with IO-awareness. In Advances in Neural Information Processing Systems. ",
+            "Alexey Dosovitskiy, Lucas Beyer, Alexander Kolesnikov, Dirk Weissenborn, Xiaohua Zhai, Thomas Unterthiner, Mostafa Dehghani, Matthias Minderer, Georg Heigold, Sylvain Gelly, Jakob Uszkoreit, and Neil Houlsby. 2021. An image is worth 16x16 words: Transformers for image recognition at scale. In International Conference on Learning Representations. ",
+            "Yingqi Fan, Anhao Zhao, Jinlan Fu, Junlong Tong, Hui Su, Yijie Pan, Wei Zhang, and Xiaoyu Shen. 2025. VisiPruner: Decoding discontinuous cross-modal dynamics for efficient multimodal LLMs. In Proceedings of the 2025 Conference on Empirical Methods in Natural Language Processing, pages 18885–18902. ",
+            "Chaoyou Fu, Peixian Chen, Yunhang Shen, Yulei Qin, Mengdan Zhang, Xu Lin, Jinrui Yang, Xiawu Zheng, Ke Li, Xing Sun, Yunsheng Wu, and Rongrong Ji. 2023. MME: A comprehensive evaluation benchmark for multimodal large language models. arXiv preprint arXiv:2306.13394. "
+        ],
+        "bbox": [
+            510,
+            85,
+            884,
+            921
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "page_number",
+        "text": "9 ",
+        "bbox": [
+            492,
+            942,
+            505,
+            954
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "list",
+        "sub_type": "ref_text",
+        "list_items": [
+            "Yash Goyal, Tejas Khot, Douglas Summers-Stay, Dhruv Batra, and Devi Parikh. 2017. Making the V in VQA matter: Elevating the role of image understanding in visual question answering. In IEEE Conference on Computer Vision and Pattern Recognition. ",
+            "Shaohan Huang, Li Dong, Wenhui Wang, Yaru Hao, Saksham Singhal, Shuming Ma, Tengchao Lv, Lei Cui, Owais Khan Mohammed, Barun Patra, Qiang Liu, Kriti Aggarwal, Zewen Chi, Johan Bjorck, Vishrav Chaudhary, Subhojit Som, Xia Song, and Furu Wei. 2023. Language is not all you need: Aligning perception with language models. In Advances in Neural Information Processing Systems. ",
+            "Drew A. Hudson and Christopher D. Manning. 2019. GQA: A new dataset for real-world visual reasoning and compositional question answering. In IEEE Conference on Computer Vision and Pattern Recognition. ",
+            "Yunseok Jang, Yale Song, Youngjae Yu, Youngjin Kim, and Gunhee Kim. 2017. TGIF-QA: Toward spatiotemporal reasoning in visual question answering. In IEEE Conference on Computer Vision and Pattern Recognition. ",
+            "Lei Jiang, Zixun Zhang, Yuting Zeng, Chunzhao Xie, Tongxuan Liu, Zhen Li, Lechao Cheng, and Xiaohua Xu. 2025. DCP: Dual-cue pruning for efficient large vision-language models. In Proceedings of the 2025 Conference on Empirical Methods in Natural Language Processing, pages 21191–21204. ",
+            "Bohao Li, Rui Wang, Guangzhi Wang, Yuying Ge, Yixiao Ge, and Ying Shan. 2023a. SEED-Bench: Benchmarking multimodal LLMs with generative comprehension. arXiv preprint arXiv:2307.16125. ",
+            "Junnan Li, Dongxu Li, Silvio Savarese, and Steven C. H. Hoi. 2023b. BLIP-2: Bootstrapping language-image pre-training with frozen image encoders and large language models. In International Conference on Machine Learning. ",
+            "Kunchang Li, Yinan He, Yi Wang, Yizhuo Li, Wenhai Wang, Ping Luo, Yali Wang, Limin Wang, and Yu Qiao. 2023c. VideoChat: Chat-centric video understanding. arXiv preprint arXiv:2305.06355. ",
+            "Yifan Li, Yifan Du, Kun Zhou, Jinpeng Wang, Wayne Xin Zhao, and Ji-Rong Wen. 2023d. Evaluating object hallucination in large vision-language models. In Proceedings of the 2023 Conference on Empirical Methods in Natural Language Processing. ",
+            "Bin Lin, Yang Ye, Bin Zhu, Jiaxi Cui, Munan Ning, Peng Jin, and Li Yuan. 2023. Video-LLaVA: Learning united visual representation by alignment before projection. arXiv preprint arXiv:2311.10122. ",
+            "Haotian Liu, Chunyuan Li, Yuheng Li, and Yong Jae Lee. 2024a. Improved baselines with visual instruction tuning. arXiv preprint arXiv:2310.03744. ",
+            "Haotian Liu, Chunyuan Li, Qingyang Wu, and Yong Jae Lee. 2023. Visual instruction tuning. In Advances in Neural Information Processing Systems. "
+        ],
+        "bbox": [
+            107,
+            80,
+            495,
+            925
+        ],
+        "page_idx": 9
+    },
+    {
+        "type": "list",
+        "sub_type": "ref_text",
+        "list_items": [
+            "Yuan Liu, Haodong Duan, Yuanhan Zhang, Bo Li, Songyang Zhang, Wangbo Zhao, Yike Yuan, Jiaqi Wang, Conghui He, Ziwei Liu, Kai Chen, and Dahua Lin. 2024b. MMBench: Is your multi-modal model an all-around player? In European Conference on Computer Vision, pages 216–233. ",
+            "Pan Lu, Swaroop Mishra, Tanglin Xia, Liang Qiu, Kai-Wei Chang, Song-Chun Zhu, Oyvind Tafjord, Peter Clark, and Ashwin Kalyan. 2022. Learn to explain: Multimodal reasoning via thought chains for science question answering. In Advances in Neural Information Processing Systems, pages 2507–2521. ",
+            "Qiankun Ma, Ziyao Zhang, Haofei Wang, Jie Chen, Zhen Song, and Hairong Zheng. 2026. ApET: Approximation-error guided token compression for efficient VLMs. arXiv preprint arXiv:2602.19870. ",
+            "OpenAI. 2023. GPT-4 technical report. arXiv preprint arXiv:2303.08774. ",
+            "Alec Radford, Jong Wook Kim, Chris Hallacy, Aditya Ramesh, Gabriel Goh, Sandhini Agarwal, Girish Sastry, Amanda Askell, Pamela Mishkin, Jack Clark, Gretchen Krueger, and Ilya Sutskever. 2021. Learning transferable visual models from natural language supervision. In International Conference on Machine Learning. ",
+            "Yuzhang Shang, Mu Cai, Bingxin Xu, Yong Jae Lee, and Yan Yan. 2025. LLaVA-PruMerge: Adaptive token reduction for efficient large multimodal models. In IEEE/CVF International Conference on Computer Vision, pages 22857–22867. ",
+            "Amanpreet Singh, Vivek Natarajan, Meet Shah, Yu Jiang, Xinlei Chen, Dhruv Batra, Devi Parikh, and Marcus Rohrbach. 2019. Towards VQA models that can read. In IEEE Conference on Computer Vision and Pattern Recognition. ",
+            "Hugo Touvron, Thibaut Lavril, Gautier Izacard, Xavier Martinet, Marie-Anne Lachaux, Timothee Lacroix, Baptiste Roziere, Naman Goyal, Eric Hambro, Faisal Azhar, Aurelien Rodriguez, Armand Joulin, Edouard Grave, and Guillaume Lample. 2023. LLaMA: Open and efficient foundation language models. arXiv preprint arXiv:2302.13971. ",
+            "Ashish Vaswani, Noam Shazeer, Niki Parmar, Jakob Uszkoreit, Llion Jones, Aidan N. Gomez, Lukasz Kaiser, and Illia Polosukhin. 2017. Attention is all you need. In Advances in Neural Information Processing Systems. ",
+            "Zichen Wen, Yifeng Gao, Shaobo Wang, Junyuan Zhang, Qintong Zhang, Weijia Li, Conghui He, and Linfeng Zhang. 2025. Stop looking for “important tokens” in multimodal language models: Duplication matters more. In Proceedings of the 2025 Conference on Empirical Methods in Natural Language Processing, pages 9961–9980. ",
+            "Long Xing, Qidong Huang, Xiaoyi Dong, Jiajie Lu, Pan Zhang, Yuhang Zang, Yuhang Cao, Conghui He, "
+        ],
+        "bbox": [
+            507,
+            80,
+            887,
+            925
+        ],
+        "page_idx": 9
+    },
+    {
+        "type": "page_number",
+        "text": "",
+        "bbox": [
+            489,
+            942,
+            509,
+            954
+        ],
+        "page_idx": 9
+    },
+    {
+        "type": "list",
+        "sub_type": "ref_text",
+        "list_items": [
+            "Jiaqi Wang, Feng Wu, and Dahua Lin. 2025. PyramidDrop: Accelerating your large vision-language models via pyramid visual redundancy reduction. In IEEE/CVF Conference on Computer Vision and Pattern Recognition. ",
+            "Jun Xu, Tao Mei, Ting Yao, and Yong Rui. 2016. MSR-VTT: A large video description dataset for bridging video and language. In IEEE Conference on Computer Vision and Pattern Recognition. ",
+            "Senqiao Yang, Yukang Chen, Zhuotao Tian, Chengyao Wang, Jingyao Li, Bei Yu, and Jiaya Jia. 2025. VisionZip: Longer is better but not necessary in vision language models. In IEEE/CVF Conference on Computer Vision and Pattern Recognition. ",
+            "Hang Zhang, Xin Li, and Lidong Bing. 2023. Video-LLaMA: An instruction-tuned audio-visual language model for video understanding. arXiv preprint arXiv:2306.02858. ",
+            "Yuan Zhang, Chun-Kai Fan, Junpeng Ma, Wenzhao Zheng, Tao Huang, Kuan Cheng, Denis Gudovskiy, Tomoyuki Okuno, Yohei Nakata, Kurt Keutzer, and Shanghang Zhang. 2025. SparseVLM: Visual token sparsification for efficient vision-language model inference. In International Conference on Machine Learning. ",
+            "Deyao Zhu, Jun Chen, Xiaoqian Shen, Xiang Li, and Mohamed Elhoseiny. 2023. MiniGPT-4: Enhancing vision-language understanding with advanced large language models. arXiv preprint arXiv:2304.10592. "
+        ],
+        "bbox": [
+            110,
+            83,
+            490,
+            520
+        ],
+        "page_idx": 10
+    },
+    {
+        "type": "page_number",
+        "text": "11 ",
+        "bbox": [
+            489,
+            941,
+            507,
+            954
+        ],
+        "page_idx": 10
+    },
+    {
+        "type": "text",
+        "text": "A Additional Method Details ",
+        "text_level": 1,
+        "bbox": [
+            114,
+            83,
+            381,
+            98
+        ],
+        "page_idx": 11
+    },
+    {
+        "type": "text",
+        "text": "A.1 Pseudocode of EvoCut ",
+        "text_level": 1,
+        "bbox": [
+            114,
+            108,
+            341,
+            122
+        ],
+        "page_idx": 11
+    },
+    {
+        "type": "text",
+        "text": "Algorithm 1 summarizes the complete inferencetime procedure of EvoCut. Given the hidden states from the vision encoder, EvoCut starts from a selected layer $\\ell _ { 0 } .$ , computes normalized token evolution directions between adjacent layers, estimates M group evolution directions, and accumulates token-level deviation scores across layers. After the final vision-encoder layer, the top-K patch tokens are retained and sent to the multimodal projector. ",
+        "bbox": [
+            112,
+            129,
+            489,
+            274
+        ],
+        "page_idx": 11
+    },
+    {
+        "type": "code",
+        "sub_type": "algorithm",
+        "code_caption": [
+            "Algorithm 1 EvoCut visual token compression "
+        ],
+        "code_body": "Require: Vision-encoder hidden states $\\{X^{(\\ell)}\\}_{\\ell=\\ell_{0}-1}^{L}$ , number of retained tokens K, group direction number M, EMA decay factor $\\alpha$ Ensure: Compressed visual token sequence $\\hat{X}^{(L)}$ 1: Initialize token scores $s_{i}^{(\\ell_{0}-1)} \\leftarrow 0$ for all patch tokens $i = 1, \\ldots, N$ 2: for $\\ell = \\ell_{0}$ to L do\n\n3: for i = 1 to N do\n\n4: $\\vec{\\Delta}_{i}^{(\\ell)} \\leftarrow \\frac{x_{i}^{(\\ell)} - x_{i}^{(\\ell-1)}}{\\|x_{i}^{(\\ell)} - x_{i}^{(\\ell-1)}\\|_{2}}$ 5: end for\n\n6: Cluster $\\{\\vec{\\Delta}_{i}^{(\\ell)}\\}_{i=1}^{N}$ into M groups $\\{C_{m}^{(\\ell)}\\}_{m=1}^{M}$ with K-means\n\n7: for m = 1 to M do\n\n8: $\\vec{u}_{m}^{(\\ell)} \\leftarrow \\text{Norm}\\left(\\frac{1}{|C_{m}^{(\\ell)}|} \\sum_{i \\in C_{m}^{(\\ell)}} \\vec{\\Delta}_{i}^{(\\ell)}\\right)$ 9: end for\n\n10: for i = 1 to N do\n\n11: $a_{i}^{(\\ell)} \\leftarrow \\max_{m} \\cos(\\vec{\\Delta}_{i}^{(\\ell)}, \\vec{u}_{m}^{(\\ell)})$ 12: $r_{i}^{(\\ell)} \\leftarrow 1 - a_{i}^{(\\ell)}$ 13: $s_{i}^{(\\ell)} \\leftarrow \\alpha s_{i}^{(\\ell-1)} + (1 - \\alpha)r_{i}^{(\\ell)}$ 14: end for\n\n15: end for\n\n16: $S \\leftarrow$ indices of the top-K tokens according to $s_{i}^{(L)}$ 17: $\\hat{X}^{(L)} \\leftarrow \\{x_{i}^{(L)} \\mid i \\in S\\}$ 18: return $\\hat{X}^{(L)}$ ",
+        "bbox": [
+            115,
+            305,
+            489,
+            636
+        ],
+        "page_idx": 11
+    },
+    {
+        "type": "text",
+        "text": "A.2 Dataset Descriptions ",
+        "text_level": 1,
+        "bbox": [
+            114,
+            655,
+            326,
+            670
+        ],
+        "page_idx": 11
+    },
+    {
+        "type": "text",
+        "text": "We evaluate EvoCut on a diverse set of image and video understanding benchmarks to examine whether the proposed token-compression criterion preserves different types of multimodal information. The datasets used in our experiments are summarized below. ",
+        "bbox": [
+            112,
+            676,
+            487,
+            771
+        ],
+        "page_idx": 11
+    },
+    {
+        "type": "text",
+        "text": "Image understanding benchmarks. ",
+        "text_level": 1,
+        "bbox": [
+            114,
+            780,
+            393,
+            796
+        ],
+        "page_idx": 11
+    },
+    {
+        "type": "text",
+        "text": "VQAv2. VQAv2 evaluates general visual question answering over natural images and requires models to answer diverse questions about objects, attributes, actions, and scenes (Goyal et al., 2017). ",
+        "bbox": [
+            114,
+            802,
+            487,
+            881
+        ],
+        "page_idx": 11
+    },
+    {
+        "type": "text",
+        "text": "GQA. GQA focuses on compositional visual reasoning and tests whether models can answer ",
+        "bbox": [
+            114,
+            889,
+            489,
+            921
+        ],
+        "page_idx": 11
+    },
+    {
+        "type": "text",
+        "text": "questions that require object recognition, relation understanding, and multi-step reasoning (Hudson and Manning, 2019). ",
+        "bbox": [
+            534,
+            84,
+            882,
+            131
+        ],
+        "page_idx": 11
+    },
+    {
+        "type": "text",
+        "text": "TextVQA. TextVQA measures text-rich image understanding, where models must recognize and reason over textual content appearing in images (Singh et al., 2019). ",
+        "bbox": [
+            509,
+            140,
+            882,
+            204
+        ],
+        "page_idx": 11
+    },
+    {
+        "type": "text",
+        "text": "ScienceQA. ScienceQA is a multimodal science question answering benchmark that evaluates knowledge-intensive reasoning over imagequestion pairs (Lu et al., 2022). ",
+        "bbox": [
+            509,
+            212,
+            882,
+            275
+        ],
+        "page_idx": 11
+    },
+    {
+        "type": "text",
+        "text": "MME. MME provides a comprehensive evaluation of LVLM perception and cognition abilities, covering tasks such as object existence, count, position, color, and reasoning (Fu et al., 2023). ",
+        "bbox": [
+            509,
+            284,
+            882,
+            363
+        ],
+        "page_idx": 11
+    },
+    {
+        "type": "text",
+        "text": "POPE. POPE evaluates object hallucination in LVLMs through binary questions and includes random, popular, and adversarial sampling settings (Li et al., 2023d). ",
+        "bbox": [
+            509,
+            372,
+            882,
+            437
+        ],
+        "page_idx": 11
+    },
+    {
+        "type": "text",
+        "text": "MMBench and MMBench-CN. MMBench evaluates multimodal understanding with multiplechoice questions, and MMBench-CN provides a Chinese counterpart for testing cross-lingual multimodal capability (Liu et al., 2024b). ",
+        "bbox": [
+            509,
+            444,
+            882,
+            525
+        ],
+        "page_idx": 11
+    },
+    {
+        "type": "text",
+        "text": "SEED-Bench. SEED-Bench is a multidimensional benchmark for evaluating generative multimodal comprehension across images and videos (Li et al., 2023a). ",
+        "bbox": [
+            509,
+            532,
+            882,
+            596
+        ],
+        "page_idx": 11
+    },
+    {
+        "type": "text",
+        "text": "LLaVA-Bench. LLaVA-Bench contains openended image-instruction examples and is used to assess instruction-following multimodal response quality (Liu et al., 2023). ",
+        "bbox": [
+            509,
+            605,
+            882,
+            669
+        ],
+        "page_idx": 11
+    },
+    {
+        "type": "text",
+        "text": "Video understanding benchmarks. ",
+        "text_level": 1,
+        "bbox": [
+            509,
+            680,
+            784,
+            695
+        ],
+        "page_idx": 11
+    },
+    {
+        "type": "text",
+        "text": "TGIF-QA. TGIF-QA evaluates video question answering over GIF-style videos and emphasizes temporal events, actions, and repeated motion patterns (Jang et al., 2017). ",
+        "bbox": [
+            509,
+            706,
+            882,
+            771
+        ],
+        "page_idx": 11
+    },
+    {
+        "type": "text",
+        "text": "MSVD-QA. MSVD-QA is built on the MSVD video dataset and tests question answering over short web videos with diverse daily activities (Chen and Dolan, 2011). ",
+        "bbox": [
+            509,
+            778,
+            882,
+            841
+        ],
+        "page_idx": 11
+    },
+    {
+        "type": "text",
+        "text": "MSRVTT-QA. MSRVTT-QA evaluates openended video question answering on a large collection of web videos covering broad topics and scenes (Xu et al., 2016). ",
+        "bbox": [
+            509,
+            850,
+            882,
+            914
+        ],
+        "page_idx": 11
+    },
+    {
+        "type": "page_number",
+        "text": "",
+        "bbox": [
+            489,
+            942,
+            509,
+            954
+        ],
+        "page_idx": 11
+    },
+    {
+        "type": "text",
+        "text": "A.3 FLOPs Analysis ",
+        "text_level": 1,
+        "bbox": [
+            114,
+            84,
+            292,
+            99
+        ],
+        "page_idx": 12
+    },
+    {
+        "type": "text",
+        "text": "EvoCut reduces the computational cost mainly by shortening the visual sequence before the multimodal projector and the LLM prefilling stage. Since compression is performed at the output of the vision encoder, EvoCut does not reduce the FLOPs of the vision encoder itself. Instead, it reduces the FLOPs of all subsequent modules whose cost depends on the number of visual tokens. ",
+        "bbox": [
+            112,
+            105,
+            487,
+            231
+        ],
+        "page_idx": 12
+    },
+    {
+        "type": "text",
+        "text": "Let N denote the original number of visual tokens and K denote the number of retained visual tokens after compression. Let T be the number of text tokens, d be the hidden size of the LLM, $d _ { \\mathrm { f } }$ be the feed-forward dimension, and $L _ { \\mathrm { l l m } }$ be the number of LLM layers. For a decoder-only Transformer layer, the prefilling FLOPs can be approximated, up to constant factors, as ",
+        "bbox": [
+            112,
+            234,
+            489,
+            362
+        ],
+        "page_idx": 12
+    },
+    {
+        "type": "equation",
+        "text": "$$\n\\mathcal {F} _ {\\text { layer }} (S) \\approx 4 S d ^ {2} + 2 S ^ {2} d + 2 S d d _ {\\mathrm{ff}}, \\tag {7}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            159,
+            367,
+            487,
+            385
+        ],
+        "page_idx": 12
+    },
+    {
+        "type": "text",
+        "text": "where $S = T { + } N$ before compression and $S = T \\mathrm { - }$ 上 K after compression. The three terms correspond to attention projections, self-attention computation, and feed-forward layers, respectively. Therefore, the LLM-side FLOPs reduction is approximately ",
+        "bbox": [
+            112,
+            391,
+            489,
+            472
+        ],
+        "page_idx": 12
+    },
+    {
+        "type": "equation",
+        "text": "$$\n\\begin{array}{l} \\Delta \\mathcal {F} _ {\\mathrm{llm}} \\approx L _ {\\mathrm{llm}} \\left[ \\mathcal {F} _ {\\text {layer}} (T + N) \\right. \\tag {8} \\\\ \\left. - \\mathcal {F} _ {\\mathrm{layer}} (T + K) \\right]. \\\\ \\end{array}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            184,
+            476,
+            487,
+            514
+        ],
+        "page_idx": 12
+    },
+    {
+        "type": "text",
+        "text": "This reduction contains both linear terms in the sequence length and the quadratic self-attention term. Thus, the benefit becomes more significant for high-resolution images and videos, where N is large. ",
+        "bbox": [
+            112,
+            519,
+            487,
+            598
+        ],
+        "page_idx": 12
+    },
+    {
+        "type": "text",
+        "text": "The multimodal projector also benefits from token reduction. If the projector maps each visual token from dimension $d _ { v }$ to the LLM hidden size $d ,$ its FLOPs decrease from approximately $2 N d _ { v } d$ to $2 K d _ { v } d .$ . Although this saving is smaller than the LLM-side reduction, it further lowers the prefilling cost. ",
+        "bbox": [
+            112,
+            599,
+            487,
+            709
+        ],
+        "page_idx": 12
+    },
+    {
+        "type": "text",
+        "text": "EvoCut introduces only a lightweight scoring overhead. For $L _ { e }$ evaluated layer transitions, token-direction computation costs $O ( L _ { e } N d _ { v } )$ . Kmeans clustering and nearest-direction scoring cost $O ( L _ { e } I N M d _ { v } )$ and $O ( L _ { e } N M d _ { v } )$ , respectively, where I is the number of K-means iterations and M is the number of group evolution directions. Since we use a small default value $M = 8$ and do not perform any additional vision-encoder forward pass, this overhead is small compared with the FLOPs saved in the LLM prefilling stage. For LLaVA-1.5- 7B, we estimate this overhead under the default setting with $N = 5 7 6 , d _ { v } = 1 0 2 4 , M = 8 , L _ { e } = 1 3 .$ , and I = 2 K-means iterations. The resulting Evo-Cut scoring cost is approximately 0.40 GFLOPs, i.e., 0.00040 TFLOPs. Compared with the 2.04 TFLOPs of LLaVA-1.5-7B after compression to 64 visual tokens, this overhead accounts for only about 0.020% of the total inference FLOPs. ",
+        "bbox": [
+            112,
+            712,
+            489,
+            921
+        ],
+        "page_idx": 12
+    },
+    {
+        "type": "text",
+        "text": "",
+        "bbox": [
+            507,
+            84,
+            884,
+            179
+        ],
+        "page_idx": 12
+    },
+    {
+        "type": "text",
+        "text": "The measured TFLOPs in Tables 5 and 6 are consistent with this analysis. On LLaVA-1.5-7B, reducing visual tokens from 576 to 64 lowers TFLOPs from 8.82 to 2.04, corresponding to a 76.9% reduction. On LLaVA-NeXT-7B, reducing visual tokens from 2880 to 160 lowers TFLOPs from 31.03 to 4.74, corresponding to an 84.7% reduction. These results show that visual token compression substantially reduces the dominant prefilling computation, while the remaining cost mainly comes from the unchanged vision encoder and lightweight EvoCut scoring. ",
+        "bbox": [
+            507,
+            181,
+            882,
+            374
+        ],
+        "page_idx": 12
+    },
+    {
+        "type": "chart",
+        "img_path": "images/df8de5d721d20c5d88858c56aa75fba8b792c39cdc60c4b7d948fcf50e7abf03.jpg",
+        "content": "Qwen2.5-VL-7B — POPE\n| VIT Encoder Layer Index | Qwen2.5-VL-7B — TextVQA |\n|---|---|\n| 1 | 2.3 |\n| 2 | 2.5 |\n| 3 | 4.8 |\n| 4 | 4.9 |\n| 5 | 5.1 |\n| 6 | 8.3 |\n| 7 | 6.6 |\n| 8 | 11.1 |\n| 9 | 3.5 |\n| 10 | 5.7 |\n| 11 | 2.8 |\n| 12 | 6.7 |\n| 13 | 3.9 |\n| 14 | 3.2 |\n| 15 | 6.7 |\n| 16 | 6.4 |\n| 17 | 4.6 |\n| 18 | 4.4 |\n| 19 | 4.1 |\n| 20 | 5.3 |\n| 21 | 5.9 |\n| 22 | 9.7 |\n| 23 | 11.6 |\n| 24 | 15.4 |\n| 25 | 12.4 |\n| 26 | 12.2 |\n| 27 | 14.8 |\n| 28 | 15.0 |\n| 29 | 13.8 |\n| 30 | 15.3 |\n| 31 | 7.8 |\n| 32 | 8.4 |\nThe chart displays two vertical bar charts comparing the number of evolution directions for each VIT Encoder Layer Index in Qwen2.5-VL-7B and TextVQA models. The Y-axis represents the number of evolution directions, and the X-axis represents the VIT Encoder Layer Index (1 to 32). The top chart shows the absolute direction count per layer, while the bottom chart shows the corresponding direction count per layer. Both charts use blue bars to represent values for each layer, with numerical labels above each bar indicating the direction count for that layer. The text series 'TextVQA' is shown in the legend but not plotted on the charts.",
+        "chart_caption": [
+            "A.4 Evolution Deviation Visualization ",
+            "Figure 5: Supplementary visualization for the layerwise token evolution analysis in Section 3.2. The figure further illustrates how token evolution directions deviate from group evolution directions across multiple visionencoder layers, complementing the findings in Figure 3. "
+        ],
+        "chart_footnote": [],
+        "sub_type": "bar",
+        "bbox": [
+            537,
+            414,
+            853,
+            592
+        ],
+        "page_idx": 12
+    },
+    {
+        "type": "text",
+        "text": "A.5 Qualitative Visualization ",
+        "text_level": 1,
+        "bbox": [
+            507,
+            692,
+            756,
+            707
+        ],
+        "page_idx": 12
+    },
+    {
+        "type": "text",
+        "text": "Figure 6 provides qualitative examples of token retention after EvoCut compression. Retained tokens are concentrated on visually informative regions, while filtered tokens mostly lie in background and repetitive-texture areas. ",
+        "bbox": [
+            507,
+            712,
+            882,
+            791
+        ],
+        "page_idx": 12
+    },
+    {
+        "type": "page_number",
+        "text": "13 ",
+        "bbox": [
+            489,
+            941,
+            509,
+            954
+        ],
+        "page_idx": 12
+    },
+    {
+        "type": "image",
+        "img_path": "images/d7b899390faa9d52c836d19cfff07a4ee82fbf264e776ca538b99a29146bfc27.jpg",
+        "image_caption": [
+            "Figure 6: Qualitative visualization of token retention after EvoCut compression. Retained tokens (highlighted) are concentrated on visually informative regions, while filtered tokens mostly lie in background and repetitive-texture areas. "
+        ],
+        "image_footnote": [],
+        "content": "",
+        "bbox": [
+            110,
+            92,
+            825,
+            858
+        ],
+        "page_idx": 13
+    },
+    {
+        "type": "page_number",
+        "text": "14 ",
+        "bbox": [
+            489,
+            942,
+            510,
+            954
+        ],
+        "page_idx": 13
+    }
+]

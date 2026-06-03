@@ -19,20 +19,18 @@
   </header>
   <nav class="site-nav" aria-label="主导航">
     <a class="nav-link" href="../index.html">头版</a>
-<a class="nav-link active" href="../issues/2026-06-02.html">今日速递</a>
+<a class="nav-link" href="../issues/2026-06-03.html">今日速递</a>
 <a class="nav-link" href="../pages/catalog.html">论文目录</a>
 <a class="nav-link" href="../pages/timeline.html">时间线</a>
   </nav>
   <main><article class="paper-detail issue-detail">
   <div class="paper-main">
     <div class="kicker">Daily issue · 2026-06-02 · CCF A/B 会议优先</div>
-    <h1 class="paper-headline">6 月 2 日：Internalizing Temporal Consistency in Video 等视觉表征主线更新</h1>
-    <p class="dek">本期聚焦通用视觉表征、视觉语言预训练与视频自监督中最值得跟进的论文，并保留 CCF A/B、OpenReview 与 arXiv 状态线索。</p>
+    <h1 class="paper-headline">6 月 2 日：Internalizing Temporal Consistency in Video 等视觉表征论文归档</h1>
+    <p class="dek">本页按日期归档近期论文，保留优先级、主题、来源与方法线索，方便回看同一批工作的研究脉络。</p>
     <div class="feature-body">
-      <p class="lead dropcap">先读 Internalizing Temporal Consistency in Video OCL，它最直接服务通用视觉自监督：无标签视频、slot 表征、跨帧一致性和重建目标之间的关系都值得细看。第二读 SOCO，重点不是 benchmark 本身，而是它把视觉基础模型的对象部件结构能力拆成 semantic correspondence，可作为 DINO/CLIP/SAM 类模型的补充评测。第三读 IC-VCO，看细粒度视觉负样本如何减少 VLM hallucination，并思考这种视觉差异信号能否前移到预训练阶段。Diversity Matters、iSAE、ReGuLaR 更像诊断/解释/推理侧补充，适合快速扫读；YARD 只需看 register token 替代 patch token 的 degraded branch 设计。</p>
+      <p class="lead dropcap">先读 Internalizing Temporal Consistency in Video。把跨帧一致性从显式 slot 对比损失改成模型结构和重建目标，最接近视频自监督表征。 其余论文按 P1/P2 与主题顺序扫读，重点看方法图、消融设置和是否能迁移到通用视觉表征。</p>
       <h2>论文索引</h2>
-      <table class="compact-table"><thead><tr><th>优先级</th><th>论文</th><th>类型</th><th>相关性</th><th>一句话理由</th></tr></thead><tbody><tr><td>P0</td><td>Internalizing Temporal Consistency in Video Object-Centric Learning without Explicit Regularization</td><td>arXiv backfill</td><td>高</td><td>把跨帧一致性从显式 slot 对比损失改成模型结构和重建目标，最接近视频自监督表征。</td></tr><tr><td>P1</td><td>SOCO: Benchmarking Semantic Object Correspondence in Vision Foundation Models</td><td>arXiv + project</td><td>高</td><td>用细粒度语义 correspondence 直接评估 DINO/CLIP/SAM 类视觉基础模型是否学到可迁移对象结构。</td></tr><tr><td>P2</td><td>Learning from Fine-Grained Visual Discrepancies: Mitigating Multimodal Hallucinations via In-Context Visual Contrastive Optimization</td><td>arXiv + ICML 2026 Poster</td><td>中高</td><td>把视觉负样本做成同上下文对比训练，关注 VLM 是否真的利用细粒度视觉证据。</td></tr><tr><td>P2</td><td>Diversity Matters: Revisiting Test-Time Compute in Vision-Language Models</td><td>arXiv + ICML 2026 Poster</td><td>中</td><td>分析 VLM 推理时 compute 为什么常失效，结论指向视觉-语言表征/输出多样性不足。</td></tr><tr><td>P3</td><td>Toward Identifiable Sparse Autoencoders</td><td>arXiv + ICML 2026 Poster</td><td>中</td><td>不是视觉专属，但 sparse autoencoder 稳定性直接影响 DINO/CLIP 等表征解释。</td></tr><tr><td>P3</td><td>ReGuLaR: Relation-Grounded Latent Reasoning for Large Vision-Language Models</td><td>arXiv</td><td>中</td><td>把连续 latent reasoning 绑定到对象和关系证据，对视觉 token/中间表征设计有启发。</td></tr><tr><td>扫读</td><td>YARD: Y-Architecture Register Decoding for Efficient Hallucination Mitigation in Large Vision-Language Models</td><td>arXiv</td><td>中低</td><td>训练免费推理方法，但 register token 替代局部视觉 token 的设计可帮助理解视觉证据粒度。</td></tr></tbody></table>
-      <h2>主线阅读</h2>
       <div class="paper-list issue-list"><article class="paper-card" data-category="arXiv backfill" data-priority="P0" data-date="2026-06-02" data-title="internalizing temporal consistency in video object-centric learning without explicit regularization" data-keywords="internalizing temporal consistency in video object-centric learning without explicit regularization internalizing temporal consistency in video arxiv backfill p0 2026-06-02 arxiv backfill 把跨帧一致性从显式 slot 对比损失改成模型结构和重建目标，最接近视频自监督表征 高相关；详见方法、贡献和实验边界。">
   <a class="paper-thumb paper-thumb-text" href="../papers/2605.31508.html">
     <img src="../assets/mineru/2605.31508/images/5f63c51538eef9e73170b7b0995371e929dd15bb8d36968e86099b494295989a.jpg" alt="Internalizing Temporal Consistency in Video figure"><span>P0</span>
@@ -120,18 +118,17 @@
     </div>
   </div>
   <aside class="paper-side">
-    <div class="side-box"><h4>今日重点</h4><p>TextTeacher、MDM、EvoVid、Ablate-to-Validate。</p></div>
-    <div class="side-box"><h4>会议口径</h4><p>只把 CCF A/B 放进主提醒；临近截止或 CCF C 仅记录。</p></div>
     <div class="side-box"><h4>阅读重点</h4><p>先看 P1/P2 与方法图，再扫状态变化和边界案例。</p></div>
+    <div class="side-box"><h4>会议口径</h4><p>主提醒只保留 CCF A/B；CCF C 与过期截止仅作状态记录。</p></div>
   </aside>
 </article></main>
-  <aside class="conf-float" data-conf-reminder="2026-06-02-main-ddl" aria-label="CCF A/B 主投稿提醒">
+  <aside class="conf-float" data-conf-reminder="2026-06-03-main-ddl" aria-label="CCF A/B 主投稿提醒">
   <button class="conf-close" type="button" aria-label="关闭会议提醒">×</button>
   <details open>
     <summary>CCF A/B 主投稿提醒</summary>
     <div class="conf-list"><a class="conf-item " href="https://github.com/ccfddl/ccf-deadlines/blob/main/conference/AI/aaai.yml">
   <span><b>AAAI 2027</b><em>CCF A · Main paper submission</em></span>
-  <strong>55 天</strong>
+  <strong>54 天</strong>
   <small>2026-07-27 · CCF DDL: abstract 2026-07-20；进入 1 个月窗口后重点提醒。</small>
 </a></div>
   </details>
@@ -144,7 +141,7 @@
   (() => {
     const box = document.querySelector('[data-conf-reminder]');
     if (!box) return;
-    const key = `visualSslConfReminderClosed:${box.dataset.confReminder || '2026-06-02-main-ddl'}`;
+    const key = `visualSslConfReminderClosed:${box.dataset.confReminder || '2026-06-03-main-ddl'}`;
     try {
       if (localStorage.getItem(key) === '1') box.hidden = true;
     } catch (err) {}

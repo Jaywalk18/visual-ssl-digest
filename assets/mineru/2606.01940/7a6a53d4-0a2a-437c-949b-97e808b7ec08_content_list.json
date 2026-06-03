@@ -1,0 +1,1577 @@
+[
+    {
+        "type": "text",
+        "text": "SCAPO: Self-Supervised Category-Level Articulated Pose Estimation from a Single 3D Observation ",
+        "text_level": 1,
+        "bbox": [
+            111,
+            128,
+            883,
+            174
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "Can Zhang Gim Hee Lee ",
+        "bbox": [
+            377,
+            204,
+            617,
+            220
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "Department of Computer Science, National University of Singapore ",
+        "bbox": [
+            230,
+            222,
+            764,
+            239
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "can.zhang@u.nus.edu gimhee.lee@nus.edu.sg ",
+        "bbox": [
+            299,
+            243,
+            692,
+            255
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "Abstract ",
+        "text_level": 1,
+        "bbox": [
+            248,
+            291,
+            325,
+            306
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "Existing methods for category-level object articulation from a single 3D observation often rely on dense supervision, multi-frame inputs, or CAD templates, and still struggle to disentangle geometry from articulation or to recover explicit joint parameters. We propose SCAPO, a self-supervised framework that estimates canonical geometry, rigid part segmentation, and joint pivots, axes, and articulation states from a single RGB-D observation without ground-truth labels or category-specific models. Our SCAPO first uses an SE(3)-equivariant vector-neuron autoencoder to factor out global pose and align diverse instances into a shared canonical space. On this aligned shape, a joint-aware blend-skinning module is then designed to model part motion. We learn this representation through cycle reconstruction between observed and canonical shapes and cross-space alignment with a learnable canonical template that decouples shared category geometry from instance-specific residual shape. Experiments on synthetic and real articulated-object datasets show that our SCAPO recovers consistent part structure and accurate articulation parameters and outperforms all self-supervised baselines. Our source code is available at: https:// lulusindazc.github.io/SCAPOproject/. ",
+        "bbox": [
+            88,
+            325,
+            483,
+            674
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "1. Introduction ",
+        "text_level": 1,
+        "bbox": [
+            91,
+            676,
+            220,
+            691
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "Articulated objects consist of multiple rigid parts connected by joints such as doors, drawers and laptop screens. They appear in most everyday environments and often govern how humans act on the world. For robots and embodied agents, structured understanding of these objects requires part-level pose, segmentation and joint parameters such as rotation axes or sliding directions. This task is especially challenging for previously unseen instances within a known category and becomes even harder when ground-truth annotations or predefined 3D templates are absent. In this paper, we study the problem of estimating part segmentation, per-part pose and joint properties from a single RGB-D image of an articulated object under a self-supervised setting. Success in this setting would benefit robotic manipulation, AR/VR and digital-twin systems, where reliable kinematic reasoning from sparse observations is crucial. ",
+        "bbox": [
+            89,
+            703,
+            483,
+            900
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "image",
+        "img_path": "images/3f497ff2a78349843bb463faa8e0a42cb03bcda5935b394599523465d55cb50b.jpg",
+        "image_caption": [
+            "Figure 1. Our model maps articulated objects under arbitrary poses to global poses, canonical shapes, part segmentation and joint parameters in a self-supervised framework. "
+        ],
+        "image_footnote": [],
+        "content": "```mermaid\ngraph LR\n    A[\"Arbitrary-Pose Instances\"] --> B[\"SCAPO Self-Supervised Model\"]\n    B --> C[\"Canonicalized & Aligned\"]\n    \n    subgraph SCAPO Self-Supervised Model\n        D[\"Part Segmentation\"] --> E[\"Canonical Shape\"]\n        F[\"Joint Parameters\"] --> G[\"Canonical Shape\"]\n    end\n    \n    subgraph Canonicalized & Aligned\n        H[\"Green 3D Shape\"] --> I[\"Green 3D Shape\"]\n    end\n```",
+        "sub_type": "flowchart",
+        "bbox": [
+            516,
+            290,
+            910,
+            392
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "",
+        "bbox": [
+            511,
+            460,
+            906,
+            505
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "Early work on articulated modeling [6, 18] often relies on instance-level supervision with CAD models and joint annotations at test time, which limits generalization to new instances. Category-level articulated object modeling removes this restriction and aims to predict part poses and joint attributes for novel objects within a category under a shared kinematic structure. A self-supervised formulation is especially attractive because it avoids expensive labels for part poses, segmentations and joint metadata. However, it must cope with large intra-class shape variation, ambiguous part boundaries, unknown articulation states and kinematics, and strong ambiguity from single-frame observations. ",
+        "bbox": [
+            511,
+            506,
+            908,
+            688
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "Recent works tackle self-supervised category-level articulation from several angles. PartMobility [24] uses motion cues in point cloud sequences to discover moving parts and infer motion attributes. However, it depends on dynamic input and does not recover full object or part poses, which limits deployment in static scenes. UPPD [10] handles static inputs by decomposing shapes into parts with SE(3) transforms and implicit fields. Nonetheless, its reliance on volumetric supervision weakens robustness on sparse or noisy point clouds and makes articulation hard to separate from shape variation. EAP [15] learns part-level SE(3)- equivariant features to disentangle pose and shape and generalizes better to unseen instances. However, it only predicts latent part transforms and lacks explicit joint pivots or motion axes, which restricts downstream kinematic reasoning. OP-Align [1] introduces a self-supervised framework that aligns object poses and part articulations via canonical reconstruction from a single point cloud, and shows strong category-level generalization. Nonetheless, it still struggles with fine-grained articulation and large shape variation because geometry and articulation remain entangled. Despite the progress, existing methods still face key gaps in recovering explicit joint structure from a single observation, and in disentangling geometry and motion across diverse realworld objects. ",
+        "bbox": [
+            511,
+            689,
+            908,
+            900
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "aside_text",
+        "text": "arXiv:2606.01940v1 [cs.CV] 1 Jun 2026 ",
+        "bbox": [
+            22,
+            282,
+            57,
+            710
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "",
+        "bbox": [
+            89,
+            90,
+            480,
+            256
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "text",
+        "text": "We propose SCAPO, a self-supervised framework that predicts canonical shape, part segmentation and joint parameters from a single 3D observation of an articulated object. Our SCAPO first learns a category-level canonical space with an SE(3)-equivariant autoencoder that factors out global pose and extracts pose-invariant shape features. These features align unseen instances into a shared canonical frame. Subsequently, our SCAPO models part structure and motion with a joint-aware blend-skinning deformation that comprises a keypoint network to infer part centroids as bone anchors, a pose network to regress joint pivots, axes and articulation states, and a skinning field to induce soft part segmentation. To support category-level generalization, our SCAPO introduces a shared canonical template with instance-specific residual shape that decouples geometry from articulation across objects with diverse shapes. We learn this canonical representation through cycle reconstruction between observed and canonical shapes and through cross-space alignment between each input and its canonical template. Additional regularizers are added on keypoints, joint directions and joint locations to guide the model towards physically meaningful articulation with minimal supervision. ",
+        "bbox": [
+            91,
+            257,
+            483,
+            604
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "text",
+        "text": "We summarize our main contributions as follows: ",
+        "bbox": [
+            89,
+            604,
+            429,
+            618
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "list",
+        "sub_type": "text",
+        "list_items": [
+            "• We introduce SCAPO, a self-supervised framework that recovers canonical shape, rigid parts and joint parameters of articulated objects from a single 3D observation. ",
+            "• SCAPO disentangles shape from pose and models part motion in a unified blend-skinning deformation space. This design yields interpretable joint pivots, axes and articulation states. ",
+            "• Experiments on synthetic and real-world benchmarks show that SCAPO outperforms prior self-supervised methods in part segmentation, joint estimation and articulated pose accuracy. "
+        ],
+        "bbox": [
+            89,
+            619,
+            482,
+            786
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "text",
+        "text": "2. Related Work ",
+        "text_level": 1,
+        "bbox": [
+            89,
+            799,
+            232,
+            814
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "text",
+        "text": "Modeling Articulated Objects. Recent work has moved from modeling humans and animals [3, 14, 17, 19, 22] to general articulated objects with rigid parts. Early methods such as A-SDF [21] and ANCSH [12] use implicit fields to disentangle shape and articulation. CAPTRA [29] and Ditto [8] extend this line to dynamic tracking from point clouds. Multi-view approaches like PARIS [14] and CLANeRF [26] reconstruct part-aware geometry but rely on dense 3D supervision. CARTO [7], NASAM [28] and REACTO [25] adopt weak or self-supervision to reduce annotation cost. However, they still assume stereo inputs or observable motion. DigitalTwinArt [30] uses paired frames with known articulation changes, and recent methods such as ArticulatedGS [5] and IAAO [32] exploit 3D Gaussian splats from multi-frame data. In contrast, our SCAPO recovers joints, parts and canonical shapes from a single RGB-D or point cloud input without templates, annotations or motion sequences. Consequently, our single-view labelfree design supports more scalable deployment. ",
+        "bbox": [
+            89,
+            824,
+            483,
+            901
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "text",
+        "text": "",
+        "bbox": [
+            511,
+            90,
+            903,
+            303
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "text",
+        "text": "Category-Level Articulated Object Pose Estimation. Prior work tackles this task with several strategies. Part-Mobility [24] and UPPD [10] rely on multi-view inputs or shape annotations, which restricts them to settings beyond single-frame inference. Other methods [11, 20, 23] use implicit shape modeling or active exploration [6, 8] and require dense labels or complex data collection. EAP [15] proposes a self-supervised pipeline from single views but has slow inference and unstable segmentation. The more recent work OP-Align [1] improves alignment through joint object- and part-level canonicalization. However, it still struggles with large shape variation and fine-grained articulation. Our method advances this line by using poseinvariant features and a blend-skinning-based deformation model to infer part motion and canonical shape from a single view without annotations and with stronger generalization across category-level variation. ",
+        "bbox": [
+            511,
+            306,
+            906,
+            565
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "text",
+        "text": "3. Our Methodology ",
+        "text_level": 1,
+        "bbox": [
+            513,
+            580,
+            687,
+            599
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "text",
+        "text": "Objective. Given an input point cloud $ { \\mathbf { X } } \\in \\mathbb { R } ^ { 3 \\times N }$ of an articulated object with P rigid parts, we aim to segment points into part-level components, estimate the rigid pose of each part, and recover joint parameters that describe the relative motion between parts. We consider J joints that connect pairs of parts and associate each joint j with a pivot $\\mathbf { c } ^ { [ j ] } \\in \\mathbb { R } ^ { \\bar { 3 } }$ , a motion axis $\\mathbf { d } ^ { [ j ] } \\in \\mathbb { R } ^ { 3 }$ and a pair of articulation states $\\mathbf { a } ^ { [ j ] } \\in \\mathbb { R } ^ { 2 }$ with one entry per incident part. Each part p has a rigid transformation ${ \\bf T } ^ { [ p ] } = [ { \\bf R } ^ { [ p ] } | { \\bf t } ^ { [ \\bar { p } ] } ] \\in \\mathrm { S E } ( 3 )$ that shares the appropriate joint pivot with its adjacent part and differs in articulation state. Objects appear under arbitrary global poses in the observation space, and thus we define a pose-normalized canonical space where globally aligned shapes support consistent part and joint analysis. ",
+        "bbox": [
+            511,
+            606,
+            906,
+            819
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "text",
+        "text": "Overview. Fig. 2 presents an overview of our SCAPO framework, which consists of three main stages: 1) The canonicalization module (cf . Sec. 3.1) maps each input object into a shared canonical space where objects are globally aligned. It uses a SE(3)-equivariant auto-encoder to estimate the global pose and reconstruct the canonical shape from pose-invariant features with a self-supervision objective. 2) The joint-aware deformation stage (cf . Sec. 3.2) defines a bi-directional deformation pipeline that transforms points between the observation and canonical space with a blend skinning formulation. A keypoint network predicts part centroids to define a skeletal structure from which skinning weights are derived to guide deformation of all points. A pose network estimates joint pivots, motion axes and articulation states that drive rigid transformations of individual parts. 3) The optimization and regularization stage (cf . Sec. 3.3) jointly refines part geometry and articulation under self-supervision. Based on the deformation pipeline, we use a cycle-consistency loss between observed and reconstructed shapes, and a cross-space consistency loss between canonical and observation coordinates. ",
+        "bbox": [
+            511,
+            824,
+            908,
+            901
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "text",
+        "text": "",
+        "bbox": [
+            89,
+            90,
+            483,
+            330
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "3.1. Canonicalization with SE(3)-Equivariance ",
+        "text_level": 1,
+        "bbox": [
+            89,
+            342,
+            452,
+            358
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "Articulated objects often exhibit large pose variation and intra-class shape differences. With only a single observation per instance, explicit motion cues are absent and articulation remains ambiguous. We thus introduce a canonicalization module that learns a category-level canonical space, where diverse instances align to a common frame. The module uses an $\\operatorname { S E } ( 3 )$ )-equivariant auto-encoder $( \\Theta _ { E } , \\Theta _ { D } )$ built on Vector Neuron Networks (VNNs) [4] and Vector Neuron Translation (VNT) [9]. Given a point cloud $\\mathbf { X } \\in \\mathbb { R } ^ { N \\times 3 }$ , the encoder produces affine-invariant features $\\mathbf { Z } _ { x }$ for estimation of the global rotation ${ \\bf R } _ { g }$ and translation $\\mathbf { t } _ { g }$ . The decoder maps the latent code to a canonical shape $\\mathbf { S } _ { \\mathrm { o b j } }$ that represents the object in the shared canonical frame. This global pose and pose-invariant shape code support downstream part segmentation and articulation modeling. ",
+        "bbox": [
+            89,
+            364,
+            483,
+            592
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "SE(3)-equivariant Encoder-Decoder. The encoder $\\Theta _ { E }$ takes input X and progressively factors out global translation and rotation. We first estimates a translation vector $\\mathbf { t } _ { g }$ with VNT layers and builds translation-invariant features. We then applies VNN layers to extract orientation-aware features and aggregates them to predict the rotation matrix $\\mathbf { R } _ { g }$ . This pose disentanglement produces a pose-invariant latent shape code $\\mathbf { Z } _ { x }$ . The decoder $\\Theta _ { D }$ maps $\\mathbf { Z } _ { x }$ to a canonical shape $\\mathbf { S } _ { \\mathrm { o b i } } \\in \\mathbb { R } ^ { N \\times 3 }$ that is independent of any global transformation. The original input X can be recovered as: ${ \\bf X } = { \\bf S } _ { \\mathrm { o b j } } \\cdot { \\bf R } _ { g } + { \\bf 1 } _ { N } \\cdot { \\bf t } _ { g } ^ { \\top }$ , where $\\mathbf { 1 } _ { N } \\in \\mathbb { R } ^ { N \\times 1 }$ broadcasts the translation to all points. This guarantees that shape features are invariant to SE(3) transformations, while pose parameters remain equivariant. ",
+        "bbox": [
+            89,
+            594,
+            483,
+            805
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "Training Objectives for Canonical Alignment. We adopt the training objectives from [9] to achieve pose-shape disentanglement and stable canonical alignment. A reconstruction loss $\\mathcal { L } _ { \\mathrm { r e c } }$ matches the input and the reconstructed output. An orthonormality loss $\\mathcal { L } _ { \\mathrm { o r t h o } }$ regularizes ${ \\bf R } _ { g }$ towards SO(3). An augmentation consistency loss Laug consist enforces pose consistency under input augmentations. A canonical consistency loss $\\mathcal { L } _ { \\mathrm { c a n \\_ c o n s i s t } }$ promotes robustness to known SE(3) perturbations. We combine these terms as: ",
+        "bbox": [
+            89,
+            809,
+            483,
+            902
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "",
+        "bbox": [
+            511,
+            90,
+            906,
+            137
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "equation",
+        "text": "$$\n\\mathcal {L} = \\mathcal {L} _ {\\text { rec }} + \\lambda_ {1} \\mathcal {L} _ {\\text { ortho }} + \\lambda_ {2} \\mathcal {L} _ {\\text { aug\\_consist }} + \\lambda_ {3} \\mathcal {L} _ {\\text { can\\_consist }}, \\tag {1}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            535,
+            146,
+            906,
+            162
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "where $\\lambda _ { 1 } , \\lambda _ { 2 }$ and $\\lambda _ { 3 }$ are balancing coefficients. This stage aligns instances globally and supports part segmentation and articulation modeling. ",
+        "bbox": [
+            511,
+            171,
+            906,
+            217
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "3.2. Joint-Aware Deformation ",
+        "text_level": 1,
+        "bbox": [
+            511,
+            226,
+            746,
+            239
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "We model articulation with a joint-aware blend-skinning framework in the canonical space. A keypoint network $\\Theta _ { K }$ predicts part centroids that anchor a set of bones and form a skeleton over the canonical shape. A skinning field then assigns soft weights that control the influence of each part on every 3D point. A pose network $\\Theta _ { J }$ predicts joint pivots, motion axes and articulation states. These quantities drive per-part rigid transforms $\\mathbf { T } ^ { [ p ] }$ and a bidirectional blendskinning map between observation and canonical spaces. ",
+        "bbox": [
+            511,
+            247,
+            906,
+            383
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "Forward and Backward Deformation. Given the canonical shape Sobj, we assign a set of bones B = {b[p]}Pp= $\\mathbf { S } _ { \\mathrm { o b j } }$ $\\mathbf { B } = \\{ \\mathbf { b } ^ { [ p ] } \\} _ { p = 1 } ^ { P }$ , where each bone $\\mathbf { b } ^ { [ p ] }$ corresponds to a locally rigid part such as a handle, door or lid. Each point $\\mathbf { s } _ { i } ~ \\in ~ \\mathbf { S } _ { \\mathrm { o b j } }$ receives influence from all bones with weights ${ \\bf w } _ { i } \\in { \\mathbb { R } } ^ { P }$ from the learned skinning matrix $\\mathbf { W } \\in \\mathbb { R } ^ { N \\times P }$ . For each bone $\\mathbf { b } ^ { [ p ] }$ , we define a rigid transformation ${ \\bf T } ^ { [ p ] } = [ { \\bf R } ^ { [ p ] } | \\mathbf { t } ^ { [ p ] } ] \\in$ $\\operatorname { S E } ( 3 )$ based on its joint parameters. ",
+        "bbox": [
+            511,
+            387,
+            905,
+            511
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "We obtain blended per-point transformations in canonical-to-observation and observation-to-canonical directions as: ",
+        "bbox": [
+            511,
+            510,
+            906,
+            555
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "equation",
+        "text": "$$\n\\mathbf {T} _ {i} ^ {c \\rightarrow o} = \\sum_ {p = 1} ^ {P} \\mathbf {w} _ {i} ^ {[ p ]} \\mathbf {T} ^ {[ p ]}, \\quad \\mathbf {T} _ {i} ^ {o \\rightarrow c} = \\sum_ {p = 1} ^ {P} \\mathbf {w} _ {i} ^ {[ p ]} (\\mathbf {T} ^ {[ p ]}) ^ {- 1}. (2)\n$$",
+        "text_format": "latex",
+        "bbox": [
+            519,
+            564,
+            906,
+            608
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "The backward deformation $\\mathcal { D } ^ { o \\to c } ( \\cdot )$ maps an observed point $\\mathbf { s } _ { i }$ to its canonical counterpart $\\mathbf { s } _ { i } ^ { * }$ : ",
+        "bbox": [
+            511,
+            617,
+            905,
+            650
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "equation",
+        "text": "$$\n\\mathbf {s} _ {i} ^ {*} = \\mathcal {D} ^ {o \\rightarrow c} (\\mathbf {s} _ {i}) = \\mathbf {T} _ {i} ^ {o \\rightarrow c} \\left[\\begin{array}{c c}\\mathbf {s} _ {i} ^ {\\top}&1\\end{array}\\right] ^ {\\top}, \\tag {3}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            584,
+            659,
+            906,
+            681
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "and the forward deformation $\\mathcal { D } ^ { c  o } ( \\cdot )$ maps a canonical reference point $\\mathbf { s } _ { i } ^ { * }$ back to the observation: ",
+        "bbox": [
+            511,
+            691,
+            905,
+            722
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "equation",
+        "text": "$$\n\\mathbf {s} _ {i} = \\mathcal {D} ^ {c \\rightarrow o} (\\mathbf {s} _ {i} ^ {*}) = \\mathbf {T} _ {i} ^ {c \\rightarrow o} \\left[\\begin{array}{l l}\\mathbf {s} _ {i} ^ {*} ^ {\\top}&1\\end{array}\\right] ^ {\\top}. (4)\n$$",
+        "text_format": "latex",
+        "bbox": [
+            581,
+            732,
+            906,
+            755
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "This forward-backward pipeline supports cycle-consistent reconstruction. Each point can move between the observed shape and the canonical frame in both directions, and we use this property during training to enforce geometric consistency and coherent part motions. ",
+        "bbox": [
+            511,
+            763,
+            906,
+            840
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "Bone Transformation from Joint Parameters. We use a pose estimation network $\\Theta _ { J }$ to predict joint parameters for each part $p .$ These parameters consist of the pivot point $\\mathbf { c } ^ { [ p ] }$ , motion axis $\\mathbf { d } ^ { [ p ] }$ and scalar articulation state $\\bar { \\mathbf { \\Gamma } } _ { a } [ p ]$ . From these quantities, we construct the bone transformation $\\mathbf { T } ^ { [ p ] }$ that models the motion of part $p$ relative to the canonical frame. For each part, the transformation applies in three steps: 1) translate points to the pivot $\\mathbf { c } ^ { [ p ] }$ , 2) apply the motion, and 3) translate them back. We define the rotation $\\mathbf { R } ^ { [ p ] }$ and translation $\\mathbf { t } ^ { [ p ] }$ as: ",
+        "bbox": [
+            511,
+            842,
+            906,
+            900
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "image",
+        "img_path": "images/ea144c7c9208c7625b90e982e0eca1e5f9861eced542740a9286d2d23efd28ab.jpg",
+        "image_caption": [],
+        "image_footnote": [],
+        "content": "```mermaid\ngraph LR\n    X[\"Observed Input\"] --> Encoder[\"Encoder θ_E\"]\n    Encoder --> Rigid[\"Reconstructed Transformation\"]\n    Rigid --> X2[\"Reconstructed Output\"]\n    X2 --> Decoder[\"Decoder θ_D\"]\n    Decoder --> Rigid\n    Rigid --> Zx[\"Z_x\"]\n    Zx --> Encoder\n    style X fill:#f9f,stroke:#333\n    style X2 fill:#ccf,stroke:#333\n    style Decoder fill:#cfc,stroke:#333\n    style Rigid fill:#fcc,stroke:#333\n```",
+        "sub_type": "flowchart",
+        "bbox": [
+            96,
+            89,
+            676,
+            183
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "image",
+        "img_path": "images/af59b373967e17b0eb0fa9679525a8b7f0d3f24e6f77099b76ad8ac810f706ff.jpg",
+        "image_caption": [],
+        "image_footnote": [],
+        "content": "```mermaid\ngraph TD\n    A[\"S*\"] --> B[\"Backward D^{o→c}\"]\n    C[\"S_Y\"] --> B\n    B --> D[\"Y_X\"]\n    E[\"Forward D^{c→o}\"] --> F[\"\\hat{S}_{obj}\"]\n    F --> G[\"\\hat{Y}_X\"]\n    G --> H[\"Output\"]\n```",
+        "sub_type": "flowchart",
+        "bbox": [
+            678,
+            90,
+            900,
+            186
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "image",
+        "img_path": "images/7f59fa4b2e11008a67997c353415d94172940bc985ac7e258d202ac831a11414.jpg",
+        "image_caption": [],
+        "image_footnote": [],
+        "content": "```mermaid\ngraph TD\n    A[\"Shape Variance Decoder θΔ\"] --> B[\"Encoder θE\"]\n    C[\"Ybase (Category-level Prior)\"] --> B\n    D[\"YX = Ybase + ΔSx (Canonical Input)\"] --> B\n    B --> E[\"Keypoint Decoder θK\"]\n    E --> F[\"Skinning Field\"]\n    F --> G[\"Blend Skinning Deformation\"]\n    G --> H[\"Consistency Loss\"]\n    I[\"Sobj\"] -.-> J[\"Pose Network θJ\"]\n    J --> K[\"Bone Transformation\"]\n    K --> G\n    L[\"Zy\"] -.-> E\n    M[\"Sobj\"] -.-> J\n    N[\"KY(K)\"] --> E\n    O[\"WY(W)\"] --> F\n    P[\"TY(T)\"] --> G\n    Q[\"Sobj\"] -.-> G\n    R[\"YX\"] -.-> G\n```",
+        "sub_type": "flowchart",
+        "bbox": [
+            96,
+            185,
+            676,
+            311
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "image",
+        "img_path": "images/b37d685ba32cc9d19d259bc72c043dfe7abbe8335b2de2dc8f5b8c8d04386b63.jpg",
+        "image_caption": [
+            "Figure 2. Our SCAPO framework. Stage 1 canonicalizes the input point cloud X using the global pose $\\{ \\mathbf { R } _ { g } , \\mathbf { t } _ { g } \\}$ predicted by a SE(3)- equivariant auto-encoder $( \\Theta _ { E }$ and $\\Theta _ { D } )$ . In Stage $2 , \\Theta _ { J }$ takes as input the globally aligned shape $\\mathbf { S _ { \\mathrm { o b j } } }$ and the learnable canonical template $\\mathbf { Y } _ { X }$ to estimate joint parameters and derive bone transformations. The affine-invariant features $\\mathbf { Z } _ { x }$ are fed to $\\Theta _ { K }$ and $\\Theta _ { \\Delta }$ to learn keypoints K and shape variance $\\Delta S _ { x }$ . With the skinning weights W and bone transformations D, our blend skinning module reconstructs coherent articulated shapes across poses. "
+        ],
+        "image_footnote": [],
+        "content": "```mermaid\ngraph LR\n    A[\"Forward D^{Y→X}\"] -->|S^y2x| B[\"Backward D^{X→Y}\"]\n    B -->|S_obj| A\n    C[\"Y_X\"] --> A\n    style A fill:#f9f,stroke:#333\n    style B fill:#ccf,stroke:#333\n    style C fill:#cfc,stroke:#333\n```",
+        "sub_type": "flowchart",
+        "bbox": [
+            678,
+            186,
+            900,
+            311
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "text",
+        "text": "",
+        "bbox": [
+            89,
+            407,
+            483,
+            494
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "equation",
+        "text": "$$\n\\mathbf {R} ^ {[ p ]} = \\left\\{ \\begin{array}{l l} \\text { ExpSO3 } ([ \\mathbf {d} ^ {[ p ]} ] _ {\\times} \\cdot a ^ {[ p ]}), & \\text { if   revolute }, \\\\ \\mathbf {I}, & \\text { if   prismatic }, \\end{array} \\right. \\tag {5a}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            125,
+            502,
+            482,
+            539
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "equation",
+        "text": "$$\n\\mathbf {t} ^ {[ p ]} = \\left\\{ \\begin{array}{l l} \\mathbf {c} ^ {[ p ]}, & \\text { if   revolute, } \\\\ \\mathbf {d} ^ {[ p ]} \\cdot a ^ {[ p ]}, & \\text { if   prismatic. } \\end{array} \\right. \\tag {5b}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            132,
+            541,
+            482,
+            578
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "text",
+        "text": "where $[ \\cdot ] _ { \\times }$ denotes the skew-symmetric matrix of a vector and $\\mathrm { E x p S O 3 ( \\cdot ) }$ maps an axis-angle vector to a rotation in $\\mathrm { S O ( 3 ) }$ . Combined with blend skinning, these transformations yield consistent interpretable deformations and preserve geometric fidelity across articulation states. ",
+        "bbox": [
+            89,
+            587,
+            483,
+            662
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "text",
+        "text": "Bone Anchor Discovery & Skinning Field. Following [25, 31], we represent each bone $\\mathbf { b } ^ { [ p ] }$ as a Gaussian with center ${ \\bf O } ^ { [ p ] } = { \\bf k } ^ { [ p ] }$ , orientation matrix $\\mathbf { V } ^ { [ p ] } \\in \\mathbb { R } ^ { 3 \\times 3 }$ and diagonal scale matrix $\\mathbf { A } ^ { [ p ] } \\in \\mathbb { R } ^ { 3 \\times 3 }$ . The centers are from predicted keypoints ${ \\bf K } = \\{ { \\bf k } ^ { [ 1 ] } , \\ldots , { \\bf k } ^ { [ P ] } \\} \\in \\mathbb { R } ^ { P \\times 3 }$ , which we learn as geometric part centroids. A lightweight MLP $\\Theta _ { K }$ predicts these keypoints from affine-invariant features $\\mathbf { Z } _ { x }$ , and they anchor part-level deformations. ",
+        "bbox": [
+            89,
+            666,
+            483,
+            787
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "text",
+        "text": "To model part influence, we define a skinning field Ω : $\\mathbf { s } _ { i } \\mapsto \\mathbf { w } _ { i } \\in \\bar { \\mathbb { R } ^ { P } }$ that assigns soft bone weights to each point $\\mathbf { s } _ { i }$ . We compute the unnormalized influence of bone p as: ",
+        "bbox": [
+            89,
+            787,
+            483,
+            832
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "equation",
+        "text": "$$\n\\mathbf {W} _ {i} ^ {[ p ]} = \\left(\\mathbf {s} _ {i} - \\mathbf {O} ^ {[ p ]}\\right) ^ {\\top} \\mathbf {Q} ^ {[ p ]} \\left(\\mathbf {s} _ {i} - \\mathbf {O} ^ {[ p ]}\\right), \\tag {6}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            166,
+            840,
+            482,
+            859
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "text",
+        "text": "where $\\mathbf { Q } ^ { [ p ] } = \\mathbf { V } ^ { [ p ] \\top } \\mathbf { A } ^ { [ p ] } \\mathbf { V } ^ { [ p ] }$ . This Mahalanobis distance measures how well a point fits the shape and orientation of bone $p .$ We then obtain the final skinning weights with a temperature-controlled softmax: $\\begin{array} { r } { \\mathbf { w } _ { i } = \\mathrm { s o f t m a x } \\left( \\frac { - \\mathbf { W } _ { i } } { \\gamma } \\right) } \\end{array}$ where $\\gamma$ controls the sharpness of the assignment. Lower γ yields sparse and localized associations so that each point mainly depends on nearby bones. ",
+        "bbox": [
+            89,
+            868,
+            483,
+            901
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "text",
+        "text": "",
+        "bbox": [
+            511,
+            409,
+            906,
+            491
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "text",
+        "text": "Canonical Reconstruction via Cycle Consistency. To obtain a consistent reference for each input X, we first invert the predicted global pose and transform X into the aligned shape: $\\mathbf { S } _ { \\mathrm { { o b j } } } = { \\mathcal { T } } _ { \\mathrm { { g l o b a l } } } ^ { - 1 } ( \\mathbf { X } )$ . We then map $\\mathbf { S _ { \\mathrm { o b j } } }$ to a canonical shape $\\mathbf { S } ^ { \\ast }$ that encodes consistent articulation states across instances and acts as the articulation anchor. We define the bidirectional deformation pipeline as: ",
+        "bbox": [
+            511,
+            494,
+            906,
+            601
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "equation",
+        "text": "$$\n\\mathbf {X} \\xrightarrow {\\mathcal {T} _ {\\text { global }} ^ {- 1}} \\mathbf {S} _ {\\text { obj }} \\xrightarrow {\\mathcal {D} ^ {o \\to c}} \\mathbf {S} ^ {*} \\xrightarrow {\\mathcal {D} ^ {c \\to o}} \\hat {\\mathbf {S}} _ {\\text { obj }} \\xrightarrow {\\mathcal {T} _ {\\text { global }}} \\hat {\\mathbf {X}}. \\tag {7}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            553,
+            611,
+            905,
+            638
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "text",
+        "text": "We then learn the canonical space through cycle reconstruction and cross-space alignment between the observations and canonical templates. ",
+        "bbox": [
+            511,
+            646,
+            905,
+            691
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "text",
+        "text": "1) Cycle Reconstruction. To keep articulation and pose transformations invertible and consistent, we apply the forward deformation $\\mathcal { D } ^ { c  o }$ followed by the global transform $\\tau _ { \\mathrm { g l o b a l } }$ and reconstruct the input. We define the cycle consistency loss as: $\\mathcal { L } _ { \\mathrm { c y c l e } } = \\| \\hat { \\mathbf { X } } - \\mathbf { X } \\| _ { 1 }$ . ",
+        "bbox": [
+            511,
+            695,
+            905,
+            773
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "text",
+        "text": "We further regularize the reference $\\mathbf { S } ^ { \\ast }$ through a canonical template $\\mathbf { Y } _ { X }$ for each input X. This template captures both instance-specific geometry and a fully canonical pose: $\\mathbf { Y } _ { X } = \\Delta S _ { X } + \\mathbf { Y _ { b a s e } } ,$ , where $\\Delta S _ { X } = \\Theta _ { \\Delta } ( \\mathbf { F } _ { x } )$ denotes the residual shape of X predicted from the decoder final feature map $\\mathbf { F } _ { x } ,$ and $\\mathbf { Y } _ { \\mathrm { b a s e } }$ is a learnable category-level prior that encodes shared canonical geometry and pose. We apply the same cycle to ${ \\bf Y } _ { X } , i . e . \\colon { \\bf Y } _ { X } \\xrightarrow { \\mathcal { D } _ { [ Y ] } ^ { o \\to c } } { \\bf S } _ { Y } ^ { * } \\xrightarrow { \\mathcal { D } _ { [ Y ] } ^ { c \\to o } } \\hat { \\bf Y } _ { X }$ Do→c[Y ] −→ Yˆ X , and supervise it with $\\mathcal { L } _ { \\mathrm { c y c l e } }$ to keep deformations coherent between object and canonical spaces. ",
+        "bbox": [
+            511,
+            773,
+            906,
+            902
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "text",
+        "text": "",
+        "bbox": [
+            89,
+            90,
+            482,
+            121
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "2) Cross-space Alignment. Beyond the bone transformations $\\mathbf { T } ^ { [ p ] }$ used for within-instance cycles, we define crossspace bone transformations $\\mathbf { T } _ { \\mathrm { X  Y } } ^ { [ p ] }$ and $\\mathbf { T } _ { \\mathrm { Y }  \\mathrm { X } } ^ { [ p ] }$ to align the observed input X and its canonical template $\\mathbf { Y } _ { X }$ . We use these maps in the deformation pipelines: $\\mathbf { Y } _ { X } \\xrightarrow { \\mathcal { D } ^ { \\mathrm { Y \\to X } } }$ DY→X $\\hat { \\mathbf { S } } ^ { y 2 x } , \\mathbf { S } _ { \\mathrm { o b j } } \\xrightarrow { \\mathcal { D } ^ { \\mathrm { x  Y } } } \\hat { \\mathbf { S } } ^ { x 2 y }$ Sˆy2x, Sobj DX→Y . ",
+        "bbox": [
+            89,
+            125,
+            483,
+            228
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "Given joint parameters $( \\mathbf { c } _ { x } ^ { [ p ] } , \\mathbf { d } _ { x } ^ { [ p ] } , a _ { x } ^ { [ p ] } )$ for $\\mathbf { S } _ { \\mathrm { o b j } }$ and $( \\mathbf { c } _ { y } ^ { [ p ] } , \\mathbf { d } _ { y } ^ { [ p ] } , a _ { y } ^ { [ p ] } )$ d y for put sp $\\mathbf { Y } _ { X }$ , we define the transformationo canonical space as: $\\mathbf { T } _ { \\mathrm { X  Y } } ^ { [ p ] }$ ",
+        "bbox": [
+            89,
+            228,
+            483,
+            284
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "equation",
+        "text": "$$\n\\mathbf {R} _ {\\mathrm{X} \\rightarrow \\mathrm{Y}} ^ {[ p ]} = \\mathbf {R} _ {x 2 y} ^ {[ p ]} \\cdot \\mathbf {R} _ {r, x 2 y} ^ {[ p ]} \\text { with } \\quad \\mathbf {R} _ {r, x 2 y} ^ {[ p ]} \\cdot \\mathbf {d} _ {x} ^ {[ p ]} = \\mathbf {d} _ {y} ^ {[ p ]}, \\tag {8a}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            112,
+            291,
+            482,
+            311
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "equation",
+        "text": "$$\n\\mathbf {t} _ {\\mathrm{X} \\rightarrow \\mathrm{Y}} ^ {[ p ]} = \\mathbf {t} _ {x 2 y} ^ {[ p ]} + \\mathbf {t} _ {r, x 2 y} ^ {[ p ]} \\quad \\text { with } \\quad \\mathbf {t} _ {r, x 2 y} ^ {[ p ]} = \\mathbf {c} _ {y} ^ {[ p ]}. \\tag {8b}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            114,
+            313,
+            482,
+            332
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "and ",
+        "bbox": [
+            89,
+            340,
+            120,
+            353
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "equation",
+        "text": "$$\n\\mathbf {R} _ {x 2 y} ^ {[ p ]} = \\left\\{ \\begin{array}{l l} \\operatorname{ExpSO3} ([ \\mathbf {d} _ {y} ^ {[ p ]} ] _ {\\times} \\cdot (a _ {y} ^ {[ p ]} - a _ {x} ^ {[ p ]})) & \\text { if   revolute }, \\\\ \\mathbf {I} & \\text { if   prismatic }, \\end{array} \\right. \\tag {9a}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            98,
+            361,
+            482,
+            397
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "equation",
+        "text": "$$\n\\mathbf {t} _ {x 2 y} ^ {[ p ]} = \\left\\{ \\begin{array}{l l} \\mathbf {0} & \\text { if   revolute, } \\\\ \\mathbf {d} _ {y} ^ {[ p ]} \\cdot (a _ {y} ^ {[ p ]} - a _ {x} ^ {[ p ]}) & \\text { if   prismatic. } \\end{array} \\right. \\tag {9b}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            104,
+            402,
+            480,
+            436
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "Here, $\\mathbf { R } _ { r , x 2 y } ^ { [ p ] }$ aligns the input joint axis $\\mathbf { d } _ { x } ^ { \\left[ p \\right] }$ with the canonical axis $\\mathbf { d } _ { y } ^ { \\left[ p \\right] }$ , and $\\mathbf { R } _ { x 2 y } ^ { [ p ] }$ encodes the relative motion between articulation states. We construct T[p]Y→ $\\mathbf { T } _ { \\mathrm { Y }  \\mathrm { X } } ^ { [ p ] }$ analogously. These cross-space transformations define the blended transforms in $\\mathcal { D } ^ { \\mathrm { Y } \\to \\mathrm { X } }$ and $\\mathcal { D } ^ { \\mathrm { X  Y } }$ via $\\operatorname { E q } . 2$ . ",
+        "bbox": [
+            89,
+            446,
+            483,
+            534
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "We further align the deformed shapes with the learned reconstructions using a shape reconstruction loss: ",
+        "bbox": [
+            89,
+            535,
+            483,
+            565
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "equation",
+        "text": "$$\n\\mathcal {L} _ {\\text { recon }} = \\mathrm{CD} (\\hat {\\mathbf {S}} ^ {x 2 y}, \\mathbf {Y} _ {X}), \\quad \\mathcal {L} _ {\\text { recon }} ^ {Y} = \\mathrm{CD} (\\hat {\\mathbf {S}} ^ {y 2 x}, \\mathbf {S} _ {\\text { obj }}), \\tag {10}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            107,
+            573,
+            482,
+            590
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "where calize $\\operatorname { C D } ( \\cdot )$ is the Chamfer distance.  shape with canonical tem ${ \\mathcal { L } } _ { \\mathrm { r e c o n } }$ ns c, and $\\mathbf { Y } _ { X } .$ $\\mathcal { L } _ { \\mathrm { r e c o n } } ^ { Y }$ enforces that $\\mathbf { Y } _ { X }$ can deform back to aligned observation. ",
+        "bbox": [
+            89,
+            599,
+            482,
+            646
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "The combined losses $\\mathcal { L } _ { \\mathrm { c y c l e } } , \\mathcal { L } _ { \\mathrm { r e c o n } }$ and $\\mathcal { L } _ { \\mathrm { r e c o n } } ^ { Y }$ encourage the canonical template $\\mathbf { Y } _ { X }$ to encode well-aligned geometry and guide the joint parameters towards accurate reversible articulation-aware deformations. ",
+        "bbox": [
+            89,
+            652,
+            483,
+            713
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "3.3. Optimization and Regularization ",
+        "text_level": 1,
+        "bbox": [
+            89,
+            723,
+            380,
+            739
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "This stage jointly refines part geometry and articulation parameters under self-supervision. We train the full framework end-to-end and optimize global pose, articulation parameters, skinning weights and canonical shapes with the reconstruction objectives described above. To obtain a meaningful decomposition of shape and articulation and to stabilize training, we add several regularization losses that reflect the structure of articulated objects. ",
+        "bbox": [
+            89,
+            744,
+            483,
+            866
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "Keypoint Segmentation Consistency. We encourage each predicted keypoint (bone position) to match the geometric center of its associated part. Given the canonicalized shape $\\mathbf { S } _ { \\mathrm { o b j } } = \\{ \\mathbf { s } _ { i } \\} _ { i = 1 } ^ { N } \\in \\mathbb { R } ^ { N \\times 3 }$ and the part segmentation matrix (skinning weights) $\\mathbf { W } = \\{ w _ { i } ^ { [ p ] } \\} \\in \\mathbb { R } ^ { N \\times P }$ , we define the soft centroid of part p as: ",
+        "bbox": [
+            89,
+            869,
+            483,
+            901
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "",
+        "bbox": [
+            511,
+            90,
+            905,
+            155
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "equation",
+        "text": "$$\n\\mathbf {m} ^ {[ p ]} = \\frac {1}{N _ {p}} \\sum_ {i = 1} ^ {N} w _ {i} ^ {[ p ]} \\cdot \\mathbf {s} _ {i}, \\quad N _ {p} = \\sum_ {i = 1} ^ {N} w _ {i} ^ {[ p ]}. \\tag {11}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            575,
+            164,
+            905,
+            200
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "We then penalize the deviation between each keypoint $\\mathbf { k } ^ { [ p ] } \\in \\mathbf { K }$ and its part centroid: ",
+        "bbox": [
+            511,
+            210,
+            905,
+            239
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "equation",
+        "text": "$$\n\\mathcal {L} _ {\\mathrm{kp-seg}} = \\frac {1}{P} \\sum_ {p = 1} ^ {P} \\mathbb {I} (N _ {p} > \\tau) \\cdot \\| \\mathbf {k} ^ {[ p ]} - \\mathbf {m} ^ {[ p ]} \\| _ {2} ^ {2}, \\tag {12}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            568,
+            250,
+            903,
+            287
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "where τ is a minimum support threshold that avoids unstable gradients from under-supported parts. We apply this loss on $\\mathbf { S } _ { \\mathrm { o b j } } , \\mathbf { Y } _ { X }$ and $\\mathbf { S } ^ { \\ast }$ . ",
+        "bbox": [
+            511,
+            297,
+            905,
+            343
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "Keypoint-Supervised Segmentation Loss. We further regularize the part segmentation with nearest-keypoint supervision. For each point $\\mathbf { s } _ { i }$ in $\\mathbf { S _ { \\mathrm { o b j } } }$ , we find its closest keypoint: ",
+        "bbox": [
+            511,
+            345,
+            905,
+            393
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "equation",
+        "text": "$$\np _ {i} ^ {*} = \\arg \\min _ {p} \\| \\mathbf {s} _ {i} - \\mathbf {k} ^ {[ p ]} \\| _ {2} ^ {2}, \\tag {13}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            622,
+            402,
+            903,
+            425
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "convert this index into a one-hot vector $\\mathbf { y } _ { i } \\in \\{ 0 , 1 \\} ^ { P }$ , and define: ",
+        "bbox": [
+            511,
+            435,
+            905,
+            464
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "equation",
+        "text": "$$\n\\mathcal {L} _ {\\text {seg}} = \\frac {1}{N} \\sum_ {i = 1} ^ {N} \\| \\mathbf {w} _ {i} - \\mathbf {y} _ {i} \\| _ {2} ^ {2}. \\tag {14}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            622,
+            463,
+            903,
+            500
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "This objective encourages each point to take high weight on the part whose keypoint lies nearest to it and provides geometric supervision even without dense labels. We also use the same $\\mathbf { y } _ { i }$ to supervise the weights $\\mathbf { w } _ { i } ^ { * }$ on the fully canonicalized shape $\\mathbf { S } ^ { \\ast }$ . ",
+        "bbox": [
+            511,
+            503,
+            905,
+            578
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "Canonical Shape and Joint Regularization. We regularize the canonical shape and joint parameters with three additional terms: ",
+        "bbox": [
+            511,
+            582,
+            905,
+            626
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "1) Shape Variance. We constrain the instance-specific residual shape $\\Theta _ { \\Delta } ( \\cdot )$ to avoid excessive deformation. Let $\\mathbf { V } \\in \\mathbb { R } ^ { B \\times N \\times 3 }$ be the predicted residuals. We define ",
+        "bbox": [
+            513,
+            631,
+            905,
+            676
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "equation",
+        "text": "$$\n\\mathcal {L} _ {\\text { shape - var }} = 1 - \\exp \\left(- \\lambda_ {\\text { var }} \\cdot \\| \\mathbf {V} \\| _ {2} ^ {2}\\right), \\tag {15}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            591,
+            686,
+            903,
+            704
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "with scaling factor $\\lambda _ { \\mathrm { v a r } } ( \\mathrm { e . g . , 6 0 } )$ . This loss keeps residuals compact but still allows fine-grained instance variation. ",
+        "bbox": [
+            511,
+            713,
+            905,
+            743
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "2) Joint Direction. We encourage each joint axis $\\mathbf { d } ^ { [ j ] } \\in$ $\\mathbb { R } ^ { 3 }$ to align with the dominant geometric variation near part boundaries. For each sample, we detect boundary points $\\mathbf { s } _ { i }$ with high segmentation entropy and compute the principal direction d˜ via PCA on these points. We then define: ",
+        "bbox": [
+            511,
+            746,
+            905,
+            821
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "equation",
+        "text": "$$\n\\mathcal {L} _ {\\text { dir - align }} = \\frac {1}{B} \\sum_ {b = 1} ^ {B} \\left(1 - \\left| \\left\\langle \\mathbf {d} ^ {[ j ]}, \\tilde {\\mathbf {d}} \\right\\rangle \\right|\\right), \\tag {16}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            596,
+            829,
+            903,
+            863
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "where $\\langle \\cdot , \\cdot \\rangle$ denotes cosine similarity. The absolute value handles sign ambiguity and enforces symmetry-aware alignment. We apply this loss to joint directions on $\\mathbf { S } ^ { \\ast }$ and on the reference template $\\mathbf { Y } _ { X }$ . ",
+        "bbox": [
+            511,
+            869,
+            905,
+            901
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "",
+        "bbox": [
+            89,
+            90,
+            482,
+            121
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "text",
+        "text": "3a) Joint-to-Shape Proximity. We prevent joint pivots from drifting far from the surface by constraining their distance to the canonical shape. Let $\\dot { \\mathbf { C } _ { \\mathrm { ~ } } } = \\{ \\mathbf { c } ^ { [ j ] } \\}$ denote the pivots, and we define: ",
+        "bbox": [
+            89,
+            125,
+            482,
+            184
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "equation",
+        "text": "$$\n\\mathcal {L} _ {\\text { joint - prox }} = 1 - \\exp \\left(- \\lambda_ {\\text { prox }} \\cdot \\mathbb {E} _ {p} \\left[ \\min _ {\\mathbf {s} _ {i} \\in \\mathbf {S} ^ {*}} \\| \\mathbf {c} ^ {[ j ]} - \\mathbf {s} _ {i} \\| ^ {2} \\right]\\right), \\tag {17}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            104,
+            186,
+            482,
+            214
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "text",
+        "text": "with scaling factor $\\lambda _ { \\mathrm { p r o x } } , e . g . \\ 3 0$ . We approximate the inner minimum with k-NN search and apply the same loss to pivots predicted on $\\mathbf { Y } _ { X }$ . ",
+        "bbox": [
+            89,
+            218,
+            482,
+            263
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "text",
+        "text": "3b) Joint-to-Boundary Attraction. We encourage joint pivots to lie near articulation boundaries. We use entropy as a boundary cue since regions close to part interfaces tend to have high segmentation uncertainty. For each point, we compute: ",
+        "bbox": [
+            89,
+            267,
+            482,
+            340
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "equation",
+        "text": "$$\nH _ {i} = - \\sum_ {p = 1 ^ {P}} w _ {i} ^ {[ p ]} \\log w _ {i} ^ {[ p ]}. \\tag {18}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            200,
+            340,
+            482,
+            372
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "text",
+        "text": "We then define a soft attention from each joint pivot $\\mathbf { c } ^ { [ j ] }$ to nearby points $\\left\\{ \\mathbf { s } _ { i } \\right\\} _ { i = 1 } ^ { N }$ : ",
+        "bbox": [
+            89,
+            376,
+            482,
+            409
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "equation",
+        "text": "$$\n\\alpha_ {j, i} = \\frac {\\exp (- \\| \\mathbf {c} ^ {[ j ]} - \\mathbf {s} _ {i} \\|)}{\\sum_ {k} \\exp (- \\| \\mathbf {c} ^ {[ j ]} - \\mathbf {s} _ {k} \\|)}, \\tag {19}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            186,
+            415,
+            482,
+            448
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "text",
+        "text": "and finally, the joint–boundary loss is given as: ",
+        "bbox": [
+            89,
+            454,
+            401,
+            469
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "equation",
+        "text": "$$\n\\mathcal {L} _ {\\text { joint - boundary }} = - \\frac {1}{J} \\sum_ {j = 1} ^ {J} \\sum_ {i = 1} ^ {N} \\alpha_ {j, i} \\cdot H _ {i}. \\tag {20}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            166,
+            477,
+            482,
+            516
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "text",
+        "text": "This term attracts pivots towards regions with high boundary entropy and thus towards articulation points. We apply the same regularization to pivots defined on the reference frame $\\mathbf { Y } _ { X }$ . ",
+        "bbox": [
+            89,
+            523,
+            482,
+            583
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "text",
+        "text": "4. Experiment ",
+        "text_level": 1,
+        "bbox": [
+            89,
+            595,
+            215,
+            614
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "text",
+        "text": "Datasets. We evaluate SCAPO on synthetic and realworld datasets for canonical shape reconstruction, part segmentation, and joint parameter estimation under diverse articulation states. The synthetic dataset follows EAP [15] and uses selected categories from HOI4D [16] and Shape2Motion [27]. It covers five articulated categories: {laptop, safe, oven, washer, eyeglasses}. Each mesh is rendered into partial point clouds that mimic singleview depth observations, which introduces realistic occlusion and view-dependent visibility effects. The realworld dataset from [1] contains RGB-D scans of five categories without mesh ground truth: {basket, laptop, suitcase, drawer, and scissors}. 3D point clouds are reconstructed by fusing depth with instance masks predicted by detection models. This setup provides a practical test of robustness under noisy real-world conditions. ",
+        "bbox": [
+            89,
+            621,
+            482,
+            863
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "text",
+        "text": "Evaluation Metrics. We follow prior work [1, 12, 15] and evaluate our SCAPO along three dimensions: 1) Part-level metrics: we report rotation error (degrees) and translation error of each part SE(3) pose, and the 3D Intersection-over-Union (IoU) of part segmentation masks. 2) Articulationstate metrics: for revolute joints, we compute joint angle error (degrees); for prismatic joints, we measure translation magnitude error. 3) Joint-parameter metrics: we evaluate axis orientation error (angular deviation) and pivot localization error (line-to-line distance) to capture both direction and position. For real-world data, we adopt multi-threshold mean Average Precision (mAP). A part pose is correct if its rotation error is below 5◦, 10◦, or 15◦ and its translation error is below 5, 10, or 15 cm. We apply the same thresholds to joint pivot and axis estimation. For segmentation, we report mean IoU over parts under 75% and 50% thresholds. ",
+        "bbox": [
+            89,
+            869,
+            483,
+            900
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "text",
+        "text": "",
+        "bbox": [
+            511,
+            90,
+            903,
+            303
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "text",
+        "text": "Baselines. For the synthetic dataset, we compare SCAPO with three main methods: A self-supervised approach for part-level articulation EAP [15]; A supervised baseline for category-level 6D pose 3DGCN [13]; A recent selfsupervised method for articulated object pose without pose or shape annotations OP-Align [1]. We also include ICP and NPCS [12] with EPN [2] as backbone to cover classical alignment and joint estimation pipelines. ",
+        "bbox": [
+            511,
+            306,
+            903,
+            429
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "text",
+        "text": "Implementation Details. We uniformly sample $\\begin{array} { r l } { N } & { { } = } \\end{array}$ 1024 points per object for all experiments. Stage 1 trains the $\\operatorname { S E } ( 3 )$ -equivariant auto-encoder with balancing weights $\\lambda _ { 1 } { = } \\lambda _ { 2 } { = } \\lambda _ { 3 } { = } 0 . 1$ . Stage 2 optimizes the articulation-aware modules: a PointNet-style joint parameter predictor, a keypoint detector, a category-level shape variance module, and other learnable priors. They are all implemented as MLP-based heads. We set the loss weights as $\\lambda _ { \\mathrm { c y c l e } } { = } 1 0 ,$ , $\\lambda _ { \\mathrm { { r e c o n } } } = 1 0 , \\ \\lambda _ { \\mathrm { { k p - s e g } } } = 1 , \\ \\lambda _ { \\mathrm { { s e g } } } = 1 , \\ \\lambda _ { \\mathrm { { s h a p e - v a r } } } = 1 0 , \\ \\lambda _ { \\mathrm { { d i r - a l i g n } } } = 0 . 1$ $\\lambda _ { \\mathrm { j o i n t - p r o x } } { = } 1 , \\lambda _ { \\mathrm { j o i n t - b o u n d a r y } } { = } 3$ . Optimization uses Adam with weight decay ${ \\mathrm { ~ I ~ } } \\times \\ 1 0 ^ { - 8 }$ and cosine annealing over 200 epochs. The learning rate is $1 \\times 1 0 ^ { - 3 }$ in Stage 1 and $1 \\times 1 0 ^ { - 4 }$ in Stage 2, with a minimum of $1 \\times 1 0 ^ { - 6 }$ . All models train on a single NVIDIA RTX A5000 GPU with PyTorch. ",
+        "bbox": [
+            511,
+            433,
+            905,
+            645
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "text",
+        "text": "4.1. Comparison with Baselines ",
+        "text_level": 1,
+        "bbox": [
+            511,
+            652,
+            758,
+            667
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "text",
+        "text": "Results on the Synthetic Dataset. Table 1 reports results on HOI4D and Shape2Motion. Among self-supervised $( < 3 \\times \\checkmark )$ methods, SCAPO achieves the highest mean segmentation IoU (84.98%) and the lowest errors on joint direction (3.89), joint pivot (0.075), and part rotation (5.78), with consistent improvements over OP-Align (82.24, 4.60, 0.104, 6.73). For translation, our error (0.086) is lower than OP-Align (0.115) and ICP (0.174), and close to the best self-supervised result from EAP (0.067). Gains are especially clear on eyeglasses and washer, where our SCAPO improves both segmentation IoU and articulation errors over OP-Align. Compared with fully supervised $( 3 \\times ~ \\checkmark )$ 3DGCN and NPCS-EPN, our SCAPO attains substantially lower joint direction and rotation errors, and competitive pivot and translation errors despite using no annotations. ",
+        "bbox": [
+            511,
+            674,
+            905,
+            900
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "table",
+        "img_path": "images/833c4ccb59200512fb715be37e57cb15d73d115164fff8606ab07c484ee9f6fb.jpg",
+        "table_caption": [
+            "Table 1. Results on synthetic datasets HOI4D and Shape2Motion. S, D, C, R, t denote part segmentation IoU; joint direction error (degree); joint pivot error; mean part rotation error (degree); and mean part translation error. "
+        ],
+        "table_footnote": [],
+        "table_body": "<table><tr><td rowspan=\"2\">Metric</td><td rowspan=\"2\">Method</td><td rowspan=\"2\">Pose</td><td rowspan=\"2\">Supervision Segmentation</td><td rowspan=\"2\">Joint</td><td colspan=\"2\">HOI4D</td><td rowspan=\"2\">Eyeglasses</td><td rowspan=\"2\">Shape2Motion Oven</td><td rowspan=\"2\">Washer</td><td rowspan=\"2\">Mean</td></tr><tr><td>Laptop</td><td>Safe</td></tr><tr><td rowspan=\"5\">S↑</td><td>3DGCN</td><td>✓</td><td>✓</td><td>✓</td><td>99.28</td><td>94.11</td><td>81.93</td><td>94.46</td><td>93.15</td><td>92.59</td></tr><tr><td>ICP</td><td></td><td>✓</td><td></td><td>59.96</td><td>66.90</td><td>49.49</td><td>75.17</td><td>72.80</td><td>64.46</td></tr><tr><td>EAP</td><td></td><td></td><td></td><td>86.04</td><td>44.64</td><td>62.84</td><td>76.22</td><td>73.27</td><td>68.20</td></tr><tr><td>OP-Align</td><td></td><td></td><td></td><td>92.38</td><td>86.14</td><td>66.60</td><td>90.84</td><td>75.25</td><td>82.24</td></tr><tr><td>Ours</td><td></td><td></td><td></td><td>93.41</td><td>89.83</td><td>68.19</td><td>93.10</td><td>78.35</td><td>84.98</td></tr><tr><td rowspan=\"5\">D↓</td><td>3DGCN</td><td>✓</td><td>✓</td><td>✓</td><td>1.73</td><td>4.79</td><td>14.01</td><td>5.85</td><td>9.85</td><td>7.65</td></tr><tr><td>NPCS-EPN</td><td>✓</td><td>✓</td><td>✓</td><td>12.25</td><td>11.23</td><td>7.42</td><td>5.04</td><td>5.66</td><td>8.12</td></tr><tr><td>EAP</td><td></td><td></td><td></td><td>18.02</td><td>55.16</td><td>17.75</td><td>20.30</td><td>28.40</td><td>27.13</td></tr><tr><td>OP-Align</td><td></td><td></td><td></td><td>1.46</td><td>1.34</td><td>3.28</td><td>4.41</td><td>10.47</td><td>4.60</td></tr><tr><td>Ours</td><td></td><td></td><td></td><td>1.41</td><td>1.22</td><td>3.14</td><td>4.70</td><td>8.97</td><td>3.89</td></tr><tr><td rowspan=\"5\">C↓</td><td>3DGCN</td><td>✓</td><td>✓</td><td>✓</td><td>0.014</td><td>0.024</td><td>0.096</td><td>0.071</td><td>0.107</td><td>0.062</td></tr><tr><td>NPCS-EPN</td><td>✓</td><td>✓</td><td>✓</td><td>0.134</td><td>0.084</td><td>0.096</td><td>0.076</td><td>0.078</td><td>0.094</td></tr><tr><td>EAP</td><td></td><td></td><td></td><td>0.170</td><td>0.170</td><td>0.087</td><td>0.090</td><td>0.118</td><td>0.127</td></tr><tr><td>OP-Align</td><td></td><td></td><td></td><td>0.080</td><td>0.066</td><td>0.049</td><td>0.092</td><td>0.231</td><td>0.104</td></tr><tr><td>Ours</td><td></td><td></td><td></td><td>0.076</td><td>0.052</td><td>0.045</td><td>0.086</td><td>0.114</td><td>0.075</td></tr><tr><td rowspan=\"6\">R↓</td><td>3DGCN</td><td>✓</td><td>✓</td><td>✓</td><td>2.90</td><td>5.50</td><td>17.63</td><td>15.71</td><td>14.03</td><td>11.55</td></tr><tr><td>NPCS-EPN</td><td>✓</td><td>✓</td><td>✓</td><td>8.07</td><td>6.04</td><td>6.34</td><td>6.41</td><td>5.71</td><td>6.51</td></tr><tr><td>ICP</td><td></td><td>✓</td><td></td><td>36.42</td><td>45.50</td><td>34.90</td><td>46.79</td><td>53.75</td><td>43.87</td></tr><tr><td>EAP</td><td></td><td></td><td></td><td>7.71</td><td>18.65</td><td>10.99</td><td>5.91</td><td>13.38</td><td>11.73</td></tr><tr><td>OP-Align</td><td></td><td></td><td></td><td>2.87</td><td>6.54</td><td>4.65</td><td>5.76</td><td>11.83</td><td>6.73</td></tr><tr><td>Ours</td><td></td><td></td><td></td><td>2.17</td><td>6.26</td><td>4.95</td><td>5.60</td><td>9.93</td><td>5.78</td></tr><tr><td rowspan=\"6\">t↓</td><td>3DGCN</td><td>✓</td><td>✓</td><td>✓</td><td>0.018</td><td>0.025</td><td>0.177</td><td>0.112</td><td>0.122</td><td>0.091</td></tr><tr><td>NPCS-EPN</td><td>✓</td><td>✓</td><td>✓</td><td>0.048</td><td>0.028</td><td>0.066</td><td>0.028</td><td>0.194</td><td>0.073</td></tr><tr><td>ICP</td><td></td><td>✓</td><td></td><td>0.293</td><td>0.264</td><td>0.155</td><td>0.081</td><td>0.079</td><td>0.174</td></tr><tr><td>EAP</td><td></td><td></td><td></td><td>0.079</td><td>0.065</td><td>0.070</td><td>0.061</td><td>0.062</td><td>0.067</td></tr><tr><td>OP-Align</td><td></td><td></td><td></td><td>0.092</td><td>0.064</td><td>0.184</td><td>0.123</td><td>0.110</td><td>0.115</td></tr><tr><td>Ours</td><td></td><td></td><td></td><td>0.082</td><td>0.057</td><td>0.128</td><td>0.079</td><td>0.083</td><td>0.086</td></tr></table>",
+        "bbox": [
+            89,
+            121,
+            906,
+            390
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "text",
+        "text": "Results on the Real-World Dataset. Table 2 reports results on the real-world benchmark under the same protocol as OP-Align. Across all categories, SCAPO surpasses OP-Align (SJ) in mean segmentation mIoU (91.89%/98.29% vs. 90.02%/97.18%) and mean joint mAP (62.51/89.59/95.91 vs. 61.37/87.72/92.73 at $5 ^ { \\circ } 5 \\mathrm { c m } - 1 5 ^ { \\circ } 1 5 \\mathrm { c m } )$ . It also attains higher part mAP at 5◦5cm and 15◦15cm, with comparable performance at 10◦10cm. These gains show that our self-supervised articulation model transfers well from synthetic to real data. Compared with fully supervised (with Pose supervision) 3DGCN and PointNet++, our SCAPO delivers higher mean joint mAP at all thresholds (62.51/89.59/95.91 vs. 47.51/85.79/94.59 for 3DGCN), and competitive or better part mAP at 5◦5cm and 15◦15cm. These results indicate that explicit pose supervision is not necessary once the model learns a robust canonical space and deformation-based alignment from data. ",
+        "bbox": [
+            88,
+            402,
+            485,
+            660
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "text",
+        "text": "Qualitative Results. Fig. 3 illustrates some qualitative results of our SCAPO on synthetic partial views, synthetic full observations, and real-world point clouds. On synthetic data, our model achieves precise object- and partlevel alignment with clean segmentation and accurate joint prediction even under large pose changes. On real scans, we generalize well in the semi-supervised setting, align diverse inputs to a canonical frame, and recover plausible part motions. A key advantage of our SCAPO is the tight coupling between segmentation and motion. Each part deforms consistently under its bone transform and joint parameters. Segmentation noise therefore concentrates near boundaries, and interiors remain stable and semantically coherent. Motion-guided optimization allows the network to exploit kinematic cues instead of depending purely on geometry. However, limitations appear when geometric evidence is weak, $e . g .$ under heavy occlusion or missing parts. In these cases, the model may misestimate joints or exhibit segmentation drift. These visual results support our claims on disentangling pose and shape, yielding consistent part segments, and reconstructing articulation with interpretable joints across categories. ",
+        "bbox": [
+            88,
+            672,
+            485,
+            902
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "text",
+        "text": "",
+        "bbox": [
+            511,
+            402,
+            908,
+            508
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "text",
+        "text": "4.2. Ablation Study ",
+        "text_level": 1,
+        "bbox": [
+            511,
+            518,
+            666,
+            535
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "text",
+        "text": "We perform four ablations on the synthetic dataset to assess the impact of each regularization term in Tab. 3: a) Shape Variance Regularization $\\mathcal { L } _ { \\mathrm { s h a p e - v a r } } , \\mathsf { b } )$ Joint Direction Alignment $\\mathcal { L } _ { \\mathrm { d i r - a l i g n } } , \\mathrm { c } )$ Joint-to-shape Proximity Ljoint-prox, and d) Joint-to-boundary Attraction $\\mathcal { L } _ { \\mathrm { j o i n t - b o u n d a r y } } .$ . Removing $\\mathcal { L } _ { \\mathrm { s h a p e - v a r } }$ hurts all metrics, with segmentation dropping from 84.98 to 80.15, joint direction error increasing from 3.89 to 10.63, and pivot error more than doubling from 0.075 to 0.175. Without ${ \\mathcal { L } } _ { \\mathrm { d i r - a l i g n } } .$ , the joint direction error rises to 8.54 and the pivot error to 0.086, which indicates less reliable articulation axes. Dropping $\\mathcal { L } _ { \\mathrm { j o i n t - p r o x } }$ leads to a pivot error of 0.137 and a segmentation drop to 82.77, showing that pivots drift away from the actual geometry. Removing $\\mathcal { L } _ { \\mathrm { j o i n t - b o u n d a r y } }$ yields a pivot error of 0.113 with only mild changes in segmentation and direction error. These trends confirm that each loss term contributes to stable canonical shapes, accurate joint placement, and consistent part segmentation under self-supervised setting. ",
+        "bbox": [
+            511,
+            542,
+            908,
+            815
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "text",
+        "text": "5. Conclusion ",
+        "text_level": 1,
+        "bbox": [
+            511,
+            829,
+            633,
+            844
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "text",
+        "text": "We presented SCAPO, a self-supervised framework for category-level articulated object modeling from a single 3D observation. It jointly estimates canonical shape, rigid parts and joint parameters. SCAPO uses a learned canonical space with bone-based deformations to align instances, recover part motions and infer interpretable joints without manual labels or templates. Cycle and cross-space consistency losses help disentangle pose from shape and couple segmentation with motion. Parts remain stable in their interiors and vary mainly at boundaries. Regularization on shape variance, joint directions and joint locations stabilizes ",
+        "bbox": [
+            511,
+            854,
+            908,
+            902
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "table",
+        "img_path": "images/09df910884af8a5dda94440e0b76a18810de3edaad0497b546bd1c2b73cbebe5.jpg",
+        "table_caption": [
+            "Table 2. Average precision results on the real-world dataset. Supervision refers to the annotations used in training. Segmentation↑ denotes mIoU under 75%/50% thresholds. Joint↑ measures mAP under rotation/translation thresholds (5◦5cm–15◦15cm). Part↑ measures partlevel mAP under the same thresholds. "
+        ],
+        "table_footnote": [],
+        "table_body": "<table><tr><td rowspan=\"2\">Category</td><td rowspan=\"2\">Method</td><td rowspan=\"2\">Pose</td><td rowspan=\"2\">Supervision Segmentation</td><td rowspan=\"2\">Joint</td><td colspan=\"2\">Segmentation $^{\\dagger}$  (mIoU)</td><td rowspan=\"2\">5°5cm</td><td rowspan=\"2\">Joint $^{\\dagger}$ 10°10cm</td><td rowspan=\"2\">15°15cm</td><td rowspan=\"2\">5°5cm</td><td colspan=\"2\">Part $^{\\dagger}$  (mAP)</td></tr><tr><td>75%</td><td>50%</td><td>10°10cm</td><td>15°15cm</td></tr><tr><td rowspan=\"4\">Basket</td><td>3DGCN</td><td>√</td><td>√</td><td>√</td><td>67.48</td><td>92.87</td><td>38.75</td><td>84.41</td><td>93.54</td><td>1.34</td><td>20.71</td><td>44.77</td></tr><tr><td>PointNet++</td><td>√</td><td>√</td><td>√</td><td>0.00</td><td>6.24</td><td>3.12</td><td>31.18</td><td>57.23</td><td>0.45</td><td>1.56</td><td>13.59</td></tr><tr><td>OP-Align(SJ)</td><td></td><td>√</td><td>√</td><td>83.74</td><td>98.22</td><td>60.13</td><td>91.31</td><td>95.76</td><td>0.00</td><td>18.71</td><td>51.45</td></tr><tr><td>Ours</td><td></td><td>√</td><td>√</td><td>86.64</td><td>99.11</td><td>62.36</td><td>93.32</td><td>96.88</td><td>0.00</td><td>19.60</td><td>52.34</td></tr><tr><td rowspan=\"4\">Drawer</td><td>3DGCN</td><td>√</td><td>√</td><td>√</td><td>82.52</td><td>96.90</td><td>38.27</td><td>76.32</td><td>91.15</td><td>28.00</td><td>68.36</td><td>88.50</td></tr><tr><td>PointNet++</td><td>√</td><td>√</td><td>√</td><td>3.22</td><td>40.46</td><td>16.09</td><td>42.53</td><td>64.37</td><td>8.74</td><td>42.76</td><td>65.98</td></tr><tr><td>OP-Align(SJ)</td><td></td><td>√</td><td>√</td><td>88.74</td><td>95.17</td><td>54.71</td><td>82.76</td><td>85.52</td><td>17.93</td><td>52.18</td><td>85.86</td></tr><tr><td>Ours</td><td></td><td>√</td><td>√</td><td>91.03</td><td>96.09</td><td>56.55</td><td>85.29</td><td>87.36</td><td>19.31</td><td>54.71</td><td>88.28</td></tr><tr><td rowspan=\"4\">Laptop</td><td>3DGCN</td><td>√</td><td>√</td><td>√</td><td>93.20</td><td>95.87</td><td>73.30</td><td>96.12</td><td>96.60</td><td>31.31</td><td>72.57</td><td>82.03</td></tr><tr><td>PointNet++</td><td>√</td><td>√</td><td>√</td><td>91.99</td><td>96.84</td><td>45.63</td><td>88.35</td><td>92.23</td><td>11.89</td><td>51.94</td><td>72.57</td></tr><tr><td>OP-Align(SJ)</td><td></td><td>√</td><td>√</td><td>97.82</td><td>98.54</td><td>91.17</td><td>97.33</td><td>98.06</td><td>36.17</td><td>73.54</td><td>90.53</td></tr><tr><td>Ours</td><td></td><td>√</td><td>√</td><td>98.79</td><td>99.51</td><td>92.23</td><td>99.27</td><td>98.30</td><td>37.38</td><td>74.51</td><td>92.00</td></tr><tr><td rowspan=\"4\">Scissors</td><td>3DGCN</td><td>√</td><td>√</td><td>√</td><td>76.01</td><td>94.54</td><td>43.94</td><td>85.99</td><td>97.15</td><td>1.66</td><td>22.33</td><td>50.83</td></tr><tr><td>PointNet++</td><td>√</td><td>√</td><td>√</td><td>0.00</td><td>17.58</td><td>19.71</td><td>57.72</td><td>83.13</td><td>0.24</td><td>2.14</td><td>5.23</td></tr><tr><td>OP-Align(SJ)</td><td></td><td>√</td><td>√</td><td>94.77</td><td>99.21</td><td>53.21</td><td>97.39</td><td>99.38</td><td>9.54</td><td>45.65</td><td>64.55</td></tr><tr><td>Ours</td><td></td><td>√</td><td>√</td><td>95.49</td><td>99.76</td><td>53.92</td><td>98.57</td><td>99.52</td><td>10.69</td><td>47.27</td><td>66.03</td></tr><tr><td rowspan=\"4\">Suitcase</td><td>3DGCN</td><td>√</td><td>√</td><td>√</td><td>97.36</td><td>98.45</td><td>43.31</td><td>86.09</td><td>94.49</td><td>10.24</td><td>49.87</td><td>77.17</td></tr><tr><td>PointNet++</td><td>√</td><td>√</td><td>√</td><td>3.94</td><td>49.87</td><td>20.73</td><td>66.14</td><td>80.84</td><td>1.05</td><td>17.84</td><td>41.73</td></tr><tr><td>OP-Align(SJ)</td><td></td><td>√</td><td>√</td><td>85.04</td><td>94.75</td><td>44.62</td><td>69.89</td><td>96.26</td><td>1.26</td><td>26.12</td><td>51.71</td></tr><tr><td>Ours</td><td></td><td>√</td><td>√</td><td>87.50</td><td>97.00</td><td>47.50</td><td>71.50</td><td>97.50</td><td>2.50</td><td>27.50</td><td>54.00</td></tr><tr><td rowspan=\"4\">Mean</td><td>3DGCN</td><td>√</td><td>√</td><td>√</td><td>83.31</td><td>95.83</td><td>47.51</td><td>85.79</td><td>94.59</td><td>13.07</td><td>46.77</td><td>68.66</td></tr><tr><td>PointNet++</td><td>√</td><td>√</td><td>√</td><td>19.83</td><td>42.20</td><td>21.06</td><td>57.38</td><td>75.64</td><td>4.47</td><td>23.75</td><td>39.82</td></tr><tr><td>OP-Align(SJ)</td><td></td><td>√</td><td>√</td><td>90.02</td><td>97.18</td><td>61.37</td><td>87.72</td><td>92.73</td><td>12.98</td><td>43.24</td><td>62.97</td></tr><tr><td>Ours</td><td></td><td>√</td><td>√</td><td>91.89</td><td>98.29</td><td>62.51</td><td>89.59</td><td>95.91</td><td>13.98</td><td>44.72</td><td>70.53</td></tr></table>",
+        "bbox": [
+            91,
+            138,
+            906,
+            397
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "table",
+        "img_path": "images/3a007461601ddc8c74cf024498f2acd8c1771f8ad4a8678e03ebf47c79143a86.jpg",
+        "table_caption": [
+            "Figure 3. Qualitative results on synthetic partial (left), synthetic full (center), and real-world (right) point clouds. "
+        ],
+        "table_footnote": [],
+        "table_body": "<table><tr><td></td><td colspan=\"4\">Synthetic Partial</td><td colspan=\"4\">Synthetic Full</td><td colspan=\"2\">Real-World</td></tr><tr><td>Item</td><td colspan=\"2\">Laptop</td><td colspan=\"2\">Safe</td><td colspan=\"2\">Oven</td><td colspan=\"2\">Washing Machine</td><td colspan=\"2\">Drawer</td></tr><tr><td>Category Prior</td><td colspan=\"2\"></td><td colspan=\"2\"></td><td colspan=\"2\"></td><td colspan=\"2\"></td><td colspan=\"2\"></td></tr><tr><td>Instance 1</td><td colspan=\"2\"></td><td colspan=\"2\"></td><td colspan=\"2\"></td><td colspan=\"2\"></td><td colspan=\"2\"></td></tr><tr><td>Instance 2</td><td colspan=\"2\"></td><td colspan=\"2\"></td><td colspan=\"2\"></td><td colspan=\"2\"></td><td colspan=\"2\"></td></tr><tr><td>Instance 3</td><td colspan=\"2\"></td><td colspan=\"2\"></td><td colspan=\"2\"></td><td colspan=\"2\"></td><td colspan=\"2\"></td></tr><tr><td>Alignment</td><td>Global</td><td>Part-Level</td><td>Global</td><td>Part-Level</td><td>Global</td><td>Part-Level</td><td>Global</td><td>Part-Level</td><td>Global</td><td>Part-Level</td></tr></table>",
+        "bbox": [
+            93,
+            405,
+            906,
+            652
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "table",
+        "img_path": "images/de11597c1635ca54b9f80d962747ab73d98c52f50103ed12e6fe02d09dff235a.jpg",
+        "table_caption": [
+            "Table 3. Ablation study on synthetic dataset. "
+        ],
+        "table_footnote": [],
+        "table_body": "<table><tr><td>Method</td><td>Segmentation ↑</td><td>Joint Direction Error ↓</td><td>Joint Pivot Error ↓</td></tr><tr><td>Full</td><td>84.98</td><td>3.89</td><td>0.075</td></tr><tr><td>w/o  $\\mathcal{L}_{\\text{shape-var}}$ </td><td>80.15</td><td>10.63.</td><td>0.175</td></tr><tr><td>w/o  $\\mathcal{L}_{\\text{dir-align}}$ </td><td>84.21</td><td>8.54</td><td>0.086</td></tr><tr><td>w/o  $\\mathcal{L}_{\\text{joint-prox}}$ </td><td>82.77</td><td>4.73</td><td>0.137</td></tr><tr><td>w/o  $\\mathcal{L}_{\\text{joint-boundary}}$ </td><td>84.50</td><td>4.12</td><td>0.113</td></tr></table>",
+        "bbox": [
+            93,
+            705,
+            477,
+            768
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "text",
+        "text": "",
+        "bbox": [
+            89,
+            780,
+            483,
+            901
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "text",
+        "text": "learning and improves geometric plausibility. Experiments on synthetic and real-world benchmarks show that SCAPO delivers robust performance and clear articulation structure across diverse categories, often matching or surpassing supervised baselines. These results suggest that canonicalization with motion-aware deformation is an effective recipe for self-supervised articulated understanding. ",
+        "bbox": [
+            511,
+            693,
+            906,
+            799
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "text",
+        "text": "Limitations. Our method assumes a fixed number of joints and parts, which reduces flexibility across categories. The VNT auto-encoder can struggle under large shape variation or severe occlusion, which weakens canonical consistency. Joint inference also degrades with weak motion cues or noisy part segmentation. ",
+        "bbox": [
+            511,
+            810,
+            908,
+            902
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "text",
+        "text": "Acknowledgment. This research/project is supported by the Tier 2 grant MOET2EP20124-0015 from the Singapore Ministry of Education. ",
+        "bbox": [
+            89,
+            90,
+            480,
+            133
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "text",
+        "text": "References ",
+        "text_level": 1,
+        "bbox": [
+            91,
+            146,
+            187,
+            161
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "list",
+        "sub_type": "ref_text",
+        "list_items": [
+            "[1] Yuchen Che, Ryo Furukawa, and Asako Kanezaki. Op-align: Object-level and part-level alignment for self-supervised category-level articulated object pose estimation. In European Conference on Computer Vision, pages 72–88. Springer, 2024. 2, 6 ",
+            "[2] Haiwei Chen, Shichen Liu, Weikai Chen, Hao Li, and Randall Hill. Equivariant point network for 3d point cloud analysis. In Proceedings of the IEEE/CVF conference on computer vision and pattern recognition, pages 14514–14523, 2021. 6 ",
+            "[3] Boyang Deng, John P Lewis, Timothy Jeruzalski, Gerard Pons-Moll, Geoffrey Hinton, Mohammad Norouzi, and Andrea Tagliasacchi. Nasa neural articulated shape approximation. In European Conference on Computer Vision, pages 612–628. Springer, 2020. 2 ",
+            "[4] Congyue Deng, Or Litany, Yueqi Duan, Adrien Poulenard, Andrea Tagliasacchi, and Leonidas J Guibas. Vector neurons: A general framework for so (3)-equivariant networks. In Proceedings of the IEEE/CVF International Conference on Computer Vision, pages 12200–12209, 2021. 3 ",
+            "[5] Junfu Guo, Yu Xin, Gaoyi Liu, Kai Xu, Ligang Liu, and Ruizhen Hu. Articulatedgs: Self-supervised digital twin modeling of articulated objects using 3d gaussian splatting. In Proceedings of the Computer Vision and Pattern Recognition Conference, pages 27144–27153, 2025. 2 ",
+            "[6] Karol Hausman, Scott Niekum, Sarah Osentoski, and Gaurav S Sukhatme. Active articulation model estimation through interactive perception. In 2015 IEEE International Conference on Robotics and Automation (ICRA), pages 3305–3312. IEEE, 2015. 1, 2 ",
+            "[7] Nick Heppert, Muhammad Zubair Irshad, Sergey Zakharov, Katherine Liu, Rares Andrei Ambrus, Jeannette Bohg, Abhinav Valada, and Thomas Kollar. Carto: Category and joint agnostic reconstruction of articulated objects. In Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition, pages 21201–21210, 2023. 2 ",
+            "[8] Zhenyu Jiang, Cheng-Chun Hsu, and Yuke Zhu. Ditto: Building digital twins of articulated objects from interaction. In Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition, pages 5616–5626, 2022. 2 ",
+            "[9] Oren Katzir, Dani Lischinski, and Daniel Cohen-Or. Shapepose disentanglement using se (3)-equivariant vector neurons. In European Conference on Computer Vision, pages 468–484. Springer, 2022. 3 ",
+            "[10] Yuki Kawana, Yusuke Mukuta, and Tatsuya Harada. Unsupervised pose-aware part decomposition for man-made articulated objects. In European Conference on Computer Vision, pages 558–575. Springer, 2022. 1, 2 ",
+            "[11] Jiahui Lei and Kostas Daniilidis. Cadex: Learning canonical deformation coordinate space for dynamic surface representation via neural homeomorphism. In Proceedings of the IEEE/CVF conference on computer vision and pattern recognition, pages 6624–6634, 2022. 2 "
+        ],
+        "bbox": [
+            89,
+            166,
+            486,
+            902
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "list",
+        "sub_type": "ref_text",
+        "list_items": [
+            "[12] Xiaolong Li, He Wang, Li Yi, Leonidas J Guibas, A Lynn Abbott, and Shuran Song. Category-level articulated object pose estimation. In Proceedings of the IEEE/CVF conference on computer vision and pattern recognition, pages 3706–3715, 2020. 2, 6 ",
+            "[13] Zhi-Hao Lin, Sheng-Yu Huang, and Yu-Chiang Frank Wang. Convolution in the cloud: Learning deformable kernels in 3d graph convolution networks for point cloud analysis. In Proceedings of the IEEE/CVF conference on computer vision and pattern recognition, pages 1800–1809, 2020. 6 ",
+            "[14] Jiayi Liu, Ali Mahdavi-Amiri, and Manolis Savva. Paris: Part-level reconstruction and motion analysis for articulated objects. In Proceedings of the IEEE/CVF International Conference on Computer Vision, pages 352–363, 2023. 2 ",
+            "[15] Xueyi Liu, Ji Zhang, Ruizhen Hu, Haibin Huang, He Wang, and Li Yi. Self-supervised category-level articulated object pose estimation with part-level SE(3) equivariance. In The Eleventh International Conference on Learning Representations, 2023. 1, 2, 6 ",
+            "[16] Yunze Liu, Yun Liu, Che Jiang, Kangbo Lyu, Weikang Wan, Hao Shen, Boqiang Liang, Zhoujie Fu, He Wang, and Li Yi. Hoi4d: A 4d egocentric dataset for category-level humanobject interaction. In Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition, pages 21013–21022, 2022. 6 ",
+            "[17] Matthew Loper, Naureen Mahmood, Javier Romero, Gerard Pons-Moll, and Michael J Black. Smpl: A skinned multiperson linear model. In Seminal Graphics Papers: Pushing the Boundaries, Volume 2, pages 851–866. 2023. 2 ",
+            "[18] Roberto Mart´ın-Mart´ın, Sebastian Hofer, and Oliver Brock.¨ An integrated approach to visual perception of articulated objects. In 2016 IEEE international conference on robotics and automation (ICRA), pages 5091–5097. IEEE, 2016. 1 ",
+            "[19] Marko Mihajlovic, Yan Zhang, Michael J Black, and Siyu Tang. Leap: Learning articulated occupancy of people. In Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition, pages 10461–10471, 2021. 2 ",
+            "[20] Jiteng Mu, Weichao Qiu, Adam Kortylewski, Alan Yuille, Nuno Vasconcelos, and Xiaolong Wang. A-sdf: Learning disentangled signed distance functions for articulated shape representation. In Proceedings of the IEEE/CVF International Conference on Computer Vision, pages 13001–13011, 2021. 2 ",
+            "[21] Jiteng Mu, Weichao Qiu, Adam Kortylewski, Alan Yuille, Nuno Vasconcelos, and Xiaolong Wang. A-sdf: Learning disentangled signed distance functions for articulated shape representation. In Proceedings of the IEEE/CVF International Conference on Computer Vision, pages 13001–13011, 2021. 2 ",
+            "[22] Atsuhiro Noguchi, Xiao Sun, Stephen Lin, and Tatsuya Harada. Neural articulated radiance field. In Proceedings of the IEEE/CVF International Conference on Computer Vision, pages 5762–5772, 2021. 2 ",
+            "[23] Despoina Paschalidou, Angelos Katharopoulos, Andreas Geiger, and Sanja Fidler. Neural parts: Learning expressive 3d shape abstractions with invertible neural networks. In Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition, pages 3204–3215, 2021. 2 "
+        ],
+        "bbox": [
+            509,
+            88,
+            908,
+            902
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "list",
+        "sub_type": "ref_text",
+        "list_items": [
+            "[24] Yahao Shi, Xinyu Cao, and Bin Zhou. Self-supervised learning of part mobility from point cloud sequence. In Computer Graphics Forum, pages 104–116. Wiley Online Library, 2021. 1, 2 ",
+            "[25] Chaoyue Song, Jiacheng Wei, Chuan Sheng Foo, Guosheng Lin, and Fayao Liu. Reacto: Reconstructing articulated objects from a single video. In Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition, pages 5384–5395, 2024. 2, 4 ",
+            "[26] Wei-Cheng Tseng, Hung-Ju Liao, Lin Yen-Chen, and Min Sun. Cla-nerf: Category-level articulated neural radiance field. In 2022 International Conference on Robotics and Automation (ICRA), pages 8454–8460. IEEE, 2022. 2 ",
+            "[27] Xiaogang Wang, Bin Zhou, Yahao Shi, Xiaowu Chen, Qinping Zhao, and Kai Xu. Shape2motion: Joint analysis of motion parts and attributes from 3d shapes. In Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition, pages 8876–8884, 2019. 6 ",
+            "[28] Fangyin Wei, Rohan Chabra, Lingni Ma, Christoph Lassner, Michael Zollhofer, Szymon Rusinkiewicz, Chris Sweeney, ¨ Richard Newcombe, and Mira Slavcheva. Self-supervised neural articulated shape and appearance models. In Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition, pages 15816–15826, 2022. 2 ",
+            "[29] Yijia Weng, He Wang, Qiang Zhou, Yuzhe Qin, Yueqi Duan, Qingnan Fan, Baoquan Chen, Hao Su, and Leonidas J Guibas. Captra: Category-level pose tracking for rigid and articulated objects from point clouds. In Proceedings of the IEEE/CVF International Conference on Computer Vision, pages 13209–13218, 2021. 2 ",
+            "[30] Yijia Weng, Bowen Wen, Jonathan Tremblay, Valts Blukis, Dieter Fox, Leonidas Guibas, and Stan Birchfield. Neural implicit representation for building digital twins of unknown articulated objects. In Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition, pages 3141–3150, 2024. 2 ",
+            "[31] Gengshan Yang, Minh Vo, Natalia Neverova, Deva Ramanan, Andrea Vedaldi, and Hanbyul Joo. Banmo: Building animatable 3d neural models from many casual videos. In Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition, pages 2863–2873, 2022. 4 ",
+            "[32] Can Zhang and Gim Hee Lee. Iaao: Interactive affordance learning for articulated objects in 3d environments. In Proceedings of the Computer Vision and Pattern Recognition Conference, pages 12132–12142, 2025. 2 "
+        ],
+        "bbox": [
+            86,
+            88,
+            486,
+            728
+        ],
+        "page_idx": 9
+    }
+]
