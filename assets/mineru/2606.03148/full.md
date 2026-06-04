@@ -90,7 +90,7 @@ Given an $M \times M$ attention map, we greedily select non-overlapping crops $c
 <details>
 <summary>natural_image</summary>
 
-Underwater photo of a person swimming near water, with a small inset image showing a dark object (no text or symbols visible)
+Underwater photo of a person swimming near the seabed with a close-up inset showing the eye (no text or symbols visible)
 </details>
 
 1 crop
@@ -120,7 +120,7 @@ Underwater photo of a polar bear swimming near the sea (no text or symbols visib
 <details>
 <summary>natural_image</summary>
 
-Underwater scene with a polar bear swimming near blue water (no text or symbols visible)
+Underwater scene with a polar bear and blue water, no visible text or symbols
 </details>
 
 4 crops
@@ -198,13 +198,12 @@ Across both $A ^ { 2 }$ variants, localization ability of the underlying self-su
 <details>
 <summary>line</summary>
 
-| Model Parameters (log scale) | 21M   | 86M   | 300M  | 1.1B  |
-| ---------------------------- | ----- | ----- | ----- | ----- |
-| Series 1 (black)             | 0.0   | -1.5  | -4.0  | -4.0  |
-| Series 2 (purple)            | 0.0   | -0.5  | -3.0  | -3.0  |
-| Series 3 (brown)             | 0.0   | -1.5  | -0.5  | -1.5  |
-| Series 4 (green)             | 0.0   | -2.0  | -9.0  | -5.0  |
-| Series 5 (blue)              | 0.0   | -1.5  | -5.0  | -6.0  |
+| Model Parameters (log scale) | Test Acc (%) relative to smallest model |
+| ----------------------------- | --------------------------------------- |
+| 21M                           | 0                                       |
+| 86M                           | -1                                      |
+| 300M                          | -4                                      |
+| 1.1B                          | -4                                      |
 </details>
 
 Spawrious O2O Spawrious M2M Waterbirds Metashift Cat Dog Metashift Animals Mean(5)
@@ -216,11 +215,12 @@ Spawrious O2O Spawrious M2M Waterbirds Metashift Cat Dog Metashift Animals Mean(
 
 | Model Parameters (log scale) | 21M | 86M | 300M | 1.1B |
 | ----------------------------- | --- | --- | ---- | ---- |
-| Series 1                      | 0   | 10  | 12.5 | 14   |
-| Series 2                      | 0   | 8   | 7    | 8.5  |
-| Series 3                      | 0   | 4   | 5.5  | 5.5  |
-| Series 4                      | 0   | -1  | -1   | -1.5 |
-| Series 5                      | 0   | 0   | 0    | 0    |
+| Series 1 (green)              | 0   | 10  | 12.5 | 14   |
+| Series 2 (pink)              | 0   | 8   | 7    | 8.5  |
+| Series 3 (black)             | 0   | 4   | 5.5  | 5.5  |
+| Series 4 (orange)            | 0   | 2   | 4.5  | 3.5  |
+| Series 5 (brown)             | 0   | 1.5 | 3.5  | 3.5  |
+| Series 6 (blue)              | 0   | -1  | -1   | -2   |
 </details>
 
 Figure 6: Where and What Scaling Laws. Larger embedding models but smaller attention models improve performance. The best configuration pairs a small attention model with a large embedder. Each panel plots each dataset’s standard metric (test accuracy for Spawrious; worst-group accuracy for Waterbirds and Cat vs. Dog; worst-class accuracy for Animals) relative to the smallest model (thin colored) and the mean of those relative changes across 5 datasets (bold black). Left (Where to Look): With the embedding model fixed to DINOv2 ViT-G, every dataset curve slopes downward as the attention model grows. Right (What to Extract): With the attention model fixed to DINOv2 ViT-S, most dataset curves slope upward as the embedding model grows. Absolute values are in Appendix Tables 11, 12, 13, 14, and 15. The DINOv3 [29] family shows the same inverse-scaling-of-attention pattern (Appendix Figure 20).   
@@ -233,7 +233,7 @@ Figure 6: Where and What Scaling Laws. Larger embedding models but smaller atten
 | --------------------------------------- | ------------------------------------------------- | ------------------------------------------------- | ------------------------------------------------- | ------------------------------------------------- | ------------------------------------------------- |
 | 21M                                     | 0.0                                               | 0.0                                               | 0.0                                               | 0.0                                               | 0.0                                               |
 | 86M                                     | 0.5                                               | -0.2                                              | -0.1                                              | -0.3                                              | -0.4                                              |
-| 300M                                    | 0.4                                               | -0.7                                              | -0.6                                              | -1.0                                              | -1.8                                              |
+| 300M                                    | 0.4                                               | -0.6                                              | -0.7                                              | -1.0                                              | -1.8                                              |
 | 1.1B                                    | 0.4                                               | -0.4                                              | -0.5                                              | -1.0                                              | -1.4                                              |
 </details>
 
@@ -303,35 +303,18 @@ Per-layer attention mass for DINOv2 + registers. Stars mark the last layer (the 
 | ----------- | ----- | ----- | ----- | ----- |
 | 0           | 48    | 49    | 49    | 49    |
 | 5           | 55    | 54    | 53    | 52    |
-| 10          | 75    | 73    | 72    | 50    |
-| 15          | 60    | 65    | 62    | 55    |
-| 20          | 70    | 73    | 70    | 58    |
-| 25          | 68    | 68    | 65    | 60    |
-| 30          | 70    | 70    | 68    | 65    |
-| 35          | 72    | 72    | 70    | 68    |
-| 40          | 68    | 68    | 68    | 68    |
+| 10          | 60    | 73    | 50    | 51    |
+| 15          | 58    | 60    | 55    | 54    |
+| 20          | 60    | 70    | 58    | 57    |
+| 25          | 62    | 68    | 60    | 60    |
+| 30          | 65    | 70    | 65    | 65    |
+| 35          | 68    | 72    | 70    | 70    |
+| 40          | 70    | 70    | 72    | 68    |
 </details>
 
 Figure 9: Per-layer CLS-to-patches attention mass for DINOv2 with register tokens [8]. Stars mark each model’s last block (the layer used in our other figures). ViT-S and ViT-B peak at the last block; ViT-L peaks at block 21 of 24 and ViT-G at block 32 of 40, dropping 12–13 points on Waterbirds (left) and 4–6 points on ImageNet val (right) by the final block. Larger ViTs’ final blocks drift away from foreground localization while smaller ViTs concentrate localization in their last block. Appendix Figure 13 shows the same plot for DINOv2 without registers; per-layer hit-rate counterparts are in Appendix Figures 12 and 14.
 
-![](images/6bee3a861536343e09936b4e84e0c89c166df0a7d60ca4f95ef2b5879723a008.jpg)
-
-<details>
-<summary>line</summary>
-
-| Layer index | Attn on patches | Attn on registers | Mass in GT bbox |
-| ----------- | --------------- | ----------------- | --------------- |
-| 0           | 50              | 30                | 40              |
-| 5           | 75              | 20                | 45              |
-| 10          | 80              | 15                | 55              |
-| 15          | 70              | 30                | 60              |
-| 20          | 65              | 40                | 70              |
-| 25          | 60              | 45                | 75              |
-| 30          | 55              | 50                | 70              |
-| 35          | 50              | 55                | 65              |
-| 40          | 40              | 60                | 60              |
-</details>
-
+![](images/6bee3a861536343e09936b4e84e0c89c166df0a7d60ca4f95ef2b5879723a008.jpg)  
 Figure 10: The dip in patch-side localization coincides with attention shifting to register tokens. For DINOv2 with registers on Waterbirds (top) and ImageNet val (bottom), we plot the per-layer fraction of CLS softmax mass on patch tokens (blue) vs. register tokens (red), alongside the patch-side mass-in-GT-bbox metric from Figure 9 (green, dashed). For ViT-L and ViT-G, register tokens absorb a growing share of CLS attention in late layers, eventually exceeding patch attention in ViT-G’s final block (55% registers vs. 40% patches on Waterbirds); the patch-side localization metric drops correspondingly (∼ 13 points from peak-localization layer to last block in ViT-G). ViT-S and ViT-B never experience this register takeover and continue to concentrate attention on patch tokens through their last block.
 
 End-to-end attention training overfits; pretrained attention generalizes. End-to-end attention training (iFAM) [2] wins on Waterbirds, where there is no strong distribution shift between train and test, but the dataset is heavily biased toward placing the bird at the center; iFAM appears to lean on this bias: its WGA drops 18.2% from 100.0% on the 1% most-centered test images to 81.8% on the 1% most off-center, while $A ^ { 2 } \mathrm { { ^ , } } \mathrm { { s } }$ drop is roughly half as steep $( 8 3 . 3 \%  7 2 . 7 \% ;$ ; Appendix Table 18). As the test distribution strays further from train, $A ^ { 2 }$ actually outperforms iFAM despite using entirely pretrained features and a linear head: on MetaShift Animals, where train and test contexts are disjoint, $A ^ { 2 }$ beats iFAM by up to 2.3 points in accuracy and 2 points in worst-class accuracy. Pretrained attention offers a gentler degradation curve than fine-tuned attention, which tends to overfit train-task distribution biases.
@@ -422,13 +405,13 @@ Smaller self-supervised ViTs localize foreground objects better.
 <details>
 <summary>line</summary>
 
-| Attention Model Parameters (log scale) | Waterbirds |
-| -------------------------------------- | ---------- |
-| 21M                                    | 95         |
-| 86M                                    | 88         |
-| 300M                                   | 82         |
-| 1.1B                                   | 83         |
-| 6.7B                                   | 80         |
+| Attention Model Parameters (log scale) | Line 1 | Line 2 | Line 3 | Line 4 | Line 5 |
+| -------------------------------------- | ------ | ------ | ------ | ------ | ------ |
+| 21M                                    | 95     | 92     | 90     | 90     | 90     |
+| 86M                                    | 88     | 88     | 88     | 88     | 88     |
+| 300M                                   | 82     | 82     | 82     | 82     | 82     |
+| 1.1B                                   | 82     | 82     | 82     | 82     | 82     |
+| 6.7B                                   | 80     | 80     | 80     | 80     | 80     |
 </details>
 
 ![](images/b74f305b915994022e13b3abd5140d9abba27048889bf488c02bcba550262039.jpg)
@@ -439,7 +422,7 @@ Smaller self-supervised ViTs localize foreground objects better.
 | Attention Model Parameters (log scale) | DINOv1 | DINOv2 | iBOT | DINOv3 | OpenCLIP |
 | --------------------------------------- | ------ | ------ | ---- | ------ | -------- |
 | 21M                                     | 85     | 83     | 83   | 84     | 30       |
-| 86M                                     | 84     | 82     | 82   | 85     | 50       |
+| 86M                                     | 83     | 82     | 82   | 85     | 50       |
 | 300M                                    | 78     | 76     | 75   | 83     | 55       |
 | 1.1B                                    | 77     | 77     | 74   | 81     | 56       |
 | 6.7B                                    | 76     | 76     | 73   | 77     | 55       |
@@ -456,46 +439,14 @@ Per-layer attention hit rate for DINOv2 + registers. Stars mark the last layer (
 | Layer index | Attention Hit Rate (%) |
 | ----------- | ---------------------- |
 | 0           | 20                     |
-| 1           | 40                     |
-| 2           | 60                     |
-| 3           | 70                     |
-| 4           | 80                     |
-| 5           | 75                     |
-| 6           | 65                     |
-| 7           | 50                     |
-| 8           | 40                     |
-| 9           | 35                     |
-| 10          | 50                     |
-| 11          | 60                     |
-| 12          | 70                     |
-| 13          | 80                     |
-| 14          | 85                     |
-| 15          | 90                     |
-| 16          | 95                     |
-| 17          | 90                     |
-| 18          | 85                     |
-| 19          | 80                     |
-| 20          | 75                     |
-| 21          | 70                     |
-| 22          | 65                     |
-| 23          | 60                     |
-| 24          | 55                     |
-| 25          | 50                     |
-| 26          | 45                     |
-| 27          | 40                     |
-| 28          | 35                     |
-| 29          | 30                     |
-| 30          | 25                     |
-| 31          | 20                     |
-| 32          | 15                     |
-| 33          | 10                     |
-| 34          | 5                      |
-| 35          | 0                      |
-| 36          | -5                     |
-| 37          | -10                    |
-| 38          | -15                    |
-| 39          | -20                    |
-| 40          | -25                    |
+| 5           | 60                     |
+| 10          | 90                     |
+| 15          | 85                     |
+| 20          | 80                     |
+| 25          | 95                     |
+| 30          | 90                     |
+| 35          | 85                     |
+| 40          | 80                     |
 </details>
 
 ![](images/6a1a5146b0883c0e89415c5c649130cb57d7a6cea922c03a0c7aa2bc4a209aee.jpg)
@@ -526,11 +477,11 @@ Per-layer attention mass for DINOv2 without registers. Stars mark the last layer
 
 | Layer index | Attention Mass in GT Bbox (%) |
 | ----------- | ----------------------------- |
-| 10          | 80                            |
-| 11          | 50                            |
+| 10          | 82                            |
+| 11          | 70                            |
 | 20          | 60                            |
-| 25          | 45                            |
-| 39          | 40                            |
+| 25          | 50                            |
+| 39          | 43                            |
 </details>
 
 ![](images/eec4a89e5a01c17dd7deb3d7b4f095dac499a0d4782175c09a08d1c18238aaad.jpg)
@@ -580,14 +531,14 @@ Per-layer attention hit rate for DINOv2 without registers. Stars mark the last l
 | Layer index | ViT-S | ViT-L | ViT-B | ViT-G |
 | ----------- | ----- | ----- | ----- | ----- |
 | 0           | 50    | 60    | 60    | 60    |
-| 5           | 55    | 50    | 45    | 30    |
-| 10          | 80    | 50    | 5     | 40    |
-| 15          | 65    | 65    | 60    | 55    |
-| 20          | 20    | 30    | 30    | 30    |
-| 25          | 20    | 30    | 30    | 30    |
-| 30          | 20    | 30    | 30    | 30    |
-| 35          | 20    | 30    | 30    | 30    |
-| 40          | 20    | 30    | 30    | 30    |
+| 5           | 55    | 50    | 50    | 40    |
+| 10          | 80    | 10    | 10    | 10    |
+| 15          | 65    | 65    | 65    | 60    |
+| 20          | 30    | 30    | 30    | 30    |
+| 25          | 30    | 30    | 30    | 30    |
+| 30          | 30    | 30    | 30    | 30    |
+| 35          | 30    | 30    | 30    | 30    |
+| 40          | 30    | 30    | 30    | 30    |
 </details>
 
 Figure 14: Per-layer attention hit rate for DINOv2 without register tokens. Hit-rate counterpart to Figure 13. Without registers, the hit rate of ViT-B/L/G collapses sharply at fractional depth ∼ 0.75 (ViT-B layer 9, ViT-L layer 18, ViT-G layer 18), consistent with attention being captured by high-norm background tokens in late blocks. ViT-S is unaffected and remains the most reliable localizer at the last block.
@@ -725,10 +676,12 @@ graph LR
     C --> D["32×32 Scores"]
     D --> E["PerturbedTopK"]
     E --> F["Prediction"]
-    G["MLP Adapter f₀"] --> B
-    H["ΔvL backprop through fitting to MLP adapter fₛ"] --> D
-    I["ŷ = σ(wᵀz + b) fit w, b on D_val"] --> F
-    J["L_CE(ŷ, y)"] --> F
+    F --> G["L_CE(ŷ, y)"]
+    H["MLP Adapter f₀"] --> B
+    I["ΔvL backprop through fitting to MLP adapter fₛ"] --> D
+    J["64×64"] --> K["32×32"]
+    K --> L["z = [z₁, z₂"]]
+    M["ŷ = σ(wᵀz + b) fit w, b on D_val"] --> N
 ```
 </details>
 
@@ -743,7 +696,7 @@ $$
 We then fit a logistic regression classifier by taking a few gradient steps on w, b, the classifier weights using cross entropy loss ℓ.
 
 $$
-(w ^ {t + 1}, b ^ {t + 1}) = (w ^ {t}, b ^ {t}) - \eta \nabla_ {w, b} \ell \left(z (x) w ^ {t} + b ^ {t}, y\right), \quad t = 0, \ldots , T - 1.
+(w ^ {t + 1}, b ^ {t + 1}) = (w ^ {t}, b ^ {t}) - \eta \nabla_ {w, b} \ell (z (x) w ^ {t} + b ^ {t}, y), \quad t = 0, \dots , T - 1.
 $$
 
 We evaluate the classifier on a held out partition of the training set, compute the cross entropy loss, and backpropagate through the classifier fitting and patch selection to optimize the MLP adapter weights.
@@ -766,11 +719,11 @@ Simply center cropping the image to $1 2 8 \times 1 2 8 .$ , embedding the crop,
 
 ![](images/660c74414b57d7bc3ef577f3d9f1d3a8ddde73e774ca1f991cfeb7d3970cf0c5.jpg)
 
-![](images/a515feaded2cd16b486a9b73c3cca1e9c1731c3a1a732eeea29e5c1aa164882f.jpg)
+![](images/76effbf6593512ed5c3b179835ee352604a1378fa4a2c43da877360e3118fe41.jpg)
 
 ![](images/11ad6b942cc236ccb73e6f161a9f5a1913e7f9b9fa7af6633edb044243eea706.jpg)
 
-![](images/09f64a660f1e1797078b88f46d736b96a6a3f7cff52efe39e39c2008662223fa.jpg)  
+![](images/97bd327e3e7ad5ff2d7cd0aabbcfcca60cc1bd6bda3417169feae0418ea27a3c.jpg)  
 Figure 18: Examples from the bottom 1% (left three) subset and top 1% (right three) subsets. Red boxes show the center crop. Notice how in the top 1%, the center crop completely misses the bird, which explains the large drop off in Table 18.
 
 Table 18: Distance stratification on Waterbirds test set. Center crop uses a fixed $1 2 8 \times 1 2 8$ center crop with a ViT-S logistic regression classifier; $A ^ { 2 }$ uses one $6 4 \times 6 4$ attention-guided crop with a ViT-S logistic regression classifier; iFAM K=8 is trained on the full Waterbirds train set (see Appendix P). Models are trained once on the full Waterbirds training set and evaluated on each test-set subset. Test set is sorted from the bird being closest to the image center (“bottom”) to furthest from the image center (“top”); the “top1” subset is the 58 test birds furthest from the image centroid. WGA results for the top and bottom 1st and 5th percentiles may have higher noise due to minority groups having $< 2 0$ samples in those subsets, but are included for reference.
@@ -892,11 +845,11 @@ Figure 20: DINOv3 where-to-look scaling (mean across datasets) with fixed DINOv2
 
 | Attention Model Parameters (log scale) | 21M   | 29M   | 86M   | 300M  | 840M  | 6.7B  |
 | -------------------------------------- | ----- | ----- | ----- | ----- | ----- | ----- |
-| Series 1                               | 97.0  | 96.5  | 95.0  | 96.0  | 96.0  | 95.0  |
-| Series 2                               | 89.0  | 89.0  | 89.0  | 88.0  | 87.0  | 88.0  |
-| Series 3                               | 86.0  | 86.0  | 86.0  | 85.0  | 84.0  | 84.0  |
-| Series 4                               | 75.0  | 74.0  | 74.5  | 72.0  | 69.0  | 71.0  |
-| Series 5                               | 85.0  | 85.0  | 85.5  | 83.0  | 83.5  | 83.5  |
+| Series 1                               | 97.0  | 96.5  | 95.5  | 96.0  | 96.0  | 95.0  |
+| Series 2                               | 89.0  | 89.5  | 89.0  | 88.0  | 87.5  | 88.0  |
+| Series 3                               | 86.5  | 86.0  | 86.5  | 85.0  | 84.0  | 84.5  |
+| Series 4                               | 85.5  | 85.0  | 85.5  | 83.0  | 83.5  | 83.5  |
+| Series 5                               | 75.5  | 74.5  | 74.5  | 72.0  | 69.5  | 70.5  |
 </details>
 
 ![](images/6f2ef3d1134b9d933662742582f1c63bb7bf74fc85b3383d982d29c7d0f50e8a.jpg)
@@ -910,8 +863,8 @@ Figure 20: DINOv3 where-to-look scaling (mean across datasets) with fixed DINOv2
 | Series 2                               | 76.0  | 75.5  | 80.0  | 72.0  | 73.0  | 74.5  |
 | Series 3                               | 74.0  | 74.0  | 73.0  | 71.0  | 68.5  | 69.0  |
 | Series 4                               | 66.0  | 63.5  | 63.5  | 60.0  | 61.0  | 64.5  |
-| Series 5                               | 72.0  | 71.0  | 75.0  | 72.0  | 73.0  | 69.0  |
-| Series 6                               | 71.5  | 71.0  | 73.0  | 72.0  | 73.0  | 69.0  |
+| Series 5                               | 72.0  | 71.0  | 75.0  | 72.5  | 73.5  | 69.0  |
+| Series 6                               | 71.5  | 71.0  | 73.0  | 72.0  | 72.5  | 69.5  |
 | Series 7                               | 95.0  | 95.0  | 91.0  | 91.5  | 90.5  | 90.0  |
 | Series 8                               | -     | -     | -     | -     | -     | -     |
 | Series 9                               | -     | -     | -     | -     | -     | -     |
@@ -1021,7 +974,7 @@ Table 29: Waterbirds $( A _ { \mathrm { L R } } ^ { 2 } )$ with fixed DINOv2 ViT
 | 21M                                    | 0             | 0             | 0          | 0           |
 | 86M                                    | 0             | 0             | 0          | 0           |
 | 300M                                   | -1            | -1            | -6         | 1           |
-| 1.1B                                   | -1            | -1            | -7         | -1          |
+| 1.1B                                   | -2            | -1            | -7         | -1          |
 </details>
 
 ![](images/5eb17a33932cbe99063aaf915e8b96060824b01403f8f6ef4f3d939c6cb76193.jpg)

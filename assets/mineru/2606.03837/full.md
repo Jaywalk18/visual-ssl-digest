@@ -1,0 +1,623 @@
+# Where Do We (Not) Need Temporal Context in Low-Resource Video Task Adaptation?
+
+Luc P.J. Sträter
+
+Leiden University
+
+l.p.j.strater@liacs.leidenuniv.nl
+
+Hazel Doughty
+
+Leiden University
+
+h.r.doughty@liacs.leidenuniv.nl
+
+# Abstract
+
+Parameter-efficient fine-tuning (PEFT) and probing enable adaptation of foundation models using only a small number of trainable parameters, making it attractive for video understanding where annotation and computation are expensive. However, video PEFT has focused on adapting image-pretrained models, while standard PEFT methods can also be applied to video representations. These settings are rarely compared and both confine temporal reasoning to a single component of the model, leaving open how temporal context should be distributed across backbone, PEFT and probe. In this work we provide a systematic study of model adaptation strategies for video understanding. We evaluate methods across appearancefocused, motion-focused and spatially dense settings, with a particular focus on scenarios with limited data where parameter-efficiency is most beneficial. Our results provide new insights into PEFT and probing across settings and demonstrate the importance of temporal context allocation for effective video adaptation.
+
+Project page: https://lucstrater.com/temporal-context/.
+
+# 1 Introduction
+
+Foundation models [7] have become the dominant paradigm in computer vision, offering generalization through internet-scale pretraining [2, 9, 50, 55]. Despite learning transferable representations, these models still require adaptation to task-specific objectives, label spaces or domains. This is particularly costly for video, where both annotation and computation are significantly more expensive than for images. As a result, adaptation is increasingly performed through task-specific probing rather than full finetuning [3, 12]. In parallel, parameter-efficient finetuning (PEFT) methods [17, 23] adapt models by training only a small number of parameters [44]. Yet how these two paradigms interact, and how they should be applied in practice for video understanding, remains unexplored.
+
+Existing work in video PEFT has either adapted image-pretrained models to video [44, 49] or evaluated standard PEFT on video-pretrained models [67], without directly comparing the two. Beyond this gap, these works also make different assumptions about where temporal reasoning should occur. Methods built on image-pretrained backbones introduce temporal reasoning only in the adapter [44, 49], while those built on video-pretrained models limit it to the backbone [35, 67, 70]. In both cases, the temporal context is limited to one part of the model. Yet there is no reason this design should be optimal. Different tasks may benefit from temporal reasoning at different stages of the adaptation, and the cost of temporal context varies across components.
+
+In this paper, we present a systematic study of PEFT methods and probing strategies in video understanding. We focus on settings where model adaptation is most valuable: low-resource tasks from specialized domains where data or annotation is inherently limited. Our benchmark spans appearance-focused, motion-focused, and spatially dense tasks with diverse annotation requirements. To study temporal reasoning, we distribute temporal context across the backbone, probe, and PEFT modules, allowing each to operate on a different number of frames, and study the resulting performance-efficiency trade-offs. Our study reveals four key findings: (1) Standard PEFT methods (e.g. LoRA [24], AdaptFormer [11]) outperform image-to-video PEFT approaches when paired with an attentive probe. This gap widens with a video-pretrained backbone. (2) On video backbones, attention-based adaptation excels on motion-heavy tasks, while MLP-based adaptation is best for spatial prediction. (3) Although probe performance differs substantially per task, this variability largely disappears once combined with PEFT, suggesting that a simple attentive probe is sufficient and removes the need for elaborate task-specific decoders. (4) Temporal modeling is driven by the backbone, which also dominates throughput. Temporal PEFT can partially compensate for reduced temporal context in the backbone, highlighting a promising direction for efficient video adaptation.
+
+In summary, we (i) provide the first comprehensive evaluation of parameter-efficient adaptation and probing strategies for video, covering both image-pretrained and video-pretrained backbones across diverse tasks and settings. (ii) Introduce temporal context distribution as a new perspective for understanding and improving parameter-efficient model adaptation in video. (iii) Offer concrete adaptation strategies for low-resource video tasks spanning appearance, motion, and spatial understanding.
+
+# 2 Related Work
+
+Video Task Adaptation. Video understanding commonly relies on large pretrained encoders [1– 3, 6, 9, 10, 58, 61–64], however adapting them to downstream tasks via end-to-end finetuning is computationally expensive and can overwrite useful priors [3]. This motivates probing strategies, where a lightweight prediction head is trained on a frozen encoder. Probe design varies in how temporal information is modeled. Linear probes aggregate tokens before classification, discarding temporal structure, while attentive probes [3, 13, 19, 48] use cross-attention over spatio-temporal tokens and are a common choice for video [2, 3, 9, 55, 61, 79]. Recent work [48], improves attentive probe efficiency by removing redundant projections. Other approaches explicitly model time at the probe, enabling adaptation of image encoders to video [37, 49]. DiST [49] adds a lightweight temporal encoder with shallow-to-deep feature fusion emphasizing high-level representations. In contrast, for dense prediction in images, DPT [51] fuses features from deep-to-shallow, emphasizing early-layer features. VDA extends this with a spatio-temporal head for inter-frame consistency. Despite this diversity, probe designs are typically developed and evaluated for specific tasks, with limited comparison across tasks or probe types. Moreover, probing and PEFT are studied separately, despite both operating on top of a frozen backbone. We instead evaluate representative probe designs jointly with PEFT methods and study how distributing the temporal context between backbone, probe and PEFT affects adaptation across appearance, motion and spatially dense video tasks.
+
+Parameter-Efficient Fine-Tuning. While probing adapts pretrained models through the prediction head, PEFT introduces learnable updates within a frozen backbone and is complementary to probebased adaptation [19, 48]. PEFT methods can be divided into four paradigms. Adapters [11, 23, 28, 40, 46, 77] insert bottleneck modules within transformer blocks, with AdaptFormer [11] placing them in parallel with the MLP, rather than after it [23]. Additive methods [26, 33, 34, 65, 72] introduce learnable tokens into the input or intermediate representations, including frequency-aware (VFPT [72]) and low-rank (BPT [65]) variants. Selective [4, 36, 66, 71] approaches instead update subsets of existing parameters, e.g. bias terms (BitFit [71]), normalization (LayerNorm [4]) or perchannel scale and shift (SSF [36]). Reparameterization methods [24, 27, 38, 60, 75] inject low-rank residuals into existing weights. For example, LoRA [24] parameterizes the residual as the product of two low-rank matrices, while DoRA [38] further decomposes pretrained weights into magnitude and direction components, only updating the latter. While these methods are well-studied in image and language, their behavior for video remains less clear.
+
+Existing video-specific PEFT methods [37, 39, 44, 45, 47, 69] instead focus on image-to-video transfer, where a frozen image backbone [8, 43, 50, 55, 59] is augmented with temporal modules. For example, ST-Adapter [44] inserts a temporal 3D convolution into the adapter bottleneck. These approaches are typically trained on large-scale video datasets and adopt a fixed temporal configuration, where temporal reasoning is introduced only through the adaptation modules while the backbone remains static. As a result, they are tailored to large-scale action recognition. Crucially, it remains unclear how these image-to-video approaches compare to applying standard PEFT methods to video backbones. In contrast, we evaluate PEFT methods across diverse video tasks in the low-data regime and study how temporal context should be distributed across the backbone and adaptation modules.
+
+Adaptation Benchmarks. Model adaptation is particularly useful in low-resource settings, where limited data makes full finetuning undesirable. This is recognized in images, where models pretrained on large-scale image datasets [16, 52, 54] are evaluated on low-resource benchmarks [30, 73]. These settings typically involve limited data, fine-grained distinctions, and domain shift between the pretraining and downstream tasks [76]. In contrast, video adaptation is typically evaluated in the opposite regime: large-scale datasets, coarse-grained action recognition and web-domain videos closely aligned with the pretraining data, providing limited insight into generalization beyond these settings [56]. While recent works begin to consider low-resource and specialized settings [22, 35, 57] they focus on backbone design and pretraining, rather than parameter-efficient methods. Systematic evaluations of PEFT do exist in other domains [5, 17, 41, 68], but these findings do not directly transfer to video, where temporal structure introduces an additional dimension for adaptation.
+
+![](images/0eda7e1f85def0b1525b283280a4577b1885675a89e4b3944851034bf8694e07.jpg)
+
+<details>
+<summary>flowchart</summary>
+
+```mermaid
+graph TD
+    A["Linear"] --> B["PEFT"]
+    B --> C["..."]
+    B --> D["Model"]
+    E["Output"] --> F["PEFT"]
+    F --> G["..."]
+    F --> H["Model"]
+    I["Linear"] --> J["PEFT"]
+    J --> K["..."]
+    J --> L["Model"]
+    M["Linear"] --> N["PEFT"]
+    N --> O["..."]
+    O --> P["Model"]
+    Q["Linear"] --> R["PEFT"]
+    R --> S["..."]
+    S --> T["Model"]
+    U["Linear"] --> V["PEFT"]
+    V --> W["..."]
+    W --> X["Model"]
+    Y["Linear"] --> Z["PEFT"]
+    Z --> AA["..."]
+    AA --> AB["Model"]
+    AC["Linear"] --> AD["PEFT"]
+    AD --> AE["..."]
+    AE --> AF["Model"]
+    AG["Linear"] --> AH["PEFT"]
+    AH --> AI["..."]
+    AI --> AJ["Model"]
+    AK["Linear"] --> AL["PEFT"]
+    AL --> AM["..."]
+    AM --> AN["Model"]
+    AO["Linear"] --> AP["PEFT"]
+    AP --> AQ["..."]
+    AQ --> AR["Model"]
+    AS["Linear"] --> AT["PEFT"]
+    AT --> AU["..."]
+    AU --> AV["Model"]
+    AW["Linear"] --> AX["PEFT"]
+    AX --> AY["..."]
+    AY --> AZ["Model"]
+    BA["Linear"] --> BB["PEFT"]
+    BB --> BC["..."]
+    BC --> BD["Model"]
+    BE["Linear"] --> BF["PEFT"]
+    BF --> BG["..."]
+    BG --> BH["Model"]
+    BI["Linear"] --> BJ["PEFT"]
+    BJ --> BK["..."]
+    BK --> BL["Model"]
+    BM["Linear"] --> BN["PEFT"]
+    BN --> BO["..."]
+    BO --> BP["Model"]
+    BQ["Linear"] --> BR["PEFT"]
+    BR --> BS["..."]
+    BS --> BT["Model"]
+    BU["Linear"] --> BV["PEFT"]
+    BV --> BW["..."]
+    BW --> BX["Model"]
+```
+</details>
+
+a) Static Backbone + Temporal Adaptation
+
+![](images/9fc188de5a3581a6fc35b9f62d571bd9268c3e939a722b456cb390478d77e9c4.jpg)
+
+<details>
+<summary>flowchart</summary>
+
+```mermaid
+graph TD
+    A["Input Layer"] --> B["Linear"]
+    B --> C["Output Layer"]
+    C --> D["PEFT"]
+    D --> E["Model"]
+    style A fill:#f9f,stroke:#333
+    style B fill:#ccf,stroke:#333
+    style C fill:#cfc,stroke:#333
+    style D fill:#fcc,stroke:#333
+    style E fill:#ffc,stroke:#333
+```
+</details>
+
+b) Temporal Backbone + Static Adaptation
+
+![](images/f499dc3a162dd76a4596f5f0e94700b83891ab9b8aeb3008f7e4a20d6e89ab92.jpg)
+
+<details>
+<summary>flowchart</summary>
+
+```mermaid
+graph TD
+    A["Output"] --> B["Linear"]
+    B --> C["Probe"]
+    C --> D["PEFT"]
+    D --> E["..."]
+    E --> F["Model"]
+    F --> G["Output"]
+```
+</details>
+
+c) Matched Temporal Context
+
+![](images/89e127473e40cf134c3cdda50698d262884d78311358cd8d3c6db48422c0f697.jpg)
+
+<details>
+<summary>flowchart</summary>
+
+```mermaid
+graph TD
+    A["Linear"] --> B["Probe"]
+    A --> C["Probe"]
+    A --> D["Probe"]
+    A --> E["Probe"]
+    B --> F["PEFT"]
+    C --> F
+    D --> F
+    E --> F
+    F --> G["..."]
+    F --> H["Model"]
+    F --> I["Model"]
+    J["Output"] --> A
+```
+</details>
+
+d) Distributed Temporal Context   
+Figure 1: Distributing Temporal Context. Existing works place temporal modeling in a single component: either the PEFT modules (a), where a frame-wise backbone is combined with temporal adaptation, or in the backbone (b), where temporally-aware representations are adapted by static PEFT and probes. We instead allow temporal modeling across backbone, PEFT and probe simultaneously (c) and study how temporal context should be distributed across components (d).
+
+Closest to our study is V-PETL [67], which extends its analysis of PEFT on images to three video datasets (K400 [29], SSv2 [21], HMDB [31]). However, these evaluations focus on action recognition benchmarks that are either large-scale or closely aligned with pretraining data, limiting insight into low-resource regimes and the role of temporal context. In contrast, we benchmark adaptation methods on naturally low-resource video tasks spanning appearance, motion and spatial understanding and study how temporal context affects adaptation across the backbone, probe and PEFT modules.
+
+# 3 Distributing Temporal Context
+
+Video adaptation requires reasoning over multiple frames, making a central design choice not just whether to model temporal information, but where this temporal reasoning should occur. Existing approaches make this choice implicitly by assigning temporal modeling to a single component. In image-to-video adaptation [44], the backbone operates on individual frames and temporal reasoning is only introduced through the PEFT (Figure 1a). In contrast, standard PEFT or probing methods can be applied directly to video-backbones [67] (Figure 1b). Despite their differences, both concentrate temporal capacity only in a single component. This leaves a broader design space underexplored in which multiple components may benefit from temporal reasoning at different temporal scales, raising the question of how should temporal context be distributed across the backbone, PEFT modules, and probe for maximum efficiency and performance?
+
+In this study, we consider a setting where temporal modeling can be applied across the backbone, PEFT and probe (Figure 1c). This treats temporal context as a flexible resource that can be distributed across components with different temporal extents (Figure 1d), enabling a systematic study of where performance gains arise. We begin with the matched setting (Section 3.1), where all components operate on the same temporal context and progressively relax this constraint by distributing the temporal context differently across probe (Section 3.2) and PEFT modules (Section 3.3).
+
+# 3.1 Matched Temporal Context
+
+We first consider the matched setting, where the backbone, probe and PEFT modules all operate on the same temporal context. Given a video $X \in \mathbb { R } ^ { T \times H \times \dot { W } ^ { \times 3 } }$ where T is the number of frames, a video encoder $f _ { \theta }$ maps the clip into spatiotemporal tokens and produces representations Z:
+
+$$
+Z = f _ {\theta} (X) \in \mathbb {R} ^ {T \cdot N _ {s} \times D} \tag {1}
+$$
+
+where $N _ { s }$ is the number of spatial tokens per frame and $D$ is the embedding dimension, giving a total of $N { = } T { \cdot } N _ { s }$ tokens. We use a ViT [18], thus $f _ { \theta }$ consists of a stack of $L$ transformer blocks. At layer $\ell ,$ given intermediate features $h ^ { \ell } \in \mathbf { \bar { \mathbb { R } } } ^ { \bar { N } \times D }$ , the transformer applies multi-head self-attention (MSA) followed by an MLP. For adaptation, both modules are augmented with PEFT operators $\mathcal { P } _ { \mathrm { M S A } } ^ { \ell }$ and $\mathcal { P } _ { \mathrm { M L P } } ^ { \ell }$ , which introduce a small set of trainable parameters:
+
+$$
+\tilde {h} ^ {\ell} = h ^ {\ell} + \mathcal {P} _ {\mathrm{MSA}} ^ {\ell} \left(h ^ {\ell}, \operatorname{MSA} \left(h ^ {\ell}\right)\right) \quad h ^ {\ell + 1} = \tilde {h} ^ {\ell} + \mathcal {P} _ {\mathrm{MLP}} ^ {\ell} \left(\tilde {h} ^ {\ell}, \operatorname{MLP} \left(\tilde {h} ^ {\ell}\right)\right) \tag {2}
+$$
+
+To obtain a final prediction, a probe $g _ { \phi }$ aggregates the $N$ output tokens in the representation $Z { = } h ^ { L }$ into a task prediction ${ \hat { y } } .$ In this setting probe, PEFT modules and backbone all operate on the same temporal context, receiving all tokens from the T input frames. We denote this matched-context as:
+
+$$
+T _ {\text { backbone }} = T _ {\text { probe }} = T _ {\text { peft }} = T. \tag {3}
+$$
+
+# 3.2 Distributing Probe Temporal Context
+
+In the matched setting, the probe operates on all tokens and shares the backbone’s temporal context. As increasing temporal context in the backbone is computationally expensive, we consider instead varying it at the probe, either increasing or reducing it.
+
+Longer Probe Context Than Backbone. The probe can operate on a longer temporal context by aggregating tokens from multiple backbone instances, as in V-JEPA [3]. This avoids the quadratic computation for full spatio-temporal attention in the backbone. Given an input clip of $T _ { \mathrm { p r o b e } }$ frames and a backbone using $T _ { \mathrm { b a c k b o n e } } < T _ { \mathrm { p r o b e } } .$ we divide the video into $K { = } T _ { \mathrm { p r o b e } } / T _ { \mathrm { l } }$ backbone segments $X _ { 1 } , \ldots , X _ { K }$ , apply the same backbone to each and concatenate the output:
+
+$$
+Z _ {k} = f _ {\theta} (X _ {k}) \in \mathbb {R} ^ {T _ {\text {backbone}} \cdot N _ {s} \times D}, \quad Z = [ Z _ {1}; Z _ {2}; \dots ; Z _ {K} ] \in \mathbb {R} ^ {T _ {\text {probe}} \cdot N _ {s} \times D}, \quad k = 1, \dots , K. \tag {4}
+$$
+
+The probe then attends over $Z$ to give the task prediction $\scriptstyle { \hat { y } } = g _ { \phi } ( Z )$ .
+
+Shorter Probe Context Than Backbone. Conversely, the probe can have a shorter temporal context, $\begin{array} { r } { T _ { \mathrm { p r o b e } } { < } T _ { \mathrm { b a c k b o n e } } , } \end{array}$ , when the backbone already captures sufficient temporal information. Given backbone output tokens $Z \in \mathbb { R } ^ { T _ { \mathrm { b a c k b o n e } } \cdot N _ { s } \times D }$ , we partition the temporal axis into K segments $Z { = } [ Z ^ { 1 } ; Z ^ { 2 } ; \dots ; Z ^ { \dot { K } } ]$ where $Z ^ { k } \in \mathbb { R } ^ { T _ { \mathrm { p r o b e } } \cdot N _ { s } \times D }$ . The same probe $g _ { \phi }$ is applied independently to each segment, producing per-segment outputs $\scriptstyle { \hat { y } } ^ { k } = g _ { \phi } ( Z ^ { k } )$ . For dense tasks, these are concatenated temporally; for classification, they are average-pooled before a linear prediction head.
+
+# 3.3 Distributing PEFT Temporal Context
+
+The same distribution can be applied to PEFT modules. While Sectionat the prediction, here we vary it within the model. In the matched se $3 . 2$ vg, e te and context inherit $\mathcal { P } _ { \mathrm { M S A } } ^ { \ell }$ $\bar { \mathcal { P } } _ { \mathrm { M L P } } ^ { \ell }$ the backbone’s temporal context $T _ { \mathrm { b a c k b o n e } }$ . We instead allow the PEFT operators to act over their own temporal context $T _ { \mathrm { p e f t } }$ , considering both longer and shorter cases.
+
+Longer PEFT Context Than Backbone. This regime allows PEFT modules to mix information across frames that are never processed jointly by the backbone, enabling long-range temporal interaction at adapter cost. Given a clip of $T _ { \mathrm { p e f t } }$ frames and a backbone operating on $T _ { b a c k b o n e } ,$ we process $K { = } T _ { \mathrm { p e f t } } / T _ { \mathrm { b a c k b o n e } }$ segments to obtain per-layer intermediate features $h _ { k } ^ { \ell } \in \mathbb { R } ^ { T _ { 1 } }$ backbone $\cdot N _ { s } ^ { - } \times D$ for $k { = } 1 , \ldots , K$ . We concatenate these along the temporal axis $H ^ { \ell } = [ h _ { 1 } ^ { \ell } ; \dots ; \overset { \scriptscriptstyle \mathrm { \prime \prime } } { h } _ { K } ^ { \ell } ] \in \mathbb { R } ^ { T _ { \mathrm { p e f t } } \cdot N _ { s } \times D }$ . The PEFT operator acts on $H ^ { \ell }$ , enabling temporal interaction across segments, while the MSA continues to operate per segment. The result is split back into segments (denoted by [·]) to give:
+
+$$
+\tilde {h} _ {k} ^ {\ell} = h _ {k} ^ {\ell} + \left[ \mathcal {P} _ {\mathrm{MSA}} ^ {\ell} \left(H ^ {\ell}, \operatorname{MSA} \left(h _ {k} ^ {\ell}\right)\right) \right] _ {k}. \tag {5}
+$$
+
+The $\mathcal { P } _ { \mathrm { M L P } } ^ { \ell }$ case is analogous, using the concatenated features $\tilde { H } ^ { \ell } = [ \tilde { h } _ { 1 } ^ { \ell } ; \dots ; \tilde { h } _ { K } ^ { \ell } ]$
+
+Shorter PEFT Context Than Backbone. Conversely, PEFT can operate on a shorter temporal context $T _ { \mathrm { p e f t } } { < } T _ { \mathrm { b a c k b o n e } }$ . This restricts temporal mixing within the adapter to local temporal patterns while longer-range dependencies are handled by the backbone. We partition the backbone features along the temporal axis into $K { = } T _ { \mathrm { b a c k b o n e } } / \dot { T } _ { \mathrm { p e f t } }$ segments: $h ^ { \ell } { = } \dot { [ } h ^ { \ell , 1 } ; \ldots ; h ^ { \ell , K } ]$ ] where $h ^ { \ell , k } \in \mathbb { R } ^ { T _ { \mathrm { p e f t } } \cdot \mathbf { \bar { N } } _ { s } \times D }$ . The same PEFT operator is applied independently to each segment, while the MSA still acts at the full backbone context. The resulting updates are concatenated along the temporal axis to give:
+
+$$
+\tilde {h} ^ {\ell} = h ^ {\ell} + \left[ \mathcal {P} _ {\mathrm{MSA}} ^ {\ell} \left(h ^ {\ell , 1}, \operatorname{MSA} \left(h ^ {\ell}\right)\right); \dots ; \mathcal {P} _ {\mathrm{MSA}} ^ {\ell} \left(h ^ {\ell , K}, \operatorname{MSA} \left(h ^ {\ell}\right)\right) \right]. \tag {6}
+$$
+
+The $\mathcal { P } _ { \mathrm { M L P } } ^ { \ell }$ case is analogous, partitioning $\tilde { h } ^ { \ell }$ after MSA with $\mathrm { M L P } ( \tilde { h } ^ { \ell } )$ shared across segments.
+
+Table 1: Low-resource video adaptation benchmark across appearance, motion, and spatial video understanding. The datasets span diverse annotation granularities, viewpoints and domains. 
+
+<table><tr><td rowspan="2"></td><td colspan="2">Appearance</td><td colspan="2">Motion</td><td colspan="2">Spatial</td></tr><tr><td>CAER</td><td>NurViD</td><td>IndustReal</td><td>MammAlps</td><td>ScanNet</td><td>VSPW</td></tr><tr><td>Task</td><td>Emotion Analysis</td><td>Procedure Classification</td><td>Step Recognition</td><td>Behavior Recognition</td><td>Depth Estimation</td><td>Semantic Segmentation</td></tr><tr><td>Viewpoint</td><td> $3^{rd}$ </td><td> $3^{rd}$ </td><td> $1^{st}$ </td><td> $3^{rd}$ </td><td> $1^{st}$ </td><td> $3^{rd}$ </td></tr><tr><td>Domain</td><td>Television</td><td>Medical</td><td>Assembly</td><td>Wildlife</td><td>Indoor</td><td>Web</td></tr><tr><td>Classes</td><td>7</td><td>51</td><td>75</td><td>11</td><td>-</td><td>124</td></tr><tr><td>Train</td><td>9,222</td><td>3,899</td><td>3,667</td><td>4,205</td><td>1,201</td><td>2,806</td></tr><tr><td>Validation</td><td>1,316</td><td>586</td><td>1,928</td><td>686</td><td>312</td><td>343</td></tr><tr><td>Test</td><td>2,637</td><td>1,121</td><td>3,678</td><td>1,244</td><td>100</td><td> $387^†$ </td></tr></table>
+
+# 4 Low-Resource Video Evaluation
+
+To study distributed temporal context, we require a benchmark that exposes when different adaptation and temporal modeling strategies matter. Existing video adaptation [35, 67, 70] focuses on large-scale recognition where abundant data reduces the need for parameter-efficient methods. PEFT is most useful in low-resource settings [41], where specialized domains make adaptation necessary and limited data makes full finetuning prone to overfitting. We therefore define criteria for intrinsically low-resource video tasks (Sec. 4.1) and use them to construct a benchmark suite (Sec. 4.2).
+
+# 4.1 Selection Criteria
+
+We cannot simply subsample large-scale datasets, as this fails to reproduce the challenges of genuinely scarce data [76]. We instead select datasets that are intrinsically limited in size with four criteria. First, we prioritize settings where data scarcity is structural such as healthcare [25], wildlife monitoring [20], and per-pixel annotation [42]. Second, we ensure capability coverage across appearance, motion, and spatial video understanding. Third, we span a range of annotation densities, from video-level labels to per-pixel annotations, as output granularity may interact with temporal context. Finally, we include diversity in viewpoint and domain to avoid conclusions tied to a single visual regime.
+
+# 4.2 Tasks and Datasets
+
+Our suite covers six datasets organized along the three capability axes: appearance, motion and spatial understanding. Table 1 summarizes key statistics; here we briefly describe the tasks.
+
+Appearance. CAER [32] contains short TV clips, labeled with one of seven emotions. Recognition is driven by facial expression rather than motion. NurViD [25] targets nursing procedure classification. The 51 procedures are visually similar, involving a clinician interacting with a patient or equipment, making this a fine-grained appearance task.
+
+Motion. IndustReal [53] contains egocentric videos of industrial assembly, where each clip is labeled with one of 75 steps. Distinguishing steps requires modeling how the scene evolves over time. MammAlps [20] contains multi-camera wildlife footage with 11 behaviors (e.g. chasing, foraging). These unfold over seconds and are visually subtle, making this a temporally-demanding task.
+
+Spatial. ScanNet [15] consists of indoor RGB-D scans, from which we use RGB frames for per-pixel depth regression. Data collection requires specialized hardware, limiting scale. VSPW [42] provides per-frame semantic segmentation labels across 124 categories on third-person web video. Annotations are hand-drawn on each frame, making them labor-intensive. Together these tasks require dense spatial predictions, allowing us to study how temporal context interacts with per-pixel prediction.
+
+# 5 Empirical Study of Video Model Adaptation
+
+We study model adaptation across the tasks in our low-resource video benchmark. Our experiments analyze when to adapt and image or video model (Section 5.1), which PEFT (Section 5.2) and probe methods (Section 5.3) work best and how temporal context should be distributed across input, model, probe and PEFT (Sections 5.4 and 5.5). Full experiment details are provided in Appendix A.
+
+# 5.1 When to Adapt an Image Model vs. a Video Model?
+
+Experimental Setup. We consider four pretraining paradigms. For image-only self-supervision, we use DINOv3 [55], which learns via unsupervised self-distillation. SigLIP 2 [59] represents imagetext pretraining, aligning images and captions with a sigmoid contrastive objective. V-JEPA 2 [2] represents video self-supervision, performing masked video modeling in the latent feature space. InternVideo-Next [61] combines image-text and video self-supervision by aligning intermediate representations to a frozen SigLIP 2 teacher before performing masked video prediction. For each backbone, we evaluate both an attentive probe alone and in combination with several representative PEFT approaches: ST-Adapter (image-to-video) [44], AdaptFormer [11] and LoRA [24]. We use the ViT-L version of each backbone as it is the only variant available across all models.
+
+Table 2: Adapting Image vs. Video Models. Video models consistently outperforms image-to-video adaptation, especially for motion, while DINOv3 excels on spatial tasks. Best and best per backbone. 
+
+<table><tr><td rowspan="2" colspan="2"></td><td colspan="2">Appearance</td><td colspan="2">Motion</td><td colspan="2">Spatial</td></tr><tr><td>CAER top-1↑</td><td>NurViD top-1↑</td><td>IndustReal top-1↑</td><td>MammAlps top-1↑</td><td>ScanNet AbsRel ↓</td><td>VSPW mIoU ↑</td></tr><tr><td rowspan="4">SigLIP2</td><td>Attentive Probe</td><td>52.1</td><td>79.0</td><td>47.4</td><td>66.9</td><td>0.237</td><td>33.8</td></tr><tr><td>LoRA</td><td>63.0</td><td>87.0</td><td>67.7</td><td>73.4</td><td>0.136</td><td>53.5</td></tr><tr><td>Adaptformer</td><td>61.2</td><td>87.1</td><td>64.2</td><td>72.4</td><td>0.122</td><td>54.9</td></tr><tr><td>ST-Adapter</td><td>62.5</td><td>87.5</td><td>66.9</td><td>72.4</td><td>0.131</td><td>55.7</td></tr><tr><td rowspan="4">DINOv3</td><td>Attentive Probe</td><td>58.9</td><td>85.2</td><td>58.1</td><td>71.5</td><td>0.120</td><td>56.4</td></tr><tr><td>LoRA</td><td>62.8</td><td>87.3</td><td>69.8</td><td>72.6</td><td>0.111</td><td>60.6</td></tr><tr><td>Adaptformer</td><td>61.8</td><td>87.1</td><td>67.5</td><td>72.6</td><td>0.092</td><td>61.2</td></tr><tr><td>ST-Adapter</td><td>62.4</td><td>86.9</td><td>69.2</td><td>75.6</td><td>0.106</td><td>61.1</td></tr><tr><td rowspan="3">VJEPA2</td><td>Attentive Probe</td><td>54.3</td><td>82.4</td><td>60.2</td><td>74.0</td><td>0.158</td><td>35.4</td></tr><tr><td>LoRA</td><td>59.1</td><td>84.0</td><td>67.6</td><td>77.1</td><td>0.131</td><td>46.9</td></tr><tr><td>Adaptformer</td><td>57.8</td><td>83.8</td><td>64.4</td><td>77.2</td><td>0.128</td><td>45.7</td></tr><tr><td rowspan="3">IV-NEXT</td><td>Attentive Probe</td><td>62.7</td><td>88.5</td><td>67.0</td><td>74.0</td><td>0.135</td><td>47.3</td></tr><tr><td>LoRA</td><td>63.1</td><td>88.5</td><td>72.8</td><td>75.9</td><td>0.142</td><td>55.2</td></tr><tr><td>Adaptformer</td><td>63.4</td><td>88.6</td><td>70.0</td><td>76.3</td><td>0.118</td><td>57.6</td></tr></table>
+
+Results. Results are shown in Table 2. Video-pretrained backbones outperform image-pretrained ones on both appearance and motion tasks, with the largest gains on motion. Spatial tasks are less dependent on modality: here DINOv3 is strongest, while InternVideo-Next ranks second, outperforming imagetext model SigLIP2. While PEFT substantially improves over the attentive probe on image backbones, it does not close the gap to video pretraining, highlighting the limits of current PEFT methods when the backbone is misaligned with the target task. Standard PEFT (AdaptFormer, LoRA) applied to video-pretrained backbones also outperform video-specific adaptation from image models, suggesting that future research should focus on adapting video backbones rather than image-to-video transfer. Based on these results, we use InternVideo-Next in all subsequent experiments.
+
+Conclusion. In most cases, adapting a video-pretrained backbone is preferable. Image-pretrained models are only competitive for spatially dense tasks, and image-to-video adaptation is consistently less effective than standard PEFT on video models.
+
+# 5.2 Which PEFT Methods Work Best for Video?
+
+Experimental Setup. We compare ten PEFT methods spanning four paradigms: selective (BitFit [71], LayerNorm [4], SSF [36]), additive (VPT [26], VFPT [72], BPT [65]), adapter (ST-Adapter [44], AdaptFormer [11]), and low-rank (LoRA [24], DoRA [38]). Each is combined with an attentive probe and compared to full finetuning and probing alone in Table 3. We use InternVideo-Next ViT-B as the backbone, ViT-B vs. ViT-L comparisons are provided in Appendix B.1.
+
+Results. PEFT improves over the attentive probe alone on all tasks, with several approaches even exceeding or matching full finetuning at a fraction of the trainable parameters. LoRA provides the best overall performance, particularly on motion and appearance tasks. This is consistent with its design: by adapting the attention layers, LoRA directly influences the modeling of temporal and global relationships. AdaptFormer performs best on spatial tasks. In contrast to LoRA, AdaptFormer modifies only the MLP layers, suggesting that these layers carry more of the spatial information required for dense prediction. Among prompt-based methods, BPT is strongest, but is consistently outperformed by AdaptFormer or LoRA, indicating that prompting alone is a weaker adaptation mechanism than modifying model weights. Selective methods are the most parameter-efficient, with SSF in particular performing strongly, even outperforming full finetuning on several tasks. We attribute this to selective methods adjusting both attention and MLP activations, making them effective across task types. More broadly, we find conclusions from other domains do not necessarily transfer to video; for example, DoRA does not outperform LoRA, despite being more recent.
+
+Table 3: Comparison of PEFT Methods for Video. Low-rank and adapter methods perform best while keeping parameters limited. No single method dominates: LoRA excels on motion and appearance, while AdaptFormer performs best on spatial tasks. Best and second-best are highlighted. 
+
+<table><tr><td rowspan="2" colspan="2"></td><td rowspan="2">Params (M) ↓</td><td colspan="2">Appearance</td><td colspan="2">Motion</td><td colspan="2">Spatial</td></tr><tr><td>CAER top-1 ↑</td><td>NurViD top-1 ↑</td><td>IndustReal top-1 ↑</td><td>MammAlps top-1 ↑</td><td>ScanNet AbsRel ↓</td><td>VSPW mIoU ↑</td></tr><tr><td rowspan="2">Base</td><td>Full Finetuning</td><td>87.1</td><td>59.1</td><td>87.3</td><td>66.7</td><td>71.8</td><td>0.164</td><td>40.9</td></tr><tr><td>Attentive Probe</td><td>7.4</td><td>60.3</td><td>85.5</td><td>63.1</td><td>69.9</td><td>0.157</td><td>40.4</td></tr><tr><td rowspan="3">Selective</td><td>BitFit</td><td>7.5</td><td>61.1</td><td>85.9</td><td>63.8</td><td>69.9</td><td>0.147</td><td>44.8</td></tr><tr><td>LayerNorm</td><td>7.5</td><td>60.4</td><td>85.7</td><td>64.6</td><td>69.6</td><td>0.150</td><td>43.5</td></tr><tr><td>SSF</td><td>7.6</td><td>60.7</td><td>86.2</td><td>65.3</td><td>69.6</td><td>0.136</td><td>47.0</td></tr><tr><td rowspan="3">Additive</td><td>VPT</td><td>8.1</td><td>61.2</td><td>85.6</td><td>65.8</td><td>70.9</td><td>0.152</td><td>48.7</td></tr><tr><td>VFPT</td><td>8.2</td><td>60.9</td><td>86.1</td><td>64.8</td><td>69.9</td><td>0.146</td><td>48.6</td></tr><tr><td>BPT</td><td>8.5</td><td>60.7</td><td>86.5</td><td>65.5</td><td>69.9</td><td>0.144</td><td>49.3</td></tr><tr><td rowspan="2">Adapt</td><td>AdaptFormer</td><td>11.3</td><td>61.5</td><td>86.2</td><td>66.7</td><td>71.9</td><td>0.137</td><td>50.1</td></tr><tr><td>ST-Adapter</td><td>12.5</td><td>61.4</td><td>85.9</td><td>67.1</td><td>70.6</td><td>0.148</td><td>49.4</td></tr><tr><td rowspan="2">Rank</td><td>LoRA</td><td>12.1</td><td>62.1</td><td>86.9</td><td>68.7</td><td>72.6</td><td>0.156</td><td>48.2</td></tr><tr><td>DoRA</td><td>13.7</td><td>60.3</td><td>85.7</td><td>66.9</td><td>68.8</td><td>0.159</td><td>45.9</td></tr></table>
+
+![](images/6b0a5e5057f07d84067dcea64409acc84bf1089b2280200756a004a16f2a8d6a.jpg)  
+Figure 2: Comparison of Probe Methods for Video. In isolation, the best probe varies per task. Combining probe and PEFT reduces this variability, with attentive probe performing best overall.
+
+Conclusion. Low-rank and adapter methods provide the strongest performance, with LoRA best for appearance and motion tasks and AdaptFormer for spatial tasks.
+
+# 5.3 Which Probe Works Best For Video?
+
+Experimental Setup. We compare six probing strategies across the downstream tasks in Figure 2, with full results in Appendix B.2. These include linear, efficient [48] and attentive probes [3, 13], as well as temporal-focused DiST [49] and dense prediction probes DPT [51] and VDA [12]. We test each probe in isolation and additionally combine the best-performing probe and PEFT methods.
+
+Results. Alone, probe performance is strongly task-dependent, with no single method performing best across all tasks. For appearance tasks, the attentive probe performs best, suggesting that lastlayer features already capture the required global information. For motion tasks and semantic segmentation (VSPW), DiST performs best, even beating the pixel-specialized DPT and VDA on VSPW. This indicates that both motion and segmentation benefit from multi-layer aggregation. For depth estimation (ScanNet), DPT and VDA are the strongest, as pixel-level prediction depends more heavily on early-layer features. DiST cannot match them here as its downsampling degrades spatial precision. Conversely, DPT and VDA trade-off performance on appearance and motion tasks, where DPT is outperformed by the 20× smaller efficient probe. The linear probe is consistently weakest and serves mainly as a low-parameter (0.1M) lower bound. The efficient probe nearly matches the attentive probe on appearance tasks at roughly 10x fewer parameters, but does not scale to dense outputs and is therefore not evaluated on the spatial tasks. Overall, increasing probe complexity does not universally improve performance; gains depend on how well the probe design matches the task. However, when combined with PEFT, task-specific differences between probes are reduced and the attentive probe performs the most consistently across tasks.
+
+Conclusion. Probe choice is task-dependent in isolation, but less so combined with PEFT. While task-specific probes can help in some settings, the attentive probe is the most consistent overall.
+
+![](images/39f78e0704b34301494bfd58a218552273831fda88bcd02740206a6ea85b2baf.jpg)  
+Figure 3: Disentangling Temporal Modeling from Input Frames. Performance-throughput tradeoffs when varying temporal context jointly with the input (matched) or only within the backbone, PEFT, and probe while keeping the input fixed at 16 frames (input-fixed). This separates performance changes due to temporal-modeling and input-information.
+
+# 5.4 Do Input Frames or Temporal Modeling Matter More?
+
+Experimental Setup. Having established effective probe and PEFT designs, we now examine how temporal context should be distributed across the model. To separate the effect of internal temporal modeling from additional input frames, we compare two regimes. The matched setting $( T { = } T _ { \mathrm { b a c k b o n e } } { = } T _ { \mathrm { p e f t } } { = } T _ { \mathrm { p r o b e } } ;$ Section 3.1), scales the input frames and all internal temporal contexts together. The input-fixed setting $( T { \geq } T _ { \mathrm { b a c k b o n e } } { = } T _ { \mathrm { p e f t } } { = } \bar { T } _ { \mathrm { p r o b e } } )$ fixes the input clip at 16 frames while varying the temporal contexts of backbone, PEFT and probe jointly. The temporal context of each component must divide T and cannot exceed it. When a component operates on a smaller context $T _ { c } { < } T$ , the component is applied independently to each $K \bar { = } T / T _ { c }$ segment and the outputs are recombined. We vary $T _ { c } \in \{ \hat { 1 } , 2 , 4 , 8 , 1 6 \}$ for appearance and motion tasks and $T _ { c } { \in } \{ 2 , 4 , 8 , 1 6 \}$ for spatial tasks averaging performance within each task category. We use a ViT-B InternVideo-Next backbone, ST-Adapter as the temporal PEFT, and an attentive probe. Throughput is reported in clips per second for classification tasks and frames per second for spatial tasks.
+
+Results. Figure 3 shows how performance-throughput trade-offs for the matched and input-fixed settings. On appearance tasks, reducing only internal temporal modeling (input-fixed) gives a 3% drop at ${ { T } _ { c } } \mathrm { { = } } 1$ , while additionally reducing input frames (matched) reduces performance another 7%. Motion tasks show the opposite: reducing internal temporal modeling accounts for most of the performance drop (14% out of 19%). The gap between matched and input-fixed settings falls below 1% already at $\bar { T _ { c } } \mathrm { = } 2$ , showing that once minimal temporal modeling is available, additional input frames provide little benefit and decrease throughput. On spatial tasks, the input-fixed setting stays near $T { = } T _ { c } { = } 1 6$ across the entire range, with ${ \cal T } _ { c } { = } 2$ providing substantially higher throughput with minimal accuracy loss. The observed 15% drop therefore comes entirely from reduced input frames.
+
+Conclusion. Appearance tasks benefit primarily from more input frames rather than temporal modeling, suggesting the gains of video-pretraining over image-pretraining (Sec. 5.1) arise from improved visual coverage. In contrast, motion tasks depend heavily on temporal reasoning, while spatial tasks favor allocating computation toward more input frames than extending temporal modeling.
+
+# 5.5 How to Distribute the Temporal Context?
+
+Experimental Setup. Section 5.4 showed that the importance of internal temporal modeling varies strongly across task types, but used the same temporal context in backbone, PEFT, and probe. Here we ask how temporal context is most effectively distributed. As well as the input-fixed setting with T =16 and $T _ { b a c k b o n e } { = } T _ { p e f t } { = } T _ { p r o b e } { = } T _ { c }$ , we evaluate three variants where the temporal context of one model component is fixed at 16 while the other two vary with $T _ { c } .$ . For instance, fixing the backbone gives $T { = } T _ { b a c k b o n e } { = } 1 6$ and $T _ { p e f t } { = } T _ { p r o b e } { = } T _ { c }$ . Setup otherwise matches Section 5.4.
+
+Results. Figure 4 compares the four temporal context allocations. On appearance tasks, all configurations stay within ∼4% of the full temporal-context reference $( T = T _ { b a c k b o n e } { = } T _ { p e f t } { = } T _ { p r o b e } )$ , again showing that internal temporal modeling contributes little to these tasks. Throughput, however, varies substantially: reducing backbone context yields the largest speedup, while keeping $T _ { b a c k b o n e } { = } 1 6$ leaves throughput nearly unchanged regardless of PEFT or probe context. Between PEFT and probe, temporal context in the probe contributes slightly more to performance. On motion tasks, temporal modeling is dominated by the backbone. Keeping $T _ { b a c k b o n e } { = } 1 6$ maintains performance close to
+
+![](images/2158722694fa602af40251da54e2e41efcba9b7311c01a14035c7f0527a0afb6.jpg)  
+Relative Throughput (log → faster). Marker size α trainable parameters
+
+Figure 4: How to Distribute Temporal Context. Fixing one component while varying the other two at $T _ { c }$ isolates each component’s contribution to temporal modeling. Curves above input-fixed indicate that the corresponding component improves with increased temporal context.
+
+the reference regardless of $T _ { c }$ , while reducing it drops performance sharply. When $T _ { \mathrm { b a c k b o n e } } { < } T _ { \cdot }$ allocating more temporal-context to the PEFT modules is more effective than allocating it to the probe. However, when computation permits, increasing temporal context in the backbone remains most effective. Spatial tasks show a different pattern. With $T _ { b a c k b o n e } { = } 1 6$ , performance improves as temporal context in PEFT and probe shrink. The fixed probe setting confirms the probe is the main source of degradation: when the probe operates over many frames, performance drops regardless of the rest of the model. We attribute this to dense prediction becoming harder when the low-capacity probe must integrate across many temporal positions, trading spatial precision for unnecessary temporal aggregation. This also reveals why uniformly increasing temporal context showed little benefit in Section 5.4: gains from temporal modeling in the backbone are canceled by the degradation from the temporal probe. For spatial tasks, temporal context is most effective in the backbone.
+
+Conclusion. Temporal context should be allocated selectively rather than uniformly. For appearance, throughput is best saved by reducing backbone context. Motion benefits most from temporal context in the backbone, though allocating temporal context to PEFT can improve performance when high throughput is required. Spatial tasks also favor temporal context in the backbone but not in the probe.
+
+# 6 Discussion
+
+Conclusion. We presented a systematic study of model adaptation for low-resource video understanding across appearance, motion and spatial tasks. We benchmarked a diverse set of PEFT and probe approaches and analyzed how temporal context at the backbone, PEFT and probe levels affects adaptation. Our experiments provide insight into when different adaptation strategies succeed and highlight temporal context allocation as a key consideration for efficient video adaptation.
+
+Recommendations. Our experiments suggest that the best adaptation strategy depends strongly on the type of video task. For appearance tasks, video-pretrained models consistently outperform image-pretrained alternatives, but only lightweight adaptation is required. In particular, image-style adapter and low-rank PEFT methods, combined with a backbone with limited temporal context (e.g. T =2) and simple temporal aggregation in the prediction head provide a good efficiency-accuracy trade-off. For motion tasks, temporal modeling in the backbone is critical. Here, video-pretrained backbones are substantially more effective than image models and increasing temporal reasoning in the backbone leads to the largest performance gains. In contrast, extensive temporal modeling in the PEFT and probe are not necessary, although it can partially compensate for reduced backbone context when higher throughput is required. Spatial tasks are different again. While adapting DINOv3 is effective, likely due to large-scale dense pretraining, we find benefits from temporal modeling within video backbones. However, low-capacity PEFT and probes struggle to preserve spatial detail while integrating temporal context, meaning temporal context here should be minimized.
+
+Limitations. Our temporal context analysis varies one or two components at a time while fixing others, as the search space over backbone, per-layer PEFT, and probe temporal context is combinatorially large. These choices likely interact and an efficient search over the joint space is left to future work.
+
+Broader Impact. Efficient adaptation of video foundation models can make advanced video understanding systems more accessible by reducing the computation and annotation costs required for deployment. This is particularly relevant for applications where labeled video data is scarce or expensive, such as healthcare, scientific imaging, manufacturing, robotics and environmental monitoring. By studying parameter-efficient adaptation in low-resource settings our work may help enable video models in settings where large-scale training or finetuning is impractical.
+
+# Acknowledgments and Disclosure of Funding
+
+This work is supported by the Dutch Research Council (NWO) under a Veni grant (VI.Veni.222.160).
+
+# References
+
+[1] Anurag Arnab, Mostafa Dehghani, Georg Heigold, Chen Sun, Mario Luciˇ c, and Cordelia ´ Schmid. Vivit: A video vision transformer. In IEEE/CVF International Conference on Computer Vision (ICCV), pages 6836–6846, 2021.   
+[2] Mido Assran, Adrien Bardes, David Fan, Quentin Garrido, Russell Howes, Mojtaba Komeili, Matthew J. Muckley, Ammar Rizvi, Claire Roberts, Koustuv Sinha, Artem Zholus, Sergio Arnaud, Abha Gejji, Ada Martin, Francois Robert Hogan, Daniel Dugas, Piotr Bojanowski, Vasil Khalidov, Patrick Labatut, Francisco Massa, Marc Szafraniec, Kapil Krishnakumar, Yong Li, Xiaodong Ma, Sarath Chandar, Franziska Meier, Yann LeCun, Michael Rabbat, and Nicolas Ballas. V-jepa 2: Self-supervised video models enable understanding, prediction and planning. arXiv preprint arXiv:2506.09985, 2025.   
+[3] Adrien Bardes, Quentin Garrido, Jean Ponce, Xinlei Chen, Michael Rabbat, Yann LeCun, Mido Assran, and Nicolas Ballas. Revisiting feature prediction for learning visual representations from video. Transactions on Machine Learning Research, 2024.   
+[4] Samyadeep Basu, Shell Hu, Daniela Massiceti, and Soheil Feizi. Strong baselines for parameterefficient few-shot fine-tuning. In AAAI Conference on Artificial Intelligence (AAAI), pages 11024–11031, 2024.   
+[5] Robert Belanec, Branislav Pecher, Ivan Srba, and Maria Bielikova. Peft-bench: A parameterefficient fine-tuning methods benchmark. In Conference of the European Chapter of the Association for Computational Linguistics (EACL), pages 3035–3054, 2026.   
+[6] Gedas Bertasius, Heng Wang, and Lorenzo Torresani. Is space-time attention all you need for video understanding? In International Conference on Machine Learning (ICML), pages 813–824. PMLR, 2021.   
+[7] Rishi Bommasani, Drew A. Hudson, Ehsan Adeli, Russ Altman, Simran Arora, Sydney von Arx, Michael S. Bernstein, Jeannette Bohg, Antoine Bosselut, Emma Brunskill, Erik Brynjolfsson, S. Buch, Dallas Card, Rodrigo Castellon, Niladri S. Chatterji, Annie S. Chen, Kathleen A. Creel, Jared Davis, Dora Demszky, Chris Donahue, Moussa Koulako Bala Doumbouya, Esin Durmus, Stefano Ermon, John Etchemendy, Kawin Ethayarajh, Li Fei-Fei, Chelsea Finn, Trevor Gale, Lauren Gillespie, Karan Goel, Noah D. Goodman, Shelby Grossman, Neel Guha, Tatsunori Hashimoto, Peter Henderson, John Hewitt, Daniel E. Ho, Jenny Hong, Kyle Hsu, Jing Huang, Thomas F. Icard, Saahil Jain, Dan Jurafsky, Pratyusha Kalluri, Siddharth Karamcheti, Geoff Keeling, Fereshte Khani, O. Khattab, Pang Wei Koh, Mark S. Krass, Ranjay Krishna, Rohith Kuditipudi, Ananya Kumar, Faisal Ladhak, Mina Lee, Tony Lee, Jure Leskovec, Isabelle Levent, Xiang Lisa Li, Xuechen Li, Tengyu Ma, Ali Malik, Christopher D. Manning, Suvir Mirchandani, Eric Mitchell, Zanele Munyikwa, Suraj Nair, Avanika Narayan, Deepak Narayanan, Benjamin Newman, Allen Nie, Juan Carlos Niebles, Hamed Nilforoshan, Julian Nyarko, Giray Ogut, Laurel J. Orr, Isabel Papadimitriou, Joon Sung Park, Chris Piech, Eva Portelance, Christopher Potts, Aditi Raghunathan, Robert Reich, Hongyu Ren, Frieda Rong, Yusuf H. Roohani, Camilo Ruiz, Jack Ryan, Christopher R’e, Dorsa Sadigh, Shiori Sagawa, Keshav Santhanam, Andy Shih, Krishna Parasuram Srinivasan, Alex Tamkin, Rohan Taori, Armin W. Thomas, Florian Tramèr, Rose E. Wang, William Wang, Bohan Wu, Jiajun Wu, Yuhuai Wu, Sang Michael Xie, Michihiro Yasunaga, Jiaxuan You, Matei A. Zaharia, Michael Zhang, Tianyi Zhang, Xikun Zhang, Yuhui Zhang, Lucia Zheng, Kaitlyn Zhou, and Percy Liang. On the opportunities and risks of foundation models. arXiv preprint arXiv:2108.07258, 2021.   
+[8] Mathilde Caron, Hugo Touvron, Ishan Misra, Hervé Jégou, Julien Mairal, Piotr Bojanowski, and Armand Joulin. Emerging properties in self-supervised vision transformers. In IEEE/CVF International Conference on Computer Vision (ICCV), pages 9650–9660, 2021.
+
+[9] João Carreira, Dilara Gokay, Michael King, Chuhan Zhang, Ignacio Rocco, Aravindh Mahendran, Thomas Albert Keck, Joseph Heyward, Skanda Koppula, Etienne Pot, Goker Erdogan, Yana Hasson, Yi Yang, Klaus Greff, Guillaume Le Moing, Sjoerd van Steenkiste, Daniel Zoran, Drew A. Hudson, Pedro V’elez, Luisa F. Polan’ia, Luke Friedman, Chris Duvarney, Ross Goroshin, Kelsey Allen, Jacob Walker, Rishabh Kabra, Eric Aboussouan, Jennifer Sun, Thomas Kipf, Carl Doersch, Viorica Puatruaucean, Dima Damen, Pauline Luc, Mehdi S. M. Sajjadi, and Andrew Zisserman. Scaling 4d representations. arXiv preprint arXiv:2412.15212, 2024.   
+[10] Delong Chen, Mustafa Shukor, Theo Moutakanni, Willy Chung, Jade Yu, Tejaswi Kasarla, Yejin Bang, Allen Bolourchi, Yann LeCun, and Pascale Fung. Vl-jepa: Joint embedding predictive architecture for vision-language. In International Conference on Learning Representations (ICLR), 2026.   
+[11] Shoufa Chen, Chongjian Ge, Zhan Tong, Jiangliu Wang, Yibing Song, Jue Wang, and Ping Luo. Adaptformer: Adapting vision transformers for scalable visual recognition. In Advances in Neural Information Processing Systems (NeurIPS), pages 16664–16678, 2022.   
+[12] Sili Chen, Hengkai Guo, Shengnan Zhu, Feihu Zhang, Zilong Huang, Jiashi Feng, and Bingyi Kang. Video depth anything: Consistent depth estimation for super-long videos. In IEEE/CVF Conference on Computer Vision and Pattern Recognition (CVPR), pages 22831–22840, 2025.   
+[13] Xiaokang Chen, Mingyu Ding, Xiaodi Wang, Ying Xin, Shentong Mo, Yunhao Wang, Shumin Han, Ping Luo, Gang Zeng, and Jingdong Wang. Context autoencoder for self-supervised representation learning. International Journal of Computer Vision (IJCV), 132(1):208–223, 2024.   
+[14] Ekin D Cubuk, Barret Zoph, Jonathon Shlens, and Quoc V Le. Randaugment: Practical automated data augmentation with a reduced search space. In IEEE/CVF Conference on Computer Vision and Pattern Recognition Workshops (CVPRW), pages 702–703, 2020.   
+[15] Angela Dai, Angel X. Chang, Manolis Savva, Maciej Halber, Thomas Funkhouser, and Matthias Nießner. Scannet: Richly-annotated 3d reconstructions of indoor scenes. In IEEE Conference on Computer Vision and Pattern Recognition (CVPR), 2017.   
+[16] Jia Deng, Wei Dong, Richard Socher, Li-Jia Li, Kai Li, and Li Fei-Fei. Imagenet: A large-scale hierarchical image database. In IEEE Conference on Computer Vision and Pattern Recognition (CVPR), pages 248–255, 2009.   
+[17] Ning Ding, Yujia Qin, Guang Yang, Fuchao Wei, Zonghan Yang, Yusheng Su, Shengding Hu, Yulin Chen, Chi-Min Chan, Weize Chen, Jing Yi, Weilin Zhao, Xiaozhi Wang, Zhiyuan Liu, Hai-Tao Zheng, Jianfei Chen, Yang Liu, Jie Tang, Juanzi Li, and Maosong Sun. Parameterefficient fine-tuning of large-scale pre-trained language models. Nature Machine Intelligence, 5 (3):220–235, 2023.   
+[18] Alexey Dosovitskiy, Lucas Beyer, Alexander Kolesnikov, Dirk Weissenborn, Xiaohua Zhai, Thomas Unterthiner, Mostafa Dehghani, Matthias Minderer, Georg Heigold, Sylvain Gelly, Jakob Uszkoreit, and Neil Houlsby. An image is worth 16x16 words: Transformers for image recognition at scale. In International Conference on Learning Representations (ICLR), 2021.   
+[19] Alaaeldin El-Nouby, Michal Klein, Shuangfei Zhai, Miguel Angel Bautista, Vaishaal Shankar, Alexander Toshev, Joshua M Susskind, and Armand Joulin. Scalable pre-training of large autoregressive image models. In International Conference on Machine Learning (ICML), pages 12371–12384. PMLR, 2024.   
+[20] Valentin Gabeff, Haozhe Qi, Brendan Flaherty, Gencer Sumbul, Alexander Mathis, and Devis Tuia. Mammalps: A multi-view video behavior monitoring dataset of wild mammals in the swiss alps. In IEEE/CVF Conference on Computer Vision and Pattern Recognition (CVPR), pages 13854–13864, 2025.   
+[21] Raghav Goyal, Samira Ebrahimi Kahou, Vincent Michalski, Joanna Materzynska, Susanne Westphal, Heuna Kim, Valentin Haenel, Ingo Fruend, Peter Yianilos, Moritz Mueller-Freitag, Florian Hoppe, Christian Thurau, Ingo Bax, and Roland Memisevic. The" something something" video database for learning and evaluating visual common sense. In IEEE International Conference on Computer Vision (ICCV), pages 5842–5850, 2017.
+
+[22] Yana Hasson, Pauline Luc, Liliane Momeni, Maks Ovsjanikov, Guillaume Le Moing, Alina Kuznetsova, Ira Ktena, Jennifer J. Sun, Skanda Koppula, Dilara Gokay, Joseph Heyward, Etienne Pot, and Andrew Zisserman. Scivid: Cross-domain evaluation of video models in scientific applications. In IEEE/CVF International Conference on Computer Vision (ICCV), pages 21800–21811, 2025.   
+[23] Neil Houlsby, Andrei Giurgiu, Stanislaw Jastrzebski, Bruna Morrone, Quentin De Laroussilhe, Andrea Gesmundo, Mona Attariyan, and Sylvain Gelly. Parameter-efficient transfer learning for nlp. In International Conference on Machine Learning (ICML), pages 2790–2799. PMLR, 2019.   
+[24] Edward J Hu, Yelong Shen, Phillip Wallis, Zeyuan Allen-Zhu, Yuanzhi Li, Shean Wang, Lu Wang, and Weizhu Chen. Lora: Low-rank adaptation of large language models. In International Conference on Learning Representations (ICLR), 2022.   
+[25] Ming Hu, Lin Wang, Siyuan Yan, Don Ma, Qingli Ren, Peng Xia, Wei Feng, Peibo Duan, Lie Ju, and Zongyuan Ge. Nurvid: A large expert-level video database for nursing procedure activity understanding. In Advances in Neural Information Processing Systems (NeurIPS), pages 18146–18164, 2023.   
+[26] Menglin Jia, Luming Tang, Bor-Chun Chen, Claire Cardie, Serge Belongie, Bharath Hariharan, and Ser-Nam Lim. Visual prompt tuning. In European Conference on Computer Vision (ECCV), pages 709–727. Springer, 2022.   
+[27] Shibo Jie and Zhi-Hong Deng. Fact: Factor-tuning for lightweight adaptation on vision transformer. In AAAI Conference on Artificial Intelligence (AAAI), pages 1060–1068, 2023.   
+[28] Shibo Jie, Zhi-Hong Deng, Shixuan Chen, and Zhijuan Jin. Convolutional bypasses are better vision transformer adapters. In European Conference on Artificial Intelligence (ECAI). IOS Press, 2024.   
+[29] Will Kay, João Carreira, Karen Simonyan, Brian Zhang, Chloe Hillier, Sudheendra Vijayanarasimhan, Fabio Viola, Tim Green, Trevor Back, Apostol Natsev, Mustafa Suleyman, and Andrew Zisserman. The kinetics human action video dataset. arXiv preprint arXiv:1705.06950, 2017.   
+[30] Simon Kornblith, Jonathon Shlens, and Quoc V Le. Do better imagenet models transfer better? In IEEE/CVF Conference on Computer Vision and Pattern Recognition (CVPR), pages 2661–2671, 2019.   
+[31] Hildegard Kuehne, Hueihan Jhuang, Estíbaliz Garrote, Tomaso Poggio, and Thomas Serre. Hmdb: a large video database for human motion recognition. In IEEE International Conference on Computer Vision (ICCV), pages 2556–2563, 2011.   
+[32] Jiyoung Lee, Seungryong Kim, Sunok Kim, Jungin Park, and Kwanghoon Sohn. Context-aware emotion recognition networks. In IEEE/CVF International Conference on Computer Vision (ICCV), pages 10143–10152, 2019.   
+[33] Brian Lester, Rami Al-Rfou, and Noah Constant. The power of scale for parameter-efficient prompt tuning. In Conference on Empirical Methods in Natural Language Processing (EMNLP), pages 3045–3059, 2021.   
+[34] Xiang Lisa Li and Percy Liang. Prefix-tuning: Optimizing continuous prompts for generation. In Annual Meeting of the Association for Computational Linguistics (ACL), pages 4582–4597, 2021.   
+[35] Xinhao Li, Zhenpeng Huang, Jing Wang, Kunchang Li, and Limin Wang. Videoeval: Comprehensive benchmark suite for low-cost evaluation of video foundation model. arXiv preprint arXiv:2407.06491, 2024.   
+[36] Dongze Lian, Daquan Zhou, Jiashi Feng, and Xinchao Wang. Scaling & shifting your features: A new baseline for efficient model tuning. In Advances in Neural Information Processing Systems (NeurIPS), pages 109–123, 2022.
+
+[37] Ziyi Lin, Shijie Geng, Renrui Zhang, Peng Gao, Gerard De Melo, Xiaogang Wang, Jifeng Dai, Yu Qiao, and Hongsheng Li. Frozen clip models are efficient video learners. In European Conference on Computer Vision (ECCV), pages 388–404. Springer, 2022.   
+[38] Shih-Yang Liu, Chien-Yi Wang, Hongxu Yin, Pavlo Molchanov, Yu-Chiang Frank Wang, Kwang-Ting Cheng, and Min-Hung Chen. Dora: Weight-decomposed low-rank adaptation. In International Conference on Machine Learning (ICML). PMLR, 2024.   
+[39] Yang Liu, Qianqian Xu, Peisong Wen, Siran Dai, Xilin Zhao, and Qingming Huang. From static to dynamic: Exploring self-supervised image-to-video representation transfer learning. In IEEE/CVF Conference on Computer Vision and Pattern Recognition (CVPR), 2026.   
+[40] Gen Luo, Minglang Huang, Yiyi Zhou, Xiaoshuai Sun, Guannan Jiang, Zhiyu Wang, and Rongrong Ji. Towards efficient visual adaption via structural re-parameterization. arXiv preprint arXiv:2302.08106, 2023.   
+[41] Zheda Mai, Ping Zhang, Cheng-Hao Tu, Hong-You Chen, Quang-Huy Nguyen, Li Zhang, and Wei-Lun Chao. Lessons and insights from a unifying study of parameter-efficient finetuning (peft) in visual recognition. In IEEE/CVF Conference on Computer Vision and Pattern Recognition (CVPR), pages 14845–14857, 2025.   
+[42] Jiaxu Miao, Yunchao Wei, Yu Wu, Chen Liang, Guangrui Li, and Yi Yang. Vspw: A large-scale dataset for video scene parsing in the wild. In IEEE/CVF Conference on Computer Vision and Pattern Recognition (CVPR), pages 4133–4143, 2021.   
+[43] Maxime Oquab, Timothée Darcet, Théo Moutakanni, Huy V. Vo, Marc Szafraniec, Vasil Khalidov, Pierre Fernandez, Daniel HAZIZA, Francisco Massa, Alaaeldin El-Nouby, Mido Assran, Nicolas Ballas, Wojciech Galuba, Russell Howes, Po-Yao Huang, Shang-Wen Li, Ishan Misra, Michael Rabbat, Vasu Sharma, Gabriel Synnaeve, Hu Xu, Herve Jegou, Julien Mairal, Patrick Labatut, Armand Joulin, and Piotr Bojanowski. DINOv2: Learning robust visual features without supervision. Transactions on Machine Learning Research, 2024.   
+[44] Junting Pan, Ziyi Lin, Xiatian Zhu, Jing Shao, and Hongsheng Li. St-adapter: Parameterefficient image-to-video transfer learning. In Advances in Neural Information Processing Systems (NeurIPS), pages 26462–26477, 2022.   
+[45] Jungin Park, Jiyoung Lee, and Kwanghoon Sohn. Dual-path adaptation from image to video transformers. In IEEE/CVF Conference on Computer Vision and Pattern Recognition (CVPR), pages 2203–2213, 2023.   
+[46] Jonas Pfeiffer, Aishwarya Kamath, Andreas Rücklé, Kyunghyun Cho, and Iryna Gurevych. Adapterfusion: Non-destructive task composition for transfer learning. In Conference of the European Chapter of the Association for Computational Linguistics (EACL), pages 487–503, 2021.   
+[47] Thinesh Thiyakesan Ponbagavathi, Constantin Seibold, and Alina Roitberg. Frame2freq: Spectral adapters for fine-grained video understanding. IEEE/CVF Conference on Computer Vision and Pattern Recognition (CVPR), 2026.   
+[48] Bill Psomas, Dionysis Christopoulos, Eirini Baltzi, Ioannis Kakogeorgiou, Tilemachos Aravanis, Nikos Komodakis, Konstantinos Karantzalos, Yannis Avrithis, and Giorgos Tolias. Attention, please! revisiting attentive probing through the lens of efficiency. In International Conference on Learning Representations (ICLR), 2026.   
+[49] Zhiwu Qing, Shiwei Zhang, Ziyuan Huang, Yingya Zhang, Changxin Gao, Deli Zhao, and Nong Sang. Disentangling spatial and temporal learning for efficient image-to-video transfer learning. In IEEE/CVF International Conference on Computer Vision (ICCV), pages 13934–13944, 2023.   
+[50] Alec Radford, Jong Wook Kim, Chris Hallacy, Aditya Ramesh, Gabriel Goh, Sandhini Agarwal, Girish Sastry, Amanda Askell, Pamela Mishkin, Jack Clark, Gretchen Krueger, and Ilya Sutskever. Learning transferable visual models from natural language supervision. In International Conference on Machine Learning (ICML), pages 8748–8763. PMLR, 2021.
+
+[51] René Ranftl, Alexey Bochkovskiy, and Vladlen Koltun. Vision transformers for dense prediction. In IEEE/CVF International Conference on Computer Vision (ICCV), pages 12179–12188, 2021.   
+[52] Tal Ridnik, Emanuel Ben-Baruch, Asaf Noy, and Lihi Zelnik-Manor. Imagenet-21k pretraining for the masses. In Advances in Neural Information Processing Systems (NeurIPS), 2021.   
+[53] Tim J. Schoonbeek, Tim Houben, Hans Onvlee, Peter H.N. de With, and Fons van der Sommen. Industreal: A dataset for procedure step recognition handling execution errors in egocentric videos in an industrial-like setting. In IEEE/CVF Winter Conference on Applications of Computer Vision (WACV), pages 4365–4374, 2024.   
+[54] Christoph Schuhmann, Romain Beaumont, Richard Vencu, Cade Gordon, Ross Wightman, Mehdi Cherti, Theo Coombes, Aarush Katta, Clayton Mullis, Mitchell Wortsman, Patrick Schramowski, Srivatsa Kundurthy, Katherine Crowson, Ludwig Schmidt, Robert Kaczmarczyk, and Jenia Jitsev. Laion-5b: An open large-scale dataset for training next generation image-text models. In Advances in Neural Information Processing Systems (NeurIPS), pages 25278–25294, 2022.   
+[55] Oriane Siméoni, Huy V. Vo, Maximilian Seitzer, Federico Baldassarre, Maxime Oquab, Cijo Jose, Vasil Khalidov, Marc Szafraniec, Seung Eun Yi, Michael Ramamonjisoa, Francisco Massa, Daniel HAZIZA, Luca Wehrstedt, Jianyuan Wang, Timothée Darcet, Théo Moutakanni, Leonel Sentana, Claire Roberts, Andrea Vedaldi, Jamie Tolan, John Brandt, Camille Couprie, Julien Mairal, Herve Jegou, Patrick Labatut, and Piotr Bojanowski. DINOv3. Transactions on Machine Learning Research, 2026.   
+[56] Fida Mohammad Thoker, Hazel Doughty, Piyush Bagad, and Cees GM Snoek. How severe is benchmark-sensitivity in video self-supervised learning? In European Conference on Computer Vision (ECCV), pages 632–652. Springer, 2022.   
+[57] Fida Mohammad Thoker, Letian Jiang, Chen Zhao, Piyush Bagad, Hazel Doughty, Bernard Ghanem, and Cees GM Snoek. Severe++: Evaluating benchmark sensitivity in generalization of video representation learning. arXiv preprint arXiv:2504.05706, 2025.   
+[58] Zhan Tong, Yibing Song, Jue Wang, and Limin Wang. Videomae: Masked autoencoders are data-efficient learners for self-supervised video pre-training. In Advances in Neural Information Processing Systems (NeurIPS), 2022.   
+[59] Michael Tschannen, Alexey Gritsenko, Xiao Wang, Muhammad Ferjad Naeem, Ibrahim Alabdulmohsin, Nikhil Parthasarathy, Talfan Evans, Lucas Beyer, Ye Xia, Basil Mustafa, Olivier H’enaff, Jeremiah Harmsen, Andreas Steiner, and Xiaohua Zhai. Siglip 2: Multilingual visionlanguage encoders with improved semantic understanding, localization, and dense features. arXiv preprint arXiv:2502.14786, 2025.   
+[60] Lokesh Veeramacheneni, Moritz Wolter, Hilde Kuehne, and Juergen Gall. Canonical rank adaptation: An efficient fine-tuning strategy for vision transformers. In International Conference on Machine Learning (ICML). PMLR, 2025.   
+[61] Chenting Wang, Yuhan Zhu, Yicheng Xu, Jiange Yang, Ziang Yan, Yali Wang, Yi Wang, and Limin Wang. Internvideo-next: Towards world-understanding video models. In IEEE/CVF Conference on Computer Vision and Pattern Recognition (CVPR), pages 16966–16976, 2026.   
+[62] Limin Wang, Bingkun Huang, Zhiyu Zhao, Zhan Tong, Yinan He, Yi Wang, Yali Wang, and Yu Qiao. Videomae v2: Scaling video masked autoencoders with dual masking. In IEEE/CVF Conference on Computer Vision and Pattern Recognition (CVPR), pages 14549–14560, 2023.   
+[63] Yi Wang, Kunchang Li, Yizhuo Li, Yinan He, Bingkun Huang, Zhiyu Zhao, Hongjie Zhang, Jilan Xu, Yi Liu, Zun Wang, Sen Xing, Guo Chen, Junting Pan, Jiashuo Yu, Yali Wang, Limin Wang, and Yu Qiao. Internvideo: General video foundation models via generative and discriminative learning. arXiv preprint arXiv:2212.03191, 2022.   
+[64] Yi Wang, Kunchang Li, Xinhao Li, Jiashuo Yu, Yinan He, Guo Chen, Baoqi Pei, Rongkun Zheng, Zun Wang, Yansong Shi, Tianxiang Jiang, Songze Li, Jilan Xu, Hongjie Zhang, Yifei Huang, Yu Qiao, Yali Wang, and Limin Wang. Internvideo2: Scaling foundation models for
+
+multimodal video understanding. In European Conference on Computer Vision (ECCV), pages 396–416. Springer, 2024.   
+[65] Yuzhu Wang, Manni Duan, and Shu Kong. Attention to the burstiness in visual prompt tuning! In IEEE/CVF International Conference on Computer Vision (ICCV), pages 4253–4263, 2025.   
+[66] Enze Xie, Lewei Yao, Han Shi, Zhili Liu, Daquan Zhou, Zhaoqiang Liu, Jiawei Li, and Zhenguo Li. Difffit: Unlocking transferability of large diffusion models via simple parameter-efficient fine-tuning. In IEEE/CVF International Conference on Computer Vision (ICCV), pages 4230– 4239, 2023.   
+[67] Yi Xin, Siqi Luo, Xuyang Liu, Yuntao Du., Haodi Zhou, Xinyu Cheng, Christina Luoluo Lee, Junlong Du, Haozhe Wang, MingCai Chen, Ting Liu, Guimin Hu, Zhongwei Wan, Rongchao Zhang, Aoxue Li, Mingyang Yi, and Xiaohong Liu. V-petl bench: A unified visual parameterefficient transfer learning benchmark. In Advances in Neural Information Processing Systems (NeurIPS), pages 80522–80535, 2024.   
+[68] Yi Xin, Jianjiang Yang, Siqi Luo, Yuntao Du, Qi Qin, Kangrui Cen, Yangfan He, Zhiwei Zhang, Bin Fu, Xiaokang Yang, Guangtao Zhai, Ming-Hsuan Yang, and Xiaohong Liu. Parameterefficient fine-tuning for pre-trained vision models: A survey and benchmark. arXiv preprint arXiv:2402.02242, 2024.   
+[69] Taojiannan Yang, Yi Zhu, Yusheng Xie, Aston Zhang, Chen Chen, and Mu Li. Aim: Adapting image models for efficient video action recognition. In International Conference on Learning Representations (ICLR), 2023.   
+[70] Liangzhe Yuan, Nitesh Bharadwaj Gundavarapu, Long Zhao, Hao Zhou, Yin Cui, Lu Jiang, Xuan Yang, Menglin Jia, Tobias Weyand, Luke Friedman, Mikhail Sirotenko, Huisheng Wang, Florian Schroff, Hartwig Adam, Ming-Hsuan Yang, Ting Liu, and Boqing Gong. VideoGLUE: Video general understanding evaluation of foundation models. Transactions on Machine Learning Research, 2024.   
+[71] Elad Ben Zaken, Yoav Goldberg, and Shauli Ravfogel. Bitfit: Simple parameter-efficient finetuning for transformer-based masked language-models. In Annual Meeting of the Association for Computational Linguistics (ACL), 2022.   
+[72] Runjia Zeng, Cheng Han, Qifan Wang, Chunshu Wu, Tong Geng, Lifu Huang, Ying N Wu, and Dongfang Liu. Visual fourier prompt tuning. In Advances in Neural Information Processing Systems (NeurIPS), pages 5552–5585, 2024.   
+[73] Xiaohua Zhai, Joan Puigcerver, Alexander Kolesnikov, Pierre Ruyssen, Carlos Riquelme, Mario Lucic, Josip Djolonga, André Susano Pinto, Maxim Neumann, Alexey Dosovitskiy, Lucas Beyer, Olivier Bachem, Michael Tschannen, Marcin Michalski, Olivier Bousquet, Sylvain Gelly, and Neil Houlsby. A large-scale study of representation learning with the visual task adaptation benchmark. arXiv preprint arXiv:1910.04867, 2019.   
+[74] Hongyi Zhang, Moustapha Cisse, Yann N Dauphin, and David Lopez-Paz. mixup: Beyond empirical risk minimization. In International Conference on Learning Representations (ICLR), 2018.   
+[75] Qingru Zhang, Minshuo Chen, Alexander Bukharin, Nikos Karampatziakis, Pengcheng He, Yu Cheng, Weizhu Chen, and Tuo Zhao. Adalora: Adaptive budget allocation for parameterefficient fine-tuning. In International Conference on Learning Representations (ICLR), 2023.   
+[76] Yunhua Zhang, Hazel Doughty, and Cees GM Snoek. Low-resource vision challenges for foundation models. In IEEE/CVF Conference on Computer Vision and Pattern Recognition (CVPR), pages 21956–21966, 2024.   
+[77] Wangbo Zhao, Jiasheng Tang, Yizeng Han, Yibing Song, Kai Wang, Gao Huang, Fan Wang, and Yang You. Dynamic tuning towards parameter and inference efficiency for vit adaptation. In Advances in Neural Information Processing Systems (NeurIPS), pages 114765–114796, 2024.   
+[78] Zhun Zhong, Liang Zheng, Guoliang Kang, Shaozi Li, and Yi Yang. Random erasing data augmentation. In AAAI Conference on Artificial Intelligence (AAAI), pages 13001–13008, 2020.
+
+[79] Daniel Zoran, Nikhil Parthasarathy, Yi Yang, Drew A Hudson, João Carreira, and Andrew Zisserman. Recurrent video masked autoencoders. In IEEE/CVF Conference on Computer Vision and Pattern Recognition (CVPR), pages 17744–17755, 2026.
+
+# A Experiment Details
+
+# A.1 Backbone
+
+All experiments use a InternVideo-Next [61] ViT-B backbone with patch size 14 and input resolution $2 2 4 \times 2 2 4$ , which yields $\textstyle { \frac { 2 2 4 } { 1 4 } } \times { \frac { 2 2 4 } { 1 4 } } = 2 5 6$ spatial tokens per frame, unless stated otherwise. To keep the token budget consistent across image and video backbones, we fix the total number of tokens to $2 5 6 \times 8 = 2 0 4 8$ . For video models like VJEPA-2 [2] that process spatio-temporal tubelets of size 2, we use 16 input frames resulting in $1 6 / 2 = 8$ temporal positions. Image models do not produce temporal positional encodings; we therefore add learnable positional embeddings to their output features before the probe head as in [55].
+
+# A.2 Parameter-Efficient Finetuning Methods
+
+Selective methods. BitFit [71] unfreezes only the bias terms of every linear layer in the backbone. LayerNorm tunes only the scale and shift parameters of every LayerNorm in the backbone. $S S F \left[ 3 6 \right]$ inserts a learnable per-channel affine transformation $\hat { x } = \gamma \odot x + \beta$ after each of the QKV projection, attention output projection, and MLP activations. Scale $\gamma$ is initialized $\sim \mathcal { N } ( 1 , 0 . 0 2 )$ and bias $\beta \sim \mathcal { N } ( 0 , 0 . 0 2 )$ .
+
+Additive methods. All prompt methods use the deep variant, inserting tokens at every transformer layer. The tokens are initialized $\sim \mathcal { N } ( 0 , 0 . 0 2 )$ and discarded after each block. We sweep the number of prompt tokens $N _ { p } \in \{ 1 6 , 6 4 , 2 5 6 \}$ for all three methods. VPT [26] prepends $N _ { p }$ learnable embedding vectors to the token sequence at each layer. VFPT extends VPT by replacing the first $\lfloor N _ { p } / 2 \rfloor$ prompt tokens at each layer with the real part of their 2-D discrete Fourier transform (over the token and channel axes), encouraging frequency-diverse structure in the prompt representation. BPT parameterizes the $N _ { p }$ prompt tokens at each layer as the product of two low-rank matrices $\mathbf { P } = \mathbf { A } \mathbf { B } ^ { \top }$ . We set the bottleneck rank to 100.
+
+Adapter methods. AdaptFormer [11] inserts a bottleneck MLP (down-projection → ReLU → up-projection) in parallel with the MLP block of every transformer layer. The up-projection is zero-initialized and its output is scaled by a learnable scalar initialized to $1 0 ^ { - 3 }$ , so the adapter is identity at the start of training. We sweep bottleneck rank $r \in \{ 6 4 , 1 2 8 , 2 5 6 \}$ with dropout 0.0.
+
+ST-Adapter [44] is placed sequentially before both the attention and the MLP sub-layers in each block (two adapters per block). It projects tokens to a bottleneck of width r, applies a depthwise 3-D convolution with kernel $3 \times 1 \times 1$ to mix information along the temporal axis while preserving spatial resolution, and projects back to the original dimension. The convolution is zero-initialized so the adapter begins as an identity; there is no intermediate activation. We sweep $r \in \{ 6 4 , 1 2 8 , 2 5 6 \}$ with dropout 0.0; in the ablations of Sections 5.4 and 5.5 we fix r=128 to reduce compute.
+
+Reparameterization methods. LoRA [24] adds a low-rank residual ∆W = BA to the QKV weight of every attention block, where $\mathbf { A } \in \mathbb { R } ^ { r \times d }$ (Kaiming initialized) and $\mathbf { B } \in \mathbb { R } ^ { 3 d \times r }$ (zero initialized), so the adapter is identity at initialization. We sweep rank $r \in \{ 6 4 , 1 2 8 , 2 5 6 \}$ with dropout 0.1 applied to the input of B.
+
+DoRA [38] extends LoRA by decomposing the effective weight into a direction component and a learnable magnitude vector m, where m is initialized to the row-wise $\ell _ { 2 }$ norms of the pretrained QKV weight, so DoRA is also identical to the pretrained model at initialization. Other settings match LoRA.
+
+# A.3 Probe
+
+Linear probe. This simple baseline applies global average pooling over all backbone tokens (spatial and temporal) and maps the resulting vector to class logits with a single linear layer.
+
+Efficient probe. Following Psomas et al. [48], we use a single-head cross-attention pooler with $N _ { q } { = } 3 2$ learnable cluster queries. Each query attends to the full set of backbone tokens via an efficient value-only projection; the aggregated vectors are then fed to a linear head.
+
+Attentive probe. For depth estimation and semantic segmentation we adopt the attentive probe of Carreira et al. [9], which inserts a single cross-attention block (with a subsequent ML $\mathrm { \cdot } H { = } \mathrm { \bar { 1 } } 2$ heads, MLP ratio 4.0) between a set of learnable spatial queries and the backbone token sequence. We set the probe patch size to 8, yielding $\textstyle { \frac { 2 2 4 } { 8 } } \times { \frac { 2 2 4 } { 8 } } =$ 784 spatial query tokens per frame; for a clip of T frames the queries are tiled as $\frac { T } { d _ { t } } \times 7 8 4$ where $d _ { t } \mathrm { = } 2$ is the query tubelet size. For classification we use a single learnable query that cross-attends to all backbone tokens, producing a global representation. In both cases a linear layer projects the query outputs to the target dimension.
+
+DiST. Following Qing et al. [49], we fuse the input frames encoded by a lightweight temporal encoder with the intermediate features from all backbone layers through a spatial-temporal integration network. The lightweight temporal encoder is a 3D CNN with kernel $5 \times 1 4 \times 1 4$ , stride $1 \times \bar { 1 } 4 \times 1 4$ , and extracts 96-dimensional temporal features from the input frames. The backbone features are first linearly projected to the shared integration dimension of 384. The integration network is a MLP with MLP ratio 1.0, spatial-temporal MLP ratio 0.25, and temporal kernel size 3. The final output is a sequence of spatiotemporal features of dimension 384.
+
+Since Qing et al. [49] consider only action recognition, where a single pooled representation suffices, we extend DiST to dense prediction by replacing the original pooling step with an attentive probe that cross-attends between the output features and the learnable queries.
+
+DPT. Following Ranftl et al. [51], DPT gets the dense predictions from four backbone layers sampled at uniform depth fractions $k / 4$ for $k { = } 1 , 2 , 3 , 4$ (layers 3, 6, 9, 12 for a 12-layer backbone). Each layer’s token map is projected with a 1×1 convolution to intermediate channels [96, 192, 384, 768], then spatially resized and fused top-down through residual fusion blocks (ReLU activations, no batch normalization). The fused map is processed by a two-stage convolutional head that produces per-pixel logits directly, without any additional linear projection on token representations. For depth estimation the output is scaled to $[ 0 , d _ { \mathrm { m a x } } ]$ via a sigmoid.
+
+VDA. Video Depth Anything [12] extends DPT with temporal self-attention at four intermediate decoder stages. Each temporal module contains one transformer block with two temporal selfattention sub-layers (8 heads, absolute sinusoidal positional encodings along the time axis) and zero-initialized output projections, so the model initializes identically to a per-frame DPT.
+
+# A.4 Training
+
+Optimization. All models are trained with AdamW $( \beta _ { 1 } { = } 0 . 9 , \beta _ { 2 } { = } 0 . 9 9 9 , { \epsilon } { = } 1 0 ^ { - 8 }$ , weight decay 0.01) for 4,000 steps. We use a linear warmup over the first 400 steps (warmup factor 0.1) followed by cosine decay to zero, with a global batch size of 32 on $2 \times \mathrm { H 1 0 0 }$ GPUs. For classification we sweep learning rates over $\{ 1 0 ^ { - 4 } , 2 . 5 \times 1 0 ^ { - 4 } , 5 \times 1 0 ^ { - 4 } , 1 0 ^ { - 3 } \}$ . For depth estimation and semantic segmentation we use a higher range of $\{ 5 \times 1 0 ^ { - 4 } , 1 0 ^ { - 3 } , 2 . 5 \times 1 0 ^ { - 3 } , \dot { 5 } \times 1 0 ^ { - 3 } \}$ . The probe head uses drop-path regularization with rate 0.1.
+
+Augmentation. We use minimal data augmentation during training. Consistent with findings from image-based PEFT benchmark [41], we found that strategies such as RandAugment [14], mix-up [74], and random erasing [78] hurt performance, especially on smaller datasets. For all tasks we apply only random resized cropping, with scale in [0.3, 1.0] and aspect ratio in [0.75, 1.33].
+
+Frame sampling. For classification we use uniform segment sampling: the video is split into T equal-length segments and one frame is drawn uniformly at random from each, giving global coverage of the action. For depth estimation and segmentation we instead use dense sampling of T consecutive frames, preserving the local temporal structure needed for per-frame dense prediction.
+
+# A.5 Evaluation
+
+Classification. We follow the standard three-crop protocol, averaging softmax scores across the three spatial crops and reporting top-1 accuracy.
+
+Dense prediction. At test time, each video is partitioned into non-overlapping consecutive chunks of T frames that together cover the full sequence. Each chunk is processed independently with a single center crop, yielding per-frame predictions for every frame. Metrics (AbsRel for depth, mIoU for segmentation) are computed per frame across all chunks and averaged over the entire test set, giving true per-frame dataset-level scores.
+
+# B Additional Results
+
+# B.1 Backbone size
+
+In Table 4 we report a backbone size comparison for InternVideo-Next. ViT-B with PEFT (LoRA, AdaptFormer) outperforms ViT-L with a linear probe, and when the same method is applied to both backbones, ViT-L is better on all 24/24 comparisons, with the largest gains on motion and spatial tasks. However, gains from different PEFT and probing methods remain similar, regardless of the backbone used.
+
+Table 4: ViT-B vs ViT-L comparison for InternVideo-Next (IV-Next). ViT-B with PEFT (LoRA, AdaptFormer) beats ViT-L with a Linear Probe. When the same method is used on both backbones, ViT-L outperforms on all 24/24 comparisons, with the largest gains on motion and spatial tasks. 
+
+<table><tr><td rowspan="2">Method</td><td rowspan="2">Backbone</td><td colspan="2">Appearance</td><td colspan="2">Motion</td><td colspan="2">Spatial</td></tr><tr><td>CAER top-1↑</td><td>NurViD top-1↑</td><td>IndustReal top-1↑</td><td>MammAlps top-1↑</td><td>ScanNet AbsRel ↓</td><td>VSPW mIoU ↑</td></tr><tr><td rowspan="2">Linear Probe</td><td>ViT-B</td><td>52.6</td><td>78.1</td><td>36.3</td><td>67.0</td><td>0.237</td><td>40.4</td></tr><tr><td>ViT-L</td><td>55.0</td><td>83.5</td><td>41.4</td><td>70.7</td><td>0.232</td><td>42.1</td></tr><tr><td rowspan="2">Attentive Probe</td><td>ViT-B</td><td>60.3</td><td>85.5</td><td>63.1</td><td>69.9</td><td>0.157</td><td>40.4</td></tr><tr><td>ViT-L</td><td>62.7</td><td>88.5</td><td>67.0</td><td>74.0</td><td>0.135</td><td>47.3</td></tr><tr><td rowspan="2">LoRA</td><td>ViT-B</td><td>62.1</td><td>86.9</td><td>68.7</td><td>72.6</td><td>0.156</td><td>48.2</td></tr><tr><td>ViT-L</td><td>63.1</td><td>88.5</td><td>72.8</td><td>75.9</td><td>0.142</td><td>55.2</td></tr><tr><td rowspan="2">AdaptFormer</td><td>ViT-B</td><td>61.5</td><td>86.2</td><td>66.7</td><td>71.9</td><td>0.137</td><td>50.1</td></tr><tr><td>ViT-L</td><td>63.4</td><td>88.6</td><td>70.0</td><td>76.3</td><td>0.118</td><td>57.6</td></tr></table>
+
+# B.2 Probe
+
+Table 5 reports the numerical values corresponding to the probe comparison visualized in Figure 2. We evaluate six probe variants spanning lightweight (linear, efficient, attentive) and heavier task-specific decoders (DiST [49], DPT [51], VDA [12]) across all six tasks.
+
+Table 5: Comparison of Probe Methods for Video. In isolation, the best probe varies per task. Combining probe and PEFT reduces this variability, with attentive probe emerging as the strongest overall. 
+
+<table><tr><td rowspan="2"></td><td rowspan="2">Params(M) ↓</td><td colspan="2">Appearance</td><td colspan="2">Motion</td><td colspan="2">Spatial</td></tr><tr><td>CAERtop-1 ↑</td><td>NurViDtop-1 ↑</td><td>IndustRealtop-1 ↑</td><td>MammAlpstop-1 ↑</td><td>ScanNetAbsRel ↓ / δ1</td><td>VSPWmIoU ↑</td></tr><tr><td>Linear Probe</td><td>0.1</td><td>52.6</td><td>78.1</td><td>36.3</td><td>67.0</td><td>0.237 / 62.6</td><td>40.4</td></tr><tr><td>Efficient Probe</td><td>0.6</td><td>56.8</td><td>84.0</td><td>57.0</td><td>69.7</td><td>NA</td><td>NA</td></tr><tr><td>Attentive Probe</td><td>7.4</td><td>60.3</td><td>85.5</td><td>63.1</td><td>69.9</td><td>0.157 / 79.4</td><td>40.4</td></tr><tr><td>DiST</td><td>12.8</td><td>57.4</td><td>85.3</td><td>67.1</td><td>70.8</td><td>0.165 / 78.3</td><td>47.7</td></tr><tr><td>DPT</td><td>10.6</td><td>57.5</td><td>81.1</td><td>55.8</td><td>69.7</td><td>0.142 / 82.2</td><td>41.0</td></tr><tr><td>VDA</td><td>27.5</td><td>57.7</td><td>83.2</td><td>61.7</td><td>70.2</td><td>0.133 / 83.8</td><td>43.4</td></tr></table>
+
+# B.3 How to Adapt Video Models for Low-Resource Video Tasks?
+
+Experimental Setup: We ask whether parameter-efficient adaptation is sufficient on its own, or whether full finetuning is needed to make use of a strong video backbone. Figure 5 compares three PEFT methods, ST-Adapter (rank 128, 4.7M trainable parameters), AdaptFormer (rank 128, 4.7M trainable parameters), and LoRA (rank 128, 2.4M trainable parameters), against attentive probing (7.4M) and full finetuning (87.1M); full results are reported in Table 6.
+
+Results: We observe that all three PEFT methods match or surpass the attentive probe on every task while training fewer parameters, and outperform full finetuning on 5 of 6 tasks at ∼20× to 35× fewer trainable parameters, with NurViD the sole exception. Among the PEFT methods, LoRA and AdaptFormer match or exceed the video-specific ST-Adapter.
+
+![](images/a67aebe00faa3f9965074330800b2bdca32066a210b0bd62b8444024876097a6.jpg)
+
+<details>
+<summary>bar</summary>
+
+| Model | Full Finetuning | Linear Probe | Attentive Probe | ST-Adapter | AdaptFormer | LoRA |
+| :--- | :--- | :--- | :--- | :--- | :--- | :--- |
+| CAER | 59.1 | 52.6 | 60.3 | 59.7 | 60.3 | 61.3 |
+| NurViD | 87.3 | 78.1 | 85.5 | 87.1 | 84.8 | 86.8 |
+| IndustReal | 66.7 | 36.3 | 63.1 | 62.2 | 62.7 | 67.3 |
+| MammAlps | 71.8 | 67.0 | 69.9 | 67.8 | 72.1 | 70.7 |
+| ScanNet | 77.2 | 62.6 | 79.4 | 80.4 | 80.0 | 76.2 |
+| VSPW | 40.9 | 40.4 | 40.4 | 50.4 | 49.2 | 50.5 |
+</details>
+
+Figure 5: PEFT vs. Full-Finetuning. PEFT methods outperform the attentive probe on every task with fewer trainable parameters, and exceed full finetuning on 5 of 6 tasks. Notably, general PEFT methods (LoRA, AdaptFormer) perform on par with or better than the video-specific ST-Adapter. All methods adapt an InternVideo-Next ViT-B backbone with 2048 tokens per video.
+
+Table 6: Full numerical results for Figure 5 comparing attentive probing, PEFT methods, and full finetuning on InternVideo-Next ViT-B. PEFT methods consistently improve over probing and often match or exceed full finetuning with substantially fewer trainable parameters 
+
+<table><tr><td rowspan="2"></td><td rowspan="2">Params (M) ↓</td><td colspan="2">Appearance</td><td colspan="2">Motion</td><td colspan="2">Spatial</td></tr><tr><td>CAER top-1 ↑</td><td>NurViD top-1 ↑</td><td>IndustReal top-1 ↑</td><td>MammAlps top-1 ↑</td><td>ScanNet AbsRel ↓ / δ1</td><td>VSPW mIoU ↑</td></tr><tr><td>Full Finetuning</td><td>87.1</td><td>59.1</td><td>87.3</td><td>66.7</td><td>71.8</td><td>0.164 / 77.2</td><td>40.9</td></tr><tr><td>Linear Probe</td><td>0.1</td><td>52.6</td><td>78.1</td><td>36.3</td><td>67.0</td><td>0.237 / 62.6</td><td>40.4</td></tr><tr><td>Attentive Probe</td><td>7.4</td><td>60.3</td><td>85.5</td><td>63.1</td><td>69.9</td><td>0.157 / 79.4</td><td>40.4</td></tr><tr><td>ST-Adapter</td><td>4.7</td><td>59.7</td><td>87.1</td><td>62.2</td><td>67.8</td><td>0.155 / 80.4</td><td>50.4</td></tr><tr><td>+ Attentive Probe</td><td>12.1</td><td>60.9</td><td>85.2</td><td>67.1</td><td>69.1</td><td>0.148 / 82.3</td><td>49.3</td></tr><tr><td>AdaptFormer</td><td>2.4</td><td>60.3</td><td>84.8</td><td>62.7</td><td>72.1</td><td>0.154 / 80.0</td><td>49.2</td></tr><tr><td>+ Attentive Probe</td><td>9.8</td><td>61.5</td><td>86.2</td><td>65.8</td><td>71.1</td><td>0.140 / 82.8</td><td>49.2</td></tr><tr><td>LoRA</td><td>4.7</td><td>61.3</td><td>86.8</td><td>67.3</td><td>70.7</td><td>0.174 / 76.2</td><td>50.5</td></tr><tr><td>+ Attentive Probe</td><td>12.1</td><td>62.1</td><td>86.2</td><td>67.3</td><td>71.3</td><td>0.156 / 79.2</td><td>47.0</td></tr></table>
+
+# C Per-dataset Graphs
+
+We provide per-dataset versions of the temporal modeling analyses presented in the main paper, where results were aggregated across the appearance, motion, and spatial categories. Figure 6 reports the per-dataset breakdown of Figure 3. Figure 7 provides the per-dataset counterpart of Figure 4.
+
+# D Extended Broader Impact
+
+Efficient adaptation of video foundation models can make advanced video understanding systems more accessible by reducing the computation and annotation costs required for deployment. This is particularly relevant for applications where labeled video data is scarce or expensive, such as healthcare, scientific imaging, manufacturing, robotics and environmental monitoring. By studying parameter-efficient adaptation in low-resource settings our work may help enable video models in settings where large-scale training or finetuning is impractical.
+
+At the same time, improving the efficiency of video adaptation may also lower the barrier to deploying large-scale video analysis systems in privacy-sensitive settings, including surveillance and automated monitoring. As with other works based on foundation models, biases inherited from pretraining data may also transfer to downstream applications, particularly in low-resource domains where evaluation
+
+![](images/2bb831484f365d8340c291e8d098c08f879c8d9564dabc50006e6343026e3a3f.jpg)  
+Relative Throughput (log → faster). Marker size ∝ trainable parameters.   
+Max temporal-modelling drop   
+Max input-information drop
+
+Figure 6: Disentangling temporal modeling from input information. Decoupling the input frame count from the internal temporal context of the backbone, PEFT, and probe separates performance drops into a temporal-modeling component and an input-information component. This is the perdataset version of Figure 3.
+
+![](images/b0d9f4ac2d930722a57972c017136dd4fea212e86ac448c9f7b6532ad255707b.jpg)
+
+<details>
+<summary>line</summary>
+
+| Ratio | Series 1 | Series 2 | Series 3 |
+|-------|----------|----------|----------|
+| 1×    | 62%      | 62%      | 62%      |
+| 2×    | 60%      | 60%      | 60%      |
+| >2×   | 59%      | 59%      | 59%      |
+</details>
+
+![](images/09424a0c07f32b8f123d08334f957cfbb76ab60013c845ac438e575b090cf5d7.jpg)
+
+<details>
+<summary>line</summary>
+
+|        | Top-1  |
+| ------ | ------ |
+| 1×     | 86.5%  |
+| 2×     | 88.5%  |
+| 3×     | 86.0%  |
+</details>
+
+![](images/8ee9675d4448c13416799e8371c22ea8baf0c32f35289e2791ae1c51cd936e05.jpg)
+
+<details>
+<summary>line</summary>
+
+|        | Top-1  |
+| ------ | ------ |
+| 1×     | 69%    |
+| 2×     | 62%    |
+| 3×     | 58%    |
+</details>
+
+![](images/fbf451e966f00ccf32c53cd6aaf85e19f2a1908732ec7e1e46abadff457635b7.jpg)
+
+<details>
+<summary>line</summary>
+
+| Method | Top-1 |
+| ------ | ----- |
+| 1×     | 72%   |
+| 2×     | 68%   |
+| Final  | 65%   |
+</details>
+
+![](images/aa47777afb510d4dcb95a7dc29aa6c391ef039316cf39729ff067159a058dfbb.jpg)
+
+<details>
+<summary>line</summary>
+
+| Ratio | Series 1 | Series 2 | Series 3 | Series 4 |
+|-------|----------|----------|----------|----------|
+| 1×    | 0.140    | 0.140    | 0.140    | 0.140    |
+| 2×    | 0.148    | 0.146    | 0.147    | 0.149    |
+</details>
+
+![](images/a09b16a4facce28433ce68e69b5a63f74af9510d07edc6648827454aa7878457.jpg)
+
+<details>
+<summary>line</summary>
+
+|        | mIoU   |
+| ------ | ------ |
+| 1x     | 50%    |
+| 2x     | 49%    |
+</details>
+
+Relative Throughput (log → faster). Marker size ∝ trainable parameters. ScanNet y-axis is inverted (lower AbsRel is better).
+
+![](images/b13bfea20fd51b44f7a77656454e1d1269cf7b21dd3e64c88a939fd46007f36d.jpg)  
+Input-Fixed
+
+![](images/305feae4b13ddc9027f246fb11f52eb3e6d8d8a6bd6e914050892f3c573d123a.jpg)  
++ Backbone Fixed
+
+![](images/ae969eddcbb63b52602d8bed3f804050213cde65a37aaba32799dbeb6ddf865f.jpg)  
++ PEFT Fixed
+
+![](images/ff48c34d48816e1c69ca5c13f482ec9dc8a351fba3ae7bef261844fbf181baa6.jpg)  
++ Probe Fixed   
+Figure 7: Where to allocate temporal context. Fixing one component while varying the other two at $T _ { c }$ isolates each component’s contribution to temporal modeling. Curves above input-fixed indicate that the corresponding component improves with increased temporal context. This is the per-dataset version of Figure 4.
+
+data is limited. Careful consideration of privacy, fairness and deployment constraints therefore remain important when applying our findings in practice.

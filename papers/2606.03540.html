@@ -39,7 +39,8 @@
     </div>
     <div class="feature-body">
       <p class="lead dropcap">先说结论。可作为自监督视觉特征“看哪里”的外部对照，与 A^2 的 SSL attention localization 现象有并读价值。 把分散的图像、视频、音视频 attention 任务统一到一个多模态 foundation model。</p>
-      <aside class="marginalia"><b>图像状态</b> 这篇暂未抽到足够稳定的 pipeline / motivation 图，因此正文以方法和实验解读为主。</aside>
+      <figure class="full-fig"><img src="../assets/mineru/2606.03540/images/865f99e89522359bcab483f14b4ea1fd8ca7dc739c657a1966f0eb246b6c06bb.jpg" alt="(c) Audio-Visual Modeling Figure 15"><figcaption><b>(c) Audio-Visual Modeling Figure 15</b><span class="fig-en">(c) Audio-Visual Modeling Figure 15. Visual comparison against SOTA methods.</span><span class="fig-zh">这张图/表用于判断 Attend to Anything 的实验收益来自哪里。重点看替换、消融或跨模型设置下趋势是否一致，而不是只看单个最高分。</span></figcaption></figure>
+<figure class="full-fig"><img src="../assets/mineru/2606.03540/images/61e10951e9316035df8eb51bf8ee9ee1b0db4ce38612bd40069266b22234368d.jpg" alt="Figureure 11 · The architecture of audio fusion module"><figcaption><b>Figureure 11 · The architecture of audio fusion module</b><span class="fig-en">Figure 11. The architecture of audio fusion module</span><span class="fig-zh">这张图概括 Attend to Anything 的整体方法流程。阅读时先看模块之间传递的训练信号，再看作者如何把目标拆成可优化的子问题。</span></figcaption></figure>
       
       <h2>核心问题</h2>
       <p>可作为自监督视觉特征“看哪里”的外部对照，与 A^2 的 SSL attention localization 现象有并读价值。</p>

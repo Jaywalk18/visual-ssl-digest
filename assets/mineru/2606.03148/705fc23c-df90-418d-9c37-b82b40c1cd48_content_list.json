@@ -1,0 +1,3123 @@
+[
+    {
+        "type": "text",
+        "text": "A2: Smaller Self-Supervised ViTs Localize Better than Larger Ones ",
+        "text_level": 1,
+        "bbox": [
+            292,
+            123,
+            704,
+            176
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "Sreehari Rammohana Huy $\\mathbf { H } \\mathbf { a } ^ { b }$ Carl Vondricka ",
+        "bbox": [
+            315,
+            227,
+            679,
+            243
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "a Columbia University b Stanford University ",
+        "bbox": [
+            343,
+            250,
+            651,
+            266
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "Abstract ",
+        "text_level": 1,
+        "bbox": [
+            459,
+            301,
+            537,
+            316
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "Robust visual classification often depends on localizing the main foreground objects in an image while ignoring contextual distractors. Surprisingly, we find that the attention maps of smaller self-supervised ViTs localize foreground objects better than those of larger ViTs. However, we still need large ViTs, because they extract richer representations from each patch. To get the best of both worlds, good localization and rich representations, we propose $A ^ { 2 } ,$ , a simple method that leverages this inverse scaling finding by decoupling where to look (a small attention model) from what to extract (a large embedding model): we crop around the attention peaks of a small model and embed the crops with a larger model. $A ^ { 2 }$ uses entirely pretrained features, requires no group labels, and does not require per-dataset attention or backbone training. Across 5 benchmarks, $A ^ { 2 }$ is competitive with backbone-matched loss-level methods like DFR, and outperforms end-to-end attention training under stronger distribution shifts. ",
+        "bbox": [
+            228,
+            334,
+            767,
+            515
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "1 Introduction ",
+        "text_level": 1,
+        "bbox": [
+            171,
+            542,
+            313,
+            559
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "Large vision models can approximate a wide range of functions given sufficient training data. However, this flexibility also means the model will exploit all biases and shortcuts [13] in the dataset to minimize the training loss. For example, Figure 1 (left) shows a linear classifier trained on ViT [11] embeddings that falsely predicts that the animal is a horse, when it is actually a cow. Spurious correlations, such as the co-occurrence of horses and people, are pervasive in visual data. Despite progress in curating benchmarks and developing debiasing algorithms, recognition in the presence of such distractors remains a longstanding challenge for computer vision. ",
+        "bbox": [
+            169,
+            575,
+            826,
+            648
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "image",
+        "img_path": "images/22dec4736cf17db4d32917fed8061d368a5998af5de793afad5cf1197b2baaa2.jpg",
+        "image_caption": [
+            "Figure 1: Robust Recognition through Exclusion. Images contain spurious correlations that often mislead classifiers, e.g. a man holding a rein is usually associated with horses. $A ^ { 2 }$ removes spatially spurious correlations by automatically selecting crops based on a pre-trained model’s attention map. While the original model is misled (left), our $A ^ { \\widetilde { 2 } }$ trained classifier explicitly attends to only the animal body and correctly predicts “cow” (right). "
+        ],
+        "image_footnote": [],
+        "content": "```mermaid\ngraph LR\n    A[\"Input Image\"] --> B[\"A² Attention Map\"]\n    B --> C[\"A² Crops (input to classifier)\"]\n    D[\"ViT-S predicts: &quot;horse&quot; ×\"] --> A\n    E[\"A² predicts: &quot;cow&quot; ✓\"] --> C\n```",
+        "sub_type": "flowchart",
+        "bbox": [
+            181,
+            672,
+            816,
+            854
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "aside_text",
+        "text": "arXiv:2606.03148v1 [cs.CV] 2 Jun 2026 ",
+        "bbox": [
+            22,
+            282,
+            57,
+            710
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "image",
+        "img_path": "images/cc2331a20cd17dee4362c21b8396c5d0cc37840907b5637344529638c68f46a3.jpg",
+        "image_caption": [
+            "Figure 2: Do Smaller ViTs Localize Better? We show the proportion of attention mass that is inside ground-truth bounding boxes versus model size across six pretraining families, on Waterbirds (left) and ImageNet Val (right). All five self-supervised families (DINOv1, DINOv2, DINOv3, MAE, iBOT) slope downward as model size grows; the contrastive image-text family (OpenCLIP, dashed) does not. "
+        ],
+        "image_footnote": [],
+        "content": "",
+        "bbox": [
+            176,
+            92,
+            823,
+            282
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "text",
+        "text": "",
+        "bbox": [
+            169,
+            378,
+            823,
+            407
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "text",
+        "text": "Existing methods have tried to correct for these biases by altering the loss function or augmenting the training data. These methods use group labels [27, 16], multiple training passes [19, 36], end-to-end training of attention [2], an LLM to identify spurious features [1], or prompts specifying what to segment [26, 3]. Most of these methods try to correct for the spurious correlation after it has already entered the model, or require external prompts or supervision specifying the bias. ",
+        "bbox": [
+            169,
+            412,
+            823,
+            484
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "text",
+        "text": "A natural question is whether a pretrained attention model can be used to filter out these spurious cues on their own. In many cases, these tasks can simply be solved by isolating the primary foreground object, something that pretrained vision transformers are already good at doing. We find a surprising result: the attention maps in smaller self-supervised ViTs are better at localizing the foreground object than the attention maps in larger ViTs. This inverse scaling trend runs contrary to the common belief that larger parameter-count models are always better [35, 31, 9]. ",
+        "bbox": [
+            169,
+            489,
+            823,
+            571
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "text",
+        "text": "We design $A ^ { 2 }$ to leverage this finding by decoupling where to look (the attention model) from what to extract (the embedding model): one model attends to another model’s attention, hence Attending on Attention. While pretrained attention might not always be enough to localize the features of interest, for many real-world applications (e.g. security camera footage, species identification, medical imaging) the foreground objects are the most task-relevant. This property is also baked into common distribution shift benchmarks (Waterbirds, Spawrious, MetaShift). ",
+        "bbox": [
+            169,
+            579,
+            826,
+            662
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "text",
+        "text": "Contributions. We make two contributions: 1) we find that smaller pretrained self-supervised ViTs localize foreground objects substantially better than larger ones, and that localization quality tracks downstream task performance, and 2) we leverage this finding to propose A2, a simple method that decouples where to look (the attention model) from what to extract (the embedding model) using only frozen pretrained features, outperforming purpose-built methods for learning under distribution shift. ",
+        "bbox": [
+            169,
+            667,
+            826,
+            739
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "text",
+        "text": "2 Attention in Smaller Models Localizes Better ",
+        "text_level": 1,
+        "bbox": [
+            169,
+            760,
+            581,
+            777
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "text",
+        "text": "To directly test whether smaller self-supervised ViTs [4] localize better than larger ones, we use ImageNet [10] (1000 object classes, N=50,000) and Waterbirds (2 classes, N=5,794) where annotated bounding boxes are available. We measure the proportion of attention mass captured within the bounding box (taking the union if there are multiple) and also report the hit rate (whether or not the highest attention map value falls within a bounding box). ",
+        "bbox": [
+            169,
+            792,
+            826,
+            864
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "text",
+        "text": "Figure 2 shows that the trend appears across all five self-supervised families we evaluate. The original DINO [4] shows it at its smallest scale: ViT-S/16 puts 68.9% of its attention mass inside Waterbirds GT bboxes vs. 64.9% for ViT-B/16. For DINOv2 [24], there is a monotonic decrease in attention mass and hit rate as the ViT gets larger. For ImageNet Val, ViT-S puts 74.6% of its mass inside the ground truth object box vs. 67.6% for ViT-G. The same pattern persists at much larger scale with DINOv3 [29]: on Waterbirds, ViT-S/16 (21M) puts 76.7% of its mass inside GT bboxes vs. only 57.7% for ViT-7B/16 (6.7B), a 19-point drop while scaling 320× in parameters. Although not monotonic, we observe a similar trend in another self-supervised ViT trained with reconstruction loss, MAE [14], with the model best at localization being the smallest, ViT-B/16 (For Waterbirds, ViT-B/16 puts 47.4% of its mass inside the ground truth object box vs. 37.8% for ViT-H/14). The same monotonic decrease in attention mass holds for iBOT [37], a fourth self-supervised family combining masked image modeling with self-distillation: ViT-S/16 puts 69.6% of its mass inside Waterbirds GT bboxes vs. 55.7% for ViT-L/16. In contrastive language-image pretrained ViTs (OpenCLIP) the trend does not hold: ViT-B/16 is both the smallest and the worst at localization with a particularly low hit rate of 0.166 compared with ViT-L/14 (0.815). Appendix Table 3 reports precise values for all metrics. ",
+        "bbox": [
+            169,
+            869,
+            823,
+            912
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "page_number",
+        "text": "",
+        "bbox": [
+            493,
+            935,
+            504,
+            946
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "image",
+        "img_path": "images/28cb12ea8874b7ee6b5195032f90c7cdf80c6fd114755ef72e366f7c027605f0.jpg",
+        "image_caption": [
+            "Figure 3: Overview of $A ^ { 2 }$ . Given an input image, x, we use an attention model to select crops, $\\mathrm { C r o p } _ { i } ( x ; \\mathrm { A t t n } ( x ) )$ , which are resized and embedded using a (possibly different) embedding model, T . The concatenated embeddings $[ \\mathcal { T } ( c _ { 1 } ) , . . . , \\mathcal { T } ( c _ { k } ) ]$ ] are passed to a classifier f to predict yˆ. "
+        ],
+        "image_footnote": [],
+        "content": "```mermaid\ngraph LR\n    A[\"Input Image\"] --> B[\"VIT-S\"]\n    B --> C[\"Attn Map\"]\n    C --> D[\"Crops\"]\n    C --> E[\"Embed Model\"]\n    E --> F[\"Classifier\"]\n    F --> G[\"\\hat{y}\"]\n    style A fill:#f9f,stroke:#333\n    style G fill:#bbf,stroke:#333\n```",
+        "sub_type": "flowchart",
+        "bbox": [
+            173,
+            97,
+            803,
+            205
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "",
+        "bbox": [
+            169,
+            275,
+            826,
+            443
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "3 Attending on Attention ",
+        "text_level": 1,
+        "bbox": [
+            171,
+            463,
+            401,
+            479
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "Motivated by this finding, we propose Attending on Attention $( A ^ { 2 } )$ , a method where a larger model attends to the attention of a smaller model. $A ^ { 2 }$ has two variants: $A _ { Z S } ^ { 2 }$ , which is fully zero-shot, and $A _ { \\mathrm { L R } } ^ { 2 }$ which fits a logistic regression head using crop embeddings from a frozen pretrained model. As shown by Figure $3 , A ^ { 2 }$ operates in two stages: 1) selection of crops 2) classification based on crops. ",
+        "bbox": [
+            169,
+            494,
+            823,
+            551
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "Given an image $x ,$ we predict the label yˆ by independently embedding image crops $c _ { i }$ using a transformer $\\tau _ { \\ast }$ , concatenating the representations, and making a prediction using a classifier $f .$ . The main idea of our approach is that the crops are computed using the attention maps from a second (possibly different) transformer: ",
+        "bbox": [
+            169,
+            556,
+            823,
+            612
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "equation",
+        "text": "$$\n\\hat {y} = f ([ \\mathcal {T} (c _ {1}), \\dots , \\mathcal {T} (c _ {k}) ]) \\quad \\text { where } \\quad c _ {i} = \\operatorname{Crop} _ {i} (x; \\operatorname{Attn} (x)) \\tag {1}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            277,
+            621,
+            825,
+            638
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "where $\\tau ( \\cdot )$ is the CLS embedding of a vision transformer. This approach effectively turns the softattention Attn into a hard attention [33]. While the T and Attn could be from the same model, this decoupling also allows us to use one transformer to estimate the attention and a different transformer to predict the label. ",
+        "bbox": [
+            169,
+            645,
+            826,
+            702
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "3.1 Crops as Hard Attention ",
+        "text_level": 1,
+        "bbox": [
+            171,
+            719,
+            387,
+            734
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "We crop the image, $x ,$ around the highest-attention regions in the attention map Attn(x) computed from a vision transformer. This converts the transformer’s soft attention to hard attention, allowing only the most attended-to and relevant regions to enter the downstream representation. ",
+        "bbox": [
+            169,
+            744,
+            823,
+            787
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "Concretely, we use a ViT (DINOv2/v3, CLIP, etc) to produce an attention map by looking at the CLS token’s query dotted with all possible keys [32]. Because large ViT models have multiple heads, we choose to compute the mean attention map over all heads. We upsample the attention matrix to be the same size as the input image using bilinear interpolation. ",
+        "bbox": [
+            169,
+            792,
+            823,
+            849
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "Given an $M \\times M$ attention map, we greedily select non-overlapping crops $c _ { 1 } , \\ldots , c _ { n }$ from a predefined list of crop sizes $s _ { 1 } , \\ldots , s _ { n }$ (ordered from largest to smallest). Each crop is chosen so as to maximize the sum of attention mass within it while also not intersecting with a previously placed crop. Formal definitions for both head aggregation and greedy crop selection are given in Appendix B. ",
+        "bbox": [
+            169,
+            854,
+            828,
+            912
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "page_number",
+        "text": "3 ",
+        "bbox": [
+            493,
+            935,
+            503,
+            946
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "image",
+        "img_path": "images/f0c94b1dc8351c0725ba8c2023a1537c63324400e177ef0d6c1a90d7340e46d2.jpg",
+        "image_caption": [
+            "1 crop "
+        ],
+        "image_footnote": [],
+        "content": "Underwater photo of a person swimming near the seabed with a close-up inset showing the eye (no text or symbols visible)",
+        "sub_type": "natural_image",
+        "bbox": [
+            174,
+            87,
+            330,
+            208
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "image",
+        "img_path": "images/401ba401cc7007b5a248c3c7aae09a52149a48dcb03d5a13f361569d84eeac2e.jpg",
+        "image_caption": [
+            "2 crops "
+        ],
+        "image_footnote": [],
+        "content": "Underwater photo of a polar bear with visible eye and tail, surrounded by water (no text or symbols)",
+        "sub_type": "natural_image",
+        "bbox": [
+            336,
+            87,
+            495,
+            208
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "image",
+        "img_path": "images/8af35678eac7907de8cf09d1e924d14f60435275bfc239c773de623ea848660b.jpg",
+        "image_caption": [
+            "3 crops "
+        ],
+        "image_footnote": [],
+        "content": "Underwater photo of a polar bear swimming near the sea (no text or symbols visible)",
+        "sub_type": "natural_image",
+        "bbox": [
+            503,
+            87,
+            660,
+            208
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "image",
+        "img_path": "images/e2c97bc626975ad184ea43029453e844c91a5e5adb2acd26cc17a012f627d071.jpg",
+        "image_caption": [
+            "4 crops "
+        ],
+        "image_footnote": [],
+        "content": "Underwater scene with a polar bear and blue water, no visible text or symbols",
+        "sub_type": "natural_image",
+        "bbox": [
+            668,
+            88,
+            825,
+            208
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "image",
+        "img_path": "images/0d98ee0f0f5ef3337d7f9eb39ab1a206c007981ec3ff3d3ee25461bfa506b3c7.jpg",
+        "image_caption": [
+            "Figure 4: Qualitative example of $A ^ { 2 }$ attention-guided crops. One to four 64×64 crops selected by ViT-S attention on a MetaShift Animals bear. Crop regions are at full brightness; the rest of the image is faded. $A ^ { 2 }$ focuses on the bear and excludes the surrounding water and aquarium context. Full crop-count ablation in Appendix D. ",
+            "Figure 5: MetaShift Animals (ours): disjoint train/test contexts. One of our eight classes (giraffe) shown across several Visual Genome context tags. The top row of each pair contains training images and the bottom row contains test images; the per-image label is the context tag (spurious feature). Train tags (e.g., tree, building, man) and test tags (e.g., water, umbrella, dirt) are disjoint by construction. Full panels for four representative classes in Appendix Figure 15. "
+        ],
+        "image_footnote": [],
+        "content": "tree (n=141)\nman (n=26)\ndirt (n=21)\nglasses (n=10)\ngirl (n=9)\ntrain\nground (n=628)\ntest\ntrees (n=506)\nwall (n=278)\nrock (n=233)\npole (n=211)",
+        "sub_type": "text_image",
+        "bbox": [
+            176,
+            313,
+            823,
+            498
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "text",
+        "text": "3.2 Classification ",
+        "text_level": 1,
+        "bbox": [
+            171,
+            597,
+            307,
+            612
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "text",
+        "text": "Each crop, $c _ { i } ,$ , is resized to 224 × 224 before being embedded using $\\tau$ into a d dimensional representation. T need not be the same model used to compute Attn(x). In the $A _ { \\mathrm { L R } } ^ { 2 }$ variant, we concatenate the crop embeddings $[ \\mathcal { T } ( c _ { 1 } ) , \\ldots , \\mathcal { T } ( c _ { k } ) ] \\in \\mathbb { R } ^ { k \\cdot d }$ and fit a logistic regression classifier to predict yˆ. Training happens on these frozen crop embeddings and does not require group labels. In the zero-shot variant, $A _ { \\mathrm { Z S } } ^ { 2 ^ { - } }$ , we select a single crop, c1, embed it using CLIP [25] (T = CLIP), and classify by comparing the cosine similarity of the crop embedding with those of the possible label embeddings (\"a photo of a {}\"). ",
+        "bbox": [
+            169,
+            627,
+            826,
+            727
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "text",
+        "text": "4 Experiments ",
+        "text_level": 1,
+        "bbox": [
+            171,
+            756,
+            313,
+            773
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "text",
+        "text": "In our experiments, we use five datasets: Spawrious O2O Hard, Spawrious M2M Hard [22], Waterbirds [27], MetaShift Cat vs. Dog [18], and a new dataset we created, MetaShift Animals (Figure 5), which is the only dataset where the spurious features are completely disjoint between train and test. Each MetaShift image carries a context tag from Visual Genome (e.g., tree, water, rope) which acts as the spurious feature; we split the context tags such that those appearing in training are disjoint from those at test time. The full dataset card with all eight classes and per-class image counts is in Appendix C. Code and the MetaShift Animals dataset will be released. ",
+        "bbox": [
+            169,
+            792,
+            826,
+            891
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "text",
+        "text": "We design experiments to answer the following questions: ",
+        "bbox": [
+            171,
+            897,
+            555,
+            912
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "page_number",
+        "text": "4 ",
+        "bbox": [
+            493,
+            936,
+            504,
+            946
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "table",
+        "img_path": "images/f4ecc176521b84ef5539f336554926ec1ece156c8bfcf7a2848ae03f5a5ae2c0.jpg",
+        "table_caption": [
+            "Table 1: Worst-Group Accuracy. $A ^ { 2 }$ improves worst-group accuracy over backbone-matched linear probes on every benchmark. Worst-group accuracy (WGA, %) on five distribution-shift benchmarks. MetaShift Animals reports worst-class accuracy (WC) since its groups are class-context pairs with disjoint train/test contexts. Methods that require group labels at training time are shown above the horizontal line and are not directly comparable to the methods below. Backbones are DINOv2 [24] unless prefixed (e.g., OpenCLIP); for $A ^ { \\overset { \\bullet } { 2 } }$ rows, the Backbone column reads attention × embedding. Bold indicates the best value per column among methods not requiring group labels. Values are means over 5 random seeds where applicable; per-seed standard deviations are reported in Appendix Tables 6, 8, 9, 10. "
+        ],
+        "table_footnote": [
+            "† = uses group labels via the DFR step. "
+        ],
+        "table_body": "<table><tr><td>Method</td><td>Backbone (attn × emb)</td><td>Spawrious O2O</td><td>Spawrious M2M</td><td>Waterbirds</td><td>Cat vs. Dog</td><td>Animals (WC)</td></tr><tr><td colspan=\"7\">Deep Feature Reweighting (requires group labels)</td></tr><tr><td>DFR [16]</td><td>ViT-S (21M)</td><td>74.9</td><td>49.9</td><td>90.4</td><td>54.5</td><td>72.0</td></tr><tr><td>DFR [16]</td><td>ViT-B (86M)</td><td>84.5</td><td>69.7</td><td>94.0</td><td>65.9</td><td>73.5</td></tr><tr><td>DFR [16]</td><td>ViT-G (1.1B)</td><td>89.9</td><td>73.9</td><td>96.4</td><td>74.2</td><td>76.6</td></tr><tr><td> $DFR^† + A^2$ </td><td>ViT-S × ViT-S</td><td>88.8</td><td>64.6</td><td>91.0</td><td>67.7</td><td>72.9</td></tr><tr><td colspan=\"7\">Linear probe on full image (no crops)</td></tr><tr><td>LR (full image)</td><td>ViT-S (21M)</td><td>71.7</td><td>25.0</td><td>72.7</td><td>56.0</td><td>63.2</td></tr><tr><td>LR (full image)</td><td>ViT-G (1.1B)</td><td>77.7</td><td>52.4</td><td>92.8</td><td>76.8</td><td>75.9</td></tr><tr><td colspan=\"7\">End-to-end attention learning</td></tr><tr><td>iFAM [2] (K=4)</td><td>ViT-B (86M)</td><td>80.6</td><td>71.4</td><td>96.0</td><td>72.1</td><td>68.8</td></tr><tr><td>iFAM [2] (K=8)</td><td>ViT-B (86M)</td><td>76.1</td><td>72.4</td><td>96.1</td><td>73.5</td><td>63.5</td></tr><tr><td colspan=\"7\">Zero-shot CLIP-based references (no crops)</td></tr><tr><td>TTR [21]</td><td>OpenCLIP ViT-L-14</td><td>70.2</td><td>83.6</td><td>76.9</td><td>82.7</td><td>49.1</td></tr><tr><td>OpenCLIP ZS (full image)</td><td>ViT-L-14</td><td>82.0</td><td>82.1</td><td>46.9</td><td>88.8</td><td>58.8</td></tr><tr><td colspan=\"7\">Attending on Attention (ours)</td></tr><tr><td> $A_{LR}^2$  cross-model</td><td>ViT-S × ViT-G</td><td>79.9</td><td>64.6</td><td>94.4</td><td>76.6</td><td>70.8</td></tr><tr><td> $A_{LR}^2$ </td><td>ViT-S × ViT-S</td><td>80.2</td><td>58.1</td><td>80.4</td><td>68.3</td><td>67.0</td></tr><tr><td> $A_{ZS}^2$ </td><td>ViT-S × OpenCLIP ViT-L-14</td><td>85.0</td><td>85.4</td><td>64.5</td><td>88.8</td><td>54.7</td></tr></table>",
+        "bbox": [
+            171,
+            222,
+            834,
+            450
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "list",
+        "sub_type": "text",
+        "list_items": [
+            "• Robustness: Does $A ^ { 2 }$ improve robustness to common spatial spurious correlations over full-image, last-layer retraining (DFR [16]), and attention retraining baselines [2]? Can $A ^ { 2 }$ be used with existing methods for spurious correlations that operate at the loss level? ",
+            "• Decoupling: Can decoupling the model used to compute attention and embed crops improve performance as observed in Section 2? Is localization performance tied to downstream task performance? ",
+            "• Extension: Can $A ^ { 2 }$ work in cases where the attention maps do not focus on task-relevant features? "
+        ],
+        "bbox": [
+            215,
+            477,
+            823,
+            609
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "4.1 $A ^ { 2 }$ improves robustness and complements loss-level methods ",
+        "text_level": 1,
+        "bbox": [
+            169,
+            633,
+            635,
+            648
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "We show our consolidated results in Tables 1 (worst-group accuracy) and 2 (test accuracy), with the full results and ablations in Appendix Tables 6, 7, 8, 9, 10. To keep the main comparison backbone-matched (ViT throughout), we omit the historical ResNet-50 baselines (ERM, CORAL, CausIRL, JTT, GroupDRO) from Tables 1 and 2. They are reported in Appendix Tables 6 and 8, where $A ^ { 2 }$ is competitive with them on out-of-domain test accuracy. ",
+        "bbox": [
+            169,
+            662,
+            826,
+            733
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "$A ^ { 2 }$ significantly improves performance when the spatial spurious signal dominates. At fixed backbone, adding $A ^ { \\hat { 2 } }$ crops to a ViT-S linear probe improves Spawrious M2M Hard WGA from 25.0% to 58.1% (+33.1%). In zero-shot, holding the OpenCLIP ViT-L-14 embedder fixed, $A ^ { 2 }$ crops improve Waterbirds WGA from 46.9% to 64.5% (+17.6%). On benchmarks where the full-image ViT-G probe is already strong (MetaShift Animals, Cat vs. Dog accuracy), $A ^ { 2 }$ trails slightly. ",
+        "bbox": [
+            169,
+            737,
+            823,
+            809
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "$A ^ { 2 }$ is complementary to loss-level methods (e.g. DFR, which does last-layer retraining on an equally weighted dataset) and can be used in tandem with these methods to improve performance. Fixing the backbone size to ViT-S, $A _ { \\mathrm { L R } } ^ { 2 }$ outperforms DFR on $4 / 5$ datasets in test accuracy $( 3 / 5$ in worst-group accuracy). $A ^ { 2 } + { \\sf D F R }$ adds another +13.9 points WGA over DFR alone on Spawrious O2O Hard. $A _ { Z S } ^ { 2 }$ outperforms TTR (an input filtering method [21]) on $4 / 5$ datasets. On the remaining dataset, Waterbirds, $A _ { \\mathrm { L R } } ^ { 2 }$ outperforms TTR by 5.8 points in accuracy and 3.5 points in WGA. Full details of our TTR implementation are in Appendix O. ",
+        "bbox": [
+            169,
+            813,
+            826,
+            912
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "page_number",
+        "text": "",
+        "bbox": [
+            493,
+            936,
+            503,
+            946
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "table",
+        "img_path": "images/f69ce7097884ea56990af42d7cbc2381eec743cf6f521dfbce465f964f53d6fa.jpg",
+        "table_caption": [
+            "Table 2: O.O.D. Classification Accuracy. $A ^ { 2 }$ does not sacrifice test accuracy, matching or exceeding backbone-matched linear probes across all five benchmarks. Methods that require group labels at training time are shown above the horizontal rule and are not directly comparable to the methods below. Backbones are DINOv2 [24] unless prefixed. For $A ^ { 2 }$ rows, the backbone column is attention × embedding. Bold indicates the best value per column among methods not requiring group labels. Values are means over 5 random seeds where applicable; per-seed standard deviations are reported in the corresponding appendix tables. "
+        ],
+        "table_footnote": [
+            "† = uses group labels via the DFR step. "
+        ],
+        "table_body": "<table><tr><td>Method</td><td>Backbone (attn × emb)</td><td>Spawrious O2O</td><td>Spawrious M2M</td><td>Waterbirds</td><td>Cat vs. Dog</td><td>Animals</td></tr><tr><td colspan=\"7\">Deep Feature Reweighting (requires group labels)</td></tr><tr><td>DFR [16]</td><td>ViT-S (21M)</td><td>86.1</td><td>73.4</td><td>92.4</td><td>58.7</td><td>88.3</td></tr><tr><td>DFR [16]</td><td>ViT-B (86M)</td><td>90.1</td><td>84.9</td><td>95.5</td><td>68.6</td><td>90.3</td></tr><tr><td>DFR [16]</td><td>ViT-G (1.1B)</td><td>95.7</td><td>88.0</td><td>98.1</td><td>76.0</td><td>91.4</td></tr><tr><td> $DFR^† + A^2$ </td><td>ViT-S × ViT-S</td><td>95.2</td><td>86.2</td><td>91.9</td><td>69.4</td><td>88.9</td></tr><tr><td colspan=\"7\">Linear probe on full image (no crops)</td></tr><tr><td>LR (full image)</td><td>ViT-S (21M)</td><td>80.5</td><td>66.6</td><td>88.7</td><td>59.8</td><td>83.2</td></tr><tr><td>LR (full image)</td><td>ViT-G (1.1B)</td><td>87.8</td><td>79.7</td><td>97.8</td><td>78.6</td><td>90.6</td></tr><tr><td colspan=\"7\">End-to-end attention learning</td></tr><tr><td>iFAM [2] (K=4)</td><td>ViT-B (86M)</td><td>92.0</td><td>86.1</td><td>98.9</td><td>78.3</td><td>86.6</td></tr><tr><td>iFAM [2] (K=8)</td><td>ViT-B (86M)</td><td>91.2</td><td>86.0</td><td>98.8</td><td>81.1</td><td>88.2</td></tr><tr><td colspan=\"7\">Zero-shot CLIP-based references (no crops)</td></tr><tr><td>TTR [21]</td><td>OpenCLIP ViT-L-14</td><td>84.4</td><td>92.1</td><td>87.2</td><td>88.1</td><td>69.2</td></tr><tr><td>OpenCLIP ZS (full image)</td><td>ViT-L-14</td><td>89.8</td><td>92.4</td><td>73.5</td><td>92.4</td><td>90.4</td></tr><tr><td colspan=\"7\">Attending on Attention (ours)</td></tr><tr><td> $A_{LR}^2$  cross-model</td><td>ViT-S × ViT-G</td><td>89.2</td><td>86.0</td><td>98.2</td><td>77.3</td><td>88.9</td></tr><tr><td> $A_{LR}^2$ </td><td>ViT-S × ViT-S</td><td>91.0</td><td>82.4</td><td>93.0</td><td>69.8</td><td>85.1</td></tr><tr><td> $A_{ZS}^2$ </td><td>ViT-S × OpenCLIP ViT-L-14</td><td>92.8</td><td>94.0</td><td>80.3</td><td>89.7</td><td>89.7</td></tr></table>",
+        "bbox": [
+            173,
+            194,
+            823,
+            422
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "text",
+        "text": "$A ^ { 2 }$ vs. end-to-end attention training (iFAM). We compare against iFAM [2], an attention tuning method that learns its attention head and ViT-B backbone jointly on a target dataset. We ran iFAM at both K=4 and K=8 part-discovery configurations on every benchmark and report both in Tables 1 and 2. In Waterbirds, where train and test contexts overlap, iFAM wins (96.1% vs. our 94.4% WGA at $K { = } 8 )$ , though iFAM’s WGA drops 18.2 points when tested on a subset of off-center birds (while $A ^ { 2 }$ drops 10.6 points), showing it may be overfitting to the center bias of the birds in the dataset (Appendix Table 18). On the harder distribution-shift dataset MetaShift Animals, $A ^ { 2 }$ wins in both accuracy and worst-class accuracy. The pattern suggests that frozen pretrained DINOv2 attention generalizes across context shifts in a way that iFAM’s per-dataset training does not. ",
+        "bbox": [
+            169,
+            445,
+            823,
+            571
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "text",
+        "text": "In MetaShift Cat vs. Dog (binary classification), the OpenCLIP [5] zero-shot classifier outperforms the $A _ { \\mathrm { L R } } ^ { 2 }$ classifier. The OpenCLIP classifier possesses very strong image-text grounding for the cat and dog labels through its large-scale pretraining. The logistic regression classifier does not start with these priors and the slightest amount of spurious information that leaks into the representations can lead to decreased performance. When the task becomes more difficult (8-way classification in MetaShift Animals), $A _ { \\mathrm { L R } } ^ { 2 }$ improves over OpenCLIP zero-shot, +12-point gain in worst-class accuracy. ",
+        "bbox": [
+            169,
+            575,
+            823,
+            674
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "text",
+        "text": "4.2 Localization quality predicts downstream task performance ",
+        "text_level": 1,
+        "bbox": [
+            171,
+            691,
+            627,
+            707
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "text",
+        "text": "A natural question is whether downstream $A ^ { 2 }$ performance mimics the trends seen in Section 2. ",
+        "bbox": [
+            169,
+            717,
+            799,
+            733
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "text",
+        "text": "For $A _ { \\mathrm { L R } } ^ { 2 } ,$ we fix the crop embedder to be DINOv2 ViT-G, and vary the model used to compute attention (left panel in Figure 6). To test the direct scaling of embedding size, we fix the attention model to be DINOv2 ViT-S, and vary the model used to embed the crops (right panel in Figure 6). For $A _ { \\mathrm { Z S } } ^ { 2 } ,$ , we fix the embedding model to OpenCLIP ViT-L/14 and vary the crop selector within the DINOv2 family and OpenCLIP family. ",
+        "bbox": [
+            169,
+            737,
+            823,
+            808
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "text",
+        "text": "Across both $A ^ { 2 }$ variants, localization ability of the underlying self-supervised model is indicative of downstream task performance. We see the same downward sloping trend in task performance as the DINOv2 model used to select a crop scales. OpenCLIP does not show this trend, and worst-group accuracy follows the same family pattern (Appendix Figure 22). On Spawrious and Waterbirds, $A _ { \\mathrm { Z S } } ^ { 2 }$ using ViT-S attention improves the test accuracy and worst-group accuracy over standard CLIP classification using the full image (improving WGA for Waterbirds from 46.9% to 64.5%). Across all 5 datasets, in 18/20 cases, the best results are achieved with ViT-S (the smallest model). In fact, pairing a small selector with a large embedder $\\mathbf { ( } \\mathbf { V i T - S } \\times \\mathbf { V i T - G } )$ outperforms using the large model for both (ViT-G × ViT-G) on every dataset. Full cross-model pairings in Appendix Tables 11-15. ",
+        "bbox": [
+            169,
+            813,
+            826,
+            912
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "page_number",
+        "text": "6 ",
+        "bbox": [
+            493,
+            936,
+            504,
+            946
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "chart",
+        "img_path": "images/da4b447f65edfb8a4895494e0f0d9bd9097fcef477cfdf218d30b7ad97563d9c.jpg",
+        "content": "| Model Parameters (log scale) | Test Acc (%) relative to smallest model |\n| ----------------------------- | --------------------------------------- |\n| 21M                           | 0                                       |\n| 86M                           | -1                                      |\n| 300M                          | -4                                      |\n| 1.1B                          | -4                                      |",
+        "chart_caption": [],
+        "chart_footnote": [
+            "Spawrious O2O Spawrious M2M Waterbirds Metashift Cat Dog Metashift Animals Mean(5) "
+        ],
+        "sub_type": "line",
+        "bbox": [
+            176,
+            89,
+            496,
+            284
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "chart",
+        "img_path": "images/5d4e34de77dc2cc6e712c2569277175d778cda87d62c6111d2f0bd95018155b6.jpg",
+        "content": "| Model Parameters (log scale) | 21M | 86M | 300M | 1.1B |\n| ----------------------------- | --- | --- | ---- | ---- |\n| Series 1 (green)              | 0   | 10  | 12.5 | 14   |\n| Series 2 (pink)              | 0   | 8   | 7    | 8.5  |\n| Series 3 (black)             | 0   | 4   | 5.5  | 5.5  |\n| Series 4 (orange)            | 0   | 2   | 4.5  | 3.5  |\n| Series 5 (brown)             | 0   | 1.5 | 3.5  | 3.5  |\n| Series 6 (blue)              | 0   | -1  | -1   | -2   |",
+        "chart_caption": [],
+        "chart_footnote": [],
+        "sub_type": "line",
+        "bbox": [
+            501,
+            90,
+            821,
+            284
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "chart",
+        "img_path": "images/2e40e5b8170aabbb4e86b08dfb38b642283816b497efffb954a47a4c2ec5750c.jpg",
+        "content": "| Attention Model Parameters (log scale) | Test Acc (%) relative to smallest model (Line 1) | Test Acc (%) relative to smallest model (Line 2) | Test Acc (%) relative to smallest model (Line 3) | Test Acc (%) relative to smallest model (Line 4) | Test Acc (%) relative to smallest model (Line 5) |\n| --------------------------------------- | ------------------------------------------------- | ------------------------------------------------- | ------------------------------------------------- | ------------------------------------------------- | ------------------------------------------------- |\n| 21M                                     | 0.0                                               | 0.0                                               | 0.0                                               | 0.0                                               | 0.0                                               |\n| 86M                                     | 0.5                                               | -0.2                                              | -0.1                                              | -0.3                                              | -0.4                                              |\n| 300M                                    | 0.4                                               | -0.6                                              | -0.7                                              | -1.0                                              | -1.8                                              |\n| 1.1B                                    | 0.4                                               | -0.4                                              | -0.5                                              | -1.0                                              | -1.4                                              |",
+        "chart_caption": [
+            "Figure 6: Where and What Scaling Laws. Larger embedding models but smaller attention models improve performance. The best configuration pairs a small attention model with a large embedder. Each panel plots each dataset’s standard metric (test accuracy for Spawrious; worst-group accuracy for Waterbirds and Cat vs. Dog; worst-class accuracy for Animals) relative to the smallest model (thin colored) and the mean of those relative changes across 5 datasets (bold black). Left (Where to Look): With the embedding model fixed to DINOv2 ViT-G, every dataset curve slopes downward as the attention model grows. Right (What to Extract): With the attention model fixed to DINOv2 ViT-S, most dataset curves slope upward as the embedding model grows. Absolute values are in Appendix Tables 11, 12, 13, 14, and 15. The DINOv3 [29] family shows the same inverse-scaling-of-attention pattern (Appendix Figure 20). "
+        ],
+        "chart_footnote": [
+            "Spawrious O2O Spawrious M2M Waterbirds MetaShift Cat/Dog MetaShift Animals Mean across 5 datasets "
+        ],
+        "sub_type": "line",
+        "bbox": [
+            176,
+            460,
+            493,
+            628
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "chart",
+        "img_path": "images/44f95e3d9758a65cfb7f04757a8ffb2d3c26751b4e4b76d89d486a786d705508.jpg",
+        "content": "| Attention Model Parameters (log scale) | Test Acc (%) relative to smallest model (Line 1) | Test Acc (%) relative to smallest model (Line 2) | Test Acc (%) relative to smallest model (Line 3) | Test Acc (%) relative to smallest model (Line 4) | Test Acc (%) relative to smallest model (Line 5) |\n| --------------------------------------- | ------------------------------------------------- | ------------------------------------------------- | ------------------------------------------------- | ------------------------------------------------- | ------------------------------------------------- |\n| 86M                                     | 0.0                                               | 0.0                                               | 0.0                                               | 0.0                                               | 0.0                                               |\n| 304M                                    | 8.0                                               | 6.2                                               | 4.0                                               | 2.5                                               | 1.8                                               |\n| 632M                                    | 7.2                                               | 5.8                                               | 3.5                                               | 1.8                                               | 1.2                                               |\n| 1.0B                                    | 7.5                                               | 6.2                                               | 3.7                                               | 1.5                                               | 1.7                                               |",
+        "chart_caption": [
+            "Figure 7: Downstream Task Performance. $A _ { Z S } ^ { 2 }$ tracks localization quality, not model size. We fix the embedder to OpenCLIP ViT-L/14 and vary the attention model. Each panel plots per-dataset performance relative to the smallest model in that family (thin colored) and the mean of those relative changes across 5 datasets (bold black). Left: With a DINOv2 crop selector, performance decreases as the attention model grows on most datasets (curves below zero). Right: An OpenCLIP selector does not show the same inverse scaling, ViT-B/16 (the smallest) is the worst. Appendix Figure 22 shows the worst-group accuracy version; Appendix Table 30 reports the precise absolute values. "
+        ],
+        "chart_footnote": [],
+        "sub_type": "line",
+        "bbox": [
+            517,
+            460,
+            821,
+            628
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "text",
+        "text": "",
+        "bbox": [
+            169,
+            766,
+            823,
+            795
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "text",
+        "text": "4.3 When pretrained attention misaligns: a learned adapter for CelebA ",
+        "text_level": 1,
+        "bbox": [
+            169,
+            814,
+            681,
+            830
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "text",
+        "text": "$A ^ { 2 }$ assumes the attention map naturally concentrates attention on the task-relevant features of the image. One prominent counter-example is CelebA [20], where the task is to predict whether a person has blond hair or not given a photo of their face, with the spurious feature being gender (since blond men are a rarity). The default attention maps will focus attention on the face or lower body (Figure 8 shows this). To address this limitation, we initialize a small MLP adapter network (3, 000 params) ",
+        "bbox": [
+            169,
+            840,
+            826,
+            912
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "page_number",
+        "text": "7 ",
+        "bbox": [
+            493,
+            935,
+            504,
+            946
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "image",
+        "img_path": "images/0df5b450a7fc9af28ddde342c128f4bbbbd96911cc746300207b31b56a4f9733.jpg",
+        "image_caption": [
+            "Figure 8: Visualizing the MLP Adapter. The MLP Adapter changes the attention map for the blond male class in the CelebA dataset. Default attention (lime box) focuses on the face; adapted attention (cyan box) focuses on the hair, which is the label-defining feature. "
+        ],
+        "image_footnote": [],
+        "content": "",
+        "bbox": [
+            191,
+            88,
+            803,
+            289
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "text",
+        "text": "whose input is the latent activations of the ViT, and whose output is added to the attention map from the ViT. The MLP is trained end-to-end, by backpropagating through the logistic regression fit and patch selection process (using DPS [7]). This proof-of-concept approach allows us to refocus attention to the hair in CelebA and improves worst-group accuracy (blond men) from 23.33% to 66.11%, outperforming a baseline logistic regression fit on ViT-S embeddings of the full image by 35.01% (baseline gets 31.1% WGA). See Appendix Tables 16, 17 for full results and Appendix G for further details on the adapter. ",
+        "bbox": [
+            169,
+            362,
+            823,
+            459
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "text",
+        "text": "5 Discussion ",
+        "text_level": 1,
+        "bbox": [
+            171,
+            488,
+            292,
+            503
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "text",
+        "text": "Inverse Scaling in Self-Supervised ViTs. The trend does not extend to contrastive image-text ViTs like OpenCLIP, where ViT-B/16 is the smallest and worst localizer in the family. We posit that this is because the image-text objective encourages more diffuse attention than a distillation or reconstruction objective. ",
+        "bbox": [
+            169,
+            525,
+            823,
+            580
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "text",
+        "text": "We first rule out simple head averaging as the contributor (ViT-G has 24 attention heads vs. 6 in ViT-S, and averaging more heads should, by concavity of entropy, yield more diffuse attention). We explored trying different head aggregation strategies (Appendix Table 23), and while this ultimately reduced the attention entropy of the selection map, it did not increase downstream task performance (the models were concentrating attention on objects besides the foreground). ",
+        "bbox": [
+            169,
+            587,
+            823,
+            657
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "text",
+        "text": "Next, we look at downstream localization from the attention map at every layer in the ViT. In Appendix Figure 14, we are able to reproduce the observation in [8] of high-norm tokens appearing in the attention maps of larger ViTs midway through the model, but note that this inverse scaling effect still holds in DINOv2 with registers (see Figure 9), so another explanation is still needed. ",
+        "bbox": [
+            169,
+            662,
+            823,
+            719
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "text",
+        "text": "Lappe et al. [17] observed that even with registers, while the attention maps in models with registers are visually cleaner, they do not properly aggregate local information and pay a disproportionate amount of attention to register tokens over patch tokens. To the best of our knowledge, we are the first to observe the premature peak in localization ability, which we find coincides with the model shifting the majority of its attention from patch tokens to register tokens (Figure 10). In ViT-G on Waterbirds, the fraction of CLS attention on register tokens grows from 41% at the peak-localization layer (block 32) to 55% at the last block, while the patch-side attention falls from 57% to 40% and the patch-side mass-in-bbox drops 13 points over the same span. ViT-S and ViT-B never undergo this register takeover and continue to localize through their last block. ",
+        "bbox": [
+            169,
+            724,
+            823,
+            849
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "text",
+        "text": "ViTs naturally have high shape bias. It is true that $A ^ { 2 }$ works solely for spatial spurious correlations. For non-spatial spurious correlations like color or texture, it has been shown that ViTs naturally have high shape bias [23, 12] (tendency to focus on object shapes, more robust to local texture changes). $A ^ { \\widetilde { 2 } }$ cropping of spurious spatial correlations and the shape bias of ViTs are complementary: the initial crops prevent the spurious feature from entering, and then the backbone’s shape bias helps make the representation robust to color or texture level shifts. ",
+        "bbox": [
+            169,
+            854,
+            826,
+            912
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "page_number",
+        "text": "8 ",
+        "bbox": [
+            493,
+            936,
+            503,
+            946
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "chart",
+        "img_path": "images/87d1ca2c5b2631ac34ce09a86d2931a80f740692636d5a0b6598f8e158af0739.jpg",
+        "content": "| Layer index | Attention Mass in GT Bbox (%) |\n| ----------- | ----------------------------- |\n| 0           | 35                            |\n| 5           | 45                            |\n| 10          | 80                            |\n| 15          | 50                            |\n| 20          | 75                            |\n| 25          | 65                            |\n| 30          | 70                            |\n| 35          | 65                            |\n| 40          | 60                            |",
+        "chart_caption": [
+            "Per-layer attention mass for DINOv2 + registers. Stars mark the last layer (the layer used in all other figures). "
+        ],
+        "chart_footnote": [],
+        "sub_type": "line",
+        "bbox": [
+            176,
+            106,
+            488,
+            255
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "chart",
+        "img_path": "images/d650e00e0b01d33d764b6576d2be75ff34ebaae8c6b6e16534fba3c8a2be8c4b.jpg",
+        "content": "| Layer index | ViT-S | ViT-L | ViT-B | ViT-G |\n| ----------- | ----- | ----- | ----- | ----- |\n| 0           | 48    | 49    | 49    | 49    |\n| 5           | 55    | 54    | 53    | 52    |\n| 10          | 60    | 73    | 50    | 51    |\n| 15          | 58    | 60    | 55    | 54    |\n| 20          | 60    | 70    | 58    | 57    |\n| 25          | 62    | 68    | 60    | 60    |\n| 30          | 65    | 70    | 65    | 65    |\n| 35          | 68    | 72    | 70    | 70    |\n| 40          | 70    | 70    | 72    | 68    |",
+        "chart_caption": [
+            "Figure 9: Per-layer CLS-to-patches attention mass for DINOv2 with register tokens [8]. Stars mark each model’s last block (the layer used in our other figures). ViT-S and ViT-B peak at the last block; ViT-L peaks at block 21 of 24 and ViT-G at block 32 of 40, dropping 12–13 points on Waterbirds (left) and 4–6 points on ImageNet val (right) by the final block. Larger ViTs’ final blocks drift away from foreground localization while smaller ViTs concentrate localization in their last block. Appendix Figure 13 shows the same plot for DINOv2 without registers; per-layer hit-rate counterparts are in Appendix Figures 12 and 14. "
+        ],
+        "chart_footnote": [],
+        "sub_type": "line",
+        "bbox": [
+            504,
+            107,
+            821,
+            255
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "chart",
+        "img_path": "images/6bee3a861536343e09936b4e84e0c89c166df0a7d60ca4f95ef2b5879723a008.jpg",
+        "content": "",
+        "chart_caption": [
+            "Figure 10: The dip in patch-side localization coincides with attention shifting to register tokens. For DINOv2 with registers on Waterbirds (top) and ImageNet val (bottom), we plot the per-layer fraction of CLS softmax mass on patch tokens (blue) vs. register tokens (red), alongside the patch-side mass-in-GT-bbox metric from Figure 9 (green, dashed). For ViT-L and ViT-G, register tokens absorb a growing share of CLS attention in late layers, eventually exceeding patch attention in ViT-G’s final block (55% registers vs. 40% patches on Waterbirds); the patch-side localization metric drops correspondingly (∼ 13 points from peak-localization layer to last block in ViT-G). ViT-S and ViT-B never experience this register takeover and continue to concentrate attention on patch tokens through their last block. "
+        ],
+        "chart_footnote": [],
+        "sub_type": "line",
+        "bbox": [
+            173,
+            378,
+            823,
+            633
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "text",
+        "text": "",
+        "bbox": [
+            169,
+            780,
+            823,
+            808
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "text",
+        "text": "End-to-end attention training overfits; pretrained attention generalizes. End-to-end attention training (iFAM) [2] wins on Waterbirds, where there is no strong distribution shift between train and test, but the dataset is heavily biased toward placing the bird at the center; iFAM appears to lean on this bias: its WGA drops 18.2% from 100.0% on the 1% most-centered test images to 81.8% on the 1% most off-center, while $A ^ { 2 } \\mathrm { { ^ , } } \\mathrm { { s } }$ drop is roughly half as steep $( 8 3 . 3 \\%  7 2 . 7 \\% ;$ ; Appendix Table 18). As the test distribution strays further from train, $A ^ { 2 }$ actually outperforms iFAM despite using entirely pretrained features and a linear head: on MetaShift Animals, where train and test contexts are disjoint, $A ^ { 2 }$ beats iFAM by up to 2.3 points in accuracy and 2 points in worst-class accuracy. Pretrained attention offers a gentler degradation curve than fine-tuned attention, which tends to overfit train-task distribution biases. ",
+        "bbox": [
+            169,
+            814,
+            826,
+            912
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "page_number",
+        "text": "9 ",
+        "bbox": [
+            493,
+            935,
+            504,
+            946
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "text",
+        "text": "",
+        "bbox": [
+            169,
+            90,
+            823,
+            133
+        ],
+        "page_idx": 9
+    },
+    {
+        "type": "text",
+        "text": "Scaling alone doesn’t fix spurious correlations. On Spawrious O2O Hard and M2M Hard, $A _ { \\mathrm { L R } } ^ { 2 }$ with a ViT-S backbone outperforms a linear probe on ViT-G embeddings (1.1B parameters). This suggests that increased model capacity is not enough on its own to prevent spurious correlations from entering the representations. Existing methods that address these failures require group labels or retraining. $A ^ { 2 }$ allows for improving the robustness of existing models to spurious correlations, without either, which can be a helpful bridge while waiting to collect new data or update the model. ",
+        "bbox": [
+            169,
+            138,
+            826,
+            224
+        ],
+        "page_idx": 9
+    },
+    {
+        "type": "text",
+        "text": "6 Related Work ",
+        "text_level": 1,
+        "bbox": [
+            171,
+            253,
+            321,
+            268
+        ],
+        "page_idx": 9
+    },
+    {
+        "type": "text",
+        "text": "6.1 Data augmentation ",
+        "text_level": 1,
+        "bbox": [
+            171,
+            292,
+            346,
+            306
+        ],
+        "page_idx": 9
+    },
+    {
+        "type": "text",
+        "text": "Approaches that modify what the model attends to fall into two broad buckets: those that try to include more visual information and those that try to include less. $S ^ { 2 }$ [28] represents the former, showing that increased performance can be achieved by constructing representations based on the merging of multiple image scales (e.g., concatenating 2242 and $4 4 8 ^ { \\overleftarrow { 2 } }$ features), and that scaling on scales can outperform scaling on model size. In contrast, $A ^ { 2 }$ focuses on reducing the number of image tokens the model sees. ",
+        "bbox": [
+            169,
+            321,
+            823,
+            405
+        ],
+        "page_idx": 9
+    },
+    {
+        "type": "text",
+        "text": "In the space of approaches that try to include less visual information, iFAM [2] uses a two-stage system trained jointly on each target dataset: stage 1 learns task-specific binary attention masks via part-discovery losses, and stage 2 fine-tunes a ViT classifier on the masked input using class labels. While iFAM initializes from pretrained DINOv2 weights, it does not use the pretrained attention as-is—it learns new mask parameters per dataset and fine-tunes the backbone. TTR [21] improves CLIP’s zero-shot classification abilities by first isolating a “core object” at test time for each image, which is found by a combination of PCA and Kmeans clustering on the CLIP patch embeddings together with a hand-crafted prompt (“a photo of a bird”). Both iFAM and TTR are similar to $A ^ { 2 }$ in that they prevent the spurious feature from entering the classifier; however, iFAM requires end-to-end per-dataset training and TTR uses clustering and a separate prompt to isolate the main cluster. ",
+        "bbox": [
+            169,
+            411,
+            825,
+            551
+        ],
+        "page_idx": 9
+    },
+    {
+        "type": "text",
+        "text": "Segmentation models like SAM2 [26] or SAM3 [3] require concept prompts, clicks, boxes, or masks as input to the model to know what to segment. This requires the user know the relevant object to segment at evaluation time. $A ^ { 2 }$ identifies the salient regions using the model’s own attention. ",
+        "bbox": [
+            169,
+            556,
+            823,
+            599
+        ],
+        "page_idx": 9
+    },
+    {
+        "type": "text",
+        "text": "6.2 Regularization, reweighting, and retraining ",
+        "text_level": 1,
+        "bbox": [
+            171,
+            626,
+            516,
+            641
+        ],
+        "page_idx": 9
+    },
+    {
+        "type": "text",
+        "text": "Assuming one has access to group labels, GroupDRO [27] trains a model to minimize the maximum loss over all groups. In Deep Feature Reweighting (DFR) [16], the authors show that an ERM trained classifier can be modified to perform well on spurious correlation tasks by simply re-training the final layer on a small validation set where all groups are represented equally. When benchmarking against DFR, we use the same ViT backbone to ensure fair comparisons. ",
+        "bbox": [
+            169,
+            655,
+            823,
+            726
+        ],
+        "page_idx": 9
+    },
+    {
+        "type": "text",
+        "text": "When one doesn’t have access to group labels, JTT [19] proposes a two-stage system, first fitting an ERM model and then training a second model that upweights the data the first model has difficulty predicting. CnC, Correct-N-Contrast [36], similarly uses a two-stage ERM-then-contrastive system, encouraging same-class samples from different groups to be close together in representation space using supervised contrastive learning [15]. ",
+        "bbox": [
+            169,
+            731,
+            823,
+            801
+        ],
+        "page_idx": 9
+    },
+    {
+        "type": "text",
+        "text": "Finally in the zero-shot setting, Roboshot [1] uses a language model given a task description to generate spurious and helpful text descriptions, then projects these descriptions into the input embedding space to amplify helpful components and suppress spurious ones. TIE [34] uses translation instead of projection, translating the image embedding away from a spurious vector. ",
+        "bbox": [
+            169,
+            806,
+            823,
+            864
+        ],
+        "page_idx": 9
+    },
+    {
+        "type": "text",
+        "text": "All these methods intervene after the spurious feature has entered the representations through loss reweighting, retraining or embedding adjustment, $A ^ { 2 }$ operates upstream at the input level, preventing the spurious correlation from entering the representation. ",
+        "bbox": [
+            169,
+            869,
+            823,
+            912
+        ],
+        "page_idx": 9
+    },
+    {
+        "type": "page_number",
+        "text": "10 ",
+        "bbox": [
+            490,
+            935,
+            508,
+            946
+        ],
+        "page_idx": 9
+    },
+    {
+        "type": "text",
+        "text": "7 Conclusion ",
+        "text_level": 1,
+        "bbox": [
+            171,
+            89,
+            302,
+            104
+        ],
+        "page_idx": 10
+    },
+    {
+        "type": "text",
+        "text": "Self-supervised ViTs show inverse scaling of localization: smaller models are better than larger models at identifying foreground objects. Furthermore, this trend directly translates into $A ^ { 2 }$ , with performance decreasing as the size of the model used to select crops increases. By preventing distractors from entering the model through hard crops, $A ^ { 2 }$ outperforms loss-level baselines and beats end-to-end attention training (iFAM) under stronger distribution shifts while being simple and interpretable. ",
+        "bbox": [
+            169,
+            119,
+            826,
+            205
+        ],
+        "page_idx": 10
+    },
+    {
+        "type": "text",
+        "text": "Acknowledgements ",
+        "text_level": 1,
+        "bbox": [
+            171,
+            224,
+            339,
+            242
+        ],
+        "page_idx": 10
+    },
+    {
+        "type": "text",
+        "text": "SR and CV are partially supported by the National Science Foundation’s Center for Smart Streetscapes (CS3), the National Science Foundation’s AI Institute for Artificial and Natural Intelligence, the NSF ACED Award #2435757, and the NSF RI Award #2403016. ",
+        "bbox": [
+            169,
+            255,
+            826,
+            297
+        ],
+        "page_idx": 10
+    },
+    {
+        "type": "text",
+        "text": "References ",
+        "text_level": 1,
+        "bbox": [
+            173,
+            316,
+            269,
+            333
+        ],
+        "page_idx": 10
+    },
+    {
+        "type": "list",
+        "sub_type": "ref_text",
+        "list_items": [
+            "[1] Dyah Adila, Changho Shin, Linrong Cai, and Frederic Sala. Zero-Shot Robustification of Zero-Shot Models. arXiv e-prints, art. arXiv:2309.04344, September 2023. doi: 10.48550/ arXiv.2309.04344. ",
+            "[2] Ananthu Aniraj, Cassio F. Dantas, Dino Ienco, and Diego Marcos. Two-stage vision transformers and hard masking offer robust object representations. In International Conference on Pattern Recognition (ICPR), 2026. ",
+            "[3] Nicolas Carion, Laura Gustafson, Yuan-Ting Hu, Shoubhik Debnath, Ronghang Hu, Didac Suris, Chaitanya Ryali, Kalyan Vasudev Alwala, Haitham Khedr, Andrew Huang, Jie Lei, Tengyu Ma, Baishan Guo, Arpit Kalla, Markus Marks, Joseph Greer, Meng Wang, Peize Sun, Roman Rädle, Triantafyllos Afouras, Effrosyni Mavroudi, Katherine Xu, Tsung-Han Wu, Yu Zhou, Liliane Momeni, Rishi Hazra, Shuangrui Ding, Sagar Vaze, Francois Porcher, Feng Li, Siyuan Li, Aishwarya Kamath, Ho Kei Cheng, Piotr Dollár, Nikhila Ravi, Kate Saenko, Pengchuan Zhang, and Christoph Feichtenhofer. SAM 3: Segment Anything with Concepts. arXiv e-prints, art. arXiv:2511.16719, November 2025. doi: 10.48550/arXiv.2511.16719. ",
+            "[4] Mathilde Caron, Hugo Touvron, Ishan Misra, Hervé Jégou, Julien Mairal, Piotr Bojanowski, and Armand Joulin. Emerging Properties in Self-Supervised Vision Transformers. arXiv e-prints, art. arXiv:2104.14294, April 2021. doi: 10.48550/arXiv.2104.14294. ",
+            "[5] Mehdi Cherti, Romain Beaumont, Ross Wightman, Mitchell Wortsman, Gabriel Ilharco, Cade Gordon, Christoph Schuhmann, Ludwig Schmidt, and Jenia Jitsev. Reproducible scaling laws for contrastive language-image learning. arXiv e-prints, art. arXiv:2212.07143, December 2022. doi: 10.48550/arXiv.2212.07143. ",
+            "[6] Mathieu Chevalley, Charlotte Bunne, Andreas Krause, and Stefan Bauer. Invariant Causal Mechanisms through Distribution Matching. arXiv e-prints, art. arXiv:2206.11646, June 2022. doi: 10.48550/arXiv.2206.11646. ",
+            "[7] Jean-Baptiste Cordonnier, Aravindh Mahendran, Alexey Dosovitskiy, Dirk Weissenborn, Jakob Uszkoreit, and Thomas Unterthiner. Differentiable patch selection for image recognition. In Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition, pages 2351–2360, 2021. ",
+            "[8] Timothée Darcet, Maxime Oquab, Julien Mairal, and Piotr Bojanowski. Vision transformers need registers. In The Twelfth International Conference on Learning Representations, 2024. URL https://openreview.net/forum?id=2dnO3LLiJ1. ",
+            "[9] Mostafa Dehghani, Josip Djolonga, Basil Mustafa, Piotr Padlewski, Jonathan Heek, Justin Gilmer, Andreas Peter Steiner, Mathilde Caron, Robert Geirhos, Ibrahim Alabdulmohsin, Rodolphe Jenatton, Lucas Beyer, Michael Tschannen, Anurag Arnab, Xiao Wang, Carlos Riquelme Ruiz, Matthias Minderer, Joan Puigcerver, Utku Evci, Manoj Kumar, Sjoerd Van "
+        ],
+        "bbox": [
+            173,
+            335,
+            831,
+            914
+        ],
+        "page_idx": 10
+    },
+    {
+        "type": "page_number",
+        "text": "",
+        "bbox": [
+            490,
+            935,
+            506,
+            946
+        ],
+        "page_idx": 10
+    },
+    {
+        "type": "list",
+        "sub_type": "ref_text",
+        "list_items": [
+            "Steenkiste, Gamaleldin Fathy Elsayed, Aravindh Mahendran, Fisher Yu, Avital Oliver, Fantine Huot, Jasmijn Bastings, Mark Collier, Alexey A. Gritsenko, Vighnesh Birodkar, Cristina Nader Vasconcelos, Yi Tay, Thomas Mensink, Alexander Kolesnikov, Filip Pavetic, Dustin Tran, Thomas Kipf, Mario Lucic, Xiaohua Zhai, Daniel Keysers, Jeremiah J. Harmsen, and Neil Houlsby. Scaling vision transformers to 22 billion parameters. In Andreas Krause, Emma Brunskill, Kyunghyun Cho, Barbara Engelhardt, Sivan Sabato, and Jonathan Scarlett, editors, Proceedings of the 40th International Conference on Machine Learning, volume 202 of Proceedings of Machine Learning Research, pages 7480–7512. PMLR, 23–29 Jul 2023. URL https://proceedings.mlr.press/v202/dehghani23a.html. ",
+            "[10] Jia Deng, Wei Dong, Richard Socher, Li-Jia Li, Kai Li, and Li Fei-Fei. Imagenet: A largescale hierarchical image database. In 2009 IEEE Conference on Computer Vision and Pattern Recognition, pages 248–255, 2009. doi: 10.1109/CVPR.2009.5206848. ",
+            "[11] Alexey Dosovitskiy, Lucas Beyer, Alexander Kolesnikov, Dirk Weissenborn, Xiaohua Zhai, Thomas Unterthiner, Mostafa Dehghani, Matthias Minderer, Georg Heigold, Sylvain Gelly, Jakob Uszkoreit, and Neil Houlsby. An Image is Worth 16x16 Words: Transformers for Image Recognition at Scale. arXiv e-prints, art. arXiv:2010.11929, October 2020. doi: 10.48550/ arXiv.2010.11929. ",
+            "[12] Robert Geirhos, Patricia Rubisch, Claudio Michaelis, Matthias Bethge, Felix A. Wichmann, and Wieland Brendel. ImageNet-trained CNNs are biased towards texture; increasing shape bias improves accuracy and robustness. arXiv e-prints, art. arXiv:1811.12231, November 2018. doi: 10.48550/arXiv.1811.12231. ",
+            "[13] Robert Geirhos, Jörn-Henrik Jacobsen, Claudio Michaelis, Richard Zemel, Wieland Brendel, Matthias Bethge, and Felix A. Wichmann. Shortcut Learning in Deep Neural Networks. arXiv e-prints, art. arXiv:2004.07780, April 2020. doi: 10.48550/arXiv.2004.07780. ",
+            "[14] Kaiming He, Xinlei Chen, Saining Xie, Yanghao Li, Piotr Dollár, and Ross Girshick. Masked autoencoders are scalable vision learners. In Proceedings of the IEEE/CVF conference on computer vision and pattern recognition, pages 16000–16009, 2022. ",
+            "[15] Prannay Khosla, Piotr Teterwak, Chen Wang, Aaron Sarna, Yonglong Tian, Phillip Isola, Aaron Maschinot, Ce Liu, and Dilip Krishnan. Supervised Contrastive Learning. arXiv e-prints, art. arXiv:2004.11362, April 2020. doi: 10.48550/arXiv.2004.11362. ",
+            "[16] Polina Kirichenko, Pavel Izmailov, and Andrew Gordon Wilson. Last layer re-training is sufficient for robustness to spurious correlations. arXiv preprint arXiv:2204.02937, 2022. ",
+            "[17] Alexander Lappe and Martin Giese. Register and [cls] tokens induce a decoupling of local and global features in large vits. In D. Belgrave, C. Zhang, H. Lin, R. Pascanu, P. Koniusz, M. Ghassemi, and N. Chen, editors, Advances in Neural Information Processing Systems, volume 38, pages 1009–1029. Curran Associates, Inc., 2025. URL https://proceedings.neurips.cc/paper\\_files/paper/2025/file/ 01bcbd34b02f3da9700a3ddd0480c156-Paper-Conference.pdf. ",
+            "[18] Weixin Liang and James Zou. MetaShift: A Dataset of Datasets for Evaluating Contextual Distribution Shifts and Training Conflicts. arXiv e-prints, art. arXiv:2202.06523, February 2022. doi: 10.48550/arXiv.2202.06523. ",
+            "[19] Evan Z Liu, Behzad Haghgoo, Annie S Chen, Aditi Raghunathan, Pang Wei Koh, Shiori Sagawa, Percy Liang, and Chelsea Finn. Just train twice: Improving group robustness without training group information. In Marina Meila and Tong Zhang, editors, Proceedings of the 38th International Conference on Machine Learning, volume 139 of Proceedings of Machine Learning Research, pages 6781–6792. PMLR, 18–24 Jul 2021. URL https://proceedings. mlr.press/v139/liu21f.html. ",
+            "[20] Ziwei Liu, Ping Luo, Xiaogang Wang, and Xiaoou Tang. Deep learning face attributes in the wild. In Proceedings of International Conference on Computer Vision (ICCV), December 2015. ",
+            "[21] Shenyu Lu, Zhaoying Pan, and Xiaoqian Wang. Think twice: Test-time reasoning for robust clip zero-shot classification. In Proceedings of the IEEE/CVF International Conference on Computer Vision (ICCV), pages 2919–2929, October 2025. "
+        ],
+        "bbox": [
+            165,
+            87,
+            834,
+            914
+        ],
+        "page_idx": 11
+    },
+    {
+        "type": "page_number",
+        "text": "",
+        "bbox": [
+            490,
+            935,
+            508,
+            946
+        ],
+        "page_idx": 11
+    },
+    {
+        "type": "list",
+        "sub_type": "ref_text",
+        "list_items": [
+            "[22] Aengus Lynch, Gbètondji J-S Dovonon, Jean Kaddour, and Ricardo Silva. Spawrious: A benchmark for fine control of spurious correlation biases, 2023. ",
+            "[23] Muzammal Naseer, Kanchana Ranasinghe, Salman Khan, Munawar Hayat, Fahad Khan, and Ming-Hsuan Yang. Intriguing properties of vision transformers. In A. Beygelzimer, Y. Dauphin, P. Liang, and J. Wortman Vaughan, editors, Advances in Neural Information Processing Systems, 2021. URL https://openreview.net/forum?id=o2mbl-Hmfgd. ",
+            "[24] Maxime Oquab, Timothée Darcet, Théo Moutakanni, Huy Vo, Marc Szafraniec, Vasil Khalidov, Pierre Fernandez, Daniel Haziza, Francisco Massa, Alaaeldin El-Nouby, et al. Dinov2: Learning robust visual features without supervision. arXiv preprint arXiv:2304.07193, 2023. ",
+            "[25] Alec Radford, Jong Wook Kim, Chris Hallacy, Aditya Ramesh, Gabriel Goh, Sandhini Agarwal, Girish Sastry, Amanda Askell, Pamela Mishkin, Jack Clark, Gretchen Krueger, and Ilya Sutskever. Learning Transferable Visual Models From Natural Language Supervision. arXiv e-prints, art. arXiv:2103.00020, February 2021. doi: 10.48550/arXiv.2103.00020. ",
+            "[26] Nikhila Ravi, Valentin Gabeur, Yuan-Ting Hu, Ronghang Hu, Chaitanya Ryali, Tengyu Ma, Haitham Khedr, Roman Rädle, Chloe Rolland, Laura Gustafson, Eric Mintun, Junting Pan, Kalyan Vasudev Alwala, Nicolas Carion, Chao-Yuan Wu, Ross Girshick, Piotr Dollár, and Christoph Feichtenhofer. Sam 2: Segment anything in images and videos. arXiv preprint arXiv:2408.00714, 2024. URL https://arxiv.org/abs/2408.00714. ",
+            "[27] Shiori Sagawa, Pang Wei Koh, Tatsunori B. Hashimoto, and Percy Liang. Distributionally Robust Neural Networks for Group Shifts: On the Importance of Regularization for Worst-Case Generalization. arXiv e-prints, art. arXiv:1911.08731, November 2019. doi: 10.48550/arXiv. 1911.08731. ",
+            "[28] Baifeng Shi, Ziyang Wu, Maolin Mao, Xin Wang, and Trevor Darrell. When Do We Not Need Larger Vision Models? arXiv e-prints, art. arXiv:2403.13043, March 2024. doi: 10.48550/ arXiv.2403.13043. ",
+            "[29] Oriane Siméoni, Huy V. Vo, Maximilian Seitzer, Federico Baldassarre, Maxime Oquab, Cijo Jose, Vasil Khalidov, Marc Szafraniec, Seungeun Yi, Michaël Ramamonjisoa, Francisco Massa, Daniel Haziza, Luca Wehrstedt, Jianyuan Wang, Timothée Darcet, Théo Moutakanni, Leonel Sentana, Claire Roberts, Andrea Vedaldi, Jamie Tolan, John Brandt, Camille Couprie, Julien Mairal, Hervé Jégou, Patrick Labatut, and Piotr Bojanowski. DINOv3. arXiv e-prints, art. arXiv:2508.10104, August 2025. doi: 10.48550/arXiv.2508.10104. ",
+            "[30] Baochen Sun and Kate Saenko. Deep CORAL: Correlation Alignment for Deep Domain Adaptation. arXiv e-prints, art. arXiv:1607.01719, July 2016. doi: 10.48550/arXiv.1607.01719. ",
+            "[31] Chen Sun, Abhinav Shrivastava, Saurabh Singh, and Abhinav Gupta. Revisiting Unreasonable Effectiveness of Data in Deep Learning Era . In 2017 IEEE International Conference on Computer Vision (ICCV), pages 843–852, Los Alamitos, CA, USA, October 2017. IEEE Computer Society. doi: 10.1109/ICCV.2017.97. URL https://doi.ieeecomputersociety. org/10.1109/ICCV.2017.97. ",
+            "[32] Ashish Vaswani, Noam Shazeer, Niki Parmar, Jakob Uszkoreit, Llion Jones, Aidan N. Gomez, Lukasz Kaiser, and Illia Polosukhin. Attention Is All You Need. arXiv e-prints, art. arXiv:1706.03762, June 2017. doi: 10.48550/arXiv.1706.03762. ",
+            "[33] Kelvin Xu, Jimmy Ba, Ryan Kiros, Kyunghyun Cho, Aaron Courville, Ruslan Salakhutdinov, Richard Zemel, and Yoshua Bengio. Show, Attend and Tell: Neural Image Caption Generation with Visual Attention. arXiv e-prints, art. arXiv:1502.03044, February 2015. doi: 10.48550/ arXiv.1502.03044. ",
+            "[34] Yu Yang, Besmira Nushi, Hamid Palangi, and Baharan Mirzasoleiman. Mitigating Spurious Correlations in Multi-modal Models during Fine-tuning. arXiv e-prints, art. arXiv:2304.03916, April 2023. doi: 10.48550/arXiv.2304.03916. ",
+            "[35] Xiaohua Zhai, Alexander Kolesnikov, Neil Houlsby, and Lucas Beyer. Scaling vision transformers. In Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition (CVPR), pages 12104–12113, June 2022. "
+        ],
+        "bbox": [
+            165,
+            87,
+            834,
+            914
+        ],
+        "page_idx": 12
+    },
+    {
+        "type": "page_number",
+        "text": "13 ",
+        "bbox": [
+            490,
+            935,
+            508,
+            946
+        ],
+        "page_idx": 12
+    },
+    {
+        "type": "list",
+        "sub_type": "ref_text",
+        "list_items": [
+            "[36] Michael Zhang, Nimit S. Sohoni, Hongyang R. Zhang, Chelsea Finn, and Christopher Ré. Correct-N-Contrast: A Contrastive Approach for Improving Robustness to Spurious Correlations. arXiv e-prints, art. arXiv:2203.01517, March 2022. doi: 10.48550/arXiv.2203.01517. ",
+            "[37] Jinghao Zhou, Chen Wei, Huiyu Wang, Wei Shen, Cihang Xie, Alan Yuille, and Tao Kong. ibot: Image bert pre-training with online tokenizer. International Conference on Learning Representations (ICLR), 2022. "
+        ],
+        "bbox": [
+            166,
+            85,
+            831,
+            186
+        ],
+        "page_idx": 13
+    },
+    {
+        "type": "page_number",
+        "text": "14 ",
+        "bbox": [
+            490,
+            935,
+            508,
+            946
+        ],
+        "page_idx": 13
+    },
+    {
+        "type": "text",
+        "text": "A Attention Localization and Hit Rate across model families ",
+        "text_level": 1,
+        "bbox": [
+            171,
+            89,
+            694,
+            107
+        ],
+        "page_idx": 14
+    },
+    {
+        "type": "table",
+        "img_path": "images/6a28d34614e8b922aeb39dcb84a759648829404a4fc1de9913dfe631beb3c421.jpg",
+        "table_caption": [
+            "Table 3: Attention localization vs. ground-truth bounding boxes across six pretraining families. Mass is the fraction of attention mass inside the ground truth bounding boxes; Hit is whether the arg max of attention lies inside any ground truth box. Bold = best per family per column. Blue rows mark the smallest model under self-supervised pretraining, where the smallest ViT beats the largest on every column. Peach row marks the smallest model under contrastive image-text pretraining, where the trend breaks (smallest is not the best). "
+        ],
+        "table_footnote": [],
+        "table_body": "<table><tr><td rowspan=\"2\">Model</td><td rowspan=\"2\">Params</td><td colspan=\"2\">Waterbirds</td><td colspan=\"2\">ImageNet val</td></tr><tr><td>Mass ↑</td><td>Hit ↑</td><td>Mass ↑</td><td>Hit ↑</td></tr><tr><td colspan=\"6\">DINOv1 (self-distillation, original)</td></tr><tr><td>ViT-S/16</td><td>21M</td><td>0.689</td><td>0.939</td><td>0.681</td><td>0.849</td></tr><tr><td>ViT-B/16</td><td>86M</td><td>0.649</td><td>0.934</td><td>0.659</td><td>0.829</td></tr><tr><td colspan=\"6\">DINOv2 (self-distillation)</td></tr><tr><td>ViT-S</td><td>21M</td><td>0.820</td><td>0.947</td><td>0.746</td><td>0.834</td></tr><tr><td>ViT-B</td><td>86M</td><td>0.764</td><td>0.875</td><td>0.726</td><td>0.818</td></tr><tr><td>ViT-L</td><td>300M</td><td>0.650</td><td>0.823</td><td>0.678</td><td>0.767</td></tr><tr><td>ViT-G</td><td>1.1B</td><td>0.608</td><td>0.819</td><td>0.676</td><td>0.765</td></tr><tr><td colspan=\"6\">DINOv3 (self-distillation)</td></tr><tr><td>ViT-S/16</td><td>21M</td><td>0.767</td><td>0.913</td><td>0.722</td><td>0.821</td></tr><tr><td>ViT-S+/16</td><td>29M</td><td>0.758</td><td>0.900</td><td>0.729</td><td>0.821</td></tr><tr><td>ViT-B/16</td><td>86M</td><td>0.735</td><td>0.877</td><td>0.740</td><td>0.840</td></tr><tr><td>ViT-L/16</td><td>300M</td><td>0.690</td><td>0.888</td><td>0.705</td><td>0.824</td></tr><tr><td>ViT-H+/16</td><td>840M</td><td>0.662</td><td>0.870</td><td>0.705</td><td>0.808</td></tr><tr><td>ViT-7B/16</td><td>6.7B</td><td>0.577</td><td>0.798</td><td>0.649</td><td>0.756</td></tr><tr><td colspan=\"6\">MAE (reconstruction)</td></tr><tr><td>ViT-B/16</td><td>86M</td><td>0.474</td><td>0.879</td><td>0.551</td><td>0.658</td></tr><tr><td>ViT-L/16</td><td>307M</td><td>0.376</td><td>0.370</td><td>0.507</td><td>0.499</td></tr><tr><td>ViT-H/14</td><td>632M</td><td>0.378</td><td>0.451</td><td>0.503</td><td>0.554</td></tr><tr><td colspan=\"6\">iBOT (masked self-distillation)</td></tr><tr><td>ViT-S/16</td><td>21M</td><td>0.696</td><td>0.909</td><td>0.675</td><td>0.824</td></tr><tr><td>ViT-B/16</td><td>85M</td><td>0.639</td><td>0.949</td><td>0.635</td><td>0.809</td></tr><tr><td>ViT-L/16</td><td>307M</td><td>0.557</td><td>0.902</td><td>0.583</td><td>0.750</td></tr><tr><td colspan=\"6\">OpenCLIP (contrastive image-text)</td></tr><tr><td>ViT-B/16</td><td>86M</td><td>0.480</td><td>0.166</td><td>0.525</td><td>0.291</td></tr><tr><td>ViT-L/14</td><td>304M</td><td>0.561</td><td>0.815</td><td>0.567</td><td>0.543</td></tr><tr><td>ViT-H/14</td><td>632M</td><td>0.526</td><td>0.431</td><td>0.554</td><td>0.457</td></tr><tr><td>ViT-g/14</td><td>1.0B</td><td>0.522</td><td>0.585</td><td>0.556</td><td>0.555</td></tr></table>",
+        "bbox": [
+            295,
+            217,
+            707,
+            636
+        ],
+        "page_idx": 14
+    },
+    {
+        "type": "page_number",
+        "text": "",
+        "bbox": [
+            490,
+            935,
+            508,
+            946
+        ],
+        "page_idx": 14
+    },
+    {
+        "type": "chart",
+        "img_path": "images/3e7adb6c6ec7211ad8f01626a211ae737881b7da20e06eb5fd622fc03fdef2a3.jpg",
+        "content": "| Attention Model Parameters (log scale) | Line 1 | Line 2 | Line 3 | Line 4 | Line 5 |\n| -------------------------------------- | ------ | ------ | ------ | ------ | ------ |\n| 21M                                    | 95     | 92     | 90     | 90     | 90     |\n| 86M                                    | 88     | 88     | 88     | 88     | 88     |\n| 300M                                   | 82     | 82     | 82     | 82     | 82     |\n| 1.1B                                   | 82     | 82     | 82     | 82     | 82     |\n| 6.7B                                   | 80     | 80     | 80     | 80     | 80     |",
+        "chart_caption": [
+            "Smaller self-supervised ViTs localize foreground objects better. "
+        ],
+        "chart_footnote": [],
+        "sub_type": "line",
+        "bbox": [
+            176,
+            176,
+            491,
+            354
+        ],
+        "page_idx": 15
+    },
+    {
+        "type": "chart",
+        "img_path": "images/b74f305b915994022e13b3abd5140d9abba27048889bf488c02bcba550262039.jpg",
+        "content": "| Attention Model Parameters (log scale) | DINOv1 | DINOv2 | iBOT | DINOv3 | OpenCLIP |\n| --------------------------------------- | ------ | ------ | ---- | ------ | -------- |\n| 21M                                     | 85     | 83     | 83   | 84     | 30       |\n| 86M                                     | 83     | 82     | 82   | 85     | 50       |\n| 300M                                    | 78     | 76     | 75   | 83     | 55       |\n| 1.1B                                    | 77     | 77     | 74   | 81     | 56       |\n| 6.7B                                    | 76     | 76     | 73   | 77     | 55       |",
+        "chart_caption": [
+            "Figure 11: Attention hit rate vs. model size across six pretraining families, on Waterbirds (left) and ImageNet val (right). Hit rate is the fraction of images where the arg max of the attention map falls inside the ground-truth bounding box. The DINOv2 and DINOv3 families show the cleanest inversescaling trend; MAE drops sharply from ViT-B/16 to ViT-L/16 on Waterbirds; OpenCLIP (dashed) breaks the trend, with ViT-B/16 at 0.166 on Waterbirds (well below the next size). Companion to Figure 2; see Table 3 for precise values. "
+        ],
+        "chart_footnote": [],
+        "sub_type": "line",
+        "bbox": [
+            504,
+            176,
+            818,
+            354
+        ],
+        "page_idx": 15
+    },
+    {
+        "type": "chart",
+        "img_path": "images/944179d1a96eac2df28ff87143d21c417ff7d093fe05289dbc394779f870476e.jpg",
+        "content": "| Layer index | Attention Hit Rate (%) |\n| ----------- | ---------------------- |\n| 0           | 20                     |\n| 5           | 60                     |\n| 10          | 90                     |\n| 15          | 85                     |\n| 20          | 80                     |\n| 25          | 95                     |\n| 30          | 90                     |\n| 35          | 85                     |\n| 40          | 80                     |",
+        "chart_caption": [
+            "Per-layer attention hit rate for DINOv2 + registers. Stars mark the last layer (the layer used in all other figures). "
+        ],
+        "chart_footnote": [],
+        "sub_type": "line",
+        "bbox": [
+            176,
+            621,
+            488,
+            767
+        ],
+        "page_idx": 15
+    },
+    {
+        "type": "chart",
+        "img_path": "images/6a1a5146b0883c0e89415c5c649130cb57d7a6cea922c03a0c7aa2bc4a209aee.jpg",
+        "content": "| Layer index | ViT-S | ViT-L | ViT-B | ViT-G |\n| ----------- | ----- | ----- | ----- | ----- |\n| 0           | 58    | 58    | 58    | 58    |\n| 5           | 60    | 60    | 60    | 60    |\n| 10          | 70    | 70    | 70    | 70    |\n| 15          | 75    | 75    | 75    | 75    |\n| 20          | 80    | 80    | 80    | 80    |\n| 25          | 80    | 80    | 80    | 80    |\n| 30          | 80    | 80    | 80    | 80    |\n| 35          | 80    | 80    | 80    | 80    |\n| 40          | 80    | 80    | 80    | 80    |",
+        "chart_caption": [
+            "Figure 12: Per-layer attention hit rate for DINOv2 with register tokens [8]. Hit-rate counterpart to Figure 9 in the main paper. Stars mark each model’s last block. Hit rate stays high across late layers for all sizes, reflecting that registers absorb the high-norm artifact tokens that would otherwise capture the CLS attention argmax. "
+        ],
+        "chart_footnote": [],
+        "sub_type": "line",
+        "bbox": [
+            511,
+            621,
+            818,
+            767
+        ],
+        "page_idx": 15
+    },
+    {
+        "type": "page_number",
+        "text": "",
+        "bbox": [
+            490,
+            935,
+            508,
+            946
+        ],
+        "page_idx": 15
+    },
+    {
+        "type": "chart",
+        "img_path": "images/78e8fb7a60d97f1e996385e46e2dfc094250370a2176691c69296aa347da6c7f.jpg",
+        "content": "| Layer index | Attention Mass in GT Bbox (%) |\n| ----------- | ----------------------------- |\n| 10          | 82                            |\n| 11          | 70                            |\n| 20          | 60                            |\n| 25          | 50                            |\n| 39          | 43                            |",
+        "chart_caption": [
+            "Per-layer attention mass for DINOv2 without registers. Stars mark the last layer (the layer used in all other figures). "
+        ],
+        "chart_footnote": [],
+        "sub_type": "line",
+        "bbox": [
+            176,
+            172,
+            486,
+            320
+        ],
+        "page_idx": 16
+    },
+    {
+        "type": "chart",
+        "img_path": "images/eec4a89e5a01c17dd7deb3d7b4f095dac499a0d4782175c09a08d1c18238aaad.jpg",
+        "content": "| Layer index | ViT-S | ViT-L | ViT-B | ViT-G |\n| ----------- | ----- | ----- | ----- | ----- |\n| 0           | 48.0  | 52.0  | 53.0  | 51.0  |\n| 5           | 52.0  | 51.0  | 50.0  | 49.0  |\n| 10          | 72.0  | 62.0  | 51.0  | 50.0  |\n| 15          | 54.0  | 53.0  | 52.0  | 51.0  |\n| 20          | 56.0  | 55.0  | 53.0  | 52.0  |\n| 25          | 53.0  | 54.0  | 52.0  | 51.0  |\n| 30          | 58.0  | 57.0  | 56.0  | 53.0  |\n| 35          | 55.0  | 56.0  | 54.0  | 52.0  |\n| 40          | 48.0  | 49.0  | 47.0  | 46.0  |",
+        "chart_caption": [
+            "Figure 13: Per-layer CLS-to-patches attention mass for DINOv2 without register tokens. Without registers to absorb the late-layer high-norm “artifact” tokens identified by Darcet et al. [8], the inverse scaling trend in Figure 9 (with registers, main paper) becomes substantially sharper: the last-layer mass drop from ViT-S to ViT-G widens from 21 points to 37 points on Waterbirds and from 7 to 25 points on ImageNet val. ViT-S is largely unaffected (within 2.5 points of its registered counterpart at the last layer), while ViT-B/L/G’s last-layer attention drifts off-object in late blocks. The per-layer hit-rate version (Figure 14) shows the effect even more starkly: for large ViTs without registers, the attention arg max falls outside the GT bounding box on more than 80% of images at the final block. Registers mitigate, but do not eliminate, the inverse scaling we observe. "
+        ],
+        "chart_footnote": [],
+        "sub_type": "line",
+        "bbox": [
+            509,
+            172,
+            821,
+            320
+        ],
+        "page_idx": 16
+    },
+    {
+        "type": "chart",
+        "img_path": "images/fdce33eee3345f7c2fe6456df6194c6a522915f16b808bc52d4a545889a3af01.jpg",
+        "content": "| Layer index | Attention Hit Rate (%) |\n| ----------- | ---------------------- |\n| 0           | 50                     |\n| 5           | 60                     |\n| 10          | 95                     |\n| 15          | 85                     |\n| 20          | 10                     |\n| 25          | 20                     |\n| 30          | 20                     |\n| 35          | 20                     |\n| 40          | 20                     |",
+        "chart_caption": [
+            "Per-layer attention hit rate for DINOv2 without registers. Stars mark the last layer (the layer used in all other figures). "
+        ],
+        "chart_footnote": [],
+        "sub_type": "line",
+        "bbox": [
+            176,
+            614,
+            488,
+            760
+        ],
+        "page_idx": 16
+    },
+    {
+        "type": "chart",
+        "img_path": "images/4f93b6183490ad6ccf5f8f23dd7137ab5d06440d09e886e0fc9ba4f4ef0357f5.jpg",
+        "content": "| Layer index | ViT-S | ViT-L | ViT-B | ViT-G |\n| ----------- | ----- | ----- | ----- | ----- |\n| 0           | 50    | 60    | 60    | 60    |\n| 5           | 55    | 50    | 50    | 40    |\n| 10          | 80    | 10    | 10    | 10    |\n| 15          | 65    | 65    | 65    | 60    |\n| 20          | 30    | 30    | 30    | 30    |\n| 25          | 30    | 30    | 30    | 30    |\n| 30          | 30    | 30    | 30    | 30    |\n| 35          | 30    | 30    | 30    | 30    |\n| 40          | 30    | 30    | 30    | 30    |",
+        "chart_caption": [
+            "Figure 14: Per-layer attention hit rate for DINOv2 without register tokens. Hit-rate counterpart to Figure 13. Without registers, the hit rate of ViT-B/L/G collapses sharply at fractional depth ∼ 0.75 (ViT-B layer 9, ViT-L layer 18, ViT-G layer 18), consistent with attention being captured by high-norm background tokens in late blocks. ViT-S is unaffected and remains the most reliable localizer at the last block. "
+        ],
+        "chart_footnote": [],
+        "sub_type": "line",
+        "bbox": [
+            511,
+            614,
+            818,
+            761
+        ],
+        "page_idx": 16
+    },
+    {
+        "type": "page_number",
+        "text": "17 ",
+        "bbox": [
+            490,
+            935,
+            508,
+            946
+        ],
+        "page_idx": 16
+    },
+    {
+        "type": "text",
+        "text": "B Attention Aggregation and Crop Selection ",
+        "text_level": 1,
+        "bbox": [
+            171,
+            89,
+            560,
+            107
+        ],
+        "page_idx": 17
+    },
+    {
+        "type": "text",
+        "text": "Head aggregation. The CLS token’s attention in the last block of an H-head ViT yields per-head maps $a ^ { \\overset {  } { h } } \\in \\overset { \\smile } { \\mathbb { R } } ^ { N }$ given the query $q _ { \\mathrm { C L S } } ^ { h }$ and key matrix $K ^ { h } \\in \\mathbb { R } ^ { N \\times d _ { k } }$ (with $d _ { k }$ the per-head embedding dimension): ",
+        "bbox": [
+            169,
+            119,
+            823,
+            160
+        ],
+        "page_idx": 17
+    },
+    {
+        "type": "equation",
+        "text": "$$\na ^ {h} = \\operatorname{softmax} \\left(\\frac {q _ {\\mathrm{CLS}} ^ {h} \\cdot (K ^ {h}) ^ {\\intercal}}{\\sqrt {d _ {k}}}\\right) \\in \\mathbb {R} ^ {N}.\n$$",
+        "text_format": "latex",
+        "bbox": [
+            369,
+            161,
+            625,
+            196
+        ],
+        "page_idx": 17
+    },
+    {
+        "type": "text",
+        "text": "We aggregate by mean over heads, a = 1H PHh=1 $\\begin{array} { r } { a = \\frac { 1 } { H } \\sum _ { h = 1 } ^ { H } a ^ { h } \\in \\mathbb { R } ^ { N } } \\end{array}$ , before bilinearly upsampling to the input resolution. Alternative aggregators (max, top-k, head-pruned) are ablated in Appendix Table 23; none change downstream ${ \\check { A } } ^ { 2 }$ performance. ",
+        "bbox": [
+            169,
+            200,
+            823,
+            244
+        ],
+        "page_idx": 17
+    },
+    {
+        "type": "text",
+        "text": "Greedy non-overlapping crop selection. Given the upsampled $M \\times M$ attention map a and a list of crop sizes $s _ { 1 } , \\ldots , s _ { n }$ ordered largest-to-smallest, we sequentially place crops $c _ { 1 } , \\ldots , c _ { n }$ . Each crop $c _ { k } = ( x _ { k } , y _ { k } , s _ { k } )$ is the location that maximizes the sum of attention mass within it, subject to non-overlap with previously placed crops. Letting BoxSum $( a , x , y , x + s , y + s )$ denote the sum of attention values inside the crop starting at $( x , y )$ with size s: ",
+        "bbox": [
+            169,
+            258,
+            823,
+            329
+        ],
+        "page_idx": 17
+    },
+    {
+        "type": "equation",
+        "text": "$$\n\\begin{array}{l} c _ {k} = \\arg \\max \\operatorname{BoxSum} (a, x, y, x + s _ {k}, y + s _ {k}), \\quad k = 1, \\dots , n. \\\\ c = (x, y, s _ {k}) \\\\ 0 \\leq x, y \\leq M - s _ {k} \\\\ c \\cap c _ {j} = \\varnothing , \\forall j <   k \\\\ \\end{array}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            259,
+            335,
+            733,
+            381
+        ],
+        "page_idx": 17
+    },
+    {
+        "type": "text",
+        "text": "The number and sizes of crops are dataset-dependent and chosen as ablated in Appendix D. ",
+        "bbox": [
+            171,
+            387,
+            769,
+            402
+        ],
+        "page_idx": 17
+    },
+    {
+        "type": "page_number",
+        "text": "18 ",
+        "bbox": [
+            490,
+            935,
+            508,
+            946
+        ],
+        "page_idx": 17
+    },
+    {
+        "type": "text",
+        "text": "C MetaShift Animals Dataset Card ",
+        "text_level": 1,
+        "bbox": [
+            171,
+            89,
+            485,
+            107
+        ],
+        "page_idx": 18
+    },
+    {
+        "type": "text",
+        "text": "MetaShift [18] is a dataset created from the Visual Genome in order to study learning under distribution shift. The dataset is grouped into subsets, where a subset is a co-occurrence of a particular class with another spurious feature. For example, an elephant with a person, an elephant with a bike, etc. ",
+        "bbox": [
+            169,
+            258,
+            826,
+            303
+        ],
+        "page_idx": 18
+    },
+    {
+        "type": "text",
+        "text": "We created a subset of the MetaShift dataset focused on 8-class animal classification under distribution shift. Our dataset includes the classes bear, bird, cow, elephant, giraffe, horse, sheep, zebra in various contexts. For example, elephant train contexts include {people, rope, wall, $\\mathrm  t r e e , \\ldots \\}$ , while elephant test contexts include {water, umbrella, camera, $\\mathbf { d i r t } , \\ldots \\mathbf { \\Psi } .$ . The contexts between the train and test set are entirely disjoint; we split them equally (the context count) between the two sets. We remove any image IDs present in the test set from the train set to enforce zero overlap between train and test (this deduplication step is why the train set ends up being far smaller than the test set). ",
+        "bbox": [
+            169,
+            306,
+            826,
+            419
+        ],
+        "page_idx": 18
+    },
+    {
+        "type": "text",
+        "text": "Per-class train/test image counts are summarized in Table 4, and visual examples across context tags for four representative classes are shown in Figure 15. We will release the entire dataset as well as the code to recreate it. ",
+        "bbox": [
+            169,
+            424,
+            825,
+            467
+        ],
+        "page_idx": 18
+    },
+    {
+        "type": "table",
+        "img_path": "images/348b5f0167c368ec7a5fa236811ace6a463d47ba8db52282098f9fac0adddc59.jpg",
+        "table_caption": [
+            "Table 4: MetaShift Animals (8-class benchmark) class counts. "
+        ],
+        "table_footnote": [],
+        "table_body": "<table><tr><td>Class</td><td>Train</td><td>Test</td></tr><tr><td>bear</td><td>503</td><td>978</td></tr><tr><td>bird</td><td>1,122</td><td>977</td></tr><tr><td>cow</td><td>125</td><td>968</td></tr><tr><td>elephant</td><td>367</td><td>1,580</td></tr><tr><td>giraffe</td><td>238</td><td>2,368</td></tr><tr><td>horse</td><td>1,188</td><td>586</td></tr><tr><td>sheep</td><td>90</td><td>1,142</td></tr><tr><td>zebra</td><td>57</td><td>2,230</td></tr><tr><td>Total images</td><td>3,690</td><td>10,829</td></tr><tr><td>Class-context groups</td><td>75</td><td>77</td></tr><tr><td>Unique context tags</td><td>55</td><td>47</td></tr><tr><td>Unique image IDs</td><td>2,385</td><td>6,043</td></tr></table>",
+        "bbox": [
+            357,
+            708,
+            640,
+            910
+        ],
+        "page_idx": 18
+    },
+    {
+        "type": "page_number",
+        "text": "19 ",
+        "bbox": [
+            490,
+            935,
+            509,
+            946
+        ],
+        "page_idx": 18
+    },
+    {
+        "type": "image",
+        "img_path": "images/dae998f258ab66fe28e42d9641030cd7a009b06f470f0ea5dd1158cb5a198461.jpg",
+        "image_caption": [
+            "Figure 15: MetaShift Animals: full context visualization. Companion to Figure 5. Each panel shows one class (giraffe, horse, sheep, zebra) across multiple Visual Genome context tags. Within each panel, the top row contains training images and the bottom row contains test images; the per-image label is the context tag, which acts as the spurious feature. Train and test context tags are disjoint by construction. "
+        ],
+        "image_footnote": [],
+        "content": "",
+        "bbox": [
+            233,
+            92,
+            763,
+            709
+        ],
+        "page_idx": 19
+    },
+    {
+        "type": "page_number",
+        "text": "20 ",
+        "bbox": [
+            488,
+            935,
+            509,
+            946
+        ],
+        "page_idx": 19
+    },
+    {
+        "type": "text",
+        "text": "D Crop Count Ablation ",
+        "text_level": 1,
+        "bbox": [
+            171,
+            89,
+            388,
+            107
+        ],
+        "page_idx": 20
+    },
+    {
+        "type": "text",
+        "text": "The specific number and sizes of crops extracted is dataset-dependent, as it depends on how strongly the spurious signal is mixed into the input distribution of images. On a dataset with a very strong presence of spurious features, fewer crops are better, because it decreases the chance that a spurious feature makes it into the model if it is even mildly attended to in the attention map. We see this trend in Spawrious, 1 crop performs best and the performance gradually drops as we introduce more crops (since more crops introduce the background distractor, Figure 16). On MetaShift Animals, however, the spurious features are less pronounced and so the attention map naturally doesn’t attend to them as much, so adding more crops helps performance because it uncovers more of the main subject. In practice, to choose the number of crops, one could train N different logistic regression models, each using between 1..N crop embeddings as input, record metrics on a held-out validation set, and then choose the best one. ",
+        "bbox": [
+            169,
+            119,
+            826,
+            272
+        ],
+        "page_idx": 20
+    },
+    {
+        "type": "table",
+        "img_path": "images/4d3b49ec8cde46913bb6c8208cc8dabbf184738f07f5f44f68bd281ca4d04aea.jpg",
+        "table_caption": [
+            "Table 5: Ablating the number of crops (64 × 64) using ViT-S for both attention and embedding. Coverage % is the proportion of the image seen by the classifier. "
+        ],
+        "table_footnote": [],
+        "table_body": "<table><tr><td rowspan=\"2\"># Crops</td><td rowspan=\"2\">Coverage (%)</td><td>Spawrious O2O</td><td colspan=\"2\">MetaShift Animals</td></tr><tr><td>Test Acc (%)</td><td>Test Acc (%)</td><td>Worst-Class (%)</td></tr><tr><td>1</td><td>8.2</td><td>91.5</td><td>83.1</td><td>61.8</td></tr><tr><td>2</td><td>16.3</td><td>88.3</td><td>85.5</td><td>67.0</td></tr><tr><td>3</td><td>24.5</td><td>87.0</td><td>84.7</td><td>66.2</td></tr><tr><td>4</td><td>32.7</td><td>86.0</td><td>85.0</td><td>68.3</td></tr></table>",
+        "bbox": [
+            222,
+            321,
+            776,
+            428
+        ],
+        "page_idx": 20
+    },
+    {
+        "type": "image",
+        "img_path": "images/c1d1f8eea789416427fce0afcd4aee2f6fcb7f51e317bc35ef8577b56e79b9d7.jpg",
+        "image_caption": [
+            "Figure 16: Crop count ablation visualization. Each column shows 1–4 attention-guided 64×64 crops selected by ViT-S. Rows 1–2: Spawrious O2O Hard, Rows 3–4: MetaShift Animals. Crop regions are shown at full brightness, background shown as faded. "
+        ],
+        "image_footnote": [],
+        "content": "",
+        "bbox": [
+            256,
+            455,
+            738,
+            824
+        ],
+        "page_idx": 20
+    },
+    {
+        "type": "page_number",
+        "text": "21 ",
+        "bbox": [
+            488,
+            935,
+            506,
+            946
+        ],
+        "page_idx": 20
+    },
+    {
+        "type": "text",
+        "text": "E Full Results for Spawrious, Waterbirds, and MetaShift ",
+        "text_level": 1,
+        "bbox": [
+            171,
+            89,
+            666,
+            107
+        ],
+        "page_idx": 21
+    },
+    {
+        "type": "text",
+        "text": "E.1 Spawrious ",
+        "text_level": 1,
+        "bbox": [
+            171,
+            152,
+            290,
+            167
+        ],
+        "page_idx": 21
+    },
+    {
+        "type": "table",
+        "img_path": "images/4cc56b630ae43d40e56f1bfa7a8d5a4abe83363972c69c453df37827aac90fac.jpg",
+        "table_caption": [
+            "Table 6: Spawrious Benchmark (O2O Hard + M2M Hard). We report the out of domain test accuracy. Note, by default the native resolution of all images is $2 2 4 ^ { 2 }$ . In cases where we use a larger image, we have bilinearly interpolated the image to be bigger. $A ^ { 2 }$ uses two square crops of width [64, 32] for Spawrious. "
+        ],
+        "table_footnote": [
+            "† Requires group labels during training. ",
+            "‡ Key rows were rerun across 5 seeds. Values are reported as means and show no variation $( \\mathrm { s t d } = 0 . 0 )$ since we use the lbfgs solver with sklearn Logistic Regression. "
+        ],
+        "table_body": "<table><tr><td>Method</td><td>Backbone</td><td>O2O-Hard</td><td>M2M-Hard</td></tr><tr><td colspan=\"4\">Baselines using DINOv2 backbone</td></tr><tr><td>Random Crops</td><td>ViT-S (21M)</td><td>38.2</td><td>22.1</td></tr><tr><td>Center Crop</td><td>ViT-S (21M)</td><td>80.2</td><td>68.4</td></tr><tr><td>Center Crop</td><td>ViT-G (1.1B)</td><td>72.6</td><td>61.4</td></tr><tr><td colspan=\"4\">Prior work (trained on Spawrious) [22]:</td></tr><tr><td>ERM [22, 19]</td><td>ResNet-50</td><td>71.32</td><td>58.70</td></tr><tr><td>GroupDRO†[22, 19, 27]</td><td>ResNet-50</td><td>76.99</td><td>60.86</td></tr><tr><td>IRM†</td><td>ResNet-50</td><td>74.90</td><td>60.93</td></tr><tr><td>CORAL [22, 30]</td><td>ResNet-50</td><td>79.65</td><td>67.97</td></tr><tr><td>CausIRL [22, 6]</td><td>ResNet-50</td><td>80.40</td><td>68.93</td></tr><tr><td>DFR†</td><td>ViT-S (21M)</td><td>86.1 ± 0.4</td><td>73.4 ± 1.2</td></tr><tr><td>DFR†</td><td>ViT-B (86M)</td><td>90.1 ± 0.3</td><td>84.9 ± 1.2</td></tr><tr><td>DFR†</td><td>ViT-L (300M)</td><td>94.3 ± 0.2</td><td>86.1 ± 0.5</td></tr><tr><td>DFR†</td><td>ViT-G (1.1B)</td><td>95.7 ± 0.3</td><td>88.0 ± 0.5</td></tr><tr><td>DFR† + A2</td><td>ViT-S (21M)</td><td>95.2 ± 0.1</td><td>86.2 ± 0.4</td></tr><tr><td colspan=\"4\">DINOv2 backbone</td></tr><tr><td>Full only</td><td>ViT-S (21M)</td><td>80.5</td><td>66.6</td></tr><tr><td>Full only (5182image)</td><td>ViT-S (21M)</td><td>86.2</td><td>72.6</td></tr><tr><td>Full only</td><td>ViT-B (86M)</td><td>78.8</td><td>73.4</td></tr><tr><td>Full only (5182image)</td><td>ViT-B (86M)</td><td>82.5</td><td>82.4</td></tr><tr><td>Full only</td><td>ViT-L (300M)</td><td>80.8</td><td>81.9</td></tr><tr><td>Full only (5182image)</td><td>ViT-L (300M)</td><td>86.3</td><td>86.7</td></tr><tr><td>Full only</td><td>ViT-G (1.1B)</td><td>87.8</td><td>79.7</td></tr><tr><td>Attending on Attention (A2)‡</td><td>ViT-S (21M)</td><td>91.0</td><td>82.4</td></tr><tr><td>Attending on Attention (A2)‡</td><td>ViT-B (86M)</td><td>88.4</td><td>83.8</td></tr><tr><td>Attending on Attention (A2)‡</td><td>ViT-L (300M)</td><td>82.1</td><td>83.5</td></tr><tr><td>Attending on Attention (A2)‡</td><td>ViT-G (1.1B)</td><td>83.1</td><td>80.6</td></tr><tr><td>A2cross-model (Table 12)‡</td><td>ViT-S × ViT-L</td><td>89.7</td><td>87.1</td></tr><tr><td>Scaling on Scales [28] (scales=[1, 2] 2242)</td><td>ViT-S (21M)</td><td>82.2</td><td>60.0</td></tr><tr><td colspan=\"4\">OpenCLIP backbone</td></tr><tr><td>Full only</td><td>ViT-L-14</td><td>71.0</td><td>50.6</td></tr><tr><td>OpenCLIP ZS prompt (full)</td><td>ViT-L-14</td><td>89.8</td><td>92.4</td></tr></table>",
+        "bbox": [
+            171,
+            319,
+            823,
+            864
+        ],
+        "page_idx": 21
+    },
+    {
+        "type": "page_number",
+        "text": "22 ",
+        "bbox": [
+            488,
+            935,
+            509,
+            946
+        ],
+        "page_idx": 21
+    },
+    {
+        "type": "table",
+        "img_path": "images/348e2ee6e758108a3320a99ec116a8a58dd9a437431ca50461d3fd1fefbd36ce.jpg",
+        "table_caption": [
+            "Table 7: Worst-group accuracy on the test set of Spawrious O2O Hard and M2M Hard. DFR rowmeans ± standard deviation over 5 seeds (DFR’s group-balanced retraining is stochastic). The $A _ { \\mathrm { L R } } ^ { 2 }$ cross-model row uses lbfgs Logistic Regression on the full training set and is therefore deterministic; we report the single fit. Groups are (breed, location) pairs; WGA is the worst-performing group on the test split. "
+        ],
+        "table_footnote": [],
+        "table_body": "<table><tr><td>Configuration</td><td>Backbone</td><td>O2O-Hard WGA</td><td>M2M-Hard WGA</td></tr><tr><td>DFR</td><td>ViT-S (21M)</td><td> $74.9 \\pm 0.4$ </td><td> $49.9 \\pm 1.7$ </td></tr><tr><td>DFR +  $A^{2}$ </td><td>ViT-S (21M)</td><td> $88.8 \\pm 1.2$ </td><td> $64.6 \\pm 0.8$ </td></tr><tr><td>DFR</td><td>ViT-B (86M)</td><td> $84.5 \\pm 1.0$ </td><td> $69.7 \\pm 1.5$ </td></tr><tr><td>DFR</td><td>ViT-L (300M)</td><td> $89.1 \\pm 0.4$ </td><td> $72.3 \\pm 0.8$ </td></tr><tr><td>DFR</td><td>ViT-G (1.1B)</td><td> $89.9 \\pm 0.5$ </td><td> $73.9 \\pm 0.7$ </td></tr><tr><td> $A_{LR}^{2}$  cross-model</td><td>ViT-S × ViT-G</td><td>79.9</td><td>64.6</td></tr></table>",
+        "bbox": [
+            236,
+            167,
+            759,
+            287
+        ],
+        "page_idx": 22
+    },
+    {
+        "type": "page_number",
+        "text": "23 ",
+        "bbox": [
+            488,
+            935,
+            508,
+            946
+        ],
+        "page_idx": 22
+    },
+    {
+        "type": "text",
+        "text": "E.2 Waterbirds ",
+        "text_level": 1,
+        "bbox": [
+            171,
+            90,
+            295,
+            104
+        ],
+        "page_idx": 23
+    },
+    {
+        "type": "table",
+        "img_path": "images/fbbc12f68410ad24604c4d8d9ecdebe27eaf4f7ab475f9ec59fb01eef1d4b276.jpg",
+        "table_caption": [
+            "Table 8: Waterbirds Benchmark. We report the out of domain test average accuracy and worst-group accuracy (%). Image size is $2 2 4 ^ { 2 }$ by default; rows tagged $( 5 1 8 ^ { 2 }$ image) use bilinear upsampling. $A _ { \\mathrm { L R } } ^ { 2 }$ uses one 64×64 attention-guided crop; ${ \\dot { A _ { \\mathrm { Z S } } ^ { 2 } } }$ uses ViT-S to select a $1 2 8 \\times 1 2 8$ crop. Key rows (‡) averaged over 5 seeds. "
+        ],
+        "table_footnote": [
+            "† Requires group labels during training. ",
+            "‡ Key rows were rerun across 5 seeds. Values are reported as means and show no variation (std = 0.0) since we use the lbfgs solver with sklearn Logistic Regression. ",
+            "§ See Section H for explanation as to why center crop does so well in Waterbirds (dataset center bias) "
+        ],
+        "table_body": "<table><tr><td>Method</td><td>Backbone</td><td>Avg Acc</td><td>Worst-Group</td></tr><tr><td colspan=\"4\">Baselines using DINOv2 backbone</td></tr><tr><td>Random Crops</td><td>ViT-S (21M)</td><td>70.7</td><td>32.4</td></tr><tr><td>Center Crop</td><td>ViT-S (21M)</td><td>90.9</td><td>78.7</td></tr><tr><td>Center Crop</td><td>ViT-G (1.1B)</td><td> $98.0^§$ </td><td>94.9</td></tr><tr><td colspan=\"4\">Prior work (trained on Waterbirds) [19]:</td></tr><tr><td>ERM [22, 19]</td><td>ResNet-50</td><td>97.3</td><td>72.6</td></tr><tr><td>CVaR DRO</td><td>ResNet-50</td><td>96.0</td><td>75.9</td></tr><tr><td>LfF</td><td>ResNet-50</td><td>91.2</td><td>78.0</td></tr><tr><td>JTT [19]</td><td>ResNet-50</td><td>93.3</td><td>86.7</td></tr><tr><td>Group DRO $^†$  [22, 19, 27]</td><td>ResNet-50</td><td>93.5</td><td>91.4</td></tr><tr><td>DFR $^†$ </td><td>ResNet-50 [16]</td><td> $94.2 ± 0.4$ </td><td> $92.9 ± 0.2$ </td></tr><tr><td>DFR $^†$ </td><td>ViT-S (21M)</td><td> $92.4 ± 0.4$ </td><td> $90.4 ± 0.6$ </td></tr><tr><td>DFR $^†$ </td><td>ViT-B (86M)</td><td> $95.5 ± 0.2$ </td><td> $94.0 ± 0.5$ </td></tr><tr><td>DFR $^†$ </td><td>ViT-L (300M)</td><td> $97.7 ± 0.1$ </td><td> $97.1 ± 0.1$ </td></tr><tr><td>DFR $^†$ </td><td>ViT-G (1.1B)</td><td> $98.1 ± 0.1$ </td><td> $96.4 ± 0.1$ </td></tr><tr><td>DFR $^† + A^2$ </td><td>ViT-S (21M)</td><td> $91.9 ± 0.5$ </td><td> $91.0 ± 0.6$ </td></tr><tr><td colspan=\"4\">DINOv2 backbone</td></tr><tr><td>Full only</td><td>ViT-S (21M)</td><td>88.7</td><td>72.7</td></tr><tr><td>Full only ( $518^2$  image)</td><td>ViT-S (21M)</td><td>91.9</td><td>81.6</td></tr><tr><td>Full only</td><td>ViT-B (86M)</td><td>94.4</td><td>84.0</td></tr><tr><td>Full only ( $518^2$  image)</td><td>ViT-B (86M)</td><td>96.3</td><td>89.9</td></tr><tr><td>Full only</td><td>ViT-L (300M)</td><td>96.9</td><td>89.3</td></tr><tr><td>Full only ( $518^2$  image)</td><td>ViT-L (300M)</td><td>97.7</td><td>90.3</td></tr><tr><td>Full only</td><td>ViT-G (1.1B)</td><td>97.8</td><td>92.8</td></tr><tr><td>Attending on Attention ( $A^2$ ) $^‡$ </td><td>ViT-S (21M)</td><td>93.0</td><td>80.4</td></tr><tr><td>Attending on Attention ( $A^2$ ) $^‡$ </td><td>ViT-B (86M)</td><td>96.1</td><td>88.6</td></tr><tr><td>Attending on Attention ( $A^2$ ) $^‡$ </td><td>ViT-L (300M)</td><td>93.8</td><td>85.2</td></tr><tr><td>Attending on Attention ( $A^2$ ) $^‡$ </td><td>ViT-G (1.1B)</td><td>95.8</td><td>89.9</td></tr><tr><td> $A^2$  cross-model (Table  $13$ ) $^‡$ </td><td>ViT-S × ViT-G</td><td>98.2</td><td>94.4</td></tr><tr><td>Scaling on Scales [28] (scales=[1, 2]  $224^2$ )</td><td>ViT-S (21M)</td><td>88.3</td><td>73.1</td></tr><tr><td colspan=\"4\">OpenCLIP backbone:</td></tr><tr><td>Full only</td><td>ViT-L-14</td><td>87.5</td><td>69.2</td></tr><tr><td>OpenCLIP ZS prompt (full)</td><td>ViT-L-14</td><td>73.5</td><td>46.9</td></tr></table>",
+        "bbox": [
+            173,
+            301,
+            823,
+            854
+        ],
+        "page_idx": 23
+    },
+    {
+        "type": "page_number",
+        "text": "24 ",
+        "bbox": [
+            488,
+            935,
+            508,
+            946
+        ],
+        "page_idx": 23
+    },
+    {
+        "type": "table",
+        "img_path": "images/44c93a5d6707c972ecc47d23574215ea846d79db135af4d8c6dd7aeb3debe346.jpg",
+        "table_caption": [
+            "Table 9: MetaShift Cat vs. Dog [18]. Test accuracy and worst-group accuracy (%) reported. Training has 100% spurious correlation (cat=indoor, dog=outdoor); test has flipped correlation. Image size is $2 2 4 ^ { 2 }$ by default; rows tagged $( 5 1 8 ^ { 2 }$ image) use bilinear upsampling. $\\dot { A } _ { \\mathrm { L R } } ^ { 2 }$ uses two attention-guided crops of width [64, 32]; $\\mathrm { \\overline { { A } } _ { Z S } ^ { 2 } }$ uses ViT-S to select a $1 2 8 \\times 1 2 8$ crop. Key rows are reported over 5 seeds. "
+        ],
+        "table_footnote": [
+            "† Requires group labels during training. ",
+            "‡ Key rows were rerun across 5 seeds. Values are reported as means and show no variation $( \\mathrm { s t d } = 0 . 0 )$ since we use the lbfgs solver with sklearn Logistic Regression. "
+        ],
+        "table_body": "<table><tr><td>Method</td><td>Backbone</td><td>Test Acc</td><td>Worst-Group</td></tr><tr><td colspan=\"4\">Baselines using DINOv2 backbone</td></tr><tr><td>Random Crops</td><td>ViT-S (21M)</td><td>44.0</td><td>40.6</td></tr><tr><td>Center Crop</td><td>ViT-S (21M)</td><td>64.0</td><td>61.3</td></tr><tr><td>Center Crop</td><td>ViT-G (1.1B)</td><td>76.9</td><td>74.8</td></tr><tr><td colspan=\"4\">DINOv2 backbone</td></tr><tr><td>Full only</td><td>ViT-S (21M)</td><td>59.8</td><td>56.0</td></tr><tr><td>Full only ( $518^2$  image)</td><td>ViT-S (21M)</td><td>65.2</td><td>60.9</td></tr><tr><td>Full only</td><td>ViT-B (86M)</td><td>68.5</td><td>68.2</td></tr><tr><td>Full only ( $518^2$  image)</td><td>ViT-B (86M)</td><td>75.3</td><td>73.9</td></tr><tr><td>Full only</td><td>ViT-L (300M)</td><td>80.0</td><td>79.2</td></tr><tr><td>Full only ( $518^2$  image)</td><td>ViT-L (300M)</td><td>83.2</td><td>82.4</td></tr><tr><td>Full only</td><td>ViT-G (1.1B)</td><td>78.6</td><td>76.8</td></tr><tr><td>DFR $^{\\dagger}$ </td><td>ViT-S (21M)</td><td> $58.7 \\pm 2.0$ </td><td> $54.5 \\pm 3.9$ </td></tr><tr><td>DFR $^{\\dagger}$ +  $A^2$ </td><td>ViT-S (21M)</td><td> $69.4 \\pm 0.8$ </td><td> $67.7 \\pm 1.5$ </td></tr><tr><td>DFR $^{\\dagger}$ </td><td>ViT-B (86M)</td><td> $68.6 \\pm 3.4$ </td><td> $65.9 \\pm 5.1$ </td></tr><tr><td>DFR $^{\\dagger}$ </td><td>ViT-L (300M)</td><td> $73.6 \\pm 1.9$ </td><td> $70.4 \\pm 3.5$ </td></tr><tr><td>DFR $^{\\dagger}$ </td><td>ViT-G (1.1B)</td><td> $76.0 \\pm 2.0$ </td><td> $74.2 \\pm 3.3$ </td></tr><tr><td>Attending on Attention ( $A^2$ ) $^{\\ddagger}$ </td><td>ViT-S (21M)</td><td>69.8</td><td>68.3</td></tr><tr><td>Attending on Attention ( $A^2$ ) $^{\\ddagger}$ </td><td>ViT-B (86M)</td><td>73.9</td><td>71.8</td></tr><tr><td>Attending on Attention ( $A^2$ ) $^{\\ddagger}$ </td><td>ViT-L (300M)</td><td>72.5</td><td>70.6</td></tr><tr><td>Attending on Attention ( $A^2$ ) $^{\\ddagger}$ </td><td>ViT-G (1.1B)</td><td>76.1</td><td>73.7</td></tr><tr><td> $A^2$ cross-model (Table 14) $^{\\ddagger}$ </td><td>ViT-S × ViT-G</td><td>77.3</td><td>76.6</td></tr><tr><td>Scaling on Scales [28] (scales=[1, 2]  $224^2$ )</td><td>ViT-S (21M)</td><td>59.7</td><td>56.9</td></tr><tr><td>OpenCLIP ZS prompt (full)</td><td>ViT-L-14</td><td>92.4</td><td>88.8</td></tr></table>",
+        "bbox": [
+            171,
+            463,
+            823,
+            868
+        ],
+        "page_idx": 24
+    },
+    {
+        "type": "header",
+        "text": "E.3 MetaShift Cat vs. Dog ",
+        "bbox": [
+            171,
+            90,
+            370,
+            106
+        ],
+        "page_idx": 24
+    },
+    {
+        "type": "page_number",
+        "text": "25 ",
+        "bbox": [
+            488,
+            935,
+            508,
+            946
+        ],
+        "page_idx": 24
+    },
+    {
+        "type": "text",
+        "text": "E.4 MetaShift Animals ",
+        "text_level": 1,
+        "bbox": [
+            171,
+            90,
+            346,
+            104
+        ],
+        "page_idx": 25
+    },
+    {
+        "type": "table",
+        "img_path": "images/7c70dd0266d2163d887e2f934f78a4bbdfff5f2f058560985afef9327bfdec93.jpg",
+        "table_caption": [
+            "Table 10: MetaShift Animals (8-class Domain Generalization). Test accuracy and worst-class accuracy (%) reported. Training and test contexts are completely disjoint. Image size is $2 2 4 ^ { 2 }$ by default; rows tagged $( 5 1 8 ^ { 2 }$ image) use bilinear upsampling. $\\bar { A } _ { \\mathrm { L R } } ^ { 2 }$ uses two attention-guided crops of width [64, 32]; $\\breve { A } _ { Z S } ^ { 2 }$ uses ViT-S to select a 128×128 crop. Key rows (‡) averaged over 5 seeds. "
+        ],
+        "table_footnote": [
+            "† Requires group labels during training. ",
+            "‡ Key rows were rerun across 5 seeds. Values are reported as means and show no variation (std = 0.0) since we use the lbfgs solver with sklearn Logistic Regression. "
+        ],
+        "table_body": "<table><tr><td>Method</td><td>Backbone</td><td>Test Acc</td><td>Worst-Class</td></tr><tr><td colspan=\"4\">Baselines using DINOv2 backbone</td></tr><tr><td>Random Crops</td><td>ViT-S (21M)</td><td>58.3</td><td>34.6</td></tr><tr><td>Center Crop</td><td>ViT-S (21M)</td><td>82.6</td><td>62.7</td></tr><tr><td>Center Crop</td><td>ViT-G (1.1B)</td><td>89.2</td><td>72.4</td></tr><tr><td colspan=\"4\">DINOv2 backbone</td></tr><tr><td>Full only</td><td>ViT-S (21M)</td><td>83.2</td><td>63.2</td></tr><tr><td>Full only ( $518^2$  image)</td><td>ViT-S (21M)</td><td>87.5</td><td>68.3</td></tr><tr><td>Full only</td><td>ViT-B (86M)</td><td>88.3</td><td>70.3</td></tr><tr><td>Full only ( $518^2$  image)</td><td>ViT-B (86M)</td><td>89.6</td><td>72.7</td></tr><tr><td>Full only</td><td>ViT-L (300M)</td><td>89.7</td><td>75.9</td></tr><tr><td>Full only ( $518^2$  image)</td><td>ViT-L (300M)</td><td>90.1</td><td>77.6</td></tr><tr><td>Full only</td><td>ViT-G (1.1B)</td><td>90.6</td><td>75.9</td></tr><tr><td>DFR $^{\\dagger}$ </td><td>ViT-S (21M)</td><td> $88.3 \\pm 0.1$ </td><td> $72.0 \\pm 2.0$ </td></tr><tr><td>DFR $^{\\dagger}$ +  $A^2$ </td><td>ViT-S (21M)</td><td> $88.9 \\pm 0.1$ </td><td> $72.9 \\pm 1.3$ </td></tr><tr><td>DFR $^{\\dagger}$ </td><td>ViT-B (86M)</td><td> $90.3 \\pm 0.3$ </td><td> $73.5 \\pm 2.2$ </td></tr><tr><td>DFR $^{\\dagger}$ </td><td>ViT-L (300M)</td><td> $91.4 \\pm 0.0$ </td><td> $77.9 \\pm 0.8$ </td></tr><tr><td>DFR $^{\\dagger}$ </td><td>ViT-G (1.1B)</td><td> $91.4 \\pm 0.3$ </td><td> $76.6 \\pm 1.9$ </td></tr><tr><td>Attending on Attention ( $A^2$ ) $^{\\ddagger}$ </td><td>ViT-S (21M)</td><td>85.1</td><td>67.0</td></tr><tr><td>Attending on Attention ( $A^2$ ) $^{\\ddagger}$ </td><td>ViT-B (86M)</td><td>87.5</td><td>67.9</td></tr><tr><td>Attending on Attention ( $A^2$ ) $^{\\ddagger}$ </td><td>ViT-L (300M)</td><td>85.2</td><td>69.1</td></tr><tr><td>Attending on Attention ( $A^2$ ) $^{\\ddagger}$ </td><td>ViT-G (1.1B)</td><td>87.7</td><td>69.2</td></tr><tr><td> $A^2$ cross-model (Table 15) $^{\\ddagger}$ </td><td>ViT-S × ViT-G</td><td>88.9</td><td>70.8</td></tr><tr><td>Scaling on Scales [28] (scales=[1, 2]  $224^2$ )</td><td>ViT-S (21M)</td><td>84.7</td><td>65.5</td></tr><tr><td colspan=\"4\">OpenCLIP backbone</td></tr><tr><td>OpenCLIP ZS prompt (full)</td><td>ViT-L-14</td><td>90.4</td><td>58.8</td></tr></table>",
+        "bbox": [
+            171,
+            186,
+            823,
+            619
+        ],
+        "page_idx": 25
+    },
+    {
+        "type": "page_number",
+        "text": "26 ",
+        "bbox": [
+            488,
+            935,
+            508,
+            946
+        ],
+        "page_idx": 25
+    },
+    {
+        "type": "text",
+        "text": "F Cross Model Matrices ",
+        "text_level": 1,
+        "bbox": [
+            171,
+            89,
+            392,
+            104
+        ],
+        "page_idx": 26
+    },
+    {
+        "type": "text",
+        "text": "Cross model matrices across all 5 datasets are shown below. In each matrix, Bold = best in column (best attention for each embedding) and Italic = diagonal entries which use the same model for embedding and attention computation. Each matrix reports that dataset’s standard metric: test accuracy for Spawrious O2O/M2M, worst-group accuracy for Waterbirds and Cat vs. Dog, and worst-class accuracy for Animals. ",
+        "bbox": [
+            169,
+            126,
+            823,
+            196
+        ],
+        "page_idx": 26
+    },
+    {
+        "type": "text",
+        "text": "F.1 Spawrious ",
+        "text_level": 1,
+        "bbox": [
+            171,
+            222,
+            287,
+            238
+        ],
+        "page_idx": 26
+    },
+    {
+        "type": "table",
+        "img_path": "images/25b9c5d1f1e86045ea1b63c98aacc49444bba142a7bfee73c9d4772e85bb04a3.jpg",
+        "table_caption": [
+            "Table 11: Spawrious O2O Hard: Cross-model attention × embedding matrix. Rows = attention source, columns = embedding model. Values are test accuracy. "
+        ],
+        "table_footnote": [],
+        "table_body": "<table><tr><td>Attn \\ Emb</td><td>ViT-S</td><td>ViT-B</td><td>ViT-L</td><td>ViT-G</td></tr><tr><td>ViT-S attn</td><td>91.0</td><td>89.5</td><td>89.7</td><td>89.2</td></tr><tr><td>ViT-B attn</td><td>89.6</td><td>88.4</td><td>88.2</td><td>87.9</td></tr><tr><td>ViT-L attn</td><td>85.2</td><td>82.7</td><td>82.1</td><td>84.6</td></tr><tr><td>ViT-G attn</td><td>86.3</td><td>84.3</td><td>84.6</td><td>83.1</td></tr></table>",
+        "bbox": [
+            323,
+            306,
+            674,
+            378
+        ],
+        "page_idx": 26
+    },
+    {
+        "type": "table",
+        "img_path": "images/bc5fb8bbc13a67e902e132e509fd3a9d5b1001375782c24f36c73a6e62ac2279.jpg",
+        "table_caption": [
+            "Table 12: Spawrious M2M Hard: Cross-model attention × embedding matrix. ViT-S attn → ViT-L emb (87.1) is the overall best, beating all diagonal entries. Values are test accuracy. "
+        ],
+        "table_footnote": [],
+        "table_body": "<table><tr><td>Attn \\ Emb</td><td>ViT-S</td><td>ViT-B</td><td>ViT-L</td><td>ViT-G</td></tr><tr><td>ViT-S attn</td><td>82.4</td><td>84.6</td><td>87.1</td><td>86.0</td></tr><tr><td>ViT-B attn</td><td>81.0</td><td>83.8</td><td>85.3</td><td>84.8</td></tr><tr><td>ViT-L attn</td><td>76.5</td><td>80.2</td><td>83.5</td><td>82.3</td></tr><tr><td>ViT-G attn</td><td>74.7</td><td>79.9</td><td>81.2</td><td>80.6</td></tr></table>",
+        "bbox": [
+            323,
+            463,
+            671,
+            536
+        ],
+        "page_idx": 26
+    },
+    {
+        "type": "text",
+        "text": "F.2 Waterbirds ",
+        "text_level": 1,
+        "bbox": [
+            171,
+            566,
+            292,
+            580
+        ],
+        "page_idx": 26
+    },
+    {
+        "type": "table",
+        "img_path": "images/1973f4190d6868aff9c25c924bcfc49c05857de9f4ba3e5ccad44ca3d649bed4.jpg",
+        "table_caption": [
+            "Table 13: Waterbirds: Cross-model attention × embedding matrix. ViT-S attn → ViT-G emb (94.4 WGA) beats all diagonal entries including ViT-G → ViT-G (89.9). Values are worst-group accuracy. "
+        ],
+        "table_footnote": [],
+        "table_body": "<table><tr><td>Attn \\ Emb</td><td>ViT-S</td><td>ViT-B</td><td>ViT-L</td><td>ViT-G</td></tr><tr><td>ViT-S attn</td><td>80.4</td><td>90.5</td><td>93.1</td><td>94.4</td></tr><tr><td>ViT-B attn</td><td>77.9</td><td>88.6</td><td>91.0</td><td>93.5</td></tr><tr><td>ViT-L attn</td><td>67.9</td><td>75.5</td><td>85.2</td><td>86.0</td></tr><tr><td>ViT-G attn</td><td>71.7</td><td>81.6</td><td>86.4</td><td>89.9</td></tr></table>",
+        "bbox": [
+            323,
+            648,
+            671,
+            720
+        ],
+        "page_idx": 26
+    },
+    {
+        "type": "text",
+        "text": "F.3 MetaShift Cat vs. Dog ",
+        "text_level": 1,
+        "bbox": [
+            171,
+            753,
+            369,
+            768
+        ],
+        "page_idx": 26
+    },
+    {
+        "type": "table",
+        "img_path": "images/c41c9e19de6f1e6bf9ab350992743797e4bb7e366f2d06d57858430118495a3f.jpg",
+        "table_caption": [
+            "Table 14: MetaShift Cat vs. Dog: Cross-model attention × embedding matrix. ViT-S attention is best for 3/4 embedding columns. Values are worst-group accuracy. "
+        ],
+        "table_footnote": [],
+        "table_body": "<table><tr><td>Attn \\ Emb</td><td>ViT-S</td><td>ViT-B</td><td>ViT-L</td><td>ViT-G</td></tr><tr><td>ViT-S attn</td><td>68.3</td><td>76.2</td><td>75.5</td><td>76.6</td></tr><tr><td>ViT-B attn</td><td>69.3</td><td>71.8</td><td>74.0</td><td>75.8</td></tr><tr><td>ViT-L attn</td><td>64.4</td><td>70.8</td><td>70.6</td><td>73.6</td></tr><tr><td>ViT-G attn</td><td>66.2</td><td>70.6</td><td>73.2</td><td>73.7</td></tr></table>",
+        "bbox": [
+            323,
+            835,
+            671,
+            910
+        ],
+        "page_idx": 26
+    },
+    {
+        "type": "page_number",
+        "text": "",
+        "bbox": [
+            488,
+            935,
+            508,
+            946
+        ],
+        "page_idx": 26
+    },
+    {
+        "type": "text",
+        "text": "F.4 MetaShift Animals ",
+        "text_level": 1,
+        "bbox": [
+            171,
+            90,
+            346,
+            104
+        ],
+        "page_idx": 27
+    },
+    {
+        "type": "table",
+        "img_path": "images/ebd9408b350a2fe21de70b7500619c35aaebc83cf4a58127ed83ad15da0223d8.jpg",
+        "table_caption": [
+            "Table 15: MetaShift Animals: Cross-model attention × embedding matrix. ViT-S attention is best for 3/4 embedding columns. Values are worst-class accuracy. "
+        ],
+        "table_footnote": [],
+        "table_body": "<table><tr><td>Attn \\ Emb</td><td>ViT-S</td><td>ViT-B</td><td>ViT-L</td><td>ViT-G</td></tr><tr><td>ViT-S attn</td><td>67.0</td><td>68.2</td><td>70.3</td><td>70.8</td></tr><tr><td>ViT-B attn</td><td>64.6</td><td>67.9</td><td>69.6</td><td>69.0</td></tr><tr><td>ViT-L attn</td><td>62.1</td><td>65.8</td><td>69.1</td><td>70.0</td></tr><tr><td>ViT-G attn</td><td>64.0</td><td>64.8</td><td>70.4</td><td>69.2</td></tr></table>",
+        "bbox": [
+            325,
+            159,
+            671,
+            232
+        ],
+        "page_idx": 27
+    },
+    {
+        "type": "page_number",
+        "text": "28 ",
+        "bbox": [
+            488,
+            935,
+            508,
+            946
+        ],
+        "page_idx": 27
+    },
+    {
+        "type": "text",
+        "text": "G Adapting Attention ",
+        "text_level": 1,
+        "bbox": [
+            171,
+            89,
+            374,
+            107
+        ],
+        "page_idx": 28
+    },
+    {
+        "type": "text",
+        "text": "The zero-shot method assumes that the features the attention map focuses on are the ones relevant to the task; this assumption holds for the 5 benchmarks we test, but it may not always be the case. In this scenario, we can learn a simple MLP adapter network (≈ 3, 000 parameters), MLP(A) which operates on the attention map, $A \\in \\mathbb { R } ^ { 1 6 \\times 1 6 }$ , to produce an augmented A˜ which allows us to $\\mathrm { C r o p } _ { i } ( x ; { \\tilde { A } } )$ , embed with $\\mathcal { T } ( c _ { i } )$ , and fit a classifier using crops from a better attention map. Figure 17 illustrates the full pipeline. ",
+        "bbox": [
+            169,
+            119,
+            826,
+            205
+        ],
+        "page_idx": 28
+    },
+    {
+        "type": "image",
+        "img_path": "images/b16d98e537466e51cf9cb56e7c43cd3cafd98d3dcc8c67d3893ff37e5b884ac7.jpg",
+        "image_caption": [
+            "Figure 17: Learning the MLP attention adapter by differentiating through classifier fit using differentiable patch selection. The adapter learns to focus on the hair. "
+        ],
+        "image_footnote": [],
+        "content": "```mermaid\ngraph LR\n    A[\"ViT-S Attention A (frozen)\"] --> B[\"Crop Scoring w/ Å\"]\n    B --> C[\"64×64 Scores\"]\n    C --> D[\"32×32 Scores\"]\n    D --> E[\"PerturbedTopK\"]\n    E --> F[\"Prediction\"]\n    F --> G[\"L_CE(ŷ, y)\"]\n    H[\"MLP Adapter f₀\"] --> B\n    I[\"ΔvL backprop through fitting to MLP adapter fₛ\"] --> D\n    J[\"64×64\"] --> K[\"32×32\"]\n    K --> L[\"z = [z₁, z₂\"]]\n    M[\"ŷ = σ(wᵀz + b) fit w, b on D_val\"] --> N\n```",
+        "sub_type": "flowchart",
+        "bbox": [
+            187,
+            227,
+            810,
+            358
+        ],
+        "page_idx": 28
+    },
+    {
+        "type": "text",
+        "text": "We use differentiable patch selection (DPS) [7] with a fixed set of 58 possible crops (9 32 × 32 and 49 64 × 64 crops in the 224 × 224 image) to get k weighted crops $c _ { 1 } ( x ) , \\ldots , c _ { k } ( x )$ from the attention map, A˜. We compute the embedding z by concatenating the embedded crops using the embedding model, T : ",
+        "bbox": [
+            169,
+            420,
+            823,
+            479
+        ],
+        "page_idx": 28
+    },
+    {
+        "type": "equation",
+        "text": "$$\nz (x) = \\left[ \\mathcal {T} \\left(c _ {1} (x)\\right), \\dots , \\mathcal {T} \\left(c _ {k} (x)\\right) \\right] \\in \\mathbb {R} ^ {k \\cdot d}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            351,
+            496,
+            643,
+            515
+        ],
+        "page_idx": 28
+    },
+    {
+        "type": "text",
+        "text": "We then fit a logistic regression classifier by taking a few gradient steps on w, b, the classifier weights using cross entropy loss ℓ. ",
+        "bbox": [
+            169,
+            522,
+            823,
+            551
+        ],
+        "page_idx": 28
+    },
+    {
+        "type": "equation",
+        "text": "$$\n(w ^ {t + 1}, b ^ {t + 1}) = (w ^ {t}, b ^ {t}) - \\eta \\nabla_ {w, b} \\ell (z (x) w ^ {t} + b ^ {t}, y), \\quad t = 0, \\dots , T - 1.\n$$",
+        "text_format": "latex",
+        "bbox": [
+            254,
+            569,
+            740,
+            588
+        ],
+        "page_idx": 28
+    },
+    {
+        "type": "text",
+        "text": "We evaluate the classifier on a held out partition of the training set, compute the cross entropy loss, and backpropagate through the classifier fitting and patch selection to optimize the MLP adapter weights. ",
+        "bbox": [
+            169,
+            594,
+            826,
+            637
+        ],
+        "page_idx": 28
+    },
+    {
+        "type": "table",
+        "img_path": "images/c6567b1b8db5ec509d3849b10c5f10d9efa5bf6ebc1bb7fd260e09d99cf1661f.jpg",
+        "table_caption": [
+            "Table 16: MLP Adapter Evaluation on CelebA Dataset. Adapter and default attention results are reported as mean ± std over 5 seeds. "
+        ],
+        "table_footnote": [],
+        "table_body": "<table><tr><td>Configuration</td><td>Test</td><td>Worst-Group Acc.</td></tr><tr><td> $A^{2}$  with MLP Adapter (384-dim)</td><td>91.07 ± 0.16%</td><td>66.11 ± 1.57%</td></tr><tr><td> $A^{2}$  default attention (384-dim)</td><td>78.41 ± 0.19%</td><td>23.33 ± 0.93%</td></tr><tr><td>ViT-S classifier (full image 224 × 224)</td><td>94.2%</td><td>31.1%</td></tr></table>",
+        "bbox": [
+            225,
+            686,
+            771,
+            747
+        ],
+        "page_idx": 28
+    },
+    {
+        "type": "table",
+        "img_path": "images/a65edfcf0805e32ffeffe3a27efec0dc5ad65285ef663f9ce7e62f4135617ca4.jpg",
+        "table_caption": [
+            "Table 17: Per-Group Accuracy Breakdown on CelebA Test Set. The MLP adapter increases performance on the minority class (blond men). Adapter and default attention results are reported as mean ± std over 5 seeds. "
+        ],
+        "table_footnote": [],
+        "table_body": "<table><tr><td>Group</td><td>MLP Adapter</td><td>Default Attn</td><td>ViT-S Classifier</td></tr><tr><td>Non-blond female (n=9767)</td><td>86.96 ± 0.37%</td><td>67.52 ± 0.37%</td><td>95.1%</td></tr><tr><td>Non-blond male (n=7535)</td><td>96.01 ± 0.18%</td><td>92.90 ± 0.25%</td><td>99.4%</td></tr><tr><td>Blond female (n=2480)</td><td>94.12 ± 0.38%</td><td>81.31 ± 0.39%</td><td>78.8%</td></tr><tr><td>Blond male (n=180)</td><td>66.11 ± 1.57%</td><td>23.33 ± 0.93%</td><td>31.1%</td></tr></table>",
+        "bbox": [
+            210,
+            821,
+            785,
+            897
+        ],
+        "page_idx": 28
+    },
+    {
+        "type": "page_number",
+        "text": "29 ",
+        "bbox": [
+            488,
+            935,
+            508,
+            946
+        ],
+        "page_idx": 28
+    },
+    {
+        "type": "text",
+        "text": "H On center crop as a strong baseline for Waterbirds (Table 8) ",
+        "text_level": 1,
+        "bbox": [
+            171,
+            89,
+            712,
+            107
+        ],
+        "page_idx": 29
+    },
+    {
+        "type": "text",
+        "text": "Simply center cropping the image to $1 2 8 \\times 1 2 8 .$ , embedding the crop, and fitting a logistic regression classifier seems like a competitive baseline. This is because Waterbirds is heavily biased toward placing the main subject (bird) at the center of the image. To illustrate this point, we sorted the test set birds by distance to the image center, and showed the performance of a center crop classifier on various percentiles (of bird distance to center). The results (Table 18) show a clear trend that as the main subject drifts away from the center, the $\\mathring { A } ^ { 2 }$ fitted classifier outperforms the center crop classifier. In the 58 test set images with the bird furthest away from the image centroid, $A ^ { 2 }$ outperforms center crop by 6.9 points, while for the 58 test set images closest to the image centroid, $A ^ { \\dot { 2 } }$ actually underperforms the center crop classifier by 1.7 points (the bird is exactly centered here so center cropping is the most optimal crop to take). For reference, we also include iFAM $K { = } 8$ results in the same table; iFAM relies on the center bias as well, and performance drops when going from subset bottom1 to top1 $( 1 0 0 . 0 \\%  8 1 . 8 \\% )$ , consistent with iFAM exploiting Waterbirds’ center bias more than $A ^ { 2 }$ does. We show some images from the top 1% and bottom 1% in Figure 18. ",
+        "bbox": [
+            169,
+            119,
+            826,
+            301
+        ],
+        "page_idx": 29
+    },
+    {
+        "type": "image",
+        "img_path": "images/1b6024d93f3cd0efdd04e0a26517c7f7654859792654a0b45fa87bdfb65e330b.jpg",
+        "image_caption": [],
+        "image_footnote": [],
+        "content": "",
+        "bbox": [
+            176,
+            311,
+            279,
+            393
+        ],
+        "page_idx": 29
+    },
+    {
+        "type": "image",
+        "img_path": "images/3953586be1c9986804b8a00a8fef2a814ac2d2b1f5d04ae45501ec98b88780ce.jpg",
+        "image_caption": [],
+        "image_footnote": [],
+        "content": "",
+        "bbox": [
+            282,
+            313,
+            383,
+            393
+        ],
+        "page_idx": 29
+    },
+    {
+        "type": "image",
+        "img_path": "images/660c74414b57d7bc3ef577f3d9f1d3a8ddde73e774ca1f991cfeb7d3970cf0c5.jpg",
+        "image_caption": [],
+        "image_footnote": [],
+        "content": "",
+        "bbox": [
+            385,
+            313,
+            488,
+            393
+        ],
+        "page_idx": 29
+    },
+    {
+        "type": "image",
+        "img_path": "images/76effbf6593512ed5c3b179835ee352604a1378fa4a2c43da877360e3118fe41.jpg",
+        "image_caption": [],
+        "image_footnote": [],
+        "content": "",
+        "bbox": [
+            506,
+            313,
+            609,
+            393
+        ],
+        "page_idx": 29
+    },
+    {
+        "type": "image",
+        "img_path": "images/11ad6b942cc236ccb73e6f161a9f5a1913e7f9b9fa7af6633edb044243eea706.jpg",
+        "image_caption": [],
+        "image_footnote": [],
+        "content": "",
+        "bbox": [
+            612,
+            313,
+            714,
+            393
+        ],
+        "page_idx": 29
+    },
+    {
+        "type": "image",
+        "img_path": "images/97bd327e3e7ad5ff2d7cd0aabbcfcca60cc1bd6bda3417169feae0418ea27a3c.jpg",
+        "image_caption": [
+            "Figure 18: Examples from the bottom 1% (left three) subset and top 1% (right three) subsets. Red boxes show the center crop. Notice how in the top 1%, the center crop completely misses the bird, which explains the large drop off in Table 18. "
+        ],
+        "image_footnote": [],
+        "content": "",
+        "bbox": [
+            717,
+            313,
+            820,
+            393
+        ],
+        "page_idx": 29
+    },
+    {
+        "type": "text",
+        "text": "Table 18: Distance stratification on Waterbirds test set. Center crop uses a fixed $1 2 8 \\times 1 2 8$ center crop with a ViT-S logistic regression classifier; $A ^ { 2 }$ uses one $6 4 \\times 6 4$ attention-guided crop with a ViT-S logistic regression classifier; iFAM K=8 is trained on the full Waterbirds train set (see Appendix P). Models are trained once on the full Waterbirds training set and evaluated on each test-set subset. Test set is sorted from the bird being closest to the image center (“bottom”) to furthest from the image center (“top”); the “top1” subset is the 58 test birds furthest from the image centroid. WGA results for the top and bottom 1st and 5th percentiles may have higher noise due to minority groups having $< 2 0$ samples in those subsets, but are included for reference. ",
+        "bbox": [
+            169,
+            473,
+            823,
+            584
+        ],
+        "page_idx": 29
+    },
+    {
+        "type": "table",
+        "img_path": "images/06d78ef670fb9a77cf1634df9354f440dd2523ad9ed02cd9377e978ab30221ba.jpg",
+        "table_caption": [],
+        "table_footnote": [],
+        "table_body": "<table><tr><td>Subset</td><td>N</td><td>Center Crop Acc</td><td>Center Crop WGA</td><td> $A^2$ Acc</td><td> $A^2$ WGA</td><td>iFAM K=8Acc</td><td>iFAM K=8WGA</td></tr><tr><td>top1</td><td>58</td><td>84.5</td><td>63.6</td><td>91.4</td><td>72.7</td><td>98.3</td><td>81.8</td></tr><tr><td>top5</td><td>290</td><td>89.0</td><td>75.6</td><td>93.8</td><td>87.8</td><td>98.3</td><td>92.7</td></tr><tr><td>top10</td><td>580</td><td>89.8</td><td>78.4</td><td>93.1</td><td>84.6</td><td>98.4</td><td>92.3</td></tr><tr><td>bottom10</td><td>580</td><td>91.6</td><td>84.5</td><td>92.2</td><td>78.0</td><td>98.6</td><td>96.6</td></tr><tr><td>bottom5</td><td>290</td><td>92.4</td><td>85.8</td><td>92.4</td><td>74.1</td><td>99.7</td><td>100.0</td></tr><tr><td>bottom1</td><td>58</td><td>93.1</td><td>86.7</td><td>91.4</td><td>83.3</td><td>100.0</td><td>100.0</td></tr><tr><td>full</td><td>5794</td><td>90.9</td><td>78.7</td><td>93.0</td><td>80.4</td><td>98.8</td><td>96.1</td></tr></table>",
+        "bbox": [
+            243,
+            585,
+            743,
+            724
+        ],
+        "page_idx": 29
+    },
+    {
+        "type": "page_number",
+        "text": "30 ",
+        "bbox": [
+            488,
+            935,
+            508,
+            946
+        ],
+        "page_idx": 29
+    },
+    {
+        "type": "text",
+        "text": "I DFR Baseline Implementation Details ",
+        "text_level": 1,
+        "bbox": [
+            171,
+            89,
+            521,
+            107
+        ],
+        "page_idx": 30
+    },
+    {
+        "type": "text",
+        "text": "All DFR rows run only Stage 2 of [16], last-layer retraining on a group-balanced subset, applied to frozen pretrained DINOv2 features. We do not fine-tune the backbone (Stage 1 ERM) on the biased train set; this is the natural baseline because A2 also operates on frozen DI-NOv2 features, so comparing against balanced last-layer retraining on the same backbone isolates the effect of group balancing versus attention-guided cropping. We base our code on the public DFR repo https://github.com/izmailovpavel/spurious\\_feature\\_learning/ blob/main/dfr\\_evaluate\\_spurious.py (modified to use frozen DINOv2 embeddings) and fit L1-regularized logistic regression (sklearn liblinear) on standardized features, grid-searching $C \\in \\left\\{ 1 . 0 , 0 . 7 , 0 . 3 \\overline { { , } } 0 . 1 , 0 . 0 \\overline { { 7 } } , 0 . 0 3 , 0 . 0 1 \\right\\}$ and (for binary tasks) per-class weights to maximize worstgroup accuracy on a tuning split, then averaging weights over 20 retrains on independently subsampled group-balanced sets. Waterbirds uses DFR(Val) (official val split 50/50 for tuning vs. retraining). Spawrious O2O/M2M Hard, MetaShift Cat vs. Dog, and MetaShift Animals have no provided val, so we use DFR(Train): 20% of train held out as pseudo-val for hyperparameter tuning, group-balanced retraining on the remaining 80%. ",
+        "bbox": [
+            169,
+            119,
+            826,
+            315
+        ],
+        "page_idx": 30
+    },
+    {
+        "type": "page_number",
+        "text": "31 ",
+        "bbox": [
+            488,
+            935,
+            508,
+            946
+        ],
+        "page_idx": 30
+    },
+    {
+        "type": "text",
+        "text": "J Attention Concentration and Different Head Aggregators ",
+        "text_level": 1,
+        "bbox": [
+            169,
+            89,
+            686,
+            108
+        ],
+        "page_idx": 31
+    },
+    {
+        "type": "table",
+        "img_path": "images/f7e4fad623b116b63edc654bc028f2793453c5a2fd828c9853fc11705e45fc56.jpg",
+        "table_caption": [
+            "Table 19: Attention concentration across DINOv2 model sizes (ImageNet validation, 50k images). Interpretation, 3rd column, first row: 48% of attention goes to 10% of patches. "
+        ],
+        "table_footnote": [],
+        "table_body": "<table><tr><td>Model</td><td>Entropy (norm)</td><td>Top-10%</td><td>Top-25%</td></tr><tr><td>ViT-S (21M)</td><td> $0.9219 \\pm 0.0382$ </td><td> $0.4814 \\pm 0.1504$ </td><td> $0.7430 \\pm 0.1259$ </td></tr><tr><td>ViT-B (86M)</td><td> $0.9292 \\pm 0.0316$ </td><td> $0.4653 \\pm 0.1305$ </td><td> $0.7207 \\pm 0.1098$ </td></tr><tr><td>ViT-L (300M)</td><td> $0.9343 \\pm 0.0271$ </td><td> $0.4528 \\pm 0.1090$ </td><td> $0.7052 \\pm 0.0991$ </td></tr><tr><td>ViT-G (1.1B)</td><td> $0.9351 \\pm 0.0226$ </td><td> $0.4522 \\pm 0.0941$ </td><td> $0.7043 \\pm 0.0840$ </td></tr></table>",
+        "bbox": [
+            235,
+            166,
+            761,
+            252
+        ],
+        "page_idx": 31
+    },
+    {
+        "type": "table",
+        "img_path": "images/9ab6c9b91fb8b55f1441b74dbcee68723ed8551e04e2fb96ad5e2d6fb3b9ac96.jpg",
+        "table_caption": [
+            "Table 20: Attention concentration on Waterbirds validation set. "
+        ],
+        "table_footnote": [],
+        "table_body": "<table><tr><td>Model</td><td>Entropy (norm)</td><td>Top-10%</td><td>Top-25%</td></tr><tr><td>ViT-S (21M)</td><td> $0.8763 \\pm 0.0303$ </td><td> $0.6742 \\pm 0.1173$ </td><td> $0.8742 \\pm 0.0612$ </td></tr><tr><td>ViT-B (86M)</td><td> $0.8980 \\pm 0.0245$ </td><td> $0.6089 \\pm 0.1049$ </td><td> $0.8246 \\pm 0.0606$ </td></tr><tr><td>ViT-L (300M)</td><td> $0.9187 \\pm 0.0271$ </td><td> $0.5195 \\pm 0.1119$ </td><td> $0.7636 \\pm 0.0850$ </td></tr><tr><td>ViT-G (1.1B)</td><td> $0.9307 \\pm 0.0196$ </td><td> $0.4738 \\pm 0.0842$ </td><td> $0.7234 \\pm 0.0688$ </td></tr></table>",
+        "bbox": [
+            235,
+            303,
+            761,
+            390
+        ],
+        "page_idx": 31
+    },
+    {
+        "type": "table",
+        "img_path": "images/c6e175cbd93c14fb1d896216146a05b5505e6ed198ea24199c82c2cfdb8f42c4.jpg",
+        "table_caption": [
+            "Table 21: Different attention head aggregation methods on Spawrious O2O Hard (cross-model ViT-G attention and ViT-S embeddings). We report $A ^ { 2 }$ crops-only OOD test accuracy, where crops are chosen using the attention map resulting when using the following aggregation method (on the last-layer self-attention across all 24 ViT-G heads). "
+        ],
+        "table_footnote": [],
+        "table_body": "<table><tr><td>Aggregation Method</td><td> $A^{2}$  Test OOD (%)</td></tr><tr><td>Mean</td><td>86.3</td></tr><tr><td>Entropy-weighted</td><td>86.3</td></tr><tr><td>Lowest-k mean (k=6)</td><td>85.7</td></tr><tr><td>Max</td><td>85.0</td></tr></table>",
+        "bbox": [
+            341,
+            483,
+            655,
+            568
+        ],
+        "page_idx": 31
+    },
+    {
+        "type": "table",
+        "img_path": "images/a6ae0186b02afcf1d0cd8147bcc00c7016293a2d6e478a630c56df8b20f72d5e.jpg",
+        "table_caption": [
+            "Table 22: Attention concentration on Spawrious O2O Hard test split for ViT-G using different head aggregation methods "
+        ],
+        "table_footnote": [],
+        "table_body": "<table><tr><td>Aggregation Method</td><td>Entropy (norm)</td><td>Top-10%</td><td>Top-25%</td></tr><tr><td>Mean</td><td> $0.9202 \\pm 0.0210$ </td><td> $0.5029 \\pm 0.0914$ </td><td> $0.7698 \\pm 0.0717$ </td></tr><tr><td>Entropy-weighted</td><td> $0.9170 \\pm 0.0224$ </td><td> $0.5142 \\pm 0.0950$ </td><td> $0.7780 \\pm 0.0728$ </td></tr><tr><td>Lowest-entropy  $k = 6$  mean</td><td> $0.8561 \\pm 0.0338$ </td><td> $0.7185 \\pm 0.1056$ </td><td> $0.9111 \\pm 0.0513$ </td></tr><tr><td>Max</td><td> $0.9000 \\pm 0.0268$ </td><td> $0.5817 \\pm 0.0969$ </td><td> $0.8117 \\pm 0.0680$ </td></tr></table>",
+        "bbox": [
+            181,
+            633,
+            816,
+            720
+        ],
+        "page_idx": 31
+    },
+    {
+        "type": "table",
+        "img_path": "images/70a12b96924ce20c784955b1d515897d0d22bb877a703487e904e350bcb4f50a.jpg",
+        "table_caption": [
+            "Table 23: Attention concentration on ImageNet (50k validation split) for ViT-G using different head aggregation methods "
+        ],
+        "table_footnote": [],
+        "table_body": "<table><tr><td>Aggregation Method</td><td>Entropy (norm)</td><td>Top-10%</td><td>Top-25%</td></tr><tr><td>Mean</td><td> $0.9351 \\pm 0.0226$ </td><td> $0.4522 \\pm 0.0941$ </td><td> $0.7043 \\pm 0.0840$ </td></tr><tr><td>Entropy-weighted</td><td> $0.9325 \\pm 0.0241$ </td><td> $0.4619 \\pm 0.0983$ </td><td> $0.7117 \\pm 0.0857$ </td></tr><tr><td>Lowest-entropy  $k = 6$  mean</td><td> $0.8731 \\pm 0.0411$ </td><td> $0.6624 \\pm 0.1271$ </td><td> $0.8654 \\pm 0.0764$ </td></tr><tr><td>Max</td><td> $0.9218 \\pm 0.0273$ </td><td> $0.5050 \\pm 0.0998$ </td><td> $0.7383 \\pm 0.0794$ </td></tr></table>",
+        "bbox": [
+            181,
+            785,
+            816,
+            871
+        ],
+        "page_idx": 31
+    },
+    {
+        "type": "page_number",
+        "text": "32 ",
+        "bbox": [
+            488,
+            935,
+            509,
+            946
+        ],
+        "page_idx": 31
+    },
+    {
+        "type": "text",
+        "text": "K Adapter Learning Curves ",
+        "text_level": 1,
+        "bbox": [
+            171,
+            89,
+            426,
+            108
+        ],
+        "page_idx": 32
+    },
+    {
+        "type": "chart",
+        "img_path": "images/918a5dd5568d298ba52a0bc1f0b3ae5f1285973e1fb2022c43a0daeaf9c7857f.jpg",
+        "content": "| Epoch | Default attention | Adapter |\n|-------|-------------------|---------|\n| 1     | 78.0              | 84.0    |\n| 3     | 78.0              | 87.5    |\n| 6     | 78.0              | 89.5    |\n| 9     | 78.0              | 90.5    |\n| 12    | 78.0              | 91.0    |\n| 15    | 78.0              | 91.0    |\n| 18    | 78.0              | 91.0    |\n| 21    | 78.0              | 91.0    |",
+        "chart_caption": [],
+        "chart_footnote": [],
+        "sub_type": "line",
+        "bbox": [
+            173,
+            128,
+            498,
+            319
+        ],
+        "page_idx": 32
+    },
+    {
+        "type": "chart",
+        "img_path": "images/973c4c974cf507b8c40f059bfcd19a7a43a570f722dd043849c591e8eb55c218.jpg",
+        "content": "| Epoch | Default attention | Adapter |\n|-------|-------------------|---------|\n| 1     | 25.0              | 47.0    |\n| 3     | 25.0              | 55.0    |\n| 6     | 25.0              | 62.0    |\n| 9     | 25.0              | 65.0    |\n| 12    | 25.0              | 67.0    |\n| 15    | 25.0              | 66.0    |\n| 18    | 25.0              | 66.0    |\n| 21    | 25.0              | 66.0    |",
+        "chart_caption": [
+            "Figure 19: MLP Adapter Learning curves on CelebA. Results averaged across 5 seeds. "
+        ],
+        "chart_footnote": [],
+        "sub_type": "line",
+        "bbox": [
+            500,
+            128,
+            823,
+            319
+        ],
+        "page_idx": 32
+    },
+    {
+        "type": "page_number",
+        "text": "33 ",
+        "bbox": [
+            488,
+            935,
+            508,
+            946
+        ],
+        "page_idx": 32
+    },
+    {
+        "type": "text",
+        "text": "L DINOv3 Attention Scaling Graphs and Results ",
+        "text_level": 1,
+        "bbox": [
+            171,
+            89,
+            599,
+            108
+        ],
+        "page_idx": 33
+    },
+    {
+        "type": "text",
+        "text": "DINOv3 Attention Scaling. The Attention model is varied from DINOv3 ViT-S/16 (21M) to DINOv3 ViT-7B/16 (6.7B) with the embedding model fixed to DINOv2 ViT-G (1.1B). We show the general trend of decreasing $A ^ { 2 }$ performance (Test Acc and WGA) as the attention model size grows also holds for DINOv3. ",
+        "bbox": [
+            169,
+            119,
+            823,
+            176
+        ],
+        "page_idx": 33
+    },
+    {
+        "type": "table",
+        "img_path": "images/4da3043b7eae194ccb8154f284e8e6595bc6002bee90398d0899cc562f0bcb75.jpg",
+        "table_caption": [
+            "Table 24: Mean $A _ { \\mathrm { L R } } ^ { 2 }$ performance across all evaluated datasets, ordered from smallest to largest DINOv3 attention model. "
+        ],
+        "table_footnote": [],
+        "table_body": "<table><tr><td>Attention model</td><td>Params</td><td>Test Acc (%)</td><td>WGA (%)</td></tr><tr><td>ViT-S/16</td><td>21M</td><td>86.76</td><td>76.16</td></tr><tr><td>ViT-S+/16</td><td>29M</td><td>86.38</td><td>75.40</td></tr><tr><td>ViT-B/16</td><td>86M</td><td>86.66</td><td>75.52</td></tr><tr><td>ViT-L/16</td><td>300M</td><td>84.98</td><td>72.12</td></tr><tr><td>ViT-H+/16</td><td>840M</td><td>84.38</td><td>72.44</td></tr><tr><td>ViT-7B/16</td><td>6,716M</td><td>84.76</td><td>73.38</td></tr></table>",
+        "bbox": [
+            303,
+            224,
+            696,
+            339
+        ],
+        "page_idx": 33
+    },
+    {
+        "type": "chart",
+        "img_path": "images/48c863ef7aa03eb02248850be299a7fceafce96ba7f4e456872159b99d35ab24.jpg",
+        "content": "| Attention Model Parameters (log scale) | Crops-only Test Accuracy (%) |\n| -------------------------------------- | ---------------------------- |\n| 21M                                    | 86.7                         |\n| 29M                                    | 86.4                         |\n| 86M                                    | 86.6                         |\n| 300M                                   | 85.0                         |\n| 840M                                   | 84.4                         |\n| 6.76M                                  | 84.8                         |",
+        "chart_caption": [],
+        "chart_footnote": [],
+        "sub_type": "line",
+        "bbox": [
+            176,
+            369,
+            500,
+            588
+        ],
+        "page_idx": 33
+    },
+    {
+        "type": "chart",
+        "img_path": "images/b3ad175a792a058304c4f6eef09b75b5a40a82556c9e6629ceb880a19751b638.jpg",
+        "content": "| Attention Model Parameters (log scale) | Crops-only WGA (%) |\n| -------------------------------------- | ------------------ |\n| 21M                                    | 76.0               |\n| 29M                                    | 75.5               |\n| 86M                                    | 75.6               |\n| 300M                                   | 72.2               |\n| 840M                                   | 72.5               |\n| 6.7B                                   | 73.5               |",
+        "chart_caption": [],
+        "chart_footnote": [
+            "OMean(5) "
+        ],
+        "sub_type": "line",
+        "bbox": [
+            509,
+            369,
+            821,
+            588
+        ],
+        "page_idx": 33
+    },
+    {
+        "type": "text",
+        "text": "Figure 20: DINOv3 where-to-look scaling (mean across datasets) with fixed DINOv2 ViT-G embeddings. Absolute values are reported in Table 24. ",
+        "bbox": [
+            169,
+            623,
+            826,
+            652
+        ],
+        "page_idx": 33
+    },
+    {
+        "type": "page_number",
+        "text": "34 ",
+        "bbox": [
+            488,
+            935,
+            508,
+            946
+        ],
+        "page_idx": 33
+    },
+    {
+        "type": "text",
+        "text": "M Additional DINOv3 Where-to-Look Scaling Results ",
+        "text_level": 1,
+        "bbox": [
+            171,
+            89,
+            643,
+            107
+        ],
+        "page_idx": 34
+    },
+    {
+        "type": "chart",
+        "img_path": "images/71b94d6cd3a36d7922ce972ecfcc7684e997adf36d30cb72c3997ac2ab57a724.jpg",
+        "content": "| Attention Model Parameters (log scale) | 21M   | 29M   | 86M   | 300M  | 840M  | 6.7B  |\n| -------------------------------------- | ----- | ----- | ----- | ----- | ----- | ----- |\n| Series 1                               | 97.0  | 96.5  | 95.5  | 96.0  | 96.0  | 95.0  |\n| Series 2                               | 89.0  | 89.5  | 89.0  | 88.0  | 87.5  | 88.0  |\n| Series 3                               | 86.5  | 86.0  | 86.5  | 85.0  | 84.0  | 84.5  |\n| Series 4                               | 85.5  | 85.0  | 85.5  | 83.0  | 83.5  | 83.5  |\n| Series 5                               | 75.5  | 74.5  | 74.5  | 72.0  | 69.5  | 70.5  |",
+        "chart_caption": [],
+        "chart_footnote": [],
+        "sub_type": "line",
+        "bbox": [
+            176,
+            167,
+            493,
+            388
+        ],
+        "page_idx": 34
+    },
+    {
+        "type": "chart",
+        "img_path": "images/6f2ef3d1134b9d933662742582f1c63bb7bf74fc85b3383d982d29c7d0f50e8a.jpg",
+        "content": "| Attention Model Parameters (log scale) | 21M   | 29M   | 80M   | 300M  | 840M  | 6.7B  |\n| -------------------------------------- | ----- | ----- | ----- | ----- | ----- | ----- |\n| Series 1                               | 95.0  | 95.0  | 91.0  | 91.5  | 90.5  | 90.0  |\n| Series 2                               | 76.0  | 75.5  | 80.0  | 72.0  | 73.0  | 74.5  |\n| Series 3                               | 74.0  | 74.0  | 73.0  | 71.0  | 68.5  | 69.0  |\n| Series 4                               | 66.0  | 63.5  | 63.5  | 60.0  | 61.0  | 64.5  |\n| Series 5                               | 72.0  | 71.0  | 75.0  | 72.5  | 73.5  | 69.0  |\n| Series 6                               | 71.5  | 71.0  | 73.0  | 72.0  | 72.5  | 69.5  |\n| Series 7                               | 95.0  | 95.0  | 91.0  | 91.5  | 90.5  | 90.0  |\n| Series 8                               | -     | -     | -     | -     | -     | -     |\n| Series 9                               | -     | -     | -     | -     | -     | -     |\n| Series 10                              | -     | -     | -     | -     | -     | -     |\n| Series 11                              | -     | -     | -     | -     | -     | -     |\n| Series 12                              | -     | -     | -     | -     | -     | -     |\n| Series 13                              | -     | -     | -     | -     | -     | -     |\n| Series 14                              | -     | -     | -     | -     | -     | -     |\n| Series 15                              | -     | -     | -     | -     | -     | -     |\n| Series 16                              | -     | -     | -     | -     | -     | -     |\n| Series 17                              | -     | -     | -     | -     | -     | -     |\n| Series 18                              | -     | -     | -     | -     | -     | -     |\n| Series 19                              | -     | -     | -     | -     | -     | -     |\n| Series 20                              | -     | -     | -     | -     | -     | -     |\n| Series 21                              | -     | -     | -     | -     | -     | -     |\n| Series 22                              | -     | -     | -     | -     | -     | -     |\n| Series 23                              | -     | -     | -     | -     | -     | -     |\n| Series 24                              | -     | -     | -     | -     | -     | -     |\n| Series 25                              | -     | -     | -     | -     | -     | -     |\n| Series 26                              | -     | -     | -     | -     | -     | -     |\n| Series 27                              | -     | -     | -     | -     | -     | -     |\n| Series 28                              | -     | -     | -     | -     | -     | -     |\n| Series 29                              | -     | -     | -     | -     | -     | -     |\n| Series 30                              | -     | -     | -     | -     | -     | -     |\n| Series 31                              | -     | -     | -     | -     | -     | -     |\n| Series 32                              | -     | -     | -     | -     | -     | -     |\n| Series 33                              | -     | -     | -     | -     | -     | -     |\n| Series 34                              | -     | -     | -     | -     | -     | -     |\n| Series 35                              | -     | -     | -     | -     | -     | -     |\n| Series 36                              | -     | -     | -     | -     | -     | -     |\n| Series 37                              | -     | -     | -     | -     | -     | -     |\n| Series 38                              | -     | -     | -     | -     | -     | -     |\n| Series 39                              | -     | -     | -     | -     | -     | -     |\n| Series 40                              | -     | -     | -     | -     | -     | -     |\n| Series 41                              | -     | -     | -     | -     | -     | -     |\n| Series 42                              | -     | -     | -     | -     | -     | -     |\n| Series 43                              | -     | -     | -     | -     | -     | -     |\n| Series 44                              | -     | -     | -     | -     | -     | -     |\n| Series 45                              | -     | -     | -     | -     | -     | -     |\n| Series 46                              | -     | -     | -     | -     | -     | -     |\n| Series 47                              | -     | -     | -     | -     | -     | -      |\n| Series 48                              | ~95.0%| ~95.0%| ~91.0%| ~91.5%| ~90.5%| ~90.0%|\n| Series 49                              | ~95.0%| ~95.0%| ~91.0%| ~91.5%| ~90.5%| ~90.0%|\n| Series 50                              | ~95.0%| ~95.0%| ~91.0%| ~91.5%| ~90.5%| ~90.0%|\n| Series 51                              | ~95.0%| ~95.0%| ~91.0%| ~91.5%| ~90.5%| ~90.0%|\n| Series 52                              | ~95.0%| ~95.0%| ~91.0%| ~91.5%| ~90.5%| ~90.0%|\n| Series 53                              | ~95.0%| ~95.0%| ~91.0%| ~91.5%| ~90.5%| ~90.0%|\n| Series 54                              | ~95.0%| ~95.0%| ~91.0%| ~91.5%| ~90.5%| ~90.0%|\n| Series 55                              | ~95.0%| ~95.0%| ~91.0%| ~91.5%| ~90.5%| ~90.0%|\n| Series 56                              | ~95.0%| ~95.0%| ~91.0%| ~91.5%| ~90.5%| ~90.0%|\n| Series 57                              | ~95.0%| ~95.0%| ~91.0%| ~91.5%| ~90.5%| ~90.0%|\n| Series 58                              | ~95.0%| ~95.0%| ~91.0%| ~91.5%| ~90.5%| ~90.0%|\n| Series 59                              | ~95.0%| ~95.0%| ~91.0%| ~91.5%| ~90.5%| ~90.0%|\n| Series 60                              | ~95.0%| ~95.0%| ~91.0%| ~91.5%| ~90.5%| ~90.0%|\n| Series 61                              | ~95.0%| ~95.0%| ~91.0%| ~91.5%| ~90.5%| ~90.0%|\n| Series 62                              | ~95.0%| ~95.0%| ~91.0%| ~91.5%| ~90.5%| ~90.0%|\n| Series 63                              | ~95.0%| ~95.0%| ~91.0%| ~91.5%| ~90.5%| ~90.0%|\n| Series 64                              | ~95.0%| ~95.0%| ~91.0%| ~91.5%| ~90.5%| ~90.0%|\n| Series 65                              | ~95.0%| ~95.0%| ~91.0%| ~91.5%| ~90.5%| ~90.0%|\n| Series 66                              | ~95.0%| ~95.0%| ~91.0%| ~91.5%| ~90.5%| ~90.0%|\n| Series 67                              | ~95.0%| ~95.0%| ~91.0%| ~91.5%| ~90.5%| ~90.0%|\n| Series 68                              | ~95.0%| ~95.0%| ~91.0%| ~91.5%| ~90.5%| ~90.0%|\n| Series 69                              | ~95.0%| ~95.0%| ~91.0%| ~91.5%| ~90.5%| ~90.0%|\n| Series 70                              | ~95.0%| ~95.0%| ~91.0%| ~91.5%| ~90.5%| ~90.0%|\n| Series 71                              | ~95.0%| ~95.0%| ~91.0%| ~91.5%| ~90.5%| ~90.0%|\n| Series 72                              | ~95.0%| ~95.0%| ~91.0%| ~91.5%| ~90.5%| ~90.0%|\n| Series 73                              | ~95.0%| ~95.0%| ~91.0%| ~91.5%| ~90.5%| ~90.0%|\n| Series 74                              | ~95.0%| ~95.0%| ~91.0%| ~91.5%| ~90.5%| ~90.0%|\n|",
+        "chart_caption": [],
+        "chart_footnote": [
+            "Spawrious O2O  Spawrious M2M - Waterbirds - Metashift Cat Dog - Metashift Animals O Mean(5) "
+        ],
+        "sub_type": "line",
+        "bbox": [
+            504,
+            167,
+            821,
+            388
+        ],
+        "page_idx": 34
+    },
+    {
+        "type": "text",
+        "text": "Figure 21: DINOv3 where-to-look scaling per dataset (colored lines) with the mean trend (black), using fixed DINOv2 ViT-G embeddings. Per-dataset absolute values in Tables 25, 26, 27, 28, and 29. ",
+        "bbox": [
+            169,
+            424,
+            826,
+            454
+        ],
+        "page_idx": 34
+    },
+    {
+        "type": "text",
+        "text": "M.1 Per-dataset DINOv3 Where-to-Look Results ",
+        "text_level": 1,
+        "bbox": [
+            171,
+            500,
+            529,
+            513
+        ],
+        "page_idx": 34
+    },
+    {
+        "type": "table",
+        "img_path": "images/03e414266fa35c3995461e68feae667d9355606c9348aeaf8f168653f1261b88.jpg",
+        "table_caption": [
+            "Table 25: MetaShift Animals $( A _ { \\mathrm { L R } } ^ { 2 } )$ with fixed DINOv2 ViT-G embeddings. "
+        ],
+        "table_footnote": [],
+        "table_body": "<table><tr><td>Attention model</td><td>Params</td><td>Test Acc (%)</td><td>WC (%)</td></tr><tr><td>ViT-S/16</td><td>21M</td><td>88.8</td><td>71.5</td></tr><tr><td>ViT-S+/16</td><td>29M</td><td>89.2</td><td>70.4</td></tr><tr><td>ViT-B/16</td><td>86M</td><td>88.7</td><td>70.1</td></tr><tr><td>ViT-L/16</td><td>300M</td><td>87.9</td><td>66.3</td></tr><tr><td>ViT-H+/16</td><td>840M</td><td>87.4</td><td>68.3</td></tr><tr><td>ViT-7B/16</td><td>6,716M</td><td>88.1</td><td>69.0</td></tr></table>",
+        "bbox": [
+            308,
+            588,
+            687,
+            700
+        ],
+        "page_idx": 34
+    },
+    {
+        "type": "table",
+        "img_path": "images/1607df5b3b8a0552a8d7d81b4579582be60364343e15743f4fb033a1e956507f.jpg",
+        "table_caption": [
+            "Table 26: MetaShift Cat vs. Dog $( A _ { \\mathrm { L R } } ^ { 2 } )$ with fixed DINOv2 ViT-G embeddings. "
+        ],
+        "table_footnote": [],
+        "table_body": "<table><tr><td>Attention model</td><td>Params</td><td>Test Acc (%)</td><td>WGA (%)</td></tr><tr><td>ViT-S/16</td><td>21M</td><td>75.6</td><td>75.2</td></tr><tr><td>ViT-S+/16</td><td>29M</td><td>74.3</td><td>73.4</td></tr><tr><td>ViT-B/16</td><td>86M</td><td>74.5</td><td>73.1</td></tr><tr><td>ViT-L/16</td><td>300M</td><td>72.1</td><td>71.0</td></tr><tr><td>ViT-H+/16</td><td>840M</td><td>69.4</td><td>69.1</td></tr><tr><td>ViT-7B/16</td><td>6,716M</td><td>70.9</td><td>69.0</td></tr></table>",
+        "bbox": [
+            302,
+            797,
+            694,
+            910
+        ],
+        "page_idx": 34
+    },
+    {
+        "type": "page_number",
+        "text": "35 ",
+        "bbox": [
+            488,
+            935,
+            508,
+            946
+        ],
+        "page_idx": 34
+    },
+    {
+        "type": "table",
+        "img_path": "images/f65d4a7957d2505c083619e0eaf818411d93a705bbcd12c8b55ff214bc2d58cd.jpg",
+        "table_caption": [
+            "Table 27: Spawrious O2O Hard $( A _ { \\mathrm { L R } } ^ { 2 } )$ with fixed DINOv2 ViT-G embeddings. "
+        ],
+        "table_footnote": [],
+        "table_body": "<table><tr><td>Attention model</td><td>Params</td><td>Test Acc (%)</td><td>WGA (%)</td></tr><tr><td>ViT-S/16</td><td>21M</td><td>86.3</td><td>73.7</td></tr><tr><td>ViT-S+/16</td><td>29M</td><td>86.3</td><td>75.4</td></tr><tr><td>ViT-B/16</td><td>86M</td><td>89.2</td><td>80.0</td></tr><tr><td>ViT-L/16</td><td>300M</td><td>85.3</td><td>71.7</td></tr><tr><td>ViT-H+/16</td><td>840M</td><td>85.5</td><td>73.2</td></tr><tr><td>ViT-7B/16</td><td>6,716M</td><td>86.5</td><td>74.5</td></tr></table>",
+        "bbox": [
+            303,
+            113,
+            694,
+            224
+        ],
+        "page_idx": 35
+    },
+    {
+        "type": "table",
+        "img_path": "images/762e81f70f0a621c02e2f4477ea2cd17e951bef9359b5d0b705002aab2949c2d.jpg",
+        "table_caption": [
+            "Table 28: Spawrious M2M Hard $( A _ { \\mathrm { L R } } ^ { 2 } )$ with fixed DINOv2 ViT-G embeddings. "
+        ],
+        "table_footnote": [],
+        "table_body": "<table><tr><td>Attention model</td><td>Params</td><td>Test Acc (%)</td><td>WGA (%)</td></tr><tr><td>ViT-S/16</td><td>21M</td><td>85.4</td><td>65.9</td></tr><tr><td>ViT-S+/16</td><td>29M</td><td>85.0</td><td>63.3</td></tr><tr><td>ViT-B/16</td><td>86M</td><td>85.6</td><td>63.2</td></tr><tr><td>ViT-L/16</td><td>300M</td><td>83.2</td><td>59.9</td></tr><tr><td>ViT-H+/16</td><td>840M</td><td>83.3</td><td>60.8</td></tr><tr><td>ViT-7B/16</td><td>6,716M</td><td>83.3</td><td>64.1</td></tr></table>",
+        "bbox": [
+            303,
+            279,
+            694,
+            390
+        ],
+        "page_idx": 35
+    },
+    {
+        "type": "table",
+        "img_path": "images/8fdb1dcd718533b28d1aa44631a14088e4612fd91bece7e003940a2ae8cbf92d.jpg",
+        "table_caption": [
+            "Table 29: Waterbirds $( A _ { \\mathrm { L R } } ^ { 2 } )$ with fixed DINOv2 ViT-G embeddings. "
+        ],
+        "table_footnote": [],
+        "table_body": "<table><tr><td>Attention model</td><td>Params</td><td>Test Acc (%)</td><td>WGA (%)</td></tr><tr><td>ViT-S/16</td><td>21M</td><td>97.7</td><td>94.5</td></tr><tr><td>ViT-S+/16</td><td>29M</td><td>97.1</td><td>94.5</td></tr><tr><td>ViT-B/16</td><td>86M</td><td>95.3</td><td>91.2</td></tr><tr><td>ViT-L/16</td><td>300M</td><td>96.4</td><td>91.7</td></tr><tr><td>ViT-H+/16</td><td>840M</td><td>96.3</td><td>90.8</td></tr><tr><td>ViT-7B/16</td><td>6,716M</td><td>95.0</td><td>90.3</td></tr></table>",
+        "bbox": [
+            303,
+            444,
+            694,
+            555
+        ],
+        "page_idx": 35
+    },
+    {
+        "type": "page_number",
+        "text": "36 ",
+        "bbox": [
+            488,
+            935,
+            509,
+            948
+        ],
+        "page_idx": 35
+    },
+    {
+        "type": "text",
+        "text": "N OpenCLIP ZS Family Scaling: Full Results ",
+        "text_level": 1,
+        "bbox": [
+            171,
+            89,
+            571,
+            108
+        ],
+        "page_idx": 36
+    },
+    {
+        "type": "chart",
+        "img_path": "images/461993e3a185a3cbe3cecc723fbf21a11da870af3dff581c1c5e53a813afa04d.jpg",
+        "content": "| Attention Model Parameters (log scale) | Spawrious O2O | Spawrious M2M | Waterbirds | Purple Line |\n| -------------------------------------- | ------------- | ------------- | ---------- | ----------- |\n| 21M                                    | 0             | 0             | 0          | 0           |\n| 86M                                    | 0             | 0             | 0          | 0           |\n| 300M                                   | -1            | -1            | -6         | 1           |\n| 1.1B                                   | -2            | -1            | -7         | -1          |",
+        "chart_caption": [],
+        "chart_footnote": [],
+        "sub_type": "line",
+        "bbox": [
+            176,
+            127,
+            488,
+            313
+        ],
+        "page_idx": 36
+    },
+    {
+        "type": "chart",
+        "img_path": "images/5eb17a33932cbe99063aaf915e8b96060824b01403f8f6ef4f3d939c6cb76193.jpg",
+        "content": "| Attention Model Parameters (log scale) | MetaShift Cat/Dog | MetaShift Animals | Mean across 5 datasets |\n| -------------------------------------- | ----------------- | ----------------- | ----------------------- |\n| 86M                                    | 0                 | 0                 | 0                       |\n| 304M                                   | -1                | 7.5               | 4.5                     |\n| 632M                                   | 0.5               | 7.0               | 4.0                     |\n| 1.0B                                   | -2                | 7.0               | 3.0                     |",
+        "chart_caption": [
+            "Figure 22: Worst-group accuracy version of Figure 7, also plotted relative to the smallest model in each family. The same family contrast holds: DINOv2 attention shows a mild downward WGA trend with size, while OpenCLIP attention shows large positive offsets at ViT-L/14 and larger (Section 2). Absolute per-dataset values are reported in Table 30. "
+        ],
+        "chart_footnote": [],
+        "sub_type": "line",
+        "bbox": [
+            504,
+            127,
+            821,
+            313
+        ],
+        "page_idx": 36
+    },
+    {
+        "type": "table",
+        "img_path": "images/ec51645bf9444cd074b7aac7d5f1eb173745f9b60a9e515f9753a0df22b8fbc9.jpg",
+        "table_caption": [
+            "Table 30: OpenCLIP ViT-L-14 zero-shot classification on $A ^ { 2 }$ attention-guided $1 2 8 \\times 1 2 8$ crops. The rows represent the model used to compute attention (and select crops). The backbone used to embed crops and class text labels is fixed to OpenCLIP ViT-L-14. DINOv2 attention shows inverse scaling (smaller is better); OpenCLIP attention is non-monotonic (ViT-B-16 underperforms despite being the smallest), this finding mirrors the localization finding from Section 2. For OpenCLIP, we report the number of parameters in the vision encoder. "
+        ],
+        "table_footnote": [],
+        "table_body": "<table><tr><td rowspan=\"2\">Attn Family</td><td rowspan=\"2\">Attn Model</td><td colspan=\"2\">O2O-Hard</td><td colspan=\"2\">M2M-Hard</td><td colspan=\"2\">Waterbirds</td><td colspan=\"2\">Cat vs. Dog</td><td colspan=\"2\">Animals</td></tr><tr><td>Acc</td><td>WGA</td><td>Acc</td><td>WGA</td><td>Acc</td><td>WGA</td><td>Acc</td><td>WGA</td><td>Acc</td><td>WC</td></tr><tr><td colspan=\"2\">Full image (no crops)</td><td>89.8</td><td>82.0</td><td>92.4</td><td>82.1</td><td>73.5</td><td>46.9</td><td>92.4</td><td>88.8</td><td>90.4</td><td>58.8</td></tr><tr><td rowspan=\"4\">DINOv2</td><td>ViT-S(21M)</td><td>92.8</td><td>85.0</td><td>94.0</td><td>85.4</td><td>80.3</td><td>64.5</td><td>89.7</td><td>88.8</td><td>89.7</td><td>54.7</td></tr><tr><td>ViT-B(86M)</td><td>92.5</td><td>85.0</td><td>94.0</td><td>85.4</td><td>80.7</td><td>64.7</td><td>90.3</td><td>88.8</td><td>89.6</td><td>56.1</td></tr><tr><td>ViT-L(300M)</td><td>91.0</td><td>84.5</td><td>93.4</td><td>84.7</td><td>77.8</td><td>58.3</td><td>90.1</td><td>89.9</td><td>89.0</td><td>56.6</td></tr><tr><td>ViT-G(1.1B)</td><td>91.5</td><td>84.4</td><td>93.5</td><td>84.9</td><td>77.0</td><td>57.6</td><td>90.1</td><td>87.8</td><td>89.5</td><td>56.8</td></tr><tr><td rowspan=\"4\">OpenCLIP</td><td>ViT-B-16(86M)</td><td>84.0</td><td>75.9</td><td>87.2</td><td>76.8</td><td>77.1</td><td>58.4</td><td>87.7</td><td>87.5</td><td>87.5</td><td>59.4</td></tr><tr><td>ViT-L-14(304M)</td><td>91.9</td><td>84.2</td><td>93.4</td><td>84.4</td><td>79.6</td><td>63.5</td><td>89.0</td><td>89.0</td><td>89.3</td><td>58.8</td></tr><tr><td>ViT-H-14(632M)</td><td>91.2</td><td>83.2</td><td>92.9</td><td>83.6</td><td>78.9</td><td>62.0</td><td>89.5</td><td>89.5</td><td>88.6</td><td>60.1</td></tr><tr><td>ViT-G-14(1.01B)</td><td>91.4</td><td>83.8</td><td>93.4</td><td>83.9</td><td>78.6</td><td>61.3</td><td>89.5</td><td>87.1</td><td>88.8</td><td>57.5</td></tr></table>",
+        "bbox": [
+            171,
+            505,
+            823,
+            659
+        ],
+        "page_idx": 36
+    },
+    {
+        "type": "page_number",
+        "text": "37 ",
+        "bbox": [
+            488,
+            935,
+            508,
+            946
+        ],
+        "page_idx": 36
+    },
+    {
+        "type": "text",
+        "text": "O TTR Implementation Details ",
+        "text_level": 1,
+        "bbox": [
+            171,
+            89,
+            454,
+            107
+        ],
+        "page_idx": 37
+    },
+    {
+        "type": "text",
+        "text": "We reimplement TTR [21] based on the author’s official codebase https: $/ / { \\tt g i }$ thub.com/ ShengyuLu/TTR. We use the OpenCLIP ViT-L-14 backbone (laion2b\\_s32b\\_b82k) for TTR and $\\breve { A } ^ { \\breve { 2 } }$ to ensure fair comparison. For Waterbirds, we were able to reproduce the reported results (achieving slightly higher WGA than was originally reported). We were unable to match the MetaShift Cat vs. Dog result, and report our best numbers instead. ",
+        "bbox": [
+            169,
+            119,
+            826,
+            191
+        ],
+        "page_idx": 37
+    },
+    {
+        "type": "table",
+        "img_path": "images/3b1cc12df866247e7f3e84a2ac2b898df5fd2a6169ab29f6554e6f7679df77ba.jpg",
+        "table_caption": [
+            "Table 31: TTR hyperparameters used in our reimplementation "
+        ],
+        "table_footnote": [],
+        "table_body": "<table><tr><td></td><td>Waterbirds</td><td>Spawrious O2O/M2M</td><td>MetaShift Cat vs. Dog</td><td>MetaShift Animals</td></tr><tr><td>Queue length</td><td>28</td><td>28</td><td>24</td><td>24</td></tr><tr><td>Gaussian σ</td><td>0.72</td><td>0.72</td><td>0.71</td><td>0.71</td></tr><tr><td>KMeans K</td><td>3</td><td>3</td><td>3</td><td>3</td></tr><tr><td>PCA components</td><td>3</td><td>3</td><td>3</td><td>3</td></tr><tr><td>SVD rank (q)</td><td>16</td><td>16</td><td>16</td><td>16</td></tr></table>",
+        "bbox": [
+            173,
+            227,
+            823,
+            375
+        ],
+        "page_idx": 37
+    },
+    {
+        "type": "text",
+        "text": "Below we also include our class prompts and general prompts (to isolate the main subject in each image from the clusters) ",
+        "bbox": [
+            169,
+            396,
+            823,
+            425
+        ],
+        "page_idx": 37
+    },
+    {
+        "type": "table",
+        "img_path": "images/74cfabe613e91bb32049d6e9b87ea3a4446db68608dce8f165f44c5be1e32fda.jpg",
+        "table_caption": [
+            "Table 32: TTR text prompts used in our reimplementation. "
+        ],
+        "table_footnote": [],
+        "table_body": "<table><tr><td>Dataset</td><td>Class prompts</td><td>General label</td></tr><tr><td>Waterbirds</td><td>“a photo of a landbird.”, “a photo of a waterbird.”</td><td>“a photo of a bird.”</td></tr><tr><td>Spawrious O2O/M2M</td><td>“a photo of a {breed}.” for each breed</td><td>“a photo of a dog.”</td></tr><tr><td>MetaShift Cat vs. Dog</td><td>“a photo of a cat.”, “a photo of a dog.”</td><td>“a photo of a pet.”</td></tr><tr><td>MetaShift Animals</td><td>“a photo of a {class}.” for each class</td><td>“a photo of an animal.”</td></tr></table>",
+        "bbox": [
+            173,
+            463,
+            823,
+            545
+        ],
+        "page_idx": 37
+    },
+    {
+        "type": "page_number",
+        "text": "38 ",
+        "bbox": [
+            488,
+            935,
+            508,
+            948
+        ],
+        "page_idx": 37
+    },
+    {
+        "type": "text",
+        "text": "P iFAM Comparison Runs ",
+        "text_level": 1,
+        "bbox": [
+            171,
+            89,
+            413,
+            107
+        ],
+        "page_idx": 38
+    },
+    {
+        "type": "text",
+        "text": "We re-trained iFAM [2] on every benchmark in Tables 1 and 2 using the official code release with all default hyperparameters from the iFAM paper (Appendix A). ",
+        "bbox": [
+            169,
+            119,
+            823,
+            148
+        ],
+        "page_idx": 38
+    },
+    {
+        "type": "text",
+        "text": "Number of foreground parts K. The iFAM paper reports K=8 as its Waterbirds default and K=4 as its MetaShift Cat vs. Dog default; the remaining benchmarks we evaluate (Spawrious O2O Hard, Spawrious M2M Hard, MetaShift Animals) are not in the iFAM paper, so no published default exists. To give iFAM the strongest comparison, we trained at both K=4 and K=8 on every benchmark and report both rows in Tables 1 and 2. ",
+        "bbox": [
+            169,
+            155,
+            826,
+            224
+        ],
+        "page_idx": 38
+    },
+    {
+        "type": "text",
+        "text": "Our Waterbirds numbers (K=8: 98.8 accuracy, 96.1 WGA) match the iFAM paper’s reported Waterbirds results closely, which we take as evidence that our implementation is faithful; the same default hyperparameters are used across all five benchmarks (excluding K which we varied). ",
+        "bbox": [
+            169,
+            229,
+            823,
+            273
+        ],
+        "page_idx": 38
+    },
+    {
+        "type": "page_number",
+        "text": "39 ",
+        "bbox": [
+            488,
+            935,
+            508,
+            946
+        ],
+        "page_idx": 38
+    }
+]
