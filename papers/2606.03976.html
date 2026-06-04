@@ -1,0 +1,97 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Formalizing the Binding Problem · 通用视觉自监督研究报</title>
+  <link rel="stylesheet" href="../assets/styles.css?v=20260525j">
+  <link rel="stylesheet" href="../assets/visual-ssl.css?v=20260525j">
+</head>
+<body>
+  <header class="masthead">
+    <div class="masthead-kicker">Visual SSL Research Report · 2026-06-04</div>
+    <a class="masthead-title" href="../index.html">通用视觉自监督研究报</a>
+    <div class="masthead-meta">
+      <span>图像表征 · VFM · JEPA · 视频预训练</span>
+      <span>CCF A/B 会议优先</span>
+      <span>图文精读 · 方法图解</span>
+    </div>
+  </header>
+  <nav class="site-nav" aria-label="主导航">
+    <a class="nav-link" href="../index.html">头版</a>
+<a class="nav-link" href="../issues/2026-06-04.html">今日速递</a>
+<a class="nav-link" href="../pages/catalog.html">论文目录</a>
+<a class="nav-link" href="../pages/timeline.html">时间线</a>
+  </nav>
+  <main><article class="paper-detail">
+  <div class="paper-main">
+    <div class="kicker">ICML 2026 · P1 · 2026-06-04</div>
+    <h1 class="paper-headline">Formalizing the Binding Problem：SSL/VLM 表征如果只编码“有什么”而不编码“谁属于谁”，在复杂场景、关系推理和稳健迁移上会受限</h1>
+    <p class="dek">把视觉表征组合性从定性错误案例转成可测量的信息量，为评估 ViT 是否真正理解对象-属性关系提供工具。</p>
+    <p class="byline"><strong>Formalizing the Binding Problem</strong>　Lianghuan Huang, Yihao Li, Saeed Salehi, Yingshan Chang, Ansh Soni, Konrad P. Kording；机构信息 arXiv 元数据未列出。　arXiv + ICML 2026　<a href="https://arxiv.org/abs/2606.03976">原文链接</a></p>
+    <div class="paper-facts">
+      <span><b>编号</b>2606.03976</span>
+      <span><b>优先级</b>P1</span>
+      <span><b>类别</b>ICML 2026</span>
+      <span><b>会议</b>arXiv + ICML 2026</span>
+      <span><b>方法</b>用信息论方式形式化 feature binding，并设计 probing 方法测量模型表示是否包含“哪些特征属于同一对象”的绑定信息；在 ViT 的 CLS token、spatial tokens 等组件上分析。</span>
+      <span><b>来源</b>arXiv / OpenReview</span>
+    </div>
+    <div class="feature-body">
+      <p class="lead dropcap">先说结论。SSL/VLM 表征如果只编码“有什么”而不编码“谁属于谁”，在复杂场景、关系推理和稳健迁移上会受限。 把视觉表征组合性从定性错误案例转成可测量的信息量，为评估 ViT 是否真正理解对象-属性关系提供工具。</p>
+      <figure class="full-fig"><img src="../assets/mineru/2606.03976/images/2576f0c85cd4566710523f16cbf7037f4a9c93580fc9d7efc78d6e17790edb50.jpg" alt="Figureure 2 · Binding theory and probing framework"><figcaption><b>Figureure 2 · Binding theory and probing framework</b><span class="fig-en">Figure 2. Binding theory and probing framework. We first define the space of features and objects of interest, as shown in features set F and object set O (Definitions 2.1, 2.3). Each object is a combination of features from the feature set (Definition 2.3, Remark 2.4). From there, we define the feature code F and object code O, which are random vectors that denote the presence and absence of each feature and object in a scene X. Binding information $I ( O ; Z )$ is the information of the object code in the representation Z (Definition 2.10). Conditional binding information is the information of the object code in the representation beyond what can be explained by features, hence $I ( O ; Z \mid { \breve { F } } )$ (Definition 2.13). Using information theory, the I terms can be decomposed into entropies H. $H ( O \mid Z )$ and $H ( F \mid Z )$ are the uncertainties of the object and feature codes in the representation, which can be estimated by training object code probe $f _ { O } ( Z )$ and feature code probe $f _ { F } ( Z )$ on the representation with ground truth labels of the object and feature codes (Section 2.2). The figure shows hypothetical probe-predicted logits for each element of the object and feature code. The cross-entropy losses of the object and feature probes are provable estimates of $H ( O \mid Z )$ and $H ( F \mid Z )$ (Theorem 2.20, Lemma 2.21). The remaining H(O) or $H ( O \mid F )$ terms are dataset priors which can be independently calculated from the distribution of the F and O in the dataset (Section 2.3). Combining these terms, we arrive at a probe-estimated value of binding information and conditional binding information.</span><span class="fig-zh">这张图概括 Formalizing the Binding Problem 的整体方法流程。阅读时先看模块之间传递的训练信号，再看作者如何把目标拆成可优化的子问题。</span></figcaption></figure>
+<figure class="full-fig"><img src="../assets/mineru/2606.03976/images/6b655694b1c71b28a77556c97b1aad5c1dd0f501e04a23f97ffb2c7f1e2321d9.jpg" alt="Figureure 1 · Binding failures"><figcaption><b>Figureure 1 · Binding failures</b><span class="fig-en">Figure 1. Binding failures. Left: (Campbell et al., 2025) shows that the ability of a vision-language model to accurately describe objects and their features in a scene degrades monotonically as the number of feature-sharing triplets (or the total number of objects) increases in a scene. Right: (Zhang et al., 2024) prompts visionlanguage models to describe grid patterns in the Raven matrix. For the middle-right block, the model outputs “a triangle with an X inside,” combining elements from the middle-center and the middle-right blocks. They further show that segmenting the grid into separate images before passing them in significantly reduces such errors. Figures reproduced from the papers.</span><span class="fig-zh">这张图来自论文 PDF 的结构化抽取。当前用于辅助理解 Formalizing the Binding Problem 的方法或实验，请结合正文精读段落一起看。</span></figcaption></figure>
+      
+      <h2>核心问题</h2>
+      <p>SSL/VLM 表征如果只编码“有什么”而不编码“谁属于谁”，在复杂场景、关系推理和稳健迁移上会受限。</p>
+      <h2>方法拆解</h2>
+      <p>用信息论方式形式化 feature binding，并设计 probing 方法测量模型表示是否包含“哪些特征属于同一对象”的绑定信息；在 ViT 的 CLS token、spatial tokens 等组件上分析。</p>
+      <h2>主要贡献</h2>
+      <p>把视觉表征组合性从定性错误案例转成可测量的信息量，为评估 ViT 是否真正理解对象-属性关系提供工具。</p>
+      <h2>实验看点</h2>
+      <p>摘要称在不同 binding challenge 数据集上分析 ViT 组件，测量对象属性绑定信息，补充此前“patch 是否同属一物”的研究。</p>
+      <h2>局限与读法</h2>
+      <p>probe 仍可能受到数据构造、任务范式和特征可线性读出的限制；与真实开放世界 compositional generalization 的关系还需验证。</p>
+    
+    </div>
+  </div>
+  <aside class="paper-side">
+
+    <div class="side-box"><h4>关键判断</h4><dl><dt>相关性</dt><dd>P1</dd><dt>类别</dt><dd>ICML 2026</dd><dt>会议</dt><dd>arXiv + ICML 2026</dd><dt>读法</dt><dd>方法图优先，表格次之</dd></dl></div>
+    <div class="side-box"><h4>原文</h4><p><a href="https://arxiv.org/abs/2606.03976">https://arxiv.org/abs/2606.03976</a></p></div>
+  </aside>
+</article></main>
+  <aside class="conf-float" data-conf-reminder="2026-06-04-main-ddl" aria-label="CCF A/B 主投稿提醒">
+  <button class="conf-close" type="button" aria-label="关闭会议提醒">×</button>
+  <details open>
+    <summary>CCF A/B 主投稿提醒</summary>
+    <div class="conf-list"><a class="conf-item " href="https://github.com/ccfddl/ccf-deadlines/blob/main/conference/AI/aaai.yml">
+  <span><b>AAAI 2027</b><em>CCF A · Main paper submission</em></span>
+  <strong>53 天</strong>
+  <small>2026-07-27 · CCF DDL: abstract 2026-07-20；进入 1 个月窗口后重点提醒。</small>
+</a></div>
+  </details>
+</aside>
+  <footer class="footer">
+    <div>面向通用视觉自监督、视觉基础模型与多模态表征学习的每日研究报。</div>
+    <div class="muted">Issue 2026-06-04 · Curated readings and figure notes</div>
+  </footer>
+  <script>
+  (() => {
+    const box = document.querySelector('[data-conf-reminder]');
+    if (!box) return;
+    const key = `visualSslConfReminderClosed:${box.dataset.confReminder || '2026-06-04-main-ddl'}`;
+    try {
+      if (localStorage.getItem(key) === '1') box.hidden = true;
+    } catch (err) {}
+    const close = box.querySelector('.conf-close');
+    if (close) {
+      close.addEventListener('click', () => {
+        box.hidden = true;
+        try { localStorage.setItem(key, '1'); } catch (err) {}
+      });
+    }
+  })();
+  </script>
+</body>
+</html>

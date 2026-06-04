@@ -19,39 +19,39 @@
   </header>
   <nav class="site-nav" aria-label="主导航">
     <a class="nav-link" href="../index.html">头版</a>
-<a class="nav-link" href="../issues/2026-06-03.html">今日速递</a>
+<a class="nav-link" href="../issues/2026-06-04.html">今日速递</a>
 <a class="nav-link" href="../pages/catalog.html">论文目录</a>
 <a class="nav-link" href="../pages/timeline.html">时间线</a>
   </nav>
   <main><article class="paper-detail">
   <div class="paper-main">
     <div class="kicker">Visual SSL / representation · P2 · 2026-06-03</div>
-    <h1 class="paper-headline">AdaCodec：视频预训练和视频 MLLM 都受 token budget 限制，predictive visual code 是一个值得借鉴的自监督压缩信号</h1>
-    <p class="dek">把视频 MLLM 的视觉输入从独立帧编码改成预测式视觉码，显式利用时序冗余。</p>
-    <p class="byline"><strong>AdaCodec: A Predictive Visual Code for Video MLLMs</strong>　Haowen Hou, Zhen Huang, Zheming Liang, Qingyi Si, Chenglin Li, Shuai Dong, Kele Shao, Ruilin Li, Dianyi Wang, Nan Duan, Jiaqi Wang；机构信息 arXiv 元数据未列出。　arXiv　<a href="https://arxiv.org/abs/2606.02569">原文链接</a></p>
+    <h1 class="paper-headline">AdaCodec：它和通用视觉自监督的关系在于：把视频冗余建模为 reference frame + predictive P-token，直接减少重复视觉 token</h1>
+    <p class="dek">中高相关；详见方法、贡献和实验边界。</p>
+    <p class="byline"><strong>AdaCodec: A Predictive Visual Code for Video MLLMs</strong>　arXiv　<a href="https://arxiv.org/abs/2606.02569">原文链接</a></p>
     <div class="paper-facts">
       <span><b>编号</b>2606.02569</span>
       <span><b>优先级</b>P2</span>
       <span><b>类别</b>Visual SSL / representation</span>
       <span><b>会议</b>arXiv</span>
-      <span><b>方法</b>只在条件预测成本高时发送完整 reference frame，否则把帧间变化、运动和 residual 编成紧凑 P-tokens。</span>
+      <span><b>方法</b>把视频冗余建模为 reference frame + predictive P-token，直接减少重复视觉 token</span>
       <span><b>来源</b>arXiv / OpenReview</span>
     </div>
     <div class="feature-body">
-      <p class="lead dropcap">先说结论。视频预训练和视频 MLLM 都受 token budget 限制，predictive visual code 是一个值得借鉴的自监督压缩信号。 把视频 MLLM 的视觉输入从独立帧编码改成预测式视觉码，显式利用时序冗余。</p>
+      <p class="lead dropcap">先说结论。它和通用视觉自监督的关系在于：把视频冗余建模为 reference frame + predictive P-token，直接减少重复视觉 token。 中高相关；详见方法、贡献和实验边界。</p>
       <figure class="full-fig"><img src="../assets/mineru/2606.02569/images/cb3f1d02bef5748188599bbf9dfb629fd3f254ae5d9a55ac984520dec3f9b25a.jpg" alt="Deployable Model Figure 2: AdaCodec method overview"><figcaption><b>Deployable Model Figure 2: AdaCodec method overview</b><span class="fig-en">Deployable Model Figure 2: AdaCodec method overview. Left: Motion-and-residual encoding for a P-frame. For each macroblock in the target frame, AdaCodec searches a local window in the reference frame for the best-matching block; the displacement gives the motion vector and the per-pixel difference gives the residual. Right: Deployable model. Each GOP encodes its I-frame with the ViT and each P-frame with the P-tokenizer.</span><span class="fig-zh">这张图概括 AdaCodec 的整体方法流程。阅读时先看模块之间传递的训练信号，再看作者如何把目标拆成可优化的子问题。</span></figcaption></figure>
 <figure class="full-fig"><img src="../assets/mineru/2606.02569/images/911ad83efb5938c70a834f50382b129feaa27c9863705aba475552087bd9fa4f.jpg" alt="Figureure 1 · AdaCodec treats the video MLLM visual interface as a predictive code: "><figcaption><b>Figureure 1 · AdaCodec treats the video MLLM visual interface as a predictive code: </b><span class="fig-en">Figure 1. AdaCodec treats the video MLLM visual interface as a predictive code: a frame is encoded into full visual tokens only when it cannot be predicted from prior context, and intermediate frames are sent as compact motion-and-residual P-tokens. Left: AdaCodec splits the video into adaptive Groups of Pictures (GOPs), each containing one I-frame (intra-coded frame, encoded independently) followed by a chain of Pframes (predictive frames). AdaCodec places I-frames adaptively via a pcost threshold on per-frame predictive cost, encodes each I-frame into full ViT tokens, and encodes each intermediate P-frame into fewer compact motion-and-residual tokens produced by the P-tokenizer. Right: AdaCodec matches or surpasses Qwen3-VL-8B on all eleven benchmarks even at 1/7 the tokens, cuts time-to-first-token (TTFT) and end-to-end latency (E2EL) while raising average accuracy, and leads on long-video accuracy across token budgets from 32k to 224k.</span><span class="fig-zh">这张图/表用于判断 AdaCodec 的实验收益来自哪里。重点看替换、消融或跨模型设置下趋势是否一致，而不是只看单个最高分。</span></figcaption></figure>
       
       <h2>核心问题</h2>
-      <p>视频预训练和视频 MLLM 都受 token budget 限制，predictive visual code 是一个值得借鉴的自监督压缩信号。</p>
+      <p>它和通用视觉自监督的关系在于：把视频冗余建模为 reference frame + predictive P-token，直接减少重复视觉 token。</p>
       <h2>方法拆解</h2>
-      <p>只在条件预测成本高时发送完整 reference frame，否则把帧间变化、运动和 residual 编成紧凑 P-tokens。</p>
+      <p>把视频冗余建模为 reference frame + predictive P-token，直接减少重复视觉 token</p>
       <h2>主要贡献</h2>
-      <p>把视频 MLLM 的视觉输入从独立帧编码改成预测式视觉码，显式利用时序冗余。</p>
+      <p>中高相关；详见方法、贡献和实验边界。</p>
       <h2>实验看点</h2>
-      <p>摘要称在 11 个 benchmark 上相对 Qwen3 系视频模型有提升，并减少视觉 token 重复。</p>
+      <p>实验部分建议重点看两类证据：一是作者是否把方法收益和更强数据、更长训练、更大模型区分开；二是跨模型、跨数据或跨任务迁移是否还能保留同样趋势。</p>
       <h2>局限与读法</h2>
-      <p>更偏接口/推理效率，未必产生更好的通用视觉 encoder；预测成本阈值和场景切换鲁棒性需要看正文。</p>
+      <p>这篇论文的结论需要结合任务设置、训练数据规模和消融实验一起看；不要只凭单个指标判断它对通用视觉表征的价值。</p>
     
     </div>
   </div>
@@ -61,13 +61,13 @@
     <div class="side-box"><h4>原文</h4><p><a href="https://arxiv.org/abs/2606.02569">https://arxiv.org/abs/2606.02569</a></p></div>
   </aside>
 </article></main>
-  <aside class="conf-float" data-conf-reminder="2026-06-03-main-ddl" aria-label="CCF A/B 主投稿提醒">
+  <aside class="conf-float" data-conf-reminder="2026-06-04-main-ddl" aria-label="CCF A/B 主投稿提醒">
   <button class="conf-close" type="button" aria-label="关闭会议提醒">×</button>
   <details open>
     <summary>CCF A/B 主投稿提醒</summary>
     <div class="conf-list"><a class="conf-item " href="https://github.com/ccfddl/ccf-deadlines/blob/main/conference/AI/aaai.yml">
   <span><b>AAAI 2027</b><em>CCF A · Main paper submission</em></span>
-  <strong>54 天</strong>
+  <strong>53 天</strong>
   <small>2026-07-27 · CCF DDL: abstract 2026-07-20；进入 1 个月窗口后重点提醒。</small>
 </a></div>
   </details>
@@ -80,7 +80,7 @@
   (() => {
     const box = document.querySelector('[data-conf-reminder]');
     if (!box) return;
-    const key = `visualSslConfReminderClosed:${box.dataset.confReminder || '2026-06-03-main-ddl'}`;
+    const key = `visualSslConfReminderClosed:${box.dataset.confReminder || '2026-06-04-main-ddl'}`;
     try {
       if (localStorage.getItem(key) === '1') box.hidden = true;
     } catch (err) {}

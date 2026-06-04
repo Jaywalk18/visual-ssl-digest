@@ -1,0 +1,606 @@
+# Beyond Encoder Accumulation: Measuring Encoder Roles in Multi-Encoder VLMs
+
+Wei Ding∗
+
+Tsinghua University
+
+Beijing, China
+
+teresading999@gmail.com
+
+Yudong Zhang∗ †
+
+Tsinghua University, Tencent
+
+Beijing, China
+
+zhangyd16@mails.tsinghua.edu.cn
+
+Ruobing Xie
+
+Tencent
+
+Beijing, China
+
+xrbsnowing@163.com
+
+Xingwu Sun
+
+University of Macau
+
+Macau, China
+
+sunxingwu01@gmail.com
+
+Jiansheng Chen
+
+University of Science and Technology Beijing
+
+Beijing, China
+
+jschen@ustb.edu.cn
+
+Yu Wang†
+
+Tsinghua University
+
+Beijing, China
+
+yu-wang@mail.tsinghua.edu.cn
+
+# Abstract
+
+As foundation models scale toward fusing more heterogeneous visual streams, understanding how diverse encoders interact under joint training becomes a prerequisite for principled design. Yet large vision-language models (LVLMs) currently lack the tools to do so, and parameter-efficient encoder configurations remain hard to identify before training. To re-examine encoder roles under joint training, on the 16-benchmark Cambrian-1 suite we retrain and evaluate all 31 non-empty subsets of five common vision encoders under a unified pipeline (≈20k GPU-hours total), and report three findings. First, retraining each subset from scratch reveals encoder rankings that differ from those obtained by masking encoders on a fixed checkpoint, including which encoder ranks first overall. Second, we decompose each encoder’s contribution into two axes, Capacity, the score an encoder reaches on its own, and Necessity, the drop when it is removed from the full pool. The two axes are not interchangeable. Pairing the two highest-Capacity encoders is suboptimal, while pairing a high-Capacity anchor with an adaptive complement matches the full five-encoder model. Adding further encoders beyond this pair yields only marginal gains. Third, at fixed parameter count, per-encoder pre-projector effective rank explains the residual score variation. The strongest pairs combine an anchor whose rank survives joint training with a complement whose rank expands under it, suggesting that higher-rank, less-collapsed projector inputs correspond to a more favorable optimization regime at the encoder–projector interface. Together, the Capacity–Necessity decomposition and the pre-projector rank analysis, along with comprehensive evaluation through retraining, expose a methodological gap in multi-encoder LVLM design, and offer concrete primitives for closing it.
+
+# 1 Introduction
+
+Large Vision-Language Models (LVLMs) [21, 38] have made substantial progress on multimodal tasks, and combining multiple heterogeneous vision encoders has been proposed as one route to further gains. Eagle [30] is a representative example, fusing features from ConvNeXt [23], EVA-02 [5], CLIP [27], Pix2Struct [18], and SAM [15] through channel concatenation, a recipe also adopted by Prismatic VLMs [13] and subsequent channel-concat designs [10]; the channel-concat family is one of three fusion mechanisms surveyed in Section 2, alongside token-sequence concatenation and cross-attention aggregation (which Cambrian-1 [32] and BRAVE [12] adopt). The same trend extends beyond benchmark VLMs to vision-language-action policies [14], and foundation models for world modeling and physical AI [26] continue to fuse heterogeneous perception streams, making principled methodology for evaluating multi-encoder fusion broadly relevant.
+
+Vision encoders are much smaller than the language backbone, so adding them is an attractive design lever if the gains are real. Some studies have attempted to conduct ablation analyses on the roles of different encoders in multi-encoder LVLMs, for example, Wang et al. [35] study this question by masking individual encoder branches at inference time and measuring the resulting performance drops, formalizing the protocol as the Conditional Utilization Rate (CUR). Two limitations remain: this inference-time evaluation departs from the actual training pipeline and tends to produce unreliable conclusions, and no prior method evaluates the full set of encoder subsets. We adopt the five-encoder family as a concrete instance to study.
+
+![](images/c3fe999b184e06c50dd556dd5a07383902004373239693e186bb0dae0b5f4586.jpg)
+
+<details>
+<summary>flowchart</summary>
+
+```mermaid
+graph TD
+    A["Inference-time Masking"] --> B["Train"]
+    C["Training-time Removal"] --> D["Inference"]
+    E["Rank 1: EVA"] --> F["ConvNeXt"]
+    G["Rank 2: EVA"] --> H["Pix2Struct"]
+    I["Rank 3: Pix2Struct"] --> J["CLIP"]
+    K["Rank 4: CLIP"] --> L["SAM"]
+    M["Rank 5: SAM"] --> N["End"]
+```
+</details>
+
+![](images/4e6899224287b3a5f686f1cab17b3c0289c72c8c69714698692ac563d1c42a34.jpg)
+
+<details>
+<summary>line</summary>
+
+| Encoder Setting | Overall score |
+| --------------- | ------------- |
+| Clip            | 54            |
+| ConvNext CL+CN   | 62            |
+| Best 3          | 62            |
+| Best 4          | 62            |
+| All 5           | 62            |
+</details>
+
+![](images/0ee19b40b7ee1eaefbef525dec1bc3d4614b55ea3e06e4ceb79684b3ea5d9468.jpg)
+
+<details>
+<summary>scatter</summary>
+
+| Model       | Capacity | Necessity |
+|-------------|----------|-----------|
+| ConvNeXt    | 0.95     | 2.4       |
+| EVA         | 0.85     | 1.0       |
+| CLIP        | 0.85     | 0.6       |
+| Pix2Struct   | 0.85     | 1.0       |
+| SAM         | 0.65     | 0.3       |
+</details>
+
+Figure 1: Paradigm preview. (A) IM and TR rank a different encoder first: EVA-02 under IM, ConvNeXt under TR. The two protocols also swap at rank 2, while ranks 3 to 5 agree. (B) Best-at-k overall score. With CLIP alone as the baseline and the full pool as the ceiling, ConvNeXt alone closes 85% of the gap and CLIP+ConvNeXt closes 97%. The third and fourth encoders add little. (C) Capacity–Necessity plane. The five encoders fall into the four regions of the plane. The arrow points to the best two-encoder pair, ConvNeXt+CLIP, which is not the pair formed by the two highest-Capacity encoders.
+
+We address these limitations by retraining all 31 encoder subsets under a unified training and evaluation pipeline. Taking the Inference-time Masking (IM) results of Wang et al. as the reference and our Training-time Removal (TR) results as the ground truth, we identify two systematic discrepancies. IM and TR rank a different encoder first, and they disagree on which two-encoder combination is best, in a way that changes the practical recommendation. IM also shows higher cross-subset variance than TR for most encoders, indicating that retraining each subset gives a more stable measurement of individual encoder contributions.
+
+Building on this protocol, three findings shape our recommendation for compact-pool design. First, adding vision encoders yields strongly diminishing returns: a well-chosen two-encoder model recovers nearly all of the full-pool score, while the third and fourth encoders contribute little, and only the fifth recovers a small Vision-Centric margin. Second, encoder contributions decompose along two axes we call Capacity and Necessity. A single attribution score conflates how well an encoder performs alone with how much of its contribution is irreplaceable by the others, and disentangling them yields a five-class encoder taxonomy together with a non-obvious pair-selection rule: pairing the two highest-Capacity encoders is suboptimal. Third, per-encoder pre-projector effective rank explains residual score variation at fixed parameter count, connecting compact-pool selection to a representation-level signal whose change under joint training predicts pair quality. Figure 1 previews the protocol contrast and the two-axis decomposition.
+
+The contributions of this paper are summarized as follows: (1) Attribution. A retrain-and-remove protocol that yields more stable, decision-relevant rankings than inference-time masking, and disagrees with masking on which encoder ranks first. (2) Decomposition. The Capacity and Necessity axes, which expose substitutability that single-score attribution conflates and yield a Universal Core with Adaptive Complement pair-selection pattern that the two-highest-Capacity heuristic misses. (3) Mechanism. Per-encoder pre-projector effective rank as a representation-level selection signal independent of parameter count, supporting an anchor with rank-expanding complement principle for compact-pool design.
+
+# 2 Related Work
+
+Multi-Encoder LVLMs. Multi-encoder LVLMs combine heterogeneous visual streams via three fusion mechanisms [30]: token-sequence concatenation [20, 4], cross-attention aggregation [19, 32, 12, 25], and channel-level concatenation [13, 10]; Tong et al. [32] provide the largest perencoder benchmarking to date. A routing line activates encoders conditionally per input [39, 17, 36], with Zhang et al. [36] showing that one routed encoder can match four fused ones. A complementary direction compresses a multi-encoder pool into one backbone via distillation [28, 8, 2, 34], implicitly assuming every teacher’s contribution is worth preserving. We adopt Eagle-X5 [30] as our testbed (channel-concat keeps token count independent of the active encoder set, making 31-subset enumeration tractable). Relative to all three lines above, our contribution is methodological rather than architectural: the 31-subset audit quantifies how much of each teacher’s contribution actually survives joint training, providing direct guidance for distillation pipelines.
+
+Encoder Attribution and Representation Analysis. Identifying which encoders a multi-encoder LVLM relies on after joint training is a measurement problem. The closest precursor, Wang et al. [35], formalises this for Eagle-X5 via Conditional Utilization Rate (CUR) and Information Gap (IG), computed by Inference-time Masking (IM) on a fixed checkpoint; earlier inference-time subset removal appears in BRAVE [12], and broader feature-attribution methods [7, 33, 31, 24] share the same checkpoint-conditional counterfactual. Compact-pool design instead requires a training-time counterfactual: how the model would have performed had the subset been trained from the start. We retrain on every non-empty subset (31 models for k=5) and show that Inference-time Masking (IM) and Training-time Removal (TR) rank a different encoder first; our Capacity/Necessity decomposition then yields a five-class taxonomy and pair-selection rules the IM protocol cannot recover. To interpret subset-level differences we measure each encoder’s pre-projector representation through its effective rank [29], complemented by Centred Kernel Alignment [16] as a drift-to-correctness consistency check and a PID-based pairwise redundancy diagnostic. We adopt a pool-conditional view of encoder roles, motivated by the Platonic Representation Hypothesis [9], which posits that encoders may converge toward a shared statistical model while differing in how much of it they engage.
+
+# 3 Experimental Setup
+
+# 3.1 Architecture, subsets, and benchmarks
+
+We build on Eagle-X5 [30], which pairs a Vicuna-7B decoder [37] with five vision encoders (ConvNeXt-1024, EVA-02-1024, CLIP-448, Pix2Struct-1024, SAM-1024). Width-aligned features are concatenated channel-wise and mapped to the LLM input space by a shared two-layer MLP projector; combined visual width ranges from 1024 to 7680 across active subsets, while projector output is fixed at 4096. We retrain all 25−1=31 non-empty encoder subsets under a single unified recipe, and evaluate on the 16-benchmark Cambrian-1 suite in four families: General, Knowledge, OCR&Chart, and Vision-Centric. Unless stated otherwise, the overall score is the unweighted 16-task mean and encoders are listed in Capacity-descending order (Section 4). Per-encoder citations, the lattice composition (5 singletons, 10 pairs, 10 triples, 5 quads, 1 full pool), and the per-family benchmark lists are in Appendix A.1. The same 31 models support the protocol audit (Section 3.3), the Capacity and Necessity decomposition (Section 4), and the per-encoder effective rank analysis (Section 5).
+
+Table 1: Best-at-k models, $k = 1 , \ldots , 5 .$ . Each row reports the highest-scoring retrained subset of size k. 
+
+<table><tr><td>Pool (best at k)</td><td>k</td><td>Avg</td><td>Rel. Avg</td><td>Params (M)</td><td>Throughput</td><td>Pareto</td></tr><tr><td>ConvNeXt</td><td>1</td><td>61.30</td><td>0.980</td><td>846</td><td>4.89</td><td>Yes</td></tr><tr><td>CLIP + ConvNeXt</td><td>2</td><td>62.28</td><td>0.996</td><td>1150</td><td>4.71</td><td>Yes</td></tr><tr><td>CLIP + ConvNeXt + Pix2Struct</td><td>3</td><td>62.26</td><td>0.996</td><td>1663</td><td>3.33</td><td>No</td></tr><tr><td>CLIP + ConvNeXt + EVA-02 + Pix2Struct</td><td>4</td><td>62.22</td><td>0.995</td><td>1966</td><td>2.76</td><td>No</td></tr><tr><td>CLIP + ConvNeXt + SAM + EVA-02 + Pix2Struct</td><td>5</td><td>62.54</td><td>1.000</td><td>2274</td><td>2.34</td><td>Yes</td></tr></table>
+
+# 3.2 Attribution protocols: IM and TR
+
+We compare two per-encoder contribution measures. Inference-time Masking (IM) silences one encoder slice on a fixed full-pool checkpoint; we use the zero-input (ZA) CUR values from Wang et al. [35] as our IM reference, so any difference between IM and TR is not confounded by reimplementation. Training-time Removal (TR) computes score $( F ) - \operatorname { s c o r e } ( F \setminus \{ e \} )$ from the leave-one-out row of our retrained subsets. The two protocols answer different counterfactuals—what the model would do if an encoder were silenced at inference, versus what it would have learned if an encoder had never been included—so their numerical magnitudes are not directly commensurate; we restrict the comparison to rankings and to the architectural choices they induce. Each subset is trained once, so conclusions rest on ranking consistency, gap-closure patterns, and per-family signals across the 31 models rather than pointwise significance claims.
+
+# 3.3 Protocol audit: IM and TR lead to different design decisions
+
+The two rankings broadly agree (Spearman ρ=0.82; Figure 2A) but disagree at the most decisionrelevant position: under IM, EVA-02 ranks first and ConvNeXt second, while under TR the order is reversed, with ConvNeXt producing the largest leave-one-out drop. This top-anchor swap propagates into pair selection: taking CLIP-only as a common baseline, the IM top-two heuristic recommends ConvNeXt+EVA-02 (closing ∼91% of the CLIP-to-full gap), whereas the best retrained pair is CLIP+ConvNeXt (closing 97%; Table 1). The pair-level score difference is small in absolute terms, but the per-family decomposition (Figure 2B) supports treating it as a directional design signal.
+
+TR also yields lower across-context variance than IM for four of the five encoders, with Pix2Struct as the only reverse case: evaluation on a fixed checkpoint amplifies noise tied to the specific subset context, while comparison across retrained subsets does not. IM remains useful for quick ranking triage, but compact-pool selection requires the training-time counterfactual that TR provides.
+
+# 4 Capacity and Necessity: Two Axes of Encoder Contribution
+
+# 4.1 Two axes from the retrained subsets
+
+A single attribution score conflates how well an encoder performs alone with how much of its contribution is actually irreplaceable under joint training. We define two axes on the 31 retrained subsets that disentangle these modes. Capacity is the singleton score relative to the full five-encoder model:
+
+$$
+\operatorname{Cap} (e) = \frac {\operatorname{score} (\{e \})}{\operatorname{score} (F)},
+$$
+
+where score(·) is the 16-task average and $F = \{ \mathrm { C o n v N e X t , E V A - } 0 2 , \mathrm { C L I P , P i x 2 S t r u c t , S A M } \}$ .
+
+Necessity is the leave-one-out drop from the full model:
+
+$$
+\mathrm{Nec} (e) = \mathrm{score} (F) - \mathrm{score} (F \setminus \{e \}),
+$$
+
+in absolute percentage points. Nec(e) measures the contribution of encoder e that is not supplied by the other four when all five are trained together.An encoder with high Capacity but low Necessity performs well in isolation but is partly substitutable once the other four are present. Capacity is determined by singleton training, while Necessity depends on the rest of the subset.
+
+![](images/993a9752c484a97ee4ec6c48bf5f5e3ea09b2bd0de75ffad15076d64960b9508.jpg)
+
+<details>
+<summary>bar</summary>
+
+|        | IM   | TR (ours) |
+| ------ | ---- | --------- |
+| EV     | 1#   | 2#        |
+| CN     | 2#   | 1#        |
+| PS     | 3#   | 3#        |
+| CL     | 4#   | 4#        |
+| SA     | 5#   | 5#        |
+</details>
+
+![](images/43fc37dbeb777430423530c62d988cf3b83b757f446d24c43705cab6f6d11a44.jpg)
+
+<details>
+<summary>heatmap</summary>
+
+B
+| | General | Knowledge | OCR&Chart | Vision-Centric |
+|---|---|---|---|---|
+| EV | 5.2x | 5.2x | 2.3x | 17.2x |
+| CN | 0.8x | 2.6x | | 3.4x |
+| PS | 0.6x | 0.5x | 1.2x | 2.4x |
+| CL | 1.2x | 1.1x | 0.7x | 3.6x |
+| SA | 0.5x | 0.7x | 1.1x | 1.9x |
+</details>
+
+Figure 2: Protocol audit. (A) Protocol-internal normalised drops: EVA-02 is rank-1 under IM, ConvNeXt rank-1 under TR (ρ=0.82). EV=EVA-02, CN=ConvNeXt, CL=CLIP, PS=Pix2Struct, SA=SAM. (B) Per-encoder, per-family $\log _ { 1 0 } ( \mathrm { I M } / \mathrm { T R } )$ ; only the largest outliers are annotated.
+
+Table 2: Per-encoder role labels under the Capacity and Necessity decomposition. 
+
+<table><tr><td>Encoder</td><td>Cap</td><td>Nec</td><td>Role label</td><td>Deployment Prescription</td></tr><tr><td>ConvNeXt</td><td>0.980</td><td>2.44</td><td>Universal Core</td><td>Default anchor; positive presence effect across families.</td></tr><tr><td>CLIP</td><td>0.869</td><td>0.59</td><td>Adaptive Complement</td><td>Add to anchor; joint training expands rank.</td></tr><tr><td>EVA-02</td><td>0.917</td><td>1.02</td><td>Vision-Centric Specialist</td><td>Alternative anchor for vision-centric deployment.</td></tr><tr><td>Pix2Struct</td><td>0.840</td><td>1.02</td><td>Niche Specialist</td><td>Add for OCR-heavy deployment.</td></tr><tr><td>SAM</td><td>0.706</td><td>0.32</td><td>Replaceable</td><td>First removal candidate in broad pool.</td></tr></table>
+
+# 4.2 Per-encoder values, averaged and by family
+
+Table 2 reports per-encoder Capacity and Necessity values; we highlight the qualitative patterns. ConvNeXt leads on both axes; EVA-02 has high Capacity but moderate Necessity; CLIP has moderate Capacity and the lowest Necessity among the top three. Per-family Capacity reveals that ConvNeXt remains uniformly strong, while CLIP, EVA-02, and Pix2Struct each show family-specific behavior that the cross-family average hides.
+
+The Knowledge family is a caveat: the strong LLM prior on these tasks inflates Knowledge Capacity for every encoder, with even SAM scoring near the full pool ceiling, suggesting visual features contribute little on these benchmarks. We therefore exclude Knowledge from all per-family analyses in the rest of the paper, though figures still show it for completeness. Figure 3 summarizes the main result; full per-encoder family profiles are in Appendix A.3.
+
+# 4.3 Per-encoder roles and pair selection
+
+Each encoder receives a role label combining its Capacity and Necessity values with per-family behavior (Table 2). ConvNeXt is the Universal Core, uniformly strong across families. CLIP is an Adaptive Complement: moderate Capacity, but the only encoder whose effective rank grows under joint training (Section 5). EVA-02 is a Vision-Centric Specialist whose Necessity depends strongly on the rest of the subset, and the best alternative primary for Vision-Centric tasks. Pix2Struct is a Niche Specialist concentrated on OCR&Chart, and SAM is Replaceable.
+
+The best two-encoder model combines CLIP with ConvNeXt rather than ConvNeXt with EVA-02, even though EVA-02 has higher singleton Capacity than CLIP; per-pair overall and per-family scores for all 10 two-encoder subsets are listed in Appendix Table 3. Selecting the two highest-Capacity encoders is therefore not optimal, even within this five-encoder set. The rule consistent with our data is instead to combine a high-Capacity primary encoder with a second encoder that is minimally redundant with the first under joint training. Section 5 measures this non-redundancy via the second encoder’s effective rank growth in the trained pair.
+
+![](images/a398a3a60282adbf0a7eb738af7960d4b92200bcaa46c5f826c054ab423ba403.jpg)  
+Figure 3: Capacity and Necessity. (A) The Capacity and Necessity plane. Background fills mark the four coarse regions (Universal Core, Context-dependent, Capacity Specialist, and Low-value) defined by the $\mathrm { C a p { = } 0 . 8 5 }$ and Nec=0.80 pp dotted lines; marker shape and color encode the per-encoder role labels in Table 2, which refine the coarse regions using per-family behavior and are therefore not a one-to-one map. (B) Per-family Capacity per encoder (singleton score normalised by the full pool score); the dashed line marks the full-model ceiling. (C) Per-family Necessity per encoder (leave-one-out drop in pp), with the full y-range shown. Knowledge bars (green, K) reflect the LLM prior rather than visual attribution; the interpretive focus is on the other three families.
+
+# 4.4 Marginal contribution across subset sizes
+
+The marginal contribution at size k is $\Delta _ { k } = \mathrm { b e s t } ( k ) - \mathrm { b e s t } ( k - 1 )$ , where best(k) is the highestscoring subset of k encoders (the optimum at each k, not a greedy extension of best(k − 1)).
+
+Adding CLIP to ConvNeXt yields the largest marginal gain. The third and fourth encoders contribute essentially zero (Figure 4C), indicating saturation rather than monotonic gain. The full five-encoder model recovers a small Vision-Centric margin over the best four-encoder subset, which we report as a family-specific direction rather than a significance claim.
+
+CLIP combined with ConvNeXt closes 97% of the CLIP-to-full gap on the overall score; on OCR&Chart the pair actually matches or slightly exceeds the full model, indicating early saturation on this family. Vision-Centric does not saturate until k=5. (Knowledge is omitted from Figure 4B because its CLIP-to-full denominator is near zero.) The number of encoders to include is therefore set by the most demanding task family in the target workload, and Section 5 asks what these saturating subsets share at the representation level.
+
+The right choice of encoders therefore depends jointly on the available pool and the target task family: ConvNeXt alone is the strongest singleton, CLIP combined with ConvNeXt is the best pair, and additional encoders are justified mainly by Vision-Centric requirements. Encoder parameter count remains a useful but coarse predictor; Section 5 attributes the residual variation at fixed parameter count to per-encoder pre-projector effective rank.
+
+# 5 A Rank-Based View of Encoder Composition
+
+Sections 3.3 and 4 established which encoder pools win and what their roles are; we now ask what they share at the representation level. For each retrained checkpoint we hook the shared projector and, for every active encoder, compute the effective rank of its own channel slice of the projector input $( r _ { \mathrm { e f f } } ( \bar { X ( \cdot ) } = \mathrm { e x p } ( - \sum _ { i } p _ { i } \mathrm { l o g } \bar { p } _ { i } )$ with $\begin{array} { r } { \dot { p } _ { i } = s _ { i } ^ { 2 } / \sum _ { i } s _ { j } ^ { 2 } \ [ 2 9 ] \rangle } \end{array}$ ). We measure on the projector input rather than its output because the post-projector 4096-dim space is shared and cannot be cleanly decomposed back to individual encoders. Three regimes emerge as pool size grows, each with a different operative rank quantity (Section 5.1); rank does not displace parameter count as a global predictor of score, but it captures representational structure that parameter count alone misses (Section 5.2).
+
+![](images/0922e293e52545a8235d1d5fc73d74f51ad97e300b372cf8ba93e3e4dc0c6ee6.jpg)
+
+<details>
+<summary>scatter</summary>
+
+| Encoder params (M) | Overall score | k   |
+| ------------------ | ------------- | --- |
+| ~300               | ~45           | 1   |
+| ~400               | ~55           | 1   |
+| ~500               | ~58           | 2   |
+| ~600               | ~60           | 2   |
+| ~700               | ~61           | 3   |
+| ~800               | ~62           | 3   |
+| ~900               | ~63           | 4   |
+| ~1000              | ~63           | 4   |
+| ~1100              | ~63           | 4   |
+| ~1200              | ~63           | 4   |
+| ~1300              | ~63           | 4   |
+| ~1400              | ~63           | 4   |
+| ~1500              | ~63           | 4   |
+| ~1600              | ~63           | 4   |
+| ~1700              | ~63           | 4   |
+| ~1800              | ~63           | 4   |
+| ~1900              | ~63           | 4   |
+| ~2000              | ~63           | 4   |
+| ~2100              | ~63           | 4   |
+| ~2200              | ~63           | 4   |
+| ~2300              | ~63           | 4   |
+| ~2400              | ~63           | 4   |
+| ~2500              | ~63           | 4   |
+| ~2600              | ~63           | 4   |
+| ~2700              | ~63           | 4   |
+| ~2800              | ~63           | 4   |
+| ~2900              | ~63           | 4   |
+| ~3000              | ~63           | 4   |
+| ~3100              | ~63           | 4   |
+| ~3200              | ~63           | 4   |
+| ~3300              | ~63           | 4   |
+| ~3400              | ~63           | 4   |
+| ~3500              | ~63           | 4   |
+| ~3600              | ~63           | 4   |
+| ~3700              | ~63           | 4   |
+| ~3800              | ~63           | 4   |
+| ~3900              | ~63           | 4   |
+| ~4000              | ~63           | 4   |
+| ~4100              | ~63           | 4   |
+| ~4200              | ~63           | 4   |
+| ~4300              | ~63           | 4   |
+| ~4400              | ~63           | 4   |
+| ~4500              | ~63           | 4   |
+| ~4600              | ~63           | 4   |
+| ~4700              | ~63           | 4   |
+| ~4800              | ~63           | 4   |
+| ~4900              | ~63           | 4   |
+| ~5000              | ~63           | 4   |
+| ~5100              | ~63           | 4   |
+| ~5200              | ~63           | 4   |
+| ~5300              | ~63           | 4   |
+| ~5400              | ~63           | 4   |
+| ~5500              | ~63           | 4   |
+| ~5600              | ~63           | 4   |
+| ~5700              | ~63           | 4   |
+| ~5800              | ~63           | 4   |
+| ~5900              | ~63           | 4   |
+| ~6000              | ~63           | 4   |
+| ~6100              | ~63           | 4   |
+| ~6200              | ~63           | 4   |
+| ~6300              | ~63           | 4   |
+| ~6400              | ~63           | 4   |
+| ~6500              | ~63           | 4   |
+| ~6600              | ~63           | 4   |
+| ~6700              | ~63           | 4   |
+| ~6800              | ~63           | 4   |
+| ~6900              | ~63           | 4   |
+| ~7000              | ~63           | 4   |
+| ~7100              | ~63           | 4   |
+| ~7200              | ~63           | 4   |
+| ~7300              | ~63           | 4   |
+| ~7400              | ~63           | 4   |
+| ~7500              | ~63           | 4   |
+| ~7600              | ~63           | 4   |
+| ~7700              | ~63           | 4   |
+| ~7800              | ~63           | 4   |
+| ~7900              | ~63           | 4   |
+| ~8000              | ~63           | 4   |
+| ~8100              | ~63           | 4   |
+| ~8200              | ~63           | 4   |
+| ~8300              | ~63           | 4   |
+| ~8400              | ~63           | 4   |
+| ~8500              | ~63           | 4   |
+| ~8600              | ~63           | 4   |
+| ~8700              | ~63           | 4   |
+| ~8800              | ~63           | 4   |
+| ~8900              | ~63           | 4   |
+| ~9000              | ~63           | 4   |
+| ~9100              | ~63           | 4   |
+| ~9200              | ~63           | 4   |
+| ~9300              | ~63           | 4   |
+| ~9400              | ~63           | 4   |
+| ~9500              | ~63           | 4   |
+| ~9600              | ~63           | 4   |
+| ~9700              | ~63           | 4   |
+| ~9800              | ~63           | 4   |
+| ~9900              | ~63           | 4   |
+| >1555              | >55           | Full|
+* indicates the total score for each parameter is calculated based on the sum of all scores. The chart includes a legend defining the parameter values.
+</details>
+
+![](images/8133220da7d6a6012e659534dc732e752dc0da31ec09f07a125c0b5d601dcc19.jpg)
+
+<details>
+<summary>bar</summary>
+
+| Category | Overall | OCR & Chart | General | Vision-Centric |
+| -------- | ------- | ----------- | ------- | -------------- |
+| EV       | 35      | 45          | -90     | 50             |
+| CL+PS    | 65      | 75          | -5      | 45             |
+| CN       | 85      | 100         | 15      | 40             |
+| CL+CN    | 100     | 100         | 60      | 80             |
+| Full     | 100     | 100         | 100     | 100            |
+</details>
+
+![](images/a7d95ed73424081ccdcdef4ca927c9ff157995243925d126532a23bd6294f9e5.jpg)
+
+<details>
+<summary>bar</summary>
+
+Best-k gap closure
+| k | Best-k gap closure |
+|---|---|
+| k=1 | 85 |
+| k=2 | 97 |
+| k=3 | 97 |
+| k=4 | 96 |
+| k=5 | 100 |
+</details>
+
+Figure 4: Two encoders are sufficient for most of the full-pool score. (A) Pareto frontier. Overall score against encoder parameter count for all 31 subsets, colored by size k. ConvNeXt alone, the pair of CLIP and ConvNeXt, and the full pool sit on the Pareto frontier; the three-encoder and four-encoder pools below them are dominated. Per-subset parameter counts and throughput are listed in Appendix Table 5. (B) Per-family gap closure for representative pools (CLIP as common baseline). The pair of CLIP and ConvNeXt closes at least 95% General and OCR & Chart, but Vision-Centric keeps benefiting up to the full pool. Knowledge omitted (denominator near zero). (C) Best-at-k gap closure. Most of the gap is closed at k=2; k=3 and k=4 plateau; k=5 recovers a small additional margin.
+
+![](images/7e130d8e14cb0b6755e6b9e02ba1b6f760ced0854223b1e445419de9000ff9f9.jpg)
+
+<details>
+<summary>scatter</summary>
+
+| Label | Rank (dims) | Score |
+|---|---|---|
+| SA | 18 | 44 |
+| PS | 40 | 52 |
+| CL | 55 | 54 |
+| EV | 45 | 57 |
+| CN | 55 | 61 |
+</details>
+
+![](images/0a19d4e6a9c5d31ca82c6de9fa44bfd05a4bc1282bb1a14ca8064d4fab1fc3ef.jpg)
+
+<details>
+<summary>scatter</summary>
+
+| Partner Δrank (dims) | Score | Anchor |
+| --------------------- | ----- | ------ |
+| -20                   | 59    | EV     |
+| -10                   | 61    | CN     |
+| 0                     | 57    | PS     |
+| 0                     | 61    | CL+CN  |
+</details>
+
+![](images/cef52d4d49c4e048d6f0dd8b27fc58e67912e6acc46a7f83e8475e5205cb6f46.jpg)
+
+<details>
+<summary>line</summary>
+
+| Pool size | Mean rank | Score |
+| --------- | --------- | ----- |
+| k=1       | 54        | 38    |
+| k=2       | 58        | 54    |
+| k=3       | 53        | 53    |
+| k=4       | 49        | 52    |
+| k=5       | 32        | 58    |
+</details>
+
+![](images/c019bb6ba34266deb1225c082b1aa46b17d9eb63fe7f049bf556ce1ab01b2bd3.jpg)
+
+<details>
+<summary>scatter</summary>
+
+| Total rank (dims) | Score | k   |
+| ----------------- | ----- | --- |
+| ~10^1             | 45    | 1   |
+| ~10^2             | 55    | 2   |
+| ~10^2             | 60    | 3   |
+| ~10^2             | 62    | 4   |
+| ~10^2             | 63    | 5   |
+</details>
+
+Figure 5: Per-encoder pre-projector effective rank tracks score across three regimes. (A) Singleton rank predicts singleton score (Pearson r=0.89). (B) Within ConvNeXt-anchored pairs, partner ∆rank (the complement’s rank in the pair minus its singleton baseline) tracks pair score. CLIP shows the only substantial rank expansion under joint training, and CLIP+ConvNeXt tops the pair tier. (C) Best-at-k trajectory: overall score plateaus at the cardinality where mean rank stops growing. (D) Pool-level: score against $\sum _ { e } r _ { e }$ (Pearson $r { = } 0 . 6 7 )$ . Pools at similar aggregate rank diverge by whether the budget is text-aligned or fragmented across mismatched objectives.
+
+# 5.1 Three regimes
+
+The headline finding is that the predictor of score shifts as the pool grows: from a singleton’s own rank, to the complement’s rank change under joint training, to a saturating budget shared across encoders (Figure 5).
+
+Single encoder: rank predicts score. The projector input is one encoder’s slice, so per-encoder rank reads out representational diversity in that encoder’s native subspace; the correspondence to singleton score is tight (Pearson $r { = } 0 . 8 9$ , Panel A). Capacity (Section 4) is essentially the score axis of this scatter normalised by the full-pool ceiling.
+
+![](images/49063742c5f12f2fcbb4b66c6b9563265671e3cc3d5a1dea7f64b827d25a3297.jpg)
+
+<details>
+<summary>line</summary>
+
+| Task family | ConvNeXt | CLIP | EVA-02 | Pix2Struct | SAM |
+| ----------- | -------- | ---- | ------ | ---------- | --- |
+| Know        | 25       | 30   | 30     | 35         | 15  |
+| OCR         | 50       | 50   | 35     | 45         | 18  |
+| Gen         | 60       | 65   | 55     | 42         | 22  |
+| Vis         | 80       | 75   | 60     | 35         | 22  |
+</details>
+
+![](images/a2fccccf77eeba32365ea4650e18306d716c33705fad5570c503813686c6db7a.jpg)
+
+<details>
+<summary>scatter</summary>
+
+| Category       | Mean rank demand (dims) | Saturation k |
+| -------------- | ----------------------- | ------------ |
+| Vision-Centric | 50                      | 5            |
+| General        | 48                      | 2            |
+| OCR & Chart    | 39                      | 2            |
+| Knowledge      | 26                      | 1            |
+</details>
+
+Figure 6: Task families differ in rank demand. (A) Singleton effective rank by family. Knowledge engages little rank across all encoders (LLM-prior dominated); Vision-Centric demands the most. (B) Family rank demand against saturation k (smallest pool whose best-at-k family score reaches 99% of the full-pool family score). Vision-Centric is the only family whose demand exceeds every singleton’s budget.
+
+Two encoders: the operative quantity is ∆rank, not the singleton value. Joint training begins to reshape representations, and the predictor switches from the singleton level to its change. Within ConvNeXt-anchored pairs, partner ∆rank tracks pair score, and the complement whose rank expands under joint training (CLIP) wins—even though the alternative complement (EVA-02) has higher singleton Capacity. What matters at the pair level is not the level of rank an encoder brings, but whether that rank survives or grows once it shares the projector with another encoder.
+
+Multiple encoders: the projector budget saturates. The shared projector compresses a varying input width into a fixed 4096-dim output, so as more encoders share that budget, joint training is forced to push most encoders’ slices toward lower-rank representations: the mean per-encoder rank drops by several dimensions per addition (Appendix Table 6). This supplies the representation-level mechanism behind the saturation in Section 4: best-at-k score plateaus at the same cardinality where mean rank stops growing.
+
+At the pool level (Panel D), score correlates with total per-encoder effective rank at $r { = } 0 . 6 7$ , with a ceiling near the two-encoder saturation point. Pools at similar aggregate rank can sit near the frontier or well below it depending on whether the rank budget is text-aligned or fragmented across mismatched objectives. Rank quantity is therefore necessary but not sufficient: the budget must also be allocated across encoders whose representations remain compatible under joint training.
+
+# 5.2 Rank versus parameter count
+
+These rank patterns are not simply a stand-in for parameter count, though the two carry partly overlapping information. The cleanest isolation is the matched-parameter singleton control: CLIP, EVA-02, and SAM all have roughly 305 M parameters but span a wide range of effective rank, and their singleton scores differ by more than ten points—a spread tracked by rank but not by parameter count. Within a fixed cardinality, parameters remain the stronger residual predictor. We therefore use rank as a complementary descriptive lens grounded in representation geometry, not as an independent scaling dimension.
+
+# 5.3 Task families differ in rank demand
+
+The family-asymmetric saturation observed in Section 4—OCR&Chart saturating with two encoders, Vision-Centric continuing through five—has a representation-level counterpart in rank demand. Singleton pre-projector rank is low on KNOWLEDGE (LLM-prior dominated) and highest on VISION-CENTRIC; only CONVNEXT and CLIP have the headroom to reach high rank there, while EVA-02, PIX2STRUCT, and SAM plateau lower. Rank demand and family saturation therefore co-vary (Figure 6 B): families met by a single high-rank encoder (OCR&CHART, GENERAL) saturate with two encoders, while VISION-CENTRIC—the only family whose demand exceeds any singleton’s budget—keeps benefiting from larger pools. The cardinality decision in Section 4 thus has a clean representation-level reading: aggregate enough rank to clear the highest family-level demand, and no more.
+
+# 5.4 Anchor with rank-expanding complement
+
+Putting the three regimes together: strong compact pools combine (i) a high-Capacity anchor whose own rank survives joint training intact, and (ii) a complement whose rank grows under joint training, expanding its projector-input subspace rather than compressing it. In our five-encoder pool, CONVNEXT is the only encoder satisfying (i)—its pre-projector rank shifts only marginally across its four pairings—and CLIP is the only one satisfying (ii): partner ∆rank when CLIP serves as the complement is positive and substantially larger than for any other encoder (Appendix Table 6). No other encoder satisfies both, which is why CLIP+ConvNeXt sits alone at the top of the pair tier.
+
+This is a descriptive heuristic for the Eagle-X5 pool, not a derived selection rule for unseen pools; whether rank expansion is a generic property of contrastively pretrained, text-aligned complements is left for future work. Sample-level drift-to-correctness and IM-flip negative-control checks (Appendix A.5) are directionally consistent with the synthesis.
+
+# 6 Discussion
+
+Encoder roles are properties of joint training. In a multi-encoder LVLM, an encoder’s contribution is a property of joint training, not of the encoder in isolation. IM and TR rank a different encoder first (Section 3.3); the best two-encoder pool combines an anchor with an adaptive complement rather than the two highest-Capacity encoders (Section 4); and pair quality is predicted by the complement’s rank change under joint training, not by its singleton value (Section 5).
+
+Implications for multi-encoder distillation. The Capacity and Necessity decomposition together with the rank-budget view predicts when distillation methods [28, 2, 34] should help. Compressing a Replaceable encoder should preserve performance; a Niche Specialist preserves its family only if the student carries that capability. The Adaptive Complement is the hard case: its contribution comes from rank that grows under joint training, an encoder–projector interaction a frozen distilled student cannot reproduce.
+
+CKA-based representational diagnostics. Three supplementary CKA analyses reinforce the main findings: pretrain-to-finetune drift on correctly answered queries is lower for CLIP and EVA-02 than for Pix2Struct and SAM (Appendix A.5), matching their contrasting roles; projector CKA between retrained models grows with the number of shared encoders (Appendix A.6), confirming that pool composition rather than random initialisation drives the projector’s fusion geometry; and a proxy PID decomposition shows pairwise complementarity is largely additive (Appendix A.7), consistent with encoders contributing approximately independent subspace slices.
+
+Rank and optimisation geometry. The pattern of best pairs combining an anchor with a rankexpanding complement (Section 5.4) admits a representation-level reading: a higher-rank projector input may correspond to a more well-conditioned forward signal, in line with prior work connecting higher effective rank of intermediate representations to more favourable optimisation dynamics [3, 6]; the same geometric intuition appears on the optimiser side in recent work on orthogonalised gradient updates [11, 22]. We do not directly measure optimiser-level quantities, so this remains a representation-level correlate left for future investigation.
+
+A methodological view, and what future fusion architectures will need. The findings above expose a methodological gap in multi-encoder LVLM design: how to attribute, decompose, and ablate encoder contributions in ways that reflect joint training rather than fixed-checkpoint approximations. As foundation models for world modeling [26] and self-supervised video world models [1] fuse more heterogeneous perception streams, full enumeration retraining becomes infeasible, and the open question becomes how to estimate Capacity, Necessity, and projector-input rank dynamics with minimal retraining—for instance via lightweight surrogates from pretrained encoders’ pre-projector geometry (mutual rank, CKA, PID), calibrated against a reference like ours. Scope and limitations of the present study are discussed in Appendix A.8.
+
+# 7 Conclusion
+
+This paper conducts retraining-based ablation experiments on encoder combinations in multi-encoder LVLMs to analyze the functional roles of individual encoders. Meanwhile, from the perspectives of capacity, necessity, and effective rank, it further proposes practical strategies for encoder selection. Future foundation models for world modeling and embodied perception will inevitably fuse heterogeneous perceptual information flows. Our method is not only applicable to multi-encoder LVLMs, but also contributes to the development and optimization of future world modeling models.
+
+# References
+
+[1] Mahmoud Assran, Adrien Bardes, David Fan, Quentin Garrido, Russell Howes, Mojtaba Komeili, Matthew Muckley, Ammar Rizvi, Claire Roberts, Koustuv Sinha, et al. V-JEPA 2: Self-supervised video models enable understanding, prediction and planning. arXiv preprint arXiv:2506.09985, 2025.   
+[2] Jiajun Cao, Yuan Zhang, Tao Huang, Ming Lu, Qizhe Zhang, Ruichuan An, Ningning Ma, and Shanghang Zhang. MoVE-KD: Knowledge distillation for VLMs with mixture of visual encoders. In IEEE/CVF Conference on Computer Vision and Pattern Recognition (CVPR), 2025. arXiv:2501.01709.   
+[3] Hadi Daneshmand, Jonas Kohler, Francis Bach, Thomas Hofmann, and Aurelien Lucchi. Batch normalization provably avoids rank collapse for randomly initialised deep networks. In Advances in Neural Information Processing Systems (NeurIPS), 2020.   
+[4] Xiaoran Fan, Tao Ji, Changhao Jiang, Shuo Li, Senjie Jin, Sirui Song, Junke Wang, Boyang Hong, Lu Chen, Guodong Zheng, et al. MouSi: Poly-visual-expert vision-language models, 2024.   
+[5] Yuxin Fang, Quan Sun, Xinggang Wang, Tiejun Huang, Xinlong Wang, and Yue Cao. EVA-02: A visual representation for neon genesis. Image and Vision Computing, 149:105171, 2024. arXiv:2303.11331.   
+[6] Ruili Feng, Kecheng Zheng, Yukun Huang, Deli Zhao, Michael Jordan, and Zheng-Jun Zha. Rank diminishing in deep neural networks. In Advances in Neural Information Processing Systems (NeurIPS), 2022.   
+[7] Stefan Heimersheim and Neel Nanda. How to use and interpret activation patching, 2024.   
+[8] Greg Heinrich, Mike Ranzinger, Hongxu, Yin, Yao Lu, Jan Kautz, Andrew Tao, Bryan Catanzaro, and Pavlo Molchanov. Radiov2.5: Improved baselines for agglomerative vision foundation models, 2025. URL https://arxiv.org/abs/2412.07679.   
+[9] Minyoung Huh, Brian Cheung, Tongzhou Wang, and Phillip Isola. The platonic representation hypothesis. In International Conference on Machine Learning (ICML), 2024. arXiv:2405.07987.   
+[10] Dongsheng Jiang, Yuchen Liu, Songlin Liu, Jin’e Zhao, Hao Zhang, Zhen Gao, Xiaopeng Zhang, Jin Li, and Hongkai Xiong. From CLIP to DINO: Visual encoders shout in multi-modal large language models, 2024.   
+[11] Keller Jordan, Yuchen Jin, Vlado Boza, Jiacheng You, Franz Cesista, Laker Newhouse, and Jeremy Bernstein. Muon: An optimizer for hidden layers in neural networks. https://kell erjordan.github.io/posts/muon/, 2024.   
+[12] Oguzhan Fatih Kar, Alessio Tonioni, Petra Poklukar, Achin Kulshrestha, Amir Zamir, and ˘ Federico Tombari. BRAVE: Broadening the visual encoding of vision-language models. In European Conference on Computer Vision (ECCV), 2024. Oral; arXiv:2404.07204.   
+[13] Siddharth Karamcheti, Suraj Nair, Ashwin Balakrishna, Percy Liang, Thomas Kollar, and Dorsa Sadigh. Prismatic VLMs: Investigating the design space of visually-conditioned language models. In International Conference on Machine Learning (ICML), 2024. arXiv:2402.07865.   
+[14] Moo Jin Kim, Karl Pertsch, Siddharth Karamcheti, Ted Xiao, Ashwin Balakrishna, Suraj Nair, Rafael Rafailov, Ethan Foster, Grace Lam, Pannag Sanketi, et al. OpenVLA: An open-source vision-language-action model. arXiv preprint arXiv:2406.09246, 2024.   
+[15] Alexander Kirillov, Eric Mintun, Nikhila Ravi, Hanzi Mao, Chloe Rolland, Laura Gustafson, Tete Xiao, Spencer Whitehead, Alexander C. Berg, Wan-Yen Lo, Piotr Dollár, and Ross Girshick. Segment anything. In IEEE/CVF International Conference on Computer Vision (ICCV), pages 4015–4026, 2023.   
+[16] Simon Kornblith, Mohammad Norouzi, Honglak Lee, and Geoffrey Hinton. Similarity of neural network representations revisited. In International Conference on Machine Learning (ICML), 2019. arXiv:1905.00414.   
+[17] Byung-Kwan Lee, Beomchan Park, Chae Won Kim, and Yong Man Ro. MoAI: Mixture of all intelligence for large language and vision models. In European Conference on Computer Vision (ECCV), 2024. arXiv:2403.07508.
+
+[18] Kenton Lee, Mandar Joshi, Iulia Turc, Hexiang Hu, Fangyu Liu, Julian Eisenschlos, Urvashi Khandelwal, Peter Shaw, Ming-Wei Chang, and Kristina Toutanova. Pix2Struct: Screenshot parsing as pretraining for visual language understanding. In International Conference on Machine Learning (ICML), 2023. arXiv:2210.03347.   
+[19] Yanwei Li, Yuechen Zhang, Chengyao Wang, Zhisheng Zhong, Yixin Chen, Ruihang Chu, Shaoteng Liu, and Jiaya Jia. Mini-Gemini: Mining the potential of multi-modality vision language models, 2024.   
+[20] Ziyi Lin, Dongyang Liu, Renrui Zhang, Peng Gao, Longtian Qiu, Han Xiao, Han Qiu, Wenqi Shao, Keqin Chen, Jiaming Han, Siyuan Huang, Yichi Zhang, Xuming He, Yu Qiao, and Hongsheng Li. Sphinx: A mixer of weights, visual embeddings and image scales for multimodal large language models. In Aleš Leonardis, Elisa Ricci, Stefan Roth, Olga Russakovsky, Torsten Sattler, and Gül Varol, editors, Computer Vision – ECCV 2024, pages 36–55, Cham, 2025. Springer Nature Switzerland. ISBN 978-3-031-73033-7.   
+[21] Haotian Liu, Chunyuan Li, Qingyang Wu, and Yong Jae Lee. Visual instruction tuning. In Advances in Neural Information Processing Systems (NeurIPS), 2023.   
+[22] Jingyuan Liu, Jianlin Su, Xingcheng Yao, Zhejun Jiang, Guokun Lai, Yulun Du, et al. Muon is scalable for LLM training. arXiv preprint arXiv:2502.16982, 2025.   
+[23] Zhuang Liu, Hanzi Mao, Chao-Yuan Wu, Christoph Feichtenhofer, Trevor Darrell, and Saining Xie. A ConvNet for the 2020s. In IEEE/CVF Conference on Computer Vision and Pattern Recognition (CVPR), pages 11976–11986, 2022.   
+[24] Scott M. Lundberg and Su-In Lee. A unified approach to interpreting model predictions. In Advances in Neural Information Processing Systems (NeurIPS), 2017. arXiv:1705.07874.   
+[25] Gen Luo, Yiyi Zhou, Yuxin Zhang, Xiawu Zheng, Xiaoshuai Sun, and Rongrong Ji. Feast your eyes: Mixture-of-resolution adaptation for multimodal large language models. In International Conference on Learning Representations (ICLR), 2025. arXiv:2403.03003.   
+[26] NVIDIA. Cosmos world foundation model platform for physical AI. arXiv preprint arXiv:2501.03575, 2025.   
+[27] Alec Radford, Jong Wook Kim, Chris Hallacy, Aditya Ramesh, Gabriel Goh, Sandhini Agarwal, Girish Sastry, Amanda Askell, Pamela Mishkin, Jack Clark, Gretchen Krueger, and Ilya Sutskever. Learning transferable visual models from natural language supervision. In International Conference on Machine Learning (ICML), pages 8748–8763, 2021.   
+[28] Mike Ranzinger, Greg Heinrich, Jan Kautz, and Pavlo Molchanov. AM-RADIO: Agglomerative vision foundation model – reduce all domains into one. In IEEE/CVF Conference on Computer Vision and Pattern Recognition (CVPR), pages 12490–12500, 2024. arXiv:2312.06709.   
+[29] Olivier Roy and Martin Vetterli. The effective rank: A measure of effective dimensionality. In European Signal Processing Conference (EUSIPCO), pages 606–610, 2007.   
+[30] Min Shi, Fuxiao Liu, Shihao Wang, Shijia Liao, Subhashree Radhakrishnan, Yilin Zhao, De-An Huang, Hongxu Yin, Karan Sapra, Yaser Yacoob, Humphrey Shi, Bryan Catanzaro, Andrew Tao, Jan Kautz, Zhiding Yu, and Guilin Liu. Eagle: Exploring the design space for multimodal LLMs with mixture of encoders. In International Conference on Learning Representations (ICLR), 2025. Spotlight; arXiv:2408.15998.   
+[31] Mukund Sundararajan, Ankur Taly, and Qiqi Yan. Axiomatic attribution for deep networks. In International Conference on Machine Learning (ICML), 2017. arXiv:1703.01365.   
+[32] Shengbang Tong, Ellis Brown, Penghao Wu, Sanghyun Woo, Manoj Middepogu, Sai C Akula, Jihan Yang, Shusheng Yang, Adithya Iyer, Xichen Pan, et al. Cambrian-1: A fully open, vision-centric exploration of multimodal llms. Advances in Neural Information Processing Systems, 37:87310–87356, 2024.   
+[33] Kevin Wang, Alexandre Variengien, Arthur Conmy, Buck Shlegeris, and Jacob Steinhardt. Interpretability in the wild: A circuit for indirect object identification in GPT-2 small. In International Conference on Learning Representations (ICLR), 2023. arXiv:2211.00593.   
+[34] Yimu Wang, Mozhgan Nasr Azadani, Sean Sedwards, and Krzysztof Czarnecki. HAWAII: Hierarchical visual knowledge transfer for efficient vision-language models. In Advances in Neural Information Processing Systems (NeurIPS), 2025. arXiv:2506.19072.
+
+[35] Yizhou Wang, Song Mao, Yang Chen, Yufan Shen, Pinlong Cai, Ding Wang, Guohang Yan, Zhi Yu, Yinqiao Yan, Xuming Hu, and Botian Shi. Investigating redundancy in multimodal large language models with multiple vision encoders. In International Conference on Learning Representations (ICLR), 2026. arXiv:2507.03262.   
+[36] Tianyu Zhang, Suyuchen Wang, Chao Wang, Juan Rodriguez, Ahmed Masry, Xiangru Jian, Yoshua Bengio, and Perouz Taslakian. SCOPE: Selective cross-modal orchestration of visual perception experts, 2025.   
+[37] Lianmin Zheng, Wei-Lin Chiang, Ying Sheng, Siyuan Zhuang, Zhanghao Wu, Yonghao Zhuang, Zi Lin, Zhuohan Li, Dacheng Li, Eric P. Xing, Hao Zhang, Joseph E. Gonzalez, and Ion Stoica. Judging LLM-as-a-judge with MT-Bench and chatbot arena. In Advances in Neural Information Processing Systems (NeurIPS), Datasets and Benchmarks Track, 2023.   
+[38] Deyao Zhu, Jun Chen, Xiaoqian Shen, Xiang Li, and Mohamed Elhoseiny. MiniGPT-4: Enhancing vision-language understanding with advanced large language models. arXiv preprint arXiv:2304.10592, 2023.   
+[39] Zhuofan Zong, Bingqi Ma, Dazhong Shen, Guanglu Song, Hao Shao, Dongzhi Jiang, Hongsheng Li, and Yu Liu. MoVA: Adapting mixture of vision experts to multimodal context. In Advances in Neural Information Processing Systems (NeurIPS), 2024. arXiv:2404.13046.
+
+# A Additional Results
+
+# A.1 Detailed experimental setup
+
+Encoders. The five vision encoders in Eagle-X5 [30] are ConvNeXt-1024 [23], EVA-02-1024 [5], CLIP-448 [27], Pix2Struct-1024 [18], and SAM-1024 [15].
+
+Subset enumeration. The non-empty subsets comprise 5 singletons, 10 pairs, 10 triples, 5 fourencoder subsets, and the full five-encoder pool. All are retrained from scratch under an identical recipe.
+
+Benchmark families. Following the standard Cambrian-1 partition: General = {MME-Perception, MMBench-EN, SeedBench, GQA}; Knowledge = {ScienceQA, MMMU-val, MathVista, AI2D}; OCR&Chart = {OCRBench, ChartQA, TextVQA, DocVQA}; Vision-Centric = {MMVP, Real-WorldQA, CV-Bench-2D, CV-Bench-3D}. The overall score in the main text is the unweighted average across all 16 benchmarks.
+
+# A.2 Per-subset training results
+
+This subsection gives the subset-level results used in the main text. It includes pair scores and family decompositions (Table 3), the full scoreboard for all retrained subsets (Table 4), and the corresponding parameter counts, throughput, and best-at-k Pareto status (Table 5).
+
+Table 3: Pair decomposition. All 10 two encoder subsets, sorted by overall score. The highlighted rows compare CLIP+ConvNeXt with ConvNeXt+EVA-02. The pair score gap is reported by direction; Section 4.4 focuses on the gap closure pattern rather than the absolute gap. 
+
+<table><tr><td>Pair</td><td>Class A × Class B</td><td>Overall</td><td>ΔGen</td><td>ΔKnow</td><td>ΔOCR</td><td>ΔVis</td></tr><tr><td>CLIP+ConvNeXt</td><td>Adaptive Complement × Universal Core</td><td>62.28</td><td>+0.44</td><td>+0.23</td><td>+0.98</td><td>+2.13</td></tr><tr><td>ConvNeXt+EVA-02</td><td>Universal Core × Capacity Specialist</td><td>61.77</td><td>+0.13</td><td>+0.09</td><td>+0.12</td><td>+1.03</td></tr><tr><td>ConvNeXt+Pix2Struct</td><td>Universal Core × Niche Specialist</td><td>61.50</td><td>+0.11</td><td>+0.20</td><td>+0.03</td><td>+0.45</td></tr><tr><td>ConvNeXt+SAM</td><td>Universal Core × Replaceable</td><td>61.41</td><td>+0.04</td><td>-0.22</td><td>-0.91</td><td>+1.55</td></tr><tr><td>CLIP+Pix2Struct</td><td>Adaptive Complement × Niche Specialist</td><td>59.90</td><td>-0.05</td><td>+0.59</td><td>+4.55</td><td>+2.45</td></tr><tr><td>Pix2Struct+EVA-02</td><td>Niche Specialist × Capacity Specialist</td><td>59.66</td><td>+0.47</td><td>+0.64</td><td>+4.06</td><td>+0.75</td></tr><tr><td>CLIP+EVA-02</td><td>Adaptive Complement × Capacity Specialist</td><td>58.87</td><td>+0.00</td><td>+0.39</td><td>+2.29</td><td>+1.31</td></tr><tr><td>SAM+EVA-02</td><td>Replaceable × Capacity Specialist</td><td>57.93</td><td>-0.13</td><td>+0.45</td><td>-0.05</td><td>+2.14</td></tr><tr><td>SAM+Pix2Struct</td><td>Replaceable × Niche Specialist</td><td>56.15</td><td>+1.57</td><td>-0.30</td><td>+0.83</td><td>+2.37</td></tr><tr><td>CLIP+SAM</td><td>Adaptive Complement × Replaceable</td><td>54.57</td><td>-0.36</td><td>-0.74</td><td>+0.99</td><td>+1.04</td></tr></table>
+
+Table 4: Full subset scoreboard. All non-empty encoder subsets trained with the same recipe. Subsets are sorted by cardinality and then by overall score, with the best subset at each cardinality shown in bold. The table provides a direct lookup for each subset’s overall and per family scores. 
+
+<table><tr><td>Combo</td><td>#enc</td><td>General</td><td>Knowledge</td><td>OCR&amp;Chart</td><td>Vision</td><td>Avg</td><td>rel. Avg</td></tr><tr><td colspan="8">Pool size 5 — 1 combination; rel. avg 1.000</td></tr><tr><td>CNSPD</td><td>5</td><td>65.70</td><td>54.88</td><td>66.97</td><td>62.62</td><td>62.54</td><td>1.000</td></tr><tr><td colspan="8">Pool size 4 — 5 combinations; mean rel. avg 0.983, range 0.961–0.995</td></tr><tr><td>CN·PD</td><td>4</td><td>65.48</td><td>55.19</td><td>66.44</td><td>61.76</td><td>62.22</td><td>0.995</td></tr><tr><td>·NSPD</td><td>4</td><td>65.04</td><td>55.42</td><td>66.58</td><td>60.75</td><td>61.95</td><td>0.991</td></tr><tr><td>CNS·D</td><td>4</td><td>65.14</td><td>54.49</td><td>65.90</td><td>60.58</td><td>61.52</td><td>0.984</td></tr><tr><td>CNSP·</td><td>4</td><td>64.95</td><td>54.25</td><td>66.63</td><td>60.25</td><td>61.52</td><td>0.984</td></tr><tr><td>C·SPD</td><td>4</td><td>64.90</td><td>55.11</td><td>61.00</td><td>59.41</td><td>60.10</td><td>0.961</td></tr><tr><td colspan="8">Pool size 3 — 10 combinations; mean rel. avg 0.972, range 0.935–0.996</td></tr><tr><td>CN·P·</td><td>3</td><td>65.56</td><td>55.50</td><td>67.12</td><td>60.88</td><td>62.26</td><td>0.996</td></tr><tr><td>CN···D</td><td>3</td><td>65.58</td><td>54.79</td><td>66.39</td><td>60.91</td><td>61.92</td><td>0.990</td></tr><tr><td>·NSP·</td><td>3</td><td>65.27</td><td>54.82</td><td>66.65</td><td>59.93</td><td>61.67</td><td>0.986</td></tr><tr><td>CNS···</td><td>3</td><td>64.87</td><td>54.61</td><td>66.26</td><td>60.74</td><td>61.62</td><td>0.985</td></tr><tr><td>·N·PD</td><td>3</td><td>65.62</td><td>54.34</td><td>65.81</td><td>60.70</td><td>61.62</td><td>0.985</td></tr><tr><td>·NS·D</td><td>3</td><td>64.70</td><td>54.93</td><td>65.86</td><td>60.49</td><td>61.49</td><td>0.983</td></tr><tr><td>C···PD</td><td>3</td><td>64.93</td><td>54.22</td><td>60.74</td><td>60.14</td><td>60.01</td><td>0.960</td></tr><tr><td>···SPD</td><td>3</td><td>64.01</td><td>54.01</td><td>59.41</td><td>60.84</td><td>59.57</td><td>0.953</td></tr><tr><td>C·SP·</td><td>3</td><td>64.08</td><td>54.26</td><td>60.17</td><td>58.86</td><td>59.34</td><td>0.949</td></tr><tr><td>C·S·D</td><td>3</td><td>64.83</td><td>54.65</td><td>54.10</td><td>60.34</td><td>58.48</td><td>0.935</td></tr><tr><td colspan="8">Pool size 2 — 10 combinations; mean rel. avg 0.950, range 0.873–0.996</td></tr><tr><td>CN···</td><td>2</td><td>65.37</td><td>55.02</td><td>67.25</td><td>61.50</td><td>62.28</td><td>0.996</td></tr><tr><td>·N···D</td><td>2</td><td>65.06</td><td>54.72</td><td>66.39</td><td>60.93</td><td>61.77</td><td>0.988</td></tr><tr><td>·N·P·</td><td>2</td><td>65.04</td><td>54.83</td><td>66.30</td><td>59.82</td><td>61.50</td><td>0.983</td></tr><tr><td>·NS···</td><td>2</td><td>64.97</td><td>54.41</td><td>65.36</td><td>60.92</td><td>61.41</td><td>0.982</td></tr><tr><td>C···P·</td><td>2</td><td>64.76</td><td>55.38</td><td>59.94</td><td>59.52</td><td>59.90</td><td>0.958</td></tr><tr><td>···PD</td><td>2</td><td>64.46</td><td>54.07</td><td>59.45</td><td>60.65</td><td>59.66</td><td>0.954</td></tr><tr><td>C···D</td><td>2</td><td>64.81</td><td>55.18</td><td>54.28</td><td>61.21</td><td>58.87</td><td>0.941</td></tr><tr><td>···S·D</td><td>2</td><td>63.86</td><td>53.88</td><td>51.94</td><td>62.04</td><td>57.93</td><td>0.926</td></tr><tr><td>···SP·</td><td>2</td><td>57.86</td><td>52.54</td><td>56.22</td><td>58.00</td><td>56.15</td><td>0.898</td></tr><tr><td>C·S···</td><td>2</td><td>64.45</td><td>54.05</td><td>41.67</td><td>58.11</td><td>54.57</td><td>0.873</td></tr><tr><td colspan="8">Pool size 1 — 5 combinations; mean rel. avg 0.862, range 0.706–0.980</td></tr><tr><td>·N···</td><td>1</td><td>64.93</td><td>54.63</td><td>66.27</td><td>59.37</td><td>61.30</td><td>0.980</td></tr><tr><td>···D</td><td>1</td><td>63.99</td><td>53.43</td><td>51.99</td><td>59.90</td><td>57.32</td><td>0.917</td></tr><tr><td>C····</td><td>1</td><td>64.81</td><td>54.79</td><td>40.68</td><td>57.07</td><td>54.34</td><td>0.869</td></tr><tr><td>···P·</td><td>1</td><td>50.10</td><td>51.90</td><td>55.39</td><td>52.87</td><td>52.56</td><td>0.840</td></tr><tr><td>···S···</td><td>1</td><td>56.29</td><td>52.84</td><td>11.86</td><td>55.63</td><td>44.16</td><td>0.706</td></tr></table>
+
+Table 5: Per-subset parameters, throughput, and Pareto status. Throughput in tokens per second, parameter count, and relative score for all subsets. The final column marks whether a subset lies on the latency score Pareto frontier among the best-at-k candidates, using the same selection setting as the main text. 
+
+<table><tr><td>Combo</td><td>#Enc</td><td>Params (M)</td><td>Latency (ms)</td><td>Throughput</td><td>Avg</td><td>rel. Avg</td><td>Best-k Pareto</td></tr><tr><td>CNSPD</td><td>5</td><td>2274</td><td>427.8</td><td>2.34</td><td>62.54</td><td>1.000</td><td>Yes</td></tr><tr><td>CN·PD</td><td>4</td><td>1966</td><td>362.4</td><td>2.76</td><td>62.22</td><td>0.995</td><td>No</td></tr><tr><td>·NSPD</td><td>4</td><td>1970</td><td>420.4</td><td>2.38</td><td>61.95</td><td>0.991</td><td>No</td></tr><tr><td>CNS·D</td><td>4</td><td>1761</td><td>342.9</td><td>2.92</td><td>61.52</td><td>0.984</td><td>No</td></tr><tr><td>CNSP·</td><td>4</td><td>1970</td><td>367.2</td><td>2.72</td><td>61.52</td><td>0.984</td><td>No</td></tr><tr><td>C·SPD</td><td>4</td><td>1427</td><td>362.2</td><td>2.76</td><td>60.10</td><td>0.961</td><td>No</td></tr><tr><td>CN·P·</td><td>3</td><td>1663</td><td>299.9</td><td>3.33</td><td>62.26</td><td>0.996</td><td>No</td></tr><tr><td>CN···D</td><td>3</td><td>1453</td><td>274.6</td><td>3.64</td><td>61.92</td><td>0.990</td><td>No</td></tr><tr><td>·NSP·</td><td>3</td><td>1667</td><td>359.6</td><td>2.78</td><td>61.67</td><td>0.986</td><td>No</td></tr><tr><td>CNS···</td><td>3</td><td>1458</td><td>279.1</td><td>3.58</td><td>61.62</td><td>0.985</td><td>No</td></tr><tr><td>·N·PD</td><td>3</td><td>1663</td><td>353.7</td><td>2.83</td><td>61.62</td><td>0.985</td><td>No</td></tr><tr><td>·NS·D</td><td>3</td><td>1458</td><td>334.5</td><td>2.99</td><td>61.49</td><td>0.983</td><td>No</td></tr><tr><td>C···PD</td><td>3</td><td>1120</td><td>296.3</td><td>3.38</td><td>60.01</td><td>0.960</td><td>No</td></tr><tr><td>···SPD</td><td>3</td><td>1124</td><td>353.6</td><td>2.83</td><td>59.57</td><td>0.953</td><td>No</td></tr><tr><td>C·SP·</td><td>3</td><td>1124</td><td>334.5</td><td>2.99</td><td>59.34</td><td>0.949</td><td>No</td></tr><tr><td>C·S·D</td><td>3</td><td>915</td><td>274.5</td><td>3.64</td><td>58.48</td><td>0.935</td><td>No</td></tr><tr><td>CN···</td><td>2</td><td>1150</td><td>212.5</td><td>4.71</td><td>62.28</td><td>0.996</td><td>Yes</td></tr><tr><td>·N···D</td><td>2</td><td>1150</td><td>266.8</td><td>3.75</td><td>61.77</td><td>0.988</td><td>No</td></tr><tr><td>·N·P·</td><td>2</td><td>1359</td><td>292.0</td><td>3.42</td><td>61.50</td><td>0.983</td><td>No</td></tr><tr><td>·NS···</td><td>2</td><td>1154</td><td>271.7</td><td>3.68</td><td>61.41</td><td>0.982</td><td>No</td></tr><tr><td>C···P·</td><td>2</td><td>816</td><td>233.0</td><td>4.29</td><td>59.90</td><td>0.958</td><td>No</td></tr><tr><td>···PD</td><td>2</td><td>816</td><td>287.7</td><td>3.48</td><td>59.66</td><td>0.954</td><td>No</td></tr><tr><td>C···D</td><td>2</td><td>607</td><td>207.6</td><td>4.82</td><td>58.87</td><td>0.941</td><td>No</td></tr><tr><td>···S·D</td><td>2</td><td>611</td><td>266.6</td><td>3.75</td><td>57.93</td><td>0.926</td><td>No</td></tr><tr><td>···SP·</td><td>2</td><td>820</td><td>292.6</td><td>3.42</td><td>56.15</td><td>0.898</td><td>No</td></tr><tr><td>C·S···</td><td>2</td><td>611</td><td>212.4</td><td>4.71</td><td>54.57</td><td>0.873</td><td>No</td></tr><tr><td>·N···</td><td>1</td><td>846</td><td>204.6</td><td>4.89</td><td>61.30</td><td>0.980</td><td>Yes</td></tr><tr><td>···D</td><td>1</td><td>303</td><td>199.9</td><td>5.00</td><td>57.32</td><td>0.917</td><td>No</td></tr><tr><td>C·····</td><td>1</td><td>304</td><td>145.5</td><td>6.87</td><td>54.34</td><td>0.869</td><td>No</td></tr><tr><td>···P·</td><td>1</td><td>513</td><td>225.5</td><td>4.43</td><td>52.56</td><td>0.840</td><td>No</td></tr><tr><td>···S···</td><td>1</td><td>308</td><td>204.2</td><td>4.90</td><td>44.16</td><td>0.706</td><td>No</td></tr></table>
+
+# A.3 Family-conditional Capacity and Necessity profiles
+
+Figure 3, panels B and C, gives the full family conditional Cap/Nec decomposition used in Section 4. Pooled values from Table 2 are: ConvNeXt (Cap 0.980, Nec 2.44 pp), EVA-02 (Cap 0.917, Nec 1.02 pp), CLIP (Cap 0.869, Nec 0.59 pp), Pix2Struct (Cap 0.840, Nec 1.02 pp), and SAM (Cap 0.706, Nec 0.32 pp).
+
+The family conditional view separates encoders that look similar in the pooled numbers. Pix2Struct has much higher OCR&Chart Capacity than General Capacity, matching its role as a niche specialist. EVA-02 has the highest Vision-Centric Capacity, making it a strong alternative anchor for vision heavy settings. Knowledge Capacity is high for all encoders (SAM reaches 0.967, panel $B ) ,$ , reflecting the strong LLM prior on that family. For this reason, Section 4 does not use Knowledge when drawing family conditional conclusions.
+
+For Necessity, panel C shows that removing ConvNeXt causes the largest single encoder drop on OCR&Chart (5.97 pp). SAM is close to zero across all families, with pooled Necessity at most 0.32 pp, so it is the natural first encoder to remove when the pool must be reduced.
+
+# A.4 Effective rank by subset size
+
+Table 6 reports the mean effective rank of each encoder at each subset size k. Section 5 uses these numbers in two places. First, the $k { = } 2$ column supports the claim in Section 5.4 that $\mathrm { C L I P } ^ { \prime } \mathrm { s }$ mean rank rises by $+ 9 . 9$ dims across its four heterogeneous pairings (Table 6: 64.7 − 54.8). CLIP is the only encoder whose rank increases when it is paired with another encoder. Second, the variation across encoders within the same k gives the within k centred residual diagnostic used in the footnote of Section 5.2. From k=1 to k=5, only CLIP has a positive change (+12 dims). The other four encoders lose effective rank as more encoders share the projector’s fixed output budget.
+
+Table 6: Mean per encoder effective rank by subset size $k .$ Each cell gives the mean effective rank of the named encoder, averaged over all subsets that contain that encoder at the given k. Standard deviation is shown where applicable. The last column reports the change from $k { = } 1$ to $k { = } 5$ . 
+
+<table><tr><td>Encoder</td><td>k=1</td><td>k=2</td><td>k=3</td><td>k=4</td><td>k=5</td><td> $\Delta_{1\rightarrow 5}$ </td></tr><tr><td>CLIP</td><td>54.8</td><td>64.7±3.7</td><td>62.6±3.3</td><td>64.7±5.5</td><td>66.9</td><td>↑+12</td></tr><tr><td>ConvNeXt</td><td>54.0</td><td>54.9±11.9</td><td>52.0±20.9</td><td>63.6±12.4</td><td>27.5</td><td>↓-26</td></tr><tr><td>SAM</td><td>17.5</td><td>11.7±3.7</td><td>8.3±2.2</td><td>7.5±1.5</td><td>5.6</td><td>↓-12</td></tr><tr><td>Pix2Struct</td><td>39.3</td><td>29.8±7.2</td><td>29.5±3.0</td><td>27.7±1.7</td><td>26.6</td><td>↓-13</td></tr><tr><td>EVA-02</td><td>44.0</td><td>40.9±4.2</td><td>40.1±5.5</td><td>36.0±6.6</td><td>33.4</td><td>↓-11</td></tr><tr><td>models per column</td><td>n=5</td><td>n=10</td><td>n=10</td><td>n=5</td><td>n=1</td><td>-</td></tr></table>
+
+# A.5 Sample-level consistency checks
+
+Drift-to-correctness (CKA). For each encoder in the five encoder full pool, we compute a persample CKA score between the encoder’s pre-projector activations after fine tuning and its activations at the pre-training checkpoint. We then compare this drift measure between correctly and incorrectly answered samples using Welch’s t-test and Cohen’s d (Section 5.4).
+
+For the full pool baseline $( n _ { \mathrm { c o r r e c t } } { = } 1 7 , 4 7 0 ; \ n _ { \mathrm { i n c o r r e c t } } { = } 8 , 2 0 2 )$ , CLIP and EVA-02 have negative d values (CLIP: d=−0.165; EVA-02: d=−0.131; both $p$ below 0.001). Correctly answered queries are associated with lower deviation from the pretrained representation. This matches the view that these encoders provide stable, pretrain aligned visual grounding on the samples the model answers correctly. Pix2Struct and SAM have positive d values (Pix2Struct: d=+0.170; SAM: d=+0.121; both $p$ below 0.001). For these encoders, correct answers are associated with larger drift, suggesting that fine tuning moves their representations toward document and boundary cues that are useful for the answer. ConvNeXt is much smaller $\left( d { = } { + } 0 . 0 2 6 ; p { = } 0 . 0 4 2 \right)$ , in line with its role as a complementary anchor rather than the main driver of this sample level CKA signal.
+
+IM-flip negative control. For each encoder, family, and variant cell, we compute the Pearson correlation between two quantities: the representation divergence caused by ablation, measured as the L2 drift norm at the projector input when the encoder’s input channel is zeroed under IM, and the sample level flip rate under IM. This measures how much the encoder’s own channel slice shifts when its input is masked. It is separate from the drift to correctness measure above, which compares pre-training and fine-tuning checkpoints using CKA.
+
+Across the 80 cells (5 encoders × 4 families × 4 variants), the maximum absolute Pearson correlation is 0.105, and the mean absolute correlation is 0.030. Thus, ablation induced representation divergence and IM flip rate are nearly uncorrelated at the sample level. The two measurements are capturing different parts of encoder behaviour.
+
+# A.6 CKA convergence with encoder-pool size
+
+Table 7 shows how projector layer CKA between two retrained models changes with the number of encoders they share. Across all 16,896 ordered model pairs, the Spearman correlation between projector CKA and the minimum shared encoder count is ρ=0.202 (p below 0.001). Mean projector CKA increases with pool overlap: 0.754 for pairs sharing one encoder, 0.800 for two, 0.830 for three, and 0.852 for four. The same pattern appears within each task family $( \rho _ { \mathrm { G e n e r a l } } { = } 0 . 2 9 9 ; \rho _ { \mathrm { O C R } \& \mathrm { C h a r t } } { = } 0 . 2 3 1 $ ; ρVision-Centric=0.242; ρKnowledge=0.086). This suggests that the projector geometry is tied to which encoders are present, rather than being explained only by random initialisation.
+
+Table 7: Projector CKA by shared encoder count. Spearman $\rho$ with 95% confidence interval between projector CKA and minimum shared encoder count, together with mean projector CKA for each shared count bucket, grouped by task family. 
+
+<table><tr><td>Family</td><td>Shared-1</td><td>Shared-2</td><td>Shared-3</td><td>Shared-4</td><td>Mixed</td><td>ρ</td></tr><tr><td>Overall</td><td>0.754</td><td>0.800</td><td>0.830</td><td>0.852</td><td>0.814</td><td>0.202</td></tr><tr><td>General</td><td>0.759</td><td>0.793</td><td>0.838</td><td>0.862</td><td>0.809</td><td>0.299</td></tr><tr><td>Knowledge</td><td>0.746</td><td>0.772</td><td>0.774</td><td>0.808</td><td>0.788</td><td>0.086</td></tr><tr><td>OCR &amp; Chart</td><td>0.699</td><td>0.775</td><td>0.806</td><td>0.829</td><td>0.789</td><td>0.231</td></tr><tr><td>Vision-Centric</td><td>0.810</td><td>0.861</td><td>0.901</td><td>0.908</td><td>0.870</td><td>0.242</td></tr></table>
+
+# A.7 Partial Information Decomposition between encoder pairs
+
+Table 8 reports a proxy Partial Information Decomposition (PID) between encoder pairs. We decompose the change in projector CKA when an encoder is added to a singleton pool into three terms: shared information, unique information from each encoder, and synergy. Here, shared information is the CKA already captured by the existing singleton, while synergy measures the interaction gain from using the pair.
+
+Across all task family cells, the shared term is the largest component (about 0.55 to 0.85 of total CKA). Unique contributions are small, around 0.02 or lower, and synergy is close to zero. At the CKA level, pairwise complementarity in Eagle-X5 therefore looks mostly additive rather than strongly synergistic. This agrees with the rank budget view: encoders contribute largely independent subspace slices, and the projector combines them without needing a large cross encoder interaction term in the representation geometry.
+
+Table 8: Proxy PID shared CKA between encoder pairs. Mean proxy\_shared\_cka, defined as the CKA between the two encoders’ pre-projector representations, aggregated by benchmark family. All values pair CLIP with one partner encoder. Unique and synergy terms are close to zero for percentage scaled tasks, around 0.02 or lower, and are omitted for readability. 
+
+<table><tr><td>Pair (CLIP + X)</td><td>General</td><td>Knowledge</td><td>OCR &amp; Chart</td><td>Vision-Centric</td></tr><tr><td>CLIP + ConvNeXt</td><td>0.848</td><td>0.869</td><td>0.783</td><td>0.873</td></tr><tr><td>CLIP + EVA-02</td><td>0.844</td><td>0.848</td><td>0.824</td><td>0.877</td></tr><tr><td>CLIP + Pix2Struct</td><td>0.661</td><td>0.648</td><td>0.647</td><td>0.738</td></tr><tr><td>CLIP + SAM</td><td>0.768</td><td>0.739</td><td>0.655</td><td>0.815</td></tr></table>
+
+# A.8 Scope and limitations
+
+Findings are calibrated to channel-concatenation fusion, the Vicuna-7B decoder, and a single fiveencoder pool; the rank-budget argument relies on a shared projector with fixed output dimension and does not transfer directly to cross-attention or routing architectures, where each encoder has its own pathway. The five-class taxonomy is a descriptive label for Eagle-X5; whether the Universal Core and Adaptive Complement pattern generalises beyond CLIP is not settled by our data. Each subset is trained once, so small per-family differences are directional evidence rather than significance claims. Effects of decoder size on the IM/TR discrepancy and on the saturation point, as well as extensions to larger encoder pools, are left to future work.

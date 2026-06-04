@@ -1,0 +1,635 @@
+# When Attention Collapses: Stage-Aware Visual Token Pruning from Structure to Semantics
+
+Jiahui Wang1\* Kai Zhang1\* Mai Han2 Huanghe Zhang1†
+
+1Shandong University
+
+2National University of Singapore (Suzhou) Research Institute wangjiahui27@mail.sdu.edu.cn, zhanghuanghe@sdu.edu.cn
+
+# Abstract
+
+Vision-Language Models (VLMs) have demonstrated remarkable capabilities but suffer from significant computational overhead during inference. While visual token pruning offers a promising solution, existing methods predominantly rely on initial attention scores. This single-metric paradigm presents a critical flaw: high attention scores inherently collapse onto semantically similar regions, thereby severely reducing feature diversity and discarding vital contextual details. To address this, we introduce Structure-to-Semantics (STS), a novel two-stage visual token pruning framework that explicitly decouples the pruning process. The first stage employs a repulsion-based sampling mechanism to maximize spatial and structural diversity. The second stage leverages instruction-aware cross-attention to precisely filter out prompt-irrelevant tokens. This twostage synergy constitutes the core of STS, first ensuring geometric coverage and then refining the retained tokens according to semantic relevance. Extensive evaluations demonstrate that STS mitigates the redundancy caused by attention-based selection, improving both structural diversity and fine-grained task alignment of the preserved visual tokens.
+
+# 1 Introduction
+
+Vision-Language Models (VLMs) (Liu et al., 2023a; Bai et al., 2023; Team et al., 2023) have achieved strong performance across a wide range of multimodal tasks by coupling high-resolution vision encoders with powerful Large Language Models (LLMs) (Brown et al., 2020; Alayrac et al., 2022; Radford et al., 2019). While this design enables fine-grained visual understanding, it also introduces substantial computational overhead. To preserve visual fidelity, modern vision encoders often produce hundreds of visual tokens per image, all of which must be processed by the LLM (Xu et al., 2024; Chen et al., 2024b). Due to the quadratic complexity of Transformer self-attention with respect to sequence length (Tay et al., 2022; Wen et al., 2025), this large token count leads to significant increases in inference latency and memory usage, limiting the practicality of VLMs in real-time and resource-constrained settings.
+
+To alleviate this computational burden, visual token pruning (Zhang et al., 2025b,c; Yang et al., 2026; Zhang et al., 2025a) has emerged as a promising direction for reducing spatial and semantic redundancy. Existing methods often rely on attention scores as token-importance indicators (Chen et al., 2024a; Xing et al., 2025). However, the representation dynamics of vision encoders in VLM pipelines remain less explored compared with the attention dynamics of LLMs (Xiao et al., 2024; Zhang et al., 2023).
+
+By analyzing these dynamics, we identify a key limitation of attention-based visual token pruning: high-attention tokens tend to concentrate in semantically similar regions, leading to redundant selections. Specifically, in shallow vision layers, attention scores are only weakly related to feature similarity. As depth increases, tokens that are close in the feature space increasingly receive similar attention scores. As a result, pruning based solely on attention is prone to retaining multiple tokens from the same semantic neighborhood while discarding more diverse visual details. These observations suggest that a single static pruning criterion is insufficient, motivating our decoupled, stage-aware pruning strategy.
+
+To overcome this "clustering trap" and prevent the loss of feature diversity, we reformulate the initial token selection—prior to the LLM stage—as a potential-energy-inspired objective. Drawing inspiration from electrostatic repulsion principles, we model visual tokens as mutually repulsive charged particles in the feature space (Wang and Isola, 2020; Kulesza and Taskar, 2012). In this analogy, tokens with high semantic similarity generate strong repulsive interactions. This mechanism actively discourages excessive concentration in redundant regions, thereby ensuring the retention of a globally diverse and structurally complete set of visual features.
+
+To complement this diversity-preserving mechanism, we further introduce pruning within an intermediate layer of the language model to remove task-irrelevant tokens. This two-stage design jointly preserves structural diversity and semantic relevance, yielding a pruning strategy that better matches the stage-dependent representation dynamics of VLMs. Extensive experiments across multiple vision–language models demonstrate that our method improves inference efficiency while maintaining strong task performance.
+
+In summary, our contributions are three-fold:
+
+• In vision encoders, we find that tokens with high attention scores tend to concentrate in semantically similar regions, and we further quantify this phenomenon using a KNN-based analysis. This helps explain why traditional attention-based pruning methods often select spatially clustered tokens.   
+• We propose STS, a training-free, stage-aware visual token pruning framework that uses a potential-energy-inspired objective to preserve global structural diversity while maintaining taskspecific semantic relevance.   
+• Extensive experiments across multiple vision– language models and benchmarks demonstrate that STS achieves favorable efficiency– performance trade-offs, improving inference efficiency while preserving strong task performance even under aggressive token reduction.
+
+# 2 Related Work
+
+Vision-Language Models. Recent vision-language models (VLMs) have achieved strong multimodal reasoning performance by encoding images into dense sequences of visual tokens. Representative architectures, including LLaVA-1.5 and LLaVA-NeXT (Liu et al., 2024a,b), employ high-resolution vision encoders that generate large numbers of visual tokens, and this token burden is further amplified in video-based extensions such as Video-LLaVA (Lin et al., 2024). However, this design introduces substantial inference overhead: selfattention scales quadratically with sequence length, while KV-cache memory grows linearly with the number of tokens (Kwon et al., 2023; Pope et al., 2023). As a result, processing all visual tokens is often computationally prohibitive in latency- or memory-constrained settings, motivating the need for effective token sparsification strategies that reduce redundancy without sacrificing critical visual information.
+
+Visual Token Reduction. Existing approaches typically rely on heuristic criteria, such as attentionbased pruning (Xing et al., 2025), token merging (Bolya et al., 2022; Liang et al., 2022), and diversity-driven sampling (Liang et al., 2023; Wen et al., 2025). However, attention-based methods may repeatedly select tokens from similar regions, while diversity-based heuristics often capture only local differences and may still miss the overall visual structure. Motivated by these limitations, we propose STS, a training-free and stage-aware pruning framework. STS first applies a potentialenergy-inspired selection strategy before the LLM stage to encourage globally diverse token coverage, and then performs task-aware pruning within the language model to remove semantically irrelevant tokens. In this way, STS explicitly balances geometric diversity with semantic relevance.
+
+# 3 Empirical Analysis
+
+Our analysis provides two insights for visual token pruning. In the vision encoder, attention scores become increasingly similar among feature-similar tokens in deeper layers, making attention-based pruning prone to redundant selections. In the LLM decoder, visual information flow shifts from broad contextual aggregation in earlier layers to taskspecific concentration in deeper layers. These findings motivate a stage-aware pruning strategy that first preserves structural diversity before the LLM and then applies semantic filtering within the LLM.
+
+# 3.1 Feature-Attention Redundancy in Vision Encoders
+
+To examine whether semantically similar tokens receive similar attention scores, and how this relationship evolves across the vision encoder, we introduce a KNN-based (Cover and Hart, 1967) Consistency Score (C). This metric measures the consistency of attention scores within local neighborhoods of the feature space (Caron et al., 2021). Intuitively, if tokens that are close in the feature space also receive nearly identical attention scores, then attention-based pruning may struggle to distinguish among redundant tokens.
+
+![](images/69eb8816a4c32cb6926f5d31d8f4a602360966fb0f8c9165d30f6229b6b7dd71.jpg)  
+(a)
+
+![](images/4b1a5abbd5567077c29509bbcf33434abbabd3cbe16637a498cdb8ed95134fda.jpg)  
+(b)
+
+![](images/b8561ef3d39aa1ad768994343edaa2bc3e8e6b56fbbacc758236af5143e82475.jpg)
+
+<details>
+<summary>scatter</summary>
+
+| Group | Attention Rank |
+|-------|----------------|
+| Left  | High           |
+| Left  | Medium         |
+| Left  | Low            |
+| Right | High           |
+| Right | Medium         |
+| Right | Low            |
+</details>
+
+(c)   
+Figure 1: t-SNE visualization of visual tokens for a representative image from the COCO dataset at (a) the 1st layer, (b) the 14th layer, and (c) the 24th layer. In shallow layers, attention similarity is weakly aligned with feature similarity, whereas in deeper layers, tokens with similar attention scores tend to cluster in nearby regions of the feature space.
+
+Formally, let $\mathcal { T } = \{ t _ { 1 } , \ldots , t _ { N } \}$ denote the set of visual tokens, where each token $t _ { i }$ is associated with a feature vector $\mathbf { f } _ { i }$ and an attention score si. We first project all features into an ℓ -normalized embedding space, and for each token $t _ { i } ,$ we identify its k-nearest neighbors $\mathcal { N } _ { k } ( t _ { i } )$ based on feature similarity. We then define the local fluctuation of attention scores as
+
+$$
+\sigma_ {\text { local }} = \frac {1}{N} \sum_ {i = 1} ^ {N} \operatorname{std} (\{s _ {j} \mid t _ {j} \in \mathcal {N} _ {k} (t _ {i}) \}). \tag {1}
+$$
+
+A small $\sigma _ { \mathrm { l o c a l } }$ indicates that tokens within the same local feature neighborhood tend to receive similar attention scores. To make this quantity comparable across layers and models, we normalize it by the global standard deviation of attention scores over the full token set, denoted as $\sigma _ { \mathrm { g l o b a l } }$ . The resulting KNN Consistency Score is defined as
+
+$$
+C = 1 - \frac {\sigma_ {\text { local }}}{\sigma_ {\text { global }}}. \tag {2}
+$$
+
+A larger value of C indicates stronger alignment between feature similarity and attention similarity. In such cases, attention becomes less discriminative within local semantic neighborhoods, making attention-based pruning more likely to retain spatially clustered and semantically redundant tokens rather than a diverse subset of visual features.
+
+Observations.Our analysis on LLaVA-1.5 reveals a clear depth-dependent trend. In shallow layers, the consistency score $C$ remains low, indicating that attention similarity is only weakly aligned with feature similarity. In deeper layers, however, C increases markedly, showing that tokens within the same local feature neighborhood tend to receive increasingly similar attention scores. Consequently, attention-based pruning becomes prone to selecting multiple tokens from semantically similar regions, producing clustered and redundant token subsets. Such clustering can reduce the diversity of the retained tokens and increase the risk of discarding complementary long-tail visual details. These results provide a direct explanation for the failure mode of attention-based pruning in deep vision layers.
+
+![](images/f9edfa0726245fed2a43d9b6baeca940ac6fbfa1723d49e452d52d53f0aaeea2.jpg)
+
+<details>
+<summary>line</summary>
+
+| Layer Index | Neighborhood Size (k) = 5 | Neighborhood Size (k) = 10 | Neighborhood Size (k) = 20 |
+| ----------- | ------------------------- | -------------------------- | -------------------------- |
+| 0           | 0.63                      | 0.57                       | 0.52                       |
+| 1           | 0.58                      | 0.51                       | 0.45                       |
+| 2           | 0.65                      | 0.56                       | 0.51                       |
+| 3           | 0.67                      | 0.58                       | 0.53                       |
+| 4           | 0.64                      | 0.60                       | 0.55                       |
+| 5           | 0.62                      | 0.58                       | 0.52                       |
+| 6           | 0.60                      | 0.56                       | 0.49                       |
+| 7           | 0.58                      | 0.54                       | 0.46                       |
+| 8           | 0.56                      | 0.52                       | 0.43                       |
+| 9           | 0.54                      | 0.50                       | 0.41                       |
+| 10          | 0.52                      | 0.48                       | 0.39                       |
+| 11          | 0.65                      | 0.62                       | 0.60                       |
+| 12          | 0.92                      | 0.94                       | 0.91                       |
+| 13          | 0.96                      | 0.97                       | 0.93                       |
+| 14          | 0.97                      | 0.98                       | 0.94                       |
+| 15          | 0.97                      | 0.98                       | 0.94                       |
+| 16          | 0.97                      | 0.98                       | 0.94                       |
+| 17          | 0.97                      | 0.98                       | 0.94                       |
+| 18          | 0.97                      | 0.98                       | 0.94                       |
+| 19          | 0.97                      | 0.98                       | 0.94                       |
+| 20          | 0.96                      | 0.97                       | 0.93                       |
+| 21          | 0.95                      | 0.96                       | 0.92                       |
+| 22          | 0.94                      | 0.95                       | 0.91                       |
+| 23          | 0.93                      | 0.94                       | 0.90                       |
+| 24          | 0.92                      | 0.93                       | 0.89                       |
+| 25          | 0.91                      | 0.92                       | 0.88                       |
+| 26          | 0.90                      | 0.91                       | 0.87                       |
+| 27          | 0.89                      | 0.90                       | 0.86                       |
+| 28          | 0.88                      | 0.89                       | 0.85                       |
+| 29          | 0.87                      | 0.88                       | 0.84                       |
+| 30          | 0.86                      | 0.87                       | 0.83                       |
+| 31          | 0.85                      | 0.86                       | 0.82                       |
+| 32          | 0.84                      | 0.85                       | 0.81                       |
+| 33          | 0.83                      | 0.84                       | 0.80                       |
+| 34          | 0.82                      | 0.83                       | 0.79                       |
+| 35          | 0.81                      | 0.82                       | 0.78                       |
+| 36          | 0.80                      | 0.81                       | 0.77                       |
+| 37          | 0.79                      | 0.80                       | 0.76                       |
+| 38          | 0.78                      | 0.79                       | 0.75                       |
+| 39          | 0.77                      | 0.78                       | 0.74                       |
+| 40          | 0.76                      | 0.77                       | 0.73                       |
+| 41          | 0.75                      | 0.76                       | 0.72                       |
+| 42          | 0.74                      | 0.75                       | 0.71                       |
+| 43          | 0.73                      | 0.74                       | 0.70                       |
+| 44          | 0.72                      | 0.73                       | 0.69                       |
+| 45          | 0.71                      | 0.72                       | 0.68                       |
+| 46          | 0.70                      | 0.71                       | 0.67                       |
+| 47          | 0.69                      | 0.70                       | 0.66                       |
+| 48          | 0.68                      | 0.69                       | 0.65                       |
+| 49          | 0.67                      | 0.68                       | 0.64                       |
+| 50          | 0.66                      | 0.67                       | 0.63                       |
+| Note: The data is extracted from the code and presented in the following two rows: 'Consequence Score' and 'Smoother'. The values are estimated based on the provided code.
+</details>
+
+Figure 2: KNN sensitivity analysis across LLaVA vision encoder layers. The consistency scores across various k reveal a clear shift toward feature aggregation in deeper layers, indicating an increasing alignment between attention scores and token embeddings that leads to redundancy.
+
+# 3.2 Stage-dependent Redundancy of Visual Tokens in LLMs
+
+Building on prior analyses of attention propagation and attribution in Transformer models (Abnar and Zuidema, 2020; Elhage et al., 2021), we draw on existing findings to discuss how visual tokens are utilized across LLM layers. Rather than characterizing these layer-wise patterns in detail, we use them to motivate when visual token redundancy is likely to emerge and where pruning can be applied most effectively.
+
+![](images/ad764d761f4bcfe5fdd7e37242078f60de94d0fd8a48f818e0b8903f770a8ca4.jpg)
+
+<details>
+<summary>flowchart</summary>
+
+```mermaid
+graph TD
+    A["Vision Encoder"] --> B["Projector"]
+    B --> C["Stage 1: Strong repulsion, Weak repulsion, Feature Space"]
+    C --> D["Stage 2: Attention Map"]
+    D --> E["Visual Token"]
+    D --> F["Text Token"]
+    D --> G["Pruned Token"]
+    H["Is there a dog in the image ?"] --> I["Tokenizer"]
+    I --> J["Stage 2: Remove Low-Attention Tokens"]
+    J --> K["Visual Token"]
+    J --> L["Text Token"]
+    J --> M["Pruned Token"]
+    N["Greedy selection via potential minimization"] --> I
+```
+</details>
+
+Figure 3: Overview of the proposed STS framework for stage-aware visual token pruning. Given visual tokens from the vision encoder and textual tokens from the input prompt, STS performs token reduction in two stages. In Stage 1, visual tokens are modeled as repulsive particles in feature space and selected using a potential-energy-inspired strategy to promote broad coverage of the feature space. In Stage 2, the remaining tokens are further filtered using cross-modal attention from textual tokens to visual tokens, retaining those most relevant to the textual query. This two-stage strategy preserves both structural diversity and task-specific semantic information while substantially reducing the number of visual tokens processed by the LLM.
+
+In earlier layers, the model performs broad contextual integration, distributing attention over a large set of visual tokens to capture global scene semantics. However, as computation progresses deeper into the LLM, visual processing undergoes a critical transition: guided by the textual prompt, attention gradually concentrates on a narrower, taskrelevant subset of visual tokens, leaving the majority of visual features with diminishing contributions (Voita et al., 2019; Zhang et al., 2024b; Dong et al., 2023).
+
+This progressive, instruction-driven concentration implies a strategic window for token reduction. Premature pruning risks discarding essential features before full contextual integration, whereas delayed pruning incurs severe computational waste by propagating redundant tokens through the deep LLM layers. Consequently, the intermediate layers emerge as the optimal pruning bottleneck—a "sweet spot" where broad context has been assimilated, yet prompt-irrelevant visual tokens can be aggressively filtered out to maximize efficiency (Liu et al., 2023b; Men et al., 2024). Our empirical results corroborate this analysis, demonstrating that executing pruning within these early-to-middle layers successfully achieves an optimal trade-off between task accuracy and inference efficiency. We provide a detailed ablation study validating this optimal layer selection in Appendix B.
+
+# 4 Method
+
+In this section, we introduce STS, a training-free visual token pruning framework. The key idea of STS is to separate structural preservation from semantic filtering. Before visual tokens enter the LLM, textual instructions are unavailable, making it difficult to determine task relevance. Therefore, STS first selects a compact and diverse subset of visual tokens from the vision encoder output using a potentialenergy-inspired objective, which promotes broad coverage of the feature space. Once the selected visual tokens are processed within the LLM, crossmodal attention provides an instruction-aware relevance signal. STS then applies task-aware filtering at an intermediate LLM layer to remove visual tokens with low relevance to the textual instruction. This two-step design first preserves structural diversity and then refines the retained tokens according to semantic relevance, reducing visual redundancy without additional training.
+
+# 4.1 Pre-LLM Pruning via Global Potential Energy Minimization
+
+The first stage operates on the visual tokens produced by the vision encoder before they are fed into the LLM. Let ${ \bf V } = [ v _ { 1 } , v _ { 2 } , \ldots , v _ { N } ] \in \mathbb { R } ^ { N \times C }$ denote the visual token sequence, where N is the number of tokens and C is the feature dimension. Since textual instructions are unavailable at this stage, token selection should preserve broad structural coverage rather than depend only on local importance scores. We therefore select a compact subset $s \subset \nu$ with $| S | = K \ll N$ to reduce redundancy while maintaining diverse visual information.
+
+To achieve this, we draw inspiration from electrostatic field theory and reformulate token selection as a potential-energy minimization problem. Visual tokens are modeled as mutually repulsive particles in feature space, where interaction strengths are governed by their pairwise proximity.
+
+Potential Energy Modeling. We embed the visual tokens into a metric feature space. Formally, we define the squared Euclidean distance between tokens $v _ { i }$ and $v _ { j }$ as
+
+$$
+d _ {i j} = \left\| v _ {i} - v _ {j} \right\| _ {2} ^ {2}. \tag {3}
+$$
+
+Based on this distance metric, the cumulative repulsive potential experienced by a candidate token $v _ { i }$ with respect to the currently selected subset $S _ { t }$ is formulated as
+
+$$
+U (v _ {i} \mid \mathcal {S} _ {t}) = \sum_ {v _ {j} \in \mathcal {S} _ {t}} \frac {1}{d _ {i j} + \epsilon}, \tag {4}
+$$
+
+where ϵ is a small constant for numerical stability. This formulation assigns a larger penalty to candidates that are close to already selected tokens, thereby discouraging redundant selections from densely populated regions of the feature space. Conversely, tokens that are farther from the current selected set receive lower potential values and are more likely to be retained.
+
+Iterative Selection Algorithm. We adopt an efficient greedy strategy to approximate the global minimization of this potential. To ensure deterministic behavior and improve robustness, we initialize $ { \boldsymbol { S } } _ { 0 }$ with an anchor token, such as the token closest to the global mean of the visual features or the token with the highest initial saliency. At each subsequent step, we select the candidate that experiences the minimum repulsive potential with respect to the already selected tokens:
+
+$$
+v _ {\text { next }} = \arg \min _ {v \in \mathcal {V} \backslash \mathcal {S} _ {t}} U (v \mid \mathcal {S} _ {t}). \tag {5}
+$$
+
+By consistently selecting tokens with lower potential, the algorithm encourages the retained tokens to be well separated in the feature space. This process selects visual tokens that are more widely distributed in the feature space, reducing redundancy before they are passed to the LLM.
+
+# 4.2 Intra-LLM Pruning via Task-Aware Filtering
+
+As visual tokens propagate through the LLM, the model gradually shifts from broad contextual integration to a more selective focus on task-relevant information. At this stage, purely diversity-driven retention may become suboptimal, since some structurally distinct tokens may still be irrelevant to the textual query. To address this issue, we apply taskaware pruning at an intermediate layer $L _ { \mathrm { p r u n e } }$ (Yin et al., 2022; Wang et al., 2021).
+
+Let S denote the visual tokens retained after the pre-LLM stage, and let $t _ { \mathrm { l a s t } }$ denote the final textual token in the input sequence (Vaswani et al., 2017). We estimate the semantic relevance of each visual token $v \in S$ using the attention weight it receives from this last textual token:
+
+$$
+R (v) = A _ {t _ {\text { last }}, v}, \tag {6}
+$$
+
+where $A _ { t _ { \mathrm { l a s t } } , v }$ is the attention weight from the last textual token to visual token v at layer $L _ { \mathrm { p r u n e } }$ (Tang et al., 2024).
+
+The final retained token set is then obtained by selecting the top-ranked visual tokens:
+
+$$
+\mathcal {S} _ {\text { final }} = \operatorname{TopK} _ {v \in \mathcal {S}} (R (v), K ^ {\prime}). \tag {7}
+$$
+
+This filtering step removes semantically irrelevant tokens while preserving those most relevant to the current instruction, thereby refining the diverse candidate pool into a compact and task-aware visual representation. For implementation details and pseudo-code, please refer to Algorithm 1 .
+
+Remarks on FlashAttention. Our method can still be used with models that adopt FlashAttention, since the task-aware relevance scores are obtained by recomputing the attention of the last instruction token with a standard attention operation outside the original LLM layers.
+
+<table><tr><td>Method</td><td>GQA</td><td>MMB</td><td>MME</td><td>POPE</td><td>SQA</td><td> $VQA^{v2}$ </td><td> $VQA^{Text}$ </td><td>VizWiz</td><td>Avg.</td></tr><tr><td>LLaVA-1.5-7B</td><td colspan="9">Upper Bound, 576 Tokens (100%)</td></tr><tr><td>Vanilla</td><td>61.9</td><td>64.7</td><td>1862</td><td>85.9</td><td>69.5</td><td>78.5</td><td>58.2</td><td>50.1</td><td>100.0%</td></tr><tr><td>LLaVA-1.5-7B</td><td colspan="9">Retain 128 Tokens (↓77.8%)</td></tr><tr><td>VisionZip (CVPR2025)</td><td>57.6</td><td>62.0</td><td>1762</td><td>83.2</td><td>68.9</td><td>75.0</td><td>56.8</td><td>49.6</td><td>96.5%</td></tr><tr><td>SparseVLM (ICML2025)</td><td>56.0</td><td>60.0</td><td>1696</td><td>80.5</td><td>67.1</td><td>73.8</td><td>54.9</td><td>51.0</td><td>94.3%</td></tr><tr><td>DART (EMNLP2025)</td><td>57.9</td><td>60.7</td><td>1721</td><td>80.4</td><td>69.1</td><td>74.7</td><td>56.3</td><td>52.8</td><td>96.8%</td></tr><tr><td>DivPrune (CVPR2025)</td><td>59.3</td><td>61.5</td><td>1718</td><td>86.7</td><td>68.6</td><td>76.0</td><td>56.0</td><td>52.8</td><td>97.6%</td></tr><tr><td>Zoo-Prune (CVPR2026)</td><td>59.5</td><td>61.9</td><td>1751</td><td>87.1</td><td>68.9</td><td>76.6</td><td>57.9</td><td>-</td><td>97.6%</td></tr><tr><td>AgilePrune (ICLR2026)</td><td>59.4</td><td>61.8</td><td>1748</td><td>87.4</td><td>68.6</td><td>76.4</td><td>57.0</td><td>53.0</td><td>98.4%</td></tr><tr><td>STS (Ours)</td><td>60.1</td><td>63.5</td><td>1803</td><td>87.2</td><td>68.8</td><td>77.3</td><td>57.6</td><td>52.5</td><td>99.4%</td></tr><tr><td>LLaVA-1.5-7B</td><td colspan="9">Retain 64 Tokens (↓88.9%)</td></tr><tr><td>VisionZip (CVPR2025)</td><td>55.1</td><td>60.1</td><td>1690</td><td>77.0</td><td>69.0</td><td>72.4</td><td>55.5</td><td>51.9</td><td>94.1%</td></tr><tr><td>SparseVLM (ICML2025)</td><td>52.7</td><td>56.2</td><td>1505</td><td>75.1</td><td>67.2</td><td>68.2</td><td>51.8</td><td>49.6</td><td>89.0%</td></tr><tr><td>DART (EMNLP2025)</td><td>54.7</td><td>59.5</td><td>1692</td><td>73.8</td><td>69.3</td><td>71.3</td><td>54.7</td><td>53.5</td><td>93.9%</td></tr><tr><td>DivPrune (CVPR2025)</td><td>57.8</td><td>59.3</td><td>1674</td><td>85.6</td><td>68.2</td><td>74.1</td><td>54.7</td><td>53.6</td><td>94.8%</td></tr><tr><td>Zoo-Prune (CVPR2026)</td><td>58.5</td><td>60.2</td><td>1675</td><td>85.9</td><td>68.3</td><td>75.0</td><td>55.4</td><td>-</td><td>95.2%</td></tr><tr><td>AgilePrune (ICLR2026)</td><td>57.4</td><td>60.7</td><td>1703</td><td>84.1</td><td>68.6</td><td>75.5</td><td>56.0</td><td>54.0</td><td>96.9%</td></tr><tr><td>STS (Ours)</td><td>59.0</td><td>61.6</td><td>1718</td><td>87.0</td><td>69.2</td><td>75.9</td><td>56.8</td><td>53.0</td><td>98.0%</td></tr><tr><td>LLaVA-1.5-7B</td><td colspan="9">Retain 32 Tokens (↓94.4%)</td></tr><tr><td>VisionZip (CVPR2025)</td><td>51.8</td><td>57.0</td><td>1579</td><td>69.4</td><td>69.1</td><td>67.1</td><td>53.1</td><td>52.4</td><td>89.8%</td></tr><tr><td>DART (EMNLP2025)</td><td>52.9</td><td>58.5</td><td>1601</td><td>69.1</td><td>69.3</td><td>67.1</td><td>52.2</td><td>52.5</td><td>90.9%</td></tr><tr><td>DivPrune (CVPR2025)</td><td>54.9</td><td>57.6</td><td>1594</td><td>81.5</td><td>68.6</td><td>71.2</td><td>52.9</td><td>53.3</td><td>93.1%</td></tr><tr><td>AgilePrune (ICLR2026)</td><td>54.1</td><td>60.4</td><td>1603</td><td>80.1</td><td>69.0</td><td>74.0</td><td>54.5</td><td>53.4</td><td>94.2%</td></tr><tr><td>STS (Ours)</td><td>57.1</td><td>60.2</td><td>1652</td><td>85.4</td><td>69.4</td><td>73.9</td><td>55.4</td><td>52.7</td><td>96.0%</td></tr></table>
+
+Table 1: Performance comparison of different token pruning methods on LLaVA-1.5-7B across multiple benchmarks. The orange background highlights our method.
+
+# 5 Experiments
+
+# 5.1 Experimental Setup
+
+We evaluate STS on four representative large multimodal models (LMMs)—LLaVA-v1.5- 7B/13B, LLaVA-NeXT-7B, and Qwen2.5-VL-7B—covering fixed-resolution, high-resolution, and dynamic visual encoding schemes. Experiments are conducted on eight widely adopted image-based benchmarks: GQA (Hudson and Manning, 2019), MMBench (Li et al., 2023), MME (Fu et al., 2025), POPE (Pope et al., 2023), ScienceQA (Lu et al., 2022), TextVQA (Singh et al., 2019), VQA-v2 (Goyal et al., 2017), and VizWiz (Gurari et al., 2018) . For all benchmarks, we follow their default settings and official evaluation metrics.
+
+We adopt the standard inference settings of the evaluated LVLMs and report results using the official metrics of each benchmark. STS reduces visual tokens in two stages. For the intra-LLM stage, we perform task-aware filtering at a fixed intermediate layer, setting $L _ { \mathrm { p r u n e } } = 1 6$ for LLaVAseries models and $L _ { \mathrm { p r u n e } } = 1 4$ for Qwen2.5-VL. By default, the intra-LLM retention ratio is fixed to $\rho _ { \mathrm { i n t r a } } = 3 3 . 3 \%$ , while the pre-LLM token budget is adjusted according to the target average number of visual tokens processed by the LLM. For example, to obtain an average budget of 128 tokens, we retain 192 tokens before the LLM and further reduce them to 64 tokens after intra-LLM pruning. These settings are fixed for simplicity and to enable consistent computation and efficiency measurement across different models and experimental settings. As we show later in the ablation studies, performance is relatively insensitive to the exact pruning layer within the middle stage of the LLM.
+
+# 5.2 Comparison on Diverse Tasks
+
+Results on LLaVA-1.5-7B. As shown in Table 1, STS consistently achieves the best average performance across different token budgets on LLaVA-1.5-7B. With 128 retained tokens, STS reaches 99.4% relative performance, outperforming strong recent baselines such as AgilePrune and Zoo-Prune. Under more aggressive pruning, STS retains 98.0% relative performance with only 64 tokens, while achieving the best results on GQA, MMB, MME,
+
+<table><tr><td>Method</td><td>GQA</td><td>MMB</td><td>MME</td><td>POPE</td><td>SQA</td><td> $VQA^{v2}$ </td><td> $VQA^{Text}$ </td><td>VizWiz</td><td>Avg.</td></tr><tr><td>LLaVA-NeXT-7B</td><td colspan="9">Upper Bound (100%)</td></tr><tr><td>Vanilla</td><td>69.2</td><td>67.9</td><td>1842</td><td>86.4</td><td>70.2</td><td>80.1</td><td>61.3</td><td>55.2</td><td>100.0%</td></tr><tr><td>LLaVA-NeXT-7B</td><td colspan="9">Retain 640 Tokens (↓77.8%)</td></tr><tr><td>SparseVLM (ICML2025)</td><td>60.3</td><td>65.7</td><td>1772</td><td>85.2</td><td>67.7</td><td>77.1</td><td>57.8</td><td>53.6</td><td>95.3%</td></tr><tr><td>VisionZip (CVPR2025)</td><td>61.3</td><td>65.8</td><td>1787</td><td>86.3</td><td>68.1</td><td>79.1</td><td>60.2</td><td>57.1</td><td>97.5%</td></tr><tr><td>DART(EMNLP2025)</td><td>61.3</td><td>64.9</td><td>1781</td><td>85.0</td><td>68.2</td><td>78.3</td><td>59.5</td><td>57.0</td><td>96.8%</td></tr><tr><td>DivPrune (CVPR2025)</td><td>61.6</td><td>65.4</td><td>1773</td><td>85.5</td><td>67.8</td><td>78.9</td><td>55.4</td><td>55.7</td><td>95.9%</td></tr><tr><td>AgilePrune (ICLR2026)</td><td>62.0</td><td>65.9</td><td>-</td><td>86.1</td><td>67.8</td><td>79.3</td><td>59.0</td><td>56.0</td><td>97.1%</td></tr><tr><td>Zoo-Prune (CVPR2026)</td><td>62.2</td><td>65.2</td><td>1816</td><td>86.8</td><td>68.0</td><td>79.6</td><td>58.0</td><td>-</td><td>96.6%</td></tr><tr><td>STS (Ours)</td><td>63.4</td><td>65.9</td><td>1801</td><td>87.6</td><td>67.7</td><td>79.9</td><td>58.9</td><td>55.7</td><td>97.6%</td></tr><tr><td>LLaVA-NeXT-7B</td><td colspan="9">Retain 320 Tokens (↓88.9%)</td></tr><tr><td>SparseVLM (ICML2025)</td><td>57.7</td><td>64.3</td><td>1684</td><td>78.6</td><td>67.3</td><td>73.4</td><td>55.9</td><td>54.2</td><td>92.2%</td></tr><tr><td>VisionZip (CVPR2025)</td><td>59.3</td><td>63.1</td><td>1702</td><td>82.1</td><td>67.3</td><td>76.2</td><td>58.9</td><td>56.2</td><td>94.4%</td></tr><tr><td>DART (EMNLP2025)</td><td>59.5</td><td>64.2</td><td>1743</td><td>81.0</td><td>67.5</td><td>75.7</td><td>57.6</td><td>56.8</td><td>94.5%</td></tr><tr><td>DivPrune (CVPR2025)</td><td>59.6</td><td>63.7</td><td>1731</td><td>83.5</td><td>67.8</td><td>76.6</td><td>53.9</td><td>55.6</td><td>93.9%</td></tr><tr><td>AgilePrune (ICLR2026)</td><td>60.1</td><td>64.5</td><td>-</td><td>84.0</td><td>67.3</td><td>77.8</td><td>58.9</td><td>55.8</td><td>95.6%</td></tr><tr><td>Zoo-Prune (CVPR2026)</td><td>60.9</td><td>64.9</td><td>1787</td><td>85.5</td><td>67.8</td><td>78.1</td><td>57.3</td><td>-</td><td>95.3%</td></tr><tr><td>STS (Ours)</td><td>61.5</td><td>64.5</td><td>1791</td><td>87.5</td><td>67.7</td><td>78.8</td><td>58.6</td><td>56.3</td><td>96.8%</td></tr><tr><td>LLaVA-NeXT-7B</td><td colspan="9">Retain 160 Tokens (↓94.4%)</td></tr><tr><td>SparseVLM (ICML2025)</td><td>51.2</td><td>63.1</td><td>1542</td><td>77.3</td><td>67.5</td><td>66.3</td><td>46.4</td><td>-</td><td>85.0%</td></tr><tr><td>VisionZip (CVPR2025)</td><td>55.5</td><td>60.1</td><td>1630</td><td>74.8</td><td>68.3</td><td>71.4</td><td>56.2</td><td>55.5</td><td>90.3%</td></tr><tr><td>DivPrune (CVPR2025)</td><td>57.8</td><td>62.0</td><td>1658</td><td>79.4</td><td>68.0</td><td>73.9</td><td>52.4</td><td>56.1</td><td>91.6%</td></tr><tr><td>Zoo-Prune (CVPR2026)</td><td>59.9</td><td>64.2</td><td>1738</td><td>83.1</td><td>68.4</td><td>76.1</td><td>55.4</td><td>-</td><td>93.5%</td></tr><tr><td>STS (Ours)</td><td>61.1</td><td>63.7</td><td>1765</td><td>87.1</td><td>67.8</td><td>76.9</td><td>55.4</td><td>55.8</td><td>95.3%</td></tr></table>
+
+Table 2: Performance comparison of different token pruning methods on LLaVA-NeXT-7B across multiple benchmarks. The orange background highlights our method.
+
+POPE, $\mathrm { V Q A } ^ { \mathrm { v 2 } }$ , and $\mathrm { \Delta V Q A ^ { \mathrm { T e x t } } }$ . Even at the extreme 32-token budget, STS maintains 96.0% relative performance, surpassing AgilePrune by 1.8 points and showing strong robustness under severe visual token reduction.
+
+Results on LLaVA-NeXT-7B. On the highresolution LLaVA-NeXT-7B setting, STS remains effective across different token budgets, as shown in Table 2. With 640 retained tokens, STS achieves 97.6% relative performance, slightly outperforming VisionZip and AgilePrune. Under more aggressive pruning, STS retains 96.8% relative performance with 320 tokens and 95.3% with only 160 tokens. Notably, at the 160-token budget, STS outperforms Zoo-Prune by 1.8 points on average and achieves the best results on GQA, MME, POPE, and $\mathrm { V Q A } ^ { \mathrm { v 2 } }$ , indicating strong performance under high-resolution visual token compression.
+
+We focus on the main experimental results in this section. Additional comparisons and ablation studies are included in Appendix B due to space constraints.
+
+# 5.3 Ablation Studies
+
+To analyze the effectiveness of our decoupled design, we compare the full STS framework with four representative variants on LLaVA-1.5-7B: LLM-Only (FastV), which performs pruning using LLM attention; FasterVLM, which uses standard [CLS] attention after the vision encoder; DivPrune, which selects tokens through max-min diversity; and STS-S, our Stage-1-only variant that uses the potential-energy objective without taskaware semantic filtering. We report results on GQA, POPE, and TextVQA under different pruning budgets to examine the roles of pre-LLM diversity preservation and intra-LLM semantic filtering.
+
+First, attention-based pruning methods degrade substantially under aggressive token reduction. FasterVLM, which prunes visual tokens at the ViT exit based on attention scores, drops to 73.0% on POPE at the lowest budget, compared with the 85.9% full-token baseline. FastV performs even worse, falling to 38.0% on POPE and 42.0% on GQA. As shown in our visualization, attentiononly pruning can also concentrate tokens in promptirrelevant regions, such as the lower-right area of the image, wasting the limited token budget . As showed in C. In contrast, STS first constructs a diverse candidate set before LLM-stage filtering, helping the final selection focus more on useful visual content.
+
+<table><tr><td>Method</td><td># Token</td><td>FLOPs (T)</td><td>Prefill (ms)</td><td>Decode (ms)</td><td>KV Cache (MB)</td><td>Memory (GB)</td><td>Score (F1)</td></tr><tr><td colspan="8">Upper Bound, All 2880 Tokens (100%)</td></tr><tr><td>LLaVA-NeXT-7B</td><td>2880</td><td>41.7</td><td>246</td><td>29</td><td>1440.0</td><td>16.7</td><td>86.8</td></tr><tr><td colspan="8">Retain 320 Tokens (↓ 88.9%)</td></tr><tr><td>FastV (ECCV24)</td><td>320</td><td>4.4 (×9.5)</td><td>54 (×4.6)</td><td>23 (×1.2)</td><td>160.3</td><td>15.6</td><td>49.5</td></tr><tr><td>SparseVLM (ICML25)</td><td>320</td><td>4.5 (×9.3)</td><td>71 (×3.5)</td><td>25 (×1.1)</td><td>161.2</td><td>18.6</td><td>76.9</td></tr><tr><td>VisionZip (CVPR25)</td><td>320</td><td>4.2 (×9.9)</td><td>38 (×6.6)</td><td>22 (×1.3)</td><td>160.0</td><td>14.8</td><td>82.3</td></tr><tr><td>DivPrune (CVPR25)</td><td>320</td><td>4.2 (×9.9)</td><td>38 (×6.6)</td><td>22 (×1.3)</td><td>160.0</td><td>13.8</td><td>84.7</td></tr><tr><td>STS (Ours)</td><td>320</td><td>4.2 (×9.9)</td><td>38 (×6.6)</td><td>22 (×1.3)</td><td>160.0</td><td>13.8</td><td>87.7</td></tr></table>
+
+Table 3: Efficiency Analysis on LLaVA-NeXT-7B. The orange background highlights our method.
+
+![](images/bb9c818054927f0d02fb8709c6c0d58d7bd2a5852ca2f52a2c35397dceb32227.jpg)
+
+<details>
+<summary>line</summary>
+
+| Visual Token Number | STS (Ours) | STS-S | DivPrune | FasterVLM | LLM-Only (FastV) |
+| ------------------- | ---------- | ----- | -------- | --------- | ---------------- |
+| 32                  | 57.0       | 55.0  | 55.0     | 52.0      | 42.0             |
+| 64                  | 59.0       | 58.0  | 57.0     | 55.0      | 46.0             |
+| 128                 | 60.0       | 59.0  | 59.0     | 58.0      | 54.0             |
+</details>
+
+![](images/6d7652e5bd1272306d4e0e0fc89389ed0a0a838ef3c43c13a7b013e5b9cf1ba1.jpg)
+
+<details>
+<summary>line</summary>
+
+| Visual Token Number | STS (Ours) | STS-S | DivPrune | FasterVLM | LLM-Only (FastV) |
+| ------------------- | ---------- | ----- | -------- | --------- | ---------------- |
+| 32                  | 85         | 82    | 80       | 72        | 38               |
+| 64                  | 86         | 84    | 82       | 80        | 54               |
+| 128                 | 87         | 86    | 84       | 84        | 69               |
+</details>
+
+![](images/f36c84d8764cc4683ea3dceed0baf5b0c8cd7e306c6b7ffb20062a09a84d4e10.jpg)
+
+<details>
+<summary>line</summary>
+
+| Visual Token Number | STS (Ours) | STS-S | DivPrune | FasterVLM | LLM-Only (FastV) |
+| ------------------- | ---------- | ----- | -------- | --------- | ---------------- |
+| 32                  | 55.0       | 54.0  | 52.0     | 54.0      | 43.0             |
+| 64                  | 57.0       | 56.0  | 54.0     | 56.0      | 48.0             |
+| 128                 | 58.0       | 57.0  | 56.0     | 57.0      | 51.0             |
+</details>
+
+Figure 4: Performance comparison of different token pruning variants under rigorous budgets. Results are reported on GQA, POPE, and TextVQA using LLaVA-NeXT-7B. The full STS framework consistently outperforms all single-stage or attention-dependent baselines across varying preserved token counts.
+
+Second, among pre-LLM diversity-preserving methods, STS-S consistently outperforms DivPrune. At the most aggressive pruning ratio, STS-S achieves 82.0% on POPE and 54.0% on TextVQA, compared with 81.0% and 52.0% for DivPrune. Since both methods operate without textual instructions, this suggests that the potentialenergy objective provides a stronger structural selection criterion than standard distance-based diversity selection by considering each candidate token relative to the entire selected set.
+
+Third, intra-LLM task-aware filtering further improves over STS-S. At the lowest budget, full STS improves POPE from 82.0% to 85.4%, showing that structural diversity should be refined according to the textual query. At higher budgets, STS reaches 87.2% on POPE, slightly exceeding the unpruned baseline of 85.9%. Overall, these results indicate that the two stages are complementary: the first preserves a diverse candidate set, while the second removes prompt-irrelevant tokens.
+
+# 5.4 Efficiency Analysis
+
+Table 3 reports the efficiency–performance tradeoff on LLaVA-NeXT-7B under an aggressive 88.9% token reduction. STS reduces FLOPs by 9.9× and prefill latency by 6.6× (from 246 ms to 38 ms). It also reduces the KV cache from 1440.0 MB to 160.0 MB and lowers peak memory usage to 13.8 GB. Compared with SparseVLM, which introduces additional memory and latency overhead, STS matches the efficiency profile of lightweight baselines such as VisionZip and DivPrune.
+
+Despite this substantial reduction in computation, STS achieves an F1 score of 87.7, slightly exceeding the 2880-token unpruned baseline (86.8) under the same setting. In contrast, FastV and SparseVLM exhibit much larger performance drops at this compression ratio. These results indicate that STS provides a strong efficiency–performance trade-off in high-redundancy settings.
+
+# 6 Conclusion
+
+We presented STS, a training-free, stage-aware visual token pruning framework for efficient multimodal inference. Our analysis shows that attentionbased pruning tends to select high-attention tokens from semantically similar regions, causing redundant selection and reduced diversity. By combining diversity-preserving pre-LLM selection with taskaware intra-LLM filtering, STS improves efficiency under aggressive token reduction across VLM architectures while maintaining task performance. These results highlight the importance of matching pruning strategies to representation dynamics.
+
+# Limitations
+
+Although the STS framework preserves strong task performance under aggressive token reduction without requiring additional training, it is not entirely without loss. Furthermore, like many efficiencyoriented approaches that operate on intermediate model representations, STS requires direct access to internal visual tokens during inference. As a result, it cannot be directly applied to black-box multimodal models, such as proprietary GPT- or Claude-style systems, where such intermediate representations are not exposed. Moving forward, we are committed to advancing our research toward model quantization and broader efficient LLM paradigms, aiming to develop more versatile and lossless methods to further enhance the efficiency of visual understanding.
+
+# References
+
+Samira Abnar and Willem Zuidema. 2020. Quantifying attention flow in transformers. Preprint, arXiv:2005.00928.   
+Jean-Baptiste Alayrac, Jeff Donahue, Pauline Luc, Antoine Miech, Iain Barr, Yana Hasson, Karel Lenc, Arthur Mensch, Katherine Millican, Malcolm Reynolds, and 1 others. 2022. Flamingo: a visual language model for few-shot learning. Advances in neural information processing systems, 35:23716– 23736.   
+Jinze Bai, Shuai Bai, Yunfei Chu, Zeyu Cui, Kai Dang, Xiaodong Deng, Yang Fan, Wenbin Ge, Yu Han, Fei Huang, Binyuan Hui, Luo Ji, Mei Li, Junyang Lin, Runji Lin, Dayiheng Liu, Gao Liu, Chengqiang Lu, Keming Lu, and 29 others. 2023. Qwen technical report. Preprint, arXiv:2309.16609.   
+Daniel Bolya, Cheng-Yang Fu, Xiaoliang Dai, Peizhao Zhang, Christoph Feichtenhofer, and Judy Hoffman. 2022. Token merging: Your vit but faster. arXiv preprint arXiv:2210.09461.   
+Tom Brown, Benjamin Mann, Nick Ryder, Melanie Subbiah, Jared D Kaplan, Prafulla Dhariwal, Arvind Neelakantan, Pranav Shyam, Girish Sastry, Amanda Askell, and 1 others. 2020. Language models are few-shot learners. Advances in neural information processing systems, 33:1877–1901.
+
+Mathilde Caron, Hugo Touvron, Ishan Misra, Hervé Jégou, Julien Mairal, Piotr Bojanowski, and Armand Joulin. 2021. Emerging properties in self-supervised vision transformers. Preprint, arXiv:2104.14294.   
+Liang Chen, Haozhe Zhao, Tianyu Liu, Shuai Bai, Junyang Lin, Chang Zhou, and Baobao Chang. 2024a. An image is worth 1/2 tokens after layer 2: Plug-andplay inference acceleration for large vision-language models. Preprint, arXiv:2403.06764.   
+Zhe Chen, Jiannan Wu, Wenhai Wang, Weijie Su, Guo Chen, Sen Xing, Muyan Zhong, Qinglong Zhang, Xizhou Zhu, Lewei Lu, Bin Li, Ping Luo, Tong Lu, Yu Qiao, and Jifeng Dai. 2024b. Internvl: Scaling up vision foundation models and aligning for generic visual-linguistic tasks. Preprint, arXiv:2312.14238.   
+Thomas Cover and Peter Hart. 1967. Nearest neighbor pattern classification. IEEE transactions on information theory, 13(1):21–27.   
+Yihe Dong, Jean-Baptiste Cordonnier, and Andreas Loukas. 2023. Attention is not all you need: Pure attention loses rank doubly exponentially with depth. Preprint, arXiv:2103.03404.   
+Nelson Elhage, Neel Nanda, Catherine Olsson, Tom Henighan, Nicholas Joseph, Ben Mann, Amanda Askell, Yuntao Bai, Anna Chen, Tom Conerly, Nova DasSarma, Dawn Drain, Deep Ganguli, Zac Hatfield-Dodds, Danny Hernandez, Andy Jones, Jackson Kernion, Liane Lovitt, Kamal Ndousse, and 6 others. 2021. A mathematical framework for transformer circuits. Transformer Circuits Thread. Https://transformercircuits.pub/2021/framework/index.html.   
+Chaoyou Fu, Peixian Chen, Yunhang Shen, Yulei Qin, Mengdan Zhang, Xu Lin, Jinrui Yang, Xiawu Zheng, Ke Li, Xing Sun, Yunsheng Wu, Rongrong Ji, Caifeng Shan, and Ran He. 2025. Mme: A comprehensive evaluation benchmark for multimodal large language models. Preprint, arXiv:2306.13394.   
+Yash Goyal, Tejas Khot, Douglas Summers-Stay, Dhruv Batra, and Devi Parikh. 2017. Making the v in vqa matter: Elevating the role of image understanding in visual question answering. Preprint, arXiv:1612.00837.   
+Danna Gurari, Qing Li, Abigale J. Stangl, Anhong Guo, Chi Lin, Kristen Grauman, Jiebo Luo, and Jeffrey P. Bigham. 2018. Vizwiz grand challenge: Answering visual questions from blind people. Preprint, arXiv:1802.08218.   
+Drew A. Hudson and Christopher D. Manning. 2019. Gqa: A new dataset for real-world visual reasoning and compositional question answering. Preprint, arXiv:1902.09506.   
+Alex Kulesza and Ben Taskar. 2012. Determinantal point processes for machine learning. Foundations and Trends® in Machine Learning, 5(2-3):123–286.
+
+Woosuk Kwon, Zhuohan Li, Siyuan Zhuang, Ying Sheng, Lianmin Zheng, Cody Hao Yu, Joseph E. Gonzalez, Hao Zhang, and Ion Stoica. 2023. Efficient memory management for large language model serving with pagedattention. Preprint, arXiv:2309.06180.   
+Yifan Li, Yifan Du, Kun Zhou, Jinpeng Wang, Wayne Xin Zhao, and Ji-Rong Wen. 2023. Evaluating object hallucination in large vision-language models. Preprint, arXiv:2305.10355.   
+James Liang, Tianfei Zhou, Dongfang Liu, and Wenguan Wang. 2023. Clustseg: Clustering for universal segmentation. Preprint, arXiv:2305.02187.   
+Youwei Liang, Chongjian Ge, Zhan Tong, Yibing Song, Jue Wang, and Pengtao Xie. 2022. Not all patches are what you need: Expediting vision transformers via token reorganizations. Preprint, arXiv:2202.07800.   
+Bin Lin, Yang Ye, Bin Zhu, Jiaxi Cui, Munan Ning, Peng Jin, and Li Yuan. 2024. Video-llava: Learning united visual representation by alignment before projection. Preprint, arXiv:2311.10122.   
+Haotian Liu, Chunyuan Li, Yuheng Li, and Yong Jae Lee. 2024a. Improved baselines with visual instruction tuning. Preprint, arXiv:2310.03744.   
+Haotian Liu, Chunyuan Li, Yuheng Li, Bo Li, Yuanhan Zhang, Sheng Shen, and Yong Jae Lee. 2024b. Llavanext: Improved reasoning, ocr, and world knowledge.   
+Haotian Liu, Chunyuan Li, Qingyang Wu, and Yong Jae Lee. 2023a. Visual instruction tuning. In Advances in Neural Information Processing Systems, volume 36, pages 34892–34916. Curran Associates, Inc.   
+Zichang Liu, Jue Wang, Tri Dao, Tianyi Zhou, Binhang Yuan, Zhao Song, Anshumali Shrivastava, Ce Zhang, Yuandong Tian, Christopher Re, and Beidi Chen. 2023b. Deja vu: Contextual sparsity for efficient llms at inference time. Preprint, arXiv:2310.17157.   
+Pan Lu, Swaroop Mishra, Tony Xia, Liang Qiu, Kai-Wei Chang, Song-Chun Zhu, Oyvind Tafjord, Peter Clark, and Ashwin Kalyan. 2022. Learn to explain: Multimodal reasoning via thought chains for science question answering. Preprint, arXiv:2209.09513.   
+Xin Men, Mingyu Xu, Qingyu Zhang, Bingning Wang, Hongyu Lin, Yaojie Lu, Xianpei Han, and Weipeng Chen. 2024. Shortgpt: Layers in large language models are more redundant than you expect. Preprint, arXiv:2403.03853.   
+Reiner Pope, Sholto Douglas, Aakanksha Chowdhery, Jacob Devlin, James Bradbury, Jonathan Heek, Kefan Xiao, Shivani Agrawal, and Jeff Dean. 2023. Efficiently scaling transformer inference. Proceedings of machine learning and systems, 5:606–624.
+
+Alec Radford, Jeffrey Wu, Rewon Child, David Luan, Dario Amodei, Ilya Sutskever, and 1 others. 2019. Language models are unsupervised multitask learners. OpenAI blog, 1(8):9.   
+Amanpreet Singh, Vivek Natarajan, Meet Shah, Yu Jiang, Xinlei Chen, Dhruv Batra, Devi Parikh, and Marcus Rohrbach. 2019. Towards vqa models that can read. Preprint, arXiv:1904.08920.   
+Jiaming Tang, Yilong Zhao, Kan Zhu, Guangxuan Xiao, Baris Kasikci, and Song Han. 2024. Quest: Queryaware sparsity for efficient long-context llm inference. Preprint, arXiv:2406.10774.   
+Yi Tay, Mostafa Dehghani, Dara Bahri, and Donald Metzler. 2022. Efficient transformers: A survey. Preprint, arXiv:2009.06732.   
+Gemini Team, Rohan Anil, Sebastian Borgeaud, Jean-Baptiste Alayrac, Jiahui Yu, Radu Soricut, Johan Schalkwyk, Andrew M Dai, Anja Hauth, Katie Millican, and 1 others. 2023. Gemini: a family of highly capable multimodal models. arXiv preprint arXiv:2312.11805.   
+Ashish Vaswani, Noam Shazeer, Niki Parmar, Jakob Uszkoreit, Llion Jones, Aidan N Gomez, Łukasz Kaiser, and Illia Polosukhin. 2017. Attention is all you need. Advances in neural information processing systems, 30.   
+Elena Voita, David Talbot, Fedor Moiseev, Rico Sennrich, and Ivan Titov. 2019. Analyzing multi-head self-attention: Specialized heads do the heavy lifting, the rest can be pruned. Preprint, arXiv:1905.09418.   
+Hanrui Wang, Zhekai Zhang, and Song Han. 2021. Spatten: Efficient sparse attention architecture with cascade token and head pruning. In 2021 IEEE International Symposium on High-Performance Computer Architecture (HPCA), page 97–110. IEEE.   
+Tongzhou Wang and Phillip Isola. 2020. Understanding contrastive representation learning through alignment and uniformity on the hypersphere. In International conference on machine learning, pages 9929–9939. PMLR.   
+Zichen Wen, Yifeng Gao, Shaobo Wang, Junyuan Zhang, Qintong Zhang, Weijia Li, Conghui He, and Linfeng Zhang. 2025. Stop looking for important tokens in multimodal language models: Duplication matters more. Preprint, arXiv:2502.11494.   
+Guangxuan Xiao, Yuandong Tian, Beidi Chen, Song Han, and Mike Lewis. 2024. Efficient streaming language models with attention sinks. In The Twelfth International Conference on Learning Representations.   
+Long Xing, Qidong Huang, Xiaoyi Dong, Jiajie Lu, Pan Zhang, Yuhang Zang, Yuhang Cao, Conghui He, Jiaqi Wang, Feng Wu, and Dahua Lin. 2025. Pyramiddrop: Accelerating your large vision-language models via pyramid visual redundancy reduction. Preprint, arXiv:2410.17247.
+
+Ruyi Xu, Yuan Yao, Zonghao Guo, Junbo Cui, Zanlin Ni, Chunjiang Ge, Tat-Seng Chua, Zhiyuan Liu, Maosong Sun, and Gao Huang. 2024. Llava-uhd: an lmm perceiving any aspect ratio and high-resolution images. Preprint, arXiv:2403.11703.   
+Senqiao Yang, Yukang Chen, Zhuotao Tian, Chengyao Wang, Jingyao Li, Bei Yu, and Jiaya Jia. 2026. Visionzip: Longer is better but not necessary in vision language models. Preprint, arXiv:2412.04467.   
+Hongxu Yin, Arash Vahdat, Jose Alvarez, Arun Mallya, Jan Kautz, and Pavlo Molchanov. 2022. Adavit: Adaptive tokens for efficient vision transformer. Preprint, arXiv:2112.07658.   
+Kai Zhang, Xingyu Chen, and Xiaofeng Zhang. 2025a. Adatoken-3d: Dynamic spatial gating for efficient 3d large multimodal-models reasoning. In 2025 IEEE/RSJ International Conference on Intelligent Robots and Systems (IROS), pages 16702–16709.   
+Qizhe Zhang, Aosong Cheng, Ming Lu, Renrui Zhang, Zhiyong Zhuo, Jiajun Cao, Shaobo Guo, Qi She, and Shanghang Zhang. 2025b. Beyond text-visual attention: Exploiting visual cues for effective token pruning in vlms. Preprint, arXiv:2412.01818.   
+Xiaofeng Zhang, Yihao Quan, Chaochen Gu, Chen Shen, Xiaosong Yuan, Shaotian Yan, Hao Cheng, Kaijie Wu, and Jieping Ye. 2024a. Seeing clearly by layer two: Enhancing attention heads to alleviate hallucination in lvlms. Preprint, arXiv:2411.09968.   
+Xiaofeng Zhang, Yihao Quan, Chen Shen, Xiaosong Yuan, Shaotian Yan, Liang Xie, Wenxiao Wang, Chaochen Gu, Hao Tang, and Jieping Ye. 2024b. From redundancy to relevance: Information flow in lvlms across reasoning tasks. Preprint, arXiv:2406.06579.   
+Yuan Zhang, Chun-Kai Fan, Junpeng Ma, Wenzhao Zheng, Tao Huang, Kuan Cheng, Denis Gudovskiy, Tomoyuki Okuno, Yohei Nakata, Kurt Keutzer, and Shanghang Zhang. 2025c. Sparsevlm: Visual token sparsification for efficient vision-language model inference. Preprint, arXiv:2410.04417.   
+Zhenyu Zhang, Ying Sheng, Tianyi Zhou, Tianlong Chen, Lianmin Zheng, Ruisi Cai, Zhao Song, Yuandong Tian, Christopher Ré, Clark Barrett, Zhangyang Wang, and Beidi Chen. 2023. H o: Heavy-hitter oracle for efficient generative inference of large language models. Preprint, arXiv:2306.14048.   
+Qiyan Zhao, Xiaofeng Zhang, Yiheng Li, Yun Xing, Xiaosong Yuan, Feilong Tang, Sinan Fan, Xuhang Chen, Xuyao Zhang, and Dahan Wang. 2025. Mcallava: Manhattan causal attention for reducing hallucination in large vision-language models. Preprint, arXiv:2507.09184.   
+Jinguo Zhu, Weiyun Wang, Zhe Chen, Zhaoyang Liu, Shenglong Ye, Lixin Gu, Hao Tian, Yuchen Duan, Weijie Su, Jie Shao, Zhangwei Gao, Erfei Cui, Xuehui Wang, Yue Cao, Yangzhou Liu, Xingguang Wei,
+
+Hongjie Zhang, Haomin Wang, Weiye Xu, and 32 others. 2025. Internvl3: Exploring advanced training and test-time recipes for open-source multimodal models. Preprint, arXiv:2504.10479.
+
+# Appendix
+
+# A Additional Analysis and Algorithm Details
+
+# A.1 Background and Rationale
+
+K-nearest neighbors (KNN) is used in this work not as a classifier, but as a diagnostic tool for probing the local geometry of visual token representations. Specifically, we use KNN to examine whether visual tokens that are close in the feature space also receive similar attention-based importance scores. This question is central to understanding the failure mode of attention-based pruning: if nearby tokens receive nearly identical attention scores, attention becomes less discriminative within local neighborhoods and may lead to redundant token selection.
+
+Given a set of N visual tokens at a certain layer, each token ti is represented by a feature vector $\mathbf { f } _ { i } \in \mathbb { R } ^ { d }$ and an attention score $s _ { i } \in \mathbb { R }$ . For each token, we construct a local neighborhood $\mathcal { N } _ { K } ( t _ { i } )$ using the K nearest neighbors in the feature space. In our implementation, cosine distance is used to reduce the influence of feature magnitude in highdimensional representations.
+
+To measure how attention scores vary within these local neighborhoods, we define the local fluctuation as
+
+$$
+\sigma_ {\text { local }} = \frac {1}{N} \sum_ {i = 1} ^ {N} \operatorname{std} \left(\left\{s _ {j} \mid t _ {j} \in \mathcal {N} _ {K} (t _ {i}) \right\}\right). \tag {8}
+$$
+
+We further normalize this quantity by the global attention fluctuation
+
+$$
+\sigma_ {\text { global }} = \text { std } (\{s _ {i} \} _ {i = 1} ^ {N}), \tag {9}
+$$
+
+and define the KNN Consistency Score as
+
+$$
+C = 1 - \frac {\sigma_ {\text { local }}}{\sigma_ {\text { global }}}. \tag {10}
+$$
+
+A low value of C indicates that attention scores vary substantially even among feature-similar tokens, suggesting weak alignment between attention similarity and feature similarity. In contrast, a high value of C indicates that tokens within the same local feature neighborhood tend to receive similar attention scores. This implies that attention becomes locally homogeneous in the feature space, making attention-based pruning more likely to retain or discard groups of semantically similar tokens together.
+
+This analysis helps explain the Manifold Coverage Gap observed in attention-based pruning. When attention scores become locally consistent within feature neighborhoods, pruning based only on attention magnitude may select redundant tokens from the same semantic region while missing complementary long-tail visual details. Therefore, the KNN Consistency Score provides empirical evidence that attention magnitude alone is insufficient for preserving diverse visual representations in deep vision layers.
+
+KNN is suitable for this analysis because it captures local neighborhood structure without imposing hard cluster assignments. Compared with clustering methods, which require discrete partitioning of the feature space, KNN provides a more flexible way to probe local feature geometry. Compared with spectral methods, which emphasize global structure, KNN directly focuses on local behavior, making it well suited for detecting redundancy among semantically similar visual tokens.
+
+# A.2 Cross-Model Consistency Analysis
+
+To assess whether this phenomenon is consistent across different vision encoders, we extend our KNN-based analysis to a broader set of representative architectures. We focus on whether, as encoder depth increases, tokens with similar attention scores tend to become more concentrated in nearby regions of the feature space. Specifically, we evaluate the following vision encoders:
+
+LLaVA-1.5 (Liu et al., 2024a): As a cornerstone of open-source MLLMs, LLaVA-1.5 utilizes a pretrained CLIP visual encoder connected to a Vicuna language model via an MLP projector. This architecture processes 336×336 resolution images, resulting in 576 visual tokens, and achieves stateof-the-art performance through extensive visual instruction tuning.
+
+InternVL3 (Zhu et al., 2025) :This model adopts a native multimodal pre-training paradigm within a ViT-MLP-LLM framework, acquiring linguistic and multimodal capabilities simultaneously. By incorporating Variable Visual Position Encoding, InternVL3 demonstrates superior performance in handling extended contexts and specialized tasks such as industrial image analysis and 3D perception.
+
+Qwen2.5-VL (Bai et al., 2023): Representing the latest advancement in the Qwen-VL series, this model employs a redesigned Vision Transformer architecture featuring window attention and dynamic resolution support. It excels in complex visual reasoning, document parsing, and long-video comprehension, functioning as a versatile agent capable of precise event localization and tool usage.
+
+![](images/acb356d0604be4ab8b6c1f213abc9510a0e65385a2fb51ae262da5daab3e4610.jpg)  
+Figure 5: Evolution of feature redundancy across diverse VLM vision encoders. The figure compares LLaVA-1.5 (blue box), InternVL3 (purple box), and Qwen2.5-VL (green box). Panel (a) displays the KNN Consistency Score across layers for different k values, consistently revealing a sharp increase in deeper layers. Panels (b)- (d) show t-SNE visualizations of token embeddings at shallow, middle, and deep layers (Layers 1, 12, 24 for LLaVA/InternVL3; Layers 1, 16, 32 for Qwen2.5-VL), colored by their attention ranks. The cross-model visual evidence clearly demonstrates a universal dispersion-to-aggregation pattern: tokens in shallow layers are broadly distributed, whereas high-attention tokens in deep layers collapse into redundant, localized clusters.
+
+# A.3 Observations and Visualization
+
+To provide a cross-model comparison, we visualize both the quantitative KNN sensitivity analysis and the corresponding qualitative feature distributions. Figure 5 presents the results for LLaVA-1.5, InternVL3, and Qwen2.5-VL.
+
+Quantitative Trend: Layer-wise Increase in Local Consistency. As shown in Panel (a), all three models exhibit a similar layer-wise trend under different neighborhood sizes (k ∈ {5, 10, 20}). In shallow and intermediate layers, the KNN Consistency Scores remain relatively low, suggesting weak alignment between feature similarity and attention similarity. In other words, tokens that are close in the feature space do not necessarily receive similar attention scores at these layers. As depth increases, the consistency scores gradually rise across different values of k, indicating that attention scores become more locally consistent within feature neighborhoods. This trend suggests that deeper vision layers increasingly assign similar attention scores to feature-similar tokens, which may increase redundancy for attention-based token selection.
+
+Qualitative Evidence: From Dispersion to Concentration. Panels (b), (c), and (d) show t-SNE projections of visual token embeddings at shallow, intermediate, and deep layers, respectively. Points are colored by attention rank, with warmer colors indicating higher attention scores. In shallow layers, token embeddings are relatively dispersed in the projected space, and high-attention tokens are distributed across different regions. In deeper layers, tokens with similar attention ranks become more concentrated in nearby regions, indicating stronger alignment between attention patterns and local feature neighborhoods.
+
+Algorithm 1 STS: Structure-to-Semantics Visual Token Pruning   
+Require: Image I, prompt P, pre-LLM budget K, pruning layers L, intra-LLM budgets B
+Ensure: Output logits
+1: V ← VisionTower(I)
+2: S ← ∅, ri ← 0 for all visual tokens
+3: for t = 1 to K do
+4: i* ← arg min_{i∉S} ri
+5: S ← S ∪ {i*}
+6: ri ← ri + 1 / ||v_i - v_i*||_2^2 + ε for all i
+7: end for
+8: V_S ← MMProjector(V_S)
+9: Construct multimodal embeddings H from P and V_S
+10: for each LLM layer ℓ do
+11: H ← DecoderLayer_ℓ(H)
+12: if ℓ ∈ L and in prefill stage then
+13: Compute attention from the last instruction token to visual tokens
+14: Select top-ranked visual tokens according to attention scores
+15: Rebuild H, attention mask, and position IDs
+16: end if
+17: end for
+18: return LMHead(Norm(H))
+
+Overall, the quantitative and qualitative results reveal a consistent depth-dependent pattern across the evaluated vision encoders: attention scores become increasingly aligned with local feature similarity in deeper layers. This observation supports our motivation for introducing a diversitypreserving pre-LLM pruning stage, which aims to reduce redundant token selection before task-aware filtering in the LLM.
+
+# B Supplementary Experiments
+
+In this section, we provide extended experimental results to demonstrate the scalability and architectural generalizability of our proposed STS framework. Specifically, we evaluate STS on a larger model scale (LLaVA-1.5-13B) and a fundamentally different VLM architecture (Qwen2.5-VL-7B). Furthermore, we provide a detailed ablation study on the optimal layer depth for executing the Stage-2 semantic pruning within the LLM.
+
+# B.1 Evaluation benchmarks
+
+GQA. (Hudson and Manning, 2019) GQA integrates three key components: scene graphs, questions, and images, providing both spatial and object-level visual features. The questions are specifically structured to rigorously test a model’s capacity for visual scene reasoning and compositional understanding.
+
+MMBench. (Li et al., 2023) Designed for a holistic assessment, MMBench employs a hierarchical evaluation framework spanning three granularity levels (L-1 to L-3). It begins with broad capabilities like perception and reasoning and refines them into 20 specific dimensions. This multi-tiered structure allows for a fine-grained analysis of the model’s comprehensive abilities.
+
+MME. (Fu et al., 2025) MME is a comprehensive suite targeting both perceptual and cognitive competencies through 14 distinct subtasks. By leveraging concise instruction designs and manually curated instruction-answer pairs, it effectively minimizes the risks of data leakage and ensures a fair, robust evaluation of model performance.
+
+POPE. (Pope et al., 2023) Focusing on object hallucination, POPE reformulates evaluation as a series of binary queries regarding object presence. It utilizes robust metrics—including Accuracy, Precision, Recall, and F1 Score—to strictly quantify hallucination rates across three distinct sampling settings.
+
+ScienceQA. (Lu et al., 2022) Spanning natural, language, and social sciences, ScienceQA features a rich taxonomy structured by topic, category, and skill (covering 26, 127, and 379 distinct types, respectively). This benchmark serves as a rigorous testbed for multimodal understanding, multi-hop reasoning, and interpretability within scientific contexts.
+
+VQA-v2. (Goyal et al., 2017) This benchmark assesses visual perception via open-ended questioning on a massive scale. Comprising over 265,000 images representing diverse real-world scenarios, VQA-v2 utilizes 10 human-annotated ground truth answers per question to ensure accurate and reliable performance benchmarking.
+
+TextVQA. (Singh et al., 2019) TextVQA targets the interpretation of textual information embedded within visual scenes. It demands that models not only perceive visual content but also detect, read, and reason about text in images to answer questions accurately, thereby evaluating integrated optical character recognition (OCR) and reasoning skills.
+
+<table><tr><td>Method</td><td>GQA</td><td>MMB</td><td>MME</td><td>POPE</td><td>SQA</td><td> $VQA^{v2}$ </td><td> $VQA^{Text}$ </td><td>VizWiz</td><td>Avg.</td></tr><tr><td>LLaVA-1.5-13B</td><td colspan="9">Upper Bound (100%)</td></tr><tr><td>Vanilla</td><td>63.2</td><td>67.7</td><td>1818</td><td>85.9</td><td>72.8</td><td>80.0</td><td>61.3</td><td>53.6</td><td>100.0%</td></tr><tr><td>LLaVA-1.5-13B</td><td colspan="9">Retain 128 Tokens</td></tr><tr><td>VisionZip</td><td>57.9</td><td>66.7</td><td>1743</td><td>85.2</td><td>74.0</td><td>76.8</td><td>58.9</td><td>52.3</td><td>96.5%</td></tr><tr><td>DART</td><td>57.7</td><td>65.4</td><td>1751</td><td>80.4</td><td>74.2</td><td>75.7</td><td>58.7</td><td>53.0</td><td>96.8%</td></tr><tr><td>DivPrune</td><td>58.9</td><td>66.1</td><td>1748</td><td>86.5</td><td>72.8</td><td>77.1</td><td>58.2</td><td>53.5</td><td>97.6%</td></tr><tr><td>AgilePrune</td><td>59.1</td><td>67.6</td><td>-</td><td>86.9</td><td>72.8</td><td>77.5</td><td>58.9</td><td>52.5</td><td>98.4%</td></tr><tr><td>Zoo-Prune</td><td>58.9</td><td>67.0</td><td>1791</td><td>87.0</td><td>73.4</td><td>77.8</td><td>58.8</td><td>-</td><td>97.6%</td></tr><tr><td>STS (Ours)</td><td>60.1</td><td>67.8</td><td>1800</td><td>87.9</td><td>73.2</td><td>78.5</td><td>58.9</td><td>52.8</td><td>99.4%</td></tr><tr><td>LLaVA-1.5-13B</td><td colspan="9">Retain 64 Tokens</td></tr><tr><td>VisionZip</td><td>56.2</td><td>64.9</td><td>1676</td><td>76.0</td><td>74.4</td><td>73.7</td><td>57.4</td><td>53.2</td><td>94.1%</td></tr><tr><td>DART</td><td>55.7</td><td>64.7</td><td>1769</td><td>72.8</td><td>73.8</td><td>72.4</td><td>57.3</td><td>53.4</td><td>93.9%</td></tr><tr><td>DivPrune</td><td>57.7</td><td>64.6</td><td>1778</td><td>84.8</td><td>71.3</td><td>75.2</td><td>57.1</td><td>54.4</td><td>94.8%</td></tr><tr><td>AgilePrune</td><td>57.5</td><td>66.2</td><td>-</td><td>82.0</td><td>72.0</td><td>75.7</td><td>58.6</td><td>54.2</td><td>96.9%</td></tr><tr><td>Zoo-Prune</td><td>58.6</td><td>64.8</td><td>1780</td><td>85.3</td><td>72.1</td><td>76.4</td><td>58.6</td><td>-</td><td>95.2%</td></tr><tr><td>STS (Ours)</td><td>58.7</td><td>66.3</td><td>1789</td><td>87.2</td><td>72.6</td><td>77.2</td><td>58.9</td><td>52.8</td><td>98.0%</td></tr><tr><td>LLaVA-1.5-13B</td><td colspan="9">Retain 32 Tokens</td></tr><tr><td>VisionZip</td><td>52.7</td><td>61.2</td><td>-</td><td>66.8</td><td>72.9</td><td>68.4</td><td>55.2</td><td>53.0</td><td>89.8%</td></tr><tr><td>DART</td><td>53.9</td><td>61.9</td><td>-</td><td>66.9</td><td>73.2</td><td>68.1</td><td>55.1</td><td>52.0</td><td>90.9%</td></tr><tr><td>DivPrune</td><td>56.2</td><td>61.7</td><td>-</td><td>79.3</td><td>70.9</td><td>72.0</td><td>54.6</td><td>54.5</td><td>93.1%</td></tr><tr><td>STS (Ours)</td><td>57.9</td><td>64.1</td><td>1734</td><td>86.5</td><td>72.6</td><td>75.4</td><td>57.5</td><td>53.9</td><td>96.0%</td></tr></table>
+
+Table 4: Performance comparison of different token pruning methods on LLaVA-1.5-13B across multiple benchmarks. The orange background highlights our proposed STS method.
+
+VizWiz. (Gurari et al., 2018)A visual question answering benchmark collected in a real-world accessibility setting, where blind users captured images and asked spoken questions about them. Each visual question is paired with 10 crowdsourced answers. It introduces two key tasks: answering visual questions and predicting whether a question is unanswerable based on the image, highlighting challenges such as poor image quality and ambiguous content. We use the test split for evaluation.
+
+# B.2 Generalization to Larger Scales and Dynamic Architectures
+
+Results on LLaVA-1.5-13B. As shown in Table 4, STS also performs consistently well on the larger LLaVA-1.5-13B model. With 128 retained tokens, STS reaches 99.4% relative performance, outperforming recent baselines such as AgilePrune and Zoo-Prune. When the budget is reduced to 64 tokens, STS retains 98.0% relative performance and achieves the best results on GQA, MMB, MME, POPE, $\mathrm { V Q A } ^ { \mathrm { v 2 } }$ , and $\mathrm { \Delta V Q A ^ { \mathrm { T e x t } } }$ . Even under the extreme 32-token setting, STS maintains 96.0% relative performance, exceeding DivPrune by 2.9 points and showing that the proposed pruning strategy remains effective on larger VLMs.
+
+<table><tr><td>Method</td><td>GQA</td><td>MMB</td><td>MME</td><td>POPE</td><td>Rel.</td></tr><tr><td colspan="6">Baseline (Full Tokens)</td></tr><tr><td>Qwen2.5-VL-7B</td><td>60.84</td><td>84.10</td><td>2310</td><td>86.30</td><td>100.0%</td></tr><tr><td colspan="6">Retain 20% Tokens</td></tr><tr><td>VisionZip</td><td>57.27</td><td>79.72</td><td>2221</td><td>83.89</td><td>95.6%</td></tr><tr><td>DivPrune</td><td>60.05</td><td>79.55</td><td>2173</td><td>83.42</td><td>96.0%</td></tr><tr><td>STS (Ours)</td><td>60.31</td><td>80.70</td><td>2211</td><td>84.37</td><td>97.1%</td></tr><tr><td colspan="6">Retain 10% Tokens</td></tr><tr><td>VisionZip</td><td>54.09</td><td>76.03</td><td>1937</td><td>78.97</td><td>88.7%</td></tr><tr><td>DivPrune</td><td>55.49</td><td>76.03</td><td>2054</td><td>79.05</td><td>90.5%</td></tr><tr><td>STS (Ours)</td><td>56.35</td><td>76.48</td><td>2108</td><td>80.97</td><td>92.2%</td></tr></table>
+
+Table 5: Performance comparison on Qwen2.5-VL-7B under different token retention ratios. The orange background highlights our proposed STS method.
+
+Results on Qwen2.5-VL-7B. We further evaluate STS on Qwen2.5-VL-7B to examine its effectiveness beyond the LLaVA family. As shown in Table 5, STS achieves 97.1% relative performance when retaining 20% of visual tokens, outperforming VisionZip and DivPrune by 1.5 and 1.1 points, respectively. Under the more aggressive 10% token budget, STS retains 92.2% relative performance and achieves the best results across all evaluated benchmarks. These results indicate that STS remains effective on dynamic-resolution VLM architectures.
+
+<table><tr><td>Settings</td><td>GQA</td><td>VQA $^text$ </td><td>MME</td><td>SQA</td><td>POPE</td></tr><tr><td> $L_{prune} = 2, \rho_{intra} = 73.3\%$ </td><td>60.2</td><td>57.6</td><td>1805</td><td>69.7%</td><td>86.2</td></tr><tr><td> $L_{prune} = 8, \rho_{intra} = 66.7\%$ </td><td>60.1</td><td>57.6</td><td>1814</td><td>69.3%</td><td>85.9</td></tr><tr><td> $L_{prune} = 12, \rho_{intra} = 60.0\%$ </td><td>60.9</td><td>57.8</td><td>1816</td><td>69.6%</td><td>86.3</td></tr><tr><td> $L_{prune} = 16, \rho_{intra} = 50.0\%$ </td><td>60.9</td><td>58.0</td><td>1793</td><td>69.6%</td><td>86.3</td></tr><tr><td> $L_{prune} = 20, \rho_{intra} = 33.3\%$ </td><td>60.8</td><td>57.8</td><td>1803</td><td>69.6%</td><td>86.2</td></tr><tr><td> $L_{prune} = 24, \rho_{intra} = 0.0\%$ </td><td>60.6</td><td>57.4</td><td>1793</td><td>69.4%</td><td>86.2</td></tr></table>
+
+Table 6: Ablation study on hyper-parameters $L _ { \mathrm { p r u n e } }$ and $\rho _ { \mathrm { i n t r a } }$ .
+
+# B.3 Ablation on the pruning layer.
+
+We analyze the sensitivity of STS to the intra-LLM pruning layer $L _ { \mathrm { p r u n e } }$ . In this experiment, we fix the pre-LLM retention ratio as $\rho _ { \mathrm { p r e } } = 5 0 \%$ and keep the overall retention ratio at 37.5% by adjusting $\rho _ { \mathrm { i n t r a } }$ for different choices of $L _ { \mathrm { p r u n e } } .$ .
+
+As shown in Table 6, the performance remains relatively stable across a wide range of pruning layers. For example, GQA varies only from 60.1 to 60.9, $\mathrm { V Q A } ^ { \mathrm { t e x t } }$ from 57.4 to 58.0, and POPE from 85.9 to 86.3, indicating that STS is not highly sensitive to the exact choice of $L _ { \mathrm { p r u n e } }$ . Meanwhile, intermediate layers such as $L _ { \mathrm { p r u n e } } = 1 2$ and $L _ { \mathrm { p r u n e } } = 1 6$ achieve the best overall results, suggesting that middle layers provide a suitable pruning point where task-relevant signals have emerged while redundant visual tokens can still be removed before later computation.
+
+# C Additional Visualization Results
+
+# C.1 Visualization of Pre-LLM Token Selection
+
+We first present visualizations of vision-encoder token selection using image masks and t-SNE projections. Under the same 32-token budget, we compare STS-S with [CLS] attention-based selection in Figure 6. The attention-based strategy tends to retain tokens from a few high-response regions, which often results in redundant selections of semantically similar visual content. As a result, several visually distinct regions in the image and feature space may receive limited coverage.
+
+By contrast, STS-S produces a more balanced and informative token subset. Since the potentialenergy objective penalizes selecting tokens that are close to already retained ones in the feature space, the selected tokens naturally spread toward different semantic regions. Interestingly, this process does not simply scatter tokens uniformly at random; instead, it tends to retain tokens from visually diverse and information-rich areas, including objects, contextual regions, boundaries, and other less dominant but complementary visual cues. In the image masks, STS-S covers a broader range of meaningful regions, while in the t-SNE space, the retained tokens span multiple feature clusters rather than collapsing into a single dense area. This suggests that potential-energy-based selection can automatically construct a less redundant visual summary before the tokens are passed to the LLM.
+
+# C.2 Visualization of the Complete STS Process
+
+In this visualization, we compare the final token selections of STS with an LLM-only attention-based pruning strategy in Figure 7. We observe that when pruning relies solely on LLM attention scores, the selected tokens tend to concentrate in the lowerright region of the image (Zhao et al., 2025; Zhang et al., 2024a). These tokens are largely unrelated to the textual prompt, indicating a potential attention bias that wastes the limited token budget and can negatively affect the final prediction.
+
+In contrast, STS avoids this issue by first applying diversity-preserving selection before the tokens enter the LLM. As a result, the subsequent taskaware filtering is performed over a more balanced candidate set, allowing the retained tokens to better focus on visually relevant regions for the given prompt.
+
+![](images/26d3e346e24cfaf6d984831a2339433dc7316c10bfa2128c5848f784383f699b.jpg)  
+Figure 6: Visualization of vision-encoder token selection under a 32-token budget. Green markers denote tokens selected by the [CLS] attention-based method, and red markers denote tokens selected by STS-S.
+
+![](images/a5f985f57d4785713ffe3d88ba1dbbce32c19ee31ef2b1ad453970a9afd183b0.jpg)
+
+<details>
+<summary>text_image</summary>
+
+POLPERRO
+TRAM CO.
+POLPERRO
+TRAM CO.
+</details>
+
+What is the license plate number of this car?
+
+![](images/64344dba240562a3463a42a4482db7ac2ef7d4534af5a44ba363790a533dccb4.jpg)
+
+<details>
+<summary>text_image</summary>
+
+POLPERRO
+TRAM CO.
+POLPERRO
+TRAM CO.
+</details>
+
+Is there a blue road sign in the picture？
+
+![](images/b4de97f1c75eabfa66bca4bf0c27d814bb8909225b6c057a18d551a33f34b60b.jpg)
+
+<details>
+<summary>natural_image</summary>
+
+Two-panel image showing a baseball pitcher in white uniform and blue helmet running on a field, with a close-up of the player's face in foreground (no text or symbols visible)
+</details>
+
+Is there a person wearing a blue hat in the picture?
+
+![](images/9c6ee9cf8173ad01f65de9b4a9c9bcf2a62a4c8abbf6f5145f901b41ae4448f4.jpg)
+
+<details>
+<summary>natural_image</summary>
+
+Two side-by-side photos showing a baseball player in white uniform and helmet on the field, with no visible text or symbols.
+</details>
+
+Is there a person wearing a red hat in the picture?
+
+![](images/3ae13d57abdfb962a54a7d41734919dd998a13d42bf6f6ac526742a74d858c31.jpg)
+
+<details>
+<summary>text_image</summary>
+
+PILATE
+IN WELLS
+NOT THE SEA
+</details>
+
+What is the pattern on the water cup?
+
+![](images/1664720bd204f497b3717b42896bd7791043237a487b14300a230feade6eb11f.jpg)
+
+<details>
+<summary>natural_image</summary>
+
+Two identical white mugs with skull and crossbones, placed on a pixelated surface (no text or symbols visible)
+</details>
+
+Is there a knife in the picture?
+
+![](images/647c40497954d8b533dfdc70a33a6d88cb777baf27e199018d5850ed76bc0c6b.jpg)
+
+<details>
+<summary>natural_image</summary>
+
+Two-panel image showing a group of sheep standing on grass in pixelated backgrounds, with spectators and white structures in the background (no text or symbols visible)
+</details>
+
+How many sheep are there in the picture?
+
+![](images/16c4f21201a0a128f978e7a596b8b9e9104f8acbc4cf45aec9f1d295f3fd9361.jpg)
+
+<details>
+<summary>natural_image</summary>
+
+Two side-by-side photos of sheep in a grassy field, one with white frames and the other with green pixelated overlays (no text or symbols)
+</details>
+
+Is there a person in red clothes in the picture?
+
+![](images/d3cf5c00a0692b098f57950e9cfd9758310c025ad505165f6a2fa0a0ac679317.jpg)
+
+<details>
+<summary>natural_image</summary>
+
+Two-panel image showing a zebra grazing in a grassy field with hills in the background; no text or symbols present.
+</details>
+
+Is there a zebra in the picture?
+
+![](images/ad1abe1aed4335b39e811a16402869c8ad1a352dc78219ee03b51f87f689178a.jpg)
+
+<details>
+<summary>natural_image</summary>
+
+Two-panel image showing a grassland with grazing zebras and horses, no text or symbols present.
+</details>
+
+Is there any wildebeest in the picture?   
+Figure 7: Visualization of final token selection. Green boxes denote attention-based pruning results, and red boxes denote STS results.

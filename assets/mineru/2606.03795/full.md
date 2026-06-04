@@ -1,0 +1,447 @@
+# Beyond Compression: Quantifying Spectral Accessibility in Vision Representations
+
+Akayou A. Kitessa
+
+Fordham University
+
+New York City, NY
+
+ak214@fordham.edu
+
+Yijun Zhao
+
+Fordham University
+
+New York City, NY
+
+yzhao11@fordham.edu
+
+# Abstract
+
+Vision-language models map visual features into a shared embedding space through learned projection layers, yet it remains unclear how these transformations alter the structure of visual information. This study examines changes in representation through spatial-frequency accessibility, measured by the linear recoverability of band-limited Fourier energy from model representations. To isolate effects beyond dimensionality reduction, we introduce Residual Spectral Loss (RSL), which evaluates changes relative to a dimension-matched random projection baseline. To reduce confounding effects from optimization, the analysis uses pretrained models with all parameters frozen. The experimental results show consistent frequencydependent changes in accessibility across CLIP and DINOv2 on ImageNet and MS-COCO datasets. Spectral accessibility follows a non-monotonic trajectory across depth, peaking at intermediate layers before decreasing toward the output representation. The final transformation differs across architectures: CLIP’s learned projection is spectrally neutral, with changes explained by compression, whereas DINOv2’s [CLS] pooling induces a structured loss across the spectrum. These findings identify intermediate layers and pooling mechanisms as primary drivers of spectral transformation in modern vision encoders.
+
+# 1 Introduction
+
+Vision-language models such as CLIP [Radford et al., 2021] map high-dimensional visual features into a shared multimodal embedding space through a learned projection layer. This component, referred to here as the connector, is widely used in modern architectures. However, relatively little is known about how this mapping alters the fundamental structure of the visual information it carries. A common assumption is that such projections act as a neutral form of dimensionality reduction and discard information in an unstructured manner. In contrast, these connectors are learned under objectives that link visual features with text and may systematically bias the representation toward features that support this coupling. This motivates the central question: does the representation selectively reshape spectral content, and does this deviation exceed what would be expected from compression alone?
+
+We study this question through spatial-frequency accessibility. Instead of reconstructing pixels or intermediate features, the analysis tests whether specific frequency components of the original image are recoverable from the representation through a linear mapping. This framework provides a controlled setting to quantify how representations preserve or suppress information across the frequency spectrum and builds on prior work that uses linear probes to assess representational accessibility [Alain and Bengio, 2016]. It also relates to evidence that deep visual models exhibit systematic frequency biases, including a preference for texture over shape and sensitivity to highfrequency components [Geirhos et al., 2019, Wang et al., 2020]. Because the analysis relies on linear decoding, it quantifies the accessibility of frequency components rather than the total information content of the representation.
+
+We introduce Residual Spectral Loss (RSL) to quantify additional changes in accessibility induced by learned transformations relative to a dimension-matched random projection baseline that captures the effect of compression alone. Experiments are conducted on subsets of the ImageNet dataset [Deng et al., 2009] and the COCO dataset [Lin et al., 2014]. The vision encoders are pretrained and kept frozen. Only the linear probes are fit. This approach limits confounding effects from model fine-tuning.
+
+The analysis is evaluated across multiple architectures, including CLIP ViT-L/14, CLIP ViT-B/32, and DINOv2 ViT-B [Oquab et al., 2023]. Multiple representational stages are investigated, including the convolutional stem [Xiao et al., 2021], intermediate layers, and the final projection. Results show statistically significant, frequency-dependent changes in accessibility, with the largest losses consistently occurring at intermediate layers. While the projection stage also introduces structured changes, the dominant effect appears prior to the final mapping. These findings indicate that learned transformations induce a distinct spectral signature that cannot be explained by dimensionality reduction alone.
+
+# Contributions.
+
+1. A framework for measuring spectral accessibility. Linear probes quantify the recoverability of radial frequency components and characterize preserved information.   
+2. A method to isolate learned transformation effects from dimensionality reduction. A dimensionmatched random baseline and RSL separate compression effects from changes induced by learned mappings.   
+3. Empirical evidence of consistent, frequency-dependent accessibility changes across CLIP and DINOv2 models. These results demonstrate that training objectives influence spectral properties of representations.   
+4. A layerwise analysis demonstrating that the largest accessibility losses occur at intermediate layers, rather than uniformly across the network.
+
+# 2 Related Work
+
+# 2.1 Probing Representation Accessibility in Deep Models
+
+A common approach to analyzing representations in deep networks is to evaluate what information remains accessible through simple downstream mappings. Linear probes provide a controlled way to assess whether a representation retains information relevant to a target variable without requiring end-to-end retraining [Alain and Bengio, 2016]. In this framework, probe performance reflects the degree to which information is linearly accessible from a representation. This approach is well suited to layerwise analysis, where the goal is to characterize how learned transformations preserve or suppress information across depth. In this work, we apply linear probing in the frequency domain by predicting band-limited Fourier energy of the input image from intermediate and final representations, thereby extending probing from semantic attributes to spatial-frequency accessibility.
+
+# 2.2 Frequency Bias and Spectral Structure in Vision Models
+
+A growing body of work has shown that deep vision models exhibit systematic biases in how they encode spatial-frequency information. Prior work has shown that standard image classifiers often rely heavily on texture cues rather than global shape and can be sensitive to high-frequency patterns that are less salient to human observers [Geirhos et al., 2019, Wang et al., 2020]. These findings suggest that visual representations may emphasize particular frequency-dependent signals over others.
+
+The frequency domain has also been used to analyze architectural behavior more directly. Prior work has argued that self-attention in Vision Transformers (ViTs) [Dosovitskiy et al., 2021] behaves as a low-pass operator, progressively attenuating higher-frequency components with depth [Wang et al., 2022]. Other studies evaluate robustness through Fourier-based perturbations, showing that Fourier analysis can expose systematic vulnerabilities and spectral preferences in computer vision systems [Yin et al., 2019]. Frequency-based analyses have additionally been applied to generative models, where spectral discrepancies reveal artifacts and inductive biases that are not always apparent in pixel space [Schwarz et al., 2021].
+
+Our work builds on this literature by focusing not only on whether models exhibit frequency bias, but on where frequency-dependent accessibility changes emerge across layers and whether those changes exceed what would be expected from dimensionality reduction alone.
+
+# 2.3 Information Flow in Vision Transformers
+
+Prior work has shown that ViTs develop internal representations that differ in important ways from those of convolutional networks. Comparative analyses suggest that ViTs exhibit relatively uniform representational structure across depth and incorporate global information at early layers, while residual connections help preserve lower-level spatial information [Raghu et al., 2021]. These findings motivate layerwise analyses aimed at identifying where information is retained or transformed.
+
+Related work has also shown ViTs can remain robust under strong spatial perturbations, suggesting that meaningful spatial structure can remain accessible even as representations become increasingly global [Naseer et al., 2021]. At the same time, local information is not distributed uniformly across tokens. Large ViTs can develop high-norm tokens that act as global information aggregators while becoming less faithful carriers of local spatial and positional content [Darcet et al., 2024].
+
+These observations are directly relevant to spatial-frequency accessibility. Changes across layers may reflect not only overall compression, but also redistribution of information across token types and the effects of final aggregation.
+
+# 2.4 Training Objectives and Spectral Accessibility
+
+Our experiments compare models trained under different objectives, including multimodal contrastive learning in CLIP and self-supervised visual learning in DINOv2 [Radford et al., 2021, Oquab et al., 2023]. Prior work has shown that training objectives strongly influence the learned visual representations, including their invariances, transfer properties, and internal organization. This makes objective-level comparison important when studying spectral accessibility: differences between CLIP and DINOv2 may reflect not only architectural similarities, but also the distinct pressures imposed by language alignment versus self-distillation.
+
+In this context, our analysis complements existing comparisons of pretrained visual representations by examining how different training objectives affect accessibility across the spatial-frequency spectrum and across model depth. Rather than evaluating only downstream task performance, we study how objective choice shapes the internal preservation and suppression of visual information.
+
+# 3 Data and Preprocessing
+
+We use subsets of the open-access ImageNet [Deng et al., 2009] and the COCO [Lin et al., 2014] datasets. For each dataset, a total of $\bar { N } = 1 0 \small { , } 0 0 0 \bar { }$ images are randomly sampled and resized to the input resolution required by each model $( \mathrm { e } . \mathrm { g } . , 2 2 4 \times 2 2 4 )$ . The same subsets are used across all models to maintain comparability of extracted representations. Each dataset is partitioned into training and test sets using a fixed random seed, with an 80/20 split. The training set is used to fit all linear probes, while the test set is reserved exclusively for evaluation.
+
+# 3.1 Preprocessing and spectral representation.
+
+For each image $x \in \mathbb { R } ^ { H \times W }$ , we first convert it to grayscale to isolate spatial structure. The image is then multiplied element-wise by a separable two-dimensional Hann window W :
+
+$$
+x _ {w} (i, j) = W (i, j) x (i, j), \quad W (i, j) = w _ {H} (i) w _ {W} (j), \tag {1}
+$$
+
+where $w _ { H }$ and wW are standard one-dimensional Hann windows [Harris, 1978]. The centered two-dimensional discrete Fourier transform is computed as
+
+$$
+F = \text { fftshift } (\mathcal {F} x _ {w}), \tag {2}
+$$
+
+with power spectrum $P ( i , j ) = | F ( i , j ) | ^ { 2 }$ . The zero-frequency (DC) component is removed to avoid dominance by global intensity.
+
+![](images/d136b1fb44cdb2ef093cbf7cc25147cb5baf4642091ff6e8a1b7a2d1d6e3410a.jpg)
+
+<details>
+<summary>flowchart</summary>
+
+```mermaid
+graph TD
+    A["ImageNet COCO"] --> B["Representation Extraction z_H, z_M, z_V, z_P"]
+    A --> C["Frequency Band Construction E_k(x)"]
+    B --> D["Linear Probing & Accessibility\n• Fit ridge model on training data z(x) → E_k(x)\n• Compute Pearson α_k(z) on test data"]
+    C --> D
+    D --> E["Random Projection Baseline \overline{SDR}_k^rand"]
+    E --> F["Residual Spectral Loss (RSL) \overline{SDR} - \overline{SDR}_k^rand"]
+    F --> G["Bootstrap Inference CI on RSL"]
+    E --> H["Spectral Decay Rate (SDR) (relative to z_V)"]
+    H --> I["Spectral"]
+```
+</details>
+
+Figure 1: Pipeline for Spectral Accessibility Analysis
+
+# 3.2 Frequency band construction
+
+Natural images exhibit an approximate $1 / f$ power spectrum [Torralba and Oliva, 2003, van der Schaaf and van Hateren, 1996], so we partition the frequency plane into $K = 1 2$ logarithmically spaced radial bands to maintain adequate signal at higher frequencies. Let $R ( i , j )$ denote the radial frequency at coordinate (i, j), and let $\left( c _ { y } , c _ { x } \right)$ denote the center of the spectrum.
+
+We define $K + 1$ radial boundaries $\{ r _ { k } \} _ { k = 0 } ^ { K }$ using logarithmic spacing:
+
+$$
+r _ {k} = \exp \left(\log r _ {\min} + \frac {k}{K} (\log R _ {\max} - \log r _ {\min})\right), \quad k = 0, \dots , K, \tag {3}
+$$
+
+where $r _ { \operatorname* { m i n } } = 1$ excludes the DC component from the band construction and $R _ { \mathrm { m a x } } = \operatorname* { m a x } _ { i , j } R ( i , j )$ .
+
+These boundaries induce K frequency bands:
+
+$$
+\Omega_ {k} = \{(i, j) \mid r _ {k - 1} \leq R (i, j) <   r _ {k} \}, \quad k = 1, \dots , K. \tag {4}
+$$
+
+For each band $\Omega _ { k }$ , we compute the normalized energy
+
+$$
+E _ {k} (x) = \frac {\sum_ {(i , j) \in \Omega_ {k} , (i , j) \neq (c _ {y} , c _ {x})} P (i , j)}{\sum_ {(i , j) \neq (c _ {y} , c _ {x})} P (i , j)}, \tag {5}
+$$
+
+which represents the fraction of total non-DC Fourier energy contained in band k. These band energies $\bar { \boldsymbol { E } } _ { k } ( \boldsymbol { x } )$ serve as targets in the spectral accessibility analysis (Section 4.2).
+
+# 4 Methods
+
+Figure 1 summarizes the analysis pipeline. Given an input image, we extract layer-wise representations from pretrained vision encoders and compute band-limited spectral energies as targets. Linear probes are then used to measure how well each representation predicts these frequency components. To separate learned effects from dimensionality reduction, we compare against a dimension-matched random projection baseline and quantify the difference using Residual Spectral Loss (RSL). The following subsections describe representation extraction (Section 4.1) and spectral accessibility analysis (Section 4.2). Code to reproduce the full analysis pipeline is available at an anonymized GitHub repository [Authors, 2026]. All experiments were conducted on a Linux system with NVIDIA V100 GPUs. The analysis can be reproduced on standard hardware.
+
+# 4.1 Representation Extraction
+
+We extract representations from pretrained vision encoders at multiple depths to characterize how visual information evolves across layers. This section specifies the models under study and the layerwise representations used in the spectral accessibility analysis. All representations are computed with frozen model weights.
+
+# 4.1.1 Models
+
+We evaluate ViT [Dosovitskiy et al., 2021] architectures that differ in their training objective and in whether a language-aligned projection is present. All weights are frozen without fine-tuning.
+
+Table 1: Summary of representational stages extracted from each model. 
+
+<table><tr><td>Stage</td><td>Symbol</td><td>CLIP (ViT-B/32, ViT-L/14)</td><td>DINOv2</td></tr><tr><td>Conv. Stem</td><td> $\mathbf{z}_H$ </td><td>Spatial avg. of conv1 tokens</td><td>Spatial avg. of conv tokens</td></tr><tr><td>Mid-layer</td><td> $\mathbf{z}_M$ </td><td>[CLS] at block 11</td><td>Mean-pool patches at layer 6</td></tr><tr><td>Pre-projection</td><td> $\mathbf{z}_V$ </td><td>[CLS] at block 24</td><td>Mean-pool patches at layer 12</td></tr><tr><td>Output</td><td> $\mathbf{z}_P$ </td><td> $\mathbf{z}_V W_{proj}$ </td><td>[CLS] at layer 12</td></tr></table>
+
+CLIP ViT-L/14. CLIP [Radford et al., 2021] is a contrastive vision-language model whose visual encoder is a ViT-Large with patch size 14, comprising L=24 transformer blocks and a learned linear projection mapping the final visual representation $\scriptstyle ( D = 1 0 2 4 )$ into a shared embedding space (d=768). We load the model via the OpenCLIP library [Ilharco et al., 2021] using the publicly released OpenAI checkpoint.
+
+CLIP ViT-B/32. We also evaluate CLIP with a ViT-Base architecture and patch size 32. The encoder comprises L=12 transformer blocks with hidden dimension D=768, followed by a learned projection to a d=512-dimensional embedding space. This model serves as a comparison to assess whether spectral effects persist across model scale and patch resolution.
+
+DINOv2. DINOv2 [Oquab et al., 2023] is a self-supervised vision model trained with selfdistillation and masked image modeling, without language supervision. We use the ViT-Base variant (facebook/dinov2-base) loaded via the HuggingFace Transformers library [Wolf et al., 2020]. The encoder comprises L=12 transformer blocks with hidden dimension D=768. Unlike CLIP, DINOv2 has no projection to a language-aligned space.
+
+# 4.1.2 Layer-wise Representations
+
+For each input image x, we extract representations at four stages to characterize the evolution of spectral information across the encoder. Following Xiao et al. [2021], we treat the initial projection as a convolutional stem. CLIP and DINOv2 differ in their pooling mechanisms. CLIP relies on [CLS], while DINOv2 uses patch-average pooling at intermediate layers and [CLS] at the output. Table 1 summarizes the extraction points.
+
+Let $\mathbf { t } _ { i } ^ { ( \ell ) } \in \mathbb { R } ^ { D }$ denote the i-th token at layer $\ell ,$ and let P denote the number of patch tokens. The representational stages are defined as follows:
+
+Convolutional Stem (zH) ${ \bf z } _ { H } = \frac { 1 } { P } \sum _ { i = 1 } ^ { P } { \bf t } _ { i } ^ { ( 0 ) } .$ X t(0).
+
+$\begin{array} { r } { ( { \bf z } _ { M } , { \bf z } _ { V } ) { \bf z } ^ { ( \ell ) } = \left\{ \begin{array} { l l } { { \bf t } _ { [ \mathrm { C L S } ] } ^ { ( \ell ) } } & { } \\ { \frac { 1 } { P } \sum _ { i = 1 } ^ { P } { \bf t } _ { i } ^ { ( \ell ) } } \end{array} \right. } \end{array}$ CLIP Mid-layer and Pre-projection DINOv2
+
+where $\boldsymbol { \ell } \in \{ \lfloor L / 2 \rfloor , L \} , \mathbf { z } _ { M } = \mathbf { z } ^ { ( \lfloor L / 2 \rfloor ) }$ , and $\mathbf { z } _ { V } = \mathbf { z } ^ { ( L ) }$ .
+
+Output Representation (zP ) $\mathbf { z } _ { P } = \left\{ \begin{array} { l l } { \mathbf { z } _ { V } W _ { \mathrm { p r o j } } } & { \mathrm { C L I P } } \\ { \mathbf { t } _ { [ \mathrm { C L S } ] } ^ { ( L ) } } & { \mathrm { D I N O v } 2 } \end{array} \right. .$ t(L)[CLS]
+
+All features are extracted in a single forward pass per image, with gradients disabled, and cached for downstream analysis.
+
+# 4.2 Spectral Accessibility Analysis
+
+Spatial-frequency information, defined via band energies $E _ { k } ( x )$ (Section 3), is analyzed across layer-wise representations by measuring its linear accessibility and isolating changes induced by learned transformations from those explained by dimensionality reduction.
+
+# 4.2.1 Accessibility and Spectral Metrics
+
+Accessibility is defined as the degree to which spatial-frequency content can be linearly decoded from a representation [Alain and Bengio, 2016]. For each frequency band k and representation $\mathbf { z } \in \{ \mathbf { z } _ { H } , \mathbf { z } _ { M } , \mathbf { z } _ { V } , \mathbf { z } _ { P } \}$ , a separate Ridge regression model is fit on the training set:
+
+$$
+\left(\hat {\mathbf {w}} _ {k}, \hat {b} _ {k}\right) = \arg \min _ {\mathbf {w}, b} \frac {1}{\left| D _ {\text { train }} \right|} \sum_ {x \in D _ {\text { train }}} \left(E _ {k} (x) - \mathbf {w} ^ {\top} \mathbf {z} - b\right) ^ {2} + \lambda \| \mathbf {w} \| _ {2} ^ {2} \tag {6}
+$$
+
+with λ = 1.0, where z is the representation of input x.
+
+Accessibility is evaluated on the test set using Pearson correlation:
+
+$$
+\alpha_ {k} (\mathbf {z}) = \operatorname{Corr} _ {x \sim \mathcal {D} _ {\text { test }}} \left(E _ {k} (\mathbf {x}), \hat {\mathbf {w}} _ {k} ^ {\top} \mathbf {z} + \hat {b} _ {k}\right). \tag {7}
+$$
+
+This measure is scale-invariant and reflects the linear relationship between predicted and true band energies.
+
+To compare representations, the Spectral Decay Rate (SDR) is defined relative to the pre-projection representation $\mathbf { z } _ { V }$ :
+
+$$
+\mathrm{SDR} _ {k} (\mathbf {z}) = \frac {\alpha_ {k} (\mathbf {z} _ {V}) - \alpha_ {k} (\mathbf {z})}{\alpha_ {k} (\mathbf {z} _ {V})}, \tag {8}
+$$
+
+where $\mathbf { z } \in \{ \mathbf { z } _ { H } , \mathbf { z } _ { M } , \mathbf { z } _ { P } \}$ . A positive value indicates reduced accessibility relative to $\mathbf { z } _ { V }$ .
+
+To isolate effects beyond dimensionality reduction, we define the Residual Spectral Loss (RSL):
+
+$$
+\mathrm{RSL} _ {k} (\mathbf {z}) = \mathrm{SDR} _ {k} (\mathbf {z}) - \overline {{\mathrm{SDR}}} _ {k} ^ {\text { rand }}, \tag {9}
+$$
+
+where $\overline { { \mathrm { S D R } } } _ { k } ^ { \mathrm { r a n d } }$ denotes the baseline decay induced by random projections (Section 4.2.2). Positive values indicate additional attenuation, while negative values indicate better preservation relative to compression alone.
+
+# 4.2.2 Dimensionality-Controlled Baseline
+
+To quantify the effect of dimensionality reduction alone, we construct a random projection baseline following the Johnson–Lindenstrauss framework [Johnson and Lindenstrauss, 1984, Dasgupta and Gupta, 2003]. For CLIP, which maps $\mathbf { z } _ { V } \in \mathbb { R } ^ { D } \mathrm { t o } \bar { \mathbb { R } ^ { d } }$ , we generate $M = 2 0$ random semi-orthogonal projection matrices.
+
+For each $m = 1 , \ldots , M$ , we sample a Gaussian matrix $G _ { m } \sim \mathcal { N } ( 0 , 1 ) ^ { D \times d }$ and compute its QR decomposition $G _ { m } = Q _ { m } R _ { m }$ , where $Q _ { m } ^ { \top } Q _ { m } = I _ { d }$ . The projected representation is
+
+$$
+\mathbf {z} _ {\text { rand }} ^ {(m)} = \mathbf {z} _ {V} Q _ {m}. \tag {10}
+$$
+
+Accessibility and SDR are computed for each projection, and the baseline is obtained by averaging:
+
+$$
+\overline {{\mathrm{SDR}}} _ {k} ^ {\text { rand }} = \frac {1}{M} \sum_ {m = 1} ^ {M} \mathrm{SDR} _ {k} (\mathbf {z} _ {\text { rand }} ^ {(m)}). \tag {11}
+$$
+
+For DINOv2, we instead apply square orthogonal transformations (d = D) to provide a baseline that preserves dimensionality while removing learned dependencies between the representation and the spectral targets. Because DINOv2 does not reduce dimensionality $( d = D )$ , this baseline controls for the reorganization of information rather than compression, isolating effects due to learned transformations. Any non-zero RSL therefore reflects effects beyond this baseline.
+
+# 4.2.3 Statistical Inference
+
+We estimate uncertainty in RSL due to finite test-set sampling using the nonparametric bootstrap [Efron and Tibshirani, 1994]. We generate $B = 1 0 0 0$ bootstrap resamples of the test set (with replacement) and recompute accessibility, SDR, and RSL with fixed probes. This isolates variability due to the test set rather than probe estimation and yields an empirical distribution of RSLk.
+
+The 95% confidence interval (CI) is computed using the percentile method:
+
+$$
+\mathrm{CI} _ {95 \%} = \left[ \mathrm{RSL} _ {k} ^ {(0. 0 2 5)}, \mathrm{RSL} _ {k} ^ {(0. 9 7 5)} \right]. \tag{12}
+$$
+
+A frequency band exhibits a statistically significant RSL when its confidence interval excludes zero.
+
+![](images/237ece635cc3eee52f11aa68abbf44a3a449572aaac50649c94e0effa365e795.jpg)
+
+<details>
+<summary>line</summary>
+
+| Frequency band (low → high) | αω(z_H) conv. stem | αω(z_M) mid-layer | αω(z_V) pre-proj | αω(z_RnD) random avg |
+| --------------------------- | ------------------ | ----------------- | ---------------- | -------------------- |
+| 1                           | 0.45               | 0.60              | 0.58             | 0.58                 |
+| 2                           | 0.22               | 0.62              | 0.40             | 0.40                 |
+| 3                           | 0.28               | 0.58              | 0.42             | 0.42                 |
+| 4                           | 0.32               | 0.65              | 0.45             | 0.45                 |
+| 5                           | 0.35               | 0.67              | 0.47             | 0.47                 |
+| 6                           | 0.37               | 0.70              | 0.50             | 0.50                 |
+| 7                           | 0.38               | 0.72              | 0.52             | 0.52                 |
+| 8                           | 0.37               | 0.74              | 0.55             | 0.55                 |
+| 9                           | 0.36               | 0.73              | 0.56             | 0.56                 |
+| 10                          | 0.34               | 0.75              | 0.57             | 0.57                 |
+| 11                          | 0.31               | 0.77              | 0.58             | 0.58                 |
+| 12                          | 0.27               | 0.79              | 0.58             | 0.58                 |
+</details>
+
+(a) CLIP ViT-L/14   
+![](images/f3fa720ce453fc4cc8b1ff1fdd83ebb7c66e2b8ff47bb2ebc59baf04add87c9d.jpg)
+
+<details>
+<summary>line</summary>
+
+| Frequency band | proj  | mid-layer | conv. stem |
+| -------------- | ----- | --------- | ---------- |
+| 2              | 0.0   | -0.4      | 0.2        |
+| 4              | 0.0   | -0.5      | 0.3        |
+| 6              | 0.0   | -0.4      | 0.3        |
+| 8              | 0.0   | -0.3      | 0.3        |
+| 10             | 0.0   | -0.3      | 0.4        |
+| 12             | 0.0   | -0.4      | 0.5        |
+</details>
+
+![](images/485377e7c84370a8b484a46f4ed468252e49126ebf2f17ae3b5fdcaf3b3a4b1d.jpg)
+
+<details>
+<summary>line</summary>
+
+| Frequency band (low → high) | αω(zH) conv. stem | αω(zM) mid-layer | αω(zV) pre-proj | αω(zP) post-proj | αω(zrand) random avg |
+| --------------------------- | ----------------- | ---------------- | --------------- | ---------------- | -------------------- |
+| 1                           | 0.4               | 0.65             | 0.65            | 0.65             | 0.65                 |
+| 2                           | 0.1               | 0.65             | 0.45            | 0.45             | 0.45                 |
+| 3                           | 0.2               | 0.65             | 0.45            | 0.45             | 0.45                 |
+| 4                           | 0.25              | 0.7              | 0.5             | 0.5              | 0.5                  |
+| 5                           | 0.3               | 0.75             | 0.55            | 0.55             | 0.55                 |
+| 6                           | 0.3               | 0.8              | 0.6             | 0.6              | 0.6                  |
+| 7                           | 0.3               | 0.8              | 0.6             | 0.6              | 0.6                  |
+| 8                           | 0.3               | 0.8              | 0.6             | 0.6              | 0.6                  |
+| 9                           | 0.25              | 0.8              | 0.6             | 0.6              | 0.6                  |
+| 10                          | 0.2               | 0.8              | 0.6             | 0.6              | 0.6                  |
+| 11                          | 0.15              | 0.8              | 0.6             | 0.6              | 0.6                  |
+| 12                          | 0.1               | 0.8              | 0.6             | 0.6              | 0.6                  |
+</details>
+
+(b) CLIP ViT-B/32
+
+![](images/ded6f22db62ee83c3b4686f37bafcd859aa98f7b9b69f27389d7544100eedab7.jpg)
+
+<details>
+<summary>line</summary>
+
+| Frequency band | proj  | mid-layer | conv. stem |
+| -------------- | ----- | --------- | ---------- |
+| 1              | 0.0   | -0.4      | 0.3        |
+| 2              | 0.0   | -0.5      | 0.7        |
+| 3              | -0.05 | -0.45     | 0.5        |
+| 4              | -0.05 | -0.4      | 0.45       |
+| 5              | -0.05 | -0.35     | 0.4        |
+| 6              | -0.05 | -0.3      | 0.4        |
+| 7              | -0.05 | -0.25     | 0.45       |
+| 8              | -0.05 | -0.2      | 0.5        |
+| 9              | -0.05 | -0.15     | 0.55       |
+| 10             | -0.05 | -0.1      | 0.6        |
+| 11             | -0.05 | -0.1      | 0.65       |
+| 12             | -0.05 | -0.1      | 0.7        |
+</details>
+
+![](images/88d7e9d99f24125de37bd0bd14a7c50236e3d1376f9361282bb31049677fd598.jpg)
+
+<details>
+<summary>line</summary>
+
+| Frequency band | α₀(z₁) conv. stem | α₀(zₘ) mid-layer | α₀(zᵥ) pre-proj | α₀(zᵣ) post-proj | α₀(zᵣₙᵣd) random avg |
+| -------------- | ----------------- | ---------------- | --------------- | ---------------- | --------------------- |
+| 1              | 0.55              | 0.60             | 0.55            | 0.60             | 0.55                  |
+| 2              | 0.25              | 0.70             | 0.40            | 0.40             | 0.50                  |
+| 3              | 0.30              | 0.65             | 0.45            | 0.45             | 0.55                  |
+| 4              | 0.40              | 0.70             | 0.50            | 0.50             | 0.60                  |
+| 5              | 0.45              | 0.75             | 0.55            | 0.55             | 0.65                  |
+| 6              | 0.45              | 0.80             | 0.60            | 0.60             | 0.65                  |
+| 7              | 0.45              | 0.80             | 0.65            | 0.65             | 0.65                  |
+| 8              | 0.45              | 0.80             | 0.65            | 0.65             | 0.65                  |
+| 9              | 0.40              | 0.80             | 0.65            | 0.65             | 0.65                  |
+| 10             | 0.35              | 0.80             | 0.65            | 0.65             | 0.65                  |
+| 11             | 0.30              | 0.82             | 0.65            | 0.65             | 0.65                  |
+| 12             | 0.28              | 0.82             | 0.65            | 0.65             | 0.65                  |
+</details>
+
+(c) DINOv2   
+![](images/5f8cddc06eb10a41af9043b99296d88d38b1f4bf8d9c7aa869adfad12b2b78ae.jpg)
+
+<details>
+<summary>line</summary>
+
+| Frequency band | proj  | mid-layer | conv. stem |
+| -------------- | ----- | --------- | ---------- |
+| 1              | 0.15  | -0.2      | 0.2        |
+| 2              | 0.2   | -0.3      | 0.5        |
+| 3              | 0.2   | -0.2      | 0.4        |
+| 4              | 0.18  | -0.3      | 0.25       |
+| 5              | 0.17  | -0.2      | 0.25       |
+| 6              | 0.15  | -0.2      | 0.25       |
+| 7              | 0.12  | -0.2      | 0.3        |
+| 8              | 0.1   | -0.2      | 0.35       |
+| 9              | 0.1   | -0.2      | 0.4        |
+| 10             | 0.1   | -0.2      | 0.45       |
+| 11             | 0.12  | -0.3      | 0.5        |
+| 12             | 0.12  | -0.4      | 0.5        |
+</details>
+
+Figure 2: Spatial-frequency accessibility (left) and Residual Spectral Loss (right) on ImageNet. Left panels plot per-band accessibility $\alpha _ { k }$ across layers; right panels show RSL with 95% bootstrap confidence intervals. COCO results show the same qualitative patterns (Appendix).
+
+# 5 Results
+
+We evaluate spectral accessibility across CLIP ViT-L/14, CLIP ViT-B/32, and DINOv2 on ImageNet-1K and COCO. Using RSL to factor out compression effects, we identify consistent frequencydependent patterns across all configurations. Unless otherwise noted, we report ImageNet results; COCO results are qualitatively similar and are provided in the appendix due to space constraints.
+
+# 5.1 Spatial-Frequency Accessibility Peaks at Intermediate Depth
+
+The accessibility profiles (Figure 2, left panels) present spatial-frequency accessibility across layers for the three encoders and reveal a consistent non-monotonic trajectory through the network. Across all models and datasets, mean accessibility follows
+
+$$
+\bar {\alpha} (\mathbf {z} _ {H}) <   \bar {\alpha} (\mathbf {z} _ {P}) <   \bar {\alpha} (\mathbf {z} _ {V}) <   \bar {\alpha} (\mathbf {z} _ {M}), \tag {13}
+$$
+
+and the per-band ordering $\alpha _ { k } ( { \mathbf { z } } _ { H } ) < \alpha _ { k } ( { \mathbf { z } } _ { P } ) < \alpha _ { k } ( { \mathbf { z } } _ { M } )$ holds across all frequency bands. Spatialfrequency information therefore does not accumulate monotonically through the encoder. It increases from $\mathbf { z } _ { H }$ to $\mathbf { z } _ { M }$ , peaks at intermediate depth, and decreases toward the final representation.
+
+Convolutional stem exhibits limited spectral accessibility. $\mathbf { A t } \mathbf { z } _ { H }$ , accessibility is concentrated at low frequencies. Band 1 accessibility is approximately 0.4–0.6, but drops sharply at band 2 by roughly 0.25–0.30 in absolute terms, approximately a halving within a single logarithmic step. Beyond band 2 the curve remains suppressed, with the highest-frequency band recovering only to approximately 0.15–0.35. This pattern reflects the limited receptive field of the convolutional stem: a single 14×14 (or 32×32) patch captures coarse spatial structure but does not encode relationships across distant regions. This is consistent with patch embeddings that act as a low-pass filter. Consequently, linearly decodable information is concentrated in low-frequency components.
+
+Table 2: Quantitative Summary of Accessibility and RSL Across Models and Datasets 
+
+<table><tr><td rowspan="3" colspan="2">Model</td><td colspan="4">Accessibility ( $\bar{\alpha}$ )</td><td colspan="4">RSL (mean)</td></tr><tr><td rowspan="2"> $z_{H}$ </td><td rowspan="2"> $z_{M}$ </td><td rowspan="2"> $z_{V}$ </td><td rowspan="2"> $z_{P}$ </td><td colspan="2"> $z_{P}$ </td><td rowspan="2"> $z_{M}$ </td><td rowspan="2"> $z_{H}$ </td></tr><tr><td>low</td><td>high</td></tr><tr><td rowspan="2">CLIP L/14</td><td>IN</td><td>.331</td><td>.714</td><td>.520</td><td>.518</td><td>-.011</td><td>-.004</td><td>-.396</td><td>+.347</td></tr><tr><td>CO</td><td>.371</td><td>.718</td><td>.543</td><td>.540</td><td>+.004</td><td>-.016</td><td>-.344</td><td>+.297</td></tr><tr><td rowspan="2">CLIP B/32</td><td>IN</td><td>.260</td><td>.761</td><td>.568</td><td>.562</td><td>-.015</td><td>-.010</td><td>-.372</td><td>+.515</td></tr><tr><td>CO</td><td>.344</td><td>.764</td><td>.570</td><td>.556</td><td>+.024</td><td>-.010</td><td>-.379</td><td>+.362</td></tr><tr><td rowspan="2">DINOv2</td><td>IN</td><td>.375</td><td>.754</td><td>.595</td><td>.508</td><td>+.189</td><td>+.121</td><td>-.269</td><td>+.371</td></tr><tr><td>CO</td><td>.420</td><td>.753</td><td>.626</td><td>.553</td><td>+.142</td><td>+.105</td><td>-.210</td><td>+.327</td></tr></table>
+
+IN = ImageNet, CO = COCO. Accessibility shows mean Pearson r per layer. RSL reports mean values, with low and high for bands 1–4 and 9–12. Highest α¯ and smallest |RSL| are shown in bold.
+
+Intermediate layers increase accessibility, followed by consolidation. By the midpoint of the transformer stack $( \ell _ { \mathrm { m i d } } )$ , accessibility rises substantially and is no longer confined to low frequencies. This increase is not limited to a specific frequency range: $\alpha _ { k } ( { \bf z } _ { M } )$ ) remains high at every band, including those that are poorly represented at $\mathbf { z } _ { H }$ . The early transformer blocks therefore integrate cross-patch dependencies into a representation from which spatial-frequency content across the full spectrum becomes linearly decodable. From $\mathbf { z } _ { M }$ to the final pre-projection representation $\mathbf { z } _ { V }$ , accessibility decreases moderately. This reduction is approximately uniform across the spectrum. The resulting representation retains substantial spectral information while reflecting a shift toward task-relevant invariances.
+
+Quantitative summary. Table 2 provides a quantitative summary of these trends. Mean accessibility ranges from 0.26 to 0.42 at $\mathbf { z } _ { H }$ and from 0.71 to 0.76 at $\mathbf { z } _ { M }$ , corresponding to an approximately twofold to threefold increase relative to $\mathbf { z } _ { H }$ , depending on the model. The decrease from $\mathbf { z } _ { M }$ to $\mathbf { z } _ { V }$ is more moderate, on the order of 17%–27%, and is consistent across configurations.
+
+# 5.2 The Output Transformation: Language Projection Versus [CLS] Attention
+
+The depth trajectory from $\mathbf { z } _ { H }$ through $\mathbf { z } _ { V }$ is shared across all three architectures. The two model families diverge only at the final step, the transformation from $\mathbf { z } _ { V }$ to the output $\mathbf { z } _ { P } ,$ , and it is precisely this step that the RSL is designed to characterize.
+
+CLIP’s learned projection is spectrally neutral. For both CLIP variants, the gap between $\mathbf { z } _ { V }$ and $\mathbf { z } _ { P }$ is negligible, with mean differences of 0.002 for ViT-L/14 and 0.006 for ViT-B/32 on ImageNet (Table 2). The RSL analysis (Figure 2, right panels) confirms that this small change is fully explained by dimensionality reduction. Across all CLIP configurations, $\mathrm { R S L } _ { k } ( { \mathbf { z } } _ { P } )$ remains close to zero at every frequency band, never exceeding approximately $\pm 0 . 0 3 5$ , with no consistent direction across bands. The same pattern holds for ViT-B/32, whose projection reduces dimensionality more aggressively $( D { = } 7 6 8 \to \ d { = } 5 1 2 )$ . The learned projection $\bar { W } _ { \mathrm { p r o j } }$ therefore maps $\mathbf { z } _ { V }$ into the shared vision-language space without introducing additional frequency-dependent distortion beyond that expected from compression.
+
+DINOv2’s [CLS] attention reduces spectral accessibility. DINOv2 exhibits a notably different behavior. The gap between $\mathbf { z } _ { V }$ and $\mathbf { z } _ { P }$ is substantially larger, at 0.087 on ImageNet and 0.073 on COCO (Table 2). Because both representations have the same dimensionality $( { \bar { D } } { = } 7 6 8 )$ , this difference reflects a genuine loss in spectral accessibility. The RSL profiles (Figure 2, right panels) show that $\mathrm { R S L } _ { k } ( { \mathbf { z } } _ { P } )$ is positive and statistically significant across all frequency bands, with values from approximately +0.10 to +0.22. The [CLS] token’s attention pooling thus goes beyond aggregating patch information and systematically reduces the linear decodability of spatial-frequency content across the spectrum.
+
+The spectral shape of the attenuation is also informative. For DINOv2, the RSL peaks at low-to-mid frequencies (around 0.22) and decreases toward higher bands (around 0.10), indicating that the [CLS] token disproportionately suppresses coarse-scale structure. By contrast, CLIP’s flat RSL profile exhibits no clear frequency-dependent pattern.
+
+# 5.3 The RSL Reveals Structured Depth Effects Beyond Raw Accessibility
+
+While the accessibility curves establish the ordering in Eq. 13, the RSL provides a finer diagnostic by factoring out the random-projection baseline and revealing how each stage’s spectral content differs from $\mathbf { z } _ { V }$ (Figure 2, right panels).
+
+Convolutional stem: a frequency-graded deficit. $\mathrm { R S L } _ { k } ( { \mathbf { z } } _ { H } )$ is positive at every frequency band and exhibits a consistent pattern across all experiments: a pronounced spike at low-to-mid frequencies (around band 2), followed by a gradual increase toward higher frequencies. The spike reaches approximately $+ 0 . 4 5 ~ \mathrm { t o } ~ + 0 . 7 0$ , representing the strongest per-band effect observed in the study. At higher frequencies, ${ \mathrm { R S L } } _ { 1 2 }$ reaches approximately 2.1–3.2 times the value at band 1, indicating a substantial increase in inaccessibility. The band-2 spike shows a pronounced deficit at low-tomid frequencies, while the increase toward higher bands suggests reduced accessibility at higher frequencies, which typically correspond to finer spatial scales.
+
+Mid-layer: broadband improvement. ${ \mathrm { R S L } } _ { k } ( \mathbf { z } _ { M } )$ is negative at all frequency bands in every experiment, with 95% CIs below zero throughout. This indicates that the mid-layer makes spectral content more linearly accessible than $\mathbf { z } _ { V }$ across the spectrum. In the CLIP models, the largest gains occur at low-to-mid frequencies (around band 2), where RSL reaches approximately $- 0 . 4 9 \mathrm { t o } - 0 . 5 3$ . This pattern mirrors the frequencies where $\mathbf { z } _ { H }$ shows the largest deficit, suggesting that the early transformer layers improve accessibility in frequency ranges that are initially less accessible in $\mathbf { z } _ { H }$ . For DINOv2, the gains are more evenly distributed across frequencies, with clear improvements also observed at higher frequencies (e.g., around −0.39), where $\mathbf { z } _ { H }$ exhibits larger deficits.
+
+# 6 Conclusion
+
+This work examines how modern vision encoders alter spatial-frequency information using a linear accessibility framework and the proposed Residual Spectral Loss (RSL). Spectral accessibility follows a consistent non-monotonic trajectory across depth, peaking at intermediate layers before decreasing toward the output. This indicates that early transformer layers recover spatial-frequency information not accessible from the convolutional stem, while later layers consolidate representations toward task-relevant invariances. The analysis also reveals a clear architectural distinction. In CLIP, the projection to a shared vision-language space is largely spectrally neutral, with changes explained by dimensionality reduction. In contrast, DINOv2’s [CLS] attention pooling induces a structured and statistically significant loss of spectral information, particularly at low-to-mid frequencies. These results suggest that pooling mechanisms may play a more central role than projection layers in determining spectral properties. They also complement standard performance metrics by revealing how models balance information from the input with downstream objectives. This has implications for architectural choices, particularly in aggregation mechanisms and intermediate features.
+
+This study has several limitations. The analysis is observational and does not establish causal effects of specific architectural components. It relies on linear probes and therefore captures linear accessibility rather than the full information content of the representation, so nonlinear structure may differ. The spectral representation is based on grayscale images and radial frequency bands, and does not capture color or directional components. The evaluation is also limited to ViT architectures and natural image datasets, which may restrict generality. Future work can extend this framework by incorporating nonlinear probes, analyzing color and directional frequency components, and introducing controlled interventions on pooling mechanisms or connector designs to establish causal effects.
+
+# References
+
+Guillaume Alain and Yoshua Bengio. Understanding intermediate layers using linear classifier probes. arXiv preprint arXiv:1610.01644, 2016. URL https://arxiv.org/abs/1610.01644.   
+Anonymous Authors. Anonymous repository for “beyond compression: Quantifying spectral accessibility in vision representations”. https://anonymous.4open.science/r/vlm\_ insight-8106/, 2026. Code repository for reproducibility, anonymized for double-blind review.   
+Timothée Darcet, Maxime Oquab, Julien Mairal, and Piotr Bojanowski. Vision transformers need registers. arXiv preprint arXiv:2309.16588, 2024. URL https://arxiv.org/abs/2309.16588.   
+Sanjoy Dasgupta and Anupam Gupta. An elementary proof of a theorem of Johnson and Lindenstrauss. Random Structures & Algorithms, 22(1):60–65, 2003.   
+Jia Deng, Wei Dong, Richard Socher, Li-Jia Li, Kai Li, and Li Fei-Fei. Imagenet: A large-scale hierarchical image database. In IEEE Conference on Computer Vision and Pattern Recognition (CVPR), 2009. URL https://ieeexplore.ieee.org/document/5206848.   
+Alexey Dosovitskiy et al. An image is worth 16x16 words: Transformers for image recognition at scale. In ICLR, 2021.   
+Bradley Efron and Robert J. Tibshirani. An Introduction to the Bootstrap. Chapman & Hall/CRC, 1994.   
+Robert Geirhos, Paul Rubisch, Claudio Michaelis, Matthias Bethge, Felix A. Wichmann, and Wieland Brendel. Imagenet-trained cnns are biased towards texture; increasing shape bias improves accuracy and robustness. In International Conference on Learning Representations (ICLR), 2019. URL https://arxiv.org/abs/1811.12231.   
+Fredric J. Harris. On the use of windows for harmonic analysis with the discrete fourier transform. Proceedings of the IEEE, 66(1):51–83, 1978. URL https://ieeexplore.ieee.org/ document/1455106.   
+Gabriel Ilharco, Mitchell Wortsman, Ross Wightman, Cade Gordon, Nicholas Carlini, Rohan Taori, Achal Dave, Vaishaal Shankar, Hongseok Namkoong, John Miller, Hannaneh Hajishirzi, Ali Farhadi, and Ludwig Schmidt. OpenCLIP, 2021. URL https://github.com/mlfoundations/ open\_clip.   
+William B. Johnson and Joram Lindenstrauss. Extensions of Lipschitz mappings into a Hilbert space. Contemporary Mathematics, 26:189–206, 1984.   
+Tsung-Yi Lin, Michael Maire, Serge Belongie, et al. Microsoft coco: Common objects in context. In ECCV, 2014. URL https://arxiv.org/abs/1405.0312.   
+Muzammal Naseer, Kanchana Ranasinghe, Salman Khan, Munawar Hayat, Fahad Shahbaz Khan, and Ming-Hsuan Yang. Intriguing properties of vision transformers. In Advances in Neural Information Processing Systems, 2021. URL https://arxiv.org/abs/2105.10497.   
+Maxime Oquab, Timothée Darcet, Théo Moutakanni, Huy Vo, Marc Szafraniec, Vasil Khalidov, Pierre Fernandez, Daniel Haziza, Francisco Massa, Alaaeldin El-Nouby, Mahmoud Assran, Nicolas Ballas, Wojciech Galuba, Russell Howes, Po-Yao Huang, Shang-Wen Li, Ishan Misra, Michael Rabbat, Vasu Sharma, Gabriel Synnaeve, Hu Xu, Hervé Jégou, Julien Mairal, Patrick Labatut, Armand Joulin, and Piotr Bojanowski. DINOv2: Learning robust visual features without supervision. arXiv preprint arXiv:2304.07193, 2023. URL https://arxiv.org/pdf/2304.07193.   
+Alec Radford, Jong Wook Kim, Chris Hallacy, Aditya Ramesh, Gabriel Goh, Sandhini Agarwal, Girish Sastry, Amanda Askell, Pamela Mishkin, Jack Clark, Gretchen Krueger, and Ilya Sutskever. Learning transferable visual models from natural language supervision. In Proceedings of the 38th International Conference on Machine Learning (ICML). PMLR, 2021. URL https://arxiv. org/pdf/2103.00020.   
+Maithra Raghu, Thomas Unterthiner, Simon Kornblith, Chiyuan Zhang, and Alexey Dosovitskiy. Do vision transformers see like convolutional neural networks? arXiv preprint arXiv:2108.08810, 2021. URL https://arxiv.org/abs/2108.08810.
+
+Katja Schwarz, Yiyi Liao, and Andreas Geiger. On the frequency bias of generative models. In Advances in Neural Information Processing Systems, 2021. URL https://proceedings.neurips. cc/paper\_files/paper/2021/file/96bf57c6ff19504ff145e2a32991ea96-Paper.pdf.   
+Antonio Torralba and Aude Oliva. Statistics of natural image categories. Network: Computation in Neural Systems, 14(3):391–412, 2003.   
+Arjen van der Schaaf and J. H. van Hateren. Modelling the power spectra of natural images: Statistics and information. Vision Research, 36(17):2759–2770, 1996.   
+Haohan Wang, Xindi Wu, Zeyi Yin, and Eric P. Xing. High-frequency component helps explain the generalization of convolutional neural networks. In IEEE Conference on Computer Vision and Pattern Recognition (CVPR), 2020. URL https://arxiv.org/abs/1905.13545.   
+Peihao Wang, Wenqing Zheng, Tianlong Chen, and Zhangyang Wang. Anti-oversmoothing in deep vision transformers via the fourier domain analysis: From theory to practice. In International Conference on Learning Representations, 2022. URL https://arxiv.org/abs/2203.05962.   
+Thomas Wolf, Lysandre Debut, Victor Sanh, Julien Chaumond, Clement Delangue, Anthony Moi, Pierric Cistac, Tim Rault, Rémi Louf, Morgan Funtowicz, Joe Davison, Sam Shleifer, Patrick von Platen, Clara Ma, Yacine Jernite, Julien Plu, Canwen Xu, Teven Le Scao, Sylvain Gugger, Mariama Drame, Quentin Lhoest, and Alexander Rush. Transformers: State-of-the-art natural language processing. In Proceedings of the 2020 Conference on Empirical Methods in Natural Language Processing: System Demonstrations, pages 38–45. Association for Computational Linguistics, 2020.   
+Tete Xiao, Mannat Singh, Eric Mintun, Trevor Darrell, Piotr Dollár, and Ross Girshick. Early convolutions help transformers see better. In Advances in Neural Information Processing Systems (NeurIPS), volume 34, 2021. URL https://proceedings.neurips.cc/paper/2021/hash/ ff1418e8cc993fe8abcfe3ce2003e5c5-Abstract.html.   
+Dong Yin, Raphael Gontijo Lopes, Jonathon Shlens, Ekin D. Cubuk, and Justin Gilmer. A fourier perspective on model robustness in computer vision. In Advances in Neural Information Processing Systems, 2019. URL https://papers.neurips.cc/paper/ 9483-a-fourier-perspective-on-model-robustness-in-computer-vision.pdf.
+
+Appendix   
+![](images/eb94346c0bae9b757f848afc29bf9eab2f6544774e5a07cb9f2d3c0d8843f665.jpg)  
+Figure 3: Spatial-frequency accessibility (left) and Residual Spectral Loss (right) on COCO. Left panels plot per-band accessibility $\alpha _ { k }$ across layers; right panels show RSL with 95% bootstrap confidence intervals.

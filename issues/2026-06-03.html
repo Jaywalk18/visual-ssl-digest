@@ -19,20 +19,18 @@
   </header>
   <nav class="site-nav" aria-label="主导航">
     <a class="nav-link" href="../index.html">头版</a>
-<a class="nav-link active" href="../issues/2026-06-03.html">今日速递</a>
+<a class="nav-link" href="../issues/2026-06-04.html">今日速递</a>
 <a class="nav-link" href="../pages/catalog.html">论文目录</a>
 <a class="nav-link" href="../pages/timeline.html">时间线</a>
   </nav>
   <main><article class="paper-detail issue-detail">
   <div class="paper-main">
     <div class="kicker">Daily issue · 2026-06-03 · CCF A/B 会议优先</div>
-    <h1 class="paper-headline">6 月 3 日：VISReg 等视觉表征主线更新</h1>
-    <p class="dek">本期聚焦通用视觉表征、视觉语言预训练与视频自监督中最值得跟进的论文，并保留 CCF A/B、OpenReview 与 arXiv 状态线索。</p>
+    <h1 class="paper-headline">6 月 3 日：VISReg 等视觉表征论文归档</h1>
+    <p class="dek">本页按日期归档近期论文，保留优先级、主题、来源与方法线索，方便回看同一批工作的研究脉络。</p>
     <div class="feature-body">
-      <p class="lead dropcap">先读 VISReg 和 UR-JEPA，它们都在回答 JEPA/非对比 SSL 的核心问题：怎样防止 collapse，同时不把表征压成不符合视觉流形的分布。第二步读 Scaling Parallel Sequence Models to Foundation-Scale Vision Encoders，重点看 C-GSPN 是否真的能成为 attention 之外的大规模视觉编码器路线。第三步读 Decomposed On-Policy Distillation 和 V-LynX，前者从梯度几何解释视觉 grounding，后者把 Video LLM 的 token interface 当成跨模态对齐目标。AdaCodec、EvoCut、InfoMerge 可合并扫读，关注视频 token budget；PRISM/SCAPO/T-CLIP 只需看可迁移的几何或跨模态对齐机制。</p>
+      <p class="lead dropcap">先读 VISReg。直接改进 JEPA/SSL 防 collapse 正则化，并报告 ImageNet-22K 下接近 DINOv2 OOD 表现。 其余论文按 P1/P2 与主题顺序扫读，重点看方法图、消融设置和是否能迁移到通用视觉表征。</p>
       <h2>论文索引</h2>
-      <table class="compact-table"><thead><tr><th>优先级</th><th>论文</th><th>类型</th><th>相关性</th><th>一句话理由</th></tr></thead><tbody><tr><td>P0</td><td>VISReg: Variance-Invariance-Sketching Regularization for JEPA training</td><td>arXiv</td><td>高</td><td>直接改进 JEPA/SSL 防 collapse 正则化，并报告 ImageNet-22K 下接近 DINOv2 OOD 表现。</td></tr><tr><td>P0</td><td>UR-JEPA: Uniform Rectifiability as a Regularizer for Joint-Embedding Predictive Architectures</td><td>arXiv</td><td>高</td><td>同样针对 JEPA collapse，但从低维流形/rectifiability 角度替代 isotropic Gaussian 先验。</td></tr><tr><td>P1</td><td>Scaling Parallel Sequence Models to Foundation-Scale Vision Encoders</td><td>arXiv</td><td>高</td><td>面向视觉基础模型的近线性 2D spatial propagation encoder，目标是降低大分辨率预训练成本。</td></tr><tr><td>P1</td><td>Decomposed On-Policy Distillation for Vision-Language Reasoning: Steering Gradients for Visual Grounding</td><td>arXiv + ICML 2026 Spotlight</td><td>高</td><td>把 VLM 蒸馏梯度拆成 language prior 与 visual grounding，直接处理视觉证据被语言先验淹没的问题。</td></tr><tr><td>P1</td><td>V-LynX: Token Interface Alignment for Video+X LLMs</td><td>arXiv + ICML 2026</td><td>高</td><td>提出 Video LLM 内部存在可复用 token interface，用未配对单模态数据对齐新模态到视频 token 流形。</td></tr><tr><td>P2</td><td>AdaCodec: A Predictive Visual Code for Video MLLMs</td><td>arXiv</td><td>中高</td><td>把视频冗余建模为 reference frame + predictive P-token，直接减少重复视觉 token。</td></tr><tr><td>P2</td><td>EvoCut: Multi-Layer Evolution-Aware Visual Token Compression for Efficient Large Vision-Language Models</td><td>arXiv</td><td>中高</td><td>从 vision encoder 多层 token 演化方向估计重要性，比单层 attention/相似度压缩更贴近表征形成过程。</td></tr><tr><td>P2</td><td>From Extrinsic to Intrinsic: Geodesic-Guided Representation Learning for 3D Geometric Data</td><td>arXiv + ICML 2026 Poster</td><td>中高</td><td>用内在 geodesic metric 预训练 3D 表征，强调拓扑/流形结构而非外在坐标或语义标签。</td></tr><tr><td>P3</td><td>SCAPO: Self-Supervised Category-Level Articulated Pose Estimation from a Single 3D Observation</td><td>arXiv</td><td>中</td><td>单帧 RGB-D 下用自监督分解 canonical geometry、part segmentation 与 articulation，方法信号可迁移到对象结构学习。</td></tr><tr><td>P3</td><td>InfoMerge: Information-aware Token Compression for Efficient Video Large Language Models</td><td>arXiv</td><td>中</td><td>训练免费的视频 token compression，用 segment-level temporal fingerprint 估计冗余和内容预算。</td></tr><tr><td>扫读</td><td>T-CLIP: Enabling Thermal Perception for Contrastive Language-Image Pretraining</td><td>arXiv</td><td>中低</td><td>热成像是垂直模态，但 dual-LoRA 拆分全局场景与对象热签名的 CLIP adaptation 有方法借鉴价值。</td></tr></tbody></table>
-      <h2>主线阅读</h2>
       <div class="paper-list issue-list"><article class="paper-card" data-category="Visual SSL / representation" data-priority="P0" data-date="2026-06-03" data-title="visreg: variance-invariance-sketching regularization for jepa training" data-keywords="visreg: variance-invariance-sketching regularization for jepa training visreg visual ssl / representation p0 2026-06-03 arxiv 直接改进 jepa/ssl 防 collapse 正则化，并报告 imagenet-22k 下接近 dinov2 ood 表现 高相关；详见方法、贡献和实验边界。">
   <a class="paper-thumb paper-thumb-text" href="../papers/2606.02572.html">
     <img src="../assets/mineru/2606.02572/images/559377036e71303b5c758b8c3db8f052cc86a179d54b1620617e981a91c7be0a.jpg" alt="VISReg figure"><span>P0</span>
@@ -168,18 +166,17 @@
     </div>
   </div>
   <aside class="paper-side">
-    <div class="side-box"><h4>今日重点</h4><p>TextTeacher、MDM、EvoVid、Ablate-to-Validate。</p></div>
-    <div class="side-box"><h4>会议口径</h4><p>只把 CCF A/B 放进主提醒；临近截止或 CCF C 仅记录。</p></div>
     <div class="side-box"><h4>阅读重点</h4><p>先看 P1/P2 与方法图，再扫状态变化和边界案例。</p></div>
+    <div class="side-box"><h4>会议口径</h4><p>主提醒只保留 CCF A/B；CCF C 与过期截止仅作状态记录。</p></div>
   </aside>
 </article></main>
-  <aside class="conf-float" data-conf-reminder="2026-06-03-main-ddl" aria-label="CCF A/B 主投稿提醒">
+  <aside class="conf-float" data-conf-reminder="2026-06-04-main-ddl" aria-label="CCF A/B 主投稿提醒">
   <button class="conf-close" type="button" aria-label="关闭会议提醒">×</button>
   <details open>
     <summary>CCF A/B 主投稿提醒</summary>
     <div class="conf-list"><a class="conf-item " href="https://github.com/ccfddl/ccf-deadlines/blob/main/conference/AI/aaai.yml">
   <span><b>AAAI 2027</b><em>CCF A · Main paper submission</em></span>
-  <strong>54 天</strong>
+  <strong>53 天</strong>
   <small>2026-07-27 · CCF DDL: abstract 2026-07-20；进入 1 个月窗口后重点提醒。</small>
 </a></div>
   </details>
@@ -192,7 +189,7 @@
   (() => {
     const box = document.querySelector('[data-conf-reminder]');
     if (!box) return;
-    const key = `visualSslConfReminderClosed:${box.dataset.confReminder || '2026-06-03-main-ddl'}`;
+    const key = `visualSslConfReminderClosed:${box.dataset.confReminder || '2026-06-04-main-ddl'}`;
     try {
       if (localStorage.getItem(key) === '1') box.hidden = true;
     } catch (err) {}

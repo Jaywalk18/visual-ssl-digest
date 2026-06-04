@@ -19,39 +19,39 @@
   </header>
   <nav class="site-nav" aria-label="主导航">
     <a class="nav-link" href="../index.html">头版</a>
-<a class="nav-link" href="../issues/2026-06-03.html">今日速递</a>
+<a class="nav-link" href="../issues/2026-06-04.html">今日速递</a>
 <a class="nav-link" href="../pages/catalog.html">论文目录</a>
 <a class="nav-link" href="../pages/timeline.html">时间线</a>
   </nav>
   <main><article class="paper-detail">
   <div class="paper-main">
     <div class="kicker">ICML 2026 Poster · P2 · 2026-06-03</div>
-    <h1 class="paper-headline">From Extrinsic to Intrinsic：通用视觉基础模型正在向 3D/4D 扩展，内在几何作为自监督目标值得跟踪</h1>
-    <p class="dek">把 3D 表征学习从外部坐标/高层语义转向内在几何约束，可作为 3D/视频 foundation representation 的预训练信号。</p>
-    <p class="byline"><strong>From Extrinsic to Intrinsic: Geodesic-Guided Representation Learning for 3D Geometric Data</strong>　Yuming Zhao, Junhui Hou, Qijian Zhang, Jia Qin, Ying He；机构信息 arXiv 元数据未列出。　arXiv + ICML 2026 Poster　<a href="https://arxiv.org/abs/2606.02268">原文链接</a></p>
+    <h1 class="paper-headline">From Extrinsic to Intrinsic：它和通用视觉自监督的关系在于：用内在 geodesic metric 预训练 3D 表征，强调拓扑/流形结构而非外在坐标或语义标签</h1>
+    <p class="dek">中高相关；详见方法、贡献和实验边界。</p>
+    <p class="byline"><strong>From Extrinsic to Intrinsic: Geodesic-Guided Representation Learning for 3D Geometric Data</strong>　arXiv + ICML 2026 Poster　<a href="https://arxiv.org/abs/2606.02268">原文链接</a></p>
     <div class="paper-facts">
       <span><b>编号</b>2606.02268</span>
       <span><b>优先级</b>P2</span>
       <span><b>类别</b>ICML 2026 Poster</span>
       <span><b>会议</b>arXiv + ICML 2026 Poster</span>
-      <span><b>方法</b>提出 PRISM，通过恢复 intrinsic surface geodesic metric 学习 isometric embeddings，并加入 topology-enforcing objective 和两阶段训练处理 geodesic distance 分布不均。</span>
+      <span><b>方法</b>用内在 geodesic metric 预训练 3D 表征，强调拓扑/流形结构而非外在坐标或语义标签</span>
       <span><b>来源</b>arXiv / OpenReview</span>
     </div>
     <div class="feature-body">
-      <p class="lead dropcap">先说结论。通用视觉基础模型正在向 3D/4D 扩展，内在几何作为自监督目标值得跟踪。 把 3D 表征学习从外部坐标/高层语义转向内在几何约束，可作为 3D/视频 foundation representation 的预训练信号。</p>
+      <p class="lead dropcap">先说结论。它和通用视觉自监督的关系在于：用内在 geodesic metric 预训练 3D 表征，强调拓扑/流形结构而非外在坐标或语义标签。 中高相关；详见方法、贡献和实验边界。</p>
       <figure class="full-fig"><img src="../assets/mineru/2606.02268/images/4657a71410c9ecc95d11665e7f3db583a794705de1fe2edfdd471fa84811da85.jpg" alt="Figureure 12 · The overall pipeline of our 3D shape correspondence framework."><figcaption><b>Figureure 12 · The overall pipeline of our 3D shape correspondence framework.</b><span class="fig-en">Figure 12. The overall pipeline of our 3D shape correspondence framework.</span><span class="fig-zh">这张图概括 From Extrinsic to Intrinsic 的整体方法流程。阅读时先看模块之间传递的训练信号，再看作者如何把目标拆成可优化的子问题。</span></figcaption></figure>
 <figure class="full-fig"><img src="../assets/mineru/2606.02268/images/20345aa1d29dbc254d4bf30cd92cfcac559bc480da983dbcbc604cef6ae47950.jpg" alt="Figureure 11 · The overall pipeline of our fixed-boundary surface parameterization fr"><figcaption><b>Figureure 11 · The overall pipeline of our fixed-boundary surface parameterization fr</b><span class="fig-en">Figure 11. The overall pipeline of our fixed-boundary surface parameterization framework.</span><span class="fig-zh">这张图概括 From Extrinsic to Intrinsic 的整体方法流程。阅读时先看模块之间传递的训练信号，再看作者如何把目标拆成可优化的子问题。</span></figcaption></figure>
       
       <h2>核心问题</h2>
-      <p>通用视觉基础模型正在向 3D/4D 扩展，内在几何作为自监督目标值得跟踪。</p>
+      <p>它和通用视觉自监督的关系在于：用内在 geodesic metric 预训练 3D 表征，强调拓扑/流形结构而非外在坐标或语义标签。</p>
       <h2>方法拆解</h2>
-      <p>提出 PRISM，通过恢复 intrinsic surface geodesic metric 学习 isometric embeddings，并加入 topology-enforcing objective 和两阶段训练处理 geodesic distance 分布不均。</p>
+      <p>用内在 geodesic metric 预训练 3D 表征，强调拓扑/流形结构而非外在坐标或语义标签</p>
       <h2>主要贡献</h2>
-      <p>把 3D 表征学习从外部坐标/高层语义转向内在几何约束，可作为 3D/视频 foundation representation 的预训练信号。</p>
+      <p>中高相关；详见方法、贡献和实验边界。</p>
       <h2>实验看点</h2>
-      <p>摘要称在精度、鲁棒性和迁移表现上有收益；ICML 官方列为 Poster。</p>
+      <p>实验部分建议重点看两类证据：一是作者是否把方法收益和更强数据、更长训练、更大模型区分开；二是跨模型、跨数据或跨任务迁移是否还能保留同样趋势。</p>
       <h2>局限与读法</h2>
-      <p>主要在 3D geometric data 上验证，对 2D 图像表征的直接收益需要跨模态实验。</p>
+      <p>这篇论文的结论需要结合任务设置、训练数据规模和消融实验一起看；不要只凭单个指标判断它对通用视觉表征的价值。</p>
     
     </div>
   </div>
@@ -61,13 +61,13 @@
     <div class="side-box"><h4>原文</h4><p><a href="https://arxiv.org/abs/2606.02268">https://arxiv.org/abs/2606.02268</a></p></div>
   </aside>
 </article></main>
-  <aside class="conf-float" data-conf-reminder="2026-06-03-main-ddl" aria-label="CCF A/B 主投稿提醒">
+  <aside class="conf-float" data-conf-reminder="2026-06-04-main-ddl" aria-label="CCF A/B 主投稿提醒">
   <button class="conf-close" type="button" aria-label="关闭会议提醒">×</button>
   <details open>
     <summary>CCF A/B 主投稿提醒</summary>
     <div class="conf-list"><a class="conf-item " href="https://github.com/ccfddl/ccf-deadlines/blob/main/conference/AI/aaai.yml">
   <span><b>AAAI 2027</b><em>CCF A · Main paper submission</em></span>
-  <strong>54 天</strong>
+  <strong>53 天</strong>
   <small>2026-07-27 · CCF DDL: abstract 2026-07-20；进入 1 个月窗口后重点提醒。</small>
 </a></div>
   </details>
@@ -80,7 +80,7 @@
   (() => {
     const box = document.querySelector('[data-conf-reminder]');
     if (!box) return;
-    const key = `visualSslConfReminderClosed:${box.dataset.confReminder || '2026-06-03-main-ddl'}`;
+    const key = `visualSslConfReminderClosed:${box.dataset.confReminder || '2026-06-04-main-ddl'}`;
     try {
       if (localStorage.getItem(key) === '1') box.hidden = true;
     } catch (err) {}

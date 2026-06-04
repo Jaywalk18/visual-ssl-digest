@@ -1,0 +1,3004 @@
+[
+    {
+        "type": "text",
+        "text": "Visual Instruction Tuning Aligns Modalities through Abstraction ",
+        "text_level": 1,
+        "bbox": [
+            264,
+            122,
+            733,
+            174
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "Luis Palacios∗ ",
+        "bbox": [
+            228,
+            224,
+            331,
+            239
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "Lorenzo Basile∗ ",
+        "bbox": [
+            357,
+            224,
+            470,
+            239
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "Diego Doimo† ",
+        "bbox": [
+            496,
+            224,
+            596,
+            239
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "Alberto Cazzaniga† ",
+        "bbox": [
+            630,
+            224,
+            769,
+            239
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "Area Science Park, Trieste, Italy {firstname.lastname}@areasciencepark.it ",
+        "bbox": [
+            326,
+            262,
+            661,
+            291
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "Abstract ",
+        "text_level": 1,
+        "bbox": [
+            459,
+            325,
+            537,
+            340
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "Visual instruction tuning effectively adapts a pre-trained Large Language Model (LLM) to process image information alongside text. Yet, it remains unclear how visual features are embedded into the layer-wise hierarchy of abstractions of the LLM backbone. Across a diverse set of vision-language architectures, we show that instruction tuning primarily serves as a bridge, embedding visual features directly into the intermediate semantic layers of the LLM, bypassing the early layers devoted to unimodal processing. With probing analyses and causal interventions, we show that these intermediate layers are the semantic core of vision-language processing and play a critical role in the performance on a broad set of multimodal benchmarks. In addition, by comparing the geometry of semantically equivalent visual and textual representations, we find that fine-tuning extends and strengthens the existing abstraction phase, aligning visual features with pre-existing textual ones. Finally, we confirm the functional role of this localized alignment by restricting fine-tuning to intermediate layers alone: this strategy preserves the performance of full fine-tuning on vision-centric benchmarks while reducing training time. Our results suggest that multimodal integration is a localized phenomenon driven by the repurposing of the internal abstraction engine of the LLM. ",
+        "bbox": [
+            228,
+            357,
+            767,
+            593
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "1 Introduction ",
+        "text_level": 1,
+        "bbox": [
+            171,
+            617,
+            313,
+            633
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "Incorporating visual perception into language-based architectures is a fundamental step toward versatile multimodal systems. Modern generative Vision-Language Models (VLMs) [1–4] achieve this by processing visual features extracted from encoders like CLIP [5] alongside textual prompts. These models typically build upon Large Language Models (LLMs) pre-trained on massive text corpora, adapted to multimodal tasks via a two-stage fine-tuning pipeline. An initial alignment stage trains a connector to project visual latents into the LLM. A second visual instruction tuning stage then reshapes the internal representations of the LLM to support multimodal understanding. ",
+        "bbox": [
+            169,
+            648,
+            826,
+            746
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "Despite the empirical success of this approach, the internal mechanisms of multimodal integration remain poorly understood. This contrasts with the increasingly detailed picture emerging for textonly LLMs, which are known to develop a hierarchy of abstract representations during pre-training, with semantic content concentrated in intermediate layers [6–8]. A recent line of work has further shown that during supervised fine-tuning, the weights that mostly affect downstream performance are located in the middle layers [9], and that selectively tuning these layers is sufficient for crosslingual transfer [10]. Parallel evidence from multimodal interpretability suggests that the same intermediate region is where visual and textual features become more similar [11, 12] and that crossmodal information is transferred between vision and language tokens in early-to-middle layers [13]. ",
+        "bbox": [
+            169,
+            752,
+            826,
+            878
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "aside_text",
+        "text": "arXiv:2606.03871v1 [cs.CV] 2 Jun 2026 ",
+        "bbox": [
+            22,
+            282,
+            57,
+            710
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "page_footnote",
+        "text": "∗Equal contribution. †Equal supervision. ",
+        "bbox": [
+            189,
+            886,
+            416,
+            901
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "footer",
+        "text": "Preprint. ",
+        "bbox": [
+            171,
+            922,
+            220,
+            935
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "image",
+        "img_path": "images/a90b18dd9cab274653792c524c989ef2f32098d1856bda9631033064440cce11.jpg",
+        "image_caption": [
+            "Figure 1: Visual and textual abstractions align in the intermediate layers of VLMs. We compare two ways of asking the same question about the same visual content: a multimodal prompt, where the image is encoded and passed to the language model through the connector, and a text-only prompt, where natural-language captions replace the image. For both inputs, we track the hidden representation of the final contextualized input token across the LLM backbone, separating the computation into early modality-specific processing, intermediate shared abstraction, and late answer generation. The figure shows the main result of the paper: visual instruction tuning aligns image and text-derived representations primarily in intermediate layers, and fine-tuning this region alone recovers nearly full vision-language performance. "
+        ],
+        "image_footnote": [],
+        "content": "```mermaid\ngraph LR\n    A[\"What animal is this?\"] --> B[\"Vit\"]\n    B --> C[\"Connector\"]\n    C --> D[\"Text tokens\"]\n    D --> E[\"Tokenizer\"]\n    E --> F[\"Text tokens\"]\n    F --> G[\"EARLY LAYERS\"]\n    G --> H[\"INTERMEDIATE LAYERS\"]\n    H --> I[\"Shared abstraction\"]\n    I --> J[\"Red Panda\"]\n    J --> K[\"Generation\"]\n    K --> L[\"Output Red Panda\"]\n    \n    M[\"A small arboreal mammal native to the eastern Himalayas. This specimen displays a characteristic reddish-brown fur with white facial markings. A small animal feeding on bamboo leaves.\"] --> N[\"Tokenizer\"]\n    N --> O[\"Text tokens\"]\n    O --> P[\"EARLY LAYERS\"]\n    P --> Q[\"LATE LAYERS\"]\n    \n    R[\"What animal is this?\"] --> S[\"Tokenizer\"]\n    S --> T[\"Text tokens\"]\n    T --> U[\"EARLY LAYERS\"]\n    U --> V[\"LLM Backbone\"]\n    \n    style A fill:#f9f,stroke:#333\n    style B fill:#f9f,stroke:#333\n    style C fill:#f9f,stroke:#333\n    style D fill:#ccf,stroke:#333\n    style E fill:#ccf,stroke:#333\n    style F fill:#cfc,stroke:#333\n    style G fill:#ffc,stroke:#333\n    style H fill:#ffc,stroke:#333\n    style I fill:#ffc,stroke:#333\n    style J fill:#ffc,stroke:#333\n    style K fill:#ffc,stroke:#333\n    style L fill:#ffc,stroke:#333\n    style M fill:#fff,stroke:#333\n    style N fill:#fff,stroke:#333\n    style O fill:#fff,stroke:#333\n    style P fill:#fff,stroke:#333\n    style Q fill:#fff,stroke:#333\n    style R fill:#fff,stroke:#333\n```",
+        "sub_type": "flowchart",
+        "bbox": [
+            210,
+            90,
+            789,
+            334
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "text",
+        "text": "Together, these findings motivate intermediate layers as a candidate site for cross-modal integration. The picture, however, remains fragmented: existing analyses are typically confined to a single architecture, methodology, or modality, and stop short of asking whether the alignment of visual features with intermediate textual abstractions is causally responsible for multimodal performance. ",
+        "bbox": [
+            169,
+            492,
+            823,
+            550
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "text",
+        "text": "In this work, we go beyond these findings and provide interventional evidence across seven openweight VLM variants and an extensive set of multimodal benchmarks, showing that the intermediate semantic layers are the most critical for multimodal integration. Furthermore, on the subset of variants for which reproducible fine-tuning pipelines and training data are available, we show that actively restricting the tuning process to these layers achieves performance comparable to full fine-tuning. ",
+        "bbox": [
+            169,
+            555,
+            823,
+            625
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "text",
+        "text": "We summarize our main contributions as follows: ",
+        "bbox": [
+            171,
+            631,
+            500,
+            645
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "list",
+        "sub_type": "text",
+        "list_items": [
+            "1. Through interventional analysis, we show that intermediate layers are necessary for vision–language performance: ablating them causes the largest drop across all layer ranges on a diverse set of tasks, identifying them as the main locus of cross-modal communication (Section 3.1); ",
+            "2. By probing the semantic content of hidden representations, we find that data abstractions emerge in these intermediate layers. We then compare pre-trained and fine-tuned representations of semantically equivalent visual and textual prompts, revealing a deep impact of instruction tuning in aligning visual and textual abstractions (Sections 3.2 and 3.3). ",
+            "3. Localized instruction tuning shows that the abstraction layers are also sufficient for multimodal integration: restricting fine-tuning to them closely matches full fine-tuning at lower training cost, with the largest gains on the most vision-centric tasks (Sections 4.1 and 4.2). "
+        ],
+        "bbox": [
+            210,
+            656,
+            823,
+            819
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "text",
+        "text": "2 Methods ",
+        "text_level": 1,
+        "bbox": [
+            171,
+            838,
+            277,
+            853
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "text",
+        "text": "Vision-Language Models Architectures. We focus our analysis on the following VLMs trained for image understanding tasks: LLaVA-1.5-7B/13B [14], LLaVA-OneVision-1.5-4B/8B [15], InternVL2- 8B [16], and Cambrian-8B [17]. From this point, to simplify notation, we refer to LLaVA-1.5 as LLaVA and to LLaVA-OneVision-1.5 as OneVision. These architectures include three main components: a LLM backbone, a vision encoder, and a connector that maps visual embeddings into the LLM. Multimodal fine-tuning consists of two phases. A first phase (Stage-1) trains only the connector weights on multimodal datasets to align the visual features with the LLM embedding space. A second visual-instruction tuning phase (Stage-2), in addition to the connection parameters, trains the LLM and, in some cases, the vision encoder parameters on a curated instruction-following dataset. In this work, we study the impact of Stage-2 on multimodal alignment. ",
+        "bbox": [
+            169,
+            869,
+            823,
+            912
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "page_number",
+        "text": "",
+        "bbox": [
+            493,
+            935,
+            503,
+            946
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "text",
+        "text": "",
+        "bbox": [
+            169,
+            90,
+            826,
+            188
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "We select a set of models to represent a diverse range of design choices in modern VLMs, including model scale, training data, vision encoder architectures, and freezing strategies. In addition, to verify that our findings are valid beyond the architecture design based on self-attention, we analyze Llama-3.2-Vision-90B [18], a VLM based on cross-attention. In this case, only the cross-attention blocks are trained during visual instruction tuning, while the pretrained LLM weights remain frozen. Comprehensive details on the selected architectures are provided in the Appendix (Section A). ",
+        "bbox": [
+            169,
+            194,
+            826,
+            279
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "Datasets. In our experiments, we consider a broad range of vision and vision-language benchmarks, covering multiple-choice and open-ended question answering, captioning, classification, and compositional reasoning. We also evaluate model performance on text-only benchmarks. Detailed information on the datasets we evaluated is in the Appendix (Section B). ",
+        "bbox": [
+            169,
+            292,
+            826,
+            349
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "Causal interventions: attention knockout and layer-skipping. We use two intervention techattention knockout [19] and layer skipping. Let niques to identify where visual information is processed and transferred within the language backbone: $\\mathbf { X } ^ { ( l ) } = \\mathbf { x } _ { 1 } ^ { ( l ) } , \\ldots , \\mathbf { x } _ { S } ^ { ( l ) }$ denote the hidden states in the layer l, divided into text-token indices T and image-token indices V. For attention head h, let $A ^ { ( l , h ) }$ be the corresponding tmax attention matrix. tention knockout, we set $A _ { i j } ^ { ( l , h ) } = - \\infty$ for all text-token queries $i \\in \\mathcal T$ and image-token keys $j \\in \\mathcal V$ . This intervention removes image-to-text information flow, but preserves within-modality interactions. With layer skipping, we also bypass the computation done on visual tokens in a layer range $[ l , l ^ { \\prime } )$ . In this case, in addition to the cross-modal attention knockout described above, we copy the image embeddings of layer l into those of layer l′. ",
+        "bbox": [
+            169,
+            363,
+            826,
+            500
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "Comparing the information content of semantically equivalent multimodal and textual prompts. A central question of this work is how visual instruction tuning aligns visual representations within the language model backbone and in which layers this alignment is strongest. To investigate this, we compare hidden representations obtained from semantically equivalent prompts expressed in two different modalities. For each example $i \\in \\{ 1 , \\ldots , N \\}$ , we construct a multimodal prompt containing an image and a question, and a text-only prompt in which the image is replaced by a caption conveying the same information. At a given layer, this yields two sets of representations, $X _ { \\mathrm { i m g } } = \\{ \\mathbf { x } _ { 1 } ^ { \\mathrm { i m g } } , \\dots , \\mathbf { x } _ { N } ^ { \\mathrm { i m g } } \\}$ , x N and $X _ { \\mathrm { t e x t } } = \\{ \\mathbf { x } _ { 1 } ^ { \\mathrm { t e x t } } , \\dots , \\mathbf { x } _ { N } ^ { \\mathrm { t e x t } } \\}$ where each vector corresponds to the emebedding of last token of the sequence. ",
+        "bbox": [
+            169,
+            513,
+            826,
+            641
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "Because the transformers are pre-trained on text, textual representations are expected to contain more information than visual ones. To capture this asymmetry, we use the information imbalance [24], a nearest-neighbor-based measure of directional predictability between representation spaces. Let $r _ { i j } ^ { X }$ denote the rank of point j among the neighbors of point i in representation space X, according to Euclidean distance. In particular, $r _ { i j } ^ { X } = 1 \\mathrm { i f } \\ j$ is the nearest neighbor of i in X. The information imbalance between $X _ { \\mathrm { i m g } }$ and $X _ { \\mathrm { t e x t } }$ is: ",
+        "bbox": [
+            169,
+            646,
+            826,
+            734
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "equation",
+        "text": "$$\n\\Delta_ {\\mathrm{img} \\rightarrow \\text { text }} = \\frac {2}{N ^ {2}} \\sum_ {i, j \\mid r _ {i j} ^ {X _ {\\mathrm{img}}} = 1} r _ {i j} ^ {X _ {\\mathrm{text}}}, \\tag {1}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            383,
+            739,
+            825,
+            785
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "Intuitively, this quantity measures whether pairs of examples that are nearest neighbors in the visual representation space remain neighbors in the textual representation space. When $\\Delta _ { \\mathrm { i m g } \\to \\mathrm { t e x t } }$ is close to zero, the neighborhood structure of $X _ { \\mathrm { i m g } }$ accurately predicts that of $X _ { \\mathrm { t e x t } }$ , while higher values indicate weaker predictive power. The metric is directional: $\\Delta _ { \\mathrm { i m g \\to t e x t } } \\neq \\Delta _ { \\mathrm { t e x t \\to i m g } } .$ , allowing us to determine whether one modality contains information that is not fully represented in the other. ",
+        "bbox": [
+            169,
+            791,
+            825,
+            862
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "For completeness, we also report two measures of symmetric similarity, linear CKA [23] and Neighborhood Overlap [25], which quantify overall representational similarity but cannot capture asymmetries in information content. ",
+        "bbox": [
+            169,
+            867,
+            825,
+            910
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "page_number",
+        "text": "3 ",
+        "bbox": [
+            493,
+            935,
+            503,
+            946
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "image",
+        "img_path": "images/e36986641a0380d47a56f931c0fc23e399c3643c2496d5be6ec01c3937b7a8f9.jpg",
+        "image_caption": [
+            "Figure 2: Intermediate layers drive vision–language performance. Average performance over six vision–language tasks (GQA, MMBench-cn, MMBench-en, MME, SeedBench, and VQAv2) for LLaVA-7B, OneVision-4B, and InternVL2-8B, normalized to the full model. Purple curves skip image-token layers and green curves knock out image-to-text attention. Solid lines show progressive interventions from early to late layers, while dashed lines show five-layer sliding windows. "
+        ],
+        "image_footnote": [],
+        "content": "",
+        "bbox": [
+            173,
+            85,
+            826,
+            280
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "text",
+        "text": "Visual instruction tuning setup. We perform the Stage-2 visual instruction tuning on LLaVA-7B and OneVision-4B, selected for their fully reproducible public training pipelines. Following their original procedures, we train the parameters of the MLP connector and LLM for LLaVA and also those of the ViT for OneVision. We use officially supported training datasets for both models: the standard 665k instruction mixture for LLaVA, and the LLaVA-NeXT 780k data recipe [26] for OneVision. All training hyperparameters match the original ones [14, 15] (see Appendix Section C). ",
+        "bbox": [
+            169,
+            382,
+            823,
+            467
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "text",
+        "text": "Computational Resources. We performed most of the experiments on a single NVIDIA H100 GPU with 80GB of VRAM. We used 3 H100s for the analysis on the Llama 3.2-90B model and 4 H100s for the fine-tuning experiments. To facilitate reproducibility and future research, we will release our code and trained checkpoints upon publication. ",
+        "bbox": [
+            169,
+            479,
+            823,
+            537
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "text",
+        "text": "3 Multimodal Integration and Alignment in Intermediate Abstraction Layers ",
+        "text_level": 1,
+        "bbox": [
+            169,
+            555,
+            823,
+            573
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "text",
+        "text": "A primary objective of visual instruction tuning is to enable effective integration of visual and linguistic representations, which are inherently misaligned at the output of the vision encoder [27]. Despite the convergence of many modern VLM proposals to a standard architecture, with a visual encoder and a pre-trained LLM bridged by a multimodal connector that handles the alignment, understanding whether the visual embeddings align with the textual ones in early [28] or middle layers [13] remains a matter of debate. In this section, we show that multimodal fusion emerges predominantly in the intermediate layers, which are functionally critical for the performance in multimodal tasks (Section 3.1), rich in high-level semantic information (Section 3.2), and where the cross-modal alignment is maximal after visual instruction tuning (Section 3.3). ",
+        "bbox": [
+            169,
+            585,
+            826,
+            710
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "text",
+        "text": "3.1 Analyzing the functional role of the transformer blocks through causal interventions ",
+        "text_level": 1,
+        "bbox": [
+            169,
+            727,
+            799,
+            742
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "text",
+        "text": "We begin our analysis to understand whether and how much input visual features change in the early layers and where the cross-modal integration happens. ",
+        "bbox": [
+            169,
+            752,
+            823,
+            781
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "text",
+        "text": "To answer the first question, we apply the layer-skipping intervention to the image embeddings. In Figure 2, we report in purple the impact on average performance on six vision-language tasks (see Section E.3) as we skip an increasing number of layers from the input (full lines) and apply the intervention on a window of five consecutive layers (dashed profiles). Performance is normalized such that a value of 1 corresponds to the unmodified model, while 0 corresponds to removing image embeddings from all layers. In some cases, normalized performance falls below 0 or exceeds 1 when intervening on a subset of layers degrades or improves performance more than removing or retaining the image information entirely. For all models, removing the image features from the first six layers leaves the average performance above 90% of that of the standard model, and only around half of the network, the performance drops to a random level. The sliding window ablation further shows that the groups of layers that cause the largest performance drop are around layer 8 for LLaVA (left), 16 for OneVision (center), and 12 for InternVL2 (right), but removing the image at the beginning or at the end of the network does not affect performance. The impact of layer-skipping for pure textual inputs instead follows a strikingly different trend (see Figure 7). Removing only a few early layers causes performance on language tasks to rapidly collapse to near-random levels, and only the second half is robust to the removal of small layer windows. This different behavior can be partially explained by the previous observations that early layers “de-tokenize” raw tokens to construct concepts or word phrases from word pieces [29]. These highly specific linguistic operations are largely bypassed by image embeddings. ",
+        "bbox": [
+            169,
+            787,
+            823,
+            912
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "page_number",
+        "text": "4 ",
+        "bbox": [
+            493,
+            936,
+            504,
+            946
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "image",
+        "img_path": "images/1a3de28adb2f8d6016696275f633ce9f38c4e89be4fa2dc2ae9435c3f0a054df.jpg",
+        "image_caption": [
+            "Figure 3: Probing semantic information across layers. Left: Label overlap of last-token residualstream representations on seven 10-option MCQ classification datasets. Right: Chance-adjusted MCQ accuracy from the logit lens (solid) and a linear probe (dashed) on vision–language benchmarks. Colors denote LLaVA-7B (orange), OneVision-4B (blue), and InternVL2-8B (green). "
+        ],
+        "image_footnote": [],
+        "content": "",
+        "bbox": [
+            236,
+            85,
+            759,
+            244
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "",
+        "bbox": [
+            169,
+            334,
+            823,
+            473
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "Green profiles instead show the impact of attention knockout on the cross-modal attention weights. This experiment allows us to identify where cross-modal communication happens, since with this intervention, we only block the information flow from image to text tokens. In LLaVA, image processing and cross-modal communication are simultaneous, while the rightward shift of the green profiles in OneVision shows that there is a range of early layers (6 to 12), with unimodal processing, since the performance is unaffected by the cross-modal attention knockout, but is greatly damaged if the visual embeddings are removed. Analogous results on additional models are reported in Figure 6. ",
+        "bbox": [
+            169,
+            479,
+            823,
+            577
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "In summary, layer-skipping and attention knockout show that cross-modal integration is mainly localized in intermediate layers, while early layers focus solely on unimodal token processing. ",
+        "bbox": [
+            169,
+            583,
+            823,
+            612
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "3.2 Probing the semantic content of intermediate representations on vision-language tasks ",
+        "text_level": 1,
+        "bbox": [
+            171,
+            627,
+            810,
+            643
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "Figure 3 reports two complementary experiments aimed at probing the semantic content of the representations of the last token of the prompt in LLaVA-7B (yellow), OneVision-4B (blue), and InternVL2-8B (green). The results of the other models are shown in Section F (Appendix). ",
+        "bbox": [
+            169,
+            652,
+            823,
+            696
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "The left panel shows the average classification performance across seven datasets (see Section F.1), each with at least 10 classes, framed as a 10-option multiple-choice VQA task. In this case, the partition into classes is an obvious semantic abstraction of the prompts. We measure the performance with label overlap (LO) [25], a kNN metric that quantifies the average fraction of k-nearest neighbors of a point sharing the same class. This allows us to probe at which layers the nearest neighbors encode the same high-level abstraction. Moreover, to further understand in which layers the neighborhood structure inherently represents the class abstraction independent of the specific prompt formulation, we assign the 10 classes to different letter options for each datapoint (e.g., \"A: dog, B: cat\" for the first sample, \"A: cat, B: dog\" for the second sample, etc.). The average LO grows in the first layers, and reaches a peak of 0.9 in layer 10 (normalized depth ∼ 0.3) for LLaVA, 16 (∼ 0.5) for OneVision, 14 (∼ 0.4) for InternVL2. These layer ranges are also the pivotal ones for the image integration and cross-modal communication, as we discussed in Section 3.1. In later representations, the neighborhood structure rearranges according to the letter corresponding to the correct class, and LO decreases below 0.4. ",
+        "bbox": [
+            169,
+            700,
+            826,
+            893
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "page_number",
+        "text": "",
+        "bbox": [
+            493,
+            935,
+            503,
+            946
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "chart",
+        "img_path": "images/776e9011d1742acf7f666f741789ce26deb3ff1da26fdd78456e5a0e9df8cfff.jpg",
+        "content": "| Layer (text input) | Layer (multimodal input) | Type       | Δ Range           |\n| ------------------ | ------------------------ | ---------- | ----------------- |\n| 1                  | 1                        | pre-trained| < 0.040           |\n| 5                  | 5                        | pre-trained| 0.040 ≤ Δ < 0.065|\n| 10                 | 10                       | pre-trained| 0.065 ≤ Δ < 0.090|\n| 15                 | 15                       | pre-trained| < 0.040           |\n| 20                 | 20                       | pre-trained| 0.040 ≤ Δ < 0.065|\n| 25                 | 25                       | pre-trained| 0.065 ≤ Δ < 0.090|\n| 30                 | 30                       | pre-trained| < 0.040           |\n| 33                 | 33                       | pre-trained| 0.040 ≤ Δ < 0.065|\n| 1                  | 1                        | finetuned   | < 0.040           |\n| 5                  | 5                        | finetuned   | 0.040 ≤ Δ < 0.065|\n| 10                 | 10                       | finetuned   | 0.065 ≤ Δ < 0.090|\n| 15                 | 15                       | finetuned   | < 0.040           |\n| 20                 | 20                       | finetuned   | 0.040 ≤ Δ < 0.065|\n| 25                 | 25                       | finetuned   | 0.065 ≤ Δ < 0.090|\n| 30                 | 30                       | finetuned   | < 0.040           |\n| 33                 | 33                       | finetuned   | 0.040 ≤ Δ < 0.065|",
+        "chart_caption": [],
+        "chart_footnote": [],
+        "sub_type": "scatter",
+        "bbox": [
+            171,
+            85,
+            491,
+            263
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "chart",
+        "img_path": "images/750c3070c1d24367d8cd85595d5b6b2e3d74d39f4a927d910b938fee8ee58fef.jpg",
+        "content": "| Layer (Text Input) | Layer (multimodal Input) | Type        | Δ Range           |\n| ------------------ | ------------------------ | ----------- | ----------------- |\n| 17                 | 17                       | image → text | 0.020 ≤ Δ < 0.040   |\n| 17                 | 17                       | text → image | 0.040 ≤ Δ < 0.060   |\n| 17                 | 17                       | image → text | 0.020 ≤ Δ < 0.040   |\n| 17                 | 17                       | text → image | 0.040 ≤ Δ < 0.060   |\n| 17                 | 17                       | image → text | 0.020 ≤ Δ < 0.040   |\n| 21                 | 21                       | image → text | 0.020 ≤ Δ < 0.040   |\n| 21                 | 21                       | text → image | 0.040 ≤ Δ < 0.060   |\n| 21                 | 21                       | image → text | 0.020 ≤ Δ < 0.040   |\n| 21                 | 21                       | text → image | 0.040 ≤ Δ < 0.060   |\n| 25                 | 25                       | image → text | 0.020 ≤ Δ < 0.040   |\n| 25                 | 25                       | text → image | 0.040 ≤ Δ < 0.060   |\n| 25                 | 25                       | image → text | 0.020 ≤ Δ < 0.040   |\n| 25                 | 25                       | text → image | 0.040 ≤ Δ < 0.060   |\n| 29                 | 29                       | image → text | 0.020 ≤ Δ < 0.040   |\n| 29                 | 29                       | text → image | 0.040 ≤ Δ < 0.060   |\n| 29                 | 29                       | image → text | 0.020 ≤ Δ < 0.040   |\n| 29                 | 29                       | text → image | 0.040 ≤ Δ < 0.060   |\n| 9                  | 9                        | image → text | 0.020 ≤ Δ < 0.040   |\n| 9                  | 9                        | text → image | 0.040 ≤ Δ < 0.060   |\n| 9                  | 9                        | image → text | 0.020 ≤ Δ < 0.040   |\n| 9                  | 9                        | text → image | 0.040 ≤ Δ < 0.060   |\n| 13                 | 13                       | image → text | 0.020 ≤ Δ < 0.040   |\n| 13                 | 13                       | text → image | 0.040 ≤ Δ < 0.060   |\n| 13                 | 13                       | image → text | 0.020 ≤ Δ < 0.040   |\n| 13                 | 13                       | text → image | 0.040 ≤ Δ < 0.060   |\n| 17                 | 17                       | image → text | 0.020 ≤ Δ < 0.040   |\n| 17                 | 17                       | text → image | 0.040 ≤ Δ < 0.060   |\n| 17                 | 17                       | image ← text | > 0.020           |\n| 17                 | 17                       | text → image | > 0.040           |\n| 21                 | 21                       | image → text | > 0.020           |\n| 21                 | 21                       | text → image | > 0.040           |\n| 21                 | 21                       | image ← text | > 0.020           |\n| 21                 | 21                       | text → image | > 0.040           |\n| 25                 | 25                       | image → text | > 0.020           |\n| 25                 | 25                       | text → image | > 0.040           |\n| 25                 | 25                       | image ← text | > 0.020           |\n| 25                 | 25                       | text → image | > 0.040           |\n| 29                 | 29                       | image → text | > 0.020           |\n| 29                 | 29                       | text → image | > 0.040           |\n| 29                 | 29                       | image ← text | > 0.020           |\n| 29                 | 29                       | text → image | > 0.040           |\n| Note: The actual values are not provided in the code; they are estimated based on the chart type (e.g., “Pretrained” vs “Finetuned”). The actual values may vary due to the random nature of the data generation.",
+        "chart_caption": [
+            "Figure 4: Cross-modal alignment measured by information imbalance (∆). For OneVision-4B (left) and InternVL2-8B (right), we compare hidden representations from multimodal VQA prompts (y-axis) with equivalent text-only prompts where the image is replaced by a caption (x-axis), before and after instruction tuning. Green squares show text-to-image predictability, and purple circles the opposite direction. Larger markers indicate lower ∆ and stronger alignment. The yellow band marks the abstraction region. Values are averaged over VQAv2, COCO-QA, GQA, SEED, and MMBench. "
+        ],
+        "chart_footnote": [],
+        "sub_type": "scatter",
+        "bbox": [
+            504,
+            85,
+            826,
+            263
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "text",
+        "text": "The right panel confirms this, by probing the performance on multiple-choice visual question answering benchmarks (ScienceQA, MMBench, MME, and POPE) for which we do not have an explicit abstract labeling that allows us to group the dataset instances into classes. At the end of the abstraction phase, around layer 14 (depth ∼ 0.4) for LLaVA, 16 (∼ 0.5) for InternVL2, and 20 (∼ 0.6) for OneVision-4B, the performance of a logistic regression classifier reaches a plateau approximately matching the accuracy of the full model, while Logit Lens [30] performance increases later, suggesting that mid-late layers serve to align already linearly separable answers with the output vocabulary to predict the correct letter. ",
+        "bbox": [
+            169,
+            382,
+            823,
+            492
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "text",
+        "text": "In the Appendix, we show that a consistent identification of the abstraction layers extends to multimodal information retrieval (Section F.6) and when probing the semantic linguistic content of the representations (Section F.7). ",
+        "bbox": [
+            169,
+            500,
+            823,
+            542
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "text",
+        "text": "Overall, these results demonstrate that in the early-mid layers, the representations accumulate the semantic properties of the inputs, while the function of the last layers is to understand the correct letter-to-class assignment and align the representation with the unembedding directions for generation. ",
+        "bbox": [
+            169,
+            547,
+            826,
+            590
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "text",
+        "text": "3.3 The geometric alignment of multimodal representations ",
+        "text_level": 1,
+        "bbox": [
+            171,
+            606,
+            599,
+            622
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "text",
+        "text": "Building on our observation that visual information is mostly processed in intermediate, semanticallyrich layers, we examine how this integration evolves during visual instruction tuning by comparing pairs of prompts that convey the same semantic information in either visual or purely textual form. ",
+        "bbox": [
+            169,
+            631,
+            826,
+            674
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "text",
+        "text": "Concretely, we compare the last-token hidden representations of visual question answering prompts from VQAv2, COCO-QA, GQA, SEED, MMBench-EN, with those of equivalent prompts in which the images are replaced with captions. For VQAv2 and COCO-QA, we use human-annotated captions from COCO, and for the other datasets, we prompt Qwen3-VL [31] to generate synthetic descriptions. In Figure 4, we show the relative information content of visual and textual representations, measured with the information imbalance, ∆ (see Section 2). Purple markers indicate how well visual representations predict the information content of the equivalent matching textual ones, while green markers measure the predictive power in the opposite direction. Larger marker size corresponds to lower imbalance and stronger alignment. ",
+        "bbox": [
+            169,
+            679,
+            826,
+            805
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "text",
+        "text": "We report imbalance values for OneVision-4B (left) and InternVL2-8B (right) in their pre-trained and instruction-tuned variants; the corresponding plots for the other models are in Section G. In all the cases, after instruction tuning, semantically equivalent visual and textual inputs develop strongly mutually informative representations in mid-network layers consistent with those that develop explicit semantic abstractions of the data (see Figure 3). In OneVision-4B, these are around layer 16-22, in InternVL2 between layers 8 and 13 (for LLaVA-7B from 6 to 13, see Figure 21 of the Appendix) ",
+        "bbox": [
+            169,
+            810,
+            823,
+            893
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "page_number",
+        "text": "6 ",
+        "bbox": [
+            493,
+            936,
+            503,
+            946
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "table",
+        "img_path": "images/65c31ed5c2b334a225b67b74d2efbd6a18cb1186c1828a4be0d848aa1c11801a.jpg",
+        "table_caption": [
+            "Table 1: Evaluation of localized fine-tuning strategies on LLaVA-7B and OneVision-4B. Results are normalized to the corresponding fully fine-tuned model. MC VQA averages 12 multiple-choice tasks; OE VQA averages 4 open-ended tasks; Compositional averages ARO and SugarCrepe; Captioning averages COCO and Flickr30k. Overall averages all tasks. Train time refers to visual instruction tuning time on 4 NVIDIA H100 GPUs. Detailed results for all benchmarks are reported in Figure 31. "
+        ],
+        "table_footnote": [],
+        "table_body": "<table><tr><td>Model</td><td>Trained layers</td><td>MC VQA ↑</td><td>OE VQA ↑</td><td>Compositional ↑</td><td>Captioning ↑</td><td>Overall ↑</td><td>Train time ↓</td></tr><tr><td rowspan=\"2\">LLaVA-7B</td><td>[6, 16]</td><td>98.5</td><td>99.5</td><td>99.2</td><td>98.7</td><td>98.8</td><td>86.1</td></tr><tr><td> $[6, 16]^C$ </td><td>92.9</td><td>94.1</td><td>98.1</td><td>97.6</td><td>94.1</td><td>92.4</td></tr><tr><td rowspan=\"2\">OneVision-4B</td><td>[8, 25]</td><td>101.1</td><td>99.4</td><td>100.3</td><td>98.5</td><td>100.4</td><td>75.7</td></tr><tr><td> $[8, 25]^C$ </td><td>98.5</td><td>95.2</td><td>100.5</td><td>99.4</td><td>98.1</td><td>79.0</td></tr></table>",
+        "bbox": [
+            200,
+            88,
+            797,
+            181
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "text",
+        "text": "Moreover, the values of the information imbalance show, more manifestly for OneVision, that the textual representations are, on average, more informative than the visual representations, especially after the abstraction phase, as indicated by larger green markers from layer 17 to 27. This suggests that the text modality, on which the LLM backbone was originally pre-trained, remains more informative after visual instruction tuning. At the same time, visual representations continue to retain predictive power over later textual representations, although to a lesser extent. This indicates that the conceptual abstractions formed from visual inputs persist in later layers and that, once multimodal alignment is established, the originating modality becomes less important. A similar trend is observed with symmetric representation similarity measures such as linear CKA and neighborhood overlap (see Appendix, Figures 24 and 27), even though these are inherently unable to capture the directional asymmetry between textual and visual representations. ",
+        "bbox": [
+            169,
+            292,
+            823,
+            445
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "text",
+        "text": "In summary, visual instruction tuning substantially increases the alignment between semantically equivalent visual and textual representations. This effect is concentrated in the intermediate abstraction layers previously identified by interventions and probing, while later layers preserve a residual asymmetry in which textual representations remain more informative than visual ones. ",
+        "bbox": [
+            169,
+            450,
+            826,
+            507
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "text",
+        "text": "4 The impact of fine-tuning on different VLM layers ",
+        "text_level": 1,
+        "bbox": [
+            171,
+            526,
+            625,
+            542
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "text",
+        "text": "Our previous analysis suggests that the primary effect of visual instruction tuning is the expansion and the cross-modal alignment of a specific abstraction region within the LLM backbone. To further validate the functional role of these layers, we evaluate a localized fine-tuning strategy. By restricting instruction tuning to the weights of the identified abstraction layers, we will show that multimodal integration can be achieved through a targeted adaptation of the network parameters. ",
+        "bbox": [
+            169,
+            556,
+            823,
+            628
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "text",
+        "text": "4.1 Localized Visual Instruction Tuning ",
+        "text_level": 1,
+        "bbox": [
+            171,
+            643,
+            464,
+            657
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "text",
+        "text": "We compare the effect of fine-tuning the intermediate abstraction phase and its complement in LLaVA-7B and OneVision-4B, as their training code and data are publicly available, and their fine-tuning cost is manageable with our current computational infrastructure. Following the original training procedures, we train the encoder only for OneVision, while we train the multimodal connector for both models. For the complementary layer windows, which include the early and late layers of the LLMs, we additionally train the embedding and unembedding parameters. ",
+        "bbox": [
+            169,
+            667,
+            826,
+            753
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "text",
+        "text": "In Table 1, we report the performance of models fine-tuned according to these strategies, normalized with respect to the fully-trained baselines (available in the Appendix, Table 5) and averaged across four task categories: multiple-choice visual question answering (MC VQA) comprising CVBench, MMBench-Chinese, MMBench-English, MME, MMStar, MMMU, MMMU-Pro, Naturalbench, POPE, RealWorldQA, SEEDBench, and ScienceQA; open-ended visual question answering (OE VQA) including ChartQA, CountBench, GQA, and VQAv2; Compositional including ARO and SugarCrepe; and Captioning with COCO and Flickr30k. ",
+        "bbox": [
+            169,
+            758,
+            826,
+            854
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "text",
+        "text": "The data from Table 1 shows that fine-tuning the abstraction region, identified as layers 6 to 16 in LLaVA-7B and 8 to 25 in OneVision-4B, successfully recovers the performance of the fullytrained baselines. For LLaVA, despite training only one-third of the LLM layers, we can achieve an overall mean performance of 98.8%. Similarly, for OneVision, training half the layers slightly surpasses the base performance (100.4%). These localized configurations are significantly more effective than their complements $[ 6 , 1 6 ] ^ { C } = [ 0 , 5 ] \\cup [ 1 7 , 3 1 ]$ and $\\mathbf { \\widetilde { \\lvert 8 , 2 5 \\lvert } } ^ { C } = \\mathbf { \\widetilde { \\lvert 0 , 7 \\lvert } \\cup \\lvert 2 6 , 3 \\ 5 \\lvert }$ . The complementary windows fail to recover the same performance despite having an identical number of layers for OneVision and 10 more trainable layers for LLaVA, lagging behind the abstraction window performance by more than 2% and 4%, respectively. Beyond maintaining accuracy, this localized strategy provides advantages in training efficiency. By updating only the layers in the abstraction region, the models achieve performance comparable to full fine-tuning while reducing training time by 14% for LLaVA and 24% for OneVision. We report the complete results on all benchmarks in the Appendix (Figure 31). In addition, in Figure 30 of the Appendix, we provide further evidence supporting the choice of the [6, 16] layer window in LLaVA by selectively freezing an increasing number of layers from either the beginning or the end of the network. ",
+        "bbox": [
+            169,
+            861,
+            826,
+            904
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "page_number",
+        "text": "7 ",
+        "bbox": [
+            493,
+            935,
+            504,
+            946
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "chart",
+        "img_path": "images/a56ec76146f8da0139b67d0075e3cfcbe4d9348850d50e1ea144d98335df0f67.jpg",
+        "content": "| Method         | Image reliance | Localized fit advantage |\n| -------------- | -------------- | ----------------------- |\n| MMMU           | 0.15           | -0.025                  |\n| ARO            | 0.10           | 0.015                   |\n| SQA            | 0.20           | 0.015                   |\n| GQA            | 0.35           | 0.01                    |\n| CVBench        | 0.35           | 0.025                   |\n| RWOQ           | 0.40           | 0.05                    |\n| SEED           | 0.45           | 0.05                    |\n| POPE           | 0.50           | 0.025                   |\n| MME            | 0.55           | 0.04                    |\n| VQAv2          | 0.50           | 0.01                    |\n| MMStar         | 0.55           | -0.01                   |\n| MMMU-Pro-S     | 0.35           | 0.075                   |\n| MMB-EN         | 0.75           | 0.125                   |\n| MMB-CN         | 0.80           | 0.165                   |\n| Naturalbench   | 1.00           | 0.165                   |\n| CountBench     | 0.90           | 0.125                   |\n| ChartQA        | 0.85           | 0.075                   |",
+        "chart_caption": [
+            "Task type: "
+        ],
+        "chart_footnote": [],
+        "sub_type": "scatter",
+        "bbox": [
+            171,
+            87,
+            500,
+            262
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "image",
+        "img_path": "images/8de67b73402b4d18a9ed90d30ebb5e8beb9d327a2cbaff1963c0cc4b76fcf440.jpg",
+        "image_caption": [
+            "Compositional "
+        ],
+        "image_footnote": [],
+        "content": "",
+        "bbox": [
+            401,
+            267,
+            411,
+            276
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "chart",
+        "img_path": "images/d632042fa2bba7e02f31a21d199ba5e667812a94e74b2ff005aad28e2a08216d.jpg",
+        "content": "| Model        | Image reliance | Localized ft advantage |\n| ------------ | -------------- | ---------------------- |\n| ARO          | 0.1            | 0.01                   |\n| MMMU         | 0.2            | 0.01                   |\n| SQA          | 0.2            | 0.01                   |\n| CVBench      | 0.3            | 0.04                   |\n| MMMU-Pro-S   | 0.4            | 0.04                   |\n| GQA          | 0.5            | 0.04                   |\n| MMStar       | 0.6            | 0.05                   |\n| POPE         | 0.5            | 0.01                   |\n| VQAv2        | 0.5            | 0.01                   |\n| MME          | 0.6            | 0.00                   |\n| RWQA         | 0.4            | 0.01                   |\n| SEED         | 0.5            | 0.00                   |\n| MMB-EN       | 0.7            | 0.02                   |\n| MMB-CN       | 0.8            | 0.04                   |\n| MMB-EN       | 0.9            | 0.04                   |\n| MMStar       | 0.5            | 0.05                   |\n| CountBench   | 1.0            | 0.07                   |\n| ChartQA      | 0.9            | 0.04                   |\n| SugarCrepe   | 0.1            | -0.01                  |",
+        "chart_caption": [],
+        "chart_footnote": [],
+        "sub_type": "scatter",
+        "bbox": [
+            509,
+            88,
+            823,
+            262
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "image",
+        "img_path": "images/b8cbc9011bef24dcdb92356b48a00966b5f5440f78089fa77422d6a086fa30b3.jpg",
+        "image_caption": [
+            "Open-ended "
+        ],
+        "image_footnote": [],
+        "content": "",
+        "bbox": [
+            509,
+            267,
+            519,
+            276
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "image",
+        "img_path": "images/c44f01f68f7da7f4126ffcd5c3438f503a5629c81b71069f99ad5faceea9b9bb.jpg",
+        "image_caption": [
+            "Multiple choice ",
+            "Figure 5: Localized fine-tuning helps most when the image matters. Each point is a benchmark. The x-axis measures image reliance: the normalized gap between image-conditioned and text-only performance, averaged over four reference VLMs. The y-axis measures the gain from fine-tuning the abstraction layers instead of their complement, for LLaVA-7B (left) and OneVision-4B (right). Benchmarks that rely more on visual input benefit more from localized tuning. "
+        ],
+        "image_footnote": [],
+        "content": "",
+        "bbox": [
+            606,
+            267,
+            614,
+            276
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "text",
+        "text": "",
+        "bbox": [
+            169,
+            383,
+            823,
+            551
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "text",
+        "text": "In summary, fine-tuning just the middle abstraction layers of LLaVA and OneVision matches or even slightly improves the performance of training the entire model, while training the outer layers causes a clear drop in accuracy. As a practical advantage, this targeted approach improves efficiency, cutting training time by up to 24% without sacrificing benchmark results. ",
+        "bbox": [
+            169,
+            556,
+            823,
+            613
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "text",
+        "text": "4.2 Fine-tuning the intermediate layers is beneficial for vision-centric tasks ",
+        "text_level": 1,
+        "bbox": [
+            171,
+            628,
+            705,
+            643
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "text",
+        "text": "In this section, we further analyze the performance disparity between the identified abstraction layers and their functional complement. As we report in detail in Figure 31 (Appendix), our fine-tuning runs localized to the identified abstraction layers generally outperform training the complementary set of layers, even though the latter contains an equal or larger number of layers. In 14 cases out of 20 total benchmarks evaluated, our localized window surpasses its complementary for both LLaVA and OneVision, while in no case does the exact opposite happen. Upon closer examination of these performance gains, we observe that they are particularly notable in a specific subset of tasks, such as MMBench (both English and Chinese), ChartQA, CountBench and Naturalbench. We hypothesize that this advantage stems from the visual complexity of these benchmarks. Success on these tasks requires substantial multimodal integration, preventing the model from simply relying on text-based assumptions or unimodal biases. To quantify this relationship, we introduce an Image Reliance (IR) metric, which is defined as the normalized performance drop of a given VLM m when visual input is withheld: ",
+        "bbox": [
+            169,
+            654,
+            823,
+            830
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "equation",
+        "text": "$$\n\\operatorname{IR} (m, \\text { dataset }) = \\frac {\\text { score } (m , \\text { image - text }) - \\text { score } (m , \\text { text   only })}{\\text { score } (m , \\text { image - text })}. \\tag {2}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            299,
+            830,
+            823,
+            861
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "text",
+        "text": "Then, since we aim to determine a model-agnostic measure of image-centricity of a dataset, we average this metric over a range of four high-performing VLMs (InternVL2-8B [16], OneVision-8B [15], Cambrian-8B [17], Pixtral-12B [32]). In Figure 5, we plot the normalized performance gap between the localized fine-tuned models ([6, 16] for LLaVA (left) and [8, 25] for OneVision (right)) and their complements against this average reliance metric for all 18 benchmarks. We exclude image captioning tasks from this analysis as these are trivially impossible to solve without relying on the image. Our analysis reveals a clear positive connection between the two variables for both models considered, supported by a Spearman correlation of approximately $\\varrho = 0 . 6$ with high statistical significance $( p < 0 . 0 1 )$ . Image-centric tasks such as MMBench, CountBench, and Naturalbench consistently appear in the upper right corner of the plots, confirming both their high reliance on visual information and their performance gains when the abstraction phase is tuned. Conversely, on less vision-centric tasks, where the model can rely more heavily on textual context (such as ScienceQA or MMMU), the performance gap between the two tuning strategies narrows or even slightly inverts. To verify generalization across multimodal fusion strategies, we evaluate Llama-3.2-Vision-90B in the Appendix (Figure 34). Instead of performing localized fine-tuning, we selectively activate its cross-attention layers, and we confirm that the performance advantage of intermediate abstraction layers over their complement strongly correlates with image reliance. ",
+        "bbox": [
+            169,
+            864,
+            823,
+            907
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "page_number",
+        "text": "8 ",
+        "bbox": [
+            493,
+            935,
+            503,
+            946
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "text",
+        "text": "",
+        "bbox": [
+            169,
+            90,
+            826,
+            287
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "text",
+        "text": "Overall, the performance advantage of fine-tuning only the middle abstraction layers is particularly marked on vision-heavy tasks. This confirms that these specific layers carry the primary responsibility of successfully integrating visual cues into textual processing. ",
+        "bbox": [
+            169,
+            291,
+            823,
+            334
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "text",
+        "text": "5 Related Work and Discussion ",
+        "text_level": 1,
+        "bbox": [
+            171,
+            353,
+            452,
+            369
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "text",
+        "text": "Our work shows that visual instruction tuning does not modify the representation space within the LLM backbone uniformly, but focuses on an intermediate group of semantically-rich layers. We establish this result on seven VLM architectures through causal interventions, semantic probing, and geometric similarity analysis between semantically equivalent visual and textual representations. We finally validate the functional role of this intermediate region through localized fine-tuning: updating only the intermediate layers approximately preserves full fine-tuning performance, especially on vision-centric tasks. ",
+        "bbox": [
+            169,
+            383,
+            823,
+            481
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "text",
+        "text": "Semantic abstraction in intermediate layers of unimodal transformers. The presence of an intermediate abstraction phase in autoregressive transformers processing unimodal inputs was previously observed in the visual [6] and textual [7, 8] domains. Our findings are consistent with those results and further show that after instruction tuning, VLMs preserve the hierarchical organization of abstraction of the underlying LLM backbone, while assigning multimodal understanding to the most semantically rich layers. The evidence that visual instruction tuning strengthens and expands cross-modal alignment in intermediate layers also extends work on unimodal representation similarity, where independently trained image and text models have been shown to develop convergent abstract representations [33, 34]. While those studies compare separately trained models, we study how visual and textual abstractions become aligned within a single multimodal backbone during instruction tuning. ",
+        "bbox": [
+            169,
+            494,
+            826,
+            635
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "text",
+        "text": "Connection with vision-language interpretability studies. This question is also central to recent interpretability work on VLMs, which has offered contrasting accounts of where multimodal integration occurs. Work employing logit lens [30] and transfer-based analyses argue for a shared intermediate semantic hub [12], and analyses done with sparse autoencoders [35], circuit tracing [36], find progressive alignment in late representations. Conversely, [13, 28] find alignment between visual and textual concepts in the early layers of VLMs. ",
+        "bbox": [
+            169,
+            648,
+            826,
+            734
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "text",
+        "text": "Our results go beyond these earlier studies by combining a broader methodological framework with more extensive experimental validation to reveal a new link between semantic abstraction and multimodal integration. While [12] provides correlational evidence for the existence of a transmodal hub across pre-trained models, we present causal evidence that this hub is the functional core of multimodal integration during visual instruction tuning. Likewise, while [13, 35, 36] characterize cross-modal information flow only through attention ablation or circuit-level mechanisms within a limited set of architectures, we show that semantic abstraction and localization of cross-modal communication are fundamentally linked during visual instruction tuning across seven distinct architectures, rather than being artifacts of any specific model. ",
+        "bbox": [
+            169,
+            738,
+            823,
+            864
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "text",
+        "text": "By combining intervention and probing experiments, geometric alignment analyses, and localized fine-tuning interventions, our work reconciles these views and provides causal evidence for where multimodal integration occurs. ",
+        "bbox": [
+            169,
+            869,
+            823,
+            912
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "page_number",
+        "text": "9 ",
+        "bbox": [
+            493,
+            935,
+            504,
+            946
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "text",
+        "text": "Limitations. Although we evaluated a broad set of models representative of the current state of the art, our analysis is inherently limited to fully open architectures. Specifically, our approach necessitates access to both the pre-trained and fine-tuned checkpoints and, for the localized finetuning, the original training code and data. In addition, while our choice of trainable layers is grounded in extensive empirical evidence (see Section 3 and Figure 30), our primary objective was mechanistic characterization rather than performance maximization. As such, our configuration may not represent the global optimum, and specific applications might benefit from a more exhaustive hyperparameter search. ",
+        "bbox": [
+            169,
+            90,
+            826,
+            203
+        ],
+        "page_idx": 9
+    },
+    {
+        "type": "text",
+        "text": "Future work. Our present study focuses on vision–language models, and a natural next step is to examine whether these alignment mechanisms persist across other modalities, such as audio or video, when integrated into a pre-trained language backbone. It would also be informative to compare our findings with alternative multimodal integration strategies, such as native end-to-end training on multimodal data (e.g., [37, 38]). Such comparisons would help disentangle which aspects of the alignment of abstractions in intermediate layers are intrinsic to language-centric backbones and which depend on specific architectural or training choices. ",
+        "bbox": [
+            169,
+            217,
+            826,
+            316
+        ],
+        "page_idx": 9
+    },
+    {
+        "type": "text",
+        "text": "Contributions ",
+        "text_level": 1,
+        "bbox": [
+            171,
+            333,
+            294,
+            349
+        ],
+        "page_idx": 9
+    },
+    {
+        "type": "text",
+        "text": "The paper originates as the Master’s thesis work of Luis Palacios, hosted at the Laboratory of Data Engineering (LADE) of Area Science Park, Trieste, Italy. Diego Doimo and Alberto Cazzaniga jointly supervised the project, providing technical guidance and research direction, with the co-supervision of Lorenzo Basile. The core experiments were designed by Lorenzo Basile, Diego Doimo, and Alberto Cazzaniga. Following this design, Luis Palacios, Lorenzo Basile, and Diego Doimo collaboratively developed the codebase and executed the experimental pipeline. All authors contributed to the analysis of the data and the writing of this paper. ",
+        "bbox": [
+            169,
+            364,
+            823,
+            464
+        ],
+        "page_idx": 9
+    },
+    {
+        "type": "text",
+        "text": "Acknowledgments ",
+        "text_level": 1,
+        "bbox": [
+            171,
+            481,
+            330,
+            500
+        ],
+        "page_idx": 9
+    },
+    {
+        "type": "text",
+        "text": "The authors acknowledge the Area Science Park supercomputing platform ORFEO made available for conducting the research reported in this paper, and the technical support of the LADE staff. LB was supported by the European Union – NextGenerationEU within the PNRR project “Finanziamento di progetti presentati da giovani ricercatori\" – Mission 4 Component 2 Investment 1.2, CUP: J93C25000440001. DD and AC were supported by the project “Supporto alla diagnosi di malattie rare tramite l’intelligenza artificiale\" CUP: F53C22001770002 and “Valutazione automatica delle immagini diagnostiche tramite l’intelligenza artificiale\", CUP: F53C22001780002. AC was supported by the European Union – NextGenerationEU within the PNRR project “PRP@CERIC\" IR0000028 – Mission 4 Component 2 Investment 3.1 Action 3.1.1 and by the PRIN-PNRR project “SCOLORINA\", Mission 4, Component 2, Investment 1.1, and Call for tender no. 1409 published on 14 September 2022 by the Italian Ministry of University and Research (MUR), funded by the European Union – NextGenerationEU – CUP J53D23015070001. ",
+        "bbox": [
+            169,
+            511,
+            826,
+            664
+        ],
+        "page_idx": 9
+    },
+    {
+        "type": "text",
+        "text": "References ",
+        "text_level": 1,
+        "bbox": [
+            171,
+            681,
+            267,
+            698
+        ],
+        "page_idx": 9
+    },
+    {
+        "type": "list",
+        "sub_type": "ref_text",
+        "list_items": [
+            "[1] Jean-Baptiste Alayrac, Jeff Donahue, Pauline Luc, Antoine Miech, Iain Barr, Yana Hasson, Karel Lenc, Arthur Mensch, Katherine Millican, Malcolm Reynolds, et al. Flamingo: a visual language model for few-shot learning. Advances in neural information processing systems, 35:23716–23736, 2022. ",
+            "[2] Haotian Liu, Chunyuan Li, Qingyang Wu, and Yong Jae Lee. Visual instruction tuning. Advances in neural information processing systems, 36:34892–34916, 2023. ",
+            "[3] Jinze Bai, Shuai Bai, Shusheng Yang, Shijie Wang, Sinan Tan, Peng Wang, Junyang Lin, Chang Zhou, and Jingren Zhou. Qwen-vl: A versatile vision-language model for understanding, localization, text reading, and beyond. arXiv preprint arXiv:2308.12966, 2023. ",
+            "[4] Gemma Team, Aishwarya Kamath, Johan Ferret, Shreya Pathak, Nino Vieillard, Ramona Merhej, Sarah Perrin, Tatiana Matejovicova, Alexandre Ramé, Morgane Rivière, et al. Gemma 3 technical report. arXiv preprint arXiv:2503.19786, 2025. ",
+            "[5] Alec Radford, Jong Wook Kim, Chris Hallacy, Aditya Ramesh, Gabriel Goh, Sandhini Agarwal, Girish Sastry, Amanda Askell, Pamela Mishkin, Jack Clark, et al. Learning transferable visual models from "
+        ],
+        "bbox": [
+            173,
+            700,
+            828,
+            912
+        ],
+        "page_idx": 9
+    },
+    {
+        "type": "page_number",
+        "text": "10 ",
+        "bbox": [
+            490,
+            935,
+            508,
+            946
+        ],
+        "page_idx": 9
+    },
+    {
+        "type": "list",
+        "sub_type": "ref_text",
+        "list_items": [
+            "natural language supervision. In International conference on machine learning, pages 8748–8763. PmLR, 2021. ",
+            "[6] Lucrezia Valeriani, Diego Doimo, Francesca Cuturello, Alessandro Laio, Alessio Ansuini, and Alberto Cazzaniga. The geometry of hidden representations of large transformer models. In A. Oh, T. Naumann, A. Globerson, K. Saenko, M. Hardt, and S. Levine, editors, Advances in Neural Information Processing Systems, volume 36, pages 51234–51252. Curran Associates, Inc., 2023. ",
+            "[7] Emily Cheng, Diego Doimo, Corentin Kervadec, Iuri Macocco, Lei Yu, Alessandro Laio, and Marco Baroni. Emergence of a high-dimensional abstraction phase in language transformers. In The Thirteenth International Conference on Learning Representations, 2025. ",
+            "[8] Oscar Skean, Md Rifat Arefin, Dan Zhao, Niket Nikul Patel, Jalal Naghiyev, Yann LeCun, and Ravid Shwartz-Ziv. Layer by layer: Uncovering hidden representations in language models. In Forty-second International Conference on Machine Learning, 2025. ",
+            "[9] Yuto Harada, Yusuke Yamauchi, Yusuke Oda, Yohei Oseki, Yusuke Miyao, and Yu Takagi. Massive supervised fine-tuning experiments reveal how data, layer, and training factors shape LLM alignment quality. In Christos Christodoulopoulos, Tanmoy Chakraborty, Carolyn Rose, and Violet Peng, editors, Proceedings of the 2025 Conference on Empirical Methods in Natural Language Processing, pages 22360–22381, Suzhou, China, November 2025. Association for Computational Linguistics. ",
+            "[10] Danni Liu and Jan Niehues. Middle-layer representation alignment for cross-lingual transfer in fine-tuned LLMs. In Wanxiang Che, Joyce Nabende, Ekaterina Shutova, and Mohammad Taher Pilehvar, editors, Proceedings of the 63rd Annual Meeting of the Association for Computational Linguistics (Volume 1: Long Papers), pages 15979–15996, Vienna, Austria, July 2025. Association for Computational Linguistics. ",
+            "[11] Clement Neo, Luke Ong, Philip Torr, Mor Geva, David Krueger, and Fazl Barez. Towards interpreting visual information processing in vision-language models. In The Thirteenth International Conference on Learning Representations, 2025. ",
+            "[12] Zhaofeng Wu, Xinyan Velocity Yu, Dani Yogatama, Jiasen Lu, and Yoon Kim. The semantic hub hypothesis: Language models share semantic representations across languages and modalities. In The Thirteenth International Conference on Learning Representations, 2025. ",
+            "[13] Zhi Zhang, Srishti Yadav, Fengze Han, and Ekaterina Shutova. Cross-modal information flow in multimodal large language models. In Proceedings of the Computer Vision and Pattern Recognition Conference, pages 19781–19791, 2025. ",
+            "[14] Haotian Liu, Chunyuan Li, Yuheng Li, and Yong Jae Lee. Improved baselines with visual instruction tuning. In Proceedings of the IEEE/CVF conference on computer vision and pattern recognition, pages 26296–26306, 2024. ",
+            "[15] Xiang An, Yin Xie, Kaicheng Yang, Wenkang Zhang, Xiuwei Zhao, Zheng Cheng, Yirui Wang, Songcen Xu, Changrui Chen, Didi Zhu, et al. Llava-onevision-1.5: Fully open framework for democratized multimodal training. arXiv preprint arXiv:2509.23661, 2025. ",
+            "[16] OpenGVLab Team. Internvl2: Better than the best—expanding performance boundaries of open-source multimodal models with the progressive scaling strategy, Jul 2024. ",
+            "[17] Peter Tong, Ellis Brown, Penghao Wu, Sanghyun Woo, Adithya Jairam Vedagiri IYER, Sai Charitha Akula, Shusheng Yang, Jihan Yang, Manoj Middepogu, Ziteng Wang, et al. Cambrian-1: A fully open, vision-centric exploration of multimodal llms. Advances in Neural Information Processing Systems, 37:87310–87356, 2024. ",
+            "[18] Meta AI. Llama 3.2: Revolutionizing edge ai and vision with open, customizable models. Meta AI Blog, Sep 25 2024. ",
+            "[19] Mor Geva, Jasmijn Bastings, Katja Filippova, and Amir Globerson. Dissecting recall of factual associations in auto-regressive language models. In Proceedings of the 2023 Conference on Empirical Methods in Natural Language Processing, pages 12216–12235, 2023. ",
+            "[20] Atticus Geiger, Hanson Lu, Thomas Icard, and Christopher Potts. Causal abstractions of neural networks. Advances in neural information processing systems, 34:9574–9586, 2021. ",
+            "[21] Arthur Conmy, Augustine Mavor-Parker, Aengus Lynch, Stefan Heimersheim, and Adrià Garriga-Alonso. Towards automated circuit discovery for mechanistic interpretability. Advances in Neural Information Processing Systems, 36:16318–16352, 2023. "
+        ],
+        "bbox": [
+            165,
+            87,
+            831,
+            910
+        ],
+        "page_idx": 10
+    },
+    {
+        "type": "page_number",
+        "text": "",
+        "bbox": [
+            490,
+            935,
+            506,
+            946
+        ],
+        "page_idx": 10
+    },
+    {
+        "type": "list",
+        "sub_type": "ref_text",
+        "list_items": [
+            "[22] Maithra Raghu, Justin Gilmer, Jason Yosinski, and Jascha Sohl-Dickstein. Svcca: Singular vector canonical correlation analysis for deep learning dynamics and interpretability. Advances in neural information processing systems, 30, 2017. ",
+            "[23] Simon Kornblith, Mohammad Norouzi, Honglak Lee, and Geoffrey Hinton. Similarity of neural network representations revisited. In International Conference on Machine Learning, pages 3519–3529. PMLR, 2019. ",
+            "[24] Aldo Glielmo, Claudio Zeni, Bingqing Cheng, Gábor Csányi, and Alessandro Laio. Ranking the information content of distance measures. PNAS nexus, 1(2):pgac039, 2022. ",
+            "[25] Diego Doimo, Aldo Glielmo, Alessio Ansuini, and Alessandro Laio. Hierarchical nucleation in deep neural networks. Advances in Neural Information Processing Systems, 33, 2020. ",
+            "[26] Haotian Liu, Chunyuan Li, Yuheng Li, Bo Li, Yuanhan Zhang, Sheng Shen, and Yong Jae Lee. Llava-next: Improved reasoning, ocr, and world knowledge, January 2024. ",
+            "[27] Victor Weixin Liang, Yuhui Zhang, Yongchan Kwon, Serena Yeung, and James Zou. Mind the gap: Understanding the modality gap in multi-modal contrastive representation learning. In S. Koyejo, S. Mohamed, A. Agarwal, D. Belgrave, K. Cho, and A. Oh, editors, Advances in Neural Information Processing Systems, volume 35, pages 17612–17625. Curran Associates, Inc., 2022. ",
+            "[28] Evžen Wybitul, Javier Rando, Florian Tramèr, and Stanislav Fort. Representations of text and images align from layer one, 2026. ",
+            "[29] Nelson Elhage, Tristan Hume, Catherine Olsson, Neel Nanda, Tom Henighan, Scott Johnston, Sheer ElShowk, Nicholas Joseph, Nova DasSarma, Ben Mann, Danny Hernandez, Amanda Askell, Kamal Ndousse, Andy Jones, Dawn Drain, Anna Chen, Yuntao Bai, Deep Ganguli, Liane Lovitt, Zac Hatfield-Dodds, Jackson Kernion, Tom Conerly, Shauna Kravec, Stanislav Fort, Saurav Kadavath, Josh Jacobson, Eli Tran-Johnson, Jared Kaplan, Jack Clark, Tom Brown, Sam McCandlish, Dario Amodei, and Christopher Olah. Softmax linear units. Transformer Circuits Thread, 2022. https://transformercircuits.pub/2022/solu/index.html. ",
+            "[30] nostalgebraist. interpreting gpt: the logit lens. LessWrong, 2020. ",
+            "[31] Shuai Bai, Yuxuan Cai, Ruizhe Chen, Keqin Chen, Xionghui Chen, Zesen Cheng, Lianghao Deng, Wei Ding, Chang Gao, Chunjiang Ge, Wenbin Ge, Zhifang Guo, Qidong Huang, Jie Huang, Fei Huang, Binyuan Hui, Shutong Jiang, Zhaohai Li, Mingsheng Li, Mei Li, Kaixin Li, Zicheng Lin, Junyang Lin, Xuejing Liu, Jiawei Liu, Chenglong Liu, Yang Liu, Dayiheng Liu, Shixuan Liu, Dunjie Lu, Ruilin Luo, Chenxu Lv, Rui Men, Lingchen Meng, Xuancheng Ren, Xingzhang Ren, Sibo Song, Yuchong Sun, Jun Tang, Jianhong Tu, Jianqiang Wan, Peng Wang, Pengfei Wang, Qiuyue Wang, Yuxuan Wang, Tianbao Xie, Yiheng Xu, Haiyang Xu, Jin Xu, Zhibo Yang, Mingkun Yang, Jianxin Yang, An Yang, Bowen Yu, Fei Zhang, Hang Zhang, Xi Zhang, Bo Zheng, Humen Zhong, Jingren Zhou, Fan Zhou, Jing Zhou, Yuanzhi Zhu, and Ke Zhu. Qwen3-vl technical report, 2025. ",
+            "[32] Pixtral Team. Pixtral 12b, 2024. ",
+            "[33] Minyoung Huh, Brian Cheung, Tongzhou Wang, and Phillip Isola. Position: The platonic representation hypothesis. In Ruslan Salakhutdinov, Zico Kolter, Katherine Heller, Adrian Weller, Nuria Oliver, Jonathan Scarlett, and Felix Berkenkamp, editors, Proceedings of the 41st International Conference on Machine Learning, volume 235 of Proceedings of Machine Learning Research, pages 20617–20642. PMLR, 21–27 Jul 2024. ",
+            "[34] Santiago Acevedo, Andrea Mascaretti, Riccardo Rende, Matéo Mahaut, Marco Baroni, and Alessandro Laio. A quantitative analysis of semantic information in deep representations of text and images, 2025. ",
+            "[35] Constantin Venhoff, Ashkan Khakzar, Sonia Joseph, Philip Torr, and Neel Nanda. How visual representations map to language feature space in multimodal llms, 2025. ",
+            "[36] Yaniv Nikankin, Dana Arad, Yossi Gandelsman, and Yonatan Belinkov. Same task, different circuits: Disentangling modality-specific mechanisms in VLMs. In The Thirty-ninth Annual Conference on Neural Information Processing Systems, 2025. ",
+            "[37] Chameleon Team. Chameleon: Mixed-modal early-fusion foundation models. arXiv preprint arXiv:2405.09818, 2024. "
+        ],
+        "bbox": [
+            165,
+            87,
+            831,
+            876
+        ],
+        "page_idx": 11
+    },
+    {
+        "type": "page_number",
+        "text": "",
+        "bbox": [
+            490,
+            935,
+            508,
+            946
+        ],
+        "page_idx": 11
+    },
+    {
+        "type": "list",
+        "sub_type": "ref_text",
+        "list_items": [
+            "[38] Xinlong Wang, Xiaosong Zhang, Zhengxiong Luo, Quan Sun, Yufeng Cui, Jinsheng Wang, Fan Zhang, Yueze Wang, Zhen Li, Qiying Yu, Yingli Zhao, Yulong Ao, Xuebin Min, Tao Li, Boya Wu, Bo Zhao, Bowen Zhang, Liangdong Wang, Guang Liu, Zheqi He, Xi Yang, Jingjing Liu, Yonghua Lin, Tiejun Huang, and Zhongyuan Wang. Emu3: Next-token prediction is all you need, 2024. ",
+            "[39] Yin Xie, Kaicheng Yang, Xiang An, Kun Wu, Yongle Zhao, Weimo Deng, Zimin Ran, Yumeng Wang, Ziyong Feng, Roy Miles, et al. Region-based cluster discrimination for visual representation learning. In Proceedings of the IEEE/CVF International Conference on Computer Vision, pages 1793–1803, 2025. ",
+            "[40] Abhimanyu Dubey et al. The llama 3 herd of models. arXiv preprint arXiv:2407.21783, 2024. ",
+            "[41] Meta AI. Llama 3.2 vision model card. https://github.com/meta-llama/llama-models/blob/ main/models/llama3\\_2/MODEL\\_CARD\\_VISION.md, 2024. Official model card. ",
+            "[42] Yuan Liu, Haodong Duan, Yuanhan Zhang, Bo Li, Songyang Zhang, Wangbo Zhao, Yike Yuan, Jiaqi Wang, Conghui He, Ziwei Liu, et al. Mmbench: Is your multi-modal model an all-around player? In European conference on computer vision, pages 216–233. Springer, 2024. ",
+            "[43] Chaoyou Fu, Peixian Chen, Yunhang Shen, Yulei Qin, Mengdan Zhang, Xu Lin, Jinrui Yang, Xiawu Zheng, Ke Li, Xing Sun, Yunsheng Wu, Rongrong Ji, Caifeng Shan, and Ran He. MME: A comprehensive evaluation benchmark for multimodal large language models. In The Thirty-ninth Annual Conference on Neural Information Processing Systems Datasets and Benchmarks Track, 2025. ",
+            "[44] Bohao Li, Yuying Ge, Yixiao Ge, Guangzhi Wang, Rui Wang, Ruimao Zhang, and Ying Shan. Seed-bench: Benchmarking multimodal large language models. In Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition, pages 13299–13308, 2024. ",
+            "[45] Lin Chen, Jinsong Li, Xiaoyi Dong, Pan Zhang, Yuhang Zang, Zehui Chen, Haodong Duan, Jiaqi Wang, Yu Qiao, Dahua Lin, and Zhao Feng. Are we on the right way for evaluating large vision-language models? arXiv preprint arXiv:2403.20330, 2024. ",
+            "[46] Pan Lu, Swaroop Mishra, Tanglin Xia, Liang Qiu, Kai-Wei Chang, Song-Chun Zhu, Oyvind Tafjord, Peter Clark, and Ashwin Kalyan. Learn to explain: Multimodal reasoning via thought chains for science question answering. Advances in Neural Information Processing Systems, 35:2507–2521, 2022. ",
+            "[47] Xiang Yue, Yuansheng Ni, Kai Zhang, Tianyu Zheng, Ruoqi Liu, Ge Zhang, Samuel Stevens, Dongfu Jiang, Weiming Ren, Yuxuan Sun, Cong Wei, Botao Yu, Ruibin Yuan, Renliang Sun, Ming Yin, Boyuan Zheng, Zhenzhu Yang, Yibo Liu, Wenhao Huang, Huan Sun, Yu Su, and Wenhu Chen. MMMU: A massive multi-discipline multimodal understanding and reasoning benchmark for expert AGI. In Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition, 2024. ",
+            "[48] Xiang Yue, Tianyu Zheng, Yuansheng Ni, Yubo Wang, Kai Zhang, Shengbang Tong, Yuxuan Sun, Botao Yu, Ge Zhang, Huan Sun, Yu Su, Wenhu Chen, and Graham Neubig. MMMU-Pro: A more robust multi-discipline multimodal understanding benchmark. In Proceedings of the 63rd Annual Meeting of the Association for Computational Linguistics, 2025. ",
+            "[49] Yifan Li, Yifan Du, Kun Zhou, Jinpeng Wang, Wayne Xin Zhao, and Ji-Rong Wen. Evaluating object hallucination in large vision-language models. In Proceedings of the 2023 Conference on Empirical Methods in Natural Language Processing, pages 292–305, 2023. ",
+            "[50] xAI. Grok-1.5 vision preview. https://x.ai/news/grok-1.5v, 2024. ",
+            "[51] Baiqi Li, Zhiqiu Lin, Wenxuan Peng, Jean de Dieu Nyandwi, Daniel Jiang, Zixian Ma, Simran Khanuja, Ranjay Krishna, Graham Neubig, and Deva Ramanan. NaturalBench: Evaluating vision-language models on natural adversarial samples. In Advances in Neural Information Processing Systems, 2024. ",
+            "[52] Roni Paiss, Ariel Ephrat, Omer Tov, Shiran Zada, Inbar Mosseri, Michal Irani, and Tali Dekel. Teaching CLIP to count to ten. In Proceedings of the IEEE/CVF International Conference on Computer Vision, pages 3147–3157, 2023. ",
+            "[53] Yash Goyal, Tejas Khot, Douglas Summers-Stay, Dhruv Batra, and Devi Parikh. Making the v in vqa matter: Elevating the role of image understanding in visual question answering. In Proceedings of the IEEE conference on computer vision and pattern recognition, pages 6904–6913, 2017. ",
+            "[54] Drew A Hudson and Christopher D Manning. Gqa: A new dataset for real-world visual reasoning and compositional question answering. In Proceedings of the IEEE/CVF conference on computer vision and pattern recognition, pages 6700–6709, 2019. "
+        ],
+        "bbox": [
+            165,
+            87,
+            831,
+            898
+        ],
+        "page_idx": 12
+    },
+    {
+        "type": "page_number",
+        "text": "",
+        "bbox": [
+            490,
+            935,
+            506,
+            946
+        ],
+        "page_idx": 12
+    },
+    {
+        "type": "list",
+        "sub_type": "ref_text",
+        "list_items": [
+            "[55] Mengye Ren, Ryan Kiros, and Richard Zemel. Exploring models and data for image question answering. Advances in neural information processing systems, 28, 2015. ",
+            "[56] Ahmed Masry, Xuan Long Do, Jia Qing Tan, Shafiq Joty, and Enamul Hoque. Chartqa: A benchmark for question answering about charts with visual and logical reasoning. In Findings of the association for computational linguistics: ACL 2022, pages 2263–2279, 2022. ",
+            "[57] Mert Yuksekgonul, Federico Bianchi, Pratyusha Kalluri, Dan Jurafsky, and James Zou. When and why vision-language models behave like bags-of-words, and what to do about it? In International Conference on Learning Representations, 2023. ",
+            "[58] Cheng-Yu Hsieh, Jieyu Zhang, Zixian Ma, Aniruddha Kembhavi, and Ranjay Krishna. SugarCrepe: Fixing hackable benchmarks for vision-language compositionality. In Advances in Neural Information Processing Systems, 2023. ",
+            "[59] Tsung-Yi Lin, Michael Maire, Serge Belongie, James Hays, Pietro Perona, Deva Ramanan, Piotr Dollár, and C Lawrence Zitnick. Microsoft coco: Common objects in context. In European conference on computer vision, pages 740–755. Springer, 2014. ",
+            "[60] Peter Young, Alice Lai, Micah Hodosh, and Julia Hockenmaier. From image descriptions to visual denotations: New similarity metrics for semantic inference over event descriptions. Transactions of the association for computational linguistics, 2:67–78, 2014. ",
+            "[61] Peter Clark, Isaac Cowhey, Oren Etzioni, Tushar Khot, Ashish Sabharwal, Carissa Schoenick, and Oyvind Tafjord. Think you have solved question answering? try arc, the ai2 reasoning challenge. ArXiv, abs/1803.05457, 2018. ",
+            "[62] Alon Talmor, Jonathan Herzig, Nicholas Lourie, and Jonathan Berant. CommonsenseQA: A question answering challenge targeting commonsense knowledge. In Proceedings of the 2019 Conference of the North American Chapter of the Association for Computational Linguistics: Human Language Technologies, Volume 1 (Long and Short Papers), pages 4149–4158, Minneapolis, Minnesota, June 2019. Association for Computational Linguistics. ",
+            "[63] Rowan Zellers, Ari Holtzman, Yonatan Bisk, Ali Farhadi, and Yejin Choi. Hellaswag: Can a machine really finish your sentence? In Proceedings of the 57th Annual Meeting of the Association for Computational Linguistics, 2019. ",
+            "[64] Dan Hendrycks, Collin Burns, Steven Basart, Andy Zou, Mantas Mazeika, Dawn Song, and Jacob Steinhardt. Measuring massive multitask language understanding. Proceedings of the International Conference on Learning Representations (ICLR), 2021. ",
+            "[65] Yonatan Bisk, Rowan Zellers, Ronan Le Bras, Jianfeng Gao, and Yejin Choi. Piqa: Reasoning about physical commonsense in natural language. In Thirty-Fourth AAAI Conference on Artificial Intelligence, 2020. ",
+            "[66] Keisuke Sakaguchi, Ronan Le Bras, Chandra Bhagavatula, and Yejin Choi. Winogrande: An adversarial winograd schema challenge at scale. arXiv preprint arXiv:1907.10641, 2019. ",
+            "[67] Sachin Ravi and H. Larochelle. Optimization as a model for few-shot learning. In International Conference on Learning Representations, 2016. ",
+            "[68] Lukas Bossard, Matthieu Guillaumin, and Luc Van Gool. Food-101 - mining discriminative components with random forests. In European Conference on Computer Vision, 2014. ",
+            "[69] Maria-Elena Nilsback and Andrew Zisserman. Automated flower classification over a large number of classes. 2008 Sixth Indian Conference on Computer Vision, Graphics & Image Processing, pages 722–729, 2008. ",
+            "[70] Jianxiong Xiao, James Hays, Krista A. Ehinger, Aude Oliva, and Antonio Torralba. Sun database: Largescale scene recognition from abbey to zoo. 2010 IEEE Computer Society Conference on Computer Vision and Pattern Recognition, pages 3485–3492, 2010. ",
+            "[71] Bolei Zhou, Àgata Lapedriza, Aditya Khosla, Aude Oliva, and Antonio Torralba. Places: A 10 million image database for scene recognition. IEEE Transactions on Pattern Analysis and Machine Intelligence, 40:1452–1464, 2018. ",
+            "[72] Li Fei-Fei, Rob Fergus, and Pietro Perona. Learning generative visual models from few training examples: An incremental bayesian approach tested on 101 object categories. 2004 Conference on Computer Vision and Pattern Recognition Workshop, pages 178–178, 2004. "
+        ],
+        "bbox": [
+            165,
+            87,
+            831,
+            914
+        ],
+        "page_idx": 13
+    },
+    {
+        "type": "page_number",
+        "text": "14 ",
+        "bbox": [
+            490,
+            935,
+            508,
+            946
+        ],
+        "page_idx": 13
+    },
+    {
+        "type": "list",
+        "sub_type": "ref_text",
+        "list_items": [
+            "[73] Mircea Cimpoi, Subhransu Maji, Iasonas Kokkinos, Sammy Mohamed, and Andrea Vedaldi. Describing textures in the wild. 2014 IEEE Conference on Computer Vision and Pattern Recognition, pages 3606–3613, 2013. ",
+            "[74] Kaichen Zhang, Bo Li, Peiyuan Zhang, Fanyi Pu, Joshua Adrian Cahyono, Kairui Hu, Yuhao Dong, Shuai Liu, Yuanhan Zhang, Jingkang Yang, Chunyuan Li, and Ziwei Liu. Lmms-eval: Reality check on the evaluation of large multimodal models. In North American Chapter of the Association for Computational Linguistics, 2024. ",
+            "[75] Alexis Conneau, German Kruszewski, Guillaume Lample, Loïc Barrault, and Marco Baroni. What you can cram into a single \\$&!#\\* vector: Probing sentence embeddings for linguistic properties. In Iryna Gurevych and Yusuke Miyao, editors, Proceedings of the 56th Annual Meeting of the Association for Computational Linguistics (Volume 1: Long Papers), pages 2126–2136, Melbourne, Australia, July 2018. Association for Computational Linguistics. "
+        ],
+        "bbox": [
+            166,
+            87,
+            831,
+            268
+        ],
+        "page_idx": 14
+    },
+    {
+        "type": "page_number",
+        "text": "",
+        "bbox": [
+            490,
+            935,
+            508,
+            946
+        ],
+        "page_idx": 14
+    },
+    {
+        "type": "text",
+        "text": "Appendix ",
+        "text_level": 1,
+        "bbox": [
+            171,
+            90,
+            258,
+            107
+        ],
+        "page_idx": 15
+    },
+    {
+        "type": "text",
+        "text": "A Model architectures and training paradigms. ",
+        "text_level": 1,
+        "bbox": [
+            171,
+            122,
+            584,
+            140
+        ],
+        "page_idx": 15
+    },
+    {
+        "type": "text",
+        "text": "We describe each of the studied VLMs along the same axes: visual encoder, connector mechanism, language backbone, and the training stages that produce the pre-trained or base checkpoint and the instruction-tuned variants used in our analyses. All models share the same coarse structure—a pre-trained vision encoder feeding representations into a pre-trained language model—but diverge at the connector, which ranges from two-layer MLPs and spatial aggregators to cross-attention adapters. Their training recipes follow the same broad progression from modality alignment to visual instruction tuning, but differ in which components remain frozen and multimodal data used. ",
+        "bbox": [
+            169,
+            152,
+            826,
+            251
+        ],
+        "page_idx": 15
+    },
+    {
+        "type": "text",
+        "text": "LLaVA-1.5 [2, 14] pairs a CLIP ViT-L/336 visual encoder with a Vicuna language backbone through a two-layer MLP projector. Its training follows the canonical two-stage visual-instructiontuning recipe: Stage 1 freezes the vision encoder and LLM and trains only the projector on 558K image–text pairs; Stage 2 keeps the vision encoder frozen and fine-tunes the projector and LLM on a 665K instruction mixture containing multimodal conversations, detailed descriptions, complex reasoning examples, and academic VQA data. ",
+        "bbox": [
+            169,
+            265,
+            826,
+            349
+        ],
+        "page_idx": 15
+    },
+    {
+        "type": "text",
+        "text": "InternVL2 [16] uses the same ViT–MLP–LLM interface, scaled with an InternViT visual encoder, an MLP projector, dynamic high-resolution image tiling, and an InternLM-family chat backbone. Stage 1 trains only the MLP projector on multimodal pre-training data spanning captioning, VQA, detection, grounding, OCR, exam-style data, and interleaved image–text examples. Stage 2 performs instruction tuning with the ViT, MLP, and LLM trainable on a higher-quality bilingual mixture enriched with long text, multiple images, video, medical examples, handwritten-OCR data, and ShareGPT-4o-style supervision. ",
+        "bbox": [
+            169,
+            363,
+            826,
+            460
+        ],
+        "page_idx": 15
+    },
+    {
+        "type": "text",
+        "text": "LLaVA-OneVision-1.5 [15] keeps the LLaVA-style ViT–MLP–LLM decomposition, replacing the visual tower with RICE-ViT [39] for region-aware visual and OCR representations and using a two-layer MLP projector before a Qwen3 language backbone. Stage 1 is projector-only languageimage alignment on the LLaVA-1.5 558K alignment set. Stage 1.5 then switches to full-parameter mid-training on the 85M-image LLaVA-OneVision-1.5-Mid-Training corpus, a concept-balanced image–text dataset captioned in English and Chinese. Stage 2 continues full-parameter visual instruction tuning on LLaVA-OneVision-1.5-Instruct, a 22M-sample instruction corpus, together with FineVision data. ",
+        "bbox": [
+            169,
+            474,
+            826,
+            585
+        ],
+        "page_idx": 15
+    },
+    {
+        "type": "text",
+        "text": "Cambrian-1 [17] builds a vision-centric LMM around multiple frozen vision encoders and a Spatial Vision Aggregator (SVA), a connector based on learnable latent queries and cross-attention that compresses high-resolution visual features before passing them to a LLaMA-style backbone. Stage 1, visual connector training, freezes the vision encoders and LLM and trains the SVA on 2.5M Cambrian Alignment Data. Stage 2 performs visual instruction tuning by training the SVA and LLM on Cambrian-7M, a curated instruction mixture drawn from public visual-interaction, OCR, grounding, and VQA-style sources. ",
+        "bbox": [
+            169,
+            599,
+            826,
+            699
+        ],
+        "page_idx": 15
+    },
+    {
+        "type": "text",
+        "text": "Llama-3.2-Vision [18, 40, 41] couples a Llama-3.1 text backbone to a pre-trained image encoder through a cross-attention vision adapter, rather than inserting projected visual tokens into the prompt. The adapter’s cross-attention layers, inserted after every fourth self-attention layer, feed imageencoder representations into the core LLM and are engaged only when image features are supplied. Vision alignment and pre-training start from pre-trained Llama-3.1 text weights plus the image encoder and adapter; Meta trains this vision pathway while keeping the language-model weights frozen, first on 6B image–text pairs and then on a higher-quality in-domain and knowledge-enhanced annealing set. In post-training, Meta swaps the pre-trained text backbone for an instruction-tuned Llama chat backbone and applies supervised fine-tuning plus preference-alignment stages while continuing to update the vision encoder and adapter rather than the LLM ",
+        "bbox": [
+            169,
+            712,
+            826,
+            851
+        ],
+        "page_idx": 15
+    },
+    {
+        "type": "text",
+        "text": "The exact checkpoint provenance of the models used in our research is summarized in Table 2. ",
+        "bbox": [
+            169,
+            857,
+            792,
+            872
+        ],
+        "page_idx": 15
+    },
+    {
+        "type": "page_number",
+        "text": "16 ",
+        "bbox": [
+            490,
+            935,
+            509,
+            948
+        ],
+        "page_idx": 15
+    },
+    {
+        "type": "table",
+        "img_path": "images/7ee749ba517bd45c6684f9c4a98bc9b8c1e744611d3f6fc247ee39262d938c24.jpg",
+        "table_caption": [
+            "Table 2: Checkpoint provenance. Base/pre-trained and instruction-tuned checkpoints studied. "
+        ],
+        "table_footnote": [],
+        "table_body": "<table><tr><td>Model</td><td>Base/pre-trained checkpoint</td><td>Instruction-tuned checkpoint</td></tr><tr><td>LLaVA-1.5</td><td>Can be assembled from pre-trained connector + LLM backbone:7B: liuhaotian/llava-v1.5-mlp2x-336px-pretrain-vicuna-7b-v1.5+ lmsys/vicuna-7b-v1.513B: liuhaotian/llava-v1.5-mlp2x-336px-pretrain-vicuna-13b-v1.5+ lmsys/vicuna-13b-v1.5</td><td>llava-hf/llava-1.5-7b-hfllava-hf/llava-1.5-13b-hf</td></tr><tr><td>InternVL2</td><td>OpenGVLab/InternVL2-Pretrain-Models/InternVL2-8B-Pretrain</td><td>OpenGVLab/InternVL2-8B</td></tr><tr><td>LLaVA-OneVision-1.5</td><td>lmms-lab/LLaVA-OneVision-1.5-4B-Baselmms-lab/LLaVA-OneVision-1.5-8B-Base</td><td>lmms-lab/LLaVA-OneVision-1.5-4B-Instructlmms-lab/LLaVA-OneVision-1.5-8B-Instruct</td></tr><tr><td>Cambrian-1</td><td>nyu-visionx/cambrian-8b-pretrain</td><td>nyu-visionx/cambrian-8b</td></tr><tr><td>Llama-3.2-Vision</td><td>-</td><td>meta-llama/Llama-3.2-90B-Vision-Instruct</td></tr></table>",
+        "bbox": [
+            173,
+            88,
+            823,
+            191
+        ],
+        "page_idx": 16
+    },
+    {
+        "type": "text",
+        "text": "B Datasets ",
+        "text_level": 1,
+        "bbox": [
+            171,
+            247,
+            279,
+            263
+        ],
+        "page_idx": 16
+    },
+    {
+        "type": "text",
+        "text": "Our analyses draw on a broad evaluation suite covering multiple-choice and open-ended visual question answering, captioning, image classification, and compositional reasoning—introduced in Section 2 and used throughout the paper for evaluation, ablation studies, and probing experiments. Here we describe the full set in detail, organized by the capability each benchmark is meant to probe rather than by output format alone. These categories are descriptive rather than exclusive: several datasets combine visual perception, language understanding, and reasoning, but the taxonomy makes explicit why each benchmark is part of the suite. ",
+        "bbox": [
+            169,
+            277,
+            826,
+            377
+        ],
+        "page_idx": 16
+    },
+    {
+        "type": "table",
+        "img_path": "images/5a00b7a80d06bec59ad46175cf25ccacd21c3688a83c1f3b056529366e4fab8d.jpg",
+        "table_caption": [
+            "Table 3: Dataset taxonomy. Benchmarks used in our experiments, grouped by the main role they play in the evaluation rather than by output format alone. "
+        ],
+        "table_footnote": [],
+        "table_body": "<table><tr><td>Evaluation role</td><td>Benchmarks</td><td>Main capability tested</td></tr><tr><td>General multimodal multiple-choice questions</td><td>MMBench [42], MME [43], SEED-Bench [44], MMStar [45]</td><td>Broad multimodal perception and reasoning, including instruction-style question answering and vision-dependent samples.</td></tr><tr><td>Expert and scientific reasoning</td><td>ScienceQA [46], MMMU [47], MMMU-Pro [48]</td><td>Science and college-level multi-disciplinary questions that require subject knowledge, visual evidence, and deliberate reasoning.</td></tr><tr><td>Grounding, spatial, and robustness probes</td><td>POPE [49], CV-Bench [17], RealWorldQA [50], NaturalBench [51], CountBench [52]</td><td>Object hallucination, 2D/3D spatial understanding, real-world spatial reasoning, natural adversarial VQA, and object counting.</td></tr><tr><td>Open-ended VQA and chart QA</td><td>VQAv2 [53], GQA [54], COCO-QA [55], ChartQA [56]</td><td>Open-answer visual question answering, compositional scene reasoning, automatically generated COCO questions, and chart interpretation.</td></tr><tr><td>Compositional image-text matching</td><td>ARO [57], SugarCrepe [58]</td><td>Sensitivity to attributes, relations, word order, and hard negative captions in image-text matching.</td></tr><tr><td>Captioning</td><td>COCO [59], Flickr30k [60]</td><td>Free-form image description on standard captioning corpora.</td></tr><tr><td>Text-only controls</td><td>ARC-Easy [61], CommonsenseQA [62], HellaSwag [63], MMLU [64], PIQA [65], WinoGrande [66]</td><td>Language-only science, commonsense, physical reasoning, broad knowledge, and Winograd-style reasoning.</td></tr></table>",
+        "bbox": [
+            173,
+            388,
+            823,
+            618
+        ],
+        "page_idx": 16
+    },
+    {
+        "type": "text",
+        "text": "The general multimodal multiple-choice question benchmarks provide broad coverage. MMBench, MME, and SEED-Bench evaluate multimodal understanding across many perception and reasoning dimensions, while MMStar narrows the focus to curated samples intended to require visual evidence and reduce leakage from text-only shortcuts. ScienceQA, MMMU, and MMMU-Pro move this evaluation toward knowledge-heavy reasoning: ScienceQA focuses on science questions, MMMU covers college-level multimodal problems across disciplines, and MMMU-Pro strengthens MMMU by filtering text-only answerable examples, expanding the answer space, and adding a vision-only setting. ",
+        "bbox": [
+            169,
+            685,
+            826,
+            797
+        ],
+        "page_idx": 16
+    },
+    {
+        "type": "text",
+        "text": "The grounding and robustness benchmarks isolate failure modes that aggregate VQA scores can hide. POPE probes object hallucination through object-existence questions. CV-Bench focuses on 2D and 3D visual understanding. RealWorldQA evaluates basic spatial understanding from real-world images, NaturalBench uses paired natural images with different answers to reduce blind answering, and CountBench directly tests whether models bind object identity to object count. ",
+        "bbox": [
+            169,
+            801,
+            826,
+            875
+        ],
+        "page_idx": 16
+    },
+    {
+        "type": "text",
+        "text": "Open-ended answering and captioning complete the multimodal suite. VQAv2 and COCO-QA provide general visual question answering over natural images, GQA emphasizes compositional and relational scene understanding, and ChartQA targets chart reading that combines visual and logical reasoning. COCO and Flickr30k evaluate free-form image description on standard captioning corpora. ",
+        "bbox": [
+            169,
+            878,
+            825,
+            907
+        ],
+        "page_idx": 16
+    },
+    {
+        "type": "page_number",
+        "text": "17 ",
+        "bbox": [
+            490,
+            935,
+            508,
+            946
+        ],
+        "page_idx": 16
+    },
+    {
+        "type": "text",
+        "text": "",
+        "bbox": [
+            169,
+            90,
+            823,
+            133
+        ],
+        "page_idx": 17
+    },
+    {
+        "type": "text",
+        "text": "ARO and SugarCrepe test compositional image-text understanding through hard negative captions that differ from the correct one in attribute, relational, or word-order structure; SugarCrepe strengthens this with model-generated distractors that avoid the lexical artifacts in ARO’s rule-based negatives. Both were designed for contrastive encoder models and are adapted here to a multiple-choice format in which the model selects the correct caption from a small candidate set, making the compositional challenge tractable for generative VLMs. ",
+        "bbox": [
+            169,
+            138,
+            826,
+            223
+        ],
+        "page_idx": 17
+    },
+    {
+        "type": "text",
+        "text": "The text-only benchmarks probe the language reasoning capabilities that visual instruction tuning is expected to preserve. ARC-Easy and MMLU cover knowledge-based reasoning, from grade-school science to professional and academic subjects spanning STEM, humanities, and the social sciences. CommonsenseQA, HellaSwag, and PIQA probe commonsense reasoning from complementary angles: everyday world knowledge, physical and activity understanding via sentence completion, and intuitions about how objects and actions interact. WinoGrande rounds out the suite with Winogradstyle pronoun disambiguation. ",
+        "bbox": [
+            169,
+            229,
+            826,
+            327
+        ],
+        "page_idx": 17
+    },
+    {
+        "type": "text",
+        "text": "Image classification. For our label overlap experiments probing the semantic content of intermediate representations, we use seven image classification datasets spanning a range of visual category types. mini-ImageNet [67] is a 100-class subset of ImageNet widely used for few-shot evaluation. Food101 [68] and Flowers102 [69] target fine-grained recognition of food categories and flower species, respectively. SUN397 [70] and Places365 [71] cover large-scale scene recognition at 397 and 365 scene categories. Caltech101 [72] provides a broad collection of 101 everyday object categories, and DTD [73] tests texture-based recognition across 47 categories. Together, these datasets probe how class-level semantic geometry varies with category type—object identity, scene context, textures, and fine-grained visual distinctions—across model depth. ",
+        "bbox": [
+            169,
+            340,
+            826,
+            465
+        ],
+        "page_idx": 17
+    },
+    {
+        "type": "text",
+        "text": "All benchmarks except the compositional ones were evaluated using the lmms-eval library [74]. For the label overlap experiments, we subsampled each image classification dataset to its 10 most populated classes and balanced the samples to the size of the least populated selected class. Exactmatch accuracy was above random chance for all models, always above 50%, and above 90% for some model–dataset combinations. ",
+        "bbox": [
+            169,
+            470,
+            826,
+            542
+        ],
+        "page_idx": 17
+    },
+    {
+        "type": "text",
+        "text": "C Visual instruction tuning hyperparameters ",
+        "text_level": 1,
+        "bbox": [
+            171,
+            561,
+            568,
+            579
+        ],
+        "page_idx": 17
+    },
+    {
+        "type": "text",
+        "text": "We run localized fine-tuning on models with fully reproducible training pipelines and with publicly available data, focusing on the following model variants: LLaVA-1.5-7B, LLaVA-OneVision-1.5-4B (Section 4). The training hyperparameters were selected according to the official implementations, and they are reported in Table 4. ",
+        "bbox": [
+            169,
+            592,
+            826,
+            648
+        ],
+        "page_idx": 17
+    },
+    {
+        "type": "table",
+        "img_path": "images/f5e37cac9d9e390d75c5a8dbef81208c7d53f002e2aa007b0a0803bc893de03c.jpg",
+        "table_caption": [
+            "Table 4: Instruction Fine-Tuning Hyperparameters. Values for LLaVA-1.5 (7B) reproduce the fine-tuning settings from Table 9 of [14]. Values for LLaVA-OneVision-1.5 (4B) correspond to the instruction training stage from the released scripts [15]. "
+        ],
+        "table_footnote": [],
+        "table_body": "<table><tr><td>Hyperparameter</td><td>LLaVA-1.5 (7B)</td><td>LLaVA-OneVision-1.5 (4B)</td></tr><tr><td>Batch size</td><td>128</td><td>224</td></tr><tr><td>Learning rate</td><td>2e-5</td><td>1e-5</td></tr><tr><td>Min learning rate</td><td>0</td><td>1e-6</td></tr><tr><td>LR schedule</td><td>cosine decay</td><td>cosine decay</td></tr><tr><td>Warmup ratio</td><td>0.03</td><td>0.002</td></tr><tr><td>Weight decay</td><td>0</td><td>0</td></tr><tr><td>Training length</td><td>1 epoch</td><td>1 epoch</td></tr><tr><td>Optimizer</td><td>AdamW</td><td>Adam</td></tr><tr><td>Optimizer betas</td><td>(0.9, 0.999)</td><td>(0.9, 0.99)</td></tr></table>",
+        "bbox": [
+            264,
+            661,
+            733,
+            816
+        ],
+        "page_idx": 17
+    },
+    {
+        "type": "page_number",
+        "text": "18 ",
+        "bbox": [
+            490,
+            935,
+            508,
+            946
+        ],
+        "page_idx": 17
+    },
+    {
+        "type": "text",
+        "text": "D Task performances ",
+        "text_level": 1,
+        "bbox": [
+            171,
+            90,
+            370,
+            107
+        ],
+        "page_idx": 18
+    },
+    {
+        "type": "text",
+        "text": "D.1 Multimodal benchmarks. ",
+        "text_level": 1,
+        "bbox": [
+            171,
+            119,
+            393,
+            133
+        ],
+        "page_idx": 18
+    },
+    {
+        "type": "table",
+        "img_path": "images/317f0d08427fa7321920ab3778295efff71f7742e7acc76bcc45173beaab27ae.jpg",
+        "table_caption": [
+            "Table 5: Multimodal task performance. We report each model on multiple-choice, open-ended, compositional, and captioning benchmarks using the metric specified in the second column. The Overall Mean summarizes the available entries in this multimodal evaluation suite. "
+        ],
+        "table_footnote": [],
+        "table_body": "<table><tr><td>Task</td><td>Metric</td><td>LLaVA-7B</td><td>LLaVA-13B</td><td>OneVision-4B-LN</td><td>OneVision-4B</td><td>OneVision-8B</td><td>InternVL2-8B</td><td>Cambrian-8B</td><td>Llama-90B</td></tr><tr><td colspan=\"10\">Multiple-choice</td></tr><tr><td>ScienceQA</td><td>Exact Match (%)</td><td>67.7</td><td>71.2</td><td>81.5</td><td>98.5</td><td>98.8</td><td>97.2</td><td>80.3</td><td>91.4</td></tr><tr><td>MMBench-EN</td><td>GPT Score</td><td>64.3</td><td>67.9</td><td>80.0</td><td>83.7</td><td>85.4</td><td>81.8</td><td>75.7</td><td>81.4</td></tr><tr><td>MMBench-CN</td><td>GPT Score</td><td>52.6</td><td>56.6</td><td>77.7</td><td>61.1</td><td>77.7</td><td>79.6</td><td>64.5</td><td>77.1</td></tr><tr><td>MME</td><td>Normalized Score (%)</td><td>61.8</td><td>62.4</td><td>74.9</td><td>77.3</td><td>78.7</td><td>78.1</td><td>68.4</td><td>65.7</td></tr><tr><td>POPE</td><td>F1 Score (%)</td><td>82.0</td><td>82.3</td><td>86.9</td><td>87.4</td><td>87.3</td><td>85.8</td><td>86.7</td><td>0.0</td></tr><tr><td>SEED</td><td>Accuracy (%)</td><td>64.8</td><td>68.2</td><td>77.2</td><td>76.4</td><td>77.3</td><td>76.3</td><td>73.9</td><td>78.0</td></tr><tr><td>MMMU</td><td>Accuracy (%)</td><td>35.7</td><td>34.7</td><td>48.8</td><td>52.0</td><td>55.6</td><td>48.3</td><td>41.5</td><td>49.2</td></tr><tr><td>MMMU-Pro</td><td>Accuracy (%)</td><td>18.0</td><td>20.6</td><td>30.4</td><td>34.3</td><td>36.5</td><td>32.1</td><td>24.2</td><td>32.3</td></tr><tr><td>MMStar</td><td>Mean Acc. (%)</td><td>33.6</td><td>36.5</td><td>55.8</td><td>65.2</td><td>68.1</td><td>59.6</td><td>47.5</td><td>52.7</td></tr><tr><td>NaturalBench</td><td>Group Acc. (%)</td><td>14.2</td><td>14.7</td><td>27.8</td><td>27.6</td><td>28.7</td><td>24.4</td><td>20.3</td><td>32.5</td></tr><tr><td>CVBench</td><td>Accuracy (%)</td><td>53.8</td><td>54.9</td><td>71.0</td><td>76.8</td><td>79.3</td><td>71.6</td><td>8.4</td><td>69.9</td></tr><tr><td>RealWorldQA</td><td>Exact Match (%)</td><td>54.8</td><td>56.6</td><td>63.9</td><td>68.0</td><td>68.9</td><td>64.4</td><td>64.3</td><td>66.0</td></tr><tr><td colspan=\"10\">Open-ended</td></tr><tr><td>GQA</td><td>Exact Match (%)</td><td>61.8</td><td>62.3</td><td>61.6</td><td>62.4</td><td>62.7</td><td>63.0</td><td>65.6</td><td>53.8</td></tr><tr><td>VQAv2</td><td>Exact Match (%)</td><td>76.6</td><td>77.6</td><td>80.0</td><td>81.1</td><td>82.0</td><td>79.2</td><td>82.7</td><td>73.6</td></tr><tr><td>CountBench</td><td>Accuracy (%)</td><td>45.8</td><td>48.3</td><td>74.9</td><td>83.7</td><td>85.5</td><td>58.5</td><td>15.1</td><td>78.0</td></tr><tr><td>ChartQA</td><td>Relaxed Acc. (%)</td><td>16.8</td><td>18.8</td><td>79.3</td><td>87.4</td><td>86.3</td><td>82.7</td><td>73.3</td><td>25.7</td></tr><tr><td colspan=\"10\">Compositionality</td></tr><tr><td>ARO</td><td>Mean Acc. (%)</td><td>74.3</td><td>83.8</td><td>87.5</td><td>90.0</td><td>89.9</td><td>88.7</td><td>84.9</td><td>85.44</td></tr><tr><td>SugarCrepe</td><td>Mean Acc. (%)</td><td>81.8</td><td>87.9</td><td>89.6</td><td>94.4</td><td>94.1</td><td>95.2</td><td>86.5</td><td>94.71</td></tr><tr><td colspan=\"10\">Captioning</td></tr><tr><td>COCO</td><td>CIDEr (×100)</td><td>108.5</td><td>112.7</td><td>135.5</td><td>118.8</td><td>135.7</td><td>90.3</td><td>9.3</td><td>51.2</td></tr><tr><td>Flickr30k</td><td>CIDEr (×100)</td><td>83.3</td><td>86.7</td><td>84.4</td><td>87.0</td><td>88.4</td><td>74.7</td><td>14.8</td><td>70.8</td></tr><tr><td>Overall Mean</td><td></td><td>57.6</td><td>60.2</td><td>73.4</td><td>75.7</td><td>78.3</td><td>71.6</td><td>54.4</td><td>61.5</td></tr></table>",
+        "bbox": [
+            173,
+            151,
+            823,
+            375
+        ],
+        "page_idx": 18
+    },
+    {
+        "type": "table",
+        "img_path": "images/19d87ebced24b3e28fa851b9f97a854570d8fd73164e8a6268339bbb44bf4648.jpg",
+        "table_caption": [
+            "Table 6: Multimodal task performance without visual input. The same evaluation suite is run after removing the image, measuring how much performance can be recovered from the text prompt, language priors, or dataset shortcuts alone. "
+        ],
+        "table_footnote": [],
+        "table_body": "<table><tr><td>Task</td><td>Metric</td><td>LLaVA-7B</td><td>LLaVA-13B</td><td>OneVision-4B-LN</td><td>OneVision-4B</td><td>OneVision-8B</td><td>InternVL2-8B</td><td>Cambrian-8B</td></tr><tr><td colspan=\"9\">Multiple-choice</td></tr><tr><td>ScienceQA</td><td>Exact Match (%)</td><td>64.3</td><td>66.1</td><td>71.3</td><td>74.0</td><td>73.2</td><td>74.4</td><td>69.2</td></tr><tr><td>MMBench-EN</td><td>GPT Score</td><td>19.5</td><td>22.2</td><td>27.6</td><td>24.2</td><td>23.7</td><td>20.3</td><td>22.8</td></tr><tr><td>MMBench-CN</td><td>GPT Score</td><td>15.4</td><td>19.0</td><td>23.4</td><td>16.8</td><td>17.1</td><td>18.6</td><td>14.4</td></tr><tr><td>MME</td><td>Normalized Score (%)</td><td>32.7</td><td>30.0</td><td>30.1</td><td>31.2</td><td>33.5</td><td>40.3</td><td>32.9</td></tr><tr><td>POPE</td><td>F1 Score (%)</td><td>10.5</td><td>13.0</td><td>49.8</td><td>13.9</td><td>22.5</td><td>14.0</td><td>0.0</td></tr><tr><td>SEED</td><td>Accuracy (%)</td><td>36.4</td><td>37.6</td><td>40.0</td><td>39.4</td><td>40.3</td><td>40.1</td><td>39.5</td></tr><tr><td>MMMU</td><td>Accuracy (%)</td><td>31.5</td><td>32.6</td><td>41.6</td><td>43.2</td><td>45.1</td><td>42.0</td><td>34.5</td></tr><tr><td>MMMU-Pro</td><td>Accuracy (%)</td><td>14.6</td><td>16.6</td><td>22.7</td><td>23.0</td><td>25.9</td><td>21.1</td><td>17.2</td></tr><tr><td>MMStar</td><td>Mean Acc. (%)</td><td>24.2</td><td>21.9</td><td>28.3</td><td>27.7</td><td>31.8</td><td>27.8</td><td>20.6</td></tr><tr><td>NaturalBench</td><td>Group Acc. (%)</td><td>0.0</td><td>0.0</td><td>0.0</td><td>0.0</td><td>0.1</td><td>0.0</td><td>0.0</td></tr><tr><td>CVBench</td><td>Accuracy (%)</td><td>42.4</td><td>42.8</td><td>48.3</td><td>43.5</td><td>51.0</td><td>52.1</td><td>33.7</td></tr><tr><td>RealWorldQA</td><td>Exact Match (%)</td><td>42.9</td><td>42.7</td><td>46.4</td><td>42.7</td><td>43.5</td><td>35.3</td><td>40.9</td></tr><tr><td colspan=\"9\">Open-ended</td></tr><tr><td>GQA</td><td>Exact Match (%)</td><td>39.1</td><td>39.6</td><td>36.8</td><td>36.6</td><td>35.5</td><td>33.7</td><td>39.6</td></tr><tr><td>VQAv2</td><td>Exact Match (%)</td><td>42.4</td><td>43.3</td><td>40.6</td><td>40.1</td><td>40.5</td><td>39.0</td><td>42.5</td></tr><tr><td>CountBench</td><td>Accuracy (%)</td><td>2.4</td><td>0.2</td><td>9.8</td><td>10.4</td><td>9.4</td><td>7.9</td><td>0.2</td></tr><tr><td>ChartQA</td><td>Relaxed Acc. (%)</td><td>11.3</td><td>12.4</td><td>12.4</td><td>12.6</td><td>13.8</td><td>12.0</td><td>11.2</td></tr><tr><td colspan=\"9\">Compositionality</td></tr><tr><td>ARO</td><td>Mean Acc. (%)</td><td>64.9</td><td>67.0</td><td>79.0</td><td>78.8</td><td>79.0</td><td>80.1</td><td>80.6</td></tr><tr><td>SugarCrepe</td><td>Mean Acc. (%)</td><td>52.2</td><td>50.2</td><td>49.8</td><td>56.1</td><td>61.5</td><td>61.8</td><td>58.7</td></tr><tr><td colspan=\"9\">Captioning</td></tr><tr><td>COCO</td><td>CIDEr (×100)</td><td>0.6</td><td>3.9</td><td>8.4</td><td>8.2</td><td>7.6</td><td>9.1</td><td>4.0</td></tr><tr><td>Flickr30k</td><td>CIDEr (×100)</td><td>0.9</td><td>3.0</td><td>5.2</td><td>5.1</td><td>6.1</td><td>6.2</td><td>3.8</td></tr><tr><td colspan=\"2\">Overall Mean</td><td>27.4</td><td>28.2</td><td>33.6</td><td>31.4</td><td>33.1</td><td>31.8</td><td>28.3</td></tr></table>",
+        "bbox": [
+            173,
+            460,
+            823,
+            705
+        ],
+        "page_idx": 18
+    },
+    {
+        "type": "page_number",
+        "text": "19 ",
+        "bbox": [
+            490,
+            935,
+            509,
+            948
+        ],
+        "page_idx": 18
+    },
+    {
+        "type": "text",
+        "text": "D.2 Text benchmarks. ",
+        "text_level": 1,
+        "bbox": [
+            171,
+            90,
+            341,
+            104
+        ],
+        "page_idx": 19
+    },
+    {
+        "type": "table",
+        "img_path": "images/ae405f004c92a73e576db627c29a7230ef90368f7d56f8ea3db685da6bf885bd.jpg",
+        "table_caption": [
+            "Table 7: Text-only benchmarks. Zero-shot accuracy on language-only science, commonsense, physical-reasoning, broad-knowledge, and Winograd-style tasks, used to check whether multimodal adaptation changes text capabilities outside the visual setting. "
+        ],
+        "table_footnote": [],
+        "table_body": "<table><tr><td>Task</td><td>Metric</td><td>LLaVA-7B</td><td>LLaVA-13B</td><td>Cambrian-8B</td><td>InternVL2-8B</td><td>LLaVA-OV-1.5-4B</td><td>LLaVA-OV-1.5-8B</td></tr><tr><td>ARC-Easy</td><td>acc_norm</td><td>71.00</td><td>73.82</td><td>69.78</td><td>67.13</td><td>73.11</td><td>77.82</td></tr><tr><td>CommonsenseQA</td><td>acc</td><td>67.65</td><td>73.55</td><td>77.89</td><td>83.13</td><td>80.59</td><td>83.37</td></tr><tr><td>HellaSwag</td><td>acc_norm</td><td>73.93</td><td>77.82</td><td>68.42</td><td>75.38</td><td>67.26</td><td>72.14</td></tr><tr><td>MMLU</td><td>acc</td><td>50.35</td><td>54.64</td><td>55.91</td><td>71.11</td><td>72.65</td><td>75.40</td></tr><tr><td>PIQA</td><td>acc_norm</td><td>77.37</td><td>79.82</td><td>76.93</td><td>81.01</td><td>77.31</td><td>78.94</td></tr><tr><td>Winogrande</td><td>acc</td><td>70.40</td><td>72.22</td><td>67.01</td><td>76.01</td><td>68.90</td><td>70.88</td></tr></table>",
+        "bbox": [
+            174,
+            122,
+            823,
+            202
+        ],
+        "page_idx": 19
+    },
+    {
+        "type": "text",
+        "text": "E Interventions: additional results ",
+        "text_level": 1,
+        "bbox": [
+            171,
+            285,
+            478,
+            301
+        ],
+        "page_idx": 19
+    },
+    {
+        "type": "text",
+        "text": "E.1 Interventions: dataset average for LLaVA-13B, LLaVA-OneVision-8B, Cambrian-8B ",
+        "text_level": 1,
+        "bbox": [
+            171,
+            316,
+            805,
+            330
+        ],
+        "page_idx": 19
+    },
+    {
+        "type": "image",
+        "img_path": "images/06356fe776118b4e1f066a4593fd07c31488e7e97462bebb816dd92ff84855e7.jpg",
+        "image_caption": [],
+        "image_footnote": [
+            "Intervention: Skip image layer Knockout img text Progressive Sliding window "
+        ],
+        "content": "",
+        "bbox": [
+            173,
+            347,
+            826,
+            540
+        ],
+        "page_idx": 19
+    },
+    {
+        "type": "text",
+        "text": "Figure 6: Multimodal ablation profiles for LLaVA-13B, OneVision-8B, and Cambrian-8B. Normalized performance is shown for visual layer-skipping (purple) and cross-modal attention knockout (green) using progressive (solid) and sliding-window (dashed) interventions. The slidingwindow ablation sweep is over 5 contiguous layers. Across all models, performance is resilient to early and late-layer perturbations but collapses when targeting intermediate depths, showing that these layers are critical bottlenecks for cross-modal integration. ",
+        "bbox": [
+            169,
+            549,
+            826,
+            632
+        ],
+        "page_idx": 19
+    },
+    {
+        "type": "page_number",
+        "text": "20 ",
+        "bbox": [
+            488,
+            935,
+            509,
+            946
+        ],
+        "page_idx": 19
+    },
+    {
+        "type": "image",
+        "img_path": "images/5386d979f4e9e942fd61057b8dc3bac1927776f980b136e754b7198a8f6324bb.jpg",
+        "image_caption": [
+            "E.2 Interventions on text benchmarks "
+        ],
+        "image_footnote": [
+            "Skip layers: progressive sliding window "
+        ],
+        "content": "",
+        "bbox": [
+            173,
+            119,
+            826,
+            417
+        ],
+        "page_idx": 20
+    },
+    {
+        "type": "text",
+        "text": "Figure 7: Text-only layer-skipping profiles for LLaVA-7B/13B, Cambrian-8B, OneVision-4B/8B, and InternVL2-8B. Normalized performance is shown for progressive (solid) and sliding-window (dashed, 5-layer window) ablation. While input-side progressive removal triggers immediate performance collapse, sliding-window profiles identify specific localized layers critical for maintaining language capabilities. ",
+        "bbox": [
+            169,
+            426,
+            826,
+            496
+        ],
+        "page_idx": 20
+    },
+    {
+        "type": "page_number",
+        "text": "21 ",
+        "bbox": [
+            488,
+            935,
+            506,
+            946
+        ],
+        "page_idx": 20
+    },
+    {
+        "type": "text",
+        "text": "E.3 Interventions: all datasets (multimodal benchmarks) ",
+        "text_level": 1,
+        "bbox": [
+            171,
+            90,
+            583,
+            106
+        ],
+        "page_idx": 21
+    },
+    {
+        "type": "image",
+        "img_path": "images/99335b6fb424a2d2ac5013bf71dc8a235bfc2419bafcef1b8b153d01999f39db.jpg",
+        "image_caption": [
+            "Progressive layer-skipping "
+        ],
+        "image_footnote": [
+            "GQA MMBench-CN MMBench-EN 一 MME ！ SEEDBench VQAv2 "
+        ],
+        "content": "",
+        "bbox": [
+            173,
+            146,
+            826,
+            444
+        ],
+        "page_idx": 21
+    },
+    {
+        "type": "text",
+        "text": "Figure 8: Progressive layer-skipping on multimodal benchmarks. Normalized performance is plotted against the cumulative depth of layers skipped from the input side for LLaVA-7B/13B, Cambrian-8B, OneVision-4B/8B, and InternVL2-8B. Colors denote benchmarks: GQA (red), MMBench-CN/EN (orange/yellow), MME (green), SEEDBench (teal), and VQAv2 (blue). Across all models and datasets, performance collapses once ablation reaches intermediate layers, tying multimodal capabilities to the critical abstraction regions identified in our analysis. ",
+        "bbox": [
+            169,
+            452,
+            826,
+            536
+        ],
+        "page_idx": 21
+    },
+    {
+        "type": "page_number",
+        "text": "22 ",
+        "bbox": [
+            488,
+            935,
+            509,
+            946
+        ],
+        "page_idx": 21
+    },
+    {
+        "type": "image",
+        "img_path": "images/afbcaa31815a756fe69ccfef584bb98929708341d515f53486bdc87daa0dd7b7.jpg",
+        "image_caption": [
+            "Sliding window layer-skipping "
+        ],
+        "image_footnote": [
+            "GQA 一 MMBench-CN MMBench-EN MME SEEDBench VQAv2 "
+        ],
+        "content": "",
+        "bbox": [
+            173,
+            119,
+            823,
+            420
+        ],
+        "page_idx": 22
+    },
+    {
+        "type": "image",
+        "img_path": "images/72423090e5e5a040f576e87af4afbb447a6be980953909d4a6f982abf2c895cd.jpg",
+        "image_caption": [
+            "Figure 9: Sliding-window layer-skipping on multimodal benchmarks. The same benchmark suite is evaluated while skipping a window-width of 5 contiguous layer window. The localized troughs show that performance loss is concentrated when the window covers intermediate layers, while early and late windows leave most multimodal behavior intact. ",
+            "Progressive attention knockout "
+        ],
+        "image_footnote": [
+            "GQA MMBench-CN MMBench-EN MME SEEDBench VQAv2 "
+        ],
+        "content": "",
+        "bbox": [
+            173,
+            537,
+            826,
+            837
+        ],
+        "page_idx": 22
+    },
+    {
+        "type": "text",
+        "text": "Figure 10: Progressive cross-modal attention knockout on multimodal benchmarks. This intervention removes image–text attention connections cumulatively up to the layer on the x-axis. The curves fall at similar intermediate depths, showing that multimodal performance depends specifically on cross-modal communication within the same region, not only on generic layer capacity. ",
+        "bbox": [
+            169,
+            842,
+            823,
+            898
+        ],
+        "page_idx": 22
+    },
+    {
+        "type": "page_number",
+        "text": "23 ",
+        "bbox": [
+            488,
+            935,
+            508,
+            946
+        ],
+        "page_idx": 22
+    },
+    {
+        "type": "image",
+        "img_path": "images/965021553447f9b110fbd3bd5283e25df99497e5ea12918ea7dc12db984dc189.jpg",
+        "image_caption": [
+            "Sliding window attention knockout "
+        ],
+        "image_footnote": [
+            "GQA MMBench-CN MMBench-EN MME SEEDBench VQAv2 "
+        ],
+        "content": "",
+        "bbox": [
+            173,
+            119,
+            823,
+            420
+        ],
+        "page_idx": 23
+    },
+    {
+        "type": "text",
+        "text": "Figure 11: Sliding-window cross-modal attention knockout on multimodal benchmarks. Crossmodal attention is removed only within a moving window of 5 layers. The narrow performance dips show that image–text communication isn’t spread out but localized and exposes task-specific sensitivity to different intermediate depths across models and datasets. ",
+        "bbox": [
+            169,
+            426,
+            826,
+            483
+        ],
+        "page_idx": 23
+    },
+    {
+        "type": "page_number",
+        "text": "24 ",
+        "bbox": [
+            488,
+            935,
+            509,
+            946
+        ],
+        "page_idx": 23
+    },
+    {
+        "type": "text",
+        "text": "E.4 Interventions: all datasets (text benchmarks) ",
+        "text_level": 1,
+        "bbox": [
+            171,
+            90,
+            527,
+            106
+        ],
+        "page_idx": 24
+    },
+    {
+        "type": "image",
+        "img_path": "images/349a575cc47e1eef4a0ab1d084543cafc69579a8459dbc6b5e8f2dc528f95100.jpg",
+        "image_caption": [
+            "Progressive layer-skipping (all datasets) "
+        ],
+        "image_footnote": [
+            "ARC-Easy CommonsenseQA HellaSwag 一 MMLU ！ PIQA WinoGrande "
+        ],
+        "content": "",
+        "bbox": [
+            173,
+            146,
+            826,
+            444
+        ],
+        "page_idx": 24
+    },
+    {
+        "type": "image",
+        "img_path": "images/53496fb0625cb14ad6b1f6b11a1d1a0abe06607e28f545db67773fda8b797f3d.jpg",
+        "image_caption": [
+            "Figure 12: Progressive layer-skipping on text-only benchmarks. Normalized performance against unablated models on ARC-Easy (red), CommonsenseQA (orange), HellaSwag (yellow), MMLU (green), PIQA (teal), and WinoGrande (blue). Removing layers cumulatively from the input side collapses language performance almost immediately. ",
+            "Sliding window layer-skipping (all datasets) "
+        ],
+        "image_footnote": [
+            "ARC-Easy CommonsenseQA HellaSwag 一 MMLU ！ PIQA WinoGrande "
+        ],
+        "content": "",
+        "bbox": [
+            173,
+            561,
+            823,
+            859
+        ],
+        "page_idx": 24
+    },
+    {
+        "type": "text",
+        "text": "Figure 13: Sliding-window layer-skipping on text-only benchmarks. A window of 5 layers is ablated while the rest of the language pathway remains active. ",
+        "bbox": [
+            169,
+            868,
+            823,
+            897
+        ],
+        "page_idx": 24
+    },
+    {
+        "type": "page_number",
+        "text": "25 ",
+        "bbox": [
+            488,
+            935,
+            508,
+            946
+        ],
+        "page_idx": 24
+    },
+    {
+        "type": "text",
+        "text": "F Probing the semantic content of intermediate layers ",
+        "text_level": 1,
+        "bbox": [
+            171,
+            89,
+            642,
+            107
+        ],
+        "page_idx": 25
+    },
+    {
+        "type": "text",
+        "text": "F.1 Averaged Label Overlap across Models ",
+        "text_level": 1,
+        "bbox": [
+            171,
+            119,
+            485,
+            136
+        ],
+        "page_idx": 25
+    },
+    {
+        "type": "text",
+        "text": "Probing the semantic information with Label Overlap. To evaluate how well the residual stream encodes an abstract property of the image, like the identity of the main object represented (e.g., ImageNet) we use the neighborhood overlap [25]. The neighborhood overlap measures the consistency between the k-nearest neighbors of a datapoint i in the residual stream at a layer l, denoted by $\\mathcal { N } _ { k } ^ { l } ( i )$ , and the nearest neighbors in a reference data representation, $\\mathcal { N } _ { k } ^ { g t } ( i )$ , which encodes the abstract property of interest. In the case of classification datasets, all the points belonging to the same class are considered nearest neighbors for the purpose of computing the reference $\\mathcal { N } _ { k } ^ { g t } ( i )$ . The neighborhood overlap, denoted by $\\chi _ { k } ^ { \\bar { l } , g t }$ , can be then written as: ",
+        "bbox": [
+            169,
+            145,
+            826,
+            265
+        ],
+        "page_idx": 25
+    },
+    {
+        "type": "equation",
+        "text": "$$\n\\chi_ {k} ^ {l, g t} = \\frac {1}{n k} \\sum_ {i = 1} ^ {n} \\left| \\mathcal {N} _ {k} ^ {l} (i) \\cap \\mathcal {N} _ {k} ^ {g t} (i) \\right| \\tag {3}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            383,
+            272,
+            825,
+            311
+        ],
+        "page_idx": 25
+    },
+    {
+        "type": "text",
+        "text": "where | · | denotes the cardinality of a set, and n the dataset size. In our experiments, we set $k = 3 0$ . ",
+        "bbox": [
+            169,
+            319,
+            828,
+            334
+        ],
+        "page_idx": 25
+    },
+    {
+        "type": "chart",
+        "img_path": "images/42685e045ffc696069068cbabeab4a3921113ccc676d840a793f7db8b41e5b4c.jpg",
+        "content": "| Normalized depth | LLaVA-7B | LLaVA-13B | Cambrian-8B | OneVision-4B | OneVision-8B | InternVL2-8B |\n| ---------------- | -------- | --------- | ----------- | ------------ | ------------ | ------------ |\n| 0.0              | 0.8      | 0.8       | 0.8         | 0.7          | 0.7          | 0.5          |\n| 0.1              | 0.75     | 0.85      | 0.75        | 0.5          | 0.7          | 0.4          |\n| 0.2              | 0.9      | 0.9       | 0.7         | 0.45         | 0.7          | 0.4          |\n| 0.3              | 0.95     | 0.95      | 0.75        | 0.5          | 0.75         | 0.45         |\n| 0.4              | 0.9      | 0.9       | 0.8         | 0.6          | 0.8          | 0.5          |\n| 0.5              | 0.5      | 0.4       | 0.9         | 0.8          | 0.9          | 0.8          |\n| 0.6              | 0.35     | 0.35      | 0.4         | 0.3          | 0.9          | 0.3          |\n| 0.7              | 0.3      | 0.3       | 0.4         | 0.3          | 0.9          | 0.3          |\n| 0.8              | 0.3      | 0.3       | 0.4         | 0.3          | 0.9          | 0.3          |\n| 0.9              | 0.3      | 0.3       | 0.4         | 0.3          | 0.9          | 0.3          |\n| 1.0              | 0.3      | 0.3       | 0.4         | 0.3          | 0.9          | 0.3          |",
+        "chart_caption": [
+            "Figure 14: Average Label Overlap across models depth. We compare the nearest-neighbor structure of each layer’s last-token representation with the correct class labels in 10-option image-classification prompts. Each curve is one model, averaged over mini-ImageNet, Food101, SUN397, Caltech101, DTD, Flowers102, and Places365. The shared drop after the intermediate layers indicates that class-level semantic geometry is strongest before final answer-token formation. "
+        ],
+        "chart_footnote": [],
+        "sub_type": "line",
+        "bbox": [
+            334,
+            349,
+            651,
+            571
+        ],
+        "page_idx": 25
+    },
+    {
+        "type": "page_number",
+        "text": "26 ",
+        "bbox": [
+            488,
+            935,
+            509,
+            948
+        ],
+        "page_idx": 25
+    },
+    {
+        "type": "image",
+        "img_path": "images/9f28ee2158718f0c806432d260f394967dd95abb25588eda595f2f503792ffed.jpg",
+        "image_caption": [
+            "F.2 Label Overlap Profiles across Models and Datasets "
+        ],
+        "image_footnote": [
+            "mini-ImageNet SUN397 DTD Places365 Food101 Caltech101 Flowers102 "
+        ],
+        "content": "",
+        "bbox": [
+            173,
+            123,
+            826,
+            428
+        ],
+        "page_idx": 26
+    },
+    {
+        "type": "text",
+        "text": "Figure 15: Label overlap profiles across models and datasets. The same label overlap setup as Figure 14 is shown separately for mini-ImageNet, Food101, SUN397, Caltech101, DTD, Flowers102, and Places365 in each model. While dataset-specific scores varies in early layers, the consistent late-layer drop across all models suggests that visual category structure is largely established prior to the generation phase. ",
+        "bbox": [
+            169,
+            436,
+            826,
+            507
+        ],
+        "page_idx": 26
+    },
+    {
+        "type": "page_number",
+        "text": "",
+        "bbox": [
+            488,
+            935,
+            508,
+            946
+        ],
+        "page_idx": 26
+    },
+    {
+        "type": "image",
+        "img_path": "images/cca4f5269ab76f1c097756386ed958a2124ad969cdff56fa2a57b4151713bb02.jpg",
+        "image_caption": [
+            "F.3 Linear Probing multiple-choice tasks "
+        ],
+        "image_footnote": [],
+        "content": "",
+        "bbox": [
+            173,
+            122,
+            826,
+            428
+        ],
+        "page_idx": 27
+    },
+    {
+        "type": "image",
+        "img_path": "images/d43725bcfaf4c444bca7b93b03b66d2f8822e126ca715320d48201195462ee37.jpg",
+        "image_caption": [
+            "Figure 16: Linear probing on multiple-choice VQA tasks. We report layer-wise performance values normalized against random-chance on ScienceQA (red), MMBench (yellow), MME (orange), and POPE (green). Accuracy rises from early to intermediate layers and saturates before the final layers, showing when answer-relevant information becomes linearly separable. ",
+            "F.4 Logit Lens on multiple-choice tasks ",
+            "Figure 17: Logit lens on the same multiple-choice VQA tasks. Accuracy stays low until later layers and then rises sharply, separating the emergence of linearly available answer information from its alignment to vocabulary logits. Values are normalized against random chance. "
+        ],
+        "image_footnote": [],
+        "content": "",
+        "bbox": [
+            173,
+            547,
+            823,
+            852
+        ],
+        "page_idx": 27
+    },
+    {
+        "type": "page_number",
+        "text": "28 ",
+        "bbox": [
+            488,
+            935,
+            508,
+            946
+        ],
+        "page_idx": 27
+    },
+    {
+        "type": "image",
+        "img_path": "images/07027d0aa9c38cc347db3b9253c4e353aa3c9f271113002192465b1c50d83d7f.jpg",
+        "image_caption": [
+            "F.5 Logit Lens on open-ended tasks ",
+            "Figure 18: Logit lens on open-ended VQA tasks. We measured the top 10-tokens accuracy of the logit lens on GQA (teal), VQAv2 (dark blue), COCO-QA (light blue), and CountBench (purple), where answers are not restricted to fixed multiple-choice options. Correct answers emerge mainly in the final layers, making this a stricter probe of when hidden states become generative outputs. "
+        ],
+        "image_footnote": [],
+        "content": "",
+        "bbox": [
+            173,
+            122,
+            826,
+            428
+        ],
+        "page_idx": 28
+    },
+    {
+        "type": "page_number",
+        "text": "29 ",
+        "bbox": [
+            488,
+            935,
+            508,
+            946
+        ],
+        "page_idx": 28
+    },
+    {
+        "type": "image",
+        "img_path": "images/cef8134cf54442ac58d19d92541af231bd6ac7645fc0cf203bbec5bc0d95cb82.jpg",
+        "image_caption": [
+            "F.6 Retrieval metrics. "
+        ],
+        "image_footnote": [
+            "euclidean cosine "
+        ],
+        "content": "",
+        "bbox": [
+            173,
+            119,
+            826,
+            422
+        ],
+        "page_idx": 29
+    },
+    {
+        "type": "text",
+        "text": "Figure 19: COCO image-caption retrieval over averaged VLM representations. At each layer, we average the hidden representations from each COCO image and its paired caption to obtain imagelevel and text-level embeddings, then run both image-to-text and text-to-image retrieval. The curves report the average over the two retrieval directions for mean percentile rank under Euclidean (orange) and cosine (blue) distances. Across models, retrieval quality rises sharply in the early-to-intermediate layers, showing where paired image and caption representations become most mutually identifiable. ",
+        "bbox": [
+            169,
+            430,
+            826,
+            516
+        ],
+        "page_idx": 29
+    },
+    {
+        "type": "page_number",
+        "text": "30 ",
+        "bbox": [
+            488,
+            935,
+            509,
+            946
+        ],
+        "page_idx": 29
+    },
+    {
+        "type": "chart",
+        "img_path": "images/8ccc57893e414a48b7a5232092af8028d034c127b4bfd64877cb064c3cfb3c23.jpg",
+        "content": "| Epoch | Accuracy (Red Line) | Accuracy (Orange Line) |\n|-------|---------------------|------------------------|\n| 0     | 0.5                 | 0.5                    |\n| 4     | 0.6                 | 0.55                   |\n| 8     | 0.7                 | 0.65                   |\n| 12    | 0.75                | 0.7                    |\n| 16    | 0.73                | 0.7                    |\n| 20    | 0.72                | 0.68                   |\n| 24    | 0.71                | 0.67                   |\n| 28    | 0.7                 | 0.65                   |",
+        "chart_caption": [
+            "F.7 Probing semantic linguistic properties of hidden layers. "
+        ],
+        "chart_footnote": [],
+        "sub_type": "line",
+        "bbox": [
+            205,
+            123,
+            405,
+            243
+        ],
+        "page_idx": 30
+    },
+    {
+        "type": "chart",
+        "img_path": "images/1261c4cedf674f4895097c69fb76ede54747aca17956220060548b27cec7afc3.jpg",
+        "content": "| x  | Red Line | Orange Line |\n|----|----------|-------------|\n| 0  | 0.5      | 0.5         |\n| 4  | 0.6      | 0.55        |\n| 8  | 0.7      | 0.65        |\n| 12 | 0.75     | 0.7         |\n| 16 | 0.74     | 0.71        |\n| 20 | 0.73     | 0.7         |\n| 24 | 0.72     | 0.69        |\n| 28 | 0.71     | 0.68        |\n| 32 | 0.7      | 0.67        |\n| 36 | 0.69     | 0.66        |",
+        "chart_caption": [],
+        "chart_footnote": [],
+        "sub_type": "line",
+        "bbox": [
+            408,
+            123,
+            598,
+            244
+        ],
+        "page_idx": 30
+    },
+    {
+        "type": "chart",
+        "img_path": "images/85f9d53ad367da339835e990e401f563b9b1237c7ef9e8ab23256b7a122c4d18.jpg",
+        "content": "| x  | y     |\n|----|-------|\n| 0  | 0.50  |\n| 4  | 0.55  |\n| 8  | 0.62  |\n| 12 | 0.65  |\n| 16 | 0.63  |\n| 20 | 0.62  |\n| 24 | 0.63  |\n| 28 | 0.64  |",
+        "chart_caption": [],
+        "chart_footnote": [],
+        "sub_type": "line",
+        "bbox": [
+            602,
+            125,
+            792,
+            244
+        ],
+        "page_idx": 30
+    },
+    {
+        "type": "chart",
+        "img_path": "images/6db158f0ba14b9b6c8845fcfb957761f567983b701609bb805451a28f0bc4bdd.jpg",
+        "content": "| Layer | Accuracy (Red Line) | Accuracy (Orange Line) |\n|-------|---------------------|------------------------|\n| 0     | 0.53                | 0.51                   |\n| 4     | 0.60                | 0.55                   |\n| 8     | 0.65                | 0.60                   |\n| 12    | 0.70                | 0.65                   |\n| 16    | 0.73                | 0.68                   |\n| 20    | 0.75                | 0.70                   |\n| 24    | 0.74                | 0.69                   |\n| 28    | 0.72                | 0.67                   |\n| 32    | 0.70                | 0.65                   |\n| 36    | 0.68                | 0.63                   |",
+        "chart_caption": [],
+        "chart_footnote": [],
+        "sub_type": "line",
+        "bbox": [
+            205,
+            246,
+            405,
+            375
+        ],
+        "page_idx": 30
+    },
+    {
+        "type": "chart",
+        "img_path": "images/12860ae047db497788cd936503aa580ea2a63ece868e57db464054ec79791202.jpg",
+        "content": "| Layer | Red Line | Orange Line |\n|-------|----------|-------------|\n| 0     | 0.54     | 0.51        |\n| 4     | 0.60     | 0.55        |\n| 8     | 0.66     | 0.60        |\n| 12    | 0.72     | 0.65        |\n| 16    | 0.76     | 0.70        |\n| 20    | 0.78     | 0.72        |\n| 24    | 0.76     | 0.70        |\n| 28    | 0.74     | 0.68        |\n| 32    | 0.72     | 0.65        |\n| 36    | 0.70     | 0.63        |",
+        "chart_caption": [],
+        "chart_footnote": [],
+        "sub_type": "line",
+        "bbox": [
+            408,
+            247,
+            598,
+            375
+        ],
+        "page_idx": 30
+    },
+    {
+        "type": "chart",
+        "img_path": "images/0bbcf17e4fc54b3b3a4171f06227b87044709d8e6ee90c9ccc06dd7f227a7edb.jpg",
+        "content": "| Layer | Red Line | Orange Line |\n|-------|----------|-------------|\n| 0     | 0.5      | 0.5         |\n| 4     | 0.6      | 0.55        |\n| 8     | 0.7      | 0.65        |\n| 12    | 0.75     | 0.7         |\n| 16    | 0.75     | 0.7         |\n| 20    | 0.74     | 0.69        |\n| 24    | 0.73     | 0.68        |\n| 28    | 0.72     | 0.67        |\n| 32    | 0.71     | 0.66        |",
+        "chart_caption": [],
+        "chart_footnote": [
+            "CoordInv SOMO "
+        ],
+        "sub_type": "line",
+        "bbox": [
+            602,
+            247,
+            792,
+            375
+        ],
+        "page_idx": 30
+    },
+    {
+        "type": "text",
+        "text": "Figure 20: Semantic linguistic information peaks in intermediate hidden layers. We probe residual stream representations from LLaVA-7B/13B, LLaVA-OneVision-4B/8B, InternVL2, and Cambrian with the semantic SentEval tasks [75]: coordination inversion (CoordInv) and semantic odd man out (SOMO). For each layer, we train a logistic-regression classifier on the layer representation and report classification accuracy; the dashed gray line marks chance performance. Across models, semantic-task accuracy rises from early layers, peaks around the intermediate abstraction region, and then gradually declines or plateaus in later layers, supporting the view that semantic linguistic content is strongest before the final generation-oriented layers. ",
+        "bbox": [
+            169,
+            405,
+            823,
+            516
+        ],
+        "page_idx": 30
+    },
+    {
+        "type": "page_number",
+        "text": "31 ",
+        "bbox": [
+            488,
+            935,
+            506,
+            946
+        ],
+        "page_idx": 30
+    },
+    {
+        "type": "text",
+        "text": "G Information imbalance planes ",
+        "text_level": 1,
+        "bbox": [
+            171,
+            89,
+            462,
+            108
+        ],
+        "page_idx": 31
+    },
+    {
+        "type": "image",
+        "img_path": "images/3c10da82b9875c90d0bbb7beea2f8ab660efb1853c1078ed91be2c5e1c29d7c1.jpg",
+        "image_caption": [],
+        "image_footnote": [],
+        "content": "",
+        "bbox": [
+            173,
+            127,
+            826,
+            304
+        ],
+        "page_idx": 31
+    },
+    {
+        "type": "chart",
+        "img_path": "images/65b4b0858bf24952942005136a53945c98c37939950802623d6a13faec7b6b3b.jpg",
+        "content": "",
+        "chart_caption": [
+            "Figure 21: Information-imbalance planes for LLaVA-1.5. After fine-tuning, the bidirectional informativeness concentrate in the intermediate abstraction region and reduces the imbalance asymmetry. ",
+            "Figure 22: Information-imbalance planes for LLaVA-OneVision-1.5. The low-∆ region becomes denser and more bidirectional around intermediate layers. "
+        ],
+        "chart_footnote": [],
+        "sub_type": "scatter",
+        "bbox": [
+            173,
+            369,
+            826,
+            547
+        ],
+        "page_idx": 31
+    },
+    {
+        "type": "chart",
+        "img_path": "images/10978a660424f79118fa307ffcb4bcc256b3abb16edcf0318cab00ee52d4d58a.jpg",
+        "content": "| Dataset     | Layer (text input) | Layer (multimodal input) | Data Type       |\n|-------------|--------------------|--------------------------|-----------------|\n| InternVL2-8B | 17                 | 17                       | text → image    |\n| InternVL2-8B | 17                 | 17                       | image → text    |\n| Finetuned   | 13                 | 13                       | text → image    |\n| Finetuned   | 13                 | 13                       | image → text    |\n| Cambrian-8B | 9                  | 9                        | text → image    |\n| Cambrian-8B | 9                  | 9                        | image → text    |\n| InternVL2-8B | 17                 | 17                       | text → image    |\n| InternVL2-8B | 17                 | 17                       | image → text    |\n| Finetuned   | 13                 | 13                       | text → image    |\n| Finetuned   | 13                 | 13                       | image → text    |\n| Cambrian-8B | 9                  | -                        | text → image    |\n| Cambrian-8B | 9                  | -                        | image → text    |\n| InternVL2-8B | 17                 | 17                       | text → image    |\n| InternVL2-8B | 17                 | 17                       | image → text    |\n| Finetuned   | 13                 | 13                       | text → image    |\n| Finetuned   | 13                 | 13                       | image → text    |\n| Cambrian- 8B | 9                  | -                        | text → image    |\n| Cambrian-8B | 9                  | -                        | image → text    |\n| InternVL2-8B | 17                 | 17                       | text → image    |\n| InternVL2-8B | 17                 | 17                       | image → text    |\n| Finetuned   | 13                 | -                        | text → image    |\n| Finetuned   | 13                 | -                        | image → text    |\n| Cambrian-8B | 9                  | -                        | text → image    |\n| Cambrian-8B | 9                  | -                        | image → text    |\n| InternVL2-8B | 17                 | 17                       | text → image    |\n| InternVL2-8B | 17                 | 17                       | image → text    |\n| Finetuned   | 13                  | -                        | text → image    |\n| Finetuned   | 13                  | -                        | image → text    |\n| Cambrian-8B | 9                  | -                        | text → image    |\n| Cambrian-8B | 9                  | -                        | image → text    |\n| InternVL2-8B | 17                 | 17                       | text → image    |\n| InternVL2-8B | 17                 | 17                       | image → text    |\n| Finetuned   | -                  | -                        | text → image    |\n| Finetuned   | -                  | -                        | image → text    |\n| Cambrian-8B | -                  | -                        | text → image    |\n| Cambrian-8B | -                  | -                        | image → text    |\n| InternVL2-8B | -                   | -                        | text → image    |\n| InternVL2-8B | -                   | -                        | image → text    |\n| Finetuned   | -                  | -                        | text → image    |\n| Finetuned   | -                  | -                        | image → text    |\n| Cambrian-8B | -                   | -                        | text → image    |\n| Cambrian-8B | -                   | -                        | image → text    |\n| InternVL2-8B | -                   | -                        | text → image    |\n| InternVL2-8B | -                   | -                        | image → text    |\n| Finetuned   | -                  | -                        | text → image    |\n| Finetuned   | -                  | -                        | image → text    |\n| Cambrian-8B | -                   | -                        | text → image    |\n|\n| Cambrian-8B   | -                   | -                        | image → text    |\n| InternVL2-8B      | -                   | -                        | text → image    |\n|\n| InternVL2-8B      | -                   | -                        | image → text    |\n| Finetuned   | -                  | -                        | text → image    |\n|\n| Finetuned   | -                  | -                        | image → text    |\n| Cambrian-8B      | -                   | -                        | text → image    |\n|\n| Cambrian-8B      | -                   | -                        | image → text    |\n| InternVL2-8B      | -                   | -                        | text → image    |\n|\n| InternVL2-8B      | -                   | -                        | image → text    |\n| Finetuned   | -                   | -                        | text → image    |\n|\n| Finetuned   | -                   | -                        | image → text    |\n| Cambrian-8B      | -                   | -                        | text → image    |\n|\n| Cambrian-8B      | -                   | -                        | image → text    |\n| InternVL2-8B      | -                   | -                        | text → image    |\n|\n| InternVL2-8B      | -                   | -                        | image → text    |\n| Finetuned   | -                   | -                                        | text → image    |\n|\n| Finetuned   | -                   | -                                        | image → text    |\n| Cambrian-8B      | -                   | -                        | text → image    |\n|\n| Cambrian-8B      | -                   | -                        | image → text    |\n| InternVL2-8B      | -                   | -                        | text → image    |\n|\n| InternVL2-8B      | -                   | -                        | image → text    |\n| Finetuned   :          (Text Input)        (Δ <0.020)         (0.020 ≤ Δ <0.040)       (0.040 ≤ Δ <0.060)       (Δ <0.025)             (0.025 ≤ Δ <0.050)            (0.050 ≤ Δ <0.070)        (Δ <0.025)              (0.050 ≤ Δ <0.070)        (Δ <0.025)              (0.050 ≤ Δ <0.070)        (Δ <0.025)              (0.050 ≤ Δ <0.070)        (Δ <0.025)              (0.050 ≤ Δ <0.070)        (Δ <0.25)              (0.050 ≤ Δ <0.070)        (Δ <0.25)              (0.050 ≤ Δ <0.070)        (Δ <0.25)              (0.050 ≤ Δ <0.070)        (Δ <0.25)              (0.050 ≤ Δ <0.070)        (Δ <0.",
+        "chart_caption": [
+            "Figure 23: Information-imbalance planes for InternVL2-8B and Cambrian-8B. InternVL2-8B shifts the directional imbalance asymmetry to a more symmetrical relative informativeness between modalities concentrated in the abstraction region. The pre-trained checkpoint of Cambrian-8B starts with very high and asymmetrical imbalance values (not shown) biased towards the purely textual inputs, which remain in the more symmetrical fine-tuned version. "
+        ],
+        "chart_footnote": [],
+        "sub_type": "scatter",
+        "bbox": [
+            173,
+            612,
+            826,
+            787
+        ],
+        "page_idx": 31
+    },
+    {
+        "type": "page_number",
+        "text": "",
+        "bbox": [
+            488,
+            935,
+            508,
+            946
+        ],
+        "page_idx": 31
+    },
+    {
+        "type": "text",
+        "text": "H Other similarity metrics: Linear CKA and Neighborhood overlap. ",
+        "text_level": 1,
+        "bbox": [
+            171,
+            89,
+            764,
+            108
+        ],
+        "page_idx": 32
+    },
+    {
+        "type": "text",
+        "text": "H.1 Linear CKA ",
+        "text_level": 1,
+        "bbox": [
+            171,
+            119,
+            305,
+            133
+        ],
+        "page_idx": 32
+    },
+    {
+        "type": "chart",
+        "img_path": "images/893fee50bb5920c002db2f3c47bd55a311906a84e0d09aa6717ecc9ba0b1c049.jpg",
+        "content": "",
+        "chart_caption": [],
+        "chart_footnote": [],
+        "sub_type": "heatmap",
+        "bbox": [
+            171,
+            148,
+            488,
+            284
+        ],
+        "page_idx": 32
+    },
+    {
+        "type": "chart",
+        "img_path": "images/b46e6843d53d22e1d22ccc0744c5459b56308049fe5ac6841bc5bf9eb125031c.jpg",
+        "content": "",
+        "chart_caption": [
+            "Figure 24: Linear CKA between text-only and multimodal representations for LLaVA-1.5. For the 7B and 13B variants, each heatmap compares text-input layers on the x-axis with multimodal-input layers on the y-axis, with darker cells indicating higher Linear CKA, which measures global linear subspace alignment. Values are averaged over the representation-analysis datasets. Fine-tuning turns broad cross-input similarity into a clearer intermediate-to-late block, complementing the directional information-imbalance view in Figure 21. "
+        ],
+        "chart_footnote": [],
+        "sub_type": "heatmap",
+        "bbox": [
+            504,
+            148,
+            823,
+            284
+        ],
+        "page_idx": 32
+    },
+    {
+        "type": "chart",
+        "img_path": "images/d538f95a43e06cc7c952a5be3bef0f322172e280a26b5b04ab8e47ec0d642610.jpg",
+        "content": "",
+        "chart_caption": [],
+        "chart_footnote": [],
+        "sub_type": "heatmap",
+        "bbox": [
+            171,
+            402,
+            488,
+            537
+        ],
+        "page_idx": 32
+    },
+    {
+        "type": "chart",
+        "img_path": "images/33426a95b1d7150fbda3107e3c49358af6363ce9f40b9ac08bb517f12c33ab7f.jpg",
+        "content": "| Layer (multimodal input) | Layer (text input) | Pretrained | Finetuned |\n| ------------------------ | ------------------ | ---------- | --------- |\n| 1                        | 1                  | 33         | 33        |\n| 1                        | 5                  | 29         | 29        |\n| 1                        | 9                  | 25         | 25        |\n| 1                        | 13                 | 21         | 21        |\n| 1                        | 17                 | 17         | 17        |\n| 1                        | 21                 | 13         | 13        |\n| 1                        | 25                 | 9          | 9         |\n| 1                        | 29                 | 5          | 5         |\n| 1                        | 33                 | 1          | 1         |\n| 2                        | 1                  | 33         | 33        |\n| 2                        | 5                  | 29         | 29        |\n| 2                        | 9                  | 25         | 25        |\n| 2                        | 13                 | 21         | 21        |\n| 2                        | 17                 | 17         | 17        |\n| 2                        | 21                 | 13         | 13        |\n| 2                        | 25                 | 9          | 9         |\n| 2                        | 29                 | 5          | 5         |\n| 2                        | 33                 | 1          | 1         |\n| 3                        | 1                  | 33         | 33        |\n| 3                        | 5                  | 29         | 29        |\n| 3                        | 9                  | 25         | 25        |\n| 3                        | 13                 | 21         | 21        |\n| 3                        | 17                 | 17         | 17        |\n| 3                        | 21                 | 13         | 13        |\n| 3                        | 25                 | 9          | 9         |\n| 3                        | 29                 | 5          | 5         |\n| 3                        | 33                 | 1          | 1         |\n| ...                      | ...                | ...        | ...       |\n| ...                      | ...                | ...        | ...       |\n| ...                      | ...                | ...        | ...       |\n| ...                      | ...                | ...        | ...       |\n| ...                      | ...                | ...        | ...       |\n| ...                      | ...                | ...        | ...       |\n| ...                      | ...                | ...        | ...       |\n| ...                      | ...                | ...        | ...       |\n| ...                      | ...                |...        | ...       |\n| ...                      | ...                | ...        | ...       |\n| ...                      | ...                | ...        | ...       |\n| ...                      | ...                | ...        | ...       |\n| ...                      | ...                | ...        | ...       |\n| ...                      | ...                | ...        | ...       |\n| ...                      | ...                | ...        | ...       |\n| ...                      | ...                | ...        | ...       |\n| ...                      (final)           | ...                | ...        | ...       |\n| ...                      (final)           | ...                | ...        | ...       |\n| ...                      (final)           | ...                | ...        | ...       |\n| ...                      (final)           | ...                | ...        | ...       |\n| ...                      (final)           | ...                | ...        | ...       |\n| ...                      (final)           | ...                | ...        | ...       |\n| ...                      (last)            | ...                | ...        | ...       |\n| ...                      (last)            | ...                | ...        | ...       |\n| ...                      (last)            | ...                | ...        | ...       |\n| ...                      (last)            | ...                | ...        | ...       |\n| ...                      (last)            | ...                | ...        | ...       |\n| ...                      (last)            | ...                | ...        | ...       |\n| ...                      (final)           | ...                | ...        | ...       |\n| ...                      (final)           | ...                | ...        | ...       |\n| ...                      (final)           | ...                | ...        | ...       |\n| ...                      (final)           | ...                | ...        | ...       |\n| ...                      (final)           | ...                | ...        | ...       |\n| ...                      (end)             | ...                | ...        | ...       |\n| ...                      (end)             | ...                | ...        | ...       |\n| ...                      (end)             | ...                | ...        | ...       |\n| ...                      (end)             | ...                | ...        | ...       |\n| ...                      (end)             | ...                | ...        | ...       |\n| Note: The actual values for the last two layers are not provided in the code. I have used the same label 'multimodal input' as they are in the original data. There are no labels provided in the code. The actual values may be the result of the missing data. I have been calculated based on the given code.",
+        "chart_caption": [
+            "Figure 25: Linear CKA for LLaVA-OneVision-1.5. Visual instruction tuning strengthens the intermediate-to-late cross-input similarity block. "
+        ],
+        "chart_footnote": [],
+        "sub_type": "heatmap",
+        "bbox": [
+            506,
+            402,
+            823,
+            537
+        ],
+        "page_idx": 32
+    },
+    {
+        "type": "chart",
+        "img_path": "images/5d15d50a4abbe48e6046570d05c44268fe6150be7337b0677befa6560defd3d8.jpg",
+        "content": "",
+        "chart_caption": [],
+        "chart_footnote": [],
+        "sub_type": "heatmap",
+        "bbox": [
+            171,
+            602,
+            488,
+            736
+        ],
+        "page_idx": 32
+    },
+    {
+        "type": "chart",
+        "img_path": "images/00157930cdf989359d388d4fe198b4627c27c82f4889e8930693655a36e63781.jpg",
+        "content": "Cambrian-8B\n| Layer (text input) | 1 | 5 | 9 | 13 | 17 | 21 | 25 | 29 |\n|---|---|---|---|---|---|---|---|---|\n| Pretrained | 0.9 | 0.8 | 0.7 | 0.6 | 0.5 | 0.4 | 0.3 | 0.2 |\n| Finetuned | 0.8 | 0.7 | 0.6 | 0.5 | 0.4 | 0.3 | 0.2 | 0.1 |",
+        "chart_caption": [
+            "Figure 26: Linear CKA for InternVL2-8B and Cambrian-8B. Both models show stronger crossinput similarity after instruction tuning, again centered on intermediate and later layers. "
+        ],
+        "chart_footnote": [],
+        "sub_type": "heatmap",
+        "bbox": [
+            506,
+            602,
+            823,
+            736
+        ],
+        "page_idx": 32
+    },
+    {
+        "type": "page_number",
+        "text": "33 ",
+        "bbox": [
+            488,
+            935,
+            508,
+            946
+        ],
+        "page_idx": 32
+    },
+    {
+        "type": "text",
+        "text": "H.2 Neighborhood overlap ",
+        "text_level": 1,
+        "bbox": [
+            171,
+            90,
+            374,
+            106
+        ],
+        "page_idx": 33
+    },
+    {
+        "type": "chart",
+        "img_path": "images/bf1f1e8e05eb876a9a9bc80a2fba9a92a6e8976800200f7d7be1a7e76d6b1a63.jpg",
+        "content": "| Layer (multimodal input) | Layer (text input) | Pretrained | Finetuned |\n| ------------------------ | ------------------ | ---------- | --------- |\n| 1                        | 1                  | 0.5        | 0.5       |\n| 1                        | 5                  | 0.4        | 0.4       |\n| 1                        | 9                  | 0.3        | 0.3       |\n| 1                        | 13                 | 0.2        | 0.2       |\n| 1                        | 17                 | 0.1        | 0.1       |\n| 1                        | 21                 | 0.0        | 0.0       |\n| 1                        | 25                 | -0.1       | -0.1      |\n| 1                        | 29                 | -0.2       | -0.2      |\n| 5                        | 1                  | 0.4        | 0.4       |\n| 5                        | 5                  | 0.3        | 0.3       |\n| 5                        | 9                  | 0.2        | 0.2       |\n| 5                        | 13                 | 0.1        | 0.1       |\n| 5                        | 17                 | 0.0        | 0.0       |\n| 5                        | 21                 | -0.1       | -0.1      |\n| 5                        | 25                 | -0.2       | -0.2      |\n| 5                        | 29                 | -0.3       | -0.3      |\n| 9                        | 1                  | 0.3        | 0.3       |\n| 9                        | 5                  | 0.2        | 0.2       |\n| 9                        | 9                  | 0.1        | 0.1       |\n| 9                        | 13                 | 0.0        | 0.0       |\n| 9                        | 17                 | -0.1       | -0.1      |\n| 9                        | 21                 | -0.2       | -0.2      |\n| 9                        | 25                 | -0.3       | -0.3      |\n| 9                        | 29                 | -0.4       | -0.4      |\n| 13                       | 1                  | 0.2        | 0.2       |\n| 13                       | 5                  | 0.1        | 0.1       |\n| 13                       | 9                  | 0.0        | 0.0       |\n| 13                       | 13                 | -0.1       | -0.1      |\n| 13                       | 17                 | -0.2       | -0.2      |\n| 13                       | 21                 | -0.3       | -0.3      |\n| 13                       | 25                 | -0.4       | -0.4      |\n| 13                       | 29                 | -0.5       | -0.5      |\n| 17                       | 1                  | 0.1        | 0.1       |\n| 17                       | 5                  | 0.0        | 0.0       |\n| 17                       | 9                  | -0.1       | -0.1      |\n| 17                       | 13                 | -0.2       | -0.2      |\n| 17                       | 17                 | -0.3       | -0.3      |\n| 17                       | 21                 | -0.4       | -0.4      |\n| 17                       | 25                 | -0.5       | -0.5      |\n| 17                       | 29                 | -0.6       | -0.6      |\n| 21                       | 1                  | -0.1       | -0.1      |\n| 21                       | 5                  | -0.2       | -0.2      |\n| 21                       | 9                  | -0.3       | -0.3      |\n| 21                       | 13                 | -0.4       | -0.4      |\n| 21                       | 17                 | -0.5       | -0.5      |\n| 21                       | 21                 | -0.6       | -0.6      |\n| 21                       | 25                 | -0.7       | -0.7      |\n| 21                       | 29                 | -0.8       | -0.8      |\n| 25                       | 1                  | -0.2       | -0.2      |\n| 25                       | 5                  | -0.3       | -0.3      |\n| 25                       | 9                  | -0.4       | -0.4      |\n| 25                       | 13                 | -0.5       | -0.5      |\n| 25                       | 17                 | -0.6       | -0.6      |\n| 25                       | 21                 | -0.7       | -0.7      |\n| 25                       | 25                 | -0.8       | -0.8      |\n| 25                       | 29                 | -0.9       | -0.9      |\n| 29                       | 1                  | -0.3       | -0.3      |\n| 29                       | 5                  | -0.4       | -0.4      |\n| 29                       | 9                  | -0.5       | -0.5      |\n| 29                       | 13                 | -0.6       | -0.6      |\n| 29                       | 17                 | -0.7       | -0.7      |\n| 29                       | 21                 | -0.8       | -0.8      |\n| 29                       | 25                 | -0.9       | -0.9      |\n| 29                       | 29                 | -1.0       | -1.0      |\nThe data is already in CSV format with the original text input and the original text input as rows and columns for each row and column of the data points.",
+        "chart_caption": [],
+        "chart_footnote": [],
+        "sub_type": "heatmap",
+        "bbox": [
+            171,
+            122,
+            488,
+            258
+        ],
+        "page_idx": 33
+    },
+    {
+        "type": "chart",
+        "img_path": "images/0de6791172c93d35f3c4bb0101ec954da2bf01a622246daaaf25d24e7a62e31e.jpg",
+        "content": "",
+        "chart_caption": [
+            "Figure 27: Neighborhood Overlap between text-only and multimodal representations for LLaVA-1.5. This repeats the layer-pair comparison from Figure 24 using Neighborhood Overlap, which measures preservation of local nearest-neighbor structure. Fine-tuning increases neighborhood agreement along intermediate-to-late layer pairs, supporting the same localized alignment picture with a geometry-preserving metric. "
+        ],
+        "chart_footnote": [],
+        "sub_type": "heatmap",
+        "bbox": [
+            504,
+            122,
+            826,
+            258
+        ],
+        "page_idx": 33
+    },
+    {
+        "type": "chart",
+        "img_path": "images/8e4944a70d09c999c8da6f2fabb0bcd9f33e0c1516af7e2ab7e4d61a4e5ea5eb.jpg",
+        "content": "",
+        "chart_caption": [],
+        "chart_footnote": [],
+        "sub_type": "heatmap",
+        "bbox": [
+            171,
+            362,
+            488,
+            496
+        ],
+        "page_idx": 33
+    },
+    {
+        "type": "chart",
+        "img_path": "images/50952fd82eb813dad44b70bc52cc3aee13824a6e359d6f58f29fec5c62393460.jpg",
+        "content": "",
+        "chart_caption": [
+            "Figure 28: Neighborhood Overlap for LLaVA-OneVision-1.5. The post-tuning heatmaps show stronger local-neighborhood agreement in the same intermediate-to-late region highlighted by Linear CKA and information imbalance. "
+        ],
+        "chart_footnote": [],
+        "sub_type": "heatmap",
+        "bbox": [
+            506,
+            362,
+            825,
+            496
+        ],
+        "page_idx": 33
+    },
+    {
+        "type": "chart",
+        "img_path": "images/1707e9e56293e6542a9a6813bae60210bc05b629b8fa341925ffb754b96db14e.jpg",
+        "content": "",
+        "chart_caption": [],
+        "chart_footnote": [],
+        "sub_type": "heatmap",
+        "bbox": [
+            171,
+            573,
+            488,
+            709
+        ],
+        "page_idx": 33
+    },
+    {
+        "type": "chart",
+        "img_path": "images/e661d40b6061298348e37578747505cabd8d08cb7473b4d207db326a7871eff9.jpg",
+        "content": "| Layer (multimodal input) | Layer (text input) | Pretrained | Finetuned |\n| ------------------------ | ------------------ | ---------- | --------- |\n| 1                        | 1                  | 0.5        | 0.5       |\n| 1                        | 5                  | 0.4        | 0.4       |\n| 1                        | 9                  | 0.3        | 0.3       |\n| 1                        | 13                 | 0.2        | 0.2       |\n| 1                        | 17                 | 0.1        | 0.1       |\n| 1                        | 21                 | 0.0        | 0.0       |\n| 1                        | 25                 | -0.1       | -0.1      |\n| 1                        | 29                 | -0.2       | -0.2      |\n| 5                        | 1                  | 0.4        | 0.4       |\n| 5                        | 5                  | 0.3        | 0.3       |\n| 5                        | 9                  | 0.2        | 0.2       |\n| 5                        | 13                 | 0.1        | 0.1       |\n| 5                        | 17                 | 0.0        | 0.0       |\n| 5                        | 21                 | -0.1       | -0.1      |\n| 5                        | 25                 | -0.2       | -0.2      |\n| 5                        | 29                 | -0.3       | -0.3      |\n| 9                        | 1                  | 0.3        | 0.3       |\n| 9                        | 5                  | 0.2        | 0.2       |\n| 9                        | 9                  | 0.1        | 0.1       |\n| 9                        | 13                 | 0.0        | 0.0       |\n| 9                        | 17                 | -0.1       | -0.1      |\n| 9                        | 21                 | -0.2       | -0.2      |\n| 9                        | 25                 | -0.3       | -0.3      |\n| 9                        | 29                 | -0.4       | -0.4      |\n| 13                       | 1                  | 0.2        | 0.2       |\n| 13                       | 5                  | 0.1        | 0.1       |\n| 13                       | 9                  | 0.0        | 0.0       |\n| 13                       | 13                 | -0.1       | -0.1      |\n| 13                       | 17                 | -0.2       | -0.2      |\n| 13                       | 21                 | -0.3       | -0.3      |\n| 13                       | 25                 | -0.4       | -0.4      |\n| 13                       | 29                 | -0.5       | -0.5      |\n| 17                       | 1                  | 0.1        | 0.1       |\n| 17                       | 5                  | 0.0        | 0.0       |\n| 17                       | 9                  | -0.1       | -0.1      |\n| 17                       | 13                 | -0.2       | -0.2      |\n| 17                       | 17                 | -0.3       | -0.3      |\n| 17                       | 21                 | -0.4       | -0.4      |\n| 17                       | 25                 | -0.5       | -0.5      |\n| 17                       | 29                 | -0.6       | -0.6      |\n| 21                       | 1                  | -0.1       | -0.1      |\n| 21                       | 5                  | -0.2       | -0.2      |\n| 21                       | 9                  | -0.3       | -0.3      |\n| 21                       | 13                 | -0.4       | -0.4      |\n| 21                       | 17                 | -0.5       | -0.5      |\n| 21                       | 21                 | -0.6       | -0.6      |\n| 21                       | 25                 | -0.7       | -0.7      |\n| 21                       | 29                 | -0.8       | -0.8      |\n| Finetuned               |                                |            |           |\n| Finetuned               |                                |            |           |\n| Finetuned               |                                |            |           |\n| Finetuned               |                                |            |           |\n| Finetuned               |                                |            |           |\n| Finetuned               |                                |            |           |\n| Finetuned               |                                |            |           |\n| Finetuned               |                                |            |           |\n| Finetuned               |                                |            |           |\n| Finatuned              |                                |            |           |\n| Finatuned              |                                |            |           |\n| Finatuned              |                                |            |           |\n| Finatuned              |                                |            |           |\n| Finatuned              |                                |            |           |\n| Finatuned              |                                |            |           |\n| Finatuned              |                                |            |           |\n| Finatuned              |                                |            |           |\n| Finatuned              |                                |                    end   |           |\n| Finatuned              |                                |                    end   |           |\n| Finatuned              |                                |                    end   |           |\n| Finatuned              |                                |                    end   |           |\n| Finatuned              |                                |                    end   |           |\n| Finatuned              |                                |                    end   |           |\n| Finatuned              |                                |                    end   |           |\n| Finatuned              |                                |                    end   |          |\n| Finatuned              |                                |                    end   |          |\n| Finatuned              |                                |                    end   |          |\n| Finatuned              |                                |                    end   (end)|          |\n| Finatuned              (final)    A: Pretrained; Finatuned; Finatuned (final)    B: Finatuned; Finalused (final)    C: Pretrained; Finalused (final)    D: Finalused (final)    E: Finalused (final)    F: Finalused (final)    G: Finalused (final)    H: Finalused (final)    I: Finalused (final)    J: Finalused (final)    K: Finalused (final)    L: Finalused (final)    M: Finalused (final)    N: Finalused (final)    O: Finalused (final)    P: Finalused (final)    Q: Finalused (final)    R: Finalused (final)    S: Finalused (final)    T: Finalused (final)    U: Finalused (final)    V: Finalused (final)    W: Finalused (final)    X: Finalused (final)    Y: Finalused (final)    Z: Finalused (final)    AA: Finalused (final)    AB: Finalused (final)    AC: Finalused (final)    AD: Finalused (final)    AE: Finalused (final)    AF: Finalused (final)    AG: Finalused (final)    AH: Finalused (final)    AI: Finalused (final)    AJ: Finalused (final)    AK: Finalused (final)    AL: Finalused (final)    AM: Finalused (final)    AN: Finalused (final)    AO: Finalused (final)    AP: Finalused (final)    AQ: Finalused (final)    AR: Finalused (final)    AS: Finalused (final)    AT: Finalused (final)     AU: Finalused (final)     AV: Finalused (final)     AW: Finalused (final)     AX: Finalused (final)     AZ: Finalused (final)     BA: Finalused (final)     BB: Finalused (final)     BC: Finalused (final)     BD: Finalused (final)     BE: Finalused (final)     BF: Finalused (final)     BG: Finalused (final)     BH: Finalused (final)     BI: Finalused (final)     BJ: Finalused (final)     BK: Finalused (final)     BL: Finalused (final)     BM: Finalused (final)     BN: Finalused (final)     BO: Finalused (final)     BP: Finalused (final)     BQ: Finalused (final)     CA: Finalused (final)     CB: Finalused (final)     CC: Finalused (final)     CD: Finalused (final)     CE: Finalused (final)     CF: Finalused (final)     CG: Finalused (final)     CH: Finalused (final)     CI: Finalused (final)     CJ: Finalused (final)     CK: Finalused (final)     CL: Finalused (final)     CM: Finalused (final)     CO: Finalused (final)     CP: Finalused (final)     COB: Finalused (final)     CR: Finalused (final)     CS: Finalused (final)     CX: Finalused (final)     CY: Finalused (final)     CZ: Finalused (final)     DA: Finalused (final)     DB: Finalused (final)     DBQ : Finalused(Final)",
+        "chart_caption": [
+            "Figure 29: Neighborhood Overlap for InternVL2-8B and Cambrian-8B. The darker post-tuning regions show that local geometry between text-only and multimodal inputs becomes more aligned around intermediate and later layers. "
+        ],
+        "chart_footnote": [],
+        "sub_type": "heatmap",
+        "bbox": [
+            506,
+            573,
+            825,
+            709
+        ],
+        "page_idx": 33
+    },
+    {
+        "type": "page_number",
+        "text": "34 ",
+        "bbox": [
+            488,
+            935,
+            508,
+            946
+        ],
+        "page_idx": 33
+    },
+    {
+        "type": "text",
+        "text": "I Localized fine-tuning ",
+        "text_level": 1,
+        "bbox": [
+            171,
+            89,
+            382,
+            108
+        ],
+        "page_idx": 34
+    },
+    {
+        "type": "chart",
+        "img_path": "images/2d2d224b3044402f181dae3195c8544639944e9dabf42a8f4b7d15108d60878c.jpg",
+        "content": "| Layers | Bottom-Up [0, N - 1] | Top-Down [N, 31] |\n| ------ | --------------------- | ---------------- |\n| 0      | 0.75                  | 1.00             |\n| 4      | 0.85                  | 0.98             |\n| 8      | 0.93                  | 0.98             |\n| 12     | 0.98                  | 0.95             |\n| 16     | 0.99                  | 0.88             |\n| 20     | 0.99                  | 0.86             |\n| 24     | 0.99                  | 0.86             |\n| 28     | 0.99                  | 0.84             |\n| 32     | 0.99                  | 0.75             |",
+        "chart_caption": [
+            "Figure 30: Average performance of different LLaVA-7B fine-tuning strategies. The green curve reports the average performance of LLaVA models trained up to layer N-1, while the orange one reports the average performance of models trained from layer N to the last layer. All values are normalized with respect to the performance of fully trained LLaVA. Points at 0 and 32 represent the extreme values (only training the connector and full fine-tuning, respectively). "
+        ],
+        "chart_footnote": [],
+        "sub_type": "line",
+        "bbox": [
+            334,
+            126,
+            663,
+            295
+        ],
+        "page_idx": 34
+    },
+    {
+        "type": "chart",
+        "img_path": "images/2f78e94d99efb1fc24b3489310081d9ef3d6ef306117689c53faeb48264d1ecb.jpg",
+        "content": "",
+        "chart_caption": [
+            "Figure 31: Detailed performance analysis. Performance of localized fine-tuning strategies on LLaVA-7B and LLaVA-OneVision-1.5-4B across visual question answering, captioning, and compositional benchmarks, normalized against the full training baseline. Restricting updates to the intermediate layers proves beneficial for performance in the vast majority of cases. "
+        ],
+        "chart_footnote": [],
+        "sub_type": "radar",
+        "bbox": [
+            173,
+            391,
+            826,
+            656
+        ],
+        "page_idx": 34
+    },
+    {
+        "type": "page_number",
+        "text": "35 ",
+        "bbox": [
+            488,
+            935,
+            508,
+            946
+        ],
+        "page_idx": 34
+    },
+    {
+        "type": "text",
+        "text": "J Extension to multimodal Cross-Attention integration: Llama3.2-90B ",
+        "text_level": 1,
+        "bbox": [
+            169,
+            89,
+            777,
+            108
+        ],
+        "page_idx": 35
+    },
+    {
+        "type": "text",
+        "text": "J.1 Ablation studies: multimodal benchmarks ",
+        "text_level": 1,
+        "bbox": [
+            171,
+            119,
+            508,
+            133
+        ],
+        "page_idx": 35
+    },
+    {
+        "type": "chart",
+        "img_path": "images/d9f85e5472fa9070f4154f0ffbd6254207b65267e07f49929b70823462cf8d8b.jpg",
+        "content": "| layers | Ablation from input | Ablation from output |\n| ------ | ------------------- | -------------------- |\n| 0      | 1.0                 | 0.0                  |\n| 10     | 1.0                 | 0.1                  |\n| 20     | 0.8                 | 0.3                  |\n| 30     | 0.6                 | 0.8                  |\n| 40     | 0.2                 | 1.0                  |\n| 50     | 0.0                 | 1.0                  |\n| 60     | 0.0                 | 1.0                  |\n| 70     | 0.0                 | 1.0                  |\n| 80     | 0.0                 | 1.0                  |\n| 90     | 0.0                 | 1.0                  |\n| 100    | 0.0                 | 1.0                  |",
+        "chart_caption": [],
+        "chart_footnote": [],
+        "sub_type": "line",
+        "bbox": [
+            184,
+            160,
+            390,
+            327
+        ],
+        "page_idx": 35
+    },
+    {
+        "type": "chart",
+        "img_path": "images/3d94c5cc883df71c20a3ecdb06a4d5caa911ffad4e2f95360dd13073f1cac0f3.jpg",
+        "content": "| layers | cv_bench | gqa   | mmbench | mmbench |\n| ------ | -------- | ----- | ------- | ------- |\n| 0      | 1.00     | 1.00  | 1.00    | 1.00    |\n| 10     | 1.00     | 1.00  | 1.00    | 1.00    |\n| 20     | 0.80     | 0.90  | 0.95    | 0.95    |\n| 30     | 0.60     | 0.70  | 0.75    | 0.75    |\n| 40     | 0.20     | 0.30  | 0.35    | 0.35    |\n| 50     | -0.50    | -0.20 | -0.10   | -0.10   |\n| 60     | -0.20    | -0.10 | -0.15   | -0.15   |\n| 70     | -0.30    | -0.20 | -0.25   | -0.25   |\n| 80     | -0.10    | -0.15 | -0.15   | -0.15   |\n| 90     | 0.05     | 0.05  | 0.05    | 0.05    |\n| 100    | 0.05     | 0.05  | 0.05    | 0.05    |",
+        "chart_caption": [],
+        "chart_footnote": [],
+        "sub_type": "line",
+        "bbox": [
+            418,
+            159,
+            625,
+            327
+        ],
+        "page_idx": 35
+    },
+    {
+        "type": "chart",
+        "img_path": "images/bcc78e9c217d8f6ec07dec93684f8a89cc673b07f1194c6e86a6c9a4344278cc.jpg",
+        "content": "| layers | mme    | vqav2_val | seedbench |\n| ------ | ------ | --------- | --------- |\n| 100    | 0.0    | 0.0       | 0.0       |\n| 90     | 0.2    | 0.1       | 0.1       |\n| 80     | 0.8    | 0.4       | 0.3       |\n| 70     | 1.1    | 0.7       | 0.6       |\n| 60     | 1.1    | 0.9       | 0.8       |\n| 50     | 1.1    | 1.0       | 0.9       |\n| 40     | 1.1    | 1.0       | 1.0       |\n| 30     | 1.1    | 1.0       | 1.0       |\n| 20     | 1.1    | 1.0       | 1.0       |\n| 10     | 1.1    | 1.0       | 1.0       |\n| 0      | 1.1    | 1.0       | 1.0       |",
+        "chart_caption": [
+            "Figure 32: Cross-attention layer ablations in Llama-3.2-Vision-90B. Left: Average multimodal performance under ablation from the input side and from the output side across cross-attention layers. Center and right panels show the corresponding per-dataset curves for CV-Bench, GQA, MMBench, MME, SEED-Bench, and VQAv2. Performance drops identify the cross-attention depth ranges most important for visual information flow. "
+        ],
+        "chart_footnote": [],
+        "sub_type": "line",
+        "bbox": [
+            630,
+            159,
+            821,
+            325
+        ],
+        "page_idx": 35
+    },
+    {
+        "type": "text",
+        "text": "J.2 Information imbalance ",
+        "text_level": 1,
+        "bbox": [
+            171,
+            431,
+            374,
+            446
+        ],
+        "page_idx": 35
+    },
+    {
+        "type": "chart",
+        "img_path": "images/562387c88b506113d0159054683aceb742f36149faef7a30b387d9df40eb760d.jpg",
+        "content": "| Layer (text input) | Layer (multimodal input) | Type         |\n| ------------------ | ------------------------ | ------------ |\n| 11                 | 1                        | image → text |\n| 21                 | 21                       | image → text |\n| 31                 | 31                       | image → text |\n| 41                 | 41                       | image → text |\n| 51                 | 51                       | image → text |\n| 61                 | 61                       | image → text |\n| 71                 | 71                       | image → text |\n| 81                 | 81                       | image → text |\n| 91                 | 91                       | image → text |\n| 11                 | 1                        | text → image |\n| 21                 | 21                       | text → image |\n| 31                 | 31                       | text → image |\n| 41                 | 41                       | text → image |\n| 51                 | 51                       | text → image |\n| 61                 | 61                       | text → image |\n| 71                 | 71                       | text → image |\n| 81                 | 81                       | text → image |\n| 91                 | 91                       | text → image |",
+        "chart_caption": [
+            "Figure 33: Information-imbalance plane for the instruction tuned Llama-3.2-90B-Vision-Instruct. This instruction-tuned model, whose LLM backbone was not modified but integrates visual features using cross-attention, also depicts a large bidirectional informativeness in the early-tomid layers. "
+        ],
+        "chart_footnote": [],
+        "sub_type": "scatter",
+        "bbox": [
+            323,
+            467,
+            687,
+            785
+        ],
+        "page_idx": 35
+    },
+    {
+        "type": "page_number",
+        "text": "36 ",
+        "bbox": [
+            488,
+            935,
+            509,
+            946
+        ],
+        "page_idx": 35
+    },
+    {
+        "type": "text",
+        "text": "J.3 Visual reliance correlation ",
+        "text_level": 1,
+        "bbox": [
+            171,
+            90,
+            397,
+            104
+        ],
+        "page_idx": 36
+    },
+    {
+        "type": "table",
+        "img_path": "images/2b1e3c6f4b70cd470e09e356fef4505a7764d4eaed844aaa8c9619ebcf41778f.jpg",
+        "table_caption": [
+            "Table 8: Evaluation of localized fine-tuning strategies on Llama-3-90B. Results are normalized with respect to the fully fine-tuned version of the model. MC VQA denotes the average performance over the multiple-choice tasks MMBench-CN, MMBench-EN, MME, and SEEDBench. OE VQA represents the average performance over the open-ended tasks GQA and VQAv2. Compositional reports CV-Bench. Overall is the average across all available tasks. Layer ranges [a, b] indicate the layers kept trainable; $[ a , b ] ^ { C }$ denotes the complementary range (layers ablated/removed). MMBench-CN and MMBench-EN remove-rows for $[ 1 5 , \\dot { 6 } 5 ] ^ { C }$ are missing, so that MC VQA average is over only MME and SEEDBench. "
+        ],
+        "table_footnote": [],
+        "table_body": "<table><tr><td>Model</td><td>Layers kept</td><td>MC VQA↑</td><td>OE VQA↑</td><td>Compositional ↑</td><td>Overall ↑</td></tr><tr><td rowspan=\"4\">Llama-3-90B</td><td>[10, 65]</td><td>108.5</td><td>96.8</td><td>96.7</td><td>103.5</td></tr><tr><td> $[10, 65]^C$ </td><td>34.0</td><td>45.0</td><td>50.5</td><td>39.5</td></tr><tr><td>[15, 65]</td><td>104.1</td><td>94.3</td><td>93.6</td><td>99.8</td></tr><tr><td> $[15, 65]^C$ </td><td>38.4</td><td>48.0</td><td>50.1</td><td>44.6</td></tr></table>",
+        "bbox": [
+            272,
+            123,
+            723,
+            209
+        ],
+        "page_idx": 36
+    },
+    {
+        "type": "chart",
+        "img_path": "images/c8dafd76fb6123fd7519163523753659636f1981075166c3fd1276292ec6a275.jpg",
+        "content": "| Method       | Image reliance | Localized fit advantage |\n| ------------ | -------------- | ----------------------- |\n| SeED         | 0.45           | 0.9                     |\n| MME          | 0.55           | 0.7                     |\n| VQAv2        | 0.5            | 0.6                     |\n| GQA          | 0.4            | 0.5                     |\n| CVBench      | 0.3            | 0.45                    |\n| SQA          | 0.2            | 0.35                    |\n| MMMU         | 0.15           | 0.15                    |\n| MMB-CN       | 0.85           | 0.45                    |\n| MMB-EN       | 0.75           | 0.7                     |\n| ChartQA      | 0.85           | 0.85                    |\n| CountBench   | 0.9            | 0.95                    |\n| Naturalbench | 1.0            | 1.0                     |",
+        "chart_caption": [
+            "Figure 34: Visual reliance predicts localized fine-tuning gains in Llama-3.2-Vision-Instruct-90B. Each point is a benchmark; the x-axis measures image reliance, and the y-axis measures the performance advantage of fine-tuned cross-attention blocks 13–63 (50 out of 100 cross-attention layers used). The positive association reported in the plot (Spearman $\\rho = 0 . 7 3 , p = 0 . 0 0 7 )$ indicates that tasks that depend more on images benefit more from localized cross-attention adaptation. "
+        ],
+        "chart_footnote": [],
+        "sub_type": "scatter",
+        "bbox": [
+            308,
+            369,
+            687,
+            583
+        ],
+        "page_idx": 36
+    },
+    {
+        "type": "page_number",
+        "text": "37 ",
+        "bbox": [
+            488,
+            935,
+            508,
+            946
+        ],
+        "page_idx": 36
+    }
+]
