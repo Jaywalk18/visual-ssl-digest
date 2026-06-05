@@ -19,39 +19,39 @@
   </header>
   <nav class="site-nav" aria-label="主导航">
     <a class="nav-link" href="../index.html">头版</a>
-<a class="nav-link" href="../issues/2026-06-04.html">今日速递</a>
+<a class="nav-link" href="../issues/2026-06-05.html">今日速递</a>
 <a class="nav-link" href="../pages/catalog.html">论文目录</a>
 <a class="nav-link" href="../pages/timeline.html">时间线</a>
   </nav>
   <main><article class="paper-detail">
   <div class="paper-main">
     <div class="kicker">Visual SSL / representation · P0 · 2026-06-04</div>
-    <h1 class="paper-headline">$A^2$：它直接触及通用 SSL ViT 表征的“定位 vs 语义”分工，对选择 DINO/MAE/CLIP 类 backbone 以及构建免训练适配器都有启发</h1>
-    <p class="dek">提出一个反直觉经验结论：较小 SSL ViT 的注意力图对前景对象定位更好，而大模型更擅长局部语义表征；A^2 用无训练方式组合两者。</p>
-    <p class="byline"><strong>$A^2$: Smaller Self-Supervised ViTs Localize Better than Larger Ones</strong>　Sreehari Rammohan, Huy Ha, Carl Vondrick；机构信息 arXiv 元数据未列出。　arXiv　<a href="https://arxiv.org/abs/2606.03148">原文链接</a></p>
+    <h1 class="paper-headline">$A^2$：它和通用视觉自监督的关系在于：直接分析自监督 ViT 注意力定位的逆 scaling 现象，并用小模型定位 + 大模型嵌入做无训练增强</h1>
+    <p class="dek">高相关；详见方法、贡献和实验边界。</p>
+    <p class="byline"><strong>$A^2$: Smaller Self-Supervised ViTs Localize Better than Larger Ones</strong>　arXiv　<a href="https://arxiv.org/abs/2606.03148">原文链接</a></p>
     <div class="paper-facts">
       <span><b>编号</b>2606.03148</span>
       <span><b>优先级</b>P0</span>
       <span><b>类别</b>Visual SSL / representation</span>
       <span><b>会议</b>arXiv</span>
-      <span><b>方法</b>把“where to look”和“what to extract”拆开：用较小自监督 ViT 的 attention peak 定位/裁剪前景区域，再用较大 ViT 对裁剪区域抽取更丰富 patch 表征。</span>
+      <span><b>方法</b>直接分析自监督 ViT 注意力定位的逆 scaling 现象，并用小模型定位 + 大模型嵌入做无训练增强</span>
       <span><b>来源</b>arXiv / OpenReview</span>
     </div>
     <div class="feature-body">
-      <p class="lead dropcap">先说结论。它直接触及通用 SSL ViT 表征的“定位 vs 语义”分工，对选择 DINO/MAE/CLIP 类 backbone 以及构建免训练适配器都有启发。 提出一个反直觉经验结论：较小 SSL ViT 的注意力图对前景对象定位更好，而大模型更擅长局部语义表征；A^2 用无训练方式组合两者。</p>
+      <p class="lead dropcap">先说结论。它和通用视觉自监督的关系在于：直接分析自监督 ViT 注意力定位的逆 scaling 现象，并用小模型定位 + 大模型嵌入做无训练增强。 高相关；详见方法、贡献和实验边界。</p>
       <figure class="full-fig"><img src="../assets/mineru/2606.03148/images/b74f305b915994022e13b3abd5140d9abba27048889bf488c02bcba550262039.jpg" alt="Figureure 11 · : Attention hit rate vs"><figcaption><b>Figureure 11 · : Attention hit rate vs</b><span class="fig-en">Figure 11: Attention hit rate vs. model size across six pretraining families, on Waterbirds (left) and ImageNet val (right). Hit rate is the fraction of images where the arg max of the attention map falls inside the ground-truth bounding box. The DINOv2 and DINOv3 families show the cleanest inversescaling trend; MAE drops sharply from ViT-B/16 to ViT-L/16 on Waterbirds; OpenCLIP (dashed) breaks the trend, with ViT-B/16 at 0.166 on Waterbirds (well below the next size). Companion to Figure 2; see Table 3 for precise values.</span><span class="fig-zh">这张图/表用于判断 $A^2$ 的实验收益来自哪里。重点看替换、消融或跨模型设置下趋势是否一致，而不是只看单个最高分。</span></figcaption></figure>
 <figure class="full-fig"><img src="../assets/mineru/2606.03148/images/d650e00e0b01d33d764b6576d2be75ff34ebaae8c6b6e16534fba3c8a2be8c4b.jpg" alt="Figureure 9 · : Per-layer CLS-to-patches attention mass for DINOv2 with register tok"><figcaption><b>Figureure 9 · : Per-layer CLS-to-patches attention mass for DINOv2 with register tok</b><span class="fig-en">Figure 9: Per-layer CLS-to-patches attention mass for DINOv2 with register tokens [8]. Stars mark each model’s last block (the layer used in our other figures). ViT-S and ViT-B peak at the last block; ViT-L peaks at block 21 of 24 and ViT-G at block 32 of 40, dropping 12–13 points on Waterbirds (left) and 4–6 points on ImageNet val (right) by the final block. Larger ViTs’ final blocks drift away from foreground localization while smaller ViTs concentrate localization in their last block. Appendix Figure 13 shows the same plot for DINOv2 without registers; per-layer hit-rate counterparts are in Appendix Figures 12 and 14.</span><span class="fig-zh">这张可视化用来解释 $A^2$ 学到的中间表征或对齐关系。重点看它是否支持正文里的机制判断。</span></figcaption></figure>
       
       <h2>核心问题</h2>
-      <p>它直接触及通用 SSL ViT 表征的“定位 vs 语义”分工，对选择 DINO/MAE/CLIP 类 backbone 以及构建免训练适配器都有启发。</p>
+      <p>它和通用视觉自监督的关系在于：直接分析自监督 ViT 注意力定位的逆 scaling 现象，并用小模型定位 + 大模型嵌入做无训练增强。</p>
       <h2>方法拆解</h2>
-      <p>把“where to look”和“what to extract”拆开：用较小自监督 ViT 的 attention peak 定位/裁剪前景区域，再用较大 ViT 对裁剪区域抽取更丰富 patch 表征。</p>
+      <p>直接分析自监督 ViT 注意力定位的逆 scaling 现象，并用小模型定位 + 大模型嵌入做无训练增强</p>
       <h2>主要贡献</h2>
-      <p>提出一个反直觉经验结论：较小 SSL ViT 的注意力图对前景对象定位更好，而大模型更擅长局部语义表征；A^2 用无训练方式组合两者。</p>
+      <p>高相关；详见方法、贡献和实验边界。</p>
       <h2>实验看点</h2>
-      <p>摘要称在 5 个 benchmark 上，A^2 可与 DFR 等 backbone-matched loss-level 方法竞争，并在更强 distribution shift 下优于端到端 attention training。</p>
+      <p>实验部分建议重点看两类证据：一是作者是否把方法收益和更强数据、更长训练、更大模型区分开；二是跨模型、跨数据或跨任务迁移是否还能保留同样趋势。</p>
       <h2>局限与读法</h2>
-      <p>方法依赖 attention peak 与前景的相关性；对密集预测、细粒度多对象和强遮挡场景是否稳定还需要看完整实验。</p>
+      <p>这篇论文的结论需要结合任务设置、训练数据规模和消融实验一起看；不要只凭单个指标判断它对通用视觉表征的价值。</p>
     
     </div>
   </div>
@@ -61,13 +61,13 @@
     <div class="side-box"><h4>原文</h4><p><a href="https://arxiv.org/abs/2606.03148">https://arxiv.org/abs/2606.03148</a></p></div>
   </aside>
 </article></main>
-  <aside class="conf-float" data-conf-reminder="2026-06-04-main-ddl" aria-label="CCF A/B 主投稿提醒">
+  <aside class="conf-float" data-conf-reminder="2026-06-05-main-ddl" aria-label="CCF A/B 主投稿提醒">
   <button class="conf-close" type="button" aria-label="关闭会议提醒">×</button>
   <details open>
     <summary>CCF A/B 主投稿提醒</summary>
     <div class="conf-list"><a class="conf-item " href="https://github.com/ccfddl/ccf-deadlines/blob/main/conference/AI/aaai.yml">
   <span><b>AAAI 2027</b><em>CCF A · Main paper submission</em></span>
-  <strong>53 天</strong>
+  <strong>52 天</strong>
   <small>2026-07-27 · CCF DDL: abstract 2026-07-20；进入 1 个月窗口后重点提醒。</small>
 </a></div>
   </details>
@@ -80,7 +80,7 @@
   (() => {
     const box = document.querySelector('[data-conf-reminder]');
     if (!box) return;
-    const key = `visualSslConfReminderClosed:${box.dataset.confReminder || '2026-06-04-main-ddl'}`;
+    const key = `visualSslConfReminderClosed:${box.dataset.confReminder || '2026-06-05-main-ddl'}`;
     try {
       if (localStorage.getItem(key) === '1') box.hidden = true;
     } catch (err) {}

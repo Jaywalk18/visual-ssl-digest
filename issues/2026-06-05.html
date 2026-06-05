@@ -1,0 +1,233 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>2026-06-05 速递 · 通用视觉自监督研究报</title>
+  <link rel="stylesheet" href="../assets/styles.css?v=20260525j">
+  <link rel="stylesheet" href="../assets/visual-ssl.css?v=20260525j">
+</head>
+<body>
+  <header class="masthead">
+    <div class="masthead-kicker">Visual SSL Research Report · 2026-06-05</div>
+    <a class="masthead-title" href="../index.html">通用视觉自监督研究报</a>
+    <div class="masthead-meta">
+      <span>图像表征 · VFM · JEPA · 视频预训练</span>
+      <span>CCF A/B 会议优先</span>
+      <span>图文精读 · 方法图解</span>
+    </div>
+  </header>
+  <nav class="site-nav" aria-label="主导航">
+    <a class="nav-link" href="../index.html">头版</a>
+<a class="nav-link active" href="../issues/2026-06-05.html">今日速递</a>
+<a class="nav-link" href="../pages/catalog.html">论文目录</a>
+<a class="nav-link" href="../pages/timeline.html">时间线</a>
+  </nav>
+  <main><article class="paper-detail issue-detail">
+  <div class="paper-main">
+    <div class="kicker">Daily issue · 2026-06-05 · CCF A/B 会议优先</div>
+    <h1 class="paper-headline">6 月 5 日：Geometry-Preserving Unsupervised Alignment for Heterogeneous 等视觉表征主线更新</h1>
+    <p class="dek">本期聚焦通用视觉表征、视觉语言预训练与视频自监督中最值得跟进的论文，并保留 CCF A/B、OpenReview 与 arXiv 状态线索。</p>
+    <div class="feature-body">
+      <p class="lead dropcap">先读 GPUA 和 KODA：一个回答“VFM 的几何特征如何接到 VLM 语义空间”，另一个回答“两个 VLM 表征差异到底体现在哪些样本簇和模态交互上”。第二步读 The Loss Is Not Enough，它从理论上提醒 contrastive loss 本身不足以保证想要的 latent geometry，和 KODA 的表征诊断可以并读。第三步读 BabyCL、RePercENT、ChannelTok，分别对应流式视觉语言自监督、多模态解耦表示、视觉 tokenizer。Stateful Visual Encoders、FINO、IN2R、VideoCUPS 更偏系统/适配/场景理解，建议按是否在做多图 VLM、科学域适配、网页图文对齐或视频无监督分割来精读；Video2LoRA、Hyper-ICL、M3Eval 扫读即可。</p>
+      <h2>论文索引</h2>
+      <table class="compact-table"><thead><tr><th>优先级</th><th>论文</th><th>类型</th><th>相关性</th><th>一句话理由</th></tr></thead><tbody><tr><td>P0</td><td>Geometry-Preserving Unsupervised Alignment for Heterogeneous Foundation Models</td><td>arXiv + ICML 2026</td><td>高</td><td>用无监督正交映射连接 VFM 几何空间与 VLM 语义空间，是今天最直接服务通用视觉表征融合的论文。</td></tr><tr><td>P0</td><td>KODA: Contrastive Representation Comparison and Alignment for Vision-Language Foundation Models</td><td>arXiv</td><td>高</td><td>给 CLIP/SigLIP 等 VLM 表征提供可解释的差异发现和对齐工具，适合作为 foundation feature 诊断方法。</td></tr><tr><td>P0</td><td>Continual Visual and Verbal Learning Through a Child&#x27;s Egocentric Input</td><td>arXiv</td><td>高</td><td>BabyCL 用单遍时间流、视觉表征学习和图文对比损失模拟真实连续经验，比离线 shuffle 训练更接近通用学习设定。</td></tr><tr><td>P1</td><td>The Loss Is Not Enough: Sampling Conditions and Inductive Bias in Contrastive Representation Learning</td><td>arXiv + ICML 2026</td><td>高</td><td>从正样本采样 support 条件解释 contrastive SSL 何时能恢复 latent geometry，补足经验方法的理论边界。</td></tr><tr><td>P1</td><td>RePercENT: Scaling Disentangled Representation Learning Beyond Two Modalities</td><td>arXiv</td><td>高</td><td>面向多于两种模态的自监督解耦表示，直接处理共享因子与模态特异因子的可扩展分解。</td></tr><tr><td>P1</td><td>ChannelTok: Efficient Flexible-Length Vision Tokenization</td><td>arXiv</td><td>高</td><td>把 latent channel 当视觉 token，训练时随机丢尾通道形成按语义重要性排序的可变长视觉 tokenizer。</td></tr><tr><td>P2</td><td>Stateful Visual Encoders for Vision-Language Models</td><td>arXiv + project</td><td>中高</td><td>让视觉编码器在多图/多轮中带状态，解决变化信息在进入 LLM 前被独立编码抹平的问题。</td></tr><tr><td>P2</td><td>Scene-Centric Unsupervised Video Panoptic Segmentation</td><td>arXiv + CVPR 2026</td><td>中高</td><td>VideoCUPS 用无监督深度、运动和视觉 cues 生成时序一致伪标签，是视频无监督场景理解的重要扩展。</td></tr><tr><td>P2</td><td>Who Needs Labels? Adapting Vision Foundation Models With the Metadata You Already Have</td><td>arXiv</td><td>中高</td><td>FINO 用元数据指导自监督适配 VFM，虽然实验偏科学域，但“无标签元数据适配”方法可迁移。</td></tr><tr><td>P2</td><td>Intra-Modal Neighbors Never Lie: Rectifying Inter-Modal Noisy Correspondence via Graph-Based Intra-Modal Reasoning</td><td>arXiv</td><td>中高</td><td>面向网页图文噪声配对，用同模态邻域生成软监督目标，对大规模 image-text 预训练很实用。</td></tr><tr><td>P3</td><td>Video2LoRA: Parametric Video Internalization for Vision-Language Models</td><td>arXiv</td><td>中</td><td>把视频编码为 LoRA 参数，让 VLM 查询时不再携带视觉 token，适合关注长视频 token 压缩的人扫读。</td></tr><tr><td>P3</td><td>Hyper-ICL: Attention Calibration with Hyperbolic Anchor Distillation for Multimodal In-Context Learning</td><td>arXiv + ICML 2026</td><td>中</td><td>用 logit/attention 校准和 hyperbolic anchor distillation 复现多模态 demonstrations 的效果，偏 MLLM 推理效率。</td></tr><tr><td>扫读</td><td>M$^3$Eval: Multi-Modal Memory Evaluation through Cognitively-Grounded Video Tasks</td><td>arXiv</td><td>中</td><td>长视频多模态记忆 benchmark，揭示模型难以保持并行视频流的解耦记忆和时间来源归因。</td></tr></tbody></table>
+      <h2>主线阅读</h2>
+      <div class="paper-list issue-list"><article class="paper-card" data-category="ICML 2026" data-priority="P0" data-date="2026-06-05" data-title="geometry-preserving unsupervised alignment for heterogeneous foundation models" data-keywords="geometry-preserving unsupervised alignment for heterogeneous foundation models geometry-preserving unsupervised alignment for heterogeneous icml 2026 p0 2026-06-05 arxiv + icml 2026 用无监督正交映射连接 vfm 几何空间与 vlm 语义空间，是今天最直接服务通用视觉表征融合的论文 高相关；详见方法、贡献和实验边界。">
+  <a class="paper-thumb paper-thumb-text" href="../papers/2606.04385.html">
+    <img src="../assets/mineru/2606.04385/images/11c80cf403c8c1cf964e0cffe1a7adc4bd37e9149283fd38400e9e9e7865420b.jpg" alt="Geometry-Preserving Unsupervised Alignment for Heterogeneous figure"><span>P0</span>
+  </a>
+  <div>
+    <div class="paper-meta">2026-06-05 · ICML 2026 · arXiv + ICML 2026</div>
+    <h3><a href="../papers/2606.04385.html">Geometry-Preserving Unsupervised Alignment for Heterogeneous Foundation Models</a></h3>
+    <p>高相关；详见方法、贡献和实验边界。</p>
+    <p class="card-tech"><b>方法：</b>用无监督正交映射连接 VFM 几何空间与 VLM 语义空间，是今天最直接服务通用视觉表征融合的论文</p>
+    <div class="paper-actions"><a href="../papers/2606.04385.html">读图文页</a><a href="https://arxiv.org/abs/2606.04385">原文</a></div>
+  </div>
+</article>
+<article class="paper-card" data-category="Visual SSL / representation" data-priority="P0" data-date="2026-06-05" data-title="koda: contrastive representation comparison and alignment for vision-language foundation models" data-keywords="koda: contrastive representation comparison and alignment for vision-language foundation models koda visual ssl / representation p0 2026-06-05 arxiv 给 clip/siglip 等 vlm 表征提供可解释的差异发现和对齐工具，适合作为 foundation feature 诊断方法 高相关；详见方法、贡献和实验边界。">
+  <a class="paper-thumb paper-thumb-text" href="../papers/2606.04180.html">
+    <img src="../assets/mineru/2606.04180/images/f5d93f976b1dd558e6a55f8d2bce0434059ccbc3831bbeaed87d7fd204acbbc5.jpg" alt="KODA figure"><span>P0</span>
+  </a>
+  <div>
+    <div class="paper-meta">2026-06-05 · Visual SSL / representation · arXiv</div>
+    <h3><a href="../papers/2606.04180.html">KODA: Contrastive Representation Comparison and Alignment for Vision-Language Foundation Models</a></h3>
+    <p>高相关；详见方法、贡献和实验边界。</p>
+    <p class="card-tech"><b>方法：</b>给 CLIP/SigLIP 等 VLM 表征提供可解释的差异发现和对齐工具，适合作为 foundation feature 诊断方法</p>
+    <div class="paper-actions"><a href="../papers/2606.04180.html">读图文页</a><a href="https://arxiv.org/abs/2606.04180">原文</a></div>
+  </div>
+</article>
+<article class="paper-card" data-category="Visual SSL / representation" data-priority="P0" data-date="2026-06-05" data-title="continual visual and verbal learning through a child&#x27;s egocentric input" data-keywords="continual visual and verbal learning through a child&#x27;s egocentric input continual visual and verbal learning visual ssl / representation p0 2026-06-05 arxiv babycl 用单遍时间流、视觉表征学习和图文对比损失模拟真实连续经验，比离线 shuffle 训练更接近通用学习设定 高相关；详见方法、贡献和实验边界。">
+  <a class="paper-thumb paper-thumb-text" href="../papers/2606.05115.html">
+    <img src="../assets/mineru/2606.05115/images/a70df4dc9fabd5ada37b93cabdca946c6747804622d9824b27dcb2478e0b8363.jpg" alt="Continual Visual and Verbal Learning figure"><span>P0</span>
+  </a>
+  <div>
+    <div class="paper-meta">2026-06-05 · Visual SSL / representation · arXiv</div>
+    <h3><a href="../papers/2606.05115.html">Continual Visual and Verbal Learning Through a Child&#x27;s Egocentric Input</a></h3>
+    <p>高相关；详见方法、贡献和实验边界。</p>
+    <p class="card-tech"><b>方法：</b>BabyCL 用单遍时间流、视觉表征学习和图文对比损失模拟真实连续经验，比离线 shuffle 训练更接近通用学习设定</p>
+    <div class="paper-actions"><a href="../papers/2606.05115.html">读图文页</a><a href="https://arxiv.org/abs/2606.05115">原文</a></div>
+  </div>
+</article>
+<article class="paper-card" data-category="ICML 2026" data-priority="P1" data-date="2026-06-05" data-title="the loss is not enough: sampling conditions and inductive bias in contrastive representation learning" data-keywords="the loss is not enough: sampling conditions and inductive bias in contrastive representation learning the loss is not enough icml 2026 p1 2026-06-05 arxiv + icml 2026 从正样本采样 support 条件解释 contrastive ssl 何时能恢复 latent geometry，补足经验方法的理论边界 高相关；详见方法、贡献和实验边界。">
+  <a class="paper-thumb paper-thumb-text" href="../papers/2606.04280.html">
+    <img src="../assets/mineru/2606.04280/images/61cfcefd20a983d6c46b2f6966904f1f83d6e521f17868c9094aec4ff2cc12ab.jpg" alt="The Loss Is Not Enough figure"><span>P1</span>
+  </a>
+  <div>
+    <div class="paper-meta">2026-06-05 · ICML 2026 · arXiv + ICML 2026</div>
+    <h3><a href="../papers/2606.04280.html">The Loss Is Not Enough: Sampling Conditions and Inductive Bias in Contrastive Representation Learning</a></h3>
+    <p>高相关；详见方法、贡献和实验边界。</p>
+    <p class="card-tech"><b>方法：</b>从正样本采样 support 条件解释 contrastive SSL 何时能恢复 latent geometry，补足经验方法的理论边界</p>
+    <div class="paper-actions"><a href="../papers/2606.04280.html">读图文页</a><a href="https://arxiv.org/abs/2606.04280">原文</a></div>
+  </div>
+</article>
+<article class="paper-card" data-category="Visual SSL / representation" data-priority="P1" data-date="2026-06-05" data-title="repercent: scaling disentangled representation learning beyond two modalities" data-keywords="repercent: scaling disentangled representation learning beyond two modalities repercent visual ssl / representation p1 2026-06-05 arxiv 面向多于两种模态的自监督解耦表示，直接处理共享因子与模态特异因子的可扩展分解 高相关；详见方法、贡献和实验边界。">
+  <a class="paper-thumb paper-thumb-text" href="../papers/2606.05109.html">
+    <img src="../assets/mineru/2606.05109/images/ae3076dbe4f55603b2707e1796b8ceb4d6ab0d2ee6c9f4c9138cab536aa99d87.jpg" alt="RePercENT figure"><span>P1</span>
+  </a>
+  <div>
+    <div class="paper-meta">2026-06-05 · Visual SSL / representation · arXiv</div>
+    <h3><a href="../papers/2606.05109.html">RePercENT: Scaling Disentangled Representation Learning Beyond Two Modalities</a></h3>
+    <p>高相关；详见方法、贡献和实验边界。</p>
+    <p class="card-tech"><b>方法：</b>面向多于两种模态的自监督解耦表示，直接处理共享因子与模态特异因子的可扩展分解</p>
+    <div class="paper-actions"><a href="../papers/2606.05109.html">读图文页</a><a href="https://arxiv.org/abs/2606.05109">原文</a></div>
+  </div>
+</article>
+<article class="paper-card" data-category="Visual SSL / representation" data-priority="P1" data-date="2026-06-05" data-title="channeltok: efficient flexible-length vision tokenization" data-keywords="channeltok: efficient flexible-length vision tokenization channeltok visual ssl / representation p1 2026-06-05 arxiv 把 latent channel 当视觉 token，训练时随机丢尾通道形成按语义重要性排序的可变长视觉 tokenizer 高相关；详见方法、贡献和实验边界。">
+  <a class="paper-thumb paper-thumb-text" href="../papers/2606.04461.html">
+    <img src="../assets/mineru/2606.04461/images/87eff21ed9233681b65603af8be3aeb19800d01fa6d3ea32a706f58fe867f887.jpg" alt="ChannelTok figure"><span>P1</span>
+  </a>
+  <div>
+    <div class="paper-meta">2026-06-05 · Visual SSL / representation · arXiv</div>
+    <h3><a href="../papers/2606.04461.html">ChannelTok: Efficient Flexible-Length Vision Tokenization</a></h3>
+    <p>高相关；详见方法、贡献和实验边界。</p>
+    <p class="card-tech"><b>方法：</b>把 latent channel 当视觉 token，训练时随机丢尾通道形成按语义重要性排序的可变长视觉 tokenizer</p>
+    <div class="paper-actions"><a href="../papers/2606.04461.html">读图文页</a><a href="https://arxiv.org/abs/2606.04461">原文</a></div>
+  </div>
+</article>
+<article class="paper-card" data-category="project" data-priority="P2" data-date="2026-06-05" data-title="stateful visual encoders for vision-language models" data-keywords="stateful visual encoders for vision-language models stateful visual encoders for vision-language project p2 2026-06-05 arxiv + project 让视觉编码器在多图/多轮中带状态，解决变化信息在进入 llm 前被独立编码抹平的问题 中高相关；详见方法、贡献和实验边界。">
+  <a class="paper-thumb paper-thumb-text" href="../papers/2606.04433.html">
+    <img src="../assets/mineru/2606.04433/images/91efc068fdda29ff258fcaa251c025a8213459c7ddb50b0a66a2f12314aff474.jpg" alt="Stateful Visual Encoders for Vision-Language figure"><span>P2</span>
+  </a>
+  <div>
+    <div class="paper-meta">2026-06-05 · project · arXiv + project</div>
+    <h3><a href="../papers/2606.04433.html">Stateful Visual Encoders for Vision-Language Models</a></h3>
+    <p>中高相关；详见方法、贡献和实验边界。</p>
+    <p class="card-tech"><b>方法：</b>让视觉编码器在多图/多轮中带状态，解决变化信息在进入 LLM 前被独立编码抹平的问题</p>
+    <div class="paper-actions"><a href="../papers/2606.04433.html">读图文页</a><a href="https://arxiv.org/abs/2606.04433">原文</a></div>
+  </div>
+</article>
+<article class="paper-card" data-category="CVPR 2026" data-priority="P2" data-date="2026-06-05" data-title="scene-centric unsupervised video panoptic segmentation" data-keywords="scene-centric unsupervised video panoptic segmentation scene-centric unsupervised video panoptic segmentation cvpr 2026 p2 2026-06-05 arxiv + cvpr 2026 videocups 用无监督深度、运动和视觉 cues 生成时序一致伪标签，是视频无监督场景理解的重要扩展 中高相关；详见方法、贡献和实验边界。">
+  <a class="paper-thumb paper-thumb-text" href="../papers/2606.04925.html">
+    <img src="../assets/mineru/2606.04925/images/7eab5336c5002022fe3f791308c2795997b97e823dabd500f310e6f1803d8c12.jpg" alt="Scene-Centric Unsupervised Video Panoptic Segmentation figure"><span>P2</span>
+  </a>
+  <div>
+    <div class="paper-meta">2026-06-05 · CVPR 2026 · arXiv + CVPR 2026</div>
+    <h3><a href="../papers/2606.04925.html">Scene-Centric Unsupervised Video Panoptic Segmentation</a></h3>
+    <p>中高相关；详见方法、贡献和实验边界。</p>
+    <p class="card-tech"><b>方法：</b>VideoCUPS 用无监督深度、运动和视觉 cues 生成时序一致伪标签，是视频无监督场景理解的重要扩展</p>
+    <div class="paper-actions"><a href="../papers/2606.04925.html">读图文页</a><a href="https://arxiv.org/abs/2606.04925">原文</a></div>
+  </div>
+</article>
+<article class="paper-card" data-category="Visual SSL / representation" data-priority="P2" data-date="2026-06-05" data-title="who needs labels? adapting vision foundation models with the metadata you already have" data-keywords="who needs labels? adapting vision foundation models with the metadata you already have who needs labels? adapting vision visual ssl / representation p2 2026-06-05 arxiv fino 用元数据指导自监督适配 vfm，虽然实验偏科学域，但“无标签元数据适配”方法可迁移 中高相关；详见方法、贡献和实验边界。">
+  <a class="paper-thumb paper-thumb-text" href="../papers/2606.05107.html">
+    <img src="../assets/mineru/2606.05107/images/688ef2fd4e1b3518cf43d0f8e950bb667903091dbe71ef7878dc4a512a14ecf7.jpg" alt="Who Needs Labels? Adapting Vision figure"><span>P2</span>
+  </a>
+  <div>
+    <div class="paper-meta">2026-06-05 · Visual SSL / representation · arXiv</div>
+    <h3><a href="../papers/2606.05107.html">Who Needs Labels? Adapting Vision Foundation Models With the Metadata You Already Have</a></h3>
+    <p>中高相关；详见方法、贡献和实验边界。</p>
+    <p class="card-tech"><b>方法：</b>FINO 用元数据指导自监督适配 VFM，虽然实验偏科学域，但“无标签元数据适配”方法可迁移</p>
+    <div class="paper-actions"><a href="../papers/2606.05107.html">读图文页</a><a href="https://arxiv.org/abs/2606.05107">原文</a></div>
+  </div>
+</article>
+<article class="paper-card" data-category="Visual SSL / representation" data-priority="P2" data-date="2026-06-05" data-title="intra-modal neighbors never lie: rectifying inter-modal noisy correspondence via graph-based intra-modal reasoning" data-keywords="intra-modal neighbors never lie: rectifying inter-modal noisy correspondence via graph-based intra-modal reasoning intra-modal neighbors never lie visual ssl / representation p2 2026-06-05 arxiv 面向网页图文噪声配对，用同模态邻域生成软监督目标，对大规模 image-text 预训练很实用 中高相关；详见方法、贡献和实验边界。">
+  <a class="paper-thumb paper-thumb-text" href="../papers/2606.04061.html">
+    <img src="../assets/mineru/2606.04061/images/991ef24d0241d912c5a465788331fbb74abcfefa6fb25c49984461e6271cbf65.jpg" alt="Intra-Modal Neighbors Never Lie figure"><span>P2</span>
+  </a>
+  <div>
+    <div class="paper-meta">2026-06-05 · Visual SSL / representation · arXiv</div>
+    <h3><a href="../papers/2606.04061.html">Intra-Modal Neighbors Never Lie: Rectifying Inter-Modal Noisy Correspondence via Graph-Based Intra-Modal Reasoning</a></h3>
+    <p>中高相关；详见方法、贡献和实验边界。</p>
+    <p class="card-tech"><b>方法：</b>面向网页图文噪声配对，用同模态邻域生成软监督目标，对大规模 image-text 预训练很实用</p>
+    <div class="paper-actions"><a href="../papers/2606.04061.html">读图文页</a><a href="https://arxiv.org/abs/2606.04061">原文</a></div>
+  </div>
+</article>
+<article class="paper-card" data-category="Visual SSL / representation" data-priority="P3" data-date="2026-06-05" data-title="video2lora: parametric video internalization for vision-language models" data-keywords="video2lora: parametric video internalization for vision-language models video2lora visual ssl / representation p3 2026-06-05 arxiv 把视频编码为 lora 参数，让 vlm 查询时不再携带视觉 token，适合关注长视频 token 压缩的人扫读 中相关；详见方法、贡献和实验边界。">
+  <a class="paper-thumb paper-thumb-text" href="../papers/2606.04351.html">
+    <img src="../assets/mineru/2606.04351/images/1c2f09c62180576d65c9539f567b973bea437cd4ea15831753ddb83eb5d06189.jpg" alt="Video2LoRA figure"><span>P3</span>
+  </a>
+  <div>
+    <div class="paper-meta">2026-06-05 · Visual SSL / representation · arXiv</div>
+    <h3><a href="../papers/2606.04351.html">Video2LoRA: Parametric Video Internalization for Vision-Language Models</a></h3>
+    <p>中相关；详见方法、贡献和实验边界。</p>
+    <p class="card-tech"><b>方法：</b>把视频编码为 LoRA 参数，让 VLM 查询时不再携带视觉 token，适合关注长视频 token 压缩的人扫读</p>
+    <div class="paper-actions"><a href="../papers/2606.04351.html">读图文页</a><a href="https://arxiv.org/abs/2606.04351">原文</a></div>
+  </div>
+</article>
+<article class="paper-card" data-category="ICML 2026" data-priority="P3" data-date="2026-06-05" data-title="hyper-icl: attention calibration with hyperbolic anchor distillation for multimodal in-context learning" data-keywords="hyper-icl: attention calibration with hyperbolic anchor distillation for multimodal in-context learning hyper-icl icml 2026 p3 2026-06-05 arxiv + icml 2026 用 logit/attention 校准和 hyperbolic anchor distillation 复现多模态 demonstrations 的效果，偏 mllm 推理效率 中相关；详见方法、贡献和实验边界。">
+  <a class="paper-thumb paper-thumb-text" href="../papers/2606.04434.html">
+    <img src="../assets/mineru/2606.04434/images/3c2a5210e891a3225fcf6d06b2a988cc33763b1304b0d84c513099d60f4df462.jpg" alt="Hyper-ICL figure"><span>P3</span>
+  </a>
+  <div>
+    <div class="paper-meta">2026-06-05 · ICML 2026 · arXiv + ICML 2026</div>
+    <h3><a href="../papers/2606.04434.html">Hyper-ICL: Attention Calibration with Hyperbolic Anchor Distillation for Multimodal In-Context Learning</a></h3>
+    <p>中相关；详见方法、贡献和实验边界。</p>
+    <p class="card-tech"><b>方法：</b>用 logit/attention 校准和 hyperbolic anchor distillation 复现多模态 demonstrations 的效果，偏 MLLM 推理效率</p>
+    <div class="paper-actions"><a href="../papers/2606.04434.html">读图文页</a><a href="https://arxiv.org/abs/2606.04434">原文</a></div>
+  </div>
+</article>
+<article class="paper-card" data-category="Visual SSL / representation" data-priority="扫读" data-date="2026-06-05" data-title="m$^3$eval: multi-modal memory evaluation through cognitively-grounded video tasks" data-keywords="m$^3$eval: multi-modal memory evaluation through cognitively-grounded video tasks m$^3$eval visual ssl / representation 扫读 2026-06-05 arxiv 长视频多模态记忆 benchmark，揭示模型难以保持并行视频流的解耦记忆和时间来源归因 中相关；详见方法、贡献和实验边界。">
+  <a class="paper-thumb paper-thumb-text" href="../papers/2606.05008.html">
+    <img src="../assets/mineru/2606.05008/images/89c08518d066f9d60a045f3ecc2566c4d13af0807d1c18bd182145162f42d386.jpg" alt="M$^3$Eval figure"><span>扫读</span>
+  </a>
+  <div>
+    <div class="paper-meta">2026-06-05 · Visual SSL / representation · arXiv</div>
+    <h3><a href="../papers/2606.05008.html">M$^3$Eval: Multi-Modal Memory Evaluation through Cognitively-Grounded Video Tasks</a></h3>
+    <p>中相关；详见方法、贡献和实验边界。</p>
+    <p class="card-tech"><b>方法：</b>长视频多模态记忆 benchmark，揭示模型难以保持并行视频流的解耦记忆和时间来源归因</p>
+    <div class="paper-actions"><a href="../papers/2606.05008.html">读图文页</a><a href="https://arxiv.org/abs/2606.05008">原文</a></div>
+  </div>
+</article></div>
+    </div>
+  </div>
+  <aside class="paper-side">
+    <div class="side-box"><h4>今日重点</h4><p>TextTeacher、MDM、EvoVid、Ablate-to-Validate。</p></div>
+    <div class="side-box"><h4>会议口径</h4><p>只把 CCF A/B 放进主提醒；临近截止或 CCF C 仅记录。</p></div>
+    <div class="side-box"><h4>阅读重点</h4><p>先看 P1/P2 与方法图，再扫状态变化和边界案例。</p></div>
+  </aside>
+</article></main>
+  <aside class="conf-float" data-conf-reminder="2026-06-05-main-ddl" aria-label="CCF A/B 主投稿提醒">
+  <button class="conf-close" type="button" aria-label="关闭会议提醒">×</button>
+  <details open>
+    <summary>CCF A/B 主投稿提醒</summary>
+    <div class="conf-list"><a class="conf-item " href="https://github.com/ccfddl/ccf-deadlines/blob/main/conference/AI/aaai.yml">
+  <span><b>AAAI 2027</b><em>CCF A · Main paper submission</em></span>
+  <strong>52 天</strong>
+  <small>2026-07-27 · CCF DDL: abstract 2026-07-20；进入 1 个月窗口后重点提醒。</small>
+</a></div>
+  </details>
+</aside>
+  <footer class="footer">
+    <div>面向通用视觉自监督、视觉基础模型与多模态表征学习的每日研究报。</div>
+    <div class="muted">Issue 2026-06-05 · Curated readings and figure notes</div>
+  </footer>
+  <script>
+  (() => {
+    const box = document.querySelector('[data-conf-reminder]');
+    if (!box) return;
+    const key = `visualSslConfReminderClosed:${box.dataset.confReminder || '2026-06-05-main-ddl'}`;
+    try {
+      if (localStorage.getItem(key) === '1') box.hidden = true;
+    } catch (err) {}
+    const close = box.querySelector('.conf-close');
+    if (close) {
+      close.addEventListener('click', () => {
+        box.hidden = true;
+        try { localStorage.setItem(key, '1'); } catch (err) {}
+      });
+    }
+  })();
+  </script>
+</body>
+</html>

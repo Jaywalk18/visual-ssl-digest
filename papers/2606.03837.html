@@ -19,39 +19,39 @@
   </header>
   <nav class="site-nav" aria-label="主导航">
     <a class="nav-link" href="../index.html">头版</a>
-<a class="nav-link" href="../issues/2026-06-04.html">今日速递</a>
+<a class="nav-link" href="../issues/2026-06-05.html">今日速递</a>
 <a class="nav-link" href="../pages/catalog.html">论文目录</a>
 <a class="nav-link" href="../pages/timeline.html">时间线</a>
   </nav>
   <main><article class="paper-detail">
   <div class="paper-main">
     <div class="kicker">Visual SSL / representation · P3 · 2026-06-04</div>
-    <h1 class="paper-headline">Where Do We (Not) Need：通用视觉自监督常从图像扩展到视频，这篇有助于判断何时只需 image SSL feature，何时需要视频表征或 temporal adapter</h1>
-    <p class="dek">把“是否需要视频 backbone”拆成 appearance-focused、motion-focused、spatially dense 等任务类型讨论，帮助决定低资源视频表征适配策略。</p>
-    <p class="byline"><strong>Where Do We (Not) Need Temporal Context in Low-Resource Video Task Adaptation?</strong>　Luc P.J. Sträter, Hazel Doughty；机构信息 arXiv 元数据未列出。　arXiv　<a href="https://arxiv.org/abs/2606.03837">原文链接</a></p>
+    <h1 class="paper-headline">Where Do We (Not) Need：它和通用视觉自监督的关系在于：系统比较 image-pretrained 与 video representation 的 PEFT/probing，回答低资源视频适配中 temporal context 放在哪里</h1>
+    <p class="dek">中相关；详见方法、贡献和实验边界。</p>
+    <p class="byline"><strong>Where Do We (Not) Need Temporal Context in Low-Resource Video Task Adaptation?</strong>　arXiv　<a href="https://arxiv.org/abs/2606.03837">原文链接</a></p>
     <div class="paper-facts">
       <span><b>编号</b>2606.03837</span>
       <span><b>优先级</b>P3</span>
       <span><b>类别</b>Visual SSL / representation</span>
       <span><b>会议</b>arXiv</span>
-      <span><b>方法</b>系统比较低资源视频任务中 temporal context 应放在 backbone、PEFT 模块还是 probe 中；覆盖 image-pretrained models 与 video representations 的 PEFT/probing 组合。</span>
+      <span><b>方法</b>系统比较 image-pretrained 与 video representation 的 PEFT/probing，回答低资源视频适配中 temporal context 放在哪里</span>
       <span><b>来源</b>arXiv / OpenReview</span>
     </div>
     <div class="feature-body">
-      <p class="lead dropcap">先说结论。通用视觉自监督常从图像扩展到视频，这篇有助于判断何时只需 image SSL feature，何时需要视频表征或 temporal adapter。 把“是否需要视频 backbone”拆成 appearance-focused、motion-focused、spatially dense 等任务类型讨论，帮助决定低资源视频表征适配策略。</p>
+      <p class="lead dropcap">先说结论。它和通用视觉自监督的关系在于：系统比较 image-pretrained 与 video representation 的 PEFT/probing，回答低资源视频适配中 temporal context 放在哪里。 中相关；详见方法、贡献和实验边界。</p>
       <figure class="full-fig"><img src="../assets/mineru/2606.03837/images/6b0a5e5057f07d84067dcea64409acc84bf1089b2280200756a004a16f2a8d6a.jpg" alt="Figureure 2 · : Comparison of Probe Methods for Video"><figcaption><b>Figureure 2 · : Comparison of Probe Methods for Video</b><span class="fig-en">Figure 2: Comparison of Probe Methods for Video. In isolation, the best probe varies per task. Combining probe and PEFT reduces this variability, with attentive probe performing best overall.</span><span class="fig-zh">这张图/表用于判断 Where Do We (Not) Need 的实验收益来自哪里。重点看替换、消融或跨模型设置下趋势是否一致，而不是只看单个最高分。</span></figcaption></figure>
 <figure class="full-fig"><img src="../assets/mineru/2606.03837/images/89e127473e40cf134c3cdda50698d262884d78311358cd8d3c6db48422c0f697.jpg" alt="d) Distributed Temporal Context Figure 1: Distributing Temporal Context"><figcaption><b>d) Distributed Temporal Context Figure 1: Distributing Temporal Context</b><span class="fig-en">d) Distributed Temporal Context Figure 1: Distributing Temporal Context. Existing works place temporal modeling in a single component: either the PEFT modules (a), where a frame-wise backbone is combined with temporal adaptation, or in the backbone (b), where temporally-aware representations are adapted by static PEFT and probes. We instead allow temporal modeling across backbone, PEFT and probe simultaneously (c) and study how temporal context should be distributed across components (d).</span><span class="fig-zh">这张图来自论文 PDF 的结构化抽取。当前用于辅助理解 Where Do We (Not) Need 的方法或实验，请结合正文精读段落一起看。</span></figcaption></figure>
       
       <h2>核心问题</h2>
-      <p>通用视觉自监督常从图像扩展到视频，这篇有助于判断何时只需 image SSL feature，何时需要视频表征或 temporal adapter。</p>
+      <p>它和通用视觉自监督的关系在于：系统比较 image-pretrained 与 video representation 的 PEFT/probing，回答低资源视频适配中 temporal context 放在哪里。</p>
       <h2>方法拆解</h2>
-      <p>系统比较低资源视频任务中 temporal context 应放在 backbone、PEFT 模块还是 probe 中；覆盖 image-pretrained models 与 video representations 的 PEFT/probing 组合。</p>
+      <p>系统比较 image-pretrained 与 video representation 的 PEFT/probing，回答低资源视频适配中 temporal context 放在哪里</p>
       <h2>主要贡献</h2>
-      <p>把“是否需要视频 backbone”拆成 appearance-focused、motion-focused、spatially dense 等任务类型讨论，帮助决定低资源视频表征适配策略。</p>
+      <p>中相关；详见方法、贡献和实验边界。</p>
       <h2>实验看点</h2>
-      <p>摘要称不同场景中 temporal context allocation 对效果关键，PEFT/probing 的最佳位置并不一致。</p>
+      <p>实验部分建议重点看两类证据：一是作者是否把方法收益和更强数据、更长训练、更大模型区分开；二是跨模型、跨数据或跨任务迁移是否还能保留同样趋势。</p>
       <h2>局限与读法</h2>
-      <p>属于适配/评测研究，不是新自监督预训练目标；需要看具体模型、数据和任务覆盖。</p>
+      <p>这篇论文的结论需要结合任务设置、训练数据规模和消融实验一起看；不要只凭单个指标判断它对通用视觉表征的价值。</p>
     
     </div>
   </div>
@@ -61,13 +61,13 @@
     <div class="side-box"><h4>原文</h4><p><a href="https://arxiv.org/abs/2606.03837">https://arxiv.org/abs/2606.03837</a></p></div>
   </aside>
 </article></main>
-  <aside class="conf-float" data-conf-reminder="2026-06-04-main-ddl" aria-label="CCF A/B 主投稿提醒">
+  <aside class="conf-float" data-conf-reminder="2026-06-05-main-ddl" aria-label="CCF A/B 主投稿提醒">
   <button class="conf-close" type="button" aria-label="关闭会议提醒">×</button>
   <details open>
     <summary>CCF A/B 主投稿提醒</summary>
     <div class="conf-list"><a class="conf-item " href="https://github.com/ccfddl/ccf-deadlines/blob/main/conference/AI/aaai.yml">
   <span><b>AAAI 2027</b><em>CCF A · Main paper submission</em></span>
-  <strong>53 天</strong>
+  <strong>52 天</strong>
   <small>2026-07-27 · CCF DDL: abstract 2026-07-20；进入 1 个月窗口后重点提醒。</small>
 </a></div>
   </details>
@@ -80,7 +80,7 @@
   (() => {
     const box = document.querySelector('[data-conf-reminder]');
     if (!box) return;
-    const key = `visualSslConfReminderClosed:${box.dataset.confReminder || '2026-06-04-main-ddl'}`;
+    const key = `visualSslConfReminderClosed:${box.dataset.confReminder || '2026-06-05-main-ddl'}`;
     try {
       if (localStorage.getItem(key) === '1') box.hidden = true;
     } catch (err) {}

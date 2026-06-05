@@ -1,0 +1,4832 @@
+[
+    {
+        "type": "text",
+        "text": "The Loss Is Not Enough: Sampling Conditions and Inductive Bias in Contrastive Representation Learning ",
+        "text_level": 1,
+        "bbox": [
+            86,
+            109,
+            887,
+            156
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "Justinas Zaliaduonis 1 2 Patrick Putzky 3 Till Richter 1 4 Sergios Gatidis 5 ",
+        "bbox": [
+            223,
+            198,
+            746,
+            215
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "Abstract ",
+        "text_level": 1,
+        "bbox": [
+            241,
+            242,
+            320,
+            258
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "Contrastive learning has become a leading paradigm for self-supervised representation learning, yet the conditions under which it recovers meaningful latent geometry remain incompletely understood. We develop a measure-theoretic framework formalizing the diversity condition, a support requirement on positive-pair sampling that is necessary for isometric latent recovery. We show that the standard full-support von Mises-Fisher setting implies the satisfaction of the diversity condition and as a consequence global contrastive loss minimizers recover latent geometry up to orthogonal transformation, while restricted conditionals can make non-orthogonal maps attain strictly lower asymptotic contrastive loss. We introduce a support-corrected Information Noise Contrastive Estimation (InfoNCE) variant as a theoretical fix: this correction makes orthogonal latent space recovery achievable but does not uniquely select it. Experiments on synthetic benchmarks validate the identifiability predictions, and CIFAR-10 experiments are consistent with the qualitative prediction that architectural inductive bias becomes more important when sampling diversity is limited. Together, our results clarify how sampling mechanisms and encoder inductive bias interact in contrastive representation learning. ",
+        "bbox": [
+            117,
+            282,
+            444,
+            705
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "\\*Equal contribution 1Technical University of Munich, Munich, Germany 2Stanford University, Stanford, USA 3Merantix Momentum GmbH, Berlin, Germany 4Helmholtz Munich, Munich, Germany 5Department of Radiology, Stanford University School of Medicine, Stanford, USA. Correspondence to: Justinas Zaliaduonis <justinas.zaliaduonis@gmail.com>, Patrick Putzky <patrick.putzky@merantix-momentum.com>, Till Richter <till.richter@helmholtz-munich.de>, Sergios Gatidis <sgatidis@stanford.edu>. ",
+        "bbox": [
+            84,
+            739,
+            475,
+            854
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "Proceedings of the $\\it 4 3 ^ { r d }$ International Conference on Machine Learning, Seoul, South Korea. PMLR 306, 2026. Copyright 2026 by the author(s). ",
+        "bbox": [
+            84,
+            864,
+            475,
+            905
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "1. Introduction ",
+        "text_level": 1,
+        "bbox": [
+            498,
+            242,
+            629,
+            258
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "The machine learning community has long envisioned methods that turn vast amounts of unlabeled data into dense, robust, and reusable representations useful for many different downstream tasks such as classification, regression, and search. Contrastive learning (CL) has emerged as a successful technique for achieving this goal, which in recent years has led to advances in language (Jaiswal et al., 2021), vision (Chen et al., 2020), video (Zhao et al., 2024), and multimodal (Radford et al., 2021) domains. ",
+        "bbox": [
+            496,
+            268,
+            887,
+            404
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "The vast range of applications in scientific fields like Biology (Richter et al., 2025; Bahrami et al., 2025), Physics (Cy et al., 2023; Wilkinson et al., 2025), and Climate Science (Ballard, 2022; Liu et al., 2026) has made CL one of the most widely adopted unsupervised learning methods (Uelwer et al., 2023). However, despite its empirical success, the precise mechanisms driving contrastive learning remain only partially understood. This gap in theoretical understanding results in heuristic-driven development, inefficient use of computational resources, and design choices that may not fully exploit the method’s potential. In this work, we seek to move beyond intuitive understanding of CL and provide a rigorous framework to reason about its regimes of success and failure. ",
+        "bbox": [
+            496,
+            411,
+            888,
+            623
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "One approach to explain the learning mechanisms posits that CL induces data representations invariant to nuisance factors (Dangovski et al., 2022; Liu et al., 2025; Poudel et al., 2022). However, this framework does not address which factors in the data are nuisance, nor how the choice of data augmentations implicitly determine this partition. Moreover, the choice of nuisance factors, often referred to as the style-content decomposition (von Kugelgen et al. ¨ , 2021), can be detrimental to downstream tasks: depending on the intended use of the learned representations, factors deemed “nuisance” by the contrastive objective may carry discriminative information necessary for a specific downstream task. We refer to this approach as the Invariance Explanation. ",
+        "bbox": [
+            496,
+            630,
+            888,
+            843
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "An alternative direction reasons that CL recovers the “true” generating factors of the data (Ji et al., 2023; Kirchhof et al., 2023; Sandilya et al., 2025). This approach assumes that data lies on a high-dimensional manifold but possesses a low-dimensional latent structure, and that a generative process maps this low-dimensional representation to the observed high-dimensional data. In this direction, CL recovers the latent structure. Figure 1 illustrates this setup. We refer to this approach as the Recovery Explanation. ",
+        "bbox": [
+            496,
+            849,
+            888,
+            895
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "aside_text",
+        "text": "arXiv:2606.04280v1 [cs.LG] 2 Jun 2026 ",
+        "bbox": [
+            22,
+            284,
+            57,
+            710
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "page_number",
+        "text": "1 ",
+        "bbox": [
+            480,
+            922,
+            491,
+            934
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "image",
+        "img_path": "images/61cfcefd20a983d6c46b2f6966904f1f83d6e521f17868c9094aec4ff2cc12ab.jpg",
+        "image_caption": [
+            "Figure 1. Overview of contrastive learning and the role of sampling diversity and inductive bias. The generative process $g$ maps latent variables to observations, and the encoder $f$ learns to recover the latent structure. Here $f _ { 1 }$ denotes a low inductive bias encoder (e.g., MLP) and $f _ { 2 }$ a high inductive bias encoder (e.g., a model of the inverse process). Orange dot indicates the anchor point; green dots are co-occurring (positive) samples. Border colors on images match their latent positions. (a) Diversity holds: $f _ { 1 }$ recovers geometry. (b) Diversity violated (blue band): $f _ { 1 }$ fails. (c) Diversity violated: $f _ { 2 }$ recovers the latent structure despite restricted sampling diversity. "
+        ],
+        "image_footnote": [],
+        "content": "```mermaid\ngraph LR\n    A[\"Latent Space (Z)\"] -->|g| B[\"Data Space (X)\"]\n    B -->|f1| C[\"Recovered Latent Space (Z')\"]\n    D[\"Latent Space (Z)\"] -->|g| E[\"Data Space (X)\"]\n    E -->|f1| F[\"Recovered Latent Space (Z')\"]\n    G[\"Latent Space (Z)\"] -->|g| H[\"Data Space (X)\"]\n    H -->|f2| I[\"Recovered Latent Space (Z')\"]\n```",
+        "sub_type": "flowchart",
+        "bbox": [
+            86,
+            80,
+            890,
+            378
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "text",
+        "text": "",
+        "bbox": [
+            84,
+            483,
+            475,
+            575
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "text",
+        "text": "In this work, we argue that the Recovery Explanation provides a more epistemologically complete account of the mechanisms underlying contrastive learning. We introduce a constraint on the conditional law of the latent space, $P _ { \\tilde { Z } | z } ,$ which we term the diversity condition, and show that it is necessary for recovering the latent space up to an isometric (distance-preserving) transformation. Building on the notion of latent space recovery introduced by (Zimmermann et al., 2021), we separate the classical full-support vMF setting from the practically relevant setting where sampling is restricted. Our proof of the full-support case uses a probabilistic Mazur-Ulam argument (Zaliaduonis & Gatidis, 2026) and does not require differentiability of the recovery map. Our main result shows that violated diversity can make geometry-distorting solutions preferable, and that correcting the support mismatch restores, but does not uniquely select, geometry-preserving minimizers. ",
+        "bbox": [
+            84,
+            580,
+            475,
+            838
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "text",
+        "text": "The real-world sampling mechanisms often violate the diversity condition and the latent structure is typically unknown a priori. We propose a generalized InfoNCE objective to address this gap and prove that this adjustment allows geometry-preserving latent spaces to be among the optimal solutions of the objective. ",
+        "bbox": [
+            84,
+            845,
+            478,
+            892
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "text",
+        "text": "",
+        "bbox": [
+            496,
+            483,
+            885,
+            529
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "text",
+        "text": "We empirically study the qualitative implications of the theory on CIFAR-10 (Krizhevsky, 2009). Here, we examine how architectural inductive bias affects representation quality under different augmentation regimes. In summary, our contributions are: ",
+        "bbox": [
+            496,
+            536,
+            887,
+            609
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "list",
+        "sub_type": "text",
+        "list_items": [
+            "• Formalize a measure-theoretic diversity condition on latent space sampling, distinguish it from the fullsupport vMF assumption used in prior identifiability results, and analyze what fails when this condition is violated. ",
+            "• Prove that violated diversity can make non-orthogonal recovery maps attain strictly lower asymptotic contrastive loss than any orthogonal map, and show that a support-corrected InfoNCE objective makes isometric embeddings achievable. ",
+            "• Empirically validate theoretical predictions on synthetic datasets and examine their qualitative implications on CIFAR-10, demonstrating how sampling strategies and encoder inductive bias jointly determine representation quality. ",
+            "• Distill design guidance for choosing augmentation "
+        ],
+        "bbox": [
+            516,
+            631,
+            887,
+            906
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "header",
+        "text": "The Loss Is Not Enough ",
+        "bbox": [
+            408,
+            56,
+            562,
+            70
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "page_number",
+        "text": "2 ",
+        "bbox": [
+            480,
+            922,
+            491,
+            934
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "text",
+        "text": "pipelines and encoder architectures from the theoryexperiment alignment. ",
+        "bbox": [
+            117,
+            85,
+            475,
+            114
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "2. Related Work ",
+        "text_level": 1,
+        "bbox": [
+            84,
+            131,
+            227,
+            148
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "Identifiability in Contrastive Learning. The question of identifiability in unsupervised learning has a long history, beginning with classical results in Independent Component Analysis (ICA). Early work established that linear mixtures of non-Gaussian independent sources can be identified up to permutation and scaling, laying the theoretical foundation for blind source separation (Comon, 1994). Subsequent developments provided practical algorithms and characterized the fundamental limits of linear ICA (Hyvarinen & ¨ Oja, 2000). The broader goal of learning disentangled representations that capture meaningful factors of variation was later articulated (Bengio et al., 2013), though it was subsequently proved that unsupervised disentanglement is impossible without inductive biases on both the model and data (Locatello et al., 2019). ",
+        "bbox": [
+            84,
+            157,
+            475,
+            383
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "In the context of contrastive learning, a formal definition of latent space identifiability was introduced, with proofs that InfoNCE recovers ground-truth factors up to orthogonal transformation (Zimmermann et al., 2021). This analysis employs von Mises-Fisher conditionals and cross-entropy asymptotics on spherical manifolds. Connections between contrastive objectives and nonlinear ICA have also been established, demonstrating identifiability through temporal structure (Hyvarinen & Morioka ¨ , 2016). ",
+        "bbox": [
+            84,
+            392,
+            473,
+            527
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "Augmentations and Invariance. A complementary line of work examines how data augmentations shape learned representations by defining which factors should be preserved versus discarded. A content-style framework formalizes this intuition, proving that augmentation-based contrastive learning achieves block-identifiability of the invariant content partition under a latent variable model with nontrivial statistical and causal dependencies (von Kugelgen ¨ et al., 2021). The InfoMin principle proposes that optimal views for contrastive learning should share minimal mutual information while retaining task-relevant information, thereby discarding nuisance factors (Tian et al., 2020). A causal interpretation shows that data augmentations can be viewed as interventions on style variables, motivating an explicit invariance regularizer that enforces invariant prediction of proxy targets across augmentations (Mitrovic et al., 2021). Wen & Li (2021) study a complementary featurelearning regime: they analyze gradient-based learning in finite ReLU networks and show how suitable augmentations can decouple desired sparse features from nuisance dense features. Our analysis asks a different question, namely whether the asymptotic contrastive objective recovers latent geometry up to isometry, and how architectural inductive bias compensates when sampling diversity is insufficient. ",
+        "bbox": [
+            84,
+            542,
+            477,
+            906
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "Architectural Bias and Extensions. The role of encoder architecture in contrastive learning has received increasing attention. Recent work analyzes how architectural constraints influence the geometry of learned representations (HaoChen & Ma, 2023), while theoretical frameworks have been extended to multimodal settings (Tschannen et al., 2023). Other contributions address gaps between theoretical assumptions and practical implementations (Rusak et al., 2025). ",
+        "bbox": [
+            496,
+            84,
+            887,
+            220
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "Empirical Methods. Our theoretical analysis builds upon empirically successful methods including SimCLR (Chen et al., 2020), Contrastive Predictive Coding (CPC) (van den Oord et al., 2019), and VICReg (Bardes et al., 2022). These frameworks demonstrate the practical efficacy of contrastive objectives across vision, language, and multimodal domains. ",
+        "bbox": [
+            496,
+            236,
+            887,
+            327
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "3. Preliminaries ",
+        "text_level": 1,
+        "bbox": [
+            496,
+            345,
+            635,
+            362
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "3.1. Contrastive Learning Framework ",
+        "text_level": 1,
+        "bbox": [
+            496,
+            372,
+            767,
+            387
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "Following (Zimmermann et al., 2021), we analyze contrastive learning using tools from Nonlinear Independent Component Analysis (ICA) (Hyvarinen et al. ¨ , 2019). We consider an encoder $f : \\mathcal { X } \\to \\mathcal { Z }$ mapping observations from the data space $\\mathcal { X } \\subset \\mathbb { R } ^ { n }$ to a latent representation space $\\mathcal { Z } \\subset \\mathbb { R } ^ { k }$ , where $k < n .$ We model the data as generated by an injective mapping $g : { \\mathcal { Z } }  { \\mathcal { X } }$ from a lower-dimensional latent manifold whose coordinates represent statistically independent factors (Figure 1). ",
+        "bbox": [
+            496,
+            396,
+            887,
+            532
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "Contrastive learning aims to learn encoder parameters θ by discriminating between co-occurring signals $x , \\tilde { x } \\in$ X (Chen et al., 2020). These signals may arise from natural mechanisms (e.g., different modalities of the same scene) or synthetic transformations (e.g., image augmentations). We define a view-generating function $\\tau : \\mathcal { X }  \\mathcal { X }$ that produces related views $\\tilde { x } = \\tau ( x )$ , and aim to learn an encoder such that the underlying latent factors are identified. ",
+        "bbox": [
+            496,
+            539,
+            887,
+            660
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "3.2. Sampling Mechanism ",
+        "text_level": 1,
+        "bbox": [
+            496,
+            676,
+            683,
+            691
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "Since the data is generated via the injective mapping g, observations satisfy $x = g ( z )$ and $\\tilde { x } = \\tau ( g ( z ) ) = g ( \\tilde { z } )$ . As view generation is typically non-deterministic, we treat it stochastically through the conditional law $P _ { \\tilde { X } \\mid x }$ . This formulation connects to the latent dynamics $P _ { \\tilde { Z } | z }$ via the pushforward measure: ",
+        "bbox": [
+            496,
+            700,
+            887,
+            790
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "equation",
+        "text": "$$\nP _ {\\tilde {X} | x} = g _ {*} P _ {\\tilde {Z} | z} \\tag {1}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            637,
+            803,
+            885,
+            821
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "where $g _ { * }$ is the pushforward operator. Our analysis focuses on how $P _ { \\tilde { Z } | z }$ affects the recovery map $h : = f \\circ g : \\mathcal { Z } \\to \\mathcal { Z }$ . The sampling mechanism need not be an image augmentation; it may also arise from temporal proximity, spatial crops, multimodal co-occurrence, or any other rule for drawing related observations. Independent views mean conditionally independent draws from $P _ { \\tilde { Z } | z }$ for a fixed anchor $z ,$ not semantic independence of the resulting observations. Notation: uppercase $P , Q$ denotes probability laws, while lowercase $p , q$ denotes probability measure densities with respect to the stated reference measure. ",
+        "bbox": [
+            496,
+            830,
+            888,
+            905
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "header",
+        "text": "The Loss Is Not Enough ",
+        "bbox": [
+            408,
+            56,
+            563,
+            70
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "page_number",
+        "text": "3 ",
+        "bbox": [
+            480,
+            922,
+            491,
+            934
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "",
+        "bbox": [
+            84,
+            84,
+            475,
+            175
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "text",
+        "text": "3.3. Diversity Condition ",
+        "text_level": 1,
+        "bbox": [
+            84,
+            191,
+            256,
+            207
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "text",
+        "text": "We formalize the diversity condition and argue for its necessity in distance-preserving latent space reconstruction. The condition is motivated by comparing the theoretical ideal of full-support positive-pair sampling with practical sampling mechanisms. In the ideal vMF setting used by (Zimmermann et al., 2021), positive pairs can in principle cover the entire latent space around an anchor, which provides enough information to recover pairwise geometry. Practical mechanisms often restrict this support by keeping some latent coordinates fixed while changing others. The diversity condition identifies the weakest support requirement needed for recovery: every latent region that has nonzero marginal probability must also be reachable by the conditional positive-pair distribution. ",
+        "bbox": [
+            84,
+            215,
+            475,
+            426
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "text",
+        "text": "Definition 3.1 (Diversity Condition). For a latent measurable space $\\mathcal { Z }$ with marginal probability measure $P _ { Z }$ and conditional probability measure $P _ { \\tilde { Z } | z }$ , the diversity condition holds ${ \\mathrm { i f } } ,$ for $P _ { Z }$ -almost every $z \\in { \\mathcal { Z } } .$ , ",
+        "bbox": [
+            84,
+            434,
+            475,
+            494
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "equation",
+        "text": "$$\nP _ {Z} \\ll P _ {\\tilde {Z} | z}. \\tag {2}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            236,
+            513,
+            473,
+            532
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "text",
+        "text": "Equivalently, for every measurable set $A \\subseteq { \\mathcal { Z } } , P _ { { \\tilde { Z } } | z } ( A ) =$ 0 implies $P _ { Z } ( A ) = 0$ for $P _ { Z }$ -almost every anchor z. ",
+        "bbox": [
+            84,
+            547,
+            473,
+            580
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "text",
+        "text": "Intuitively, the diversity condition requires that $P _ { \\tilde { Z } | z }$ has sufficiently large support to cover any region where $P _ { Z }$ assigns nonzero probability. This implies that the viewgenerating process must perturb all latent features. If some generative features remain constant, the encoder cannot distinguish them along fixed dimensions, failing to invert $g$ for those components. ",
+        "bbox": [
+            84,
+            595,
+            473,
+            702
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "text",
+        "text": "Finally, we relate the condition to practical sampling mechanisms. The diversity condition is stated at the level of the induced latent sampling mechanism $P _ { \\tilde { Z } | z } ,$ ˜|z, rather than in terms of application-specific categories of transformations. Descriptions such as appearance, structure, or semantic content are therefore only informal indicators of which latent directions a sampling mechanism may vary. In practice, an augmentation or view-generation rule is useful for recovery only to the extent that it gives the conditional distribution support along the latent factors present under $P _ { Z }$ . Mechanisms that vary only a restricted subset of these factors may violate the condition, even if they produce visually distinct observations. ",
+        "bbox": [
+            84,
+            709,
+            475,
+            904
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "text",
+        "text": "3.4. InfoNCE as Cross-Entropy Minimization ",
+        "text_level": 1,
+        "bbox": [
+            496,
+            84,
+            818,
+            99
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "text",
+        "text": "Information Noise Contrastive Estimation (InfoNCE) (van den Oord et al., 2019) is the standard contrastive objective used to train representations from one positive view and a set of negative samples. For each anchor, it increases similarity to the positive sample while decreasing similarity to negatives, making it a probabilistic discrimination loss over co-occurring and non-co-occurring samples. The InfoNCE objective quantifies encoder performance on this discrimination task. ",
+        "bbox": [
+            496,
+            108,
+            885,
+            243
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "text",
+        "text": "Definition 3.2 (InfoNCE Loss (van den Oord et al., 2019)). Given a recovery map $h : \\mathcal { Z } \\to \\mathcal { Z }$ , positive pairs $( z , \\tilde { z } ) \\sim$ $P _ { \\mathrm { p o s } }$ , and negative samples $\\{ z _ { i } ^ { - } \\} _ { i = 1 } ^ { M } \\stackrel { \\mathrm { i . i . d . } } { \\sim } P ^ { - }$ 1 i.i.d. ∼ P −: ",
+        "bbox": [
+            496,
+            246,
+            887,
+            297
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "equation",
+        "text": "$$\n\\mathcal{L}_{\\mathrm{CL}}(h;\\tau ,M) = \\underset { \\begin{array}{c}(z,\\tilde{z})\\sim P_{\\mathrm{pos}}\\\\ \\{z_{i}^{-}\\}_{i = 1}^{M}\\stackrel {\\text{i.i.d.}}{\\sim}P^{-} \\end{array} }{\\mathbb{E}}\\left[-\\log \\frac{e^{h(z)^{\\top}h(\\tilde{z}) / \\tau}}{D(z,\\tilde{z})}\\right]\n$$",
+        "text_format": "latex",
+        "bbox": [
+            511,
+            301,
+            867,
+            356
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "equation",
+        "text": "$$\nD (z, \\tilde {z}) = e ^ {h (z) ^ {\\top} h (\\tilde {z}) / \\tau} + \\sum_ {i = 1} ^ {M} e ^ {h (z) ^ {\\top} h (z _ {i} ^ {-}) / \\tau}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            553,
+            364,
+            849,
+            405
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "text",
+        "text": "where $\\tau > 0$ is a temperature parameter and M is the number of negative samples. ",
+        "bbox": [
+            496,
+            410,
+            885,
+            441
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "text",
+        "text": "Following (Zimmermann et al., 2021), we take the latent space to be a hypersphere $\\mathbb { S } ^ { k - 1 }$ , motivated by the practical convention of $L ^ { \\hat { 2 } } .$ -normalizing contrastive representations (Chen et al., 2020; Haas et al., 2024). We assume the conditional follows a von Mises-Fisher (vMF) distribution with concentration $\\kappa > 0$ , where sampling frequency is inversely proportional to latent distance. ",
+        "bbox": [
+            496,
+            450,
+            885,
+            556
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "text",
+        "text": "Theorem 3.3 (Asymptotics of ${ \\mathcal { L } } _ { \\mathrm { C I } }$ (Zimmermann et al., 2021)). Given a spherical latent space $\\mathcal { Z } = \\mathbb { S } ^ { k - 1 }$ , a uniform marginal law $P _ { Z } = U ( { \\mathcal { Z } } )$ , a von Mises-Fisher conditional measure $P _ { \\tilde { Z } | z }$ with density ",
+        "bbox": [
+            495,
+            559,
+            887,
+            623
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "equation",
+        "text": "$$\np (\\tilde {z} | z) = \\frac {e ^ {\\kappa \\tilde {z} ^ {\\top} z}}{\\int_ {\\mathcal {Z}} e ^ {\\kappa z ^ {\\prime \\top} z} d \\sigma (z ^ {\\prime})} \\tag {3}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            598,
+            637,
+            885,
+            676
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "text",
+        "text": "where σ denotes spherical surface measure on $\\mathcal { Z }$ and $\\kappa > 0$ is the concentration parameter, ",
+        "bbox": [
+            496,
+            678,
+            885,
+            708
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "text",
+        "text": "and a model conditional measure $Q _ { h , z }$ with density ",
+        "bbox": [
+            496,
+            715,
+            839,
+            731
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "equation",
+        "text": "$$\nq _ {h} (\\tilde {z} | z) = \\frac {e ^ {h (\\tilde {z}) ^ {\\top} h (z) / \\tau}}{\\int_ {\\mathcal {Z}} e ^ {h (z ^ {\\prime}) ^ {\\top} h (z) / \\tau} d \\sigma (z ^ {\\prime})} \\tag {4}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            573,
+            748,
+            885,
+            787
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "text",
+        "text": "For fixed $\\tau > 0 ,$ , as the number of negative samples $M \\to \\infty$ the (normalized) contrastive loss converges to ",
+        "bbox": [
+            496,
+            795,
+            885,
+            825
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "equation",
+        "text": "$$\n\\begin{array}{l} \\lim _ {M \\to \\infty} \\mathcal {L} _ {C L} (h; \\tau , M) - \\log M + \\log | \\mathcal {Z} | = \\\\ \\mathbb {E} _ {z \\sim P _ {Z}} [ H (P _ {\\tilde {Z} | z}, Q _ {h, z}) ] \\tag {5} \\\\ \\end{array}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            516,
+            858,
+            885,
+            902
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "header",
+        "text": "The Loss Is Not Enough ",
+        "bbox": [
+            408,
+            56,
+            563,
+            70
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "page_number",
+        "text": "4 ",
+        "bbox": [
+            480,
+            922,
+            491,
+            934
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "text",
+        "text": "where $H ( P _ { \\tilde { Z } | z } , Q _ { h , z } )$ denotes cross-entropy, using densities with respect to σ in the vMF setting. ",
+        "bbox": [
+            84,
+            84,
+            473,
+            114
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "This interpretation allows us to analyze contrastive learning through the lens of distribution matching between the sampling mechanism $P _ { \\tilde { Z } | z }$ and the model measure $Q _ { h , z }$ . ",
+        "bbox": [
+            84,
+            127,
+            475,
+            176
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "3.5. Inductive Bias ",
+        "text_level": 1,
+        "bbox": [
+            86,
+            189,
+            220,
+            203
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "Inductive bias refers to the structural assumptions that constrain a learning algorithm’s hypothesis space, enabling generalization (Vapnik, 1999). In contrastive learning, these assumptions arise through model architecture (e.g., translation equivariance in CNNs (LeCun et al., 1998), attention in Transformers (Dosovitskiy et al., 2021)) and geometric constraints on the embedding space. In our framework, an encoder is geometry-preserving when the recovery map $h = f \\circ g$ recovers the latent structure up to an orthogonal transformation, i.e., $h ( z ) \\approx A z$ for some $A \\in O ( k )$ . Equivalently, the encoder approximates $f \\approx A \\circ g ^ { - 1 }$ on the data manifold. An effective inductive bias therefore makes approximate inverses of the data-generating process easier to represent and optimize, while restricting arbitrary non-geometry-preserving maps that can also satisfy the contrastive loss. ",
+        "bbox": [
+            84,
+            213,
+            475,
+            454
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "When the diversity condition is violated, the contrastive objective alone cannot uniquely determine the latent geometry. Inductive bias then acts as a compensatory mechanism, restricting admissible solutions to those consistent with architectural priors. In Section 4.3, we show that such biases are necessary for linearly identifiable reconstruction when diversity is violated. Crucially, we demonstrate experimentally (Section 5) that this necessity persists even asymptotically: the contrastive objective fails to recover latent geometry regardless of data quantity unless structural constraints are imposed. ",
+        "bbox": [
+            84,
+            462,
+            475,
+            628
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "4. Theoretical Results ",
+        "text_level": 1,
+        "bbox": [
+            84,
+            647,
+            272,
+            662
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "We present the core theoretical results under the common assumption of $L ^ { 2 } .$ -normalized representations (Grill et al., 2020; Haas et al., 2023). Unless stated otherwise, the results use the following standing assumptions: ",
+        "bbox": [
+            84,
+            672,
+            475,
+            734
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "list",
+        "sub_type": "text",
+        "list_items": [
+            "(A1) $\\mathcal Z = \\mathbb S ^ { k - 1 }$ is a unit hypersphere; ",
+            "(A2) the marginal $P _ { Z }$ is uniform on Z; ",
+            "(A3) the conditional $P _ { \\tilde { Z } | z }$ is vMF with concentration $\\kappa > 0$ before diversity violation is introduced; ",
+            "(A4) the encoder has sufficient capacity to realize any measurable recovery map considered below; ",
+            "(A5) representations are $L ^ { 2 } { \\mathrm { - n o r m a l i z e d } } .$ , so $h : \\mathcal { Z } \\to \\mathcal { Z }$ . "
+        ],
+        "bbox": [
+            78,
+            750,
+            475,
+            858
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "The full-support result below is closest to prior hypersphere identifiability results, but the proof uses a probabilistic Mazur-Ulam theorem and requires no differentiability of h. The subsequent results are the main extension: they characterize the asymptotic global optima when sampling diversity is violated. We introduce the following definitions to formalize our analysis. ",
+        "bbox": [
+            84,
+            875,
+            473,
+            905
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "",
+        "bbox": [
+            496,
+            84,
+            885,
+            160
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "Definition 4.1 (Isometry Almost Everywhere). Let $( \\mathcal { Z } , \\delta )$ be a metric space with measure µ. A measurable mapping $h : \\mathcal { Z } \\to \\mathcal { Z }$ is an isometry almost everywhere if there exists an isometry $e : \\mathcal { Z } \\to \\mathcal { Z }$ such that $h ( z ) = e ( z )$ for µ-almost all $z \\in { \\mathcal { Z } }$ . ",
+        "bbox": [
+            496,
+            162,
+            885,
+            238
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "Definition 4.2 (Equivalent Recovery Maps). Two mappings $h _ { 1 } , h _ { 2 } : { \\mathcal { Z } } \\to { \\mathcal { Z } }$ are equivalent with respect to the contrastive loss if $\\mathcal { L } _ { \\mathrm { C L } } ( h _ { 1 } ; \\tau , M ) = \\mathcal { L } _ { \\mathrm { C L } } ( h _ { 2 } ; \\tau , M )$ for fixed τ and M . ",
+        "bbox": [
+            496,
+            242,
+            885,
+            301
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "4.1. Reconstruction Under Full-Support Sampling ",
+        "text_level": 1,
+        "bbox": [
+            496,
+            319,
+            849,
+            335
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "Lemma 4.3 (Full-Support vMF Implies Diversity). Let $P _ { Z }$ be uniform on $\\mathcal { Z } = \\bar { \\mathbb { S } } ^ { k - 1 }$ , and let $P _ { \\tilde { Z } | z }$ have vMF density proportional to $\\exp ( \\kappa z ^ { \\top } \\tilde { z } )$ with $\\kappa ~ > ~ 0$ with respect to spherical surface measure. Then the diversity condition holds. ",
+        "bbox": [
+            495,
+            342,
+            885,
+            420
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "Proof. The vMF density is strictly positive on the whole sphere. Therefore, any measurable set with zero $P _ { \\tilde { Z } | z }$ measure also has zero spherical surface measure, and hence zero uniform marginal measure. □ ",
+        "bbox": [
+            495,
+            436,
+            885,
+            498
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "Thus in the vMF setting the diversity condition is a consequence of full support, not an additional independent hypothesis. Contrastive learning then recovers the latent space up to orthogonal transformation. ",
+        "bbox": [
+            495,
+            513,
+            885,
+            573
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "Theorem 4.4 (Linear Identifiability Under Full Diversity). Under a uniform marginal on $\\mathcal { Z } = \\mathbb { S } ^ { k - 1 }$ and full-support vMF conditional, any recovery map $h : \\mathcal { Z } \\to \\mathcal { Z }$ that globally minimizes the asymptotic contrastive objective is an isometry almost everywhere: ",
+        "bbox": [
+            496,
+            577,
+            885,
+            652
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "equation",
+        "text": "$$\nh (z) = A z \\quad \\text {   for   } \\mu \\text {-almost   all   } z \\in \\mathcal {Z},\n$$",
+        "text_format": "latex",
+        "bbox": [
+            566,
+            660,
+            813,
+            676
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "where $A \\in O ( k )$ is an orthogonal matrix. ",
+        "bbox": [
+            496,
+            685,
+            772,
+            700
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "Proof. See Appendix A.1. ",
+        "bbox": [
+            496,
+            715,
+            674,
+            731
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "Proof sketch. The asymptotic InfoNCE objective reduces to conditional cross-entropy. Under the full-support vMF conditional, any minimizer must match conditionals and therefore preserve inner products almost surely. On the sphere, this gives distance preservation, and the probabilistic Mazur-Ulam theorem extends this almost-sure isometry to a global orthogonal map. ",
+        "bbox": [
+            495,
+            747,
+            885,
+            853
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "This represents an ideal scenario: when the sampling mechanism perturbs all latent factors, the learned representations preserve pairwise distances, yielding a separable latent space suitable for downstream tasks. However, real-world augmentation pipelines rarely have full support, motivating the analysis in the following section. ",
+        "bbox": [
+            495,
+            859,
+            885,
+            906
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "header",
+        "text": "The Loss Is Not Enough ",
+        "bbox": [
+            408,
+            56,
+            563,
+            70
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "page_number",
+        "text": "5 ",
+        "bbox": [
+            480,
+            922,
+            491,
+            934
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "",
+        "bbox": [
+            84,
+            85,
+            473,
+            130
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "text",
+        "text": "4.2. Reconstruction Under Violated Diversity ",
+        "text_level": 1,
+        "bbox": [
+            84,
+            146,
+            403,
+            162
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "text",
+        "text": "In practice, the diversity condition is rarely satisfied. Most augmentation pipelines preserve certain semantic features while perturbing others. We model this by decomposing the latent vector $z = ( u , v )$ into an invariant component $u \\in \\mathbb { R } ^ { m }$ and a varying component $v \\in \\mathbb { R } ^ { \\ell }$ , with $m + \\ell = k$ and $m , \\ell > 0$ . Let ",
+        "bbox": [
+            84,
+            170,
+            473,
+            260
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "equation",
+        "text": "$$\nK (z) := \\{\\tilde {z} = (\\tilde {u}, \\tilde {v}) \\in \\mathbb {S} ^ {k - 1}: \\tilde {u} = u \\},\n$$",
+        "text_format": "latex",
+        "bbox": [
+            142,
+            271,
+            406,
+            289
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "equation",
+        "text": "$$\nK (z) \\cong \\mathbb {S} _ {r (z)} ^ {\\ell - 1}, \\qquad r (z) := \\sqrt {1 - \\| u \\| ^ {2}}.\n$$",
+        "text_format": "latex",
+        "bbox": [
+            142,
+            292,
+            415,
+            314
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "text",
+        "text": "For $r ( z ) > 0$ , let $\\sigma _ { K \\left( z \\right) }$ denote the intrinsic surface measure on $K ( z )$ . The constrained positive-pair conditional is the probability measure $P _ { \\tilde { Z } | z } ^ { K }$ supported on $K ( z )$ with Radon-Nikodym density ",
+        "bbox": [
+            84,
+            324,
+            475,
+            387
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "equation",
+        "text": "$$\n\\frac {d P _ {\\tilde {Z} | z} ^ {K}}{d \\sigma_ {K (z)}} (\\tilde {z}) = \\frac {e ^ {\\kappa z ^ {\\top} \\tilde {z}}}{\\int_ {K (z)} e ^ {\\kappa z ^ {\\top} z ^ {\\prime}} d \\sigma_ {K (z)} (z ^ {\\prime})}. \\tag {6}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            147,
+            398,
+            473,
+            440
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "text",
+        "text": "This measure is singular with respect to ambient spherical measure on $\\mathbb { S } ^ { k - 1 }$ , but it is a well-defined probability law on the lower-dimensional submanifold $K ( z )$ . ",
+        "bbox": [
+            84,
+            450,
+            473,
+            496
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "text",
+        "text": "This collapses the sampling support from $\\mathbb { S } ^ { k - 1 }$ onto a lowerdimensional submanifold $K ( z )$ , mirroring the content-style framework of (von Kugelgen et al. ¨ , 2021). ",
+        "bbox": [
+            84,
+            503,
+            473,
+            549
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "text",
+        "text": "Theorem 4.5 (Loss of Identifiability Under Violated Diversity). For the asymptotic contrastive objective obtained as $M \\ \\to \\ \\infty$ under the constrained conditional (Equation 6) and standard full-sphere negatives, orthogonal recovery is not globally optimal. There exists a recovery map $h : \\mathcal { Z } \\to \\mathcal { Z }$ that is not induced by any orthogonal transformation such that ",
+        "bbox": [
+            84,
+            553,
+            475,
+            657
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "equation",
+        "text": "$$\n\\mathcal {L} _ {\\mathrm{CL}} (h) <   \\mathcal {L} _ {\\mathrm{CL}} (\\tilde {h}), \\quad \\forall \\tilde {h} \\in O (k).\n$$",
+        "text_format": "latex",
+        "bbox": [
+            153,
+            669,
+            403,
+            688
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "text",
+        "text": "This is a statement about global values of the limiting objective, not about finite-sample optimization dynamics. ",
+        "bbox": [
+            84,
+            705,
+            475,
+            737
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "text",
+        "text": "Proof. See Appendix A.2. ",
+        "bbox": [
+            84,
+            753,
+            263,
+            768
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "image",
+        "img_path": "images/2b12b6aed2da4e99fe890a7204b7c98dbcf628f900e72be4071b635b613afd1e.jpg",
+        "image_caption": [],
+        "image_footnote": [],
+        "content": "",
+        "bbox": [
+            457,
+            753,
+            473,
+            766
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "text",
+        "text": "Proof sketch. The constrained conditional fixes u and only varies v, while the standard model conditional still normalizes over the full sphere. We construct an explicit nonorthogonal map $h _ { \\lambda } ( u , v ) = ( u , \\lambda v ) / \\| ( u , \\lambda v ) \\|$ ∥ with $\\lambda < 1$ close to one. Because positive pairs share u, this map improves the alignment term to first order, while the uniformity term is stationary at the identity, yielding lower asymptotic loss than any orthogonal map. ",
+        "bbox": [
+            84,
+            784,
+            475,
+            906
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "text",
+        "text": "The consequence is concrete: arbitrarily expressive encoders are actively disincentivized from learning orthogonal recovery maps when the diversity condition is violated. The contrastive objective rewards geometry-distorting solutions, leading to poorly structured latent spaces where semantic relationships are not preserved. Consequently, downstream tasks that rely on meaningful distance relationships in the representation space face a fundamental bottleneck that cannot be overcome by increasing encoder capacity alone. ",
+        "bbox": [
+            496,
+            84,
+            887,
+            220
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "text",
+        "text": "4.3. Correcting the Model ",
+        "text_level": 1,
+        "bbox": [
+            496,
+            237,
+            681,
+            252
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "text",
+        "text": "The support mismatch between $P _ { \\tilde { Z } | z } ^ { K }$ z and the standard fullsphere model conditional prevents the InfoNCE objective from favoring isometric solutions. We address this by constraining the model conditional to the same submanifold $K ( z )$ : ",
+        "bbox": [
+            496,
+            258,
+            887,
+            339
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "equation",
+        "text": "$$\nq _ {h, z} ^ {K} (\\tilde {z}) = \\frac {e ^ {h (z) ^ {\\top} h (\\tilde {z}) / \\tau}}{\\int_ {K (z)} e ^ {h (z) ^ {\\top} h (z ^ {\\prime}) / \\tau} d \\sigma_ {K (z)} \\left(z ^ {\\prime}\\right)}, \\quad \\tilde {z} \\in K (z). \\tag {7}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            496,
+            368,
+            885,
+            422
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "text",
+        "text": "Equivalently, for a positive pair $( z , \\tilde { z } )$ and negatives $z _ { 1 } ^ { - } , \\ldots , z _ { M } ^ { - } \\stackrel { \\mathrm { i . i . d . } } { \\sim } U ( K ( z ) )$ , the per-anchor adapted loss is ",
+        "bbox": [
+            496,
+            429,
+            885,
+            477
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "equation",
+        "text": "$$\n\\ell_ {\\mathrm{adapt}} = - \\log \\frac {\\exp (h (z) ^ {\\top} h (\\tilde {z}) / \\tau)}{D _ {a} (z , \\tilde {z})},\n$$",
+        "text_format": "latex",
+        "bbox": [
+            575,
+            474,
+            815,
+            508
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "equation",
+        "text": "$$\nD _ {a} (z, \\tilde {z}) = \\exp (h (z) ^ {\\top} h (\\tilde {z}) / \\tau) \\tag {8}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            558,
+            511,
+            885,
+            532
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "equation",
+        "text": "$$\n+ \\sum_ {j = 1} ^ {M} \\exp (h (z) ^ {\\top} h (z _ {j} ^ {-}) / \\tau).\n$$",
+        "text_format": "latex",
+        "bbox": [
+            637,
+            532,
+            823,
+            574
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "text",
+        "text": "This corresponds to drawing negative samples from $K ( z )$ rather than the full latent space. Exact sampling requires access to the invariant component u, which is generally unavailable in real data. In practice, same-anchor augmentations provide a proxy: independent transformations of the same anchor preserve the components fixed by the augmentation mechanism while varying the remaining components. Appendix C gives the resulting training step, but the adapted loss should be read primarily as a theoretical diagnostic rather than a fully practical replacement for standard InfoNCE. ",
+        "bbox": [
+            496,
+            580,
+            887,
+            746
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "text",
+        "text": "Theorem 4.6 (Orthogonal Mappings as Minimizers). Under the corrected model (Equation 7), any orthogonal transformation $h \\in O ( k )$ minimizes the asymptotic contrastive loss. ",
+        "bbox": [
+            496,
+            752,
+            887,
+            797
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "text",
+        "text": "Proof. See Appendix A.3. ",
+        "bbox": [
+            496,
+            813,
+            674,
+            829
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "text",
+        "text": "Proof sketch. Once the model conditional is restricted to the same support $K ( z )$ as the true conditional, any orthogonal map preserves the inner products that define the vMF density on that support. Thus the model conditional matches the true conditional when $\\kappa = 1 / \\tau$ , minimizing cross-entropy. This proves achievability of orthogonal solutions, but not uniqueness. ",
+        "bbox": [
+            496,
+            845,
+            885,
+            905
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "header",
+        "text": "The Loss Is Not Enough ",
+        "bbox": [
+            408,
+            56,
+            563,
+            70
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "page_number",
+        "text": "6 ",
+        "bbox": [
+            480,
+            922,
+            491,
+            934
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "text",
+        "text": "",
+        "bbox": [
+            84,
+            84,
+            475,
+            130
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "text",
+        "text": "Although the corrected objective admits orthogonal solutions, it does not guarantee that all minimizers are orthogonal. Thus, the adapted objective should not be interpreted as a fully general solution: it removes the support mismatch and makes geometry-preserving recovery achievable, but it does not make such recovery unique. The sampling mechanism determines which solutions are achievable, while inductive bias influences which solution is selected during optimization. This non-uniqueness highlights the necessity of inductive bias for selecting geometry-preserving solutions. ",
+        "bbox": [
+            84,
+            137,
+            475,
+            303
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "text",
+        "text": "5. Experimental Results ",
+        "text_level": 1,
+        "bbox": [
+            84,
+            323,
+            290,
+            339
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "text",
+        "text": "5.1. Synthetic Dataset Experiments ",
+        "text_level": 1,
+        "bbox": [
+            84,
+            349,
+            334,
+            364
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "text",
+        "text": "We validate the theoretical predictions from Section 4 using a controlled synthetic setup with a spherical latent space $\\mathcal { Z } = \\mathbb { S } ^ { 2 } . ^ { 1 }$ Following the assumptions of our theoretical framework, the marginal law is uniform over the sphere, and positive pairs are sampled according to a von Mises-Fisher (vMF) conditional law $P _ { \\tilde { Z } | z }$ with density $p ( \\tilde { z } | z ) = \\mathrm { v M F } ( z , \\kappa )$ and concentration parameter $\\kappa = 1 / \\tau$ (see Equation 17), where τ is the temperature in the InfoNCE loss. The generative processes used in our experiments are illustrated in Figure 2. Details of the sampling procedures are provided in Appendix C. ",
+        "bbox": [
+            84,
+            372,
+            475,
+            541
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "text",
+        "text": "Experimental Setup. We evaluate five generative processes $g : { \\mathcal { Z } }  { \\mathcal { X } }$ of varying complexity: Identity, injective Linear map $( \\mathbb { S } ^ { 2 }  \\bar { \\mathbb { R } ^ { 7 } } )$ , Spiral rotation, Patches, and invertible MLP (Hyvarinen & Morioka¨ , 2016). Detailed definitions are provided in Appendix B.1. For each generative process, we compare two encoder architectures: an MLP encoder with hidden dimensions [128, 256, 256, 256, 128] representing low inductive bias, and an inverse encoder designed to invert the corresponding generative process, representing high inductive bias. The invertible MLP is an exception, as it lacks a strict analytic inverse; we therefore evaluate only the MLP encoder for this generative process. All experiments use InfoNCE loss with temperature $\\tau = 0 . 3$ , Adam optimizer (Kingma & Ba, 2015) $( \\mathrm { l r } = 1 0 ^ { - 3 } )$ , batch size 2000, and 5000 iterations. The generative process g remains frozen throughout training, and each configuration is evaluated over 5 independent runs. ",
+        "bbox": [
+            84,
+            561,
+            475,
+            818
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "text",
+        "text": "Evaluation Metrics. We assess reconstruction quality using linear identifiability $( R ^ { 2 } )$ , which measures recovery up 1Code is available at https://github.com/ BosonicJustin/CLTheory. ",
+        "bbox": [
+            84,
+            839,
+            475,
+            869
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "text",
+        "text": "",
+        "bbox": [
+            84,
+            877,
+            475,
+            906
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "text",
+        "text": "to affine transformation as in (Hyvarinen & Morioka¨ , 2016). Additional metrics (Mean Correlation Coefficient and Angular Preservation Error) are provided in Appendix D. ",
+        "bbox": [
+            496,
+            84,
+            887,
+            130
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "text",
+        "text": "Results. We summarize the experimental results in Table 1 and Figure 5. ",
+        "bbox": [
+            496,
+            146,
+            885,
+            176
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "text",
+        "text": "Diversity Condition Holds. When the diversity condition is satisfied, the MLP encoder achieves near-perfect linear identifiability $( R ^ { 2 } \\ge 0 . 9 9 )$ across all five generative processes, confirming the theoretical prediction of Theorem 4.4. This demonstrates that a sufficiently expressive encoder can recover a representation linearly identifiable with the ground-truth latent space when the diversity condition holds, across varying degrees of injective generative processes. ",
+        "bbox": [
+            495,
+            191,
+            887,
+            329
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "text",
+        "text": "Diversity Condition Violated. When the diversity condition is violated by fixing the first latent dimension during positive pair sampling, MLP performance collapses dramatically. Linear identifiability drops to $R ^ { 2 } \\in [ 0 . \\mathrm { \\bar { 0 5 } } , 0 . 1 3 ]$ for Identity, MLP, and Linear generative processes, and $R ^ { 2 } = 0$ .25 for Patches. The Spiral process is an exception $( R ^ { 2 } = 0 . 7 2 )$ , maintaining poor but not catastrophic performance with high variance across runs. This validates Theorem 4.5: the contrastive objective alone no longer incentivizes geometry-preserving solutions when the conditional sampling support is restricted. ",
+        "bbox": [
+            495,
+            344,
+            888,
+            512
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "text",
+        "text": "Inductive Bias Compensation. Under violated diversity, incorporating inductive bias through inverse encoders restores near-perfect recovery $( R ^ { 2 } \\ \\bar { \\geq } \\ 0 . 8 8 )$ , with Identity, Linear, and Spiral processes achieving $R ^ { 2 } \\ge 0 . 9 9$ . The inverse encoders, designed to mirror the structure of each generative process, successfully recover the latent geometry even when the sampling mechanism provides insufficient information. This demonstrates that architectural constraints can compensate for deficiencies in the sampling regime, highlighting the complementary roles of data augmentation and model design in contrastive learning. ",
+        "bbox": [
+            495,
+            527,
+            888,
+            694
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "text",
+        "text": "Adapted InfoNCE Loss. The adapted InfoNCE loss partially recovers MLP performance under violated diversity $( R ^ { 2 } ~ \\approx ~ 0 . 6 0 – 0 . 6 5 )$ , representing a substantial improvement over standard InfoNCE $( \\bar { R ^ { 2 } } \\approx 0 . 0 5  – 0 . 2 5$ for most processes). However, this falls short of the performance achieved with appropriate inductive bias $( R ^ { 2 } \\ge 0 . 8 8 )$ . This confirms Theorem 4.6: correcting the model conditional makes isometric solutions achievable but does not guarantee them. From a practical standpoint, these results suggest that while loss modifications can mitigate the effects of violated diversity, incorporating architectural priors remains the more effective strategy, aligning with the empirical success of high inductive bias architectures such as CNNs and ",
+        "bbox": [
+            495,
+            709,
+            888,
+            905
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "header",
+        "text": "The Loss Is Not Enough ",
+        "bbox": [
+            408,
+            56,
+            563,
+            70
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "page_number",
+        "text": "7 ",
+        "bbox": [
+            480,
+            922,
+            491,
+            934
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "image",
+        "img_path": "images/205cba5d936e9104f1d4f8efc018a5750d7ac8392558bc425f1bd6cc22be088d.jpg",
+        "image_caption": [
+            "(a) Identity "
+        ],
+        "image_footnote": [],
+        "content": "",
+        "bbox": [
+            94,
+            133,
+            187,
+            204
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "image",
+        "img_path": "images/d757c440e69bae457ac8c758b3d76db6679cfd77ff1d9e674a3fa0e87629f3cc.jpg",
+        "image_caption": [
+            "(b) Linear "
+        ],
+        "image_footnote": [],
+        "content": "",
+        "bbox": [
+            264,
+            141,
+            352,
+            196
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "image",
+        "img_path": "images/91e52c012b038c56e4d72f70c60c1f0bd0ea830cc405319f3de80f64d3b30307.jpg",
+        "image_caption": [
+            "(c) Spiral "
+        ],
+        "image_footnote": [],
+        "content": "",
+        "bbox": [
+            429,
+            133,
+            519,
+            204
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "image",
+        "img_path": "images/32ced65c109a0e085891f7c2c2de3629139b5af9eefede484d395684da7b9b69.jpg",
+        "image_caption": [
+            "(d) Patches "
+        ],
+        "image_footnote": [],
+        "content": "",
+        "bbox": [
+            596,
+            133,
+            687,
+            204
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "image",
+        "img_path": "images/3fe01473de16af41585acb26414640816f5c6efdecc902661cb71225d061e93d.jpg",
+        "image_caption": [
+            "(e) Invertible MLP ",
+            "Figure 2. Generative processes mapping the unit sphere to observation space. Colors encode input coordinates (RGB = xyz), illustrating how each transformation warps the latent space: (a) identity preserves the sphere, (b) linear maps to an ellipsoid, (c) spiral twists points around the vertical axis, (d) patches applies piecewise rotations creating discontinuities, and (e) invertible MLP produces smooth nonlinear deformations. "
+        ],
+        "image_footnote": [],
+        "content": "",
+        "bbox": [
+            787,
+            128,
+            844,
+            202
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "text",
+        "text": "Vision Transformers in contrastive learning pipelines. ",
+        "bbox": [
+            84,
+            297,
+            439,
+            313
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "text",
+        "text": "5.2. CIFAR-10 Experiments ",
+        "text_level": 1,
+        "bbox": [
+            84,
+            329,
+            284,
+            345
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "text",
+        "text": "We test the qualitative implications of our theory on CIFAR-10 using SimCLR (Chen et al., 2020) with three encoder architectures of comparable size (∼11M parameters each). We rate inductive bias by how closely each architecture’s structural priors align with the spatial generative structure of natural images. Equivalently, this measures how strongly the architecture favors approximate inverses of image formation. ResNet-18 (He et al., 2016) has high inductive bias because convolutional layers encode spatial locality and translation equivariance. Vision Transformer (ViT) (Dosovitskiy et al., 2021) with 4×4 patches has medium inductive bias because self-attention can learn global spatial structure, but does not hardcode locality to the same extent. The MLP has low inductive bias because it treats each image as a flat vector and imposes little domain-specific restriction on the hypothesis space. All encoders project to 512-dimensional L2-normalized embeddings and are initialized with random weights. Because CIFAR-10 does not provide ground-truth latent coordinates, linear probe accuracy is not a direct test of identifiability. We use it as a real-data sanity check for the qualitative predictions of the theory: richer sampling mechanisms and better aligned architectural inductive bias should improve downstream representation quality. ",
+        "bbox": [
+            84,
+            353,
+            475,
+            700
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "text",
+        "text": "Augmentation Regimes. We design three augmentation regimes to vary the degree to which the diversity condition is approximated (Figure 4): (1) All: color jitter, random crop, horizontal flip, grayscale, blur, and cutout (DeVries & Taylor, 2017), perturbing as many features as possible; (2) Crop Only: Perturbing all features slightly, but with a lesser degree than All augmentations; (3) All w/o crop: all augmentations except crop, varying the features in a more fixed manner. Training uses InfoNCE with $\\tau = 0 . 5$ , Adam optimizer (Kingma & Ba, 2015) $( \\mathrm { l r } = 3 \\times 1 0 ^ { - 4 } )$ , batch size 2000, for 200 epochs. We evaluate via linear probing over 5 runs per configuration. ",
+        "bbox": [
+            84,
+            724,
+            475,
+            906
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "text",
+        "text": "Results. The results (Figure 3) are consistent with the qualitative predictions of the theory. First, the “All” augmentation regime yields the highest accuracy across all architectures, consistent with the expectation that broader sampling support improves representation quality. Second, higher inductive bias consistently improves performance: ResNet-18 outperforms ViT, which outperforms MLP, across all augmentation regimes. Third, and most importantly, the performance gap between architectures widens as the diversity condition is increasingly violated. Under the “All” regime, the gap between ResNet-18 and MLP is moderate; under “All w/o crop”, this gap increases substantially. This interaction effect supports the compensatory role of inductive bias: when sampling diversity is insufficient, architectural priors become critical for recovering useful representations. Notably, for MLP the “All” and “Crop” regimes yield nearly identical performance, suggesting that without appropriate inductive bias, the encoder cannot exploit the additional augmentations, since cropping provides the majority of the meaningful signal. ",
+        "bbox": [
+            496,
+            297,
+            888,
+            599
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "chart",
+        "img_path": "images/77aa6af5c8ab7508bc90e2cdf194cdd744bbafeafd4c8d7ce48bcd933328b7ce.jpg",
+        "content": "| Model       | Condition  | Individual runs | Mean |\n|-------------|------------|-----------------|------|\n| ResNet-18   | All        | 57.0            | 56.0 |\n| ResNet-18   | Crop       | 38.0            | 37.0 |\n| ResNet-18   | w/o Crop   | 34.0            | 33.0 |\n| ViT-Tiny    | All        | 55.0            | 54.0 |\n| ViT-Tiny    | Crop       | 42.0            | 41.0 |\n| ViT-Tiny    | w/o Crop   | 33.0            | 32.0 |\n| MLP         | All        | 43.0            | 42.0 |\n| MLP         | Crop       | 44.0            | 43.0 |\n| MLP         | w/o Crop   | 32.0            | 31.0 |",
+        "chart_caption": [
+            "Figure 3. Linear probe accuracy on CIFAR-10 by architecture and augmentation regime. Individual runs shown as points; bars indicate mean ±1 std. The “All” regime best approximates the diversity condition and yields highest accuracy across all architectures. "
+        ],
+        "chart_footnote": [],
+        "sub_type": "scatter",
+        "bbox": [
+            501,
+            613,
+            883,
+            750
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "text",
+        "text": "6. Conclusion ",
+        "text_level": 1,
+        "bbox": [
+            496,
+            849,
+            617,
+            864
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "text",
+        "text": "We have presented a theoretical framework for understanding when contrastive learning recovers meaningful latent representations. Our central contribution is the diversity condition (Definition 3.1), a requirement on $P _ { \\tilde { Z } | } { } _ { i }$ z that is necessary for isometric latent recovery. When it holds, sufficiently expressive encoders recover the latent space up to an orthogonal transformation; when it is violated, the contrastive objective can actively disincentivize geometry-preserving solutions. The adapted InfoNCE objective makes isometric solutions achievable under violated diversity, but does not guarantee their selection. Our synthetic and CIFAR-10 experiments show that sampling diversity and architectural inductive bias jointly determine representation quality. ",
+        "bbox": [
+            496,
+            875,
+            887,
+            906
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "header",
+        "text": "The Loss Is Not Enough ",
+        "bbox": [
+            408,
+            56,
+            563,
+            70
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "page_number",
+        "text": "8 ",
+        "bbox": [
+            480,
+            922,
+            491,
+            934
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "table",
+        "img_path": "images/70e87cf3b622628d349beaf9d0b45fa2b5c21d6d108c66d97ea59d8e6236d646.jpg",
+        "table_caption": [
+            "Table 1. Linear identifiability $( R ^ { 2 } )$ across generative processes under different experimental conditions. Results reported as mean ± std across 5 random seeds. The Invertible MLP process lacks a closed-form inverse, so no inverse encoder is available (indicated by N/A). "
+        ],
+        "table_footnote": [],
+        "table_body": "<table><tr><td><img src=\"images/ade5e400ebf0cad49fd03018a44dd0cde39570c13f6bfd473e8d260f7b710b5b.jpg\"/></td><td><img src=\"images/dc5a8bed7eea55695bf019bd8a2b717cab640e24b6ed508a035178f7ec80bc9d.jpg\"/></td><td><img src=\"images/fc0e38708d3d6f191eb4672d51ce993f00f52d54a16852cec621163834466624.jpg\"/></td><td><img src=\"images/4c3b5504577f85772ad19800cdda1f8cbe51e3463ab5215d3e46c5e8a2b9fb7f.jpg\"/></td><td><img src=\"images/8019b422a0ef2a8b6ac2112dae6e67dfa9e652ceb90e21cbf4194106d732a2d8.jpg\"/></td></tr><tr><td rowspan=\"2\">Generative Process</td><td colspan=\"2\">Diversity Holds</td><td colspan=\"2\">Diversity Violated</td></tr><tr><td>InfoNCE</td><td>InfoNCE</td><td>InfoNCE Adapted</td><td>InfoNCE + Ind. Bias</td></tr><tr><td>Identity</td><td>1.00 ± 0.00</td><td>0.06 ± 0.03</td><td>0.63 ± 0.00</td><td>0.99 ± 0.00</td></tr><tr><td>Invertible MLP</td><td>1.00 ± 0.00</td><td>0.13 ± 0.12</td><td>0.60 ± 0.01</td><td>N/A</td></tr><tr><td>Linear</td><td>1.00 ± 0.00</td><td>0.05 ± 0.06</td><td>0.65 ± 0.03</td><td>0.99 ± 0.00</td></tr><tr><td>Patches</td><td>0.99 ± 0.00</td><td>0.25 ± 0.03</td><td>0.63 ± 0.02</td><td>0.88 ± 0.01</td></tr><tr><td>Spiral</td><td>1.00 ± 0.00</td><td>0.72 ± 0.33</td><td>0.62 ± 0.01</td><td>1.00 ± 0.00</td></tr></table>",
+        "bbox": [
+            153,
+            116,
+            820,
+            276
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "image",
+        "img_path": "images/26879799a8ce512cbbee8ff02e0920d69d979965b578b675394f403a218fe015.jpg",
+        "image_caption": [
+            "(a) Original "
+        ],
+        "image_footnote": [],
+        "content": "Two potted flowers on a wooden deck, one with purple flowers and green leaves, the other with yellow flowers (no text or symbols visible)",
+        "sub_type": "natural_image",
+        "bbox": [
+            86,
+            297,
+            263,
+            434
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "image",
+        "img_path": "images/40dc3a6480d3faa0add1be176dec14314688649bbfc98981857951a186d4d67c.jpg",
+        "image_caption": [
+            "(b) Crop "
+        ],
+        "image_footnote": [],
+        "content": "Potted purple flowers with green leaves on a wooden surface (no text or symbols visible)",
+        "sub_type": "natural_image",
+        "bbox": [
+            297,
+            299,
+            473,
+            434
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "image",
+        "img_path": "images/675b52e961d74389217c66e463612928cb1b17a2392970133aa2f872cb55d328.jpg",
+        "image_caption": [
+            "(c) All w/o crop "
+        ],
+        "image_footnote": [],
+        "content": "Two potted flowers on a wooden deck, one with purple flowers and green leaves (no text or symbols visible)",
+        "sub_type": "natural_image",
+        "bbox": [
+            89,
+            455,
+            263,
+            593
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "image",
+        "img_path": "images/f1f6c91777f8529b140553d7144a62a0fdb4a23d22377c8c7cdcd311c641edb0.jpg",
+        "image_caption": [
+            "(d) All ",
+            "Figure 4. CIFAR-10 augmentation regimes. (a) Original image. (b) Crop Only: random resized crop altering spatial extent. (c) All without crop: color jitter, horizontal flip, rotation, and blur. (d) All augmentations combined. Cropping changes visible spatial extent and local statistics, while color and blur transformations mainly alter appearance in this example. "
+        ],
+        "image_footnote": [],
+        "content": "Potted orange pot with purple flowers and green leaves on a wooden surface (no text or symbols visible)",
+        "sub_type": "natural_image",
+        "bbox": [
+            297,
+            455,
+            473,
+            593
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "text",
+        "text": "",
+        "bbox": [
+            84,
+            739,
+            475,
+            906
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "text",
+        "text": "Limitations and future work. Motivated by practical $L ^ { 2 }$ normalization, our analysis uses a spherical latent space and vMF conditionals; future work should relax these assumptions and estimate diversity violation from data. Adapted InfoNCE is a theoretical diagnostic rather than a scalable objective: anchor-specific negatives require O(N(M + 1)) memory, and support correction restores achievability but not selection. ",
+        "bbox": [
+            496,
+            301,
+            887,
+            421
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "text",
+        "text": "Impact Statement ",
+        "text_level": 1,
+        "bbox": [
+            498,
+            441,
+            653,
+            458
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "text",
+        "text": "This work advances theoretical understanding of contrastive learning, a foundational technique for self-supervised representation learning. Our contributions are primarily theoretical, providing formal conditions (the diversity condition) under which contrastive methods succeed or fail at recovering meaningful latent structure. ",
+        "bbox": [
+            496,
+            467,
+            888,
+            558
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "text",
+        "text": "The practical implications are indirect but potentially significant. By clarifying the interplay between sampling mechanisms and architectural inductive bias, our framework may guide more principled design of augmentation pipelines and encoder architectures, potentially reducing computational waste from trial-and-error experimentation. This could lower the environmental cost of training large-scale representation learning systems. ",
+        "bbox": [
+            496,
+            566,
+            888,
+            686
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "text",
+        "text": "Contrastive learning underlies many deployed systems in vision, language, and multimodal domains. Improved theoretical understanding may help practitioners anticipate failure modes before deployment, particularly in high-stakes applications such as medical imaging or scientific discovery where representation quality directly affects downstream reliability. ",
+        "bbox": [
+            496,
+            694,
+            887,
+            799
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "text",
+        "text": "We do not foresee direct negative societal consequences from this theoretical work. However, as with any advance in representation learning, improved methods could enhance both beneficial applications (e.g., drug discovery, climate modeling) and potentially harmful ones (e.g., surveillance). We encourage practitioners to consider the ethical implications of specific downstream applications enabled by better representation learning. ",
+        "bbox": [
+            496,
+            806,
+            888,
+            898
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "header",
+        "text": "The Loss Is Not Enough ",
+        "bbox": [
+            408,
+            56,
+            562,
+            70
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "page_number",
+        "text": "9 ",
+        "bbox": [
+            480,
+            922,
+            491,
+            934
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "text",
+        "text": "",
+        "bbox": [
+            84,
+            84,
+            473,
+            114
+        ],
+        "page_idx": 9
+    },
+    {
+        "type": "text",
+        "text": "References ",
+        "text_level": 1,
+        "bbox": [
+            86,
+            133,
+            181,
+            148
+        ],
+        "page_idx": 9
+    },
+    {
+        "type": "list",
+        "sub_type": "ref_text",
+        "list_items": [
+            "Bahrami, M., Tejada-Lapuerta, A., Becker, S., Hashemi G., F. S., and Theis, F. J. scConcept: Contrastive pretraining for technology-agnostic single-cell representations beyond reconstruction. bioRxiv, 2025. doi: 10.1101/2025.10.14.682419. URL https://www.biorxiv.org/content/ early/2025/10/15/2025.10.14.682419. ",
+            "Ballard, T. Contrastive learning for climate model bias correction and super-resolution. In AAAI 2022 Fall Symposium: The Role of AI in Responding to Climate Challenges, 2022. URL https://www.climatechange.ai/papers/ aaaifss2022/10. ",
+            "Bardes, A., Ponce, J., and LeCun, Y. VICReg: Varianceinvariance-covariance regularization for self-supervised learning. In International Conference on Learning Representations, 2022. ",
+            "Bengio, Y., Courville, A., and Vincent, P. Representation learning: A review and new perspectives. IEEE Transactions on Pattern Analysis and Machine Intelligence, 35 (8):1798–1828, 2013. ",
+            "Chen, T., Kornblith, S., Norouzi, M., and Hinton, G. A simple framework for contrastive learning of visual representations. In Proceedings of the 37th International Conference on Machine Learning, volume 119 of Proceedings of Machine Learning Research, pp. 1597–1607. PMLR, 2020. ",
+            "Comon, P. Independent component analysis, a new concept? Signal Processing, 36(3):287–314, 1994. ",
+            "Cy, A., Chemparathy, A., Han, M., Dangovski, R., Lu, P. Y., and Soljacic, M. Studying phase transitions in contrastive learning With physics-inspired datasets. In ICLR 2023 Workshop Physics4ML, 2023. URL https://openreview.net/forum? id=djssHWljSA. Physics4ML poster. ",
+            "Dangovski, R., Jing, L., Loh, C., Han, S., Srivastava, A., Cheung, B., Agrawal, P., and Soljaciˇ c, M. Equivari-´ ant contrastive learning. In International Conference on Learning Representations, 2022. ",
+            "DeVries, T. and Taylor, G. W. Improved regularization of convolutional neural networks with cutout. arXiv preprint arXiv:1708.04552, 2017. URL https:// arxiv.org/abs/1708.04552. "
+        ],
+        "bbox": [
+            86,
+            157,
+            475,
+            905
+        ],
+        "page_idx": 9
+    },
+    {
+        "type": "ref_text",
+        "text": "Dosovitskiy, A., Beyer, L., Kolesnikov, A., Weissenborn, D., Zhai, X., Unterthiner, T., Dehghani, M., Minderer, M., Heigold, G., Gelly, S., Uszkoreit, J., and Houlsby, N. An image is worth 16x16 words: Transformers for image recognition at scale. In International Conference on Learning Representations, 2021. ",
+        "bbox": [
+            498,
+            84,
+            887,
+            175
+        ],
+        "page_idx": 9
+    },
+    {
+        "type": "ref_text",
+        "text": "Grill, J.-B., Strub, F., Altche, F., Tallec, C., Richemond, ´ P. H., Buchatskaya, E., Doersch, C., Avila Pires, B., Guo, Z. D., Gheshlaghi Azar, M., Piot, B., Kavukcuoglu, K., Munos, R., and Valko, M. Bootstrap your own latent: A new approach to self-supervised learning. In Advances in Neural Information Processing Systems, volume 33, pp. 21271–21284, 2020. ",
+        "bbox": [
+            498,
+            184,
+            887,
+            289
+        ],
+        "page_idx": 9
+    },
+    {
+        "type": "ref_text",
+        "text": "Haas, J., Yolland, W., and Rabus, B. Linking neural collapse and L2 normalization with improved out-ofdistribution detection in deep neural networks. Transactions on Machine Learning Research, 2023. ISSN 2835- 8856. URL https://openreview.net/forum? id=fjkN5Ur2d6. ",
+        "bbox": [
+            498,
+            297,
+            887,
+            388
+        ],
+        "page_idx": 9
+    },
+    {
+        "type": "ref_text",
+        "text": "Haas, J., Yolland, W., and Rabus, B. Exploring simple, high quality out-of-distribution detection with L2 normalization. Transactions on Machine Learning Research, 2024. ISSN 2835-8856. URL https:// openreview.net/forum?id=daX2UkLMS0. ",
+        "bbox": [
+            498,
+            398,
+            887,
+            474
+        ],
+        "page_idx": 9
+    },
+    {
+        "type": "ref_text",
+        "text": "HaoChen, J. Z. and Ma, T. A theoretical study of inductive biases in contrastive learning. In International Conference on Learning Representations, 2023. URL https: //openreview.net/forum?id=AuEgNlEAmed. ",
+        "bbox": [
+            498,
+            483,
+            887,
+            542
+        ],
+        "page_idx": 9
+    },
+    {
+        "type": "ref_text",
+        "text": "He, K., Zhang, X., Ren, S., and Sun, J. Deep residual learning for image recognition. In Proceedings of the IEEE Conference on Computer Vision and Pattern Recognition, pp. 770–778, 2016. ",
+        "bbox": [
+            498,
+            551,
+            887,
+            612
+        ],
+        "page_idx": 9
+    },
+    {
+        "type": "ref_text",
+        "text": "Hyvarinen, A. and Morioka, H. Unsupervised feature ex- ¨ traction by time-contrastive learning and nonlinear ICA. In Advances in Neural Information Processing Systems, 2016. ",
+        "bbox": [
+            498,
+            622,
+            887,
+            681
+        ],
+        "page_idx": 9
+    },
+    {
+        "type": "ref_text",
+        "text": "Hyvarinen, A. and Oja, E. Independent component analysis: ¨ algorithms and applications. Neural Networks, 13(4-5): 411–430, 2000. ",
+        "bbox": [
+            498,
+            691,
+            887,
+            736
+        ],
+        "page_idx": 9
+    },
+    {
+        "type": "ref_text",
+        "text": "Hyvarinen, A., Sasaki, H., and Turner, R. E. Nonlinear ¨ ICA using auxiliary variables and generalized contrastive learning. In Proceedings of the 22nd International Conference on Artificial Intelligence and Statistics, volume 89 of Proceedings of Machine Learning Research, pp. 859–868. PMLR, 2019. ",
+        "bbox": [
+            498,
+            744,
+            887,
+            835
+        ],
+        "page_idx": 9
+    },
+    {
+        "type": "ref_text",
+        "text": "Jaiswal, A., Babu, A. R., Zadeh, M. Z., Banerjee, D., and Makedon, F. A survey on contrastive self-supervised learning. Technologies, 9(1):2, 2021. doi: 10.3390/ technologies9010002. ",
+        "bbox": [
+            498,
+            845,
+            887,
+            905
+        ],
+        "page_idx": 9
+    },
+    {
+        "type": "header",
+        "text": "The Loss Is Not Enough ",
+        "bbox": [
+            408,
+            56,
+            563,
+            70
+        ],
+        "page_idx": 9
+    },
+    {
+        "type": "page_number",
+        "text": "",
+        "bbox": [
+            478,
+            922,
+            495,
+            934
+        ],
+        "page_idx": 9
+    },
+    {
+        "type": "list",
+        "sub_type": "ref_text",
+        "list_items": [
+            "Ji, W., Deng, Z., Nakada, R., Zou, J., and Zhang, L. The power of contrast for feature learning: A theoretical analysis. Journal of Machine Learning Research, 24(330): 1–78, 2023. URL https://jmlr.org/papers/ v24/21-1501.html. ",
+            "Kingma, D. P. and Ba, J. Adam: A method for stochastic optimization. In International Conference on Learning Representations, 2015. URL https://arxiv.org/ abs/1412.6980. ",
+            "Kirchhof, M., Kasneci, E., and Oh, S. J. Probabilistic contrastive learning recovers the correct aleatoric uncertainty of ambiguous inputs. In Proceedings of the 40th International Conference on Machine Learning, volume 202 of Proceedings of Machine Learning Research, pp. 17085– 17104. PMLR, 2023. ",
+            "Krizhevsky, A. Learning multiple layers of features from tiny images. Technical Report TR-2009, University of Toronto, 2009. ",
+            "LeCun, Y., Bottou, L., Bengio, Y., and Haffner, P. Gradientbased learning applied to document recognition. Proceedings of the IEEE, 86(11):2278–2324, 1998. doi: 10.1109/5.726791. ",
+            "Liu, S., Zhao, L., and Chen, D. Clicv2: Image complexity representation via content invariance contrastive learning, 2025. URL https://arxiv.org/abs/2503. 06641. ",
+            "Liu, Z., Hu, K., Zhang, J., Ren, X., and Wang, X. Longterm air quality data filling based on contrastive learning. Information, 17(2), 2026. ISSN 2078-2489. doi: 10.3390/info17020121. URL https://www.mdpi. com/2078-2489/17/2/121. ",
+            "Locatello, F., Bauer, S., Lucic, M., Raetsch, G., Gelly, S., Scholkopf, B., and Bachem, O. Challenging common ¨ assumptions in the unsupervised learning of disentangled representations. In International Conference on Machine Learning, pp. 4114–4124, 2019. ",
+            "Mitrovic, J., McWilliams, B., Walker, J., Buesing, L., and Blundell, C. Representation learning via invariant causal mechanisms. In International Conference on Learning Representations, 2021. ",
+            "Poudel, R. P. K., Pandya, H., and Cipolla, R. Contrastive unsupervised learning of world model with invariant causal features, 2022. URL https://arxiv.org/abs/ 2209.14932. ",
+            "Radford, A., Kim, J. W., Hallacy, C., Ramesh, A., Goh, G., Agarwal, S., Sastry, G., Askell, A., Mishkin, P., Clark, J., Krueger, G., and Sutskever, I. Learning transferable visual models from natural language supervision. In "
+        ],
+        "bbox": [
+            81,
+            80,
+            480,
+            909
+        ],
+        "page_idx": 10
+    },
+    {
+        "type": "list",
+        "sub_type": "ref_text",
+        "list_items": [
+            "Proceedings of the 38th International Conference on Machine Learning, volume 139 of Proceedings of Machine Learning Research, pp. 8748–8763. PMLR, 2021. ",
+            "Richter, T., Bahrami, M., Xia, Y., Fischer, D. S., and Theis, F. J. Delineating the effective use of self-supervised learning in single-cell genomics. Nature Machine Intelligence, 7(1):68–78, 2025. ",
+            "Rusak, E., Reizinger, P., Juhos, A., Bringmann, O., Zimmermann, R. S., and Brendel, W. InfoNCE: Identifying the gap between theory and practice. In Proceedings of The 28th International Conference on Artificial Intelligence and Statistics, volume 258 of Proceedings of Machine Learning Research, pp. 4159–4167. PMLR, 2025. ",
+            "Sandilya, R., Perez, S., Lynch, C., Victoria, L., Zebley, B., Buchanan, D. M., Bhati, M. T., Williams, N., Spellman, T. J., Gunning, F. M., Liston, C., and Grosenick, L. Contrastive diffusion alignment: Learning structured latents for controllable generation, 2025. URL https://arxiv.org/abs/2510.14190. ",
+            "Tian, Y., Sun, C., Poole, B., Krishnan, D., Schmid, C., and Isola, P. What makes for good views for contrastive learning? In Advances in Neural Information Processing Systems, 2020. ",
+            "Tschannen, M., Mustafa, B., and Houlsby, N. CLIPPO: Image-and-language understanding from pixels only. In Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition, pp. 11006–11017, 2023. ",
+            "Uelwer, T., Robine, J., Wagner, S. S., Hoftmann, M., Up- ¨ schulte, E., Konietzny, S., Behrendt, M., and Harmeling, S. A survey on self-supervised representation learning, 2023. URL https://arxiv.org/abs/2308. 11455. ",
+            "van den Oord, A., Li, Y., and Vinyals, O. Representation learning with contrastive predictive coding, 2019. URL https://arxiv.org/abs/1807.03748. ",
+            "Vapnik, V. The Nature of Statistical Learning Theory. Springer: New York, 1999. ",
+            "von Kugelgen, J., Sharma, Y., Gresele, L., Brendel, W.,¨ Scholkopf, B., Besserve, M., and Locatello, F. Self-¨ supervised learning with data augmentations provably isolates content from style. In Advances in Neural Information Processing Systems, volume 34, pp. 16451–16467, 2021. ",
+            "Wang, T. and Isola, P. Understanding contrastive representation learning through alignment and uniformity on the hypersphere. In Proceedings of the 37th International Conference on Machine Learning, volume 119 of Proceedings of Machine Learning Research, pp. 9929–9939. PMLR, 2020. "
+        ],
+        "bbox": [
+            504,
+            80,
+            890,
+            905
+        ],
+        "page_idx": 10
+    },
+    {
+        "type": "header",
+        "text": "The Loss Is Not Enough ",
+        "bbox": [
+            408,
+            56,
+            563,
+            70
+        ],
+        "page_idx": 10
+    },
+    {
+        "type": "page_number",
+        "text": "",
+        "bbox": [
+            477,
+            922,
+            493,
+            934
+        ],
+        "page_idx": 10
+    },
+    {
+        "type": "list",
+        "sub_type": "ref_text",
+        "list_items": [
+            "Wen, Z. and Li, Y. Toward understanding the feature learning process of self-supervised contrastive learning. In Proceedings of the 38th International Conference on Machine Learning, volume 139 of Proceedings of Machine Learning Research, pp. 11112–11122. PMLR, 2021. URL https://proceedings.mlr.press/ v139/wen21c.html. ",
+            "Wilkinson, A., Radev, R., and Alonso-Monsalve, S. Contrastive learning for robust representations of neutrino data. Physical Review D, 111(9), May 2025. ISSN 2470-0029. doi: 10.1103/physrevd.111. 092011. URL http://dx.doi.org/10.1103/ PhysRevD.111.092011. ",
+            "Wood, A. T. A. Simulation of the von Mises–Fisher distribution. Communications in Statistics-Simulation and Computation, 23(1):157–164, 1994. doi: 10.1080/ 03610919408813161. ",
+            "Zaliaduonis, J. and Gatidis, S. A probabilistic generalization of the Mazur-Ulam theorem, 2026. URL https:// arxiv.org/abs/2601.03900. ",
+            "Zhao, L., Gundavarapu, N. B., Yuan, L., Zhou, H., Yan, S., Sun, J. J., Friedman, L., Qian, R., Weyand, T., Zhao, Y., Hornung, R., Schroff, F., Yang, M.-H., Ross, D. A., Wang, H., Adam, H., Sirotenko, M., Liu, T., and Gong, B. VideoPrism: A foundational visual encoder for video understanding. In Proceedings of the 41st International Conference on Machine Learning, volume 235 of Proceedings of Machine Learning Research, pp. 60785–60811. PMLR, 2024. ",
+            "Zimmermann, R. S., Sharma, Y., Schneider, S., Bethge, M., and Brendel, W. Contrastive learning inverts the data generating process. In Proceedings of the 38th International Conference on Machine Learning, volume 139 of Proceedings of Machine Learning Research, pp. 12979–12990. PMLR, 2021. "
+        ],
+        "bbox": [
+            86,
+            84,
+            475,
+            662
+        ],
+        "page_idx": 11
+    },
+    {
+        "type": "header",
+        "text": "The Loss Is Not Enough ",
+        "bbox": [
+            408,
+            56,
+            563,
+            70
+        ],
+        "page_idx": 11
+    },
+    {
+        "type": "page_number",
+        "text": "",
+        "bbox": [
+            478,
+            922,
+            493,
+            934
+        ],
+        "page_idx": 11
+    },
+    {
+        "type": "text",
+        "text": "A. Theoretical Results: Proofs ",
+        "text_level": 1,
+        "bbox": [
+            86,
+            83,
+            341,
+            99
+        ],
+        "page_idx": 12
+    },
+    {
+        "type": "text",
+        "text": "This appendix provides complete proofs for the theoretical results presented in Section 4. We organize the material into three subsections corresponding to the three scenarios analyzed: full diversity (Section A.1), violated diversity (Section A.2), and the corrected model (Section A.3). ",
+        "bbox": [
+            84,
+            109,
+            887,
+            156
+        ],
+        "page_idx": 12
+    },
+    {
+        "type": "text",
+        "text": "A.1. Proofs for Reconstruction Under Full Diversity ",
+        "text_level": 1,
+        "bbox": [
+            84,
+            171,
+            449,
+            186
+        ],
+        "page_idx": 12
+    },
+    {
+        "type": "text",
+        "text": "We first establish that cross-entropy minimizers preserve inner products almost surely, which forms the foundation for proving linear identifiability. ",
+        "bbox": [
+            84,
+            195,
+            887,
+            224
+        ],
+        "page_idx": 12
+    },
+    {
+        "type": "text",
+        "text": "Theorem A.1 (Cross-Entropy Minimizers Preserve Inner Products). Let $\\mathcal { Z } = \\mathbb { S } ^ { k - 1 } , \\kappa > 0$ , and let $P _ { \\tilde { Z } | z }$ have density ",
+        "bbox": [
+            84,
+            229,
+            857,
+            248
+        ],
+        "page_idx": 12
+    },
+    {
+        "type": "equation",
+        "text": "$$\np (\\tilde {z} | z) = C _ {p} ^ {- 1} \\exp (\\kappa \\tilde {z} ^ {\\top} z),\n$$",
+        "text_format": "latex",
+        "bbox": [
+            393,
+            260,
+            575,
+            281
+        ],
+        "page_idx": 12
+    },
+    {
+        "type": "text",
+        "text": "where $C _ { p }$ is the normalizing constant with respect to σ. Let $Q _ { h , z }$ have density $q _ { h } ( \\cdot | z )$ with respect to σ. Let $h : \\mathcal { Z } \\to \\mathcal { Z }$ be a recovery map. If h minimizes the cross-entropy ",
+        "bbox": [
+            84,
+            292,
+            885,
+            323
+        ],
+        "page_idx": 12
+    },
+    {
+        "type": "equation",
+        "text": "$$\n\\mathcal {L} _ {h} := \\mathbb {E} _ {z \\sim P _ {Z}} [ H (P _ {\\tilde {Z} | z}, Q _ {h, z}) ],\n$$",
+        "text_format": "latex",
+        "bbox": [
+            380,
+            335,
+            589,
+            353
+        ],
+        "page_idx": 12
+    },
+    {
+        "type": "text",
+        "text": "$t h e n p ( \\tilde { z } | z ) = q _ { h } ( \\tilde { z } | z ) P _ { \\tilde { Z } | z } { - a . s . , a n d z ^ { \\top } \\tilde { z } = h ( z ) ^ { \\top } h ( \\tilde { z } ) } P _ { Z , \\tilde { Z } } { - a . s . }$ ",
+        "bbox": [
+            84,
+            366,
+            522,
+            386
+        ],
+        "page_idx": 12
+    },
+    {
+        "type": "text",
+        "text": "Proof. Since h minimizes $\\mathcal { L } _ { h }$ , it minimizes $H ( P _ { \\tilde { Z } | z } , Q _ { h , z } )$ almost surely with respect to $P _ { Z }$ . The cross-entropy H is minimized when ",
+        "bbox": [
+            84,
+            405,
+            885,
+            434
+        ],
+        "page_idx": 12
+    },
+    {
+        "type": "equation",
+        "text": "$$\np (\\cdot | z) = q _ {h} (\\cdot | z) \\quad P _ {\\tilde {Z} | z} \\text {-a.s.}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            390,
+            436,
+            578,
+            455
+        ],
+        "page_idx": 12
+    },
+    {
+        "type": "text",
+        "text": "For a fixed z, this implies: ",
+        "bbox": [
+            84,
+            469,
+            261,
+            484
+        ],
+        "page_idx": 12
+    },
+    {
+        "type": "equation",
+        "text": "$$\n\\frac {e ^ {\\kappa \\tilde {z} ^ {\\top} z}}{C _ {p}} = \\frac {e ^ {h (\\tilde {z}) ^ {\\top} h (z) / \\tau}}{D (z)} \\quad P _ {\\tilde {Z} | z} \\text {-a.s.} \\tag {9}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            370,
+            483,
+            885,
+            521
+        ],
+        "page_idx": 12
+    },
+    {
+        "type": "text",
+        "text": "where $D ( z )$ and $C _ { p }$ are the normalizing constants for the respective von Mises-Fisher distributions. ",
+        "bbox": [
+            84,
+            529,
+            736,
+            545
+        ],
+        "page_idx": 12
+    },
+    {
+        "type": "text",
+        "text": "Taking the logarithm yields: ",
+        "bbox": [
+            84,
+            551,
+            272,
+            566
+        ],
+        "page_idx": 12
+    },
+    {
+        "type": "equation",
+        "text": "$$\n\\log \\left(\\frac {D (z)}{C _ {p}}\\right) \\tau + \\tau \\kappa \\tilde {z} ^ {\\top} z = h (\\tilde {z}) ^ {\\top} h (z) \\quad P _ {\\tilde {Z} | z} \\text {-a.s.} \\tag {10}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            315,
+            566,
+            885,
+            601
+        ],
+        "page_idx": 12
+    },
+    {
+        "type": "text",
+        "text": "Since h maps onto the unit sphere, ",
+        "bbox": [
+            84,
+            614,
+            315,
+            630
+        ],
+        "page_idx": 12
+    },
+    {
+        "type": "equation",
+        "text": "$$\n- 1 \\leq h (\\tilde {z}) ^ {\\top} h (z) \\leq 1 \\quad P _ {\\tilde {Z} | z} \\text {-a.s.} \\tag {11}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            372,
+            628,
+            885,
+            650
+        ],
+        "page_idx": 12
+    },
+    {
+        "type": "text",
+        "text": "Rearranging gives: ",
+        "bbox": [
+            84,
+            664,
+            212,
+            679
+        ],
+        "page_idx": 12
+    },
+    {
+        "type": "equation",
+        "text": "$$\n- 1 \\leq \\log \\left(\\frac {D (z)}{C _ {p}}\\right) \\tau + \\tau \\kappa \\tilde {z} ^ {\\top} z \\leq 1 \\quad P _ {\\tilde {Z} | z} \\text {-a.s.} \\tag {12}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            326,
+            678,
+            885,
+            712
+        ],
+        "page_idx": 12
+    },
+    {
+        "type": "text",
+        "text": "This simplifies to: ",
+        "bbox": [
+            84,
+            727,
+            207,
+            742
+        ],
+        "page_idx": 12
+    },
+    {
+        "type": "equation",
+        "text": "$$\n\\frac {- 1 - \\log \\left(\\frac {D (z)}{C _ {p}}\\right) \\tau}{\\tau \\kappa} \\leq \\tilde {z} ^ {\\top} z \\leq \\frac {1 - \\log \\left(\\frac {D (z)}{C _ {p}}\\right) \\tau}{\\tau \\kappa} \\tag {13}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            323,
+            742,
+            885,
+            782
+        ],
+        "page_idx": 12
+    },
+    {
+        "type": "text",
+        "text": "Since $P _ { \\tilde { Z } | } ,$ z is a von Mises-Fisher distribution, the support of $\\tilde { z } ^ { \\top } z$ under this measure includes regions arbitrarily close to both 1 and −1. Specifically, for any $c \\in ( - 1 , 1 )$ : ",
+        "bbox": [
+            84,
+            797,
+            885,
+            830
+        ],
+        "page_idx": 12
+    },
+    {
+        "type": "equation",
+        "text": "$$\n\\mu \\left(\\{\\tilde {z} \\in \\mathcal {Z}: \\tilde {z} ^ {\\top} z \\geq c \\}\\right) = \\beta \\int_ {0} ^ {\\cos^ {- 1} (c)} e ^ {\\kappa \\cos \\theta} \\sin^ {k - 2} \\theta d \\theta > 0 \\tag {14}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            276,
+            842,
+            885,
+            880
+        ],
+        "page_idx": 12
+    },
+    {
+        "type": "text",
+        "text": "where $\\beta > 0$ is the spherical-measure normalization constant. ",
+        "bbox": [
+            84,
+            890,
+            491,
+            905
+        ],
+        "page_idx": 12
+    },
+    {
+        "type": "header",
+        "text": "The Loss Is Not Enough ",
+        "bbox": [
+            408,
+            56,
+            563,
+            70
+        ],
+        "page_idx": 12
+    },
+    {
+        "type": "page_number",
+        "text": "13 ",
+        "bbox": [
+            477,
+            922,
+            495,
+            934
+        ],
+        "page_idx": 12
+    },
+    {
+        "type": "text",
+        "text": "To satisfy the inequality almost surely with respect to $P _ { \\tilde { Z } | z }$ , the bounds must equal the extremes: ",
+        "bbox": [
+            84,
+            85,
+            718,
+            101
+        ],
+        "page_idx": 13
+    },
+    {
+        "type": "equation",
+        "text": "$$\n\\frac {1 - \\log \\left(\\frac {D (z)}{C _ {p}}\\right) \\tau}{\\tau \\kappa} = 1 \\quad \\text { and } \\quad \\frac {- 1 - \\log \\left(\\frac {D (z)}{C _ {p}}\\right) \\tau}{\\tau \\kappa} = - 1 \\tag {15}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            294,
+            114,
+            885,
+            154
+        ],
+        "page_idx": 13
+    },
+    {
+        "type": "text",
+        "text": "Both equations yield: ",
+        "bbox": [
+            84,
+            172,
+            228,
+            186
+        ],
+        "page_idx": 13
+    },
+    {
+        "type": "equation",
+        "text": "$$\n\\log \\left(\\frac {D (z)}{C _ {p}}\\right) = 0 \\implies D (z) = C _ {p} \\tag {16}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            362,
+            186,
+            885,
+            219
+        ],
+        "page_idx": 13
+    },
+    {
+        "type": "text",
+        "text": "and ",
+        "bbox": [
+            84,
+            224,
+            114,
+            238
+        ],
+        "page_idx": 13
+    },
+    {
+        "type": "equation",
+        "text": "$$\n\\kappa \\tau = 1 \\tag {17}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            459,
+            241,
+            885,
+            255
+        ],
+        "page_idx": 13
+    },
+    {
+        "type": "text",
+        "text": "Substituting back: ",
+        "bbox": [
+            84,
+            272,
+            207,
+            286
+        ],
+        "page_idx": 13
+    },
+    {
+        "type": "equation",
+        "text": "$$\n\\tilde {z} ^ {\\top} z = h (\\tilde {z}) ^ {\\top} h (z) \\quad P _ {\\tilde {Z} | z} \\text {-a.s.} \\tag {18}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            383,
+            285,
+            885,
+            305
+        ],
+        "page_idx": 13
+    },
+    {
+        "type": "text",
+        "text": "Since h minimizes $\\mathcal { L } _ { h }$ , this holds for almost all z with respect to $P _ { Z }$ , implying: ",
+        "bbox": [
+            84,
+            318,
+            606,
+            334
+        ],
+        "page_idx": 13
+    },
+    {
+        "type": "equation",
+        "text": "$$\n\\tilde {z} ^ {\\top} z = h (\\tilde {z}) ^ {\\top} h (z) \\quad P _ {Z, \\tilde {Z}} \\text {-a.s.} \\tag {19}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            383,
+            344,
+            885,
+            364
+        ],
+        "page_idx": 13
+    },
+    {
+        "type": "image",
+        "img_path": "images/7a5bb777f625e8479675e7ad7ebeba81af5bb6101f6d2d5e81b03727df19f7c6.jpg",
+        "image_caption": [],
+        "image_footnote": [],
+        "content": "",
+        "bbox": [
+            867,
+            376,
+            883,
+            387
+        ],
+        "page_idx": 13
+    },
+    {
+        "type": "text",
+        "text": "The following corollary translates inner product preservation to distance preservation, which is the key geometric property needed for identifiability. ",
+        "bbox": [
+            84,
+            407,
+            885,
+            436
+        ],
+        "page_idx": 13
+    },
+    {
+        "type": "text",
+        "text": "Corollary A.2 (Cross-Entropy Minimizers Preserve Distances Almost Everywhere). If h minimizes the expected crossentropy loss $\\mathbb { E } _ { z \\sim P _ { Z } } [ H ( P _ { \\tilde { Z } | z } , Q _ { h , z } ) ]$ ], then ",
+        "bbox": [
+            84,
+            443,
+            887,
+            474
+        ],
+        "page_idx": 13
+    },
+    {
+        "type": "equation",
+        "text": "$$\n\\| h (z) - h (\\tilde {z}) \\| ^ {2} = \\| z - \\tilde {z} \\| ^ {2} P _ {Z, \\tilde {Z}} \\text {-a.s.}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            349,
+            487,
+            619,
+            508
+        ],
+        "page_idx": 13
+    },
+    {
+        "type": "text",
+        "text": "Proof. Since both $z , \\tilde { z } \\in \\mathcal { Z } = \\mathbb { S } ^ { k - 1 }$ and $h ( z ) , h ( \\tilde { z } ) \\in \\mathcal { Z } ^ { \\prime } = \\mathbb { S } ^ { k - 1 }$ , we have $\\| z \\| ^ { 2 } = \\| \\tilde { z } \\| ^ { 2 } = \\| h ( z ) \\| ^ { 2 } = \\| h ( \\tilde { z } ) \\| ^ { 2 } = 1$ . ",
+        "bbox": [
+            84,
+            523,
+            854,
+            541
+        ],
+        "page_idx": 13
+    },
+    {
+        "type": "text",
+        "text": "Expanding the squared Euclidean distance: ",
+        "bbox": [
+            84,
+            547,
+            372,
+            561
+        ],
+        "page_idx": 13
+    },
+    {
+        "type": "equation",
+        "text": "$$\n\\left\\| z - \\tilde {z} \\right\\| ^ {2} = \\left\\| z \\right\\| ^ {2} - 2 z ^ {\\top} \\tilde {z} + \\left\\| \\tilde {z} \\right\\| ^ {2} = 2 - 2 z ^ {\\top} \\tilde {z} \\tag {20}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            328,
+            573,
+            885,
+            592
+        ],
+        "page_idx": 13
+    },
+    {
+        "type": "text",
+        "text": "Similarly, for the mapped points: ",
+        "bbox": [
+            84,
+            611,
+            305,
+            626
+        ],
+        "page_idx": 13
+    },
+    {
+        "type": "equation",
+        "text": "$$\n\\left\\| h (z) - h (\\tilde {z}) \\right\\| ^ {2} = \\left\\| h (z) \\right\\| ^ {2} - 2 h (z) ^ {\\top} h (\\tilde {z}) + \\left\\| h (\\tilde {z}) \\right\\| ^ {2} = 2 - 2 h (z) ^ {\\top} h (\\tilde {z}) \\tag {21}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            241,
+            637,
+            885,
+            656
+        ],
+        "page_idx": 13
+    },
+    {
+        "type": "text",
+        "text": "By Theorem A.1, we have $z ^ { \\top } \\tilde { z } = h ( z ) ^ { \\top } h ( \\tilde { z } ) ~ P _ { Z , \\tilde { Z } ^ { - \\mathbf { a } . \\mathbf { S } } }$ . Therefore: ",
+        "bbox": [
+            84,
+            675,
+            526,
+            694
+        ],
+        "page_idx": 13
+    },
+    {
+        "type": "equation",
+        "text": "$$\n\\left\\| h (z) - h (\\tilde {z}) \\right\\| ^ {2} = 2 - 2 h (z) ^ {\\top} h (\\tilde {z}) = 2 - 2 z ^ {\\top} \\tilde {z} = \\left\\| z - \\tilde {z} \\right\\| ^ {2} \\tag {22}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            282,
+            705,
+            885,
+            724
+        ],
+        "page_idx": 13
+    },
+    {
+        "type": "text",
+        "text": "holds $P _ { Z , \\tilde { Z } ^ { - \\mathrm { { a l m o s t } \\ s u r e l y } } }$ . ",
+        "bbox": [
+            84,
+            734,
+            259,
+            753
+        ],
+        "page_idx": 13
+    },
+    {
+        "type": "text",
+        "text": "The distance preservation property established above holds only almost everywhere with respect to the joint distribution. To conclude that the optimal recovery map is a global orthogonal transformation, we apply the probabilistic generalization of the Mazur-Ulam theorem (Zaliaduonis & Gatidis, 2026), which shows that isometries holding almost everywhere on probability spaces can be extended to global isometries on the entire space. ",
+        "bbox": [
+            84,
+            768,
+            885,
+            829
+        ],
+        "page_idx": 13
+    },
+    {
+        "type": "text",
+        "text": "Proof of Theorem 4.4. By Corollary A.2, the optimal recovery map $h : \\mathcal { Z } \\to \\mathcal { Z }$ preserves distances almost everywhere with respect to the joint distribution $P _ { Z , \\tilde { Z } }$ . Specifically, there exists a set $N \\subset \\mathcal { Z } \\times \\mathcal { Z }$ with $P _ { Z , \\tilde { Z } } ( N ) = 0$ such that ",
+        "bbox": [
+            84,
+            847,
+            885,
+            880
+        ],
+        "page_idx": 13
+    },
+    {
+        "type": "equation",
+        "text": "$$\n\\| h (z) - h (\\tilde {z}) \\| = \\| z - \\tilde {z} \\| \\quad \\text {   for   all   } (z, \\tilde {z}) \\in (\\mathcal {Z} \\times \\mathcal {Z}) \\setminus N.\n$$",
+        "text_format": "latex",
+        "bbox": [
+            292,
+            888,
+            678,
+            906
+        ],
+        "page_idx": 13
+    },
+    {
+        "type": "header",
+        "text": "The Loss Is Not Enough ",
+        "bbox": [
+            408,
+            56,
+            563,
+            70
+        ],
+        "page_idx": 13
+    },
+    {
+        "type": "page_number",
+        "text": "14 ",
+        "bbox": [
+            477,
+            922,
+            495,
+            934
+        ],
+        "page_idx": 13
+    },
+    {
+        "type": "text",
+        "text": "Since the marginal law $P _ { Z }$ is uniform on the sphere and has full support, h preserves pairwise distances on a set of full $P _ { Z } \\mathrm { - m e a s u r e }$ . ",
+        "bbox": [
+            84,
+            85,
+            887,
+            116
+        ],
+        "page_idx": 14
+    },
+    {
+        "type": "text",
+        "text": "Applying the probabilistic Mazur-Ulam theorem (Zaliaduonis & Gatidis, 2026), which extends almost-everywhere isometries on probability spaces to global isometries, there exists $H : \\mathbb { R } ^ { k }  \\mathbb { R } ^ { k }$ of the form $H ( x ) = A x + b$ with $A \\in O ( k )$ and $b \\in \\mathbb { R } ^ { k }$ , such that $h ( z ) = H ( z )$ for PZ -almost all $z \\in { \\mathcal { Z } }$ . ",
+        "bbox": [
+            84,
+            122,
+            887,
+            167
+        ],
+        "page_idx": 14
+    },
+    {
+        "type": "text",
+        "text": "Since both $\\mathcal { Z }$ and $\\mathcal { Z } ^ { \\prime }$ are unit spheres centered at the origin, and H agrees almost everywhere with $h : \\mathcal { Z } \\to \\mathcal { Z } ^ { \\prime }$ , the translation component must vanish $( b = 0 )$ and the linear part must preserve the unit sphere. This implies that A is an orthogonal matrix, $\\mathrm { i . e . , } A ^ { \\top } A = I ,$ . ",
+        "bbox": [
+            84,
+            174,
+            887,
+            220
+        ],
+        "page_idx": 14
+    },
+    {
+        "type": "text",
+        "text": "Therefore, the optimal recovery map h coincides with an orthogonal transformation almost everywhere: ",
+        "bbox": [
+            84,
+            228,
+            767,
+            243
+        ],
+        "page_idx": 14
+    },
+    {
+        "type": "equation",
+        "text": "$$\nh (z) = A z \\quad \\text {   for   } \\mu \\text {-almost all   } z \\in \\mathcal {Z},\n$$",
+        "text_format": "latex",
+        "bbox": [
+            359,
+            253,
+            609,
+            270
+        ],
+        "page_idx": 14
+    },
+    {
+        "type": "text",
+        "text": "where $A \\in O ( k )$ is an orthogonal matrix. ",
+        "bbox": [
+            84,
+            280,
+            359,
+            295
+        ],
+        "page_idx": 14
+    },
+    {
+        "type": "image",
+        "img_path": "images/8be31600009eca23f7d5aa70b244403aa9104bf175939c5bf6725dabd61a0ecd.jpg",
+        "image_caption": [],
+        "image_footnote": [],
+        "content": "",
+        "bbox": [
+            867,
+            281,
+            885,
+            292
+        ],
+        "page_idx": 14
+    },
+    {
+        "type": "text",
+        "text": "A.2. Proofs for Reconstruction Under Violated Diversity ",
+        "text_level": 1,
+        "bbox": [
+            84,
+            311,
+            480,
+            328
+        ],
+        "page_idx": 14
+    },
+    {
+        "type": "text",
+        "text": "When the diversity condition is violated, the conditional law is constrained to a lower-dimensional submanifold. We decompose each latent vector $z \\in \\mathcal { Z } = \\mathbb { S } ^ { k - 1 }$ into two components: ",
+        "bbox": [
+            84,
+            335,
+            887,
+            366
+        ],
+        "page_idx": 14
+    },
+    {
+        "type": "equation",
+        "text": "$$\nz = (u, v) ^ {\\top} \\in \\mathbb {R} ^ {m} \\times \\mathbb {R} ^ {\\ell}, \\quad \\text { where } m + \\ell = k \\text { and } m, \\ell > 0.\n$$",
+        "text_format": "latex",
+        "bbox": [
+            284,
+            375,
+            684,
+            392
+        ],
+        "page_idx": 14
+    },
+    {
+        "type": "text",
+        "text": "Here, $u \\in \\mathbb { R } ^ { m }$ represents latent dimensions that remain fixed under conditional sampling, while $v \\in \\mathbb { R } ^ { \\ell }$ represents dimensions that can vary. Let $K ( z ) = \\{ \\tilde { z } \\in \\mathbb { S } ^ { k - 1 } : \\tilde { u } = u \\} \\cong \\mathbb { S } _ { r ( z ) } ^ { \\ell - 1 }$ , where $r ( z ) = \\sqrt { 1 - \\| u \\| ^ { 2 } }$ . Let $\\sigma _ { K \\left( z \\right) }$ denote intrinsic surface measure on $K ( z )$ . The constrained conditional is the probability measure $P _ { \\tilde { Z } | z } ^ { K }$ with density Z˜|z ",
+        "bbox": [
+            84,
+            402,
+            887,
+            457
+        ],
+        "page_idx": 14
+    },
+    {
+        "type": "equation",
+        "text": "$$\n\\frac {d P _ {\\tilde {Z} | z} ^ {K}}{d \\sigma_ {K (z)}} (\\tilde {z}) = \\frac {e ^ {\\kappa \\tilde {z} ^ {\\top} z}}{\\int_ {K (z)} e ^ {\\kappa z ^ {\\top} z ^ {\\prime}} d \\sigma_ {K (z)} \\left(z ^ {\\prime}\\right)}. \\tag {23}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            352,
+            465,
+            885,
+            508
+        ],
+        "page_idx": 14
+    },
+    {
+        "type": "text",
+        "text": "It is singular with respect to ambient spherical measure on $\\mathbb { S } ^ { k - 1 }$ , but absolutely continuous with respect to the intrinsic measure on $K ( z )$ . ",
+        "bbox": [
+            84,
+            518,
+            885,
+            549
+        ],
+        "page_idx": 14
+    },
+    {
+        "type": "text",
+        "text": "Despite this modification, the asymptotic relationship between the contrastive loss and cross-entropy minimization remains valid. ",
+        "bbox": [
+            84,
+            556,
+            887,
+            585
+        ],
+        "page_idx": 14
+    },
+    {
+        "type": "text",
+        "text": "Theorem A.3 (Asymptotic Equivalence Under Violated Diversity). Given the constrained conditional probability measure defined above, the marginal law $P _ { Z }$ uniform on $\\mathcal Z = \\mathbb S ^ { k - 1 }$ , temperature $\\tau > 0 ,$ , and number of negative samples $M > 0 ,$ , as $M \\to \\infty ;$ ",
+        "bbox": [
+            84,
+            590,
+            887,
+            633
+        ],
+        "page_idx": 14
+    },
+    {
+        "type": "equation",
+        "text": "$$\n\\lim _ {M \\to \\infty} \\mathcal {L} _ {C L} (h; \\tau , M) - \\log M + \\log | \\mathcal {Z} | = \\mathbb {E} _ {z \\sim P _ {Z}} [ H (P _ {\\tilde {Z} | z} ^ {K}, Q _ {h, z}) ]\n$$",
+        "text_format": "latex",
+        "bbox": [
+            266,
+            633,
+            704,
+            657
+        ],
+        "page_idx": 14
+    },
+    {
+        "type": "text",
+        "text": "Proof. The proof follows identically to Theorem 3.3, as the asymptotic analysis relies only on the law of large numbers and properties of the logarithm, not on the specific structure of the ground-truth conditional law. See (Wang & Isola, 2020) for the full argument. □ ",
+        "bbox": [
+            84,
+            671,
+            887,
+            717
+        ],
+        "page_idx": 14
+    },
+    {
+        "type": "text",
+        "text": "The critical distinction arises when comparing global values of the limiting objective. Under violated diversity, orthogonal recovery maps are not global minimizers. ",
+        "bbox": [
+            84,
+            732,
+            887,
+            763
+        ],
+        "page_idx": 14
+    },
+    {
+        "type": "text",
+        "text": "Proof of Theorem 4.5. Let σ denote the normalized spherical measure on $\\mathcal { Z } = \\mathbb { S } ^ { k - 1 }$ . By Theorem $\\mathbf { A . } 3 ,$ it suffices to compare the asymptotic contrastive loss up to constants independent of h: ",
+        "bbox": [
+            84,
+            779,
+            887,
+            810
+        ],
+        "page_idx": 14
+    },
+    {
+        "type": "equation",
+        "text": "$$\n\\mathcal {L} (h) = - \\frac {1}{\\tau} \\mathbb {E} _ {(z, \\tilde {z}) \\sim P _ {\\mathrm{pos}}} \\left[ h (z) ^ {\\top} h (\\tilde {z}) \\right] + \\mathbb {E} _ {z \\sim \\sigma} \\log \\int_ {\\mathbb {S} ^ {k - 1}} \\exp \\left(\\frac {h (z) ^ {\\top} h (z ^ {\\prime})}{\\tau}\\right) d \\sigma (z ^ {\\prime}).\n$$",
+        "text_format": "latex",
+        "bbox": [
+            209,
+            818,
+            761,
+            854
+        ],
+        "page_idx": 14
+    },
+    {
+        "type": "text",
+        "text": "For $\\lambda > 0 .$ , define ",
+        "bbox": [
+            84,
+            862,
+            205,
+            876
+        ],
+        "page_idx": 14
+    },
+    {
+        "type": "equation",
+        "text": "$$\nh _ {\\lambda} (u, v) := \\frac {(u , \\lambda v)}{\\sqrt {\\| u \\| ^ {2} + \\lambda^ {2} \\| v \\| ^ {2}}}.\n$$",
+        "text_format": "latex",
+        "bbox": [
+            377,
+            875,
+            593,
+            910
+        ],
+        "page_idx": 14
+    },
+    {
+        "type": "header",
+        "text": "The Loss Is Not Enough ",
+        "bbox": [
+            408,
+            56,
+            563,
+            70
+        ],
+        "page_idx": 14
+    },
+    {
+        "type": "page_number",
+        "text": "15 ",
+        "bbox": [
+            477,
+            922,
+            495,
+            934
+        ],
+        "page_idx": 14
+    },
+    {
+        "type": "text",
+        "text": "$\\mathrm { A t } \\lambda = 1 , h _ { \\lambda }$ is the identity. For $\\lambda \\neq 1 , h _ { \\lambda }$ is not orthogonal because it changes inner products between points with different relative invariant and variant components. ",
+        "bbox": [
+            84,
+            85,
+            887,
+            116
+        ],
+        "page_idx": 15
+    },
+    {
+        "type": "text",
+        "text": "Write the alignment and uniformity terms as ",
+        "bbox": [
+            84,
+            123,
+            379,
+            137
+        ],
+        "page_idx": 15
+    },
+    {
+        "type": "equation",
+        "text": "$$\n\\begin{array}{l} A (\\lambda) := \\mathbb {E} _ {(z, \\tilde {z}) \\sim P _ {\\mathrm{pos}}} \\left[ h _ {\\lambda} (z) ^ {\\top} h _ {\\lambda} (\\tilde {z}) \\right], \\\\ U (\\lambda) := \\mathbb {E} _ {z \\sim \\sigma} \\log \\int_ {\\mathbb {S} ^ {k - 1}} \\exp \\left(\\frac {h _ {\\lambda} (z) ^ {\\top} h _ {\\lambda} (z ^ {\\prime})}{\\tau}\\right) d \\sigma (z ^ {\\prime}). \\\\ \\end{array}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            300,
+            146,
+            669,
+            203
+        ],
+        "page_idx": 15
+    },
+    {
+        "type": "text",
+        "text": "Then $\\mathcal { L } ( h _ { \\lambda } ) = - \\tau ^ { - 1 } A ( \\lambda ) + U ( \\lambda )$ . ",
+        "bbox": [
+            84,
+            212,
+            323,
+            228
+        ],
+        "page_idx": 15
+    },
+    {
+        "type": "text",
+        "text": "We first show that shrinking the variant component improves alignment to first order. Under the constrained positive-pair distribution, $\\tilde { u } = u .$ . Since $z , \\tilde { z } \\in \\mathbb { S } ^ { k - 1 }$ , this implies $\\| v \\| = \\| \\tilde { v } \\|$ . Therefore ",
+        "bbox": [
+            84,
+            236,
+            887,
+            266
+        ],
+        "page_idx": 15
+    },
+    {
+        "type": "equation",
+        "text": "$$\nh _ {\\lambda} (z) ^ {\\top} h _ {\\lambda} (\\tilde {z}) = \\frac {\\| u \\| ^ {2} + \\lambda^ {2} v ^ {\\top} \\tilde {v}}{\\| u \\| ^ {2} + \\lambda^ {2} \\| v \\| ^ {2}}.\n$$",
+        "text_format": "latex",
+        "bbox": [
+            370,
+            275,
+            599,
+            310
+        ],
+        "page_idx": 15
+    },
+    {
+        "type": "text",
+        "text": "With $t = \\lambda ^ { 2 }$ and ",
+        "bbox": [
+            84,
+            319,
+            199,
+            334
+        ],
+        "page_idx": 15
+    },
+    {
+        "type": "equation",
+        "text": "$$\nf (t) = \\frac {\\| u \\| ^ {2} + t v ^ {\\top} \\tilde {v}}{\\| u \\| ^ {2} + t \\| v \\| ^ {2}},\n$$",
+        "text_format": "latex",
+        "bbox": [
+            406,
+            330,
+            562,
+            364
+        ],
+        "page_idx": 15
+    },
+    {
+        "type": "text",
+        "text": "we have ",
+        "bbox": [
+            84,
+            369,
+            143,
+            383
+        ],
+        "page_idx": 15
+    },
+    {
+        "type": "equation",
+        "text": "$$\nf ^ {\\prime} (t) = \\frac {\\| u \\| ^ {2} (v ^ {\\top} \\tilde {v} - \\| v \\| ^ {2})}{(\\| u \\| ^ {2} + t \\| v \\| ^ {2}) ^ {2}}.\n$$",
+        "text_format": "latex",
+        "bbox": [
+            388,
+            378,
+            581,
+            414
+        ],
+        "page_idx": 15
+    },
+    {
+        "type": "text",
+        "text": "By Cauchy-Schwarz, $v ^ { \\top } \\tilde { v } \\leq \\| v \\| ^ { 2 }$ , with strict inequality whenever $v \\neq \\tilde { v }$ . The constrained vMF conditional is nondegenerate for $\\kappa > 0 .$ , so $\\boldsymbol { v } \\neq \\tilde { \\boldsymbol { v } }$ on a set of positive $P _ { \\mathrm { p o s } ^ { - } \\mathrm { m e a s u r e } . }$ and $\\| u \\| > 0$ for σ-almost every z when $m > 0$ . Hence $A ^ { \\prime } ( 1 ) < 0 .$ , and for some $c > 0$ , ",
+        "bbox": [
+            84,
+            419,
+            888,
+            465
+        ],
+        "page_idx": 15
+    },
+    {
+        "type": "equation",
+        "text": "$$\nA (\\lambda) - A (1) = c (1 - \\lambda) + o (1 - \\lambda) \\quad \\text { as } \\lambda \\uparrow 1.\n$$",
+        "text_format": "latex",
+        "bbox": [
+            315,
+            476,
+            653,
+            492
+        ],
+        "page_idx": 15
+    },
+    {
+        "type": "text",
+        "text": "We next show that the uniformity term has zero first derivative at the identity. Let ",
+        "bbox": [
+            84,
+            511,
+            620,
+            526
+        ],
+        "page_idx": 15
+    },
+    {
+        "type": "equation",
+        "text": "$$\ng (z) := \\left. \\frac {d}{d \\lambda} h _ {\\lambda} (z) \\right| _ {\\lambda = 1} = (- \\| v \\| ^ {2} u, \\| u \\| ^ {2} v),\n$$",
+        "text_format": "latex",
+        "bbox": [
+            334,
+            536,
+            635,
+            570
+        ],
+        "page_idx": 15
+    },
+    {
+        "type": "text",
+        "text": "so $z ^ { \\top } g ( z ) = 0 . \\operatorname { A t } \\lambda = 1$ , the inner integral ",
+        "bbox": [
+            84,
+            580,
+            375,
+            595
+        ],
+        "page_idx": 15
+    },
+    {
+        "type": "equation",
+        "text": "$$\nC := \\int_ {\\mathbb {S} ^ {k - 1}} \\exp (z ^ {\\top} z ^ {\\prime} / \\tau) d \\sigma (z ^ {\\prime})\n$$",
+        "text_format": "latex",
+        "bbox": [
+            377,
+            606,
+            593,
+            638
+        ],
+        "page_idx": 15
+    },
+    {
+        "type": "text",
+        "text": "is independent of z by rotational symmetry. Differentiating under the integral, which is justified by smoothness and compactness of the sphere, ",
+        "bbox": [
+            84,
+            647,
+            885,
+            676
+        ],
+        "page_idx": 15
+    },
+    {
+        "type": "equation",
+        "text": "$$\nU ^ {\\prime} (1) = \\frac {1}{\\tau C} \\iint \\exp (z ^ {\\top} z ^ {\\prime} / \\tau) \\left(g (z) ^ {\\top} z ^ {\\prime} + z ^ {\\top} g (z ^ {\\prime})\\right) d \\sigma (z ^ {\\prime}) d \\sigma (z).\n$$",
+        "text_format": "latex",
+        "bbox": [
+            259,
+            686,
+            709,
+            718
+        ],
+        "page_idx": 15
+    },
+    {
+        "type": "text",
+        "text": "For any fixed $a \\in \\mathbb { S } ^ { k - 1 }$ , rotational symmetry gives ",
+        "bbox": [
+            84,
+            727,
+            423,
+            743
+        ],
+        "page_idx": 15
+    },
+    {
+        "type": "equation",
+        "text": "$$\n\\int_ {\\mathbb {S} ^ {k - 1}} z \\exp (a ^ {\\top} z / \\tau) d \\sigma (z) = \\alpha a\n$$",
+        "text_format": "latex",
+        "bbox": [
+            374,
+            753,
+            596,
+            785
+        ],
+        "page_idx": 15
+    },
+    {
+        "type": "text",
+        "text": "for some scalar α. Applying this identity to each of the two terms above and using $z ^ { \\top } g ( z ) = 0$ yields $U ^ { \\prime } ( 1 ) = 0$ . Thus ",
+        "bbox": [
+            84,
+            795,
+            867,
+            811
+        ],
+        "page_idx": 15
+    },
+    {
+        "type": "equation",
+        "text": "$$\nU (\\lambda) - U (1) = o (1 - \\lambda) \\quad \\text {   as   } \\lambda \\uparrow 1.\n$$",
+        "text_format": "latex",
+        "bbox": [
+            352,
+            821,
+            616,
+            837
+        ],
+        "page_idx": 15
+    },
+    {
+        "type": "text",
+        "text": "Combining the two expansions, ",
+        "bbox": [
+            84,
+            856,
+            295,
+            871
+        ],
+        "page_idx": 15
+    },
+    {
+        "type": "equation",
+        "text": "$$\n\\mathcal {L} (h _ {\\lambda}) - \\mathcal {L} (I) = - \\frac {1}{\\tau} (A (\\lambda) - A (1)) + (U (\\lambda) - U (1)) = - \\frac {c}{\\tau} (1 - \\lambda) + o (1 - \\lambda) <   0\n$$",
+        "text_format": "latex",
+        "bbox": [
+            194,
+            880,
+            774,
+            910
+        ],
+        "page_idx": 15
+    },
+    {
+        "type": "header",
+        "text": "The Loss Is Not Enough ",
+        "bbox": [
+            408,
+            56,
+            563,
+            70
+        ],
+        "page_idx": 15
+    },
+    {
+        "type": "page_number",
+        "text": "16 ",
+        "bbox": [
+            477,
+            922,
+            495,
+            934
+        ],
+        "page_idx": 15
+    },
+    {
+        "type": "text",
+        "text": "for all $\\lambda < 1$ sufficiently close to 1. ",
+        "bbox": [
+            84,
+            85,
+            318,
+            99
+        ],
+        "page_idx": 16
+    },
+    {
+        "type": "text",
+        "text": "Finally, every orthogonal map ${ \\tilde { h } } \\in O ( k )$ preserves inner products and the uniform spherical measure, so $\\mathcal { L } ( \\tilde { h } ) = \\mathcal { L } ( I )$ . Taking $h = h _ { \\lambda }$ for any $\\lambda < 1$ sufficiently close to 1 gives ",
+        "bbox": [
+            84,
+            106,
+            887,
+            138
+        ],
+        "page_idx": 16
+    },
+    {
+        "type": "equation",
+        "text": "$$\n\\mathcal {L} _ {\\mathrm{CL}} (h) <   \\mathcal {L} _ {\\mathrm{CL}} (\\tilde {h}), \\quad \\forall \\tilde {h} \\in O (k),\n$$",
+        "text_format": "latex",
+        "bbox": [
+            359,
+            147,
+            609,
+            166
+        ],
+        "page_idx": 16
+    },
+    {
+        "type": "text",
+        "text": "in the asymptotic regime $M \\to \\infty$ ",
+        "bbox": [
+            84,
+            176,
+            318,
+            193
+        ],
+        "page_idx": 16
+    },
+    {
+        "type": "text",
+        "text": "A.3. Proofs for the Corrected Model ",
+        "text_level": 1,
+        "bbox": [
+            86,
+            209,
+            339,
+            223
+        ],
+        "page_idx": 16
+    },
+    {
+        "type": "text",
+        "text": "To address the support mismatch, we modify the model conditional to incorporate the same constraint structure: ",
+        "bbox": [
+            84,
+            233,
+            818,
+            248
+        ],
+        "page_idx": 16
+    },
+    {
+        "type": "equation",
+        "text": "$$\nq _ {h, z} ^ {K} (\\tilde {z}) = \\frac {e ^ {h (z) ^ {\\top} h (\\tilde {z}) / \\tau}}{\\int_ {K (z)} e ^ {h (z) ^ {\\top} h (z ^ {\\prime}) / \\tau} d \\sigma_ {K (z)} \\left(z ^ {\\prime}\\right)}, \\quad \\tilde {z} \\in K (z). \\tag {24}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            290,
+            258,
+            885,
+            299
+        ],
+        "page_idx": 16
+    },
+    {
+        "type": "text",
+        "text": "This modification ensures that supp $( Q _ { h , z } ^ { K } ) = \\mathrm { s u p p } ( P _ { \\tilde { Z } | z } ^ { K } )$ , eliminating the support mismatch. ",
+        "bbox": [
+            84,
+            316,
+            692,
+            337
+        ],
+        "page_idx": 16
+    },
+    {
+        "type": "text",
+        "text": "Theorem A.4 (Asymptotic Form of Modified Contrastive Loss). Under the corrected model conditional, where negative samples are drawn uniformly from the constrained manifold $K ( z )$ rather than from the full sphere Z, the asymptotic contrastive loss takes the form: ",
+        "bbox": [
+            84,
+            340,
+            885,
+            386
+        ],
+        "page_idx": 16
+    },
+    {
+        "type": "equation",
+        "text": "$$\n\\lim _ {M \\to \\infty} \\mathcal {L} (h, \\tau , M) - \\log (M) = \\mathbb {E} _ {z \\sim P _ {Z}} [ H (P _ {\\tilde {Z} | z} ^ {K}, Q _ {h, z} ^ {K}) ] - \\mathbb {E} _ {z \\sim P _ {Z}} [ \\log (| K (z) |) ]\n$$",
+        "text_format": "latex",
+        "bbox": [
+            225,
+            396,
+            743,
+            420
+        ],
+        "page_idx": 16
+    },
+    {
+        "type": "text",
+        "text": "The proof follows the same steps as in (Zimmermann et al., 2021), but with conditionals defined on $K ( z )$ . ",
+        "bbox": [
+            84,
+            439,
+            781,
+            455
+        ],
+        "page_idx": 16
+    },
+    {
+        "type": "text",
+        "text": "Proof. Step 1: Cross-entropy decomposition. The cross-entropy between the true and model conditionals, both defined on $K ( z )$ , is: ",
+        "bbox": [
+            84,
+            470,
+            885,
+            500
+        ],
+        "page_idx": 16
+    },
+    {
+        "type": "equation",
+        "text": "$$\nH (P _ {\\tilde {Z} | z} ^ {K}, Q _ {h, z} ^ {K}) = - \\mathbb {E} _ {\\tilde {z} \\sim P _ {\\tilde {Z} | z} ^ {K}} [ \\log q _ {h, z} ^ {K} (\\tilde {z}) ] \\tag {25}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            248,
+            508,
+            885,
+            534
+        ],
+        "page_idx": 16
+    },
+    {
+        "type": "equation",
+        "text": "$$\n= - \\mathbb {E} _ {\\tilde {z} \\sim P _ {\\tilde {Z} | z} ^ {K}} \\left[ \\log \\left(\\frac {e ^ {h (z) ^ {\\top} h (\\tilde {z}) / \\tau}}{\\int_ {K (z)} e ^ {h (z) ^ {\\top} h (z ^ {\\prime}) / \\tau} d \\sigma_ {K (z)} \\left(z ^ {\\prime}\\right)}\\right) \\right]. \\tag {26}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            352,
+            535,
+            885,
+            579
+        ],
+        "page_idx": 16
+    },
+    {
+        "type": "equation",
+        "text": "$$\nH (P _ {\\tilde {Z} | z} ^ {K}, Q _ {h, z} ^ {K}) = - \\mathbb {E} _ {\\tilde {z} \\sim P _ {\\tilde {Z} | z} ^ {K}} \\left[ \\frac {1}{\\tau} h (z) ^ {\\top} h (\\tilde {z}) - \\log C _ {h} (z) \\right] \\tag {27}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            294,
+            608,
+            885,
+            643
+        ],
+        "page_idx": 16
+    },
+    {
+        "type": "equation",
+        "text": "$$\n= - \\frac {1}{\\tau} \\mathbb {E} _ {\\tilde {z} \\sim P _ {\\tilde {Z} | z} ^ {K}} [ h (z) ^ {\\top} h (\\tilde {z}) ] + \\log C _ {h} (z) \\tag {28}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            397,
+            643,
+            885,
+            672
+        ],
+        "page_idx": 16
+    },
+    {
+        "type": "text",
+        "text": "where $\\begin{array} { r } { C _ { h } ( z ) = \\int _ { K ( z ) } e ^ { h ( z ) ^ { \\top } h ( z ^ { \\prime } ) / \\tau } d \\sigma _ { K ( z ) } ( z ^ { \\prime } ) } \\end{array}$ is the normalizing constant over the constrained manifold. ",
+        "bbox": [
+            84,
+            685,
+            777,
+            705
+        ],
+        "page_idx": 16
+    },
+    {
+        "type": "text",
+        "text": "Step 2: Normalizing constant estimation. Using the fact that the uniform distribution on $K ( z )$ has density $1 / | K ( z ) |$ : ",
+        "bbox": [
+            84,
+            712,
+            866,
+            728
+        ],
+        "page_idx": 16
+    },
+    {
+        "type": "equation",
+        "text": "$$\nC _ {h} (z) = \\int_ {K (z)} e ^ {h (z) ^ {\\top} h (z ^ {\\prime}) / \\tau} d \\sigma_ {K (z)} (z ^ {\\prime}) = | K (z) | \\cdot \\mathbb {E} _ {z ^ {\\prime} \\sim \\mathrm{U} (K (z))} \\left[ e ^ {h (z) ^ {\\top} h (z ^ {\\prime}) / \\tau} \\right] \\tag {29}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            218,
+            738,
+            885,
+            772
+        ],
+        "page_idx": 16
+    },
+    {
+        "type": "text",
+        "text": "Step 3: Final form. Substituting the estimate of $C _ { h } ( z )$ back into the cross-entropy expression and splitting the logarithm: ",
+        "bbox": [
+            84,
+            790,
+            885,
+            806
+        ],
+        "page_idx": 16
+    },
+    {
+        "type": "equation",
+        "text": "$$\nH (P _ {\\tilde {Z} | z} ^ {K}, Q _ {h, z} ^ {K}) = - \\frac {1}{\\tau} \\mathbb {E} _ {\\tilde {z} \\sim P _ {\\tilde {Z} | z} ^ {K}} [ h (z) ^ {\\top} h (\\tilde {z}) ] \\tag {30}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            267,
+            816,
+            885,
+            844
+        ],
+        "page_idx": 16
+    },
+    {
+        "type": "equation",
+        "text": "$$\n+ \\log \\mathbb {E} _ {z ^ {\\prime} \\sim \\mathrm{U} (K (z))} \\left[ e ^ {h (z) ^ {\\top} h (z ^ {\\prime}) / \\tau} \\right] + \\log | K (z) | \\tag {31}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            387,
+            847,
+            885,
+            875
+        ],
+        "page_idx": 16
+    },
+    {
+        "type": "text",
+        "text": "Taking expectations over $z \\sim P _ { Z }$ yields the stated result. ",
+        "bbox": [
+            84,
+            890,
+            460,
+            906
+        ],
+        "page_idx": 16
+    },
+    {
+        "type": "header",
+        "text": "The Loss Is Not Enough ",
+        "bbox": [
+            408,
+            56,
+            563,
+            70
+        ],
+        "page_idx": 16
+    },
+    {
+        "type": "page_number",
+        "text": "17 ",
+        "bbox": [
+            477,
+            922,
+            495,
+            934
+        ],
+        "page_idx": 16
+    },
+    {
+        "type": "text",
+        "text": "Proof of Theorem 4.6. With the corrected model conditional, the supports of $P _ { \\tilde { Z } | z } ^ { K }$ and $Q _ { h , z } ^ { K }$ now match: both are restricted to the submanifold $K ( z )$ . Within this constrained setting, the analysis proceeds analogously to Theorem A.1. ",
+        "bbox": [
+            84,
+            84,
+            887,
+            119
+        ],
+        "page_idx": 17
+    },
+    {
+        "type": "text",
+        "text": "For any $h \\in O ( k )$ , we have $h ( z ) ^ { \\top } h ( \\tilde { z } ) = z ^ { \\top } \\tilde { z }$ for all $z , \\tilde { z } \\in \\mathcal { Z }$ . This means the model conditional $Q _ { h , . } ^ { K }$ z exactly matches the true conditional $P _ { \\tilde { Z } | z } ^ { K }$ on the constrained manifold $K ( z )$ : ",
+        "bbox": [
+            84,
+            125,
+            887,
+            162
+        ],
+        "page_idx": 17
+    },
+    {
+        "type": "equation",
+        "text": "$$\nq _ {h, z} ^ {K} (\\tilde {z}) = \\frac {e ^ {z ^ {\\top} \\tilde {z} / \\tau}}{\\int_ {K (z)} e ^ {z ^ {\\top} z ^ {\\prime} / \\tau} d \\sigma_ {K (z)} (z ^ {\\prime})} = \\frac {d P _ {\\tilde {Z} | z} ^ {K}}{d \\sigma_ {K (z)}} (\\tilde {z})\n$$",
+        "text_format": "latex",
+        "bbox": [
+            316,
+            174,
+            653,
+            215
+        ],
+        "page_idx": 17
+    },
+    {
+        "type": "text",
+        "text": "when $\\kappa = 1 / \\tau$ . ",
+        "bbox": [
+            84,
+            228,
+            191,
+            242
+        ],
+        "page_idx": 17
+    },
+    {
+        "type": "text",
+        "text": "Since matching distributions achieves zero KL divergence and hence minimal cross-entropy, any orthogonal transformation minimizes the asymptotic contrastive loss. □ ",
+        "bbox": [
+            84,
+            250,
+            887,
+            280
+        ],
+        "page_idx": 17
+    },
+    {
+        "type": "text",
+        "text": "Although the corrected objective admits orthogonal solutions, it does not guarantee uniqueness. The following theorem shows that multiple equivalent solutions exist. ",
+        "bbox": [
+            84,
+            297,
+            887,
+            327
+        ],
+        "page_idx": 17
+    },
+    {
+        "type": "text",
+        "text": "Theorem A.5 (Equivalence of Feature Extractors Under Constrained Sampling). Given a data-generating process $g : { \\mathcal { Z } } $ X , uniform marginal law $P _ { Z } ,$ , ground-truth conditional law $P _ { \\tilde { Z } | } { } _ { i }$ with density $p ( \\tilde { z } | z )$ , and model conditional law $Q _ { h , z }$ with density $q _ { h } ( \\tilde { z } | z )$ that define the expected cross-entropy loss ",
+        "bbox": [
+            84,
+            332,
+            887,
+            378
+        ],
+        "page_idx": 17
+    },
+    {
+        "type": "equation",
+        "text": "$$\n\\mathcal {L} _ {h} = \\mathbb {E} _ {z \\sim P _ {Z}} [ H (P _ {\\tilde {Z} | z}, Q _ {h, z}) ],\n$$",
+        "text_format": "latex",
+        "bbox": [
+            383,
+            391,
+            588,
+            409
+        ],
+        "page_idx": 17
+    },
+    {
+        "type": "text",
+        "text": "let $m : \\mathcal { Z }  \\mathcal { Z }$ be an invertible mapping that preserves the marginal law and the ground-truth conditional density: ",
+        "bbox": [
+            84,
+            420,
+            841,
+            435
+        ],
+        "page_idx": 17
+    },
+    {
+        "type": "equation",
+        "text": "$$\nm _ {\\#} P _ {Z} = P _ {Z}, \\qquad p (m (\\tilde {z}) | m (z)) = p (\\tilde {z} | z) \\quad \\forall z, \\tilde {z} \\in \\mathcal {Z}.\n$$",
+        "text_format": "latex",
+        "bbox": [
+            292,
+            446,
+            674,
+            464
+        ],
+        "page_idx": 17
+    },
+    {
+        "type": "text",
+        "text": "Then any two mappings $h _ { 1 } : = f _ { 1 } \\circ g$ and h2 := f2 ◦ g with $h _ { 2 } ( z ) : = h _ { 1 } ( m ( z ) )$ are equivalent, i.e., $\\mathcal { L } _ { h _ { 1 } } = \\mathcal { L } _ { h _ { 2 } }$ ",
+        "bbox": [
+            84,
+            474,
+            820,
+            491
+        ],
+        "page_idx": 17
+    },
+    {
+        "type": "text",
+        "text": "Proof. Starting with the cross-entropy loss for $h _ { 2 } { \\mathrm { : } }$ ",
+        "bbox": [
+            84,
+            508,
+            419,
+            523
+        ],
+        "page_idx": 17
+    },
+    {
+        "type": "equation",
+        "text": "$$\n\\mathcal {L} _ {h _ {2}} = \\mathbb {E} _ {z \\sim P _ {Z}} \\left[ \\mathbb {E} _ {\\tilde {z} \\sim P _ {\\tilde {Z} | z}} [ - \\log q _ {h _ {2}} (\\tilde {z} | z) ] \\right] \\tag {32}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            346,
+            532,
+            885,
+            560
+        ],
+        "page_idx": 17
+    },
+    {
+        "type": "text",
+        "text": "Using the definition of h2: ",
+        "bbox": [
+            84,
+            577,
+            263,
+            592
+        ],
+        "page_idx": 17
+    },
+    {
+        "type": "equation",
+        "text": "$$\n= \\mathbb {E} _ {z \\sim P _ {Z}} \\left[ \\mathbb {E} _ {\\tilde {z} \\sim P _ {\\tilde {Z} | z}} [ - \\log q _ {h _ {1}} (m (\\tilde {z}) | m (z)) ] \\right] \\tag {33}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            334,
+            590,
+            885,
+            616
+        ],
+        "page_idx": 17
+    },
+    {
+        "type": "text",
+        "text": "Since m preserves the conditional density: ",
+        "bbox": [
+            84,
+            628,
+            369,
+            643
+        ],
+        "page_idx": 17
+    },
+    {
+        "type": "equation",
+        "text": "$$\n= \\mathbb {E} _ {z \\sim P _ {\\bar {Z}}} \\left[ \\mathbb {E} _ {m (\\tilde {z}) \\sim P _ {\\bar {Z} | m (z)}} [ - \\log q _ {h _ {1}} (m (\\tilde {z}) | m (z)) ] \\right] \\tag {34}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            315,
+            655,
+            885,
+            681
+        ],
+        "page_idx": 17
+    },
+    {
+        "type": "text",
+        "text": "Since $m _ { \\# } P _ { Z } = P _ { Z }$ , we can change variables in the outer expectation: ",
+        "bbox": [
+            84,
+            698,
+            549,
+            714
+        ],
+        "page_idx": 17
+    },
+    {
+        "type": "equation",
+        "text": "$$\n= \\mathbb {E} _ {m (z) \\sim P _ {Z}} \\left[ \\mathbb {E} _ {m (\\tilde {z}) \\sim P _ {\\tilde {Z} | m (z)}} [ - \\log q _ {h _ {1}} (m (\\tilde {z}) | m (z)) ] \\right] \\tag {35}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            303,
+            724,
+            885,
+            752
+        ],
+        "page_idx": 17
+    },
+    {
+        "type": "text",
+        "text": "Finally, because m is invertible: ",
+        "bbox": [
+            84,
+            768,
+            300,
+            784
+        ],
+        "page_idx": 17
+    },
+    {
+        "type": "equation",
+        "text": "$$\n= \\mathbb {E} _ {z \\sim P _ {\\bar {Z}}} \\left[ \\mathbb {E} _ {\\tilde {z} \\sim P _ {\\bar {Z} | z}} [ - \\log q _ {h _ {1}} (\\tilde {z} | z) ] \\right] = \\mathcal {L} _ {h _ {1}} \\tag {36}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            338,
+            782,
+            885,
+            809
+        ],
+        "page_idx": 17
+    },
+    {
+        "type": "text",
+        "text": "This theorem reveals a fundamental non-uniqueness in the solution space of the modified contrastive learning objective. Any conditional-preserving transformation of the latent space yields identical loss values, meaning that without additional constraints through inductive bias, the objective cannot distinguish between semantically meaningful representations and arbitrary rearrangements that preserve only local structure within constrained manifolds. ",
+        "bbox": [
+            84,
+            845,
+            887,
+            906
+        ],
+        "page_idx": 17
+    },
+    {
+        "type": "header",
+        "text": "The Loss Is Not Enough ",
+        "bbox": [
+            408,
+            56,
+            563,
+            70
+        ],
+        "page_idx": 17
+    },
+    {
+        "type": "page_number",
+        "text": "18 ",
+        "bbox": [
+            477,
+            922,
+            495,
+            934
+        ],
+        "page_idx": 17
+    },
+    {
+        "type": "text",
+        "text": "B. Generative Processes and Encoder Architectures ",
+        "text_level": 1,
+        "bbox": [
+            86,
+            83,
+            519,
+            99
+        ],
+        "page_idx": 18
+    },
+    {
+        "type": "text",
+        "text": "This section describes the generative processes and encoder architectures used in our synthetic experiments. ",
+        "bbox": [
+            84,
+            109,
+            792,
+            125
+        ],
+        "page_idx": 18
+    },
+    {
+        "type": "text",
+        "text": "B.1. Generative Processes ",
+        "text_level": 1,
+        "bbox": [
+            86,
+            141,
+            269,
+            155
+        ],
+        "page_idx": 18
+    },
+    {
+        "type": "text",
+        "text": "We employ five generative processes $g : \\mathbb { S } ^ { d - 1 }  \\mathbb { R } ^ { D }$ of varying complexity to test our theoretical predictions across different data-generating mechanisms. ",
+        "bbox": [
+            84,
+            162,
+            885,
+            196
+        ],
+        "page_idx": 18
+    },
+    {
+        "type": "code",
+        "sub_type": "algorithm",
+        "code_caption": [
+            "Algorithm 1 Identity Process "
+        ],
+        "code_body": "Require: $z\\in \\mathbb{S}^{d - 1}$ 1: $x\\gets z$ 2: return $x\\in \\mathbb{R}^d$ ",
+        "bbox": [
+            86,
+            229,
+            220,
+            277
+        ],
+        "page_idx": 18
+    },
+    {
+        "type": "code",
+        "sub_type": "algorithm",
+        "code_caption": [
+            "Algorithm 2 Linear Process "
+        ],
+        "code_body": "Require: $z \\in S^{d-1}$ , weight matrix $W \\in R^{D \\times d}$ with $\\text{rank}(W) = d$ 1: $x \\leftarrow Wz$ 2: return $x \\in R^{D}$ ",
+        "bbox": [
+            86,
+            332,
+            531,
+            380
+        ],
+        "page_idx": 18
+    },
+    {
+        "type": "code",
+        "sub_type": "algorithm",
+        "code_caption": [
+            "Algorithm 3 Spiral Rotation Process "
+        ],
+        "code_body": "Require: $z = (z_{1}, z_{2}, z_{3}) \\in \\mathbb{S}^{2}$ , period n\n1: Compute rotation angle: $\\theta \\leftarrow n\\pi z_{3}$ 2: Apply 2D rotation to first two coordinates:\n3: $x_{1} \\leftarrow \\cos(\\theta)z_{1} - \\sin(\\theta)z_{2}$ 4: $x_{2} \\leftarrow \\sin(\\theta)z_{1} + \\cos(\\theta)z_{2}$ 5: $x_{3} \\leftarrow z_{3}$ 6: return $x = (x_{1}, x_{2}, x_{3}) \\in \\mathbb{R}^{3}$ ",
+        "bbox": [
+            86,
+            434,
+            395,
+            542
+        ],
+        "page_idx": 18
+    },
+    {
+        "type": "code",
+        "sub_type": "algorithm",
+        "code_caption": [
+            "Algorithm 4 Patches Process "
+        ],
+        "code_body": "Require: $z = (z_{1}, z_{2}, z_{3}) \\in \\mathbb{S}^{2}$ , number of slices K\n\n1: Step 1: Apply piecewise rotation based on $z_{3}$ 2: Determine bucket $k \\leftarrow \\lfloor(z_{3} + 1) \\cdot K/2 \\rfloor$ 3: Compute angle $\\theta_{k} \\leftarrow -\\pi / \\max(1, K - k)$ 4: $z' \\leftarrow R_{xy}(\\theta_{k}) \\cdot z$ {Rotate in $(x, y)$ plane}\n\n5: Step 2: Apply 3D rotation (pitch = $\\pi/2$ )\n\n6: $z'' \\leftarrow R_{y}(\\pi/2) \\cdot z'$ 7: Step 3: Apply second piecewise rotation\n\n8: Determine new bucket, apply rotation as in Step 1\n\n9: return $x \\in R^{3}$ ",
+        "bbox": [
+            86,
+            599,
+            459,
+            750
+        ],
+        "page_idx": 18
+    },
+    {
+        "type": "code",
+        "sub_type": "algorithm",
+        "code_caption": [
+            "Algorithm 5 Invertible MLP Process (Hyvarinen & Morioka ¨ , 2016) "
+        ],
+        "code_body": "Require: $z \\in S^{d-1}$ , MLP layers $\\{W_{i}, b_{i}\\}_{i=1}^{L}$ with conditioning\n1: $h_{0} \\leftarrow z$ 2: for i = 1 to L do\n3: $h_{i} \\leftarrow \\sigma(W_{i}h_{i-1} + b_{i}) \\left\\{\\sigma = \\text{LeakyReLU}\\right\\}$ 4: end for\n5: return $x = h_{L} \\in R^{D}$ ",
+        "bbox": [
+            86,
+            805,
+            509,
+            898
+        ],
+        "page_idx": 18
+    },
+    {
+        "type": "header",
+        "text": "The Loss Is Not Enough ",
+        "bbox": [
+            408,
+            56,
+            563,
+            70
+        ],
+        "page_idx": 18
+    },
+    {
+        "type": "page_number",
+        "text": "19 ",
+        "bbox": [
+            477,
+            922,
+            495,
+            934
+        ],
+        "page_idx": 18
+    },
+    {
+        "type": "text",
+        "text": "B.2. Encoder Architectures ",
+        "text_level": 1,
+        "bbox": [
+            86,
+            84,
+            279,
+            99
+        ],
+        "page_idx": 19
+    },
+    {
+        "type": "text",
+        "text": "We compare two classes of encoders: a generic MLP encoder representing low inductive bias, and inverse encoders designed to mirror the structure of each generative process, representing high inductive bias. ",
+        "bbox": [
+            84,
+            108,
+            885,
+            138
+        ],
+        "page_idx": 19
+    },
+    {
+        "type": "code",
+        "sub_type": "algorithm",
+        "code_caption": [
+            "Algorithm 6 MLP Encoder (Low Inductive Bias) "
+        ],
+        "code_body": "Require: $x \\in R^{D}$ , hidden dims [128, 256, 256, 256, 128]\n1: $h_{0} \\leftarrow x$ 2: for i = 1 to L - 1 do\n3: $h_{i} \\leftarrow \\text{ReLU}(\\text{BatchNorm}(W_{i}h_{i-1} + b_{i}))$ 4: end for\n5: $z' \\leftarrow W_{L}h_{L-1} + b_{L}$ 6: $z \\leftarrow z' / \\|z'\\|_{2}$ {Project to sphere}\n7: return $z \\in S^{d-1}$ ",
+        "bbox": [
+            86,
+            179,
+            467,
+            303
+        ],
+        "page_idx": 19
+    },
+    {
+        "type": "code",
+        "sub_type": "algorithm",
+        "code_caption": [
+            "Algorithm 7 Inverse Linear Encoder (High Inductive Bias) "
+        ],
+        "code_body": "Require: $x \\in R^{D}$ , learnable $W \\in R^{d \\times D}$ , $b \\in R^{d}$ 1: $z' \\leftarrow Wx + b$ 2: $z \\leftarrow z' / \\|z'\\|_{2}$ 3: return $z \\in S^{d-1}$ ",
+        "bbox": [
+            86,
+            368,
+            416,
+            431
+        ],
+        "page_idx": 19
+    },
+    {
+        "type": "code",
+        "sub_type": "algorithm",
+        "code_caption": [
+            "Algorithm 8 Inverse Spiral Encoder (High Inductive Bias) "
+        ],
+        "code_body": "Require: $x \\in R^{3}$ , period n\n1: Predict rotation control: $c \\leftarrow \\text{MLP}_{\\text{rot}}(x)$ {3-layer MLP}\n2: Extract spatial components: $(x_{1}, x_{2}) \\leftarrow x_{1:2}$ 3: Compute inverse rotation: $\\theta \\leftarrow -n\\pi c$ 4: Apply inverse rotation:\n5: $z_{1} \\leftarrow \\cos(\\theta)x_{1} - \\sin(\\theta)x_{2}$ 6: $z_{2} \\leftarrow \\sin(\\theta)x_{1} + \\cos(\\theta)x_{2}$ 7: $z' \\leftarrow (z_{1}, z_{2}, c)$ 8: $z \\leftarrow z' / \\|z' \\|_{2}$ 9: return $z \\in S^{2}$ ",
+        "bbox": [
+            86,
+            498,
+            483,
+            650
+        ],
+        "page_idx": 19
+    },
+    {
+        "type": "code",
+        "sub_type": "algorithm",
+        "code_caption": [
+            "Algorithm 9 Inverse Patches Encoder (High Inductive Bias) "
+        ],
+        "code_body": "Require: $x \\in R^{3}$ , number of slices K\n\n1: Predict original z-coordinate: $z_{\\text{pred}} \\leftarrow \\tanh(\\text{MLP}_{z}(x))$ 2: Predict bucket probabilities: $w \\leftarrow \\text{softmax}(\\text{MLP}_{\\text{bucket}}(x))$ 3: Step 1: Inverse second piecewise rotation\n\n4: $x_{1} \\leftarrow \\sum_{k=0}^{K-1} w_{k} \\cdot R_{xy}(-\\theta_{k}) \\cdot x$ {Soft inverse}\n\n5: Step 2: Inverse 3D rotation\n\n6: $x_{2} \\leftarrow R_{y}(-\\pi/2) \\cdot x_{1}$ 7: Step 3: Inverse first piecewise rotation\n\n8: $x_{3} \\leftarrow \\sum_{k=0}^{K-1} w_{k} \\cdot R_{xy}(-\\theta_{k}) \\cdot x_{2}$ 9: Replace z-coordinate: $x_{\\text{rec}} \\leftarrow (x_{3,1}, x_{3,2}, z_{\\text{pred}})$ 10: $z \\leftarrow x_{\\text{rec}} / \\|x_{\\text{rec}}\\|_{2}$ 11: return $z \\in S^{2}$ ",
+        "bbox": [
+            86,
+            717,
+            500,
+            900
+        ],
+        "page_idx": 19
+    },
+    {
+        "type": "header",
+        "text": "The Loss Is Not Enough ",
+        "bbox": [
+            408,
+            56,
+            563,
+            70
+        ],
+        "page_idx": 19
+    },
+    {
+        "type": "page_number",
+        "text": "",
+        "bbox": [
+            477,
+            922,
+            496,
+            934
+        ],
+        "page_idx": 19
+    },
+    {
+        "type": "text",
+        "text": "C. Sampling Procedures ",
+        "text_level": 1,
+        "bbox": [
+            86,
+            83,
+            292,
+            101
+        ],
+        "page_idx": 20
+    },
+    {
+        "type": "text",
+        "text": "We use standard techniques for sampling from the uniform distribution on the sphere and the von Mises-Fisher distribution. ",
+        "bbox": [
+            84,
+            109,
+            887,
+            125
+        ],
+        "page_idx": 20
+    },
+    {
+        "type": "code",
+        "sub_type": "algorithm",
+        "code_caption": [
+            "Algorithm 10 Uniform Sampling from $\\mathbb { S } ^ { d - 1 }$ "
+        ],
+        "code_body": "Require: Dimension $d \\in N$ 1: Draw $z_{i} \\sim \\mathcal{N}(0,1)$ independently for $i = 1, \\ldots, d$ 2: $z \\leftarrow (z_{1}, \\ldots, z_{d})^{\\top}$ 3: $v \\leftarrow z / \\|z\\|_{2}$ 4: return $v \\in S^{d-1}$ ",
+        "bbox": [
+            86,
+            164,
+            450,
+            241
+        ],
+        "page_idx": 20
+    },
+    {
+        "type": "code",
+        "sub_type": "algorithm",
+        "code_caption": [
+            "Algorithm 11 von Mises-Fisher Sampling (Wood, 1994) "
+        ],
+        "code_body": "Require: Mean direction $\\mu \\in \\mathbb{S}^{d - 1}$ , concentration $\\kappa > 0$ 1: $p \\leftarrow d - 1$ 2: $b \\leftarrow p / (\\sqrt{4\\kappa^2 + p^2} + 2\\kappa)$ 3: $x \\leftarrow (1 - b) / (1 + b)$ 4: $c \\leftarrow \\kappa x + p\\log (1 - x^2)$ 5: repeat\n\n6: Sample $t \\sim \\mathrm{Beta}(p/2, p/2)$ 7: $w \\leftarrow (1 - (1 + b)t) / (1 - (1 - b)t)$ 8: Sample $u \\sim \\mathrm{Uniform}(0, 1)$ 9: until $\\log(u) \\leq \\kappa w + p\\log(1 - xw) - c$ 10: Sample $g \\sim \\mathcal{N}(0, I_d)$ 11: $v \\leftarrow g - (g^\\top \\mu)\\mu$ {Project out $\\mu$ component}\n\n12: $v \\leftarrow v / \\|v\\|_2$ 13: $s \\leftarrow \\sqrt{1 - w^2} \\cdot v + w \\cdot \\mu$ 14: return $s \\sim \\mathrm{vMF}(\\mu, \\kappa)$ ",
+        "bbox": [
+            86,
+            301,
+            467,
+            532
+        ],
+        "page_idx": 20
+    },
+    {
+        "type": "code",
+        "sub_type": "algorithm",
+        "code_caption": [
+            "Algorithm 12 Conditional Sampling: Diversity Holds "
+        ],
+        "code_body": "Require: Anchor $z \\in \\mathbb{S}^{d-1}$ , concentration $\\kappa$ 1: $\\tilde{z} \\leftarrow \\text{vMF}(z, \\kappa)$ {Sample positive using Algorithm 11}\n\n2: return $\\tilde{z} \\in \\mathbb{S}^{d-1}$ ",
+        "bbox": [
+            86,
+            594,
+            475,
+            640
+        ],
+        "page_idx": 20
+    },
+    {
+        "type": "code",
+        "sub_type": "algorithm",
+        "code_caption": [
+            "Algorithm 13 Conditional Sampling: Diversity Violated "
+        ],
+        "code_body": "Require: Anchor $z = (u, v) \\in \\mathbb{S}^{d-1}$ , fixed dimensions $d_{fixed}$ , concentration $\\kappa$ 1: $u \\leftarrow z_{1:d_{\\text{fixed}}}$ {Fixed component}\n\n2: $v \\leftarrow z_{d_{\\text{fixed}}+1:d}$ {Varying component}\n\n3: $r \\leftarrow \\|v\\|_{2}$ {Radius of sub-sphere}\n\n4: if r > 0 then\n\n5: $\\hat{v} \\leftarrow v/r$ {Normalize to sub-sphere}\n\n6: $\\tilde{v} \\leftarrow \\text{vMF}(\\hat{v}, \\kappa)$ {Sample on sub-sphere}\n\n7: $\\tilde{v} \\leftarrow r \\cdot \\tilde{v}$ {Scale back}\n\n8: else\n\n9: $\\tilde{v} \\leftarrow v$ 10: end if\n\n11: $\\tilde{z} \\leftarrow (u, \\tilde{v})$ {Concatenate fixed and sampled}\n\n12: return $\\tilde{z} \\in S^{d-1}$ ",
+        "bbox": [
+            86,
+            702,
+            599,
+            900
+        ],
+        "page_idx": 20
+    },
+    {
+        "type": "header",
+        "text": "The Loss Is Not Enough ",
+        "bbox": [
+            408,
+            56,
+            563,
+            70
+        ],
+        "page_idx": 20
+    },
+    {
+        "type": "page_number",
+        "text": "",
+        "bbox": [
+            477,
+            922,
+            493,
+            934
+        ],
+        "page_idx": 20
+    },
+    {
+        "type": "code",
+        "sub_type": "algorithm",
+        "code_caption": [
+            "Algorithm 14 Adapted InfoNCE with Same-anchor Negatives "
+        ],
+        "code_body": "Require: Encoder h, batch $\\{x_{1},\\ldots,x_{N}\\}$ , stochastic augmentation T, temperature $\\tau$ , negatives per anchor M\n1: for each anchor $x_{i}$ do\n2: Draw positive view $\\tilde{x}_{i} \\leftarrow \\mathcal{T}(x_{i})$ 3: for j = 1 to M do\n4: Draw same-anchor negative $x_{i,j}^{-} \\leftarrow \\mathcal{T}(x_{i})$ independently\n5: end for\n6: Compute $\\mathcal{L}_{i} = -\\log \\frac{\\exp(h(x_{i})^{\\top} h(\\tilde{x}_{i}) / \\tau)}{\\exp(h(x_{i})^{\\top} h(\\tilde{x}_{i}) / \\tau) + \\sum_{j=1}^{M} \\exp(h(x_{i})^{\\top} h(x_{i,j}^{-}) / \\tau)}.$ 7: end for\n8: return $L = \\frac{1}{N} \\sum_{i=1}^{N} L_{i}$ ",
+        "bbox": [
+            86,
+            103,
+            810,
+            286
+        ],
+        "page_idx": 21
+    },
+    {
+        "type": "text",
+        "text": "Algorithm 14 approximates sampling negatives from $K ( z )$ in observation space. Each call to $\\tau$ uses independent randomness conditional on the same anchor $x _ { i }$ , which is the observation-space analogue of drawing conditionally independent samples from $P _ { \\tilde { Z } | z _ { i } }$ . The same sampling family is applied repeatedly to the same anchor, so all views preserve the invariant component encoded by the mechanism while varying the remaining components. This changes the negative-sampling task relative to standard InfoNCE, which samples negatives from other instances. In our framework this is consistent with the goal of recovering latent distance structure rather than discriminating instance identity, but it can trade crossinstance discrimination signal for better support matching. The approximation also samples from the augmentation-induced distribution on $K ( z )$ rather than uniformly from $K ( z )$ . ",
+        "bbox": [
+            84,
+            332,
+            888,
+            455
+        ],
+        "page_idx": 21
+    },
+    {
+        "type": "text",
+        "text": "D. Evaluation Metrics ",
+        "text_level": 1,
+        "bbox": [
+            86,
+            472,
+            274,
+            488
+        ],
+        "page_idx": 21
+    },
+    {
+        "type": "text",
+        "text": "We evaluate latent space reconstruction quality using three complementary metrics, following standard practice in the identifiability literature (Hyvarinen & Morioka ¨ , 2016; Zimmermann et al., 2021). ",
+        "bbox": [
+            84,
+            498,
+            885,
+            530
+        ],
+        "page_idx": 21
+    },
+    {
+        "type": "code",
+        "sub_type": "algorithm",
+        "code_caption": [
+            "Algorithm 15 Linear Identifiability $( R ^ { 2 } )$ "
+        ],
+        "code_body": "Require: Ground-truth latents $Z = \\{z_i\\}_{i=1}^n$ , recovered latents $\\hat{Z} = \\{\\hat{z}_i\\}_{i=1}^n$ 1: Fit linear regression: $\\hat{z} = Az + b$ minimizing $\\sum_{i} \\|z_i - (A\\hat{z}_i + b)\\|^2$ 2: Compute predictions: $\\tilde{z}_i \\leftarrow A\\hat{z}_i + b$ 3: Compute total variance: $SS_{tot} \\leftarrow \\sum_{i=1}^n \\|z_i - \\bar{z}\\|^2$ 4: Compute residual variance: $SS_{res} \\leftarrow \\sum_{i=1}^n \\|z_i - \\tilde{z}_i\\|^2$ 5: $R^2 \\leftarrow 1 - SS_{res}/SS_{tot}$ 6: return $R^2 \\in (-\\infty, 1]$ $\\{1.0 = perfect linear recovery\\}$ ",
+        "bbox": [
+            86,
+            583,
+            589,
+            696
+        ],
+        "page_idx": 21
+    },
+    {
+        "type": "code",
+        "sub_type": "algorithm",
+        "code_caption": [
+            "Algorithm 16 Mean Correlation Coefficient (MCC) "
+        ],
+        "code_body": "Require: Ground-truth latents $Z \\in R^{n \\times d}$ , recovered latents $\\hat{Z} \\in R^{n \\times d}$ 1: Compute correlation matrix $C \\in R^{d \\times d}$ :\n\n2: $C_{ij} \\leftarrow |\\text{corr}(Z_{:,i}, \\hat{Z}_{:,j})|$ 3: Find optimal assignment via Munkres algorithm:\n\n4: $\\pi^* \\leftarrow \\arg\\max_\\pi \\sum_{i=1}^d C_{i,\\pi(i)}$ 5: MCC $\\leftarrow \\frac{1}{d} \\sum_{i=1}^d C_{i,\\pi^*(i)}$ 6: return MCC $\\in [0,1]$ $\\{1.0 = perfect factor alignment\\}$ ",
+        "bbox": [
+            86,
+            784,
+            558,
+            898
+        ],
+        "page_idx": 21
+    },
+    {
+        "type": "header",
+        "text": "The Loss Is Not Enough ",
+        "bbox": [
+            408,
+            56,
+            563,
+            70
+        ],
+        "page_idx": 21
+    },
+    {
+        "type": "page_number",
+        "text": "22 ",
+        "bbox": [
+            475,
+            922,
+            496,
+            934
+        ],
+        "page_idx": 21
+    },
+    {
+        "type": "code",
+        "sub_type": "algorithm",
+        "code_caption": [
+            "Algorithm 17 Angular Preservation Error (APE) "
+        ],
+        "code_body": "Require: Ground-truth latents $Z = \\{z_i\\}_{i=1}^n$ , recovered latents $\\hat{Z} = \\{\\hat{z}_i\\}_{i=1}^n$ 1: Initialize APE $\\leftarrow 0$ 2: for i = 1 to n do\n\n3: for j = 1 to n, $j \\neq i$ do\n\n4: APE $\\leftarrow$ APE + $|z_i^\\top z_j - \\hat{z}_i^\\top \\hat{z}_j|$ 5: end for\n\n6: end for\n\n7: APE $\\leftarrow$ APE/(n(n-1))\n\n8: return APE $\\in [0, 2]$ {0.0 = perfect isometry} ",
+        "bbox": [
+            86,
+            104,
+            589,
+            246
+        ],
+        "page_idx": 22
+    },
+    {
+        "type": "table",
+        "img_path": "images/de5bf8fdaa6dba4ce50611fd94c1c9db1c787810af43318f73223ae64b1c25c1.jpg",
+        "table_caption": [
+            "Table 2. Summary of evaluation metrics for latent space reconstruction. "
+        ],
+        "table_footnote": [],
+        "table_body": "<table><tr><td>Metric</td><td>Range</td><td>Measures</td><td>Optimal</td></tr><tr><td> $R^{2}$ </td><td> $(-\\infty, 1]$ </td><td>Linear predictability</td><td>1.0</td></tr><tr><td>MCC</td><td> $[0, 1]$ </td><td>Factor alignment (up to permutation)</td><td>1.0</td></tr><tr><td>APE</td><td> $[0, 2]$ </td><td>Angular/geometric preservation</td><td>0.0</td></tr></table>",
+        "bbox": [
+            264,
+            292,
+            709,
+            361
+        ],
+        "page_idx": 22
+    },
+    {
+        "type": "text",
+        "text": "E. Additional Experimental Results ",
+        "text_level": 1,
+        "bbox": [
+            84,
+            417,
+            387,
+            436
+        ],
+        "page_idx": 22
+    },
+    {
+        "type": "text",
+        "text": "E.1. Diversity Condition Holds ",
+        "text_level": 1,
+        "bbox": [
+            86,
+            444,
+            303,
+            459
+        ],
+        "page_idx": 22
+    },
+    {
+        "type": "text",
+        "text": "Table 3 reports MCC, APE, and final loss when the diversity condition is satisfied. ",
+        "bbox": [
+            84,
+            468,
+            625,
+            484
+        ],
+        "page_idx": 22
+    },
+    {
+        "type": "table",
+        "img_path": "images/37c1ff8ea80efd5265884fc386a49e34662077eb45b0716595cab6f4357f5218.jpg",
+        "table_caption": [
+            "Table 3. Evaluation metrics when diversity condition holds. Results reported as mean ± std across 5 random seeds using MLP encoder. Lower APE is better. "
+        ],
+        "table_footnote": [],
+        "table_body": "<table><tr><td>Generative Process</td><td>MCC</td><td>APE</td><td>Final Loss</td></tr><tr><td>Identity</td><td>0.775 ± 0.060</td><td>0.007 ± 0.001</td><td>7.388 ± 0.007</td></tr><tr><td>Linear</td><td>0.854 ± 0.083</td><td>0.007 ± 0.001</td><td>7.386 ± 0.006</td></tr><tr><td>Invertible MLP</td><td>0.822 ± 0.038</td><td>0.010 ± 0.002</td><td>7.383 ± 0.012</td></tr><tr><td>Patches</td><td>0.836 ± 0.060</td><td>0.031 ± 0.001</td><td>7.429 ± 0.019</td></tr><tr><td>Spiral</td><td>0.858 ± 0.041</td><td>0.012 ± 0.001</td><td>7.390 ± 0.011</td></tr></table>",
+        "bbox": [
+            246,
+            539,
+            727,
+            647
+        ],
+        "page_idx": 22
+    },
+    {
+        "type": "text",
+        "text": "E.2. Diversity Condition Violated ",
+        "text_level": 1,
+        "bbox": [
+            86,
+            679,
+            320,
+            695
+        ],
+        "page_idx": 22
+    },
+    {
+        "type": "text",
+        "text": "Tables 4-6 compare three approaches when diversity is violated: standard InfoNCE, adapted InfoNCE (Section 4.3), and InfoNCE with inductive bias. ",
+        "bbox": [
+            84,
+            703,
+            887,
+            733
+        ],
+        "page_idx": 22
+    },
+    {
+        "type": "table",
+        "img_path": "images/615f475b32f1c0fa8374f60b24627409e1f6c476c54831d604acd6d25216183e.jpg",
+        "table_caption": [
+            "Table 4. Mean Correlation Coefficient (MCC) when diversity condition is violated. Results reported as mean ± std across 5 random seeds. "
+        ],
+        "table_footnote": [],
+        "table_body": "<table><tr><td rowspan=\"2\">Generative Process</td><td colspan=\"3\">Diversity Condition Violated</td></tr><tr><td>InfoNCE</td><td>InfoNCE Adapted</td><td>InfoNCE + Ind. Bias</td></tr><tr><td>Identity</td><td>0.143 ± 0.016</td><td>0.607 ± 0.039</td><td>0.801 ± 0.102</td></tr><tr><td>Linear</td><td>0.111 ± 0.075</td><td>0.592 ± 0.085</td><td>0.841 ± 0.094</td></tr><tr><td>Invertible MLP</td><td>0.178 ± 0.116</td><td>0.569 ± 0.048</td><td>N/A</td></tr><tr><td>Patches</td><td>0.265 ± 0.018</td><td>0.624 ± 0.035</td><td>0.687 ± 0.014</td></tr><tr><td>Spiral</td><td>0.629 ± 0.294</td><td>0.602 ± 0.044</td><td>0.999 ± 0.001</td></tr></table>",
+        "bbox": [
+            209,
+            773,
+            763,
+            904
+        ],
+        "page_idx": 22
+    },
+    {
+        "type": "header",
+        "text": "The Loss Is Not Enough ",
+        "bbox": [
+            408,
+            56,
+            562,
+            70
+        ],
+        "page_idx": 22
+    },
+    {
+        "type": "page_number",
+        "text": "23 ",
+        "bbox": [
+            475,
+            922,
+            495,
+            935
+        ],
+        "page_idx": 22
+    },
+    {
+        "type": "table",
+        "img_path": "images/7ad2f1fbaa2d2cf741811591bfb7c85cd7f61134be5af04d1ca79874a9f98bff.jpg",
+        "table_caption": [
+            "Table 5. Angular Preservation Error (APE) when diversity condition is violated. Results reported as mean ± std across 5 random seeds. Lower is better. "
+        ],
+        "table_footnote": [],
+        "table_body": "<table><tr><td rowspan=\"2\">Generative Process</td><td colspan=\"3\">Diversity Condition Violated</td></tr><tr><td>InfoNCE</td><td>InfoNCE Adapted</td><td>InfoNCE + Ind. Bias</td></tr><tr><td>Identity</td><td>0.322 ± 0.007</td><td>0.152 ± 0.002</td><td>0.047 ± 0.000</td></tr><tr><td>Linear</td><td>0.325 ± 0.012</td><td>0.155 ± 0.002</td><td>0.046 ± 0.000</td></tr><tr><td>Invertible MLP</td><td>0.305 ± 0.034</td><td>0.168 ± 0.003</td><td>N/A</td></tr><tr><td>Patches</td><td>0.283 ± 0.008</td><td>0.154 ± 0.002</td><td>0.109 ± 0.003</td></tr><tr><td>Spiral</td><td>0.136 ± 0.115</td><td>0.156 ± 0.002</td><td>0.016 ± 0.003</td></tr></table>",
+        "bbox": [
+            209,
+            116,
+            763,
+            246
+        ],
+        "page_idx": 23
+    },
+    {
+        "type": "table",
+        "img_path": "images/93f4be6508e3e3087b157b2672f2358b5c1ec814c556fab56ee9cbb333ebedbc.jpg",
+        "table_caption": [
+            "Table 6. Final InfoNCE loss when diversity condition is violated. Results reported as mean ± std across 5 random seeds. "
+        ],
+        "table_footnote": [],
+        "table_body": "<table><tr><td rowspan=\"2\">Generative Process</td><td colspan=\"3\">Diversity Condition Violated</td></tr><tr><td>InfoNCE</td><td>InfoNCE Adapted</td><td>InfoNCE + Ind. Bias</td></tr><tr><td>Identity</td><td>5.709 ± 0.000</td><td>6.689 ± 0.007</td><td>6.058 ± 0.009</td></tr><tr><td>Linear</td><td>5.708 ± 0.001</td><td>6.697 ± 0.005</td><td>6.043 ± 0.009</td></tr><tr><td>Invertible MLP</td><td>5.715 ± 0.002</td><td>6.009 ± 0.006</td><td>N/A</td></tr><tr><td>Patches</td><td>5.850 ± 0.021</td><td>6.028 ± 0.009</td><td>6.222 ± 0.007</td></tr><tr><td>Spiral</td><td>5.949 ± 0.140</td><td>6.011 ± 0.012</td><td>6.075 ± 0.014</td></tr></table>",
+        "bbox": [
+            209,
+            313,
+            763,
+            444
+        ],
+        "page_idx": 23
+    },
+    {
+        "type": "text",
+        "text": "E.3. Progressive Diversity Violation ",
+        "text_level": 1,
+        "bbox": [
+            84,
+            477,
+            336,
+            492
+        ],
+        "page_idx": 23
+    },
+    {
+        "type": "text",
+        "text": "Table 7 and Figure 5c examine how performance degrades as the diversity condition is progressively violated in a 10- dimensional latent space. The parameter $d _ { \\mathrm { f i x e d } }$ denotes the number of dimensions held constant during positive pair sampling. ",
+        "bbox": [
+            84,
+            501,
+            888,
+            546
+        ],
+        "page_idx": 23
+    },
+    {
+        "type": "text",
+        "text": "Table 7. Linear identifiability $( R ^ { 2 } )$ as a function of diversity violation severity for 10D latent space. $d _ { \\mathrm { f i x e d } }$ denotes the number of dimensions held constant during positive pair sampling. ",
+        "bbox": [
+            84,
+            569,
+            887,
+            597
+        ],
+        "page_idx": 23
+    },
+    {
+        "type": "table",
+        "img_path": "images/4826845d317a6d3a28ef5307b5b4f428509bbea4eb57a9a19a36a32af688b200.jpg",
+        "table_caption": [],
+        "table_footnote": [],
+        "table_body": "<table><tr><td> $d_{\\text{fixed}}$ </td><td>Violation Ratio</td><td>Linear</td><td>Monomial</td></tr><tr><td>0</td><td>0.0</td><td>0.969 ± 0.047</td><td>0.990 ± 0.000</td></tr><tr><td>1</td><td>0.1</td><td>0.023 ± 0.011</td><td>0.015 ± 0.005</td></tr><tr><td>2</td><td>0.2</td><td>0.014 ± 0.003</td><td>0.015 ± 0.003</td></tr><tr><td>3</td><td>0.3</td><td>0.027 ± 0.009</td><td>0.034 ± 0.008</td></tr><tr><td>4</td><td>0.4</td><td>0.061 ± 0.021</td><td>0.042 ± 0.004</td></tr><tr><td>5</td><td>0.5</td><td>0.099 ± 0.019</td><td>0.097 ± 0.015</td></tr><tr><td>6</td><td>0.6</td><td>0.168 ± 0.017</td><td>0.185 ± 0.021</td></tr><tr><td>7</td><td>0.7</td><td>0.213 ± 0.035</td><td>0.284 ± 0.022</td></tr><tr><td>8</td><td>0.8</td><td>0.238 ± 0.049</td><td>0.348 ± 0.022</td></tr><tr><td>9</td><td>0.9</td><td>0.299 ± 0.047</td><td>0.425 ± 0.056</td></tr><tr><td>10</td><td>1.0</td><td>0.032 ± 0.004</td><td>0.086 ± 0.032</td></tr></table>",
+        "bbox": [
+            299,
+            604,
+            674,
+            801
+        ],
+        "page_idx": 23
+    },
+    {
+        "type": "text",
+        "text": "E.4. Constraint Ratio Experiments ",
+        "text_level": 1,
+        "bbox": [
+            84,
+            837,
+            333,
+            852
+        ],
+        "page_idx": 23
+    },
+    {
+        "type": "text",
+        "text": "Tables 8-11 show identifiability metrics as a function of the constraint ratio $\\rho ,$ which interpolates between standard InfoNCE $( \\rho = 0 )$ and the fully corrected objective $( \\rho = 1 )$ . The parameter $\\rho$ controls the fraction of negative samples drawn from the constrained manifold $K ( z )$ versus the full sphere Z. ",
+        "bbox": [
+            84,
+            859,
+            887,
+            906
+        ],
+        "page_idx": 23
+    },
+    {
+        "type": "header",
+        "text": "The Loss Is Not Enough ",
+        "bbox": [
+            408,
+            56,
+            562,
+            70
+        ],
+        "page_idx": 23
+    },
+    {
+        "type": "page_number",
+        "text": "24 ",
+        "bbox": [
+            475,
+            922,
+            496,
+            934
+        ],
+        "page_idx": 23
+    },
+    {
+        "type": "table",
+        "img_path": "images/bbbd6a3da9c05afb63d0244dea409c2602f3574a43c09ccf26a851b0da6f818b.jpg",
+        "table_caption": [
+            "Table 8. Linear identifiability $( R ^ { 2 } )$ across all generative processes and encoder types as a function of constraint ratio $\\rho .$ Results reported as mean across 5 seeds. "
+        ],
+        "table_footnote": [],
+        "table_body": "<table><tr><td rowspan=\"2\">ρ</td><td colspan=\"2\">Identity</td><td colspan=\"2\">Linear</td><td>InvMLP</td><td colspan=\"2\">Patches</td><td colspan=\"2\">Spiral</td></tr><tr><td>MLP</td><td>Inv</td><td>MLP</td><td>Inv</td><td>MLP</td><td>MLP</td><td>Inv</td><td>MLP</td><td>Inv</td></tr><tr><td>0.0</td><td>.053</td><td>.994</td><td>.112</td><td>.995</td><td>.286</td><td>.265</td><td>.871</td><td>.331</td><td>.996</td></tr><tr><td>0.1</td><td>.228</td><td>.997</td><td>.293</td><td>.997</td><td>.317</td><td>.651</td><td>.892</td><td>.731</td><td>.781</td></tr><tr><td>0.2</td><td>.306</td><td>.999</td><td>.299</td><td>.999</td><td>.350</td><td>.763</td><td>.878</td><td>.622</td><td>.963</td></tr><tr><td>0.3</td><td>.226</td><td>1.00</td><td>.201</td><td>1.00</td><td>.554</td><td>.820</td><td>.870</td><td>.797</td><td>.999</td></tr><tr><td>0.4</td><td>.502</td><td>.999</td><td>.452</td><td>.999</td><td>.666</td><td>.745</td><td>.859</td><td>.813</td><td>.842</td></tr><tr><td>0.5</td><td>.575</td><td>.997</td><td>.487</td><td>.997</td><td>.544</td><td>.737</td><td>.819</td><td>.822</td><td>.991</td></tr><tr><td>0.6</td><td>.525</td><td>.991</td><td>.461</td><td>.991</td><td>.564</td><td>.719</td><td>.645</td><td>.803</td><td>.831</td></tr><tr><td>0.7</td><td>.469</td><td>.979</td><td>.333</td><td>.979</td><td>.524</td><td>.731</td><td>.674</td><td>.661</td><td>.846</td></tr><tr><td>0.8</td><td>.402</td><td>.958</td><td>.350</td><td>.958</td><td>.485</td><td>.681</td><td>.680</td><td>.620</td><td>.826</td></tr><tr><td>0.9</td><td>.440</td><td>.905</td><td>.457</td><td>.904</td><td>.487</td><td>.675</td><td>.623</td><td>.637</td><td>.811</td></tr><tr><td>1.0</td><td>.626</td><td>.709</td><td>.650</td><td>.680</td><td>.597</td><td>.633</td><td>.656</td><td>.624</td><td>.572</td></tr></table>",
+        "bbox": [
+            313,
+            117,
+            661,
+            263
+        ],
+        "page_idx": 24
+    },
+    {
+        "type": "table",
+        "img_path": "images/7203a4dd88aad289dff0f68af1ffae2dbc0f8e7e40766eba02c39520c5e5d286.jpg",
+        "table_caption": [
+            "Table 9. Mean Correlation Coefficient (MCC) across all generative processes and encoder types as a function of constraint ratio $\\rho .$ Results reported as mean across 5 seeds. "
+        ],
+        "table_footnote": [],
+        "table_body": "<table><tr><td rowspan=\"2\">ρ</td><td colspan=\"2\">Identity</td><td colspan=\"2\">Linear</td><td>InvMLP</td><td colspan=\"2\">Patches</td><td colspan=\"2\">Spiral</td></tr><tr><td>MLP</td><td>Inv</td><td>MLP</td><td>Inv</td><td>MLP</td><td>MLP</td><td>Inv</td><td>MLP</td><td>Inv</td></tr><tr><td>0.0</td><td>.102</td><td>.769</td><td>.125</td><td>.859</td><td>.247</td><td>.275</td><td>.660</td><td>.315</td><td>.997</td></tr><tr><td>0.1</td><td>.342</td><td>.819</td><td>.364</td><td>.836</td><td>.350</td><td>.636</td><td>.648</td><td>.648</td><td>.777</td></tr><tr><td>0.2</td><td>.381</td><td>.815</td><td>.362</td><td>.838</td><td>.453</td><td>.670</td><td>.648</td><td>.632</td><td>.978</td></tr><tr><td>0.3</td><td>.321</td><td>.841</td><td>.336</td><td>.827</td><td>.590</td><td>.711</td><td>.631</td><td>.685</td><td>.999</td></tr><tr><td>0.4</td><td>.538</td><td>.807</td><td>.542</td><td>.811</td><td>.617</td><td>.664</td><td>.654</td><td>.801</td><td>.876</td></tr><tr><td>0.5</td><td>.594</td><td>.776</td><td>.537</td><td>.834</td><td>.533</td><td>.699</td><td>.628</td><td>.808</td><td>.995</td></tr><tr><td>0.6</td><td>.522</td><td>.863</td><td>.496</td><td>.818</td><td>.600</td><td>.660</td><td>.540</td><td>.796</td><td>.876</td></tr><tr><td>0.7</td><td>.499</td><td>.778</td><td>.394</td><td>.758</td><td>.561</td><td>.657</td><td>.584</td><td>.628</td><td>.868</td></tr><tr><td>0.8</td><td>.448</td><td>.704</td><td>.408</td><td>.775</td><td>.516</td><td>.649</td><td>.612</td><td>.542</td><td>.861</td></tr><tr><td>0.9</td><td>.463</td><td>.698</td><td>.483</td><td>.703</td><td>.467</td><td>.663</td><td>.560</td><td>.650</td><td>.841</td></tr><tr><td>1.0</td><td>.607</td><td>.593</td><td>.592</td><td>.590</td><td>.569</td><td>.624</td><td>.628</td><td>.602</td><td>.611</td></tr></table>",
+        "bbox": [
+            313,
+            330,
+            661,
+            477
+        ],
+        "page_idx": 24
+    },
+    {
+        "type": "table",
+        "img_path": "images/fb71f4f07a2dd7a4748d18ee455cc7076cae096f3b9fe7c55e59052264309ac2.jpg",
+        "table_caption": [
+            "Table 10. Angular Preservation Error (APE) across all generative processes and encoder types as a function of constraint ratio $\\rho .$ Results reported as mean across 5 seeds. Lower is better. "
+        ],
+        "table_footnote": [],
+        "table_body": "<table><tr><td rowspan=\"2\">ρ</td><td colspan=\"2\">Identity</td><td colspan=\"2\">Linear</td><td>InvMLP</td><td colspan=\"2\">Patches</td><td colspan=\"2\">Spiral</td></tr><tr><td>MLP</td><td>Inv</td><td>MLP</td><td>Inv</td><td>MLP</td><td>MLP</td><td>Inv</td><td>MLP</td><td>Inv</td></tr><tr><td>0.0</td><td>.325</td><td>.047</td><td>.310</td><td>.046</td><td>.265</td><td>.280</td><td>.112</td><td>.257</td><td>.027</td></tr><tr><td>0.1</td><td>.288</td><td>.035</td><td>.269</td><td>.036</td><td>.265</td><td>.187</td><td>.101</td><td>.134</td><td>.114</td></tr><tr><td>0.2</td><td>.267</td><td>.020</td><td>.268</td><td>.020</td><td>.257</td><td>.146</td><td>.105</td><td>.195</td><td>.038</td></tr><tr><td>0.3</td><td>.286</td><td>.004</td><td>.293</td><td>.005</td><td>.210</td><td>.126</td><td>.107</td><td>.136</td><td>.011</td></tr><tr><td>0.4</td><td>.223</td><td>.014</td><td>.235</td><td>.014</td><td>.176</td><td>.148</td><td>.111</td><td>.126</td><td>.067</td></tr><tr><td>0.5</td><td>.202</td><td>.034</td><td>.223</td><td>.034</td><td>.204</td><td>.149</td><td>.122</td><td>.120</td><td>.027</td></tr><tr><td>0.6</td><td>.212</td><td>.054</td><td>.228</td><td>.055</td><td>.197</td><td>.151</td><td>.164</td><td>.123</td><td>.089</td></tr><tr><td>0.7</td><td>.225</td><td>.079</td><td>.255</td><td>.079</td><td>.206</td><td>.145</td><td>.158</td><td>.161</td><td>.088</td></tr><tr><td>0.8</td><td>.238</td><td>.105</td><td>.249</td><td>.106</td><td>.216</td><td>.157</td><td>.152</td><td>.171</td><td>.101</td></tr><tr><td>0.9</td><td>.225</td><td>.138</td><td>.221</td><td>.138</td><td>.212</td><td>.152</td><td>.169</td><td>.165</td><td>.114</td></tr><tr><td>1.0</td><td>.152</td><td>.155</td><td>.155</td><td>.158</td><td>.168</td><td>.154</td><td>.160</td><td>.156</td><td>.190</td></tr></table>",
+        "bbox": [
+            308,
+            542,
+            663,
+            690
+        ],
+        "page_idx": 24
+    },
+    {
+        "type": "table",
+        "img_path": "images/2b7b330f30e5978e199bda26ed4a2c5d63a8ec89f7eefd9a5cd4d70cadfd31ec.jpg",
+        "table_caption": [
+            "Table 11. Final InfoNCE loss across all generative processes and encoder types as a function of constraint ratio $\\rho .$ Results reported as mean across $^ { 5 }$ seeds. "
+        ],
+        "table_footnote": [],
+        "table_body": "<table><tr><td rowspan=\"2\">ρ</td><td colspan=\"2\">Identity</td><td colspan=\"2\">Linear</td><td>InvMLP</td><td colspan=\"2\">Patches</td><td colspan=\"2\">Spiral</td></tr><tr><td>MLP</td><td>Inv</td><td>MLP</td><td>Inv</td><td>MLP</td><td>MLP</td><td>Inv</td><td>MLP</td><td>Inv</td></tr><tr><td>0.0</td><td>5.71</td><td>6.05</td><td>5.71</td><td>6.05</td><td>5.03</td><td>5.17</td><td>6.19</td><td>5.07</td><td>6.07</td></tr><tr><td>0.1</td><td>6.07</td><td>6.18</td><td>6.06</td><td>6.18</td><td>5.38</td><td>5.50</td><td>6.31</td><td>5.45</td><td>6.44</td></tr><tr><td>0.2</td><td>6.21</td><td>6.30</td><td>6.22</td><td>6.30</td><td>5.53</td><td>5.62</td><td>6.40</td><td>5.55</td><td>6.37</td></tr><tr><td>0.3</td><td>6.32</td><td>6.38</td><td>6.32</td><td>6.38</td><td>5.63</td><td>5.69</td><td>6.47</td><td>5.65</td><td>6.38</td></tr><tr><td>0.4</td><td>6.40</td><td>6.46</td><td>6.40</td><td>6.46</td><td>5.71</td><td>5.76</td><td>6.53</td><td>5.72</td><td>6.53</td></tr><tr><td>0.5</td><td>6.46</td><td>6.53</td><td>6.47</td><td>6.53</td><td>5.78</td><td>5.83</td><td>6.60</td><td>5.79</td><td>6.52</td></tr><tr><td>0.6</td><td>6.52</td><td>6.59</td><td>6.53</td><td>6.59</td><td>5.84</td><td>5.88</td><td>6.68</td><td>5.85</td><td>6.62</td></tr><tr><td>0.7</td><td>6.57</td><td>6.62</td><td>6.57</td><td>6.63</td><td>5.89</td><td>5.93</td><td>6.71</td><td>5.89</td><td>6.72</td></tr><tr><td>0.8</td><td>6.62</td><td>6.67</td><td>6.62</td><td>6.67</td><td>5.94</td><td>5.97</td><td>6.74</td><td>5.94</td><td>6.75</td></tr><tr><td>0.9</td><td>6.65</td><td>6.68</td><td>6.66</td><td>6.68</td><td>5.98</td><td>6.01</td><td>6.78</td><td>5.97</td><td>6.81</td></tr><tr><td>1.0</td><td>6.69</td><td>6.69</td><td>6.70</td><td>6.69</td><td>6.01</td><td>6.03</td><td>6.79</td><td>6.01</td><td>6.94</td></tr></table>",
+        "bbox": [
+            318,
+            755,
+            655,
+            902
+        ],
+        "page_idx": 24
+    },
+    {
+        "type": "header",
+        "text": "The Loss Is Not Enough ",
+        "bbox": [
+            408,
+            56,
+            562,
+            70
+        ],
+        "page_idx": 24
+    },
+    {
+        "type": "page_number",
+        "text": "25 ",
+        "bbox": [
+            477,
+            922,
+            495,
+            934
+        ],
+        "page_idx": 24
+    },
+    {
+        "type": "text",
+        "text": "E.5. Synthetic Validation Figures ",
+        "text_level": 1,
+        "bbox": [
+            86,
+            85,
+            318,
+            99
+        ],
+        "page_idx": 25
+    },
+    {
+        "type": "text",
+        "text": "Figure 5 provides visual summaries comparing MLP and inverse encoder performance across conditions. ",
+        "bbox": [
+            84,
+            108,
+            774,
+            125
+        ],
+        "page_idx": 25
+    },
+    {
+        "type": "chart",
+        "img_path": "images/295bc74228f9e63646e2fedc8e10463ae207fdf991a2e6622c1d918c51b09f44.jpg",
+        "content": "| Category          | MLP   | Inverse |\n| ----------------- | ----- | ------- |\n| Diversity Holds   | 1.00  | 0.79    |\n| Diversity Violated| 0.25  | 0.85    |",
+        "chart_caption": [
+            "(a) "
+        ],
+        "chart_footnote": [],
+        "sub_type": "bar",
+        "bbox": [
+            169,
+            137,
+            377,
+            277
+        ],
+        "page_idx": 25
+    },
+    {
+        "type": "chart",
+        "img_path": "images/363d19a881ebf9c5d6049c8039c0c57795e37a1dc44cdc0b587182c24e61f814.jpg",
+        "content": "| Constraint Ratio (ρ) | MLP  | Inverse |\n| -------------------- | ---- | ------- |\n| 0.0                  | 0.30 | 0.06    |\n| 0.2                  | 0.23 | 0.05    |\n| 0.4                  | 0.21 | 0.04    |\n| 0.6                  | 0.18 | 0.09    |\n| 0.8                  | 0.20 | 0.12    |\n| 1.0                  | 0.16 | 0.16    |",
+        "chart_caption": [
+            "(b) "
+        ],
+        "chart_footnote": [],
+        "sub_type": "line",
+        "bbox": [
+            385,
+            137,
+            588,
+            276
+        ],
+        "page_idx": 25
+    },
+    {
+        "type": "chart",
+        "img_path": "images/8bf9e00866967043cadb923af1583dae6be55f75efc81f2147275a5b0d8797d7.jpg",
+        "content": "| Number of Fixed Dimensions (dfixed) | Linear | Monomial |\n| ---------------------------------- | ------ | -------- |\n| 0                                  | 1.0    | 1.0      |\n| 1                                  | 0.0    | 0.0      |\n| 2                                  | 0.0    | 0.0      |\n| 3                                  | 0.0    | 0.0      |\n| 4                                  | 0.05   | 0.05     |\n| 5                                  | 0.1    | 0.1      |\n| 6                                  | 0.15   | 0.2      |\n| 7                                  | 0.2    | 0.3      |\n| 8                                  | 0.25   | 0.4      |\n| 9                                  | 0.3    | 0.45     |\n| 10                                 | 0.05   | 0.1      |",
+        "chart_caption": [
+            "(c) ",
+            "Figure 5. Synthetic validation of theoretical predictions. (a) Linear identifiability for MLP and inverse encoders. When the diversity condition holds, MLP achieves $R ^ { 2 } = 1 . 0 0 ;$ ; when violated, it collapses to $R ^ { 2 } = 0 . \\dot { 2 } 5$ while inverse encoders remain robust $( R ^ { 2 } = 0 . 8 3 )$ . (b) Angular preservation error vs. constraint ratio $\\rho . \\ \\mathrm { A t } \\ \\rho = 1$ (corrected InfoNCE), MLP converges to inverse encoder performance. (c) Linear identifiability on ${ \\mathbb S } ^ { 9 }$ vs. incremental violation of diversity condition; even $d _ { \\mathrm { f i x e d } } = 1$ causes catastrophic failure. Results averaged across 5 generative processes; shaded regions indicate ±1 std. "
+        ],
+        "chart_footnote": [],
+        "sub_type": "line",
+        "bbox": [
+            601,
+            138,
+            803,
+            276
+        ],
+        "page_idx": 25
+    },
+    {
+        "type": "header",
+        "text": "The Loss Is Not Enough ",
+        "bbox": [
+            408,
+            56,
+            562,
+            70
+        ],
+        "page_idx": 25
+    },
+    {
+        "type": "page_number",
+        "text": "",
+        "bbox": [
+            477,
+            922,
+            496,
+            934
+        ],
+        "page_idx": 25
+    }
+]

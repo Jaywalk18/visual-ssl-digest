@@ -9,7 +9,7 @@
 </head>
 <body>
   <header class="masthead">
-    <div class="masthead-kicker">Visual SSL Research Report · 2026-06-04</div>
+    <div class="masthead-kicker">Visual SSL Research Report · 2026-06-05</div>
     <a class="masthead-title" href="index.html">通用视觉自监督研究报</a>
     <div class="masthead-meta">
       <span>图像表征 · VFM · JEPA · 视频预训练</span>
@@ -19,106 +19,106 @@
   </header>
   <nav class="site-nav" aria-label="主导航">
     <a class="nav-link active" href="index.html">头版</a>
-<a class="nav-link" href="issues/2026-06-04.html">今日速递</a>
+<a class="nav-link" href="issues/2026-06-05.html">今日速递</a>
 <a class="nav-link" href="pages/catalog.html">论文目录</a>
 <a class="nav-link" href="pages/timeline.html">时间线</a>
   </nav>
   <main><section class="hero-grid">
   <article class="lead-story">
-    <div class="kicker">今日主线 · arXiv</div>
-    <h1>$A^2$：直接分析自监督 ViT 注意力定位的逆 scaling 现象，并用小模型定位 + 大模型嵌入做无训练增强</h1>
-    <p class="dek">直接分析自监督 ViT 注意力定位的逆 scaling 现象，并用小模型定位 + 大模型嵌入做无训练增强。</p>
-    <figure class="hero-figure"><img src="assets/mineru/2606.03148/images/b74f305b915994022e13b3abd5140d9abba27048889bf488c02bcba550262039.jpg" alt="$A^2$ figure"><figcaption>这张图/表用于判断 $A^2$ 的实验收益来自哪里。重点看替换、消融或跨模型设置下趋势是否一致，而不是只看单个最高分。</figcaption></figure>
-    <div class="paper-actions"><a href="issues/2026-06-04.html">阅读 6 月 4 日速递</a><a href="papers/2606.03148.html">打开主文页</a></div>
+    <div class="kicker">今日主线 · arXiv + ICML 2026</div>
+    <h1>Geometry-Preserving Unsupervised Alignment for Heterogeneous：用无监督正交映射连接 VFM 几何空间与 VLM 语义空间，是今天最直接服务通用视觉表征融合的论文</h1>
+    <p class="dek">用无监督正交映射连接 VFM 几何空间与 VLM 语义空间，是今天最直接服务通用视觉表征融合的论文。</p>
+    <figure class="hero-figure"><img src="assets/mineru/2606.04385/images/11c80cf403c8c1cf964e0cffe1a7adc4bd37e9149283fd38400e9e9e7865420b.jpg" alt="Geometry-Preserving Unsupervised Alignment for Heterogeneous figure"><figcaption>这张可视化用来解释 Geometry-Preserving Unsupervised Alignment for Heterogeneous 学到的中间表征或对齐关系。重点看它是否支持正文里的机制判断。</figcaption></figure>
+    <div class="paper-actions"><a href="issues/2026-06-05.html">阅读 6 月 5 日速递</a><a href="papers/2606.04385.html">打开主文页</a></div>
   </article>
   <aside class="issue-brief">
     <h2>快速摘要</h2>
-    <ul><li><b>今日最值得看</b><span>A^2 和 IdEst。前者直接指出小型自监督 ViT 的注意力定位反而强于大型 ViT，后者用 intrinsic dimension 替代昂贵 linear probing 来评估 SSL 表征。</span></li><li><b>建议精读顺序</b><span>A^2 -&gt; IdEst -&gt; PRISM -&gt; Beyond Compression -&gt; Formalizing the Binding Problem；之后扫读视觉指令微调、视频/世界模型和注意力 foundation model。</span></li><li><b>新增/更新/过滤数量</b><span>arXiv Wed 2026-06-03 官方 new 页已出现；合并 cs.CV/cs.LG/cs.AI/cs.CL/stat.ML 后唯一 ID 948；关键词候选 503；新增入选 10；会议状态合并 4；过滤/降级 493。</span></li><li><b>主要判断</b><span>今天没有新的 JEPA 正则化主线，但有一组更实用的“表征诊断与组合”论文：SSL ViT localization、intrinsic dimension、spectral accessibility、binding information 和 VFM 专家化融合。</span></li><li><b>会议动态</b><span>ICML 2026 官方 Downloads/virtual 页面确认 IdEst、PRISM、Formalizing the Binding Problem、Attend to Anything；另有 Directional Neural Collapse、Global Geometry 等旧/会议侧条目作为状态观察。</span></li></ul>
+    <ul><li><b>今日最值得看</b><span>GPUA 和 KODA。前者把 vision-only foundation model 的几何结构无监督映射到 VLM 语义空间，后者用 kernel discrepancy 找 CLIP/SigLIP 等表征之间真正不同的样本子结构。</span></li><li><b>建议精读顺序</b><span>GPUA -&gt; KODA -&gt; The Loss Is Not Enough -&gt; BabyCL；随后读 RePercENT 与 ChannelTok；Stateful Visual Encoder、FINO、IN2R、VideoCUPS 按项目需要精读。</span></li><li><b>新增/更新/过滤数量</b><span>arXiv Thu 2026-06-04 官方 new 页已出现；合并 cs.CV/cs.LG/cs.AI/cs.CL/stat.ML 后唯一 latest ID 477；关键词/标题候选 148 + 手动边缘复核 7；新增入选 13；会议状态合并/观察 5；过滤/降级/状态记录 173。</span></li><li><b>主要判断</b><span>今天不是 MAE/JEPA 新目标爆发，而是“通用视觉表征如何对齐、比较、流式更新和压缩”的一天：VFM/VLM 兼容、contrastive identifiability、视觉 tokenization、跨图像状态编码同时出现。</span></li><li><b>会议动态</b><span>ICML 2026 官方 Downloads/virtual 确认 GPUA、The Loss Is Not Enough、Hyper-ICL、MaskAQ；CVPR Open Access 确认 VideoCUPS。OpenReview 抽查未发现 24-48 小时内新的高相关通用视觉 SSL 状态变化。</span></li></ul>
   </aside>
 </section>
 <section class="section-block">
   <div class="section-heading"><h2>今日推荐论文</h2><a href="pages/catalog.html">全目录 →</a></div>
-  <div class="paper-list"><article class="paper-card" data-category="Visual SSL / representation" data-priority="P0" data-date="2026-06-04" data-title="$a^2$: smaller self-supervised vits localize better than larger ones" data-keywords="$a^2$: smaller self-supervised vits localize better than larger ones $a^2$ visual ssl / representation p0 2026-06-04 arxiv 直接分析自监督 vit 注意力定位的逆 scaling 现象，并用小模型定位 + 大模型嵌入做无训练增强 高相关；详见方法、贡献和实验边界。">
-  <a class="paper-thumb paper-thumb-text" href="papers/2606.03148.html">
-    <img src="assets/mineru/2606.03148/images/b74f305b915994022e13b3abd5140d9abba27048889bf488c02bcba550262039.jpg" alt="$A^2$ figure"><span>P0</span>
+  <div class="paper-list"><article class="paper-card" data-category="ICML 2026" data-priority="P0" data-date="2026-06-05" data-title="geometry-preserving unsupervised alignment for heterogeneous foundation models" data-keywords="geometry-preserving unsupervised alignment for heterogeneous foundation models geometry-preserving unsupervised alignment for heterogeneous icml 2026 p0 2026-06-05 arxiv + icml 2026 用无监督正交映射连接 vfm 几何空间与 vlm 语义空间，是今天最直接服务通用视觉表征融合的论文 高相关；详见方法、贡献和实验边界。">
+  <a class="paper-thumb paper-thumb-text" href="papers/2606.04385.html">
+    <img src="assets/mineru/2606.04385/images/11c80cf403c8c1cf964e0cffe1a7adc4bd37e9149283fd38400e9e9e7865420b.jpg" alt="Geometry-Preserving Unsupervised Alignment for Heterogeneous figure"><span>P0</span>
   </a>
   <div>
-    <div class="paper-meta">2026-06-04 · Visual SSL / representation · arXiv</div>
-    <h3><a href="papers/2606.03148.html">$A^2$: Smaller Self-Supervised ViTs Localize Better than Larger Ones</a></h3>
+    <div class="paper-meta">2026-06-05 · ICML 2026 · arXiv + ICML 2026</div>
+    <h3><a href="papers/2606.04385.html">Geometry-Preserving Unsupervised Alignment for Heterogeneous Foundation Models</a></h3>
     <p>高相关；详见方法、贡献和实验边界。</p>
-    <p class="card-tech"><b>方法：</b>直接分析自监督 ViT 注意力定位的逆 scaling 现象，并用小模型定位 + 大模型嵌入做无训练增强</p>
-    <div class="paper-actions"><a href="papers/2606.03148.html">读图文页</a><a href="https://arxiv.org/abs/2606.03148">原文</a></div>
+    <p class="card-tech"><b>方法：</b>用无监督正交映射连接 VFM 几何空间与 VLM 语义空间，是今天最直接服务通用视觉表征融合的论文</p>
+    <div class="paper-actions"><a href="papers/2606.04385.html">读图文页</a><a href="https://arxiv.org/abs/2606.04385">原文</a></div>
   </div>
 </article>
-<article class="paper-card" data-category="ICML 2026" data-priority="P0" data-date="2026-06-04" data-title="idest: assessing self-supervised learning representations via intrinsic dimension" data-keywords="idest: assessing self-supervised learning representations via intrinsic dimension idest icml 2026 p0 2026-06-04 arxiv + icml 2026 用 mst intrinsic dimension 作为 ssl 表征质量代理，目标是减少 linear probe 成本和超参敏感性 高相关；详见方法、贡献和实验边界。">
-  <a class="paper-thumb paper-thumb-text" href="papers/2606.03338.html">
-    <img src="assets/mineru/2606.03338/images/c7bbabe2f4fed77fbb419a4402119331cef3370188ec1a6a975ef5338327adbc.jpg" alt="IdEst figure"><span>P0</span>
+<article class="paper-card" data-category="Visual SSL / representation" data-priority="P0" data-date="2026-06-05" data-title="koda: contrastive representation comparison and alignment for vision-language foundation models" data-keywords="koda: contrastive representation comparison and alignment for vision-language foundation models koda visual ssl / representation p0 2026-06-05 arxiv 给 clip/siglip 等 vlm 表征提供可解释的差异发现和对齐工具，适合作为 foundation feature 诊断方法 高相关；详见方法、贡献和实验边界。">
+  <a class="paper-thumb paper-thumb-text" href="papers/2606.04180.html">
+    <img src="assets/mineru/2606.04180/images/f5d93f976b1dd558e6a55f8d2bce0434059ccbc3831bbeaed87d7fd204acbbc5.jpg" alt="KODA figure"><span>P0</span>
   </a>
   <div>
-    <div class="paper-meta">2026-06-04 · ICML 2026 · arXiv + ICML 2026</div>
-    <h3><a href="papers/2606.03338.html">IdEst: Assessing Self-Supervised Learning Representations via Intrinsic Dimension</a></h3>
+    <div class="paper-meta">2026-06-05 · Visual SSL / representation · arXiv</div>
+    <h3><a href="papers/2606.04180.html">KODA: Contrastive Representation Comparison and Alignment for Vision-Language Foundation Models</a></h3>
     <p>高相关；详见方法、贡献和实验边界。</p>
-    <p class="card-tech"><b>方法：</b>用 MST intrinsic dimension 作为 SSL 表征质量代理，目标是减少 linear probe 成本和超参敏感性</p>
-    <div class="paper-actions"><a href="papers/2606.03338.html">读图文页</a><a href="https://arxiv.org/abs/2606.03338">原文</a></div>
+    <p class="card-tech"><b>方法：</b>给 CLIP/SigLIP 等 VLM 表征提供可解释的差异发现和对齐工具，适合作为 foundation feature 诊断方法</p>
+    <div class="paper-actions"><a href="papers/2606.04180.html">读图文页</a><a href="https://arxiv.org/abs/2606.04180">原文</a></div>
   </div>
 </article>
-<article class="paper-card" data-category="ICML 2026" data-priority="P1" data-date="2026-06-04" data-title="prism: synergizing vision foundation models via self-organized expert specialization" data-keywords="prism: synergizing vision foundation models via self-organized expert specialization prism icml 2026 p1 2026-06-04 arxiv + icml 2026 面向多个 vfm 的模块化 moe 蒸馏/融合，处理 monolithic distillation 的负迁移 高相关；详见方法、贡献和实验边界。">
-  <a class="paper-thumb paper-thumb-text" href="papers/2606.03444.html">
-    <img src="assets/mineru/2606.03444/images/f6d4afea3180e209d93b61a3009734caf9c4dd0a6b91bf6d57985b00181065a2.jpg" alt="PRISM figure"><span>P1</span>
+<article class="paper-card" data-category="Visual SSL / representation" data-priority="P0" data-date="2026-06-05" data-title="continual visual and verbal learning through a child&#x27;s egocentric input" data-keywords="continual visual and verbal learning through a child&#x27;s egocentric input continual visual and verbal learning visual ssl / representation p0 2026-06-05 arxiv babycl 用单遍时间流、视觉表征学习和图文对比损失模拟真实连续经验，比离线 shuffle 训练更接近通用学习设定 高相关；详见方法、贡献和实验边界。">
+  <a class="paper-thumb paper-thumb-text" href="papers/2606.05115.html">
+    <img src="assets/mineru/2606.05115/images/a70df4dc9fabd5ada37b93cabdca946c6747804622d9824b27dcb2478e0b8363.jpg" alt="Continual Visual and Verbal Learning figure"><span>P0</span>
   </a>
   <div>
-    <div class="paper-meta">2026-06-04 · ICML 2026 · arXiv + ICML 2026</div>
-    <h3><a href="papers/2606.03444.html">PRISM: Synergizing Vision Foundation Models via Self-organized Expert Specialization</a></h3>
+    <div class="paper-meta">2026-06-05 · Visual SSL / representation · arXiv</div>
+    <h3><a href="papers/2606.05115.html">Continual Visual and Verbal Learning Through a Child&#x27;s Egocentric Input</a></h3>
     <p>高相关；详见方法、贡献和实验边界。</p>
-    <p class="card-tech"><b>方法：</b>面向多个 VFM 的模块化 MoE 蒸馏/融合，处理 monolithic distillation 的负迁移</p>
-    <div class="paper-actions"><a href="papers/2606.03444.html">读图文页</a><a href="https://arxiv.org/abs/2606.03444">原文</a></div>
+    <p class="card-tech"><b>方法：</b>BabyCL 用单遍时间流、视觉表征学习和图文对比损失模拟真实连续经验，比离线 shuffle 训练更接近通用学习设定</p>
+    <div class="paper-actions"><a href="papers/2606.05115.html">读图文页</a><a href="https://arxiv.org/abs/2606.05115">原文</a></div>
   </div>
 </article>
-<article class="paper-card" data-category="Visual SSL / representation" data-priority="P1" data-date="2026-06-04" data-title="beyond compression: quantifying spectral accessibility in vision representations" data-keywords="beyond compression: quantifying spectral accessibility in vision representations beyond compression visual ssl / representation p1 2026-06-04 arxiv 用频域 recoverability 诊断 clip/dinov2 表征在投影、池化和层深中的信息损失 高相关；详见方法、贡献和实验边界。">
-  <a class="paper-thumb paper-thumb-text" href="papers/2606.03795.html">
-    <img src="assets/mineru/2606.03795/images/d136b1fb44cdb2ef093cbf7cc25147cb5baf4642091ff6e8a1b7a2d1d6e3410a.jpg" alt="Beyond Compression figure"><span>P1</span>
+<article class="paper-card" data-category="ICML 2026" data-priority="P1" data-date="2026-06-05" data-title="the loss is not enough: sampling conditions and inductive bias in contrastive representation learning" data-keywords="the loss is not enough: sampling conditions and inductive bias in contrastive representation learning the loss is not enough icml 2026 p1 2026-06-05 arxiv + icml 2026 从正样本采样 support 条件解释 contrastive ssl 何时能恢复 latent geometry，补足经验方法的理论边界 高相关；详见方法、贡献和实验边界。">
+  <a class="paper-thumb paper-thumb-text" href="papers/2606.04280.html">
+    <img src="assets/mineru/2606.04280/images/61cfcefd20a983d6c46b2f6966904f1f83d6e521f17868c9094aec4ff2cc12ab.jpg" alt="The Loss Is Not Enough figure"><span>P1</span>
   </a>
   <div>
-    <div class="paper-meta">2026-06-04 · Visual SSL / representation · arXiv</div>
-    <h3><a href="papers/2606.03795.html">Beyond Compression: Quantifying Spectral Accessibility in Vision Representations</a></h3>
+    <div class="paper-meta">2026-06-05 · ICML 2026 · arXiv + ICML 2026</div>
+    <h3><a href="papers/2606.04280.html">The Loss Is Not Enough: Sampling Conditions and Inductive Bias in Contrastive Representation Learning</a></h3>
     <p>高相关；详见方法、贡献和实验边界。</p>
-    <p class="card-tech"><b>方法：</b>用频域 recoverability 诊断 CLIP/DINOv2 表征在投影、池化和层深中的信息损失</p>
-    <div class="paper-actions"><a href="papers/2606.03795.html">读图文页</a><a href="https://arxiv.org/abs/2606.03795">原文</a></div>
+    <p class="card-tech"><b>方法：</b>从正样本采样 support 条件解释 contrastive SSL 何时能恢复 latent geometry，补足经验方法的理论边界</p>
+    <div class="paper-actions"><a href="papers/2606.04280.html">读图文页</a><a href="https://arxiv.org/abs/2606.04280">原文</a></div>
   </div>
 </article>
-<article class="paper-card" data-category="ICML 2026" data-priority="P1" data-date="2026-06-04" data-title="formalizing the binding problem" data-keywords="formalizing the binding problem formalizing the binding problem icml 2026 p1 2026-06-04 arxiv + icml 2026 用信息论 probing 测量 vit 表征是否知道“哪些属性属于同一对象”，补充全局几何指标 中高相关；详见方法、贡献和实验边界。">
-  <a class="paper-thumb paper-thumb-text" href="papers/2606.03976.html">
-    <img src="assets/mineru/2606.03976/images/2576f0c85cd4566710523f16cbf7037f4a9c93580fc9d7efc78d6e17790edb50.jpg" alt="Formalizing the Binding Problem figure"><span>P1</span>
+<article class="paper-card" data-category="Visual SSL / representation" data-priority="P1" data-date="2026-06-05" data-title="repercent: scaling disentangled representation learning beyond two modalities" data-keywords="repercent: scaling disentangled representation learning beyond two modalities repercent visual ssl / representation p1 2026-06-05 arxiv 面向多于两种模态的自监督解耦表示，直接处理共享因子与模态特异因子的可扩展分解 高相关；详见方法、贡献和实验边界。">
+  <a class="paper-thumb paper-thumb-text" href="papers/2606.05109.html">
+    <img src="assets/mineru/2606.05109/images/ae3076dbe4f55603b2707e1796b8ceb4d6ab0d2ee6c9f4c9138cab536aa99d87.jpg" alt="RePercENT figure"><span>P1</span>
   </a>
   <div>
-    <div class="paper-meta">2026-06-04 · ICML 2026 · arXiv + ICML 2026</div>
-    <h3><a href="papers/2606.03976.html">Formalizing the Binding Problem</a></h3>
-    <p>中高相关；详见方法、贡献和实验边界。</p>
-    <p class="card-tech"><b>方法：</b>用信息论 probing 测量 ViT 表征是否知道“哪些属性属于同一对象”，补充全局几何指标</p>
-    <div class="paper-actions"><a href="papers/2606.03976.html">读图文页</a><a href="https://arxiv.org/abs/2606.03976">原文</a></div>
+    <div class="paper-meta">2026-06-05 · Visual SSL / representation · arXiv</div>
+    <h3><a href="papers/2606.05109.html">RePercENT: Scaling Disentangled Representation Learning Beyond Two Modalities</a></h3>
+    <p>高相关；详见方法、贡献和实验边界。</p>
+    <p class="card-tech"><b>方法：</b>面向多于两种模态的自监督解耦表示，直接处理共享因子与模态特异因子的可扩展分解</p>
+    <div class="paper-actions"><a href="papers/2606.05109.html">读图文页</a><a href="https://arxiv.org/abs/2606.05109">原文</a></div>
   </div>
 </article></div>
 </section></main>
-  <aside class="conf-float" data-conf-reminder="2026-06-04-main-ddl" aria-label="CCF A/B 主投稿提醒">
+  <aside class="conf-float" data-conf-reminder="2026-06-05-main-ddl" aria-label="CCF A/B 主投稿提醒">
   <button class="conf-close" type="button" aria-label="关闭会议提醒">×</button>
   <details open>
     <summary>CCF A/B 主投稿提醒</summary>
     <div class="conf-list"><a class="conf-item " href="https://github.com/ccfddl/ccf-deadlines/blob/main/conference/AI/aaai.yml">
   <span><b>AAAI 2027</b><em>CCF A · Main paper submission</em></span>
-  <strong>53 天</strong>
+  <strong>52 天</strong>
   <small>2026-07-27 · CCF DDL: abstract 2026-07-20；进入 1 个月窗口后重点提醒。</small>
 </a></div>
   </details>
 </aside>
   <footer class="footer">
     <div>面向通用视觉自监督、视觉基础模型与多模态表征学习的每日研究报。</div>
-    <div class="muted">Issue 2026-06-04 · Curated readings and figure notes</div>
+    <div class="muted">Issue 2026-06-05 · Curated readings and figure notes</div>
   </footer>
   <script>
   (() => {
     const box = document.querySelector('[data-conf-reminder]');
     if (!box) return;
-    const key = `visualSslConfReminderClosed:${box.dataset.confReminder || '2026-06-04-main-ddl'}`;
+    const key = `visualSslConfReminderClosed:${box.dataset.confReminder || '2026-06-05-main-ddl'}`;
     try {
       if (localStorage.getItem(key) === '1') box.hidden = true;
     } catch (err) {}

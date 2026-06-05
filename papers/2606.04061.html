@@ -1,0 +1,97 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Intra-Modal Neighbors Never Lie · 通用视觉自监督研究报</title>
+  <link rel="stylesheet" href="../assets/styles.css?v=20260525j">
+  <link rel="stylesheet" href="../assets/visual-ssl.css?v=20260525j">
+</head>
+<body>
+  <header class="masthead">
+    <div class="masthead-kicker">Visual SSL Research Report · 2026-06-05</div>
+    <a class="masthead-title" href="../index.html">通用视觉自监督研究报</a>
+    <div class="masthead-meta">
+      <span>图像表征 · VFM · JEPA · 视频预训练</span>
+      <span>CCF A/B 会议优先</span>
+      <span>图文精读 · 方法图解</span>
+    </div>
+  </header>
+  <nav class="site-nav" aria-label="主导航">
+    <a class="nav-link" href="../index.html">头版</a>
+<a class="nav-link" href="../issues/2026-06-05.html">今日速递</a>
+<a class="nav-link" href="../pages/catalog.html">论文目录</a>
+<a class="nav-link" href="../pages/timeline.html">时间线</a>
+  </nav>
+  <main><article class="paper-detail">
+  <div class="paper-main">
+    <div class="kicker">Visual SSL / representation · P2 · 2026-06-05</div>
+    <h1 class="paper-headline">Intra-Modal Neighbors Never Lie：大规模视觉-语言自监督高度依赖网页图文配对质量，IN2R 的 soft-neighborhood supervision 对清洗/利用噪声配对很有实际价值</h1>
+    <p class="dek">把 web-harvested image-text 噪声处理从离散筛选转成同模态几何邻域推理，减少 single-point fragility 与 discretization error。</p>
+    <p class="byline"><strong>Intra-Modal Neighbors Never Lie: Rectifying Inter-Modal Noisy Correspondence via Graph-Based Intra-Modal Reasoning</strong>　Yang Liu, Wentao Feng, Shu-Dong Huang, Yalan Ye, Jiancheng Lv；机构信息 arXiv 元数据未列出。　arXiv　<a href="https://arxiv.org/abs/2606.04061">原文链接</a></p>
+    <div class="paper-facts">
+      <span><b>编号</b>2606.04061</span>
+      <span><b>优先级</b>P2</span>
+      <span><b>类别</b>Visual SSL / representation</span>
+      <span><b>会议</b>arXiv</span>
+      <span><b>方法</b>IN2R 不再为噪声图文配对寻找单个 substitute label，而是在动态 cross-model memory 中检索同模态邻居，用 graph refiner 生成 continuous soft prototype 作为更稳定监督目标。</span>
+      <span><b>来源</b>arXiv / OpenReview</span>
+    </div>
+    <div class="feature-body">
+      <p class="lead dropcap">先说结论。大规模视觉-语言自监督高度依赖网页图文配对质量，IN2R 的 soft-neighborhood supervision 对清洗/利用噪声配对很有实际价值。 把 web-harvested image-text 噪声处理从离散筛选转成同模态几何邻域推理，减少 single-point fragility 与 discretization error。</p>
+      <figure class="full-fig"><img src="../assets/mineru/2606.04061/images/991ef24d0241d912c5a465788331fbb74abcfefa6fb25c49984461e6271cbf65.jpg" alt="Figureure 2 · The overall framework of Intra-modal Neighbor-aware Noise Rectificatio"><figcaption><b>Figureure 2 · The overall framework of Intra-modal Neighbor-aware Noise Rectificatio</b><span class="fig-en">Figure 2. The overall framework of Intra-modal Neighbor-aware Noise Rectification $( \mathbf { I N } ^ { 2 } \mathbf { R } ) .$ . (Top) Manifold Stabilization: For identified clean pairs, we minimize ${ \mathcal { L } } _ { \mathrm { c l e a n } }$ (combining inter-modal alignment and intra-modal constraints) to consolidate the geometric structure, while pushing high-confidence representations into the Cross-Model Memory. (Bottom) Graph-Guided Continuous Rectification: For noisy pairs, we retrieve the Top-K intra-modal neighbors from the memory queue. A learnable Graph Refiner then performs relational reasoning over these neighbors to synthesize a continuous, robust soft prototype. This synthesized target provides fine-grained supervision via ${ \mathcal { L } } _ { \mathrm { r e c t } } .$ , correcting the noisy correspondence.</span><span class="fig-zh">这张图概括 Intra-Modal Neighbors Never Lie 的整体方法流程。阅读时先看模块之间传递的训练信号，再看作者如何把目标拆成可优化的子问题。</span></figcaption></figure>
+<figure class="full-fig"><img src="../assets/mineru/2606.04061/images/413886b9246767abf6af4a690d035e6bcc085e25aa0e81963bb82b450f8dce80.jpg" alt="Figureure 1 · Comparison between the Traditional Discrete Selection paradigm and our"><figcaption><b>Figureure 1 · Comparison between the Traditional Discrete Selection paradigm and our</b><span class="fig-en">Figure 1. Comparison between the Traditional Discrete Selection paradigm and our proposed Continuous Rectification (IN2R). While discrete selection (top) seeks a single substitute proxy from a finite dataset, often suffering from discretization error or selecting noisy neighbors (e.g., retrieving an imperfect caption), our approach (bottom) leverages the intrinsic topological structure. By retrieving intra-modal neighbors and aggregating them via a Graph Refiner, we synthesize a robust, continuous prototype that rectifies the semantic misalignment (e.g., correcting “A sleeping cat” using the visual consensus of dog-related features).</span><span class="fig-zh">这张图/表用于判断 Intra-Modal Neighbors Never Lie 的实验收益来自哪里。重点看替换、消融或跨模型设置下趋势是否一致，而不是只看单个最高分。</span></figcaption></figure>
+      
+      <h2>核心问题</h2>
+      <p>大规模视觉-语言自监督高度依赖网页图文配对质量，IN2R 的 soft-neighborhood supervision 对清洗/利用噪声配对很有实际价值。</p>
+      <h2>方法拆解</h2>
+      <p>IN2R 不再为噪声图文配对寻找单个 substitute label，而是在动态 cross-model memory 中检索同模态邻居，用 graph refiner 生成 continuous soft prototype 作为更稳定监督目标。</p>
+      <h2>主要贡献</h2>
+      <p>把 web-harvested image-text 噪声处理从离散筛选转成同模态几何邻域推理，减少 single-point fragility 与 discretization error。</p>
+      <h2>实验看点</h2>
+      <p>摘要称在 Flickr30K、MS-COCO、CC152K 上显著优于现有 noisy correspondence 方法。</p>
+      <h2>局限与读法</h2>
+      <p>任务形式是 cross-modal retrieval；需要看它能否在更大规模 CLIP 式预训练中稳定提升 representation，而不仅是 retrieval benchmark。</p>
+    
+    </div>
+  </div>
+  <aside class="paper-side">
+
+    <div class="side-box"><h4>关键判断</h4><dl><dt>相关性</dt><dd>P2</dd><dt>类别</dt><dd>Visual SSL / representation</dd><dt>会议</dt><dd>arXiv</dd><dt>读法</dt><dd>方法图优先，表格次之</dd></dl></div>
+    <div class="side-box"><h4>原文</h4><p><a href="https://arxiv.org/abs/2606.04061">https://arxiv.org/abs/2606.04061</a></p></div>
+  </aside>
+</article></main>
+  <aside class="conf-float" data-conf-reminder="2026-06-05-main-ddl" aria-label="CCF A/B 主投稿提醒">
+  <button class="conf-close" type="button" aria-label="关闭会议提醒">×</button>
+  <details open>
+    <summary>CCF A/B 主投稿提醒</summary>
+    <div class="conf-list"><a class="conf-item " href="https://github.com/ccfddl/ccf-deadlines/blob/main/conference/AI/aaai.yml">
+  <span><b>AAAI 2027</b><em>CCF A · Main paper submission</em></span>
+  <strong>52 天</strong>
+  <small>2026-07-27 · CCF DDL: abstract 2026-07-20；进入 1 个月窗口后重点提醒。</small>
+</a></div>
+  </details>
+</aside>
+  <footer class="footer">
+    <div>面向通用视觉自监督、视觉基础模型与多模态表征学习的每日研究报。</div>
+    <div class="muted">Issue 2026-06-05 · Curated readings and figure notes</div>
+  </footer>
+  <script>
+  (() => {
+    const box = document.querySelector('[data-conf-reminder]');
+    if (!box) return;
+    const key = `visualSslConfReminderClosed:${box.dataset.confReminder || '2026-06-05-main-ddl'}`;
+    try {
+      if (localStorage.getItem(key) === '1') box.hidden = true;
+    } catch (err) {}
+    const close = box.querySelector('.conf-close');
+    if (close) {
+      close.addEventListener('click', () => {
+        box.hidden = true;
+        try { localStorage.setItem(key, '1'); } catch (err) {}
+      });
+    }
+  })();
+  </script>
+</body>
+</html>

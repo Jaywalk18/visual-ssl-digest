@@ -1,0 +1,2204 @@
+[
+    {
+        "type": "text",
+        "text": "ChannelTok: Efficient Flexible-Length Vision Tokenization ",
+        "text_level": 1,
+        "bbox": [
+            200,
+            130,
+            797,
+            152
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "Sukriti Paul Arpit Bansal Tom Goldstein University of Maryland, College Park {sukriti5, bansal01, tomg}@umd.edu ",
+        "bbox": [
+            316,
+            181,
+            679,
+            233
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "Abstract ",
+        "text_level": 1,
+        "bbox": [
+            248,
+            268,
+            326,
+            284
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "Leading flexible vision tokenizers achieve SOTA quality at an extreme cost, relying on parameter-heavy backbones and slow, multi-step generative decoders. We depart from this complex, spatial-token paradigm and introduce a simple, lightweight, and fast channel-wise flexible-length tokenizer. Our method treats each latent channel as a visual token, enabling a parameter-efficient CNN-Transformer hybrid backbone. Furthermore, employing a stochastic taildropping paradigm during training naturally forces channels to organize by semantic importance. This allows for flexible compression at inference by simply retaining the first k channels, and naturally enables variable-length autoregressive image generation. We validate our approach through extensive experiments on ImageNet, demonstrating consistent quality across diverse token budgets. The results establish a new quality-efficiency frontier: our model achieves state-of-the-art perceptual quality (rFID 2.92) while being 8.6× faster in decoding and 2.1× smaller (159M params) than the next-best alternative. Our work establishes channel-wise tokenization as a powerful and practical paradigm for efficient visual representation. Project page: https://channeltok.github.io ",
+        "bbox": [
+            88,
+            300,
+            485,
+            632
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "1. Introduction ",
+        "text_level": 1,
+        "bbox": [
+            91,
+            648,
+            220,
+            664
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "Vision tokenization serves as a foundational component in discrete generative image models, compressing images from pixel space into compact, semantically rich representations in latent space. While early generative representations for images focused on continuous-valued autoencoders [9] and VAEs [13], the pursuit of more efficient and discrete representations led to vector quantization, first via explicit codebooks in VQ-VAE [24] and VQ-GAN [7], and more recently through lookup-free methods such as FSQ [16], LFQ [29], and BSQ [31]. ",
+        "bbox": [
+            89,
+            672,
+            483,
+            824
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "Efficiency in vision tokenization spans multiple dimensions like compression ratio, reconstruction fidelity, semantic richness, encoding-decoding latency, and downstream task performance. Until recently, however, another critical dimension remained largely unexplored: flexible-length tok-",
+        "bbox": [
+            89,
+            824,
+            483,
+            900
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "chart",
+        "img_path": "images/87eff21ed9233681b65603af8be3aeb19800d01fa6d3ea32a706f58fe867f887.jpg",
+        "content": "",
+        "chart_caption": [
+            "Figure 1. Quality-efficiency comparison. Reconstruction fidelity (rFID), decoding throughput, and model size across recent tokenizers. Our method achieves state-of-the-art rFID while being the smallest and among the fastest decoders. "
+        ],
+        "chart_footnote": [],
+        "sub_type": "scatter",
+        "bbox": [
+            517,
+            297,
+            903,
+            534
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "enization that adjusts representation length based on visual complexity. This need has become increasingly urgent in the era of large-scale vision models, where compute budgets constrain deployment and the inherent variability in visual data suggests that not all images require equal representational capacity. ",
+        "bbox": [
+            511,
+            628,
+            906,
+            718
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "In this work, we introduce a simple channel-wise approach for training a flexible-length tokenizer. Our approach is based off a lightweight VQGAN [7] based autoencoder where each channel slice forms a visual token. However unlike standard architectures, our latent features are ordered from low- to high-level. On each step, the encoder maps an image onto the latent space, a random number k of features is chosen, and the decoder must reconstruct the image using only the k lowest-level features. From this process, a coarse-to-fine hierarchy of features naturally emerges in which “low-level” features represent concepts and shapes, and “high-level” features represent details. ",
+        "bbox": [
+            511,
+            719,
+            908,
+            900
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "aside_text",
+        "text": "arXiv:2606.04461v1 [cs.CV] 3 Jun 2026 ",
+        "bbox": [
+            22,
+            282,
+            58,
+            710
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "page_number",
+        "text": "1 ",
+        "bbox": [
+            493,
+            924,
+            503,
+            935
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "image",
+        "img_path": "images/f07099d4f907c1def1588a4a6ce0510a816ffecfe992f15d9551bb096a6e0e8f.jpg",
+        "image_caption": [
+            "Figure 2. Overview of our channel-wise flexible tokenizer. The encoder compresses the input image into a latent representation $\\mathbf { z } \\in \\mathbb { R } ^ { C \\times h \\times w }$ . During training, we adaptively mask channels by retaining only the first k active channels (shown in teal) while stopping gradients through inactive channels (shown in gray). Each active channel is independently quantized using Binary Spherical Quantization (BSQ). The decoder reconstructs the image from the quantized active channels and the masked inactive channels. At inference, varying k enables flexible compression rates without retraining. "
+        ],
+        "image_footnote": [],
+        "content": "```mermaid\ngraph TD\n    A[\"Original\"] --> B[\"VQGAN Encoder\"]\n    B --> C[\"h'\"]\n    C --> D[\"Channel-wise masking\"]\n    D --> E[\"Inactive channels C - k\"]\n    E --> F[\"Active channels k\"]\n    F --> G[\"Stop gradient\"]\n    G --> H[\"Channel-wise BSQ (active channels)\"]\n    H --> I[\"c = 0\"]\n    H --> J[\"c = 1\"]\n    H --> K[\"c = 2\"]\n    H --> L[\"c = 3\"]\n    I --> M[\"Reconstructed VQGAN Decoder\"]\n    J --> M\n    K --> M\n    L --> M\n```",
+        "sub_type": "flowchart",
+        "bbox": [
+            133,
+            85,
+            867,
+            411
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "text",
+        "text": "By leveraging the inherent structure along the channel dimension, our architecture avoids the complexity of parameter-heavy, multi-step generative decoders [1, 15]. Fig. 1 shows our method strikes a favorable balance across the quality-efficiency frontier: competitive reconstruction quality (rFID 2.92) while being the smallest (159M parameters) and among the fastest high-fidelity flexible tokenizers. This balance of efficiency and fidelity makes our method ideally suited for deployment scenarios where size, speed, and quality collectively matter, such as edge devices and real-time applications. ",
+        "bbox": [
+            88,
+            517,
+            485,
+            684
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "text",
+        "text": "Our contributions include: (1) a channel-wise flexible tokenization mechanism that dynamically allocates latent channel capacity based on image complexity; (2) a lightweight VQGAN-based architecture optimized for parameter efficiency and high-throughput encoding–decoding; (3) practical training strategies and regularization for stable learning in the channel-dimension tokenization regime; and (4) a demonstration that channel-wise token ordering transfers to autoregressive generation, where a LlamaGen model trained on our tokens produces coherent images at variable token budgets, suggesting channel-wise tokenization as a promising direction for efficient AR generation. ",
+        "bbox": [
+            88,
+            698,
+            485,
+            895
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "text",
+        "text": "Background & Related Work ",
+        "text_level": 1,
+        "bbox": [
+            513,
+            516,
+            743,
+            532
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "text",
+        "text": "Recent work has begun to address flexible tokenization through various mechanisms. CAT [21] employs a visionlanguage model to classify images by complexity level and assigns them to one of three fixed compression ratios within a nested VAE architecture, though this relies on external LLM-based complexity prediction of an image’s textual description. Other approaches enforce nested token hierarchies through tail-token dropping [1, 17] and block-wise causal masking [27]. These Matryoshka-inspired [14] methods demonstrate a semantic hierarchy from coarse to fine representations through explicit token ordering. ALIT [5] instead uses recurrence to iteratively adjust token lengths over multiple roll-outs, rather than nesting multiple granularities within a single pass. As a further departure, KARL [6] predicts the appropriate token count in one forward pass guided by Kolmogorov Complexity, framing token length as a proxy for minimal description length. However, it relies on an upsidedown reinforcement learning training paradigm and depends heavily on multiple manual design choices for optimizing token budgets, with heightened reconstruction sensitivity to these manual selections. ",
+        "bbox": [
+            511,
+            546,
+            908,
+            863
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "text",
+        "text": "While these methods expand the notion of “flexibility” to encompass reconstruction fidelity, downstream performance, and latent compressibility, industry-scale deployment demands additional considerations: parameter efficiency and inference speed. Many existing approaches rely on sophisticated, parameter-heavy architectures with large ViT backbones [1, 15, 23]. Some methods, though achieving compelling reconstruction fidelity, require multi-step decoding (FlexTok’s [1] rectified flow decoder, DOVE’s [15] transformer-based generative decoder), adding computational overhead at inference. Others limit compression to fixed token buckets [5] or train on hundreds of millions of samples [27]. Moreover, these approaches typically require extensive training recipes, including multi-stage training pipelines or prolonged training schedules, to maintain quality in low-token regimes. ",
+        "bbox": [
+            511,
+            869,
+            908,
+            901
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "page_number",
+        "text": "",
+        "bbox": [
+            493,
+            924,
+            503,
+            935
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "text",
+        "text": "",
+        "bbox": [
+            89,
+            90,
+            483,
+            301
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "Contemporary flexible tokenization research for 2D discrete representations primarily operates along the spatial dimension, typically treating local $h \\times w$ patches as tokens. Recent fixed-length tokenization work [28, 32] has marked a conceptual shift by operating in the channel dimension, revealing that latent channels naturally encode a coarse-to-fine hierarchy that emerges without explicit ordering constraints. Unlike spatial approaches that enforce token ordering through architectural constraints and training objectives, channel-based representations exhibit this hierarchy organically. Motivated by this redefinition of “visual words,” we identify the channel dimension as the preferred axis for flexible tokenization, enabling a simpler and more parameter-efficient design. ",
+        "bbox": [
+            89,
+            301,
+            486,
+            513
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "2. Method ",
+        "text_level": 1,
+        "bbox": [
+            89,
+            526,
+            181,
+            542
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "We introduce a channel-wise adaptive tokenizer that dynamically selects the number of latent channels to retain for each input. Our approach employs a VQGAN-inspired [7] autoencoder where each latent channel functions as a discrete visual token. An overview appears in Fig. 2. ",
+        "bbox": [
+            89,
+            551,
+            483,
+            628
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "2.1. Preliminaries ",
+        "text_level": 1,
+        "bbox": [
+            89,
+            636,
+            230,
+            651
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "Let $\\mathbf { x } \\in \\mathbb { R } ^ { H \\times W \\times 3 }$ denote an input image. Our tokenizer comprises an encoder $E _ { \\theta }$ , quantizer $Q _ { \\phi }$ , and decoder $D _ { \\psi }$ The encoder compresses x into latent representation ${ \\bf z } =$ $E _ { \\theta } ( \\mathbf { x } ) \\in \\mathbb { R } ^ { C \\times h \\times w }$ , where C is the channel dimension and $h ,$ w are spatial dimensions. Unlike spatial tokenization methods treating each spatial location as a token, we operate along the channel dimension where each channel slice $\\mathbf { z } _ { c } \\in$ $\\mathbb { R } ^ { h \\times w }$ constitutes a visual token. This design enables a natural coarse-to-fine hierarchy without explicit ordering constraints. ",
+        "bbox": [
+            89,
+            657,
+            483,
+            808
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "2.2. Encoder-Decoder Architecture ",
+        "text_level": 1,
+        "bbox": [
+            89,
+            818,
+            362,
+            832
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "Encoder. Building on VQGAN [7], our encoder applies convolutional blocks with residual connections and downsampling layers. Multi-head self-attention blocks at resolutions {32, 16, 8} capture global dependencies. The encoder reduces spatial resolution by factor 16 (from $2 5 6 \\times 2 5 6$ to $1 6 \\times 1 6 )$ while expanding to $C = 5 1 2$ channels, yielding z ∈ R512×16×16. $\\mathbf { z } \\in \\mathbb { R } ^ { 5 1 2 \\times 1 6 \\times 1 6 }$ ",
+        "bbox": [
+            89,
+            839,
+            485,
+            901
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "code",
+        "sub_type": "algorithm",
+        "code_caption": [
+            "Algorithm 1 Adaptive Channel Masking. "
+        ],
+        "code_body": "Require: Latent $z \\in R^{C \\times h \\times w}$ , mask probability $p_{mask}$ , range $[t_{\\min}, t_{\\max}]$ Ensure: Masked latent $z_{input}$ , mask M, active channels k\n\n1: Sample apply_mask ~ Bernoulli( $p_{mask}$ )\n\n2: if apply_mask = 1 then\n\n3: Sample $t \\sim \\mathcal{U}(t_{\\min}, t_{\\max})$ 4: $k \\leftarrow \\max(1, \\min(\\lfloor t \\cdot C \\rfloor, C))$ 5: Initialize $M \\in \\{0, 1\\}^{C \\times h \\times w}$ with zeros\n\n6: for c = 1 to k do\n\n7: $M_c \\leftarrow 1_{h \\times w}$ // Set first k channels to 1\n\n8: end for\n\n9: $z_{active} \\leftarrow M \\odot z$ 10: $z_{inactive} \\leftarrow (1 - M) \\odot \\text{sg}(z)$ // Stop-grad on inactive\n\n11: $z_{input} \\leftarrow z_{active} + z_{inactive}$ 12: else\n\n13: $M \\leftarrow 1_{C \\times h \\times w}$ // Use all channels\n\n14: $k \\leftarrow C$ 15: $z_{input} \\leftarrow z$ 16: end if\n\n17: return $z_{input}$ , M, k ",
+        "bbox": [
+            513,
+            109,
+            908,
+            420
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "",
+        "bbox": [
+            511,
+            452,
+            906,
+            497
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "Channel as token. Each of the C channels encodes distinct visual information at varying abstraction levels. We treat the channel dimension as the token dimension, where $\\mathbf { z } _ { c }$ for $c \\in \\{ 1 , \\ldots , C \\}$ represents the c-th visual token. This formulation differs fundamentally from spatial tokenization: rather than encoding local patches, each channel captures global patterns across the entire spatial extent, with earlier channels encoding coarse structure and later channels refining details. ",
+        "bbox": [
+            511,
+            501,
+            908,
+            637
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "Decoder. The decoder mirrors the encoder with upsampling blocks and multi-head self-attention at resolutions {8, 16, 32}. It reconstructs the image $\\hat { \\mathbf { x } } = D _ { \\psi } ( \\mathbf { q } )$ from quantized representation q with inactive channels set to zero. ",
+        "bbox": [
+            511,
+            641,
+            908,
+            702
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "2.3. Adaptive Channel Masking ",
+        "text_level": 1,
+        "bbox": [
+            511,
+            720,
+            761,
+            736
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "To enable flexible tokenization, we introduce a stochastic prefix channel masking mechanism during training. This encourages the model to learn an ordered representation where information importance decreases along the channel dimension, following strategies from FlexTok [1], OneDPiece [17], and ElasticTok [27]. ",
+        "bbox": [
+            511,
+            746,
+            908,
+            837
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "Mask generation and application. For each training sample, we uniformly sample mask retention ratio $t \\sim$ $\\mathcal { U } ( t _ { \\operatorname* { m i n } } , t _ { \\operatorname* { m a x } } )$ with $t _ { \\mathrm { m i n } } ~ = ~ 0 . 0 0 2$ and $t _ { \\mathrm { m a x } } ~ = ~ 1 . 0 .$ . The number of active channels is $k = \\lfloor t \\cdot C \\rfloor$ , clamped to [1, C ]. ",
+        "bbox": [
+            511,
+            840,
+            908,
+            902
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "page_number",
+        "text": "3 ",
+        "bbox": [
+            493,
+            924,
+            503,
+            936
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "table",
+        "img_path": "images/68417cf2e153008dbab47e556eed3822276094be27fd969bf70ba64bb73063f9.jpg",
+        "table_caption": [
+            "Table 1. Flexible tokenization results on ImageNet-1K validation set. We report learnable parameters (M = millions), reconstruction metrics (rFID ↓, LPIPS ↓, DreamSim ↓), and system efficiency (encoding/decoding throughput in images/s and latency in ms/image). All methods are evaluated at a 256-token budget; we additionally report a 512-token variant of our method. Best results are shown in bold, second-best are underlined. "
+        ],
+        "table_footnote": [],
+        "table_body": "<table><tr><td rowspan=\"2\">Method</td><td colspan=\"3\">Parameters (M)</td><td colspan=\"3\">Reconstruction Quality</td><td colspan=\"4\">System Efficiency</td></tr><tr><td>Encoder</td><td>Decoder</td><td>Total</td><td>rFID ↓</td><td>LPIPS ↓</td><td>DreamSim ↓</td><td>Enc. Tput ↑</td><td>Dec. Tput ↑</td><td>Enc. Lat. ↓</td><td>Dec. Lat. ↓</td></tr><tr><td>OneDPiece [17]</td><td>304</td><td>307</td><td>642</td><td>7.61</td><td>0.180</td><td>0.109</td><td>32.84</td><td>24.77</td><td>30.5</td><td>40.4</td></tr><tr><td>DOVE [15]</td><td>70</td><td>70</td><td>287</td><td>13.82</td><td>0.153</td><td>0.133</td><td>118.70</td><td>68.83</td><td>8.4</td><td>14.5</td></tr><tr><td>ALIT [5]</td><td>202</td><td>206</td><td>431</td><td>9.74</td><td>0.180</td><td>0.11</td><td>18.51</td><td>18.34</td><td>54.01</td><td>54.54</td></tr><tr><td>KARL [6]</td><td>101</td><td>105</td><td>239</td><td>5.74</td><td>0.154</td><td>0.116</td><td>63.54</td><td>54.66</td><td>15.7</td><td>18.3</td></tr><tr><td>FlexTok [1]</td><td>85</td><td>172</td><td>341</td><td>2.97</td><td>0.228</td><td>0.154</td><td>61.33</td><td>4.78</td><td>16.3</td><td>209.3</td></tr><tr><td>Ours (256)</td><td>65</td><td>95</td><td>159</td><td>3.70</td><td>0.169</td><td>0.111</td><td>51.34</td><td>41.39</td><td>19.5</td><td>24.2</td></tr><tr><td>Ours (512)</td><td>65</td><td>95</td><td>159</td><td>2.92</td><td>0.153</td><td>0.096</td><td>51.40</td><td>41.30</td><td>19.5</td><td>24.2</td></tr></table>",
+        "bbox": [
+            94,
+            156,
+            903,
+            292
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "chart",
+        "img_path": "images/88d86dcd344086e985769a60414291247fdd43e98554e698a2a87bbcd2fc4ce9.jpg",
+        "content": "| Token Budget | OneDPiece | DOVE | ALIT | KARL | FlexTok | Ours |\n| ------------ | --------- | ---- | ---- | ---- | ------- | ---- |\n| 32           | 11        | 21   | 26   | 37   | 4       | 26   |\n| 64           | 10        | 18   | 19   | 28   | 3       | 13   |\n| 128          | 9         | 16   | 13   | 14   | 3       | 6    |\n| 256          | 8         | 15   | 10   | 6    | 3       | 4    |\n| 512          | 7         | 14   | 9    | 4    | 3       | 3    |",
+        "chart_caption": [
+            "(a) rFID vs. Token Budget. "
+        ],
+        "chart_footnote": [],
+        "sub_type": "line",
+        "bbox": [
+            94,
+            303,
+            354,
+            436
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "chart",
+        "img_path": "images/aa10fc965d137dfe5d991722e9f5706b54650174ac67945ffc789607288e4f95.jpg",
+        "content": "| Token Budget | OneDPiece | DOVE | ALIT | KARL | FlexTok | Ours |\n| ------------ | --------- | ---- | ---- | ---- | ------- | ---- |\n| 32           | 0.125     | 0.065 | 0.115 | 0.125 | 0.14    | 0.11 |\n| 64           | 0.11      | 0.06  | 0.105 | 0.11  | 0.125   | 0.095 |\n| 128          | 0.09      | 0.06  | 0.095 | 0.08  | 0.095   | 0.08 |\n| 256          | 0.075     | 0.06  | 0.075 | 0.06  | 0.075   | 0.07 |\n| 512          | 0.07      | 0.06  | 0.07  | 0.06  | 0.07    | 0.065 |",
+        "chart_caption": [
+            "(b) L1 vs. Token Budget. "
+        ],
+        "chart_footnote": [],
+        "sub_type": "line",
+        "bbox": [
+            367,
+            303,
+            630,
+            436
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "chart",
+        "img_path": "images/4aca4e7dda7db34131599f944e92157e3f3b38377f94bbff26cc4543d079d937.jpg",
+        "content": "| Token Budget | OneDPiece | DOVE  | ALIT  | KARL  | FlexTok | Ours  |\n| ------------ | --------- | ----- | ----- | ----- | ------- | ----- |\n| 32           | 0.18      | 0.18  | 0.30  | 0.42  | 0.27    | 0.35  |\n| 64           | 0.15      | 0.15  | 0.22  | 0.33  | 0.22    | 0.23  |\n| 128          | 0.14      | 0.14  | 0.14  | 0.21  | 0.18    | 0.14  |\n| 256          | 0.12      | 0.12  | 0.10  | 0.12  | 0.16    | 0.12  |\n| 512          | 0.10      | 0.10  | 0.10  | 0.10  | 0.10    | 0.10  |",
+        "chart_caption": [
+            "(c) DreamSim vs. Token Budget. ",
+            "Figure 3. Performance across token budgets. Our method demonstrates consistent quality improvement across reconstruction metrics across token budgets while being computationally efficient. "
+        ],
+        "chart_footnote": [],
+        "sub_type": "line",
+        "bbox": [
+            643,
+            303,
+            903,
+            436
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "text",
+        "text": "We construct binary mask $\\mathbf { M } \\in \\{ 0 , 1 \\} ^ { C \\times h \\times w }$ as: ",
+        "bbox": [
+            89,
+            518,
+            416,
+            535
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "equation",
+        "text": "$$\n\\mathbf {M} _ {c} = \\left\\{ \\begin{array}{l l} 1 & \\text { if } c \\leq k \\\\ 0 & \\text { otherwise } \\end{array} \\right. \\tag {1}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            207,
+            544,
+            483,
+            585
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "text",
+        "text": "The mask will be used to stochastically drop the tail of the feature tensor, promoting hierarchical organization where critical information concentrates in early channels, and fine details in later channels. ",
+        "bbox": [
+            89,
+            592,
+            483,
+            651
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "text",
+        "text": "During training, we randomly choose between applying masking or using the full latent $\\mathbf { z } ,$ each with equal probability. For masked channels $( c > k )$ , we apply stop-gradient to prevent encoding information into inactive channels during the backward pass: ",
+        "bbox": [
+            89,
+            652,
+            483,
+            728
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "equation",
+        "text": "$$\n\\mathbf {z} _ {\\text { input }} = \\mathbf {M} \\odot \\mathbf {z} + (1 - \\mathbf {M}) \\odot \\operatorname{sg} (\\mathbf {z}), \\tag {2}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            163,
+            739,
+            482,
+            755
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "text",
+        "text": "where sg(·) denotes stop-gradient. This ensures gradients flow only through active channels, encouraging the encoder to prioritize information in early channels that are more likely to be retained. Algorithm 1 formalizes the procedure. ",
+        "bbox": [
+            89,
+            763,
+            483,
+            824
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "text",
+        "text": "Inference flexibility. At inference, we control compression rate by specifying active channel count $k \\in [ 1 , C ]$ . Given target k, we construct mask M deterministically with first k channels active, encode the image to obtain z, and apply the mask. We quantize only the active channels via BSQ, while inactive channels are set to zero. The decoder reconstructs from both the quantized active channels and the zero-masked inactive channels, enabling continuous control over the rate-distortion tradeoff without retraining. The emergent coarse-to-fine structure allows progressive decoding: reconstructions with k = 32 capture global structure, while increasing k progressively refines local details. ",
+        "bbox": [
+            89,
+            825,
+            483,
+            900
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "text",
+        "text": "",
+        "bbox": [
+            511,
+            518,
+            906,
+            626
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "text",
+        "text": "2.4. Binary Spherical Quantization ",
+        "text_level": 1,
+        "bbox": [
+            511,
+            633,
+            785,
+            650
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "text",
+        "text": "We incorporate Binary Spherical Quantization (BSQ) [31] to discretize each active channel independently. Following the analysis in WeTok [32], BSQ provides a lookup-free, parameter-efficient alternative to codebook-based methods that is particularly well-suited for channel-wise tokenization. BSQ projects latent features onto a unit hypersphere and applies binary quantization. We use straight-through estimation [2] for gradients and optimize entropy-based and commitment losses following [31], with $\\lambda _ { \\mathrm { e n t } } ~ = ~ 0 . 1$ and $\\lambda _ { \\mathrm { c o m m i t } } = 0 . 2 5$ in our quantization loss ",
+        "bbox": [
+            511,
+            655,
+            906,
+            806
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "equation",
+        "text": "$$\n\\mathcal {L} _ {\\text { quant }} = \\lambda_ {\\text { ent }} \\mathcal {L} _ {\\text { ent }} + \\lambda_ {\\text { commit }} \\mathcal {L} _ {\\text { commit }}.\n$$",
+        "text_format": "latex",
+        "bbox": [
+            593,
+            815,
+            823,
+            832
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "text",
+        "text": "2.5. Training Objective ",
+        "text_level": 1,
+        "bbox": [
+            511,
+            848,
+            694,
+            864
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "text",
+        "text": "Reconstruction and perceptual losses. We supervise the decoder with an $\\ell _ { 1 }$ reconstruction loss $\\mathcal { L } _ { \\mathrm { r e c } } = \\| \\mathbf { x } - \\hat { \\mathbf { x } } \\| _ { 1 }$ and ",
+        "bbox": [
+            511,
+            869,
+            906,
+            901
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "page_number",
+        "text": "4 ",
+        "bbox": [
+            493,
+            924,
+            504,
+            935
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "image",
+        "img_path": "images/ecf5cf20987eec5a4cc383e5c574b7c7c8678f4ea874ddb15b06f4aab4eb2597.jpg",
+        "image_caption": [
+            "Figure 4. Qualitative comparison across token budgets. We show reconstructions from our model and prior flexible tokenizers at 32–256 tokens, along with the original image. Differences in sharpness, color consistency, and structural preservation can be observed as the token budget increases. Additional results are provided in the Appendix. "
+        ],
+        "image_footnote": [],
+        "content": "Original\n32 tokens\nOurs\nALIT\nDOVE\nFlexTok\nKARL\nOne-D-Piece\n64 tokens\n128 tokens\n256 tokens",
+        "sub_type": "text_image",
+        "bbox": [
+            96,
+            87,
+            906,
+            444
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "a VGG-based perceptual loss ",
+        "bbox": [
+            89,
+            527,
+            287,
+            542
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "equation",
+        "text": "$$\n\\mathcal {L} _ {\\text { perc }} = \\sum_ {l} \\| \\Phi_ {l} (\\mathbf {x}) - \\Phi_ {l} (\\hat {\\mathbf {x}}) \\| _ {2} ^ {2}, \\tag {3}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            179,
+            553,
+            483,
+            584
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "where l indexes feature layers of the pretrained network Φ. The base objective combines these with the quantization loss: ",
+        "bbox": [
+            89,
+            594,
+            483,
+            637
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "equation",
+        "text": "$$\n\\mathcal {L} _ {\\text { base }} = \\lambda_ {\\text { rec }} \\mathcal {L} _ {\\text { rec }} + \\lambda_ {\\text { perc }} \\mathcal {L} _ {\\text { perc }} + \\mathcal {L} _ {\\text { quant }}, \\tag {4}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            158,
+            638,
+            483,
+            656
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "with fixed weights $\\lambda _ { \\mathrm { r e c } } = 0 . 2 5 \\mathrm { a n d } \\lambda _ { \\mathrm { p e r c } } = 1 . 0 .$ ",
+        "bbox": [
+            89,
+            661,
+            403,
+            678
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "Adversarial training. To improve perceptual fidelity, we employ a PatchGAN discriminator [10] with the standard hinge loss [18]. We train for 15 epochs using only $\\mathcal { L } _ { \\mathrm { b a s e } }$ as a warm-up, after which we add the adversarial term and optimize ",
+        "bbox": [
+            89,
+            695,
+            483,
+            771
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "equation",
+        "text": "$$\n\\mathcal {L} = \\mathcal {L} _ {\\text { base }} + \\lambda_ {\\text { gan }} \\mathcal {L} _ {\\text { hinge }}, \\quad \\lambda_ {\\text { gan }} = 0. 1.\n$$",
+        "text_format": "latex",
+        "bbox": [
+            158,
+            782,
+            411,
+            799
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "This schedule avoids early adversarial instability while boosting perceptual quality in later stages. ",
+        "bbox": [
+            89,
+            809,
+            485,
+            840
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "2.6. Training Considerations ",
+        "text_level": 1,
+        "bbox": [
+            89,
+            848,
+            313,
+            864
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "Flexible-length channel-wise tokenization remains largely unexplored compared to spatial tokenization, with limited established training recipes in the literature. Through experimentation, we identify choices that impact training stability and reconstruction fidelity. We adopt $C = 5 1 2$ latent channels to balance capacity with stability. We employ $\\ell _ { 1 }$ reconstruction loss with perceptual loss weighting $( \\lambda _ { \\mathrm { p e r c } } = 1 . 0 $ , $\\lambda _ { \\mathrm { r e c } } = 0 . 2 5 )$ , where higher perceptual weight enhances reconstruction fidelity; this reversal of traditional weighting aligns with recent findings in visual tokenization that prioritize perceptual quality [1, 29]. We also found $\\ell _ { 2 }$ loss, Charbonnier loss, and gram matrix losses [26] produced noticeable blurring in our channel-wise setting, while perceptual weights below 0.1 caused training instabilities. ",
+        "bbox": [
+            89,
+            869,
+            483,
+            901
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "",
+        "bbox": [
+            511,
+            527,
+            908,
+            709
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "We introduce adversarial training to mitigate BSQ quantization artifacts, particularly checkerboard patterns and gridlike distortions that emerge from binary quantization. However, we delay GAN loss introduction until epoch 15, as applying it from initialization led to mode collapse in preliminary experiments. This approach allows the reconstruction objective to establish a stable baseline before adversarial refinement. Our stochastic masking $( p _ { \\mathrm { m a s k } } = 0 . 5 )$ was more stable than deterministic warmup schemes that maintain full channels for initial epochs before transitioning to adaptive masking. Cosine decay with linear warmup (5K steps to peak LR $1 0 ^ { - 3 }$ , decaying to $5 \\times 1 0 ^ { - 5 } )$ becomes crucial when combining reconstruction and adversarial objectives [3, 12]. Finally, we adopt BSQ with an implicit codebook size of $2 ^ { 1 6 }$ over codebook-based vector quantization since our aim was to first establish a training recipe for flexible channel-wise tokenization without additional complexity from codebook commitment and collapse issues [29]. BSQ eliminates lookup operations and codebook memory storage, with recent work showing its relevance in channelwise regimes [32]. ",
+        "bbox": [
+            511,
+            719,
+            908,
+            901
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "page_number",
+        "text": "5 ",
+        "bbox": [
+            493,
+            924,
+            503,
+            936
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "image",
+        "img_path": "images/2a07b0e86140ec54550793fa3fd98f9c755fb734ca2a1464885c2f1b6d74295b.jpg",
+        "image_caption": [
+            "Figure 5. Comparison of reconstructions with and without our channel-wise flexible masking module. The baseline model is identical to the flexible model but trained without masking. For the baseline: semantic coherence appears only at high token budgets, indicating a lack of emergent semantic hierarchy. Our flexible tokenizer clearly shows a semantic coarse-to-fine progression, with meaningful reconstructions even at low and moderate token budgets. "
+        ],
+        "image_footnote": [],
+        "content": "Original\nt=16\nt=32\nt=48\nt=64\nt=96\nt=128\nt=256\nt=512\nFlexible\nBase\nFlexible\nBase",
+        "sub_type": "text_image",
+        "bbox": [
+            91,
+            87,
+            906,
+            369
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "text",
+        "text": "",
+        "bbox": [
+            88,
+            462,
+            485,
+            598
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "text",
+        "text": "System Specifications. For training, we use 8× NVIDIA H100 80GB GPUs over a period of 48 hours for training over 150 epochs on ImageNet-1K [20]. For our inference, we use 1x NVIDIA A5000 GPU. ",
+        "bbox": [
+            89,
+            598,
+            483,
+            657
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "text",
+        "text": "3. Experiments ",
+        "text_level": 1,
+        "bbox": [
+            89,
+            672,
+            223,
+            690
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "text",
+        "text": "3.1. Flexible Length Tokenization ",
+        "text_level": 1,
+        "bbox": [
+            89,
+            696,
+            352,
+            713
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "text",
+        "text": "Evaluation protocol. We evaluate reconstruction quality and system efficiency on ImageNet-1K [20] validation set (50k images) with standard transforms. We measure reconstruction fidelity and perceptual quality via PSNR, rFID [11], L1 distance, LPIPS [30], SSIM [25], and DreamSim [8]. For system performance, we report encoding/decoding throughput (images/s) and latency (ms/image) on a single A5000 GPU. To ensure a fair and rigorous comparison, all methods were benchmarked with fp16 precision (Note: DOVE required bf16 as it was incompatible with fp16) and a fixed batch size of 128. We isolate model performance to a forward pass by excluding data loading, GPU-CPU transfers, and disk I/O from timing measurements. All baselines were benchmarked under these identical hardware and protocol settings. ",
+        "bbox": [
+            89,
+            719,
+            485,
+            900
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "image",
+        "img_path": "images/8dc8a870dbf6052988d7ba3511819fdb8f725688008b73ae6663f6f7d7903875.jpg",
+        "image_caption": [
+            "Figure 6. Semantic organization in early channels. Channel swapping experiments demonstrate hierarchical semantic encoding. Each pair of rows shows two images whose first t channels are progressively swapped. When channels from one image are replaced with another, the image progressively transforms from the source to the target. "
+        ],
+        "image_footnote": [],
+        "content": "Original\nt=8\nt=32\nt=64\nt=128\nt=256\nt=512",
+        "sub_type": "text_image",
+        "bbox": [
+            516,
+            458,
+            906,
+            645
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "text",
+        "text": "",
+        "bbox": [
+            511,
+            775,
+            906,
+            821
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "text",
+        "text": "Performance at 256 tokens. Tab. 1 demonstrates that our method establishes a new Pareto frontier for flexible tokenization, delivering competitive perceptual quality while being significantly smaller and faster than existing methods. We first evaluate at a 256-token budget to enable fair comparison with key baselines [1, 5, 17] that support this maximum token count. At 256 tokens, our model achieves an rFID of 3.70, closely matching FlexTok’s 2.97. However, our decoder is 8.6× faster (41.4 vs 4.8 images/s) and our total model is 2.1× smaller (159M vs 341M params). This efficiency gain stems from our lightweight architecture that avoids the costly multi-step generative decoder used in FlexTok. In contrast, while DOVE achieves high throughput, its perceptual quality (rFID 13.82) is insufficient for highfidelity reconstruction tasks. A key advantage of our channelwise design is the ability to scale capacity without retraining. At our model’s full 512-channel capacity (row Ours (512)), we achieve state-of-the-art perceptual quality with an rFID of 2.92, surpassing FlexTok’s 2.97. Our method is the only flexible tokenizer that simultaneously achieves best-in-class perceptual quality (rFID 2.92, DreamSim 0.096) and efficiency (smallest model at 159M params, among the fastest decoders), making it ideal for latency-sensitive applications. ",
+        "bbox": [
+            511,
+            825,
+            908,
+            900
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "page_number",
+        "text": "6 ",
+        "bbox": [
+            493,
+            925,
+            504,
+            936
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "image",
+        "img_path": "images/b7db5cbdafd07f975e3e15c5c1fb0b4062882ade5f3ece89a9fcda8d09243828.jpg",
+        "image_caption": [
+            "Figure 7. Autoregressive image generation across token budgets. Images are generated by sampling from the LlamaGen [22] GPT-L transformer trained on discrete channel tokens. Generation begins from a randomly sampled first token and proceeds autoregressively, with remaining channels zero-filled at truncation. Even at 32 tokens (7.9× speedup), generated samples show coherent global structure, with quality improving progressively as more channels are generated. "
+        ],
+        "image_footnote": [],
+        "content": "t=32\nt=64\nt=128\nt=256\nt=32\nt=64\nt=128\nt=256\nt=32\nt=64\nt=128\nt=256",
+        "sub_type": "text_image",
+        "bbox": [
+            93,
+            85,
+            906,
+            369
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "text",
+        "text": "",
+        "bbox": [
+            88,
+            462,
+            485,
+            734
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "text",
+        "text": "Performance across token budgets. Fig. 3 shows reconstruction quality across varying token budgets. Our method demonstrates consistent quality improvement across all metrics, with rFID decreasing from 12.60 at 64 tokens to 2.92 at 512 tokens. At the highest budget, we achieve the best rFID (2.92) and DreamSim (0.096) across all methods, indicating superior semantic preservation and perceptual alignment. FlexTok maintains consistently low rFID (2.83-3.81) across budgets due to its rectified flow decoder [1], which provides perceptual coherence largely independent of token count. KARL and ALIT exhibit steeper rFID degradation at lower budgets but achieve strong pixel-level reconstruction at higher token counts, with KARL reaching competitive L1 distance (0.060) at 256 tokens. The DreamSim metric further validates our approach: scores improve from 0.347 at 32 tokens to 0.096 at 512 tokens, demonstrating that additional channels enable richer feature representations that better capture perceptually-salient content. This trend suggests our channel-wise design naturally scales with capacity, allocating tokens to maximally preserve semantic information. A key advantage of our approach is seamless scaling from 64 to 512 tokens without architectural modifications, enabling flexible quality-efficiency operating points. Visual comparisons across methods and token budgets are provided in Fig. 4. ",
+        "bbox": [
+            89,
+            734,
+            485,
+            901
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "text",
+        "text": "",
+        "bbox": [
+            511,
+            462,
+            908,
+            675
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "text",
+        "text": "4. Induced Semantic Hierarchy ",
+        "text_level": 1,
+        "bbox": [
+            511,
+            686,
+            779,
+            704
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "text",
+        "text": "4.1. Prefix Masking Enforces Ordering ",
+        "text_level": 1,
+        "bbox": [
+            511,
+            712,
+            815,
+            729
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "text",
+        "text": "Fig. 5 illustrates the effect of our adaptive masking on the ordering of representations. Our baseline model without tail-dropping produces unstructured channel representations where the progression of tokens lacks sufficient semantic content until the last few tokens. Our tail-dropping strategy forces a causal structure along the channel dimension. Therefore, early channels must encode information independently of later channels, as tail channels may be masked during training. This causal constraint forces our method to concentrate important information in early channels through reconstruction from variable-length prefixes, with later channels adding progressive refinement. Additional training details on our baseline model and qualitative examples are in the supplementary material. ",
+        "bbox": [
+            511,
+            734,
+            908,
+            900
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "page_number",
+        "text": "7 ",
+        "bbox": [
+            493,
+            924,
+            503,
+            935
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "chart",
+        "img_path": "images/4b5e2169284e298238976345f45e91854ab97be9707cdcc4b1bb95b9f5644559.jpg",
+        "content": "| Token Budget | Mask 0.2 | Mask 0.5 | Mask 0.8 |\n| ------------ | -------- | -------- | -------- |\n| 32           | 49       | 34       | 36       |\n| 64           | 36       | 22       | 26       |\n| 128          | 29       | 15       | 21       |\n| 256          | 26       | 13       | 19       |",
+        "chart_caption": [],
+        "chart_footnote": [],
+        "sub_type": "line",
+        "bbox": [
+            91,
+            88,
+            356,
+            246
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "chart",
+        "img_path": "images/4e736d1ca9d25146c2b8977805bbb14ec492f59b1e481ac772985fb3238b9ad9.jpg",
+        "content": "| Token Budget | Bias High | Bias Low | Bias Normal |\n| ------------ | --------- | -------- | ----------- |\n| 32           | 41.0      | 28.0     | 34.0        |\n| 64           | 25.0      | 20.0     | 22.0        |\n| 128          | 17.0      | 15.0     | 15.0        |\n| 256          | 13.0      | 12.0     | 12.0        |",
+        "chart_caption": [],
+        "chart_footnote": [],
+        "sub_type": "line",
+        "bbox": [
+            367,
+            88,
+            630,
+            244
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "chart",
+        "img_path": "images/8ba1adfc2a57e585276607a872585faf91b988d19cbaac64b7d7104be1854af9.jpg",
+        "content": "| Token Budget | Tiny (6.3M) | Small (18.16M) | Medium (31.73M) | Large (72.39M) |\n| ------------ | ----------- | -------------- | --------------- | -------------- |\n| 32           | 57          | 44             | 42              | 34             |\n| 64           | 44          | 30             | 28              | 22             |\n| 128          | 36          | 22             | 18              | 15             |\n| 256          | 34          | 18             | 14              | 12             |",
+        "chart_caption": [
+            "Figure 8. Architectural ablations. (a) Effect of masking probability $p _ { \\mathrm { m a s k } } .$ . (b) Effect of sampling bias on retention ratio t. (c) Effect of model scale. rFID consistently improves with more balanced masking, uniform sampling, and larger model capacity. "
+        ],
+        "chart_footnote": [],
+        "sub_type": "line",
+        "bbox": [
+            640,
+            88,
+            905,
+            244
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "text",
+        "text": "",
+        "bbox": [
+            89,
+            311,
+            483,
+            357
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "text",
+        "text": "4.2. Semantic Transferability ",
+        "text_level": 1,
+        "bbox": [
+            89,
+            367,
+            316,
+            383
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "text",
+        "text": "We investigate whether the global semantics encoded in early channels transfer between pairs of images. We select visually dissimilar image pairs and swap their first t channels, as shown in Fig. 6. For small swaps $( t < 3 2 )$ , we observe transfer of stylistic elements such as background characteristics, color temperature, and lighting while preserving the primary subject. However, as swap depth increases $( t \\geq 6 4 )$ , images undergo more noticeable semantic transformations with foreground subjects beginning to morph. This behavior mirrors the hierarchical refinement in progressive image coding, where early layers establish global structure before fine details emerge. ",
+        "bbox": [
+            89,
+            390,
+            483,
+            571
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "text",
+        "text": "5. Autoregressive Image Generation ",
+        "text_level": 1,
+        "bbox": [
+            89,
+            587,
+            395,
+            604
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "text",
+        "text": "A key advantage of channel-wise tokenization is its natural compatibility with autoregressive (AR) generation. In spatial tokenization, each token encodes a local patch, and the generation order is an arbitrary raster scan, where truncating the sequence yields an incomplete spatial grid rather than a usable image. In contrast, our channel-wise tokens are ordered by semantic importance: each successive token refines the entire image, progressing from coarse structure to fine detail. This ordering maps directly onto the autoregressive factorization, making variable-length generation not merely possible but semantically meaningful. ",
+        "bbox": [
+            89,
+            613,
+            483,
+            779
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "text",
+        "text": "We validate this by first training a tokenizer with a reduced implicit codebook vocabulary $( 2 ^ { 1 4 } )$ and a maximum dimension of 256, for the smaller ImageNet-100 subset. We then train a LlamaGen [22] GPT-L transformer on the discrete token sequences extracted by our tokenizer. The model is trained with standard next-token prediction using crossentropy loss. To reflect the coarse-to-fine hierarchy, we introduce a position-weighted loss that emphasizes early channels: ",
+        "bbox": [
+            89,
+            780,
+            483,
+            901
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "text",
+        "text": "",
+        "bbox": [
+            513,
+            311,
+            578,
+            324
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "equation",
+        "text": "$$\n\\mathcal {L} _ {\\mathrm{AR}} = \\sum_ {c = 0} ^ {C - 1} w _ {c} \\cdot \\mathcal {L} _ {\\mathrm{CE}} (c), \\quad w _ {c} = 1 + \\alpha \\left(1 - \\frac {c}{C - 1}\\right), \\tag {5}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            521,
+            335,
+            906,
+            377
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "text",
+        "text": "where $\\mathcal { L } _ { \\mathrm { C E } } ( c )$ is the cross-entropy at channel position c and α controls the weighting strength. With $\\alpha = 1$ , weights decrease linearly from $w _ { 0 } = 2 . 0$ for the first channel to $w _ { C - 1 } = 1 . 0$ for the last, biasing the model toward accurately predicting the structurally critical early channels while still learning fine-grained later channels. ",
+        "bbox": [
+            511,
+            387,
+            905,
+            477
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "text",
+        "text": "Flexible generation budget. At inference, generation can be terminated after any number of tokens $k \\leq C ,$ , with remaining channels zero-filled before decoding. Tab. 2 reports FID (calculated with respect to the tokenizer outputs) and generation throughput across token budgets on a single H100 GPU. At 64 tokens, the model achieves FID 9.75 with a 4.1× speedup over full 256-token generation (3.77s → 0.91s per image). The marginal gain from 128 to 256 tokens is negligible (FID $7 . 9 6  7 . 8 5 )$ , consistent with the coarse-to-fine hierarchy: early channels carry the dominant semantic content, and later channels contribute diminishing perceptual improvement. Even at 32 tokens (7.9× speedup), generated samples exhibit coherent global structure (Fig. 7), confirming that the channel ordering learned by the tokenizer transfers effectively to the generative setting. ",
+        "bbox": [
+            511,
+            478,
+            906,
+            703
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "text",
+        "text": "This quality-speed tradeoff is architecturally infeasible with spatial tokenizers, where partial sequences produce fragmented images. Channel-wise generation uniquely enables a single trained model to serve diverse latency budgets without retraining or architectural modification. ",
+        "bbox": [
+            511,
+            704,
+            906,
+            779
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "text",
+        "text": "6. Ablations ",
+        "text_level": 1,
+        "bbox": [
+            513,
+            792,
+            619,
+            808
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "text",
+        "text": "6.1. Effects of Sampling and Masking ",
+        "text_level": 1,
+        "bbox": [
+            511,
+            816,
+            805,
+            834
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "text",
+        "text": "As described in Sec. 2.3, our architecture introduces two forms of stochasticity: a global masking probability $p _ { \\mathrm { m a s k } }$ and a per-sample retention ratio t. We sweep $p _ { \\mathrm { m a s k } }$ on ImageNet-100 and measure rFID across token budgets. Low masking $( p _ { \\mathrm { m a s k } } = 0 . 2 )$ performs worst as the model overfits to full-context reconstructions, while high masking $( p _ { \\mathrm { m a s k } } = 0 . 8 )$ improves robustness but slightly hurts fidelity. We find $p _ { \\mathrm { m a s k } } = 0 . 5$ optimal, providing sufficient masking pressure to induce semantic structure without destabilizing reconstructions. We then vary the retention distribution t at fixed $p _ { \\mathrm { m a s k } } = 0 . 5 ( \\mathrm { F i g . \\ 8 b } )$ . Biasing t towards lower or higher values trades off performance between token regimes. Uniform sampling provides the most balanced training signal across all budgets. ",
+        "bbox": [
+            511,
+            839,
+            905,
+            900
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "page_number",
+        "text": "8 ",
+        "bbox": [
+            493,
+            924,
+            503,
+            935
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "table",
+        "img_path": "images/a49cca3d69e22ac438c7ea595f6307fbe2d41cef61226f4164a6568d4b05eb0e.jpg",
+        "table_caption": [
+            "Table 2. Token budget vs. speed/quality (tokenizer reference). "
+        ],
+        "table_footnote": [
+            "†FID w.r.t. tokenizer reconstruction. "
+        ],
+        "table_body": "<table><tr><td>Budget</td><td>Speedup</td><td>Time/Im.</td><td>gFID $^{\\dagger}$ </td></tr><tr><td>32</td><td>7.93×</td><td>0.475s</td><td>20.71</td></tr><tr><td>64</td><td>4.13×</td><td>0.92s</td><td>9.75</td></tr><tr><td>128</td><td>2.06×</td><td>1.82s</td><td>7.96</td></tr><tr><td>256</td><td>1.0×</td><td>3.78s</td><td>7.85</td></tr></table>",
+        "bbox": [
+            91,
+            114,
+            486,
+            209
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "text",
+        "text": "",
+        "bbox": [
+            89,
+            246,
+            485,
+            398
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "text",
+        "text": "6.2. Scaling Parameters ",
+        "text_level": 1,
+        "bbox": [
+            89,
+            415,
+            276,
+            431
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "text",
+        "text": "We train four models by varying the parameters of both the encoder and decoder. The trained models clearly exhibit a scaling curve, with larger models consistently improving rFID scores across token budgets. ",
+        "bbox": [
+            89,
+            440,
+            483,
+            501
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "text",
+        "text": "6.3. Effect of Quantizers ",
+        "text_level": 1,
+        "bbox": [
+            89,
+            518,
+            282,
+            534
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "text",
+        "text": "To study the effect of different quantizers we also train our tokenizer with FSQ on ImageNet-100 [16] and compare it with BSQ in Tab. 3. We observe that the channelwise tokenization is agnostic to the quantization method. ",
+        "bbox": [
+            89,
+            542,
+            483,
+            604
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "text",
+        "text": "7. Conclusion ",
+        "text_level": 1,
+        "bbox": [
+            89,
+            626,
+            209,
+            642
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "text",
+        "text": "We introduce a channel-wise flexible tokenizer that achieves excellent rFID with high image throughput, offering the best trade-off between quality and efficiency. Our key insight is that coarse-to-fine semantic hierarchy emerges naturally when tokenizing in the channel dimension, eliminating the need for complex architectural constraints. Future work includes exploring adaptive channel selection mechanisms for task-specific optimization and investigating training strategies to further improve low-token regime performance. ",
+        "bbox": [
+            89,
+            654,
+            485,
+            790
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "text",
+        "text": "Acknowledgments ",
+        "text_level": 1,
+        "bbox": [
+            89,
+            811,
+            250,
+            829
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "text",
+        "text": "This work was supported by DOE Office of Science’s ASCR AI for Science initiative, the NSF TRAILS Institute (2229885), and Coefficient Giving, and Longview Philanthropy. ",
+        "bbox": [
+            89,
+            839,
+            483,
+            901
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "table",
+        "img_path": "images/2d560bd18e5aada577076be349e645e82fcc8faaed4ba9c09c9c8ef7abf96f02.jpg",
+        "table_caption": [
+            "Table 3. Quantizer performance across token budgets. "
+        ],
+        "table_footnote": [
+            "PSNR in dB; L1 is mean absolute error. "
+        ],
+        "table_body": "<table><tr><td rowspan=\"2\">Budget</td><td colspan=\"2\">FSQ</td><td colspan=\"2\">BSQ</td></tr><tr><td>PSNR</td><td>L1</td><td>PSNR</td><td>L1</td></tr><tr><td>32</td><td>15.37</td><td>0.1166</td><td>15.58</td><td>0.1158</td></tr><tr><td>64</td><td>16.33</td><td>0.1020</td><td>16.42</td><td>0.1031</td></tr><tr><td>128</td><td>17.46</td><td>0.0881</td><td>17.34</td><td>0.0911</td></tr><tr><td>256</td><td>18.42</td><td>0.0775</td><td>18.04</td><td>0.0827</td></tr></table>",
+        "bbox": [
+            511,
+            114,
+            905,
+            209
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "text",
+        "text": "References ",
+        "text_level": 1,
+        "bbox": [
+            514,
+            244,
+            609,
+            260
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "list",
+        "sub_type": "ref_text",
+        "list_items": [
+            "[1] Roman Bachmann, Jesse Allardice, David Mizrahi, Enrico Fini, Oguzhan Fatih Kar, Elmira Amirloo, Alaaeldin El- ˘ Nouby, Amir Zamir, and Afshin Dehghan. Flextok: Resampling images into 1d token sequences of flexible length. arXiv preprint arXiv:2502.13967, 2025. ",
+            "[2] Yoshua Bengio, Nicholas Leonard, and Aaron Courville. Es- ´ timating or propagating gradients through stochastic neurons for conditional computation. 2013. ",
+            "[3] Andrew Brock, Jeff Donahue, and Karen Simonyan. Large scale GAN training for high fidelity natural image synthesis. In Int. Conf. Learn. Represent., 2019. ",
+            "[4] Tadeusz Calinski and Jerzy Harabasz. A dendrite method for ´ cluster analysis. Communications in Statistics-Theory and Methods, 3(1):1–27, 1974. ",
+            "[5] Shivam Duggal, Sanghyun Byun, William T Freeman, Antonio Torralba, and Phillip Isola. Adaptive length image tokenization via recurrent allocation. arXiv preprint arXiv:2411.02393, 2024. ",
+            "[6] Shivam Duggal, Sanghyun Byun, William T Freeman, Antonio Torralba, and Phillip Isola. Single-pass adaptive image tokenization for minimum program search. arXiv preprint arXiv:2507.07995, 2025. ",
+            "[7] Patrick Esser, Robin Rombach, and Bjorn Ommer. Taming ¨ transformers for high-resolution image synthesis. In Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition, pages 12873–12883, 2021. ",
+            "[8] Stephanie Fu, Netanel Y Ramesh, Vongani H Xie, Yue Luo, Philip HS Torr, Joshua B Tenenbaum, Olga Russakovsky, William T Freeman, and Stephanie Wong. Dreamsim: Learning new dimensions of human visual similarity using synthetic data. In Advances in Neural Information Processing Systems, 2023. ",
+            "[9] Geoffrey E Hinton and Ruslan R Salakhutdinov. Reducing the dimensionality of data with neural networks. Science, 313 (5786):504–507, 2006. ",
+            "[10] Phillip Isola, Jun-Yan Zhu, Tinghui Zhou, and Alexei A Efros. Image-to-image translation with conditional adversarial networks. In Proceedings of the IEEE Conference on Computer Vision and Pattern Recognition, pages 1125–1134, 2017. ",
+            "[11] Sadeep Jayasumana, Srikumar Ramalingam, Andreas Veit, Daniel Glasner, Ayan Chakrabarti, and Sanjiv Kumar. Rethinking fid: Towards a better evaluation metric for image generation. In Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition, pages 9307–9315, 2024. "
+        ],
+        "bbox": [
+            513,
+            266,
+            911,
+            901
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "page_number",
+        "text": "9 ",
+        "bbox": [
+            493,
+            924,
+            504,
+            936
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "list",
+        "sub_type": "ref_text",
+        "list_items": [
+            "[12] Tero Karras, Samuli Laine, and Timo Aila. A style-based generator architecture for generative adversarial networks. In IEEE Conf. Comput. Vis. Pattern Recog., pages 4401–4410, 2019. ",
+            "[13] Diederik P Kingma and Max Welling. Auto-encoding variational bayes. arXiv preprint arXiv:1312.6114, 2013. ",
+            "[14] Aditya Kusupati, Gantavya Bhatt, Aniket Rege, Matthew Wallingford, Aditya Sinha, Vivek Ramanujan, William Howard-Snyder, Kaifeng Chen, Sham M. Kakade, Prateek Jain, and Ali Farhadi. Matryoshka representation learning. In Advances in Neural Information Processing Systems 35 (NeurIPS 2022), 2022. ",
+            "[15] Lingjun Mao, Zikang Jin, Haokui Wang, Xiaodan Zhang, and Xin Li. Images are worth variable length of representations. arXiv preprint arXiv:2506.03643, 2025. ",
+            "[16] Fabian Mentzer, David Minnen, Eirikur Agustsson, and Michael Tschannen. Finite scalar quantization: Vq-vae made simple. arXiv preprint arXiv:2309.15505, 2023. ",
+            "[17] Kazuki Miwa, Go Irie, Yuki Nakashima, and Rin-ichiro Taniguchi. One-d-piece: Image tokenizer meets qualitycontrollable compression. arXiv preprint arXiv:2501.10064, 2025. ",
+            "[18] Takeru Miyato, Toshiki Kataoka, Masanori Koyama, and Yuichi Yoshida. Spectral normalization for generative adversarial networks. In International Conference on Learning Representations, 2018. ",
+            "[19] Maxime Oquab, Timothee Darcet, Th ´ eo Moutakanni, Huy V. ´ Vo, Marc Szafraniec, Vasil Khalidov, Pierre Fernandez, Daniel Haziza, Francisco Massa, Alaaeldin El-Nouby, Mahmoud Assran, Nicolas Ballas, Wojciech Galuba, Russell Howes, Po-Yao Huang, Shang-Wen Li, Ishan Misra, Michael Rabbat, Vasu Sharma, Gabriel Synnaeve, Hu Xu, Herve´ Jegou, Julien Mairal, Patrick Labatut, Armand Joulin, and ´ Piotr Bojanowski. Dinov2: Learning robust visual features without supervision, 2023. ",
+            "[20] Olga Russakovsky, Jia Deng, Hao Su, Jonathan Krause, Sanjeev Satheesh, Sean Ma, Zhiheng Huang, Andrej Karpathy, Aditya Khosla, Michael S Bernstein, Alexander C Berg, and Li Fei-Fei. Imagenet large scale visual recognition challenge. International Journal of Computer Vision, 115:211– 252, 2014. ",
+            "[21] Junhong Shen, Kushal Tirumala, Michihiro Yasunaga, Ishan Misra, Luke Zettlemoyer, Lili Yu, and Chunting Zhou. Cat: Content-adaptive image tokenization. arXiv preprint arXiv:2501.03120, 2025. ",
+            "[22] Peize Sun, Yi Jiang, Shoufa Chen, Shilong Zhang, Bingyue Peng, Ping Luo, and Zehuan Yuan. Autoregressive model beats diffusion: Llama for scalable image generation. arXiv preprint arXiv:2406.06525, 2024. ",
+            "[23] Keyu Tian, Yi Jiang, Zehuan Yuan, Bingyue Peng, and Liwei Wang. Detailflow: 1d coarse-to-fine autoregressive image generation via next-detail prediction. arXiv preprint arXiv:2505.21473, 2024. ",
+            "[24] Aaron van den Oord, Oriol Vinyals, and Koray Kavukcuoglu. Neural discrete representation learning. In Advances in Neural Information Processing Systems, 2017. ",
+            "[25] Zhou Wang, Alan C Bovik, Hamid R Sheikh, and Eero P Simoncelli. Image quality assessment: from error visibility to "
+        ],
+        "bbox": [
+            86,
+            88,
+            488,
+            902
+        ],
+        "page_idx": 9
+    },
+    {
+        "type": "list",
+        "sub_type": "ref_text",
+        "list_items": [
+            "structural similarity. IEEE Transactions on Image Processing, 13(4):600–612, 2004. ",
+            "[26] Wentao Wu, Libin Huang, Wenyi Xu, Qi Chen, Yue Zhang, and Weiwei Zhou. AToken: Adaptive tokenization for vision transformers. arXiv preprint arXiv:2509.14476, 2024. ",
+            "[27] Wilson Yan, Matei Zaharia, Volodymyr Mnih, Pieter Abbeel, Aleksandra Faust, and Hao Liu. Elastictok: Adaptive tokenization for image and video. arXiv preprint arXiv:2410.08368, 2024. ",
+            "[28] Jingfeng Yao and Xinggang Wang. Quantize-then-rectify: Efficient vq-vae training. arXiv preprint arXiv:2507.10547, 2025. ",
+            "[29] Lijun Yu, Jose Lezama, Nitesh B Gundavarapu, Luca Versari, ´ Kihyuk Sohn, David Minnen, Yong Cheng, Agrim Gupta, Xiuye Gu, Alexander G Hauptmann, et al. Language model beats diffusion–tokenizer is key to visual generation. arXiv preprint arXiv:2310.05737, 2023. ",
+            "[30] Richard Zhang, Phillip Isola, Alexei A Efros, Eli Shechtman, and Oliver Wang. The unreasonable effectiveness of deep features as a perceptual metric. In Proceedings of the IEEE Conference on Computer Vision and Pattern Recognition, pages 586–595, 2018. ",
+            "[31] Yue Zhao, Yuanjun Panda, Zhengzhong Xu, Zhenzhong Wang, Gaurav Kumar, Yu Zhang, Jinshuo Zhou, Yan Chen, Guan Wang, Jiaqi Zhang, et al. Image and video tokenization with binary spherical quantization. arXiv preprint arXiv:2406.07548, 2024. ",
+            "[32] Shaobin Zhuang, Yiwei Guo, Canmiao Fu, Zhipeng Huang, Zeyue Tian, Fangyikang Wang, Ying Zhang, Chen Li, and Yali Wang. Wetok: Powerful discrete tokenization for high-fidelity visual reconstruction. arXiv preprint arXiv:2508.05599, 2025. "
+        ],
+        "bbox": [
+            509,
+            88,
+            911,
+            545
+        ],
+        "page_idx": 9
+    },
+    {
+        "type": "page_number",
+        "text": "10 ",
+        "bbox": [
+            490,
+            924,
+            508,
+            936
+        ],
+        "page_idx": 9
+    },
+    {
+        "type": "text",
+        "text": "ChannelTok: Efficient Flexible-Length Vision Tokenization Supplementary Material ",
+        "text_level": 1,
+        "bbox": [
+            200,
+            85,
+            799,
+            138
+        ],
+        "page_idx": 10
+    },
+    {
+        "type": "text",
+        "text": "A. Training and Evaluation Details ",
+        "text_level": 1,
+        "bbox": [
+            89,
+            155,
+            387,
+            171
+        ],
+        "page_idx": 10
+    },
+    {
+        "type": "text",
+        "text": "A.1. Training ",
+        "text_level": 1,
+        "bbox": [
+            89,
+            183,
+            199,
+            199
+        ],
+        "page_idx": 10
+    },
+    {
+        "type": "text",
+        "text": "We provide training specifications to facilitate reproducibility in Tab. 4, Tab. 5, and Tab. 6. All training experiments for flexible and baseline tokenizer models were conducted on 8× NVIDIA H100 80GB GPUs using PyTorch with distributed data parallel (DDP) training. Our baseline model is architecturally identical to our flexible tokenizer model, but devoid of the flexible module (causal masking). ",
+        "bbox": [
+            89,
+            207,
+            483,
+            313
+        ],
+        "page_idx": 10
+    },
+    {
+        "type": "text",
+        "text": "A.2. Training Stability Notes ",
+        "text_level": 1,
+        "bbox": [
+            89,
+            330,
+            313,
+            347
+        ],
+        "page_idx": 10
+    },
+    {
+        "type": "text",
+        "text": "Several design choices were critical for stable training: ",
+        "bbox": [
+            89,
+            354,
+            452,
+            371
+        ],
+        "page_idx": 10
+    },
+    {
+        "type": "list",
+        "sub_type": "text",
+        "list_items": [
+            "• Two-stage GAN introduction: Applying adversarial loss from initialization caused mode collapse. Delaying until epoch 15 allows reconstruction objectives to establish a stable baseline. ",
+            "• Stochastic masking: Deterministic warmup schemes (using full channels for initial epochs) were less stable than our stochastic approach with $p _ { \\mathrm { m a s k } } = 0 . 5$ . ",
+            "• Learning rate schedule: Cosine decay with warmup is essential when combining reconstruction and adversarial objectives. ",
+            "• Gradient clipping: Max norm clipping at 1.0 prevents gradient explosions during masked training. ",
+            "• Loss weighting: Higher perceptual weight $( \\lambda _ { \\mathrm { p e r c } } > \\lambda _ { \\mathrm { r e c } } )$ improves rFID; values below 0.1 cause instabilities. "
+        ],
+        "bbox": [
+            89,
+            378,
+            483,
+            590
+        ],
+        "page_idx": 10
+    },
+    {
+        "type": "text",
+        "text": "A.3. Evaluation ",
+        "text_level": 1,
+        "bbox": [
+            89,
+            607,
+            215,
+            622
+        ],
+        "page_idx": 10
+    },
+    {
+        "type": "text",
+        "text": "We evaluate reconstruction quality and system efficiency on the ImageNet-1K validation set (50,000 images). All images undergo standard preprocessing: resizing to 256 × 256 and normalization with mean and standard deviation of [0.5, 0.5, 0.5] across RGB channels. We save preprocessed original images as lossless PNG files to ensure consistent rFID computation. ",
+        "bbox": [
+            89,
+            632,
+            483,
+            737
+        ],
+        "page_idx": 10
+    },
+    {
+        "type": "text",
+        "text": "Reconstruction fidelity is assessed through complementary metrics that are computed using established libraries: LPIPS with VGG backbone via lpips package1, SSIM via torchmetrics2, and rFID via clean-fid3. For rFID computation, both original and reconstructed images are saved as lossless PNG files following the preprocessing protocol above. ",
+        "bbox": [
+            89,
+            739,
+            483,
+            845
+        ],
+        "page_idx": 10
+    },
+    {
+        "type": "chart",
+        "img_path": "images/f4a52b140738257f1f0339ebb8dbaa090619741f0b3098d21ca14b4e016fb72a.jpg",
+        "content": "| Token Budget | Top-1 Accuracy | Top-5 Accuracy |\n| ------------ | -------------- | -------------- |\n| 32           | 27             | 47             |\n| 64           | 50             | 73             |\n| 128          | 68             | 87             |\n| 256          | 74             | 91             |\n| 512          | 77             | 93             |",
+        "chart_caption": [
+            "Figure 9. DINOv2 classification accuracy across token budgets. Higher token budgets preserve more discriminative structure, mirroring the rFID trends. "
+        ],
+        "chart_footnote": [],
+        "sub_type": "line",
+        "bbox": [
+            517,
+            157,
+            903,
+            353
+        ],
+        "page_idx": 10
+    },
+    {
+        "type": "text",
+        "text": "B. Downstream Analysis ",
+        "text_level": 1,
+        "bbox": [
+            513,
+            433,
+            723,
+            450
+        ],
+        "page_idx": 10
+    },
+    {
+        "type": "text",
+        "text": "B.1. Autoregressive Image Generation (LlamaGen) ",
+        "text_level": 1,
+        "bbox": [
+            511,
+            457,
+            905,
+            474
+        ],
+        "page_idx": 10
+    },
+    {
+        "type": "text",
+        "text": "To evaluate the efficacy of our flexible-length visual tokens, we train an autoregressive (AR) generation model following the LlamaGen framework. We adopt a GPT-L (Large) architecture with 343M parameters. The model is trained unconditionally or class-conditionally on pre-extracted latents of ImageNet-100. ",
+        "bbox": [
+            511,
+            479,
+            906,
+            570
+        ],
+        "page_idx": 10
+    },
+    {
+        "type": "text",
+        "text": "Flexible-Length AR Training Objective. Unlike standard fixed-length tokenization which treats all spatial tokens equally, our autoregressive training utilizes the full token sequence (e.g., 512 tokens) but applies a temporally weighted Cross-Entropy loss. This weighting scheme assigns higher importance to earlier predictions in the sequence, forcing the AR model to prioritize generating the most critical structural and semantic information first. Because the network is explicitly rewarded for early accuracy, we can simply truncate (or ”chop”) the generation process at inference time at any desired token budget $( t \\leq t _ { \\operatorname* { m a x } } )$ to achieve the desired compute-quality trade-off, entirely avoiding the need for variable-length padding or masking during training. ",
+        "bbox": [
+            511,
+            589,
+            908,
+            786
+        ],
+        "page_idx": 10
+    },
+    {
+        "type": "text",
+        "text": "Optimization Specifications. We optimize the model using fused AdamW with a peak learning rate of $8 \\times 1 0 ^ { - 4 }$ . We utilize a cosine decay learning rate schedule with a 10% linear warmup. For class-conditional models, classifier-free guidance is enabled by dropping the class label with a 10% probability. Detailed hyperparameters are provided in Tab. 7. ",
+        "bbox": [
+            511,
+            803,
+            910,
+            895
+        ],
+        "page_idx": 10
+    },
+    {
+        "type": "page_footnote",
+        "text": "1https://github.com/richzhang/PerceptualSimilarity ",
+        "bbox": [
+            107,
+            862,
+            454,
+            876
+        ],
+        "page_idx": 10
+    },
+    {
+        "type": "page_footnote",
+        "text": "2https://lightning.ai/docs/torchmetrics/ ",
+        "bbox": [
+            109,
+            876,
+            385,
+            887
+        ],
+        "page_idx": 10
+    },
+    {
+        "type": "page_footnote",
+        "text": "3https://github.com/GaParmar/clean-fid ",
+        "bbox": [
+            109,
+            887,
+            372,
+            898
+        ],
+        "page_idx": 10
+    },
+    {
+        "type": "page_number",
+        "text": "11 ",
+        "bbox": [
+            490,
+            924,
+            506,
+            936
+        ],
+        "page_idx": 10
+    },
+    {
+        "type": "table",
+        "img_path": "images/b7871a246a1c2262949ea1503ce7474cc782366f731b56c48ec85482e470bd66.jpg",
+        "table_caption": [
+            "Table 4. Model architecture specifications. "
+        ],
+        "table_footnote": [],
+        "table_body": "<table><tr><td colspan=\"2\">Encoder (65M)</td><td colspan=\"2\">Decoder (95M)</td><td colspan=\"2\">BSQ Quantizer</td></tr><tr><td>Input resolution</td><td> $256^{2} \\times 3$ </td><td>Input resolution</td><td> $16^{2} \\times 512$ </td><td>Method</td><td>Binary Spherical</td></tr><tr><td>Latent resolution</td><td> $16^{2} \\times 512$ </td><td>Output resolution</td><td> $256^{2} \\times 3$ </td><td>Codebook size</td><td> $2^{16}$ </td></tr><tr><td>Downsampling</td><td>16×</td><td>Upsampling</td><td>16×</td><td>Dimension</td><td>16 (4 × 4)</td></tr><tr><td>Channels</td><td>[192,256,384,512,640]</td><td>Channels</td><td>[640,512,384,256,192]</td><td>Channel-wise</td><td>True</td></tr><tr><td>Attention res.</td><td>{32,16,8}</td><td>Attention res.</td><td>{8,16,32}</td><td>Lookup-free</td><td>Yes</td></tr><tr><td>Attention heads</td><td>8 (Flash)</td><td>Attention heads</td><td>8 (Flash)</td><td></td><td></td></tr><tr><td>Residual blocks</td><td>2 per res.</td><td>Residual blocks</td><td>3 per res.</td><td colspan=\"2\">Total: 159M params</td></tr></table>",
+        "bbox": [
+            94,
+            114,
+            903,
+            250
+        ],
+        "page_idx": 11
+    },
+    {
+        "type": "table",
+        "img_path": "images/a9180c1d6ac097c634b71be2a13bd4dff6c21d99db19a5f7d3968b5d2d57c841.jpg",
+        "table_caption": [
+            "Table 5. Training configuration and hyperparameters. "
+        ],
+        "table_footnote": [
+            "System: 8× NVIDIA H100 80GB, 48 hours, PyTorch 2.1+ "
+        ],
+        "table_body": "<table><tr><td colspan=\"2\">Optimization</td><td colspan=\"2\">Training Schedule</td><td colspan=\"2\">Data Pipeline</td></tr><tr><td>Optimizer</td><td>AdamW (fused)</td><td>Total epochs</td><td>150</td><td>Dataset</td><td>ImageNet-1K</td></tr><tr><td>Peak LR</td><td> $10^{-3}$ </td><td>Batch/GPU</td><td>32</td><td>Train images</td><td>1.28M</td></tr><tr><td>Discriminator LR</td><td> $10^{-4}$ </td><td>Effective batch</td><td>256</td><td>Val images</td><td>50K</td></tr><tr><td>Weight decay</td><td>0.01</td><td>Num workers</td><td>8</td><td>Data format</td><td>WebDataset</td></tr><tr><td>Gradient clip</td><td>1.0 (max norm)</td><td>Precision</td><td>bfloat16 mixed</td><td>Loader</td><td>DALI (GPU)</td></tr><tr><td>LR schedule</td><td>Cosine + warmup</td><td>DDP</td><td>True</td><td>Train aug.</td><td>Crop + flip</td></tr><tr><td>Warmup steps</td><td>5,000</td><td>Sync BN</td><td>True</td><td>Val aug.</td><td>Resize + crop</td></tr><tr><td>Init LR</td><td> $10^{-6}$ </td><td>Compile</td><td>torch.compile</td><td>Normalize</td><td>[0.5,0.5,0.5]</td></tr><tr><td>Min LR</td><td> $5 \\times 10^{-5}$ </td><td>Flash Attn</td><td>Enabled</td><td></td><td></td></tr></table>",
+        "bbox": [
+            94,
+            287,
+            901,
+            481
+        ],
+        "page_idx": 11
+    },
+    {
+        "type": "text",
+        "text": "B.2. Semantic Feature Preservation ",
+        "text_level": 1,
+        "bbox": [
+            89,
+            532,
+            366,
+            547
+        ],
+        "page_idx": 11
+    },
+    {
+        "type": "text",
+        "text": "To measure how well our tokenizer retains semantic information, we evaluate reconstructed images using a pretrained DinoV2 [19] backbone on the ImageNet-1K validation set. As shown in Fig. 9, both Top-1 and Top-5 accuracy increase steadily with the reconstruction token budget, indicating that higher budgets preserve more discriminative structure. This trend closely follows the rFID improvements reported earlier, confirming that perceptual fidelity and semantic retention improve hand-in-hand in our model. ",
+        "bbox": [
+            89,
+            556,
+            485,
+            693
+        ],
+        "page_idx": 11
+    },
+    {
+        "type": "text",
+        "text": "B.3. Semantic Organization in Early Channels ",
+        "text_level": 1,
+        "bbox": [
+            89,
+            709,
+            450,
+            726
+        ],
+        "page_idx": 11
+    },
+    {
+        "type": "text",
+        "text": "We perform K-means clustering (K = 50) on the first 32 channels of quantized latents from the ImageNet-1K validation set. As shown in Fig. 10, clusters exhibit coherent semantic groupings along two axes: (1) global scene characteristics (marine blues, verdant backgrounds, warm palettes, high-contrast compositions) and (2) object-level semantics (aquatic life, reptiles, birds, canines, produce). These groupings emerge organically without class supervision, confirming early channels encode coarse categorical structure. A Calinski-Harabasz [4] score of 404.7 confirms well-separated centroids across ImageNet’s categories. ",
+        "bbox": [
+            89,
+            734,
+            485,
+            902
+        ],
+        "page_idx": 11
+    },
+    {
+        "type": "text",
+        "text": "C. Per-Class Token Budget Analysis ",
+        "text_level": 1,
+        "bbox": [
+            513,
+            532,
+            818,
+            550
+        ],
+        "page_idx": 11
+    },
+    {
+        "type": "text",
+        "text": "We conduct an analysis of token requirements across all 1,000 ImageNet-1K validation classes to understand our tokenizer’s flexible allocation behavior across different classes. For each class, we determine the minimum number of tokens required to achieve a perceptual quality threshold (LPIPS≤ 0.15). Aggregating statistics yields per-class distributions characterized by mean, revealing the relationship between semantic content and representational capacity. ",
+        "bbox": [
+            511,
+            570,
+            908,
+            691
+        ],
+        "page_idx": 11
+    },
+    {
+        "type": "text",
+        "text": "Fig. 11 shows the correlation between visual complexity and token allocation. Geometrically simple classes such as Airship, Parachute, and Nematode consistently achieve the perceptual threshold with mean token budgets of only 56–87 tokens, well below the global per-class mean of 199.6 tokens. Conversely, classes with intricate textures and fine-grained details, including Coral fungus, Toyshop, Rotisserie, and Jinrikisha, require considerably higher budgets of 392–494 tokens on average. Fig. 11 summarizes this gap by plotting the mean token counts for the five simplest and five most complex classes, making the inter-class stratification explicit: token budgets align with visual complexity rather than being uniformly allocated across categories. ",
+        "bbox": [
+            511,
+            704,
+            908,
+            902
+        ],
+        "page_idx": 11
+    },
+    {
+        "type": "page_number",
+        "text": "",
+        "bbox": [
+            490,
+            924,
+            508,
+            936
+        ],
+        "page_idx": 11
+    },
+    {
+        "type": "table",
+        "img_path": "images/448f7be87fa82058d8deebf70a949e4995b56dc35e4032a79117f69cccaf2c7b.jpg",
+        "table_caption": [
+            "Table 6. Loss configuration and channel masking. "
+        ],
+        "table_footnote": [],
+        "table_body": "<table><tr><td rowspan=\"2\">Component</td><td colspan=\"2\">Loss Components</td><td colspan=\"2\">Channel Masking</td></tr><tr><td>Weight</td><td>Schedule</td><td>Parameter</td><td>Value</td></tr><tr><td colspan=\"3\">Stage 1: Reconstruction (Epochs 0-14)</td><td>Mask prob.  $p_{mask}$ </td><td>0.5</td></tr><tr><td>L1 reconstruction</td><td> $\\lambda_{rec} = 0.25$ </td><td>All epochs</td><td>Min retention  $t_{min}$ </td><td>0.002</td></tr><tr><td>Perceptual (LPIPS)</td><td> $\\lambda_{perc} = 1.0$ </td><td>All epochs</td><td>Max retention  $t_{max}$ </td><td>1.0</td></tr><tr><td>BSQ entropy</td><td> $\\lambda_{ent} = 0.1$ </td><td>All epochs</td><td>Sampling</td><td> $\\mathcal{U}(t_{min}, t_{max})$ </td></tr><tr><td>BSQ commitment</td><td> $\\lambda_{commit} = 0.25$ </td><td>All epochs</td><td>Total channels  $C$ </td><td>512</td></tr><tr><td>BSQ diversity  $\\gamma$ </td><td>1.0</td><td>All epochs</td><td>Active channels  $k$ </td><td> $\\max(1, \\lfloor t \\cdot C \\rfloor)$ </td></tr><tr><td colspan=\"3\">Stage 2: + Adversarial (Epoch 15+)</td><td>Stop-gradient</td><td>True (inactive)</td></tr><tr><td>Generator adversarial</td><td> $\\lambda_{gan} = 0.1$ </td><td>Epoch  $\\geq 15$ </td><td></td><td></td></tr><tr><td>Discriminator</td><td>PatchGAN (3 layers, 64 ch)</td><td>Epoch  $\\geq 15$ </td><td></td><td></td></tr><tr><td>Adversarial loss</td><td>Hinge loss</td><td>Epoch  $\\geq 15$ </td><td></td><td></td></tr></table>",
+        "bbox": [
+            98,
+            114,
+            903,
+            335
+        ],
+        "page_idx": 12
+    },
+    {
+        "type": "table",
+        "img_path": "images/9f214b96a31d76b5c3efb639be2d8e843378c785a172f870ea04f2d56bf11840.jpg",
+        "table_caption": [
+            "Table 7. Autoregressive Generation configuration and hyperparameters. "
+        ],
+        "table_footnote": [],
+        "table_body": "<table><tr><td colspan=\"2\">Architecture (GPT-L)</td><td colspan=\"2\">Optimization</td><td colspan=\"2\">Flexible Generation Setup</td></tr><tr><td>Parameters</td><td>343M</td><td>Optimizer</td><td>AdamW (fused)</td><td>Training length</td><td>512 (Full Budget)</td></tr><tr><td>Layers</td><td>12</td><td>Peak LR</td><td> $8 \\times 10^{-4}$ </td><td>Inference length</td><td>Dynamic (32–512)</td></tr><tr><td>Attention heads</td><td>12</td><td>Weight decay</td><td>0.05</td><td>Objective</td><td>Weighted Cross-Entropy</td></tr><tr><td>Hidden dimension</td><td>768</td><td>Betas ( $\\beta_1$ ,  $\\beta_2$ )</td><td>(0.9, 0.95)</td><td>Early token reward</td><td>High</td></tr><tr><td>Vocab size</td><td>16384</td><td>Gradient clip</td><td>1.0 (max norm)</td><td>Resid/FFN Dropout</td><td>0.1</td></tr><tr><td>Max seq. length</td><td>512</td><td>LR schedule</td><td>Cosine</td><td>Class drop prob.</td><td>0.1</td></tr><tr><td>Pos. Encoding</td><td>1D Absolute/RoPE</td><td>Warmup fraction</td><td>0.1 (10%)</td><td>Token dropout</td><td>0.1</td></tr><tr><td>Hardware</td><td>8× H100</td><td></td><td></td><td></td><td></td></tr></table>",
+        "bbox": [
+            96,
+            375,
+            901,
+            520
+        ],
+        "page_idx": 12
+    },
+    {
+        "type": "text",
+        "text": "D. Ablations ",
+        "text_level": 1,
+        "bbox": [
+            89,
+            542,
+            200,
+            559
+        ],
+        "page_idx": 12
+    },
+    {
+        "type": "text",
+        "text": "We conduct ablations (Sec. 6) on ImageNet-100 to analyze key design choices. For scaling trends (Sec. 6.2), we train four model sizes: Tiny (6.3M), Small (18.16M), Medium (31.73M), and Large (72.39M). We perform network-width ablation by progressively increasing channel dimensions of convolutional layers in the encoder-decoder backbone, while keeping latent space (256-D), quantizer (BSQ with 65,536 codes), training schedule, and loss configuration fixed. ",
+        "bbox": [
+            89,
+            570,
+            483,
+            691
+        ],
+        "page_idx": 12
+    },
+    {
+        "type": "text",
+        "text": "Sec. 6.1 investigates sampling bias effects on retention ratio t at fixed $p _ { \\mathrm { m a s k } } = 0 . 5$ using three piecewise-uniform distributions: ",
+        "bbox": [
+            89,
+            693,
+            483,
+            737
+        ],
+        "page_idx": 12
+    },
+    {
+        "type": "list",
+        "sub_type": "text",
+        "list_items": [
+            "• bias lower: Samples from lower 25% of $[ t _ { \\mathrm { m i n } } , t _ { \\mathrm { m a x } } ]$ with probability 0.75, remainder otherwise ",
+            "• bias higher: Symmetrically emphasizes upper 25% of $[ t _ { \\mathrm { m i n } } , t _ { \\mathrm { m a x } } ]$ with probability 0.75 ",
+            "• uniform: Standard uniform distribution on $[ t _ { \\mathrm { m i n } } , t _ { \\mathrm { m a x } } ]$ "
+        ],
+        "bbox": [
+            89,
+            742,
+            482,
+            821
+        ],
+        "page_idx": 12
+    },
+    {
+        "type": "text",
+        "text": "To isolate the gains of the channel-wise paradigm from the quantizer choice, we run our tokenizer with FSQ [16] as a drop-in replacement for BSQ (Sec. 6.3). Both yield similar trends across budgets, confirming the improvements stem from the channel-wise paradigm, not the quantizer. ",
+        "bbox": [
+            89,
+            824,
+            483,
+            901
+        ],
+        "page_idx": 12
+    },
+    {
+        "type": "text",
+        "text": "E. Performance Across Token Budgets ",
+        "text_level": 1,
+        "bbox": [
+            513,
+            542,
+            839,
+            561
+        ],
+        "page_idx": 12
+    },
+    {
+        "type": "text",
+        "text": "Complementing our quantitative analysis in Fig. 3, Tab. 8 presents additional reconstruction quality metrics (LPIPS, SSIM, PSNR) across token budgets. Our method shows consistent perceptual quality improvement across token budgets (LPIPS: 0.344 → 0.153, SSIM: 0.363 → 0.556). At higher token counts (512), we achieve competitive fidelity with FlexTok (LPIPS 0.153 vs 0.228) while maintaining 8.6× faster decoding. ",
+        "bbox": [
+            511,
+            568,
+            906,
+            689
+        ],
+        "page_idx": 12
+    },
+    {
+        "type": "text",
+        "text": "F. Qualitative Analysis ",
+        "text_level": 1,
+        "bbox": [
+            513,
+            703,
+            709,
+            720
+        ],
+        "page_idx": 12
+    },
+    {
+        "type": "text",
+        "text": "We evaluate reconstruction across diverse visual scenarios: contrasting foreground-background (Fig. 14), varied textures (Fig. 15), scenes with vibrant colors and landscapes (Fig. 16). Our method shows consistent quality improvement with token budget, maintaining competitive fidelity at 64– 128 tokens. Fig. 12 contrasts our flexible tokenizer against a baseline without prefix channel masking. We also present qualitative autoregressive generation results across token budgets in Fig. 13, demonstrating coherent global structure even at 32 tokens. ",
+        "bbox": [
+            511,
+            728,
+            908,
+            878
+        ],
+        "page_idx": 12
+    },
+    {
+        "type": "page_number",
+        "text": "13 ",
+        "bbox": [
+            490,
+            924,
+            508,
+            936
+        ],
+        "page_idx": 12
+    },
+    {
+        "type": "image",
+        "img_path": "images/89f83642f52371c8c4de40dc117f95b39f811c4c00e1226d5fa5eb260492633e.jpg",
+        "image_caption": [
+            "Clusters (? = 50) "
+        ],
+        "image_footnote": [],
+        "content": "",
+        "bbox": [
+            94,
+            109,
+            903,
+            271
+        ],
+        "page_idx": 13
+    },
+    {
+        "type": "image",
+        "img_path": "images/36e86889144bfe033ce36721d33348f9dc29c5f31ce289f2e5843b12a92752b1.jpg",
+        "image_caption": [
+            "Figure 10. Semantic clustering of early channels. K-means clustering on first 32 channels produces semantically coherent groups organized by scene characteristics (black, marine blue, greenery), hinting that early channels encode meaningful semantic structure. Beyond global scene attributes, clusters also align with object-level semantics, grouping marine life and birds into distinct regions. Crucially, this organisation is never explicitly supervised: it emerges purely from the channel-wise masking objective, suggesting that prioritising early channels during training naturally induces a semantically ordered latent space. "
+        ],
+        "image_footnote": [],
+        "content": "Collage of diverse images including superhero, kitchen, food, and space-themed scenes (no text or symbols)",
+        "sub_type": "natural_image",
+        "bbox": [
+            94,
+            369,
+            336,
+            556
+        ],
+        "page_idx": 13
+    },
+    {
+        "type": "chart",
+        "img_path": "images/7e17979dca1d24e1db4a046af5bcfecfd17e67b12da789e5eee843138cd3f877.jpg",
+        "content": "| Category | Simplest Classes | Most Complex Classes |\n| :--- | :--- | :--- |\n| Nematode | 56.2 | - |\n| jigsaw puzzle | 57.5 | - |\n| Airship | 76.2 | - |\n| Matchstick | 84.5 | - |\n| Parachute | 86.7 | - |\n| Butcher shop | - | 392.7 |\n| Rotisserie | - | 395.8 |\n| Coral fungus | - | 413.0 |\n| Jimrikisha | - | 422.0 |\n| Toyshop | - | 494.0 |\nOverall Mean: 199.6",
+        "chart_caption": [
+            "Figure 11. Token allocation across ImageNet-1K validation classes. Left: Rows 1–2 show complex classes that require high token counts: Coral fungus (498, 490), Toyshop (494), Rotisserie (491, 459, 442, 432), and Jinrikisha (422), all featuring intricate textures and fine-grained details. Rows 3–4 show visually simple classes that need far fewer tokens: Airship (5, 6, 9, 12), Parachute (9), and Nematode (12, 12, 13), characterised by uniform backgrounds and simple structures. Right: Per-class mean token counts for the five simplest and five most complex classes. Teal bars denote simple classes, red bars complex classes, and the dashed line marks the dataset mean (199.6 tokens). The clear separation between the two groups shows that our tokenizer adapts its budget to visual complexity rather than allocating tokens uniformly across categories. The complexity ordering also aligns with human intuition, as classes that people would judge as visually intricate (dense textures, cluttered scenes) consistently demand more tokens, while perceptually simple classes (plain backgrounds, minimal structure) require far fewer. "
+        ],
+        "chart_footnote": [],
+        "sub_type": "bar",
+        "bbox": [
+            343,
+            369,
+            908,
+            559
+        ],
+        "page_idx": 13
+    },
+    {
+        "type": "table",
+        "img_path": "images/c304b2cc46e39103a8360383a12b17cd3b3b82cfa71def400ca190eebf83f09c.jpg",
+        "table_caption": [
+            "Table 8. Reconstruction quality across token budgets on the ImageNet-1K validation set. We report LPIPS ↓, SSIM ↑, and PSNR ↑ at five token budgets. Our method is the only one that scales to 512 tokens, where it achieves LPIPS 0.153 (matching the best score of any competing method) with a 1.8× lighter model (159M vs. 287M parameters). Quality improves monotonically at every budget (LPIPS: 0.344 → 0.153), reflecting the coarse-to-fine channel hierarchy learned during training. "
+        ],
+        "table_footnote": [],
+        "table_body": "<table><tr><td rowspan=\"2\">Method</td><td colspan=\"3\">32 Tokens</td><td colspan=\"3\">64 Tokens</td><td colspan=\"3\">128 Tokens</td><td colspan=\"3\">256 Tokens</td><td colspan=\"3\">512 Tokens</td></tr><tr><td>LPIPS ↓</td><td>SSIM ↑</td><td>PSNR ↑</td><td>LPIPS ↓</td><td>SSIM ↑</td><td>PSNR ↑</td><td>LPIPS ↓</td><td>SSIM ↑</td><td>PSNR ↑</td><td>LPIPS ↓</td><td>SSIM ↑</td><td>PSNR ↑</td><td>LPIPS ↓</td><td>SSIM ↑</td><td>PSNR ↑</td></tr><tr><td>OneDPiece</td><td>0.372</td><td>0.379</td><td>15.66</td><td>0.280</td><td>0.409</td><td>16.83</td><td>0.212</td><td>0.450</td><td>18.09</td><td>0.180</td><td>0.472</td><td>18.80</td><td>-</td><td>-</td><td>-</td></tr><tr><td>DOVE</td><td>0.197</td><td>0.596</td><td>20.34</td><td>0.168</td><td>0.619</td><td>21.06</td><td>0.165</td><td>0.623</td><td>21.17</td><td>0.153</td><td>0.633</td><td>21.54</td><td>-</td><td>-</td><td>-</td></tr><tr><td>ALIT</td><td>0.301</td><td>0.350</td><td>15.86</td><td>0.237</td><td>0.394</td><td>17.13</td><td>0.186</td><td>0.443</td><td>18.42</td><td>0.147</td><td>0.477</td><td>19.52</td><td>-</td><td>-</td><td>-</td></tr><tr><td>KARL</td><td>0.401</td><td>0.371</td><td>15.42</td><td>0.335</td><td>0.413</td><td>16.66</td><td>0.237</td><td>0.489</td><td>18.81</td><td>0.154</td><td>0.568</td><td>21.08</td><td>-</td><td>-</td><td>-</td></tr><tr><td>FlexTok</td><td>0.434</td><td>0.327</td><td>14.24</td><td>0.370</td><td>0.361</td><td>15.14</td><td>0.290</td><td>0.443</td><td>17.16</td><td>0.228</td><td>0.523</td><td>19.19</td><td>-</td><td>-</td><td>-</td></tr><tr><td>Ours</td><td>0.344</td><td>0.363</td><td>15.72</td><td>0.263</td><td>0.427</td><td>16.90</td><td>0.201</td><td>0.497</td><td>18.17</td><td>0.169</td><td>0.536</td><td>19.05</td><td>0.153</td><td>0.556</td><td>19.56</td></tr></table>",
+        "bbox": [
+            94,
+            795,
+            903,
+            893
+        ],
+        "page_idx": 13
+    },
+    {
+        "type": "page_number",
+        "text": "14 ",
+        "bbox": [
+            490,
+            924,
+            508,
+            936
+        ],
+        "page_idx": 13
+    },
+    {
+        "type": "image",
+        "img_path": "images/48e566a3732bdd58282ac85570dd584c0b1c8d0595c03823235bc0913076b963.jpg",
+        "image_caption": [
+            "Figure 12. Reconstruction with and without prefix masking. Each image pair shows channel progression across increasing token budgets. The first row is our flexible tokenizer and the second row is the baseline, which is architecturally identical but trained without channel-wise adaptive masking. Without masking, the baseline produces no meaningful reconstruction at low token counts, with recognisable structure emerging only at high budgets. Our flexible tokenizer, by contrast, exhibits a clear coarse-to-fine progression, recovering global semantics early and refining detail as more channels are added. "
+        ],
+        "image_footnote": [],
+        "content": "Original\n32 tokens\n48 tokens\n64 tokens\n96 tokens\n112 tokens\n128 tokens\n256 tokens\n512 tokens\nOurs\nBaseline\nOurs\nBaseline",
+        "sub_type": "text_image",
+        "bbox": [
+            91,
+            93,
+            903,
+            388
+        ],
+        "page_idx": 14
+    },
+    {
+        "type": "image",
+        "img_path": "images/dd28a2f44ca927cc310491dde869ad5d17b0771c563ed9695326d2c965ccdb75.jpg",
+        "image_caption": [
+            "Figure 13. Autoregressive generation across token budgets. LlamaGen [22] GPT-L generations across diverse ImageNet-100 categories (birds, insects, annelids, and marine life) using discrete channel tokens with truncated channels zero-filled. Even at 32 tokens, outputs maintain coherent global structure, with fidelity improving progressively at higher budgets. Generation at such low token counts is made possible by our tokenizer’s channel ordering, which concentrates the most semantically meaningful information into the earliest tokens. "
+        ],
+        "image_footnote": [],
+        "content": "t=32\nt=64\nt=128\nt=256\nt=32\nt=64\nt=128\nt=256",
+        "sub_type": "text_image",
+        "bbox": [
+            91,
+            489,
+            906,
+            821
+        ],
+        "page_idx": 14
+    },
+    {
+        "type": "page_number",
+        "text": "15 ",
+        "bbox": [
+            490,
+            924,
+            508,
+            936
+        ],
+        "page_idx": 14
+    },
+    {
+        "type": "image",
+        "img_path": "images/0f1effd5d2ad780bafd119ddc356e3d3b33de92ec9c6b96c98a5c4ac19a47ae2.jpg",
+        "image_caption": [
+            "Figure 14. Qualitative comparison on images with contrasting tones. Top: A jellyfish against a dark background, where our method preserves color fidelity even at lower token budgets. Bottom: A butterfly on a flower, where subtle wing textures and fine details emerge progressively with increasing tokens. Our method maintains perceptual coherence and colour consistency across all budgets. "
+        ],
+        "image_footnote": [],
+        "content": "Original\nOurs\nALIT\nDOVE\nFlexTok\nKARL\nOne-D-Piece\n32 tokens\n64 tokens\n128 tokens\n256 tokens\n32 tokens\n64 tokens\n128 tokens\n256 tokens",
+        "sub_type": "text_image",
+        "bbox": [
+            89,
+            104,
+            906,
+            824
+        ],
+        "page_idx": 15
+    },
+    {
+        "type": "page_number",
+        "text": "16 ",
+        "bbox": [
+            490,
+            924,
+            508,
+            936
+        ],
+        "page_idx": 15
+    },
+    {
+        "type": "image",
+        "img_path": "images/eded484d4ab85b6578a0ac2d208e317b90ab4e755da1ad0101f3ef2a58de99b3.jpg",
+        "image_caption": [
+            "Figure 15. Qualitative comparison on images with varied textures. Top: A red mushroom with white spots against a mossy background, where our method preserves fine surface detail and color fidelity even at low token budgets. Bottom: A dark round fruit, where competing methods introduce color artifacts and lose surface sheen at low tokens, while ours maintains perceptual consistency across all budgets. "
+        ],
+        "image_footnote": [],
+        "content": "",
+        "bbox": [
+            89,
+            104,
+            906,
+            824
+        ],
+        "page_idx": 16
+    },
+    {
+        "type": "page_number",
+        "text": "17 ",
+        "bbox": [
+            490,
+            924,
+            508,
+            936
+        ],
+        "page_idx": 16
+    },
+    {
+        "type": "image",
+        "img_path": "images/f6e55c664af62d22639d6bb9b79a7890802f6f4f95766062cae4f44929253786.jpg",
+        "image_caption": [
+            "Figure 16. Reconstructions on cases with text and vibrant colours. Top: Christmas stocking with text, where legibility remains difficult at low token counts but improves by 128 tokens. Bottom: A geyser eruption scene, where our method recovers landscape structure. "
+        ],
+        "image_footnote": [],
+        "content": "Original\nOurs\nALIT\nDOVE\nFlexTok\nKARL\nOne-D-Piece\n32 tokens\n64 tokens\n128 tokens\n256 tokens\n32 tokens\n64 tokens\n128 tokens\n256 tokens",
+        "sub_type": "text_image",
+        "bbox": [
+            89,
+            113,
+            906,
+            829
+        ],
+        "page_idx": 17
+    },
+    {
+        "type": "page_number",
+        "text": "18 ",
+        "bbox": [
+            490,
+            924,
+            508,
+            936
+        ],
+        "page_idx": 17
+    }
+]

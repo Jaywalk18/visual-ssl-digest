@@ -19,39 +19,39 @@
   </header>
   <nav class="site-nav" aria-label="主导航">
     <a class="nav-link" href="../index.html">头版</a>
-<a class="nav-link" href="../issues/2026-06-04.html">今日速递</a>
+<a class="nav-link" href="../issues/2026-06-05.html">今日速递</a>
 <a class="nav-link" href="../pages/catalog.html">论文目录</a>
 <a class="nav-link" href="../pages/timeline.html">时间线</a>
   </nav>
   <main><article class="paper-detail">
   <div class="paper-main">
     <div class="kicker">project/code · P2 · 2026-06-04</div>
-    <h1 class="paper-headline">Cosmos 3：虽然偏 embodied/world model，但对通用视频预训练、多模态 token 接口和图像-视频-动作统一建模有强信号</h1>
-    <p class="dek">把世界模型从单一视频或机器人策略扩展到 omnimodal backbone，并开源代码、模型 checkpoint、合成数据和评测。</p>
-    <p class="byline"><strong>Cosmos 3: Omnimodal World Models for Physical AI</strong>　Aditi 等大型协作团队；arXiv 作者列表显示 NVIDIA 相关大规模团队成员，机构信息以论文为准。　arXiv + project/code　<a href="https://arxiv.org/abs/2606.02800">原文链接</a></p>
+    <h1 class="paper-headline">Cosmos 3：它和通用视觉自监督的关系在于：大规模 omnimodal world model 同时处理语言、图像、视频、音频和 action，是通用视频/世界模型预训练的重要系统信号</h1>
+    <p class="dek">中高相关；详见方法、贡献和实验边界。</p>
+    <p class="byline"><strong>Cosmos 3: Omnimodal World Models for Physical AI</strong>　arXiv + project/code　<a href="https://arxiv.org/abs/2606.02800">原文链接</a></p>
     <div class="paper-facts">
       <span><b>编号</b>2606.02800</span>
       <span><b>优先级</b>P2</span>
       <span><b>类别</b>project/code</span>
       <span><b>会议</b>arXiv + project/code</span>
-      <span><b>方法</b>统一 mixture-of-transformers 架构，同时处理/生成 language、image、video、audio 和 action sequences，覆盖 VLM、视频生成、世界模拟和 world-action model。</span>
+      <span><b>方法</b>大规模 omnimodal world model 同时处理语言、图像、视频、音频和 action，是通用视频/世界模型预训练的重要系统信号</span>
       <span><b>来源</b>arXiv / OpenReview</span>
     </div>
     <div class="feature-body">
-      <p class="lead dropcap">先说结论。虽然偏 embodied/world model，但对通用视频预训练、多模态 token 接口和图像-视频-动作统一建模有强信号。 把世界模型从单一视频或机器人策略扩展到 omnimodal backbone，并开源代码、模型 checkpoint、合成数据和评测。</p>
+      <p class="lead dropcap">先说结论。它和通用视觉自监督的关系在于：大规模 omnimodal world model 同时处理语言、图像、视频、音频和 action，是通用视频/世界模型预训练的重要系统信号。 中高相关；详见方法、贡献和实验边界。</p>
       <figure class="full-fig"><img src="../assets/mineru/2606.02800/images/8520684c48a18f551d5de2c6b90775f5a0bdbe66278369022a7382a87c049821.jpg" alt="Figureure 1 · : Cosmos 3 serves as a general-purpose backbone for Physical AI"><figcaption><b>Figureure 1 · : Cosmos 3 serves as a general-purpose backbone for Physical AI</b><span class="fig-en">Figure 1: Cosmos 3 serves as a general-purpose backbone for Physical AI. By jointly modeling language, image, video, audio, and action for both understanding and generation, Cosmos 3 unifies a wide range of model classes within a single network architecture, including vision-language models, image generation models, audio-visual generation models, policy or world-action models, forward dynamics models, and inverse dynamics models.</span><span class="fig-zh">这张图概括 Cosmos 3 的整体方法流程。阅读时先看模块之间传递的训练信号，再看作者如何把目标拆成可优化的子问题。</span></figcaption></figure>
 <figure class="full-fig"><img src="../assets/mineru/2606.02800/images/689fb00a8734c4b43d59ffa143b72a0a694ca347f46b311708e7404906fe3d92.jpg" alt="Figureure 12 · : Overview of the Joint Data-Loader"><figcaption><b>Figureure 12 · : Overview of the Joint Data-Loader</b><span class="fig-en">Figure 12: Overview of the Joint Data-Loader. Stream-specific data-loaders feed local per-stream buffers on each rank. At each global iteration, a rank-synchronous selector chooses the same stream $k _ { i }$ across distributed ranks. Each rank then greedily packs samples from its selected local buffer into $B _ { i } ^ { ( \rho ) }$ under token and sample-count budgets, using bounded look-ahead to reduce unused token capacity.</span><span class="fig-zh">这张图概括 Cosmos 3 的整体方法流程。阅读时先看模块之间传递的训练信号，再看作者如何把目标拆成可优化的子问题。</span></figcaption></figure>
       
       <h2>核心问题</h2>
-      <p>虽然偏 embodied/world model，但对通用视频预训练、多模态 token 接口和图像-视频-动作统一建模有强信号。</p>
+      <p>它和通用视觉自监督的关系在于：大规模 omnimodal world model 同时处理语言、图像、视频、音频和 action，是通用视频/世界模型预训练的重要系统信号。</p>
       <h2>方法拆解</h2>
-      <p>统一 mixture-of-transformers 架构，同时处理/生成 language、image、video、audio 和 action sequences，覆盖 VLM、视频生成、世界模拟和 world-action model。</p>
+      <p>大规模 omnimodal world model 同时处理语言、图像、视频、音频和 action，是通用视频/世界模型预训练的重要系统信号</p>
       <h2>主要贡献</h2>
-      <p>把世界模型从单一视频或机器人策略扩展到 omnimodal backbone，并开源代码、模型 checkpoint、合成数据和评测。</p>
+      <p>中高相关；详见方法、贡献和实验边界。</p>
       <h2>实验看点</h2>
-      <p>摘要称 Cosmos 3 在理解和生成任务上建立 SOTA，并在技术报告撰写时被 Artificial Analysis 评为最佳开源 T2I/I2V 模型，被 RoboArena 评为最佳 policy model。</p>
+      <p>实验部分建议重点看两类证据：一是作者是否把方法收益和更强数据、更长训练、更大模型区分开；二是跨模型、跨数据或跨任务迁移是否还能保留同样趋势。</p>
       <h2>局限与读法</h2>
-      <p>Physical AI/机器人约束明显；技术报告规模大，训练数据、评测覆盖和开源 license/可复现性需要单独审阅。</p>
+      <p>这篇论文的结论需要结合任务设置、训练数据规模和消融实验一起看；不要只凭单个指标判断它对通用视觉表征的价值。</p>
     
     </div>
   </div>
@@ -61,13 +61,13 @@
     <div class="side-box"><h4>原文</h4><p><a href="https://arxiv.org/abs/2606.02800">https://arxiv.org/abs/2606.02800</a></p></div>
   </aside>
 </article></main>
-  <aside class="conf-float" data-conf-reminder="2026-06-04-main-ddl" aria-label="CCF A/B 主投稿提醒">
+  <aside class="conf-float" data-conf-reminder="2026-06-05-main-ddl" aria-label="CCF A/B 主投稿提醒">
   <button class="conf-close" type="button" aria-label="关闭会议提醒">×</button>
   <details open>
     <summary>CCF A/B 主投稿提醒</summary>
     <div class="conf-list"><a class="conf-item " href="https://github.com/ccfddl/ccf-deadlines/blob/main/conference/AI/aaai.yml">
   <span><b>AAAI 2027</b><em>CCF A · Main paper submission</em></span>
-  <strong>53 天</strong>
+  <strong>52 天</strong>
   <small>2026-07-27 · CCF DDL: abstract 2026-07-20；进入 1 个月窗口后重点提醒。</small>
 </a></div>
   </details>
@@ -80,7 +80,7 @@
   (() => {
     const box = document.querySelector('[data-conf-reminder]');
     if (!box) return;
-    const key = `visualSslConfReminderClosed:${box.dataset.confReminder || '2026-06-04-main-ddl'}`;
+    const key = `visualSslConfReminderClosed:${box.dataset.confReminder || '2026-06-05-main-ddl'}`;
     try {
       if (localStorage.getItem(key) === '1') box.hidden = true;
     } catch (err) {}
