@@ -19,39 +19,39 @@
   </header>
   <nav class="site-nav" aria-label="主导航">
     <a class="nav-link" href="../index.html">头版</a>
-<a class="nav-link" href="../issues/2026-06-05.html">今日速递</a>
+<a class="nav-link" href="../issues/2026-06-06.html">今日速递</a>
 <a class="nav-link" href="../pages/catalog.html">论文目录</a>
 <a class="nav-link" href="../pages/timeline.html">时间线</a>
   </nav>
   <main><article class="paper-detail">
   <div class="paper-main">
     <div class="kicker">CVPR 2026 · P2 · 2026-06-05</div>
-    <h1 class="paper-headline">Scene-Centric Unsupervised Video Panoptic Segmentation：它是少数明确“无监督视频场景理解”的 CVPR 工作，对视频 SSL、object-centric/scene-centric learning 和无标注 dense prediction 有参考价值</h1>
-    <p class="dek">提出 unsupervised video panoptic segmentation 任务设定、评估协议和四个强 baselines，把无监督 scene understanding 从图像扩展到视频 panoptic 层级。</p>
-    <p class="byline"><strong>Scene-Centric Unsupervised Video Panoptic Segmentation</strong>　Christoph Reich, Oliver Hahn, Nikita Araslanov, Laura Leal-Taixé, Christian Rupprecht, Daniel Cremers, Stefan Roth；CVF PDF 显示机构包括 TU Munich, TU Darmstadt, NVIDIA, University of Oxford, MCML, ELIZA, hessian.AI。　arXiv + CVPR 2026　<a href="https://arxiv.org/abs/2606.04925">原文链接</a></p>
+    <h1 class="paper-headline">Scene-Centric Unsupervised Video Panoptic Segmentation：它和通用视觉自监督的关系在于：VideoCUPS 用无监督深度、运动和视觉 cues 生成时序一致伪标签，是视频无监督场景理解的重要扩展</h1>
+    <p class="dek">中高相关；详见方法、贡献和实验边界。</p>
+    <p class="byline"><strong>Scene-Centric Unsupervised Video Panoptic Segmentation</strong>　arXiv + CVPR 2026　<a href="https://arxiv.org/abs/2606.04925">原文链接</a></p>
     <div class="paper-facts">
       <span><b>编号</b>2606.04925</span>
       <span><b>优先级</b>P2</span>
       <span><b>类别</b>CVPR 2026</span>
       <span><b>会议</b>arXiv + CVPR 2026</span>
-      <span><b>方法</b>VideoCUPS 从 scene-centric videos 中结合无监督 depth、motion 与 visual cues 生成时序一致 panoptic pseudo-labels，再用 Video DropLoss 训练 unsupervised VPS model。</span>
+      <span><b>方法</b>VideoCUPS 用无监督深度、运动和视觉 cues 生成时序一致伪标签，是视频无监督场景理解的重要扩展</span>
       <span><b>来源</b>arXiv / OpenReview</span>
     </div>
     <div class="feature-body">
-      <p class="lead dropcap">先说结论。它是少数明确“无监督视频场景理解”的 CVPR 工作，对视频 SSL、object-centric/scene-centric learning 和无标注 dense prediction 有参考价值。 提出 unsupervised video panoptic segmentation 任务设定、评估协议和四个强 baselines，把无监督 scene understanding 从图像扩展到视频 panoptic 层级。</p>
+      <p class="lead dropcap">先说结论。它和通用视觉自监督的关系在于：VideoCUPS 用无监督深度、运动和视觉 cues 生成时序一致伪标签，是视频无监督场景理解的重要扩展。 中高相关；详见方法、贡献和实验边界。</p>
       <figure class="full-fig"><img src="../assets/mineru/2606.04925/images/7eab5336c5002022fe3f791308c2795997b97e823dabd500f310e6f1803d8c12.jpg" alt="Figureure 1 · Results and overview of our unsupervised video panoptic segmentation a"><figcaption><b>Figureure 1 · Results and overview of our unsupervised video panoptic segmentation a</b><span class="fig-en">Figure 1. Results and overview of our unsupervised video panoptic segmentation approach VideoCUPS. Top: Panoptic video predictions by VideoCUPS across four datasets. Bottom: We use self-supervised representations, motion, and depth cues from monocular videos to generate scene-centric panoptic video pseudo-labels and train a video panoptic segmentation model using a novel Video DropLoss.</span><span class="fig-zh">这张图概括 Scene-Centric Unsupervised Video Panoptic Segmentation 的整体方法流程。阅读时先看模块之间传递的训练信号，再看作者如何把目标拆成可优化的子问题。</span></figcaption></figure>
 <figure class="full-fig"><img src="../assets/mineru/2606.04925/images/dc1d16fd3127693a385c836138490d06b092c30055ff9060f1d71f93ed88a3d3.jpg" alt="Figureure 10 · Qualitative unsupervised VPS examples on DAVIS [132]"><figcaption><b>Figureure 10 · Qualitative unsupervised VPS examples on DAVIS [132]</b><span class="fig-en">Figure 10. Qualitative unsupervised VPS examples on DAVIS [132]. We provide qualitative samples for VideoCUPS inference on DAVIS videos using the Cityscapes-VPS class assignments for visualization purposes. VideoCUPS generalizes to the unseen dataset and even to unseen semantic concepts.</span><span class="fig-zh">这张可视化用来解释 Scene-Centric Unsupervised Video Panoptic Segmentation 学到的中间表征或对齐关系。重点看它是否支持正文里的机制判断。</span></figcaption></figure>
       
       <h2>核心问题</h2>
-      <p>它是少数明确“无监督视频场景理解”的 CVPR 工作，对视频 SSL、object-centric/scene-centric learning 和无标注 dense prediction 有参考价值。</p>
+      <p>它和通用视觉自监督的关系在于：VideoCUPS 用无监督深度、运动和视觉 cues 生成时序一致伪标签，是视频无监督场景理解的重要扩展。</p>
       <h2>方法拆解</h2>
-      <p>VideoCUPS 从 scene-centric videos 中结合无监督 depth、motion 与 visual cues 生成时序一致 panoptic pseudo-labels，再用 Video DropLoss 训练 unsupervised VPS model。</p>
+      <p>VideoCUPS 用无监督深度、运动和视觉 cues 生成时序一致伪标签，是视频无监督场景理解的重要扩展</p>
       <h2>主要贡献</h2>
-      <p>提出 unsupervised video panoptic segmentation 任务设定、评估协议和四个强 baselines，把无监督 scene understanding 从图像扩展到视频 panoptic 层级。</p>
+      <p>中高相关；详见方法、贡献和实验边界。</p>
       <h2>实验看点</h2>
-      <p>摘要称 VideoCUPS 超过所有 baselines，并显示强 label-efficient learning；CVF 版本图示覆盖 Cityscapes-VPS、KITTI-STEP、Waymo、MOTS 等视频场景。</p>
+      <p>实验部分建议重点看两类证据：一是作者是否把方法收益和更强数据、更长训练、更大模型区分开；二是跨模型、跨数据或跨任务迁移是否还能保留同样趋势。</p>
       <h2>局限与读法</h2>
-      <p>任务仍偏 segmentation/scene parsing，且依赖 depth/motion pseudo cues；与通用视觉 backbone 预训练的关系需要看是否能反哺更一般表征。</p>
+      <p>这篇论文的结论需要结合任务设置、训练数据规模和消融实验一起看；不要只凭单个指标判断它对通用视觉表征的价值。</p>
     
     </div>
   </div>
@@ -61,13 +61,13 @@
     <div class="side-box"><h4>原文</h4><p><a href="https://arxiv.org/abs/2606.04925">https://arxiv.org/abs/2606.04925</a></p></div>
   </aside>
 </article></main>
-  <aside class="conf-float" data-conf-reminder="2026-06-05-main-ddl" aria-label="CCF A/B 主投稿提醒">
+  <aside class="conf-float" data-conf-reminder="2026-06-06-main-ddl" aria-label="CCF A/B 主投稿提醒">
   <button class="conf-close" type="button" aria-label="关闭会议提醒">×</button>
   <details open>
     <summary>CCF A/B 主投稿提醒</summary>
     <div class="conf-list"><a class="conf-item " href="https://github.com/ccfddl/ccf-deadlines/blob/main/conference/AI/aaai.yml">
   <span><b>AAAI 2027</b><em>CCF A · Main paper submission</em></span>
-  <strong>52 天</strong>
+  <strong>51 天</strong>
   <small>2026-07-27 · CCF DDL: abstract 2026-07-20；进入 1 个月窗口后重点提醒。</small>
 </a></div>
   </details>
@@ -80,7 +80,7 @@
   (() => {
     const box = document.querySelector('[data-conf-reminder]');
     if (!box) return;
-    const key = `visualSslConfReminderClosed:${box.dataset.confReminder || '2026-06-05-main-ddl'}`;
+    const key = `visualSslConfReminderClosed:${box.dataset.confReminder || '2026-06-06-main-ddl'}`;
     try {
       if (localStorage.getItem(key) === '1') box.hidden = true;
     } catch (err) {}

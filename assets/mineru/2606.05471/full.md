@@ -1,0 +1,1551 @@
+# Formal Concept Lattices are Good Semantic Scaffolds for Concept-Based Learning
+
+Deepika SN Vemuri 1 Sayanta Adhikari† 1 2 Ankit Saha†‡ 1 Krishn Vishwas Kher 1 Vineeth N Balasubramanian 1 3
+
+# Abstract
+
+Learning semantics is essential for deep learning models to be interpretable and better aligned with human reasoning. Concept-based models approach this by representing classes through meaningful semantic abstractions, but typically treat all concepts as a flat, unstructured set learned at a single neural network layer. This overlooks a fundamental property of human semantic understanding: concepts being organized hierarchically, from general to specific. While deep networks do learn a hierarchy of visual features, this structure is rarely aligned with explicit semantic hierarchies. Drawing on Formal Concept Analysis, we demonstrate that formal concept lattices provide principled semantic scaffolds to guide neural network learning. These lattices naturally identify where in the network concepts should be learned based on their level of generality. This allows the model to develop staged, semantically grounded representations throughout its depth. Empirical results on real-world datasets show that our models produce more interpretable embeddings, support more effective interventions, and learn concept representations that are both meaningful and hierarchically structured. Code available at: https://github.com/deepikavemuri/ FoCA-CBMs.
+
+# 1. Introduction
+
+For many years now, deep neural networks (DNNs) have been known to learn hierarchical representations. In computer vision, the early layers of these networks capture generic features like texture, while the later layers encode class-specific information (Zeiler & Fergus, 2014; Olah et al., 2018). However, the exact nature of these representations remains opaque and semantically less interpretable.
+
+† Work started while the authors were students at IITH. ‡ Currently works at KLA. 1IIT Hyderabad 2Amazon, India 3Microsoft Research. Correspondence to: Deepika SN Vemuri <ai22resch11001@iith.ac.in>, Vineeth N Balasubramanian <vineethnb@cse.iith.ac.in, vineeth.nb@microsoft.com>.
+
+Proceedings of the $\it 4 3 ^ { r d }$ International Conference on Machine Learning, Seoul, South Korea. PMLR 306, 2026. Copyright 2026 by the author(s).
+
+![](images/241e5e701a228d481cd95a59083f61a1abc22935ddf0be83fcb541cec5ff0600.jpg)
+
+<details>
+<summary>flowchart</summary>
+
+```mermaid
+graph TD
+    A["Animal, Vertebrate"] --> B["Animal, Vertebrate, Feline"]
+    B --> C["Animal, Vertebrate, Feline, Slit Pupils, Purrs"]
+    D["Dog"] --> E["Tiger"]
+    F["Cat"] --> G["Tiger"]
+    H["Cat"] --> I["Tiger"]
+    J["Cat"] --> K["Tiger"]
+    L["White Stork"] --> M["{animal, vertebrate, webbed foot}"]
+    M --> N["{animal, long beak, long, thin neck, vertebrate, a field, webbed foot}"]
+    O["{animal, long beak, long, thin neck, vertebrate, a baby, long orange beak, a field, webbed foot, white feathers}"] --> P["{animal, long beak, long, thin neck, vertebrate, a baby, long orange beak, a field, webbed foot, white feathers}"]
+```
+</details>
+
+Figure 1. Classes (orange) and attributes (green) (a) An illustrative example of how attributes shared by more classes are more general; those shared by fewer are more specific, naturally forming a subsetsuperset hierarchy; (b) Attributes learned by a FoCA CBM at different layers for the class White Stork in ImageNet100.
+
+Recent work has focused on making models inherently interpretable (Chen et al., 2019; Sarkar et al., 2022) so as to have better insight into what these models are learning. In particular, concept-based models or CBMs (Koh et al., 2020; Oikarinen et al., 2023; Liu et al., 2025) have emerged as a promising direction that quantify how learned concepts contribute to predictions. However, existing concept-based models typically learn all concepts at a single layer, overlooking the inherent hierarchical structure in neural network representations across multiple layers.
+
+Human cognition, on the other hand, organizes knowledge through semantic hierarchies and reasons over different levels of learned concepts (Theves et al., 2021) (see Fig 1a). Existing CBMs do not leverage such structure; while a few limited recent efforts have explored hierarchical concept sets (Panousis et al., 2024; Sun et al., 2024), architecturally, all concepts are still learned at the same stage in the network - immediately before classification. In contrast, in this work, we examine how concept learning can capture hierarchical structure across network depth. To this end, we explicitly guide the network to learn general humanunderstandable concepts in early layers and specific ones in deeper layers and see that this helps the model learn more semantically grounded representations while additionally allowing interpretability at different granularities. In classification tasks where each class is defined by a set of attributes, a natural semantic hierarchy emerges from the pattern of attribute sharing. Attributes shared by many classes are general, while those shared by a few are specific. For instance, a cat and tiger are an animal, vertebrate and are feline; while a dog, cat and tiger are an animal and are vertebrate. Here, the latter group {animal, vertebrate} is more general as it spans more classes. Conversely, more specific attributes help better class discriminability in data samples. This subset-superset structure creates a concept hierarchy where generality corresponds to the number of classes sharing an attribute set, as shown in Fig 1.
+
+To leverage such semantic structure while learning DNN models, we draw on Formal Concept Analysis (FCA) (Ganter & Wille, 2024) to construct a concept lattice from classattribute associations. The lattice identifies natural supervision points in the network by aligning with class density patterns across network depth. Supervisory signals are then extracted from the lattice to learn sets of attributes and classes at these supervision points. These sets define hierarchical semantic layers, each comprising an attribute layer and a classifier layer, that effectively overlay a semantic scaffold onto the network’s visual feature hierarchy. (Fig 1b illustrates the progressively refined attribute sets for the class White Stork). Each attribute layer corresponds to (and hence predicts) a group of classes, with the group’s specificity determined by the granularity of its attributes. This layered structure enables progressive refinement of class predictions, while improving model transparency. One could view our formulation as generalizing extant CBM paradigms by exploiting a dataset’s concept taxonomy. When the taxonomy is flat, it defaults to the canonical single-layer concept representation characteristic of traditional CBMs.
+
+# Our Contributions:
+
+• We generalize the notion of concept-based interpretability in DNNs to semantic hierarchies using concept lattices, thus providing a means to leverage semantic scaffolds to guide learning across layers and enabling a deeper notion of interpretability in such models.   
+• We theoretically analyze our approach to study why such semantic ordering matters for concept-based models.   
+• Through comprehensive experiments on benchmark datasets, we show that this approach to learning not only performs on accuracy, but also yields semantically more meaningful embeddings, which we show using a clustering analysis.   
+• As part of a range of ablation studies and analysis, we show that our framework provides a mechanism to con-
+
+duct multi-level concept interventions, going beyond the standard single-layer interventions in existing CBMs.
+
+# 2. Related Work
+
+Concept-Based Models. Building inherently interpretable models using concepts is an actively growing area of research, initially introduced as the idea of learning classes through a concept layer in the network (Koh et al., 2020). Follow-up works improve various aspects of these models, such as addressing concept leakage (Marconato et al., 2022), including uncertainty quantification (Kim et al., 2023) and improving robustness (Sinha et al., 2022). Other efforts include increasing model capacity using additional unsupervised concepts (Sawada & Nakamura, 2022) and building concept bases for such models (Yuksekgonul et al., 2023). More recent efforts have attempted the use of LLMs and VLMs for concept guidance and annotations (Oikarinen et al., 2023; Yang et al., 2023; Srivastava et al., 2024). Finally, some works have studied concept relations (Vandenhirtz et al., 2024b; Raman et al., 2024) and incorporating structure over concepts (Barbiero et al., 2024; De Felice et al., 2026). All these efforts focus on learning concepts at the last layer with no semantic scaffolding across layers. This is an aspect we focus on in this work.
+
+Hierarchical Learning. Hierarchical learning has been explored more generally from a few perspectives. One line of work learns hierarchical embeddings like order embeddings (Vendrov et al., 2015), hyperbolic entailment cones (Ganea et al., 2018) and Poincare embeddings ( ´ Nickel & Kiela, 2017). These methods, however, typically impose geometries across samples to align with pre-existing structure (often hierarchical) in the label space. Our approach, on the other hand, induces a concept hierarchy across features of single sample. Another line of work uses a hierarchy to constrain the predictions of the model (Giunchiglia & Lukasiewicz, 2020; 2022; Li et al., 2023). Some CBMbased works use hierarchical concept sets, although they are limited to two-level ones (Sun et al., 2024; Panousis et al., 2024) and are limited to the pre-classification step. In contrast, we focus on deriving supervisory signals from a structured formal concept lattice with an arbitrary number of levels (26 levels on one of the datasets we use).
+
+Formal Concept Analysis (FCA). This is a mathematical theory of data analysis where a set of objects and attributes are used to derive structured hierarchy of formal concepts. There have been a few sparse efforts to use this theory in deep learning settings: to encode closure operators in a neural network (Rudolph, 2007), to introduce an embedding technique (Durrschnabel et al., 2019) for problems with formal context-like structures like bipartite graphs (Peng et al., 2024), and to obtain order-based representations using binary vectors (Gyurek et al., 2024). To the best of our knowledge, ours is the first effort to apply ideas from FCA to a concept-based learning setting in vision to overlay a structured organization of concepts on a neural network’s representations, which provides a strong semantic interpretation including at intermediate levels of a network.
+
+# 3. Lattices for Concept-Based Learning
+
+# 3.1. Background and Preliminaries
+
+Concept-Based Models: We follow the standard CBM setup introduced by (Koh et al., 2020) and define a conceptbased model as one that learns a mapping from $X \mapsto Y$ via an intermediate concept encoder $q ( \cdot )$ . Such models learn from a three-tuple dataset $\mathcal { D } = \{ X , C , Y \}$ where $X \in \mathbb { R } ^ { m }$ , $C \in \mathbb { R } ^ { k } , Y \in \mathbb { R } ^ { n }$ and m, k, n are dimensions of the image, concept and label spaces respectively. Each prediction is of the form ${ \hat { y } } = p ( q ( x ) )$ where $q \colon X \mapsto C \left( \mathbf { e . g } \right.$ . bird image → {white body, flat yellow bill, . . . , orange legs}) is the concept encoder, and $p \colon C \mapsto { } \quad Y$ (e.g. {white body, flat yellow $b i l l , \ldots$ , orange $l e g s \} \to \ D u c k )$ is an interpretable classifier network. These text-based concepts correspond to attributes (as discussed in earlier sections), and we refer to them as such henceforth.
+
+Formal Concept Analysis (FCA): A formal context is defined as a three-tuple $\langle G , M , I \rangle$ , where G is a set of objects, M is a set of attributes, and $I \subseteq G \times M$ captures the binary relations (also called incidence relation) indicating which attributes are present in which objects. Given such a formal context, a formal concept (Ganter & Wille, 2024) is defined as a tuple ⟨A, B⟩, where A (extent) is a subset of objects and B (intent) is a subset of attributes. Note that these are not arbitrary subsets; these subsets of objects and attributes have concept-forming operators defined over them (↑, ↓). A contains objects (classes in our case) sharing all attributes in B, and B contains attributes shared by all objects in A. Given $A \subseteq G , B \subseteq M$ , this is defined as:
+
+$$
+A ^ {\uparrow} = B, B ^ {\downarrow} = A \tag {1}
+$$
+
+$$
+A ^ {\uparrow} = \{m \in M | \forall g \in A: \langle g, m \rangle \in I \}
+$$
+
+$$
+B ^ {\downarrow} = \{g \in G | \forall m \in B: \langle g, m \rangle \in I \}
+$$
+
+The set of all formal concepts derived from a formal context forms a partial order over the subset-superset ordering relation, i.e. if $\langle A _ { 1 } , B _ { 1 } \rangle , \ \langle A _ { 2 } , B _ { 2 } \rangle$ are two formal concepts, $\langle A _ { 1 } , B _ { 1 } \rangle ~ \preceq ~ \langle A _ { 2 } , B _ { 2 } \rangle$ if $A _ { 1 } ~ \subseteq ~ A _ { 2 }$ and $B _ { 1 } \supseteq B _ { 2 }$ , where ⪯ represents subconcept-superconcept ordering. This implies that general concepts have lesser attributes and more objects, while specific concepts have more attributes and lesser objects. For example, ⟨{dog, cat, tiger}, {animal, vertebrate}⟩ is more general than $\langle \{ c a t , t i g e r \}$ , {animal, vertebrate, $f e l i n e \} )$ . This partial order allows us to construct a lattice of formal concepts, a hierarchy wherein concepts in higher layers are more general and ones in lower layers are more specific.
+
+Definition 3.1 (Formal Concept Lattice). Let $B ( G , M , I )$ denote the collection of all formal concepts of the formal context $\langle G , M , I \rangle$ , i.e. ${ \cal B } ( G , M , I ) = \{ \langle A , B \rangle \in 2 ^ { G } \times$ $2 ^ { M } | A ^ { \uparrow } = B , B ^ { \downarrow } = A \} . \ \langle B ( G , M , I ) , \preceq \rangle$ is then a formal concept lattice (or simply lattice, in this work), where $\preceq$ is the subset-superset ordering. Let L denote this lattice, where $\mathcal { L } = \{ \mathcal { L } _ { 1 } , \mathcal { L } _ { 2 } , \ldots , \mathcal { L } _ { L } \}$ . $\mathcal { L } _ { i }$ represents the set of formal concepts at level i, with $i = 1$ being the most general (top) level and $i = L$ the most specific.
+
+# 3.2. Formal Concepts for Deep Neural Networks
+
+FCA (Ganter & Wille, 2024) provides a principled framework for organizing objects and attributes into a hierarchical structure based on their binary incidence relation. This naturally translates to a concept-based setting in DNNs where we have access to two interpretable sets: classes and their attributes. Treating classes as objects (G) and attributes as their properties $( M ) .$ , we define a formal context $\langle G , M , I \rangle$ , where I is a binary relation indicating which classes contain which attributes. From this formal context, we construct a formal concept lattice: structured tuples of class and attribute subsets organized hierarchically (see Appendix for examples of formal concepts).
+
+Fig 2 (top, in white box) shows an illustrative example of such a lattice. The formal concepts shown at the bottom of the lattice contain singleton classes and the set of attributes that they contain. As we go up the lattice, the formal concepts become more general with increasing class set sizes along with the corresponding maximal set of attributes they have in common. Attributes individually are not general or specific; it is the set of attributes that capture levels of generality. Note that the hierarchy herein captures a subsetsuperset ordering: attribute sets shared by more classes are more general, while those shared by fewer are more specific. We construct such a lattice for each dataset in our experiments; more lattice construction details are provided in Appendix A6.
+
+We next discuss how sets derived from this lattice can be mapped to specific depths in the network using a mechanism we propose called class-cluster density. Then, we detail our training process which involves the joint optimization of attribute learning, iterative class-group refinement and final classification.
+
+Extracting Attribute and Class Sets. The constructed formal concept lattice encodes multi-level semantic relationships, allowing us to extract supervision signals at varying levels of generality. We begin by organizing attributes into sets on the basis of their level in the lattice. Specifically, for each $\mathcal { L } _ { i } .$ we identify the set of formal concepts residing at that level. To represent attributes corresponding to a certain semantic level of generality, we compute the union of intents (i.e., sets of attributes) associated with formal concepts in $\mathcal { L } _ { i }$ :
+
+![](images/c992013eb3be6fe1e232e30648c3d355f4827cf0576f268e1b1da479d9364ef3.jpg)
+
+<details>
+<summary>flowchart</summary>
+
+```mermaid
+graph TD
+    subgraph Training the Neural Network
+        A["Input Image C²(cat)"] --> B["Constructed attribute ground truths for input"]
+        B --> C["Cat cat"]
+        C --> D["Neural Network"]
+    end
+
+    subgraph Building the Lattice (One-time Offline Step)
+        E["1 We generate a formal concept lattice as an offline step using classes and their attributes"]
+        F["2 Intents (attributes) are gathered from the lattice-from formal concepts of different levels"]
+        G["3 Class-cluster density based backbone position and lattice level alignment is done"]
+        H["4 Attributes (from the selected lattice levels) provide supervisory signals to train attribute layers at different network blocks"]
+        I["5 Class labels provide supervisory signal to the classifier at different network blocks"]
+
+    subgraph Generation the Neural Network
+        J["1 General to specific (Class set size)"]
+        K["2 Union of Intents"] --> L["More general set"]
+        M["3 Intersection"] --> N["More specific set"]
+    end
+
+    subgraph Input Image
+        O["Block 1"] --> P["Neural Network"]
+        Q["Block 2"] --> P
+        R["Block 3"] --> P
+        S["Block 4"] --> P
+        T["Block 5"] --> P
+        U["Block 6"] --> P
+        V["Block 7"] --> P
+        W["Block 8"] --> P
+        X["Block 9"] --> P
+        Y["Block 10"] --> P
+        Z["Block 11"] --> P
+        AA["Block 12"] --> P
+        AB["Block 13"] --> P
+        AC["Block 14"] --> P
+        AD["Block 15"] --> P
+        AE["Block 16"] --> P
+        AF["Block 17"] --> P
+        AG["Block 18"] --> P
+        AH["Block 19"] --> P
+        AI["Block 20"] --> P
+        AJ["Block 21"] --> P
+        AK["Block 22"] --> P
+        AL["Block 23"] --> P
+        AM["Block 24"] --> P
+        AN["Block 25"] --> P
+        AO["Block 26"] --> P
+        AP["Block 27"] --> P
+        AQ["Block 28"] --> P
+        AR["Block 29"] --> P
+        AS["Block 30"] --> P
+        AT["Block 31"] --> P
+        AU["Block 32"] --> P
+        AV["Block 33"] --> P
+        AW["Block 34"] --> P
+        AX["Block 35"] --> P
+        AY["Block 36"] --> P
+        AZ["Block 37"] --> P
+        BA["Block 38"] --> P
+        BB["Block 39"] --> P
+        BC["Block 40"] --> P
+    end
+
+    subgraph Legend
+        D1["G=0, G2=0, G3=0, G4=0, G5=0, G6=0, G7=0, G8=0, G9=0, G10=0, G11=0, G12=0, G13=0, G14=0, G15=0, G16=0, G17=0, G18=0, G19=0, G20=0, G21=0, G22=0, G23=0, G24=0, G25=0, G26=0, G27=0, G28=0, G29=0, G30=0, G31=0, G32=0, G33=0, G34=0, G35=0, G36=0, G37=0, G38=0, G39=0, G40=0, G41=0, G42=0, G43=0, G44=0, G45=0, G46=0, G47=0, G48=0, G49=0, G50=0, G51=0, G52=0, G53=0, G54=0, G55=0, G56=0, G57=0, G58=0, G59=0, G60=0, G61=0, G62=0, G63=0, G64=0, G65=0, G66=0, G67=0, G68=0, G69=0, G70=0, G71=0, G72=0, G73=0, G74=0, G75=0, G76=0, G77=0, G78=0, G79=0, G80=0, G81=0, G82=0, G83=0, G84=0, G85=0, G86=0, G87=0, G88=0, G89=0, G90=0, G91=0, G92=0, G93=0, G94=0, G95=0, G96=0, G97=0, G98=0, G99=0, H10=G4,D4≤D̄D1,GAP[D4≤D̄D1"]
+    end
+
+    subgraph Legend
+        D1["a1,a2,a3,a4,a5,a6,...a|M"]
+        D2["a1,a2,a3,a4,a5,a6,...a|M"]
+        D3["a1,a2,a3,a5,...a|M"]
+        D4["a1,a3,a7,...a|M"]
+    end
+
+    style Legend fill:#f9f9f9,stroke:#333
+```
+</details>
+
+Figure 2. Illustration of our overall approach. A formal concept lattice is constructed for a concept-based setting using class and attribute sets and the binary relation between them (top). A neural network is supervised at intermediate blocks using the information extracted from specific levels in the lattice (bottom).
+
+$$
+M _ {i} = \bigcup_ {\mathrm{fc} \in \mathcal {L} _ {i}} \text { fc.intent } \tag {2}
+$$
+
+where fc.intent denotes the intent of the formal concept. By repeating this process across different levels of the lattice, we obtain a hierarchy of attribute sets $\{ M _ { 1 } , M _ { 2 } , \ldots , M _ { l } \}$ , each progressively more specific than the previous.
+
+The concept lattice not only provides hierarchical attributes but also class groupings (extents) within each formal concept. We leverage this structure as a form of supervision via iterative refinement: we use loss functions at different layers such that they progressively narrow down the set of plausible classes (details in Sec 3.3). At early layers, general attribute sets may not identify individual classes but can often disambiguate groups of classes. For example, the presence of attributes such as {whiskers, fur} can rule out classes like tortoise or whale, narrowing the prediction space from all classes to, say, {cat, dog, lion, tiger}. This class group is then cascaded forward, where subsequent layers refine it using more specific attributes; the next layer may use domesticated to narrow this down to {cat, dog}.
+
+Such a learning mechanism allows suppression of classes that get eliminated early, focusing the network’s discriminative capacity on the remaining candidates. We theoretically show in Sec 4 that this iterative refinement mechanism preserves the semantic ordering imposed by the lattice structure, minimizing ordering violations during training (Sec 3.3).
+
+Class-Cluster Density. Modern neural network architectures are organized into progressive modular components, for example, residual blocks in ResNets, transformer encoder blocks in ViTs, etc. We refer to these generically as ‘blocks’ and treat them as candidates for semantic supervision. We formalize the notion of class-cluster density to quantify the semantic granularity of intermediate network representations and to align lattice levels with network depth. Let $f _ { j } ( x ) \in \mathbb { R } ^ { d _ { j } }$ denote the feature embedding of input x at network block $j .$ Given a dataset with n classes, we apply k-means clustering with $k = n$ to the set $\{ f _ { j } ( x ) \}$ over the training samples. For a cluster K, let $\mathcal { V } ( K )$ denote the set of ground-truth class labels of samples assigned to K. We define the class-cluster density at block j as:
+
+![](images/2efbc64c9d4965bc260fcd71b9af710d5a29fd47fc1d73d388e59fca1c215a53.jpg)  
+Figure 3. An illustrative example on 10 classes of how lattice levels are selected to supervise layers (blocks in our implementation) in the network. We perform clustering with n (here 10) centers at each layer and obtain the average number of unique classes present per cluster, compute the same over the formal concept extents at each lattice level, and then choose closest alignment.
+
+$$
+D _ {j} = \frac {1}{n} \sum_ {k = 1} ^ {n} | \{\mathcal {Y} (K _ {k}) \} | \tag {3}
+$$
+
+where $\{ K _ { k } \} _ { k = 1 } ^ { n }$ 1 are the resulting clusters. For example, if $K \ = \ \{ ( x 1 , y 1 ) , ( x 2 , y 2 ) , ( x 3 , y 2 ) \}$ , then $\mathcal { D } ( K ) \ =$ $\{ y _ { 1 } , y _ { 2 } \}$ and $| \mathcal { D } ( K ) | = 2$ . The above equation averages this count across all n clusters. Intuitively, $D _ { j }$ measures the average number of distinct classes grouped together by the representation at depth $j ;$ higher values indicate more class-agnostic (general) features, while lower values reflect increased class-specific separation.
+
+An analogous quantity can be defined for the formal concept lattice. For each lattice level i, we define this quantity as $\begin{array} { r c l } { \bar { D } _ { i } } & { = } & { \frac { 1 } { \left| \mathcal { L } _ { i } \right| } \sum _ { f c \in \mathcal { L } _ { i } } \left| \left\{ \mathrm { f c . e x t e n t } \right\} \right| } \end{array}$ . By construction, higher lattice levels correspond to more general concepts and thus larger average extents, while lower levels correspond to finer-grained concepts with smaller extents. This establishes a natural alignment principle: early network blocks with high $D _ { j }$ should be supervised by higher lattice levels with large $\bar { D _ { i } }$ , while deeper blocks with lower $D _ { j }$ should align with lower lattice levels. In practice, we assign each lattice level i to the earliest network block j such that $D _ { j } \leq \bar { D } _ { i }$ (see Fig 2 bottom middle), ensuring that semantic supervision is applied at a representational depth whose granularity matches that of the corresponding lattice level. This strategy is illustrated in Figure 3 and an algorithm is included in Appendix A7.
+
+# 3.3. FoCA CBM Training
+
+We refer to our models as FoCA CBMs (Formal Concept Analysis CBMs). Once appropriate depths in the backbone have been determined, at each selected position $j$ in the network, we introduce a concept encoder $q _ { j }$ to project the intermediate feature representation into a concept space defined by the attribute set $M _ { i }$ from lattice level i (i denotes an index in the lattice, j denotes an index in the network). Formally, each encoder learns a mapping $q _ { j } : \mathbb { R } ^ { d _ { j } }  \mathbb { R } ^ { | M _ { i } | }$ where $d _ { j }$ is the dimensionality of the downsampled feature at layer j, obtained via global average pooling, and $| M _ { i } |$ is the size of the attribute set $M _ { i }$ (see Fig 2, bottom). We also introduce l classifiers $p _ { j } : \mathbb { R } ^ { | M _ { i } | }  \mathbb { R } ^ { n }$ , each operating on the output of the corresponding concept encoder $q _ { j }$ , where n is the total number of classes.
+
+Obtaining Level-Wise Attribute and Class Ground Truths. Given a sample x with ground truth class label $y ,$ let $\mathbf { C } ( x ) \in \{ 0 , 1 \} ^ { | \bar { M } | }$ | denote its complete ground truth attribute vector, where $| M |$ indicates all the attributes from the lattice. For lattice level $i ,$ let $\mathcal { M } _ { i } \subseteq \{ 1 , \dots , | M | \}$ denote the set of attribute indices corresponding to attributes at that level. The level-wise ground truth attribute vector for sample x at level i is then obtained as $\mathbf { C } ^ { i } ( x ) = \mathbf { C } ( x ) [ M _ { i } ]$ , i.e., by selecting the entries in $\mathbf { C } ( x )$ indexed by attributes belonging to $\mathcal { M } _ { i }$ . Similarly, we define the class group of y at level i as the union of all class sets (extents) of formal concepts at $\mathcal { L } _ { i }$ whose extents contain $y .$ Formally, if $\mathcal { L } _ { i }$ denotes the set of formal concepts at level i, then the class group is given by:
+
+$$
+G _ {i} (y) = \bigcup_ {\substack {\mathrm{fc} \in \mathcal {L} _ {i} \\ y \in \mathrm{fc}. \text {extent}}} \text {fc}. \text {extent} \tag{4}
+$$
+
+As an example, let level $l _ { i }$ contains the formal concepts ⟨{dog, cat}, {animal, vertebrate, ...}⟩, ⟨{cat, tiger}, {animal, vertebrate, ...}⟩ and ⟨{tiger, zebra}, {animal, vertebrate, ...}⟩. If sample x is a cat, since cat appears in two extents, the resulting group is $G _ { i } ( y ) = \{ d o g , c a t , t i g e r \} . \ : \bar { G } _ { y } ^ { i } = { \bf 1 } _ { c \in G _ { u } ^ { i } }$ represents the corresponding binary vector. This is Step 4 in Fig 2. As we proceed to deeper lattice levels, these groups become progressively smaller, ultimately converging to singleton sets representing individual classes.
+
+Overall Training Process. The network is jointly trained for both attribute prediction and classification, using the aforementioned iterative refinement strategy. For each attribute encoder output, we apply a binary cross-entropy loss $\ell _ { \mathrm { B C E } }$ against the corresponding attribute set. For all intermediate classifiers, we supervise using group-level labels derived from the lattice, again using $\ell _ { \mathrm { B C E } }$ . The final classifier is trained with standard cross-entropy loss $\ell _ { \mathrm { C E } }$ using the ground truth class label. Denoting $s _ { j } ( x ) = p _ { j } ( q _ { j } ( f _ { j } ( x ) ) )$ as the output of the classifier at layer j, we have ${ \hat { s } } _ { j } ( x ) =$ $s _ { j } ( x ) \cdot \sigma ( s _ { j - 1 } ( x ) )$ as the post-iterative refinement output for classes at layer j, and $a _ { j } ( x ) = \sigma ( q _ { j } ( f _ { j } ( x ) ) )$ as the sigmoid output for attributes at layer j. The overall loss $\ell _ { \mathrm { t o t a l } }$ is hence:
+
+$$
+\begin{array}{l} \alpha \sum_ {j = 1} ^ {l} (\underbrace {\mathbf {C} ^ {i} (x) \cdot \log (a _ {j} (x)) + (1 - \mathbf {C} ^ {i} (x) \cdot (1 - \log (a _ {j} (x)))} _ {\ell_ {\mathrm{BCE} _ {j}} ^ {\mathrm{attr}}}) \\ + \beta \sum_ {j = 1} ^ {l} (\underbrace {\bar {G} _ {y} ^ {i} \cdot \log (\hat {s} _ {j} (x)) + (1 - \bar {G} _ {y} ^ {i}) \cdot (1 - \log (\hat {s} _ {j} (x)))} _ {\ell_ {\mathrm{BCE} _ {j}} ^ {\text {group}}} + \ell_ {\mathrm{CE} _ {l}} \tag {5} \\ \end{array}
+$$
+
+where α and $\beta$ are weighting hyperparameters that balance the contribution of attribute and group-level supervision.
+
+# 4. Some Theoretical Implications
+
+We now present a theoretical analysis highlighting advantages of FoCA CBMs: (a) over non-hierarchical CBMs, and (b) more specifically, over other hierarchical CBM variants. Focusing first on (a), we study how imposing a lattice-ordered structure on classes and attributes provides a semantic scaffold for the network, in contrast to unordered alternatives, and show that FoCA CBMs preserve semantic concept ordering across layers. Let $f ^ { \mathrm { f o c a } }$ denote a FoCA CBM trained with iterative refinement , and let $f ^ { \mathrm { r n d } }$ denote a network trained with random class groupings $\{ G _ { \mathrm { r n d } } ^ { i } ( y ) \}$ that do not satisfy the subset constraint $G _ { \mathrm { r n d } } ^ { i + 1 } ( y ) \subseteq \overleftarrow { G _ { \mathrm { r n d } } ^ { i } } ( y )$ At zero training loss, preservation of ordering is trivial: a FoCA CBM respects lattice structure by construction, while random groupings may not. In general, multiple parameter configurations can attain the same empirical risk (Zhang et al., 2021). FoCA CBMs, however, introduce an inductive bias toward order-consistent solutions, ensuring that any formal concept activated at a given layer is also activated in all preceding layers, a guarantee absent under random group-based supervision. The substantive question lies in the realistic regime where the empirical risk ˆℓ differs from the optimal risk $\ell ^ { * }$ by some margin $\epsilon > 0$ . Crucially, not all prediction errors constitute ordering violations. For example, for a given input, if two consecutive layers incorrectly predict a true class as absent, the semantic ordering is preserved despite the misclassification. We therefore isolate and bound the probability of ordering-specific errors (configurations where $c \in \hat { G } _ { i + 1 } ^ { \setminus } \setminus \hat { G } _ { i } )$ as a function of the generalization gap $\epsilon = | \hat { \ell } - \ell ^ { * } |$ . The following theorem establishes that, under bounded generalization error, a FoCA CBM maintains hierarchical consistency with high probability (over the training set X), while random supervision fails this guarantee even at zero training loss.
+
+Theorem 4.1 (Inductive Bias towards Order Consistency). For an input $( x , y ) \sim X \times Y$ , define:
+
+$$
+\hat {G} _ {i} (x) = \left\{g \in G _ {i} (y) \mid \hat {s} _ {j} (x) [ g ] \geq \tau_ {c} \right\},
+$$
+
+where $\tau _ { c } \in [ 0 , 1 ]$ is a threshold, typically chosen as 0.5. $A l s o ,$ let $E _ { i } ^ { c }$ denote the event $c \in \hat { G } _ { i + 1 } ( x ) \setminus \hat { G } _ { i } ( x )$ . Then, given $| \widehat { \ell _ { t o t a l } } - \ell _ { t o t a l } ^ { * } | \le \epsilon $ , assuming max ${ } _ { i , c } P ( E _ { i - 1 } ^ { c } ) + $ $\begin{array} { r } { P ( E _ { i } ^ { c } ) \leq \frac { 1 } { e } , } \end{array}$
+
+![](images/c1ace3e1a3c5793f7252148550ecdcbdb57412abf3ffe997617642d647d2f87d.jpg)
+
+<details>
+<summary>scatter</summary>
+
+| Block | CBM Range | FoCA CBM Range |
+|-------|-----------|----------------|
+| block 1 | -25 to 0 | -25 to 25 |
+| block 2 | -25 to 0 | -25 to 25 |
+| block 3 | -25 to 0 | -25 to 25 |
+| block 4 | -25 to 0 | -50 to 25 |
+</details>
+
+Figure 4. t-SNE plots of sample embeddings from AwA2 obtained from trained ResNet-18 backbones of Vanilla CBM and FoCA CBM. On a CBM, the clusters separate at the final block; in FoCA CBM, the separation happens gradually over blocks, showing graded semantic learning.
+
+$$
+\operatorname * {P r} _ {f ^ {\text { foca }}} \left(\hat {G} _ {i + 1} (x) \not \subseteq \hat {G} _ {i} (x)\right) \ll \operatorname * {P r} _ {f ^ {\text { rnd }}} \left(\hat {G} _ {i + 1} (x) \not \subseteq \hat {G} _ {i} (x)\right).
+$$
+
+We provide a brief proof sketch herein, while deferring the detailed proof to Appendix A3.
+
+Proof Sketch. The proof proceeds in three steps. First, we establish that ground truth class groups respect the superset ordering: $G ^ { i \bar { + } 1 } ( y ) \subseteq G ^ { i } ( y )$ for all i and y. Second, we quantify the loss penalty for ordering violations. Each violation at transition $i  i + 1$ incurs excess loss of at least $\gamma _ { \mathrm { m i n } } > 0$ compared to correct predictions. Third, we apply the asymmetric Lovasz Local Lemma ( ´ Erdos & Lov ˝ asz ´ , 1975) to the collection of violation events $\{ E _ { i } \} _ { i = 1 } ^ { L - 1 }$ . T he dependency structure where each event $E _ { i }$ depends only on adjacent events $E _ { i - 1 }$ and $E _ { i + 1 }$ , enables us to lower bound the probability of maintaining ordering across all layers as $\mathrm { P r } ( { \bar { \cap } } _ { i } { \overline { { E } } } _ { i } )$ ). In stark contrast, random groupings yield high violation probabilities, via a simple combinatorial argument, even at zero training loss. □
+
+Notably this affinity for order consistency holds vacuously for vanilla CBMs where mappings are restricted to only the most fine-grained bottom layer of a formal concept lattice. FoCA CBMs, on the other hand, generalize this approach by allowing mappings to any layer of the formal concept lattice. We next analyze the advantages of using a formal concept lattice as opposed to an arbitrary hierarchy. Drawing on insights from the information bottleneck theory (Tishby & Zaslavsky, 2015), we posit that the increase in mutual information between successive layers and the output $I ( f _ { j } ( X ) ; Y ) - I ( f _ { j - 1 } ( X ) ; Y )$ is upper-bounded by a constant $\Delta ,$ , that depends on structural details such as the architecture and optimizer. In general, for DNNs, information gain between successive layers may be method-dependent and not guaranteed, as qualitatively illustrated by the t-SNE visualizations in the top row of Fig 4. In contrast, supervision of intermediate layers using a formal lattice induces a guaranteed lower bound on the information gain between any two consecutively supervised layers in FoCA-CBMs, a result formally established below in Theorem 4.2.
+
+Theorem 4.2 (Information-Theoretic Benefit of FCA Supervision). Consider a FoCA-CBM trained with formal concept lattice L constructed from $\langle G , M , I \rangle$ . Let network layer j be supervised by lattice level i via class groups $G ^ { i }$ and attribute sets Mi. Then, under bounded training error $| \hat { \ell } - \ell ^ { * } | \leq \epsilon$ with N training samples, the ϵ-calibrated information gain of the network for layer j is:
+
+Table 1. Results on Classification Test Accuracy, Cluster Impurity (CI) and Cluster Compactness (DBI) on ImageNet100, AwA2, CIFAR100 datasets averaged over 3 seeds. Best in bold, second best underlined. FoCA CBM-N is a Naive variant of our method where the attribute sets obtained from the lattice are all stacked after the backbone followed by a standard classifier. 
+
+<table><tr><td></td><td colspan="3">ImageNet100</td><td colspan="3">AwA2</td><td colspan="3">CIFAR100</td></tr><tr><td></td><td>Acc ↑</td><td>CI ↓</td><td>DBI ↓</td><td>Acc ↑</td><td>CI ↓</td><td>DBI ↓</td><td>Acc ↑</td><td>CI ↓</td><td>DBI ↓</td></tr><tr><td>Vanilla CBM [ICML&#x27;20]</td><td> $88.27 \pm 0.490$ </td><td> $0.662 \pm 0.005$ </td><td> $2.197 \pm 0.023$ </td><td> $90.36 \pm 0.210$ </td><td> $0.628 \pm 0.004$ </td><td> $2.137 \pm 0.011$ </td><td> $76.63 \pm 0.690$ </td><td> $0.712 \pm 0.006$ </td><td> $2.238 \pm 0.024$ </td></tr><tr><td>MLPCBM</td><td> $86.88 \pm 0.290$ </td><td> $0.659 \pm 0.006$ </td><td> $2.210 \pm 0.029$ </td><td> $89.65 \pm 0.370$ </td><td> $0.637 \pm 0.007$ </td><td> $2.120 \pm 0.018$ </td><td> $76.17 \pm 0.620$ </td><td> $0.722 \pm 0.006$ </td><td> $2.276 \pm 0.027$ </td></tr><tr><td>Posthoc CBM [ICLR&#x27;23]</td><td> $67.25 \pm 0.700$ </td><td> $0.820 \pm 0.000$ </td><td> $2.530 \pm 0.000$ </td><td> $81.00 \pm 0.340$ </td><td> $0.773 \pm 0.000$ </td><td> $2.674 \pm 0.000$ </td><td> $52.00 \pm 0.005$ </td><td> $0.851 \pm 0.000$ </td><td> $2.779 \pm 0.000$ </td></tr><tr><td>LFCBM [ICLR&#x27;23]</td><td> $86.32 \pm 0.240$ </td><td> $0.676 \pm 0.000$ </td><td> $2.448 \pm 0.000$ </td><td> $83.03 \pm 0.020$ </td><td> $0.699 \pm 0.000$ </td><td> $2.803 \pm 0.000$ </td><td> $65.13 \pm 0.120$ </td><td> $0.907 \pm 0.000$ </td><td> $2.519 \pm 0.000$ </td></tr><tr><td>CEM [NeurIPS&#x27;22]</td><td> $86.51 \pm 0.400$ </td><td> $0.678 \pm 0.004$ </td><td> $2.178 \pm 0.026$ </td><td> $93.11 \pm 0.170$ </td><td> $0.646 \pm 0.003$ </td><td> $2.278 \pm 0.009$ </td><td> $77.32 \pm 0.570$ </td><td> $0.811 \pm 0.003$ </td><td> $2.497 \pm 0.019$ </td></tr><tr><td>LaBo [CVPR&#x27;23]</td><td> $74.48 \pm 0.004$ </td><td> $0.676 \pm 0.000$ </td><td> $2.448 \pm 0.000$ </td><td> $91.53 \pm 0.010$ </td><td> $0.699 \pm 0.000$ </td><td> $2.803 \pm 0.000$ </td><td> $65.23 \pm 0.003$ </td><td> $0.907 \pm 0.000$ </td><td> $2.519 \pm 0.000$ </td></tr><tr><td>SCBM [NeurIPS&#x27;24]</td><td> $85.97 \pm 0.150$ </td><td> $0.662 \pm 0.003$ </td><td> $2.049 \pm 0.024$ </td><td> $90.40 \pm 0.260$ </td><td> $0.615 \pm 0.002$ </td><td> $2.096 \pm 0.014$ </td><td> $79.13 \pm 1.100$ </td><td> $0.705 \pm 0.004$ </td><td> $2.114 \pm 0.018$ </td></tr><tr><td>ProbCBM [ICML&#x27;23]</td><td> $85.75 \pm 0.820$ </td><td> $0.693 \pm 0.003$ </td><td> $2.269 \pm 0.027$ </td><td> $89.80 \pm 0.020$ </td><td> $0.661 \pm 0.002$ </td><td> $2.373 \pm 0.007$ </td><td> $78.86 \pm 0.100$ </td><td> $0.732 \pm 0.005$ </td><td> $2.401 \pm 0.012$ </td></tr><tr><td>CF-CBM [NeurIPS&#x27;24]</td><td> $87.30 \pm 0.010$ </td><td> $0.676 \pm 0.000$ </td><td> $2.448 \pm 0.000$ </td><td> $89.19 \pm 0.810$ </td><td> $0.699 \pm 0.000$ </td><td> $2.803 \pm 0.000$ </td><td> $60.02 \pm 0.540$ </td><td> $0.907 \pm 0.000$ </td><td> $2.519 \pm 0.000$ </td></tr><tr><td>HybridCBM [CVPR&#x27;25]</td><td> $79.51 \pm 0.370$ </td><td> $0.676 \pm 0.000$ </td><td> $2.448 \pm 0.000$ </td><td> $92.25 \pm 0.07$ </td><td> $0.699 \pm 0.000$ </td><td> $2.803 \pm 0.000$ </td><td> $59.52 \pm 0.090$ </td><td> $0.907 \pm 0.000$ </td><td> $2.519 \pm 0.000$ </td></tr><tr><td>FoCA CBM-N [Ours]</td><td> $88.36 \pm 0.290$ </td><td> $0.665 \pm 0.005$ </td><td> $2.150 \pm 0.021$ </td><td> $88.26 \pm 0.270$ </td><td> $0.659 \pm 0.005$ </td><td> $2.273 \pm 0.015$ </td><td> $82.41 \pm 0.050$ </td><td> $0.688 \pm 0.005$ </td><td> $2.177 \pm 0.021$ </td></tr><tr><td>FoCA CBM [Ours]</td><td> $91.88 \pm 0.350$ </td><td> $0.573 \pm 0.005$ </td><td> $1.862 \pm 0.027$ </td><td> $92.13 \pm 0.280$ </td><td> $0.571 \pm 0.004$ </td><td> $2.057 \pm 0.010$ </td><td> $79.47 \pm 0.200$ </td><td> $0.622 \pm 0.004$ </td><td> $1.855 \pm 0.020$ </td></tr></table>
+
+$$
+I _ {\mathcal {D}} (f _ {j} (X); Y) - I _ {\mathcal {D}} (f _ {j - 1} (X); Y) \geq \Delta_ {\mathrm{lattice}} ^ {(i)} - 2 \Delta_ {\mathrm{align}} (\epsilon),
+$$
+
+$w h e r e \Delta _ { \mathrm { a l i g n } } ( \epsilon ) = O \bigl ( \sqrt { \epsilon \log | G | } + N ^ { - 1 / 2 } \bigr ) .$
+
+The formality property (Eqn 1) guarantees that each attribute set $M _ { i }$ is both informationally complete and parsimonious for its associated class-group structure. In contrast, random concept selection (Thm 4.1) breaks this optimality, resulting in ordering violations and unwarranted information loss.
+
+# 5. Experiments
+
+Datasets: We study our approach on three widely used benchmark datasets in concept-based learning: ImageNet100 (Russakovsky et al., 2015), AwA2 (Xian et al., 2019) and CIFAR100 (Krizhevsky et al., 2009). AwA2 is an expert-annotated dataset with class-level attributes, while for ImageNet100 and CIFAR100, we acquire class-level attribute annotations as in (Oikarinen et al., 2023) using an LLM. We use these benchmark datasets as they capture conceptual diversity among them. More dataset details are in Appendix A5.
+
+Baselines: We compare our approach with ten conceptbased learning models: (1) Vanilla CBMs (Koh et al., 2020), (2) MLPCBMs (an extension of vanilla CBMs), (3) Posthoc CBMs (Yuksekgonul et al., 2023), (4) Label-free CBMs (Oikarinen et al., 2023), (5) Concept Embedding Models (Zarlenga et al., 2022), (6) Language in a Bottle (Yang et al., 2023), (7) Stochastic CBMs (Vandenhirtz et al., 2024a), (8) Probabilistic CBMs (Kim et al., 2023), (9) Coarse-to-Fine CBMs (Panousis et al., 2024), and (10) Hybrid CBMs (Liu et al., 2025). These models represent different flavors of concept-based approaches with strong performance. All models, including ours, are ResNet-based.
+
+Metrics: In addition to classification accuracy, we evaluate the semantic quality of learned embeddings across network depth using clustering-based metrics. After training, we apply k-means clustering with n centers (= number of classes) to the feature embeddings at the end of each backbone block. We evaluate clusters using (i) Cluster Impurity (CI), using the Gini index (Breiman et al., 1984), which captures class heterogeneity within clusters, and (ii) Cluster Compactness, using the Davies–Bouldin Index (DBI) (Davies & Bouldin, 1979), which quantifies intra-cluster compactness and intercluster separation. Lower values of CI and DBI indicate more semantically structured representations.
+
+Results: Our results over all metrics (Test Accuracy, CI, DBI) are reported for all baselines and our method in Table 1. FoCA CBM-N (N=Naive) is a naive variant of our method where attribute sets from multiple lattice levels are added as consecutive linear layers after the backbone. This is then trained like a Vanilla CBM with multiple attribute layers, followed by a classifier (one can view this as akin to a hierarchical CBM, with attribute sets constructed using our FCA lattice). The CI and DBI metrics give us a score per block of each model; we report the mean across all blocks. We see that our models consistently learn more meaningful embeddings, outperforming all baselines across datasets in terms of CI and DBI. In terms of accuracy, our models are consistently competitive across datasets.
+
+Performance on ViT Backbones: Existing CBM methods largely focus on CNN architectures. To expand on this, we also studied our approach on ViT backbones, aligning appropriate levels from our lattice to intermediate blocks of a ViT architecture. We then compared our method (FoCA ViT) with a ViT CBM (CBM trained with a ViT backbone) on the CIFAR100 dataset. FoCA ViT outperformed the ViT CBM on all our metrics: 86.65 ± 0.295 vs 84.49 ± 0.547 test accuracy, 0.755 ± 0.004 vs 0.774 ± 0.016 CI and 1.983 ± 0.021 vs 2.237 ± 0.006 DBI, all averaged over three seeds (more
+
+![](images/6881ff49e75c1253709320e2ed2ed809ac0cffaf71b54b0af1096350987ff7c2.jpg)
+
+Figure 5. (a) Severity of misclassification informs which level of attributes to intervene on. Ground truth class for current input is c2, which is not in prediction set at layer 2; we hence intervene at 2nd layer; (b) Comparison of average number of corrections on interventions at last attribute layer (blue) and at appropriate intermediate layer on Imagenet100 (orange). Intervening at apt level improves performance; (c) Example attributes intervened on at last and intermediate layers; note that intermediate layers have more general attributes.   
+Table 2. Comparison with LLM (GPT4)-based hierarchy; both models show strong performance. However, turning off some attributes shows significant concept leakage in GPT4-based model, while FCA-based model shows strong concept compactness. 
+
+<table><tr><td>Hierarchy</td><td>ImageNet100</td><td>AwA2</td><td>CIFAR100</td></tr><tr><td>FCA</td><td> $91.88_{\pm 0.35}$ ↓ $60.57_{\pm 0.03}$ </td><td> $92.13_{\pm 0.28}$ ↓ $91.51_{\pm 0.29}$ </td><td> $79.47_{\pm 0.20}$ ↓ $51.06_{\pm 0.06}$ </td></tr><tr><td>GPT4</td><td> $91.47_{\pm 0.41}$ ↓ $89.20_{\pm 0.40}$ </td><td> $92.67_{\pm 0.10}$ ↓ $92.30_{\pm 0.39}$ </td><td> $80.35_{\pm 0.07}$ ↓ $76.16_{\pm 0.08}$ </td></tr></table>
+
+baselines in Appendix A4).
+
+# 6. Analysis
+
+Considering Alternative Hierarchies: Our framework is not restricted to FCA-derived hierarchies. Any hierarchical structure satisfying the subset-superset ordering property can be used to guide network learning. To demonstrate this generality, we propose an alternative LLM-based hierarchy construction method: An LLM (GPT4) is provided with the class-attribute incidence matrix and is prompted to generate attribute sets that satisfy the subset-superset relation, along with a group of classes associated with each class. This method produces a hierarchy with the required ordering properties and can be integrated into our framework. Table 2 (top value in each row) shows the competitive performance of the GPT4-based model, demonstrating our method’s generalizability. That said, we observe that FCAbased hierarchies are superior in terms of concept leakage. To quantify this, we randomly turn off some attributes (1%) in both models and measure the resulting drop in test accuracy (standard test to study concept leakage in CBMs). We observe that the model based on GPT4 hierarchy shows minimal change, indicating significant concept leakage, while our FCA-based model shows strong concept compactness.
+
+Multi-Level Interventions: A key advantage of CBMs is their support for test-time interventions that probe conceptto-class mappings. While standard approaches apply random interventions at the final concept layer, our framework enables level-aware interventions aligned with semantic granularity. Intuitively, coarse misclassifications (e.g., dog vs. elephant) require intervention on general attributes, whereas fine-grained confusions (e.g., dog vs.cat) require more specific corrections. We quantify misclassification severity by identifying the deepest layer at which the ground-truth class remains in the predicted class group (Fig 5(a)). Due to iterative refinement, classes eliminated at a given level rarely reappear, making this layer a natural intervention point. We intervene at the corresponding attribute layer by randomly modifying k attributes and propagating the updated activations forward, and compare this to interventions applied only at the final layer. As shown in Fig 5(b), level-aware interventions consistently outperform final-layer interventions across four random sets of misclassifications on ImageNet100 (averaged over 10 trials of 20 interventions per sample). Fig 5(c) illustrates that earlier layers predominantly involve general attributes, whereas finallayer interventions mix general and fine-grained concepts.
+
+Additionally, we evaluate our models intervention effectiveness with respect to random oracle interventions over the whole test set and find that our general-layer interventions yield the highest accuracy gains per oracle intervention, as is shown in the oracle interventions vs accuracy gains curve to the right. Together, these results show that semantic scaffolding enables effective interventions at multiple abstraction levels.
+
+![](images/32f086c6b0b093e865c318e060dee3e2aac6f8f0c815a3cd3c6d5941e53641d0.jpg)
+
+<details>
+<summary>line</summary>
+
+| Number of attributes intervened | FoCA CBM General | FoCA CBM Specific | Vanilla CBM | CEM | ProbCBM |
+| ------------------------------ | ---------------- | ----------------- | ----------- | --- | ------- |
+| 0                              | 92               | 92                | 88          | 86  | 86      |
+| 10                             | 93               | 92                | 88          | 87  | 87      |
+| 20                             | 94               | 92                | 88          | 88  | 87      |
+| 40                             | 95               | 92                | 88          | 90  | 87      |
+</details>
+
+Scaling and Practicality: Formal concept lattices are constructed as a one-time offline preprocessing step, taking approximately 4.5 seconds for ImageNet100, 37 seconds for AwA2, and 2 seconds for CIFAR100.
+
+Table 3. Computational cost (in Giga Floating Point Operations) of different models on all three datasets. 
+
+<table><tr><td>Model</td><td>ImageNet100</td><td>AwA2</td><td>CIFAR100</td></tr><tr><td>CBM</td><td>8.21G</td><td>3.64G</td><td>8.21G</td></tr><tr><td>CEM</td><td>8.259G</td><td>3.64G</td><td>8.26G</td></tr><tr><td>SCBM</td><td>17.44G</td><td>7.28G</td><td>17.44G</td></tr><tr><td>FoCA CBM</td><td>8.21G</td><td>3.64G</td><td>8.21G</td></tr></table>
+
+The worst-case complexity of lattice construction is
+
+![](images/e887ebfdb523d8d4a2a39e8e0a1f28b36ffc398baf362529d3c7224f325409d4.jpg)  
+'terrapin', 'hognose snake', 'hermit crab', 'rock crab', 'black swan', 'banded gecko', 'great white shark', 'hen', 'tailed frog', 'pelican', 'boa constrictor', 'bittern', 'scorpion', 'electric ray', 'nematode', 'sea snake', 'garter snake', 'black widow', 'spiny lobster', 'water ouzel', 'red-backed sandpiper', 'sidewinder', 'thunder snake', 'centipede', 'harvestman', 'conch', 'oystercatcher', 'American alligator', 'leatherback turtle', 'redshank', 'chickadee', 'hammerhead', 'peacock'   
+'terrapin', 'hognose snake', 'black swan', 'banded gecko', 'great white shark', 'king snake', 'tailed frog', 'American coot', 'prairie chicken', 'electric ray', 'black and gold garden spider', 'sea snake', 'black widow', 'common newt', 'stingray', 'barn spider', 'sea lion', 'sidewinder', 'thunder snake', 'centipede', 'harvestman', 'American alligator', 'gold sh', 'redshank', 'hammerhead'   
+'albatross', 'hermit crab', 'black swan', 'Dungeness crab', 'banded gecko', 'boa constrictor', 'scorpion', 'electric ray', 'sulphur-crested cockatoo', 'tick', 'barn spider', 'gold nch', 'thunder snake', 'hummingbird', 'harvestman', 'vine snake', 'bee eater', 'green lizard', 'gold sh', 'toucan', 'hammerhead', 'axolotl   
+'Kerry blue terrier', 'pelican', 'spiny lobster', 'white stork', 'wallaby', 'American coot', 'king snake', 'wombat', 'ptarmigan', 'prairie chicken', 'redbacked sandpiper', 'vine snake', 'crane', 'Komodo dragon', 'whiptail', 'albatross', 'black swan', 'chiton', 'sidewinder', 'diamondback', 'goose', 'jelly sh', 'rock crab', 'bustard', 'hognose snake' 'hen', 'mud turtle', 'great grey owl', 'leatherback turtle', 'magpie', 'snail'   
+'goose', 'redshank', 'crane', 'pelican', 'American alligator', 'albatross', 'oystercatcher', 'American coot', 'leatherback turtle', 'black swan', 'sea snake', 'red-backed sandpiper', 'vine snake'   
+'black swan', 'crane', 'macaw', 'toucan'
+
+Figure 6. Visualizing some class clusters at different blocks. Classes from the clusters of a Vanilla CBM are mixed up across blocks, whereas a FoCA CBM gradually telescopes relevant concepts.
+
+$O ( | { \mathcal { L } } | \cdot | G | ^ { 2 } \cdot | M | )$ , where |L| is the number of formal concepts; however, real-world class–attribute relations are typically sparse (fill ratio < 0.1), resulting in near-quadratic growth in practice (Table A12). Table 3 reports the computational cost (in FLOPs) of FoCA CBMs and representative baselines. Despite introducing intermediate supervision, FoCA CBMs incur computational costs comparable to standard CBMs. Prior work has also shown that formal concepts remain stable under incremental updates (Kuznetsov, 2007), supporting the applicability of FCA-based hierarchies in dynamic settings.
+
+Looking into the Clusters: We examine the clusters from the blocks of a FoCA CBM and Vanilla CBM. As shown in Fig 6, the classes in a Vanilla CBM’s clusters only separate out into the group {black swan, goose} at the last block, being quite noisy throughout. However in a FoCA CBM, we observe gradual semantic refinement. The first block captures a mixture of classes, the second block refines it to classes that are associated with water, the third block narrows this down to a set of birds and finally the last block has a separate cluster for {black swan}.
+
+Further analysis, ablations, and more results including interventions, impact of iterative refinement, lattice and position choices are provided in Appendix A2, A4.
+
+# 7. Conclusion
+
+In this work, we examine how concept-based learning models can respect hierarchical structure across a network’s depth. Rather than learning concepts as a flat set at a single stage, we propose guiding representation learning using a structured semantic hierarchy derived from Formal Concept Analysis. The resulting formal concept lattice provides principled supervision points that align semantic granularity with network depth, enabling representations to evolve naturally from general to specific. Our approach improves interpretability by exposing meaningful intermediate concepts and enhances learning through gradual semantic refinement, as reflected in improved clustering quality. We further show that multi-level interventions are both feasible and more effective than standard single-layer alternatives through our approach. We believe this framework brings concept-based models closer to human semantic reasoning, and opens avenues for weakly supervised hierarchies and extensions to other modalities.
+
+Acknowledgments: Deepika SN Vemuri and Krishn Vishwas Kher would like to thank the MoE Prime Minister’s Research Fellowship (PMRF) for the fellowship support. We thank the anonymous reviewers for their helpful feedback in improving the presentation of the paper.
+
+# Impact Statement
+
+Our work advances the fields of Concept-Based Learning and Interpretability by establishing a principled method for organizing semantic concepts in neural networks. The hierarchical structure we introduce enables multi-level interpretability, where users can interact with models at varying levels of abstraction. We believe that this has significant implications for high-stakes domains like healthcare and medical diagnostics where the operators can verify that a model’s reasoning respects the appropriate diagnostic hierarchies (e.g. identifying organs before specific pathologies). The multi-level intervention capability enables more nuanced interactions with these models. Users can now target corrections at the appropriate level of semantic granularity - a broad category mistake or finer-grained mistake. By formalizing the connection between Formal Concept Analysis and Deep Learning, our work bridges communities that have traditionally worked in isolation. We believe that this crosspollination could inspire new research directions leading to models that better align with human cognitive structures.
+
+# References
+
+Barbiero, P., Giannini, F., Ciravegna, G., Diligenti, M., and Marra, G. Relational concept bottleneck models. Advances in Neural Information Processing Systems, 37: 77663–77685, 2024.   
+Berend, D. and Kontorovich, A. A finite sample analysis of the naive bayes classifier. Journal of Machine Learning Research, 16(44):1519–1545, 2015. URL http: //jmlr.org/papers/v16/berend15a.html.   
+Breiman, L., Friedman, J., Stone, C., and Olshen, R. Classification and Regression Trees. Taylor & Francis, 1984. ISBN 9780412048418. URL https://books. google.co.in/books?id=JwQx-WOmSyQC.   
+Chen, C., Li, O., Tao, D., Barnett, A., Rudin, C., and Su, J. K. This looks like that: deep learning for interpretable image recognition. Advances in neural information processing systems, 32, 2019.   
+Davies, D. L. and Bouldin, D. W. A cluster separation measure. IEEE Transactions on Pattern Analysis and Machine Intelligence, PAMI-1(2):224–227, 1979. doi: 10.1109/TPAMI.1979.4766909.   
+De Felice, G., Casanova Flores, A., De Santis, F., Santini, S., Schneider, J., Barbiero, P., and Termine, A. Causally reliable concept bottleneck models. Advances in Neural Information Processing Systems, 38:149099–149139, 2026.   
+Durrschnabel, D., Hanika, T., and Stubbemann, M. Fca2vec: Embedding techniques for formal concept analysis. In
+
+Complex Data Analytics with Formal Concept Analysis, 2019. URL https://api.semanticscholar. org/CorpusID:208291462.
+
+Erdos, P. and Lov˝ asz, L. Problems and results on 3-´ chromatic hypergraphs and some related questions. In Infinite and Finite Sets (Colloq., Keszthely, 1973; dedicated to P. Erdos on his 60th birthday) ˝ , volume 10 of Colloq. Math. Soc. Janos Bolyai ´ , pp. 609–627. North-Holland, Amsterdam, 1975.
+
+Erdos, P. and Lovasz, L. Problems and results on ´ 3- chromatic hypergraphs and some related questions. In Infinite and finite sets (Colloq., Keszthely, 1973; dedicated to P. Erdos on his 60th birthday), Vols. I, II, III ˝ , volume Vol. 10 of Colloq. Math. Soc. Janos Bolyai ´ , pp. 609–627. North-Holland, Amsterdam-London, 1975.
+
+Ganea, O., Becigneul, G., and Hofmann, T. Hyperbolic entailment cones for learning hierarchical embeddings. In Dy, J. and Krause, A. (eds.), Proceedings of the 35th International Conference on Machine Learning, volume 80 of Proceedings of Machine Learning Research, pp. 1646–1655. PMLR, 10–15 Jul 2018. URL https://proceedings.mlr.press/v80/ ganea18a.html.
+
+Ganter, B. and Wille, R. Formal concept analysis: mathematical foundations. Springer Nature, 2024.
+
+Giunchiglia, E. and Lukasiewicz, T. Coherent hierarchical multi-label classification networks. In Proceedings of the 34th International Conference on Neural Information Processing Systems, NIPS ’20, Red Hook, NY, USA, 2020. Curran Associates Inc. ISBN 9781713829546.
+
+Giunchiglia, E. and Lukasiewicz, T. Multi-label classification neural networks with hard logical constraints. J. Artif. Int. Res., 72:759–818, January 2022. ISSN 1076-9757. doi: 10.1613/jair.1.12850. URL https: //doi.org/10.1613/jair.1.12850.
+
+Gyurek, C., Talukder, N., and Hasan, M. A. Binder: Hierarchical concept representation through order embedding of binary vectors. In Proceedings of the 30th ACM SIGKDD Conference on Knowledge Discovery and Data Mining, pp. 980–991, 2024.
+
+Harvey, N. J. and Vondrak, J. An algorithmic proof of the ´ lovasz local lemma via resampling oracles. In 2015 IEEE 56th Annual Symposium on Foundations of Computer Science, pp. 1327–1346, 2015. doi: 10.1109/FOCS.2015. 85.
+
+Kearns, M. and Saul, L. Large deviation methods for approximate probabilistic inference. In Proceedings of the Fourteenth Conference on Uncertainty in Artificial Intelligence, UAI’98, pp. 311–319, San Francisco, CA,
+
+USA, 1998. Morgan Kaufmann Publishers Inc. ISBN 155860555X.   
+Kim, E., Jung, D., Park, S., Kim, S., and Yoon, S.-H. Probabilistic concept bottleneck models. ArXiv, abs/2306.01574, 2023. URL https: //api.semanticscholar.org/CorpusID: 259063823.   
+Koh, P. W., Nguyen, T., Tang, Y. S., Mussmann, S., Pierson, E., Kim, B., and Liang, P. Concept bottleneck models. In International conference on machine learning, pp. 5338– 5348. PMLR, 2020.   
+Krizhevsky, A., Hinton, G., et al. Learning multiple layers of features from tiny images. 2009.   
+Kuznetsov, S. O. On stability of a formal concept. Annals of Mathematics and Artificial Intelligence, 49(1):101–115, 2007.   
+Li, L., Wang, W., and Yang, Y. Logicseg: Parsing visual semantics with neural logic learning and reasoning. In Proceedings of the IEEE/CVF International Conference on Computer Vision (ICCV), pp. 4122–4133, October 2023.   
+Liu, Y., Zhang, T., and Gu, S. Hybrid concept bottleneck models. In Proceedings of the Computer Vision and Pattern Recognition Conference, pp. 20179–20189, 2025.   
+Marconato, E., Passerini, A., and Teso, S. Glancenets: Interpretabile, leak-proof concept-based models. In Neural Information Processing Systems, 2022. URL https://api.semanticscholar.org/ CorpusID:249209924.   
+Nickel, M. and Kiela, D. Poincare embeddings for learning ´ hierarchical representations. In Guyon, I., Luxburg, U. V., Bengio, S., Wallach, H., Fergus, R., Vishwanathan, S., and Garnett, R. (eds.), Advances in Neural Information Processing Systems, volume 30. Curran Associates, Inc., 2017. URL https://proceedings.neurips. cc/paper\_files/paper/2017/file/ 59dfa2df42d9e3d41f5b02bfc32229dd-Paper. pdf.   
+Oikarinen, T., Das, S., Nguyen, L. M., and Weng, T.-W. Label-free concept bottleneck models. arXiv preprint arXiv:2304.06129, 2023.   
+Olah, C., Satyanarayan, A., Johnson, I., Carter, S., Schubert, L., Ye, K., and Mordvintsev, A. The building blocks of interpretability. Distill, 3(3):e10, 2018.   
+Panousis, K. P., Ienco, D., and Marcos, D. Coarse-to-fine concept bottleneck models. In The Thirty-eighth Annual Conference on Neural Information Processing Systems,
+
+2024. URL https://openreview.net/forum? id=RMdnTnffou.   
+Park, K., Choe, Y. J., Jiang, Y., and Veitch, V. The geometry of categorical and hierarchical concepts in large language models. In International Conference on Learning Representations, volume 2025, pp. 76441–76463, 2025.   
+Peng, S., Yang, H., and Yamamoto, A. Bert4fca: A method for bipartite link prediction using formal concept analysis and bert. Plos one, 19(6):e0304858, 2024.   
+Raman, N. J., Espinosa Zarlenga, M., and Jamnik, M. Understanding inter-concept relationships in concept-based models. In Salakhutdinov, R., Kolter, Z., Heller, K., Weller, A., Oliver, N., Scarlett, J., and Berkenkamp, F. (eds.), Proceedings of the 41st International Conference on Machine Learning, volume 235 of Proceedings of Machine Learning Research, pp. 42009–42025. PMLR, 21– 27 Jul 2024. URL https://proceedings.mlr. press/v235/raman24a.html.   
+Rudolph, S. Using fca for encoding closure operators into neural networks. In International Conference on Conceptual Structures, pp. 321–332. Springer, 2007.   
+Russakovsky, O., Deng, J., Su, H., Krause, J., Satheesh, S., Ma, S., Huang, Z., Karpathy, A., Khosla, A., Bernstein, M., Berg, A. C., and Fei-Fei, L. ImageNet Large Scale Visual Recognition Challenge. International Journal of Computer Vision (IJCV), 115(3):211–252, 2015. doi: 10.1007/s11263-015-0816-y.   
+Sarkar, A., Vijaykeerthy, D., Sarkar, A., and Balasubramanian, V. N. A framework for learning ante-hoc explainable models via concepts. In 2022 IEEE/CVF Conference on Computer Vision and Pattern Recognition (CVPR), pp. 10276–10285, 2022.   
+Sawada, Y. and Nakamura, K. Concept bottleneck model with additional unsupervised concepts. IEEE Access, 10:41758–41765, 2022. doi: 10.1109/ACCESS.2022. 3167702.   
+Sinha, S., Huai, M., Sun, J., and Zhang, A. Understanding and enhancing robustness of concept-based models. In AAAI Conference on Artificial Intelligence, 2022. URL https://api.semanticscholar. org/CorpusID:254069697.   
+Srivastava, D., Yan, G., and Weng, T.-W. Vlg-cbm: Training concept bottleneck models with vision-language guidance. In Globerson, A., Mackey, L., Belgrave, D., Fan, A., Paquet, U., Tomczak, J., and Zhang, C. (eds.), Advances in Neural Information Processing Systems, volume 37, pp. 79057–79094. Curran Associates, Inc., 2024. URL https://proceedings.neurips.
+
+cc/paper\_files/paper/2024/file/ 90043ebd68500f9efe84fedf860a64f3-Paperpdf.   
+Sun, A., Yuan, Y., Ma, P., and Wang, S. Eliminating information leakage in hard concept bottleneck models with supervised, hierarchical concept learning. arXiv preprint arXiv:2402.05945, 2024.   
+Theves, S., Neville, D. A., Fernandez, G., and Doeller, C. F. ´ Learning and representation of hierarchical concepts in hippocampus and prefrontal cortex. Journal of Neuroscience, 41(36):7675–7686, 2021.   
+Tishby, N. and Zaslavsky, N. Deep learning and the information bottleneck principle, 2015. URL https: //arxiv.org/abs/1503.02406.   
+Troy, A. D., Zhang, G.-Q., and Tian, Y. Faster concept analysis. In Proceedings of the 15th International Conference on Conceptual Structures: Knowledge Architectures for Smart Applications, ICCS ’07, pp. 206–219, Berlin, Heidelberg, 2007. Springer-Verlag. ISBN 9783540736806. doi: 10.1007/978-3-540-73681-3 16. URL https:// doi.org/10.1007/978-3-540-73681-3\_16.   
+Vandenhirtz, M., Laguna, S., Marcinkevics, R., and Vogt, J. ˇ Stochastic concept bottleneck models. Advances in Neural Information Processing Systems, 37:51787–51810, 2024a.   
+Vandenhirtz, M., Laguna, S., Marcinkevics, R., and Vogt, J. ˇ Stochastic concept bottleneck models. Advances in Neural Information Processing Systems, 37:51787–51810, 2024b.   
+Vendrov, I., Kiros, R., Fidler, S., and Urtasun, R. Orderembeddings of images and language. arXiv preprint arXiv:1511.06361, 2015.   
+Xian, Y., Lampert, C. H., Schiele, B., and Akata, Z. Zeroshot learning—a comprehensive evaluation of the good, the bad and the ugly. IEEE Transactions on Pattern Analysis &; Machine Intelligence, 41(09):2251–2265, sep 2019. ISSN 1939-3539. doi: 10.1109/TPAMI.2018. 2857768.   
+Yang, Y., Panagopoulou, A., Zhou, S., Jin, D., Callison-Burch, C., and Yatskar, M. Language in a bottle: Language model guided concept bottlenecks for interpretable image classification. In Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition, pp. 19187–19197, 2023.   
+Yuksekgonul, M., Wang, M., and Zou, J. Post-hoc concept bottleneck models. In The Eleventh International Conference on Learning Representations, 2023. URL https: //openreview.net/forum?id=nA5AZ8CEyow.
+
+Zarlenga, M. E., Barbiero, P., Ciravegna, G., Marra, G., onference.Giannini, F., Diligenti, M., Shams, Z., Precioso, F., Melacci, S., Weller, A., Lio, P., and Jamnik, M. Concept embedding models. In Oh, A. H., Agarwal, A., Belgrave, D., and Cho, K. (eds.), Advances in Neural Information Processing Systems, 2022. URL https: //openreview.net/forum?id=HXCPA2GXf\_.
+
+Zeiler, M. D. and Fergus, R. Visualizing and understanding convolutional networks. In Computer Vision–ECCV 2014: 13th European Conference, Zurich, Switzerland, September 6-12, 2014, Proceedings, Part I 13, pp. 818– 833. Springer, 2014.
+
+Zhang, C., Bengio, S., Hardt, M., Recht, B., and Vinyals, O. Understanding deep learning (still) requires rethinking generalization. Commun. ACM, 64(3):107–115, February 2021. ISSN 0001-0782. doi: 10.1145/3446776. URL https://doi.org/10.1145/3446776.
+
+# Appendix
+
+In this appendix, we provide additional details of our work, including the following information.
+
+# Table of Contents
+
+A1 Notation   
+A2 Ablations
+
+Ablation on Iterative Refinement . .
+
+Ablation on Class-Cluster Density
+
+A3 Proofs and Further Theoretical Analysis   
+A4 More Analysis
+
+Impact of Class-Ordering . 8
+
+Impact of CBM Training Mode 8
+
+Choice of α and β 9
+
+More Cluster-Based Analysis 9
+
+More Results on ViT-based backbones . 9
+
+A5 Dataset Details 10   
+A6 Lattice Details   
+A7 Implementation Details
+
+Evaluation Metric Details . 12
+
+Model Details 12
+
+Computational Complexity 13
+
+Hyperparameter Details 13
+
+GPT-Hierarchy Details . 14
+
+A8 Limitations . . . 15
+
+A1. Notation 
+
+<table><tr><td>Symbol</td><td>Description</td></tr><tr><td> $\langle G, M, I \rangle$ </td><td>Formal context of the set of objects  $G$ , the set of attributes  $M$ , with the incidence relation  $I$ </td></tr><tr><td> $\langle A, B \rangle$ </td><td>Formal concept with the extent  $A \subseteq G$  and the intent  $B \subseteq M$ </td></tr><tr><td> $\uparrow, \downarrow$ </td><td>Concept-forming operators</td></tr><tr><td> $\preceq$ </td><td>Subset-superset ordering</td></tr><tr><td> $\mathcal{B}(G, M, I)$ </td><td>Set of all formal concepts corresponding to the formal context  $\langle G, M, I \rangle$ </td></tr><tr><td> $\mathcal{L}$ </td><td>Formal concept lattice,  $\mathcal{L} = \langle \mathcal{B}(G, M, I), \preceq \rangle$ </td></tr><tr><td> $L$ </td><td>Number of levels in the lattice</td></tr><tr><td> $\mathcal{L}_{1}, \ldots, \mathcal{L}_{L}$ </td><td>Set of formal concepts at each level of the lattice</td></tr><tr><td> $M_{1}, \ldots, M_{L}$ </td><td>Attribute set at each level of the lattice</td></tr><tr><td> $n$ </td><td>Total number of classes</td></tr><tr><td> $\sigma$ </td><td>Sigmoid</td></tr><tr><td> $d_{j}$ </td><td>Dimensionality of the downsampled feature space at selected position  $j$  in the backbone network</td></tr><tr><td> $f_{j}$ </td><td>Global average pooling output at semantic layer  $j$  for input  $x, f_{j}: \mathcal{X} \to \mathbb{R}^{d_{j}}$ </td></tr><tr><td> $q_{j}$ </td><td>Concept encoder for semantic layer  $j$  corresponding to lattice layer  $i, q_{j}: \mathbb{R}^{d_{j}} \to \mathbb{R}^{|M_{i}|}$ </td></tr><tr><td> $p_{j}$ </td><td>Classifier for semantic layer  $j$  corresponding to lattice layer  $i, p_{j}: \mathbb{R}^{|M_{i}|} \to \mathbb{R}^{n}$ </td></tr><tr><td> $s_{j}$ </td><td>Classifier output at semantic layer  $j$  for input  $x, s_{j}: \mathcal{X} \to \mathbb{R}^{n} = p_{j} \circ q_{j} \circ f_{j}$ </td></tr><tr><td> $\hat{s}_{j}$ </td><td>Post-iterative refinement output at semantic layer  $j$  for input  $x, \hat{s}_{j}: \mathcal{X} \to \mathbb{R}^{n} = s_{j} \cdot (\sigma \circ s_{j-1})$ </td></tr><tr><td> $a_{j}$ </td><td>Attribute sigmoid output at semantic layer  $j$  for input  $x, a_{j}: \mathcal{X} \to \mathbb{R}^{n} = \sigma \circ q_{j} \circ f_{j}$ </td></tr><tr><td> $\mathbf{C}$ </td><td>Complete ground truth attribute vector for sample  $x$ </td></tr><tr><td> $\mathbf{C}^{i}$ </td><td>Ground truth attribute vector for sample  $x$  at lattice level  $i$ </td></tr><tr><td> $G_{y}^{i}$ </td><td>Class group of sample  $x$  with class label  $y$  at lattice level  $i$ </td></tr><tr><td> $H(\cdot)$ </td><td>Entropy</td></tr><tr><td> $I_{\mathcal{D}}(\cdot; \cdot)$ </td><td>Mutual information for dataset  $\mathcal{D}$ </td></tr></table>
+
+# A2. Ablations
+
+Ablation on Iterative Refinement: We study the impact of iterative refinement and perform an ablation with and without it on our method. We see a consistent drop in accuracy across datasets without iterative refinement, with consistent increases in CI and DBI as well, on almost all datasets. We report these results in Tables A4, A5 and A6. These results highlight the usefulness of our class group-based refinement strategy.
+
+Table A4. Our group-based iterative refinement strategy improves on all metrics on CIFAR100. 
+
+<table><tr><td rowspan="2"></td><td colspan="3">CIFAR100</td></tr><tr><td>Acc ↑</td><td>CI ↓</td><td>DBI ↓</td></tr><tr><td>With</td><td>79.7</td><td>0.6221</td><td>1.8558</td></tr><tr><td>Without</td><td>77.19</td><td>0.6612</td><td>1.8762</td></tr></table>
+
+Table A5. Our group-based iterative refinement strategy improves on all metrics on ImageNet100. 
+
+<table><tr><td rowspan="2"></td><td colspan="3">ImageNet100</td></tr><tr><td>Acc ↑</td><td>CI ↓</td><td>DBI ↓</td></tr><tr><td>With</td><td>91.92</td><td>0.5737</td><td>1.8623</td></tr><tr><td>Without</td><td>88.19</td><td>0.6162</td><td>2.0639</td></tr></table>
+
+Ablation on Class-Cluster Density: We study the impact of class-cluster-density-based backbone position selection and lattice level selection. In order to isolate the impacts, we try both (1) fixing the backbone position and using non class-cluster-density-based lattice level selection, and (2) fixing the lattice level and using non class-cluster-density-based backbone position selection. We use two semantic layers for these experiments and provide the results in Tables A7 and A8. The results indicate how different levels carry different amounts of information.
+
+Table A6. Our group-based iterative refinement strategy improves on almost all metrics on AwA2, with the CI scores being in the same range. 
+
+<table><tr><td rowspan="2"></td><td colspan="3">AwA2</td></tr><tr><td>Acc ↑</td><td>CI ↓</td><td>DBI ↓</td></tr><tr><td>With</td><td>92.20</td><td>0.5288</td><td>1.932</td></tr><tr><td>Without</td><td>91.85</td><td>0.5231</td><td>2.017</td></tr></table>
+
+Table A7. Accuracy on varying the semantic layers position in FoCA CBM models on all datasets. Models have the following naming scheme: FoCA <levels> <positions>. For example, FoCA (2, 1) (3, 4) indicates that the attributes are extracted from the 2nd and 1st levels in the lattice, and are used to supervise the 3rd and 4th blocks in the ResNet. clf0 and clf1 correspond to the two classifiers from the two semantic layers. 
+
+<table><tr><td rowspan="2">Model</td><td colspan="2">AwA2</td><td rowspan="2">Model</td><td colspan="2">CIFAR100</td><td rowspan="2">Model</td><td colspan="2">ImageNet100</td></tr><tr><td>clf0</td><td>clf1</td><td>clf0</td><td>clf1</td><td>clf0</td><td>clf1</td></tr><tr><td>FoCA_(2, 1)-(2, 4)</td><td>85.61</td><td>89.88</td><td>FoCA_(2, 1)-(2, 4)</td><td>92.41</td><td>68.89</td><td>FoCA_(5,1)-(2, 4)</td><td>79.56</td><td>90.69</td></tr><tr><td>FoCA_(2, 1)-(3, 4)</td><td>87.90</td><td>92.20</td><td>FoCA_(2, 1)-(3, 4)</td><td>94.30</td><td>79.70</td><td>FoCA_(5,1)-(3, 4)</td><td>96.26</td><td>91.92</td></tr></table>
+
+Table A8. Accuracy on varying the levels chosen from the lattice in FoCA CBM models on all datasets.Models have the following naming scheme: FoCA <levels> <positions>. For example, FoCA (3, 1) (3, 4) indicates that the attributes are extracted from the 3rd and 1st levels in the lattice, and are used to supervise the 3rd and 4th blocks in the ResNet. clf0 and clf1 correspond to the two classifiers from the two semantic layers. 
+
+<table><tr><td rowspan="2">Model</td><td colspan="2">AwA2</td><td rowspan="2">Model</td><td colspan="2">CIFAR100</td><td rowspan="2">Model</td><td colspan="2">ImageNet100</td></tr><tr><td>clf0</td><td>clf1</td><td>clf0</td><td>clf1</td><td>clf0</td><td>clf1</td></tr><tr><td>FoCA_(3, 1)-(3, 4)</td><td>87.90</td><td>92.20</td><td>FoCA_(2, 1)-(3, 4)</td><td>94.30</td><td>79.70</td><td>FoCA_(3,1)-(3, 4)</td><td>91.80</td><td>88.30</td></tr><tr><td>FoCA_(4, 1)-(3, 4)</td><td>95.40</td><td>91.61</td><td>FoCA_(3, 1)-(3, 4)</td><td>92.16</td><td>78.44</td><td>FoCA_(5,1)-(3, 4)</td><td>96.26</td><td>91.92</td></tr><tr><td>FoCA_(6, 1)-(3, 4)</td><td>98.27</td><td>91.77</td><td>FoCA_(5, 1)-(3, 4)</td><td>89.26</td><td>73.91</td><td>FoCA_(7,1)-(3, 4)</td><td>93.98</td><td>91.00</td></tr></table>
+
+# A3. Proofs and Further Theoretical Analysis
+
+In this section, we provide the proof of Theorem 1, along with a similar theorem for attributes.
+
+Theorem 4.1 (Inductive Bias towards Order Consistency). For an input $( x , y ) \sim X \times Y ,$ , define:
+
+$$
+\hat {G} _ {i} (x) = \left\{g \in G _ {i} (y) \mid \hat {s} _ {j} (x) [ g ] \geq \tau_ {c} \right\},
+$$
+
+where $\tau _ { c } \in [ 0 , 1 ]$ is a threshold, typically chosen as 0.5. Also, let $E _ { i } ^ { c }$ denote the event $c \in \hat { G } _ { i + 1 } ( x ) \setminus \hat { G } _ { i } ( x )$ . Then, given $\widehat { | \ell _ { t o t a l } - \ell _ { t o t a l } ^ { * } | } \leq \epsilon ,$ , assuming ma $\begin{array} { r } { \mathrm { x } _ { i , c } P ( E _ { i - 1 } ^ { c } ) + P ( E _ { i } ^ { c } ) \leq \frac { 1 } { e } } \end{array}$ ,
+
+$$
+\operatorname * {P r} _ {f ^ {\text { foca }}} \left(\hat {G} _ {i + 1} (x) \not \subseteq \hat {G} _ {i} (x)\right) \ll \operatorname * {P r} _ {f ^ {\text { rnd }}} \left(\hat {G} _ {i + 1} (x) \not \subseteq \hat {G} _ {i} (x)\right).
+$$
+
+Proof. We provide mathematical details to the proof sketch described in Section 4 of the main paper. We begin by proving the following simple lemma.
+
+# Step 1: Ground Truth Ordering.
+
+Lemma A3.1. $G ^ { i + 1 } ( y ) \subseteq G ^ { i } ( y )$ for all $i \in [ L - 1 ] , y \in G .$ .
+
+Proof. For sake of contradiction, suppose $\exists c \in G ^ { i + 1 } ( y ) \setminus G ^ { i } ( y )$ . Then $\exists \langle A , B \rangle \in \mathcal { L } _ { i + 1 }$ with $c , y \in A$ . By lattice structure, $\exists \langle C , D \rangle \in { \mathcal { L } } _ { i }$ with $A \subseteq C$ (subconcept property). Thus $c \in C$ and $y \in C$ , implying $C \subseteq G ^ { i } ( y )$ by definition, giving $c \in G ^ { i } ( y )$ , which is absurd. Hence, the assertion in the lemma holds. □
+
+Algorithm 1 Training Lattice-Guided Concept-Based Models   
+Require: Dataset $\mathcal{D} = \{(x, c, y)\}$ , class-attribute annotations ( $G, M, I$ ), base network $f$ , number of supervision points $l$ , loss weights $\alpha, \beta$ 1: $\mathcal{L} \leftarrow \text{CONSTRUCTLATTICE}(G, M, I)$ ▷ Build concept lattice
+
+2: for $i = 1$ to $l$ do
+
+3: $\mathcal{M}_i \leftarrow \bigcup_{\langle A, B \rangle \in \mathcal{L}_i} B$ ▷ Extract attribute set from level $i$ of the lattice $\mathcal{L}$ 4: end for
+
+5: $\{j_1, \ldots, j_l\}, \{\mathcal{L}_1, \ldots, \mathcal{L}_l\} \leftarrow \text{SELECTLAYERSANDLEVELS}(f, \mathcal{D}, \mathcal{L}, l)$ ▷ Select supervision points in network and lattice levels using class cluster density
+
+6: Initialize concept encoders $\{q_1, \ldots, q_l\}$ and classifiers $\{p_1, \ldots, p_l\}$ 7: for epoch = 1 to $N$ do
+
+8: for each $(x, c, y) \in \mathcal{D}$ do
+
+9: $\hat{y}_0 \leftarrow \infty$ ▷ Initialize with all classes possible
+
+10: $\ell_{\text{attr}} \leftarrow 0$ , $\ell_{\text{group}} \leftarrow 0$ , $\ell_{\text{class}} \leftarrow 0$ 11: for $i = 1$ to $l$ do
+
+12: $h_i \leftarrow f_{\leq j_i}(x)$ ▷ Forward through layer $j_i$ 13: $\hat{c}_i \leftarrow q_i(h_i)$ ▷ Predict concepts from $M_i$ 14: $\hat{y}_i \leftarrow p_i(\hat{c}_i)$ ▷ Predict classes
+
+15: $C_y^i \leftarrow [c[\mathcal{M}_i]]$ ▷ Ground truth concepts for level $i$ by selecting the concepts from $c$ that are present in $\mathcal{M}_i$ 16: $G_y^i \leftarrow \bigcup_{\langle A, B \rangle \in \mathcal{L}_i, y \in A} A$ ▷ Ground truth group
+
+17: $\ell_{\text{attr}} \leftarrow \ell_{\text{attr}} + \text{BCE}(\sigma(\hat{c}_i), C_y^i)$ ▷ Concept loss
+
+18: $\hat{y}_i \leftarrow \hat{y}_i \odot \sigma(\hat{y}_{i-1})$ ▷ Iterative refinement
+
+19: if $i < l$ then
+
+20: $\ell_{\text{group}} \leftarrow \ell_{\text{group}} + \text{BCE}(\sigma(\hat{y}_i), G_y^i)$ ▷ Group loss
+
+21: else
+
+22: $\ell_{\text{class}} \leftarrow \text{CE}(\text{SOFTMAX}(\hat{y}_i), y)$ ▷ Final class loss
+
+23: end if
+
+24: end for
+
+25: $\ell_{\text{total}} \leftarrow \alpha \cdot \ell_{\text{attr}} + \beta \cdot \ell_{\text{group}} + \ell_{\text{class}}$ 26: Update parameters via backpropagation on $\ell_{\text{total}}$ 27: end for
+
+28: end for
+
+29: return Trained model with hierarchical concept structure
+
+# Step 2: Loss Penalty for Violations.
+
+Next, we examine how much extra loss is incurred by an ordering mismatch over a prediction that obeys the ground truth, to later help us derive a bound on the probability of ordering mismatches. For simplicity, we assume the 0 − 1 loss, and we only consider the group loss for the rest of this proof. First, note that for a sample $( x , y )$ and class $c ,$ the per-layer loss is:
+
+$$
+\ell_ {i} ^ {c} = \left\{ \begin{array}{l l} - \log \hat {y} _ {i} ^ {c} & \text { if } c \in G ^ {i} (y) \\ - \log (1 - \hat {y} _ {i} ^ {c}) & \text { if } c \notin G ^ {i} (y) \end{array} \right. \tag {6}
+$$
+
+Lemma A3.2. $I f c \in \hat { G } _ { i + 1 } ( x ) \setminus \hat { G } _ { i } ( x )$ (ordering violation), then:
+
+$$
+\ell_ {i} ^ {c} + \ell_ {i + 1} ^ {c} \geq \ell_ {i} ^ {c, *} + \ell_ {i + 1} ^ {c, *} + \gamma_ {\min} \tag {7}
+$$
+
+where $\ell _ { i } ^ { c , * }$ is the optimal loss achievable respecting ordering, and $\gamma _ { \operatorname* { m i n } } = - 2 \operatorname* { m a x } ( \log ( \tau ) , \log ( 1 - \tau ) )$ .
+
+Proof. Since neural networks are universal function approximators, we take $\ell _ { i } ^ { c , * } = 0 .$ . By Lemma A3.1, there are three exhaustive cases to consider, namely:
+
+• Case 1: $c \in G ^ { i + 1 } ( y ) \subseteq G ^ { i } ( y )$ . Ground truth requires $\hat { y } _ { i } ^ { c } , \hat { y } _ { i + 1 } ^ { c } \ge \tau .$ .
+
+• Case $2 \colon c \in G ^ { i } ( y ) \setminus G ^ { i + 1 } ( y )$ . Ground truth requires $\hat { y } _ { i } ^ { c } \ge \tau , \hat { y } _ { i + 1 } ^ { c } < \tau$ .   
+• Case 3: c /∈ $G ^ { i } ( y ) \cup G ^ { i + 1 } ( y )$ . Ground truth requires both predictions low.
+
+Simple casework in each of these cases gives $\gamma _ { \operatorname* { m i n } } = - 2 \operatorname* { m a x } ( \log ( \tau ) , \log ( 1 - \tau ) )$ .
+
+![](images/c3a8fcd9a92a6eee7498dc1d826e4838695c88853a88a3257ec42b4940847426.jpg)
+
+# Step 3: Probability Upper Bound For a Single Ordering Mismatch.
+
+By the definition of the group loss function and its contribution to the total loss (Objective 5), we know that the risk $\widehat { \ell _ { \mathtt { g r o u p } } } \le \widehat { \ell _ { \mathtt { t o t a l } } }$ . Furthermore, we assume that $\ell _ { \mathrm { t o t a l } } ^ { \ast } = \ell _ { \mathrm { g r o u p } } ^ { \ast } = 0$ owing to the universal function approximation capabilities of neural networks. Therefore, given that $| \widehat { \ell _ { \tt t o t a l } } - \ell _ { \tt t o t a l } | \leq \epsilon .$ , we can sum individual risks specific to layer indices and classes to write,
+
+$$
+\widehat {| \ell_ {\text {total}} - \ell_ {\text {total}}} | \leq \epsilon \iff \sum_ {i = 1} ^ {L - 1} \sum_ {c \in G} \ell_ {i} ^ {c} + \ell_ {i + 1} ^ {c} \leq \sum_ {i = 1} ^ {L - 1} \sum_ {c \in G} \ell_ {i} ^ {c, *} + \ell_ {i + 1} ^ {c, *} + 2 \epsilon .
+$$
+
+Next, we write out the sum of losses at two consecutive layers for the same class as a total expectation over the probability of the event $E _ { i } ^ { c }$
+
+$$
+\mathbb {E} _ {(x, y) \sim \mathcal {D}} \left[ \sum_ {i = 1} ^ {L - 1} \sum_ {c \in G} \ell_ {i} ^ {c} + \ell_ {i + 1} ^ {c} - \ell_ {i} ^ {c, *} - \ell_ {i + 1} ^ {c, *} \right] \leq 2 \epsilon . \tag {8}
+$$
+
+Switching sums and expectations, we get:
+
+$$
+\begin{array}{l} \mathbb {E} _ {(x, y) \sim \mathcal {D}} \left[ \sum_ {i = 1} ^ {L - 1} \sum_ {c \in G} \ell_ {i} ^ {c} + \ell_ {i + 1} ^ {c} - \ell_ {i} ^ {c, *} - \ell_ {i + 1} ^ {c, *} \right] = \sum_ {i = 1} ^ {L - 1} \sum_ {c \in G} \mathbb {E} _ {(x, y) \sim \mathcal {D}} \left[ \ell_ {i} ^ {c} + \ell_ {i + 1} ^ {c} - \ell_ {i} ^ {c, *} - \ell_ {i + 1} ^ {c, *} \right] \geq \tag {9} \\ \sum_ {i = 1} ^ {L - 1} \sum_ {c \in G} \mathrm{P} (E _ {i} ^ {c}) \cdot \gamma_ {\min} \implies \sum_ {i = 1} ^ {L - 1} \sum_ {c \in G} \mathrm{P} (E _ {i} ^ {c}) \leq \frac {2 \epsilon}{\gamma_ {\min}}, \\ \end{array}
+$$
+
+where the first inequality follows by expanding the inner expectation of the Bernoulli random variable $E _ { i } ^ { c }$ and the fact from Lemma A3.2 that $\ell _ { i } ^ { c } + \ell _ { i + 1 } ^ { c } - \ell _ { i } ^ { c , * } - \ell _ { i + 1 } ^ { c , * } \geq \gamma _ { \mathrm { m i n } } .$ , since $\ell _ { i } ^ { c } + \ell _ { i + 1 } ^ { c }$ is a non-negative cross entropy loss and $\ell _ { i } ^ { c , * } + \ell _ { i + 1 } ^ { c , * }$ is 0.
+
+# Step 4: Applying Asymmetric Lovasz Local Lemma. ´
+
+To provide a tighter lower bound on the probability that no ordering mismatch occurs under lighter assumptions, we turn to applying the (asymmetric version of the) Lovasz Local Lemma ( ´ LLL) to the events $E _ { i } ^ { c }$ . We begin by stating the $L L L$ as follows (Harvey & Vondrak´ , 2015; Erdos & Lovasz ´ , 1975):
+
+Lemma A3.3 (Asymmetric Lovasz Local Lemma ´ ). Let $\mathcal { E } _ { 1 } , \mathcal { E } _ { 2 } , \ldots , \mathcal { E } _ { n }$ be events in a probability space with a dependency graph Γ such that $P ( \mathcal { E } _ { i } ) \leq p _ { i } \in [ 0 , 1 ] . \ I f \exists y _ { 1 } , y _ { 2 } , \dotsc y _ { n } > 0 f o i$ r which:
+
+$$
+p _ {i} \leq \frac {y _ {i}}{\sum_ {S \subseteq \Gamma^ {+} (i)} \Pi_ {j \in S} (1 + y _ {j})}, \forall i \in [ n ], \tag {10}
+$$
+
+$\begin{array} { r } { t h e n ~ P \left( \bigcap _ { i = 1 } ^ { n } \overline { { \mathcal { E } _ { i } } } \right) = \prod _ { i \in [ n ] } \frac { 1 } { ( 1 + y _ { i } ) } > 0 . } \end{array}$
+
+Here, $\Gamma ^ { + } ( i )$ denotes the union of the neighbors of the event $\mathcal { E } _ { i }$ (along with itself) in Γ, the dependency graph that exists over the events. In our setting, the only neighbour that a given event $\mathcal { E } _ { i } ^ { c }$ directly depends on is $\mathcal { E } _ { i - 1 } ^ { c }$ for $i > 0$ . Therefore applying the LLL in our setting reduces to finding $y _ { 1 } , y _ { 2 } , \dotsc y _ { | G | \times L }$ such that,
+
+$$
+\operatorname * {P r} (E _ {i} ^ {c}) \leq \frac {y _ {\{c , i \}}}{(1 + y _ {\{c , i \}}) (1 + y _ {\{c , i - 1 \}})},   \forall i \in [ n ] \setminus \{0 \}, c \in G. \tag {11}
+$$
+
+To do $\mathbf { s o } ,$ we first note that since the events $E _ { i } ^ { c }$ correspond to Bernoulli random variables, we can apply a tight inequality applicable for Bernoulli random variables known as the Kearns-Saul inequality (Kearns & Saul, 1998; Berend & Kontorovich, 2015), stated as follows:
+
+Lemma A3.4 (Kearns-Saul Inequality). For all $p \in ( 0 , 1 )$ and $t \in \mathbb { R } .$ ,
+
+$$
+(1 - p) e ^ {- t p} + p e ^ {t (1 - p)} \leq e ^ {\left(\frac {1 - 2 p}{4 \log \left(\frac {1 - p}{p}\right)} t ^ {2}\right)}. \tag {12}
+$$
+
+The above inequality can be rewritten as,
+
+$$
+p \leq \frac {e ^ {\left(\frac {1 - 2 p}{4 \log \left(\frac {1 - p}{p}\right)}\right) t ^ {2} + p t} - 1}{(e ^ {t} - 1)}, \forall p \in (0, 1), t \in \mathbb {R}. \tag {13}
+$$
+
+Notice that $\begin{array} { r } { f ( t ) = \left( \frac { 1 - 2 p } { 4 \log \left( \frac { 1 - p } { p } \right) } \right) t ^ { 2 } + p t - t } \end{array}$ attains its minimum value at $\begin{array} { r } { t ^ { * } ( p ) = 2 \cdot \frac { 1 - p } { 1 - 2 p } \log ( \frac { 1 - p } { p } ) } \end{array}$ . Furthermore, $f ( t ^ { * } ( p ) ) \leq 0 \leq t ^ { * } ( p )$ , as can be verified by direct calculation. Therefore for a fixed $p \in ( 0 , 1 )$ we can write,
+
+$$
+p \leq \frac {e ^ {f (t ^ {*} (p)) + t ^ {*} (p)} - 1}{(e ^ {t ^ {*} (p)} - 1)} = \frac {e ^ {f (t ^ {*} (p)) + t ^ {*} (p)} - e ^ {f (t ^ {*} (p))} + e ^ {f (t ^ {*} (p))} - 1}{(e ^ {t ^ {*} (p)} - 1)} = e ^ {f (t ^ {*} (p))} + \frac {e ^ {f (t ^ {*} (p))} - 1}{(e ^ {t ^ {*} (p)} - 1)} \leq e ^ {f (t ^ {*} (p))}. \tag {14}
+$$
+
+Now let $\kappa = e$ . Choose $y _ { \{ c , i \} } = e ^ { \kappa P ( E _ { i } ^ { c } ) } - 1$ . Notice that,
+
+$$
+\frac {y _ {\{c , i \}}}{(1 + y _ {\{c , i \}}) (1 + y _ {\{c , i - 1 \}})} \tag {15}
+$$
+
+$$
+= e ^ {- \kappa (\mathbb {P} (E _ {i - 1} ^ {c}) + \mathbb {P} (E _ {i} ^ {c}))} \cdot \left(e ^ {\kappa \mathbb {P} (E _ {i} ^ {c})} - 1\right) \tag {16}
+$$
+
+$$
+\geq e ^ {- \kappa (\mathbb {P} (E _ {i - 1} ^ {c}) + \mathbb {P} (E _ {i} ^ {c}))} \cdot (e \cdot \mathbb {P} (E _ {i} ^ {c})), \tag {17}
+$$
+
+where the last inequality can be obtained by first noting that the functions $h ( x ) = e ^ { \kappa x } - 1$ and $g ( x ) = \kappa x$ are monotonic $h ( 0 ) = g ( 0 ) = 0$ the Taylor series expansion. Consequently, we note that n. $h ( x ) , g ( x )$ ows that proving. Lastly, note that $\begin{array} { r } { \frac { \partial h } { \partial x } \geq \frac { \partial g } { \partial x } \forall x \stackrel { \circ } { \in } [ 0 , 1 ] \implies h ( x ) \geq g ( x ) \forall x \in [ 0 , \bar { 1 } ] } \end{array}$ $\begin{array} { r } { \frac { \partial h } { \partial x } \overset { \cdot } { = } \kappa e ^ { \kappa x } } \end{array}$ $\begin{array} { r } { \frac { \partial g } { \partial x } \overset { \cdot } { = } \kappa } \end{array}$ ∂g min[0,1] ∂h∂x $\begin{array} { r } { { 1 } [ 0 , 1 ] \ \frac { \partial h } { \partial x } = \kappa . } \end{array}$
+
+By using our assumption that $\begin{array} { r } { \mathbb { P } ( E _ { i } ^ { c } ) + \mathbb { P } ( E _ { i - 1 } ^ { c } ) \le \frac { 1 } { e } } \end{array}$ , we have that,
+
+$$
+1 - \kappa (\mathbb {P} (E _ {i} ^ {c}) + \mathbb {P} (E _ {i - 1} ^ {c})) \geq 0 \tag {18}
+$$
+
+by direct substitution.
+
+Therefore,
+
+$$
+\mathbb {P} (E _ {i} ^ {c}) \leq \frac {y _ {\{c , i \}}}{(1 + y _ {\{c , i \}}) (1 + y _ {\{c , i - 1 \}})},   \forall i \in [ n ] \setminus \{0 \}, c \in G. \tag {19}
+$$
+
+Therefore, $\begin{array} { r } { \mathbb { P } \big ( \bigcap _ { i = 1 } ^ { | G | \cdot L } \overline { { \mathcal { E } _ { i } } } \big ) = \Pi _ { i \in [ | G | \cdot L ] } \frac { 1 } { ( 1 + y _ { i } ) } \geq \Pi _ { i \in [ | G | \cdot L ] } e ^ { - \kappa \mathbb { P } ( E _ { i } ^ { c } ) } \geq e ^ { - \frac { 2 \epsilon \kappa } { \gamma _ { \operatorname* { m i n } } } } } \end{array}$ γmin .
+
+# Step 5: Random Baseline Analysis.
+
+Lemma A3.5. For random groupings where $G _ { r n d } ^ { i + 1 } ( y ) \not \subseteq G _ { r n d } ^ { i } ( y )$ in general, with group sizes $k _ { i + 1 } , k _ { i } .$
+
+$$
+\operatorname * {P r} (E _ {i} ^ {c}) \geq \frac {k _ {i + 1}}{| G |} \left(1 - \frac {k _ {i}}{| G |}\right) \tag {20}
+$$
+
+For hierarchies with $k _ { i } = \Theta ( | G | / L )$ , this gives $\operatorname* { P r } ( E _ { i } ^ { c } ) = \Omega ( 1 / L )$ .
+
+Proof. Under random independent assignment, a class c satisfies:
+
+$$
+\operatorname * {P r} (c \in G _ {\mathrm{rnd}} ^ {i + 1} (y)) = \frac {k _ {i + 1}}{| G |} \tag {21}
+$$
+
+$$
+\operatorname * {P r} (c \notin G _ {\text { rnd }} ^ {i} (y)) = 1 - \frac {k _ {i}}{| G |} \tag {22}
+$$
+
+Therefore:
+
+$$
+\operatorname * {P r} (c \in G _ {\text { rnd }} ^ {i + 1} (y) \setminus G _ {\text { rnd }} ^ {i} (y)) = \frac {k _ {i + 1}}{| G |} \left(1 - \frac {k _ {i}}{| G |}\right) \tag {23}
+$$
+
+The probability of at least one violation among |G| classes:
+
+$$
+\operatorname * {P r} (E _ {i} ^ {c}) = 1 - \left(1 - \frac {k _ {i + 1}}{| G |} \left(1 - \frac {k _ {i}}{n}\right)\right) ^ {| G |} \tag {24}
+$$
+
+In our experiments typical hierarchies are about $k _ { i + 1 } = | G | / ( 2 L )$ and $k _ { i } = 2 k _ { i + 1 } = | G | / L \colon$ :
+
+$$
+\frac {k _ {i + 1}}{| G |} \left(1 - \frac {k _ {i}}{| G |}\right) = \frac {1}{2 L} \left(1 - \frac {1}{L}\right) = \frac {L - 1}{2 L ^ {2}} \tag {25}
+$$
+
+Thus:
+
+$$
+\operatorname * {P r} (E _ {i}) \geq 1 - \exp \left(- \frac {| G | (L - 1)}{2 L ^ {2}}\right) \tag {26}
+$$
+
+By union bound:
+
+$$
+\operatorname * {P r} \left(\bigcup_ {i = 1} ^ {L - 1} E _ {i} ^ {c}\right) \geq \max _ {i} \operatorname * {P r} (E _ {i} ^ {c}) = \Omega (1 / L) \tag {27}
+$$
+
+Therefore, random supervision leads to violations with constant probability, independent of training quality or sample size. The above probability multiplied by PAC bound gives the desired bound. □
+
+# Theorem 2.
+
+Theorem (Explicit Minimisation of Ordering Mismatches for Attributes). For an input x with true label y, define:
+
+$$
+\mathcal {A} _ {i} (x) = \left\{a \mid \hat {a} _ {i} ^ {c} (x) \geq \tau_ {a} \right\}, \tag {28}
+$$
+
+where $\tau _ { a } \in [ 0 , 1 ]$ is a threshold, typically chosen as 0.5. Then, given $\begin{array} { r } { | \widehat { \ell _ { \mathtt { t o t a l } } } - \ell _ { \mathtt { t o t a l } } ^ { * } | \le \epsilon , } \end{array}$ ,
+
+$$
+\operatorname * {P r} _ {f ^ {\text { foca }}} \left(\mathcal {A} _ {i} (x) \not \subseteq \mathcal {A} _ {i + 1} (x)\right) <   <   \operatorname * {P r} _ {f ^ {\text { rnd }}} \left(\mathcal {A} _ {i} (x) \not \subseteq \mathcal {A} _ {i + 1} (x)\right). \tag {29}
+$$
+
+Proof. The proof is similar to Theorem 1, except with the ordering changed.
+
+# Proof of Theorem 4.2
+
+Theorem 4.2 (Information-Theoretic Benefit of FCA Supervision). Consider a FoCA-CBM trained with formal concept lattice L constructed from ⟨G, M, I⟩. Let network layer j be supervised by lattice level i via class groups Gi and attribute sets $M _ { i }$ . Then, under bounded training error $| \hat { \ell } - \ell ^ { * } | \leq \epsilon$ with N training samples, the ϵ-calibrated information gain of the network for layer j is:
+
+$$
+I _ {\mathcal {D}} (f _ {j} (X); Y) - I _ {\mathcal {D}} (f _ {j - 1} (X); Y) \geq \Delta_ {\mathrm{lattice}} ^ {(i)} - 2 \Delta_ {\mathrm{align}} (\epsilon),
+$$
+
+where $\Delta _ { \mathrm { a l i g n } } ( \epsilon ) = O \bigl ( \sqrt { \epsilon \log | G | } + N ^ { - 1 / 2 } \bigr )$ .
+
+Notation. For a sample (x, y) let
+
+$$
+\hat {s} _ {j} [ c ] := s _ {j} [ c ] \cdot \sigma (s _ {j - 1} [ c ]) \quad \text { and } \quad p _ {j} [ c ] := \sigma (\hat {s} _ {j} [ c ])
+$$
+
+where $\sigma ( z ) = 1 / ( 1 + e ^ { - z } )$ . Let $m : = | G ^ { i } ( y ) |$ . The group BCE loss at layer j is
+
+$$
+\ell_ {\mathrm{BCE}, j} ^ {\mathrm{group}} (x, y) = - \sum_ {c \in G ^ {(i)} (y)} \log p _ {j} [ c ] - \sum_ {c \notin G ^ {(i)} (y)} \log (1 - p _ {j} [ c ]).
+$$
+
+Assumption A3.6 (BCE Loss Bound on Groups). For layer j supervised by lattice level i, the group-level BCE loss satisfies:
+
+$$
+\mathbb {E} _ {(x, y) \sim \mathcal {D}} \left[ \ell_ {\mathrm{BCE} _ {j}} ^ {\text { group }} \right] = \mathbb {E} _ {(x, y)} \left[ \sum_ {c \in G} \mathbf {1} _ {c \in G ^ {(i)} (y)} (- \log \sigma (\hat {s} _ {j} [ c ])) + \mathbf {1} _ {c \notin G ^ {(i)} (y)} (- \log (1 - \sigma (\hat {s} _ {j} [ c ]))) \right] \leq \beta \epsilon , \tag {30}
+$$
+
+where $\beta > 0$ is the weight from Equation (3), and $\hat { s } _ { j } = \sigma ( s _ { j } \cdot \sigma ( s _ { j - 1 } ) )$ is the refined prediction.
+
+Assumption A3.7 (Cluster-Density Matching). Layer j is selected via the class-cluster density procedure such that:
+
+$$
+\left| \text { ClassClusterDensity } (j) - \mathbb {E} _ {\mathrm{fc} \in \mathcal {L} _ {i}} [ | \text { fc extent } | ] \right| \leq \gamma , \tag {31}
+$$
+
+where $\gamma = O ( N ^ { - 1 / 2 } )$ from finite-sample concentration.
+
+Lemma 1 (Average sigmoid is close to 1 on the true group). For any sample $( x , y )$ whose per-sample group loss satisfies $\ell _ { \mathrm { B C E } , j } ^ { \mathrm { g r o u p } } ( x , y ) \leq \bar { K \epsilon }$ (which holds for most samples by Markov/Chebyshev from the expectation bound), we have
+
+$$
+\frac {1}{m} \sum_ {c \in G ^ {(i)} (y)} p _ {j} [ c ] \geq \exp \left(- \frac {K \epsilon}{m}\right) = 1 - O \left(\frac {\epsilon}{m}\right). \tag {32}
+$$
+
+Proof. For the classes in the true group apply Jensen to − log:
+
+$$
+- \log \left(\frac {1}{m} \sum_ {c \in G ^ {(i)} (y)} p _ {j} [ c ]\right) \leq \frac {1}{m} \sum_ {c \in G ^ {(i)} (y)} - \log p _ {j} [ c ] \leq \frac {K \epsilon}{m}.
+$$
+
+Exponentiating yields (32). □
+
+Lemma 2 (Pigeonhole / concentration - most individual sigmoids are high). Define $a : = \frac { K \epsilon } { m }$ . For any $\delta \in ( 0 , 1 )$ ) let α m be the fraction of classes $c \in G ^ { i } ( y )$ with $p _ { j } [ c ] \leq 1 - \delta$ . Then
+
+$$
+\alpha \leq \frac {a}{\delta}.
+$$
+
+Choosing $\delta = { \sqrt { a } }$ gives $\alpha \leq \sqrt { a } = O \Big ( \sqrt { \frac { \epsilon } { m } } \Big )$ . Hence at least a $1 - O ( \sqrt { \epsilon / m } )$ fraction of classes in the true group satisfy
+
+$$
+p _ {j} [ c ] \geq 1 - O \left(\sqrt {\frac {\epsilon}{m}}\right).
+$$
+
+Proof. If αm classes have $p _ { j } [ c ] \leq 1 - \delta$ then the group average is $\leq \alpha ( 1 - \delta ) + ( 1 - \alpha ) \cdot 1 = 1 - \alpha \delta$ . Combine with (32) to get $\alpha \delta \leq a ,$ , hence $\alpha \leq a / \delta . \square$
+
+Lemma 3 (From high sigmoid to large refined logit and per-class logit separation). Let $\tau : = \sqrt { \frac { K \epsilon } { m } } ( \mathrm { s o } \tau  0 $ with $\epsilon  0 )$ . For the majority of classes in $G ^ { i } ( y )$ (fraction $1 - O ( \tau ) )$ we have
+
+$$
+p _ {j} [ c ] = \sigma (\hat {s} _ {j} [ c ]) \geq 1 - \tau \quad \Longrightarrow \quad \hat {s} _ {j} [ c ] \geq \sigma^ {- 1} (1 - \tau) = \log \frac {1 - \tau}{\tau} =: L _ {j} ^ {+}.
+$$
+
+Since ${ \hat { s } } _ { j } [ c ] = s _ { j } [ c ] \cdot \sigma ( s _ { j - 1 } [ c ] )$ and (by earlier-level supervision) for classes that were kept at layer $j - 1$ we have $\sigma ( s _ { j - 1 } [ c ] ) \geq 1 / 2$ (for well-trained earlier layer), we deduce for those classes
+
+$$
+s _ {j} [ c ] \geq \frac {L _ {j} ^ {+}}{\sigma (s _ {j - 1} [ c ])} \geq L _ {j} ^ {+}.
+$$
+
+Similarly, for most classes outside the true group one obtains $p _ { j } [ c ] \leq \tau$ and hence $\begin{array} { r } { \hat { s } _ { j } [ c ] \leq \sigma ^ { - 1 } ( \tau ) = - \log \frac { 1 - \tau } { \tau } = : L _ { j } ^ { - } < 0 } \end{array}$ and therefore $s _ { j } [ c ] \le L _ { j } ^ { - } / \sigma ( s _ { j - 1 } [ c ] ) \le L _ { j } ^ { - } < 0$ . Thus the majority of in-group logits are $\geq L _ { j } ^ { + }$ and the majority of out-group logits $\mathrm { a r e } \leq L _ { j } ^ { - }$ , an d
+
+$$
+L _ {j} ^ {+} - L _ {j} ^ {-} = \Theta (\log (1 / \tau)) = \Theta \left(\frac {1}{2} \log \frac {m}{\epsilon}\right).
+$$
+
+Step 4 (Conditional entropy alignment). Fix a typical sample $( x , y )$ for which the sigmoid-concentration conclusions hold, and let ζ denote the total probability mass (under the model’s per-class probabilities implied by the refined sigmoids) on classes outside the true group $G ^ { i } ( y )$ . From Lemmas 1–3 we have $\zeta = O ( \bar { \tau } ) = O ( \sqrt { \frac { \epsilon } { m } } )$ (up to constants and averaging effects). The conditional entropy of Y given the representation $f _ { j } ( x )$ satisfies
+
+$$
+H (Y \mid f _ {j} (x)) \leq (1 - \zeta) \log m + H _ {\mathrm{bin}} (\zeta) + \zeta \log (n),
+$$
+
+where $H _ { \mathrm { b i n } } ( \zeta ) = - \zeta \log \zeta - ( 1 - \zeta ) \log ( 1 - \zeta ) = O ( \zeta \log ( 1 / \zeta ) )$ . Therefore
+
+$$
+H (Y \mid f _ {j} (x)) = \log m + O (\zeta \log n) = \log | G ^ {(i)} (y) | + O \Bigl (\sqrt {\frac {\epsilon}{m}} \log n \Bigr).
+$$
+
+Taking expectation over $( x , y )$ and combining with finite-sample error from the class-cluster density matching (Assumption $\gamma = O ( N ^ { - 1 / 2 } ) )$ yields
+
+$$
+\left| H _ {\mathcal {D}} (Y \mid f _ {j} (X)) - \mathbb {E} _ {y} [ \log | G ^ {i} (y) | ] \right| \leq \Delta_ {\mathrm{align}} (\epsilon),
+$$
+
+with
+
+$$
+\Delta_ {\mathrm{align}} (\epsilon) = O \Bigl (\sqrt {\epsilon \log n} + N ^ {- 1 / 2} \Bigr).
+$$
+
+This is the claimed alignment error.
+
+Final step (Information-gain comparison). Using $I ( Y ; f _ { j } ( X ) ) = H ( Y ) - H ( Y \mid f _ { j } ( X ) )$ and the above alignment,
+
+$$
+I _ {\mathcal {D}} (f _ {j} (X); Y) = H (Y) - \mathbb {E} _ {y} [ \log | G ^ {i} (y) | ] \pm \Delta_ {\mathrm{align}} (\epsilon) = I _ {\mathrm{lattice}} ^ {(i)} (Y) \pm \Delta_ {\mathrm{align}} (\epsilon).
+$$
+
+Similarly for layer j − 1 aligned with level i − 1 we get
+
+$$
+I _ {\mathcal {D}} (f _ {j - 1} (X); Y) = I _ {\mathrm{lattice}} ^ {(i - 1)} (Y) \pm \Delta_ {\mathrm{align}} (\epsilon).
+$$
+
+Subtracting,
+
+$$
+I _ {\mathcal {D}} (f _ {j} (X); Y) - I _ {\mathcal {D}} (f _ {j - 1} (X); Y) \geq \Delta_ {\mathrm{lattice}} ^ {(i)} - 2 \Delta_ {\mathrm{align}} (\epsilon). \quad \square
+$$
+
+# A4. More Analysis
+
+Impact of Class-Ordering: We empirically validate Theorem 4.1 by training a FoCA CBM on ImageNet100 with random class ordering. Here, a sample is supervised by the right group with a probability of 0.5 and is supervised by a wrong group with a probabililty of 0.5. We observe that this leads to a sharp fall in test accuracy $( 9 1 . 3 6  2 8 . 9 6 )$ , showing the importance of class ordering.
+
+Impact of CBM Training Mode: There are several ways of learning concept-based models: independent, sequential and joint optimization. All the results in the paper are over joint models, following standard practice. To study the impact of this, we train FoCA CBMs using the other training schemes on the ImageNet100 dataset. Interestingly, we observe significant performance differences across training schemes: Joint $- 9 1 . 8 8 \pm 0 . 3 5 ,$ Sequential - 86.69 ± 0.04, Independent - $7 7 . 5 4 \pm 0 . 3 5$ . We attribute this to two factors: (1) Broken iterative refinement: training attribute layers without class feedback breaks the coordination our cascading mechanism relies on; (2) Compounding error: errors at earlier layers cascade through the hierarchy. This implies that joint optimization is essential, and high attribute accuracy in isolation is insufficient.
+
+Table A9. Effect of α on FoCA CBM on accuracy. 
+
+<table><tr><td>Dataset</td><td>Alpha</td><td>FoCA CBM</td></tr><tr><td rowspan="3">AWA2</td><td>0.01</td><td>92.36</td></tr><tr><td>0.1</td><td>92.13</td></tr><tr><td>1</td><td>91.94</td></tr><tr><td rowspan="3">CIFAR100</td><td>0.01</td><td>79.36</td></tr><tr><td>0.1</td><td>75.84</td></tr><tr><td>1</td><td>73.50</td></tr><tr><td rowspan="3">Imagenet100</td><td>0.01</td><td>91.92</td></tr><tr><td>0.1</td><td>87.73</td></tr><tr><td>1</td><td>87.56</td></tr></table>
+
+Table A10. Effect of $\beta$ on FoCA CBM on accuracy. 
+
+<table><tr><td>Dataset</td><td>Beta</td><td>FoCA CBM</td></tr><tr><td rowspan="3">AWA2</td><td>0.01</td><td>92.36</td></tr><tr><td>0.1</td><td>91.24</td></tr><tr><td>1</td><td>90.02</td></tr><tr><td rowspan="3">CIFAR100</td><td>0.01</td><td>79.36</td></tr><tr><td>0.1</td><td>71.85</td></tr><tr><td>1</td><td>65.09</td></tr><tr><td rowspan="3">Imagenet100</td><td>0.01</td><td>91.92</td></tr><tr><td>0.1</td><td>86.94</td></tr><tr><td>1</td><td>85.22</td></tr></table>
+
+Choice of α and β: We perform ablation studies on the two hyperparameters α and β. We fix one of the values of these hyperparameters from the best models and vary the other one. Both are varied among [0.01, 0.1, 1]. The results are reported in Tables A9 and A10. A lower value is preferred since the first two terms of our loss function in Eqn 4 are summed up over multiple layers, thus scaling the loss values. However, a more complete picture is obtained by also examining the other aspect we are concerned about, namely the goodness of the structure of the embeddings, which we study over the ImageNet100 dataset. Since our overall loss is a multi-objective optimization problem, there is naturally a trade off between accuracy and structure. As we can see from the below tables, giving more weight to the class grouping term leads to more coherent cluster groups (as indicated by the lower CI and DBI values) but at the cost of accuracy. Similarly, increasing the weight of the attribute loss leads to higher attribute accuracy, but degrades accuracy and clustering quality. This highlights the critical role that the auxiliary losses play in the learning. Crucially, setting either α = 0 or β = 0 leads to dramatic accuracy drops (30.07 and 42.91 respectively vs. 91.92 at α=β=0.01); CI and DBI are also poor due to the lack of proper supervision, confirming both loss terms are essential.
+
+<table><tr><td>β</td><td>Acc</td><td>CI</td><td>DBI</td></tr><tr><td>0.01</td><td>91.92</td><td>0.573</td><td>1.862</td></tr><tr><td>0.1</td><td>86.94</td><td>0.566</td><td>1.816</td></tr><tr><td>1</td><td>85.22</td><td>0.549</td><td>1.712</td></tr></table>
+
+<table><tr><td>α</td><td>Acc</td><td>CI</td><td>DBI</td><td>Attr Acc</td></tr><tr><td>0.01</td><td>91.92</td><td>0.573</td><td>1.862</td><td>88.48</td></tr><tr><td>0.1</td><td>87.73</td><td>0.6218</td><td>2.006</td><td>92.55</td></tr><tr><td>1</td><td>88.6</td><td>0.656</td><td>2.024</td><td>95.21</td></tr></table>
+
+<table><tr><td> $(\alpha, \beta)$ </td><td>Acc</td><td>CI</td><td>DBI</td></tr><tr><td> $(0, 0.01)$ </td><td>30.07</td><td>0.675</td><td>2.257</td></tr><tr><td> $(0.01, 0)$ </td><td>42.91</td><td>0.641</td><td>2.075</td></tr><tr><td> $(0, 0)$ </td><td>29.24</td><td>0.6835</td><td>2.3902</td></tr></table>
+
+Overall, these results suggest that the auxiliary loss terms are most effective when used as light regularizers, striking a balance between accuracy and semantic structure, which is consistent with standard multi-objective learning setups.
+
+More Cluster-based Analysis: We provide more comprehensive results on our cluster-based analysis here. Going beyond the reported average CI and DBI scores in Table 1, we examine herein how these metrics evolve across blocks of a model. Ideally, both scores should decrease as we move deeper into a network, indicating lower cluster impurity and more compact, well-separated representations. In other words, we would want embeddings to move closer to the origin of the CI-DBI space across blocks. As is evident from Figure A7 for CIFAR-100, the FoCA CBM models move closest to the origin. In contrast, some baselines show little change across layers, suggesting weaker representation refinement. The CI-DBI plots for the other datasets are also provided. We also use line plots to visualize cluster impurity reduction alone through blocks (Fig A11) and see that our models gradually reduce in cluster impurity, unlike the other models where there is either a sharp drop in the last block or no drop at all. This indicates our models’ ability to learn more meaningful embeddings. Finally, we provide more comprehensive t-SNE plots comparing the cluster formation in all blocks of the respective backbone networks in Fig A13, A14, A15. The set of classes considered for AwA2 were dalmatian, german shepherd, horse, for ImageNet100 were agama, banded-gecko, whiptail and for CIFAR100 were beetle, butterfly, cockroach.
+
+More Results on ViT-based backbones: We obtained results on more baselines with ViT backbones on CIFAR100 and see that our method continues to outperform baselines. The nature of the representations of ViTs is less explicitly understood than CNNs. One could view our method as providing an explicit inductive bias for hierarchical representations on such
+
+![](images/dfb77bd87cf189fc24b1a6b2dfdf2c9791522c7889df75d4c37de17a27e22f34.jpg)  
+Vanilla CBM   
+× MLPCBM   
+□ Pretrained ResNet-50  
++ CLIP-Pretrained ResNet-50   
+CEM   
+SCBM   
+▲ ProbCBM   
+FoCA CBM-N   
+? FoCA CBM   
+Vanilla CBM   
+MLPCBM   
+Pretrained ResNet-50   
++ CLIP-Pretrained ResNet-50   
+CEM   
+← SCBM   
+ProbCBM   
+FoCA CBM-N   
+FoCA CBM   
+Vanilla CBM   
+× MLPCBM   
+Pretrained ResNet-50   
++ CLIP-Pretrained ResNet-50   
+CEM   
+SCBM   
+ProbCBM   
+FoCA CBM-N   
+FoCA CBM
+
+Figure A7. CI vs DBI plot per block on CIFAR100, AwA2 and ImageNet100 datasets. Each marker indicates a model trained on the respective dataset. Markers should ideally move towards the origin in higher blocks. We attribute the superiority of CBMs and MLPCBMs on AwA2 to the simplicity of the dataset.
+
+architectures. Recent works (Park et al., 2025) show that hierarchical structure can emerge in the representation space of transformers. Our results provide empirical evidence that FoCA CBM’s inductive bias successfully uncovers this structure in ViTs, as reflected by consistent gains across all three metrics.
+
+# A5. Dataset Details
+
+• AwA2: The Animals with Attributes (AwA2) dataset (Xian et al., 2019) is commonly used for zero-shot learning (ZSL) and attribute-based classification. It consists of 37322 images (26125 training, 11197 testing) of 50 animal classes, annotated with 85 numeric attribute values for each class and is class-level expert annotated. Each class in the dataset has on average $3 1 \pm 4$ active attributes, with 22 being the minimum number of attributes active for a particular class and 39 being maximum.
+
+Table A11. Comparison of baselines with ViT-backbones. FoCA ViT outperforms over all metrics. 
+
+<table><tr><td>ViT-Based Model</td><td>Acc</td><td>CI</td><td>DBI</td></tr><tr><td>ViT CBM</td><td>84.49 ± 0.55</td><td>0.774 ± 0.016</td><td>2.237 ± 0.006</td></tr><tr><td>LFCBM</td><td>72.40 ± 0.27</td><td>0.873 ± 0.000</td><td>2.797 ± 0.000</td></tr><tr><td>Posthoc CBM</td><td>71.29 ± 0.63</td><td>0.873 ± 0.000</td><td>2.797 ± 0.000</td></tr><tr><td>LaBo</td><td>76.12 ± 1.04</td><td>0.873 ± 0.000</td><td>2.797 ± 0.000</td></tr><tr><td>CFCBM</td><td>74.11 ± 0.44</td><td>0.873 ± 0.000</td><td>2.797 ± 0.000</td></tr><tr><td>FoCA ViT</td><td>86.65 ± 0.30</td><td>0.755 ± 0.004</td><td>1.983 ± 0.021</td></tr></table>
+
+Table A12. Details about the formal concept lattice obtained for each dataset. 
+
+<table><tr><td>Dataset</td><td>|G|</td><td>|M|</td><td>Fill ratio</td><td>|L|</td><td>L</td><td>Worst case |L|</td><td>Time (s)</td><td>Space (MB)</td></tr><tr><td>AwA2</td><td>50</td><td>85</td><td>0.368</td><td>64315</td><td>26</td><td> $1.13 \times 10^{15}$ </td><td>37.37</td><td>63.62</td></tr><tr><td>CIFAR100</td><td>100</td><td>700</td><td>0.023</td><td>915</td><td>10</td><td> $1.27 \times 10^{30}$ </td><td>1.97</td><td>1.00</td></tr><tr><td>ImageNet-100</td><td>100</td><td>700</td><td>0.026</td><td>1593</td><td>10</td><td> $1.27 \times 10^{30}$ </td><td>4.56</td><td>1.68</td></tr></table>
+
+• CIFAR100: CIFAR100 is a well-known subset of the Tiny Images dataset (Krizhevsky et al., 2009) comprising 100 classes. Attributes associated with each of these classes are generated using GPT-3 (Oikarinen et al., 2023), where an initial concept set is generated through queries like “List the most important features for recognizing something as a {class}”. This is followed by a sequence of filtering steps, to improve the quality of the concept set. This involves the k-means clustering (with k = 700) of similar attributes together based on their all-MiniLM-L6-v2 embeddings and choosing the closest attributes to each cluster centroid as the cluster representatives. The dataset finally consists of 60000 images (50000 for training and 10000 for testing), 700 attributes and 100 classes. Each class in the dataset has on average 16 ± 3 active attributes, with 8 being the minimum number of attributes active for a particular class and 24 being maximum.   
+• ImageNet100: ImageNet100 is a well-known subset of the ImageNet-1k dataset (Russakovsky et al., 2015). We randomly select 100 classes from the set of 1k classes. We follow the same process we followed for the CIFAR100 dataset here as well and acquire attributes from GPT-3. The dataset finally consists of 134973 images (129973 training, 5000 testing) of 100 distinct classes and 700 LLM-generated unique attributes. Each class in the dataset has on average 18 ± 3 active attributes, with 9 being the minimum number of attributes active for a certain class and 25 being maximum.
+
+Some example classes and their corresponding attributes are provided in Tab A13.
+
+# A6. Lattice Details
+
+Our formal concept lattices are constructed using the concepts 1 Python module. This module employs the Fast Concept Analysis algorithm (Troy et al., 2007) for generating the lattices (CONSTRUCTLATTICE in Algorithm 1). The hierarchy level of each formal concept is computed by first performing a topological sort on the lattice (which is always a directed acyclic graph), and then iteratively updating the level of the upper neighbors of each formal concept traversed in topological order (described in Algorithm 2).
+
+• The AwA2 lattice consists of 50 classes, 85 attributes, and 64315 total formal concepts across 26 hierarchy levels with 1, 50, 743, 3038, 5755, 7440, 7876, 7472, 6680, 5738, 4800, 3912, 3083, 2310, 1693, 1221, 873, 613, 409, 262, 165, 98, 52, 23, 7, 1 formal concepts per level. Computing the lattice took 37.37 seconds on average, and it occupies 63.62 MB of space.   
+• The CIFAR100 lattice consists of 100 classes, 700 attributes and 915 total formal concepts across 10 hierarchy levels with 1, 100, 345, 211, 131, 75, 33, 14, 4, 1 formal concepts per level. Computing the lattice took 1.97 seconds on average, and it occupies 1.00 MB of space.   
+• The ImageNet-100 lattice consists of 100 classes, 700 attributes, and 1593 total formal concepts across 10 hierarchy levels. The number of formal concepts in the 10 levels is 1, 100, 592, 415, 250, 129, 65, 30, 10, 1, respectively, going from the infimum to the supremum. Computing the lattice took 4.56 seconds on average, and it occupies 1.68 MB of space.
+
+# A7. Implementation Details
+
+The algorithm for the whole method is provided in Algorithm 1.
+
+Algorithm 2 COMPUTE HIERARCHY LEVELS(L):   
+Require: Formal concept lattice L.
+1: $\mathcal{L}_{s} \leftarrow \text{TopologicalSort}(\mathcal{L})$ ▷ Infimum at the first index
+2: level[fc] ← 0  ∀ fc ∈ $L_{s}$ 3: for u ∈ $L_{s} \setminus \{L_{s}.infimum\}$ do
+4:    for v in u.upper_neighbors do
+5:    level[v] = max{level[v], level[u] + 1}
+6:    end for
+7: end for
+8: return level
+
+![](images/7262c9758a5fef10107bb22f755908d4fc2f10d4a7d5bbbc3253fed8fdaa6088.jpg)
+
+<details>
+<summary>bar</summary>
+
+| Hierarchy Level | Value   |
+| --------------- | ------- |
+| 9               | 100.00  |
+| 8               | 60.33   |
+| 7               | 49.33   |
+| 6               | 38.89   |
+| 5               | 29.31   |
+| 4               | 26.30   |
+| 3               | 18.86   |
+| 2               | 12.92   |
+| 1               | 1.00    |
+</details>
+
+![](images/ff180788400196224204fbeaa274417cced20f59a4fbe73f3eaae0a0f38596b1.jpg)
+
+<details>
+<summary>bar</summary>
+
+| Hierarchy Level | Value  |
+| --------------- | ------ |
+| 9               | 100.00 |
+| 8               | 38.41  |
+| 7               | 21.45  |
+| 6               | 25.51  |
+| 5               | 21.58  |
+| 4               | 15.45  |
+| 3               | 11.22  |
+| 2               | 8.06   |
+| 1               | 1.00   |
+</details>
+
+![](images/26bf96d0d9a4cf23eeeba8b2bf8ce20fb665194811680402d4c8da00da1c4270.jpg)
+
+<details>
+<summary>bar</summary>
+
+| Hierarchy Level | Value |
+|---|---|
+| 25 | 50.00 |
+| 24 | 49.68 |
+| 23 | 49.20 |
+| 22 | 49.04 |
+| 21 | 49.40 |
+| 20 | 49.76 |
+| 19 | 49.56 |
+| 18 | 49.84 |
+| 17 | 49.92 |
+| 16 | 49.92 |
+| 15 | 49.88 |
+| 14 | 49.88 |
+| 13 | 49.92 |
+| 12 | 49.96 |
+| 11 | 49.92 |
+| 10 | 49.80 |
+| 9 | 49.52 |
+| 8 | 49.12 |
+| 7 | 48.56 |
+| 6 | 47.88 |
+| 5 | 46.40 |
+| 4 | 44.24 |
+| 3 | 40.36 |
+| 2 | 30.72 |
+| 1 | 1.00 |
+</details>
+
+![](images/8845f8c593813919fbb71cb065b51871d7df492ab9e7797bbeeb3541dc6198fe.jpg)
+
+<details>
+<summary>bar</summary>
+
+| Block | Value |
+|---|---|
+| block 1 | 17.56 |
+| block 2 | 16.75 |
+| block 3 | 13.94 |
+| block 4 | 9.72 |
+</details>
+
+(a)
+
+![](images/ce7f8937484f51f72d7bede6b6198a5b6675666349a4416baacbc4209cc0cd58.jpg)
+
+<details>
+<summary>bar</summary>
+
+| Block | Value |
+|---|---|
+| block 1 | 40.23 |
+| block 2 | 36.08 |
+| block 3 | 26.00 |
+| block 4 | 20.40 |
+</details>
+
+(b)
+
+![](images/ae656255ae38dbff558a9953d600a6bb96c0064ab219b283fde068238437838a.jpg)
+
+<details>
+<summary>bar</summary>
+
+| Block | Value |
+|---|---|
+| block 1 | 33.78 |
+| block 2 | 30.22 |
+| block 3 | 24.52 |
+| block 4 | 8.10 |
+</details>
+
+(c)   
+Figure A8. The average number of classes active per lattice level (top) and per block of a ResNet (bottom) for the ImageNet-100 (a), CIFAR100 (b) and AwA2 (c) datasets.
+
+Evaluation Metric Details: We provide additional details herein on the clustering-based metrics (CI, DBI) we report in our results in the main paper (Table 1). At each block, we get the set of embeddings on the samples for all n classes and cluster them (with k = n). For each cluster in a block, we compute the gini-index and davies bouldin score. Averaging this value over all the clusters in a block, gives the average impurity and average cluster compactness of that block. We then take the harmonic mean of this number across all blocks to get the numbers representing the average CI and DBI of the model. These are described in Algorithm 3 and 4.
+
+Model Details: All models were run on a single NVIDIA GeForce RTX 3090. We use a ResNet18-based backbone for all AwA2 models and a ResNet50-based backbone for all CIFAR100 and ImageNet100 models. On our models, we place semantic layers at the end of blocks and hence have 4 backbone position choices corresponding to the 4 blocks in a ResNet. All the results reported in the main table are models with 2 semantic layers.
+
+Algorithm 5 CLASSCLUSTERDENSITYMODEL(f, D):   
+Require: Model f, Dataset D.
+Initialize avg_class_per_block ← 0
+n ← number of classes in D
+
+for b in f.blocks do
+    for j in D do $E_{b_i} = E_{b_i} \cup \{h_i^j\}$ ▷ Set of embeddings at block $b_i$ end for
+    clusters = k-means( $E_{b_i}, n$ )    ▷ Cluster $E_{b_i}$ with n centers
+    for c in clusters do
+    avg_class_per_block[b] += UniqueClasses(c) ▷ gets number of unique classes, associated with the embeddings, in a cluster
+    c
+    end for
+    avg_class_per_block[b] /= n
+end for
+return avg_class_per_block
+
+Algorithm 3 COMPUTE CLUSTER IMPURITY(f, D):   
+Require: Model f, Dataset D.
+1: Initialize ci = 0
+2: for b in f.blocks do
+3:    for j in D do
+4: $E_{b_i} = E_{b_i} \cup \{h_i^j\}$ ▷ Set of embeddings at block $b_i$ 5:    end for
+6:    clusters = k-means( $E_{b_i}, n$ )    ▷ Cluster $E_{b_i}$ with n centers
+7:    for c in clusters do
+8:    ci += gini-index(c)
+9:    end for
+10:    ci /= n
+11: end for
+12: ci /= #blocks
+13: return ci
+
+Algorithm 4 COMPUTE DBI(f, D):   
+Require: Model f, Dataset D.
+Initialize dbi = 0
+for b in f.blocks do
+    for j in D do $E_{b_i} = E_{b_i} \cup \{h_i^j\}$ ▷ Set of embeddings at block $b_i$ end for
+    clusters = k-means( $E_{b_i}$ , n)    ▷ Cluster $E_{b_i}$ with n centers
+    dbi += davies_bouldin_score( $E_{b_i}$ , clusters.labels)
+end for
+dbi /= #blocks
+return dbi
+
+Algorithm 6 CLASSCLUSTERDENSITYLATTICE(L):   
+Require: Lattice $\mathcal{L}$ Initialize avg_class_per_level $\leftarrow 0$ for level in $\mathcal{L}$ do count $\leftarrow 0$ for fc in level do count $+ = 1$ avg_class_per_level[level] $+ =$ len(fc.extent) end for avg_class_per_level[level] $/ =$ count   
+end for return avg_class_per_level
+
+Computational Complexity: Our FoCA CBM models were trained in ≈: 40 min for AwA2, 1.75 hrs for CIFAR100 and 3 hrs for ImageNet100 on a single NVIDIA GeForce RTX 3090; these times were about the same timings as Vanilla CBMs and MLPCBMs took. Our lattices are generated offline before training and took ≈: 37 secs for AwA2, 2 secs for CIFAR100 and 4.5 secs for ImageNet100, thus making this a near-negligible cost.
+
+# Hyperparameter Details:
+
+• Vanilla CBMs and MLPCBMs: All models here were trained for 30 epochs with a batch size of 128, an AdamW optimizer and a onecycle scheduler. The AwA2 and CIFAR100 models were trained using a learning rate of $3 \times 1 0 ^ { - 4 }$ , while the ImageNet100 models were trained with a learning rate of $1 \times 1 0 ^ { - 4 }$ .   
+• Posthoc CBMs: Here, we use the multimodal CLIP-based backbones for AwA2 and ImageNet100 datasets, with $\lambda = 2 \times 1 0 ^ { - 4 }$ and a batch size of 512. For CIFAR100, we take the numbers from the respective paper (Posthoc CBMs).   
+• Label-Free CBMs: Most hyperparameters used here were the same as the ones reported by the paper on the ImageNet dataset. Additionally, we use a clip-cutoff of 0.26 for ImageNet100 models and 0.25 for AwA2 models. An Adam
+
+Algorithm 7 SELECTLAYERSANDLEVELS(f, D, L, m)   
+Require: Model f, Dataset D, Lattice L, number of (layer, level) pairs to select $m \geq 1$ 1: block_density ← CLASSCLUSTERDENSITYMODEL(f, D) ▷ length = #blocks = $L_{f}$ 2: level_density ← CLASSCLUSTERDENSITYLATTICE(L) ▷ length = #levels = $L_{L}$ 3: $L_{f} \leftarrow \text{len}(\text{block\_density}) \quad L_{L} \leftarrow \text{len}(\text{level\_density})$ 4: selected_layers ← $[L_{f} - 1]$ ▷ index of last (top) block
+5: selected_levels ← $[L_{L} - 1]$ ▷ index of most fine-grained lattice level
+6: remaining ← m - 1
+7: last_level_idx ← $L_{L} - 1$ ▷ we will search levels strictly above this index
+8: for layer_idx in range( $L_{f} - 2, -1, -1$ ) do ▷ iterate remaining model blocks bottom→top
+9: if remaining == 0 then
+10: break
+11: end if
+12: layer_density ← block_density[layer_idx]
+13: chosen_level ← None ▷ search lattice levels from (last_level_idx - 1) downward to 0
+14: for level_idx in range(last_level_idx - 1, -1, -1) do
+15: if level_density[level_idx] ≥ layer_density then
+16: chosen_level ← level_idx
+17: break
+18: end if
+19: end for
+20: if chosen_level is not None then
+21: selected_layers.append(layer_idx)
+22: selected_levels.append(chosen_level)
+23: last_level_idx ← chosen_level
+24: remaining ← remaining - 1
+25: end if
+26: end for
+27: return selected_layers, selected_levels
+
+optimizer with a learning rate of $1 \times 1 0 ^ { - 3 }$ was used to learn the concepts. Finally, for learning the classes, we use glmsaga with a regularization strength of $1 \times 1 0 ^ { - 4 }$ for ImageNet100 and $3 \times 1 0 ^ { - 4 }$ for AwA2. We use a batch size of 512. We report the CIFAR100 results from the paper.
+
+• Concept Embedding Models: We train all these models for 100 epochs with a batch size of 256, a learning rate of 0.01 and an SGD optimizer.   
+• Language in a Bottle (LaBo): Since these models work with CLIP-based backbones, we use a CLIP:RN50, along with submodular concept selection, max epochs of 10000, batch size of 512 and learning rate of $1 \times 1 0 ^ { - 5 }$ on all datasets.   
+• Stochastic CBMs: All models were trained for 70 epochs, with a batch size of 64, learning rate of $3 \times 1 0 ^ { - 5 }$ using an Adam optimizer, with the number of monte carlo samples being 100.   
+• Probabilistic CBMs: All models were trained with an embedding size of 16, training intervention probability of 0.25, learning rate of $1 \times 1 0 ^ { - 2 }$ with an SGD optimizer, a batch size of 256 and max epochs of 100.   
+• Coarse-to-Fine CBMs: For all the models here we first compute the CLIP similarities using a CLIP:RN50 model and then train the models. We use a learning rate of $3 \times 1 0 ^ { - 4 }$ with an Adam optimizer, batch size of 256 and number of epochs of 30.   
+• Hybrid CBMs: Since these models work with CLIP-based backbones, we use a CLIP:RN50 on all datasets, along with submodular concept selection with a dynamic concept ratio of 0.5, max epochs of 5000 and learning rate of $5 \times 1 0 ^ { - 5 }$ For the AwA2 and CIFAR100 models, we use a batch size of 512 and for the Imagenet100 models, we use a batch size of 4096.   
+• FoCA CBMs: Our hyperparameters here are the same as Vanilla CBM models.
+
+GPT-Hierarchy Details: The prompt used for GPT4 to generate the LLM-Based hierarchy was the following: Given a set of classes and attributes, generate 2 sets: a set of general attributes and a set of specific attribute, with the set of specific attributes being a superset of general attributes. I also need a class group set that would get activated using the general attributes per class. For example: a general set of attributes could be ”animal”, ”vertebrate”, ”mammal”, ”strong” and a specific set of attributes could be ”animal”, ”vertebrate”, ”a long beak”, ”large wings”, ”mammal”, ”rocks”, ”strong” and for the class ”macaw”, a class group could be ”indigo bunting, ”macaw”, ”flamingo” which could be activated by a subset of the general attributes.
+
+![](images/f4f0662b7f032be1af4c8e7e4a20374eb736b6e5e04430da30ed71df8d82383e.jpg)
+
+<details>
+<summary>flowchart</summary>
+
+```mermaid
+graph TD
+    A["Image"] --> B["Block 1"]
+    B --> C["Block 2"]
+    C --> D["Block 3"]
+    D --> E["Block 4"]
+    E --> F["...Large wingspan"]
+    F --> G["Macaw, Crane, White Stork, Leatherback Turtle, Night Snake, Bald Eagle, ...Goose"]
+    G --> H["Macaw, Crane, White Stork, Leatherback Turtle, Night Snake, Bald Eagle, ...Goose"]
+    H --> I["...Goose"]
+    I --> J["...Goose"]
+    J --> K["...Goose"]
+    K --> L["...Goose"]
+    L --> M["...Goose"]
+    M --> N["...Goose"]
+    N --> O["...Goose"]
+    O --> P["...Goose"]
+    P --> Q["...Goose"]
+    Q --> R["...Goose"]
+    R --> S["...Goose"]
+    S --> T["...Goose"]
+    T --> U["...Goose"]
+    U --> V["...Goose"]
+    V --> W["...Goose"]
+    W --> X["...Goose"]
+    X --> Y["...Goose"]
+    Y --> Z["...Goose"]
+    Z --> AA["...Goose"]
+    AA --> AB["...Goose"]
+    AB --> AC["...Goose"]
+    AC --> AD["...Goose"]
+    AD --> AE["...Goose"]
+    AE --> AF["...Goose"]
+    AF --> AG["...Goose"]
+    AG --> AH["...Goose"]
+    AH --> AI["...Goose"]
+    AI --> AJ["...Goose"]
+    AJ --> AK["...Goose"]
+    AK --> AL["...Goose"]
+    AL --> AM["...Goose"]
+    AM --> AN["...Goose"]
+    AN --> AO["...Goose"]
+    AO --> AP["...Goose"]
+    AP --> AQ["...Goose"]
+    AQ --> AR["...Goose"]
+    AR --> AS["...Goose"]
+    AS --> AT["...Goose"]
+    AT --> AU["...Goose"]
+    AU --> AV["...Goose"]
+    AV --> AW["...Goose"]
+    AW --> AX["...Goose"]
+    AX --> AY["...Goose"]
+    AY --> AZ["...Goose"]
+    AZ --> BA["...Goose"]
+    BA --> BB["...Goose"]
+    BB --> BC["...Goose"]
+    BC --> BD["...Goose"]
+    BD --> BE["...Goose"]
+    BE --> BF["...Goose"]
+    BF --> BG["...Goose"]
+    BG --> BH["...Goose"]
+    BH --> BI["...Goose"]
+    BI --> BJ["...Goose"]
+    BJ --> BK["...Goose"]
+    BK --> BL["...Goose"]
+    BL --> BM["...Goose"]
+    BM --> BN["...Goose"]
+    BN --> BO["...Goose"]
+    BO --> BP["...Goose"]
+    BP --> BQ["...Goose"]
+    BQ --> BR["...Goose"]
+    BR --> BS["...Goose"]
+    BS --> BT["...Goose"]
+    BT --> BU["...Goose"]
+    BU --> BV["...Goose"]
+    BV --> BW["...Goose"]
+    BW --> BX["...Goose"]
+    BX --> BY["...Goose"]
+    BY --> BZ["...Goose"]
+    BZ --> CA["...Goose"]
+    CA --> CB["...Goose"]
+    CB --> CC["...Goose"]
+    CC --> CD["...Goose"]
+    CD --> CE["...Goose"]
+    CE --> CF["...Goose"]
+    CF --> CG["...Goose"]
+    CG --> CH["...Goose"]
+    CH --> CI["...Goose"]
+    CI --> CJ["...Goose"]
+    CJ --> CK["...Goose"]
+    CK --> CR["...Goose"]
+    CR --> CS["...Goose"]
+    CS --> CT["...Goose"]
+    CT --> CU["...Goose"]
+    CU --> CV["...Goose"]
+    CV --> CW["...Goose"]
+    CW --> CX["...Goose"]
+    CX --> CY["...Goose"]
+    CY --> CZ["...Goose"]
+    CZ --> DA["...Goose"]
+    DA --> DB["...Goose"]
+    DB --> DC["...Goose"]
+    DC --> DD["...Goose"]
+    DD --> DE["...Goose"]
+    DE --> DF["...Goose"]
+    DF --> DG["...Goose"]
+    DG --> DH["...Goose"]
+    DH --> DI["...Goose"]
+    DI --> DJ["...Goose"]
+    DJ --> DK["...Goose"]
+    DK --> DL["...Goose"]
+    DL --> DJ
+```
+</details>
+
+Figure A9. Some qualitative results of the predicted attributes and subsequent class group refinement for some samples from ImageNet100.
+
+![](images/49d394781389bd58c5500dbbe08a60ace4c89517e3eff255c4120703624092c1.jpg)
+
+<details>
+<summary>flowchart</summary>
+
+```mermaid
+graph LR
+    A["Peacock"] --> B["{animal, long, thick tail, rocks}"]
+    B --> C["{animal, a perch, a nest, insects}"]
+    C --> D["{animal, a high, shrill call a nest, chicks, a large, colorful bird, living thing, insects}"]
+    E["Black Swan"] --> F["{animal, webbed foot, vertebrate}"]
+    F --> G["{animal, long, thin neck, a pond, short beak, webbed foot, vertebrate}"]
+    G --> H["{animal, a black body, long, thin neck, a pond, short beak, orange bill and legs webbed foot, short, round wings, vertebrate}"]
+```
+</details>
+
+Figure A10. More examples of the attributes learned by a FoCA CBM after blocks 2, 3 and 4 of a ResNet50 for the classes Peacock and Black Swan in ImageNet100.
+
+This generates a two-level hierarchy which is compared with a two-level FoCA CBM.
+
+# A8. Limitations
+
+To facilitate future work, we also outline a few limitations of our approach. Firstly, as with all concept-based methods, the quality of our intermediate semantic representations is dependent on the accuracy of the attribute annotations. This dependency is particularly pronounced in LLM-annotated datasets such as CIFAR100 and ImageNet100. Enhancing annotation quality could therefore lead to notable gains in both model performance and interpretability. Secondly, once again mirroring a concern that is common across concept-based models, constraining the model to operate through semantic concepts can, in some cases, limit overall performance, a trade-off that is reflected in parts of our results. While we demonstrate consistent improvements in interpretability and related metrics, narrowing this performance gap remains a key area for further investigation. Finally, concept-based models typically treat concepts as static entities. Developing mechanisms that allow concept representations to adapt dynamically to the context of a specific input (e.g., a given input image) could be an interesting approach to improvements in flexibility and model performance.
+
+![](images/aad53340f534a710e04b5b56f67d5b4569375b12c18d0bd6126a14cf39cdaccf.jpg)
+
+<details>
+<summary>line</summary>
+
+| Block   | Vanilla CBM | MLPCBM | Pretrained ResNet-50 | CLIP-Pretrained ResNet-50 | CEM  | SCBM | ProbCBM | FoCA CBM-N | FoCA CBM |
+|---------|-------------|--------|----------------------|---------------------------|------|------|---------|------------|----------|
+| block 1 | 0.88        | 0.88   | 0.88                 | 0.90                      | 0.88 | 0.88 | 0.88    | 0.88       | 0.82     |
+| block 2 | 0.82        | 0.82   | 0.82                 | 0.88                      | 0.82 | 0.82 | 0.82    | 0.82       | 0.70     |
+| block 3 | 0.70        | 0.70   | 0.70                 | 0.82                      | 0.70 | 0.70 | 0.70    | 0.70       | 0.45     |
+| block 4 | 0.15        | 0.15   | 0.15                 | 0.50                      | 0.15 | 0.15 | 0.15    | 0.15       | 0.20     |
+</details>
+
+![](images/54b68060c8643a7a1b942381445ba19561080b94550a443d43294a576b733b13.jpg)
+
+<details>
+<summary>line</summary>
+
+| Block   | Vanilla CBM | MLPCBM | Pretrained ResNet-50 | CLIP-Pretrained ResNet-50 | CEM  | SCBM | ProbCBM | FoCA CBM-N | FoCA CBM |
+|---------|-------------|--------|----------------------|---------------------------|------|------|---------|------------|----------|
+| block 1 | 0.92        | 0.92   | 0.92                 | 0.92                      | 0.92 | 0.92 | 0.92    | 0.92       | 0.92     |
+| block 2 | 0.91        | 0.91   | 0.91                 | 0.91                      | 0.91 | 0.91 | 0.91    | 0.91       | 0.91     |
+| block 3 | 0.85        | 0.85   | 0.85                 | 0.85                      | 0.85 | 0.85 | 0.85    | 0.85       | 0.85     |
+| block 4 | 0.20        | 0.20   | 0.75                 | 0.85                      | 0.55 | 0.20 | 0.30    | 0.20       | 0.25     |
+</details>
+
+![](images/73a684e479291b272c32c4d4e0d18c8c51c79181b12feab54192db0b60c031be.jpg)
+
+<details>
+<summary>line</summary>
+
+| Block   | Vanilla CBM | MLPCBM | Pretrained ResNet-50 | CLIP-Pretrained ResNet-50 | CEM  | SCBM | ProbCBM | FoCA CBM-N | FoCA CBM |
+|---------|-------------|--------|----------------------|---------------------------|------|------|---------|------------|----------|
+| block 1 | 0.85        | 0.85   | 0.85                 | 0.85                      | 0.85 | 0.85 | 0.85    | 0.85       | 0.85     |
+| block 2 | 0.85        | 0.85   | 0.85                 | 0.85                      | 0.85 | 0.85 | 0.85    | 0.85       | 0.85     |
+| block 3 | 0.75        | 0.75   | 0.75                 | 0.75                      | 0.75 | 0.75 | 0.75    | 0.75       | 0.75     |
+| block 4 | 0.15        | 0.15   | 0.15                 | 0.15                      | 0.15 | 0.15 | 0.15    | 0.15       | 0.15     |
+</details>
+
+Figure A11. Cluster impurity over all models per block on AwA2, CIFAR100 and ImageNet100 datasets. Our models (inverted light green triangle) display a gradual reduction in impurity. The other models fall sharply at the last block or not at all.
+
+Table A13. Examples of classes and subsets of corresponding attributes from AWA2, CIFAR100 and ImageNet100 datasets. 
+
+<table><tr><td>Dataset</td><td>Class</td><td>Concepts</td></tr><tr><td rowspan="3">AwA2</td><td>Raccoon</td><td>black, white, gray, patches, spots, stripes, furry, small, pads, paws, tail, chewteeth, meatteeth, claws, walks, fast, quadrapedal, active, nocturnal, hibernate, agility</td></tr><tr><td>Cow</td><td>black, white, brown, patches, spots, furry, toughskin, big, bulbous, hooves, tail, chewteeth, horns, smelly, walks, slow, strong, quadrapedal, active, inactive</td></tr><tr><td>Dolphin</td><td>white, blue, gray, hairless, toughskin, big, lean, flippers, tail, chewteeth, swims, fast, strong, muscle, active, agility, fish, new-world, oldworld, coastal, ocean, water</td></tr><tr><td rowspan="3">CIFAR100</td><td>Chair</td><td>furniture, a person, object, legs to support the seat, an office, a computer, a desk, four legs, a backrest, armrests on either side windows, building, object, structure, a yard, a chimney, a door, a wall, siding or brick exterior, a garage, roof</td></tr><tr><td>House</td><td rowspan="2">a grassland, short front legs, an animal, a safari, mammal, a long, powerful tail, brown or gray fur, marsupial, long, powerful hind legs, Australia</td></tr><tr><td>Kangaroo</td></tr><tr><td rowspan="3">ImageNet100</td><td>Electric Ray</td><td>paddle-like fins, a flat circular shape, fish, a long, thick tail, mammal, animal, water, vertebrate, a large mouth, a large, bulky body</td></tr><tr><td>White Stork</td><td>an animal, a large size, a tree, a field, insects, a sky, a long, curved neck, white feather, a thin neck, long red legs, long, arms and legs, a medium-sized body, vertebrate, a long orange beak</td></tr><tr><td>Komodo Dragon</td><td>a large size, a keeper, scales, a tree, a dish, scaly skin, a rock, long, sharp claws, a long, thick tail, a long, forked tongue, an animal, reptile, a fence, vertebrate, a water dish, a zoo, a heat lamp, a large, bulky body, a cage, a lizard</td></tr></table>
+
+ResNet 
+
+<table><tr><td>Stingray</td><td colspan="2">Last Layer Intervention</td><td colspan="2">Intermediate Layer Intervention</td><td>Leatherback Turtle</td><td colspan="2">Last Layer Intervention</td><td colspan="2">Intermediate Layer Intervention</td></tr><tr><td rowspan="5"><img src="images/5c62465d5b984a0293aea11846daaffa58d0400030659a3c66d83342836deaa4.jpg"/></td><td>Forked tongue</td><td>0.033</td><td>Thin legs</td><td>0.038</td><td rowspan="5"><img src="images/59bce839e17c8128d0cc71427c63cbbb4081356dd100858bd17aadd6deb75017.jpg"/></td><td>A beak</td><td>0.020</td><td>A bill</td><td>0.028</td></tr><tr><td>Fish</td><td>0.993</td><td>Crabs</td><td>0.027</td><td>Big head</td><td>0.679</td><td>Brown color</td><td>0.024</td></tr><tr><td>A rock</td><td>0.031</td><td>Heavy shell</td><td>0.027</td><td>An animal</td><td>0.728</td><td>Carnivorous</td><td>0.022</td></tr><tr><td>Many legs</td><td>0.028 → 0</td><td>Reptile</td><td>0.052 → 0</td><td>Large claws</td><td>0.025 → 0</td><td>Reptile</td><td>0.974 → 1</td></tr><tr><td>Pointed barbon tail</td><td>0.027 → 1</td><td>Water</td><td>0.041 → 1</td><td>Slender body</td><td>0.033 → 0</td><td>Flippers</td><td>0.024 → 1</td></tr><tr><td>Night Snake</td><td colspan="2">Last Layer Intervention</td><td colspan="2">Intermediate Layer Intervention</td><td>Centepede</td><td colspan="2">Last Layer Intervention</td><td colspan="2">Intermediate Layer Intervention</td></tr><tr><td rowspan="5"></td><td>Black nose</td><td>0.024</td><td>Black head</td><td>0.028</td><td rowspan="5"><img src="images/4a586a10e12c65dc5f197babc3d32eb467cd893bbb97edbee86c6cc33a04b02e.jpg"/></td><td>Big head</td><td>0.037</td><td>Bright color</td><td>0.028</td></tr><tr><td>Green color</td><td>0.033</td><td>Animal</td><td>0.946</td><td>Animal</td><td>0.786</td><td>A belt</td><td>0.201</td></tr><tr><td>Mammal</td><td>0.031</td><td>Bright color</td><td>0.028</td><td>A bug</td><td>0.046</td><td>Animal</td><td>0.786</td></tr><tr><td>Short Legs</td><td>0.027 → 0</td><td>Mammal</td><td>0.035 → 0</td><td>Legs</td><td>0.024 → 0</td><td>LongTentacles</td><td>0.024 → 0</td></tr><tr><td>Protective Shell</td><td>0.028 → 0</td><td>Smoothshiny scales</td><td>0.034 → 1</td><td>Furry body</td><td>0.041 → 0</td><td>Invertebrate</td><td>0.039 → 1</td></tr><tr><td>Magpie</td><td colspan="2">Last Layer Intervention</td><td colspan="2">Intermediate Layer Intervention</td><td>Vine Snake</td><td colspan="2">Last Layer Intervention</td><td colspan="2">Intermediate Layer Intervention</td></tr><tr><td rowspan="5"></td><td>Grayish color</td><td>0.025</td><td>Mammal</td><td>0.027</td><td rowspan="5"><img src="images/6f8bb86f823237d4e0cded0bc8eb322f23d478a631010ff044d0871958eea87e.jpg"/></td><td>Big head</td><td>0.033</td><td>A beak</td><td>0.038</td></tr><tr><td>Animal</td><td>0.873</td><td>A brightcolor</td><td>0.018</td><td>Animal</td><td>0.504</td><td>A branch</td><td>0.167</td></tr><tr><td>Carnivorous diet</td><td>0.026</td><td>Bird of Prey</td><td>0.031</td><td>A black body</td><td>0.021</td><td>Animal</td><td>0.544</td></tr><tr><td>Black-white color scheme</td><td>0.052 → 1</td><td>Reptile</td><td>0.041 → 0</td><td>Can beagressive</td><td>0.039 → 0</td><td>Reptile</td><td>0.206 → 1</td></tr><tr><td>Bright plumage</td><td>0.482 → 0</td><td>Loud, harshcall</td><td>0.045 → 1</td><td>Worm</td><td>0.148 → 0</td><td>Leaves</td><td>0.292 → 1</td></tr><tr><td colspan="10">ViT</td></tr><tr><td>Chiton</td><td colspan="2">Last Layer Intervention</td><td colspan="2">Intermediate Layer Intervention</td><td><img src="images/eda80a0e55fc8796ea08745e95bed467276b0d17c95bb961e7892a71c3f7c6d2.jpg"/></td><td colspan="2">Last Layer Intervention</td><td colspan="2">Intermediate Layer Intervention</td></tr><tr><td rowspan="5"></td><td>Animal</td><td>0.559</td><td>Bright color</td><td>0.427</td><td rowspan="5">Green color</td><td>0.484</td><td>A bush</td><td>0.389</td><td></td></tr><tr><td>Loud call</td><td>0.184</td><td>Large jaw</td><td>0.221</td><td>Bulky body</td><td>0.337</td><td>Long, forked tongue</td><td>0.940</td></tr><tr><td>Diamond patterned back</td><td>0.417</td><td>A bug</td><td>0.077</td><td>Pair ofpincers</td><td>0.359</td><td>Light body</td><td>0.423</td></tr><tr><td>Powerful fins</td><td>0.379 → 0</td><td>Mollusk</td><td>0.578 → 1</td><td>Worm</td><td>0.429 → 0</td><td>Long, thickneck</td><td>0.464 → 0</td></tr><tr><td>Lightweight body</td><td>0.405 → 0</td><td>Large body</td><td>0.362 → 0</td><td>Short legs</td><td>0.402 → 0</td><td>Round face</td><td>0.390 → 0</td></tr><tr><td>Thunder Snake</td><td colspan="2">Last Layer Intervention</td><td colspan="2">Intermediate Layer Intervention</td><td>Bulbul</td><td colspan="2">Last Layer Intervention</td><td colspan="2">Intermediate Layer Intervention</td></tr><tr><td rowspan="5"></td><td>Green, olive color</td><td>0.455</td><td>Black body</td><td>0.419</td><td rowspan="5"><img src="images/48261d5295b3c145f4a738ae4dcc06dfa7e99a52407a70fdf76ab4d8b4169e52.jpg"/></td><td>Nature reserve</td><td>0.409</td><td>Curved beak</td><td>0.722</td></tr><tr><td>Long, forked tongue</td><td>0.994</td><td>Thick tail</td><td>0.234</td><td>Long, thinbeak</td><td>0.585</td><td>A meadow</td><td>0.418</td></tr><tr><td>A jungle</td><td>0.373</td><td>Long, thinbody</td><td>0.463</td><td>Loud call</td><td>0.388</td><td>Medium sized</td><td>0.683</td></tr><tr><td>Short legs</td><td>0.577 → 0</td><td>Animal</td><td>0.247 → 1</td><td>Pointed wings</td><td>0.410 → 0</td><td>Four legs</td><td>0.450 → 1</td></tr><tr><td>Muscular body</td><td>0.405 → 0</td><td>Arachnid</td><td>0.498 → 0</td><td>Wide, flat head</td><td>0.422 → 0</td><td>Long, thinneck</td><td>0.619 → 1</td></tr></table>
+
+Figure A12. More examples of the kind of attributes intervened on in the last layers versus an intermediate layer (chosen according to the severity of the misclassification). Intermediate layers have more general attributes.
+
+![](images/6f54cc1cb092cc8bfe7ebb43f93d9af0601e030d03e0714234461c203b84fb57.jpg)  
+Figure A13. t-SNE plots of the embeddings obtained from the backbones of the models mentioned on the left of each plot on ImageNet100. On most models the clusters separate out only at the final block; in FoCA CBM, it happens gradually over blocks.
+
+![](images/563c83a3e41dd60eaccca397b67cd0e5d0147054e7391879c2aa387f600ce105.jpg)  
+Figure A14. t-SNE plots of the embeddings obtained from the backbones of the models mentioned on the left of each plot on AwA2. On most models the clusters separate out only at the final block; in FoCA CBM, it happens gradually over blocks.
+
+![](images/73333248f31cefe67715240b05e8cfa980610af538380fb6d0b367e0624dfda6.jpg)  
+Figure A15. t-SNE plots of the embeddings obtained from the backbones of the models mentioned on the left of each plot on CIFAR100.
+
+4
+
+![](images/181d4eade7e3bf9b811d5e687ad589432d09ea0745ddaba82b547d07d5521457.jpg)
+
+![](images/04a452cc7c0e5427aef1a39497d36aed7cec3100de14750604e6935498c6c65e.jpg)
+
+![](images/a5a38dfe6ed779d6ca6aec5706570e1ad0cc99851c4e5d94d32c72608d556cec.jpg)
+
+![](images/c8f07b70ef8a7929ddeda6c43c9abae2d24c49701bf879a9d215512dca3e7d25.jpg)
+
+'chewteeth','hors',walks','strong',quadrapedal',vegetation' 'grazer','newworld','oldworld','plains','fields','ground','timid'}
+
+4
+
+![](images/151635e8d6246f51b9655c92e202830ad25f55725d157d90315f168505ef2662.jpg)
+
+![](images/b3ac0c4ff39ecc75a16cb1fd2c836d4b93e90ccb4a881112926a1c44d9b04641.jpg)
+
+![](images/f39497d617a02b29ce972111d97ea0ea77a930764e9aecbc79de9b428c0cf118.jpg)
+
+![](images/df3089b46de7e045e507d3771e5f954f58464033540a6b274bf3156edb2dd700.jpg)
+
+'tail','chewteeth',walks','strong','muscle',quadrapedal','vegetation', 'grazer','newworld','oldworld','plains','fields','ground','timid'}
+
+3
+
+![](images/8a673386ff6d78227dbf9100a7928963f98fcf083a3131e01bcad72fe63bbee4.jpg)
+
+![](images/a32aba12eb457b572c432a658cc045ab80a5812252caa851ab59c2c8b7ba64d4.jpg)
+
+![](images/7f4766505c47296f7aad7a7407c4048d03fc95a36c18682f8041771b729c54a1.jpg)
+
+{'antelope','moose','chimpanzee'}{'furry','toughskin','big','longleg', 'tail','chewteeth',walks','fast,'strong','muscle','quadrapdal', 'vegetation','forager','newworld','oldworld','mountains','ground', 'timid','group}
+
+3
+
+![](images/f65500da1c8f97edbee5d267071b5ae1d8f59547b2faa9c2c2a2f31db3968fc6.jpg)
+
+![](images/e136b901ad9d3d019f8bc847a4bdacd26c0864bc945213347b9263c936741de7.jpg)
+
+![](images/e24b0151b3977a08206afa1aeddad38774a9e7f8a78a29eedb7955cdf142595c.jpg)
+
+![](images/7556f0e1fab9bd71a018f4dd117041ad51f6c8a5d2cbc8cfbb9ede5a03b2b3e6.jpg)
+
+{'antelope','moose','ox'}{'furry','toughskin','big','hooves','tail', 'chewteeth','horns',walks','strong','muscle','quadrapedal', ‘vegetation','grazer','newworld','odworld','plains','fields','grod', 'timid'}
+
+![](images/912cf36c6769cdb4437e281f6965d30cb18d76afc2f083d1550f517cf5f142d0.jpg)
+
+![](images/e8afc456c452534cbbb2ae0f399e0005265ab32ee988069c300b764ecc3798fe.jpg)
+
+![](images/00ec22e8a95f6d2405eb72beb7bcbc75069b4a27308e581e8930dda9f5f9a0c3.jpg)
+
+![](images/d1b4988c63564879f50a775a431118e97b928a2f6de9f8f02305b372afc8bdcf.jpg)
+
+![](images/3969074bf0296ac1b6f3549f48a07e338ed95aa6aedfa1584603eb118aeab52a.jpg)
+
+'chewteeth','horns','walks','fast,'strong','muscle','quadrapedal', 'vegetation','forager','grazer','newworld','oldworld','plains','fields', 'mountains','ground','timid','group'
+
+CIFAR100
+
+4
+
+![](images/df41e968c52543d3bb14ee118c7ec83ec9ebade6c4acc202b9edddb976b6294a.jpg)
+
+![](images/aef076be6ca482e5f769dad7bc3b7f2bce7b2a88ce97452a9da4ca5e7f013870.jpg)
+
+![](images/ff504f9e92cab441d12416346bdfc15c3ae9275fc4706f7781113d94e3b6ad5e.jpg)
+
+![](images/9e275254c1e34b8006ee095239448db5c2f1f04a23aa323b7e79fafd1567f0cb.jpg)
+
+4
+
+![](images/7646839836cf267cd8cddd3efef33d144dad2173c1516b3cacb354c44113b7e5.jpg)
+
+![](images/4e20821e04caf9a8578d5c2bcb0aeb10b533f1e40632d61e08033dd20c2bbaca.jpg)
+
+![](images/a708db754df692bf220d996adceabcaaf5fb84492dcde03a76d5f9f41c04d892.jpg)
+
+![](images/76cc634ca9b80d11a9e18b4cb3ef66c0122381e3697f2630c6a1fb9a090973de.jpg)
+
+3
+
+![](images/d3e2e6894e70992dcc5267585e2c2c098dfe13793b893802310362cbb9c340d5.jpg)
+
+![](images/f0c371f06b736f42937b74e004ff3792d7337c1439d94c8851185567d2f3d78f.jpg)
+
+![](images/7a3d149a767cf82d7f053fef4fbd385a117fc6676442fa0221ca2444c3769001.jpg)
+
+![](images/61d1d22c46c9b82f5b49c53b323a882a9636fe32322e0b22658db9cbd3110f0c.jpg)
+
+![](images/f12c5989a89b97891c9d86f31e24d21a80166d5736b4523bcf6b58a3f0ff024b.jpg)
+
+![](images/b834a5d15ddd6c153bc81d743a0e44b06ffe0ec8bbfa1b6c01610b5dea7ee4f6.jpg)
+
+![](images/deaeef4bca09be6a15af143995ef9840b49c0ae01a67320344abbf459a60372e.jpg)
+
+![](images/aa639fed218714c14280b5da4ce493563801d519f701e715b57029f6b8a79c1f.jpg)
+
+![](images/e38bae362bff0a19e7063309bedc0e9495a7f46b35cac1bbbfcdf18282c0b408.jpg)
+
+![](images/567b161d6387389750fd17e2327eb0efd212cf42f0c1917f129bd0d0b34b693c.jpg)
+
+![](images/7e2165ee3ac4310053bf56c6deb39fec2fa71474e7447bc0d652ddcb30f68d0d.jpg)
+
+![](images/8682fb385e69cdf39d3909f18697d2d53a53d168df50fcb20d7eaf6ecfc68fb9.jpg)
+
+'flower','person','leaves']
+
+‘person','leaves','smooth, green skin','fruit'}
+
+Imagenet100
+
+![](images/c7bf993872c84b36b7c42d4e35586b55b4bc60ecb9af39fe17ee7bca9390cd25.jpg)
+
+![](images/ea07dcb871914efa67307930f67019d632cb19a18d13cc34ea796e1c955b5ee9.jpg)
+
+![](images/3f18009f330769bd93b9d5816c233503271ca3154fe3ad25331d2791864c8649.jpg)
+
+![](images/6f94a284b0b90f67535dee0a3cc08584efcfd72a4a50e408860419d5398f0d8f.jpg)
+
+![](images/af0710ae39dc6570b7e9a0c2b0c00802e6643fa01adc4c75fab07ddf01ea939e.jpg)
+
+![](images/454e5ba978c3d1c45b11d0f99e1ed46b57ef3f6fd2d3ebf07ce1a002fa44dd2b.jpg)
+
+![](images/d60a547631108c9ecf3c80d60ab2fe378996e0aeec7175d80eb375af5b000311.jpg)
+
+![](images/8759bf2cb4c60437531f880e02d560258aecb52a6efef930b5670d03ed92079e.jpg)
+
+![](images/fd62bba3c0b08136679debed5659ad47ca75b5e022d0bbd0fa2b908f586bd7be.jpg)
+
+![](images/a4a537e12310d71d9cfa2dcf35bbaafa42dc8beac529560469d2b1b5d21efec2.jpg)
+
+![](images/e8b24b19fbfa236fb9101c6ddb7288869db8154b50b66890f47756029c0eea70.jpg)
+
+![](images/5eaf02cbfa8b9fb58d44208df3ec92d586418114dbccd07b2e36373854905e9c.jpg)
+
+![](images/cb5f3fabc7554d2429ff2119dd7375a673054a3b266dfe91e44dcd24dc6ca2f3.jpg)
+
+![](images/5c06ca3e463f8ac06472d4119ee2605f8e4bcde5833e308e60365066a1c69ab0.jpg)
+
+![](images/71f6ec5dc08e85982c4c2eed3bc88d59676100982cd0478e12094c3c6f78c319.jpg)
+
+![](images/30ef0e6926db0fd9d5a78320b93571028eec9ac4a8450b71ce388819d4da3850.jpg)
+
+lizard',rocks''aong,thick tail
+
+![](images/24b3a28d7537c0ba90c6a4248241bbda2a1027df609a4a916e50be0cbf38c401.jpg)
+
+![](images/bd8c6a0eafb8a137e96be4ff928484c8094c7f4837cefc189a2c7c0ab984a6b1.jpg)
+
+![](images/00763c8ba7bf95201c09ea27ed3fb4554bcc9ca5f3a8bc3049fd2f389fc5e602.jpg)
+
+![](images/f3e7e5ec08580d2ee22a0251a971b472d60c437983d638cc2662e107503d3326.jpg)
+
+desert,'alizard','sand,rocks','along,thick tail]
+
+Figure A16. More examples of formal concepts (extent (classes) - intent (attributes)) from the lattices built for the AwA2, CIFAR100 and ImageNet100 datasets. The shown formal concepts have parent-children relations denoted by the arrows. The level that the formal concept belongs to is provided at the top left of each formal concept.

@@ -19,20 +19,18 @@
   </header>
   <nav class="site-nav" aria-label="主导航">
     <a class="nav-link" href="../index.html">头版</a>
-<a class="nav-link active" href="../issues/2026-06-05.html">今日速递</a>
+<a class="nav-link" href="../issues/2026-06-06.html">今日速递</a>
 <a class="nav-link" href="../pages/catalog.html">论文目录</a>
 <a class="nav-link" href="../pages/timeline.html">时间线</a>
   </nav>
   <main><article class="paper-detail issue-detail">
   <div class="paper-main">
     <div class="kicker">Daily issue · 2026-06-05 · CCF A/B 会议优先</div>
-    <h1 class="paper-headline">6 月 5 日：Geometry-Preserving Unsupervised Alignment for Heterogeneous 等视觉表征主线更新</h1>
-    <p class="dek">本期聚焦通用视觉表征、视觉语言预训练与视频自监督中最值得跟进的论文，并保留 CCF A/B、OpenReview 与 arXiv 状态线索。</p>
+    <h1 class="paper-headline">6 月 5 日：Geometry-Preserving Unsupervised Alignment for Heterogeneous 等视觉表征论文归档</h1>
+    <p class="dek">本页按日期归档近期论文，保留优先级、主题、来源与方法线索，方便回看同一批工作的研究脉络。</p>
     <div class="feature-body">
-      <p class="lead dropcap">先读 GPUA 和 KODA：一个回答“VFM 的几何特征如何接到 VLM 语义空间”，另一个回答“两个 VLM 表征差异到底体现在哪些样本簇和模态交互上”。第二步读 The Loss Is Not Enough，它从理论上提醒 contrastive loss 本身不足以保证想要的 latent geometry，和 KODA 的表征诊断可以并读。第三步读 BabyCL、RePercENT、ChannelTok，分别对应流式视觉语言自监督、多模态解耦表示、视觉 tokenizer。Stateful Visual Encoders、FINO、IN2R、VideoCUPS 更偏系统/适配/场景理解，建议按是否在做多图 VLM、科学域适配、网页图文对齐或视频无监督分割来精读；Video2LoRA、Hyper-ICL、M3Eval 扫读即可。</p>
+      <p class="lead dropcap">先读 Geometry-Preserving Unsupervised Alignment for Heterogeneous。用无监督正交映射连接 VFM 几何空间与 VLM 语义空间，是今天最直接服务通用视觉表征融合的论文。 其余论文按 P1/P2 与主题顺序扫读，重点看方法图、消融设置和是否能迁移到通用视觉表征。</p>
       <h2>论文索引</h2>
-      <table class="compact-table"><thead><tr><th>优先级</th><th>论文</th><th>类型</th><th>相关性</th><th>一句话理由</th></tr></thead><tbody><tr><td>P0</td><td>Geometry-Preserving Unsupervised Alignment for Heterogeneous Foundation Models</td><td>arXiv + ICML 2026</td><td>高</td><td>用无监督正交映射连接 VFM 几何空间与 VLM 语义空间，是今天最直接服务通用视觉表征融合的论文。</td></tr><tr><td>P0</td><td>KODA: Contrastive Representation Comparison and Alignment for Vision-Language Foundation Models</td><td>arXiv</td><td>高</td><td>给 CLIP/SigLIP 等 VLM 表征提供可解释的差异发现和对齐工具，适合作为 foundation feature 诊断方法。</td></tr><tr><td>P0</td><td>Continual Visual and Verbal Learning Through a Child&#x27;s Egocentric Input</td><td>arXiv</td><td>高</td><td>BabyCL 用单遍时间流、视觉表征学习和图文对比损失模拟真实连续经验，比离线 shuffle 训练更接近通用学习设定。</td></tr><tr><td>P1</td><td>The Loss Is Not Enough: Sampling Conditions and Inductive Bias in Contrastive Representation Learning</td><td>arXiv + ICML 2026</td><td>高</td><td>从正样本采样 support 条件解释 contrastive SSL 何时能恢复 latent geometry，补足经验方法的理论边界。</td></tr><tr><td>P1</td><td>RePercENT: Scaling Disentangled Representation Learning Beyond Two Modalities</td><td>arXiv</td><td>高</td><td>面向多于两种模态的自监督解耦表示，直接处理共享因子与模态特异因子的可扩展分解。</td></tr><tr><td>P1</td><td>ChannelTok: Efficient Flexible-Length Vision Tokenization</td><td>arXiv</td><td>高</td><td>把 latent channel 当视觉 token，训练时随机丢尾通道形成按语义重要性排序的可变长视觉 tokenizer。</td></tr><tr><td>P2</td><td>Stateful Visual Encoders for Vision-Language Models</td><td>arXiv + project</td><td>中高</td><td>让视觉编码器在多图/多轮中带状态，解决变化信息在进入 LLM 前被独立编码抹平的问题。</td></tr><tr><td>P2</td><td>Scene-Centric Unsupervised Video Panoptic Segmentation</td><td>arXiv + CVPR 2026</td><td>中高</td><td>VideoCUPS 用无监督深度、运动和视觉 cues 生成时序一致伪标签，是视频无监督场景理解的重要扩展。</td></tr><tr><td>P2</td><td>Who Needs Labels? Adapting Vision Foundation Models With the Metadata You Already Have</td><td>arXiv</td><td>中高</td><td>FINO 用元数据指导自监督适配 VFM，虽然实验偏科学域，但“无标签元数据适配”方法可迁移。</td></tr><tr><td>P2</td><td>Intra-Modal Neighbors Never Lie: Rectifying Inter-Modal Noisy Correspondence via Graph-Based Intra-Modal Reasoning</td><td>arXiv</td><td>中高</td><td>面向网页图文噪声配对，用同模态邻域生成软监督目标，对大规模 image-text 预训练很实用。</td></tr><tr><td>P3</td><td>Video2LoRA: Parametric Video Internalization for Vision-Language Models</td><td>arXiv</td><td>中</td><td>把视频编码为 LoRA 参数，让 VLM 查询时不再携带视觉 token，适合关注长视频 token 压缩的人扫读。</td></tr><tr><td>P3</td><td>Hyper-ICL: Attention Calibration with Hyperbolic Anchor Distillation for Multimodal In-Context Learning</td><td>arXiv + ICML 2026</td><td>中</td><td>用 logit/attention 校准和 hyperbolic anchor distillation 复现多模态 demonstrations 的效果，偏 MLLM 推理效率。</td></tr><tr><td>扫读</td><td>M$^3$Eval: Multi-Modal Memory Evaluation through Cognitively-Grounded Video Tasks</td><td>arXiv</td><td>中</td><td>长视频多模态记忆 benchmark，揭示模型难以保持并行视频流的解耦记忆和时间来源归因。</td></tr></tbody></table>
-      <h2>主线阅读</h2>
       <div class="paper-list issue-list"><article class="paper-card" data-category="ICML 2026" data-priority="P0" data-date="2026-06-05" data-title="geometry-preserving unsupervised alignment for heterogeneous foundation models" data-keywords="geometry-preserving unsupervised alignment for heterogeneous foundation models geometry-preserving unsupervised alignment for heterogeneous icml 2026 p0 2026-06-05 arxiv + icml 2026 用无监督正交映射连接 vfm 几何空间与 vlm 语义空间，是今天最直接服务通用视觉表征融合的论文 高相关；详见方法、贡献和实验边界。">
   <a class="paper-thumb paper-thumb-text" href="../papers/2606.04385.html">
     <img src="../assets/mineru/2606.04385/images/11c80cf403c8c1cf964e0cffe1a7adc4bd37e9149283fd38400e9e9e7865420b.jpg" alt="Geometry-Preserving Unsupervised Alignment for Heterogeneous figure"><span>P0</span>
@@ -192,18 +190,17 @@
     </div>
   </div>
   <aside class="paper-side">
-    <div class="side-box"><h4>今日重点</h4><p>TextTeacher、MDM、EvoVid、Ablate-to-Validate。</p></div>
-    <div class="side-box"><h4>会议口径</h4><p>只把 CCF A/B 放进主提醒；临近截止或 CCF C 仅记录。</p></div>
     <div class="side-box"><h4>阅读重点</h4><p>先看 P1/P2 与方法图，再扫状态变化和边界案例。</p></div>
+    <div class="side-box"><h4>会议口径</h4><p>主提醒只保留 CCF A/B；CCF C 与过期截止仅作状态记录。</p></div>
   </aside>
 </article></main>
-  <aside class="conf-float" data-conf-reminder="2026-06-05-main-ddl" aria-label="CCF A/B 主投稿提醒">
+  <aside class="conf-float" data-conf-reminder="2026-06-06-main-ddl" aria-label="CCF A/B 主投稿提醒">
   <button class="conf-close" type="button" aria-label="关闭会议提醒">×</button>
   <details open>
     <summary>CCF A/B 主投稿提醒</summary>
     <div class="conf-list"><a class="conf-item " href="https://github.com/ccfddl/ccf-deadlines/blob/main/conference/AI/aaai.yml">
   <span><b>AAAI 2027</b><em>CCF A · Main paper submission</em></span>
-  <strong>52 天</strong>
+  <strong>51 天</strong>
   <small>2026-07-27 · CCF DDL: abstract 2026-07-20；进入 1 个月窗口后重点提醒。</small>
 </a></div>
   </details>
@@ -216,7 +213,7 @@
   (() => {
     const box = document.querySelector('[data-conf-reminder]');
     if (!box) return;
-    const key = `visualSslConfReminderClosed:${box.dataset.confReminder || '2026-06-05-main-ddl'}`;
+    const key = `visualSslConfReminderClosed:${box.dataset.confReminder || '2026-06-06-main-ddl'}`;
     try {
       if (localStorage.getItem(key) === '1') box.hidden = true;
     } catch (err) {}

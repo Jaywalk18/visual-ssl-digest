@@ -19,39 +19,39 @@
   </header>
   <nav class="site-nav" aria-label="主导航">
     <a class="nav-link" href="../index.html">头版</a>
-<a class="nav-link" href="../issues/2026-06-05.html">今日速递</a>
+<a class="nav-link" href="../issues/2026-06-06.html">今日速递</a>
 <a class="nav-link" href="../pages/catalog.html">论文目录</a>
 <a class="nav-link" href="../pages/timeline.html">时间线</a>
   </nav>
   <main><article class="paper-detail">
   <div class="paper-main">
     <div class="kicker">ICML 2026 · P1 · 2026-06-05</div>
-    <h1 class="paper-headline">The Loss Is Not Enough：通用视觉 SSL 中正样本如何构造仍是核心问题，这篇给对比学习失败模式提供了比“loss 不够好”更具体的解释</h1>
-    <p class="dek">指出 contrastive loss 的全局最优本身不足以保证等距 latent recovery，正样本 conditional support 与归纳偏置会决定学到的几何。</p>
-    <p class="byline"><strong>The Loss Is Not Enough: Sampling Conditions and Inductive Bias in Contrastive Representation Learning</strong>　Justinas Zaliaduonis, Patrick Putzky, Till Richter, Sergios Gatidis；机构信息 arXiv 元数据未列出。　arXiv + ICML 2026　<a href="https://arxiv.org/abs/2606.04280">原文链接</a></p>
+    <h1 class="paper-headline">The Loss Is Not Enough：它和通用视觉自监督的关系在于：从正样本采样 support 条件解释 contrastive SSL 何时能恢复 latent geometry，补足经验方法的理论边界</h1>
+    <p class="dek">高相关；详见方法、贡献和实验边界。</p>
+    <p class="byline"><strong>The Loss Is Not Enough: Sampling Conditions and Inductive Bias in Contrastive Representation Learning</strong>　arXiv + ICML 2026　<a href="https://arxiv.org/abs/2606.04280">原文链接</a></p>
     <div class="paper-facts">
       <span><b>编号</b>2606.04280</span>
       <span><b>优先级</b>P1</span>
       <span><b>类别</b>ICML 2026</span>
       <span><b>会议</b>arXiv + ICML 2026</span>
-      <span><b>方法</b>用 measure-theoretic framework 定义正样本采样的 diversity/support 条件，分析 contrastive learning 何时能恢复 latent geometry，并提出 support-corrected InfoNCE 作为理论修正。</span>
+      <span><b>方法</b>从正样本采样 support 条件解释 contrastive SSL 何时能恢复 latent geometry，补足经验方法的理论边界</span>
       <span><b>来源</b>arXiv / OpenReview</span>
     </div>
     <div class="feature-body">
-      <p class="lead dropcap">先说结论。通用视觉 SSL 中正样本如何构造仍是核心问题，这篇给对比学习失败模式提供了比“loss 不够好”更具体的解释。 指出 contrastive loss 的全局最优本身不足以保证等距 latent recovery，正样本 conditional support 与归纳偏置会决定学到的几何。</p>
+      <p class="lead dropcap">先说结论。它和通用视觉自监督的关系在于：从正样本采样 support 条件解释 contrastive SSL 何时能恢复 latent geometry，补足经验方法的理论边界。 高相关；详见方法、贡献和实验边界。</p>
       <figure class="full-fig"><img src="../assets/mineru/2606.04280/images/61cfcefd20a983d6c46b2f6966904f1f83d6e521f17868c9094aec4ff2cc12ab.jpg" alt="Figureure 1 · Overview of contrastive learning and the role of sampling diversity an"><figcaption><b>Figureure 1 · Overview of contrastive learning and the role of sampling diversity an</b><span class="fig-en">Figure 1. Overview of contrastive learning and the role of sampling diversity and inductive bias. The generative process $g$ maps latent variables to observations, and the encoder $f$ learns to recover the latent structure. Here $f _ { 1 }$ denotes a low inductive bias encoder (e.g., MLP) and $f _ { 2 }$ a high inductive bias encoder (e.g., a model of the inverse process). Orange dot indicates the anchor point; green dots are co-occurring (positive) samples. Border colors on images match their latent positions. (a) Diversity holds: $f _ { 1 }$ recovers geometry. (b) Diversity violated (blue band): $f _ { 1 }$ fails. (c) Diversity violated: $f _ { 2 }$ recovers the latent structure despite restricted sampling diversity.</span><span class="fig-zh">这张图概括 The Loss Is Not Enough 的整体方法流程。阅读时先看模块之间传递的训练信号，再看作者如何把目标拆成可优化的子问题。</span></figcaption></figure>
 <figure class="full-fig"><img src="../assets/mineru/2606.04280/images/77aa6af5c8ab7508bc90e2cdf194cdd744bbafeafd4c8d7ce48bcd933328b7ce.jpg" alt="Figureure 3 · Linear probe accuracy on CIFAR-10 by architecture and augmentation reg"><figcaption><b>Figureure 3 · Linear probe accuracy on CIFAR-10 by architecture and augmentation reg</b><span class="fig-en">Figure 3. Linear probe accuracy on CIFAR-10 by architecture and augmentation regime. Individual runs shown as points; bars indicate mean ±1 std. The “All” regime best approximates the diversity condition and yields highest accuracy across all architectures.</span><span class="fig-zh">这张图概括 The Loss Is Not Enough 的整体方法流程。阅读时先看模块之间传递的训练信号，再看作者如何把目标拆成可优化的子问题。</span></figcaption></figure>
       
       <h2>核心问题</h2>
-      <p>通用视觉 SSL 中正样本如何构造仍是核心问题，这篇给对比学习失败模式提供了比“loss 不够好”更具体的解释。</p>
+      <p>它和通用视觉自监督的关系在于：从正样本采样 support 条件解释 contrastive SSL 何时能恢复 latent geometry，补足经验方法的理论边界。</p>
       <h2>方法拆解</h2>
-      <p>用 measure-theoretic framework 定义正样本采样的 diversity/support 条件，分析 contrastive learning 何时能恢复 latent geometry，并提出 support-corrected InfoNCE 作为理论修正。</p>
+      <p>从正样本采样 support 条件解释 contrastive SSL 何时能恢复 latent geometry，补足经验方法的理论边界</p>
       <h2>主要贡献</h2>
-      <p>指出 contrastive loss 的全局最优本身不足以保证等距 latent recovery，正样本 conditional support 与归纳偏置会决定学到的几何。</p>
+      <p>高相关；详见方法、贡献和实验边界。</p>
       <h2>实验看点</h2>
-      <p>摘要称 synthetic benchmarks 验证 identifiability prediction，并展示 restricted conditionals 下非正交映射可取得更低 asymptotic contrastive loss。</p>
+      <p>实验部分建议重点看两类证据：一是作者是否把方法收益和更强数据、更长训练、更大模型区分开；二是跨模型、跨数据或跨任务迁移是否还能保留同样趋势。</p>
       <h2>局限与读法</h2>
-      <p>理论设定与真实图像增强、语义多样性和大规模 batch 训练之间仍有 gap；实际 SSL pipeline 需要把该条件翻译成可操作的数据采样/增强策略。</p>
+      <p>这篇论文的结论需要结合任务设置、训练数据规模和消融实验一起看；不要只凭单个指标判断它对通用视觉表征的价值。</p>
     
     </div>
   </div>
@@ -61,13 +61,13 @@
     <div class="side-box"><h4>原文</h4><p><a href="https://arxiv.org/abs/2606.04280">https://arxiv.org/abs/2606.04280</a></p></div>
   </aside>
 </article></main>
-  <aside class="conf-float" data-conf-reminder="2026-06-05-main-ddl" aria-label="CCF A/B 主投稿提醒">
+  <aside class="conf-float" data-conf-reminder="2026-06-06-main-ddl" aria-label="CCF A/B 主投稿提醒">
   <button class="conf-close" type="button" aria-label="关闭会议提醒">×</button>
   <details open>
     <summary>CCF A/B 主投稿提醒</summary>
     <div class="conf-list"><a class="conf-item " href="https://github.com/ccfddl/ccf-deadlines/blob/main/conference/AI/aaai.yml">
   <span><b>AAAI 2027</b><em>CCF A · Main paper submission</em></span>
-  <strong>52 天</strong>
+  <strong>51 天</strong>
   <small>2026-07-27 · CCF DDL: abstract 2026-07-20；进入 1 个月窗口后重点提醒。</small>
 </a></div>
   </details>
@@ -80,7 +80,7 @@
   (() => {
     const box = document.querySelector('[data-conf-reminder]');
     if (!box) return;
-    const key = `visualSslConfReminderClosed:${box.dataset.confReminder || '2026-06-05-main-ddl'}`;
+    const key = `visualSslConfReminderClosed:${box.dataset.confReminder || '2026-06-06-main-ddl'}`;
     try {
       if (localStorage.getItem(key) === '1') box.hidden = true;
     } catch (err) {}

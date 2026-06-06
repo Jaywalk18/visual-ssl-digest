@@ -1,0 +1,394 @@
+# Balancing Image Compression and Generation with Bootstrapped Tokenization
+
+Haozhe Chi 1 Jinghan Li 1 Hao Jiang 1 Wu Sheng 1 Yi Ma 2 Jing Wang 2 Yadong Mu 1∗ 1Peking University, 2Central Media Technology Institute, Huawei
+
+# Abstract
+
+Despite progress in image tokenization, standard methods encode redundant information by mixing all granularities within each token, thus redundancy persists between tokens. The mix of information of different granularity also complicates the training of generators. This paper introduces SelfBootTok, a method that resolves this by cleanly decomposing information into global and local token groups. Through self-bootstrapped learning, the model predicts local details exclusively from global tokens, shifting the burden of visual details from the generator to the tokenizer. Consequently, our generator is far more efficient, requiring only global tokens and reducing computation by approximately 40%, while delivering superior reconstruction and generation. Moreover, this paradigm scales elegantly: by leveraging more data or parameters to self-supervise local representation learning, SelfBootTok achieves a new state-of-the-art gFID score of 1.56 using only 64 tokens.
+
+# 1 Introduction
+
+Recent advancements in diffusion-based image generation, exemplified by the Diffusion Transformer (DiT) [1] and flow matching [2, 3, 4], have driven significant progress. Beyond diffusion models, other generative paradigms like masked generative models and autoregressive visual models have seen notable developments. For instance, VAR [5] introduces next-scale prediction, where autoregressive visual models surpass diffusion models. Additionally, MAE-tok [6] and MAR [7] have improved masked generative modeling, boosting downstream generation performance. Multi-scale designs, as demonstrated by HieraTok [8], VAR [5], and FlowAR [9], further enhance performance. In parallel with quality improvements, recent studies have focused on enhancing generation efficiency. For example, Lightning-DiT [10] accelerates training by optimizing latent representations for image generation, addressing the reconstruction-generation tradeoff. Similarly, REG [11] accelerates SiT [12] training. As generative frameworks advance, image tokenization has become essential for enabling multimodal understanding and generation through compact latent representations. Early methods like VQ-GAN [13] and VQ-VAE [14] encoded images as 2D grid latents, preserving spatial relationships. However, the need for a strict one-to-one mapping between image patches and tokens is unclear, driving the exploration of 1D sequential tokenizers, which offer higher compression while retaining key semantic and structural information.
+
+The emergence of 1D image tokenizers to encode images into compact latent sequences provides a promising alternative to conventional 2D grid representations. The key challenge lies in capturing both global semantics and local details within an extremely limited number of tokens. Early efforts such as Titok [5] demonstrated that an image can be effectively represented by as few as 32 onedimensional tokens, establishing the feasibility of this paradigm. Subsequent developments, including Flextok [19], TA-Titok [20], Flowtok [21], and GigaTok [17], have progressively enhanced token efficiency, flexibility, and semantic richness. Despite these advancements, existing methods still exhibit redundant token interactions and overlap between global and local representations, which constrain scalability and generation efficiency.
+
+![](images/363da288836764ca15608e28af50d80a866d8aa5a7797b48c162068504837205.jpg)
+
+<details>
+<summary>flowchart</summary>
+
+```mermaid
+graph TD
+    A["Original 1D tokenization"] --> B["Image Enc"]
+    B --> C["Image Dec"]
+    C --> D["Generator"]
+    D --> E["Compression"]
+    E --> F["Generation"]
+    
+    G["1D tokenization with global-local decomposition"] --> H["Image Enc"]
+    H --> I["Decoding process"]
+    I --> J["Generator"]
+    J --> K["Local info inject"]
+    
+    L["Self-bootstrapped 1D tokenization with global-local decomposition"] --> M["Image Enc"]
+    M --> N["Decoding process"]
+    N --> O["Generator"]
+    O --> P["Local info inject"]
+    
+    style A fill:#f9f,stroke:#333
+    style G fill:#f9f,stroke:#333
+    style L fill:#f9f,stroke:#333
+```
+</details>
+
+Figure 1: Illustration of our self-bootstrapped learning paradigm. Compared to classical 1D image tokenizers [15, 16, 17] and recent approaches incorporating local detail injection [8, 18], our method employs a global-local decomposition to achieve efficient hierarchical representation learning and adopts a self-bootstrapped strategy to enable both efficient generation and scalable training.
+
+In this work, we propose SelfBootTok. It improves the balance at various aspects between image compression and generation, by decomposing conventional visual tokens into high-level semanticsbased (i.e., global tokens) and fine-grained visual information-related (i.e., local tokens). The conceptual comparison with existing works is illustrated in Fig. 1. The proposed new model has several advantages:
+
+1. Simpler and more efficient generator: Traditionally, visual generators are required to produce all levels of visual details at once when fed with prompts. In contrast, our method bootstraps finegrained visual information directly from global tokens using unlabeled images, as shown in Fig. 1, thereby bypassing the need for extensive text-image pairs. This scheme essentially moves part of the generation process into the compression pipeline. The generator can focus solely on learning high-level semantics from a compact token set, requiring significantly less data and complexity.   
+2. Scalable image tokenizer: Our tokenizer employs a self-supervised learning strategy to reconstruct local image information from global tokens. It utilizes a hybrid of 1D and 2D local tokens to capture features at varying granularities. A novel optimal transport alignment is introduced to compactly map these 2D features into the 1D token sequence. This paradigm allows the tokenizer to scale efficiently using more data or parameters. This decomposition also minimizes token-level redundancy, thereby reducing the computational burden on the subsequent generator and enhancing the generation efficiency.   
+3. Parallel optimization of scaled-up tokenizers and generators: This framework enables efficient scaling by sharing only a set of global tokens. After learning these tokens, the global component of the tokenizer is frozen. The generators and the larger, bootstrapped local components of the tokenizers can then be trained in parallel. Crucially, this decouples their design, allowing the tokenizer size to be varied without requiring the generators to be re-trained.
+
+Comprehensive experiments demonstrate that our method achieves state-of-the-art generation performance among 1D tokenizers and exhibits strong scalability of the self-bootstrapping design.
+
+Moreover, we propose a training strategy that scales local aligners while generating global tokens only once, reducing total computational cost by approximately 40% and training time by about 54%.
+
+# 2 Related work
+
+![](images/eafd212f26df609e087872c4df4a80146726243d489629a3b046d07d45488a5a.jpg)
+
+<details>
+<summary>natural_image</summary>
+
+Collage of diverse images including a dog, flowers, coastal landscapes, and animals (no text or symbols)
+</details>
+
+Figure 2: ImageNet-1K 256×256 generation results of generative models trained with 64 tokens. We include a versatile classes of images such as animals, plants and food. Our method achieve pleasant generation outcomes with efficient token representation and local details.
+
+# 2.1 Image tokenization
+
+Image tokenization methods can be broadly categorized by their latent space type (discrete vs. continuous) and spatial structure (2D grid vs. 1D sequence). For discrete modeling, Vector Quantization (VQ) frameworks [14, 13, 22] learn a codebook of discrete visual tokens. In contrast, continuous models such as KL-VAEs [23] employ the reparameterization trick to constrain latents to Gaussian priors. Most early works, including VQ-VAE and SD-VAE [24], adopt 2D grid latents to preserve spatial structure, a design that underpins diffusion-based models like Stable Diffusion. While highly effective, these 2D formulations impose limitations in compactness and efficiency, prompting recent research into 1D image tokenizers that represent images as highly compressed sequential embeddings.
+
+The study of 1D image tokenization began with Titok [15], which demonstrated effective reconstruction using only 32 tokens by representing images as short 1D sequences. Titok uses a twostage training pipeline for discrete 1D VQ modeling, leveraging codes from pretrained models like MaskGIT-VQGAN [25]. Subsequent works have explored various directions, including Flowtok and TA-Titok [21, 20] for text-to-image generation, Flextok and OneDpiece [19, 26] for variable-length sequences, and GigaTok [17] for combining 1D and 2D structures. Recent work [27] further investigates 1D sequences for fine-grained image editing. To improve tokenization quality, SoftVQ [16] introduces a differentiable soft vector quantization mechanism, and MAE-Tok [6] leverages masked autoencoding for semantically enriched latent spaces with strong reconstruction fidelity. However, none of these tokenizers explicitly differentiate or exploit the global-local information. To address this, we propose SelfBootTok, a 1D tokenizer that models global-local interactions for compact, efficient image representation.
+
+# 2.2 Generative Models
+
+Generative models are critical for evaluating image tokenizers in downstream generation tasks, and can be broadly divided into diffusion-based and autoregressive approaches. Diffusion-based models generate images by gradually converting Gaussian noise into structured latent codes. Representative methods include DiT, SiT, and MAR [1, 12, 7]. DiT adopts a Transformer backbone and models diffusion via stochastic differential equations. SiT leverages stochastic interpolants and optimizes the velocity field of a probability flow ODE. MAR unifies diffusion and autoregression within an encoder-decoder Transformer. Lightning-DiT [10] further boosts efficiency via a lightweight design that balances reconstruction and generation quality. Autoregressive models follow the next-token prediction paradigm from LLMs, enabling unified multimodal generation. Methods incorporating masked modeling [25, 28, 29, 15] and next-scale prediction [5, 30] further improve representation and generation quality.
+
+# 2.3 Self-Bootstrapped and Scaling Paradigms in Multimodal Learning
+
+Self-bootstrapping has proven effective for multimodal learning by fully exploiting model capacity. For instance, BLIP-2 [31] introduced it for vision–language fusion, OK-VQA [32] and VILA [33] applied it to visual question answering and model refinement, and VideoJudge [34] extended it to scalable video assessment. Further works [35, 36] validated its potential in data-efficient reasoning and 3D scene understanding. Nevertheless, its application to image tokenization remains largely unexplored. The success of scaling in LLMs has motivated extensive research in multimodal understanding and generation. In visual understanding, recent studies have focused on scaling vision encoders within multimodal LLMs [37, 38, 39, 40, 41, 42, 43, 44, 45], with InternVideo2 [46] and CuMo [47] adopting efficient scaling and sparsely-gated Mixture-of-Experts layers. For image understanding, SViT [48], LongLLaVA [49], and LLaVA-scale [50] investigate backbone scaling, while AuroraCap [51] and LLaVA-Next [52] use multi-stage training to unify visual instruction tuning across image and video. In multimodal generation, scaling remains a critical challenge. Methods such as ViT-VQGAN [22] and ViTok [53] show that larger tokenizers do not always improve generation performance and often underuse model capacity. GigaTok [17] improves scaling efficiency via hybrid CNN-Transformer tokenizers. However, efficiently scaling local token information is still an open problem, which we target in this work.
+
+# 3 Method
+
+![](images/c5ec315bf627c1b3e1192a7076e2fac0644d5b3581ca2195079409c562a2065e.jpg)
+
+<details>
+<summary>flowchart</summary>
+
+```mermaid
+graph TD
+    A["User"] --> B["VIT Enc"]
+    B --> C["Generator"]
+    C --> D["Pretrained Local Enc"]
+    D --> E["L_local1D repa"]
+    E --> F["1D Aligner"]
+    F --> G["Local 1D Codebook"]
+    G --> H["Global Soft Quantization"]
+    H --> I["+"]
+    I --> J["VIT Dec"]
+    J --> K["User"]
+    D --> L["L_local2D repa"]
+    L --> M["2D Aligner"]
+    M --> N["Local 2D Codebook"]
+    N --> O["Local 2D Feature"]
+    O --> P["Local 1D Encoding"]
+    P --> Q["Global Encoding"]
+    P --> R["Local 1D Encoding"]
+    P --> S["Local 2D Encoding"]
+    style A fill:#f9f,stroke:#333
+    style K fill:#bbf,stroke:#333
+```
+</details>
+
+Figure 3: Overview of the proposed SelfbootTok pipeline. The input image is first encoded into a set of global tokens using a ViT backbone. Subsequently, local tokens of varying granularity (i.e., 1D or 2D) are predicted through a self-bootstrapping paradigm. These local tokens are aligned with different pretrained visual encoders to capture multi-granularity structural information. Both global and local tokens are then softly quantized, fused, and finally decoded using a ViT decoder. This overall architecture offers strong scalability and training efficiency, enabling high-quality reconstruction and generation with minimal computational overhead.
+
+Our image tokenization framework consists of three key components: global-local decomposition, self-supervised bootstrapped learning, and 2D to 1D alignment via optimal transport. Our framework employs a hierarchical self-bootstrapped VAE to support efficient global-local representation learning. The global-local decomposition aims to separately optimize global and local token representations, thereby reducing redundant information and improving representational efficiency. The self-supervised bootstrapped learning mechanism is designed to capture the intrinsic relationships between global semantics and fine-grained local details, facilitating hierarchical feature learning. The 2D to 1D alignment module preserves the sequential structure of 1D tokens by transporting the 2D token distribution into a 1D sequence space and minimizing an optimal transport loss. Moreover, our framework naturally supports efficient scaling of local aligners, enabling flexible adaptation to different computational budgets while maintaining high generation performance and significantly reducing training cost.
+
+# 3.1 Global-local Decomposition
+
+As shown in Fig. 3, after getting the global tokens $z _ { G }$ from input image I through a Vision Transformer encoder $E n c ,$ our pipeline recovers more local information through local alignment and get local 1D tokens $z _ { L 1 }$ and local 2D tokens $z _ { L 2 }$ . Then, we apply a multi-codebooks design that distinguishes local entries with global entries and enhances the localized representations with either 1D or 2D information injection:
+
+$$
+\text {Encode:} \quad \mathbf {z} _ {G} = \operatorname{Enc} (I), \quad \mathbf {z} _ {\text {tot}} = \left\{\mathbf {z} _ {G}, \mathbf {z} _ {L 1}, \mathbf {z} _ {L 2} \right\}, \tag {1}
+$$
+
+$$
+\text { Codebook   Set: } \quad \mathcal {C} _ {\mathrm{tot}} = \{\mathcal {C} _ {\mathrm{global}}, \mathcal {C} _ {\mathrm{local1D}}, \mathcal {C} _ {\mathrm{local2D}} \}.
+$$
+
+We apply soft vector quantization [16] such that both global and local quantizations are fullydifferentiable, and thus the encoder and codebook can be optimized directly from the reconstruction loss:
+
+$$
+q _ {\phi} (Z \mid I) = \operatorname{Softmax} \left(- \frac {1}{\tau} \| \hat {Z} - \mathcal {C} \| _ {2}\right), \hat {Z} \in \mathbf {z} _ {\text { tot }}, \tag {2}
+$$
+
+$$
+Z = q _ {\phi} (Z \mid I) \mathcal {C}, \mathcal {C} \in \mathcal {C} _ {\text { tot }}. \tag {3}
+$$
+
+Under this design, we separate different token groups using distinct codebooks, allowing each group to specialize in learning representations of a specific granularity. The overall training objective combines reconstruction, perceptual, adversarial, alignment, and KL regularization terms:
+
+$$
+\mathcal {L} = \mathcal {L} _ {\text { recon }} + \lambda_ {1} \mathcal {L} _ {\text { percep }} + \lambda_ {2} \mathcal {L} _ {\text { adv }} + \lambda_ {3} \mathcal {L} _ {\text { align }} + \lambda_ {4} \mathcal {L} _ {\text { KL }}, \tag {4}
+$$
+
+The alignment loss $\mathcal { L } _ { \mathrm { a l i g n } }$ further decomposes into three components, corresponding to the global, local, and cross-dimensional (2D to 1D) alignment objectives:
+
+$$
+\mathcal {L} _ {\text { align }} = \mu_ {1} \mathcal {L} _ {\text { repa }} ^ {\text { global }} + \mu_ {2} \mathcal {L} _ {\text { repa }} ^ {\text { local }} + \mu_ {3} \mathcal {L} _ {\text { OT }} \tag {5}
+$$
+
+The global alignment loss encourages global tokens to align with the features extracted by a pretrained global semantic encoder (e.g., DINOv2 [54]). This loss is computed as a patch-wise similarity measure:
+
+$$
+\mathcal {L} _ {\text { repa }} ^ {\text { global }} = \text { PatchwiseSim } (\mathbf {z} _ {G}, f _ {\text { DINOv2 }} (I)). \tag {6}
+$$
+
+Similarly, the local alignment loss matches each local 1D token to its corresponding localized representation from pretrained encoders (e.g., SigLIP2 [55] or I-JEPA [56]):
+
+$$
+\mathcal {L} _ {\text { repa }} ^ {\text { local }} = \text { PatchwiseSim } (\mathbf {z} _ {L 1} \text {   or   } \mathbf {z} _ {L 2}, f _ {\text { local }} (I)). \tag {7}
+$$
+
+Finally, ${ \mathcal { L } } _ { \mathrm { O T } }$ denotes the optimal transport loss that aligns the 2D VAE latent representations of images with their corresponding 1D token sequences, as defined in Eq. (13). This design effectively disentangles global and local information across token groups, leading to more compact and efficient representations, particularly for global tokens.
+
+# 3.2 Self-supervised Bootstrapped Learning
+
+After obtaining the global tokens $\mathbf { z } _ { G }$ from Eq. (1), we employ a self-bootstrapped paradigm to predict local tokens from these global representations. Specifically, to predict local 1D tokens $\mathbf { z } _ { L 1 }$ , we use an MLP module to project $\mathbf { z } _ { G }$ into a higher-dimensional token space:
+
+$$
+\mathbf {z} _ {L 1} = \mathrm{MLP} (\mathbf {z} _ {G}), \tag {8}
+$$
+
+To predict local 2D tokens, we employ several scalable causal transformer blocks that autoregressively map $\mathbf { z } _ { G }$ to another sequence of tokens ${ \bf z } _ { L 2 } .$ :
+
+$$
+p _ {\theta} (\mathbf {z} _ {L 2} \mid \mathbf {z} _ {G}) = \prod_ {i = 1} ^ {N _ {l}} p _ {\theta} \big (\mathbf {t} _ {i} ^ {\text { local }} \mid \mathbf {z} _ {G}, \mathbf {t} _ {<   i} ^ {\text { local }} \big), \tag {9}
+$$
+
+We then align this token sequence with the corresponding sequence transported from the 2D VAE latents, as described in Eq. (13). During the generation process, the generator produces only the global tokens $\mathbf { z } _ { G }$ . The local tokens $\mathbf { z } _ { L 1 }$ and ${ \bf z } _ { L 2 }$ are then automatically predicted through the local 1D and 2D aligners. Finally, after the soft quantization of $\mathbf { z } _ { G } , \mathbf { z } _ { L 1 }$ , and $\mathbf { z } _ { L 2 }$ , all tokens are fused and decoded together:
+
+$$
+\hat {\mathbf {x}} = \operatorname{Dec} \left(\text { Fuse } (\mathbf {z} _ {G}, \mathbf {z} _ {L 1}, \mathbf {z} _ {L 2}); \mathbf {z} _ {L 1}; \mathbf {z} _ {L 2}\right), \tag {10}
+$$
+
+The fused tokens, along with $\mathbf { z } _ { L 1 }$ and $\mathbf { z } _ { L 2 } .$ , are then injected into the cross-attention layers of the decoder. We explore two fusion strategies for decoding: soft residual fusion and concatenation fusion. Further ablation studies comparing these strategies are provided in the experimental section.
+
+$$
+\text { Fuse } = \left\{ \begin{array}{l l} \alpha   \mathbf {z} _ {G} + \beta   \mathbf {z} _ {L 1} + (1 - \alpha - \beta)   \mathbf {z} _ {L 2}, & (\text { Soft   residual }) \\ \text { Concat } [ \mathbf {z} _ {G}; \mathbf {z} _ {L 1}; \mathbf {z} _ {L 2} ], & (\text { Concatenation }) \end{array} \right. \tag {11}
+$$
+
+Within our self-bootstrapped paradigm, generating only high-level, compact global information is sufficient to achieve high-quality generation. This approach reduces computational costs and optimizes the latent space of global tokens.
+
+# 3.3 2D to 1D alignment via optimal transport
+
+To efficiently inject 2D priors into a 1D token sequence and achieve a compact 1D representation, we use a local 2D aligner to predict a 1D sequence and align the 2D VAE latent features with it. This formulation naturally fits into the optimal transport (OT) framework, which constructs mappings between tensors of different dimensions while encouraging compact representations, and can be efficiently solved via the Sinkhorn algorithm. Specifically, let $\dot { \mathbf { X } } \in \mathbb { R } ^ { \pmb { \mathring { B } } \times N _ { x } \times d }$ be the matrix of 2D VAE latents (with $N _ { x } = H \times W$ spatial tokens), and $\mathbf { z } _ { L 2 } \mathbf { \bar { \Psi } } \in \mathbb { R } ^ { B \times N _ { z } \times d }$ be the matrix of 1dim (with he goa $N _ { z }$ atent tokens). Here,  find a transport plan batch size, and  that couples th $d$ refers to tmarginals a $\mathbf { P } \in \mathbb { R } _ { + } ^ { N _ { x } \times N _ { z } }$ $\in \Delta ^ { N _ { x } }$ $\mathbf { b } \in \Delta ^ { N _ { z } }$ $\Delta ^ { N }$
+
+Let the squared-Euclidean cost matrix be
+
+$$
+\mathbf {C} _ {i j} = \| \mathbf {x} _ {i} - \mathbf {z} _ {j} \| _ {2} ^ {2}, \quad \mathrm{for} i \in [ 1, N _ {x} ], j \in [ 1, N _ {z} ]
+$$
+
+measuring pairwise distances between 2D latents X and 1D tokens ${ \bf z } _ { L 2 }$ . We solve the entropyregularized optimal transport problem
+
+$$
+\mathbf {P} ^ {*} = \arg \min _ {\mathbf {P} \in \Pi (\mathbf {a}, \mathbf {b})} \langle \mathbf {P}, \mathbf {C} \rangle + \varepsilon \mathcal {H} (\mathbf {P}), \tag {12}
+$$
+
+where $\Pi ( \mathbf { a } , \mathbf { b } )$ is the set of transport plans coupling a and b, $\langle . , . \rangle$ represents the Frobenius inner product and $\mathcal { \dot { H } } ( \mathbf { P } )$ is the entropy regularizer. The optimal transport plan $\mathbf { P } ^ { * }$ is computed using the Sinkhorn algorithm:
+
+$$
+\mathbf {P} ^ {*} = \operatorname{Sinkhorn} (\mathbf {K}, \mathbf {a}, \mathbf {b}),
+$$
+
+where $\mathbf { K } = \exp ( - \mathbf { C } / \varepsilon )$ . And we use the transport cost as part of the alignment loss shown in Eq. (5):
+
+$$
+\mathcal {L} _ {\mathrm{OT}} = \langle \mathbf {P} ^ {*}, \mathbf {C} \rangle . \tag {13}
+$$
+
+# 3.4 Local Scaling with heavier local aligner
+
+To explore the potential of the self-bootstrapped paradigm, we conduct experiments using local aligners at different spatial scales. Specifically, we vary the size of the local 2D module while keeping all other components fixed. When the local 2D aligner becomes large, the overall model becomes computationally heavy and difficult to optimize. To address this issue, we adopt a two-stage training strategy. In the first stage, we train the entire pipeline with a smaller local 2D aligner. In the second stage, we scale up the local 2D aligner and fine-tune it while freezing the remaining components. This strategy allows simultaneous training of the generator and the enlarged local aligner, enabling the generator to be trained once for global tokens and subsequently reused across different local aligner scales. Further discussions on the scaling results are provided in Section 4.2 and Fig. 6.
+
+![](images/e31c800d1bb57137821376363a44b84f4346118b8cd88cc2259418729f5ea545.jpg)
+
+<details>
+<summary>flowchart</summary>
+
+```mermaid
+graph LR
+    A["Image"] --> B["VIT Enc"]
+    B --> C["..."]
+    C --> D["100M --> 200M --> 400M --> 600M Local Aligner"]
+    C --> E["Generator"]
+    E --> F["Generating"]
+    G["Trainable Module"] --> B
+    H["Frozen Module"] --> B
+    I["Tokenizer Scaling"] --> E
+    J["Parallel Optimization"] --> E
+```
+</details>
+
+Generator Training
+
+Figure 4: Illustration of parallel training pipeline. Our method supports training larger scale tokenizer and generator at the same time, which enhances training efficiency. 
+
+<table><tr><td>Tokenizer</td><td>#Tokens</td><td>Generators</td><td>rFID↓</td><td>gFID(w/o CFG)↓</td><td>gFID(w CFG)↓</td></tr><tr><td colspan="6">2D Tokenizer</td></tr><tr><td>VAE [24]</td><td>4096</td><td>LDM-4 [24]</td><td>0.27</td><td>10.56</td><td>3.60</td></tr><tr><td>SD-VAE [24]</td><td>256</td><td>DiT-XL/2 [1]</td><td>0.62</td><td>9.62</td><td>2.27</td></tr><tr><td>SD-VAE [24]</td><td>256</td><td>SiT-XL/2 [12]</td><td>0.62</td><td>8.61</td><td>2.06</td></tr><tr><td>VAR-Tok [5]</td><td>680</td><td>VAR-d30 [5]</td><td>1.00</td><td>-</td><td>1.92</td></tr><tr><td>VQGAN [13]</td><td>256</td><td>LlamaGen [63]</td><td>0.59</td><td>9.38</td><td>2.18</td></tr><tr><td>VA-VAE [10]</td><td>256</td><td>LightningDiT [10]</td><td>0.28</td><td>2.17</td><td>1.35</td></tr><tr><td colspan="6">Auto-regressive Tokenizer</td></tr><tr><td>MaskGIT [25]</td><td>256</td><td>MaskGIT [25]</td><td>2.28</td><td>6.18</td><td>-</td></tr><tr><td>LlamaGen-3B [63]</td><td>576</td><td>LlamaGen [63]</td><td>2.19</td><td>-</td><td>2.18</td></tr><tr><td>RQ-VAE [64]</td><td>256</td><td>RQ-Transformer [64]</td><td>3.20</td><td>-</td><td>3.80</td></tr><tr><td>MAGE [65]</td><td>256</td><td>MAGE [65]</td><td>-</td><td>6.93</td><td>-</td></tr><tr><td>MAR-H [7]</td><td>256</td><td>MAR-H [7]</td><td>1.22</td><td>2.35</td><td>1.55</td></tr><tr><td>ViTok S-B/16 [53]</td><td>256</td><td>DiT-XL [1]</td><td>-</td><td>-</td><td>2.45</td></tr><tr><td colspan="6">1D Tokenizer</td></tr><tr><td>TiTok-B [15]</td><td>64</td><td>MaskGIT-ViT [25]</td><td>1.70</td><td>-</td><td>2.48</td></tr><tr><td>TiTok-S [15]</td><td>128</td><td>MaskGIT-UViT-L [25, 66]</td><td>1.71</td><td>-</td><td>1.97</td></tr><tr><td>FlexTok d18-d28 [19]</td><td>1 to 256</td><td>LlamaGen [63]</td><td>1.45</td><td>-</td><td>1.86</td></tr><tr><td>OneD-piece [26]</td><td>1 to 256</td><td>-</td><td>1.08</td><td>-</td><td>-</td></tr><tr><td>HieraTok [8]</td><td>256</td><td>DiT [1]</td><td>0.45</td><td>3.53</td><td>1.82</td></tr><tr><td>GigaTok XL-XXL [17]</td><td>256</td><td>LlamaGen XXL [63]</td><td>0.79</td><td>-</td><td>1.98</td></tr><tr><td>MAETok [6]</td><td>128</td><td>LightningDiT [10]</td><td>0.48</td><td>-</td><td>1.73</td></tr><tr><td>SoftVQ [16]</td><td>64</td><td>SiT [12]</td><td>0.88</td><td>5.98</td><td>1.78</td></tr><tr><td>SelfBootTok</td><td>64</td><td>SiT [12]</td><td>0.66</td><td>2.22</td><td>1.56</td></tr></table>
+
+Table 1: Performance of SelfBootTok in the context of state-of-the-art generative models on ImageNet-256. We additionally report the number of latent tokens (#Tokens) for each tokenizer. Our method achieves state-of-the-art generation performance gfid 1.56 among 1D tokenizers with only 64 tokens.
+
+# 4 Experiments
+
+# 4.1 Experiments Setup
+
+Implementation Details of SelfBootTok. In this section, we introduce the experiment settings of our method. Our tokenizer utilizes Dinov2 VIT [54] as the backbone and the encoder is initialized the same as pretrained Dinov2 encoder. All the experiments are conducted on the base size of Dinov2 VIT backbone with a total of 173M parameters, while the sizes of local aligners vary during the scaling experiments, including sizes of 10M, 100M, 200M, 400M and 600M. Most of our experiments are conducted with the number of latent code N = 64 and token dimension 32. The tokenizer is trained on ImageNet at a resolution of 256 × 256 for 50 epochs with a small local aligner, and up to 75 epochs with larger local aligners in the scaling experiments. For discriminator training, we adopt a setup similar to SoftVQ [16], using a StyleGAN-like architecture [57, 58] and strategies such as LeCAM [59] and consistency regularization [60].
+
+Table 2: Ablation study of different local1D aligners. We compare reconstruction performance using I-JEPA, DINOv2, and SigLIP as 1D alignment encoders, evaluated by rFID, PSNR, and SSIM metrics under the 400M local 2D aligner. 
+
+<table><tr><td>Aligner</td><td>rFID (↓)</td><td>PSNR (↑)</td><td>SSIM (↑)</td></tr><tr><td>I-JEPA</td><td>0.66</td><td>22.86</td><td>0.7288</td></tr><tr><td>DINOv2</td><td>0.70</td><td>22.68</td><td>0.7192</td></tr><tr><td>SigLIP</td><td>0.72</td><td>22.45</td><td>0.7150</td></tr></table>
+
+Table 3: Ablation results of different design choices (600M parameter tokenizer, 64 tokens). G: global; L1/L2: local 1D/2D; C: causal; CB: local codebooks. 
+
+<table><tr><td>Method</td><td>C</td><td>CB</td><td>gFID</td><td>rFID</td></tr><tr><td>SoftVQ</td><td>-</td><td>-</td><td>1.78</td><td>0.88</td></tr><tr><td>G + L1</td><td>-</td><td>√</td><td>1.70</td><td>0.76</td></tr><tr><td>G + L1 + L2</td><td>×</td><td>√</td><td>1.65</td><td>0.72</td></tr><tr><td>G + L1 + L2</td><td>√</td><td>×</td><td>1.68</td><td>0.73</td></tr><tr><td>G + L1 + L2</td><td>√</td><td>√</td><td>1.56</td><td>0.66</td></tr></table>
+
+![](images/73cbfb323a7f968f93a79a7362632e0a699e82d5db3605f2c19b6e398b7a7c67.jpg)
+
+<details>
+<summary>line</summary>
+
+| Tokenizer Design          | RFID (↓) | PSNR (↑) | SSIM (↑) |
+| ------------------------- | -------- | -------- | -------- |
+| Global                    | 0.85     | 0.75     | 0.70     |
+| Global+Loc1D             | 0.76     | 0.79     | 0.74     |
+| Global+Loc1D+Loc2D       | 0.70     | 0.83     | 0.83     |
+</details>
+
+Figure 5: Ablation study of global-local selfbootstrapping design. RFID, PSNR, and SSIM curves are reported. As shown, incorporating self-bootstrapped local 1D and 2D tokens substantially improves reconstruction performance across all metrics.
+
+![](images/04553d59e354961be887b5dbd3083d271920dd539935cd0ac5d78f0656a59087.jpg)
+
+<details>
+<summary>line</summary>
+
+| Model Scale (Parameters) | RFID (1) | GFID (1) | PSNR (1) | SSIM (1) |
+|---|---|---|---|---|
+| 10M | 0.85 | 1.78 | 0.723 | 0.710 |
+| 100M | 0.84 | 1.76 | 0.724 | 0.712 |
+| 200M | 0.82 | 1.70 | 0.723 | 0.716 |
+| 400M | 0.75 | 1.65 | 0.725 | 0.720 |
+| 600M | 0.65 | 1.58 | 0.727 | 0.724 |
+</details>
+
+Figure 6: Scaling results for the local 2D aligner are presented, where the model size is scaled from 10M to 600M. As shown, efficient scaling improves both reconstruction and generation quality. Notably, for the five generation results (gFID) shown, the generator is trained only once, resulting in a 40 percent reduction in total computational cost.
+
+Implementation Details of Generators. We use SiT as the generator for downstream denoisingbased image generation tasks. In our setup, where only global tokens need to be generated, we train our tokenizer for 50 epochs and SiT for 800K iterations. For subsequent scaling, we expand the local 2D aligner and train the tokenizer pipeline for an additional 50 to 75 epochs, keeping the ViT encoder frozen. Notably, SiT requires no further training. To accelerate SiT’s training, we apply the representation disentangling method [11] and incorporate a pretrained DINOv2-base encoder [54] to enhance convergence speed.
+
+Evaluation. We adopt reconstruction Frechet Inception Distance (rFID) [61] on ImageNet validation set to assess the performance of tokenizer. Furthermore, we include PSNR and SSIM metrics to more accurately reflect the reconstruction quality. To evaluate the generation quality, we report generation FID (gFID) under either with or without CFG setting. Additionally, we evaluate the efficiency of generative models with respect to tokenizer GFLOPs.
+
+# 4.2 Quantitative Results
+
+We analyze the reconstruction and generation results, along with the training efficiency in this section.
+
+High reconstruction quality with only 64 tokens. As shown in Table 1, our method achieves superior reconstruction performance (i.e., an rFID score of 0.66) using only 64 tokens, outperforming other baselines trained with the same token budget [16, 15] and performing comparably to methods [13, 24, 17] that rely on 256 tokens. Moreover, after efficient scaling, our method achieves better PSNR and SSIM scores for reconstruction, as illustrated in Fig. 6. This demonstrates the potential for progressively improved reconstruction performance as the local aligner is scaled up within our architecture.
+
+State-of-the-art generation performance among 1D tokenizers. In terms of generation, our approach achieves a state-of-the-art gFID score of 1.56 using only 64 tokens, as reported in Table 1. This result is comparable to the best-performing 2D tokenizer VA-VAE (i.e., 1.35 gFID with 256 tokens) and the top autoregressive tokenizer MAR-H (i.e., 1.55 gFID with 256 tokens). Moreover, our model attains a lower gFID even without classifier-free guidance (CFG), outperforming other 1D and autoregressive baselines under the same setting. This shows that incorporating multi-granularity information into our model architecture enhances generation quality, leading to superior performance and validating the effectiveness of our design.
+
+Efficient training. Our method also exhibits strong training efficiency, achieving competitive performance without additional generation optimization overhead. As illustrated in Fig. 4, once the tokenizer pipeline is trained, our framework supports parallel optimization of the scaled local aligners and the generator. Unlike conventional approaches that require retraining the generator each time the tokenizer is scaled, our design leverages global tokens for generation, allowing the generator to be trained only once. For the overall scaling experiment, this strategy reduces training computation by about 40% (from 4.9B parameters and 60K GFLOPs to 2.95B and 36.6K GFLOPs) and shortens training time by roughly 54% (from 28 to 13 days). Moreover, our method scales efficiently to larger datasets, yielding greater computational savings as the generator size increases.
+
+# 4.3 Qualitative Results
+
+As shown in Fig. 2, our method generates diverse, high-quality real-world images using only 64 tokens, covering animals (e.g., dogs, tigers), food (e.g., noodles, burgers), and plants (e.g., flowers) sampled from 1000 ImageNet [62] classes.
+
+# 4.4 Ablation Study
+
+To justify our design choices and validate the self-bootstrapping paradigm, we conduct comprehensive ablation studies on local 1D/2D branches, 1D aligners, and fusion strategies. As shown in Table 3, our design outperforms all variants: we use an MLP for the efficient 1D local aligner (not scaled, captures coarse local info) and a transformer-based 2D local aligner (scaled, models rich spatial details). Fig. 5 illustrates that progressive integration of local structural info enhances reconstruction quality, with optimal performance when both local branches are included. Table 2 investigates local 1D token alignment with frozen visual encoders (I-JEPA, DINOv2, SigLIP): I-JEPA performs best, with DINOv2 and SigLIP comparable, indicating distinct local structural cues affect tokenizer behavior. We compare fusion strategies under Eq. 11: concatenation-based fusion improves reconstruction but increases decoder size/computational cost, degrading generation quality and revealing a taskdependent trade-off. Finally, Fig. 6 shows our method improves with local aligner scaling: at 600M parameters and 64 tokens, it achieves a gFID of 1.56, outperforming baselines and demonstrating architectural scalability.
+
+# 5 Conclusion
+
+In this paper, we propose SelfBootTok, an efficient 1D image tokenizer that decomposes image tokens into global and local groups and leverages a self-supervised bootstrapped paradigm to recover sufficient local information from global tokens. Our architecture reduces image token overlap, achieving higher reconstruction quality and better efficiency in downstream generation tasks, while its local self-bootstrapped prediction design enables strong scalability and highlights self-bootstrapping’s potential for image tokenization.
+
+# References
+
+[1] Peebles, William, Xie, Saining. Scalable diffusion models with transformers. Proceedings of the IEEE/CVF international conference on computer vision:4195–4205, 2023.   
+[2] Lipman, Yaron, Chen, Ricky TQ, Ben-Hamu, Heli, Nickel, Maximilian, Le, Matt. Flow matching for generative modeling. arXiv preprint arXiv:2210.02747, 2022.
+
+[3] Gat, Itai, Remez, Tal, Shaul, Neta, Kreuk, Felix, Chen, Ricky TQ, Synnaeve, Gabriel, Adi, Yossi, Lipman, Yaron. Discrete flow matching. Advances in Neural Information Processing Systems 37:133345–133385, 2024.   
+[4] Dao, Quan, Phung, Hao, Nguyen, Binh, Tran, Anh. Flow matching in latent space. arXiv preprint arXiv:2307.08698, 2023.   
+[5] Tian, Keyu, Jiang, Yi, Yuan, Zehuan, Peng, Bingyue, Wang, Liwei. Visual autoregressive modeling: Scalable image generation via next-scale prediction. Advances in neural information processing systems 37:84839–84865, 2024.   
+[6] Chen, Hao, Han, Yujin, Chen, Fangyi, Li, Xiang, Wang, Yidong, Wang, Jindong, Wang, Ze, Liu, Zicheng, Zou, Difan, Raj, Bhiksha. Masked autoencoders are effective tokenizers for diffusion models. Forty-second International Conference on Machine Learning, 2025.   
+[7] Li, Tianhong, Tian, Yonglong, Li, He, Deng, Mingyang, He, Kaiming. Autoregressive image generation without vector quantization. Advances in Neural Information Processing Systems 37:56424–56445, 2024.   
+[8] Chen, Cong, Huang, Ziyuan, Zou, Cheng, Zhu, Muzhi, Ji, Kaixiang, Liu, Jiajia, Chen, Jingdong, Chen, Hao, Shen, Chunhua. Hieratok: Multi-scale visual tokenizer improves image reconstruction and generation. arXiv preprint arXiv:2509.23736, 2025.   
+[9] Ren, Sucheng, Yu, Qihang, He, Ju, Shen, Xiaohui, Yuille, Alan, Chen, Liang-Chieh. Flowar: Scale-wise autoregressive image generation meets flow matching. arXiv preprint arXiv:2412.15205, 2024.   
+[10] Yao, Jingfeng, Yang, Bin, Wang, Xinggang. Reconstruction vs. generation: Taming optimization dilemma in latent diffusion models. Proceedings of the Computer Vision and Pattern Recognition Conference:15703–15712, 2025.   
+[11] Wu, Ge, Zhang, Shen, Shi, Ruijing, Gao, Shanghua, Chen, Zhenyuan, Wang, Lei, Chen, Zhaowei, Gao, Hongcheng, Tang, Yao, Yang, Jian, others. Representation Entanglement for Generation: Training Diffusion Transformers Is Much Easier Than You Think. arXiv preprint arXiv:2507.01467, 2025.   
+[12] Nanye Ma, Mark Goldstein, Michael S. Albergo, Nicholas M. Boffi, Eric Vanden-Eijnden, Saining Xie. SiT: Exploring Flow and Diffusion-based Generative Models with Scalable Interpolant Transformers. 2024. https://arxiv.org/abs/2401.08740.   
+[13] Esser, Patrick, Rombach, Robin, Ommer, Bjorn. Taming transformers for high-resolution image synthesis. Proceedings of the IEEE/CVF conference on computer vision and pattern recognition:12873–12883, 2021.   
+[14] Van Den Oord, Aaron, Vinyals, Oriol, others. Neural discrete representation learning. Advances in neural information processing systems 30, 2017.   
+[15] Yu, Qihang, Weber, Mark, Deng, Xueqing, Shen, Xiaohui, Cremers, Daniel, Chen, Liang-Chieh. An image is worth 32 tokens for reconstruction and generation. Advances in Neural Information Processing Systems 37:128940–128966, 2024.   
+[16] Chen, Hao, Wang, Ze, Li, Xiang, Sun, Ximeng, Chen, Fangyi, Liu, Jiang, Wang, Jindong, Raj, Bhiksha, Liu, Zicheng, Barsoum, Emad. Softvq-vae: Efficient 1-dimensional continuous tokenizer. Proceedings of the Computer Vision and Pattern Recognition Conference:28358– 28370, 2025.   
+[17] Xiong, Tianwei, Liew, Jun Hao, Huang, Zilong, Feng, Jiashi, Liu, Xihui. Gigatok: Scaling visual tokenizers to 3 billion parameters for autoregressive image generation. arXiv preprint arXiv:2504.08736, 2025.   
+[18] Esteves, Carlos, Suhail, Mohammed, Makadia, Ameesh. Spectral image tokenizer. Proceedings of the IEEE/CVF International Conference on Computer Vision:17181–17190, 2025.
+
+[19] Bachmann, Roman, Allardice, Jesse, Mizrahi, David, Fini, Enrico, Kar, Oguzhan Fatih, Amirloo, ˘ Elmira, El-Nouby, Alaaeldin, Zamir, Amir, Dehghan, Afshin. FlexTok: Resampling Images into 1D Token Sequences of Flexible Length. Forty-second International Conference on Machine Learning, 2025.   
+[20] Kim, Dongwon, He, Ju, Yu, Qihang, Yang, Chenglin, Shen, Xiaohui, Kwak, Suha, Chen, Liang-Chieh. Democratizing text-to-image masked generative models with compact text-aware one-dimensional tokens. arXiv preprint arXiv:2501.07730, 2025.   
+[21] He, Ju, Yu, Qihang, Liu, Qihao, Chen, Liang-Chieh. Flowtok: Flowing seamlessly across text and image tokens. arXiv preprint arXiv:2503.10772, 2025.   
+[22] Yu, Jiahui, Li, Xin, Koh, Jing Yu, Zhang, Han, Pang, Ruoming, Qin, James, Ku, Alexander, Xu, Yuanzhong, Baldridge, Jason, Wu, Yonghui. Vector-quantized image modeling with improved vqgan. arXiv preprint arXiv:2110.04627, 2021.   
+[23] Kingma, Diederik P, Welling, Max. Auto-encoding variational bayes. arXiv preprint arXiv:1312.6114, 2013.   
+[24] Rombach, Robin, Blattmann, Andreas, Lorenz, Dominik, Esser, Patrick, Ommer, Björn. Highresolution image synthesis with latent diffusion models. Proceedings of the IEEE/CVF conference on computer vision and pattern recognition:10684–10695, 2022.   
+[25] Chang, Huiwen, Zhang, Han, Jiang, Lu, Liu, Ce, Freeman, William T. Maskgit: Masked generative image transformer. Proceedings of the IEEE/CVF conference on computer vision and pattern recognition:11315–11325, 2022.   
+[26] Miwa, Keita, Sasaki, Kento, Arai, Hidehisa, Takahashi, Tsubasa, Yamaguchi, Yu. One-d-piece: Image tokenizer meets quality-controllable compression. arXiv preprint arXiv:2501.10064, 2025.   
+[27] Beyer, L Lao, Li, Tianhong, Chen, Xinlei, Karaman, Sertac, He, Kaiming. Highly Compressed Tokenizer Can Generate Without Training. arXiv preprint arXiv:2506.08257, 2025.   
+[28] Weber, Mark, Yu, Lijun, Yu, Qihang, Deng, Xueqing, Shen, Xiaohui, Cremers, Daniel, Chen, Liang-Chieh. Maskbit: Embedding-free image generation via bit tokens. arXiv preprint arXiv:2409.16211, 2024.   
+[29] Yu, Lijun, Lezama, José, Gundavarapu, Nitesh B, Versari, Luca, Sohn, Kihyuk, Minnen, David, Cheng, Yong, Birodkar, Vighnesh, Gupta, Agrim, Gu, Xiuye, others. Language Model Beats Diffusion–Tokenizer is Key to Visual Generation. arXiv preprint arXiv:2310.05737, 2023.   
+[30] Li, Xiang, Qiu, Kai, Chen, Hao, Kuen, Jason, Gu, Jiuxiang, Raj, Bhiksha, Lin, Zhe. Imagefolder: Autoregressive image generation with folded tokens. arXiv preprint arXiv:2410.01756, 2024.   
+[31] Li, Junnan, Li, Dongxu, Savarese, Silvio, Hoi, Steven. Blip-2: Bootstrapping language-image pre-training with frozen image encoders and large language models. International conference on machine learning:19730–19742, 2023.   
+[32] Hao, Dongze, Wang, Qunbo, Guo, Longteng, Jiang, Jie, Liu, Jing. Self-bootstrapped visual-language model for knowledge selection and question answering. arXiv preprint arXiv:2404.13947, 2024.   
+[33] Fang, Yunhao, Zhu, Ligeng, Lu, Yao, Wang, Yan, Molchanov, Pavlo, Kautz, Jan, Cho, Jang Hyun, Pavone, Marco, Han, Song, Yin, Hongxu. VILA2: VILA Augmented VILA. arXiv preprint arXiv:2407.17453, 2024.   
+[34] Waheed, Abdul, Wu, Zhen, Alharthi, Dareen, Kim, Seungone, Raj, Bhiksha. VideoJudge: Bootstrapping Enables Scalable Supervision of MLLM-as-a-Judge for Video Understanding. arXiv preprint arXiv:2509.21451, 2025.   
+[35] Xia, Jiaer, Tong, Bingkui, Zang, Yuhang, Shao, Rui, Zhou, Kaiyang. Bootstrapping Grounded Chain-of-Thought in Multimodal LLMs for Data-Efficient Model Adaptation. arXiv preprint arXiv:2507.02859, 2025.
+
+[36] Ding, Runyu, Yang, Jihan, Xue, Chuhui, Zhang, Wenqing, Bai, Song, Qi, Xiaojuan. Lowis3d: Language-driven open-world instance-level 3d scene understanding. IEEE Transactions on Pattern Analysis and Machine Intelligence 46:8517–8533, 2024.   
+[37] Alayrac, Jean-Baptiste, Donahue, Jeff, Luc, Pauline, Miech, Antoine, Barr, Iain, Hasson, Yana, Lenc, Karel, Mensch, Arthur, Millican, Katherine, Reynolds, Malcolm, others. Flamingo: a visual language model for few-shot learning. Advances in neural information processing systems 35:23716–23736, 2022.   
+[38] Awadalla, Anas, Gao, Irena, Gardner, Josh, Hessel, Jack, Hanafy, Yusuf, Zhu, Wanrong, Marathe, Kalyani, Bitton, Yonatan, Gadre, Samir, Sagawa, Shiori, others. Openflamingo: An open-source framework for training large autoregressive vision-language models. arXiv preprint arXiv:2308.01390, 2023.   
+[39] Dai, Wenliang, Li, Junnan, Li, Dongxu, Tiong, Anthony, Zhao, Junqi, Wang, Weisheng, Li, Boyang, Fung, Pascale N, Hoi, Steven. Instructblip: Towards general-purpose vision-language models with instruction tuning. Advances in neural information processing systems 36:49250– 49267, 2023.   
+[40] Li, KunChang, He, Yinan, Wang, Yi, Li, Yizhuo, Wang, Wenhai, Luo, Ping, Wang, Yali, Wang, Limin, Qiao, Yu. Videochat: Chat-centric video understanding. arXiv preprint arXiv:2305.06355, 2023.   
+[41] Lin, Bin, Ye, Yang, Zhu, Bin, Cui, Jiaxi, Ning, Munan, Jin, Peng, Yuan, Li. Videollava: Learning united visual representation by alignment before projection. arXiv preprint arXiv:2311.10122, 2023.   
+[42] Maaz, Muhammad, Rasheed, Hanoona, Khan, Salman, Khan, Fahad Shahbaz. Video-chatgpt: Towards detailed video understanding via large vision and language models. arXiv preprint arXiv:2306.05424, 2023.   
+[43] Liu, Haotian, Li, Chunyuan, Wu, Qingyang, Lee, Yong Jae. Visual instruction tuning. Advances in neural information processing systems 36:34892–34916, 2023.   
+[44] Achiam, Josh, Adler, Steven, Agarwal, Sandhini, Ahmad, Lama, Akkaya, Ilge, Aleman, Florencia Leoni, Almeida, Diogo, Altenschmidt, Janko, Altman, Sam, Anadkat, Shyamal, others. Gpt-4 technical report. arXiv preprint arXiv:2303.08774, 2023.   
+[45] Team, Gemini, Anil, Rohan, Borgeaud, Sebastian, Alayrac, Jean-Baptiste, Yu, Jiahui, Soricut, Radu, Schalkwyk, Johan, Dai, Andrew M, Hauth, Anja, Millican, Katie, others. Gemini: a family of highly capable multimodal models. arXiv preprint arXiv:2312.11805, 2023.   
+[46] Wang, Yi, Li, Kunchang, Li, Xinhao, Yu, Jiashuo, He, Yinan, Chen, Guo, Pei, Baoqi, Zheng, Rongkun, Wang, Zun, Shi, Yansong, others. Internvideo2: Scaling foundation models for multimodal video understanding. European Conference on Computer Vision:396–416, 2024.   
+[47] Li, Jiachen, Wang, Xinyao, Zhu, Sijie, Kuo, Chia-Wen, Xu, Lu, Chen, Fan, Jain, Jitesh, Shi, Humphrey, Wen, Longyin. Cumo: Scaling multimodal llm with co-upcycled mixture-of-experts. Advances in Neural Information Processing Systems 37:131224–131246, 2024.   
+[48] Zhao, Bo, Wu, Boya, He, Muyang, Huang, Tiejun. Svit: Scaling up visual instruction tuning. arXiv preprint arXiv:2307.04087, 2023.   
+[49] Wang, Xidong, Song, Dingjie, Chen, Shunian, Chen, Junyin, Cai, Zhenyang, Zhang, Chen, Sun, Lichao, Wang, Benyou. Longllava: Scaling multi-modal llms to 1000 images efficiently via a hybrid architecture. arXiv preprint arXiv:2409.02889, 2024.   
+[50] Lu, Yadong, Li, Chunyuan, Liu, Haotian, Yang, Jianwei, Gao, Jianfeng, Shen, Yelong. An empirical study of scaling instruct-tuned large multimodal models. arXiv preprint arXiv:2309.09958, 2023.   
+[51] Chai, Wenhao, Song, Enxin, Du, Yilun, Meng, Chenlin, Madhavan, Vashisht, Bar-Tal, Omer, Hwang, Jenq-Neng, Xie, Saining, Manning, Christopher D. Auroracap: Efficient, performant video detailed captioning and a new benchmark. arXiv preprint arXiv:2410.03051, 2024.
+
+[52] Li, Feng, Zhang, Renrui, Zhang, Hao, Zhang, Yuanhan, Li, Bo, Li, Wei, Ma, Zejun, Li, Chunyuan. Llava-next-interleave: Tackling multi-image, video, and 3d in large multimodal models. arXiv preprint arXiv:2407.07895, 2024.   
+[53] Philippe Hansen-Estruch, David Yan, Ching-Yao Chung, Orr Zohar, Jialiang Wang, Tingbo Hou, Tao Xu, Sriram Vishwanath, Peter Vajda, Xinlei Chen. Learnings from Scaling Visual Tokenizers for Reconstruction and Generation. 2025. https://arxiv.org/abs/2501.09755.   
+[54] Oquab, Maxime, Darcet, Timothée, Moutakanni, Théo, Vo, Huy, Szafraniec, Marc, Khalidov, Vasil, Fernandez, Pierre, Haziza, Daniel, Massa, Francisco, El-Nouby, Alaaeldin, others. Dinov2: Learning robust visual features without supervision. arXiv preprint arXiv:2304.07193, 2023.   
+[55] Tschannen, Michael, Gritsenko, Alexey, Wang, Xiao, Naeem, Muhammad Ferjad, Alabdulmohsin, Ibrahim, Parthasarathy, Nikhil, Evans, Talfan, Beyer, Lucas, Xia, Ye, Mustafa, Basil, others. Siglip 2: Multilingual vision-language encoders with improved semantic understanding, localization, and dense features. arXiv preprint arXiv:2502.14786, 2025.   
+[56] Assran, Mahmoud, Duval, Quentin, Misra, Ishan, Bojanowski, Piotr, Vincent, Pascal, Rabbat, Michael, LeCun, Yann, Ballas, Nicolas. Self-supervised learning from images with a jointembedding predictive architecture. Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition:15619–15629, 2023.   
+[57] Karras, Tero, Laine, Samuli, Aila, Timo. A style-based generator architecture for generative adversarial networks. Proceedings of the IEEE/CVF conference on computer vision and pattern recognition:4401–4410, 2019.   
+[58] Karras, Tero, Laine, Samuli, Aittala, Miika, Hellsten, Janne, Lehtinen, Jaakko, Aila, Timo. Analyzing and improving the image quality of stylegan. Proceedings of the IEEE/CVF conference on computer vision and pattern recognition:8110–8119, 2020.   
+[59] Tseng, Hung-Yu, Jiang, Lu, Liu, Ce, Yang, Ming-Hsuan, Yang, Weilong. Regularizing generative adversarial networks under limited data. Proceedings of the IEEE/CVF conference on computer vision and pattern recognition:7921–7931, 2021.   
+[60] Zhang, Han, Zhang, Zizhao, Odena, Augustus, Lee, Honglak. Consistency regularization for generative adversarial networks. arXiv preprint arXiv:1910.12027, 2019.   
+[61] Heusel, Martin, Ramsauer, Hubert, Unterthiner, Thomas, Nessler, Bernhard, Hochreiter, Sepp. Gans trained by a two time-scale update rule converge to a local nash equilibrium. Advances in neural information processing systems 30, 2017.   
+[62] Deng, Jia, Dong, Wei, Socher, Richard, Li, Li-Jia, Li, Kai, Fei-Fei, Li. Imagenet: A largescale hierarchical image database. 2009 IEEE conference on computer vision and pattern recognition:248–255, 2009.   
+[63] Sun, Peize, Jiang, Yi, Chen, Shoufa, Zhang, Shilong, Peng, Bingyue, Luo, Ping, Yuan, Zehuan. Autoregressive model beats diffusion: Llama for scalable image generation. arXiv preprint arXiv:2406.06525, 2024.   
+[64] Lee, Doyup, Kim, Chiheon, Kim, Saehoon, Cho, Minsu, Han, Wook-Shin. Autoregressive image generation using residual quantization. Proceedings of the IEEE/CVF conference on computer vision and pattern recognition:11523–11532, 2022.   
+[65] Li, Tianhong, Chang, Huiwen, Mishra, Shlok, Zhang, Han, Katabi, Dina, Krishnan, Dilip. Mage: Masked generative encoder to unify representation learning and image synthesis. Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition:2142–2152, 2023.   
+[66] Bao, Fan, Nie, Shen, Xue, Kaiwen, Cao, Yue, Li, Chongxuan, Su, Hang, Zhu, Jun. All are worth words: A vit backbone for diffusion models. Proceedings of the IEEE/CVF conference on computer vision and pattern recognition:22669–22679, 2023.

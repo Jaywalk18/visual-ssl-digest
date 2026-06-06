@@ -19,39 +19,39 @@
   </header>
   <nav class="site-nav" aria-label="主导航">
     <a class="nav-link" href="../index.html">头版</a>
-<a class="nav-link" href="../issues/2026-06-05.html">今日速递</a>
+<a class="nav-link" href="../issues/2026-06-06.html">今日速递</a>
 <a class="nav-link" href="../pages/catalog.html">论文目录</a>
 <a class="nav-link" href="../pages/timeline.html">时间线</a>
   </nav>
   <main><article class="paper-detail">
   <div class="paper-main">
     <div class="kicker">Visual SSL / representation · P0 · 2026-06-05</div>
-    <h1 class="paper-headline">Continual Visual and Verbal Learning：它把自监督视觉表征、图文对比和 continual/streaming learning 放在同一框架，对视频预训练和真实世界长期学习很有启发</h1>
-    <p class="dek">把视觉-语言表示学习从离线多 epoch shuffle 训练改成更接近真实经验的连续流式设定，测试模型能否从时间结构中学习词义与视觉表征。</p>
-    <p class="byline"><strong>Continual Visual and Verbal Learning Through a Child&#x27;s Egocentric Input</strong>　Xiaoyang Jiang, Yanlai Yang, Kenneth A. Norman, Brenden Lake, Mengye Ren；机构信息 arXiv 元数据未列出。　arXiv　<a href="https://arxiv.org/abs/2606.05115">原文链接</a></p>
+    <h1 class="paper-headline">Continual Visual and Verbal Learning：它和通用视觉自监督的关系在于：BabyCL 用单遍时间流、视觉表征学习和图文对比损失模拟真实连续经验，比离线 shuffle 训练更接近通用学习设定</h1>
+    <p class="dek">高相关；详见方法、贡献和实验边界。</p>
+    <p class="byline"><strong>Continual Visual and Verbal Learning Through a Child&#x27;s Egocentric Input</strong>　arXiv　<a href="https://arxiv.org/abs/2606.05115">原文链接</a></p>
     <div class="paper-facts">
       <span><b>编号</b>2606.05115</span>
       <span><b>优先级</b>P0</span>
       <span><b>类别</b>Visual SSL / representation</span>
       <span><b>会议</b>arXiv</span>
-      <span><b>方法</b>BabyCL 在 SAYCam 儿童视角视频上做单遍 chronological streaming learning，结合多阶段时间切分、视觉与多模态双 replay buffer，以及共享 backbone 上的三种 contrastive losses。</span>
+      <span><b>方法</b>BabyCL 用单遍时间流、视觉表征学习和图文对比损失模拟真实连续经验，比离线 shuffle 训练更接近通用学习设定</span>
       <span><b>来源</b>arXiv / OpenReview</span>
     </div>
     <div class="feature-body">
-      <p class="lead dropcap">先说结论。它把自监督视觉表征、图文对比和 continual/streaming learning 放在同一框架，对视频预训练和真实世界长期学习很有启发。 把视觉-语言表示学习从离线多 epoch shuffle 训练改成更接近真实经验的连续流式设定，测试模型能否从时间结构中学习词义与视觉表征。</p>
+      <p class="lead dropcap">先说结论。它和通用视觉自监督的关系在于：BabyCL 用单遍时间流、视觉表征学习和图文对比损失模拟真实连续经验，比离线 shuffle 训练更接近通用学习设定。 高相关；详见方法、贡献和实验边界。</p>
       <figure class="full-fig"><img src="../assets/mineru/2606.05115/images/a70df4dc9fabd5ada37b93cabdca946c6747804622d9824b27dcb2478e0b8363.jpg" alt="Figureure 1 · : Overview of BabyCL"><figcaption><b>Figureure 1 · : Overview of BabyCL</b><span class="fig-en">Figure 1: Overview of BabyCL. The incoming SAYCam stream is partitioned into event segments of roughly three minutes using hierarchical visual clustering, with boundaries adjusted to utterance timestamps. Embeddings of frames within the same event segment are brought together while those from different event segments are pushed apart $( { \mathcal { L } } _ { S } ) .$ . Matching pairs of utterances and frames are brought together while mismatching ones are pushed apart $( \mathcal { L } _ { C } )$ .</span><span class="fig-zh">这张图概括 Continual Visual and Verbal Learning 的整体方法流程。阅读时先看模块之间传递的训练信号，再看作者如何把目标拆成可优化的子问题。</span></figcaption></figure>
 <figure class="full-fig"><img src="../assets/mineru/2606.05115/images/8fd793fc5d5b6640bd9e72c16b9ab489613eca092e6f6971c924c314a05fac07.jpg" alt="Figureure 2 · : Example of the 4AFC task"><figcaption><b>Figureure 2 · : Example of the 4AFC task</b><span class="fig-en">Figure 2: Example of the 4AFC task. Given a target category (“ball”) and three foil categories (“cat”, “couch”, and “car”), the model must select the image corresponding to the target category from four candidate images.</span><span class="fig-zh">这张图来自论文 PDF 的结构化抽取。当前用于辅助理解 Continual Visual and Verbal Learning 的方法或实验，请结合正文精读段落一起看。</span></figcaption></figure>
       
       <h2>核心问题</h2>
-      <p>它把自监督视觉表征、图文对比和 continual/streaming learning 放在同一框架，对视频预训练和真实世界长期学习很有启发。</p>
+      <p>它和通用视觉自监督的关系在于：BabyCL 用单遍时间流、视觉表征学习和图文对比损失模拟真实连续经验，比离线 shuffle 训练更接近通用学习设定。</p>
       <h2>方法拆解</h2>
-      <p>BabyCL 在 SAYCam 儿童视角视频上做单遍 chronological streaming learning，结合多阶段时间切分、视觉与多模态双 replay buffer，以及共享 backbone 上的三种 contrastive losses。</p>
+      <p>BabyCL 用单遍时间流、视觉表征学习和图文对比损失模拟真实连续经验，比离线 shuffle 训练更接近通用学习设定</p>
       <h2>主要贡献</h2>
-      <p>把视觉-语言表示学习从离线多 epoch shuffle 训练改成更接近真实经验的连续流式设定，测试模型能否从时间结构中学习词义与视觉表征。</p>
+      <p>高相关；详见方法、贡献和实验边界。</p>
       <h2>实验看点</h2>
-      <p>摘要称在匹配优化预算下，BabyCL 优于 streaming baselines，并显著缩小与离线训练上界的差距；ablation 显示时间窗口长度和 buffer eviction 规则下收益稳定。</p>
+      <p>实验部分建议重点看两类证据：一是作者是否把方法收益和更强数据、更长训练、更大模型区分开；二是跨模型、跨数据或跨任务迁移是否还能保留同样趋势。</p>
       <h2>局限与读法</h2>
-      <p>数据来自儿童 egocentric 场景，规模和视觉分布与网页级预训练不同；需要看它在更广泛通用图像/视频数据上的迁移性。</p>
+      <p>这篇论文的结论需要结合任务设置、训练数据规模和消融实验一起看；不要只凭单个指标判断它对通用视觉表征的价值。</p>
     
     </div>
   </div>
@@ -61,13 +61,13 @@
     <div class="side-box"><h4>原文</h4><p><a href="https://arxiv.org/abs/2606.05115">https://arxiv.org/abs/2606.05115</a></p></div>
   </aside>
 </article></main>
-  <aside class="conf-float" data-conf-reminder="2026-06-05-main-ddl" aria-label="CCF A/B 主投稿提醒">
+  <aside class="conf-float" data-conf-reminder="2026-06-06-main-ddl" aria-label="CCF A/B 主投稿提醒">
   <button class="conf-close" type="button" aria-label="关闭会议提醒">×</button>
   <details open>
     <summary>CCF A/B 主投稿提醒</summary>
     <div class="conf-list"><a class="conf-item " href="https://github.com/ccfddl/ccf-deadlines/blob/main/conference/AI/aaai.yml">
   <span><b>AAAI 2027</b><em>CCF A · Main paper submission</em></span>
-  <strong>52 天</strong>
+  <strong>51 天</strong>
   <small>2026-07-27 · CCF DDL: abstract 2026-07-20；进入 1 个月窗口后重点提醒。</small>
 </a></div>
   </details>
@@ -80,7 +80,7 @@
   (() => {
     const box = document.querySelector('[data-conf-reminder]');
     if (!box) return;
-    const key = `visualSslConfReminderClosed:${box.dataset.confReminder || '2026-06-05-main-ddl'}`;
+    const key = `visualSslConfReminderClosed:${box.dataset.confReminder || '2026-06-06-main-ddl'}`;
     try {
       if (localStorage.getItem(key) === '1') box.hidden = true;
     } catch (err) {}

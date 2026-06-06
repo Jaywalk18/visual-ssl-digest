@@ -1,0 +1,97 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Diff-CA · 通用视觉自监督研究报</title>
+  <link rel="stylesheet" href="../assets/styles.css?v=20260525j">
+  <link rel="stylesheet" href="../assets/visual-ssl.css?v=20260525j">
+</head>
+<body>
+  <header class="masthead">
+    <div class="masthead-kicker">Visual SSL Research Report · 2026-06-06</div>
+    <a class="masthead-title" href="../index.html">通用视觉自监督研究报</a>
+    <div class="masthead-meta">
+      <span>图像表征 · VFM · JEPA · 视频预训练</span>
+      <span>CCF A/B 会议优先</span>
+      <span>图文精读 · 方法图解</span>
+    </div>
+  </header>
+  <nav class="site-nav" aria-label="主导航">
+    <a class="nav-link" href="../index.html">头版</a>
+<a class="nav-link" href="../issues/2026-06-06.html">今日速递</a>
+<a class="nav-link" href="../pages/catalog.html">论文目录</a>
+<a class="nav-link" href="../pages/timeline.html">时间线</a>
+  </nav>
+  <main><article class="paper-detail">
+  <div class="paper-main">
+    <div class="kicker">Visual SSL / representation · P2 · 2026-06-06</div>
+    <h1 class="paper-headline">Diff-CA：通用视觉自监督里的 shared/salient factor 分离一直是核心问题，Diff-CA 提供了 diffusion 时代的可视化和可编辑实现</h1>
+    <p class="dek">把 contrastive analysis 从 VAE/GAN 迁移到更高保真 diffusion，解决旧方法重建质量限制 latent 因子分离的问题。</p>
+    <p class="byline"><strong>Diff-CA: Separating Common and Salient Factors with Diffusion Models</strong>　Michaël Soumm, Alexandre Fournier Montgieux, Yunlong He, Pietro Gori, Alasdair Newson；机构信息 arXiv 元数据未列出。　arXiv　<a href="https://arxiv.org/abs/2606.06120">原文链接</a></p>
+    <div class="paper-facts">
+      <span><b>编号</b>2606.06120</span>
+      <span><b>优先级</b>P2</span>
+      <span><b>类别</b>Visual SSL / representation</span>
+      <span><b>会议</b>arXiv</span>
+      <span><b>方法</b>先训练 prompt-free、image-conditioned diffusion model，再把 conditioning 分解为 common factor 与 salient factor，支持只交换或插值 salient factor。</span>
+      <span><b>来源</b>arXiv / OpenReview</span>
+    </div>
+    <div class="feature-body">
+      <p class="lead dropcap">先说结论。通用视觉自监督里的 shared/salient factor 分离一直是核心问题，Diff-CA 提供了 diffusion 时代的可视化和可编辑实现。 把 contrastive analysis 从 VAE/GAN 迁移到更高保真 diffusion，解决旧方法重建质量限制 latent 因子分离的问题。</p>
+      <figure class="full-fig"><img src="../assets/mineru/2606.06120/images/5990866c588ce68446a9b38d157f8ebf4dcc860e2c5580d4540e1fc75419b59d.jpg" alt="Figureure 3 · : Our 2-Stage training protocol"><figcaption><b>Figureure 3 · : Our 2-Stage training protocol</b><span class="fig-en">Figure 3: Our 2-Stage training protocol. Left: Conditioning pipeline. An input image $x _ { 1 }$ is mapped to a latent u0 by a VAE encoder and to DINOv3 features (a). A cross-query module (b) produces semantic tokens T , and a small CNN (c) produces a color token $t _ { \mathrm { c o l } }$ . The concatenated tokens Z condition a U-Net diffusion model via cross-attention (d). Right: Training pipeline of our Common-Salient encoder. A CLS token is prepended to the input tokens. The encoder separates the common and salient parts, whose sum reconstructs the input. An anchor loss $\mathcal { L } _ { a n c h o r }$ ensures that the salient part has no information about background samples, while adversarial training purifies the common part. A cycle-consistency protocol ensures that counterfactuals (swaps) produce meaningful outputs.</span><span class="fig-zh">这张图概括 Diff-CA 的整体方法流程。阅读时先看模块之间传递的训练信号，再看作者如何把目标拆成可优化的子问题。</span></figcaption></figure>
+<figure class="full-fig"><img src="../assets/mineru/2606.06120/images/8b5402be47b7525c016fd51c757b43b509ddce8781486c73c2ab7fb12c834130.jpg" alt="Figureure 21 · : Example of swapping with a model trained without cycle consistency"><figcaption><b>Figureure 21 · : Example of swapping with a model trained without cycle consistency</b><span class="fig-en">Figure 21: Example of swapping with a model trained without cycle consistency. Swapping $\hat { Z } _ { S }$ leads to major color changes from the reconstruction, indicating a hidden dependance between $\hat { Z } _ { C }$ and $\hat { Z } _ { C }$</span><span class="fig-zh">这张图来自论文 PDF 的结构化抽取。当前用于辅助理解 Diff-CA 的方法或实验，请结合正文精读段落一起看。</span></figcaption></figure>
+      
+      <h2>核心问题</h2>
+      <p>通用视觉自监督里的 shared/salient factor 分离一直是核心问题，Diff-CA 提供了 diffusion 时代的可视化和可编辑实现。</p>
+      <h2>方法拆解</h2>
+      <p>先训练 prompt-free、image-conditioned diffusion model，再把 conditioning 分解为 common factor 与 salient factor，支持只交换或插值 salient factor。</p>
+      <h2>主要贡献</h2>
+      <p>把 contrastive analysis 从 VAE/GAN 迁移到更高保真 diffusion，解决旧方法重建质量限制 latent 因子分离的问题。</p>
+      <h2>实验看点</h2>
+      <p>摘要给出 additive contrastive factorization 的 identifiability 条件，并强调可做 targeted editing。</p>
+      <h2>局限与读法</h2>
+      <p>弱监督条件和分解假设需要仔细看；它更偏生成/编辑中的因子分离，不是完整通用表征预训练。</p>
+    
+    </div>
+  </div>
+  <aside class="paper-side">
+
+    <div class="side-box"><h4>关键判断</h4><dl><dt>相关性</dt><dd>P2</dd><dt>类别</dt><dd>Visual SSL / representation</dd><dt>会议</dt><dd>arXiv</dd><dt>读法</dt><dd>方法图优先，表格次之</dd></dl></div>
+    <div class="side-box"><h4>原文</h4><p><a href="https://arxiv.org/abs/2606.06120">https://arxiv.org/abs/2606.06120</a></p></div>
+  </aside>
+</article></main>
+  <aside class="conf-float" data-conf-reminder="2026-06-06-main-ddl" aria-label="CCF A/B 主投稿提醒">
+  <button class="conf-close" type="button" aria-label="关闭会议提醒">×</button>
+  <details open>
+    <summary>CCF A/B 主投稿提醒</summary>
+    <div class="conf-list"><a class="conf-item " href="https://github.com/ccfddl/ccf-deadlines/blob/main/conference/AI/aaai.yml">
+  <span><b>AAAI 2027</b><em>CCF A · Main paper submission</em></span>
+  <strong>51 天</strong>
+  <small>2026-07-27 · CCF DDL: abstract 2026-07-20；进入 1 个月窗口后重点提醒。</small>
+</a></div>
+  </details>
+</aside>
+  <footer class="footer">
+    <div>面向通用视觉自监督、视觉基础模型与多模态表征学习的每日研究报。</div>
+    <div class="muted">Issue 2026-06-06 · Curated readings and figure notes</div>
+  </footer>
+  <script>
+  (() => {
+    const box = document.querySelector('[data-conf-reminder]');
+    if (!box) return;
+    const key = `visualSslConfReminderClosed:${box.dataset.confReminder || '2026-06-06-main-ddl'}`;
+    try {
+      if (localStorage.getItem(key) === '1') box.hidden = true;
+    } catch (err) {}
+    const close = box.querySelector('.conf-close');
+    if (close) {
+      close.addEventListener('click', () => {
+        box.hidden = true;
+        try { localStorage.setItem(key, '1'); } catch (err) {}
+      });
+    }
+  })();
+  </script>
+</body>
+</html>

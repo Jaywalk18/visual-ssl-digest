@@ -19,39 +19,39 @@
   </header>
   <nav class="site-nav" aria-label="主导航">
     <a class="nav-link" href="../index.html">头版</a>
-<a class="nav-link" href="../issues/2026-06-05.html">今日速递</a>
+<a class="nav-link" href="../issues/2026-06-06.html">今日速递</a>
 <a class="nav-link" href="../pages/catalog.html">论文目录</a>
 <a class="nav-link" href="../pages/timeline.html">时间线</a>
   </nav>
   <main><article class="paper-detail">
   <div class="paper-main">
     <div class="kicker">ICML 2026 · P0 · 2026-06-05</div>
-    <h1 class="paper-headline">Geometry-Preserving Unsupervised Alignment for Heterogeneous：通用视觉自监督系统越来越常同时使用 DINO/SAM/CLIP/SigLIP 等特征，GPUA 直接处理“不同 foundation features 如何兼容”的基础问题</h1>
-    <p class="dek">不需要标签、不更新 backbone，只用 feature-level access 就能缩小 VFM/VLM 间的 modality gap，目标是同时保留 VFM 的感知几何和 VLM 的语言语义。</p>
-    <p class="byline"><strong>Geometry-Preserving Unsupervised Alignment for Heterogeneous Foundation Models</strong>　Shuwen Yu, Zhanxuan Hu, Yi Zhao, Yonghang Tai, Huafeng Li；机构信息 arXiv 元数据未列出。　arXiv + ICML 2026　<a href="https://arxiv.org/abs/2606.04385">原文链接</a></p>
+    <h1 class="paper-headline">Geometry-Preserving Unsupervised Alignment for Heterogeneous：它和通用视觉自监督的关系在于：用无监督正交映射连接 VFM 几何空间与 VLM 语义空间，是今天最直接服务通用视觉表征融合的论文</h1>
+    <p class="dek">高相关；详见方法、贡献和实验边界。</p>
+    <p class="byline"><strong>Geometry-Preserving Unsupervised Alignment for Heterogeneous Foundation Models</strong>　arXiv + ICML 2026　<a href="https://arxiv.org/abs/2606.04385">原文链接</a></p>
     <div class="paper-facts">
       <span><b>编号</b>2606.04385</span>
       <span><b>优先级</b>P0</span>
       <span><b>类别</b>ICML 2026</span>
       <span><b>会议</b>arXiv + ICML 2026</span>
-      <span><b>方法</b>GPUA 把 vision-only foundation model 的 feature space 看作一种“视觉语言”，学习正交映射把 VFM feature 翻译到 VLM semantic space，同时尽量保持原有几何结构。</span>
+      <span><b>方法</b>用无监督正交映射连接 VFM 几何空间与 VLM 语义空间，是今天最直接服务通用视觉表征融合的论文</span>
       <span><b>来源</b>arXiv / OpenReview</span>
     </div>
     <div class="feature-body">
-      <p class="lead dropcap">先说结论。通用视觉自监督系统越来越常同时使用 DINO/SAM/CLIP/SigLIP 等特征，GPUA 直接处理“不同 foundation features 如何兼容”的基础问题。 不需要标签、不更新 backbone，只用 feature-level access 就能缩小 VFM/VLM 间的 modality gap，目标是同时保留 VFM 的感知几何和 VLM 的语言语义。</p>
+      <p class="lead dropcap">先说结论。它和通用视觉自监督的关系在于：用无监督正交映射连接 VFM 几何空间与 VLM 语义空间，是今天最直接服务通用视觉表征融合的论文。 高相关；详见方法、贡献和实验边界。</p>
       <figure class="full-fig"><img src="../assets/mineru/2606.04385/images/11c80cf403c8c1cf964e0cffe1a7adc4bd37e9149283fd38400e9e9e7865420b.jpg" alt="Figureure 1 · t-SNE visualization of foundation-model representations on the Pets"><figcaption><b>Figureure 1 · t-SNE visualization of foundation-model representations on the Pets</b><span class="fig-en">Figure 1. t-SNE visualization of foundation-model representations on the Pets. (a) The original CLIP space exhibits a pronounced modality gap between image-text embeddings. (b) VFM features yield more compact intra-class clusters, yet lack globally consistent alignment to semantic concepts. (c) GPUA (Ours) projects visual clusters onto their corresponding semantic anchors (⋆) while preserving intra-class structure, demonstrating effective geometry-preserving alignment and recovering accurate instance-to-prototype correspondences.</span><span class="fig-zh">这张可视化用来解释 Geometry-Preserving Unsupervised Alignment for Heterogeneous 学到的中间表征或对齐关系。重点看它是否支持正文里的机制判断。</span></figcaption></figure>
 <figure class="full-fig"><img src="../assets/mineru/2606.04385/images/e32711e732bcb158d3610cb079fa3e0ef49c4613ecad5d980050a867ea833e99.jpg" alt="Figureure 2 · The pipeline of GPUA"><figcaption><b>Figureure 2 · The pipeline of GPUA</b><span class="fig-en">Figure 2. The pipeline of GPUA. Stage 1: An unsupervised correspondence estimation module infers soft assignments (P) by jointly enforcing structural consistency and semantic alignment between visual features and semantic prototypes. Stage 2: These correspondences are used to derive the optimal orthogonal transformation (W), which is further refined via the THS loss to yield a hubness-robust embedding space.</span><span class="fig-zh">这张图概括 Geometry-Preserving Unsupervised Alignment for Heterogeneous 的整体方法流程。阅读时先看模块之间传递的训练信号，再看作者如何把目标拆成可优化的子问题。</span></figcaption></figure>
       
       <h2>核心问题</h2>
-      <p>通用视觉自监督系统越来越常同时使用 DINO/SAM/CLIP/SigLIP 等特征，GPUA 直接处理“不同 foundation features 如何兼容”的基础问题。</p>
+      <p>它和通用视觉自监督的关系在于：用无监督正交映射连接 VFM 几何空间与 VLM 语义空间，是今天最直接服务通用视觉表征融合的论文。</p>
       <h2>方法拆解</h2>
-      <p>GPUA 把 vision-only foundation model 的 feature space 看作一种“视觉语言”，学习正交映射把 VFM feature 翻译到 VLM semantic space，同时尽量保持原有几何结构。</p>
+      <p>用无监督正交映射连接 VFM 几何空间与 VLM 语义空间，是今天最直接服务通用视觉表征融合的论文</p>
       <h2>主要贡献</h2>
-      <p>不需要标签、不更新 backbone，只用 feature-level access 就能缩小 VFM/VLM 间的 modality gap，目标是同时保留 VFM 的感知几何和 VLM 的语言语义。</p>
+      <p>高相关；详见方法、贡献和实验边界。</p>
       <h2>实验看点</h2>
-      <p>摘要称在多种 benchmark 上提升 cross-model compatibility，并改善 zero-shot recognition 与 segmentation，额外开销很小。</p>
+      <p>实验部分建议重点看两类证据：一是作者是否把方法收益和更强数据、更长训练、更大模型区分开；二是跨模型、跨数据或跨任务迁移是否还能保留同样趋势。</p>
       <h2>局限与读法</h2>
-      <p>核心假设是 VFM/VLM 空间可由较简单几何映射对齐；对大规模开放词表、多 VFM ensemble 和视频特征是否稳定还需看完整实验。</p>
+      <p>这篇论文的结论需要结合任务设置、训练数据规模和消融实验一起看；不要只凭单个指标判断它对通用视觉表征的价值。</p>
     
     </div>
   </div>
@@ -61,13 +61,13 @@
     <div class="side-box"><h4>原文</h4><p><a href="https://arxiv.org/abs/2606.04385">https://arxiv.org/abs/2606.04385</a></p></div>
   </aside>
 </article></main>
-  <aside class="conf-float" data-conf-reminder="2026-06-05-main-ddl" aria-label="CCF A/B 主投稿提醒">
+  <aside class="conf-float" data-conf-reminder="2026-06-06-main-ddl" aria-label="CCF A/B 主投稿提醒">
   <button class="conf-close" type="button" aria-label="关闭会议提醒">×</button>
   <details open>
     <summary>CCF A/B 主投稿提醒</summary>
     <div class="conf-list"><a class="conf-item " href="https://github.com/ccfddl/ccf-deadlines/blob/main/conference/AI/aaai.yml">
   <span><b>AAAI 2027</b><em>CCF A · Main paper submission</em></span>
-  <strong>52 天</strong>
+  <strong>51 天</strong>
   <small>2026-07-27 · CCF DDL: abstract 2026-07-20；进入 1 个月窗口后重点提醒。</small>
 </a></div>
   </details>
@@ -80,7 +80,7 @@
   (() => {
     const box = document.querySelector('[data-conf-reminder]');
     if (!box) return;
-    const key = `visualSslConfReminderClosed:${box.dataset.confReminder || '2026-06-05-main-ddl'}`;
+    const key = `visualSslConfReminderClosed:${box.dataset.confReminder || '2026-06-06-main-ddl'}`;
     try {
       if (localStorage.getItem(key) === '1') box.hidden = true;
     } catch (err) {}

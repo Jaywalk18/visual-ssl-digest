@@ -1,0 +1,97 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Learning Visual Spatial Planning from · 通用视觉自监督研究报</title>
+  <link rel="stylesheet" href="../assets/styles.css?v=20260525j">
+  <link rel="stylesheet" href="../assets/visual-ssl.css?v=20260525j">
+</head>
+<body>
+  <header class="masthead">
+    <div class="masthead-kicker">Visual SSL Research Report · 2026-06-06</div>
+    <a class="masthead-title" href="../index.html">通用视觉自监督研究报</a>
+    <div class="masthead-meta">
+      <span>图像表征 · VFM · JEPA · 视频预训练</span>
+      <span>CCF A/B 会议优先</span>
+      <span>图文精读 · 方法图解</span>
+    </div>
+  </header>
+  <nav class="site-nav" aria-label="主导航">
+    <a class="nav-link" href="../index.html">头版</a>
+<a class="nav-link" href="../issues/2026-06-06.html">今日速递</a>
+<a class="nav-link" href="../pages/catalog.html">论文目录</a>
+<a class="nav-link" href="../pages/timeline.html">时间线</a>
+  </nav>
+  <main><article class="paper-detail">
+  <div class="paper-main">
+    <div class="kicker">Visual SSL / representation · P2 · 2026-06-06</div>
+    <h1 class="paper-headline">Learning Visual Spatial Planning from：从 pixels 恢复 latent state 再规划，是视觉表征是否“可用于推理”的强检验；这篇与 ViCuR 可作为蒸馏类工作并读</h1>
+    <p class="dek">把 symbolic planning 能力迁移到纯视觉输入模型，训练时可用 symbolic state，推理时仍保持视觉输入。</p>
+    <p class="byline"><strong>Learning Visual Spatial Planning from Symbolic State via Modality-Gap-Aware Self-Distillation</strong>　Haocheng Luo, Jiahui Liu, Ruicheng Zhang, Zhizhou Zhong, Jiaqi Huang, Zunnan Xu, Quan Shi, Jun Zhou, Xiu Li；机构信息 arXiv 元数据未列出。　arXiv　<a href="https://arxiv.org/abs/2606.06076">原文链接</a></p>
+    <div class="paper-facts">
+      <span><b>编号</b>2606.06076</span>
+      <span><b>优先级</b>P2</span>
+      <span><b>类别</b>Visual SSL / representation</span>
+      <span><b>会议</b>arXiv</span>
+      <span><b>方法</b>MGSD 先做 cold-start grounding 让视觉 student 获得可靠状态表示，再用可见 symbolic state 的 privileged teacher 做 on-policy distillation。</span>
+      <span><b>来源</b>arXiv / OpenReview</span>
+    </div>
+    <div class="feature-body">
+      <p class="lead dropcap">先说结论。从 pixels 恢复 latent state 再规划，是视觉表征是否“可用于推理”的强检验；这篇与 ViCuR 可作为蒸馏类工作并读。 把 symbolic planning 能力迁移到纯视觉输入模型，训练时可用 symbolic state，推理时仍保持视觉输入。</p>
+      <figure class="full-fig"><img src="../assets/mineru/2606.06076/images/e8e718fa5afb451196c8580ac94fcbe3807b9dee47612e26c7edfc6237584ebe.jpg" alt="Figureure 2 · : Overview of the MGSD framework"><figcaption><b>Figureure 2 · : Overview of the MGSD framework</b><span class="fig-en">Figure 2: Overview of the MGSD framework. Training consists of two stages to bridge the perception–reasoning modality gap. Bottom Left (Cold-Start SFT): The base visual model is fine-tuned on structured perception tasks to reliably recover state variables (e.g., coordinates of the player, goal, and holes) from images. Bottom Right (OPSD): Symbolic-guided on-policy self-distillation. The visual student generates reasoning rollouts from the image (I), while a privileged symbolic teacher conditions on the explicit symbolic state (T ) and reference plan (A) to provide dense, token-level supervision on the student’s prefix. Top (Inference): The symbolic teacher is discarded, and the trained student performs spatial planning purely from visual inputs.</span><span class="fig-zh">这张图概括 Learning Visual Spatial Planning from 的整体方法流程。阅读时先看模块之间传递的训练信号，再看作者如何把目标拆成可优化的子问题。</span></figcaption></figure>
+<figure class="full-fig"><img src="../assets/mineru/2606.06076/images/0c3295a55d55907af5fc51d1f60ddd201165fbd618edacca68d5f90a275601da.jpg" alt="A Perception Gap: Image →Wrong State A Reasoning Gap: Correct State→Wrong Plan Figure 1: T"><figcaption><b>A Perception Gap: Image →Wrong State A Reasoning Gap: Correct State→Wrong Plan Figure 1: T</b><span class="fig-en">A Perception Gap: Image →Wrong State A Reasoning Gap: Correct State→Wrong Plan Figure 1: The Modality Gap and MGSD. Top: Perception and reasoning bottlenecks in visual planning. Bottom: MGSD sequentially bridges the gap via SFT and OPSD, progressively matching symbolic reference performance.</span><span class="fig-zh">这张图/表用于判断 Learning Visual Spatial Planning from 的实验收益来自哪里。重点看替换、消融或跨模型设置下趋势是否一致，而不是只看单个最高分。</span></figcaption></figure>
+      
+      <h2>核心问题</h2>
+      <p>从 pixels 恢复 latent state 再规划，是视觉表征是否“可用于推理”的强检验；这篇与 ViCuR 可作为蒸馏类工作并读。</p>
+      <h2>方法拆解</h2>
+      <p>MGSD 先做 cold-start grounding 让视觉 student 获得可靠状态表示，再用可见 symbolic state 的 privileged teacher 做 on-policy distillation。</p>
+      <h2>主要贡献</h2>
+      <p>把 symbolic planning 能力迁移到纯视觉输入模型，训练时可用 symbolic state，推理时仍保持视觉输入。</p>
+      <h2>实验看点</h2>
+      <p>摘要报告在 visual planning benchmark 上，4B 与 8B backbone macro average 分别提升 19.3% 和 18.4%。</p>
+      <h2>局限与读法</h2>
+      <p>偏视觉规划而非通用图像表征；symbolic state 数据获取和任务分布可能影响迁移。</p>
+    
+    </div>
+  </div>
+  <aside class="paper-side">
+
+    <div class="side-box"><h4>关键判断</h4><dl><dt>相关性</dt><dd>P2</dd><dt>类别</dt><dd>Visual SSL / representation</dd><dt>会议</dt><dd>arXiv</dd><dt>读法</dt><dd>方法图优先，表格次之</dd></dl></div>
+    <div class="side-box"><h4>原文</h4><p><a href="https://arxiv.org/abs/2606.06076">https://arxiv.org/abs/2606.06076</a></p></div>
+  </aside>
+</article></main>
+  <aside class="conf-float" data-conf-reminder="2026-06-06-main-ddl" aria-label="CCF A/B 主投稿提醒">
+  <button class="conf-close" type="button" aria-label="关闭会议提醒">×</button>
+  <details open>
+    <summary>CCF A/B 主投稿提醒</summary>
+    <div class="conf-list"><a class="conf-item " href="https://github.com/ccfddl/ccf-deadlines/blob/main/conference/AI/aaai.yml">
+  <span><b>AAAI 2027</b><em>CCF A · Main paper submission</em></span>
+  <strong>51 天</strong>
+  <small>2026-07-27 · CCF DDL: abstract 2026-07-20；进入 1 个月窗口后重点提醒。</small>
+</a></div>
+  </details>
+</aside>
+  <footer class="footer">
+    <div>面向通用视觉自监督、视觉基础模型与多模态表征学习的每日研究报。</div>
+    <div class="muted">Issue 2026-06-06 · Curated readings and figure notes</div>
+  </footer>
+  <script>
+  (() => {
+    const box = document.querySelector('[data-conf-reminder]');
+    if (!box) return;
+    const key = `visualSslConfReminderClosed:${box.dataset.confReminder || '2026-06-06-main-ddl'}`;
+    try {
+      if (localStorage.getItem(key) === '1') box.hidden = true;
+    } catch (err) {}
+    const close = box.querySelector('.conf-close');
+    if (close) {
+      close.addEventListener('click', () => {
+        box.hidden = true;
+        try { localStorage.setItem(key, '1'); } catch (err) {}
+      });
+    }
+  })();
+  </script>
+</body>
+</html>
