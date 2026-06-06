@@ -26,32 +26,32 @@
   <main><article class="paper-detail">
   <div class="paper-main">
     <div class="kicker">Visual SSL / representation · P0 · 2026-06-06</div>
-    <h1 class="paper-headline">Balancing Image Compression and Generation：视觉自监督、RAE/VQ/MAE 和 AR 图像模型都依赖 latent token 的信息组织，SelfBootTok 是今天最值得精读的视觉表征压缩方法</h1>
-    <p class="dek">解决常规视觉 tokenizer 在单个 token 中混合多粒度信息、token 间冗余高的问题，同时兼顾压缩与生成。</p>
+    <h1 class="paper-headline">Balancing Image Compression and Generation：MAE/VQ/RAE/AR 图像模型都依赖视觉 token 设计，SelfBootTok 直接影响表征压缩和 token budget 策略</h1>
+    <p class="dek">减少常规 tokenizer 在 token 内混合多粒度信息造成的冗余，把细节负担从生成器转移到 tokenizer。</p>
     <p class="byline"><strong>Balancing Image Compression and Generation with Bootstrapped Tokenization</strong>　Haozhe Chi, Jinghan Li, Hao Jiang, Wu Sheng, Yi Ma, Jing Wang, Yadong Mu；机构信息 arXiv 元数据未列出。　arXiv　<a href="https://arxiv.org/abs/2606.05552">原文链接</a></p>
     <div class="paper-facts">
       <span><b>编号</b>2606.05552</span>
       <span><b>优先级</b>P0</span>
       <span><b>类别</b>Visual SSL / representation</span>
       <span><b>会议</b>arXiv</span>
-      <span><b>方法</b>SelfBootTok 将图像信息拆成 global tokens 与 local tokens，通过自举目标让模型只用 global tokens 预测局部细节，从而把细节负担从生成器转移到 tokenizer。</span>
+      <span><b>方法</b>把图像 tokenization 拆成 global tokens 与 local tokens，通过 self-bootstrapped learning 让模型从 global tokens 预测 local details。</span>
       <span><b>来源</b>arXiv / OpenReview</span>
     </div>
     <div class="feature-body">
-      <p class="lead dropcap">先说结论。视觉自监督、RAE/VQ/MAE 和 AR 图像模型都依赖 latent token 的信息组织，SelfBootTok 是今天最值得精读的视觉表征压缩方法。 解决常规视觉 tokenizer 在单个 token 中混合多粒度信息、token 间冗余高的问题，同时兼顾压缩与生成。</p>
+      <p class="lead dropcap">先说结论。MAE/VQ/RAE/AR 图像模型都依赖视觉 token 设计，SelfBootTok 直接影响表征压缩和 token budget 策略。 减少常规 tokenizer 在 token 内混合多粒度信息造成的冗余，把细节负担从生成器转移到 tokenizer。</p>
       <figure class="full-fig"><img src="../assets/mineru/2606.05552/images/c5ec315bf627c1b3e1192a7076e2fac0644d5b3581ca2195079409c562a2065e.jpg" alt="Figureure 3 · : Overview of the proposed SelfbootTok pipeline"><figcaption><b>Figureure 3 · : Overview of the proposed SelfbootTok pipeline</b><span class="fig-en">Figure 3: Overview of the proposed SelfbootTok pipeline. The input image is first encoded into a set of global tokens using a ViT backbone. Subsequently, local tokens of varying granularity (i.e., 1D or 2D) are predicted through a self-bootstrapping paradigm. These local tokens are aligned with different pretrained visual encoders to capture multi-granularity structural information. Both global and local tokens are then softly quantized, fused, and finally decoded using a ViT decoder. This overall architecture offers strong scalability and training efficiency, enabling high-quality reconstruction and generation with minimal computational overhead.</span><span class="fig-zh">这张图概括 Balancing Image Compression and Generation 的整体方法流程。阅读时先看模块之间传递的训练信号，再看作者如何把目标拆成可优化的子问题。</span></figcaption></figure>
 <figure class="full-fig"><img src="../assets/mineru/2606.05552/images/363da288836764ca15608e28af50d80a866d8aa5a7797b48c162068504837205.jpg" alt="Figureure 1 · : Illustration of our self-bootstrapped learning paradigm"><figcaption><b>Figureure 1 · : Illustration of our self-bootstrapped learning paradigm</b><span class="fig-en">Figure 1: Illustration of our self-bootstrapped learning paradigm. Compared to classical 1D image tokenizers [15, 16, 17] and recent approaches incorporating local detail injection [8, 18], our method employs a global-local decomposition to achieve efficient hierarchical representation learning and adopts a self-bootstrapped strategy to enable both efficient generation and scalable training.</span><span class="fig-zh">这张图来自论文 PDF 的结构化抽取。当前用于辅助理解 Balancing Image Compression and Generation 的方法或实验，请结合正文精读段落一起看。</span></figcaption></figure>
       
       <h2>核心问题</h2>
-      <p>视觉自监督、RAE/VQ/MAE 和 AR 图像模型都依赖 latent token 的信息组织，SelfBootTok 是今天最值得精读的视觉表征压缩方法。</p>
+      <p>MAE/VQ/RAE/AR 图像模型都依赖视觉 token 设计，SelfBootTok 直接影响表征压缩和 token budget 策略。</p>
       <h2>方法拆解</h2>
-      <p>SelfBootTok 将图像信息拆成 global tokens 与 local tokens，通过自举目标让模型只用 global tokens 预测局部细节，从而把细节负担从生成器转移到 tokenizer。</p>
+      <p>把图像 tokenization 拆成 global tokens 与 local tokens，通过 self-bootstrapped learning 让模型从 global tokens 预测 local details。</p>
       <h2>主要贡献</h2>
-      <p>解决常规视觉 tokenizer 在单个 token 中混合多粒度信息、token 间冗余高的问题，同时兼顾压缩与生成。</p>
+      <p>减少常规 tokenizer 在 token 内混合多粒度信息造成的冗余，把细节负担从生成器转移到 tokenizer。</p>
       <h2>实验看点</h2>
-      <p>摘要报告在约 64 tokens 下达到 gFID 1.56，并使生成器计算约降低 40%。</p>
+      <p>摘要称计算降低约 40%，并在 64 tokens 下达到 gFID 1.56。</p>
       <h2>局限与读法</h2>
-      <p>目前摘要侧重重建/生成指标；作为通用视觉 backbone tokenizer，还需要分类、检索、dense prediction 与 VLM 接口验证。</p>
+      <p>指标仍偏 reconstruction/generation；作为通用视觉 tokenizer 还需下游分类、检索、分割和 VLM 接口验证。</p>
     
     </div>
   </div>

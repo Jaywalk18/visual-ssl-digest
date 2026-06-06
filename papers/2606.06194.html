@@ -1,0 +1,97 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>ActiveMimic · 通用视觉自监督研究报</title>
+  <link rel="stylesheet" href="../assets/styles.css?v=20260525j">
+  <link rel="stylesheet" href="../assets/visual-ssl.css?v=20260525j">
+</head>
+<body>
+  <header class="masthead">
+    <div class="masthead-kicker">Visual SSL Research Report · 2026-06-06</div>
+    <a class="masthead-title" href="../index.html">通用视觉自监督研究报</a>
+    <div class="masthead-meta">
+      <span>图像表征 · VFM · JEPA · 视频预训练</span>
+      <span>CCF A/B 会议优先</span>
+      <span>图文精读 · 方法图解</span>
+    </div>
+  </header>
+  <nav class="site-nav" aria-label="主导航">
+    <a class="nav-link" href="../index.html">头版</a>
+<a class="nav-link" href="../issues/2026-06-06.html">今日速递</a>
+<a class="nav-link" href="../pages/catalog.html">论文目录</a>
+<a class="nav-link" href="../pages/timeline.html">时间线</a>
+  </nav>
+  <main><article class="paper-detail">
+  <div class="paper-main">
+    <div class="kicker">project · P1 · 2026-06-06</div>
+    <h1 class="paper-headline">ActiveMimic：通用视频自监督常忽略拍摄者运动与主动观测，这篇提供了利用 egocentric video 的新角度</h1>
+    <p class="dek">指出 egocentric video 中的人类视角调整不应被当作噪声，而是主动感知学习信号。</p>
+    <p class="byline"><strong>ActiveMimic: Egocentric Video Pretraining with Active Perception</strong>　Xingyao Lin, Guojin Zhong, Tianyi Lu, Ziyi Ye, Yichen Zhu, Zuxuan Wu, Yu-Gang Jiang；机构信息 arXiv 元数据未列出。　arXiv + project　<a href="https://arxiv.org/abs/2606.06194">原文链接</a></p>
+    <div class="paper-facts">
+      <span><b>编号</b>2606.06194</span>
+      <span><b>优先级</b>P1</span>
+      <span><b>类别</b>project</span>
+      <span><b>会议</b>arXiv + project</span>
+      <span><b>方法</b>从 body-worn RGB camera 恢复同步 camera/wrist trajectories，把 camera motion 建模为 viewpoint action，并和 manipulation 一起预训练。</span>
+      <span><b>来源</b>arXiv / OpenReview</span>
+    </div>
+    <div class="feature-body">
+      <p class="lead dropcap">先说结论。通用视频自监督常忽略拍摄者运动与主动观测，这篇提供了利用 egocentric video 的新角度。</p>
+      <figure class="full-fig"><img src="../assets/mineru/2606.06194/images/1989b78373908b6ae8d45190d02602b00512129948cb07c5d542f6d8f0d39ee9.jpg" alt="Figureure 2 · : Overview of ActiveMimic"><figcaption><b>Figureure 2 · : Overview of ActiveMimic</b><span class="fig-en">Figure 2: Overview of ActiveMimic. Left: recovering synchronized camera and wrist trajectories from a single body-worn RGB camera. Middle: resolving camera-wrist coupling and encoding as a unified 27D action. Right: pretraining on the 27D action to jointly model active perception and manipulation, then adapting to the target robot.</span><span class="fig-zh">这张图概括 ActiveMimic 的整体方法流程。阅读时先看模块之间传递的训练信号，再看作者如何把目标拆成可优化的子问题。</span></figcaption></figure>
+<figure class="full-fig"><img src="../assets/mineru/2606.06194/images/408d500d94127f4b3eaaa8db370ec5df7dfb0cebcab487aca0595e156d0a451c.jpg" alt="Figureure 1 · : ActiveMimic acquires active perception from in-the-wild egocentric h"><figcaption><b>Figureure 1 · : ActiveMimic acquires active perception from in-the-wild egocentric h</b><span class="fig-en">Figure 1: ActiveMimic acquires active perception from in-the-wild egocentric human video and transfers it to real-world humanoid robots. Left to center: egocentric camera motion and wrist action together form a 27-dimensional unified action representation that enables the model to jointly learn active perception and manipulation. Center to right: active perception is transferred to a humanoid robot, which repositions its viewpoint actively during task execution.</span><span class="fig-zh">这张图来自论文 PDF 的结构化抽取。当前用于辅助理解 ActiveMimic 的方法或实验，请结合正文精读段落一起看。</span></figcaption></figure>
+      
+      <h2>核心问题</h2>
+      <p>通用视频自监督常忽略拍摄者运动与主动观测，这篇提供了利用 egocentric video 的新角度。</p>
+      <h2>方法拆解</h2>
+      <p>从 body-worn RGB camera 恢复同步 camera/wrist trajectories，把 camera motion 建模为 viewpoint action，并和 manipulation 一起预训练。</p>
+      <h2>主要贡献</h2>
+      <p>指出 egocentric video 中的人类视角调整不应被当作噪声，而是主动感知学习信号。</p>
+      <h2>实验看点</h2>
+      <p>摘要称真实任务中超过只用人类视频预训练的 baselines，并接近用机器人数据预训练的 SOTA。</p>
+      <h2>局限与读法</h2>
+      <p>落点是机器人操作，强垂直；通用视觉侧需要抽象出主动视角变化信号，而不是直接照搬任务。</p>
+    
+    </div>
+  </div>
+  <aside class="paper-side">
+
+    <div class="side-box"><h4>关键判断</h4><dl><dt>相关性</dt><dd>P1</dd><dt>类别</dt><dd>project</dd><dt>会议</dt><dd>arXiv + project</dd><dt>读法</dt><dd>方法图优先，表格次之</dd></dl></div>
+    <div class="side-box"><h4>原文</h4><p><a href="https://arxiv.org/abs/2606.06194">https://arxiv.org/abs/2606.06194</a></p></div>
+  </aside>
+</article></main>
+  <aside class="conf-float" data-conf-reminder="2026-06-06-main-ddl" aria-label="CCF A/B 主投稿提醒">
+  <button class="conf-close" type="button" aria-label="关闭会议提醒">×</button>
+  <details open>
+    <summary>CCF A/B 主投稿提醒</summary>
+    <div class="conf-list"><a class="conf-item " href="https://github.com/ccfddl/ccf-deadlines/blob/main/conference/AI/aaai.yml">
+  <span><b>AAAI 2027</b><em>CCF A · Main paper submission</em></span>
+  <strong>51 天</strong>
+  <small>2026-07-27 · CCF DDL: abstract 2026-07-20；进入 1 个月窗口后重点提醒。</small>
+</a></div>
+  </details>
+</aside>
+  <footer class="footer">
+    <div>面向通用视觉自监督、视觉基础模型与多模态表征学习的每日研究报。</div>
+    <div class="muted">Issue 2026-06-06 · Curated readings and figure notes</div>
+  </footer>
+  <script>
+  (() => {
+    const box = document.querySelector('[data-conf-reminder]');
+    if (!box) return;
+    const key = `visualSslConfReminderClosed:${box.dataset.confReminder || '2026-06-06-main-ddl'}`;
+    try {
+      if (localStorage.getItem(key) === '1') box.hidden = true;
+    } catch (err) {}
+    const close = box.querySelector('.conf-close');
+    if (close) {
+      close.addEventListener('click', () => {
+        box.hidden = true;
+        try { localStorage.setItem(key, '1'); } catch (err) {}
+      });
+    }
+  })();
+  </script>
+</body>
+</html>

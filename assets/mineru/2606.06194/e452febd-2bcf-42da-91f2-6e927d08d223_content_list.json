@@ -1,0 +1,2247 @@
+[
+    {
+        "type": "text",
+        "text": "ActiveMimic: Egocentric Video Pretraining with Active Perception ",
+        "text_level": 1,
+        "bbox": [
+            233,
+            157,
+            763,
+            209
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "Xingyao Lin1,2 ",
+        "bbox": [
+            334,
+            239,
+            439,
+            256
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "Guojin Zhong1 ",
+        "bbox": [
+            457,
+            241,
+            563,
+            256
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "Tianyi Lu1 ",
+        "bbox": [
+            583,
+            241,
+            660,
+            256
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "Ziyi Ye1 ",
+        "bbox": [
+            282,
+            256,
+            341,
+            271
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "Yichen Zhu3 ",
+        "bbox": [
+            359,
+            257,
+            449,
+            270
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "Zuxuan Wu1,2,4 ",
+        "bbox": [
+            467,
+            257,
+            576,
+            270
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "Yu-Gang Jiang1 ",
+        "bbox": [
+            594,
+            257,
+            707,
+            271
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "1 Fudan University, 2 Shanghai Innovation Institute, 3 Current Robotics, 4 NeoteAI ",
+        "bbox": [
+            228,
+            271,
+            769,
+            286
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "image",
+        "img_path": "images/408d500d94127f4b3eaaa8db370ec5df7dfb0cebcab487aca0595e156d0a451c.jpg",
+        "image_caption": [
+            "Figure 1: ActiveMimic acquires active perception from in-the-wild egocentric human video and transfers it to real-world humanoid robots. Left to center: egocentric camera motion and wrist action together form a 27-dimensional unified action representation that enables the model to jointly learn active perception and manipulation. Center to right: active perception is transferred to a humanoid robot, which repositions its viewpoint actively during task execution. "
+        ],
+        "image_footnote": [],
+        "content": "```mermaid\ngraph TD\n    A[\"Camera Motion\"] --> B[\"In-the-wild Egocentric Video\"]\n    B --> C[\"Real-world Deployment\"]\n    C --> D[\"Active Perception\"]\n    D --> E[\"3D Cube with z, y, x, z axes\"]\n    E --> F[\"Robot with labeled components\"]\n```",
+        "sub_type": "flowchart",
+        "bbox": [
+            183,
+            306,
+            813,
+            526
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "Abstract ",
+        "text_level": 1,
+        "bbox": [
+            465,
+            636,
+            531,
+            650
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "Egocentric human video offers a scalable alternative to robot data for pretraining, yet models pretrained on such video consistently underperform those pretrained on robot data. We attribute this gap to a missing signal, the active perception behavior in egocentric videos, where humans continuously reposition their viewpoint during manipulation, inducing camera motion that standard pipelines treat as noise. To address this, we present ActiveMimic, a pretraining framework that recovers synchronized camera and wrist trajectories from a single body-worn RGB camera, models camera motion as a viewpoint action, and jointly learns active perception and manipulation from in-the-wild egocentric human video before adapting to a target robot. Empirically, real-world experiments across tasks with diverse active perception demands show that ActiveMimic consistently surpasses baselines pretrained on human video and matches state-of-the-art models pretrained on robot data. Further analysis provides evidence that active perception capability originates from egocentric human video pretraining rather than robot-specific fine-tuning, confirming active perception as the key to unlocking egocentric human video for robot pretraining. ",
+        "bbox": [
+            192,
+            656,
+            802,
+            851
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "Keywords: Robot Manipulation, Egocentric Human Video, Active Perception ",
+        "bbox": [
+            194,
+            862,
+            658,
+            877
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "Project Page: https://activemimic.github.io/ ",
+        "bbox": [
+            194,
+            880,
+            519,
+            893
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "aside_text",
+        "text": "arXiv:2606.06194v1 [cs.RO] 4 Jun 2026 ",
+        "bbox": [
+            22,
+            282,
+            57,
+            710
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "header",
+        "text": "",
+        "bbox": [
+            174,
+            95,
+            222,
+            132
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "header",
+        "text": "Institute of Trustworthy Embodied AI Fudan University ",
+        "bbox": [
+            227,
+            95,
+            583,
+            132
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "page_number",
+        "text": "1 ",
+        "bbox": [
+            493,
+            935,
+            503,
+            946
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "1 Introduction ",
+        "text_level": 1,
+        "bbox": [
+            173,
+            90,
+            312,
+            104
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "text",
+        "text": "Robot foundation models have become a central paradigm in robotic manipulation [1, 2, 3, 4, 5, 6]. A common training strategy combines a Vision-Language Model (VLM) with an action expert [7, 8], pretrains on large-scale robot data [9], and adapts to downstream tasks. However, robot data remains expensive to collect, difficult to scale, and limited in task diversity. Instead, egocentric human videos offer a scalable alternative, being cheaper to acquire, covering a broader range of daily activities, and are easy to scale. While appealing, models pretrained on egocentric human data consistently underperform those pretrained on robot data. ",
+        "bbox": [
+            169,
+            122,
+            823,
+            228
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "text",
+        "text": "Existing studies attribute this gap to the absence of action supervision and focus on constructing proxy action labels, such as hand trajectories [10, 11], hand point clouds [12], or object motion signals [13]. These approaches, however, miss a key signal: during manipulation, humans continuously reposition their viewpoint through head and body movements, inducing substantial camera motion in egocentric videos that standard pipelines treat as noise. In this paper, we argue that explicitly modeling this active perception behavior [14, 15, 16] is key to unlocking egocentric human video for robot pretraining. ",
+        "bbox": [
+            169,
+            234,
+            826,
+            340
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "text",
+        "text": "More specifically, modeling active perception requires recovering synchronized camera and wrist trajectories from egocentric human videos. However, wrist motion recovered from such videos inevitably conflates hand movement with camera rotation and translation, resulting in an inherent camera and hand coupling. Without resolving this coupling, a model cannot correctly learn either camera motion or hand motion. While existing methods that decouple camera motion and hand motion rely on dedicated capture hardware beyond a single body-worn RGB camera [17, 18, 19, 20], preventing them from scaling to in-the-wild video, our goal is to resolve this coupling without specialized hardware, computing synchronized camera and wrist trajectories using off-the-shelf vision models alone and producing a unified action representation that captures how perception and manipulation jointly evolve. ",
+        "bbox": [
+            169,
+            348,
+            826,
+            500
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "text",
+        "text": "With this in mind, we introduce ActiveMimic, a pretraining framework that models viewpoint and wrist motion so as to perceive and act in an active manner. In particular, ActiveMimic derives a unified action representation encoding the viewpoint motion of the camera alongside the bimanual wrist motion, all expressed in a common reference frame, allowing the model to learn their relationships through a single flow matching objective. We compute this unified action space on Ego4D [21], a large-scale egocentric dataset covering diverse daily activities and hand-object manipulation. It is worth noting that the approach is general and can be extended to any in-the-wild egocentric data. Once camera and wrist actions are aligned, we pretrain the model to predict both camera and wrist actions from egocentric observations, learning active perception jointly with manipulation. Finally, the pretrained model is adapted to the target robotic embodiment using robot-specific data, transferring the active perception capability acquired during pretraining. ",
+        "bbox": [
+            169,
+            506,
+            825,
+            672
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "text",
+        "text": "Real-world experiments on tasks spanning diverse active perception demands show that ActiveMimic consistently surpasses baselines pretrained on human video and matches state-of-the-art models pretrained on robot data. Our analysis further reveals that active perception originates from egocentric video pretraining rather than robot-specific fine-tuning, and that camera motion supervision facilitates representational transfer from human perception to robot control. ",
+        "bbox": [
+            169,
+            679,
+            823,
+            755
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "text",
+        "text": "In summary, our contributions are threefold. (a) ActiveMimic: an active-perception-aware pretraining framework for in-the-wild egocentric video. We extract synchronized camera and wrist trajectories from egocentric human video and jointly model active perception with manipulation, enabling scalable pretraining without dedicated capture hardware. (b) Active perception is the key to unlocking egocentric human video for robot pretraining. Real-world experiments demonstrate that camera motion supervision consistently improves success rate across tasks with diverse active perception demands. (c) Active perception originates from pretraining and transfers from human to robot. We show that active perception is acquired during egocentric pretraining rather than robot fine-tuning, and that camera motion supervision facilitates representational transfer from human perception to robot control. ",
+        "bbox": [
+            169,
+            761,
+            826,
+            912
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "page_number",
+        "text": "",
+        "bbox": [
+            493,
+            935,
+            504,
+            946
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "image",
+        "img_path": "images/1989b78373908b6ae8d45190d02602b00512129948cb07c5d542f6d8f0d39ee9.jpg",
+        "image_caption": [
+            "Figure 2: Overview of ActiveMimic. Left: recovering synchronized camera and wrist trajectories from a single body-worn RGB camera. Middle: resolving camera-wrist coupling and encoding as a unified 27D action. Right: pretraining on the 27D action to jointly model active perception and manipulation, then adapting to the target robot. "
+        ],
+        "image_footnote": [],
+        "content": "```mermaid\ngraph LR\n    A[\"In-the-wild Egocentric Videos\"] --> B[\"Unified Trajectory Space\"]\n    B --> C[\"Real-world Deployment\"]\n    \n    subgraph_A[\"In-the-wild Egocentric Videos\"]\n        D[\"Time\"] --> E[\"Pose Estimation\"]\n        E --> F[\"Camera\"]\n        E --> G[\"Left Wrist\"]\n        E --> H[\"Right Wrist\"]\n    end\n    \n    subgraph_B[\"Unified Trajectory Space\"]\n        I[\"Camera\"] --> J[\"Left Wrist\"]\n        J --> K[\"Right Wrist\"]\n        L[\"Camera Trai\"] --> M[\"Night Wrist Trai\"]\n        N[\"Left Wrist Trai\"] --> O[\"Right Wrist\"]\n        P[\"Camdra Trai\"] --> Q[\"Camdra Trai\"]\n        R[\"Left Wrist Trai\"] --> S[\"Left Wrist\"]\n        T[\"Right Wrist Trai\"] --> U[\"Right Wrist\"]\n    end\n    \n    subgraph_C[\"Real-world Deployment\"]\n        V[\"Transfer\"] --> W[\"Robot-specific Training\"]\n        X[\"Vision-Language-Action Model\"] --> Y[\"Egocentric Video Pretraining\"]\n        Z[\"Pre-trained Vision-Language Model\"] --> AA[\"Action Expert (Random Init.)\"]\n    end\n```",
+        "sub_type": "flowchart",
+        "bbox": [
+            173,
+            88,
+            823,
+            243
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "2 Related Work ",
+        "text_level": 1,
+        "bbox": [
+            171,
+            311,
+            321,
+            327
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "Learning from human videos Human videos offer a cheaper, more scalable, and more diverse alternative to robot data for pretraining. One line of work estimates proxy action labels from such videos, including hand trajectories [10, 11], hand point clouds [12], and object motion signals [13], but supervises only hand or object motion and offers no signal about viewpoint action. A complementary line reads both viewpoint and hand actions directly from dedicated capture hardware [17, 18], restoring action supervision at the cost of additional cameras [22] or wearable sensors [19, 20, 23] beyond a single body-worn RGB camera, which restricts its applicability to in-thewild egocentric human video. ",
+        "bbox": [
+            169,
+            344,
+            823,
+            465
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "Active perception A long-standing problem in robotics and computer vision is active perception [14, 15, 16], where an agent actively controls its viewpoint to reduce perceptual uncertainty rather than passively receiving images. Classically, it has been studied as Next-Best-View planning [24, 25, 26, 27, 28, 29], where viewpoint selection is optimized independently of downstream manipulation. Recent work instead models camera motion and manipulation actions jointly within a shared action space, learning perception and action end-to-end [30, 31, 32, 33, 34, 35, 36]. This new paradigm, however, relies on dedicated data collection with human-operated capture rigs, ranging from VR headsets and controllers for robot teleoperation [32, 30] to wearable devices that record head and hand poses [19], and therefore cannot leverage in-the-wild egocentric human videos as a web-scale, organically produced corpus, analogous to the readily available web data that has driven the rapid scaling of modern VLM and LLM pretraining. ",
+        "bbox": [
+            169,
+            481,
+            823,
+            647
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "Learning active perception from egocentric human videos Among models trained on egocentric human videos [17, 37, 38], the dominant line supervises only proxy hand or object labels and leaves active perception unmodeled, while work that learns active perception from human data relies on additional cameras [22] or wearable sensors [19, 20] beyond a single body-worn RGB camera rather than on in-the-wild egocentric video. In contrast, ActiveMimic introduces a purely visionbased approach that recovers camera and wrist trajectories jointly from a single body-worn RGB camera, striking a balance between fidelity and scalability that enables active perception to be trained together with manipulation in a unified action space on in-the-wild egocentric videos. ",
+        "bbox": [
+            169,
+            662,
+            823,
+            784
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "3 Method ",
+        "text_level": 1,
+        "bbox": [
+            171,
+            803,
+            272,
+            819
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "ActiveMimic reframes egocentric human video pretraining around the coupled evolution of active perception and manipulation. Rather than treating egocentric camera motion as incidental noise, we interpret it as a viewpoint action that reflects how humans actively position their viewpoint during task execution. Starting from raw egocentric videos, we recover temporally aligned camera and wrist trajectories and represent them in a unified trajectory space, enabling joint modeling of active perception and manipulation (Sec. 3.1). The model is then trained on this structured signal to predict both camera and wrist action from egocentric observations, enabling it to acquire transferable perceptual representations prior to adaptation to the target robotic embodiment (Sec. 3.2). ",
+        "bbox": [
+            169,
+            835,
+            823,
+            912
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "page_number",
+        "text": "3 ",
+        "bbox": [
+            493,
+            935,
+            503,
+            946
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "",
+        "bbox": [
+            169,
+            90,
+            823,
+            137
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "text",
+        "text": "3.1 From Egocentric Video to Unified Action Space ",
+        "text_level": 1,
+        "bbox": [
+            171,
+            151,
+            542,
+            166
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "text",
+        "text": "From a single body-worn RGB camera, we recover synchronized camera and wrist trajectories that jointly describe active perception and manipulation, without requiring additional sensors or controlled capture conditions. This involves three steps: recovering camera and wrist trajectories from RGB frames using off-the-shelf vision models, resolving the camera and wrist coupling by re-expressing all poses in a common reference frame, and encoding the result as a unified 27- dimensional action representation. In particular, we consider Ego4D [21], a large-scale egocentric dataset covering diverse daily activities; details of dataset filtering, temporal segmentation, and instruction annotation are provided in Sec. A.2. ",
+        "bbox": [
+            169,
+            171,
+            823,
+            292
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "text",
+        "text": "Recovering camera and wrist trajectories. For each egocentric video, we estimate three synchronized pose trajectories using off-the-shelf vision models: the egocentric camera trajectory and the left and right wrist trajectories. We denote by target frame expressed in the reference frame. Fo $T _ { \\mathrm { r e f } } ^ { \\mathrm { t g t } } ~ \\in ~ S E ( 3 )$ sformation of thein an episode of $k \\in \\{ 1 , \\ldots , K \\}$ K frames, we estimate the egocentric camera pose $T _ { \\mathrm { c a m } _ { 1 } } ^ { \\mathrm { c a m } _ { k } }$ , expressed in the coordinate system of the camera at the first frame of the episode, together with the left and right wrist poses $T _ { \\mathrm { c a m } _ { k } } ^ { \\mathrm { w r i s t } _ { k } ^ { L } }$ and $T _ { \\mathrm { c a m } _ { k } } ^ { \\mathrm { w r i s t } _ { k } ^ { R } }$ , expressed in the coordinate system of the current-frame camera. The egocentric camera trajectory serves as the operational realization of the viewpoint action introduced earlier; rigidly attached to the wearer, it encodes active perception independent of the mounting configuration (head-, chest-, or glasses-mounted). Wrist poses are estimated by SAM-3D-Body [39]. The camera trajectory is recovered by VGGT [40] as a scale-normalized path $\\tilde { T } _ { \\mathrm { c a m } _ { 1 } } ^ { \\mathrm { c a m } _ { k } }$ , whose translational component is determined only up to a global scale factor. To recover the metric scale, we align the per-pixel depth maps from VGGT with metric depth estimates from UniDepth [41] viaaggregated into an episode-level scale factor λ. The metric camera trajectory $T _ { \\mathrm { c a m } _ { 1 } } ^ { \\mathrm { c a m } _ { k } }$ ian depth ratio,is obtained by scaling the translational component ofthe scale recovery procedure are provi $\\tilde { T } _ { \\mathrm { c a m } _ { 1 } } ^ { \\mathrm { c a m } _ { k } }$ by λ while keeping its rotation unchanged. Details ofSec. A.1. ",
+        "bbox": [
+            169,
+            297,
+            826,
+            551
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "text",
+        "text": "Resolving camera and wrist coupling. The recovered camera and wrist trajectories are coupled: wrist poses are expressed in the current-frame camera coordinate system while the camera trajectory is anchored to the first frame, so any displacement in the wrist poses between frames reflects both actual wrist movement and the camera’s own rotation and translation; using these wrist poses directly as action supervision would therefore conflate wrist movement with camera motion. We resolve this coupling by re-expressing all poses in a common chunk-relative reference frame. Since the policy operates on fixed-length temporal chunks rather than full episodes, we re-center all poses for each chunk. For a chunk of length H, let i denote its start frame in the episode-level index and let $\\tau \\in \\{ 0 , \\ldots , H - 1 \\}$ denote the chunk-local offset. The corresponding episode-level frame index is $k = i + \\tau$ . We re-center all camera poses in this chunk to the coordinate system cami of the chunk’s first frame. The chunk-relative camera pose at offset τ is ",
+        "bbox": [
+            169,
+            556,
+            823,
+            722
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "equation",
+        "text": "$$\nT _ {\\mathrm{cam} _ {i}} ^ {\\mathrm{cam} _ {i + \\tau}} = \\left(T _ {\\mathrm{cam} _ {1}} ^ {\\mathrm{cam} _ {i}}\\right) ^ {- 1} T _ {\\mathrm{cam} _ {1}} ^ {\\mathrm{cam} _ {i + \\tau}}, \\tag {1}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            387,
+            724,
+            823,
+            744
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "text",
+        "text": "and the wrist poses are followed by composing the chunk-relative camera pose at offset τ with the current-frame wrist estimates, ",
+        "bbox": [
+            169,
+            747,
+            823,
+            775
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "equation",
+        "text": "$$\nT _ {\\mathrm{cam} _ {i}} ^ {\\mathrm{wrist} _ {i + \\tau} ^ {L}} = T _ {\\mathrm{cam} _ {i}} ^ {\\mathrm{cam} _ {i + \\tau}} T _ {\\mathrm{cam} _ {i + \\tau}} ^ {\\mathrm{wrist} _ {i + \\tau} ^ {L}}, \\tag {2}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            390,
+            777,
+            823,
+            801
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "text",
+        "text": "and analogously for the right wrist. This construction decouples camera and wrist motions by placing them in a single spatial reference frame cami. ",
+        "bbox": [
+            169,
+            803,
+            823,
+            833
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "text",
+        "text": "27D action representation. The decoupled chunk-relative poses are encoded into a unified 27- dimensional action vector that jointly captures viewpoint action and bimanual manipulation. Each chunk-relative pose, written in homogeneous form as ",
+        "bbox": [
+            169,
+            835,
+            823,
+            880
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "equation",
+        "text": "$$\nT = \\left[ \\begin{array}{l l} R & t \\\\ \\mathbf {0} ^ {\\top} & 1 \\end{array} \\right], \\quad R \\in S O (3), t \\in \\mathbb {R} ^ {3}, \\tag {3}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            354,
+            882,
+            823,
+            916
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "page_number",
+        "text": "4 ",
+        "bbox": [
+            493,
+            935,
+            504,
+            946
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "text",
+        "text": "is encoded by its translation and a continuous 6D rotation representation [42]: ",
+        "bbox": [
+            171,
+            90,
+            683,
+            106
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "equation",
+        "text": "$$\np = t \\in \\mathbb {R} ^ {3}, \\quad r _ {6 D} = \\left[ R _ {:, 1}; R _ {:, 2} \\right] \\in \\mathbb {R} ^ {6}, \\tag {4}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            351,
+            111,
+            823,
+            130
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "where $R _ { : , j }$ denotes the j-th column of R. Concatenating the camera and both wrist encodings yields a unified chunk-relative action vector for each chunk start i and offset τ : ",
+        "bbox": [
+            169,
+            133,
+            823,
+            162
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "equation",
+        "text": "$$\na _ {i, \\tau} = \\left[ \\underbrace {p _ {i , \\tau} ^ {\\text { cam }} , r _ {6 D , i , \\tau} ^ {\\text { cam }}} _ {\\text { camera   (9D)}}, \\underbrace {p _ {i , \\tau} ^ {\\text { wrist } ^ {L}} , r _ {6 D , i , \\tau} ^ {\\text { wrist } ^ {L}}} _ {\\text { left   wrist   (9D)}}, \\underbrace {p _ {i , \\tau} ^ {\\text { wrist } ^ {R}} , r _ {6 D , i , \\tau} ^ {\\text { wrist } ^ {R}}} _ {\\text { right   wrist   (9D)}} \\right] \\in \\mathbb {R} ^ {2 7}. \\tag {5}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            282,
+            166,
+            825,
+            208
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "This unified 27D action space enables the model to jointly learn the coupled dynamics of camera and wrist motion within a single prediction objective. ",
+        "bbox": [
+            169,
+            212,
+            823,
+            242
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "3.2 Architecture and Training Strategy ",
+        "text_level": 1,
+        "bbox": [
+            171,
+            248,
+            459,
+            263
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "With the decoupled camera and wrist action from Sec. 3.1, we introduce a two-stage training strategy that injects active perception capability into the model. We first describe the model architecture, then detail the training strategy. ",
+        "bbox": [
+            169,
+            268,
+            823,
+            314
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "Architecture and training objective. The architecture of ActiveMimic adopts a mix-oftransformers design [43, 44, 3] that combines a visual-language prefix with an action-expert suffix. The visual-language prefix encodes images and a tokenized prompt into a multimodal context, onto which the action expert attends together with the current state and a continuous time variable to predict a chunk of future continuous actions. The policy is trained with a conditional flow-matching objective. The loss is defined as ",
+        "bbox": [
+            169,
+            316,
+            825,
+            406
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "equation",
+        "text": "$$\n\\mathcal {L} = \\mathbb {E} _ {a, \\epsilon , t} \\left\\| v _ {t} (a _ {t}, o) - (\\epsilon - a) \\right\\| _ {2} ^ {2}, \\tag {6}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            383,
+            412,
+            823,
+            433
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "where $a _ { t } = t \\epsilon + ( 1 - t ) \\iota$ is a noisy sample of the clean action chunk a, Gaussian noise $\\epsilon \\sim \\mathcal { N } ( 0 , I )$ , time step $t \\sim \\mathcal { U } ( 0 , 1 )$ , and o denotes the overall conditioning context. The action chunk a refers to the 27D unified action defined in Sec. 3.1 during egocentric human video pretraining and to the robot action chunk during robot-specific fine-tuning. At inference, the prefix representation is encoded once and cached, and the action chunk is recovered by initializing from Gaussian noise and iteratively denoising via Euler integration along the learned velocity field. ",
+        "bbox": [
+            169,
+            436,
+            825,
+            527
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "Two-stage training. Training follows a two-stage recipe: an egocentric human video pretraining stage on the dataset constructed in Sec. 3.1, followed by a robot-specific training stage that adapts the pretrained policy to the target robotic embodiment. During pretraining, the visual-language prefix is initialized from a pretrained VLM checkpoint [45] while the action expert is initialized at random, and the policy is supervised with the chunk-relative camera and wrist targets, so that it learns to model active perception jointly with manipulation from large-scale egocentric human video. The subsequent robot-specific training stage retains the same architecture and is initialized entirely from the pretrained weights, training on robot-specific data to transfer the active perception capability acquired during pretraining to the robotic embodiment. ",
+        "bbox": [
+            169,
+            530,
+            826,
+            667
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "4 Experiments ",
+        "text_level": 1,
+        "bbox": [
+            171,
+            672,
+            313,
+            688
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "We structure our evaluation around four questions that together assess whether active perception is the key to unlocking egocentric human video for robot pretraining. Q1 (Sec. 4.2). Does camera motion supervision improve real-world task performance? Q2 (Sec. 4.3). Do the camera and wrist trajectories recovered from egocentric video carry effective pretraining signals? Q3 (Sec. 4.4). Does active perception come from egocentric pretraining, and how does the model use it? Q4 (Sec. 4.5). Does camera motion supervision enable human-to-robot representational transfer? ",
+        "bbox": [
+            169,
+            704,
+            825,
+            794
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "4.1 Experimental Setup ",
+        "text_level": 1,
+        "bbox": [
+            171,
+            810,
+            352,
+            825
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "Robot platform. We conduct all real-world experiments on a humanoid upper-body robot (AGI-BOT G1) equipped with a 2-DoF head, a 2-DoF waist, and two 7-DoF arms with parallel-jaw grippers. The robot observes through three RGB cameras: one head-mounted and two wrist-mounted. The head camera, together with the head and waist joints, forms the active perception subsystem that enables viewpoint repositioning during task execution. ",
+        "bbox": [
+            169,
+            835,
+            825,
+            912
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "page_number",
+        "text": "",
+        "bbox": [
+            493,
+            936,
+            503,
+            946
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "image",
+        "img_path": "images/c3c5891f0acacb5872d3595ad04bcc6097438da1c9762dd92ec3b19e7a9a2e1a.jpg",
+        "image_caption": [],
+        "image_footnote": [],
+        "content": "Crouch\nManipulation\n#1",
+        "sub_type": "text_image",
+        "bbox": [
+            178,
+            90,
+            388,
+            186
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "image",
+        "img_path": "images/8b33a96142aa63b805926f8b11dee3f46720c2122ac74d48b7e6b988413623d1.jpg",
+        "image_caption": [],
+        "image_footnote": [],
+        "content": "Stand Up\n→\nManipulation\n#2",
+        "sub_type": "text_image",
+        "bbox": [
+            392,
+            90,
+            599,
+            185
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "image",
+        "img_path": "images/f742fb0cebf0635992522c1cc841e0b7f47f626e72778add20ff9e2b703b5463.jpg",
+        "image_caption": [],
+        "image_footnote": [],
+        "content": "#3\n#2\n#1\n#0",
+        "sub_type": "text_image",
+        "bbox": [
+            604,
+            90,
+            816,
+            185
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "image",
+        "img_path": "images/19abe8944474adc46286b3ea691365abff9762f6ef69efc455255aba0ae8c13b.jpg",
+        "image_caption": [
+            "(a) Restocking Task ",
+            "(b) Reaching Task "
+        ],
+        "image_footnote": [],
+        "content": "Stand Up\nLean Over\nManipulation",
+        "sub_type": "text_image",
+        "bbox": [
+            178,
+            200,
+            387,
+            292
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "image",
+        "img_path": "images/6b56b57f94f44616c0cee663cc99b97d95577a7acbe9b16e8d4a596fad8d3893.jpg",
+        "image_caption": [
+            "(c) Finding Task "
+        ],
+        "image_footnote": [],
+        "content": "Manipulation\nTurn Head",
+        "sub_type": "text_image",
+        "bbox": [
+            392,
+            200,
+            601,
+            292
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "image",
+        "img_path": "images/f9d007a728c3099df9b7c44ad74f61b5737fe6026cd2a6f10b028a5e66d02b82.jpg",
+        "image_caption": [
+            "(d) Pouring Task ",
+            "Figure 3: Real-world tasks. (a) Restocking: the robot crouches to pick up a water bottle from the table, then stands and looks up to scan the shelf for an empty slot and places it. (b) Reaching: the robot stands up and leans over an obstacle to reach the target object behind it. (c) Finding: the robot turns its head left or right to locate a yogurt and grasps it with the corresponding arm. (d) Pouring: the robot uses both hands to transfer liquid from a source container to a receiving container. "
+        ],
+        "image_footnote": [],
+        "content": "Manipulation\nManipulation",
+        "sub_type": "text_image",
+        "bbox": [
+            604,
+            200,
+            815,
+            294
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "text",
+        "text": "Tasks. We evaluate ActiveMimic on four real-world tasks spanning the active perception spectrum (Fig. 3). (a) Restocking is the most demanding: the robot crouches to pick up a water bottle from the table, stands and looks up to scan the shelf for an empty slot, then places the bottle. The shelf has three tiers at 70, 100, and 130 cm; we award one point for pickup and one for placement. (b) Reaching requires standing up and leaning over a 24 cm obstacle to grasp a target object initialized in a 20×20 cm region behind it. (c) Finding requires active search: the target yogurt is initialized in one of two 15×25 cm regions on the left or right side of the table, and the robot turns its head to locate and grasp it with the corresponding arm. (d) Pouring requires bimanual coordination to transfer liquid between two containers initialized in separate 20×20 cm regions. We train the four tasks on 270, 30, 60, and 90 teleoperated demonstrations and evaluate over 81, 18, 36, and 45 trials, respectively. We report end-to-end success rate as the primary metric and additionally score Restocking by average points per trial. ",
+        "bbox": [
+            169,
+            414,
+            823,
+            595
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "text",
+        "text": "Pretraining data. We build our pretraining corpus from the Hands and Objects subset of Ego4D, which already targets egocentric hand-object manipulation. We further filter this subset to remove clips unsuitable for active perception supervision, yielding 2,561 episodes that amount to roughly 10 hours of video at 10 fps and an average of 130 frames per episode. Details of the additional filtering procedure are provided in Sec. A.2. ",
+        "bbox": [
+            169,
+            611,
+            823,
+            686
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "text",
+        "text": "Baselines. We compare ActiveMimic against four baselines. (i) π0 [3], initialized from the publicly released checkpoint and fine-tuned on our robot-specific data. (ii) MotoVLA [12], a state-of-theart model pretrained on human video whose pretraining corpus mixes robot data with RH20T [46] human video, serving as the strongest available representative of pretraining on human video. (iii) $A c t i \\nu e M i m i c _ { w r i s t - o n l y }$ shares the Ego4D [21] corpus and architecture of ActiveMimic but is supervised only with the 18D wrist action, isolating the contribution of camera motion supervision. (iv) $A c t i v e M i m i c _ { s f t - o n l y }$ skips egocentric pretraining entirely and trains only on robot-specific data, isolating the contribution of egocentric human video pretraining. ",
+        "bbox": [
+            169,
+            703,
+            823,
+            824
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "text",
+        "text": "4.2 Comparison with Baselines ",
+        "text_level": 1,
+        "bbox": [
+            171,
+            839,
+            401,
+            854
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "text",
+        "text": "Fig. 4 shows that ActiveMimic surpasses all baselines on all four tasks, achieving success rates of 90.1% on Restocking, 88.9% on Reaching, 91.7% on Finding, and 93.3% on Pouring. Among the ActiveMimic variants, both $\\mathrm { A c t i v e M i m i c _ { w r i s t - o n l y } }$ and $\\mathrm { A c t i v e M i m i c _ { s f t - o n l y } }$ fall behind ActiveMimic across the board, confirming that camera motion supervision during egocentric pretraining is the key differentiating factor. MotoVLA, which leverages a large mixed corpus of robot and human data, also falls behind ActiveMimic by a substantial margin on all tasks. Beyond these baselines, ActiveMimic achieves comparable or higher success rates than $\\pi _ { 0 }$ on all four tasks, showing that egocentric video pretraining matches a state-of-the-art model pretrained on robot data. On Restocking and Finding, the two tasks with the highest active perception demands, ActiveMimic clearly surpasses $\\pi _ { 0 }$ (90.1% vs. 86.4% and 91.7% vs. 86.1%), indicating that egocentric video provides active perception advantages that robot data alone does not capture. We further investigate where this capability originates (Sec. 4.4) and whether it transfers from human to robot (Sec. 4.5). ",
+        "bbox": [
+            169,
+            866,
+            823,
+            912
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "page_number",
+        "text": "6 ",
+        "bbox": [
+            493,
+            936,
+            503,
+            946
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "chart",
+        "img_path": "images/2570852e83c6161ec2db0dae0a92371fbf581ad68114c982edf6c3a1d2dee348.jpg",
+        "content": "| Task       | ActiveMimic | ActiveMimic_wrist-only | ActiveMimic_sft-only | MotoVLA | π₀   |\n| ---------- | ----------- | ---------------------- | -------------------- | ------- | ---- |\n| Restocking | 90.1        | 86.4                   | 82.7                 | 43.2    | 86.4 |\n| Reaching   | 88.9        | 83.3                   | 72.2                 | 44.4    | 83.3 |\n| Finding    | 91.7        | 80.6                   | 66.7                 | 41.7    | 86.1 |\n| Pouring    | 93.3        | 80.0                   | 60.0                 | 0.0     | 97.8 |",
+        "chart_caption": [],
+        "chart_footnote": [],
+        "sub_type": "line",
+        "bbox": [
+            178,
+            89,
+            602,
+            262
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "chart",
+        "img_path": "images/95ef60a0a7f341bc0240e514d66f20a1dd623c5e2a8f137c4a6124e11af5e744.jpg",
+        "content": "| Restocking Points | Avg. points / trial |\n| ----------------- | ------------------- |\n| Group 1           | 1.3                 |\n| Group 2           | 1.4                 |\n| Group 3           | 1.3                 |\n| Group 4           | 1.2                 |",
+        "chart_caption": [
+            "Figure 4: Real-world results. (a) Success rate: end-to-end success rate (%) on the four real-world tasks. (b) Restocking points: average points per trial on Restocking, with one point awarded for picking up the bottle and one for placing it on the shelf. "
+        ],
+        "chart_footnote": [],
+        "sub_type": "bar",
+        "bbox": [
+            607,
+            90,
+            821,
+            261
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "chart",
+        "img_path": "images/b2e010b727196a1334cc8242fff01d1d8d64e194c836d4c9a2af376a539d68d1.jpg",
+        "content": "(a) Recovery Rate\n| Body Part | Strict (%) | Medium (%) | Loose (%) |\n| :--- | :--- | :--- | :--- |\n| Head | 78.8 | 85.1 | 93.9 |\n| Wrist (L) | 65.9 | 77.1 | 85.0 |\n| Wrist (R) | 61.7 | 79.7 | 86.2 |",
+        "chart_caption": [],
+        "chart_footnote": [],
+        "sub_type": "bar",
+        "bbox": [
+            179,
+            333,
+            362,
+            443
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "image",
+        "img_path": "images/377b32abcb519353a64399f741b6bf4f1ca2740c6259b0d8c83e760739b4bf01.jpg",
+        "image_caption": [],
+        "image_footnote": [],
+        "content": "Person holding a beverage can in a small room with a wooden table and fruit (no visible text or symbols)",
+        "sub_type": "natural_image",
+        "bbox": [
+            362,
+            335,
+            470,
+            443
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "chart",
+        "img_path": "images/6b55e96533cb660c040b0d65236abb83ff8ade32bae6a1f25cc03e5a161ef4f4.jpg",
+        "content": "| x (m) | y (m) | z (m) | Category   |\n|-------|-------|-------|------------|\n| 0.30  | -0.1  | 0.2   | camera     |\n| 0.15  | -0.2  | 0.1   | left wrist |\n| 0.15  | -0.1  | 0.0   | right wrist |\n| 0.15  | 0.0   | -0.1  | Pred.      |\n| 0.15  | 0.1   | -0.2  | GT         |",
+        "chart_caption": [],
+        "chart_footnote": [],
+        "sub_type": "scatter_3d",
+        "bbox": [
+            470,
+            335,
+            591,
+            443
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "image",
+        "img_path": "images/bd38755c0d28283ba97371f7018d5d5df4645aebb41a8e834e5b2ee6cd6553df.jpg",
+        "image_caption": [],
+        "image_footnote": [],
+        "content": "Hand operating a 3D trajectory device in a lab setting (no visible text or symbols)",
+        "sub_type": "natural_image",
+        "bbox": [
+            591,
+            335,
+            696,
+            443
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "chart",
+        "img_path": "images/7ee340c2f2d5d299ddca30b4a8e54425a9fa3de0494d2bc08cd5ccadc2364a0b.jpg",
+        "content": "| Category     | x (m)  | y (m)  | z (m)  |\n| ------------ | ------ | ------ | ------ |\n| camera       | -0.1   | 0.1    | 0.2    |\n| left wrist   | 0.0    | 0.0    | 0.1    |\n| right wrist  | 0.1    | 0.1    | 0.2    |\n| Pred.        | -0.1   | 0.0    | 0.1    |\n| GT           | -0.1   | 0.0    | 0.1    |",
+        "chart_caption": [
+            "Figure 5: Dataset characterization. $L e f t { \\mathrm { : } }$ : recovery rates of predicted head and wrist poses on HOT3D at three tolerance tiers. Right: for two HOT3D videos, predicted wrist projections on a sampled frame and 3D chunk trajectories starting from that frame. "
+        ],
+        "chart_footnote": [],
+        "sub_type": "scatter",
+        "bbox": [
+            696,
+            335,
+            816,
+            443
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "text",
+        "text": "",
+        "bbox": [
+            169,
+            527,
+            823,
+            664
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "text",
+        "text": "4.3 Egocentric Video Yields Effective Pretraining Labels ",
+        "text_level": 1,
+        "bbox": [
+            169,
+            686,
+            578,
+            702
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "text",
+        "text": "The 27D action labels constructed in Sec. 3.1 are designed to expose the coupling structure between active perception and manipulation from in-the-wild egocentric video. Validating this design requires an egocentric dataset with ground-truth head and wrist pose annotations, which Ego4D itself does not provide. We therefore evaluate our approach on HOT3D [47], an external egocentric dataset that supplies such annotations. We quantify label fidelity through the recovery rate on a randomly sampled 10% subset of HOT3D videos: for each sampled frame, the estimated head and wrist poses are compared against ground-truth annotations, and a frame is considered recovered when both the translational error and the rot6d L2 error fall within a specified tolerance. Under the strict tier $( \\mathrm { p o s } \\le 0 . 8 \\mathrm { m }$ , rot6d $\\mathrm { L } 2 \\le 0 . 6 )$ , head recovery reaches 78.82%, with left and right wrist recovery at 65.93% and 61.72%, respectively; under the loose tier, all three body parts exceed 85% (Fig. 5a). The approach operates purely from RGB video, without motion capture, inertial sensors, or calibrated multi-camera rigs, a deliberate fidelity-vs-scalability design choice that allows it to scale to arbitrary in-the-wild egocentric video. In addition, qualitative results show that estimated trajectories closely follow ground-truth trends on sampled HOT3D episodes (Fig. 5b). Together, these results (Fig. 5) confirm that the labels carry effective pretraining signals. ",
+        "bbox": [
+            169,
+            715,
+            826,
+            912
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "page_number",
+        "text": "7 ",
+        "bbox": [
+            493,
+            935,
+            503,
+            946
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "chart",
+        "img_path": "images/eb7ff6c2d5135b98dc9f4b3b1b03f7f09ec802351c0c562e18da1c06ff8ac845.jpg",
+        "content": "| Method                  | Avg. Pts1 / trial | Avg. Pts2 / trial |\n| ----------------------- | ----------------- | ----------------- |\n| ActiveMimic             | 1.00              | 0.98              |\n| ActiveMimic (w/o head)   | 0.56              | 0.01              |\n| ActiveMimicsft-only      | 0.98              | 0.33              |",
+        "chart_caption": [],
+        "chart_footnote": [],
+        "sub_type": "scatter",
+        "bbox": [
+            176,
+            89,
+            496,
+            204
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "chart",
+        "img_path": "images/128af6eb600c2974eb4677f2d669b989f02ae6877a255f998282ebb6100b4494.jpg",
+        "content": "| Layer | ActiveMimic | ActiveMimic_wrist-only | Advantage |\n|-------|-------------|------------------------|---------|\n| 0     | 80          | 75                     | 78      |\n| 6     | 70          | 60                     | 65      |\n| 12    | 50          | 50                     | 55      |\n| 17    | 60          | 50                     | 60      |",
+        "chart_caption": [
+            "Figure 6: Analysis experiments. (a) Scores on Restocking for crouching to grasp the bottle (Pts1) and looking up to place it (Pts2). (b) Per-layer overlap (%) of the top-10% activated units under head-view vs. full-view inputs for ActiveMimic and ActiveMimicwrist-only. "
+        ],
+        "chart_footnote": [],
+        "sub_type": "line",
+        "bbox": [
+            500,
+            90,
+            821,
+            205
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "text",
+        "text": "",
+        "bbox": [
+            169,
+            282,
+            823,
+            313
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "text",
+        "text": "4.4 The Head Camera Enables Pretrained Active Perception ",
+        "text_level": 1,
+        "bbox": [
+            169,
+            328,
+            607,
+            343
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "text",
+        "text": "To pinpoint whether active perception comes from egocentric pretraining and how the model deploys it, we ablate Restocking under three inference conditions (Fig. 6a): ActiveMimic with all three cameras, ActiveMimic with the head camera zeroed out (w/o head), and $\\mathrm { \\ A c t i v e M i m i c _ { s f t } } .$ only with all cameras. Notably, all three conditions reliably complete the pickup point, but the placement point reveals a stark separation. ActiveMimic scores 24 out of 27 on placement, whereas $\\mathrm { A c t i v e M i m i c _ { s f t - o n l y } }$ achieves only 6 out of 27. This fourfold gap indicates that active perception capability is acquired during egocentric pretraining rather than robot-specific fine-tuning. Removing the head camera from the pretrained model collapses placement further to 1 out of 27, confirming that the model realizes this capability through the head camera. Together, egocentric pretraining provides active perception capability, and the head camera is how the model uses it. ",
+        "bbox": [
+            169,
+            354,
+            823,
+            506
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "text",
+        "text": "4.5 Human-to-Robot Representational Transfer via Camera Motion Supervision ",
+        "text_level": 1,
+        "bbox": [
+            169,
+            521,
+            745,
+            537
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "text",
+        "text": "To investigate how camera motion supervision facilitates human-to-robot transfer, we compare ActiveMimic and $\\mathrm { A c t i v e M i m i c _ { w r i s t - o n l y } }$ under two inference conditions: full-view, where the model receives all three cameras, and head-view, where it receives only the head camera, approximating the single egocentric viewpoint in pretraining. Specifically, for each layer in the action expert, we identify the top-K% most activated units under each view and compute their overlap. The resulting overlap between head-view and full-view thus measures how much of the egocentric representational structure is preserved under the robot’s multi-camera observation. Because this egocentric structure is learned from human video pretraining, higher preservation directly reflects stronger human-to-robot transfer. As shown in Fig. 6b, ActiveMimic maintains consistently higher overlap than $\\mathrm { A c t i v e M i m i c _ { w r i s t - o n l y } }$ across the early-to-mid layers (layers 0 through 11), where perceptual representations are encoded [48]. The higher overlap in perceptual layers indicates that camera motion supervision produces representations more robust to the observation modality shift, providing representational-level evidence that camera motion supervision strengthens human-to-robot transfer. We report K=10 and show in Sec. C.4 that the conclusion is robust to the choice of K. ",
+        "bbox": [
+            169,
+            547,
+            823,
+            758
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "text",
+        "text": "5 Conclusion ",
+        "text_level": 1,
+        "bbox": [
+            171,
+            766,
+            302,
+            781
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "text",
+        "text": "We introduce ActiveMimic, an active-perception-aware pretraining framework for in-the-wild egocentric video. Across real-world tasks, ActiveMimic consistently surpasses baselines pretrained on human video, confirming active perception as the key to unlocking egocentric human video for robot pretraining. We further provide evidence that active perception originates from egocentric pretraining and that camera motion supervision facilitates representational transfer from human perception to robot control. Limitations are discussed in Sec. D. ",
+        "bbox": [
+            169,
+            797,
+            823,
+            888
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "page_number",
+        "text": "8 ",
+        "bbox": [
+            493,
+            935,
+            503,
+            946
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "text",
+        "text": "References ",
+        "text_level": 1,
+        "bbox": [
+            173,
+            89,
+            267,
+            104
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "list",
+        "sub_type": "ref_text",
+        "list_items": [
+            "[1] B. Zitkovich, T. Yu, S. Xu, P. Xu, T. Xiao, F. Xia, J. Wu, P. Wohlhart, S. Welker, A. Wahid, et al. Rt-2: Vision-language-action models transfer web knowledge to robotic control. In CoRL, 2023. ",
+            "[2] M. J. Kim, K. Pertsch, S. Karamcheti, T. Xiao, A. Balakrishna, S. Nair, R. Rafailov, E. P. Foster, P. R. Sanketi, Q. Vuong, et al. Openvla: An open-source vision-language-action model. In CoRL, 2025. ",
+            "[3] K. Black, N. Brown, D. Driess, A. Esmail, M. Equi, C. Finn, N. Fusai, L. Groom, K. Hausman, B. Ichter, et al. $\\pi _ { 0 } \\colon$ A vision-language-action flow model for general robot control. arXiv preprint arXiv:2410.24164, 2024. ",
+            "[4] J. Bjorck, F. Castaneda, N. Cherniadev, X. Da, R. Ding, L. Fan, Y. Fang, D. Fox, F. Hu, ˜ S. Huang, et al. Gr00t n1: An open foundation model for generalist humanoid robots. arXiv preprint arXiv:2503.14734, 2025. ",
+            "[5] S. Liu, L. Wu, B. Li, H. Tan, H. Chen, Z. Wang, K. Xu, H. Su, and J. Zhu. Rdt-1b: a diffusion foundation model for bimanual manipulation. In ICLR, 2025. ",
+            "[6] P. Intelligence, K. Black, N. Brown, J. Darpinian, K. Dhabalia, D. Driess, A. Esmail, M. Equi, C. Finn, N. Fusai, et al. π0.5: a vision-language-action model with open-world generalization. arXiv preprint arXiv:2504.16054, 2025. ",
+            "[7] W. Peebles and S. Xie. Scalable diffusion models with transformers. In ICCV, 2023. ",
+            "[8] Y. Lipman, R. T. Chen, H. Ben-Hamu, M. Nickel, and M. Le. Flow matching for generative modeling. In ICLR, 2023. ",
+            "[9] A. O’Neill, A. Rehman, A. Maddukuri, A. Gupta, A. Padalkar, A. Lee, A. Pooley, A. Gupta, A. Mandlekar, A. Jain, et al. Open x-embodiment: Robotic learning datasets and rt-x models: Open x-embodiment collaboration 0. In ICRA, 2024. ",
+            "[10] Y. Liu, W. C. Shin, Y. Han, Z. Chen, H. Ravichandar, and D. Xu. Immimic: Cross-domain imitation from human videos via mapping and interpolation. In CoRL, 2025. ",
+            "[11] X. Cai, R.-Z. Qiu, G. Chen, L. Wei, I. Liu, T. Huang, X. Cheng, and X. Wang. In-n-on: Scaling egocentric manipulation with in-the-wild and on-task data. arXiv preprint arXiv:2511.15704, 2025. ",
+            "[12] A. Spiridonov, J.-N. Zaech, N. Nikolov, L. Van Gool, and D. P. Paudel. Generalist robot manipulation beyond action labeled data. In CoRL, 2025. ",
+            "[13] T. Yoshida, S. Kurita, T. Nishimura, and S. Mori. Developing vision-language-action model from egocentric videos. arXiv preprint arXiv:2509.21986, 2025. ",
+            "[14] R. Bajcsy. Active perception. Proceedings of the IEEE, 1988. ",
+            "[15] R. Bajcsy, Y. Aloimonos, and J. K. Tsotsos. Revisiting active perception. Autonomous Robots, 2018. ",
+            "[16] J. Aloimonos, I. Weiss, and A. Bandyopadhyay. Active vision. IJCV, 1988. ",
+            "[17] R. Yang, Q. Yu, Y. Wu, R. Yan, B. Li, A.-C. Cheng, X. Zou, Y. Fang, X. Cheng, R.-Z. Qiu, et al. Egovla: Learning vision-language-action models from egocentric human videos. arXiv preprint arXiv:2507.12440, 2025. ",
+            "[18] L. Y. Zhu, P. Kuppili, R. Punamiya, P. Aphiwetsa, D. Patel, S. Kareer, S. Ha, and D. Xu. Emma: Scaling mobile manipulation via egocentric human data. RAL, 2026. "
+        ],
+        "bbox": [
+            165,
+            108,
+            834,
+            917
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "page_number",
+        "text": "9 ",
+        "bbox": [
+            493,
+            935,
+            504,
+            946
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "list",
+        "sub_type": "ref_text",
+        "list_items": [
+            "[19] M. Shi, S. Peng, J. Chen, H. Jiang, Y. Li, D. Huang, P. Luo, H. Li, and L. Chen. Egohumanoid: Unlocking in-the-wild loco-manipulation with robot-free egocentric demonstration. arXiv preprint arXiv:2602.10106, 2026. ",
+            "[20] R.-Z. Qiu, S. Yang, X. Cheng, C. Chawla, J. Li, T. He, G. Yan, D. J. Yoon, R. Hoque, L. Paulsen, et al. Humanoid policy ∼ human policy. In CoRL, 2025. ",
+            "[21] K. Grauman, A. Westbury, E. Byrne, Z. Chavis, A. Furnari, R. Girdhar, J. Hamburger, H. Jiang, M. Liu, X. Liu, et al. Ego4d: Around the world in 3,000 hours of egocentric video. In CVPR, 2022. ",
+            "[22] H. Luo, Y. Wang, W. Zhang, S. Zheng, Z. Xi, C. Xu, H. Xu, H. Yuan, C. Zhang, Y. Wang, et al. Being-h0. 5: Scaling human-centric robot learning for cross-embodiment generalization. arXiv preprint arXiv:2601.12993, 2026. ",
+            "[23] S. Kareer, D. Patel, R. Punamiya, P. Mathur, S. Cheng, C. Wang, J. Hoffman, and D. Xu. Egomimic: Scaling imitation learning via egocentric video. In ICRA, 2025. ",
+            "[24] A. Bircher, M. Kamel, K. Alexis, H. Oleynikova, and R. Siegwart. Receding horizon” nextbest-view” planner for 3d exploration. In ICRA, 2016. ",
+            "[25] M. Breyer, L. Ott, R. Siegwart, and J. J. Chung. Closed-loop next-best-view planning for target-driven grasping. In IROS, 2022. ",
+            "[26] C. Connolly. The determination of next best views. In ICRA, 1985. ",
+            "[27] M. Krainin, B. Curless, and D. Fox. Autonomous generation of complete 3d object models using next best view manipulation planning. In ICRA, 2011. ",
+            "[28] M. Naazare, F. G. Rosas, and D. Schulz. Online next-best-view planner for 3d-exploration and inspection with a mobile manipulator robot. RAL, 2022. ",
+            "[29] X. Zhang, D. Wang, S. Han, W. Li, B. Zhao, Z. Wang, X. Duan, C. Fang, X. Li, and J. He. Affordance-driven next-best-view planning for robotic grasping. In CoRL, 2023. ",
+            "[30] J. Yu, Y. Shentu, D. Wu, P. Abbeel, K. Goldberg, and P. Wu. Egomi: Learning active vision and whole-body manipulation from egocentric human demonstrations. arXiv preprint arXiv:2511.00153, 2025. ",
+            "[31] H. Xiong, X. Xu, J. Wu, Y. Hou, J. Bohg, and S. Song. Vision in action: Learning active perception from human demonstrations. In CoRL, 2025. ",
+            "[32] Q. Zeng, C. Li, J. S. John, Z. Zhou, J. Wen, G. Feng, Y. Zhu, and Y. Xu. Activeumi: Robotic manipulation with active perception from robot-free human demonstrations. arXiv preprint arXiv:2510.01607, 2025. ",
+            "[33] I. Chuang, A. Lee, D. Gao, M.-M. Naddaf-Sh, and I. Soltani. Active vision might be all you need: Exploring active vision in bimanual robotic manipulation. In ICRA, 2025. ",
+            "[34] J. Kerr, K. Hari, E. Weber, C. M. Kim, B. Yi, K. Goldberg, A. Kanazawa, et al. Eye, robot: Learning to look to act with a bc-rl perception-action loop. In CoRL, 2025. ",
+            "[35] X. Cheng, J. Li, S. Yang, G. Yang, and X. Wang. Open-television: Teleoperation with immersive active visual feedback. In CoRL, 2025. ",
+            "[36] M. Liu, E. Zhou, C. Chi, Y. Han, S. Rong, L. Chen, P. Wang, Z. Wang, and S. Zhang. Sapave: Towards active perception and manipulation in vision-language-action models for robotics. arXiv preprint arXiv:2603.12193, 2026. "
+        ],
+        "bbox": [
+            166,
+            87,
+            831,
+            914
+        ],
+        "page_idx": 9
+    },
+    {
+        "type": "page_number",
+        "text": "10 ",
+        "bbox": [
+            490,
+            935,
+            508,
+            946
+        ],
+        "page_idx": 9
+    },
+    {
+        "type": "list",
+        "sub_type": "ref_text",
+        "list_items": [
+            "[37] S. Kareer, K. Pertsch, J. Darpinian, J. Hoffman, D. Xu, S. Levine, C. Finn, and S. Nair. Emergence of human to robot transfer in vision-language-action models. arXiv preprint arXiv:2512.22414, 2025. ",
+            "[38] Q. Li, Y. Deng, Y. Liang, L. Luo, L. Zhou, C. Yao, L. Zeng, Z. Feng, H. Liang, S. Xu, et al. Scalable vision-language-action model pretraining for robotic manipulation with real-life human activity videos. arXiv preprint arXiv:2510.21571, 2025. ",
+            "[39] X. Yang, D. Kukreja, D. Pinkus, A. Sagar, T. Fan, J. Park, S. Shin, J. Cao, J. Liu, N. Ugrinovic, et al. Sam 3d body: Robust full-body human mesh recovery. arXiv preprint arXiv:2602.15989, 2026. ",
+            "[40] J. Wang, M. Chen, N. Karaev, A. Vedaldi, C. Rupprecht, and D. Novotny. Vggt: Visual geometry grounded transformer. In CVPR, 2025. ",
+            "[41] L. Piccinelli, Y.-H. Yang, C. Sakaridis, M. Segu, S. Li, L. Van Gool, and F. Yu. Unidepth: Universal monocular metric depth estimation. In CVPR, 2024. ",
+            "[42] Y. Zhou, C. Barnes, J. Lu, J. Yang, and H. Li. On the continuity of rotation representations in neural networks. In CVPR, 2019. ",
+            "[43] W. Liang, L. Yu, L. Luo, S. Iyer, N. Dong, C. Zhou, G. Ghosh, M. Lewis, W.-t. Yih, L. Zettlemoyer, et al. Mixture-of-transformers: A sparse and scalable architecture for multi-modal foundation models. arXiv preprint arXiv:2411.04996, 2024. ",
+            "[44] S. Zhao, X. Zhang, J. Guo, J. Hu, L. Duan, M. Fu, Y. X. Chng, G.-H. Wang, Q.-G. Chen, Z. Xu, et al. Unified multimodal understanding and generation models: Advances, challenges, and opportunities. arXiv preprint arXiv:2505.02567, 2025. ",
+            "[45] L. Beyer, A. Steiner, A. S. Pinto, A. Kolesnikov, X. Wang, D. Salz, M. Neumann, I. Alabdulmohsin, M. Tschannen, E. Bugliarello, et al. Paligemma: A versatile 3b vlm for transfer. arXiv preprint arXiv:2407.07726, 2024. ",
+            "[46] H.-S. Fang, H. Fang, Z. Tang, J. Liu, C. Wang, J. Wang, H. Zhu, and C. Lu. Rh20t: A comprehensive robotic dataset for learning diverse skills in one-shot. arXiv preprint arXiv:2307.00595, 2023. ",
+            "[47] P. Banerjee, S. Shkodrani, P. Moulon, S. Hampali, S. Han, F. Zhang, L. Zhang, J. Fountain, E. Miller, S. Basol, et al. Hot3d: Hand and object tracking in 3d from egocentric multi-view videos. In CVPR, 2025. ",
+            "[48] Y. Luo, H. Chen, Z. Wu, B. Sui, J. Liu, C. Gu, Z. Liu, Q. Feng, J. Yu, S. Gu, et al. Look before acting: Enhancing vision foundation representations for vision-language-action models. arXiv preprint arXiv:2603.15618, 2026. ",
+            "[49] S. Bai, Y. Cai, R. Chen, K. Chen, X. Chen, Z. Cheng, L. Deng, W. Ding, C. Gao, C. Ge, et al. Qwen3-vl technical report. arXiv preprint arXiv:2511.21631, 2025. ",
+            "[50] A. Yang, A. Li, B. Yang, B. Zhang, B. Hui, B. Zheng, B. Yu, C. Gao, C. Huang, C. Lv, et al. Qwen3 technical report. arXiv preprint arXiv:2505.09388, 2025. ",
+            "[51] K. Grauman, A. Westbury, L. Torresani, K. Kitani, J. Malik, T. Afouras, K. Ashutosh, V. Baiyya, S. Bansal, B. Boote, et al. Ego-exo4d: Understanding skilled human activity from first-and third-person perspectives. In CVPR, 2024. ",
+            "[52] S. Yin, Y. Ze, H.-X. Yu, C. K. Liu, and J. Wu. Visualmimic: Visual humanoid locomanipulation via motion tracking and generation. arXiv preprint arXiv:2509.20322, 2025. "
+        ],
+        "bbox": [
+            165,
+            85,
+            831,
+            917
+        ],
+        "page_idx": 10
+    },
+    {
+        "type": "page_number",
+        "text": "",
+        "bbox": [
+            490,
+            935,
+            506,
+            946
+        ],
+        "page_idx": 10
+    },
+    {
+        "type": "list",
+        "sub_type": "ref_text",
+        "list_items": [
+            "[53] S. Wei, H. Jing, B. Li, Z. Zhao, J. Mao, Z. Ni, S. He, J. Liu, X. Liu, K. Kang, et al. ψ0: An open foundation model towards universal humanoid loco-manipulation. arXiv preprint arXiv:2603.12263, 2026. ",
+            "[54] H. Jiang, J. Chen, Q. Bu, L. Chen, M. Shi, Y. Zhang, D. Li, C. Suo, C. Wang, Z. Peng, et al. Wholebodyvla: Towards unified latent vla for whole-body loco-manipulation control. arXiv preprint arXiv:2512.11047, 2025. ",
+            "[55] X. Wang, T. Kwon, M. Rad, B. Pan, I. Chakraborty, S. Andrist, D. Bohus, A. Feniello, B. Tekin, F. V. Frujeri, et al. Holoassist: an egocentric human interaction dataset for interactive ai assistants in the real world. In ICCV, 2023. ",
+            "[56] L. Xu, C. Yang, Z. Lin, F. Xu, Y. Liu, C. Xu, Y. Zhang, J. Qin, X. Sheng, Y. Liu, et al. Perceiving and acting in first-person: A dataset and benchmark for egocentric human-objecthuman interactions. In ICCV, 2025. ",
+            "[57] X. Lin, X. Zhu, T. Lu, S. Xie, H. Zhang, X. Qiu, Z. Wu, and Y.-G. Jiang. Ask-to-clarify: Resolving instruction ambiguity through multi-turn dialogue. arXiv preprint arXiv:2509.15061, 2025. ",
+            "[58] I. Rodin, A. Furnari, D. Mavroeidis, and G. M. Farinella. Predicting the future from first person (egocentric) vision: A survey. CVIU, 2021. "
+        ],
+        "bbox": [
+            165,
+            85,
+            831,
+            402
+        ],
+        "page_idx": 11
+    },
+    {
+        "type": "page_number",
+        "text": "",
+        "bbox": [
+            490,
+            935,
+            508,
+            946
+        ],
+        "page_idx": 11
+    },
+    {
+        "type": "text",
+        "text": "A From Egocentric Video to Unified Action Space ",
+        "text_level": 1,
+        "bbox": [
+            171,
+            89,
+            606,
+            107
+        ],
+        "page_idx": 12
+    },
+    {
+        "type": "text",
+        "text": "A.1 Metric Scale Recovery ",
+        "text_level": 1,
+        "bbox": [
+            171,
+            119,
+            374,
+            133
+        ],
+        "page_idx": 12
+    },
+    {
+        "type": "text",
+        "text": "The camera trajectory recovered by VGGT is a scale-normalized path $\\tilde { T } _ { \\mathrm { c a m } _ { 1 } } ^ { \\mathrm { c a m } _ { k } }$ whose translational component is determined only up to a global scale factor. To recover the metric scale, we align the per-pixel depth map $D _ { k } ^ { \\mathrm { n o r m } }$ from VGGT with the per-pixel metric depth map $D _ { k } ^ { \\mathrm { m e t r i c } }$ from UniDepth. A per-frame scale is first computed as the median depth ratio over valid pixels, ",
+        "bbox": [
+            169,
+            146,
+            823,
+            207
+        ],
+        "page_idx": 12
+    },
+    {
+        "type": "equation",
+        "text": "$$\n\\lambda_ {k} = \\operatorname{median} _ {(u, v) \\in \\Omega_ {k}} \\frac {D _ {k} ^ {\\text { metric }} (u , v)}{D _ {k} ^ {\\text { norm }} (u , v)}, \\tag {7}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            372,
+            212,
+            823,
+            247
+        ],
+        "page_idx": 12
+    },
+    {
+        "type": "text",
+        "text": "where $\\Omega _ { k }$ denotes the set of pixels with valid positive depth values in both $D _ { k } ^ { \\mathrm { n o r m } }$ and $D _ { k } ^ { \\mathrm { m e t r i c } }$ The per-frame scales are then aggregated into an episode-level scale $\\lambda = \\mathrm { m e d i a n } _ { k \\in \\{ 1 , . . . , K \\} } \\lambda _ { k }$ . The metric camera trajectory is then obtained by scaling only the translational component of the scale-normalized transform, ",
+        "bbox": [
+            169,
+            253,
+            823,
+            313
+        ],
+        "page_idx": 12
+    },
+    {
+        "type": "equation",
+        "text": "$$\n\\tilde {T} _ {\\mathrm{cam} _ {1}} ^ {\\mathrm{cam} _ {k}} = \\left[ \\begin{array}{c c} R _ {\\mathrm{cam} _ {1}} ^ {\\mathrm{cam} _ {k}} & \\tilde {t} _ {\\mathrm{cam} _ {1}} ^ {\\mathrm{cam} _ {k}} \\\\ \\mathbf {0} ^ {\\top} & 1 \\end{array} \\right], \\quad T _ {\\mathrm{cam} _ {1}} ^ {\\mathrm{cam} _ {k}} = \\left[ \\begin{array}{c c} R _ {\\mathrm{cam} _ {1}} ^ {\\mathrm{cam} _ {k}} & \\lambda \\tilde {t} _ {\\mathrm{cam} _ {1}} ^ {\\mathrm{cam} _ {k}} \\\\ \\mathbf {0} ^ {\\top} & 1 \\end{array} \\right]. \\tag {8}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            284,
+            318,
+            823,
+            352
+        ],
+        "page_idx": 12
+    },
+    {
+        "type": "text",
+        "text": "A.2 Video Filtering and Segmentation ",
+        "text_level": 1,
+        "bbox": [
+            171,
+            366,
+            452,
+            381
+        ],
+        "page_idx": 12
+    },
+    {
+        "type": "text",
+        "text": "As described in Sec. 3.1, we identify hand-object manipulation segments from Ego4D through a two-stage filtering procedure that combines VLM-based temporal segmentation with LLM-based semantic filtering. ",
+        "bbox": [
+            169,
+            393,
+            823,
+            439
+        ],
+        "page_idx": 12
+    },
+    {
+        "type": "text",
+        "text": "VLM-based temporal segmentation. For each Ego4D clip that passes an initial duration filter, a VLM (Qwen3-VL-8B-Instruct [49]) parses the full egocentric video and proposes candidate manipulation segments. The model is prompted to retain only intervals in which the camera wearer purposefully uses their hands to manipulate physical objects, excluding passive observation, walking, waiting, and pure camera motion. For each retained segment, the model outputs a start and end time, an action verb, a list of manipulated objects, and a natural-language task instruction composed from the action and objects. This task instruction serves as the language prompt during pretraining. Adjacent or overlapping segments with the same task description are merged, and a duration filter is applied to remove segments that are too short to contain meaningful manipulation or too long for efficient downstream processing. The full prompt is provided in Fig. 12. ",
+        "bbox": [
+            169,
+            453,
+            825,
+            604
+        ],
+        "page_idx": 12
+    },
+    {
+        "type": "text",
+        "text": "LLM-based semantic filtering. These candidates are then filtered by an LLM (Qwen3-30B-A3B-Instruct [50]) against three semantic criteria: the action must involve hand-object manipulation, the manipulated objects must be artificial physical objects, and the scene must be indoors. Segments involving body parts or other humans as targets, natural or outdoor materials, outdoor activities, or non-manipulation actions are removed. This stage produces the final set of high-confidence indoor manipulation segments that are sampled and extracted at 10 fps for pose estimation. The full prompt is provided in Fig. 13. ",
+        "bbox": [
+            169,
+            619,
+            823,
+            726
+        ],
+        "page_idx": 12
+    },
+    {
+        "type": "text",
+        "text": "Dataset statistics. Fig. 7 visualizes the action verb and object noun distributions of the final pretraining corpus. The verb word cloud reflects the diversity of manipulation actions, while the noun word cloud shows the breadth of manipulated object categories, confirming that the filtering procedure preserves semantic variety suitable for general-purpose pretraining. ",
+        "bbox": [
+            169,
+            739,
+            823,
+            801
+        ],
+        "page_idx": 12
+    },
+    {
+        "type": "text",
+        "text": "B Training Details ",
+        "text_level": 1,
+        "bbox": [
+            171,
+            819,
+            344,
+            835
+        ],
+        "page_idx": 12
+    },
+    {
+        "type": "text",
+        "text": "The model comprises a 3B visual-language prefix and a 0.6B action expert. As described in Sec. 3.2, training follows a two-stage recipe. The egocentric human video pretraining stage is further divided into a warm-up phase and a full training phase. During warm-up, the visual-language prefix is frozen and only the action expert is trained, allowing the randomly initialized action expert to reach a reasonable operating point before joint optimization. The full training phase then unfreezes all parameters and trains the entire model end-to-end. The robot-specific training stage initializes from the pretrained checkpoint and fine-tunes on task-specific robot data. Table 1 summarizes the hyperparameters for each phase. Both ActiveMimic and $\\mathrm { A c t i v e M i m i c _ { w r i s t - o n l y } }$ share the same training configuration; the only difference is that $\\mathrm { A c t i v e M i m i c _ { w r i s t - o n l y } }$ is supervised with the 18D wrist action instead of the full 27D action. ",
+        "bbox": [
+            169,
+            851,
+            823,
+            912
+        ],
+        "page_idx": 12
+    },
+    {
+        "type": "page_number",
+        "text": "13 ",
+        "bbox": [
+            490,
+            935,
+            508,
+            946
+        ],
+        "page_idx": 12
+    },
+    {
+        "type": "image",
+        "img_path": "images/3b8608e30979dcb83f6414315b19a01318120634a21e870e32f74298acfd2db4.jpg",
+        "image_caption": [],
+        "image_footnote": [],
+        "content": "color\ncut\nwipe\nwiping\ntie\nshuffle\nhammer\npress\ngrind\ndrill\napply\nspread\nhit\nsort\npull\nsand\nclean\nplane\ncover\nhold\nconnect\nchange\npou\nplay\nsqueeze\nhand\nover\nfolds\nunscrew\nmove\ndraw out\nlift\noperate\npeel\n Polish\ndisperse\nsharpen\nclose\npress\npin\nmark\nspray\nteck\nopen\nmeasure\npress\npin\ndry\nsmooth\nup\ndown\nwash\nclear\npress\npress\npress\npress\npress\npress\npress\npress\npress\npress\npress\npress\npress\npress\npress\npress\npress\npress\npress\npress\npress\npress\npress\npress\npress\npress\npress\npress\npress\npress\npress\npress\npress\npress\npress\npress\npress\npress\npress\npress\npress\npress\npress\npress\npress\npress\npress\npress\npress\npress\nexpress",
+        "sub_type": "text_image",
+        "bbox": [
+            178,
+            89,
+            496,
+            273
+        ],
+        "page_idx": 13
+    },
+    {
+        "type": "image",
+        "img_path": "images/b53c3ae10c7c61805d429f023a45fbfdf05a56ae20f1c70727cc3d6bad5f0b79.jpg",
+        "image_caption": [
+            "Figure 7: Pretraining corpus statistics. Word cloud of (a) action verbs and (b) manipulated objects in the final pretraining corpus after filtering, showing broad coverage of manipulation actions and object categories. "
+        ],
+        "image_footnote": [],
+        "content": "b) Object Wordcloud\nwooden board wooden slats wooden floor tile counter stamp set\nbrake pad handlebar nail gun plate\nknife tape plate\ntooth board wooden structure\npen lego pieces baseboard circuit board hammer\ntool boat bolt workbench\nwooden post spray bottle engine part\nwooden plank wall paint paper\npaint can fabric brush cup sandpaper\nonion pot handboard nag-lin pencil\ngrinder machine bucket tile\nbaglic\nbowl circular saw garlic wheel dumbbell tree\nradio cloth filter dough pan paper\nwindow bathtub sink plastic bag painting\n Metal bar utensils bag paint\ncandle switch glass bottle broom\nhandlebar stemp oil filter metallic object socket wrench engine\nliquid clothes metal part cover screwdriver\ndough ball dough ball cover",
+        "sub_type": "text_image",
+        "bbox": [
+            500,
+            90,
+            821,
+            272
+        ],
+        "page_idx": 13
+    },
+    {
+        "type": "text",
+        "text": "",
+        "bbox": [
+            169,
+            351,
+            823,
+            441
+        ],
+        "page_idx": 13
+    },
+    {
+        "type": "table",
+        "img_path": "images/c19d3693ba3957b0a3c328b63c12809a6cc97c19cb5c3a49fb54531906cbc421.jpg",
+        "table_caption": [
+            "Table 1: Training hyperparameters for each phase. Stage 2 trains for approximately 5 epochs on each task. "
+        ],
+        "table_footnote": [],
+        "table_body": "<table><tr><td></td><td>Stage 1: Warm-up</td><td>Stage 1: Train</td><td>Stage 2</td></tr><tr><td>Frozen modules</td><td>VLM</td><td>None</td><td>None</td></tr><tr><td>Batch size</td><td>64</td><td>64</td><td>64</td></tr><tr><td>Optimizer</td><td>AdamW</td><td>AdamW</td><td>AdamW</td></tr><tr><td>LR schedule</td><td>Cosine decay</td><td>Cosine decay</td><td>Cosine decay</td></tr><tr><td>Peak LR</td><td> $1 \\times 10^{-4}$ </td><td> $1 \\times 10^{-4}$ </td><td> $1 \\times 10^{-4}$ </td></tr><tr><td>Final LR</td><td> $1 \\times 10^{-5}$ </td><td> $1 \\times 10^{-5}$ </td><td> $1 \\times 10^{-5}$ </td></tr><tr><td>Warmup steps</td><td>200</td><td>1,000</td><td>100</td></tr><tr><td>Total steps</td><td>2,000</td><td>500,000</td><td>~5 epochs</td></tr><tr><td>Action horizon</td><td>50</td><td>50</td><td>50</td></tr></table>",
+        "bbox": [
+            267,
+            450,
+            730,
+            593
+        ],
+        "page_idx": 13
+    },
+    {
+        "type": "text",
+        "text": "C Experimental Details ",
+        "text_level": 1,
+        "bbox": [
+            171,
+            661,
+            387,
+            678
+        ],
+        "page_idx": 13
+    },
+    {
+        "type": "text",
+        "text": "C.1 Task Setup ",
+        "text_level": 1,
+        "bbox": [
+            171,
+            691,
+            294,
+            707
+        ],
+        "page_idx": 13
+    },
+    {
+        "type": "text",
+        "text": "Table 2 consolidates the detailed specifications for each evaluation task. All four tasks are executed on the same robot platform described in Sec. 4.1. ",
+        "bbox": [
+            169,
+            718,
+            823,
+            750
+        ],
+        "page_idx": 13
+    },
+    {
+        "type": "text",
+        "text": "C.2 Robustness Evaluation ",
+        "text_level": 1,
+        "bbox": [
+            171,
+            763,
+            375,
+            777
+        ],
+        "page_idx": 13
+    },
+    {
+        "type": "text",
+        "text": "Restocking under flashing lighting. We evaluate all models on the Restocking task under alternating red/green/blue flashing light, using the same checkpoint as the main results, with 81 trials per condition. As shown in Fig. 9(a), ActiveMimic achieves the highest success rate under the flashing condition (79.0%) and shows the smallest absolute drop among all models (−11.1% from 90.1%). $\\mathrm { A c t i v e M i m i c _ { w r i s t - o n l y } }$ drops by 24.7% to 58.0%, suggesting that camera motion supervision contributes to the robustness. $\\mathrm { A c t i v e M i m i c _ { s f t - o n l y } }$ and MotoVLA both collapse to 0%, indicating that pretraining without active-perception-aware supervision provides no protection against visual perturbations. $\\pi _ { 0 }$ shows comparable robustness (75.3%), dropping 11.1%. ",
+        "bbox": [
+            169,
+            791,
+            823,
+            912
+        ],
+        "page_idx": 13
+    },
+    {
+        "type": "page_number",
+        "text": "14 ",
+        "bbox": [
+            490,
+            935,
+            508,
+            946
+        ],
+        "page_idx": 13
+    },
+    {
+        "type": "table",
+        "img_path": "images/4e1c8a5c492e4cd790611d97d7b9afffef8a203dab45486451a43f884630d590.jpg",
+        "table_caption": [
+            "Table 2: Detailed task specifications. Init. region denotes the randomized object initialization area; (×2) indicates two separate regions. SR = success rate; Pts = average points per trial (1 for pickup + 1 for placement). "
+        ],
+        "table_footnote": [],
+        "table_body": "<table><tr><td></td><td>Restocking</td><td>Reaching</td><td>Finding</td><td>Pouring</td></tr><tr><td colspan=\"5\">Object specifications</td></tr><tr><td>Target object</td><td>Water bottle</td><td>Cubic block</td><td>Yogurt</td><td>Cup</td></tr><tr><td>Object height (cm)</td><td>17</td><td>5</td><td>16</td><td>9</td></tr><tr><td>Object diameter/side (cm)</td><td>5.5</td><td>5</td><td>5</td><td>7</td></tr><tr><td colspan=\"5\">Environment specifications</td></tr><tr><td>Shelf tier heights (cm)</td><td>70 / 100 / 130</td><td>-</td><td>-</td><td>-</td></tr><tr><td>Shelf tier size (cm)</td><td> $92.5 \\times 35$ </td><td>-</td><td>-</td><td>-</td></tr><tr><td>Obstacle height (cm)</td><td>-</td><td>24</td><td>-</td><td>-</td></tr><tr><td>Init. region (cm)</td><td>-</td><td> $20 \\times 20$ </td><td> $15 \\times 25 (\\times 2)$ </td><td> $20 \\times 20 (\\times 2)$ </td></tr><tr><td colspan=\"5\">Training and evaluation</td></tr><tr><td>Demonstrations</td><td>270</td><td>30</td><td>60</td><td>90</td></tr><tr><td>Evaluation trials</td><td>81</td><td>18</td><td>36</td><td>45</td></tr><tr><td>Metric</td><td>SR + Pts</td><td>SR</td><td>SR</td><td>SR</td></tr></table>",
+        "bbox": [
+            212,
+            88,
+            782,
+            292
+        ],
+        "page_idx": 14
+    },
+    {
+        "type": "image",
+        "img_path": "images/c1ce18ab623d2ef4d2fd8778c3958ac6c4c3732ad9485971f6001ea63db29a25.jpg",
+        "image_caption": [
+            "Figure 8: Robustness evaluation setup. (a) Restocking under alternating red, green, and blue flashing light. (b) Finding with two unseen yogurt variants (different packaging, identical shape and size) not present in training demonstrations. The training yogurt is shown at the top; the two unseen variants are shown below. "
+        ],
+        "image_footnote": [],
+        "content": "",
+        "bbox": [
+            173,
+            362,
+            823,
+            503
+        ],
+        "page_idx": 14
+    },
+    {
+        "type": "text",
+        "text": "Finding with unseen objects. We replace the training yogurt with two unseen yogurt variants (different packaging, identical shape and size) and evaluate on the Finding task with 36 trials per condition. As shown in Fig. 9(b), ActiveMimic maintains the highest success rate among all models (72.2%) and the smallest drop (−19.5% from 91.7%). π0 drops 22.2% to 63.9%. ActiveMimicwrist-only drops 33.4% to 47.2%, while ActiveMimicsft-only and MotoVLA drop to 27.8% and 11.1%, respectively. The larger gaps relative to the lighting experiment reflect that visual appearance is particularly load-bearing for object localization, yet ActiveMimic’s active-perception pretraining provides the strongest generalization. ",
+        "bbox": [
+            169,
+            599,
+            823,
+            720
+        ],
+        "page_idx": 14
+    },
+    {
+        "type": "text",
+        "text": "C.3 Failure Case Analysis ",
+        "text_level": 1,
+        "bbox": [
+            171,
+            742,
+            367,
+            757
+        ],
+        "page_idx": 14
+    },
+    {
+        "type": "text",
+        "text": "Fig. 10 presents representative failure cases of the w/o head condition on Restocking. All three failures occur at the placement point. In the first case, the arm reaches the correct shelf tier and lateral position but the placement motion is imprecise and knocks over the shelf. In the second case, the arm places the bottle on the correct tier but at the wrong lateral position. In the third case, the arm targets the wrong tier entirely. All three failures stem from removing the head camera, which severs the visual loop that the pretrained model relies on to coordinate head and hand movements during active perception. Without this feedback, the head-hand coordination acquired during egocentric human video pretraining breaks down, producing increasingly coarse placement errors. ",
+        "bbox": [
+            169,
+            771,
+            823,
+            893
+        ],
+        "page_idx": 14
+    },
+    {
+        "type": "page_number",
+        "text": "",
+        "bbox": [
+            490,
+            935,
+            508,
+            946
+        ],
+        "page_idx": 14
+    },
+    {
+        "type": "chart",
+        "img_path": "images/8c0f8a53d3b47b8b78730fe70d232efbe2a188e1b77a6fe767af7135ec990a38.jpg",
+        "content": "(a) Lighting\n| Method | in domain (%) | out-of-box (%) |\n| :--- | :--- | :--- |\n| ActiveMimic | 90.1 | 79.0 |\n| ActiveMimic_wrist-only | 82.7 | 58.0 |\n| ActiveMimic_sft-only | 67.9 | 0.0 |\n| MotoVLA | 43.2 | 0.0 |\n| π₀ | 86.4 | 75.3 |",
+        "chart_caption": [],
+        "chart_footnote": [],
+        "sub_type": "bar",
+        "bbox": [
+            176,
+            89,
+            496,
+            232
+        ],
+        "page_idx": 15
+    },
+    {
+        "type": "chart",
+        "img_path": "images/25cccd8cf479c10d0a1d51d92ce29306d809cdf6c52c11d98f6c41634f06eb17.jpg",
+        "content": "(b) Unseen Objects\n| Method | in domain (%) | out-of-box (%) |\n| :--- | :--- | :--- |\n| ActiveMimic | 91.7 | 72.2 |\n| ActiveMimic_wrist-only | 80.6 | 47.2 |\n| ActiveMimic_sft-only | 66.7 | 27.8 |\n| MotoVLA | 41.7 | 11.1 |\n| π₀ | 86.1 | 63.9 |",
+        "chart_caption": [
+            "Figure 9: Robustness evaluation. (a) Restocking under alternating red/green/blue flashing light. (b) Finding with unseen yogurt objects (different packaging, identical shape and size). Solid bars denote in-domain (normal) conditions; hatched bars denote out-of-domain conditions. ActiveMimic achieves the highest success rate under both perturbations and exhibits the smallest absolute drop among all models. "
+        ],
+        "chart_footnote": [],
+        "sub_type": "bar",
+        "bbox": [
+            500,
+            90,
+            821,
+            232
+        ],
+        "page_idx": 15
+    },
+    {
+        "type": "image",
+        "img_path": "images/9e7f6a4d94fcaa0b9a426cf92e87aa93a273dce669dffe819e43144656811475.jpg",
+        "image_caption": [],
+        "image_footnote": [],
+        "content": "Robot interacting with a wall-mounted device, showing liquid and gas bubbles (no visible text or symbols)",
+        "sub_type": "natural_image",
+        "bbox": [
+            179,
+            330,
+            385,
+            422
+        ],
+        "page_idx": 15
+    },
+    {
+        "type": "image",
+        "img_path": "images/714e1a71fb635e8c5ca858e3423b36709d594b7b192a48d8e7811a6c8ad2d074.jpg",
+        "image_caption": [],
+        "image_footnote": [],
+        "content": "Robot interacting with a wall-mounted device, showing a close-up of its internal components (no visible text or symbols)",
+        "sub_type": "natural_image",
+        "bbox": [
+            397,
+            330,
+            602,
+            422
+        ],
+        "page_idx": 15
+    },
+    {
+        "type": "image",
+        "img_path": "images/22a711f6a336c264ae7cfd56f2eb728560b7b92c6cc3c621e4b051c27fc54ce3.jpg",
+        "image_caption": [
+            "Figure 10: Representative failure cases of ActiveMimic without the head camera on Restocking. All three failures occur at the placement point. From left to right: (1) correct shelf tier and lateral position, but the placement motion is imprecise and knocks over the shelf; (2) correct tier, wrong lateral position; (3) wrong tier entirely. All three stem from severing the visual loop that the pretrained model relies on to coordinate head and hand movements during active perception. "
+        ],
+        "image_footnote": [],
+        "content": "Robot interacting with a wall-mounted device in a lab setting (no visible text or symbols)",
+        "sub_type": "natural_image",
+        "bbox": [
+            614,
+            330,
+            820,
+            422
+        ],
+        "page_idx": 15
+    },
+    {
+        "type": "text",
+        "text": "C.4 Representational Transfer: K Sensitivity Analysis ",
+        "text_level": 1,
+        "bbox": [
+            171,
+            536,
+            563,
+            551
+        ],
+        "page_idx": 15
+    },
+    {
+        "type": "text",
+        "text": "Sec. 4.5 reports representational transfer results at K = 10. Fig. 11 extends this analysis to $K \\in \\{ 5 , 1 0 , 1 5 , 2 0 \\}$ . Across all values of K, ActiveMimic maintains consistently higher top-K% activation overlap than $\\mathrm { A c t i v e M i m i c _ { w r i s t - o n l y } }$ , confirming that the conclusion is robust to the choice of K . ",
+        "bbox": [
+            169,
+            563,
+            823,
+            625
+        ],
+        "page_idx": 15
+    },
+    {
+        "type": "text",
+        "text": "D Limitations and Future Directions ",
+        "text_level": 1,
+        "bbox": [
+            171,
+            645,
+            496,
+            662
+        ],
+        "page_idx": 15
+    },
+    {
+        "type": "text",
+        "text": "Data scale. The current pretraining corpus comprises approximately 10 hours of filtered egocentric manipulation video from Ego4D. While this scale already yields significant gains over training from scratch, substantially larger egocentric corpora ( e.g., the full Ego4D [21] or Ego-Exo4D [51]) are readily available and can be incorporated with the same automated procedure, which we expect to further strengthen the pretrained representations. ",
+        "bbox": [
+            169,
+            679,
+            823,
+            755
+        ],
+        "page_idx": 15
+    },
+    {
+        "type": "text",
+        "text": "Embodiment diversity. All real-world experiments use a single humanoid platform. Because the pretraining stage is embodiment-agnostic, operating on egocentric video without any robotspecific input, extending to other embodiments only requires the robot-specific training stage with corresponding demonstrations. Validating this across a broader range of platforms is a natural next step. ",
+        "bbox": [
+            169,
+            772,
+            823,
+            849
+        ],
+        "page_idx": 15
+    },
+    {
+        "type": "text",
+        "text": "Label fidelity. Action labels are obtained from vision-based pose estimation rather than hardwarerecorded trajectories, which inevitably introduces estimation noise. Nonetheless, the pretrained models achieve strong downstream performance, suggesting that the learning objective is robust to moderate label noise. Label quality can be further improved as better off-the-shelf pose estimation methods become available. ",
+        "bbox": [
+            169,
+            866,
+            823,
+            912
+        ],
+        "page_idx": 15
+    },
+    {
+        "type": "page_number",
+        "text": "",
+        "bbox": [
+            490,
+            935,
+            509,
+            946
+        ],
+        "page_idx": 15
+    },
+    {
+        "type": "chart",
+        "img_path": "images/18c9a7c32d99d04251b0b052f92538d7c6179f25ba1db11e0ec822795aa0994e.jpg",
+        "content": "| Layer | ActiveMimic | ActiveMimic_wrist-only |\n|-------|-------------|------------------------|\n| 0     | 80          | 78                     |\n| 6     | 85          | 60                     |\n| 12    | 75          | 65                     |\n| 17    | 80          | 80                     |",
+        "chart_caption": [
+            "(a) K=5 "
+        ],
+        "chart_footnote": [],
+        "sub_type": "line",
+        "bbox": [
+            178,
+            89,
+            496,
+            195
+        ],
+        "page_idx": 16
+    },
+    {
+        "type": "chart",
+        "img_path": "images/d8704335dd25a3ee54ad0267960c04fd1deb63fb088f5603ca5f1ef61f935d82.jpg",
+        "content": "| Layer | ActiveMimic | ActiveMimic_wrist-only |\n|-------|-------------|------------------------|\n| 0     | 78          | 76                     |\n| 6     | 65          | 50                     |\n| 12    | 50          | 52                     |\n| 17    | 58          | 50                     |",
+        "chart_caption": [
+            "(b) K=10 "
+        ],
+        "chart_footnote": [],
+        "sub_type": "line",
+        "bbox": [
+            501,
+            90,
+            820,
+            195
+        ],
+        "page_idx": 16
+    },
+    {
+        "type": "chart",
+        "img_path": "images/4a9ae0a106ce8157973ed3d62b6273841ed7e0602da25d6f7b644202f29c745d.jpg",
+        "content": "| Layer | ActiveMimic | ActiveMimic_wrist-only |\n|-------|-------------|------------------------|\n| 0     | 75          | 75                     |\n| 6     | 65          | 55                     |\n| 12    | 45          | 50                     |\n| 17    | 55          | 40                     |",
+        "chart_caption": [
+            "(c) K=15 "
+        ],
+        "chart_footnote": [],
+        "sub_type": "line",
+        "bbox": [
+            178,
+            205,
+            496,
+            306
+        ],
+        "page_idx": 16
+    },
+    {
+        "type": "chart",
+        "img_path": "images/467484972134546de7b21c17ed1e8cb175627cc9bad9ce8b1be29cb321e06bc2.jpg",
+        "content": "| Layer | ActiveMimic | ActiveMimic_wrist-only | Advantage |\n|-------|-------------|------------------------|---------|\n| 0     | 75          | 72                     | 73      |\n| 6     | 60          | 58                     | 59      |\n| 12    | 50          | 48                     | 51      |\n| 17    | 45          | 42                     | 55      |",
+        "chart_caption": [
+            "(d) K=20 ",
+            "Figure 11: K sensitivity analysis for representational transfer. Top-K% activation overlap between full-view and head-view inference conditions for ActiveMimic and ActiveMimicwrist-only across all action-expert layers, evaluated at K = 5, 10, 15, 20. The shaded area indicates the advantage of ActiveMimic over ActiveMimicwrist-only. ActiveMimic maintains consistently higher overlap across all K values, confirming that the conclusion in Sec. 4.5 is robust to the choice of K. "
+        ],
+        "chart_footnote": [],
+        "sub_type": "line",
+        "bbox": [
+            501,
+            205,
+            818,
+            306
+        ],
+        "page_idx": 16
+    },
+    {
+        "type": "text",
+        "text": "",
+        "bbox": [
+            169,
+            426,
+            823,
+            455
+        ],
+        "page_idx": 16
+    },
+    {
+        "type": "text",
+        "text": "Loco-manipulation. The current evaluation focuses on stationary tabletop and shelf manipulation. Extending ActiveMimic to loco-manipulation on humanoid robots [19, 52, 53, 54], where the robot must coordinate locomotion and manipulation simultaneously, is a promising direction, as egocentric video datasets already contain abundant walking-while-manipulating footage that could serve as pretraining data. ",
+        "bbox": [
+            169,
+            470,
+            823,
+            547
+        ],
+        "page_idx": 16
+    },
+    {
+        "type": "text",
+        "text": "Human-robot interaction. Egocentric video covers diverse daily activities, many of which naturally involve interactions with other people [55, 56, 57, 58]. Extending ActiveMimic to humanrobot interaction scenarios, where the robot must perceive and respond to human actions in shared workspaces, is a compelling direction that could leverage this inherent property of egocentric data. ",
+        "bbox": [
+            169,
+            561,
+            823,
+            623
+        ],
+        "page_idx": 16
+    },
+    {
+        "type": "page_number",
+        "text": "17 ",
+        "bbox": [
+            490,
+            935,
+            508,
+            946
+        ],
+        "page_idx": 16
+    },
+    {
+        "type": "text",
+        "text": "You are an expert in understanding egocentric videos involving hand-object interactions. ",
+        "bbox": [
+            171,
+            253,
+            849,
+            266
+        ],
+        "page_idx": 17
+    },
+    {
+        "type": "text",
+        "text": "Please watch the entire egocentric video carefully and identify all time segments where the camera wearer is performing a specific, goal-directed task that involves direct interaction between their hands and a specific object. ",
+        "bbox": [
+            169,
+            277,
+            846,
+            316
+        ],
+        "page_idx": 17
+    },
+    {
+        "type": "text",
+        "text": "A valid task must satisfy the following conditions: ",
+        "bbox": [
+            171,
+            328,
+            566,
+            340
+        ],
+        "page_idx": 17
+    },
+    {
+        "type": "list",
+        "sub_type": "text",
+        "list_items": [
+            "- The person’s hands are actively manipulating or interacting with a physical object ",
+            "- The action has a clear purpose, such as \"washing a dish\", \"opening a bottle\", or \"tightening a screw\" ",
+            "Segments where the person is not using their hands to manipulate any object | such as walking, turning their head, looking around, standing still, observing, or waiting | should be excluded "
+        ],
+        "bbox": [
+            171,
+            340,
+            846,
+            416
+        ],
+        "page_idx": 17
+    },
+    {
+        "type": "text",
+        "text": "The total duration of the video is [VIDEO\\_DURATION] seconds. ",
+        "bbox": [
+            171,
+            429,
+            635,
+            441
+        ],
+        "page_idx": 17
+    },
+    {
+        "type": "text",
+        "text": "For each detected task segment, provide: ",
+        "bbox": [
+            171,
+            455,
+            482,
+            467
+        ],
+        "page_idx": 17
+    },
+    {
+        "type": "list",
+        "sub_type": "text",
+        "list_items": [
+            "1. The start time (in seconds, integer only) ",
+            "2. The end time (in seconds, integer only) ",
+            "3. A concise description of the specific task being performed "
+        ],
+        "bbox": [
+            171,
+            467,
+            645,
+            506
+        ],
+        "page_idx": 17
+    },
+    {
+        "type": "text",
+        "text": "Each description must include: ",
+        "bbox": [
+            171,
+            517,
+            405,
+            529
+        ],
+        "page_idx": 17
+    },
+    {
+        "type": "list",
+        "sub_type": "text",
+        "list_items": [
+            "- The main manipulation action (a verb like \"pick up\", \"place\", \"insert\", \"open\", etc.) ",
+            "- A list of one or more objects that are being manipulated ",
+            "- A short natural language instruction generated from the action and objects "
+        ],
+        "bbox": [
+            171,
+            529,
+            844,
+            569
+        ],
+        "page_idx": 17
+    },
+    {
+        "type": "text",
+        "text": "The segments may overlap in time if multiple tasks are performed in close succession or simultaneously. ",
+        "bbox": [
+            169,
+            580,
+            823,
+            606
+        ],
+        "page_idx": 17
+    },
+    {
+        "type": "text",
+        "text": "Return the results strictly in the following JSON format: ",
+        "bbox": [
+            171,
+            618,
+            612,
+            631
+        ],
+        "page_idx": 17
+    },
+    {
+        "type": "code",
+        "sub_type": "code",
+        "code_caption": [],
+        "code_body": "```json\n[ {\"start\": 4, \"end\": 9, \"action\": \"open\", \"objects\": [\"bag\"], \"task\": \"Open the bag\"}, {\"start\": 9, \"end\": 15, \"action\": \"place\", \"objects\": [\"apple\", \"plate\"], \"task\": \"Place the apple on the plate\"}] \n```",
+        "bbox": [
+            171,
+            631,
+            844,
+            693
+        ],
+        "page_idx": 17
+    },
+    {
+        "type": "text",
+        "text": "Figure 12: Prompt used for VLM-based temporal segmentation. The model identifies manipulation segments from egocentric video and outputs structured annotations including a natural-language task instruction that serves as the language prompt during pretraining. ",
+        "bbox": [
+            169,
+            699,
+            825,
+            742
+        ],
+        "page_idx": 17
+    },
+    {
+        "type": "page_number",
+        "text": "18 ",
+        "bbox": [
+            490,
+            935,
+            508,
+            946
+        ],
+        "page_idx": 17
+    },
+    {
+        "type": "text",
+        "text": "You are a task filter for egocentric video clips. ",
+        "bbox": [
+            171,
+            334,
+            550,
+            348
+        ],
+        "page_idx": 18
+    },
+    {
+        "type": "text",
+        "text": "You will be given a JSON object that represents a single video clip. Each clip contains a list of task segments. Your job is to extract only segments that are suitable for training a Vision-Language-Action (VLA) model focused on indoor hand-object manipulation. ",
+        "bbox": [
+            169,
+            359,
+            859,
+            398
+        ],
+        "page_idx": 18
+    },
+    {
+        "type": "text",
+        "text": "Each segment includes: ",
+        "bbox": [
+            171,
+            410,
+            344,
+            422
+        ],
+        "page_idx": 18
+    },
+    {
+        "type": "list",
+        "sub_type": "text",
+        "list_items": [
+            "- start, end: time in seconds ",
+            "- action: verb describing the action ",
+            "- objects: list of physical objects being interacted with ",
+            "- task: natural language description "
+        ],
+        "bbox": [
+            173,
+            422,
+            614,
+            473
+        ],
+        "page_idx": 18
+    },
+    {
+        "type": "text",
+        "text": "Filtering criteria | keep only segments that satisfy all three: ",
+        "bbox": [
+            171,
+            486,
+            658,
+            498
+        ],
+        "page_idx": 18
+    },
+    {
+        "type": "list",
+        "sub_type": "text",
+        "list_items": [
+            "1. The action involves hand-object manipulation (e.g., pick up, cut, fold, assemble, insert, tighten, wipe, pour, etc.) ",
+            "2. The object(s) must be artificial, physical items (tools, containers, utensils, electronics, furniture, fabric, household goods). Exclude: body parts (leg, hand, arm), people (man, woman, person), natural materials (plant, soil, mud, grass, tree). ",
+            "3. The scene is likely indoors. Exclude: gardening, farming, outdoor repair, digging, planting, handling mud/branches/natural terrain. "
+        ],
+        "bbox": [
+            171,
+            498,
+            849,
+            587
+        ],
+        "page_idx": 18
+    },
+    {
+        "type": "text",
+        "text": "Return a JSON object: ",
+        "bbox": [
+            171,
+            599,
+            336,
+            611
+        ],
+        "page_idx": 18
+    },
+    {
+        "type": "text",
+        "text": "{\"clip\\_uid\": \"...\", \"status\": \"success\", \"filtered\\_segments\": [...]} ",
+        "bbox": [
+            171,
+            611,
+            699,
+            625
+        ],
+        "page_idx": 18
+    },
+    {
+        "type": "text",
+        "text": "Figure 13: Prompt used for LLM-based semantic filtering. The model retains only segments involving indoor hand-object manipulation of artificial objects. ",
+        "bbox": [
+            169,
+            631,
+            823,
+            660
+        ],
+        "page_idx": 18
+    },
+    {
+        "type": "page_number",
+        "text": "19 ",
+        "bbox": [
+            490,
+            935,
+            508,
+            946
+        ],
+        "page_idx": 18
+    }
+]

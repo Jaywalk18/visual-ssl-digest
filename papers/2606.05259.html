@@ -26,32 +26,32 @@
   <main><article class="paper-detail">
   <div class="paper-main">
     <div class="kicker">ICML 2026 Spotlight · 扫读 · 2026-06-06</div>
-    <h1 class="paper-headline">VideoKR：若关注视频 VLM 后训练数据，值得扫读；若只关心通用视觉 SSL backbone，可低优先级处理</h1>
-    <p class="dek">把视频 understanding 数据从浅层问答推向 knowledge- and reasoning-intensive examples，并附带 VideoKR-Eval。</p>
+    <h1 class="paper-headline">VideoKR：视频 foundation models 的表征评估不能只看短视频 caption/VQA；VideoKR 可作为扫读资源</h1>
+    <p class="dek">用 human-in-the-loop、skill-oriented generation 让问题更依赖连续视频理解和知识推理，而不是单帧/text shortcut。</p>
     <p class="byline"><strong>VideoKR: Towards Knowledge- and Reasoning-Intensive Video Understanding</strong>　Lin Fu, Zheyuan Yang, Yang Wang, Tingyu Song, Arman Cohan, Yilun Zhao；机构信息 arXiv 元数据未列出。　arXiv + ICML 2026 Spotlight　<a href="https://arxiv.org/abs/2606.05259">原文链接</a></p>
     <div class="paper-facts">
       <span><b>编号</b>2606.05259</span>
       <span><b>优先级</b>扫读</span>
       <span><b>类别</b>ICML 2026 Spotlight</span>
       <span><b>会议</b>arXiv + ICML 2026 Spotlight</span>
-      <span><b>方法</b>构建 VideoKR，含 315K video reasoning examples 与 145K CC-licensed expert-domain videos，并用 SFT -&gt; GRPO 后训练模型。</span>
+      <span><b>方法</b>构建 315K video reasoning examples、145K CC-licensed expert-domain videos，并提供 VideoKR-Eval。</span>
       <span><b>来源</b>arXiv / OpenReview</span>
     </div>
     <div class="feature-body">
-      <p class="lead dropcap">先说结论。若关注视频 VLM 后训练数据，值得扫读；若只关心通用视觉 SSL backbone，可低优先级处理。 把视频 understanding 数据从浅层问答推向 knowledge- and reasoning-intensive examples，并附带 VideoKR-Eval。</p>
+      <p class="lead dropcap">先说结论。视频 foundation models 的表征评估不能只看短视频 caption/VQA；VideoKR 可作为扫读资源。 用 human-in-the-loop、skill-oriented generation 让问题更依赖连续视频理解和知识推理，而不是单帧/text shortcut。</p>
       <figure class="full-fig"><img src="../assets/mineru/2606.05259/images/b93e52c5ee885e0788cd9650c3c4060a66b1c395e0ae0eeebb7b365b400cb6df.jpg" alt="Figureure 6 · A VideoKR-SFT-201K example from the engineering domain"><figcaption><b>Figureure 6 · A VideoKR-SFT-201K example from the engineering domain</b><span class="fig-en">Figure 6. A VideoKR-SFT-201K example from the engineering domain. The reasoning process is presented in a concise and abbreviated form to improve readability.</span><span class="fig-zh">这张图来自论文 PDF 的结构化抽取。当前用于辅助理解 VideoKR 的方法或实验，请结合正文精读段落一起看。</span></figcaption></figure>
 <figure class="full-fig"><img src="../assets/mineru/2606.05259/images/f17ba814082b6536996ad89881d0b6eb1eb90ea710f36991d1af706462a0626d.jpg" alt="(b) Knowledge-intensive Reasoning Figure 3"><figcaption><b>(b) Knowledge-intensive Reasoning Figure 3</b><span class="fig-en">(b) Knowledge-intensive Reasoning Figure 3. Inference-time frame scaling results on general and knowledge-intensive video reasoning benchmarks. The figure shows category-wise average accuracies for Qwen2.5-VL-7B-Instruct and its VideoKR post-trained variant (SFT+RL) under different input frame budgets. Appendix D.1 provides the full per-benchmark results for post-trained Qwen2.5-VL-7B-Instruct and Qwen3-VL-8B-Instruct models.</span><span class="fig-zh">这张图/表用于判断 VideoKR 的实验收益来自哪里。重点看替换、消融或跨模型设置下趋势是否一致，而不是只看单个最高分。</span></figcaption></figure>
       
       <h2>核心问题</h2>
-      <p>若关注视频 VLM 后训练数据，值得扫读；若只关心通用视觉 SSL backbone，可低优先级处理。</p>
+      <p>视频 foundation models 的表征评估不能只看短视频 caption/VQA；VideoKR 可作为扫读资源。</p>
       <h2>方法拆解</h2>
-      <p>构建 VideoKR，含 315K video reasoning examples 与 145K CC-licensed expert-domain videos，并用 SFT -&gt; GRPO 后训练模型。</p>
+      <p>构建 315K video reasoning examples、145K CC-licensed expert-domain videos，并提供 VideoKR-Eval。</p>
       <h2>主要贡献</h2>
-      <p>把视频 understanding 数据从浅层问答推向 knowledge- and reasoning-intensive examples，并附带 VideoKR-Eval。</p>
+      <p>用 human-in-the-loop、skill-oriented generation 让问题更依赖连续视频理解和知识推理，而不是单帧/text shortcut。</p>
       <h2>实验看点</h2>
-      <p>摘要称在知识密集型视频推理上优于 prior post-training approaches，同时保持一般视频推理竞争力。</p>
+      <p>摘要称 SFT -&gt; GRPO pipeline 下优于 prior video reasoning post-training approaches。</p>
       <h2>局限与读法</h2>
-      <p>它是数据和后训练工作，不是自监督视觉表征方法；CoT/rationale 数据设计可能带来语言捷径。</p>
+      <p>数据/后训练工作，不是视觉自监督目标；CoT/rationale 构造成本和 domain coverage 需要关注。</p>
     
     </div>
   </div>

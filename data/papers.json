@@ -1,5 +1,18 @@
 [
   {
+    "id": "2606.05833",
+    "title": "Learning Geometric Representations from Videos for Spatial Intelligent Multimodal Large Language Models",
+    "short": "Learning Geometric Representations from Videos",
+    "category": "Visual SSL / representation",
+    "priority": "P0",
+    "date": "2026-06-06",
+    "venue": "arXiv",
+    "url": "https://arxiv.org/abs/2606.05833",
+    "thesis": "GeoVR 用纯 2D video 与 3D foundation teacher 重塑 MLLM 几何表征，是今天最强的视频/空间表征候选。",
+    "takeaway": "高相关；详见方法、贡献和实验边界。",
+    "method": "GeoVR 用纯 2D video 与 3D foundation teacher 重塑 MLLM 几何表征，是今天最强的视频/空间表征候选"
+  },
+  {
     "id": "2606.05552",
     "title": "Balancing Image Compression and Generation with Bootstrapped Tokenization",
     "short": "Balancing Image Compression and Generation",
@@ -8,9 +21,61 @@
     "date": "2026-06-06",
     "venue": "arXiv",
     "url": "https://arxiv.org/abs/2606.05552",
-    "thesis": "SelfBootTok 用自举方式拆分全局/局部视觉 token，是今天最直接服务通用图像 tokenizer 与表示压缩的工作。",
+    "thesis": "SelfBootTok 把视觉 token 分成 global/local 组，并用 self-bootstrapping 让 tokenizer 承担局部细节学习。",
     "takeaway": "高相关；详见方法、贡献和实验边界。",
-    "method": "SelfBootTok 用自举方式拆分全局/局部视觉 token，是今天最直接服务通用图像 tokenizer 与表示压缩的工作"
+    "method": "SelfBootTok 把视觉 token 分成 global/local 组，并用 self-bootstrapping 让 tokenizer 承担局部细节学习"
+  },
+  {
+    "id": "2606.05769",
+    "title": "Imagine Before You Predict: Interleaved Latent Visual Reasoning for Video Event Prediction",
+    "short": "Imagine Before You Predict",
+    "category": "code",
+    "priority": "P0",
+    "date": "2026-06-06",
+    "venue": "arXiv + code",
+    "url": "https://arxiv.org/abs/2606.05769",
+    "thesis": "Future-L1 让视频 MLLM 在生成中交替使用语言 token 与连续视觉 latent span，针对视觉语义被文本化损失的问题。",
+    "takeaway": "高相关；详见方法、贡献和实验边界。",
+    "method": "Future-L1 让视频 MLLM 在生成中交替使用语言 token 与连续视觉 latent span，针对视觉语义被文本化损失的问题"
+  },
+  {
+    "id": "2606.05328",
+    "title": "The Invisible Hand of Physics: When Video Diffusion Models Know More Than They Show",
+    "short": "The Invisible Hand of Physics",
+    "category": "Visual SSL / representation",
+    "priority": "P1",
+    "date": "2026-06-06",
+    "venue": "arXiv",
+    "url": "https://arxiv.org/abs/2606.05328",
+    "thesis": "通过反演视频扩散轨迹发现物理可行性可从 DiT 状态线性解码，提示生成式预训练隐含视觉物理表征。",
+    "takeaway": "高相关；详见方法、贡献和实验边界。",
+    "method": "通过反演视频扩散轨迹发现物理可行性可从 DiT 状态线性解码，提示生成式预训练隐含视觉物理表征"
+  },
+  {
+    "id": "2606.06194",
+    "title": "ActiveMimic: Egocentric Video Pretraining with Active Perception",
+    "short": "ActiveMimic",
+    "category": "project",
+    "priority": "P1",
+    "date": "2026-06-06",
+    "venue": "arXiv + project",
+    "url": "https://arxiv.org/abs/2606.06194",
+    "thesis": "从人类第一视角视频恢复相机/手腕轨迹，把主动感知当作预训练信号；虽偏机器人，但对视频 SSL 有迁移价值。",
+    "takeaway": "中高相关；详见方法、贡献和实验边界。",
+    "method": "从人类第一视角视频恢复相机/手腕轨迹，把主动感知当作预训练信号；虽偏机器人，但对视频 SSL 有迁移价值"
+  },
+  {
+    "id": "2606.06076",
+    "title": "Learning Visual Spatial Planning from Symbolic State via Modality-Gap-Aware Self-Distillation",
+    "short": "Learning Visual Spatial Planning from",
+    "category": "Visual SSL / representation",
+    "priority": "P1",
+    "date": "2026-06-06",
+    "venue": "arXiv",
+    "url": "https://arxiv.org/abs/2606.06076",
+    "thesis": "MGSD 用符号状态 teacher 做训练期特权监督，改善纯视觉推理中的 state recovery 与多步规划。",
+    "takeaway": "中高相关；详见方法、贡献和实验边界。",
+    "method": "MGSD 用符号状态 teacher 做训练期特权监督，改善纯视觉推理中的 state recovery 与多步规划"
   },
   {
     "id": "2606.05718",
@@ -21,61 +86,9 @@
     "date": "2026-06-06",
     "venue": "arXiv",
     "url": "https://arxiv.org/abs/2606.05718",
-    "thesis": "把 privileged teacher 的额外信息限制为可由视觉输入恢复的 cues，避免多模态蒸馏学到不可迁移捷径。",
-    "takeaway": "高相关；详见方法、贡献和实验边界。",
-    "method": "把 privileged teacher 的额外信息限制为可由视觉输入恢复的 cues，避免多模态蒸馏学到不可迁移捷径"
-  },
-  {
-    "id": "2606.06078",
-    "title": "Knowledge Distillation for Visual Autoregressive Models",
-    "short": "Knowledge Distillation for Visual Autoregressive",
-    "category": "Visual SSL / representation",
-    "priority": "P1",
-    "date": "2026-06-06",
-    "venue": "arXiv",
-    "url": "https://arxiv.org/abs/2606.06078",
-    "thesis": "首次系统研究视觉 AR 模型 KD，并提出 VarKD 处理长解码和视觉 token ambiguity。",
-    "takeaway": "高相关；详见方法、贡献和实验边界。",
-    "method": "首次系统研究视觉 AR 模型 KD，并提出 VarKD 处理长解码和视觉 token ambiguity"
-  },
-  {
-    "id": "2606.05833",
-    "title": "Learning Geometric Representations from Videos for Spatial Intelligent Multimodal Large Language Models",
-    "short": "Learning Geometric Representations from Videos",
-    "category": "Visual SSL / representation",
-    "priority": "P1",
-    "date": "2026-06-06",
-    "venue": "arXiv",
-    "url": "https://arxiv.org/abs/2606.05833",
-    "thesis": "GeoVR 用纯 2D 视频和 3D foundation teacher 蒸馏几何 latent，补 MLLM 的空间一致性。",
-    "takeaway": "高相关；详见方法、贡献和实验边界。",
-    "method": "GeoVR 用纯 2D 视频和 3D foundation teacher 蒸馏几何 latent，补 MLLM 的空间一致性"
-  },
-  {
-    "id": "2606.05769",
-    "title": "Imagine Before You Predict: Interleaved Latent Visual Reasoning for Video Event Prediction",
-    "short": "Imagine Before You Predict",
-    "category": "project",
-    "priority": "P1",
-    "date": "2026-06-06",
-    "venue": "arXiv + project",
-    "url": "https://arxiv.org/abs/2606.05769",
-    "thesis": "Future-L1 在语言 token 与连续视觉 latent 之间交替推理，保留未来事件预测中的细粒度运动/几何线索。",
-    "takeaway": "高相关；详见方法、贡献和实验边界。",
-    "method": "Future-L1 在语言 token 与连续视觉 latent 之间交替推理，保留未来事件预测中的细粒度运动/几何线索"
-  },
-  {
-    "id": "2606.05471",
-    "title": "Formal Concept Lattices are Good Semantic Scaffolds for Concept-Based Learning",
-    "short": "Formal Concept Lattices are Good",
-    "category": "ICML 2026",
-    "priority": "P2",
-    "date": "2026-06-06",
-    "venue": "arXiv + ICML 2026",
-    "url": "https://arxiv.org/abs/2606.05471",
-    "thesis": "用形式概念格把语义层级对齐到网络深度，适合关注可解释视觉表征和概念监督的人精读。",
+    "thesis": "用视觉 cues 而不是答案侧 rationale 做 privileged teacher，避免多模态蒸馏学习不可恢复捷径。",
     "takeaway": "中高相关；详见方法、贡献和实验边界。",
-    "method": "用形式概念格把语义层级对齐到网络深度，适合关注可解释视觉表征和概念监督的人精读"
+    "method": "用视觉 cues 而不是答案侧 rationale 做 privileged teacher，避免多模态蒸馏学习不可恢复捷径"
   },
   {
     "id": "2606.05753",
@@ -91,69 +104,56 @@
     "method": "诊断 latent visual reasoning 中 cosine/MSE 对齐指标可能反向误导，提醒看 load-bearing latent 而非表面相似度"
   },
   {
-    "id": "2606.06120",
-    "title": "Diff-CA: Separating Common and Salient Factors with Diffusion Models",
-    "short": "Diff-CA",
-    "category": "Visual SSL / representation",
-    "priority": "P2",
-    "date": "2026-06-06",
-    "venue": "arXiv",
-    "url": "https://arxiv.org/abs/2606.06120",
-    "thesis": "用 diffusion 条件分解做 contrastive analysis，将 common/salient 因子分离接到高保真图像生成。",
-    "takeaway": "中高相关；详见方法、贡献和实验边界。",
-    "method": "用 diffusion 条件分解做 contrastive analysis，将 common/salient 因子分离接到高保真图像生成"
-  },
-  {
-    "id": "2606.05917",
-    "title": "MemoryCard: Topic-Aware Multi-Modal Clue Compression for Long-Video Question Answering",
-    "short": "MemoryCard",
-    "category": "Visual SSL / representation",
-    "priority": "P2",
-    "date": "2026-06-06",
-    "venue": "arXiv",
-    "url": "https://arxiv.org/abs/2606.05917",
-    "thesis": "把长视频切成可检索 memory cards，在相近 token budget 下提升长视频 VLM 的事件级证据组织。",
-    "takeaway": "中高相关；详见方法、贡献和实验边界。",
-    "method": "把长视频切成可检索 memory cards，在相近 token budget 下提升长视频 VLM 的事件级证据组织"
-  },
-  {
-    "id": "2606.06076",
-    "title": "Learning Visual Spatial Planning from Symbolic State via Modality-Gap-Aware Self-Distillation",
-    "short": "Learning Visual Spatial Planning from",
-    "category": "Visual SSL / representation",
-    "priority": "P2",
-    "date": "2026-06-06",
-    "venue": "arXiv",
-    "url": "https://arxiv.org/abs/2606.06076",
-    "thesis": "MGSD 用 symbolic state teacher 蒸馏纯视觉 planning student，重点在视觉状态恢复与推理能力迁移。",
-    "takeaway": "中高相关；详见方法、贡献和实验边界。",
-    "method": "MGSD 用 symbolic state teacher 蒸馏纯视觉 planning student，重点在视觉状态恢复与推理能力迁移"
-  },
-  {
     "id": "2606.06100",
     "title": "HyperVis: Continuous Latent Visual Relational Graphs on the Lorentz Hyperboloid for Compositional Reasoning",
     "short": "HyperVis",
     "category": "Visual SSL / representation",
-    "priority": "P3",
+    "priority": "P2",
     "date": "2026-06-06",
     "venue": "arXiv",
     "url": "https://arxiv.org/abs/2606.06100",
-    "thesis": "用连续视觉关系图和双曲约束替代离散 scene graph label，作为 VLM 关系表征正则值得扫读。",
+    "thesis": "用连续视觉关系张量与双曲几何替代离散 scene graph 文本瓶颈，直接塑形 VLM 关系表征。",
+    "takeaway": "中高相关；详见方法、贡献和实验边界。",
+    "method": "用连续视觉关系张量与双曲几何替代离散 scene graph 文本瓶颈，直接塑形 VLM 关系表征"
+  },
+  {
+    "id": "2606.05843",
+    "title": "Mechanistic Insights into Functional Sparsity in Multimodal LLMs via CoRe Heads",
+    "short": "Mechanistic Insights into Functional Sparsity",
+    "category": "Visual SSL / representation",
+    "priority": "P2",
+    "date": "2026-06-06",
+    "venue": "arXiv",
+    "url": "https://arxiv.org/abs/2606.05843",
+    "thesis": "从 attention head 层面定位 MLLM 的 query-relevant visual feature retrieval 机制，可诊断视觉表征如何被读取。",
+    "takeaway": "中高相关；详见方法、贡献和实验边界。",
+    "method": "从 attention head 层面定位 MLLM 的 query-relevant visual feature retrieval 机制，可诊断视觉表征如何被读取"
+  },
+  {
+    "id": "2606.06078",
+    "title": "Knowledge Distillation for Visual Autoregressive Models",
+    "short": "Knowledge Distillation for Visual Autoregressive",
+    "category": "Visual SSL / representation",
+    "priority": "P3",
+    "date": "2026-06-06",
+    "venue": "arXiv",
+    "url": "https://arxiv.org/abs/2606.06078",
+    "thesis": "VarKD 是视觉 AR 模型 distillation 系统研究，更多服务生成模型压缩，但涉及 visual token ambiguity。",
     "takeaway": "中相关；详见方法、贡献和实验边界。",
-    "method": "用连续视觉关系图和双曲约束替代离散 scene graph label，作为 VLM 关系表征正则值得扫读"
+    "method": "VarKD 是视觉 AR 模型 distillation 系统研究，更多服务生成模型压缩，但涉及 visual token ambiguity"
   },
   {
     "id": "2606.05515",
     "title": "BRepCLIP: Contrastive Multimodal Pretraining on BRep Primitives for CAD Understanding",
     "short": "BRepCLIP",
-    "category": "Visual SSL / representation",
+    "category": "project",
     "priority": "P3",
     "date": "2026-06-06",
-    "venue": "arXiv",
+    "venue": "arXiv + project",
     "url": "https://arxiv.org/abs/2606.05515",
-    "thesis": "CAD 垂直场景，但“结构 token + CLIP 对比预训练”对 3D/结构化视觉表征有可迁移启发。",
+    "thesis": "CAD 垂直领域，但“结构 token + CLIP 对齐”的 contrastive multimodal pretraining 对 3D/结构视觉表征有迁移启发。",
     "takeaway": "中相关；详见方法、贡献和实验边界。",
-    "method": "CAD 垂直场景，但“结构 token + CLIP 对比预训练”对 3D/结构化视觉表征有可迁移启发"
+    "method": "CAD 垂直领域，但“结构 token + CLIP 对齐”的 contrastive multimodal pretraining 对 3D/结构视觉表征有迁移启发"
   },
   {
     "id": "2606.05259",
@@ -164,9 +164,9 @@
     "date": "2026-06-06",
     "venue": "arXiv + ICML 2026 Spotlight",
     "url": "https://arxiv.org/abs/2606.05259",
-    "thesis": "不是视觉 SSL 主线，但 ICML Spotlight 的视频 reasoning corpus 对视频后训练数据设计有状态价值。",
+    "thesis": "ICML Spotlight 的视频推理数据与评测工作；不是 SSL 目标，但对视频 foundation model 评估有参考。",
     "takeaway": "中相关；详见方法、贡献和实验边界。",
-    "method": "不是视觉 SSL 主线，但 ICML Spotlight 的视频 reasoning corpus 对视频后训练数据设计有状态价值"
+    "method": "ICML Spotlight 的视频推理数据与评测工作；不是 SSL 目标，但对视频 foundation model 评估有参考"
   },
   {
     "id": "2606.04385",

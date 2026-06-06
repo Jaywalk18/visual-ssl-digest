@@ -25,39 +25,39 @@
   </nav>
   <main><article class="paper-detail">
   <div class="paper-main">
-    <div class="kicker">project · P1 · 2026-06-06</div>
-    <h1 class="paper-headline">Imagine Before You Predict：这是 latent visual reasoning 在视频任务上的新实例，和视觉 token/连续 latent 是否真正承载信息的讨论高度相关</h1>
-    <p class="dek">避免把未来视觉线索过早 verbalize 成文本后丢失运动、几何和交互细节。</p>
-    <p class="byline"><strong>Imagine Before You Predict: Interleaved Latent Visual Reasoning for Video Event Prediction</strong>　Tianxiang Jiang, Linquan Wu, Sheng Xia, Songze Li, Ziang Yan, Haoyu Yang, Yu Qiao, Yi Wang；机构信息 arXiv 元数据未列出。　arXiv + project　<a href="https://arxiv.org/abs/2606.05769">原文链接</a></p>
+    <div class="kicker">code · P0 · 2026-06-06</div>
+    <h1 class="paper-headline">Imagine Before You Predict：它把“连续视觉 latent 是否应参与推理”放到中心位置，对视频 VLM 和 latent world model 很关键</h1>
+    <p class="dek">避免把未来视觉推理全写成文字后丢失 motion、geometry、interaction cues。</p>
+    <p class="byline"><strong>Imagine Before You Predict: Interleaved Latent Visual Reasoning for Video Event Prediction</strong>　Tianxiang Jiang, Linquan Wu, Sheng Xia, Songze Li, Ziang Yan, Haoyu Yang, Yu Qiao, Yi Wang；机构信息 arXiv 元数据未列出。　arXiv + code　<a href="https://arxiv.org/abs/2606.05769">原文链接</a></p>
     <div class="paper-facts">
       <span><b>编号</b>2606.05769</span>
-      <span><b>优先级</b>P1</span>
-      <span><b>类别</b>project</span>
-      <span><b>会议</b>arXiv + project</span>
-      <span><b>方法</b>Future-L1 让 MLLM 在 autoregressive decoding 时交替生成语言 token 与连续 latent visual spans，并用未来帧 embeddings 与 latent-aware RL 目标优化。</span>
+      <span><b>优先级</b>P0</span>
+      <span><b>类别</b>code</span>
+      <span><b>会议</b>arXiv + code</span>
+      <span><b>方法</b>在 autoregressive decoding 中交替产生语言 token 与连续 latent visual spans；训练时把 latent states 对齐 future-frame embeddings，并用 LA-DAPO 做 latent-aware RL。</span>
       <span><b>来源</b>arXiv / OpenReview</span>
     </div>
     <div class="feature-body">
-      <p class="lead dropcap">先说结论。这是 latent visual reasoning 在视频任务上的新实例，和视觉 token/连续 latent 是否真正承载信息的讨论高度相关。 避免把未来视觉线索过早 verbalize 成文本后丢失运动、几何和交互细节。</p>
+      <p class="lead dropcap">先说结论。它把“连续视觉 latent 是否应参与推理”放到中心位置，对视频 VLM 和 latent world model 很关键。 避免把未来视觉推理全写成文字后丢失 motion、geometry、interaction cues。</p>
       <figure class="full-fig"><img src="../assets/mineru/2606.05769/images/655c7a74599f7a1a81df9230091d30f4e44fe4d9d54e4740d86a7a708ad92bfc.jpg" alt="Figureure 2 · : Overview of FUTURE-L1"><figcaption><b>Figureure 2 · : Overview of FUTURE-L1</b><span class="fig-en">Figure 2: Overview of FUTURE-L1. (Left) FUTURE-L1-50K is built by ranking TwiFF candidates by visual gain $p _ { v } - p _ { t }$ . (Center) SFT trains interleaved text–latent trajectories, aligning latent spans with future visual states. (Right) LA-DAPO further optimizes sampled trajectories with outcome-contrastive and temporal-diversity rewards.</span><span class="fig-zh">这张图概括 Imagine Before You Predict 的整体方法流程。阅读时先看模块之间传递的训练信号，再看作者如何把目标拆成可优化的子问题。</span></figcaption></figure>
 <figure class="full-fig"><img src="../assets/mineru/2606.05769/images/d2cd9ab4f6aa6329cc296a62fe23036dbd10011cdd40d28b54046fe56372af6b.jpg" alt="Figureure 1 · : Motivation of interleaved latent visual reasoning"><figcaption><b>Figureure 1 · : Motivation of interleaved latent visual reasoning</b><span class="fig-en">Figure 1: Motivation of interleaved latent visual reasoning. Text-CoT can be verbose and visually lossy, while pixel-space future simulation is computationally heavy. FUTURE-L1 instead inserts compact latent visual spans that preserve dynamic future semantics without generating full frames.</span><span class="fig-zh">这张图来自论文 PDF 的结构化抽取。当前用于辅助理解 Imagine Before You Predict 的方法或实验，请结合正文精读段落一起看。</span></figcaption></figure>
       
       <h2>核心问题</h2>
-      <p>这是 latent visual reasoning 在视频任务上的新实例，和视觉 token/连续 latent 是否真正承载信息的讨论高度相关。</p>
+      <p>它把“连续视觉 latent 是否应参与推理”放到中心位置，对视频 VLM 和 latent world model 很关键。</p>
       <h2>方法拆解</h2>
-      <p>Future-L1 让 MLLM 在 autoregressive decoding 时交替生成语言 token 与连续 latent visual spans，并用未来帧 embeddings 与 latent-aware RL 目标优化。</p>
+      <p>在 autoregressive decoding 中交替产生语言 token 与连续 latent visual spans；训练时把 latent states 对齐 future-frame embeddings，并用 LA-DAPO 做 latent-aware RL。</p>
       <h2>主要贡献</h2>
-      <p>避免把未来视觉线索过早 verbalize 成文本后丢失运动、几何和交互细节。</p>
+      <p>避免把未来视觉推理全写成文字后丢失 motion、geometry、interaction cues。</p>
       <h2>实验看点</h2>
-      <p>摘要报告在 FutureBench 将 Qwen3-VL-8B 从 61.0 提到 85.4，并超过前一最佳 Video-CoE 10.4 分；TwiFF-Bench 平均分从 2.44 到 3.04。</p>
+      <p>摘要称 FutureBench 上 Qwen3-VL-8B 从 61.0 提升到 85.4，并超过 Video-CoE 10.4；TwiFF-Bench 从 2.44 到 3.04。</p>
       <h2>局限与读法</h2>
-      <p>任务是视频事件预测，可能偏 reasoning/post-training；latent span 的可控性和跨数据集泛化还需看完整消融。</p>
+      <p>集中于 video event prediction；latent spans 的可解释性、跨任务迁移和与通用视频预训练的结合仍需验证。</p>
     
     </div>
   </div>
   <aside class="paper-side">
 
-    <div class="side-box"><h4>关键判断</h4><dl><dt>相关性</dt><dd>P1</dd><dt>类别</dt><dd>project</dd><dt>会议</dt><dd>arXiv + project</dd><dt>读法</dt><dd>方法图优先，表格次之</dd></dl></div>
+    <div class="side-box"><h4>关键判断</h4><dl><dt>相关性</dt><dd>P0</dd><dt>类别</dt><dd>code</dd><dt>会议</dt><dd>arXiv + code</dd><dt>读法</dt><dd>方法图优先，表格次之</dd></dl></div>
     <div class="side-box"><h4>原文</h4><p><a href="https://arxiv.org/abs/2606.05769">https://arxiv.org/abs/2606.05769</a></p></div>
   </aside>
 </article></main>

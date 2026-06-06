@@ -25,39 +25,39 @@
   </nav>
   <main><article class="paper-detail">
   <div class="paper-main">
-    <div class="kicker">Visual SSL / representation · P1 · 2026-06-06</div>
-    <h1 class="paper-headline">Learning Geometric Representations from Videos：通用视频预训练正在从语义帧理解转向几何一致性，GeoVR 是“视频自监督/蒸馏获取 3D latent”的明确样本</h1>
-    <p class="dek">在缺少大规模 3D 数据的条件下，把预训练 3D foundation model 的几何知识蒸馏进 MLLM 表征。</p>
+    <div class="kicker">Visual SSL / representation · P0 · 2026-06-06</div>
+    <h1 class="paper-headline">Learning Geometric Representations from Videos：通用视觉自监督正从单图语义走向视频、几何与世界模型；GeoVR 是今天最值得精读的几何视频表征工作</h1>
+    <p class="dek">把预训练 3D foundation model 的几何知识转成 MLLM 可用的表征约束，而不是只做浅层 feature mixing。</p>
     <p class="byline"><strong>Learning Geometric Representations from Videos for Spatial Intelligent Multimodal Large Language Models</strong>　Haibo Wang, Lifu Huang；机构信息 arXiv 元数据未列出。　arXiv　<a href="https://arxiv.org/abs/2606.05833">原文链接</a></p>
     <div class="paper-facts">
       <span><b>编号</b>2606.05833</span>
-      <span><b>优先级</b>P1</span>
+      <span><b>优先级</b>P0</span>
       <span><b>类别</b>Visual SSL / representation</span>
       <span><b>会议</b>arXiv</span>
-      <span><b>方法</b>GeoVR 用纯 2D 视频序列学习几何 representation，通过 camera pose、depth、metric scale 与 3D foundation feature distillation 重塑 MLLM 内部语义 latent space。</span>
+      <span><b>方法</b>用 camera pose、dense depth、metric scale、多尺度 3D feature distillation 四类目标，从 2D 视频中向 MLLM 内部 latent space 注入 3D 几何结构。</span>
       <span><b>来源</b>arXiv / OpenReview</span>
     </div>
     <div class="feature-body">
-      <p class="lead dropcap">先说结论。通用视频预训练正在从语义帧理解转向几何一致性，GeoVR 是“视频自监督/蒸馏获取 3D latent”的明确样本。 在缺少大规模 3D 数据的条件下，把预训练 3D foundation model 的几何知识蒸馏进 MLLM 表征。</p>
+      <p class="lead dropcap">先说结论。通用视觉自监督正从单图语义走向视频、几何与世界模型；GeoVR 是今天最值得精读的几何视频表征工作。 把预训练 3D foundation model 的几何知识转成 MLLM 可用的表征约束，而不是只做浅层 feature mixing。</p>
       <figure class="full-fig"><img src="../assets/mineru/2606.05833/images/cce45d760d802846ba35bd59aced86b525640aa81e4174a884b1a1fcb7cacb96.jpg" alt="Figureure 2 · Framework of GeoVR"><figcaption><b>Figureure 2 · Framework of GeoVR</b><span class="fig-en">Figure 2. Framework of GeoVR. During training, alongside the standard next-token prediction $( \mathcal { L } _ { t e x t } )$ , the intrinsic latent space is restructured via: camera pose estimation $( \mathcal { L } _ { c a m } )$ , dense depth prediction $( \mathcal { L } _ { d e p t h } )$ , metric scale calibration $( \mathcal { L } _ { s c a l e } )$ , and geometric representation alignment $( \mathcal { L } _ { a l i g n } )$ from a frozen 3D teacher $( \mathcal { E } _ { 3 D } )$ . All auxiliary heads and the $\mathcal { E } _ { 3 D }$ branch are discarded during inference.</span><span class="fig-zh">这张图概括 Learning Geometric Representations from Videos 的整体方法流程。阅读时先看模块之间传递的训练信号，再看作者如何把目标拆成可优化的子问题。</span></figcaption></figure>
 <figure class="full-fig"><img src="../assets/mineru/2606.05833/images/75182f1aec0035b74479ddd9b701c539c3a6f56147150d158e7cea3e457b5996.jpg" alt="Figureure 1 · Comparison of different paradigms"><figcaption><b>Figureure 1 · Comparison of different paradigms</b><span class="fig-en">Figure 1. Comparison of different paradigms. P and V denote point clouds and RGB video. $\mathcal { E } _ { P } , \mathcal { E } _ { 2 D } ,$ , and $\mathcal { E } _ { 3 D }$ denote point cloud, 2D vision, and 3D foundation encoders, respectively. (a) relies on scarce 3D data, limiting scalability. (b) patches external 3D features onto 2D tokens, causing inference overhead. (c) (ours) restructures the latent space via training-only geometric constraints.</span><span class="fig-zh">这张图/表用于判断 Learning Geometric Representations from Videos 的实验收益来自哪里。重点看替换、消融或跨模型设置下趋势是否一致，而不是只看单个最高分。</span></figcaption></figure>
       
       <h2>核心问题</h2>
-      <p>通用视频预训练正在从语义帧理解转向几何一致性，GeoVR 是“视频自监督/蒸馏获取 3D latent”的明确样本。</p>
+      <p>通用视觉自监督正从单图语义走向视频、几何与世界模型；GeoVR 是今天最值得精读的几何视频表征工作。</p>
       <h2>方法拆解</h2>
-      <p>GeoVR 用纯 2D 视频序列学习几何 representation，通过 camera pose、depth、metric scale 与 3D foundation feature distillation 重塑 MLLM 内部语义 latent space。</p>
+      <p>用 camera pose、dense depth、metric scale、多尺度 3D feature distillation 四类目标，从 2D 视频中向 MLLM 内部 latent space 注入 3D 几何结构。</p>
       <h2>主要贡献</h2>
-      <p>在缺少大规模 3D 数据的条件下，把预训练 3D foundation model 的几何知识蒸馏进 MLLM 表征。</p>
+      <p>把预训练 3D foundation model 的几何知识转成 MLLM 可用的表征约束，而不是只做浅层 feature mixing。</p>
       <h2>实验看点</h2>
-      <p>摘要称在空间推理 benchmark 上达到 SOTA，并显示内部表示具备更强 3D awareness。</p>
+      <p>摘要称在 spatial reasoning benchmarks 上达到 SOTA，并保持零额外推理开销。</p>
       <h2>局限与读法</h2>
-      <p>主要评估空间推理；需要确认蒸馏的几何 latent 是否改善通用图像/视频表征，而非只服务特定 spatial QA。</p>
+      <p>主要验证空间推理；是否提升通用识别、检索、dense prediction 或开放世界视频表征还需更多实验。</p>
     
     </div>
   </div>
   <aside class="paper-side">
 
-    <div class="side-box"><h4>关键判断</h4><dl><dt>相关性</dt><dd>P1</dd><dt>类别</dt><dd>Visual SSL / representation</dd><dt>会议</dt><dd>arXiv</dd><dt>读法</dt><dd>方法图优先，表格次之</dd></dl></div>
+    <div class="side-box"><h4>关键判断</h4><dl><dt>相关性</dt><dd>P0</dd><dt>类别</dt><dd>Visual SSL / representation</dd><dt>会议</dt><dd>arXiv</dd><dt>读法</dt><dd>方法图优先，表格次之</dd></dl></div>
     <div class="side-box"><h4>原文</h4><p><a href="https://arxiv.org/abs/2606.05833">https://arxiv.org/abs/2606.05833</a></p></div>
   </aside>
 </article></main>

@@ -1,0 +1,3071 @@
+[
+    {
+        "type": "text",
+        "text": "Mechanistic Insights into Functional Sparsity in Multimodal LLMs via CoRe Heads ",
+        "text_level": 1,
+        "bbox": [
+            207,
+            122,
+            789,
+            170
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "Ruoxi Sun1, Quantong Qiu1, Juntao Li1∗, Zecheng Tang1, Yihang Lou2, Min Zhang1 ",
+        "bbox": [
+            205,
+            220,
+            792,
+            237
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "1 Soochow University ",
+        "bbox": [
+            426,
+            237,
+            571,
+            250
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "2 Peking University ",
+        "bbox": [
+            433,
+            250,
+            563,
+            265
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "{ljt}@suda.edu.cn ",
+        "bbox": [
+            426,
+            265,
+            571,
+            279
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "Abstract ",
+        "text_level": 1,
+        "bbox": [
+            459,
+            296,
+            537,
+            311
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "While Multimodal Large Language Models (MLLMs) demonstrate remarkable proficiency on complex vision-language tasks, the mechanisms by which they extract query-relevant visual features from complex, noisy contexts remain opaque. In this paper, we present an in-depth interpretability study that uncovers a profound structural property within MLLMs: functional sparsity in cross-modal retrieval. Leveraging a token-level metric termed Retrieval Attention Mass (RAM), we identify and characterize a highly specialized subset of attention heads, referred to as Context-aware Retrieval (CoRe) heads. Across diverse visual domains and model scales, we observe a clear functional division: CoRe heads act as dedicated information extractors, while most other heads distribute attention over broader contextual regions. Causal interventions further demonstrate the necessity of these specialized heads. Ablating only the top 5% of CoRe heads causes significant degradation in multimodal reasoning performance, whereas ablating lower-ranked heads has minimal effect. Moreover, acceleration experiments validate the utility of CoRe heads, showing that leveraging this localized sparsity significantly accelerates inference while maintaining robust task performance. Our findings reveal a structural principle of functional sparsity within MLLMs, refining the current understanding of mechanistic interpretability and laying a theoretical foundation that can inspire future architecture design and model optimization. ",
+        "bbox": [
+            228,
+            325,
+            767,
+            590
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "1 Introduction ",
+        "text_level": 1,
+        "bbox": [
+            171,
+            614,
+            313,
+            628
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "Multimodal Large Language Models (MLLMs) have demonstrated remarkable capabilities in complex vision-language tasks [11, 18, 26]. These models map high-dimensional visual signals into the semantic space of large language models [15]. However, real-world visual inputs are often cluttered with redundant information. Consequently, robust multimodal reasoning is dependent on the model’s capacity to selectively retrieve and isolate sparse, task-relevant visual cues from these cluttered or complex spatiotemporal scenes. Yet, despite the profound empirical success of MLLMs, the precise internal mechanisms governing this critical cross-modal information retrieval remain unexplored, presenting a significant gap in our understanding of multimodal mechanistic interpretability. ",
+        "bbox": [
+            169,
+            643,
+            486,
+            881
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "Context: A bowl full of fruit , including strawberries and mango ",
+        "bbox": [
+            503,
+            647,
+            799,
+            657
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "image",
+        "img_path": "images/8ca8fe1e670d08e5f5a5e967cbda8271bb647b3b465019def167761daf0dda94.jpg",
+        "image_caption": [],
+        "image_footnote": [],
+        "content": "Food preparation setup with a metal bowl containing vegetables, a bowl of fruit, and a spoon on a bamboo mat (no text or symbols visible)",
+        "sub_type": "natural_image",
+        "bbox": [
+            504,
+            657,
+            650,
+            747
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "image",
+        "img_path": "images/ca211e3f8215b8c64d8b88b2199f5f7af25075481ad0831b81d7f36de37233bd.jpg",
+        "image_caption": [
+            "1.0 0.8 0.6 0.4 0.2 0.0 "
+        ],
+        "image_footnote": [],
+        "content": "Bowl of colorful fruit and vegetable on a bamboo mat, accompanied by a pink food cup with vegetables and a fork (no text or symbols visible)",
+        "sub_type": "natural_image",
+        "bbox": [
+            651,
+            657,
+            799,
+            747
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "image",
+        "img_path": "images/af68a08b63c352df9e4f2dbc8ad355295994f5d61914f425beff47a1128ecb93.jpg",
+        "image_caption": [
+            "High-attention regions correspond to the context "
+        ],
+        "image_footnote": [],
+        "content": "",
+        "bbox": [
+            503,
+            748,
+            580,
+            809
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "image",
+        "img_path": "images/d0857a69d0429dac1e43a1541bb6bfc82d770f364ffd37425e067e53040461b8.jpg",
+        "image_caption": [
+            "High-attention regions do not correspond to the context ",
+            "Figure 1: Functional specialization in MLLM attention heads on RefCOCOg. Left (CoRe Heads): High-attention regions correspond to contextrelevant objects. Right (Bottom Heads): Highattention regions show week context-relevant. "
+        ],
+        "image_footnote": [],
+        "content": "",
+        "bbox": [
+            736,
+            750,
+            816,
+            810
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "aside_text",
+        "text": "arXiv:2606.05843v1 [cs.CL] 4 Jun 2026 ",
+        "bbox": [
+            22,
+            284,
+            57,
+            709
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "page_footnote",
+        "text": "∗Corresponding author. ",
+        "bbox": [
+            189,
+            888,
+            316,
+            902
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "footer",
+        "text": "Preprint. ",
+        "bbox": [
+            171,
+            924,
+            220,
+            936
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "image",
+        "img_path": "images/3eebe752f62edc037fcffe0daee1d0c3c07c7177da1ddddab1ff432c789799cd.jpg",
+        "image_caption": [
+            "Figure 2: Mechanistic evidence of functional specialization in MLLMs attention heads on VidSTG. Left (CoRe Heads): A sparse subset of specialized heads acts as precise information extractors, surgically isolating context-relevant entities (e.g., “red car”, “adult in white”) by filtering background noise across key frames. Right (Bottom Heads): The vast majority of heads exhibit semantic dispersion, scattering attention across irrelevant regions and failing to ground the instruction. "
+        ],
+        "image_footnote": [],
+        "content": "```mermaid\ngraph TD\n    A[\"Q1: What is the red car next to outdoors?\"] --> B[\"The model concentrates on the red car across key frames, keeping more relevant tokens.\"]\n    C[\"Q2: What does the adult in white clothes hug?\"] --> D[\"The model focuses on the adult and the dog, capturing the hugging action.\"]\n    B --> E[\"Relevant to Context High\"]\n    D --> F[\"Relevant to Context Low\"]\n```",
+        "sub_type": "flowchart",
+        "bbox": [
+            176,
+            89,
+            820,
+            290
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "text",
+        "text": "While recent interpretability studies have identified specialized attention heads in MLLMs [3, 16, 2], how these models perform cross-modal information retrieval remains poorly understood. Current frameworks rely on coarse statistical heuristics such as spatial entropy [17] and attention aggregation [12], typically evaluated on simple static images. Consequently, these approaches struggle to capture fine-grained, query-conditioned token-level attention in dense or complex spatiotemporal scenes. Without rigorous quantitative methods to characterize these retrieval mechanisms, understanding MLLM failure modes and internal efficiency remains limited. ",
+        "bbox": [
+            169,
+            387,
+            826,
+            484
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "text",
+        "text": "We find that within MLLMs, a specialized subset of attention heads consistently captures task-relevant visual information during multimodal understanding, which we called CoRe head. To identify these heads, we quantify the attention mass from context tokens to semantically relevant visual tokens. We evaluate this across multiple complementary datasets covering different visual domains, including video-based spatio-temporal reasoning (VidSTG [29]), document layout understanding (MMDocIR [6]), object-level visual grounding (RefCOCOg [9]), and long-context multimodal reasoning (MMLongBench [22]). We further analyze a range of MLLMs, including Llava-onevision [10], InternVL3.5 [21], and the Qwen3-VL family [1], across different parameter scales. ",
+        "bbox": [
+            169,
+            489,
+            826,
+            602
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "text",
+        "text": "Our analysis reveals a distinct functional dichotomy where CoRe heads execute localized visual extraction while standard vision heads facilitate global feature aggregation. Furthermore, we note that as model capacity scales, these CoRe heads progressively concentrate in middle-to-late layers. Evaluations across diverse multimodal datasets reveal a globally consistent yet locally variant paradigm: approximately 30 specific heads remain universally activated, while others dynamically adapt to specific data distributions. To rigorously ascertain their functional necessity, we conduct causal interventions via attention masking. Crucially, ablating just the top 5% of CoRe heads causes a significant performance drop, confirming their indispensable role in cross-modal visual retrieval. ",
+        "bbox": [
+            169,
+            607,
+            826,
+            719
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "text",
+        "text": "Spatial visualizations of attention weights further reveal a stark functional dichotomy during visionlanguage reasoning. As shown in Figures 1 and 2, across both image and video modalities, the top-ranked CoRe heads precisely localize context-relevant visual entities. In contrast, lower-ranked heads exhibit diffuse activation patterns, predominantly covering non-salient background regions. Corroborating our quantitative ablations, these observations confirm that fine-grained, context-aware visual selection is exclusively governed by a sparse subset of highly specialized heads. ",
+        "bbox": [
+            169,
+            724,
+            826,
+            809
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "text",
+        "text": "The discovery of CoRe heads offers profound implications for the mechanistic interpretability and optimization of MLLMs. Our findings reveal a structured organization in multimodal processing, where a sparse, consistent subset of heads governs cross-modal extraction across diverse modalities and scales. As evidenced by our causal interventions, multimodal reasoning is highly sensitive to these specific heads, highlighting their non-redundant necessity. Crucially, this localized functional sparsity paves the way for efficient model optimization, suggesting that operating on a small fraction of critical heads can significantly accelerate inference while maintaining precise semantic selection. ",
+        "bbox": [
+            169,
+            814,
+            826,
+            912
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "page_number",
+        "text": "",
+        "bbox": [
+            493,
+            935,
+            504,
+            946
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "text",
+        "text": "2 Related Work ",
+        "text_level": 1,
+        "bbox": [
+            171,
+            89,
+            321,
+            104
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "2.1 Mechanistic Interpretability of MLLMs ",
+        "text_level": 1,
+        "bbox": [
+            171,
+            119,
+            491,
+            136
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "Recent mechanistic interpretability research on MLLMs shows that their perceptual and reasoning capabilities rely on specialized and sparsely activated attention heads. Statistical and structural analyses of cross-modal attention suggest that certain heads exhibit functional preferences. Recent work suggests that certain attention heads in MLLMs are associated with functional roles such as visual perception and spatial reasoning [16]. Quantitative analyses based on response scoring [19], signal-based methods [2], and entropy measures [17] suggest that a subset of heads contributes disproportionately to task-specific adaptation and visual representation encoding. Furthermore, causal intervention techniques, including activation patching and representation editing, have been used to investigate candidate functional circuits (e.g., visual counting [4]) and hierarchical interactions between attention heads and feed-forward networks [12]. These mechanistic insights also enable training-free interventions to improve model reliability and efficiency. For instance, prior studies have investigated interventions such as causal head modulation [20], reweighting attention from visual sinks to informative heads [7], and exploiting abnormal attention patterns for zero-shot hallucination detection [28]. These methods demonstrate potential benefits in improving VQA performance, mitigating hallucinations, and reducing inference cost. Despite these advances, existing analyses are largely limited to static datasets. limiting their ability to capture fine-grained attention patterns in dynamic or densely structured visual environments. ",
+        "bbox": [
+            169,
+            146,
+            826,
+            381
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "2.2 Cross-Modal Information Retrieval ",
+        "text_level": 1,
+        "bbox": [
+            171,
+            398,
+            460,
+            412
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "Current MLLMs exhibit strong performance in complex multimodal reasoning tasks such as multihop question answering [14]. However, the mechanisms underlying their ability to locate and extract task-relevant visual features in dense visual contexts remain poorly understood. Existing literature primarily investigates this cross-modal information retrieval through two distinct analytical lenses: head-level structural sparsity and token-level interpretability. For the former, inspired by text-only LLMs [23], researchers have identified dedicated subsets of attention heads that naturally govern visual grounding and localization behaviors [8, 25]. Parallel to these macro-level insights, finer-grained token-level approaches attempt to trace autoregressive generation directly to specific visual regions [5, 13] and employ explicit mechanisms like Vision-Guided Attention to anchor generated text to tangible visual cues [30]. Specifically, these token-level strategies typically compute semantic alignment scores between textual instructions and visual patches, forcing the model to assign higher importance to relevant objects. While effective for standard visual contexts, these techniques predominantly rely on static structural priors or post-hoc attributions. Consequently, existing approaches struggle to perform robust cross-modal information retrieval in modern, dense, and dynamic datasets, where target features are deeply embedded and heavily obscured by complex, evolving background distractors. ",
+        "bbox": [
+            169,
+            424,
+            826,
+            645
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "3 Isolating CoRe Heads via Retrieval Attention Mass ",
+        "text_level": 1,
+        "bbox": [
+            169,
+            665,
+            632,
+            683
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "To systematically isolate the attention heads responsible for precise visual retrieval and filtering background noise, we extend the text-only probing framework of QRhead [27] to multimodal settings. Our key idea is simple: a useful head should place more attention from the query tokens onto the relevant visual regions, not just anywhere in the sequence. Based on this intuition, we define a token-level metric called Retrieval Attention Mass (RAM) to quantify how much attention a head allocates to the target visual content. For each attention head h, we define its RAM score as: ",
+        "bbox": [
+            169,
+            696,
+            826,
+            781
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "equation",
+        "text": "$$\n\\mathcal {M} _ {\\mathrm{RAM}} ^ {(h)} (q \\rightarrow V ^ {*}) = \\mathbb {E} _ {x \\in q} \\left[ \\sum_ {y \\in \\Omega (V ^ {*})} \\mathbf {A} _ {x \\rightarrow y} ^ {(h)} \\right] \\tag {1}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            352,
+            789,
+            825,
+            838
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "where q represents the set of instructional query tokens, and $\\Omega ( V ^ { * } )$ denotes the tokenized spatial or temporal span corresponding to the key visual entities $V ^ { * }$ . The term $\\mathbf { A } _ { x  y } ^ { ( h ) }$ is the attention weight from token x to token y in head h. Intuitively, this metric measures how strongly a head retrieve information from the query to the relevant visual regions. By averaging over all query tokens, RAM reflects the expected retrieval strength of a head. Importantly, since we restrict the summation to the ground-truth region $\\Omega ( V ^ { * } )$ , high RAM values indicate targeted retrieval, rather than generic attention accumulation. This allows us to distinguish true retrieval heads from attention sinks that absorb probability mass without contributing a meaningful cross-modal grounding. ",
+        "bbox": [
+            169,
+            851,
+            825,
+            912
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "page_number",
+        "text": "3 ",
+        "bbox": [
+            493,
+            935,
+            504,
+            946
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "",
+        "bbox": [
+            169,
+            90,
+            823,
+            148
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "image",
+        "img_path": "images/3c407ba2eca467b37103a717b7ffef34f9b7a6e0080d78e4160998c4c7ac5d65.jpg",
+        "image_caption": [
+            "Figure 3: Overview of the CoRe head probing pipeline. The input multimodal sequence is partitioned into general text tokens, key target visual tokens $( t _ { v } ) .$ , and instructional query tokens $( t _ { q } )$ . During MLLM inference, we extract the internal self-attention maps. By aggregating the attention weights directed from $t _ { q }$ to $t _ { v } ,$ , we compute a routing metric $( \\mathcal { M } _ { \\mathrm { R A M } } ^ { ( h ) } )$ to isolate the sparse CoRe heads "
+        ],
+        "image_footnote": [],
+        "content": "```mermaid\ngraph TD\n    A[\"Query: What does the adult play in the room?\"] --> B[\"Text Tokens\"]\n    A --> C[\"Text Images\"]\n    A --> D[\"Text Visual Tokens\"]\n    A --> E[\"Text Visual Images\"]\n    A --> F[\"Text Visual Images\"]\n    A --> G[\"Text Visual Images\"]\n    A --> H[\"Text Visual Images\"]\n    A --> I[\"Text Visual Images\"]\n    A --> J[\"Text Visual Images\"]\n    A --> K[\"Text Visual Images\"]\n    A --> L[\"Text Visual Images\"]\n    A --> M[\"Text Visual Images\"]\n    A --> N[\"Text Visual Images\"]\n    A --> O[\"Text Visual Images\"]\n    A --> P[\"Text Visual Images\"]\n    A --> Q[\"Text Visual Images\"]\n    A --> R[\"Text Visual Images\"]\n    A --> S[\"Text Visual Images\"]\n    A --> T[\"Text Visual Images\"]\n    A --> U[\"Text Visual Images\"]\n    A --> V[\"Text Visual Images\"]\n    A --> W[\"Text Visual Images\"]\n    A --> X[\"Text Visual Images\"]\n    A --> Y[\"Text Visual Images\"]\n    A --> Z[\"Text Visual Images\"]\n    A --> AA[\"Text Visual Images\"]\n    A --> AB[\"Text Visual Images\"]\n    A --> AC[\"Text Visual Images\"]\n    A --> AD[\"Text Visual Images\"]\n    A --> AE[\"Text Visual Images\"]\n    A --> AF[\"Text Visual Images\"]\n    A --> AG[\"Text Visual Images\"]\n    A --> AH[\"Text Visual Images\"]\n    A --> AI[\"Text Visual Images\"]\n    A --> AJ[\"Text Visual Images\"]\n    A --> AK[\"Text Visual Images\"]\n    A --> AL[\"Text Visual Images\"]\n    A --> AM[\"Text Visual Images\"]\n    A --> AN[\"Text Visual Images\"]\n    A --> AO[\"Text Visual Images\"]\n    A --> AP[\"Text Visual Images\"]\n    A --> AQ[\"Text Visual Images\"]\n    A --> AR[\"Text Visual Images\"]\n    A --> AS[\"Text Visual Images\"]\n    A --> AT[\"Text Visual Images\"]\n    A --> AU[\"Text Visual Images\"]\n    A --> AV[\"Text Visual Images\"]\n    A --> AW[\"Text Visual Images\"]\n    A --> AX[\"Text Visual Images\"]\n    A --> AY[\"Text Visual Images\"]\n    A --> AZ[\"Text Visual Images\"]\n    A --> BA[\"Text Visual Images\"]\n    A --> BB[\"Text Visual Images\"]\n    A --> BC[\"Text Visual Images\"]\n    A --> BD[\"Text Visual Images\"]\n    A --> BE[\"Text Visual Images\"]\n    A --> BF[\"Text Visual Images\"]\n    A --> BG[\"Text Visual Images\"]\n    A --> BH[\"Text Visual Images\"]\n    A --> BI[\"Text Visual Images\"]\n    A --> BJ[\"Text Visual Images\"]\n    A --> BK[\"Text Visual Images\"]\n    A --> BL[\"Text Visual Images\"]\n    A --> BM[\"Text Visual Images\"]\n    A --> BN[\"Text Visual Images\"]\n    A --> BO[\"Text Visual Images\"]\n    A --> BP[\"Text Visual Images\"]\n    A --> BQ[\"Text Visual Images\"]\n    A --> BR[\"Text Visual Images\"]\n    A --> BS[\"Text Visual Images\"]\n    A --> BT[\"Text Visual Images\"]\n    A --> BU[\"Text Visual Images\"]\n    A --> BV[\"Text Visual Images\"]\n    A --> BW[\"Text Visual Images\"]\n    A --> BX[\"Text Visual Images\"]\n    A --> BY[\"Text Visual Images\"]\n    A --> BZ[\"Text Visual Images\"]\n    A --> CA[\"Text Visual Images\"]\n    A --> CB[\"Text Visual Images\"]\n    A --> CC[\"Text Visual Images\"]\n    A --> CD[\"Text Visual Images\"]\n    A --> CE[\"Text Visual Images\"]\n    A --> CF[\"Text Visual Images\"]\n    A --> CG[\"Text Visual Images\"]\n    A --> CH[\"Text Visual Images\"]\n    A --> CI[\"Text Visual Images\"]\n    A --> CJ[\"Text Visual Images\"]\n    A --> CK[\"Text Visual Images\"]\n    A --> CY[\"Text Visual Images\"]\n    A --> CZ[\"Text Visual Images\"]\n    A --> DA[\"Text Visual Images\"]\n    A --> DB[\"Text Visual Images\"]\n    A --> DC[\"Text Visual Images\"]\n    A --> DD[\"Text Visual Images\"]\n    A --> EE[\"Text Visual Images\"]\n    A --> FF[\"Text Visual Images\"]\n    A --> DG[\"Text Visual Images\"]\n    A --> DH[\"Text Visual Images\"]\n    A --> DI[\"Text Visual Images\"]\n    A --> DJ[\"Text Visual Images\"]\n    A --> DK[\"Text Visual Images\"]\n    A --> DL[\"Text Visual Images\"]\n    A --> DV[\"Text Visual Images\"]\n    A --> DW[\"Text Visual Images\"]\n    A --> DX[\"Text Visual Images\"]\n    A --> DY[\"Text Visual Images\"]\n    A --> DYD[\"Text Visual Images\"]\n    A --> DYK[\"Text Visual Images\"]\n```",
+        "sub_type": "flowchart",
+        "bbox": [
+            176,
+            162,
+            821,
+            300
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "text",
+        "text": "As shown in Figure 3, we first partition the multimodal input into three parts: text context, query tokens, and key visual tokens. During a standard forward pass, we extract the full self-attention maps Softmax( $\\cdot \\frac { Q K ^ { \\top } } { \\sqrt { d } } )$ across all layers and heads. We then focus only on the text-to-vision attention, i.e., the sub-matrix where query tokens attend to visual tokens. This step removes irrelevant intra-modal interactions (e.g., text-to-text or vision-to-vision attention), significantly reducing noise. By applying Equation (1), we aggregate these attention values into a scalar RAM score for each head. Collectively, this produces a global $\\mathcal { M } _ { \\mathrm { R A M } } ^ { ( h ) }$ distribution, where only a small subset of heads exhibit high scores. We define these high-scoring heads as CoRe Heads, as they are responsible for focused cross-modal retrieval. Detailed implementations and pseudocode are provided in Appendix D.2. ",
+        "bbox": [
+            169,
+            397,
+            826,
+            532
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "table",
+        "img_path": "images/ee2542d6af66fc8b05adb7b0b55922cf11f37ea3e2515d8d93cc2fe531e548a3.jpg",
+        "table_caption": [
+            "Table 1: CoRe Heads Detection Experimental Configuration "
+        ],
+        "table_footnote": [],
+        "table_body": "<table><tr><td>Dataset</td><td>Modality</td><td>Task Type</td><td>Key Visual Entity  $V^{*}$ </td></tr><tr><td>RefCOCOg [9]</td><td>Static Image</td><td>Visual Grounding</td><td>Bounding box  $[x, y, w, h]$ </td></tr><tr><td>VidSTG [29]</td><td>Video</td><td>Spatio-temporal Grounding</td><td>Temporal tube  $\\mathcal{T}_{t_1:t_2}$ </td></tr><tr><td>MMLongBench [22]</td><td>Long Document</td><td>Multi-evidence Reasoning</td><td>Evidence regions  $\\{R_k\\}$ </td></tr><tr><td>MMDocIR [6]</td><td>Doc + Image</td><td>Document-grounded Retrieval</td><td>Relevant page/figure region</td></tr></table>",
+        "bbox": [
+            176,
+            565,
+            823,
+            665
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "text",
+        "text": "Unified Evaluation Protocol. To test whether CoRe heads generalize across tasks, we design a unified evaluation protocol covering four diverse multimodal datasets (see Table 1 and Appendix B for detailed descriptions). To capture different types of retrieval, we define the target $V ^ { * }$ differently for each task: bounding boxes for spatial grounding (RefCOCOg), spatio-temporal tubes for video grounding (VidSTG), multiple evidence regions for multi-hop reasoning (MMLongBench), and document regions for multimodal retrieval (MMDocIR). Since these annotations are continuous (in space or time) but the model operates over discrete tokens, we map each target region to its corresponding token indices $\\Omega ( V ^ { * } )$ . The details of this mapping are provided in Appendix C. This unified formulation allows us to evaluate whether CoRe heads implement a shared retrieval mechanism across modalities and tasks. ",
+        "bbox": [
+            169,
+            676,
+            826,
+            814
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "text",
+        "text": "Generalization Across Architectures and Scales Finally, to verify that CoRe heads are not tied to a specific architecture, we conduct experiments across multiple model families, including Qwen3- VL, LLaVA-OneVision, and InternVL3.5. We also perform a scaling study using different sizes of Qwen3-VL (4B, 8B, 32B). This combined analysis enables us to examine how the sparsity and stability of CoRe heads evolve with model design and scale, and whether they reflect an intrinsic property of multimodal transformers. ",
+        "bbox": [
+            169,
+            827,
+            826,
+            912
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "page_number",
+        "text": "4 ",
+        "bbox": [
+            493,
+            935,
+            504,
+            946
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "chart",
+        "img_path": "images/3d8079909f0f961502515ad088926f8698b59e5f1c261b0ae3b920fe8c64ea9b.jpg",
+        "content": "| Model | Layer Index | Head Index | Value Range |\n|-------|-------------|------------|-------------|\n| Qwen3-VL-4B-Instruct | 0 | 0 | ~0.6 - 1.0 |\n| Qwen3-VL-4B-Instruct | 0 | 16 | ~0.6 - 1.0 |\n| Qwen3-VL-4B-Instruct | 0 | 28 | ~0.6 - 1.0 |\n| Qwen3-VL-4B-Instruct | 12 | 0 | ~0.6 - 1.0 |\n| Qwen3-VL-4B-Instruct | 12 | 16 | ~0.6 - 1.0 |\n| Qwen3-VL-4B-Instruct | 12 | 28 | ~0.6 - 1.0 |\n| Qwen3-VL-4B-Instruct | 28 | 0 | ~0.6 - 1.0 |\n| Qwen3-VL-4B-Instruct | 28 | 16 | ~0.6 - 1.0 |\n| Qwen3-VL-4B-Instruct | 28 | 28 | ~0.6 - 1.0 |\n| Qwen3-VL-8B-Instruct | 0 | 0 | ~0.6 - 1.0 |\n| Qwen3-VL-8B-Instruct | 0 | 16 | ~0.6 - 1.0 |\n| Qwen3-VL-8B-Instruct | 0 | 28 | ~0.6 - 1.0 |\n| Qwen3-VL-8B-Instruct | 0 | 40 | ~0.6 - 1.0 |\n| Qwen3-VL-8B-Instruct | 0 | 60 | ~0.6 - 1.0 |\n| Qwen3-VL-8B-Instruct | 12 | 0 | ~0.6 - 1.0 |\n| Qwen3-VL-8B-Instruct | 12 | 16 | ~0.6 - 1.0 |\n| Qwen3-VL-8B-Instruct | 12 | 28 | ~0.6 - 1.0 |\n| Qwen3-VL-8B-Instruct | 28 | 0 | ~0.6 - 1.0 |\n| Qwen3-VL-8B-Instruct | 28 | 16 | ~0.6 - 1.0 |\n| Qwen3-VL-8B-Instruct | 28 | 28 | ~0.6 - 1.0 |\n| Qwen3-VL-32B-Instruct | 0 | 0 | ~0.6 - 1.0 |\n| Qwen3-VL-32B-Instruct | 0 | 16 | ~0.6 - 1.0 |\n| Qwen3-VL-32B-Instruct | 0 | 28 | ~0.6 - 1.0 |\n| Qwen3-VL-32B-Instruct | 0 | 40 | ~0.6 - 1.0 |\n| Qwen3-VL-32B-Instruct | 0 | 60 | ~0.6 - 1.0 |\n| Qwen3-VL-32B-Instruct | 12 | 0 | ~0.6 - 1.0 |\n| Qwen3-VL-32B-Instruct | 12 | 16 | ~0.6 - 1.0 |\n| Qwen3-VL-32B-Instruct | 12 | 28 | ~0.6 - 1.0 |\n| Qwen3-VL-32B-Instruct | 28 | 0 | ~0.6 - 1.0 |\n| Qwen3-VL-32B-Instruct | 28 | 16 | ~0.6 - 1.0 |\n| Qwen3-VL-32B-Instruct | 28 | 28 | ~0.6 - 1.0 |\n| Qwen3-VL-4B-Instruct (Vision Head) | 0 | 0 | ~0.6 - 1.0 |\n| Qwen3-VL-4B-Instruct (Vision Head) | 0 | 16 | ~0.6 - 1.0 |\n| Qwen3-VL-4B-Instruct (Vision Head) | 0 | 28 | ~0.6 - 1.0 |\n| Qwen3-VL-4B-Instruct (Vision Head) | 0 | 40 | ~0.6 - 1.0 |\n| Qwen3-VL-4B-Instruct (Vision Head) | 0 | 60 | ~0.6 - 1.0 |\n| Qwen3-VL-4B-Instruct (Vision Head) | 12 | 0 | ~0.6 - 1.0 |\n| Qwen3-VL-4B-Instruct (Vision Head) | 12 | 16 | ~0.6 - 1.0 |\n| Qwen3-VL-4B-Instruct (Vision Head) | 12 | 28 | ~0.6 - 1.0 |\n| Qwen3-VL-4B-Instruct (Vision Head) | 28 | 0 | ~0.6 - 1.0 |\n| Qwen3-VL-4B-Instruct (Vision Head) | 28 | 16 | ~0.6 - 1.0 |\n| Qwen3-VL-4B-Instruct (Vision Head) | 28 | 28 | ~0.6 - 1.0 |\n| Llava-onevision-gwen2-7b-ov-hf | 0 | 0 | ~0.6 - 1.0 |\n| Llava-onevision-gwen2-7b-ov-hf | 0 | 16 | ~0.6 - 1.0 |\n| Llava-onevision-gwen2-7b-ov-hf | 0 | 28 | ~0.6 - 1.0 |\n| Llava-onevision-gwen2-7b-ov-hf | 0 | 40 | ~0.6 - 1.0 |\n| Llava-onevision-gwen2-7b-ov-hf | 0 | 60 | ~0.6 - 1.0 |\n| Llava-onevision-gwen2-7b-ov-hf | 12 | 0 | ~0.6 - 1.0 |\n| Llava-onevision-gwen2-7b-ov-hf | 12 | 16 | ~0.6 - 1.0 |\n| Llava-onevision-gwen2-7b-ov-hf | 12 | 28 | ~0.6 - 1.0 |\n| Llava-onevision-gwen2-7b-ov-hf | 28 | 0 | ~0.6 - 1.0 |\n| InternVL3.5-8B | 0 | 0 | ~0.6 - 1.0 |\n| InternVL3.5-8B | 0 | 16 | ~0.6 - 1.0 |\n| InternVL3.5-8B | 0 | 28 | ~0.6 - 1.0 |\n| InternVL3.5-8B | 0 | 40 | ~0.6 - 1.0 |\n| InternVL3.5-8B | 0 | 60 | ~0.6 - 1.0 |\n| InternVL3.5-8B | 12 | 0 | ~0.6 - 1.0 |\n| InternVL3.5-8B | 12 | 16 | ~0.6 - 1.0 |\n| InternVL3.5-8B | 12 | 28 | ~0.6 - 1.0 |\n| InternVL3.5-8B | 28 | 0 | ~0.6 - 1.0 |\n| InternVL3.5-8B | 28 | 16 | ~0.6 - 1.0 |\n| InternVL3.5-8B | 28 | 28 | ~0.6 - 1.0 |\n| InternVL3.5-8B (InternVL3.5-8B) + InternVL3.5-8B (Qwen3-VL-4B-Instruct) + InternVL3.5-8B (Qwen3-VL-4B-Instruct) + InternVL3.5-8B (Qwen3-VL-4B-Instruct) + InternVL3.5-8B (Qwen3-VL-4B-Instruct) + InternVL3.5-8B (Qwen3-VL-4B-Instruct) + InternVL3.5-8B (Qwen3-VI_4B-Instruct) + InternVL3.5-8B (Qwen3-VI_4B-Instruct) + InternVL3_5_5_5_5_5_5_5_5_5_5_5_5_5_5_5_5_5_5_5_5_5_5_5_5_5_5_5_5_5_5_5_5_5_5_5_5_5_5_5_5_5_5_5_5_5_5_5_5_5_5_7",
+        "chart_caption": [
+            "Figure 4: Evolution and structural divergence of CoRe heads on the MMDocIR dataset. As model scale increases, attention patterns shift from broadly distributed activations (4B) to a pronounced deeplayer bottleneck (32B). Cross-architecture comparisons further reveal distinct attention topologies: Qwen3-VL exhibits sparse localization, Llava-onevision shows moderate dispersion, and InternVL3.5 presents dense, widespread activations. "
+        ],
+        "chart_footnote": [],
+        "sub_type": "heatmap",
+        "bbox": [
+            174,
+            88,
+            823,
+            282
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "4 Mechanistic Analysis of CoRe heads ",
+        "text_level": 1,
+        "bbox": [
+            169,
+            383,
+            508,
+            400
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "4.1 Distribution Dynamics across Architectures and Scales ",
+        "text_level": 1,
+        "bbox": [
+            171,
+            414,
+            594,
+            429
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "Scaling Patterns within Model Families. As illustrated in Figure 4, model capacity expansion triggers a transition from uniform dispersion to pronounced structural localization. In smaller variants (4B), active CoRe heads are relatively scattered across the middle layers. However, as the scale reaches 32B, these critical heads converge into a highly concentrated, contiguous block within the deep layers (approximately layers 44–56). This evolution indicates that larger models spontaneously develop a more specialized \"bottleneck\" for cross-modal semantic integration, delegating complex visual-linguistic retrieval to a compact subset of deep-layer heads. ",
+        "bbox": [
+            169,
+            439,
+            823,
+            537
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "Architectural Divergence across Model Families. Figure 4 reveals stark contrasts in attention allocation across models. Qwen3-VL exhibits a highly sparse and localized activation structure, whereas Llava-onevision demonstrates a moderately dense and vertically dispersed pattern. Conversely, InternVL3.5 displays pervasive, high-density activations spanning nearly the entire network depth. We attribute these structural discrepancies to three primary factors: (1) Vision Encoder Capability: InternVL3.5 employs a massive encoder to achieve deep semantic pre-alignment before projection, allowing the LLM to process visual tokens as \"native\" semantic units with high-density, layer-wise interaction. Lighter encoders shift the modality-bridging burden to the LLM, forcing the emergence of specialized deep-layer hubs. (2) Feature Alignment Paradigm: The multi-stage tuning of Llava-onevision fosters progressive fusion, while the native joint optimization in Qwen3-VL induces sparse specialization to preserve linguistic reasoning capacity. (3) Base Model Adaptation: Notably, despite sharing the Qwen backbone, Qwen3-VL and Llava-onevision exhibit distinct topologies. This confirms that the structural sparsity of multimodal integration is not an intrinsic property of the base LLM, but a dynamic allocation strategy responsive to the density of visual representations and the specific alignment objectives. ",
+        "bbox": [
+            169,
+            551,
+            826,
+            758
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "4.2 Functional Decoupling: Semantic vs. Global Processing ",
+        "text_level": 1,
+        "bbox": [
+            169,
+            773,
+            599,
+            789
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "Experimental Setting To further elucidate the functional heterogeneity among internal attention components, we evaluate and contrast two distinct categories of attention heads: (1) CoRe heads, which are systematically isolated using our proposed cross-modal attention allocation metric, and (2) Vision Heads, which are heuristically identified through the direct statistical aggregation of the macroscopic attention mass directed from linguistic query tokens to the entire set of visual tokens. ",
+        "bbox": [
+            169,
+            799,
+            823,
+            869
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "Result analysis From a distributional perspective, the two categories exhibit markedly distinct structural characteristics. As illustrated in the top-left panel of Figure 4, the activation profiles of ",
+        "bbox": [
+            169,
+            883,
+            823,
+            912
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "page_number",
+        "text": "",
+        "bbox": [
+            493,
+            936,
+            503,
+            946
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "CoRe Heads are highly sparse and localized. These heads govern crucial cross-modal information selection, selectively executing the extraction of key visual features within specific layers. In contrast, the attention distribution of the baseline Vision Heads (depicted in the lower panel) is continuous and diffuse. It exhibits robust responses across the middle-to-late layers with substantially broader coverage along the head dimension. This indicates that their functionality is predominantly oriented toward global visual information aggregation, facilitating the holistic encoding and propagation of visual signals. This phenomenon reveals the spontaneous emergence of a structured functional decomposition mechanism within the network. Rather than relying on homogeneously distributed attention computations, MLLMs achieve efficient cross-modal retrieval through a critical minority of specialized heads, while leveraging a vast ensemble of auxiliary heads to ensure the stable propagation and integration of multimodal information. ",
+        "bbox": [
+            169,
+            90,
+            826,
+            243
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "text",
+        "text": "4.3 Cross-Domian Stability of CoRe heads ",
+        "text_level": 1,
+        "bbox": [
+            171,
+            260,
+            480,
+            275
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "chart",
+        "img_path": "images/721f96a20c40c842f98ee47c93295d1628ee5fb1365108d2c26601f9fe96ee08.jpg",
+        "content": "| | RefCOCOg | MMLongBench | VidSTG | MMDocIR |\n|---|---|---|---|---|\n| RefCOCOg | 1.00 | 0.79 | 0.85 | 0.81 |\n| MMLongBench | 0.79 | 1.00 | 0.92 | 0.92 |\n| VidSTG | 0.85 | 0.92 | 1.00 | 0.88 |\n| MMDocIR | 0.81 | 0.92 | 0.88 | 1.00 |",
+        "chart_caption": [
+            "(a) Spearman correlation of head activations. "
+        ],
+        "chart_footnote": [],
+        "sub_type": "heatmap",
+        "bbox": [
+            189,
+            313,
+            472,
+            479
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "chart",
+        "img_path": "images/ca2fe3aa845b993d466f0ebf1284ab4b8d27dce2289fff6492e38ae05713ddbf.jpg",
+        "content": "",
+        "chart_caption": [
+            "(b) Spatial distribution of highly activated heads. ",
+            "Figure 5: Stability of attention heads across multi-modal tasks. (a) The Spearman rank correlation across distinct datasets exhibits high consistency, indicating a shared information retrieval mechanism. (b) The layer-head stability matrix illustrates the distribution of task-agnostic anchor heads. Heads consistently ranked in the top 5% across all tasks are localized in the middle-to-late layers. "
+        ],
+        "chart_footnote": [],
+        "sub_type": "heatmap",
+        "bbox": [
+            526,
+            295,
+            807,
+            479
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "text",
+        "text": "Experimental Setting To investigate the stability of CoRe heads across heterogeneous multimodal distributions, we extract head-level activation scores from Qwen3-VL-4B on RefCOCOg, MM-LongBench, VidSTG, and MMDocIR. We measure cross-task consistency by computing pairwise Spearman rank correlations between flattened head activation vectors, capturing the agreement in relative head importance across tasks. And for each task, we identify heads within the top 5% of activation scores and aggregate their occurrence frequency across all benchmarks. These frequencies are then mapped onto a layer–head grid to visualize the cross-task persistence of salient heads.Detailed implementations and pseudocode are provided in Appendix E.1. ",
+        "bbox": [
+            169,
+            590,
+            823,
+            703
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "text",
+        "text": "Result analysis As illustrated in Figure 5, the identified CoRe heads exhibit consistent global structural characteristics across diverse datasets. As depicted in Figure 5a, strong positive correlations are observed across all task pairs, with coefficients ranging from 0.79 to 0.92. Notably, tasks demanding complex structural understanding or long-context reasoning (e.g., MMLongBench and VidSTG) demonstrate an exceptionally high correlation (0.92). This pronounced correlation suggests that the model universally repurposes a highly overlapping set of specialized attention heads to execute cross-modal alignment across varied downstream applications. Furthermore, as shown in Figure 5b, the majority of CoRe heads are stably concentrated within the middle layers of the architecture, predominantly distributed between layer 13 and layer 24. Approximately 30 specific heads remain highly activated across all four tasks, with only a marginal fraction of heads exhibiting dataset-specific activation variance. Consequently, the CoRe heads exhibit a \"globally consistent, locally variant\" distributional paradigm. While the core CoRe head topology demonstrates robust cross-domain generalizability, its precise activation patterns undergo adaptive modulation contingent on the target data distribution. Detailed heatmaps for various configurations are provided in Appendix F. ",
+        "bbox": [
+            169,
+            717,
+            826,
+            912
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "page_number",
+        "text": "6 ",
+        "bbox": [
+            493,
+            936,
+            503,
+            946
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "chart",
+        "img_path": "images/7091db6ca7ed38a8054d0edb0f0d4bf5e96ae10cdfc4340c9a0ea1f35c4ddeb9.jpg",
+        "content": "| Number of Masked Heads | Qwen Top | Llava Top | Qwen Rand. | Llava Rand. | Qwen Bot. | Llava Bot. |\n| ---------------------- | -------- | --------- | ---------- | ----------- | --------- | ---------- |\n| 0                      | 45       | 17        | 45         | 17          | 45        | 17         |\n| 5                      | 42       | 16        | 42         | 16          | 28        | 15         |\n| 10                     | 40       | 15        | 40         | 15          | 15        | 10         |\n| 20                     | 38       | 14        | 38         | 14          | 10        | 5          |\n| 30                     | 35       | 13        | 35         | 13          | 5         | 2          |",
+        "chart_caption": [
+            "(a) Causal impact of head masking. "
+        ],
+        "chart_footnote": [],
+        "sub_type": "line",
+        "bbox": [
+            171,
+            90,
+            385,
+            203
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "chart",
+        "img_path": "images/d550e6029e65c41cd97a9c9b41243f543f91d571f81cd6e4012e5ac3b9f1fcbf.jpg",
+        "content": "| Model | Top 15 Heads (%) | Bottom 15 Heads (%) |\n|---|---|---|\n| Llava-onevision-qwen2-7b-ov-hf | 14.4 | 2.6 |\n| Qwen3VL-4B-Instruct | 25.6 | 2.1 |",
+        "chart_caption": [
+            "(b) Key visual token concentration. "
+        ],
+        "chart_footnote": [],
+        "sub_type": "bar",
+        "bbox": [
+            393,
+            89,
+            604,
+            203
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "chart",
+        "img_path": "images/c97b237e4651a420600c4e73330454dd2d9f49edef47529c24184521f46d56e1.jpg",
+        "content": "| Number of Top-K Heads | Qwen3VL-4B-Instruct | Llava-onevision-qwen2-7b-ov-hf |\n| --------------------- | ------------------- | ----------------------------- |\n| 20                    | 53                  | 64                            |\n| 50                    | 67                  | 74                            |\n| 100                   | 80                  | 75                            |\n| 150                   | 86                  | 80                            |\n| 200                   | 88                  | 84                            |",
+        "chart_caption": [
+            "(c) Rapid token coverage saturation. ",
+            "Figure 6: Quantitative analysis of the causal impact and structural sparsity of CoRe heads in MLLMs. (a) Performance degradation under head masking reveals that top-ranked CoRe heads are causally indispensable for complex multimodal reasoning tasks, whereas bottom-ranked heads yield minimal impact. (b) Key token ratios demonstrate that critical visual semantics are highly concentrated within a compact subset of elite heads. (c) The rapid saturation of cumulative token coverage confirms the structural sparsity of localized cross-modal feature extraction. "
+        ],
+        "chart_footnote": [],
+        "sub_type": "line",
+        "bbox": [
+            612,
+            88,
+            823,
+            203
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "text",
+        "text": "4.4 Causal Impact and Information Sparsity ",
+        "text_level": 1,
+        "bbox": [
+            171,
+            327,
+            495,
+            343
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "text",
+        "text": "Experimental Setting To evaluate the functional role and visual information extraction efficiency of the CoRe heads, we conduct both intervention and quantitative analyses on the Qwen3-VL-4B and Llava-onevision architectures. For causal validation, we perform attention head masking during inference by ablating k ∈ 5, 10, 20, 30 heads and measuring the resulting performance degradMMLongBench. We consider three ablation strategies: masking the Top-k heads ranked by $\\mathcal { M } _ { \\mathrm { R A M } } ^ { ( h ) }$ masking the Bottom-k heads, and randomly masking k heads. In parallel, to assess visual information extraction efficiency, we introduce two metrics: Key Token Ratio, which evaluates the precision of individual heads by measuring the overlap between their top 5% attended tokens and ground-truth critical visual patches, and Key Token Coverage, which measures the collective coverage of such patches by aggregating the top attended tokens across head groups.Detailed implementations and pseudocode are provided in Appendices E.2, E.3, and E.4. ",
+        "bbox": [
+            169,
+            353,
+            826,
+            508
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "text",
+        "text": "Assessing Causal Impact via Attention Head Intervention As illustrated in Figure 6a, a pronounced performance divergence among the different ablation strategies emerges as the number of masked heads increases. Masking the Top-k CoRe heads (red lines) induces a precipitous and catastrophic degradation in model performance. For instance, ablating merely the top 5 heads causes the Accuracy of the Qwen model to plummet from approximately 45.3 to 27.0, and that of the Llava model from 16.4 to 10.6. When the mask size expands to k = 30, the multimodal comprehension capabilities of both models effectively collapse, with accuracy scores dropping below 7. This phenomenon strongly validates that the identified CoRe heads govern critical information aggregation and cross-modal retrieval mechanisms during inference. Conversely, masking the Bottom-k heads (blue lines) yields only a marginal performance drop, exhibiting an ablation trajectory that is more robust than the random masking baseline. This performance gap demonstrates that the top-ranked CoRe heads are not merely correlated with multimodal semantic integration; rather, they are causally indispensable for complex vision-language understanding tasks. They function as a highly concentrated informational bottleneck within the network architecture. In contrast, heads with lower importance scores contribute minimally to cross-modal feature interaction, indicating a significant degree of functional redundancy. ",
+        "bbox": [
+            169,
+            523,
+            826,
+            744
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "text",
+        "text": "Emergent Sparsity in Multimodal Models As illustrated in Figure 6b, the Top 15 CoRe heads concentrate a remarkably high proportion of critical visual tokens, reaching 14.4% and 25.6% for the Llava and Qwen models, whereas the Bottom 15 heads capture a negligible fraction of approximately 2%. This contrast validates that the top-ranked CoRe heads function as highly efficient, localized hubs for cross-modal feature interaction, selectively distilling salient visual semantics. Figure 6c further reveals that the cumulative coverage trajectories for both models exhibit a rapid initial ascent followed by swift saturation. Notably, aggregating merely the top 50 to 100 heads is sufficient to encompass 70% to 80% of the critical visual tokens. This rapid saturation phenomenon provides compelling quantitative evidence for the structural sparsity of multimodal retrieval. It indicates that the MLLMs avoids distributing critical visual processing uniformly; instead, it delegates core feature extraction mechanisms to a remarkably compact subset of elite CoRe heads. ",
+        "bbox": [
+            169,
+            758,
+            826,
+            912
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "page_number",
+        "text": "7 ",
+        "bbox": [
+            493,
+            935,
+            504,
+            946
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "table",
+        "img_path": "images/c2781dca44a991cdf77f69bf7537a6306a29bcc15abcbc51026f3f382269c183.jpg",
+        "table_caption": [
+            "Table 2: Performance comparison of different models across multiple tasks. Best results for each model are highlighted in bold. The subscript indicates the absolute difference compared to the corresponding Dense.The overall performances on MLVU dev set, including the holistic LVU tasks (TR: Topic Reasoning), the single-detail LVU tasks (NQA: Needle QA, ER: Ego Reasoning, PQA: Plot QA), and multi-detail LVU tasks (AO: Action Order, AC: Action Count). "
+        ],
+        "table_footnote": [],
+        "table_body": "<table><tr><td rowspan=\"2\">Model</td><td rowspan=\"2\">Config</td><td>Holistic</td><td colspan=\"3\">Single Detail</td><td colspan=\"2\">Multi Detail</td><td rowspan=\"2\">Perf. Avg.</td><td rowspan=\"2\">Speedup</td></tr><tr><td>TR</td><td>NQA</td><td>ER</td><td>PQA</td><td>AO</td><td>AC</td></tr><tr><td rowspan=\"6\">LLaVA-OneVis.</td><td>Dense</td><td>89.0</td><td>74.4</td><td>65.6</td><td>75.0</td><td>47.1</td><td>37.4</td><td>64.7</td><td>1.0×</td></tr><tr><td>2.6%</td><td> $85.9_{\\downarrow 3.1}$ </td><td> $68.5_{\\downarrow 5.9}$ </td><td> $62.8_{\\downarrow 2.8}$ </td><td> $67.9_{\\downarrow 7.1}$ </td><td> $44.4_{\\downarrow 2.7}$ </td><td> $36.4_{\\downarrow 1.0}$ </td><td> $61.0_{\\downarrow 3.7}$ </td><td>2.1×</td></tr><tr><td>3.8%</td><td> $87.5_{\\downarrow 1.5}$ </td><td> $70.1_{\\downarrow 4.3}$ </td><td> $66.2_{\\uparrow 0.6}$ </td><td> $70.1_{\\downarrow 4.9}$ </td><td> $47.9_{\\uparrow 0.8}$ </td><td> $36.4_{\\downarrow 1.0}$ </td><td> $63.0_{\\downarrow 1.7}$ </td><td>2.1×</td></tr><tr><td>6.4%</td><td> $87.8_{\\downarrow 1.2}$ </td><td> $70.4_{\\downarrow 4.0}$ </td><td> $65.3_{\\downarrow 0.3}$ </td><td> $69.6_{\\downarrow 5.4}$ </td><td> $44.8_{\\downarrow 2.3}$ </td><td> $37.9_{\\uparrow 0.5}$ </td><td> $62.6_{\\downarrow 2.1}$ </td><td>2.0×</td></tr><tr><td>12.8%</td><td> $86.7_{\\downarrow 2.3}$ </td><td> $70.7_{\\downarrow 3.7}$ </td><td> $68.2_{\\uparrow 2.6}$ </td><td> $70.1_{\\downarrow 4.9}$ </td><td> $46.3_{\\downarrow 0.8}$ </td><td> $36.9_{\\downarrow 0.5}$ </td><td> $63.2_{\\downarrow 1.5}$ </td><td>1.9×</td></tr><tr><td>19.1%</td><td> $89.4_{\\uparrow 0.4}$ </td><td> $74.6_{\\uparrow 0.2}$ </td><td> $66.8_{\\uparrow 1.2}$ </td><td> $73.1_{\\downarrow 1.9}$ </td><td> $47.5_{\\uparrow 0.4}$ </td><td> $37.4_{\\pm 0.0}$ </td><td> $64.8_{\\uparrow 0.1}$ </td><td>1.8×</td></tr><tr><td rowspan=\"7\">Qwen3-VL-8B</td><td>Dense</td><td>90.5</td><td>74.1</td><td>57.1</td><td>74.6</td><td>61.4</td><td>37.4</td><td>65.8</td><td>1.0×</td></tr><tr><td>1.7%</td><td> $89.0_{\\downarrow 1.5}$ </td><td> $68.7_{\\downarrow 5.4}$ </td><td> $59.4_{\\uparrow 2.3}$ </td><td> $67.3_{\\downarrow 7.3}$ </td><td> $58.3_{\\downarrow 3.1}$ </td><td> $34.0_{\\downarrow 3.4}$ </td><td> $62.8_{\\downarrow 3.0}$ </td><td>2.3×</td></tr><tr><td>2.6%</td><td> $89.4_{\\downarrow 1.1}$ </td><td> $71.8_{\\downarrow 2.3}$ </td><td> $58.8_{\\uparrow 1.7}$ </td><td> $73.3_{\\downarrow 1.3}$ </td><td> $57.5_{\\downarrow 3.9}$ </td><td> $33.5_{\\downarrow 3.9}$ </td><td> $64.0_{\\downarrow 1.8}$ </td><td>2.3×</td></tr><tr><td>4.3%</td><td> $89.7_{\\downarrow 0.8}$ </td><td> $72.7_{\\downarrow 1.4}$ </td><td> $58.5_{\\uparrow 1.4}$ </td><td> $74.4_{\\downarrow 0.2}$ </td><td> $59.5_{\\downarrow 1.9}$ </td><td> $34.0_{\\downarrow 3.4}$ </td><td> $64.8_{\\downarrow 1.0}$ </td><td>2.2×</td></tr><tr><td>8.7%</td><td> $90.1_{\\downarrow 0.4}$ </td><td> $73.8_{\\downarrow 0.3}$ </td><td> $58.2_{\\uparrow 1.1}$ </td><td> $74.0_{\\downarrow 0.6}$ </td><td> $61.8_{\\uparrow 0.4}$ </td><td> $35.4_{\\downarrow 2.0}$ </td><td> $65.6_{\\downarrow 0.2}$ </td><td>2.1×</td></tr><tr><td>13.0%</td><td> $90.1_{\\downarrow 0.4}$ </td><td> $73.5_{\\downarrow 0.6}$ </td><td> $58.0_{\\uparrow 0.9}$ </td><td> $74.4_{\\downarrow 0.2}$ </td><td> $60.6_{\\downarrow 0.8}$ </td><td> $37.4_{\\pm 0.0}$ </td><td> $65.7_{\\downarrow 0.1}$ </td><td>2.0×</td></tr><tr><td>21.7%</td><td> $90.1_{\\downarrow 0.4}$ </td><td> $73.5_{\\downarrow 0.6}$ </td><td> $58.0_{\\uparrow 0.9}$ </td><td> $73.7_{\\downarrow 0.9}$ </td><td> $61.0_{\\downarrow 0.4}$ </td><td> $39.3_{\\uparrow 1.9}$ </td><td> $65.9_{\\uparrow 0.1}$ </td><td>1.8×</td></tr><tr><td rowspan=\"7\">Qwen3-VL-32B</td><td>Dense</td><td>89.7</td><td>76.9</td><td>63.6</td><td>75.0</td><td>72.2</td><td>38.8</td><td>69.4</td><td>1.0×</td></tr><tr><td>1.2%</td><td> $89.4_{\\downarrow 0.3}$ </td><td> $76.6_{\\downarrow 0.3}$ </td><td> $62.8_{\\downarrow 0.8}$ </td><td> $74.8_{\\downarrow 0.2}$ </td><td> $68.3_{\\downarrow 3.9}$ </td><td> $33.5_{\\downarrow 5.3}$ </td><td> $67.6_{\\downarrow 1.8}$ </td><td>2.2×</td></tr><tr><td>2.4%</td><td> $89.4_{\\downarrow 0.3}$ </td><td> $76.6_{\\downarrow 0.3}$ </td><td> $61.6_{\\downarrow 2.0}$ </td><td> $75.0_{\\pm 0.0}$ </td><td> $70.3_{\\downarrow 1.9}$ </td><td> $35.9_{\\downarrow 2.9}$ </td><td> $68.1_{\\downarrow 1.3}$ </td><td>2.2×</td></tr><tr><td>3.7%</td><td> $89.4_{\\downarrow 0.3}$ </td><td> $77.2_{\\uparrow 0.3}$ </td><td> $60.5_{\\downarrow 3.1}$ </td><td> $74.6_{\\downarrow 0.4}$ </td><td> $71.0_{\\downarrow 1.2}$ </td><td> $35.9_{\\downarrow 2.9}$ </td><td> $68.1_{\\downarrow 1.3}$ </td><td>2.1×</td></tr><tr><td>4.9%</td><td> $89.0_{\\downarrow 0.7}$ </td><td> $76.6_{\\downarrow 0.3}$ </td><td> $63.4_{\\downarrow 0.2}$ </td><td> $75.5_{\\uparrow 0.5}$ </td><td> $72.2_{\\pm 0.0}$ </td><td> $35.4_{\\downarrow 3.4}$ </td><td> $68.7_{\\downarrow 0.7}$ </td><td>2.1×</td></tr><tr><td>6.1%</td><td> $89.4_{\\downarrow 0.3}$ </td><td> $76.3_{\\downarrow 0.6}$ </td><td> $63.1_{\\downarrow 0.5}$ </td><td> $75.3_{\\uparrow 0.3}$ </td><td> $71.8_{\\downarrow 0.4}$ </td><td> $35.9_{\\downarrow 2.9}$ </td><td> $68.6_{\\downarrow 0.8}$ </td><td>2.1×</td></tr><tr><td>7.3%</td><td> $89.0_{\\downarrow 0.7}$ </td><td> $76.9_{\\pm 0.0}$ </td><td> $63.1_{\\downarrow 0.5}$ </td><td> $74.8_{\\downarrow 0.2}$ </td><td> $71.8_{\\downarrow 0.4}$ </td><td> $35.9_{\\downarrow 2.9}$ </td><td> $68.6_{\\downarrow 0.8}$ </td><td>2.0×</td></tr></table>",
+        "bbox": [
+            174,
+            166,
+            823,
+            500
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "text",
+        "text": "5 System-Level Acceleration via CoRe head-Guided Sparsity ",
+        "text_level": 1,
+        "bbox": [
+            169,
+            527,
+            694,
+            545
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "text",
+        "text": "5.1 Methodology and Experimental Setup ",
+        "text_level": 1,
+        "bbox": [
+            171,
+            560,
+            477,
+            575
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "text",
+        "text": "CoRe head-Guided Hybrid Attention Paradigm To empirically validate the structural sparsity of CoRe heads and their potential for accelerating inference, we implement a head-level hybrid attention strategy. Conventional MLLMs inherently suffer from quadratic computational complexity during the prefill phase of long visual contexts. Motivated by our finding that cross-modal semantic integration is highly concentrated within a sparse subset of CoRe heads, we apply a deterministic attention allocation mask to mitigate this bottleneck. Specifically, during the prefill stage, we inject a static head configuration into the attention forward pass. For the top-k critical CoRe heads, we retain the standard Full Attention formulation to preserve their capacity for dense, global multimodal semantic extraction. Conversely, for the remaining non-essential vision heads, we fallback to a Stream Sparse Attention mechanism [24], restricting their computations strictly within localized sliding windows. Detailed implementations and pseudocode are provided in Appendices G.1 and G.2. ",
+        "bbox": [
+            169,
+            588,
+            823,
+            741
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "text",
+        "text": "Baselines and Configurations We systematically ablate the proportion of attention heads retained for Full Attention computation. Specifically, we vary the proportion of top-ranked CoRe heads that are retained in a dense attention state, while all remaining heads are constrained to operate under Stream Sparse Attention. Our evaluations are conducted across the Qwen3-VL (8B and 32B) and Llava-onevision architectures, establishing the standard, unmodified models (utilizing 100% Full Attention) as our Dense baselines. To precisely monitor the performance-efficiency trade-offs across different cognitive granularities, we comprehensively evaluate the models on diverse subsets of the MLVU benchmark [31], which effectively decouples multimodal comprehension into holistic tasks, single-detail reasoning, and multi-detail spatiotemporal perception. Due to space constraints, the evaluation results on the VideoMME benchmark [18] are deferred to Appendix G.3, which exhibit a consistent trend with those observed on MLVU. ",
+        "bbox": [
+            169,
+            758,
+            826,
+            910
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "page_number",
+        "text": "8 ",
+        "bbox": [
+            493,
+            936,
+            503,
+            946
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "text",
+        "text": "5.2 Results and Analysis ",
+        "text_level": 1,
+        "bbox": [
+            171,
+            90,
+            357,
+            104
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "text",
+        "text": "Efficacy of System-Level Acceleration Table 2 presents the quantitative evaluation of our CoRe head-guided hybrid attention paradigm across multiple model architectures. The empirical results demonstrate that dense global attention is highly redundant for the majority of attention heads. Across all evaluated models, our proposed structural sparsity mechanism consistently achieves significant prefill speedups. Remarkably, under specific configurations such as retaining 19.1% of the CoRe heads in Llava-onevision and 24.4% in Qwen3-VL-8B, this hybrid paradigm not only realizes a 1.8× acceleration but also marginally outperforms the fully Dense baselines in overall average performance. These findings substantiate our hypothesis that cross-modal information retrieval is highly concentrated within a critical subset of CoRe heads; strictly pruning the receptive fields of nonessential attention heads effectively circumvents computational bottlenecks without compromising the representational integrity of the model. As shown in Figure 7, the latency advantage becomes increasingly pronounced as sequence length grows, highlighting the scalability of our approach. ",
+        "bbox": [
+            169,
+            116,
+            826,
+            282
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "text",
+        "text": "Granular Impact on Multimodal Comprehension ",
+        "text_level": 1,
+        "bbox": [
+            171,
+            296,
+            517,
+            310
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "text",
+        "text": "A detailed analysis across tasks of varying cognitive granularities within the MLVU benchmark reveals task-specific model behaviors under the sparse paradigm. For holistic reasoning and broad detail extraction tasks, The introduction of the hybrid attention mechanism results in the performance drop typically remains within a minimal range of 1% to 3%, even under aggressive sparsity settings (e.g., retaining fewer than 5% of attention heads). Conversely, for precise single-detail reasoning (ER) and complex multidetail spatiotemporal perception tasks (AO, AC), the introduction of structural sparsity frequently yields performance improvements. We attribute this counterintuitive phenomenon to an implicit regularization effect: restricting the computation of non-essential attention heads to localized sliding windows intrinsically filters out cross-modal noise in long sequences, thereby enhancing the model’s spatiotemporal focus on precise visual cues. ",
+        "bbox": [
+            169,
+            311,
+            517,
+            571
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "chart",
+        "img_path": "images/8f5a254cae50ba7ed4b730a862cebbdfa01556f1b183f7ee239682e53d8fb8e1.jpg",
+        "content": "| Sequence length | Ours (CoRe-Guided Hybrid) | Dense Baseline |\n| --------------- | -------------------------- | -------------- |\n| 8k              | 0.5                        | 1.0            |\n| 16k             | 1.0                        | 1.5            |\n| 32k             | 3.0                        | 4.0            |\n| 64k             | 7.0                        | 12.0           |\n| 128k            | 13.0                       | 32.0           |",
+        "chart_caption": [
+            "Figure 7: Our CoRe-Guided Hybrid approach consistently achieves lower latency compared to the dense baseline(Qwen3-VL-8B), with the gap widening as sequence length increases, demonstrating better scalability for long sequences. The inset highlights performance in the short-sequence regime. "
+        ],
+        "chart_footnote": [],
+        "sub_type": "line",
+        "bbox": [
+            537,
+            301,
+            820,
+            455
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "text",
+        "text": "Robustness Across Model Scales Furthermore, as model capacity increases, CoRe head-guided attention exhibits improved robustness under sparsity constraints. Comparing the 8B and 32B variants of Qwen3-VL, we observe that larger models can sustain substantially higher levels of head sparsification with only minor performance degradation. In particular, Qwen3-VL-32B remains effective even when dense computation is reduced to 4.9% of attention heads, achieving a 2.1× inference speedup with an average performance drop of only 0.7 points. These results suggest that scaling enhances redundancy in attention allocation, thereby allowing more aggressive yet stable removal of non-critical heads. Consequently, our deterministic head masking strategy enables controlled isolation of task-relevant CoRe heads and provides a simple and effective mechanism for accelerating inference in large multimodal models without significant loss in performance. ",
+        "bbox": [
+            169,
+            585,
+            823,
+            726
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "text",
+        "text": "6 Conclusion ",
+        "text_level": 1,
+        "bbox": [
+            171,
+            743,
+            299,
+            758
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "text",
+        "text": "In this work, we investigate the mechanistic basis of cross-modal information retrieval in Multimodal Large Language Models by identifying CoRe heads, a sparse subset of attention heads responsible for query-relevant visual extraction. Our analyses reveal a clear functional dichotomy: CoRe heads precisely localize relevant entities, while the vast majority of heads exhibit diffuse, global attention patterns. Through causal interventions, we establish the non-redundant necessity of these specific heads for robust multimodal reasoning. Furthermore, our acceleration experiments validate the practical utility of this phenomenon, demonstrating that selectively preserving CoRe heads significantly expedites inference without compromising task performance. While preliminary, we hope these findings provide insights into the mechanistic interpretability of multimodal models and inspire further work on controllable efficiency. ",
+        "bbox": [
+            169,
+            772,
+            823,
+            912
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "page_number",
+        "text": "",
+        "bbox": [
+            493,
+            935,
+            503,
+            946
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "text",
+        "text": "References ",
+        "text_level": 1,
+        "bbox": [
+            173,
+            89,
+            267,
+            104
+        ],
+        "page_idx": 9
+    },
+    {
+        "type": "list",
+        "sub_type": "ref_text",
+        "list_items": [
+            "[1] Shuai Bai, Yuxuan Cai, Ruizhe Chen, Keqin Chen, Xionghui Chen, Zesen Cheng, Lianghao Deng, Wei Ding, Chang Gao, Chunjiang Ge, Wenbin Ge, Zhifang Guo, Qidong Huang, Jie Huang, Fei Huang, Binyuan Hui, Shutong Jiang, Zhaohai Li, Mingsheng Li, Mei Li, Kaixin Li, Zicheng Lin, Junyang Lin, Xuejing Liu, Jiawei Liu, Chenglong Liu, Yang Liu, Dayiheng Liu, Shixuan Liu, Dunjie Lu, Ruilin Luo, Chenxu Lv, Rui Men, Lingchen Meng, Xuancheng Ren, Xingzhang Ren, Sibo Song, Yuchong Sun, Jun Tang, Jianhong Tu, Jianqiang Wan, Peng Wang, Pengfei Wang, Qiuyue Wang, Yuxuan Wang, Tianbao Xie, Yiheng Xu, Haiyang Xu, Jin Xu, Zhibo Yang, Mingkun Yang, Jianxin Yang, An Yang, Bowen Yu, Fei Zhang, Hang Zhang, Xi Zhang, Bo Zheng, Humen Zhong, Jingren Zhou, Fan Zhou, Jing Zhou, Yuanzhi Zhu, and Ke Zhu. Qwen3-vl technical report. arXiv preprint arXiv:2511.21631, 2025. ",
+            "[2] Lorenzo Basile, Valentino Maiorca, Diego Doimo, Francesco Locatello, and Alberto Cazzaniga. Head pursuit: Probing attention specialization in multimodal transformers. In The Thirty-ninth Annual Conference on Neural Information Processing Systems, 2025. ",
+            "[3] Jing Bi, Junjia Guo, Yunlong Tang, Lianggong Bruce Wen, Zhang Liu, Bingjie Wang, and Chenliang Xu. Unveiling visual perception in language models: An attention head analysis approach. In Proceedings of the Computer Vision and Pattern Recognition Conference, pages 4135–4144, 2025. ",
+            "[4] Liwei Che, Zhiyu Xue, Yihao Quan, Benlin Liu, Zeru Shi, Michelle Hurst, Jacob Feldman, Ruixiang Tang, Ranjay Krishna, and Vladimir Pavlovic. Counting circuits: Mechanistic interpretability of visual reasoning in large vision-language models. arXiv preprint arXiv:2603.18523, 2026. ",
+            "[5] Ruoyu Chen, Xiaoqing Guo, Kangwei Liu, Siyuan Liang, Shiming Liu, Qunli Zhang, Laiyuan Wang, Hua Zhang, and Xiaochun Cao. Where mllms attend and what they rely on: Explaining autoregressive token generation, 2026. ",
+            "[6] Kuicai Dong, Yujing Chang, Derrick Goh Xin Deik, Dexun Li, Ruiming Tang, and Yong Liu. Mmdocir: Benchmarking multimodal retrieval for long documents. In Proceedings of the 2025 Conference on Empirical Methods in Natural Language Processing, pages 30959–30993, 2025. ",
+            "[7] Seil Kang, Jinyeong Kim, Junhyeok Kim, and Seong Jae Hwang. See what you are told: Visual attention sink in large multimodal models. arXiv preprint arXiv:2503.03321, 2025. ",
+            "[8] Seil Kang, Jinyeong Kim, Junhyeok Kim, and Seong Jae Hwang. Your large vision-language model only needs a few attention heads for visual grounding. In Proceedings of the Computer Vision and Pattern Recognition Conference, pages 9339–9350, 2025. ",
+            "[9] Sahar Kazemzadeh, Vicente Ordonez, Mark Matten, and Tamara Berg. ReferItGame: Referring to objects in photographs of natural scenes. In Alessandro Moschitti, Bo Pang, and Walter Daelemans, editors, Proceedings of the 2014 Conference on Empirical Methods in Natural Language Processing (EMNLP), pages 787–798, Doha, Qatar, October 2014. Association for Computational Linguistics. ",
+            "[10] Bo Li, Yuanhan Zhang, Dong Guo, Renrui Zhang, Feng Li, Hao Zhang, Kaichen Zhang, Peiyuan Zhang, Yanwei Li, Ziwei Liu, and Chunyuan Li. LLaVA-onevision: Easy visual task transfer. Transactions on Machine Learning Research, 2025. ",
+            "[11] Junnan Li, Dongxu Li, Silvio Savarese, and Steven Hoi. Blip-2: Bootstrapping language-image pre-training with frozen image encoders and large language models. In International conference on machine learning, pages 19730–19742. PMLR, 2023. ",
+            "[12] Qiming Li, Zekai Ye, Xiaocheng Feng, Weihong Zhong, Weitao Ma, and Xiachong Feng. Causal tracing of object representations in large vision language models: Mechanistic interpretability and hallucination mitigation. In Proceedings of the AAAI Conference on Artificial Intelligence, pages 31645–31653, 2026. ",
+            "[13] Jiawei Liang, Ruoyu Chen, Xianghao Jiao, Siyuan Liang, Shiming Liu, Qunli Zhang, Zheng Hu, and Xiaochun Cao. Explaining multimodal llms via intra-modal token interactions. arXiv preprint arXiv:2509.22415, 2025. ",
+            "[14] Qi Zhi Lim, Chin Poo Lee, Kian Ming Lim, and Kalaiarasi Sonai Muthu Anbananthen. Vlmt: Visionlanguage multimodal transformer for multimodal multi-hop question answering. ArXiv, abs/2504.08269, 2025. ",
+            "[15] Haotian Liu, Chunyuan Li, Qingyang Wu, and Yong Jae Lee. Visual instruction tuning. In Thirty-seventh Conference on Neural Information Processing Systems, 2023. "
+        ],
+        "bbox": [
+            171,
+            108,
+            831,
+            914
+        ],
+        "page_idx": 9
+    },
+    {
+        "type": "page_number",
+        "text": "10 ",
+        "bbox": [
+            490,
+            935,
+            508,
+            946
+        ],
+        "page_idx": 9
+    },
+    {
+        "type": "list",
+        "sub_type": "ref_text",
+        "list_items": [
+            "[16] Xueqi Ma, Shuo Yang, Yanbei Jiang, Shu Liu, Zhenzhen Liu, Jiayang Ao, Xingjun Ma, Sarah Monazam Erfani, and James Bailey. Attention in space: Functional roles of vlm heads for spatial reasoning. arXiv preprint arXiv:2603.20662, 2026. ",
+            "[17] Yiming Ma, Hongkun Yang, Lionel Z Wang, Bin Chen, Weizhi Xian, and Jianzhi Teng. Dear: Fine-grained vlm adaptation by decomposing attention head roles. arXiv preprint arXiv:2603.01111, 2026. ",
+            "[18] Yunlong Tang, Jing Bi, Siting Xu, Luchuan Song, Susan Liang, Teng Wang, Daoan Zhang, Jie An, Jingyang Lin, Rongyi Zhu, et al. Video understanding with large language models: A survey. IEEE Transactions on Circuits and Systems for Video Technology, 2025. ",
+            "[19] Jiahui Wang, Zuyan Liu, Yongming Rao, and Jiwen Lu. Sparsemm: Head sparsity emerges from visual concept responses in mllms. In Proceedings of the IEEE/CVF International Conference on Computer Vision, pages 23177–23187, 2025. ",
+            "[20] Qidong Wang, Junjie Hu, and Ming Jiang. V-seam: Visual semantic editing and attention modulating for causal interpretability of vision-language models. In Proceedings of the 2025 Conference on Empirical Methods in Natural Language Processing, pages 17407–17431, 2025. ",
+            "[21] Weiyun Wang, Zhangwei Gao, Lixin Gu, Hengjun Pu, Long Cui, Xingguang Wei, Zhaoyang Liu, Linglin Jing, Shenglong Ye, Jie Shao, et al. Internvl3.5: Advancing open-source multimodal models in versatility, reasoning, and efficiency. arXiv preprint arXiv:2508.18265, 2025. ",
+            "[22] Zhaowei Wang, Wenhao Yu, Xiyu Ren, Jipeng Zhang, Yu Zhao, Rohit Saxena, Liang Cheng, Ginny Wong, Simon See, Pasquale Minervini, Yangqiu Song, and Mark Steedman. Mmlongbench: Benchmarking long-context vision-language models effectively and thoroughly. In The 39th (2025) Annual Conference on Neural Information Processing Systems, 2025. ",
+            "[23] Wenhao Wu, Yizhong Wang, Guangxuan Xiao, Hao Peng, and Yao Fu. Retrieval head mechanistically explains long-context factuality. In 13th International Conference on Learning Representations, ICLR 2025, pages 33762–33775. International Conference on Learning Representations, ICLR, 2025. ",
+            "[24] Guangxuan Xiao, Yuandong Tian, Beidi Chen, Song Han, and Mike Lewis. Efficient streaming language models with attention sinks. In The Twelfth International Conference on Learning Representations, 2024. ",
+            "[25] Junfei Xie, Peng Pan, and Xulong Zhang. Head-aware visual cropping: Enhancing fine-grained vqa with attention-guided subimage. arXiv preprint arXiv:2601.22483, 2026. ",
+            "[26] Shukang Yin, Chaoyou Fu, Sirui Zhao, Ke Li, Xing Sun, Tong Xu, and Enhong Chen. A survey on multimodal large language models. National Science Review, 11(12):nwae403, 2024. ",
+            "[27] Wuwei Zhang, Fangcong Yin, Howard Yen, Danqi Chen, and Xi Ye. Query-focused retrieval heads improve long-context reasoning and re-ranking. In Proceedings of EMNLP, 2025. ",
+            "[28] Yudong Zhang, Ruobing Xie, Xingwu Sun, Yiqing Huang, Jiansheng Chen, Zhanhui Kang, Di Wang, and Yu Wang. Dhcp: Detecting hallucinations by cross-modal attention pattern in large vision-language models. In Proceedings of the 33rd ACM International Conference on Multimedia, pages 3555–3564, 2025. ",
+            "[29] Zhu Zhang, Zhou Zhao, Yang Zhao, Qi Wang, Huasheng Liu, and Lianli Gao. Where does it exist: Spatio-temporal video grounding for multi-form sentences. In CVPR, 2020. ",
+            "[30] Jianfei Zhao, Feng Zhang, Xin Sun, Chong Feng, and Zhixing Tan. Tell model where to look: Mitigating hallucinations in mllms by vision-guided attention. arXiv preprint arXiv:2511.20032, 2025. ",
+            "[31] Junjie Zhou, Yan Shu, Bo Zhao, Boya Wu, Shitao Xiao, Xi Yang, Yongping Xiong, Bo Zhang, Tiejun Huang, and Zheng Liu. Mlvu: Benchmarking multi-task long video understanding. 2025 IEEE/CVF Conference on Computer Vision and Pattern Recognition (CVPR), pages 13691–13701, 2024. "
+        ],
+        "bbox": [
+            166,
+            87,
+            831,
+            777
+        ],
+        "page_idx": 10
+    },
+    {
+        "type": "page_number",
+        "text": "",
+        "bbox": [
+            490,
+            935,
+            506,
+            946
+        ],
+        "page_idx": 10
+    },
+    {
+        "type": "text",
+        "text": "A Code Availability ",
+        "text_level": 1,
+        "bbox": [
+            171,
+            89,
+            354,
+            107
+        ],
+        "page_idx": 11
+    },
+    {
+        "type": "text",
+        "text": "The source code of CoRe-Head is publicly available at: https://github.com/aaxiyao/CoRe\\_Head ",
+        "bbox": [
+            171,
+            119,
+            781,
+            133
+        ],
+        "page_idx": 11
+    },
+    {
+        "type": "text",
+        "text": "B Dataset Statistics ",
+        "text_level": 1,
+        "bbox": [
+            171,
+            152,
+            352,
+            167
+        ],
+        "page_idx": 11
+    },
+    {
+        "type": "text",
+        "text": "To evaluate the cross-modal retrieval capabilities of CoRe heads across diverse scenarios, we select four datasets that cover static images, video sequences, dense documents, and multimodal input in long-context. ",
+        "bbox": [
+            169,
+            181,
+            823,
+            209
+        ],
+        "page_idx": 11
+    },
+    {
+        "type": "text",
+        "text": "RefCOCOg RefCOCOg [9] is a large-scale benchmark for complex referring expression comprehension in static images. (1) Providing high-precision visual anchors: Its exhaustive bounding box annotations establish a reliable baseline to precisely compute attention distributions from complex queries to target regions. (2) Introducing static spatial robustness validation: The presence of similar distracting entities severely challenges target disambiguation, proving that CoRe heads maintain precise filtering in crowded static scenes. (3) Encompassing highly complex semantic interactions: Queries with rich attributes and spatial relationships validate that these heads execute fine-grained spatial reasoning rather than shallow noun matching. ",
+        "bbox": [
+            169,
+            220,
+            826,
+            311
+        ],
+        "page_idx": 11
+    },
+    {
+        "type": "text",
+        "text": "MMDocIR MMDocIR [6] targets multimodal document information retrieval in highly dense visual environments. (1) Providing high-precision visual anchors: Annotations of specific layout regions help isolate core evidence from massive text and chart noise. (2) Introducing dense layout robustness validation: The extreme visual clutter of long documents elevates the evaluation rigor, demonstrating the heads’ robust anti-noise mechanisms. (3) Encompassing highly complex semantic interactions: Structured queries requiring cross-chart parsing verify that these heads possess deep semantic alignment capabilities for complex document topologies, moving beyond simple OCR. ",
+        "bbox": [
+            169,
+            324,
+            823,
+            414
+        ],
+        "page_idx": 11
+    },
+    {
+        "type": "text",
+        "text": "MMLongBench MMLongBench [22] focuses on extreme long-context multimodal reasoning across massive visual sequences. (1) Providing high-precision visual anchors: Annotations of sparsely distributed evidence enable the precise computation of attention distributions while stripping away extensive contextual noise. (2) Introducing long-range dependency robustness validation: Severe attention dilution in massive sequences rigorously proves that CoRe heads sustain stable, high-recall retrieval mechanisms. (3) Encompassing highly complex semantic interactions: Queries demanding multi-hop reasoning confirm that these heads execute profound multi-evidence cross-modal routing rather than localized feature matching. ",
+        "bbox": [
+            169,
+            426,
+            823,
+            517
+        ],
+        "page_idx": 11
+    },
+    {
+        "type": "text",
+        "text": "VidSTG VidSTG [29] is a large-scale benchmark for video spatio-temporal grounding, requiring dual localization within video streams. (1) Providing high-precision visual anchors: Its frame-level bounding box annotations provide a robust baseline to isolate background noise and precisely compute query-to-target attention. (2) Introducing dynamic robustness validation: The inherent spatio-temporal dynamics of videos increase evaluation rigor, proving that CoRe heads maintain stable alignment amidst evolving visual inputs. (3) Encompassing highly complex semantic interactions: Queries involving actions and relationships verify that these heads execute fine-grained cross-modal routing beyond simple entity matching. ",
+        "bbox": [
+            169,
+            530,
+            823,
+            619
+        ],
+        "page_idx": 11
+    },
+    {
+        "type": "text",
+        "text": "C Token Mapping Rules ",
+        "text_level": 1,
+        "bbox": [
+            171,
+            638,
+            395,
+            656
+        ],
+        "page_idx": 11
+    },
+    {
+        "type": "text",
+        "text": "To measure the attention allocated to target visual regions by the CoRe heads, we map continuous spatial annotations to discrete 1D token indices within the language model sequence. ",
+        "bbox": [
+            169,
+            667,
+            823,
+            695
+        ],
+        "page_idx": 11
+    },
+    {
+        "type": "text",
+        "text": "C.1 Mapping Strategy for Spatial Visual Entities in RefCOCOg ",
+        "text_level": 1,
+        "bbox": [
+            171,
+            710,
+            630,
+            726
+        ],
+        "page_idx": 11
+    },
+    {
+        "type": "text",
+        "text": "For the RefCOCOg dataset, the ground-truth visual entity $V ^ { * }$ is provided as a continuous bounding box. ",
+        "bbox": [
+            169,
+            734,
+            787,
+            750
+        ],
+        "page_idx": 11
+    },
+    {
+        "type": "text",
+        "text": "Let the original image I have a resolution of $W \\times H ,$ , and the target object be localized by a bounding box defined by its top-left and bottom-right coordinates: $B = [ x _ { m i n } , y _ { m i n } , x _ { m a x } , y _ { m a x } ]$ . The vision encoder partitions the image into a 2D patch grid of dimensions $W _ { g r i d } \\times H _ { g r i d }$ . We compute the scaling factors along the spatial axes as $\\begin{array} { r } { s _ { x } = \\frac { W _ { g r i d } } { W } } \\end{array}$ Wgrid W and $\\begin{array} { r } { s _ { y } = \\frac { H _ { g r i d } } { H } } \\end{array}$ HgridH . The continuous coordinates of B are then projected onto the discrete token grid. To ensure complete coverage of the target region without exceeding the image boundaries, the projected grid coordinates are defined as: ",
+        "bbox": [
+            169,
+            753,
+            826,
+            834
+        ],
+        "page_idx": 11
+    },
+    {
+        "type": "equation",
+        "text": "$$\nx _ {m i n} ^ {\\prime} = \\max (0, \\lfloor x _ {m i n} \\cdot s _ {x} \\rfloor), \\quad y _ {m i n} ^ {\\prime} = \\max (0, \\lfloor y _ {m i n} \\cdot s _ {y} \\rfloor) \\tag {2}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            310,
+            840,
+            823,
+            856
+        ],
+        "page_idx": 11
+    },
+    {
+        "type": "equation",
+        "text": "$$\nx _ {m a x} ^ {\\prime} = \\min \\left(W _ {\\text {grid}} - 1, \\left\\lfloor x _ {m a x} \\cdot s _ {x} \\right\\rfloor\\right), \\quad y _ {m a x} ^ {\\prime} = \\min \\left(H _ {\\text {grid}} - 1, \\left\\lfloor y _ {m a x} \\cdot s _ {y} \\right\\rfloor\\right) \\tag {3}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            254,
+            859,
+            823,
+            876
+        ],
+        "page_idx": 11
+    },
+    {
+        "type": "text",
+        "text": "These 2D visual patches are then flattened into a 1D sequence in row-major order. For any target patch located at grid coordinates $( x ^ { \\prime } , y ^ { \\prime } )$ where $x ^ { \\prime } \\in [ x _ { m i n } ^ { \\prime } , x _ { m a x } ^ { \\prime } ]$ and $y ^ { \\prime } \\in [ y _ { m i n } ^ { \\prime } , y _ { m a x } ^ { \\prime } ]$ ], its relative 1D index within the ",
+        "bbox": [
+            169,
+            885,
+            823,
+            912
+        ],
+        "page_idx": 11
+    },
+    {
+        "type": "page_number",
+        "text": "",
+        "bbox": [
+            490,
+            935,
+            508,
+            946
+        ],
+        "page_idx": 11
+    },
+    {
+        "type": "text",
+        "text": "visual sequence is: ",
+        "bbox": [
+            171,
+            92,
+            285,
+            104
+        ],
+        "page_idx": 12
+    },
+    {
+        "type": "equation",
+        "text": "$$\ni _ {r e l} = y ^ {\\prime} \\cdot W _ {g r i d} + x ^ {\\prime} \\tag {4}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            428,
+            103,
+            825,
+            119
+        ],
+        "page_idx": 12
+    },
+    {
+        "type": "text",
+        "text": "Multimodal LLMs like Qwen-VL use a vision-language adapter to compress the visual sequence, often merging multiple adjacent patches into a single visual token. Let c denote this downsampling factor $( \\mathbf { e . g . } , c = 4$ for a $2 \\times 2$ pooling mechanism). The effective relative index of the visual token becomes $\\textstyle \\lfloor { \\frac { i _ { r e l } } { c } } \\rfloor .$ Assuming the visual tokens are injected into the full input\\_ids sequence starting at an absolute positional offset $\\mathcal { O } _ { v i s } .$ , the final set of target visual token indices $V ^ { * }$ corresponding to the bounding box $B$ is: ",
+        "bbox": [
+            169,
+            127,
+            823,
+            194
+        ],
+        "page_idx": 12
+    },
+    {
+        "type": "equation",
+        "text": "$$\nV ^ {*} = \\left\\{\\mathcal {O} _ {v i s} + \\left\\lfloor \\frac {y ^ {\\prime} \\cdot W _ {g r i d} + x ^ {\\prime}}{c} \\right\\rfloor \\mid x ^ {\\prime} \\in [ x _ {m i n} ^ {\\prime}, x _ {m a x} ^ {\\prime} ], y ^ {\\prime} \\in [ y _ {m i n} ^ {\\prime}, y _ {m a x} ^ {\\prime} ] \\right\\} \\tag {5}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            261,
+            198,
+            825,
+            231
+        ],
+        "page_idx": 12
+    },
+    {
+        "type": "text",
+        "text": "This mapping ensures that the Retrieval Attention Mass (RAM) metric aggregates attention weights only over tokens representing the target entity, minimizing background noise and reflecting the spatial retrieval capability of the CoRe heads. ",
+        "bbox": [
+            169,
+            241,
+            823,
+            279
+        ],
+        "page_idx": 12
+    },
+    {
+        "type": "text",
+        "text": "C.2 Mapping Strategies for Structural Visual Entities in MMDocIR ",
+        "text_level": 1,
+        "bbox": [
+            169,
+            294,
+            656,
+            309
+        ],
+        "page_idx": 12
+    },
+    {
+        "type": "text",
+        "text": "Unlike static single-image tasks, the MMDocIR dataset presents an extreme long-context challenge characterized by highly dense, interleaved multimodal sequences (e.g., dozens of document pages containing interspersed textual paragraphs, figures, and tables). Consequently, traditional spatial coordinate projection is inadequate. To precisely isolate the token indices of the ground-truth visual entity $V ^ { \\ast } \\left( \\mathbf { e } . \\mathbf { g } . \\right.$ ., a specific target figure) within massive sequences (often exceeding 100K tokens), our mapping protocols must be explicitly tailored to the MLLM’s underlying visual encoding architecture. We introduce three distinct strategies: the Boundary-Tagging Protocol for adapter-based models, Uniform Sequence Slicing for fixed-expansion models, and Dynamic Cumulative Slicing for variable-resolution models. ",
+        "bbox": [
+            169,
+            319,
+            823,
+            421
+        ],
+        "page_idx": 12
+    },
+    {
+        "type": "text",
+        "text": "Boundary-Tagging Protocol (e.g., the Qwen-VL Paradigm) For models that dynamically compress visual sequences using Vision-Language Adapters, we structurally intervene in the context construction. Let the entire multimodal document context be represented as an interleaved sequence of elements $C = \\{ e _ { 1 } , e _ { 2 } , . . . , e _ { n } \\}$ , where each element $e _ { i }$ can be either a text block or a visual block. Given a complex query $Q ,$ assume the oracle evidence is located at a specific visual element $e ^ { \\ast } \\in C .$ . ",
+        "bbox": [
+            169,
+            434,
+            825,
+            500
+        ],
+        "page_idx": 12
+    },
+    {
+        "type": "text",
+        "text": "1. Context Tagging and Reconstruction: During the preprocessing phase, rather than altering the native tokenization alignment, we introduce two auxiliary boundary markers, denoted as $\\tau _ { s t a r t }$ and $\\mathcal { T } _ { e n d }$ (corresponding to START\\_IDS and END\\_IDS). The original context C is reconstructed into a tagged sequence $C _ { t a g } ,$ , where the target element $e ^ { * }$ is explicitly enveloped: ",
+        "bbox": [
+            169,
+            503,
+            823,
+            556
+        ],
+        "page_idx": 12
+    },
+    {
+        "type": "equation",
+        "text": "$$\nC _ {t a g} = \\left\\{e _ {1}, \\dots , \\mathcal {T} _ {\\text { start }}, e ^ {*}, \\mathcal {T} _ {\\text { end }}, \\dots , e _ {n} \\right\\} \\tag {6}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            367,
+            561,
+            825,
+            575
+        ],
+        "page_idx": 12
+    },
+    {
+        "type": "text",
+        "text": "2. Tokenization and Target Extraction: The tagged sequence $C _ { t a g }$ is processed by the tokenizer to generate a discrete 1D sequence $S = [ s _ { 1 } , s _ { 2 } , \\ldots , s _ { L } ]$ . By linearly scanning ${ \\dot { S } } ,$ we identify the absolute sequence indices of the boundary markers: ",
+        "bbox": [
+            169,
+            588,
+            823,
+            627
+        ],
+        "page_idx": 12
+    },
+    {
+        "type": "equation",
+        "text": "$$\ni d x _ {s t a r t} = \\arg \\max _ {j} (s _ {j} = \\mathcal {T} _ {s t a r t}), \\quad i d x _ {e n d} = \\arg \\max _ {j} (s _ {j} = \\mathcal {T} _ {e n d}) \\tag {7}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            287,
+            632,
+            825,
+            652
+        ],
+        "page_idx": 12
+    },
+    {
+        "type": "text",
+        "text": "The final set of target visual token indices $V ^ { * }$ corresponding to $e ^ { * }$ is rigorously extracted as the enclosed sequence: ",
+        "bbox": [
+            169,
+            659,
+            823,
+            685
+        ],
+        "page_idx": 12
+    },
+    {
+        "type": "equation",
+        "text": "$$\nV ^ {*} = \\{j \\mid i d x _ {s t a r t} <   j <   i d x _ {e n d} \\} \\tag {8}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            388,
+            685,
+            825,
+            700
+        ],
+        "page_idx": 12
+    },
+    {
+        "type": "text",
+        "text": "Uniform Sequence Slicing (e.g., the LLaVA Paradigm) Conversely, models like LLaVA circumvent complex spatial downsampling by deterministically expanding visual inputs into fixed-length token sequences marked by specific placeholders (e.g., the <image> token). For these architectures, tagging is unnecessary; instead, we rely on exact deterministic slicing. ",
+        "bbox": [
+            169,
+            710,
+            823,
+            763
+        ],
+        "page_idx": 12
+    },
+    {
+        "type": "list",
+        "sub_type": "text",
+        "list_items": [
+            "1. Global Visual Token Identification: Let the ordered set of all visual inputs $( \\mathrm { e . g . }$ , document pages) in a sample be $\\mathcal { T } = \\{ I _ { 0 } , I _ { 1 } , . . . , I _ { N - 1 } \\}$ . We execute a global scan across the complete input\\_ids sequence to locate the absolute sequence indices of all visual tokens. Let this ordered array be $\\mathcal { P } _ { a l l } = [ p _ { 0 } , p _ { 1 } , . . . , p _ { M - 1 } ]$ , where M is the total number of visual tokens. ",
+            "2. Target Sequence Slicing: Since the vision processchunk, the number of visual tokens allocated per imaglocated in a specific subset of images whose index set is $\\begin{array} { r } { P = \\frac { \\breve { M } } { N } } \\end{array}$ to a fixed-length continu the ground-truth evidenc, the target token indices ${ \\cal { K } } _ { g t } \\subset \\{ 0 , 1 , \\ldots , { \\cal { N } } ^ { \\smash { \\perp } } - 1 \\}$ $V ^ { * }$ are extracted through exact array slicing: "
+        ],
+        "bbox": [
+            169,
+            768,
+            825,
+            878
+        ],
+        "page_idx": 12
+    },
+    {
+        "type": "equation",
+        "text": "$$\nV ^ {*} = \\bigcup_ {k \\in \\mathcal {K} _ {g t}} \\left\\{\\mathcal {P} _ {\\text { all }} [ j ] \\mid j \\in [ k \\cdot P, (k + 1) \\cdot P - 1 ] \\right\\} \\tag {9}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            339,
+            883,
+            825,
+            914
+        ],
+        "page_idx": 12
+    },
+    {
+        "type": "page_number",
+        "text": "13 ",
+        "bbox": [
+            490,
+            935,
+            508,
+            946
+        ],
+        "page_idx": 12
+    },
+    {
+        "type": "text",
+        "text": "Dynamic Cumulative Slicing (e.g., the InternVL Paradigm) For advanced architectures like InternVL that employ dynamic resolution preprocessing, images are adaptively partitioned into a variable number of patches based on their native aspect ratios. Consequently, the uniform slicing assumption $( P = M / N )$ is mathematically invalid. ",
+        "bbox": [
+            169,
+            90,
+            823,
+            143
+        ],
+        "page_idx": 13
+    },
+    {
+        "type": "list",
+        "sub_type": "text",
+        "list_items": [
+            "1. Dynamic Patch Allocation Tracking: During the dynamic preprocessing phase, each image $I _ { i } \\in \\mathcal { Z }$ is partitioned into $c _ { i }$ visual blocks. Let $T _ { b l o c k }$ denote the fixed token length per block (e.g., 256 tokens). The specific number of visual tokens allocated for image Ii is $P _ { i } = c _ { i } \\times T _ { b l o c k }$ . We maintain an ordered array of these dynamic token lengths: $\\mathcal { V } _ { c o u n t s } = [ P \\mathrm { 0 } , P \\mathrm { 1 , \\ldots , } P \\mathrm { - 1 } ]$ . ",
+            "2. Cumulative Offset Alignment: To precisely isolate the tokens for a target ground-truth image $k \\in \\mathcal { K } _ { g t }$ , we must compute the cumulative offset of all preceding visual tokens within the global visual token array $\\mathcal { P } _ { a l l }$ . The start offset index is defined as $\\begin{array} { r } { O _ { k } = \\sum _ { i = 0 } ^ { k - 1 } P _ { i } } \\end{array}$ (where $O _ { 0 } = 0 )$ . The exact subset of target token indices $V ^ { * }$ is then extracted using this dynamic offset: "
+        ],
+        "bbox": [
+            169,
+            148,
+            823,
+            258
+        ],
+        "page_idx": 13
+    },
+    {
+        "type": "equation",
+        "text": "$$\nV ^ {*} = \\bigcup_ {k \\in \\mathcal {K} _ {g t}} \\left\\{\\mathcal {P} _ {\\text { all }} [ j ] \\mid j \\in \\left[ O _ {k}, O _ {k} + P _ {k} - 1 \\right] \\right\\} \\tag {10}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            351,
+            266,
+            825,
+            296
+        ],
+        "page_idx": 13
+    },
+    {
+        "type": "text",
+        "text": "Unified Attention Masking and Verification. Once the architecture-specific subset $V ^ { * }$ is accurately obtained using tagging, uniform slicing, or dynamic cumulative slicing, we utilize a dynamic key-value cache mechanism during the model’s forward pass to capture the attention probability matrix. By slicing the global attention matrix exclusively at the indices belonging to V ∗, we ensure that the Retrieval Attention Mass (RAM) metric precisely reflects the attention allocated to the target figure. These rigorous strategies intrinsically prevent index shifting, guaranteeing that our quantitative probing remains completely immune to the extreme visual clutter and structural noise pervasive in long-document contexts. ",
+        "bbox": [
+            169,
+            309,
+            823,
+            398
+        ],
+        "page_idx": 13
+    },
+    {
+        "type": "text",
+        "text": "C.3 Mapping Strategies for Page-Level Evidence in MMLongBench ",
+        "text_level": 1,
+        "bbox": [
+            171,
+            414,
+            656,
+            429
+        ],
+        "page_idx": 13
+    },
+    {
+        "type": "text",
+        "text": "Unlike fine-grained spatial grounding or interleaved layout retrieval, MMLongBench evaluates the \"needlein-a-haystack\" retrieval capabilities of MLLMs across extensive document collections. The input inherently consists of a massive sequence of high-resolution, full-page images (e.g., multi-page PDF documents) seamlessly concatenated with complex user queries. The primary challenge here shifts from spatial localization to macrolevel temporal/sequential isolation, as the context length frequently approaches the extreme limit of 100K+ tokens. To accurately compute the Retrieval Attention Mass (RAM) directed at specific ground-truth pages, we implement architecture-specific mapping protocols tailored to the underlying visual tokenization mechanisms: the Page-Level Boundary-Tagging Protocol for adapter-based models and Uniform Page-Level Slicing for token-expansion models. ",
+        "bbox": [
+            169,
+            438,
+            825,
+            553
+        ],
+        "page_idx": 13
+    },
+    {
+        "type": "text",
+        "text": "Let the long document be represented as a chronologically ordered sequence of full-page visual elements $\\mathcal { T } = \\{ I _ { 0 } , I _ { 1 } , \\ldots , I _ { K - 1 } \\}$ , where K denotes the total page capacity $( \\mathrm { e . g . , } K \\bar { = } 2 0 )$ . Based on the natural language query Q, the oracle visual evidence is localized within a specific subset of target pages $\\mathcal { E } ^ { * } \\subset \\{ 0 , 1 , \\dotsc , K ^ { - } - \\bar { 1 } \\}$ ",
+        "bbox": [
+            169,
+            559,
+            823,
+            599
+        ],
+        "page_idx": 13
+    },
+    {
+        "type": "text",
+        "text": "Page-Level Boundary-Tagging Protocol (e.g., the Qwen-VL Paradigm). For models that employ complex vision-language pooling, we structurally intervene during the multi-turn message construction to prevent catastrophic token shifting over extreme sequence lengths. ",
+        "bbox": [
+            169,
+            609,
+            823,
+            650
+        ],
+        "page_idx": 13
+    },
+    {
+        "type": "text",
+        "text": "1. Dynamic Prompt Tagging: We inject two specialized text tokens, $\\mathcal { T } _ { s t a r t } \\ \\left( < \\mathtt { G T \\_ S T A R T } > \\right)$ and $\\tau _ { e n d }$ (<GT\\_END>), acting as explicit deterministic boundaries. The visual sequence is reconstructed such that any target evidence page $T _ { e } ~ ( \\bar { e } \\in \\mathcal { E } ^ { * } )$ is tightly enveloped: ",
+        "bbox": [
+            169,
+            656,
+            823,
+            695
+        ],
+        "page_idx": 13
+    },
+    {
+        "type": "equation",
+        "text": "$$\n\\mathcal {M} _ {\\text { input }} = \\left[ \\dots , I _ {e - 1}, \\mathcal {T} _ {\\text { start }}, I _ {e}, \\mathcal {T} _ {\\text { end }}, I _ {e + 1}, \\dots \\right] \\oplus Q \\tag {11}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            318,
+            700,
+            825,
+            724
+        ],
+        "page_idx": 13
+    },
+    {
+        "type": "text",
+        "text": "2. Global Sequence Scanning: The continuous page images are flattened into a massive 1D discrete token array $S = [ s _ { 1 } , s _ { 2 } , \\ldots , s _ { L } ]$ ]. We execute a linear scan across $\\bar { S }$ to capture the absolute index boundaries for each evidence page: ",
+        "bbox": [
+            169,
+            734,
+            823,
+            773
+        ],
+        "page_idx": 13
+    },
+    {
+        "type": "equation",
+        "text": "$$\ni d x _ {s t a r t} ^ {(e)} = \\arg \\max _ {j} (s _ {j} = \\mathcal {T} _ {s t a r t}), \\quad i d x _ {e n d} ^ {(e)} = \\arg \\max _ {j} (s _ {j} = \\mathcal {T} _ {e n d}) \\tag {12}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            289,
+            773,
+            825,
+            796
+        ],
+        "page_idx": 13
+    },
+    {
+        "type": "text",
+        "text": "The ultimate set of target visual token indices is strictly defined as the union of all enclosed sequence blocks: ",
+        "bbox": [
+            171,
+            797,
+            815,
+            811
+        ],
+        "page_idx": 13
+    },
+    {
+        "type": "equation",
+        "text": "$$\nV ^ {*} = \\bigcup_ {e \\in \\mathcal {E} ^ {*}} \\left\\{j \\mid i d x _ {\\text { start }} ^ {(e)} <   j <   i d x _ {\\text { end }} ^ {(e)} \\right\\} \\tag {13}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            374,
+            816,
+            825,
+            845
+        ],
+        "page_idx": 13
+    },
+    {
+        "type": "text",
+        "text": "Uniform Page-Level Slicing (e.g., the LLaVA Paradigm). For token-expansion models like LLaVA, structural tagging is unnecessary. Instead, these models allocate a fixed, deterministic number of tokens for each input image placeholder, allowing for precise mathematical slicing based on the model’s native image\\_token\\_id. ",
+        "bbox": [
+            169,
+            859,
+            825,
+            912
+        ],
+        "page_idx": 13
+    },
+    {
+        "type": "page_number",
+        "text": "14 ",
+        "bbox": [
+            490,
+            935,
+            508,
+            946
+        ],
+        "page_idx": 13
+    },
+    {
+        "type": "list",
+        "sub_type": "text",
+        "list_items": [
+            "1. Global Vision Token Extraction: By scanning the complete sequence of input IDs, we locate the absolute sequence positions of all visual tokens, forming an ordered array $\\bar { \\mathcal { P } } _ { a l l } = [ p _ { 0 } , \\bar { p _ { 1 } } , . . . , p _ { M - 1 } ] ,$ , where M is the total count of visual tokens in the entire document. ",
+            "2. Deterministic Index Slicing: Given the uniform expansion property, the fixed number of tokens allocated per document page is derived as $\\begin{array} { r } { T _ { p a g e } = \\frac { M } { K } } \\end{array}$ . To isolate the exact token indices representing the target multi-page∗ evidence, we project the page indices $e \\in \\mathcal { E } ^ { \\ast }$ onto the global vision token array: "
+        ],
+        "bbox": [
+            169,
+            92,
+            823,
+            176
+        ],
+        "page_idx": 14
+    },
+    {
+        "type": "equation",
+        "text": "$$\nV ^ {*} = \\bigcup_ {e \\in \\mathcal {E} ^ {*}} \\left\\{\\mathcal {P} _ {\\text { all }} [ j ] \\mid j \\in [ e \\cdot T _ {\\text { page }}, (e + 1) \\cdot T _ {\\text { page }} - 1 ] \\right\\} \\tag {14}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            320,
+            183,
+            825,
+            212
+        ],
+        "page_idx": 14
+    },
+    {
+        "type": "text",
+        "text": "Unified Target Verification. By extracting the architecture-specific subset $V ^ { * }$ and dynamically masking the global attention probability matrix during the model’s forward pass, we isolate the query-to-evidence attention flows. These deterministic page-level tracking paradigms guarantee that our quantitative probing is completely immune to the macro-level structural noise generated by dozens of irrelevant document pages, rigorously validating the CoRe heads’ capacity for long-range cross-modal routing. ",
+        "bbox": [
+            169,
+            226,
+            826,
+            291
+        ],
+        "page_idx": 14
+    },
+    {
+        "type": "text",
+        "text": "C.4 Mapping Strategies for Temporal Visual Entities in VidSTG ",
+        "text_level": 1,
+        "bbox": [
+            171,
+            306,
+            633,
+            321
+        ],
+        "page_idx": 14
+    },
+    {
+        "type": "text",
+        "text": "Unlike static spatial grounding or document layout analysis, the VidSTG benchmark evaluates the spatiotemporal retrieval capabilities of MLLMs in dynamic, unconstrained video streams. The input comprises a lengthy chronological sequence of sampled video frames, seamlessly concatenated with natural language queries. As the temporal context expands (e.g., up to 128 frames per video), the model encounters massive temporal background noise. To accurately compute the Retrieval Attention Mass (RAM) directed exclusively at the ground-truth action or object frames, we adapt our architecture-specific mapping protocols to the temporal domain, transitioning from page-level extraction to fine-grained temporal sequence isolation. ",
+        "bbox": [
+            169,
+            330,
+            823,
+            421
+        ],
+        "page_idx": 14
+    },
+    {
+        "type": "text",
+        "text": "Let the input video be represented as a chronologically ordered set of sampled frames $\\mathcal { V } = \\{ F _ { 0 } , F _ { 1 } , . . . , F _ { N - 1 } \\}$ , where N denotes the total number of extracted frames. Based on the temporal annotations, the oracle visual evidence corresponds to a specific continuous or discrete subset of target frames, whose index set is defined as ${ \\cal K } _ { g t } \\subset \\{ 0 , 1 , \\dotsc , \\widehat { \\cal N } - 1 \\}$ . ",
+        "bbox": [
+            169,
+            426,
+            825,
+            479
+        ],
+        "page_idx": 14
+    },
+    {
+        "type": "text",
+        "text": "Temporal Boundary-Tagging Protocol (e.g., the Qwen-VL Paradigm). For models employing Vision-Language Adapters that dynamically compress temporal visual tokens, we intervene at the text-prompt construction phase to prevent temporal index shifting. ",
+        "bbox": [
+            169,
+            491,
+            823,
+            532
+        ],
+        "page_idx": 14
+    },
+    {
+        "type": "text",
+        "text": "1. Dynamic Frame Tagging: We inject explicit temporal boundaries, $\\mathcal { T } _ { s t a r t }$ and $\\mathcal { T } _ { e n d }$ (corresponding to START\\_IDS and END\\_IDS), surrounding the specific target frames. The temporal context is reconstructed such that any target evidence frame $F _ { k } ( k \\in \\mathcal { K } _ { g t } )$ is tightly enveloped: ",
+        "bbox": [
+            169,
+            537,
+            823,
+            575
+        ],
+        "page_idx": 14
+    },
+    {
+        "type": "equation",
+        "text": "$$\n\\mathcal {M} _ {\\text { input }} = \\left[ \\dots , F _ {k - 1}, \\mathcal {T} _ {\\text { start }}, F _ {k}, \\mathcal {T} _ {\\text { end }}, F _ {k + 1}, \\dots \\right] \\oplus Q \\tag {15}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            313,
+            582,
+            825,
+            606
+        ],
+        "page_idx": 14
+    },
+    {
+        "type": "text",
+        "text": "2. Global Sequence Scanning: The entire video-text context is flattened into a 1D discrete token array $S = [ s _ { 1 } , s _ { 2 } , \\ldots , s _ { L } ] .$ A linear scan captures the absolute index boundaries for each tagged target frame: ",
+        "bbox": [
+            169,
+            619,
+            823,
+            646
+        ],
+        "page_idx": 14
+    },
+    {
+        "type": "equation",
+        "text": "$$\ni d x _ {s t a r t} ^ {(k)} = \\arg \\max _ {j} (s _ {j} = \\mathcal {T} _ {s t a r t}), \\quad i d x _ {e n d} ^ {(k)} = \\arg \\max _ {j} (s _ {j} = \\mathcal {T} _ {e n d}) \\tag {16}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            289,
+            652,
+            825,
+            676
+        ],
+        "page_idx": 14
+    },
+    {
+        "type": "text",
+        "text": "The target temporal token indices $V ^ { * }$ are defined as the union of these enclosed sequence blocks: ",
+        "bbox": [
+            169,
+            681,
+            746,
+            696
+        ],
+        "page_idx": 14
+    },
+    {
+        "type": "equation",
+        "text": "$$\nV ^ {*} = \\bigcup_ {k \\in \\mathcal {K} _ {g t}} \\left\\{j \\mid i d x _ {\\text { start }} ^ {(k)} <   j <   i d x _ {\\text { end }} ^ {(k)} \\right\\} \\tag {17}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            370,
+            702,
+            825,
+            733
+        ],
+        "page_idx": 14
+    },
+    {
+        "type": "text",
+        "text": "Uniform Temporal Slicing (e.g., the LLaVA Paradigm). For token-expansion models like LLaVA-OneVision, which allocate a fixed, deterministic number of tokens for each video frame placeholder, temporal structural tagging is omitted in favor of exact mathematical array slicing. ",
+        "bbox": [
+            169,
+            747,
+            826,
+            787
+        ],
+        "page_idx": 14
+    },
+    {
+        "type": "list",
+        "sub_type": "text",
+        "list_items": [
+            "1. Global Frame Token Extraction: By scanning the complete input\\_ids sequence, we locate the absolute positions of all visual tokens, forming an ordered array $\\mathcal { P } _ { a l l } = [ p _ { 0 } , p _ { 1 } , . . . , p _ { M - 1 } ]$ , where M is the total token count representing the entire video. ",
+            "2. Deterministic Temporal Slicing: Given the uniform expansion property, the fixed token length allocated per frame is exactlythe target frame $\\begin{array} { r } { T _ { f r a m e } = \\frac { M } { N } } \\end{array}$ To strictly isolate the tokens representing the target temporal tubes, we projectonto the global array: $k \\in \\dot { \\mathcal { K } } _ { g t }$ "
+        ],
+        "bbox": [
+            169,
+            792,
+            823,
+            878
+        ],
+        "page_idx": 14
+    },
+    {
+        "type": "equation",
+        "text": "$$\nV ^ {*} = \\bigcup_ {k \\in \\mathcal {K} _ {g t}} \\left\\{\\mathcal {P} _ {\\text { all }} [ j ] \\mid j \\in [ k \\cdot T _ {\\text { frame }}, (k + 1) \\cdot T _ {\\text { frame }} - 1 ] \\right\\} \\tag {18}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            303,
+            883,
+            825,
+            914
+        ],
+        "page_idx": 14
+    },
+    {
+        "type": "page_number",
+        "text": "",
+        "bbox": [
+            490,
+            935,
+            508,
+            946
+        ],
+        "page_idx": 14
+    },
+    {
+        "type": "text",
+        "text": "Dynamic Cumulative Temporal Slicing (e.g., the InternVL Paradigm). For advanced architectures like InternVL that enforce dynamic resolution preprocessing, individual frames may be partitioned into a variable number of patches depending on their motion blur or native aspect ratios. Therefore, the uniform assumption $( M / N )$ is violated, necessitating a dynamic cumulative tracking mechanism. ",
+        "bbox": [
+            169,
+            90,
+            823,
+            143
+        ],
+        "page_idx": 15
+    },
+    {
+        "type": "list",
+        "sub_type": "text",
+        "list_items": [
+            "1. Dynamic Patch Allocation Tracking: During video preprocessing, each frame $F _ { i }$ is adaptively partitioned into $c _ { i }$ visual blocks. Assuming a fixed token length per block $T _ { b l o c k }$ , the total tokens allocated for frame $F _ { i }$ is $P _ { i } = c _ { i } \\times T _ { b l o c k }$ . We maintain an ordered tracking array of these dynamic lengths across the temporal axis: $\\mathcal { V } _ { c o u n t s } = [ P \\mathrm { 0 } , P \\mathrm { 1 , . . . , } P \\mathrm { { } } _ { N - 1 } ]$ . ",
+            "2. Cumulative Offset Alignment: To precisely isolate the tokens for a target temporal frame $k \\in \\mathcal { K } _ { g t }$ we calculate the cumulative temporal offset of all preceding frames. The start offset index is formulated as $\\begin{array} { r } { O _ { k } = \\sum _ { i = 0 } ^ { k - 1 } P _ { i } } \\end{array}$ (where $O _ { 0 } = 0 )$ . The exact target token indices $V ^ { * }$ are extracted via this dynamically computed sliding window: "
+        ],
+        "bbox": [
+            169,
+            148,
+            825,
+            258
+        ],
+        "page_idx": 15
+    },
+    {
+        "type": "equation",
+        "text": "$$\nV ^ {*} = \\bigcup_ {k \\in \\mathcal {K} _ {g t}} \\left\\{\\mathcal {P} _ {\\text { all }} [ j ] \\mid j \\in \\left[ O _ {k}, O _ {k} + P _ {k} - 1 \\right] \\right\\} \\tag {19}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            351,
+            263,
+            825,
+            294
+        ],
+        "page_idx": 15
+    },
+    {
+        "type": "text",
+        "text": "Unified Temporal Verification. By utilizing these rigorous, architecture-aware mapping protocols to extract the precise subset $V ^ { * }$ , we dynamically slice the global attention probability matrix during inference. This ensures that our RAM formulation strictly evaluates the attention routed solely to the query-relevant spatio-temporal segments. These methodologies inherently neutralize the massive temporal noise introduced by dozens of irrelevant background frames, thereby strictly validating the CoRe heads’ temporal reasoning robustness. ",
+        "bbox": [
+            169,
+            311,
+            823,
+            388
+        ],
+        "page_idx": 15
+    },
+    {
+        "type": "text",
+        "text": "D CoRe Heads: Detection Mechanisms and Model Configuration ",
+        "text_level": 1,
+        "bbox": [
+            169,
+            412,
+            732,
+            430
+        ],
+        "page_idx": 15
+    },
+    {
+        "type": "text",
+        "text": "D.1 Model Architectures and Hyperparameters ",
+        "text_level": 1,
+        "bbox": [
+            171,
+            445,
+            517,
+            460
+        ],
+        "page_idx": 15
+    },
+    {
+        "type": "text",
+        "text": "To strictly ensure our findings regarding CoRe heads are intrinsic structural properties rather than artifacts of specific designs, we evaluate three representative MLLM families encompassing diverse vision-language integration paradigms: adapter-based compression, deterministic token expansion, and dynamic high-resolution preprocessing. The architectural distinctions are summarized in Table 3. ",
+        "bbox": [
+            169,
+            470,
+            823,
+            523
+        ],
+        "page_idx": 15
+    },
+    {
+        "type": "table",
+        "img_path": "images/d3787543e71a439c700291e22423db8a323b4f2e4f6fe5ca3f0b3ddc29068446.jpg",
+        "table_caption": [
+            "Table 3: Overview of Evaluated MLLMs and their Visual Processing Paradigms "
+        ],
+        "table_footnote": [],
+        "table_body": "<table><tr><td>Model Family</td><td>Variants</td><td>Bridging Mechanism</td><td>Visual Processing Strategy</td></tr><tr><td>Qwen3-VL [1]</td><td>4B, 8B, 32B</td><td>Vision-Language Adapter</td><td>Local pooling (2 × 2 downsampling) resulting in c = 4 sequence compression.</td></tr><tr><td>LLaVA-OneVision [10]</td><td>7B</td><td>MLP Projector</td><td>Deterministic expansion into fixed-length, continuous 1D token chunks.</td></tr><tr><td>InternVL3.5 [21]</td><td>8B</td><td>Dynamic Cumulation</td><td>Adaptive image partitioning based on native aspect ratios (1 to 12 patches).</td></tr></table>",
+        "bbox": [
+            173,
+            564,
+            826,
+            694
+        ],
+        "page_idx": 15
+    },
+    {
+        "type": "text",
+        "text": "D.2 Unified Detection Framework for CoRe Heads ",
+        "text_level": 1,
+        "bbox": [
+            171,
+            726,
+            539,
+            739
+        ],
+        "page_idx": 15
+    },
+    {
+        "type": "text",
+        "text": "Building upon the architecture-specific mapping protocols detailed in previous sections, we abstract our empirical probing methodology into a unified, computationally efficient algorithm. The core objective is to quantitatively extract the Retrieval Attention Mass (RAM) allocated to the ground-truth visual entities across any combination of MLLM architectures and heterogeneous datasets (ranging from static bounding boxes to extreme long-context video tubes). ",
+        "bbox": [
+            169,
+            752,
+            823,
+            816
+        ],
+        "page_idx": 15
+    },
+    {
+        "type": "text",
+        "text": "Algorithm 1 presents the complete detection framework. To circumvent the prohibitive memory overhead of full-sequence generation and backpropagation, we implement a customized Dynamic Key-Value Cache mechanism. By running a single forward pass without computing language modeling logits, we hook directly into the intermediate transformer layers. Furthermore, the algorithm is meticulously designed to handle modern the inner product. Ultimately, the algorithm computes a normalized attention map architectural variants, such as Grouped Query Attention (GQA), by explicitly repeating the Key states prior to $\\mathbf { \\dot { M } } _ { R A M } \\in \\mathbb { R } ^ { L \\times H }$ , identifying the precise topological location of CoRe heads. ",
+        "bbox": [
+            169,
+            821,
+            825,
+            912
+        ],
+        "page_idx": 15
+    },
+    {
+        "type": "page_number",
+        "text": "",
+        "bbox": [
+            490,
+            935,
+            508,
+            946
+        ],
+        "page_idx": 15
+    },
+    {
+        "type": "code",
+        "sub_type": "algorithm",
+        "code_caption": [
+            "Algorithm 1 Unified Extraction Framework for Retrieval Attention Mass (RAM) "
+        ],
+        "code_body": "Input: Multimodal context C, Query Q, Ground-truth visual entity $E^{*}$ , Model M\nOutput: Layer-head attention allocation map $M_{RAM} \\in R^{L \\times H}$ 1: Phase 1: Architecture-Aware Token Mapping\n2: $S \\leftarrow \\text{UnifiedTokenizer}(C \\oplus Q)$ 3: $idx_{Q} \\leftarrow \\text{FindTokenIndices}(S, Q)$ {Locate query tokens}\n4: if M uses Adapter-based Compression (e.g., Qwen-VL) then\n5:    if Context is dense sequence then\n6: $V^{*} \\leftarrow \\text{BoundaryTagging}(S, E^{*}, T_{start}, T_{end})$ 7:    else\n8: $V^{*} \\leftarrow \\text{SpatialProjection}(E^{*}, \\text{downsample\\_ratio} = c)$ 9:    end if\n10: else if M uses Deterministic Expansion (e.g., LLaVA) then\n11: $V^{*} \\leftarrow \\text{UniformSlicing}(S, E^{*}, T_{page/frame})$ 12: else if M uses Dynamic High-Res Preprocessing (e.g., InternVL) then\n13: $V_{counts} \\leftarrow \\text{TrackPatchAllocations}(C)$ 14: $V^{*} \\leftarrow \\text{CumulativeOffsetSlicing}(S, E^{*}, V_{counts})$ 15: end if\n16: Phase 2: Custom Cache and Forward Pass\n17: Initialize $C_{kv} \\leftarrow \\text{DynamicCacheWithQuery}(idx_{Q})$ 18: ModelForward(M, input = S, past_key_values = $C_{kv}$ , compute_logits = False)\n19: Phase 3: RAM Computation across Layers and Heads\n20: Initialize $M_{RAM}$ as an $L \\times H$ zero matrix\n21: for each layer $l \\in \\{1, 2, \\ldots, L\\}$ do\n22: $Q^{(l)}, K^{(l)} \\leftarrow C_{kv}.get\\_layer(l)$ 23: $K_{GQA}^{(l)} \\leftarrow \\text{RepeatKV}(K^{(l)}, num\\_kv\\_groups)$ {Align dimensions for GQA}\n24: $A^{(l)} \\leftarrow \\text{Softmax}\\left(\\frac{Q^{(l)}\\left(K_{GQA}^{(l)}\\right)^T}{\\sqrt{d_{head}}}\\right)$ {Global attention probability}\n25:    for each head $h \\in \\{1, 2, \\ldots, H\\}$ do\n26: $M_{RAM}[l, h] \\leftarrow \\sum_{j \\in V^{*}} A_{:,j}^{(l,h)}$ {Aggregate mass over target tokens}\n27:    end for\n28: end for\n29: return $M_{RAM}$ ",
+        "bbox": [
+            173,
+            107,
+            712,
+            578
+        ],
+        "page_idx": 16
+    },
+    {
+        "type": "text",
+        "text": "E Feature Analysis and Causal Verification of CoRe Heads ",
+        "text_level": 1,
+        "bbox": [
+            171,
+            604,
+            679,
+            622
+        ],
+        "page_idx": 16
+    },
+    {
+        "type": "text",
+        "text": "E.1 Implementation Details for Cross-Domain Stability Analysis ",
+        "text_level": 1,
+        "bbox": [
+            171,
+            635,
+            633,
+            650
+        ],
+        "page_idx": 16
+    },
+    {
+        "type": "text",
+        "text": "This section provides the implementation details for the cross-domain stability and correlation analysis of CoRe heads presented in the main text. To quantitatively assess the functional consistency of attention heads across diverse multimodal distributions, we implemented a unified evaluation pipeline across four representative datasets: RefCOCOg, MMLongBench, VidSTG, and MMDocIR. ",
+        "bbox": [
+            169,
+            659,
+            826,
+            710
+        ],
+        "page_idx": 16
+    },
+    {
+        "type": "text",
+        "text": "Data Processing and Spearman Correlation. For each dataset $t \\in { \\mathcal { T } } .$ , we first extract the head-level Retrieval Attention Mass (RAM) scores, denoted as from layer-head extraction are zero-padded to en $\\mathcal { M } _ { \\mathrm { R A M } } ^ { ( l , h ) }$ , for all layers l and heads h. Missing values resultingiform tensor dimensions across tasks. To measure cross-task consistency, we flatten the spatial dimensions and compute the pairwise Spearman rank correlation coefficient between the score distributions of each task pair. The resulting correlation matrix is visualized to highlight the strong positive correlations across all domains. ",
+        "bbox": [
+            169,
+            723,
+            823,
+            803
+        ],
+        "page_idx": 16
+    },
+    {
+        "type": "text",
+        "text": "Top-k Stability Masking and Spatial Distribution. To isolate the universally critical heads, we compute a stability matrix $S \\in \\mathbb { R } ^ { L \\times H }$ that aggregates the occurrence frequency of top-ranked heads across all tasks. Specifically, for each task t, we calculate a dynamic threshold $\\tau _ { t }$ corresponding to the 95th percentile (top 5%) of its RAM score distribution. We then generate a binary activation mask $\\mathbb { I } _ { l , h } ^ { ( t ) }$ for each head: ",
+        "bbox": [
+            169,
+            816,
+            826,
+            873
+        ],
+        "page_idx": 16
+    },
+    {
+        "type": "equation",
+        "text": "$$\n\\mathbb {I} _ {l, h} ^ {(t)} = \\left\\{ \\begin{array}{l l} 1, & \\text { if } \\mathcal {M} _ {\\mathrm{RAM}, t} ^ {(l, h)} \\geq \\tau_ {t} \\\\ 0, & \\text { otherwise } \\end{array} \\right. \\tag {20}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            405,
+            878,
+            825,
+            916
+        ],
+        "page_idx": 16
+    },
+    {
+        "type": "page_number",
+        "text": "17 ",
+        "bbox": [
+            490,
+            935,
+            508,
+            946
+        ],
+        "page_idx": 16
+    },
+    {
+        "type": "text",
+        "text": "The cross-domain stability count for a given head is computed by summing these indicator variables over all evaluating tasks: ",
+        "bbox": [
+            169,
+            92,
+            823,
+            118
+        ],
+        "page_idx": 17
+    },
+    {
+        "type": "equation",
+        "text": "$$\nS _ {l, h} = \\sum_ {t \\in \\mathcal {T}} \\mathbb {I} _ {l, h} ^ {(t)} \\tag {21}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            449,
+            117,
+            825,
+            146
+        ],
+        "page_idx": 17
+    },
+    {
+        "type": "text",
+        "text": "where $S _ { l , h } \\in \\{ 0 , 1 , 2 , 3 , 4 \\}$ . ",
+        "bbox": [
+            171,
+            147,
+            341,
+            162
+        ],
+        "page_idx": 17
+    },
+    {
+        "type": "text",
+        "text": "Visualization Setup. The stability matrix is visualized using a custom discrete linear segmented colormap. To ensure the accurate visual representation of the discrete task counts, the colorbar visualization boundaries are shifted by −0.5 (spanning from −0.5 to 3.5 for N = 4 task overlaps) so that the color ticks perfectly align with the integer centers. All visualizations strictly adhere to the standard typographical guidelines, utilizing Times New Roman and STIX fonts for consistency. ",
+        "bbox": [
+            169,
+            172,
+            826,
+            239
+        ],
+        "page_idx": 17
+    },
+    {
+        "type": "text",
+        "text": "E.2 Implementation Details for Attention Head Intervention ",
+        "text_level": 1,
+        "bbox": [
+            171,
+            252,
+            606,
+            268
+        ],
+        "page_idx": 17
+    },
+    {
+        "type": "text",
+        "text": "To rigorously assess the causal impact of CoRe heads (as discussed in Section 4.4), we implemented a headlevel attention intervention mechanism. The complete unified intervention procedure is formally outlined in Algorithm 2. ",
+        "bbox": [
+            169,
+            277,
+            826,
+            316
+        ],
+        "page_idx": 17
+    },
+    {
+        "type": "code",
+        "sub_type": "algorithm",
+        "code_caption": [
+            "Algorithm 2 Memory-Efficient Chunk-wise Attention Head Intervention "
+        ],
+        "code_body": "Input: Query $Q \\in R^{B \\times H \\times N \\times d}$ , Key $K \\in R^{B \\times H \\times M \\times d}$ , Value $V \\in R^{B \\times H \\times M \\times d}$ Input: Current layer index l, Ablation set B, Chunk size C (e.g., 256), Scaling factor $\\alpha$ Output: Intervened Attention Output $O \\in R^{B \\times H \\times N \\times d}$ 1: Initialize empty output tensor O with shape of Q\n\n2: Extract target heads for current layer: $H_{l} \\leftarrow \\{h \\mid (l, h) \\in B\\}$ 3: if $H_{l} = \\emptyset$ then\n\n4: return FlashAttention(Q, K, V)\n\n5: end if\n\n6: for i = 0 to N - 1 step C do\n\n7: $j \\leftarrow \\min(i + C, N)$ 8: $Q_{chunk} \\leftarrow Q[:, :, i : j, :]$ 9: $S_{chunk} \\leftarrow (Q_{chunk} K^{\\top}) \\cdot \\alpha$ {Compute pre-softmax logits}\n\n10: Apply standard causal/padding mask to $S_{chunk}$ if necessary\n\n11: for $h \\in H_{l}$ do\n\n12: $S_{chunk}[:, h, :, :] \\leftarrow 0.0$ {Ablate selective retrieval via logit neutralization}\n\n13: end for\n\n14: $A_{chunk} \\leftarrow Softmax(S_{chunk}, dim = -1)$ 15: $A_{chunk} \\leftarrow Dropout(A_{chunk})$ 16: $O_{chunk} \\leftarrow A_{chunk} V$ 17: $O[:, :, i : j, :] \\leftarrow O_{chunk}$ 18: Free memory: Delete $Q_{chunk}, S_{chunk}, A_{chunk}, O_{chunk}$ 19: end for\n\n20: $O \\leftarrow Transpose and format O$ 21: return O, None {Avoid returning full attention weight matrices to save VRAM} ",
+        "bbox": [
+            173,
+            345,
+            748,
+            686
+        ],
+        "page_idx": 17
+    },
+    {
+        "type": "text",
+        "text": "E.3 Calculation of the Key Token Ratio ",
+        "text_level": 1,
+        "bbox": [
+            171,
+            710,
+            460,
+            726
+        ],
+        "page_idx": 17
+    },
+    {
+        "type": "text",
+        "text": "To quantitatively evaluate the extraction precision and efficiency of the identified CoRe heads, we define a granular, token-level metric termed the Key Token Ratio. This metric assesses whether a specific attention head successfully concentrates its highest attention mass on the exact ground-truth visual tokens required to answer the query, filtering out surrounding multimodal noise. ",
+        "bbox": [
+            169,
+            734,
+            826,
+            787
+        ],
+        "page_idx": 17
+    },
+    {
+        "type": "text",
+        "text": "Mathematical Formulation. Given an input sequence S of length L, let $Q \\subset S$ denote the subset of tokens corresponding to the linguistic question, and let $V ^ { * } \\subset S$ denote the subset of key target visual tokens (e.g., the specific image patches or figure tokens corresponding to the ground-truth answer). ",
+        "bbox": [
+            169,
+            799,
+            825,
+            839
+        ],
+        "page_idx": 17
+    },
+    {
+        "type": "text",
+        "text": "During the forward pass, for a specific attention head h in layer l, we extract the post-softmax attention probability matrix. We first aggregate the attention distribution directed from the query tokens to the entire sequence by averaging over the query dimension: ",
+        "bbox": [
+            169,
+            844,
+            823,
+            883
+        ],
+        "page_idx": 17
+    },
+    {
+        "type": "equation",
+        "text": "$$\n\\bar {A} ^ {(h)} = \\frac {1}{| Q |} \\sum_ {q \\in Q} A _ {q \\rightarrow S} ^ {(h)} \\tag {22}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            424,
+            882,
+            825,
+            914
+        ],
+        "page_idx": 17
+    },
+    {
+        "type": "page_number",
+        "text": "18 ",
+        "bbox": [
+            490,
+            935,
+            508,
+            946
+        ],
+        "page_idx": 17
+    },
+    {
+        "type": "text",
+        "text": "where A(h)q→S $A _ { q  S } ^ { ( h ) } \\in \\mathbb { R } ^ { L }$ Aq→s represents the attention probability distribution from a single query token q to all tokens in the sequence. ",
+        "bbox": [
+            169,
+            90,
+            823,
+            119
+        ],
+        "page_idx": 18
+    },
+    {
+        "type": "text",
+        "text": "To evaluate the precision of head h, we define a stringent threshold by isolating only the top 5% of tokens that receive the highest attention scores. Let $k = \\mathrm { m a x } ( \\bar { 1 } , \\lfloor L \\times 0 . 0 5 \\rfloor )$ . We define the highly-attended token set $\\mathcal { T } _ { \\mathrm { t o p } } ^ { ( h ) }$ as the indices of the top k values in the aggregated distribution $\\bar { A } ^ { ( h ) }$ . ",
+        "bbox": [
+            169,
+            125,
+            823,
+            167
+        ],
+        "page_idx": 18
+    },
+    {
+        "type": "text",
+        "text": "The Key Token Ratio for head h is then defined as the percentage of ground-truth target tokens successfully captured within this top 5% attended set: ",
+        "bbox": [
+            169,
+            171,
+            823,
+            198
+        ],
+        "page_idx": 18
+    },
+    {
+        "type": "equation",
+        "text": "$$\n\\text { Key   Token   Ratio } ^ {(h)} = \\frac {\\left| \\mathcal {T} _ {\\text { top }} ^ {(h)} \\cap V ^ {*} \\right|}{\\left| V ^ {*} \\right|} \\times 1 0 0 \\tag {23}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            367,
+            199,
+            825,
+            232
+        ],
+        "page_idx": 18
+    },
+    {
+        "type": "text",
+        "text": "During evaluation, if a head’s Key Token Ratio meets or exceeds a predefined threshold $( \\mathrm { e . g . , } 5 0 \\% )$ , it is recorded as a successful \"hit\". We compute the average hit rate across the selected Top-K and Bottom-K head populations to demonstrate the functional divergence between CoRe heads and standard vision heads. ",
+        "bbox": [
+            169,
+            239,
+            825,
+            277
+        ],
+        "page_idx": 18
+    },
+    {
+        "type": "text",
+        "text": "E.4 Calculation of the Key Token Coverage ",
+        "text_level": 1,
+        "bbox": [
+            171,
+            292,
+            488,
+            308
+        ],
+        "page_idx": 18
+    },
+    {
+        "type": "text",
+        "text": "While the Key Token Ratio (detailed in Section E.3) evaluates the retrieval precision of individual attention heads, it does not account for the collaborative dynamics among them. To assess the collective retrieval capacity of a population of heads, we introduce the Key Token Coverage metric. This metric quantifies the proportion of the ground-truth visual tokens that are successfully captured by the aggregate attention of a specific subset of heads (e.g., the Top-K CoRe heads versus the Bottom-K heads). ",
+        "bbox": [
+            169,
+            316,
+            823,
+            381
+        ],
+        "page_idx": 18
+    },
+    {
+        "type": "text",
+        "text": "Mathematical Formulation. Following the previous notations, let S denote the input sequence, $Q$ denote the query tokens, and $V ^ { * }$ denote the set of critical ground-truth visual tokens. For a given attention head $h ,$ , we compute the query-aggregated 1D attention distribution $\\bar { A } ^ { ( h ) }$ and extract the indices of the top p% $( \\mathbf { e } . \\mathbf { g } . , p = 5 )$ most attended tokens, denoted as $\\mathcal { T } _ { \\mathrm { t o p } } ^ { ( h ) }$ . ",
+        "bbox": [
+            169,
+            393,
+            823,
+            450
+        ],
+        "page_idx": 18
+    },
+    {
+        "type": "text",
+        "text": "Let $\\mathcal { G }$ represent a designated group of attention heads evaluated as an ensemble (for instance, $\\mathcal { G } _ { \\mathrm { t o p } }$ representing the Top-250 heads based on RAM scores). The subset of ground-truth target tokens successfully hit by an individual head h is given by the intersection $( T _ { \\mathrm { t o p } } ^ { ( h ) } \\cap V ^ { * } )$ . ",
+        "bbox": [
+            169,
+            455,
+            823,
+            498
+        ],
+        "page_idx": 18
+    },
+    {
+        "type": "text",
+        "text": "To determine the collective coverage of the entire head group ${ \\mathcal { G } } ,$ , we compute the union of all successfully hit target tokens across all heads in the group. This ensures that redundant retrievals of the same visual token by multiple heads are systematically deduplicated: ",
+        "bbox": [
+            169,
+            502,
+            823,
+            541
+        ],
+        "page_idx": 18
+    },
+    {
+        "type": "equation",
+        "text": "$$\n\\mathcal {U} _ {\\mathcal {G}} = \\bigcup_ {h \\in \\mathcal {G}} \\left(\\mathcal {T} _ {\\text { top }} ^ {(h)} \\cap V ^ {*}\\right) \\tag {24}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            419,
+            542,
+            825,
+            571
+        ],
+        "page_idx": 18
+    },
+    {
+        "type": "text",
+        "text": "The Key Token Coverage for the group $\\mathcal { G }$ is then defined as the ratio of this union’s cardinality to the total number of ground-truth visual tokens: ",
+        "bbox": [
+            169,
+            580,
+            823,
+            606
+        ],
+        "page_idx": 18
+    },
+    {
+        "type": "equation",
+        "text": "$$\n\\text { Key   Token   Coverage } (\\mathcal {G}) = \\frac {| \\mathcal {U} _ {\\mathcal {G}} |}{| V ^ {*} |} \\times 1 0 0 \\tag {25}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            375,
+            608,
+            825,
+            638
+        ],
+        "page_idx": 18
+    },
+    {
+        "type": "text",
+        "text": "Evaluation Protocol. During our evaluation on the MMDocIR dataset, we systematically compute this coverage metric for both the highest-ranked CoRe heads and the lowest-ranked baseline heads across both LLaVA-OneVision and Qwen3-VL architectures. ",
+        "bbox": [
+            169,
+            648,
+            823,
+            688
+        ],
+        "page_idx": 18
+    },
+    {
+        "type": "text",
+        "text": "By comparing Key Token $\\mathrm { C o v e r a g e } ( \\mathcal { G } _ { \\mathrm { t o p } } )$ against Key Token $\\mathrm { C o v e r a g e } ( \\mathcal { G } _ { \\mathrm { b o t t o m } } )$ , we quantitatively demonstrate the structural sparsity of multimodal retrieval. The results confirm that a highly compact subset of Top-K heads collectively encompasses the vast majority of necessary visual evidence, whereas the cumulative receptive field of the Bottom-K heads fails to align with the semantic targets. Consistent with the individual head evaluations, the target token extraction $( V ^ { * } )$ and the memory-efficient sequential layer-wise caching are employed to prevent memory bottlenecks during long-context inference. ",
+        "bbox": [
+            169,
+            694,
+            825,
+            771
+        ],
+        "page_idx": 18
+    },
+    {
+        "type": "text",
+        "text": "E.5 Qualitative Visualization of Functional Dichotomy in Object Grounding ",
+        "text_level": 1,
+        "bbox": [
+            169,
+            785,
+            715,
+            800
+        ],
+        "page_idx": 18
+    },
+    {
+        "type": "text",
+        "text": "Figure 8 provides compelling qualitative evidence of the functional dichotomy within the model’s attention mechanism on the RefCOCOg dataset. As illustrated, high-scoring CoRe heads act as precise information extractors, consistently and accurately localizing the semantically critical entities specified by complex textual queries (e.g., specific clothing attributes or fine-grained spatial relationships). Conversely, the low-scoring heads exhibit severe semantic dispersion, scattering their attention mass across uninformative background regions or irrelevant objects. These stark visual contrasts directly corroborate our quantitative findings, confirming that fine-grained cross-modal grounding is exclusively governed by a highly specialized, sparse subset of attention heads rather than homogeneously distributed across the network. ",
+        "bbox": [
+            169,
+            809,
+            825,
+            911
+        ],
+        "page_idx": 18
+    },
+    {
+        "type": "page_number",
+        "text": "19 ",
+        "bbox": [
+            490,
+            935,
+            508,
+            946
+        ],
+        "page_idx": 18
+    },
+    {
+        "type": "text",
+        "text": "1 the chair near the window ",
+        "bbox": [
+            181,
+            189,
+            310,
+            241
+        ],
+        "page_idx": 19
+    },
+    {
+        "type": "image",
+        "img_path": "images/25f75b7fd594fb9cae566d8d9add4dfacab0857cfce738ac1bfc69bdb9ce200b.jpg",
+        "image_caption": [
+            "High-scoring (CoRe) Heads ",
+            "Focus on semantically critical tokens "
+        ],
+        "image_footnote": [],
+        "content": "Interior of a room with wooden furniture, patterned rug, and display cases (no visible text or symbols)",
+        "sub_type": "natural_image",
+        "bbox": [
+            330,
+            161,
+            547,
+            287
+        ],
+        "page_idx": 19
+    },
+    {
+        "type": "text",
+        "text": "2 A young boy with blonde hair brushing his teeth ",
+        "bbox": [
+            184,
+            308,
+            316,
+            377
+        ],
+        "page_idx": 19
+    },
+    {
+        "type": "chart",
+        "img_path": "images/02a7a370b1c26b9cc97be05df956c4d174867a8827fecc6451f3286c778a06d6.jpg",
+        "content": "| Value | Color |\n|---|---|\n| 0.5 | Blue |\n| 0.5 | Dark Blue |\n| 0.81 | Blue |\n| 0.43 | Blue |\n| 0.32 | Blue |\n| 0.67 | Blue |\n| 0.33 | Blue |\n| 0.12 | Blue |\n| 0.93 | Blue |\n| 0.09 | Blue |\n| 0.22 | Blue |\n| 0.35 | Blue |\n| 0.68 | Blue |\n| 0.52 | Blue |\n| 0.30 | Blue |\n| 0.27 | Blue |\n| 0.37 | Blue |\n| 0.49 | Blue |\n| 0.69 | Blue |\n| 0.25 | Blue |\n| 0.10 | Blue |\n| 0.12 | Blue |\n| 0.29 | Blue |\n| 0.18 | Blue |\n| 0.43 | Blue |\n| 0.85 | Blue |\n| 0.61 | Blue |\n| 0.11 | Blue |\n| 0.37 | Blue |\n| 0.29 | Blue |\n| 0.20 | Blue |\n| 0.13 | Blue |\n| 0.11 | Blue |\n| 0.11 | Dark Blue |\n| 0.11 | Dark Blue |\n| 0.11 | Dark Blue |\n| 0.11 | Dark Blue |\n| 0.11 | Dark Blue |\n| 0.11 | Dark Blue |\n| 0.11 | Dark Blue |\n| 0.11 | Dark Blue |\n| 0.11 | Dark Blue |\n| 0.11 | Dark Blue |\n| 0.11 | Black |\n| 0.11 | Black |\n| 0.11 | Black |\n| 0.11 | Black |\n| 0.11 | Black |\n| 0.11 | Black |\n| 0.11 | Black |\n| 0.11 | Black |\n| 0.11 | Black |\n| 0.11 | Black |\n| 0.11 | Black |\n| 0.11 | Black (Blue) |\n| 0.11 | Black (Blue) |\n| 0.11 | Black (Blue) |\n| 0.11 | Black (Blue) |\n| 0.11 | Black (Blue) |\n| 0.11 | Black (Blue) |\n| 0.11 | Black (Blue) |\n| 0.11 | Black (Blue) |\n| 0.11 | Black (Blue) |\n| 25 | Black (Blue) |\n| 25 | Black (Blue) |\n| 25 | Black (Blue) |\n| 25 | Black (Blue) |\n| 25 | Black (Blue) |\n| 25 | Black (Blue) |\n| 25 | Black (Blue) |\n| 25 | Black (Blue) |\n| 25 | Black (Blue) |\n| 25 | Black (Blue) |\n| 26 | Black (Blue) |\n| 26 | Black (Blue) |\n| 26 | Black (Blue) |\n| 26 | Black (Blue) |\n| 26 | Black (Blue) |\n| 26 | Black (Blue) |\n| 26 | Black (Blue) |\n| 26 | Black (Blue) |\n| 26 | Black (Blue) |\n| 26 | Black (Blue) |\n| 27 | Black (Blue) |\n| 27 | Black (Blue) |\n| 27 | Black (Blue) |\n| 27 | Black (Blue) |\n| 27 | Black (Blue) |\n| 27 | Black (Blue) |\n| 27 | Black (Blue) |\n| 27 | Black (Blue) |\n| 27 | Black (Blue) |\n| 27 | Black (Blue) |\n| 28 | Black (Blue) |\n| 28 | Black (Blue) |\n| 28 | Black (Blue) |\n| 28 | Black (Blue) |\n| 28 | Black (Blue) |\n| 28 | Black (Blue) |\n| 28 | Black (Blue) |\n| 28 | Black (Blue) |\n| 28 | Black (Blue) |\n| 28 | Black (Blue) |\n| 29 | Black (Blue) |\n| 29 | Black (Blue) |\n| 29 | Black (Blue) |\n| 29 | Black (Blue) |\n| 29 | Black (Blue) |\n| 29 | Black (Blue) |\n| 29 | Black (Blue) |\n| 29 | Black (Blue) |\n| 29 | Black (Blue) |\n| 29 | Black (Blue) |\n| 30 | Black (Blue) |\n| 30 | Black (Blue) |\n| 30 | Black (Blue) |\n| 30 | Black (Blue) |\n| 30 | Black (Blue) |\n| 30 | Black (Blue) |\n| 30 | Black (Blue) |\n| 30 | Black (Blue) |\n| 30 | Black (Blue) |\n| 30 | Black (Blue) |\n| ... ...<fcel>...<nl>",
+        "chart_caption": [],
+        "chart_footnote": [],
+        "sub_type": "heatmap",
+        "bbox": [
+            330,
+            295,
+            547,
+            407
+        ],
+        "page_idx": 19
+    },
+    {
+        "type": "text",
+        "text": "3 the right computer in the right hand picture ",
+        "bbox": [
+            184,
+            431,
+            323,
+            500
+        ],
+        "page_idx": 19
+    },
+    {
+        "type": "image",
+        "img_path": "images/4f91048f92c0105737d23b09706b375998d385a23aa597bcc52c66686acf4a77.jpg",
+        "image_caption": [],
+        "image_footnote": [],
+        "content": "Laptop screen displaying a red progress bar with numerical values, surrounded by blue UI elements and a background of household items.",
+        "sub_type": "text_image",
+        "bbox": [
+            330,
+            415,
+            547,
+            527
+        ],
+        "page_idx": 19
+    },
+    {
+        "type": "text",
+        "text": "4 Boy wearing long gray sleeves and pink shirt in the background ",
+        "bbox": [
+            184,
+            550,
+            316,
+            637
+        ],
+        "page_idx": 19
+    },
+    {
+        "type": "image",
+        "img_path": "images/002014f562bd8994f2020c2c9c19cb6091660cc393032e1bd28be6409131b20b.jpg",
+        "image_caption": [],
+        "image_footnote": [],
+        "content": "Street photo with visible phone call and overlaid numerical data overlays on a person's face",
+        "sub_type": "text_image",
+        "bbox": [
+            330,
+            535,
+            547,
+            670
+        ],
+        "page_idx": 19
+    },
+    {
+        "type": "text",
+        "text": "5 A white umbrella is next to a red and white umbrella ",
+        "bbox": [
+            184,
+            696,
+            323,
+            766
+        ],
+        "page_idx": 19
+    },
+    {
+        "type": "image",
+        "img_path": "images/23d0b393fae4ae8eb885c6f255c955c2fc8afef83f8f49ccecff2e6eb9f0c236.jpg",
+        "image_caption": [],
+        "image_footnote": [],
+        "content": "Street photo with visible store signboards and people interacting at a table, including a pie chart overlay showing numerical values.",
+        "sub_type": "text_image",
+        "bbox": [
+            330,
+            676,
+            547,
+            804
+        ],
+        "page_idx": 19
+    },
+    {
+        "type": "image",
+        "img_path": "images/ff3810e5928f086cf3b9937c526be41cd89e345eadd4a3ad09efcfc27e9c25d9.jpg",
+        "image_caption": [
+            "Low-scoring Heads Focus less informatice or background tokens "
+        ],
+        "image_footnote": [],
+        "content": "Interior of a vintage room with wooden furniture, a large window, and a patterned rug (no visible text or symbols)",
+        "sub_type": "natural_image",
+        "bbox": [
+            602,
+            161,
+            818,
+            287
+        ],
+        "page_idx": 19
+    },
+    {
+        "type": "image",
+        "img_path": "images/e0aec49753bf5fc6fd740e449c4d3b235112060de8ed185f33a2faa0d6586a2c.jpg",
+        "image_caption": [],
+        "image_footnote": [],
+        "content": "Close-up of a child brushing another's teeth, with overlaid numerical data points (no text or symbols on the image itself)",
+        "sub_type": "natural_image",
+        "bbox": [
+            602,
+            295,
+            818,
+            407
+        ],
+        "page_idx": 19
+    },
+    {
+        "type": "image",
+        "img_path": "images/8b51b96e92864b975593aa9cca009c6d8049737c7c844d29de9b2c28a90772b1.jpg",
+        "image_caption": [],
+        "image_footnote": [],
+        "content": "Two laptops on a patterned rug, one displaying a simple UI interface (no text or symbols visible)",
+        "sub_type": "natural_image",
+        "bbox": [
+            602,
+            415,
+            818,
+            527
+        ],
+        "page_idx": 19
+    },
+    {
+        "type": "image",
+        "img_path": "images/eb027689f8f6a0e5cd341f3478acda26bef0b9b57dc36e9c4846a1c21a60c0af.jpg",
+        "image_caption": [],
+        "image_footnote": [],
+        "content": "Close-up of a person holding a phone to their ear, outdoors with trees and another person in the background (no visible text or symbols)",
+        "sub_type": "natural_image",
+        "bbox": [
+            602,
+            535,
+            818,
+            670
+        ],
+        "page_idx": 19
+    },
+    {
+        "type": "image",
+        "img_path": "images/42504da4147414fe556ed2a9fcadbd24cf975c1a2d6467242320b3ffff666894.jpg",
+        "image_caption": [
+            "Figure 8: Qualitative comparison of attention allocation on the RefCOCOg dataset. Left (CoRe Heads): High-scoring heads demonstrate highly precise spatial grounding, accurately isolating the visual tokens corresponding to the query-relevant entities (highlighted in red). Right (Low-scoring Heads): The remaining heads fail to capture task-relevant visual cues, instead distributing their attention diffusely across background noise and uninformative regions. This visually confirms the role of CoRe heads as dedicated cross-modal extractors. "
+        ],
+        "image_footnote": [],
+        "content": "Street photo with visible store signboards and people interacting with documents or maps",
+        "sub_type": "text_image",
+        "bbox": [
+            602,
+            676,
+            820,
+            804
+        ],
+        "page_idx": 19
+    },
+    {
+        "type": "page_number",
+        "text": "",
+        "bbox": [
+            488,
+            935,
+            508,
+            946
+        ],
+        "page_idx": 19
+    },
+    {
+        "type": "text",
+        "text": "F Extended Analysis of CoRe Attention Topologies and Model Scaling ",
+        "text_level": 1,
+        "bbox": [
+            171,
+            89,
+            774,
+            108
+        ],
+        "page_idx": 20
+    },
+    {
+        "type": "text",
+        "text": "To further substantiate the observations regarding model-wide attention shifts discussed in the main text, we provide comprehensive heatmaps of the heads. This extended visualization con $\\mathcal { M } _ { \\mathrm { R A M } } ^ { ( h ) }$ (Relative Activation Magnitude) scores for the CoRe attentione attention topologies of the Qwen3-VL series across varying parameter scales (2B vs. 4B) and task modalities, ranging from static image understanding (COCO) to complex spatio-temporal reasoning (VidSTG) and long-context document processing (MMLongBench).The empirical results consistently demonstrate that as task complexity and model scale increase, the attention distribution transitions from a broadly dispersed state to a highly localized \"bottleneck structure\" within the intermediateto-deep layers. This structural divergence suggests that larger models develop specialized functional regions to manage the increased informational entropy inherent in long-range and multi-modal reasoning, effectively distilling critical cues through a narrowed architectural bottleneck. ",
+        "bbox": [
+            169,
+            119,
+            826,
+            248
+        ],
+        "page_idx": 20
+    },
+    {
+        "type": "image",
+        "img_path": "images/0d7966d725265eb1b05f2929afd0f03aee63a2463c6048d5705630b83df2afc7.jpg",
+        "image_caption": [
+            "Figure 9: Heatmaps of CoRe head activation distributions across heterogeneous datasets and model scales. Warmer colors indicate higher normalized activation scores. (a) Task-Specific Patterns: Contrasting the 4B model on COCO, VidSTG, and MMLongBench reveals that complex temporal and long-context tasks drive activations to cluster in specific deep layers (Layers 12–28), forming a distinct \"reasoning bottleneck.\" (b) Scaling Effects: On the VidSTG dataset, the 4B model demonstrates a more structured, deep-layer attention concentration compared to the fragmented activations of the 2B model, indicating that increased capacity facilitates efficient feature localization. "
+        ],
+        "image_footnote": [],
+        "content": "",
+        "bbox": [
+            173,
+            261,
+            823,
+            536
+        ],
+        "page_idx": 20
+    },
+    {
+        "type": "text",
+        "text": "G System-Level Acceleration and Additional Benchmarks ",
+        "text_level": 1,
+        "bbox": [
+            169,
+            669,
+            671,
+            686
+        ],
+        "page_idx": 20
+    },
+    {
+        "type": "text",
+        "text": "G.1 CoRe-Guided Hybrid Attention Mechanism ",
+        "text_level": 1,
+        "bbox": [
+            171,
+            699,
+            522,
+            713
+        ],
+        "page_idx": 20
+    },
+    {
+        "type": "text",
+        "text": "The quadratic computational complexity of the self-attention mechanism poses a severe bottleneck for Multimodal Large Language Models (MLLMs), particularly during the prefill stage of processing long visual contexts (e.g., high-resolution images or multi-page documents). Based on our finding that cross-modal semantic integration is highly localized within a sparse subset of CoRe heads, we introduce a system-level acceleration paradigm: Head-level Hybrid Attention. ",
+        "bbox": [
+            169,
+            723,
+            826,
+            787
+        ],
+        "page_idx": 20
+    },
+    {
+        "type": "text",
+        "text": "As illustrated in our architectural design, we decouple the attention computation during the prefill stage based on the intrinsic importance of each attention head. The formulation is as follows: ",
+        "bbox": [
+            169,
+            792,
+            823,
+            819
+        ],
+        "page_idx": 20
+    },
+    {
+        "type": "list",
+        "sub_type": "text",
+        "list_items": [
+            "1. Head Configuration via CoRe Ranking: All attention heads are ranked according to their expected semantic contribution to cross-modal integration (CoRe Score). We partition the heads into two sets: the top-k critical CoRe heads $\\scriptstyle ( { \\mathcal { H } } _ { \\mathrm { d e n s e } } )$ and the remaining non-essential heads $( \\mathcal { H } _ { \\mathrm { s p a r s e } } )$ . ",
+            "2. Top-k Full Attention: For heads in ${ \\mathcal { H } } _ { \\mathrm { d e n s e } } ,$ we retain the standard global dense attention pattern, allowing these routing hubs to maintain unconstrained receptive fields for precise visual feature extraction. "
+        ],
+        "bbox": [
+            210,
+            829,
+            825,
+            910
+        ],
+        "page_idx": 20
+    },
+    {
+        "type": "page_number",
+        "text": "",
+        "bbox": [
+            488,
+            935,
+            506,
+            946
+        ],
+        "page_idx": 20
+    },
+    {
+        "type": "text",
+        "text": "3. Stream Sparse Attention: For the vast majority of heads in $\\mathcal { H } _ { \\mathrm { s p a r s e } }$ , global connections are functionally redundant. We restrict their computation to a local sliding window. For a query at position i, these heads strictly attend to keys within a localized window $[ i - w , i + w ]$ alongside a small set of initial attention sinks. ",
+        "bbox": [
+            210,
+            92,
+            823,
+            143
+        ],
+        "page_idx": 21
+    },
+    {
+        "type": "text",
+        "text": "During the decoding stage (autoregressive generation), the sequence length of the query is 1, rendering the computational overhead of global attention negligible. Therefore, the hybrid pattern is exclusively applied to the prefill stage, seamlessly transitioning back to standard attention during decoding. ",
+        "bbox": [
+            169,
+            154,
+            823,
+            194
+        ],
+        "page_idx": 21
+    },
+    {
+        "type": "text",
+        "text": "G.2 Algorithm and Implementation Details ",
+        "text_level": 1,
+        "bbox": [
+            171,
+            209,
+            488,
+            224
+        ],
+        "page_idx": 21
+    },
+    {
+        "type": "text",
+        "text": "The unified forward pass for the CoRe-guided acceleration is formalized in Algorithm 3. ",
+        "bbox": [
+            171,
+            233,
+            694,
+            248
+        ],
+        "page_idx": 21
+    },
+    {
+        "type": "code",
+        "sub_type": "algorithm",
+        "code_caption": [
+            "Algorithm 3 CoRe-Guided Head-level Hybrid Attention (Forward Pass) "
+        ],
+        "code_body": "Input: Hidden states X, Position Embeddings (cos, sin)\nInput: Current layer index l, Top-k dense head set $H_{dense}$ Parameters: FULL_ATTN_FLAG = 0, SPARSE_ATTN_FLAG = -1\n    1: Q, K, V ← ProjectAndApplyRoPE(X, cos, sin)\n    2: B, H, N, D ← Q.shape {Batch size, Num heads, Seq length, Head dim}\n    3: is_prefill ← N > 1\n    4: if not is_prefill then\n    5: {Decoding Stage: Use standard FlashAttention for efficiency}\n    6: O, weights ← StandardAttention(Q, K, V)\n    7: else\n    8: {Prefill Stage: Apply Head-level Hybrid Attention}\n    9: Initialize head_mask ∈ R^H with SPARSE_ATTN_FLAG\n    10: Extract dense heads for current layer: $H_l \\leftarrow \\{h \\mid (l, h) \\in H_{dense}\\}$ 11: if $H_l \\neq \\emptyset$ then\n    12: head_mask[ $H_l$ ] ← FULL_ATTN_FLAG {Elevate target heads to dense}\n    13: end if\n    14: Define streaming_info ← [4, 32] × H {Set attention sinks and window size}\n    15: Flatten Q, K, V to shape (B × N, H, D) for var-len kernel\n    16: O ← block_streaming_attn_func(\n    17: Q, K, V, head_mask, streaming_info, is_causal = True\n    18: )\n    19: Reshape O back to (B, N, H, D)\n    20: end if\n    21: O ← OutputProjection(O)\n    22: return O, None ",
+        "bbox": [
+            173,
+            279,
+            741,
+            628
+        ],
+        "page_idx": 21
+    },
+    {
+        "type": "text",
+        "text": "By utilizing this fused kernel strategy, we effectively convert the theoretical $O ( N ^ { 2 } )$ complexity of standard attention into $O ( N \\cdot w )$ for the vast majority of heads. As empirically demonstrated in our main experiments (Table 2), this system-level optimization yields substantial prefill speedups (up to 2.3×) while simultaneously preserving, and in some granular reasoning tasks even slightly enhancing, the multimodal comprehension capabilities of the baseline models. ",
+        "bbox": [
+            169,
+            647,
+            823,
+            712
+        ],
+        "page_idx": 21
+    },
+    {
+        "type": "text",
+        "text": "G.3 Long-Video Inference Performance of the Video-MME Benchmark ",
+        "text_level": 1,
+        "bbox": [
+            169,
+            727,
+            684,
+            742
+        ],
+        "page_idx": 21
+    },
+    {
+        "type": "text",
+        "text": "To evaluate the acceleration strategy on long-context multimodal tasks, we benchmarked the models on the Video-MME dataset. This benchmark tests model performance across perception, recognition, problem-solving, and reasoning. As shown in Table 4, our sparse attention configurations match or occasionally exceed the performance of fully dense baselines. ",
+        "bbox": [
+            169,
+            752,
+            826,
+            804
+        ],
+        "page_idx": 21
+    },
+    {
+        "type": "text",
+        "text": "Overall performance remains stable across all three model families under high sparsity. Instead of degrading, models frequently show slight improvements at specific sparsity levels. For LLaVA-OneVision, the dense baseline scores an average of 56.3. When retaining only 19.1% and 25.5% of the attention heads, this average increases to 56.5 and 56.6. Similarly, Qwen3-VL-8B matches its dense baseline average of 65.0 while using only 2.6% of its attention heads. This performance stabilization suggests an implicit regularization effect. Dense attention mechanisms in long-video contexts tend to aggregate irrelevant background noise. Masking non-essential heads forces the model to rely on specialized CoRe heads, filtering out visual distractions and focusing computation on relevant spatiotemporal information. ",
+        "bbox": [
+            169,
+            809,
+            826,
+            912
+        ],
+        "page_idx": 21
+    },
+    {
+        "type": "page_number",
+        "text": "",
+        "bbox": [
+            488,
+            935,
+            508,
+            946
+        ],
+        "page_idx": 21
+    },
+    {
+        "type": "table",
+        "img_path": "images/6fe9b0404f1128ab05f5327d5bc8ce6e3f9bd5059bd44c57b1fc23f14cf14366.jpg",
+        "table_caption": [
+            "Table 4: Overall evaluation results on the VideoMME benchmark. Best results per model family are bolded. The subscript indicates the absolute difference compared to the corresponding Dense baseline. "
+        ],
+        "table_footnote": [],
+        "table_body": "<table><tr><td rowspan=\"2\">Model</td><td rowspan=\"2\">Config</td><td colspan=\"3\">Perception</td><td colspan=\"2\">Recognition</td><td colspan=\"2\">Problem</td><td colspan=\"4\">Reasoning</td><td rowspan=\"2\">Synopsis</td><td rowspan=\"2\">Avg.</td></tr><tr><td>Temp.</td><td>Spat.</td><td>Attr.</td><td>Act.</td><td>Obj.</td><td>OCR</td><td>Cnt.</td><td>Temp.</td><td>Spat.</td><td>Act.</td><td>Obj.</td></tr><tr><td rowspan=\"7\">LLaVA-OneVis.</td><td>Dense</td><td>58.2</td><td>55.6</td><td>69.4</td><td>53.7</td><td>62.7</td><td>58.3</td><td>35.8</td><td>37.3</td><td>76.8</td><td>51.2</td><td>55.3</td><td>71.2</td><td>56.3</td></tr><tr><td>2.6%</td><td> $54.5_{\\downarrow 3.7}$ </td><td> $57.4_{\\uparrow 1.8}$ </td><td> $62.6_{\\downarrow 6.8}$ </td><td> $51.4_{\\downarrow 2.3}$ </td><td> $56.5_{\\downarrow 6.2}$ </td><td> $52.5_{\\downarrow 5.8}$ </td><td> $38.4_{\\uparrow 2.6}$ </td><td> $36.2_{\\downarrow 1.1}$ </td><td> $75.0_{\\downarrow 1.8}$ </td><td> $51.9_{\\uparrow 0.7}$ </td><td> $54.6_{\\downarrow 0.7}$ </td><td> $67.5_{\\downarrow 3.7}$ </td><td> $54.0_{\\downarrow 2.3}$ </td></tr><tr><td>3.8%</td><td> $58.2_{\\pm 0.0}$ </td><td> $59.3_{\\uparrow 3.7}$ </td><td> $66.7_{\\downarrow 2.7}$ </td><td> $53.0_{\\downarrow 0.7}$ </td><td> $57.9_{\\downarrow 4.8}$ </td><td> $56.1_{\\uparrow 2.2}$ </td><td> $36.9_{\\uparrow 1.1}$ </td><td> $37.3_{\\pm 0.0}$ </td><td> $73.2_{\\downarrow 3.6}$ </td><td> $51.6_{\\uparrow 0.4}$ </td><td> $55.1_{\\downarrow 0.2}$ </td><td> $69.7_{\\downarrow 1.5}$ </td><td> $55.1_{\\downarrow 1.2}$ </td></tr><tr><td>6.4%</td><td> $60.0_{\\uparrow 1.8}$ </td><td> $57.4_{\\uparrow 1.8}$ </td><td> $67.1_{\\downarrow 2.3}$ </td><td> $53.0_{\\downarrow 0.7}$ </td><td> $58.8_{\\downarrow 3.9}$ </td><td> $57.6_{\\uparrow 0.7}$ </td><td> $38.1_{\\uparrow 2.3}$ </td><td> $36.2_{\\downarrow 1.1}$ </td><td> $71.4_{\\downarrow 5.4}$ </td><td> $50.9_{\\downarrow 0.3}$ </td><td> $54.4_{\\downarrow 0.9}$ </td><td> $70.0_{\\downarrow 1.2}$ </td><td> $55.2_{\\downarrow 1.1}$ </td></tr><tr><td>12.8%</td><td> $60.0_{\\uparrow 1.8}$ </td><td> $53.7_{\\downarrow 1.9}$ </td><td> $66.7_{\\downarrow 2.7}$ </td><td> $54.0_{\\uparrow 0.3}$ </td><td> $56.8_{\\downarrow 5.9}$ </td><td> $56.1_{\\downarrow 2.2}$ </td><td> $38.1_{\\uparrow 2.3}$ </td><td> $37.9_{\\uparrow 0.6}$ </td><td> $80.4_{\\uparrow 3.6}$ </td><td> $50.9_{\\downarrow 0.3}$ </td><td> $52.6_{\\downarrow 2.7}$ </td><td> $70.6_{\\downarrow 0.6}$ </td><td> $55.0_{\\downarrow 1.3}$ </td></tr><tr><td>19.1%</td><td> $61.8_{\\downarrow 3.6}$ </td><td> $59.3_{\\uparrow 3.7}$ </td><td> $68.0_{\\downarrow 1.4}$ </td><td> $53.0_{\\downarrow 0.7}$ </td><td> $61.0_{\\downarrow 1.7}$ </td><td> $56.8_{\\uparrow 1.5}$ </td><td> $39.2_{\\uparrow 3.4}$ </td><td> $37.3_{\\pm 0.0}$ </td><td> $82.1_{\\uparrow 5.3}$ </td><td> $51.2_{\\pm 0.0}$ </td><td> $55.3_{\\pm 0.0}$ </td><td> $72.1_{\\uparrow 0.9}$ </td><td> $56.5_{\\uparrow 0.2}$ </td></tr><tr><td>25.5%</td><td> $60.0_{\\uparrow 1.8}$ </td><td> $55.6_{\\pm 0.0}$ </td><td> $66.2_{\\downarrow 3.2}$ </td><td> $54.3_{\\uparrow 0.6}$ </td><td> $60.7_{\\downarrow 2.0}$ </td><td> $56.1_{\\uparrow 2.2}$ </td><td> $40.7_{\\uparrow 4.9}$ </td><td> $37.9_{\\uparrow 0.6}$ </td><td> $82.1_{\\uparrow 5.3}$ </td><td> $52.3_{\\uparrow 1.1}$ </td><td> $55.3_{\\pm 0.0}$ </td><td> $71.8_{\\uparrow 0.6}$ </td><td> $56.6_{\\uparrow 0.3}$ </td></tr><tr><td rowspan=\"7\">Qwen3-VL-8B</td><td>Dense</td><td>78.2</td><td>66.7</td><td>76.1</td><td>65.5</td><td>68.4</td><td>66.2</td><td>45.9</td><td>52.5</td><td>80.4</td><td>60.0</td><td>61.9</td><td>78.6</td><td>65.0</td></tr><tr><td>1.7%</td><td> $76.4_{\\downarrow 1.8}$ </td><td> $66.7_{\\pm 0.0}$ </td><td> $74.8_{\\downarrow 1.3}$ </td><td> $63.9_{\\downarrow 1.6}$ </td><td> $68.4_{\\pm 0.0}$ </td><td> $66.9_{\\uparrow 0.7}$ </td><td> $47.4_{\\uparrow 1.5}$ </td><td> $50.3_{\\downarrow 2.2}$ </td><td> $80.4_{\\pm 0.0}$ </td><td> $59.6_{\\downarrow 0.4}$ </td><td> $61.7_{\\downarrow 0.2}$ </td><td> $79.3_{\\uparrow 0.7}$ </td><td> $64.7_{\\downarrow 0.3}$ </td></tr><tr><td>2.6%</td><td> $74.5_{\\downarrow 3.7}$ </td><td> $66.7_{\\pm 0.0}$ </td><td> $75.7_{\\downarrow 0.4}$ </td><td> $64.2_{\\downarrow 1.3}$ </td><td> $68.4_{\\pm 0.0}$ </td><td> $67.6_{\\uparrow 1.4}$ </td><td> $46.6_{\\uparrow 0.7}$ </td><td> $51.4_{\\downarrow 1.1}$ </td><td> $80.4_{\\pm 0.0}$ </td><td> $60.7_{\\uparrow 0.7}$ </td><td> $61.9_{\\pm 0.0}$ </td><td> $79.9_{\\uparrow 1.3}$ </td><td> $65.0_{\\pm 0.0}$ </td></tr><tr><td>4.3%</td><td> $78.2_{\\pm 0.0}$ </td><td> $66.7_{\\pm 0.0}$ </td><td> $75.7_{\\downarrow 0.4}$ </td><td> $63.6_{\\downarrow 1.9}$ </td><td> $68.9_{\\uparrow 0.5}$ </td><td> $66.2_{\\pm 0.0}$ </td><td> $46.6_{\\uparrow 0.7}$ </td><td> $52.0_{\\downarrow 0.5}$ </td><td> $80.4_{\\pm 0.0}$ </td><td> $60.4_{\\uparrow 0.4}$ </td><td> $61.7_{\\downarrow 0.2}$ </td><td> $78.9_{\\uparrow 0.3}$ </td><td> $64.9_{\\downarrow 0.1}$ </td></tr><tr><td>8.7%</td><td> $78.2_{\\pm 0.0}$ </td><td> $66.7_{\\pm 0.0}$ </td><td> $75.2_{\\downarrow 0.9}$ </td><td> $64.5_{\\downarrow 1.0}$ </td><td> $68.1_{\\downarrow 0.3}$ </td><td> $67.6_{\\uparrow 1.4}$ </td><td> $47.0_{\\uparrow 1.1}$ </td><td> $52.0_{\\downarrow 0.5}$ </td><td> $80.4_{\\pm 0.0}$ </td><td> $60.0_{\\pm 0.0}$ </td><td> $61.7_{\\downarrow 0.2}$ </td><td> $79.3_{\\uparrow 0.7}$ </td><td> $64.9_{\\downarrow 0.1}$ </td></tr><tr><td>13.0%</td><td> $78.2_{\\pm 0.0}$ </td><td> $68.5_{\\uparrow 1.8}$ </td><td> $74.8_{\\downarrow 1.3}$ </td><td> $64.9_{\\downarrow 0.6}$ </td><td> $68.6_{\\uparrow 0.2}$ </td><td> $68.3_{\\uparrow 2.1}$ </td><td> $47.0_{\\uparrow 1.1}$ </td><td> $51.4_{\\downarrow 1.1}$ </td><td> $80.4_{\\pm 0.0}$ </td><td> $60.4_{\\uparrow 0.4}$ </td><td> $61.7_{\\downarrow 0.2}$ </td><td> $78.9_{\\uparrow 0.3}$ </td><td> $65.0_{\\pm 0.0}$ </td></tr><tr><td>17.4%</td><td> $78.2_{\\pm 0.0}$ </td><td> $66.7_{\\pm 0.0}$ </td><td> $75.7_{\\downarrow 0.4}$ </td><td> $64.5_{\\downarrow 1.0}$ </td><td> $68.1_{\\downarrow 0.3}$ </td><td> $67.6_{\\uparrow 1.4}$ </td><td> $46.3_{\\uparrow 0.4}$ </td><td> $52.0_{\\downarrow 0.5}$ </td><td> $80.4_{\\pm 0.0}$ </td><td> $60.7_{\\uparrow 0.7}$ </td><td> $61.7_{\\downarrow 0.2}$ </td><td> $78.9_{\\uparrow 0.3}$ </td><td> $64.9_{\\downarrow 0.1}$ </td></tr><tr><td rowspan=\"7\">Qwen3-VL-32B</td><td>Dense</td><td>81.8</td><td>75.9</td><td>81.5</td><td>68.7</td><td>72.0</td><td>76.3</td><td>49.6</td><td>57.6</td><td>87.5</td><td>62.5</td><td>68.5</td><td>84.2</td><td>69.9</td></tr><tr><td>1.2%</td><td> $83.6_{\\uparrow 1.8}$ </td><td> $75.9_{\\pm 0.0}$ </td><td> $80.6_{\\downarrow 0.9}$ </td><td> $67.7_{\\downarrow 1.0}$ </td><td> $71.5_{\\downarrow 0.5}$ </td><td> $78.4_{\\uparrow 2.1}$ </td><td> $47.8_{\\downarrow 1.8}$ </td><td> $56.5_{\\downarrow 1.1}$ </td><td> $85.7_{\\downarrow 1.8}$ </td><td> $61.1_{\\downarrow 1.4}$ </td><td> $68.9_{\\uparrow 0.4}$ </td><td> $83.6_{\\downarrow 0.6}$ </td><td> $69.4_{\\downarrow 0.5}$ </td></tr><tr><td>2.4%</td><td> $81.8_{\\pm 0.0}$ </td><td> $75.9_{\\pm 0.0}$ </td><td> $80.2_{\\downarrow 1.3}$ </td><td> $68.4_{\\downarrow 0.3}$ </td><td> $71.8_{\\downarrow 0.2}$ </td><td> $77.7_{\\uparrow 1.4}$ </td><td> $46.6_{\\downarrow 3.0}$ </td><td> $55.4_{\\downarrow 2.2}$ </td><td> $85.7_{\\downarrow 1.8}$ </td><td> $60.7_{\\downarrow 1.8}$ </td><td> $68.5_{\\pm 0.0}$ </td><td> $84.2_{\\pm 0.0}$ </td><td> $69.1_{\\downarrow 0.8}$ </td></tr><tr><td>3.7%</td><td> $81.8_{\\pm 0.0}$ </td><td> $75.9_{\\pm 0.0}$ </td><td> $80.2_{\\downarrow 1.3}$ </td><td> $68.4_{\\downarrow 0.3}$ </td><td> $71.8_{\\downarrow 0.2}$ </td><td> $77.7_{\\upharpoonright 1.4}$ </td><td> $48.1_{\\downarrow 1.5}$ </td><td> $55.9_{\\downarrow 1.7}$ </td><td> $85.7_{\\downarrow 1.8}$ </td><td> $60.7_{\\downarrow 1.8}$ </td><td> $67.8_{\\downarrow 0.7}$ </td><td> $84.2_{\\pm 0.0}$ </td><td> $69.2_{\\downarrow 0.7}$ </td></tr><tr><td>4.9%</td><td> $83.6_{\\uparrow 1.8}$ </td><td> $75.9_{\\pm 0.0}$ </td><td> $81.5_{\\pm 0.0}$ </td><td> $69.0_{\\uparrow 0.3}$ </td><td> $72.0_{\\pm 0.0}$ </td><td> $77.0_{\\uparrow 0.7}$ </td><td> $48.1_{\\downarrow 1.5}$ </td><td> $56.5_{\\downarrow 1.1}$ </td><td> $87.5_{\\pm 0.0}$ </td><td> $60.0_{\\downarrow 2.5}$ </td><td> $68.5_{\\pm 0.0}$ </td><td> $85.1_{\\uparrow 0.9}$ </td><td> $69.7_{\\downarrow 0.2}$ </td></tr><tr><td>6.1%</td><td> $81.8_{\\pm 0.0}$ </td><td> $75.9_{\\pm 0.0}$ </td><td> $80.6_{\\downarrow 0.9}$ </td><td> $68.7_{\\pm 0.0}$ </td><td> $72.0_{\\pm 0.0}$ </td><td> $77.0_{\\uparrow 0.7}$ </td><td> $47.8_{\\downarrow 1.8}$ </td><td> $57.1_{\\downarrow 0.5}$ </td><td> $87.5_{\\pm 0.0}$ </td><td> $60.7_{\\downarrow 1.8}$ </td><td> $68.7_{\\uparrow 0.2}$ </td><td> $85.1_{\\uparrow 0.9}$ </td><td> $69.6_{\\downarrow 0.3}$ </td></tr><tr><td>7.3%</td><td> $81.8_{\\pm 0.0}$ </td><td> $75.9_{\\pm 0.0}$ </td><td> $81.1_{\\downarrow 0.4}$ </td><td> $68.4_{\\downarrow 0.3}$ </td><td> $72.0_{\\pm 0.0}$ </td><td> $77.0_{\\uparrow 0.7}$ </td><td> $48.5_{\\downarrow 1.1}$ </td><td> $55.9_{\\downarrow 1.7}$ </td><td> $87.5_{\\pm 0.0}$ </td><td> $61.4_{\\downarrow 1.1}$ </td><td> $68.7_{\\uparrow 0.2}$ </td><td> $84.5_{\\uparrow 0.3}$ </td><td> $69.6_{\\downarrow 0.3}$ </td></tr></table>",
+        "bbox": [
+            174,
+            138,
+            823,
+            400
+        ],
+        "page_idx": 22
+    },
+    {
+        "type": "text",
+        "text": "The Qwen3-VL family results demonstrate a scaling pattern for attention head redundancy. The 32B model maintains stable performance under extreme sparsity. Retaining 4.9% of its heads yields a score of $6 9 . 7 ,$ a 0.2-point decrease from the dense baseline of 69.9. At a 1.2% retention rate, performance slightly decreases to 69.4. This scaling behavior indicates that visual information routing becomes more concentrated as model capacity increases. Larger models exhibit higher functional redundancy in their attention layers, permitting aggressive pruning during prefill without affecting reasoning accuracy. ",
+        "bbox": [
+            169,
+            430,
+            823,
+            508
+        ],
+        "page_idx": 22
+    },
+    {
+        "type": "text",
+        "text": "Examining specific Video-MME sub-tasks shows how sparsity affects different cognitive dimensions. Spatial perception and OCR metrics frequently improve under sparse conditions. LLaVA’s spatial perception increases from 55.6 in the dense setting to 59.3 in the 19.1% configuration, and Qwen-32B’s OCR reaches 78.4 in the 1.2% configuration, compared to the 76.3 baseline. This indicates that isolating CoRe heads aids in localizing spatial details and text within noisy frames. Higher-order reasoning tasks, such as action, object, and spatio-temporal reasoning, are largely unaffected by head masking. Qwen-8B maintains a score of 80.4 in spatial reasoning across most sparsity levels, confirming that the retained heads capture the semantic logic necessary for video comprehension. ",
+        "bbox": [
+            169,
+            513,
+            826,
+            616
+        ],
+        "page_idx": 22
+    },
+    {
+        "type": "text",
+        "text": "G.4 Prefill Latency Benchmarking ",
+        "text_level": 1,
+        "bbox": [
+            171,
+            636,
+            428,
+            651
+        ],
+        "page_idx": 22
+    },
+    {
+        "type": "text",
+        "text": "We designed a controlled micro-benchmarking protocol to evaluate the speedup achieved by our CoRe-guided hybrid attention mechanism. This protocol isolates the self-attention bottleneck within the language modeling backbone, allowing us to precisely measure the prefill latency across varying context windows ranging from 8k to 128k tokens. ",
+        "bbox": [
+            169,
+            662,
+            823,
+            715
+        ],
+        "page_idx": 22
+    },
+    {
+        "type": "text",
+        "text": "In Multimodal Large Language Models (MLLMs) like Qwen3-VL, the $O ( N ^ { 2 } )$ computational complexity is primarily localized within the self-attention layers of the core language model, rather than the vision encoder. To isolate this scaling behavior and eliminate the constant-time overhead of visual feature extraction, our benchmarking script directly targets the text-conditional generation module. We simulate multimodal longcontext inputs by generating randomized discrete token sequences and fully unmasked tensors of length N. This setup ensures that the measured latency strictly reflects the computational cost of the attention operations. ",
+        "bbox": [
+            169,
+            720,
+            826,
+            797
+        ],
+        "page_idx": 22
+    },
+    {
+        "type": "text",
+        "text": "Prior to the forward pass, we leverage the empirical Retrieval Attention Mass (RAM) scores to construct a static block\\_list. This list dictates the specific layers and heads designated for dense full attention versus Stream Sparse Attention. We inject this configuration into our Triton-based attention kernel, ensuring that the hardware dispatch aligns perfectly with our theoretical attention distribution. ",
+        "bbox": [
+            169,
+            803,
+            823,
+            854
+        ],
+        "page_idx": 22
+    },
+    {
+        "type": "text",
+        "text": "To guarantee precise timing, we employ CUDA event tracking, which circumvents CPU-GPU asynchronous execution discrepancies and Python interpreter overhead. Before recording the measurements, we execute two warmup forward passes to initialize the CUDA context, allocate KV-cache buffers, and stabilize GPU clock speeds. Subsequently, we perform five independent forward passes for each sequence length. We enforce strict synchronization before and after each pass to capture the exact physical GPU execution time. The final prefill latency is reported as the arithmetic mean of these five runs. ",
+        "bbox": [
+            169,
+            859,
+            823,
+            912
+        ],
+        "page_idx": 22
+    },
+    {
+        "type": "page_number",
+        "text": "23 ",
+        "bbox": [
+            488,
+            935,
+            508,
+            946
+        ],
+        "page_idx": 22
+    },
+    {
+        "type": "text",
+        "text": "",
+        "bbox": [
+            171,
+            92,
+            823,
+            118
+        ],
+        "page_idx": 23
+    },
+    {
+        "type": "text",
+        "text": "Additionally, to evaluate memory scalability, the script is designed to catch OutOfMemoryError exceptions. If a specific context length exceeds the VRAM capacity, the process logs the failure, clears the CUDA cache, and safely proceeds to the next configuration. This mechanism allows us to identify the exact context-length boundaries where standard dense attention fails but our hybrid attention continues to operate successfully. ",
+        "bbox": [
+            169,
+            125,
+            826,
+            176
+        ],
+        "page_idx": 23
+    },
+    {
+        "type": "text",
+        "text": "H Limitation ",
+        "text_level": 1,
+        "bbox": [
+            171,
+            194,
+            302,
+            210
+        ],
+        "page_idx": 23
+    },
+    {
+        "type": "text",
+        "text": "While this study provides robust mechanistic insights into the functional sparsity of Multimodal Large Language Models (MLLMs), several limitations warrant future investigation. Primarily, the formulation of our core metric, Retrieval Attention Mass (RAM), relies heavily on explicit ground-truth spatial or temporal annotations (e.g., bounding boxes or video tubes) to locate target visual entities, which complicates the identification of CoRe heads in entirely unannotated or purely abstract reasoning contexts. Furthermore, although our evaluations span diverse, representative late-fusion transformer architectures, it remains an open question whether this distinct functional dichotomy universally emerges in natively multimodal early-fusion models or non-transformer frameworks. Finally, our proposed CoRe-guided hybrid attention mechanism currently employs a deterministic, static head configuration during the prefill stage; while highly efficient on standard benchmarks, advancing towards a dynamic, input-adaptive routing strategy could further enhance model robustness for complex, out-ofdistribution queries. ",
+        "bbox": [
+            169,
+            223,
+            826,
+            363
+        ],
+        "page_idx": 23
+    },
+    {
+        "type": "page_number",
+        "text": "24 ",
+        "bbox": [
+            488,
+            935,
+            508,
+            946
+        ],
+        "page_idx": 23
+    }
+]

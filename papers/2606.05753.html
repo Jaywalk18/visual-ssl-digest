@@ -26,32 +26,32 @@
   <main><article class="paper-detail">
   <div class="paper-main">
     <div class="kicker">Visual SSL / representation · P2 · 2026-06-06</div>
-    <h1 class="paper-headline">Cosine Misleads：今天多篇工作使用 latent visual spans、visual cues 或 teacher distillation；这篇提醒不要只看表面特征相似度，要看 latent 是否 load-bearing</h1>
-    <p class="dek">发现 cosine/MSE alignment 与 accuracy 可负相关，辅助损失可能主要通过共享参数重塑语言模型，而不是让中间 latent 本身变好。</p>
+    <h1 class="paper-headline">Cosine Misleads：Future-L1、ViCuR 等都依赖视觉 latent/visual cues，这篇是必要的诊断反例</h1>
+    <p class="dek">发现 cosine alignment 与 accuracy 可负相关，辅助 loss 可能主要通过 shared parameters 改变语言模型。</p>
     <p class="byline"><strong>Cosine Misleads: Auxiliary Losses Reshape Vision Language Models, Not Their Latents</strong>　XiuYu Zhang, Junfeng Fang, Zhenkai Liang；机构信息 arXiv 元数据未列出。　arXiv　<a href="https://arxiv.org/abs/2606.05753">原文链接</a></p>
     <div class="paper-facts">
       <span><b>编号</b>2606.05753</span>
       <span><b>优先级</b>P2</span>
       <span><b>类别</b>Visual SSL / representation</span>
       <span><b>会议</b>arXiv</span>
-      <span><b>方法</b>设计 5 个 latent visual reasoning 变体，用 linear probe 与 corruption test 诊断 supervised latent token 是否真的承载答案信息。</span>
+      <span><b>方法</b>构建五种 LVR variants，用 PRISM 的 linear probe 与 corruption test 检查 latent 是否真正承载答案信息。</span>
       <span><b>来源</b>arXiv / OpenReview</span>
     </div>
     <div class="feature-body">
-      <p class="lead dropcap">先说结论。今天多篇工作使用 latent visual spans、visual cues 或 teacher distillation；这篇提醒不要只看表面特征相似度，要看 latent 是否 load-bearing。 发现 cosine/MSE alignment 与 accuracy 可负相关，辅助损失可能主要通过共享参数重塑语言模型，而不是让中间 latent 本身变好。</p>
+      <p class="lead dropcap">先说结论。Future-L1、ViCuR 等都依赖视觉 latent/visual cues，这篇是必要的诊断反例。 发现 cosine alignment 与 accuracy 可负相关，辅助 loss 可能主要通过 shared parameters 改变语言模型。</p>
       <figure class="full-fig"><img src="../assets/mineru/2606.05753/images/be3ce1ec1d32a8b53973d897ec5c3e11feeb51d576ec4eb46e1d1493d295b209.jpg" alt="Figureure 2 · : PRISM overview"><figcaption><b>Figureure 2 · : PRISM overview</b><span class="fig-en">Figure 2: PRISM overview. Two inference-time diagnostics for the LVR family. Axis 1 trains linear probes (Alain and Bengio, 2018) at two positions in the model: (a) the answer-decoding state the LM head reads, and (b) the feedback variable the autoregressive loop re-injects. We report the decodability gap $G = a c c _ { p r o b e } ( a ) - a c c _ { p r o b e } ( b )$ , which summarizes how much more answer-decodable the post-latent state is than the latent. Axis 2 perturbs the LVR-injected hidden states (latents) in generation (truncation, noise, swap) and measures the change in accuracy; small |∆acc| means the latent is bypassed. Section 5 shows the two axes are tied: G predicts each variant’s response to latent perturbation.</span><span class="fig-zh">这张图概括 Cosine Misleads 的整体方法流程。阅读时先看模块之间传递的训练信号，再看作者如何把目标拆成可优化的子问题。</span></figcaption></figure>
 <figure class="full-fig"><img src="../assets/mineru/2606.05753/images/2250e598e3052dd202b7d0d19b876e6bd3f7956537790314154fb4e3b15f659a.jpg" alt="Cosine misleads: r = 0.94 across variants Figure 1: Cosine misleads"><figcaption><b>Cosine misleads: r = 0.94 across variants Figure 1: Cosine misleads</b><span class="fig-en">Cosine misleads: r = 0.94 across variants Figure 1: Cosine misleads. Cosine alignment between LVR-position hidden states and their teacher-forced visual targets is negatively correlated with V∗Bench accuracy across all five trained variants (Pearson r=−0.94). Progressive variants (P-LVR-2, P-LVR-3) reach the highest cosine but the lowest accuracy.</span><span class="fig-zh">这张图/表用于判断 Cosine Misleads 的实验收益来自哪里。重点看替换、消融或跨模型设置下趋势是否一致，而不是只看单个最高分。</span></figcaption></figure>
       
       <h2>核心问题</h2>
-      <p>今天多篇工作使用 latent visual spans、visual cues 或 teacher distillation；这篇提醒不要只看表面特征相似度，要看 latent 是否 load-bearing。</p>
+      <p>Future-L1、ViCuR 等都依赖视觉 latent/visual cues，这篇是必要的诊断反例。</p>
       <h2>方法拆解</h2>
-      <p>设计 5 个 latent visual reasoning 变体，用 linear probe 与 corruption test 诊断 supervised latent token 是否真的承载答案信息。</p>
+      <p>构建五种 LVR variants，用 PRISM 的 linear probe 与 corruption test 检查 latent 是否真正承载答案信息。</p>
       <h2>主要贡献</h2>
-      <p>发现 cosine/MSE alignment 与 accuracy 可负相关，辅助损失可能主要通过共享参数重塑语言模型，而不是让中间 latent 本身变好。</p>
+      <p>发现 cosine alignment 与 accuracy 可负相关，辅助 loss 可能主要通过 shared parameters 改变语言模型。</p>
       <h2>实验看点</h2>
-      <p>摘要报告 cosine alignment 与准确率相关系数为 -0.94；corrupt latent 只造成最多 4 点 accuracy shift。</p>
+      <p>摘要给出相关系数 r=-0.94；corrupt latents 对准确率最多影响 4 points。</p>
       <h2>局限与读法</h2>
-      <p>结论依赖其 LVR 变体和任务设置；仍需在更多 VLM、更多 latent training objective 上验证。</p>
+      <p>结论依赖特定 LVR 设计；仍需在更多 VLM 和 latent training objectives 上复核。</p>
     
     </div>
   </div>

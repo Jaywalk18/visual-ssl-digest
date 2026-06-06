@@ -26,32 +26,32 @@
   <main><article class="paper-detail">
   <div class="paper-main">
     <div class="kicker">Visual SSL / representation · P1 · 2026-06-06</div>
-    <h1 class="paper-headline">ViCuR：通用视觉-语言自监督正在从简单 caption contrast 转向 on-policy/self-distillation，ViCuR 直接讨论“监督信号是否视觉可恢复”</h1>
-    <p class="dek">把多模态 on-policy distillation 的教师优势限制在学生推理时也能从图像中恢复的信息，减少 shortcut imitation。</p>
+    <h1 class="paper-headline">ViCuR：视觉自监督与多模态后训练都在处理“监督信号是否来自视觉本身”，ViCuR 对避免语言捷径很有参考价值</h1>
+    <p class="dek">避免 answer-side privilege 导致 student 模仿不可见答案/rationale 捷径。</p>
     <p class="byline"><strong>ViCuR: Visual Cues as Recoverable Privilege for Multimodal On-Policy Distillation</strong>　Kanghui Tian, Siyuan Liu, Ziang Yan, Sheng Xia, Shuai Dong, Yi Wang；机构信息 arXiv 元数据未列出。　arXiv　<a href="https://arxiv.org/abs/2606.05718">原文链接</a></p>
     <div class="paper-facts">
       <span><b>编号</b>2606.05718</span>
       <span><b>优先级</b>P1</span>
       <span><b>类别</b>Visual SSL / representation</span>
       <span><b>会议</b>arXiv</span>
-      <span><b>方法</b>用从输入视觉证据中可恢复的 visual cues 替代 answer/rationale side privilege，并用 sink-token cross-attention 聚合 task-relevant visual evidence。</span>
+      <span><b>方法</b>把 privileged supervision 限制为 query-related visual cues，并用 sink-token cross-attention 在 prefill 阶段聚合任务相关视觉证据。</span>
       <span><b>来源</b>arXiv / OpenReview</span>
     </div>
     <div class="feature-body">
-      <p class="lead dropcap">先说结论。通用视觉-语言自监督正在从简单 caption contrast 转向 on-policy/self-distillation，ViCuR 直接讨论“监督信号是否视觉可恢复”。 把多模态 on-policy distillation 的教师优势限制在学生推理时也能从图像中恢复的信息，减少 shortcut imitation。</p>
+      <p class="lead dropcap">先说结论。视觉自监督与多模态后训练都在处理“监督信号是否来自视觉本身”，ViCuR 对避免语言捷径很有参考价值。 避免 answer-side privilege 导致 student 模仿不可见答案/rationale 捷径。</p>
       <figure class="full-fig"><img src="../assets/mineru/2606.05718/images/2dd0e3d17d1e3cc0d39ccc91a566bce13b07ad4c51234e627432d6753526c742.jpg" alt="Figureure 1 · : Conventional OPSD conditions teacher supervision on answer/rationale"><figcaption><b>Figureure 1 · : Conventional OPSD conditions teacher supervision on answer/rationale</b><span class="fig-en">Figure 1: Conventional OPSD conditions teacher supervision on answer/rationale privilege ??, inducing a train– test mismatch. Our ViCuR instead uses visually grounded cues ??, allowing the student to recover corresponding evidence internally while preserving the standard inference interface.</span><span class="fig-zh">这张图来自论文 PDF 的结构化抽取。当前用于辅助理解 ViCuR 的方法或实验，请结合正文精读段落一起看。</span></figcaption></figure>
 <figure class="full-fig"><img src="../assets/mineru/2606.05718/images/f83be7b147120e90431e7f31fe89240bf14c1fcb17cf8357dd7be64ebb5d2db6.jpg" alt="Figureure 5 · : ViCuR gains across teacher–student configurations on Geometry3K"><figcaption><b>Figureure 5 · : ViCuR gains across teacher–student configurations on Geometry3K</b><span class="fig-en">Figure 5: ViCuR gains across teacher–student configurations on Geometry3K. Each x-axis label denotes a student–teacher pair. Baselines are answer-based OPSD and vanilla OPD, respectively.</span><span class="fig-zh">这张图来自论文 PDF 的结构化抽取。当前用于辅助理解 ViCuR 的方法或实验，请结合正文精读段落一起看。</span></figcaption></figure>
       
       <h2>核心问题</h2>
-      <p>通用视觉-语言自监督正在从简单 caption contrast 转向 on-policy/self-distillation，ViCuR 直接讨论“监督信号是否视觉可恢复”。</p>
+      <p>视觉自监督与多模态后训练都在处理“监督信号是否来自视觉本身”，ViCuR 对避免语言捷径很有参考价值。</p>
       <h2>方法拆解</h2>
-      <p>用从输入视觉证据中可恢复的 visual cues 替代 answer/rationale side privilege，并用 sink-token cross-attention 聚合 task-relevant visual evidence。</p>
+      <p>把 privileged supervision 限制为 query-related visual cues，并用 sink-token cross-attention 在 prefill 阶段聚合任务相关视觉证据。</p>
       <h2>主要贡献</h2>
-      <p>把多模态 on-policy distillation 的教师优势限制在学生推理时也能从图像中恢复的信息，减少 shortcut imitation。</p>
+      <p>避免 answer-side privilege 导致 student 模仿不可见答案/rationale 捷径。</p>
       <h2>实验看点</h2>
-      <p>摘要报告在 7 个 benchmark 上，Qwen3-VL-2B/8B student 相比 answer-based OPD 稳定提升；stronger-teacher OPD 下也有增益。</p>
+      <p>摘要称 Qwen3-VL-2B/8B 相比 answer-based OPD 总平均分别提升 +1.19 和 +1.24。</p>
       <h2>局限与读法</h2>
-      <p>仍是 VLM 后训练而非底层视觉预训练；visual cue recovery 的质量和可解释性需要看 cue 构造与失败案例。</p>
+      <p>主要是 MLLM 后训练/蒸馏；visual cues 的生成质量会影响上限。</p>
     
     </div>
   </div>

@@ -1,0 +1,97 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>The Invisible Hand of Physics · 通用视觉自监督研究报</title>
+  <link rel="stylesheet" href="../assets/styles.css?v=20260525j">
+  <link rel="stylesheet" href="../assets/visual-ssl.css?v=20260525j">
+</head>
+<body>
+  <header class="masthead">
+    <div class="masthead-kicker">Visual SSL Research Report · 2026-06-06</div>
+    <a class="masthead-title" href="../index.html">通用视觉自监督研究报</a>
+    <div class="masthead-meta">
+      <span>图像表征 · VFM · JEPA · 视频预训练</span>
+      <span>CCF A/B 会议优先</span>
+      <span>图文精读 · 方法图解</span>
+    </div>
+  </header>
+  <nav class="site-nav" aria-label="主导航">
+    <a class="nav-link" href="../index.html">头版</a>
+<a class="nav-link" href="../issues/2026-06-06.html">今日速递</a>
+<a class="nav-link" href="../pages/catalog.html">论文目录</a>
+<a class="nav-link" href="../pages/timeline.html">时间线</a>
+  </nav>
+  <main><article class="paper-detail">
+  <div class="paper-main">
+    <div class="kicker">Visual SSL / representation · P1 · 2026-06-06</div>
+    <h1 class="paper-headline">The Invisible Hand of Physics：为“图像/视频生成器能否成为通用视觉表征学习器”提供直接证据</h1>
+    <p class="dek">证明物理结构信号可以作为生成式 denoising 的副产物出现，不一定需要显式 JEPA/VideoMAE 式预测目标。</p>
+    <p class="byline"><strong>The Invisible Hand of Physics: When Video Diffusion Models Know More Than They Show</strong>　Parsa Esmati, Somjit Nath, Katja Hofmann, Derek Nowrouzezahrai, Samira Ebrahimi Kahou, Majid Mirmehdi；机构信息 arXiv 元数据未列出。　arXiv　<a href="https://arxiv.org/abs/2606.05328">原文链接</a></p>
+    <div class="paper-facts">
+      <span><b>编号</b>2606.05328</span>
+      <span><b>优先级</b>P1</span>
+      <span><b>类别</b>Visual SSL / representation</span>
+      <span><b>会议</b>arXiv</span>
+      <span><b>方法</b>从真实视频 latent 反向积分 deterministic sampling velocity field，得到 diffusion transformer 中间状态与 attention maps，再 probing 物理可行性。</span>
+      <span><b>来源</b>arXiv / OpenReview</span>
+    </div>
+    <div class="feature-body">
+      <p class="lead dropcap">先说结论。为“图像/视频生成器能否成为通用视觉表征学习器”提供直接证据。 证明物理结构信号可以作为生成式 denoising 的副产物出现，不一定需要显式 JEPA/VideoMAE 式预测目标。</p>
+      <figure class="full-fig"><img src="../assets/mineru/2606.05328/images/04bfd993f9aed543bbd5a865bb22f1e74bb08841acf5b7195a41460cd974a233.jpg" alt="Figureure 2 · : Physical plausibility is decodable from the internal states of video"><figcaption><b>Figureure 2 · : Physical plausibility is decodable from the internal states of video</b><span class="fig-en">Figure 2: Physical plausibility is decodable from the internal states of video diffusion models. Probe accuracy on (Left) IntPhys and (Middle) InfLevel for WAN, LTX, and CogVideoX, compared against V-JEPA and VideoMAEv2. (Right) Diffusion video models outperform representation encoder on average. Error bars demonstrates standard error of the mean across 5 seeds.</span><span class="fig-zh">这张图/表用于判断 The Invisible Hand of Physics 的实验收益来自哪里。重点看替换、消融或跨模型设置下趋势是否一致，而不是只看单个最高分。</span></figcaption></figure>
+<figure class="full-fig"><img src="../assets/mineru/2606.05328/images/1a6949939da8ec788013de17f491a8ccfe84dbc6e5421d317ca6f194c6d9c009.jpg" alt="Figureure 12 · : t-SNE projections of internal activations on IntPhys"><figcaption><b>Figureure 12 · : t-SNE projections of internal activations on IntPhys</b><span class="fig-en">Figure 12: t-SNE projections of internal activations on IntPhys. Best-performing block at ?? = 0.5 for the three diffusion models, and best-performing block for V-JEPA 2 ViT-L and VideoMAE-Large. Plausible videos are shown in blue, implausible in orange.</span><span class="fig-zh">这张图来自论文 PDF 的结构化抽取。当前用于辅助理解 The Invisible Hand of Physics 的方法或实验，请结合正文精读段落一起看。</span></figcaption></figure>
+      
+      <h2>核心问题</h2>
+      <p>为“图像/视频生成器能否成为通用视觉表征学习器”提供直接证据。</p>
+      <h2>方法拆解</h2>
+      <p>从真实视频 latent 反向积分 deterministic sampling velocity field，得到 diffusion transformer 中间状态与 attention maps，再 probing 物理可行性。</p>
+      <h2>主要贡献</h2>
+      <p>证明物理结构信号可以作为生成式 denoising 的副产物出现，不一定需要显式 JEPA/VideoMAE 式预测目标。</p>
+      <h2>实验看点</h2>
+      <p>摘要称 IntPhys/InfLevel 上 physical plausibility 线性解码平均约 81.27%，优于 V-JEPA、VideoMAE 等 baselines。</p>
+      <h2>局限与读法</h2>
+      <p>这是 probing/analysis，不是新训练目标；下游控制、视频理解和 open-world planning 的迁移价值还需验证。</p>
+    
+    </div>
+  </div>
+  <aside class="paper-side">
+
+    <div class="side-box"><h4>关键判断</h4><dl><dt>相关性</dt><dd>P1</dd><dt>类别</dt><dd>Visual SSL / representation</dd><dt>会议</dt><dd>arXiv</dd><dt>读法</dt><dd>方法图优先，表格次之</dd></dl></div>
+    <div class="side-box"><h4>原文</h4><p><a href="https://arxiv.org/abs/2606.05328">https://arxiv.org/abs/2606.05328</a></p></div>
+  </aside>
+</article></main>
+  <aside class="conf-float" data-conf-reminder="2026-06-06-main-ddl" aria-label="CCF A/B 主投稿提醒">
+  <button class="conf-close" type="button" aria-label="关闭会议提醒">×</button>
+  <details open>
+    <summary>CCF A/B 主投稿提醒</summary>
+    <div class="conf-list"><a class="conf-item " href="https://github.com/ccfddl/ccf-deadlines/blob/main/conference/AI/aaai.yml">
+  <span><b>AAAI 2027</b><em>CCF A · Main paper submission</em></span>
+  <strong>51 天</strong>
+  <small>2026-07-27 · CCF DDL: abstract 2026-07-20；进入 1 个月窗口后重点提醒。</small>
+</a></div>
+  </details>
+</aside>
+  <footer class="footer">
+    <div>面向通用视觉自监督、视觉基础模型与多模态表征学习的每日研究报。</div>
+    <div class="muted">Issue 2026-06-06 · Curated readings and figure notes</div>
+  </footer>
+  <script>
+  (() => {
+    const box = document.querySelector('[data-conf-reminder]');
+    if (!box) return;
+    const key = `visualSslConfReminderClosed:${box.dataset.confReminder || '2026-06-06-main-ddl'}`;
+    try {
+      if (localStorage.getItem(key) === '1') box.hidden = true;
+    } catch (err) {}
+    const close = box.querySelector('.conf-close');
+    if (close) {
+      close.addEventListener('click', () => {
+        box.hidden = true;
+        try { localStorage.setItem(key, '1'); } catch (err) {}
+      });
+    }
+  })();
+  </script>
+</body>
+</html>
