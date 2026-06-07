@@ -1,0 +1,904 @@
+# Toward Diffusible High-Dimensional Latent Spaces: A Frequency Perspective
+
+Bolin Lai1,2 † XuDong Wang1 Saketh Rambhatla1 James M. Rehg3 Zsolt Kira2 Rohit Girdhar1 Ishan Misra1
+
+1Meta AI 2Georgia Institute of Technology 3University of Illinois Urbana-Champaign
+
+bolin.lai,zkira@gatech.edu {xudongw,rssaketh,rgirdhar,imisra}@meta.com jrehg@illinois.edu
+
+Project Page: https://bolinlai.github.io/projects/FreqWarm
+
+# Abstract
+
+Latent diffusion has become the default paradigm for visual generation, yet we observe a persistent reconstruction–generation trade-off as latent dimensionality increases: higher-capacity autoencoders improve reconstruction fidelity but generation quality eventually declines. We trace this gap to the different behaviors in high-frequency encoding and decoding. Through controlled perturbations in both RGB and latent domains, we analyze encoder/decoder behaviors and find that decoders depend strongly on high-frequency latent components to recover details, whereas encoders under-represent high-frequency contents, yielding insufficient exposure and underfitting in high-frequency bands for diffusion model training. To address this issue, we introduce FreqWarm, a plug-and-play frequency warm-up curriculum that increases early-stage exposure to high-frequency latent signals during diffusion or flow-matching training – without modifying or retraining the autoencoder. Applied across several high-dimensional autoencoders, FreqWarm consistently improves generation quality: decreasing gFID by 14.11 on Wan2.2-VAE, 6.13 on LTX-VAE, and 4.42 on DC-AE-f32, while remaining architecture-agnostic and compatible with diverse backbones. Our study shows that explicitly managing frequency exposure can successfully turn high-dimensional latent spaces into more diffusible targets.
+
+# 1. Introduction
+
+Diffusion models have dominated the field of image and video generation in recent years [2, 10, 12, 17, 26, 30, 33, 43]. Early models fit the raw pixels directly, which suffer from the complex distribution in RGB space. Since the emergence of latent diffusion models [33], modeling data distributions in a latent space has become a canonical paradigm because of the reduced dimensional complexity and smooth latent distributions. Hence, the diffusibility of latent spaces determined by autoencoders becomes a key factor for diffusion model performance.
+
+![](images/e0540752d96d2b31c21b12cf3e5e409f7a884b8fdb894a7a8ef2eb15ab74d516.jpg)
+
+<details>
+<summary>line</summary>
+
+| Number of Latent Channels | Vanilla (rFID) | Ours (gFID) | Vanilla (gFID) |
+| ------------------------- | -------------- | ----------- | -------------- |
+| 8                         | 13.8           | 3.5         | 3.5            |
+| 16                        | 5.2            | 2.0         | 2.0            |
+| 32                        | 2.5            | 0.0         | 0.0            |
+| 64                        | 1.5            | 1.0         | 1.5            |
+| 128                       | 0.5            | 1.0         | 2.5            |
+| 256                       | 0.0            | 35.0        | 40.0           |
+| 512                       | 0.0            | 45.0        | 50.0           |
+</details>
+
+Figure 1. Trade-off between reconstruction and generation. Reconstruction is evaluated by FID between input images and reconstructed images (i.e., rFID). Generation is evaluated by the FID between synthetic images and real images (i.e., gFID). Lower rFID and gFID indicate the better performance. The spatial compression ratio remains 32 for all experiments.
+
+To make the latent space easier for diffusion models to fit (i.e., more diffusible [38]), many efforts have been made to train a stronger autoencoder. Early work uses SD-VAE [33] with a spatial compression ratio of 8 and 4 latent channels. To reduce the amount of tokens for computing efficiency, subsequent models further compress the input with higher ratios and compensate the capacity by expanding the number of channels [7, 22, 40]. However, there is a natural trade-off between reconstruction (how well the decoder can recover encoded images) and generation (how close the synthetic image distribution is to real image distribution) with regard to the dimension of latent space, as illustrated in Fig. 1. When the number of channel expands, the reconstruction performance consistently improves (blue), while the generation performance improves at the beginning and then decreases (green). We argue that there are two factors affecting gFID – the reconstruction fidelity (determined by autoencoders) and the quality of latent embeddings (synthesized by diffusion models). With high dimensionality, the reconstruction fidelity keeps benefiting from the high capacity but overall generation performance eventually declines, which implies a significant drop in latent embedding synthesis. Previous work tends to use a latent space with low dimensions (e.g., 4-channel or 32-channel). How to improve diffusibility in high-dimensional latent space remains understudied, which hinders encoding with higher compression ratios. This is exactly the focus of our paper.
+
+To obtain a diffusible high-dimensional latent space, it is necessary to investigate existing autoencoders to figure out the reason for the reconstruction-generation trade-off. Recent work improves diffusibility by aligning the latent space with semantic embeddings [6, 42, 44], using hierarchical tokenization [5, 24, 46], or representing images by 1D seqeunces [45]. However, most prior studies are motivated intuitively without detailed analysis. Recently, Skorokhodov et al. [38] investigates the change of latent frequency energy with regard to different latent channels, introducing a new perspective to understand the encoding mechanism.
+
+Inspired by their method, in this paper we conduct a thorough study of how the encoder and decoder react to signals in different frequency bands, resulting in a number of actionable findings. We make frequency perturbation in the latent space and decode high-frequency and lowfrequency embeddings separately. Likewise, we also separate frequency bands in the RGB space and foward them to a pre-trained encoder. In our experiments, we find a significant difference in encoding and decoding behaviors, especially for high-frequency signals. Specifically, the decoder greatly relies on high-frequency components in the latent embeddings to reconstruct details, which suggests the importance of synthesizing high-quality embeddings in highfrequency bands. However, we also find it very challenging for the encoder to encode high-frequency information. A portion of extremely high-frequency RGB signals even impede the encoding process, which leads to a lower energy in high-frequency bands of the latent space. The diffusion models thus fail to fit the distribution in the highfrequency band due to under-representation during training. This phenomenon is more prominent in high-dimensional space, thus leading to the trade-off shown in Fig. 1.
+
+To mitigate this issue, we propose an easy-to-implement frequency warm-up strategy, termed FreqWarm, which exposes diffusion models to more high-frequency latent embeddings in the early training stage. In contrast to the previous work that focuses on model architectures and training losses, our method does not require any training for autoencoders. Thus we can fully leverage the off-the-shelf autoencoders as the starting point and further improve diffusibility on top of it. We implement our methods on top of a variety of high-dimensional autoencoders. Experiments show that FreqWarm consistently improves generation performance of Wan2.2-VAE by 14.11, LTX-VAE by 6.14 and DC-AE-f32 by 4.42 in gFID. Our method can also generalize to diverse diffusion and flow matching architectures.
+
+Overall, our contributions can be summarized as follows:
+
+• We conduct the first analysis to reveal the different behaviors of encoders and decoders to signals with different frequencies.   
+• Inspired by our findings, we propose a plug-and-play method to warm up latent spaces in frequency domain to improve the diffusibility for diffusion and flow matching model training, without re-training the autoencoders.   
+• Extensive experiments suggest that our method consistently improves the generation performance for highdimensional latent spaces defined by various autoencoders, providing a new training recipe for future work.
+
+# 2. Related Work
+
+Autoencoders for Visual Generation Modern diffusion models depend on diffusible latent spaces for generative training. Many studies have been conducted to improve diffusibility by training a better autoencoder [21, 23, 25, 27, 28, 31, 36, 39, 41, 49]. Early work uses SD-VAE [33] to tokenize RGB images into 4-channel embeddings with a spatial compression ratio of 8. Recent work pursues higher compression ratios coupled with more latent channels [8, 10, 40, 45]. DC-AE [7] recently achieves compression ratios of 32 and 64, reducing the computation complexity in diffusion models. To incorporate more semantics in latent spaces, SoftVQ-VAE [6] and VideoREPA [48] are proposed to align the latent representations with visual features obtained from visual models. Recent studies find that visual foundation models can be directly used as encoders by training a paired decoder [3, 37, 51]. VA-VAE [44] and ReaLS [42] use features from frozen visual foundation models (such as DINO [4], SAM [19] and MAE [11]) as guidance for alignment. Besides, many investigations also focus on improving tokenization and detokenization strategies, including hierarchical encoding [5, 24, 46] and multistep decoding [50]. Most of prior work is driven by intuitive motivation and lacks detailed analysis on latent spaces. SE-VAE [38] is the most relevant study to our work. They analyze frequency distributions in latent spaces, which introduce a new tool to interpret the mechanism of autoencoders. Inspired by this work, we further conduct a detailed analysis on high-dimensional autoencoders to understand the reaction to frequency perturbations. Motivated by our findings, we propose a plug-and-play frequency warm-up recipe that can be used jointly with previous novel architecture designs to improve diffusibility without re-training autoencoders.
+
+Diffusion-based Generation Early diffusion models corrupt input images by adding noise iteratively and adapt the UNet structure for noise estimation [12, 33], establishing today’s default training recipe. Transformer backbones subsequently replaced U-Nets [20, 40, 43]. U-ViT [2] shows that plain ViTs can serve as effective diffusion backbones, and DiT [30] scales this paradigm to state-of-the-art ImageNet synthesis in latent space. Building on DiT, SiT [26] unifies diffusion and flow-style training under an interpolant framework and reports consistent gains at fixed compute, reinforcing transformers as the base model family for modern diffusion. For video synthesis, foundational works adapt image diffusion to the temporal domain and introduce cascaded pipelines for higher resolution and longer clips [15, 16]. Recent systems couple strong VAEs with DiT-style denoisers in latent space – Stable Video Diffusion [12] and LTX-Video [10] exemplify this trend, targeting practical efficiency (real-time modes) while preserving fidelity. Large-scale open suites (e.g., Wan [40] CogVideo [17], CogVideoX[43] and HunyuanVideo [20]) further push performance via scaled training and improved tokenizers. Our work is orthogonal to the development of visual generation models. Rather than changing the base denoiser or sampler, we analyze how latent frequency characteristics interact with these diffusion-based pipelines, and propose a new training recipe that improves diffusibility across various diffusion and flow matching models.
+
+Frequency Analysis on Neural Networks With the development of transformer architectures, frequency diagnostics are established to interpret vision transformers [1, 18, 29]. In recent years, a small but growing body of work examines diffusion through a Fourier lens. Falck et al. [9] show that the forward noising disproportionately suppresses high-frequency content, and that reverse processes tend to reconstruct coarse (low-frequency) structure before fine details – implicating frequency hierarchy as a source of artifacts and inefficiency. Ren et al. [32] explicitly inject frequency cues into training or objectives, improving latent editing and related tasks via frequency-aware scores. Closest to our setup, Skorokhodov et al. [38] study spectra of pretrained autoencoders and links latent frequency distributions to degraded diffusion behavior. Distinct from previous studies, our paper focuses on the different responses of the encoder and decoder to input signals in different frequency bands. Our proposed method does not need to re-train or finetune the autoencoder which makes it easier to integrate our method into existing codebases and training recipes.
+
+# 3. Frequency Perturbation Analysis
+
+We study the frequency correspondence between RGB and latent spaces in modern autoencoders by perturbing inputs to the encoder/decoder and measuring the induced spectral changes in their outputs. All experiments are conducted on the SOTA deep-compression autoencoder with 128 latent channels (e.g., DC-AE-f32c128) pre-trained on full-band RGB images [7]. While prior work has examined frequency characteristics of autoencoder latents [38], the cross-space correspondence remains unexplored. Our analysis fills this gap and directly informs the design of our method.
+
+![](images/7e15eff7bbb74df5d1deb28d70ef9b93557bb2ad012e468a9ce5a4438c0a2ed7.jpg)
+
+<details>
+<summary>flowchart</summary>
+
+```mermaid
+graph LR
+    A["Reconstructed Images"] --> B["FFT"]
+    B --> C["Frequency Spectrum"]
+    D["r < 0.03"] --> E["r > 0.03"]
+    F["r < 0.05"] --> G["r > 0.05"]
+    H["r < 0.2"] --> I["r > 0.2"]
+```
+</details>
+
+Figure 2. Visualization of images reconstructed from lowfrequency and high-frequency embeddings in the latent space. r is the threshold to separate low frequency and high frequency. Please zoom in for more details.
+
+# 3.1. Frequency Analysis on Decoder
+
+First of all, we investigate the contribution of latent embeddings with different frequencies to image reconstruction in the decoding process. Given an image $\mathbf { \boldsymbol { X } } \in \mathbb { R } ^ { 3 \times H \times W }$ in RGB space, we input it into the encoder $\mathcal { E }$ to get the latent embedding $\pmb { Z } = \pmb { \mathcal { E } } ( \pmb { X } ) \in \mathbb { R } ^ { C \times H ^ { \prime } \times W ^ { \prime } }$ . We convert the embedding into frequency domain using the 2D fast fourier transform (FFT) on each channel independently, followed by origin shift to move low-frequency component to the center. The resulting frequency profile is
+
+$$
+\mathbf {Z} _ {f r e q} = \mathbf {S h i f t} (\mathbf {F F T} (\mathbf {Z})) \in \mathbb {C} ^ {C \times H ^ {\prime} \times W ^ {\prime}}. \tag {1}
+$$
+
+The value at each location of $\boldsymbol { Z } _ { f r e q }$ denotes the amplitude and phase of a specific frequency component. After shifting, the frequency increases from the center to the corner as shown in Fig. 2. We set up a threshold to separate the frequency profile into two parts (frequency higher than threshold and lower than threshold). In practice, we use a circle mask M with radius r (as a proxy of frequency threshold) to separate low- and high-frequency signals. The separated frequency profiles are transformed back to the latent space by inverse FFT, which is written as
+
+$$
+\mathbf {Z} _ {l o w} = \mathbf {I F F T} (\mathbf {I S h i f t} (M \odot \mathbf {Z} _ {f r e q})), \tag {2}
+$$
+
+$$
+\mathbf {Z} _ {\text { high }} = \mathbf {I F F T} (\mathbf {I S h i f t} ((1 - M) \odot \mathbf {Z} _ {\text { freq }})), \tag {3}
+$$
+
+where IFFT(·) and IShift(·) are the inverse operations of FFT(·) and Shift(·). ⊙ is element-wise multiplication.
+
+![](images/b63ed23da6c8cc4eeb3031afb9162098b27eb76fe2065dcaa78e13ae582f7ac5.jpg)
+
+<details>
+<summary>text_image</summary>
+
+FFT
+1.0
+Frequency Spectrum
+Reconstructed Images
+r < 0.03
+r > 0.03
+r < 0.05
+r > 0.05
+r < 0.2
+r > 0.2
+</details>
+
+Figure 3. Visualization of images reconstructed from lowfrequency and high-frequency components in the RGB space. r is the threshold to separate low frequency and high frequency. Please zoom in for more details.
+
+In Fig. 2, we observe that the RGB images reconstructed from low-frequency latent embeddings are blurry, containing only basic color and layout information. On the contrary, the images reconstructed from high-frequency components include way more details and semantic information. This phenomenon persists when we raise the threshold from 0.05 to 0.20, which reveals the different contributions of different latent frequency bands to image reconstruction.
+
+Finding 1: Decoder relies more on the information encoded in high-frequency latent embeddings to reconstruct details and semantics in RGB space.
+
+# 3.2. Frequency Analysis on Encoder
+
+Based on the analysis in Sec. 3.1 and Finding 1, we conclude that one key factor of achieving a high generation performance is synthesizing reliable high-frequency latent embeddings. To explore the encoding process for different frequencies, we further conduct an analogical analysis on the encoder. Specifically, we transform the RGB image $\pmb { X } \in \mathbb { R } ^ { 3 \times H \times W }$ to the frequency profile $X _ { f r e q }$ by FFT like Eq. (1). Then we also separate the frequency profile into low- and high-frequency portions using different cutoff thresholds and convert them back to RGB space, akin to Eq. (2) and Eq. (3). The visualization is shown in Fig. 3. When the threshold (also represented by the mask radius) is as low as 0.03 or 0.05, we can see a clear separation of information in different frequencies: low frequency encodes colors, layout, size and shapes, while high frequency encodes textures and boundaries. However, when the threshold is raised to 0.20, the image recovered from low-frequency components is almost the same as the original image. The image recovered from high-frequency part contains trivial infromation. Here we come up with the second finding.
+
+![](images/441eacd6211c1ed4e60be5f5fee16be413c1ff639a9a2bda9536f5981103e3ba.jpg)
+
+<details>
+<summary>line</summary>
+
+| Spatial Frequency | Threshold r₀ = 0.03 | Threshold r₀ = 0.05 | Threshold r₀ = 0.20 | No threshold |
+| ----------------- | ------------------- | ------------------- | ------------------- | ------------ |
+| 0.01              | ~2000               | ~2000               | ~2000               | ~2000        |
+| 0.1               | ~500                | ~600                | ~800                | ~700         |
+| 0.2               | ~100                | ~150                | ~200                | ~150         |
+| 0.3               | ~50                 | ~100                | ~150                | ~100         |
+| 0.4               | ~30                 | ~70                 | ~100                | ~70          |
+| 0.5               | ~20                 | ~50                 | ~70                 | ~50          |
+| 0.6               | ~15                 | ~40                 | ~50                 | ~40          |
+| 0.7               | ~10                 | ~30                 | ~40                 | ~30          |
+| 0.8               | ~8                  | ~25                 | ~35                 | ~25          |
+| 0.9               | ~6                  | ~20                 | ~30                 | ~20          |
+| 1.0               | ~5                  | ~15                 | ~25                 | ~15          |
+| 1.1               | ~4                  | ~10                 | ~20                 | ~10          |
+| 1.2               | ~3                  | ~8                  | ~15                 | ~8           |
+| 1.3               | ~2                  | ~6                  | ~10                 | ~6           |
+| 1.4               | ~1                  | ~5                  | ~8                  | ~5           |
+| 1.5               | ~1                  | ~4                  | ~6                  | ~4           |
+| 1.6               | ~1                  | ~3                  | ~5                  | ~3           |
+| 1.7               | ~1                  | ~2                  | ~4                  | ~2           |
+| 1.8               | ~1                  | ~2                  | ~3                  | ~2           |
+| 1.9               | ~1                  | ~2                  | ~3                  | ~2           |
+| 2.0               | ~1                  | ~2                  | ~3                  | ~2           |
+| 2.1               | ~1                  | ~2                  | ~3                  | ~2           |
+| 2.2               | ~1                  | ~2                  | ~3                  | ~2           |
+| 2.3               | ~1                  | ~2                  | ~3                  | ~2           |
+| 2.4               | ~1                  | ~2                  | ~3                  | ~2           |
+| 2.5               | ~1                  | ~2                  | ~3                  | ~2           |
+| 2.6               | ~1                  | ~2                  | ~3                  | ~2           |
+| 2.7               | ~1                  | ~2                  | ~3                  | ~2           |
+| 2.8               | ~1                  | ~2                  | ~3                  | ~2           |
+| 2.9               | ~1                  | ~2                  | ~3                  | ~2           |
+| 3.0               | ~1                  | ~2                  | ~3                  | ~2           |
+| 3.1               | ~1                  | ~2                  | ~3                  | ~2           |
+| 3.2               | ~1                  | ~2                  | ~3                  | ~2           |
+| 3.3               | ~1                  | ~2                  | ~3                  | ~2           |
+| 3.4               | ~1                  | ~2                  | ~3                  | ~2           |
+| 3.5               | ~1                  | ~2                  | ~3                  | ~2           |
+| 3.6               | ~1                  | ~2                  | ~3                  | ~2           |
+| 3.7               | ~1                  | ~2                  | ~3                  | ~2           |
+| 3.8               | ~1                  | ~2                  | ~3                  | ~2           |
+| 3.9               | ~1                  | ~2                  | ~3                  | ~2           |
+| 4.0               | ~1                  | ~2                  | ~3                  | ~2           |
+| 4.1               | ~1                  | ~2                  | ~3                  | ~2           |
+| 4.2               | ~1                  | ~2                  | ~3                  | ~2           |
+| 4.3               | ~1                  | ~2                  | ~3                  | ~2           |
+| 4.4               | ~1                  | ~2                  | ~3                  | ~2           |
+| 4.5               | ~1                  | ~2                  | ~3                  | ~2           |
+| 4.6               | ~1                  | ~2                  | ~3                  | ~2           |
+| 4.7               | ~1                  | ~2                  | ~3                  | ~2           |
+| 4.8               | ~1                  | ~2                  | ~3                  | ~2           |
+| 4.9               | ~1                  | ~2                  | ~3                  | ~2           |
+| 5.0               | ~1                  | ~2                  | ~3                  | ~2           |
+| 5.1               | ~1                  | ~2                  | ~3                  | ~2           |
+| 5.2               | ~1                  | ~2                  | ~3                  | ~2           |
+| 5.3               | ~1                  | ~2                  | ~3                  | ~2           |
+| 5.4               | ~1                  | ~2                  | ~3                  | ~2           |
+| 5.5               | ~1                  | ~2                  | ~3                  | ~2           |
+| 5.6               | ~1                  | ~2                  | ~3                  | ~2           |
+| 5.7               | ~1                  | ~2                  | ~3                  | ~2           |
+| 5.8               | ~1                  | ~2                  | ~3                  | ~2           |
+| 5.9               | ~1                  | ~2                  | ~3                  | ~2           |
+| 6.0               | ~1                  | ~2                  | ~3                  | ~2           |
+| 6.1               | ~1                  | ~2                  | ~3                  | ~2           |
+| 6.2               | ~1                  | ~2                  | ~3                  | ~2           |
+| 6.3               | ~1                  | ~2                  | ~3                  | ~2           |
+| 6.4               | ~1                  | ~2                  | ~3                  | ~2           |
+| 6.5               | ~1                  | ~2                  | ~3                  | ~2           |
+| 6.6               | ~1                  | ~2                  | ~3                  | ~2           |
+| 6.7               | ~1                  | ~2                  | ~3                  | ~2           |
+| 6.8               | ~1                  | ~2                  | ~3                  | ~2           |
+| 6.9               | ~1                  | ~2                  | ~3                  | ~2           |
+| 7.0               | (~5)                | (~7)                | (~9)                 | (~6)          |
+| 7.1               | (~5)                | (~7)                | (~9)                 | (~6)          |
+| 7.2               | (~5)                | (~7)                | (~9)                 | (~6)          |
+| 7.3               | (~5)                | (~7)                | (~9)                 | (~6)          |
+| 7.4               | (~5)                | (~7)                | (~9)                 | (~6)          |
+| 7.5               | (~5)                | (~7)                | (~9)                 | (~6)          |
+| 7.6               | (~5)                | (~7)                | (~9)                 | (~6)          |
+| 7.7               | (~5)                | (~7)                | (~9)                 | (~6)          |
+| 7.8               | (~5)                | (~7)                | (~9)                 | (~6)          |
+| 7.9               | (~5)                | (~7)                | (~9)                 | (~6)          |
+| 8.0               | (~5)                | (~7)                | (~9)                 | (~6)          |
+| 8.1               | (~5)                | (~7)                | (~9)                 | (~6)          |
+| 8.2               | (~5)                | (~7)                | (~9)                 | (~6)          |
+| 8.3               | (~5)                | (~7)                | (~9)                 | (~6)          |
+| 8.4               | (~5)                | (~7)                | (~9)                 | (~6)          |
+| 8.5               | (~5)                | (~7)                | (~9)                 | (~6)          |
+| 8.6               | (~5)                | (~7)                | (~9)                 | (~6)          |
+| 8.7               | (~5)                | (~7)                | (~9)                 | (~6)          |
+| 8.8               | (~5)                | (~7)                | (~9)                 | (~6)          |
+| 8.9               | (~5)                | (~7)                | (~9)                 | (~6)          |
+| 9.0               | (~5)                | (~7)                | (~9)                 | (~6)          |
+| 9.1               | (~5)                | (~7)                | (~9)                 | (~6)          |
+| 9.2               | (~5)                | (~7)                | (~9)                 | (~6)          |
+| 9.3               | (~5)                | (~7)                | (~9)                 | (~6)          |
+| 9.4               | (~5)                | (~7)                | (~9)                 | (~6)          |
+| 9.5               | (~5)                | (~7)                | (~9)                 | (~6)          |
+| 9.6               | (~5)                | (~7)                | (~9)                 | (~6)          |
+| 9.7               | (~5)                | (~7)                | (~9)                 | (~6)          |
+| 9.8               | (~5)                | (~7)                | (~9)                 | (~6)          |
+| 9.9               | (~5)                | (~7)                | (~9)                 | (~6)          |
+| 10.0              \ 
+    Next   Next   Next   Next   Next   Next   Next   Next   Next   Next   Next   Next   Next   Next   Next   Next   Next   Next   Next   Next   Next   Next   Next   Next   Next   Next   Next   Next   Next   Next   Next   Next   Next   Next   Next   Next   Next   Next   Next   Next   Next   Next   Next   Next   Next   Next   Next   Next   Next   Next   Next     |
+
+The data is presented in a table format with three columns: 'Amplitude' and 'No threshold'. The values are estimated based on the provided code.
+</details>
+
+Figure 4. Different frequency distributions in the latent space with regard to the low-pass threshold on RGB images (measured on 50k images). The spatial frequency of x-axis is measured by the distance to the center of frequency spectrum. Both axes are in logarithmic scale. Detailed explanation is described in Sec. 3.
+
+Finding 2: In RGB space, most information of images exist in a narrow low-frequency band, which is different from the distribution in latent space.
+
+We further input these images containing only lowfrequency signals to a pre-trained encoder to obtain their latent embeddings. We illustrate the corresponding frequency distribution of these latent embeddings in Fig. 4. Note that we conduct frequency perturbations in the RGB space while measuring the frequency in the latent space.
+
+When we use a threshold as low as 0.03, only very lowfrequency components are preserved in the input images. We encode the low-frequency signals and obtain the frequency distribution illustrated in the orange curve. The energy decreases with the increase of frequency. If the threshold is raised to 0.05 (green curve) to include more highfrequency signal in RGB images, we find a significant improvement in amplitude for high-frequency bands in the latent space while the low frequency remains comparable. We further raise the threshold to 0.20 and obtain the frequency distribution illustrated by the red curve. A similar change is observed in the latent space – comparable amplitude in low frequency and increased amplitude in high frequency. Finally, we lift the threshold to include all high frequencies (i.e., original RGB images without threshold). The resultant curve is expected to be above the red curve following the trend in previous experiments. However, we find there is a notable amplitude drop in latent space (shown in the blue curve), especially within high-frequency bands. The result suggests that a portion of very high-frequency RGB signals may prevent the encoding of other high-frequency information. We speculate the reason is that these high-frequency signals trigger aliasing into lower bands (studied in [47])
+
+![](images/e15fef9cd188e80c2e0ac1ba4dd1bc1d1befc7285293224970f24e3534d9abe9.jpg)
+
+<details>
+<summary>flowchart</summary>
+
+```mermaid
+graph TD
+    A["Photo of bird"] --> B["Diffusion / Flow Matching"]
+    C["Image of bird"] --> B
+    D["Image of bird"] --> B
+    E["Image of bird"] --> B
+    F["Image of bird"] --> B
+    G["Image of bird"] --> B
+    H["Image of bird"] --> B
+    I["Image of bird"] --> B
+    J["Image of bird"] --> B
+    K["Image of bird"] --> B
+    L["Image of bird"] --> B
+    M["Image of bird"] --> B
+    N["Image of bird"] --> B
+    O["Image of bird"] --> B
+    P["Image of bird"] --> B
+    Q["Image of bird"] --> B
+    R["Image of bird"] --> B
+    S["Image of bird"] --> B
+    T["Image of bird"] --> B
+    U["Image of bird"] --> B
+    V["Image of bird"] --> B
+    W["Image of bird"] --> B
+    X["Image of bird"] --> B
+    Y["Image of bird"] --> B
+    Z["Image of bird"] --> B
+    AA["Image of bird"] --> B
+    AB["Image of bird"] --> B
+    AC["Image of bird"] --> B
+    AD["Image of bird"] --> B
+    AE["Image of bird"] --> B
+    AF["Image of bird"] --> B
+    AG["Image of bird"] --> B
+    AH["Image of bird"] --> B
+    AI["Image of bird"] --> B
+    AJ["Image of bird"] --> B
+    AK["Image of bird"] --> B
+    AL["Image of bird"] --> B
+    AM["Image of bird"] --> B
+    AN["Image of bird"] --> B
+    AO["Image of bird"] --> B
+    AP["Image of bird"] --> B
+    AQ["Image of bird"] --> B
+    AR["Image of bird"] --> B
+    AS["Image of bird"] --> B
+    AT["Image of bird"] --> B
+    AU["Image of bird"] --> B
+    AV["Image of bird"] --> B
+    AW["Image of bird"] --> B
+    AX["Image of bird"] --> B
+    AY["remove high frequency (r > r₀)"]
+```
+</details>
+
+Figure 5. Overview of FreqWarm. We filter out high-frequency components above a frequency threshold $r _ { 0 }$ in the RGB space. The filtered images are forwarded into a pretrained autoencoder. We train diffusion models or flow matching models on top of the latent space in the early training stage for warm-up. Note that the autoencoder is kept frozen throughout training in our method.
+
+which consumes the capacity for other bands. Combining our observation with Finding 2, we summarize our experiment results in the third finding.
+
+Finding 3: Extremely high-frequency components in RGB space have marginal contributions to the image quality, but may impede the encoding of other high-frequency signals.
+
+# 4. FreqWarm
+
+Based on the findings in Sec. 3, we find a conflict in diffusion model training. When we tokenize the entire images into latent representations, some high-frequency signals block the encoding process, leading to an amplitude drop in high-frequency embeddings (Finding 3). Thus training diffusion models on top of the dominant low-frequency latent embeddings results in a suboptimal performance in fitting high-frequency components. Meanwhile, the decoder heavily relies on the high-frequency latent components to reconstruct images in RGB space (Finding 1). This conflict of encoding and decoding processes becomes more prominent in latent spaces with more dimensionality (shown in Fig. 6). This phenomenon also partially explains the trade-off between reconstruction and generation as shown in Fig. 1.
+
+To alleviate this conflict, we propose a straightforward and easy-to-implement method, dubbed FreqWarm, to improve the diffusibility in high-dimensional latent spaces defined by autoencoders. As illustrated in Fig. 5, we filter out all the high-frequency signals in RGB images by a threshold $r _ { 0 }$ . Then we tokenize the filtered images using a pre-trained encoder to obtain the latent embeddings with stronger highfrequency components. We warm up diffusion and flow matching model training (from scratch) on top of these embeddings. Then we close the model training with finetuning steps on the full-frequency bands.
+
+# 5. Experiments
+
+# 5.1. Dataset and Metrics
+
+Dataset We run all the experiments on ImageNet [34]. Instead of the original ImageNet, we use the face-blurred version to avoid privacy leakage. The only difference is that all faces in the dataset we used are detected and blurred to remove identity. The official training and validation splits are used for diffusion model training.
+
+Metrics Following prior work [6, 8, 21], we use generation FID (gFID) [13] and inception score (IS) [35] for quantitative assessment. Since our method does not require re-training existing autoencoders, the reconstruction performance remains the same. We thus do not report the reconstruction quality repeatedly. Given the sensitivity of gFID to the number of images, we synthesize 1000 images for each category (50,000 samples in total) in all experiments for a fair comparison.
+
+# 5.2. Implementation Details
+
+We implement our method on some advanced image/video autoencoders. We directly load the released autoencoder weights for diffusion model training if the checkpoint is publicly released. If the weights are not publicly available, we train the autoencoder using the released code following the same training strategy in the original papers. We follow [8] to represent the spatial compression ratio x and channel number y in the form of ”f x c y” (e.g., f32c128 denotes 32× spatial compression and 128 latent channels).
+
+For diffusion models, we follow the original training settings in their official implementation, except that we increase the batch size to 4096. We use a threshold of $r _ { 0 } ~ = ~ 0 . 2$ by default in our method if not specified. We train the diffusion model on 32 NVIDIA A100 GPUs for 5-7 days. Specific resources depend on the size and type of the diffusion model.
+
+# 5.3. Experiments on Latest Autoencoders
+
+We implement FreqWarm on three high-dimensional autoencoders released recently, including Wan2.2-AE [40], LTX-AE[10] and DC-AE [8]. Wan2.2-AE and LTX-AE are developed mainly for video tokenization. They can also encode images by setting the number of frames as 1. DC-AE has released the autoencoder weights for 64× compression and 128 channel (f64c128), but there is no available checkpoints for high-dimensional space with 32× compression. We train DC-AE-f32c128 on ImageNet from scratch and report the best number we can achieve. To evaluate the generalization of our method, we consider 4 diffusion and flow matching models with different architectures and scales, including DiT-XL [30], UViT-H [2], USiT-H [26] and USiT-2B [26]. We also compare with previous low-dimensional autoencoders, such as Flux-VAE [22], Asym-VAE [52] and SD-VAE [33]. We do not use classifier-free guidance (CFG) [14] by default unless explicitly stated.
+
+<table><tr><td rowspan="2">Diffusion Model</td><td rowspan="2">Autoencoder</td><td rowspan="2">Warm-up in Frequency</td><td rowspan="2">Params (B)</td><td colspan="2">gFID ↓</td><td colspan="2">IS ↑</td></tr><tr><td>w/o CFG</td><td>w/ CFG</td><td>w/o CFG</td><td>w/ CFG</td></tr><tr><td rowspan="7">DiT-XL [30]</td><td>Flux-VAE-f8c16 [22]</td><td>None</td><td>0.67</td><td>27.35</td><td>8.72</td><td>53.09</td><td>-</td></tr><tr><td>Asym-VAE-f8 [52]</td><td>None</td><td>0.67</td><td>11.39</td><td>2.97</td><td>-</td><td>-</td></tr><tr><td>SD-VAE-f8c4 [33]</td><td>None</td><td>0.67</td><td>12.03</td><td>3.04</td><td>105.25</td><td>-</td></tr><tr><td>DC-AE-f32c128† [7]</td><td>None</td><td>0.67</td><td>15.81</td><td>3.11</td><td>84.41</td><td>227.69</td></tr><tr><td>DC-AE-f32c128† [7]</td><td>w/ FreqWarm</td><td>0.67</td><td>11.02 (-4.79)</td><td>2.87 (-0.24)</td><td>108.65 (+24.24)</td><td>240.05 (+12.36)</td></tr><tr><td>DC-AE-f64c128 [7]</td><td>None</td><td>0.67</td><td>20.68</td><td>5.91</td><td>67.69</td><td>160.70</td></tr><tr><td>DC-AE-f64c128 [7]</td><td>w/ FreqWarm</td><td>0.67</td><td>16.63 (-4.05)</td><td>3.74 (-2.17)</td><td>83.71 (+16.02)</td><td>223.05 (+62.35)</td></tr><tr><td rowspan="3">UViT-H [2]</td><td>Flux-VAE-f8c16 [22]</td><td>None</td><td>0.50</td><td>30.91</td><td>12.61</td><td>-</td><td>-</td></tr><tr><td>DC-AE-f64c128 [7]</td><td>None</td><td>0.50</td><td>17.34</td><td>3.23</td><td>84.49</td><td>219.30</td></tr><tr><td>DC-AE-f64c128 [7]</td><td>w/ FreqWarm</td><td>0.50</td><td>12.36 (-4.98)</td><td>2.76 (-0.47)</td><td>108.80 (+24.31)</td><td>246.89 (+27.59)</td></tr><tr><td rowspan="10">USiT-H [26]</td><td>Wan2.2-AE-f16c48 [40]</td><td>None</td><td>0.50</td><td>43.67</td><td>15.13</td><td>33.48</td><td>88.73</td></tr><tr><td>Wan2.2-AE-f16c48 [40]</td><td>w/ FreqWarm</td><td>0.50</td><td>29.56 (-14.11)</td><td>10.90 (-4.23)</td><td>46.16 (+12.68)</td><td>109.57 (+20.84)</td></tr><tr><td>LTX-AE-f32c128 [10]</td><td>None</td><td>0.50</td><td>24.18</td><td>6.24</td><td>61.60</td><td>161.22</td></tr><tr><td>LTX-AE-f32c128 [10]</td><td>w/ FreqWarm</td><td>0.50</td><td>18.05 (-6.13)</td><td>4.11 (-2.13)</td><td>76.06 (+14.46)</td><td>194.51 (+33.29)</td></tr><tr><td>DC-AE-f32c128† [7]</td><td>None</td><td>0.50</td><td>13.84</td><td>3.96</td><td>85.40</td><td>200.70</td></tr><tr><td>DC-AE-f32c128† [7]</td><td>w/ FreqWarm</td><td>0.50</td><td>9.42 (-4.42)</td><td>3.20 (-0.76)</td><td>108.80 (+23.40)</td><td>244.21 (+43.51)</td></tr><tr><td>DC-AE-f64c128 [7]</td><td>None</td><td>0.50</td><td>9.85</td><td>3.13</td><td>113.99</td><td>207.66</td></tr><tr><td>DC-AE-f64c128 [7]</td><td>w/ FreqWarm</td><td>0.50</td><td>8.31 (-1.54)</td><td>2.64 (-0.49)</td><td>130.10 (+16.11)</td><td>276.28 (+68.62)</td></tr><tr><td>DC-AE-f128c256 [7]</td><td>None</td><td>0.50</td><td>36.71</td><td>13.14</td><td>49.63</td><td>125.33</td></tr><tr><td>DC-AE-f128c256 [7]</td><td>w/ FreqWarm</td><td>0.50</td><td>33.44 (-3.27)</td><td>11.27 (-1.87)</td><td>56.03 (+6.40)</td><td>143.22 (+17.89)</td></tr><tr><td rowspan="2">USiT-2B [26]</td><td>DC-AE-f64c128 [7]</td><td>None</td><td>1.58</td><td>5.67</td><td>3.55</td><td>143.73</td><td>292.98</td></tr><tr><td>DC-AE-f64c128 [7]</td><td>w/ FreqWarm</td><td>1.58</td><td>4.77 (-0.90)</td><td>3.18 (-0.37)</td><td>166.57 (+22.84)</td><td>311.79 (+18.81)</td></tr></table>
+
+† denotes that this autoencoder is reproduced by ourselves using the released codebase.   
+Table 1. Results of our method implemented to the latest autoencoders on ImageNet with 512×512 resolution. CFG is short for classifierfree guidance. We set the scale of guidance as 1.5 for all experiments with CFG. The orange rows refer to the models trained with the proposed FreqWarm method. The numbers in green are the improvement of our method compared with the baselines without frequency warm-up. Our method outperforms all the counterparts in different combinations of diffusion models and autoencoders.
+
+Resolution 512×512 The results are shown in Tab. 1. Our method achieves significant improvement on various combinations of high-dimensional autoencoders with different diffusion models, compared with their counterparts trained without frequency warm-up. Specifically, for DiT-XL, our method improves gFID/IS by 4.79/24.24 for DC-AEf32c128 and 4.05/16.02 for DC-AE-f64c128 without CFG. For USiT-H, our method improves gFID/IS by 14.11/12.68 for Wan2.2-AE, 6.13/14.46 for LTX-AE, 4.42/23.40 for DC-AE-f32c128 and 1.54/16.11 for DC-AE-f64c128. After using CFG in inference, we still observe the prominent gains for all the autoencoders. The results suggest that FreqWarm generalizes well to different autoencoder structures and configurations. With our method, the performance of
+
+<table><tr><td>Model</td><td>Freq. Warm-up</td><td>gFID ↓</td><td>IS ↑</td></tr><tr><td>DiT [30]</td><td>None</td><td>26.30</td><td>50.36</td></tr><tr><td>DiT [30]</td><td>w/ FreqWarm</td><td>17.89 (-8.41)</td><td>72.99 (+22.63)</td></tr><tr><td>UViT [2]</td><td>None</td><td>17.99</td><td>78.15</td></tr><tr><td>UViT [2]</td><td>w/ FreqWarm</td><td>12.91 (-5.08)</td><td>93.50 (+15.35)</td></tr><tr><td>USiT [26]</td><td>None</td><td>15.41</td><td>81.03</td></tr><tr><td>USiT [26]</td><td>w/ FreqWarm</td><td>12.84 (-2.57)</td><td>94.59 (+13.56)</td></tr></table>
+
+Table 2. Experiments on ImageNet with resolution 256×256. All experiments are implemented on top of DC-AE-f32c128 (reproduced by us). The orange rows indicate the models trained with our method. The numbers in green are the gains of our method.
+
+high-dimensional autoencoders outperform preceding autoencoders with fewer channels. This encouraging results validate that it is feasible to further reduce the number of tokens without performance drop. Our method also leads to reasonable improvement to the larger model – USiT-2B, which validates the promising scalability of our method to modern large generative models.
+
+Resolution 256×256 To validate the generalization of our method, we also run experiments using a lower input resolution – 256×256, and report the results in Tab. 2. Our method decreases gFID by 8.41 for DiT, 5.08 for UViT and 2.57 for USiT, showing strong robustness to different resolutions for various diffusion models.
+
+![](images/f8a9526b8edc5c83fbd912e476d8b21d876da59841ea63cc651eb7462681ad4c.jpg)
+
+<details>
+<summary>line</summary>
+
+| x        | Series 1 | Series 2 | Series 3 | Series 4 |
+| -------- | -------- | -------- | -------- | -------- |
+| 0.01     | 1000     | 1000     | 1000     | 1000     |
+| 0.05     | 500      | 500      | 500      | 500      |
+| 0.1      | 200      | 200      | 200      | 200      |
+| 0.2      | 100      | 100      | 100      | 100      |
+| 0.5      | 50       | 50       | 50       | 50       |
+| 1.0      | 20       | 20       | 20       | 20       |
+| 2.0      | 10       | 10       | 10       | 10       |
+| 5.0      | 5        | 5        | 5        | 5        |
+| 10.0     | 2        | 2        | 2        | 2        |
+| 20.0     | 1        | 1        | 1        | 1        |
+| 50.0     | 0.5      | 0.5      | 0.5      | 0.5      |
+| 100.0    | 0.2      | 0.2      | 0.2      | 0.2      |
+| 200.0    | 0.1      | 0.1      | 0.1      | 0.1      |
+| 500.0    | 0.05     | 0.05     | 0.05     | 0.05     |
+| 1000.0   | 0.02     | 0.02     | 0.02     | 0.02     |
+| 2000.0   | 0.01     | 0.01     | 0.01     | 0.01     |
+| 5000.0   | 0.005    | 0.005    | 0.005    | 0.005    |
+| 10000.0  | 0.002    | 0.002    | 0.002    | 0.002    |
+| 20000.0  | 0.001    | 0.001    | 0.001    | 0.001    |
+| 50000.0  | 0.0005   | 0.0005   | 0.0005   | 0.0005   |
+| 100000.0 | 0.0002   | 0.0002   | 0.0002   | 0.0002   |
+| 200000.0 | 0.0         | 0.0      | 0.0      | 0.0      |
+| 50000.0  | 899999   | 899999   | 899999   | 899999   |
+| 1               | ~3799999 | ~3799999 | ~3799999 | ~3799999 |
+| # channel=16| Δ ≈ ⁰    | Δ ≈ -⁰    | Δ ≈ -∞   | Δ ≈ -∞   |
+| Value    |          |          |          |          |
+| Point    |          |          |          |          |
+| Point    |          |          |          |          |
+| Point    |          |          |          |          |
+| Point    |          |          |          |          |
+| Point    |          |          |          |          |
+| Point    |          |          |          |          |
+| Point    |          |          |          |          |
+| Point    |          |          |          |          |
+| Point    |          = -∞   |          |          |          |
+| Point    |          = -∞   |          |          |          |
+| Point    |          = -∞   |          |          |          |
+| Point    |          = -∞   |          |          |          |
+| Point    |          = -∞   |          |          |          |
+| Point    |          = -∞   |          |          |          |
+| Point    |          = -∞   |          |                  |              |
+| Point    |          = -∞   |          |                  |              |
+| Point    |          = -∞   |          |                  |              |
+| Point    |          = -∞   |          |                  |              |
+| Point    |          = -∞   |          |                  |              |
+| Point    |          = -∞   |          |                  |              |
+| Point    |          = -∞   |          |                  |              |
+| Point * 
+|            ...       ...     |
+| Point * (inset)     |
+| Δ ≈ -∞: (inset)     |
+| Point * (inset)     |
+| Δ ≈ -∞: (inset)     |
+| Δ ≈ -∞: (inset)     |
+| Δ ≈ -∞: (inset)     |
+| Δ ≈ -∞: (inset)     |
+| Δ ≈ -∞: (inset)     |
+| Δ ≈ -∞: (inset)     |
+| Δ ≈ -∞: (inset)     |
+| Δ ≈ -∞: (inset)     |
+| Δ = -∞: (inset)     |
+| Δ = -∞: (inset)     |
+| Δ = -∞: (inset)     |
+| Δ = -∞: (inset)     |
+| Δ = -∞: (inset)     |
+| Δ = -∞: (inset)     |
+| Δ = -∞: (inset)     |
+| Δ = -∞: (inset)     |
+| Δ = -∞: (-∞): (inset)|
+|            (inset)       |
+|            (inset)       |
+|            (inset)       |
+|            (inset)       |
+|            (inset)       |
+|            (inset)       |
+|            (inset)       |
+|            (inset)       |
+|            (inset)       |
+|            (inset)       |
+|            (inset)       |
+|            (inset)       |
+|            (inset)       |
+|            (out of axis)|
+|            (out of axis)|            nan   |            nan   |            nan   |            nan   |
+|            (out of axis)|            nan   |            nan   |            nan   |            nan   |
+|            (out of axis)|            nan   |            nan   |            nan   |            nan   |
+|            (out of axis)|            nan   |            nan   |            nan   |            nan   |
+|            (out of axis)|            nan   |            nan   |            nan   |            nan   |
+|            (out of axis)|           nan   |            nan   |            nan   |            nan   |
+|            (out of axis)|           nan   |            nan   |            nan   |            nan   |
+|            (out of axis)|           nan   |            nan   |            nan   |            nan   |
+|            (out of axis)|           nan   |            nan   |            nan   |            nan   |
+|            (out of axis)|           nan   |            nan   |             nan   |            nan   |
+|            (out of axis)|           nan   |            nan   |             nan   |            nan   |
+|            (out of axis)|           nan   |            nan   |             nan   |            nan   |
+|            (out of axis)|           nan   |            nan   |             nan   |            nan   |
+|            (out of axis)|           nan   |            nan   |             nan   |            nan   |
+|
+|            (out of axis)|           nan   |            nan   |             nan   |            nan   |
+|            (out of axis)|           nan   |            nan   |             nan   |            nan   |
+|
+|            (out of axis)|           nan   |            nan   |             nan   |            nan   |
+|
+|            (out of axis)|           nan   |            nan   |             nan   |            nan   |
+|
+|            (out of axis)|           nan   |            nan   |             nan   |            nan   |
+|
+|            (out of axis)|           nan   |            nan   |             nan   |            nan   |
+|
+|            (at point)    A
+        D
+        E
+        F
+        G
+        H
+        I
+        J
+        K
+        L
+        M
+        N
+        O
+        P
+        Q
+        R
+        S
+        T
+        U
+        V
+        W
+        X
+        Y
+        Z
+        AA
+        AB
+        AC
+        AD
+        AE
+        AF
+        AG
+        AH
+        AI
+        AJ
+        AK
+        AL
+        AM
+        AN
+        AO
+        AP
+        AQ
+        AR
+        AS
+        AT
+        AU
+        AV
+        AW
+        AX
+        AY
+        AZ
+        BA
+        BB
+        BC
+        BD
+        BE
+        BF
+        BG
+        BH
+        BI
+        BJ
+        BK
+        BL
+        BM
+        BN
+        BO
+        BP
+        BZ
+        BAZ
+        BBZ
+        BCZ
+        BDZ
+        BEZ
+        BFZ
+        BGZ
+        BHZ
+        BIZZ
+        BJZZ
+        BKZZ
+        BZZZ
+        BAZZZ
+        BBZZZ
+        BCZZZ
+        BDZZZZ
+        BEZZZZZ
+      end
+</details>
+
+![](images/c4758101bf8963e9b551715b9ae22480a1dcf087201bca5b079642e0c06e2b1c.jpg)
+
+<details>
+<summary>line</summary>
+
+| x        | y      |
+| -------- | ------ |
+| 0.01     | 1000   |
+| 0.02     | 500    |
+| 0.03     | 300    |
+| 0.04     | 200    |
+| 0.05     | 150    |
+| 0.06     | 120    |
+| 0.07     | 100    |
+| 0.08     | 80     |
+| 0.09     | 60     |
+| 0.1      | 50     |
+| 0.11     | 40     |
+| 0.12     | 30     |
+| 0.13     | 25     |
+| 0.14     | 20     |
+| 0.15     | 15     |
+| 0.16     | 12     |
+| 0.17     | 10     |
+| 0.18     | 8      |
+| 0.19     | 6      |
+| 0.2      | 5      |
+| 0.21     | 4      |
+| 0.22     | 3      |
+| 0.23     | 2      |
+| 0.24     | 1      |
+| 0.25     | 1      |
+</details>
+
+![](images/31fc1b22048a7d1169748858d93ee076a1317cb6d3ef575f58b2c91996691d47.jpg)
+
+<details>
+<summary>line</summary>
+
+| x        | y      |
+| -------- | ------ |
+| 0.01     | 1000   |
+| 0.05     | 500    |
+| 0.1      | 200    |
+| 0.2      | 100    |
+| 0.3      | 50     |
+| 0.4      | 20     |
+| 0.5      | 10     |
+</details>
+
+![](images/986be37c4d499b0099ec3096c12eee2814497918e38a7b092b7ce3eb5a904f31.jpg)
+
+<details>
+<summary>line</summary>
+
+| x        | Series 1 | Series 2 | Series 3 | Series 4 | Series 5 |
+| -------- | -------- | -------- | -------- | -------- | -------- |
+| 0.1      | 1000     | 1000     | 1000     | 1000     | 1000     |
+| 0.2      | 100      | 100      | 100      | 100      | 100      |
+| 0.3      | 10       | 10       | 10       | 10       | 10       |
+| 0.4      | 1        | 1        | 1        | 1        | 1        |
+| 0.5      | 0.1      | 0.1      | 0.1      | 0.1      | 0.1      |
+| 0.6      | 0.01     | 0.01     | 0.01     | 0.01     | 0.01     |
+| 0.7      | 0.001    | 0.001    | 0.001    | 0.001    | 0.001    |
+| 0.8      | 0.0001   | 0.0001   | 0.0001   | 0.0001   | 0.0001   |
+| 0.9      | 0.00001  | 0.00001  | 0.00001  | 0.00001  | 0.00001  |
+| 1.0      | 0.0      | 0.0      | 0.0      | 0.0      | 0.0      |
+</details>
+
+![](images/ca4e560871e38211cbdaba9ce3ea9a229e2b03cd5a6f520db62627a4eb69a309.jpg)
+
+<details>
+<summary>line</summary>
+
+| x_value | Series 1 | Series 2 | Series 3 | Series 4 | Series 5 |
+| ------- | -------- | -------- | -------- | -------- | -------- |
+| 1×10⁻¹  | ~10³     | ~10³     | ~10³     | ~10³     | ~10³     |
+| 2×10⁻¹  | ~10²     | ~10²     | ~10²     | ~10²     | ~10²     |
+</details>
+
+![](images/c780e417b244b8c26da02e254f9e72aa8804c06f8ae00c4ec9c8a6a9cd411b1b.jpg)
+
+<details>
+<summary>line</summary>
+
+| x        | Series 1 | Series 2 | Series 3 | Series 4 | Series 5 |
+| -------- | -------- | -------- | -------- | -------- | -------- |
+| 1×10⁻¹   | ~10³     | ~10³     | ~10³     | ~10³     | ~10³     |
+| 2×10⁻¹   | ~10²     | ~10²     | ~10²     | ~10²     | ~10²     |
+</details>
+
+![](images/0a35a9889e3f7791f598315b7f3b71435b6bcf073b6169ba8f55b6e66f1f27f9.jpg)
+
+<details>
+<summary>text_image</summary>
+
+Threshold r₀ = 0.03
+Threshold r₀ = 0.05
+Threshold r₀ = 0.20
+No threshold
+</details>
+
+Figure 6. Frequency analysis of latent spaces with channel number ranging from 16 to 512. The x-axis is spatial frequency measured by the distance to the center on frequency spectrum. The y-axis is the amplitude of signals. Note that both axes are in logarithmic scale. The amplitude gap (∆) of high-frequency bands between threshold $r _ { 0 } = 0 . 2 0$ and full band increases with regard to the number of channels. 
+
+<table><tr><td>Configuration</td><td>No Warm-up</td><td>FreqWarm</td><td> $\Delta$ </td></tr><tr><td>f32c16</td><td>12.59</td><td>12.57</td><td>0.02</td></tr><tr><td>f32c32</td><td>5.75</td><td>5.74</td><td>0.02</td></tr><tr><td>f32c64</td><td>9.97</td><td>7.20</td><td>2.77</td></tr><tr><td>f32c128</td><td>13.84</td><td>9.42</td><td>4.42</td></tr><tr><td>f32c256</td><td>42.40</td><td>33.75</td><td>8.65</td></tr><tr><td>f32c512</td><td>54.84</td><td>42.66</td><td>12.18</td></tr></table>
+
+Table 3. Analysis of our method implemented to autoencoders with different number of channels. We use gFID (↓) as the primary metric to evaluate the performance. The experiments are conducted using different configurations on DC-AE [7].
+
+Visualization We illustrate images synthesized by diffusion models trained with our method in Fig. 7. Our method synthesizes images with high quality across diverse classes.
+
+# 5.4. Analysis on Latent Spaces with Different Number of Channels
+
+To show more insights of our method, we run experiments on DC-AE with different number of channels. The results are demonstrated in Tab. 3. The channel number varies from 16 to 512 while the compression ratio remains the same. We find our method leads to more gains for latent spaces with more channels. In particular, the performance difference of DC-AE-f32c16 and DC-AE-f32c32 is very marginal due to the low dimension. We think this is a reasonable result, which can be explained by the latent frequency distributions with regard to different channel numbers. Akin to Fig. 3,
+
+<table><tr><td>Model</td><td>Threshold  $r_0$ </td><td>gFID ↓</td><td>IS ↑</td></tr><tr><td rowspan="4">DC-AE-f32c128 [7]+USiT-H [26]</td><td>0.05</td><td>23.11</td><td>65.50</td></tr><tr><td>0.20</td><td>9.42</td><td>108.80</td></tr><tr><td>0.40</td><td>12.88</td><td>90.49</td></tr><tr><td>0.60</td><td>13.24</td><td>88.71</td></tr></table>
+
+Table 4. Ablation study on the frequency threshold r0. The orange row indicates the optimal threshold used in all of our experiments.
+
+we do the same analysis on encoders with different channels. As illustrated in Fig. 6, we see the same phenomenon (see Finding 3 in Sec. 3.2) happens to all high-dimensional encoders: the extremely high-frequency signals hinder the encoding of other components, causing a lower amplitude (the gap between red curve and blue curve) especially in high-frequency bands. The gap becomes smaller when we reduce the number of channels. We argue that the encoders prioritize low-frequency signals, and then continue to encode high-frequency signals if they have more capacity (e.g., more dimensions). In particular, for f32c16 and f32c32, the two curves almost overlap with each other. The shrinking gap exactly explains the different gains for DC-AE with different dimensions, further supporting our findings and hypothesis. In addition, with our method, we are able to decrease the gFID of DC-AE-f32c512 from 54.84 to 42.66 which is comparable with DC-AE-f32c256 without frequency warm-up (gFID=42.40). Likewise, the performance of DC-AE-f32c128 with FreqWarm (gFID=9.42) is even better than vanilla DC-AE-f32c64 (gFID=9.97).
+
+![](images/efacea68f6d950be9d46dc0b2cfcce4a2acd78923fc240344246161eeda089e9.jpg)
+
+<details>
+<summary>natural_image</summary>
+
+Close-up of a purple flower with spiky texture, labeled 'class 946: cardoon' below (no other text or symbols)
+</details>
+
+![](images/59de43d458098d8746549467ceac18ce0e44ba0c6f3449e5ae8643b2ac1f9660.jpg)
+
+<details>
+<summary>natural_image</summary>
+
+Close-up of a sea anemone with spiky tentacles (no text or symbols visible)
+</details>
+
+![](images/17ce158665e46f60ee3459789ad50f82d29d5e24a2100e6aa30f56b008a27d34.jpg)
+
+<details>
+<summary>natural_image</summary>
+
+Close-up photo of a black spider with visible legs and antennae, labeled 'class 75: black widow' below (no other text or symbols)
+</details>
+
+![](images/32e4e6c07fd7224dad167d88dc74483a6281f5765dbd4b8b104b6ffc949b5f13.jpg)
+
+<details>
+<summary>natural_image</summary>
+
+Mountain landscape with forested slopes and scattered clouds under a blue sky (no text or symbols visible)
+</details>
+
+![](images/40c77104fc4dddbd64d6ee2c1cfc66008bcee72a96de9025eb3e6ad016adbe5a.jpg)
+
+<details>
+<summary>natural_image</summary>
+
+A small bird perched on a branch, labeled 'class 12: house finch' below (no other text or symbols)
+</details>
+
+![](images/fa9ec1cca27fdb5ff99ae14214528fc1d635bd4a5607b4f0f373afd975fd4358.jpg)
+
+<details>
+<summary>natural_image</summary>
+
+Close-up photo of a brown, fluffy loom with closed eyes and gray fur (no text or symbols visible)
+</details>
+
+![](images/955efb32fb2b7b02efcb9c74e3f62c7118c94f85424d7499a5c88d1c0d6863fd.jpg)
+
+<details>
+<summary>natural_image</summary>
+
+Close-up photo of a black beetle on a textured surface, labeled 'class 302: ground beetle' (no other text or symbols visible)
+</details>
+
+![](images/ce79ef7d710d60d2a2da93656897d09a5a13df6837e55b101f12934ed14d0e7f.jpg)
+
+<details>
+<summary>natural_image</summary>
+
+Lighthouse at dusk with colorful sky and coastal water (no text or symbols on the structure)
+</details>
+
+![](images/7c20fecf55451cce5586d099b7e8ad7438b2d4159894eefec47199ec86ff738d.jpg)
+
+<details>
+<summary>natural_image</summary>
+
+Ceramic pitcher with visible cracks and handle, displayed against red background (no text or symbols on the object itself)
+</details>
+
+![](images/ba48ae407152430eb536f391eba4288401d61a46065d478c79706fb7aff74d06.jpg)
+
+<details>
+<summary>natural_image</summary>
+
+Close-up of a yellow coral fuga with dense, spiky growth (no text or symbols visible)
+</details>
+
+![](images/94de47a178b5692a35d762f812df04f978c285464351261243bd88cf4fe572b1.jpg)
+
+<details>
+<summary>natural_image</summary>
+
+Close-up of a woven textile with colorful interwoven strands (no text or symbols visible)
+</details>
+
+![](images/7a92923055f3cae0f58eef15b90bc27c692698a6b46cd51e0b6d635d16d2b504.jpg)
+
+<details>
+<summary>natural_image</summary>
+
+Close-up of a monarch butterfly perched on a yellow flower, surrounded by green foliage (no text or symbols visible)
+</details>
+
+![](images/35bfff4636b3e0db75215822490b4dca89459bc30902f184872f66002f0a6e87.jpg)
+
+<details>
+<summary>natural_image</summary>
+
+Close-up photo of a snake with white spots on its back, resting on wood shavings (no text or symbols visible)
+</details>
+
+![](images/f81067747e9325e986cd789068deecb62dab3cce65791144f527895649d69ffe.jpg)
+
+<details>
+<summary>natural_image</summary>
+
+Coastal scene with turquoise water under a clear blue sky, no text or symbols visible
+</details>
+
+![](images/c886ce2e73395a6a7465974ec5cbd0b72e85f70aaea498a91cbde5f2883ce8fd.jpg)
+
+<details>
+<summary>natural_image</summary>
+
+Close-up photo of a small tanish dog with a collar and tongue out, wearing a dark jacket (no text or symbols visible)
+</details>
+
+![](images/428ed7a2a94847e4573012c7184e2f668f5e05822641d4f9769a3fa402f95303.jpg)
+
+<details>
+<summary>natural_image</summary>
+
+Mountain range with snow-capped peaks and green slopes, labeled class 980: volcano (no other text or symbols)
+</details>
+
+![](images/dc3e760595454675af647443788e06a07557dc73a5624ff53405bb1748b3976f.jpg)
+
+<details>
+<summary>natural_image</summary>
+
+Close-up photo of a starfish in an aquarium (no text or symbols on the image itself)
+</details>
+
+![](images/c4f0a52ad6419a74b1e4f6efa110844cdedb9663885fbc7271e16dac6566a54a.jpg)
+
+<details>
+<summary>natural_image</summary>
+
+Close-up of fresh green artemannas with visible browning spots (no text or symbols)
+</details>
+
+![](images/0b0bf9d32dba4a06e0e13f22bef4d568037dd738a3c7d6c268eba5f03edd40b6.jpg)
+
+<details>
+<summary>natural_image</summary>
+
+Close-up photo of a tarantula spider on sandy ground (no text or symbols on the spider itself)
+</details>
+
+![](images/4627842698ce658d99797843b6b928f90920595085507e168fc10ca73ac6ccf0.jpg)
+
+<details>
+<summary>natural_image</summary>
+
+Close-up of a bun with visible meat and vegetables, labeled 'class 965: burrito' at bottom (no other text or symbols)
+</details>
+
+Figure 7. Demonstration of images generated by diffusion models trained with our proposed FreqWarm method.
+
+# 5.5. Ablation on Frequency Threshold
+
+In our method, the key hyperparameter is the frequency threshold $r _ { 0 }$ used to filter out harmful high-frequency components in RGB space. To test the impact of different thresholds, we use DC-AE-f32c128 and USiT-H as base models and change the threshold from 0.05 to 0.6. Note that we denote the frequency profile as a 1.0×1.0 square, so the range of frequency (radius) is from 0 to ${ \sqrt { 2 } } \approx 0 . 7 .$ . As demonstrated in Tab. 4, when the threshold is as low as 0.05, only very low-frequency information is preserved, which loses too many details. When the threshold is 0.4 or $0 . 6 ,$ the high-frequency signals are not filtered out thoroughly, leading to suboptimal performance. We find $r _ { 0 } = 0 . 2$ is an optimal value in our experiments. We also find that removing signals with frequency higher than 0.2 has only trivial impact on image quality while the latent energy is greatly increased (see Fig. 6). This makes 0.2 an ideal trade-off between image quality loss and latent energy drop.
+
+# 6. Conclusion
+
+In this work, we revisit the reconstruction–generation trade-off that emerges when autoencoders define highdimensional latent spaces for diffusion and flow-matching models. Through a controlled frequency perturbation analysis on both decoder and encoder, we show that decoders strongly depend on high-frequency latent components to recover details, while encoders under-represent exactly these bands once extremely high-frequency RGB signals are present, leading to low latent energy and poor exposure during generative training. Building on these findings, we proposed FreqWarm, a plug-and-play frequency warm-up curriculum that operates entirely on top of frozen, off-the-shelf autoencoders and can be dropped into existing diffusion model training recipes. Extensive experiments on modern high-dimensional tokenizers (Wan2.2- VAE, LTX-VAE, DC-AE) and transformer-based denoisers (DiT, UViT, USiT) demonstrated consistent gains, and the gains increase with the latent dimensionality, confirming that frequency-aware exposure is especially important at scale. Our work points to a co-design of autoencoders and diffusion transformers around explicit frequency budgets, paving the path toward higher compression ratios while preserving comparable generation performance.
+
+# References
+
+[1] Jiawang Bai, Li Yuan, Shu-Tao Xia, Shuicheng Yan, Zhifeng Li, and Wei Liu. Improving vision transformers by revisiting high-frequency components. In European Conference on Computer Vision, pages 1–18. Springer, 2022. 3   
+[2] Fan Bao, Shen Nie, Kaiwen Xue, Yue Cao, Chongxuan Li, Hang Su, and Jun Zhu. All are worth words: A vit backbone for diffusion models. In Proceedings of the IEEE/CVF conference on computer vision and pattern recognition, pages 22669–22679, 2023. 1, 3, 6   
+[3] Tianci Bi, Xiaoyi Zhang, Yan Lu, and Nanning Zheng. Vision foundation models can be good tokenizers for latent diffusion models. arXiv preprint arXiv:2510.18457, 2025. 2   
+[4] Mathilde Caron, Hugo Touvron, Ishan Misra, Herve J ´ egou, ´ Julien Mairal, Piotr Bojanowski, and Armand Joulin. Emerging properties in self-supervised vision transformers. In Proceedings of the IEEE/CVF international conference on computer vision, pages 9650–9660, 2021. 2   
+[5] Cong Chen, Ziyuan Huang, Cheng Zou, Muzhi Zhu, Kaixiang Ji, Jiajia Liu, Jingdong Chen, Hao Chen, and Chunhua Shen. Hieratok: Multi-scale visual tokenizer improves image reconstruction and generation. arXiv preprint arXiv:2509.23736, 2025. 2   
+[6] Hao Chen, Ze Wang, Xiang Li, Ximeng Sun, Fangyi Chen, Jiang Liu, Jindong Wang, Bhiksha Raj, Zicheng Liu, and Emad Barsoum. Softvq-vae: Efficient 1-dimensional continuous tokenizer. In Proceedings of the Computer Vision and Pattern Recognition Conference, pages 28358–28370, 2025. 2, 5   
+[7] Junyu Chen, Han Cai, Junsong Chen, Enze Xie, Shang Yang, Haotian Tang, Muyang Li, and Song Han. Deep compression autoencoder for efficient high-resolution diffusion models. In The Thirteenth International Conference on Learning Representations, 2025. 1, 2, 3, 6, 7   
+[8] Junyu Chen, Dongyun Zou, Wenkun He, Junsong Chen, Enze Xie, Song Han, and Han Cai. Dc-ae 1.5: Accelerating diffusion model convergence with structured latent space. In Proceedings of the IEEE/CVF International Conference on Computer Vision, pages 19628–19637, 2025. 2, 5
+
+[9] Fabian Falck, Teodora Pandeva, Kiarash Zahirnia, Rachel Lawrence, Richard Turner, Edward Meeds, Javier Zazo, and Sushrut Karmalkar. A fourier space perspective on diffusion models. arXiv preprint arXiv:2505.11278, 2025. 3   
+[10] Yoav HaCohen, Nisan Chiprut, Benny Brazowski, Daniel Shalem, Dudu Moshe, Eitan Richardson, Eran Levin, Guy Shiran, Nir Zabari, Ori Gordon, et al. Ltx-video: Realtime video latent diffusion. arXiv preprint arXiv:2501.00103, 2024. 1, 2, 3, 5, 6   
+[11] Kaiming He, Xinlei Chen, Saining Xie, Yanghao Li, Piotr Dollar, and Ross Girshick. Masked autoencoders are scalable´ vision learners. In Proceedings of the IEEE/CVF conference on computer vision and pattern recognition, pages 16000– 16009, 2022. 2   
+[12] Yingqing He, Tianyu Yang, Yong Zhang, Ying Shan, and Qifeng Chen. Latent video diffusion models for high-fidelity long video generation. arXiv preprint arXiv:2211.13221, 2022. 1, 3   
+[13] Martin Heusel, Hubert Ramsauer, Thomas Unterthiner, Bernhard Nessler, and Sepp Hochreiter. Gans trained by a two time-scale update rule converge to a local nash equilibrium. Advances in neural information processing systems, 30, 2017. 5   
+[14] Jonathan Ho and Tim Salimans. Classifier-free diffusion guidance. In NeurIPS 2021 Workshop on Deep Generative Models and Downstream Applications, 2021. 6   
+[15] Jonathan Ho, William Chan, Chitwan Saharia, Jay Whang, Ruiqi Gao, Alexey Gritsenko, Diederik P Kingma, Ben Poole, Mohammad Norouzi, David J Fleet, et al. Imagen video: High definition video generation with diffusion models. arXiv preprint arXiv:2210.02303, 2022. 3   
+[16] Jonathan Ho, Tim Salimans, Alexey Gritsenko, William Chan, Mohammad Norouzi, and David J Fleet. Video diffusion models. Advances in neural information processing systems, 35:8633–8646, 2022. 3   
+[17] Wenyi Hong, Ming Ding, Wendi Zheng, Xinghan Liu, and Jie Tang. Cogvideo: Large-scale pretraining for text-to-video generation via transformers. In The Eleventh International Conference on Learning Representations, 2023. 1, 3   
+[18] Gihyun Kim, Juyeop Kim, and Jong-Seok Lee. Exploring adversarial robustness of vision transformers in the spectral perspective. In Proceedings of the IEEE/CVF Winter Conference on Applications of Computer Vision, pages 3976–3985, 2024. 3   
+[19] Alexander Kirillov, Eric Mintun, Nikhila Ravi, Hanzi Mao, Chloe Rolland, Laura Gustafson, Tete Xiao, Spencer Whitehead, Alexander C Berg, Wan-Yen Lo, et al. Segment anything. In Proceedings of the IEEE/CVF international conference on computer vision, pages 4015–4026, 2023. 2   
+[20] W Kong, Q Tian, Z Zhang, R Min, Z Dai, J Zhou, J Xiong, X Li, B Wu, J Zhang, et al. Hunyuanvideo: A systematic framework for large video generative models, 2025. URL https://arxiv. org/abs/2412.03603, 2024. 3   
+[21] Theodoros Kouzelis, Ioannis Kakogeorgiou, Spyros Gidaris, and Nikos Komodakis. Eq-vae: Equivariance regularized latent space for improved generative image modeling. In Forty-second International Conference on Machine Learning, 2025. 2, 5
+
+[22] Black Forest Labs, Stephen Batifol, Andreas Blattmann, Frederic Boesel, Saksham Consul, Cyril Diagne, Tim Dockhorn, Jack English, Zion English, Patrick Esser, Sumith Kulal, Kyle Lacey, Yam Levi, Cheng Li, Dominik Lorenz, Jonas Muller, Dustin Podell, Robin Rombach, Harry Saini, Axel¨ Sauer, and Luke Smith. Flux.1 kontext: Flow matching for in-context image generation and editing in latent space, 2025. 1, 6   
+[23] Junho Lee, Jeongwoo Shin, Hyungwook Choi, and Joonseok Lee. Latent diffusion models with masked autoencoders. In Proceedings of the IEEE/CVF International Conference on Computer Vision, pages 17422–17431, 2025. 2   
+[24] Huaize Liu, Wenzhang Sun, Qiyuan Zhang, Donglin Di, Biao Gong, Hao Li, Chen Wei, and Changqing Zou. Hivae: Efficient video autoencoding with global and detailed motion. arXiv preprint arXiv:2506.07136, 2025. 2   
+[25] Jiasen Lu, Liangchen Song, Mingze Xu, Byeongjoo Ahn, Yanjun Wang, Chen Chen, Afshin Dehghan, and Yinfei Yang. Atoken: A unified tokenizer for vision. arXiv preprint arXiv:2509.14476, 2025. 2   
+[26] Nanye Ma, Mark Goldstein, Michael S Albergo, Nicholas M Boffi, Eric Vanden-Eijnden, and Saining Xie. Sit: Exploring flow and diffusion-based generative models with scalable interpolant transformers. In European Conference on Computer Vision, pages 23–40. Springer, 2024. 1, 3, 6, 7   
+[27] Aniruddha Mahapatra, Long Mai, David Bourgin, Yitian Zhang, and Feng Liu. Progressive growing of video tokenizers for temporally compact latent spaces. In Proceedings of the IEEE/CVF International Conference on Computer Vision, pages 17629–17639, 2025. 2   
+[28] Tejaswini Medi, Hsien-Yi Wang, Arianna Rampini, and Margret Keuper. Missing fine details in images: Last seen in high frequencies. arXiv preprint arXiv:2509.05441, 2025. 2   
+[29] Badri Patro and Vijay Agneeswaran. Scattering vision transformer: Spectral mixing matters. Advances in Neural Information Processing Systems, 36:54152–54166, 2023. 3   
+[30] William Peebles and Saining Xie. Scalable diffusion models with transformers. In Proceedings of the IEEE/CVF international conference on computer vision, pages 4195–4205, 2023. 1, 3, 6   
+[31] Kai Qiu, Xiang Li, Hao Chen, Jason Kuen, Xiaohao Xu, Jiuxiang Gu, Yinyi Luo, Bhiksha Raj, Zhe Lin, and Marios Savvides. Image tokenizer needs post-training. arXiv preprint arXiv:2509.12474, 2025. 2   
+[32] Yufan Ren, Zicong Jiang, Tong Zhang, Søren Forchhammer, and Sabine Susstrunk. Fds: Frequency-aware denois- ¨ ing score for text-guided latent diffusion image editing. In Proceedings of the Computer Vision and Pattern Recognition Conference, pages 2651–2660, 2025. 3   
+[33] Robin Rombach, Andreas Blattmann, Dominik Lorenz, Patrick Esser, and Bjorn Ommer. High-resolution image ¨ synthesis with latent diffusion models. In Proceedings of the IEEE/CVF conference on computer vision and pattern recognition, pages 10684–10695, 2022. 1, 2, 3, 6   
+[34] Olga Russakovsky, Jia Deng, Hao Su, Jonathan Krause, Sanjeev Satheesh, Sean Ma, Zhiheng Huang, Andrej Karpathy, Aditya Khosla, Michael Bernstein, et al. Imagenet large
+
+scale visual recognition challenge. International journal of computer vision, 115(3):211–252, 2015. 5   
+[35] Tim Salimans, Ian Goodfellow, Wojciech Zaremba, Vicki Cheung, Alec Radford, and Xi Chen. Improved techniques for training gans. Advances in neural information processing systems, 29, 2016. 5   
+[36] Kyle Sargent, Kyle Hsu, Justin Johnson, Li Fei-Fei, and Jiajun Wu. Flow to the mode: Mode-seeking diffusion autoencoders for state-of-the-art image tokenization. arXiv preprint arXiv:2503.11056, 2025. 2   
+[37] Minglei Shi, Haolin Wang, Wenzhao Zheng, Ziyang Yuan, Xiaoshi Wu, Xintao Wang, Pengfei Wan, Jie Zhou, and Jiwen Lu. Latent diffusion model without variational autoencoder. arXiv preprint arXiv:2510.15301, 2025. 2   
+[38] Ivan Skorokhodov, Sharath Girish, Benran Hu, Willi Menapace, Yanyu Li, Rameen Abdal, Sergey Tulyakov, and Aliaksandr Siarohin. Improving the diffusability of autoencoders. In Forty-second International Conference on Machine Learning, 2025. 1, 2, 3   
+[39] Theophane Vallaeys, Jakob Verbeek, and Matthieu Cord. ´ Ssdd: Single-step diffusion decoder for efficient image tokenization. arXiv preprint arXiv:2510.04961, 2025. 2   
+[40] Team Wan, Ang Wang, Baole Ai, Bin Wen, Chaojie Mao, Chen-Wei Xie, Di Chen, Feiwu Yu, Haiming Zhao, Jianxiao Yang, et al. Wan: Open and advanced large-scale video generative models. arXiv preprint arXiv:2503.20314, 2025. 1, 2, 3, 5, 6   
+[41] Yushu Wu, Yanyu Li, Ivan Skorokhodov, Anil Kag, Willi Menapace, Sharath Girish, Aliaksandr Siarohin, Yanzhi Wang, and Sergey Tulyakov. H3ae: High compression, high speed, and high quality autoencoder for video diffusion models. arXiv preprint arXiv:2504.10567, 2025. 2   
+[42] Wanghan Xu, Xiaoyu Yue, Zidong Wang, Yao Teng, Wenlong Zhang, Xihui Liu, Luping Zhou, Wanli Ouyang, and Lei Bai. Exploring representation-aligned latent space for better generation. arXiv preprint arXiv:2502.00359, 2025. 2   
+[43] Zhuoyi Yang, Jiayan Teng, Wendi Zheng, Ming Ding, Shiyu Huang, Jiazheng Xu, Yuanming Yang, Wenyi Hong, Xiaohan Zhang, Guanyu Feng, et al. Cogvideox: Text-to-video diffusion models with an expert transformer. In The Thirteenth International Conference on Learning Representations, 2025. 1, 3   
+[44] Jingfeng Yao, Bin Yang, and Xinggang Wang. Reconstruction vs. generation: Taming optimization dilemma in latent diffusion models. In Proceedings of the Computer Vision and Pattern Recognition Conference, pages 15703–15712, 2025. 2   
+[45] Qihang Yu, Mark Weber, Xueqing Deng, Xiaohui Shen, Daniel Cremers, and Liang-Chieh Chen. An image is worth 32 tokens for reconstruction and generation. Advances in Neural Information Processing Systems, 37:128940– 128966, 2024. 2   
+[46] Jinjin Zhang, Qiuyu Huang, Junjie Liu, Xiefan Guo, and Di Huang. Diffusion-4k: Ultra-high-resolution image synthesis with latent diffusion models. In Proceedings of the Computer Vision and Pattern Recognition Conference, pages 23464– 23473, 2025. 2
+
+[47] Richard Zhang. Making convolutional networks shiftinvariant again. In International conference on machine learning, pages 7324–7334. PMLR, 2019. 4   
+[48] Xiangdong Zhang, Jiaqi Liao, Shaofeng Zhang, Fanqing Meng, Xiangpeng Wan, Junchi Yan, and Yu Cheng. Videorepa: Learning physics for video generation through relational alignment with foundation models. arXiv preprint arXiv:2505.23656, 2025. 2   
+[49] Zhengqiang Zhang, Rongyuan Wu, Lingchen Sun, and Lei Zhang. Gpstoken: Gaussian parameterized spatiallyadaptive tokenization for image representation and generation. arXiv preprint arXiv:2509.01109, 2025. 2   
+[50] Long Zhao, Sanghyun Woo, Ziyu Wan, YANDONG LI, Han Zhang, Boqing Gong, Hartwig Adam, Xuhui Jia, and Ting Liu. Epsilon-vae: Denoising as visual decoding. In Forty-second International Conference on Machine Learning, 2025. 2   
+[51] Boyang Zheng, Nanye Ma, Shengbang Tong, and Saining Xie. Diffusion transformers with representation autoencoders. arXiv preprint arXiv:2510.11690, 2025. 2   
+[52] Zixin Zhu, Xuelu Feng, Dongdong Chen, Jianmin Bao, Le Wang, Yinpeng Chen, Lu Yuan, and Gang Hua. Designing a better asymmetric vqgan for stablediffusion. arXiv preprint arXiv:2306.04632, 2023. 6

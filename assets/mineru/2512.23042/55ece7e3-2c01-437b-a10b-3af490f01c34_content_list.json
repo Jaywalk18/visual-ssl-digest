@@ -1,0 +1,2237 @@
+[
+    {
+        "type": "text",
+        "text": "3D sans 3D Scans: Scalable Pre-training from Video-Generated Point Clouds ",
+        "text_level": 1,
+        "bbox": [
+            109,
+            130,
+            885,
+            151
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "Ryousuke Yamada1,2 Kohsuke Ide 1 Yoshihiro Fukuhara 1 Hirokatsu Kataoka1,3 Gilles Pu y 4,\\* Andrei Bursuc 4,\\* Yuki M. Asano 2 ",
+        "bbox": [
+            125,
+            178,
+            869,
+            199
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "",
+        "bbox": [
+            271,
+            208,
+            723,
+            227
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "1 AIST 2 University of Technology Nuremberg 3 University of Oxford 4 INRIA ",
+        "bbox": [
+            125,
+            238,
+            866,
+            258
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "Abstract ",
+        "text_level": 1,
+        "bbox": [
+            246,
+            284,
+            326,
+            300
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "Despite recent progress in 3D self-supervised learning, collecting large-scale 3D scene scans remains expensive and labor-intensive. In this work, we investigate whether 3D representations can be learned from unlabeled videos recorded without any real 3D sensors. We present Laplacian-Aware Multi-level 3D Clustering with Sinkhorn-Knopp (LAM3C), a self-supervised framework that learns from video-generated point clouds reconstructed from unlabeled videos. We first introduce RoomTours, a videogenerated point cloud dataset constructed by collecting room-walkthrough videos from the web (e.g., real-estate tours) and generating 49,219 scenes using an off-the-shelf feed-forward reconstruction model. We also propose a noise-regularized loss that stabilizes representation learning by enforcing local geometric smoothness and ensuring feature stability under noisy point clouds. Remarkably, without using any real 3D scans, LAM3C achieves better performance than previous self-supervised methods on indoor semantic and instance segmentation. These results suggest that unlabeled videos represent an abundant source of data for 3D self-supervised learning. Our source code is available at https://github.com/ryosukeyamada/lam3c. ",
+        "bbox": [
+            86,
+            316,
+            483,
+            664
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "1. Introduction ",
+        "text_level": 1,
+        "bbox": [
+            89,
+            696,
+            220,
+            712
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "Understanding real-world 3D scenes is essential for AI systems that require visual spatial intelligence [55]. As of 2025, vision foundation models (VFMs) such as DI-NOv2/v3 [30, 39] and SAM [22] have shown remarkable generalization in image recognition tasks. DINOv3 is pretrained on about 1.7 billion unlabeled images, while SAM is trained on 11 million densely annotated images. In contrast, 3D data is highly constrained by scanning real environments and manual annotation, making large-scale collection extremely difficult. The largest widely used indoor scene dataset offers only about 5k unique scenes [4]. This disparity in data scalability poses significant limitations to achieving scalable 3D pre-training. ",
+        "bbox": [
+            89,
+            722,
+            483,
+            875
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "chart",
+        "img_path": "images/de1c36140262fd25e1acad2a9ff414bb97a673d937ce3bebe3594211250cf700.jpg",
+        "content": "",
+        "chart_caption": [
+            "Figure 1. Video-generated point clouds (VGPC) match or exceed real 3D scan performance without using any real 3D data. Left: Our method (LAM3C) trained solely on VGPC achieves comparable performance to methods trained on real 3D scans when fine-tuning on 10% of ScanNet. Right: Instance segmentation results on S3DIS show LAM3C outperforms self-supervised methods trained on real 3D scans and matches Sonata which uses both real and synthetic data. "
+        ],
+        "chart_footnote": [],
+        "sub_type": "scatter",
+        "bbox": [
+            526,
+            290,
+            893,
+            450
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "",
+        "bbox": [
+            511,
+            595,
+            906,
+            641
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "3D self-supervised learning (3D-SSL) for indoor scene understanding has made steady progress [50, 52, 54]. For instance, Sonata [53] is a representative approach that extends DINOv2 to point clouds and mitigates the geometric shortcut problem, improving segmentation performance. However, most existing 3D-SSL methods remain fundamentally limited by the availability of 3D data. Even when combining real and synthetic point clouds, the training scale is around 140k samples, and merely 18k for real 3D scans alone. Such limited data scale hinders 3D-SSL methods from reaching the same level of success achieved in 2D vision. This limitation motivates us to develop a new 3D pre-training framework without relying on real 3D scans. ",
+        "bbox": [
+            511,
+            642,
+            908,
+            839
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "We hypothesize that we can extract enough geometric cues from unlabeled videos to learn 3D representations. Traditionally, computer vision has aimed to infer 3D structures from multi-view images. Classical methods such as ",
+        "bbox": [
+            511,
+            839,
+            908,
+            900
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "aside_text",
+        "text": "arXiv:2512.23042v2 [cs.CV] 26 Mar 2026 ",
+        "bbox": [
+            22,
+            273,
+            57,
+            722
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "page_footnote",
+        "text": "\\*indicates Valeo.ai. ",
+        "bbox": [
+            109,
+            887,
+            214,
+            898
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "page_number",
+        "text": "1 ",
+        "bbox": [
+            493,
+            924,
+            503,
+            935
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "Structure-from-Motion (SfM) [1, 41, 43, 48] and Multi-View Stereo (MVS) [17, 29, 38] reconstruct 3D structure by identifying correspondences across multi-view images and optimizing camera parameters and point clouds. While these classical methods are accurate, they involve a complex optimization procedure. More recently, feed-forward reconstruction models such as VGGT have emerged [21, 45, 46]. Despite their simple design, these models can directly infer 3D structure from multi-view images and achieve reconstructions that are comparable to, or even better than, classical methods. These advances indicate that videos contain strong geometric cues that modern reconstruction models can extract. Building on this insight, we argue that this opens a path towards scan-free indoor scene understanding. ",
+        "bbox": [
+            89,
+            90,
+            480,
+            303
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "text",
+        "text": "We aim to leverage video-generated point clouds (VGPC) reconstructed from unlabeled videos as pretraining data and show that they are remarkably effective pre-training signals for 3D-SSL. We introduce Laplacian-Aware Multi-level 3D Clustering with Sinkhorn-Knopp (LAM3C), a pre-training framework that learns stable representations from VGPC via Sinkhorn-Knopp clustering [3, 7, 14, 23]. LAM3C comprises the following key components: (i) RoomTours. We construct a new dataset, RoomTours, by collecting room-walkthrough videos from the web (e.g., real-estate tours) and reconstructing VGPC from various camera locations using an off-the-shelf feedforward 3D reconstruction model. RoomTours contains 49,219 VGPC scenes reconstructed from indoor videos. (ii) Noise-regularized loss. VGPC contain noise and missing regions, which makes point-wise embeddings unstable during Sinkhorn-Knopp clustering. To address this, we introduce a noise-regularized loss composed of two terms: a Laplacian smoothing term, which encourages spatially adjacent points to produce similar embeddings by smoothing features along the local geometry of the VGPC; a noise consistency term, which enforces two views from the same scene to have similar global representations even in the presence of noisy regions. Together, these losses make learning robust to noisy VGPC and lead to stable representations. The main contributions of this paper are as follows. ",
+        "bbox": [
+            91,
+            305,
+            483,
+            698
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "list",
+        "sub_type": "text",
+        "list_items": [
+            "• We propose a pipeline for generating large datasets of VGPC of indoor scenes from unlabeled videos. Thanks to this pipeline, we create RoomTours, a dataset of 49k point clouds obtained from videos collected from the web. ",
+            "• We propose LAM3C, a self-supervised method allowing stable representation learning on imperfect point clouds such as those reconstructed from videos. We achieve this thanks to two new regularization losses used to control the effect of noise and missing regions in the point clouds. ",
+            "• We show that VGPC are sufficient to learn 3D representations. We outperform Sonata [53] trained only on real 3D scans on several benchmarks (see Fig. 1). Beyond LAM3C, the key ingredients are a sufficiently large "
+        ],
+        "bbox": [
+            89,
+            704,
+            483,
+            901
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "text",
+        "text": "dataset of VGPC, like RoomTours, a large-capacity 3D backbone, and sufficiently long pre-training schedule. ",
+        "bbox": [
+            526,
+            90,
+            903,
+            121
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "text",
+        "text": "2. Related work ",
+        "text_level": 1,
+        "bbox": [
+            513,
+            135,
+            651,
+            150
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "text",
+        "text": "SSL on point clouds. Manual annotation of real 3D scans is costly, making 3D-SSL, which generates pseudosupervision from unlabeled data, an essential technique for representation learning. Early 3D-SSL methods concentrated on building representations for dense scans of single objects [12, 33, 36]. In indoor scene understanding, PointContrast [54] pioneered 3D-SSL by performing pointlevel contrastive learning, establishing the first successful pre-training on large-scale point clouds. Subsequent works improved performance thanks to a better choice of contrasting pairs [19, 20, 24, 44, 50, 61], and also extended the application to sparse point clouds of large outdoor scenes [27, 28, 37, 57]. Beyond contrastive methods, other strategies used a reconstruction pretext task [5, 18, 26, 31, 58, 59]. Recently, inspired by the success of DINO [8, 30], Sonata adapted this technique to point clouds with recipes to mitigate low-level geometric shortcuts during pre-training. It achieved notable gains over the state-of-the-art, especially in linear probing. ",
+        "bbox": [
+            511,
+            160,
+            906,
+            446
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "text",
+        "text": "Despite these advances, progress in 3D-SSL remains limited by the quantity of data available. Even with mixed real and synthetic data, Sonata’s largest setup involves only about 140k scenes, constrained by the high cost and complexity of acquiring real 3D scans. Without addressing this bottleneck, the progress of 3D-SSL may remain fundamentally limited by data scale. Our work departs from this setting by leveraging unlabeled videos instead of real 3D scans, providing a scalable alternative for representation learning. ",
+        "bbox": [
+            511,
+            448,
+            905,
+            598
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "text",
+        "text": "Feed-forward reconstruction models. Feed-forward reconstruction models have emerged, marking a significant shift in the paradigm of 3D reconstruction [6, 21, 45, 46]. VGGT [45] jointly predicts camera poses and point maps from multi-view images using a single transformer model, eliminating the need for sequential SfM optimization [17, 29, 38]. In addition, π3 [47] introduces a fully permutationequivariant architecture, enabling affine-invariant camera poses and scale-invariant local point maps without a reference view that is invariant to the ordering of input views. This design yields a more robust reconstruction that is well suited to in-the-wild domains. While these models achieve high-quality reconstruction without explicit geometric optimization, they only focus on reconstruction itself rather than representation learning for 3D scene understanding. The potential of the intermediate features or reconstructed point clouds for pre-training has not yet been fully realized. ",
+        "bbox": [
+            511,
+            599,
+            905,
+            854
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "text",
+        "text": "This paper explores the potential of VGPC, produced by a feed-forward reconstruction model, as pre-training data for understanding indoor scenes. Our proposed LAM3C achieves representation learning without real 3D scans. ",
+        "bbox": [
+            511,
+            854,
+            903,
+            900
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "page_number",
+        "text": "2 ",
+        "bbox": [
+            493,
+            924,
+            504,
+            935
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "image",
+        "img_path": "images/c7651092214790b89cb35d58fa7d040ff89cf554c6b79230cd642813ca36a227.jpg",
+        "image_caption": [
+            "Figure 2. Laplacian smoothing loss. LAM3C resolves learning instability by using kNN graphs for VGPC and assigning distancebased weights. This reduces embedding divergence caused by noisy point clouds and promotes more stable representations from neighboring point clouds. "
+        ],
+        "image_footnote": [],
+        "content": "```mermaid\ngraph LR\n    A[\"Input Image\"] --> B[\"kNN Graph\"]\n    B --> C[\"Point Encoder\"]\n    C --> D[\"Embedding Stability: Embedding Stability with Laplacian Smoothing\"]\n    D --> E[\"Output Image with Arrow Width Indicates Attraction Strength (thicker = stronger)\"]\n    style A fill:#f9f,stroke:#333\n    style B fill:#ccf,stroke:#333\n    style C fill:#cfc,stroke:#333\n    style D fill:#fcc,stroke:#333\n```",
+        "sub_type": "flowchart",
+        "bbox": [
+            98,
+            90,
+            480,
+            260
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "",
+        "bbox": [
+            89,
+            358,
+            455,
+            373
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "3. LAM3C ",
+        "text_level": 1,
+        "bbox": [
+            89,
+            385,
+            191,
+            400
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "This section introduces our proposed LAM3C as a pretraining framework. LAM3C learns 3D representations through Sinkhorn-Knopp clustering from VGPC generated by a feed-forward reconstruction model. The architecture follows a teacher–student design, where the student model is trained to mimic the feature representations produced by the teacher. The teacher model is updated using an exponential moving average (EMA) [32] of the student parameters. This design encourages more generalizable representations, whereas robustness to noisy or missing point clouds comes from our noise-regularized losses. In addition to the standard clustering loss [53], LAM3C introduces two new losses that mitigate the noisy nature of VGPC to enhance local smoothness and feature consistency. We recall the Sonata loss and describe our new noise-regularized losses below. ",
+        "bbox": [
+            89,
+            411,
+            483,
+            651
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "Base clustering loss. We build upon the clustering loss, which has shown strong performance for scene understanding. The teacher and student models are fed with different augmentations of the same scene, and the teacher’s parameters are updated as the EMA of the student’s parameters to stabilize training. The overall clustering loss is given by: ",
+        "bbox": [
+            89,
+            652,
+            483,
+            744
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "equation",
+        "text": "$$\n\\mathcal {L} _ {\\text { clustering }} = w _ {u} \\mathcal {L} _ {\\text { unmask }} + w _ {m} \\mathcal {L} _ {\\text { mask }} + w _ {r} \\mathcal {L} _ {\\text { roll }}. \\tag {1}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            135,
+            753,
+            482,
+            770
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "The unmask loss ${ \\mathcal { L } } _ { \\mathrm { u n m a s k } }$ aligns student local-view features to teacher global-view features via kNN matching. The mask loss $\\mathcal { L } _ { \\mathrm { m a s k } }$ distills the teacher’s prototype assignments from a full global-view to the student on a masked global-view. The roll-mask loss $\\mathcal { L } _ { \\mathrm { r o l l } }$ swaps the two globalviews when forming targets to enforce cross-view consistency. Following the Sonata configuration, we set the loss weights to $w _ { u } , w _ { m } , w _ { r } = 4 : 2 : 2$ . Each loss term aligns the feature embeddings through a cross-entropy loss over prototype assignments: ",
+        "bbox": [
+            89,
+            780,
+            483,
+            901
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "image",
+        "img_path": "images/06e097a37ad538f83722f0ba18ef0e9ce463fff4af1910a0992479b84076a985.jpg",
+        "image_caption": [
+            "Figure 3. Noise consistency loss. This is a constraint term stating that the same point cloud for the teacher and student models should yield the same embedding in the feature space. This enables more stable clustering even in VGPC. "
+        ],
+        "image_footnote": [],
+        "content": "```mermaid\ngraph TD\n    A[\"Global-View\"] --> B[\"with mask\"]\n    B --> C[\"Student\"]\n    C --> D[\"EMA\"]\n    D --> E[\"Teacher\"]\n    E --> F[\"Pull together\"]\n    G[\"with noise augmentation\"] --> B\n    G --> E\n```",
+        "sub_type": "flowchart",
+        "bbox": [
+            517,
+            87,
+            898,
+            204
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "",
+        "bbox": [
+            511,
+            284,
+            906,
+            315
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "equation",
+        "text": "$$\n\\mathcal {L} _ {k} = - \\sum_ {i} q _ {i} ^ {(t)} \\log p _ {i} ^ {(s)}. \\tag {2}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            624,
+            321,
+            903,
+            353
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "Here, p(si $p _ { i } ^ { ( s ) } = \\mathrm { s o f t m a x } ( z _ { i } ^ { ( s ) } / \\tau _ { s } )$ denotes the student’s probability distribution, and $q _ { i } ^ { ( t ) } = $ Sinkhorn $( z _ { i } ^ { ( t ) } / \\tau _ { t } )$ represents the teacher’s entropy-regularized soft assignment, following [3, 7]. Both $z _ { i } ^ { ( s ) }$ and z(t) $z _ { i } ^ { ( t ) }$ are prototype logits, while $\\tau _ { s }$ and $\\tau _ { t }$ are temperature parameters that control the sharpness of the distributions. ",
+        "bbox": [
+            511,
+            362,
+            905,
+            459
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "Laplacian smoothing loss. VGPC contain noise and missing regions due to imperfect reconstruction. To stabilize representation learning under such point clouds, we construct a k-Nearest Neighbor (kNN) graph on each point cloud and apply a Laplacian smoothness loss as shown in Fig. 2. For a point $x _ { i }$ with embedding $z _ { i } = f _ { \\theta } ( x _ { i } )$ , the loss encourages nearby points to produce similar embeddings: ",
+        "bbox": [
+            511,
+            460,
+            906,
+            566
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "equation",
+        "text": "$$\nR _ {\\text { Lap }} = \\sum_ {(i, j) \\in E} w _ {i j} \\| z _ {i} - z _ {j} \\| ^ {2}, \\tag {3}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            599,
+            573,
+            903,
+            606
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "We assign each edge a distance-based weight, $\\begin{array} { r l } { w _ { i j } } & { { } = } \\end{array}$ exp $\\lvert - \\rvert \\rvert \\bar { p _ { i } } - p _ { j } \\rvert \\rvert ^ { 2 } / \\sigma ^ { \\bar { 2 } } )$ , so that closer points contribute more to the smoothness constraint. We compute the edge weight $w _ { i j }$ based on the L2 distance between points in the VGPC. The scale parameter σ is adaptively estimated per point cloud as the median of the kNN distance, making the weighting robust to variations in point density. In addition, neighbors further away than a certain threshold are removed for improved robustness. In practice, we compute the regularization on a kNN graph with distance-based edge weights and degree normalization. To improve robustness to noisy reconstructions and outliers, we replace the squared L2 edge penalty with a Huber penalty. ",
+        "bbox": [
+            511,
+            613,
+            906,
+            810
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "This loss smooths features along the local geometry by encouraging nearby points to share similar embeddings, while noisy point clouds receive small weights. Because the loss depends only on the relational structure between points rather than absolute coordinates, it prevents the collapse of learning and promotes stable representations. ",
+        "bbox": [
+            511,
+            810,
+            908,
+            901
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "page_number",
+        "text": "3 ",
+        "bbox": [
+            493,
+            924,
+            503,
+            935
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "Noise consistency loss. While Laplacian smoothing enforces geometric smoothness across neighboring points, our noise consistency loss ensures feature stability for different augmented views of the same point cloud. As shown in Fig. 3, given two views of the same $\\operatorname { V G P C } x ^ { ( a ) }$ ) and $x ^ { ( b ) }$ , we feed them into the EMA teacher $g _ { \\mathrm { E M A } }$ and the student $f _ { \\theta } ,$ respectively, and minimize the discrepancy between their embeddings: ",
+        "bbox": [
+            89,
+            90,
+            483,
+            212
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "equation",
+        "text": "$$\nR _ {\\text { cons }} = \\frac {1}{| \\mathcal {P} |} \\sum_ {(i, j) \\in \\mathcal {P}} \\left\\| g _ {\\mathrm{EMA}} (x ^ {(a)}) _ {j} - f _ {\\theta} (x ^ {(b)}) _ {i} \\right\\| ^ {2}, \\tag {4}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            112,
+            236,
+            482,
+            275
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "text",
+        "text": "where $\\mathcal { P }$ denotes the set of kNN correspondences between the noise-augmented global-view $x ^ { ( a ) }$ and the masked global-view $\\bar { \\boldsymbol { x } } ^ { ( b ) }$ . Each pair $( i , j ) \\in \\mathcal { P }$ represents corresponding points from the student and teacher inputs, respectively. $g _ { \\mathrm { E M A } } ( \\cdot )$ and $f _ { \\theta } ( \\cdot )$ denote the backbone encoders that output point-wise embeddings. Minimizing $R _ { \\mathrm { c o n s } }$ enforces that the same point maintains a consistent embedding even in the presence of noise. ",
+        "bbox": [
+            89,
+            286,
+            483,
+            407
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "text",
+        "text": "Total objective. LAM3C extends the clustering objective by adding Laplacian smoothness and noise consistency. The final loss is defined as: ",
+        "bbox": [
+            89,
+            407,
+            483,
+            452
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "equation",
+        "text": "$$\n\\mathcal {L} _ {\\text { total }} = \\mathcal {L} _ {\\text { clustering }} + \\lambda R _ {\\text { Lap }} + \\mu R _ {\\text { cons }}. \\tag {5}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            163,
+            467,
+            482,
+            484
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "text",
+        "text": "During pre-training, we schedule the strength of regularization. The Laplacian coefficient λ starts at 2e−4 and linearly increases to 3e−3, while the noise consistency coefficient $\\mu$ is fixed at 0.05. Additional ablations on λ and µ are provided in the supplementary material. By combining Laplacian smoothing with noise consistency, our noiseregularized clustering enables stable representation learning even from noisy point clouds. ",
+        "bbox": [
+            89,
+            496,
+            483,
+            617
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "text",
+        "text": "LAM3C’s loss does not rely on hand-crafted indoor priors such as object scale or topology. In $L _ { \\mathrm { c l u s t e r i n g } } ,$ the student predicts targets computed from global views while observing only local views or masked global views. Since the targets encode global context, the task cannot be solved using local geometry alone, even for similar local structures. This encourages the representation to capture global context without relying on indoor priors. ",
+        "bbox": [
+            89,
+            617,
+            483,
+            738
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "text",
+        "text": "4. RoomTours ",
+        "text_level": 1,
+        "bbox": [
+            89,
+            753,
+            220,
+            768
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "text",
+        "text": "This section describes RoomTours and the process used to generate VGPC from unlabeled videos on the web. ",
+        "bbox": [
+            89,
+            779,
+            482,
+            809
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "text",
+        "text": "Overview of RoomTours. Online video platforms such as YouTube host a vast number of indoor walkthrough videos, including real-estate tours and apartment viewings. Although these videos are unlabeled, they contain geometric cues for understanding indoor scenes, such as various scene layouts. To leverage this video resource for 3D-SSL, ",
+        "bbox": [
+            89,
+            810,
+            483,
+            900
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "image",
+        "img_path": "images/630f6e0bd26bb5618d3a809849c72809f91fde3540af5aa24046398c3468a49b.jpg",
+        "image_caption": [
+            "Figure 4. Overview of RoomTours construction. We segment the video into scene sequences using CLIP [34], and generate VGPC by inputting each scene sequence into $\\pi ^ { 3 }$ . Because the scenes differ from real 3D scans in coordinate system, scale, and spacing, we apply a post-processing alignment. "
+        ],
+        "image_footnote": [],
+        "content": "```mermaid\ngraph LR\n    A[\"scene sequence\"] --> B[\"A video from web\"]\n    B --> C[\"A clip video\"]\n    C --> D[\"reconstruction model\"]\n    D --> E[\"1. Z-axis Adjustment\"]\n    D --> F[\"2. Scale\"]\n    E --> G[\"Video-generated point clouds\"]\n    F --> G\n```",
+        "sub_type": "flowchart",
+        "bbox": [
+            516,
+            87,
+            893,
+            229
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "text",
+        "text": "we construct RoomTours, a video-generated point cloud dataset from unlabeled videos as shown in Fig. 4. ",
+        "bbox": [
+            511,
+            332,
+            905,
+            362
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "text",
+        "text": "Video collection. We collect indoor videos from YouTube. Since room layout and furniture vary significantly across regions in the world, we target videos from multiple cities worldwide. We search using keywords such as “<city>, real-estate, walk-through,” and manually select candidate channels that upload indoor tours. ",
+        "bbox": [
+            511,
+            364,
+            905,
+            455
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "text",
+        "text": "To ensure accurate 3D reconstruction, we prioritize videos with fewer dynamic objects (e.g., real-estate agents walking in front of the camera) and minimal editing cuts or aggressive camera motion. Once candidate channels are selected, videos are automatically filtered based on metadata such as duration and undesired keywords $( \\mathrm { e . g . , \\mathrm { \\vec { \\Omega } C G , \\mathrm { \\vec { \\Omega } } } } ^ { \\prime }$ “drone,” “short”). Only videos that satisfy these criteria are downloaded, resulting in a total of 3,462 videos. In addition, we utilize videos from RealEstate10k [62], the YouTube House Tours Dataset [10], and HouseTours [9]. ",
+        "bbox": [
+            511,
+            458,
+            905,
+            609
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "text",
+        "text": "Video segmentation for indoor scene. The collected videos are not guaranteed to be indoor scenes, nor do they always correspond to a single scene. Videos may include outdoor shots, advertisements, or multiple indoor areas from a walkthrough. To address this issue, we convert each video into multiple indoor scene sequences. ",
+        "bbox": [
+            511,
+            611,
+            905,
+            702
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "text",
+        "text": "We apply frame-level zero-shot scene classification using CLIP [34]. In the first step, each frame is classified as indoor or outdoor, and frames predicted as outdoor are discarded. In the second step, the remaining indoor frames are grouped into three broad scene types, namely “living room”, “bedroom”, and “bathroom”. These categories are deliberately coarse because fine-grained categories would split a video into many short sequences, making reconstruction unreliable, whereas coarser categories would mix widely different scenes into a single sequence. Scene boundaries are detected by changes in the predicted scene type, and the video is split accordingly. We stabilize the predictions by enforcing temporal consistency, ensuring the same class label for frames within 0.5 seconds. ",
+        "bbox": [
+            511,
+            704,
+            906,
+            901
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "page_number",
+        "text": "4 ",
+        "bbox": [
+            493,
+            924,
+            503,
+            935
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "image",
+        "img_path": "images/c513ca62f6b4748d8c6b1297c36daf5eaa75a8adbaa697766f571f91f141110c.jpg",
+        "image_caption": [
+            "Figure 5. Visualization of VGPC from the RoomTours. These are pseudo-scenes generated as VGPC from unsupervised videos collected from the web. Visually, they achieve very high-quality reconstruction of real-world indoor scenes. However, for example, the leftmost scene contains a large amount of noisy point clouds in the scene due to camera shake in the input video, resulting in blurred object boundaries and cases where walls or floors appear doubled. "
+        ],
+        "image_footnote": [],
+        "content": "",
+        "bbox": [
+            91,
+            85,
+            903,
+            258
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "",
+        "bbox": [
+            89,
+            338,
+            424,
+            352
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "VGPC generation. We create VGPC from videos using $\\pi ^ { 3 }$ [47], which is a feed-forward 3D reconstruction model that does not rely on SLAM [11, 16] and Bundle Adjustment [42] optimization. Given a scene sequence, we first sample frames at uniform intervals and, for long sequences, automatically downsample to a target number of frames (e.g., 200-400 frames per scene). Each frame is resized to meet a per-image pixel count while preserving aspect ratio. $\\pi ^ { 3 }$ processes the sequence in a single mixed-precision forward pass. It filters unreliable predictions using confidence masking and edge suppression, removes remaining outliers, and then fuses the per-frame estimates into final colored point clouds. Our method outputs colored point clouds for each scene, with an average runtime of about 5 minutes. Example outputs of RoomTours are shown in Fig. 5. ",
+        "bbox": [
+            89,
+            354,
+            483,
+            580
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "Alignment of scenes from VGPC. A scene reconstructed from $\\pi ^ { 3 }$ often contains noise and has an inconsistent coordinate system or scale. Thus, we apply a lightweight alignment procedure that enforces geometric consistency while maintaining data diversity. First, we randomly sample points from VGPC and remove statistical outliers using a standard SOR filter, which eliminates points with abnormally large k-NN distances. Next, we detect a dominant plane and align the scene to a Z-up coordinate system. We then perform an SVD refinement of its orientation. If plane detection fails, ceilings or walls may be mistakenly selected, causing the coordinate system to flip. We keep such scenes unchanged in our dataset because automatic rejection could remove valid samples and reduce diversity. ",
+        "bbox": [
+            89,
+            582,
+            483,
+            792
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "In addition, we define the scale of a scene as the diagonal length of its axis-aligned bounding box, which captures the overall spatial extent of the geometry. This value is denoted as $s _ { \\mathrm { c u r r e n t } }$ . We then align the scene with a factor $\\begin{array} { r } { \\alpha = \\frac { s _ { \\mathrm { t a r g e t } } } { s _ { \\mathrm { c u r r e n t } } } } \\end{array}$ scurrent where $s _ { \\mathrm { t a r g e t } }$ is drawn from a scale distribution estimated in advance over ScanNet. Finally, we estimate per-point normals using local PCA. This process aligns VGPC, converting them into geometrically consistent pre-training data. ",
+        "bbox": [
+            89,
+            795,
+            483,
+            900
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "",
+        "bbox": [
+            511,
+            338,
+            883,
+            353
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "Dataset statistics. The final RoomTours contains 49,219 scenes from VGPC, covering diverse lighting conditions, camera trajectories, and architectural styles across different countries. Compared to existing 3D datasets, RoomTours captures a greater diversity of 3D structures, providing a scalable foundation for learning stable representations from unlabeled videos. Here, we denote the full version, which contains 49,219 VGPC including videos from existing datasets, as RoomTours-49k (or LAM3C-49k for the model trained on RoomTours-49k). We also refer to the subset consisting of 15,921 VGPC built solely from our collected videos as RoomTours-16k (or LAM3C-16k for the model trained on RoomTours-16k). We provide the dataset details in the supplementary materials. ",
+        "bbox": [
+            511,
+            354,
+            906,
+            565
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "5. Experiments ",
+        "text_level": 1,
+        "bbox": [
+            513,
+            580,
+            643,
+            598
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "In this section, we evaluate the effectiveness of LAM3C through comprehensive experiments. ",
+        "bbox": [
+            511,
+            607,
+            906,
+            638
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "5.1. Implementation Details ",
+        "text_level": 1,
+        "bbox": [
+            511,
+            650,
+            730,
+            666
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "Pre-training configuration. We pre-train the model using LAM3C with a Point Transformer V3 (PTv3) [51] backbone. Each scene provides 9D input features consisting of coordinates, colors and normals. Training is conducted on eight NVIDIA H200 GPUs with a total batch size of 16. AdamW [25] is used as the optimizer with an initial learning rate of 0.001 and layer-wise decay of 0.9. The OneCycleLR [40] learning rate scheduler is used, running for 145,600 iterations with a warm-up period followed by cosine annealing. Weight decay is linearly increased from 0.04 to 0.1 during pre-training. For the default RoomTours-1k / PTv3-Base setting, we train for 145,600 iterations with OneCycleLR. For larger-scale settings, we scale the number of iterations with dataset and model size (see Supp. Tab. 7). Evaluation protocol. We evaluate the pre-training effectiveness of LAM3C on semantic and instance segmentation tasks in indoor scenes. We use four widely used indoor scene datasets for evaluation: ScanNet [15], Scan-Net++ [56], ScanNet200 [35], and S3DIS [2]. Following standard evaluation protocols, we report results under two settings: (i) Full fine-tuning, in which all pre-trained model parameters are updated on the fine-tuning dataset, and (ii) Linear probing, in which the backbone parameters are frozen and only a final linear layer is trained on the finetuning dataset. The details of the hyperparameters for each dataset are described in the supplementary material. ",
+        "bbox": [
+            511,
+            672,
+            908,
+            900
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "page_number",
+        "text": "5 ",
+        "bbox": [
+            493,
+            924,
+            503,
+            935
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "table",
+        "img_path": "images/349ebe43611d43aed971958dcfa9aeffc3cf79a9fdd5b98666b83feac7c82561.jpg",
+        "table_caption": [
+            "Table 1. Indoor Semantic Segmentation Results across Datasets. All methods are evaluated by full fine-tuning (Full-FT) or linear probing (LP) on PTv3 (Base) for 100 epochs. We use mIoU as evaluation metric. VGPC indicates video-generated point clouds. "
+        ],
+        "table_footnote": [
+            "\\* uses PTv3 (Large) and 437k pre-training steps. Gray indicates sup. method or access to val/test splits during pre-training. "
+        ],
+        "table_body": "<table><tr><td>Semantic Seg.</td><td colspan=\"3\">Pre-training Data</td><td colspan=\"2\">ScanNet [15]</td><td colspan=\"2\">ScanNet200 [35]</td><td colspan=\"2\">ScanNet++ Val [56]</td><td colspan=\"2\">S3DIS Area 5 [2]</td></tr><tr><td>Methods</td><td>Real</td><td>Synth.</td><td>VGPC</td><td>LP</td><td>Full-FT</td><td>LP</td><td>Full-FT</td><td>LP</td><td>Full-FT</td><td>LP</td><td>Full-FT</td></tr><tr><td>PTv3</td><td>-</td><td>-</td><td>-</td><td>16.1</td><td>74.7</td><td>2.2</td><td>32.0</td><td>6.9</td><td>40.3</td><td>29.6</td><td>67.8</td></tr><tr><td>MSC [50]</td><td>7k</td><td>-</td><td>-</td><td>21.8</td><td>78.2</td><td>3.3</td><td>33.4</td><td>8.1</td><td>42.4</td><td>32.1</td><td>69.9</td></tr><tr><td>PPT [52] (sup.)</td><td>1k</td><td>21k</td><td>-</td><td>-</td><td>78.6</td><td>-</td><td>36.0</td><td>-</td><td>43.3</td><td>-</td><td>74.3</td></tr><tr><td>Sonata [53]</td><td>18k</td><td>121k</td><td>-</td><td>72.5</td><td>79.4</td><td>29.3</td><td>36.8</td><td>37.3</td><td>43.7</td><td>72.3</td><td>76.0</td></tr><tr><td>Sonata (all real)</td><td>15k</td><td>-</td><td>-</td><td>69.4</td><td>78.5</td><td>28.1</td><td>35.3</td><td>36.3</td><td>42.7</td><td>69.8</td><td>75.2</td></tr><tr><td>Sonata (ScanNet)</td><td>1k</td><td>-</td><td>-</td><td>67.1</td><td>75.4</td><td>27.2</td><td>32.2</td><td>34.3</td><td>41.7</td><td>61.2</td><td>72.2</td></tr><tr><td>LAM3C (ours)</td><td>-</td><td>-</td><td>16k</td><td>58.9</td><td>75.6</td><td>23.7</td><td>32.8</td><td>33.5</td><td>40.7</td><td>63.8</td><td>71.9</td></tr><tr><td>LAM3C (ours)</td><td>-</td><td>-</td><td>49k</td><td>66.0</td><td>77.7</td><td>25.3</td><td>35.1</td><td>34.2</td><td>43.1</td><td>65.7</td><td>72.9</td></tr><tr><td>LAM3C* (ours)</td><td>-</td><td>-</td><td>49k</td><td>69.5</td><td>79.5</td><td>28.1</td><td>35.9</td><td>35.9</td><td>43.1</td><td>69.5</td><td>75.5</td></tr></table>",
+        "bbox": [
+            91,
+            117,
+            903,
+            319
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "table",
+        "img_path": "images/ad0ad1797c10081378157f3d252d222b4471f5620cb0cfe85a3bba9ce49768d9.jpg",
+        "table_caption": [
+            "Table 2. Indoor Instance Segmentation Results across Datasets. All methods are evaluated by full fine-tuning (Full-FT) or linear probing (LP) on PTv3 (Base) for 100 epochs. We use mAP as evaluation metric. VGPC indicates video-generated point clouds. "
+        ],
+        "table_footnote": [
+            "\\* uses PTv3 (Large) and 437k pre-training steps. Gray indicates sup. method or access to val/test splits during pre-training. "
+        ],
+        "table_body": "<table><tr><td>Instance Seg.</td><td colspan=\"3\">Pre-training Data</td><td colspan=\"2\">ScanNet [15]</td><td colspan=\"2\">ScanNet200 [35]</td><td colspan=\"2\">ScanNet++ Val [56]</td><td colspan=\"2\">S3DIS Area 5 [2]</td></tr><tr><td>Methods</td><td>Real</td><td>Synth</td><td>VGPC</td><td>LP</td><td>Full-FT</td><td>LP</td><td>Full-FT</td><td>LP</td><td>Full-FT</td><td>LP</td><td>Full-FT</td></tr><tr><td>PTv3</td><td>-</td><td>-</td><td>-</td><td>0.2</td><td>26.9</td><td>0.02</td><td>17.2</td><td>0.03</td><td>18.5</td><td>11.9</td><td>39.6</td></tr><tr><td>MSC [50]</td><td>7k</td><td>-</td><td>-</td><td>-</td><td>41.1</td><td>-</td><td>23.4</td><td>-</td><td>21.7</td><td>-</td><td>38.1</td></tr><tr><td>PPT [52] (sup.)</td><td>1k</td><td>21k</td><td>-</td><td>-</td><td>42.1</td><td>-</td><td>24.0</td><td>-</td><td>21.9</td><td>-</td><td>39.7</td></tr><tr><td>Sonata [53]</td><td>18k</td><td>121k</td><td>-</td><td>-</td><td>42.4</td><td>-</td><td>25.4</td><td>-</td><td>22.3</td><td>-</td><td>45.5</td></tr><tr><td>Sonata (all real)</td><td>15k</td><td>-</td><td>-</td><td>28.0</td><td>40.3</td><td>9.7</td><td>20.8</td><td>10.0</td><td>19.7</td><td>22.9</td><td>41.5</td></tr><tr><td>Sonata (ScanNet)</td><td>1k</td><td>-</td><td>-</td><td>23.9</td><td>29.8</td><td>8.6</td><td>19.7</td><td>9.7</td><td>18.7</td><td>19.5</td><td>40.8</td></tr><tr><td>LAM3C (ours)</td><td>-</td><td>-</td><td>16k</td><td>19.1</td><td>38.9</td><td>5.8</td><td>18.7</td><td>9.5</td><td>19.7</td><td>18.0</td><td>43.3</td></tr><tr><td>LAM3C (ours)</td><td>-</td><td>-</td><td>49k</td><td>25.1</td><td>39.7</td><td>8.3</td><td>19.6</td><td>11.3</td><td>20.5</td><td>21.6</td><td>45.7</td></tr><tr><td>LAM3C* (ours)</td><td>-</td><td>-</td><td>49k</td><td>28.6</td><td>41.7</td><td>9.5</td><td>21.9</td><td>12.1</td><td>21.1</td><td>27.8</td><td>47.2</td></tr></table>",
+        "bbox": [
+            91,
+            378,
+            901,
+            580
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "text",
+        "text": "",
+        "bbox": [
+            88,
+            613,
+            482,
+            779
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "text",
+        "text": "Comparison baseline. We use Sonata as a baseline in our experiments. We noticed that previous 3D-SSL techniques could include, during pre-training, the validation and test splits of datasets also used for downstream evaluation. This is the case for Sonata, in particular.1 While no labels of the validation and test splits are accessed, including these splits during pre-training nevertheless improves performance, as shown in the supplementary material. As our method uses no real point clouds, let alone validation or test data, we remove these splits when pre-training Sonata baselines to ensure fair comparison. ",
+        "bbox": [
+            88,
+            781,
+            482,
+            857
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "text",
+        "text": "",
+        "bbox": [
+            511,
+            613,
+            906,
+            704
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "text",
+        "text": "5.2. Main results ",
+        "text_level": 1,
+        "bbox": [
+            511,
+            712,
+            648,
+            726
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "text",
+        "text": "This section presents comparative experiments on semantic and instance segmentation tasks on indoor scene datasets, comparing our method against state-of-the-art approaches. ",
+        "bbox": [
+            511,
+            734,
+            906,
+            779
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "text",
+        "text": "Semantic segmentation. Here, we evaluate the effect of pre-training on downstream semantic segmentation tasks using mIoU as the evaluation metric. The results are shown in Table 1. First, compared to training PTv3 from scratch, LAM3C improves performance across all datasets under both linear probing and full fine-tuning settings. This shows that effective representations can be acquired even through pre-training using only VGPC. ",
+        "bbox": [
+            511,
+            780,
+            908,
+            901
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "page_footnote",
+        "text": "1https : / / github . com / facebookresearch / sonata / issues/35 ",
+        "bbox": [
+            89,
+            875,
+            482,
+            898
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "page_number",
+        "text": "6 ",
+        "bbox": [
+            493,
+            925,
+            504,
+            936
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "table",
+        "img_path": "images/1a948b00b7a1e91bb9cf3eb0486464395d9c392eaadca5e9ee35098734095813.jpg",
+        "table_caption": [],
+        "table_footnote": [],
+        "table_body": "<table><tr><td>case</td><td>LP</td><td>Full-FT</td></tr><tr><td>w/o align.</td><td>51.8</td><td>76.1</td></tr><tr><td>w/ align.</td><td>57.1</td><td>75.1</td></tr></table>",
+        "bbox": [
+            109,
+            87,
+            339,
+            146
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "table",
+        "img_path": "images/e64effc79ce27f287b45a499383735bed8bf28d3095442933337706a531c13c1.jpg",
+        "table_caption": [
+            "(a) Z-axis up alignment. Z-axis alignment improves LP by 5.3 points. ",
+            "(d) Regularizer loss. Both RLap and Rcons work to improve the pre-training effect. "
+        ],
+        "table_footnote": [],
+        "table_body": "<table><tr><td>case</td><td>LP</td><td>Full-FT</td></tr><tr><td>w/o  $R_{\\text{Lap}}$ </td><td>55.0</td><td>74.8</td></tr><tr><td>w/o  $R_{\\text{cons}}$ </td><td>55.3</td><td>75.0</td></tr><tr><td>w/  $R_{\\text{Lap}}$  &amp;  $R_{\\text{cons}}$ </td><td>57.1</td><td>75.1</td></tr></table>",
+        "bbox": [
+            101,
+            176,
+            367,
+            252
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "table",
+        "img_path": "images/b09d9a170ba0ba8abfd56886eb82b59154c6155ae9f3194ab77a11e1b1ca375d.jpg",
+        "table_caption": [],
+        "table_footnote": [],
+        "table_body": "<table><tr><td>case</td><td>LP</td><td>Full-FT</td></tr><tr><td>w/o align.</td><td>55.5</td><td>75.3</td></tr><tr><td>w/ align.</td><td>57.1</td><td>75.1</td></tr></table>",
+        "bbox": [
+            385,
+            87,
+            614,
+            147
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "table",
+        "img_path": "images/89cbf88b533936992da3200f1f035754e09509d96a54e74a1c880e2d5f107da4.jpg",
+        "table_caption": [
+            "(b) Scale alignment. RoomTours dataset improves performance by aligning scales. ",
+            "(e) Data scaling. RoomTours #data scaling is linked to enhanced recognition performance. "
+        ],
+        "table_footnote": [],
+        "table_body": "<table><tr><td>#scene</td><td>LP</td><td>Full-FT</td></tr><tr><td>1k</td><td>57.1</td><td>75.1</td></tr><tr><td>16k</td><td>58.9</td><td>75.6</td></tr><tr><td>49k</td><td>65.9</td><td>77.7</td></tr></table>",
+        "bbox": [
+            382,
+            176,
+            609,
+            250
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "table",
+        "img_path": "images/9e00b0340ea2d1b8846cc7ac877f133337868f1a57c76ceeec7b7be4707ddf8b.jpg",
+        "table_caption": [],
+        "table_footnote": [],
+        "table_body": "<table><tr><td>case</td><td>LP</td><td>Full-FT</td></tr><tr><td>w/o regularizer</td><td>51.1</td><td>74.4</td></tr><tr><td>w/ regularizer</td><td>57.1</td><td>75.1</td></tr></table>",
+        "bbox": [
+            656,
+            87,
+            908,
+            146
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "table",
+        "img_path": "images/c728402b88957be74499397d2cd143954c6fa33ab2d4f0b324de47dca62e621e.jpg",
+        "table_caption": [
+            "(c) Self-distillation. A self-distillation with noise regularization is more accurate. ",
+            "(f) Reconstruction model. RoomTours construction using π3 generally performs well. ",
+            "Table 3. LAM3C ablation experiments with PTv3 on ScanNet semantic segmentation benchmark. We report full fine-tuning (Full-FT) and linear probing (LP) performance (%). Unless otherwise specified, the default settings use the RoomTours generated by using π3 and pretrain it using PTv3 (Base). Full-FT and LP are set to 100 epochs. Default settings for this ablation are marked in gray . "
+        ],
+        "table_footnote": [],
+        "table_body": "<table><tr><td>reconst. model</td><td>LP</td><td>Full-FT</td></tr><tr><td>VGGT [45]</td><td>49.3</td><td>75.1</td></tr><tr><td>MapAnything [21]</td><td>50.1</td><td>75.5</td></tr><tr><td> $\\pi^3$  [47]</td><td>57.1</td><td>75.1</td></tr></table>",
+        "bbox": [
+            658,
+            176,
+            893,
+            251
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "text",
+        "text": "This suggests that the VGPC provide complementary information rather than simply replacing real data. Based on these results, LAM3C can be considered an effective pretraining method for semantic segmentation tasks in indoor scenes. ",
+        "bbox": [
+            89,
+            347,
+            482,
+            421
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "text",
+        "text": "Instance segmentation. We also evaluate the pre-training effect on instance segmentation tasks. AP is used as the evaluation metric, and the results are shown in Table 2. First, compared to training PTv3 from scratch, LAM3C consistently improves AP across all datasets under both linear probing and full fine-tuning settings. This demonstrates that representations enabling individual object recognition can be acquired even through pre-training without real 3D scans. This suggests that VGPC provide complementary information regarding the geometric distinctiveness required for instance segmentation, rather than merely substituting real data. Therefore, LAM3C can be considered an effective pre-training method for instance segmentation in indoor scenes. ",
+        "bbox": [
+            88,
+            424,
+            483,
+            633
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "text",
+        "text": "5.3. Ablation studies ",
+        "text_level": 1,
+        "bbox": [
+            89,
+            648,
+            251,
+            662
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "text",
+        "text": "This section explores the key components of the proposed regularized loss and the RoomTours dataset, aiming to identify effective elements of LAM3C. ",
+        "bbox": [
+            89,
+            671,
+            482,
+            715
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "text",
+        "text": "Effect of z-axis alignment (see Table 3a). This experiment aims to investigate the effectiveness of the z-axis alignment for RoomTours. Table 3a shows that RoomTours with the z-axis alignment improves segmentation performance. For linear probing in particular, RoomTours with z-axis alignment performs better by +5.3 points. Thus, z-axis alignment is a key factor, especially when using frozen pretrained model parameters produced by LAM3C. ",
+        "bbox": [
+            89,
+            718,
+            482,
+            839
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "text",
+        "text": "Effect of scale alignment (see Table 3b). This experiment aims to evaluate the effectiveness of scale alignment on RoomTours. We adjust each scene in RoomTours to align roughly with the scale distribution of ScanNet. ",
+        "bbox": [
+            89,
+            839,
+            483,
+            900
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "text",
+        "text": "Table 3b confirms that RoomTours with scale alignment achieves a performance improvement of +1.6 points, particularly in linear probing. This suggests that data scale impacts performance in LP, given that parameters other than the final layer of the pre-trained model are frozen. Based on these results, our scale alignment for RoomTours contributes to the effectiveness of pre-training. ",
+        "bbox": [
+            511,
+            347,
+            906,
+            453
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "text",
+        "text": "Effect of LAM3C components (see Table 3c and Table 3d). This experiment verifies the effectiveness of noiseregularized loss of LAM3C. First, we compare the results of using only the clustering loss with those of adding our proposed noise-regularized loss. Table 3c confirms that noise-regularized loss achieves an improvement in segmentation performance compared to clustering loss alone, for both LP and Full-FT. This suggests that noise-regularized loss is effective for RoomTours composed of VGPC containing noise and missing regions, and helps stabilize representation learning. Furthermore, we investigate the combined effects of the Laplacian smoothing loss and the noise consistency loss in LAM3C. Table 3d shows that noise-regularized loss using both loss functions achieves higher pre-training effectiveness than using either Laplacian smoothing loss or noise consistency loss alone. This result indicates that the Laplacian smoothing loss and the noise consistency loss play complementary roles in promoting stable learning on noisy point clouds. ",
+        "bbox": [
+            511,
+            457,
+            908,
+            744
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "text",
+        "text": "Effect of data scaling (see Table 3e). RoomTours enables scalable VGPC generation from videos with limited manual intervention, making it easier to scale than real 3D scans, provided that video and computational resources are available. This experiment investigates the effect of pretraining on the number of VGPC scenes in RoomTours. Compared to 1k scenes, increasing the number of scenes to 16k and 49k tends to improve performance. These results demonstrate that LAM3C, despite not using real 3D scans, holds potential for scaling with VGPC. ",
+        "bbox": [
+            511,
+            750,
+            908,
+            900
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "page_number",
+        "text": "7 ",
+        "bbox": [
+            493,
+            924,
+            504,
+            935
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "table",
+        "img_path": "images/f190c0234ad03aeee5d7a29ee0c5e6122b85986def6884e6e90a7ab2c095ac05.jpg",
+        "table_caption": [
+            "Table 4. Comparison of semantic segmentation performance on limited training samples and annotation in ScanNet. "
+        ],
+        "table_footnote": [
+            "\\* uses PTv3 (Large) and 437k pre-training steps. "
+        ],
+        "table_body": "<table><tr><td>Data Efficiency</td><td colspan=\"4\">Limited Scenes (Pct.)</td><td colspan=\"4\">Limited Annotation (Pts.)</td></tr><tr><td>Methods</td><td>1%</td><td>5%</td><td>10%</td><td>20%</td><td>20</td><td>50</td><td>100</td><td>200</td></tr><tr><td>PTv3</td><td>23.6</td><td>47.2</td><td>59.7</td><td>67.2</td><td>62.2</td><td>68.1</td><td>70.6</td><td>71.8</td></tr><tr><td>PPT [52] (sup.)</td><td>31.1</td><td>52.6</td><td>63.3</td><td>68.2</td><td>62.4</td><td>69.1</td><td>74.3</td><td>75.5</td></tr><tr><td>Sonata [53]</td><td>45.3</td><td>65.7</td><td>72.4</td><td>72.8</td><td>70.5</td><td>73.6</td><td>76.0</td><td>77.0</td></tr><tr><td>Sonata (all real)</td><td>43.1</td><td>63.1</td><td>70.0</td><td>71.7</td><td>69.9</td><td>73.9</td><td>75.3</td><td>76.4</td></tr><tr><td>Sonata (ScanNet)</td><td>36.0</td><td>57.7</td><td>66.7</td><td>68.2</td><td>66.3</td><td>70.2</td><td>71.4</td><td>73.0</td></tr><tr><td>LAM3C-16k</td><td>36.8</td><td>56.5</td><td>65.8</td><td>68.6</td><td>66.0</td><td>70.2</td><td>73.3</td><td>73.7</td></tr><tr><td>LAM3C-49k</td><td>40.1</td><td>59.2</td><td>68.7</td><td>71.6</td><td>68.8</td><td>73.0</td><td>75.1</td><td>76.2</td></tr><tr><td>LAM3C-49k*</td><td>40.5</td><td>60.1</td><td>71.9</td><td>71.6</td><td>70.4</td><td>74.2</td><td>76.2</td><td>77.1</td></tr></table>",
+        "bbox": [
+            94,
+            121,
+            488,
+            271
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "table",
+        "img_path": "images/98dd5120e1fd40cf5b56a68b6944afbf05ba8de169f18ffb864c1172c6b5b4ed.jpg",
+        "table_caption": [
+            "Table 5. Synergy between RoomTours and LAM3C "
+        ],
+        "table_footnote": [],
+        "table_body": "<table><tr><td></td><td>Sonata</td><td>LAM3C</td></tr><tr><td>ScanNet (clean)</td><td>67.1</td><td>66.8</td></tr><tr><td>RoomTours (noisy)</td><td>51.1</td><td>57.1</td></tr></table>",
+        "bbox": [
+            137,
+            311,
+            433,
+            369
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "text",
+        "text": "Effect of reconstruction model (see Table 3f). We assess the impact of feed-forward reconstruction models on VGPC. This experiment compares VGGT, MapAnything, and $\\pi ^ { 3 } .$ . Table 3f shows that $\\pi ^ { 3 }$ exhibits greater pre-training effectiveness than VGGT and MapAnything. This is because π3 can process longer sequences, enabling it to reconstruct high-quality VGPC compared with VGGT and MapAnything. ",
+        "bbox": [
+            89,
+            383,
+            483,
+            505
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "text",
+        "text": "5.4. Additional Experiments ",
+        "text_level": 1,
+        "bbox": [
+            89,
+            513,
+            312,
+            531
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "text",
+        "text": "We evaluate the pre-training performance of LAM3C under limited resources. Furthermore, based on qualitative results, we analyze the zero-shot segmentation performance. ",
+        "bbox": [
+            89,
+            537,
+            483,
+            583
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "text",
+        "text": "Impact of limited resources. In this experiment, we evaluate the effect of LAM3C under limited resources for downstream tasks. On ScanNet semantic segmentation, we restrict the number of training scenes to {1%, 5%, 10%, 20%}, and separately limit the number of annotated point clouds to {20, 50, 100, 200}. As shown in Table 4, our method provides clear gains even when both the number of training samples and the amount of supervision are heavily constrained. LAM3C remains competitive under limited supervision and consistently outperforms the ScanNet only Sonata baseline, while approaching or exceeding stronger Sonata variants in several settings. ",
+        "bbox": [
+            89,
+            583,
+            483,
+            763
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "text",
+        "text": "Disentangling the contributions of LAM3C and RoomTours. When pre-trained on ScanNet, the two self-supervised methods, Sonata and LAM3C, perform comparably, indicating that our proposed self-supervised method does not provide inherent gains on curated 3D scans, as shown in Table 5. In contrast, on RoomTours-1k, LAM3C substantially outperforms Sonata, indicating that the improvement arises from the learning design rather than the dataset alone. Taken together, RoomTours provides scalable scan-free pre-training data, while LAM3C is essential for learning effectively from noisy reconstructed point clouds. ",
+        "bbox": [
+            89,
+            763,
+            483,
+            901
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "image",
+        "img_path": "images/701a09b217809e9171f86d87709aff2e0cb9ff27adaaddb0c46ce0ea84231831.jpg",
+        "image_caption": [
+            "Sonata trained with real data ",
+            "LAM3C trained with RoomTours (ours) "
+        ],
+        "image_footnote": [],
+        "content": "Three-panel scientific visualization of a 3D surface with color-coded regions and zoomed-in insets (no text or symbols)",
+        "sub_type": "natural_image",
+        "bbox": [
+            521,
+            104,
+            906,
+            170
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "image",
+        "img_path": "images/d70e1ac158818dc4e840831a971c5f2f1faa95373c7e0ccc9255c82a7d37c0af.jpg",
+        "image_caption": [
+            "Figure 6. Zero-shot qualitative evaluation using PCA visualizations. LAM3C learns semantic representations in the real world without pre-training on real 3D scans. "
+        ],
+        "image_footnote": [],
+        "content": "Two 3D rendered models of a building with color-coded lighting and zoomed-in insets showing interior features (no text or symbols)",
+        "sub_type": "natural_image",
+        "bbox": [
+            521,
+            184,
+            905,
+            253
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "text",
+        "text": "",
+        "bbox": [
+            511,
+            325,
+            905,
+            369
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "text",
+        "text": "Qualitative results. This experiment qualitatively evaluates zero-shot recognition by using PCA. As shown in Fig. 6, LAM3C produces clear segmentation of local structures such as desks even in a zero-shot setting. This result indicates that VGPC preserve enough coarse geometric cues to learn representations for 3D-SSL directly from video. At the same time, LAM3C exhibits less coherent global structure compared to Sonata trained with real 3D scans. For example, floor edges show lower contrast, and the floor boundaries appear more blurred in the PCA space. This behavior is expected because $\\pi ^ { 3 }$ reconstructions provide approximate 3D representations with variations in coordinate frames and scale, which makes it more difficult for the model to learn globally consistent scene geometry than when the model is pre-trained on accurate 3D scans. ",
+        "bbox": [
+            511,
+            372,
+            906,
+            599
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "text",
+        "text": "6. Conclusion ",
+        "text_level": 1,
+        "bbox": [
+            513,
+            617,
+            633,
+            633
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "text",
+        "text": "We have presented LAM3C, a self-supervised framework that learns 3D representations from unlabeled videos. By leveraging VGPC reconstructed with a feed-forward reconstruction model and introducing noise-regularized objectives, namely local smoothness and noise consistency, LAM3C achieves comparable or better pre-training performance without using any real 3D scans. We also constructed RoomTours, a dataset of 49k VGPC derived from unlabeled room-tour videos, and showed that LAM3C matches or surpasses prior pre-training methods such as Sonata, even under limited downstream data conditions. These results demonstrate that unlabeled videos can serve as an effective and scalable source of supervision for 3D-SSL. Our contribution is this scan-free and scalable 3D-SSL setting based on video-only data collection, rather than the input format itself. Unlike prior 3D-SSL methods, we generate pre-training data from unlabeled videos at scale. ",
+        "bbox": [
+            511,
+            643,
+            906,
+            900
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "page_number",
+        "text": "8 ",
+        "bbox": [
+            493,
+            924,
+            504,
+            936
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "text",
+        "text": "Acknowledgment ",
+        "text_level": 1,
+        "bbox": [
+            91,
+            90,
+            240,
+            107
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "text",
+        "text": "This work was supported by the AIST policy-based budget project “R&D on Generative AI Foundation Models for the Physical Domain.” It was also supported by the JSPS Overseas Research Fellowship. In addition, this work was supported by the Japan Science and Technology Agency (JST) through the Adopting Sustainable Partnerships for Innovative Research Ecosystem (ASPIRE) program under Grant Number JPMJAP2518. We used ABCI 3.0, provided by AIST and AIST Solutions, with support from the “ABCI 3.0 Development Acceleration Use” program. ",
+        "bbox": [
+            89,
+            114,
+            483,
+            267
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "text",
+        "text": "References ",
+        "text_level": 1,
+        "bbox": [
+            91,
+            277,
+            187,
+            292
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "list",
+        "sub_type": "ref_text",
+        "list_items": [
+            "[1] Sameer Agarwal, Yasutaka Furukawa, Noah Snavely, Ian Simon, Brian Curless, Steven M Seitz, and Richard Szeliski. Building rome in a day. CACM, 2011. 2 ",
+            "[2] Iro Armeni, Ozan Sener, Amir Roshan Zamir, Helen Jiang, Ioannis Brilakis, Martin Fischer, and Silvio Savarese. 3d semantic parsing of large-scale indoor spaces. In CVPR, 2016. 6, 13, 15 ",
+            "[3] Yuki Markus Asano, Christian Rupprecht, and Andrea Vedaldi. Self-labelling via simultaneous clustering and representation learning. In ICLR, 2020. 2, 3 ",
+            "[4] Gilad Baruch, Zhuoyuan Chen, Afshin Dehghan, Yuri Feigin, Peter Fu, Thomas Gebauer, Daniel Kurz, Tal Dimry, Brandon Joffe, Arik Schwartz, and Elad Shulman. Arkitscenes: A diverse real-world dataset for 3d indoor scene understanding using mobile rgb-d data. In NeurIPS, 2021. 1 ",
+            "[5] Alexandre Boulch, Corentin Sautier, Bjorn Michele, Gilles ¨ Puy, and Renaud Marlet. ALSO: Automotive lidar selfsupervision by occupancy estimation. In CVPR, 2023. 2 ",
+            "[6] Yohann Cabon, Lucas Stoffl, Leonid Antsfeld, Gabriela Csurka, Boris Chidlovskii, Jerome Revaud, and Vincent Leroy. Must3r: Multi-view network for stereo 3d reconstruction. In CVPR, 2025. 2 ",
+            "[7] Mathilde Caron, Ishan Misra, Julien Mairal, Priya Goyal, Piotr Bojanowski, and Armand Joulin. Unsupervised learning of visual features by contrasting cluster assignments. In NeurIPS, 2020. 2, 3 ",
+            "[8] Mathilde Caron, Hugo Touvron, Ishan Misra, Herve J ´ egou, ´ Julien Mairal, Piotr Bojanowski, and Armand Joulin. Emerging properties in self-supervised vision transformers. In ICCV, 2021. 2 ",
+            "[9] Ata C¸ elen, Marc Pollefeys, Daniel Barath, and Iro Armeni. Housetour: A virtual real estate a(i)gent. In ICCV, 2025. 4, 12 ",
+            "[10] Matthew Chang, Arjun Gupta, and Saurabh Gupta. Semantic visual navigation by watching youtube videos. In NeurIPS, 2020. 4, 12 ",
+            "[11] Peter Cheeseman, Robert Smith, and Michael Self. A stochastic map for uncertain spatial relationships. In ISRR, 1987. 5 ",
+            "[12] Ye Chen, Jinxian Liu, Bingbing Ni, Hang Wang, Jiancheng Yang, Ning Liu, Teng Li, and Qi Tian. Shape self-correction for unsupervised point cloud understanding. In ICCV, 2021. 2 "
+        ],
+        "bbox": [
+            93,
+            299,
+            486,
+            900
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "list",
+        "sub_type": "ref_text",
+        "list_items": [
+            "[13] Pointcept Contributors. Pointcept: A codebase for point cloud perception research. https://github.com/ Pointcept/Pointcept, 2023. Accessed: 2025-11-19. 12 ",
+            "[14] Marco Cuturi. Sinkhorn distances: Lightspeed computation of optimal transport. In NeurIPS, 2013. 2 ",
+            "[15] Angela Dai, Angel X. Chang, Manolis Savva, Maciej Halber, Thomas Funkhouser, and Matthias Nießner. Scannet: Richly-annotated 3d reconstructions of indoor scenes. In CVPR, 2017. 6, 13, 15 ",
+            "[16] Andrew J Davison, Ian D Reid, Nicholas D Molton, and Olivier Stasse. Monoslam: Real-time single camera slam. TPAMI, 2007. 5 ",
+            "[17] Yasutaka Furukawa and Jean Ponce. Accurate, dense, and robust multiview stereopsis. TPAMI, 2009. 2 ",
+            "[18] Georg Hess, Johan Jaxing, Elias Svensson, David Hagerman, Christoffer Petersson, and Lennart Svensson. Masked autoencoder for self-supervised pre-training on lidar point clouds. In WACV, 2023. 2 ",
+            "[19] Ji Hou, Benjamin Graham, Matthias Niessner, and Saining Xie. Exploring data-efficient 3d scene understanding with contrastive scene contexts. In CVPR, 2021. 2 ",
+            "[20] Siyuan Huang, Yichen Xie, Song-Chun Zhu, and Yixin Zhu. Spatio-temporal self-supervised representation learning for 3D point clouds. In ICCV, 2021. 2 ",
+            "[21] Nikhil Keetha, Norman Muller, Johannes Sch ¨ onberger, ¨ Lorenzo Porzi, Yuchen Zhang, Tobias Fischer, Arno Knapitsch, Duncan Zauss, Ethan Weber, Nelson Antunes, Luiten Jonathon, Lopez-Antequera Manuel, Rota Bulo\\` Samuel, Richardt Christian, Ramanan Deva, Scherer Sebastian, and Kontschieder Peter. Mapanything: Universal feed-forward metric 3d reconstruction. arXiv preprint arXiv:2509.13414, 2025. 2, 7 ",
+            "[22] Alexander Kirillov, Eric Mintun, Nikhila Ravi, Hanzi Mao, Chloe Rolland, Laura Gustafson, Tete Xiao, Spencer Whitehead, Alexander C. Berg, Wan-Yen Lo, Piotr Dollar, and Ross Girshick. Segment anything. In ICCV, 2023. 1 ",
+            "[23] Philip A Knight. The sinkhorn–knopp algorithm: convergence and applications. SIAM Journal on Matrix Analysis and Applications, 2008. 2 ",
+            "[24] Kangcheng Liu, Aoran Xiao, Xiaoqin Zhang, Shijian Lu, and Ling Shao. FAC: 3D representation learning via foreground aware feature contrast. In CVPR, 2023. 2 ",
+            "[25] Ilya Loshchilov and Frank Hutter. Decoupled weight decay regularization. In ICLR, 2019. 5 ",
+            "[26] Chen Min, Dawei Zhao, Liang Xiao, Yiming Nie, and Bin Dai. Voxel-MAE: Masked autoencoders for pre-training large-scale point clouds. arXiv preprint arXiv:2206.09900, 2022. 2 ",
+            "[27] Lucas Nunes, Rodrigo Marcuzzi, Xieyuanli Chen, Jens Behley, and Cyrill Stachniss. SegContrast: 3D point cloud feature representation learning through self-supervised segment discrimination. RA-L, 2022. 2 ",
+            "[28] Lucas Nunes, Louis Wiesmann, Rodrigo Marcuzzi, Xieyuanli Chen, Jens Behley, and Cyrill Stachniss. Temporal consistent 3D lidar representation learning for semantic perception in autonomous driving. In CVPR, 2023. 2 "
+        ],
+        "bbox": [
+            509,
+            88,
+            908,
+            902
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "page_number",
+        "text": "9 ",
+        "bbox": [
+            493,
+            924,
+            504,
+            936
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "list",
+        "sub_type": "ref_text",
+        "list_items": [
+            "[29] Masatoshi Okutomi and Takeo Kanade. A multiple-baseline stereo. TPAMI, 1993. 2 ",
+            "[30] Maxime Oquab, Timothee Darcet, Th ´ eo Moutakanni, Huy ´ Vo, Marc Szafraniec, Vasil Khalidov, Pierre Fernandez, Daniel Haziza, Francisco Massa, Alaaeldin El-Nouby, et al. Dinov2: Learning robust visual features without supervision. TMLR, 2023. 1, 2 ",
+            "[31] Yatian Pang, Wenxiao Wang, Francis EH Tay, Wei Liu, Yonghong Tian, and Li Yuan. Masked autoencoders for point cloud self-supervised learning. In ECCV, 2022. 2 ",
+            "[32] Boris T Polyak and Anatoli B Juditsky. Acceleration of stochastic approximation by averaging. SIAM journal on control and optimization, 1992. 3 ",
+            "[33] Omid Poursaeed, Tianxing Jiang, Han Qiao, Nayun Xu, and Vladimir G Kim. Self-supervised learning of point clouds via orientation estimation. In 3DV, 2020. 2 ",
+            "[34] Alec Radford, Jong Wook Kim, Chris Hallacy, Aditya Ramesh, Gabriel Goh, Sandhini Agarwal, Girish Sastry, Amanda Askell, Pamela Mishkin, Jack Clark, et al. Learning transferable visual models from natural language supervision. In ICML, 2021. 4, 12 ",
+            "[35] David Rozenberszki, Or Litany, and Angela Dai. Languagegrounded indoor 3d semantic segmentation in the wild. In ECCV, 2022. 6, 13, 15 ",
+            "[36] Jonathan Sauder and Bjarne Sievers. Self-supervised deep learning on point clouds by reconstructing space. In NeurIPS, 2019. 2 ",
+            "[37] Corentin Sautier, Gilles Puy, Alexandre Boulch, Renaud Marlet, and Vincent Lepetit. BEVContrast: Self-supervision in bev space for automotive lidar point clouds. In 3DV, 2024. 2 ",
+            "[38] Steven M Seitz and Charles R Dyer. Photorealistic scene reconstruction by voxel coloring. IJCV, 1999. 2 ",
+            "[39] Oriane Simeoni, Huy V. Vo, Maximilian Seitzer, Federico ´ Baldassarre, Maxime Oquab, Cijo Jose, Vasil Khalidov, Marc Szafraniec, Seungeun Yi, Michael Ramamonjisoa, ¨ Francisco Massa, Daniel Haziza, Luca Wehrstedt, Jianyuan Wang, Timothee Darcet, Th ´ eo Moutakanni, Leonel Sentana, ´ Claire Roberts, Andrea Vedaldi, Jamie Tolan, John Brandt, Camille Couprie, Julien Mairal, Herve J ´ egou, Patrick La- ´ batut, and Piotr Bojanowski. Dinov3. arXiv preprint arXiv:2508.10104, 2025. 1 ",
+            "[40] Leslie N Smith. A disciplined approach to neural network hyper-parameters: Part 1–learning rate, batch size, momentum, and weight decay. arXiv preprint arXiv:1803.09820, 2018. 5 ",
+            "[41] Carlo Tomasi and Takeo Kanade. Shape and motion from image streams under orthography: a factorization method. IJCV, 1992. 2 ",
+            "[42] Bill Triggs, Philip F McLauchlan, Richard I Hartley, and Andrew W Fitzgibbon. Bundle adjustment—a modern synthesis. In IWVA, 1999. 5 ",
+            "[43] Shimon Ullman. The interpretation of structure from motion. Proceedings of the Royal Society of London. Series B. Biological Sciences, 1979. 2 ",
+            "[44] Chengyao Wang, Li Jiang, Xiaoyang Wu, Zhuotao Tian, Bohao Peng, Hengshuang Zhao, and Jiaya Jia. Groupcontrast: "
+        ],
+        "bbox": [
+            86,
+            88,
+            486,
+            902
+        ],
+        "page_idx": 9
+    },
+    {
+        "type": "list",
+        "sub_type": "ref_text",
+        "list_items": [
+            "Semantic-aware self-supervised representation learning for 3d understanding. In CVPR, 2024. 2 ",
+            "[45] Jianyuan Wang, Minghao Chen, Nikita Karaev, Andrea Vedaldi, Christian Rupprecht, and David Novotny. Vggt: Visual geometry grounded transformer. In CVPR, 2025. 2, 7 ",
+            "[46] Shuzhe Wang, Vincent Leroy, Yohann Cabon, Boris Chidlovskii, and Jerome Revaud. Dust3r: Geometric 3d vision made easy. In CVPR, 2024. 2 ",
+            "[47] Yifan Wang, Jianjun Zhou, Haoyi Zhu, Wenzheng Chang, Yang Zhou, Zizun Li, Junyi Chen, Jiangmiao Pang, Chunhua Shen, and Tong He. π3: Permutation-equivariant visual geometry learning. arXiv preprint arXiv:2507.13347, 2025. 2, 5, 7 ",
+            "[48] Changchang Wu et al. Visualsfm: A visual structure from motion system, 2011. 2 ",
+            "[49] Xiaoyang Wu, Yixing Lao, Li Jiang, Xihui Liu, and Hengshuang Zhao. Point transformer v2: Grouped vector attention and partition-based pooling. NeurIPS, 2022. 13 ",
+            "[50] Xiaoyang Wu, Xin Wen, Xihui Liu, and Hengshuang Zhao. Masked scene contrast: A scalable framework for unsupervised 3d representation learning. In CVPR, 2023. 1, 2, 6, 15 ",
+            "[51] Xiaoyang Wu, Li Jiang, Peng-Shuai Wang, Zhijian Liu, Xihui Liu, Yu Qiao, Wanli Ouyang, Tong He, and Hengshuang Zhao. Point transformer v3: Simpler faster stronger. In CVPR, 2024. 5, 12 ",
+            "[52] Xiaoyang Wu, Zhuotao Tian, Xin Wen, Bohao Peng, Xihui Liu, Kaicheng Yu, and Hengshuang Zhao. Towards largescale 3d representation learning with multi-dataset point prompt training. In CVPR, 2024. 1, 6, 8, 15 ",
+            "[53] Xiaoyang Wu, Daniel DeTone, Duncan Frost, Tianwei Shen, Chris Xie, Nan Yang, Jakob Engel, Richard Newcombe, Hengshuang Zhao, and Julian Straub. Sonata: Selfsupervised learning of reliable point representations. In CVPR, 2025. 1, 2, 3, 6, 8, 13 ",
+            "[54] Saining Xie, Jiatao Gu, Demi Guo, Charles R Qi, Leonidas Guibas, and Or Litany. Pointcontrast: Unsupervised pretraining for 3d point cloud understanding. In ECCV, 2020. 1, 2 ",
+            "[55] Jihan Yang, Shusheng Yang, Anjali W Gupta, Rilyn Han, Li Fei-Fei, and Saining Xie. Thinking in space: How multimodal large language models see, remember, and recall spaces. In CVPR, 2025. 1 ",
+            "[56] Chandan Yeshwanth, Yueh-Cheng Liu, Matthias Nießner, and Angela Dai. Scannet++: A high-fidelity dataset of 3d indoor scenes. In ICCV, 2023. 6, 13, 15 ",
+            "[57] Junbo Yin, Dingfu Zhou, Liangjun Zhang, Jin Fang, Cheng-Zhong Xu, Jianbing Shen, and Wenguan Wang. Proposal-Contrast: Unsupervised pre-training for lidar-based 3D object detection. In ECCV, 2022. 2 ",
+            "[58] Xumin Yu, Lulu Tang, Yongming Rao, Tiejun Huang, Jie Zhou, and Jiwen Lu. Point-BERT: Pre-training 3D point cloud transformers with masked point modeling. In CVPR, 2022. 2 ",
+            "[59] Renrui Zhang, Ziyu Guo, Peng Gao, Rongyao Fang, Bin Zhao, Dong Wang, Yu Qiao, and Hongsheng Li. Point-M2AE: multi-scale masked autoencoders for hierarchical point cloud pre-training. In NeurIPS, 2022. 2 "
+        ],
+        "bbox": [
+            511,
+            88,
+            908,
+            902
+        ],
+        "page_idx": 9
+    },
+    {
+        "type": "page_number",
+        "text": "10 ",
+        "bbox": [
+            490,
+            924,
+            508,
+            936
+        ],
+        "page_idx": 9
+    },
+    {
+        "type": "list",
+        "sub_type": "ref_text",
+        "list_items": [
+            "[60] Yujia Zhang, Xiaoyang Wu, Yixing Lao, Chengyao Wang, Zhuotao Tian, Naiyan Wang, and Hengshuang Zhao. Concerto: Joint 2d-3d self-supervised learning emerges spatial representations. In NeurIPS, 2025. 13 ",
+            "[61] Zaiwei Zhang, Rohit Girdhar, Armand Joulin, and Ishan Misra. Self-supervised pretraining of 3D features on any point-cloud. In ICCV, 2021. 2 ",
+            "[62] Tinghui Zhou, Richard Tucker, John Flynn, Graham Fyffe, and Noah Snavely. Stereo magnification: learning view synthesis using multiplane images. TOG, 2018. 4, 12 "
+        ],
+        "bbox": [
+            91,
+            90,
+            486,
+            233
+        ],
+        "page_idx": 10
+    },
+    {
+        "type": "page_number",
+        "text": "11 ",
+        "bbox": [
+            490,
+            924,
+            506,
+            936
+        ],
+        "page_idx": 10
+    },
+    {
+        "type": "image",
+        "img_path": "images/275e45e8f94697630df54417837923c1f6d1b4affcea01b63eca89ee867537c0.jpg",
+        "image_caption": [],
+        "image_footnote": [],
+        "content": "",
+        "bbox": [
+            93,
+            104,
+            903,
+            229
+        ],
+        "page_idx": 11
+    },
+    {
+        "type": "chart",
+        "img_path": "images/4762e1e7dfe349b803c96bc3f1bfe808f2f6e6f080e87eccc0a39acc5551770f.jpg",
+        "content": "| Number of points | Scene Count |\n| ---------------- | ----------- |\n| 0                | 0           |\n| 50k              | 250         |\n| 100k             | 450         |\n| 150k             | 520         |\n| 200k             | 400         |\n| 250k             | 280         |\n| 300k             | 150         |\n| 350k             | 100         |\n| 400k             | 50          |\n| 450k             | 20          |\n| 500k             | 10          |\n| 550k             | 5           |\n| 600k             | 2           |\n| 650k             | 1           |\n| 700k             | 0           |",
+        "chart_caption": [
+            "Figure 7. Statistics of the RoomTours video collection. Our RoomTours consists of 3,462 indoor walkthrough videos collected from 19 countries. (Left) Geographic distribution of the source countries and their proportions. (Right) Distribution of video durations, ranging from short clips to long walkthroughs, with a median length of 3.63 minutes. "
+        ],
+        "chart_footnote": [],
+        "sub_type": "histogram",
+        "bbox": [
+            96,
+            290,
+            362,
+            446
+        ],
+        "page_idx": 11
+    },
+    {
+        "type": "chart",
+        "img_path": "images/e855c2c4301927cd9af31b8c724cefb8ad70e38aea0a1a5d38f938187c0087d3.jpg",
+        "content": "| Scene scale (meter) | Scene Count |\n| ------------------- | ----------- |\n| 0.0 - 2.5           | 0           |\n| 2.5 - 5.0           | 10          |\n| 5.0 - 7.5           | 200         |\n| 7.5 - 10.0          | 500         |\n| 10.0 - 12.5         | 300         |\n| 12.5 - 15.0         | 100         |\n| 15.0 - 17.5         | 0           |",
+        "chart_caption": [],
+        "chart_footnote": [],
+        "sub_type": "histogram",
+        "bbox": [
+            366,
+            290,
+            627,
+            446
+        ],
+        "page_idx": 11
+    },
+    {
+        "type": "chart",
+        "img_path": "images/e426f0fed1be0454d20e0f27d0fe09f9688d131dcc849c262bda13ecfc0a0d0b.jpg",
+        "content": "| Spacing median (meter) | Scene Count |\n| ---------------------- | ----------- |\n| 6e-3                   | 0           |\n| 8e-3                   | 0           |\n| 10e-3                  | 50          |\n| 12e-3                  | 850         |\n| 14e-3                  | 350         |\n| 16e-3                  | 0           |\n| 18e-3                  | 0           |\n| 20e-3                  | 0           |",
+        "chart_caption": [
+            "Figure 8. Statistics of the video-generated point clouds. We report the properties of the aligned scenes used for pre-training. (Left) Distribution of the number of points per scene before the align processing. (Center) Distribution of scene scales (the diagonal length of the axis-aligned bounding box). (Right) Distribution of the median point spacing, defined as the median kNN distance within each scene. "
+        ],
+        "chart_footnote": [],
+        "sub_type": "histogram",
+        "bbox": [
+            632,
+            290,
+            898,
+            446
+        ],
+        "page_idx": 11
+    },
+    {
+        "type": "text",
+        "text": "A. RoomTours Details ",
+        "text_level": 1,
+        "bbox": [
+            89,
+            518,
+            287,
+            534
+        ],
+        "page_idx": 11
+    },
+    {
+        "type": "text",
+        "text": "We construct RoomTours using a feedforward reconstruction model applied to unlabeled videos from the web. The dataset consists of VGPC obtained from both our collected videos and existing datasets (RealEstate10k [62], YouTube House Tours [10], and HouseTours [9]). In this section, we report statistics of our independently collected videos and the VGPC reconstructed from them. ",
+        "bbox": [
+            89,
+            546,
+            483,
+            650
+        ],
+        "page_idx": 11
+    },
+    {
+        "type": "text",
+        "text": "For our own collection, we assume that indoor layouts and furniture vary across geographic regions. Therefore, we collected walkthrough videos from 19 countries, as shown in Fig. 7. In total, we gathered 3,462 videos, each with a median duration of 3.63 minutes. ",
+        "bbox": [
+            89,
+            654,
+            483,
+            729
+        ],
+        "page_idx": 11
+    },
+    {
+        "type": "text",
+        "text": "For scene classification, we sample every frame at the native FPS of each video and resize all frames to the standard CLIP [34] ViT-B/32 resolution of 224 × 224. Each frame is first classified by the CLIP image encoder as either “indoor” or “outdoor.” Frames predicted as indoor are then re-evaluated using room-type prompts (living room, bedroom, bathroom) to obtain scene categorization. This twostage filtering produces a total of 15,921 indoor sequences, with each video contributing on average 4.59 sequences. ",
+        "bbox": [
+            89,
+            732,
+            483,
+            868
+        ],
+        "page_idx": 11
+    },
+    {
+        "type": "text",
+        "text": "The reconstruction of a single scene takes approximately 5 minutes on average, although the actual time depends on the number of frames extracted from each video. We process our collected videos using eight NVIDIA H200 GPUs (144GB each), requiring roughly eight hours in total to generate the video-based point clouds. The raw outputs are pixel-aligned point clouds and therefore contain an extremely large number of points. Directly applying our post-processing pipeline to these raw point clouds leads to substantial computational overhead. To maintain efficiency, we randomly downsample each scene to 20k points before alignment and normalization. Fig. 8 reports the statistics of the post-processed VGPC, including the distribution of point counts and scene scale. After post-processing, the structural properties of the indoor scenes closely match those observed in standard ScanNet scenes. ",
+        "bbox": [
+            89,
+            869,
+            483,
+            901
+        ],
+        "page_idx": 11
+    },
+    {
+        "type": "text",
+        "text": "",
+        "bbox": [
+            511,
+            518,
+            906,
+            731
+        ],
+        "page_idx": 11
+    },
+    {
+        "type": "text",
+        "text": "B. Implementation Details ",
+        "text_level": 1,
+        "bbox": [
+            513,
+            750,
+            738,
+            767
+        ],
+        "page_idx": 11
+    },
+    {
+        "type": "text",
+        "text": "This section explains the details of our implementation. We begin by describing Point Transformer V3 (PTv3) [51] which is the backbone model used in our experiments. We then detail the pre-training setup and the configurations adopted for semantic segmentation and instance segmentation. Our implementation is based on PointCept [13]. ",
+        "bbox": [
+            511,
+            777,
+            906,
+            868
+        ],
+        "page_idx": 11
+    },
+    {
+        "type": "text",
+        "text": "Backbone network. PTv3 improves efficiency by removing the kNN query and the Relative Positional Encoding (RPE) modules in PTv2 [49]. The kNN query module was designed to capture local structure on unstructured point clouds, but it requires repeated distance computations at every iteration and occupies 28% of the forward time. The RPE module encodes relative positions, yet point cloud RPE must compute pairwise Euclidean distances for every point pair, accounting for 26% of the computation. PTv3 avoids both costs by abandoning the unordered-set formulation and serializing point clouds into a structured representation, which eliminates the need for kNN and RPE computations and leads to efficiency gains. PTv3 assigns a consistent order to points through four ordering strategies: Z-order (Z), Transposed Z-order (TZ), Hilbert (H), and Transposed Hilbert (TH). ",
+        "bbox": [
+            511,
+            869,
+            906,
+            901
+        ],
+        "page_idx": 11
+    },
+    {
+        "type": "page_number",
+        "text": "",
+        "bbox": [
+            490,
+            924,
+            508,
+            936
+        ],
+        "page_idx": 11
+    },
+    {
+        "type": "table",
+        "img_path": "images/5b6cb56b10e4b80ea57d96affc496ff7d5735665cee0b2cd52c2f599d15e907d.jpg",
+        "table_caption": [
+            "Table 6. Configuration of PTv3 (Base) and PTv3 (Large) "
+        ],
+        "table_footnote": [],
+        "table_body": "<table><tr><td rowspan=\"2\">Config</td><td colspan=\"2\">Value</td></tr><tr><td>PTv3 (Base)</td><td>PTv3 (Large)</td></tr><tr><td>order</td><td>Z + TZ + H + TH</td><td>Z + TZ + H + TH</td></tr><tr><td>stride</td><td>(2, 2, 2, 2)</td><td>(2, 2, 2, 2)</td></tr><tr><td>enc_depths</td><td>(3, 3, 3, 12, 3)</td><td>(3, 3, 3, 12, 3)</td></tr><tr><td>enc_channels</td><td>(48, 96, 192, 384, 512)</td><td>(64, 128, 256, 512, 768)</td></tr><tr><td>enc_num_head</td><td>(3, 6, 12, 24, 32)</td><td>(4, 8, 16, 32, 48)</td></tr><tr><td>enc_patch_size</td><td>1024 × 5</td><td>1024 × 5</td></tr><tr><td>mlp_ratio</td><td>4</td><td>4</td></tr><tr><td>qkv_bias</td><td>True</td><td>True</td></tr><tr><td>drop_path</td><td>0.3</td><td>0.3</td></tr><tr><td>head_in_channels</td><td>1088</td><td>1536</td></tr><tr><td>head_embed_channels</td><td>256</td><td>256</td></tr><tr><td>head_prototypes</td><td>4096</td><td>4096</td></tr><tr><td>params</td><td>121M</td><td>224M</td></tr></table>",
+        "bbox": [
+            96,
+            103,
+            478,
+            301
+        ],
+        "page_idx": 12
+    },
+    {
+        "type": "table",
+        "img_path": "images/914d92932a3e679ff72ffcde3f8a4fe5e3d0f62499d1eba83cb853c80d159caf.jpg",
+        "table_caption": [
+            "Table 7. Pre-training configuration for LAM3C "
+        ],
+        "table_footnote": [],
+        "table_body": "<table><tr><td>Config</td><td>Value</td></tr><tr><td>laplacian kNN</td><td>24</td></tr><tr><td>huber delta</td><td>0.5</td></tr><tr><td>max radius distance</td><td>0.08</td></tr><tr><td>laplacian loss weight</td><td> $2e-4 \\rightarrow 3e-3$ </td></tr><tr><td>noise consistency loss weight</td><td>0.05</td></tr><tr><td>teacher temperature</td><td> $0.04 \\rightarrow 0.07$ </td></tr><tr><td>student temperature</td><td>0.1</td></tr><tr><td>views (global / local)</td><td>2 / 4</td></tr><tr><td>optimizer</td><td>AdamW</td></tr><tr><td>base learning rate</td><td>1e-3</td></tr><tr><td>layer-wise LR decay</td><td>0.9</td></tr><tr><td>weight decay</td><td> $0.04 \\rightarrow 0.10$ </td></tr><tr><td>scheduler</td><td>OneCycleLR</td></tr><tr><td>batch size</td><td>16</td></tr><tr><td></td><td>145,600 (RoomTours-1k, PTv3-Base)</td></tr><tr><td>iterations</td><td>291,200 (RoomTours-49k, PTv3-Base)</td></tr><tr><td></td><td>436,800 (RoomTours-49k, PTv3-Large)</td></tr></table>",
+        "bbox": [
+            96,
+            324,
+            477,
+            551
+        ],
+        "page_idx": 12
+    },
+    {
+        "type": "text",
+        "text": "",
+        "bbox": [
+            89,
+            566,
+            482,
+            777
+        ],
+        "page_idx": 12
+    },
+    {
+        "type": "text",
+        "text": "We use PTv3 as the backbone model for all experiments, with two variants: PTv3 (Base) and PTv3 (Large). The Base variant follows the configuration used in Sonata, and the Large variant follows the configuration used in Concerto [60]. The detailed parameter settings are provided in Table 6. ",
+        "bbox": [
+            89,
+            779,
+            482,
+            868
+        ],
+        "page_idx": 12
+    },
+    {
+        "type": "text",
+        "text": "Pre-training setting. We set the default parameters as shown in Table 7. The Laplacian smoothing loss hyperpa-",
+        "bbox": [
+            89,
+            869,
+            482,
+            901
+        ],
+        "page_idx": 12
+    },
+    {
+        "type": "table",
+        "img_path": "images/74b7b9c1b23e19dd941ea998cb2f6387d252463963b1bc64c9757ddd339abc85.jpg",
+        "table_caption": [
+            "Table 8. Indoor semantic segmentation settings "
+        ],
+        "table_footnote": [],
+        "table_body": "<table><tr><td colspan=\"2\">Linear Probing</td><td colspan=\"2\">Full Fine-Tuning</td></tr><tr><td>Config</td><td>Value</td><td>Config</td><td>Value</td></tr><tr><td>optimizer</td><td>AdamW</td><td>optimizer</td><td>AdamW</td></tr><tr><td>scheduler</td><td>OneCycleLR</td><td>scheduler</td><td>OneCycleLR</td></tr><tr><td>criteria</td><td>CrossEntropy</td><td>criteria</td><td>CrossEntropy</td></tr><tr><td>learning rate</td><td>2e-3</td><td>learning rate</td><td>2e-3</td></tr><tr><td>block LR</td><td>N/A</td><td>block LR</td><td>2e-4</td></tr><tr><td>weight decay</td><td>2e-2</td><td>weight decay</td><td>2e-2</td></tr><tr><td>batch size</td><td>168</td><td>batch size</td><td>128</td></tr><tr><td>epochs</td><td>100</td><td>epochs</td><td>100</td></tr></table>",
+        "bbox": [
+            519,
+            103,
+            901,
+            267
+        ],
+        "page_idx": 12
+    },
+    {
+        "type": "table",
+        "img_path": "images/4710ed3be96aa083c0b5c9efe86aaaa78df3842344e029bc21e595ee95094f92.jpg",
+        "table_caption": [
+            "Table 9. Indoor instance segmentation settings "
+        ],
+        "table_footnote": [],
+        "table_body": "<table><tr><td colspan=\"2\">Linear Probing</td><td colspan=\"2\">Full Fine-Tuning</td></tr><tr><td>Config</td><td>Value</td><td>Config</td><td>Value</td></tr><tr><td>optimizer</td><td>AdamW</td><td>optimizer</td><td>AdamW</td></tr><tr><td>scheduler</td><td>OneCycleLR</td><td>scheduler</td><td>OneCycleLR</td></tr><tr><td>criteria</td><td>CrossEntropy</td><td>criteria</td><td>CrossEntropy</td></tr><tr><td>learning rate</td><td>2e-3</td><td>learning rate</td><td>2e-3</td></tr><tr><td>block LR</td><td>N/A</td><td>block LR</td><td>2e-4</td></tr><tr><td>weight decay</td><td>5e-2</td><td>weight decay</td><td>5e-2</td></tr><tr><td></td><td></td><td></td><td>168 (ScanNet / S3DIS)</td></tr><tr><td>batch size</td><td>168</td><td>batch size</td><td>144 (ScanNet200)</td></tr><tr><td></td><td></td><td></td><td>96 (ScanNet++)</td></tr><tr><td>epochs</td><td>100</td><td>epochs</td><td>100</td></tr></table>",
+        "bbox": [
+            519,
+            297,
+            901,
+            467
+        ],
+        "page_idx": 12
+    },
+    {
+        "type": "text",
+        "text": "rameters were set based on experimental results and computational considerations during pre-training. In our formulation, the Laplacian smoothing loss penalizes pairwise feature differences between neighboring points on the kNN graph. When the feature difference on an edge is small, the Huber penalty behaves quadratically; when it exceeds δ, it becomes linear, reducing the influence of outlier edges. Other settings related to the clustering loss follow the configuration used in Sonata. Furthermore, our comparative experiments employed three settings: RoomTours-16k (PTv3- Base), RoomTours-49k (PTv3-Base), and RoomTours-49k (PTv3-Large). Based on empirical results from previous research, the number of iterations is scaled with both data size and model size. ",
+        "bbox": [
+            511,
+            488,
+            906,
+            698
+        ],
+        "page_idx": 12
+    },
+    {
+        "type": "text",
+        "text": "Downstream task setting. We evaluate the pre-training effect on two downstream tasks: semantic segmentation and instance segmentation in indoor scenes. Semantic segmentation and instance segmentation are evaluated on Scan-Net [15], ScanNet200 [35], ScanNet++ [56], S3DIS [2]. For both tasks, we adopt the following fine-tuning protocols: Linear probing and Full fine-tuning. Linear probing freezes the entire backbone and trains only a linear classifier, whereas Full fine-tuning updates all model parameters. For the linear probing and the full fine-tuning protocol, we follow Sonata setting [53]. The configuration for semantic segmentation is provided in Table 8, and the configuration for instance segmentation is provided in Table 9. ",
+        "bbox": [
+            511,
+            704,
+            908,
+            900
+        ],
+        "page_idx": 12
+    },
+    {
+        "type": "page_number",
+        "text": "13 ",
+        "bbox": [
+            490,
+            924,
+            508,
+            936
+        ],
+        "page_idx": 12
+    },
+    {
+        "type": "table",
+        "img_path": "images/e0f10091bbb2a39779efd2ad55cad301bcdac0807a22bdc775380c833f404096.jpg",
+        "table_caption": [
+            "(a) kNN neighborhood size "
+        ],
+        "table_footnote": [],
+        "table_body": "<table><tr><td>k</td><td>LP</td><td>Full-FT</td></tr><tr><td>8</td><td>56.0</td><td>75.9</td></tr><tr><td>24</td><td>57.1</td><td>75.1</td></tr><tr><td>32</td><td>54.9</td><td>75.2</td></tr></table>",
+        "bbox": [
+            240,
+            85,
+            467,
+            159
+        ],
+        "page_idx": 13
+    },
+    {
+        "type": "table",
+        "img_path": "images/28721cb62e5ce08b44e42c3e3aa4630b59eaeab156d5dd3f2be3b2809e1d6470.jpg",
+        "table_caption": [],
+        "table_footnote": [],
+        "table_body": "<table><tr><td>radius</td><td>LP</td><td>Full-FT</td></tr><tr><td>0.04</td><td>55.3</td><td>75.7</td></tr><tr><td>0.08</td><td>57.1</td><td>75.1</td></tr><tr><td>0.12</td><td>55.3</td><td>75.4</td></tr></table>",
+        "bbox": [
+            535,
+            85,
+            763,
+            159
+        ],
+        "page_idx": 13
+    },
+    {
+        "type": "table",
+        "img_path": "images/4dd9ea003fd083069befc80339571990242f7655bd595669ee302a584e159ff5.jpg",
+        "table_caption": [
+            "(b) Radius threshold for noisy point removal. ",
+            "(c) Huber loss parameter δ. ",
+            "(d) Gaussian scale parameter σ. ",
+            "(e) Loss Weights λ and $\\mu .$ ",
+            "Table 10. Hyperparameter Analysis Experiments on the ScanNet semantic segmentation. We report Full Fine-tuning (Full-FT) and Linear Probing (LP) performance (%). Unless noted otherwise, the default configuration uses RoomTours-1k generated by $\\pi ^ { 3 }$ and is pre-trained with PTv3 (Base). Both Full-FT and LP are trained for 100 epochs. Default settings are highlighted in gray . "
+        ],
+        "table_footnote": [],
+        "table_body": "<table><tr><td rowspan=\"2\">δ</td><td rowspan=\"2\">LP</td><td rowspan=\"2\">Full-FT</td><td rowspan=\"2\">σ</td><td rowspan=\"2\">LP</td><td rowspan=\"2\">Full-FT</td><td> $\\lambda_{start}$ </td><td> $\\lambda_{base}$ </td><td>μ</td><td>LP</td><td>Full-FT</td></tr><tr><td>2e-4</td><td>3e-3</td><td>5e-2</td><td>57.1</td><td>75.1</td></tr><tr><td>0.05</td><td>55.7</td><td>75.5</td><td>adaptive</td><td>57.1</td><td>75.1</td><td>2e-4</td><td>3e-4</td><td>2e-2</td><td>56.7</td><td>75.7</td></tr><tr><td>0.5</td><td>57.1</td><td>75.1</td><td>0.03</td><td>56.0</td><td>75.4</td><td>2e-4</td><td>3e-4</td><td>5e-2</td><td>56.5</td><td>75.2</td></tr><tr><td>1.0</td><td>55.4</td><td>75.3</td><td>0.08</td><td>56.2</td><td>75.0</td><td>2e-4</td><td>3e-3</td><td>2e-2</td><td>54.9</td><td>74.8</td></tr></table>",
+        "bbox": [
+            114,
+            181,
+            908,
+            273
+        ],
+        "page_idx": 13
+    },
+    {
+        "type": "text",
+        "text": "C. Further Analysis Experiments ",
+        "text_level": 1,
+        "bbox": [
+            89,
+            356,
+            372,
+            373
+        ],
+        "page_idx": 13
+    },
+    {
+        "type": "text",
+        "text": "We analyze the key hyperparameters of LAM3C. Our ablations focus on the neighborhood size for Laplacian smoothing loss, the radius threshold for noisy point removal, the Huber loss parameter $\\delta ,$ the Gaussian scale parameter $\\sigma ,$ and the loss weights λ and $\\mu$ for Laplacian smoothing and noise consistency terms. ",
+        "bbox": [
+            89,
+            382,
+            483,
+            473
+        ],
+        "page_idx": 13
+    },
+    {
+        "type": "text",
+        "text": "kNN neighborhood size (see Table 10a). We analyze the effect of the neighborhood size used to construct the kNN graph for the Laplacian smoothing loss. In our LAM3C, the Laplacian smoothing loss is computed on a kNN graph constructed for each VGPC. The value of k determines the size of the local neighborhood, thus controlling the strength and spatial extent of the smoothing imposed by the regularization. ",
+        "bbox": [
+            89,
+            474,
+            483,
+            593
+        ],
+        "page_idx": 13
+    },
+    {
+        "type": "text",
+        "text": "We pre-train LAM3C with three values $k = \\{ 8 , 2 4 , 3 2 \\}$ , and evaluate the resulting models on ScanNet semantic segmentation. As shown in Table 10a, k=24 yields the best performance, particularly in the Linear Probing setting where representation quality is most directly reflected. We consider that smaller $k$ results in unstable local neighborhoods, while larger k leads to over-smoothing. ",
+        "bbox": [
+            89,
+            595,
+            483,
+            700
+        ],
+        "page_idx": 13
+    },
+    {
+        "type": "text",
+        "text": "Radius threshold for noisy point removal (see Table 10b). We analyze the effect of the radius threshold used to remove distant neighbors when constructing the kNN graph for the Laplacian smoothing loss. In VGPC, a noisy reconstructed point may cause a query point to retrieve faraway points among its top-k neighbors, which violates the locality assumption required for Laplacian regularization. To mitigate this issue, we apply a distance threshold $r _ { m a x }$ and discard neighbors whose Euclidean distance exceeds this value. ",
+        "bbox": [
+            89,
+            703,
+            483,
+            852
+        ],
+        "page_idx": 13
+    },
+    {
+        "type": "text",
+        "text": "We evaluate three thresholds $r { = } \\{ 0 . 0 4 , 0 . 0 8 , 0 . 1 2 \\}$ , by pre-training LAM3C with each setting and conducting semantic segmentation on ScanNet. As shown in Table 10b, r=0.08 achieves the best performance, particularly in the Linear Probing setting, indicating that this threshold strikes an effective balance between removing noisy outliers and preserving sufficient local structure. ",
+        "bbox": [
+            89,
+            854,
+            483,
+            900
+        ],
+        "page_idx": 13
+    },
+    {
+        "type": "text",
+        "text": "",
+        "bbox": [
+            511,
+            357,
+            906,
+            417
+        ],
+        "page_idx": 13
+    },
+    {
+        "type": "text",
+        "text": "Huber loss parameter δ (see Table 10c). We analyze the effect of the Huber loss parameter $\\delta ,$ which determines the transition point between the quadratic and linear regimes of the Huber loss. In our formulation, the Laplacian smoothing loss penalizes pairwise feature differences between neighboring points on the kNN graph. When the feature difference on an edge is small, the Huber penalty behaves quadratically; when it exceeds δ, it becomes linear, reducing the influence of outlier edges. ",
+        "bbox": [
+            511,
+            421,
+            905,
+            556
+        ],
+        "page_idx": 13
+    },
+    {
+        "type": "text",
+        "text": "We evaluate three settings $\\delta = \\{ 0 . 0 5 , 0 . 5 , 1 . 0 \\}$ and assess the pre-trained models on ScanNet semantic segmentation. As shown in Table 10c, δ=0.5 achieves the best Linear Probing performance, suggesting that it provides an effective balance between sensitivity to local variations and robustness to noisy neighborhoods. ",
+        "bbox": [
+            511,
+            561,
+            905,
+            651
+        ],
+        "page_idx": 13
+    },
+    {
+        "type": "text",
+        "text": "Gaussian scale parameter σ (see Table 10d). We analyze the effect of the Gaussian scale parameter σ, which controls the decay rate of the distance-based weighting used in the Laplacian smoothing loss. We assign each edge a distancebased weight $w _ { i j } = \\exp ( - \\| p _ { i } - p _ { j } \\| ^ { 2 } / \\sigma ^ { 2 } )$ , where a larger σ results in a slower decay of the weights, allowing distant points to retain non-negligible influence. Conversely, a smaller σ produces a sharper decay, restricting the effective neighborhood to only very close points. To account for the varying density of VGPC, our method adaptively sets σ as the median of the kNN distances for each point cloud. ",
+        "bbox": [
+            511,
+            655,
+            905,
+            821
+        ],
+        "page_idx": 13
+    },
+    {
+        "type": "text",
+        "text": "We compare three settings, $\\sigma { = } \\{ \\mathrm { a d a p t i v e , } 0 . 0 3 , 0 . 0 8 \\}$ , and evaluate the pre-trained models on ScanNet semantic segmentation. As shown in Table 10d, the adaptive setting achieves the best performance, particularly in the Linear Probing evaluation, indicating that adaptive scaling provides robustness across point clouds with diverse geometric densities. ",
+        "bbox": [
+            511,
+            824,
+            905,
+            900
+        ],
+        "page_idx": 13
+    },
+    {
+        "type": "page_number",
+        "text": "14 ",
+        "bbox": [
+            490,
+            924,
+            508,
+            936
+        ],
+        "page_idx": 13
+    },
+    {
+        "type": "table",
+        "img_path": "images/c9920980c3e0399fe70c3ca703f49db49ded8e8fce9005106e2fce65da894b3a.jpg",
+        "table_caption": [
+            "Table 11. Estimating the effect of test/val set contamination. All self-supervised methods are evaluated by full fine-tuning (Full-FT) or linear probing (LP) on PTv3 (Base) for 100 epochs. We use mIoU as evaluation metric. "
+        ],
+        "table_footnote": [],
+        "table_body": "<table><tr><td>Semantic Seg.</td><td colspan=\"2\">Test/Val set</td><td colspan=\"2\">ScanNet [15]</td><td colspan=\"2\">ScanNet200 [35]</td><td colspan=\"2\">ScanNet++ Val [56]</td><td colspan=\"2\">S3DIS Area 5 [2]</td></tr><tr><td>Methods</td><td>With</td><td>Without</td><td>LP</td><td>Full-FT</td><td>LP</td><td>Full-FT</td><td>LP</td><td>Full-FT</td><td>LP</td><td>Full-FT</td></tr><tr><td>Sonata (ScanNet)</td><td>√</td><td>-</td><td>67.3</td><td>77.4</td><td>26.6</td><td>32.7</td><td>35.1</td><td>42.4</td><td>63.4</td><td>72.5</td></tr><tr><td>Sonata (ScanNet)</td><td>-</td><td>√</td><td>67.1</td><td>75.4</td><td>27.2</td><td>32.2</td><td>34.3</td><td>41.7</td><td>61.2</td><td>72.2</td></tr></table>",
+        "bbox": [
+            114,
+            117,
+            879,
+            200
+        ],
+        "page_idx": 14
+    },
+    {
+        "type": "chart",
+        "img_path": "images/4f91d2a31e79db91f30b44300d3ca9f9af662a52a0f66465451ad723980b3bcf.jpg",
+        "content": "| Method | Semseg (mIoU) |\n| :--- | :--- |\n| VGGT (sonata pre-train) | 48.4 |\n| replace with n3 (sonata pre-train) | 51.0 |\n| + scale and z-axis align (sonata pre-train) | 54.3 |\n| + Laplacian loss | 55.0 |\n| + Consistency loss (LAM3C pre-train) | 57.1 |\n| 1k → 16k data (LAM3C pre-train) | 58.9 |\n| 16k → 50k data (LAM3C pre-train) | 65.9 |\n| PTv3 (Base → Large) | 69.5 |\nBetter VGPC; Our methodology; Scale VGPC; Scale PTv3",
+        "chart_caption": [
+            "Figure 9. Component synergy on ScanNet semantic segmentation (linear probing). Replacing VGGT with $p i ^ { 3 }$ , adding indoor alignment, and introducing LAM3C each improve performance, with further gains from scaling RoomTours and using PTv3-Large. "
+        ],
+        "chart_footnote": [],
+        "sub_type": "bar",
+        "bbox": [
+            96,
+            224,
+            472,
+            358
+        ],
+        "page_idx": 14
+    },
+    {
+        "type": "text",
+        "text": "",
+        "bbox": [
+            89,
+            455,
+            482,
+            486
+        ],
+        "page_idx": 14
+    },
+    {
+        "type": "text",
+        "text": "Loss weights λ and $\\mu$ (see Table 10e). We analyze the impact of the weighting coefficients λ and $\\mu$ used for the Laplacian smoothing loss and Noise consistency loss, respectively. As defined in Eq. (5), the overall objective consists of the distillation loss from Sonata and two additional regularization terms. Here, we focus on the balance between these two regularized losses, which are introduced to stabilize representation learning from VGPC. In our formulation, the coefficient λ for the Laplacian smoothing loss follows a scheduled progression during training, whereas the coefficient $\\mu$ for the Noise consistency loss is fixed. ",
+        "bbox": [
+            88,
+            488,
+            482,
+            654
+        ],
+        "page_idx": 14
+    },
+    {
+        "type": "text",
+        "text": "We evaluate four combinations of $( \\lambda , \\mu )$ listed in Table 10e, pre-train LAM3C under each setting, and assess the resulting models on ScanNet semantic segmentation. As shown in Table 10e, the configuration $\\lambda _ { \\mathrm { s t a r t } } { = } 2 \\times 1 0 ^ { - 4 }$ , $\\lambda _ { \\mathrm { b a s e } } { = } 3 \\times 1 0 ^ { - 3 }$ , and $\\mu = 5 \\times 1 0 ^ { - 2 }$ achieves the best Linear Probing performance, indicating that this balance of regularization strengths leads to more stable and discriminative representations. ",
+        "bbox": [
+            89,
+            657,
+            482,
+            777
+        ],
+        "page_idx": 14
+    },
+    {
+        "type": "text",
+        "text": "Component synergy (see Figure 9). We add a combination analysis on ScanNet linear probing. Keeping the same Sonata pre-training, switching the reconstruction model $( \\mathrm { V G G T } \\to \\pi ^ { 3 } )$ , adding indoor alignment, and further adding LAM3C consistently improve performance, with continued gains when increasing data scale and model capacity, indicating complementary and synergistic effects between components. ",
+        "bbox": [
+            89,
+            780,
+            482,
+            900
+        ],
+        "page_idx": 14
+    },
+    {
+        "type": "text",
+        "text": "D. Fairness considerations for baseline ",
+        "text_level": 1,
+        "bbox": [
+            511,
+            223,
+            841,
+            239
+        ],
+        "page_idx": 14
+    },
+    {
+        "type": "text",
+        "text": "In the paper, we compare against Sonata as it is the current state of the art. However, the official Sonata models are pre-trained on all splits of ScanNet, ScanNet++, and S3DIS including the {train / val / test} splits used for downstream evaluation2. This setup is not comparable to our LAM3C, which, even during finetuning evaluations, does not see any {test / val} data. Such {test / val} inclusion has been common practice in previous indoor 3D-SSL methods [50, 52], but blurs the true generalisation performance measurement. ",
+        "bbox": [
+            511,
+            250,
+            906,
+            385
+        ],
+        "page_idx": 14
+    },
+    {
+        "type": "text",
+        "text": "To ensure a fair comparison, we construct a fair Sonata baseline by pre-training Sonata using only the train split of ScanNet, completely removing the corresponding {val / test} scenes from pre-training. ",
+        "bbox": [
+            511,
+            386,
+            906,
+            446
+        ],
+        "page_idx": 14
+    },
+    {
+        "type": "text",
+        "text": "We first examine how excluding the {val / test} scenes affects Sonata’s performance when pre-trained on ScanNet. Table 11 reports the results for semantic segmentation. Removing {val / test} leads to a consistent drop in performance, confirming that the standard Sonata configuration benefits from the exposure to the evaluation scenes. This leakage provides prior knowledge of scene and object layouts, leading to performance that cannot be attributed purely to generalization. Although this paper focuses on ScanNet, we expect the performance gap to widen when combining multiple datasets such as ScanNet++, S3DIS, and others, where leakage accumulates across datasets. ",
+        "bbox": [
+            511,
+            448,
+            905,
+            628
+        ],
+        "page_idx": 14
+    },
+    {
+        "type": "text",
+        "text": "These findings highlight a fundamental issue in how 3D-SSL methods have been evaluated. While a deeper investigation is beyond the scope of this paper, we ensure fairness in all experiments by using Sonata models pre-trained strictly on the train split only. ",
+        "bbox": [
+            511,
+            628,
+            905,
+            705
+        ],
+        "page_idx": 14
+    },
+    {
+        "type": "text",
+        "text": "E. Discussion ",
+        "text_level": 1,
+        "bbox": [
+            513,
+            720,
+            630,
+            736
+        ],
+        "page_idx": 14
+    },
+    {
+        "type": "text",
+        "text": "Our findings show that high-fidelity 3D scans are not a prerequisite for effective 3D-SSL. Despite being noisy, incomplete, and inconsistent, VGPC reconstructed from unlabeled videos prove sufficient for 3D-SSL. Perhaps most notably, LAM3C performs strongly in linear probing, a setting that has not been widely explored in previous 3D-SSL methods. ",
+        "bbox": [
+            511,
+            747,
+            905,
+            839
+        ],
+        "page_idx": 14
+    },
+    {
+        "type": "page_footnote",
+        "text": "2The official configuration can be verified in the Sonata GitHub repository: https://github.com/Pointcept/Pointcept/blob/main/ configs/sonata/pretrain-sonata-v1m1-0-base.py ",
+        "bbox": [
+            511,
+            849,
+            905,
+            900
+        ],
+        "page_idx": 14
+    },
+    {
+        "type": "page_number",
+        "text": "15 ",
+        "bbox": [
+            490,
+            924,
+            508,
+            936
+        ],
+        "page_idx": 14
+    },
+    {
+        "type": "text",
+        "text": "This indicates that these imperfect reconstructions still encode rich geometric cues relevant to real-world tasks. Overall, our results highlight a promising direction toward scalable 3D data generation. Instead of costly real 3D scans, unlabeled videos offer a far more scalable source of 3D supervision, where the key is learning to handle noisy and missing regions effectively. ",
+        "bbox": [
+            89,
+            90,
+            480,
+            196
+        ],
+        "page_idx": 15
+    },
+    {
+        "type": "text",
+        "text": "F. Limitations and outlook ",
+        "text_level": 1,
+        "bbox": [
+            89,
+            210,
+            318,
+            224
+        ],
+        "page_idx": 15
+    },
+    {
+        "type": "text",
+        "text": "Although the reconstruction models used in this paper use real point clouds during training, our core contribution lies in showing that previously untapped resources such as web videos can be used for 3D-SSL and become more useful at scale. By piggybacking on reconstruction models, our approach benefits from the fast progress in this domain and might enable unifying 3D reconstruction and recognition models. Our method is designed for predominantly static indoor scenes and may be limited in highly dynamic environments, where reconstruction quality degrades due to many moving objects. While our noise regularization mitigates some outliers in RoomTours, explicit modeling of dense dynamics and motion remains an important direction for future work. ",
+        "bbox": [
+            89,
+            236,
+            483,
+            446
+        ],
+        "page_idx": 15
+    },
+    {
+        "type": "page_number",
+        "text": "16 ",
+        "bbox": [
+            490,
+            924,
+            508,
+            936
+        ],
+        "page_idx": 15
+    }
+]

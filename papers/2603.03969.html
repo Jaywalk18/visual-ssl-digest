@@ -1,0 +1,97 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Scaling Dense Event-Stream Pretraining from · 通用视觉自监督研究报</title>
+  <link rel="stylesheet" href="../assets/styles.css?v=20260525j">
+  <link rel="stylesheet" href="../assets/visual-ssl.css?v=20260525j">
+</head>
+<body>
+  <header class="masthead">
+    <div class="masthead-kicker">Visual SSL Research Report · 2026-06-07</div>
+    <a class="masthead-title" href="../index.html">通用视觉自监督研究报</a>
+    <div class="masthead-meta">
+      <span>图像表征 · VFM · JEPA · 视频预训练</span>
+      <span>CCF A/B 会议优先</span>
+      <span>图文精读 · 方法图解</span>
+    </div>
+  </header>
+  <nav class="site-nav" aria-label="主导航">
+    <a class="nav-link" href="../index.html">头版</a>
+<a class="nav-link" href="../issues/2026-06-07.html">今日速递</a>
+<a class="nav-link" href="../pages/catalog.html">论文目录</a>
+<a class="nav-link" href="../pages/timeline.html">时间线</a>
+  </nav>
+  <main><article class="paper-detail">
+  <div class="paper-main">
+    <div class="kicker">CVPR 2026 Day 1 补录 · 扫读 · 2026-06-07</div>
+    <h1 class="paper-headline">Scaling Dense Event-Stream Pretraining from：对“如何把图像 foundation model 蒸馏到异构视觉模态”有方法参考</h1>
+    <p class="dek">把 VFM 蒸馏扩展到 event-stream dense representation learning，并强调结构对齐而非逐点特征硬对齐。</p>
+    <p class="byline"><strong>Scaling Dense Event-Stream Pretraining from Visual Foundation Models</strong>　Zhiwen Chen, Junhui Hou, Zhiyu Zhu, Jinjian Wu, Guangming Shi；机构信息未在 arXiv 元数据中列出。　arXiv + CVPR 2026 Day 1 补录　<a href="https://arxiv.org/abs/2603.03969">原文链接</a></p>
+    <div class="paper-facts">
+      <span><b>编号</b>2603.03969</span>
+      <span><b>优先级</b>扫读</span>
+      <span><b>类别</b>CVPR 2026 Day 1 补录</span>
+      <span><b>会议</b>arXiv + CVPR 2026 Day 1 补录</span>
+      <span><b>方法</b>构建同步 image-event collection，用 visual foundation model 的 semantic structures 做 structure-aware distillation，缓解 image-event 稀疏性和粒度差异导致的 semantic collapse。</span>
+      <span><b>来源</b>arXiv / OpenReview</span>
+    </div>
+    <div class="feature-body">
+      <p class="lead dropcap">先说结论。对“如何把图像 foundation model 蒸馏到异构视觉模态”有方法参考。 把 VFM 蒸馏扩展到 event-stream dense representation learning，并强调结构对齐而非逐点特征硬对齐。</p>
+      <figure class="full-fig"><img src="../assets/mineru/2603.03969/images/f94becfdf0c7f35f5bb789c4ba33d2e1bbc880334634ff5178b300e4a7022b0d.jpg" alt="Figureure 10 · The qualitative comparisons among different event-based semantic segme"><figcaption><b>Figureure 10 · The qualitative comparisons among different event-based semantic segme</b><span class="fig-en">Figure 10. The qualitative comparisons among different event-based semantic segmention approaches on the test set of DSEC-Semantic. Best viewed in color.</span><span class="fig-zh">这张图/表用于判断 Scaling Dense Event-Stream Pretraining from 的实验收益来自哪里。重点看替换、消融或跨模型设置下趋势是否一致，而不是只看单个最高分。</span></figcaption></figure>
+<figure class="full-fig"><img src="../assets/mineru/2603.03969/images/6833ce19cd9b34ba2dfc270d2e303bab309fdbe138b4ea981f7845cded7b7578.jpg" alt="Comparison of dense event features of 不同的蒸馏策略"><figcaption><b>Comparison of dense event features of 不同的蒸馏策略</b><span class="fig-en">Comparison of dense event features of 不同的蒸馏策略. 随着深入分辨率的提升，事件表征会出现不同程度的退化： PCA maps become less localized Figure 4. Comparison of dense event features under different distillation strategies. All features are produced by a DINOv3-ViT-B and the similarity maps (marked with a red point) become noisier. 所有的特征由DINOv3-ViTB模型和不参与蒸馏的测试样本输出. From up to down: (a) model. Left to right: as spatial resolution increases, event representations degrade to varying degrees. PCA maps become less localized, image 表征; (b)\~(e)表示由不同蒸馏策略得到的事件表征, (a) patch-level 蒸馏, (b) superpixel-level 蒸馏, (c) patch-level 蒸馏 w/ Event Activation Mask, (d) and similarity maps (anchored at the red dot) become noisier. Top to bottom: (a) image features; (b) patch-level distillation; (c) superpixellevel distillation; (d) patch-level distillation + event activation mask; (e) patch-level distillation + event activation mask + structure-aware regularization (Our method). A more detailed feature analysis is provided in the supplementary materials.</span><span class="fig-zh">这张图/表用于判断 Scaling Dense Event-Stream Pretraining from 的实验收益来自哪里。重点看替换、消融或跨模型设置下趋势是否一致，而不是只看单个最高分。</span></figcaption></figure>
+      
+      <h2>核心问题</h2>
+      <p>对“如何把图像 foundation model 蒸馏到异构视觉模态”有方法参考。</p>
+      <h2>方法拆解</h2>
+      <p>构建同步 image-event collection，用 visual foundation model 的 semantic structures 做 structure-aware distillation，缓解 image-event 稀疏性和粒度差异导致的 semantic collapse。</p>
+      <h2>主要贡献</h2>
+      <p>把 VFM 蒸馏扩展到 event-stream dense representation learning，并强调结构对齐而非逐点特征硬对齐。</p>
+      <h2>实验看点</h2>
+      <p>摘要称下游 event representation benchmarks 有显著提升。</p>
+      <h2>局限与读法</h2>
+      <p>event camera 模态垂直性较强，通用 RGB 图像/视频 SSL 的迁移需要谨慎判断。</p>
+    
+    </div>
+  </div>
+  <aside class="paper-side">
+
+    <div class="side-box"><h4>关键判断</h4><dl><dt>相关性</dt><dd>扫读</dd><dt>类别</dt><dd>CVPR 2026 Day 1 补录</dd><dt>会议</dt><dd>arXiv + CVPR 2026 Day 1 补录</dd><dt>读法</dt><dd>方法图优先，表格次之</dd></dl></div>
+    <div class="side-box"><h4>原文</h4><p><a href="https://arxiv.org/abs/2603.03969">https://arxiv.org/abs/2603.03969</a></p></div>
+  </aside>
+</article></main>
+  <aside class="conf-float" data-conf-reminder="2026-06-07-main-ddl" aria-label="CCF A/B 主投稿提醒">
+  <button class="conf-close" type="button" aria-label="关闭会议提醒">×</button>
+  <details open>
+    <summary>CCF A/B 主投稿提醒</summary>
+    <div class="conf-list"><a class="conf-item " href="https://github.com/ccfddl/ccf-deadlines/blob/main/conference/AI/aaai.yml">
+  <span><b>AAAI 2027</b><em>CCF A · Main paper submission</em></span>
+  <strong>50 天</strong>
+  <small>2026-07-27 · CCF DDL: abstract 2026-07-20；进入 1 个月窗口后重点提醒。</small>
+</a></div>
+  </details>
+</aside>
+  <footer class="footer">
+    <div>面向通用视觉自监督、视觉基础模型与多模态表征学习的每日研究报。</div>
+    <div class="muted">Issue 2026-06-07 · Curated readings and figure notes</div>
+  </footer>
+  <script>
+  (() => {
+    const box = document.querySelector('[data-conf-reminder]');
+    if (!box) return;
+    const key = `visualSslConfReminderClosed:${box.dataset.confReminder || '2026-06-07-main-ddl'}`;
+    try {
+      if (localStorage.getItem(key) === '1') box.hidden = true;
+    } catch (err) {}
+    const close = box.querySelector('.conf-close');
+    if (close) {
+      close.addEventListener('click', () => {
+        box.hidden = true;
+        try { localStorage.setItem(key, '1'); } catch (err) {}
+      });
+    }
+  })();
+  </script>
+</body>
+</html>

@@ -1,0 +1,97 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>From Static to Dynamic · 通用视觉自监督研究报</title>
+  <link rel="stylesheet" href="../assets/styles.css?v=20260525j">
+  <link rel="stylesheet" href="../assets/visual-ssl.css?v=20260525j">
+</head>
+<body>
+  <header class="masthead">
+    <div class="masthead-kicker">Visual SSL Research Report · 2026-06-07</div>
+    <a class="masthead-title" href="../index.html">通用视觉自监督研究报</a>
+    <div class="masthead-meta">
+      <span>图像表征 · VFM · JEPA · 视频预训练</span>
+      <span>CCF A/B 会议优先</span>
+      <span>图文精读 · 方法图解</span>
+    </div>
+  </header>
+  <nav class="site-nav" aria-label="主导航">
+    <a class="nav-link" href="../index.html">头版</a>
+<a class="nav-link" href="../issues/2026-06-07.html">今日速递</a>
+<a class="nav-link" href="../pages/catalog.html">论文目录</a>
+<a class="nav-link" href="../pages/timeline.html">时间线</a>
+  </nav>
+  <main><article class="paper-detail">
+  <div class="paper-main">
+    <div class="kicker">CVPR 2026 Day 3 · P0 · 2026-06-07</div>
+    <h1 class="paper-headline">From Static to Dynamic：这是今天最贴近“通用视觉自监督”的主线：把现有 DINO/MAE/CLIP 类 image features 稳定迁移到 video representation</h1>
+    <p class="dek">把 image SSL backbone 向 video 表征迁移时的冲突明确建模为 intra-video consistency 与 inter-video separability 的 trade-off，而不是简单加 temporal module 后全量微调。</p>
+    <p class="byline"><strong>From Static to Dynamic: Exploring Self-supervised Image-to-Video Representation Transfer Learning</strong>　Yang Liu, Qianqian Xu, Peisong Wen, Siran Dai, Xilin Zhao, Qingming Huang；机构信息未在 arXiv 元数据中列出。　arXiv + CVPR 2026 Day 3　<a href="https://arxiv.org/abs/2603.26597">原文链接</a></p>
+    <div class="paper-facts">
+      <span><b>编号</b>2603.26597</span>
+      <span><b>优先级</b>P0</span>
+      <span><b>类别</b>CVPR 2026 Day 3</span>
+      <span><b>会议</b>arXiv + CVPR 2026 Day 3</span>
+      <span><b>方法</b>Co-Settle 在冻结 image-pretrained encoder 上加轻量投影层，用 temporal cycle consistency 保持同一对象跨帧稳定，同时用 semantic separability constraint 保持跨视频区分能力。</span>
+      <span><b>来源</b>arXiv / OpenReview</span>
+    </div>
+    <div class="feature-body">
+      <p class="lead dropcap">先说结论。这是今天最贴近“通用视觉自监督”的主线：把现有 DINO/MAE/CLIP 类 image features 稳定迁移到 video representation。 把 image SSL backbone 向 video 表征迁移时的冲突明确建模为 intra-video consistency 与 inter-video separability 的 trade-off，而不是简单加 temporal module 后全量微调。</p>
+      <figure class="full-fig"><img src="../assets/mineru/2603.26597/images/868183d5eaea9058edf27b093136ac6f671e48fceb33996f50738ec5d590c936.jpg" alt="Figureure 2 · Overview of our image-to-video transfer learning framework"><figcaption><b>Figureure 2 · Overview of our image-to-video transfer learning framework</b><span class="fig-en">Figure 2. Overview of our image-to-video transfer learning framework. Two frames are sampled from each video to construct a cyclic sequence. A frozen image-pretrained encoder extracts patch-level features, which are then mapped by a learnable projection layer. The projection layer is trained with a temporal cycle-consistency loss and a semantic separability constraint for representation adjustment, thereby promoting a better trade-off between intra-video temporal consistency and inter-video semantic separability.</span><span class="fig-zh">这张图概括 From Static to Dynamic 的整体方法流程。阅读时先看模块之间传递的训练信号，再看作者如何把目标拆成可优化的子问题。</span></figcaption></figure>
+<figure class="full-fig"><img src="../assets/mineru/2603.26597/images/18fe02df5552e99ac1bc58a89e3b01e1829cb562296936b9af1f00f28536be20.jpg" alt="Figureure 1 · Comparison of video representation quality with recent visual represen"><figcaption><b>Figureure 1 · Comparison of video representation quality with recent visual represen</b><span class="fig-en">Figure 1. Comparison of video representation quality with recent visual representation learning models on the Kinetics-400 [55] validation set. Favorable video representations should exhibit strong intravideo temporal consistency (lower intra-video distance $D _ { i n t r a } )$ and clear inter-video semantic separability (higher inter-video distance $D _ { i n t e r } )$ jointly, yet the two objectives often compete since the two distances co-vary. Applying our method to image-pretrained models leads to consistent improvements on the margin of inter- and intra-video distance $D = D _ { i n t e r } - \gamma D _ { i n t r a }$ (detailed in Sec. 5.3), indicating a better trade-off between the two properties, and therefore leading to improved performance on video downstream tasks.</span><span class="fig-zh">这张图/表用于判断 From Static to Dynamic 的实验收益来自哪里。重点看替换、消融或跨模型设置下趋势是否一致，而不是只看单个最高分。</span></figcaption></figure>
+      
+      <h2>核心问题</h2>
+      <p>这是今天最贴近“通用视觉自监督”的主线：把现有 DINO/MAE/CLIP 类 image features 稳定迁移到 video representation。</p>
+      <h2>方法拆解</h2>
+      <p>Co-Settle 在冻结 image-pretrained encoder 上加轻量投影层，用 temporal cycle consistency 保持同一对象跨帧稳定，同时用 semantic separability constraint 保持跨视频区分能力。</p>
+      <h2>主要贡献</h2>
+      <p>把 image SSL backbone 向 video 表征迁移时的冲突明确建模为 intra-video consistency 与 inter-video separability 的 trade-off，而不是简单加 temporal module 后全量微调。</p>
+      <h2>实验看点</h2>
+      <p>摘要称在 8 个 image-pretrained models 上验证，支持轻量投影能改善该 trade-off。</p>
+      <h2>局限与读法</h2>
+      <p>依赖已有 image-pretrained encoder；是否能替代大规模 video-native SSL 预训练还需要更大规模视频任务验证。</p>
+    
+    </div>
+  </div>
+  <aside class="paper-side">
+
+    <div class="side-box"><h4>关键判断</h4><dl><dt>相关性</dt><dd>P0</dd><dt>类别</dt><dd>CVPR 2026 Day 3</dd><dt>会议</dt><dd>arXiv + CVPR 2026 Day 3</dd><dt>读法</dt><dd>方法图优先，表格次之</dd></dl></div>
+    <div class="side-box"><h4>原文</h4><p><a href="https://arxiv.org/abs/2603.26597">https://arxiv.org/abs/2603.26597</a></p></div>
+  </aside>
+</article></main>
+  <aside class="conf-float" data-conf-reminder="2026-06-07-main-ddl" aria-label="CCF A/B 主投稿提醒">
+  <button class="conf-close" type="button" aria-label="关闭会议提醒">×</button>
+  <details open>
+    <summary>CCF A/B 主投稿提醒</summary>
+    <div class="conf-list"><a class="conf-item " href="https://github.com/ccfddl/ccf-deadlines/blob/main/conference/AI/aaai.yml">
+  <span><b>AAAI 2027</b><em>CCF A · Main paper submission</em></span>
+  <strong>50 天</strong>
+  <small>2026-07-27 · CCF DDL: abstract 2026-07-20；进入 1 个月窗口后重点提醒。</small>
+</a></div>
+  </details>
+</aside>
+  <footer class="footer">
+    <div>面向通用视觉自监督、视觉基础模型与多模态表征学习的每日研究报。</div>
+    <div class="muted">Issue 2026-06-07 · Curated readings and figure notes</div>
+  </footer>
+  <script>
+  (() => {
+    const box = document.querySelector('[data-conf-reminder]');
+    if (!box) return;
+    const key = `visualSslConfReminderClosed:${box.dataset.confReminder || '2026-06-07-main-ddl'}`;
+    try {
+      if (localStorage.getItem(key) === '1') box.hidden = true;
+    } catch (err) {}
+    const close = box.querySelector('.conf-close');
+    if (close) {
+      close.addEventListener('click', () => {
+        box.hidden = true;
+        try { localStorage.setItem(key, '1'); } catch (err) {}
+      });
+    }
+  })();
+  </script>
+</body>
+</html>

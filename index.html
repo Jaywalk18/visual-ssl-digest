@@ -25,77 +25,77 @@
   </nav>
   <main><section class="hero-grid">
   <article class="lead-story">
-    <div class="kicker">今日主线 · arXiv</div>
-    <h1>Learning Geometric Representations from Videos：GeoVR 用纯 2D video 与 3D foundation teacher 重塑 MLLM 几何表征，是今天最强的视频/空间表征候选</h1>
-    <p class="dek">GeoVR 用纯 2D video 与 3D foundation teacher 重塑 MLLM 几何表征，是今天最强的视频/空间表征候选。</p>
-    <figure class="hero-figure"><img src="assets/mineru/2606.05833/images/cce45d760d802846ba35bd59aced86b525640aa81e4174a884b1a1fcb7cacb96.jpg" alt="Learning Geometric Representations from Videos figure"><figcaption>这张图概括 Learning Geometric Representations from Videos 的整体方法流程。阅读时先看模块之间传递的训练信号，再看作者如何把目标拆成可优化的子问题。</figcaption></figure>
-    <div class="paper-actions"><a href="issues/2026-06-07.html">阅读 6 月 7 日速递</a><a href="papers/2606.05833.html">打开主文页</a></div>
+    <div class="kicker">今日主线 · arXiv + CVPR 2026 Day 3</div>
+    <h1>From Static to Dynamic：冻结 image-pretrained encoder，只学轻量投影并同时优化时序一致性与跨视频语义分离，直接切中视频表征迁移</h1>
+    <p class="dek">冻结 image-pretrained encoder，只学轻量投影并同时优化时序一致性与跨视频语义分离，直接切中视频表征迁移。</p>
+    <figure class="hero-figure"><img src="assets/mineru/2603.26597/images/868183d5eaea9058edf27b093136ac6f671e48fceb33996f50738ec5d590c936.jpg" alt="From Static to Dynamic figure"><figcaption>这张图概括 From Static to Dynamic 的整体方法流程。阅读时先看模块之间传递的训练信号，再看作者如何把目标拆成可优化的子问题。</figcaption></figure>
+    <div class="paper-actions"><a href="issues/2026-06-07.html">阅读 6 月 7 日速递</a><a href="papers/2603.26597.html">打开主文页</a></div>
   </article>
   <aside class="issue-brief">
     <h2>快速摘要</h2>
-    <ul><li><b>今日最值得看</b><span>今天没有通过去重的新论文。建议回看 2026-06-06 的 GeoVR、SelfBootTok、Future-L1 三条主线；今天不重复计入新增。</span></li><li><b>建议精读顺序</b><span>若今天有阅读时间，按 GeoVR -&gt; SelfBootTok -&gt; Future-L1 -&gt; The Invisible Hand of Physics -&gt; ActiveMimic 回看；新来源只需扫读本期“会议/顶会动态”和“arXiv 新增/更新”。</span></li><li><b>新增/更新/过滤数量</b><span>官方 arXiv new 页仍停在 Friday, 5 June 2026；合并 cs.CV/cs.LG/cs.AI/cs.CL/stat.ML/cs.MM/eess.IV 的 listing ID 902，与昨日处理窗口一致；新增入选 0，新状态变化 0，新增过滤 0。</span></li><li><b>主要判断</b><span>周末没有新的 arXiv 批次；会议检索只发现已在去重库中记录过的 CVPR/OpenReview/ICML 状态线索，不应把旧论文包装成今日新增。</span></li><li><b>来源复核</b><span>arXiv official new/recent、CVPR 2026 Open Access、OpenReview/ICML 2026 关键词检索均已复核；Spatial-SSRL、UniPixie 等已在历史记录中合并或降级。</span></li></ul>
+    <ul><li><b>今日最值得看</b><span>From Static to Dynamic、PyraTok、MacTok。今天没有新的周末 arXiv 批次，主内容来自 CVPR 2026 Day 3 官方 Open Access 与少量 Day 1/Day 2 高相关补录。</span></li><li><b>建议精读顺序</b><span>From Static to Dynamic -&gt; PyraTok -&gt; MacTok -&gt; Toward Diffusible High-Dimensional Latent Spaces -&gt; 3D sans 3D Scans；随后读 E-RayZer 与 VideoSSR。</span></li><li><b>新增/更新/过滤数量</b><span>arXiv 2026-06-06 至 2026-06-07 submitted/updated 窗口 0；CVPR 官方发布/状态补录入选 10；已知旧稿状态确认 3；过滤/降级 28 个题名命中项。</span></li><li><b>主要判断</b><span>表征学习主线继续从单纯 MAE/contrastive 转向“视频迁移、视觉 tokenization、高维 latent 可扩散性、3D/空间预训练”。CVPR Day 3 对 tokenizer 与视频/3D 表征的信号比普通 VLM 后训练更强。</span></li><li><b>会议动态</b><span>CVPR 2026 Open Access Day 3 已可定位多篇通用视觉表征相关论文；Day 1/Day 2 回查补录 E-RayZer、VideoSSR、Scaling Dense Event-Stream。OpenReview/ICML 未发现新的高相关状态变化。</span></li></ul>
   </aside>
 </section>
 <section class="section-block">
   <div class="section-heading"><h2>今日推荐论文</h2><a href="pages/catalog.html">全目录 →</a></div>
-  <div class="paper-list"><article class="paper-card" data-category="Visual SSL / representation" data-priority="P0" data-date="2026-06-06" data-title="learning geometric representations from videos for spatial intelligent multimodal large language models" data-keywords="learning geometric representations from videos for spatial intelligent multimodal large language models learning geometric representations from videos visual ssl / representation p0 2026-06-06 arxiv geovr 用纯 2d video 与 3d foundation teacher 重塑 mllm 几何表征，是今天最强的视频/空间表征候选 高相关；详见方法、贡献和实验边界。">
-  <a class="paper-thumb paper-thumb-text" href="papers/2606.05833.html">
-    <img src="assets/mineru/2606.05833/images/cce45d760d802846ba35bd59aced86b525640aa81e4174a884b1a1fcb7cacb96.jpg" alt="Learning Geometric Representations from Videos figure"><span>P0</span>
+  <div class="paper-list"><article class="paper-card" data-category="CVPR 2026 Day 3" data-priority="P0" data-date="2026-06-07" data-title="from static to dynamic: exploring self-supervised image-to-video representation transfer learning" data-keywords="from static to dynamic: exploring self-supervised image-to-video representation transfer learning from static to dynamic cvpr 2026 day 3 p0 2026-06-07 arxiv + cvpr 2026 day 3 冻结 image-pretrained encoder，只学轻量投影并同时优化时序一致性与跨视频语义分离，直接切中视频表征迁移 高相关；详见方法、贡献和实验边界。">
+  <a class="paper-thumb paper-thumb-text" href="papers/2603.26597.html">
+    <img src="assets/mineru/2603.26597/images/868183d5eaea9058edf27b093136ac6f671e48fceb33996f50738ec5d590c936.jpg" alt="From Static to Dynamic figure"><span>P0</span>
   </a>
   <div>
-    <div class="paper-meta">2026-06-06 · Visual SSL / representation · arXiv</div>
-    <h3><a href="papers/2606.05833.html">Learning Geometric Representations from Videos for Spatial Intelligent Multimodal Large Language Models</a></h3>
+    <div class="paper-meta">2026-06-07 · CVPR 2026 Day 3 · arXiv + CVPR 2026 Day 3</div>
+    <h3><a href="papers/2603.26597.html">From Static to Dynamic: Exploring Self-supervised Image-to-Video Representation Transfer Learning</a></h3>
     <p>高相关；详见方法、贡献和实验边界。</p>
-    <p class="card-tech"><b>方法：</b>GeoVR 用纯 2D video 与 3D foundation teacher 重塑 MLLM 几何表征，是今天最强的视频/空间表征候选</p>
-    <div class="paper-actions"><a href="papers/2606.05833.html">读图文页</a><a href="https://arxiv.org/abs/2606.05833">原文</a></div>
+    <p class="card-tech"><b>方法：</b>冻结 image-pretrained encoder，只学轻量投影并同时优化时序一致性与跨视频语义分离，直接切中视频表征迁移</p>
+    <div class="paper-actions"><a href="papers/2603.26597.html">读图文页</a><a href="https://arxiv.org/abs/2603.26597">原文</a></div>
   </div>
 </article>
-<article class="paper-card" data-category="Visual SSL / representation" data-priority="P0" data-date="2026-06-06" data-title="balancing image compression and generation with bootstrapped tokenization" data-keywords="balancing image compression and generation with bootstrapped tokenization balancing image compression and generation visual ssl / representation p0 2026-06-06 arxiv selfboottok 把视觉 token 分成 global/local 组，并用 self-bootstrapping 让 tokenizer 承担局部细节学习 高相关；详见方法、贡献和实验边界。">
-  <a class="paper-thumb paper-thumb-text" href="papers/2606.05552.html">
-    <img src="assets/mineru/2606.05552/images/c5ec315bf627c1b3e1192a7076e2fac0644d5b3581ca2195079409c562a2065e.jpg" alt="Balancing Image Compression and Generation figure"><span>P0</span>
+<article class="paper-card" data-category="CVPR 2026 Day 3" data-priority="P0" data-date="2026-06-07" data-title="pyratok: language-aligned pyramidal tokenizer for video understanding and generation" data-keywords="pyratok: language-aligned pyramidal tokenizer for video understanding and generation pyratok cvpr 2026 day 3 p0 2026-06-07 arxiv + cvpr 2026 day 3 多尺度语言对齐 video tokenizer 同时提升重建、生成和 zero-shot 视频理解，是今天最值得跟的 tokenization 工作 高相关；详见方法、贡献和实验边界。">
+  <a class="paper-thumb paper-thumb-text" href="papers/2601.16210.html">
+    <img src="assets/mineru/2601.16210/images/7716d8e5645b5f3daae5bd01679541e8df3b46756f403f8666dbc452e9cee009.jpg" alt="PyraTok figure"><span>P0</span>
   </a>
   <div>
-    <div class="paper-meta">2026-06-06 · Visual SSL / representation · arXiv</div>
-    <h3><a href="papers/2606.05552.html">Balancing Image Compression and Generation with Bootstrapped Tokenization</a></h3>
+    <div class="paper-meta">2026-06-07 · CVPR 2026 Day 3 · arXiv + CVPR 2026 Day 3</div>
+    <h3><a href="papers/2601.16210.html">PyraTok: Language-Aligned Pyramidal Tokenizer for Video Understanding and Generation</a></h3>
     <p>高相关；详见方法、贡献和实验边界。</p>
-    <p class="card-tech"><b>方法：</b>SelfBootTok 把视觉 token 分成 global/local 组，并用 self-bootstrapping 让 tokenizer 承担局部细节学习</p>
-    <div class="paper-actions"><a href="papers/2606.05552.html">读图文页</a><a href="https://arxiv.org/abs/2606.05552">原文</a></div>
+    <p class="card-tech"><b>方法：</b>多尺度语言对齐 video tokenizer 同时提升重建、生成和 zero-shot 视频理解，是今天最值得跟的 tokenization 工作</p>
+    <div class="paper-actions"><a href="papers/2601.16210.html">读图文页</a><a href="https://arxiv.org/abs/2601.16210">原文</a></div>
   </div>
 </article>
-<article class="paper-card" data-category="code" data-priority="P0" data-date="2026-06-06" data-title="imagine before you predict: interleaved latent visual reasoning for video event prediction" data-keywords="imagine before you predict: interleaved latent visual reasoning for video event prediction imagine before you predict code p0 2026-06-06 arxiv + code future-l1 让视频 mllm 在生成中交替使用语言 token 与连续视觉 latent span，针对视觉语义被文本化损失的问题 高相关；详见方法、贡献和实验边界。">
-  <a class="paper-thumb paper-thumb-text" href="papers/2606.05769.html">
-    <img src="assets/mineru/2606.05769/images/655c7a74599f7a1a81df9230091d30f4e44fe4d9d54e4740d86a7a708ad92bfc.jpg" alt="Imagine Before You Predict figure"><span>P0</span>
+<article class="paper-card" data-category="CVPR 2026 Day 3" data-priority="P0" data-date="2026-06-07" data-title="mactok: robust continuous tokenization for image generation" data-keywords="mactok: robust continuous tokenization for image generation mactok cvpr 2026 day 3 p0 2026-06-07 arxiv + cvpr 2026 day 3 用 masking 与 dino-guided semantic masking 防止连续 tokenizer posterior collapse，对紧凑图像 latent 表征很关键 高相关；详见方法、贡献和实验边界。">
+  <a class="paper-thumb paper-thumb-text" href="papers/2603.29634.html">
+    <img src="assets/mineru/2603.29634/images/99dd9e09a488a663d695fc81b61ed1af8ec6f2a027422e8b77999d40d0c058f6.jpg" alt="MacTok figure"><span>P0</span>
   </a>
   <div>
-    <div class="paper-meta">2026-06-06 · code · arXiv + code</div>
-    <h3><a href="papers/2606.05769.html">Imagine Before You Predict: Interleaved Latent Visual Reasoning for Video Event Prediction</a></h3>
+    <div class="paper-meta">2026-06-07 · CVPR 2026 Day 3 · arXiv + CVPR 2026 Day 3</div>
+    <h3><a href="papers/2603.29634.html">MacTok: Robust Continuous Tokenization for Image Generation</a></h3>
     <p>高相关；详见方法、贡献和实验边界。</p>
-    <p class="card-tech"><b>方法：</b>Future-L1 让视频 MLLM 在生成中交替使用语言 token 与连续视觉 latent span，针对视觉语义被文本化损失的问题</p>
-    <div class="paper-actions"><a href="papers/2606.05769.html">读图文页</a><a href="https://arxiv.org/abs/2606.05769">原文</a></div>
+    <p class="card-tech"><b>方法：</b>用 masking 与 DINO-guided semantic masking 防止连续 tokenizer posterior collapse，对紧凑图像 latent 表征很关键</p>
+    <div class="paper-actions"><a href="papers/2603.29634.html">读图文页</a><a href="https://arxiv.org/abs/2603.29634">原文</a></div>
   </div>
 </article>
-<article class="paper-card" data-category="Visual SSL / representation" data-priority="P1" data-date="2026-06-06" data-title="the invisible hand of physics: when video diffusion models know more than they show" data-keywords="the invisible hand of physics: when video diffusion models know more than they show the invisible hand of physics visual ssl / representation p1 2026-06-06 arxiv 通过反演视频扩散轨迹发现物理可行性可从 dit 状态线性解码，提示生成式预训练隐含视觉物理表征 高相关；详见方法、贡献和实验边界。">
-  <a class="paper-thumb paper-thumb-text" href="papers/2606.05328.html">
-    <img src="assets/mineru/2606.05328/images/04bfd993f9aed543bbd5a865bb22f1e74bb08841acf5b7195a41460cd974a233.jpg" alt="The Invisible Hand of Physics figure"><span>P1</span>
+<article class="paper-card" data-category="CVPR 2026 Day 3" data-priority="P1" data-date="2026-06-07" data-title="toward diffusible high-dimensional latent spaces: a frequency perspective" data-keywords="toward diffusible high-dimensional latent spaces: a frequency perspective toward diffusible high-dimensional latent spaces cvpr 2026 day 3 p1 2026-06-07 arxiv + cvpr 2026 day 3 从频率角度解释高维 autoencoder latent 的生成困难，并提出不改 autoencoder 的 freqwarm 训练策略 高相关；详见方法、贡献和实验边界。">
+  <a class="paper-thumb paper-thumb-text" href="papers/2511.22249.html">
+    <img src="assets/mineru/2511.22249/images/e15fef9cd188e80c2e0ac1ba4dd1bc1d1befc7285293224970f24e3534d9abe9.jpg" alt="Toward Diffusible High-Dimensional Latent Spaces figure"><span>P1</span>
   </a>
   <div>
-    <div class="paper-meta">2026-06-06 · Visual SSL / representation · arXiv</div>
-    <h3><a href="papers/2606.05328.html">The Invisible Hand of Physics: When Video Diffusion Models Know More Than They Show</a></h3>
+    <div class="paper-meta">2026-06-07 · CVPR 2026 Day 3 · arXiv + CVPR 2026 Day 3</div>
+    <h3><a href="papers/2511.22249.html">Toward Diffusible High-Dimensional Latent Spaces: A Frequency Perspective</a></h3>
     <p>高相关；详见方法、贡献和实验边界。</p>
-    <p class="card-tech"><b>方法：</b>通过反演视频扩散轨迹发现物理可行性可从 DiT 状态线性解码，提示生成式预训练隐含视觉物理表征</p>
-    <div class="paper-actions"><a href="papers/2606.05328.html">读图文页</a><a href="https://arxiv.org/abs/2606.05328">原文</a></div>
+    <p class="card-tech"><b>方法：</b>从频率角度解释高维 autoencoder latent 的生成困难，并提出不改 autoencoder 的 FreqWarm 训练策略</p>
+    <div class="paper-actions"><a href="papers/2511.22249.html">读图文页</a><a href="https://arxiv.org/abs/2511.22249">原文</a></div>
   </div>
 </article>
-<article class="paper-card" data-category="project" data-priority="P1" data-date="2026-06-06" data-title="activemimic: egocentric video pretraining with active perception" data-keywords="activemimic: egocentric video pretraining with active perception activemimic project p1 2026-06-06 arxiv + project 从人类第一视角视频恢复相机/手腕轨迹，把主动感知当作预训练信号；虽偏机器人，但对视频 ssl 有迁移价值 中高相关；详见方法、贡献和实验边界。">
-  <a class="paper-thumb paper-thumb-text" href="papers/2606.06194.html">
-    <img src="assets/mineru/2606.06194/images/1989b78373908b6ae8d45190d02602b00512129948cb07c5d542f6d8f0d39ee9.jpg" alt="ActiveMimic figure"><span>P1</span>
+<article class="paper-card" data-category="CVPR 2026 Day 3" data-priority="P1" data-date="2026-06-07" data-title="3d sans 3d scans: scalable pre-training from video-generated point clouds" data-keywords="3d sans 3d scans: scalable pre-training from video-generated point clouds 3d sans 3d scans cvpr 2026 day 3 p1 2026-06-07 arxiv + cvpr 2026 day 3 用普通视频生成点云再做 3d ssl，给“视频作为 3d 表征预训练数据源”提供强证据 高相关；详见方法、贡献和实验边界。">
+  <a class="paper-thumb paper-thumb-text" href="papers/2512.23042.html">
+    <img src="assets/mineru/2512.23042/images/630f6e0bd26bb5618d3a809849c72809f91fde3540af5aa24046398c3468a49b.jpg" alt="3D sans 3D Scans figure"><span>P1</span>
   </a>
   <div>
-    <div class="paper-meta">2026-06-06 · project · arXiv + project</div>
-    <h3><a href="papers/2606.06194.html">ActiveMimic: Egocentric Video Pretraining with Active Perception</a></h3>
-    <p>中高相关；详见方法、贡献和实验边界。</p>
-    <p class="card-tech"><b>方法：</b>从人类第一视角视频恢复相机/手腕轨迹，把主动感知当作预训练信号；虽偏机器人，但对视频 SSL 有迁移价值</p>
-    <div class="paper-actions"><a href="papers/2606.06194.html">读图文页</a><a href="https://arxiv.org/abs/2606.06194">原文</a></div>
+    <div class="paper-meta">2026-06-07 · CVPR 2026 Day 3 · arXiv + CVPR 2026 Day 3</div>
+    <h3><a href="papers/2512.23042.html">3D sans 3D Scans: Scalable Pre-training from Video-Generated Point Clouds</a></h3>
+    <p>高相关；详见方法、贡献和实验边界。</p>
+    <p class="card-tech"><b>方法：</b>用普通视频生成点云再做 3D SSL，给“视频作为 3D 表征预训练数据源”提供强证据</p>
+    <div class="paper-actions"><a href="papers/2512.23042.html">读图文页</a><a href="https://arxiv.org/abs/2512.23042">原文</a></div>
   </div>
 </article></div>
 </section></main>
