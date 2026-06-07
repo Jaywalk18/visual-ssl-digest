@@ -19,39 +19,39 @@
   </header>
   <nav class="site-nav" aria-label="主导航">
     <a class="nav-link" href="../index.html">头版</a>
-<a class="nav-link" href="../issues/2026-06-06.html">今日速递</a>
+<a class="nav-link" href="../issues/2026-06-07.html">今日速递</a>
 <a class="nav-link" href="../pages/catalog.html">论文目录</a>
 <a class="nav-link" href="../pages/timeline.html">时间线</a>
   </nav>
   <main><article class="paper-detail">
   <div class="paper-main">
     <div class="kicker">Visual SSL / representation · P2 · 2026-06-06</div>
-    <h1 class="paper-headline">Mechanistic Insights into Functional Sparsity：如果要判断视觉表征是否真正被 LLM 使用，这比只看最终准确率更细</h1>
-    <p class="dek">把 MLLM 如何从复杂视觉上下文取出任务相关信息推进到可干预的 head-level functional sparsity。</p>
-    <p class="byline"><strong>Mechanistic Insights into Functional Sparsity in Multimodal LLMs via CoRe Heads</strong>　Ruoxi Sun, Quantong Qiu, Juntao Li, Zecheng Tang, Yihang Lou, Min Zhang；机构信息 arXiv 元数据未列出。　arXiv　<a href="https://arxiv.org/abs/2606.05843">原文链接</a></p>
+    <h1 class="paper-headline">Mechanistic Insights into Functional Sparsity：它和通用视觉自监督的关系在于：从 attention head 层面定位 MLLM 的 query-relevant visual feature retrieval 机制，可诊断视觉表征如何被读取</h1>
+    <p class="dek">中高相关；详见方法、贡献和实验边界。</p>
+    <p class="byline"><strong>Mechanistic Insights into Functional Sparsity in Multimodal LLMs via CoRe Heads</strong>　arXiv　<a href="https://arxiv.org/abs/2606.05843">原文链接</a></p>
     <div class="paper-facts">
       <span><b>编号</b>2606.05843</span>
       <span><b>优先级</b>P2</span>
       <span><b>类别</b>Visual SSL / representation</span>
       <span><b>会议</b>arXiv</span>
-      <span><b>方法</b>提出 Retrieval Attention Mass，识别 Context-aware Retrieval heads，并通过 causal ablation 与加速实验验证。</span>
+      <span><b>方法</b>从 attention head 层面定位 MLLM 的 query-relevant visual feature retrieval 机制，可诊断视觉表征如何被读取</span>
       <span><b>来源</b>arXiv / OpenReview</span>
     </div>
     <div class="feature-body">
-      <p class="lead dropcap">先说结论。如果要判断视觉表征是否真正被 LLM 使用，这比只看最终准确率更细。 把 MLLM 如何从复杂视觉上下文取出任务相关信息推进到可干预的 head-level functional sparsity。</p>
+      <p class="lead dropcap">先说结论。它和通用视觉自监督的关系在于：从 attention head 层面定位 MLLM 的 query-relevant visual feature retrieval 机制，可诊断视觉表征如何被读取。 中高相关；详见方法、贡献和实验边界。</p>
       <figure class="full-fig"><img src="../assets/mineru/2606.05843/images/3d8079909f0f961502515ad088926f8698b59e5f1c261b0ae3b920fe8c64ea9b.jpg" alt="Figureure 4 · : Evolution and structural divergence of CoRe heads on the MMDocIR dat"><figcaption><b>Figureure 4 · : Evolution and structural divergence of CoRe heads on the MMDocIR dat</b><span class="fig-en">Figure 4: Evolution and structural divergence of CoRe heads on the MMDocIR dataset. As model scale increases, attention patterns shift from broadly distributed activations (4B) to a pronounced deeplayer bottleneck (32B). Cross-architecture comparisons further reveal distinct attention topologies: Qwen3-VL exhibits sparse localization, Llava-onevision shows moderate dispersion, and InternVL3.5 presents dense, widespread activations.</span><span class="fig-zh">这张图概括 Mechanistic Insights into Functional Sparsity 的整体方法流程。阅读时先看模块之间传递的训练信号，再看作者如何把目标拆成可优化的子问题。</span></figcaption></figure>
 <figure class="full-fig"><img src="../assets/mineru/2606.05843/images/3eebe752f62edc037fcffe0daee1d0c3c07c7177da1ddddab1ff432c789799cd.jpg" alt="Figureure 2 · : Mechanistic evidence of functional specialization in MLLMs attention"><figcaption><b>Figureure 2 · : Mechanistic evidence of functional specialization in MLLMs attention</b><span class="fig-en">Figure 2: Mechanistic evidence of functional specialization in MLLMs attention heads on VidSTG. Left (CoRe Heads): A sparse subset of specialized heads acts as precise information extractors, surgically isolating context-relevant entities (e.g., “red car”, “adult in white”) by filtering background noise across key frames. Right (Bottom Heads): The vast majority of heads exhibit semantic dispersion, scattering attention across irrelevant regions and failing to ground the instruction.</span><span class="fig-zh">这张可视化用来解释 Mechanistic Insights into Functional Sparsity 学到的中间表征或对齐关系。重点看它是否支持正文里的机制判断。</span></figcaption></figure>
       
       <h2>核心问题</h2>
-      <p>如果要判断视觉表征是否真正被 LLM 使用，这比只看最终准确率更细。</p>
+      <p>它和通用视觉自监督的关系在于：从 attention head 层面定位 MLLM 的 query-relevant visual feature retrieval 机制，可诊断视觉表征如何被读取。</p>
       <h2>方法拆解</h2>
-      <p>提出 Retrieval Attention Mass，识别 Context-aware Retrieval heads，并通过 causal ablation 与加速实验验证。</p>
+      <p>从 attention head 层面定位 MLLM 的 query-relevant visual feature retrieval 机制，可诊断视觉表征如何被读取</p>
       <h2>主要贡献</h2>
-      <p>把 MLLM 如何从复杂视觉上下文取出任务相关信息推进到可干预的 head-level functional sparsity。</p>
+      <p>中高相关；详见方法、贡献和实验边界。</p>
       <h2>实验看点</h2>
-      <p>摘要称 ablate top 5% CoRe heads 会显著损害多模态推理，而低排名 heads 影响很小。</p>
+      <p>实验部分建议重点看两类证据：一是作者是否把方法收益和更强数据、更长训练、更大模型区分开；二是跨模型、跨数据或跨任务迁移是否还能保留同样趋势。</p>
       <h2>局限与读法</h2>
-      <p>解释性研究，不是新预训练目标；不同 VLM 架构下 CoRe heads 是否稳定还需验证。</p>
+      <p>这篇论文的结论需要结合任务设置、训练数据规模和消融实验一起看；不要只凭单个指标判断它对通用视觉表征的价值。</p>
     
     </div>
   </div>
@@ -61,13 +61,13 @@
     <div class="side-box"><h4>原文</h4><p><a href="https://arxiv.org/abs/2606.05843">https://arxiv.org/abs/2606.05843</a></p></div>
   </aside>
 </article></main>
-  <aside class="conf-float" data-conf-reminder="2026-06-06-main-ddl" aria-label="CCF A/B 主投稿提醒">
+  <aside class="conf-float" data-conf-reminder="2026-06-07-main-ddl" aria-label="CCF A/B 主投稿提醒">
   <button class="conf-close" type="button" aria-label="关闭会议提醒">×</button>
   <details open>
     <summary>CCF A/B 主投稿提醒</summary>
     <div class="conf-list"><a class="conf-item " href="https://github.com/ccfddl/ccf-deadlines/blob/main/conference/AI/aaai.yml">
   <span><b>AAAI 2027</b><em>CCF A · Main paper submission</em></span>
-  <strong>51 天</strong>
+  <strong>50 天</strong>
   <small>2026-07-27 · CCF DDL: abstract 2026-07-20；进入 1 个月窗口后重点提醒。</small>
 </a></div>
   </details>
@@ -80,7 +80,7 @@
   (() => {
     const box = document.querySelector('[data-conf-reminder]');
     if (!box) return;
-    const key = `visualSslConfReminderClosed:${box.dataset.confReminder || '2026-06-06-main-ddl'}`;
+    const key = `visualSslConfReminderClosed:${box.dataset.confReminder || '2026-06-07-main-ddl'}`;
     try {
       if (localStorage.getItem(key) === '1') box.hidden = true;
     } catch (err) {}

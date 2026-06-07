@@ -19,39 +19,39 @@
   </header>
   <nav class="site-nav" aria-label="主导航">
     <a class="nav-link" href="../index.html">头版</a>
-<a class="nav-link" href="../issues/2026-06-06.html">今日速递</a>
+<a class="nav-link" href="../issues/2026-06-07.html">今日速递</a>
 <a class="nav-link" href="../pages/catalog.html">论文目录</a>
 <a class="nav-link" href="../pages/timeline.html">时间线</a>
   </nav>
   <main><article class="paper-detail">
   <div class="paper-main">
     <div class="kicker">Visual SSL / representation · P1 · 2026-06-06</div>
-    <h1 class="paper-headline">Learning Visual Spatial Planning from：多模态自监督/蒸馏越来越依赖“训练期特权信息、推理期纯视觉”的范式</h1>
-    <p class="dek">训练期利用符号状态，推理保持纯视觉输入，缩小视觉状态恢复和规划能力之间的 gap。</p>
-    <p class="byline"><strong>Learning Visual Spatial Planning from Symbolic State via Modality-Gap-Aware Self-Distillation</strong>　Haocheng Luo, Jiahui Liu, Ruicheng Zhang, Zhizhou Zhong, Jiaqi Huang, Zunnan Xu, Quan Shi, Jun Zhou, Xiu Li；机构信息 arXiv 元数据未列出。　arXiv　<a href="https://arxiv.org/abs/2606.06076">原文链接</a></p>
+    <h1 class="paper-headline">Learning Visual Spatial Planning from：它和通用视觉自监督的关系在于：MGSD 用符号状态 teacher 做训练期特权监督，改善纯视觉推理中的 state recovery 与多步规划</h1>
+    <p class="dek">中高相关；详见方法、贡献和实验边界。</p>
+    <p class="byline"><strong>Learning Visual Spatial Planning from Symbolic State via Modality-Gap-Aware Self-Distillation</strong>　arXiv　<a href="https://arxiv.org/abs/2606.06076">原文链接</a></p>
     <div class="paper-facts">
       <span><b>编号</b>2606.06076</span>
       <span><b>优先级</b>P1</span>
       <span><b>类别</b>Visual SSL / representation</span>
       <span><b>会议</b>arXiv</span>
-      <span><b>方法</b>两阶段 self-distillation：cold-start grounding 学视觉 state representations，再用能看 symbolic states 的 privileged teacher 蒸馏 student 的 visual rollouts。</span>
+      <span><b>方法</b>MGSD 用符号状态 teacher 做训练期特权监督，改善纯视觉推理中的 state recovery 与多步规划</span>
       <span><b>来源</b>arXiv / OpenReview</span>
     </div>
     <div class="feature-body">
-      <p class="lead dropcap">先说结论。多模态自监督/蒸馏越来越依赖“训练期特权信息、推理期纯视觉”的范式。 训练期利用符号状态，推理保持纯视觉输入，缩小视觉状态恢复和规划能力之间的 gap。</p>
+      <p class="lead dropcap">先说结论。它和通用视觉自监督的关系在于：MGSD 用符号状态 teacher 做训练期特权监督，改善纯视觉推理中的 state recovery 与多步规划。 中高相关；详见方法、贡献和实验边界。</p>
       <figure class="full-fig"><img src="../assets/mineru/2606.06076/images/e8e718fa5afb451196c8580ac94fcbe3807b9dee47612e26c7edfc6237584ebe.jpg" alt="Figureure 2 · : Overview of the MGSD framework"><figcaption><b>Figureure 2 · : Overview of the MGSD framework</b><span class="fig-en">Figure 2: Overview of the MGSD framework. Training consists of two stages to bridge the perception–reasoning modality gap. Bottom Left (Cold-Start SFT): The base visual model is fine-tuned on structured perception tasks to reliably recover state variables (e.g., coordinates of the player, goal, and holes) from images. Bottom Right (OPSD): Symbolic-guided on-policy self-distillation. The visual student generates reasoning rollouts from the image (I), while a privileged symbolic teacher conditions on the explicit symbolic state (T ) and reference plan (A) to provide dense, token-level supervision on the student’s prefix. Top (Inference): The symbolic teacher is discarded, and the trained student performs spatial planning purely from visual inputs.</span><span class="fig-zh">这张图概括 Learning Visual Spatial Planning from 的整体方法流程。阅读时先看模块之间传递的训练信号，再看作者如何把目标拆成可优化的子问题。</span></figcaption></figure>
 <figure class="full-fig"><img src="../assets/mineru/2606.06076/images/0c3295a55d55907af5fc51d1f60ddd201165fbd618edacca68d5f90a275601da.jpg" alt="A Perception Gap: Image →Wrong State A Reasoning Gap: Correct State→Wrong Plan Figure 1: T"><figcaption><b>A Perception Gap: Image →Wrong State A Reasoning Gap: Correct State→Wrong Plan Figure 1: T</b><span class="fig-en">A Perception Gap: Image →Wrong State A Reasoning Gap: Correct State→Wrong Plan Figure 1: The Modality Gap and MGSD. Top: Perception and reasoning bottlenecks in visual planning. Bottom: MGSD sequentially bridges the gap via SFT and OPSD, progressively matching symbolic reference performance.</span><span class="fig-zh">这张图/表用于判断 Learning Visual Spatial Planning from 的实验收益来自哪里。重点看替换、消融或跨模型设置下趋势是否一致，而不是只看单个最高分。</span></figcaption></figure>
       
       <h2>核心问题</h2>
-      <p>多模态自监督/蒸馏越来越依赖“训练期特权信息、推理期纯视觉”的范式。</p>
+      <p>它和通用视觉自监督的关系在于：MGSD 用符号状态 teacher 做训练期特权监督，改善纯视觉推理中的 state recovery 与多步规划。</p>
       <h2>方法拆解</h2>
-      <p>两阶段 self-distillation：cold-start grounding 学视觉 state representations，再用能看 symbolic states 的 privileged teacher 蒸馏 student 的 visual rollouts。</p>
+      <p>MGSD 用符号状态 teacher 做训练期特权监督，改善纯视觉推理中的 state recovery 与多步规划</p>
       <h2>主要贡献</h2>
-      <p>训练期利用符号状态，推理保持纯视觉输入，缩小视觉状态恢复和规划能力之间的 gap。</p>
+      <p>中高相关；详见方法、贡献和实验边界。</p>
       <h2>实验看点</h2>
-      <p>摘要称 4B/8B backbones macro average 分别提升 19.3% 和 18.4%。</p>
+      <p>实验部分建议重点看两类证据：一是作者是否把方法收益和更强数据、更长训练、更大模型区分开；二是跨模型、跨数据或跨任务迁移是否还能保留同样趋势。</p>
       <h2>局限与读法</h2>
-      <p>benchmark 偏视觉规划，符号 teacher 可获得性限制规模；不是通用 backbone 训练。</p>
+      <p>这篇论文的结论需要结合任务设置、训练数据规模和消融实验一起看；不要只凭单个指标判断它对通用视觉表征的价值。</p>
     
     </div>
   </div>
@@ -61,13 +61,13 @@
     <div class="side-box"><h4>原文</h4><p><a href="https://arxiv.org/abs/2606.06076">https://arxiv.org/abs/2606.06076</a></p></div>
   </aside>
 </article></main>
-  <aside class="conf-float" data-conf-reminder="2026-06-06-main-ddl" aria-label="CCF A/B 主投稿提醒">
+  <aside class="conf-float" data-conf-reminder="2026-06-07-main-ddl" aria-label="CCF A/B 主投稿提醒">
   <button class="conf-close" type="button" aria-label="关闭会议提醒">×</button>
   <details open>
     <summary>CCF A/B 主投稿提醒</summary>
     <div class="conf-list"><a class="conf-item " href="https://github.com/ccfddl/ccf-deadlines/blob/main/conference/AI/aaai.yml">
   <span><b>AAAI 2027</b><em>CCF A · Main paper submission</em></span>
-  <strong>51 天</strong>
+  <strong>50 天</strong>
   <small>2026-07-27 · CCF DDL: abstract 2026-07-20；进入 1 个月窗口后重点提醒。</small>
 </a></div>
   </details>
@@ -80,7 +80,7 @@
   (() => {
     const box = document.querySelector('[data-conf-reminder]');
     if (!box) return;
-    const key = `visualSslConfReminderClosed:${box.dataset.confReminder || '2026-06-06-main-ddl'}`;
+    const key = `visualSslConfReminderClosed:${box.dataset.confReminder || '2026-06-07-main-ddl'}`;
     try {
       if (localStorage.getItem(key) === '1') box.hidden = true;
     } catch (err) {}

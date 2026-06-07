@@ -19,39 +19,39 @@
   </header>
   <nav class="site-nav" aria-label="主导航">
     <a class="nav-link" href="../index.html">头版</a>
-<a class="nav-link" href="../issues/2026-06-06.html">今日速递</a>
+<a class="nav-link" href="../issues/2026-06-07.html">今日速递</a>
 <a class="nav-link" href="../pages/catalog.html">论文目录</a>
 <a class="nav-link" href="../pages/timeline.html">时间线</a>
   </nav>
   <main><article class="paper-detail">
   <div class="paper-main">
     <div class="kicker">Visual SSL / representation · P3 · 2026-06-06</div>
-    <h1 class="paper-headline">Knowledge Distillation for Visual Autoregressive：视觉 token 生成模型正在成为 foundation representation 路线，distillation 规则值得关注</h1>
-    <p class="dek">说明语言 KD 方法不能直接迁移到视觉 AR，因为 visual token ambiguity 和 student-conditioned contexts 会让 teacher supervision 不稳定。</p>
-    <p class="byline"><strong>Knowledge Distillation for Visual Autoregressive Models</strong>　Elia Peruzzo, Aritra Bhowmik, Guillaume Sautiere, Yuki M Asano, Amirhossein Habibian；机构信息 arXiv 元数据未列出。　arXiv　<a href="https://arxiv.org/abs/2606.06078">原文链接</a></p>
+    <h1 class="paper-headline">Knowledge Distillation for Visual Autoregressive：它和通用视觉自监督的关系在于：VarKD 是视觉 AR 模型 distillation 系统研究，更多服务生成模型压缩，但涉及 visual token ambiguity</h1>
+    <p class="dek">中相关；详见方法、贡献和实验边界。</p>
+    <p class="byline"><strong>Knowledge Distillation for Visual Autoregressive Models</strong>　arXiv　<a href="https://arxiv.org/abs/2606.06078">原文链接</a></p>
     <div class="paper-facts">
       <span><b>编号</b>2606.06078</span>
       <span><b>优先级</b>P3</span>
       <span><b>类别</b>Visual SSL / representation</span>
       <span><b>会议</b>arXiv</span>
-      <span><b>方法</b>在 student samples 上蒸馏，并选择性使用 teacher supervision，处理视觉 AR 的长解码和 token 歧义。</span>
+      <span><b>方法</b>VarKD 是视觉 AR 模型 distillation 系统研究，更多服务生成模型压缩，但涉及 visual token ambiguity</span>
       <span><b>来源</b>arXiv / OpenReview</span>
     </div>
     <div class="feature-body">
-      <p class="lead dropcap">先说结论。视觉 token 生成模型正在成为 foundation representation 路线，distillation 规则值得关注。 说明语言 KD 方法不能直接迁移到视觉 AR，因为 visual token ambiguity 和 student-conditioned contexts 会让 teacher supervision 不稳定。</p>
+      <p class="lead dropcap">先说结论。它和通用视觉自监督的关系在于：VarKD 是视觉 AR 模型 distillation 系统研究，更多服务生成模型压缩，但涉及 visual token ambiguity。 中相关；详见方法、贡献和实验边界。</p>
       <figure class="full-fig"><img src="../assets/mineru/2606.06078/images/b1a065bbbe4c9824e4103769780a0381873223ef6fd32d93f8b8992726113c1a.jpg" alt="Figureure 1 · : Comparison of training paradigms for autoregressive (AR) image model"><figcaption><b>Figureure 1 · : Comparison of training paradigms for autoregressive (AR) image model</b><span class="fig-en">Figure 1: Comparison of training paradigms for autoregressive (AR) image models. We assume access to a dataset of real images (left), represented as sequences of discrete tokens. In standard maximum-likelihood training, the model is trained via teacher forcing, optimizing a cross-entropy loss against ground-truth tokens. In knowledge distillation (KD), a pre-trained teacher guides training by matching the student’s predictive distribution under ground-truth prefixes. In VARKD (right), we instead generate samples from the student conditioned on a partial ground-truth context and use the teacher to score these rollouts. We further introduce confidence-based reweighting to improve the reliability of the distillation signal.</span><span class="fig-zh">这张图/表用于判断 Knowledge Distillation for Visual Autoregressive 的实验收益来自哪里。重点看替换、消融或跨模型设置下趋势是否一致，而不是只看单个最高分。</span></figcaption></figure>
 <figure class="full-fig"><img src="../assets/mineru/2606.06078/images/f39f8d4e78936734a8dd8bc4db31c219ff25c3166af1e93e1f920281f379ad54.jpg" alt="Figureure 2 · : Qualitative comparison showing that VARKD reduces spatial artifacts "><figcaption><b>Figureure 2 · : Qualitative comparison showing that VARKD reduces spatial artifacts </b><span class="fig-en">Figure 2: Qualitative comparison showing that VARKD reduces spatial artifacts and improves global coherence over prior distillation baselines.</span><span class="fig-zh">这张图/表用于判断 Knowledge Distillation for Visual Autoregressive 的实验收益来自哪里。重点看替换、消融或跨模型设置下趋势是否一致，而不是只看单个最高分。</span></figcaption></figure>
       
       <h2>核心问题</h2>
-      <p>视觉 token 生成模型正在成为 foundation representation 路线，distillation 规则值得关注。</p>
+      <p>它和通用视觉自监督的关系在于：VarKD 是视觉 AR 模型 distillation 系统研究，更多服务生成模型压缩，但涉及 visual token ambiguity。</p>
       <h2>方法拆解</h2>
-      <p>在 student samples 上蒸馏，并选择性使用 teacher supervision，处理视觉 AR 的长解码和 token 歧义。</p>
+      <p>VarKD 是视觉 AR 模型 distillation 系统研究，更多服务生成模型压缩，但涉及 visual token ambiguity</p>
       <h2>主要贡献</h2>
-      <p>说明语言 KD 方法不能直接迁移到视觉 AR，因为 visual token ambiguity 和 student-conditioned contexts 会让 teacher supervision 不稳定。</p>
+      <p>中相关；详见方法、贡献和实验边界。</p>
       <h2>实验看点</h2>
-      <p>摘要称在 ImageNet、多种 AR backbones 上持续优于既有 KD baselines。</p>
+      <p>实验部分建议重点看两类证据：一是作者是否把方法收益和更强数据、更长训练、更大模型区分开；二是跨模型、跨数据或跨任务迁移是否还能保留同样趋势。</p>
       <h2>局限与读法</h2>
-      <p>主要是生成模型压缩，不直接证明通用视觉表征提升。</p>
+      <p>这篇论文的结论需要结合任务设置、训练数据规模和消融实验一起看；不要只凭单个指标判断它对通用视觉表征的价值。</p>
     
     </div>
   </div>
@@ -61,13 +61,13 @@
     <div class="side-box"><h4>原文</h4><p><a href="https://arxiv.org/abs/2606.06078">https://arxiv.org/abs/2606.06078</a></p></div>
   </aside>
 </article></main>
-  <aside class="conf-float" data-conf-reminder="2026-06-06-main-ddl" aria-label="CCF A/B 主投稿提醒">
+  <aside class="conf-float" data-conf-reminder="2026-06-07-main-ddl" aria-label="CCF A/B 主投稿提醒">
   <button class="conf-close" type="button" aria-label="关闭会议提醒">×</button>
   <details open>
     <summary>CCF A/B 主投稿提醒</summary>
     <div class="conf-list"><a class="conf-item " href="https://github.com/ccfddl/ccf-deadlines/blob/main/conference/AI/aaai.yml">
   <span><b>AAAI 2027</b><em>CCF A · Main paper submission</em></span>
-  <strong>51 天</strong>
+  <strong>50 天</strong>
   <small>2026-07-27 · CCF DDL: abstract 2026-07-20；进入 1 个月窗口后重点提醒。</small>
 </a></div>
   </details>
@@ -80,7 +80,7 @@
   (() => {
     const box = document.querySelector('[data-conf-reminder]');
     if (!box) return;
-    const key = `visualSslConfReminderClosed:${box.dataset.confReminder || '2026-06-06-main-ddl'}`;
+    const key = `visualSslConfReminderClosed:${box.dataset.confReminder || '2026-06-07-main-ddl'}`;
     try {
       if (localStorage.getItem(key) === '1') box.hidden = true;
     } catch (err) {}

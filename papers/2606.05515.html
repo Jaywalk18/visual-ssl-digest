@@ -19,39 +19,39 @@
   </header>
   <nav class="site-nav" aria-label="主导航">
     <a class="nav-link" href="../index.html">头版</a>
-<a class="nav-link" href="../issues/2026-06-06.html">今日速递</a>
+<a class="nav-link" href="../issues/2026-06-07.html">今日速递</a>
 <a class="nav-link" href="../pages/catalog.html">论文目录</a>
 <a class="nav-link" href="../pages/timeline.html">时间线</a>
   </nav>
   <main><article class="paper-detail">
   <div class="paper-main">
     <div class="kicker">project · P3 · 2026-06-06</div>
-    <h1 class="paper-headline">BRepCLIP：结构 token、几何 primitive 与 CLIP-style alignment 对 3D/几何 foundation representation 有迁移启发</h1>
-    <p class="dek">把原生 CAD boundary representation 接入图文 embedding 空间，强调结构化几何 primitive 的价值。</p>
-    <p class="byline"><strong>BRepCLIP: Contrastive Multimodal Pretraining on BRep Primitives for CAD Understanding</strong>　Muhammad Usama, Didier Stricker, Mohammad Sadil Khan, Muhammad Zeshan Afzal；机构信息 arXiv 元数据未列出。　arXiv + project　<a href="https://arxiv.org/abs/2606.05515">原文链接</a></p>
+    <h1 class="paper-headline">BRepCLIP：它和通用视觉自监督的关系在于：CAD 垂直领域，但“结构 token + CLIP 对齐”的 contrastive multimodal pretraining 对 3D/结构视觉表征有迁移启发</h1>
+    <p class="dek">中相关；详见方法、贡献和实验边界。</p>
+    <p class="byline"><strong>BRepCLIP: Contrastive Multimodal Pretraining on BRep Primitives for CAD Understanding</strong>　arXiv + project　<a href="https://arxiv.org/abs/2606.05515">原文链接</a></p>
     <div class="paper-facts">
       <span><b>编号</b>2606.05515</span>
       <span><b>优先级</b>P3</span>
       <span><b>类别</b>project</span>
       <span><b>会议</b>arXiv + project</span>
-      <span><b>方法</b>将 CAD BRep 表示为 face/edge token sequences，带 surface/curve vocabularies 与空间/语义 descriptors，再与 CLIP text/image encoders 做 contrastive alignment。</span>
+      <span><b>方法</b>CAD 垂直领域，但“结构 token + CLIP 对齐”的 contrastive multimodal pretraining 对 3D/结构视觉表征有迁移启发</span>
       <span><b>来源</b>arXiv / OpenReview</span>
     </div>
     <div class="feature-body">
-      <p class="lead dropcap">先说结论。结构 token、几何 primitive 与 CLIP-style alignment 对 3D/几何 foundation representation 有迁移启发。 把原生 CAD boundary representation 接入图文 embedding 空间，强调结构化几何 primitive 的价值。</p>
+      <p class="lead dropcap">先说结论。它和通用视觉自监督的关系在于：CAD 垂直领域，但“结构 token + CLIP 对齐”的 contrastive multimodal pretraining 对 3D/结构视觉表征有迁移启发。 中相关；详见方法、贡献和实验边界。</p>
       <figure class="full-fig"><img src="../assets/mineru/2606.05515/images/3d2ff702667b3bde6ce5e1d2bf3cd83e584ce944a95b21798a1d84b1742e230a.jpg" alt="Figureure 8 · summarizes the data usage across training and evaluation"><figcaption><b>Figureure 8 · summarizes the data usage across training and evaluation</b><span class="fig-en">Figure 8 summarizes the data usage across training and evaluation. The main training set consists of 400K ABC models. For in-domain retrieval testing, we use a held-out ABC split of 91K CAD models. For zero-shot retrieval transfer, we evaluate on two unseen datasets: Automate with 65K models and CADParser with 40K models. This setup clearly separates indomain retrieval from zero-shot transfer evaluation, allowing us to test both memorization-free retrieval within the same CAD source and generalization to different CAD repositories. Figure 8: Overview of training, in-domain retrieval, and zero-shot retrieval splits used in our experiments.</span><span class="fig-zh">这张图概括 BRepCLIP 的整体方法流程。阅读时先看模块之间传递的训练信号，再看作者如何把目标拆成可优化的子问题。</span></figcaption></figure>
 <figure class="full-fig"><img src="../assets/mineru/2606.05515/images/9834341b51461477e4fe91c6849f44ceaaa06cbe8a1d753339fb32fb0cbd1273.jpg" alt="Figureure 13 · : Additional qualitative results for zero-shot classification on FabWa"><figcaption><b>Figureure 13 · : Additional qualitative results for zero-shot classification on FabWa</b><span class="fig-en">Figure 13: Additional qualitative results for zero-shot classification on FabWave. BRepCLIP produces more semantically accurate class predictions for engineering CAD models than point-based and multimodal baselines.</span><span class="fig-zh">这张图/表用于判断 BRepCLIP 的实验收益来自哪里。重点看替换、消融或跨模型设置下趋势是否一致，而不是只看单个最高分。</span></figcaption></figure>
       
       <h2>核心问题</h2>
-      <p>结构 token、几何 primitive 与 CLIP-style alignment 对 3D/几何 foundation representation 有迁移启发。</p>
+      <p>它和通用视觉自监督的关系在于：CAD 垂直领域，但“结构 token + CLIP 对齐”的 contrastive multimodal pretraining 对 3D/结构视觉表征有迁移启发。</p>
       <h2>方法拆解</h2>
-      <p>将 CAD BRep 表示为 face/edge token sequences，带 surface/curve vocabularies 与空间/语义 descriptors，再与 CLIP text/image encoders 做 contrastive alignment。</p>
+      <p>CAD 垂直领域，但“结构 token + CLIP 对齐”的 contrastive multimodal pretraining 对 3D/结构视觉表征有迁移启发</p>
       <h2>主要贡献</h2>
-      <p>把原生 CAD boundary representation 接入图文 embedding 空间，强调结构化几何 primitive 的价值。</p>
+      <p>中相关；详见方法、贡献和实验边界。</p>
       <h2>实验看点</h2>
-      <p>摘要称相对 OpenShape，在 ABC/CADParser/Automate 的 Top-1 retrieval 分别提升 40.4%、22.0%、23.9%，FabWave zero-shot Top-1 提升 15%。</p>
+      <p>实验部分建议重点看两类证据：一是作者是否把方法收益和更强数据、更长训练、更大模型区分开；二是跨模型、跨数据或跨任务迁移是否还能保留同样趋势。</p>
       <h2>局限与读法</h2>
-      <p>CAD 是强垂直结构域；不应等同于通用自然图像 SSL。</p>
+      <p>这篇论文的结论需要结合任务设置、训练数据规模和消融实验一起看；不要只凭单个指标判断它对通用视觉表征的价值。</p>
     
     </div>
   </div>
@@ -61,13 +61,13 @@
     <div class="side-box"><h4>原文</h4><p><a href="https://arxiv.org/abs/2606.05515">https://arxiv.org/abs/2606.05515</a></p></div>
   </aside>
 </article></main>
-  <aside class="conf-float" data-conf-reminder="2026-06-06-main-ddl" aria-label="CCF A/B 主投稿提醒">
+  <aside class="conf-float" data-conf-reminder="2026-06-07-main-ddl" aria-label="CCF A/B 主投稿提醒">
   <button class="conf-close" type="button" aria-label="关闭会议提醒">×</button>
   <details open>
     <summary>CCF A/B 主投稿提醒</summary>
     <div class="conf-list"><a class="conf-item " href="https://github.com/ccfddl/ccf-deadlines/blob/main/conference/AI/aaai.yml">
   <span><b>AAAI 2027</b><em>CCF A · Main paper submission</em></span>
-  <strong>51 天</strong>
+  <strong>50 天</strong>
   <small>2026-07-27 · CCF DDL: abstract 2026-07-20；进入 1 个月窗口后重点提醒。</small>
 </a></div>
   </details>
@@ -80,7 +80,7 @@
   (() => {
     const box = document.querySelector('[data-conf-reminder]');
     if (!box) return;
-    const key = `visualSslConfReminderClosed:${box.dataset.confReminder || '2026-06-06-main-ddl'}`;
+    const key = `visualSslConfReminderClosed:${box.dataset.confReminder || '2026-06-07-main-ddl'}`;
     try {
       if (localStorage.getItem(key) === '1') box.hidden = true;
     } catch (err) {}

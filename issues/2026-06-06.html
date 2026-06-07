@@ -19,20 +19,18 @@
   </header>
   <nav class="site-nav" aria-label="主导航">
     <a class="nav-link" href="../index.html">头版</a>
-<a class="nav-link active" href="../issues/2026-06-06.html">今日速递</a>
+<a class="nav-link" href="../issues/2026-06-07.html">今日速递</a>
 <a class="nav-link" href="../pages/catalog.html">论文目录</a>
 <a class="nav-link" href="../pages/timeline.html">时间线</a>
   </nav>
   <main><article class="paper-detail issue-detail">
   <div class="paper-main">
     <div class="kicker">Daily issue · 2026-06-06 · CCF A/B 会议优先</div>
-    <h1 class="paper-headline">6 月 6 日：Learning Geometric Representations from Videos 等视觉表征主线更新</h1>
-    <p class="dek">本期聚焦通用视觉表征、视觉语言预训练与视频自监督中最值得跟进的论文，并保留 CCF A/B、OpenReview 与 arXiv 状态线索。</p>
+    <h1 class="paper-headline">6 月 6 日：Learning Geometric Representations from Videos 等视觉表征论文归档</h1>
+    <p class="dek">本页按日期归档近期论文，保留优先级、主题、来源与方法线索，方便回看同一批工作的研究脉络。</p>
     <div class="feature-body">
-      <p class="lead dropcap">先读 GeoVR：它把 2D video 里的几何线索蒸馏进 MLLM 内部表征，是今天最接近“视频预训练/空间智能 foundation representation”的工作。第二篇读 SelfBootTok，它从视觉 tokenization 角度把 global/local 信息解耦，对后续 MAE/VQ/RAE/AR 图像模型都可能有影响。第三篇读 Future-L1，重点看连续 latent visual spans 是否比 text CoT 更能保存未来视频事件的细粒度视觉语义。之后把 The Invisible Hand of Physics 与 ActiveMimic 并读：前者说明生成式视频模型内部可能已经学到物理结构，后者说明 egocentric video 的主动视角变化可作为预训练信号。MGSD、ViCuR、Cosine Misleads、HyperVis 和 CoRe Heads 更偏 VLM 后训练/诊断，适合作为“视觉表征如何进入语言模型”的方法库；BRepCLIP 与 VideoKR 只需按项目需要扫读。</p>
+      <p class="lead dropcap">先读 Learning Geometric Representations from Videos。GeoVR 用纯 2D video 与 3D foundation teacher 重塑 MLLM 几何表征，是今天最强的视频/空间表征候选。 其余论文按 P1/P2 与主题顺序扫读，重点看方法图、消融设置和是否能迁移到通用视觉表征。</p>
       <h2>论文索引</h2>
-      <table class="compact-table"><thead><tr><th>优先级</th><th>论文</th><th>类型</th><th>相关性</th><th>一句话理由</th></tr></thead><tbody><tr><td>P0</td><td>Learning Geometric Representations from Videos for Spatial Intelligent Multimodal Large Language Models</td><td>arXiv</td><td>高</td><td>GeoVR 用纯 2D video 与 3D foundation teacher 重塑 MLLM 几何表征，是今天最强的视频/空间表征候选。</td></tr><tr><td>P0</td><td>Balancing Image Compression and Generation with Bootstrapped Tokenization</td><td>arXiv</td><td>高</td><td>SelfBootTok 把视觉 token 分成 global/local 组，并用 self-bootstrapping 让 tokenizer 承担局部细节学习。</td></tr><tr><td>P0</td><td>Imagine Before You Predict: Interleaved Latent Visual Reasoning for Video Event Prediction</td><td>arXiv + code</td><td>高</td><td>Future-L1 让视频 MLLM 在生成中交替使用语言 token 与连续视觉 latent span，针对视觉语义被文本化损失的问题。</td></tr><tr><td>P1</td><td>The Invisible Hand of Physics: When Video Diffusion Models Know More Than They Show</td><td>arXiv</td><td>高</td><td>通过反演视频扩散轨迹发现物理可行性可从 DiT 状态线性解码，提示生成式预训练隐含视觉物理表征。</td></tr><tr><td>P1</td><td>ActiveMimic: Egocentric Video Pretraining with Active Perception</td><td>arXiv + project</td><td>中高</td><td>从人类第一视角视频恢复相机/手腕轨迹，把主动感知当作预训练信号；虽偏机器人，但对视频 SSL 有迁移价值。</td></tr><tr><td>P1</td><td>Learning Visual Spatial Planning from Symbolic State via Modality-Gap-Aware Self-Distillation</td><td>arXiv</td><td>中高</td><td>MGSD 用符号状态 teacher 做训练期特权监督，改善纯视觉推理中的 state recovery 与多步规划。</td></tr><tr><td>P1</td><td>ViCuR: Visual Cues as Recoverable Privilege for Multimodal On-Policy Distillation</td><td>arXiv</td><td>中高</td><td>用视觉 cues 而不是答案侧 rationale 做 privileged teacher，避免多模态蒸馏学习不可恢复捷径。</td></tr><tr><td>P2</td><td>Cosine Misleads: Auxiliary Losses Reshape Vision Language Models, Not Their Latents</td><td>arXiv</td><td>中高</td><td>诊断 latent visual reasoning 中 cosine/MSE 对齐指标可能反向误导，提醒看 load-bearing latent 而非表面相似度。</td></tr><tr><td>P2</td><td>HyperVis: Continuous Latent Visual Relational Graphs on the Lorentz Hyperboloid for Compositional Reasoning</td><td>arXiv</td><td>中高</td><td>用连续视觉关系张量与双曲几何替代离散 scene graph 文本瓶颈，直接塑形 VLM 关系表征。</td></tr><tr><td>P2</td><td>Mechanistic Insights into Functional Sparsity in Multimodal LLMs via CoRe Heads</td><td>arXiv</td><td>中高</td><td>从 attention head 层面定位 MLLM 的 query-relevant visual feature retrieval 机制，可诊断视觉表征如何被读取。</td></tr><tr><td>P3</td><td>Knowledge Distillation for Visual Autoregressive Models</td><td>arXiv</td><td>中</td><td>VarKD 是视觉 AR 模型 distillation 系统研究，更多服务生成模型压缩，但涉及 visual token ambiguity。</td></tr><tr><td>P3</td><td>BRepCLIP: Contrastive Multimodal Pretraining on BRep Primitives for CAD Understanding</td><td>arXiv + project</td><td>中</td><td>CAD 垂直领域，但“结构 token + CLIP 对齐”的 contrastive multimodal pretraining 对 3D/结构视觉表征有迁移启发。</td></tr><tr><td>扫读</td><td>VideoKR: Towards Knowledge- and Reasoning-Intensive Video Understanding</td><td>arXiv + ICML 2026 Spotlight</td><td>中</td><td>ICML Spotlight 的视频推理数据与评测工作；不是 SSL 目标，但对视频 foundation model 评估有参考。</td></tr></tbody></table>
-      <h2>主线阅读</h2>
       <div class="paper-list issue-list"><article class="paper-card" data-category="Visual SSL / representation" data-priority="P0" data-date="2026-06-06" data-title="learning geometric representations from videos for spatial intelligent multimodal large language models" data-keywords="learning geometric representations from videos for spatial intelligent multimodal large language models learning geometric representations from videos visual ssl / representation p0 2026-06-06 arxiv geovr 用纯 2d video 与 3d foundation teacher 重塑 mllm 几何表征，是今天最强的视频/空间表征候选 高相关；详见方法、贡献和实验边界。">
   <a class="paper-thumb paper-thumb-text" href="../papers/2606.05833.html">
     <img src="../assets/mineru/2606.05833/images/cce45d760d802846ba35bd59aced86b525640aa81e4174a884b1a1fcb7cacb96.jpg" alt="Learning Geometric Representations from Videos figure"><span>P0</span>
@@ -192,18 +190,17 @@
     </div>
   </div>
   <aside class="paper-side">
-    <div class="side-box"><h4>今日重点</h4><p>TextTeacher、MDM、EvoVid、Ablate-to-Validate。</p></div>
-    <div class="side-box"><h4>会议口径</h4><p>只把 CCF A/B 放进主提醒；临近截止或 CCF C 仅记录。</p></div>
     <div class="side-box"><h4>阅读重点</h4><p>先看 P1/P2 与方法图，再扫状态变化和边界案例。</p></div>
+    <div class="side-box"><h4>会议口径</h4><p>主提醒只保留 CCF A/B；CCF C 与过期截止仅作状态记录。</p></div>
   </aside>
 </article></main>
-  <aside class="conf-float" data-conf-reminder="2026-06-06-main-ddl" aria-label="CCF A/B 主投稿提醒">
+  <aside class="conf-float" data-conf-reminder="2026-06-07-main-ddl" aria-label="CCF A/B 主投稿提醒">
   <button class="conf-close" type="button" aria-label="关闭会议提醒">×</button>
   <details open>
     <summary>CCF A/B 主投稿提醒</summary>
     <div class="conf-list"><a class="conf-item " href="https://github.com/ccfddl/ccf-deadlines/blob/main/conference/AI/aaai.yml">
   <span><b>AAAI 2027</b><em>CCF A · Main paper submission</em></span>
-  <strong>51 天</strong>
+  <strong>50 天</strong>
   <small>2026-07-27 · CCF DDL: abstract 2026-07-20；进入 1 个月窗口后重点提醒。</small>
 </a></div>
   </details>
@@ -216,7 +213,7 @@
   (() => {
     const box = document.querySelector('[data-conf-reminder]');
     if (!box) return;
-    const key = `visualSslConfReminderClosed:${box.dataset.confReminder || '2026-06-06-main-ddl'}`;
+    const key = `visualSslConfReminderClosed:${box.dataset.confReminder || '2026-06-07-main-ddl'}`;
     try {
       if (localStorage.getItem(key) === '1') box.hidden = true;
     } catch (err) {}

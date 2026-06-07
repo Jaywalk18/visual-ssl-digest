@@ -19,39 +19,39 @@
   </header>
   <nav class="site-nav" aria-label="主导航">
     <a class="nav-link" href="../index.html">头版</a>
-<a class="nav-link" href="../issues/2026-06-06.html">今日速递</a>
+<a class="nav-link" href="../issues/2026-06-07.html">今日速递</a>
 <a class="nav-link" href="../pages/catalog.html">论文目录</a>
 <a class="nav-link" href="../pages/timeline.html">时间线</a>
   </nav>
   <main><article class="paper-detail">
   <div class="paper-main">
     <div class="kicker">Visual SSL / representation · P0 · 2026-06-06</div>
-    <h1 class="paper-headline">Balancing Image Compression and Generation：MAE/VQ/RAE/AR 图像模型都依赖视觉 token 设计，SelfBootTok 直接影响表征压缩和 token budget 策略</h1>
-    <p class="dek">减少常规 tokenizer 在 token 内混合多粒度信息造成的冗余，把细节负担从生成器转移到 tokenizer。</p>
-    <p class="byline"><strong>Balancing Image Compression and Generation with Bootstrapped Tokenization</strong>　Haozhe Chi, Jinghan Li, Hao Jiang, Wu Sheng, Yi Ma, Jing Wang, Yadong Mu；机构信息 arXiv 元数据未列出。　arXiv　<a href="https://arxiv.org/abs/2606.05552">原文链接</a></p>
+    <h1 class="paper-headline">Balancing Image Compression and Generation：它和通用视觉自监督的关系在于：SelfBootTok 把视觉 token 分成 global/local 组，并用 self-bootstrapping 让 tokenizer 承担局部细节学习</h1>
+    <p class="dek">高相关；详见方法、贡献和实验边界。</p>
+    <p class="byline"><strong>Balancing Image Compression and Generation with Bootstrapped Tokenization</strong>　arXiv　<a href="https://arxiv.org/abs/2606.05552">原文链接</a></p>
     <div class="paper-facts">
       <span><b>编号</b>2606.05552</span>
       <span><b>优先级</b>P0</span>
       <span><b>类别</b>Visual SSL / representation</span>
       <span><b>会议</b>arXiv</span>
-      <span><b>方法</b>把图像 tokenization 拆成 global tokens 与 local tokens，通过 self-bootstrapped learning 让模型从 global tokens 预测 local details。</span>
+      <span><b>方法</b>SelfBootTok 把视觉 token 分成 global/local 组，并用 self-bootstrapping 让 tokenizer 承担局部细节学习</span>
       <span><b>来源</b>arXiv / OpenReview</span>
     </div>
     <div class="feature-body">
-      <p class="lead dropcap">先说结论。MAE/VQ/RAE/AR 图像模型都依赖视觉 token 设计，SelfBootTok 直接影响表征压缩和 token budget 策略。 减少常规 tokenizer 在 token 内混合多粒度信息造成的冗余，把细节负担从生成器转移到 tokenizer。</p>
+      <p class="lead dropcap">先说结论。它和通用视觉自监督的关系在于：SelfBootTok 把视觉 token 分成 global/local 组，并用 self-bootstrapping 让 tokenizer 承担局部细节学习。 高相关；详见方法、贡献和实验边界。</p>
       <figure class="full-fig"><img src="../assets/mineru/2606.05552/images/c5ec315bf627c1b3e1192a7076e2fac0644d5b3581ca2195079409c562a2065e.jpg" alt="Figureure 3 · : Overview of the proposed SelfbootTok pipeline"><figcaption><b>Figureure 3 · : Overview of the proposed SelfbootTok pipeline</b><span class="fig-en">Figure 3: Overview of the proposed SelfbootTok pipeline. The input image is first encoded into a set of global tokens using a ViT backbone. Subsequently, local tokens of varying granularity (i.e., 1D or 2D) are predicted through a self-bootstrapping paradigm. These local tokens are aligned with different pretrained visual encoders to capture multi-granularity structural information. Both global and local tokens are then softly quantized, fused, and finally decoded using a ViT decoder. This overall architecture offers strong scalability and training efficiency, enabling high-quality reconstruction and generation with minimal computational overhead.</span><span class="fig-zh">这张图概括 Balancing Image Compression and Generation 的整体方法流程。阅读时先看模块之间传递的训练信号，再看作者如何把目标拆成可优化的子问题。</span></figcaption></figure>
 <figure class="full-fig"><img src="../assets/mineru/2606.05552/images/363da288836764ca15608e28af50d80a866d8aa5a7797b48c162068504837205.jpg" alt="Figureure 1 · : Illustration of our self-bootstrapped learning paradigm"><figcaption><b>Figureure 1 · : Illustration of our self-bootstrapped learning paradigm</b><span class="fig-en">Figure 1: Illustration of our self-bootstrapped learning paradigm. Compared to classical 1D image tokenizers [15, 16, 17] and recent approaches incorporating local detail injection [8, 18], our method employs a global-local decomposition to achieve efficient hierarchical representation learning and adopts a self-bootstrapped strategy to enable both efficient generation and scalable training.</span><span class="fig-zh">这张图来自论文 PDF 的结构化抽取。当前用于辅助理解 Balancing Image Compression and Generation 的方法或实验，请结合正文精读段落一起看。</span></figcaption></figure>
       
       <h2>核心问题</h2>
-      <p>MAE/VQ/RAE/AR 图像模型都依赖视觉 token 设计，SelfBootTok 直接影响表征压缩和 token budget 策略。</p>
+      <p>它和通用视觉自监督的关系在于：SelfBootTok 把视觉 token 分成 global/local 组，并用 self-bootstrapping 让 tokenizer 承担局部细节学习。</p>
       <h2>方法拆解</h2>
-      <p>把图像 tokenization 拆成 global tokens 与 local tokens，通过 self-bootstrapped learning 让模型从 global tokens 预测 local details。</p>
+      <p>SelfBootTok 把视觉 token 分成 global/local 组，并用 self-bootstrapping 让 tokenizer 承担局部细节学习</p>
       <h2>主要贡献</h2>
-      <p>减少常规 tokenizer 在 token 内混合多粒度信息造成的冗余，把细节负担从生成器转移到 tokenizer。</p>
+      <p>高相关；详见方法、贡献和实验边界。</p>
       <h2>实验看点</h2>
-      <p>摘要称计算降低约 40%，并在 64 tokens 下达到 gFID 1.56。</p>
+      <p>实验部分建议重点看两类证据：一是作者是否把方法收益和更强数据、更长训练、更大模型区分开；二是跨模型、跨数据或跨任务迁移是否还能保留同样趋势。</p>
       <h2>局限与读法</h2>
-      <p>指标仍偏 reconstruction/generation；作为通用视觉 tokenizer 还需下游分类、检索、分割和 VLM 接口验证。</p>
+      <p>这篇论文的结论需要结合任务设置、训练数据规模和消融实验一起看；不要只凭单个指标判断它对通用视觉表征的价值。</p>
     
     </div>
   </div>
@@ -61,13 +61,13 @@
     <div class="side-box"><h4>原文</h4><p><a href="https://arxiv.org/abs/2606.05552">https://arxiv.org/abs/2606.05552</a></p></div>
   </aside>
 </article></main>
-  <aside class="conf-float" data-conf-reminder="2026-06-06-main-ddl" aria-label="CCF A/B 主投稿提醒">
+  <aside class="conf-float" data-conf-reminder="2026-06-07-main-ddl" aria-label="CCF A/B 主投稿提醒">
   <button class="conf-close" type="button" aria-label="关闭会议提醒">×</button>
   <details open>
     <summary>CCF A/B 主投稿提醒</summary>
     <div class="conf-list"><a class="conf-item " href="https://github.com/ccfddl/ccf-deadlines/blob/main/conference/AI/aaai.yml">
   <span><b>AAAI 2027</b><em>CCF A · Main paper submission</em></span>
-  <strong>51 天</strong>
+  <strong>50 天</strong>
   <small>2026-07-27 · CCF DDL: abstract 2026-07-20；进入 1 个月窗口后重点提醒。</small>
 </a></div>
   </details>
@@ -80,7 +80,7 @@
   (() => {
     const box = document.querySelector('[data-conf-reminder]');
     if (!box) return;
-    const key = `visualSslConfReminderClosed:${box.dataset.confReminder || '2026-06-06-main-ddl'}`;
+    const key = `visualSslConfReminderClosed:${box.dataset.confReminder || '2026-06-07-main-ddl'}`;
     try {
       if (localStorage.getItem(key) === '1') box.hidden = true;
     } catch (err) {}
