@@ -293,6 +293,10 @@ def figure_label_from_caption(caption: str, fallback: str) -> str:
 def content_list_path(pid: str) -> Path | None:
     root = ROOT / "assets" / "mineru" / pid
     paths = sorted(root.glob("*content_list.json"))
+    for path in paths:
+        text = path.read_text(encoding="utf-8", errors="ignore")
+        if "First-page visual preview" not in text and "full figure extraction is pending" not in text:
+            return path
     return paths[0] if paths else None
 
 
