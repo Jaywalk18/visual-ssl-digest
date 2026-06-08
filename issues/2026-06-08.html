@@ -1,0 +1,197 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>2026-06-08 速递 · 通用视觉自监督研究报</title>
+  <link rel="stylesheet" href="../assets/styles.css?v=20260525j">
+  <link rel="stylesheet" href="../assets/visual-ssl.css?v=20260525j">
+</head>
+<body>
+  <header class="masthead">
+    <div class="masthead-kicker">Visual SSL Research Report · 2026-06-08</div>
+    <a class="masthead-title" href="../index.html">通用视觉自监督研究报</a>
+    <div class="masthead-meta">
+      <span>图像表征 · VFM · JEPA · 视频预训练</span>
+      <span>CCF A/B 会议优先</span>
+      <span>图文精读 · 方法图解</span>
+    </div>
+  </header>
+  <nav class="site-nav" aria-label="主导航">
+    <a class="nav-link" href="../index.html">头版</a>
+<a class="nav-link active" href="../issues/2026-06-08.html">今日速递</a>
+<a class="nav-link" href="../pages/catalog.html">论文目录</a>
+<a class="nav-link" href="../pages/timeline.html">时间线</a>
+  </nav>
+  <main><article class="paper-detail issue-detail">
+  <div class="paper-main">
+    <div class="kicker">Daily issue · 2026-06-08 · CCF A/B 会议优先</div>
+    <h1 class="paper-headline">6 月 8 日：AdaTok 等视觉表征主线更新</h1>
+    <p class="dek">本期聚焦通用视觉表征、视觉语言预训练与视频自监督中最值得跟进的论文，并保留 CCF A/B、OpenReview 与 arXiv 状态线索。</p>
+    <div class="feature-body">
+      <p class="lead dropcap">先读 AdaTok，它把 image tokenizer 的 token 数从固定超参数变成内容自适应输出，直接关系到 AR/latent visual foundation model 的吞吐与表征质量。第二篇读 TEVI：它用 sparse autoencoder 和 caption-conditioned masking 改写 CLIP image embeddings，是今天最清楚的 vision-language representation editing 工作。第三篇读 Inside the Visual Mind/ViSAE，重点不是性能榜，而是如何用概念电路解释和 steering ViT 表征。随后读 Lighting-Aware Representation Learning 和 MotionEnhancer：前者提醒 contrastive augmentation 不应只追求光照不变性，后者展示 video diffusion attention 可以蒸馏成 video VLM 的 motion prior。其余论文多是诊断或生成侧的表征干预，建议按自己的 VLM grounding、diffusion latent、spatial binding 需求扫读。</p>
+      <h2>论文索引</h2>
+      <table class="compact-table"><thead><tr><th>优先级</th><th>论文</th><th>类型</th><th>相关性</th><th>一句话理由</th></tr></thead><tbody><tr><td>P0</td><td>AdaTok: Self-Budgeting Image Tokenization with Quality-Preserving Dynamic Tokens</td><td>arXiv 新增</td><td>高</td><td>把离散 1D image tokenizer 的 token budget 学成内容条件输出，连接 visual tokenization、latent compression 和 AR image generation。</td></tr><tr><td>P0</td><td>TEVI: Text-Conditioned Editing of Visual Representations via Sparse Autoencoders for Improved Vision-Language Alignment</td><td>arXiv 新增</td><td>高</td><td>用 caption-conditioned sparse autoencoder editing 精简 CLIP image embedding，直接服务图文表征对齐。</td></tr><tr><td>P1</td><td>Inside the Visual Mind: Neuroscience-Motivated Concept Circuits for Interpreting and Steering Vision Transformers</td><td>arXiv 新增 + ICML 2026 Poster</td><td>高</td><td>ViSAE 把 SAE 概念分解、自动解释和 causal circuit tracing 接到 ViT，是理解/steering 视觉表征的高价值工具。</td></tr><tr><td>P1</td><td>Lighting-Aware Representation Learning under Controllable Lighting Variation</td><td>arXiv 新增</td><td>高</td><td>把光照变化从“要被增强抹掉的 nuisance”改成显式训练信号，扩展 contrastive visual representation learning。</td></tr><tr><td>P1</td><td>MotionEnhancer: Leveraging Video Diffusion for Motion-Enhanced Vision-Language Models</td><td>arXiv 新增 + CVPR 2026</td><td>中高</td><td>从 video diffusion model 蒸馏 motion attention prior 给 video VLM，适合跟踪视频表征和生成模型监督的交叉。</td></tr><tr><td>P2</td><td>Diagnosing Visual Ignorance in Vision-Language Models</td><td>arXiv 新增</td><td>中高</td><td>用层替换、MLP probing 和视觉衰减指标诊断 VLM 如何丢失视觉证据，是 V-L 自监督评估的强信号。</td></tr><tr><td>P2</td><td>Generalization of Diffusion Models Arises with a Balanced Representation Space</td><td>arXiv 更新 + ICLR 2026</td><td>中高</td><td>从 representation geometry 解释 diffusion memorization/generalization，对 latent diffusion 与 RAE 线索有理论参考。</td></tr><tr><td>P2</td><td>Breaking the Lock-in: Diversifying Text-to-Image Generation via Representation Modulation</td><td>arXiv 新增 + ICML 2026 Poster</td><td>中</td><td>在 diffusion transformer 中对早期 DC feature 做 training-free modulation，说明生成多样性也可从表征频率成分入手。</td></tr><tr><td>P3</td><td>The Dual Mechanisms of Spatial Variable Binding in Vision-Language Models</td><td>arXiv 更新</td><td>中</td><td>指出 VLM spatial binding 的主信号来自 vision encoder 的全局 token 表征，适合作为 VLM 表征诊断读物。</td></tr><tr><td>扫读</td><td>Implicit Data Synthesis for Contrastive Unsupervised Data Augmentation</td><td>arXiv 新增</td><td>中</td><td>用网络权重扰动替代数据扰动生成 contrastive samples，实验偏雷达科学数据，但思想可迁移。</td></tr></tbody></table>
+      <h2>主线阅读</h2>
+      <div class="paper-list issue-list"><article class="paper-card" data-category="arXiv 新增" data-priority="P0" data-date="2026-06-08" data-title="adatok: self-budgeting image tokenization with quality-preserving dynamic tokens" data-keywords="adatok: self-budgeting image tokenization with quality-preserving dynamic tokens adatok arxiv 新增 p0 2026-06-08 arxiv 新增 把离散 1d image tokenizer 的 token budget 学成内容条件输出，连接 visual tokenization、latent compression 和 ar image generation 高相关；详见方法、贡献和实验边界。">
+  <a class="paper-thumb paper-thumb-text" href="../papers/2606.07185.html">
+    <img src="../assets/mineru/2606.07185/images/page_preview.jpg" alt="AdaTok figure"><span>P0</span>
+  </a>
+  <div>
+    <div class="paper-meta">2026-06-08 · arXiv 新增 · arXiv 新增</div>
+    <h3><a href="../papers/2606.07185.html">AdaTok: Self-Budgeting Image Tokenization with Quality-Preserving Dynamic Tokens</a></h3>
+    <p>高相关；详见方法、贡献和实验边界。</p>
+    <p class="card-tech"><b>方法：</b>把离散 1D image tokenizer 的 token budget 学成内容条件输出，连接 visual tokenization、latent compression 和 AR image generation</p>
+    <div class="paper-actions"><a href="../papers/2606.07185.html">读图文页</a><a href="https://arxiv.org/abs/2606.07185">原文</a></div>
+  </div>
+</article>
+<article class="paper-card" data-category="arXiv 新增" data-priority="P0" data-date="2026-06-08" data-title="tevi: text-conditioned editing of visual representations via sparse autoencoders for improved vision-language alignment" data-keywords="tevi: text-conditioned editing of visual representations via sparse autoencoders for improved vision-language alignment tevi arxiv 新增 p0 2026-06-08 arxiv 新增 用 caption-conditioned sparse autoencoder editing 精简 clip image embedding，直接服务图文表征对齐 高相关；详见方法、贡献和实验边界。">
+  <a class="paper-thumb paper-thumb-text" href="../papers/2606.07451.html">
+    <img src="../assets/mineru/2606.07451/images/page_preview.jpg" alt="TEVI figure"><span>P0</span>
+  </a>
+  <div>
+    <div class="paper-meta">2026-06-08 · arXiv 新增 · arXiv 新增</div>
+    <h3><a href="../papers/2606.07451.html">TEVI: Text-Conditioned Editing of Visual Representations via Sparse Autoencoders for Improved Vision-Language Alignment</a></h3>
+    <p>高相关；详见方法、贡献和实验边界。</p>
+    <p class="card-tech"><b>方法：</b>用 caption-conditioned sparse autoencoder editing 精简 CLIP image embedding，直接服务图文表征对齐</p>
+    <div class="paper-actions"><a href="../papers/2606.07451.html">读图文页</a><a href="https://arxiv.org/abs/2606.07451">原文</a></div>
+  </div>
+</article>
+<article class="paper-card" data-category="arXiv 新增 + ICML 2026 Poster" data-priority="P1" data-date="2026-06-08" data-title="inside the visual mind: neuroscience-motivated concept circuits for interpreting and steering vision transformers" data-keywords="inside the visual mind: neuroscience-motivated concept circuits for interpreting and steering vision transformers inside the visual mind arxiv 新增 + icml 2026 poster p1 2026-06-08 arxiv 新增 + icml 2026 poster visae 把 sae 概念分解、自动解释和 causal circuit tracing 接到 vit，是理解/steering 视觉表征的高价值工具 高相关；详见方法、贡献和实验边界。">
+  <a class="paper-thumb paper-thumb-text" href="../papers/2606.06664.html">
+    <img src="../assets/mineru/2606.06664/images/page_preview.jpg" alt="Inside the Visual Mind figure"><span>P1</span>
+  </a>
+  <div>
+    <div class="paper-meta">2026-06-08 · arXiv 新增 + ICML 2026 Poster · arXiv 新增 + ICML 2026 Poster</div>
+    <h3><a href="../papers/2606.06664.html">Inside the Visual Mind: Neuroscience-Motivated Concept Circuits for Interpreting and Steering Vision Transformers</a></h3>
+    <p>高相关；详见方法、贡献和实验边界。</p>
+    <p class="card-tech"><b>方法：</b>ViSAE 把 SAE 概念分解、自动解释和 causal circuit tracing 接到 ViT，是理解/steering 视觉表征的高价值工具</p>
+    <div class="paper-actions"><a href="../papers/2606.06664.html">读图文页</a><a href="https://arxiv.org/abs/2606.06664">原文</a></div>
+  </div>
+</article>
+<article class="paper-card" data-category="arXiv 新增" data-priority="P1" data-date="2026-06-08" data-title="lighting-aware representation learning under controllable lighting variation" data-keywords="lighting-aware representation learning under controllable lighting variation lighting-aware representation learning under controllable arxiv 新增 p1 2026-06-08 arxiv 新增 把光照变化从“要被增强抹掉的 nuisance”改成显式训练信号，扩展 contrastive visual representation learning 高相关；详见方法、贡献和实验边界。">
+  <a class="paper-thumb paper-thumb-text" href="../papers/2606.06899.html">
+    <img src="../assets/mineru/2606.06899/images/page_preview.jpg" alt="Lighting-Aware Representation Learning under Controllable figure"><span>P1</span>
+  </a>
+  <div>
+    <div class="paper-meta">2026-06-08 · arXiv 新增 · arXiv 新增</div>
+    <h3><a href="../papers/2606.06899.html">Lighting-Aware Representation Learning under Controllable Lighting Variation</a></h3>
+    <p>高相关；详见方法、贡献和实验边界。</p>
+    <p class="card-tech"><b>方法：</b>把光照变化从“要被增强抹掉的 nuisance”改成显式训练信号，扩展 contrastive visual representation learning</p>
+    <div class="paper-actions"><a href="../papers/2606.06899.html">读图文页</a><a href="https://arxiv.org/abs/2606.06899">原文</a></div>
+  </div>
+</article>
+<article class="paper-card" data-category="arXiv 新增 + CVPR 2026" data-priority="P1" data-date="2026-06-08" data-title="motionenhancer: leveraging video diffusion for motion-enhanced vision-language models" data-keywords="motionenhancer: leveraging video diffusion for motion-enhanced vision-language models motionenhancer arxiv 新增 + cvpr 2026 p1 2026-06-08 arxiv 新增 + cvpr 2026 从 video diffusion model 蒸馏 motion attention prior 给 video vlm，适合跟踪视频表征和生成模型监督的交叉 中高相关；详见方法、贡献和实验边界。">
+  <a class="paper-thumb paper-thumb-text" href="../papers/2606.06853.html">
+    <img src="../assets/mineru/2606.06853/images/page_preview.jpg" alt="MotionEnhancer figure"><span>P1</span>
+  </a>
+  <div>
+    <div class="paper-meta">2026-06-08 · arXiv 新增 + CVPR 2026 · arXiv 新增 + CVPR 2026</div>
+    <h3><a href="../papers/2606.06853.html">MotionEnhancer: Leveraging Video Diffusion for Motion-Enhanced Vision-Language Models</a></h3>
+    <p>中高相关；详见方法、贡献和实验边界。</p>
+    <p class="card-tech"><b>方法：</b>从 video diffusion model 蒸馏 motion attention prior 给 video VLM，适合跟踪视频表征和生成模型监督的交叉</p>
+    <div class="paper-actions"><a href="../papers/2606.06853.html">读图文页</a><a href="https://arxiv.org/abs/2606.06853">原文</a></div>
+  </div>
+</article>
+<article class="paper-card" data-category="arXiv 新增" data-priority="P2" data-date="2026-06-08" data-title="diagnosing visual ignorance in vision-language models" data-keywords="diagnosing visual ignorance in vision-language models diagnosing visual ignorance in vision-language arxiv 新增 p2 2026-06-08 arxiv 新增 用层替换、mlp probing 和视觉衰减指标诊断 vlm 如何丢失视觉证据，是 v-l 自监督评估的强信号 中高相关；详见方法、贡献和实验边界。">
+  <a class="paper-thumb paper-thumb-text" href="../papers/2606.06890.html">
+    <img src="../assets/mineru/2606.06890/images/page_preview.jpg" alt="Diagnosing Visual Ignorance in Vision-Language figure"><span>P2</span>
+  </a>
+  <div>
+    <div class="paper-meta">2026-06-08 · arXiv 新增 · arXiv 新增</div>
+    <h3><a href="../papers/2606.06890.html">Diagnosing Visual Ignorance in Vision-Language Models</a></h3>
+    <p>中高相关；详见方法、贡献和实验边界。</p>
+    <p class="card-tech"><b>方法：</b>用层替换、MLP probing 和视觉衰减指标诊断 VLM 如何丢失视觉证据，是 V-L 自监督评估的强信号</p>
+    <div class="paper-actions"><a href="../papers/2606.06890.html">读图文页</a><a href="https://arxiv.org/abs/2606.06890">原文</a></div>
+  </div>
+</article>
+<article class="paper-card" data-category="ICLR 2026" data-priority="P2" data-date="2026-06-08" data-title="generalization of diffusion models arises with a balanced representation space" data-keywords="generalization of diffusion models arises with a balanced representation space generalization of diffusion models arises iclr 2026 p2 2026-06-08 arxiv 更新 + iclr 2026 从 representation geometry 解释 diffusion memorization/generalization，对 latent diffusion 与 rae 线索有理论参考 中高相关；详见方法、贡献和实验边界。">
+  <a class="paper-thumb paper-thumb-text" href="../papers/2512.20963.html">
+    <img src="../assets/mineru/2512.20963/images/page_preview.jpg" alt="Generalization of Diffusion Models Arises figure"><span>P2</span>
+  </a>
+  <div>
+    <div class="paper-meta">2026-06-08 · ICLR 2026 · arXiv 更新 + ICLR 2026</div>
+    <h3><a href="../papers/2512.20963.html">Generalization of Diffusion Models Arises with a Balanced Representation Space</a></h3>
+    <p>中高相关；详见方法、贡献和实验边界。</p>
+    <p class="card-tech"><b>方法：</b>从 representation geometry 解释 diffusion memorization/generalization，对 latent diffusion 与 RAE 线索有理论参考</p>
+    <div class="paper-actions"><a href="../papers/2512.20963.html">读图文页</a><a href="https://arxiv.org/abs/2512.20963">原文</a></div>
+  </div>
+</article>
+<article class="paper-card" data-category="arXiv 新增 + ICML 2026 Poster" data-priority="P2" data-date="2026-06-08" data-title="breaking the lock-in: diversifying text-to-image generation via representation modulation" data-keywords="breaking the lock-in: diversifying text-to-image generation via representation modulation breaking the lock-in arxiv 新增 + icml 2026 poster p2 2026-06-08 arxiv 新增 + icml 2026 poster 在 diffusion transformer 中对早期 dc feature 做 training-free modulation，说明生成多样性也可从表征频率成分入手 中相关；详见方法、贡献和实验边界。">
+  <a class="paper-thumb paper-thumb-text" href="../papers/2606.06813.html">
+    <img src="../assets/mineru/2606.06813/images/page_preview.jpg" alt="Breaking the Lock-in figure"><span>P2</span>
+  </a>
+  <div>
+    <div class="paper-meta">2026-06-08 · arXiv 新增 + ICML 2026 Poster · arXiv 新增 + ICML 2026 Poster</div>
+    <h3><a href="../papers/2606.06813.html">Breaking the Lock-in: Diversifying Text-to-Image Generation via Representation Modulation</a></h3>
+    <p>中相关；详见方法、贡献和实验边界。</p>
+    <p class="card-tech"><b>方法：</b>在 diffusion transformer 中对早期 DC feature 做 training-free modulation，说明生成多样性也可从表征频率成分入手</p>
+    <div class="paper-actions"><a href="../papers/2606.06813.html">读图文页</a><a href="https://arxiv.org/abs/2606.06813">原文</a></div>
+  </div>
+</article>
+<article class="paper-card" data-category="arXiv 更新" data-priority="P3" data-date="2026-06-08" data-title="the dual mechanisms of spatial variable binding in vision-language models" data-keywords="the dual mechanisms of spatial variable binding in vision-language models the dual mechanisms of spatial arxiv 更新 p3 2026-06-08 arxiv 更新 指出 vlm spatial binding 的主信号来自 vision encoder 的全局 token 表征，适合作为 vlm 表征诊断读物 中相关；详见方法、贡献和实验边界。">
+  <a class="paper-thumb paper-thumb-text" href="../papers/2603.22278.html">
+    <img src="../assets/mineru/2603.22278/images/page_preview.jpg" alt="The Dual Mechanisms of Spatial figure"><span>P3</span>
+  </a>
+  <div>
+    <div class="paper-meta">2026-06-08 · arXiv 更新 · arXiv 更新</div>
+    <h3><a href="../papers/2603.22278.html">The Dual Mechanisms of Spatial Variable Binding in Vision-Language Models</a></h3>
+    <p>中相关；详见方法、贡献和实验边界。</p>
+    <p class="card-tech"><b>方法：</b>指出 VLM spatial binding 的主信号来自 vision encoder 的全局 token 表征，适合作为 VLM 表征诊断读物</p>
+    <div class="paper-actions"><a href="../papers/2603.22278.html">读图文页</a><a href="https://arxiv.org/abs/2603.22278">原文</a></div>
+  </div>
+</article>
+<article class="paper-card" data-category="arXiv 新增" data-priority="扫读" data-date="2026-06-08" data-title="implicit data synthesis for contrastive unsupervised data augmentation" data-keywords="implicit data synthesis for contrastive unsupervised data augmentation implicit data synthesis for contrastive arxiv 新增 扫读 2026-06-08 arxiv 新增 用网络权重扰动替代数据扰动生成 contrastive samples，实验偏雷达科学数据，但思想可迁移 中相关；详见方法、贡献和实验边界。">
+  <a class="paper-thumb paper-thumb-text" href="../papers/2606.07498.html">
+    <img src="../assets/mineru/2606.07498/images/page_preview.jpg" alt="Implicit Data Synthesis for Contrastive figure"><span>扫读</span>
+  </a>
+  <div>
+    <div class="paper-meta">2026-06-08 · arXiv 新增 · arXiv 新增</div>
+    <h3><a href="../papers/2606.07498.html">Implicit Data Synthesis for Contrastive Unsupervised Data Augmentation</a></h3>
+    <p>中相关；详见方法、贡献和实验边界。</p>
+    <p class="card-tech"><b>方法：</b>用网络权重扰动替代数据扰动生成 contrastive samples，实验偏雷达科学数据，但思想可迁移</p>
+    <div class="paper-actions"><a href="../papers/2606.07498.html">读图文页</a><a href="https://arxiv.org/abs/2606.07498">原文</a></div>
+  </div>
+</article></div>
+    </div>
+  </div>
+  <aside class="paper-side">
+    <div class="side-box"><h4>今日重点</h4><p>TextTeacher、MDM、EvoVid、Ablate-to-Validate。</p></div>
+    <div class="side-box"><h4>会议口径</h4><p>只把 CCF A/B 放进主提醒；临近截止或 CCF C 仅记录。</p></div>
+    <div class="side-box"><h4>阅读重点</h4><p>先看 P1/P2 与方法图，再扫状态变化和边界案例。</p></div>
+  </aside>
+</article></main>
+  <aside class="conf-float" data-conf-reminder="2026-06-08-main-ddl" aria-label="CCF A/B 主投稿提醒">
+  <button class="conf-close" type="button" aria-label="关闭会议提醒">×</button>
+  <details open>
+    <summary>CCF A/B 主投稿提醒</summary>
+    <div class="conf-list"><a class="conf-item " href="https://github.com/ccfddl/ccf-deadlines/blob/main/conference/AI/aaai.yml">
+  <span><b>AAAI 2027</b><em>CCF A · Main paper submission</em></span>
+  <strong>49 天</strong>
+  <small>2026-07-27 · CCF DDL: abstract 2026-07-20；进入 1 个月窗口后重点提醒。</small>
+</a></div>
+  </details>
+</aside>
+  <footer class="footer">
+    <div>面向通用视觉自监督、视觉基础模型与多模态表征学习的每日研究报。</div>
+    <div class="muted">Issue 2026-06-08 · Curated readings and figure notes</div>
+  </footer>
+  <script>
+  (() => {
+    const box = document.querySelector('[data-conf-reminder]');
+    if (!box) return;
+    const key = `visualSslConfReminderClosed:${box.dataset.confReminder || '2026-06-08-main-ddl'}`;
+    try {
+      if (localStorage.getItem(key) === '1') box.hidden = true;
+    } catch (err) {}
+    const close = box.querySelector('.conf-close');
+    if (close) {
+      close.addEventListener('click', () => {
+        box.hidden = true;
+        try { localStorage.setItem(key, '1'); } catch (err) {}
+      });
+    }
+  })();
+  </script>
+</body>
+</html>

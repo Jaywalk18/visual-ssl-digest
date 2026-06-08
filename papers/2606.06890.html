@@ -1,0 +1,96 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Diagnosing Visual Ignorance in Vision-Language · 通用视觉自监督研究报</title>
+  <link rel="stylesheet" href="../assets/styles.css?v=20260525j">
+  <link rel="stylesheet" href="../assets/visual-ssl.css?v=20260525j">
+</head>
+<body>
+  <header class="masthead">
+    <div class="masthead-kicker">Visual SSL Research Report · 2026-06-08</div>
+    <a class="masthead-title" href="../index.html">通用视觉自监督研究报</a>
+    <div class="masthead-meta">
+      <span>图像表征 · VFM · JEPA · 视频预训练</span>
+      <span>CCF A/B 会议优先</span>
+      <span>图文精读 · 方法图解</span>
+    </div>
+  </header>
+  <nav class="site-nav" aria-label="主导航">
+    <a class="nav-link" href="../index.html">头版</a>
+<a class="nav-link" href="../issues/2026-06-08.html">今日速递</a>
+<a class="nav-link" href="../pages/catalog.html">论文目录</a>
+<a class="nav-link" href="../pages/timeline.html">时间线</a>
+  </nav>
+  <main><article class="paper-detail">
+  <div class="paper-main">
+    <div class="kicker">arXiv 新增 · P2 · 2026-06-08</div>
+    <h1 class="paper-headline">Diagnosing Visual Ignorance in Vision-Language：视觉-语言自监督如果只看榜单，容易把语言先验误认为视觉表征能力。该工作给了评估 V-L 表征 grounding 的工具</h1>
+    <p class="dek">把“VLM 看图不认真”具体化为 routing failure：中间层未能有效检索视觉信息，后层又可能压制剩余视觉信号。</p>
+    <p class="byline"><strong>Diagnosing Visual Ignorance in Vision-Language Models</strong>　Runyu Zhou, Qi Zhang, Qixun Wang, Yisen Wang；机构信息未在 arXiv 元数据中列出。　arXiv 新增　<a href="https://arxiv.org/abs/2606.06890">原文链接</a></p>
+    <div class="paper-facts">
+      <span><b>编号</b>2606.06890</span>
+      <span><b>优先级</b>P2</span>
+      <span><b>类别</b>arXiv 新增</span>
+      <span><b>会议</b>arXiv 新增</span>
+      <span><b>方法</b>结合 counterfactual layer replacement、supervised layer-wise MLP probing 和 progressive visual decay metric，追踪 VLM decoder 中视觉语义与语言先验如何竞争。</span>
+      <span><b>来源</b>arXiv / OpenReview</span>
+    </div>
+    <div class="feature-body">
+      <p class="lead dropcap">先说结论。视觉-语言自监督如果只看榜单，容易把语言先验误认为视觉表征能力。该工作给了评估 V-L 表征 grounding 的工具。 把“VLM 看图不认真”具体化为 routing failure：中间层未能有效检索视觉信息，后层又可能压制剩余视觉信号。</p>
+      <figure class="full-fig"><img src="../assets/mineru/2606.06890/images/page_preview.jpg" alt="First-page visual preview for Diagnosing Visual Ignorance in Vision-Language Models."><figcaption><b>First-page visual preview for Diagnosing Visual Ignorance in Vision-Language Models.</b><span class="fig-en">First-page visual preview for Diagnosing Visual Ignorance in Vision-Language Models.</span><span class="fig-zh">这是 Diagnosing Visual Ignorance in Vision-Language 的 PDF 首页预览兜底图，不是 MinerU 结构化抽取出的论文图表。正式抽图完成后应优先展示方法图、实验图或表格。</span></figcaption></figure>
+      
+      <h2>核心问题</h2>
+      <p>视觉-语言自监督如果只看榜单，容易把语言先验误认为视觉表征能力。该工作给了评估 V-L 表征 grounding 的工具。</p>
+      <h2>方法拆解</h2>
+      <p>结合 counterfactual layer replacement、supervised layer-wise MLP probing 和 progressive visual decay metric，追踪 VLM decoder 中视觉语义与语言先验如何竞争。</p>
+      <h2>主要贡献</h2>
+      <p>把“VLM 看图不认真”具体化为 routing failure：中间层未能有效检索视觉信息，后层又可能压制剩余视觉信号。</p>
+      <h2>实验看点</h2>
+      <p>在 12 个 VQA benchmarks 和 3 个代表性 VLM 上发现不少样例在强视觉模糊甚至视觉破坏下仍可被回答，说明 benchmark 可能奖励 language prior。</p>
+      <h2>局限与读法</h2>
+      <p>主要是诊断，不直接提出新的 pretraining objective；如何构建能强制跨模态 grounding 的训练分布仍是后续问题。</p>
+    
+    </div>
+  </div>
+  <aside class="paper-side">
+
+    <div class="side-box"><h4>关键判断</h4><dl><dt>相关性</dt><dd>P2</dd><dt>类别</dt><dd>arXiv 新增</dd><dt>会议</dt><dd>arXiv 新增</dd><dt>读法</dt><dd>方法图优先，表格次之</dd></dl></div>
+    <div class="side-box"><h4>原文</h4><p><a href="https://arxiv.org/abs/2606.06890">https://arxiv.org/abs/2606.06890</a></p></div>
+  </aside>
+</article></main>
+  <aside class="conf-float" data-conf-reminder="2026-06-08-main-ddl" aria-label="CCF A/B 主投稿提醒">
+  <button class="conf-close" type="button" aria-label="关闭会议提醒">×</button>
+  <details open>
+    <summary>CCF A/B 主投稿提醒</summary>
+    <div class="conf-list"><a class="conf-item " href="https://github.com/ccfddl/ccf-deadlines/blob/main/conference/AI/aaai.yml">
+  <span><b>AAAI 2027</b><em>CCF A · Main paper submission</em></span>
+  <strong>49 天</strong>
+  <small>2026-07-27 · CCF DDL: abstract 2026-07-20；进入 1 个月窗口后重点提醒。</small>
+</a></div>
+  </details>
+</aside>
+  <footer class="footer">
+    <div>面向通用视觉自监督、视觉基础模型与多模态表征学习的每日研究报。</div>
+    <div class="muted">Issue 2026-06-08 · Curated readings and figure notes</div>
+  </footer>
+  <script>
+  (() => {
+    const box = document.querySelector('[data-conf-reminder]');
+    if (!box) return;
+    const key = `visualSslConfReminderClosed:${box.dataset.confReminder || '2026-06-08-main-ddl'}`;
+    try {
+      if (localStorage.getItem(key) === '1') box.hidden = true;
+    } catch (err) {}
+    const close = box.querySelector('.conf-close');
+    if (close) {
+      close.addEventListener('click', () => {
+        box.hidden = true;
+        try { localStorage.setItem(key, '1'); } catch (err) {}
+      });
+    }
+  })();
+  </script>
+</body>
+</html>

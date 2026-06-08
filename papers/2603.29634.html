@@ -19,39 +19,39 @@
   </header>
   <nav class="site-nav" aria-label="主导航">
     <a class="nav-link" href="../index.html">头版</a>
-<a class="nav-link" href="../issues/2026-06-07.html">今日速递</a>
+<a class="nav-link" href="../issues/2026-06-08.html">今日速递</a>
 <a class="nav-link" href="../pages/catalog.html">论文目录</a>
 <a class="nav-link" href="../pages/timeline.html">时间线</a>
   </nav>
   <main><article class="paper-detail">
   <div class="paper-main">
     <div class="kicker">CVPR 2026 Day 3 · P0 · 2026-06-07</div>
-    <h1 class="paper-headline">MacTok：RAE、VQ、continuous tokenizer 正在重塑图像基础模型的 bottleneck；MacTok 是今天最值得跟的图像 token 压缩表征工作</h1>
-    <p class="dek">把连续 tokenizer 的压缩极限和语义保持放在一起优化，让 64/128 个 tokens 仍能保留可生成和可判别信息。</p>
-    <p class="byline"><strong>MacTok: Robust Continuous Tokenization for Image Generation</strong>　Hengyu Zeng, Xin Gao, Guanghao Li, Yuxiang Yan, Jiaoyang Ruan, Junpeng Ma, Haoyu Albert Wang, Jian Pu；机构信息未在 arXiv 元数据中列出。　arXiv + CVPR 2026 Day 3　<a href="https://arxiv.org/abs/2603.29634">原文链接</a></p>
+    <h1 class="paper-headline">MacTok：它和通用视觉自监督的关系在于：用 masking 与 DINO-guided semantic masking 防止连续 tokenizer posterior collapse，对紧凑图像 latent 表征很关键</h1>
+    <p class="dek">高相关；详见方法、贡献和实验边界。</p>
+    <p class="byline"><strong>MacTok: Robust Continuous Tokenization for Image Generation</strong>　arXiv + CVPR 2026 Day 3　<a href="https://arxiv.org/abs/2603.29634">原文链接</a></p>
     <div class="paper-facts">
       <span><b>编号</b>2603.29634</span>
       <span><b>优先级</b>P0</span>
       <span><b>类别</b>CVPR 2026 Day 3</span>
       <span><b>会议</b>arXiv + CVPR 2026 Day 3</span>
-      <span><b>方法</b>Masked Augmenting 1D Continuous Tokenizer 通过 random masking、DINO-guided semantic masking、global/local representation alignment 来避免少 token 下的 posterior collapse。</span>
+      <span><b>方法</b>用 masking 与 DINO-guided semantic masking 防止连续 tokenizer posterior collapse，对紧凑图像 latent 表征很关键</span>
       <span><b>来源</b>arXiv / OpenReview</span>
     </div>
     <div class="feature-body">
-      <p class="lead dropcap">先说结论。RAE、VQ、continuous tokenizer 正在重塑图像基础模型的 bottleneck；MacTok 是今天最值得跟的图像 token 压缩表征工作。 把连续 tokenizer 的压缩极限和语义保持放在一起优化，让 64/128 个 tokens 仍能保留可生成和可判别信息。</p>
+      <p class="lead dropcap">先说结论。它和通用视觉自监督的关系在于：用 masking 与 DINO-guided semantic masking 防止连续 tokenizer posterior collapse，对紧凑图像 latent 表征很关键。 高相关；详见方法、贡献和实验边界。</p>
       <figure class="full-fig"><img src="../assets/mineru/2603.29634/images/99dd9e09a488a663d695fc81b61ed1af8ec6f2a027422e8b77999d40d0c058f6.jpg" alt="Figureure 4 · Overview of the MacTok framework"><figcaption><b>Figureure 4 · Overview of the MacTok framework</b><span class="fig-en">Figure 4. Overview of the MacTok framework. Top: Transformer-based encoder and decoder operating on image, latent, and mask tokens. Bottom left: DINO-guided image masking introduces semantic priors. Bottom center: Global and local representation alignment between latent and pretrained visual representations. Bottom right: Discriminator and perceptual networks provide auxiliary supervision.</span><span class="fig-zh">这张图概括 MacTok 的整体方法流程。阅读时先看模块之间传递的训练信号，再看作者如何把目标拆成可优化的子问题。</span></figcaption></figure>
 <figure class="full-fig"><img src="../assets/mineru/2603.29634/images/23a4be843b14c60e86c008fed6354c234404213903a7a535586b4730446a80f3.jpg" alt="Figureure 2 · Generation results produced by generative models with MacTok using 64 "><figcaption><b>Figureure 2 · Generation results produced by generative models with MacTok using 64 </b><span class="fig-en">Figure 2. Generation results produced by generative models with MacTok using 64 and 128 tokens on ImageNet at 256×256 and 512×512.</span><span class="fig-zh">这张图/表用于判断 MacTok 的实验收益来自哪里。重点看替换、消融或跨模型设置下趋势是否一致，而不是只看单个最高分。</span></figcaption></figure>
       
       <h2>核心问题</h2>
-      <p>RAE、VQ、continuous tokenizer 正在重塑图像基础模型的 bottleneck；MacTok 是今天最值得跟的图像 token 压缩表征工作。</p>
+      <p>它和通用视觉自监督的关系在于：用 masking 与 DINO-guided semantic masking 防止连续 tokenizer posterior collapse，对紧凑图像 latent 表征很关键。</p>
       <h2>方法拆解</h2>
-      <p>Masked Augmenting 1D Continuous Tokenizer 通过 random masking、DINO-guided semantic masking、global/local representation alignment 来避免少 token 下的 posterior collapse。</p>
+      <p>用 masking 与 DINO-guided semantic masking 防止连续 tokenizer posterior collapse，对紧凑图像 latent 表征很关键</p>
       <h2>主要贡献</h2>
-      <p>把连续 tokenizer 的压缩极限和语义保持放在一起优化，让 64/128 个 tokens 仍能保留可生成和可判别信息。</p>
+      <p>高相关；详见方法、贡献和实验边界。</p>
       <h2>实验看点</h2>
-      <p>摘要称 ImageNet 上 256 分辨率 gFID 1.44，512 分辨率配合 SiT-XL gFID 1.52，并最多减少 64 倍 token 用量。</p>
+      <p>实验部分建议重点看两类证据：一是作者是否把方法收益和更强数据、更长训练、更大模型区分开；二是跨模型、跨数据或跨任务迁移是否还能保留同样趋势。</p>
       <h2>局限与读法</h2>
-      <p>实验重点仍是 image generation；是否提升下游识别、检测、分割或 VLM 输入效率还需额外验证。</p>
+      <p>这篇论文的结论需要结合任务设置、训练数据规模和消融实验一起看；不要只凭单个指标判断它对通用视觉表征的价值。</p>
     
     </div>
   </div>
@@ -61,13 +61,13 @@
     <div class="side-box"><h4>原文</h4><p><a href="https://arxiv.org/abs/2603.29634">https://arxiv.org/abs/2603.29634</a></p></div>
   </aside>
 </article></main>
-  <aside class="conf-float" data-conf-reminder="2026-06-07-main-ddl" aria-label="CCF A/B 主投稿提醒">
+  <aside class="conf-float" data-conf-reminder="2026-06-08-main-ddl" aria-label="CCF A/B 主投稿提醒">
   <button class="conf-close" type="button" aria-label="关闭会议提醒">×</button>
   <details open>
     <summary>CCF A/B 主投稿提醒</summary>
     <div class="conf-list"><a class="conf-item " href="https://github.com/ccfddl/ccf-deadlines/blob/main/conference/AI/aaai.yml">
   <span><b>AAAI 2027</b><em>CCF A · Main paper submission</em></span>
-  <strong>50 天</strong>
+  <strong>49 天</strong>
   <small>2026-07-27 · CCF DDL: abstract 2026-07-20；进入 1 个月窗口后重点提醒。</small>
 </a></div>
   </details>
@@ -80,7 +80,7 @@
   (() => {
     const box = document.querySelector('[data-conf-reminder]');
     if (!box) return;
-    const key = `visualSslConfReminderClosed:${box.dataset.confReminder || '2026-06-07-main-ddl'}`;
+    const key = `visualSslConfReminderClosed:${box.dataset.confReminder || '2026-06-08-main-ddl'}`;
     try {
       if (localStorage.getItem(key) === '1') box.hidden = true;
     } catch (err) {}

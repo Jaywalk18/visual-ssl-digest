@@ -1,0 +1,10 @@
+[
+  {
+    "type": "image",
+    "img_path": "images/page_preview.jpg",
+    "image_caption": [
+      "First-page visual preview for MotionEnhancer: Leveraging Video Diffusion for Motion-Enhanced Vision-Language Models."
+    ],
+    "content": "Generated from the paper PDF as a stable visual preview while full figure extraction is pending."
+  }
+]

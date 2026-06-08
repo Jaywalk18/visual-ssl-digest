@@ -19,20 +19,18 @@
   </header>
   <nav class="site-nav" aria-label="主导航">
     <a class="nav-link" href="../index.html">头版</a>
-<a class="nav-link active" href="../issues/2026-06-07.html">今日速递</a>
+<a class="nav-link" href="../issues/2026-06-08.html">今日速递</a>
 <a class="nav-link" href="../pages/catalog.html">论文目录</a>
 <a class="nav-link" href="../pages/timeline.html">时间线</a>
   </nav>
   <main><article class="paper-detail issue-detail">
   <div class="paper-main">
     <div class="kicker">Daily issue · 2026-06-07 · CCF A/B 会议优先</div>
-    <h1 class="paper-headline">6 月 7 日：From Static to Dynamic 等视觉表征主线更新</h1>
-    <p class="dek">本期聚焦通用视觉表征、视觉语言预训练与视频自监督中最值得跟进的论文，并保留 CCF A/B、OpenReview 与 arXiv 状态线索。</p>
+    <h1 class="paper-headline">6 月 7 日：From Static to Dynamic 等视觉表征论文归档</h1>
+    <p class="dek">本页按日期归档近期论文，保留优先级、主题、来源与方法线索，方便回看同一批工作的研究脉络。</p>
     <div class="feature-body">
-      <p class="lead dropcap">先读 From Static to Dynamic：它正面处理 image SSL backbone 迁移到 video 时的 temporal consistency 与 semantic separability trade-off，是今天最直接的通用视频表征论文。第二篇读 PyraTok，关注多尺度离散 video tokens 如何同时服务理解与生成。第三篇读 MacTok，它把 masking、DINO-guided semantic masking 和局部/全局对齐接到 continuous image tokenizer，和最近的 RAE/VQ/tokenizer 线索能连起来。之后读 Toward Diffusible High-Dimensional Latent Spaces 与 3D sans 3D Scans：前者解释高维 latent 为什么难生成，后者说明 unlabeled web video 可以转成 3D SSL 数据源。E-RayZer、VideoSSR 和 Progressive Mask Distillation 都很相关，但作为 CVPR 状态补录可稍后读；SynCLIP/CORE/Scaling Dense Event-Stream 更适合按 VLM dense perception、token merging 或 event camera 需求扫读。</p>
+      <p class="lead dropcap">先读 From Static to Dynamic。冻结 image-pretrained encoder，只学轻量投影并同时优化时序一致性与跨视频语义分离，直接切中视频表征迁移。 其余论文按 P1/P2 与主题顺序扫读，重点看方法图、消融设置和是否能迁移到通用视觉表征。</p>
       <h2>论文索引</h2>
-      <table class="compact-table"><thead><tr><th>优先级</th><th>论文</th><th>类型</th><th>相关性</th><th>一句话理由</th></tr></thead><tbody><tr><td>P0</td><td>From Static to Dynamic: Exploring Self-supervised Image-to-Video Representation Transfer Learning</td><td>arXiv + CVPR 2026 Day 3</td><td>高</td><td>冻结 image-pretrained encoder，只学轻量投影并同时优化时序一致性与跨视频语义分离，直接切中视频表征迁移。</td></tr><tr><td>P0</td><td>PyraTok: Language-Aligned Pyramidal Tokenizer for Video Understanding and Generation</td><td>arXiv + CVPR 2026 Day 3</td><td>高</td><td>多尺度语言对齐 video tokenizer 同时提升重建、生成和 zero-shot 视频理解，是今天最值得跟的 tokenization 工作。</td></tr><tr><td>P0</td><td>MacTok: Robust Continuous Tokenization for Image Generation</td><td>arXiv + CVPR 2026 Day 3</td><td>高</td><td>用 masking 与 DINO-guided semantic masking 防止连续 tokenizer posterior collapse，对紧凑图像 latent 表征很关键。</td></tr><tr><td>P1</td><td>Toward Diffusible High-Dimensional Latent Spaces: A Frequency Perspective</td><td>arXiv + CVPR 2026 Day 3</td><td>高</td><td>从频率角度解释高维 autoencoder latent 的生成困难，并提出不改 autoencoder 的 FreqWarm 训练策略。</td></tr><tr><td>P1</td><td>3D sans 3D Scans: Scalable Pre-training from Video-Generated Point Clouds</td><td>arXiv + CVPR 2026 Day 3</td><td>高</td><td>用普通视频生成点云再做 3D SSL，给“视频作为 3D 表征预训练数据源”提供强证据。</td></tr><tr><td>P1</td><td>E-RayZer: Self-supervised 3D Reconstruction as Spatial Visual Pre-training</td><td>arXiv + CVPR 2026 Day 1 补录</td><td>高</td><td>把 self-supervised 3D reconstruction 显式作为 spatial visual pre-training，补齐 2D/video SSL 到 3D-aware 表征的桥。</td></tr><tr><td>P1</td><td>VideoSSR: Video Self-Supervised Reinforcement Learning</td><td>arXiv + CVPR 2026 Day 2 补录</td><td>中高</td><td>用视频内生 pretext tasks 构造 RLVR 训练数据，对 video MLLM 的自监督后训练有直接参考。</td></tr><tr><td>P2</td><td>Progressive Mask Distillation for Self-supervised Video Representation</td><td>CVPR 2026 Day 3</td><td>中高</td><td>动态 mask ratio + progressive distillation，是今天最标准的 masked video SSL 论文，但暂未定位到 arXiv ID。</td></tr><tr><td>P2</td><td>CORE: Compact Object-centric REpresentations as a New Paradigm for Token Merging in LVLMs</td><td>arXiv + CVPR 2026 Day 3</td><td>中高</td><td>用 object masks 引导 LVLM token merging，说明高层 object-centric 表征比纯几何压缩更稳。</td></tr><tr><td>P3</td><td>SynCLIP: Synonym-Coherent Language-Image Pretraining for Robust Open-Vocabulary Dense Perception</td><td>CVPR 2026 Day 3</td><td>中</td><td>属于 CLIP dense perception 对齐增强；对通用 V-L 表征有参考，但更偏 OVDP 下游鲁棒性。</td></tr><tr><td>扫读</td><td>Scaling Dense Event-Stream Pretraining from Visual Foundation Models</td><td>arXiv + CVPR 2026 Day 1 补录</td><td>中</td><td>event camera 模态较专，但 VFM 蒸馏到异构视觉流的结构对齐思路可迁移。</td></tr></tbody></table>
-      <h2>主线阅读</h2>
       <div class="paper-list issue-list"><article class="paper-card" data-category="CVPR 2026 Day 3" data-priority="P0" data-date="2026-06-07" data-title="from static to dynamic: exploring self-supervised image-to-video representation transfer learning" data-keywords="from static to dynamic: exploring self-supervised image-to-video representation transfer learning from static to dynamic cvpr 2026 day 3 p0 2026-06-07 arxiv + cvpr 2026 day 3 冻结 image-pretrained encoder，只学轻量投影并同时优化时序一致性与跨视频语义分离，直接切中视频表征迁移 高相关；详见方法、贡献和实验边界。">
   <a class="paper-thumb paper-thumb-text" href="../papers/2603.26597.html">
     <img src="../assets/mineru/2603.26597/images/868183d5eaea9058edf27b093136ac6f671e48fceb33996f50738ec5d590c936.jpg" alt="From Static to Dynamic figure"><span>P0</span>
@@ -168,18 +166,17 @@
     </div>
   </div>
   <aside class="paper-side">
-    <div class="side-box"><h4>今日重点</h4><p>TextTeacher、MDM、EvoVid、Ablate-to-Validate。</p></div>
-    <div class="side-box"><h4>会议口径</h4><p>只把 CCF A/B 放进主提醒；临近截止或 CCF C 仅记录。</p></div>
     <div class="side-box"><h4>阅读重点</h4><p>先看 P1/P2 与方法图，再扫状态变化和边界案例。</p></div>
+    <div class="side-box"><h4>会议口径</h4><p>主提醒只保留 CCF A/B；CCF C 与过期截止仅作状态记录。</p></div>
   </aside>
 </article></main>
-  <aside class="conf-float" data-conf-reminder="2026-06-07-main-ddl" aria-label="CCF A/B 主投稿提醒">
+  <aside class="conf-float" data-conf-reminder="2026-06-08-main-ddl" aria-label="CCF A/B 主投稿提醒">
   <button class="conf-close" type="button" aria-label="关闭会议提醒">×</button>
   <details open>
     <summary>CCF A/B 主投稿提醒</summary>
     <div class="conf-list"><a class="conf-item " href="https://github.com/ccfddl/ccf-deadlines/blob/main/conference/AI/aaai.yml">
   <span><b>AAAI 2027</b><em>CCF A · Main paper submission</em></span>
-  <strong>50 天</strong>
+  <strong>49 天</strong>
   <small>2026-07-27 · CCF DDL: abstract 2026-07-20；进入 1 个月窗口后重点提醒。</small>
 </a></div>
   </details>
@@ -192,7 +189,7 @@
   (() => {
     const box = document.querySelector('[data-conf-reminder]');
     if (!box) return;
-    const key = `visualSslConfReminderClosed:${box.dataset.confReminder || '2026-06-07-main-ddl'}`;
+    const key = `visualSslConfReminderClosed:${box.dataset.confReminder || '2026-06-08-main-ddl'}`;
     try {
       if (localStorage.getItem(key) === '1') box.hidden = true;
     } catch (err) {}

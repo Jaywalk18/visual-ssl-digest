@@ -1,0 +1,96 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>AdaTok · 通用视觉自监督研究报</title>
+  <link rel="stylesheet" href="../assets/styles.css?v=20260525j">
+  <link rel="stylesheet" href="../assets/visual-ssl.css?v=20260525j">
+</head>
+<body>
+  <header class="masthead">
+    <div class="masthead-kicker">Visual SSL Research Report · 2026-06-08</div>
+    <a class="masthead-title" href="../index.html">通用视觉自监督研究报</a>
+    <div class="masthead-meta">
+      <span>图像表征 · VFM · JEPA · 视频预训练</span>
+      <span>CCF A/B 会议优先</span>
+      <span>图文精读 · 方法图解</span>
+    </div>
+  </header>
+  <nav class="site-nav" aria-label="主导航">
+    <a class="nav-link" href="../index.html">头版</a>
+<a class="nav-link" href="../issues/2026-06-08.html">今日速递</a>
+<a class="nav-link" href="../pages/catalog.html">论文目录</a>
+<a class="nav-link" href="../pages/timeline.html">时间线</a>
+  </nav>
+  <main><article class="paper-detail">
+  <div class="paper-main">
+    <div class="kicker">arXiv 新增 · P0 · 2026-06-08</div>
+    <h1 class="paper-headline">AdaTok：通用视觉自监督越来越受制于 latent/token 接口；AdaTok 直接处理“视觉表征需要多少 token”这个基础问题</h1>
+    <p class="dek">把视觉 token 数从固定的训练/部署超参数变成 tokenizer 自己的一次前向输出，使视觉复杂度高的图像获得更多 token，简单图像少用 token。</p>
+    <p class="byline"><strong>AdaTok: Self-Budgeting Image Tokenization with Quality-Preserving Dynamic Tokens</strong>　Xiaocheng Lu, Yuxi Chen, Jie Zhang, Jian Liu, Jingcai Guo, Fangqi Zhu, Tao Han, Song Guo；机构信息未在 arXiv 元数据中列出。　arXiv 新增　<a href="https://arxiv.org/abs/2606.07185">原文链接</a></p>
+    <div class="paper-facts">
+      <span><b>编号</b>2606.07185</span>
+      <span><b>优先级</b>P0</span>
+      <span><b>类别</b>arXiv 新增</span>
+      <span><b>会议</b>arXiv 新增</span>
+      <span><b>方法</b>提出 self-budgeting discrete 1D tokenizer。Prioritized Representation Learning 用 nested tail masking 学会 token 前缀可解码性，并用 Multi-Head LoRA decoder heads 减少不同预算下的语义漂移；Adaptive Token Allocation 用 deterministic-group GRPO policy 在候选预算中选择内容条件 token 数；Dynamic Pareto Weighting 平衡 fidelity 与效率。</span>
+      <span><b>来源</b>arXiv / OpenReview</span>
+    </div>
+    <div class="feature-body">
+      <p class="lead dropcap">先说结论。通用视觉自监督越来越受制于 latent/token 接口；AdaTok 直接处理“视觉表征需要多少 token”这个基础问题。 把视觉 token 数从固定的训练/部署超参数变成 tokenizer 自己的一次前向输出，使视觉复杂度高的图像获得更多 token，简单图像少用 token。</p>
+      <figure class="full-fig"><img src="../assets/mineru/2606.07185/images/page_preview.jpg" alt="First-page visual preview for AdaTok: Self-Budgeting Image Tokenization with Quality-Prese"><figcaption><b>First-page visual preview for AdaTok: Self-Budgeting Image Tokenization with Quality-Prese</b><span class="fig-en">First-page visual preview for AdaTok: Self-Budgeting Image Tokenization with Quality-Preserving Dynamic Tokens.</span><span class="fig-zh">这是 AdaTok 的 PDF 首页预览兜底图，不是 MinerU 结构化抽取出的论文图表。正式抽图完成后应优先展示方法图、实验图或表格。</span></figcaption></figure>
+      
+      <h2>核心问题</h2>
+      <p>通用视觉自监督越来越受制于 latent/token 接口；AdaTok 直接处理“视觉表征需要多少 token”这个基础问题。</p>
+      <h2>方法拆解</h2>
+      <p>提出 self-budgeting discrete 1D tokenizer。Prioritized Representation Learning 用 nested tail masking 学会 token 前缀可解码性，并用 Multi-Head LoRA decoder heads 减少不同预算下的语义漂移；Adaptive Token Allocation 用 deterministic-group GRPO policy 在候选预算中选择内容条件 token 数；Dynamic Pareto Weighting 平衡 fidelity 与效率。</p>
+      <h2>主要贡献</h2>
+      <p>把视觉 token 数从固定的训练/部署超参数变成 tokenizer 自己的一次前向输出，使视觉复杂度高的图像获得更多 token，简单图像少用 token。</p>
+      <h2>实验看点</h2>
+      <p>ImageNet-1K 上 AdaTok-Full 在 256 tokens 达到 rFID 1.31；AdaTok-Adaptive 约 118 tokens 平均预算下 rFID 1.50；AR image generation 中 adaptive representation 带来约 2.1x throughput。</p>
+      <h2>局限与读法</h2>
+      <p>实验重心仍是重建和图像生成；是否改善下游识别、dense prediction、VLM 输入或视频 tokenizer 还需要额外验证。GRPO budget policy 也增加了训练复杂度。</p>
+    
+    </div>
+  </div>
+  <aside class="paper-side">
+
+    <div class="side-box"><h4>关键判断</h4><dl><dt>相关性</dt><dd>P0</dd><dt>类别</dt><dd>arXiv 新增</dd><dt>会议</dt><dd>arXiv 新增</dd><dt>读法</dt><dd>方法图优先，表格次之</dd></dl></div>
+    <div class="side-box"><h4>原文</h4><p><a href="https://arxiv.org/abs/2606.07185">https://arxiv.org/abs/2606.07185</a></p></div>
+  </aside>
+</article></main>
+  <aside class="conf-float" data-conf-reminder="2026-06-08-main-ddl" aria-label="CCF A/B 主投稿提醒">
+  <button class="conf-close" type="button" aria-label="关闭会议提醒">×</button>
+  <details open>
+    <summary>CCF A/B 主投稿提醒</summary>
+    <div class="conf-list"><a class="conf-item " href="https://github.com/ccfddl/ccf-deadlines/blob/main/conference/AI/aaai.yml">
+  <span><b>AAAI 2027</b><em>CCF A · Main paper submission</em></span>
+  <strong>49 天</strong>
+  <small>2026-07-27 · CCF DDL: abstract 2026-07-20；进入 1 个月窗口后重点提醒。</small>
+</a></div>
+  </details>
+</aside>
+  <footer class="footer">
+    <div>面向通用视觉自监督、视觉基础模型与多模态表征学习的每日研究报。</div>
+    <div class="muted">Issue 2026-06-08 · Curated readings and figure notes</div>
+  </footer>
+  <script>
+  (() => {
+    const box = document.querySelector('[data-conf-reminder]');
+    if (!box) return;
+    const key = `visualSslConfReminderClosed:${box.dataset.confReminder || '2026-06-08-main-ddl'}`;
+    try {
+      if (localStorage.getItem(key) === '1') box.hidden = true;
+    } catch (err) {}
+    const close = box.querySelector('.conf-close');
+    if (close) {
+      close.addEventListener('click', () => {
+        box.hidden = true;
+        try { localStorage.setItem(key, '1'); } catch (err) {}
+      });
+    }
+  })();
+  </script>
+</body>
+</html>

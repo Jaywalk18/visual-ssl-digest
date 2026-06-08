@@ -19,39 +19,39 @@
   </header>
   <nav class="site-nav" aria-label="主导航">
     <a class="nav-link" href="../index.html">头版</a>
-<a class="nav-link" href="../issues/2026-06-07.html">今日速递</a>
+<a class="nav-link" href="../issues/2026-06-08.html">今日速递</a>
 <a class="nav-link" href="../pages/catalog.html">论文目录</a>
 <a class="nav-link" href="../pages/timeline.html">时间线</a>
   </nav>
   <main><article class="paper-detail">
   <div class="paper-main">
     <div class="kicker">CVPR 2026 Day 3 · P1 · 2026-06-07</div>
-    <h1 class="paper-headline">3D sans 3D Scans：它把普通视频转成 3D SSL 数据源，是通用视觉从 2D/视频迈向 3D foundation representation 的实用路径</h1>
-    <p class="dek">证明不依赖真实 3D scanner，也可以用 unlabeled videos 扩展 3D self-supervised representation learning。</p>
-    <p class="byline"><strong>3D sans 3D Scans: Scalable Pre-training from Video-Generated Point Clouds</strong>　Ryousuke Yamada, Kohsuke Ide, Yoshihiro Fukuhara, Hirokatsu Kataoka, Gilles Puy, Andrei Bursuc, Yuki M. Asano；机构信息未在 arXiv 元数据中列出。　arXiv + CVPR 2026 Day 3　<a href="https://arxiv.org/abs/2512.23042">原文链接</a></p>
+    <h1 class="paper-headline">3D sans 3D Scans：它和通用视觉自监督的关系在于：用普通视频生成点云再做 3D SSL，给“视频作为 3D 表征预训练数据源”提供强证据</h1>
+    <p class="dek">高相关；详见方法、贡献和实验边界。</p>
+    <p class="byline"><strong>3D sans 3D Scans: Scalable Pre-training from Video-Generated Point Clouds</strong>　arXiv + CVPR 2026 Day 3　<a href="https://arxiv.org/abs/2512.23042">原文链接</a></p>
     <div class="paper-facts">
       <span><b>编号</b>2512.23042</span>
       <span><b>优先级</b>P1</span>
       <span><b>类别</b>CVPR 2026 Day 3</span>
       <span><b>会议</b>arXiv + CVPR 2026 Day 3</span>
-      <span><b>方法</b>从 web room-walkthrough videos 生成点云，构建 RoomTours；用 LAM3C 做 Laplacian-aware multi-level 3D clustering，并加入 noise-regularized loss 保持局部几何平滑与噪声下特征稳定。</span>
+      <span><b>方法</b>用普通视频生成点云再做 3D SSL，给“视频作为 3D 表征预训练数据源”提供强证据</span>
       <span><b>来源</b>arXiv / OpenReview</span>
     </div>
     <div class="feature-body">
-      <p class="lead dropcap">先说结论。它把普通视频转成 3D SSL 数据源，是通用视觉从 2D/视频迈向 3D foundation representation 的实用路径。 证明不依赖真实 3D scanner，也可以用 unlabeled videos 扩展 3D self-supervised representation learning。</p>
+      <p class="lead dropcap">先说结论。它和通用视觉自监督的关系在于：用普通视频生成点云再做 3D SSL，给“视频作为 3D 表征预训练数据源”提供强证据。 高相关；详见方法、贡献和实验边界。</p>
       <figure class="full-fig"><img src="../assets/mineru/2512.23042/images/630f6e0bd26bb5618d3a809849c72809f91fde3540af5aa24046398c3468a49b.jpg" alt="Figureure 4 · Overview of RoomTours construction"><figcaption><b>Figureure 4 · Overview of RoomTours construction</b><span class="fig-en">Figure 4. Overview of RoomTours construction. We segment the video into scene sequences using CLIP [34], and generate VGPC by inputting each scene sequence into $\pi ^ { 3 }$ . Because the scenes differ from real 3D scans in coordinate system, scale, and spacing, we apply a post-processing alignment.</span><span class="fig-zh">这张图概括 3D sans 3D Scans 的整体方法流程。阅读时先看模块之间传递的训练信号，再看作者如何把目标拆成可优化的子问题。</span></figcaption></figure>
 <figure class="full-fig"><img src="../assets/mineru/2512.23042/images/de1c36140262fd25e1acad2a9ff414bb97a673d937ce3bebe3594211250cf700.jpg" alt="Figureure 1 · Video-generated point clouds (VGPC) match or exceed real 3D scan perfo"><figcaption><b>Figureure 1 · Video-generated point clouds (VGPC) match or exceed real 3D scan perfo</b><span class="fig-en">Figure 1. Video-generated point clouds (VGPC) match or exceed real 3D scan performance without using any real 3D data. Left: Our method (LAM3C) trained solely on VGPC achieves comparable performance to methods trained on real 3D scans when fine-tuning on 10% of ScanNet. Right: Instance segmentation results on S3DIS show LAM3C outperforms self-supervised methods trained on real 3D scans and matches Sonata which uses both real and synthetic data.</span><span class="fig-zh">这张图/表用于判断 3D sans 3D Scans 的实验收益来自哪里。重点看替换、消融或跨模型设置下趋势是否一致，而不是只看单个最高分。</span></figcaption></figure>
       
       <h2>核心问题</h2>
-      <p>它把普通视频转成 3D SSL 数据源，是通用视觉从 2D/视频迈向 3D foundation representation 的实用路径。</p>
+      <p>它和通用视觉自监督的关系在于：用普通视频生成点云再做 3D SSL，给“视频作为 3D 表征预训练数据源”提供强证据。</p>
       <h2>方法拆解</h2>
-      <p>从 web room-walkthrough videos 生成点云，构建 RoomTours；用 LAM3C 做 Laplacian-aware multi-level 3D clustering，并加入 noise-regularized loss 保持局部几何平滑与噪声下特征稳定。</p>
+      <p>用普通视频生成点云再做 3D SSL，给“视频作为 3D 表征预训练数据源”提供强证据</p>
       <h2>主要贡献</h2>
-      <p>证明不依赖真实 3D scanner，也可以用 unlabeled videos 扩展 3D self-supervised representation learning。</p>
+      <p>高相关；详见方法、贡献和实验边界。</p>
       <h2>实验看点</h2>
-      <p>摘要称 RoomTours 包含 49,219 个 video-generated scenes，并在 indoor semantic/instance segmentation 上优于既有 3D SSL 方法。</p>
+      <p>实验部分建议重点看两类证据：一是作者是否把方法收益和更强数据、更长训练、更大模型区分开；二是跨模型、跨数据或跨任务迁移是否还能保留同样趋势。</p>
       <h2>局限与读法</h2>
-      <p>依赖离线重建模型生成点云，错误会进入预训练数据；泛化到室外、动态场景和非室内视频还需验证。</p>
+      <p>这篇论文的结论需要结合任务设置、训练数据规模和消融实验一起看；不要只凭单个指标判断它对通用视觉表征的价值。</p>
     
     </div>
   </div>
@@ -61,13 +61,13 @@
     <div class="side-box"><h4>原文</h4><p><a href="https://arxiv.org/abs/2512.23042">https://arxiv.org/abs/2512.23042</a></p></div>
   </aside>
 </article></main>
-  <aside class="conf-float" data-conf-reminder="2026-06-07-main-ddl" aria-label="CCF A/B 主投稿提醒">
+  <aside class="conf-float" data-conf-reminder="2026-06-08-main-ddl" aria-label="CCF A/B 主投稿提醒">
   <button class="conf-close" type="button" aria-label="关闭会议提醒">×</button>
   <details open>
     <summary>CCF A/B 主投稿提醒</summary>
     <div class="conf-list"><a class="conf-item " href="https://github.com/ccfddl/ccf-deadlines/blob/main/conference/AI/aaai.yml">
   <span><b>AAAI 2027</b><em>CCF A · Main paper submission</em></span>
-  <strong>50 天</strong>
+  <strong>49 天</strong>
   <small>2026-07-27 · CCF DDL: abstract 2026-07-20；进入 1 个月窗口后重点提醒。</small>
 </a></div>
   </details>
@@ -80,7 +80,7 @@
   (() => {
     const box = document.querySelector('[data-conf-reminder]');
     if (!box) return;
-    const key = `visualSslConfReminderClosed:${box.dataset.confReminder || '2026-06-07-main-ddl'}`;
+    const key = `visualSslConfReminderClosed:${box.dataset.confReminder || '2026-06-08-main-ddl'}`;
     try {
       if (localStorage.getItem(key) === '1') box.hidden = true;
     } catch (err) {}

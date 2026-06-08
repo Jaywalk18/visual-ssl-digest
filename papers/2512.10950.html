@@ -19,39 +19,39 @@
   </header>
   <nav class="site-nav" aria-label="主导航">
     <a class="nav-link" href="../index.html">头版</a>
-<a class="nav-link" href="../issues/2026-06-07.html">今日速递</a>
+<a class="nav-link" href="../issues/2026-06-08.html">今日速递</a>
 <a class="nav-link" href="../pages/catalog.html">论文目录</a>
 <a class="nav-link" href="../pages/timeline.html">时间线</a>
   </nav>
   <main><article class="paper-detail">
   <div class="paper-main">
     <div class="kicker">CVPR 2026 Day 1 补录 · P1 · 2026-06-07</div>
-    <h1 class="paper-headline">E-RayZer：它说明 self-supervised reconstruction 仍可作为空间视觉基础模型的核心训练目标，只是目标从像素转到显式 3D</h1>
-    <p class="dek">相比只用 latent-space view synthesis 间接学 3D，E-RayZer 以 explicit geometry 约束学习 3D-aware visual representations。</p>
-    <p class="byline"><strong>E-RayZer: Self-supervised 3D Reconstruction as Spatial Visual Pre-training</strong>　Qitao Zhao, Hao Tan, Qianqian Wang, Sai Bi, Kai Zhang, Kalyan Sunkavalli, Shubham Tulsiani, Hanwen Jiang；机构信息未在 arXiv 元数据中列出。　arXiv + CVPR 2026 Day 1 补录　<a href="https://arxiv.org/abs/2512.10950">原文链接</a></p>
+    <h1 class="paper-headline">E-RayZer：它和通用视觉自监督的关系在于：把 self-supervised 3D reconstruction 显式作为 spatial visual pre-training，补齐 2D/video SSL 到 3D-aware...</h1>
+    <p class="dek">高相关；详见方法、贡献和实验边界。</p>
+    <p class="byline"><strong>E-RayZer: Self-supervised 3D Reconstruction as Spatial Visual Pre-training</strong>　arXiv + CVPR 2026 Day 1 补录　<a href="https://arxiv.org/abs/2512.10950">原文链接</a></p>
     <div class="paper-facts">
       <span><b>编号</b>2512.10950</span>
       <span><b>优先级</b>P1</span>
       <span><b>类别</b>CVPR 2026 Day 1 补录</span>
       <span><b>会议</b>arXiv + CVPR 2026 Day 1 补录</span>
-      <span><b>方法</b>直接在 3D 空间进行 self-supervised reconstruction，加入 fine-grained curriculum 来组织 easy-to-hard samples 并协调异构数据源。</span>
+      <span><b>方法</b>把 self-supervised 3D reconstruction 显式作为 spatial visual pre-training，补齐 2D/video SSL 到 3D-aware 表征的桥</span>
       <span><b>来源</b>arXiv / OpenReview</span>
     </div>
     <div class="feature-body">
-      <p class="lead dropcap">先说结论。它说明 self-supervised reconstruction 仍可作为空间视觉基础模型的核心训练目标，只是目标从像素转到显式 3D。 相比只用 latent-space view synthesis 间接学 3D，E-RayZer 以 explicit geometry 约束学习 3D-aware visual representations。</p>
+      <p class="lead dropcap">先说结论。它和通用视觉自监督的关系在于：把 self-supervised 3D reconstruction 显式作为 spatial visual pre-training，补齐 2D/video SSL 到 3D-aware... 高相关；详见方法、贡献和实验边界。</p>
       <figure class="full-fig"><img src="../assets/mineru/2512.10950/images/88ed74f85aceb7f180476a9bd030573b79daa17554bd7a713fd25a87ceed4f4c.jpg" alt="Raw Output Pose Acc"><figcaption><b>Raw Output Pose Acc</b><span class="fig-en">Raw Output Pose Acc. Figure 1. E-RayZer, a self-supervised 3D vision model that predicts camera poses and scene geometry as 3D Gaussians. The use of explicit 3D geometry yields more geometrically grounded poses compared to its implicit counterpart, RayZer [25]: they are comparable to (and sometimes surpass) those from our supervised baseline, VGGT [59]. Furthermore, E-RayZer serves as a self-supervised visual pretraining framework, with learned representations that transfer effectively to downstream tasks requiring 3D understanding, outperforming previous representation learners such as CroCo v2 [66], VideoMAE V2 [61], DINOv3 [51], and Perception Encoder [7].</span><span class="fig-zh">这张图概括 E-RayZer 的整体方法流程。阅读时先看模块之间传递的训练信号，再看作者如何把目标拆成可优化的子问题。</span></figcaption></figure>
 <figure class="full-fig"><img src="../assets/mineru/2512.10950/images/1d9a33b7276596bad151bc72e3bb07f3863bc1a9beddd8b9daf0683e9937aa53.jpg" alt="Figureure 2 · E-RayZer Model &amp; Training"><figcaption><b>Figureure 2 · E-RayZer Model &amp; Training</b><span class="fig-en">Figure 2. E-RayZer Model &amp; Training. E-RayZer first predicts camera poses and intrinsics for all images. Then it follows RayZer [25] to split images into two sets. E-RayZer predicts explicit 3D Gaussians as scene representation from the reference views $( \mathcal { T } _ { \mathrm { r e f } } )$ , and renders the scene using self-predicted target-view $( \mathcal { T } _ { \mathrm { t g t } } )$ cameras. Finally, E-RayZer is trained with self-supervised photometric losses on target views.</span><span class="fig-zh">这张图来自论文 PDF 的结构化抽取。当前用于辅助理解 E-RayZer 的方法或实验，请结合正文精读段落一起看。</span></figcaption></figure>
       
       <h2>核心问题</h2>
-      <p>它说明 self-supervised reconstruction 仍可作为空间视觉基础模型的核心训练目标，只是目标从像素转到显式 3D。</p>
+      <p>它和通用视觉自监督的关系在于：把 self-supervised 3D reconstruction 显式作为 spatial visual pre-training，补齐 2D/video SSL 到 3D-aware 表征的桥。</p>
       <h2>方法拆解</h2>
-      <p>直接在 3D 空间进行 self-supervised reconstruction，加入 fine-grained curriculum 来组织 easy-to-hard samples 并协调异构数据源。</p>
+      <p>把 self-supervised 3D reconstruction 显式作为 spatial visual pre-training，补齐 2D/video SSL 到 3D-aware 表征的桥</p>
       <h2>主要贡献</h2>
-      <p>相比只用 latent-space view synthesis 间接学 3D，E-RayZer 以 explicit geometry 约束学习 3D-aware visual representations。</p>
+      <p>高相关；详见方法、贡献和实验边界。</p>
       <h2>实验看点</h2>
-      <p>摘要称 pose estimation 优于 RayZer，并能匹配或超过部分 fully supervised reconstruction models；下游 3D 任务上优于 DINOv3、CroCo v2、VideoMAE V2、RayZer 等预训练表征。</p>
+      <p>实验部分建议重点看两类证据：一是作者是否把方法收益和更强数据、更长训练、更大模型区分开；二是跨模型、跨数据或跨任务迁移是否还能保留同样趋势。</p>
       <h2>局限与读法</h2>
-      <p>主要面向多视角/3D 空间理解；与通用 2D recognition 或 VLM 对齐的结合还不是主实验。</p>
+      <p>这篇论文的结论需要结合任务设置、训练数据规模和消融实验一起看；不要只凭单个指标判断它对通用视觉表征的价值。</p>
     
     </div>
   </div>
@@ -61,13 +61,13 @@
     <div class="side-box"><h4>原文</h4><p><a href="https://arxiv.org/abs/2512.10950">https://arxiv.org/abs/2512.10950</a></p></div>
   </aside>
 </article></main>
-  <aside class="conf-float" data-conf-reminder="2026-06-07-main-ddl" aria-label="CCF A/B 主投稿提醒">
+  <aside class="conf-float" data-conf-reminder="2026-06-08-main-ddl" aria-label="CCF A/B 主投稿提醒">
   <button class="conf-close" type="button" aria-label="关闭会议提醒">×</button>
   <details open>
     <summary>CCF A/B 主投稿提醒</summary>
     <div class="conf-list"><a class="conf-item " href="https://github.com/ccfddl/ccf-deadlines/blob/main/conference/AI/aaai.yml">
   <span><b>AAAI 2027</b><em>CCF A · Main paper submission</em></span>
-  <strong>50 天</strong>
+  <strong>49 天</strong>
   <small>2026-07-27 · CCF DDL: abstract 2026-07-20；进入 1 个月窗口后重点提醒。</small>
 </a></div>
   </details>
@@ -80,7 +80,7 @@
   (() => {
     const box = document.querySelector('[data-conf-reminder]');
     if (!box) return;
-    const key = `visualSslConfReminderClosed:${box.dataset.confReminder || '2026-06-07-main-ddl'}`;
+    const key = `visualSslConfReminderClosed:${box.dataset.confReminder || '2026-06-08-main-ddl'}`;
     try {
       if (localStorage.getItem(key) === '1') box.hidden = true;
     } catch (err) {}

@@ -19,38 +19,38 @@
   </header>
   <nav class="site-nav" aria-label="主导航">
     <a class="nav-link" href="../index.html">头版</a>
-<a class="nav-link" href="../issues/2026-06-07.html">今日速递</a>
+<a class="nav-link" href="../issues/2026-06-08.html">今日速递</a>
 <a class="nav-link" href="../pages/catalog.html">论文目录</a>
 <a class="nav-link" href="../pages/timeline.html">时间线</a>
   </nav>
   <main><article class="paper-detail">
   <div class="paper-main">
     <div class="kicker">CVPR 2026 Day 3 · P3 · 2026-06-07</div>
-    <h1 class="paper-headline">SynCLIP：如果关注视觉-语言自监督如何服务开放词汇 dense prediction，SynCLIP 值得扫读</h1>
-    <p class="dek">把 CLIP 类图文预训练中的语言同义词不稳定问题显式约束到空间注意力层面。</p>
-    <p class="byline"><strong>SynCLIP: Synonym-Coherent Language-Image Pretraining for Robust Open-Vocabulary Dense Perception</strong>　Mingjie Xie, Guangjun He, Dongli Xu, Youtian Lin, Hongjue Li, Pengming Feng, Jian Guan, Yue Deng；机构信息未在 CVPR Open Access 元数据中列出。　CVPR 2026 Day 3　<a href="https://openaccess.thecvf.com/content/CVPR2026/html/Xie_SynCLIP_Synonym-Coherent_Language-Image_Pretraining_for_Robust_Open-Vocabulary_Dense_Perception_CVPR_2026_paper.html">原文链接</a></p>
+    <h1 class="paper-headline">SynCLIP：它和通用视觉自监督的关系在于：属于 CLIP dense perception 对齐增强；对通用 V-L 表征有参考，但更偏 OVDP 下游鲁棒性</h1>
+    <p class="dek">中相关；详见方法、贡献和实验边界。</p>
+    <p class="byline"><strong>SynCLIP: Synonym-Coherent Language-Image Pretraining for Robust Open-Vocabulary Dense Perception</strong>　CVPR 2026 Day 3　<a href="https://openaccess.thecvf.com/content/CVPR2026/html/Xie_SynCLIP_Synonym-Coherent_Language-Image_Pretraining_for_Robust_Open-Vocabulary_Dense_Perception_CVPR_2026_paper.html">原文链接</a></p>
     <div class="paper-facts">
       <span><b>编号</b>synclip-synonym-coherent-language-image-pretrain</span>
       <span><b>优先级</b>P3</span>
       <span><b>类别</b>CVPR 2026 Day 3</span>
       <span><b>会议</b>CVPR 2026 Day 3</span>
-      <span><b>方法</b>提出 Semantic-consistent Spatial Attention alignment 与 Spatial Attention Refinement，并构建 Synonym-Enriched Visual Corpus，让同义表达得到一致的 dense grounding。</span>
+      <span><b>方法</b>属于 CLIP dense perception 对齐增强；对通用 V-L 表征有参考，但更偏 OVDP 下游鲁棒性</span>
       <span><b>来源</b>arXiv / OpenReview</span>
     </div>
     <div class="feature-body">
-      <p class="lead dropcap">先说结论。如果关注视觉-语言自监督如何服务开放词汇 dense prediction，SynCLIP 值得扫读。 把 CLIP 类图文预训练中的语言同义词不稳定问题显式约束到空间注意力层面。</p>
+      <p class="lead dropcap">先说结论。它和通用视觉自监督的关系在于：属于 CLIP dense perception 对齐增强；对通用 V-L 表征有参考，但更偏 OVDP 下游鲁棒性。 中相关；详见方法、贡献和实验边界。</p>
       <aside class="marginalia"><b>图像状态</b> 这篇暂未抽到足够稳定的 pipeline / motivation 图，因此正文以方法和实验解读为主。</aside>
       
       <h2>核心问题</h2>
-      <p>如果关注视觉-语言自监督如何服务开放词汇 dense prediction，SynCLIP 值得扫读。</p>
+      <p>它和通用视觉自监督的关系在于：属于 CLIP dense perception 对齐增强；对通用 V-L 表征有参考，但更偏 OVDP 下游鲁棒性。</p>
       <h2>方法拆解</h2>
-      <p>提出 Semantic-consistent Spatial Attention alignment 与 Spatial Attention Refinement，并构建 Synonym-Enriched Visual Corpus，让同义表达得到一致的 dense grounding。</p>
+      <p>属于 CLIP dense perception 对齐增强；对通用 V-L 表征有参考，但更偏 OVDP 下游鲁棒性</p>
       <h2>主要贡献</h2>
-      <p>把 CLIP 类图文预训练中的语言同义词不稳定问题显式约束到空间注意力层面。</p>
+      <p>中相关；详见方法、贡献和实验边界。</p>
       <h2>实验看点</h2>
-      <p>CVPR 摘要称在多个 open-vocabulary dense perception benchmarks 上提升 grounding consistency，并达到 CLIP-based OVDP SOTA。</p>
+      <p>实验部分建议重点看两类证据：一是作者是否把方法收益和更强数据、更长训练、更大模型区分开；二是跨模型、跨数据或跨任务迁移是否还能保留同样趋势。</p>
       <h2>局限与读法</h2>
-      <p>更偏 dense perception 与 synonym robustness；对纯视觉表征、视频表征和非语言监督的贡献间接。</p>
+      <p>这篇论文的结论需要结合任务设置、训练数据规模和消融实验一起看；不要只凭单个指标判断它对通用视觉表征的价值。</p>
     
     </div>
   </div>
@@ -60,13 +60,13 @@
     <div class="side-box"><h4>原文</h4><p><a href="https://openaccess.thecvf.com/content/CVPR2026/html/Xie_SynCLIP_Synonym-Coherent_Language-Image_Pretraining_for_Robust_Open-Vocabulary_Dense_Perception_CVPR_2026_paper.html">https://openaccess.thecvf.com/content/CVPR2026/html/Xie_SynCLIP_Synonym-Coherent_Language-Image_Pretraining_for_Robust_Open-Vocabulary_Dense_Perception_CVPR_2026_paper.html</a></p></div>
   </aside>
 </article></main>
-  <aside class="conf-float" data-conf-reminder="2026-06-07-main-ddl" aria-label="CCF A/B 主投稿提醒">
+  <aside class="conf-float" data-conf-reminder="2026-06-08-main-ddl" aria-label="CCF A/B 主投稿提醒">
   <button class="conf-close" type="button" aria-label="关闭会议提醒">×</button>
   <details open>
     <summary>CCF A/B 主投稿提醒</summary>
     <div class="conf-list"><a class="conf-item " href="https://github.com/ccfddl/ccf-deadlines/blob/main/conference/AI/aaai.yml">
   <span><b>AAAI 2027</b><em>CCF A · Main paper submission</em></span>
-  <strong>50 天</strong>
+  <strong>49 天</strong>
   <small>2026-07-27 · CCF DDL: abstract 2026-07-20；进入 1 个月窗口后重点提醒。</small>
 </a></div>
   </details>
@@ -79,7 +79,7 @@
   (() => {
     const box = document.querySelector('[data-conf-reminder]');
     if (!box) return;
-    const key = `visualSslConfReminderClosed:${box.dataset.confReminder || '2026-06-07-main-ddl'}`;
+    const key = `visualSslConfReminderClosed:${box.dataset.confReminder || '2026-06-08-main-ddl'}`;
     try {
       if (localStorage.getItem(key) === '1') box.hidden = true;
     } catch (err) {}

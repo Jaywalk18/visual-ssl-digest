@@ -1,0 +1,10 @@
+[
+  {
+    "type": "image",
+    "img_path": "images/page_preview.jpg",
+    "image_caption": [
+      "First-page visual preview for TEVI: Text-Conditioned Editing of Visual Representations via Sparse Autoencoders for Improved Vision-Language Alignment."
+    ],
+    "content": "Generated from the paper PDF as a stable visual preview while full figure extraction is pending."
+  }
+]

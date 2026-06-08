@@ -19,39 +19,39 @@
   </header>
   <nav class="site-nav" aria-label="主导航">
     <a class="nav-link" href="../index.html">头版</a>
-<a class="nav-link" href="../issues/2026-06-07.html">今日速递</a>
+<a class="nav-link" href="../issues/2026-06-08.html">今日速递</a>
 <a class="nav-link" href="../pages/catalog.html">论文目录</a>
 <a class="nav-link" href="../pages/timeline.html">时间线</a>
   </nav>
   <main><article class="paper-detail">
   <div class="paper-main">
     <div class="kicker">CVPR 2026 Day 2 补录 · P1 · 2026-06-07</div>
-    <h1 class="paper-headline">VideoSSR：视频 SSL 与 MLLM RLVR 正在合流，VideoSSR 是把视觉内生信号变成可训练奖励的代表</h1>
-    <p class="dek">把视频自监督任务转成 video MLLM 后训练的可验证数据生成机制，减少人工标注依赖。</p>
-    <p class="byline"><strong>VideoSSR: Video Self-Supervised Reinforcement Learning</strong>　Zefeng He, Xiaoye Qu, Yafu Li, Siyuan Huang, Daizong Liu, Yu Cheng；机构信息未在 arXiv 元数据中列出。　arXiv + CVPR 2026 Day 2 补录　<a href="https://arxiv.org/abs/2511.06281">原文链接</a></p>
+    <h1 class="paper-headline">VideoSSR：它和通用视觉自监督的关系在于：用视频内生 pretext tasks 构造 RLVR 训练数据，对 video MLLM 的自监督后训练有直接参考</h1>
+    <p class="dek">中高相关；详见方法、贡献和实验边界。</p>
+    <p class="byline"><strong>VideoSSR: Video Self-Supervised Reinforcement Learning</strong>　arXiv + CVPR 2026 Day 2 补录　<a href="https://arxiv.org/abs/2511.06281">原文链接</a></p>
     <div class="paper-facts">
       <span><b>编号</b>2511.06281</span>
       <span><b>优先级</b>P1</span>
       <span><b>类别</b>CVPR 2026 Day 2 补录</span>
       <span><b>会议</b>arXiv + CVPR 2026 Day 2 补录</span>
-      <span><b>方法</b>设计 Anomaly Grounding、Object Counting、Temporal Jigsaw 三类视频内生 pretext tasks，构建 VideoSSR-30K，并用 self-supervised tasks 作为 RLVR 可验证奖励。</span>
+      <span><b>方法</b>用视频内生 pretext tasks 构造 RLVR 训练数据，对 video MLLM 的自监督后训练有直接参考</span>
       <span><b>来源</b>arXiv / OpenReview</span>
     </div>
     <div class="feature-body">
-      <p class="lead dropcap">先说结论。视频 SSL 与 MLLM RLVR 正在合流，VideoSSR 是把视觉内生信号变成可训练奖励的代表。 把视频自监督任务转成 video MLLM 后训练的可验证数据生成机制，减少人工标注依赖。</p>
+      <p class="lead dropcap">先说结论。它和通用视觉自监督的关系在于：用视频内生 pretext tasks 构造 RLVR 训练数据，对 video MLLM 的自监督后训练有直接参考。 中高相关；详见方法、贡献和实验边界。</p>
       <figure class="full-fig"><img src="../assets/mineru/2511.06281/images/5da40759a9cdc2e5992b52c77821e6e9d2cbbee14345beb66a88c4b39f65246b.jpg" alt="Figureure 2 · Performance comparison on four video tasks"><figcaption><b>Figureure 2 · Performance comparison on four video tasks</b><span class="fig-en">Figure 2. Performance comparison on four video tasks. Input frames for VideoSSR and Qwen3-VL-8B do not exceed 64.</span><span class="fig-zh">这张图/表用于判断 VideoSSR 的实验收益来自哪里。重点看替换、消融或跨模型设置下趋势是否一致，而不是只看单个最高分。</span></figcaption></figure>
 <figure class="full-fig"><img src="../assets/mineru/2511.06281/images/4a4971c0b9b224f51ba683cb8634fd90942194fe3ed06c50282a3fb9ef70ed6a.jpg" alt="Figureure 1 · Distribution of answer correctness on ReWatch and LongVideoReason"><figcaption><b>Figureure 1 · Distribution of answer correctness on ReWatch and LongVideoReason</b><span class="fig-en">Figure 1. Distribution of answer correctness on ReWatch and LongVideoReason. Across both models and datasets, a vast majority of questions yield a bimodal outcome, resulting in either zero or eight correct answers. This zero variance issue is notably more pronounced for the more powerful Qwen3-VL model.</span><span class="fig-zh">这张图来自论文 PDF 的结构化抽取。当前用于辅助理解 VideoSSR 的方法或实验，请结合正文精读段落一起看。</span></figcaption></figure>
       
       <h2>核心问题</h2>
-      <p>视频 SSL 与 MLLM RLVR 正在合流，VideoSSR 是把视觉内生信号变成可训练奖励的代表。</p>
+      <p>它和通用视觉自监督的关系在于：用视频内生 pretext tasks 构造 RLVR 训练数据，对 video MLLM 的自监督后训练有直接参考。</p>
       <h2>方法拆解</h2>
-      <p>设计 Anomaly Grounding、Object Counting、Temporal Jigsaw 三类视频内生 pretext tasks，构建 VideoSSR-30K，并用 self-supervised tasks 作为 RLVR 可验证奖励。</p>
+      <p>用视频内生 pretext tasks 构造 RLVR 训练数据，对 video MLLM 的自监督后训练有直接参考</p>
       <h2>主要贡献</h2>
-      <p>把视频自监督任务转成 video MLLM 后训练的可验证数据生成机制，减少人工标注依赖。</p>
+      <p>中高相关；详见方法、贡献和实验边界。</p>
       <h2>实验看点</h2>
-      <p>摘要称在 17 个 benchmarks、四类视频域 General Video QA、Long Video QA、Temporal Grounding、Complex Reasoning 上稳定提升。</p>
+      <p>实验部分建议重点看两类证据：一是作者是否把方法收益和更强数据、更长训练、更大模型区分开；二是跨模型、跨数据或跨任务迁移是否还能保留同样趋势。</p>
       <h2>局限与读法</h2>
-      <p>目标更偏 MLLM RL 后训练，不是纯视觉 encoder 预训练；pretext task 的覆盖范围和 reward gaming 风险需要关注。</p>
+      <p>这篇论文的结论需要结合任务设置、训练数据规模和消融实验一起看；不要只凭单个指标判断它对通用视觉表征的价值。</p>
     
     </div>
   </div>
@@ -61,13 +61,13 @@
     <div class="side-box"><h4>原文</h4><p><a href="https://arxiv.org/abs/2511.06281">https://arxiv.org/abs/2511.06281</a></p></div>
   </aside>
 </article></main>
-  <aside class="conf-float" data-conf-reminder="2026-06-07-main-ddl" aria-label="CCF A/B 主投稿提醒">
+  <aside class="conf-float" data-conf-reminder="2026-06-08-main-ddl" aria-label="CCF A/B 主投稿提醒">
   <button class="conf-close" type="button" aria-label="关闭会议提醒">×</button>
   <details open>
     <summary>CCF A/B 主投稿提醒</summary>
     <div class="conf-list"><a class="conf-item " href="https://github.com/ccfddl/ccf-deadlines/blob/main/conference/AI/aaai.yml">
   <span><b>AAAI 2027</b><em>CCF A · Main paper submission</em></span>
-  <strong>50 天</strong>
+  <strong>49 天</strong>
   <small>2026-07-27 · CCF DDL: abstract 2026-07-20；进入 1 个月窗口后重点提醒。</small>
 </a></div>
   </details>
@@ -80,7 +80,7 @@
   (() => {
     const box = document.querySelector('[data-conf-reminder]');
     if (!box) return;
-    const key = `visualSslConfReminderClosed:${box.dataset.confReminder || '2026-06-07-main-ddl'}`;
+    const key = `visualSslConfReminderClosed:${box.dataset.confReminder || '2026-06-08-main-ddl'}`;
     try {
       if (localStorage.getItem(key) === '1') box.hidden = true;
     } catch (err) {}

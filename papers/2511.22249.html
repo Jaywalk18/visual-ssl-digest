@@ -19,39 +19,39 @@
   </header>
   <nav class="site-nav" aria-label="主导航">
     <a class="nav-link" href="../index.html">头版</a>
-<a class="nav-link" href="../issues/2026-06-07.html">今日速递</a>
+<a class="nav-link" href="../issues/2026-06-08.html">今日速递</a>
 <a class="nav-link" href="../pages/catalog.html">论文目录</a>
 <a class="nav-link" href="../pages/timeline.html">时间线</a>
   </nav>
   <main><article class="paper-detail">
   <div class="paper-main">
     <div class="kicker">CVPR 2026 Day 3 · P1 · 2026-06-07</div>
-    <h1 class="paper-headline">Toward Diffusible High-Dimensional Latent Spaces：高维 latent 正成为视觉生成和表征学习的共同接口，这篇提供了可操作的训练诊断和修正</h1>
-    <p class="dek">解释为什么高容量 autoencoder 重建更好但生成变差：decoder 依赖高频 latent，而 encoder/生成模型训练对高频暴露不足。</p>
-    <p class="byline"><strong>Toward Diffusible High-Dimensional Latent Spaces: A Frequency Perspective</strong>　Bolin Lai, Xudong Wang, Saketh Rambhatla, James M. Rehg, Zsolt Kira, Rohit Girdhar, Ishan Misra；机构信息未在 arXiv 元数据中列出。　arXiv + CVPR 2026 Day 3　<a href="https://arxiv.org/abs/2511.22249">原文链接</a></p>
+    <h1 class="paper-headline">Toward Diffusible High-Dimensional Latent Spaces：它和通用视觉自监督的关系在于：从频率角度解释高维 autoencoder latent 的生成困难，并提出不改 autoencoder 的 FreqWarm 训练策略</h1>
+    <p class="dek">高相关；详见方法、贡献和实验边界。</p>
+    <p class="byline"><strong>Toward Diffusible High-Dimensional Latent Spaces: A Frequency Perspective</strong>　arXiv + CVPR 2026 Day 3　<a href="https://arxiv.org/abs/2511.22249">原文链接</a></p>
     <div class="paper-facts">
       <span><b>编号</b>2511.22249</span>
       <span><b>优先级</b>P1</span>
       <span><b>类别</b>CVPR 2026 Day 3</span>
       <span><b>会议</b>arXiv + CVPR 2026 Day 3</span>
-      <span><b>方法</b>从 RGB 与 latent 域扰动分析 encoder/decoder 的频率行为，提出 FreqWarm，在 diffusion/flow matching 训练早期增加高频 latent 信号暴露。</span>
+      <span><b>方法</b>从频率角度解释高维 autoencoder latent 的生成困难，并提出不改 autoencoder 的 FreqWarm 训练策略</span>
       <span><b>来源</b>arXiv / OpenReview</span>
     </div>
     <div class="feature-body">
-      <p class="lead dropcap">先说结论。高维 latent 正成为视觉生成和表征学习的共同接口，这篇提供了可操作的训练诊断和修正。 解释为什么高容量 autoencoder 重建更好但生成变差：decoder 依赖高频 latent，而 encoder/生成模型训练对高频暴露不足。</p>
+      <p class="lead dropcap">先说结论。它和通用视觉自监督的关系在于：从频率角度解释高维 autoencoder latent 的生成困难，并提出不改 autoencoder 的 FreqWarm 训练策略。 高相关；详见方法、贡献和实验边界。</p>
       <figure class="full-fig"><img src="../assets/mineru/2511.22249/images/e15fef9cd188e80c2e0ac1ba4dd1bc1d1befc7285293224970f24e3534d9abe9.jpg" alt="Figureure 5 · Overview of FreqWarm"><figcaption><b>Figureure 5 · Overview of FreqWarm</b><span class="fig-en">Figure 5. Overview of FreqWarm. We filter out high-frequency components above a frequency threshold $r _ { 0 }$ in the RGB space. The filtered images are forwarded into a pretrained autoencoder. We train diffusion models or flow matching models on top of the latent space in the early training stage for warm-up. Note that the autoencoder is kept frozen throughout training in our method.</span><span class="fig-zh">这张图概括 Toward Diffusible High-Dimensional Latent Spaces 的整体方法流程。阅读时先看模块之间传递的训练信号，再看作者如何把目标拆成可优化的子问题。</span></figcaption></figure>
 <figure class="full-fig"><img src="../assets/mineru/2511.22249/images/e0540752d96d2b31c21b12cf3e5e409f7a884b8fdb894a7a8ef2eb15ab74d516.jpg" alt="Figureure 1 · Trade-off between reconstruction and generation"><figcaption><b>Figureure 1 · Trade-off between reconstruction and generation</b><span class="fig-en">Figure 1. Trade-off between reconstruction and generation. Reconstruction is evaluated by FID between input images and reconstructed images (i.e., rFID). Generation is evaluated by the FID between synthetic images and real images (i.e., gFID). Lower rFID and gFID indicate the better performance. The spatial compression ratio remains 32 for all experiments.</span><span class="fig-zh">这张图/表用于判断 Toward Diffusible High-Dimensional Latent Spaces 的实验收益来自哪里。重点看替换、消融或跨模型设置下趋势是否一致，而不是只看单个最高分。</span></figcaption></figure>
       
       <h2>核心问题</h2>
-      <p>高维 latent 正成为视觉生成和表征学习的共同接口，这篇提供了可操作的训练诊断和修正。</p>
+      <p>它和通用视觉自监督的关系在于：从频率角度解释高维 autoencoder latent 的生成困难，并提出不改 autoencoder 的 FreqWarm 训练策略。</p>
       <h2>方法拆解</h2>
-      <p>从 RGB 与 latent 域扰动分析 encoder/decoder 的频率行为，提出 FreqWarm，在 diffusion/flow matching 训练早期增加高频 latent 信号暴露。</p>
+      <p>从频率角度解释高维 autoencoder latent 的生成困难，并提出不改 autoencoder 的 FreqWarm 训练策略</p>
       <h2>主要贡献</h2>
-      <p>解释为什么高容量 autoencoder 重建更好但生成变差：decoder 依赖高频 latent，而 encoder/生成模型训练对高频暴露不足。</p>
+      <p>高相关；详见方法、贡献和实验边界。</p>
       <h2>实验看点</h2>
-      <p>摘要称在 Wan2.2-VAE、LTX-VAE、DC-AE-f32 上分别降低 gFID 14.11、6.13、4.42，且无需改或重训 autoencoder。</p>
+      <p>实验部分建议重点看两类证据：一是作者是否把方法收益和更强数据、更长训练、更大模型区分开；二是跨模型、跨数据或跨任务迁移是否还能保留同样趋势。</p>
       <h2>局限与读法</h2>
-      <p>主要服务 latent diffusion/flow generation；作为通用视觉表征的判别迁移能力还不是主评测。</p>
+      <p>这篇论文的结论需要结合任务设置、训练数据规模和消融实验一起看；不要只凭单个指标判断它对通用视觉表征的价值。</p>
     
     </div>
   </div>
@@ -61,13 +61,13 @@
     <div class="side-box"><h4>原文</h4><p><a href="https://arxiv.org/abs/2511.22249">https://arxiv.org/abs/2511.22249</a></p></div>
   </aside>
 </article></main>
-  <aside class="conf-float" data-conf-reminder="2026-06-07-main-ddl" aria-label="CCF A/B 主投稿提醒">
+  <aside class="conf-float" data-conf-reminder="2026-06-08-main-ddl" aria-label="CCF A/B 主投稿提醒">
   <button class="conf-close" type="button" aria-label="关闭会议提醒">×</button>
   <details open>
     <summary>CCF A/B 主投稿提醒</summary>
     <div class="conf-list"><a class="conf-item " href="https://github.com/ccfddl/ccf-deadlines/blob/main/conference/AI/aaai.yml">
   <span><b>AAAI 2027</b><em>CCF A · Main paper submission</em></span>
-  <strong>50 天</strong>
+  <strong>49 天</strong>
   <small>2026-07-27 · CCF DDL: abstract 2026-07-20；进入 1 个月窗口后重点提醒。</small>
 </a></div>
   </details>
@@ -80,7 +80,7 @@
   (() => {
     const box = document.querySelector('[data-conf-reminder]');
     if (!box) return;
-    const key = `visualSslConfReminderClosed:${box.dataset.confReminder || '2026-06-07-main-ddl'}`;
+    const key = `visualSslConfReminderClosed:${box.dataset.confReminder || '2026-06-08-main-ddl'}`;
     try {
       if (localStorage.getItem(key) === '1') box.hidden = true;
     } catch (err) {}
