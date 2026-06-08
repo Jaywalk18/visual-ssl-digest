@@ -1,0 +1,1134 @@
+[
+    {
+        "type": "text",
+        "text": "AdaTok: Self-Budgeting Image Tokenization with Quality-Preserving Dynamic Tokens ",
+        "text_level": 1,
+        "bbox": [
+            197,
+            121,
+            799,
+            174
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "Xiaocheng Lu1 Yuxi Chen1 Jie Zhang1 Jian Liu1 Jingcai Guo2 Fangqi Zhu1 Tao Han1 Song Guo1 1The Hong Kong University of Science and Technology 2The Hong Kong Polytechnic University ",
+        "bbox": [
+            310,
+            224,
+            684,
+            282
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "Abstract ",
+        "text_level": 1,
+        "bbox": [
+            459,
+            318,
+            537,
+            334
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "Image tokenizers, from 2D grids to recent 1D sequences, typically encode every image with the same fixed number of tokens. Yet visual complexity is highly heterogeneous, so a uniform budget overspends on simple inputs and underserves complex ones. Existing elastic tokenizers expose variable-length reconstructions, but often leave token length as a deployment-time operating point, a search target, or an external prediction rather than an output of the tokenizer itself. In this work, we ask whether a discrete visual tokenizer can budget itself in one pass. Our central finding is that actionable elasticity requires a representation–allocation co-design: prefixes must remain decodable across budgets, and the tokenizer must learn which prefix each image needs. We propose AdaTok, a self-budgeting discrete 1D tokenizer. AdaTok combines Prioritized Representation Learning, which orders tokens with nested tail masking and resolves budget-dependent semantic shift through Multi-Head LoRA decoder heads, with Adaptive Token Allocation, which trains a lightweight deterministic-group GRPO policy over candidate budgets. Dynamic Pareto Weighting balances fidelity and efficiency during policy training without manual trade-off sweeps. On ImageNet-1K, AdaTok-Full reaches rFID 1.31 at 256 tokens, while AdaTok-Adaptive attains rFID 1.50 using only ∼118 tokens on average, outperforming discrete 1D baselines at comparable budgets. In autoregressive image generation, the shorter adaptive representation yields ∼2.1× throughput over a fixed 256-token decode, suggesting that visual token count can be learned as a content-conditioned output rather than set as a fixed hyperparameter. ",
+        "bbox": [
+            228,
+            347,
+            767,
+            638
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "1 Introduction ",
+        "text_level": 1,
+        "bbox": [
+            171,
+            660,
+            313,
+            676
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "Modern image tokenizers, from 2D-grid models such as VQ-VAE [Van Den Oord et al., 2017] and VQGAN [Esser et al., 2021] to recent 1D variants such as TiTok [Yu et al., 2025], FlexTok [Bachmann et al., 2025], and One-D-Piece [Miwa et al., 2025], usually make one hidden commitment: every image receives the same token budget. This commitment is convenient for batching and downstream sequence modeling, but it is poorly matched to visual data. A centered logo, a smooth background, and a dense street scene do not require the same description length. Fig. 1 (a) makes this mismatch concrete: reconstruction quality scales non-uniformly with token length across samples, and the same token count produces markedly different rMSE across image classes. The cost is structural. In autoregressive image generation, latency grows with sequence length; in vision–language models, visual tokens compete with text for context. A fixed-length tokenizer therefore pays a near worst-case price on every input, even when many images admit a shorter discrete description. ",
+        "bbox": [
+            169,
+            690,
+            826,
+            843
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "Recent work has begun to loosen this rigidity. 1D tokenizers decouple latent tokens from spatial grids [Yu et al., 2025], and elastic representations reconstruct images from different prefix lengths [Bachmann et al., 2025, Miwa et al., 2025]. Other adaptive tokenizers use recurrent or search-based allocation [Yan et al., 2024, Duggal et al., 2024], ordered latent importance [Wen et al., 2025], or external complexity predictors [Shen et al., 2025]. These methods show that variable-length visual representation is possible, but they leave a gap between flexible reconstruction and autonomous tokenization. First, variable-length decoding does not specify which length an input should use; the budget is still chosen by a fixed operating point, test-time search, target-quality conditioning, or an external model. Second, a nested prefix is not automatically reusable across budgets. The same leading tokens must act as a standalone structural summary at low budgets and as a coarse scaffold at high budgets, creating a budget-dependent semantic shift for a shared decoder. The missing object is therefore an actionable elastic tokenizer: a discrete prefix stream that remains decodable at each budget, paired with an internal one-pass policy that decides how many tokens the image needs. ",
+        "bbox": [
+            169,
+            849,
+            826,
+            933
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "aside_text",
+        "text": "arXiv:2606.07185v1 [cs.CV] 5 Jun 2026",
+        "bbox": [
+            22,
+            282,
+            57,
+            710
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "footer",
+        "text": "Preprint. ",
+        "bbox": [
+            171,
+            950,
+            220,
+            964
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "chart",
+        "img_path": "images/2e6a6afcabaab95b4b4697a2ec6068bb522eebbb84c96ccd58f72ed17916e815.jpg",
+        "content": "| Token Number (k) | Image 1 (Complex) RMSE | Image 2 RMSE | Image 3 RMSE | Image 4 (Simple) RMSE |\n| ---------------- | ---------------------- | ------------ | ------------ | --------------------- |\n| 2                | ~0.8                   | ~0.7         | ~0.6         | ~0.5                  |\n| 4                | ~0.6                   | ~0.5         | ~0.4         | ~0.3                  |\n| 8                | ~0.4                   | ~0.3         | ~0.2         | ~0.1                  |\n| 16               | ~0.3                   | ~0.2         | ~0.1         | ~0.05                 |\n| 32               | ~0.2                   | ~0.1         | ~0.05        | ~0.02                 |\n| 64               | ~0.15                  | ~0.05        | ~0.03        | ~0.01                 |\n| 128              | ~0.1                   | ~0.03        | ~0.02        | ~0.005                |\n| 256              | ~0.08                  | ~0.02        | ~0.01        | ~0.002                |",
+        "chart_caption": [
+            "(a) rMSE vs. token usage (left) and qualitative reconstructions (right). "
+        ],
+        "chart_footnote": [],
+        "sub_type": "area",
+        "bbox": [
+            176,
+            92,
+            609,
+            204
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "chart",
+        "img_path": "images/ec7117a14ed3a05cdd2fa4b751f3477a92393a7a14fd1cbac046ec9f9d7c76c1.jpg",
+        "content": "| Model | Generation FID (Lower is Better) | Computational Cost (Average Token Usage) |\n| --- | --- | --- |\n| AdaTek (64) | 2.5 | 50 |\n| TITok-L | 2.5 | 50 |\n| TITok-B | 1.5 | 100 |\n| TITok-S | 1.5 | 100 |\n| AdaTek (120) | 1.5 | 100 |\n| Open-MAGNER+ | 1.5 | 200 |\n| One-D-Piece | 1.5 | 200 |\n| FlexTok | 3.5 | 250 |\n| LlamaGen | 2.5 | 200 |\n| MaskGIT | 2.5 | 200 |\n| AdaTek (Ours) | 2.5 | 250 |\n| 1D Tokenizers | 2.5 | 250 |\n| 2D Tokenizers | 2.5 | 250 |\n| High Efficiency Zone (Fewer Tokens) | 2.5 | 50 |\n| High Fidelity Zone (Lower FID) | 3.5 | 250 |",
+        "chart_caption": [
+            "(b) Token–rFID Pareto frontier. ",
+            "Figure 1: Motivation. (a) Reconstruction quality scales non-uniformly with token length across heterogeneous samples, motivating per-instance adaptive allocation rather than a one-size-fits-all budget. (b) AdaTok lies in a favorable quality–efficiency region compared with fixed-budget baselines. "
+        ],
+        "chart_footnote": [],
+        "sub_type": "scatter",
+        "bbox": [
+            627,
+            90,
+            821,
+            205
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "text",
+        "text": "",
+        "bbox": [
+            169,
+            289,
+            823,
+            387
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "text",
+        "text": "We propose AdaTok, a self-budgeting discrete 1D tokenizer that turns token count into a learned, input-conditioned output. Our central finding is that actionable elasticity is a representation–allocation co-design problem. As shown in Fig. 2, AdaTok has two coupled components. Prioritized Representation Learning (PRL) builds an ordered prefix stream with Nested Tail Masking and equips the decoder with budget-specific Multi-Head LoRA heads, so each prefix is decoded under the modulation appropriate to its semantic role. Adaptive Token Allocation (ATA) then freezes the tokenizer and trains a lightweight policy with Group Relative Policy Optimization (GRPO). For each image, the candidate budget set itself forms a deterministic comparison group, giving an instance-relative advantage without sampling variance or a value network. Dynamic Pareto Weighting (DPW) further balances the fidelity and length rewards by their gradient influence, avoiding a manual sweep over scalarization weights. ",
+        "bbox": [
+            169,
+            393,
+            826,
+            545
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "text",
+        "text": "We validate the full chain across reconstruction, ablation, and downstream generation. On ImageNet-1K, AdaTok-Full reaches rFID 1.31 at 256 tokens, while AdaTok-Adaptive reaches rFID 1.50 at only ∼118 average tokens, outperforming the discrete 1D baselines we compare against at comparable budgets. Ablations show that Nested Tail Masking alone hurts reconstruction, but MH-LoRA resolves the semantic shift and makes ordered prefixes usable. On the allocation side, deterministic-group GRPO with DPW improves both quality and average length over heuristic allocation, REINFORCE, PPO, and GRPO without dynamic weighting. In autoregressive generation, the 118-token operating point yields ∼2.1× throughput over a fixed 256-token decode, and matched-compute analysis shows that shorter prefixes can preserve or even improve generation quality in the appropriate regime. Our contributions are summarized as follows: ",
+        "bbox": [
+            169,
+            551,
+            826,
+            689
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "list",
+        "sub_type": "text",
+        "list_items": [
+            "• Actionable elasticity for discrete tokenizers. We turn variable-length reconstruction into self-budgeted tokenization: the tokenizer learns an internal per-image budget decision and keeps the selected discrete prefix decodable via budget-specialized MH-LoRA. ",
+            "• Deterministic-group GRPO for allocation. We adapt GRPO by using the discrete candidate budget set as the policy group itself, giving an exact instance-relative advantage with no sampling variance, no critic, and no external predictor; Dynamic Pareto Weighting auto-balances fidelity against length. ",
+            "• Quality-preserving token reduction. AdaTok reaches rFID 1.50 at ∼118 average tokens, a favorable reconstruction point among the discrete 1D tokenizers we compare against, and delivers ∼2.1× AR-generation throughput over a fixed 256-token baseline. "
+        ],
+        "bbox": [
+            215,
+            700,
+            823,
+            852
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "text",
+        "text": "2 Related Work ",
+        "text_level": 1,
+        "bbox": [
+            171,
+            878,
+            321,
+            893
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "text",
+        "text": "Compressing high-resolution images into compact latent spaces is foundational to modern visual generation. Continuous tokenization via VAEs [Kingma and Welling, 2014] underpins latent diffusion models [Rombach et al., 2022], which perform denoising in a latent manifold. In parallel, discrete tokenization, pioneered by VQ-VAE [Van Den Oord et al., 2017] and refined by VQGAN [Esser et al., 2021], quantizes images into a 2D grid of discrete codes. While dominant, the 2D-grid layout imposes a rigid structural prior that wastes capacity on simple regions and underserves complex ones. ",
+        "bbox": [
+            169,
+            910,
+            823,
+            939
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "page_number",
+        "text": "",
+        "bbox": [
+            493,
+            939,
+            504,
+            946
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "text",
+        "text": "",
+        "bbox": [
+            169,
+            90,
+            823,
+            148
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "To break this rigidity, recent work has shifted toward structure-free 1D sequences. TiTok [Yu et al., 2025] showed that an image can be represented as a compact 1D sequence; FlexTok [Bachmann et al., 2025] and One-D-Piece [Miwa et al., 2025] extended this to variable-length encoding. Beyond elastic representations, several works study how to allocate the budget itself: Semanticist [Wen et al., 2025] orders latent tokens by information importance, CAT [Shen et al., 2025] delegates the choice to an external LLM-based complexity predictor, and ElasticTok [Yan et al., 2024] performs test-time search. Concurrent work KARL [Duggal et al., 2025] also predicts token count in a single forward pass, via Upside-Down RL conditioned on a target reconstruction quality. AdaTok targets a different cell in this design space: discrete 1D codes, elastic prefixes, internal one-pass allocation, no search or external predictor, no target-quality conditioning, and a budget-specialized decoder that makes the selected prefix usable. ",
+        "bbox": [
+            169,
+            152,
+            826,
+            306
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "The work also connects to adaptive computation in Vision Transformers such as DynamicViT [Rao et al., 2021] and A-ViT [Yin et al., 2022], which prune redundant tokens at inference. Where those methods accelerate specific backbone layers, AdaTok aims at a reusable adaptive representation: by framing token selection as a multi-objective decision optimized with Group Relative Policy Optimization (GRPO), AdaTok provides a single-pass alternative to search-based allocation and aligns naturally with the variable-length structure of language models [Sun et al., 2024, Tian et al., 2024, Yang et al., 2022]. ",
+        "bbox": [
+            169,
+            311,
+            823,
+            409
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "3 Preliminaries and Motivation ",
+        "text_level": 1,
+        "bbox": [
+            171,
+            430,
+            452,
+            446
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "Setup. Let $\\mathbf { x } \\in \\mathbb { R } ^ { H \\times W \\times C }$ denote an input image. A canonical discrete tokenizer maps x to a latent sequence ${ \\bf z } = [ z _ { 1 } , \\dots , z _ { N } ] \\in \\mathcal { V } ^ { N }$ via an encoder E and quantizer Q, then reconstructs xˆ via a decoder G. Adaptive Tokenization replaces the fixed length N with an instance-dependent length $k \\leq N$ via a policy $\\pi _ { \\boldsymbol { \\theta } } ( k | \\mathbf { x } )$ , yielding a truncated sequence $\\mathbf { z } _ { 1 : k }$ . ",
+        "bbox": [
+            169,
+            462,
+            823,
+            520
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "Why fixed budgets are wasteful. Two classical results from information theory motivate adaptivity. First, in the lossless regime, Shannon’s source coding theorem implies that the optimal code length for a sample x scales as $K ^ { \\star } ( x ) \\propto - \\log p ( x )$ , so a fixed budget $\\bar { K } ( x ) \\equiv N$ overspends on simple samples and underserves complex ones; the bound is conceptually analogous to (rather than directly equivalent to) the lossy rate–distortion case relevant to image tokenization. Second, in the lossy regime, the rate–distortion bound requires a worst-case fixed-budget tokenizer to spend capacity according to the most complex instances, even when the average image needs fewer tokens. Together these results call for per-instance allocation rather than a uniform worst-case budget that pays the same cost on every input. ",
+        "bbox": [
+            169,
+            525,
+            825,
+            650
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "Why a single fixed weighting is hard to optimize. Adaptive tokenization has two competing objectives: distortion $\\mathcal { D } ( \\mathbf { x } , \\pi _ { \\boldsymbol { \\theta } } )$ and length $K ( \\mathbf { x } ; \\theta )$ . A single global scalar loss $w _ { 1 } \\mathcal { D } + w _ { 2 } K$ can describe an aggregate first-order trade-off, but the right w is hard to find empirically. In practice, the per-instance marginal value of additional tokens varies sharply, the length gradient is dominated by majority easy images, and tuning w to a target operating point requires extensive sweeping. AdaTok sidesteps this with a per-instance baseline that produces a stable scale-invariant relative-reward signal (GRPO + DPW, Sec. 4.2). ",
+        "bbox": [
+            169,
+            656,
+            823,
+            753
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "4 Method ",
+        "text_level": 1,
+        "bbox": [
+            171,
+            775,
+            272,
+            789
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "Section 3 identifies two limits of static tokenization: fixed budgets create systematic redundancy, and the fidelity–efficiency trade-off varies across inputs. An adaptive tokenizer therefore needs two capabilities: a latent space that preserves an information hierarchy across budgets, and a policy that chooses an input-specific operating point. ",
+        "bbox": [
+            169,
+            806,
+            823,
+            864
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "Following these principles, AdaTok extends 1D image tokenization into a self-budgeting tokenizer: length is predicted by the tokenizer itself, not chosen after training by a user-defined operating point. As shown in Fig. 2, it has two coupled modules. Prioritized Representation Learning $( P R L )$ builds the length-aware representational foundation: nested masking enforces an ordered information hierarchy, and budget-specific decoder modulation guarantees that any prefix of the 1D latent sequence remains a high-quality representation of the input. Adaptive Token Allocation (ATA) is the decision engine: a lightweight policy network trained with Group Relative Policy Optimization (GRPO) picks a content-adaptive token budget in one forward pass, without test-time search or external guidance. ",
+        "bbox": [
+            169,
+            869,
+            826,
+            912
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "page_number",
+        "text": "3 ",
+        "bbox": [
+            493,
+            935,
+            503,
+            946
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "image",
+        "img_path": "images/dc12cd4422a7ffa35107ad3b30de3409170f4f5ad81d12a1dd9e1c62f62e1a29.jpg",
+        "image_caption": [
+            "Figure 2: Framework of AdaTok. AdaTok integrates Prioritized Representation Learning (PRL) to learn hierarchical 1D tokens and an Adaptive Token Allocation (ATA) policy to autonomously select a content-adaptive token budget for each image. "
+        ],
+        "image_footnote": [],
+        "content": "```mermaid\ngraph TD\n    A[\"Input Image\"] --> B[\"Encoder\"]\n    B --> C[\"Partitioned Representation Learning\"]\n    C --> D[\"Random Length Sampling\"]\n    D --> E[\"Length l₁\"]\n    D --> F[\"Length l₂\"]\n    D --> G[\"Length lₖ\"]\n    E --> H[\"Decoder + MH-LoRA (Φ1)\"]\n    F --> I[\"Decoder + MH-LoRA (Φ2)\"]\n    G --> J[\"Decoder + MH-LoRA (Φk)\"]\n    H --> K[\"Reconstruction losses\"]\n    I --> L[\"Reconstruction losses\"]\n    J --> M[\"Reconstruction losses\"]\n    N[\"Policy Network\"] --> O[\"Length Probability Distribution\"]\n    O --> P[\"GRPO & Dynamic Pareto Weighting\"]\n    P --> Q[\"Fidelity Reward\"]\n    P --> R[\"Efficiency Reward\"]\n    Q --> S[\"Optimal Length\"]\n    R --> S\n    S --> T[\"Reconstructed Images\"]\n    U[\"Adaptive Token Allocation\"] --> V[\"Update\"]\n    V --> W[\"Length Probability Distribution\"]\n    W --> X[\"GRPO & Dynamic Pareto Weighting\"]\n    X --> Y[\"Fidelity Reward\"]\n    X --> Z[\"Efficiency Reward\"]\n    Y --> AA[\"Optimal Length\"]\n    Z --> AA\n```",
+        "sub_type": "flowchart",
+        "bbox": [
+            204,
+            90,
+            789,
+            289
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "text",
+        "text": "",
+        "bbox": [
+            169,
+            356,
+            823,
+            426
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "text",
+        "text": "4.1 Prioritized Representation Learning ",
+        "text_level": 1,
+        "bbox": [
+            171,
+            443,
+            465,
+            458
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "text",
+        "text": "Information Ordering via Nested Tail Masking. Standard discrete tokenizers treat all latent positions as equally important, which produces semantic redundancy. Following 1D tokenizers [Yu et al., 2025], we represent an image as a sequence of N latent tokens. To make prefixes actionable rather than merely inspectable, we apply Nested Tail Masking (NTM) during training [Rippel et al., 2014, Miwa et al., 2025]: given a latent sequence $\\mathbf { z } \\in \\mathbb { R } ^ { N \\times \\tilde { d } }$ , we sample a budget $l \\in \\mathcal L$ and mask the trailing tokens [l + 1, N ]. This forces the encoder to pack the most invariant, information-dense semantics into the prefix and to use the trailing tokens for reconstruction refinement, yielding an implicit bit-stream in which early tokens carry the semantic foundation and later tokens add fidelity. ",
+        "bbox": [
+            169,
+            469,
+            823,
+            580
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "text",
+        "text": "Decoupling Semantic Shift via Multi-Head LoRA. NTM yields a flexible latent sequence, but it also creates a semantic shift problem. The same prefix tokens must summarize the image when the budget is small and act as a coarse scaffold when the budget is large. This is not merely a capacity issue: the conditional meaning of a prefix changes with the chosen budget. A static decoder, as used by existing elastic tokenizers [Miwa et al., 2025, Bachmann et al., 2025], has no way to separate these roles and is forced into a sub-optimal compromise. ",
+        "bbox": [
+            169,
+            585,
+            823,
+            669
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "text",
+        "text": "We address this with Multi-Head LoRA (MH-LoRA) inside the decoder. The budget space is discretized into K=8 buckets L = {32, 64, 96, 128, 160, 192, 224, 256}, and each bucket gets a dedicated rank-r LoRA head $\\phi _ { k }$ (we use r=16, adding ∼1.05M parameters or ∼1.1% of the model). During training, NTM samples a budget $l _ { k } \\in \\mathcal { L }$ and the reconstruction becomes ",
+        "bbox": [
+            169,
+            676,
+            823,
+            733
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "equation",
+        "text": "$$\n\\hat {\\mathbf {x}} = \\operatorname{Decoder} (Q (\\mathbf {z} _ {1: l _ {k}}); \\Theta + \\phi_ {k}), \\tag {1}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            382,
+            739,
+            823,
+            757
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "text",
+        "text": "where Θ is the shared base decoder and $\\phi _ { k }$ is the budget-specific modulation. At inference, the ATA policy (Sec. 4.2) returns a categorical distribution over $\\dot { \\mathcal { L } } ;$ we take the argmax $k ^ { \\star }$ and decode with $\\phi _ { k ^ { \\star } }$ on the truncated sequence $\\mathbf { z } _ { 1 : l _ { k } \\star }$ . By specializing only lightweight residual heads, MH-LoRA makes each prefix decodable at its own semantic scale while preserving a shared codebook and base decoder. ",
+        "bbox": [
+            169,
+            763,
+            823,
+            833
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "text",
+        "text": "Optimization Objective. The PRL module is trained end-to-end to minimize the reconstruction loss across all possible budgets in $\\mathcal { L } \\mathrm { : }$ ",
+        "bbox": [
+            169,
+            840,
+            823,
+            869
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "equation",
+        "text": "$$\n\\begin{array}{l} \\mathcal {L} _ {\\mathrm{PRL}} = \\mathbb {E} _ {l \\in \\mathcal {L}} \\left[ \\mathcal {L} _ {\\text {recon}} (\\mathbf {x}, \\hat {\\mathbf {x}} _ {l}) + \\lambda_ {p} \\mathcal {L} _ {P} (\\mathbf {x}, \\hat {\\mathbf {x}} _ {l}) \\right. \\tag {2} \\\\ \\left. + \\lambda_ {g} \\mathcal {L} _ {G} (\\hat {\\mathbf {x}} _ {l}) + \\mathcal {L} _ {\\mathrm{commit}} \\right] \\\\ \\end{array}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            352,
+            876,
+            823,
+            916
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "page_number",
+        "text": "4 ",
+        "bbox": [
+            493,
+            935,
+            503,
+            946
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "text",
+        "text": "where $\\mathcal { L } _ { \\mathrm { r e c o n } } , \\mathcal { L } _ { P }$ , and $\\mathcal { L } _ { G }$ are the pixel-level, perceptual, and adversarial losses, respectively. Optimizing across all budgets jointly forces the shared codebook to encode multi-granularity visual features rather than overfitting to a single length. ",
+        "bbox": [
+            169,
+            90,
+            823,
+            133
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "4.2 Adaptive Token Allocation (ATA) ",
+        "text_level": 1,
+        "bbox": [
+            171,
+            150,
+            444,
+            165
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "On top of the PRL foundation, ATA learns a lightweight policy network $\\pi _ { \\theta }$ that picks a contentadaptive token length l for each input image. ",
+        "bbox": [
+            169,
+            175,
+            826,
+            203
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "Group Relative Policy Optimization. We frame token selection as a discrete decision problem. Because the fidelity–length trade-off varies sharply across images, standard policy-gradient methods exhibit high variance: easy images receive high rewards regardless of allocation, obscuring the marginal value of additional tokens. We therefore adapt Group Relative Policy Optimization (GRPO) [Shao et al., 2024] to the elastic-tokenization setting, with a key twist: the group itself is the discrete candidate budget set $\\mathcal { L } ,$ evaluated deterministically on the same image. The policy therefore compares “how many tokens does this image need?” against all available budgets and obtains an exact relative advantage per budget without sampling variance. The choice has two further benefits. First, content-dependent baseline calibration: normalizing rewards by the group mean removes per-image difficulty bias and lets the policy focus on the marginal gain from additional tokens. Second, GRPO realizes instance-dependent adaptation without an auxiliary value network, keeping inference lightweight. ",
+        "bbox": [
+            169,
+            209,
+            826,
+            377
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "Rate–Distortion Reward Formulation. For each $l \\in \\mathcal L$ in the deterministic group, the rewards are the fidelity term $r _ { \\mathrm { m s e } } ( l ) = - \\mathbf { M S E } ( \\mathbf { x } , \\hat { \\mathbf { x } } _ { l } )$ and the efficiency term $r _ { \\mathrm { l e n } } ( l ) = - l / l _ { \\mathrm { m a x } }$ . We do not apply an explicit reward scale: under group-relative normalization any positive multiplier cancels in the standardized advantage (up to the stability constant ϵ). GRPO computes the relative advantage A by standardizing these rewards over the group L (deterministic, no sampling): ",
+        "bbox": [
+            169,
+            381,
+            823,
+            452
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "equation",
+        "text": "$$\nA _ {r} (l, \\mathbf {x}) = \\frac {r (l , \\mathbf {x}) - \\mu_ {\\mathcal {L}} (r)}{\\sigma_ {\\mathcal {L}} (r) + \\epsilon}. \\tag {3}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            401,
+            459,
+            825,
+            491
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "Here $\\mu _ { \\mathcal { L } } , \\sigma _ { \\mathcal { L } }$ are the per-image mean and standard deviation across the candidate set. We interpret the resulting policy as a content-conditioned allocation rule rather than a strict per-instance R–D optimum, since standardization removes absolute distortion magnitudes. ",
+        "bbox": [
+            169,
+            500,
+            823,
+            542
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "Dynamic Pareto Weighting. While GRPO handles per-instance adaptation, balancing the global convergence between fidelity and efficiency remains a challenge. We employ Dynamic Pareto Weighting (DPW) to stabilize the multi-objective optimization. The ATA module minimizes the following objective: ",
+        "bbox": [
+            169,
+            546,
+            823,
+            603
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "equation",
+        "text": "$$\n\\mathcal {L} _ {\\mathrm{ATA}} = - \\sum_ {l \\in \\mathcal {L}} \\pi_ {\\theta} (l | z) \\left(w _ {\\text {mse}} A _ {\\text { mse }} (l) + w _ {\\text { len }} A _ {\\text { len }} (l)\\right) \\tag {4}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            328,
+            611,
+            825,
+            643
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "equation",
+        "text": "$$\n- \\beta H (\\pi_ {\\theta})\n$$",
+        "text_format": "latex",
+        "bbox": [
+            387,
+            646,
+            459,
+            662
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "where $H ( \\pi _ { \\theta } )$ is entropy regularization to encourage exploration, and we denote the individual objectives as $\\begin{array} { r } { \\mathcal { L } _ { i } = - \\sum _ { l \\in \\mathcal { L } } \\bar { \\pi } _ { \\theta } ( l | z ) A _ { i } ( l ) } \\end{array}$ for $i \\in \\{ \\mathrm { m s e } , \\mathrm { l e n } \\}$ . To avoid manual tuning and encourage synergistic learning, the weights $\\mathbf { w } = [ w _ { \\mathrm { m s e } } , w _ { \\mathrm { l e n } } ]$ are dynamically adjusted based on the gradient influence of each objective: ",
+        "bbox": [
+            169,
+            669,
+            823,
+            728
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "equation",
+        "text": "$$\nI _ {i} ^ {(t)} = \\left\\langle \\nabla_ {\\theta} \\mathcal {L} _ {i} ^ {(t)}, \\sum_ {k} \\nabla_ {\\theta} \\mathcal {L} _ {k} ^ {(t)} \\right\\rangle , \\quad w _ {i} ^ {(t)} = \\frac {w _ {i} ^ {(t - 1)} \\exp \\left(\\frac {\\eta}{\\mu} I _ {i} ^ {(t)}\\right)}{\\sum_ {j} w _ {j} ^ {(t - 1)} \\exp \\left(\\frac {\\eta}{\\mu} I _ {j} ^ {(t)}\\right)} \\tag {5}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            279,
+            734,
+            825,
+            787
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "Here η is the ATA learning rate (distinct from the reward scale α) and $\\mu$ is a regularization factor; we use $\\mu { = } 1 0$ , and sweeps over {1, 5, 10, 50} changed final rFID by less than 0.05. The update emphasizes the objective with the larger marginal contribution to joint progress [Lu et al., 2025], improving the empirical rate–distortion trade-off while preserving single-pass budget selection (Tab. 2). ",
+        "bbox": [
+            169,
+            792,
+            825,
+            863
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "Training Pipeline. We adopt a two-stage scheme rather than joint end-to-end optimization: Stage 1 trains the tokenizer (encoder, decoder, MH-LoRA heads, codebook) to convergence; Stage 2 freezes it and trains the ATA policy on top. Joint training is fragile for three reasons. (i) Reward non-stationarity: GRPO’s reward is reconstruction quality, but during early tokenizer training the short-length reconstructions are noisy and the policy collapses to selecting the maximum budget. (ii) Codebook fragility: VQ codebook learning is notoriously brittle, and injecting RL gradients before the codebook stabilizes risks collapse; our two-stage scheme attains >98.8% codebook utilization. (iii) Objective conflict: high reconstruction across all lengths and minimum-token allocation are inherently competing goals, which makes joint convergence hard to control. Decoupling lets the tokenizer first build a clean latent space, after which the policy learns allocation on a stationary reward in only 10K steps (∼3% of total training cost). ",
+        "bbox": [
+            169,
+            869,
+            825,
+            912
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "page_number",
+        "text": "",
+        "bbox": [
+            493,
+            936,
+            503,
+            946
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "table",
+        "img_path": "images/2759ba15f9c9032b42df657c1806188417fa1ad7b80f25dd50c2c034d32e9957.jpg",
+        "table_caption": [
+            "Table 1: Reconstruction and Generation Across Tokenizers. We report AdaTok at two operating points: AdaTok-Full uses the full 256-token budget and demonstrates the capacity ceiling of our PRL-trained tokenizer; AdaTok-Adaptive uses the per-image budget chosen by the ATA policy (118 tokens on average) and demonstrates the rate–distortion advantage of adaptive allocation. Within each row, all metrics are measured at the same operating point. Bold highlights AdaTok results among the discrete 1D rows. Generation numbers use the generators reported by each method and should be interpreted as compatibility indicators rather than a controlled generator comparison. "
+        ],
+        "table_footnote": [],
+        "table_body": "<table><tr><td>Tokenizer</td><td>#Params</td><td>#Codebook</td><td>#Tokens</td><td>Elastic</td><td>rFID↓</td><td>PSNR↑</td><td>Generator</td><td>gFID↓</td></tr><tr><td colspan=\"9\">fixed-budget baselines</td></tr><tr><td>VQGAN</td><td>85M</td><td>1024</td><td>256</td><td>X</td><td>7.94</td><td>19.4</td><td>LDM-8</td><td>15.78</td></tr><tr><td>MaskGIT</td><td>227M</td><td>1024</td><td>256</td><td>X</td><td>2.12</td><td>-</td><td>MaskGIT</td><td>6.18</td></tr><tr><td>LlamaGen</td><td>72M</td><td>16384</td><td>256</td><td>X</td><td>2.28</td><td>20.79</td><td>LlamaGen</td><td>3.06</td></tr><tr><td>ImageFolder</td><td>362M</td><td>4096</td><td>286</td><td>X</td><td>0.80</td><td>-</td><td>VAR-d16</td><td>2.60</td></tr><tr><td>VAR</td><td>310M</td><td>4096</td><td>680</td><td>X</td><td>0.90</td><td>-</td><td>VAR-d16</td><td>3.30</td></tr><tr><td>TiTok-S</td><td>83M</td><td>4096</td><td>128</td><td>X</td><td>1.71</td><td>17.80</td><td>MaskGIT</td><td>1.97</td></tr><tr><td>TiTok-B</td><td>204M</td><td>4096</td><td>64</td><td>X</td><td>1.70</td><td>17.13</td><td>MaskGIT</td><td>2.48</td></tr><tr><td>TiTok-L</td><td>641M</td><td>4096</td><td>32</td><td>X</td><td>2.21</td><td>15.96</td><td>MaskGIT</td><td>2.77</td></tr><tr><td colspan=\"9\">continuous-token adaptive baselines (contextual; not directly token-count comparable to discrete 1D)</td></tr><tr><td>CAT</td><td>187M</td><td>-</td><td>-</td><td>✓</td><td>0.46</td><td>-</td><td>-</td><td>-</td></tr><tr><td>Semanticist</td><td>-</td><td>-</td><td>256</td><td>✓</td><td>0.72</td><td>-</td><td>LlamaGen</td><td>2.57</td></tr><tr><td colspan=\"9\">discrete-token elastic baselines (directly comparable)</td></tr><tr><td>FlexTok</td><td>341M</td><td>64000</td><td>32</td><td>✓</td><td>4.20</td><td>-</td><td>FlexTok</td><td>3.83</td></tr><tr><td>ALIT</td><td>-</td><td>4096</td><td>256</td><td>✓</td><td>8.25</td><td>-</td><td>-</td><td>-</td></tr><tr><td>One-D-Piece</td><td>83M</td><td>4096</td><td>256</td><td>✓</td><td>1.55</td><td>18.28</td><td>MaskGIT</td><td>2.67</td></tr><tr><td>AdaTok-Full</td><td>97M</td><td>4096</td><td>256</td><td>✓</td><td>1.31</td><td>18.42</td><td>MaskGIT</td><td>2.28</td></tr><tr><td>AdaTok-Adaptive</td><td>97M</td><td>4096</td><td>118 avg.</td><td>✓</td><td>1.50</td><td>17.78</td><td>-</td><td>-</td></tr></table>",
+        "bbox": [
+            173,
+            191,
+            823,
+            425
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "text",
+        "text": "",
+        "bbox": [
+            169,
+            438,
+            823,
+            550
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "text",
+        "text": "5 Experiments ",
+        "text_level": 1,
+        "bbox": [
+            171,
+            568,
+            313,
+            585
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "text",
+        "text": "Implementation Details. Data and evaluation. All experiments use ImageNet-1K at 256×256. Reconstruction metrics (rFID, PSNR, SSIM, LPIPS) are computed on the standard 50K validation split; gFID follows the ADM protocol [Dhariwal and Nichol, 2021] on 50K class-conditional samples. Architecture. Encoder and decoder follow the TiTok-S backbone (8 layers, $d _ { \\mathrm { m o d e l } } { = } 5 1 2 ,$ , 8 attention heads, 16×16 patches); the codebook has 4096 entries at latent dimension 12; the ATA policy is a 3-layer GeLU MLP on globally pooled encoder features. Training. Stage 1 (PRL) trains the tokenizer end-to-end for 200 epochs with AdamW (lr 1e-4, weight decay 0.05, batch size 256) and a linear warm-up; nested tail masking samples a budget per step uniformly over the 8 buckets. Stage 2 (ATA) freezes the tokenizer and trains the policy with GRPO for 10K steps (∼1 h, ∼3% of total cost) at group size 8. Decoupling matters: training the policy on top of an unconverged tokenizer yields non-stationary rewards and the policy collapses to the maximum budget. Hardware: 8×NVIDIA H100. ",
+        "bbox": [
+            169,
+            599,
+            826,
+            765
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "text",
+        "text": "5.1 Overall Performance ",
+        "text_level": 1,
+        "bbox": [
+            171,
+            781,
+            359,
+            795
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "text",
+        "text": "We benchmark AdaTok against fixed-budget tokenizers (VQGAN, MaskGIT [Chang et al., 2022], LlamaGen [Sun et al., 2024], the TiTok series) and flexible or adaptive tokenizers (One-D-Piece, FlexTok, Semanticist [Wen et al., 2025], LLM-guided CAT [Shen et al., 2025], search-based Elastic-Tok [Yan et al., 2024], multi-scale VAR [Tian et al., 2024], recurrent ALIT [Duggal et al., 2024]), assessing reconstruction fidelity, generation quality, and allocation efficiency. ",
+        "bbox": [
+            169,
+            806,
+            823,
+            878
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "text",
+        "text": "Reconstruction and Generation. Reconstruction (primary metric). Tab. 1 reports AdaTok at two operating points and isolates two distinct claims. First, at the matched 256-token budget, AdaTok-",
+        "bbox": [
+            169,
+            883,
+            826,
+            912
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "page_number",
+        "text": "6 ",
+        "bbox": [
+            493,
+            936,
+            504,
+            946
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "chart",
+        "img_path": "images/31efd05b19dde170423f2076655afc1ca284b216d0b153e6d90f11a1bd22ed76.jpg",
+        "content": "| Token Length | OneDPiece | FlexTok | Ours (Base) |\n| ------------ | --------- | ------- | ----------- |\n| 32           | 7.5       | 3.5     | 4.5         |\n| 64           | 4.0       | 3.0     | 2.8         |\n| 96           | 2.8       | 3.0     | 2.0         |\n| 128          | 2.2       | 3.0     | 1.7         |\n| 160          | 1.8       | 3.0     | 1.5         |\n| 192          | 1.7       | 3.0     | 1.4         |\n| 224          | 1.6       | 3.2     | 1.3         |\n| 256          | 1.5       | 3.3     | 1.3         |",
+        "chart_caption": [
+            "Figure 3: rFID across token budgets for AdaTok versus similarly sized discrete elastic tokenizers (TiTok-S, One-D-Piece, FlexTok-d12-d12). AdaTok stays close to its frontier and remains stable across the full 32–256 token range. "
+        ],
+        "chart_footnote": [],
+        "sub_type": "line",
+        "bbox": [
+            209,
+            119,
+            480,
+            276
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "chart",
+        "img_path": "images/29ae78de0a9924c8ca796c9091486f29ac019568aba8caa53179bfad1553b38e.jpg",
+        "content": "| Average Token Usage | rMSE (Lower is Better) | Method |\n| ------------------- | --------------------- | ------ |\n| 100                 | 0.0218                | Dynamic-weight (last 3, non-dominated) |\n| 100                 | 0.0216                | Fixed-weight (last 3, non-dominated) |\n| 100                 | 0.0215                | Initial Policy |\n| 105                 | 0.0219                | Dynamic-weight (last 3, non-dominated) |\n| 105                 | 0.0217                | Fixed-weight (last 3, non-dominated) |\n| 105                 | 0.0216                | Initial Policy |\n| 120                 | 0.0218                | Dynamic-weight (last 3, non-dominated) |\n| 120                 | 0.0216                | Fixed-weight (last 3, non-dominated) |\n| 120                 | 0.0215                | Initial Policy |\n| 130                 | 0.0219                | Dynamic-weight (last 3, non-dominated) |\n| 130                 | 0.0217                | Fixed-weight (last 3, non-dominated) |\n| 130                 | 0.0216                | Initial Policy |",
+        "chart_caption": [
+            "Figure 4: ATA training trajectory in the (avg. tokens, rMSE) plane; lower-left is better. GRPO with dynamic Pareto weighting (red) reaches a better fidelity–budget trade-off than fixed-weight scalarization (gray) from the same initial policy. "
+        ],
+        "chart_footnote": [],
+        "sub_type": "scatter",
+        "bbox": [
+            511,
+            90,
+            782,
+            276
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "text",
+        "text": "Full reaches rFID 1.31, the lowest among the discrete 1D baselines we compare against (vs. TiTok-S 1.71, TiTok-B 1.70, TiTok-L 2.21, One-D-Piece 1.55), while using only 15% of TiTok-L’s parameter count (97M vs. 641M). Second, when the ATA policy chooses the budget per image, AdaTok-Adaptive attains rFID 1.50 at an average of 118 tokens — still better than every fixed-length discrete 1D baseline at this token cost or higher, and roughly 2.2× shorter than One-D-Piece’s 256 tokens at a similar quality level. The two rows together demonstrate that PRL provides a strong reconstruction ceiling and ATA delivers a favorable rate–distortion operating point. ",
+        "bbox": [
+            169,
+            393,
+            826,
+            492
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "text",
+        "text": "Generation (compatibility check). Generation is not our optimization target; we report gFID only to confirm that AdaTok tokens compose with standard generators. Because MaskGIT requires a fixed sequence length, gFID is reported at AdaTok-Full’s 256-token operating point. Under this protocol AdaTok reaches gFID 2.28, a favorable result among adaptive-token baselines that report compatible generator evaluations (Semanticist 2.57, One-D-Piece 2.67, FlexTok 3.83). Fixed-length TiTok-S attains a stronger gFID (1.97), but is locked to 128 tokens at both training and inference; AdaTok instead exposes a continuous rate–quality control without retraining. Closing the residual gap to specialist generators would require joint generator–tokenizer training and a larger compute envelope, which we leave to future work. ",
+        "bbox": [
+            169,
+            497,
+            826,
+            621
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "text",
+        "text": "Elasticity and Adaptivity. AdaTok offers two complementary advantages. First, it outperforms existing discrete elastic tokenizers (FlexTok, One-D-Piece, ALIT) on both reconstruction and generation. Second, it supports reconstruction at any token count in the 32–256 range without retraining, providing a continuous rate–distortion control knob. Fig. 3 compares AdaTok against similarly sized elastic competitors (TiTok-S, One-D-Piece, FlexTok-d12-d12) across the full budget range: AdaTok leads in the 96–256 region and stays stable elsewhere. FlexTok is competitive in the 32–64 range, but its training objective targets perceptual rather than pixel-level fidelity, making rFID comparisons at very low bitrates nuanced. Continuous adaptive tokenizers (Semanticist 0.72, CAT 0.46) report lower rFID than AdaTok-Adaptive (1.50), but their tokens are float vectors that carry roughly an order of magnitude more bits than a single discrete code from our 4096-entry vocabulary. A fair comparison is therefore bits per pixel rather than token count. We focus on the discrete regime because discrete codes plug directly into autoregressive next-token generators (LlamaGen, MaskGIT) and discrete-vocabulary VLM pipelines without additional quantization loss. Consistent with this focus, AdaTok also leads the adaptive baselines on the directly comparable downstream metric, reaching gFID 2.28 versus 2.57 for Semanticist (Tab. 1). We therefore view AdaTok as a competitive discrete adaptive tokenizer with fine-grained budget control from 32 to 256 tokens. ",
+        "bbox": [
+            169,
+            628,
+            828,
+            849
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "text",
+        "text": "Matched-Budget Reconstruction. For an apples-to-apples comparison at fixed token budgets, we evaluate AdaTok in non-adaptive mode at exactly k ∈ {32, 64, 128, 256} tokens and report rFID, PSNR, SSIM, and LPIPS (Tab. 3). At 128 tokens AdaTok already reaches rFID 1.63 and LPIPS 0.216, surpassing fixed-length TiTok-S at the same budget (rFID 1.71); at 256 tokens all four metrics improve further. The monotone trend across budgets confirms that prefix tokens carry an information hierarchy rather than redundant filler, and that AdaTok’s gains hold under matched-budget protocols rather than relying on unequal token counts. ",
+        "bbox": [
+            169,
+            854,
+            826,
+            912
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "page_number",
+        "text": "7 ",
+        "bbox": [
+            493,
+            935,
+            504,
+            946
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "table",
+        "img_path": "images/c17958970c467c6acb15e3dec25e72daab4a33a309da268151cc10b2eb1e9354.jpg",
+        "table_caption": [
+            "Table 2: Ablation and failure-mode diagnosis. NM: Nested Tail Masking; MH: MH-LoRA. Cases (b,d) expose naive representation and allocation failure modes; Case (e) is GRPO without Dynamic Pareto Weighting; Case (f) is full AdaTok. rFID on ImageNet-1K. "
+        ],
+        "table_footnote": [],
+        "table_body": "<table><tr><td>Case</td><td>NM</td><td>MH</td><td>Policy</td><td>rFID ↓</td><td>Tokens</td></tr><tr><td colspan=\"6\">PRL module study</td></tr><tr><td>(a)</td><td>X</td><td>X</td><td>Fixed</td><td>1.71</td><td>128</td></tr><tr><td>(b)</td><td>√</td><td>X</td><td>Fixed</td><td>2.04</td><td>128</td></tr><tr><td>(c)</td><td>√</td><td>√</td><td>Fixed</td><td>1.63</td><td>128</td></tr><tr><td colspan=\"6\">policy study</td></tr><tr><td>(d)</td><td>√</td><td>√</td><td>Heur.</td><td>2.32</td><td>155.3</td></tr><tr><td>(e)</td><td>√</td><td>√</td><td>GRPO</td><td>1.58</td><td>123</td></tr><tr><td>(f)</td><td>√</td><td>√</td><td>GRPO+DPW</td><td>1.50</td><td>118</td></tr></table>",
+        "bbox": [
+            300,
+            138,
+            694,
+            258
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "table",
+        "img_path": "images/dfbf970df4ff3cc0f3e6df6dedf03a465bc3a42f42ff0e4d99f7a57aee55faa0.jpg",
+        "table_caption": [
+            "Table 3: Matched-Budget Reconstruction of AdaTok. AdaTok evaluated in non-adaptive mode at fixed budgets k ∈ {32, 64, 128, 256} on ImageNet-1K (256×256). All four metrics improve monotonically with the budget. Adaptive mode (avg. ∼118 tokens) attains rFID 1.50, beating the fixed-128 decoder (1.63) while still using fewer tokens on average; TiTok-S@128: 1.71 for reference. "
+        ],
+        "table_footnote": [],
+        "table_body": "<table><tr><td>Tokens</td><td>rFID ↓</td><td>PSNR ↑</td><td>SSIM ↑</td><td>LPIPS ↓</td></tr><tr><td>32</td><td>4.60</td><td>16.48</td><td>0.366</td><td>0.330</td></tr><tr><td>64</td><td>2.64</td><td>17.27</td><td>0.395</td><td>0.262</td></tr><tr><td>128</td><td>1.63</td><td>17.92</td><td>0.421</td><td>0.216</td></tr><tr><td>256</td><td>1.31</td><td>18.42</td><td>0.434</td><td>0.196</td></tr></table>",
+        "bbox": [
+            313,
+            335,
+            679,
+            414
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "text",
+        "text": "",
+        "bbox": [
+            169,
+            441,
+            823,
+            484
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "text",
+        "text": "Coarse-to-Fine Hierarchy Verification. To directly test the coarse-to-fine ordering NTM is meant to induce (Sec. 4.1), we apply FFT spectral decomposition to 1K ImageNet validation reconstructions at each fixed budget and track the low-frequency energy ratio. It falls monotonically as the budget grows: 0.3826 at 32 tokens, 0.3754 at 64, 0.3710 at 128, and 0.3704 at 256, converging toward the source images’ ratio of 0.3667. Prefix tokens therefore carry low-frequency structural content while later tokens add progressively higher-frequency detail, supporting the information hierarchy PRL was designed to induce. ",
+        "bbox": [
+            169,
+            489,
+            823,
+            587
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "text",
+        "text": "5.2 Ablation Study ",
+        "text_level": 1,
+        "bbox": [
+            171,
+            617,
+            318,
+            633
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "text",
+        "text": "PRL components (Cases a–c). Adding Nested Tail Masking (NM) on its own hurts the vanilla 1D baseline (Case a, equivalent to TiTok-S [Yu et al., 2025] at rFID 1.71 → Case b, 2.04), directly diagnosing semantic shift: one static decoder cannot use the same prefix both as a standalone structural code and as a scaffold for longer decodes. Adding MH-LoRA (Case c) decouples these roles and recovers rFID 1.63, surpassing the baseline. MH-LoRA is therefore the mechanism that makes ordered discrete prefixes usable across budgets. ",
+        "bbox": [
+            169,
+            648,
+            823,
+            733
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "text",
+        "text": "ATA vs. heuristic allocation (Cases d–f). On the same PRL backbone, the heuristic policy (Case d) binary-searches L per image for the smallest budget under a fixed rMSE threshold, requiring multiple decoder passes and landing at 2.32 rFID with 155.3 tokens. GRPO without DPW improves this to 1.58 rFID at 123 tokens (Case e), while GRPO+DPW reaches 1.50 rFID at 118 tokens in one pass (Case f). The full allocator therefore improves both quality and length over the fixed 128-token counterpart (Case c, 1.63), which is the core adaptive-tokenization claim. ",
+        "bbox": [
+            169,
+            738,
+            823,
+            823
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "text",
+        "text": "Policy learning paradigms. We further compare GRPO against REINFORCE [Williams, 1992] and PPO [Schulman et al., 2017] on the same PRL backbone (Tab. 4). REINFORCE collapses to too-short sequences under high gradient variance, while PPO over-allocates and saturates the maximum budget. Only GRPO attains both the highest hypervolume in this comparison (HV=1342) and a healthy policy entropy (H(π)=0.28), supporting the group-relative advantage as a suitable inductive bias for adaptive-budget tokenization. ",
+        "bbox": [
+            169,
+            827,
+            826,
+            912
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "page_number",
+        "text": "8 ",
+        "bbox": [
+            493,
+            935,
+            503,
+            946
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "table",
+        "img_path": "images/c877c3097912b47ba8debe84fa2b1f5435e3168862da8863c386ab00688dd6ed.jpg",
+        "table_caption": [
+            "Table 4: Policy Learning Paradigms. HV: Hypervolume; H(π): policy entropy. GRPO attains the highest hypervolume in this comparison without an auxiliary critic. "
+        ],
+        "table_footnote": [],
+        "table_body": "<table><tr><td rowspan=\"2\">Strategy</td><td colspan=\"2\">Policy</td><td colspan=\"2\">Recon.</td></tr><tr><td>HV↑</td><td>H(π)↑</td><td>rMSE↓</td><td>Tok.</td></tr><tr><td>Fixed (128)</td><td>226</td><td>0.00</td><td>0.0219</td><td>128.0</td></tr><tr><td>REINFORCE</td><td>182</td><td>0.08</td><td>0.0263</td><td>36.8</td></tr><tr><td>PPO</td><td>419</td><td>0.0</td><td>0.0197</td><td>224</td></tr><tr><td>GRPO</td><td>1342</td><td>0.28</td><td>0.0232</td><td>118</td></tr></table>",
+        "bbox": [
+            184,
+            152,
+            488,
+            250
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "table",
+        "img_path": "images/4daf344a793a440b222a346a836627c17726ca43f38caf9e0b9171f1dfd57e9c.jpg",
+        "table_caption": [
+            "Table 5: AR Generation, Matched Compute. 195M LlamaGen-style AR, 200K steps. Speedup is theoretical length reduction 256/k; ∆gFID is relative to the 256-token decode (self-comparison only). "
+        ],
+        "table_footnote": [],
+        "table_body": "<table><tr><td>Tok.</td><td>Speedup↑</td><td>ΔgFID↓</td><td>gFID</td></tr><tr><td>32</td><td>8×</td><td>+2.60</td><td>15.07</td></tr><tr><td>64</td><td>4×</td><td>+0.97</td><td>13.44</td></tr><tr><td>128</td><td>2×</td><td>-0.34</td><td>12.13</td></tr><tr><td>256</td><td>1×</td><td>0 (ref.)</td><td>12.47</td></tr></table>",
+        "bbox": [
+            549,
+            167,
+            789,
+            244
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "text",
+        "text": "5.3 Further Analysis ",
+        "text_level": 1,
+        "bbox": [
+            171,
+            266,
+            333,
+            282
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "text",
+        "text": "Optimization trajectory. Fig. 4 traces the ATA learning trajectory: GRPO with dynamic Pareto weighting reaches a better rate–distortion trade-off than fixed-weight scalarization, confirming that input-dependent reweighting helps over a static λ. ",
+        "bbox": [
+            169,
+            291,
+            826,
+            333
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "text",
+        "text": "AR generation under matched compute. Separately from the MaskGIT compatibility result in Tab. 1, we train a single 195M LlamaGen-style AR generator on AdaTok tokens for 200K steps and vary the inference-time budget; this exposes a clean throughput–quality trade-off (Tab. 5). Because the matched-compute setup deliberately undertrains the generator, absolute gFID is not comparable to fully-trained AR baselines, so we report relative ∆gFID against the 256-token decode. In this self-comparison, 128 tokens already improve on the 256-token decode (∆ = −0.34) while halving inference cost, and 32 tokens trade a modest quality drop (∆ = +2.60) for an 8× length reduction. The measured ∼2.1× wall-clock throughput at the 118-token decode reports the speedup of decoding to a fixed 118-token target chosen to match AdaTok-Adaptive’s average; generation-time autonomous selection without access to the target image requires a visual end-of-sequence mechanism that we leave to future work. Computational efficiency. We measure costs against a fixed 256-token baseline on a single H100. Training overhead is small: GRPO trains a 330K-parameter MLP on top of a frozen tokenizer in 10K steps (∼3% of total) and needs no value network, while MH-LoRA adds only ∼1.1% parameters. Tokenizer-stage speedup is modest (∼12–17% across batch sizes, limited by 31% padding); the dominant gain shows up at AR generation, where shorter sequences translate linearly into throughput: ∼2.1× at the 118-token average and 8× at 32 tokens (Sec. 5.3). ",
+        "bbox": [
+            169,
+            339,
+            826,
+            561
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "text",
+        "text": "On the novelty of each component. Each module uses familiar ingredients, but the learned object is new: a discrete visual tokenizer whose token count is an input-conditioned output. This requires all three pieces to close the loop. Ordered prefixes make multiple budgets meaningful; MH-LoRA removes the Semantic Shift that otherwise breaks those prefixes (Tab. 2, b vs. c); deterministic-group GRPO+DPW then chooses the prefix in one pass and improves both quality and length over fixed or GRPO-only allocation (f vs. c/e). The novelty is therefore not variable-length reconstruction alone, but making elasticity operational inside a discrete tokenizer without search, external predictors, or target-quality conditioning. ",
+        "bbox": [
+            169,
+            566,
+            828,
+            679
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "text",
+        "text": "6 Conclusion ",
+        "text_level": 1,
+        "bbox": [
+            171,
+            696,
+            302,
+            713
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "text",
+        "text": "We presented AdaTok, a self-budgeting discrete 1D tokenizer that learns token count as an inputconditioned output. PRL resolves Semantic Shift with budget-specific MH-LoRA heads, while deterministic-group GRPO+DPW turns the candidate budget set into an exact relative-reward group for one-pass allocation. On ImageNet-1K, AdaTok-Adaptive reaches rFID 1.50 at ∼118 average tokens, AdaTok-Full attains gFID 2.28 at 256 tokens, and AR throughput at the 118-token average is ∼2.1× over a fixed 256-token baseline. The codebook plugs directly into MaskGIT and LlamaGenstyle generators, and we plan to release code and checkpoints. ",
+        "bbox": [
+            169,
+            728,
+            828,
+            827
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "page_number",
+        "text": "9 ",
+        "bbox": [
+            493,
+            935,
+            504,
+            946
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "text",
+        "text": "References ",
+        "text_level": 1,
+        "bbox": [
+            173,
+            89,
+            269,
+            106
+        ],
+        "page_idx": 9
+    },
+    {
+        "type": "list",
+        "sub_type": "ref_text",
+        "list_items": [
+            "Roman Bachmann, Jesse Allardice, David Mizrahi, Enrico Fini, Oguzhan Fatih Kar, Elmira Amirloo, ˘ Alaaeldin El-Nouby, Amir Zamir, and Afshin Dehghan. Flextok: Resampling images into 1d token sequences of flexible length. arXiv preprint arXiv:2502.13967, 2025. ",
+            "Huiwen Chang, Han Zhang, Lu Jiang, Ce Liu, and William T Freeman. Maskgit: Masked generative image transformer. In Proceedings of the IEEE/CVF conference on computer vision and pattern recognition, pages 11315–11325, 2022. ",
+            "Prafulla Dhariwal and Alexander Nichol. Diffusion models beat gans on image synthesis. Advances in neural information processing systems, 34:8780–8794, 2021. ",
+            "Shivam Duggal, Phillip Isola, Antonio Torralba, and William T Freeman. Adaptive length image tokenization via recurrent allocation. In First Workshop on Scalable Optimization for Efficient and Adaptive Foundation Models, 2024. ",
+            "Shivam Duggal, Sanghyun Byun, William T. Freeman, Antonio Torralba, and Phillip Isola. Singlepass adaptive image tokenization for minimum program search. CoRR, abs/2507.07995, 2025. doi: 10.48550/ARXIV.2507.07995. URL https://doi.org/10.48550/arXiv.2507.07995. ",
+            "Patrick Esser, Robin Rombach, and Bjorn Ommer. Taming transformers for high-resolution image synthesis. In Proceedings of the IEEE/CVF conference on computer vision and pattern recognition, pages 12873–12883, 2021. ",
+            "Diederik P. Kingma and Max Welling. Auto-encoding variational bayes. In 2nd International Conference on Learning Representations (ICLR), 2014. URL https://arxiv.org/abs/1312. 6114. ",
+            "Yining Lu, Zilong Wang, Shiyang Li, Xin Liu, Changlong Yu, Qingyu Yin, Zhan Shi, Zixuan Zhang, and Meng Jiang. Learning to optimize multi-objective alignment through dynamic reward weighting. arXiv preprint arXiv:2509.11452, 2025. ",
+            "Keita Miwa, Kento Sasaki, Hidehisa Arai, Tsubasa Takahashi, and Yu Yamaguchi. One-d-piece: Image tokenizer meets quality-controllable compression. arXiv preprint arXiv:2501.10064, 2025. ",
+            "Yongming Rao, Wenliang Zhao, Benlin Liu, Jiwen Lu, Jie Zhou, and Cho-Jui Hsieh. Dynamicvit: Efficient vision transformers with dynamic token sparsification. Advances in neural information processing systems, 34:13937–13949, 2021. ",
+            "Oren Rippel, Michael Gelbart, and Ryan Adams. Learning ordered representations with nested dropout. In International Conference on Machine Learning, pages 1746–1754. PMLR, 2014. ",
+            "Robin Rombach, Andreas Blattmann, Dominik Lorenz, Patrick Esser, and Björn Ommer. Highresolution image synthesis with latent diffusion models. In Proceedings of the IEEE/CVF conference on computer vision and pattern recognition, pages 10684–10695, 2022. ",
+            "John Schulman, Filip Wolski, Prafulla Dhariwal, Alec Radford, and Oleg Klimov. Proximal policy optimization algorithms. arXiv preprint arXiv:1707.06347, 2017. ",
+            "Zhihong Shao, Peiyi Wang, Qihao Zhu, Runxin Xu, Junxiao Song, Mingchuan Zhang, Y. K. Li, Y. Wu, and Daya Guo. DeepSeekMath: Pushing the limits of mathematical reasoning in open language models. CoRR, abs/2402.03300, 2024. doi: 10.48550/ARXIV.2402.03300. URL https://doi.org/10.48550/arXiv.2402.03300. ",
+            "Junhong Shen, Kushal Tirumala, Michihiro Yasunaga, Ishan Misra, Luke Zettlemoyer, Lili Yu, and Chunting Zhou. Cat: Content-adaptive image tokenization. arXiv preprint arXiv:2501.03120, 2025. ",
+            "Peize Sun, Yi Jiang, Shoufa Chen, Shilong Zhang, Bingyue Peng, Ping Luo, and Zehuan Yuan. Autoregressive model beats diffusion: Llama for scalable image generation. arXiv preprint arXiv:2406.06525, 2024. "
+        ],
+        "bbox": [
+            166,
+            109,
+            834,
+            914
+        ],
+        "page_idx": 9
+    },
+    {
+        "type": "page_number",
+        "text": "10 ",
+        "bbox": [
+            490,
+            935,
+            508,
+            946
+        ],
+        "page_idx": 9
+    },
+    {
+        "type": "list",
+        "sub_type": "ref_text",
+        "list_items": [
+            "Keyu Tian, Yi Jiang, Zehuan Yuan, Bingyue Peng, and Liwei Wang. Visual autoregressive modeling: Scalable image generation via next-scale prediction. Advances in neural information processing systems, 37:84839–84865, 2024. ",
+            "Aaron Van Den Oord, Oriol Vinyals, et al. Neural discrete representation learning. Advances in neural information processing systems, 30, 2017. ",
+            "Xin Wen, Bingchen Zhao, Ismail Elezi, Jiankang Deng, and Xiaojuan Qi. \" principal components\" enable a new language of images. In Proceedings of the IEEE/CVF International Conference on Computer Vision, pages 16641–16651, 2025. ",
+            "Ronald J Williams. Simple statistical gradient-following algorithms for connectionist reinforcement learning. Machine learning, 8:229–256, 1992. ",
+            "Wilson Yan, Volodymyr Mnih, Aleksandra Faust, Matei Zaharia, Pieter Abbeel, and Hao Liu. Elastictok: Adaptive tokenization for image and video. arXiv preprint arXiv:2410.08368, 2024. ",
+            "Tao Yang, Yuwang Wang, Yan Lu, and Nanning Zheng. Visual concepts tokenization. Advances in Neural Information Processing Systems, 35:31571–31582, 2022. ",
+            "Hongxu Yin, Arash Vahdat, Jose M Alvarez, Arun Mallya, Jan Kautz, and Pavlo Molchanov. A-vit: Adaptive tokens for efficient vision transformer. In Proceedings of the IEEE/CVF conference on computer vision and pattern recognition, pages 10809–10818, 2022. ",
+            "Qihang Yu, Mark Weber, Xueqing Deng, Xiaohui Shen, Daniel Cremers, and Liang-Chieh Chen. An image is worth 32 tokens for reconstruction and generation. Advances in Neural Information Processing Systems, 37:128940–128966, 2025. "
+        ],
+        "bbox": [
+            166,
+            87,
+            831,
+            440
+        ],
+        "page_idx": 10
+    },
+    {
+        "type": "page_number",
+        "text": "",
+        "bbox": [
+            490,
+            935,
+            506,
+            946
+        ],
+        "page_idx": 10
+    }
+]
