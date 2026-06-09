@@ -1,0 +1,679 @@
+# Do Video Foundation Models Understand Intuitive Physics? A Layerwise Probing Analysis
+
+Samuele Punzo\* 1 Niccolo Caselli\*\` 1 Ippokratis Pantelidis\* 1 Francesco Massafra\* 1 Salvatore Lo Sardo\* 1 Mohammadreza Salehi† 1
+
+∗Equal contribution, †Supervisor
+
+## Abstract
+
+We study whether pretrained video foundation models encode intuitive-physics information in their frozen representations, and how this information varies across model families, layers, and probe types. Using frozen-feature probing on IntPhys2 and Minimal Video Pairs (MVP), we compare predictive joint-embedding models (V-JEPA), masked reconstruction models (Video-MAE), and a diffusion-based video generator (LTX-Video). V-JEPA achieves the strongest overall results across benchmarks, especially with probes that model temporal dynamics, while VideoMAE remains competitive and LTX-Video recovers weaker but non-trivial signal. Layerwise analyses show that physics-relevant information is weakest in early layers and becomes most accessible at intermediate-to-late depth, and temporal controls show that disrupting frame order substantially reduces performance, especially on MVP. Together, these results suggest that intuitivephysics knowledge emerges reliably in pretrained video representations, but its accessibility depends strongly on pretraining paradigm, representational depth, and readout mechanism.
+
+## 1. Introduction
+
+Video foundation models trained on internet scale data exhibit strong performance across tasks ranging from action recognition to future prediction and text-conditioned generation. Yet strong benchmark performance does not establish what kind of internal knowledge these models acquire. It remains unclear whether pretrained video models encode representations that reflect intuitive physical understanding, or rather their apparent competence is driven by superficial visual statistics and benchmark-specific shortcuts. Many recent video architectures are implicitly or explicitly motivated as world models, systems that capture how objects and events evolve over time in a structured latent space (Bardes et al., 2024; Assran et al., 2023). If such framing is accurate, we should expect pretrained representations to encode intuitive physical structure. Garrido et al. (2025) offer evidence that this may be the case, showing that some aspects of intuitive physics already emerge in pretrained representations. At the same time, practical use cases often depend on temporal coherence (Ouyang et al., 2024), as well as on physical plausibility and robustness beyond benchmark-specific pattern matching. Yet as Bordes et al. (2025) and Krojer et al. (2025) demonstrate, evaluating intuitive physics in modern video models remains difficult, because success on video benchmarks may reflect generic motion sensitivity, semantic recognition, or dataset biases rather than genuine sensitivity to physical constraints.
+
+In this paper, following the probing methodology of Alain & Bengio (2018), the frozen-feature analysis paradigm of El Banani et al. (2024) and the more recent work of Joseph et al. (2026), we use frozen-feature probing to ask not whether video foundation models can be adapted to solve intuitive-physics benchmarks, but whether they already encode physics-relevant structure as a consequence of pretraining. This framing organizes our analysis around four questions. First, across three major pretraining paradigms: masked video reconstruction, predictive joint-embedding learning, and diffusion-based video generation, instantiated by VideoMAE (Tong et al., 2022; Wang et al., 2023), V-JEPA (Bardes et al., 2024; Assran et al., 2025; Mur-Labadia et al., 2026), and LTX-Video (HaCohen et al., 2024); we ask which learning objectives make intuitive physics information most accessible under a common evaluation protocol. Second, by probing multiple depths of each architecture, and multiple denoising stages for diffusion models, we ask where in the representational hierarchy this information becomes most accessible. Third, by comparing probes of increasing expressivity, linear, MLP, and attentive temporal probes, we assess the degree to which intuitive physics information is explicitly decodable from frozen features or only recoverable with more expressive readout mechanisms.
+
+We evaluate the resulting representations on two recent benchmarks that target physical understanding in video. Int-Phys2 by Bordes et al. (2025) tests sensitivity to core principles such as: permanence, immutability, spatio-temporal continuity, and solidity in controlled environments. MVP by Krojer et al. (2025) complements this setting with minimal video pairs designed to reduce shortcut based performance inflation: paired examples are visually similar but require opposite answers, making it harder to succeed through superficial cues alone. To further distinguish intuitive physics from generic temporal modeling, we include control conditions such as single-frame and time-shuffled baselines. These controls are essential for interpreting performance: if a model retains strong results after temporal shuffling, for example, then success on the main benchmark may not reflect genuine sensitivity to physical dynamics (Dwibedi et al., 2018; Feng et al., 2025).
+
+We do not take benchmark performance as evidence that video foundation models reason about physics in a humanlike way. Instead, we investigate a more precise question: what physics-relevant structure is already encoded by pretraining, where it becomes accessible inside the model, how that accessibility changes across different learning objectives and how robustly it depends on temporal dynamics.
+
+## 2. Related Work
+
+Closely related recent work has begun to study intuitive physics in pretrained video models from complementary perspectives. Garrido et al. (2025) show that intuitive physics understanding can emerge from self-supervised pretraining on natural videos, particularly in models that predict in representation space, using violation-of-expectation style evaluation. Joseph et al. (2026) further examine how physical information is organized within large-scale video encoders through layerwise probing and interpretability analyzes. In the following subsections, we review the literature on video pretraining paradigms, probing methodologies, and intuitive-physics benchmarks to contextualize how different objectives may influence the encoding of physical structure.
+
+## 2.1. Pretraining Paradigms in Video Foundation Models
+
+Self-supervised video representation learning has developed along several distinct pretraining objectives. One prominent line of work is masked video reconstruction, where models are trained to recover masked spatio-temporal content from partial observations. Architectures such as VideoMAE (Tong et al., 2022) and its successor VideoMAE-v2 (Wang et al., 2023) show that reconstruction based objectives can learn strong and transferable video representations, even under very high masking ratios.
+
+A second line of work replaces pixel reconstruction with latent space prediction. As shown by Assran et al. (2023), in the JEPA framework the model predicts target representations from context rather than reconstructing raw inputs, with the goal of encouraging more abstract and semantically structured representations. This idea was first developed by Assran et al. (2023) in the visual domain with I-JEPA and later extended to video by Bardes et al. (2024) in V-JEPA, where prediction in representation space is explicitly connected to temporal understanding and, more broadly, to world modeling objectives. Recent variants such as V-JEPA 2 (Assran et al., 2025) and V-JEPA 2.1 (Mur-Labadia et al., 2026) further emphasize large scale learning and dense temporally grounded features.
+
+A third family is diffusion-based video modeling (HaCohen et al., 2024), in which useful representations may arise implicitly through the denoising process used for video generation. Unlike masked reconstruction or latent prediction, diffusion models are not primarily optimized for representation quality, yet recent work suggests that their backbones can encode substantial motion information and coherent temporal-semantic structure (Xiao et al., 2024; Zhu et al., 2024). In our experiments, we use LTX-Video as a representative of this family: a large-scale model designed for efficient real-time text-to-video generation, which makes it an informative counterpart to the representation-focused objectives of V-JEPA and VideoMAE.
+
+Taken together, these paradigms optimize for different notions of structure: reconstruction, latent prediction, and denoising. However, it remains unclear how these differences affect the encoding and accessibility of intuitive physics information in pretrained video representations.
+
+## 2.2. Probing and Representation Evaluation
+
+Probing (Alain & Bengio, 2018; Belinkov, 2022) has become a standard tool for analyzing what information is accessible in learned representations. Early work on linear classifier probes introduced the idea of attaching independent readouts to intermediate layers in order to measure how task relevant information can be extracted across network depth. In this view, strong probe performance does not simply reflect end task accuracy, but offers a way to study how information is organized inside a pretrained model. In video representation learning, frozen feature evaluation has been widely used to assess whether pretrained backbones encode motion, temporal correspondence, and higher level semantic structure without full task specific finetuning (Bardes et al., 2024; Joseph et al., 2026). At the same time, the conclusions that can be drawn from probing depend strongly on probe expressivity. Linear probes test whether information is directly accessible, whereas stronger probes may recover information that is present but not explicitly organized for simple readout. For this reason, comparing probe families of increasing capacity can be more informative than relying on a single probe type. Despite the broad use of probing for representation analysis, only a small number of recent studies have begun to examine intuitive-physics representations in pretrained video models, and these do not compare the main video pretraining paradigms under a unified layer-wise frozen-feature protocol (Garrido et al., 2025; Joseph et al., 2026).
+
+## 2.3. Evaluating Intuitive Physics and Video Understanding
+
+Evaluating physical understanding in video is challenging because many benchmarks can be partially solved through superficial appearance cues, generic motion statistics, or dataset specific biases. Bordes et al. (2025) created Int-Phys 2 to address this problem with controlled videos built around four core physical principles, namely permanence, immutability, spatio-temporal continuity, and solidity. Its possible versus impossible setup is designed to test sensitivity to physical plausibility rather than generic action recognition. MVP by Krojer et al. (2025) addresses a complementary issue: shortcut-based score inflation in video question answering. It does so by constructing minimal video pairs that are visually similar and paired with the same question but opposite answers. Under this design, a model must answer both members of the pair consistently, making it much harder to rely on superficial visual or textual shortcuts.
+
+These benchmarks provide a more targeted evaluation of intuitive physics than standard video understanding datasets alone. However, benchmark performance in isolation still does not fully separate sensitivity to physical structure from generic temporal modeling. This motivates controlled comparisons that examine not only overall accuracy, but also the conditions under which physics relevant information becomes accessible in pretrained representations.
+
+## 3. Models
+
+We compare three model families representing the main pretraining paradigms considered in this work: predictive joint-embedding models (V-JEPA), masked video reconstruction models (VideoMAE), and a diffusion-based video generator (LTX-Video). This selection allows us to compare how latent prediction, reconstruction, and denoising affect the accessibility of intuitive-physics information under a common frozen-feature probing protocol. For the scope of our work, we consider the version of the model with the largest possible backbone. Detailed model descriptions, checkpoint choices, and backbone configurations are reported in the appendix (Tables 2 and 3).
+
+## 4. Datasets
+
+## 4.1. IntPhys 2
+
+IntPhys 2 (Bordes et al., 2025) organizes its videos around four physical principles (permanence, immutability, spatiotemporal continuity, and solidity) and structures them into scenes. Each scene consists of four clips: two that are physically possible and two that are impossible. This quadruplet structure is the unit of evaluation throughout our analysis.
+
+The primary metric is Violation of Expectation (VOE) accuracy. A scene is counted as correct only when every possible clip in that scene receives a higher plausibility score than every impossible clip, i.e., min $\left( \mathrm { s c o r e } _ { \mathrm { p o s s i b l e } } \right) >$ max $( { \mathrm { s c o r e } } _ { \mathrm { i m p o s s i b l e } } )$ . This is stricter than per-clip accuracy: a model can classify the majority of clips correctly and still fail on VOE if it does not rank them consistently within a scene. Since VOE requires a continuous score per clip rather than a hard label, it connects directly to our probing setup where probes are trained to output a scalar plausibility estimate. Full filtering, split-count, stratification and adaptation are reported in Appendix A.2.
+
+We report clip-level accuracy and VOE accuracy for each backbone, broken down by condition. The difference between clip accuracy and VOE is informative on its own: a model that achieves high clip accuracy but low VOE accuracy is partially sensitive to plausibility, but not consistently so within a scene, which is a qualitatively different failure mode from one that performs poorly on both.
+
+## 4.2. Minimal Video Pairs (MVP)
+
+Krojer et al. (2025) proposed MVP a shortcut-aware video question answering benchmark for physical understanding. Its key feature is the use of minimal video pairs: two videos are visually similar and associated with the same question, but require opposite answers. This structure is useful for our setting because it reduces the extent to which a model can succeed by exploiting static or dataset-specific shortcuts. The main metric employed by the benchmark is pair consistency: a pair is counted as correct only when both members of the minimal pair are classified correctly.
+
+The original MVP task is formulated as video question answering, where each example is answered in the benchmark’s local choice space. This creates a mismatch with our frozen-feature probing protocol. Most of the backbones considered in this work, such as VideoMAE and V-JEPA, are video-only representation models and do not natively accept a natural-language query. Although some video encoders can be aligned with a language model for video question answering, doing so would introduce an additional visionlanguage training stage and would no longer measure only the information already present in the frozen video representations. For this reason, we do not evaluate MVP as a full text-conditioned QA task, but instead adapt it to a binary physical-plausibility task. Figure 1 summarizes this adaptation: the original text-conditioned VideoQA format is converted into a binary plausibility prediction task, and probe outputs are mapped back to the original answer space for pair-consistency scoring.
+
+![](images/0129d1ad7382fee1d664faf41ed1b663fa07a1d6c9f9745817a5487b1d4026d5.jpg)
+
+<details>
+<summary>flowchart</summary>
+
+```mermaid
+graph LR
+  A["Original MVP task: text-conditioned VideoQA"] --> B["Q Is video plausible according to intuitive physics [..."]?]
+  A --> C["Q Is video plausible according to intuitive physics [..."]?]
+  A --> D["Correct choice: B"]
+  A --> E["Correct choice: A"]
+    
+  F["Our probing setup: frozen video features + binary probe"] --> G["1 = plausible / possible\n0 = implausible / impossible"]
+  F --> H["1 = plausible / possible\n0 = implausible / impossible"]
+  F --> I["Correct label: 0"]
+  F --> J["Correct choice: B"]
+  F --> K["Correct choice: A"]
+    
+    style A fill:#f9f,stroke:#333
+    style F fill:#ccf,stroke:#333
+```
+</details>
+
+Figure 1. MVP adaptation for frozen-feature probing. We convert text-conditioned VideoQA examples from Minimal Video Pairs (Krojer et al., 2025) into binary physical-plausibility labels, while preserving pair-consistency evaluation. Video frames are adapted from MVP examples; figure layout and annotations are ours.
+
+Concretely, we filter MVP to retain intuitive-physics examples whose questions can be mapped to a binary plausibility judgment, and require that each retained example has exactly two answer choices that can be semantically mapped to a yes-or-no option. Rather than training probes on the raw positional choice labels, which are not stable across examples, we convert each retained sample into a semantic binary label: plausible/possible versus implausible/impossible. At evaluation time, binary probe predictions are mapped back into the original MVP choice space so that scoring remains compatible with the benchmark’s paired evaluation protocol. Full filtering, split-count, and stratification details are reported in Appendix A.2.
+
+Recent video-language evaluations, such as V-JEPA 2 and V-JEPA 2.1 (Assran et al., 2025; Mur-Labadia et al., 2026), also report MVP paired accuracy as a measure of physicalworld understanding. However, these works evaluate MVP in a text-conditioned video question answering setting after aligning the video encoder with a large language model (LLM), whereas our goal is to probe frozen video representations directly.
+
+## 5. Evaluation
+
+To assess how intuitive-physics information is distributed across the pretrained backbones, we train probes on representations extracted from multiple depths of each model.
+
+For all architectures, we select four relative encoder depths corresponding approximately to 25%, 50%, 75%, and 100% of the backbone. This keeps the comparison consistent across models with different numbers of layers. For example, V-JEPA 2.1 uses a 48-layer ViT-Gigantic encoder, so we extract features from layers 12, 24, 36, and 48. For LTX-Video, we follow the same four-depth protocol and additionally probe representations at 10 noise levels ranging from 0.1 to 1.0, allowing us to analyze how the accessibility of intuitive-physics information changes not only across depth but also across the denoising trajectory.
+
+Because the linear and MLP probes require a single input vector, we perform average pooling over the spatio-temporal token embeddings produced by the backbones. We use average pooling rather than a CLS token for two reasons: first, not all evaluated architectures provide a directly comparable CLS representation; second, prior work suggests that pooled token features can provide a stronger and more comparable summary for downstream evaluation (Pan et al., 2021; Beyer et al., 2022).
+
+## 5.1. Probes
+
+Linear probe Following the standard probing setup introduced by Alain & Bengio (2018) these probes test whether task-relevant information is directly accessible from the extracted representation. Each linear probe consists of a single layer that maps the pooled clip embedding to the output space of the target task. As such, strong performance with this probe provides evidence that the relevant signal is encoded in a relatively explicit and linearly decodable form (Belinkov, 2022).
+
+Multi-layer perceptron probe To evaluate whether physics-relevant information is present but not linearly encoded, we also train multi-layer perceptron (MLP) probes. These extend the linear probe by introducing additional hidden layers interleaved with non-linear activations (GeLU) and normalization layers (LayerNorm). We vary the number of hidden layers, hidden dimensionality, and dropout rate, selecting the best configuration on the validation set. MLP probes provide a stronger readout than linear probes and can recover task-relevant signals that are not directly linearly decodable, although the interpretability of such results depends more strongly on probe capacity (Liu et al., 2019; Hewitt & Liang, 2019).
+
+Temporal attentive probe Finally, we evaluate a temporal attentive probe inspired by recent attentive probing protocols for frozen visual representations and transformer-based readouts over frozen video features (Bardes et al., 2024; Psomas et al., 2026; Lin et al., 2022). Unlike the linear and MLP probes, this probe operates directly on the sequence of token embeddings rather than on a pooled clip representation, allowing it to model temporal interactions explicitly. The probe consists of a shallow stack of self-attention layers followed by a final cross-attention layer used for classification. In our experiments, we use one self-attention layer and one final cross-attention layer, with 16 attention heads throughout. This probe therefore tests whether intuitivephysics information becomes more accessible when the readout mechanism can exploit the spatio-temporal structure directly.
+
+Training methodology and hyperparameter selection details for all probe families are reported in Appendix A.5, including the full Optuna search space in Table 4.
+
+## 5.2. Temporal Control Conditions
+
+To verify that observed probe performance reflects genuine sensitivity to temporal physics dynamics rather than static appearance cues or order-invariant frame statistics, we evaluate each probe under two control conditions applied at the input level, keeping the probe and backbone frozen.
+
+Frame-shuffled control The temporal order of frames in each original clip is randomly permuted before feature extraction. This disrupts motion trajectories and causal event structure while preserving the set of frames and their individual appearance. A model whose performance is robust to shuffling cannot reliably be interpreted as relying on temporal ordering.
+
+Single-frame control A single frame is randomly sampled from each clip and repeated for the full clip length, producing a video of the same temporal dimension as the original input. This eliminates all temporal variation while keeping the input format identical to the main-task setting, thereby isolating static appearance as an upper bound on what can be inferred without any temporal dynamics.
+
+For each model, probe type, and benchmark, we report the signed relative change in the primary metric with respect to the main-task score (Table 5). These controls are essential for interpreting further results: if a model retains strong performance after temporal disruption, its main-task success may not reflect genuine sensitivity to physical dynamics.
+
+## 6. Results and Discussion
+
+## Analysis 1: Best-case benchmark comparison across model families
+
+Research question Do different pretraining paradigms encode equally accessible intuitive-physics information?
+
+As Table 1 shows, intuitive-physics information retention seems to depend on the pretraining objective and the expressivity of the probe used to measure it. In the following discussion, we focus on the temporal attentive probe, this probe works directly on the sequence of token embeddings rather than a pooled summary (as linear and MLP probes do), thus being more representative of the models’ ability to leverage temporal interactions.
+
+From the experiments we observe how the V-JEPA family consistently retains most of the physical information. V-JEPA models achieve the best scores across both benchmarks, with V-JEPA 2.1 leading IntPhys2 (66.67% VOE) and the base V-JEPA leading MVP (94.03% Pair-acc). The VideoMAE family is close on MVP (reaching 92.01%, a gap of ∼ 2%), but shows a much wider performance gap on IntPhys2. By contrary, the diffusion-based LTX-Video consistently runs behind, with a gap of 10% on MVP and over 19% on IntPhys2. These performance gaps are consistent with differences in architecture and pretraining modality, although our comparison does not isolate objective from confounds such as scale, recency, and training setup. For the V-JEPA family, learning to predict target representations in a joint embedding space rather than reconstructing raw pixels encourages the model to develop abstract, semantically meaningful, and temporally grounded representations. Conversely, LTX-Video is a diffusion model optimized primarily for video generation via progressive denoising; while this yields strong visual results, the objective alone may not be enough to explicitly organize fine-grained intuitive physics into an accessible format.
+
+One point worth noting is the extremely low score of VideoMAE-v2 on IntPhys2 (15.69%), which we suspect to be an artifact of training instability (see Appendix A.6).
+
+(a) IntPhys2
+
+<table><tr><td rowspan="2">Model</td><td colspan="3">Linear</td><td colspan="3">MLP</td><td colspan="3">Temporal Attn.</td></tr><tr><td>Layer</td><td>Acc.</td><td>VOE</td><td>Layer</td><td>Acc.</td><td>VOE</td><td>Layer</td><td>Acc.</td><td>VOE</td></tr><tr><td>V-JEPA</td><td>24</td><td>59.31</td><td>50.98</td><td>32</td><td>66.18</td><td>45.10</td><td>32</td><td>75.98</td><td>56.86</td></tr><tr><td>V-JEPA 2</td><td>40</td><td>58.82</td><td>41.18</td><td>30</td><td>63.24</td><td>56.86</td><td>40</td><td>77.45</td><td>58.82</td></tr><tr><td>V-JEPA 2.1</td><td>48</td><td>58.82</td><td>35.29</td><td>38</td><td>57.35</td><td>39.22</td><td>48</td><td>76.47</td><td>66.67</td></tr><tr><td>VideoMAE</td><td>16</td><td>58.33</td><td>35.29</td><td>24</td><td>59.80</td><td>35.29</td><td>24</td><td>74.51</td><td>58.82</td></tr><tr><td>VideoMAE-v2</td><td>40</td><td>56.86</td><td>47.06</td><td>20</td><td>56.37</td><td>47.06</td><td>30</td><td>50.49</td><td>15.69</td></tr><tr><td>LTX-Video</td><td>24 (0.1)</td><td>61.76</td><td>49.02</td><td>24 (0.2)</td><td>61.76</td><td>47.06</td><td>36 (0.1)</td><td>68.14</td><td>47.06</td></tr></table>
+
+(b) MVP
+
+<table><tr><td rowspan="2">Model</td><td colspan="3">Linear</td><td colspan="3">MLP</td><td colspan="3">Temporal Attn.</td></tr><tr><td>Layer</td><td>Acc.</td><td>Pair</td><td>Layer</td><td>Acc.</td><td>Pair</td><td>Layer</td><td>Acc.</td><td>Pair</td></tr><tr><td>V-JEPA</td><td>32</td><td>71.59</td><td>48.74</td><td>32</td><td>93.02</td><td>87.26</td><td>24</td><td>96.61</td><td>94.03</td></tr><tr><td>V-JEPA 2</td><td>40</td><td>68.00</td><td>47.32</td><td>40</td><td>92.77</td><td>86.75</td><td>40</td><td>96.46</td><td>93.33</td></tr><tr><td>V-JEPA 2.1</td><td>38</td><td>67.24</td><td>43.88</td><td>38</td><td>83.06</td><td>70.78</td><td>48</td><td>96.51</td><td>93.73</td></tr><tr><td>VideoMAE</td><td>24</td><td>63.95</td><td>37.51</td><td>24</td><td>80.13</td><td>64.41</td><td>24</td><td>95.10</td><td>92.01</td></tr><tr><td>VideoMAE-v2</td><td>20</td><td>64.86</td><td>38.62</td><td>20</td><td>80.43</td><td>66.13</td><td>30</td><td>94.89</td><td>91.10</td></tr><tr><td>LTX-Video</td><td>24 (0.6)</td><td>71.33</td><td>49.95</td><td>24 (0.7)</td><td>82.81</td><td>69.16</td><td>24 (0.5)</td><td>91.76</td><td>84.33</td></tr></table>
+
+Table 1. Best-case benchmark comparison across model families. For each dataset and probe, we report the best layer, clip-level accuracy, and the benchmark-specific metric. Shaded columns denote the primary dataset-specific metric. The darkest cell within each probe block indicates the highest value. For LTX-Video, layer columns report the block number, with the noise level indicated in parentheses.
+
+This instability is likely driven by a smaller dataset size and the VOE metric, which requires a consistent ranking of plausibility across all four clips in a scene, meaning that every minor error heavily penalizes the final score.
+
+Takeaway: Under our probing protocol, the V-JEPA family yields the most accessible and robust intuitivephysics representations, outperforming both masked reconstruction and diffusion paradigms when evaluated with temporally expressive readout mechanisms.
+
+## Analysis 2: Layerwise emergence of physics information
+
+Research question. Where in the network does intuitivephysics information become most accessible?
+
+To determine where physical understanding originates within the backbones, we analyzed the layer-wise performance profiles across our models. Here, we focus our analysis on the MLP probe, as it possesses sufficient capacity to extract latent task-relevant signals without explicitly remodeling temporal sequences. Corresponding layerwise profiles for the linear and temporal attentive probes are reported in Appendix Figure 4, 7, and 5. As Figure 2 and 8 show, the depth at which physics-relevant information becomes most accessible depends strongly on the benchmark. On MVP, performance generally improves toward later layers for both the V-JEPA and VideoMAE families (see Figure 2 and Figure 6 in the Appendix), indicating that the information needed for minimal-pair physical reasoning becomes most accessible only after substantial processing. With MLP probes, V-JEPA rises from 59.45% pair consistency at 0.25 depth to 87.26% at the final layer, and V-JEPA 2 from 52.07% to 86.75%. V-JEPA 2.1 peaks slightly earlier at 0.75 depth (70.78%) before declining at the output (68.45%), but still follows the same broad late-layer trend. The VideoMAE models show a similar, though weaker, pattern: VideoMAE improves from 50.46% at 0.25 depth to 64.41% at 0.75, then decreases slightly at the final layer (62.59%), while VideoMAE-v2 peaks at 0.5 depth (66.13%) before declining thereafter. Overall, MVP is best characterized as late-layer dominated, with most gains concentrated between the middle and upper portions of the encoder.
+
+Like MVP, IntPhys2 relies on intermediate-to-late representations, but its depth profile is less monotonic and less consistent across models, with several backbones peaking by mid-depth or declining again at the final layer. V-JEPA improves sharply from 15.69% VOE at 0.25 depth to 45.10% already at 0.5, and then remains flat through later layers. V-JEPA 2 peaks at 0.75 depth with 56.86%, before dropping to 47.06% at the final layer. V-JEPA 2.1 also peaks at 0.75 (39.22%), while VideoMAE peaks at 0.75 (35.29%) and VideoMAE-v2 at 0.5 (47.06%). Unlike MVP, IntPhys2 does not show a clear late-layer trend, but rather physics-relevant information becomes accessible over a broader intermediateto-late region, and in several cases weakens again at the output. LTX reinforce this interpretation while adding a denoising dimension. From Figure 8 in the appendix we observe that on IntPhys2, fixing the transformer block and decreasing the noise level does not yield a clear monotonic improvement: performance fluctuates across the denoising trajectory, suggesting that intuitive-physics information is not progressively revealed in a simple stage-by-stage manner. However, the strongest results are concentrated in the middle of the backbone. On MVP, LTX shows a similar depth preference: performance is again strongest around the middle blocks while the earliest and latest blocks remain weaker overall. Thus, even for diffusion features, the most accessible physics signal appears at intermediate depth rather than at the extremes of the denoising process.
+
+MLP probe performance by relative depth, separated by family  
+![](images/165654891a459f9ccf2f03236031972d9e938033314d0aaf695bca8c5c407b7f.jpg)
+
+<details>
+<summary>line chart</summary>
+
+| Relative depth slot | V-JEPA | V-JEPA 2 | V-JEPA 2.1 |
+| ------------------- | ------ | -------- | ---------- |
+| 0.25                | 18     | 12       | 25         |
+| 0.50                | 45     | 25       | 20         |
+| 0.75                | 45     | 50       | 40         |
+| 1.00                | 45     | 45       | 38         |
+</details>
+
+![](images/6f58948b6db1993663153959630fbe9f34fc6284efeb9898cabee95ec8e57a49.jpg)
+
+<details>
+<summary>line chart</summary>
+
+| Relative depth slot | V-JEPA | V-JEPA 2 | V-JEPA 2.1 |
+| ------------------- | ------ | -------- | ---------- |
+| 0.25                | 60     | 55       | 53         |
+| 0.50                | 70     | 60       | 62         |
+| 0.75                | 85     | 75       | 70         |
+| 1.00                | 85     | 85       | 68         |
+</details>
+
+![](images/a10f12118aa6902366a870bc142c313c30408cf920d1d8c22e7f79e5abba19bd.jpg)
+
+<details>
+<summary>line chart</summary>
+
+| Relative depth slot | VideoMAE | VideoMAE-v2 |
+| ------------------- | -------- | ----------- |
+| 0.25                | 18       | 32          |
+| 0.50                | 34       | 46          |
+| 0.75                | 36       | 44          |
+| 1.00                | 30       | 38          |
+</details>
+
+![](images/5cbb99a28ea705677ac02476e2d159a92195f3e3fd56f5dfb724779305d4c9c3.jpg)
+
+<details>
+<summary>line chart</summary>
+
+| Relative depth slot | VideoMAE | VideoMAE-v2 |
+| ------------------- | -------- | ----------- |
+| 0.25                | 50       | 50          |
+| 0.50                | 58       | 65          |
+| 0.75                | 63       | 60          |
+| 1.00                | 61       | 60          |
+</details>
+
+Figure 2. Layerwise MLP depth profiles by model family. MVP generally improves toward later layers, while IntPhys2 more often peaks before the final layer.
+
+Takeaway. Physics-relevant information is weakest in early layers and becomes most accessible at intermediate-to-late depth. MVP shows the clearest late-layer trend, whereas IntPhys2 is less monotonic and often peaks between 50% and 75% depth. LTX follows the same broad pattern, with its strongest signal concentrated in the middle of the backbone.
+
+## Analysis 3: Readout accessibility under linear and nonlinear probes
+
+Research question. Is intuitive-physics information directly readable from frozen features, or only recoverable with a stronger probe?
+
+The answer depends strongly on the benchmark. A full bestcase comparison across probe families and model families is shown in Appendix Figure 9. On MVP, probe capacity matters substantially: linear probes perform poorly across all model families, while MLP and especially temporal attentive probes recover much stronger signal. For the V-JEPA family, pair consistency rises from 48.7%, 47.3%, and 43.9% with linear probes to 87.26%, 86.75%, and 70.78% with MLP probes, and further to 94.03%, 93.33%, and 93.73% with temporal attentive probes. The same pattern holds for VideoMAE and LTX-Video: VideoMAE improves from 37.5% linear to 64.41% MLP and 92.01% attentive, VideoMAE-v2 from 38.62% to 66.13% to 91.10%, and LTX-Video from 49.95% to 69.16% to 84.33%. This large and consistent separation indicates that MVP-relevant physics information is only weakly accessible to a linear readout and becomes much more recoverable when the probe can model nonlinear or explicit temporal interactions.
+
+IntPhys2 shows a weaker and less uniform dependence on probe expressivity. Linear probes already recover a moderate amount of signal in several models, reaching 50.98% VOE for V-JEPA, 47.06% for VideoMAE-v2, and 49.02% for LTX-Video. MLP probes help in some cases, most notably for V-JEPA 2 (41.18% to 56.86%) and V-JEPA 2.1 (35.29% to 39.22%), but offer little or no gain for others. Temporal attentive probes are often strongest, reaching 56.86% for V-JEPA, 58.82% for V-JEPA 2, 66.67% for V-JEPA 2.1, and 58.82% for VideoMAE, although the very low VideoMAE-v2 attentive score (15.69%) is likely an unstable outlier. Compared with MVP, then, IntPhys2 appears to contain more signal that is already linearly decodable, while still benefiting in many cases from probes that can exploit richer temporal structure.
+
+Takeaway. Intuitive-physics information is not equally explicit across tasks. On MVP, it is largely not directly readable from frozen features and requires stronger nonlinear or temporal readouts to become accessible. On IntPhys2, a larger fraction of the signal is already available to linear probes, but more expressive probes still often improve performance, especially in the strongest JEPA models.
+
+## Analysis 4: Temporal controls
+
+Research question. How much of the original task performance survives when temporal structure is disrupted?
+
+Table 5 reports, for each model, probe type, and benchmark, the drop in the primary metric relative to the main-task result under the two control conditions introduced in subsection 5.2. Figure 10 visualises these drops across model families for the MLP probe.
+
+On MVP, temporal disruption produces a clear collapse. With MLP probes, frame shuffling reduces pair consistency by −39% to −61%, and single-frame repetition by −86% to −100%. The same pattern holds for temporal attentive probes despite their high main-task scores. Notably, LTX-Video suffers the most catastrophic collapses under the attentive probe (−96% for shuffle, −97% for singleframe). MVP therefore provides the cleanest evidence that the recovered signal is not static: successful minimal-pair classification requires multi-frame temporal evidence.
+
+In contrast, results on IntPhys2 reveal a more mixed reliance on temporal structure. Single-frame repetition remains highly damaging, for example for V-JEPA linear (−85%), LTX-Video linear (−100%), and VideoMAE-v2 MLP (−75%), showing that IntPhys2 is not purely solvable from one static frame.1 However, frame shuffling is less uniformly destructive: V-JEPA temporal attention and V-JEPA 2.1 linear show exactly a 0.00% relative drop. This lack of degradation strongly implies that these probes have collapsed into exploiting dataset biases and unordered appearance features rather than modeling a causal physics trajectory. This distinction matters for interpreting the pooled probes. Linear and MLP probes receive averaged features, but shuffle drops still occur because the frozen backbone contextualizes tokens before pooling and is therefore not time-permutation invariant. Conversely, the fact that Int-Phys2 performance often survives shuffling suggests that
+
+1The notable exception is VideoMAE-v2’s temporal attentive probe, which shows an anomalous +62.50% jump under the single-frame control; however, as noted in Analysis 1, this specific configuration failed to learn a stable temporal representation to begin with.
+
+some IntPhys2 VOE signal can be recovered from orderinsensitive configurations or unordered multi-frame evidence, rather than from the original event trajectory itself.
+
+Takeaway. Temporal controls show that the probed signal is not purely static, especially on MVP. However, IntPhys2 shuffle results suggest that some VOE performance can come from order-insensitive plausibility cues rather than robust temporal physical reasoning.
+
+## 7. Conclusions
+
+In this work, we studied if pretrained video foundation models already encode intuitive-physics information in their frozen representations, and how that information is organized across model families, layers, and probe types. Across both IntPhys2 and MVP, the strongest overall results, especially under temporally expressive readouts, come from the V-JEPA family, suggesting that latent-space predictive pretraining yields representations in which physics-relevant structure is highly accessible under our probing protocol.
+
+Our layerwise and probe-based analyses further show that intuitive-physics information is not uniformly distributed inside these models. On MVP, it becomes most accessible in later layers and benefits strongly from more expressive readouts, indicating that the relevant signal is present but not directly linearly decodable. On IntPhys2, by contrast, useful information is often available already at intermediateto-late depth and is in several cases partially accessible even to linear probes. Temporal control experiments further show that removing or weakening the temporal dimension substantially reduces performance, indicating that physical plausibility judgments depend on multi-frame evidence rather than static appearance alone.
+
+Taken together, our results show that intuitive-physics knowledge emerges reliably in pretrained video representations, but its accessibility depends strongly on the learning objective, representational depth, and readout mechanism. Among the paradigms we evaluate, predictive jointembedding pretraining is associated with the strongest and most robust physics-relevant features in the current generation of large video models.
+
+An important next step is to disentangle pretraining objective from confounding factors such as model scale and architecture, for example by repeating the same probing analysis on smaller and more closely matched backbones within each model family.
+
+## References
+
+Akiba, T., Sano, S., Yanase, T., Ohta, T., and Koyama, M. Optuna: A next-generation hyperparameter optimization framework. In Proceedings of the 25th ACM SIGKDD International Conference on Knowledge Discovery & Data Mining, KDD ’19, pp. 2623–2631. Association for Computing Machinery, 2019. doi: 10. 1145/3292500.3330701. URL https://doi.org/ 10.1145/3292500.3330701.  
+Alain, G. and Bengio, Y. Understanding intermediate layers using linear classifier probes, 2018. URL https:// arxiv.org/abs/1610.01644.  
+Assran, M., Duval, Q., Misra, I., Bojanowski, P., Vincent, P., Rabbat, M., LeCun, Y., and Ballas, N. Self-supervised learning from images with a joint-embedding predictive architecture, 2023. URL https://arxiv.org/ abs/2301.08243.  
+Assran, M., Bardes, A., Fan, D., Garrido, Q., Howes, R., Mojtaba, Komeili, Muckley, M., Rizvi, A., Roberts, C., Sinha, K., Zholus, A., Arnaud, S., Gejji, A., Martin, A., Hogan, F. R., Dugas, D., Bojanowski, P., Khalidov, V., Labatut, P., Massa, F., Szafraniec, M., Krishnakumar, K., Li, Y., Ma, X., Chandar, S., Meier, F., LeCun, Y., Rabbat, M., and Ballas, N. V-jepa 2: Self-supervised video models enable understanding, prediction and planning, 2025. URL https://arxiv.org/abs/2506.09985.  
+Bardes, A., Garrido, Q., Ponce, J., Chen, X., Rabbat, M., LeCun, Y., Assran, M., and Ballas, N. Revisiting feature prediction for learning visual representations from video, 2024. URL https://arxiv.org/abs/ 2404.08471.  
+Belinkov, Y. Probing classifiers: Promises, shortcomings, and advances. Computational Linguistics, 48(1):207–219, 04 2022. doi: 10.1162/coli a 00422.  
+Bergstra, J., Bardenet, R., Bengio, Y., and Kegl, B. ´ Algorithms for hyper-parameter optimization. In Shawe-Taylor, J., Zemel, R., Bartlett, P., Pereira, F., and Weinberger, K. (eds.), Advances in Neural Information Processing Systems, volume 24. Curran Associates, Inc., 2011. URL https://proceedings.neurips. cc/paper\_files/paper/2011/file/ 86e8f7ab32cfd12577bc2619bc635690-Paper. pdf.  
+Beyer, L., Zhai, X., and Kolesnikov, A. Better plain vit baselines for imagenet-1k, 2022. URL https: //arxiv.org/abs/2205.01580.  
+Bordes, F., Garrido, Q., Kao, J., Williams, A., Rabbat, M., and Dupoux, E. Intphys 2: Benchmarking intu-
+
+itive physics understanding in complex synthetic environments, 06 2025.
+
+Dwibedi, D., Sermanet, P., and Tompson, J. Temporal reasoning in videos using convolutional gated recurrent units. In Proceedings of the IEEE Conference on Computer Vision and Pattern Recognition (CVPR) Workshops, June 2018.
+
+El Banani, M., Raj, A., Maninis, K.-K., Kar, A., Li, Y., Rubinstein, M., Sun, D., Guibas, L., Johnson, J., and Jampani, V. Probing the 3d awareness of visual foundation models. In Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition (CVPR), pp. 21795–21806, June 2024.
+
+Feng, B., Lai, Z., Li, S., Wang, Z., Wang, S., Huang, P., and Cao, M. Breaking down video llm benchmarks: Knowledge, spatial perception, or true temporal understanding?, 2025. URL https://arxiv.org/abs/ 2505.14321.
+
+Garrido, Q., Ballas, N., Assran, M., Bardes, A., Najman, L., Rabbat, M., Dupoux, E., and LeCun, Y. Intuitive physics understanding emerges from self-supervised pretraining on natural videos, 2025. URL https://arxiv.org/ abs/2502.11831.
+
+HaCohen, Y., Chiprut, N., Brazowski, B., Shalem, D., Moshe, D., Richardson, E., Levin, E., Shiran, G., Zabari, N., Gordon, O., Panet, P., Weissbuch, S., Kulikov, V., Bitterman, Y., Melumian, Z., and Bibi, O. Ltx-video: Realtime video latent diffusion, 2024. URL https: //arxiv.org/abs/2501.00103.
+
+Hewitt, J. and Liang, P. Designing and interpreting probes with control tasks, 2019. URL https://arxiv. org/abs/1909.03368.
+
+Joseph, S., Garrido, Q., Balestriero, R., Kowal, M., Fel, T., Bakhtiari, S., Richards, B., and Rabbat, M. Interpreting physics in video world models, 2026. URL https: //arxiv.org/abs/2602.07050.
+
+Krojer, B., Komeili, M., Ross, C., Garrido, Q., Sinha, K., Ballas, N., and Assran, M. A shortcut-aware video-qa benchmark for physical understanding via minimal video pairs. arXiv, 2025.
+
+Lin, Z., Geng, S., Zhang, R., Gao, P., de Melo, G., Wang, X., Dai, J., Qiao, Y., and Li, H. Frozen clip models are efficient video learners, 2022. URL https://arxiv. org/abs/2208.03550.
+
+Liu, N. F., Gardner, M., Belinkov, Y., Peters, M. E., and Smith, N. A. Linguistic knowledge and transferability of contextual representations, 2019. URL https:// arxiv.org/abs/1903.08855.
+
+Loshchilov, I. and Hutter, F. Decoupled weight decay regularization, 2019. URL https://arxiv.org/abs/ 1711.05101.  
+Mur-Labadia, L., Muckley, M., Bar, A., Assran, M., Sinha, K., Rabbat, M., LeCun, Y., Ballas, N., and Bardes, A. V-jepa 2.1: Unlocking dense features in video selfsupervised learning, 2026. URL https://arxiv. org/abs/2603.14482.  
+Ouyang, H., Wang, Q., Xiao, Y., Bai, Q., Zhang, J., Zheng, K., Zhou, X., Chen, Q., and Shen, Y. Codef: Content deformation fields for temporally consistent video processing, 2024. URL https://arxiv.org/abs/2308. 07926.  
+Pan, Z., Zhuang, B., Liu, J., He, H., and Cai, J. Scalable vision transformers with hierarchical pooling. In Proceedings of the IEEE/CVF International Conference on Computer Vision (ICCV), pp. 377–386, October 2021.  
+Psomas, B., Christopoulos, D., Baltzi, E., Kakogeorgiou, I., Aravanis, T., Komodakis, N., Karantzalos, K., Avrithis, Y., and Tolias, G. Attention, please! revisiting attentive probing through the lens of efficiency, 2026. URL https://arxiv.org/abs/2506.10178.  
+Tong, Z., Song, Y., Wang, J., and Wang, L. Videomae: Masked autoencoders are data-efficient learners for selfsupervised video pre-training, 2022. URL https:// arxiv.org/abs/2203.12602.  
+Wang, L., Huang, B., Zhao, Z., Tong, Z., He, Y., Wang, Y., Wang, Y., and Qiao, Y. Videomae v2: Scaling video masked autoencoders with dual masking, 2023. URL https://arxiv.org/abs/2303.16727.  
+Xiao, Z., Zhou, Y., Yang, S., and Pan, X. Video diffusion models are training-free motion interpreter and controller, 2024. URL https://arxiv.org/abs/ 2405.14864.  
+Zhu, Z., Feng, X., Chen, D., Yuan, J., Qiao, C., and Hua, G. Exploring pre-trained text-to-video diffusion models for referring video object segmentation, 2024. URL https: //arxiv.org/abs/2403.12042.
+
+## A. Appendix
+
+## A.1. Code Availability
+
+All code necessary to reproduce the experiments is publicly available in the GitHub repository.
+
+## A.2. Dataset Construction and Additional Benchmark Details
+
+IntPhys2 We use the Main split of the dataset and discard the Debug split, which contains simplified videos intended for model calibration and is not representative of the evaluation conditions. This gives 253 scenes and 1,012 clips in total. We split at the scene level so that all four clips of a quadruplet always fall in the same partition. The split is 60/20/20 and is stratified by physics condition to keep each principle proportionally represented across train, validation, and test. The final counts are 151 scenes (604 clips) for training, and 51 scenes (204 clips) each for validation and test. Each clip carries a native binary label (possible or impossible) that maps directly onto the probe’s binary output, so no label conversion is required.
+
+MVP For MVP, we retain only examples from the intuitive-physics subset whose questions ask whether an event, trajectory, final position, or object interaction is physically plausible, and require that each retained example has exactly two answer choices that can be semantically mapped to a yes-or-no option. This filtering yields a balanced binary subset of MVP. Starting with 54,828 raw rows, we retain 9,886 samples, comprising exactly 4,943 plausible and 4,943 implausible videos. We split the data at the pair level, so that both videos in a minimal pair always belong to the same split, using a 60/20/20 train/validation/test split stratified by source and question template.
+
+## IntPhys 2 physical conditions
+
+Object Permanence  
+Hiddenobjects should stillexist when they become visible again  
+![](images/9ddb1b6fc73382f69436f948a2dbe68cbda288b07d8be3450677d0d1091f1de0.jpg)  
+· t1
+
+![](images/dc788c16d1700c592f4051b59b63aed6f4568f8004dbab54b80e74c3711fcb42.jpg)
+
+![](images/f4826d961f6d066ec00db7483fd850f239b4ca8ce2ad4500cf6dcd80ff3a7080.jpg)
+
+Spatio-Temporal Continuity  
+Occluded motion should remain continuous through space and time  
+![](images/de9d3c5b8d82480dffb4046c586565229795855734e258f9eeded275f50bd8d5.jpg)
+
+![](images/1168fb3ff8475f27733839491fc5b906429b87f861b588937f84627b96bc7825.jpg)  
+t2
+
+![](images/0067769edb294d31e7e20cda07183a342486822a516c1b243bc90fc016aaa1bf.jpg)  
+t3
+
+Object Immutability  
+Hiddenobjects should keep the same identity and properties  
+![](images/2971d092c4478cfb9f44db8e82c3200b8a69ff0179d96d7ea95ad7294aea8ce1.jpg)
+
+![](images/b0d471edc29c2b9d00cdd21e6501a41d00e13cd183f50cfdbc5756ab81ad1663.jpg)  
+· t2
+
+![](images/f3eba9ec1ea56711821e3fbf2596f440c72215361ed5aef5e62c416e6a65088d.jpg)
+
+Solidity  
+Solid objects should block each other,not pass through each other  
+![](images/19e6325d5632c88bb2dda79d6e71c95533b02cce9fee6351616d580a4d1bb5b8.jpg)
+
+![](images/18cd0d682c8ed40cae79b4cbe281dd6b0c8a82eba2fc68f717e127e0db6cdc9a.jpg)  
+●t2
+
+![](images/a3e55da8fc42904d99e82e23c42f022f9403409ccb90cb954266fd22c651467d.jpg)  
+t3  
+Figure 3. IntPhys 2 physical conditions. Each panel shows an illustrative fixed-camera frame sequence for one principle: permanence, immutability, spatio-temporal continuity, and solidity. Frames are adapted from Fig. 6 of Bordes et al. (2025); figure layout and annotations are ours.
+
+## A.3. Extended Model Descriptions
+
+V-JEPA Family The V-JEPA (Video Joint-Embedding Predictive Architecture) (Bardes et al., 2024) models leverage the principle of latent space prediction. Unlike reconstruction-based approaches that operate on pixel-level data, the model learns to predict a target representation from context in a shared embedding space. This encourages abstract, semantically meaningful, and compact representations rather than appearance matching. Compared with the original V-JEPA (Bardes et al., 2024), V-JEPA 2 (Assran et al., 2025) and V-JEPA 2.1 (Mur-Labadia et al., 2026) extend the same core idea to larger-scale training and stronger temporally grounded representations, with a greater emphasis on dense video understanding and world-model-like behavior. In our experiments, we use the largest available checkpoint within this family so that the probing results reflect the strongest pretrained representation we can access under the same evaluation protocol. Specifically, we probe V-JEPA (ViT-H/16), V-JEPA 2 (ViT-G/16), and V-JEPA 2.1 (ViT-Gigantic/16), all operating on 16-frame clips at 384×384 resolution with patch size 16 and tubelet size 2.
+
+VideoMAE Family The VideoMAE (Tong et al., 2022) architecture represents the masked video reconstruction paradigm, where a model is trained to reconstruct masked spatio-temporal content from partial observations. Architecturally, it adapts the masked auto-encoding idea to video by using a ViT-based encoder on visible tokens and learning from a high masking ratio, which forces the model to exploit temporal context and long-range structure rather than local pixel continuity alone. VideoMAE-v2 (Wang et al., 2023) improves on the original formulation by strengthening representation learning and transfer performance, while keeping the same overall masked-reconstruction paradigm. Relative to v1, v2 is generally better at extracting transferable video features, so it provides a stronger baseline for probing whether reconstruction-based pretraining encodes intuitive physics. We evaluate VideoMAE (ViT-H/16) and VideoMAE-v2 (ViT-G/16), both processing 16-frame clips at 224×224 resolution with patch size 16 and tubelet size 2.
+
+LTX Video Diffuser LTX Video belongs to the diffusion-based video generation family (HaCohen et al., 2024). In this setting, the model learns to denoise a video sample over multiple steps, starting from a noisy latent and progressively refining it into a coherent video. The architecture is designed for generation rather than representation learning, but the denoising backbone can still encode useful information about motion, scene layout, and object interactions. Unlike V-JEPA and VideoMAE, whose representations are extracted from a single forward pass, LTX provides an additional dimension of analysis through the denoising trajectory itself, so we probe different diffusion stages to see when physical and temporal structure becomes most accessible. We use the ltxv 13b 0 9 8 distilled checkpoint2, a 13B-parameter distilled DiT with 48 transformer blocks, processing 16-frame clips at 224×224 resolution.
+
+<table><tr><td>Family</td><td>Model</td><td>Architecture</td><td>Variant ID</td><td>Resolution</td><td>Depth</td><td>Probed layers</td></tr><tr><td rowspan="3">V-JEPA</td><td>V-JEPA</td><td>ViT-H/16</td><td>vith16_384</td><td>384</td><td>32</td><td>8, 16, 24, 32</td></tr><tr><td>V-JEPA 2</td><td>ViT-G/16</td><td>vitg_384</td><td>384</td><td>40</td><td>10, 20, 30, 40</td></tr><tr><td>V-JEPA 2.1</td><td>ViT-Gigantic/16</td><td>vitG_384</td><td>384</td><td>48</td><td>12, 24, 36, 48</td></tr><tr><td rowspan="2">VideoMAE</td><td>VideoMAE</td><td>ViT-H/16</td><td>vit_huge_16_224</td><td>224</td><td>32</td><td>8, 16, 24, 32</td></tr><tr><td>VideoMAE-v2</td><td>ViT-G/16</td><td>vit_giant_16_224</td><td>224</td><td>40</td><td>10, 20, 30, 40</td></tr><tr><td>LTX-Video</td><td>LTX-Video 13B</td><td>DiT-48</td><td>ltxv_13b_0_9_8_distilled</td><td>224</td><td>48</td><td>12, 24, 36, 48</td></tr></table>
+
+Table 2. Overview of models evaluated in this study. Probed layers are the absolute block indices selected at relative depths {0.25, 0.50, 0.75, 1.00} of each encoder depth. For LTX-Video, we consider 10 noise levels for each of the 4 layers.
+
+<table><tr><td>Model</td><td>Arch.</td><td>Res.</td><td>Frames</td><td>Patch</td><td>Tubelet</td></tr><tr><td>V-JEPA</td><td>ViT-H (32 blocks)</td><td>384</td><td>16</td><td>16</td><td>2</td></tr><tr><td>V-JEPA 2</td><td> $ViT-G^†$ (40 blocks)</td><td>384</td><td>16</td><td>16</td><td>2</td></tr><tr><td>V-JEPA 2.1</td><td> $ViT-Gigantic^†$ (48 blocks)</td><td>384</td><td>16</td><td>16</td><td>2</td></tr><tr><td>VideoMAE</td><td>ViT-H (32 blocks)</td><td>224</td><td>16</td><td>16</td><td>2</td></tr><tr><td>VideoMAE-v2</td><td>ViT-G (40 blocks)</td><td>224</td><td>16</td><td>16</td><td>2</td></tr><tr><td>LTX-Video 13B</td><td>DiT (48 blocks)</td><td>224</td><td>16</td><td>1</td><td>1</td></tr></table>
+
+† Uses xformers attention with $n _ { \mathrm { h e a d s } } = 2 2$ instead of the standard ViT-G head count.
+
+Table 3. Detailed backbone configurations used in all experiments. Patch size refers to spatial tokens; tubelet size is the temporal stride in frames.
+
+## A.4. Model and Probe Configuration
+
+Table 2 reports the model families, architectural variants, input resolutions, and probed depths used in the main experiments, while Table 3 provides the corresponding backbone details. Table 4 lists the hyperparameter search space for the linear and MLP probes, together with the fixed settings used for the temporal attentive probe.
+
+<table><tr><td>Probe</td><td>Hyperparameter</td><td>Values</td></tr><tr><td>Linear &amp; MLP</td><td>Learning Rate</td><td>Log-uniform in [ $10^{-5}$ ,  $10^{-2}$ ]</td></tr><tr><td>Linear &amp; MLP</td><td>Weight Decay</td><td>Log-uniform in [ $10^{-8}$ ,  $10^{-2}$ ]</td></tr><tr><td>Linear &amp; MLP</td><td>Batch Size</td><td>{32, 64, 128, 256}</td></tr><tr><td>Linear &amp; MLP</td><td>Epochs</td><td>{20, 50, 100, 500, 1000, 2000}</td></tr><tr><td>MLP</td><td>Hidden dimensions</td><td>{[256], [512], [1024], [512, 256], [1024, 512, 256], [1024, 512, 1024]}</td></tr><tr><td>MLP</td><td>Dropout</td><td>Uniform in [0, 0.5]</td></tr><tr><td>Temporal Attentive</td><td>Learning Rates</td><td>[5e-4, 1e-4, 5e-5, 1e-5]</td></tr><tr><td>Temporal Attentive</td><td>Weight Decay</td><td>0.01</td></tr><tr><td>Temporal Attentive</td><td>Batch Size</td><td>1</td></tr><tr><td>Temporal Attentive</td><td>Epochs</td><td>30</td></tr><tr><td>Temporal Attentive</td><td>Self Attention Layers</td><td>1</td></tr><tr><td>Temporal Attentive</td><td>Num Heads</td><td>16</td></tr><tr><td>Temporal Attentive</td><td>Dropout</td><td>0.2</td></tr><tr><td>Temporal Attentive</td><td>MLP Ratio</td><td>2</td></tr></table>
+
+Table 4. Optuna search space for the Linear, MLP and Temporal Attentive probes.
+
+## A.5. Training Methodology
+
+For all probe families, we keep the pretrained video backbone frozen and optimize only the probe parameters. We train a separate probe for each backbone–layer pair using the dataset splits produced by our benchmark pipeline (60% train, 20% validation, 20% test). Optimization uses cross-entropy loss with AdamW (Loshchilov & Hutter, 2019). After every epoch, we evaluate on the validation split and retain the checkpoint with the highest validation benchmark-specific metric, breaking ties with lower validation loss. All runs use a fixed random seed of 42.
+
+For the linear and MLP probes, we perform hyperparameter selection independently for each layer with Optuna (Akiba et al., 2019). Each layer is assigned a 20-trial study with a TPE sampler (Bergstra et al., 2011) and a median pruner. The sampler is seeded with 42, and pruning is enabled after 3 startup trials, with checks every epoch after a 100-epoch warm-up. The search space includes the learning rate, number of epochs, weight decay, batch size, and, for MLP probes, the hidden-layer configuration and dropout rate (Table 4). Within each trial, we train on the training split, select the best checkpoint using the benchmark-specific downstream metric on the validation set. The best trial for each layer is then used for final evaluation on the held-out test split.
+
+For the temporal attentive probe, we follow the same train/validation/test protocol as for the linear and MLP probes. Because token-level probing is substantially more memory-intensive than pooled-feature probing, we fix the batch size to 1 and tune only the learning rate via a small grid search over [5e−4, 1e−4, 5e−5, 1e−5], rather than running full Optuna-based optimization. The probe architecture is fixed to one self-attention block followed by a cross-attention block for classification, with 16 attention heads throughout.
+
+## A.6. VideoMAE-v2 Attentive Probe on IntPhys2
+
+To better understand the unusually weak IntPhys2 performance of the VideoMAE-v2’s temporal attentive probe, we compared the original learning-rate sweep with a matched control re-run in a longer extended training regime. The original and control runs used 30 epochs with patience 5, while the extended sweep used 60 epochs with patience 30 under the same feature signature, layer set, and learning-rate grid.
+
+The extended number of epochs substantially improved performance relative to the original sweep. The strongest recovered configuration was at layer 30 with learning rate 1e−5, reaching 31.37% test VOE, compared with 15.69% in the original sweep. These results suggest that the initially poor VideoMAE-v2 attentive result was at least partly due to undertraining, and should therefore be interpreted cautiously.
+
+Linear probe performance by relative depth, separated by family  
+![](images/cb01e563624e5736e6c1182e5cbff801d0f605f840676887bcb0a817cfa342de.jpg)
+
+<details>
+<summary>line chart</summary>
+
+| Relative depth slot | V-JEPA | V-JEPA 2 | V-JEPA 2.1 |
+| ------------------- | ------ | -------- | ---------- |
+| 0.25                | 15     | 15       | 25         |
+| 0.50                | 38     | 25       | 20         |
+| 0.75                | 50     | 38       | 23         |
+| 1.00                | 47     | 41       | 35         |
+</details>
+
+![](images/9e479568ec8cf7c9a52014f64c7f9e6e7d6792f55b4b117eeb9eb4894d413af4.jpg)
+
+<details>
+<summary>line chart</summary>
+
+| Relative depth slot | V-JEPA | V-JEPA 2 | V-JEPA 2.1 |
+| ------------------- | ------ | -------- | ---------- |
+| 0.25                | 40     | 38       | 38         |
+| 0.50                | 43     | 36       | 41         |
+| 0.75                | 50     | 48       | 47         |
+| 1.00                | 55     | 55       | 51         |
+</details>
+
+![](images/991919a6a3a5ea8b17e62719dbf2e5084da2d45426123a5f408f329249e99f11.jpg)
+
+<details>
+<summary>line chart</summary>
+
+| Relative depth slot | VideoMAE | VideoMAE-v2 |
+| ------------------- | -------- | ----------- |
+| 0.25                | 15       | 25          |
+| 0.50                | 35       | 37          |
+| 0.75                | 35       | 41          |
+| 1.00                | 31       | 47          |
+</details>
+
+![](images/01ed2a0805dc95000f8986400248ed2c08c2343593137983f495dc910d1a3bad.jpg)
+
+<details>
+<summary>line chart</summary>
+
+| Relative depth slot | VideoMAE | VideoMAE-v2 |
+| ------------------- | -------- | ----------- |
+| 0.25                | 34.0     | 34.5        |
+| 0.50                | 39.5     | 42.0        |
+| 0.75                | 38.0     | 40.5        |
+| 1.00                | 39.5     | 39.5        |
+</details>
+
+Figure 4. Layerwise depth profiles for the linear probe across model families and benchmarks.
+
+Attentive probe performance by relative depth, separated by family  
+![](images/1c0d580252478610fdbfa7421ce41eeb52099a538c5b4be741ae564d17152301.jpg)
+
+<details>
+<summary>line chart</summary>
+
+| Relative depth slot | V-JEPA | V-JEPA 2 | V-JEPA 2.1 |
+| ------------------- | ------ | -------- | ---------- |
+| 0.25                | 20     | 10       | 20         |
+| 0.50                | 35     | 15       | 20         |
+| 0.75                | 55     | 10       | 15         |
+| 1.00                | 55     | 60       | 65         |
+</details>
+
+![](images/5a2982760e27e656b7a1f2ed2c2583a6c3fb3173e892f2cecc8ffa0e6d8faa7b.jpg)
+
+<details>
+<summary>line chart</summary>
+
+| Relative depth slot | V-JEPA | V-JEPA 2 | V-JEPA 2.1 |
+| ------------------- | ------ | -------- | ---------- |
+| 0.25                | 78     | 52       | 49         |
+| 0.50                | 88     | 60       | 78         |
+| 0.75                | 90     | 90       | 90         |
+| 1.00                | 90     | 90       | 90         |
+</details>
+
+![](images/038ae655d9c46fa084e545717966eaaa1578ab3cad46a698bc29cc725916f693.jpg)
+
+<details>
+<summary>line chart</summary>
+
+| Relative depth slot | VideoMAE | VideoMAE-v2 |
+| ------------------- | -------- | ----------- |
+| 0.25                | 10       | 10          |
+| 0.50                | 30       | 12          |
+| 0.75                | 60       | 15          |
+| 1.00                | 40       | 15          |
+</details>
+
+![](images/be34ce5a93e0178e77a6c431c28944acde9abc327542e248131a6113a06d0692.jpg)
+
+<details>
+<summary>line chart</summary>
+
+| Relative depth slot | VideoMAE | VideoMAE-v2 |
+| ------------------- | -------- | ----------- |
+| 0.25                | 60       | 70          |
+| 0.50                | 82       | 88          |
+| 0.75                | 90       | 90          |
+| 1.00                | 85       | 82          |
+</details>
+
+Figure 5. Layerwise depth profiles for the temporal attentive probe across model families and benchmarks.
+
+MLP probe performance by relative depth  
+![](images/8f4adf5fa81e9ee139b1edcef7574950d6c23b3b7f9a923eba409d39c1b1b988.jpg)
+
+<details>
+<summary>line chart</summary>
+
+| Relative depth slot | V-JEPA mean | VideoMAE mean |
+| ------------------- | ----------- | ------------- |
+| 0.25                | 18          | 24            |
+| 0.50                | 30          | 40            |
+| 0.75                | 46          | 40            |
+| 1.00                | 43          | 33            |
+</details>
+
+![](images/810c63d6209ce1135052540c1fdbe5e25a1387f60ade3896aeb5e3a6f11354ae.jpg)
+
+<details>
+<summary>line chart</summary>
+
+| Relative depth slot | V-JEPA mean | VideoMAE mean |
+| ------------------- | ----------- | ------------- |
+| 0.25                | 55          | 51            |
+| 0.50                | 63          | 62            |
+| 0.75                | 77          | 63            |
+| 1.00                | 80          | 62            |
+</details>
+
+Figure 6. Family-mean depth profiles. MVP is late-layer dominated, whereas IntPhys2 tends to peak at intermediate-to-late depth.
+
+LTX noise x block heatmap (Linear probe)  
+![](images/75abbd32871bfe36f857d6eff6cf2014382c5454aaa3e542cb337c543d94642e.jpg)
+
+<details>
+<summary>heatmap</summary>
+
+IntPhys2 (VOE accuracy)
+| Noise level | Transformer block 12.0 | Transformer block 24.0 | Transformer block 36.0 | Transformer block 48.0 |
+| :--- | :--- | :--- | :--- | :--- |
+| 1.0 | 0.0 | 0.0 | 0.0 | 0.0 |
+| 0.9 | 23.5 | 19.6 | 15.7 | 11.8 |
+| 0.8 | 25.5 | 25.5 | 17.6 | 9.8 |
+| 0.7 | 31.4 | 31.4 | 31.4 | 17.6 |
+| 0.6 | 25.5 | 39.2 | 39.2 | 13.7 |
+| 0.5 | 25.5 | 39.2 | 39.2 | 29.4 |
+| 0.4 | 33.3 | 43.1 | 33.3 | 29.4 |
+| 0.3 | 33.3 | 41.2 | 27.5 | 29.4 |
+| 0.2 | 29.4 | 47.1 | 37.3 | 27.5 |
+| 0.1 | 35.3 | 49.0 | 37.3 | 31.4 |
+</details>
+
+![](images/d793b67a3cb54d43798b1eb1183310c934f0b353d369055f91b16b34c5626951.jpg)
+
+<details>
+<summary>heatmap</summary>
+
+MVP (pair consistency)
+| Noise level | 12.0 | 24.0 | 36.0 | 48.0 |
+| :--- | :--- | :--- | :--- | :--- |
+| 0.9 | 42.7 | 39.4 | 33.3 | 29.2 |
+| 0.8 | 42.6 | 48.5 | 35.5 | 33.1 |
+| 0.7 | 46.3 | 49.1 | 41.7 | 39.7 |
+| 0.6 | 41.8 | 49.9 | 41.6 | 41.9 |
+| 0.5 | 45.1 | 48.9 | 42.1 | 41.3 |
+| 0.4 | 40.7 | 46.5 | 44.8 | 41.8 |
+| 0.3 | 42.5 | 48.4 | 43.2 | 42.7 |
+| 0.2 | 43.1 | 49.3 | 43.5 | 41.2 |
+| 0.1 | 42.2 | 47.6 | 43.7 | 40.4 |
+</details>
+
+Figure 7. LTX-Video linear performance over denoising noise level and transformer block. The best LTX scores appear at specific denoising stages rather than uniformly across the trajectory
+
+LTX noise x block heatmap (MLP probe)  
+![](images/cd7a5ac085c0828b319cbd63851b0b439f0634c18c5c11e1df6e969cbc2d7896.jpg)
+
+<details>
+<summary>heatmap</summary>
+
+IntPhys2 (VOE accuracy)
+| Noise level | Transformer block 12.0 | Transformer block 24.0 | Transformer block 36.0 | Transformer block 48.0 |
+| :--- | :--- | :--- | :--- | :--- |
+| 1.0 | 0.0 | 0.0 | 0.0 | 0.0 |
+| 0.9 | 15.7 | 15.7 | 35.3 | 13.7 |
+| 0.8 | 19.6 | 13.7 | 19.6 | 21.6 |
+| 0.7 | 33.3 | 33.3 | 35.3 | 19.6 |
+| 0.6 | 23.5 | 33.3 | 35.3 | 31.4 |
+| 0.5 | 25.5 | 35.3 | 29.4 | 25.5 |
+| 0.4 | 13.7 | 39.2 | 33.3 | 27.5 |
+| 0.3 | 25.5 | 41.2 | 35.3 | 21.6 |
+| 0.2 | 15.7 | 47.1 | 35.3 | 41.2 |
+| 0.1 | 31.4 | 43.1 | 43.1 | 15.7 |
+</details>
+
+![](images/daaf03335dc6e2e90ab82b016b1864453fcf3872d800f75cd31678b6c005ac53.jpg)
+
+<details>
+<summary>heatmap</summary>
+
+MVP (pair consistency)
+| Noise level | Transformer block 12.0 | Transformer block 24.0 | Transformer block 36.0 | Transformer block 48.0 |
+| :--- | :--- | :--- | :--- | :--- |
+| 1.0 | 0.0 | 0.0 | 0.0 | 0.0 |
+| 0.9 | 49.8 | 56.0 | 42.5 | 33.2 |
+| 0.8 | 58.7 | 66.3 | 50.7 | 41.8 |
+| 0.7 | 63.2 | 69.2 | 59.2 | 51.3 |
+| 0.6 | 60.8 | 68.1 | 62.1 | 60.1 |
+| 0.5 | 62.7 | 66.8 | 63.7 | 59.9 |
+| 0.4 | 61.6 | 67.6 | 66.5 | 64.4 |
+| 0.3 | 62.9 | 66.4 | 65.1 | 62.9 |
+| 0.2 | 58.7 | 66.7 | 66.0 | 61.2 |
+| 0.1 | 60.1 | 66.9 | 65.8 | 61.7 |
+</details>
+
+Figure 8. LTX-Video MLP performance over denoising noise level and transformer block. The best LTX scores appear at specific denoising stages rather than uniformly across the trajectory.
+
+Probe performance by model  
+![](images/5d48f1e9feb99400132dd71bed25cb0f6406f45a6eefcb2586ad265efedb48fc.jpg)
+
+<details>
+<summary>bar chart</summary>
+
+| Model         | Blue Bar | Orange Bar |
+| ------------- | -------- | ---------- |
+| V-JEPA        | 50       | 56         |
+| V-JEPA 2      | 40       | 57         |
+| V-JEPA 2.1    | 35       | 66         |
+| VideoMAE      | 35       | 58         |
+| VideoMAE-v2   | 47       | 15         |
+| LTX-Video     | 48       | 47         |
+</details>
+
+![](images/3c2709cc56bacf2828d3990ea973d8ea74911b3a80ada2b0aeb92b5863c0af42.jpg)
+
+<details>
+<summary>bar chart</summary>
+
+| Model         | MLP  | attentive |
+| ------------- | ---- | --------- |
+| V-JEPA        | 87   | 93        |
+| V-JEPA 2      | 86   | 93        |
+| V-JEPA 2.1    | 70   | 94        |
+| VideoMAE      | 65   | 92        |
+| VideoMAE-v2   | 67   | 91        |
+| LTX-Video     | 70   | 85        |
+</details>
+
+Figure 9. Best-case probe comparison across model families for IntPhys2 and MVP.
+
+(a) IntPhys2
+
+<table><tr><td rowspan="2">Model</td><td colspan="3">Linear</td><td colspan="3">MLP</td><td colspan="3">Temporal Attn.</td></tr><tr><td>Main</td><td> $\Delta \downarrow$ shuffle(%)</td><td> $\Delta \downarrow$ single(%)</td><td>Main</td><td> $\Delta \downarrow$ shuffle(%)</td><td> $\Delta \downarrow$ single(%)</td><td>Main</td><td> $\Delta \downarrow$ shuffle(%)</td><td> $\Delta \downarrow$ single(%)</td></tr><tr><td>V-JEPA</td><td>50.98</td><td>-57.69</td><td>-84.62</td><td>45.10</td><td>-56.52</td><td>-65.22</td><td>56.86</td><td>0.00</td><td>-75.86</td></tr><tr><td>V-JEPA 2</td><td>41.18</td><td>-23.81</td><td>-38.10</td><td>56.86</td><td>-58.62</td><td>-62.07</td><td>58.82</td><td>-30.00</td><td>-66.67</td></tr><tr><td>V-JEPA 2.1</td><td>35.29</td><td>0.00</td><td>-72.22</td><td>39.22</td><td>-25.00</td><td>-50.00</td><td>66.67</td><td>-38.24</td><td>-82.35</td></tr><tr><td>VideoMAE</td><td>35.29</td><td>-44.44</td><td>-72.22</td><td>35.29</td><td>-61.11</td><td>-61.11</td><td>58.82</td><td>-23.33</td><td>-76.67</td></tr><tr><td>VideoMAE-v2</td><td>47.06</td><td>-54.17</td><td>-66.67</td><td>47.06</td><td>-70.83</td><td>-75.00</td><td>15.69</td><td>-12.50</td><td>62.50</td></tr><tr><td>LTX-Video</td><td>49.02</td><td>-60.00</td><td>-100.00</td><td>47.06</td><td>-66.67</td><td>-54.17</td><td>47.06</td><td>-54.17</td><td>-66.67</td></tr></table>
+
+(b) MVP
+
+<table><tr><td rowspan="2">Model</td><td colspan="3">Linear</td><td colspan="3">MLP</td><td colspan="3">Temporal Attn.</td></tr><tr><td>Main</td><td> $\Delta \downarrow$ shuffle(%)</td><td> $\Delta \downarrow$ single(%)</td><td>Main</td><td> $\Delta \downarrow$ shuffle(%)</td><td> $\Delta \downarrow$ single(%)</td><td>Main</td><td> $\Delta \downarrow$ shuffle(%)</td><td> $\Delta \downarrow$ single(%)</td></tr><tr><td>V-JEPA</td><td>48.74</td><td>-28.63</td><td>-89.83</td><td>87.26</td><td>-55.39</td><td>-100.00</td><td>94.03</td><td>-23.33</td><td>-88.71</td></tr><tr><td>V-JEPA 2</td><td>47.32</td><td>-34.62</td><td>-95.30</td><td>86.75</td><td>-53.38</td><td>-93.36</td><td>93.33</td><td>-30.99</td><td>-76.92</td></tr><tr><td>V-JEPA 2.1</td><td>43.88</td><td>-37.79</td><td>-96.08</td><td>70.78</td><td>-49.14</td><td>-93.00</td><td>93.73</td><td>-16.18</td><td>-70.77</td></tr><tr><td>VideoMAE</td><td>37.51</td><td>-21.56</td><td>-86.79</td><td>64.41</td><td>-39.25</td><td>-93.09</td><td>92.01</td><td>-24.18</td><td>-82.09</td></tr><tr><td>VideoMAE-v2</td><td>38.62</td><td>-27.23</td><td>-92.67</td><td>66.13</td><td>-44.19</td><td>-96.64</td><td>91.10</td><td>-37.74</td><td>-83.91</td></tr><tr><td>LTX-Video</td><td>49.95</td><td>-43.52</td><td>-73.28</td><td>69.16</td><td>-61.11</td><td>-86.26</td><td>84.33</td><td>-95.92</td><td>-96.52</td></tr></table>
+
+Table 5. Temporal-control results for Experiment 4. Main denotes VOE accuracy for IntPhys2 and pair consistency for MVP. Control columns report signed relative change, computed as $\Delta _ { \% } = 1 0 0 \times \left( \mathrm { C o n t r o l - M a i n } \right) / \mathrm { M a i n }$ . More negative values indicate stronger degradation under temporal disruption; bold marks the strongest degradation within each dataset, probe type, and control.
+
+Temporal controls (MLP)  
+![](images/03f11d84f25d88662ca3fc83bb51ef615faa92229d4d6a3a30a8970dd5eac99e.jpg)
+
+<details>
+<summary>line chart</summary>
+
+|        | V-JEPA | V-JEPA 2 | V-JEPA 2.1 | VideoMAE | VideoMAE-v2 | LTX-Video |
+| ------ | ------ | -------- | ---------- | -------- | ----------- | --------- |
+| Main   | 45     | 55       | 39         | 35       | 47          | 47        |
+| Frame-shuffle | 25    | 23       | 29         | 14       | 14          | 16        |
+| Single-frame | 8      | 21       | 19         | 13       | 12          | 21        |
+</details>
+
+MVP (pair consistency)  
+![](images/db4aa3887488a00dff35315dc9217d836af34c4e9aec32106d9f4e38e6edf878.jpg)
+
+<details>
+<summary>line chart</summary>
+
+|          | V-JEPA | V-JEPA 2 | V-JEPA 2.1 | VideoMAE | VideoMAE-v2 | LTX-Video |
+| -------- | ------ | -------- | ---------- | -------- | ----------- | --------- |
+| Main     | 85     | 70       | 68         | 65       | 64          | 63        |
+| Frame-shuffle | 40   | 38       | 36         | 37       | 35          | 27        |
+| Single-frame | 0    | 10       | 8          | 5        | 4           | 10        |
+</details>
+
+Figure 10. Relative degradation under temporal controls for the MLP probe. Both frame shuffling and single-frame repetition substantially reduce performance, with the single-frame control producing the largest degradation, especially on MVP.

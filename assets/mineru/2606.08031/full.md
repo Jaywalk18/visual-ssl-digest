@@ -1,0 +1,442 @@
+# Vision-Language Asymmetry in Bistable Image Captioning
+
+Arohan Agate $^{1}$
+
+## Abstract
+
+Wittgenstein's duck–rabbit poses a question for vision-language models: when a model captions an ambiguous image, where in the model is the commitment to one aspect made? We address this with a 3,320-generation behavioral baseline over 83 bistable stimuli that surfaces three regimes (default-dominant, force-dominant, force-balanced) under neutral vs forced-choice prompting, then probe the underlying representations using a TopK sparse autoencoder we train on the CLIP layer that LLaVA-1.6-7B actually consumes (validation EV 0.93). Across 69 bistable stimuli with both per-aspect feature pools available, 72% (50/69) show simultaneous activation of both pools at the vision tower, including 12/12 default-dominant duck/rabbit and 7/8 force-balanced young/old. Causal steering at CLIP layer 22 flips captions on default-dominant stimuli (33% rabbit-flip rate under a fluency guard) but cannot flip captions on force-balanced young/old at any tested coefficient, despite their vision-side superposition. The dominance bottleneck lives downstream of the vision tower; the gap between vision-side representation and language-side commitment is an empirical handle on the seeing/seeing-as distinction. We also flag a methodological note: rank-based statistics on TopK SAE outputs require tie-corrected ranking to avoid silent row-order bias.
+
+## 1. Introduction
+
+A Necker cube shown to LLaVA-1.6-Vicuna-7B (Liu et al., 2024) under the prompt “What is in this image?” yields, across 40 sampled generations, captions like “a wireframe drawing of a cube” that commit to neither face-up nor face-down, 40/40 aspect-agnostic. “Is this a cube viewed from above or from below?” on the same image yields a near-
+
+$^{1}$ University of Washington. Correspondence to: Arohan Agate <aagate@cs.washington.edu>.
+
+Proceedings of the $43^{rd}$ International Conference on Machine Learning, Seoul, South Korea. PMLR 306, 2026. Copyright 2026 by the author(s).
+
+even split between two committed answers. Same input, different prompt; same model, different report. The difference is exactly the difference Wittgenstein flagged in the late Philosophical Investigations (Wittgenstein et al., 2010, Philosophy of Psychology — A Fragment, §§111–136): between seeing an image and seeing-as. This paper takes that prompt contrast as an empirical handle on the distinction and asks where in a VLM the gap between the two reports is implemented.
+
+We surface three behavioral regimes, default-dominant, force-dominant, force-balanced, across 83 bistable stimuli and 3,320 generations. On 50/69 (72%) bistable stimuli, per-aspect SAE feature pools at LLaVA's consumption layer are simultaneously active. Causal steering at CLIP layer 22 flips captions on default-dominant duck/rabbit (33% rabbit-flip at $\alpha = 16$ under a fluency guard) but cannot flip captions on force-balanced young/old at any $\alpha$ , despite their vision-side superposition. The seeing-as commitment in this VLM lives downstream of the vision tower.
+
+## 2. Background and related work
+
+Bistable images in vision-language models. Panagopoulou et al. (2024) establish a 29-image bistable benchmark and show that twelve VLMs exhibit strong language-prior dominance on duck/rabbit, vase/profile, young/old, and similar paired figures. Their analysis is purely behavioral: captions are scored against canonical aspects, dominance is a per-stimulus statistic, and no representational claim is made. The recent AMBIBENCH submission (Ma et al., 2026) extends the behavioral side substantially (2,238 ambiguous images, broader aspect taxonomy) and crosses into mechanism with attention-head-level intervention, raising InternVL3-2B accuracy from 29% to 42% by amplifying perceptual-switch heads. Our work differs in granularity (SAE features rather than attention heads, with per-feature max-activating-image evidence in Appendix B) and in framing: AMBIBENCH measures task-accuracy improvement under intervention; we measure where representational commitment is localized.
+
+Sparse autoencoders in CLIP/LLaVA pipelines. Pach et al. (2026) establish the CLIP-side SAE → LLaVA pipeline that we use, demonstrating that interventions on monosemantic SAE features in CLIP residual streams propagate cleanly to LLaVA's captions; Joseph et al. (2025) quantify steerability and report that roughly 10–15% of CLIP SAE features are reliably steerable. Our contribution is not the pipeline but its application to representational competition: bistable stimuli are the minimal experimental condition under which feature competition (rather than feature detection) is the phenomenon of interest, and the comparison of vision-side superposition to language-side commitment is meaningful only on stimuli that admit two simultaneous interpretations.
+
+Aspect-seeing in philosophy of perception. Wittgenstein et al. (2010) (Philosophical Investigations, Philosophy of Psychology — A Fragment, §§111–136) is the canonical source for the seeing/seeing-as distinction; Hanson (1958) reframes it at the level of scientific observation (what counts as seeing a phenomenon is shaped by the conceptual frame the observer brings), and Kuhn & Hacking (2012) generalizes this to paradigm-level commitments. Nanay (2016) replaces the gestalt framing with an attention-based account: aspects are the contents the perceiver currently attends to within an otherwise stable perceptual field. Our experimental contrast engages most directly with the Wittgenstein–Hanson side: the prompt contrast is a controlled manipulation of the conceptual frame the model is asked to apply, and the coexistence of vision-side feature pools with split caption-level commitment is the mechanistic analogue. To our knowledge, no prior ML paper operationalizes this literature with mechanistic evidence; the closest adjacent work argues for philosophy–ML integration without empirical aspect-seeing experiments (Millière & Buckner, 2024; Williams et al., 2025).
+
+## 3. Methods
+
+Stimuli. Our bistable set comprises 83 images: 29 from Panagopoulou et al. (2024), 53 from AMBIBENCH (Ma et al., 2026), and one rendered Necker cube. We organize these into six groups with paired pure-aspect SDXL controls (hand-verified, 21–27 per aspect for four groups; schroeder\_stairs and necker\_cube pure-B counts are 8 and 15, see Appendix A): duck\_rabbit, face\_vase, hidden\_face, young\_old\_woman, schroeder\_stairs, necker\_cube.
+
+Models. The target VLM is LLaVA-1.6-Vicuna-7B (Liu et al., 2024), which sets vision\_feature\_layer = -2 on a CLIP ViT-L/14-336 (Radford et al., 2021) backbone with Vicuna 7B (Chiang et al., 2023). Representational analysis happens at CLIP layer 22 (the layer LLaVA consumes) on patch tokens, CLS dropped. Captions are classified by Qwen3-8B (Yang et al., 2025) with enable\_thinking=False; judge-manual agreement is ≥ 95% on 30 hand-checked captions per phase.
+
+Sparse autoencoder. We train a TopK SAE (k = 32, 65,536 features) on a 200K-image cache of CLIP layer-22 patch activations from CC3M, validation EV=0.93. We trained our own SAE rather than reuse pretrained CLIP-Scope (Ewington-Pitsos & Goyal, 2024) because CLIP-Scope was trained on LAION-CLIP activations and on our bistable stimuli reconstructs at $\sim$ 40% above its own MSE baseline; LLaVA consumes OpenAI-CLIP, so we matched that distribution.
+
+Tie-corrected rank AUROC. TopK SAE outputs are over 99% sparse, so most feature columns contain many activations tied at exactly zero. numpy.argsort is a stable sort and resolves ties by input-row position, which silently biases any rank-based statistic toward whichever class occupies the earlier rows of the activation matrix. We compute all AUROCs with scipy.stats.rankdata (method="average"), which assigns each tied set the average of the rank positions it spans. Without this correction an earlier pass returned roughly 14k phantom B-preferring features per group, all clustered in one feature-index range (Appendix D).
+
+Phase 2 — feature identification. For each group and each aspect $X \in \{A, B\}$ , we compute the leave-one-out tie-corrected AUROC of every SAE feature in separating mean-pooled control activations of class X from those of the opposite class. We retain features with leave-one-out AUROC $\geq 0.85$ and mean-match activation > 0.005 (a sparsity floor that excludes features which fire on almost no image), then compute a second AUROC against 10K random CC3M patches as a distractor specificity test. Surviving features are ranked by distractor AUROC and capped at 15 per aspect.
+
+Phase 3 — superposition vs. dominance. For each bistable stimulus we compute the mean activation of its 15 A-features and 15 B-features, which we call the A-pool and B-pool activations. The threshold for “X-pool fires” is the median activation of X-pool features observed on opposite-aspect controls, i.e. the activation level that opposite-class images can produce by chance. A stimulus is classified superposition when both pools exceed their thresholds, dominance\_X when only X does, and neither otherwise.
+
+Phase 4 — causal steering. The steering vector for aspect X is the mean of the 15 X-feature SAE decoder rows. We add $\alpha v_{X}$ to the layer-22 patch residual under a forward hook, sweep $\alpha \in \{2^{-1}, \ldots, 2^{4}\}$ , and generate one caption per stimulus per $\alpha$ . Success is the fraction Qwen3 labels as the steered aspect; we accept an $\alpha$ only if perplexity ratio against the unsteered caption is $\leq$ 1.2 (the fluency guard). Steering runs only on Phase-3 superposition stimuli.
+
+Reproducibility. Code, configs, and per-stimulus result tables will be released upon acceptance.
+
+## 4. Results
+
+## 4.1. Three behavioral regimes
+
+Across 3,320 captions over 83 stimuli (40 generations per stimulus, neutral prompts “What is in this image?” and “Describe this image”), LLaVA’s mean dominance score $|P(A) - P(B)|$ is 0.558 and 38 of 83 stimuli show dominance > 0.5 with $P(\text{neither}) < 0.2$ , the classical default-dominant regime that replicates the language-prior bias of Panagopoulou et al. (2024). Ten stimuli sit in the opposite corner of Figure 1: $P(\text{neither}) \geq 0.95$ under neutral prompting, i.e. LLaVA refuses to commit to either aspect and produces aspect-agnostic descriptions (“a black-and-white line drawing of a person”). A second behavioral pass on these ten stimuli replaces the neutral prompt with a binary forced-choice prompt (“Is this an X or a Y?”). All ten stimuli (10/10) commit to an aspect under forced choice. Seven commit asymmetrically with at least a 70/30 split (forcedominant: Schroeder stairs, spinning dancer, two of three young/old woman exemplars, two AmbiBench young/old, the grimace–beggar) and three split close to 50/50 (force-balanced: all three Necker cube exemplars). Behavioral abstention is not representational unavailability: the model has aspect-specific information available, it simply does not surface it under neutral prompts. The three-regime taxonomy gives us three different mechanistic predictions for what should happen at the SAE-feature level, which we test in Sections 4.3 and 4.4.
+
+## 4.2. Per-aspect SAE features exist
+
+For each of the six analysis groups, the leave-one-out tie-corrected AUROC plus mean-match floor plus distractor filter retains exactly 15 features per aspect (30 features per group, 180 features overall). Median leave-one-out AUROC is $\geq 0.997$ across all six groups; median CC3M-distractor AUROC is $\geq 0.998$ . The leave-one-out split holds out every control image once, and the surviving features must separate matched against opposite-aspect controls under every fold; max-activating images cleanly partition by aspect (Appendix B reproduces all six groups' grids and the duck/rabbit + face/ vase compact view from Figure 3).
+
+## 4.3. Vision-side superposition is the modal regime
+
+For each bistable stimulus we compute the mean activation of its 15 A-features and 15 B-features and compare each pool to the median activation observed for that pool on opposite-aspect controls (Section 3). Figure 2 shows the result across all six groups and all 69 bistable stimuli for which both pools are available. Fifty stimuli (50/69, 72%) classify as superposition: both feature pools fire above their opposite-class threshold. The per-group breakdown: duck\_rabbit 12/12, necker\_cube 13/14, young\_old\_woman 7/8, hidden\_face 10/15, face\_vase 7/16, and schroeder\_stairs 1/4. The Schroeder count is the weakest case: pure-B controls were thin after curation (n = 8), and we report Schroeder for completeness of the figure; per-stimulus details and the curation log are in Appendix A. The result that matters for the rest of the paper is that vision-side superposition is the modal regime regardless of behavioral outcome: it is unanimous on default-dominant duck-rabbit (n = 12, all duck-leaning behaviorally), nearly unanimous on the force-balanced Necker cubes (13/14), and 7/8 on the force-dominant young-old. Whatever distinguishes these three behavioral regimes downstream, it is not happening at the SAE feature level of CLIP layer 22.
+
+![](images/3fe0d5219482a705b84b5f84be004533197a0dd1f56d3bcc4d7df35a81a52695.jpg)
+
+<details>
+<summary>scatter plot</summary>
+
+| Dominance | Dominance | P(neither) |
+| -------- | -------- | ---------- |
+| abstention / aspect-blind (low dom - high neither) | 0.0 | 1.0 |
+| intermediate / partial | 0.4 | 0.5 |
+| steering butgets (high dom - low neither) | 0.9 | 0.0 |
+| other (n=45) | 0.0 | 0.2 |
+| duck-rabbit (n=6) | 0.6 | 0.1 |
+| rubin / vase / faces (n=20) | 0.7 | 0.3 |
+| necker cube (n=3) | 0.1 | 0.8 |
+| young / old (n=6) | 0.2 | 0.8 |
+| schroeder stairs (n=2) | 0.3 | 0.7 |
+| spinning dancer (n=1) | 0.0 | 1.0 |
+</details>
+
+Figure 1. Three behavioral regimes over 83 bistable stimuli (LLaVA-1.6-7B, 40 generations each, Qwen3-8B judge). Bottom-right: default-dominant; top-left: aspect-blind under neutral prompting, splits into force-dominant (7/10, ≥70/30 commitment under forced choice) and force-balanced (3/10, \~50/50, the Necker cubes).
+
+## 4.4. Causal steering exposes a vision/language asymmetry
+
+Phase 4 takes each Phase-3 superposition stimulus, constructs the steering vector for the non-default aspect as the mean of the 15 target-aspect SAE decoder rows, injects it into CLIP layer 22, sweeps $\alpha$ , and measures both caption-flip rate and the perplexity ratio against the unsteered caption (Section 3). We run three groups, one per behavioral regime.
+
+For the default-dominant group duck\_rabbit (baseline
+
+![](images/1e66ae6b17dcf3564a2c33459b907ec4426867125a34f932a3856c9f53e860f0.jpg)
+
+<details>
+<summary>bubble chart</summary>
+
+duck rabbit (n=12)
+sup=12
+| young old woman (n=8) | Value | Bubble Size |
+|---|---|---|
+| 0.005 | 0.043 | Large |
+| 0.012 | 0.008 | Medium |
+| 0.013 | 0.006 | Small |
+| 0.015 | 0.019 | Medium |
+| 0.017 | 0.018 | Small |
+| 0.018 | 0.017 | Small |
+| 0.022 | 0.039 | Medium |
+| 0.025 | 0.017 | Medium |
+| 0.027 | 0.016 | Medium |
+| 0.055 | 0.003 | Small |
+| 0.021 | 0.022 | Small |
+| 0.023 | 0.018 | Small |
+| 0.024 | 0.017 | Small |
+| 0.026 | 0.016 | Small |
+| 0.028 | 0.015 | Small |
+| 0.039 | 0.041 | Medium |
+| 0.048 | 0.017 | Small |
+| 0.056 | 0.016 | Small |
+| 0.057 | 0.015 | Small |
+| 0.058 | 0.014 | Small |
+| 0.061 | 0.013 | Small |
+| 0.062 | 0.012 | Small |
+| 0.063 | 0.011 | Small |
+| 0.064 | 0.010 | Small |
+| 0.065 | 0.019 | Small |
+| 0.066 | 0.018 | Small |
+| 0.067 | 0.017 | Small |
+| 0.068 | 0.016 | Small |
+| 0.069 | 0.015 | Small |
+| 0.071 | 0.014 | Small |
+| 0.072 | 0.013 | Small |
+| 0.073 | 0.012 | Small |
+| 0.074 | 0.011 | Small |
+| 0.075 | 0.010 | Small |
+| 0.076 | 0.019 | Small |
+| 0.077 | 0.018 | Small |
+| 0.078 | 0.017 | Small |
+| 0.079 | 0.016 | Small |
+| 0.081 | 0.015 | Small |
+| 0.082 | 0.014 | Small |
+| 0.083 | 0.013 | Small |
+| 0.084 | 0.012 | Small |
+| 0.085 | 0.011 | Small |
+| 0.086 | 0.019 | Small |
+| 0.087 | 0.018 | Small |
+| 0.088 | 0.017 | Small |
+| 0.089 | 0.016 | Small |
+| 0.139 | 0.434 | Medium |
+| 0.239 | 0.434 | Medium |
+| 239 | 239 | Medium |
+| 239+ (bubble size: b=1) = Young old woman (n=8)
+</details>
+
+![](images/6fe0d6798ec276d0748ff990d89d72a8a3c498951ac26b0eccb16cbc5b002255.jpg)
+
+<details>
+<summary>bubble chart</summary>
+
+face vase (n=16)
+sup=7 a=7 b=2
+schroeder stairs (n=4)
+sup=1 a=2 neither=1
+</details>
+
+![](images/f2c3ee1e4e97e3a07ca07e64ccfff023c0639265a7abfce4ac6663065d6775f0.jpg)
+
+<details>
+<summary>scatter plot</summary>
+
+| necker cube (n=14) | Value  |
+| ------------------ | ------ |
+| 0.00               | 0.04   |
+| 0.01               | 0.005  |
+| 0.02               | 0.01   |
+| 0.03               | 0.005  |
+| 0.07               | 0.01   |
+</details>
+
+![](images/1d823ac0004f44d4306acb683508b6c371fef0175139cdcea28ebedbca621a56.jpg)
+
+<details>
+<summary>scatterplot</summary>
+
+| aspect-A pool mean activation | y_value |
+| ------------------------------ | ------- |
+| 0.000                          | 0.025   |
+| 0.003                          | 0.013   |
+| 0.004                          | 0.014   |
+| 0.005                          | 0.004   |
+| 0.015                          | 0.012   |
+| 0.018                          | 0.016   |
+| 0.031                          | 0.003   |
+| 0.032                          | 0.005   |
+</details>
+
+![](images/0320b059aba81535998ff1c83a3439e4915267abf6778c9c963326aa4dd22947.jpg)
+
+<details>
+<summary>scatterplot</summary>
+
+| aspect-A pool mean activation | y_value |
+| ----------------------------- | ------- |
+| 0.000                         | 0.001   |
+| 0.006                         | 0.004   |
+| 0.007                         | 0.0045  |
+| 0.008                         | 0.008   |
+</details>
+
+![](images/9bbe77506e78ca93ea12657c72153401d1b75fbf9ad6cdd4944e4ff4c4ba8a53.jpg)
+
+<details>
+<summary>scatterplot</summary>
+
+| aspect-A pool mean activation | y_value |
+| ----------------------------- | ------- |
+| 0.03                          | 0.005   |
+| 0.06                          | 0.007   |
+| 0.07                          | 0.004   |
+| 0.07                          | 0.0035  |
+| 0.07                          | 0.003   |
+| 0.07                          | 0.0025  |
+| 0.08                          | 0.006   |
+| 0.09                          | 0.0055  |
+| 0.10                          | 0.0055  |
+| 0.11                          | 0.003   |
+</details>
+
+Figure 2. Phase 3: per-stimulus aspect-A (x-axis) vs aspect-B (y-axis) pool mean activation across all six groups. Marker color gives the per-stimulus classification (purple = superposition, blue = dominance A, red = dominance B, gray = neither); marker size is proportional to Phase 1 neutral-prompt dominance score. Dashed lines show per-pool thresholds (median activation on opposite-aspect controls). Purple dominates: both pools above threshold (vision-side superposition) for 50 of 69 stimuli.
+
+91.7% duck), steering toward duck is a no-op (already at the behavioral ceiling); steering toward rabbit reaches 33.3% rabbit captions at $\alpha = 16$ with perplexity ratio 1.06, comfortably under the $1.2\times$ fluency guard. For the mixed group hidden\_face (baseline 30% A / 50% B / 10% neither), steering toward A reaches 60% at $\alpha = 16$ (perplexity ratio 0.99) and steering toward B reaches 50% at $\alpha = 8$ (1.04). For the force-balanced group young\_old\_woman (baseline 0% A / 0% B / 100% neither), neither direction produces a single aspect-committed caption at any $\alpha$ tested, despite Phase 3 finding 7/8 of these stimuli in vision-side superposition. $^{1}$ The steering direction visibly affects low-level visual descriptors in the captions (hair, hat, lighting): at $\alpha = 16$ the captions describe “a stylized illustration of a woman’s face with a dramatic, exaggerated eyelash and a large flowing hair accessory that resembles a feather or a piece of fabric” – the steering direction is reaching the language model, but the language model continues to refuse to commit to “young” or “old.” Captions remain aspect-agnostic across the entire $\alpha$ range and degrade fluency before flipping (Section C).
+
+## 5. Discussion
+
+Operationalizing seeing/seeing-as without metaphysical commitment. Wittgenstein's distinction between seeing an image and seeing-as was a remark on a structural feature of perception, not a claim about phenomenology (Wittgenstein et al., 2010). Our prompt contrast inherits the structure without the phenomenology: the neutral prompt asks the model to report what it sees, the forced-choice prompt to commit to seeing-as. The behavioral gap (100% abstention becoming 100% commitment on ten stimuli) is a measurable instance of the gap Wittgenstein flagged. We do not claim LLaVA has aspect-seeing experiences; we claim the prompt contrast tracks the same distinction in a system whose internal state we can inspect.
+
+Theory-ladenness as a language-side phenomenon. The Hanson–Kuhn extension of Wittgenstein's distinction, that observation is theory-laden, that the conceptual frame fixes what is observed (Hanson, 1958; Kuhn & Hacking, 2012), predicts that the linguistic context should be load-bearing for which aspect is reported. Our results give that prediction empirical content. The vision-side feature pools coexist on bistable stimuli (Section 4.3); what changes when we change the prompt is not what the vision encoder represents but what the language model commits to. "Is this an X or a Y?" is a minimal theory-frame, and its effect on the report is large enough to push 100% abstention to 100% commitment without any change to the input image. The locus of theory-ladenness, in this VLM, is the language decoder. We caveat: the localization is verified for one VLM and a single SAE training run; cross-model and cross-SAE generalization, as well as random-feature and permuted-aspect baselines, are left to extended work.
+
+## References
+
+Chiang, W.-L., Li, Z., Lin, Z., Sheng, Y., Wu, Z., Zhang, H., Zheng, L., Zhuang, S., Zhuang, Y., Gonzalez, J. E., Stoica, I., and Xing, E. P. Vicuna: An open-source chatbot impressing gpt-4 with 90%\* chatgpt quality, March 2023. URL https://lmsys.org/blog/2023-03-30-vicuna/.  
+Ewington-Pitsos, L. and Goyal, R. R. CLIP-Scope: Sparse autoencoders for CLIP ViT-L/14. Hugging Face model release and LessWrong post, 2024. URL https://huggingface.co/ lewington/CLIP-ViT-L-scope. Companion post: https://www.lesswrong.com/posts/wrznNDMRmbQABAEMH/a-suite-of-vision-sparse-autoencoders.  
+Hanson, N. Patterns of Discovery: An Inquiry into the Conceptual Foundations of Science. Cambridge University Press, 1958. ISBN 9780521092616. URL https://books.google.com/books?id=qrwLSgAACAAJ.  
+Joseph, S., Suresh, P., Goldfarb, E., Hufe, L., Gandelsman, Y., Graham, R., Bzdok, D., Samek, W., and Richards, B. A. Steering clip's vision transformer with sparse autoencoders. arXiv preprint arXiv:2504.08729, 2025.  
+Kuhn, T. and Hacking, I. The Structure of Scientific Revolutions. University of Chicago Press, 2012. ISBN 9780226458144. URL https://books.google.com/books?id=3eP5Y\_OOuzwC.  
+Liu, H., Li, C., Li, Y., and Lee, Y. J. Improved baselines with visual instruction tuning. In Proceedings of the IEEE/CVF conference on computer vision and pattern recognition, pp. 26296–26306, 2024.  
+Ma, X., Jiang, Y., Li, Y., Liu, S., Ao, J., Ma, X., Lau, J. H., Ehinger, K. A., Erfani, S. M., and Bailey, J. What do VLMs see? benchmarking vision-language models on ambiguous images, 2026. URL https://openreview.net/forum?id=R2dCGaqzYW.  
+Millière, R. and Buckner, C. A philosophical introduction to language models-part ii: The way forward. arXiv preprint arXiv:2405.03207, 2024.  
+Nanay, B. Aesthetics as Philosophy of Perception. Yearbook on International Investment Law and Policy. OUP Oxford, 2016. ISBN 9780191633027. URL https://books.google.com/books?id=bsAPCwAAQBAJ.  
+Pach, M., Karthik, S., Bouniot, Q., Belongie, S., and Akata, Z. Sparse autoencoders learn monosemantic features in vision-language models. Advances in Neural Information Processing Systems, 38:95706–95742, 2026.  
+Panagopoulou, A., Melkin, C., and Callison-Burch, C. Evaluating vision-language models on bistable images. In Proceedings of the Workshop on Cognitive Modeling and Computational Linguistics, pp. 8–29, 2024.  
+Radford, A., Kim, J. W., Hallacy, C., Ramesh, A., Goh, G., Agarwal, S., Sastry, G., Askell, A., Mishkin, P., Clark, J., et al. Learning transferable visual models from natural language supervision. In International conference on machine learning, pp. 8748–8763. PmLR, 2021.  
+Williams, I., Oldenburg, N., Dhar, R., Hatherley, J., Fierro, C., Rajcic, N., Schiller, S. R., Stamatiou, F., and Søgaard, A. Mechanistic interpretability needs philosophy. arXiv preprint arXiv:2506.18852, 2025.  
+Wittgenstein, L., Hacker, P., and Schulte, J. Philosophical Investigations. Wiley, 2010. ISBN 9781444307979. URL https://books.google.com/books?id=XN9yyyhYMDoC.  
+Yang, A., Li, A., Yang, B., Zhang, B., Hui, B., Zheng, B., Yu, B., Gao, C., Huang, C., Lv, C., et al. Qwen3 technical report. arXiv preprint arXiv:2505.09388, 2025.
+
+## A. Dataset inventory
+
+The full bistable stimulus set (Section 3) contains 83 images: 29 Panagopoulou benchmark images (Panagopoulou et al., 2024), 53 AMBIBENCH bistable images (Ma et al., 2026), and 1 programmatically rendered Necker cube. Table 1 summarizes the six analysis groups. Pure-aspect controls are SDXL-generated for the photographic groups (duck\_rabbit ducks/rabbits in pond and field settings, young\_old\_woman portraits, etc.) and programmatic for the geometric groups; every control image was hand-verified by the authors and rejected if the non-target aspect was visible or the subject was ambiguous. Public-domain originals from Wikimedia Commons supplement the SDXL-generated controls where available (e.g. original Jastrow 1899 duck–rabbit, original Hill 1915 young/old woman). Stimulus IDs are hash-based; full per-image source, license, and retention flags are in the supplementary CSV (dataset.csv).
+
+## B. Phase 2 feature grids
+
+Figure 3 shows the compact two-group view referenced from the main text (Section 4.2): top-3 features per aspect for duck\_rabbit and face\_vase, each with top-4 max-activating images. The per-group full grids (15 features per aspect, top-10 images each) for all six groups are in Figures 4a, 4b, 5a and 5b below; equivalent full grids for duck\_rabbit and face\_vase accompany this submission in the supplementary figure bundle. Median leave-one out tie-corrected AUROC is $\geq 0.997$ for every group; median CC3M-distractor AUROC is $\geq 0.997$ for every group except schroeder\_stairs (0.999) and hidden\_face (0.998). For schroeder\_stairs the pure-B controls are thinner (n = 8); the AUROC remains high because the controls that survive curation are clean, but the small sample size means per-feature claims are weaker than for the photographic groups.
+
+<table><tr><td>Group</td><td>Bistable</td><td>Pure-A</td><td>Pure-B</td></tr><tr><td>duck_rabbit</td><td>12</td><td>26</td><td>27</td></tr><tr><td>face_vase</td><td>16</td><td>21</td><td>27</td></tr><tr><td>hidden_face</td><td>15</td><td>27</td><td>27</td></tr><tr><td>young_old_woman</td><td>8</td><td>27</td><td>27</td></tr><tr><td>schroeder_stairs</td><td>4</td><td>25</td><td>8</td></tr><tr><td>necker_cube</td><td>14</td><td>27</td><td>15</td></tr></table>
+
+Table 1. Per-group stimulus and control counts after curation. Pure-B counts for schroeder\_stairs and necker\_cube are reduced because the canonical pure-B prompts (descending stairs, cube viewed from below) are geometrically ambiguous to SDXL; for necker\_cube we supplement with programmatic 3D solid-cube renders with explicit lighting cues.
+
+![](images/2e9e4b4dd46571841533bf95b86b991233bbe4531638e0d5e10d6c457baa175b.jpg)  
+Figure 6. Phase 4: steering success (top) and fluency (bottom) vs $\alpha$ . Vision-side steering rescues default-dominant captions (duck\_rabbit, 33%) and partially the mixed case (hidden\_face, 50–60%) under the 1.2× fluency guard, but cannot flip force-balanced captions (young\_old\_woman, 0/7).
+
+## C. Phase 4 full per- $\alpha$ steering results
+
+Table 2 reports the per-direction-per- $\alpha$ flip rate and perplexity ratio for the three steering groups (extracted from success\_vs\_alpha.csv). The fluency guard is a perplexity ratio of 1.2 against the unsteered caption.
+
+The young\_old\_woman captions remain aspect-agnostic across the entire $\alpha$ range, then degrade fluency as $\alpha$ grows without ever producing an aspect-committed caption: at $\alpha = 16$ the captions describe “a stylized illustration of a woman’s face with a dramatic, exaggerated eyelash and a large flowing hair accessory that resembles a feather or a piece of fabric” — the steering direction influences low-level visual descriptors (hair, hat) but the model continues to refuse to commit to “young” or “old.”
+
+<table><tr><td>Group</td><td>Dir</td><td>α</td><td>n</td><td>Success</td><td>ppl ratio</td></tr><tr><td>duck_rabbit</td><td>a</td><td>0.5</td><td>12</td><td>0.92</td><td>1.00</td></tr><tr><td>duck_rabbit</td><td>a</td><td>1</td><td>12</td><td>0.92</td><td>1.16</td></tr><tr><td>duck_rabbit</td><td>a</td><td>2</td><td>12</td><td>0.92</td><td>0.98</td></tr><tr><td>duck_rabbit</td><td>a</td><td>4</td><td>12</td><td>0.92</td><td>0.98</td></tr><tr><td>duck_rabbit</td><td>a</td><td>8</td><td>12</td><td>0.92</td><td>1.33</td></tr><tr><td>duck_rabbit</td><td>a</td><td>16</td><td>12</td><td>0.92</td><td>1.75</td></tr><tr><td>duck_rabbit</td><td>b</td><td>0.5</td><td>12</td><td>0.17</td><td>1.00</td></tr><tr><td>duck_rabbit</td><td>b</td><td>1</td><td>12</td><td>0.17</td><td>1.00</td></tr><tr><td>duck_rabbit</td><td>b</td><td>2</td><td>12</td><td>0.17</td><td>1.00</td></tr><tr><td>duck_rabbit</td><td>b</td><td>4</td><td>12</td><td>0.25</td><td>1.19</td></tr><tr><td>duck_rabbit</td><td>b</td><td>8</td><td>12</td><td>0.33</td><td>1.44</td></tr><tr><td>duck_rabbit</td><td>b</td><td>16</td><td>12</td><td>0.33</td><td>1.06</td></tr><tr><td>hidden_face</td><td>a</td><td>0.5</td><td>10</td><td>0.40</td><td>1.01</td></tr><tr><td>hidden_face</td><td>a</td><td>1</td><td>10</td><td>0.30</td><td>1.00</td></tr><tr><td>hidden_face</td><td>a</td><td>2</td><td>10</td><td>0.40</td><td>1.06</td></tr><tr><td>hidden_face</td><td>a</td><td>4</td><td>10</td><td>0.40</td><td>0.93</td></tr><tr><td>hidden_face</td><td>a</td><td>8</td><td>10</td><td>0.50</td><td>0.94</td></tr><tr><td>hidden_face</td><td>a</td><td>16</td><td>10</td><td>0.60</td><td>0.99</td></tr><tr><td>hidden_face</td><td>b</td><td>0.5</td><td>10</td><td>0.40</td><td>1.03</td></tr><tr><td>hidden_face</td><td>b</td><td>1</td><td>10</td><td>0.40</td><td>1.06</td></tr><tr><td>hidden_face</td><td>b</td><td>2</td><td>10</td><td>0.40</td><td>1.01</td></tr><tr><td>hidden_face</td><td>b</td><td>4</td><td>10</td><td>0.40</td><td>1.00</td></tr><tr><td>hidden_face</td><td>b</td><td>8</td><td>10</td><td>0.50</td><td>1.04</td></tr><tr><td>hidden_face</td><td>b</td><td>16</td><td>10</td><td>0.50</td><td>0.92</td></tr><tr><td>young_old_woman</td><td>a</td><td>0.5</td><td>7</td><td>0.00</td><td>1.05</td></tr><tr><td>young_old_woman</td><td>a</td><td>1</td><td>7</td><td>0.00</td><td>1.06</td></tr><tr><td>young_old_woman</td><td>a</td><td>2</td><td>7</td><td>0.00</td><td>1.04</td></tr><tr><td>young_old_woman</td><td>a</td><td>4</td><td>7</td><td>0.00</td><td>1.09</td></tr><tr><td>young_old_woman</td><td>a</td><td>8</td><td>7</td><td>0.00</td><td>1.12</td></tr><tr><td>young_old_woman</td><td>a</td><td>16</td><td>7</td><td>0.00</td><td>1.17</td></tr><tr><td>young_old_woman</td><td>b</td><td>0.5</td><td>7</td><td>0.00</td><td>1.03</td></tr><tr><td>young_old_woman</td><td>b</td><td>1</td><td>7</td><td>0.00</td><td>1.06</td></tr><tr><td>young_old_woman</td><td>b</td><td>2</td><td>7</td><td>0.00</td><td>1.04</td></tr><tr><td>young_old_woman</td><td>b</td><td>4</td><td>7</td><td>0.00</td><td>1.08</td></tr><tr><td>young_old_woman</td><td>b</td><td>8</td><td>7</td><td>0.00</td><td>1.11</td></tr><tr><td>young_old_woman</td><td>b</td><td>16</td><td>7</td><td>0.00</td><td>1.06</td></tr></table>
+
+Table 2. Phase 4 per- $\alpha$ flip rate and perplexity ratio. “Dir a” steers toward the canonical aspect-A; “Dir b” toward aspect-B. The young\_old\_woman sample is the seven Phase-3 superposition stimuli; pana\_028 (Phase-3 dominance\_b) is excluded by the protocol’s superposition filter.
+
+## D. Rank-tie diagnostic
+
+This appendix reports the empirical signature that motivated the tie-corrected ranking note in Section 3. An earlier feature-identification pass used a vectorized AUROC built on numpy.argsort and np.put\_along\_axis for ranking. numpy.argsort is a stable sort: when two activations are equal, it preserves their original row order. In our data, class-A controls occupy rows $0 \ldots n_A - 1$ of the activation matrix and class-B controls occupy rows $n_A \ldots n_A + n_B - 1$ , so a value of zero shared between an A row and a B row gets a lower rank when it is in an A row, and a higher rank when it is in a B row, purely by virtue of position.
+
+Because TopK SAE outputs are over 99% sparse, most feature columns contain mass at exactly zero. The argsort tie-break therefore systematically gave class-A samples low ranks and class-B samples high ranks on any column with no real signal, producing AUROCs near zero (interpreted as “B-preferring”) for thousands of features that in fact had no class-discriminative behavior. The empirical signature was
+
+![](images/243076e13b22b437e707aa087107c9be7d5e2fb859ccf4f5d54eac12d8b7d7f1.jpg)
+
+<details>
+<summary>grid of 10x10 visualizations</summary>
+
+| Species | Features | AUROC |
+|---------|----------|-------|
+| duck    | 5233     | 1.00  |
+| duck    | 16806    | 1.00  |
+| duck    | 26149    | 1.00  |
+| rabbit  | 53793    | 0.92  |
+| rabbit  | 1152     | 1.00  |
+| rabbit  | 63312    | 1.00  |
+</details>
+
+Figure 3. duck\_rabbit and face\_vase retained SAE features. Top-3 features per aspect, with top-4 max-activating images across controls and bistable stimuli. Duck-features fire on duck controls, rabbit-features on rabbit controls; face-features fire on profile controls and the canonical Rubin bistable (face-leaning), vase-features on vase controls.
+
+striking: across all six analysis groups, the post-AUROC candidate counts were asymmetric by 47–79× in favor of phantom B-preferring features (Table 3), and the retained B-features clustered in a narrow feature-index range (43000–44200) consistent across groups, with mean activations ∼ 0 on matching controls.
+
+<table><tr><td>Group</td><td>Phantom-A</td><td>Phantom-B</td><td>Ratio</td></tr><tr><td>duck_rabbit</td><td>208</td><td>9,848</td><td>47×</td></tr><tr><td>face_vase</td><td>180</td><td>14,253</td><td>79×</td></tr><tr><td>hidden_face</td><td>297</td><td>14,636</td><td>49×</td></tr><tr><td>young_old_woman</td><td>272</td><td>12,548</td><td>46×</td></tr><tr><td>schroeder_stairs</td><td>121</td><td>9,551</td><td>79×</td></tr><tr><td>necker_cube</td><td>138</td><td>9,578</td><td>69×</td></tr></table>
+
+Table 3. Phantom feature counts, pre-fix. Each group's class-B candidate set is dominated by features with no real activation but spurious AUROC near 0 induced by stable-sort tie-breaking on row position.
+
+The fix is one line: scipy.stats.rankdata(method="average", axis=0) replaces the argsort-based ranking and assigns each tied set the average of the rank positions it spans. With the tie-corrected ranking, the asymmetry disappears: post-AUROC candidate counts equalize, the phantom B-features vanish, and the surviving features in both classes have substantive mean activation on matching controls and clear max-activating-image evidence (cf. Figure 3). We also added a sparsity floor (mean\_match > 0.005) and replaced the previous specificity ratio with a CC3M distractor AUROC; together these changes leave 15 features per aspect per group from a starting pool of 65,536.
+
+We flag the failure mode because it is silent. numpy.argsort produces no warning on ties, AUROC values look reasonable on inspection (they are not NaN, they are bounded in $[0,1]$ , and many appear close to 1 because the phantom B-preference is systematic), and the only diagnostic that catches it is checking max-activating images by hand. We expect this pitfall to recur as more researchers analyze SAE features with rank statistics, and we recommend tie-corrected ranking as a default in any AUROC pipeline that consumes sparse activations.
+
+![](images/cb2d9014b08ceeb9b4f492ea0cb0ac19667eec127cca52c8f1ff7629be834590.jpg)
+
+![](images/d36f9657283f390a76f854b2b790515e86f8096e5cb438c818702c3e0a158a35.jpg)
+
+![](images/a7777cdb7b02ba986f5780ae2b0664f52a5fe22fe99b8fb8a3d5461ba0261e40.jpg)
+
+![](images/0bf4b9d0ac33034c9cd4b5075cb591bf3eff3f6b412e58a5cfe98229abb07ca4.jpg)
+
+![](images/a6280ddad76eefe8784656627a14bcbd62584fad9e9d180a7556abec4f8f8694.jpg)
+
+![](images/89ffec0b34684070e3d8c5495c7c10f77cbb27603efa4e6e4599df641f21ebcc.jpg)
+
+![](images/2a5c5731251dab6e38295585f29c3982a2547c2fe3d32387a349b212509c6851.jpg)
+
+![](images/014cd530b73bb09c699bf3deb1a49af9cab7ba3f5b2de0f230c2b474cc6d233d.jpg)
+
+![](images/ea50a46db16ac09de5fe88e3e58f2641423653f32a91ae954293864e44ace18b.jpg)
+
+![](images/bf92dc8b77eef615c225c805b364023bf7ea20915ef3db5168fbf6b39d31712d.jpg)
+
+![](images/e1793b5031055edf61b4da5a78988d9c9df4d630344c31435b5d7f1bc2cc1082.jpg)
+
+![](images/0e868d98428b8273367273077b0ea0daa7c3753c361abaa55235313f841633c6.jpg)
+
+![](images/a6f5ebbac55e28bc7731680b0724b0fbde53306616b021d0e0423c3026ec7eba.jpg)
+
+![](images/cfa321d21f55db9caf738ce133e52449e97572b5403db78e64ddf133472f7786.jpg)
+
+![](images/290350708cf8c7e2d7caa71dc3369c563056497bf26738e06083216c388617b4.jpg)
+
+![](images/61936ae8e4f9ed2a34b9482aae5752f805a01c963ea0491688a428389970ee2f.jpg)
+
+![](images/7b0b06d4a22c2a21296b4606782f82cd2e9be02c6f1953bdc36fcebe6631f652.jpg)
+
+![](images/4b30aa88ea68240c8d3d3d2de1612125cb38d4c6df0b3489e4ea9f88d67c7795.jpg)
+
+![](images/c093c8f57afb7b01a24544894bc164bafda8de896f01a8f6441546c0e8a542ad.jpg)
+
+![](images/e4446b08119b0a462a87b07cff1490bc9c8e100b167720286ff96698f3cedb20.jpg)
+
+![](images/cbdb1c4222552a2e191713650ecfad9a6c9187bc4fd6394ed4309f46c151632b.jpg)
+
+![](images/7ea55199d82f37d999ba2292fedece2248e48d2ce80aa200cb3c582aff995a2c.jpg)
+
+![](images/5e8690974a1b649551091b33e0ad0680972cbdc49e4df0bc7bf7e796367685bd.jpg)
+
+![](images/2842302aeabaa4ce96b06504d84c5be994a38dc53a938a691baa9197cd764cd5.jpg)
+
+![](images/bdce2692ad757e0f217971079f23832565328e11d9da821d2c2673f0618c6156.jpg)
+
+![](images/5a3008ea1b6bc7d387c1718ae29678e68e48e141a79330648f741856ac618f69.jpg)
+
+![](images/6c023224ea4187adabafb15c895e1f727745af7bd47ba2d4457306018f373c71.jpg)
+
+![](images/e7e086447abe3ef93b88fd660e623a1dd432e0c3b9e49c6129c8539bc4f66d8b.jpg)
+
+![](images/be551d700b11a5e5187ecb3a0df8e4cb32e614388df2adc2dd91d8b1cea901af.jpg)
+
+![](images/bc25f15e4cc496b5bde3f5b26c8011093a056cb4dde2a00a08d2fd590dfe5505.jpg)
+
+![](images/549fbe4f4b41e2d42b65edc7fd1e8e0c6656884c62d4a2c8fda0bbedbfb64f37.jpg)
+
+![](images/07ef4bb4ddd995125b43dda59ca2a38cdd49b47ae5d1c61204f4cb21e3f6ec22.jpg)
+
+![](images/a82a18214be76e72da74bc209096fbacf5724daa9bf7ac16726d8788155afd06.jpg)
+
+![](images/9aa35f2eee5fe3b38a2d70cc81074b173428570108d5aaccc27bc41d39df937c.jpg)
+
+![](images/3ad5ee4bb02b8a5c3c07c7f3428d4878d6369b2246e1ef73dbf3b6537c723f93.jpg)
+
+![](images/37a3cbe2c4531b98f2432a4febcd81072f4ccbd67b12d56f2b437e7220ab416b.jpg)
+
+![](images/58b3b36f6f9876ff5e64c620b3a4c80679446163da2769d5be46c8dda54ea87c.jpg)
+
+![](images/765f95433861c1ac07fb67c0464718ee135efb49b90940213960715923159234.jpg)
+
+![](images/6697ad0a6ba501ce0db0eb51a57a9f833809c19fc896c430b481fbf23562c56f.jpg)
+
+![](images/e2305335ea2667b46a7fcb74acd0497088f8dfaf959040e0c431aa8399c16845.jpg)
+
+![](images/84f9b19093f6980177f1ca1f57899c8ee88737475a7ba904a87f0c45f4cafd2d.jpg)
+
+![](images/50f0c44eba2353c86cd6014d5f8f67f308a640d0e067674aabe58823cd1822fc.jpg)
+
+![](images/e6acc41a12bd3c43ab8f9c76be52e1f7258b0bdd86d5e7be16acd933cc35a027.jpg)
+
+![](images/bb816bebf7be0e110a9a0b4fe98b632c3f5198813a11d9c90cfe5d235a98ffd9.jpg)
+
+![](images/42df1342bbe868a9d345bc26c6f99f3d47833fb551955afadb07a33e8066ab81.jpg)
+
+![](images/f6d198ee52db8ffce19fa328546682e36f3edcb444370edcfb7b0204a16d2e9e.jpg)
+
+![](images/fbe80573685945e02092a5a0fca05bc6751e235b489d363776f8d63a57b9d9d8.jpg)
+
+![](images/fdb6f67cb361dd17c5e209085049d2286a02a2b8da547f773335a7172d18d8df.jpg)
+
+![](images/f44429485f7312a9a6f2ea9a07b41cbad64967497d532855ebc6373c18563e8d.jpg)
+
+![](images/864ce7ceeef387d002772e4dac998fad2444a83aec5a14f4b15e6c61624dbff8.jpg)
+
+![](images/41ff64a41fa952fc49dadeed2aacdd89b897fdc836357b347ae11601921955aa.jpg)
+
+![](images/36bdafcd19fbcdf1c10d7c3728fa126b8740c2b98a38c560d5afd10e0355323d.jpg)
+
+![](images/f424f4aa8fdc6d8a17f2f1c2d2abdb9e8e299436e6d73ef4503c6f0c632bb504.jpg)
+
+![](images/612ff05e4a16f8846349d48e1f4d4f7a7371e9f25d57cfe8587322061f4a7def.jpg)
+
+![](images/40c5d88d983763ed16da31189f7cc2e0abc524301b79f53b3730d1dc2386c1e2.jpg)
+
+![](images/62d8a3e06d25301bbfa9447a9782b2c20292c216327f09e1f026c538f2677cef.jpg)
+
+![](images/6f09af69f17324d0ffe3a9bee37403eae4f9033d81728e40b967d9907344b926.jpg)
+
+![](images/82c4f748bde08bac36293267e39a0625afe4d206a8602a2f30bbc3f1cba15e0c.jpg)
+
+![](images/cfabfbd57fb5daee0233ee7d4d70a0eae4b7964465628656f45fd72b1142954c.jpg)
+
+![](images/80bdf0dd27e3ccaecc88837bd7fa83b19102758c2ba5f551a9db3c1bd77d65fc.jpg)
+
+![](images/d14ddafa40fb06380820098c15c2d8f937d05dcee15b47bbd1a88020c04e51b5.jpg)  
+(a) hidden\_face: 15 face-features (top) and 15 background-tree-features (bottom).  
+(b) young\_old\_woman: 15 young-features (top) and 15 old-features (bottom).
+
+![](images/4d0722a2b4658300e33f796b33ff0c9063d58a613f41d6ceef30c6f501a4ca28.jpg)
+
+![](images/478d46bff8b38af35157be94627b6a3d88a60e1731c87eb3e82525f33ce9e104.jpg)
+
+![](images/c0e6c075f7d13115afc27f7928bf91bf2eee4cc7aaf512c567d4cb00655ebabd.jpg)
+
+![](images/5adb8df98590b27509bb64b087239954deb84a6e118f296786c6901be491337f.jpg)  
+(a) schroeder\_stairs: 15 ascending-features (top) and 15 descending-features (bottom). Pure-B count is n = 8 post-curation; per-feature evidence is correspondingly thinner.  
+(b) necker\_cube: 15 face-up-features (top) and 15 face-down-features (bottom).

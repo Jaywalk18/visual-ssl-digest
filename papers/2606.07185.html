@@ -19,39 +19,39 @@
   </header>
   <nav class="site-nav" aria-label="主导航">
     <a class="nav-link" href="../index.html">头版</a>
-<a class="nav-link" href="../issues/2026-06-08.html">今日速递</a>
+<a class="nav-link" href="../issues/2026-06-09.html">今日速递</a>
 <a class="nav-link" href="../pages/catalog.html">论文目录</a>
 <a class="nav-link" href="../pages/timeline.html">时间线</a>
   </nav>
   <main><article class="paper-detail">
   <div class="paper-main">
     <div class="kicker">arXiv 新增 · P0 · 2026-06-08</div>
-    <h1 class="paper-headline">AdaTok：通用视觉自监督越来越受制于 latent/token 接口；AdaTok 直接处理“视觉表征需要多少 token”这个基础问题</h1>
-    <p class="dek">把视觉 token 数从固定的训练/部署超参数变成 tokenizer 自己的一次前向输出，使视觉复杂度高的图像获得更多 token，简单图像少用 token。</p>
-    <p class="byline"><strong>AdaTok: Self-Budgeting Image Tokenization with Quality-Preserving Dynamic Tokens</strong>　Xiaocheng Lu, Yuxi Chen, Jie Zhang, Jian Liu, Jingcai Guo, Fangqi Zhu, Tao Han, Song Guo；机构信息未在 arXiv 元数据中列出。　arXiv 新增　<a href="https://arxiv.org/abs/2606.07185">原文链接</a></p>
+    <h1 class="paper-headline">AdaTok：它和通用视觉自监督的关系在于：把离散 1D image tokenizer 的 token budget 学成内容条件输出，连接 visual tokenization、latent compression 和 AR i...</h1>
+    <p class="dek">高相关；详见方法、贡献和实验边界。</p>
+    <p class="byline"><strong>AdaTok: Self-Budgeting Image Tokenization with Quality-Preserving Dynamic Tokens</strong>　arXiv 新增　<a href="https://arxiv.org/abs/2606.07185">原文链接</a></p>
     <div class="paper-facts">
       <span><b>编号</b>2606.07185</span>
       <span><b>优先级</b>P0</span>
       <span><b>类别</b>arXiv 新增</span>
       <span><b>会议</b>arXiv 新增</span>
-      <span><b>方法</b>提出 self-budgeting discrete 1D tokenizer。Prioritized Representation Learning 用 nested tail masking 学会 token 前缀可解码性，并用 Multi-Head LoRA decoder heads 减少不同预算下的语义漂移；Adaptive Token Allocation 用 deterministic-group GRPO policy 在候选预算中选择内容条件 token 数；Dynamic Pareto Weighting 平衡 fidelity 与效率。</span>
+      <span><b>方法</b>把离散 1D image tokenizer 的 token budget 学成内容条件输出，连接 visual tokenization、latent compression 和 AR image generation</span>
       <span><b>来源</b>arXiv / OpenReview</span>
     </div>
     <div class="feature-body">
-      <p class="lead dropcap">先说结论。通用视觉自监督越来越受制于 latent/token 接口；AdaTok 直接处理“视觉表征需要多少 token”这个基础问题。 把视觉 token 数从固定的训练/部署超参数变成 tokenizer 自己的一次前向输出，使视觉复杂度高的图像获得更多 token，简单图像少用 token。</p>
+      <p class="lead dropcap">先说结论。它和通用视觉自监督的关系在于：把离散 1D image tokenizer 的 token budget 学成内容条件输出，连接 visual tokenization、latent compression 和 AR i... 高相关；详见方法、贡献和实验边界。</p>
       <figure class="full-fig"><img src="../assets/mineru/2606.07185/images/ec7117a14ed3a05cdd2fa4b751f3477a92393a7a14fd1cbac046ec9f9d7c76c1.jpg" alt="(b) Token–rFID Pareto frontier"><figcaption><b>(b) Token–rFID Pareto frontier</b><span class="fig-en">(b) Token–rFID Pareto frontier. Figure 1: Motivation. (a) Reconstruction quality scales non-uniformly with token length across heterogeneous samples, motivating per-instance adaptive allocation rather than a one-size-fits-all budget. (b) AdaTok lies in a favorable quality–efficiency region compared with fixed-budget baselines.</span><span class="fig-zh">这张图来自论文 PDF 的结构化抽取。当前用于辅助理解 AdaTok 的方法或实验，请结合正文精读段落一起看。</span></figcaption></figure>
 <figure class="full-fig"><img src="../assets/mineru/2606.07185/images/dc12cd4422a7ffa35107ad3b30de3409170f4f5ad81d12a1dd9e1c62f62e1a29.jpg" alt="Figureure 2 · : Framework of AdaTok"><figcaption><b>Figureure 2 · : Framework of AdaTok</b><span class="fig-en">Figure 2: Framework of AdaTok. AdaTok integrates Prioritized Representation Learning (PRL) to learn hierarchical 1D tokens and an Adaptive Token Allocation (ATA) policy to autonomously select a content-adaptive token budget for each image.</span><span class="fig-zh">这张图概括 AdaTok 的整体方法流程。阅读时先看模块之间传递的训练信号，再看作者如何把目标拆成可优化的子问题。</span></figcaption></figure>
       
       <h2>核心问题</h2>
-      <p>通用视觉自监督越来越受制于 latent/token 接口；AdaTok 直接处理“视觉表征需要多少 token”这个基础问题。</p>
+      <p>它和通用视觉自监督的关系在于：把离散 1D image tokenizer 的 token budget 学成内容条件输出，连接 visual tokenization、latent compression 和 AR image generation。</p>
       <h2>方法拆解</h2>
-      <p>提出 self-budgeting discrete 1D tokenizer。Prioritized Representation Learning 用 nested tail masking 学会 token 前缀可解码性，并用 Multi-Head LoRA decoder heads 减少不同预算下的语义漂移；Adaptive Token Allocation 用 deterministic-group GRPO policy 在候选预算中选择内容条件 token 数；Dynamic Pareto Weighting 平衡 fidelity 与效率。</p>
+      <p>把离散 1D image tokenizer 的 token budget 学成内容条件输出，连接 visual tokenization、latent compression 和 AR image generation</p>
       <h2>主要贡献</h2>
-      <p>把视觉 token 数从固定的训练/部署超参数变成 tokenizer 自己的一次前向输出，使视觉复杂度高的图像获得更多 token，简单图像少用 token。</p>
+      <p>高相关；详见方法、贡献和实验边界。</p>
       <h2>实验看点</h2>
-      <p>ImageNet-1K 上 AdaTok-Full 在 256 tokens 达到 rFID 1.31；AdaTok-Adaptive 约 118 tokens 平均预算下 rFID 1.50；AR image generation 中 adaptive representation 带来约 2.1x throughput。</p>
+      <p>实验部分建议重点看两类证据：一是作者是否把方法收益和更强数据、更长训练、更大模型区分开；二是跨模型、跨数据或跨任务迁移是否还能保留同样趋势。</p>
       <h2>局限与读法</h2>
-      <p>实验重心仍是重建和图像生成；是否改善下游识别、dense prediction、VLM 输入或视频 tokenizer 还需要额外验证。GRPO budget policy 也增加了训练复杂度。</p>
+      <p>这篇论文的结论需要结合任务设置、训练数据规模和消融实验一起看；不要只凭单个指标判断它对通用视觉表征的价值。</p>
     
     </div>
   </div>
@@ -61,13 +61,13 @@
     <div class="side-box"><h4>原文</h4><p><a href="https://arxiv.org/abs/2606.07185">https://arxiv.org/abs/2606.07185</a></p></div>
   </aside>
 </article></main>
-  <aside class="conf-float" data-conf-reminder="2026-06-08-main-ddl" aria-label="CCF A/B 主投稿提醒">
+  <aside class="conf-float" data-conf-reminder="2026-06-09-main-ddl" aria-label="CCF A/B 主投稿提醒">
   <button class="conf-close" type="button" aria-label="关闭会议提醒">×</button>
   <details open>
     <summary>CCF A/B 主投稿提醒</summary>
     <div class="conf-list"><a class="conf-item " href="https://github.com/ccfddl/ccf-deadlines/blob/main/conference/AI/aaai.yml">
   <span><b>AAAI 2027</b><em>CCF A · Main paper submission</em></span>
-  <strong>49 天</strong>
+  <strong>48 天</strong>
   <small>2026-07-27 · CCF DDL: abstract 2026-07-20；进入 1 个月窗口后重点提醒。</small>
 </a></div>
   </details>
@@ -80,7 +80,7 @@
   (() => {
     const box = document.querySelector('[data-conf-reminder]');
     if (!box) return;
-    const key = `visualSslConfReminderClosed:${box.dataset.confReminder || '2026-06-08-main-ddl'}`;
+    const key = `visualSslConfReminderClosed:${box.dataset.confReminder || '2026-06-09-main-ddl'}`;
     try {
       if (localStorage.getItem(key) === '1') box.hidden = true;
     } catch (err) {}

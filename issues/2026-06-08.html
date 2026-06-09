@@ -19,20 +19,18 @@
   </header>
   <nav class="site-nav" aria-label="主导航">
     <a class="nav-link" href="../index.html">头版</a>
-<a class="nav-link active" href="../issues/2026-06-08.html">今日速递</a>
+<a class="nav-link" href="../issues/2026-06-09.html">今日速递</a>
 <a class="nav-link" href="../pages/catalog.html">论文目录</a>
 <a class="nav-link" href="../pages/timeline.html">时间线</a>
   </nav>
   <main><article class="paper-detail issue-detail">
   <div class="paper-main">
     <div class="kicker">Daily issue · 2026-06-08 · CCF A/B 会议优先</div>
-    <h1 class="paper-headline">6 月 8 日：AdaTok 等视觉表征主线更新</h1>
-    <p class="dek">本期聚焦通用视觉表征、视觉语言预训练与视频自监督中最值得跟进的论文，并保留 CCF A/B、OpenReview 与 arXiv 状态线索。</p>
+    <h1 class="paper-headline">6 月 8 日：AdaTok 等视觉表征论文归档</h1>
+    <p class="dek">本页按日期归档近期论文，保留优先级、主题、来源与方法线索，方便回看同一批工作的研究脉络。</p>
     <div class="feature-body">
-      <p class="lead dropcap">先读 AdaTok，它把 image tokenizer 的 token 数从固定超参数变成内容自适应输出，直接关系到 AR/latent visual foundation model 的吞吐与表征质量。第二篇读 TEVI：它用 sparse autoencoder 和 caption-conditioned masking 改写 CLIP image embeddings，是今天最清楚的 vision-language representation editing 工作。第三篇读 Inside the Visual Mind/ViSAE，重点不是性能榜，而是如何用概念电路解释和 steering ViT 表征。随后读 Lighting-Aware Representation Learning 和 MotionEnhancer：前者提醒 contrastive augmentation 不应只追求光照不变性，后者展示 video diffusion attention 可以蒸馏成 video VLM 的 motion prior。其余论文多是诊断或生成侧的表征干预，建议按自己的 VLM grounding、diffusion latent、spatial binding 需求扫读。</p>
+      <p class="lead dropcap">先读 AdaTok。把离散 1D image tokenizer 的 token budget 学成内容条件输出，连接 visual tokenization、latent compression 和 AR image generation。 其余论文按 P1/P2 与主题顺序扫读，重点看方法图、消融设置和是否能迁移到通用视觉表征。</p>
       <h2>论文索引</h2>
-      <table class="compact-table"><thead><tr><th>优先级</th><th>论文</th><th>类型</th><th>相关性</th><th>一句话理由</th></tr></thead><tbody><tr><td>P0</td><td>AdaTok: Self-Budgeting Image Tokenization with Quality-Preserving Dynamic Tokens</td><td>arXiv 新增</td><td>高</td><td>把离散 1D image tokenizer 的 token budget 学成内容条件输出，连接 visual tokenization、latent compression 和 AR image generation。</td></tr><tr><td>P0</td><td>TEVI: Text-Conditioned Editing of Visual Representations via Sparse Autoencoders for Improved Vision-Language Alignment</td><td>arXiv 新增</td><td>高</td><td>用 caption-conditioned sparse autoencoder editing 精简 CLIP image embedding，直接服务图文表征对齐。</td></tr><tr><td>P1</td><td>Inside the Visual Mind: Neuroscience-Motivated Concept Circuits for Interpreting and Steering Vision Transformers</td><td>arXiv 新增 + ICML 2026 Poster</td><td>高</td><td>ViSAE 把 SAE 概念分解、自动解释和 causal circuit tracing 接到 ViT，是理解/steering 视觉表征的高价值工具。</td></tr><tr><td>P1</td><td>Lighting-Aware Representation Learning under Controllable Lighting Variation</td><td>arXiv 新增</td><td>高</td><td>把光照变化从“要被增强抹掉的 nuisance”改成显式训练信号，扩展 contrastive visual representation learning。</td></tr><tr><td>P1</td><td>MotionEnhancer: Leveraging Video Diffusion for Motion-Enhanced Vision-Language Models</td><td>arXiv 新增 + CVPR 2026</td><td>中高</td><td>从 video diffusion model 蒸馏 motion attention prior 给 video VLM，适合跟踪视频表征和生成模型监督的交叉。</td></tr><tr><td>P2</td><td>Diagnosing Visual Ignorance in Vision-Language Models</td><td>arXiv 新增</td><td>中高</td><td>用层替换、MLP probing 和视觉衰减指标诊断 VLM 如何丢失视觉证据，是 V-L 自监督评估的强信号。</td></tr><tr><td>P2</td><td>Generalization of Diffusion Models Arises with a Balanced Representation Space</td><td>arXiv 更新 + ICLR 2026</td><td>中高</td><td>从 representation geometry 解释 diffusion memorization/generalization，对 latent diffusion 与 RAE 线索有理论参考。</td></tr><tr><td>P2</td><td>Breaking the Lock-in: Diversifying Text-to-Image Generation via Representation Modulation</td><td>arXiv 新增 + ICML 2026 Poster</td><td>中</td><td>在 diffusion transformer 中对早期 DC feature 做 training-free modulation，说明生成多样性也可从表征频率成分入手。</td></tr><tr><td>P3</td><td>The Dual Mechanisms of Spatial Variable Binding in Vision-Language Models</td><td>arXiv 更新</td><td>中</td><td>指出 VLM spatial binding 的主信号来自 vision encoder 的全局 token 表征，适合作为 VLM 表征诊断读物。</td></tr><tr><td>扫读</td><td>Implicit Data Synthesis for Contrastive Unsupervised Data Augmentation</td><td>arXiv 新增</td><td>中</td><td>用网络权重扰动替代数据扰动生成 contrastive samples，实验偏雷达科学数据，但思想可迁移。</td></tr></tbody></table>
-      <h2>主线阅读</h2>
       <div class="paper-list issue-list"><article class="paper-card" data-category="arXiv 新增" data-priority="P0" data-date="2026-06-08" data-title="adatok: self-budgeting image tokenization with quality-preserving dynamic tokens" data-keywords="adatok: self-budgeting image tokenization with quality-preserving dynamic tokens adatok arxiv 新增 p0 2026-06-08 arxiv 新增 把离散 1d image tokenizer 的 token budget 学成内容条件输出，连接 visual tokenization、latent compression 和 ar image generation 高相关；详见方法、贡献和实验边界。">
   <a class="paper-thumb paper-thumb-text" href="../papers/2606.07185.html">
     <img src="../assets/mineru/2606.07185/images/ec7117a14ed3a05cdd2fa4b751f3477a92393a7a14fd1cbac046ec9f9d7c76c1.jpg" alt="AdaTok figure"><span>P0</span>
@@ -156,18 +154,17 @@
     </div>
   </div>
   <aside class="paper-side">
-    <div class="side-box"><h4>今日重点</h4><p>TextTeacher、MDM、EvoVid、Ablate-to-Validate。</p></div>
-    <div class="side-box"><h4>会议口径</h4><p>只把 CCF A/B 放进主提醒；临近截止或 CCF C 仅记录。</p></div>
     <div class="side-box"><h4>阅读重点</h4><p>先看 P1/P2 与方法图，再扫状态变化和边界案例。</p></div>
+    <div class="side-box"><h4>会议口径</h4><p>主提醒只保留 CCF A/B；CCF C 与过期截止仅作状态记录。</p></div>
   </aside>
 </article></main>
-  <aside class="conf-float" data-conf-reminder="2026-06-08-main-ddl" aria-label="CCF A/B 主投稿提醒">
+  <aside class="conf-float" data-conf-reminder="2026-06-09-main-ddl" aria-label="CCF A/B 主投稿提醒">
   <button class="conf-close" type="button" aria-label="关闭会议提醒">×</button>
   <details open>
     <summary>CCF A/B 主投稿提醒</summary>
     <div class="conf-list"><a class="conf-item " href="https://github.com/ccfddl/ccf-deadlines/blob/main/conference/AI/aaai.yml">
   <span><b>AAAI 2027</b><em>CCF A · Main paper submission</em></span>
-  <strong>49 天</strong>
+  <strong>48 天</strong>
   <small>2026-07-27 · CCF DDL: abstract 2026-07-20；进入 1 个月窗口后重点提醒。</small>
 </a></div>
   </details>
@@ -180,7 +177,7 @@
   (() => {
     const box = document.querySelector('[data-conf-reminder]');
     if (!box) return;
-    const key = `visualSslConfReminderClosed:${box.dataset.confReminder || '2026-06-08-main-ddl'}`;
+    const key = `visualSslConfReminderClosed:${box.dataset.confReminder || '2026-06-09-main-ddl'}`;
     try {
       if (localStorage.getItem(key) === '1') box.hidden = true;
     } catch (err) {}

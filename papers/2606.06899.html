@@ -19,38 +19,38 @@
   </header>
   <nav class="site-nav" aria-label="主导航">
     <a class="nav-link" href="../index.html">头版</a>
-<a class="nav-link" href="../issues/2026-06-08.html">今日速递</a>
+<a class="nav-link" href="../issues/2026-06-09.html">今日速递</a>
 <a class="nav-link" href="../pages/catalog.html">论文目录</a>
 <a class="nav-link" href="../pages/timeline.html">时间线</a>
   </nav>
   <main><article class="paper-detail">
   <div class="paper-main">
     <div class="kicker">arXiv 新增 · P1 · 2026-06-08</div>
-    <h1 class="paper-headline">Lighting-Aware Representation Learning under Controllable：视觉 SSL 常把颜色、光照、纹理作为 augmentation nuisance；这篇提醒某些“变化因素”本身就是有用的视觉结构</h1>
-    <p class="dek">提出“semantic consistency + lighting-sensitive structure”双目标：表征既要稳定识别对象，也要保留对光照相关视觉结构的敏感性。</p>
-    <p class="byline"><strong>Lighting-Aware Representation Learning under Controllable Lighting Variation</strong>　Lizhen Zhu, Charantej Reddy Pochimireddy, James Z Wang, Brad Wyble；机构信息未在 arXiv 元数据中列出。　arXiv 新增　<a href="https://arxiv.org/abs/2606.06899">原文链接</a></p>
+    <h1 class="paper-headline">Lighting-Aware Representation Learning under Controllable：它和通用视觉自监督的关系在于：把光照变化从“要被增强抹掉的 nuisance”改成显式训练信号，扩展 contrastive visual representation learning</h1>
+    <p class="dek">高相关；详见方法、贡献和实验边界。</p>
+    <p class="byline"><strong>Lighting-Aware Representation Learning under Controllable Lighting Variation</strong>　arXiv 新增　<a href="https://arxiv.org/abs/2606.06899">原文链接</a></p>
     <div class="paper-facts">
       <span><b>编号</b>2606.06899</span>
       <span><b>优先级</b>P1</span>
       <span><b>类别</b>arXiv 新增</span>
       <span><b>会议</b>arXiv 新增</span>
-      <span><b>方法</b>在 contrastive learning 中加入 illumination-dependent auxiliary objective，把光照变化当作显式训练信号，而不是只用 augmentation 强行学不变性。</span>
+      <span><b>方法</b>把光照变化从“要被增强抹掉的 nuisance”改成显式训练信号，扩展 contrastive visual representation learning</span>
       <span><b>来源</b>arXiv / OpenReview</span>
     </div>
     <div class="feature-body">
-      <p class="lead dropcap">先说结论。视觉 SSL 常把颜色、光照、纹理作为 augmentation nuisance；这篇提醒某些“变化因素”本身就是有用的视觉结构。 提出“semantic consistency + lighting-sensitive structure”双目标：表征既要稳定识别对象，也要保留对光照相关视觉结构的敏感性。</p>
+      <p class="lead dropcap">先说结论。它和通用视觉自监督的关系在于：把光照变化从“要被增强抹掉的 nuisance”改成显式训练信号，扩展 contrastive visual representation learning。 高相关；详见方法、贡献和实验边界。</p>
       <figure class="full-fig"><img src="../assets/mineru/2606.06899/images/page_preview.jpg" alt="First-page visual preview for Lighting-Aware Representation Learning under Controllable Li"><figcaption><b>First-page visual preview for Lighting-Aware Representation Learning under Controllable Li</b><span class="fig-en">First-page visual preview for Lighting-Aware Representation Learning under Controllable Lighting Variation.</span><span class="fig-zh">这是 Lighting-Aware Representation Learning under Controllable 的 PDF 首页预览兜底图，不是 MinerU 结构化抽取出的论文图表。正式抽图完成后应优先展示方法图、实验图或表格。</span></figcaption></figure>
       
       <h2>核心问题</h2>
-      <p>视觉 SSL 常把颜色、光照、纹理作为 augmentation nuisance；这篇提醒某些“变化因素”本身就是有用的视觉结构。</p>
+      <p>它和通用视觉自监督的关系在于：把光照变化从“要被增强抹掉的 nuisance”改成显式训练信号，扩展 contrastive visual representation learning。</p>
       <h2>方法拆解</h2>
-      <p>在 contrastive learning 中加入 illumination-dependent auxiliary objective，把光照变化当作显式训练信号，而不是只用 augmentation 强行学不变性。</p>
+      <p>把光照变化从“要被增强抹掉的 nuisance”改成显式训练信号，扩展 contrastive visual representation learning</p>
       <h2>主要贡献</h2>
-      <p>提出“semantic consistency + lighting-sensitive structure”双目标：表征既要稳定识别对象，也要保留对光照相关视觉结构的敏感性。</p>
+      <p>高相关；详见方法、贡献和实验边界。</p>
       <h2>实验看点</h2>
-      <p>在 ImageNet、ExDark、PASCAL VOC 的 classification/detection 设置中，相比标准 contrastive baselines 有稳定提升；同架构、同训练预算下有效。</p>
+      <p>实验部分建议重点看两类证据：一是作者是否把方法收益和更强数据、更长训练、更大模型区分开；二是跨模型、跨数据或跨任务迁移是否还能保留同样趋势。</p>
       <h2>局限与读法</h2>
-      <p>方法依赖可控 lighting variation/rendered scenes 的训练信号；在 web-scale SSL、真实复杂照明和 foundation-scale ViT 上是否仍有相同收益需要验证。</p>
+      <p>这篇论文的结论需要结合任务设置、训练数据规模和消融实验一起看；不要只凭单个指标判断它对通用视觉表征的价值。</p>
     
     </div>
   </div>
@@ -60,13 +60,13 @@
     <div class="side-box"><h4>原文</h4><p><a href="https://arxiv.org/abs/2606.06899">https://arxiv.org/abs/2606.06899</a></p></div>
   </aside>
 </article></main>
-  <aside class="conf-float" data-conf-reminder="2026-06-08-main-ddl" aria-label="CCF A/B 主投稿提醒">
+  <aside class="conf-float" data-conf-reminder="2026-06-09-main-ddl" aria-label="CCF A/B 主投稿提醒">
   <button class="conf-close" type="button" aria-label="关闭会议提醒">×</button>
   <details open>
     <summary>CCF A/B 主投稿提醒</summary>
     <div class="conf-list"><a class="conf-item " href="https://github.com/ccfddl/ccf-deadlines/blob/main/conference/AI/aaai.yml">
   <span><b>AAAI 2027</b><em>CCF A · Main paper submission</em></span>
-  <strong>49 天</strong>
+  <strong>48 天</strong>
   <small>2026-07-27 · CCF DDL: abstract 2026-07-20；进入 1 个月窗口后重点提醒。</small>
 </a></div>
   </details>
@@ -79,7 +79,7 @@
   (() => {
     const box = document.querySelector('[data-conf-reminder]');
     if (!box) return;
-    const key = `visualSslConfReminderClosed:${box.dataset.confReminder || '2026-06-08-main-ddl'}`;
+    const key = `visualSslConfReminderClosed:${box.dataset.confReminder || '2026-06-09-main-ddl'}`;
     try {
       if (localStorage.getItem(key) === '1') box.hidden = true;
     } catch (err) {}
