@@ -65,7 +65,7 @@ Reference-conditioned generation is now a central interface for controllable vis
 
 ## Detailed Prompt
 
-"A voxel game hero faces a green minion in a sandbox rod
+"A voxel game hero faces a green minion in a sandbox
 
 Tl: Hero and minion stand apart  
 T2: Hero starts a sword attack.  
@@ -92,6 +92,7 @@ Enemy defeated too early.
 
 ![](images/ac34f8047d65a413ac53eb53fd9994c47b6ec822bd68262fcc137a494fc7829a.jpg)
 
+3  
 ![](images/daeba706909b03a7d5f62d4d4e3e286f9f10fab38e390e40017eafd2e598f20a.jpg)
 
 4  
@@ -148,7 +149,7 @@ Reward appears before the minion is defeated.
 
 ## Capability Tree
 
-![](images/17626a491df084d975c44bae786a629356aef32b8ea4da95dadf2679282424bf.jpg)  
+![](images/9127e0e5eab3b12a18399765b544cc2c26491cc6160cdc8bbbc93aac98858902.jpg)  
 Static  
 Identity  
 L2  
@@ -293,42 +294,32 @@ The radar plot also separates two kinds of progress. Open-weight or lower-cost s
 
 Figure 4 then provides the visual evidence behind the C-score gaps. The most informative diagnostic dimensions are D8 state-transition visibility, D9 phase distinctiveness, D6 trajectory–pose coupling, D11 quantity and attribute binding, D12 occlusion/reappearance consistency, and D13 constraint execution. These are precisely the dimensions where a model must do more than independently render plausible snapshots. It must show where an object moved from, how a pose supports the displacement, whether source and target states co-vary, and whether explicit constraints prevent invalid outcomes.
 
-![](images/df4b7aa0808dde369bca5b1ff813f214cef4f8f3b27330b17460b4a0d105b630.jpg)
+![](images/aa000c9bec889fe25d0ddd5006996877bd032866c72c2c8e4f8b3d989727de04.jpg)
 
 <details>
 <summary>radar chart</summary>
 
-| Category | Layout | Entity | Spatial | Motion | Temporal | Causal | Interaction | C8 Constraint | Quality |
-| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| C0 | 10 | 9 | 8 | 7 | 6 | 5 | 7 | 6 | 8 |
-| Layout | 9 | 8 | 7 | 6 | 5 | 4 | 6 | 5 | 7 |
-| C2 | 8 | 7 | 6 | 5 | 4 | 3 | 5 | 4 | 6 |
-| Entity | 7 | 6 | 5 | 4 | 3 | 2 | 4 | 3 | 5 |
-| Spatial | 6 | 5 | 4 | 3 | 2 | 1 | 3 | 2 | 4 |
-| Motion | 5 | 4 | 3 | 2 | 1 | 0 | 2 | 1 | 3 |
-| Temporal | 4 | 3 | 2 | 1 | 0 | -1 | 1 | -1 | 2 |
-| C6 | 3 | 2 | 1 | 0 | -1 | -2 | -1 | -2 | 1 |
-| Causal | 2 | 1 | 0 | -1 | -2 | -3 | -2 | -3 | 0 |
-| Interaction | 1 | 0 | -1 | -2 | -3 | -4 | -3 | -4 | -1 |
-| C8 Constraint | 0 | -1 | -2 | -3 | -4 | -5 | -4 | -5 | -2 |
-| Quality | -1 | -2 | -3 | -4 | -5 | -6 | -5 | -6 | -3 |
-| C9 | -2 | -3 | -4 | -5 | -6 | -7 | -6 | -7 | -4 |
-| Segment | -3 | -4 | -5 | -6 | -7 | -8 | -7 | -8 | -5 |
-</details>
-
-![](images/a5c8aabc3e43ba0fd93ba9209624e089e6fba4f1960cb08b5291f082a194eaa4.jpg)
-
-<details>
-<summary>text_image</summary>
-
-GPT Image 2
-Seedream 5.0 Lite
-Z-Image-Turbo
-HunyuanImage-2.1
-Nano Banana 2
-FLUX.2 Pro
-Qwen-Image-2512
-SDXL
+| C4 Motion | 8 | 7 | 6 | 5 | 7 | 6 | 5 | 4 |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| C5 Temporal | 8 | 7 | 7 | 5 | 7 | 6 | 6 | 4 |
+| C6 Causal | 8 | 7 | 6 | 4 | 7 | 5 | 5 | 3 |
+| C7 Interaction | 8 | 7 | 7 | 4 | 7 | 6 | 6 | 4 |
+| C8 Constraint | 8 | 7 | 6 | 3 | 7 | 5 | 4 | 3 |
+| C9 Quality | 8 | 7 | 7 | 3 | 7 | 6 | 6 | 4 |
+| C0 Layout | 10 | 9 | 9 | 8 | 9 | 9 | 8 | 7 |
+| C2 Entity | 8 | 7 | 7 | 6 | 7 | 6 | 6 | 5 |
+| C3 Spatial: | - | - | - | - | - | - | - | - |
+| C4 Motion: | - | - | - | - | - | - | - | - |
+| C5 Temporal: | - | - | - | - | - | - | - | - |
+| C6 Causal: | - | - | - | - | - | - | - | - |
+| C7 Interaction: | - | - | - | - | - | - | - | - |
+| C8 Constraint: | - | - | - | - | - | - | - | - |
+| C9 Quality: | - | - | - | - | - | - | - | - |
+| C0 Layout | - | - | - | - | - | - | - | - |
+| C2 Entity | - | - | - | - | - | - | - | - |
+| C3 Spatial: | - | - | - | - | - | - | - | - |
+| C4 Motion: | - | - | - | - | - | - | - | - |
+| C5 Temporal: | - | - | - | - | - | - | - | - |
 </details>
 
 Figure 3 | Radar view of prompt-only capability scores across all eight evaluated models. The axes correspond to C0 and C2–C9; C1 is omitted because reference grounding is not applicable without a reference image. The faint purple envelope highlights the GPT Image 2 capability profile, while all model contours and markers are retained for comparison.
@@ -338,7 +329,7 @@ Figure 3 | Radar view of prompt-only capability scores across all eight evaluate
 <details>
 <summary>heatmap</summary>
 
-| | D0 | D1 | D2 | D3 | D4 | D5 | D6 | D7 | D8 | D9 | D10 | D11 | D12 | D13 | Readability |
+| | Panel parse | Task entity | Lifecycle | Anchors | Relations | Camera | Trajectory | Affordance | Transition | Phase | Gaze | Quantity | Occlusion | Constraint | Readability |
 |---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
 | GPT Image 2 | 9.5 | 8.5 | 7.6 | 7.5 | 7.6 | 7.2 | 7.5 | 7.5 | 7.4 | 7.9 | 8.1 | 7.3 | 7.6 | 7.3 | 8.5 |
 | Nano Banana 2 | 8.4 | 8.3 | 7.0 | 7.1 | 7.1 | 6.8 | 7.2 | 7.3 | 7.3 | 7.8 | 7.7 | 6.7 | 7.4 | 5.8 | 8.0 |
@@ -348,7 +339,7 @@ Figure 3 | Radar view of prompt-only capability scores across all eight evaluate
 | Qwen-Image-2512 | 6.6 | 6.9 | 5.6 | 5.9 | 6.1 | 6.1 | 4.5 | 5.6 | 3.2 | 3.6 | 6.8 | 4.7 | 4.8 | 1.2 | 6.6 |
 | HunyuanImage-2.1 | 7.6 | 6.1 | 4.3 | 4.2 | 4.8 | 4.6 | 4.5 | 5.1 | 3.4 | 4.2 | 6.2 | 3.7 | 4.2 | 1.2 | 6.3 |
 | SDXL | 0.6 | 3.0 | 1.8 | 1.7 | 2.0 | 2.1 | 0.6 | 1.9 | 0.3 | 0.4 | 2.2 | 1.4 | 0.9 | 0.6 | 3.4 |
-The color intensity corresponds to the mean score, with darker shades indicating higher scores and lighter shades indicating lower scores.
+The color intensity reflects the mean score, with darker shades indicating higher scores and lighter shades indicating lower scores.
 </details>
 
 Figure 4 | Fine-grained diagnostic decomposition across D0–D14. Process-sensitive diagnostics include trajectory–pose coupling (D6), state-transition visibility (D8), phase distinctiveness (D9), quantity and attribute binding (D11), occlusion and reappearance consistency (D12), and constraint execution (D13).
@@ -403,7 +394,7 @@ Table 5 | Prompt-only ImageTime results over 750 motion-sheet generations per mo
 | Z-Image-Turbo       | 5.5                       |
 | Qwen-Image-2512     | 5.3                       |
 | HunyuanImage-2.1    | 5.0                       |
-| SDXL                | 1.6                       |
+| SDXL                | 1.5                       |
 </details>
 
 Figure 6 | Distribution of Overall mean scores across the 750 prompt-only cases for each model. Boxes show the interquartile range; black lines show medians; whiskers show 5th–95th percentiles; hollow circles show means.
@@ -421,31 +412,14 @@ Figure 7 reports category-level Overall mean scores over all 22 fine-grained Ima
 <details>
 <summary>heatmap</summary>
 
-| Category | GPT Image 2 | Nano Banana 2 | Seedream 5.0 Lite | FLUX.2 Pro | Z-Image-Turbo | Qwen-Image-2512 | Hunyuan Image-2.1 | SDXL |
-| :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- |
-| Animation | 8.1 | 7.7 | 7.2 | 5.9 | 5.1 | 5.2 | 4.8 | 1.9 |
-| Caregiving | 7.9 | 7.4 | 7.3 | 6.2 | 5.3 | 5.3 | 5.0 | 1.5 |
-| Clothing | 7.8 | 7.7 | 7.5 | 6.0 | 5.8 | 5.3 | 4.9 | 1.4 |
-| Constraints | 7.3 | 7.0 | 6.9 | 6.0 | 4.6 | 4.6 | 4.2 | 1.5 |
-| Daily | 7.6 | 7.1 | 7.1 | 6.1 | 5.6 | 5.4 | 5.2 | 1.9 |
-| Games | 8.1 | 7.5 | 7.0 | 5.9 | 4.8 | 5.2 | 4.8 | 1.3 |
-| Gardening | 8.2 | 7.3 | 7.4 | 6.4 | 5.6 | 5.5 | 5.4 | 1.8 |
-| Household | 8.2 | 7.9 | 7.5 | 6.6 | 5.7 | 5.6 | 5.3 | 1.4 |
-| Kitchen | 8.2 | 8.0 | 7.6 | 6.5 | 5.9 | 5.6 | 5.3 | 1.5 |
-| Lab | 7.7 | 7.7 | 7.2 | 6.5 | 5.8 | 5.6 | 5.5 | 1.6 |
-| Long-horizon | 7.8 | 7.5 | 7.3 | 6.3 | 5.1 | 5.2 | 4.6 | 1.5 |
-| Machines | 7.7 | 7.2 | 6.8 | 6.0 | 5.4 | 5.2 | 5.0 | 1.4 |
-| Nature | 7.7 | 7.2 | 7.3 | 6.1 | 5.5 | 5.4 | 4.7 | 1.6 |
-| Navigation | 7.9 | 7.5 | 7.3 | 5.7 | 6.0 | 5.7 | 5.2 | 1.8 |
-| Occlusion | 7.6 | 7.8 | 7.2 | 6.2 | 5.3 | 5.4 | 5.1 | 1.6 |
-| Pets | 8.1 | 7.6 | 7.3 | 6.0 | 5.2 | 5.6 | 4.9 | 1.8 |
-| Quantity-focused | 7.8 | 7.2 | 6.8 | 5.8 | 5.0 | 5.0 | 4.4 | 1.4 |
-| Repair | 7.8 | 7.3 | 7.0 | 6.3 | 5.5 | 5.4 | 5.2 | 1.3 |
-| Social | 7.7 | 7.1 | 6.9 | 5.7 | 5.3 | 5.3 | 5.0 | 1.8 |
-| Sports | 7.7 | 7.2 | 6.9 | 6.0 | 5.8 | 5.2 | 5.1 | 1.7 |
-| Systems | 7.3 | 6.8 | 6.6 | 5.3 | 4.9 | 4.6 | 4.4 | 1.6 |
-| Unboxing | 8.0 | 7.6 | 7.2 | 6.2 | 5.1 | 5.3 | 5.1 | 1.2 |
-Overall mean score
+|  | Animation | Caregiving | Clothing | Constraints | Daily | Games | Gardening | Household | Kitchen | Lab | Long-horizon | Machines | Nature | Navigation | Occlusion | Pets | Quantity-focused | Repair | Social | Sports | Systems | Unboxing |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| GPT Image 2 | 8.1 | 7.9 | 7.8 | 7.3 | 7.6 | 8.1 | 8.2 | 8.2 | 8.2 | 7.7 | 7.8 | 7.7 | 7.9 | 7.9 | 7.6 | 8.1 | 7.8 | 7.8 | 7.8 | 7.7 | 7.7 | 8.0 |
+| Nano Banana 2 | 7.7 | 7.4 | 7.7 | 7.0 | 7.1 | 7.5 | 7.3 | 7.9 | 8.0 | 7.7 | 7.5 | 7.2 | 7.5 | 7.5 | 7.8 | 7.6 | 7.2 | 7.2 | 7.3 | 7.1 | 7.2 | 7.6 |
+| Seedream 5.0 Lite | 7.2 | 7.3 | 7.5 | 6.9 | 7.1 | 7.0 | 7.4 | 7.9 | 7.6 | 7.2 | 7.3 | 6.8 | 6.8 | 6.8 | 7.2 | 7.3 | 6.8 | 6.8 | 7.0 | 6.9 | 6.9 | 7.2 |
+| FLUX.2 Pro | 5.9 | 6.2 | 6.0 | 6.0 | 6.1 | 5.9 | 6.4 | 6.6 | 6.5 | 6.5 | 6.3 | 6.0 | 6.1 | 5.7 | 6.2 | 6.0 | 6.3 | 6.3 | 5.7 | 5.7 | 5.3 | 6.2 |
+| Z-Image-Turbo | 5.1 | 5.3 | 5.8 | 6.0 | 5.6 | 4.8 | 5.6 | 5.7 | 5.9 | 5.8 | 5.1 | 5.4 | 5.3 | 5.3 | 5.3 | 5.2 | 5.2 | 5.5 | 5.4 | 5.3 | 5.3 | 5.1 |
+| Qwen-Image-2512 | 5.2 | 5.3 | 5.3 | 4.6 | 5.4 | 5.2 | 5.4 | 5.4 | 5.6 | 5.6 | 5.2 | 5.2 | 5.4 | 5.4 | 5.4 | 5.4 | 5.0 | 5.2 | 5.3 | 5.0 | 5.0 | - |
 </details>
 
 Figure 7 | Fine-grained category-level prompt-only Overall mean scores. Rows cover all 22 ImageTime categories reconstructed from the case filename and case-id prefixes, and columns report the eight evaluated models.
@@ -633,7 +607,7 @@ Grid of nine-panel sequence showing a girl in school uniform holding an umbrella
 Sequence of nine-panel anime-style illustrations of a girl in school uniform holding an umbrella, standing in a rainy urban street with illuminated buildings (no text or symbols)
 </details>
 
-Promptsummary:anime-style4x2motionsheeforopena glowingumbrella.Theumbrell startsclosedatherside;sheraises itaboveherhead;thecanopyunfoldsandcatches therain;thefialstate showsafullyopenumbrella withagentlemagicalglowwhilethesamestret,signs,puddlesandposecontinuityremainstable.Imagesareshownatmatcheddisplayscalewithoutchangingeitherrawimage'saspetratio
+Promptsummary:anime-style4x2motionshetforopena glowingumbrella.Theumbrella startsclosedatherside;sheraisesitaboveherhead;thecanopyunfoldsandcatches therain;thefinalstate showsafullyopenumbrella withagentlemagicalglowwhilethesamestret,signs,puddlesandposecontinuityremainstable.Imagesareshownatmatcheddisplayscalewithoutchangingeitherawimage'saspetatio.
 
 Figure 10 | Anime-style dense-grid qualitative comparison for a Rainy Street prompt using a 4x2 temporal grid, i.e., four rows with two panels per row.
 
@@ -659,7 +633,7 @@ Sequence of nine photos showing a woman in aprons crouching and kneeling on a wo
 Sequence of nine photos showing a woman in aprons demonstrating ball rolling motion, with no visible text or symbols.
 </details>
 
-Promptsummary:generateone4-rowx2-colummotionshet.Thefistpanelstartsbeforetheaction;intermediatepanelsshoworderedcausalprogress;thefinalpanelshows thecompletedresult whilepreservingidentityayout, and non-target objects.Images are shown at matched display scale without changing either raw image's aspect ratio.
+Promptsummary:generateone4-rowx2-columnmotionshet.Thefistpanelstartsbeforetheaction;intermediatepanelsshoworderedcausalprogress;thefinalpanelshowsthecompletedresult whilepreservingidentityayout, and non-target objects.Images are shown at matched display scale without changing either raw image's aspect ratio.
 
 Figure 11 | Dense-grid qualitative comparison for an Occlusion prompt using a 4x2 temporal grid, i.e., four rows with two panels per row.
 
@@ -672,7 +646,7 @@ Nano Banana 2|native 768x1376
 <details>
 <summary>natural_image</summary>
 
-Sequence of nine photos showing a man walking through a bedroom with a blue bed, laptop, and coffee cup (no text or symbols visible)
+Sequence of nine photos showing a man walking through a bedroom with a blue bed, laptop, and coffee mug (no text or symbols visible)
 </details>
 
 ![](images/0dc8849ca42c3a3c2c0d5fb98bd3011ac1277710e302be37438ad07e753dbe2b.jpg)
@@ -727,7 +701,7 @@ Sequence of 16 photos showing a young man sitting at a table with birds and a bi
 Sequence of 12 photos showing a person sitting at a desk with birds and birds in cages, viewed from the camera (no text or symbols visible)
 </details>
 
-Promptsummary:generateone4-rowx4-colummotionshet.Thefistpanelstartsbeforetheaction;intermediatepanelsshoworderedcausalprogress;thefinalpanelshows thecompletedresult whilepreservingidentityayout, and non-target objects.Images are shown at matched display scale without changing either raw image's aspect ratio.
+Promptsummary:generateone4-rowx4-columnmotionshet.Thefistpanelstartsbeforetheaction;intermediatepanelsshoworderedcausalprogress;thefinalpanelshowsthecompletedresult whilepreservingidentityayout, and non-target objects.Images are shown at matched display scale without changing either raw image's aspect ratio.
 
 Figure 14 | Dense-grid qualitative comparison for a Pets prompt using a 4x4 temporal grid, i.e., four rows with four panels per row.
 
@@ -735,7 +709,7 @@ Figure 14 | Dense-grid qualitative comparison for a Pets prompt using a 4x4 temp
 
 Action: assemble a colorful bento box
 
-GPTImage 2丨native 1254x1254
+GPT Image 2丨native 1254x1254
 
 Nano Banana 2|native 1024x1024
 
@@ -755,7 +729,7 @@ Illustration of a girl in pink apron eating a meal in a kitchen, with no visible
 Illustration of a chef preparing food in a kitchen, showing multiple steps from stir-frying to making (no text or symbols)
 </details>
 
-Promptsummary:anime-style4x4motionshetforassembleacolorfulbentobox.Thebentoboxbeginsempty;riceisplaced intoonecompartment;colorfulsidedishesareadded inordered steps;thefialstate showsacomplete tidybento whilethe kitchencounter and non-target bowls remainunchanged.Images are shownatmatched display scale without changing eitherraw image's aspect ratio.
+Promptsummary:anime-style4x4motionshetforassembleacolorfulbentobox.Thebentoboxbeginsempty;riceisplaced intoonecompartment;colorfulsidedishesareadded inordered steps;thefialstate showsacomplete tidybento whilethe kitchencounter andnon-target bowls remainunchanged.Images are shownatmatched display scale without changing eitherraw image's aspect ratio.
 
 Figure 15 | Anime-style dense-grid qualitative comparison for a Bento Kitchen prompt using a 4x4 temporal grid, i.e., four rows with four panels per row.
 
@@ -781,11 +755,11 @@ Nano Banana 2|native 1264x848
 Sequence of 20-panel images showing a technician assembling small mechanical parts at a workbench, with no visible text or symbols.
 </details>
 
-Promptsummary:generateone4-rowx6-columnmotionshet.Thefistpanelstartsbeforetheaction;intermediatepanelsshoworderedcausalprogress;thefinalpanelshowsthecompletedresult whilepreservingidentityayout, and non-target objects.Images are shown at matched display scale without changing either raw image's aspect ratio.
+Promptsummary:generateone4-rowx6-colummotionshet.Thefistpanelstartsbeforetheaction;intermediate panelsshoworderedcausalprogress;thefinalpanelshows thecompletedresult whilepreservingidentity,layout, and non-target objects.Images are shown at matched display scale without changing either raw image's aspect ratio.
 
 Figure 16 | Dense-grid qualitative comparison for a Repair prompt using a 4x6 temporal grid, i.e., four rows with six panels per row.
 
-## Sports 丨4x6 Dense Temporal Grid
+## Sports丨4x6 Dense Temporal Grid
 
 Action: a goalkeeper dives for a ball
 
@@ -795,7 +769,7 @@ GPTImage2|native 1536x1024
 <details>
 <summary>natural_image</summary>
 
-Sequence of 16 photos showing a soccer player in action, demonstrating a dynamic shot with a goal net and ball, set on grassy field (no text or symbols)
+Sequence of 16 photos showing a soccer player in action, demonstrating a dynamic shot with a goal net and ball, set against a grassy field background (no text or symbols)
 </details>
 
 Nano Banana 2|native 1264x848  
@@ -807,7 +781,7 @@ Nano Banana 2|native 1264x848
 Sequence of 20-panel images showing a soccer player in action, demonstrating the motion with a ball and stick (no text or symbols)
 </details>
 
-Prompt summary: generate one4-rowx 6-olumn motionshet.The fistpaelstartsbefore the action; intermediate panels showorderedcausalprogress; te finalpanelshows the completedresult while preserving identity,ayout, and non-target objects.Images are shown at matched display scale without changing either raw image's aspect ratio.
+Prompt summary: generate one4-row x 6-olumn motionshet.The fistpanelstarts before the action; intermediate panelsshow ordered causal progress; the finalpanelshows thecompletedresult while preserving identity,ayout, and non-target objects.Images are shown at matched display scale without changing either raw image's aspect ratio.
 
 Figure 17 | Dense-grid qualitative comparison for a Sports prompt using a 4x6 temporal grid, i.e., four rows with six panels per row.
 
@@ -821,7 +795,7 @@ GPTImage 2|native 1536x1024
 <details>
 <summary>natural_image</summary>
 
-Grid of 24 identical action shots of a person skateboarding on a ramp under a blue sky, with trees and a fence in the background (no text or symbols visible)
+Grid of 24 identical action shots of a person skateboarding on a paved surface under a blue sky with trees (no text or symbols visible)
 </details>
 
 Nano Banana 2|native1264x848  
@@ -833,7 +807,7 @@ Nano Banana 2|native1264x848
 Illustration of a person skateboarding on a ramp with trees and sky in the background (no text or symbols)
 </details>
 
-Prompt summary: anime-style 4x6 motionshet for performa skateboardjump.Theskater startsrollng toward theramp; kneesbendand theboardbegins tolift; thejumprises through visible airborne phases; the final stateshows a cleanlanding withthe same ramp,background,skateboard identity,andcameraview preserved.Imagesare shownat matched display scale without changing either raw image'saspect ratio.
+Prompt summary: anime-style 4x6 motionshet for performa skateboardjump.Theskater startsroling toward theramp; kneesbendand theboardbegins tolift; thejumprises through visible airborne phases; the final state shows a cleanlanding withthe same ramp,background,skateboard identity,andcameraview preserved.Imagesare shownat matched display scale without changing either raw image'saspect ratio.
 
 Figure 18 | Anime-style dense-grid qualitative comparison for a Skate Park prompt using a 4x6 temporal grid, i.e., four rows with six panels per row.
 
@@ -847,7 +821,7 @@ GPTImage2|native 1679x937
 <details>
 <summary>natural_image</summary>
 
-Grid of 24 sequential photos showing a man in a lab coat and gloves holding potted flowers, with no visible text or symbols.
+Grid of 24 sequential photos showing a person in a lab setting, holding and examining a potted plant with pink lotus flowers (no text or symbols visible)
 </details>
 
 Nano Banana 2|native 1376x768  
@@ -859,7 +833,7 @@ Nano Banana 2|native 1376x768
 Grid of 20-panel images showing hands holding pink roses, with no visible text or symbols.
 </details>
 
-Promptsummary:generateone4-rowx8-colummotionshet.Thefistpanelstartsbeforetheaction;intermediatepanelsshoworderedcausalprogress;thefinalpanelshows thecompletedresult whilepreservingidentityayout, and non-target objects.Images are shown at matched display scale without changing either raw image's aspect ratio.
+Promptsummary:generateone4-rowx8-columnmotionshet.Thefistpanelstartsbeforetheaction;intermediatepanelsshoworderedcausalprogress;thefinalpanelshowsthecompletedresult whilepreservingidentityayout, and non-target objects.Images are shown at matched display scale without changing either raw image's aspect ratio.
 
 Figure 19 | Dense-grid qualitative comparison for a Long-horizon prompt using a 4x8 temporal grid, i.e., four rows with eight panels per row.
 
@@ -867,7 +841,7 @@ Figure 19 | Dense-grid qualitative comparison for a Long-horizon prompt using a 
 
 Action: add seasoning to a bowl
 
-GPTImage2|native 1679x937  
+GPTImage 2|native 1679x937  
 ![](images/5b85d68d4c55041c63ece67714203b6a7f648181d5ef771e2596b34813c59fe0.jpg)
 
 <details>
@@ -885,7 +859,7 @@ Nano Banana 2|native 1376x768
 Sequence of 30-panel black-and-white photo sequence showing hands preparing food at a table, with no visible text or symbols
 </details>
 
-Promptsummary:generateone4-rowx8-colummotionshet.Thefistpanelstartsbeforetheaction;intermediatepanelsshoworderedcausalprogress;thefinalpanelshows thecompletedresult whilepreservingidentityayout, and non-target objects.Images are shown at matched display scale without changing either raw image's aspect ratio.
+Promptsummary:generateone4-rowx8-columnmotionshet.Thefistpanelstartsbeforetheaction;intermediatepanelsshoworderedcausalprogress;thefinalpanelshowsthecompletedresult whilepreservingidentityayout, and non-target objects.Images are shown at matched display scale without changing either raw image's aspect ratio.
 
 Figure 20 | Dense-grid qualitative comparison for a Kitchen prompt using a 4x8 temporal grid, i.e., four rows with eight panels per row.
 
@@ -908,10 +882,10 @@ Nano Banana 2|native 1376x768
 <details>
 <summary>natural_image</summary>
 
-Grid of 24 identical photos showing pink cherry blossoms on branches, with a traditional building in the background (no text or symbols)
+Grid of 24 identical photos showing cherry blossoms with pink flowers and buds, set against a backdrop of greenery and a traditional building (no text or symbols)
 </details>
 
-Promptsummary:anime-style4x&motionshetforacherryblossombud gradually blooms.Thebudbeginstightlyclosed; petals slowlyloosenacrossmanysmall orderedsteps; theblossomopens wider whilethebranchand background remain fixed;the final state showsa fuly open sakura flower withcoherent petal growth.Images are shown at matched display scale without changing either raw image's aspect ratio.
+Promptsummary:anime-style4x&motionsheeforacherry blossombud graduallyblooms.Thebudbegins tightlyclosed; petals slowlyloosenacrossmanysmallordered steps; the blossomopens widerwhile thebranchand background remain fixed;the final state showsafuly open sakura flower with coherent petal growth.Images are shownatmatched display scale without changing eitherraw image's aspect ratio.
 
 Figure 21 | Anime-style dense-grid qualitative comparison for a Sakura Garden prompt using a 4x8 temporal grid, i.e., four rows with eight panels per row.
 
@@ -949,7 +923,7 @@ Table 6 | Complete ImageTime action-concept inventory (continued).
 
 ## C Example Case Gallery
 
-Animation|characteropen magic book Case:animation\_character\_open\_magic\_book\_v02  
+Animation|character open magic book Case:animation\_character\_open\_magic\_book\_v02  
 ![](images/cf50e86849b9a8119d197024d0fd64aaa0931da14938f8adcf137c7123b57e3d.jpg)
 
 <details>
@@ -965,7 +939,7 @@ GPT Image 2 Overall8.56 C8.62/D8.50
 <details>
 <summary>text_image</summary>
 
-Four-panel comic strip showing a person cooking with books and using a tool, labeled t1 to t4.
+Four-panel comic strip showing a person cooking with books and using a lamp, labeled t1 to t4.
 </details>
 
 Nano Banana 2 Overall7.57 C7.33/D7.80
@@ -985,7 +959,7 @@ Seedream 5.0 LiteOverall5.99C5.62/D6.36
 <details>
 <summary>natural_image</summary>
 
-Four-panel illustration of a person studying at a desk with plants and books (no text or symbols)
+Four-panel illustration of a person studying at a desk with plants, no text or symbols present
 </details>
 
 FLUX.2 Pro Overall6.53C6.12/D6.93
@@ -1034,10 +1008,10 @@ SDXL Overall2.14 C2.00/D2.29
 
 Prompt summary
 
-Sene:ahand-drawncartooncharaterwithonsistetostumedetalsinacolorful2Danimatedroombackgrod,widestableview;backgrond:aosedtobox,acoiledable;preseednon-target item1thatmustreminuchangd,sall background object.; style: 2D animated cartoon style, clean line art, flat colors, hand-draw...  
-Initial before‘character openmagic book':show ahand-drawn cartoon character with consistent costume details in a colorful 2D animated room background, wide stable view;include a closed toolbox,acoiled cable;key objects start  
+Sene:ahand-drawncartooncharacterwithconsistetostumedetalsinacolorful2Danimatedroombackgroud,widestableview;backgrond:alosed tobox,acoiledcable;preseednon-target item1thatmustreminuchanged,small background object.; style: 2D animated cartoon style, clean line art,flat colors, hand-drawm...  
+T1:Initialbefore‘character openmagicbook':showahand-drawncartooncharacter with consistent costumedetails inacolorful 2D animatedroombackground,wide stable view;include aclosed toolbox,acoiled cable; key objects start  
 First concrete stepof'character open magicbook’: show ahand-drawncartooncharacter withconsistent costumedetails beginning this actioninthe scene,withvisible motion,contact,trigger,or selection; keep non-target item1that must  
-Midway through‘character open magic book’: show a partial result or aetive transition, so the causal path from T2 to T4 is visually inspeetable. Completedcharacter openmagicbook:showthefinal state/result ofthis action; no-target item1thatmust remainunchanged,smallbackgroundobjet1 stillmatch prior identitycount,and position.
+Midway throughcharacteropenmagicbook’:show a partial result or active transition, so the causalpath fromT2 to T4is visuallinspectable. T4 Completed'character open magic book’: show the final state/result of this action; non-target item 1 that must remain unchanged, smal background object 1 stillmatch prior identity, count, and position.
 
 Animation|transform Case:animation\_transform\_v01  
 ![](images/963b126a2c6aa255a08a42bdfdee17b2d6ca95070bdbb25cb3cc61743128f9c9.jpg)
@@ -1075,7 +1049,7 @@ Seedream 5.0 Lite Overall7.35C7.38/D7.33
 <details>
 <summary>natural_image</summary>
 
-Four-panel comic strip showing a boy playing on a bench and holding a ring, with trees in the background (no text or symbols)
+Four-panel comic strip showing a boy playing on a bench and another holding a colorful ring, both in outdoor setting (no text or symbols)
 </details>
 
 FLUX.2 Pro Overall6.10 C5.88/D6.33
@@ -1095,7 +1069,7 @@ Z-Image-Turbo Overall4.23C3.88/D4.58
 <details>
 <summary>natural_image</summary>
 
-Four-panel cartoon illustration of a character in a blue hat walking outdoors, with trees and rocks in the background (no text or symbols)
+Four-panel cartoon illustration of a character with backpack walking outdoors, surrounded by trees and rocks (no text or symbols)
 </details>
 
 Qwen-Image-2512 Overall4.83C4.50/D5.17
@@ -1105,7 +1079,7 @@ Qwen-Image-2512 Overall4.83C4.50/D5.17
 <details>
 <summary>natural_image</summary>
 
-Four-panel comic strip showing a character in a green hat walking on a grassy path, with a notebook and coffee cup nearby (no text or symbols)
+Four-panel comic strip showing a character in a green hat walking on a grassy path, with another figure and a notebook nearby (no text or symbols)
 </details>
 
 Hunyuanlmage-2.1Overall3.31 C3.38/D3.25
@@ -1123,11 +1097,11 @@ SDXL Overall0.81 C0.88/D0.75
 Prompt summary
 
 Sene:acolorful 2Danimated character with cleanline art inacleancartoonpark background,three-quarter sideview; background: asmallnotebook,a plain ceramiccup; preserved: non-target itemithat must remainunchanged,smallbackground  
-object.;style: 2Danimated cartoon style, cleanline art, flat colors,hand-drawm. Initialbeforetrasfom:sowaolofl2Danimatedcaractrwitheanlineartinaceancartoonparkbacgrod,threequartersideview;incdeasmallnotebool,aplainceramiccup;keyobectsstartuhangedandthefinalresltis  
+object..;style: 2Danimated cartoon style, cleanline art,flat colors,hand-drawn... Initialbeforetrasfom:sowaolofl2Danimatedcaractrwitheanlineartinaceancartoonparkbacgrod,threequartersideview;incdeasmallnotebool,aplainceramiccup;keyobectsstartuhangedandthefinalresltis  
 absent.  
-First concrete stepof’transform': show acolorful 2Danimated character with cleanline art beginning this action in the scene,with visible motion,contact,trigger, or selection; keep non-target item1 that must remain unchanged,smal background object 4 unchanged.  
-T3:Midway through’transform’: show a partial result or active transition, so the causal path from T2 to T4 is visually inspeetable.  
-T4:Compedtraooeaate/ultoisti;tatt,allcgoet4stillatchiorentityotd
+T2: First concrete stepof’transform': show acolorful 2Danimated character with cleanline art beginning this aetion in the scene,with visible motion,contact,trigger,or selection; keep non-target item1 that must remain unchanged,smal background object 4 unchanged.  
+T3:Midway through ’transform’: show a partial result or active transition, so the causal path from T2 to T4 is visually inspeetable.  
+Completed’transform’: show the final state/result of this action; non-target item 1 that must remain unchanged, small background object 4 still match prior identity, count, and position.
 
 Figure 22 | Example summary grids from the Animation category. Each grid compares the same prompt across eight image-generation models and reports the overall mean score below each generated motion sheet.
 
@@ -1215,7 +1189,7 @@ SDXL Overall1.29C1.25/D1.33
 Prompt summary
 
 Scene:akitehen worker wearing anaproninagarage workbench,over-the-shoulderview;background:apottedplant,aneutral wallshelf;preserved: non-target item3thatmust remainunchanged,smallbackgroundobject.;style:realisticphoto. T1: Initial before'removemask':showakitchen worker wearing anaproninagarage workbench，over-the-shoulder view;include apotted plant,aneutral wall shelf;key objects start unchangedandthefinalresult is absent.  
-Firstconeretestefremovemask:sowaitchnwokerweangaaponbegingthistiiescee,ithisibemotioncotact,tgeroreleton;eepotargetittatmusteminchagedsallckgrodee 4unchanged.  
+Firstconeretestefremovemask:sowaitchnwokerweangaaponbegingthistiiescee,ithisibemotioncotact,tgeroreletion;eepotargetitetatmusteminchagedsallckgrode 4unchanged.  
 Midwaythrough‘remove mask’: show a partialresult or active transition, so the causal path from T2 to T4is visualy inspectable. T4: Completed’removemask’:showthefinalstate/resultofthisaction;nontargetitem3thatmustremainunchanged,smallbackgroundobject4stillmatchprioridentitycount,andposition.
 
 Caregiving|open medicine box Case:caregiving\_open\_medicine\_box\_v01  
@@ -1234,7 +1208,7 @@ GPT Image 2 Overall8.79 C8.88/D8.71
 <details>
 <summary>natural_image</summary>
 
-Four-panel sequence showing a person using a small object on a wooden table, with potted plants in the background (no text or symbols visible)
+Four-panel sequence showing a person interacting with a small object on a wooden table, surrounded by potted plants (no text or symbols visible)
 </details>
 
 Nano Banana 2 Overall8.09 C8.11/D8.07
@@ -1244,7 +1218,7 @@ Nano Banana 2 Overall8.09 C8.11/D8.07
 <details>
 <summary>natural_image</summary>
 
-Four-panel photo sequence showing a person in uniform holding a white box and a small display case, with potted plants on the wall (no text or symbols visible)
+Four-panel photo sequence showing a person in uniform holding an open gift box, with potted plants and a potted plant in the background (no text or symbols visible)
 </details>
 
 Seedream 5.0 Lite Overall6.84 C6.75/D6.93
@@ -1274,7 +1248,7 @@ Z-Image-Turbo Overall4.55C4.25/D4.86
 <details>
 <summary>natural_image</summary>
 
-Four-panel photo sequence showing a person in uniform examining a small box with potted plants, no visible text or symbols
+Four-panel photo sequence showing a person in a blue shirt holding a small box and a potted plant, all open and inside a room with shelves (no visible text or symbols)
 </details>
 
 Qwen-Image-2512 Overall4.93C4.50/D5.36
@@ -1301,9 +1275,9 @@ SDXLOverall0.63 C0.62/D0.64
 
 Prompt summary
 
-Scene:anurseinlightscrubsinanoutdoor patio,over-the-shoulder view;background:apottedplant,aneutralwallshelf,preseved:non-target item3thatmustremainunchanged,smallbackgroundobject.;style:realisticphoto.  
-T1 Initial before'openmedicine box’:show anurseinlight scrubs inanoutdoor patio,over-the-shoulder view;inelude apotted plant,aneutral wall shelf;key objeets start unchanged and thefinal result is absent. istonesgeibctgedalckg unchanged.  
-T3:Midway through‘open medicine box’: show apartialresult or active transition,so the causalpath from T2 to T4is visuall inspectable.  
+Scene:anurseinlightsrubsinanoutdoor patio,over-the-shoulder view;background:apottedplant,aneutralwall shelf,preserved:non-target item3thatmustremainunchanged,smallbackgroundobject.;style:realisticphoto.  
+T1 Initial before'openmedicine box’:show anurseinlight scrubs inanoutdoor patio,over-the-shoulder view;inelude apotted plant,aneutral wall shelf;key objeets start unchanged and thefinal result is absent. istonegeibctgedalckg unchanged.  
+T3:Midway through‘open medicine box’: show a partialresult or active transition,so the causalpath fromT2 to T4 is visualy inspectable.  
 T4:Completed’openmedicinebox':showthefinalstate/result ofthis action;non-targetitem3thatmustremainunchanged,smallbackgroundobject 4stillmatch prioridentity,count,andposition.
 
 Figure 23 | Example summary grids from the Caregiving category. Each grid compares the same prompt across eight image-generation models and reports the overall mean score below each generated motion sheet.
@@ -1334,7 +1308,7 @@ Nano Banana 2 Overall7.77 C7.88/D7.67
 <details>
 <summary>natural_image</summary>
 
-Four-panel sequence showing a person adjusting their shirt, standing in a kitchen (no text or symbols visible)
+Four-panel sequence showing a person adjusting their shirt, standing in a kitchen setting (no text or symbols visible)
 </details>
 
 Seedream 5.0 Lite Overall7.88 C8.00/D7.75
@@ -1379,19 +1353,19 @@ Four-panel photo sequence showing a person cleaning or handling food at a kitche
 
 Hunyuanlmage-2.1Overall4.98 C4.88/D5.08
 
-![](images/fe33fa32f824545ae99a420c1dd180705fc25770c7fb37fee75b88c53471f82f.jpg)
+![](images/1cab1e7f99cef4c9feac4d71201599e8816312cbf30b224d7bd2842d5470b19d.jpg)
 
 <details>
 <summary>natural_image</summary>
 
-Woman standing in a kitchen preparing food at a wooden counter with teacups and a kettle (no visible text or symbols)
+Woman standing at a wooden table in a kitchen with kitchen appliances and a coffee cup (no visible text or symbols)
 </details>
 
 SDXL Overall1.75C1.50/D2.00  
 Prompt summary  
 Scene:anadult wearing a gray jacket inacompact kitchencounter,thre-quarter side view; background: asmallnotebook, a plainceramiccup; preserved: non-target item1that must remainunchanged,smallbackgroundobject.; style: realistic  
 Initialbefore‘organize colar': show anadult wearing a gray jacket in a compact kitchen counter,three-quarter side view;includea smallnotebook,a plain ceramiccup;key objects start unchanged andthe finalresult is absent.  
-Firstconretetefgancolarsowdteinggacketbgingtisctiteseeithisiblionotact,tgge，eleti;kotargetittmstemaaedsmallkgodbet2 unchanged.  
+Firstconcretestepoforganzecolar’:showanadultwearigagrayjacketbeginningthisactioninthescene,withvisiblemotion,contact,triggerorselection;keepnon-targetitem1thatmustremainunchanged,smallbackgroundobject2 unchanged  
 T3:Midwaythrough’organize collar’: show a partialresult or active transition,so the causalpath fromT2to T4 is visualy inspectable  
 T4:Completed’organize colar': show thefinal state/result of this action; non-target item 1that must remainunchanged,small background objeet 2 stillmatch prior identity, count,and position.
 
@@ -1401,7 +1375,7 @@ Clothing|open umbrella Case:clothing\_open\_umbrella\_v01
 <details>
 <summary>natural_image</summary>
 
-Four-panel sequence showing a person in traditional attire holding and opening an umbrella, standing near potted plants (no text or symbols visible)
+Four-panel sequence showing a person in traditional attire holding an umbrella, standing near potted plants (no text or symbols visible)
 </details>
 
 GPT Image2 Overall8.17 C8.25/D8.08
@@ -1421,22 +1395,22 @@ Nano Banana 2 Overall6.75 C6.50/D7.00
 <details>
 <summary>natural_image</summary>
 
-Four-panel sequence showing a person in a white shirt holding an umbrella, interacting with another black umbrella indoors (no text or symbols visible)
+Four-panel sequence showing a person in a white shirt holding an umbrella, interacting with another person's umbrella indoors (no text or symbols visible)
 </details>
 
 Seedream 5.0 Lite Overall8.04 C8.00/D8.08
 
-![](images/153cb58f8d4813bf6a8c900ac71aa9f06a304d1650aba207f8444ac6450d3e8d.jpg)
+![](images/269a814265f0f2342c0b98ce6b332453eadc6efa09dd5f47a97d05ffc9e82acb.jpg)
 
 <details>
 <summary>natural_image</summary>
 
-Four-panel photo sequence showing a person holding an umbrella outdoors, with potted plants and a wall in the background (no text or symbols visible)
+Four-panel photo sequence showing a person holding an umbrella outdoors, with potted plants and bottles in the background (no text or symbols visible)
 </details>
 
 FLUX.2Pro Overall4.79C4.25/D5.33
 
-![](images/6263460126fa56f48db199daa6d8d96c0ba4437ad8e3d8abc5f4eb18ad2b1b22.jpg)
+![](images/85cb68ad7aaa7f9d6a75fb83797473af071beb569860d9e685e33e93d7e564ea.jpg)
 
 <details>
 <summary>natural_image</summary>
@@ -1451,7 +1425,7 @@ Z-Image-Turbo Overall5.69 C5.12/D6.25
 <details>
 <summary>natural_image</summary>
 
-Four-panel sequence showing a person holding an umbrella outdoors, with potted plants in the background (no text or symbols visible)
+Four-panel sequence showing a person holding up an umbrella outdoors, with potted plants in the background (no text or symbols visible)
 </details>
 
 Qwen-Image-2512 Overall4.02C3.62/D4.42
@@ -1466,20 +1440,18 @@ Four-panel photo sequence showing a kitchen scene with an umbrella, a potted pla
 
 Hunyuanlmage-2.1Overall3.92C3.75/D4.08
 
-![](images/c2e69821bfd3f00d878369c194cb1dc59e7feffad820a047676e0b10793f4a68.jpg)
+![](images/eabf5a945a535beefe02244ac999ca28c1bc1b0be7c28c5804ed29d1896dfb5e.jpg)
 
 <details>
 <summary>natural_image</summary>
 
-Woman in apron holding an umbrella next to a potted plant, standing indoors (no text or symbols visible)
+A person in a apron holding an umbrella next to a potted plant, with a red cap and umbrella in the background (no text or symbols visible)
 </details>
 
 SDXL Overall2.10C1.88/D2.33  
 Prompt summary  
-T1:Initialbeforeopenumbrela’showakithenworkerwearinganaproninarainysidewalkoutsideabldingover-theshoulderview;includeapottedplantaneutralwallshelf,keyobjectsstartunchangedandthefinalresultisaent  
-iste  
-T3: Midwaythrough‘open umbrella’: show a partial result or active transition,sothecausal path from T2 to T4 is visually inspectable.  
-T4:Completed’open umbrela’: show the final state/result of this action; non-target item 3 that must remain unchanged,small background object 4 stillmatch prior identity, count,and position.
+Initialbeforeopenumbrell’:owakitchenworkerwearinganaproninaraiysidewalkoutsideabilingover-theshoulderview;inudeapotedplantanetralwallshelf;keybetstartunchangedandthfinalresultisabent. Firstconcretestepofopenumbrella':showakitchenworkerwearinganapronbeginningthisaetioninthescene，withvisiblemotion，contact，trigger，orselection;keepnon-targetitem3thatmustremainunchanged,smallbackgroundobjet 4unchanged.  
+Midway through'open umbrella’: show a partial result or active transition, so the causal path from T2 to T4 is visually inspectable. T4 Completed'open umbrella’: show the final state/result of this action; non-target item 3 that must remain unchanged, smallbackground object 4 still match prior identity, count,and position.
 
 Figure 24 | Example summary grids from the Clothing category. Each grid compares the same prompt across eight image-generation models and reports the overall mean score below each generated motion sheet.
 
@@ -1499,7 +1471,7 @@ GPT Image 2 Overall8.41 C8.56/D8.27
 <details>
 <summary>natural_image</summary>
 
-Four-panel sequence showing a person assembling cardboard boxes in different positions (t1-t4), no text or symbols present.
+Four-panel sequence showing a person assembling cardboard boxes in a classroom setting (t1-t4), no text or symbols visible.
 </details>
 
 Nano Banana 2 Overall7.80 C7.67/D7.93
@@ -1529,7 +1501,7 @@ FLUX.2 Pro Overall2.42 C2.11/D2.73
 <details>
 <summary>natural_image</summary>
 
-Four-panel sequence showing a student in school uniforms moving boxes on a table, with backpacks and blue containers (no text or symbols visible)
+Four-panel sequence showing a student in school uniforms moving boxes on a table, with no visible text or symbols.
 </details>
 
 Z-Image-Turbo Overall5.22 C4.78/D5.67
@@ -1559,19 +1531,19 @@ Hunyuanlmage-2.1Overall4.04C4.22/D3.87
 <details>
 <summary>natural_image</summary>
 
-Illustration of a person standing beside a table with clothes and a shirt, no text or symbols present
+Illustration of a person standing near a table with clothes and a shirt, no text or symbols present
 </details>
 
 SDXL Overall0.46C0.44/D0.47
 
 Prompt summary
 
-Scene:a student withabackpack inatidy bedroom,table-height side view; background:twofolded towels,a smallbasket; preserved: non-target item 2 that must remainunchanged,smallbackground object.;style: realisticphoto.  
+Scene:a student withabackpack inatidy bedroom,table-height side view; background:two folded towels,a smallbasket; preserved: non-target item2 that must remainunchanged,smallbackground object.;style: realistic photo.  
 Initial before'open onlyleft box':show a student withabackpack ina tidy bedroom,table-height side view;inelude two angedandthefinalresult isabsent.  
-Firstconeretestefopenlyftxowasudentithckackbgingtisctiotesee,ithisibemotiootact,triggereleti;kotargeit2tatmusteminchaged,salckgrodet  
-unchanged. Midway through‘open onlyleft box': show a partial result or active transition, so the causal path from T2 to T4 is visually inspectable. T4 Completedopenonlyleftbox:showthefinalstate/resultofthisaction;non-targetitem2thatmustremainunchanged,smallbackgroundobjeet1stillmatchprioridentity，count,andposition.
+Firstconeretestefopenlyftxowasudentithckackbgingtisctiotesee,ithisibemotionotact,triggereleti;kotargeit2tatmusteminchaged,salckgrodet  
+unchanged. Midway through‘open only left box': show a partial result or active transition, so the causal path from T2 to T4 is visually inspectable. T4 Completedopenonlyleftbox:showthefinalstate/resultofthisaction;non-targetitem2thatmustremainunchanged,smallbackgroundobject1stillmatchprioridentity，count,ndposition.
 
-Constraints|the box cannot openso the object remains inside Case:constraints\_the\_box\_cannot\_open\_so\_the\_object\_remains\_inside\_v01  
+Constraints|the box cannot open so the object remains inside Case:constraints\_the\_box\_cannot\_open\_so\_the\_object\_remains\_inside\_v01  
 ![](images/a6fc315be20eb5c7ff66efa5c96e7e414c46b0f652700188770ad424232dd260.jpg)
 
 <details>
@@ -1654,12 +1626,12 @@ SDXL Overall 0.93C1.00/D0.86
 
 Prompt summary
 
-Sene:akitchenworkerwearinganaproinagaragewkbenchover-tsouervie;backgrodapotedplantaneutalalshelfpreseedn-targeti3tatmustremainucanged,sallbackgronde;styleealistit  
-Initialbeforethecanotoenstebetemainsinide’sowakitchenwokerweainganaproinagaagewokbencher-thesholderview;indeapotedpantaneutralwallshelfkeybetstatuchangedadthefinal  
-result is absent.  
+Sene:akitchenworkerwearinganaproinagaragewkbenchover-tshouervie;backgrodapotedplantaneutalalshelfpreseedn-targetim3tatmustremainucanged,sallbackgronde;styleealistiot  
+Initialbeforehecanotoesteetemainsinside’sowakitchenworkerweariganaproinagaagewokbencher-theshoulderview;iludeapotedlantaetralwallselfebestartucangedndfial  
+Fi  
 T2: Firstconcretest epof’thebox cannotopensotheobjectremainsinside’:showakitchenworkerwearinganapronbeginningthisactioninthescene,withvisiblemotic unchanged,small background object 4unchanged.  
-T3:Midwaythrough‘theboxcannot openso the object remains inside': show apartialresult or active transition,so the causal path fromT2 toT4 is visually inspectable.  
-T4:Completed’thexcanotoesotheetremaissideshowthefinalstateresultfthisatin;o-targetitetatmusteminuchagd,salbackgrodet4stillmachprioidentityount,adsiio
+T3:Midwaythrough‘theboxcannot openso theobject remains inside':show apartialresult or active transition,so the causalpath fromT2 toT4 is visually inspectable.  
+T4:Completed’thexcanotoeheetremaisiide’showthefinalstateesultofthisati;otargetitetatmusteminunchaged,sallbackgrodet4stillatchprioentityount,andsito
 
 Figure 25 | Example summary grids from the Constraints category. Each grid compares the same prompt across eight image-generation models and reports the overall mean score below each generated motion sheet.
 
@@ -1681,7 +1653,7 @@ Overall8.40 C8.38/D8.42
 <details>
 <summary>natural_image</summary>
 
-Four-panel sequence showing a person folding a tent outdoors, with outdoor equipment and trees in the background (no text or symbols visible)
+Four-panel sequence showing a person folding a tent outdoors on grass, with no visible text or symbols.
 </details>
 
 Nano Banana 2  
@@ -1714,7 +1686,7 @@ Overall4.88 C4.75/D5.00
 <details>
 <summary>natural_image</summary>
 
-Four-panel sequence showing a person sitting on a tent using a device, arranged in rows (t1-t4) with no visible text or symbols.
+Four-panel sequence showing a person sitting on a tent using a device, arranged in rows (t1-t4), with no visible text or symbols.
 </details>
 
 Z-Image-Turbo  
@@ -1729,7 +1701,7 @@ Four-panel photo sequence showing a person installing or adjusting a green tent 
 </details>
 
 Qwen-Image-2512  
-Overall5.31C4.88/D5.75
+Overall5.31 C4.88/D5.75
 
 ![](images/30a630929affc07cebf639148d87391f31cee2ee0554dd8bf0dfa2074021d442.jpg)
 
@@ -1761,8 +1733,8 @@ Initial before'set upacamping tent’:show anadult wearingagrayjacketinagrassy c
 
 Firstconeretesteofsetuampigtentsowaaultwearigagajacketbegiingthsioinhese,withisiblemotiocotact,tigeroeletio;keep-targetittatmustemcanged,sallcod
 
-object 2unchanged. T3: Midwaythrough‘set upa camping tent’:show a partialresult or active transition, so thecausal path fromT2 toT4 is visually inspectable.  
-T4:Completed’setupacampingtent’：showthefinalstate/result ofthis action;non-targetitem2thatmustremainunchanged,smallbackgroundobject2stillmatchprioridentity,count,andposition.
+T3: Midwaythrough‘setupa camping tent’:show a partialresult or active transition, so the causalpathfromT2 to T4 is visually inspectable.  
+T4:Completed’setupacampingtent’:showthefinalstate/result ofthisaction;non-targetitem2thatmustremainunchanged,smallbackgroundobject 2stillmatchprioridentity,count,andposition.
 
 Daily|run toward bus stop  
 ![](images/612a8472503c062076c7b536365c722227dcd9b2c6777b0f09b291f03e7e9980.jpg)
@@ -1770,7 +1742,7 @@ Daily|run toward bus stop
 <details>
 <summary>natural_image</summary>
 
-Four-panel photo sequence showing a person walking near a bus shelter and sitting on a paved area, with no visible text or symbols.
+Four-panel photo sequence showing a person walking through a public bus shelter with buckets, no visible text or symbols
 </details>
 
 GPT Image2  
@@ -1803,7 +1775,7 @@ Overall6.05 C5.88/D6.23
 <details>
 <summary>natural_image</summary>
 
-Four-panel photo sequence showing a person walking outdoors with backpacks and safety cones, no visible text or symbols
+Four-panel photo sequence showing a person walking outdoors with backpacks, no visible text or symbols
 </details>
 
 FLUX.2Pro  
@@ -1814,7 +1786,7 @@ Overall5.93 C5.62/D6.23
 <details>
 <summary>natural_image</summary>
 
-Four-panel photo sequence showing a person walking on a street with buildings in the background (no text or symbols visible)
+Four-panel photo sequence showing a person walking outdoors on a street, wearing a backpack (no text or symbols visible)
 </details>
 
 Z-Image-Turbo  
@@ -1825,7 +1797,7 @@ Overall5.13C4.88/D5.38
 <details>
 <summary>natural_image</summary>
 
-Four-panel sequence showing a person jogging through a glass-walled structure, with no visible text or symbols.
+Four-panel sequence showing a person running through a glass-walled structure, wearing dark clothing and carrying black bags (no text or symbols visible)
 </details>
 
 Qwen-Image-2512  
@@ -1856,8 +1828,8 @@ Prompt summary
 
 Seesde  
 T1 Initialbefore'runtowardbus stop’:showastudent withabackpack inacitysidewalk besideabus stop,wide stableview;ineludeaclosedtoolbox,acoiledcable;keyobjeets startunchangedandthefinalresultis absent. Firstconeretestepof‘runtowardbusstop’;showastudentwithabackpackbeginningthisactioninthescene,withvisiblemotion,contact,trigger，orselection;keepnon-targetitem1thatmustremainunchanged,smallbackgroundobjet1 unchanged.  
-T3:Midway through‘runtoward bus stop': show a partial result or active transition,so the causal path fromT2to T4 is visualy inspectable.  
-T4:Completed'run toward bus stop’:show the final state/result of this action; non-target item1that must remainunchanged,smallbackground object 1 stillmatch prior identity,count,and position.
+T3:Midway through‘runtoward bus stop': show apartial result or active transition,so the causalpath fromT2to T4is visualy inspectable.  
+T4:Completed'run toward bus stop’: show the final state/result of this action; non-target item1that must remainunchanged,smallbackground object 1 still match prior identity,count,and position.
 
 Figure 26 | Example summary grids from the Daily category. Each grid compares the same prompt across eight image-generation models and reports the overall mean score below each generated motion sheet.
 
@@ -1897,7 +1869,7 @@ Seedream 5.0 Lite Overall6.64 C6.75/D6.54
 <details>
 <summary>text_image</summary>
 
-Game screenshot showing three identical panels with character evolution and game environment, including numbered move markers and background objects.
+Game screenshot showing three identical panels with character evolution and game environment, including numbered move markers and a '战地' (stage) icon.
 </details>
 
 FLUX.2 Pro Overall4.46C4.25/D4.67
@@ -1945,7 +1917,7 @@ Hunyuanlmage-2.1Overall4.07C4.00/D4.14
 <details>
 <summary>natural_image</summary>
 
-Game interface screenshot showing character evolution and terrain layout (no text or symbols)
+Game interface screenshot showing character evolution and terrain layout (no readable text or symbols)
 </details>
 
 SDXLOverall1.42C1.38/D1.46
@@ -1955,8 +1927,8 @@ Prompt summary
 Scene:aside-scrollngplatformgamecharacter inastylizedvideogamelevel,wide stable view; background: aclosedtoobox,acoiledcable; preserved: non-target item1that mustremainunchanged,smallbackgroundobject.;style: stylizedvideo
 
 gamescreenshot style,game-renderedcharacters and environment,not. Initialbefore‘avoidanobstacle’:showaside-scrolingplatformgamecharacter ina stylizedvideo gamelevel,wide stable view; include aclosedtoolbox,acoiledcable;key objects start unchangedandthefinalresultis absent.  
-Firstconcretstefdtalé;oidolinafogmeactebginghstiitceeitsibmoiotact,tgerelei;targeittatstemaaall background object1unchanged.  
-T3:Midwaythrough‘avoidanobstacle':showapartialresultoractivetransition,sothecusalpathfromT2toT4isvisuallispeable.  
+Firstconcretstefdtalé;oidolinafogmeactebginghsctiitceeithisibmoiootact,tger，elei;eetargeittatstemaagall background object1unchanged.  
+T3:Midwathrough‘avoidanobstacle':showapatialresultoractivetransition,sothcausalpathfomTtoT4isvisuallyispecable  
 T4:Completed’avoid an obstacle': show the final state/result of this aetion; non-target item 1 that must remain unchanged, small background object 1 still match prior identity,count, and position.
 
 Games|craftan item  
@@ -1966,7 +1938,7 @@ Case:games\_craft\_an\_item\_v01
 <details>
 <summary>natural_image</summary>
 
-Four-panel illustration of a person in a teal shirt sitting at a table with a lamp, surrounded by plants and a table with items (no visible text or symbols)
+Four-panel illustration of a person in a traditional-style room with a table, lamp, and small objects (no text or symbols)
 </details>
 
 GPT Image2 Overall7.50 C7.50/D7.50
@@ -1976,7 +1948,7 @@ GPT Image2 Overall7.50 C7.50/D7.50
 <details>
 <summary>natural_image</summary>
 
-Four-panel illustration showing a person cleaning a bench with a potted plant on the wall (no text or symbols)
+Four-panel illustration showing a person cleaning a bench with a potted plant on the wall, and another person washing water near a table (no text or symbols)
 </details>
 
 Nano Banana 2Overall7.53C7.62/D7.43
@@ -2043,11 +2015,11 @@ SDXL Overall1.40C1.38/D1.43
 
 Prompt summary
 
-Scene:asmallisometric gamecharacter ina voxelsandbox gameareaover-theshoulder view;background: apoted plant,aneutral wallshelf; preserved: non-target item 3 that must remainunchanged,smallbackground objet.; style stylized video game screnshot style,game-renderedcharacters andenvironment,not..  
+Scene:asmallisometric gamecharacter ina voxelsandbox gameareaover-theshoulder view;background: apoted plant,aneutral wallshelf; preserved: non-target item 3 that must remainunchanged,smallbackground objet.; style stylized videogamescreenshotstyle,game-renderedcharactersandenvironment,not..  
 Initial before'craft anitem’:show asmallisometric game character ina voxelsandbox game area,over-the-shoulder view;inelude apottedplant,a neutral wallshelf;keyobjects start unchangedandthefinalresult is absent.  
 Fistonceeefsmaliabitiigel;oisdsalgo unchanged.  
 T3:Midway through'eraft anitem': show a partial result or active transition,so the causal path from T2 to T4is visuall inspectable.  
-T4:Completed’eraftanitem':show thefinalstate/result ofthis action; non-target item3that mustremainunchanged,small backgroundobject 4 stillmatch prior identity,count,andposition.
+T4:Completed’eraft anitem':show thefinalstate/result ofthis action; non-target item3that mustremainunchanged, small backgroundobject 4 stillmatch prior identity,count,and position.
 
 Figure 27 | Example summary grids from the Games category. Each grid compares the same prompt across eight image-generation models and reports the overall mean score below each generated motion sheet.
 
@@ -2080,7 +2052,7 @@ Overall7.30 C7.38/D7.23
 <details>
 <summary>natural_image</summary>
 
-Four-panel photo sequence showing a man in a gray shirt standing outdoors among trees, with fruit and a white object nearby (no text or symbols visible)
+Four-panel sequence showing a man in a gray shirt standing outdoors among trees, with fruit and a white object nearby (no text or symbols visible)
 </details>
 
 Seedream 5.0Lite  
@@ -2102,7 +2074,7 @@ Overall6.78 C6.88/D6.69
 <details>
 <summary>natural_image</summary>
 
-Four-panel photo sequence showing a man picking green fruits from a tree in an orchard, labeled t1 to t4 (no text or symbols on the image itself)
+Four-panel photo sequence showing a man picking up citrus fruits in an orchard, labeled t1 to t4 (no text or symbols on subjects)
 </details>
 
 Z-Image-Turbo  
@@ -2150,10 +2122,10 @@ Overall1.50 C1.38/D1.62
 
 Prompt summary
 
-,small background object.,;style: realistic photo  
-T Initialbeforepickfruitfromaplant’showanadultwearingagrayjacketiabackyardfruitgarden,frot-facingstableview;includeastackofbooks,adesklamp;keybectstartunchangedandthefinalresultisabent.  
+,small background object.,;style: realistic photo.  
+T Initialbeforepickfruitfromaplant’showanadultwearingagrayjacketiabackyardfruitgarden,frot-facingstableview;includeastackofbooks,adesklamp;keybectstartunchangedandthefinalresultisabsent.  
 Firstconeretestepof’pickfruitfromaplant’:showanadultwearingagrayjacketbeginningthisactioninthescene,withvisiblemotion,contact,trigger，orselection;keepnon-targetitem2thatmustremainunchanged,smallbackground  
-T3:Midwathroughpicfritfomaplant’showapartialresultoractivetransition,sothecausalpathromT2toT4isvisuallyinspectable.  
+T3:Midwathroughpicfruitfomaplantshowapartialresultoractivetransition,sothecausalpathfromT2toT4isvisuallyispeable.  
 T4:Completed’pickfruitfromaplant’showthefinalstate/result ofthis action;non-targetitem2thatmustremainunchanged,smallbackgroundobject 2stillmatchprioridentity,count,andposition.
 
 Gardening |plant seeds  
@@ -2195,7 +2167,7 @@ Overall7.78 C7.88/D7.69
 <details>
 <summary>natural_image</summary>
 
-Four-panel sequence showing a person examining a surface with scattered objects, possibly for surveying or fieldwork (no text or symbols visible)
+Four-panel sequence showing a person examining a construction site with materials, no visible text or symbols
 </details>
 
 FLUX.2 Pro  
@@ -2239,18 +2211,18 @@ Overall5.12 C5.00/D5.23
 <details>
 <summary>natural_image</summary>
 
-Four-panel illustration of a child planting crops in wooden trays, showing different planting methods and soil conditions (no text or symbols)
+Four-panel illustration of a child planting crops in wooden trays, showing different leafy and seedling arrangements (no text or symbols)
 </details>
 
 Overall3.06C3.12/D3.00
 
 Prompt summary
 
-Sene:astudentwithabckpackinbckyrdgdeedslightoverheadview;bckgrod:asmalltayfedlot;preseed:notargetit3tatmustremanchanged,sallbkgrodoet.;style:liicot  
+Sene:astudentwithabckpackinbckyardgadenbed,slightoverheadview;bckgroudasmalltayfdedcloth;preseed:notargetite3tatmustremainhanged,smallbckgroundoe.;syle:ealisticot  
 Initialbefore‘plant seeds’:showastudent withabackpackinabackyardgardenbed,slight overheadview;inelude asmall tray,afoldedcloth;key objeets start unchangedandthefinalresultis absent  
-Firstconeretestepof’plantseeds’:showastudentwithabackpackbeginningthisactioninthescene,withvisiblemotion,contact,trigger，orselection;keepnon-targetitem3thatmustremainunchanged,smallbackgroundobeet1  
-Midwaythrough’plant seeds’: show a partial result or active transition, so the causal path from T2 to T4is visuall inspectable.  
-T4:Completed’plantseeds':showthefinalstate/resultofthisaction;non-targetitem3thatmustremainunchanged,smallbackgroundobject1stillmatchprioridentitycount,andposition.
+Firstconeretestepof’plantseeds’:showastudentwithabackpackbeginningthisactioninthescene,withvisiblemotion,contact,trigger，orselection;keepnon-targetitem3thatmustremainunchanged,smallbackgroundobjeet1  
+Midwaythrough’plant seeds’: show a partial result or active transition, so the causal path from T2 toT4is visuall inspectable  
+T4:Completed’plantseeds':showthefinalstate/resultofthisaction;non-targetitem3thatmustremainunchanged,smallbackgroundobject1stillmatchprioridentity,count,andposition.
 
 Figure 28 | Example summary grids from the Gardening category. Each grid compares the same prompt across eight image-generation models and reports the overall mean score below each generated motion sheet.
 
@@ -2316,7 +2288,7 @@ Overall5.75 C5.25/D6.25
 <details>
 <summary>natural_image</summary>
 
-Four-panel photo sequence showing a child in yellow uniform using a kitchen sink with water, labeled t2, t3, and t4 (no text or symbols on the image itself)
+Four-panel photo sequence showing a child washing hands in a kitchen sink, labeled t2 to t4 (no text or symbols on the image itself)
 </details>
 
 Qwen-Image-2512  
@@ -2327,7 +2299,7 @@ Overall6.29 C6.00/D6.58
 <details>
 <summary>natural_image</summary>
 
-Four-panel photo sequence showing a child in a yellow hoodie using a wrench on a desk, with no visible text or symbols.
+Four-panel photo sequence showing a child in a yellow hoodie using a hand tools on a kitchen (no text or symbols visible)
 </details>
 
 Hunyuanlmage-2.1  
@@ -2338,7 +2310,7 @@ Overall5.27C5.12/D5.42
 <details>
 <summary>natural_image</summary>
 
-Child in yellow hoodie playing with colorful balls on a tray in a kitchen setting (no text or symbols visible)
+Child in yellow hoodie playing with colorful balls on a tray in a classroom setting (no text or symbols visible)
 </details>
 
 SDXL  
@@ -2350,8 +2322,7 @@ Scene: a child wearingayellow hoodie in aclassroomcorner,slight overheadview;bac
 T1:Initial before'turnonafaucet':showachildwearingayellow hoodieinaclassroomcorner,slight overhead view;include asmalltray,a foldedcloth;key objects start unchanged andthefinal result is absent.  
 mustremainunchanged,smallbackgrounde  
 unchanged.  
-T3: Midway through’turn on a faucet’: show apartial result or active transition, so the causal path from T2 to T4 is visually inspectable.  
-T4:Completed’turnonafaucet’sowthefinalstate/resultofthisaction;non-target item3thatmustremainunchanged,smallbackgroundobject3stillmatchprioridentitycount,andposition
+T3: Midway through’turn on a faucet’: show a partial result or active transition, so the causal path from T2 to T4 is visually inspectable. T4 Completed‘turn ona faucet’: show the final state/result of this action; non-target item 3 that must remain unchanged,small background object 3 still match prior identity,count,and position.
 
 Household|tidy up toys  
 ![](images/1668dfa5742bc8219947584266400da36153ee02b0cd8d679acaeb4cecb6cd18.jpg)
@@ -2370,7 +2341,7 @@ Overall 6.00 C6.00/D6.00
 <details>
 <summary>natural_image</summary>
 
-Four-panel photo collage showing a child playing with LEGO blocks in a colorful rug, surrounded by stuffed toys (no text or symbols visible)
+Four-panel photo collage showing a child playing with LEGO blocks in a colorful room, surrounded by stuffed toys (no text or symbols visible)
 </details>
 
 Nano Banana 2  
@@ -2414,7 +2385,7 @@ Overall5.43 C5.25/D5.62
 <details>
 <summary>natural_image</summary>
 
-Four-panel photo sequence showing a child in yellow hoodie playing with colorful blocks, no text or symbols visible
+Four-panel photo sequence showing a child in a yellow hoodie playing with colorful blocks, arranged in a grid (no text or symbols visible)
 </details>
 
 Qwen-Image-2512  
@@ -2439,12 +2410,13 @@ Overall4.39C4.25/D4.54
 Two yellow hooded children standing on a small table with colorful blocks and toys, no visible text or symbols.
 </details>
 
+SDXL  
 Overall1.19C1.00/D1.38
 
 Prompt summary
 
-Sene:achildweangaellowooieiaroomcoeidesableviw;bkgrodosedtoiledable;preseed:ntargetitatmustemacanged,sallbckgrondbe;styleealistiot  
-T1:Initialbeforetidptoyssowachldwearingayellowhoodieinclasroomcoer，idestableview;includeaclosedtoboxaoiledcable;keybjectsstartunchangedandthefialresultisbent  
+Sene:achildweangaellowooieiaroomcoeidesableviw;bkgrodosedtoiledable;preseed:ntargetitatmustemacanged,sallbckgrondbe;styleealistot  
+T1:Initialbeforetidyptoys':showachldwearingayellowhoodieinacasroomcorer，widestableview;includeaclosedtoox,acoiledcable;keyobjectsstartunchangedandthefinalresultisabent  
 istoneoceiocgeeedalc  
 T3: Midwaythrough’tidy up toys’: show a partial result or aetive transition,so the causal path fromT2to T4 is visuall inspectable.  
 T4: Completed’tidyuptoys:showthefinalstate/resultofthisaction;non-targetitem1thatmustremainunchanged,smallbackgroundobject3stillmatchprioridentity,count,andpsition.
@@ -2524,7 +2496,7 @@ Overall5.17C4.88/D5.46
 <details>
 <summary>natural_image</summary>
 
-Four-panel image showing a nurse performing a ceramic or ceramic work, labeled 'Visual Spot' and 'Carl State', with no visible text or symbols in the images themselves.
+Four-panel image showing a nurse performing a ceramic or ceramic work, labeled 'Visual/Spot' and 'Carl State', with no visible text or symbols in the images themselves.
 </details>
 
 Hunyuanlmage-2.1  
@@ -2546,7 +2518,7 @@ Prompt summary
 Scene:a nurse in light scrubs in an outdoor patio,front-facing stable view;b ust remain unchanged,small background object..;style: realistic photo.  
 T1:Initial before'open acan’:show a nurseinlight scrubsinan outdoor patio,front-facing stable view;include astack ofbooks,adesk lamp;key objects start unchanged andthe final result isabsent.  
   
-Midway throughopen a can’:show apartial result or active transition,so the causal path from T2 to T4 is visually inspectable. T4: Completed’openacan': show thefinal state/result ofthis action;non-target item2that must remainunchanged,smallbackground object 4 stillmatchprior identity,count,and position.
+Midway throughopen a can’:show apartial result or active transition,so the causal path from T2 to T4 is visually inspectable. T4: Completed’openacan': show thefinal state/result of this action;non-target item2that must remainunchanged,smallbackground object 4 stillmatchprior identity,count,and position.
 
 Kitchen|crack an egg  
 ![](images/25b19d89844089cc5b7aaaaccc4f4c00b810c76cf379e2e5a6bddbf41dbe0e7c.jpg)
@@ -2591,7 +2563,7 @@ Four-panel photo sequence showing a child eating at a table in a classroom setti
 </details>
 
 FLUX.2 Pro  
-Overall5.70C5.25/D6.15
+Overall5.70 C5.25/D6.15
 
 ![](images/ccbee599c0c60a7db9e348dd0be2368d1e0f38082fe95e8ac916908dfc9b203a.jpg)
 
@@ -2609,7 +2581,7 @@ Overall6.91 C6.75/D7.08
 <details>
 <summary>natural_image</summary>
 
-Four-panel photo sequence showing a child in yellow hoodie eating food at a table, with egg baskets and bowls in the background (no text or symbols)
+Four-panel photo sequence showing a child in yellow hoodie eating food at a table, with egg baskets and bowls in the background (no text or symbols visible)
 </details>
 
 Qwen-Image-2512  
@@ -2642,7 +2614,7 @@ Sene:achildwearingyellowooieiasromcoerableheigsieew;ackgrodtwofoedtowelsasmallbs
 T1:Initial before'rack anegg':showachild wearingayellowhoodieinaclasroomcorner,table-height sideview;ineludetwofoldedtowels,asmallbasket;key objects startunchangedandthefinalresultis absent.  
 T2Fisteefoceeiict,gegdllgo unchanged.  
 T3:Midway through'erack aneg:showa partialresult or active transition,so the causal pathfromT2to T4 is visually inspectable.  
-T4:Completed'crack an egg':show the final state/result ofthis action; non-target item 2 that must remainunchanged, smallbackground object 3 stillmatch prior identity,count,and position.
+T4:Completed'crack an egg':show the final state/result ofthis action; non-target item 2 that must remainunchanged,smallbackground object 3 still match prior identity,count,and position.
 
 Figure 30 | Example summary grids from the Kitchen category. Each grid compares the same prompt across eight image-generation models and reports the overall mean score below each generated motion sheet.
 
@@ -2681,7 +2653,7 @@ Four-panel photo sequence showing a boy reading and studying at a table, with no
 Seedream 5.0 Lite  
 Overall7.96 C8.00/D7.92
 
-![](images/7051918eb763746f319dec384e6810febfdc6d4df0c73133e5d98110f89557a9.jpg)
+![](images/84aa626dbe13b57d63e61174d736a18cefece3a4aab721208ce2a1fce1436236.jpg)
 
 <details>
 <summary>natural_image</summary>
@@ -2725,12 +2697,12 @@ Four-panel sequence showing a person studying at desks in a classroom setting, w
 Hunyuanlmage-2.1  
 Overall5.29 C5.25/D5.33
 
-![](images/c2f339870651efec634765a497f5b125c5fc78799aaa684b9bb2ceb50ac9d46f.jpg)
+![](images/09d0764ea56a89e0412a991be91d3db97bf65f756b2d08c6de67b3b05667e37f.jpg)
 
 <details>
 <summary>natural_image</summary>
 
-Four-panel image showing a person standing on a wooden platform, with one person using a book and another holding a backpack (no text or symbols visible)
+Four-panel illustration showing a person standing on a wooden platform, with one holding an open book and another carrying a backpack (no text or symbols)
 </details>
 
 SDXL  
@@ -2751,7 +2723,7 @@ Case:lab\_mix\_colors\_v02
 <details>
 <summary>natural_image</summary>
 
-Four-panel photo sequence showing a person pouring liquid into colored cups on a table, with no visible text or symbols.
+Four-panel photo sequence showing a person pouring liquid into colored cups at a table (no text or symbols visible)
 </details>
 
 GPT Image2  
@@ -2773,22 +2745,22 @@ Overall7.34 C7.38/D7.31
 <details>
 <summary>natural_image</summary>
 
-Four-panel illustration of a student in a classroom setting, showing a person preparing food at desks (no text or symbols present)
+Four-panel illustration of a student in a classroom setting, showing a person using a tool to prepare food at desks (no text or symbols present)
 </details>
 
 Seedream 5.0 Lite  
 Overall6.52 C6.12/D6.92
 
-![](images/a1dba042aeb48908d7d35973f0c929ac5d7749c8d6697d1153aea5444061a4cd.jpg)
+![](images/203820e79671eb6e37b31909ce14422503e6c007df6e3f3a538c7a786efd80f4.jpg)
 
 <details>
 <summary>natural_image</summary>
 
-Four-panel sequence showing a person using a smartphone and interacting with colored objects on a bed, with no visible text or symbols.
+Four-panel photo sequence showing a person assembling glasses and holding a small object, with no visible text or symbols.
 </details>
 
 FLUX.2 Pro  
-Overall7.42C7.38/D7.46
+Overall7.42 C7.38/D7.46
 
 ![](images/a0c0c1819c61f28ed8df27d0235d756bf511db872689aa153425f4a4c2838dad.jpg)
 
@@ -2823,117 +2795,77 @@ Four-panel photo collage showing a person painting on a table, with one person u
 Hunyuanlmage-2.1  
 Overall5.25 C5.25/D5.25
 
-![](images/5a8a4d5dcc0ad1ad4c40ca567b23a386fe6e0b5105b8fc05c70cc9b0348aa9b5.jpg)
+![](images/2f26cee4f90410146b49f8f98e0f957f4d4047642e8cda0d0f97ff5c54f12868.jpg)
 
 <details>
 <summary>text_image</summary>
 
 CREAR ONE MOTIONS
-24-10-2014 • 2 Stent's Sheet A DESP® DesalView Chible
-• On weights, compacted
-• 1. Use a single bag to ensure that the weight is 30 gm.
-• 2. Use a double bag to ensure that the weight is 30 gm.
-• 3. Use a single bag to ensure that the weight is 30 gm.
-• 4. Use a double bag to ensure that the weight is 30 gm.
-• 5. Use a single bag to ensure that the weight is 30 gm.
-• 6. Use a double bag to ensure that the weight is 30 gm.
-• 7. Use a single bag to ensure that the weight is 30 gm.
-• 8. Use a double bag to ensure that the weight is 30 gm.
-• 9. Use a single bag to ensure that the weight is 30 gm.
-• 10. Use a double bag to ensure that the weight is 30 gm.
-• 11. Use a single bag to ensure that the weight is 30 gm.
-• 12. Use a double bag to ensure that the weight is 30 gm.
-• 13. Use a single bag to ensure that the weight is 30 gm.
-• 14. Use a double bag to ensure that the weight is 30 gm.
-• 15. Use a single bag to ensure that the weight is 30 gm.
-• 16. Use a double bag to ensure that the weight is 30 gm.
-• 17. Use a single bag to ensure that the weight is 30 gm.
-• 18. Use a double bag to ensure that the weight is 30 gm.
-• 19. Use a single bag to ensure that the weight is 30 gm.
-• 20. Use a double bag to ensure that the weight is 30 gm.
-• 21. Use a single bag to ensure that the weight is 30 gm.
-• 22. Use a double bag to ensure that the weight is 30 gm.
-• 23. Use a single bag to ensure that the weight is 30 gm.
-• 24. Use a double bag to ensure that the weight is 30 gm.
-• 25. Use a single bag to ensure that the weight is 30 gm.
-• 26. Use a double bag to ensure that the weight is 30 gm.
-• 27. Use a single bag to ensure that the weight is 30 gm.
-• 28. Use a double bag to ensure that the weight is 30 gm.
-• 29. Use a single bag to ensure that the weight is 30 gm.
-• 30. Use a double bag to ensure that the weight is 30 gm.
-• 31. Use a single bag to ensure that the weight is 30 gm.
-• 32. Use a double bag to ensure that the weight is 30 gm.
-• 33. Use a single bag to ensure that the weight is 30 gm.
-• 34. Use a double bag to ensure that the weight is 30 gm.
-• 35. Use a single bag to ensure that the weight is 30 gm.
-• 36. Use a double bag to ensure that the weight is 30 gm.
-• 37. Use a single bag to ensure that the weight is 30 gm.
-• 38. Use a double bag to ensure that the weight is 30 gm.
-• 39. Use a single bag to ensure that the weight is 30 gm.
-• 40. Use a double bag to ensure that the weight is 30 gm.
-• 41. Use a single bag to ensure that the weight is 30 gm.
-• 42. Use a double bag to ensure that the weight is 30 gm.
-• 43. Use a single bag to ensure that the weight is 30 gm.
-• 44. Use a double bag to ensure that the weight is 30 gm.
-• 45. Use a single bag to ensure that the weight is 30 gm.
-• 46. Use a double bag to ensure that the weight is 30 gm.
-• 47. Use a single bag to ensure that the weight is 30 gm.
-• 48. Use a double bag to ensure that the weight is 30 gm.
-• 49. Use a single bag to ensure that the weight is 30 gm.
-• 50. Use a double bag to ensure that the weight is 30 gm.
-• 51. Use a single bag to ensure that the weight is 30 gm.
-• 52. Use a double bag to ensure that the weight is 30 gm.
-• 53. Use a single bag to ensure that the weight is 30 gm.
-• 54. Use a double bag to ensure that the weight is 30 gm.
-• 55. Use a single bag to ensure that the weight is 30 gm.
-• 56. Use a double bag to ensure that the weight is 30 gm.
-• 57. Use a single bag to ensure that the weight is 30 gm.
-• 58. Use a double bag to ensure that the weight is 30 gm.
-• 59. Use a single bag to ensure that the weight is 30 gm.
-• 60. Use a double bag to ensure that the weight is 30 gm.
-• 61. Use a single bag to ensure that the weight is 30 gm.
-• 62. Use a double bag to ensure that the weight is 30 gm.
-• 63. Use a single bag to ensure that the weight is 30 gm.
-• 64. Use a double bag to ensure that the weight is 30 gm.
-• 65. Use a single bag to ensure that the weight is 30 gm.
-• 66. Use a double bag to ensure that the weight is 30 gm.
-• 67. Use a single bag to ensure that the weight is 30 gm.
-• 68. Use a double bag to ensure that the weight is 30 gm.
-• 69. Use a single bag to ensure that the weight is 30 gm.
-• 70. Use a double bag to ensure that the weight is 30 gm.
-• 71. Use a single bag to ensure that the weight is 30 gm.
-• 72. Use a double bag to ensure that the weight is 30 gm.
-• 73. Use a single bag to ensure that the weight is 30 gm.
-• 74. Use a double bag to ensure that the weight is 30 gm.
-• 75. Use a single bag to ensure that the weight is 30 gm.
-• 76. Use a double bag to ensure that the weight is 30 gm.
-• 77. Use a single bag to ensure that the weight is 30 gm.
-• 78. Use a double bag to ensure that the weight is 30 gm.
-• 79. Use a single bag to ensure that the weight is 30 gm.
-• 80. Use a double bag to ensure that the weight is 30 gm.
-• 81. Use a single bag to ensure that the weight is 30 gm.
-• 82. Use a double bag to ensure that the weight is 30 gm.
-• 83. Use a single bag to ensure that the weight is 30 gm.
-• 84. Use a double bag to ensure that the weight is 30 gm.
-• 85. Use a single bag to ensure that the weight is 30 gm.
-• 86. Use a double bag to ensure that the weight is 30 gm.
-• 87. Use a single bag to ensure that the weight is 30 gm.
-• 88. Use a double bag to ensure that the weight is 30 gm.
-• 89. Use a single bag to ensure that the weight is 30 gm.
-• 90. Use a double bag to ensure that the weight is 30 gm.
-• 91. Use a single bag to ensure that the weight is 30 gm.
-• 92. Use a double bag to ensure that the weight is 30 gm.
-• 93. Use a single bag to ensure that the weight is 30 gm.
-• 94. Use a double bag to ensure that the weight is 30 gm.
-• 95. Use a single bag to ensure that the weight is 30 gm.
-• 96. Use a double bag to ensure that the weight is 30 gm.
-• 97. Use a single bag to ensure that the weight is 30 gm.
-• 98. Use a double bag to ensure that the weight is 30 gm.
-• 99. Use a single bag to ensure that the weight is 30 gm.
-•100. USE OF ONE MOTIONS
-BEEF: When I can use it, I can use it as well as I can use it as less than I can use it as more than I can use it as less than I can use it as more than I can use it as less than I can use it as more than I can use it as less than I can use it as more than I can use it as more than I can use it as more than I can use it as more than I can use it as more than I can use it as more than I can use it as more than I can use it as more than I can use it as more than I can use it as more than I can use it as more than I can use it as more than I can use it as more than I can use it as more than I can use it as more than II
-LEARN ONE MOTIONS
-BEEF: When I can use it, I can use it as less than I can use it as less than I can use it as more than I can use it as less than I can use it as less than I can use it as more than I can use it as more than I can use it as more than I can use it as more than I can use it as more than II
+24-10-2014 • 2 Sport: Sweet A DeFiO® One-Drink Chile
+• On weights, propeller
+• 300 gm/1000 gm
+• 1 kg of mass and spring
+• 50 gm/1000 gm
+• 100 gm/1000 gm
+• 200 gm/1000 gm
+• 300 gm/1000 gm
+• 40 gm/1000 gm
+• 50 gm/1000 gm
+• 60 gm/1000 gm
+• 70 gm/1000 gm
+• 80 gm/1000 gm
+• 90 gm/1000 gm
+• 100 gm/1000 gm
+• 110 gm/1000 gm
+• 120 gm/1000 gm
+• 130 gm/1000 gm
+• 140 gm/1000 gm
+• 150 gm/1000 gm
+• 160 gm/1000 gm
+• 170 gm/1000 gm
+• 180 gm/1000 gm
+• 190 gm/1000 gm
+• 200 gm/1000 gm
+• 210 gm/1000 gm
+• 220 gm/1000 gm
+• 230 gm/1000 gm
+• 240 gm/1000 gm
+• 250 gm/1000 gm
+• 260 gm/1000 gm
+• 270 gm/1000 gm
+• 280 gm/1000 gm
+• 290 gm/1000 gm
+• 300 gm/1000 gm
+• 310 gm/1000 gm
+• 320 gm/1000 gm
+• 330 gm/1000 gm
+• 340 gm/1000 gm
+• 350 gm/1000 gm
+• 360 gm/1000 gm
+• 370 gm/1000 gm
+• 380 gm/1000 gm
+• 390 gm/1000 gm
+• 400 gm/1000 gm
+• 410 gm/1000 gm
+• 420 gm/1000 gm
+• 430 gm/1000 gm
+• 440 gm/1000 gm
+• 450 gm/1000 gm
+• 460 gm/1000 gm
+• 470 gm/1000 gm
+• 480 gm/1000 gm
+• 490 gm/1000 gm
+• 500 gm/1000 gm
+• 510 gm/1000 gm
+• 520 gm/1000 gm
+• 530 gm/1000 gm
+• 540 gm/1000 gm
+• 550 gm/1000 gm
+• 560 gm/1000 gm
+• 570 gm/1000 gm
+• 580 gm/1000 gm
+• 590 gm/1000 gm
+• 600 gm/100<nl>
 </details>
 
 Overall0.24 C0.25/D0.23
@@ -2941,9 +2873,10 @@ Overall0.24 C0.25/D0.23
 Prompt summary
 
 Scene:a student with abackpack in a tidy bedroom,wide stable view;background: a closed toolbox,acoiled cable;preserved: non-target item1that must remain unchanged,small background object.;style: realistic photo.  
-  
-T2:Firstconcretestepof‘mixcolors’:showastudentwithabackpackbeginningthisactioninthescene,withvisiblemotioncontact,trigger，orseletion;keepnon-targetitem1thatmustremainunchanged,smallbackgroundobet1unchanged.  
-T3: Midway through’mix colors’:showapartial result or active transition,so the causal path fromT2to T4 is visuallyinspectable. T4: Completed'mix colors:showthefinal state/result ofthisaction;non-target item1that must remainunchanged,small background object 1stillmatch prior identity,count,and position.
+T1:Initialbeforemixcolors'showastudentwithabackpackinatidybedrom,widestableview;includealosedtolbox，acoiledcable;keyobjectsstartunchangedandthefinalresultisabsent.  
+Firstconcretestef’ixolos：showastudentithckpackbeginthsactiointhesene,itisilemotioncntacttrigeroseletion;keepno-targetitemthatmusreminhaged,smallckgrodjectd  
+T3:Midwaythrough‘mixcolors’:showapartialresultoractivetransition,sothecausalpathfromT2toT4isvisuallinspetable.  
+T4:Compleeaatlsigegcgoeilatrtityo
 
 Figure 31 | Example summary grids from the Lab category. Each grid compares the same prompt across eight image-generation models and reports the overall mean score below each generated motion sheet.
 
@@ -2954,7 +2887,7 @@ Case:longhorizonaflowegraduallyloomsv01
 <details>
 <summary>natural_image</summary>
 
-Four-panel photo sequence showing a man in a lab coat holding a potted plant, with a pink flower emerging from the plant (no text or symbols visible)
+Four-panel photo sequence showing a man in blue gloves holding a potted plant, with one reaching for a pink flower (no text or symbols visible)
 </details>
 
 GPT Image 2  
@@ -3020,7 +2953,7 @@ Overall5.29C4.75/D5.83
 <details>
 <summary>natural_image</summary>
 
-Four-panel photo sequence showing a person planting a white daisy flower in a workshop, wearing gloves and blue gloves (no text or symbols visible)
+Four-panel photo sequence showing a person planting a white daisy flower in a workshop, wearing gloves and gloves (no text or symbols visible)
 </details>
 
 Hunyuanlmage-2.1  
@@ -3043,10 +2976,10 @@ Scene: a mechanic wearingbluegloves inasmallshopinterior,three-quarter side view
 Initial before'a flower graduallyblooms':show amechanic rearingblue gloves ina small shop interior,three-quarter side view; include a small notebook,a plain ceramic cup;key objects start unchangedand the final result is absent  
 Firstconcretestepof’aflowergraduallyblooms’;showamechanicwearingblueglovesbeginningthisactioninthescene,withvisiblemotion，contact,trigger，orselection;keepnon-targetitem1thatmustremainunhanged,small  
 backgroundobect2uchaged.  
-T3:Midway through’aflower graduall blooms’:show a partialresult or active transition,sothecausal path fromT2 toT4is visually inspectable.  
-T4:Completed’aflowergraduallyblooms':showthefinalstate/resultofthisaction;non-targetitem1thatmustremainunchanged,smallbackgroundobjet 2stillmatchprioridentitycount,andposition.
+T3:Midway through’aflower graduall blooms’: show a partial result or active transition,sothecausal path fromT2toT4is visually inspectable.  
+T4:Completed’aflowergraduallyblooms':showthefinalstate/resultofthisaction;non-targetitem1thatmustremainunchanged,smallbackgroundobject2stillmatchprioridentity,count,andposition.
 
-Long-horizon licegradually melts  
+Long-horizonlicegraduallymelts  
 ![](images/0c258b9bfaf6b6297b73314b7c682533337e6821c2c19cbebde19d4b3547bf43.jpg)
 
 <details>
@@ -3140,9 +3073,9 @@ Overall0.90 C0.88/D0.92
 
 Prompt summary
 
-Sene:anurseinightsubsinnoutdorpatiover-teshoulderview;backgrodapotedplantanetralwallself,presevd:o-targetittatmustreminuchanged,sallbackgrondject.;style:ealisticto  
-T1Initialbefoeicegradallmeltsshowanurseinlightsebinanoutdorpatiovertheshoulderview;includeapotedplantaneutralwallselfkeybectsstartunchangedandthefinalesultist  
-Firstconeetestefegraalleltsoaseihtgistioeseeitisiblemototct,triggereleioepogetit3tmstemaedsallckgot4  
+Sene:anurseinightsubsinnoutdoorpatiover-tesolerview;backgrodapotedplantaneutalwallshelf;preseed:otargtit3tatmustreminchanged,sallackgroundect.;style:alistict  
+T1Initialbefoeicegradallmeltssowanuseinlightsebsinanoutdorpatioverteshoulderviewcludeapotedplantaneutralwallselfeybectsstartunchangedndthefinalesltit  
+Firstconeetestefegraalleltsoaseitgstioeseisiblemototct,triggereleioepgeitetstemaedsallkgoet4  
 unchanged. Midway th  
 Midway through ‘ice gradually melts’: show a partial result or active transition, so the causal path from T2 to T4 is visually inspectable.  
 T4:Completed‘ice gradually melts’:show the final state/result of this action; non-target item3 that must remain unchanged,small background objeet 4 stillmatch prior identity,count,and position.
@@ -3195,7 +3128,7 @@ FLUX.2 Pro Overall5.33C5.25/D5.42
 <details>
 <summary>natural_image</summary>
 
-Four-panel sequence showing a person in a doorway holding a small object, no text or symbols visible
+Four-panel photo sequence showing a person in a doorway holding an object, no text or symbols visible
 </details>
 
 Z-Image-Turbo Overall5.90C5.62/D6.17
@@ -3215,7 +3148,7 @@ Qwen-lmage-2512 Overall4.62C4.25/D5.00
 <details>
 <summary>natural_image</summary>
 
-Four-panel photo collage showing a person walking through a hospital corridor, interacting with a robot near a door (no visible text or symbols)
+Four-panel photo collage showing a person walking through a hospital corridor, with a robot interacting near a door (no visible text or symbols)
 </details>
 
 Hunyuanlmage-2.1Overall5.65 C5.62/D5.67
@@ -3225,7 +3158,7 @@ Hunyuanlmage-2.1Overall5.65 C5.62/D5.67
 <details>
 <summary>natural_image</summary>
 
-Interior view of a modern office with a humanoid robot standing in a room, no visible text or symbols.
+Interior view of a modern office with a humanoid robot standing in a room, surrounded by bookshelves and documents (no visible text or symbols)
 </details>
 
 SDXL Overall1.25C1.25/D1.25
@@ -3233,7 +3166,7 @@ SDXL Overall1.25C1.25/D1.25
 Prompt summary
 
 Scene:ashop assistant wearing adark vest inabright clinic room,slight overheadview; background: asmalltray,afoldedcloth; preserved: non-target item 3that must remain unchanged, small backgroundobject.; style: realistic photo.  
-Initialbefore’arobotopensadoor’:showashopasistantwearingadarkvestinabghtclinicroom,slightoverheadview;includeasmalltrayafoldedcloth;keyobjectsstartunchangedandthefinalresultisabsent. Firstconretestefaotoendosososisntweagdarkstbggsiotheeeithisiblemotonotct,triggereleionepogetit3tmstemaed,sallgod object 3unchanged.  
+Initialbefore’arobotopensadoor’:showashopasistantwearingadarkvestinabrghtclinicroom,slightoverheadview;includeasmalltrayafoldedcloth;keyobjectsstartunchangedandthefinalresultisabsent. Firstconreestefaotoenadoososistweagdarkstbtsioeeeiisiblemotnotcttigge，leioneptagetit3tastemaaedsallod object 3unchanged.  
 T3:Midwaythrough’arobotopensador':showapartialresultoractivetransition,sothecausalpathfromT2toT4isvisuallinspectable. T4: Completed’arobot opensadoor’:showthefinal state/result ofthisaction;non-targetitem3thatmust remainunchanged,small backgroundobject 3stillmatchprioridentity,count,andposition.
 
 Machines|grab take part Case:machines\_grab\_take\_partv02  
@@ -3272,7 +3205,7 @@ Seedream 5.0 Lite Overall6.46C6.00/D6.92
 <details>
 <summary>natural_image</summary>
 
-Four-panel photo sequence showing a person in a beige hat and hat working on a small object at a wooden table, with no visible text or symbols.
+Four-panel photo sequence showing a person in a straw hat working on a small object at a wooden table, with no visible text or symbols.
 </details>
 
 FLUX.2Pro Overall5.73C5.38/D6.08
@@ -3282,7 +3215,7 @@ FLUX.2Pro Overall5.73C5.38/D6.08
 <details>
 <summary>natural_image</summary>
 
-Four-panel photo sequence showing a person in a gray shirt and hat sitting on a sofa, holding objects (no text or symbols visible)
+Four-panel photo sequence showing a person in a hat performing a task on a device, with no visible text or symbols.
 </details>
 
 Z-Image-Turbo Overall5.21 C5.00/D5.42
@@ -3302,7 +3235,7 @@ Qwen-Image-2512 Overall5.48 C5.38/D5.58
 <details>
 <summary>text_image</summary>
 
-Four-panel photo sequence showing a person in a straw hat preparing food, labeled t1 to t4 with Chinese text descriptions.
+Four-panel photo sequence showing a person in a straw hat performing a food preparation, labeled t1 to t4 with Chinese text overlays.
 </details>
 
 Hunyuanlmage-2.1Overall4.52 C4.38/D4.67
@@ -3320,9 +3253,9 @@ SDXL Overall1.38C1.25/D1.50
 Prompt summary
 
 Sene:agardenerwearigasnatinlelvigom,sligtovereadiew;ackgroundasmalltrayfldedoth;presevd:o-targetittatmustreminuchangedsallbackgrondject.;styleealisticto  
-Initialbefore'grabtakepart’sowagardenerwearingasuatinsimplelingrom,sligtoveeadview;includeasmaltayafoldedcloth;keybectsstartunhangedndthefinalesultisent. Firstconcretestepofrabtaepart：ogardeeweaingsatbgiinthstiointhescene,ithiblemoti，cntat,trige，seltion;eepnotargetite3thatmstemaicanged,smallbckgrodbt unchanged.  
-T3:Midway through'grab take part’: show a partial result or active transition,so the causal path fromT2to T4 is visualy inspectable.  
-T4:Completed’grabtakepart’:showthefinalstate/resultofthisaction;non-targetitem3thatmustremainunchanged,smallbackgroundobjeet1stillmatchprioridentity,count,andposition.
+Initialbefore'grabtakepart’sowagardenerwearingasuatinsimplelingrom,sligtoveeadview;includeasmaltayafoldedcloth;keybectsstartunhangedndthefinalesultisent. Firstconcretestepofrabtaepart：oagardeeweaingsatbgiinthstiointhescene,ithiblemoti，cntat,trige，selction;eepnotargetite3thatmstemaicanged,smallbckgrodt unchanged.  
+T3:Midwaythrough'grab take part’: show a partial result or activetransition,so the causal path fromT2to T4is visualy inspectable.  
+T4:Completed’grabtakepart’:showthefinalstate/resultofthisaction;non-targetitem3thatmustremainunchanged,smallbackgroundojet1stillmatchprioridentity，count,andposition.
 
 Figure 33 | Example summary grids from the Machines category. Each grid compares the same prompt across eight image-generation models and reports the overall mean score below each generated motion sheet.
 
@@ -3333,7 +3266,7 @@ Case:nature\_lightning\_v01
 <details>
 <summary>natural_image</summary>
 
-Four-panel photo sequence showing a person experiencing lightning in a stormy outdoor setting, with no visible text or symbols.
+Four-panel photo sequence showing a person experiencing lightning in a stormy outdoor environment, with no visible text or symbols.
 </details>
 
 GPT Image 2  
@@ -3355,7 +3288,7 @@ Overall7.27C7.12/D7.42
 <details>
 <summary>natural_image</summary>
 
-Four-panel photo collage showing a person holding a plant under lightning against a cloudy sky, with no visible text or symbols.
+Four-panel photo collage showing a person holding a plant under lightning against a cloudy sky, with another person observing (no text or symbols)
 </details>
 
 Seedream 5.0 Lite  
@@ -3366,7 +3299,7 @@ Overall6.92 C6.75/D7.08
 <details>
 <summary>natural_image</summary>
 
-Four-panel photo sequence showing a person holding a blue umbrella on a rooftop, with lightning and potted plants in the background (no text or symbols)
+Four-panel photo sequence showing a person holding a blue umbrella on a rooftop, with lightning and potted plants in the background (no text or symbols visible)
 </details>
 
 FLUX.2Pro  
@@ -3399,7 +3332,7 @@ Overall5.75C5.50/D6.00
 <details>
 <summary>natural_image</summary>
 
-Four-panel image sequence showing a person in outdoor setting with lightning strikes and a potted plant, no visible text or symbols
+Four-panel photo sequence showing a person in a lab setting during lightning, with no visible text or symbols.
 </details>
 
 Hunyuanlmage-2.1  
@@ -3422,7 +3355,7 @@ Scene:amechanic wearing blue gloves inanoutdoor stormylandscape,over-the-shoulde
 
 Initialbeforelightning':showamechanicwearing blue gloves inanoutdoor stormylandscape,over-the-shoulder view; include a potted plant,a neutral wallshelf; key objects start unchangedandthefinalresult is absent.  
 Firstconcretestepoflightning’:showamechanicwearingblueglovesbeginingthisactioninthesene,withvisiblemotion,contact,trigger，orselection;keepnon-targetitem3thatmustremainunchanged,smallbackgroundjet2 unchanged  
-T3:Midwaythrough lightning': show a partialresult or active transition,so the causal path fromT2 toT4isvisualy inspectable.  
+T3:Midway through lightning': show a partialresult or active transition,so the causal path fromT2 toT4is visualy inspeetable.  
 T4:Completed lightning': show the final state/result ofthis action; non-target item 3 that must remain unchanged, smallbackground object 2 still match prior identity,count,and position.
 
 Nature|an insect crawls  
@@ -3431,7 +3364,7 @@ Nature|an insect crawls
 <details>
 <summary>natural_image</summary>
 
-Four-panel photo sequence showing a technician working on equipment at a table with a mug and notebook (no visible text or symbols)
+Four-panel photo collage showing a technician working on equipment at a table with a mug and notebook (no visible text or symbols)
 </details>
 
 GPT Image2  
@@ -3442,7 +3375,7 @@ Overall7.75 C7.75/D7.75
 <details>
 <summary>natural_image</summary>
 
-Four-panel photo collage showing a technician working at a lab bench with tools and equipment (no visible text or symbols)
+Four-panel photo collage showing a technician working at a desk with tools and equipment (no visible text or symbols)
 </details>
 
 Nano Banana 2  
@@ -3453,7 +3386,7 @@ Overall6.62 C6.50/D6.75
 <details>
 <summary>natural_image</summary>
 
-Four-panel photo collage showing a gloved hand holding a notepad and a mug, with scattered objects on the surface (no text or symbols visible)
+Four-panel photo collage showing a gloved hand holding a notepad and a mug, with small objects scattered on the surface (no text or symbols visible)
 </details>
 
 Seedream 5.0 Lite  
@@ -3468,7 +3401,7 @@ Four-panel photo showing a person in a lab coat and blue gloves, handling white 
 </details>
 
 FLUX.2 Pro  
-Overall 5.46C5.25/D5.67
+Overall5.46C5.25/D5.67
 
 ![](images/c236a765e26e41146a6a6962c21786ef293d9b60252c040476c5706760baa739.jpg)
 
@@ -3522,14 +3455,14 @@ Overall1.96C2.00/D1.92
 
 Prompt summary
 
-Sene:amehaicwearingbueglovsinsmallshopiteriorthreequartersidevewbckgroundasmallnotebok,aplainceramicup;preseed-targetitethatmustremainuchangedsallbackgrondet.;style:ealisticto  
-Firstconcretestefaninsectras：showamechcearingegoesbginngthisctiothescene,ithvisibemotion，ontaet,triger，electio;kepontargetitethatmustemacangedsmallbckgrodbet2 unchanged.  
+Scene:amechanicwearingbueglovesinasmallshopinterior,three-quartersideview;background: asmallnotebook,aplainceramiccup;preserved:non-targetitemthatmustremainunchanged,smallbackgroundobject.;style:realisticphoto. T gedand the final resultisabse  
+Firstconcretestefaninsectras：showamechcwearingegoesbginngthisctiothescene,ithvisiblemotion，ontaet,triger，electio;kepontargetitethatmustemacangedsmallbckgrodect unchanged.  
 T3:Midwaythrough’aninset crawls’: show a partialresult or active transition, so the causal path from T2 toT4is visuall inspectable.  
 T4:Completed’aninsect crawls':showthefinalstate/resultofthisaction;non-targetitem1thatmustremainunchanged,smallbackgroundoject2stillmatchprior identitycount,andposition.
 
 Figure 34 | Example summary grids from the Nature category. Each grid compares the same prompt across eight image-generation models and reports the overall mean score below each generated motion sheet.
 
-Navigation|walk throughahallway Case:navigation\_walk\_through\_a\_hallway\_v02  
+Navigation|walkthroughahallway Case:navigation\_walk\_through\_a\_hallway\_v02  
 ![](images/bfb8879d52ccc3a0942645fb1ff4c5ad626811a4d77cfd02578b41f37a1d635b.jpg)
 
 <details>
@@ -3565,7 +3498,7 @@ Seedream 5.0 Lite Overall6.25 C6.25/D6.25
 <details>
 <summary>natural_image</summary>
 
-Four-panel photo sequence showing a man in a straw hat walking down a wooden table, with another person sitting beside a small table (no text or symbols visible)
+Four-panel photo sequence showing a man in a straw hat walking through a room with wooden furniture (no text or symbols visible)
 </details>
 
 FLUX.2 Pro Overall6.85C6.88/D6.83
@@ -3585,7 +3518,7 @@ Z-Image-Turbo Overall6.98 C6.88/D7.08
 <details>
 <summary>natural_image</summary>
 
-Four-panel sequence showing a man walking down a hallway, wearing a hat and casual clothing (no visible text or symbols)
+Four-panel sequence of a person walking down a hallway, wearing a hat and casual clothing (no visible text or symbols)
 </details>
 
 Qwen-lmage-2512 Overall6.85 C6.88/D6.83
@@ -3613,8 +3546,10 @@ SDXL Overall2.23C2.12/D2.33
 Prompt summary
 
 Sene:agardenerwearingasunatinsimpleligrom,sligtoverheadview;backgrondasmalltray,afldedoth;preseved:non-targettmthatmustremainuchanged,smallbackgrondject.;style:realisticto  
-Initialbeforewalkthroughahallayshowagardenerwearingasunhatinasimplelivingroom,slightoverheadview;includeasmalltrayafoldedcloth;keyobjectsstartunchangedandthefinalresultisabsent. Firstconeretesteofalkthouhallay：owagardeerwearingastgiingthisioinheseeitsilemotioctacttrigeroseletion;keep-targett3atmustemacaged,sallbcgod object 1unchanged.  
-T3:Midwaythroughwalktroughahallway:showapartialresultoractivetransition,sothecausalpathfromT2toT4isvisuallinspectable. T4: Completed‘walk throughahallway':showthefinal state/result ofthisaction;non-target item3thatmust remainunchanged,small backgroundobject 1stillmatchprior identity,count,andposition.
+Initialbefore‘walk throughahallway’:showagaro eadview;include a small tray,a folded cloth;key objects start unch  
+Firstconcretesofalktrolla：ogdeweagstgithistioheeisibemottacttig，eeion;eptageiastemcaedsalld  
+object 1unchanged. T3: Midway through‘walk through ahallway': show a partialresult or active transition,so the causal path fromT2 toT4is visuall inspectable  
+T4: Completed‘walk throughahallway':showthefinal state/result ofthisaction;non-target item3thatmust remainunchanged,smallbackgroundobject 1stillmatchprioridentity,count,andposition.
 
 Navigation |walk towarda desk and stop Case:navigation\_walk\_toward\_a\_desk\_and\_stop\_v02  
 ![](images/b2570fec97d5266af616c9d380a606fb9937a910882729acb301497f02906b80.jpg)
@@ -3622,7 +3557,7 @@ Navigation |walk towarda desk and stop Case:navigation\_walk\_toward\_a\_desk\_a
 <details>
 <summary>natural_image</summary>
 
-Four-panel photo sequence showing a child walking in a classroom with desks and books (no visible text or symbols)
+Four-panel photo sequence showing a child walking down a classroom with desks and books (no visible text or symbols)
 </details>
 
 GPT Image2 Overall7.90 C7.88/D7.92
@@ -3715,7 +3650,7 @@ Hunyuanlmage-2.1Overall5.18 C5.12/D5.23
 <details>
 <summary>natural_image</summary>
 
-Illustration of two children in yellow hoodies standing at a desk, one holding a notebook and pen, the other writing with a pencil (no text or symbols present)
+Illustration of two children in yellow hoodies standing at a desk, one holding a pencil and the other writing on a notebook (no text or symbols present)
 </details>
 
 SDXL Overall1.54C1.62/D1.46
@@ -3723,18 +3658,20 @@ SDXL Overall1.54C1.62/D1.46
 Prompt summary
 
 Sene:achildweangaellooieiarocostovedviewckgrodasaltayfedoth;presedn-agetitatustemicagedsallckgronde;style:eaistit  
-nitialbefretddesdelaltradoegedts Firstconcretestepof‘walktowardadeskandstop':showachildwearingayelowhoodiebeginningthisactioninthescene,withvisiblemotion,contact,trigger，orseleetion;keepnon-targetitem3thatmustremainunchanged,small background object 3 unchanged.  
-T3:Midwaythroughwalktowardadeskandstop:showapartialresultoractivetransition,sothecausalpathfromT2toT4isvisuallyinspeable. Completed‘walktowardadeskandstop’;showthefinalstate/resultofthisaction;non-targetitem3thatmustremainuchanged,smallbackgroundobject3stillmatchprioridentity,ount,andposition.
+Initialbeforewalktowardadeskandstop’:showachildwearingayellowhoodieinaclasroomcorner,slightoverheadview;includeasmalltay,afoldedcloth;keyobjectsstartunchangedandthefinalresultisabsent.  
+Firstconcretestepofalktorddeskntopsoachleaingellebegiinthistionnthesene,ithiblemoti，ctact,tige，etion;eepotargettetatmustemcdl  
+T3: Midwaythrough‘walk towardadesk and stop': show a partial result or active transition,so the causalpath fromT2to T4 is visualy inspectable.  
+T4:Completed’walktowardadeskandstop’:showthefinalstate/resultofthisaction;non-targetitem3thatmustremainunchanged,smallbackgroundobject3stillmatchprioridentity,count,andposition.
 
 Figure 35 | Example summary grids from the Navigation category. Each grid compares the same prompt across eight image-generation models and reports the overall mean score below each generated motion sheet.
 
-Occlusion|a cat crawls into abox Case:occlusion\_a\_cat\_crawls\_into\_a\_box\_v01  
+Occlusion|a cat crawls into a box Case:occlusion\_a\_cat\_crawls\_into\_a\_box\_v01  
 ![](images/aff38241ec5c8f0647a7c0936c79b4d30b60d5af985db775f8c565e657719549.jpg)
 
 <details>
 <summary>natural_image</summary>
 
-Four-panel photo collage showing a person in a lab setting, interacting with a cat inside a cardboard box (no text or symbols visible)
+Four-panel photo collage showing a person in a lab setting, one holding a cat inside a cardboard box, with tools and equipment visible (no text or symbols)
 </details>
 
 GPT Image 2 Overall7.80 C7.75/D7.85
@@ -3794,7 +3731,7 @@ Qwen-lmage-2512 Overall5.68 C5.75/D5.62
 <details>
 <summary>natural_image</summary>
 
-Four-panel photo collage showing a person in blue gloves handling a potted plant next to a cat, with cardboard boxes in the background (no visible text or symbols)
+Four-panel photo collage showing a person in blue gloves handling a potted plant and a cat next to cardboard boxes (no text or symbols visible)
 </details>
 
 Hunyuanlmage-2.1Overall4.88 C4.75/D5.00
@@ -3814,16 +3751,16 @@ Prompt summary
 Scene: a mechanic wearingblue gloves inasmallshop interior,over-the-shoulder view; background: apottedplant, a neutral wallshelf; preserved: non-targetitem3 that must remainunchanged,smallbackgroundobject.; style: realistic photo.  
 Initialbefore'acat crawlsintoabox’:showamechanic wearingblue glovesinasmallshopinterior,over-the-shoulder view;includeapotedplant,aneutral wallshelf,keyobjects startunchangedandthefinalresultis absent. ingthis actionin the scene.with visiblemotioncontact.tri  
 T2: objet2unchanged.  
-T3:Midwathroughacaterawlsintoabox:showapartialresultoractivetransition,sothecausalpathromT2toT4isvisuallyinspectable.  
+T3:Midwathroughacaterawlsintoabox:howapartialresultoractivetransition,sothecausalpathfromT2toT4isvisuallyispeable.  
 T4:Completed’acatcrawlsintoabox’:showthefinalstate/result ofthis action;non-targetitem3thatmustremainunchanged,smallbackgroundobject 2stillmatchprioridentity,count,andposition.
 
 Occlusion|pickupa ball fromundera table Case:occlusion\_pick\_up\_a\_ball\_from\_under\_a\_table\_v01  
-![](images/c977644854f7d6ad2b6092469f576b2028253cfe0fe1e987eaf00292f6a9eed9.jpg)
+![](images/4e0d065dfcbb1dc7e0fafc4854046ebb47febf75128ad24aa85baa0c2c131b28.jpg)
 
 <details>
 <summary>natural_image</summary>
 
-Four-panel sequence showing a person in uniform performing physical exercises on a table, with no visible text or symbols.
+Four-panel sequence showing a person in scrubs performing physical exercises on a table, with no visible text or symbols.
 </details>
 
 GPT Image2Overall7.50 C7.62/D7.38
@@ -3833,7 +3770,7 @@ GPT Image2Overall7.50 C7.62/D7.38
 <details>
 <summary>natural_image</summary>
 
-Four-panel sequence showing a person in blue uniform performing outdoor activity: jumping, crouching, and swinging a green object (no text or symbols visible)
+Four-panel sequence showing a person in blue uniform performing outdoor activity: jumping, crouching, and swinging a ball on a table (no text or symbols visible)
 </details>
 
 Nano Banana 2 Overall8.02 C8.12/D7.92
@@ -3843,7 +3780,7 @@ Nano Banana 2 Overall8.02 C8.12/D7.92
 <details>
 <summary>natural_image</summary>
 
-Four-panel sequence showing a person in blue uniform performing a gentle task with an orange object on a wooden table, surrounded by greenery (no text or symbols)
+Four-panel sequence showing a person in blue uniform performing a gentle task with an orange object on a wooden table, outdoors in a garden setting (no text or symbols visible)
 </details>
 
 Seedream 5.0 Lite Overall6.56 C6.50/D6.62
@@ -3900,15 +3837,15 @@ SDXL Overall1.60C1.50/D1.69
 
 Prompt summary
 
-Sene:anurseinightsubsinanoutdorpatiotreuarteridevie;backgrondasmallnotebok,aplainceramiccup;presed:o-targetittatmustremainhaged,smallckgroundec;style:ealistict  
-Initialbeforepickupbalfromunderatable'showanurseinlightscbsinanoutdorpatio,threquartersideview;includeasmallnotebook，aplainceramiccup;keybectstartunchangedandthefinalesultiset.  
+Sene:anurseinightsubsinanoutdorpatiotreuartersidevie;backgrondasmallnotebok,aplainceramiccup;preseed:o-targetittatmustremainhanged,smallbckgroundoe.;syle:ealisticot  
+Initialbeforepickupbalfromunderatable'showanurseinlightscbsinanoutdorpatio,threquartersideviewincludeasmallnotebook，aplainceramicup;keybectstartunchangedandthefinalesultiset.  
 T2: Firstconcretesteof’icuballfromudertable’sowaurseiigubsegiingthisetinesceeithisibemotiocontacttgerseletin;keepo-targetittatmustremainnhagedsallbcgod object 4unchanged.  
-Midwaythrough‘pick upaballfrom under a table’: show a partialresult or active transition,so the causal path from T2 toT4is visuall inspetable.  
-T4:Completed’pickupabalfromunderatable':showthefinalstate/resultofthis action;non-targetitem1thatmustremainunchanged,smallbackgroundobject4stillmatchprioridentity,count,andposition.
+Midwaythrough‘pick upaballfrom under a table’: show a partialresult or active transition,so the causal path from T2 toT4is visuall inspectable.  
+T4:Completed’pickupaballfromunderatable':showthefinalstate/resultofthis action;non-targetitem1thatmustremainunchanged,smallbackgroundbject 4stillmatchprior identity,count,andposition.
 
 Figure 36 | Example summary grids from the Occlusion category. Each grid compares the same prompt across eight image-generation models and reports the overall mean score below each generated motion sheet.
 
-Pets|acat crawls into a box  
+Pets|acat crawlsinto a box  
 Case:pets\_a\_cat\_crawls\_into\_a\_box\_v02  
 ![](images/1951d7648905d60b8b81d116a7dec1a35b1c3903675adbe37206491ee7f1144c.jpg)
 
@@ -3948,7 +3885,7 @@ Overall6.74 C6.25/D7.23
 <details>
 <summary>natural_image</summary>
 
-Four-panel sequence showing a person in a kitchen setting, each with a bag and a cat inside a box (no text or symbols visible)
+Four-panel sequence showing a person in a kitchen setting, each with a bag and a cat inside a cabin (no text or symbols visible)
 </details>
 
 FLUX.2Pro  
@@ -3970,7 +3907,7 @@ Overall4.46C4.00/D4.92
 <details>
 <summary>natural_image</summary>
 
-Four-panel photo sequence showing a person in a bedroom setting, holding and folding a cat on a bed (no text or symbols visible)
+Four-panel photo sequence showing a person in a bedroom setting, holding and inspecting a box of clothes (no visible text or symbols)
 </details>
 
 Qwen-Image-2512  
@@ -3981,7 +3918,7 @@ Overall4.77C4.62/D4.92
 <details>
 <summary>natural_image</summary>
 
-Four-panel photo sequence showing a person interacting with a cat on a table, with one cat being held and others handling the cat outside (no text or symbols visible)
+Four-panel photo sequence showing a person interacting with a cat on a table, with one cat being held and others handling the pet outside (no text or symbols visible)
 </details>
 
 Hunyuanlmage-2.1  
@@ -4012,7 +3949,7 @@ Pets|put a pet into a cage
 <details>
 <summary>natural_image</summary>
 
-Four-panel photo sequence showing a child in yellow clothing assembling small objects on a grid box, with no visible text or symbols.
+Four-panel photo sequence showing a child in yellow shirt assembling a cat's cage and tablet, with no visible text or symbols.
 </details>
 
 GPT Image2  
@@ -4067,7 +4004,7 @@ Overall4.65 C4.00/D5.31
 <details>
 <summary>natural_image</summary>
 
-Four-panel photo sequence showing a child in yellow clothing using a dog inside a petri dish (no text or symbols visible)
+Four-panel sequence showing a child in yellow clothing using a dog inside a petri dish, with no visible text or symbols.
 </details>
 
 Qwen-Image-2512  
@@ -4078,7 +4015,7 @@ Overall4.98C4.50/D5.46
 <details>
 <summary>natural_image</summary>
 
-Four-panel sequence showing a person in yellow clothing interacting with a cat in a classroom setting, labeled 't3' and 'Palage' (no text or symbols on the subjects)
+Four-panel sequence showing a person in yellow clothing interacting with a cat in a classroom setting, labeled 't3' and 'Palage' (no text or symbols on the images themselves)
 </details>
 
 Hunyuanlmage-2.1  
@@ -4099,13 +4036,15 @@ Prompt summary
 Sene:achildearingyellooieiasromoesightovdi;ckgrodaalltayfedlot;preseed:tgetit3tamustemaagedsmallkgrodet;styleait  
 T1:Initial beforeputapetintoacage':showachild wearingayelowhoodieinaclassroomcorner,slight overheadview;includeasmalltray,afoldedcloth;key objects start unchangedandthefinalresult isabsent.  
 Firstconeretestepof‘putapetintoacage':showachildwearingayelowhoodiebeginningthisactioninthescene,withvisiblemotion,contact,trigger，orselection;keepnon-targetitem3thatmustremainunchanged,smallbackground  
-T3:Midwaythrough‘put apet into acage': show a partial result or active transition,so the causalpath fromT2to T4 is visually inspectable.  
+T3:Midwaythrough‘put apet into acage': show a partial result or active transition,sothecausalpath fromT2 to T4 is visually inspectable.  
 T4:Completed’put a pet into acage’:show the final state/result of this action; non-target item 3that must remainunchanged,smallbackground object 3 still match prior identity,count,and position.
 
 Figure 37 | Example summary grids from the Pets category. Each grid compares the same prompt across eight image-generation models and reports the overall mean score below each generated motion sheet.
 
-Quantity-focused|one of three birds flies away  
-Case:quantityfocusedoneofthree\_birds\_fliesawayv02  
+## Quantity-focused|one of three birds flies away
+
+Case:quantityfocusedoneof\_three\_birds\_fliesawayv02
+
 ![](images/6269ab1f1e9abd6830a2aa9d9f57250868f71413bb0a59eb2f884dbf74f01068.jpg)
 
 <details>
@@ -4122,7 +4061,7 @@ Overall8.04 C8.00/D8.07
 <details>
 <summary>natural_image</summary>
 
-Four-panel photo collage showing a child sitting at a desk looking out of a window with birds perched on the windows (no text or symbols visible)
+Four-panel photo collage showing a child sitting at a desk looking out of a window with birds flying above (no text or symbols visible)
 </details>
 
 Nano Banana 2  
@@ -4144,7 +4083,7 @@ Overall5.00 C4.78/D5.21
 <details>
 <summary>natural_image</summary>
 
-Four-panel sequence showing a person in a bedroom with birds flying overhead, no text or symbols present
+Four-panel sequence showing a girl in a bedroom with birds flying overhead, no text or symbols present
 </details>
 
 FLUX.2Pro  
@@ -4203,7 +4142,8 @@ object 1unchanged.
 T3: Midway through’one of three birds flies away': show apartial result or active transition,so the causal path fromT2 to T4 is visually inspectable. T4: Completed'one of three birds flies wav':show the final state/result of this action etitem3thatm ainupghar ged.small backg nd obiect 1 stillm idontitu  
 T4:
 
-Quantity-focused|arowof people moves forwardone byone  
+## Quantity-focused|arowof people moves forward one by one
+
 ![](images/e0b6d7a04cf304e8bb32159d947087fb82a9a3a57d5ba43ca918e64a27cadd60.jpg)
 
 <details>
@@ -4215,18 +4155,18 @@ Four-panel photo collage showing a man in a gray coat standing at a table with t
 GPT Image2  
 Overall7.50 C7.62/D7.38
 
-![](images/924c17a97a5fb0f2bfdc75d568d9432673bd749c0d7fbbe86987d696e694a89b.jpg)
+![](images/08d731e0a77f984f81591b59f1cdfcd9592f8626565930fc1becb48043aa5514.jpg)
 
 <details>
 <summary>natural_image</summary>
 
-Four-panel photo sequence showing people cleaning kitchen surfaces with potted plants (no text or symbols visible)
+Four-panel photo showing people in a kitchen, one leaning over the counter with potted plants, others observing (no text or symbols visible)
 </details>
 
 Nano Banana 2  
 Overall6.22 C6.12/D6.31
 
-![](images/3f9368b0c5b7854422d71e0e58df89ce05a5cec75910be556b4099c3ccd9b12d.jpg)
+![](images/b58b62978ac5b55783c89e884a8ef0e36ec2908110cc6ab7cfa77c4a7b1e7d24.jpg)
 
 <details>
 <summary>natural_image</summary>
@@ -4237,12 +4177,12 @@ Four-panel photo sequence showing people seated in a room with potted plants on 
 Seedream 5.0 Lite  
 Overall4.46 C4.38/D4.54
 
-![](images/87f6813b058d6d46699feec456894091bb55141054b9101a49a4e4f71fb1dea9.jpg)
+![](images/0db7d63429e9463d362a6eb905c2351542844437c66efe6916f33ed2f0dbc044.jpg)
 
 <details>
 <summary>natural_image</summary>
 
-Four-panel photo sequence showing a man in a gray shirt standing at a counter with potted plants, and three others in white shirts seated at a counter (no text or symbols visible)
+Four-panel sequence showing a man in a gray shirt standing at a counter with potted plants, viewed from the side (no text or symbols)
 </details>
 
 FLUX.2 Pro  
@@ -4295,7 +4235,7 @@ Overall1.22 C1.12/D1.31
 Prompt summary
 
 Sene:anadultwearingagrajcketinacompactitchencountrver-teshlderview;backgrond:apotedplant,aneutalwallshelf,preseed:no-targtite3tatmustreminunchanged,smallbackgrodject.;style:ealisticoto  
-Initialbefoearowofpeoplemoveforwardonebyonesowandultwearigagrajacketinompactkitchencoteoverthsholderiew;incdeapotedpant,aneutralwallshelfkejetsstartnchangedandthefinalsltis  
+Initialbefoearowofpeoplemoveforwardonebyonesowandultwearigagrajacketincompactkitchencouteoverthshoulderiew;incdeapotedpant,aneutralwallshelfkejetsstartunchangedandthefinalreslti  
 absent.  
 Firstconcretesteof’aowofpeoplemoesforwardebone’sowanaultweaingagrajacketbegiinthistioinhesenewitiblemotionctact,trigeeetion;keepn-targetite3tatmustremaged  
 small background object 2 unchanged. T3: Midway through‘a row of people moves forward one by one’: show a partial result or active transition,so the causal path from T2 to T4 is visually inspectable  
@@ -4321,7 +4261,7 @@ Overall8.54 C8.50/D8.58
 <details>
 <summary>natural_image</summary>
 
-Four-panel photo collage showing a person in a bedroom with blue walls, surrounded by equipment and plants (no visible text or symbols)
+Four-panel photo collage showing a person installing or adjusting a blue wall-mounted device, with no visible text or symbols.
 </details>
 
 Nano Banana 2  
@@ -4354,7 +4294,7 @@ Overall7.52 C7.38/D7.67
 <details>
 <summary>natural_image</summary>
 
-Four-panel photo sequence showing a person adjusting a wall with a backpack, labeled t1 to t4 (no text or symbols on the image itself)
+Four-panel photo sequence showing a person installing or adjusting a wall, labeled t1 to t4 (no text or symbols on the image itself)
 </details>
 
 Z-Image-Turbo  
@@ -4365,7 +4305,7 @@ Overall5.62 C5.25/D6.00
 <details>
 <summary>natural_image</summary>
 
-Four-panel sequence showing a person painting on a wall, with no visible text or symbols
+Four-panel sequence showing a person painting on a wall, wearing a backpack (no text or symbols visible)
 </details>
 
 Qwen-Image-2512  
@@ -4400,8 +4340,8 @@ Prompt summary
 
 Scene:a student withabackpack inatidy bedroom,wide stable view; background: aclosedtoolbox, acoiledcable; preserved: non-target item1that must remain unchanged, smallbackgroundobject.; style: realistic photo.  
 T1:Initialbefore’paintwall:showastudentwithabackpackinatidybedroom,widestableview;includeaclosedtoboxacoiledcable;keyobjectsstartunchangedandthefinalresultisabsent.  
-Firstconcretesteofntal:soastudenwithkackbeginngtisctitescee,itisibmtionotaet,tiggeeletin;keeotargetittmustemaangedsmallckgrodectged  
-T3: Midway through‘paint wall':show apartial result or active transition,so the causal path from T2 to T4 is visually inspectable. T4: Completed’paint wall':show the final state/result ofthis aetion; non-target item1thatmust remainunchanged,small background object 1stillmatch prior identity,count,andposition.
+Firstconcretesteofntal:sowastudenwithkackbeginngtisctintescee,itisibmtionotaet,tiggeeletin;keeotargetittmustemaangedsmallckgrodected  
+T3: Midway through‘paint wall':show apartial result or active transition,so the causal path from T2 to T4 is visually inspectable. T4: Completed’paint wall':show the final state/result ofthis aetion;non-target item1that must remainunchanged,small background object 1stillmatch prior identity,count,and position.
 
 Repairhammernail  
 Case:repair\_hammer\_nail\_v01  
@@ -4421,7 +4361,7 @@ Overall7.88 C7.75/D8.00
 <details>
 <summary>natural_image</summary>
 
-Four-panel photo sequence showing a man working at a counter with tools and a lamp, in a kitchen setting (no visible text or symbols)
+Four-panel photo sequence showing a man working at a counter with tools, no visible text or symbols
 </details>
 
 Nano Banana 2  
@@ -4465,7 +4405,7 @@ Overall6.44 C6.38/D6.50
 <details>
 <summary>natural_image</summary>
 
-Four-panel photo sequence showing a person writing at a desk with ink, surrounded by a wooden cup and papers (no visible text or symbols)
+Four-panel photo sequence showing a person writing at a desk with ink, surrounded by a wooden board and cups (no visible text or symbols)
 </details>
 
 Qwen-Image-2512  
@@ -4487,19 +4427,19 @@ Overall5.33 C5.25/D5.42
 <details>
 <summary>natural_image</summary>
 
-Man standing beside a wooden table with tea set and teapot, holding a pointer (no visible text or symbols)
+Man standing beside a small wooden table with tea set and teapot, holding a pointer (no text or symbols visible)
 </details>
 
 Overall1.40C1.38/D1.42
 
 Prompt summary
 
-Sene:anadultwearingagrajcetinacompctkitenountethequarterseview;bckgrondasmallnotebo,ainceraccp;preseed:o-targetite1tatmustremainhanged,smallbakgrodoje.;stylelisti  
+Sene:anadultwearingagrajcetinacompactkitenountethequarterseview;bckgrondasmallnotebo,apinceraccp;preseed:o-targetite1tatmustremainhanged,smallbakgrodoje.;stylelisti  
 photo.  
 Initialbeforehammernail':showanadult wearingagrayjacketinacompactkitchencounter,thre-quartersideview;includeasmallnotebook,aplainceramiccup;keyobjetsstartunchangedandthefinalresultisabsent.  
 Firstconcretestepofhammernail’:showanadultwearingagrayjacketbeginningthisactioninthescene,withvisiblemotion,contact,trigger，orselection;keepnon-targetitem1thatmustremainunchanged,smallbackgroundobject2  
 unchanged. T3: Midway thr  
-T3: T4 Completedhammernail’:showthefinalstate/result ofthis action;non-targetitem1thatmustremainunchanged,smallbackgroundobjet2 stillmatchprioridentity,count,andposition
+T3: T4 Completedhammernail’:showthefinalstate/result ofthis action;non-targetitem1thatmust remainunchanged,smallbackgroundobjet2 stillmatchprioridentity,count,andposition.
 
 Figure 39 | Example summary grids from the Repair category. Each grid compares the same prompt across eight image-generation models and reports the overall mean score below each generated motion sheet.
 
@@ -4519,7 +4459,7 @@ GPT Image 2 Overall8.48 C8.50/D8.46
 <details>
 <summary>natural_image</summary>
 
-Four-panel sequence showing a man in a vest moving a cardboard box across different time periods (t1–t4), with no visible text or symbols.
+Four-panel sequence showing a man in a vest moving a cardboard box across different time periods (t1 to t4), with no visible text or symbols.
 </details>
 
 Nano Banana 2 Overall6.60 C6.50/D6.69
@@ -4539,7 +4479,7 @@ Seedream 5.0 Lite Overall7.50 C7.38/D7.62
 <details>
 <summary>natural_image</summary>
 
-Four-panel sequence showing a person performing a task on a table, with no visible text or symbols.
+Four-panel sequence showing a person performing a task on a table, with no visible text or symbols
 </details>
 
 FLUX.2 Pro Overall6.55 C6.25/D6.85
@@ -4579,7 +4519,7 @@ Hunyuanlmage-2.1Overall5.36 C5.25/D5.46
 <details>
 <summary>natural_image</summary>
 
-Two men in white aprons holding a woven basket and a cloth, standing side by side against a plain gray background (no text or symbols visible)
+Two men in white aprons holding a woven basket and a cloth, smiling (no text or symbols visible)
 </details>
 
 SDXL Overall1.01 C0.88/D1.15
@@ -4587,10 +4527,10 @@ SDXL Overall1.01 C0.88/D1.15
 Prompt summary
 
 Scene: ashopasistant wearingadark vest inabright clinicroom,table-height sideview;background:twofoldedtowels, asmallbasket; preserved: non-target item2that must remainunchanged,smallbackground object.,;style: realisticphoto.  
-Initialbefore’twopeoplecarryabox’:showashopassistant wearingadarkvestinabrightclinicroom,table-heightside view;include twofoldedtowels,asmallbasket;keyobjets startunchangedandthefinalresultisabsent. aringadarkyesthes ningthisactionin.theso withyisiblem  
+Initialbefore’twopeoplecarryabox’:showashopassistant wearingadarkvestinabrightclinicroom,table-heightside view;include twofoldedtowels,asmallbasket;keyobjets startunchangedandthefinalresultisabsent. aringadarkyesthes ningthisactionin.thes withyisiblem  
 backgroundbjeet3chaged  
 T3:Midwaythrough‘two peoplecarry abox’:showa partialresult oractive transition,sothe causal pathfromT2to T4 is visually inspectable.  
-T4:Completed’twopeoplecarryabox’:showthefinalstate/resultofthisaction;non-targetitem2thatmustremainunchanged,smallbackgroundobject3stillmatchprioridentity,count,andposition.
+T4:Completed’twopeoplecarryabox’:showthefinalstate/resultofthisaction;non-targetitem2thatmustremainunchanged,smallbackgroundobjet3stillmatchprioridentity，count,andposition.
 
 Social|people set up a tent together Case:social\_people\_set\_up\_a\_tent\_together\_v02  
 ![](images/7a7a301584384f041405c0d3589b5d92c59b8b9119c7c010d61a5ef216218326.jpg)
@@ -4631,14 +4571,14 @@ Seedream 5.0 Lite Overall7.68 C7.75/D7.62
 Four-panel photo sequence showing a person in straw hat preparing outdoors on grass, with no visible text or symbols
 </details>
 
-FLUX.2Pro Overall 6.90C6.88/D6.92
+FLUX.2Pro Overall6.90C6.88/D6.92
 
 ![](images/ca7fed64189a81ab1f311e35f53bddf0df3c1f096ed73639b0b3626c706fa7c8.jpg)
 
 <details>
 <summary>natural_image</summary>
 
-Four-panel sequence showing a person installing or maintaining a tent on grass, with no visible text or symbols.
+Four-panel sequence showing a person installing or maintaining a small tent on grass, with no visible text or symbols.
 </details>
 
 Z-Image-Turbo Overall5.42 C5.38/D5.46
@@ -4668,7 +4608,7 @@ Hunyuanlmage-2.1Overall4.42 C4.38/D4.46
 <details>
 <summary>natural_image</summary>
 
-Six-panel collage showing a person in a tent, outdoor gardening, and a person sitting on a chair (no text or symbols visible)
+Six-panel collage showing a person in a tent, outdoor gardening, and a person sitting on a table under the canopy (no text or symbols visible)
 </details>
 
 SDXL Overall2.14C2.12/D2.15
@@ -4676,9 +4616,9 @@ SDXL Overall2.14C2.12/D2.15
 Prompt summary
 
 Seedel  
-T1:Initialbeforepeoplesetupatentogethershowagardenerwearingasunatinagrassycampsite,slightoverbeadview;incdeasmalltrayafoldedloth;keybjetstartunchangedandthefinalresultisaben  
-Firstconcretestepof‘peoplesetupatenttogether'showagardenerwearingasunhatbeginningthisactioninthescene,withvisiblemotion,contact,trigger，orselection;keepnon-targetitem3thatmustremainunchanged,smal background object 1unchanged.  
-T3: Midwaythrough‘people set upa tent together': show a partial result or active transition, so the causal path fromT2 toT4is visuallinspectable.  
+T1:Initialbeforepeoplesetupatentogethershowagardenerwearingasunatinagrassycampsite,slightoverbeadview;incdeasmalltrayafoldedloth;keybjetstartunchangedandthefinalresultisabent.  
+Firstconcretestepof‘peoplesetupatenttogether'showagardenerwearingasunhatbeginningthisactioninthescene,withvisiblemotion,contat,trigger，orselection;keepnon-targetitem3thatmustremainunchangedsmal background object 1unchanged.  
+T3: Midwaythrough‘people set upa tent together': show a partial result or active transition, sothe causal path fromT2 toT4is visuallinspectable.  
 T4:Completed’peoplesetupatenttogether':showthefinalstate/resultofthisaetion;non-targetitem3thatmustremainunchanged,smallbackgroundobject1stillmatchprioridentity,count,andposition.
 
 Figure 40 | Example summary grids from the Social category. Each grid compares the same prompt across eight image-generation models and reports the overall mean score below each generated motion sheet.
@@ -4712,7 +4652,7 @@ Overall6.40 C6.38/D6.42
 <details>
 <summary>natural_image</summary>
 
-Four-panel sequence showing a person in uniform performing a martial arts or exercise pose on sand, with no visible text or symbols.
+Four-panel sequence showing a person in uniform performing a walking motion on sand, with no visible text or symbols.
 </details>
 
 Seedream 5.0 Lite  
@@ -4745,7 +4685,7 @@ Overall5.62 C5.25/D6.00
 <details>
 <summary>natural_image</summary>
 
-Four-panel sequence showing a person performing a physical exercise on a paved surface, with potted plants in the background (no text or symbols visible)
+Four-panel sequence showing a person performing a physical exercise on a paved path, with potted plants in the background (no text or symbols visible)
 </details>
 
 Qwen-Image-2512  
@@ -4756,7 +4696,7 @@ Overall5.85C5.62/D6.08
 <details>
 <summary>natural_image</summary>
 
-Four-panel photo sequence showing a person performing a track and exercise on a playground (no text or symbols visible)
+Four-panel photo sequence showing a person performing a stretching exercise on a track, with no visible text or symbols.
 </details>
 
 Hunyuanlmage-2.1  
@@ -4767,7 +4707,7 @@ Overall5.08 C5.00/D5.17
 <details>
 <summary>natural_image</summary>
 
-Person in blue sleeveless shirt mid-jump with arms outstretched, standing on sandy ground (no text or symbols visible)
+Person in blue sleeveless outfit mid-jump with arms outstretched, standing on sandy ground (no text or symbols visible)
 </details>
 
 SDXL  
@@ -4775,12 +4715,10 @@ Overall1.73C1.62/D1.83
 
 Prompt summary
 
-Scene: a nurse in light serubs in an athletics long-jump r nged,smallbackgroundobject.;style:
-
-realistic photo  
-  
-  
-T3: Midway through longjump’: show apartial result or active transition,so the causal path fromT2 to T4is visuallyinspectable. T4: Completedlongjump’:showthefinal state/result of thisaction;non-target item3that must remainunchanged,smallbackgroundobject4stillmatchprioridentity,count,andposition.
+Seene: a nurse inlight serubs inanathleticslong-jumprunway andsandpit,over-the-shoulder view; background: apotted plant,a neutralwallshelf; preserved: non-target item3 that must remainunchanged,smallbackground object.;style:  
+Initialbeforelongjump': show a nurse inlight scrubs inan athleticslong-jump runway andsand pit,over-the-shoulder view;include apotted plant,a neutral wall shelf; key objects start unchanged and the final result is absent.  
+Firstconcretestepoflongjump’:showanurseinlightserubsbeginnngthisactioninthescene,withvisiblemotioncontact,triger，orseletion;keepnon-targetitem3thatmustremainunchanged,smallbackgroundobject4uncnged.  
+T3: Midway through longjump’: show apartial result or active transition,so the causal path fromT2 to T4is visuallyinspectable. T4: Completedlongjump’:showthefinal state/result of thisaction; non-target item3that must remainunchanged,smallbackgroundobject 4stillmatch prior identity,count,andposition.
 
 Sports|throw boxing punches  
 ![](images/304ae68db476f85a74915195b438507b797b5b3d3647de6fbb790993770b07de.jpg)
@@ -4788,7 +4726,7 @@ Sports|throw boxing punches
 <details>
 <summary>natural_image</summary>
 
-Four-panel photo sequence showing a person in white uniform performing a martial arts or exercise pose outdoors, with no visible text or symbols.
+Four-panel photo sequence showing a person in white uniform performing a martial arts or exercise pose, outdoors with outdoor furniture and greenery (no text or symbols visible)
 </details>
 
 GPT Image2  
@@ -4832,24 +4770,24 @@ Overall7.96C8.00/D7.92
 <details>
 <summary>natural_image</summary>
 
-Four-panel photo sequence of a person in uniform holding red boxing gloves, standing with books in the background (no text or symbols visible)
+Four-panel photo sequence of a person in uniform holding red boxing gloves, standing indoors with books and stacks in background (no text or symbols)
 </details>
 
 Z-Image-Turbo  
 Overall6.60 C6.38/D6.83
 
-![](images/392f1c8ee68c82ad0ebddbfbe83b03b96d033fe637a71f4578028832ac229143.jpg)
+![](images/7683f4d1d463a4ae100354e3d9fb2c95e371620469e2e239ad027d5179d2976f.jpg)
 
 <details>
 <summary>natural_image</summary>
 
-Four-panel sequence showing a person in a boxing stance, wearing a gray shirt and gloves, with no visible text or symbols.
+Four-panel sequence showing a person in a boxing stance, wearing gloves and holding a red glove, in a room with study materials (no text or symbols visible)
 </details>
 
 Qwen-Image-2512  
 Overall5.69C5.38/D6.00
 
-![](images/37fe89923cf5f38c3dac62e6f36ba878144e7acb312fb8e8be0e12c957d7d9d1.jpg)
+![](images/04abe3a028a14b6d492351cc7d63c0b2423f5fa89c1c75369050245488a437cd.jpg)
 
 <details>
 <summary>natural_image</summary>
@@ -4860,34 +4798,33 @@ Four-panel sequence showing a nurse in uniform performing a boxing stance, with 
 Hunyuanlmage-2.1  
 Overall6.29 C6.25/D6.33
 
-![](images/0489d5fa39d28e2b3619014fa69b6b96d2151d36cc51d0aa210b95124add6dd1.jpg)
+![](images/2c039a152541759f33fca518c01b48f0c3fffa37476aa253cec9ac14f3345552.jpg)
 
 <details>
 <summary>natural_image</summary>
 
-Two male fighters in white uniforms and caps practicing boxing gloves (no text or symbols visible)
+Two male athletes in white protective suits practicing boxing, one holding red gloves (no text or symbols visible)
 </details>
 
 Overall1.44C1.38/D1.50
 
 Prompt summary
 
-Scene:a nurse inlight scrubs inanoutdoor patio,front-facing stable view; background: astack ofbooks,adesk lamp; preserved: non-target item2that must remain unchanged,smallbackground object.; style: realistic photo.  
-T1:Initialbefore'throwboxing punches’:showanurseinlight serubsinanoutdoor patio,front-facing stableview;include astack ofbooks,adesklamp;key objects startunchangedandthefinalresultis absent.  
-Firstconeretestepof’throwboxingpunches’:showanurseinlightsrubsbeginningthisactioninthescene,withvisiblemotion,contact,trigger，orselection;keepnon-targetitem2thatmustremainunchanged,smallbackgroundoet4  
-T3: Midway through 'throw boxing punches’: show a partial result or active transition, so the causal path from T2 to T4 is visually inspectable,  
-T4:Completed’throwboxingpunches’:showthefinalstate/result ofthis action;non-targetitem2thatmustremainunchanged,smallbackgroundobject4stillmatchprioridentity,count,andposition.
+Seneausedotibkgdacllgo  
+T unchanged.  
+T3:Midwaythrough‘throwboxingpunches':sowapartialresult oractivetranstion,sothecausalpathfromTtoT4isvisuallyinspetable.  
+T4:Compleed’throbxingpunessowthfialstate/resultofthitio;-targetittatmusreminuchangdsmallackgrodbet4stillmatchpriridentityountdsitio
 
 Figure 41 | Example summary grids from the Sports category. Each grid compares the same prompt across eight image-generation models and reports the overall mean score below each generated motion sheet.
 
 Systems |a small boat goes around a buoy  
-Case:systems\_a\_smallboat\_goes\_around\_a\_buoy\_v02  
+Case:systemsasmallboat\_goesaround\_abuoyv02  
 ![](images/65d22860a267e83204f1ff55b6871d1f6c0cba23ef5dc5d00e8d0a6b888496a7.jpg)
 
 <details>
 <summary>natural_image</summary>
 
-Four-panel image showing a person in a yellow boat navigating water with floating buoys, against a lake backdrop with trees (no text or symbols)
+Four-panel image showing a person in a yellow boat navigating water with floating buoys, surrounded by trees and distant hills (no text or symbols)
 </details>
 
 GPT Image2  
@@ -4902,14 +4839,14 @@ Four-panel collage showing a person in a boat on a lake surrounded by red contai
 </details>
 
 Nano Banana 2  
-Overall7.40 C7.38/D7.42
+Overall7.40C7.38/D7.42
 
 ![](images/c697130e0e6e3ad1f6904a14fecbc91cc2f3363e6b1cc9e7191f7212a3512396.jpg)
 
 <details>
 <summary>natural_image</summary>
 
-Four-panel comic strip showing a yellow boat with a lighthouse and a small boat on a pier, all floating in blue water (no text or symbols)
+Four-panel illustration showing a yellow boat with a lighthouse and a small boat on a dock, each with a red-and-white striped buoy nearby (no text or symbols)
 </details>
 
 Seedream 5.0 Lite  
@@ -4942,11 +4879,11 @@ Overall4.44C4.12/D4.75
 <details>
 <summary>natural_image</summary>
 
-Four-panel photo sequence showing a child in yellow raincoats on a floating platform, with no visible text or symbols.
+Four-panel photo sequence showing a child in yellow raincoats on a boat, with no visible text or symbols.
 </details>
 
 Qwen-Image-2512  
-Overall5.08 C4.75/D5.42
+Overall5.08C4.75/D5.42
 
 ![](images/a0df91783e7b986b0c17b07d1023c407e14f07de739f8736b39e2c2fe0bee372.jpg)
 
@@ -4973,7 +4910,7 @@ Overall2.04C2.00/D2.08
 Prompt summary
 
 Sene:achildwearingayellowhoodieinalake withabuoy,wide stableview;background: aclosed toobox,acoiledcable; preserved: non-target item1that must remainunchanged,smallbackground object.;style: realistic photo.  
-Initial before’asmallboat goes aroundabuoy’:showachildwearingayelowhoodieinalakewithabuoy,widestableview;ineludeaclosedtoolbox,acoiledcable;keyobjects start unchangedandthefinalresult is absent.  
+Initial before'asmallboat goes aroundabuoy':showachildwearingayellowhoodieinalake withabuoy,wide stableview;includeaclosedtoolbox,acoiledcable;keyobjects startunchangedandthefinalresultis absent.  
 Firstconcreteseofasmalltgoarodoy;soachlearingyellooeggtsctioteseeitisiblemototct,trggereleioepogetitatmustemcgdall  
 background object 3unchanged.  
 T3: Midway through’a small boat goes around a buoy’: show a partial result or active transition,so the causal path from T2 to T4 is visually inspectable. T4: Completed’asmallboat goesaroundabuoy':showthefinal state/result ofthisaction;non-target item1thatmustremainunchanged,smallbackgroundobject 3stillmatchprior identity,count,andposition.
@@ -4995,7 +4932,7 @@ Overall5.84 C5.75/D5.92
 <details>
 <summary>natural_image</summary>
 
-Four-panel photo collage showing a black sedan parked at an outdoor parking lot, with a person standing nearby and stacked boxes on the ground (no visible text or symbols)
+Four-panel photo collage showing a black sedan parked at an outdoor parking lot with stacked boxes and a person standing nearby (no visible text or symbols)
 </details>
 
 Nano Banana 2  
@@ -5039,7 +4976,7 @@ Overall4.57C4.38/D4.77
 <details>
 <summary>natural_image</summary>
 
-Four-panel photo collage showing a black Volkswagen car parked outdoors, with crew and officials inspecting it (no visible text or symbols)
+Four-panel photo collage showing a black Volkswagen car parked outdoors, with people and vehicles in the background (no visible text or symbols)
 </details>
 
 Qwen-Image-2512  
@@ -5068,11 +5005,11 @@ Overall2.38 C2.00/D2.77
 
 Prompt summary
 
-Sene:akitchenworkerwearinganaproninanoudoorpakinglot,front-facngstablevew;bckgroundastackofoos,adesklamp;preseed:notargetite2thatmustremanhanged,smallbckgrounde;style:ealistic  
+Sene:akitchenworkerwearnganaproninanoudoorpainglot,font-facingstablevewbckgroundastackofoos,adesklamp;preseed:notargetite2thatmustremachangedsmallbckgrodoe.,stle:liticot  
 Initialbefore'reverseacarintoaparkingspace'showakichenworkerwearinganaproninanoutdorparkinglot,front-facingstableviewinudeastackofbooksadeslamp;kebetstartncangedandthefinalresultisbet  
-First concrete stepof'reversea backgroundobject4unchanged.  
-T3:Midway through‘reverse acarintoa parking space': show a partial result or active transition, so the causalpath from T2 toT4is visuall inspectable.  
-T4:Completed’reverse acar into aparking space’:show thefinal state/result ofthis action; non-target item 2that must remain unchanged,smallbackground object 4 stillmatch prior identity,count,andposition.
+First concrete stepof'reversea background object4unchanged  
+T3:Midwaythrough‘reverseacarintoa parking space': show a partial result or active transition,sothe causalpathfromT2 toT4is visuallinspectable.  
+T4:Completed’reverseacarintoaparkingspace':showthefinalstate/result ofthisaction;non-targetitem2thatmustremainunchanged,smallbackgroundobject4stillmatchprioridentity,count,andposition.
 
 Figure 42 | Example summary grids from the Systems category. Each grid compares the same prompt across eight image-generation models and reports the overall mean score below each generated motion sheet.
 
@@ -5112,7 +5049,7 @@ Seedream 5.0 LiteOverall7.42C7.62/D7.21
 <details>
 <summary>natural_image</summary>
 
-Four-panel sequence showing a woman in uniform preparing food at different times (t1, t2, t3, t4), with no visible text or symbols.
+Four-panel sequence showing a woman in uniform preparing food at different times (t1, t2, t3, t4), no visible text or symbols.
 </details>
 
 FLUX.2 ProOverall5.78 C5.62/D5.93
@@ -5135,7 +5072,7 @@ Z-Image-Turbo Overall4.99 C4.62/D5.36
 <details>
 <summary>natural_image</summary>
 
-Four-panel sequence showing a woman in uniform preparing food at desks, with no visible text or symbols.
+Four-panel sequence showing a woman in uniform handling a bottle and water, with no visible text or symbols.
 </details>
 
 Qwen-lmage-2512 Overall4.47C4.33/D4.60
@@ -5155,7 +5092,7 @@ Hunyuanlmage-2.1Overall4.73C4.75/D4.71
 <details>
 <summary>natural_image</summary>
 
-Four-panel image showing a woman in uniform preparing food at different times: standing in a kitchen, handling a tray with food, and holding a basket of vegetables (no visible text or symbols)
+Four-panel image showing a woman in uniform preparing food at different times: kitchen, kitchen with kitchen, kitchen with kitchen, and delivery (no visible text or symbols)
 </details>
 
 SDXLOverall3.49C3.62/D3.36
@@ -5163,8 +5100,8 @@ SDXLOverall3.49C3.62/D3.36
 Prompt summary
 
 Scene:ashopassstant wearingadarkvest inabright clinicroom,table-heightsideview;background:twofoldedtowels,asmall basket;preseved:non-targetitem2thatmust remainunchanged,smallbackgroundobjet.;style:realisticphoto. T1: Initial before'takeout aproduct':showashopasistant wearingadark vestinabright clinicroom,table-height sideview;ineludetwofoldedtowels,asmallbasket;key objeets start unchangedandthefinalresultis absent.  
-Firstconeretesteoftakeoutaprodetswasopsistatweaingadarkvestbgingtisctioteseeithisiblemoionotact,triggeeleti;keotargtit2tatmustemincagd,sallcod object 3unchanged.  
-Midwaythrough‘take out a product':show a partialresult or active transition, sothecausal path from T2 toT4is visually inspectable. T4 Completed’takeoutaproduct’:showthefinalstate/resultofthisaction;non-targetitem2thatmustremainunchanged,smallbackgroundobject3stillmatchprioridentity,count,andposition.
+Firstconreesteoftakeotaprodet：swasopsistatweagdakvestbgigtisctiotseeithisibemoiooact,triggereletio;eotargeit2ttmstemaagedsallgod object 3unchanged.  
+Midwaythrough‘take out a product':show a partialresult or active transition, so the causal path from T2 to T4 is visually inspectable. T4 Completed’takeoutaproduct’:showthefinalstate/resultofthisaction;non-targetitem2thatmustremainunchanged,smallbackgroundobject3stillmatchprioridentity,count,andposition.
 
 Unboxing|open a product box Case:unboxing\_open\_a\_product\_box\_v02  
 ![](images/f09462cbc9b2f097b852529d8d6bf4ae783b422e899faecae1f79d5065e89df3.jpg)
@@ -5251,7 +5188,7 @@ Prompt summary
 
 Scene:agardener wearingasunhatinasimplelivingroom,table-height sideview;background:twofoldedtowels,asmallbasket;preserved:non-targetitem2that mustremainunchanged,smallbackgroundobject.;style:realisticphoto  
 Fistoneseosdeetiseiibatggegdslcgoe unchanged.  
-T3:Midway through‘opena product box’: show a partial result or active transition, so the causal path from T2 to T4 is visually inspectable.  
+T3:Midway through‘opena product box': show a partial result or active transition, so the causal path from T2 to T4 is visually inspectable.  
 T4:Completed’openaproductbox':showthefinalstate/resultofthisaction;non-targetitem2thatmustremainunchanged,smallbackgroundobject1stillmatchprioridentity,count,andposition.
 
 Figure 43 | Example summary grids from the Unboxing category. Each grid compares the same prompt across eight image-generation models and reports the overall mean score below each generated motion sheet.

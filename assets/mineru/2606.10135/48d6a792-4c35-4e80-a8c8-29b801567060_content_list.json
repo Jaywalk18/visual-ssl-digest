@@ -1,0 +1,1744 @@
+[
+    {
+        "type": "text",
+        "text": "BiWM: Advancing Open-Source Interactive Video World Models with Bidirectional Autoregression",
+        "text_level": 1,
+        "bbox": [
+            137,
+            98,
+            818,
+            152
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "Shaohao Rui1,2,3∗‡, Xiaofeng Mao2,4∗, Zhanyu Zhang1, Peijia Lin1,2, Yansong Zhu1, Yibo Zhang1,2, Haibin Wan1, Weijie Ma1,2,4†",
+        "bbox": [
+            137,
+            156,
+            799,
+            188
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "1LynnReal AI, 2Shanghai Innovation Institute, 3Shanghai Jiao Tong University, 4Fudan University ∗Equal contribution., ‡Project Lead., †Corresponding Author.",
+        "bbox": [
+            137,
+            194,
+            849,
+            226
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "Transitioning bidirectional video generation models into an autoregressive paradigm has significantly enhanced the interactivity and real-time responsiveness of video world models. However, existing causal autoregressive pipelines typically undergo a multi-stage process encompassing control finetuning, autoregressive training, causal initialization, and few-step distillation. This complex pipeline is not only computationally cumbersome to assemble but also leaves a noticeable quality gap compared to bidirectional counterparts due to compounding error accumulation. In contrast, recent world models like Yume-1.5 and Matrix-Game-3.0 adopt a bidirectional autoregressive approach, achieving superior visual fidelity and more stable long-horizon exploration thanks to the self-correcting nature of bidirectional error propagation. To bridge the architectural gap in open-source tools, where frameworks like minWM support only causal models, we present BiWM, the first full-stack framework dedicated to building interactive video world models under the bidirectional autoregressive paradigm that jointly optimizes for both generation quality and inference speed. Capitalizing on a pretrained video foundation model, BiWM injects camera-control capabilities via fine-tuning in the first stage, followed immediately by a few-step Distribution Matching Distillation (DMD) stage that transforms the backbone into an action- or camera-controllable interactive world model. By compressing the pipeline into just two training stages instead of the four required by minWM, BiWM is highly efficient to train, with both stages jointly converging within a few hundred optimizer steps on 8×H200 GPUs to facilitate rapid prototyping under academic budgets. Our framework features versatile, full-stack training support across diverse architectures and modalities, including Wan2.1-T2V-1.3B, Wan2.2-TI2V-5B, HunyuanVideo-1.5-TI2V-8B, and LTX-2.3-22B, while additionally supporting secondary fine-tuning of existing bidirectional models to adapt them to novel data distributions. Notably, BiWM enables real-world camera control, a scenario in which minWM frequently loses controllability. To keep bidirectional rollout affordable over long horizons, BiWM further integrates pluggable history-compression mechanisms, including a FramePack-style memory layout (as in Yume-1.5) and a PackForcing-style scheme, which reduce the memory and compute of autoregressive inference while preserving long-range context. For deployment, we further open-source an optional NVFP4 (4-bit floating-point) training and inference pipeline that casts the distilled generator to 4-bit precision for additional inference acceleration. To mitigate the mode-seeking pathology inherent in DMD, we introduce a suite of anti-degradation techniques, including a GAN-based adversarial refinement objective and a forward-KL, mass-covering regularization term that maximally preserves complex scene dynamics. We hope BiWM will serve as a practical choice for resource-constrained research and scenarios that demand high-fidelity environment simulation, thereby accelerating algorithmic iteration within academia. Finally, we argue that updatable history states represent an important direction for future world models, and we invite the community to explore it further.",
+        "bbox": [
+            137,
+            243,
+            859,
+            758
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "Date: 2026.06.09",
+        "bbox": [
+            137,
+            775,
+            256,
+            787
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "Correspondence: Weijie Ma at weijiema@lynnreal.com",
+        "bbox": [
+            140,
+            790,
+            500,
+            804
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "Code: https://github.com/LynnReal-AI/BiWM",
+        "bbox": [
+            140,
+            805,
+            462,
+            819
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "aside_text",
+        "text": "arXiv:2606.10135v1 [cs.CV] 8 Jun 2026",
+        "bbox": [
+            22,
+            282,
+            60,
+            710
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "page_number",
+        "text": "1",
+        "bbox": [
+            493,
+            936,
+            503,
+            948
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "image",
+        "img_path": "images/9be5de64206a483733f54f32367c2540f8d35accbf8fc74aeff8ca34d64eb192.jpg",
+        "image_caption": [],
+        "image_footnote": [],
+        "content": "```mermaid\ngraph LR\n  A[\"Pretrained Video Foundation Model (Bidirectional)\"] --> B[\"Control Fine-tuning (Full Attention)\"]\n  B --> C[\"Few-step DMD Distillation (Bidirectional Attention)\"]\n  C --> D[\"BiWM (Bidirectional AR World Model)\"]\n    \n    subgraph Training Stages\n  E[\"Only 2 training stages\"] --> F[\"Highly efficient (few hundred steps on 8×H200 GPUs)\"]\n  F --> G[\"Bidirectional self-correction for stable rollout\"]\n  G --> H[\"High fidelity & strong controllability\"]\n    end\n```",
+        "sub_type": "flowchart",
+        "bbox": [
+            127,
+            75,
+            869,
+            220
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "image",
+        "img_path": "images/4338a38b7037b7f71ac0bcb8d8a2b66dca809b694caf89a1d1db4000558c7679.jpg",
+        "image_caption": [
+            "Figure 1 Overview of BiWM. From a pretrained bidirectional video foundation model, BiWM runs just two short training stages—camera/action control fine-tuning and few-step DMD distillation, both keeping full bidirectional attention—to obtain a bidirectional autoregressive interactive world model. The recipe uses only two training stages, is highly efficient (a few hundred steps on 8×H200 GPUs), self-corrects through bidirectional rollout for stable longhorizon generation, and attains high fidelity with strong controllability.",
+            "Figure 2 Interactive world exploration with BiWM. Driven by discrete keyboard+mouse actions, BiWM lets a user explore a generated world. Text-to-video rollouts on Sekai-domain street scenes, each row navigated under a different constant discrete camera action—from top: backward-right + yaw-right, right + yaw-left, forward-right + pitch-up, yaw-left, and forward, static look. The bottom-left joystick overlay shows the action; the camera obeys each prescribed translation and look direction while preserving scene fidelity."
+        ],
+        "image_footnote": [],
+        "content": "Street surveillance collage showing traffic detection with vehicles and store signs, including a green Hanbokshk commercial vehicle in Berlin.",
+        "sub_type": "text_image",
+        "bbox": [
+            112,
+            325,
+            883,
+            670
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "text",
+        "text": "1 Introduction",
+        "text_level": 2,
+        "bbox": [
+            111,
+            784,
+            294,
+            801
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "text",
+        "text": "Given a text or image prompt, contemporary video-diffusion models synthesize seconds to minutes of highfidelity, temporally coherent footage (Brooks et al., 2024; Bao et al., 2024; Yang et al., 2025; Wan et al., 2025; Kong et al., 2024a; HaCohen et al., 2024). Re-purposing such a generator into an interactive video world model, one that continues a virtual world frame by frame under a stream of user actions (above all camera movements) and lets a person steer through it, has become a central goal of generative world modeling (Ball et al., 2025; Bruce et al., 2024; Sun et al., 2025; Tang et al., 2025; Mao et al., 2025; Ye et al., 2025; He et al.,",
+        "bbox": [
+            109,
+            816,
+            888,
+            907
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "page_number",
+        "text": "2",
+        "bbox": [
+            493,
+            936,
+            504,
+            949
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "image",
+        "img_path": "images/c323dafbcf9218513fc7a65599ae68b621a851c7edaa11d7e880cced5d234886.jpg",
+        "image_caption": [
+            "Figure 3 Why fully causal camera control collapses. A causal autoregressive baseline (Self-Forcing-style, continuouspose control) rolling out an image-to-video clip under a walking camera trajectory (joystick overlay, bottom-left shows the commanded action). Left to right, errors frozen into the KV cache and drift in the camera response compound, and the scene degrades from a clean street into a washed-out, structureless frame. BiWM’s chunk-wise bidirectional rollout (self-correcting history) and discrete text-camera control are designed to avoid both failure modes."
+        ],
+        "image_footnote": [],
+        "content": "Five-panel street scene with urban buildings, traffic signs, and a pedestrian crossing (no readable text or symbols)",
+        "sub_type": "natural_image",
+        "bbox": [
+            112,
+            78,
+            883,
+            145
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "2025; Xiang et al., 2025). Turning such an offline bidirectional generator into an autoregressive one that emits frames on demand is what makes these systems interactive and real-time, and is therefore the central technical challenge in building them.",
+        "bbox": [
+            109,
+            258,
+            883,
+            305
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "Existing autoregressive world models fall into two families, distinguished by how the frames within a window attend to one another. Causal models (Team et al., 2026; Hong et al., 2025; Nam et al., 2026; HunyuanWorld, 2025) impose a causal mask so that each frame sees only its past;1 their appeal is efficiency, since the past can be stored as a key–value (KV) cache and reused to accelerate the rollout. This caching, however, conceals a structural weakness: once a frame is frozen into the KV cache its representation can never be revised, so any error in the generated history is permanent and compounds as the rollout lengthens, eventually corrupting both the imagery and the model’s response to control. The drift is more damaging for video diffusion than for language. An autoregressive language model predicts over a discrete vocabulary and re-quantizes onto valid tokens at every step, which endows it with an innate ability to absorb and correct small mistakes; a diffusion-based video model instead fits a continuous distribution over pixels, where sub-token deviations are never snapped back and accumulate unchecked until the scene collapses. The two failures compound: errors in the imagery and drift in the camera response reinforce one another, so a causal rollout under camera control degrades faster than either alone (Fig. 3). Bidirectional models, namely the Yume series (Mao et al., 2026a, 2025) and Matrix-Game-3.0 (Wang et al., 2026b), instead let every frame in a window attend to every other, exactly as the pretrained backbone does, and this is precisely what counteracts the drift: because earlier history latents remain visible to, and are refreshed alongside, the frames currently being denoised, the model continually self-corrects its own past, trading a modest amount of caching efficiency for substantially better fidelity and controllability over long horizons. What makes this trade-off practical is few-step distillation: once a window denoises in only a handful of steps, retaining full bidirectional attention within it incurs little additional cost, and error resilience, rather than latency, becomes the deciding factor.",
+        "bbox": [
+            114,
+            311,
+            888,
+            614
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "These bidirectional systems confirm the benefit empirically, reporting sharper frames and more stable longhorizon exploration than their causal counterparts. What the community still lacks, however, is an open, end-to-end recipe for the paradigm. minWM (Zhao et al., 2026a) has open-sourced a full-stack framework for causal interactive world models, yet no full-stack, open-source counterpart exists for the bidirectional autoregressive paradigm, which leaves its strong empirical results difficult to reproduce or extend.",
+        "bbox": [
+            109,
+            621,
+            887,
+            699
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "We close this gap with BiWM, to our knowledge the first full-stack, open-source framework for building interactive video world models under the bidirectional autoregressive paradigm, designed to balance generation quality against generation speed. BiWM keeps the backbone’s native full attention within each short window of latent frames and pays the autoregressive cost only across windows, conditioning each window on the history of those before it. Starting from a pretrained video foundation model, the recipe needs only two stages: a first stage that injects camera control by fine-tuning, and a second stage that directly performs few-step self-rollout DMD distillation, building on Self-Forcing (Huang et al., 2026) but in the chunk-wise bidirectional rather than causal setting (Yin et al., 2024b,a), after which the backbone becomes a camera- and action-controllable interactive world model. To counter the mode-seeking tendency of distribution-matching distillation, which otherwise collapses scene dynamics, we augment the DMD objective with anti-degradation terms, including an adversarial (GAN) term and a mass-covering forward-KL anchor that preserves motion diversity.",
+        "bbox": [
+            109,
+            704,
+            887,
+            857
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "page_footnote",
+        "text": "1In practice many “causal” world models adopt a local window: attention is bidirectional within a short window of frames and causal only across windows, a compromise that recovers some visual quality. For clarity of exposition we set this refinement aside and speak of fully causal rollout; it does not affect the argument, since a window’s representation is still frozen once it leaves the cache.",
+        "bbox": [
+            109,
+            863,
+            887,
+            912
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "page_number",
+        "text": "3",
+        "bbox": [
+            493,
+            936,
+            504,
+            949
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "",
+        "bbox": [
+            109,
+            80,
+            887,
+            111
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "text",
+        "text": "Importantly, BiWM is built for the resource budgets of academic research. It uses only two training stages, compared with four in minWM, and is inexpensive to train: camera control and DMD distillation jointly converge within a few hundred optimizer steps on 8×H200 GPUs, so that a complete world model can be validated and iterated within hours rather than weeks. Because none of the recipe is tied to a particular backbone, we provide full-stack training across architectures and modalities, including Wan2.1-T2V-1.3B, Wan2.2-TI2V-5B (Wan et al., 2025), HunyuanVideo-1.5-TI2V-8B (Kong et al., 2024a; Esser et al., 2024), and LTX-2.3-22B (HaCohen et al., 2024). The same framework also supports secondary fine-tuning of existing bidirectional autoregressive models such as Yume-1.5 and Matrix-Game-3.0, adapting them to new data distributions at low cost, and it enables real-world camera control, a regime that proves nearly uncontrollable under minWM. To keep bidirectional rollout affordable over long horizons, BiWM further integrates pluggable history-compression mechanisms, including a FramePack-style memory layout (Zhang and Agrawala, 2025) (as in Yume-1.5) and a PackForcing-style scheme (Mao et al., 2026b), which reduce the memory and compute of autoregressive inference while preserving long-range context. For deployment, we further open-source an optional NVFP4 (4-bit floating-point) training and inference pipeline that casts the distilled generator to 4-bit precision for additional inference acceleration. Fig. 1 summarizes the two-stage recipe. We position BiWM not as a competitor to causal frameworks but as their bidirectional complement in the same open-source design space, trading a small amount of per-window latency for fidelity, controllability, and substantially shorter training.",
+        "bbox": [
+            112,
+            117,
+            888,
+            391
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "text",
+        "text": "Contributions.",
+        "text_level": 2,
+        "bbox": [
+            109,
+            407,
+            235,
+            422
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "list",
+        "sub_type": "text",
+        "list_items": [
+            "• We introduce BiWM, the first full-stack, open-source framework for interactive video world models under the bidirectional autoregressive paradigm, with full bidirectional attention within a chunk and autoregression across chunks, positioned as the bidirectional complement to causal frameworks such as minWM.",
+            "• We design a compact two-stage recipe (camera-control fine-tuning followed by few-step DMD distillation, versus four stages in minWM) that is deliberately suited to academic budgets: both stages jointly converge within a few hundred optimizer steps on 8×H200 GPUs. To prevent the mode-seeking collapse of distribution-matching distillation, we add anti-degradation objectives, namely an adversarial (GAN) term and a mass-covering forward-KL anchor, that preserve scene dynamics.",
+            "• We demonstrate generality and reproducibility: BiWM provides full-stack training across Wan2.1- T2V-1.3B, Wan2.2-TI2V-5B, HunyuanVideo-1.5-TI2V-8B, and LTX-2.3-22B, additionally supports secondary fine-tuning of bidirectional autoregressive models (Yume-1.5, Matrix-Game-3.0) to new data distributions, and enables real-world camera control that proves nearly uncontrollable under minWM. We release code, scripts, and checkpoints together with reproducible component studies."
+        ],
+        "bbox": [
+            133,
+            429,
+            883,
+            657
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "text",
+        "text": "2 Related Work",
+        "text_level": 2,
+        "bbox": [
+            109,
+            679,
+            310,
+            698
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "text",
+        "text": "Video (and audio–video) diffusion backbones. Large-scale diffusion transformers have become the generative prior behind most recent video world models, producing high-fidelity, temporally coherent clips across three broad architectural families: cross-attention conditioned designs (Wan et al., 2025; Yang et al., 2025; Bao et al., 2024), MMDiT designs that jointly attend over text and video tokens (Esser et al., 2024; Kong et al., 2024a), and, increasingly, models that generate synchronized audio and video (HaCohen et al., 2024). A property they all share is full bidirectional spatiotemporal attention over the entire clip—the very source of their fidelity. BiWM takes such a model as its teacher and retains this bidirectional attention within each generated chunk, rather than re-training it to be strictly causal. Since our recipe alters only the conditioning and the rollout, leaving the backbone’s attention untouched, the same framework transfers cleanly across all three families.",
+        "bbox": [
+            107,
+            712,
+            887,
+            864
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "text",
+        "text": "Causal interactive world models. Most real-time world models convert an offline generator into a controllable, causal, low-latency roll-out engine (Ball et al., 2025; Bruce et al., 2024; Sun et al., 2025; Tang et al., 2025; Mao et al., 2025; Ye et al., 2025; Xiang et al., 2025; He et al., 2025; Hong et al., 2025; Shin et al., 2025; Feng et al., 2025), typically following the block-causal AR template of CausVid (Yin et al., 2025) and Self-Forcing (Huang et al., 2026) and distilling it to a few steps. minWM (Zhao et al., 2026a) packages this conversion via Causal Forcing (Zhu et al., 2026b; Zhao et al., 2026b) with continuous PRoPE (Li et al., 2026a) camera control. BiWM differs at the level of paradigm, keeping windows bidirectional, and in its controls (discrete text-camera actions), its objective (multi-objective short distillation), and its breadth of backbones.",
+        "bbox": [
+            107,
+            881,
+            887,
+            912
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "page_number",
+        "text": "4",
+        "bbox": [
+            493,
+            936,
+            504,
+            949
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "text",
+        "text": "",
+        "bbox": [
+            107,
+            80,
+            888,
+            188
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "Bidirectional interactive world models. A complementary line keeps each window bidirectional. The Yume series (Yume-1.0 (Mao et al., 2025) and Yume-1.5 (Mao et al., 2026a)) and Matrix-Game-3.0 (Wang et al., 2026b) let every frame in a window attend to every other and report sharper, more stable long-horizon rollouts than causal models, confirming the paradigm’s benefit empirically. These systems remain hard to reproduce, however: at the time of writing none has released its training dataset or a complete training pipeline, and Matrix-Game-3.0 in particular still depends on a many-stage training recipe. BiWM targets exactly this gap, offering a fully open, two-stage recipe for the bidirectional paradigm together with its data and training code.",
+        "bbox": [
+            107,
+            203,
+            888,
+            327
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "Camera-signal injection. Existing ways to inject camera control into a video diffusion backbone fall into two families. Absolute injection adds the camera signal onto the per-frame hidden state, either as a global, low-frequency control applied to the latent before the DiT (He et al., 2024), or layer-by-layer into every block’s hidden state (Team et al., 2026). Because the pose is encoded as an absolute per-frame signal, this couples the temporal dynamics of the camera trajectory with those of the video itself, which tends to amplify error accumulation over long rollouts. Relative injection instead alters the inter-frame attention so that the interaction between two frames accounts for their relative pose; representative methods include CaPE (Kong et al., 2024b), GTA (Miyato et al., 2024), and PRoPE (Li et al., 2026a) (also adopted in HunyuanWorld 1.5 (HunyuanWorld, 2025)), as well as UCPE (Zhang et al., 2026) (adopted in SANA-WM). These are more robust, but they still inject the camera signal as a residual branch alongside the original attention; even with zero initialization, the residual perturbs the pretrained attention and induces a transient drop in visual quality early in training. Both families typically require a relatively heavy camera encoder or per-layer learnable injection modules, converge slowly, and lean on large batch sizes for training stability. In contrast, BiWM casts camera control as a conditioning task and injects the signal through the text space directly into the video tokens (Sec. 3.3): it adds no new learnable parameters, converges within roughly a hundred steps, and leaves the base generator’s visual quality intact.",
+        "bbox": [
+            112,
+            340,
+            888,
+            585
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "Few-step distillation, adversarial objectives, and long-horizon memory. Distribution matching distillation (DMD) (Wang et al., 2023; Luo et al., 2023; Yin et al., 2024b,a) and consistency distillation (Song et al., 2023) compress many-step samplers to a handful of steps; applied to AR video, DMD with selfrollout (Yin et al., 2025; Huang et al., 2026; Yin et al., 2025) is the standard route to real-time generation. As its reverse-KL objective is mode-seeking, we pair it with an adversarial term in the spirit of projected GANs (Goodfellow et al., 2014; Sauer et al., 2021; Lin et al., 2025), a supervised regression (SFT) term, and mass-covering forward-KL anchors, which together stabilize and accelerate convergence. For long-horizon rollout, the ever-growing history must be compressed, and existing schemes fall into three families: sink-based sliding windows that keep only the most recent frames plus a first-frame “sink”; learned history encoders such as PackForcing (Mao et al., 2026b) that fold the entire past into a fixed-size memory; and multi-scale layouts such as FramePack (Zhang and Agrawala, 2025) (adopted by Yume-1.5 (Mao et al., 2025) and related longcontext generators (Hong et al., 2025; Chen et al., 2025)) that keep recent frames sharp and distant ones coarse. Rather than commit to one, BiWM implements all three—a sink-based sliding window, a PackForcingstyle history encoder, and a FramePack-style pyramid—behind a single interface, so they can be swapped and ablated directly.",
+        "bbox": [
+            107,
+            599,
+            888,
+            829
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "3 Method",
+        "text_level": 2,
+        "bbox": [
+            109,
+            849,
+            246,
+            868
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "BiWM converts a pretrained multi-step bidirectional video-diffusion model into a few-step, camera-controllable, chunk-wise autoregressive world model. We emphasize at the outset that the entire training pipeline comprises exactly two stages (Fig. 1): Stage 1, camera-text pretraining, and Stage 2, multi-objective few-step distillation. There is no separate data-curation, quantization, or post-alignment stage; low-bit inference (Sec. 3.7) is an optional deployment step rather than part of training. The central design choice, illustrated in Fig. 1, is to factorize generation into chunks that are denoised with full bidirectional attention internally yet produced autoregressively, each conditioned on the history of preceding chunks and on a stream of discrete camera-action tokens. We first establish notation (Sec. 3.1) and the data preprocessing that recovers continuous 6-DoF poses (Sec. 3.2), then describe camera-text control (Sec. 3.3), the bidirectional autoregressive rollout with history compression (Sec. 3.4), the multi-objective distillation (Sec. 3.5), how a single recipe spans cross-attention, MMDiT, and audio–video backbones (Sec. 3.6), and the training budget plus optional low-bit inference (Sec. 3.7).",
+        "bbox": [
+            107,
+            883,
+            893,
+            914
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "page_number",
+        "text": "5",
+        "bbox": [
+            493,
+            936,
+            504,
+            949
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "",
+        "bbox": [
+            107,
+            80,
+            888,
+            233
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "text",
+        "text": "3.1 Problem Formulation",
+        "text_level": 2,
+        "bbox": [
+            109,
+            250,
+            359,
+            266
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "text",
+        "text": "Let $\\mathbf { x } = ( \\mathbf { x } ^ { 1 } , \\ldots , \\mathbf { x } ^ { T } )$ be the latent frames of a video produced by the VAE encoder of a foundation backbone, and let c be a (static-only) scene caption. We partition the T latent frames into B contiguous chunks of K frames each, $\\mathbf { x } = ( \\mathbf { c } _ { 1 } , \\hdots , \\mathbf { c } _ { B } )$ with $\\mathbf { c } _ { b } = \\mathbf { x } ^ { ( b - 1 ) \\hat { K } + 1 : b K }$ . Autoregression simply means generating these chunks one after another: both the causal and the bidirectional paradigm share the same chunk-wise factorization",
+        "bbox": [
+            107,
+            276,
+            888,
+            339
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "equation",
+        "text": "$$\np (\\mathbf {x} \\mid c, \\mathbf {a}) = \\prod_ {b = 1} ^ {B} p \\big (\\mathbf {c} _ {b} \\mid \\mathbf {c} _ {<   b}, c, \\mathbf {a} _ {b} \\big), \\tag {1}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            367,
+            347,
+            885,
+            388
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "text",
+        "text": "where $\\mathbf { a } ~ = ~ ( \\mathbf { a } _ { 1 } , \\dots , \\mathbf { a } _ { B } )$ is a stream of discrete camera actions and $\\mathbf { a } _ { b }$ is the per-frame action sequence governing chunk b. What separates the two paradigms is not the chunk size but how each factor treats the history $\\mathbf { c } _ { < b }$ inside the attention.",
+        "bbox": [
+            107,
+            400,
+            887,
+            445
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "text",
+        "text": "Causal vs. bidirectional autoregression. A causal autoregressive model imposes a causal attention mask: while denoising chunk $\\mathbf { c } _ { b } .$ , the history is read from a frozen key–value cache, and the current chunk may attend to the past but the past may never attend to the present. Consequently the representation (the “state”) of each history frame is fixed the moment it is produced and can never be revised. BiWM is instead bidirectional autoregressive: at each step it attends jointly and bidirectionally over the current chunk and its history, so the state of the history is itself conditioned on—and refreshed by—the chunk being generated. Because every already-generated frame remains free to update under the influence of the frames that follow it, the model continually re-interprets and self-corrects its own past, which is exactly what suppresses the error accumulation and camera drift of strict causality (Fig. 3). In short, what makes a model causal or bidirectional is simply whether its already-generated frames are still allowed to change—not how many frames it produces at a time. BiWM generates a short chunk of frames at each step and lets that chunk, together with the visible history, attend back and forth freely; the history is therefore re-encoded at every step and keeps being refined as generation moves forward. This is modestly more costly than caching the frozen history, but it is what lets the model stay sharp and on-trajectory while the rollout continues for arbitrarily long.",
+        "bbox": [
+            107,
+            462,
+            887,
+            676
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "text",
+        "text": "3.2 Data Preprocessing: Camera Trajectories to Discrete Actions",
+        "text_level": 2,
+        "bbox": [
+            109,
+            691,
+            725,
+            709
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "text",
+        "text": "BiWM is grounded in continuous camera geometry: the discrete control of Sec. 3.3 is a quantization of true 6-DoF poses, not a hand-assigned categorical label. We draw on two complementary sources, each providing per-frame continuous camera trajectories that are later quantized into the action vocabulary.",
+        "bbox": [
+            107,
+            717,
+            885,
+            763
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "text",
+        "text": "Prescribed trajectories (OpenVid + WorldPlay). We directly reuse the open-source prescribed-trajectory data released by minWM (Zhao et al., 2026a), which samples still images from OpenVid (Nan et al., 2025) and uses WorldPlay (Sun et al., 2025) to generate videos that follow specified camera trajectories. Because the trajectory is prescribed rather than estimated, these clips carry exact ground-truth 6-DoF poses by construction, providing clean and diverse camera supervision at scale.",
+        "bbox": [
+            107,
+            768,
+            887,
+            845
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "text",
+        "text": "Real footage (Sekai). For real-world coverage we use the Sekai walking dataset (Li et al., 2026b) as our realfootage split: in-the-wild egocentric footage whose camera trajectory is not given and must be recovered. We follow the camera-annotation pipeline of SANA-WM (Zhu et al., 2026a), running a SLAM-style video pose engine (Huang et al., 2025) grounded with learned monocular geometry—a temporally consistent multi-view estimator (Wang et al., 2025) for structure together with a metric monocular model (Wang et al., 2026a) for absolute scale—and refining per-frame intrinsics through bundle adjustment. This recovers metric-scale per-frame camera-to-world extrinsics $T _ { i } ^ { c w } \\in S E ( 3 )$ and intrinsics $K _ { i }$ for every real clip.",
+        "bbox": [
+            107,
+            852,
+            888,
+            914
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "page_number",
+        "text": "6",
+        "bbox": [
+            493,
+            936,
+            504,
+            949
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "text",
+        "text": "",
+        "bbox": [
+            109,
+            80,
+            887,
+            127
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "text",
+        "text": "Filtering and captioning. Clips pass generic visual filters (aesthetic quality, motion magnitude, optical-flow consistency, scene-cut removal) and camera-specific filters on field of view, focal-length consistency, trajectory smoothness, and scale stability, which discard clips whose camera geometry is unreliable. Captions are written under a strict static-only instruction that describes objects, layout, and appearance but never camera motion, so that textual supervision cannot leak the trajectory and all motion is learned through the action stream.",
+        "bbox": [
+            109,
+            133,
+            887,
+            209
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "text",
+        "text": "From continuous poses to discrete actions. Finally, the recovered continuous trajectory is converted into the per-frame relative pose $\\left( \\Delta \\mathbf { t } _ { i } , \\Delta \\mathbf { R } _ { i } \\right)$ used by the quantizer of Sec. 3.3 (Eq. 2). We stress the relationship: BiWM remains faithful to continuous 6-DoF geometry throughout annotation, and discreteness enters only at the final quantization step, which maps the continuous motion onto the compact 81-class vocabulary so that it can be expressed as injectable text. The discrete vocabulary is thus a low-bandwidth, text-friendly encoding of real camera geometry, not a replacement for it.",
+        "bbox": [
+            109,
+            215,
+            887,
+            308
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "text",
+        "text": "3.3 Text-based Camera Control",
+        "text_level": 2,
+        "bbox": [
+            109,
+            325,
+            419,
+            340
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "text",
+        "text": "The defining choice of BiWM is to treat camera control as a pure conditioning task carried entirely in the text space, adding no camera encoder and no new learnable parameters. Quantizing continuous 6-DoF camera motion into a discrete action vocabulary was introduced by HunyuanWorld-1.5 (HunyuanWorld, 2025), which injects the resulting discrete action into the diffusion time embedding. We instead inject it into the text space: because the action is expressed as ordinary text and consumed through the backbone’s existing text-conditioning path, it leaves the pretrained input distribution intact and makes fine-tuning substantially more stable and data-efficient. The mechanism has four parts: quantization of camera motion into a discrete action vocabulary, one-time pre-encoding of that vocabulary, per-frame assembly of a camera-text + caption condition, and per-frame injection through the backbone’s existing cross-attention. Let $\\tau ( \\cdot )$ denote the (frozen) text encoder with output dimension $d _ { t }$ , and let $\\mathbf { W } : \\mathbb { R } ^ { d _ { t } }  \\mathbb { R } ^ { d }$ be the backbone’s existing textprojection (the same one applied to captions).",
+        "bbox": [
+            109,
+            349,
+            888,
+            517
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "text",
+        "text": "(i) Quantization of camera motion. We map continuous camera motion to a discrete action per latent frame. From the continuous trajectory recovered in Sec. 3.2, a frame’s relative camera pose, a translation $\\Delta \\mathbf { t } _ { i }$ and rotation $\\Delta \\mathbf { R } _ { i }$ w.r.t. the previous keyframe, is fed to a direction-angle classifier, which assigns a translation class $g _ { \\mathrm { t } } ( \\Delta \\mathbf { t } _ { i } ) \\in \\{ 0 , \\dots , 8 \\}$ and a rotation class $g _ { \\mathrm { r } } ( \\Delta \\mathbf { R } _ { i } ) \\in \\{ 0 , \\ldots , 8 \\}$ (class 0 = static when the magnitude is below an adaptive threshold; otherwise the nearest of eight canonical directions), combined into a single label",
+        "bbox": [
+            109,
+            523,
+            887,
+            599
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "equation",
+        "text": "$$\na _ {i} = \\underbrace {g _ {\\mathrm{t}} (\\Delta \\mathbf {t} _ {i})} _ {\\text { translation } \\in \\{0, \\dots , 8 \\}} \\times 9 + \\underbrace {g _ {\\mathrm{r}} (\\Delta \\mathbf {R} _ {i})} _ {\\text { rotation } \\in \\{0, \\dots , 8 \\}} \\in \\{0, \\dots , 8 0 \\}, \\tag {2}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            277,
+            611,
+            885,
+            648
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "text",
+        "text": "i.e. a 9-way translation (static / forward / backward / left / right / four diagonals) crossed with a 9-way rotation (static $/ \\ \\mathrm { p i t c h } \\pm \\ / \\ \\mathrm { y a w } \\pm \\ / $ four diagonals); see Fig. 4. The direction–magnitude decoupling makes the quantization robust to pose noise. Equivalently, keyboard/mouse logs or a textual pose string are parsed directly to the same labels, yielding a per-clip action stream $\\mathbf { a } = \\left( a _ { 1 } , \\ldots , a _ { T _ { a } } \\right)$ .",
+        "bbox": [
+            109,
+            659,
+            887,
+            720
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "text",
+        "text": "(ii) One-time pre-encoding (separate encoding). Each of the 81 classes is tied to a fixed natural-language camera-motion phrase ϕ(a) (e.g. “Camera moves forward. Camera yaws right.”). Crucially, the camera vocabulary and the scene caption are encoded separately, and the vocabulary is encoded once at initialization rather than every step:",
+        "bbox": [
+            109,
+            727,
+            887,
+            789
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "equation",
+        "text": "$$\n\\mathbf {E} [ a ] = \\tau (\\phi (a)) \\in \\mathbb {R} ^ {L _ {a} \\times d _ {t}}, \\quad a \\in \\{0, \\dots , 8 0 \\}, \\quad \\widehat {\\mathbf {E}} \\in \\mathbb {R} ^ {8 1 \\times S _ {a} \\times d _ {t}} (\\text { zero - padded   to } S _ {a} = \\max _ {a} L _ {a}), \\tag {3}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            151,
+            797,
+            885,
+            821
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "text",
+        "text": "and stored as a frozen buffer. At run time we only gather from ${ \\widehat { \\mathbf { E } } } ;$ the text encoder is never invoked on camera phrases during training, which removes them from the per-step training cost.",
+        "bbox": [
+            109,
+            834,
+            883,
+            867
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "text",
+        "text": "(iii) Per-frame condition assembly (text-feature concatenation). Let $\\mathbf { C } = \\boldsymbol { \\tau } ( c ) \\in \\mathbb { R } ^ { S _ { c } \\times d _ { t } }$ be the caption embedding. For each latent frame i we concatenate its gathered camera-text with the caption and project",
+        "bbox": [
+            109,
+            872,
+            887,
+            905
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "page_number",
+        "text": "7",
+        "bbox": [
+            493,
+            936,
+            504,
+            948
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "text",
+        "text": "through the shared text head,",
+        "bbox": [
+            109,
+            80,
+            331,
+            95
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "equation",
+        "text": "$$\n\\mathbf {Z} _ {i} = \\Pi_ {S} \\left(\\left[ \\widehat {\\mathbf {E}} [ a _ {i} ]; \\mathbf {C} \\right]\\right) \\in \\mathbb {R} ^ {S \\times d _ {t}}, \\quad \\mathbf {H} _ {i} = \\mathbf {W} \\mathbf {Z} _ {i} \\in \\mathbb {R} ^ {S \\times d}, \\tag {4}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            282,
+            104,
+            885,
+            125
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "text",
+        "text": "where $[ \\cdot ; \\cdot ]$ is row-wise concatenation and $\\Pi _ { S }$ truncates/zero-pads to the fixed text length S (we use S=512). Because the cross-attention applies no positional encoding to the context and no key masking, the result is invariant to the order of the camera and caption rows, which permits implementing Eq. 4 as a single padded, vectorized gather (camera-to-latent length is aligned by nearest-neighbour interpolation, $\\mathbf { a } \\gets \\mathrm { N N } ( \\mathbf { a } , T )$ , which preserves discrete class boundaries that linear interpolation would blur).",
+        "bbox": [
+            109,
+            133,
+            887,
+            210
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "text",
+        "text": "(iv) Per-frame injection (decoupled streams). At every block, the camera-text enters through the backbone’s existing cross-attention, with no new module. Each latent frame being generated is reshaped per frame and attends to its own condition: denoting frame i’s $N _ { p }$ patch tokens by $\\mathbf { X } _ { i }$ ,",
+        "bbox": [
+            109,
+            215,
+            885,
+            263
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "equation",
+        "text": "$$\n\\mathbf {X} _ {i} + = \\text { CrossAttn } \\big (\\underbrace {\\mathbf {X} _ {i}} _ {\\text { query }}, \\underbrace {\\mathbf {H} _ {i}} _ {\\text { key / value }} \\big), \\tag {5}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            359,
+            272,
+            885,
+            309
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "text",
+        "text": "so each frame attends to its own camera-text + caption $\\mathbf { H } _ { i } .$ In Stage 1 the whole clip is denoised jointly and there is no history, so this per-frame injection is the only conditioning path: every latent frame receives its prescribed camera action through Eq. 5.",
+        "bbox": [
+            109,
+            318,
+            885,
+            364
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "text",
+        "text": "During autoregressive rollout (Stage 2, Sec. 3.4), the already-generated frames are summarized into history/memory tokens Xmem (produced by one of the three history modes below) that condition the next chunk. These memory tokens carry no camera-text and attend to the caption only,",
+        "bbox": [
+            109,
+            371,
+            887,
+            417
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "equation",
+        "text": "$$\n\\mathbf {X} ^ {\\mathrm{mem}} + = \\operatorname{CrossAttn} \\left(\\mathbf {X} ^ {\\mathrm{mem}}, \\mathbf {W} [ \\mathbf {C}; \\mathbf {0} ]\\right), \\tag {6}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            344,
+            426,
+            885,
+            446
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "text",
+        "text": "so the camera action is applied only to the chunk currently being generated, never re-applied to history. Keeping the two streams separate disentangles “what the world looks like” (caption) from “how the camera moves” (action), and prevents the history from leaking spurious camera cues into the future.",
+        "bbox": [
+            109,
+            455,
+            885,
+            501
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "text",
+        "text": "Parameter efficiency and training stability. Every operation above reuses pretrained components: the gather from E is parameter-free, and W and the cross-attention are the backbone’s own. Unlike absolute or residualrelative injection, BiWM adds no parameters and no residual branch onto the self-attention, so at step 0 the model is exactly the pretrained generator conditioned on richer text. This is why control emerges in ∼ 100 steps (Sec. 3.7) without the early-training quality dip or the large-batch requirement that prior residual camera-injection methods rely on.",
+        "bbox": [
+            109,
+            507,
+            887,
+            599
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "text",
+        "text": "3.4 Chunk-wise Autoregressive Rollout and History Conditioning",
+        "text_level": 2,
+        "bbox": [
+            109,
+            616,
+            718,
+            635
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "text",
+        "text": "To realize $\\operatorname { E q . }$ 1, chunk b is generated by the backbone conditioned on a memory representation of the alreadygenerated history $\\mathbf { c } _ { < b }$ . BiWM exposes three interchangeable history modes behind a single interface: each returns a set of memory tokens $\\mathbf { M } \\in \\mathbb { R } ^ { N \\times d }$ together with an index grid giving every token’s $( T , H , W )$ bounds in the latent coordinate system. The tokens are prepended to the chunk’s sequence as a key/value prefix, and the bounds are reduced to integer RoPE positions (by the bound midpoint), so the three modes are interchangeable without any change to the rest of the model.",
+        "bbox": [
+            109,
+            641,
+            887,
+            733
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "text",
+        "text": "Sliding-window conditioning (sink-based). The already-generated clean latents of $\\mathbf { c } _ { < b }$ are placed at noise level $\\sigma { = } 0$ in the sequence prefix, and the new chunk denoises conditioned on them through the backbone’s native image-to-video timestep separation. To bound the cost, conditioning is restricted to a sliding window of the most recent clean latents together with a first-frame sink that anchors global layout; history beyond the window is discarded rather than compressed. The scheme is exact within the window and parameter-free, which makes it the default for short to medium rollouts; because it keeps no long-range memory, however, distant context is lost once the rollout outgrows the window.",
+        "bbox": [
+            109,
+            739,
+            887,
+            845
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "text",
+        "text": "PackForcing-style history encoder. For unbounded rollout we adopt a learned memory encoder in the spirit of PackForcing (Mao et al., 2026b) that compresses $\\mathbf { c } _ { < b }$ into a fixed-size bank with two complementary rates. A high-rate (HR) branch is a stack of eight causal 3D-convolution blocks: causality is enforced by left-padding the temporal dimension so that frame t never sees $t ^ { \\prime } > t .$ preserving the autoregressive ordering.",
+        "bbox": [
+            109,
+            852,
+            887,
+            914
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "page_number",
+        "text": "8",
+        "bbox": [
+            493,
+            936,
+            504,
+            948
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "chart",
+        "img_path": "images/f185456ca573e18c56f4b2af49adaa70218cf9e649e6b25d0832fcb101516333.jpg",
+        "content": "rotation (rot, 0-8)\n| translation (trans, 0-8) | static | pitch↑ | pitch↓ | yaw→ | yaw← | ↑→ | ↑← | ↓→ | ↓← |\n|---|---|---|---|---|---|---|---|---|---|\n| static | 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 |\n| fwd (W) | 9 | 10 | 11 | 12 | 13 | 14 | 15 | 16 | 17 |\n| bwd (S) | 18 | 19 | 20 | 21 | 22 | 23 | 24 | 25 | 26 |\n| right (D) | 27 | 28 | 29 | 30 | 31 | 32 | 33 | 34 | 35 |\n| left (A) | 36 | 37 | 38 | 39 | 40 | 41 | 42 | 43 | 44 |\n| fwd-right | 45 | 46 | 47 | 48 | 49 | 50 | 51 | 52 | 53 |\n| fwd-left | 54 | 55 | 56 | 57 | 58 | 59 | 60 | 61 | 62 |\n| bwd-right | 63 | 64 | 65 | 66 | 67 | 68 | 69 | 70 | 71 |\n| bwd-left | 72 | 73 | 74 | 75 | 76 | 77 | 78 | 79 | 80 |\naction_label = trans × 9 + rot ∈ {0, ..., 80}",
+        "chart_caption": [
+            "Figure 4 The 81-class discrete camera vocabulary as a 9 × 9 grid of translation × rotation; each cell is one action label (Eq. 2) and maps to a fixed camera-text phrase ϕ(a)."
+        ],
+        "chart_footnote": [],
+        "sub_type": "heatmap",
+        "bbox": [
+            256,
+            80,
+            723,
+            401
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "text",
+        "text": "The blocks progressively downsample (a temporal stride, then a spatial stride of 2) and widen the channels (64 → 128 → 256 → 512), after which an optional 3D self-attention with a temporal-causal mask mixes the (T, H, W ) tokens and a 1×1 convolution projects them to the model width. A low-rate (LR) branch carries low-cost global context by reusing the main transformer’s own patch-embedding (not a copy) on the raw history latent and trilinearly resizing it to the HR grid; the two branches are summed into the final memory prefix. The encoder is trained end to end with the distillation stage. Because its output size is fixed, HR+LR keeps memory bounded as the rollout grows arbitrarily long, while the LR branch retains a coarse view of the entire past that the heavily compressed HR branch would otherwise lose.",
+        "bbox": [
+            109,
+            470,
+            883,
+            592
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "text",
+        "text": "Multi-scale spatiotemporal pyramid (Yume-1.5-style). As a second bounded-memory option we reconstruct the FramePack scheme (Zhang and Agrawala, 2025) used in Yume-1.5 (Mao et al., 2025), which realizes a recency-weighted compression: recent history is kept at high resolution while distant history is downsampled ever more aggressively. The timeline is partitioned into segments (sink, far, mid, near, recent); each segment is assigned a spatial scale s ∈ {1, 2, 4, 8, 16} (the farthest also a 2× temporal compression), and a strategy is selected adaptively from the history length, with tokens compressed more as the horizon lengthens (roughly 2× once the history exceeds a few frames, up to 16–32× for very long histories). The per-scale downsamplers are learnable multi-scale convolutions, initialized by trilinearly upsampling the main patch-embedding weights and trained end to end (Yume-style), so the pyramid is adapted rather than fixed. A first-frame sink token is preserved at high resolution as a stable anchor. Unlike the PackForcing-style encoder it uses no low-rate branch, since the pyramid tokens already constitute the full compressed history.",
+        "bbox": [
+            109,
+            599,
+            883,
+            767
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "text",
+        "text": "Both compressed modes share a subtle but critical RoPE convention. A memory token’s (T, H, W ) bounds must be expressed in patch-grid units so that its position aligns with the target frames’ grid: a scale-s pyramid token spans s patch cells and therefore advances its spatial position by s (not by the 2s latent pixels its convolution stride covers), and the time axis must retain true frame indices with no per-chunk rebasing. Either error, namely spatial positions in latent rather than patch units or a rebased time axis, makes the history jump spatially at every chunk boundary or scrambles the temporal order; BiWM fixes both, which is what lets the three modes share one RoPE path with no change to the backbone.",
+        "bbox": [
+            109,
+            773,
+            883,
+            878
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "page_number",
+        "text": "9",
+        "bbox": [
+            493,
+            936,
+            503,
+            948
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "text",
+        "text": "3.5 Multi-Objective Few-Step Distillation",
+        "text_level": 2,
+        "bbox": [
+            109,
+            79,
+            508,
+            95
+        ],
+        "page_idx": 9
+    },
+    {
+        "type": "text",
+        "text": "The camera-text-pretrained model of Sec. 3.3 is a 50-step bidirectional sampler. Stage 2 distills it into a 4-step chunk-wise generator with self-rollout distribution-matching distillation. The training loop directly builds on Self-Forcing (Huang et al., 2026)—the generator rolls out its own chunks during training and is supervised by a DMD objective, closing the train–test gap of autoregressive video diffusion—and our key change is the paradigm: where Self-Forcing rolls out under a strictly causal mask, BiWM rolls out chunkwise bidirectionally (full attention within each chunk, autoregression across chunks, Eq. 1). We use three copies initialized from the Stage-1 weights: a frozen real score $s _ { \\mathrm { r e a l } }$ (the bidirectional teacher, evaluated with classifier-free guidance), an online fake score $s _ { \\mathrm { f a k e } }$ (a critic tracking the student’s distribution), and the generator $G _ { \\theta }$ with velocity field $v _ { \\theta }$ , which self-rolls out a sequence x˜ chunk by chunk. We adopt a flowmatching parameterization: for a clean latent $\\mathbf { x } _ { \\mathrm { 0 } }$ , noise level $\\sigma \\in ( 0 , 1 )$ and $\\epsilon \\sim \\mathcal { N } ( 0 , I )$ , the noised sample is $\\mathbf { x } _ { \\sigma } = ( 1 - \\sigma ) \\mathbf { x } _ { 0 } + \\sigma \\mathbf { \\epsilon }$ , the velocity target is $\\left( \\epsilon - \\mathbf { x } _ { 0 } \\right)$ , and the model’s clean estimate is $\\hat { \\mathbf { x } } _ { 0 } = \\mathbf { x } _ { \\sigma } - \\sigma v _ { \\theta } ( \\mathbf { x } _ { \\sigma } , \\sigma , c , \\mathbf { a } )$ . The Stage-2 objective is a primary distribution-matching term regularized by three families of complementary anchors.",
+        "bbox": [
+            107,
+            104,
+            888,
+            299
+        ],
+        "page_idx": 9
+    },
+    {
+        "type": "text",
+        "text": "Primary: distribution-matching distillation. The leading term aligns the student to the teacher distribution through the asymmetric DMD gradient (Yin et al., 2024b, 2025; Huang et al., 2026)",
+        "bbox": [
+            109,
+            306,
+            885,
+            338
+        ],
+        "page_idx": 9
+    },
+    {
+        "type": "equation",
+        "text": "$$\n\\nabla_ {\\theta} \\mathbb {E} _ {t} \\left[ \\mathrm{KL} \\left(p _ {\\theta , t} (\\tilde {\\mathbf {x}} _ {t}) \\| p _ {\\text {data}, t} (\\tilde {\\mathbf {x}} _ {t})\\right) \\right] = - \\mathbb {E} _ {\\tilde {\\mathbf {x}}, t, \\tilde {\\mathbf {x}} _ {t}} \\left[ \\left(s _ {\\text {real}} (\\tilde {\\mathbf {x}} _ {t}, t) - s _ {\\text {fake}} (\\tilde {\\mathbf {x}} _ {t}, t)\\right) \\frac {\\partial \\tilde {\\mathbf {x}}}{\\partial \\theta} \\right], \\tag {7}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            228,
+            345,
+            885,
+            372
+        ],
+        "page_idx": 9
+    },
+    {
+        "type": "text",
+        "text": "where $\\tilde { \\mathbf { x } } _ { t }$ is the noised student sample at level t, and $s _ { \\mathrm { r e a l } } , s _ { \\mathrm { f a k e } }$ receive the same caption and camera-text conditions so controllability survives distillation. The critic $s _ { \\mathrm { f a k e } }$ is itself trained online (at an N :1 ratio against the generator) with a flow-matching velocity loss on the detached generator outputs. To keep selfrollout tractable, we retain the gradient on a single randomly chosen denoising step per chunk (Huang et al., 2026) and detach history across chunks, so the graph never spans the full rollout; a dynamic chunkcount curriculum concentrates compute on longer histories. Crucially, Eq. 7 is a reverse-KL objective and is therefore mode-seeking: minimized in isolation it tends to drop modes, manifesting as motion that decays toward a static scene or as high-frequency collapse. The three anchors below counteract these failure modes.",
+        "bbox": [
+            107,
+            378,
+            888,
+            501
+        ],
+        "page_idx": 9
+    },
+    {
+        "type": "text",
+        "text": "Adversarial anchor (GAN, hinge). To restore high-frequency detail and prevent texture collapse, we add a projected-discriminator objective (Goodfellow et al., 2014; Sauer et al., 2021). A discriminator $D _ { \\phi }$ projects each decoded frame through a frozen self-supervised backbone and scores it with frame-level and feature-level heads. It is trained with the hinge loss, and the generator is pushed to raise the discriminator’s score on its own samples:",
+        "bbox": [
+            107,
+            506,
+            887,
+            582
+        ],
+        "page_idx": 9
+    },
+    {
+        "type": "equation",
+        "text": "$$\n\\mathcal {L} _ {D} (\\phi) = \\frac {1}{2} \\mathbb {E} _ {\\mathbf {x} _ {0}} \\big [ \\mathrm{relu} (1 - D _ {\\phi} (\\mathbf {x} _ {0})) \\big ] + \\frac {1}{2} \\mathbb {E} _ {\\tilde {\\mathbf {x}} _ {0}} \\big [ \\mathrm{relu} (1 + D _ {\\phi} (\\tilde {\\mathbf {x}} _ {0})) \\big ], \\qquad \\mathcal {L} _ {\\mathrm{GAN}} (\\theta) = - \\mathbb {E} _ {\\tilde {\\mathbf {x}} _ {0}} \\big [ D _ {\\phi} (\\tilde {\\mathbf {x}} _ {0}) \\big ], \\qquad (8)\n$$",
+        "text_format": "latex",
+        "bbox": [
+            165,
+            589,
+            885,
+            609
+        ],
+        "page_idx": 9
+    },
+    {
+        "type": "text",
+        "text": "where $\\mathbf { x } _ { \\mathrm { 0 } }$ is a real latent and $\\tilde { \\mathbf { x } } _ { 0 }$ is the generator’s clean output (both heads summed). The discriminator is the only auxiliary parameter introduced, and it is discarded after training.",
+        "bbox": [
+            107,
+            614,
+            885,
+            647
+        ],
+        "page_idx": 9
+    },
+    {
+        "type": "text",
+        "text": "Supervised anchor (SFT, low-σ velocity MLE). On the full real video latent $\\mathbf { x } _ { \\mathrm { 0 } }$ (all T frames, decoupled from the per-iteration rollout length) we add a flow-matching velocity regression at low noise levels:",
+        "bbox": [
+            107,
+            652,
+            887,
+            685
+        ],
+        "page_idx": 9
+    },
+    {
+        "type": "equation",
+        "text": "$$\n\\mathcal {L} _ {\\mathrm{SFT}} (\\theta) = \\mathbb {E} _ {\\mathbf {x} _ {0}, \\sigma \\sim \\mathcal {U} (\\sigma_ {\\min}, \\sigma_ {\\mathrm{sft}}), \\epsilon} \\big [ \\left\\| v _ {\\theta} (\\mathbf {x} _ {\\sigma}, \\sigma , c, \\mathbf {a}) - (\\epsilon - \\mathbf {x} _ {0}) \\right\\| ^ {2} \\big ], \\qquad \\sigma_ {\\mathrm{sft}} \\text {small.} \\tag {9}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            220,
+            691,
+            885,
+            714
+        ],
+        "page_idx": 9
+    },
+    {
+        "type": "text",
+        "text": "At low $\\sigma$ this is a strong maximum-likelihood anchor to the real data that refines fine detail; because it is computed on the complete video rather than on the (possibly short) rollout, it preserves long-video and motion modeling even when warmup uses a single block.",
+        "bbox": [
+            107,
+            719,
+            887,
+            765
+        ],
+        "page_idx": 9
+    },
+    {
+        "type": "text",
+        "text": "Forward-KL anchors (mass-covering). To directly oppose the mode-seeking bias of Eq. 7, we add a forward-KL term KL $\\left( p _ { \\mathrm { d a t a } } \\parallel p _ { \\theta } \\right)$ , which is mass-covering and penalizes dropping data modes (the source of low-motion degeneration). Minimizing forward KL reduces to an x0-regression (maximum-likelihood) objective on samples from the covered distribution, which we instantiate two ways. (a) Real forward-KL noises the full real video at high σ and regresses the student’s clean estimate back to it,",
+        "bbox": [
+            107,
+            772,
+            888,
+            848
+        ],
+        "page_idx": 9
+    },
+    {
+        "type": "equation",
+        "text": "$$\n\\mathcal {L} _ {\\mathrm{rFKL}} (\\theta) = \\mathbb {E} _ {\\mathbf {x} _ {0}, \\sigma \\sim \\mathcal {U} \\left(\\sigma_ {\\mathrm{lo}}, \\sigma_ {\\mathrm{hi}}\\right), \\epsilon} \\left[ \\left\\| \\hat {\\mathbf {x}} _ {0} \\left(\\mathbf {x} _ {\\sigma}, \\sigma\\right) - \\mathbf {x} _ {0} \\right\\| ^ {2} \\right], \\quad \\sigma_ {\\mathrm{lo}} > \\sigma_ {\\mathrm{sft}}, \\tag {10}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            259,
+            854,
+            885,
+            877
+        ],
+        "page_idx": 9
+    },
+    {
+        "type": "text",
+        "text": "complementing SFT: high σ governs global layout and motion, low σ governs detail. (b) Teacher forward-KL is data-free: the frozen teacher (with CFG) is rolled out along a dense ODE trajectory $\\sigma { : } 1  0 ;$ for sampled trajectory anchors $\\left( \\mathbf { x } _ { \\sigma _ { a } } , \\mathbf { x } _ { \\sigma _ { b } } \\right)$ we read off the teacher’s clean target by linear extrapolation, ${ \\bf x } _ { 0 } ^ { \\mathrm { t e a c h } } =$ = $\\mathbf { x } _ { \\sigma _ { a } } - \\sigma _ { a } ( \\mathbf { x } _ { \\sigma _ { b } } - \\mathbf { x } _ { \\sigma _ { a } } ) / ( \\sigma _ { b } - \\sigma _ { a } )$ , and regress the student’s estimate at the same point:",
+        "bbox": [
+            109,
+            883,
+            887,
+            914
+        ],
+        "page_idx": 9
+    },
+    {
+        "type": "page_number",
+        "text": "10",
+        "bbox": [
+            488,
+            936,
+            509,
+            949
+        ],
+        "page_idx": 9
+    },
+    {
+        "type": "text",
+        "text": "",
+        "bbox": [
+            109,
+            80,
+            887,
+            113
+        ],
+        "page_idx": 10
+    },
+    {
+        "type": "equation",
+        "text": "$$\n\\mathcal {L} _ {\\mathrm{tFKL}} (\\theta) = \\mathbb {E} \\big [ \\left\\| \\left(\\mathbf {x} _ {\\sigma_ {a}} - \\sigma_ {a} v _ {\\theta} (\\mathbf {x} _ {\\sigma_ {a}}, \\sigma_ {a}, c, \\mathbf {a})\\right) - \\mathbf {x} _ {0} ^ {\\mathrm{teach}} \\right\\| ^ {2} \\big ]. \\tag {11}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            294,
+            118,
+            885,
+            138
+        ],
+        "page_idx": 10
+    },
+    {
+        "type": "text",
+        "text": "This transfers the teacher’s full, mass-covering distribution without any real data, countering mode shrink and preserving rich camera-driven motion.",
+        "bbox": [
+            109,
+            142,
+            885,
+            174
+        ],
+        "page_idx": 10
+    },
+    {
+        "type": "text",
+        "text": "Total objective. The generator minimizes",
+        "bbox": [
+            109,
+            180,
+            416,
+            196
+        ],
+        "page_idx": 10
+    },
+    {
+        "type": "equation",
+        "text": "$$\n\\mathcal {L} = \\mathcal {L} _ {\\mathrm{DMD}} + \\lambda_ {\\mathrm{GAN}} \\mathcal {L} _ {\\mathrm{GAN}} + \\lambda_ {\\mathrm{SFT}} \\mathcal {L} _ {\\mathrm{SFT}} + \\lambda_ {\\mathrm{rFKL}} \\mathcal {L} _ {\\mathrm{rFKL}} + \\lambda_ {\\mathrm{tFKL}} \\mathcal {L} _ {\\mathrm{tFKL}}, \\tag {12}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            251,
+            202,
+            885,
+            219
+        ],
+        "page_idx": 10
+    },
+    {
+        "type": "text",
+        "text": "where each auxiliary term is optional and toggled by a single flag, letting practitioners trade stability for speed. Conceptually the four objectives are complementary: DMD matches the teacher (mode-seeking), the forward-KL anchors restore coverage (mode-covering), SFT anchors fine detail to real data, and the GAN term sharpens high-frequency texture. With this objective the generator produces each K-frame chunk in 4 denoising steps and rolls out to 60 s and beyond.",
+        "bbox": [
+            109,
+            224,
+            887,
+            301
+        ],
+        "page_idx": 10
+    },
+    {
+        "type": "text",
+        "text": "Real-time event editing. A capability that the bidirectional paradigm makes natural—and that, to our knowledge, no prior open framework releases—is event editing: injecting a textual event into the scene while it is being explored. Each chunk is conditioned jointly on the event text and the discrete camera action, and because the history is continually re-encoded (Sec. 3.1), a user can introduce an event for the upcoming chunks and the bidirectional self-correction weaves it into the ongoing world coherently and in real time, then move on to the next event seamlessly. Fig. 5 shows BiWM realizing fantastical, prompt-specified events—glowing talisman streetlamps, rune-covered mechanical ladybugs, crystals breaking through the soil, a self-driving floating wheelchair—inside real street scenes while the camera moves under the joystick overlay. BiWM exposes this as a first-class feature, and we release the event dataset and scripts alongside the framework.",
+        "bbox": [
+            109,
+            306,
+            888,
+            445
+        ],
+        "page_idx": 10
+    },
+    {
+        "type": "text",
+        "text": "Image-to-video at inference without additional training. Although Stage 2 is run purely text-to-video, the resulting generator is image-to-video capable with no additional training. The across-chunk conditioning path (Sec. 3.4) already accepts clean latents as history; at inference we simply encode the user-provided image into the first clean latent frame and place it as the initial history, after which the model continues the sequence under camera control exactly as in T2V rollout. The same mechanism that enables long-horizon continuation thus also serves as an I2V entry point, so a single distilled checkpoint serves both modes. Fig. 6 shows this training-free I2V path: from held-out real first frames (the real-footage (Sekai) split), BiWM rolls out camera-controlled video that preserves the photometric character of the real footage. Beyond this inference-time path, BiWM also supports mixed-task training that jointly optimizes text-to-video, imageto-video, and video-to-video objectives in a single run, which further strengthens the model’s conditioning capability across all three modes.",
+        "bbox": [
+            109,
+            450,
+            888,
+            617
+        ],
+        "page_idx": 10
+    },
+    {
+        "type": "text",
+        "text": "3.6 Generality Across Architectures and Modalities",
+        "text_level": 2,
+        "bbox": [
+            109,
+            633,
+            596,
+            651
+        ],
+        "page_idx": 10
+    },
+    {
+        "type": "text",
+        "text": "Nothing above is tied to a particular backbone: BiWM only requires a video-diffusion model whose attention can be evaluated chunk-wise and whose conditioning accepts per-frame text. We exploit this to instantiate the same two-stage recipe across three architecture families. On cross-attention backbones (Wan2.1-T2V-1.3B and Wan2.2-TI2V-5B (Wan et al., 2025)), camera-text enters through the existing text cross-attention. On an MMDiT backbone (HunyuanVideo-1.5 (Kong et al., 2024a; Esser et al., 2024)), where text and video tokens are jointly attended in double-stream blocks, the camera-text tokens are concatenated into the text stream and the chunk/history logic wraps the joint attention. On a joint audio–video backbone (LTX-2.3- 22B (HaCohen et al., 2024)), the chunk groups paired audio and video latents so that each window denoises synchronized sound and vision together; the across-chunk history carries both streams, yielding an interactive world model that is audible as well as visible. Adapting to a new backbone amounts to providing an encoder for clean-latent history and a hook for per-frame camera-text, typically a thin adapter, while the camera vocabulary, rollout, and distillation code are shared.",
+        "bbox": [
+            109,
+            659,
+            887,
+            840
+        ],
+        "page_idx": 10
+    },
+    {
+        "type": "text",
+        "text": "3.7 Training Budget and Optional Low-Bit Inference",
+        "text_level": 2,
+        "bbox": [
+            109,
+            858,
+            612,
+            876
+        ],
+        "page_idx": 10
+    },
+    {
+        "type": "text",
+        "text": "A practical highlight of BiWM is how little training it needs. The chunk-wise bidirectional design keeps the backbone close to its pretrained prior, and the disentangled discrete camera-text is a low-dimensional signal to learn, so Stage 1 acquires reliable camera control in only ∼ 100 optimizer steps. Stage 2 distillation, with the SFT anchor of Eq. 9, converges in ∼ 200 steps. Both stages run on 8×H200 GPUs with gradient accumulation 4, so the entire pipeline completes in hours rather than days. Notably, there is no separate quantization or post-alignment stage; the two stages above constitute the whole recipe.",
+        "bbox": [
+            109,
+            883,
+            885,
+            914
+        ],
+        "page_idx": 10
+    },
+    {
+        "type": "page_number",
+        "text": "11",
+        "bbox": [
+            488,
+            936,
+            506,
+            949
+        ],
+        "page_idx": 10
+    },
+    {
+        "type": "image",
+        "img_path": "images/83ff3a46514e32845350041007bfe20b6588483992dfffbb9c1565f901001f23.jpg",
+        "image_caption": [
+            "Figure 5 Event generation / real-time event editing. BiWM injects prompt-specified, fantastical events into real street scenes while the camera moves (joystick overlay, bottom-left). Top to bottom: glowing talisman streetlamps, rune-covered mechanical ladybugs that repel insects, mechanical rabbits, crystal clusters breaking through the soil, a self-driving floating wheelchair, and a flashing alley advertisement sign; each is shown over four frames. The event is specified purely by text and can be introduced or switched mid-rollout in real time. We release the event dataset and scripts. Qualitative illustration, not a benchmark."
+        ],
+        "image_footnote": [],
+        "content": "",
+        "bbox": [
+            107,
+            75,
+            890,
+            579
+        ],
+        "page_idx": 11
+    },
+    {
+        "type": "text",
+        "text": "",
+        "bbox": [
+            109,
+            705,
+            887,
+            767
+        ],
+        "page_idx": 11
+    },
+    {
+        "type": "text",
+        "text": "For deployment, BiWM additionally open-sources an optional low-bit pathway. The distilled generator can be cast to FP8-E4M3 (on Hopper, through hardware FP8 matrix-multiply kernels) or NVFP4 (through native Blackwell kernels) for inference. Rather than a naive post-hoc cast, we support quantization-aware training (QAT): late in Stage 2 we switch on fake-quant and add a quantization self-distillation objective, in which the same generator’s full-precision forward serves as a teacher and its quantized forward as a student, aligned by a forward-KL on both the velocity field and the predicted clean latent $\\begin{array} { r } { \\hat { \\mathbf { x } } _ { 0 } . } \\end{array}$ . This folds into the tail of Stage 2 and thus introduces no separate stage, after which the checkpoint can be served directly as a quantized model for genuine inference acceleration. The forward-KL is the key ingredient for preserving the model’s dynamics: being mass-covering, it drives the quantized student to match the full distribution of the full-precision teacher rather than collapsing onto a few dominant modes, so the camera-driven motion and scene dynamics survive at low precision—whereas a mode-seeking (reverse-KL) or plain MSE alignment tends to suppress motion and produce a static, unchanging scene. We note that most open-source world models release only inference code while keeping the quantization-distillation training closed; BiWM open-sources this QAT pipeline as well. Low-bit inference primarily trades precision for memory at batch size 1 and yields throughput gains only when batched inference, graph compilation, and genuine low-bit kernels are combined; we therefore keep it out of the core recipe and report its effect honestly.",
+        "bbox": [
+            109,
+            773,
+            887,
+            910
+        ],
+        "page_idx": 11
+    },
+    {
+        "type": "page_number",
+        "text": "12",
+        "bbox": [
+            488,
+            936,
+            509,
+            949
+        ],
+        "page_idx": 11
+    },
+    {
+        "type": "image",
+        "img_path": "images/9657142db1a7fcd606d1e91392efa78295fc0a1387e238714bb79f2bb3529d96.jpg",
+        "image_caption": [
+            "Figure 6 Training-free image-to-video on real footage. Although the generator is distilled purely text-to-video, it performs image-to-video at inference with no extra training. Each row is a camera-controlled rollout from a held-out real first frame (the real-footage (Sekai) split); the bottom-left joystick overlay marks the action being followed. The camera obeys the prescribed motion while preserving the appearance of the real footage. Qualitative illustration, not a benchmark."
+        ],
+        "image_footnote": [],
+        "content": "",
+        "bbox": [
+            112,
+            78,
+            885,
+            344
+        ],
+        "page_idx": 12
+    },
+    {
+        "type": "text",
+        "text": "",
+        "bbox": [
+            109,
+            459,
+            888,
+            566
+        ],
+        "page_idx": 12
+    },
+    {
+        "type": "text",
+        "text": "4 Implementation Details",
+        "text_level": 2,
+        "bbox": [
+            109,
+            587,
+            419,
+            607
+        ],
+        "page_idx": 12
+    },
+    {
+        "type": "text",
+        "text": "We summarize the settings needed to reproduce BiWM beyond the recipe of Sec. 3. Real clips are truncated to 77 frames and captioned under a static-only instruction so that motion is carried solely by the discrete action stream; captions and the per-class camera-text bank are pre-encoded once for efficiency, and action-tolatent length alignment uses nearest-neighbour interpolation to preserve discrete class boundaries. In Stage 2 the generator self-rolls out chunk by chunk with one random denoising step per chunk retaining gradient (history detached across chunks), and a dynamic chunk-count curriculum concentrates compute on longer histories. Both stages run on 8×H200 GPUs with gradient accumulation 4, converging in ∼ 100 (Stage 1) and ∼ 200 (Stage 2) optimizer steps; the history-compression mode and each auxiliary loss are toggled by a single flag. For full reproducibility, all qualitative figures in this paper are generated from raw rollout frames by the released figure-generation script, and the released fine-tuning scripts reproduce both training stages and inference across the four backbones.",
+        "bbox": [
+            109,
+            619,
+            887,
+            787
+        ],
+        "page_idx": 12
+    },
+    {
+        "type": "text",
+        "text": "5 Results",
+        "text_level": 2,
+        "bbox": [
+            109,
+            809,
+            236,
+            827
+        ],
+        "page_idx": 12
+    },
+    {
+        "type": "text",
+        "text": "Because BiWM is a framework rather than a single model, we characterize it through the function of each design choice rather than through a single benchmark number. We first record how the framework is instantiated and then analyze, component by component, the contribution and rationale of each element. A systematic quantitative study across backbones is ongoing and will accompany the code release; the goal here",
+        "bbox": [
+            109,
+            842,
+            887,
+            905
+        ],
+        "page_idx": 12
+    },
+    {
+        "type": "page_number",
+        "text": "13",
+        "bbox": [
+            490,
+            936,
+            508,
+            949
+        ],
+        "page_idx": 12
+    },
+    {
+        "type": "text",
+        "text": "is to make the role of every component precise.",
+        "bbox": [
+            109,
+            80,
+            450,
+            95
+        ],
+        "page_idx": 13
+    },
+    {
+        "type": "text",
+        "text": "5.1 Instantiations",
+        "text_level": 2,
+        "bbox": [
+            109,
+            114,
+            290,
+            128
+        ],
+        "page_idx": 13
+    },
+    {
+        "type": "text",
+        "text": "Backbones. The same recipe is instantiated on four backbones spanning three architecture families: crossattention condition injection (Wan2.1-T2V-1.3B and Wan2.2-TI2V-5B (Wan et al., 2025)), an MMDiT design (HunyuanVideo-1.5 (Kong et al., 2024a)), and a joint audio–video design (LTX-2.3-22B (HaCohen et al., 2024)). Unless noted, clips are 77 frames (encoded to 20 latent frames) at each backbone’s native resolution, grouped into chunks of K latent frames, with the distilled generator run at 4 denoising steps per chunk.",
+        "bbox": [
+            109,
+            138,
+            887,
+            217
+        ],
+        "page_idx": 13
+    },
+    {
+        "type": "text",
+        "text": "Data. Both stages share one format, a per-clip caption plus discrete camera actions: OpenVid+WorldPlay clips with prescribed-trajectory actions (Sec. 3.2), and the real-footage (Sekai) split, whose recovered poses are quantized into the 81 combined-action classes (9 translation × 9 rotation). Captions are produced by a vision-language model under a strict static-only instruction that describes scene appearance but never camera or object motion, so all motion supervision flows through the discrete action stream. These real pairs also supply the SFT and real forward-KL targets (Eqs. 9, 10).",
+        "bbox": [
+            109,
+            222,
+            885,
+            314
+        ],
+        "page_idx": 13
+    },
+    {
+        "type": "text",
+        "text": "Training budget. Both stages are short—∼ 100 (Stage 1) and ∼ 200 (Stage 2) optimizer steps on 8×H200 GPUs with gradient accumulation 4, with no separate quantization or alignment stage; see Sec. 3.7 for why this short budget suffices.",
+        "bbox": [
+            109,
+            320,
+            885,
+            367
+        ],
+        "page_idx": 13
+    },
+    {
+        "type": "text",
+        "text": "5.2 Qualitative Results",
+        "text_level": 2,
+        "bbox": [
+            109,
+            383,
+            339,
+            400
+        ],
+        "page_idx": 13
+    },
+    {
+        "type": "text",
+        "text": "These results illustrate BiWM’s qualitative behavior; they convey mechanism and visual quality rather than serving as quantitative benchmarks.",
+        "bbox": [
+            109,
+            409,
+            883,
+            439
+        ],
+        "page_idx": 13
+    },
+    {
+        "type": "text",
+        "text": "Long-horizon rollouts under camera control. Figure 7 shows chunk-wise text-to-video rollouts in which each window stays bidirectional and the history keeps updating as it is generated (Sec. 3.1, 3.4). Scene identity and geometry are preserved as the camera moves, and history compression extends the rollout to far longer horizons.",
+        "bbox": [
+            109,
+            446,
+            885,
+            506
+        ],
+        "page_idx": 13
+    },
+    {
+        "type": "text",
+        "text": "Camera controllability. Figure 2 isolates the text-based control of Sec. 3.3: with a single constant discrete action per row, the camera obeys the prescribed translation and look direction while preserving scene fidelity.",
+        "bbox": [
+            109,
+            513,
+            885,
+            546
+        ],
+        "page_idx": 13
+    },
+    {
+        "type": "text",
+        "text": "Effect of the anchor losses. Figure 8 contrasts the generator distilled without the anchor losses (DMD term alone) against the one trained with them (adding the GAN, SFT, and forward-KL anchors), under the same prompt, camera script, and random seed. Without the anchor losses the rollout is hazy and low in contrast, and its content barely changes over time, a direct symptom of the mode-seeking bias toward static, oversmoothed motion. With the anchor losses, high-frequency structure and contrast are restored and temporal dynamics increase markedly, with lighting and scene geometry evolving visibly across the horizon. The terms are complementary: the GAN anchor restores texture, the SFT anchor ties fine detail to real data, and the forward-KL anchors preserve motion.",
+        "bbox": [
+            109,
+            551,
+            887,
+            675
+        ],
+        "page_idx": 13
+    },
+    {
+        "type": "text",
+        "text": "Low-bit inference fidelity. Figure 9 shows that the distilled generator can be cast to low precision while preserving visual quality: BF16 and FP8-E4M3 rollouts are frame-for-frame near-indistinguishable, and the 4-bit NVFP4 rollout retains the same per-frame sharpness and colour, though its autoregressive content drifts slightly under accumulated quantization noise.",
+        "bbox": [
+            109,
+            680,
+            887,
+            742
+        ],
+        "page_idx": 13
+    },
+    {
+        "type": "text",
+        "text": "6 Conclusion",
+        "text_level": 2,
+        "bbox": [
+            109,
+            763,
+            277,
+            782
+        ],
+        "page_idx": 13
+    },
+    {
+        "type": "text",
+        "text": "We presented BiWM, a recipe for bidirectional autoregressive video world models built on a chunk-wise factorization that retains the backbone’s full bidirectional attention within each generated chunk while rolling out autoregressively across chunks. Two short training stages, camera-text pretraining and a multi-objective few-step distillation that augments distribution matching with auxiliary GAN, SFT, and forward-KL terms, transform a 50-step bidirectional teacher into a 4-step chunk-wise generator steered by an 81-class discrete camera-action vocabulary. The recipe is economical: control emerges in ∼100 steps and distillation converges in ∼ 200 steps on 8×H200 GPUs, with no quantization or alignment stage. It is also broad: a single recipe spans cross-attention (Wan2.1-1.3B, Wan2.2-5B), MMDiT (HunyuanVideo-1.5), and audio–video (LTX-2.3- 22B) backbones, with the last yielding a world model that generates synchronized audio together with vision, and a checkpoint distilled purely text-to-video supports image-to-video at inference without additional training. We regard BiWM as the bidirectional point in the same design space as causal frameworks such as minWM, trading a small amount of per-window latency for fidelity, controllability, and markedly shorter training. Future directions include continuous and compositional action vocabularies, stronger long-horizon memory, richer audio–video control, and head-to-head benchmarking against causal recipes; we release code, checkpoints, and inference scripts to support them.",
+        "bbox": [
+            109,
+            797,
+            887,
+            905
+        ],
+        "page_idx": 13
+    },
+    {
+        "type": "page_number",
+        "text": "14",
+        "bbox": [
+            488,
+            936,
+            509,
+            949
+        ],
+        "page_idx": 13
+    },
+    {
+        "type": "image",
+        "img_path": "images/ec13c04de0cd79b1eecedec1f4fa3d52ca10624054afb38ab060417a9081ffd3.jpg",
+        "image_caption": [],
+        "image_footnote": [],
+        "content": "",
+        "bbox": [
+            112,
+            78,
+            883,
+            431
+        ],
+        "page_idx": 14
+    },
+    {
+        "type": "image",
+        "img_path": "images/07c94588bf5272e73e7b4728d228bf3a3eb75b54af93ea883fb255ed9713bbaf.jpg",
+        "image_caption": [
+            "Figure 7 Illustrative T2V rollouts under camera control. Each row is a different text-prompted scene rolled out chunkwise under its own camera motion (joystick overlay, bottom-left); keeping each window bidirectional preserves scene identity and geometry as the camera moves. Shown to illustrate the mechanism, not as a quantitative evaluation; history compression (Sec. 3.4) extends the rollout to far longer horizons.",
+            "Figure 8 With vs. without the anchor losses. Same prompt, camera trajectory, and random seed; frames sampled every second from a 5 s rollout. The top row (w/o anchor loss) is the 4-step generator distilled with the DMD term only; the bottom row (w/ anchor loss) adds the GAN, SFT, and forward-KL anchors. The anchor losses yield markedly sharper detail, higher contrast, and richer temporal dynamics, whereas DMD alone drifts toward a hazy, near-static rollout."
+        ],
+        "image_footnote": [],
+        "content": "",
+        "bbox": [
+            112,
+            523,
+            883,
+            641
+        ],
+        "page_idx": 14
+    },
+    {
+        "type": "text",
+        "text": "",
+        "bbox": [
+            109,
+            756,
+            887,
+            878
+        ],
+        "page_idx": 14
+    },
+    {
+        "type": "page_number",
+        "text": "15",
+        "bbox": [
+            490,
+            936,
+            508,
+            949
+        ],
+        "page_idx": 14
+    },
+    {
+        "type": "image",
+        "img_path": "images/2792486a90bf971802d0a53b61a60b7f82a6821ea1f731f4a03e552412e162e0.jpg",
+        "image_caption": [
+            "Figure 9 Optional low-bit inference. BF16, FP8-E4M3, and 4-bit NVFP4 rollouts of the distilled generator (top to bottom). BF16 and FP8 coincide frame-for-frame; NVFP4 preserves per-frame visual quality (sharpness, colour, scene appearance) but its autoregressive rollout drifts in content under accumulated quantization noise, so its frames are not pixel-matched to the others. Low-bit casting thus retains quality while trading precision for a smaller memory footprint."
+        ],
+        "image_footnote": [],
+        "content": "",
+        "bbox": [
+            166,
+            338,
+            823,
+            571
+        ],
+        "page_idx": 15
+    },
+    {
+        "type": "page_number",
+        "text": "16",
+        "bbox": [
+            490,
+            936,
+            508,
+            949
+        ],
+        "page_idx": 15
+    },
+    {
+        "type": "text",
+        "text": "References",
+        "text_level": 2,
+        "bbox": [
+            112,
+            79,
+            236,
+            97
+        ],
+        "page_idx": 16
+    },
+    {
+        "type": "list",
+        "sub_type": "ref_text",
+        "list_items": [
+            "Philip J. Ball, Jakob Bauer, Frank Belletti, Bethanie Brownfield, Ariel Ephrat, Shlomi Fruchter, Agrim Gupta, Kristian Holsheimer, Aleksander Holynski, Jiri Hron, Christos Kaplanis, Marjorie Limont, Matt McGill, Yanko Oliveira, Jack Parker-Holder, Frank Perbet, Guy Scully, Jeremy Shar, Stephen Spencer, Omer Tov, Ruben Villegas, Emma Wang, Jessica Yung, Cip Baetu, Jordi Berbel, David Bridson, Jake Bruce, Gavin Buttimore, Sarah Chakera, Bilva Chandra, Paul Collins, Alex Cullum, Bogdan Damoc, Vibha Dasagi, Maxime Gazeau, Charles Gbadamosi, Woohyun Han, Ed Hirst, Ashyana Kachra, Lucie Kerley, Kristian Kjems, Eva Knoepfel, Vika Koriakin, Jessica Lo, Cong Lu, Zeb Mehring, Alex Moufarek, Henna Nandwani, Valeria Oliveira, Fabio Pardo, Jane Park, Andrew Pierson, Ben Poole, Helen Ran, Tim Salimans, Manuel Sanchez, Igor Saprykin, Amy Shen, Sailesh Sidhwani, Duncan Smith, Joe Stanton, Hamish Tomlinson, Dimple Vijaykumar, Luyu Wang, Piers Wingfield, Nat Wong, Keyang Xu, Christopher Yew, Nick Young, Vadim Zubov, Douglas Eck, Dumitru Erhan, Koray Kavukcuoglu, Demis Hassabis, Zoubin Gharamani, Raia Hadsell, Aäron van den Oord, Inbar Mosseri, Adrian Bolton, Satinder Singh, and Tim Rocktäschel. Genie 3: A new frontier for world models. 2025.",
+            "Fan Bao, Chendong Xiang, Gang Yue, Guande He, Hongzhou Zhu, Kaiwen Zheng, Min Zhao, Shilong Liu, Yaole Wang, and Jun Zhu. Vidu: a highly consistent, dynamic and skilled text-to-video generator with diffusion models. arXiv preprint arXiv:2405.04233, 2024.",
+            "Tim Brooks, Bill Peebles, Connor Holmes, Will DePue, Yufei Guo, Leo Jing, David Schnurr, Joe Taylor, Troy Luhman, Eric Luhman, et al. Video generation models as world simulators. OpenAI Blog, 1(8):1, 2024.",
+            "Jake Bruce, Michael D Dennis, Ashley Edwards, Jack Parker-Holder, Yuge Shi, Edward Hughes, Matthew Lai, Aditi Mavalankar, Richie Steigerwald, Chris Apps, et al. Genie: Generative interactive environments. In Forty-first International Conference on Machine Learning, 2024.",
+            "Guibin Chen, Dixuan Lin, Jiangping Yang, Chunze Lin, Junchen Zhu, Mingyuan Fan, Hao Zhang, Sheng Chen, Zheng Chen, Chengcheng Ma, et al. Skyreels-v2: Infinite-length film generative model. arXiv preprint arXiv:2504.13074, 2025.",
+            "Patrick Esser, Sumith Kulal, Andreas Blattmann, Rahim Entezari, Jonas Müller, Harry Saini, Yam Levi, Dominik Lorenz, Axel Sauer, Frederic Boesel, et al. Scaling rectified flow transformers for high-resolution image synthesis. In Forty-first international conference on machine learning, 2024.",
+            "Yao Feng, Chendong Xiang, Xinyi Mao, Hengkai Tan, Zuyue Zhang, Shuhe Huang, Kaiwen Zheng, Haitian Liu, Hang Su, and Jun Zhu. Vidarc: Embodied video diffusion model for closed-loop control. arXiv preprint arXiv:2512.17661, 2025.",
+            "Ian J Goodfellow, Jean Pouget-Abadie, Mehdi Mirza, Bing Xu, David Warde-Farley, Sherjil Ozair, Aaron Courville, and Yoshua Bengio. Generative adversarial nets. Advances in neural information processing systems, 27, 2014.",
+            "Yoav HaCohen, Nisan Chiprut, Benny Brazowski, Daniel Shalem, Dudu Moshe, Eitan Richardson, Eran Levin, Guy Shiran, Nir Zabari, Ori Gordon, et al. Ltx-video: Realtime video latent diffusion. arXiv preprint arXiv:2501.00103, 2024.",
+            "Hao He, Yinghao Xu, Yuwei Guo, Gordon Wetzstein, Bo Dai, Hongsheng Li, and Ceyuan Yang. Cameractrl: Enabling camera control for text-to-video generation. arXiv preprint arXiv:2404.02101, 2024.",
+            "Xianglong He, Chunli Peng, Zexiang Liu, Boyang Wang, Yifan Zhang, Qi Cui, Fei Kang, Biao Jiang, Mengyin An, Yangyang Ren, et al. Matrix-game 2.0: An open-source real-time and streaming interactive world model. arXiv preprint arXiv:2508.13009, 2025.",
+            "Yicong Hong, Yiqun Mei, Chongjian Ge, Yiran Xu, Yang Zhou, Sai Bi, Yannick Hold-Geoffroy, Mike Roberts, Matthew Fisher, Eli Shechtman, et al. Relic: Interactive video world model with long-horizon memory. arXiv preprint arXiv:2512.04040, 2025.",
+            "Jiahui Huang, Qunjie Zhou, Hesam Rabeti, Aleksandr Korovko, Huan Ling, Xuanchi Ren, Tianchang Shen, Jun Gao, Dmitry Slepichev, Chen-Hsuan Lin, et al. Vipe: Video pose engine for 3d geometric perception. arXiv preprint arXiv:2508.10934, 2025.",
+            "Xun Huang, Zhengqi Li, Guande He, Mingyuan Zhou, and Eli Shechtman. Self forcing: Bridging the train-test gap in autoregressive video diffusion. Advances in Neural Information Processing Systems, 38:167283–167308, 2026.",
+            "Team HunyuanWorld. Hy-world 1.5: A systematic framework for interactive world modeling with real-time latency and geometric consistency. arXiv preprint, 2025.",
+            "Weijie Kong, Qi Tian, Zijian Zhang, Rox Min, Zuozhuo Dai, Jin Zhou, Jiangfeng Xiong, Xin Li, Bo Wu, Jianwei Zhang, et al. Hunyuanvideo: A systematic framework for large video generative models. arXiv preprint arXiv:2412.03603, 2024a.",
+            "Xin Kong, Shikun Liu, Xiaoyang Lyu, Marwan Taher, Xiaojuan Qi, and Andrew J Davison. Eschernet: A generative model for scalable view synthesis. In Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition, pages 9503–9513, 2024b.",
+            "Ruilong Li, Brent Yi, Junchen Liu, Hang Gao, Yi Ma, and Angjoo Kanazawa. Cameras as relative positional encoding. Advances in Neural Information Processing Systems, 38:15984–16009, 2026a.",
+            "Zhen Li, Chuanhao Li, Xiaofeng Mao, Shaoheng Lin, Ming Li, Shitian Zhao, Zhaopan Xu, Xinyue Li, Yukang Feng, Jianwen Sun, et al. Sekai: A video dataset towards world exploration. Advances in Neural Information Processing Systems, 38, 2026b.",
+            "Shanchuan Lin, Xin Xia, Yuxi Ren, Ceyuan Yang, Xuefeng Xiao, and Lu Jiang. Diffusion adversarial post-training for one-step video generation. arXiv preprint arXiv:2501.08316, 2025.",
+            "Weijian Luo, Tianyang Hu, Shifeng Zhang, Jiacheng Sun, Zhenguo Li, and Zhihua Zhang. Diff-instruct: A universal approach for transferring knowledge from pre-trained diffusion models. Advances in Neural Information Processing Systems, 36:76525–76546, 2023.",
+            "Xiaofeng Mao, Shaoheng Lin, Zhen Li, Chuanhao Li, Wenshuo Peng, Tong He, Jiangmiao Pang, Mingmin Chi, Yu Qiao, and Kaipeng Zhang. Yume: An interactive world generation model. arXiv preprint arXiv:2507.17744, 2025.",
+            "Xiaofeng Mao, Zhen Li, Chuanhao Li, Xiaojie Xu, Kaining Ying, and Kaipeng Zhang. Yume1. 5: A text-controlled interactive world generation model. In Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition, pages 7752–7761, 2026a.",
+            "Xiaofeng Mao, Shaohao Rui, Kaining Ying, Bo Zheng, Chuanhao Li, Mingmin Chi, and Kaipeng Zhang. Packforcing: Short video training suffices for long video sampling and long context inference. arXiv preprint arXiv:2603.25730, 2026b.",
+            "Takeru Miyato, Bernhard Jaeger, Max Welling, and Andreas Geiger. Gta: A geometry-aware attention mechanism for multi-view transformers. In International Conference on Learning Representations, volume 2024, pages 8172–8208, 2024.",
+            "Jisu Nam, Yicong Hong, Chun-Hao Paul Huang, Feng Liu, JoungBin Lee, Jiyoung Kim, Siyoon Jin, Yunsung Lee, Jaeyoon Jung, Suhwan Choi, et al. Worldcam: Interactive autoregressive 3d gaming worlds with camera pose as a unifying geometric representation. arXiv preprint arXiv:2603.16871, 2026.",
+            "Kepan Nan, Rui Xie, Penghao Zhou, Tiehan Fan, Zhenheng Yang, Zhijie Chen, Xiang Li, Jian Yang, and Ying Tai. Openvid-1m: A large-scale high-quality dataset for text-to-video generation. In International Conference on Learning Representations, volume 2025, pages 1045–1064, 2025.",
+            "Axel Sauer, Kashyap Chitta, Jens Müller, and Andreas Geiger. Projected gans converge faster. Advances in Neural Information Processing Systems, 34:17480–17492, 2021.",
+            "Joonghyuk Shin, Zhengqi Li, Richard Zhang, Jun-Yan Zhu, Jaesik Park, Eli Shechtman, and Xun Huang. Motionstream: Real-time video generation with interactive motion controls. arXiv preprint arXiv:2511.01266, 2025.",
+            "Yang Song, Prafulla Dhariwal, Mark Chen, and Ilya Sutskever. Consistency models. 2023.",
+            "Wenqiang Sun, Haiyu Zhang, Haoyuan Wang, Junta Wu, Zehan Wang, Zhenwei Wang, Yunhong Wang, Jun Zhang, Tengfei Wang, and Chunchao Guo. Worldplay: Towards long-term geometric consistency for real-time interactive world modeling. arXiv preprint arXiv:2512.14614, 2025.",
+            "Junshu Tang, Jiacheng Liu, Jiaqi Li, Longhuang Wu, Haoyu Yang, Penghao Zhao, Siruis Gong, Xiang Yuan, Shuai Shao, Linfeng Zhang, et al. Hunyuan-gamecraft-2: Instruction-following interactive game world model. arXiv preprint arXiv:2511.23429, 2025.",
+            "Robbyant Team, Zelin Gao, Qiuyu Wang, Yanhong Zeng, Jiapeng Zhu, Ka Leong Cheng, Yixuan Li, Hanlin Wang, Yinghao Xu, Shuailei Ma, et al. Advancing open-source world models. arXiv preprint arXiv:2601.20540, 2026.",
+            "Team Wan, Ang Wang, Baole Ai, Bin Wen, Chaojie Mao, Chen-Wei Xie, Di Chen, Feiwu Yu, Haiming Zhao, Jianxiao Yang, et al. Wan: Open and advanced large-scale video generative models. arXiv preprint arXiv:2503.20314, 2025.",
+            "Ruicheng Wang, Sicheng Xu, Yue Dong, Yu Deng, Jianfeng Xiang, Zelong Lv, Guangzhong Sun, Xin Tong, and Jiaolong Yang. Moge-2: Accurate monocular geometry with metric scale and sharp details. Advances in Neural Information Processing Systems, 38:35928–35959, 2026a.",
+            "Yifan Wang, Jianjun Zhou, Haoyi Zhu, Wenzheng Chang, Yang Zhou, Zizun Li, Junyi Chen, Jiangmiao Pang, Chunhua Shen, and Tong He. π3: Permutation-equivariant visual geometry learning. arXiv preprint arXiv:2507.13347, 2025.",
+            "Zhengyi Wang, Cheng Lu, Yikai Wang, Fan Bao, Chongxuan Li, Hang Su, and Jun Zhu. Prolificdreamer: High-fidelity and diverse text-to-3d generation with variational score distillation. Advances in neural information processing systems, 36:8406–8441, 2023.",
+            "Zile Wang, Zexiang Liu, Jiaxing Li, Kaichen Huang, Baixin Xu, Fei Kang, Mengyin An, Peiyu Wang, Biao Jiang, Yichen Wei, et al. Matrix-game 3.0: Real-time and streaming interactive world model with long-horizon memory. arXiv preprint arXiv:2604.08995, 2026b.",
+            "Jiannan Xiang, Yi Gu, Zihan Liu, Zeyu Feng, Qiyue Gao, Yiyan Hu, Benhao Huang, Guangyi Liu, Yichi Yang, Kun Zhou, et al. Pan: A world model for general, interactable, and long-horizon world simulation. arXiv preprint arXiv:2511.09057, 2025.",
+            "Zhuoyi Yang, Jiayan Teng, Wendi Zheng, Ming Ding, Shiyu Huang, Jiazheng Xu, Yuanming Yang, Wenyi Hong, Xiaohan Zhang, Guanyu Feng, et al. Cogvideox: Text-to-video diffusion models with an expert transformer. In International Conference on Learning Representations, volume 2025, pages 83048–83077, 2025.",
+            "Deheng Ye, Fangyun Zhou, Jiacheng Lv, Jianqi Ma, Jun Zhang, Junyan Lv, Junyou Li, Minwen Deng, Mingyu Yang, Qiang Fu, et al. Yan: Foundational interactive video generation. arXiv preprint arXiv:2508.08601, 2025.",
+            "Tianwei Yin, Michaël Gharbi, Taesung Park, Richard Zhang, Eli Shechtman, Fredo Durand, and William T Freeman. Improved distribution matching distillation for fast image synthesis. Advances in neural information processing systems, 37:47455–47487, 2024a.",
+            "Tianwei Yin, Michaël Gharbi, Richard Zhang, Eli Shechtman, Fredo Durand, William T Freeman, and Taesung Park. One-step diffusion with distribution matching distillation. In Proceedings of the IEEE/CVF conference on computer vision and pattern recognition, pages 6613–6623, 2024b.",
+            "Tianwei Yin, Qiang Zhang, Richard Zhang, William T Freeman, Fredo Durand, Eli Shechtman, and Xun Huang. From slow bidirectional to fast autoregressive video diffusion models. In Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition, pages 22963–22974, 2025.",
+            "Cheng Zhang, Boying Li, Meng Wei, Yan-Pei Cao, Camilo Gambardella, Dinh Phung, and Jianfei Cai. Unified camera positional encoding for controlled video generation. In Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition, pages 38027–38037, 2026.",
+            "Lvmin Zhang and Maneesh Agrawala. Packing input frame context in next-frame prediction models for video generation. arXiv e-prints, pages arXiv–2504, 2025.",
+            "Min Zhao, Hongzhou Zhu, Bokai Yan, Zihan Zhou, Yimin Chen, Wenqiang Sun, Kaiwen Zheng, Guande He, Xiao Yang, Chongxuan Li, et al. minwm: A full-stack open-source framework for real-time interactive video world models. arXiv preprint arXiv:2605.30263, 2026a.",
+            "Min Zhao, Hongzhou Zhu, Kaiwen Zheng, Zihan Zhou, Bokai Yan, Xinyuan Li, Xiao Yang, Chongxuan Li, and Jun Zhu. Causal forcing++: Scalable few-step autoregressive diffusion distillation for real-time interactive video generation. arXiv preprint arXiv:2605.15141, 2026b.",
+            "Haoyi Zhu, Haozhe Liu, Yuyang Zhao, Tian Ye, Junsong Chen, Jincheng Yu, Tong He, Song Han, and Enze Xie. Sana-wm: Efficient minute-scale world modeling with hybrid linear diffusion transformer. arXiv preprint arXiv:2605.15178, 2026a.",
+            "Hongzhou Zhu, Min Zhao, Guande He, Hang Su, Chongxuan Li, and Jun Zhu. Causal forcing: Autoregressive diffusion distillation done right for high-quality real-time interactive video generation. arXiv preprint arXiv:2602.02214, 2026b."
+        ],
+        "bbox": [
+            106,
+            107,
+            893,
+            900
+        ],
+        "page_idx": 16
+    },
+    {
+        "type": "page_number",
+        "text": "17",
+        "bbox": [
+            488,
+            936,
+            508,
+            949
+        ],
+        "page_idx": 16
+    },
+    {
+        "type": "list",
+        "sub_type": "ref_text",
+        "list_items": [],
+        "bbox": [
+            106,
+            75,
+            893,
+            900
+        ],
+        "page_idx": 17
+    },
+    {
+        "type": "page_number",
+        "text": "18",
+        "bbox": [
+            488,
+            936,
+            508,
+            949
+        ],
+        "page_idx": 17
+    },
+    {
+        "type": "list",
+        "sub_type": "ref_text",
+        "list_items": [],
+        "bbox": [
+            106,
+            77,
+            890,
+            820
+        ],
+        "page_idx": 18
+    },
+    {
+        "type": "page_number",
+        "text": "19",
+        "bbox": [
+            490,
+            936,
+            508,
+            949
+        ],
+        "page_idx": 18
+    }
+]

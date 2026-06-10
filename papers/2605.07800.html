@@ -39,7 +39,8 @@
     </div>
     <div class="feature-body">
       <p class="lead dropcap">先说结论。它说明冻结 VFM feature/token relation 正在成为视频生成模型的蒸馏监督，和视觉基础模型作为 teacher 的趋势一致。 从“所有 token relation 一视同仁”转向“按 prompt 语义重要性分配关系蒸馏预算”，更适合复杂文本视频生成。</p>
-      <aside class="marginalia"><b>图像状态</b> 这篇暂未抽到足够稳定的 pipeline / motivation 图，因此正文以方法和实验解读为主。</aside>
+      <figure class="full-fig"><img src="../assets/mineru/2605.07800/images/f802542c708bd8bd84544ad88dc185b12c5b34a9e4229057afdfb7502d23a9cf.jpg" alt="Figureure 2 · Overview of SARA"><figcaption><b>Figureure 2 · Overview of SARA</b><span class="fig-en">Figure 2 Overview of SARA. Stage I (top): a lightweight aligner on top of frozen V-JEPA, SAM 3.1, and Qwen3- VL-Embedding backbones learns, for any (video, caption) pair, a text-conditioned per-patch saliency $M _ { p } ,$ supervised jointly by per-entity, combined-entity, and background SAM masks (LBCE) and calibrated by a caption-level InfoNCE. Stage II (bottom): the frozen aligner is queried with the full caption, and its saliency is turned into pair weights that route a masked token-relation distillation loss, added to the diffusion loss of a trainable DiT.</span><span class="fig-zh">这张图概括 SARA 的整体方法流程。阅读时先看模块之间传递的训练信号，再看作者如何把目标拆成可优化的子问题。</span></figcaption></figure>
+<figure class="full-fig"><img src="../assets/mineru/2605.07800/images/39f1fdafcc10e84cbfe45f7f314fa4abace9cc1908cbbe0cc5143f1436755ad3.jpg" alt="Figureure 5 · Blind pairwise user study"><figcaption><b>Figureure 5 · Blind pairwise user study</b><span class="fig-en">Figure 5 Blind pairwise user study. Each row reports the percentage of comparisons where annotators prefer SARA, tie, or prefer the baseline. SARA is preferred over every baseline.</span><span class="fig-zh">这张图/表用于判断 SARA 的实验收益来自哪里。重点看替换、消融或跨模型设置下趋势是否一致，而不是只看单个最高分。</span></figcaption></figure>
       
       <h2>核心问题</h2>
       <p>它说明冻结 VFM feature/token relation 正在成为视频生成模型的蒸馏监督，和视觉基础模型作为 teacher 的趋势一致。</p>

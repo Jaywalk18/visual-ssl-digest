@@ -1,0 +1,4171 @@
+[
+    {
+        "type": "text",
+        "text": "Mitigating Manifold Departure: Uncertainty-Aware Subspace Rectification for Trustworthy MLLM Decoding",
+        "text_level": 1,
+        "bbox": [
+            107,
+            109,
+            866,
+            156
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "Yingxuan Zhuang 1 Jingxiao Yang 1 Miao Pan 1 Cheng Tan 2 Yuxiang Cai 1 Siwei Tan 1 Chen Zhi 1 Xuhong Zhang 1 Jianwei Yin 1 Jintao Chen 1 3",
+        "bbox": [
+            127,
+            198,
+            844,
+            229
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "Abstract",
+        "text_level": 2,
+        "bbox": [
+            241,
+            257,
+            320,
+            273
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "MLLMs frequently hallucinate objects inconsistent with visual inputs. This issue is typically attributed to the over-reliance on language priors, which can override the visual context. Recent training-free decoding strategies address this by penalizing language priors. However, these methods overlook the dual nature of language priors, where they can be both helpful and harmful depending on the alignment with visual evidence. In particular, blindly suppressing language priors often disrupts the model’s semantic manifold, leading to performance degradation, a phenomenon we term Manifold Departure. To address this, we propose Manifold-Guided Adaptive Projection (MGAP), a geometry-aware, training-free decoding method that mitigates hallucinations while preserving representation structure. MGAP first constructs a language-prior subspace from blind hidden states via SVD. During decoding, MGAP projects each multimodal hidden state onto this subspace and applies a consistency-aware gate to adaptively attenuate only the projected prior component, yielding a subspace-selective update that largely preserves the orthogonal semantic components. Extensive experiments on POPE and CHAIR show that MGAP outperforms prior decoding baselines, achieving stronger hallucination suppression without sacrificing coherence.",
+        "bbox": [
+            117,
+            282,
+            444,
+            705
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "1. Introduction",
+        "text_level": 2,
+        "bbox": [
+            86,
+            737,
+            217,
+            753
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "In recent years, Multimodal Large Language Models (MLLMs) (Wang et al., 2024b; Chen et al., 2024a; Deitke et al., 2024) have become strong general-purpose interfaces for vision and language, enabling multimodal reasoning and generation across diverse benchmarks (Yue et al., 2024; Liu et al., 2024b; Hu et al., 2025). Despite this progress, they remain vulnerable to object hallucination (Li et al., 2023c; Bai et al., 2024; Rohrbach et al., 2018): the model produces fluent, plausible content that is simply not supported by the image. This failure is often traced to the model’s language priors learned during pre-training, which can overpower weak or ambiguous visual evidence (Leng et al., 2024; Huang et al., 2024; Li et al., 2023a; Tong et al., 2024). Motivated by this, a growing line of training-free decoding methods (Leng et al., 2024; Favero et al., 2024; Chen et al., 2024b; Wang et al., 2024c; Park et al., 2025) attempts to mitigate hallucinations by subtracting a bias term (e.g., an unconditional branch or a contrastive context) from the decoding logits. However, the core difficulty is that language priors are not uniformly harmful. As illustrated in Figure 1, priors play a dual role: they can trigger hallucinations under vision–language conflict (blue banana), yet serve as confidence anchors when aligned with the image (yellow banana), sharpening and stabilizing generation. This makes indiscriminate prior suppression a blunt instrument: it may remove exactly the structure that helps normal, visually consistent cases.",
+        "bbox": [
+            84,
+            763,
+            473,
+            792
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "image",
+        "img_path": "images/4883b6e02a8bb3d86229107fb90cb9896f8b97a99c349eb0d4cf47d5a296f7c9.jpg",
+        "image_caption": [
+            "Figure 1. The dual role of language priors in MLLM decoding. When visual evidence and priors are aligned (yellow banana), priors sharpen and stabilize generation. When they conflict (blue banana), priors can override the image and induce hallucination."
+        ],
+        "image_footnote": [],
+        "content": "```mermaid\ngraph LR\n    subgraph Input & Question\n        A[\"Input & Question: Q: What color is the banana?\"]\n        B[\"Input & Question: Blue Banana: Conflicting\"]\n    end\n\n    subgraph Prior P(y|x) \n  C[\"Prior P(y|x) with Yellow (0.85), Green (0.10), Blue (0.05), Strong prior bias\"] --> D[\"Posterior P(y|x,v) with Yellow (0.98), Green (0.01), Blue (0.01), HELPER\"]\n    end\n\n    subgraph Input & Question\n        E[\"Input & Question: Q: What color is the banana?\"]\n  F[\"Input & Question: Blue Banana: Conflicting\"] --> G[\"Prior P(y|x) with Yellow (0.85), Green (0.10), Blue (0.05), Strong prior bias\"] --> H[\"Posterior P(y|x,v) with Yellow (0.55), Green (0.05), Blue (0.40), ADVERSARY\"]\n    end\n\n  C --> D\n  E --> G\n  F --> H\n```",
+        "sub_type": "flowchart",
+        "bbox": [
+            506,
+            277,
+            870,
+            409
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "",
+        "bbox": [
+            495,
+            505,
+            888,
+            882
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "We further show that this unintended degradation has a geometric signature. Viewed in representation space, valid decoding trajectories concentrate in a structured high-density region (Bengio et al., 2013a; Verma et al., 2019; Stutz et al., 2019; Khoury & Hadfield-Menell, 2018). Linear suppression methods apply a global, structure-agnostic shift, which can push hidden states toward low-density regions and destabilize decoding. We term this failure mode Manifold Departure and analyze it in Section 3.3 (Figure 3). To resolve this tension, we propose Manifold-Guided Adaptive Projection (MGAP), a geometry-aware, training-free decoding framework. MGAP explicitly models language priors as a low-rank prior subspace estimated from blind hidden states via SVD, and performs a selective intervention during decoding: each hidden state is projected onto the prior subspace, and only this projected component is adaptively attenuated when vision–language conflict is detected.",
+        "bbox": [
+            496,
+            890,
+            887,
+            905
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "aside_text",
+        "text": "arXiv:2606.09859v1 [cs.LG] 31 May 2026",
+        "bbox": [
+            22,
+            272,
+            60,
+            724
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "page_footnote",
+        "text": "1Ningbo Global Innovation Center, Zhejiang University 2Shanghai Artificial Intelligence Laboratory 3Zhejiang Key Laboratory of Digital-Intelligence Service Technology. Correspondence to: Jintao Chen <chenjintao@zju.edu.cn>.",
+        "bbox": [
+            84,
+            801,
+            475,
+            854
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "page_footnote",
+        "text": "Proceedings of the $\\it 4 3 ^ { r d }$ International Conference on Machine Learning, Seoul, South Korea. PMLR 306, 2026. Copyright 2026 by the author(s).",
+        "bbox": [
+            84,
+            864,
+            473,
+            905
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "page_number",
+        "text": "1",
+        "bbox": [
+            480,
+            922,
+            491,
+            934
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "",
+        "bbox": [
+            84,
+            85,
+            475,
+            325
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "text",
+        "text": "In summary, our main contributions are:",
+        "bbox": [
+            84,
+            334,
+            354,
+            349
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "list",
+        "sub_type": "text",
+        "list_items": [
+            "• We identify Manifold Departure as a geometric failure mode of linear, training-free prior suppression, explaining why such methods can degrade performance even when priors align with vision.",
+            "• We propose MGAP, which learns a language-prior subspace from blind states and applies adaptive, subspaceselective projection to suppress hallucinations without disturbing orthogonal semantics.",
+            "• Experiments on POPE (Li et al., 2023c) and CHAIR (Rohrbach et al., 2018) show that MGAP achieves stronger trade-offs between hallucination mitigation and descriptive fidelity than prior training-free decoding baselines."
+        ],
+        "bbox": [
+            104,
+            367,
+            473,
+            587
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "text",
+        "text": "2. Related Work",
+        "text_level": 2,
+        "bbox": [
+            86,
+            606,
+            227,
+            622
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "text",
+        "text": "Hallucination in MLLMs Object hallucination is a longstanding issue in vision–language generation and is amplified in modern MLLMs. Surveys summarize its phenomena and taxonomies (Bai et al., 2024), while benchmarks/protocols quantify object-level ungrounded content (Li et al., 2023c;b). Similar failures are also studied in other generation settings such as neural machine translation (Guerreiro et al., 2023). Training-time mitigation (e.g., robust instruction tuning, factual alignment, preference optimization) can reduce hallucinations but requires extra supervision or optimization (Liu et al., 2024a; Sun et al., 2023; Zhao et al., 2023; Jiang et al., 2024). We instead study training-free, decoding-time control.",
+        "bbox": [
+            84,
+            632,
+            475,
+            829
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "text",
+        "text": "Inference-time intervention Decoding-time methods mitigate hallucination without parameter updates. VCD suppresses language priors by contrasting multimodal decoding against a biased/unconditioned branch (Leng et al.,",
+        "bbox": [
+            84,
+            845,
+            478,
+            906
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "text",
+        "text": "2024). This idea is closely related to contrastive decoding in text generation (Li et al., 2023a) and has been further explored in subsequent VCD-style analyses (Lee et al., 2024). OPERA regulates over-trust via penalty and retrospectionallocation (Huang et al., 2024). Other approaches include instruction contrastive decoding (Wang et al., 2024c), adaptive focal contrast decoding (Chen et al., 2024b), and introspective/ensemble decoding (Huo et al., 2025; Cho et al., 2025; Park et al., 2025). Many can be seen as global, structureagnostic linear manipulations in representation/logit space, which may hurt outputs even when priors align with vision. Our method instead models a prior subspace and intervenes selectively in a geometry-aware manner. We additionally compare MGAP against recent decoding-time methods including DeCo (Wang et al., 2024a) and MoD (Su et al., 2025). MGAP consistently achieves the best overall tradeoff between hallucination mitigation and generation fidelity across both backbones.",
+        "bbox": [
+            496,
+            84,
+            888,
+            356
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "text",
+        "text": "Manifold structure of latent representations Representation geometry is widely used to explain and control model behavior via low-dimensional structure, dominant subspaces, and concentration near a data manifold induced by the training distribution. Following the common manifold assumption in representation learning, highdimensional observations are often assumed to lie on or near a smooth low-dimensional manifold (Roweis & Saul, 2000; Tenenbaum et al., 2000; Bengio et al., 2013b). In vision, transformer representations under large-scale pretraining exhibit strong geometric regularities (Dosovitskiy et al., 2020; He et al., 2022; Beyer et al., 2023). Related work measures cross-layer/model alignment using SVCCA/CKAstyle diagnostics (Raghu et al., 2017; Kornblith et al., 2019; Morcos et al., 2018; Li et al., 2018). Decoding-time behavior in language generation has also been connected to representation-level objectives and contrastive directions (Li et al., 2023a). Building on this view, we adopt the same geometric perspective for MLLM hidden states: we estimate a low-rank language-prior subspace from blind hidden states and apply bounded, selective projection to mitigate hallucination while staying near the data manifold.",
+        "bbox": [
+            496,
+            382,
+            888,
+            714
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "text",
+        "text": "3. Preliminary",
+        "text_level": 2,
+        "bbox": [
+            496,
+            734,
+            624,
+            750
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "text",
+        "text": "In this section, we introduce notation for multimodal decoding and summarize training-free linear suppression under a unified form. We then clarify our manifold viewpoint that motivates geometry-aware decoding interventions.",
+        "bbox": [
+            496,
+            758,
+            887,
+            820
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "text",
+        "text": "3.1. Representation-Level View of Training-Free Decoding",
+        "text_level": 2,
+        "bbox": [
+            496,
+            835,
+            836,
+            867
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "text",
+        "text": "Given an image v and a textual query x, a multimodal large language model generates tokens autoregressively. At decoding step t, the next-token distribution is given by",
+        "bbox": [
+            496,
+            875,
+            887,
+            906
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "header",
+        "text": "Mitigating Manifold Departure: Uncertainty-Aware Subspace Rectification for Trustworthy MLLM Decoding",
+        "bbox": [
+            140,
+            56,
+            831,
+            70
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "page_number",
+        "text": "2",
+        "bbox": [
+            480,
+            922,
+            491,
+            934
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "text",
+        "text": "",
+        "bbox": [
+            84,
+            85,
+            434,
+            101
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "equation",
+        "text": "$$\nP (y _ {t} \\mid y _ {<   t}, x, v) = \\operatorname{Softmax} (\\mathcal {F} (h _ {t})), \\tag {1}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            153,
+            112,
+            475,
+            128
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "where $h _ { t } \\in \\mathbb { R } ^ { d }$ denotes the final-layer hidden state.",
+        "bbox": [
+            84,
+            138,
+            424,
+            156
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "Recent training-free hallucination mitigation methods intervene at decoding time by linearly suppressing language priors. Despite different formulations, many such methods (Leng et al., 2024; Wang et al., 2024c; Kim et al., 2024) can be unified as",
+        "bbox": [
+            84,
+            162,
+            475,
+            238
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "equation",
+        "text": "$$\n\\mathrm{Logits} _ {\\mathrm{final}} = \\mathrm{Logits} _ {\\mathrm{main}} - \\rho \\cdot \\mathrm{Logits} _ {\\mathrm{bias}}, (2)\n$$",
+        "text_format": "latex",
+        "bbox": [
+            138,
+            251,
+            475,
+            268
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "where $\\mathrm { L o g i t s _ { b i a s } }$ is obtained from a biased context $( \\mathrm { e . g . }$ , blind or perturbed inputs).",
+        "bbox": [
+            84,
+            279,
+            475,
+            310
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "Importantly, Eq. (2) implicitly assumes that hallucinations can be mitigated by a global linear translation in representation space. In this work, we analyze and intervene directly on the hidden representation $h _ { t } .$ , enabling a geometric understanding of why such linear suppression may fail.",
+        "bbox": [
+            84,
+            316,
+            475,
+            393
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "3.2. Hidden-State Manifold and Manifold Departure",
+        "text_level": 2,
+        "bbox": [
+            84,
+            409,
+            455,
+            425
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "Let $h _ { t } \\in \\mathbb { R } ^ { d }$ denote the (last-layer) decoder hidden state at decoding step t. Following the common manifold assumption in representation learning, high-dimensional observations are often assumed to lie on or near a smooth low-dimensional manifold (Roweis & Saul, 2000; Tenenbaum et al., 2000; Bengio et al., 2013b). We adopt the same view for MLLM hidden states.",
+        "bbox": [
+            84,
+            431,
+            475,
+            537
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "Definition 3.1 (Hidden-state manifold). Let $P _ { 0 }$ denote the distribution of hidden states produced by normal decoding (without any decoding-time intervention). We say the hidden states concentrate near a r-dimensional manifold $\\mathcal { M } \\subset \\mathbb { R } ^ { d } \\left( r \\ll d \\right)$ if there exist $\\varepsilon > 0$ and a small $\\delta \\in ( 0 , 1 )$ such that:",
+        "bbox": [
+            84,
+            542,
+            475,
+            632
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "equation",
+        "text": "$$\n\\operatorname * {P r} _ {h \\sim P _ {0}} \\left[ \\mathrm{dist} (h, \\mathcal {M}) \\leq \\varepsilon \\right] \\geq 1 - \\delta . \\tag {3}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            166,
+            643,
+            473,
+            669
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "Here $\\mathrm { P r } _ { h \\sim P _ { 0 } } [ \\cdot ]$ denotes probability when h is sampled from $P _ { 0 }$ . Eq. (3) means that at least a $( 1 - \\delta )$ fraction of normaldecoding states lie within an ε-neighborhood (an “ε-tube”) around $\\mathcal { M } .$ . We define the Euclidean distance to the manifold as:",
+        "bbox": [
+            84,
+            680,
+            475,
+            753
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "equation",
+        "text": "$$\n\\operatorname{dist} (h, \\mathcal {M}) \\triangleq \\inf _ {m \\in \\mathcal {M}} \\| h - m \\| _ {2}. \\tag {4}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            173,
+            755,
+            473,
+            779
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "We refer to M as the semantic manifold of normal decoding.",
+        "bbox": [
+            84,
+            782,
+            475,
+            799
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "A computable proxy Since M and dist $( h , \\mathcal { M } )$ are not directly computable, we approximate them using a reference bank of hidden states ${ \\cal { S } } = \\{ h ^ { ( i ) } \\} _ { i = 1 } ^ { N }$ )}Ni=1 collected from normal decoding (gray points in $\\operatorname { F i g } . 3 )$ . For any query state $h \\in \\mathbb { R } ^ { d }$ , let $\\mathrm { N N } _ { k } ( h ; { \\mathcal { S } } ) \\subset { \\mathcal { S } }$ denote the set of its k nearest neighbors in $s$ under the chosen metric (default: Euclidean distance).",
+        "bbox": [
+            84,
+            814,
+            475,
+            905
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "We define an off-manifoldness score by the average kNN distance:",
+        "bbox": [
+            496,
+            84,
+            885,
+            113
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "equation",
+        "text": "$$\nd _ {k} (h; \\mathcal {S}) \\triangleq \\frac {1}{k} \\sum_ {s \\in \\mathrm{NN} _ {k} (h; \\mathcal {S})} \\| h - s \\| _ {2}. \\tag {5}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            571,
+            122,
+            885,
+            161
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "(Using cosine distance after $\\ell _ { 2 }$ -normalization is an alternative in high dimensions.)",
+        "bbox": [
+            496,
+            172,
+            887,
+            202
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "Definition 3.2 (Manifold departure). Consider an intervention T applied at step t that maps $h _ { t }$ to $\\tilde { h } _ { t } = T ( h _ { t } )$ . We say $T$ induces manifold departure at step t if:",
+        "bbox": [
+            496,
+            207,
+            887,
+            253
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "equation",
+        "text": "$$\nd _ {k} \\left(\\tilde {h} _ {t}; \\mathcal {S}\\right) > \\tau , \\tag {6}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            640,
+            263,
+            885,
+            281
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "where the threshold τ is set as the $( 1 - \\delta )$ -quantile of the reference scores $\\{ d _ { k } ( s ; S ) \\} _ { s \\in \\mathcal { S } } , \\mathrm { i . e . }$ , only an δ fraction of normal-decoding states would be labeled off-manifold under this criterion.",
+        "bbox": [
+            496,
+            292,
+            887,
+            353
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "3.3. Manifold Departure from Prior Suppression",
+        "text_level": 2,
+        "bbox": [
+            496,
+            369,
+            841,
+            386
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "We identify a consistent failure mechanism underlying many training-free linear decoding interventions: indiscriminate suppression of language-prior components can push hidden states away from the normal-decoding semantic manifold (Definition 3.1), thereby degrading generation quality even when the language prior is semantically helpful.",
+        "bbox": [
+            496,
+            393,
+            885,
+            484
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "chart",
+        "img_path": "images/5ff99269364ec065aa20202bfcea261863129b561cf76985935805b87be93c6b.jpg",
+        "content": "| Category     | Vanilla Decoding | Visual Contrastive Decoding |\n| ------------ | ---------------- | --------------------------- |\n| Random       | 90.0             | 88.0                        |\n| Popular      | 87.0             | 85.0                        |\n| Adversarial  | 82.0             | 80.0                        |",
+        "chart_caption": [
+            "Figure 2. Uniform linear prior suppression can hurt. VCD (vs. vanilla) shows consistent performance drops on POPE across splits, including standard cases where priors align with visual evidence."
+        ],
+        "chart_footnote": [],
+        "sub_type": "bar chart",
+        "bbox": [
+            509,
+            508,
+            877,
+            675
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "Empirical observation We compare vanilla decoding and Visual Contrastive Decoding (VCD) (Leng et al., 2024) on the POPE benchmark using LLaVA v1.5-7B. As shown in Figure 2, VCD consistently degrades performance across all evaluation splits. Notably, this degradation also occurs in standard cases where visual evidence and language priors are naturally aligned, suggesting a systematic limitation of applying the same linear suppression regardless of context.",
+        "bbox": [
+            496,
+            738,
+            887,
+            859
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "Geometric mechanism To understand why such degradation happens, we analyze hidden representations through the lens of the semantic manifold defined in Section 3.2. We focus on the final-layer hidden state $h _ { t } \\in \\mathbb { R } ^ { D }$ and its evolution under decoding-time interventions.",
+        "bbox": [
+            496,
+            875,
+            887,
+            906
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "header",
+        "text": "Mitigating Manifold Departure: Uncertainty-Aware Subspace Rectification for Trustworthy MLLM Decoding",
+        "bbox": [
+            138,
+            56,
+            834,
+            71
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "page_number",
+        "text": "3",
+        "bbox": [
+            480,
+            922,
+            491,
+            934
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "",
+        "bbox": [
+            84,
+            84,
+            475,
+            131
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "text",
+        "text": "We extract hidden states from normal decoding trajectories on the COCO dataset and visualize their distribution using Principal Component Analysis (PCA). As shown in Figure 3, hidden states corresponding to valid generations concentrate within a structured, low-dimensional region of the representation space, which we interpret as the normal-decoding semantic manifold (Definition 3.1). Linear extrapolation along the VCD direction, however, progressively moves states away from this region, as quantified by increasing off-manifoldness scores shown in the inset.",
+        "bbox": [
+            84,
+            137,
+            475,
+            287
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "chart",
+        "img_path": "images/befc80ddfd773904bced8733675a184150f3b2e6e136805f0fd2241ea6d4f54c.jpg",
+        "content": "| Point Type     | PC1  | PC2  |\n| -------------- | ---- | ---- |\n| VCD trajectory | 0    | 0    |\n| Blind          | -15  | 0    |\n| Joint          | 15   | 0    |\n| Ground Truth   | -5   | 5    |\n| Ground Truth   | 45   | 40   |",
+        "chart_caption": [
+            "Figure 3. Manifold departure under linear suppression. Gray points are hidden states from normal decoding (semantic manifold); orange/blue/green mark blind prior, joint posterior, and groundtruth states. Red numeric labels denote different values of the VCD extrapolation coefficient α. Inset: kNN-based off-manifoldness score $d _ { k }$ of VCD states at different $\\alpha ,$ computed in the original hidden space. The dashed line indicates the threshold τ used to define manifold departure (Eq. (6)); bars above τ are increasingly shaded to reflect larger deviations from the semantic manifold."
+        ],
+        "chart_footnote": [],
+        "sub_type": "scatterplot",
+        "bbox": [
+            91,
+            301,
+            468,
+            435
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "text",
+        "text": "In contrast, linear prior suppression applies a fixed contrastive shift that extrapolates along the difference between the blind (prior) and joint (visual) contexts, e.g.,",
+        "bbox": [
+            84,
+            585,
+            475,
+            631
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "equation",
+        "text": "$$\nh ^ {\\prime} = h _ {\\text { joint }} + \\rho (h _ {\\text { joint }} - h _ {\\text { blind }}). \\tag {7}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            171,
+            638,
+            473,
+            656
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "text",
+        "text": "Here $h _ { \\mathrm { b l i n d } }$ follows VCD (Leng et al., 2024) and is obtained by running the model on a visually distorted input, where the original image is perturbed with diffusion noise to form the blind view. Such a global linear extrapolation is agnostic to the local geometry of the normal-decoding manifold. Even when $h _ { \\mathrm { j o i n t } }$ lies in a typical (high-density) region, stepping along the direction $( h _ { \\mathrm { j o i n t } } - h _ { \\mathrm { b l i n d } } )$ can move the state into a tail region that is rarely visited under normal decoding. Formally, this corresponds to increased off-manifoldness (Eq. (5)) and can trigger the manifold-departure condition $d _ { k } ( \\tilde { h } _ { t } ; S ) > \\tau$ (Definition 3.2), which is visualized along the VCD trajectory in Figure 3 (inset). Once the hidden state departs from the high-density region supported by normal decoding, the decoder operates in a poorly supported regime, often leading to less stable token distributions and degraded generation quality (Fig 2).",
+        "bbox": [
+            84,
+            662,
+            475,
+            906
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "text",
+        "text": "Importantly, this failure arises from the structure-agnostic nature of uniform suppression, rather than from the intrinsic correctness or incorrectness of the language prior. This diagnosis motivates a selective and geometry-aware intervention, which we introduce next.",
+        "bbox": [
+            496,
+            84,
+            887,
+            160
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "text",
+        "text": "4. Method",
+        "text_level": 2,
+        "bbox": [
+            496,
+            179,
+            588,
+            195
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "text",
+        "text": "4.1. Label-Free Language Prior Subspace Construction",
+        "text_level": 2,
+        "bbox": [
+            496,
+            205,
+            885,
+            220
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "text",
+        "text": "Motivated by the diagnosis in Section 3.3, we model language priors as a low-dimensional subspace in the hiddenstate space. We construct this subspace using only queries, requiring no labels, image content, or parameter updates.",
+        "bbox": [
+            496,
+            229,
+            887,
+            290
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "text",
+        "text": "Given prompts {x(i)}Ni=1 $\\{ x ^ { ( i ) } \\} _ { i = 1 } ^ { N }$ , we collect final-layer blind hidden states {h(i)blind $\\{ h _ { \\mathrm { b l i n d } } ^ { ( i ) } \\in \\mathbb { R } ^ { d } \\} _ { i = 1 } ^ { N }$ $\\begin{array} { r } { \\bar { h } _ { \\mathrm { b l i n d } } \\triangleq \\frac { 1 } { N } \\sum _ { i = 1 } ^ { N } h _ { \\mathrm { b l i n d } } ^ { ( i ) } } \\end{array}$ hblind and define the centered matrix",
+        "bbox": [
+            496,
+            296,
+            887,
+            344
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "equation",
+        "text": "$$\n\\tilde {H} _ {\\text { blind }} \\triangleq \\left[ \\begin{array}{c} (h _ {\\text { blind }} ^ {(1)} - \\bar {h} _ {\\text { blind }}) ^ {\\top} \\\\ \\vdots \\\\ (h _ {\\text { blind }} ^ {(N)} - \\bar {h} _ {\\text { blind }}) ^ {\\top} \\end{array} \\right] \\in \\mathbb {R} ^ {N \\times d}. \\tag {8}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            550,
+            354,
+            885,
+            419
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "text",
+        "text": "We estimate the prior subspace as the top-K principal components, i.e.,",
+        "bbox": [
+            496,
+            430,
+            887,
+            460
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "equation",
+        "text": "$$\nV _ {\\text { prior }} \\in \\arg \\max _ {V \\in \\mathbb {R} ^ {d \\times K}} \\operatorname{Tr} \\left(V ^ {\\top} \\tilde {H} _ {\\text { blind }} ^ {\\top} \\tilde {H} _ {\\text { blind }} V\\right). \\tag {9}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            532,
+            473,
+            885,
+            501
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "text",
+        "text": "Here $\\operatorname { T r } ( \\cdot )$ denotes the trace (sum of diagonal entries); $\\operatorname { T r } ( \\cdot )$ is the total variance of blind hidden states captured by the $K$ orthonormal directions $V _ { \\mathrm { p r i o r } } = [ v _ { 1 } , \\dots , v _ { K } ]$ , which has the closed-form solution via SVD:",
+        "bbox": [
+            496,
+            513,
+            885,
+            573
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "equation",
+        "text": "$$\n\\tilde {H} _ {\\text { blind }} = U \\Sigma V ^ {\\top}, \\quad V _ {\\text { prior }} \\triangleq V _ {[,: 1: K ]} \\in \\mathbb {R} ^ {d \\times K}. \\tag {10}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            513,
+            585,
+            885,
+            606
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "text",
+        "text": "$V _ { \\mathrm { p r i o r } }$ captures dominant blind-state variations induced by linguistic regularities; it is not assumed inherently harmful, motivating adaptive (rather than uniform) suppression in subsequent decoding.",
+        "bbox": [
+            496,
+            618,
+            885,
+            679
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "text",
+        "text": "4.2. Consistency-Aware Adaptive Projection",
+        "text_level": 2,
+        "bbox": [
+            496,
+            695,
+            808,
+            710
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "text",
+        "text": "Given a hidden state $h _ { \\mathrm { o r i g } }$ produced during standard multimodal decoding, we first decompose it into components aligned with and orthogonal to the language prior subspace. The projection onto the prior subspace is given by:",
+        "bbox": [
+            495,
+            718,
+            887,
+            780
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "equation",
+        "text": "$$\nh _ {\\text { proj }} = V _ {\\text { prior }} V _ {\\text { prior }} ^ {\\top} h _ {\\text { orig }}. \\tag {11}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            602,
+            791,
+            885,
+            811
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "text",
+        "text": "While $h _ { \\mathrm { p r o j } }$ captures prior-related components, indiscriminately removing it may cause Manifold Departure. We therefore introduce an adaptive mechanism that selectively suppresses prior components only when they conflict with visual evidence.",
+        "bbox": [
+            495,
+            829,
+            887,
+            904
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "header",
+        "text": "Mitigating Manifold Departure: Uncertainty-Aware Subspace Rectification for Trustworthy MLLM Decoding",
+        "bbox": [
+            138,
+            56,
+            834,
+            71
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "page_number",
+        "text": "4",
+        "bbox": [
+            480,
+            922,
+            491,
+            934
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "image",
+        "img_path": "images/2972df2aeb946c16e0814d62f6de2c3249f1fae1419900c439066a19fc2dc8e6.jpg",
+        "image_caption": [
+            "Figure 4. Overview of the proposed Manifold-Guided Adaptive Projection (MGAP). The language-prior subspace is constructed offline using unlabeled blind inputs, while decoding-time intervention is performed online via geometry-aware adaptive projection."
+        ],
+        "image_footnote": [],
+        "content": "```mermaid\ngraph TD\n  A[\"Text Query x\"] --> B[\"Frozen MLLM\"]\n  C[\"Null Image v\"] --> B\n  B --> D[\"Extract Final-Layer Hidden States\"]\n  D --> E[\"Hidden States Matrix H_blind\"]\n  E --> F[\"SVD Operation\"]\n  F --> G[\"Language Prior Subspace V_prior\"]\n    \n  H[\"Real Image v\"] --> I[\"Frozen MLLM\"]\n  J[\"Current Context (x,y<t)\"] --> K[\"Original Hidden State h_orig\"]\n  K --> L[\"Extract h_orig\"]\n  L --> M[\"Project onto V_prior\"]\n  M --> N[\"Projection Legend h_orig, h_proj\"]\n  N --> O[\"Projected State h_proj\"]\n  O --> P[\"h_cut = h_orig - (α·δ·γ·h_proj)\"]\n  P --> Q[\"Correctioned Hidden State h_cut\"]\n  Q --> R[\"Token Generation\"]\n  R --> S[\"Next Token y_t\"]\n    \n  T[\"Text Query x\"] --> U[\"Frozen MLLM\"]\n  V[\"Null Image v\"] --> U\n  U --> W[\"Extract Final-Layer Hidden States\"]\n  W --> X[\"Hidden States Matrix H_blind\"]\n  X --> Y[\"SVD Operation\"]\n  Y --> Z[\"Language Prior Subspace V_prior\"]\n    \n    subgraph Offline_Label_free_Language_Prior_Subspace_Construction[\"Offline: Label-free Language Prior Subspace Construction\"]\n  AA[\"Text Query x ?\"] --> AB[\"Frozen MLLM\"]\n  AC[\"Null Image v\"] --> AB\n  AB --> AD[\"Extract Final-Layer Hidden States\"]\n  AD --> AE[\"Hidden States Matrix H_blind\"]\n  AE --> AF[\"SVD Operation\"]\n  AF --> AG[\"Language Prior Subspace V_prior\"]\n    end\n    \n    subgraph Online_MGAP_Decoding_Step_t[\"Online: MGAP Decoding Step t\"]\n  AH[\"Real Image v\"] --> AI[\"Frozen MLLM\"]\n  AJ[\"Current Context (x,y<t) ?\"] --> AK[\"Original Hidden State h_orig\"]\n  AL[\"Text Collection\"] --> AM[\"Project onto V_prior\"]\n  AN[\"Prior-Posterior alignment\"] --> AO[\"δ = 1 - cos(h_orig, h_proj)\"]\n  AP[\"Token Distribution\"] --> AQ[\"Uncertainty Gate\"]\n  AR[\"H = -Σp logp γ = tanh(λH) vs Gate Score γ\"] --> AS[\"Protection Score δ\"]\n  AT[\"h_cut = h_orig - (α·δ·γ·h_proj)\"] --> AU[\"Correctioned Hidden State h_cut\"]\n    end\n```",
+        "sub_type": "flowchart",
+        "bbox": [
+            98,
+            83,
+            875,
+            368
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "Prior-Posterior alignment We quantify the agreement between the original hidden state and its prior projection using cosine similarity:",
+        "bbox": [
+            84,
+            429,
+            473,
+            474
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "equation",
+        "text": "$$\n\\delta = 1 - \\cos (h _ {\\mathrm{orig}}, h _ {\\mathrm{proj}}). \\tag {12}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            191,
+            479,
+            473,
+            498
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "A small δ indicates that the current state is consistent with the prior subspace and does not require additional suppression, whereas a large δ signals a mismatch that warrants stronger attenuation of prior components.",
+        "bbox": [
+            84,
+            502,
+            473,
+            561
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "Uncertainty-Aware gating Hallucinations are often accompanied by increased predictive uncertainty. We measure uncertainty using the Shannon entropy of the token distribution:",
+        "bbox": [
+            84,
+            577,
+            475,
+            633
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "equation",
+        "text": "$$\nH = - \\sum_ {y} p (y) \\log p (y), \\tag {13}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            192,
+            633,
+            473,
+            666
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "and derive a gating factor:",
+        "bbox": [
+            84,
+            669,
+            261,
+            684
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "equation",
+        "text": "$$\n\\gamma = \\tanh (\\lambda H), \\tag {14}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            223,
+            690,
+            473,
+            705
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "which amplifies intervention when generation is unstable and suppresses it when the model is confident.",
+        "bbox": [
+            84,
+            710,
+            473,
+            742
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "Adaptive projection The corrected hidden state is computed as:",
+        "bbox": [
+            84,
+            757,
+            475,
+            787
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "equation",
+        "text": "$$\nh _ {\\text { cut }} = h _ {\\text { orig }} - \\alpha \\cdot \\gamma \\cdot \\delta \\cdot h _ {\\text { proj }}. \\tag {15}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            174,
+            792,
+            473,
+            810
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "Equivalently, letting $\\beta = \\alpha \\cdot \\gamma \\cdot \\delta$ , MGAP applies $h _ { \\mathrm { c u t } } =$ $h _ { \\mathrm { o r i g } } - \\beta h _ { \\mathrm { p r o j } }$ . When visual evidence and language priors are consistent, both $\\gamma$ and δ become small, reducing the operation to an approximate identity mapping. As a result, MGAP avoids the global linear translation that causes Manifold Departure in prior methods.",
+        "bbox": [
+            84,
+            814,
+            475,
+            906
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "4.3. Theoretical Insights",
+        "text_level": 2,
+        "bbox": [
+            496,
+            429,
+            669,
+            444
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "To clarify why MGAP avoids the indiscriminate behavior of uniform linear suppression, we summarize three theoretical properties below. The proofs are provided in Appendix B.",
+        "bbox": [
+            496,
+            452,
+            885,
+            498
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "Theorem 4.1 (Distance decrease under prior-aligned residual). Let $h _ { \\mathrm { o r i g } }$ denote the original decoding hidden state, $h _ { \\mathrm { p r o j } }$ its projection onto the learned prior subspace, and $h _ { \\mathrm { c u t } } : = h _ { \\mathrm { o r i g } } - \\beta h _ { \\mathrm { p r o j } }$ the MGAP-corrected state with $\\beta > 0 .$ Under a prior-aligned residual condition (formalized in Appendix B), MGAP yields:",
+        "bbox": [
+            496,
+            501,
+            888,
+            592
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "equation",
+        "text": "$$\n\\left\\| h _ {\\mathrm{cut}} - h _ {\\mathrm{gt}} \\right\\| ^ {2} <   \\left\\| h _ {\\mathrm{orig}} - h _ {\\mathrm{gt}} \\right\\| ^ {2}. \\tag {16}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            580,
+            599,
+            885,
+            618
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "Interpretation When the current error component lies along the prior projection direction $h _ { \\mathrm { p r o j } }$ , subtracting (a suitable amount of) $h _ { \\mathrm { p r o j } }$ moves the hidden state closer to the ground-truth-aligned state $h _ { \\mathrm { g t } }$ . This analysis is illustrative and does not assume access to $h _ { \\mathrm { g t } }$ at inference",
+        "bbox": [
+            496,
+            632,
+            887,
+            708
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "Theorem 4.2 (Bounded coefficient and bounded step). $A s -$ sume $\\beta \\ : = \\ \\alpha \\cdot \\gamma \\cdot \\delta$ with $\\gamma : = \\mathrm { t a n h } ( \\lambda H )$ and $\\delta : = $ $1 - \\cos ( h _ { \\mathrm { o r i g } } , h _ { \\mathrm { p r o j } } )$ . Then $0 \\leq \\beta < \\alpha _ { \\mathrm { { i } } }$ , and the update magnitude is bounded:",
+        "bbox": [
+            496,
+            710,
+            887,
+            771
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "equation",
+        "text": "$$\n\\left\\| h _ {\\text { cut }} - h _ {\\text { orig }} \\right\\| \\leq \\alpha \\| h _ {\\text { orig }} \\|. \\tag {17}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            598,
+            779,
+            885,
+            797
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "Interpretation Since $\\gamma$ and $\\delta$ scales the step size, the effective coefficient $\\beta$ is always bounded by $\\alpha ,$ and the update magnitude is controlled. This prevents overly large corrections and yields stable decoding-time intervention.",
+        "bbox": [
+            496,
+            811,
+            885,
+            872
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "Theorem 4.3 (Subspace-selective update). Let $V _ { \\mathrm { p r i o r } } \\ \\in$ $\\mathbb { R } ^ { d \\times K }$ be the prior-subspace basis, and the prior projection $h _ { \\mathrm { p r o j } } : = V _ { \\mathrm { p r i o r } } V _ { \\mathrm { p r i o r } } ^ { \\top } h _ { \\mathrm { o r i g } }$ . MGAP only changes the prior component and preserves the orthogonal component:",
+        "bbox": [
+            496,
+            875,
+            885,
+            906
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "header",
+        "text": "Mitigating Manifold Departure: Uncertainty-Aware Subspace Rectification for Trustworthy MLLM Decoding",
+        "bbox": [
+            140,
+            56,
+            831,
+            70
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "page_number",
+        "text": "5",
+        "bbox": [
+            480,
+            922,
+            491,
+            934
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "table",
+        "img_path": "images/fe128772031be81ab01d1ee948ef65c88dafd8db4430388f0f5a26aafe012cfa.jpg",
+        "table_caption": [
+            "Table 1. Main results on the POPE benchmark. We report Accuracy (%), Precision (%), and F1-score (%) on three splits. Our method consistently outperforms existing training-free decoding strategies across both backbones."
+        ],
+        "table_footnote": [],
+        "table_body": "<table><tr><td rowspan=\"2\">Backbone</td><td rowspan=\"2\">Method</td><td colspan=\"3\">Random</td><td colspan=\"3\">Popular</td><td colspan=\"3\">Adversarial</td></tr><tr><td>Acc.</td><td>Prec.</td><td>F1</td><td>Acc.</td><td>Prec.</td><td>F1</td><td>Acc.</td><td>Prec.</td><td>F1</td></tr><tr><td rowspan=\"7\">LLaVA v1.5 7B</td><td>Vanilla</td><td>88.88</td><td>89.70</td><td>89.76</td><td>86.23</td><td>83.28</td><td>86.80</td><td>80.16</td><td>74.93</td><td>82.05</td></tr><tr><td>VCD</td><td>87.57</td><td>86.23</td><td>87.79</td><td>84.23</td><td>80.76</td><td>85.08</td><td>78.56</td><td>73.47</td><td>80.66</td></tr><tr><td>ICD</td><td>89.47</td><td>92.84</td><td>89.04</td><td>87.50</td><td>89.04</td><td>87.24</td><td>82.70</td><td>81.10</td><td>83.13</td></tr><tr><td>HalTrapper</td><td>88.67</td><td>88.77</td><td>88.65</td><td>85.40</td><td>83.31</td><td>85.84</td><td>80.30</td><td>76.02</td><td>81.80</td></tr><tr><td>DeCo</td><td>89.86</td><td>92.41</td><td>89.58</td><td>87.72</td><td>89.36</td><td>87.31</td><td>83.18</td><td>82.47</td><td>83.71</td></tr><tr><td>MoD</td><td>89.24</td><td>91.37</td><td>89.17</td><td>87.03</td><td>87.96</td><td>86.91</td><td>82.51</td><td>80.74</td><td>83.02</td></tr><tr><td>Ours</td><td>90.63</td><td>93.69</td><td>90.29</td><td>88.10</td><td>91.50</td><td>87.59</td><td>84.59</td><td>85.06</td><td>84.46</td></tr><tr><td rowspan=\"7\">Qwen3-VL 8B</td><td>Vanilla</td><td>91.53</td><td>89.08</td><td>91.79</td><td>84.20</td><td>78.28</td><td>85.70</td><td>80.00</td><td>73.20</td><td>82.56</td></tr><tr><td>VCD</td><td>90.67</td><td>88.80</td><td>90.83</td><td>83.27</td><td>79.41</td><td>84.53</td><td>81.36</td><td>74.92</td><td>83.60</td></tr><tr><td>ICD</td><td>91.74</td><td>91.21</td><td>91.75</td><td>84.80</td><td>80.63</td><td>85.90</td><td>82.52</td><td>76.53</td><td>83.89</td></tr><tr><td>HalTrapper</td><td>91.60</td><td>92.51</td><td>91.93</td><td>85.94</td><td>82.20</td><td>86.06</td><td>82.14</td><td>78.45</td><td>82.57</td></tr><tr><td>DeCo</td><td>91.96</td><td>92.36</td><td>91.98</td><td>86.01</td><td>83.02</td><td>83.81</td><td>82.74</td><td>79.18</td><td>83.81</td></tr><tr><td>MoD</td><td>91.87</td><td>91.94</td><td>91.86</td><td>85.76</td><td>82.71</td><td>83.74</td><td>82.61</td><td>78.92</td><td>83.74</td></tr><tr><td>Ours</td><td>91.83</td><td>93.67</td><td>91.94</td><td>86.40</td><td>84.13</td><td>86.84</td><td>83.13</td><td>79.30</td><td>84.17</td></tr></table>",
+        "bbox": [
+            99,
+            116,
+            874,
+            388
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "table",
+        "img_path": "images/35f9cbf56ff35cab8804e205e9bc778e6e3a26a4caf2340de649bbf385066234.jpg",
+        "table_caption": [
+            "Table 2. Results on the CHAIR benchmark. Lower CHAIR scores indicate fewer hallucinated objects. Our method significantly reduces hallucination while maintaining competitive precision and F1."
+        ],
+        "table_footnote": [],
+        "table_body": "<table><tr><td rowspan=\"2\">Method</td><td colspan=\"4\">LLaVA v1.5 7B</td><td colspan=\"4\">Qwen3-VL 8B</td></tr><tr><td>CHAIRs↓</td><td>CHAIRi↓</td><td>Prec.</td><td>F1</td><td>CHAIRs↓</td><td>CHAIRi↓</td><td>Prec.</td><td>F1</td></tr><tr><td>Vanilla</td><td>47.4</td><td>23.5</td><td>70.8</td><td>65.0</td><td>33.6</td><td>8.7</td><td>81.5</td><td>67.7</td></tr><tr><td>HalTrapper</td><td> $\\underline{47.2}$ </td><td>23.5</td><td>70.6</td><td>64.9</td><td> $\\underline{30.8}$ </td><td>8.8</td><td> $\\underline{81.6}$ </td><td>62.3</td></tr><tr><td>VCD</td><td>52.8</td><td>15.8</td><td>72.6</td><td>76.5</td><td>38.4</td><td>11.7</td><td>79.5</td><td> $\\underline{68.8}$ </td></tr><tr><td>ICD</td><td>51.8</td><td> $\\underline{14.7}$ </td><td>73.7</td><td> $\\underline{77.4}$ </td><td>34.2</td><td> $\\underline{8.4}$ </td><td>81.4</td><td> $\\underline{68.5}$ </td></tr><tr><td>CODE</td><td>49.8</td><td>13.8</td><td> $\\underline{76.0}$ </td><td>75.7</td><td>31.4</td><td>8.7</td><td> $\\underline{81.6}$ </td><td>64.0</td></tr><tr><td>Ours</td><td>26.2</td><td>7.6</td><td>85.9</td><td>77.4</td><td>26.8</td><td>8.1</td><td>83.9</td><td>66.2</td></tr></table>",
+        "bbox": [
+            94,
+            433,
+            879,
+            578
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "text",
+        "text": "",
+        "bbox": [
+            84,
+            601,
+            473,
+            633
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "equation",
+        "text": "$$\nh _ {\\text { cut }} - V _ {\\text { prior }} V _ {\\text { prior }} ^ {\\top} h _ {\\text { cut }} = h _ {\\text { orig }} - V _ {\\text { prior }} V _ {\\text { prior }} ^ {\\top} h _ {\\text { orig }}. \\tag {18}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            94,
+            656,
+            473,
+            676
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "text",
+        "text": "Interpretation MGAP only modifies the prior-subspace component and leaves all non-prior (orthogonal) semantics unchanged, avoiding a global shift.",
+        "bbox": [
+            84,
+            708,
+            473,
+            753
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "text",
+        "text": "Takeaway MGAP applies a bounded, subspace-selective correction: its intervention strength is provably bounded (Theorem 4.2), while preserving the orthogonal semantics (Theorem 4.3) and avoiding a global shift. Moreover, when the current error is positively aligned with the prior projection (i.e., $\\langle h _ { \\mathrm { o r i g } } - h _ { \\mathrm { g t } } , h _ { \\mathrm { p r o j } } \\rangle > 0 )$ , subtracting (a suitable amount of) $h _ { \\mathrm { p r o j } }$ provably moves the hidden state closer to a ground-truth-aligned reference (Theorem 4.1).",
+        "bbox": [
+            84,
+            785,
+            475,
+            906
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "text",
+        "text": "5. Experiments",
+        "text_level": 2,
+        "bbox": [
+            496,
+            599,
+            629,
+            618
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "text",
+        "text": "5.1. Experimental Setup",
+        "text_level": 2,
+        "bbox": [
+            496,
+            626,
+            669,
+            642
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "text",
+        "text": "We evaluate MGAP on two representative multimodal large language models, LLaVA v1.5-7B and Qwen3-VL-8B. Hallucination mitigation performance is assessed on POPE and CHAIR. For each backbone, we construct the language prior subspace offline using blind inputs (null image). We sample $N = 5 0$ textual prompts and collect the corresponding final-layer blind hidden states to form $\\tilde { H } _ { \\mathrm { b l i n d } } \\ ( \\mathrm { E q . } ( 8 ) )$ . We then perform SVD and retain the top-K right singular vectors $V _ { \\mathrm { p r i o r } }$ with K = 5 (Eq. (10)). All experiments are conducted on a single NVIDIA RTX A6000 GPU (48GB).",
+        "bbox": [
+            495,
+            650,
+            887,
+            801
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "text",
+        "text": "Baselines. We compare MGAP with several representative training-free decoding methods: VCD (Leng et al., 2024), which suppresses language priors via contrastive decoding with an unconditional branch; ICD (Wang et al., 2024c), which applies instruction-level contrastive decoding to penalize prior-driven generations; CODE (Kim et al., 2024), which contrasts self-generated descriptions to reduce hallucinations; and HalTrapper (Zheng et al., 2025), a recent method that attributes hallucinations to contextual accumulation in long responses and mitigates them by dynamically regulating context influence during decoding. All baselines operate without additional training and are evaluated under their recommended settings.",
+        "bbox": [
+            495,
+            829,
+            888,
+            906
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "header",
+        "text": "Mitigating Manifold Departure: Uncertainty-Aware Subspace Rectification for Trustworthy MLLM Decoding",
+        "bbox": [
+            140,
+            56,
+            831,
+            70
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "page_number",
+        "text": "6",
+        "bbox": [
+            480,
+            922,
+            491,
+            934
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "table",
+        "img_path": "images/88d6dc7794219e655de7c95f010f484582335215e80f673dd6357abfc1e22901.jpg",
+        "table_caption": [
+            "Table 3. Ablation study on the POPE benchmark. “w/o Prot” removes consistency protection, and “w/o Gate” removes uncertainty gating. Removing either component leads to unstable trade-offs."
+        ],
+        "table_footnote": [],
+        "table_body": "<table><tr><td rowspan=\"2\">Backbone</td><td rowspan=\"2\">Method</td><td colspan=\"3\">Random</td><td colspan=\"3\">Popular</td><td colspan=\"3\">Adversarial</td></tr><tr><td>Acc.</td><td>Prec.</td><td>F1</td><td>Acc.</td><td>Prec.</td><td>F1</td><td>Acc.</td><td>Prec.</td><td>F1</td></tr><tr><td rowspan=\"3\">LLaVA v1.5 7B</td><td>w/o Prot</td><td>87.70</td><td>97.24</td><td>86.32</td><td>86.60</td><td>94.64</td><td>77.60</td><td>83.00</td><td>88.99</td><td>82.91</td></tr><tr><td>w/o Gate</td><td>86.57</td><td>98.41</td><td>84.69</td><td>85.63</td><td>96.04</td><td>83.80</td><td>83.73</td><td>91.61</td><td>82.03</td></tr><tr><td>Ours</td><td>90.13</td><td>94.79</td><td>89.59</td><td>87.90</td><td>90.35</td><td>87.56</td><td>83.93</td><td>83.10</td><td>84.00</td></tr><tr><td rowspan=\"3\">Qwen3-VL 8B</td><td>w/o Prot</td><td>91.63</td><td>90.25</td><td>91.82</td><td>85.15</td><td>82.39</td><td>86.02</td><td>80.95</td><td>76.40</td><td>83.52</td></tr><tr><td>w/o Gate</td><td>91.70</td><td>91.27</td><td>91.53</td><td>85.37</td><td>80.86</td><td>86.36</td><td>82.03</td><td>75.18</td><td>83.01</td></tr><tr><td>Ours</td><td>91.83</td><td>93.67</td><td>91.94</td><td>86.40</td><td>84.13</td><td>86.84</td><td>83.13</td><td>79.30</td><td>84.17</td></tr></table>",
+        "bbox": [
+            86,
+            116,
+            890,
+            266
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "table",
+        "img_path": "images/85891ad08f360e7b6edba01be8a6903e7dae0a2c898f1a6ebff2f2ed0dd7b36a.jpg",
+        "table_caption": [
+            "Table 4. Ablation results on the CHAIR benchmark. We analyze the contribution of consistency protection (w/o Prot) and uncertaintyaware gating (w/o Gate) on two representative backbones. Lower CHAIR scores indicate fewer hallucinated objects."
+        ],
+        "table_footnote": [],
+        "table_body": "<table><tr><td rowspan=\"2\">Method</td><td colspan=\"4\">LLaVA v1.5 7B</td><td colspan=\"4\">Qwen3-VL 8B</td></tr><tr><td>CHAIRs↓</td><td>CHAIRi↓</td><td>Prec.</td><td>F1</td><td>CHAIRs↓</td><td>CHAIRi↓</td><td>Prec.</td><td>F1</td></tr><tr><td>Vanilla</td><td>47.4</td><td>23.5</td><td>70.8</td><td>65.0</td><td>33.6</td><td>8.7</td><td>81.5</td><td>67.7</td></tr><tr><td>w/o Prot</td><td>31.6</td><td>15.2</td><td>82.2</td><td>72.8</td><td>29.3</td><td>8.6</td><td>82.4</td><td>65.9</td></tr><tr><td>w/o Gate</td><td>35.4</td><td>8.1</td><td>80.2</td><td>71.1</td><td>28.8</td><td>8.1</td><td>83.3</td><td>66.1</td></tr><tr><td>Ours</td><td>26.2</td><td>7.6</td><td>85.9</td><td>77.4</td><td>26.8</td><td>8.0</td><td>83.9</td><td>66.2</td></tr></table>",
+        "bbox": [
+            86,
+            313,
+            895,
+            431
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "text",
+        "text": "",
+        "bbox": [
+            84,
+            455,
+            475,
+            575
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "text",
+        "text": "5.2. Main Results",
+        "text_level": 2,
+        "bbox": [
+            84,
+            593,
+            212,
+            607
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "text",
+        "text": "We evaluate MGAP on the POPE benchmark using two representative backbones, LLaVA v1.5-7B and Qwen3-VL-8B. Results are summarized in Table 1.",
+        "bbox": [
+            84,
+            616,
+            475,
+            661
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "text",
+        "text": "Main Results on POPE Across all splits and both backbones, MGAP consistently achieves the best performance. Compared to vanilla decoding, our method improves F1 on all POPE splits, while avoiding the performance degradation observed in existing contrastive decoding approaches. On the Random and Popular splits, MGAP achieves clear precision gains, indicating more faithful object grounding. On the Adversarial split, which explicitly targets hallucination failure modes, MGAP yields the strongest overall performance on both backbones, demonstrating robustness under severe visual–linguistic conflict. Compared with trainingfree baselines such as VCD, ICD, and HalTrapper, MGAP consistently achieves superior trade-offs across all splits. In particular, VCD underperforms vanilla decoding even on non-adversarial splits, confirming that indiscriminate linear suppression of language priors disrupts valid semantic configurations. By contrast, MGAP selectively suppresses prior components only when they conflict with visual evidence, thereby avoiding unnecessary interference. As a result, our method is the only approach that simultaneously improves precision and accuracy while maintaining or improving F1 across all evaluation settings.",
+        "bbox": [
+            84,
+            678,
+            475,
+            905
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "text",
+        "text": "",
+        "bbox": [
+            496,
+            455,
+            887,
+            561
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "text",
+        "text": "Main Results on CHAIR We further evaluate MGAP on the CHAIR benchmark, which measures object-level hallucinations in image captioning. Results are reported in Table 2. Across both backbones, MGAP achieves a substantial reduction in hallucination rates, significantly lowering both CHAIRs and CHAIRi compared to all baselines. Notably, this reduction is accompanied by clear gains in precision, indicating that hallucination mitigation is achieved without overly conservative generation. In contrast, contrastive decoding baselines (e.g., VCD and ICD) exhibit mixed behavior across metrics and backbones, often improving only one of CHAIRs / CHAIRi while worsening the other, reflecting an unstable trade-off in object grounding. These results demonstrate that MGAP generalizes beyond binary question answering to open-ended captioning tasks.",
+        "bbox": [
+            496,
+            578,
+            888,
+            805
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "text",
+        "text": "5.3. Generalization to Additional Benchmarks",
+        "text_level": 2,
+        "bbox": [
+            496,
+            821,
+            823,
+            835
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "text",
+        "text": "While POPE primarily evaluates object-level hallucinations through binary probing questions, it remains unclear whether the learned hallucination priors generalize beyond this specific evaluation protocol. To further assess the robustness of MGAP, we additionally evaluate on the AMBER benchmark, which contains more diverse hallucination scenarios and compositional visual reasoning challenges.",
+        "bbox": [
+            496,
+            844,
+            887,
+            905
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "header",
+        "text": "Mitigating Manifold Departure: Uncertainty-Aware Subspace Rectification for Trustworthy MLLM Decoding",
+        "bbox": [
+            140,
+            56,
+            831,
+            70
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "page_number",
+        "text": "7",
+        "bbox": [
+            480,
+            922,
+            491,
+            934
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "table",
+        "img_path": "images/03e336f536bdae2faf68149dda2c8260b08778e379f187da9d1a986314c11efd.jpg",
+        "table_caption": [
+            "Table 5. Results on the AMBER benchmark using LLaVA v1.5 7B. ↓ indicates lower is better, and ↑ indicates higher is better. Best results are highlighted in bold."
+        ],
+        "table_footnote": [],
+        "table_body": "<table><tr><td>Model</td><td>CHAIR↓</td><td>Cover↑</td><td>Hal↓</td><td>Cog↓</td></tr><tr><td>LLaVA v1.5 7B</td><td>11.2</td><td>50.2</td><td>47.9</td><td>4.6</td></tr><tr><td>+ VCD</td><td>8.9</td><td>51.2</td><td>38.1</td><td>4.4</td></tr><tr><td>+ ICD</td><td>8.6</td><td>51.1</td><td>37.3</td><td>3.9</td></tr><tr><td>+ CODE</td><td>9.0</td><td>51.1</td><td>39.5</td><td>4.3</td></tr><tr><td>+ HalTrapper</td><td>8.0</td><td>51.5</td><td>36.3</td><td>3.8</td></tr><tr><td>+ MGAP (Ours)</td><td>7.6</td><td>51.7</td><td>35.1</td><td>3.8</td></tr></table>",
+        "bbox": [
+            86,
+            128,
+            478,
+            252
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "table",
+        "img_path": "images/afd1e65ec5cd4ac588d059cb7c6370b56add456e397a0e0b34b6b04b4f552e70.jpg",
+        "table_caption": [
+            "Table 6. Inference efficiency comparison on 3000 samples. We report total inference time and average latency per sample. Our method is significantly more efficient than contrastive decoding baselines."
+        ],
+        "table_footnote": [],
+        "table_body": "<table><tr><td>Method</td><td>Total Time</td><td>Sec / Sample</td></tr><tr><td>Vanilla</td><td>23:57</td><td>0.48</td></tr><tr><td>VCD</td><td>1:46:54</td><td>2.14</td></tr><tr><td>ICD</td><td>1:45:18</td><td>2.11</td></tr><tr><td>HalTrapper</td><td>1:50:03</td><td>2.20</td></tr><tr><td>Ours</td><td>52:24</td><td>1.05</td></tr></table>",
+        "bbox": [
+            86,
+            329,
+            473,
+            441
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "text",
+        "text": "",
+        "bbox": [
+            84,
+            472,
+            475,
+            518
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "text",
+        "text": "Table 5 shows that MGAP consistently improves over existing decoding-time baselines across both backbones. In particular, MGAP achieves stronger hallucination mitigation while better preserving generation fidelity, suggesting that the learned prior subspace captures hallucination-inducing directions that generalize across benchmarks.",
+        "bbox": [
+            84,
+            525,
+            475,
+            617
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "text",
+        "text": "These results indicate that hallucination priors are not merely artifacts of the POPE benchmark, but instead exhibit transferable structural properties in the representation space. This supports our hypothesis that selective prior correction can serve as a more general mechanism for mitigating hallucinations in large vision-language models.",
+        "bbox": [
+            84,
+            625,
+            475,
+            715
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "text",
+        "text": "5.4. Representation Analysis",
+        "text_level": 2,
+        "bbox": [
+            84,
+            731,
+            287,
+            746
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "text",
+        "text": "To better understand the behavior of MGAP, we analyze the representation changes introduced during decoding. Specifically, we measure the average projection magnitude onto the learned prior subspace for different decoding strategies.",
+        "bbox": [
+            84,
+            753,
+            475,
+            816
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "text",
+        "text": "As shown in Table 7, uniform suppression methods tend to produce larger global representation shifts, whereas MGAP introduces more localized corrections within the learned subspace. This behavior is consistent across both backbones.",
+        "bbox": [
+            84,
+            821,
+            475,
+            883
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "text",
+        "text": "These observations align with the design motivation of",
+        "bbox": [
+            84,
+            890,
+            475,
+            905
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "text",
+        "text": "MGAP. Instead of globally suppressing decoding trajectories, MGAP performs targeted representation correction using the learned prior subspace, which helps mitigate hallucinations while better preserving semantic fidelity.",
+        "bbox": [
+            496,
+            84,
+            887,
+            148
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "text",
+        "text": "5.5. Ablation Study",
+        "text_level": 2,
+        "bbox": [
+            496,
+            161,
+            637,
+            176
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "text",
+        "text": "We conduct ablation studies to analyze the contribution of each component in MGAP, namely the consistency-based protection and the uncertainty-aware gating. Specifically, we consider two variants: (1) w/o Prot, which removes the consistency-based protection term, and (2) w/o Gate, which removes the uncertainty-aware gating mechanism. Results are reported on both POPE and CHAIR benchmarks.",
+        "bbox": [
+            495,
+            185,
+            887,
+            292
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "text",
+        "text": "Ablation Results on POPE Table 3 summarizes the ablation results on the POPE benchmark. Removing either component leads to a noticeable degradation in overall performance, confirming that both are necessary for stable hallucination mitigation. A notable phenomenon is that both w/o Prot and w/o Gate variants exhibit abnormally high precision, particularly on LLaVA v1.5-7B. However, this precision gain comes at the cost of significantly reduced F1 scores and Accuracy. This behavior indicates an imbalanced trade-off: the model becomes overly conservative, suppressing a large portion of predictions to avoid hallucinations, but failing to correctly answer valid questions. In contrast, the full MGAP achieves a more balanced trade-off. By jointly modeling visual–linguistic consistency and generation uncertainty, our method selectively suppresses prior components only when necessary. As a result, MGAP maintains high precision while substantially improving F1 score, demonstrating stable and reliable hallucination mitigation.",
+        "bbox": [
+            495,
+            306,
+            888,
+            579
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "text",
+        "text": "Ablation Results on CHAIR Results on CHAIR in Table 4 show a consistent trend. While removing either protection or gating reduces hallucination rates compared to vanilla decoding, both variants exhibit inferior precision and F1 compared to the full model, indicating that both components are necessary for stable and accurate grounding.",
+        "bbox": [
+            495,
+            593,
+            888,
+            686
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "text",
+        "text": "5.6. Efficiency Analysis",
+        "text_level": 2,
+        "bbox": [
+            496,
+            700,
+            663,
+            715
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "text",
+        "text": "In addition to effectiveness, inference efficiency is a critical factor for training-free decoding methods. Many contrastive decoding approaches mitigate hallucinations by performing multiple forward passes with different contexts (Leng et al., 2024; Wang et al., 2024c; Zheng et al., 2025), significantly increasing inference latency. We compare the inference efficiency of MGAP with vanilla decoding and representative baselines, including VCD, ICD, and HalTrapper. As shown in Table 6, contrastive methods like VCD, ICD, and HalTrapper incur more than twice the inference time per sample compared to vanilla decoding due to multiple contrastive branches. In contrast, MGAP only applies",
+        "bbox": [
+            495,
+            724,
+            887,
+            906
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "header",
+        "text": "Mitigating Manifold Departure: Uncertainty-Aware Subspace Rectification for Trustworthy MLLM Decoding",
+        "bbox": [
+            140,
+            56,
+            831,
+            70
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "page_number",
+        "text": "8",
+        "bbox": [
+            480,
+            922,
+            491,
+            934
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "table",
+        "img_path": "images/2a438d7a548edec82f01afa90db97399c4de41d53be29dede629b98598d2df55.jpg",
+        "table_caption": [
+            "Table 7. Number of off-manifold samples (out of 3000) under different extrapolation coefficients α. Lower values indicate that the representations are better constrained within the valid data manifold. Best results are in bold, and second best are underlined."
+        ],
+        "table_footnote": [],
+        "table_body": "<table><tr><td rowspan=\"2\">Method</td><td colspan=\"5\">Extrapolation Coefficient α</td></tr><tr><td>α = 0</td><td>α = 0.25</td><td>α = 0.5</td><td>α = 0.75</td><td>α = 1.0</td></tr><tr><td>LLaVA v1.5 7B</td><td>150</td><td>-</td><td>-</td><td>-</td><td>-</td></tr><tr><td>+ VCD</td><td>150</td><td>515</td><td>2589</td><td>2999</td><td>3000</td></tr><tr><td>+ ICD</td><td>150</td><td>416</td><td>679</td><td>1175</td><td>1887</td></tr><tr><td>+ CODE</td><td>150</td><td>775</td><td>1642</td><td>2403</td><td>2944</td></tr><tr><td>+ HalTrapper</td><td>150</td><td>2098</td><td>2672</td><td>2918</td><td>2989</td></tr><tr><td>+ MGAP (Ours)</td><td>150</td><td>76</td><td>210</td><td>285</td><td>402</td></tr><tr><td>Qwen3-VL 8B</td><td>121</td><td>-</td><td>-</td><td>-</td><td>-</td></tr><tr><td>+ VCD</td><td>121</td><td>448</td><td>2386</td><td>2979</td><td>3000</td></tr><tr><td>+ ICD</td><td>121</td><td>362</td><td>694</td><td>1187</td><td>1804</td></tr><tr><td>+ CODE</td><td>121</td><td>724</td><td>1548</td><td>2297</td><td>2886</td></tr><tr><td>+ HalTrapper</td><td>121</td><td>1961</td><td>2604</td><td>2881</td><td>2970</td></tr><tr><td>+ MGAP (Ours)</td><td>121</td><td>14</td><td>32</td><td>363</td><td>438</td></tr></table>",
+        "bbox": [
+            91,
+            116,
+            883,
+            358
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "image",
+        "img_path": "images/79aeafe48a8fcfa9f79678610218219802727333065f28a1a6c69e4b9dc9eec2.jpg",
+        "image_caption": [],
+        "image_footnote": [],
+        "content": "Group photo of four people posing together at a nighttime event (no visible text or signage)",
+        "sub_type": "natural_image",
+        "bbox": [
+            96,
+            382,
+            251,
+            450
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "text",
+        "text": "Prompt: Please help me describe the image in detail.",
+        "bbox": [
+            258,
+            383,
+            519,
+            395
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "text",
+        "text": "Contrastive Decoding: In the scene, there are two wine glasses, one held by a man and the other by a woman. Additionally, there are two bottles, one near the center of the group and the other towards the right side. The group appears to be attending a social event or gathering, as they are all dressed up and holding wine glasses.",
+        "bbox": [
+            259,
+            404,
+            625,
+            449
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "text",
+        "text": "Ours: The image features a group of five people standing together, posing for a picture. Three of them having wine glasses in their hands. The group consists of two men and three women, all smiling and enjoying the moment. The group is standing close to each other, creating a sense of camaraderie and friendship.",
+        "bbox": [
+            640,
+            383,
+            879,
+            445
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "image",
+        "img_path": "images/7ba401decb90152e2409ef40a786750b7e419b66eb500a0a62db0130f1ae9a01.jpg",
+        "image_caption": [
+            "Figure 5. Qualitative comparison on the CHAIR benchmark. VCD introduces hallucinated object mentions (highlighted in red), while MGAP produces grounded descriptions without hallucinated objects."
+        ],
+        "image_footnote": [],
+        "content": "Interior view of a luxury bedroom with a bed, desk, and window (no visible text or symbols)",
+        "sub_type": "natural_image",
+        "bbox": [
+            96,
+            455,
+            251,
+            544
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "text",
+        "text": "Prompt: Please help me describe the image in detail.",
+        "bbox": [
+            258,
+            459,
+            519,
+            469
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "text",
+        "text": "Contrastive Decoding: A cozy bedroom is shown with neatly made beds and soft lighting. A desk with a chair is located near the bed, providing a comfortable workspace. A table is also present in the room, accompanied by a potted plant, adding a touch of greenery to the space. The room is connected to a balcony, offering a view of the outdoors. Additional items in the room include a remote control, a cup, and a book, suggesting that the occupant may enjoy some leisure time in the bedroom.",
+        "bbox": [
+            258,
+            478,
+            625,
+            540
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "text",
+        "text": "Ours: The image features a cozy bedroom with a large bed situated in the center of the room. The bed is adorned with a white comforter and has a few pillows on it. A trash can is placed near the door. A chair is placed near the bed, and a desk with a mirror is located in the room as well. The room also has a doorway leading to a balcony, providing a view of the outdoors.",
+        "bbox": [
+            638,
+            465,
+            877,
+            535
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "text",
+        "text": "a lightweight intervention during a single forward pass, reducing inference latency by approximately 50 % compared to contrastive baselines, while remaining fully training-free. This efficiency–effectiveness trade-off makes MGAP particularly suitable for practical deployment.",
+        "bbox": [
+            84,
+            604,
+            475,
+            680
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "text",
+        "text": "5.7. Qualitative Case Study",
+        "text_level": 2,
+        "bbox": [
+            84,
+            696,
+            279,
+            712
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "text",
+        "text": "We present qualitative case studies from CHAIR to illustrate how MGAP mitigates hallucinations. Figure 5 shows representative examples comparing Visual Contrastive Decoding (VCD) and MGAP. In these cases, VCD hallucinates objects that are not supported by the visual content, such as chairs or tableware, likely due to over-reliance on language priors associated with indoor scenes. These hallucinations lead to reduced description faithfulness. In contrast, MGAP avoids introducing unsupported object mentions. By selectively regulating language priors based on visual–linguistic consistency and generation uncertainty, our method preserves informative descriptions while suppressing hallucinated content. Importantly, the improvement does not stem from overly conservative generation: MGAP still provides detailed and coherent captions grounded in visual evidence. These qualitative results align with the quantitative findings in Sections 5.2 and 5.5, indivating that MGAP suppresses object hallucinations while maintaining descriptive quality.",
+        "bbox": [
+            84,
+            719,
+            475,
+            902
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "text",
+        "text": "",
+        "bbox": [
+            496,
+            604,
+            887,
+            696
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "text",
+        "text": "6. Conclusion",
+        "text_level": 2,
+        "bbox": [
+            496,
+            714,
+            616,
+            729
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "text",
+        "text": "We identify a common failure mode of training-free decoding for hallucination mitigation: indiscriminate linear prior suppression disrupts hidden representations, which we term Manifold Departure. We propose Manifold-Guided Adaptive Projection (MGAP), which models a language-prior subspace and applies uncertainty-aware selective projection at decoding time. 1 Experiments prove improved trade-offs between hallucination reduction and descriptive fidelity.",
+        "bbox": [
+            495,
+            739,
+            887,
+            862
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "header",
+        "text": "Mitigating Manifold Departure: Uncertainty-Aware Subspace Rectification for Trustworthy MLLM Decoding",
+        "bbox": [
+            140,
+            56,
+            831,
+            70
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "page_footnote",
+        "text": "1Our code and models are publicly available at: https:// github.com/ZJU-OmniAI/MGAP",
+        "bbox": [
+            496,
+            869,
+            885,
+            897
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "page_number",
+        "text": "9",
+        "bbox": [
+            480,
+            922,
+            491,
+            934
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "text",
+        "text": "Impact Statement",
+        "text_level": 2,
+        "bbox": [
+            86,
+            83,
+            240,
+            99
+        ],
+        "page_idx": 9
+    },
+    {
+        "type": "text",
+        "text": "This paper advances multimodal language models by improving hallucination mitigation. We anticipate positive impacts in applications like visual question answering, with continued attention to fairness and robustness.",
+        "bbox": [
+            84,
+            109,
+            475,
+            169
+        ],
+        "page_idx": 9
+    },
+    {
+        "type": "text",
+        "text": "Acknowledgements",
+        "text_level": 2,
+        "bbox": [
+            86,
+            189,
+            253,
+            207
+        ],
+        "page_idx": 9
+    },
+    {
+        "type": "text",
+        "text": "This work is supported by the Zhejiang Pioneer Project under Grant No. 2025C06SA201986 and the Zhejiang Key Laboratory Project (2024E10001).",
+        "bbox": [
+            84,
+            215,
+            475,
+            261
+        ],
+        "page_idx": 9
+    },
+    {
+        "type": "text",
+        "text": "References",
+        "text_level": 2,
+        "bbox": [
+            86,
+            279,
+            181,
+            296
+        ],
+        "page_idx": 9
+    },
+    {
+        "type": "list",
+        "sub_type": "ref_text",
+        "list_items": [
+            "Bai, Z., Wang, P., Xiao, T., He, T., Han, Z., Zhang, Z., and Shou, M. Z. Hallucination of multimodal large language models: A survey. arXiv preprint arXiv:2404.18930, 2024.",
+            "Bengio, Y., Courville, A., and Vincent, P. Representation learning: A review and new perspectives. IEEE Transactions on Pattern Analysis and Machine Intelligence, 35 (8):1798–1828, 2013a. doi: 10.1109/TPAMI.2013.50.",
+            "Bengio, Y., Courville, A., and Vincent, P. Representation learning: A review and new perspectives. IEEE Transactions on Pattern Analysis and Machine Intelligence, 35 (8):1798–1828, 2013b.",
+            "Beyer, L., Izmailov, P., Kolesnikov, A., Caron, M., Kornblith, S., Zhai, X., Minderer, M., Tschannen, M., Abdulmohsin, I., and Pavetic, F. FlexiViT: One model for all patch sizes. In Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition (CVPR), 2023.",
+            "Chen, Z., Wang, W., Cao, Y., Liu, Y., Gao, Z., Cui, E., Zhu, J., Ye, S., Tian, H., Liu, Z., Gu, L., Wang, X., Li, Q., Ren, Y., Chen, Z., Luo, J., Wang, J., Jiang, T., Wang, B., He, C., Shi, B., Zhang, X., Lv, H., Wang, Y., Shao, W., Chu, P., Tu, Z., He, T., Wu, Z., Deng, H., Ge, J., Chen, K., Zhang, K., Wang, L., Dou, M., Lu, L., Zhu, X., Lu, T., Lin, D., Qiao, Y., Dai, J., and Wang, W. Expanding performance boundaries of opensource multimodal models with model, data, and test-time scaling. arXiv preprint arXiv:2412.05271, 2024a.",
+            "Chen, Z., Zhao, Z., Luo, H., Yao, H., Li, B., and Zhou, J. Halc: Object hallucination reduction via adaptive focalcontrast decoding. arXiv preprint arXiv:2403.00425, 2024b.",
+            "Cho, Y., Kim, K., Hwang, T., and Cho, S. Do you keep an eye on what i ask? mitigating multimodal hallucination via attention-guided ensemble decoding. In International Conference on Learning Representations (ICLR), 2025."
+        ],
+        "bbox": [
+            86,
+            303,
+            475,
+            905
+        ],
+        "page_idx": 9
+    },
+    {
+        "type": "ref_text",
+        "text": "Deitke, M., Clark, C., Lee, S., Tripathi, R., Yang, Y., Park, J. S., Salehi, M., Muennighoff, N., Lo, K., Soldaini, L., Lu, J., Anderson, T., Bransom, E., Ehsani, K., Ngo, H., Chen, Y., Patel, A., Yatskar, M., Callison-Burch, C., Head, A., Hendrix, R., Bastani, F., VanderBilt, E., Lambert, N., Chou, Y., Chheda, A., Sparks, J., Skjonsberg, S., Schmitz, M., Sarnat, A., Bischoff, B., Walsh, P., Newell, C., Wolters, P., Gupta, T., Zeng, K.-H., Borchardt, J., Groeneveld, D., Dumas, J., Nam, C., Lebrecht, S., Wittlif, C., Schoenick, C., Michel, O., Krishna, R., Weihs, L., Smith, N. A., Hajishirzi, H., Girshick, R., Farhadi, A., and Kembhavi, A. Molmo and pixmo: Open weights and open data for state-of-the-art multimodal models. arXiv preprint arXiv:2409.17146, 2024.",
+        "bbox": [
+            498,
+            84,
+            887,
+            297
+        ],
+        "page_idx": 9
+    },
+    {
+        "type": "ref_text",
+        "text": "Dosovitskiy, A., Beyer, L., Kolesnikov, A., Weissenborn, D., Zhai, X., Unterthiner, T., Dehghani, M., Minderer, M., Heigold, G., Gelly, S., Uszkoreit, J., and Houlsby, N. An image is worth 16x16 words: Transformers for image recognition at scale. arXiv preprint arXiv:2010.11929, 2020.",
+        "bbox": [
+            498,
+            306,
+            887,
+            397
+        ],
+        "page_idx": 9
+    },
+    {
+        "type": "ref_text",
+        "text": "Favero, A., Zancato, L., Trager, M., Choudhary, S., Perera, P., Achille, A., Swaminathan, A., and Soatto, S. Multi-modal hallucination control by visual information grounding. In Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition (CVPR), 2024.",
+        "bbox": [
+            498,
+            409,
+            887,
+            500
+        ],
+        "page_idx": 9
+    },
+    {
+        "type": "ref_text",
+        "text": "Guerreiro, N. M., Voita, E., and Martins, A. F. T. Looking for a needle in a haystack: A comprehensive study of hallucinations in neural machine translation. In Proceedings of the 17th Conference of the European Chapter of the Association for Computational Linguistics. Association for Computational Linguistics, 2023. arXiv:2208.05309.",
+        "bbox": [
+            498,
+            511,
+            887,
+            603
+        ],
+        "page_idx": 9
+    },
+    {
+        "type": "ref_text",
+        "text": "He, K., Chen, X., Xie, S., Li, Y., Dollar, P., and Girshick, ´ R. Masked autoencoders are scalable vision learners. In Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition (CVPR), 2022.",
+        "bbox": [
+            498,
+            613,
+            887,
+            674
+        ],
+        "page_idx": 9
+    },
+    {
+        "type": "ref_text",
+        "text": "Hu, K., Wu, P., Pu, F., Xiao, W., Zhang, Y., Yue, X., Li, B., and Liu, Z. Video-mmmu: Evaluating knowledge acquisition from multi-discipline professional videos. arXiv preprint arXiv:2501.13826, 2025. URL https: //arxiv.org/abs/2501.13826.",
+        "bbox": [
+            498,
+            685,
+            887,
+            762
+        ],
+        "page_idx": 9
+    },
+    {
+        "type": "ref_text",
+        "text": "Huang, Q., Dong, X., Zhang, P., Wang, B., He, C., Wang, J., Lin, D., Zhang, W., and Yu, N. OPERA: Alleviating hallucination in multi-modal large language models via over-trust penalty and retrospection-allocation. In Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition (CVPR), 2024.",
+        "bbox": [
+            498,
+            772,
+            887,
+            864
+        ],
+        "page_idx": 9
+    },
+    {
+        "type": "ref_text",
+        "text": "Huo, F., Xu, W., Zhang, Z., Wang, H., Chen, Z., and Zhao, P. Self-introspective decoding: Alleviating hallucina-",
+        "bbox": [
+            498,
+            875,
+            887,
+            905
+        ],
+        "page_idx": 9
+    },
+    {
+        "type": "header",
+        "text": "Mitigating Manifold Departure: Uncertainty-Aware Subspace Rectification for Trustworthy MLLM Decoding",
+        "bbox": [
+            138,
+            56,
+            834,
+            71
+        ],
+        "page_idx": 9
+    },
+    {
+        "type": "page_number",
+        "text": "10",
+        "bbox": [
+            477,
+            922,
+            495,
+            934
+        ],
+        "page_idx": 9
+    },
+    {
+        "type": "list",
+        "sub_type": "ref_text",
+        "list_items": [
+            "tions for large vision-language models. arXiv preprint arXiv:2408.02032, 2025.",
+            "Jiang, C., Xu, H., Dong, M., Chen, J., Ye, W., Yan, M., Ye, Q., Zhang, J., Huang, F., and Zhang, S. Hallucination augmented contrastive learning for multimodal large language model. In Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition (CVPR), 2024.",
+            "Khoury, M. and Hadfield-Menell, D. On the geometry of adversarial examples. arXiv preprint arXiv:1811.00525, 2018.",
+            "Kim, J., Kim, H., Kim, Y., and Ro, Y. Code: Contrasting self-generated description to combat hallucination in large multi-modal models. In Advances in Neural Information Processing Systems (NeurIPS), 2024. URL https://arxiv.org/abs/2406. 01920. arXiv:2406.01920.",
+            "Kornblith, S., Norouzi, M., Lee, H., and Hinton, G. Similarity of neural network representations revisited. In Proceedings of the International Conference on Machine Learning (ICML), 2019.",
+            "Lee, Y.-L., Tsai, Y.-H., and Chiu, W.-C. Delve into visual contrastive decoding for hallucination mitigation of large vision-language models. arXiv preprint arXiv:2412.06775, 2024.",
+            "Leng, S., Zhang, H., Chen, G., Li, X., Lu, S., Miao, C., and Bing, L. Mitigating object hallucinations in large visionlanguage models through visual contrastive decoding. In Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition (CVPR), 2024.",
+            "Li, C., Farkhoor, H., Liu, R., and Yosinski, J. Measuring the intrinsic dimension of objective landscapes. In International Conference on Learning Representations (ICLR), 2018.",
+            "Li, X. L., Holtzman, A., Fried, D., Liang, P., Eisner, J., Hashimoto, T., Zettlemoyer, L., and Lewis, M. Contrastive decoding: Open-ended text generation as optimization. In Proceedings of the 61st Annual Meeting of the Association for Computational Linguistics (Volume 1: Long Papers). Association for Computational Linguistics, 2023a. arXiv:2210.15097.",
+            "Li, Y., Du, Y., Zhou, K., Wang, J., Zhao, W. X., and Wen, J.-R. Evaluating object hallucination in large vision-language models. In Proceedings of the 2023 Conference on Empirical Methods in Natural Language Processing. Association for Computational Linguistics, 2023b. URL https://aclanthology. org/2023.emnlp-main.155/.",
+            "Li, Y., Du, Y., Zhou, K., Wang, J., Zhao, W. X., and Wen, J.-R. Evaluating object hallucination in large visionlanguage models. In Proceedings of the 2023 Conference on Empirical Methods in Natural Language Processing (EMNLP). Association for Computational Linguistics, 2023c. URL https://aclanthology.org/ 2023.emnlp-main.155/.",
+            "Liu, F., Lin, K., Li, L., Wang, J., Yacoob, Y., and Wang, L. Mitigating hallucination in large multi-modal models via robust instruction tuning. In International Conference on Learning Representations (ICLR), 2024a.",
+            "Liu, Y., Duan, H., Zhang, Y., Li, B., Zhang, S., Zhao, W., Yuan, Y., Wang, J., He, C., Liu, Z., et al. Mmbench: Is your multi-modal model an all-around player? In European conference on computer vision, pp. 216–233. Springer, 2024b.",
+            "Morcos, A. S., Raghu, M., and Bengio, S. Insights on representational similarity in neural networks with canonical correlation. In Advances in Neural Information Processing Systems (NeurIPS), 2018.",
+            "Park, Y., Lee, D., Choe, J., and Chang, B.-O. ConVis: Contrastive decoding with hallucination visualization for mitigating hallucinations in multimodal large language models. In Proceedings of the AAAI Conference on Artificial Intelligence (AAAI), 2025.",
+            "Raghu, M., Gilmer, J., Yosinski, J., and Sohl-Dickstein, J. Svcca: Singular vector canonical correlation analysis for deep learning dynamics and interpretability. In Advances in Neural Information Processing Systems (NeurIPS), 2017.",
+            "Rohrbach, A., Hendricks, L. A., Burns, K., Darrell, T., and Saenko, K. Object hallucination in image captioning. In Proceedings of the 2018 Conference on Empirical Methods in Natural Language Processing, 2018.",
+            "Roweis, S. T. and Saul, L. K. Nonlinear dimensionality reduction by locally linear embedding. Science, 290 (5500):2323–2326, 2000.",
+            "Stutz, D., Hein, M., and Schiele, B. Disentangling adversarial robustness and generalization. In Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition (CVPR), 2019. arXiv:1812.00740.",
+            "Su, J., Chen, J., Li, H., Chen, Y., Qing, L., and Zhang, Z. Activation steering decoding: Mitigating hallucination in large vision-language models through bidirectional hidden state intervention. In Che, W., Nabende, J., Shutova, E., and Pilehvar, M. T. (eds.), Proceedings of the 63rd Annual Meeting of the Association for Computational Linguistics (Volume 1: Long Papers), pp.",
+            "12964–12974, Vienna, Austria, July 2025. Association for Computational Linguistics. ISBN 979-8-89176-251- 0. doi: 10.18653/v1/2025.acl-long.634. URL https: //aclanthology.org/2025.acl-long.634/.",
+            "Sun, Z., Shen, S., Cao, S., Liu, H., Li, C., Shen, Y., Gan, C., Gui, L.-Y., Wang, Y.-X., Yang, Y., et al. Aligning large multimodal models with factually augmented RLHF. arXiv preprint arXiv:2309.14525, 2023.",
+            "Tenenbaum, J. B., de Silva, V., and Langford, J. C. A global geometric framework for nonlinear dimensionality reduction. Science, 290(5500):2319–2323, 2000.",
+            "Tong, S., Liu, Z., Zhai, Y., Ma, Y., LeCun, Y., and Xie, S. Eyes wide shut? exploring the visual shortcomings of multimodal LLMs. In Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition (CVPR), 2024. arXiv:2401.06209.",
+            "Verma, V., Lamb, A., Beckham, C., Najafi, A., Mitliagkas, I., Lopez-Paz, D., and Bengio, Y. Manifold mixup: Better representations by interpolating hidden states. In Proceedings of the 36th International Conference on Machine Learning (ICML), volume 97 of Proceedings of Machine Learning Research, pp. 6438–6447, 2019.",
+            "Wang, C., Chen, X., Zhang, N., Tian, B., Xu, H., Deng, S., and Chen, H. Mllm can see? dynamic correction decoding for hallucination mitigation, 2024a. URL https://arxiv.org/abs/2410.11779.",
+            "Wang, P., Bai, S., Tan, S., Wang, S., Fan, Z., Bai, J., Chen, K., Liu, X., Wang, J., Ge, W., Fan, Y., Dang, K., Du, M., Ren, X., Men, R., Liu, D., Zhou, C., Zhou, J., and Lin, J. Qwen2-vl: Enhancing vision-language model’s perception of the world at any resolution. arXiv preprint arXiv:2409.12191, 2024b.",
+            "Wang, X., Pan, J., Ding, L., and Biemann, C. Mitigating hallucinations in large vision-language models with instruction contrastive decoding. In Findings of the Association for Computational Linguistics (Findings of ACL), 2024c. arXiv:2403.18715.",
+            "Yue, X., Ni, Y., Zhang, K., Zheng, T., Liu, R., Zhang, G., Stevens, S., Jiang, D., Ren, W., Sun, Y., Wei, C., Yu, B., Yuan, R., Sun, R., Yin, M., Zheng, B., Yang, Z., Liu, Y., Huang, W., Sun, H., Su, Y., and Chen, W. Mmmu: A massive multi-discipline multimodal understanding and reasoning benchmark for expert agi. In Proceedings of CVPR, 2024.",
+            "Zhao, Z., Wang, B., Ouyang, L., Dong, X., Wang, J., and He, C. Beyond hallucinations: Enhancing lvlms through hallucination-aware direct preference optimization, 2023."
+        ],
+        "bbox": [
+            84,
+            83,
+            480,
+            906
+        ],
+        "page_idx": 10
+    },
+    {
+        "type": "list",
+        "sub_type": "ref_text",
+        "list_items": [],
+        "bbox": [
+            498,
+            83,
+            888,
+            906
+        ],
+        "page_idx": 10
+    },
+    {
+        "type": "header",
+        "text": "Mitigating Manifold Departure: Uncertainty-Aware Subspace Rectification for Trustworthy MLLM Decoding",
+        "bbox": [
+            140,
+            56,
+            831,
+            71
+        ],
+        "page_idx": 10
+    },
+    {
+        "type": "page_number",
+        "text": "",
+        "bbox": [
+            477,
+            922,
+            493,
+            934
+        ],
+        "page_idx": 10
+    },
+    {
+        "type": "list",
+        "sub_type": "ref_text",
+        "list_items": [],
+        "bbox": [
+            84,
+            83,
+            480,
+            906
+        ],
+        "page_idx": 11
+    },
+    {
+        "type": "ref_text",
+        "text": "Zheng, G., Qian, J., Tang, J., and Yang, S. Why lvlms are more prone to hallucinations in longer responses: The role of context. In International Conference on Computer Vision (ICCV), 2025.",
+        "bbox": [
+            498,
+            84,
+            885,
+            146
+        ],
+        "page_idx": 11
+    },
+    {
+        "type": "header",
+        "text": "Mitigating Manifold Departure: Uncertainty-Aware Subspace Rectification for Trustworthy MLLM Decoding",
+        "bbox": [
+            140,
+            56,
+            831,
+            71
+        ],
+        "page_idx": 11
+    },
+    {
+        "type": "page_number",
+        "text": "12",
+        "bbox": [
+            477,
+            922,
+            495,
+            934
+        ],
+        "page_idx": 11
+    },
+    {
+        "type": "text",
+        "text": "A. Hyper-parameter Sensitivity Analysis",
+        "text_level": 2,
+        "bbox": [
+            84,
+            83,
+            429,
+            101
+        ],
+        "page_idx": 12
+    },
+    {
+        "type": "text",
+        "text": "In this section, we investigate the sensitivity of our proposed MGAP to the hyper-parameters K and N. The experiments are conducted on the LLaVA v1.5 7B backbone using the POPE benchmark. Table 8 reports the Accuracy, Precision, and F1 scores across the Random, Popular, and Adversarial evaluation splits under different settings of $K \\in \\{ 1 , 3 , 5 , 1 0 \\}$ and $N \\in \\{ 1 0 , 5 0 , 1 0 0 , 2 0 0 \\}$ .",
+        "bbox": [
+            84,
+            109,
+            887,
+            171
+        ],
+        "page_idx": 12
+    },
+    {
+        "type": "text",
+        "text": "Remarkably, as shown in Table 8, MGAP demonstrates exceptional robustness to hyper-parameter variations. The performance metrics remain highly stable across all tested values of K and N, indicating that our method does not rely on meticulous parameter tuning to achieve superior hallucination mitigation. Specifically, increasing K from 1 to 5 brings slight improvements, particularly on the more challenging Adversarial split, while further increasing K to 10 yields no additional gains. Similarly, regarding the parameter N, the performance reaches its peak around N = 50. Expanding N beyond 50 does not significantly improve the generation quality but inevitably introduces additional computational overhead. Therefore, to achieve an optimal balance between anti-hallucination performance and computational efficiency, we adopt K = 5 and N = 50 as the default configuration for all main experiments.",
+        "bbox": [
+            84,
+            176,
+            887,
+            299
+        ],
+        "page_idx": 12
+    },
+    {
+        "type": "table",
+        "img_path": "images/ac5dd4c4b68d046bd2787ea81e3585150a6daf867eda6be2bf3ed4f1a4b79be4.jpg",
+        "table_caption": [
+            "Table 8. Sensitivity analysis of hyper-parameters K and N on the POPE benchmark using LLaVA v1.5 7B. Metrics are reported across Random (R), Popular (P), and Adversarial (A) splits in the format of R / P / A. The best result for each individual split within the K and N blocks is marked in bold."
+        ],
+        "table_footnote": [],
+        "table_body": "<table><tr><td>Parameter</td><td>Value</td><td>Acc (R/P/A)</td><td>Prec (R/P/A)</td><td>F1 (R/P/A)</td></tr><tr><td rowspan=\"4\">K</td><td>1</td><td>90.60 / 87.87 / 82.70</td><td>92.89 / 87.82 / 79.64</td><td>89.34 / 87.87 / 84.35</td></tr><tr><td>3</td><td>90.53 / 88.80 / 84.10</td><td>93.87 / 91.62 / 85.49</td><td>90.16 / 87.73 / 83.69</td></tr><tr><td>5 (Default)</td><td>90.63 / 88.10 / 84.59</td><td>93.69 / 91.50 / 85.06</td><td>90.29 / 87.59 / 84.46</td></tr><tr><td>10</td><td>90.63 / 87.77 / 82.97</td><td>93.38 / 87.99 / 84.24</td><td>90.13 / 87.73 / 83.70</td></tr><tr><td rowspan=\"4\">N</td><td>10</td><td>90.40 / 87.93 / 83.43</td><td>93.10 / 89.30 / 81.68</td><td>89.98 / 87.72 / 83.38</td></tr><tr><td>50 (Default)</td><td>90.63 / 88.10 / 84.59</td><td>93.69 / 91.50 / 85.06</td><td>90.29 / 87.59 / 84.46</td></tr><tr><td>100</td><td>90.37 / 88.83 / 84.20</td><td>94.10 / 91.16 / 85.36</td><td>89.94 / 87.62 / 83.68</td></tr><tr><td>200</td><td>90.33 / 88.95 / 84.17</td><td>94.03 / 91.27 / 85.31</td><td>89.91 / 87.56 / 83.65</td></tr></table>",
+        "bbox": [
+            86,
+            358,
+            897,
+            518
+        ],
+        "page_idx": 12
+    },
+    {
+        "type": "text",
+        "text": "B. Theoretical Properties of MGAP",
+        "text_level": 2,
+        "bbox": [
+            84,
+            542,
+            387,
+            561
+        ],
+        "page_idx": 12
+    },
+    {
+        "type": "text",
+        "text": "This appendix provides several theoretical properties of MGAP that motivate its geometry-aware and stable behavior during decoding. We emphasize that MGAP performs a low-rank intervention confined to a learned language-prior subspace, and the overall correction magnitude is provably bounded. These results help explain why MGAP avoids the “global translation” effect that may cause manifold departure in linear suppression methods.",
+        "bbox": [
+            84,
+            569,
+            888,
+            631
+        ],
+        "page_idx": 12
+    },
+    {
+        "type": "text",
+        "text": "B.1. Notation and Setup",
+        "text_level": 2,
+        "bbox": [
+            84,
+            646,
+            256,
+            662
+        ],
+        "page_idx": 12
+    },
+    {
+        "type": "text",
+        "text": "Let $V \\in \\mathbb { R } ^ { d \\times K }$ denote the language prior basis with orthonormal columns, i.e., $V ^ { \\top } V = I $ . Define the orthogonal projection onto the prior subspace as",
+        "bbox": [
+            84,
+            669,
+            887,
+            700
+        ],
+        "page_idx": 12
+    },
+    {
+        "type": "equation",
+        "text": "$$\nP := V V ^ {\\top}. \\tag {19}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            442,
+            699,
+            885,
+            715
+        ],
+        "page_idx": 12
+    },
+    {
+        "type": "text",
+        "text": "At decoding step t, MGAP forms the prior projection",
+        "bbox": [
+            84,
+            723,
+            437,
+            739
+        ],
+        "page_idx": 12
+    },
+    {
+        "type": "equation",
+        "text": "$$\nh _ {\\text { proj }} := P h _ {\\text { orig }}, \\tag {20}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            426,
+            751,
+            885,
+            768
+        ],
+        "page_idx": 12
+    },
+    {
+        "type": "text",
+        "text": "and applies the adaptive correction",
+        "bbox": [
+            84,
+            779,
+            316,
+            794
+        ],
+        "page_idx": 12
+    },
+    {
+        "type": "equation",
+        "text": "$$\nh _ {\\text { cut }} := h _ {\\text { orig }} - \\beta h _ {\\text { proj }}, \\quad \\text { where } \\quad \\beta := \\alpha \\cdot g \\cdot p. \\tag {21}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            318,
+            806,
+            885,
+            824
+        ],
+        "page_idx": 12
+    },
+    {
+        "type": "text",
+        "text": "Here g is the uncertainty gate (computed from entropy) and p is the consistency-based protection factor:",
+        "bbox": [
+            84,
+            835,
+            767,
+            851
+        ],
+        "page_idx": 12
+    },
+    {
+        "type": "equation",
+        "text": "$$\ng := \\tanh (\\lambda H), \\quad p := 1 - \\cos \\left(h _ {\\text { orig }}, h _ {\\text { proj }}\\right). \\tag {22}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            321,
+            862,
+            885,
+            880
+        ],
+        "page_idx": 12
+    },
+    {
+        "type": "text",
+        "text": "For brevity, we analyze one decoding step and omit the time index.",
+        "bbox": [
+            84,
+            890,
+            527,
+            906
+        ],
+        "page_idx": 12
+    },
+    {
+        "type": "header",
+        "text": "Mitigating Manifold Departure: Uncertainty-Aware Subspace Rectification for Trustworthy MLLM Decoding",
+        "bbox": [
+            138,
+            56,
+            834,
+            71
+        ],
+        "page_idx": 12
+    },
+    {
+        "type": "page_number",
+        "text": "13",
+        "bbox": [
+            477,
+            922,
+            495,
+            934
+        ],
+        "page_idx": 12
+    },
+    {
+        "type": "text",
+        "text": "B.2. Property I: MGAP Moves Toward a Ground-truth-Aligned State Under Prior-Aligned Error",
+        "text_level": 2,
+        "bbox": [
+            84,
+            84,
+            767,
+            101
+        ],
+        "page_idx": 13
+    },
+    {
+        "type": "text",
+        "text": "Intuition The previous property ensures MGAP does not over-correct, but it does not explain when the correction is beneficial. This property states a sufficient condition under which subtracting the prior projection reduces the distance to a ground-truth-aligned reference state. Concretely, if the current error is positively aligned with the prior component, then removing (part of) that component yields a strict improvement.",
+        "bbox": [
+            84,
+            108,
+            888,
+            169
+        ],
+        "page_idx": 13
+    },
+    {
+        "type": "text",
+        "text": "Theorem B.1 (Ground-truth-directed correction under prior-aligned error). Let $h _ { \\mathrm { g t } }$ be a reference hidden state aligned with the ground-truth continuation $( e . g .$ , obtained by teacher forcing), and define the error $e : = h _ { \\mathrm { o r i g } } - h _ { \\mathrm { g t } }$ . Let $h _ { \\mathrm { p r o j } } = P h _ { \\mathrm { o r i g } }$ and $h _ { \\mathrm { c u t } } = h _ { \\mathrm { o r i g } } - \\beta h _ { \\mathrm { p r o j } }$ with $\\beta \\ge 0 . \\ : I f \\langle e , h _ { \\mathrm { p r o j } } \\rangle > 0$ , then for any",
+        "bbox": [
+            84,
+            172,
+            887,
+            220
+        ],
+        "page_idx": 13
+    },
+    {
+        "type": "equation",
+        "text": "$$\n0 <   \\beta <   \\frac {2 \\langle e , h _ {\\mathrm{proj}} \\rangle}{\\| h _ {\\mathrm{proj}} \\| ^ {2}},\n$$",
+        "text_format": "latex",
+        "bbox": [
+            411,
+            228,
+            558,
+            263
+        ],
+        "page_idx": 13
+    },
+    {
+        "type": "text",
+        "text": "the update strictly decreases the squared distance to $h _ { \\mathrm { g t } } .$ :",
+        "bbox": [
+            84,
+            270,
+            464,
+            287
+        ],
+        "page_idx": 13
+    },
+    {
+        "type": "equation",
+        "text": "$$\n\\left\\| h _ {\\mathrm{cut}} - h _ {\\mathrm{gt}} \\right\\| ^ {2} <   \\left\\| h _ {\\mathrm{orig}} - h _ {\\mathrm{gt}} \\right\\| ^ {2}.\n$$",
+        "text_format": "latex",
+        "bbox": [
+            372,
+            294,
+            596,
+            313
+        ],
+        "page_idx": 13
+    },
+    {
+        "type": "text",
+        "text": "Moreover, the optimal step size (minimizing $\\| h _ { \\mathrm { c u t } } - h _ { \\mathrm { g t } } \\| ^ { 2 } o \\nu e r \\beta \\geq 0 )$ is",
+        "bbox": [
+            84,
+            321,
+            571,
+            338
+        ],
+        "page_idx": 13
+    },
+    {
+        "type": "equation",
+        "text": "$$\n\\beta^ {\\star} = \\frac {\\langle e , h _ {\\mathrm{proj}} \\rangle}{\\| h _ {\\mathrm{proj}} \\| ^ {2}}.\n$$",
+        "text_format": "latex",
+        "bbox": [
+            426,
+            345,
+            542,
+            381
+        ],
+        "page_idx": 13
+    },
+    {
+        "type": "text",
+        "text": "Proof. We expand the squared distance:",
+        "bbox": [
+            84,
+            393,
+            352,
+            409
+        ],
+        "page_idx": 13
+    },
+    {
+        "type": "equation",
+        "text": "$$\n\\| h _ {\\mathrm{cut}} - h _ {\\mathrm{gt}} \\| ^ {2} = \\| h _ {\\mathrm{orig}} - \\beta h _ {\\mathrm{proj}} - h _ {\\mathrm{gt}} \\| ^ {2} = \\| e - \\beta h _ {\\mathrm{proj}} \\| ^ {2} = \\| e \\| ^ {2} - 2 \\beta \\langle e, h _ {\\mathrm{proj}} \\rangle + \\beta^ {2} \\| h _ {\\mathrm{proj}} \\| ^ {2}.\n$$",
+        "text_format": "latex",
+        "bbox": [
+            158,
+            417,
+            810,
+            436
+        ],
+        "page_idx": 13
+    },
+    {
+        "type": "text",
+        "text": "If $\\langle e , h _ { \\mathrm { p r o j } } \\rangle > 0$ , the quadratic is strictly smaller than $\\| e \\| ^ { 2 }$ whenever",
+        "bbox": [
+            84,
+            445,
+            542,
+            462
+        ],
+        "page_idx": 13
+    },
+    {
+        "type": "equation",
+        "text": "$$\n- 2 \\beta \\langle e, h _ {\\mathrm{proj}} \\rangle + \\beta^ {2} \\| h _ {\\mathrm{proj}} \\| ^ {2} <   0 \\quad \\Leftrightarrow \\quad 0 <   \\beta <   \\frac {2 \\langle e , h _ {\\mathrm{proj}} \\rangle}{\\| h _ {\\mathrm{proj}} \\| ^ {2}}.\n$$",
+        "text_format": "latex",
+        "bbox": [
+            274,
+            470,
+            696,
+            505
+        ],
+        "page_idx": 13
+    },
+    {
+        "type": "text",
+        "text": "The minimizer over $\\beta \\geq 0$ follows by setting the derivative to zero, yielding $\\beta ^ { \\star } = \\langle e , h _ { \\mathrm { p r o j } } \\rangle / \\| h _ { \\mathrm { p r o j } } \\| ^ { 2 }$ .",
+        "bbox": [
+            84,
+            513,
+            759,
+            531
+        ],
+        "page_idx": 13
+    },
+    {
+        "type": "text",
+        "text": "B.3. Property II: MGAP Has a Bounded Step Size",
+        "text_level": 2,
+        "bbox": [
+            84,
+            544,
+            437,
+            561
+        ],
+        "page_idx": 13
+    },
+    {
+        "type": "text",
+        "text": "Intuition Decoding-time interventions can be brittle if the correction magnitude becomes too large. MGAP prevents this by making the effective coefficient $\\beta = \\alpha$ · Gate · Protection automatically bounded, which in turn bounds the update step $\\| h _ { \\mathrm { c u t } } - h _ { \\mathrm { o r i g } } \\|$ . This yields a conservative, non-explosive intervention in a single forward pass.",
+        "bbox": [
+            84,
+            568,
+            888,
+            614
+        ],
+        "page_idx": 13
+    },
+    {
+        "type": "text",
+        "text": "Theorem B.2 (Bounded coefficient and bounded step). Assume $V ^ { \\top } V = I$ and $h _ { \\mathrm { o r i g } } \\neq 0 .$ . Let $P = V V ^ { \\top } , h _ { \\mathrm { p r o j } } = P h _ { \\mathrm { o r i g } } ,$ and define",
+        "bbox": [
+            84,
+            617,
+            887,
+            648
+        ],
+        "page_idx": 13
+    },
+    {
+        "type": "equation",
+        "text": "$$\n\\mathrm{Gate} = \\tanh (\\lambda H), \\quad \\mathrm{Protection} = 1 - \\cos (h _ {\\mathrm{orig}}, h _ {\\mathrm{proj}}), \\quad \\beta = \\alpha \\cdot \\mathrm{Gate} \\cdot \\mathrm{Protection}.\n$$",
+        "text_format": "latex",
+        "bbox": [
+            189,
+            648,
+            779,
+            666
+        ],
+        "page_idx": 13
+    },
+    {
+        "type": "text",
+        "text": "Then",
+        "bbox": [
+            84,
+            670,
+            124,
+            683
+        ],
+        "page_idx": 13
+    },
+    {
+        "type": "equation",
+        "text": "$$\n0 \\leq \\text { Gate } <   1, \\quad 0 \\leq \\text { Protection } \\leq 1, \\quad 0 \\leq \\beta <   \\alpha .\n$$",
+        "text_format": "latex",
+        "bbox": [
+            289,
+            684,
+            679,
+            700
+        ],
+        "page_idx": 13
+    },
+    {
+        "type": "text",
+        "text": "Moreover, the MGAP update $h _ { \\mathrm { c u t } } = h _ { \\mathrm { o r i g } } - \\beta h _ { \\mathrm { p r o j } }$ satisfies",
+        "bbox": [
+            84,
+            707,
+            486,
+            723
+        ],
+        "page_idx": 13
+    },
+    {
+        "type": "equation",
+        "text": "$$\n\\| h _ {\\mathrm{cut}} - h _ {\\mathrm{orig}} \\| = \\beta \\| h _ {\\mathrm{proj}} \\| \\leq \\alpha \\| h _ {\\mathrm{orig}} \\|.\n$$",
+        "text_format": "latex",
+        "bbox": [
+            349,
+            732,
+            620,
+            750
+        ],
+        "page_idx": 13
+    },
+    {
+        "type": "text",
+        "text": "Proof. Since $H \\geq 0$ and $\\lambda > 0$ , we have $\\operatorname { t a n h } ( \\lambda H ) \\in [ 0 , 1 )$ , hence $0 \\leq \\mathrm { G a t e } < 1$ .",
+        "bbox": [
+            84,
+            763,
+            633,
+            780
+        ],
+        "page_idx": 13
+    },
+    {
+        "type": "text",
+        "text": "Because $h _ { \\mathrm { p r o j } } = P h _ { \\mathrm { o r i g } }$ is an orthogonal projection, we can write $h _ { \\mathrm { o r i g } } = h _ { \\mathrm { p r o j } } + ( I - P ) h _ { \\mathrm { o r i g } }$ with $h _ { \\mathrm { p r o j } } \\perp ( I - P ) h _ { \\mathrm { o r i g } }$ . Therefore,",
+        "bbox": [
+            84,
+            786,
+            888,
+            815
+        ],
+        "page_idx": 13
+    },
+    {
+        "type": "equation",
+        "text": "$$\n\\cos (h _ {\\mathrm{orig}}, h _ {\\mathrm{proj}}) = \\frac {\\langle h _ {\\mathrm{orig}} , h _ {\\mathrm{proj}} \\rangle}{\\| h _ {\\mathrm{orig}} \\| \\| h _ {\\mathrm{proj}} \\|} = \\frac {\\| h _ {\\mathrm{proj}} \\| ^ {2}}{\\| h _ {\\mathrm{orig}} \\| \\| h _ {\\mathrm{proj}} \\|} = \\frac {\\| h _ {\\mathrm{proj}} \\|}{\\| h _ {\\mathrm{orig}} \\|} \\in [ 0, 1 ],\n$$",
+        "text_format": "latex",
+        "bbox": [
+            236,
+            814,
+            733,
+            849
+        ],
+        "page_idx": 13
+    },
+    {
+        "type": "text",
+        "text": "which implies Protection $\\in [ 0 , 1 ]$ and hence $0 \\leq \\beta < \\alpha$ .",
+        "bbox": [
+            84,
+            852,
+            464,
+            869
+        ],
+        "page_idx": 13
+    },
+    {
+        "type": "text",
+        "text": "Finally, $h _ { \\mathrm { c u t } } - h _ { \\mathrm { o r i g } } = - \\beta h _ { \\mathrm { p r o j } } \\mathrm { s o } \\| h _ { \\mathrm { c u t } } - h _ { \\mathrm { o r i g } } \\| = \\beta \\| h _ { \\mathrm { p r o j } } \\|$ . Since P is non-expansive, $\\| h _ { \\mathrm { p r o j } } \\| = \\| P h _ { \\mathrm { o r i g } } \\| \\leq \\| h _ { \\mathrm { o r i g } } \\|$ , which yields $\\| h _ { \\mathrm { c u t } } - h _ { \\mathrm { o r i g } } \\| \\leq \\alpha \\| h _ { \\mathrm { o r i g } } \\|$ . □",
+        "bbox": [
+            84,
+            875,
+            888,
+            907
+        ],
+        "page_idx": 13
+    },
+    {
+        "type": "header",
+        "text": "Mitigating Manifold Departure: Uncertainty-Aware Subspace Rectification for Trustworthy MLLM Decoding",
+        "bbox": [
+            138,
+            56,
+            834,
+            71
+        ],
+        "page_idx": 13
+    },
+    {
+        "type": "page_number",
+        "text": "14",
+        "bbox": [
+            477,
+            922,
+            495,
+            934
+        ],
+        "page_idx": 13
+    },
+    {
+        "type": "text",
+        "text": "B.4. Property III: MGAP Modifies Only the Prior Subspace",
+        "text_level": 2,
+        "bbox": [
+            84,
+            84,
+            504,
+            101
+        ],
+        "page_idx": 14
+    },
+    {
+        "type": "text",
+        "text": "Intuition A core design goal of MGAP is to avoid perturbing semantic directions that are not attributable to language priors. Since the correction is applied via the projection $h _ { \\mathrm { p r o j } }$ that lies entirely in the prior subspace, the update should leave all components orthogonal to this subspace unchanged. The following theorem formalizes this subspace-selective behavior.",
+        "bbox": [
+            84,
+            108,
+            888,
+            152
+        ],
+        "page_idx": 14
+    },
+    {
+        "type": "text",
+        "text": "Theorem B.3 (Subspace-selective update). Let $V _ { \\mathrm { p r i o r } } \\in \\mathbb { R } ^ { d \\times K }$ have orthonormal columns $( V _ { \\mathrm { p r i o r } } ^ { \\top } V _ { \\mathrm { p r i o r } } = I _ { K } )$ and define $P : = V _ { \\mathrm { p r i o r } } V _ { \\mathrm { p r i o r } } ^ { \\top } \\in \\mathbb { R } ^ { d \\times d }$ . Decompose $h _ { \\mathrm { o r i g } }$ into its subspace and orthogonal components:",
+        "bbox": [
+            84,
+            157,
+            887,
+            193
+        ],
+        "page_idx": 14
+    },
+    {
+        "type": "equation",
+        "text": "$$\nh _ {\\text { orig }} = h _ {\\parallel} + h _ {\\perp}, \\quad h _ {\\parallel} := P h _ {\\text { orig }}, h _ {\\perp} := (I _ {d} - P) h _ {\\text { orig }},\n$$",
+        "text_format": "latex",
+        "bbox": [
+            282,
+            202,
+            687,
+            219
+        ],
+        "page_idx": 14
+    },
+    {
+        "type": "text",
+        "text": "where $I _ { d }$ is the d × d identity matrix. Then MGAP yields",
+        "bbox": [
+            84,
+            229,
+            460,
+            244
+        ],
+        "page_idx": 14
+    },
+    {
+        "type": "equation",
+        "text": "$$\nh _ {\\mathrm{cut}} = (1 - \\beta) h _ {\\parallel} + h _ {\\perp}.\n$$",
+        "text_format": "latex",
+        "bbox": [
+            398,
+            256,
+            571,
+            273
+        ],
+        "page_idx": 14
+    },
+    {
+        "type": "text",
+        "text": "In particular, the orthogonal component is preserved:",
+        "bbox": [
+            84,
+            284,
+            439,
+            299
+        ],
+        "page_idx": 14
+    },
+    {
+        "type": "equation",
+        "text": "$$\n(I _ {d} - P) h _ {\\mathrm{cut}} = (I _ {d} - P) h _ {\\mathrm{orig}}.\n$$",
+        "text_format": "latex",
+        "bbox": [
+            379,
+            310,
+            593,
+            328
+        ],
+        "page_idx": 14
+    },
+    {
+        "type": "text",
+        "text": "Equivalent form. Since $P = V _ { \\mathrm { p r i o r } } V _ { \\mathrm { p r i o r } } ^ { \\top } .$ , we have",
+        "bbox": [
+            84,
+            344,
+            426,
+            363
+        ],
+        "page_idx": 14
+    },
+    {
+        "type": "equation",
+        "text": "$$\n(I _ {d} - P) h = h - P h = h - V _ {\\mathrm{prior}} V _ {\\mathrm{prior}} ^ {\\top} h.\n$$",
+        "text_format": "latex",
+        "bbox": [
+            341,
+            373,
+            629,
+            393
+        ],
+        "page_idx": 14
+    },
+    {
+        "type": "text",
+        "text": "Therefore,",
+        "bbox": [
+            84,
+            402,
+            158,
+            417
+        ],
+        "page_idx": 14
+    },
+    {
+        "type": "equation",
+        "text": "$$\n(I _ {d} - P) h _ {\\mathrm{cut}} = (I _ {d} - P) h _ {\\mathrm{orig}}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            380,
+            417,
+            589,
+            434
+        ],
+        "page_idx": 14
+    },
+    {
+        "type": "text",
+        "text": "is equivalent to",
+        "bbox": [
+            84,
+            440,
+            191,
+            455
+        ],
+        "page_idx": 14
+    },
+    {
+        "type": "equation",
+        "text": "$$\nh _ {\\text { cut }} - V _ {\\text { prior }} V _ {\\text { prior }} ^ {\\top} h _ {\\text { cut }} = h _ {\\text { orig }} - V _ {\\text { prior }} V _ {\\text { prior }} ^ {\\top} h _ {\\text { orig }}. \\tag {23}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            313,
+            452,
+            885,
+            472
+        ],
+        "page_idx": 14
+    },
+    {
+        "type": "text",
+        "text": "Proof. By definition of projection, $h _ { \\mathrm { p r o j } } = P h _ { \\mathrm { o r i g } } = h _ { \\| }$ . MGAP applies $h _ { \\mathrm { c u t } } = h _ { \\mathrm { o r i g } } - \\beta h _ { \\mathrm { p r o j } }$ . Substituting $h _ { \\mathrm { o r i g } } =$ $h _ { \\parallel } + h _ { \\perp }$ and $h _ { \\mathrm { p r o j } } = h _ { \\parallel }$ gives",
+        "bbox": [
+            84,
+            486,
+            885,
+            517
+        ],
+        "page_idx": 14
+    },
+    {
+        "type": "equation",
+        "text": "$$\nh _ {\\text { cut }} = (h _ {\\parallel} + h _ {\\perp}) - \\beta h _ {\\parallel} = (1 - \\beta) h _ {\\parallel} + h _ {\\perp}.\n$$",
+        "text_format": "latex",
+        "bbox": [
+            331,
+            517,
+            637,
+            532
+        ],
+        "page_idx": 14
+    },
+    {
+        "type": "text",
+        "text": "Applying $( I _ { d } - P )$ and using $( I _ { d } - P ) h _ { \\parallel } = 0$ and $( I _ { d } - P ) h _ { \\perp } = h _ { \\perp }$ yields $( I _ { d } - P ) h _ { \\mathrm { c u t } } = h _ { \\perp } = ( I _ { d } - P ) h _ { \\mathrm { o r i g } } .$",
+        "bbox": [
+            84,
+            537,
+            885,
+            555
+        ],
+        "page_idx": 14
+    },
+    {
+        "type": "text",
+        "text": "C. MGAP Decoding Algorithm",
+        "text_level": 2,
+        "bbox": [
+            84,
+            573,
+            349,
+            590
+        ],
+        "page_idx": 14
+    },
+    {
+        "type": "text",
+        "text": "Algorithm 1 summarizes the decoding-time procedure of MGAP. Given an image v, a query x, and the precomputed prior basis $V _ { \\mathrm { p r i o r } }$ (Section 4.1), MGAP computes the prior projection $h _ { \\mathrm { p r o j } }$ , estimates mismatch δ and uncertainty $\\gamma ,$ and applies the adaptive correction to obtain $h _ { \\mathrm { c u t } }$ for token generation.",
+        "bbox": [
+            84,
+            599,
+            887,
+            646
+        ],
+        "page_idx": 14
+    },
+    {
+        "type": "code",
+        "sub_type": "algorithm",
+        "code_caption": [
+            "Algorithm 1 MGAP Decoding"
+        ],
+        "code_body": "Require: Image v, query x, prior basis $V_{prior}$ Ensure: Generated response $y = (y_1, \\ldots, y_T)$ 1: Initialize $y_0 \\leftarrow \\langle BOS \\rangle$ 2: for t = 1 to T do\n\n3: Compute hidden state $h_{orig}$ 4: $h_{proj} \\leftarrow V_{prior} V_{prior}^\\top h_{orig}$ 5: $\\delta \\leftarrow 1 - \\cos(h_{orig}, h_{proj})$ 6: $p(\\cdot) \\leftarrow \\text{Softmax}(\\mathcal{F}(h_{orig}))$ 7: $H \\leftarrow -\\sum_y p(y) \\log p(y)$ 8: $\\gamma \\leftarrow \\tanh(\\lambda H)$ 9: $h_{cut} \\leftarrow h_{orig} - \\alpha \\cdot \\gamma \\cdot \\delta \\cdot h_{proj}$ 10: Generate $y_t \\sim \\text{Softmax}(\\mathcal{F}(h_{\\text{cut}}))$ 11: end for\n\n12: return y",
+        "bbox": [
+            86,
+            678,
+            400,
+            891
+        ],
+        "page_idx": 14
+    },
+    {
+        "type": "header",
+        "text": "Mitigating Manifold Departure: Uncertainty-Aware Subspace Rectification for Trustworthy MLLM Decoding",
+        "bbox": [
+            138,
+            56,
+            834,
+            71
+        ],
+        "page_idx": 14
+    },
+    {
+        "type": "page_number",
+        "text": "15",
+        "bbox": [
+            477,
+            922,
+            495,
+            934
+        ],
+        "page_idx": 14
+    },
+    {
+        "type": "text",
+        "text": "D. Hyper-parameter Sensitivity",
+        "text_level": 2,
+        "bbox": [
+            84,
+            83,
+            354,
+            101
+        ],
+        "page_idx": 15
+    },
+    {
+        "type": "text",
+        "text": "We study the sensitivity of MGAP to two key hyper-parameters: the projection scale α and the uncertainty-gating temperature λ (LLaVA v1.5-7B on POPE). Overall, MGAP is stable across a broad range of settings and exhibits a clear monotonic trend on the most challenging split.",
+        "bbox": [
+            84,
+            109,
+            887,
+            156
+        ],
+        "page_idx": 15
+    },
+    {
+        "type": "text",
+        "text": "Effect of α Increasing α consistently improves Precision on all splits, and yields monotonic gains on the Adversarial split $( \\mathrm { F 1 } \\colon 8 2 . 0 5  8 4 . 0 0$ when α increases from 0 to 1.0). On Random/Popular, moderate α (around 0.5–0.75) gives slightly higher F1, while larger α further boosts Precision with a small F1 trade-off, indicating a typical precision–recall shift.",
+        "bbox": [
+            84,
+            162,
+            887,
+            208
+        ],
+        "page_idx": 15
+    },
+    {
+        "type": "table",
+        "img_path": "images/27757a07e3b65306cd11ac2208418ebace699079c4b534354ea1767cdcabc82a.jpg",
+        "table_caption": [
+            "Table 9. Sensitivity to projection scale α on POPE (LLaVA v1.5-7B)."
+        ],
+        "table_footnote": [],
+        "table_body": "<table><tr><td rowspan=\"2\">α</td><td colspan=\"3\">Random</td><td colspan=\"3\">Popular</td><td colspan=\"3\">Adversarial</td></tr><tr><td>Acc</td><td>Prec</td><td>F1</td><td>Acc</td><td>Prec</td><td>F1</td><td>Acc</td><td>Prec</td><td>F1</td></tr><tr><td>0.00</td><td>88.88</td><td>89.70</td><td>89.76</td><td>86.23</td><td>83.28</td><td>86.80</td><td>80.16</td><td>74.93</td><td>82.05</td></tr><tr><td>0.25</td><td>90.30</td><td>91.21</td><td>90.19</td><td>87.17</td><td>85.71</td><td>87.42</td><td>81.33</td><td>77.07</td><td>82.69</td></tr><tr><td>0.50</td><td>90.43</td><td>92.44</td><td>90.20</td><td>87.67</td><td>87.37</td><td>87.72</td><td>82.13</td><td>78.76</td><td>83.12</td></tr><tr><td>0.75</td><td>90.63</td><td>93.69</td><td>90.29</td><td>87.90</td><td>88.49</td><td>87.81</td><td>83.07</td><td>80.58</td><td>83.73</td></tr><tr><td>1.00</td><td>90.13</td><td>94.79</td><td>89.59</td><td>87.90</td><td>90.35</td><td>87.56</td><td>83.93</td><td>83.10</td><td>84.00</td></tr></table>",
+        "bbox": [
+            86,
+            239,
+            888,
+            371
+        ],
+        "page_idx": 15
+    },
+    {
+        "type": "text",
+        "text": "Effect of λ Varying λ shows that gating is not brittle: performance remains competitive for $\\lambda \\in [ 0 . 2 5 , 1 . 0 ]$ . In particular, Adversarial improves substantially over $\\lambda = 0$ and peaks around $\\lambda = 0 . 5$ (Acc: $8 0 . 1 6  8 4 . 5 9 ;$ F1: $8 2 . 0 5  8 4 . 4 6 )$ , suggesting that moderate uncertainty amplification best targets conflict cases. Very large gating can slightly over-suppress on some splits (e.g., Popular F1 drops at $\\lambda = 0 . 7 5 )$ , but the overall trend remains stable.",
+        "bbox": [
+            84,
+            383,
+            888,
+            444
+        ],
+        "page_idx": 15
+    },
+    {
+        "type": "table",
+        "img_path": "images/ae5c1c8cf2d5e24428c0ca912fa1def01c88acc222393a5e629bb168c2cabe57.jpg",
+        "table_caption": [
+            "Table 10. Sensitivity to gating temperature λ on POPE (LLaVA v1.5-7B)."
+        ],
+        "table_footnote": [],
+        "table_body": "<table><tr><td rowspan=\"2\">λ</td><td colspan=\"3\">Random</td><td colspan=\"3\">Popular</td><td colspan=\"3\">Adversarial</td></tr><tr><td>Acc</td><td>Prec</td><td>F1</td><td>Acc</td><td>Prec</td><td>F1</td><td>Acc</td><td>Prec</td><td>F1</td></tr><tr><td>0.00</td><td>88.88</td><td>89.70</td><td>89.76</td><td>86.23</td><td>83.28</td><td>86.80</td><td>80.16</td><td>74.93</td><td>82.05</td></tr><tr><td>0.25</td><td>90.50</td><td>92.22</td><td>90.30</td><td>87.73</td><td>87.19</td><td>87.82</td><td>82.07</td><td>78.46</td><td>83.13</td></tr><tr><td>0.50</td><td>89.80</td><td>95.02</td><td>89.17</td><td>88.10</td><td>91.50</td><td>87.59</td><td>84.59</td><td>85.06</td><td>84.46</td></tr><tr><td>0.75</td><td>90.13</td><td>94.86</td><td>89.58</td><td>87.93</td><td>90.41</td><td>84.87</td><td>83.83</td><td>83.15</td><td>84.00</td></tr><tr><td>1.00</td><td>90.13</td><td>94.79</td><td>89.59</td><td>87.90</td><td>90.35</td><td>87.56</td><td>83.93</td><td>83.10</td><td>84.00</td></tr></table>",
+        "bbox": [
+            86,
+            476,
+            888,
+            606
+        ],
+        "page_idx": 15
+    },
+    {
+        "type": "text",
+        "text": "E. Computational Complexity of MGAP",
+        "text_level": 2,
+        "bbox": [
+            84,
+            630,
+            428,
+            648
+        ],
+        "page_idx": 15
+    },
+    {
+        "type": "text",
+        "text": "E.1. Notation",
+        "text_level": 2,
+        "bbox": [
+            84,
+            657,
+            184,
+            670
+        ],
+        "page_idx": 15
+    },
+    {
+        "type": "text",
+        "text": "Let d denote the hidden dimension and K the prior subspace rank with $K \\ll d .$ Let N denote the number of blind hidden states used to construct the prior basis. Let $V \\in \\mathbb { R } ^ { d \\times K }$ be the prior basis with orthonormal columns,",
+        "bbox": [
+            84,
+            680,
+            887,
+            710
+        ],
+        "page_idx": 15
+    },
+    {
+        "type": "equation",
+        "text": "$$\nV ^ {\\top} V = I _ {K}. \\tag {24}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            441,
+            718,
+            885,
+            736
+        ],
+        "page_idx": 15
+    },
+    {
+        "type": "text",
+        "text": "Define the orthogonal projector",
+        "bbox": [
+            84,
+            746,
+            295,
+            762
+        ],
+        "page_idx": 15
+    },
+    {
+        "type": "equation",
+        "text": "$$\nP := V V ^ {\\top} \\in \\mathbb {R} ^ {d \\times d}. \\tag {25}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            415,
+            758,
+            885,
+            776
+        ],
+        "page_idx": 15
+    },
+    {
+        "type": "text",
+        "text": "At each decoding step, MGAP computes",
+        "bbox": [
+            84,
+            782,
+            356,
+            797
+        ],
+        "page_idx": 15
+    },
+    {
+        "type": "equation",
+        "text": "$$\nh _ {\\text { proj }} = P h = V V ^ {\\top} h, \\tag {26}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            406,
+            794,
+            885,
+            814
+        ],
+        "page_idx": 15
+    },
+    {
+        "type": "text",
+        "text": "and performs the update",
+        "bbox": [
+            84,
+            818,
+            250,
+            834
+        ],
+        "page_idx": 15
+    },
+    {
+        "type": "equation",
+        "text": "$$\nh _ {\\text { cut }} = h - \\beta h _ {\\text { proj }}, \\tag {27}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            418,
+            833,
+            885,
+            849
+        ],
+        "page_idx": 15
+    },
+    {
+        "type": "text",
+        "text": "where",
+        "bbox": [
+            84,
+            854,
+            130,
+            868
+        ],
+        "page_idx": 15
+    },
+    {
+        "type": "equation",
+        "text": "$$\n\\beta = \\alpha \\cdot g \\cdot p. \\tag {28}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            439,
+            869,
+            885,
+            886
+        ],
+        "page_idx": 15
+    },
+    {
+        "type": "text",
+        "text": "Here $g = \\operatorname { t a n h } ( \\lambda H )$ and $p = 1 - \\cos ( h , h _ { \\mathrm { p r o j } } )$ are scalar factors.",
+        "bbox": [
+            84,
+            890,
+            519,
+            906
+        ],
+        "page_idx": 15
+    },
+    {
+        "type": "header",
+        "text": "Mitigating Manifold Departure: Uncertainty-Aware Subspace Rectification for Trustworthy MLLM Decoding",
+        "bbox": [
+            138,
+            56,
+            834,
+            71
+        ],
+        "page_idx": 15
+    },
+    {
+        "type": "page_number",
+        "text": "16",
+        "bbox": [
+            477,
+            922,
+            495,
+            934
+        ],
+        "page_idx": 15
+    },
+    {
+        "type": "text",
+        "text": "E.2. Online (Per-token) Complexity",
+        "text_level": 2,
+        "bbox": [
+            86,
+            84,
+            336,
+            101
+        ],
+        "page_idx": 16
+    },
+    {
+        "type": "text",
+        "text": "Proposition E.1 (MGAP per-step time complexity). Given $V \\in \\mathbb { R } ^ { d \\times K }$ , the additional time complexity incurred by MGAP at a decoding step is",
+        "bbox": [
+            84,
+            108,
+            888,
+            138
+        ],
+        "page_idx": 16
+    },
+    {
+        "type": "equation",
+        "text": "$$\nT _ {M G A P} (d, K) = \\mathcal {O} (d K). \\tag {29}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            401,
+            138,
+            887,
+            156
+        ],
+        "page_idx": 16
+    },
+    {
+        "type": "text",
+        "text": "Proof. Compute $u = V ^ { \\top } h \\in \\mathbb { R } ^ { K } ;$ :",
+        "bbox": [
+            84,
+            167,
+            316,
+            185
+        ],
+        "page_idx": 16
+    },
+    {
+        "type": "equation",
+        "text": "$$\nu = V ^ {\\top} h. \\tag {30}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            449,
+            183,
+            885,
+            200
+        ],
+        "page_idx": 16
+    },
+    {
+        "type": "text",
+        "text": "This is a matrix–vector multiply of size $K \\times d ,$ , costing",
+        "bbox": [
+            84,
+            205,
+            450,
+            222
+        ],
+        "page_idx": 16
+    },
+    {
+        "type": "equation",
+        "text": "$$\n\\mathcal {O} (d K). \\tag {31}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            455,
+            231,
+            885,
+            248
+        ],
+        "page_idx": 16
+    },
+    {
+        "type": "text",
+        "text": "Compute the projection $h _ { \\mathrm { p r o j } } = V u \\in \\mathbb R ^ { d } ;$ :",
+        "bbox": [
+            84,
+            256,
+            372,
+            273
+        ],
+        "page_idx": 16
+    },
+    {
+        "type": "equation",
+        "text": "$$\nh _ {\\text { proj }} = V u. \\tag {32}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            442,
+            272,
+            885,
+            289
+        ],
+        "page_idx": 16
+    },
+    {
+        "type": "text",
+        "text": "This is a matrix–vector multiply of size $d \\times K$ , costing",
+        "bbox": [
+            84,
+            294,
+            450,
+            309
+        ],
+        "page_idx": 16
+    },
+    {
+        "type": "equation",
+        "text": "$$\n\\mathcal {O} (d K). \\tag {33}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            455,
+            319,
+            885,
+            335
+        ],
+        "page_idx": 16
+    },
+    {
+        "type": "text",
+        "text": "Compute cosine similarity requires an inner product and two norms:",
+        "bbox": [
+            84,
+            345,
+            537,
+            361
+        ],
+        "page_idx": 16
+    },
+    {
+        "type": "equation",
+        "text": "$$\n\\langle h, h _ {\\text { proj }} \\rangle , \\| h \\| _ {2}, \\| h _ {\\text { proj }} \\| _ {2}, \\tag {34}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            388,
+            369,
+            885,
+            388
+        ],
+        "page_idx": 16
+    },
+    {
+        "type": "text",
+        "text": "which costs",
+        "bbox": [
+            84,
+            397,
+            166,
+            410
+        ],
+        "page_idx": 16
+    },
+    {
+        "type": "equation",
+        "text": "$$\n\\mathcal {O} (d). \\tag {35}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            464,
+            411,
+            885,
+            426
+        ],
+        "page_idx": 16
+    },
+    {
+        "type": "text",
+        "text": "Compute the gated scaling β = αgp is scalar-only:",
+        "bbox": [
+            84,
+            433,
+            423,
+            449
+        ],
+        "page_idx": 16
+    },
+    {
+        "type": "equation",
+        "text": "$$\n\\beta = \\alpha g p, \\tag {36}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            450,
+            448,
+            885,
+            464
+        ],
+        "page_idx": 16
+    },
+    {
+        "type": "text",
+        "text": "which costs",
+        "bbox": [
+            84,
+            470,
+            166,
+            483
+        ],
+        "page_idx": 16
+    },
+    {
+        "type": "equation",
+        "text": "$$\n\\mathcal {O} (1). \\tag {37}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            464,
+            484,
+            885,
+            500
+        ],
+        "page_idx": 16
+    },
+    {
+        "type": "text",
+        "text": "Finally compute the residual update:",
+        "bbox": [
+            84,
+            506,
+            328,
+            522
+        ],
+        "page_idx": 16
+    },
+    {
+        "type": "equation",
+        "text": "$$\nh _ {\\text { cut }} = h - \\beta h _ {\\text { proj }}, \\tag {38}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            418,
+            521,
+            885,
+            537
+        ],
+        "page_idx": 16
+    },
+    {
+        "type": "text",
+        "text": "which costs",
+        "bbox": [
+            84,
+            542,
+            166,
+            556
+        ],
+        "page_idx": 16
+    },
+    {
+        "type": "equation",
+        "text": "$$\n\\mathcal {O} (d). \\tag {39}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            464,
+            556,
+            885,
+            573
+        ],
+        "page_idx": 16
+    },
+    {
+        "type": "text",
+        "text": "Thus the dominant cost is two d × K / K × d matrix–vector multiplies, yielding",
+        "bbox": [
+            84,
+            579,
+            616,
+            595
+        ],
+        "page_idx": 16
+    },
+    {
+        "type": "equation",
+        "text": "$$\nT _ {\\mathrm{MGAP}} (d, K) = \\mathcal {O} (d K). \\tag {40}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            400,
+            604,
+            885,
+            621
+        ],
+        "page_idx": 16
+    },
+    {
+        "type": "text",
+        "text": "Proposition E.2 (MGAP additional memory). The additional memory required by MGAP (beyond the base model) is",
+        "bbox": [
+            84,
+            654,
+            859,
+            669
+        ],
+        "page_idx": 16
+    },
+    {
+        "type": "equation",
+        "text": "$$\nM _ {M G A P} (d, K) = \\mathcal {O} (d K), \\tag {41}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            398,
+            679,
+            885,
+            696
+        ],
+        "page_idx": 16
+    },
+    {
+        "type": "text",
+        "text": "plus O(d) temporary vectors per decoding step.",
+        "bbox": [
+            84,
+            705,
+            403,
+            720
+        ],
+        "page_idx": 16
+    },
+    {
+        "type": "text",
+        "text": "Proof. MGAP stores the prior basis $V \\in \\mathbb { R } ^ { d \\times K }$ , which takes",
+        "bbox": [
+            84,
+            734,
+            488,
+            752
+        ],
+        "page_idx": 16
+    },
+    {
+        "type": "equation",
+        "text": "$$\n\\mathcal {O} (d K) \\tag {42}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            457,
+            761,
+            885,
+            777
+        ],
+        "page_idx": 16
+    },
+    {
+        "type": "text",
+        "text": "floating-point numbers. At runtime, MGAP may allocate temporary vectors u ${ \\bf \\Psi } \\in \\mathbb { R } ^ { K }$ and $h _ { \\mathrm { p r o j } } \\in \\mathbb { R } ^ { d }$ , costing",
+        "bbox": [
+            84,
+            787,
+            802,
+            804
+        ],
+        "page_idx": 16
+    },
+    {
+        "type": "equation",
+        "text": "$$\n\\mathcal {O} (K) + \\mathcal {O} (d) = \\mathcal {O} (d). \\tag {43}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            403,
+            811,
+            885,
+            829
+        ],
+        "page_idx": 16
+    },
+    {
+        "type": "text",
+        "text": "Therefore the asymptotic additional storage is dominated by V :",
+        "bbox": [
+            84,
+            839,
+            504,
+            854
+        ],
+        "page_idx": 16
+    },
+    {
+        "type": "equation",
+        "text": "$$\nM _ {\\mathrm{MGAP}} (d, K) = \\mathcal {O} (d K). \\tag {44}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            398,
+            864,
+            885,
+            881
+        ],
+        "page_idx": 16
+    },
+    {
+        "type": "header",
+        "text": "Mitigating Manifold Departure: Uncertainty-Aware Subspace Rectification for Trustworthy MLLM Decoding",
+        "bbox": [
+            138,
+            56,
+            834,
+            71
+        ],
+        "page_idx": 16
+    },
+    {
+        "type": "page_number",
+        "text": "17",
+        "bbox": [
+            477,
+            922,
+            495,
+            934
+        ],
+        "page_idx": 16
+    },
+    {
+        "type": "text",
+        "text": "F. Offline Subspace Construction Complexity",
+        "text_level": 2,
+        "bbox": [
+            84,
+            83,
+            468,
+            101
+        ],
+        "page_idx": 17
+    },
+    {
+        "type": "text",
+        "text": "Let $H _ { \\mathrm { b l i n d } } \\in \\mathbb { R } ^ { N \\times d }$ be the centered blind-state matrix:",
+        "bbox": [
+            84,
+            108,
+            449,
+            125
+        ],
+        "page_idx": 17
+    },
+    {
+        "type": "equation",
+        "text": "$$\nH _ {\\text { blind }} = \\left[ \\begin{array}{c} (h _ {\\text { blind }} ^ {(1)} - \\bar {h}) ^ {\\top} \\\\ \\vdots \\\\ (h _ {\\text { blind }} ^ {(N)} - \\bar {h}) ^ {\\top} \\end{array} \\right]. \\tag {45}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            388,
+            133,
+            887,
+            200
+        ],
+        "page_idx": 17
+    },
+    {
+        "type": "text",
+        "text": "MGAP computes the top-K right singular vectors:",
+        "bbox": [
+            84,
+            209,
+            421,
+            224
+        ],
+        "page_idx": 17
+    },
+    {
+        "type": "equation",
+        "text": "$$\nH _ {\\text { blind }} = U \\Sigma V ^ {\\top}, \\tag {46}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            424,
+            234,
+            885,
+            253
+        ],
+        "page_idx": 17
+    },
+    {
+        "type": "text",
+        "text": "and retains",
+        "bbox": [
+            84,
+            266,
+            161,
+            279
+        ],
+        "page_idx": 17
+    },
+    {
+        "type": "equation",
+        "text": "$$\nV _ {\\text { prior }} := V _ {[:, 1: K ]} \\in \\mathbb {R} ^ {d \\times K}. \\tag {47}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            393,
+            279,
+            885,
+            299
+        ],
+        "page_idx": 17
+    },
+    {
+        "type": "text",
+        "text": "Full SVD (exact).",
+        "text_level": 2,
+        "bbox": [
+            84,
+            313,
+            210,
+            328
+        ],
+        "page_idx": 17
+    },
+    {
+        "type": "text",
+        "text": "Proposition F.1 (Offline exact SVD complexity). Computing an exact SVD of $H _ { \\mathrm { b l i n d } } \\in \\mathbb { R } ^ { N \\times d }$ has time complexity",
+        "bbox": [
+            84,
+            333,
+            844,
+            349
+        ],
+        "page_idx": 17
+    },
+    {
+        "type": "equation",
+        "text": "$$\nT _ {S V D - f u l l} (N, d) = \\mathcal {O} \\left(\\min \\{N d ^ {2}, N ^ {2} d \\}\\right), \\tag {48}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            349,
+            359,
+            885,
+            378
+        ],
+        "page_idx": 17
+    },
+    {
+        "type": "text",
+        "text": "and memory complexity",
+        "bbox": [
+            84,
+            391,
+            246,
+            406
+        ],
+        "page_idx": 17
+    },
+    {
+        "type": "equation",
+        "text": "$$\nM _ {S V D - f u l l} (N, d) = \\mathcal {O} (N d). \\tag {49}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            395,
+            406,
+            885,
+            422
+        ],
+        "page_idx": 17
+    },
+    {
+        "type": "text",
+        "text": "Proof. Standard dense SVD for an N × d matrix has the classical bound",
+        "bbox": [
+            84,
+            440,
+            566,
+            455
+        ],
+        "page_idx": 17
+    },
+    {
+        "type": "equation",
+        "text": "$$\n\\mathcal {O} \\big (\\min \\{N d ^ {2}, N ^ {2} d \\} \\big). \\tag {50}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            406,
+            467,
+            885,
+            484
+        ],
+        "page_idx": 17
+    },
+    {
+        "type": "text",
+        "text": "Storing the data matrix requires N d entries:",
+        "bbox": [
+            84,
+            497,
+            375,
+            512
+        ],
+        "page_idx": 17
+    },
+    {
+        "type": "equation",
+        "text": "$$\n\\mathcal {O} (N d). \\tag {51}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            455,
+            512,
+            885,
+            529
+        ],
+        "page_idx": 17
+    },
+    {
+        "type": "text",
+        "text": "Truncated SVD (iterative, exact up to tolerance). In practice, MGAP only needs the top-K right singular vectors. This can be obtained via Krylov subspace methods (e.g., Lanczos) using repeated matrix–vector products.",
+        "bbox": [
+            84,
+            570,
+            885,
+            601
+        ],
+        "page_idx": 17
+    },
+    {
+        "type": "text",
+        "text": "Proposition F.2 (Offline truncated SVD complexity). Assume K ≪ min $\\{ N , d \\}$ and the top-K singular vectors are computed by an iterative method requiring T iterations. Then the time complexity is",
+        "bbox": [
+            84,
+            604,
+            885,
+            637
+        ],
+        "page_idx": 17
+    },
+    {
+        "type": "equation",
+        "text": "$$\nT _ {S V D - t r u n c} (N, d, K) = \\mathcal {O} (T \\cdot N d), \\tag {52}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            369,
+            648,
+            885,
+            666
+        ],
+        "page_idx": 17
+    },
+    {
+        "type": "text",
+        "text": "and the additional memory beyond storing $H _ { \\mathrm { b l i n d } }$ is",
+        "bbox": [
+            84,
+            678,
+            433,
+            693
+        ],
+        "page_idx": 17
+    },
+    {
+        "type": "equation",
+        "text": "$$\nM _ {S V D - t r u n c} (N, d, K) = \\mathcal {O} ((N + d) K). \\tag {53}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            354,
+            705,
+            885,
+            722
+        ],
+        "page_idx": 17
+    },
+    {
+        "type": "text",
+        "text": "Proof. Each iteration of Krylov/Lanczos methods uses one or a constant number of multiplications by $H _ { \\mathrm { b l i n d } }$ and $H _ { \\mathrm { b l i n d } } ^ { \\top }$ . A matrix–vector multiply costs",
+        "bbox": [
+            84,
+            739,
+            885,
+            770
+        ],
+        "page_idx": 17
+    },
+    {
+        "type": "equation",
+        "text": "$$\n\\mathcal {O} (N d). \\tag {54}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            455,
+            770,
+            885,
+            786
+        ],
+        "page_idx": 17
+    },
+    {
+        "type": "text",
+        "text": "With T iterations, the total is",
+        "bbox": [
+            84,
+            794,
+            279,
+            808
+        ],
+        "page_idx": 17
+    },
+    {
+        "type": "equation",
+        "text": "$$\n\\mathcal {O} (T N d). \\tag {55}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            450,
+            809,
+            885,
+            825
+        ],
+        "page_idx": 17
+    },
+    {
+        "type": "text",
+        "text": "The method stores O(K) basis vectors in $\\mathbb { R } ^ { N }$ and/or $\\mathbb { R } ^ { d }$ , giving",
+        "bbox": [
+            84,
+            833,
+            509,
+            849
+        ],
+        "page_idx": 17
+    },
+    {
+        "type": "equation",
+        "text": "$$\n\\mathcal {O} (N K) + \\mathcal {O} (d K) = \\mathcal {O} ((N + d) K). \\tag {56}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            357,
+            861,
+            885,
+            878
+        ],
+        "page_idx": 17
+    },
+    {
+        "type": "header",
+        "text": "Mitigating Manifold Departure: Uncertainty-Aware Subspace Rectification for Trustworthy MLLM Decoding",
+        "bbox": [
+            138,
+            56,
+            834,
+            71
+        ],
+        "page_idx": 17
+    },
+    {
+        "type": "page_number",
+        "text": "18",
+        "bbox": [
+            477,
+            922,
+            495,
+            934
+        ],
+        "page_idx": 17
+    },
+    {
+        "type": "text",
+        "text": "Randomized SVD (approximate). A common alternative is randomized SVD, which forms a sketch of size $K + p$ with oversampling p. Let q denote the number of power iterations.",
+        "bbox": [
+            84,
+            85,
+            887,
+            116
+        ],
+        "page_idx": 18
+    },
+    {
+        "type": "text",
+        "text": "Proposition F.3 (Offline randomized SVD complexity). Randomized SVD for extracting K components from $H _ { \\mathrm { b l i n d } } \\in$ $\\mathbb { R } ^ { N \\times d }$ has time complexity",
+        "bbox": [
+            84,
+            119,
+            887,
+            151
+        ],
+        "page_idx": 18
+    },
+    {
+        "type": "equation",
+        "text": "$$\nT _ {S V D - r a n d} (N, d, K) = \\mathcal {O} (N d (K + p) + q \\cdot N d (K + p)), \\tag {57}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            294,
+            150,
+            885,
+            167
+        ],
+        "page_idx": 18
+    },
+    {
+        "type": "text",
+        "text": "and memory complexity",
+        "bbox": [
+            84,
+            172,
+            248,
+            188
+        ],
+        "page_idx": 18
+    },
+    {
+        "type": "equation",
+        "text": "$$\nM _ {S V D - r a n d} (N, d, K) = \\mathcal {O} ((N + d) (K + p)). \\tag {58}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            334,
+            186,
+            885,
+            204
+        ],
+        "page_idx": 18
+    },
+    {
+        "type": "text",
+        "text": "Proof. Randomized SVD forms a sketch using multiplications by $H _ { \\mathrm { b l i n d } }$ (and optionally power iterations). Each pass costs $\\mathcal { O } ( N d ( K + p ) )$ for multiplying by a $( d \\times ( K + p ) )$ test matrix. With q power iterations, the number of passes scales by $( 1 + q )$ , yielding",
+        "bbox": [
+            84,
+            219,
+            887,
+            263
+        ],
+        "page_idx": 18
+    },
+    {
+        "type": "equation",
+        "text": "$$\n\\mathcal {O} ((1 + q) \\cdot N d (K + p)). \\tag {59}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            395,
+            263,
+            885,
+            281
+        ],
+        "page_idx": 18
+    },
+    {
+        "type": "text",
+        "text": "The memory stores the sketch bases in $\\mathbb { R } ^ { N }$ and $\\mathbb { R } ^ { d } \\colon$",
+        "bbox": [
+            84,
+            286,
+            428,
+            303
+        ],
+        "page_idx": 18
+    },
+    {
+        "type": "equation",
+        "text": "$$\n\\mathcal {O} ((N + d) (K + p)). \\tag {60}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            411,
+            314,
+            885,
+            330
+        ],
+        "page_idx": 18
+    },
+    {
+        "type": "image",
+        "img_path": "images/bfb7bd37e4125bc1f70a279c9a2a936535cbff72e8b93d77230c9d340c003896.jpg",
+        "image_caption": [],
+        "image_footnote": [],
+        "content": "",
+        "bbox": [
+            867,
+            343,
+            885,
+            354
+        ],
+        "page_idx": 18
+    },
+    {
+        "type": "text",
+        "text": "Comparison to Multi-branch Contrastive Decoding MGAP performs a single-pass representation update and adds only $\\mathcal O ( d K )$ arithmetic per token. In contrast, contrastive decoding baselines that require B forward passes per token incur a multiplicative overhead in the base model cost. Let $C _ { \\mathrm { m o d e l } }$ denote the per-token compute cost of the backbone model. Then their total per-token cost scales as",
+        "bbox": [
+            84,
+            375,
+            888,
+            434
+        ],
+        "page_idx": 18
+    },
+    {
+        "type": "equation",
+        "text": "$$\nT _ {\\text { contrastive }} = \\Theta (B \\cdot C _ {\\text { model }}), \\tag {61}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            393,
+            434,
+            885,
+            450
+        ],
+        "page_idx": 18
+    },
+    {
+        "type": "text",
+        "text": "whereas MGAP scales as",
+        "bbox": [
+            84,
+            457,
+            256,
+            470
+        ],
+        "page_idx": 18
+    },
+    {
+        "type": "equation",
+        "text": "$$\nT _ {\\mathrm{MGAP-total}} = \\Theta (C _ {\\text { model }}) + \\mathcal {O} (d K). \\tag {62}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            367,
+            470,
+            885,
+            488
+        ],
+        "page_idx": 18
+    },
+    {
+        "type": "text",
+        "text": "When $K \\ll d$ and the backbone dominates compute, $\\mathcal O ( d K )$ is negligible relative to $C _ { \\mathrm { m o d e l } }$ .",
+        "bbox": [
+            84,
+            494,
+            692,
+            511
+        ],
+        "page_idx": 18
+    },
+    {
+        "type": "header",
+        "text": "Mitigating Manifold Departure: Uncertainty-Aware Subspace Rectification for Trustworthy MLLM Decoding",
+        "bbox": [
+            138,
+            56,
+            834,
+            71
+        ],
+        "page_idx": 18
+    },
+    {
+        "type": "page_number",
+        "text": "19",
+        "bbox": [
+            477,
+            922,
+            495,
+            934
+        ],
+        "page_idx": 18
+    }
+]
