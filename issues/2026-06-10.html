@@ -1,0 +1,233 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>2026-06-10 速递 · 通用视觉自监督研究报</title>
+  <link rel="stylesheet" href="../assets/styles.css?v=20260525j">
+  <link rel="stylesheet" href="../assets/visual-ssl.css?v=20260525j">
+</head>
+<body>
+  <header class="masthead">
+    <div class="masthead-kicker">Visual SSL Research Report · 2026-06-10</div>
+    <a class="masthead-title" href="../index.html">通用视觉自监督研究报</a>
+    <div class="masthead-meta">
+      <span>图像表征 · VFM · JEPA · 视频预训练</span>
+      <span>CCF A/B 会议优先</span>
+      <span>图文精读 · 方法图解</span>
+    </div>
+  </header>
+  <nav class="site-nav" aria-label="主导航">
+    <a class="nav-link" href="../index.html">头版</a>
+<a class="nav-link active" href="../issues/2026-06-10.html">今日速递</a>
+<a class="nav-link" href="../pages/catalog.html">论文目录</a>
+<a class="nav-link" href="../pages/timeline.html">时间线</a>
+  </nav>
+  <main><article class="paper-detail issue-detail">
+  <div class="paper-main">
+    <div class="kicker">Daily issue · 2026-06-10 · CCF A/B 会议优先</div>
+    <h1 class="paper-headline">6 月 10 日：Next Forcing 等视觉表征主线更新</h1>
+    <p class="dek">本期聚焦通用视觉表征、视觉语言预训练与视频自监督中最值得跟进的论文，并保留 CCF A/B、OpenReview 与 arXiv 状态线索。</p>
+    <div class="feature-body">
+      <p class="lead dropcap">先读 Next Forcing：它把视频 world/action model 的监督从“当前 chunk 去噪”扩成多未来 chunk 预测，是今天最接近视频自监督/世界模型目标设计的工作。第二篇读 IDEAL，重点看浅层/深层 VFM feature 同时约束离散 RAE 的做法，这和最近 RAE、visual tokenizer、DiT latent space 的主线直接相连。第三篇读 ARM，它展示了离散视觉 tokenizer 如何被放进统一 next-token prediction 框架，同时服务理解、生成和编辑。之后读 ImageTime 和 BiWM：前者是静态图像生成模型的时序一致性诊断，后者是交互式视频 world model 的工程化 recipe。GenLIP、When to Align/When to Predict 和两篇 VICL 论文适合放在第二轮，用来补齐视觉语言预训练目标、跨模态目标选择和 adaptive visual model evaluation。</p>
+      <h2>论文索引</h2>
+      <table class="compact-table"><thead><tr><th>优先级</th><th>论文</th><th>类型</th><th>相关性</th><th>一句话理由</th></tr></thead><tbody><tr><td>P0</td><td>Next Forcing: Causal World Modeling with Multi-Chunk Prediction</td><td>arXiv 新增</td><td>高</td><td>用多未来 chunk 预测给 causal video world model 更密集的时间监督，和视频自监督/latent prediction 主线高度相关。</td></tr><tr><td>P0</td><td>IDEAL: In-DEpth ALignment Makes A Discrete Representation AutoEncoder</td><td>arXiv 新增</td><td>高</td><td>直接面向 VFM-based RAE 的离散 latent：同时对齐浅层细节与深层语义，适合优先精读。</td></tr><tr><td>P1</td><td>ARM: An AutoRegressive Large Multimodal Model with Unified Discrete Representations</td><td>arXiv 新增</td><td>高</td><td>训练离散语义视觉 tokenizer，并把图像理解、生成、编辑统一到 next-token prediction。</td></tr><tr><td>P1</td><td>Can Image Models Imagine Time? ImageTime</td><td>arXiv 新增</td><td>高</td><td>用四关键帧时序一致性 probe 静态图像生成模型的 visual world modeling 能力。</td></tr><tr><td>P1</td><td>BiWM: Advancing Open-Source Interactive Video World Models with Bidirectional Autoregression</td><td>arXiv 今日公告</td><td>高</td><td>从预训练视频 backbone 出发做双向自回归交互 world model，补充 Next Forcing 的 causal 路线。</td></tr><tr><td>P1</td><td>Let ViT Speak: Generative Language-Image Pre-training</td><td>arXiv 更新</td><td>高</td><td>GenLIP 用语言建模目标预训练 ViT，不走对比 batch 或额外 text decoder，是视觉语言预训练目标的重要更新。</td></tr><tr><td>P2</td><td>When to Align, When to Predict: A Phase Diagram for Multimodal Learning</td><td>arXiv 新增</td><td>中高</td><td>给 cross-modal alignment vs prediction 一个相图，用于判断图文/多模态自监督目标何时该对齐、何时该预测。</td></tr><tr><td>P2</td><td>Cross-Modal Knowledge Distillation without Paired Data</td><td>arXiv 新增</td><td>中高</td><td>无配对跨模态蒸馏，把 teacher/student 差异拆成 feature alignment 和 label alignment。</td></tr><tr><td>P2</td><td>SARA: Semantically Adaptive Relational Alignment for Video Diffusion Models</td><td>arXiv 更新</td><td>中高</td><td>用冻结 VFM 的 token-relation distillation 和文本条件 saliency 改善视频扩散的语义对齐。</td></tr><tr><td>P2</td><td>Beyond Model Size: Probing the Gaps in Visual in-Context Learning by Training a Tiny Model</td><td>arXiv 新增</td><td>中高</td><td>用 1M 参数 tiny VICL 模型反证“大模型规模=视觉 in-context 能力”的评估假设。</td></tr><tr><td>P2</td><td>Quo Vadis, Visual In-Context Learning? A Unified Benchmark Across Domains and Tasks</td><td>arXiv 新增</td><td>中高</td><td>VIBE 覆盖 14 数据集、12 任务，系统测试视觉 in-context model 是否真的能跨任务/域适应。</td></tr><tr><td>P3</td><td>One Token per Multimodal Evidence: Latent Memory for Resource-Constrained QA</td><td>arXiv 新增</td><td>中</td><td>把图文 evidence 压成单个 latent token，用重建、对比和蒸馏训练，偏 VLM memory 但对视觉 latent 接口有参考。</td></tr><tr><td>扫读</td><td>Mitigating Manifold Departure: Uncertainty-Aware Subspace Rectification for Trustworthy MLLM Decoding</td><td>ICML 2026 + arXiv</td><td>中</td><td>ICML regular；从 hidden-state 子空间角度减少 VLM 语言先验幻觉，适合作为视觉证据读出诊断扫读。</td></tr></tbody></table>
+      <h2>主线阅读</h2>
+      <div class="paper-list issue-list"><article class="paper-card" data-category="arXiv 新增" data-priority="P0" data-date="2026-06-10" data-title="next forcing: causal world modeling with multi-chunk prediction" data-keywords="next forcing: causal world modeling with multi-chunk prediction next forcing arxiv 新增 p0 2026-06-10 arxiv 新增 用多未来 chunk 预测给 causal video world model 更密集的时间监督，和视频自监督/latent prediction 主线高度相关 高相关；详见方法、贡献和实验边界。">
+  <a class="paper-thumb paper-thumb-text" href="../papers/2606.11187.html">
+    <img src="../assets/mineru/2606.11187/images/884d17747454cc9fce58dcd85042d4798e7c260343dcd7a5d97dac4aefb0341e.jpg" alt="Next Forcing figure"><span>P0</span>
+  </a>
+  <div>
+    <div class="paper-meta">2026-06-10 · arXiv 新增 · arXiv 新增</div>
+    <h3><a href="../papers/2606.11187.html">Next Forcing: Causal World Modeling with Multi-Chunk Prediction</a></h3>
+    <p>高相关；详见方法、贡献和实验边界。</p>
+    <p class="card-tech"><b>方法：</b>用多未来 chunk 预测给 causal video world model 更密集的时间监督，和视频自监督/latent prediction 主线高度相关</p>
+    <div class="paper-actions"><a href="../papers/2606.11187.html">读图文页</a><a href="https://arxiv.org/abs/2606.11187">原文</a></div>
+  </div>
+</article>
+<article class="paper-card" data-category="arXiv 新增" data-priority="P0" data-date="2026-06-10" data-title="ideal: in-depth alignment makes a discrete representation autoencoder" data-keywords="ideal: in-depth alignment makes a discrete representation autoencoder ideal arxiv 新增 p0 2026-06-10 arxiv 新增 直接面向 vfm-based rae 的离散 latent：同时对齐浅层细节与深层语义，适合优先精读 高相关；详见方法、贡献和实验边界。">
+  <a class="paper-thumb paper-thumb-text" href="../papers/2606.11096.html">
+    <img src="../assets/mineru/2606.11096/images/5e0b9ce8f8f4a052b5cebfadc5c7ed9f6ebe9bd39df852299dfce4235c3d0512.jpg" alt="IDEAL figure"><span>P0</span>
+  </a>
+  <div>
+    <div class="paper-meta">2026-06-10 · arXiv 新增 · arXiv 新增</div>
+    <h3><a href="../papers/2606.11096.html">IDEAL: In-DEpth ALignment Makes A Discrete Representation AutoEncoder</a></h3>
+    <p>高相关；详见方法、贡献和实验边界。</p>
+    <p class="card-tech"><b>方法：</b>直接面向 VFM-based RAE 的离散 latent：同时对齐浅层细节与深层语义，适合优先精读</p>
+    <div class="paper-actions"><a href="../papers/2606.11096.html">读图文页</a><a href="https://arxiv.org/abs/2606.11096">原文</a></div>
+  </div>
+</article>
+<article class="paper-card" data-category="arXiv 新增" data-priority="P1" data-date="2026-06-10" data-title="arm: an autoregressive large multimodal model with unified discrete representations" data-keywords="arm: an autoregressive large multimodal model with unified discrete representations arm arxiv 新增 p1 2026-06-10 arxiv 新增 训练离散语义视觉 tokenizer，并把图像理解、生成、编辑统一到 next-token prediction 高相关；详见方法、贡献和实验边界。">
+  <a class="paper-thumb paper-thumb-text" href="../papers/2606.11188.html">
+    <img src="../assets/mineru/2606.11188/images/26a080f0083ba35857155bff6c07dac5095f50f3ecdf948059e14dfdf51d6965.jpg" alt="ARM figure"><span>P1</span>
+  </a>
+  <div>
+    <div class="paper-meta">2026-06-10 · arXiv 新增 · arXiv 新增</div>
+    <h3><a href="../papers/2606.11188.html">ARM: An AutoRegressive Large Multimodal Model with Unified Discrete Representations</a></h3>
+    <p>高相关；详见方法、贡献和实验边界。</p>
+    <p class="card-tech"><b>方法：</b>训练离散语义视觉 tokenizer，并把图像理解、生成、编辑统一到 next-token prediction</p>
+    <div class="paper-actions"><a href="../papers/2606.11188.html">读图文页</a><a href="https://arxiv.org/abs/2606.11188">原文</a></div>
+  </div>
+</article>
+<article class="paper-card" data-category="arXiv 新增" data-priority="P1" data-date="2026-06-10" data-title="can image models imagine time? imagetime" data-keywords="can image models imagine time? imagetime can image models imagine time? imagetime arxiv 新增 p1 2026-06-10 arxiv 新增 用四关键帧时序一致性 probe 静态图像生成模型的 visual world modeling 能力 高相关；详见方法、贡献和实验边界。">
+  <a class="paper-thumb paper-thumb-text" href="../papers/2606.10620.html">
+    <img src="../assets/mineru/2606.10620/images/a5c8aabc3e43ba0fd93ba9209624e089e6fba4f1960cb08b5291f082a194eaa4.jpg" alt="Can Image Models Imagine Time? ImageTime figure"><span>P1</span>
+  </a>
+  <div>
+    <div class="paper-meta">2026-06-10 · arXiv 新增 · arXiv 新增</div>
+    <h3><a href="../papers/2606.10620.html">Can Image Models Imagine Time? ImageTime</a></h3>
+    <p>高相关；详见方法、贡献和实验边界。</p>
+    <p class="card-tech"><b>方法：</b>用四关键帧时序一致性 probe 静态图像生成模型的 visual world modeling 能力</p>
+    <div class="paper-actions"><a href="../papers/2606.10620.html">读图文页</a><a href="https://arxiv.org/abs/2606.10620">原文</a></div>
+  </div>
+</article>
+<article class="paper-card" data-category="arXiv 今日公告" data-priority="P1" data-date="2026-06-10" data-title="biwm: advancing open-source interactive video world models with bidirectional autoregression" data-keywords="biwm: advancing open-source interactive video world models with bidirectional autoregression biwm arxiv 今日公告 p1 2026-06-10 arxiv 今日公告 从预训练视频 backbone 出发做双向自回归交互 world model，补充 next forcing 的 causal 路线 高相关；详见方法、贡献和实验边界。">
+  <a class="paper-thumb paper-thumb-text" href="../papers/2606.10135.html">
+    <span>P1</span><strong>BiWM</strong><em>arXiv 今日公告</em>
+  </a>
+  <div>
+    <div class="paper-meta">2026-06-10 · arXiv 今日公告 · arXiv 今日公告</div>
+    <h3><a href="../papers/2606.10135.html">BiWM: Advancing Open-Source Interactive Video World Models with Bidirectional Autoregression</a></h3>
+    <p>高相关；详见方法、贡献和实验边界。</p>
+    <p class="card-tech"><b>方法：</b>从预训练视频 backbone 出发做双向自回归交互 world model，补充 Next Forcing 的 causal 路线</p>
+    <div class="paper-actions"><a href="../papers/2606.10135.html">读图文页</a><a href="https://arxiv.org/abs/2606.10135">原文</a></div>
+  </div>
+</article>
+<article class="paper-card" data-category="arXiv 更新" data-priority="P1" data-date="2026-06-10" data-title="let vit speak: generative language-image pre-training" data-keywords="let vit speak: generative language-image pre-training let vit speak arxiv 更新 p1 2026-06-10 arxiv 更新 genlip 用语言建模目标预训练 vit，不走对比 batch 或额外 text decoder，是视觉语言预训练目标的重要更新 高相关；详见方法、贡献和实验边界。">
+  <a class="paper-thumb paper-thumb-text" href="../papers/2605.00809.html">
+    <span>P1</span><strong>Let ViT Speak</strong><em>arXiv 更新</em>
+  </a>
+  <div>
+    <div class="paper-meta">2026-06-10 · arXiv 更新 · arXiv 更新</div>
+    <h3><a href="../papers/2605.00809.html">Let ViT Speak: Generative Language-Image Pre-training</a></h3>
+    <p>高相关；详见方法、贡献和实验边界。</p>
+    <p class="card-tech"><b>方法：</b>GenLIP 用语言建模目标预训练 ViT，不走对比 batch 或额外 text decoder，是视觉语言预训练目标的重要更新</p>
+    <div class="paper-actions"><a href="../papers/2605.00809.html">读图文页</a><a href="https://arxiv.org/abs/2605.00809">原文</a></div>
+  </div>
+</article>
+<article class="paper-card" data-category="arXiv 新增" data-priority="P2" data-date="2026-06-10" data-title="when to align, when to predict: a phase diagram for multimodal learning" data-keywords="when to align, when to predict: a phase diagram for multimodal learning when to align, when to predict arxiv 新增 p2 2026-06-10 arxiv 新增 给 cross-modal alignment vs prediction 一个相图，用于判断图文/多模态自监督目标何时该对齐、何时该预测 中高相关；详见方法、贡献和实验边界。">
+  <a class="paper-thumb paper-thumb-text" href="../papers/2606.11190.html">
+    <img src="../assets/mineru/2606.11190/images/a3bfb29ee222d189e4a673677a0cdfd065b193ee3c8d9a76dc40865fd770abc5.jpg" alt="When to Align, When to Predict figure"><span>P2</span>
+  </a>
+  <div>
+    <div class="paper-meta">2026-06-10 · arXiv 新增 · arXiv 新增</div>
+    <h3><a href="../papers/2606.11190.html">When to Align, When to Predict: A Phase Diagram for Multimodal Learning</a></h3>
+    <p>中高相关；详见方法、贡献和实验边界。</p>
+    <p class="card-tech"><b>方法：</b>给 cross-modal alignment vs prediction 一个相图，用于判断图文/多模态自监督目标何时该对齐、何时该预测</p>
+    <div class="paper-actions"><a href="../papers/2606.11190.html">读图文页</a><a href="https://arxiv.org/abs/2606.11190">原文</a></div>
+  </div>
+</article>
+<article class="paper-card" data-category="arXiv 新增" data-priority="P2" data-date="2026-06-10" data-title="cross-modal knowledge distillation without paired data" data-keywords="cross-modal knowledge distillation without paired data cross-modal knowledge distillation without paired arxiv 新增 p2 2026-06-10 arxiv 新增 无配对跨模态蒸馏，把 teacher/student 差异拆成 feature alignment 和 label alignment 中高相关；详见方法、贡献和实验边界。">
+  <a class="paper-thumb paper-thumb-text" href="../papers/2606.10504.html">
+    <span>P2</span><strong>Cross-Modal Knowledge Distillation without Paired</strong><em>arXiv 新增</em>
+  </a>
+  <div>
+    <div class="paper-meta">2026-06-10 · arXiv 新增 · arXiv 新增</div>
+    <h3><a href="../papers/2606.10504.html">Cross-Modal Knowledge Distillation without Paired Data</a></h3>
+    <p>中高相关；详见方法、贡献和实验边界。</p>
+    <p class="card-tech"><b>方法：</b>无配对跨模态蒸馏，把 teacher/student 差异拆成 feature alignment 和 label alignment</p>
+    <div class="paper-actions"><a href="../papers/2606.10504.html">读图文页</a><a href="https://arxiv.org/abs/2606.10504">原文</a></div>
+  </div>
+</article>
+<article class="paper-card" data-category="arXiv 更新" data-priority="P2" data-date="2026-06-10" data-title="sara: semantically adaptive relational alignment for video diffusion models" data-keywords="sara: semantically adaptive relational alignment for video diffusion models sara arxiv 更新 p2 2026-06-10 arxiv 更新 用冻结 vfm 的 token-relation distillation 和文本条件 saliency 改善视频扩散的语义对齐 中高相关；详见方法、贡献和实验边界。">
+  <a class="paper-thumb paper-thumb-text" href="../papers/2605.07800.html">
+    <span>P2</span><strong>SARA</strong><em>arXiv 更新</em>
+  </a>
+  <div>
+    <div class="paper-meta">2026-06-10 · arXiv 更新 · arXiv 更新</div>
+    <h3><a href="../papers/2605.07800.html">SARA: Semantically Adaptive Relational Alignment for Video Diffusion Models</a></h3>
+    <p>中高相关；详见方法、贡献和实验边界。</p>
+    <p class="card-tech"><b>方法：</b>用冻结 VFM 的 token-relation distillation 和文本条件 saliency 改善视频扩散的语义对齐</p>
+    <div class="paper-actions"><a href="../papers/2605.07800.html">读图文页</a><a href="https://arxiv.org/abs/2605.07800">原文</a></div>
+  </div>
+</article>
+<article class="paper-card" data-category="arXiv 新增" data-priority="P2" data-date="2026-06-10" data-title="beyond model size: probing the gaps in visual in-context learning by training a tiny model" data-keywords="beyond model size: probing the gaps in visual in-context learning by training a tiny model beyond model size arxiv 新增 p2 2026-06-10 arxiv 新增 用 1m 参数 tiny vicl 模型反证“大模型规模=视觉 in-context 能力”的评估假设 中高相关；详见方法、贡献和实验边界。">
+  <a class="paper-thumb paper-thumb-text" href="../papers/2606.10905.html">
+    <span>P2</span><strong>Beyond Model Size</strong><em>arXiv 新增</em>
+  </a>
+  <div>
+    <div class="paper-meta">2026-06-10 · arXiv 新增 · arXiv 新增</div>
+    <h3><a href="../papers/2606.10905.html">Beyond Model Size: Probing the Gaps in Visual in-Context Learning by Training a Tiny Model</a></h3>
+    <p>中高相关；详见方法、贡献和实验边界。</p>
+    <p class="card-tech"><b>方法：</b>用 1M 参数 tiny VICL 模型反证“大模型规模=视觉 in-context 能力”的评估假设</p>
+    <div class="paper-actions"><a href="../papers/2606.10905.html">读图文页</a><a href="https://arxiv.org/abs/2606.10905">原文</a></div>
+  </div>
+</article>
+<article class="paper-card" data-category="arXiv 新增" data-priority="P2" data-date="2026-06-10" data-title="quo vadis, visual in-context learning? a unified benchmark across domains and tasks" data-keywords="quo vadis, visual in-context learning? a unified benchmark across domains and tasks quo vadis, visual in-context learning? arxiv 新增 p2 2026-06-10 arxiv 新增 vibe 覆盖 14 数据集、12 任务，系统测试视觉 in-context model 是否真的能跨任务/域适应 中高相关；详见方法、贡献和实验边界。">
+  <a class="paper-thumb paper-thumb-text" href="../papers/2606.10967.html">
+    <img src="../assets/mineru/2606.10967/images/171d46de8198b3db7e4219b119d0ff73ad89b72182401750baa2b60000400b70.jpg" alt="Quo Vadis, Visual In-Context Learning? figure"><span>P2</span>
+  </a>
+  <div>
+    <div class="paper-meta">2026-06-10 · arXiv 新增 · arXiv 新增</div>
+    <h3><a href="../papers/2606.10967.html">Quo Vadis, Visual In-Context Learning? A Unified Benchmark Across Domains and Tasks</a></h3>
+    <p>中高相关；详见方法、贡献和实验边界。</p>
+    <p class="card-tech"><b>方法：</b>VIBE 覆盖 14 数据集、12 任务，系统测试视觉 in-context model 是否真的能跨任务/域适应</p>
+    <div class="paper-actions"><a href="../papers/2606.10967.html">读图文页</a><a href="https://arxiv.org/abs/2606.10967">原文</a></div>
+  </div>
+</article>
+<article class="paper-card" data-category="arXiv 新增" data-priority="P3" data-date="2026-06-10" data-title="one token per multimodal evidence: latent memory for resource-constrained qa" data-keywords="one token per multimodal evidence: latent memory for resource-constrained qa one token per multimodal evidence arxiv 新增 p3 2026-06-10 arxiv 新增 把图文 evidence 压成单个 latent token，用重建、对比和蒸馏训练，偏 vlm memory 但对视觉 latent 接口有参考 中相关；详见方法、贡献和实验边界。">
+  <a class="paper-thumb paper-thumb-text" href="../papers/2606.10572.html">
+    <span>P3</span><strong>One Token per Multimodal Evidence</strong><em>arXiv 新增</em>
+  </a>
+  <div>
+    <div class="paper-meta">2026-06-10 · arXiv 新增 · arXiv 新增</div>
+    <h3><a href="../papers/2606.10572.html">One Token per Multimodal Evidence: Latent Memory for Resource-Constrained QA</a></h3>
+    <p>中相关；详见方法、贡献和实验边界。</p>
+    <p class="card-tech"><b>方法：</b>把图文 evidence 压成单个 latent token，用重建、对比和蒸馏训练，偏 VLM memory 但对视觉 latent 接口有参考</p>
+    <div class="paper-actions"><a href="../papers/2606.10572.html">读图文页</a><a href="https://arxiv.org/abs/2606.10572">原文</a></div>
+  </div>
+</article>
+<article class="paper-card" data-category="ICML 2026 + arXiv" data-priority="扫读" data-date="2026-06-10" data-title="mitigating manifold departure: uncertainty-aware subspace rectification for trustworthy mllm decoding" data-keywords="mitigating manifold departure: uncertainty-aware subspace rectification for trustworthy mllm decoding mitigating manifold departure icml 2026 + arxiv 扫读 2026-06-10 icml 2026 + arxiv icml regular；从 hidden-state 子空间角度减少 vlm 语言先验幻觉，适合作为视觉证据读出诊断扫读 中相关；详见方法、贡献和实验边界。">
+  <a class="paper-thumb paper-thumb-text" href="../papers/2606.09859.html">
+    <span>扫读</span><strong>Mitigating Manifold Departure</strong><em>ICML 2026 + arXiv</em>
+  </a>
+  <div>
+    <div class="paper-meta">2026-06-10 · ICML 2026 + arXiv · ICML 2026 + arXiv</div>
+    <h3><a href="../papers/2606.09859.html">Mitigating Manifold Departure: Uncertainty-Aware Subspace Rectification for Trustworthy MLLM Decoding</a></h3>
+    <p>中相关；详见方法、贡献和实验边界。</p>
+    <p class="card-tech"><b>方法：</b>ICML regular；从 hidden-state 子空间角度减少 VLM 语言先验幻觉，适合作为视觉证据读出诊断扫读</p>
+    <div class="paper-actions"><a href="../papers/2606.09859.html">读图文页</a><a href="https://arxiv.org/abs/2606.09859">原文</a></div>
+  </div>
+</article></div>
+    </div>
+  </div>
+  <aside class="paper-side">
+    <div class="side-box"><h4>今日重点</h4><p>TextTeacher、MDM、EvoVid、Ablate-to-Validate。</p></div>
+    <div class="side-box"><h4>会议口径</h4><p>只把 CCF A/B 放进主提醒；临近截止或 CCF C 仅记录。</p></div>
+    <div class="side-box"><h4>阅读重点</h4><p>先看 P1/P2 与方法图，再扫状态变化和边界案例。</p></div>
+  </aside>
+</article></main>
+  <aside class="conf-float" data-conf-reminder="2026-06-10-main-ddl" aria-label="CCF A/B 主投稿提醒">
+  <button class="conf-close" type="button" aria-label="关闭会议提醒">×</button>
+  <details open>
+    <summary>CCF A/B 主投稿提醒</summary>
+    <div class="conf-list"><a class="conf-item " href="https://github.com/ccfddl/ccf-deadlines/blob/main/conference/AI/aaai.yml">
+  <span><b>AAAI 2027</b><em>CCF A · Main paper submission</em></span>
+  <strong>47 天</strong>
+  <small>2026-07-27 · CCF DDL: abstract 2026-07-20；进入 1 个月窗口后重点提醒。</small>
+</a></div>
+  </details>
+</aside>
+  <footer class="footer">
+    <div>面向通用视觉自监督、视觉基础模型与多模态表征学习的每日研究报。</div>
+    <div class="muted">Issue 2026-06-10 · Curated readings and figure notes</div>
+  </footer>
+  <script>
+  (() => {
+    const box = document.querySelector('[data-conf-reminder]');
+    if (!box) return;
+    const key = `visualSslConfReminderClosed:${box.dataset.confReminder || '2026-06-10-main-ddl'}`;
+    try {
+      if (localStorage.getItem(key) === '1') box.hidden = true;
+    } catch (err) {}
+    const close = box.querySelector('.conf-close');
+    if (close) {
+      close.addEventListener('click', () => {
+        box.hidden = true;
+        try { localStorage.setItem(key, '1'); } catch (err) {}
+      });
+    }
+  })();
+  </script>
+</body>
+</html>

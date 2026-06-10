@@ -19,39 +19,39 @@
   </header>
   <nav class="site-nav" aria-label="主导航">
     <a class="nav-link" href="../index.html">头版</a>
-<a class="nav-link" href="../issues/2026-06-09.html">今日速递</a>
+<a class="nav-link" href="../issues/2026-06-10.html">今日速递</a>
 <a class="nav-link" href="../pages/catalog.html">论文目录</a>
 <a class="nav-link" href="../pages/timeline.html">时间线</a>
   </nav>
   <main><article class="paper-detail">
   <div class="paper-main">
     <div class="kicker">arXiv 新增 · P3 · 2026-06-09</div>
-    <h1 class="paper-headline">The Cross-Architecture Substrate：即使只作为假设，它也直接触及通用视觉 SSL 的核心：不同 objective 是否通向共享表征几何</h1>
-    <p class="dek">把“不同监督/自监督/图文模型是否学到共同视觉几何”转成可测量的低维子空间问题，并给出 transfer filter、domain detector、low-shot probe、teacher-free distillation auxiliary 等应用。</p>
-    <p class="byline"><strong>The Cross-Architecture Substrate: A Domain-Transcendent, Calibration-Surviving Geometric Invariant of Modern Vision Encoders</strong>　Yousef Radwan；机构信息未在 arXiv 元数据中列出。　arXiv 新增　<a href="https://arxiv.org/abs/2606.07882">原文链接</a></p>
+    <h1 class="paper-headline">The Cross-Architecture Substrate：它和通用视觉自监督的关系在于：声称不同训练范式的 vision encoders 收敛到共享低维几何子空间，若成立，对表征相似性和迁移评估很有参考</h1>
+    <p class="dek">中相关；详见方法、贡献和实验边界。</p>
+    <p class="byline"><strong>The Cross-Architecture Substrate: A Domain-Transcendent, Calibration-Surviving Geometric Invariant of Modern Vision Encoders</strong>　arXiv 新增　<a href="https://arxiv.org/abs/2606.07882">原文链接</a></p>
     <div class="paper-facts">
       <span><b>编号</b>2606.07882</span>
       <span><b>优先级</b>P3</span>
       <span><b>类别</b>arXiv 新增</span>
       <span><b>会议</b>arXiv 新增</span>
-      <span><b>方法</b>用 PCA、centered kernel alignment、Procrustes-CKA 和 Pang calibration 分析 13 个现代 vision encoders 的 top principal directions，提出 cross-architecture substrate。</span>
+      <span><b>方法</b>声称不同训练范式的 vision encoders 收敛到共享低维几何子空间，若成立，对表征相似性和迁移评估很有参考</span>
       <span><b>来源</b>arXiv / OpenReview</span>
     </div>
     <div class="feature-body">
-      <p class="lead dropcap">先说结论。即使只作为假设，它也直接触及通用视觉 SSL 的核心：不同 objective 是否通向共享表征几何。 把“不同监督/自监督/图文模型是否学到共同视觉几何”转成可测量的低维子空间问题，并给出 transfer filter、domain detector、low-shot probe、teacher-free distillation auxiliary 等应用。</p>
+      <p class="lead dropcap">先说结论。它和通用视觉自监督的关系在于：声称不同训练范式的 vision encoders 收敛到共享低维几何子空间，若成立，对表征相似性和迁移评估很有参考。 中相关；详见方法、贡献和实验边界。</p>
       <figure class="full-fig"><img src="../assets/mineru/2606.07882/images/51d7fa7138dd10f3fc22387f5871a406c63aaa0f8bbc8980d5c8a80dd754e7ac.jpg" alt="Figureure 1 · : The cross-architecture substrate transports across visual domains"><figcaption><b>Figureure 1 · : The cross-architecture substrate transports across visual domains</b><span class="fig-en">Figure 1: The cross-architecture substrate transports across visual domains. (a) Four-domain PCKA matrix (Natural, Medical, Satellite, Microscopy): median off-diagonal 0.679 over 6 pairs. (b) Eight-domain PCKA matrix adding Sketch, Depth, Infrared, Astronomy: median off-diagonal 0.604 over 28 pairs, every pair $\geq 0 . 4 0$ , 25/28 pairs $\geq 0 . 4 5$ . Both bases at $K { = } 1 6 .$ , probe $\breve { N } { = } 1 , 0 0 0$ per domain, shared $\scriptstyle D = 5 , 8 8 8$ stacked feature frame, $E { = } 5$ encoders. See $\ S 3 ;$ full matrices in Appendix D.</span><span class="fig-zh">这张图概括 The Cross-Architecture Substrate 的整体方法流程。阅读时先看模块之间传递的训练信号，再看作者如何把目标拆成可优化的子问题。</span></figcaption></figure>
 <figure class="full-fig"><img src="../assets/mineru/2606.07882/images/6bfd332ab13ee3a41ce040e66c242a5f248b326574e03ecbcde03806f50424ca.jpg" alt="Figureure 2 · : Substrate emerges in the first 10% of training, before accuracy conv"><figcaption><b>Figureure 2 · : Substrate emerges in the first 10% of training, before accuracy conv</b><span class="fig-en">Figure 2: Substrate emerges in the first 10% of training, before accuracy converges. ResNet-50 from random initialisation on ImageNette, 50 epochs. Blue (left axis): substrate-alignment linear CKA against the K=16 panel basis from §4; reaches 0.58 by epoch 5, stays in [0.50, 0.58] for the remaining 45 epochs. Red dashed (right axis): validation top-1 accuracy; climbs from 46% at epoch 5 to 76% at epoch 50. The substrate plateau precedes the accuracy plateau by $\geq 4 5$ epochs; see §5.</span><span class="fig-zh">这张图/表用于判断 The Cross-Architecture Substrate 的实验收益来自哪里。重点看替换、消融或跨模型设置下趋势是否一致，而不是只看单个最高分。</span></figcaption></figure>
       
       <h2>核心问题</h2>
-      <p>即使只作为假设，它也直接触及通用视觉 SSL 的核心：不同 objective 是否通向共享表征几何。</p>
+      <p>它和通用视觉自监督的关系在于：声称不同训练范式的 vision encoders 收敛到共享低维几何子空间，若成立，对表征相似性和迁移评估很有参考。</p>
       <h2>方法拆解</h2>
-      <p>用 PCA、centered kernel alignment、Procrustes-CKA 和 Pang calibration 分析 13 个现代 vision encoders 的 top principal directions，提出 cross-architecture substrate。</p>
+      <p>声称不同训练范式的 vision encoders 收敛到共享低维几何子空间，若成立，对表征相似性和迁移评估很有参考</p>
       <h2>主要贡献</h2>
-      <p>把“不同监督/自监督/图文模型是否学到共同视觉几何”转成可测量的低维子空间问题，并给出 transfer filter、domain detector、low-shot probe、teacher-free distillation auxiliary 等应用。</p>
+      <p>中相关；详见方法、贡献和实验边界。</p>
       <h2>实验看点</h2>
-      <p>摘要称四个视觉域 median Procrustes-CKA 0.679，八个域 0.604；16 维 low-shot probe 在 N=50 labels/class 下超过 768 维 DINOv2 3.78pp。</p>
+      <p>实验部分建议重点看两类证据：一是作者是否把方法收益和更强数据、更长训练、更大模型区分开；二是跨模型、跨数据或跨任务迁移是否还能保留同样趋势。</p>
       <h2>局限与读法</h2>
-      <p>单作者强结论，需要重点复现实验设置、数据域选择和 calibration baseline；其摘要也承认 substrate 不跨模态、不预测 transfer accuracy。</p>
+      <p>这篇论文的结论需要结合任务设置、训练数据规模和消融实验一起看；不要只凭单个指标判断它对通用视觉表征的价值。</p>
     
     </div>
   </div>
@@ -61,13 +61,13 @@
     <div class="side-box"><h4>原文</h4><p><a href="https://arxiv.org/abs/2606.07882">https://arxiv.org/abs/2606.07882</a></p></div>
   </aside>
 </article></main>
-  <aside class="conf-float" data-conf-reminder="2026-06-09-main-ddl" aria-label="CCF A/B 主投稿提醒">
+  <aside class="conf-float" data-conf-reminder="2026-06-10-main-ddl" aria-label="CCF A/B 主投稿提醒">
   <button class="conf-close" type="button" aria-label="关闭会议提醒">×</button>
   <details open>
     <summary>CCF A/B 主投稿提醒</summary>
     <div class="conf-list"><a class="conf-item " href="https://github.com/ccfddl/ccf-deadlines/blob/main/conference/AI/aaai.yml">
   <span><b>AAAI 2027</b><em>CCF A · Main paper submission</em></span>
-  <strong>48 天</strong>
+  <strong>47 天</strong>
   <small>2026-07-27 · CCF DDL: abstract 2026-07-20；进入 1 个月窗口后重点提醒。</small>
 </a></div>
   </details>
@@ -80,7 +80,7 @@
   (() => {
     const box = document.querySelector('[data-conf-reminder]');
     if (!box) return;
-    const key = `visualSslConfReminderClosed:${box.dataset.confReminder || '2026-06-09-main-ddl'}`;
+    const key = `visualSslConfReminderClosed:${box.dataset.confReminder || '2026-06-10-main-ddl'}`;
     try {
       if (localStorage.getItem(key) === '1') box.hidden = true;
     } catch (err) {}

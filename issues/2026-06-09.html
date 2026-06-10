@@ -19,20 +19,18 @@
   </header>
   <nav class="site-nav" aria-label="主导航">
     <a class="nav-link" href="../index.html">头版</a>
-<a class="nav-link active" href="../issues/2026-06-09.html">今日速递</a>
+<a class="nav-link" href="../issues/2026-06-10.html">今日速递</a>
 <a class="nav-link" href="../pages/catalog.html">论文目录</a>
 <a class="nav-link" href="../pages/timeline.html">时间线</a>
   </nav>
   <main><article class="paper-detail issue-detail">
   <div class="paper-main">
     <div class="kicker">Daily issue · 2026-06-09 · CCF A/B 会议优先</div>
-    <h1 class="paper-headline">6 月 9 日：What Makes Video World Model 等视觉表征主线更新</h1>
-    <p class="dek">本期聚焦通用视觉表征、视觉语言预训练与视频自监督中最值得跟进的论文，并保留 CCF A/B、OpenReview 与 arXiv 状态线索。</p>
+    <h1 class="paper-headline">6 月 9 日：What Makes Video World Model 等视觉表征论文归档</h1>
+    <p class="dek">本页按日期归档近期论文，保留优先级、主题、来源与方法线索，方便回看同一批工作的研究脉络。</p>
     <div class="feature-body">
-      <p class="lead dropcap">先读 What Makes Video World Model Latents Action-Relevant：它直接比较预测式视频预训练、重建式 autoencoder、diffusion 和 image-only SSL，能快速判断“world model latent”里哪些信号真的可用。第二篇读 Do Video Foundation Models Understand Intuitive Physics?，重点看 V-JEPA、VideoMAE、LTX-Video 在冻结层表示上的差异，它和第一篇共同构成今天的视频表征诊断主线。第三篇读 Evaluating the Representation Space of Diffusion Models via Self-Supervised Principles，它把 diffusion features 放回 SSL 的 invariant/residual 几何框架。然后读 Omnivorous DINO 和 Multi-Task Latent SSL，前者是跨视觉模态 DINO 对齐的 CVPR 状态更新，后者回到 BYOL/SimSiam/MoCo v3 的 latent alignment 目标设计。VLM token routing 与 SAE 解释类论文今天只需扫读，除非你正在做 MLLM projector、visual token pruning 或 CLIP/SAE interpretability。</p>
+      <p class="lead dropcap">先读 What Makes Video World Model。直接比较 image-only SSL、VideoMAE/V-JEPA、autoencoder、diffusion 等预训练信号，回答哪些 latent 真正携带 action-relevant 视频结构。 其余论文按 P1/P2 与主题顺序扫读，重点看方法图、消融设置和是否能迁移到通用视觉表征。</p>
       <h2>论文索引</h2>
-      <table class="compact-table"><thead><tr><th>优先级</th><th>论文</th><th>类型</th><th>相关性</th><th>一句话理由</th></tr></thead><tbody><tr><td>P0</td><td>What Makes Video World Model Latents Action-Relevant: Prediction over Reconstruction</td><td>arXiv 新增</td><td>高</td><td>直接比较 image-only SSL、VideoMAE/V-JEPA、autoencoder、diffusion 等预训练信号，回答哪些 latent 真正携带 action-relevant 视频结构。</td></tr><tr><td>P0</td><td>Do Video Foundation Models Understand Intuitive Physics? A Layerwise Probing Analysis</td><td>arXiv 新增</td><td>高</td><td>冻结 V-JEPA、VideoMAE、video diffusion 等模型逐层 probing 物理常识，适合判断视频 SSL 表征是否学到动态规律。</td></tr><tr><td>P1</td><td>Evaluating the Representation Space of Diffusion Models via Self-Supervised Principles</td><td>arXiv 新增 + ICML FoGen Workshop</td><td>高</td><td>用 SSL 的 invariant/residual 分解来评估 diffusion feature，是连接生成模型与视觉自监督表示几何的高价值诊断。</td></tr><tr><td>P1</td><td>A Mixed Diet Makes DINO An Omnivorous Vision Encoder</td><td>arXiv 更新 + CVPR 2026 Highlight</td><td>高</td><td>用 DINOv2 teacher distillation 与跨 RGB/depth/segmentation 对齐，把单一视觉 encoder 推向 modality-agnostic feature space。</td></tr><tr><td>P1</td><td>Self-Supervised Learning with a Multi-Task Latent Space Objective</td><td>arXiv 更新</td><td>高</td><td>直接针对 BYOL/SimSiam/MoCo v3 的 multi-crop instability，把不同空间变换视为不同 latent alignment task。</td></tr><tr><td>P2</td><td>Neural Field Tokenizations with Hierarchy and Spatial Locality Priors</td><td>arXiv 新增</td><td>中高</td><td>把连续信号 neural fields 变成层次化 token 表征，对图像、视频、3D/implicit representation 的统一 tokenization 有启发。</td></tr><tr><td>P2</td><td>Vision-Language Asymmetry in Bistable Image Captioning</td><td>arXiv 新增 + ICML Workshop</td><td>中高</td><td>在 LLaVA 消费的 CLIP 层训练 TopK SAE，分析 ambiguous image captioning 中 vision tower 与 language head 的不对称。</td></tr><tr><td>P2</td><td>Late-Layer Fusion is Enough: Dual-Path Vision Token Routing for Multimodal Large Language Models under Visual Saturation</td><td>arXiv 新增</td><td>中高</td><td>指出 vision tokens 在 MLLM 中层后趋于饱和，提供视觉 token 深层路由/迟融合的表征接口诊断。</td></tr><tr><td>P3</td><td>The Cross-Architecture Substrate: A Domain-Transcendent, Calibration-Surviving Geometric Invariant of Modern Vision Encoders</td><td>arXiv 新增</td><td>中</td><td>声称不同训练范式的 vision encoders 收敛到共享低维几何子空间，若成立，对表征相似性和迁移评估很有参考。</td></tr><tr><td>扫读</td><td>Look Less, Reason More: Block-wise Attention Skipping for Efficient Multimodal LLMs</td><td>arXiv 新增</td><td>中</td><td>同样围绕 visual attention saturation，但更偏 training-free inference efficiency；适合和 DPVR-LF 对照扫读。</td></tr></tbody></table>
-      <h2>主线阅读</h2>
       <div class="paper-list issue-list"><article class="paper-card" data-category="arXiv 新增" data-priority="P0" data-date="2026-06-09" data-title="what makes video world model latents action-relevant: prediction over reconstruction" data-keywords="what makes video world model latents action-relevant: prediction over reconstruction what makes video world model arxiv 新增 p0 2026-06-09 arxiv 新增 直接比较 image-only ssl、videomae/v-jepa、autoencoder、diffusion 等预训练信号，回答哪些 latent 真正携带 action-relevant 视频结构 高相关；详见方法、贡献和实验边界。">
   <a class="paper-thumb paper-thumb-text" href="../papers/2606.07687.html">
     <img src="../assets/mineru/2606.07687/images/61d1aa13ee893309e74c8089db91488016c2104e9fea7407eb3eaf5e48660fdb.jpg" alt="What Makes Video World Model figure"><span>P0</span>
@@ -156,18 +154,17 @@
     </div>
   </div>
   <aside class="paper-side">
-    <div class="side-box"><h4>今日重点</h4><p>TextTeacher、MDM、EvoVid、Ablate-to-Validate。</p></div>
-    <div class="side-box"><h4>会议口径</h4><p>只把 CCF A/B 放进主提醒；临近截止或 CCF C 仅记录。</p></div>
     <div class="side-box"><h4>阅读重点</h4><p>先看 P1/P2 与方法图，再扫状态变化和边界案例。</p></div>
+    <div class="side-box"><h4>会议口径</h4><p>主提醒只保留 CCF A/B；CCF C 与过期截止仅作状态记录。</p></div>
   </aside>
 </article></main>
-  <aside class="conf-float" data-conf-reminder="2026-06-09-main-ddl" aria-label="CCF A/B 主投稿提醒">
+  <aside class="conf-float" data-conf-reminder="2026-06-10-main-ddl" aria-label="CCF A/B 主投稿提醒">
   <button class="conf-close" type="button" aria-label="关闭会议提醒">×</button>
   <details open>
     <summary>CCF A/B 主投稿提醒</summary>
     <div class="conf-list"><a class="conf-item " href="https://github.com/ccfddl/ccf-deadlines/blob/main/conference/AI/aaai.yml">
   <span><b>AAAI 2027</b><em>CCF A · Main paper submission</em></span>
-  <strong>48 天</strong>
+  <strong>47 天</strong>
   <small>2026-07-27 · CCF DDL: abstract 2026-07-20；进入 1 个月窗口后重点提醒。</small>
 </a></div>
   </details>
@@ -180,7 +177,7 @@
   (() => {
     const box = document.querySelector('[data-conf-reminder]');
     if (!box) return;
-    const key = `visualSslConfReminderClosed:${box.dataset.confReminder || '2026-06-09-main-ddl'}`;
+    const key = `visualSslConfReminderClosed:${box.dataset.confReminder || '2026-06-10-main-ddl'}`;
     try {
       if (localStorage.getItem(key) === '1') box.hidden = true;
     } catch (err) {}

@@ -19,39 +19,39 @@
   </header>
   <nav class="site-nav" aria-label="主导航">
     <a class="nav-link" href="../index.html">头版</a>
-<a class="nav-link" href="../issues/2026-06-09.html">今日速递</a>
+<a class="nav-link" href="../issues/2026-06-10.html">今日速递</a>
 <a class="nav-link" href="../pages/catalog.html">论文目录</a>
 <a class="nav-link" href="../pages/timeline.html">时间线</a>
   </nav>
   <main><article class="paper-detail">
   <div class="paper-main">
     <div class="kicker">arXiv 新增 · P0 · 2026-06-09</div>
-    <h1 class="paper-headline">Do Video Foundation Models Understand：V-JEPA/VideoMAE 代表当前通用视频自监督路线；这篇给出一组直接面向动态物理结构的表征读数</h1>
-    <p class="dek">把“视频基础模型是否懂物理”拆成模型家族、层深、probe 类型和时间顺序敏感性，而不是只看视频 QA 或生成质量。</p>
-    <p class="byline"><strong>Do Video Foundation Models Understand Intuitive Physics? A Layerwise Probing Analysis</strong>　Samuele Punzo, Niccolo Caselli, Ippokratis Pantelidis, Francesco Massafra, Salvatore Lo Sardo, Mohammadreza Salehi；机构信息未在 arXiv 元数据中列出。　arXiv 新增　<a href="https://arxiv.org/abs/2606.09646">原文链接</a></p>
+    <h1 class="paper-headline">Do Video Foundation Models Understand：它和通用视觉自监督的关系在于：冻结 V-JEPA、VideoMAE、video diffusion 等模型逐层 probing 物理常识，适合判断视频 SSL 表征是否学到动态规律</h1>
+    <p class="dek">高相关；详见方法、贡献和实验边界。</p>
+    <p class="byline"><strong>Do Video Foundation Models Understand Intuitive Physics? A Layerwise Probing Analysis</strong>　arXiv 新增　<a href="https://arxiv.org/abs/2606.09646">原文链接</a></p>
     <div class="paper-facts">
       <span><b>编号</b>2606.09646</span>
       <span><b>优先级</b>P0</span>
       <span><b>类别</b>arXiv 新增</span>
       <span><b>会议</b>arXiv 新增</span>
-      <span><b>方法</b>在 IntPhys2 与 Minimal Video Pairs 上冻结特征并做 layerwise probes，比较 V-JEPA、VideoMAE 与 LTX-Video；用 temporal controls 检查 frame order 对物理信号的影响。</span>
+      <span><b>方法</b>冻结 V-JEPA、VideoMAE、video diffusion 等模型逐层 probing 物理常识，适合判断视频 SSL 表征是否学到动态规律</span>
       <span><b>来源</b>arXiv / OpenReview</span>
     </div>
     <div class="feature-body">
-      <p class="lead dropcap">先说结论。V-JEPA/VideoMAE 代表当前通用视频自监督路线；这篇给出一组直接面向动态物理结构的表征读数。 把“视频基础模型是否懂物理”拆成模型家族、层深、probe 类型和时间顺序敏感性，而不是只看视频 QA 或生成质量。</p>
+      <p class="lead dropcap">先说结论。它和通用视觉自监督的关系在于：冻结 V-JEPA、VideoMAE、video diffusion 等模型逐层 probing 物理常识，适合判断视频 SSL 表征是否学到动态规律。 高相关；详见方法、贡献和实验边界。</p>
       <figure class="full-fig"><img src="../assets/mineru/2606.09646/images/5cbb99a28ea705677ac02476e2d159a92195f3e3fd56f5dfb724779305d4c9c3.jpg" alt="Figureure 2 · Layerwise MLP depth profiles by model family"><figcaption><b>Figureure 2 · Layerwise MLP depth profiles by model family</b><span class="fig-en">Figure 2. Layerwise MLP depth profiles by model family. MVP generally improves toward later layers, while IntPhys2 more often peaks before the final layer.</span><span class="fig-zh">这张图来自论文 PDF 的结构化抽取。当前用于辅助理解 Do Video Foundation Models Understand 的方法或实验，请结合正文精读段落一起看。</span></figcaption></figure>
 <figure class="full-fig"><img src="../assets/mineru/2606.09646/images/3c2709cc56bacf2828d3990ea973d8ea74911b3a80ada2b0aeb92b5863c0af42.jpg" alt="Figureure 9 · Best-case probe comparison across model families for IntPhys2 and MVP."><figcaption><b>Figureure 9 · Best-case probe comparison across model families for IntPhys2 and MVP.</b><span class="fig-en">Figure 9. Best-case probe comparison across model families for IntPhys2 and MVP.</span><span class="fig-zh">这张图/表用于判断 Do Video Foundation Models Understand 的实验收益来自哪里。重点看替换、消融或跨模型设置下趋势是否一致，而不是只看单个最高分。</span></figcaption></figure>
       
       <h2>核心问题</h2>
-      <p>V-JEPA/VideoMAE 代表当前通用视频自监督路线；这篇给出一组直接面向动态物理结构的表征读数。</p>
+      <p>它和通用视觉自监督的关系在于：冻结 V-JEPA、VideoMAE、video diffusion 等模型逐层 probing 物理常识，适合判断视频 SSL 表征是否学到动态规律。</p>
       <h2>方法拆解</h2>
-      <p>在 IntPhys2 与 Minimal Video Pairs 上冻结特征并做 layerwise probes，比较 V-JEPA、VideoMAE 与 LTX-Video；用 temporal controls 检查 frame order 对物理信号的影响。</p>
+      <p>冻结 V-JEPA、VideoMAE、video diffusion 等模型逐层 probing 物理常识，适合判断视频 SSL 表征是否学到动态规律</p>
       <h2>主要贡献</h2>
-      <p>把“视频基础模型是否懂物理”拆成模型家族、层深、probe 类型和时间顺序敏感性，而不是只看视频 QA 或生成质量。</p>
+      <p>高相关；详见方法、贡献和实验边界。</p>
       <h2>实验看点</h2>
-      <p>摘要称 V-JEPA 总体最强，VideoMAE 仍有竞争力，LTX-Video 有较弱但非零信号；物理相关信息在中后层最易被 probe 读出，打乱帧顺序会显著削弱表现。</p>
+      <p>实验部分建议重点看两类证据：一是作者是否把方法收益和更强数据、更长训练、更大模型区分开；二是跨模型、跨数据或跨任务迁移是否还能保留同样趋势。</p>
       <h2>局限与读法</h2>
-      <p>它是 probing/benchmark 论文，不能证明模型内部形成因果世界模型；probe 能力也可能受任务构造和数据集偏差影响。</p>
+      <p>这篇论文的结论需要结合任务设置、训练数据规模和消融实验一起看；不要只凭单个指标判断它对通用视觉表征的价值。</p>
     
     </div>
   </div>
@@ -61,13 +61,13 @@
     <div class="side-box"><h4>原文</h4><p><a href="https://arxiv.org/abs/2606.09646">https://arxiv.org/abs/2606.09646</a></p></div>
   </aside>
 </article></main>
-  <aside class="conf-float" data-conf-reminder="2026-06-09-main-ddl" aria-label="CCF A/B 主投稿提醒">
+  <aside class="conf-float" data-conf-reminder="2026-06-10-main-ddl" aria-label="CCF A/B 主投稿提醒">
   <button class="conf-close" type="button" aria-label="关闭会议提醒">×</button>
   <details open>
     <summary>CCF A/B 主投稿提醒</summary>
     <div class="conf-list"><a class="conf-item " href="https://github.com/ccfddl/ccf-deadlines/blob/main/conference/AI/aaai.yml">
   <span><b>AAAI 2027</b><em>CCF A · Main paper submission</em></span>
-  <strong>48 天</strong>
+  <strong>47 天</strong>
   <small>2026-07-27 · CCF DDL: abstract 2026-07-20；进入 1 个月窗口后重点提醒。</small>
 </a></div>
   </details>
@@ -80,7 +80,7 @@
   (() => {
     const box = document.querySelector('[data-conf-reminder]');
     if (!box) return;
-    const key = `visualSslConfReminderClosed:${box.dataset.confReminder || '2026-06-09-main-ddl'}`;
+    const key = `visualSslConfReminderClosed:${box.dataset.confReminder || '2026-06-10-main-ddl'}`;
     try {
       if (localStorage.getItem(key) === '1') box.hidden = true;
     } catch (err) {}

@@ -19,39 +19,39 @@
   </header>
   <nav class="site-nav" aria-label="主导航">
     <a class="nav-link" href="../index.html">头版</a>
-<a class="nav-link" href="../issues/2026-06-09.html">今日速递</a>
+<a class="nav-link" href="../issues/2026-06-10.html">今日速递</a>
 <a class="nav-link" href="../pages/catalog.html">论文目录</a>
 <a class="nav-link" href="../pages/timeline.html">时间线</a>
   </nav>
   <main><article class="paper-detail">
   <div class="paper-main">
     <div class="kicker">arXiv 新增 · P0 · 2026-06-09</div>
-    <h1 class="paper-headline">What Makes Video World Model：通用视觉自监督正在从静态图像 encoder 走向视频 world model；这篇把“预测 latent 是否比重建像素更有用”问得很直接</h1>
-    <p class="dek">给视频世界模型 latent 一个可操作的表示诊断：action relevance 主要来自 temporal video pretraining 和 latent prediction，而不是 reconstruction fidelity 本身。</p>
-    <p class="byline"><strong>What Makes Video World Model Latents Action-Relevant: Prediction over Reconstruction</strong>　Jewon Yeom, Hanseul Kim, Jeongjae Park, Sungmok Jung, Jaejin Lee, Taesup Kim；机构信息未在 arXiv 元数据中列出。　arXiv 新增　<a href="https://arxiv.org/abs/2606.07687">原文链接</a></p>
+    <h1 class="paper-headline">What Makes Video World Model：它和通用视觉自监督的关系在于：直接比较 image-only SSL、VideoMAE/V-JEPA、autoencoder、diffusion 等预训练信号，回答哪些 latent 真正携带 action-releva...</h1>
+    <p class="dek">高相关；详见方法、贡献和实验边界。</p>
+    <p class="byline"><strong>What Makes Video World Model Latents Action-Relevant: Prediction over Reconstruction</strong>　arXiv 新增　<a href="https://arxiv.org/abs/2606.07687">原文链接</a></p>
     <div class="paper-facts">
       <span><b>编号</b>2606.07687</span>
       <span><b>优先级</b>P0</span>
       <span><b>类别</b>arXiv 新增</span>
       <span><b>会议</b>arXiv 新增</span>
-      <span><b>方法</b>构造统一 inverse-dynamics probing 评估，把不同 encoder family 冻结后放到同一 action recoverability 目标下比较；重点区分“像素重建质量高”与“latent 对动作/动态可恢复”。</span>
+      <span><b>方法</b>直接比较 image-only SSL、VideoMAE/V-JEPA、autoencoder、diffusion 等预训练信号，回答哪些 latent 真正携带 action-relevant 视频结构</span>
       <span><b>来源</b>arXiv / OpenReview</span>
     </div>
     <div class="feature-body">
-      <p class="lead dropcap">先说结论。通用视觉自监督正在从静态图像 encoder 走向视频 world model；这篇把“预测 latent 是否比重建像素更有用”问得很直接。 给视频世界模型 latent 一个可操作的表示诊断：action relevance 主要来自 temporal video pretraining 和 latent prediction，而不是 reconstruction fidelity 本身。</p>
+      <p class="lead dropcap">先说结论。它和通用视觉自监督的关系在于：直接比较 image-only SSL、VideoMAE/V-JEPA、autoencoder、diffusion 等预训练信号，回答哪些 latent 真正携带 action-releva... 高相关；详见方法、贡献和实验边界。</p>
       <figure class="full-fig"><img src="../assets/mineru/2606.07687/images/61d1aa13ee893309e74c8089db91488016c2104e9fea7407eb3eaf5e48660fdb.jpg" alt="Figureure 1 · : Pixel fidelity and frozen action-relevant structure across backbone "><figcaption><b>Figureure 1 · : Pixel fidelity and frozen action-relevant structure across backbone </b><span class="fig-en">Figure 1: Pixel fidelity and frozen action-relevant structure across backbone families on LIBERO. PSNR is rollout PSNR for pixel-producing backbones and decoder PSNR for encoderonly backbones (a 17M pixel decoder on the frozen representation); action $R ^ { 2 }$ is measured on the frozen trunk before ID supervision. The two axes are uncorrelated: at PSNR ≈ 20 dB, action $R ^ { 2 }$ spans −0.01 to +0.46, and pixel-reconstruction backbones (SDXL VAE, Cosmos-1) attain the highest PSNR but the lowest action $R ^ { 2 }$ . The ID multiplier (Section 4.2) is what separates the otherwiseclustered video-SSL, DIFF, and LAPA families.</span><span class="fig-zh">这张图来自论文 PDF 的结构化抽取。当前用于辅助理解 What Makes Video World Model 的方法或实验，请结合正文精读段落一起看。</span></figcaption></figure>
 <figure class="full-fig"><img src="../assets/mineru/2606.07687/images/6f6d68b802ef93ae6ee8af78436e982e6b7c0f3cb9c1e8f15c7b26bad35c5d1a.jpg" alt="Figureure 4 · : ID supervision sample-budget sweep on V-JEPA 2 ViT-L and VideoMAE V1"><figcaption><b>Figureure 4 · : ID supervision sample-budget sweep on V-JEPA 2 ViT-L and VideoMAE V1</b><span class="fig-en">Figure 4: ID supervision sample-budget sweep on V-JEPA 2 ViT-L and VideoMAE V1 ViT-L. x-axis: fraction p of mini-batch samples receiving ID gradient (per-sample mask probability). yaxis: action probe $R ^ { 2 }$ on LIBERO task-OOD, mean of 3 probe seeds. Endpoints at $p { = } 0$ are the frozen baselines; endpoints at $p { = } 1$ are the standard ID fine-tunes (V-JEPA re-run at 20k steps for step-matched comparison). V-JEPA captures +0.20 R² lift from just 2% ID supervision (effectively ∼1600 samples receiving ID gradient over 20k×4 batch slots), and reaches 65% of the full $p { = } 1$ lift at $\scriptstyle { p = 0 . 1 0 }$ . VideoMAE scales more linearly and gains little below $\scriptstyle { p = 0 . 1 0 }$ .</span><span class="fig-zh">这张图/表用于判断 What Makes Video World Model 的实验收益来自哪里。重点看替换、消融或跨模型设置下趋势是否一致，而不是只看单个最高分。</span></figcaption></figure>
       
       <h2>核心问题</h2>
-      <p>通用视觉自监督正在从静态图像 encoder 走向视频 world model；这篇把“预测 latent 是否比重建像素更有用”问得很直接。</p>
+      <p>它和通用视觉自监督的关系在于：直接比较 image-only SSL、VideoMAE/V-JEPA、autoencoder、diffusion 等预训练信号，回答哪些 latent 真正携带 action-relevant 视频结构。</p>
       <h2>方法拆解</h2>
-      <p>构造统一 inverse-dynamics probing 评估，把不同 encoder family 冻结后放到同一 action recoverability 目标下比较；重点区分“像素重建质量高”与“latent 对动作/动态可恢复”。</p>
+      <p>直接比较 image-only SSL、VideoMAE/V-JEPA、autoencoder、diffusion 等预训练信号，回答哪些 latent 真正携带 action-relevant 视频结构</p>
       <h2>主要贡献</h2>
-      <p>给视频世界模型 latent 一个可操作的表示诊断：action relevance 主要来自 temporal video pretraining 和 latent prediction，而不是 reconstruction fidelity 本身。</p>
+      <p>高相关；详见方法、贡献和实验边界。</p>
       <h2>实验看点</h2>
-      <p>摘要显示 video-pretrained self-supervised encoders 在视觉质量与动作可恢复性的 Pareto trade-off 上最好；高质量 pixel decoder 可能几乎不携带 action-relevant signal。</p>
+      <p>实验部分建议重点看两类证据：一是作者是否把方法收益和更强数据、更长训练、更大模型区分开；二是跨模型、跨数据或跨任务迁移是否还能保留同样趋势。</p>
       <h2>局限与读法</h2>
-      <p>评价靠 probe 和 action recoverability，未必等同于开放世界视频理解或下游 VLM 泛化；机器人/控制语境较强，需要把结论迁移回通用视频表征时保持边界。</p>
+      <p>这篇论文的结论需要结合任务设置、训练数据规模和消融实验一起看；不要只凭单个指标判断它对通用视觉表征的价值。</p>
     
     </div>
   </div>
@@ -61,13 +61,13 @@
     <div class="side-box"><h4>原文</h4><p><a href="https://arxiv.org/abs/2606.07687">https://arxiv.org/abs/2606.07687</a></p></div>
   </aside>
 </article></main>
-  <aside class="conf-float" data-conf-reminder="2026-06-09-main-ddl" aria-label="CCF A/B 主投稿提醒">
+  <aside class="conf-float" data-conf-reminder="2026-06-10-main-ddl" aria-label="CCF A/B 主投稿提醒">
   <button class="conf-close" type="button" aria-label="关闭会议提醒">×</button>
   <details open>
     <summary>CCF A/B 主投稿提醒</summary>
     <div class="conf-list"><a class="conf-item " href="https://github.com/ccfddl/ccf-deadlines/blob/main/conference/AI/aaai.yml">
   <span><b>AAAI 2027</b><em>CCF A · Main paper submission</em></span>
-  <strong>48 天</strong>
+  <strong>47 天</strong>
   <small>2026-07-27 · CCF DDL: abstract 2026-07-20；进入 1 个月窗口后重点提醒。</small>
 </a></div>
   </details>
@@ -80,7 +80,7 @@
   (() => {
     const box = document.querySelector('[data-conf-reminder]');
     if (!box) return;
-    const key = `visualSslConfReminderClosed:${box.dataset.confReminder || '2026-06-09-main-ddl'}`;
+    const key = `visualSslConfReminderClosed:${box.dataset.confReminder || '2026-06-10-main-ddl'}`;
     try {
       if (localStorage.getItem(key) === '1') box.hidden = true;
     } catch (err) {}

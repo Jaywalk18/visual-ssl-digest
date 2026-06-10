@@ -19,39 +19,39 @@
   </header>
   <nav class="site-nav" aria-label="主导航">
     <a class="nav-link" href="../index.html">头版</a>
-<a class="nav-link" href="../issues/2026-06-09.html">今日速递</a>
+<a class="nav-link" href="../issues/2026-06-10.html">今日速递</a>
 <a class="nav-link" href="../pages/catalog.html">论文目录</a>
 <a class="nav-link" href="../pages/timeline.html">时间线</a>
   </nav>
   <main><article class="paper-detail">
   <div class="paper-main">
     <div class="kicker">arXiv 新增 + ICML Workshop · P2 · 2026-06-09</div>
-    <h1 class="paper-headline">Vision-Language Asymmetry in Bistable Image：TEVI/ViSAE 之后，SAE 正在进入视觉语言表征解释；这篇有助于判断 CLIP image features 与 LLM 输出之间的信息瓶颈</h1>
-    <p class="dek">提出 V-L asymmetry：vision tower 可能同时保留多个解释，语言生成端更早/更强地承诺到单一 aspect。</p>
-    <p class="byline"><strong>Vision-Language Asymmetry in Bistable Image Captioning</strong>　Arohan Agate；机构信息未在 arXiv 元数据中列出。　arXiv 新增 + ICML Workshop　<a href="https://arxiv.org/abs/2606.08031">原文链接</a></p>
+    <h1 class="paper-headline">Vision-Language Asymmetry in Bistable Image：它和通用视觉自监督的关系在于：在 LLaVA 消费的 CLIP 层训练 TopK SAE，分析 ambiguous image captioning 中 vision tower 与 language head 的不对称...</h1>
+    <p class="dek">中高相关；详见方法、贡献和实验边界。</p>
+    <p class="byline"><strong>Vision-Language Asymmetry in Bistable Image Captioning</strong>　arXiv 新增 + ICML Workshop　<a href="https://arxiv.org/abs/2606.08031">原文链接</a></p>
     <div class="paper-facts">
       <span><b>编号</b>2606.08031</span>
       <span><b>优先级</b>P2</span>
       <span><b>类别</b>arXiv 新增 + ICML Workshop</span>
       <span><b>会议</b>arXiv 新增 + ICML Workshop</span>
-      <span><b>方法</b>用 83 个 bistable stimuli 做 3320 次 caption generation 行为基线，再在 LLaVA-1.6-7B 实际读取的 CLIP layer 上训练 TopK sparse autoencoder，比较 vision tower 中两个 aspect 的同时激活和最终语言承诺。</span>
+      <span><b>方法</b>在 LLaVA 消费的 CLIP 层训练 TopK SAE，分析 ambiguous image captioning 中 vision tower 与 language head 的不对称</span>
       <span><b>来源</b>arXiv / OpenReview</span>
     </div>
     <div class="feature-body">
-      <p class="lead dropcap">先说结论。TEVI/ViSAE 之后，SAE 正在进入视觉语言表征解释；这篇有助于判断 CLIP image features 与 LLM 输出之间的信息瓶颈。 提出 V-L asymmetry：vision tower 可能同时保留多个解释，语言生成端更早/更强地承诺到单一 aspect。</p>
+      <p class="lead dropcap">先说结论。它和通用视觉自监督的关系在于：在 LLaVA 消费的 CLIP 层训练 TopK SAE，分析 ambiguous image captioning 中 vision tower 与 language head 的不对称... 中高相关；详见方法、贡献和实验边界。</p>
       <figure class="full-fig"><img src="../assets/mineru/2606.08031/images/3fe0d5219482a705b84b5f84be004533197a0dd1f56d3bcc4d7df35a81a52695.jpg" alt="Figureure 1 · Three behavioral regimes over 83 bistable stimuli (LLaVA-1.6-7B, 40 ge"><figcaption><b>Figureure 1 · Three behavioral regimes over 83 bistable stimuli (LLaVA-1.6-7B, 40 ge</b><span class="fig-en">Figure 1. Three behavioral regimes over 83 bistable stimuli (LLaVA-1.6-7B, 40 generations each, Qwen3-8B judge). Bottom-right: default-dominant; top-left: aspect-blind under neutral prompting, splits into force-dominant (7/10, ≥70/30 commitment under forced choice) and force-balanced (3/10, \~50/50, the Necker cubes).</span><span class="fig-zh">这张图/表用于判断 Vision-Language Asymmetry in Bistable Image 的实验收益来自哪里。重点看替换、消融或跨模型设置下趋势是否一致，而不是只看单个最高分。</span></figcaption></figure>
 <figure class="full-fig"><img src="../assets/mineru/2606.08031/images/9bbe77506e78ca93ea12657c72153401d1b75fbf9ad6cdd4944e4ff4c4ba8a53.jpg" alt="Figureure 2 · Phase 3: per-stimulus aspect-A (x-axis) vs aspect-B (y-axis) pool mean"><figcaption><b>Figureure 2 · Phase 3: per-stimulus aspect-A (x-axis) vs aspect-B (y-axis) pool mean</b><span class="fig-en">Figure 2. Phase 3: per-stimulus aspect-A (x-axis) vs aspect-B (y-axis) pool mean activation across all six groups. Marker color gives the per-stimulus classification (purple = superposition, blue = dominance A, red = dominance B, gray = neither); marker size is proportional to Phase 1 neutral-prompt dominance score. Dashed lines show per-pool thresholds (median activation on opposite-aspect controls). Purple dominates: both pools above threshold (vision-side superposition) for 50 of 69 stimuli.</span><span class="fig-zh">这张图来自论文 PDF 的结构化抽取。当前用于辅助理解 Vision-Language Asymmetry in Bistable Image 的方法或实验，请结合正文精读段落一起看。</span></figcaption></figure>
       
       <h2>核心问题</h2>
-      <p>TEVI/ViSAE 之后，SAE 正在进入视觉语言表征解释；这篇有助于判断 CLIP image features 与 LLM 输出之间的信息瓶颈。</p>
+      <p>它和通用视觉自监督的关系在于：在 LLaVA 消费的 CLIP 层训练 TopK SAE，分析 ambiguous image captioning 中 vision tower 与 language head 的不对称。</p>
       <h2>方法拆解</h2>
-      <p>用 83 个 bistable stimuli 做 3320 次 caption generation 行为基线，再在 LLaVA-1.6-7B 实际读取的 CLIP layer 上训练 TopK sparse autoencoder，比较 vision tower 中两个 aspect 的同时激活和最终语言承诺。</p>
+      <p>在 LLaVA 消费的 CLIP 层训练 TopK SAE，分析 ambiguous image captioning 中 vision tower 与 language head 的不对称</p>
       <h2>主要贡献</h2>
-      <p>提出 V-L asymmetry：vision tower 可能同时保留多个解释，语言生成端更早/更强地承诺到单一 aspect。</p>
+      <p>中高相关；详见方法、贡献和实验边界。</p>
       <h2>实验看点</h2>
-      <p>摘要称 69 个可比样本中 72% 在 vision tower 同时激活两个 aspect feature pools；包含 12/12 forced-balanced stimuli。</p>
+      <p>实验部分建议重点看两类证据：一是作者是否把方法收益和更强数据、更长训练、更大模型区分开；二是跨模型、跨数据或跨任务迁移是否还能保留同样趋势。</p>
       <h2>局限与读法</h2>
-      <p>样本是哲学/心理学式 ambiguous images，规模小；更适合作为机制诊断，不宜直接外推到普通图像 captioning。</p>
+      <p>这篇论文的结论需要结合任务设置、训练数据规模和消融实验一起看；不要只凭单个指标判断它对通用视觉表征的价值。</p>
     
     </div>
   </div>
@@ -61,13 +61,13 @@
     <div class="side-box"><h4>原文</h4><p><a href="https://arxiv.org/abs/2606.08031">https://arxiv.org/abs/2606.08031</a></p></div>
   </aside>
 </article></main>
-  <aside class="conf-float" data-conf-reminder="2026-06-09-main-ddl" aria-label="CCF A/B 主投稿提醒">
+  <aside class="conf-float" data-conf-reminder="2026-06-10-main-ddl" aria-label="CCF A/B 主投稿提醒">
   <button class="conf-close" type="button" aria-label="关闭会议提醒">×</button>
   <details open>
     <summary>CCF A/B 主投稿提醒</summary>
     <div class="conf-list"><a class="conf-item " href="https://github.com/ccfddl/ccf-deadlines/blob/main/conference/AI/aaai.yml">
   <span><b>AAAI 2027</b><em>CCF A · Main paper submission</em></span>
-  <strong>48 天</strong>
+  <strong>47 天</strong>
   <small>2026-07-27 · CCF DDL: abstract 2026-07-20；进入 1 个月窗口后重点提醒。</small>
 </a></div>
   </details>
@@ -80,7 +80,7 @@
   (() => {
     const box = document.querySelector('[data-conf-reminder]');
     if (!box) return;
-    const key = `visualSslConfReminderClosed:${box.dataset.confReminder || '2026-06-09-main-ddl'}`;
+    const key = `visualSslConfReminderClosed:${box.dataset.confReminder || '2026-06-10-main-ddl'}`;
     try {
       if (localStorage.getItem(key) === '1') box.hidden = true;
     } catch (err) {}

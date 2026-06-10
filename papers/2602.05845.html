@@ -19,39 +19,39 @@
   </header>
   <nav class="site-nav" aria-label="主导航">
     <a class="nav-link" href="../index.html">头版</a>
-<a class="nav-link" href="../issues/2026-06-09.html">今日速递</a>
+<a class="nav-link" href="../issues/2026-06-10.html">今日速递</a>
 <a class="nav-link" href="../pages/catalog.html">论文目录</a>
 <a class="nav-link" href="../pages/timeline.html">时间线</a>
   </nav>
   <main><article class="paper-detail">
   <div class="paper-main">
     <div class="kicker">arXiv 更新 · P1 · 2026-06-09</div>
-    <h1 class="paper-headline">Self-Supervised Learning with a Multi-Task：它回到通用视觉自监督的核心目标设计问题，对理解 MAE/JEPAs 之外的 Siamese latent prediction 路线仍有直接价值</h1>
-    <p class="dek">给 multi-crop 为什么会破坏 BYOL、SimSiam、MoCo v3 这类 predictor-based SSL 一个简洁解释：共享 predictor 被迫同时解异质 alignment tasks。</p>
-    <p class="byline"><strong>Self-Supervised Learning with a Multi-Task Latent Space Objective</strong>　Pierre-Francois De Plaen, Abhishek Jha, Luc Van Gool, Tinne Tuytelaars, Marc Proesmans；机构信息未在 arXiv 元数据中列出。　arXiv 更新　<a href="https://arxiv.org/abs/2602.05845">原文链接</a></p>
+    <h1 class="paper-headline">Self-Supervised Learning with a Multi-Task：它和通用视觉自监督的关系在于：直接针对 BYOL/SimSiam/MoCo v3 的 multi-crop instability，把不同空间变换视为不同 latent alignment task</h1>
+    <p class="dek">高相关；详见方法、贡献和实验边界。</p>
+    <p class="byline"><strong>Self-Supervised Learning with a Multi-Task Latent Space Objective</strong>　arXiv 更新　<a href="https://arxiv.org/abs/2602.05845">原文链接</a></p>
     <div class="paper-facts">
       <span><b>编号</b>2602.05845</span>
       <span><b>优先级</b>P1</span>
       <span><b>类别</b>arXiv 更新</span>
       <span><b>会议</b>arXiv 更新</span>
-      <span><b>方法</b>把自预测 Siamese SSL 改写成 multi-task latent-space alignment：不同 crop/view/spatial transformation 使用独立 predictor，共享 encoder；进一步把 masked/cutout views 纳入同一任务集合。</span>
+      <span><b>方法</b>直接针对 BYOL/SimSiam/MoCo v3 的 multi-crop instability，把不同空间变换视为不同 latent alignment task</span>
       <span><b>来源</b>arXiv / OpenReview</span>
     </div>
     <div class="feature-body">
-      <p class="lead dropcap">先说结论。它回到通用视觉自监督的核心目标设计问题，对理解 MAE/JEPAs 之外的 Siamese latent prediction 路线仍有直接价值。 给 multi-crop 为什么会破坏 BYOL、SimSiam、MoCo v3 这类 predictor-based SSL 一个简洁解释：共享 predictor 被迫同时解异质 alignment tasks。</p>
+      <p class="lead dropcap">先说结论。它和通用视觉自监督的关系在于：直接针对 BYOL/SimSiam/MoCo v3 的 multi-crop instability，把不同空间变换视为不同 latent alignment task。 高相关；详见方法、贡献和实验边界。</p>
       <figure class="full-fig"><img src="../assets/mineru/2602.05845/images/5c8cf8a19dc6c89452632966ebffc4624bd8a5286ea5665c351be1cf77fcc2db.jpg" alt="(b) Multi-predictor multi-crop (ours, Sec"><figcaption><b>(b) Multi-predictor multi-crop (ours, Sec</b><span class="fig-en">(b) Multi-predictor multi-crop (ours, Sec. 3.2). (c) Multi-task (ours, Sec. 3.3). Figure 1: Overview of the proposed framework. Naive multi-crop (left) forces a single predictor to solve heterogeneous latent-space tasks simultaneously, leading to unstable optimization. Assigning one predictor per view type (middle) resolves this interference and stabilizes training. Introducing asymmetric cutout views (right) adds a complementary semantic inpainting task, further improving downstream performance. Here, p. denotes a predictor, and colors indicate distinct predictors.</span><span class="fig-zh">这张图概括 Self-Supervised Learning with a Multi-Task 的整体方法流程。阅读时先看模块之间传递的训练信号，再看作者如何把目标拆成可优化的子问题。</span></figcaption></figure>
 <figure class="full-fig"><img src="../assets/mineru/2602.05845/images/d7d93fda5529d63f19def5f1d1940759a88e28fa450757d7a63e82ae4b6dd342.jpg" alt="Figureure 2 · : Asymmetric and symmetric cutout"><figcaption><b>Figureure 2 · : Asymmetric and symmetric cutout</b><span class="fig-en">Figure 2: Asymmetric and symmetric cutout. Image from ImageNet val. set (№7011).</span><span class="fig-zh">这张图来自论文 PDF 的结构化抽取。当前用于辅助理解 Self-Supervised Learning with a Multi-Task 的方法或实验，请结合正文精读段落一起看。</span></figcaption></figure>
       
       <h2>核心问题</h2>
-      <p>它回到通用视觉自监督的核心目标设计问题，对理解 MAE/JEPAs 之外的 Siamese latent prediction 路线仍有直接价值。</p>
+      <p>它和通用视觉自监督的关系在于：直接针对 BYOL/SimSiam/MoCo v3 的 multi-crop instability，把不同空间变换视为不同 latent alignment task。</p>
       <h2>方法拆解</h2>
-      <p>把自预测 Siamese SSL 改写成 multi-task latent-space alignment：不同 crop/view/spatial transformation 使用独立 predictor，共享 encoder；进一步把 masked/cutout views 纳入同一任务集合。</p>
+      <p>直接针对 BYOL/SimSiam/MoCo v3 的 multi-crop instability，把不同空间变换视为不同 latent alignment task</p>
       <h2>主要贡献</h2>
-      <p>给 multi-crop 为什么会破坏 BYOL、SimSiam、MoCo v3 这类 predictor-based SSL 一个简洁解释：共享 predictor 被迫同时解异质 alignment tasks。</p>
+      <p>高相关；详见方法、贡献和实验边界。</p>
       <h2>实验看点</h2>
-      <p>摘要称独立 predictor 可稳定 multi-crop，并在多个框架上带来 3.8-4% linear evaluation gains；global/local/masked views 能统一进同一 SSL formulation。</p>
+      <p>实验部分建议重点看两类证据：一是作者是否把方法收益和更强数据、更长训练、更大模型区分开；二是跨模型、跨数据或跨任务迁移是否还能保留同样趋势。</p>
       <h2>局限与读法</h2>
-      <p>仍然是经典图像 SSL 框架，规模、数据和现代 ViT/CLIP/DINOv2 级别的外推需要细读；多个 predictor 也引入方法设计复杂度。</p>
+      <p>这篇论文的结论需要结合任务设置、训练数据规模和消融实验一起看；不要只凭单个指标判断它对通用视觉表征的价值。</p>
     
     </div>
   </div>
@@ -61,13 +61,13 @@
     <div class="side-box"><h4>原文</h4><p><a href="https://arxiv.org/abs/2602.05845">https://arxiv.org/abs/2602.05845</a></p></div>
   </aside>
 </article></main>
-  <aside class="conf-float" data-conf-reminder="2026-06-09-main-ddl" aria-label="CCF A/B 主投稿提醒">
+  <aside class="conf-float" data-conf-reminder="2026-06-10-main-ddl" aria-label="CCF A/B 主投稿提醒">
   <button class="conf-close" type="button" aria-label="关闭会议提醒">×</button>
   <details open>
     <summary>CCF A/B 主投稿提醒</summary>
     <div class="conf-list"><a class="conf-item " href="https://github.com/ccfddl/ccf-deadlines/blob/main/conference/AI/aaai.yml">
   <span><b>AAAI 2027</b><em>CCF A · Main paper submission</em></span>
-  <strong>48 天</strong>
+  <strong>47 天</strong>
   <small>2026-07-27 · CCF DDL: abstract 2026-07-20；进入 1 个月窗口后重点提醒。</small>
 </a></div>
   </details>
@@ -80,7 +80,7 @@
   (() => {
     const box = document.querySelector('[data-conf-reminder]');
     if (!box) return;
-    const key = `visualSslConfReminderClosed:${box.dataset.confReminder || '2026-06-09-main-ddl'}`;
+    const key = `visualSslConfReminderClosed:${box.dataset.confReminder || '2026-06-10-main-ddl'}`;
     try {
       if (localStorage.getItem(key) === '1') box.hidden = true;
     } catch (err) {}

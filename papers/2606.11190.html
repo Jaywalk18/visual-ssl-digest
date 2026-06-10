@@ -1,0 +1,97 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>When to Align, When to Predict · 通用视觉自监督研究报</title>
+  <link rel="stylesheet" href="../assets/styles.css?v=20260525j">
+  <link rel="stylesheet" href="../assets/visual-ssl.css?v=20260525j">
+</head>
+<body>
+  <header class="masthead">
+    <div class="masthead-kicker">Visual SSL Research Report · 2026-06-10</div>
+    <a class="masthead-title" href="../index.html">通用视觉自监督研究报</a>
+    <div class="masthead-meta">
+      <span>图像表征 · VFM · JEPA · 视频预训练</span>
+      <span>CCF A/B 会议优先</span>
+      <span>图文精读 · 方法图解</span>
+    </div>
+  </header>
+  <nav class="site-nav" aria-label="主导航">
+    <a class="nav-link" href="../index.html">头版</a>
+<a class="nav-link" href="../issues/2026-06-10.html">今日速递</a>
+<a class="nav-link" href="../pages/catalog.html">论文目录</a>
+<a class="nav-link" href="../pages/timeline.html">时间线</a>
+  </nav>
+  <main><article class="paper-detail">
+  <div class="paper-main">
+    <div class="kicker">arXiv 新增 · P2 · 2026-06-10</div>
+    <h1 class="paper-headline">When to Align, When to Predict：视觉-语言自监督长期在 CLIP-style alignment、caption prediction、masked prediction 之间摆动，这篇给出一个选择目标的分析工具</h1>
+    <p class="dek">把“该对齐还是该预测”从经验 recipe 变成可诊断相图，并给出小样本定位真实数据所处区域的程序。</p>
+    <p class="byline"><strong>When to Align, When to Predict: A Phase Diagram for Multimodal Learning</strong>　Ilay Kamai, Hugues Van Assel, Aviv Regev, Hagai B. Perets, Randall Balestriero；机构信息未在 arXiv 元数据中列出。　arXiv 新增　<a href="https://arxiv.org/abs/2606.11190">原文链接</a></p>
+    <div class="paper-facts">
+      <span><b>编号</b>2606.11190</span>
+      <span><b>优先级</b>P2</span>
+      <span><b>类别</b>arXiv 新增</span>
+      <span><b>会议</b>arXiv 新增</span>
+      <span><b>方法</b>在线性 spiked signal-plus-noise model 下比较 cross-modal alignment (CA) 与 cross-modal prediction (CP)，推导二者在不同 nuisance correlation、source modality quality 下的失败/成功区域。</span>
+      <span><b>来源</b>arXiv / OpenReview</span>
+    </div>
+    <div class="feature-body">
+      <p class="lead dropcap">先说结论。视觉-语言自监督长期在 CLIP-style alignment、caption prediction、masked prediction 之间摆动，这篇给出一个选择目标的分析工具。 把“该对齐还是该预测”从经验 recipe 变成可诊断相图，并给出小样本定位真实数据所处区域的程序。</p>
+      <figure class="full-fig"><img src="../assets/mineru/2606.11190/images/a3bfb29ee222d189e4a673677a0cdfd065b193ee3c8d9a76dc40865fd770abc5.jpg" alt="(b) Shape3D Figure 10: Comparison between VICReg and DeepCCA for dSprites and Shape3D expe"><figcaption><b>(b) Shape3D Figure 10: Comparison between VICReg and DeepCCA for dSprites and Shape3D expe</b><span class="fig-en">(b) Shape3D Figure 10: Comparison between VICReg and DeepCCA for dSprites and Shape3D experiments</span><span class="fig-zh">这张图/表用于判断 When to Align, When to Predict 的实验收益来自哪里。重点看替换、消融或跨模型设置下趋势是否一致，而不是只看单个最高分。</span></figcaption></figure>
+<figure class="full-fig"><img src="../assets/mineru/2606.11190/images/123e67ba27b24071068058a92233425a7d4afd432e4f368d8ea286a6ae87e87b.jpg" alt="Figureure 2 · : Phase diagram for signal recovery in $( \kappa , \nu )$ space under "><figcaption><b>Figureure 2 · : Phase diagram for signal recovery in $( \kappa , \nu )$ space under </b><span class="fig-en">Figure 2: Phase diagram for signal recovery in $( \kappa , \nu )$ space under the homogeneous model (all signal and noise components are equal). Solid and dashed lines respectively show the $\Delta _ { \mathrm { C A } } = 1$ and $\Delta _ { \mathrm { C P } } = 1$ boundaries from Proposition 3.1. (a) Large target nuisance $\left( \tilde { \gamma } ^ { y } \gg \gamma ^ { y } \right)$ . (b) Small target noise $( \tilde { \gamma } ^ { y } \sim \gamma ^ { y } )$ . Phase diagrams for the non-homogeneous case with partial recoveries are shown in Figure 7.</span><span class="fig-zh">这张图来自论文 PDF 的结构化抽取。当前用于辅助理解 When to Align, When to Predict 的方法或实验，请结合正文精读段落一起看。</span></figcaption></figure>
+      
+      <h2>核心问题</h2>
+      <p>视觉-语言自监督长期在 CLIP-style alignment、caption prediction、masked prediction 之间摆动，这篇给出一个选择目标的分析工具。</p>
+      <h2>方法拆解</h2>
+      <p>在线性 spiked signal-plus-noise model 下比较 cross-modal alignment (CA) 与 cross-modal prediction (CP)，推导二者在不同 nuisance correlation、source modality quality 下的失败/成功区域。</p>
+      <h2>主要贡献</h2>
+      <p>把“该对齐还是该预测”从经验 recipe 变成可诊断相图，并给出小样本定位真实数据所处区域的程序。</p>
+      <h2>实验看点</h2>
+      <p>摘要提到在 synthetic data、stereo-vision benchmarks、image-caption pairs 和 astrophysical data 上验证相图在非线性设置中的预测力。</p>
+      <h2>局限与读法</h2>
+      <p>理论框架从线性模型出发，真实大规模图文/视频预训练中的优化、架构与数据噪声远复杂得多；需要谨慎外推。</p>
+    
+    </div>
+  </div>
+  <aside class="paper-side">
+
+    <div class="side-box"><h4>关键判断</h4><dl><dt>相关性</dt><dd>P2</dd><dt>类别</dt><dd>arXiv 新增</dd><dt>会议</dt><dd>arXiv 新增</dd><dt>读法</dt><dd>方法图优先，表格次之</dd></dl></div>
+    <div class="side-box"><h4>原文</h4><p><a href="https://arxiv.org/abs/2606.11190">https://arxiv.org/abs/2606.11190</a></p></div>
+  </aside>
+</article></main>
+  <aside class="conf-float" data-conf-reminder="2026-06-10-main-ddl" aria-label="CCF A/B 主投稿提醒">
+  <button class="conf-close" type="button" aria-label="关闭会议提醒">×</button>
+  <details open>
+    <summary>CCF A/B 主投稿提醒</summary>
+    <div class="conf-list"><a class="conf-item " href="https://github.com/ccfddl/ccf-deadlines/blob/main/conference/AI/aaai.yml">
+  <span><b>AAAI 2027</b><em>CCF A · Main paper submission</em></span>
+  <strong>47 天</strong>
+  <small>2026-07-27 · CCF DDL: abstract 2026-07-20；进入 1 个月窗口后重点提醒。</small>
+</a></div>
+  </details>
+</aside>
+  <footer class="footer">
+    <div>面向通用视觉自监督、视觉基础模型与多模态表征学习的每日研究报。</div>
+    <div class="muted">Issue 2026-06-10 · Curated readings and figure notes</div>
+  </footer>
+  <script>
+  (() => {
+    const box = document.querySelector('[data-conf-reminder]');
+    if (!box) return;
+    const key = `visualSslConfReminderClosed:${box.dataset.confReminder || '2026-06-10-main-ddl'}`;
+    try {
+      if (localStorage.getItem(key) === '1') box.hidden = true;
+    } catch (err) {}
+    const close = box.querySelector('.conf-close');
+    if (close) {
+      close.addEventListener('click', () => {
+        box.hidden = true;
+        try { localStorage.setItem(key, '1'); } catch (err) {}
+      });
+    }
+  })();
+  </script>
+</body>
+</html>
