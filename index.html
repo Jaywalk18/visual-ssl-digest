@@ -9,7 +9,7 @@
 </head>
 <body>
   <header class="masthead">
-    <div class="masthead-kicker">Visual SSL Research Report · 2026-06-10</div>
+    <div class="masthead-kicker">Visual SSL Research Report · 2026-06-11</div>
     <a class="masthead-title" href="index.html">通用视觉自监督研究报</a>
     <div class="masthead-meta">
       <span>图像表征 · VFM · JEPA · 视频预训练</span>
@@ -19,106 +19,106 @@
   </header>
   <nav class="site-nav" aria-label="主导航">
     <a class="nav-link active" href="index.html">头版</a>
-<a class="nav-link" href="issues/2026-06-10.html">今日速递</a>
+<a class="nav-link" href="issues/2026-06-11.html">今日速递</a>
 <a class="nav-link" href="pages/catalog.html">论文目录</a>
 <a class="nav-link" href="pages/timeline.html">时间线</a>
   </nav>
   <main><section class="hero-grid">
   <article class="lead-story">
-    <div class="kicker">今日主线 · arXiv 新增</div>
-    <h1>Next Forcing：用多未来 chunk 预测给 causal video world model 更密集的时间监督，和视频自监督/latent prediction 主线高度相关</h1>
-    <p class="dek">用多未来 chunk 预测给 causal video world model 更密集的时间监督，和视频自监督/latent prediction 主线高度相关。</p>
-    <figure class="hero-figure"><img src="assets/mineru/2606.11187/images/884d17747454cc9fce58dcd85042d4798e7c260343dcd7a5d97dac4aefb0341e.jpg" alt="Next Forcing figure"><figcaption>这张图概括 Next Forcing 的整体方法流程。阅读时先看模块之间传递的训练信号，再看作者如何把目标拆成可优化的子问题。</figcaption></figure>
-    <div class="paper-actions"><a href="issues/2026-06-10.html">阅读 6 月 10 日速递</a><a href="papers/2606.11187.html">打开主文页</a></div>
+    <div class="kicker">今日主线 · arXiv recent-list补漏 + project</div>
+    <h1>Latent Spatial Memory for Video：把视频 world model 的跨帧记忆从 RGB/点云搬到 diffusion latent，直接触及可复用视觉 latent 与长期一致性</h1>
+    <p class="dek">把视频 world model 的跨帧记忆从 RGB/点云搬到 diffusion latent，直接触及可复用视觉 latent 与长期一致性。</p>
+    <figure class="hero-figure"><img src="assets/mineru/2606.09828/images/2cdf044328fb99c24d7a8c22a108c30c69a0e890dc2733a6482d347c39844f10.jpg" alt="Latent Spatial Memory for Video figure"><figcaption>这张图来自论文 PDF 的结构化抽取。当前用于辅助理解 Latent Spatial Memory for Video 的方法或实验，请结合正文精读段落一起看。</figcaption></figure>
+    <div class="paper-actions"><a href="issues/2026-06-11.html">阅读 6 月 11 日速递</a><a href="papers/2606.09828.html">打开主文页</a></div>
   </article>
   <aside class="issue-brief">
     <h2>快速摘要</h2>
-    <ul><li><b>今日最值得看</b><span>Next Forcing、IDEAL、ARM、ImageTime。今天的主线很集中：视频/world model 用更密的未来预测监督，图像/多模态模型继续转向离散 token 与 representation autoencoder。</span></li><li><b>建议精读顺序</b><span>2606.11187 -&gt; 2606.11096 -&gt; 2606.11188 -&gt; 2606.10620 -&gt; 2606.10135；随后读 GenLIP 与 When to Align/When to Predict；VICL、Latent Memory、MGAP 只需按需求扫读。</span></li><li><b>新增/更新/过滤数量</b><span>arXiv/API 与官方列表合并扫描 2362 个唯一 ID；最近窗口/今日公告相关 575；视觉/表征候选约 78；索引 13；其中新/今日公告 11、更新/状态 2；过滤/降级 65。</span></li><li><b>主要判断</b><span>今天的高价值信号不是单一 benchmark，而是“视觉 latent 如何被离散化、预测、对齐与诊断”：RAE/visual tokenizer、causal video prediction、multimodal alignment objective 和 visual in-context evaluation 同时出现。</span></li><li><b>会议动态</b><span>ICML 官方页面确认 AnyMod-LLVE 为 Poster；ICML 目录列出 Mitigating Manifold Departure / MGAP。AnyMod 因低光视频增强较垂直，仅放会议动态降级；MGAP 作为 VLM 表征/语言先验诊断列扫读。</span></li></ul>
+    <ul><li><b>今日最值得看</b><span>Latent Spatial Memory / Mirage 与 MaskAlign。前者把视频 world model 的记忆直接放进 diffusion latent，后者讨论如何安全地用自监督 VFM feature 对齐 diffusion token。</span></li><li><b>建议精读顺序</b><span>2606.09828 -&gt; 2606.08788 -&gt; 2606.08332 -&gt; 2606.09311 -&gt; 2606.09056；再按需要读 ATM/Echo-Memory/Prisma-World。</span></li><li><b>新增/更新/过滤数量</b><span>arXiv 官方页面截至本次运行仍停在 Wednesday, 10 June 2026；扫描 Tue/Wed recent 窗口 1609 个唯一 ID，关键词命中 370，人工筛出视觉/表征候选约 30，索引 11，其中真正“今日新公告” 0、recent-list 补漏 10、会议状态 1、过滤/降级约 52。</span></li><li><b>主要判断</b><span>今天不是新的 arXiv 放榜日，而是对近 48 小时世界模型/latent 表征线的补齐：video world model 正在从像素空间记忆转向 latent memory、hierarchical tokens、action-consistency probes。</span></li><li><b>会议动态</b><span>未发现新的 visual SSL OpenReview/ICML spotlight/oral 状态变化；Test-Time Scaling in Multimodal Foundation Models 的 arXiv comments 标注 ACL 2026 Findings，作为会议动态扫读。</span></li></ul>
   </aside>
 </section>
 <section class="section-block">
   <div class="section-heading"><h2>今日推荐论文</h2><a href="pages/catalog.html">全目录 →</a></div>
-  <div class="paper-list"><article class="paper-card" data-category="arXiv 新增" data-priority="P0" data-date="2026-06-10" data-title="next forcing: causal world modeling with multi-chunk prediction" data-keywords="next forcing: causal world modeling with multi-chunk prediction next forcing arxiv 新增 p0 2026-06-10 arxiv 新增 用多未来 chunk 预测给 causal video world model 更密集的时间监督，和视频自监督/latent prediction 主线高度相关 高相关；详见方法、贡献和实验边界。">
-  <a class="paper-thumb paper-thumb-text" href="papers/2606.11187.html">
-    <img src="assets/mineru/2606.11187/images/884d17747454cc9fce58dcd85042d4798e7c260343dcd7a5d97dac4aefb0341e.jpg" alt="Next Forcing figure"><span>P0</span>
+  <div class="paper-list"><article class="paper-card" data-category="arXiv recent-list补漏 + project" data-priority="P0" data-date="2026-06-11" data-title="latent spatial memory for video world models" data-keywords="latent spatial memory for video world models latent spatial memory for video arxiv recent-list补漏 + project p0 2026-06-11 arxiv recent-list补漏 + project 把视频 world model 的跨帧记忆从 rgb/点云搬到 diffusion latent，直接触及可复用视觉 latent 与长期一致性 高相关；详见方法、贡献和实验边界。">
+  <a class="paper-thumb paper-thumb-text" href="papers/2606.09828.html">
+    <img src="assets/mineru/2606.09828/images/2cdf044328fb99c24d7a8c22a108c30c69a0e890dc2733a6482d347c39844f10.jpg" alt="Latent Spatial Memory for Video figure"><span>P0</span>
   </a>
   <div>
-    <div class="paper-meta">2026-06-10 · arXiv 新增 · arXiv 新增</div>
-    <h3><a href="papers/2606.11187.html">Next Forcing: Causal World Modeling with Multi-Chunk Prediction</a></h3>
+    <div class="paper-meta">2026-06-11 · arXiv recent-list补漏 + project · arXiv recent-list补漏 + project</div>
+    <h3><a href="papers/2606.09828.html">Latent Spatial Memory for Video World Models</a></h3>
     <p>高相关；详见方法、贡献和实验边界。</p>
-    <p class="card-tech"><b>方法：</b>用多未来 chunk 预测给 causal video world model 更密集的时间监督，和视频自监督/latent prediction 主线高度相关</p>
-    <div class="paper-actions"><a href="papers/2606.11187.html">读图文页</a><a href="https://arxiv.org/abs/2606.11187">原文</a></div>
+    <p class="card-tech"><b>方法：</b>把视频 world model 的跨帧记忆从 RGB/点云搬到 diffusion latent，直接触及可复用视觉 latent 与长期一致性</p>
+    <div class="paper-actions"><a href="papers/2606.09828.html">读图文页</a><a href="https://arxiv.org/abs/2606.09828">原文</a></div>
   </div>
 </article>
-<article class="paper-card" data-category="arXiv 新增" data-priority="P0" data-date="2026-06-10" data-title="ideal: in-depth alignment makes a discrete representation autoencoder" data-keywords="ideal: in-depth alignment makes a discrete representation autoencoder ideal arxiv 新增 p0 2026-06-10 arxiv 新增 直接面向 vfm-based rae 的离散 latent：同时对齐浅层细节与深层语义，适合优先精读 高相关；详见方法、贡献和实验边界。">
-  <a class="paper-thumb paper-thumb-text" href="papers/2606.11096.html">
-    <img src="assets/mineru/2606.11096/images/5e0b9ce8f8f4a052b5cebfadc5c7ed9f6ebe9bd39df852299dfce4235c3d0512.jpg" alt="IDEAL figure"><span>P0</span>
+<article class="paper-card" data-category="arXiv recent-list补漏" data-priority="P0" data-date="2026-06-11" data-title="maskalign: token-subset representation alignment for efficient diffusion training" data-keywords="maskalign: token-subset representation alignment for efficient diffusion training maskalign arxiv recent-list补漏 p0 2026-06-11 arxiv recent-list补漏 明确使用自监督视觉 encoder 的 clean-image representation 监督 diffusion features，并讨论 token-level 对齐偏差 高相关；详见方法、贡献和实验边界。">
+  <a class="paper-thumb paper-thumb-text" href="papers/2606.08788.html">
+    <img src="assets/mineru/2606.08788/images/a8c5a93168f7255b971c923dd23dbacf86d9f04792aaa2b4a06d42a500037043.jpg" alt="MaskAlign figure"><span>P0</span>
   </a>
   <div>
-    <div class="paper-meta">2026-06-10 · arXiv 新增 · arXiv 新增</div>
-    <h3><a href="papers/2606.11096.html">IDEAL: In-DEpth ALignment Makes A Discrete Representation AutoEncoder</a></h3>
+    <div class="paper-meta">2026-06-11 · arXiv recent-list补漏 · arXiv recent-list补漏</div>
+    <h3><a href="papers/2606.08788.html">MaskAlign: Token-Subset Representation Alignment for Efficient Diffusion Training</a></h3>
     <p>高相关；详见方法、贡献和实验边界。</p>
-    <p class="card-tech"><b>方法：</b>直接面向 VFM-based RAE 的离散 latent：同时对齐浅层细节与深层语义，适合优先精读</p>
-    <div class="paper-actions"><a href="papers/2606.11096.html">读图文页</a><a href="https://arxiv.org/abs/2606.11096">原文</a></div>
+    <p class="card-tech"><b>方法：</b>明确使用自监督视觉 encoder 的 clean-image representation 监督 diffusion features，并讨论 token-level 对齐偏差</p>
+    <div class="paper-actions"><a href="papers/2606.08788.html">读图文页</a><a href="https://arxiv.org/abs/2606.08788">原文</a></div>
   </div>
 </article>
-<article class="paper-card" data-category="arXiv 新增" data-priority="P1" data-date="2026-06-10" data-title="arm: an autoregressive large multimodal model with unified discrete representations" data-keywords="arm: an autoregressive large multimodal model with unified discrete representations arm arxiv 新增 p1 2026-06-10 arxiv 新增 训练离散语义视觉 tokenizer，并把图像理解、生成、编辑统一到 next-token prediction 高相关；详见方法、贡献和实验边界。">
-  <a class="paper-thumb paper-thumb-text" href="papers/2606.11188.html">
-    <img src="assets/mineru/2606.11188/images/26a080f0083ba35857155bff6c07dac5095f50f3ecdf948059e14dfdf51d6965.jpg" alt="ARM figure"><span>P1</span>
+<article class="paper-card" data-category="arXiv recent-list补漏" data-priority="P1" data-date="2026-06-11" data-title="smi: efficient self-supervised learning via mutual-information-inspired dependency optimization" data-keywords="smi: efficient self-supervised learning via mutual-information-inspired dependency optimization smi arxiv recent-list补漏 p1 2026-06-11 arxiv recent-list补漏 少数直接面向图像 ssl objective 的新作，目标是降低大 batch、memory bank、momentum encoder 等训练复杂度 高相关；详见方法、贡献和实验边界。">
+  <a class="paper-thumb paper-thumb-text" href="papers/2606.08332.html">
+    <img src="assets/mineru/2606.08332/images/6aff2459bf118cb13d4eb943c19216dabc938036fc76a518816a42800c427c73.jpg" alt="SMI figure"><span>P1</span>
   </a>
   <div>
-    <div class="paper-meta">2026-06-10 · arXiv 新增 · arXiv 新增</div>
-    <h3><a href="papers/2606.11188.html">ARM: An AutoRegressive Large Multimodal Model with Unified Discrete Representations</a></h3>
+    <div class="paper-meta">2026-06-11 · arXiv recent-list补漏 · arXiv recent-list补漏</div>
+    <h3><a href="papers/2606.08332.html">SMI: Efficient Self-Supervised Learning via Mutual-Information-Inspired Dependency Optimization</a></h3>
     <p>高相关；详见方法、贡献和实验边界。</p>
-    <p class="card-tech"><b>方法：</b>训练离散语义视觉 tokenizer，并把图像理解、生成、编辑统一到 next-token prediction</p>
-    <div class="paper-actions"><a href="papers/2606.11188.html">读图文页</a><a href="https://arxiv.org/abs/2606.11188">原文</a></div>
+    <p class="card-tech"><b>方法：</b>少数直接面向图像 SSL objective 的新作，目标是降低大 batch、memory bank、momentum encoder 等训练复杂度</p>
+    <div class="paper-actions"><a href="papers/2606.08332.html">读图文页</a><a href="https://arxiv.org/abs/2606.08332">原文</a></div>
   </div>
 </article>
-<article class="paper-card" data-category="arXiv 新增" data-priority="P1" data-date="2026-06-10" data-title="can image models imagine time? imagetime" data-keywords="can image models imagine time? imagetime can image models imagine time? imagetime arxiv 新增 p1 2026-06-10 arxiv 新增 用四关键帧时序一致性 probe 静态图像生成模型的 visual world modeling 能力 高相关；详见方法、贡献和实验边界。">
-  <a class="paper-thumb paper-thumb-text" href="papers/2606.10620.html">
-    <img src="assets/mineru/2606.10620/images/aa000c9bec889fe25d0ddd5006996877bd032866c72c2c8e4f8b3d989727de04.jpg" alt="Can Image Models Imagine Time? ImageTime figure"><span>P1</span>
+<article class="paper-card" data-category="arXiv recent-list补漏" data-priority="P1" data-date="2026-06-11" data-title="ff-jepa: long-horizon planning in world models with latent planners" data-keywords="ff-jepa: long-horizon planning in world models with latent planners ff-jepa arxiv recent-list补漏 p1 2026-06-11 arxiv recent-list补漏 把 jepa latent dynamics 用到更长程规划，并引入 action-free latent planner 作为子目标预测器 中高相关；详见方法、贡献和实验边界。">
+  <a class="paper-thumb paper-thumb-text" href="papers/2606.09311.html">
+    <img src="assets/mineru/2606.09311/images/9fbc6dc5cb8f5469ce190a5f849c37fbfef4507da1d8949c19a5e75858befb14.jpg" alt="FF-JEPA figure"><span>P1</span>
   </a>
   <div>
-    <div class="paper-meta">2026-06-10 · arXiv 新增 · arXiv 新增</div>
-    <h3><a href="papers/2606.10620.html">Can Image Models Imagine Time? ImageTime</a></h3>
-    <p>高相关；详见方法、贡献和实验边界。</p>
-    <p class="card-tech"><b>方法：</b>用四关键帧时序一致性 probe 静态图像生成模型的 visual world modeling 能力</p>
-    <div class="paper-actions"><a href="papers/2606.10620.html">读图文页</a><a href="https://arxiv.org/abs/2606.10620">原文</a></div>
+    <div class="paper-meta">2026-06-11 · arXiv recent-list补漏 · arXiv recent-list补漏</div>
+    <h3><a href="papers/2606.09311.html">FF-JEPA: Long-Horizon Planning in World Models with Latent Planners</a></h3>
+    <p>中高相关；详见方法、贡献和实验边界。</p>
+    <p class="card-tech"><b>方法：</b>把 JEPA latent dynamics 用到更长程规划，并引入 action-free latent planner 作为子目标预测器</p>
+    <div class="paper-actions"><a href="papers/2606.09311.html">读图文页</a><a href="https://arxiv.org/abs/2606.09311">原文</a></div>
   </div>
 </article>
-<article class="paper-card" data-category="arXiv 今日公告" data-priority="P1" data-date="2026-06-10" data-title="biwm: advancing open-source interactive video world models with bidirectional autoregression" data-keywords="biwm: advancing open-source interactive video world models with bidirectional autoregression biwm arxiv 今日公告 p1 2026-06-10 arxiv 今日公告 从预训练视频 backbone 出发做双向自回归交互 world model，补充 next forcing 的 causal 路线 高相关；详见方法、贡献和实验边界。">
-  <a class="paper-thumb paper-thumb-text" href="papers/2606.10135.html">
-    <img src="assets/mineru/2606.10135/images/4338a38b7037b7f71ac0bcb8d8a2b66dca809b694caf89a1d1db4000558c7679.jpg" alt="BiWM figure"><span>P1</span>
+<article class="paper-card" data-category="arXiv recent-list补漏 + project" data-priority="P1" data-date="2026-06-11" data-title="millivid: hierarchical latents for long-range consistency in video generation" data-keywords="millivid: hierarchical latents for long-range consistency in video generation millivid arxiv recent-list补漏 + project p1 2026-06-11 arxiv recent-list补漏 + project 用层级 frame tokens 处理视频长程一致性，和视觉 tokenizer/rae/world model 的 latent 设计高度相关 中高相关；详见方法、贡献和实验边界。">
+  <a class="paper-thumb paper-thumb-text" href="papers/2606.09056.html">
+    <img src="assets/mineru/2606.09056/images/ad9c91eb20595e0af60faa06aa1afff7120f6a0df74fec5d6c4b6cf8a13f34a2.jpg" alt="MilliVid figure"><span>P1</span>
   </a>
   <div>
-    <div class="paper-meta">2026-06-10 · arXiv 今日公告 · arXiv 今日公告</div>
-    <h3><a href="papers/2606.10135.html">BiWM: Advancing Open-Source Interactive Video World Models with Bidirectional Autoregression</a></h3>
-    <p>高相关；详见方法、贡献和实验边界。</p>
-    <p class="card-tech"><b>方法：</b>从预训练视频 backbone 出发做双向自回归交互 world model，补充 Next Forcing 的 causal 路线</p>
-    <div class="paper-actions"><a href="papers/2606.10135.html">读图文页</a><a href="https://arxiv.org/abs/2606.10135">原文</a></div>
+    <div class="paper-meta">2026-06-11 · arXiv recent-list补漏 + project · arXiv recent-list补漏 + project</div>
+    <h3><a href="papers/2606.09056.html">MilliVid: Hierarchical Latents for Long-Range Consistency in Video Generation</a></h3>
+    <p>中高相关；详见方法、贡献和实验边界。</p>
+    <p class="card-tech"><b>方法：</b>用层级 frame tokens 处理视频长程一致性，和视觉 tokenizer/RAE/world model 的 latent 设计高度相关</p>
+    <div class="paper-actions"><a href="papers/2606.09056.html">读图文页</a><a href="https://arxiv.org/abs/2606.09056">原文</a></div>
   </div>
 </article></div>
 </section></main>
-  <aside class="conf-float" data-conf-reminder="2026-06-10-main-ddl" aria-label="CCF A/B 主投稿提醒">
+  <aside class="conf-float" data-conf-reminder="2026-06-11-main-ddl" aria-label="CCF A/B 主投稿提醒">
   <button class="conf-close" type="button" aria-label="关闭会议提醒">×</button>
   <details open>
     <summary>CCF A/B 主投稿提醒</summary>
     <div class="conf-list"><a class="conf-item " href="https://github.com/ccfddl/ccf-deadlines/blob/main/conference/AI/aaai.yml">
   <span><b>AAAI 2027</b><em>CCF A · Main paper submission</em></span>
-  <strong>47 天</strong>
+  <strong>46 天</strong>
   <small>2026-07-27 · CCF DDL: abstract 2026-07-20；进入 1 个月窗口后重点提醒。</small>
 </a></div>
   </details>
 </aside>
   <footer class="footer">
     <div>面向通用视觉自监督、视觉基础模型与多模态表征学习的每日研究报。</div>
-    <div class="muted">Issue 2026-06-10 · Curated readings and figure notes</div>
+    <div class="muted">Issue 2026-06-11 · Curated readings and figure notes</div>
   </footer>
   <script>
   (() => {
     const box = document.querySelector('[data-conf-reminder]');
     if (!box) return;
-    const key = `visualSslConfReminderClosed:${box.dataset.confReminder || '2026-06-10-main-ddl'}`;
+    const key = `visualSslConfReminderClosed:${box.dataset.confReminder || '2026-06-11-main-ddl'}`;
     try {
       if (localStorage.getItem(key) === '1') box.hidden = true;
     } catch (err) {}

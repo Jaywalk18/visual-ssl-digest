@@ -19,39 +19,39 @@
   </header>
   <nav class="site-nav" aria-label="主导航">
     <a class="nav-link" href="../index.html">头版</a>
-<a class="nav-link" href="../issues/2026-06-10.html">今日速递</a>
+<a class="nav-link" href="../issues/2026-06-11.html">今日速递</a>
 <a class="nav-link" href="../pages/catalog.html">论文目录</a>
 <a class="nav-link" href="../pages/timeline.html">时间线</a>
   </nav>
   <main><article class="paper-detail">
   <div class="paper-main">
     <div class="kicker">arXiv 更新 · P2 · 2026-06-10</div>
-    <h1 class="paper-headline">SARA：它说明冻结 VFM feature/token relation 正在成为视频生成模型的蒸馏监督，和视觉基础模型作为 teacher 的趋势一致</h1>
-    <p class="dek">从“所有 token relation 一视同仁”转向“按 prompt 语义重要性分配关系蒸馏预算”，更适合复杂文本视频生成。</p>
-    <p class="byline"><strong>SARA: Semantically Adaptive Relational Alignment for Video Diffusion Models</strong>　Jiesong Lian, Zixiang Zhou, Ruizhe Zhong, Yuan Zhou, Qinglin Lu, Yongjie Shi, Xiaolin Zheng；机构信息未在 arXiv 元数据中列出。　arXiv 更新　<a href="https://arxiv.org/abs/2605.07800">原文链接</a></p>
+    <h1 class="paper-headline">SARA：它和通用视觉自监督的关系在于：用冻结 VFM 的 token-relation distillation 和文本条件 saliency 改善视频扩散的语义对齐</h1>
+    <p class="dek">中高相关；详见方法、贡献和实验边界。</p>
+    <p class="byline"><strong>SARA: Semantically Adaptive Relational Alignment for Video Diffusion Models</strong>　arXiv 更新　<a href="https://arxiv.org/abs/2605.07800">原文链接</a></p>
     <div class="paper-facts">
       <span><b>编号</b>2605.07800</span>
       <span><b>优先级</b>P2</span>
       <span><b>类别</b>arXiv 更新</span>
       <span><b>会议</b>arXiv 更新</span>
-      <span><b>方法</b>保留从冻结 visual foundation model 蒸馏 spatio-temporal token relations 的 TRD 框架，同时加入 text-conditioned saliency，决定哪些 token pairs 最该接受关系监督；Stage 1 用 per-entity SAM 3.1 mask supervision 和 InfoNCE 训练 aligner。</span>
+      <span><b>方法</b>用冻结 VFM 的 token-relation distillation 和文本条件 saliency 改善视频扩散的语义对齐</span>
       <span><b>来源</b>arXiv / OpenReview</span>
     </div>
     <div class="feature-body">
-      <p class="lead dropcap">先说结论。它说明冻结 VFM feature/token relation 正在成为视频生成模型的蒸馏监督，和视觉基础模型作为 teacher 的趋势一致。 从“所有 token relation 一视同仁”转向“按 prompt 语义重要性分配关系蒸馏预算”，更适合复杂文本视频生成。</p>
+      <p class="lead dropcap">先说结论。它和通用视觉自监督的关系在于：用冻结 VFM 的 token-relation distillation 和文本条件 saliency 改善视频扩散的语义对齐。 中高相关；详见方法、贡献和实验边界。</p>
       <figure class="full-fig"><img src="../assets/mineru/2605.07800/images/f802542c708bd8bd84544ad88dc185b12c5b34a9e4229057afdfb7502d23a9cf.jpg" alt="Figureure 2 · Overview of SARA"><figcaption><b>Figureure 2 · Overview of SARA</b><span class="fig-en">Figure 2 Overview of SARA. Stage I (top): a lightweight aligner on top of frozen V-JEPA, SAM 3.1, and Qwen3- VL-Embedding backbones learns, for any (video, caption) pair, a text-conditioned per-patch saliency $M _ { p } ,$ supervised jointly by per-entity, combined-entity, and background SAM masks (LBCE) and calibrated by a caption-level InfoNCE. Stage II (bottom): the frozen aligner is queried with the full caption, and its saliency is turned into pair weights that route a masked token-relation distillation loss, added to the diffusion loss of a trainable DiT.</span><span class="fig-zh">这张图概括 SARA 的整体方法流程。阅读时先看模块之间传递的训练信号，再看作者如何把目标拆成可优化的子问题。</span></figcaption></figure>
 <figure class="full-fig"><img src="../assets/mineru/2605.07800/images/39f1fdafcc10e84cbfe45f7f314fa4abace9cc1908cbbe0cc5143f1436755ad3.jpg" alt="Figureure 5 · Blind pairwise user study"><figcaption><b>Figureure 5 · Blind pairwise user study</b><span class="fig-en">Figure 5 Blind pairwise user study. Each row reports the percentage of comparisons where annotators prefer SARA, tie, or prefer the baseline. SARA is preferred over every baseline.</span><span class="fig-zh">这张图/表用于判断 SARA 的实验收益来自哪里。重点看替换、消融或跨模型设置下趋势是否一致，而不是只看单个最高分。</span></figcaption></figure>
       
       <h2>核心问题</h2>
-      <p>它说明冻结 VFM feature/token relation 正在成为视频生成模型的蒸馏监督，和视觉基础模型作为 teacher 的趋势一致。</p>
+      <p>它和通用视觉自监督的关系在于：用冻结 VFM 的 token-relation distillation 和文本条件 saliency 改善视频扩散的语义对齐。</p>
       <h2>方法拆解</h2>
-      <p>保留从冻结 visual foundation model 蒸馏 spatio-temporal token relations 的 TRD 框架，同时加入 text-conditioned saliency，决定哪些 token pairs 最该接受关系监督；Stage 1 用 per-entity SAM 3.1 mask supervision 和 InfoNCE 训练 aligner。</p>
+      <p>用冻结 VFM 的 token-relation distillation 和文本条件 saliency 改善视频扩散的语义对齐</p>
       <h2>主要贡献</h2>
-      <p>从“所有 token relation 一视同仁”转向“按 prompt 语义重要性分配关系蒸馏预算”，更适合复杂文本视频生成。</p>
+      <p>中高相关；详见方法、贡献和实验边界。</p>
       <h2>实验看点</h2>
-      <p>摘要强调目标是减少视频扩散模型中的实体丢失、属性错绑和交互弱化问题，并把连续 saliency 融入 pair-routing operator。</p>
+      <p>实验部分建议重点看两类证据：一是作者是否把方法收益和更强数据、更长训练、更大模型区分开；二是跨模型、跨数据或跨任务迁移是否还能保留同样趋势。</p>
       <h2>局限与读法</h2>
-      <p>仍主要服务视频扩散生成的 text following；对通用视频理解表征是否更好没有直接结论。</p>
+      <p>这篇论文的结论需要结合任务设置、训练数据规模和消融实验一起看；不要只凭单个指标判断它对通用视觉表征的价值。</p>
     
     </div>
   </div>
@@ -61,13 +61,13 @@
     <div class="side-box"><h4>原文</h4><p><a href="https://arxiv.org/abs/2605.07800">https://arxiv.org/abs/2605.07800</a></p></div>
   </aside>
 </article></main>
-  <aside class="conf-float" data-conf-reminder="2026-06-10-main-ddl" aria-label="CCF A/B 主投稿提醒">
+  <aside class="conf-float" data-conf-reminder="2026-06-11-main-ddl" aria-label="CCF A/B 主投稿提醒">
   <button class="conf-close" type="button" aria-label="关闭会议提醒">×</button>
   <details open>
     <summary>CCF A/B 主投稿提醒</summary>
     <div class="conf-list"><a class="conf-item " href="https://github.com/ccfddl/ccf-deadlines/blob/main/conference/AI/aaai.yml">
   <span><b>AAAI 2027</b><em>CCF A · Main paper submission</em></span>
-  <strong>47 天</strong>
+  <strong>46 天</strong>
   <small>2026-07-27 · CCF DDL: abstract 2026-07-20；进入 1 个月窗口后重点提醒。</small>
 </a></div>
   </details>
@@ -80,7 +80,7 @@
   (() => {
     const box = document.querySelector('[data-conf-reminder]');
     if (!box) return;
-    const key = `visualSslConfReminderClosed:${box.dataset.confReminder || '2026-06-10-main-ddl'}`;
+    const key = `visualSslConfReminderClosed:${box.dataset.confReminder || '2026-06-11-main-ddl'}`;
     try {
       if (localStorage.getItem(key) === '1') box.hidden = true;
     } catch (err) {}

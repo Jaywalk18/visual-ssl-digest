@@ -1,0 +1,740 @@
+# SMI: Efficient Self-Supervised Learning via Mutual-Information-Inspired Dependency Optimization
+
+Pritam Mishra1 Coloma Ballester1 Dimosthenis Karatzas2
+
+1 Universitat Pompeu Fabra, Barcelona, Spain
+
+2 Universitat Autònoma de Barcelona, Barcelona, Spain
+
+## Abstract
+
+Self-supervised learning (SSL) has achieved remarkable representation learning performance, but many existing methods rely on large batch sizes, memory banks, momentum encoders, or global synchronization mechanisms that substantially increase computational cost and training complexity. In this work, we propose Semantic Mutual Information (SMI), a lightweight self-supervised objective derived from a mutual-information-inspired dependency formulation under Gaussian assumptions. Unlike conventional correlation matching objectives that operate on high-dimensional feature correlation matrices, SMI performs optimization on a sample-level dependency matrix through a nonlinear transformation of pairwise correlations. This formulation induces distinct optimization dynamics that emphasize strongly dependent semantic pairs while maintaining representation diversity. Experimental results on ImageNet using a ResNet-50 backbone demonstrate that SMI achieves competitive linear evaluation performance relative to state-of-the-art SSL approaches while substantially reducing computational complexity. Across multiple low-resource benchmarks, SMI consistently improves transfer performance over Barlow Twins, particularly on fine-grained datasets. Furthermore, analyses of optimization dynamics and representation geometry suggest improved alignment–redundancy balance, greater feature diversity, and more spatially localized semantic representations. These results indicate that nonlinear dependency optimization provides an effective and computationally efficient alternative to conventional correlation-based self-supervised learning objectives.
+
+## 1 Introduction
+
+Self-supervised learning (SSL) has emerged as a powerful paradigm for learning transferable visual representations from large-scale unlabeled data. Recent contrastive approaches achieve remarkable performance by maximizing agreement between different augmented views of the same image while separating representations from other samples in the training batch. Methods such as SimCLR [1] and MoCo [2] demonstrate that instance discrimination can learn representations competitive with supervised pre-training across a wide range of downstream tasks. Beyond image classification, these representations have proven effective in applications including video understanding, video summarization, and sequential representation learning [3, 4]. Despite their success, contrastive methods typically rely on large batch sizes, memory banks, momentum encoders, or cross-device synchronization to provide sufficient negative sample diversity, substantially increasing computational cost and implementation complexity.
+
+To alleviate these limitations, recent non-contrastive approaches shift the focus from explicit negativepair discrimination toward redundancy reduction and feature decorrelation [5, 6]. Methods such as Barlow Twins [5], VICReg [6], and BYOL [7] demonstrate that strong representations can emerge without explicit negatives. Nevertheless, these approaches often depend on large-scale distributed training, global batch normalization, gather layers, or architectural asymmetries to avoid representational collapse [8]. Moreover, most redundancy-reduction methods operate directly on high-dimensional feature correlation matrices whose computational cost grows quadratically with representation dimensionality, making efficient large-scale training increasingly challenging.
+
+From an information-theoretic perspective, representation learning can be viewed as maximizing dependency between semantically consistent views of the same sample. Mutual information (MI) provides a principled measure of statistical dependency and captures richer relationships than linear correlation alone. However, exact MI estimation is generally intractable in high-dimensional settings [9, 10], while practical approximations such as InfoNCE or MINE often introduce additional optimization complexity, sampling constraints, or auxiliary networks. Consequently, despite its conceptual appeal, developing scalable and computationally efficient MI-inspired objectives for SSL remains an open challenge.
+
+In this work, we introduce Semantic Mutual Information (SMI), a lightweight self-supervised objective based on a Gaussian mutual-information-inspired dependency transformation. Rather than directly optimizing correlations, SMI first maps pairwise correlations into a nonlinear dependency space through a closed-form mutual-information-inspired transformation and subsequently performs alignment and redundancy reduction on the resulting dependency matrix. This induces optimization dynamics that differ fundamentally from conventional correlation matching objectives.
+
+A key distinction of SMI is that dependency estimation is performed between samples rather than embedding dimensions. Existing redundancy-reduction methods typically operate on feature-level correlation matrices whose size grows with the embedding dimension. In contrast, SMI constructs a sample-level dependency matrix, resulting in substantially lower computational complexity when high-dimensional projection heads are used. Consequently, SMI combines nonlinear dependency optimization with a computationally efficient sample-space formulation, eliminating the need for memory banks, momentum encoders, gather layers, or global batch normalization.
+
+The term semantic in SMI refers to dependency structures that remain consistent across semantically invariant augmentations. In self-supervised learning, aggressive augmentations may occasionally produce positive pairs with limited semantic overlap despite originating from the same image. The nonlinear dependency transformation used by SMI naturally allocates greater optimization emphasis to strongly dependent pairs while reducing sensitivity to weakly dependent pairs. We hypothesize that this behavior encourages learning from semantically consistent views and contributes to improved transfer performance, particularly in fine-grained recognition settings.
+
+We evaluate SMI on ImageNet using a ResNet-50 backbone and demonstrate competitive linear evaluation performance relative to state-of-the-art SSL methods while substantially reducing computational complexity and synchronization requirements. Furthermore, we perform extensive analyses of optimization dynamics and representation geometry, including gradient stability, representation diversity, eigenspectrum statistics, and activation energy maps. Across multiple low-resource benchmarks, SMI consistently improves downstream transfer performance over Barlow Twins, with particularly large gains on fine-grained datasets such as ImageWoof.
+
+Our contributions can be summarized as follows:
+
+• Nonlinear Dependency Optimization: We introduce Semantic Mutual Information (SMI), a self-supervised objective that performs alignment and redundancy reduction in a nonlinear dependency space derived from a Gaussian mutual-information-inspired transformation.
+
+• Efficient Sample-Level Formulation: Unlike conventional redundancy-reduction methods that operate on feature-level correlation matrices, SMI performs dependency optimization in the sample domain, substantially reducing computational complexity while eliminating the need for momentum encoders, gather layers, memory banks, and global batch normalization.
+
+• Optimization and Representation Analysis: We provide theoretical and empirical analyses demonstrating that SMI induces distinct optimization dynamics, improved representation diversity, a more balanced alignment–redundancy tradeoff, and consistently improved transfer performance under low-resource training settings.
+
+## 2 Proposed Method
+
+We propose a self-supervised framework that learns robust and discriminative representations by maximizing mutual information (MI) between noise-invariant paired samples—generated from two distorted views of the same instance—while minimizing MI across other pairs within a batch. At the core of this approach is the Semantic Mutual Information (SMI) loss, tailored for resource-constrained environments and which readily extends to multi-view, multi-modal data. Although our experiments focus on visual data, SMI is generic and can be applied to any combination of modalities. The following subsections detail the mathematical formulation of the loss and present the key theoretical principles underlying its design.
+
+![](images/6aff2459bf118cb13d4eb943c19216dabc938036fc76a518816a42800c427c73.jpg)
+
+<details>
+<summary>flowchart</summary>
+
+```mermaid
+graph TD
+  A["{x₁, ..., xₙ}"] --> B["{x₁¹, ..., xₙ¹}"]
+  A --> C["{x₁², ..., xₙ²}"]
+  B --> D["CNN"]
+  C --> E["CNN"]
+  D --> F["MLP"]
+  E --> G["MLP"]
+  F --> H["Feature Distribution"]
+  G --> H
+  H --> I["Pairwise SMI"]
+  I --> J["L_SMI"]
+  K["{h₁¹, ..., h_N¹}"] --> F
+  L["{z₁¹, ..., z_N¹}"] --> G
+  M["{h₂¹, ..., h_N²}"] --> G
+  N["{z₂¹, ..., z_N²}"] --> G
+```
+</details>
+
+Figure 1: Overview of the proposed method with our SMI loss.
+
+## 2.1 Gaussian Mutual Information Dependency Transformation
+
+Mutual information (MI) provides a principled measure of statistical dependency between random variables. However, estimating MI in high-dimensional spaces is generally intractable and often requires variational approximations or negative sampling strategies. To obtain a computationally efficient dependency measure suitable for self-supervised learning, we adopt a Gaussian copula assumption, which yields a closed-form relationship between mutual information and Pearson correlation.
+
+According to Sklar’s theorem [11], the dependency structure of a joint distribution can be separated from its marginal distributions through a copula function. Under a Gaussian copula, the dependency between two random variables is fully characterized by their Pearson correlation coefficient $\rho ,$ defined as
+
+$$
+\rho_ {X, Y} = \frac {E [ X Y ] - E [ X ] E [ Y ]}{\sqrt {\operatorname{Var} (X) \operatorname{Var} (Y)}} \tag {1}
+$$
+
+For jointly Gaussian variables, mutual information admits the closed-form expression
+
+$$
+I (X; Y) = - \frac {1}{2} \log (1 - \rho^ {2}) \tag {2}
+$$
+
+To ensure numerical stability when $\rho  1$ , we introduce a small positive constant ϵ, yielding
+
+$$
+I (X; Y) = - \frac {1}{2} \log (1 - \rho^ {2} + \epsilon). \tag {3}
+$$
+
+Equation (3) defines a nonlinear dependency transformation that maps correlation values into a mutual-information-inspired dependency space. Unlike conventional redundancy reduction methods that operate directly on correlations, the proposed SMI objective performs alignment and redundancy reduction on the transformed dependency matrix induced by Eq. (3). The resulting optimization behavior is analyzed in Section 2.3.
+
+## 2.2 Proposed Loss leveraging SMI
+
+Let $\{ \mathbf { x } _ { 1 } , \dotsc , \mathbf { x } _ { N } \} \subset \mathcal { T }$ be N samples (a batch, in practice). Let us assume that each sample is described by a vector of size $D , \mathbf { x } _ { i } ^ { \star } \in \bar { \mathbb { R } } ^ { D }$ . For each $\mathbf { x } _ { i } .$ let $t _ { 1 }$ and $t _ { 2 }$ two augmentation functions of a set of random transforms $\tau .$ . Now, $\mathbf { x } _ { i } ^ { 1 } = t _ { 1 } ( \mathbf { x } _ { i } )$ and $\mathbf { x } _ { i } ^ { 2 } = t _ { 2 } ( \mathbf { x } _ { i } )$ represent two views of $\mathbf { x } _ { i }$ . Repeating this process for $i \in \{ 1 , \ldots , N \}$ , we obtain two sets of N samples $\{ \mathbf { x } _ { 1 } ^ { 1 } , \dotsc , \mathbf { x } _ { N } ^ { 1 } \}$ and $\{ \mathbf { x } _ { 1 } ^ { 2 } , \dotsc , \mathbf { x } _ { N } ^ { 2 } \}$ . Let $\mathbf { h } _ { i } ^ { v } = \Phi ( \mathbf { x } _ { i } ^ { v } ) \in \mathbb { R } ^ { M }$ be the high-dimensional feature vector obtained by applying an encoder Φ to each $\mathbf { x } _ { i } ^ { v } \in \mathbb { R } ^ { D }$ , for $v = 1 , 2 .$ A projection head g maps $\mathbf { h } _ { i } ^ { v }$ to the final embedding vector defined by $\mathbf { z } _ { i } ^ { v } = g ( \mathbf { h } _ { i } ^ { v } ) \in \mathbb { R } ^ { K }$ of dimension $K < M$ , for $v = 1 , 2$ and $i = 1 , \ldots , N$ . Figure 1 displays our pipeline.
+
+From (1) and (3) we can compute the MI of $\mathbf { z } _ { i } ^ { 1 }$ and $\mathbf { z } _ { i } ^ { 2 }$ as $\begin{array} { r } { \mathbf { I } _ { 1 , 2 } = I ( \mathbf { z } _ { i } ^ { 1 } ; \mathbf { z } _ { i } ^ { 2 } ) = - \frac { 1 } { 2 } \log ( 1 - \rho _ { 1 , 2 } ^ { 2 } + \epsilon ) } \end{array}$ . Similarly, we can compute the MI within the batch of each augmented view, $\mathbf { I } _ { k , k } = I ( \mathbf { z } _ { i } ^ { k } ; \mathbf { z } _ { i } ^ { k } ) =$ $- \frac { 1 } { 2 } \log ( 1 - \rho _ { k , k } ^ { 2 } + \epsilon )$ , for $k = 1 , 2$ . Since ${ \bf I } _ { 1 , 2 }$ is a symmetric matrix, the diagonal elements can be expressed as $\hat { D } _ { 1 , 2 } = \{ ( \mathbf { I } _ { 1 , 2 } ) _ { m , n } ~ | ~ m = n \}$ . The off-diagonal elements of ${ \mathbf { I } } _ { 1 , 2 } , { \mathbf { I } } _ { 1 , 1 }$ and $\mathbf { I } _ { 2 , 2 }$ can be expressed as $O _ { k , l } = \{ ( \mathbf { I } _ { k , l } ) _ { m , n } \ | \ m \neq n \}$ , for $k , l = 1 , \bar { 2 }$ .
+
+We now define the on diagonal loss from $D _ { 1 , 2 }$ as
+
+$$
+L _ {1, 2} ^ {D} = \sum \log \left(\cosh \left(D _ {1, 2} - 1\right)\right).
+$$
+
+The off diagonal losses from the off diagonal elements are defined as
+
+$$
+L _ {k, l} ^ {O} = \sum \log (\cosh (O _ {k, l} + 0. 0 6)), \quad \text { for   } k, l = 1, 2. \tag {4}
+$$
+
+Finally, our SMI loss is defined as
+
+$$
+\mathcal {L} _ {\mathrm{SMI}} = L _ {1, 2} ^ {D} + \lambda (L _ {1, 2} ^ {O} + L _ {1, 1} ^ {O} + L _ {2, 2} ^ {O}). \tag {5}
+$$
+
+## 2.3 Difference Between SMI and Correlation Objectives
+
+Although SMI is derived from Pearson correlation under Gaussian assumptions, it differs fundamentally from conventional correlation matching and redundancy reduction objectives. Existing methods such as Barlow Twins and VICReg operate directly on feature-level correlation statistics, enforcing alignment and decorrelation within the original correlation space. In contrast, SMI introduces a nonlinear dependency transformation prior to optimization, resulting in a fundamentally different representation of pairwise relationships and consequently different optimization dynamics.
+
+Given two feature vectors, SMI first computes their Pearson correlation coefficient $\rho$ and maps it into a dependency measure using the Gaussian mutual-information-inspired transformation
+
+$$
+M (\rho) = - \frac {1}{2} \log (1 - \rho^ {2} + \epsilon)
+$$
+
+where ϵ is a small constant introduced for numerical stability. Rather than directly optimizing correlation values, SMI performs alignment and redundancy reduction on the transformed dependency matrix induced by $M ( \rho )$ . Consequently, optimization is carried out in a nonlinear dependency space rather than the original correlation space.
+
+This distinction can be understood by examining the sensitivity of the dependency transformation with respect to the correlation coefficient:
+
+$$
+\frac {\partial M (\rho)}{\partial \rho} = \frac {\rho}{1 - \rho^ {2} + \epsilon}
+$$
+
+Unlike linear correlation objectives whose sensitivity remains approximately constant across different correlation values, the proposed transformation introduces correlation-dependent sensitivity. As correlation magnitude increases, the dependency measure becomes increasingly responsive to changes in correlation structure. Consequently, highly correlated feature pairs and weakly correlated feature pairs contribute differently to optimization, producing optimization dynamics that cannot be obtained through direct correlation matching alone.
+
+Importantly, the derivative above characterizes the nonlinear dependency transformation rather than the complete SMI loss. The final objective additionally applies alignment and redundancy reduction constraints to the transformed dependency matrix. Therefore, SMI can be interpreted as a two-stage optimization procedure: (i) pairwise correlations are mapped into a mutual-information-inspired dependency space, and (ii) alignment and redundancy reduction are performed within this transformed space.
+
+To better understand the optimization behavior induced by this formulation, Figure 2 compares the objective landscape and optimization sensitivity of SMI and Barlow Twins as a function of dependency strength. Figure 2 illustrates the optimization behavior induced by the proposed objective. Unlike direct correlation matching, SMI exhibits correlation-dependent sensitivity, allocating relatively little optimization emphasis to weak dependency regions while concentrating optimization effort on moderate-to-high dependency regions. This behavior arises from the combination of the nonlinear dependency transformation and the subsequent alignment objective.
+
+One possible implication of this behavior concerns the quality of positive pairs generated by aggressive data augmentations. In self-supervised learning, augmentation strategies such as RandomResizedCrop may occasionally produce views that share limited semantic content despite originating from the same image. Since such pairs are expected to exhibit weaker dependencies, SMI naturally assigns them lower optimization weight compared to positive pairs exhibiting stronger semantic consistency. Consequently, optimization is preferentially focused on views that preserve more consistent semantic structure across augmentations. We hypothesize that this property contributes to the improved transfer performance observed on fine-grained recognition datasets, where preserving semantically informative structures is particularly important.
+
+![](images/98c8223a65d4a25245bfdc545c1eb7fc80f276105e29cdb6144be8ecf4ae177e.jpg)
+
+<details>
+<summary>line chart</summary>
+
+| Correlation ρ | Barlow Twins | SMI   |
+| ------------- | ------------ | ----- |
+| 0.0           | 1.0          | 0.5   |
+| 0.2           | 0.7          | 0.48  |
+| 0.4           | 0.4          | 0.45  |
+| 0.6           | 0.2          | 0.35  |
+| 0.8           | 0.1          | 0.2   |
+| 1.0           | 0.0          | 0.0   |
+</details>
+
+![](images/00e82bccb333fc4cfc5b1e6a986c25ccbf64fadd94041cdcba72f359c11af0e5.jpg)
+
+<details>
+<summary>line chart</summary>
+
+| Correlation ρ | Barlow Twins | SMI    |
+| ------------- | ------------ | ------ |
+| 0.0           | 2.00         | 0.00   |
+| 0.2           | 1.75         | 0.25   |
+| 0.4           | 1.50         | 0.50   |
+| 0.6           | 1.25         | 0.75   |
+| 0.8           | 1.00         | 1.00   |
+| 0.9           | 0.75         | 1.15   |
+| 1.0           | 0.50         | 0.00   |
+</details>
+
+Ilustrative Positive Pair Examples
+
+![](images/072d6371a0f12a87cbc3a75c0a92ce8a2291bfdd138fa8287f801ebd056dc85a.jpg)
+
+<details>
+<summary>natural_image</summary>
+
+Two-panel image: left shows a dog with a happy expression; right shows golden grass under warm sunlight (no text or symbols)
+</details>
+
+![](images/fa9e071f57b936516b8575ba2f2618efc8b32ee70b006711e6b6c2fcbbbaaed7.jpg)
+
+<details>
+<summary>natural_image</summary>
+
+Two side-by-side photos of a smiling dog, one with open mouth and the other with closed eyes, against a blurred natural background (no text or symbols)
+</details>
+
+![](images/9b2be2a40cbb5c20cac5418d0e95ca7c63612abc306b64d719400851e5cfb437.jpg)
+
+<details>
+<summary>natural_image</summary>
+
+Two dog photos showing a cheerful, running pose against a golden grass background (no text or symbols)
+</details>
+
+Figure 2: Analytical comparison of the optimization behavior induced by Barlow Twins and the proposed SMI objective. Left: Objective value as a function of dependency strength. Right: Optimization sensitivity measured by the gradient magnitude with respect to the correlation coefficient. Unlike direct correlation matching, SMI exhibits correlation-dependent sensitivity, assigning relatively little optimization emphasis to weak dependency regions while focusing optimization effort on moderate-to-high dependency regions. Bottom: illustrative examples of positive pairs exhibiting different levels of semantic consistency.
+
+Beyond the differences in optimization behavior, SMI also differs structurally from existing redundancy-reduction methods in the way dependencies are estimated. A second important distinction lies in the structure of the dependency matrix itself. Methods such as Barlow Twins compute feature-wise correlations between embedding dimensions, producing a correlation matrix of size $K \times K$ , where K denotes the embedding dimensionality. Consequently, both memory consumption and computational cost grow quadratically with the representation dimension. In practice, modern redundancy-reduction methods often employ high-dimensional projection heads (e.g., $K = 8 1 9 2$ in Barlow Twins), resulting in increasingly expensive correlation estimation and redundancy reduction as representation dimensionality grows.
+
+In contrast, SMI computes pairwise dependencies between samples, producing a dependency matrix of size $N \times N$ , where N denotes the batch size. The proposed objective therefore operates in the sample domain rather than the feature domain. In typical self-supervised learning settings, the embedding dimensionality is substantially larger than the batch size $( K \gg N )$ , yielding a significantly smaller dependency matrix. For example, with a projection dimension of $K = 8 1 9 2$ and a batch size of $N = 2 5 6$ , Barlow Twins requires an $8 1 9 2 \times 8 1 9 2$ correlation matrix, whereas SMI operates on a $2 5 6 \times 2 5 6$ dependency matrix. This corresponds to more than three orders of magnitude fewer matrix entries, substantially reducing the computational and memory overhead associated with dependency estimation while avoiding large feature-wise redundancy matrices.
+
+From this perspective, the key distinction between SMI and existing redundancy reduction methods is not merely the use of a mutual-information-inspired dependency measure, but the combination of (i) a nonlinear dependency transformation and (ii) sample-level dependency optimization. Rather than directly enforcing redundancy reduction on feature-wise correlations, SMI first maps correlations into a nonlinear dependency space and subsequently performs alignment and redundancy reduction on the resulting sample-level dependency matrix. As demonstrated in Section 3.3, this alternative optimization formulation leads to different optimization dynamics, a more balanced alignment– redundancy tradeoff, and improved representation diversity.
+
+Implementation Details : For ImageNet experiments, we follow the same augmentation pipeline, ResNet-50 architecture, projection head design, and optimization protocol used in Barlow Twins [5]. Unlike Barlow Twins and VICReg, SMI does not require Gather Layers or Global Batch Normalization. For the small-scale dataset experiments, identical training hyperparameters are used across all four datasets to ensure a consistent evaluation protocol. Complete implementation details, augmentation parameters, architectures, and optimization hyperparameters are provided in the supplementary material.
+
+## 3 Experimental results
+
+In this section, we examine both the effectiveness and efficiency of the proposed SMI objective. We first demonstrate competitive representation quality on ImageNet through linear evaluation, then analyze the computational advantages of SMI relative to existing SSL objectives. Next, we study the optimization dynamics and representation diversity induced by SMI, and conclude with extensive evaluations on several low-resource datasets to assess robustness and generalization.
+
+## 3.1 ImageNet Linear Evaluation
+
+We assess the model’s performance by training a linear classifier on top of the fixed representations extracted from a ResNet50 model pre-trained using the proposed loss function (5) on the ImageNet [12] validation set. Our results demonstrate that the proposed method achieves performance comparable to other SOTA approaches, with high efficacy. Table 1 highlights the performance on the ImageNet [12] validation set, comparing our method to other SOTA approaches.
+
+## 3.2 Computational Efficiency
+
+To ensure a fair comparison with other SOTA self-supervised methods, we evaluated GFLOPs from two augmentations of shape (256, 8192) (same as (batch size,feature size)) for each loss function. The results demonstrate that our loss function is significantly more computationally efficient compared to all other SOTA losses. The detailed results are presented in Table 2. We further highlight that our loss function has significantly fewer negative pair terms compared to all other loss functions since it does not require gather layer, while achieving notably higher top-1 accuracy in linear evaluation than NT-Xent [1] (Table 1), and performing on par with other SOTA loss functions.
+
+Table 1: Top-1 Accuracy on ImageNet[12]: Linear evaluation on frozen ResNet-50 features, comparing our proposed method with SOTA approaches. SN indicates methods that use shared network weights vs dual ResNet-50 networks (e.g., DINO [13], BYOL [7]). MC refers to multicrop augmentation, which improved performance in [14]. The top-3 SOTA methods are ranked as superscripts trained for 300 epochs.
+
+<table><tr><td>Method</td><td>Top-1</td><td>Top-5</td><td>SN</td><td>MC</td><td>Epochs</td></tr><tr><td> $NTxent^{Reproduced}$  [1]</td><td>51.3</td><td>76.9</td><td>√</td><td>✗</td><td>300</td></tr><tr><td>PIRL [15]</td><td>63.6</td><td>-</td><td>√</td><td>✗</td><td>800</td></tr><tr><td>SIMCLR [1]</td><td>69.3</td><td>89.0</td><td>√</td><td>✗</td><td>1000</td></tr><tr><td>MoCo v2 [16]</td><td>71.1</td><td>90.1</td><td>✗</td><td>✗</td><td>800</td></tr><tr><td>SIMSIAM [8]</td><td>71.3</td><td>-</td><td>√</td><td>✗</td><td>800</td></tr><tr><td>SWAV [14]</td><td>71.8</td><td>-</td><td>√</td><td>✗</td><td>800</td></tr><tr><td>MoCo [2]</td><td>60.6</td><td>-</td><td>✗</td><td>✗</td><td>200</td></tr><tr><td> $SimCLR^3$  [1]</td><td>67</td><td>87.5</td><td>√</td><td>✗</td><td>300</td></tr><tr><td> $Barlow^2$  [5]</td><td>71.4</td><td>90.2</td><td>√</td><td>✗</td><td>300</td></tr><tr><td> $BYOL^1$  [7]</td><td>72.5</td><td>91.6</td><td>✗</td><td>✗</td><td>300</td></tr><tr><td> $DINO^1$  [13]</td><td>72.5</td><td>91.6</td><td>✗</td><td>✗</td><td>300</td></tr><tr><td> $Ours^2$ </td><td>71.41</td><td>90</td><td>√</td><td>✗</td><td>300</td></tr></table>
+
+Table 2: Computational complexity comparison of state-of-the-art SSL objectives and the proposed SMI loss.GFLOPs denotes the computational complexity of the loss computation during forward propagation for an effective batch size of 2048 distributed across 8 GPUs. Off-Diag Entries denotes the number of pairwise non-target interactions participating in the optimization objective. For contrastive methods, these correspond to negative pairs, whereas for redundancy reduction methods they correspond to off-diagonal correlation or dependency entries. GBN denotes the use of Global Batch Normalization, GL denotes Gather Layer.
+
+<table><tr><td>Loss</td><td>GFLOPs↓</td><td>Off-Diag Entries↓</td><td>GBN</td><td>GL</td><td>Epochs</td></tr><tr><td>Barlow</td><td>137.43</td><td>8192 × 8191</td><td>√</td><td>√</td><td>1000</td></tr><tr><td>VIC-Reg</td><td>274.87</td><td>2(8192 × 8191)</td><td>√</td><td>√</td><td>1000</td></tr><tr><td>Nt-xent</td><td>103.07</td><td>3(4096 × 4095)</td><td>√</td><td>√</td><td>1000</td></tr><tr><td>SMI</td><td>12.88</td><td>24(256 × 255)</td><td>✗</td><td>✗</td><td>300</td></tr></table>
+
+Efficiency Without Global Synchronization: Unlike prior state-of-the-art SSL methods that rely on embedding concatenation across GPUs (Gather Layer) or global batch normalization across devices, our approach achieves comparable performance without either. This design is more computationally efficient (we refer to Table 2), requires fewer negative pairs, and enables fully asynchronous training across devices.
+
+## 3.3 Optimization Dynamics and Representation Diversity
+
+To better understand the optimization behavior induced by SMI, we analyze the training dynamics of the proposed nonlinear dependency objective throughout self-supervised pretraining. In particular, we study gradient stability, representation diversity, and the alignment–redundancy tradeoff during training. Our analysis reveals that SMI induces substantially different optimization dynamics compared to conventional redundancy reduction objectives such as Barlow Twins, resulting in more stable optimization and improved representation diversity under low-resource training settings.
+
+Figure 3 compares the evolution of gradient norms during SSL pretraining on CIFAR10 using a ResNet50 backbone. Across training, SMI consistently exhibits smoother and lower-magnitude gradient dynamics relative to Barlow Twins. In contrast, Barlow Twins maintains significantly larger gradient magnitudes throughout optimization, suggesting a more aggressive redundancy suppression optimization. The smoother optimization trajectory of SMI is consistent with the nonlinear dependency formulation introduced by the logarithmic mutual-information-inspired objective, which adaptively rescales gradient sensitivity based on the correlation structure of the learned representations. These results indicate that SMI produces a more stable optimization landscape while avoiding unstable gradient amplification during training.
+
+![](images/b86fcb06bdd7051bdf25bbd3e4c1bc390c37fd14a4ef22fe55dcc3ba052df5cb.jpg)
+
+<details>
+<summary>line chart</summary>
+
+| Training Step | Barlow Twins | SMI     |
+| ------------- | ------------ | ------- |
+| 0             | ~2000        | ~2000   |
+| 10000         | ~300         | ~50     |
+| 20000         | ~200         | ~40     |
+| 30000         | ~150         | ~35     |
+| 40000         | ~120         | ~35     |
+| 50000         | ~100         | ~35     |
+| 60000         | ~80          | ~35     |
+</details>
+
+Figure 3: Gradient norm evolution during SSL pretraining on CIFAR10 using ResNet50. Curves are smoothed using a rolling average window of 50 steps and visualized on a logarithmic scale. SMI exhibits consistently lower gradient magnitudes and smoother optimization dynamics compared to Barlow Twins.
+
+![](images/e6918fda0a65071f3e1756a0d286c026954eeb506ca8300c7b9d35175a95e309.jpg)
+
+<details>
+<summary>line chart</summary>
+
+| Epoch | Barlow Twins | SMI λ=0.005 | SMI λ=0.01 | SMI λ=0.05 | SMI λ=0.1 | SMI λ=1.0 |
+|-------|--------------|-------------|------------|------------|-----------|-----------|
+| 0     | 6.0          | 6.0         | 6.0        | 6.0        | 6.0       | 6.0       |
+| 50    | 4.0          | 25.0        | 18.0       | 8.0        | 7.0       | 2.0       |
+| 100   | 3.5          | 30.0        | 22.0       | 8.5        | 7.5       | 4.0       |
+| 150   | 3.0          | 28.0        | 20.0       | 7.5        | 7.0       | 3.5       |
+| 200   | 2.5          | 25.0        | 18.0       | 6.5        | 6.5       | 3.0       |
+| 250   | 2.0          | 23.0        | 15.0       | 6.0        | 6.0       | 2.5       |
+| 300   | 2.0          | 22.5        | 14.5       | 5.5        | 5.5       | 2.5       |
+</details>
+
+Figure 4: Evolution of representation standard deviation during self-supervised training for Barlow Twins and SMI under different regularization strengths λ on CIFAR10 using a ResNet50 backbone. SMI enables controllable representation diversity across different λ regimes, revealing a non-monotonic relationship between representation diversity and downstream transfer performance. Intermediate diversity regimes $( \lambda = 0 . 0 1 )$ achieve the strongest linear evaluation accuracy, while excessively low or high diversity leads to degraded transfer performance. In contrast, Barlow Twins converges to a comparatively lower-diversity representation regime.
+
+Beyond optimization stability, we next investigate how SMI influences the diversity of learned representations. Figure 4 shows the evolution of feature standard deviation during training under different regularization strengths λ. Unlike Barlow Twins, which converges toward a comparatively low-diversity representation regime, SMI enables controllable representation diversity across different λ settings. Interestingly, the relationship between representation diversity and downstream transfer performance is non-monotonic. Moderate diversity regimes achieve the strongest linear evaluation performance, whereas excessively low or excessively high diversity leads to degraded transfer accuracy. In particular, $\lambda = 0 . 0 1$ consistently produces the best tradeoff between representation diversity and downstream performance.
+
+![](images/002877407b41294f827bed79eb8f8ad09d45cfac2bc669393a665e23ec131aea.jpg)
+
+<details>
+<summary>line chart</summary>
+
+| Representation Std | Linear Eval Accuracy (%) | Method        |
+| ------------------ | ------------------------ | ------------- |
+| 2.5                | 88.0                     | SMI           |
+| 5.0                | 89.6                     | SMI           |
+| 5.0                | 90.0                     | SMI           |
+| 15.0               | 90.7                     | SMI           |
+| 22.5               | 90.3                     | SMI           |
+| 2.5                | 89.9                     | Barlow Twins  |
+| 15.0               | 90.7                     | Barlow Twins  |
+</details>
+
+Figure 5: Linear evaluation accuracy as a function of representation standard deviation for different SMI regularization strengths λ on CIFAR10 using a ResNet50 backbone. SMI enables controllable representation diversity across different λ regimes. Performance improves as representation diversity increases up to an intermediate regime $( \lambda = 0 . 0 1 )$ , after which excessive diversity leads to a mild degradation in downstream transfer performance. Barlow Twins operates in a comparatively lowerdiversity regime.
+
+![](images/b8ed48e42b8ff62dc1872d76691b49b3c1b0592fa8e0ef6440e143dd6f1b4caf.jpg)
+
+<details>
+<summary>line chart</summary>
+
+| Epoch | Barlow Twins | SMI (λ = 0.01) |
+|-------|--------------|----------------|
+| 0     | 100          | 1              |
+| 50    | 200          | 0.5            |
+| 100   | 300          | 0.5            |
+| 150   | 400          | 0.5            |
+| 200   | 500          | 0.5            |
+| 250   | 600          | 0.5            |
+| 300   | 700          | 0.5            |
+</details>
+
+Figure 6: Evolution of the redundancy-to-alignment ratio during training for Barlow Twins and SMI $( \lambda = 0 . 0 1 )$ on CIFAR10 using a ResNet50 backbone. Barlow Twins progressively shifts toward a redundancy-dominated optimization regime, whereas SMI maintains a substantially lower and more stable ratio throughout training. This behavior suggests that SMI preserves a more balanced alignment–redundancy tradeoff, consistent with the higher representation diversity and improved downstream transfer performance observed in linear evaluation.
+
+To further analyze this behavior, Figure 5 plots linear evaluation accuracy as a function of representation standard deviation across different SMI regularization strengths. The results suggest that representation diversity alone is insufficient for optimal transfer performance. Instead, downstream performance appears to depend on maintaining a balanced intermediate diversity regime. Excessively constrained representations reduce feature expressiveness, while overly diverse representations may weaken semantic consistency across views.
+
+Finally, we analyze the alignment–redundancy tradeoff during training. Figure 6 compares the redundancy-to-alignment ratio for SMI and Barlow Twins, defined as the relative contribution of off-diagonal redundancy suppression and positive-pair alignment. While Barlow Twins progressively places greater emphasis on redundancy reduction throughout training, SMI maintains a lower and more stable ratio across all epochs. This suggests that the nonlinear dependency objective of SMI preserves a more balanced tradeoff between alignment and redundancy reduction.
+
+Overall, these results indicate that SMI modifies the optimization geometry of self-supervised learning in a manner fundamentally different from standard correlation matching objectives. Rather than aggressively minimizing redundancy alone, SMI maintains a more balanced alignment–redundancy tradeoff throughout training, enabling controllable representation diversity and improved downstream transfer under computationally constrained settings.
+
+## 3.4 Small-Scale Low-Resource Evaluation
+
+To evaluate the effectiveness of SMI under computationally constrained settings, we compare the proposed objective against Barlow Twins across multiple small-scale benchmarks, including CIFAR10, CIFAR100, ImageNette, and ImageWoof. All methods are pretrained using identical self-supervised training configurations, including the same backbone architecture, augmentation pipeline, optimizer, training schedule, and hyperparameter settings, followed by standard linear evaluation.
+
+Table 3: Linear evaluation performance comparison between Barlow Twins and the proposed SMI objective across multiple datasets using a ResNet50 backbone. For fair comparison, all methods are pretrained under identical self-supervised training settings, including the same architecture, optimizer, augmentation pipeline, training schedule, and hyperparameter configuration, followed by evaluation using a frozen linear classifier protocol. SMI consistently improves downstream transfer performance over the Barlow Twins baseline.
+
+<table><tr><td>Dataset</td><td>Barlow Twins</td><td>SMI (Ours)</td></tr><tr><td>CIFAR10 [17]</td><td>89.90</td><td>90.64</td></tr><tr><td>CIFAR100 [17]</td><td>65.24</td><td>66.35</td></tr><tr><td>ImageNette [18]</td><td>87.77</td><td>90.55</td></tr><tr><td>Imagewoof [19]</td><td>68.92</td><td>75.03</td></tr></table>
+
+Table 3 summarizes the downstream linear evaluation performance across all datasets. SMI consistently improves transfer performance relative to Barlow Twins on every benchmark. While moderate gains are observed on CIFAR10 and CIFAR100, larger improvements emerge on the more challenging fine-grained datasets, particularly ImageWoof, where SMI improves Top-1 accuracy by more than 6%. These results suggest that the proposed nonlinear dependency objective generalizes effectively across diverse low-resource settings and remains particularly robust when fine-grained semantic discrimination is required.
+
+To further investigate the relationship between representation dynamics and downstream performance, Figure 7 compares the evolution of feature standard deviation during training across all datasets. Across every benchmark, SMI exhibits substantially more stable and consistent representation statistics compared to Barlow Twins. In particular, SMI avoids the progressive reduction in feature diversity observed in Barlow Twins while maintaining stable representation variance throughout training.
+
+![](images/860d21628209db5463e9adc59257c627bb9c73b99308bda6d478ab78af1e46c9.jpg)  
+Figure 7: Feature standard deviation dynamics during self-supervised pretraining and corresponding downstream linear evaluation performance across CIFAR-10, CIFAR-100, Imagenette, and Image-Woof using a ResNet-50 backbone. For each dataset, the left panel shows the evolution of feature standard deviation throughout training for Barlow Twins and the proposed SMI objective, while the right panel reports the corresponding Top-1 linear evaluation accuracy. Across all datasets, SMI exhibits more stable and consistent representation statistics, correlating with improved downstream classification performance, with the largest gains observed on the fine-grained ImageWoof benchmark.
+
+Interestingly, the observed representation dynamics strongly correlate with downstream transfer performance. Datasets where SMI maintains more stable intermediate diversity consistently exhibit improved linear evaluation accuracy. This trend is especially pronounced on ImageWoof, where the largest downstream performance gain coincides with the clearest separation in representation statistics between the two methods. These observations are consistent with the optimization analysis presented in Section 2.3 and further support the hypothesis that balanced representation diversity plays a critical role in stable self-supervised learning.
+
+Overall, these results demonstrate that SMI provides improved robustness and representation stability under modest computational settings without relying on large batch sizes, momentum encoders, or global synchronization mechanisms. The consistent gains across multiple datasets suggest that the proposed nonlinear dependency objective generalizes effectively beyond large-scale distributed training scenarios.
+
+## 3.5 Representation Geometry Analysis
+
+Beyond downstream performance, we analyze the geometry of the learned representation space through representation diversity, variance concentration, and spatial activation patterns. These analyses complement the optimization dynamics presented in Section 3.3 and provide additional insight into the observed transfer performance gains.
+
+## 3.5.1 Representation Collapse
+
+To assess representation diversity and potential collapse, we analyze the embedding variance distribution and the cumulative explained variance of the representation eigenspectrum on the ImageNet validation set. Specifically, we compute the cumulative explained variance from the normalized eigenvalues of the feature covariance matrix and compare representations learned by SMI against NT-Xent (SimCLR) and MoCo v2. Figure 8(b) and Figure 8(a) summarize the resulting variance distributions and eigenspectrum statistics.
+
+![](images/1e334d2a777b821ce9bcde0a1d4b1a36db1437c4004c0827528e0de82122a71c.jpg)
+
+<details>
+<summary>line chart</summary>
+
+| Number of dimensions | NTXent(SIMCLR) 1000 Epochs | MOCO V2 800 Epochs | OURS 300 Epochs |
+| -------------------- | -------------------------- | ------------------ | --------------- |
+| 0                    | 0.0                        | 0.0                | 0.0             |
+| 500                  | 0.7                        | 0.85               | 0.65            |
+| 1000                 | 0.85                       | 0.95               | 0.8             |
+| 1500                 | 0.95                       | 0.98               | 0.9             |
+| 2000                 | 1.0                        | 1.0                | 1.0             |
+</details>
+
+(a) Eigenspectrum of Representations
+
+![](images/c9a2b871b9e3205cd1c2ab9bfb118827a4bf8b20122618f0c55fb951f671af92.jpg)
+
+<details>
+<summary>violin chart</summary>
+
+| Model      | Variance Min | Variance Max |
+|------------|--------------|--------------|
+| Barlow     | 0.005        | 0.015        |
+| BYOL       | 0.008        | 0.012        |
+| SMI(LBN)   | 0.007        | 0.013        |
+| SMI(GBN)   | 0.006        | 0.014        |
+</details>
+
+(b) Embedding Variance  
+Figure 8: 8(a) Cumulative explained variance of the representation eigenspectrum. Steeper accumulation indicates stronger variance in a small number of components, commonly associated with representational collapse. 8(b) Distribution of embedding variance across SSL methods. Higher variance indicates greater representation diversity and reduced collapse.
+
+![](images/0f497942ae166319950136dbbabc4388c143696445853018f4ed201f0350e52b.jpg)
+
+<details>
+<summary>text_image</summary>
+
+Original
+MoCo v2 (800 ep)
+SimCLR (1000 ep)
+Ours (300 ep)
+Barlow Twins (1000 ep)
+BYOL (1000 ep)
+</details>
+
+Figure 9: Activation energy maps computed from the spatial $\ell _ { 2 }$ norm of the final convolutional feature maps of SSL-pretrained ResNet-50 encoders on ImageNet. Compared to NT-Xent (SimCLR), our method produces more spatially concentrated and object-centric responses with reduced background activation. Relative to BYOL and Barlow Twins, SMI exhibits more compact and localized activations, particularly in cluttered scenes.
+
+## 3.5.2 Qualitative Representation Analysis
+
+To qualitatively assess the spatial focus of the learned representations, we visualize activation energy maps obtained from SSL-pretrained encoders on challenging ImageNet examples. As shown in Figure 9, NT-Xent (SimCLR) produces diffuse activations that often extend into background regions and high-frequency textures, indicating a stronger sensitivity to local appearance cues. MoCo v2 exhibits improved localization relative to SimCLR but retains comparatively broad responses. BYOL and Barlow Twins yield more object-centric activations, though these are often spatially smooth and cover larger object regions. In contrast, our method consistently produces more compact and spatially concentrated activation maps with reduced background activation, particularly in cluttered scenes. These observations are consistent with the improved representation diversity observed in Figures 8(a) and 8(b).
+
+## 4 Conclusions
+
+We presented Semantic Mutual Information (SMI), a novel self-supervised learning objective based on a Gaussian mutual-information-inspired dependency transformation. Unlike conventional correlation matching approaches, SMI performs alignment and redundancy reduction in a nonlinear dependency space, resulting in correlation-dependent optimization sensitivity and fundamentally different optimization behavior. Our analyses show that these properties lead to smoother optimization dynamics, improved representation diversity, and a more favorable alignment–redundancy balance.
+
+Across multiple benchmarks, SMI consistently improves downstream transfer performance while significantly reducing computational complexity and eliminating the need for Global Batch Normalization or Gather Layers. These results demonstrate that effective self-supervised learning can be achieved through dependency-based objectives without relying on increasingly expensive training protocols. More broadly, this work highlights the potential of MI-inspired dependency optimization as a scalable and computationally efficient direction for self-supervised representation learning.
+
+## References
+
+[1] T. Chen, S. Kornblith, M. Norouzi, and G. Hinton, “A simple framework for contrastive learning of visual representations,” in International conference on machine learning. PMLR, 2020, pp. 1597–1607.  
+[2] K. He, H. Fan, Y. Wu, S. Xie, and R. Girshick, “Momentum contrast for unsupervised visual representation learning,” in Proceedings of the IEEE/CVF conference on computer vision and pattern recognition, 2020, pp. 9729–9738.  
+[3] P. Mishra, C. Ballester, and D. Karatzas, “Trim: A self-supervised video summarization framework maximizing temporal relative information and representativeness,” in ICASSP 2026- 2026 IEEE International Conference on Acoustics, Speech and Signal Processing (ICASSP). IEEE, 2026, pp. 10 717–10 721.  
+[4] ——, “Trimmer: A new paradigm for video summarization through self-supervised reinforcement learning,” arXiv preprint arXiv:2605.01659, 2026.  
+[5] J. Zbontar, L. Jing, I. Misra, Y. LeCun, and S. Deny, “Barlow twins: Self-supervised learning via redundancy reduction,” in International conference on machine learning. PMLR, 2021, pp. 12 310–12 320.  
+[6] A. Bardes, J. Ponce, and Y. Lecun, “Vicreg: Variance-invariance-covariance regularization for self-supervised learning,” in ICLR 2022-International Conference on Learning Representations, 2022.  
+[7] J.-B. Grill, F. Strub, F. Altché, C. Tallec, P. Richemond, E. Buchatskaya, C. Doersch, B. Avila Pires, Z. Guo, M. Gheshlaghi Azar et al., “Bootstrap your own latent-a new approach to self-supervised learning,” Advances in neural information processing systems, vol. 33, pp. 21 271–21 284, 2020.  
+[8] X. Chen and K. He, “Exploring simple siamese representation learning,” in Proceedings of the IEEE/CVF conference on computer vision and pattern recognition, 2021, pp. 15 750–15 758.  
+[9] B. Poole, S. Ozair, A. Van Den Oord, A. Alemi, and G. Tucker, “On variational bounds of mutual information,” in International Conference on Machine Learning. PMLR, 2019, pp. 5171–5180.  
+[10] M. I. Belghazi, A. Baratin, S. Rajeshwar, S. Ozair, Y. Bengio, A. Courville, and D. Hjelm, “Mutual information neural estimation,” in International conference on machine learning. PMLR, 2018, pp. 531–540.  
+[11] A. Sklar, “Random variables, joint distribution functions, and copulas,” Kybernetika, vol. 9, no. 6, pp. 449–460, 1973.  
+[12] J. Deng, W. Dong, R. Socher, L.-J. Li, K. Li, and L. Fei-Fei, “Imagenet: A large-scale hierarchical image database,” in 2009 IEEE conference on computer vision and pattern recognition. Ieee, 2009, pp. 248–255.  
+[13] M. Caron, H. Touvron, I. Misra, H. Jégou, J. Mairal, P. Bojanowski, and A. Joulin, “Emerging properties in self-supervised vision transformers,” in Proceedings of the IEEE/CVF international conference on computer vision, 2021, pp. 9650–9660.  
+[14] M. Caron, I. Misra, J. Mairal, P. Goyal, P. Bojanowski, and A. Joulin, “Unsupervised learning of visual features by contrasting cluster assignments,” Advances in neural information processing systems, vol. 33, pp. 9912–9924, 2020.  
+[15] I. Misra and L. v. d. Maaten, “Self-supervised learning of pretext-invariant representations,” in Proceedings of the IEEE/CVF conference on computer vision and pattern recognition, 2020, pp. 6707–6717.  
+[16] X. Chen, H. Fan, R. Girshick, and K. He, “Improved baselines with momentum contrastive learning,” arXiv preprint arXiv:2003.04297, 2020.  
+[17] A. Krizhevsky, G. Hinton et al., “Learning multiple layers of features from tiny images,” Technical Report, University of Toronto, 2009.  
+[18] Fastai, “Imagenette: A smaller subset of 10 easily classified classes from imagenet,” 2019. [Online]. Available: https://github.com/fastai/imagenette  
+[19] ——, “Imagewoof: A subset of 10 classes from imagenet that are hard to classify,” 2019. [Online]. Available: https://github.com/fastai/imagenette  
+[20] Y. You, I. Gitman, and B. Ginsburg, “Large batch training of convolutional networks,” arXiv preprint arXiv:1708.03888, 2017.  
+[21] A. Coates, A. Ng, and H. Lee, “An analysis of single-layer networks in unsupervised feature learning,” in Proceedings of the fourteenth international conference on artificial intelligence and statistics. JMLR Workshop and Conference Proceedings, 2011, pp. 215–223.
+
+## A Appendix
+
+## A.1 Implementation Details
+
+## A.1.1 Large-scale Training
+
+Image Augmentations: Our image augmentation pipeline consists of the following transformations with corresponding probability values: random cropping, resizing to 224 × 224, horizontal flipping $( p = 0 . 5 $ , where $p$ is the probability of applying the transformation during data augmentation), color jittering ([brightness=0.4, contrast=0.4, saturation=0.2, hue=0.1], $p = 0 . 8 )$ , converting to grayscale $( p = 0 . 2 )$ , Gaussian blurring $( p = 1 . 0 , \forall x _ { i } ^ { 1 } ; p = 0 . 1 , \forall x _ { i } ^ { 2 } )$ , and solarization $( p = 0 , \forall x _ { i } ^ { 1 }$ ; $p = 1 . 0 , \forall x _ { i } ^ { 2 } )$ similar to $[ 7 , 5 ]$ .
+
+Architecture: Building on previous SOTA methods, we use ResNet-50 as our encoder, removing the final classification layer. For the projection head, we adopt the same architecture as Barlow Twins [5]: three linear layers with 8192 units each, along with batch normalization and ReLU activation.
+
+Optimization: We followed the optimization protocol described in previous SOTA works [7, 5, 6], with minor adjustments. Our model was trained with an effective batch size of 2048 for 300 epochs with LARS optimizer [20] without Gather Layer or Global Batch normalization across distributed devices. The base learning rate was set to scale with the effective batch size as batchsize $; / 2 5 6$ for 300 epochs. We adopt the same learning rate for bias, batch normalization, and weight decay parameters as used in Barlow Twins [5].
+
+## A.1.2 Training on Small Datasets
+
+Data Augmentation: For self-supervised pretraining, two augmented views are generated from each image using a stochastic augmentation pipeline. CIFAR-10 and CIFAR-100 employ Random-ResizedCrop (scale (0.2, 1.0)), RandomHorizontalFlip, ColorJitter (brightness=0.4, contrast=0.4, saturation=0.2, $\mathrm { h u e { = } 0 . 1 } , p = 0 . 8 )$ , RandomGrayscale $( p = 0 . 2 )$ , and GaussianBlur. For ImageNette and ImageWoof, we adopt a stronger augmentation pipeline consisting of RandomResizedCrop (scale (0.08, 1.0)), RandomHorizontalFlip, ColorJitter (brightness=0.4, contrast=0.4, saturation=0.4, hue=0.1, $p = 0 . 8 )$ , RandomGrayscale $( p = 0 . 2 )$ , GaussianBlur, and RandomSolarize $( p = 0 . 2 )$ . Detailed parameters for augmentations are provided in Table 4.
+
+Architecture: All experiments use a ResNet-50 backbone. For CIFAR-10 and CIFAR-100, the standard ImageNet stem is replaced with a $\left( 3 \times 3 \right)$ convolution with stride 1 and padding 1, and the initial max-pooling layer is removed to better accommodate low-resolution inputs. For ImageNette and ImageWoof, the standard ResNet-50 architecture is used. Following Barlow Twins, the encoder output is passed through a three-layer projection head with 4096 hidden units per layer, batch normalization, and ReLU activations.
+
+Optimization: To ensure a consistent low-resource evaluation protocol, identical optimization settings are used across CIFAR-10, CIFAR-100, ImageNette, and ImageWoof. All models are trained using the AdamW optimizer with the same learning-rate $( 1 e ^ { - 3 } )$ schedule (cosine annealing), weight decay $( 1 e ^ { - 4 } )$ , batch size (256), and training duration (300 epochs).
+
+Table 4: Dataset-specific SSL augmentation settings.
+
+<table><tr><td>Dataset</td><td>Resolution</td><td>Crop Scale</td><td>Solarization</td></tr><tr><td>CIFAR-10</td><td>32</td><td>(0.2,1.0)</td><td>No</td></tr><tr><td>CIFAR-100</td><td>32</td><td>(0.2,1.0)</td><td>No</td></tr><tr><td>ImageNette</td><td>160</td><td>(0.08,1.0)</td><td>0.2</td></tr><tr><td>ImageWoof</td><td>160</td><td>(0.08,1.0)</td><td>0.2</td></tr></table>
+
+## A.2 Derivation of the Gaussian Mutual Information Dependency Measure
+
+## A.2.1 Sklar’s Theorem
+
+Sklar’s theorem states that any joint cumulative distribution function (CDF) can be decomposed into its marginal distributions and a copula that captures the dependency structure between variables. Given random variables X and $Y$ with joint CDF $F _ { X , Y }$ ,
+
+$$
+F _ {X, Y} (x, y) = C (F _ {X} (x), F _ {Y} (y)) \tag {6}
+$$
+
+where $F _ { X }$ and $F _ { Y }$ are the marginal CDFs and $C$ denotes the copula function. The corresponding joint density can be written as
+
+$$
+f _ {X, Y} (x, y) = c (F _ {X} (x), F _ {Y} (y)) f _ {X} (x) f _ {Y} (y) \tag {7}
+$$
+
+where c denotes the copula density.
+
+## A.2.2 Gaussian Copula
+
+The Gaussian copula models dependencies using a multivariate Gaussian structure while allowing arbitrary marginal distributions. It is defined as
+
+$$
+C _ {\text { Gaussian }} (u _ {1}, u _ {2}; \rho) = \Phi_ {\rho} \left(\Phi^ {- 1} (u _ {1}), \Phi^ {- 1} (u _ {2})\right) \tag {8}
+$$
+
+where $\Phi _ { \rho }$ denotes the bivariate Gaussian CDF with correlation coefficient $\rho$ and $\Phi ^ { - 1 }$ is the inverse standard Gaussian CDF.
+
+Under the Gaussian copula assumption, dependency is fully characterized by the Pearson correlation coefficient $\rho .$
+
+## A.2.3 Mutual Information and Pearson Correlation
+
+For two continuous random variables, mutual information is defined as
+
+$$
+I (X; Y) = h (X) + h (Y) - h (X, Y), \tag {9}
+$$
+
+where $h ( \cdot )$ denotes differential entropy.
+
+For jointly Gaussian variables with variance $\sigma ^ { 2 }$ ,
+
+$$
+h (X) = h (Y) = \frac {1}{2} \log (2 \pi e \sigma^ {2}) \tag {10}
+$$
+
+The joint entropy is
+
+$$
+h (X, Y) = \frac {1}{2} \log \left((2 \pi e) ^ {2} | \Sigma |\right) \tag {11}
+$$
+
+where Σ denotes the covariance matrix. For a bivariate Gaussian distribution,
+
+$$
+| \Sigma | = \sigma^ {4} (1 - \rho^ {2}) \tag {12}
+$$
+
+Substituting into the entropy expression yields
+
+$$
+h (X, Y) = \log (2 \pi e \sigma^ {2}) + \frac {1}{2} \log (1 - \rho^ {2}). \tag {13}
+$$
+
+Finally,
+
+$$
+I (X; Y) = - \frac {1}{2} \log (1 - \rho^ {2}). \tag {14}
+$$
+
+To avoid numerical instability when ρ → 1, we introduce a small positive constant ϵ and obtain the dependency measure used throughout this work:
+
+$$
+I (X; Y) = - \frac {1}{2} \log (1 - \rho^ {2} + \epsilon). \tag {15}
+$$
+
+## A.3 Additional Optimization Dynamics Analysis
+
+Figure 10 provides additional optimization statistics for CIFAR-100, ImageNette, and ImageWoof. For each dataset, we compare the evolution of gradient norms during self-supervised pretraining and the corresponding train/validation accuracy curves obtained during linear evaluation.
+
+Across all datasets, SMI consistently exhibits lower gradient magnitudes throughout training compared to Barlow Twins, indicating a smoother optimization trajectory. This behavior is particularly pronounced on ImageNette and ImageWoof, where SMI rapidly converges to a stable low-gradient solution while maintaining improved downstream performance.
+
+The train and validation accuracy curves further demonstrate that the improved linear evaluation performance of SMI is not driven by overfitting. In all cases, validation accuracy closely tracks training accuracy throughout optimization, while consistently exceeding the performance achieved by the Barlow Twins baseline. These observations are consistent with the optimization dynamics analysis presented in Section 3.3 of the main paper and further support the hypothesis that the nonlinear dependency objective induces more stable optimization behavior.
+
+## A.4 Additional Representation Geometry
+
+To further visualize the structure of the learned representation space, we evaluate the embedding quality of SSL-pretrained models on the STL10 [21] test set using 3D t-SNE projections. Figure 11 presents embeddings extracted from frozen ResNet-50 encoders pretrained with different SSL objectives. While t-SNE does not provide a quantitative evaluation of representation quality, it offers an intuitive visualization of cluster compactness and class separability in the learned feature space.
+
+![](images/946fbe12ef6dd47e9ce2130ab36908418a4c5160b25349d7efe982da37c04589.jpg)
+
+<details>
+<summary>line chart</summary>
+
+| Training Step | Barlow Twins | SMI     |
+| ------------- | ------------ | ------- |
+| 0             | 10^4         | 10^2    |
+| 10000         | 10^3         | 10^2    |
+| 20000         | 10^2.5       | 10^2    |
+| 30000         | 10^2.2       | 10^2    |
+| 40000         | 10^2.1       | 10^2    |
+| 50000         | 10^2.0       | 10^2    |
+| 60000         | 10^2.0       | 10^2    |
+</details>
+
+(a) CIFAR-100 Gradient Norm
+
+![](images/abf7d96c9ba2608a01048a467349a679fbc62affd21fde77a6e75b6f1fb5626d.jpg)
+
+<details>
+<summary>line chart</summary>
+
+| Epoch | Barlow Twins (Train) | Barlow Twins (Val) | SMI (Train) | SMI (Val) |
+|-------|----------------------|--------------------|-------------|-----------|
+| 0     | 40                   | 40                 | 40          | 40        |
+| 20    | 70                   | 60                 | 65          | 60        |
+| 40    | 75                   | 65                 | 70          | 65        |
+| 60    | 78                   | 65                 | 75          | 65        |
+| 80    | 79                   | 65                 | 78          | 65        |
+| 100   | 80                   | 65                 | 79          | 65        |
+</details>
+
+(b) CIFAR-100 Train/Val Acc
+
+![](images/beaf812c3a08a32b47a8c959a652b6c5502dd602d2b4eb634f25be6acfb3e7f6.jpg)
+
+<details>
+<summary>line chart</summary>
+
+| Training Step | Barlow Twins | SMI     |
+| ------------- | ------------ | ------- |
+| 0             | 10000        | 3000    |
+| 1000          | 5000         | 200     |
+| 2000          | 4000         | 150     |
+| 3000          | 3500         | 120     |
+| 4000          | 3200         | 100     |
+| 5000          | 3100         | 90      |
+| 6000          | 3050         | 85      |
+| 7000          | 3000         | 85      |
+| 8000          | 3050         | 85      |
+| 9000          | 3100         | 85      |
+| 10000         | 3150         | 85      |
+</details>
+
+(c) ImageNette Gradient Norm
+
+![](images/10cbede21be9105987fd29ad42305ff7c67d7023cc7bb15e56ff3e61958e95b3.jpg)
+
+<details>
+<summary>line chart</summary>
+
+| Epoch | Barlow Twins (Train) | Barlow Twins (Val) | SMI (Train) | SMI (Val) |
+|-------|----------------------|--------------------|-------------|-----------|
+| 0     | 78.0                 | 78.0               | 78.0        | 78.0      |
+| 10    | 80.0                 | 82.0               | 85.0        | 86.0      |
+| 20    | 81.0                 | 83.0               | 86.0        | 87.0      |
+| 30    | 82.0                 | 84.0               | 87.0        | 88.0      |
+| 40    | 83.0                 | 85.0               | 88.0        | 89.0      |
+| 50    | 84.0                 | 86.0               | 89.0        | 90.0      |
+| 60    | 85.0                 | 87.0               | 90.0        | 91.0      |
+| 70    | 86.0                 | 88.0               | 91.0        | 92.0      |
+| 80    | 87.0                 | 89.0               | 92.0        | 93.0      |
+| 90    | 88.0                 | 90.0               | 93.0        | 94.0      |
+| 100   | 89.0                 | 91.0               | 94.0        | 95.0      |
+</details>
+
+(d) ImageNette Train/Val Acc
+
+![](images/3d4c4881ee2ca6faeccdff34d5dcdf76a70b4b4c418cb6da9177c16a1faf9092.jpg)
+
+<details>
+<summary>line chart</summary>
+
+| Training Step | Barlow Twins | SMI     |
+| ------------- | ------------ | ------- |
+| 0             | ~30000       | ~5000   |
+| 1000          | ~1000        | ~200    |
+| 2000          | ~1000        | ~150    |
+| 3000          | ~1000        | ~120    |
+| 4000          | ~1000        | ~110    |
+| 5000          | ~1000        | ~105    |
+| 6000          | ~1000        | ~105    |
+| 7000          | ~1000        | ~105    |
+| 8000          | ~1000        | ~105    |
+| 9000          | ~1000        | ~105    |
+| 10000         | ~1000        | ~105    |
+</details>
+
+(e) ImageWoof Gradient Norm
+
+![](images/cd1719ce35a6218bcf88a63791154b241740a0c703c33f53537baf550263e11b.jpg)
+
+<details>
+<summary>line chart</summary>
+
+| Epoch | Barlow Twins (Train) | Barlow Twins (Val) | SMI (Train) | SMI (Val) |
+|-------|----------------------|--------------------|-------------|---------|
+| 0     | 20.0                 | 20.0               | 20.0        | 20.0    |
+| 10    | 55.0                 | 58.0               | 60.0        | 62.0    |
+| 20    | 58.0                 | 60.0               | 65.0        | 68.0    |
+| 30    | 60.0                 | 62.0               | 68.0        | 70.0    |
+| 40    | 62.0                 | 64.0               | 70.0        | 72.0    |
+| 50    | 64.0                 | 66.0               | 72.0        | 74.0    |
+| 60    | 66.0                 | 68.0               | 74.0        | 76.0    |
+| 70    | 68.0                 | 70.0               | 76.0        | 78.0    |
+| 80    | 70.0                 | 72.0               | 78.0        | 80.0    |
+| 90    | 72.0                 | 74.0               | 80.0        | 82.0    |
+| 100   | 74.0                 | 76.0               | 82.0        | 84.0    |
+</details>
+
+(f) ImageWoof Train/Val Acc  
+Figure 10: Additional training dynamics for the low-resource benchmarks. For each dataset, the left column shows the evolution of gradient norms during SSL pretraining, while the right column reports train and validation accuracy during linear evaluation. Across datasets, SMI exhibits smoother optimization dynamics and consistently improved validation performance relative to the Barlow Twins baseline.
+
+![](images/560c0d9b250eddb8fa69b3b07277a9b6e1fd3af4e3a235dc1aede6d160306025.jpg)
+
+<details>
+<summary>scatterplot</summary>
+
+| x    | y    | z    |
+| ---- | ---- | ---- |
+| -8   | -8   | 0    |
+| -6   | -6   | 2    |
+| -4   | -4   | 4    |
+| -2   | -2   | 2    |
+| 0    | 0    | 0    |
+| 2    | 2    | -2   |
+| 4    | 4    | -4   |
+| 6    | 6    | -2   |
+| 8    | 8    | 0    |
+</details>
+
+(a) Barlow Twins
+
+![](images/00cc936acad98ea860ef163f6d787287d0df61d89d430ab44cb6c806f54ef51f.jpg)
+
+<details>
+<summary>scatterplot</summary>
+
+| Class    | X Range     | Y Range     |
+|----------|-------------|-------------|
+| Airplane | ~0 to 8     | ~-8 to 4    |
+| Bird     | ~0 to 8     | ~-8 to 4    |
+| Car      | ~-8 to 0    | ~-8 to 4    |
+| Cat      | ~0 to 8     | ~-8 to 4    |
+| Deer     | ~0 to 8     | ~-8 to 4    |
+| Dog      | ~0 to 8     | ~-8 to 4    |
+| Horse    | ~0 to 8     | ~-8 to 4    |
+| Monkey   | ~0 to 8     | ~-8 to 4    |
+| Ship     | ~0 to 8     | ~-8 to 4    |
+| Truck    | ~0 to 8     | ~-8 to 4    |
+</details>
+
+(b) BYOL
+
+![](images/a2280e91535621fca2c050f7aaf4a047f67fef2b18a8afe72a3c12a8143919f4.jpg)
+
+<details>
+<summary>scatterplot</summary>
+
+| x    | y    | z    |
+| ---- | ---- | ---- |
+| -8   | -8   | 0    |
+| -6   | -6   | 2    |
+| -4   | -4   | 4    |
+| -2   | -2   | 2    |
+| 0    | 0    | 0    |
+| 2    | 2    | -2   |
+| 4    | 4    | -4   |
+| 6    | 6    | -2   |
+| 8    | 8    | 0    |
+</details>
+
+(c) VICREG
+
+![](images/efcd86ff7f87d45eb9da7a00e8291d08ea3cb240bc12c257d87940f22d8bdf85.jpg)
+
+<details>
+<summary>scatterplot</summary>
+
+| x    | y    | z    |
+| ---- | ---- | ---- |
+| -8   | -8   | 0    |
+| -6   | -6   | 2    |
+| -4   | -4   | 4    |
+| -2   | -2   | 2    |
+| 0    | 0    | 0    |
+| 2    | 2    | -2   |
+| 4    | 4    | -4   |
+| 6    | 6    | -2   |
+| 8    | 8    | 0    |
+</details>
+
+(d) SMI(Ours)  
+Figure 11: 3D t-SNE visualization of image embeddings from frozen ResNet50 backbone pre-trained on ImageNet and evaluated on the STL10 [21] test set (details in the text).

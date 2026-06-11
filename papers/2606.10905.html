@@ -19,39 +19,39 @@
   </header>
   <nav class="site-nav" aria-label="主导航">
     <a class="nav-link" href="../index.html">头版</a>
-<a class="nav-link" href="../issues/2026-06-10.html">今日速递</a>
+<a class="nav-link" href="../issues/2026-06-11.html">今日速递</a>
 <a class="nav-link" href="../pages/catalog.html">论文目录</a>
 <a class="nav-link" href="../pages/timeline.html">时间线</a>
   </nav>
   <main><article class="paper-detail">
   <div class="paper-main">
     <div class="kicker">arXiv 新增 · P2 · 2026-06-10</div>
-    <h1 class="paper-headline">Beyond Model Size：视觉 foundation model 的少样本/上下文适应越来越重要，这篇提醒我们要把 evaluation protocol 设计得更像真实未见任务</h1>
-    <p class="dek">用极端小模型作为反例，质疑当前 VICL 评估是否真的测到了视觉 in-context adaptation，而不是测到任务编码或预训练任务重合。</p>
-    <p class="byline"><strong>Beyond Model Size: Probing the Gaps in Visual in-Context Learning by Training a Tiny Model</strong>　Sunil Khatri, Steven Landgraf, Markus Ulrich, Simon Reiß；机构信息未在 arXiv 元数据中列出。　arXiv 新增　<a href="https://arxiv.org/abs/2606.10905">原文链接</a></p>
+    <h1 class="paper-headline">Beyond Model Size：它和通用视觉自监督的关系在于：用 1M 参数 tiny VICL 模型反证“大模型规模=视觉 in-context 能力”的评估假设</h1>
+    <p class="dek">中高相关；详见方法、贡献和实验边界。</p>
+    <p class="byline"><strong>Beyond Model Size: Probing the Gaps in Visual in-Context Learning by Training a Tiny Model</strong>　arXiv 新增　<a href="https://arxiv.org/abs/2606.10905">原文链接</a></p>
     <div class="paper-facts">
       <span><b>编号</b>2606.10905</span>
       <span><b>优先级</b>P2</span>
       <span><b>类别</b>arXiv 新增</span>
       <span><b>会议</b>arXiv 新增</span>
-      <span><b>方法</b>训练一个约 1M 参数、7 万图像训练量的 tiny visual in-context model，并与大约 7000 倍规模的 VICL 模型在小分布偏移、未见 task encoding 和新任务适应上对照。</span>
+      <span><b>方法</b>用 1M 参数 tiny VICL 模型反证“大模型规模=视觉 in-context 能力”的评估假设</span>
       <span><b>来源</b>arXiv / OpenReview</span>
     </div>
     <div class="feature-body">
-      <p class="lead dropcap">先说结论。视觉 foundation model 的少样本/上下文适应越来越重要，这篇提醒我们要把 evaluation protocol 设计得更像真实未见任务。 用极端小模型作为反例，质疑当前 VICL 评估是否真的测到了视觉 in-context adaptation，而不是测到任务编码或预训练任务重合。</p>
+      <p class="lead dropcap">先说结论。它和通用视觉自监督的关系在于：用 1M 参数 tiny VICL 模型反证“大模型规模=视觉 in-context 能力”的评估假设。 中高相关；详见方法、贡献和实验边界。</p>
       <figure class="full-fig"><img src="../assets/mineru/2606.10905/images/f70f44b8a8ea1932dc2d89f971848c069055a713207163b0928d9015eead9423.jpg" alt="Figureure 3 · Qualitative results for all VICL models for out-of-domain prompting."><figcaption><b>Figureure 3 · Qualitative results for all VICL models for out-of-domain prompting.</b><span class="fig-en">Fig. 3. Qualitative results for all VICL models for out-of-domain prompting.</span><span class="fig-zh">这张图/表用于判断 Beyond Model Size 的实验收益来自哪里。重点看替换、消融或跨模型设置下趋势是否一致，而不是只看单个最高分。</span></figcaption></figure>
 <figure class="full-fig"><img src="../assets/mineru/2606.10905/images/b66d33848d46cfdd55003a8fee07b1b4929f8d4421bcc783af21703ef4ca0771.jpg" alt="Figureure 2 · Qualitative results for TinyVICL with different losses"><figcaption><b>Figureure 2 · Qualitative results for TinyVICL with different losses</b><span class="fig-en">Fig. 2. Qualitative results for TinyVICL with different losses. While results are imperfect, the low capacity model with 1M parameters learns to address the seven tasks.</span><span class="fig-zh">这张图/表用于判断 Beyond Model Size 的实验收益来自哪里。重点看替换、消融或跨模型设置下趋势是否一致，而不是只看单个最高分。</span></figcaption></figure>
       
       <h2>核心问题</h2>
-      <p>视觉 foundation model 的少样本/上下文适应越来越重要，这篇提醒我们要把 evaluation protocol 设计得更像真实未见任务。</p>
+      <p>它和通用视觉自监督的关系在于：用 1M 参数 tiny VICL 模型反证“大模型规模=视觉 in-context 能力”的评估假设。</p>
       <h2>方法拆解</h2>
-      <p>训练一个约 1M 参数、7 万图像训练量的 tiny visual in-context model，并与大约 7000 倍规模的 VICL 模型在小分布偏移、未见 task encoding 和新任务适应上对照。</p>
+      <p>用 1M 参数 tiny VICL 模型反证“大模型规模=视觉 in-context 能力”的评估假设</p>
       <h2>主要贡献</h2>
-      <p>用极端小模型作为反例，质疑当前 VICL 评估是否真的测到了视觉 in-context adaptation，而不是测到任务编码或预训练任务重合。</p>
+      <p>中高相关；详见方法、贡献和实验边界。</p>
       <h2>实验看点</h2>
-      <p>摘要强调实验暴露了大模型评估协议中的 chasm：资源规模差距巨大，但测量到的 adaptation 能力未必与规模成正比。</p>
+      <p>实验部分建议重点看两类证据：一是作者是否把方法收益和更强数据、更长训练、更大模型区分开；二是跨模型、跨数据或跨任务迁移是否还能保留同样趋势。</p>
       <h2>局限与读法</h2>
-      <p>它是诊断/反证型论文，不提供新的大规模视觉自监督模型；结论依赖所选任务和 tiny model 训练设置。</p>
+      <p>这篇论文的结论需要结合任务设置、训练数据规模和消融实验一起看；不要只凭单个指标判断它对通用视觉表征的价值。</p>
     
     </div>
   </div>
@@ -61,13 +61,13 @@
     <div class="side-box"><h4>原文</h4><p><a href="https://arxiv.org/abs/2606.10905">https://arxiv.org/abs/2606.10905</a></p></div>
   </aside>
 </article></main>
-  <aside class="conf-float" data-conf-reminder="2026-06-10-main-ddl" aria-label="CCF A/B 主投稿提醒">
+  <aside class="conf-float" data-conf-reminder="2026-06-11-main-ddl" aria-label="CCF A/B 主投稿提醒">
   <button class="conf-close" type="button" aria-label="关闭会议提醒">×</button>
   <details open>
     <summary>CCF A/B 主投稿提醒</summary>
     <div class="conf-list"><a class="conf-item " href="https://github.com/ccfddl/ccf-deadlines/blob/main/conference/AI/aaai.yml">
   <span><b>AAAI 2027</b><em>CCF A · Main paper submission</em></span>
-  <strong>47 天</strong>
+  <strong>46 天</strong>
   <small>2026-07-27 · CCF DDL: abstract 2026-07-20；进入 1 个月窗口后重点提醒。</small>
 </a></div>
   </details>
@@ -80,7 +80,7 @@
   (() => {
     const box = document.querySelector('[data-conf-reminder]');
     if (!box) return;
-    const key = `visualSslConfReminderClosed:${box.dataset.confReminder || '2026-06-10-main-ddl'}`;
+    const key = `visualSslConfReminderClosed:${box.dataset.confReminder || '2026-06-11-main-ddl'}`;
     try {
       if (localStorage.getItem(key) === '1') box.hidden = true;
     } catch (err) {}

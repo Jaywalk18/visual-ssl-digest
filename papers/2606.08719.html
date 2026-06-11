@@ -1,0 +1,97 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Thinking Without Images · 通用视觉自监督研究报</title>
+  <link rel="stylesheet" href="../assets/styles.css?v=20260525j">
+  <link rel="stylesheet" href="../assets/visual-ssl.css?v=20260525j">
+</head>
+<body>
+  <header class="masthead">
+    <div class="masthead-kicker">Visual SSL Research Report · 2026-06-11</div>
+    <a class="masthead-title" href="../index.html">通用视觉自监督研究报</a>
+    <div class="masthead-meta">
+      <span>图像表征 · VFM · JEPA · 视频预训练</span>
+      <span>CCF A/B 会议优先</span>
+      <span>图文精读 · 方法图解</span>
+    </div>
+  </header>
+  <nav class="site-nav" aria-label="主导航">
+    <a class="nav-link" href="../index.html">头版</a>
+<a class="nav-link" href="../issues/2026-06-11.html">今日速递</a>
+<a class="nav-link" href="../pages/catalog.html">论文目录</a>
+<a class="nav-link" href="../pages/timeline.html">时间线</a>
+  </nav>
+  <main><article class="paper-detail">
+  <div class="paper-main">
+    <div class="kicker">arXiv recent-list补漏 · P3 · 2026-06-11</div>
+    <h1 class="paper-headline">Thinking Without Images：适合作为“视觉证据如何从显式局部视图蒸馏为内部 latent 操作”的扫读材料</h1>
+    <p class="dek">把 Thinking with Images 的外部工具调用行为压缩进模型内部 reasoning trajectory。</p>
+    <p class="byline"><strong>Thinking Without Images: Internalizing Visual Manipulation with On-Policy Self-Distillation</strong>　Yishuo Cai, Jiahui Liu, Yuanxin Liu, Haobo Deng, Linli Yao, Yuhao Zheng, Kun Ouyang, Zhimo Li, Ziyue Wang, Xu Sun, Haoli Bai, Xiaohui Li；arXiv 元数据未列机构。　arXiv recent-list补漏　<a href="https://arxiv.org/abs/2606.08719">原文链接</a></p>
+    <div class="paper-facts">
+      <span><b>编号</b>2606.08719</span>
+      <span><b>优先级</b>P3</span>
+      <span><b>类别</b>arXiv recent-list补漏</span>
+      <span><b>会议</b>arXiv recent-list补漏</span>
+      <span><b>方法</b>训练时让 teacher 使用 privileged zoomed evidence views，引导模型学习“想象”哪些局部视觉线索值得查看；推理时不再真实调用外部裁剪工具。</span>
+      <span><b>来源</b>arXiv / OpenReview</span>
+    </div>
+    <div class="feature-body">
+      <p class="lead dropcap">先说结论。适合作为“视觉证据如何从显式局部视图蒸馏为内部 latent 操作”的扫读材料。 把 Thinking with Images 的外部工具调用行为压缩进模型内部 reasoning trajectory。</p>
+      <figure class="full-fig"><img src="../assets/mineru/2606.08719/images/808e4eccca619a30e1178eb488505fa9d9fe7ba2166f82950492819a1cd0f76e.jpg" alt="Figureure 2 · : A concrete training instance of Imagine-OPD"><figcaption><b>Figureure 2 · : A concrete training instance of Imagine-OPD</b><span class="fig-en">Figure 2: A concrete training instance of Imagine-OPD. Given an original image and a question, the student model generates its own imagination trace. A teacher then evaluates the same trajectory with privileged cropped evidence views and answer, providing on-policy supervision through a token-level KL objective.</span><span class="fig-zh">这张图来自论文 PDF 的结构化抽取。当前用于辅助理解 Thinking Without Images 的方法或实验，请结合正文精读段落一起看。</span></figcaption></figure>
+<figure class="full-fig"><img src="../assets/mineru/2606.08719/images/a213015a6f591cf9b7380bc200a6997790c888de3a5dfde408b8e2c338d2db56.jpg" alt="Figureure 1 · : From “Thinking with Images” to “Thinking with Imagination”"><figcaption><b>Figureure 1 · : From “Thinking with Images” to “Thinking with Imagination”</b><span class="fig-en">Figure 1: From “Thinking with Images” to “Thinking with Imagination”. “Thinking with Images” interleaves text reasoning with explicit tool calls and cropped images, improving access to local evidence but incurring repeated tool interaction and visual encoding. Thinking with Imagination replaces these intermediate images with an internal imagination process that can carry forward the same fine-grained visual evidence without actually invoking tools.</span><span class="fig-zh">这张图来自论文 PDF 的结构化抽取。当前用于辅助理解 Thinking Without Images 的方法或实验，请结合正文精读段落一起看。</span></figcaption></figure>
+      
+      <h2>核心问题</h2>
+      <p>适合作为“视觉证据如何从显式局部视图蒸馏为内部 latent 操作”的扫读材料。</p>
+      <h2>方法拆解</h2>
+      <p>训练时让 teacher 使用 privileged zoomed evidence views，引导模型学习“想象”哪些局部视觉线索值得查看；推理时不再真实调用外部裁剪工具。</p>
+      <h2>主要贡献</h2>
+      <p>把 Thinking with Images 的外部工具调用行为压缩进模型内部 reasoning trajectory。</p>
+      <h2>实验看点</h2>
+      <p>摘要称不需要外部 teacher 或高质量 imagination demonstrations，使用 on-policy self-distillation 约束中间视觉想象。</p>
+      <h2>局限与读法</h2>
+      <p>重点是 VLM reasoning/inference behavior，离纯视觉 SSL 较远；表征层收益需要另行测试。</p>
+    
+    </div>
+  </div>
+  <aside class="paper-side">
+
+    <div class="side-box"><h4>关键判断</h4><dl><dt>相关性</dt><dd>P3</dd><dt>类别</dt><dd>arXiv recent-list补漏</dd><dt>会议</dt><dd>arXiv recent-list补漏</dd><dt>读法</dt><dd>方法图优先，表格次之</dd></dl></div>
+    <div class="side-box"><h4>原文</h4><p><a href="https://arxiv.org/abs/2606.08719">https://arxiv.org/abs/2606.08719</a></p></div>
+  </aside>
+</article></main>
+  <aside class="conf-float" data-conf-reminder="2026-06-11-main-ddl" aria-label="CCF A/B 主投稿提醒">
+  <button class="conf-close" type="button" aria-label="关闭会议提醒">×</button>
+  <details open>
+    <summary>CCF A/B 主投稿提醒</summary>
+    <div class="conf-list"><a class="conf-item " href="https://github.com/ccfddl/ccf-deadlines/blob/main/conference/AI/aaai.yml">
+  <span><b>AAAI 2027</b><em>CCF A · Main paper submission</em></span>
+  <strong>46 天</strong>
+  <small>2026-07-27 · CCF DDL: abstract 2026-07-20；进入 1 个月窗口后重点提醒。</small>
+</a></div>
+  </details>
+</aside>
+  <footer class="footer">
+    <div>面向通用视觉自监督、视觉基础模型与多模态表征学习的每日研究报。</div>
+    <div class="muted">Issue 2026-06-11 · Curated readings and figure notes</div>
+  </footer>
+  <script>
+  (() => {
+    const box = document.querySelector('[data-conf-reminder]');
+    if (!box) return;
+    const key = `visualSslConfReminderClosed:${box.dataset.confReminder || '2026-06-11-main-ddl'}`;
+    try {
+      if (localStorage.getItem(key) === '1') box.hidden = true;
+    } catch (err) {}
+    const close = box.querySelector('.conf-close');
+    if (close) {
+      close.addEventListener('click', () => {
+        box.hidden = true;
+        try { localStorage.setItem(key, '1'); } catch (err) {}
+      });
+    }
+  })();
+  </script>
+</body>
+</html>

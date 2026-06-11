@@ -1,0 +1,209 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>2026-06-11 速递 · 通用视觉自监督研究报</title>
+  <link rel="stylesheet" href="../assets/styles.css?v=20260525j">
+  <link rel="stylesheet" href="../assets/visual-ssl.css?v=20260525j">
+</head>
+<body>
+  <header class="masthead">
+    <div class="masthead-kicker">Visual SSL Research Report · 2026-06-11</div>
+    <a class="masthead-title" href="../index.html">通用视觉自监督研究报</a>
+    <div class="masthead-meta">
+      <span>图像表征 · VFM · JEPA · 视频预训练</span>
+      <span>CCF A/B 会议优先</span>
+      <span>图文精读 · 方法图解</span>
+    </div>
+  </header>
+  <nav class="site-nav" aria-label="主导航">
+    <a class="nav-link" href="../index.html">头版</a>
+<a class="nav-link active" href="../issues/2026-06-11.html">今日速递</a>
+<a class="nav-link" href="../pages/catalog.html">论文目录</a>
+<a class="nav-link" href="../pages/timeline.html">时间线</a>
+  </nav>
+  <main><article class="paper-detail issue-detail">
+  <div class="paper-main">
+    <div class="kicker">Daily issue · 2026-06-11 · CCF A/B 会议优先</div>
+    <h1 class="paper-headline">6 月 11 日：Latent Spatial Memory for Video 等视觉表征主线更新</h1>
+    <p class="dek">本期聚焦通用视觉表征、视觉语言预训练与视频自监督中最值得跟进的论文，并保留 CCF A/B、OpenReview 与 arXiv 状态线索。</p>
+    <div class="feature-body">
+      <p class="lead dropcap">先读 Latent Spatial Memory / Mirage，重点看它如何避免 RGB point-cloud render-and-encode loop，这对长期视频表征和生成式 world model 都有直接启发。第二篇读 MaskAlign，把它和昨天的 IDEAL/ARM 放在一起看：这些论文都在处理“视觉 token/latent 应该对齐什么 teacher feature”。第三篇读 SMI，它是今天最纯粹的图像 SSL objective 论文，适合和 Barlow Twins、VICReg、SimCLR/Jepa-style 目标对照。随后读 FF-JEPA 与 MilliVid，前者偏 latent planning，后者偏层级 video tokens；ATM、Echo-Memory、Prisma-World 更适合作为 world model 诊断和系统设计扫读。</p>
+      <h2>论文索引</h2>
+      <table class="compact-table"><thead><tr><th>优先级</th><th>论文</th><th>类型</th><th>相关性</th><th>一句话理由</th></tr></thead><tbody><tr><td>P0</td><td>Latent Spatial Memory for Video World Models</td><td>arXiv recent-list补漏 + project</td><td>高</td><td>把视频 world model 的跨帧记忆从 RGB/点云搬到 diffusion latent，直接触及可复用视觉 latent 与长期一致性。</td></tr><tr><td>P0</td><td>MaskAlign: Token-Subset Representation Alignment for Efficient Diffusion Training</td><td>arXiv recent-list补漏</td><td>高</td><td>明确使用自监督视觉 encoder 的 clean-image representation 监督 diffusion features，并讨论 token-level 对齐偏差。</td></tr><tr><td>P1</td><td>SMI: Efficient Self-Supervised Learning via Mutual-Information-Inspired Dependency Optimization</td><td>arXiv recent-list补漏</td><td>高</td><td>少数直接面向图像 SSL objective 的新作，目标是降低大 batch、memory bank、momentum encoder 等训练复杂度。</td></tr><tr><td>P1</td><td>FF-JEPA: Long-Horizon Planning in World Models with Latent Planners</td><td>arXiv recent-list补漏</td><td>中高</td><td>把 JEPA latent dynamics 用到更长程规划，并引入 action-free latent planner 作为子目标预测器。</td></tr><tr><td>P1</td><td>MilliVid: Hierarchical Latents for Long-Range Consistency in Video Generation</td><td>arXiv recent-list补漏 + project</td><td>中高</td><td>用层级 frame tokens 处理视频长程一致性，和视觉 tokenizer/RAE/world model 的 latent 设计高度相关。</td></tr><tr><td>P2</td><td>ATM: Action-Consistency Transfer Matrix for Diagnosing and Improving Latent World Models</td><td>arXiv recent-list补漏</td><td>中高</td><td>不是新 SSL 训练法，但给 latent world model 的表征/转移质量提供快速诊断。</td></tr><tr><td>P2</td><td>Echo-Memory: A Controlled Study of Memory in Action World Models</td><td>arXiv recent-list补漏 + code</td><td>中高</td><td>系统隔离视频 action-world-model 的记忆机制，对长期视觉一致性评估有参考价值。</td></tr><tr><td>P2</td><td>Prisma-World: Camera-Controllable Multi-Agent Video World Model</td><td>arXiv recent-list补漏 + project</td><td>中</td><td>多 agent 共享场景的一致性问题与多视角视觉 latent/几何对齐相关，但更偏可控生成系统。</td></tr><tr><td>P2</td><td>Securing Self-supervised Data Curation for Foundation Models Robustness</td><td>arXiv recent-list补漏</td><td>中</td><td>关注 SSL-curated foundation-model 数据的投毒检测，方法不一定新，但问题对大规模自监督预训练重要。</td></tr><tr><td>P3</td><td>Thinking Without Images: Internalizing Visual Manipulation with On-Policy Self-Distillation</td><td>arXiv recent-list补漏</td><td>中</td><td>通过 on-policy self-distillation 内化局部视觉证据查看过程，和 VLM 视觉推理/自蒸馏有关。</td></tr><tr><td>扫读</td><td>Test-Time Scaling in Multimodal Foundation Models: A Comprehensive Survey of Generation and Reasoning</td><td>ACL 2026 Findings + arXiv</td><td>中</td><td>会议状态明确，但它是 survey；适合用来快速定位多模态推理/生成 inference-time scaling，而非精读 SSL 方法。</td></tr></tbody></table>
+      <h2>主线阅读</h2>
+      <div class="paper-list issue-list"><article class="paper-card" data-category="arXiv recent-list补漏 + project" data-priority="P0" data-date="2026-06-11" data-title="latent spatial memory for video world models" data-keywords="latent spatial memory for video world models latent spatial memory for video arxiv recent-list补漏 + project p0 2026-06-11 arxiv recent-list补漏 + project 把视频 world model 的跨帧记忆从 rgb/点云搬到 diffusion latent，直接触及可复用视觉 latent 与长期一致性 高相关；详见方法、贡献和实验边界。">
+  <a class="paper-thumb paper-thumb-text" href="../papers/2606.09828.html">
+    <img src="../assets/mineru/2606.09828/images/2cdf044328fb99c24d7a8c22a108c30c69a0e890dc2733a6482d347c39844f10.jpg" alt="Latent Spatial Memory for Video figure"><span>P0</span>
+  </a>
+  <div>
+    <div class="paper-meta">2026-06-11 · arXiv recent-list补漏 + project · arXiv recent-list补漏 + project</div>
+    <h3><a href="../papers/2606.09828.html">Latent Spatial Memory for Video World Models</a></h3>
+    <p>高相关；详见方法、贡献和实验边界。</p>
+    <p class="card-tech"><b>方法：</b>把视频 world model 的跨帧记忆从 RGB/点云搬到 diffusion latent，直接触及可复用视觉 latent 与长期一致性</p>
+    <div class="paper-actions"><a href="../papers/2606.09828.html">读图文页</a><a href="https://arxiv.org/abs/2606.09828">原文</a></div>
+  </div>
+</article>
+<article class="paper-card" data-category="arXiv recent-list补漏" data-priority="P0" data-date="2026-06-11" data-title="maskalign: token-subset representation alignment for efficient diffusion training" data-keywords="maskalign: token-subset representation alignment for efficient diffusion training maskalign arxiv recent-list补漏 p0 2026-06-11 arxiv recent-list补漏 明确使用自监督视觉 encoder 的 clean-image representation 监督 diffusion features，并讨论 token-level 对齐偏差 高相关；详见方法、贡献和实验边界。">
+  <a class="paper-thumb paper-thumb-text" href="../papers/2606.08788.html">
+    <img src="../assets/mineru/2606.08788/images/a8c5a93168f7255b971c923dd23dbacf86d9f04792aaa2b4a06d42a500037043.jpg" alt="MaskAlign figure"><span>P0</span>
+  </a>
+  <div>
+    <div class="paper-meta">2026-06-11 · arXiv recent-list补漏 · arXiv recent-list补漏</div>
+    <h3><a href="../papers/2606.08788.html">MaskAlign: Token-Subset Representation Alignment for Efficient Diffusion Training</a></h3>
+    <p>高相关；详见方法、贡献和实验边界。</p>
+    <p class="card-tech"><b>方法：</b>明确使用自监督视觉 encoder 的 clean-image representation 监督 diffusion features，并讨论 token-level 对齐偏差</p>
+    <div class="paper-actions"><a href="../papers/2606.08788.html">读图文页</a><a href="https://arxiv.org/abs/2606.08788">原文</a></div>
+  </div>
+</article>
+<article class="paper-card" data-category="arXiv recent-list补漏" data-priority="P1" data-date="2026-06-11" data-title="smi: efficient self-supervised learning via mutual-information-inspired dependency optimization" data-keywords="smi: efficient self-supervised learning via mutual-information-inspired dependency optimization smi arxiv recent-list补漏 p1 2026-06-11 arxiv recent-list补漏 少数直接面向图像 ssl objective 的新作，目标是降低大 batch、memory bank、momentum encoder 等训练复杂度 高相关；详见方法、贡献和实验边界。">
+  <a class="paper-thumb paper-thumb-text" href="../papers/2606.08332.html">
+    <img src="../assets/mineru/2606.08332/images/6aff2459bf118cb13d4eb943c19216dabc938036fc76a518816a42800c427c73.jpg" alt="SMI figure"><span>P1</span>
+  </a>
+  <div>
+    <div class="paper-meta">2026-06-11 · arXiv recent-list补漏 · arXiv recent-list补漏</div>
+    <h3><a href="../papers/2606.08332.html">SMI: Efficient Self-Supervised Learning via Mutual-Information-Inspired Dependency Optimization</a></h3>
+    <p>高相关；详见方法、贡献和实验边界。</p>
+    <p class="card-tech"><b>方法：</b>少数直接面向图像 SSL objective 的新作，目标是降低大 batch、memory bank、momentum encoder 等训练复杂度</p>
+    <div class="paper-actions"><a href="../papers/2606.08332.html">读图文页</a><a href="https://arxiv.org/abs/2606.08332">原文</a></div>
+  </div>
+</article>
+<article class="paper-card" data-category="arXiv recent-list补漏" data-priority="P1" data-date="2026-06-11" data-title="ff-jepa: long-horizon planning in world models with latent planners" data-keywords="ff-jepa: long-horizon planning in world models with latent planners ff-jepa arxiv recent-list补漏 p1 2026-06-11 arxiv recent-list补漏 把 jepa latent dynamics 用到更长程规划，并引入 action-free latent planner 作为子目标预测器 中高相关；详见方法、贡献和实验边界。">
+  <a class="paper-thumb paper-thumb-text" href="../papers/2606.09311.html">
+    <img src="../assets/mineru/2606.09311/images/9fbc6dc5cb8f5469ce190a5f849c37fbfef4507da1d8949c19a5e75858befb14.jpg" alt="FF-JEPA figure"><span>P1</span>
+  </a>
+  <div>
+    <div class="paper-meta">2026-06-11 · arXiv recent-list补漏 · arXiv recent-list补漏</div>
+    <h3><a href="../papers/2606.09311.html">FF-JEPA: Long-Horizon Planning in World Models with Latent Planners</a></h3>
+    <p>中高相关；详见方法、贡献和实验边界。</p>
+    <p class="card-tech"><b>方法：</b>把 JEPA latent dynamics 用到更长程规划，并引入 action-free latent planner 作为子目标预测器</p>
+    <div class="paper-actions"><a href="../papers/2606.09311.html">读图文页</a><a href="https://arxiv.org/abs/2606.09311">原文</a></div>
+  </div>
+</article>
+<article class="paper-card" data-category="arXiv recent-list补漏 + project" data-priority="P1" data-date="2026-06-11" data-title="millivid: hierarchical latents for long-range consistency in video generation" data-keywords="millivid: hierarchical latents for long-range consistency in video generation millivid arxiv recent-list补漏 + project p1 2026-06-11 arxiv recent-list补漏 + project 用层级 frame tokens 处理视频长程一致性，和视觉 tokenizer/rae/world model 的 latent 设计高度相关 中高相关；详见方法、贡献和实验边界。">
+  <a class="paper-thumb paper-thumb-text" href="../papers/2606.09056.html">
+    <img src="../assets/mineru/2606.09056/images/ad9c91eb20595e0af60faa06aa1afff7120f6a0df74fec5d6c4b6cf8a13f34a2.jpg" alt="MilliVid figure"><span>P1</span>
+  </a>
+  <div>
+    <div class="paper-meta">2026-06-11 · arXiv recent-list补漏 + project · arXiv recent-list补漏 + project</div>
+    <h3><a href="../papers/2606.09056.html">MilliVid: Hierarchical Latents for Long-Range Consistency in Video Generation</a></h3>
+    <p>中高相关；详见方法、贡献和实验边界。</p>
+    <p class="card-tech"><b>方法：</b>用层级 frame tokens 处理视频长程一致性，和视觉 tokenizer/RAE/world model 的 latent 设计高度相关</p>
+    <div class="paper-actions"><a href="../papers/2606.09056.html">读图文页</a><a href="https://arxiv.org/abs/2606.09056">原文</a></div>
+  </div>
+</article>
+<article class="paper-card" data-category="arXiv recent-list补漏" data-priority="P2" data-date="2026-06-11" data-title="atm: action-consistency transfer matrix for diagnosing and improving latent world models" data-keywords="atm: action-consistency transfer matrix for diagnosing and improving latent world models atm arxiv recent-list补漏 p2 2026-06-11 arxiv recent-list补漏 不是新 ssl 训练法，但给 latent world model 的表征/转移质量提供快速诊断 中高相关；详见方法、贡献和实验边界。">
+  <a class="paper-thumb paper-thumb-text" href="../papers/2606.09028.html">
+    <img src="../assets/mineru/2606.09028/images/983432db604beede3c23aaff9bb26b4f18935d3eb6725d954fbacf5fe7f2f81c.jpg" alt="ATM figure"><span>P2</span>
+  </a>
+  <div>
+    <div class="paper-meta">2026-06-11 · arXiv recent-list补漏 · arXiv recent-list补漏</div>
+    <h3><a href="../papers/2606.09028.html">ATM: Action-Consistency Transfer Matrix for Diagnosing and Improving Latent World Models</a></h3>
+    <p>中高相关；详见方法、贡献和实验边界。</p>
+    <p class="card-tech"><b>方法：</b>不是新 SSL 训练法，但给 latent world model 的表征/转移质量提供快速诊断</p>
+    <div class="paper-actions"><a href="../papers/2606.09028.html">读图文页</a><a href="https://arxiv.org/abs/2606.09028">原文</a></div>
+  </div>
+</article>
+<article class="paper-card" data-category="arXiv recent-list补漏 + code" data-priority="P2" data-date="2026-06-11" data-title="echo-memory: a controlled study of memory in action world models" data-keywords="echo-memory: a controlled study of memory in action world models echo-memory arxiv recent-list补漏 + code p2 2026-06-11 arxiv recent-list补漏 + code 系统隔离视频 action-world-model 的记忆机制，对长期视觉一致性评估有参考价值 中高相关；详见方法、贡献和实验边界。">
+  <a class="paper-thumb paper-thumb-text" href="../papers/2606.09803.html">
+    <img src="../assets/mineru/2606.09803/images/80260456a926231de966f9066b3ae4f6146ca1c678ed42a3fffd0c521a226337.jpg" alt="Echo-Memory figure"><span>P2</span>
+  </a>
+  <div>
+    <div class="paper-meta">2026-06-11 · arXiv recent-list补漏 + code · arXiv recent-list补漏 + code</div>
+    <h3><a href="../papers/2606.09803.html">Echo-Memory: A Controlled Study of Memory in Action World Models</a></h3>
+    <p>中高相关；详见方法、贡献和实验边界。</p>
+    <p class="card-tech"><b>方法：</b>系统隔离视频 action-world-model 的记忆机制，对长期视觉一致性评估有参考价值</p>
+    <div class="paper-actions"><a href="../papers/2606.09803.html">读图文页</a><a href="https://arxiv.org/abs/2606.09803">原文</a></div>
+  </div>
+</article>
+<article class="paper-card" data-category="arXiv recent-list补漏 + project" data-priority="P2" data-date="2026-06-11" data-title="prisma-world: camera-controllable multi-agent video world model" data-keywords="prisma-world: camera-controllable multi-agent video world model prisma-world arxiv recent-list补漏 + project p2 2026-06-11 arxiv recent-list补漏 + project 多 agent 共享场景的一致性问题与多视角视觉 latent/几何对齐相关，但更偏可控生成系统 中相关；详见方法、贡献和实验边界。">
+  <a class="paper-thumb paper-thumb-text" href="../papers/2606.09507.html">
+    <img src="../assets/mineru/2606.09507/images/9d43f29d65d6d8847ceade9d2d71cc3bb327765e39d36798bd21def2b156b9c7.jpg" alt="Prisma-World figure"><span>P2</span>
+  </a>
+  <div>
+    <div class="paper-meta">2026-06-11 · arXiv recent-list补漏 + project · arXiv recent-list补漏 + project</div>
+    <h3><a href="../papers/2606.09507.html">Prisma-World: Camera-Controllable Multi-Agent Video World Model</a></h3>
+    <p>中相关；详见方法、贡献和实验边界。</p>
+    <p class="card-tech"><b>方法：</b>多 agent 共享场景的一致性问题与多视角视觉 latent/几何对齐相关，但更偏可控生成系统</p>
+    <div class="paper-actions"><a href="../papers/2606.09507.html">读图文页</a><a href="https://arxiv.org/abs/2606.09507">原文</a></div>
+  </div>
+</article>
+<article class="paper-card" data-category="arXiv recent-list补漏" data-priority="P2" data-date="2026-06-11" data-title="securing self-supervised data curation for foundation models robustness" data-keywords="securing self-supervised data curation for foundation models robustness securing self-supervised data curation for arxiv recent-list补漏 p2 2026-06-11 arxiv recent-list补漏 关注 ssl-curated foundation-model 数据的投毒检测，方法不一定新，但问题对大规模自监督预训练重要 中相关；详见方法、贡献和实验边界。">
+  <a class="paper-thumb paper-thumb-text" href="../papers/2606.09511.html">
+    <img src="../assets/mineru/2606.09511/images/5e722577bd3604ce7a6e832419b09da1688cc2da1bb07b1bd6e074b576103c35.jpg" alt="Securing Self-supervised Data Curation for figure"><span>P2</span>
+  </a>
+  <div>
+    <div class="paper-meta">2026-06-11 · arXiv recent-list补漏 · arXiv recent-list补漏</div>
+    <h3><a href="../papers/2606.09511.html">Securing Self-supervised Data Curation for Foundation Models Robustness</a></h3>
+    <p>中相关；详见方法、贡献和实验边界。</p>
+    <p class="card-tech"><b>方法：</b>关注 SSL-curated foundation-model 数据的投毒检测，方法不一定新，但问题对大规模自监督预训练重要</p>
+    <div class="paper-actions"><a href="../papers/2606.09511.html">读图文页</a><a href="https://arxiv.org/abs/2606.09511">原文</a></div>
+  </div>
+</article>
+<article class="paper-card" data-category="arXiv recent-list补漏" data-priority="P3" data-date="2026-06-11" data-title="thinking without images: internalizing visual manipulation with on-policy self-distillation" data-keywords="thinking without images: internalizing visual manipulation with on-policy self-distillation thinking without images arxiv recent-list补漏 p3 2026-06-11 arxiv recent-list补漏 通过 on-policy self-distillation 内化局部视觉证据查看过程，和 vlm 视觉推理/自蒸馏有关 中相关；详见方法、贡献和实验边界。">
+  <a class="paper-thumb paper-thumb-text" href="../papers/2606.08719.html">
+    <img src="../assets/mineru/2606.08719/images/808e4eccca619a30e1178eb488505fa9d9fe7ba2166f82950492819a1cd0f76e.jpg" alt="Thinking Without Images figure"><span>P3</span>
+  </a>
+  <div>
+    <div class="paper-meta">2026-06-11 · arXiv recent-list补漏 · arXiv recent-list补漏</div>
+    <h3><a href="../papers/2606.08719.html">Thinking Without Images: Internalizing Visual Manipulation with On-Policy Self-Distillation</a></h3>
+    <p>中相关；详见方法、贡献和实验边界。</p>
+    <p class="card-tech"><b>方法：</b>通过 on-policy self-distillation 内化局部视觉证据查看过程，和 VLM 视觉推理/自蒸馏有关</p>
+    <div class="paper-actions"><a href="../papers/2606.08719.html">读图文页</a><a href="https://arxiv.org/abs/2606.08719">原文</a></div>
+  </div>
+</article>
+<article class="paper-card" data-category="ACL 2026 Findings + arXiv" data-priority="扫读" data-date="2026-06-11" data-title="test-time scaling in multimodal foundation models: a comprehensive survey of generation and reasoning" data-keywords="test-time scaling in multimodal foundation models: a comprehensive survey of generation and reasoning test-time scaling in multimodal foundation acl 2026 findings + arxiv 扫读 2026-06-11 acl 2026 findings + arxiv 会议状态明确，但它是 survey；适合用来快速定位多模态推理/生成 inference-time scaling，而非精读 ssl 方法 中相关；详见方法、贡献和实验边界。">
+  <a class="paper-thumb paper-thumb-text" href="../papers/2606.08231.html">
+    <img src="../assets/mineru/2606.08231/images/1a5656d666ed06ae40254d496b17c2328e373bac0202326321ae2608c94d6cba.jpg" alt="Test-Time Scaling in Multimodal Foundation figure"><span>扫读</span>
+  </a>
+  <div>
+    <div class="paper-meta">2026-06-11 · ACL 2026 Findings + arXiv · ACL 2026 Findings + arXiv</div>
+    <h3><a href="../papers/2606.08231.html">Test-Time Scaling in Multimodal Foundation Models: A Comprehensive Survey of Generation and Reasoning</a></h3>
+    <p>中相关；详见方法、贡献和实验边界。</p>
+    <p class="card-tech"><b>方法：</b>会议状态明确，但它是 survey；适合用来快速定位多模态推理/生成 inference-time scaling，而非精读 SSL 方法</p>
+    <div class="paper-actions"><a href="../papers/2606.08231.html">读图文页</a><a href="https://arxiv.org/abs/2606.08231">原文</a></div>
+  </div>
+</article></div>
+    </div>
+  </div>
+  <aside class="paper-side">
+    <div class="side-box"><h4>今日重点</h4><p>TextTeacher、MDM、EvoVid、Ablate-to-Validate。</p></div>
+    <div class="side-box"><h4>会议口径</h4><p>只把 CCF A/B 放进主提醒；临近截止或 CCF C 仅记录。</p></div>
+    <div class="side-box"><h4>阅读重点</h4><p>先看 P1/P2 与方法图，再扫状态变化和边界案例。</p></div>
+  </aside>
+</article></main>
+  <aside class="conf-float" data-conf-reminder="2026-06-11-main-ddl" aria-label="CCF A/B 主投稿提醒">
+  <button class="conf-close" type="button" aria-label="关闭会议提醒">×</button>
+  <details open>
+    <summary>CCF A/B 主投稿提醒</summary>
+    <div class="conf-list"><a class="conf-item " href="https://github.com/ccfddl/ccf-deadlines/blob/main/conference/AI/aaai.yml">
+  <span><b>AAAI 2027</b><em>CCF A · Main paper submission</em></span>
+  <strong>46 天</strong>
+  <small>2026-07-27 · CCF DDL: abstract 2026-07-20；进入 1 个月窗口后重点提醒。</small>
+</a></div>
+  </details>
+</aside>
+  <footer class="footer">
+    <div>面向通用视觉自监督、视觉基础模型与多模态表征学习的每日研究报。</div>
+    <div class="muted">Issue 2026-06-11 · Curated readings and figure notes</div>
+  </footer>
+  <script>
+  (() => {
+    const box = document.querySelector('[data-conf-reminder]');
+    if (!box) return;
+    const key = `visualSslConfReminderClosed:${box.dataset.confReminder || '2026-06-11-main-ddl'}`;
+    try {
+      if (localStorage.getItem(key) === '1') box.hidden = true;
+    } catch (err) {}
+    const close = box.querySelector('.conf-close');
+    if (close) {
+      close.addEventListener('click', () => {
+        box.hidden = true;
+        try { localStorage.setItem(key, '1'); } catch (err) {}
+      });
+    }
+  })();
+  </script>
+</body>
+</html>

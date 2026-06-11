@@ -1,0 +1,97 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>MilliVid · 通用视觉自监督研究报</title>
+  <link rel="stylesheet" href="../assets/styles.css?v=20260525j">
+  <link rel="stylesheet" href="../assets/visual-ssl.css?v=20260525j">
+</head>
+<body>
+  <header class="masthead">
+    <div class="masthead-kicker">Visual SSL Research Report · 2026-06-11</div>
+    <a class="masthead-title" href="../index.html">通用视觉自监督研究报</a>
+    <div class="masthead-meta">
+      <span>图像表征 · VFM · JEPA · 视频预训练</span>
+      <span>CCF A/B 会议优先</span>
+      <span>图文精读 · 方法图解</span>
+    </div>
+  </header>
+  <nav class="site-nav" aria-label="主导航">
+    <a class="nav-link" href="../index.html">头版</a>
+<a class="nav-link" href="../issues/2026-06-11.html">今日速递</a>
+<a class="nav-link" href="../pages/catalog.html">论文目录</a>
+<a class="nav-link" href="../pages/timeline.html">时间线</a>
+  </nav>
+  <main><article class="paper-detail">
+  <div class="paper-main">
+    <div class="kicker">arXiv recent-list补漏 + project · P1 · 2026-06-11</div>
+    <h1 class="paper-headline">MilliVid：它和最近 RAE/visual tokenizer 趋势相连，值得关注其层级 latent 是否能反哺视频自监督预训练</h1>
+    <p class="dek">把长视频一致性问题转化为“哪些层级的 latent 需要长期保持，哪些细节可以短期生成”的建模问题。</p>
+    <p class="byline"><strong>MilliVid: Hierarchical Latents for Long-Range Consistency in Video Generation</strong>　Ishaan Preetam Chandratreya, David Charatan, Basile Van Hoorick, Sergey Zakharov, Vitor Guizilini, Phillip Isola, Vincent Sitzmann；arXiv 元数据未列机构。　arXiv recent-list补漏 + project　<a href="https://arxiv.org/abs/2606.09056">原文链接</a></p>
+    <div class="paper-facts">
+      <span><b>编号</b>2606.09056</span>
+      <span><b>优先级</b>P1</span>
+      <span><b>类别</b>arXiv recent-list补漏 + project</span>
+      <span><b>会议</b>arXiv recent-list补漏 + project</span>
+      <span><b>方法</b>先预训练 multi-scale video/frame autoencoder，把每帧压成从极粗语义布局到细纹理的层级 tokens；再用 coarse-to-fine rollout 训练视频 diffusion model。</span>
+      <span><b>来源</b>arXiv / OpenReview</span>
+    </div>
+    <div class="feature-body">
+      <p class="lead dropcap">先说结论。它和最近 RAE/visual tokenizer 趋势相连，值得关注其层级 latent 是否能反哺视频自监督预训练。 把长视频一致性问题转化为“哪些层级的 latent 需要长期保持，哪些细节可以短期生成”的建模问题。</p>
+      <figure class="full-fig"><img src="../assets/mineru/2606.09056/images/ad9c91eb20595e0af60faa06aa1afff7120f6a0df74fec5d6c4b6cf8a13f34a2.jpg" alt="Figureure 2 · : To generate videos, we use coarse-to-fine rollout"><figcaption><b>Figureure 2 · : To generate videos, we use coarse-to-fine rollout</b><span class="fig-en">Figure 2: To generate videos, we use coarse-to-fine rollout. During each rollout step, the model sees a mixture of context and target tokens across different hierarchy levels; it does not see the fixed (already generated) or pending (not yet generated) tokens. Our model’s first four rollout steps are shown on the left. Each step is represented as a 3-row grid where the rows represent hierarchy levels and each column represents a single frame. Over the first three steps, the model generates a long sequence of coarse frames, a medium-length sequence of medium frames, and a single fine frame. The full rollout sequence is shown on our accompanying project page and in Figure 10 in the appendix. We show three levels here for clarity; in practice, we use more.</span><span class="fig-zh">这张图来自论文 PDF 的结构化抽取。当前用于辅助理解 MilliVid 的方法或实验，请结合正文精读段落一起看。</span></figcaption></figure>
+<figure class="full-fig"><img src="../assets/mineru/2606.09056/images/9ce305cd82042ecc7ca77dacdeb18bd5ee2a219f6d0b1ab9f87d95b5f5679aaf.jpg" alt="Figureure 3 · : Unlike the baselines, our method reliably recalls the scene’s struct"><figcaption><b>Figureure 3 · : Unlike the baselines, our method reliably recalls the scene’s struct</b><span class="fig-en">Figure 3: Unlike the baselines, our method reliably recalls the scene’s structure, even when many 1frames have elapsed. The top-left panel shows a top-down view of the trajectory the models follow. Blue is context; orange is generated. The points at which frames are shown are marked. We encourage the reader to consult our project website for videos of similar comparisons.</span><span class="fig-zh">这张图/表用于判断 MilliVid 的实验收益来自哪里。重点看替换、消融或跨模型设置下趋势是否一致，而不是只看单个最高分。</span></figcaption></figure>
+      
+      <h2>核心问题</h2>
+      <p>它和最近 RAE/visual tokenizer 趋势相连，值得关注其层级 latent 是否能反哺视频自监督预训练。</p>
+      <h2>方法拆解</h2>
+      <p>先预训练 multi-scale video/frame autoencoder，把每帧压成从极粗语义布局到细纹理的层级 tokens；再用 coarse-to-fine rollout 训练视频 diffusion model。</p>
+      <h2>主要贡献</h2>
+      <p>把长视频一致性问题转化为“哪些层级的 latent 需要长期保持，哪些细节可以短期生成”的建模问题。</p>
+      <h2>实验看点</h2>
+      <p>摘要提到在长 Minecraft 视频数据上改善几何与 object permanence，同时减少长序列计算。</p>
+      <h2>局限与读法</h2>
+      <p>Minecraft/生成任务语境较明显，和自然视频通用 encoder 的直接迁移仍未证明。</p>
+    
+    </div>
+  </div>
+  <aside class="paper-side">
+
+    <div class="side-box"><h4>关键判断</h4><dl><dt>相关性</dt><dd>P1</dd><dt>类别</dt><dd>arXiv recent-list补漏 + project</dd><dt>会议</dt><dd>arXiv recent-list补漏 + project</dd><dt>读法</dt><dd>方法图优先，表格次之</dd></dl></div>
+    <div class="side-box"><h4>原文</h4><p><a href="https://arxiv.org/abs/2606.09056">https://arxiv.org/abs/2606.09056</a></p></div>
+  </aside>
+</article></main>
+  <aside class="conf-float" data-conf-reminder="2026-06-11-main-ddl" aria-label="CCF A/B 主投稿提醒">
+  <button class="conf-close" type="button" aria-label="关闭会议提醒">×</button>
+  <details open>
+    <summary>CCF A/B 主投稿提醒</summary>
+    <div class="conf-list"><a class="conf-item " href="https://github.com/ccfddl/ccf-deadlines/blob/main/conference/AI/aaai.yml">
+  <span><b>AAAI 2027</b><em>CCF A · Main paper submission</em></span>
+  <strong>46 天</strong>
+  <small>2026-07-27 · CCF DDL: abstract 2026-07-20；进入 1 个月窗口后重点提醒。</small>
+</a></div>
+  </details>
+</aside>
+  <footer class="footer">
+    <div>面向通用视觉自监督、视觉基础模型与多模态表征学习的每日研究报。</div>
+    <div class="muted">Issue 2026-06-11 · Curated readings and figure notes</div>
+  </footer>
+  <script>
+  (() => {
+    const box = document.querySelector('[data-conf-reminder]');
+    if (!box) return;
+    const key = `visualSslConfReminderClosed:${box.dataset.confReminder || '2026-06-11-main-ddl'}`;
+    try {
+      if (localStorage.getItem(key) === '1') box.hidden = true;
+    } catch (err) {}
+    const close = box.querySelector('.conf-close');
+    if (close) {
+      close.addEventListener('click', () => {
+        box.hidden = true;
+        try { localStorage.setItem(key, '1'); } catch (err) {}
+      });
+    }
+  })();
+  </script>
+</body>
+</html>

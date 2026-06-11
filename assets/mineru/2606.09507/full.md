@@ -1,0 +1,264 @@
+# Prisma-World: Camera-Controllable Multi-Agent Video World Model
+
+Huiqiang Sun1∗, Zhan Peng1∗, Size Wu2, Kun Wang3, Kang Liao2, Dianyi Wang4, Xingyu Zeng5, Sheng Jin6, Yangguang Li7, Zhiguo Cao1, Ziwei Liu2, Wei Li2†
+
+1School of AIA, HUST 2S-Lab, NTU
+
+3SenseTime Research 4FDU 5SUAT 6HKU 7CUHK
+
+## Abstract
+
+Video world models have made rapid progress in generating controllable visual experiences, but most of them still simulate the world from a single observer. Extending such models to multiple agents raises a central challenge: if each agent’s future state is generated independently, overlapping views may instantiate different versions of the same scene, leading to inconsistent objects, layouts, and appearances across agents. Conventional camera conditioning controls individual trajectories, but it does not explicitly couple the generation of views that should agree under shared scene geometry. We introduce Prisma-World, a camera-controllable multiagent world model that formulates multi-agent generation as a joint geometry-aware denoising process for cross-view consistency. Prisma-World processes all agent videos within one full-attention sequence, uses a multi-agent RoPE design to distinguish agent identities while preserving synchronized temporal coordinates, and injects relative camera geometry into attention to bias overlapping viewpoints toward shared scene evidence. To further strengthen multi-view consistency and enhance global spatial perception, we augment our framework with an overlapdecaying curriculum training paradigm alongside minimap-conditioned structural guidance. To facilitate the training and evaluation of multi-agent models, we introduce PrismaDataset, a large-scale UE5 dataset with panoramic acquisition across diverse scenes, composable multi-agent view groups with flexible agent counts and complex camera trajectories, and precise camera/action annotations for consistency training and evaluation. Experiments show that a single Prisma-World model can generate high-fidelity multi-agent videos with flexible agent numbers, camera controllability, improved cross-view consistency, and spatial grounding under minimap guidance. Project Page: https://huiqiang-sun.github.io/ prisma-world/.
+
+## 1 Introduction
+
+Generative video world models [1–9] have recently achieved unprecedented breakthroughs in highfidelity video synthesis. Trained on large-scale monocular videos with action or camera annotations, these models have demonstrated remarkable capabilities in video generation [10, 11], agent behavior control [12–14], and camera trajectory manipulation [15, 16]. However, existing architectures are predominantly designed to simulate the world from the perspective of a single, isolated agent. In contrast, numerous real-world applications, such as advanced gaming environments and autonomous navigation systems, are inherently populated by multiple interacting entities. This reality necessitates models capable of simultaneously generating multi-agent videos within a shared environment. Evidently, the vast majority of current paradigms lack the fundamental capacity to synthesize multi-agent
+
+![](images/608c6f66fb4ae197a64c58f7d3799d2a4a71a8221d3d6a460554bc0a92fe1d62.jpg)
+
+## Prisma-World
+
+Figure 1: In this paper, we introduce Prisma-World, a camera-controlled multi-agent world model capable of synthesizing multi-agent videos within complex scenes while preserving multi-view consistency. Furthermore, our model offers the flexibility to specify the number of output agents and supports minimap conditioning to provide explicit local spatial structural guidance for each agent.
+
+visual streams, let alone guarantee multi-view consistency across different agents. Consequently, the development of multi-agent video world models remains a largely unexplored frontier.
+
+Multi-agent video world modeling exposes a structural limitation in existing generation paradigms. A direct extension of a single-agent model samples each agent independently, which implicitly factorizes the joint world into separate visual streams and gives the model no mechanism to enforce a shared scene state. As a result, two agents looking at the same building, road, or object may generate different appearances because each video is sampled as its own world instance. Another possible extension is to concatenate all videos into a longer sequence, but this introduces a different ambiguity: the model must know which tokens correspond to different agents, which frames are synchronized across agents, and which views should be consistent with camera geometry. Meanwhile, existing camera-conditioned video methods mainly use camera parameters to control a single trajectory; they do not explicitly use relative camera pose to regularize consistency between overlapping views. These issues make multi-agent generation a cross-view consistency problem rather than only a data or compute scaling problem.
+
+In this paper, we propose Prisma-World, a camera-controllable multi-agent world model that treats all agents as coupled observations of one shared scene. Prisma-World performs joint denoising over all agent videos in one full-attention sequence, enabling cross-view consistency to emerge during generation. To make this joint sequence interpretable to the model, Prisma-World introduces a multiagent RoPE design that separates agent identities in the positional space while keeping equal-time frames temporally aligned. To further align consistency with scene geometry, Prisma-World injects relative camera transformations into attention, encouraging nearby or overlapping views to rely on shared scene evidence while allowing distant views to preserve viewpoint-specific content. This consistency-oriented architecture is paired with an overlap-decaying curriculum that first learns from strongly overlapping views and then adapts to harder trajectory combinations to enhance the ability of multi-view consistency. Additionally, Prisma-World accommodates an optional global minimap input as a structural condition. This macroscopic prior provides explicit scene layout guidance, significantly augmenting the spatial perception and grounding during multi-agent generation.
+
+To train and evaluate this setting, we construct PrismaDataset, a large-scale UE5-based dataset tailored for controllable multi-agent world modeling. PrismaDataset covers diverse complex scenes and provides RGB videos, precise camera poses, agent actions, and optional top-down minimaps. By recording panoramic videos and projecting them into synchronized perspective views, we can compose multi-agent video groups with flexible agent counts, complex camera trajectories, and controllable degrees of visual overlap. We also construct a benchmark, MultiAgentBench, tailored to quantitatively assess the multi-view scene consistency across different generated agents. Experiments on the proposed benchmark show that Prisma-World can generate high-quality multi-agent videos in complex environments, while flexibly scaling to varying numbers of agents using a single model. It consistently outperforms both single-agent and concurrent multi-agent baselines in terms of crossview consistency, and further benefits from minimap guidance, which improves spatial grounding and scene-level coherence. In summary, our key contributions are multifold:
+
+• We propose Prisma-World, a multi-agent world model with multi-agent RoPE and cameraaware cross-view consistency modeling. It is capable of synthesizing diverse and complex scenes while guaranteeing multi-view consistency and offering the flexibility to dynamically specify the number of generated agents.  
+• We introduce training and conditioning designs for robust multi-agent generation, including an overlap-decaying curriculum for enhancing multi-view consistency and minimap-based spatial guidance.  
+• We build PrismaDataset, a large-scale panoramic UE5 dataset with precise camera/action annotations, flexible multi-agent view composition, complex camera trajectories, and a benchmark for evaluating multi-agent view consistency.
+
+## 2 Related Work
+
+Camera-Controlled Video Generation. Diffusion-based video generative models [17–20] have been widely extended with camera conditions for T2V [15, 21], I2V [16, 22], or V2V [23, 24] models, enabling the synthesis of videos following specific camera trajectories. Early methods typically encoded camera parameters directly into features for injection into DiT modules [21, 23], or converted them into perspective fields [25], ray-maps [26], or Plücker coordinates [15, 27, 28] based on camera origins and directions. To improve control precision and spatial perception, relative camera encoding techniques emerged [29, 30]. Specifically, PRoPE [29] integrates the relative relationships between camera parameters across different frames into the attention mechanism, enhancing multi-view understanding and view synthesis. UCPE [31] further incorporates control signals for the intrinsic and distortion parameters. However, these methods remain restricted to single-agent scenarios and cannot support camera-controlled video generation involving multiple agents.
+
+Video World Model. Video World Models [2, 3, 5, 9, 32] aim to learn environment dynamics from visual sequences and conditions such as text, images, actions, or camera motion. Early world models [33, 34] primarily served model-based reinforcement learning, facilitating agent planning by learning latent state transitions. With the recent advancement of generative models, some works treat video generation models as implicit world simulators [10, 35–38], emphasizing visual realism, temporal consistency, and physical plausibility. For instance, Sora [10] has demonstrated the potential of video generation in modeling motion, scene transitions, and object interactions, while the Genie series [8] introduced interactive control, enabling models to learn actionable environmental dynamics from unlabeled videos. Subsequent works have further improved critical characteristics of world models—such as physical consistency [39–42], long-term memory [43–48], and efficient autoregressive generation [49–51]—enabling diverse downstream applications in embodied AI [52– 55], autonomous driving [56], and gaming [3, 5, 7, 36]. Despite these impressive advancements, most existing methods operate under a single-agent assumption, neglecting the generation and control of multiple agents within the same environment. To address this, we propose a camera-controlled multiagent world model framework capable of generating multi-agent videos in complex environments while ensuring consistency across a variable number of agents and multi-view perspectives.
+
+Multi-Agent Video Models. Despite the rapid progress in video world models, multi-agent generation remains an under-explored frontier. Leveraging advancements in video generation, early works attempted to generate multi-view videos from fixed perspectives [57] or utilized camera parameters to synthesize novel views with simple trajectories starting from a single image [58, 59]. However, these methods rely on rudimentary camera control—often restricted to static viewpoints or simple shifts—failing to achieve interactive control over multiple agents or maintain multi-view consistency during complex motions. IC-World [60] employs reinforcement learning to enhance multi-view consistency, while it lacks explicit camera-based control, thereby sacrificing the interactivity essential for a world model. Furthermore, its reliance on multi-view concatenation limits its scalability to a larger number of agents. Similarly, MultiVerse [61] simulates a two-agent racing scenario but remains constrained by its limited agent count and lack of scene diversity.
+
+Recently, several concurrent works have explored multi-agent world models. Solaris [62] introduced a two-agent interaction model within the Minecraft environment, while MultiWorld [63] attempted to achieve flexible and scalable multi-agent capabilities by compressing multi-view information. However, these methods are confined to a single gaming scene (e.g., Minecraft or It Takes Two), failing to generalize to more complex environments. Furthermore, they cannot leverage camera parameters to enable multi-agent spatial awareness. In contrast, Prisma-World enables camera-controlled multiagent video generation across complex scenes. By utilizing the relative information of camera parameters, Prisma-World ensures multi-view consistency across overlapping regions within a shared environment, while a single trained model can flexibly accommodate a variable number of agents. Additionally, we introduce PrismaDataset, a large-scale multi-view dataset characterized by rich scene categories and precisely annotated camera poses. It supports the construction of data groups with an arbitrary number of agents, providing a solid foundation for model training.
+
+## 3 Prisma-World: Multi-Agent World Model
+
+This section provides a detailed overview of our proposed multi-agent model, Prisma-World. In Sec. 3.1 and Sec. 3.2, we elaborate on the model architecture, specifically detailing the processing of multi-agent video inputs and the control of output videos via camera parameters. Subsequently, Sec. 3.3 outlines the training strategies employed during training on the PrismaDataset to enhance multi-agent model performance. Finally, Sec. 3.4 introduces the integration of global minimap information to guide the generative process of the model.
+
+## 3.1 Model Framework
+
+Prisma-World is designed based on a simple observation: multi-agent video generation is not equivalent to running a single-agent video model multiple times. If each agent is sampled independently, the model factorizes the joint distribution into isolated streams and has no mechanism to negotiate shared objects, repeated structures, or overlapping regions. Conversely, merely concatenating multiple videos into a longer sequence is also insufficient, because the model must know which tokens belong to different agents, which frames are temporally synchronized, and which views should communicate according to camera geometry. Prisma-World addresses these issues by turning multi-agent generation into a single geometry-aware denoising process. Given N controllable agents, the model jointly denoises all agent frames with full attention, uses an agent-aware positional system to preserve temporal correspondence across agents, injects relative camera geometry into attention, and optionally conditions each agent on a local minimap prior.
+
+The core modeling challenge is to represent multiple agents as different observations of one shared world rather than as independent videos. Let $\mathbf { x } ^ { n } = \left\{ x _ { 1 } ^ { n } , \dots , x _ { T } ^ { n } \right\}$ denote the video observed by agent n, and let $\mathbf { c } ^ { n }$ denote its camera trajectory and control signals. A straightforward single-agent extension would model
+
+$$
+p (\mathbf {x} ^ {1: N} \mid \mathbf {c} ^ {1: N}) \approx \prod_ {n = 1} ^ {N} p (\mathbf {x} ^ {n} \mid \mathbf {c} ^ {n}), \tag {1}
+$$
+
+which is easy to implement but removes the statistical dependence between views. Under this factorization, two agents observing the same region may independently sample different textures or object layouts. Prisma-World instead models the joint distribution by processing all agent tokens in one denoising network,
+
+$$
+p _ {\theta} (\mathbf {x} ^ {1: N} \mid \mathbf {c} ^ {1: N}) = p _ {\theta} (\mathbf {x} ^ {1}, \dots , \mathbf {x} ^ {N} \mid \mathbf {c} ^ {1}, \dots , \mathbf {c} ^ {N}), \tag {2}
+$$
+
+so that cross-agent consistency can be formed inside the generative process.
+
+The overall model structure of Prisma-World is shown in Fig. 2. Specifically, Prisma-World builds on a pre-trained Wan2.2-TI2V-5B model [20]. Given N agent videos $\{ V _ { i } \} _ { i = 1 } ^ { N }$ , they are first encoded into latent representations x via a frozen Wan VAE encoder. Subsequently, a patch embedding operation maps these latents to $z \in \mathbb { R } ^ { N \times C \times T \times H \times W }$ . During the noising process, we maintain the first-frame tokens of each agent as clean, while adding noise to the remaining tokens. To simultaneously process the video content of all agents and establish inter-agent correlations, we flatten the latent features into a joint sequence of length $T \times N \times H \times W$ . This joint token sequence is then passed into the subsequent DiT blocks for attention computation. Unlike independently denoising each agent, this design facilitates the joint generation of all agents within a single full-attention mechanism, allowing distinct viewpoints to directly exchange information throughout the denoising process.
+
+![](images/9d43f29d65d6d8847ceade9d2d71cc3bb327765e39d36798bd21def2b156b9c7.jpg)
+
+<details>
+<summary>flowchart</summary>
+
+```mermaid
+graph TD
+  A["N Agents"] --> B["Encoder"]
+  B --> C["Flatten & Add noise"]
+  C --> D["Camera Encoding"]
+  C --> E["MA-RoPE"]
+  D --> F["Camera Attention"]
+  E --> G["Self Attention"]
+  F --> H["Cross Attention"]
+  G --> H
+  H --> I["FFN"]
+  I --> J["Decoder"]
+  J --> K["Encoder"]
+  K --> L["Minimap"]
+  L --> M["Encoder"]
+  M --> N["t"]
+    style A fill:#f9f,stroke:#333
+    style K fill:#ccf,stroke:#333
+```
+</details>
+
+Figure 2: Method overview. Prisma-World generates multi-agent videos within a single joint denoising process. Our MA-RoPE keeps frames at the same time step aligned across agents while distinguishing tokens from different agents. The minimap branch provides local spatial guidance by projecting each agent position onto a top-down minimap and injecting the extracted layout feature into the corresponding agent tokens.
+
+However, joint full attention only works if the token coordinates encode both agent identity and synchronized time. Standard 3D RoPE [64] is designed for a single video and assigns coordinates according to time, height, and width. Directly reusing it for multi-agent videos introduces ambiguity: tokens from different agents at the same image location may receive identical spatial coordinates, while treating agents as extra temporal frames would destroy the fact that frame t of different agents is synchronized. Therefore, we exploit a multi-agent RoPE (MA-RoPE) coordinate that separates agents in the spatial embedding while keeping their temporal coordinates aligned. Specifically, for a token indexed by time t, agent n, latent height h, and latent width w, we assign
+
+$$
+\mathrm{RoPE} (t, n, h, w) = R _ {t} (t) \oplus R _ {y} (n H + h) \oplus R _ {x} (n W + w), \tag {3}
+$$
+
+where $R _ { t } , R _ { y } ,$ , and $R _ { x }$ denote the rotary positional encodings along the temporal, height, and width dimensions, respectively. This design yields a critical property: when two agents are at the same latent time frame, they share identical temporal coordinates, resulting in a temporal relative offset of zero; meanwhile, since the spatial coordinates incorporate nH and nW , different agents remain distinguishable within the RoPE space. In other words, Prisma-World structures the multi-agent videos into a joint spatial-temporal grid that is temporally aligned yet agent-distinguishable. Since all agent tokens reside within a single full-attention sequence, each viewpoint can attend not only to its own temporal context but also directly to the synchronous or adjacent tokens of other agents. This modeling paradigm ensures that cross-view consistency does not rely on post-processing; rather, it emerges naturally during the attention computation at each denoising step.
+
+## 3.2 Camera-Aware Cross-View Consistency Modeling
+
+To enable camera control over multi-agent videos, inspired by relative camera parameter encoding methods such as PRoPE [29] and UCPE [31], we construct a camera projection matrix P based on the corresponding camera extrinsics. Concurrently, we integrate a parallel self-attention layer alongside the standard self-attention within the DiT module, explicitly incorporating camera coordinate transformations into the attention queries and keys. For a query derived from viewpoint i and a key from viewpoint j, the camera-aware attention can be formulated as:
+
+$$
+\ell_ {i j} = \frac {(P _ {i} ^ {\top} q _ {i}) ^ {\top} (P _ {j} ^ {- 1} k _ {j})}{\sqrt {d}} = \frac {q _ {i} ^ {\top} (P _ {i} P _ {j} ^ {- 1}) k _ {j}}{\sqrt {d}}, \tag {4}
+$$
+
+where $P _ { i } P _ { i } ^ { - 1 }$ denotes the relative camera transformation from viewpoint j to viewpoint i. This formulation demonstrates that the attention weights are no longer determined solely by the similarity of appearance tokens; rather, they are concurrently modulated by the relative camera poses between the two viewpoints. When the camera positions and orientations of two agents are in proximity, their relative transformation $P _ { i } P _ { j } ^ { - 1 }$ approaches the identity transformation, prompting the attention mechanism to establish stronger correlations between these views. Conversely, when the viewpoints diverge significantly, the model is capable of expressing more pronounced perspective differences. In this manner, Prisma-World simultaneously models content similarity and camera geometry within the full-attention multi-agent token sequence, thereby encouraging spatially adjacent viewpoints to generate highly consistent scene content.
+
+## 3.3 Training Strategies
+
+Overlap-Decaying Curriculum Training. Training a multi-agent world model directly on arbitrary trajectories is unstable because useful consistency supervision is sparse. If two sampled agents rarely observe overlapping content, the model receives little signal about how to align their generations; if all views overlap strongly, the model may overfit to near-duplicate views and fail under diverse trajectories. Prisma-World therefore uses an overlap-decaying curriculum constructed from the PrismaDataset. Our dataset captures panoramic videos of the scenes and derives perspective videos with substantial visual overlap from these panoramas, which serve as training samples in the initial stages. During training, we progressively decrease the content overlap among distinct videos within the data samples, transitioning to samples that feature more complex and relatively independent camera trajectories. Compared to training directly on the non-overlap data, this curriculum learning strategy significantly facilitates the acquisition of multi-view consistency.
+
+Variable Agent Training. We also train Prisma-World to support a variable number of agents. Since all agent tokens are processed in one full-attention sequence, the effective token length grows with N. A fixed noise schedule can therefore lead to different denoising difficulty across agent counts: small-N batches may be over-regularized, while large-N batches may become harder to stabilize. To reduce this mismatch, we use a dynamic noise-shift strategy that adjusts the flow-matching noise shift according to the current sequence length. As the number of agents increases and the token sequence lengthens, the noise schedule is increases linearly. This dynamically mitigates the training distribution shifts that occur across varying multi-agent configurations.
+
+## 3.4 Minimap Condition
+
+Camera trajectories and first-frame conditions are often insufficient to specify the global scene layout around multiple agents. A first frame anchors only the currently visible region, and a text prompt usually describes the scene category rather than the precise spatial structure. This limitation becomes more severe in multi-agent generation: different agents may start from different locations, and the model must infer what should appear around each agent while maintaining one coherent scene. To this end, Prisma-World introduces an optional minimap condition to provide this spatial prior.
+
+The minimap branch converts global layout information into agent-specific local guidance, as shown in Fig. 2. Given a minimap image M, we encode it with the VAE encoder to obtain a spatial feature map. For agent $n ,$ , we project its initial world coordinate onto the minimap coordinate and extract a local feature $m _ { n }$ using a Gaussian window centered at the projected point. The embedding $m _ { n }$ is then injected into the tokens of agent n before self-attention. In this way, the model receives a local layout hint for each agent while still generating all agents through the same joint attention process.
+
+![](images/b5a2cbba4d72a79e58f942736a18504f7d9a5f144b963252143d2a5defc02376.jpg)  
+Figure 3: Qualitative comparison. Compared to other baselines, our model can synthesize highquality multi-agent videos with precise camera control while preserving multi-view consistency.
+
+## 4 Experiment
+
+## 4.1 PrismaDataset
+
+We construct PrismaDataset in Unreal Engine 5 to provide multi-agent videos with accurate camera and action annotations. For each static scene, we use NavMesh in UE5 to identify navigable regions and deploy camera-equipped agents to automatically roam through the environment. During data collection, we record RGB videos, camera poses, agent actions, and optional top-down minimaps. This automated pipeline enables diverse trajectories across complex scenes while avoiding the cost and limited controllability of real-world multi-camera capture.
+
+A key advantage of PrismaDataset is its panoramic acquisition strategy. We record panoramic videos and project them into five synchronized perspective views with different yaw offsets [25, 65], including the center view and 30 and 60 degrees to the left and right, denoted as $C , L _ { 3 0 } , R _ { 3 0 } , L _ { 6 0 }$ , and $R _ { 6 0 }$ . These views share the same underlying trajectory but contain different degrees of visual overlap, making them well-suited for training and evaluating multi-view consistency. Under this setting, PrismaDataset contains panoramic data from 96 scenes and perspective data from 79 scenes, totaling 620 hours of video. More importantly, thanks to the panoramic video recording, our dataset can generate multi-agent video data groups of arbitrary sizes, featuring complex camera trajectories and precise camera annotations. This significantly elevates the overall diversity of the dataset.
+
+## 4.2 Experiment Settings
+
+Evaluation Benchmark. We construct an evaluation benchmark, MultiAgentBench, using the panoramic images captured in the PrismaDataset. We designate a subset of the scenes from the PrismaDataset as the test set. Within this test data, for each acquired panoramic image, we construct test samples based on the smooth transitions across five predefined viewpoints $( C , L _ { 3 0 } , L _ { 6 0 } , R _ { 3 0 }$ , and $R _ { 6 0 } )$ . The camera trajectories for each agent video can be arbitrarily composed and sequenced from these five distinct views. This experimental design enables the rigorous evaluation of multi-agent view consistency across various dimensions. Specifically, it assesses single-agent revisit consistency, synchronous multi-agent consistency when observing unseen regions, and asynchronous multi-agent consistency when viewing the identical spatial location at different timesteps. Regarding evaluation metrics, we employ the Fréchet Video Distance (FVD) [66] to assess video quality. Additionally, we utilize PSNR, SSIM [67], and LPIPS [68] to evaluate both image quality and multi-view consistency. Furthermore, we incorporate the Reprojection Error (RPE) metric [69] to evaluate geometry-aware consistency. We consider two variants: intra-agent RPE and inter-agent RPE. Intra-agent RPE is computed between overlapping frame pairs within the same generated video, measuring whether a single agent preserves stable scene geometry during continuous observation or revisits. Inter-agent RPE is computed between frame pairs from different agents using their camera poses, measuring whether generated videos maintain consistent scene content in shared spatial regions.
+
+Table 1: Quantitative Comparison Results. Although the inherent variations between the generated content and the GT result in relatively low absolute scores for pixel-level metrics like PSNR, our method still achieves the best performance across video quality and geometry-aware consistency metrics, demonstrating stronger camera control and multi-view consistency than existing baselines.
+
+<table><tr><td>Method</td><td>PSNR↑</td><td>SSIM↑</td><td>LPIPS↓</td><td>FVD↓</td><td>Intra-RPE↓</td><td>Inter-RPE↓</td></tr><tr><td>Lingbot [9]</td><td>10.47</td><td>0.377</td><td>0.599</td><td>560.49</td><td>0.068</td><td>0.219</td></tr><tr><td>MultiWorld [63]</td><td>10.64</td><td>0.366</td><td>0.579</td><td>782.34</td><td>0.074</td><td>0.190</td></tr><tr><td>Ours</td><td>14.12</td><td>0.488</td><td>0.360</td><td>134.9</td><td>0.022</td><td>0.084</td></tr></table>
+
+![](images/57f81ad64390302b4c4782c4e7813c20f215aaee01dd1b25db8a38ecaf804a13.jpg)
+
+<details>
+<summary>text_image</summary>
+
+N=2
+N=3
+N=4
+L60 - C
+R60 - C
+L60 - R60
+C - L60
+L60 - C
+Forward
+Backward
+Left
+Right
+</details>
+
+Figure 4: Scalability of agent number. Prisma-World allows for the arbitrary specification of the number of output agents across diverse and complex scenes, while robustly preserving both the visual quality and multi-view consistency in output videos.
+
+Baselines. We compare our proposed method against two baseline frameworks: (1) State-of-the-Art Single-Agent World Models (Lingbot-World [9]): We directly extend the current single-agent world model to facilitate multi-agent video generation. (2) Concurrent Multi-Agent Models (MultiWorld [63]): We compare our approach against concurrent work that similarly tackle the task of multi-agent video generation.
+
+## 4.3 Quantitative Results
+
+Table 1 presents the quantitative comparison between our approach and the baseline methods. As observed, single-agent models inherently lack dedicated mechanisms for multi-agent processing, thereby failing to preserve multi-agent view consistency in their generated results. Furthermore, while existing multi-agent approaches attempt to address this, they are predominantly constrained to specific, isolated game environments, rendering them incapable of yielding satisfactory outcomes when generalizing to more complex and diverse scenes. In contrast, our proposed method consistently generates high-quality multi-agent videos across highly complex environments while robustly enforcing strict multi-view consistency.
+
+## 4.4 Qualitative Results
+
+A qualitative comparison between our proposed method and the baseline frameworks is illustrated in Fig. 3. As demonstrated, our approach successfully synthesizes high-quality multi-agent videos while strictly preserving multi-view consistency. Furthermore, Fig. 4 highlights our model’s capacity to flexibly specify the number of agents at inference time. Utilizing a single pre-trained model, we can generate high-quality multi-agent outputs across diverse agent numbers while robustly maintaining multi-view consistency among all participating agents.
+
+## 4.5 Ablation Study
+
+To evaluate the effectiveness of the individual components and training strategies within our proposed framework, we conducted the following ablation studies: (1) RoPE Design: We substitute our multi-agent RoPE with the standard 3D RoPE, essentially processing the concatenated multi-agent video sequence as a single, continuous video (w/o MA-RoPE). (2) Overlap-Decaying Curriculum
+
+Table 2: Ablation on RoPE and overlap-decaying curriculum training.
+
+<table><tr><td>Method</td><td>PSNR↑</td><td>SSIM↑</td><td>LPIPS↓</td><td>FVD↓</td><td>Intra-RPE↓</td><td>Inter-RPE↓</td></tr><tr><td>w/o MA-RoPE</td><td>13.58</td><td>0.468</td><td>0.372</td><td>171.23</td><td>0.024</td><td>0.113</td></tr><tr><td>w/o odc</td><td>13.67</td><td>0.471</td><td>0.368</td><td>166.17</td><td>0.025</td><td>0.108</td></tr><tr><td>Ours</td><td>14.12</td><td>0.488</td><td>0.360</td><td>134.98</td><td>0.022</td><td>0.084</td></tr></table>
+
+![](images/eb19cb94ba79ef7c62ad1ab2ae6257f2d5d07c1ea21b38ca297aa75c388e120e.jpg)  
+Figure 5: Ablation on dynamic shift and minimap.
+
+Training: We discard the progressive curriculum learning strategy, initializing the training phase directly and exclusively with hard samples (w/o odc). (3) Dynamic Noise Shift: We enforce a static noise shift parameter during training, completely disregarding the fluctuating number of agents within the batch (w/o dy-shift). (4) Minimap: We compare the results before and after introducing the minimap condition. The quantitative results are detailed in Table 2. It is evident that removing either the RoPE design or the curriculum strategy consistently degrades video quality and consistency, confirming their contribution to joint multi-agent generation. Furthermore, as illustrated in Fig. 5(a), maintaining a static noise shift leads to a degradation in multi-view consistency as the number of agents increases. In contrast, the implementation of a dynamic noise shift schedule robustly ensure high-quality and consistency generation across variable agent counts. To demonstrate the function of the minimap input, we also conducted an ablation study on this conditioning signal. As evidenced by the results in Fig. 5(b), the minimap effectively guides the video generation process by providing the model with explicit scene structural information regarding the immediate surroundings of the agent. As illustrated in the figure, an agent is positioned on a horizontal yellow path and is oriented upwards. We condition the model to generate a video sequence in which the agent rotates to the right. In the absence of minimap guidance, the model hallucinates novel scene content based solely on its inherent generative capabilities. Conversely, upon incorporating the local information from the minimap, the model correctly infers the presence of a yellow path to the right. Consequently, it faithfully reflects this environmental feature within the synthesized video, successfully demonstrating the effective guidance of local spatial structural information.
+
+## 5 Conclusion
+
+This paper introduces Prisma-World, a camera-controllable multi-agent world model that generates multiple agents as consistent observations of a shared scene. Instead of sampling each video independently, Prisma-World performs joint geometry-aware denoising over all agent videos, using full attention, MA-RoPE, and relative camera geometry to couple overlapping viewpoints during generation. We further incorporate minimap-conditioned spatial guidance and construct Prisma-Dataset with panoramic acquisition, flexible multi-agent view composition, and precise camera/action annotations. Experiments show that Prisma-World generates high-quality videos with variable agent numbers while improving multi-view consistency. Future work will extend this framework toward longer-horizon interaction, richer dynamic objects, and real-world multi-agent data.
+
+## References
+
+[1] Weijie Kong, Qi Tian, Zijian Zhang, Rox Min, Zuozhuo Dai, Jin Zhou, Jiangfeng Xiong, Xin Li, Bo Wu, Jianwei Zhang, et al. Hunyuanvideo: A systematic framework for large video generative models. arXiv preprint arXiv:2412.03603, 2024.  
+[2] Jiaqi Li, Junshu Tang, Zhiyong Xu, Longhuang Wu, Yuan Zhou, Shuai Shao, Tianbao Yu, Zhiguo Cao, and Qinglin Lu. Hunyuan-gamecraft: High-dynamic interactive game video generation with hybrid history condition. arXiv preprint arXiv:2506.17201, 2(3):6, 2025.  
+[3] Junshu Tang, Jiacheng Liu, Jiaqi Li, Longhuang Wu, Haoyu Yang, Penghao Zhao, Siruis Gong, Xiang Yuan, Shuai Shao, Linfeng Zhang, et al. Hunyuan-gamecraft-2: Instruction-following interactive game world model. arXiv preprint arXiv:2511.23429, 2025.  
+[4] Xiaofeng Mao, Shaoheng Lin, Zhen Li, Chuanhao Li, Wenshuo Peng, Tong He, Jiangmiao Pang, Mingmin Chi, Yu Qiao, and Kaipeng Zhang. Yume: An interactive world generation model. arXiv preprint arXiv:2507.17744, 2025.  
+[5] Xianglong He, Chunli Peng, Zexiang Liu, Boyang Wang, Yifan Zhang, Qi Cui, Fei Kang, Biao Jiang, Mengyin An, Yangyang Ren, et al. Matrix-game 2.0: An open-source real-time and streaming interactive world model. arXiv preprint arXiv:2508.13009, 2025.  
+[6] Zile Wang, Zexiang Liu, Jiaxing Li, Kaichen Huang, Baixin Xu, Fei Kang, Mengyin An, Peiyu Wang, Biao Jiang, Yichen Wei, et al. Matrix-game 3.0: Real-time and streaming interactive world model with long-horizon memory. arXiv preprint arXiv:2604.08995, 2026.  
+[7] Etched Decart, Quinn McIntyre, Spruce Campbell, Xinlei Chen, and Robert Wachen. Oasis: A universe in a transformer. https: // oasis-model. github. io , 2024.  
+[8] Genie3: A New Frontier for World Models. Google DeepMind, 2025. https://deepmind.google/ models/genie/.  
+[9] Robbyant Team, Zelin Gao, Qiuyu Wang, Yanhong Zeng, Jiapeng Zhu, Ka Leong Cheng, Yixuan Li, Hanlin Wang, Yinghao Xu, Shuailei Ma, Yihang Chen, Jie Liu, Yansong Cheng, Yao Yao, Jiayi Zhu, Yihao Meng, Kecheng Zheng, Qingyan Bai, Jingye Chen, Zehong Shen, Yue Yu, Xing Zhu, Yujun Shen, and Hao Ouyang. Advancing open-source world models. arXiv preprint arXiv:2601.20540, 2026.  
+[10] Tim Brooks, Bill Peebles, Connor Holmes, Will DePue, Yufei Guo, Li Jing, David Schnurr, Joe Taylor, Troy Luhman, Eric Luhman, Clarence Ng, Ricky Wang, and Aditya Ramesh. Sora: Video generation models as world simulators. 2024. URL https://openai.com/research/ video-generation-models-as-world-simulators.  
+[11] Team Seedance, De Chen, Liyang Chen, Xin Chen, Ying Chen, Zhuo Chen, Zhuowei Chen, Feng Cheng, Tianheng Cheng, Yufeng Cheng, et al. Seedance 2.0: Advancing video generation for world complexity. arXiv preprint arXiv:2604.14148, 2026.  
+[12] Loïc Magne, Anas Awadalla, Guanzhi Wang, Yinzhen Xu, Joshua Belofsky, Fengyuan Hu, Joohwan Kim, Ludwig Schmidt, Georgia Gkioxari, Jan Kautz, et al. Nitrogen: An open foundation model for generalist gaming agents. arXiv preprint arXiv:2601.02427, 2026.  
+[13] Jun Cen, Chaohui Yu, Hangjie Yuan, Yuming Jiang, Siteng Huang, Jiayan Guo, Xin Li, Yibing Song, Hao Luo, Fan Wang, et al. Worldvla: Towards autoregressive action world model. arXiv preprint arXiv:2506.21539, 2025.  
+[14] Wenyao Zhang, Hongsi Liu, Zekun Qi, Yunnan Wang, Xinqiang Yu, Jiazhao Zhang, Runpei Dong, Jiawei He, He Wang, Zhizheng Zhang, et al. Dreamvla: a vision-language-action model dreamed with comprehensive world knowledge. NeurIPS, 38:24195–24228, 2026.  
+[15] Hao He, Yinghao Xu, Yuwei Guo, Gordon Wetzstein, Bo Dai, Hongsheng Li, and Ceyuan Yang. Cameractrl: Enabling camera control for text-to-video generation. arXiv preprint arXiv:2404.02101, 2024.  
+[16] Mark Yu, Wenbo Hu, Jinbo Xing, and Ying Shan. Trajectorycrafter: Redirecting camera trajectory for monocular videos via diffusion models. In ICCV, pages 100–111, 2025.  
+[17] Andreas Blattmann, Tim Dockhorn, Sumith Kulal, Daniel Mendelevitch, Maciej Kilian, Dominik Lorenz, Yam Levi, Zion English, Vikram Voleti, Adam Letts, et al. Stable video diffusion: Scaling latent video diffusion models to large datasets. arXiv preprint arXiv:2311.15127, 2023.  
+[18] Haoxin Chen, Yong Zhang, Xiaodong Cun, Menghan Xia, Xintao Wang, Chao Weng, and Ying Shan. Videocrafter2: Overcoming data limitations for high-quality video diffusion models. In CVPR, pages 7310–7320, 2024.  
+[19] Wenyi Hong, Ming Ding, Wendi Zheng, Xinghan Liu, and Jie Tang. Cogvideo: Large-scale pretraining for text-to-video generation via transformers. arXiv preprint arXiv:2205.15868, 2022.  
+[20] Team Wan, Ang Wang, Baole Ai, Bin Wen, Chaojie Mao, Chen-Wei Xie, Di Chen, Feiwu Yu, Haiming Zhao, Jianxiao Yang, Jianyuan Zeng, Jiayu Wang, Jingfeng Zhang, Jingren Zhou, Jinkai Wang, Jixuan Chen, Kai Zhu, Kang Zhao, Keyu Yan, Lianghua Huang, Mengyang Feng, Ningyi Zhang, Pandeng Li, Pingyu Wu, Ruihang Chu, Ruili Feng, Shiwei Zhang, Siyang Sun, Tao Fang, Tianxing Wang, Tianyi Gui, Tingyu Weng, Tong Shen, Wei Lin, Wei Wang, Wei Wang, Wenmeng Zhou, Wente Wang, Wenting Shen, Wenyuan Yu, Xianzhong Shi, Xiaoming Huang, Xin Xu, Yan Kou, Yangyu Lv, Yifei Li, Yijing Liu, Yiming Wang, Yingya Zhang, Yitong Huang, Yong Li, You Wu, Yu Liu, Yulin Pan, Yun Zheng, Yuntao Hong, Yupeng Shi, Yutong Feng, Zeyinzi Jiang, Zhen Han, Zhi-Fan Wu, and Ziyu Liu. Wan: Open and advanced large-scale video generative models. arXiv preprint arXiv:2503.20314, 2025.  
+[21] Zhouxia Wang, Ziyang Yuan, Xintao Wang, Yaowei Li, Tianshui Chen, Menghan Xia, Ping Luo, and Ying Shan. Motionctrl: A unified and flexible motion controller for video generation. In ACM SIGGRAPH Conference Papers, pages 1–11, 2024.  
+[22] Zekai Gu, Rui Yan, Jiahao Lu, Peng Li, Zhiyang Dou, Chenyang Si, Zhen Dong, Qifeng Liu, Cheng Lin, Ziwei Liu, et al. Diffusion as shader: 3d-aware video diffusion for versatile video generation control. In ACM SIGGRAPH Conference Papers, pages 1–12, 2025.  
+[23] Jianhong Bai, Menghan Xia, Xiao Fu, Xintao Wang, Lianrui Mu, Jinwen Cao, Zuozhu Liu, Haoji Hu, Xiang Bai, Pengfei Wan, et al. Recammaster: Camera-controlled generative rendering from a single video. In ICCV, pages 14834–14844, 2025.  
+[24] Basile Van Hoorick, Rundi Wu, Ege Ozguroglu, Kyle Sargent, Ruoshi Liu, Pavel Tokmakov, Achal Dave, Changxi Zheng, and Carl Vondrick. Generative camera dolly: Extreme monocular dynamic novel view synthesis. In ECCV, pages 313–331, 2024.  
+[25] Kang Liao, Size Wu, Zhonghua Wu, Linyi Jin, Chao Wang, Yikai Wang, Fei Wang, Wei Li, and Chen Change Loy. Thinking with camera: A unified multimodal model for camera-centric understanding and generation. In International Conference on Learning Representations, 2026.  
+[26] Ruiqi Gao, Aleksander Holynski, Philipp Henzler, Arthur Brussee, Ricardo Martin-Brualla, Pratul Srinivasan, Jonathan T Barron, and Ben Poole. Cat3d: Create anything in 3d with multi-view diffusion models. arXiv preprint arXiv:2405.10314, 2024.  
+[27] Sherwin Bahmani, Ivan Skorokhodov, Guocheng Qian, Aliaksandr Siarohin, Willi Menapace, Andrea Tagliasacchi, David B Lindell, and Sergey Tulyakov. Ac3d: Analyzing and improving 3d camera control in video diffusion transformers. In CVPR, pages 22875–22889, 2025.  
+[28] Hanwen Liang, Junli Cao, Vidit Goel, Guocheng Qian, Sergei Korolev, Demetri Terzopoulos, Konstantinos N Plataniotis, Sergey Tulyakov, and Jian Ren. Wonderland: Navigating 3d scenes from a single image. In CVPR, pages 798–810, 2025.  
+[29] Ruilong Li, Brent Yi, Junchen Liu, Hang Gao, Yi Ma, and Angjoo Kanazawa. Cameras as relative positional encoding. NeurIPS, 38:15984–16009, 2026.  
+[30] Takeru Miyato, Bernhard Jaeger, Max Welling, and Andreas Geiger. Gta: A geometry-aware attention mechanism for multi-view transformers. In ICLR, volume 2024, pages 8172–8208, 2024.  
+[31] Cheng Zhang, Boying Li, Meng Wei, Yan-Pei Cao, Camilo Cruz Gambardella, Dinh Phung, and Jianfei Cai. Unified camera positional encoding for controlled video generation. arXiv preprint arXiv:2512.07237, 2025.  
+[32] Jiannan Xiang, Guangyi Liu, Yi Gu, Qiyue Gao, Yuting Ning, Yuheng Zha, Zeyu Feng, Tianhua Tao, Shibo Hao, Yemin Shi, et al. Pandora: Towards general world model with natural language actions and video states. arXiv preprint arXiv:2406.09455, 2024.  
+[33] David Ha and Jürgen Schmidhuber. World models. arXiv preprint arXiv:1803.10122, 2018.  
+[34] Danijar Hafner, Jurgis Pasukonis, Jimmy Ba, and Timothy Lillicrap. Mastering diverse domains through world models. arXiv preprint arXiv:2301.04104, 2023.  
+[35] Ruili Feng, Han Zhang, Zhilei Shu, Zhantao Yang, Longxiang Tang, Zhicai Wang, Andy Zheng, Jie Xiao, Zhiheng Liu, Ruihang Chu, et al. The matrix: Infinite-horizon world generation with real-time moving control. NeurIPS, 38:87318–87344, 2026.  
+[36] Dani Valevski, Yaniv Leviathan, Moab Arar, and Shlomi Fruchter. Diffusion models are real-time game engines. In ICLR, volume 2025, pages 73754–73776, 2025.  
+[37] Marc Rigter, Tarun Gupta, Agrin Hilmkil, and Chao Ma. Avid: Adapting video diffusion models to world models. arXiv preprint arXiv:2410.12822, 2024.  
+[38] Eloi Alonso, Adam Jelley, Vincent Micheli, Anssi Kanervisto, Amos Storkey, Tim Pearce, and François Fleuret. Diffusion for world modeling: Visual details matter in atari. NeurIPS, 37:58757–58791, 2024.  
+[39] Zijian Song, Sihan Qin, Tianshui Chen, Liang Lin, and Guangrun Wang. Physical autoregressive model for robotic manipulation without action pretraining. arXiv preprint arXiv:2508.09822, 2025.  
+[40] Dingrui Wang, Zhexiao Sun, Zhouheng Li, Cheng Wang, Youlun Peng, Hongyuan Ye, Baha Zarrouki, Wei Li, Mattia Piccinini, Lei Xie, et al. Enhancing physical consistency in lightweight world models. arXiv preprint arXiv:2509.12437, 2025.  
+[41] Jianhao Yuan, Xiaofeng Zhang, Felix Friedrich, Nicolas Beltran-Velez, Melissa Hall, Reyhane Askari-Hemmat, Xiaochuang Han, Nicolas Ballas, Michal Drozdzal, and Adriana Romero-Soriano. Inference-time physics alignment of video generative models with latent world models. arXiv preprint arXiv:2601.10553, 2026.  
+[42] Haoyi Zhu, Yifan Wang, Jianjun Zhou, Wenzheng Chang, Yang Zhou, Zizun Li, Junyi Chen, Chunhua Shen, Jiangmiao Pang, and Tong He. Aether: Geometric-aware unified world modeling. In ICCV, pages 8535–8546, 2025.  
+[43] Yicong Hong, Yiqun Mei, Chongjian Ge, Yiran Xu, Yang Zhou, Sai Bi, Yannick Hold-Geoffroy, Mike Roberts, Matthew Fisher, Eli Shechtman, et al. Relic: Interactive video world model with long-horizon memory. arXiv preprint arXiv:2512.04040, 2025.  
+[44] Ruiqi Wu, Xuanhua He, Meng Cheng, Tianyu Yang, Yong Zhang, Zhuoliang Kang, Xunliang Cai, Xiaoming Wei, Chunle Guo, Chongyi Li, et al. Infinite-world: Scaling interactive world models to 1000-frame horizons via pose-free hierarchical memory. arXiv preprint arXiv:2602.02393, 2026.  
+[45] Jiwen Yu, Jianhong Bai, Yiran Qin, Quande Liu, Xintao Wang, Pengfei Wan, Di Zhang, and Xihui Liu. Context as memory: Scene-consistent interactive long video generation with memory retrieval. In Proceedings of the SIGGRAPH Asia Conference Papers, pages 1–11, 2025.  
+[46] Kaijin Chen, Dingkang Liang, Xin Zhou, Yikang Ding, Xiaoqiang Liu, Pengfei Wan, and Xiang Bai. Out of sight but not out of mind: Hybrid memory for dynamic video world models. arXiv preprint arXiv:2603.25716, 2026.  
+[47] Yu-Cheng Chou, Xingrui Wang, Yitong Li, Jiahao Wang, Hanting Liu, Cihang Xie, Alan Yuille, and Junfei Xiao. Captain safari: A world engine. arXiv preprint arXiv:2511.22815, 2025.  
+[48] Tong Wu, Shuai Yang, Ryan Po, Yinghao Xu, Ziwei Liu, Dahua Lin, and Gordon Wetzstein. Video world models with long-term spatial memory. NeurIPS, 38:49371–49393, 2026.  
+[49] Boyuan Chen, Diego Martí Monsó, Yilun Du, Max Simchowitz, Russ Tedrake, and Vincent Sitzmann. Diffusion forcing: Next-token prediction meets full-sequence diffusion. NeurIPS, 37:24081–24125, 2024.  
+[50] Xun Huang, Zhengqi Li, Guande He, Mingyuan Zhou, and Eli Shechtman. Self forcing: Bridging the train-test gap in autoregressive video diffusion. NeurIPS, 38:167283–167308, 2026.  
+[51] Tianwei Yin, Qiang Zhang, Richard Zhang, William T Freeman, Fredo Durand, Eli Shechtman, and Xun Huang. From slow bidirectional to fast autoregressive video diffusion models. In CVPR, pages 22963–22974, 2025.  
+[52] Xiaowei Chi, Peidong Jia, Chun-Kai Fan, Xiaozhu Ju, Weishi Mi, Kevin Zhang, Zhiyuan Qin, Wanxin Tian, Kuangzhi Ge, Hao Li, et al. Wow: Towards a world omniscient world model through embodied interaction. arXiv preprint arXiv:2509.22642, 2025.  
+[53] Arslan Ali, Junjie Bai, Maciej Bala, Yogesh Balaji, Aaron Blakeman, Tiffany Cai, Jiaxin Cao, Tianshi Cao, Elizabeth Cha, Yu-Wei Chao, et al. World simulation with video foundation models for physical ai. arXiv preprint arXiv:2511.00062, 2025.  
+[54] Lin Li, Qihang Zhang, Yiming Luo, Shuai Yang, Ruilin Wang, Fei Han, Mingrui Yu, Zelin Gao, Nan Xue, Xing Zhu, et al. Causal world modeling for robot control. arXiv preprint arXiv:2601.21998, 2026.  
+[55] Niket Agarwal, Arslan Ali, Maciej Bala, Yogesh Balaji, Erik Barker, Tiffany Cai, Prithvijit Chattopadhyay, Yongxin Chen, Yin Cui, Yifan Ding, et al. Cosmos world foundation model platform for physical ai. arXiv preprint arXiv:2501.03575, 2025.  
+[56] Lloyd Russell, Anthony Hu, Lorenzo Bertoni, George Fedoseev, Jamie Shotton, Elahe Arani, and Gianluca Corrado. Gaia-2: A controllable multi-view generative world model for autonomous driving. arXiv preprint arXiv:2503.20523, 2025.  
+[57] Jianhong Bai, Menghan Xia, Xintao Wang, Ziyang Yuan, Zuozhu Liu, Haoji Hu, Pengfei Wan, and Di Zhang. Syncammaster: Synchronizing multi-camera video generation from diverse viewpoints. In ICLR, pages 58038–58060, 2025.  
+[58] Zhengfei Kuang, Shengqu Cai, Hao He, Yinghao Xu, Hongsheng Li, Leonidas J Guibas, and Gordon Wetzstein. Collaborative video diffusion: Consistent multi-video generation with camera control. NeurIPS, 37:16240–16271, 2024.  
+[59] Dejia Xu, Yifan Jiang, Chen Huang, Liangchen Song, Thorsten Gernoth, Liangliang Cao, Zhangyang Wang, and Hao Tang. Cavia: Camera-controllable multi-view video diffusion with view-integrated attention. arXiv preprint arXiv:2410.10774, 2024.  
+[60] Fan Wu, Jiacheng Wei, Ruibo Li, Yi Xu, Junyou Li, Deheng Ye, and Guosheng Lin. Ic-world: In-context generation for shared world modeling. arXiv preprint arXiv:2512.02793, 2025.  
+[61] Enigma team. Introducing multiverse: The first ai multiplayer world model, 2025. URL https://enigma. inc/blog.  
+[62] Georgy Savva, Oscar Michel, Daohan Lu, Suppakit Waiwitlikhit, Timothy Meehan, Dhairya Mishra, Srivats Poddar, Jack Lu, and Saining Xie. Solaris: Building a multiplayer video world model in minecraft. arXiv preprint arXiv:2602.22208, 2026.  
+[63] Haoyu Wu, Jiwen Yu, Yingtian Zou, and Xihui Liu. Multiworld: Scalable multi-agent multi-view video world models. arXiv preprint arXiv:2604.18564, 2026.  
+[64] Jianlin Su, Murtadha Ahmed, Yu Lu, Shengfeng Pan, Wen Bo, and Yunfeng Liu. Roformer: Enhanced transformer with rotary position embedding. Neurocomputing, 568:127063, 2024.  
+[65] Alexander Veicht, Paul-Edouard Sarlin, Philipp Lindenberger, and Marc Pollefeys. Geocalib: Learning single-image calibration with geometric optimization. In European Conference on Computer Vision, pages 1–20, 2024.  
+[66] Thomas Unterthiner, Sjoerd Van Steenkiste, Karol Kurach, Raphael Marinier, Marcin Michalski, and Sylvain Gelly. Towards accurate generative models of video: A new metric & challenges. arXiv preprint arXiv:1812.01717, 2018.  
+[67] Zhou Wang, Alan C Bovik, Hamid R Sheikh, and Eero P Simoncelli. Image quality assessment: from error visibility to structural similarity. IEEE transactions on image processing, 13(4):600–612, 2004.  
+[68] Richard Zhang, Phillip Isola, Alexei A Efros, Eli Shechtman, and Oliver Wang. The unreasonable effectiveness of deep features as a perceptual metric. In CVPR, pages 586–595, 2018.  
+[69] Haoyu Wu, Diankun Wu, Tianyu He, Junliang Guo, Yang Ye, Yueqi Duan, and Jiang Bian. Geometry forcing: Marrying video diffusion and 3d representation for consistent world modeling. arXiv preprint arXiv:2507.07982, 2025.

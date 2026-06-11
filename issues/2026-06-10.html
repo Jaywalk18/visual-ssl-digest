@@ -19,20 +19,18 @@
   </header>
   <nav class="site-nav" aria-label="主导航">
     <a class="nav-link" href="../index.html">头版</a>
-<a class="nav-link active" href="../issues/2026-06-10.html">今日速递</a>
+<a class="nav-link" href="../issues/2026-06-11.html">今日速递</a>
 <a class="nav-link" href="../pages/catalog.html">论文目录</a>
 <a class="nav-link" href="../pages/timeline.html">时间线</a>
   </nav>
   <main><article class="paper-detail issue-detail">
   <div class="paper-main">
     <div class="kicker">Daily issue · 2026-06-10 · CCF A/B 会议优先</div>
-    <h1 class="paper-headline">6 月 10 日：Next Forcing 等视觉表征主线更新</h1>
-    <p class="dek">本期聚焦通用视觉表征、视觉语言预训练与视频自监督中最值得跟进的论文，并保留 CCF A/B、OpenReview 与 arXiv 状态线索。</p>
+    <h1 class="paper-headline">6 月 10 日：Next Forcing 等视觉表征论文归档</h1>
+    <p class="dek">本页按日期归档近期论文，保留优先级、主题、来源与方法线索，方便回看同一批工作的研究脉络。</p>
     <div class="feature-body">
-      <p class="lead dropcap">先读 Next Forcing：它把视频 world/action model 的监督从“当前 chunk 去噪”扩成多未来 chunk 预测，是今天最接近视频自监督/世界模型目标设计的工作。第二篇读 IDEAL，重点看浅层/深层 VFM feature 同时约束离散 RAE 的做法，这和最近 RAE、visual tokenizer、DiT latent space 的主线直接相连。第三篇读 ARM，它展示了离散视觉 tokenizer 如何被放进统一 next-token prediction 框架，同时服务理解、生成和编辑。之后读 ImageTime 和 BiWM：前者是静态图像生成模型的时序一致性诊断，后者是交互式视频 world model 的工程化 recipe。GenLIP、When to Align/When to Predict 和两篇 VICL 论文适合放在第二轮，用来补齐视觉语言预训练目标、跨模态目标选择和 adaptive visual model evaluation。</p>
+      <p class="lead dropcap">先读 Next Forcing。用多未来 chunk 预测给 causal video world model 更密集的时间监督，和视频自监督/latent prediction 主线高度相关。 其余论文按 P1/P2 与主题顺序扫读，重点看方法图、消融设置和是否能迁移到通用视觉表征。</p>
       <h2>论文索引</h2>
-      <table class="compact-table"><thead><tr><th>优先级</th><th>论文</th><th>类型</th><th>相关性</th><th>一句话理由</th></tr></thead><tbody><tr><td>P0</td><td>Next Forcing: Causal World Modeling with Multi-Chunk Prediction</td><td>arXiv 新增</td><td>高</td><td>用多未来 chunk 预测给 causal video world model 更密集的时间监督，和视频自监督/latent prediction 主线高度相关。</td></tr><tr><td>P0</td><td>IDEAL: In-DEpth ALignment Makes A Discrete Representation AutoEncoder</td><td>arXiv 新增</td><td>高</td><td>直接面向 VFM-based RAE 的离散 latent：同时对齐浅层细节与深层语义，适合优先精读。</td></tr><tr><td>P1</td><td>ARM: An AutoRegressive Large Multimodal Model with Unified Discrete Representations</td><td>arXiv 新增</td><td>高</td><td>训练离散语义视觉 tokenizer，并把图像理解、生成、编辑统一到 next-token prediction。</td></tr><tr><td>P1</td><td>Can Image Models Imagine Time? ImageTime</td><td>arXiv 新增</td><td>高</td><td>用四关键帧时序一致性 probe 静态图像生成模型的 visual world modeling 能力。</td></tr><tr><td>P1</td><td>BiWM: Advancing Open-Source Interactive Video World Models with Bidirectional Autoregression</td><td>arXiv 今日公告</td><td>高</td><td>从预训练视频 backbone 出发做双向自回归交互 world model，补充 Next Forcing 的 causal 路线。</td></tr><tr><td>P1</td><td>Let ViT Speak: Generative Language-Image Pre-training</td><td>arXiv 更新</td><td>高</td><td>GenLIP 用语言建模目标预训练 ViT，不走对比 batch 或额外 text decoder，是视觉语言预训练目标的重要更新。</td></tr><tr><td>P2</td><td>When to Align, When to Predict: A Phase Diagram for Multimodal Learning</td><td>arXiv 新增</td><td>中高</td><td>给 cross-modal alignment vs prediction 一个相图，用于判断图文/多模态自监督目标何时该对齐、何时该预测。</td></tr><tr><td>P2</td><td>Cross-Modal Knowledge Distillation without Paired Data</td><td>arXiv 新增</td><td>中高</td><td>无配对跨模态蒸馏，把 teacher/student 差异拆成 feature alignment 和 label alignment。</td></tr><tr><td>P2</td><td>SARA: Semantically Adaptive Relational Alignment for Video Diffusion Models</td><td>arXiv 更新</td><td>中高</td><td>用冻结 VFM 的 token-relation distillation 和文本条件 saliency 改善视频扩散的语义对齐。</td></tr><tr><td>P2</td><td>Beyond Model Size: Probing the Gaps in Visual in-Context Learning by Training a Tiny Model</td><td>arXiv 新增</td><td>中高</td><td>用 1M 参数 tiny VICL 模型反证“大模型规模=视觉 in-context 能力”的评估假设。</td></tr><tr><td>P2</td><td>Quo Vadis, Visual In-Context Learning? A Unified Benchmark Across Domains and Tasks</td><td>arXiv 新增</td><td>中高</td><td>VIBE 覆盖 14 数据集、12 任务，系统测试视觉 in-context model 是否真的能跨任务/域适应。</td></tr><tr><td>P3</td><td>One Token per Multimodal Evidence: Latent Memory for Resource-Constrained QA</td><td>arXiv 新增</td><td>中</td><td>把图文 evidence 压成单个 latent token，用重建、对比和蒸馏训练，偏 VLM memory 但对视觉 latent 接口有参考。</td></tr><tr><td>扫读</td><td>Mitigating Manifold Departure: Uncertainty-Aware Subspace Rectification for Trustworthy MLLM Decoding</td><td>ICML 2026 + arXiv</td><td>中</td><td>ICML regular；从 hidden-state 子空间角度减少 VLM 语言先验幻觉，适合作为视觉证据读出诊断扫读。</td></tr></tbody></table>
-      <h2>主线阅读</h2>
       <div class="paper-list issue-list"><article class="paper-card" data-category="arXiv 新增" data-priority="P0" data-date="2026-06-10" data-title="next forcing: causal world modeling with multi-chunk prediction" data-keywords="next forcing: causal world modeling with multi-chunk prediction next forcing arxiv 新增 p0 2026-06-10 arxiv 新增 用多未来 chunk 预测给 causal video world model 更密集的时间监督，和视频自监督/latent prediction 主线高度相关 高相关；详见方法、贡献和实验边界。">
   <a class="paper-thumb paper-thumb-text" href="../papers/2606.11187.html">
     <img src="../assets/mineru/2606.11187/images/884d17747454cc9fce58dcd85042d4798e7c260343dcd7a5d97dac4aefb0341e.jpg" alt="Next Forcing figure"><span>P0</span>
@@ -192,18 +190,17 @@
     </div>
   </div>
   <aside class="paper-side">
-    <div class="side-box"><h4>今日重点</h4><p>TextTeacher、MDM、EvoVid、Ablate-to-Validate。</p></div>
-    <div class="side-box"><h4>会议口径</h4><p>只把 CCF A/B 放进主提醒；临近截止或 CCF C 仅记录。</p></div>
     <div class="side-box"><h4>阅读重点</h4><p>先看 P1/P2 与方法图，再扫状态变化和边界案例。</p></div>
+    <div class="side-box"><h4>会议口径</h4><p>主提醒只保留 CCF A/B；CCF C 与过期截止仅作状态记录。</p></div>
   </aside>
 </article></main>
-  <aside class="conf-float" data-conf-reminder="2026-06-10-main-ddl" aria-label="CCF A/B 主投稿提醒">
+  <aside class="conf-float" data-conf-reminder="2026-06-11-main-ddl" aria-label="CCF A/B 主投稿提醒">
   <button class="conf-close" type="button" aria-label="关闭会议提醒">×</button>
   <details open>
     <summary>CCF A/B 主投稿提醒</summary>
     <div class="conf-list"><a class="conf-item " href="https://github.com/ccfddl/ccf-deadlines/blob/main/conference/AI/aaai.yml">
   <span><b>AAAI 2027</b><em>CCF A · Main paper submission</em></span>
-  <strong>47 天</strong>
+  <strong>46 天</strong>
   <small>2026-07-27 · CCF DDL: abstract 2026-07-20；进入 1 个月窗口后重点提醒。</small>
 </a></div>
   </details>
@@ -216,7 +213,7 @@
   (() => {
     const box = document.querySelector('[data-conf-reminder]');
     if (!box) return;
-    const key = `visualSslConfReminderClosed:${box.dataset.confReminder || '2026-06-10-main-ddl'}`;
+    const key = `visualSslConfReminderClosed:${box.dataset.confReminder || '2026-06-11-main-ddl'}`;
     try {
       if (localStorage.getItem(key) === '1') box.hidden = true;
     } catch (err) {}

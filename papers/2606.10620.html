@@ -19,39 +19,39 @@
   </header>
   <nav class="site-nav" aria-label="主导航">
     <a class="nav-link" href="../index.html">头版</a>
-<a class="nav-link" href="../issues/2026-06-10.html">今日速递</a>
+<a class="nav-link" href="../issues/2026-06-11.html">今日速递</a>
 <a class="nav-link" href="../pages/catalog.html">论文目录</a>
 <a class="nav-link" href="../pages/timeline.html">时间线</a>
   </nav>
   <main><article class="paper-detail">
   <div class="paper-main">
     <div class="kicker">arXiv 新增 · P1 · 2026-06-10</div>
-    <h1 class="paper-headline">Can Image Models Imagine Time? ImageTime：通用视觉模型正在从静态表征转向 world model；ImageTime 给出了一种检查静态 image model 是否含有时序结构的方法</h1>
-    <p class="dek">把 image model 的评估从单图质量/图文对齐推进到“能否想象有时间顺序的视觉过程”。</p>
-    <p class="byline"><strong>Can Image Models Imagine Time? ImageTime</strong>　Xinrui Wu, Lichen Huang；机构信息未在 arXiv 元数据中列出。　arXiv 新增　<a href="https://arxiv.org/abs/2606.10620">原文链接</a></p>
+    <h1 class="paper-headline">Can Image Models Imagine Time? ImageTime：它和通用视觉自监督的关系在于：用四关键帧时序一致性 probe 静态图像生成模型的 visual world modeling 能力</h1>
+    <p class="dek">高相关；详见方法、贡献和实验边界。</p>
+    <p class="byline"><strong>Can Image Models Imagine Time? ImageTime</strong>　arXiv 新增　<a href="https://arxiv.org/abs/2606.10620">原文链接</a></p>
     <div class="paper-facts">
       <span><b>编号</b>2606.10620</span>
       <span><b>优先级</b>P1</span>
       <span><b>类别</b>arXiv 新增</span>
       <span><b>会议</b>arXiv 新增</span>
-      <span><b>方法</b>提出 ImageTime benchmark，用四个有序关键状态来测试图像生成模型是否能保持身份、物体、空间关系和因果顺序；输入可包含 action instruction 和可选初始参考图。</span>
+      <span><b>方法</b>用四关键帧时序一致性 probe 静态图像生成模型的 visual world modeling 能力</span>
       <span><b>来源</b>arXiv / OpenReview</span>
     </div>
     <div class="feature-body">
-      <p class="lead dropcap">先说结论。通用视觉模型正在从静态表征转向 world model；ImageTime 给出了一种检查静态 image model 是否含有时序结构的方法。 把 image model 的评估从单图质量/图文对齐推进到“能否想象有时间顺序的视觉过程”。</p>
+      <p class="lead dropcap">先说结论。它和通用视觉自监督的关系在于：用四关键帧时序一致性 probe 静态图像生成模型的 visual world modeling 能力。 高相关；详见方法、贡献和实验边界。</p>
       <figure class="full-fig"><img src="../assets/mineru/2606.10620/images/aa000c9bec889fe25d0ddd5006996877bd032866c72c2c8e4f8b3d989727de04.jpg" alt="Figureure 3 · | Radar view of prompt-only capability scores across all eight evaluat"><figcaption><b>Figureure 3 · | Radar view of prompt-only capability scores across all eight evaluat</b><span class="fig-en">Figure 3 | Radar view of prompt-only capability scores across all eight evaluated models. The axes correspond to C0 and C2–C9; C1 is omitted because reference grounding is not applicable without a reference image. The faint purple envelope highlights the GPT Image 2 capability profile, while all model contours and markers are retained for comparison.</span><span class="fig-zh">这张图/表用于判断 Can Image Models Imagine Time? ImageTime 的实验收益来自哪里。重点看替换、消融或跨模型设置下趋势是否一致，而不是只看单个最高分。</span></figcaption></figure>
 <figure class="full-fig"><img src="../assets/mineru/2606.10620/images/9127e0e5eab3b12a18399765b544cc2c26491cc6160cdc8bbbc93aac98858902.jpg" alt="Static Identity L2 Spatial L3 Object L4 Interaction L5 Causal L6 Constraint Figure 2 | Ove"><figcaption><b>Static Identity L2 Spatial L3 Object L4 Interaction L5 Causal L6 Constraint Figure 2 | Ove</b><span class="fig-en">Static Identity L2 Spatial L3 Object L4 Interaction L5 Causal L6 Constraint Figure 2 | Overview of the ImageTime task formulation and failure taxonomy. A detailed action prompt specifies four ordered key states: initial state, action onset, transition, and final state. The figure illustrates common failure modes such as premature final states, missing interactions, identity or scene drift, object duplication, and causal-order violations, and links them to the L0–L6 capability tree.</span><span class="fig-zh">这张图概括 Can Image Models Imagine Time? ImageTime 的整体方法流程。阅读时先看模块之间传递的训练信号，再看作者如何把目标拆成可优化的子问题。</span></figcaption></figure>
       
       <h2>核心问题</h2>
-      <p>通用视觉模型正在从静态表征转向 world model；ImageTime 给出了一种检查静态 image model 是否含有时序结构的方法。</p>
+      <p>它和通用视觉自监督的关系在于：用四关键帧时序一致性 probe 静态图像生成模型的 visual world modeling 能力。</p>
       <h2>方法拆解</h2>
-      <p>提出 ImageTime benchmark，用四个有序关键状态来测试图像生成模型是否能保持身份、物体、空间关系和因果顺序；输入可包含 action instruction 和可选初始参考图。</p>
+      <p>用四关键帧时序一致性 probe 静态图像生成模型的 visual world modeling 能力</p>
       <h2>主要贡献</h2>
-      <p>把 image model 的评估从单图质量/图文对齐推进到“能否想象有时间顺序的视觉过程”。</p>
+      <p>高相关；详见方法、贡献和实验边界。</p>
       <h2>实验看点</h2>
-      <p>摘要强调四关键帧协议比单图生成更有时序压力，同时避免完整视频评估中的 dense dynamics confound；并组织了 progressive capability hierarchy。</p>
+      <p>实验部分建议重点看两类证据：一是作者是否把方法收益和更强数据、更长训练、更大模型区分开；二是跨模型、跨数据或跨任务迁移是否还能保留同样趋势。</p>
       <h2>局限与读法</h2>
-      <p>这是行为级 benchmark，不能直接说明模型内部学到了可迁移的动态表征；生成模型 prompt 能力也可能混入语言/模板偏置。</p>
+      <p>这篇论文的结论需要结合任务设置、训练数据规模和消融实验一起看；不要只凭单个指标判断它对通用视觉表征的价值。</p>
     
     </div>
   </div>
@@ -61,13 +61,13 @@
     <div class="side-box"><h4>原文</h4><p><a href="https://arxiv.org/abs/2606.10620">https://arxiv.org/abs/2606.10620</a></p></div>
   </aside>
 </article></main>
-  <aside class="conf-float" data-conf-reminder="2026-06-10-main-ddl" aria-label="CCF A/B 主投稿提醒">
+  <aside class="conf-float" data-conf-reminder="2026-06-11-main-ddl" aria-label="CCF A/B 主投稿提醒">
   <button class="conf-close" type="button" aria-label="关闭会议提醒">×</button>
   <details open>
     <summary>CCF A/B 主投稿提醒</summary>
     <div class="conf-list"><a class="conf-item " href="https://github.com/ccfddl/ccf-deadlines/blob/main/conference/AI/aaai.yml">
   <span><b>AAAI 2027</b><em>CCF A · Main paper submission</em></span>
-  <strong>47 天</strong>
+  <strong>46 天</strong>
   <small>2026-07-27 · CCF DDL: abstract 2026-07-20；进入 1 个月窗口后重点提醒。</small>
 </a></div>
   </details>
@@ -80,7 +80,7 @@
   (() => {
     const box = document.querySelector('[data-conf-reminder]');
     if (!box) return;
-    const key = `visualSslConfReminderClosed:${box.dataset.confReminder || '2026-06-10-main-ddl'}`;
+    const key = `visualSslConfReminderClosed:${box.dataset.confReminder || '2026-06-11-main-ddl'}`;
     try {
       if (localStorage.getItem(key) === '1') box.hidden = true;
     } catch (err) {}

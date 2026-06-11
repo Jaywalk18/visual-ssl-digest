@@ -1,0 +1,1690 @@
+[
+    {
+        "type": "text",
+        "text": "ATM: ACTION-CONSISTENCY TRANSFER MATRIX FOR DIAGNOSING AND IMPROVING LATENT WORLD MODELS",
+        "text_level": 1,
+        "bbox": [
+            171,
+            98,
+            823,
+            170
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "Jiaheng Chen",
+        "bbox": [
+            184,
+            195,
+            285,
+            209
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "School of Software, Northeastern University",
+        "bbox": [
+            183,
+            209,
+            475,
+            223
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "jiac41752@gmail.com",
+        "bbox": [
+            184,
+            224,
+            372,
+            238
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "ABSTRACT",
+        "text_level": 2,
+        "bbox": [
+            450,
+            273,
+            545,
+            287
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "Latent world models are increasingly used for control and goal-conditioned planning, yet assessing whether their learned representations are useful for planning usually requires slow, planner-coupled simulator evaluation with CEM or similar planners. Such evaluation is black-box and model-complexity-dependent: under the same protocol, different world models may require minutes to hours per checkpoint. In this work, we propose ATM, an Action-Consistency Transfer Matrix for diagnosing whether latent transitions preserve action semantics relevant to planning. ATM compares action information in real encoded transitions and model-predicted transitions through lightweight post-hoc probes, producing an interpretable matrix that reveals representation quality, transition-domain inconsistency, and failure modes without simulator rollout. It can also be collapsed into a simple screening score for within-task ranking across checkpoints, variants, and world models. When the true success gap is non-trivial, ATM achieves highly reliable pairwise ranking, while reducing minutes-to-hours CEM evaluation to seconds-level transition analysis, yielding more than 100× speedup in our setup. We further introduce AITS, showing that action-identifiability is not only diagnostic but also a useful training signal for improving downstream planning without changing the planner.",
+        "bbox": [
+            228,
+            306,
+            767,
+            556
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "1 INTRODUCTION",
+        "text_level": 2,
+        "bbox": [
+            173,
+            593,
+            336,
+            608
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "Latent world models have become an important tool for control and goal-conditioned planning (Ha & Schmidhuber, 2018; Hafner et al., 2019; 2020; Hansen et al., 2022). Rather than directly predicting future observations, these methods typically learn compact action-conditioned latent dynamics and roll them out in a representation space to support planning, policy learning, or action-sequence optimization. Recent methods such as DINO-WM (Zhou et al., 2025), PLDM (Sobal et al., 2025), and LeWM (Maes et al., 2026) further show that learned latent dynamics can be combined with planners such as CEM (Rubinstein, 1999) to search for action sequences that reach a target, even in reward-free or weakly supervised settings.",
+        "bbox": [
+            169,
+            625,
+            823,
+            737
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "Although simulator-based planning evaluation remains indispensable as a final endpoint test, it is not an ideal diagnostic for understanding whether learned representations are planning-relevant. First, such evaluation is tightly coupled with the planner, making it difficult to determine whether success or failure comes from the representation or from planner search behavior. Second, obtaining reliable success estimates usually requires averaging over many simulator episodes to reduce variance from initial states, CEM sampling, environment stochasticity, and success thresholds. More importantly, its wall-clock cost is strongly affected by the rollout complexity of the world model itself. In our experiments, under the same evaluation protocol, evaluating a single LeWM-style (Maes et al., 2026) checkpoint usually takes minutes, whereas DINO-WM (Zhou et al., 2025) can take over an hour. These limitations motivate a low-cost, interpretable diagnostic that does not require simulator rollout and can quickly assess the representation quality of latent world models.",
+        "bbox": [
+            169,
+            744,
+            826,
+            898
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "aside_text",
+        "text": "arXiv:2606.09028v1 [cs.CV] 8 Jun 2026",
+        "bbox": [
+            22,
+            282,
+            60,
+            710
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "page_footnote",
+        "text": "Code will be released at https://github.com/11isnotavailable/ATM.",
+        "bbox": [
+            196,
+            910,
+            694,
+            922
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "page_number",
+        "text": "1",
+        "bbox": [
+            493,
+            948,
+            503,
+            959
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "We focus on action-identifiability of latent transitions. In latent planning systems, a planner typically starts from the current latent state, rolls out candidate action sequences, and compares the resulting future latent states with a latent goal (Zhou et al., 2025; Sobal et al., 2025; Maes et al., 2026). It then selects the action sequence whose predicted future state is closest to the target. Thus, although the planner appears to optimize a latent goal distance, it ultimately relies on the predicted latent transitions induced by candidate actions in the learned representation space. Beyond whether individual latent states are informative, the action-induced transitions themselves must therefore encode clear, stable, and environment-consistent action semantics (Pathak et al., 2017; Brandfonbrener et al., 2023; Cui et al., 2024). Intuitively, if an action moves the latent state from zt to zt+1, the transition should preserve semantic structure related to that action. If real encoded transitions and model-predicted transitions encode action effects weakly, inconsistently, or through shortcuts that only hold in one transition domain, the representation may provide unreliable guidance for action selection; a single final success rate often cannot distinguish these internal failure modes. We therefore aim to diagnose whether action semantics are decodable, transferable, and consistent across real and predicted transitions.",
+        "bbox": [
+            169,
+            104,
+            826,
+            311
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "text",
+        "text": "To this end, we propose ATM, an Action-Consistency Transfer Matrix, as a model-agnostic post-hoc diagnostic. ATM treats real encoded transitions and model-predicted transitions as two transition domains and constructs an action-semantics transfer matrix. This matrix diagnoses whether action semantics are decodable, transferable, and asymmetric across the two domains, thereby revealing representation quality, transition-domain inconsistency, and potential failure modes. In this way, ATM turns representation-quality diagnosis for latent world models into a fast and interpretable process without simulator rollout.",
+        "bbox": [
+            169,
+            318,
+            823,
+            417
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "text",
+        "text": "ATM can also be collapsed into a simple screening score for within-task ranking across candidate models. Experiments show that this score effectively predicts which candidates are more likely to achieve stronger downstream planning performance. When the true success gap between two candidates is non-trivial, ATM ranks the pair correctly in nearly all cases; on OGBench-Cube (Park et al., 2025), it reaches 98.8% pairwise ranking accuracy at a 5% margin. Meanwhile, ATM avoids repeated CEM-based simulator evaluation, reducing minutes-to-hours evaluation to seconds-level diagnostics and yielding more than 100× speedup. We further introduce Action-Identifiable Transition Supervision (AITS), which directly improves action-identifiable transition structure during training. Experiments show that AITS consistently improves ATM diagnostics and downstream planning performance without changing the planner; on OGBench-Cube, AITS improves the LeWM (Maes et al., 2026) baseline by about 10 success-rate points.",
+        "bbox": [
+            169,
+            422,
+            823,
+            575
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "text",
+        "text": "Our contributions are as follows:",
+        "text_level": 2,
+        "bbox": [
+            171,
+            583,
+            390,
+            595
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "list",
+        "sub_type": "text",
+        "list_items": [
+            "1. We identify action-identifiability as a planning-relevant transition-level property of latent world models, revealing internal representation and transition-structure issues that rollout evaluation alone cannot explain.",
+            "2. We propose ATM, a model-agnostic post-hoc transfer matrix over true and predicted latent transition domains, to diagnose action-semantic decodability, transferability, and domaintransfer asymmetry.",
+            "3. We show that ATM enables efficient within-task screening across candidate models with strong OGBench-Cube ranking accuracy at over 100× lower evaluation cost, and introduce AITS to consistently improve action-identifiable transitions without changing the planner."
+        ],
+        "bbox": [
+            207,
+            609,
+            823,
+            747
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "text",
+        "text": "2 RELATED WORK",
+        "text_level": 2,
+        "bbox": [
+            171,
+            767,
+            346,
+            782
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "text",
+        "text": "Latent world models for control and planning. World models learn predictive dynamics that can be used for planning, policy learning, or action-sequence optimization. Early methods such as World Models (Ha & Schmidhuber, 2018) and PlaNet (Hafner et al., 2019) showed that compact latent dynamics can support control from high-dimensional observations, while Dreamer (Hafner et al., 2020; 2023) and TD-MPC-style methods (Hansen et al., 2022; 2024) further combine latent rollouts with value learning, policy optimization, or model predictive control. More recent reward-free or goalconditioned latent planning methods, including DINO-WM (Zhou et al., 2025), PLDM (Sobal et al., 2025), and LeWM (Maes et al., 2026), learn dynamics in representation spaces and use test-time planners such as CEM (Rubinstein, 1999) for goal-conditioned control. These works demonstrate that learned latent dynamics can support planning without directly reconstructing future pixels. Our work builds on this line, but addresses a different question: rather than proposing another latent dynamics architecture or planner, we study how to diagnose whether learned latent transitions preserve action semantics useful for planning.",
+        "bbox": [
+            169,
+            799,
+            826,
+            925
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "page_number",
+        "text": "",
+        "bbox": [
+            493,
+            948,
+            504,
+            959
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "text",
+        "text": "",
+        "bbox": [
+            169,
+            103,
+            823,
+            161
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "Evaluation and diagnostics for world models. Latent world models are commonly evaluated by downstream success rates, returns, or CEM-based rollout performance (Hafner et al., 2020; Hansen et al., 2022; Zhou et al., 2025; Maes et al., 2026). While such endpoint evaluation directly measures task performance, it is planner-coupled, simulator-dependent, and often costly when many rollout episodes are required. Recent works have studied related post-hoc repairs or verifiers, such as learning reachability metrics to replace or hybridize the CEM terminal cost (Li et al., 2026), or checking whether world models respect action reachability or action-consistency constraints (Liu et al., 2026; Wang et al., 2026). Recent work on world action models evaluates the compatibility between generated future observations and actions as a reliability signal for value-free test-time selection (Ruan et al., 2026). In contrast, ATM focuses on simulator-free diagnosis rather than planner-cost repair: it compares real encoded transitions and model-predicted transitions through a $2 \\times 2$ cross-domain inverse-probing matrix to assess transition-level action semantics.",
+        "bbox": [
+            169,
+            179,
+            826,
+            347
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "Inverse dynamics and action-centric world modeling. Inverse dynamics objectives have long been used to learn control-relevant representations, exploration signals, and action-conditioned features. For example, curiosity-driven exploration uses inverse dynamics to learn features that ignore uncontrollable visual variation and support intrinsic motivation (Pathak et al., 2017), while inversedynamics pretraining has been studied as a general representation-learning objective for imitation and visuomotor control (Brandfonbrener et al., 2023). More recent action-centric world modeling methods further couple dynamics prediction with action generation or action-conditioned representation learning (Tian et al., 2026). These works show that action information is useful for learning control-oriented representations. Our work is related to this line, but uses action decodability primarily as a post-hoc diagnostic lens for trained latent world models; AITS is a lightweight training extension, while the main contribution is the transition-level diagnostic and its failure-mode analysis.",
+        "bbox": [
+            169,
+            364,
+            823,
+            532
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "3 ACTION-CONSISTENCY TRANSFER MATRIX",
+        "text_level": 2,
+        "bbox": [
+            171,
+            556,
+            571,
+            571
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "This section presents the proposed ATM framework. We first introduce the latent planning setting and the action-conditioned latent transitions on which the planner relies. We then define two latent transition domains, real encoded transitions and model-predicted transitions, and use them to construct the Action-Consistency Transfer Matrix. Finally, we describe how ATM provides interpretable diagnostics and a screening score, and how action-identifiability can be further encouraged during training through Action-Identifiable Transition Supervision.",
+        "bbox": [
+            169,
+            589,
+            823,
+            676
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "3.1 OVERVIEW",
+        "text_level": 2,
+        "bbox": [
+            171,
+            694,
+            292,
+            709
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "Figure 1 gives an overview of ATM. Given a trained latent world model and offline transition data, ATM performs post-hoc analysis on the frozen encoder and dynamics predictor without modifying the model. Specifically, ATM constructs two transition domains from the same offline transitions: the real encoded transition domain, which reflects how the encoder represents actual environment evolution, and the model-predicted transition domain, which reflects the latent rollout produced by the dynamics predictor under a given action. Lightweight inverse probes are then used to compare how action information is decoded and transferred across the two domains, resulting in a $2 \\times 2$ transfer matrix.",
+        "bbox": [
+            169,
+            720,
+            823,
+            834
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "The matrix serves two purposes. First, it provides an interpretable diagnostic for whether the transition representation of a latent world model preserves action-identifiable semantics, and further reveals inconsistencies or shortcut-like failure modes between real and predicted transition domains. Second, ATM can be collapsed into a simple screening score for within-task comparison across checkpoints, model variants, and different world models, without repeatedly running simulator-based planning evaluation. Beyond post-hoc diagnosis, we also introduce AITS, which uses action-identifiability as an auxiliary training signal to encourage latent transitions with more action-identifiable structure.",
+        "bbox": [
+            169,
+            839,
+            826,
+            925
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "page_number",
+        "text": "3",
+        "bbox": [
+            493,
+            948,
+            504,
+            959
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "image",
+        "img_path": "images/983432db604beede3c23aaff9bb26b4f18935d3eb6725d954fbacf5fe7f2f81c.jpg",
+        "image_caption": [
+            "Figure 1: Overview of ATM. Given a frozen latent world model, ATM constructs true and predicted transition features and trains lightweight inverse probes $h _ { T }$ and $h _ { P }$ post-hoc. Cross-domain probe evaluation produces the $2 \\times 2$ Action-Consistency Transfer Matrix, which supports tiered diagnostics, screening and ranking, and the AITS training extension. Snowflake icons denote frozen modules, while flame icons denote trainable heads."
+        ],
+        "image_footnote": [],
+        "content": "```mermaid\ngraph TD\n    subgraph Training Stage\n  A[\"Encoder\"] --> B[\"Zt\"]\n  B --> C[\"Predictor\"]\n  C --> D[\"ŷt+1\"]\n  D --> E[\"ŷt+1\"]\n  F[\"Encoder\"] --> G[\"Zt+1\"]\n    end\n\n    subgraph Probe Stage\n  H[\"hP\"] --> I[\"DPT,P\"]\n  I --> J[\"DPT,T\"]\n  J --> K[\"DPT,P\"]\n  K --> L[\"|GPT→P|\"]\n  L --> M[\"Tier 1: |GT→P|\"]\n  M --> N[\"Tier 2: |GT→P|\"]\n  N --> O[\"Tier 3: |GPT→P|\"]\n  O --> P[\"SATM ↑ ⇒ SR ↑\"]\n    end\n\n    subgraph Use Stage\n  Q[\"Use Time\"] --> R[\"Training-time inverse head\"]\n  R --> S[\"hφ\"]\n  S --> T[\"ξTt^T\"]\n  T --> U[\"|z_t, z_{t+1}, z_{t+1} - z_t|\"]\n  U --> V[\"L_AITS = ||hφ(ξTt) - a_t||^2 / L = L_WM + αL_AITS\"]\n    end\n\n  H --> W[\"hT\"]\n  W --> X[\"a_t\"]\n  X --> Y[\"MSE\"]\n  Y --> Z[\"hP\"]\n  Z --> AA[\"|z_t, z_{t+1}, z_{t+1} - z_t|\"]\n  AA --> AB[\"hP\"]\n  AB --> AC[\"hP^T\"]\n  AC --> AD[\"ξTt^T\"]\n  AD --> AE[\"ξt^T\"]\n  AE --> AF[\"hT\"]\n  AF --> AG[\"a_t\"]\n  AG --> AH[\"MSE\"]\n  AH --> AI[\"hP\"]\n  AI --> AJ[\"|z_t, z_{t+1}, z_{t+1} - z_t|\"]\n  AJ --> AK[\"hP^T\"]\n  AK --> AL[\"hP\"]\n  AL --> AM[\"hP^T\"]\n  AM --> AN[\"hP^T\"]\n  AN --> AO[\"hP^T\"]\n  AO --> AP[\"hP^T\"]\n  AP --> AQ[\"hP^T\"]\n  AQ --> AR[\"hP^T\"]\n  AR --> AS[\"hP^T\"]\n  AS --> AT[\"hP^T\"]\n  AT --> AU[\"hP^T\"]\n  AU --> AV[\"hP^T\"]\n  AV --> AW[\"hP^T\"]\n  AW --> AX[\"hP^T\"]\n  AX --> AY[\"hP^T\"]\n  AY --> AZ[\"hP^T\"]\n  AZ --> BA[\"hP^T\"]\n  BA --> BB[\"hP^T\"]\n  BB --> BC[\"hP^T\"]\n  BC --> BD[\"hP^T\"]\n  BD --> BE[\"hP^T\"]\n  BE --> BF[\"hP^T\"]\n  BF --> BG[\"hP^T\"]\n  BG --> BH[\"hP^T\"]\n  BH --> BI[\"hP^T\"]\n  BI --> BJ[\"hP^T\"]\n  BJ --> BK[\"hP^T\"]\n  BK --> BL[\"hP^T\"]\n  BL --> BM[\"hP^T\"]\n  BM --> BN[\"hP^T\"]\n  BN --> BO[\"hP^T\"]\n  BO --> BP[\"hP^T\"]\n  BP --> BQ[\"hP^T\"]\n  BQ --> BR[\"hP^T\"]\n  BR --> BS[\"hP^T\"]\n  BS --> BT[\"hP^T\"]\n  BT --> BU[\"hP^T\"]\n  BU --> BV[\"hP^T\"]\n  BV --> BW[\"hP^T\"]\n```",
+        "sub_type": "flowchart",
+        "bbox": [
+            174,
+            104,
+            823,
+            282
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "text",
+        "text": "",
+        "bbox": [
+            169,
+            402,
+            823,
+            433
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "text",
+        "text": "3.2 LATENT PLANNING SETTING",
+        "text_level": 2,
+        "bbox": [
+            171,
+            449,
+            416,
+            462
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "text",
+        "text": "We consider goal-conditioned planning with an action-conditioned latent world model. The model consists of an encoder that maps observations to latent states and a dynamics predictor that rolls latent states forward under candidate actions. At test time, a planner such as CEM (Rubinstein, 1999) searches over action sequences by repeatedly rolling out the learned latent dynamics and selecting the sequence that best reaches a latent goal. This setting makes action-induced latent transitions the central object used by the planner.",
+        "bbox": [
+            169,
+            476,
+            823,
+            560
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "text",
+        "text": "Formally, given an observation $o _ { t } .$ , the encoder $E _ { \\theta }$ maps it to a latent state:",
+        "bbox": [
+            171,
+            566,
+            661,
+            580
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "equation",
+        "text": "$$\nz _ {t} = E _ {\\theta} (o _ {t}).\n$$",
+        "text_format": "latex",
+        "bbox": [
+            452,
+            589,
+            542,
+            604
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "text",
+        "text": "Given the current latent state $z _ { t }$ and action $a _ { t }$ , the dynamics predictor $F _ { \\theta }$ predicts the next latent state:",
+        "bbox": [
+            169,
+            612,
+            823,
+            638
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "equation",
+        "text": "$$\n\\hat {z} _ {t + 1} = F _ {\\theta} (z _ {t}, a _ {t}).\n$$",
+        "text_format": "latex",
+        "bbox": [
+            434,
+            641,
+            560,
+            656
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "text",
+        "text": "For multi-step planning, the model is rolled out recursively:",
+        "bbox": [
+            171,
+            660,
+            565,
+            675
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "equation",
+        "text": "$$\n\\hat {z} _ {t + k + 1} = F _ {\\theta} (\\hat {z} _ {t + k}, a _ {t + k}), \\quad k = 0, \\dots , H - 1,\n$$",
+        "text_format": "latex",
+        "bbox": [
+            336,
+            683,
+            656,
+            699
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "text",
+        "text": "where $\\hat { z } _ { t } = z _ { t }$ . Given a goal observation $o _ { g }$ and its latent representation $z _ { g } = E _ { \\theta } ( o _ { g } )$ , CEM searches for an action sequence that minimizes a latent goal distance:",
+        "bbox": [
+            169,
+            705,
+            823,
+            734
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "equation",
+        "text": "$$\na _ {t: t + H - 1} ^ {*} = \\arg \\min _ {a _ {t: t + H - 1}} d (\\hat {z} _ {t + H}, z _ {g}).\n$$",
+        "text_format": "latex",
+        "bbox": [
+            370,
+            743,
+            622,
+            766
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "text",
+        "text": "This formulation shows that latent planning depends not only on individual latent states, but also on how actions induce transitions in the learned representation space. Therefore, our diagnostic focuses on whether these latent transitions preserve action-identifiable semantics.",
+        "bbox": [
+            169,
+            781,
+            823,
+            824
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "text",
+        "text": "3.3 TRANSITION DOMAINS AND ATM MATRIX",
+        "text_level": 2,
+        "bbox": [
+            171,
+            840,
+            514,
+            854
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "text",
+        "text": "To diagnose action semantics in latent transitions, we construct two transition domains from offline transition tuples $\\left( o _ { t } , a _ { t } , o _ { t + 1 } \\right)$ . The first is the true transition domain, obtained by encoding consecutive observations:",
+        "bbox": [
+            169,
+            867,
+            823,
+            907
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "equation",
+        "text": "$$\nz _ {t} = E _ {\\theta} (o _ {t}), \\qquad z _ {t + 1} = E _ {\\theta} (o _ {t + 1}).\n$$",
+        "text_format": "latex",
+        "bbox": [
+            375,
+            909,
+            619,
+            926
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "page_number",
+        "text": "4",
+        "bbox": [
+            493,
+            948,
+            504,
+            959
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "text",
+        "text": "We represent each true transition with a structured feature:",
+        "bbox": [
+            171,
+            104,
+            558,
+            118
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "equation",
+        "text": "$$\n\\xi_ {t} ^ {T} = [ z _ {t}, z _ {t + 1}, z _ {t + 1} - z _ {t} ],\n$$",
+        "text_format": "latex",
+        "bbox": [
+            408,
+            125,
+            588,
+            142
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "where T denotes the true transition domain. This domain reflects how the encoder represents actual environment evolution.",
+        "bbox": [
+            169,
+            147,
+            823,
+            175
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "The second is the predicted transition domain. Using the predicted next latent state $\\hat { z } _ { t + 1 }$ produced by the dynamics predictor under the same action, we define the predicted transition feature as",
+        "bbox": [
+            169,
+            183,
+            825,
+            212
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "equation",
+        "text": "$$\n\\xi_ {t} ^ {P} = [ z _ {t}, \\hat {z} _ {t + 1}, \\hat {z} _ {t + 1} - z _ {t} ],\n$$",
+        "text_format": "latex",
+        "bbox": [
+            406,
+            217,
+            588,
+            234
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "where P denotes the predicted transition domain. This domain reflects how the learned dynamics model internally encodes action effects. Comparing the two domains allows us to examine whether model-predicted transitions preserve action semantics consistent with real encoded transitions.",
+        "bbox": [
+            169,
+            239,
+            823,
+            282
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "For vector-valued latents, $z _ { t }$ is used directly. For token- or patch-level latents, we first apply mean pooling over tokens and then construct $\\xi _ { t } ^ { T }$ and $\\xi _ { t } ^ { P }$ . This yields a fixed-size transition representation across different world models.",
+        "bbox": [
+            169,
+            289,
+            823,
+            330
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "Based on these two domains, ATM trains two lightweight inverse probes. The true-domain probe $h _ { T }$ is trained to predict $a _ { t }$ from $\\xi _ { t } ^ { T }$ , while the predicted-domain probe $h _ { P }$ is trained to predict $a _ { t }$ from $\\xi _ { t } ^ { P }$ . In our implementation, each probe is a two-layer MLP with LayerNorm and GELU activation:",
+        "bbox": [
+            169,
+            339,
+            823,
+            382
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "equation",
+        "text": "$$\nh (\\xi) = W _ {2} \\sigma (\\mathrm{LN} (W _ {1} \\xi + b _ {1})) + b _ {2}.\n$$",
+        "text_format": "latex",
+        "bbox": [
+            377,
+            387,
+            617,
+            404
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "After training, both probes are evaluated on both domains, yielding a $2 \\times 2$ Action-Consistency Transfer Matrix:",
+        "bbox": [
+            169,
+            416,
+            823,
+            443
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "equation",
+        "text": "$$\n\\mathbf {A} _ {\\mathrm{ATM}} = \\left[ \\begin{array}{c c} D _ {T, T} & D _ {T, P} \\\\ D _ {P, T} & D _ {P, P} \\end{array} \\right],\n$$",
+        "text_format": "latex",
+        "bbox": [
+            403,
+            441,
+            589,
+            474
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "where rows indicate the domain used to train the probe and columns indicate the domain used for evaluation. Each entry is defined as",
+        "bbox": [
+            169,
+            476,
+            823,
+            503
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "equation",
+        "text": "$$\nD _ {i, j} = \\mathbb {E} \\left[ \\| h _ {i} (\\xi_ {t} ^ {j}) - a _ {t} \\| _ {2} ^ {2} \\right], \\qquad i, j \\in \\{T, P \\}.\n$$",
+        "text_format": "latex",
+        "bbox": [
+            338,
+            511,
+            656,
+            537
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "The diagonal entries measure in-domain action decodability, while the off-diagonal entries measure cross-domain transfer of action semantics. During ATM evaluation, the encoder and dynamics predictor are frozen, and all inverse probes are trained fresh for each model. Thus, ATM measures action information accessible in the frozen latent transition representation, rather than the performance of any inverse head used during world-model training.",
+        "bbox": [
+            169,
+            547,
+            823,
+            619
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "3.4 DIAGNOSTICS AND SCREENING SCORE",
+        "text_level": 2,
+        "bbox": [
+            171,
+            635,
+            486,
+            648
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "The ATM matrix provides a layered diagnostic of action semantics in latent transitions. The first level focuses on action-identifiability in the true transition domain. Specifically, $D _ { T , T }$ measures the action prediction loss of the true-domain probe on real encoded transitions:",
+        "bbox": [
+            169,
+            661,
+            823,
+            704
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "equation",
+        "text": "$$\nD _ {T, T} = \\mathbb {E} \\left[ \\| h _ {T} (\\xi_ {t} ^ {T}) - a _ {t} \\| _ {2} ^ {2} \\right].\n$$",
+        "text_format": "latex",
+        "bbox": [
+            395,
+            709,
+            599,
+            729
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "A lower $D _ { T , T }$ indicates that the action causing a real latent transition is easier to recover from the transition feature, and therefore that the transition representation is more action-identifiable. We use $D _ { T , T }$ as the basic ATM diagnostic for representation quality.",
+        "bbox": [
+            169,
+            733,
+            823,
+            776
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "The second level focuses on true-to-predicted action consistency. Since actual planning relies on model-predicted transitions, true-domain action decodability alone does not guarantee that predicted transitions preserve the same action semantics. We therefore evaluate how well the action semantics learned from the true transition domain transfer to the predicted transition domain. We define the relative true-to-predicted gap as",
+        "bbox": [
+            169,
+            782,
+            825,
+            852
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "equation",
+        "text": "$$\nG _ {T \\rightarrow P} = \\frac {D _ {T , P} - D _ {T , T}}{D _ {T , T} + \\epsilon},\n$$",
+        "text_format": "latex",
+        "bbox": [
+            408,
+            857,
+            584,
+            888
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "where ϵ is a small constant for numerical stability. $G _ { T  P }$ measures the relative change when the true-domain probe is evaluated on predicted transitions. Since the sign of $G _ { T  P }$ does not have a universal interpretation, we mainly use its magnitude: a larger $| G _ { T  P } |$ indicates a stronger actionsemantic mismatch between real encoded transitions and model-predicted transitions.",
+        "bbox": [
+            169,
+            895,
+            825,
+            925
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "page_number",
+        "text": "5",
+        "bbox": [
+            493,
+            948,
+            504,
+            959
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "",
+        "bbox": [
+            169,
+            103,
+            823,
+            133
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "text",
+        "text": "The third level uses the full ATM matrix to analyze domain-transfer symmetry. Here, symmetry does not refer to standard matrix symmetry, because the rows and columns of ATM correspond to probe training domains and evaluation domains, respectively. Instead, we use symmetry in a domain-transfer sense: true and predicted transition domains should have comparable in-domain action decodability, and the relative transfer degradation should be balanced in the two directions. We first define the reverse transfer gap:",
+        "bbox": [
+            169,
+            138,
+            826,
+            223
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "equation",
+        "text": "$$\nG _ {P \\rightarrow T} = \\frac {D _ {P , T} - D _ {P , P}}{D _ {P , P} + \\epsilon}.\n$$",
+        "text_format": "latex",
+        "bbox": [
+            408,
+            226,
+            586,
+            258
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "text",
+        "text": "This measures the relative change when the predicted-domain probe is evaluated on true transitions. We then define the in-domain imbalance:",
+        "bbox": [
+            169,
+            263,
+            823,
+            292
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "equation",
+        "text": "$$\nI _ {\\mathrm{diag}} = \\frac {| D _ {T , T} - D _ {P , P} |}{\\frac {1}{2} (D _ {T , T} + D _ {P , P}) + \\epsilon}.\n$$",
+        "text_format": "latex",
+        "bbox": [
+            392,
+            294,
+            604,
+            330
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "text",
+        "text": "The ATM symmetry loss is defined as",
+        "bbox": [
+            171,
+            333,
+            424,
+            348
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "equation",
+        "text": "$$\nL _ {\\mathrm{ATM-sym}} = I _ {\\mathrm{diag}} + \\left| G _ {T \\rightarrow P} - G _ {P \\rightarrow T} \\right|.\n$$",
+        "text_format": "latex",
+        "bbox": [
+            361,
+            353,
+            633,
+            369
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "text",
+        "text": "A smaller $L _ { \\mathrm { A T M - s y m } }$ indicates that the true and predicted transition domains have similar in-domain action decodability and similar relative transfer degradation in both directions. A larger value suggests domain-specific action encoding or shortcut-like failure modes. For example, if $D _ { P , P }$ is low but $D _ { P , T }$ is high, predicted transitions are easy to decode within their own domain, but the learned action encoding does not transfer back to real transitions.",
+        "bbox": [
+            169,
+            373,
+            823,
+            444
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "text",
+        "text": "Beyond layered diagnostics, ATM can be collapsed into a lightweight screening score for model selection. Since $D _ { T , T }$ is a loss, we use $- D _ { T , T }$ as the base term. The magnitude $| G _ { T  P } |$ penalizes action-semantic mismatch between true and predicted transition domains, while $L _ { \\mathrm { A T M - s y m } }$ captures higher-level domain-transfer imbalance. We define the general ATM screening score as",
+        "bbox": [
+            169,
+            450,
+            823,
+            506
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "equation",
+        "text": "$$\nS _ {\\mathrm{ATM}} = - D _ {T, T} - \\lambda_ {1} | G _ {T \\to P} | - \\lambda_ {2} L _ {\\mathrm{ATM-sym}}, \\quad \\lambda_ {1}, \\lambda_ {2} \\geq 0.\n$$",
+        "text_format": "latex",
+        "bbox": [
+            282,
+            512,
+            712,
+            527
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "text",
+        "text": "A higher $S _ { \\mathrm { A T M } }$ indicates a better screening score. The coefficients $\\lambda _ { 1 }$ and $\\lambda _ { 2 }$ can be fitted within the same task using held-out checkpoints or model variants. In practice, we find that the first two levels, $D _ { T , T }$ and $| G _ { T  P } |$ , already provide a strong screening signal in most cases. Therefore, unless otherwise stated, our main ranking experiments use the simplified score:",
+        "bbox": [
+            169,
+            532,
+            823,
+            589
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "equation",
+        "text": "$$\nS _ {\\mathrm{ATM}} = - D _ {T, T} - \\lambda_ {1} | G _ {T \\to P} |.\n$$",
+        "text_format": "latex",
+        "bbox": [
+            390,
+            594,
+            604,
+            609
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "text",
+        "text": "This linear form is used as a lightweight screening score rather than a calibrated model of success rate. The relationship between ATM diagnostics and endpoint success can be nonlinear, especially when the true-to-predicted gap becomes large; nevertheless, we find that the linear score already provides a strong ranking signal in the regimes considered in our main screening experiments.",
+        "bbox": [
+            169,
+            622,
+            823,
+            679
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "text",
+        "text": "The full score can be used when matrix-level domain imbalance needs to be explicitly considered. Importantly, ATM scores are intended for within-task ranking rather than absolute comparison across tasks, since different tasks have different action scales, transition complexities, and success criteria.",
+        "bbox": [
+            169,
+            685,
+            823,
+            728
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "text",
+        "text": "In our experiments, we use $S _ { \\mathrm { A T M } }$ to rank checkpoints, model variants, and different world models within the same task, and compare the resulting ordering with simulator-based planning performance. Unlike full CEM evaluation, ATM only requires frozen latent transitions and lightweight probes, making it a low-cost screening signal for identifying promising models or checkpoints before expensive downstream planning evaluation.",
+        "bbox": [
+            169,
+            734,
+            825,
+            805
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "text",
+        "text": "3.5 ACTION-IDENTIFIABLE TRANSITION SUPERVISION",
+        "text_level": 2,
+        "bbox": [
+            171,
+            820,
+            568,
+            834
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "text",
+        "text": "ATM is a post-hoc diagnostic for evaluating whether a trained world model has action-identifiable transition structure. We further ask whether this property can be encouraged during training. To this end, we introduce Action-Identifiable Transition Supervision (AITS), which adds a simple inverse objective on true latent transitions:",
+        "bbox": [
+            169,
+            845,
+            825,
+            902
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "equation",
+        "text": "$$\n\\mathcal {L} _ {\\mathrm{AITS}} = \\mathbb {E} \\left[ \\| h _ {\\psi} (\\xi_ {t} ^ {T}) - a _ {t} \\| _ {2} ^ {2} \\right],\n$$",
+        "text_format": "latex",
+        "bbox": [
+            390,
+            907,
+            604,
+            926
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "page_number",
+        "text": "6",
+        "bbox": [
+            493,
+            948,
+            504,
+            959
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "text",
+        "text": "where $\\xi _ { t } ^ { T } = [ z _ { t } , z _ { t + 1 } , z _ { t + 1 } - z _ { t } ]$ , and $h _ { \\psi }$ is a training-time inverse head. Given the original worldmodel objective ${ \\mathcal { L } } _ { \\mathrm { W M } }$ , the full training loss becomes",
+        "bbox": [
+            169,
+            103,
+            823,
+            133
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "equation",
+        "text": "$$\n\\mathcal {L} = \\mathcal {L} _ {\\mathrm{WM}} + \\alpha \\mathcal {L} _ {\\mathrm{AITS}},\n$$",
+        "text_format": "latex",
+        "bbox": [
+            421,
+            140,
+            575,
+            156
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "text",
+        "text": "where α controls the weight of AITS. AITS encourages real latent transitions to preserve clearer action-identifiable structure, making the learned representation more suitable for downstream planning. It does not modify the planner or introduce a new action selection mechanism.",
+        "bbox": [
+            169,
+            162,
+            823,
+            205
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "text",
+        "text": "The training-time inverse head and the post-hoc ATM probes are separated. During ATM evaluation, any inverse head used during training is discarded, and fresh probes are trained for every model. Therefore, ATM measures whether action information is accessible in the frozen latent transition representation, rather than the performance of a head trained together with the world model.",
+        "bbox": [
+            169,
+            210,
+            823,
+            268
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "text",
+        "text": "Since planning relies on model-predicted transitions, we also consider a predicted-transition variant, denoted as AITS-P:",
+        "bbox": [
+            169,
+            275,
+            823,
+            301
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "equation",
+        "text": "$$\n\\mathcal {L} _ {\\mathrm{AITS-P}} = \\mathbb {E} \\left[ \\| h _ {\\psi} (\\xi_ {t} ^ {P}) - a _ {t} \\| _ {2} ^ {2} \\right].\n$$",
+        "text_format": "latex",
+        "bbox": [
+            383,
+            301,
+            609,
+            319
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "text",
+        "text": "AITS-P encourages action decodability in the predicted transition domain. We use it as an ablation and analysis variant rather than the main supervision, since predicted-transition supervision is more task-dependent and more sensitive to dynamics-prediction errors. In our experiments, true-transition AITS provides the more stable training signal, while AITS-P helps analyze the role of the predicted transition domain.",
+        "bbox": [
+            169,
+            321,
+            825,
+            391
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "text",
+        "text": "4 EXPERIMENTS",
+        "text_level": 2,
+        "bbox": [
+            171,
+            412,
+            326,
+            426
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "text",
+        "text": "We design experiments around three questions. First, does improving action-identifiable transition structure improve downstream planning? Second, do ATM diagnostics reflect planning-relevant transition quality and explain performance differences across models? Third, how much evaluation cost does ATM save compared with simulator-based CEM evaluation?",
+        "bbox": [
+            169,
+            443,
+            823,
+            500
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "text",
+        "text": "4.1 EXPERIMENTAL SETUP",
+        "text_level": 2,
+        "bbox": [
+            171,
+            517,
+            375,
+            530
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "text",
+        "text": "Tasks. We evaluate ATM on three goal-conditioned planning tasks: TwoRoom, PushT, and OGBench-Cube (Park et al., 2025). TwoRoom is a 2D navigation task, PushT is a continuous-control 2D manipulation task, and OGBench-Cube is a more complex 3D manipulation task. Together, they cover different levels of transition complexity, from simple navigation to contact-rich manipulation and visually complex 3D control.",
+        "bbox": [
+            169,
+            542,
+            823,
+            613
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "text",
+        "text": "Models. Our controlled experiments are based on LeWM-style (Maes et al., 2026) latent world models. We compare the LeWM baseline, LeWM with Action-Identifiable Transition Supervision (AITS), and the predicted-transition variant AITS-P. To examine within-task cross-model comparability, we further include DINO-WM (Zhou et al., 2025) checkpoints as an external latent worldmodel family. When comparing variants within each task, we use the same CEM protocol, and we report wall-clock timing separately for LeWM-style and DINO-WM evaluation.",
+        "bbox": [
+            169,
+            628,
+            823,
+            712
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "text",
+        "text": "4.2 PLANNING PERFORMANCE WITH AITS",
+        "text_level": 2,
+        "bbox": [
+            171,
+            729,
+            486,
+            742
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "text",
+        "text": "Table 1 reports downstream planning performance on the three goal-conditioned tasks. Adding AITS consistently improves the LeWM (Maes et al., 2026) baseline under the same planner, with gains of +5, +4, and +10 success-rate points on TwoRoom, PushT, and OGBench-Cube, respectively. The largest gain appears on OGBench-Cube, the least saturated task in our benchmark. These results suggest that action-identifiable transition structure is not only useful for post-hoc diagnosis, but can also serve as an effective training signal for improving downstream planning.",
+        "bbox": [
+            169,
+            755,
+            825,
+            839
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "text",
+        "text": "4.3 ATM AS A PLANNING-RELEVANT QUALITY DIAGNOSTIC",
+        "text_level": 2,
+        "bbox": [
+            169,
+            854,
+            612,
+            869
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "text",
+        "text": "We next evaluate whether ATM reflects the planning-relevant transition quality of latent world models. We do not treat ATM as a calibrated predictor of success rate; instead, we evaluate whether it can distinguish the relative quality of checkpoints, variants, and world models within the same task.",
+        "bbox": [
+            169,
+            881,
+            823,
+            925
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "page_number",
+        "text": "7",
+        "bbox": [
+            493,
+            948,
+            504,
+            959
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "table",
+        "img_path": "images/01d9d08664cc1a5dc4f32a588e3331ee71ab868000f058dd1a69ae1cab1ee45e.jpg",
+        "table_caption": [
+            "Table 1: Main planning performance on goal-conditioned planning tasks. We report simulator-based success rate (%). Baseline values are taken from the LeWM comparison setting (Maes et al., 2026). $\\Delta$ denotes the absolute improvement of LeWM+AITS over LeWM."
+        ],
+        "table_footnote": [],
+        "table_body": "<table><tr><td>Method</td><td>TwoRoom</td><td>PushT</td><td>OGBench-Cube</td></tr><tr><td>PLDM (Sobal et al., 2025)</td><td>97</td><td>78</td><td>65</td></tr><tr><td>DINO-WM (Zhou et al., 2025)</td><td>100</td><td>74</td><td>86</td></tr><tr><td>LeWM (Maes et al., 2026)</td><td>87</td><td>96</td><td>74</td></tr><tr><td>LeWM + AITS (Ours)</td><td>92</td><td>100</td><td>84</td></tr><tr><td> $\\Delta$  over LeWM</td><td>+5</td><td>+4</td><td>+10</td></tr></table>",
+        "bbox": [
+            246,
+            142,
+            746,
+            247
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "text",
+        "text": "We first analyze the correlation between diagnostic scores and simulator-based success on OGBench-Cube. Compared with TwoRoom and PushT, OGBench-Cube has a less saturated success distribution, making it more suitable for studying the relationship between continuous diagnostic signals and planning performance. Table 2 reports the correlation of prediction loss, $- D _ { T , T }$ , the $S _ { \\mathrm { A T M } } ^ { ( 2 ) } .$ $S _ { \\mathrm { A T M } } ^ { ( 3 ) }$ $S _ { \\mathrm { A T M } } ^ { ( 2 ) }$ $D _ { T , T }$ $| G _ { T  P } |$ $S _ { \\mathrm { A T M } } ^ { ( 3 ) }$ further includes $L _ { \\mathrm { A T M - s y m } }$ . All scores are oriented so that higher is better.",
+        "bbox": [
+            169,
+            260,
+            823,
+            366
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "text",
+        "text": "The results indicate that ATM-based diagnostics align more closely with downstream planning success than prediction loss. Notably, $D _ { T , T }$ alone already provides a strong signal, and adding the true-to-predicted gap slightly improves rank correlation. Although the threelevel score improves Pearson correlation, we use the two-level score as the main ranking score and analyze the full-matrix term separately for failure modes.",
+        "bbox": [
+            169,
+            373,
+            529,
+            484
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "text",
+        "text": "Beyond correlation, we evaluate the pairwise ranking accuracy of ATM scores. Pairwise ranking matches the practical use case of selecting the more promising",
+        "bbox": [
+            169,
+            491,
+            529,
+            534
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "table",
+        "img_path": "images/fa6e9877265eb3081af0ed39576f5ffe190a312eade05be887370e633e097565.jpg",
+        "table_caption": [
+            "Table 2: Correlation between diagnostic scores and downstream planning success on OGBench-Cube. All scores are oriented so that higher is better."
+        ],
+        "table_footnote": [],
+        "table_body": "<table><tr><td>Score</td><td>Spearman ρ</td><td>Pearson r</td></tr><tr><td> $-L_{\\text{pred}}$ </td><td>0.4983</td><td>0.3927</td></tr><tr><td> $-D_{T,T}$ </td><td>0.8130</td><td>0.7015</td></tr><tr><td> $S_{\\text{ATM}}^{(2)}$ </td><td>0.8239</td><td>0.7006</td></tr><tr><td> $S_{\\text{ATM}}^{(3)}$ </td><td>0.8088</td><td>0.7361</td></tr></table>",
+        "bbox": [
+            573,
+            433,
+            790,
+            517
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "text",
+        "text": "candidate from a set of checkpoints or variants. Table 3 reports ranking results on LeWM-style candidates, where $\\lambda _ { 1 }$ is fitted on the same LeWM-style candidate pool. Over all candidate pairs, $S _ { \\mathrm { A T M } } ^ { ( 2 ) }$ achieves 82.84% ranking accuracy. When the true success gap exceeds $5 \\% .$ , the ranking accuracy increases to 98.81%. This indicates that ATM is highly reliable for selecting the better checkpoint or variant when the performance difference is practically meaningful.",
+        "bbox": [
+            169,
+            534,
+            823,
+            607
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "text",
+        "text": "We further evaluate cross-model comparability by combining LeWM-style candidates with DINO-WM (Zhou et al., 2025) checkpoints. Since DINO-WM contains relatively few checkpoints and their success rates are narrowly distributed, DINO-only pairwise ranking is sensitive to rollout noise and is treated as a stress case. The more relevant test is the LeWM–DINO pair type, which asks whether ATM can place candidates from different world-model families in a shared quality order.",
+        "bbox": [
+            169,
+            613,
+            823,
+            684
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "text",
+        "text": "As shown in Table 4, the transferred score reaches 78.24% accuracy over all pooled pairs, but crossfamily LeWM–DINO ranking remains moderate without calibration. After refitting a single coefficient on the mixed candidate pool, LeWM–DINO accuracy rises to 89.90%, and all-pooled accuracy reaches 83.10%. These results suggest that ATM components provide useful cross-family diagnostic information, while direct coefficient transfer can be affected by score-scale differences between world-model families.",
+        "bbox": [
+            169,
+            689,
+            823,
+            773
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "text",
+        "text": "The DINO-only refit row should be interpreted cautiously: it contains only 40 pairs with a narrow success range, and it is not the target of the mixed-pool calibration; the primary cross-family test is the LeWM–DINO pair type. As a complementary visualization, Figure 2 shows a low-capacity spline calibration fitted on the pooled candidate set. This calibration is not used as the main screening score, but helps visualize whether DINO-WM checkpoints fall into the same diagnostic regime as LeWM-style candidates.",
+        "bbox": [
+            169,
+            780,
+            823,
+            864
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "text",
+        "text": "Together, the correlation analysis, LeWM-style ranking, cross-model ranking, and calibration visualization show that ATM can serve as a planning-relevant representation-quality diagnostic. It is most reliable for within-family screening, while cross-family comparison remains more challenging but can benefit from lightweight ATM-based calibration.",
+        "bbox": [
+            169,
+            871,
+            823,
+            926
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "page_number",
+        "text": "8",
+        "bbox": [
+            493,
+            948,
+            503,
+            959
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "table",
+        "img_path": "images/79084c5b8da2ff25ae42e34f3b627509d259d119b54a59c19dfb42951d084a6f.jpg",
+        "table_caption": [
+            "Table 3: Pairwise ranking accuracy on OGBench-Cube within LeWM-style candidates. We use the two-level linear ATM screening score $S _ { \\mathrm { A T M } } = - D _ { T , T } - \\lambda _ { 1 } | G _ { T  P } |$ . A pair is counted as correct if ATM ranks two candidates in the same order as simulator-based success. Margins filter out pairs with small success gaps."
+        ],
+        "table_footnote": [],
+        "table_body": "<table><tr><td>Success margin</td><td> $n_{pairs}$ </td><td>Ranking acc.</td><td>Weighted Ranking acc.</td></tr><tr><td>All pairs</td><td>1865</td><td>82.84</td><td>92.61</td></tr><tr><td>&gt;2%</td><td>1338</td><td>91.48</td><td>95.14</td></tr><tr><td>&gt;5%</td><td>841</td><td>98.81</td><td>99.09</td></tr><tr><td>&gt;10%</td><td>123</td><td>100.00</td><td>100.00</td></tr></table>",
+        "bbox": [
+            269,
+            169,
+            727,
+            253
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "table",
+        "img_path": "images/2de1230a84e45412eb6009b2e20addc90e59b38e587bbaf5b14db65d73208535.jpg",
+        "table_caption": [
+            "Table 4: Cross-model ranking on OGBench-Cube. We use the two-level linear ATM screening score $S _ { \\mathrm { A T M } } ~ = ~ - D _ { T , T } - { \\lambda _ { 1 } } \\bar { \\vert } G _ { T  P } \\vert$ . The transferred setting uses $\\lambda _ { 1 }$ fitted only on LeWMstyle (Maes et al., 2026) candidates. The refit setting calibrates $\\lambda _ { 1 }$ on the mixed candidate pool to assess whether ATM components can support cross-family comparison after lightweight calibration. Because DINO-WM (Zhou et ${ \\mathrm { a l . } }$ , 2025) has few checkpoints and a narrow success range, DINO-only ranking is reported as a stress case, while LeWM–DINO pairs are the primary crossfamily comparison."
+        ],
+        "table_footnote": [],
+        "table_body": "<table><tr><td>Setting</td><td>Pair type</td><td> $\\lambda_1$ </td><td> $n_{pairs}$ </td><td>Ranking acc.</td></tr><tr><td>Transferred</td><td>DINO-only</td><td>0.036</td><td>40</td><td>70.00</td></tr><tr><td>Transferred</td><td>LeWM-DINO</td><td>0.036</td><td>604</td><td>68.54</td></tr><tr><td>Transferred</td><td>All pooled</td><td>0.036</td><td>2509</td><td>78.24</td></tr><tr><td>Refit</td><td>DINO-only</td><td>0.005</td><td>40</td><td>32.50</td></tr><tr><td>Refit</td><td>LeWM-DINO</td><td>0.005</td><td>604</td><td>89.90</td></tr><tr><td>Refit</td><td>All pooled</td><td>0.005</td><td>2509</td><td>83.10</td></tr></table>",
+        "bbox": [
+            279,
+            382,
+            712,
+            501
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "text",
+        "text": "4.4 EFFICIENCY OF SIMULATOR-FREE EVALUATION",
+        "text_level": 2,
+        "bbox": [
+            171,
+            534,
+            545,
+            547
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "text",
+        "text": "A key advantage of ATM is that it avoids repeated simulator rollouts. Table 5 compares the wall-clock cost of CEM-based endpoint evaluation and ATM diagnostics. For CEM evaluation, obtaining a more stable success estimate requires averaging over multiple simulator episodes; therefore, increasing the number of evaluation episodes from 50 to 100 also increases the evaluation cost. Moreover, since CEM repeatedly queries the world model for latent rollouts in each episode, the wall-clock cost strongly depends on the rollout complexity of the underlying world model. Under the same protocol, LeWM-style models require minutes per checkpoint, whereas DINO-WM can require hours.",
+        "bbox": [
+            169,
+            569,
+            535,
+            750
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "text",
+        "text": "In contrast, ATM does not depend on simulator episodes. Once latent transitions are cached, ATM only trains lightweight inverse probes and computes the transfer matrix, keeping the main diagnostic cost at the seconds level. Even compared with the faster LeWM evaluation, ATM yields tens to over 100× speedup depending on the evaluation budget and probe runtime; compared with DINO-WM, the efficiency gain is substantially larger. Together with the ranking results in Section 4.3, this shows that ATM is not only informative, but also practical as a lightweight model-selection diagnostic.",
+        "bbox": [
+            169,
+            757,
+            535,
+            924
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "chart",
+        "img_path": "images/5c1543982d31158318c6490d262b99ae3fbea43fef3539c4e97acefffd30183a.jpg",
+        "content": "| Model | Spline-predicted success rate | Observed success rate |\n|-------|-------------------------------|------------------------|\n| DINO  | 68.5                          | 69.2                   |\n| DINO  | 69.1                          | 70.1                   |\n| DINO  | 69.8                          | 70.5                   |\n| DINO  | 70.2                          | 70.8                   |\n| LEWM  | 62.3                          | 61.5                   |\n| LEWM  | 63.1                          | 62.8                   |\n| LEWM  | 64.0                          | 63.5                   |\n| LEWM  | 64.8                          | 64.2                   |\n| LEWM  | 65.5                          | 65.0                   |\n| LEWM  | 66.2                          | 65.8                   |\n| LEWM  | 67.0                          | 66.5                   |\n| LEWM  | 67.8                          | 67.2                   |\n| LEWM  | 68.5                          | 68.0                   |\n| LEWM  | 69.2                          | 68.8                   |\n| LEWM  | 69.9                          | 69.5                   |\n| LEWM  | 70.5                          | 70.2                   |\n| LEWM  | 71.2                          | 70.9                   |\n| LEWM  | 71.9                          | 71.6                   |\n| LEWM  | 72.5                          | 72.3                   |\n| LEWM  | 73.2                          | 73.0                   |\n| LEWM  | 73.9                          | 73.7                   |\n| LEWM  | 74.5                          | 74.4                   |\n| LEWM  | 75.2                          | 75.1                   |\n| LEWM  | 75.9                          | 75.8                   |\n| LEWM  | 76.5                          | 76.5                   |",
+        "chart_caption": [
+            "Figure 2: Cross-model calibration on OGBench-Cube. A low-capacity spline model maps ATM diagnostics to success rate for visualization. DINO-WM checkpoints lie near the same trend as LeWMstyle candidates. This analysis is only used for calibration visualization."
+        ],
+        "chart_footnote": [],
+        "sub_type": "scatterplot",
+        "bbox": [
+            549,
+            598,
+            816,
+            765
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "page_number",
+        "text": "9",
+        "bbox": [
+            493,
+            948,
+            503,
+            959
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "table",
+        "img_path": "images/b36698a7761216d27963897f915dc2cb68f6f7d6720dce2ed38d256d0fa61738.jpg",
+        "table_caption": [
+            "Table 5: Evaluation cost comparison. CEM-based endpoint evaluation requires simulator rollouts and repeated planner-model interaction, so its cost increases with the number of evaluation episodes and depends on world-model rollout complexity. ATM performs simulator-free transition diagnostics after latent caching."
+        ],
+        "table_footnote": [],
+        "table_body": "<table><tr><td>Protocol</td><td>Simulator rollout?</td><td>50 episodes</td><td>100 episodes</td></tr><tr><td>LeWM CEM evaluation (Maes et al., 2026)</td><td>Yes</td><td> $\\sim 3$  min</td><td> $\\sim 7$  min</td></tr><tr><td>DINO-WM CEM evaluation (Zhou et al., 2025)</td><td>Yes</td><td> $\\sim 1.4$  h</td><td> $\\sim 2.8$  h</td></tr><tr><td>ATM diagnostics</td><td>No</td><td colspan=\"2\">3–5 s</td></tr></table>",
+        "bbox": [
+            173,
+            169,
+            848,
+            239
+        ],
+        "page_idx": 9
+    },
+    {
+        "type": "table",
+        "img_path": "images/ef60b9f0553a8fdb9f1091415ddca3ab098b484008702fac76bbbc72fb6ee723.jpg",
+        "table_caption": [
+            "Table 6: Ablation and failure-mode analysis with ATM diagnostics. Probe losses are comparable within the same task. $D _ { T , T }$ measures true-transition action-identifiability, $| G _ { T  P } |$ measures true-to-predicted mismatch, and $L _ { \\mathrm { A T M - s y m } }$ measures matrix-level domain-transfer imbalance. All reported ATM diagnostic values, including losses and relative gaps, are scaled by 100 for readability."
+        ],
+        "table_footnote": [],
+        "table_body": "<table><tr><td>Task</td><td>Model</td><td> $D_{T,T} \\downarrow$ </td><td> $|G_{T\\rightarrow P}| \\downarrow$ </td><td> $L_{ATM-sym} \\downarrow$ </td><td>Success ↑</td></tr><tr><td>TwoRoom</td><td>LeWM</td><td>80.26</td><td>1.28</td><td>0.96</td><td>87</td></tr><tr><td>TwoRoom</td><td>+ AITS</td><td>79.56</td><td>2.50</td><td>1.17</td><td>92</td></tr><tr><td>TwoRoom</td><td>+ AITS-P</td><td>79.36</td><td>0.68</td><td>1283.05</td><td>94</td></tr><tr><td>TwoRoom</td><td>+ AITS + AITS-P</td><td>79.13</td><td>6.09</td><td>7306.41</td><td>92</td></tr><tr><td>PushT</td><td>LeWM</td><td>18.29</td><td>3.72</td><td>22.63</td><td>96</td></tr><tr><td>PushT</td><td>+ AITS</td><td>16.23</td><td>1.22</td><td>8.83</td><td>100</td></tr><tr><td>PushT</td><td>+ AITS-P</td><td>17.34</td><td>10.56</td><td>1358.66</td><td>100</td></tr><tr><td>PushT</td><td>+ AITS + AITS-P</td><td>15.34</td><td>24.99</td><td>444.01</td><td>98</td></tr><tr><td>OGBench-Cube</td><td>LeWM</td><td>36.65</td><td>0.45</td><td>1.09</td><td>74</td></tr><tr><td>OGBench-Cube</td><td>+ AITS</td><td>15.87</td><td>0.96</td><td>8.37</td><td>84</td></tr><tr><td>OGBench-Cube</td><td>+ AITS-P</td><td>33.77</td><td>1.60</td><td>300.84</td><td>78</td></tr><tr><td>OGBench-Cube</td><td>+ AITS + AITS-P</td><td>15.40</td><td>4.57</td><td>126.83</td><td>84</td></tr></table>",
+        "bbox": [
+            196,
+            319,
+            802,
+            526
+        ],
+        "page_idx": 9
+    },
+    {
+        "type": "chart",
+        "img_path": "images/1bd3dcc46b20b4221a13cc6eb2561465468ba3c36aae390ca8522820310a0212.jpg",
+        "content": "| Model | Condition | True | Predicted | TT | TP |\n| --- | --- | --- | --- | --- | --- |\n| LeWM | Two Room | 0.80 | 0.81 | 0.80 | 0.81 |\n| LeWM | PushT | 0.80 | 0.82 | 0.79 | 0.80 |\n| LeWM | OGBench-Cube | 0.82 | 0.79 | 0.79 | 0.84 |\n| +AITS | Two Room | 0.79 | 0.80 | 0.79 | 0.84 |\n| +AITS | PushT | 0.18 | 0.18 | 0.17 | 0.16 |\n| +AITS | OGBench-Cube | 0.16 | 0.16 | 0.15 | 0.12 |\n| +AITS-P | Two Room | 0.92 | 0.08 | 0.92 | 0.01 |\n| +AITS-P | PushT | 0.19 | 0.01 | 0.14 | 0.04 |\n| +AITS-P | OGBench-Cube | 0.16 | 0.16 | 0.14 | 0.04 |\n| +AITS+AITS-P | Two Room | 1.10 | 0.31 | 1.10 | 0.31 |\n| +AITS+AITS-P | PushT | 1.10 | 0.31 | 1.10 | 0.31 |\n| +AITS+AITS-P | OGBench-Cube | 1.10 | 0.31 | 1.10 | 0.31 |\n| DINO-WM | Two Room | 0.22 | 6.12 | 0.22 | 6.12 |\n| DINO-WM | PushT | 0.05 | 0.70 | 0.05 | 0.70 |\n| DINO-WM | OGBench-Cube | 0.42 | 0.06 | 0.42 | 0.06 |\n| OGBench-Cube | Two Room | 0.37 | 0.37 | 0.37 | 0.37 |\n| OGBench-Cube | PushT | 0.37 | 0.37 | 0.37 | 0.37 |\n| OGBench-Cube | OGBench-Cube | 0.37 | 0.37 | 0.37 | 0.37 |\n| OGBench-Cube | Two Room | 0.37 | 0.37 | 0.37 | 0.37 |\n| OGBench-Cube | PushT | 0.18 | 0.17 | 0.18 | 0.17 |\n| OGBench-Cube | OGBench-Cube | 0.18 | 0.17 | 0.18 | 0.17 |\n| OGBench-Cube | Two Room | 0.34 | 0.33 | 0.34 | 0.33 |\n| OGBench-Cube | PushT | 0.34 | 0.33 | 0.34 | 0.33 |\n| OGBench-Cube | OGBench-Cube | 0.34 | 0.33 | 0.34 | 0.33 |\n| OGBench-Cube | Two Room | 0.15 | 0.15 | 0.15 | 0.15 |\n| OGBench-Cube | PushT | 0.15 | 0.15 | 0.15 | 0.15 |\n| OGBench-Cube | OGBench-Cube | 0.15 | 0.15 | 0.15 | 0.15 |\n| OGBench-Cube | Two Room | 0.45 | 0.45 | 0.45 | 0.45 |\n| OGBench-Cube | PushT | 0.45 | 0.45 | 0.45 | 0.45 |\n| OGBench-Cube | OGBench-Cube | 0.45 | 0.45 | 0.45 | 0.45 |",
+        "chart_caption": [
+            "Figure 3: Full ATM matrices for ablation and failure-mode analysis. Each $2 \\times 2$ matrix reports $D _ { T , T } , D _ { T , P } , D _ { P , T }$ and $D _ { P , P } ,$ where rows indicate the probe training domain and columns indicate the evaluation domain. Colors are clipped to [0, 1] for visualization, while cell values show the original probe losses. Compared with $\\mathrm { A I T S } ,$ which mainly reduces true-transition action loss, AITS-P is more likely to induce predicted-domain-specific action codes: $D _ { P , P }$ can become substantially lower, but the resulting action code does not always transfer back to the true transition domain, leading to matrix-level imbalance."
+        ],
+        "chart_footnote": [],
+        "sub_type": "heatmap",
+        "bbox": [
+            210,
+            551,
+            795,
+            777
+        ],
+        "page_idx": 9
+    },
+    {
+        "type": "page_number",
+        "text": "10",
+        "bbox": [
+            490,
+            946,
+            508,
+            959
+        ],
+        "page_idx": 9
+    },
+    {
+        "type": "text",
+        "text": "4.5 ABLATION AND FAILURE-MODE ANALYSIS",
+        "text_level": 2,
+        "bbox": [
+            171,
+            104,
+            516,
+            118
+        ],
+        "page_idx": 10
+    },
+    {
+        "type": "text",
+        "text": "We finally use ATM to analyze how different transition-supervision variants change the learned transition representation. Table 6 summarizes the scalar diagnostics, while Figure 3 visualizes the full ATM matrices. Together, they connect changes in transition-domain structure with downstream success and reveal which failure modes are alleviated or amplified by each variant.",
+        "bbox": [
+            169,
+            130,
+            823,
+            186
+        ],
+        "page_idx": 10
+    },
+    {
+        "type": "text",
+        "text": "AITS primarily improves true-transition action-identifiability. This trend is clearest on OGBench-Cube: the reported $D _ { T , T }$ decreases from 36.65 to 15.87, while the success rate improves from 74% to 84%. This suggests that, on the more challenging manipulation task, a major bottleneck of the LeWM (Maes et al., 2026) baseline is that real encoded transitions do not preserve action semantics clearly enough. A similar trend appears on PushT, where AITS reduces both $D _ { T , T }$ and $| G _ { T  P } |$ , and improves the success rate to 100%. These results indicate that improving action-identifiable structure in the true transition domain can consistently translate into downstream planning gains.",
+        "bbox": [
+            169,
+            193,
+            823,
+            292
+        ],
+        "page_idx": 10
+    },
+    {
+        "type": "text",
+        "text": "AITS-P exhibits a different behavior. On the simpler TwoRoom task, AITS-P achieves the lowest $| G _ { T  P } |$ and the highest success rate, suggesting that directly supervising predicted transitions can be beneficial when the transition structure is simple. However, its large $L _ { \\mathrm { A T M - s y m } }$ already reveals strong matrix-level imbalance. As shown in Figure 3, predicted-transition supervision can make $D _ { P , P }$ substantially lower than the other entries, indicating a predicted-domain-specific action code that is easy to decode internally but does not transfer symmetrically to real encoded transitions.",
+        "bbox": [
+            171,
+            297,
+            823,
+            383
+        ],
+        "page_idx": 10
+    },
+    {
+        "type": "text",
+        "text": "As task complexity increases, this shortcut-like behavior becomes more harmful. On PushT and OGBench-Cube, AITS-P does not reduce $D _ { T , T }$ as consistently as AITS and often increases $| G _ { T  P } |$ or matrix-level imbalance. This suggests that the model’s internal rollout may become more selfdecodable without becoming more aligned with real environment evolution, which can provide a biased action-selection signal to the planner.",
+        "bbox": [
+            169,
+            388,
+            823,
+            460
+        ],
+        "page_idx": 10
+    },
+    {
+        "type": "text",
+        "text": "These results illustrate the value of ATM for failure-mode analysis. A single success rate or indomain inverse loss cannot distinguish shared action semantics from domain-specific action codes. By separating true-transition action-identifiability, true-to-predicted mismatch, and matrix-level imbalance, ATM explains why AITS provides more stable gains, while AITS-P can help on simple tasks but becomes less reliable as transition complexity increases.",
+        "bbox": [
+            169,
+            465,
+            823,
+            536
+        ],
+        "page_idx": 10
+    },
+    {
+        "type": "text",
+        "text": "5 CONCLUSION",
+        "text_level": 2,
+        "bbox": [
+            171,
+            556,
+            320,
+            571
+        ],
+        "page_idx": 10
+    },
+    {
+        "type": "text",
+        "text": "In this work, we introduced ATM, an Action-Consistency Transfer Matrix for diagnosing planningrelevant latent transition quality in latent world models. Instead of relying solely on slow, plannercoupled rollout evaluation, ATM compares action information across real encoded transitions and model-predicted transitions through lightweight post-hoc probes. The resulting matrix provides interpretable diagnostics of action-identifiability, true-to-predicted mismatch, and domain-transfer imbalance, while also supporting efficient within-task screening of checkpoints, variants, and world models. Experiments on TwoRoom, PushT, and OGBench-Cube show that ATM aligns with downstream planning performance, reduces minutes-to-hours evaluation to seconds-level transition analysis, and reveals failure modes that are hidden by endpoint success rates alone. We further introduced AITS, showing that action-identifiable transition structure is not only useful for diagnosis, but can also be encouraged during training to improve downstream planning without changing the planner. Overall, our results suggest that action-identifiability offers a useful lens for evaluating and improving planning-oriented latent world models.",
+        "bbox": [
+            169,
+            590,
+            825,
+            772
+        ],
+        "page_idx": 10
+    },
+    {
+        "type": "text",
+        "text": "6 DISCUSSION AND FUTURE WORK",
+        "text_level": 2,
+        "bbox": [
+            171,
+            792,
+            486,
+            809
+        ],
+        "page_idx": 10
+    },
+    {
+        "type": "text",
+        "text": "ATM also provides a way to reason about desirable properties of planning-oriented latent representations. Our current analysis suggests that different world-model families may exhibit complementary strengths. DINO-WM-style checkpoints tend to show lower $D _ { T , T }$ , indicating stronger true-transition action decodability, but their true and predicted transition domains can be less balanced. In contrast, LeWM-style checkpoints often show more stable domain alignment, while their true-transition action-identifiability still leaves room for improvement. These observations suggest that an effective latent representation should combine both properties: low true-transition action loss and balanced action-semantic transfer between real encoded transitions and model-predicted transitions. We are extending this analysis to additional model families, tasks, and training objectives, with the goal of using ATM not only as a diagnostic tool, but also as guidance for designing better latent representations for downstream CEM planning.",
+        "bbox": [
+            169,
+            825,
+            823,
+            925
+        ],
+        "page_idx": 10
+    },
+    {
+        "type": "page_number",
+        "text": "",
+        "bbox": [
+            490,
+            948,
+            506,
+            959
+        ],
+        "page_idx": 10
+    },
+    {
+        "type": "text",
+        "text": "",
+        "bbox": [
+            169,
+            103,
+            823,
+            161
+        ],
+        "page_idx": 11
+    },
+    {
+        "type": "text",
+        "text": "REFERENCES",
+        "text_level": 2,
+        "bbox": [
+            173,
+            181,
+            287,
+            196
+        ],
+        "page_idx": 11
+    },
+    {
+        "type": "list",
+        "sub_type": "ref_text",
+        "list_items": [
+            "David Brandfonbrener, Ofir Nachum, and Joan Bruna. Inverse Dynamics Pretraining Learns Good Representations for Multitask Imitation. In Alice Oh, Tristan Naumann, Amir Globerson, Kate Saenko, Moritz Hardt, and Sergey Levine (eds.), Annual Conference on Neural Information Processing Systems, New Orleans, LA, USA, December 2023. doi: 10.48550/ ARXIV.2305.16985. URL http://papers.nips.cc/paper\\_files/paper/2023/ hash/d36dfcdb14473a8526111c221660f2ab-Abstract-Conference.html.",
+            "Zichen Jeff Cui, Hengkai Pan, Aadhithya Iyer, Siddhant Haldar, and Lerrel Pinto. DynaMo: In-Domain Dynamics Pretraining for Visuo-Motor Control. In Amir Globersons, Lester Mackey, Danielle Belgrave, Angela Fan, Ulrich Paquet, Jakub M. Tomczak, and Cheng Zhang (eds.), Annual Conference on Neural Information Processing Systems, Vancouver, BC, Canada, December 2024. URL http://papers.nips.cc/paper\\_files/paper/2024/hash/ 3b8db54b629e00537b59cbc6612026d7-Abstract-Conference.html.",
+            "David Ha and Jurgen Schmidhuber. World Models.¨ CoRR, abs/1803.10122, 2018. doi: 10.5281/ zenodo.1207631. URL http://arxiv.org/abs/1803.10122. arXiv: 1803.10122.",
+            "Danijar Hafner, Timothy P. Lillicrap, Ian Fischer, Ruben Villegas, David Ha, Honglak Lee, and James Davidson. Learning Latent Dynamics for Planning from Pixels. In Kamalika Chaudhuri and Ruslan Salakhutdinov (eds.), Proceedings of the 36th International Conference on Machine Learning, Proceedings of Machine Learning Research, pp. 2555–2565, Long Beach, California, USA, June 2019. PMLR. doi: 10.48550/ARXIV.1811.04551. URL http://proceedings. mlr.press/v97/hafner19a.html.",
+            "Danijar Hafner, Timothy P. Lillicrap, Jimmy Ba, and Mohammad Norouzi. Dream to Control: Learning Behaviors by Latent Imagination. In International Conference on Learning Representations, Addis Ababa, Ethiopia, April 2020. OpenReview.net. doi: 10.48550/ARXIV.1912.01603. URL https://openreview.net/forum?id=S1lOTC4tDS.",
+            "Danijar Hafner, Jurgis Pasukonis, Jimmy Ba, and Timothy P. Lillicrap. Mastering Diverse Domains through World Models. CoRR, abs/2301.04104, 2023. doi: 10.48550/ARXIV.2301.04104. URL https://doi.org/10.48550/arXiv.2301.04104. arXiv: 2301.04104.",
+            "Nicklas Hansen, Hao Su, and Xiaolong Wang. Temporal Difference Learning for Model Predictive Control. In Kamalika Chaudhuri, Stefanie Jegelka, Le Song, Csaba Szepesvari, Gang Niu, ´ and Sivan Sabato (eds.), International Conference on Machine Learning, Proceedings of Machine Learning Research, pp. 8387–8406, Baltimore, Maryland, USA, July 2022. PMLR. URL https://proceedings.mlr.press/v162/hansen22a.html.",
+            "Nicklas Hansen, Hao Su, and Xiaolong Wang. TD-MPC2: Scalable, Robust World Models for Continuous Control. In The Twelfth International Conference on Learning Representations, Vienna, Austria, May 2024. OpenReview.net. doi: 10.48550/ARXIV.2310.16828. URL https://openreview.net/forum?id=Oxh5CstDJU.",
+            "Liangyu Li, Shengzhi Wang, and Qingwen Liu. Beyond Euclidean Proximity: Repairing Latent World Models with Horizon-Matched Trajectory Reachability Metrics. arXiv preprint arXiv:2605.22164, 2026. doi: 10.48550/ARXIV.2605.22164. URL https://doi.org/10. 48550/arXiv.2605.22164.",
+            "Yuejiang Liu, Fan Feng, Lingjing Kong, Weifeng Lu, Jinzhou Tang, Kun Zhang, Kevin Murphy, Chelsea Finn, and Yilun Du. World Action Verifier: Self-Improving World Models via Forward-Inverse Asymmetry. CoRR, abs/2604.01985, 2026. doi: 10.48550/ARXIV.2604.01985. URL https://doi.org/10.48550/arXiv.2604.01985. arXiv: 2604.01985.",
+            "Lucas Maes, Quentin Le Lidec, Damien Scieur, Yann LeCun, and Randall Balestriero. LeWorld-Model: Stable End-to-End Joint-Embedding Predictive Architecture from Pixels. CoRR, abs/2603.19312, 2026. doi: 10.48550/ARXIV.2603.19312. URL https://doi.org/10. 48550/arXiv.2603.19312. arXiv: 2603.19312.",
+            "Seohong Park, Kevin Frans, Benjamin Eysenbach, and Sergey Levine. OGBench: Benchmarking Offline Goal-Conditioned RL. In International Conference on Learning Representations, Singapore, April 2025. OpenReview.net. URL https://openreview.net/forum?id= M992mjgKzI.",
+            "Deepak Pathak, Pulkit Agrawal, Alexei A. Efros, and Trevor Darrell. Curiosity-driven Exploration by Self-supervised Prediction. In Doina Precup and Yee Whye Teh (eds.), International Conference on Machine Learning, Proceedings of Machine Learning Research, pp. 2778–2787, Sydney, NSW, Australia, August 2017. PMLR. URL http://proceedings.mlr.press/v70/ pathak17a.html.",
+            "Bo-Kai Ruan, Teng-Fang Hsiao, Ling Lo, and Hong-Han Shuai. Is the Future Compatible? Diagnosing Dynamic Consistency in World Action Models. arXiv preprint arXiv:2605.07514, May 2026. doi: 10.48550/arXiv.2605.07514. URL https://doi.org/10.48550/arXiv. 2605.07514.",
+            "Reuven Rubinstein. The cross-entropy method for combinatorial and continuous optimization. Methodology and computing in applied probability, 1(2):127–190, 1999.",
+            "Vlad Sobal, Wancong Zhang, Kynghyun Cho, Randall Balestriero, Tim G. J. Rudner, and Yann LeCun. Learning from Reward-Free Offline Data: A Case for Planning with Latent Dynamics Models. CoRR, abs/2502.14819, 2025. doi: 10.48550/ARXIV.2502.14819. URL https:// doi.org/10.48550/arXiv.2502.14819. arXiv: 2502.14819.",
+            "Yuxuan Tian, Yurun Jin, Bin Yu, Yukun Shi, Hao Wu, Chi Harold Liu, Kai Chen, and Cong Huang. STARRY: Spatial-Temporal Action-Centric World Modeling for Robotic Manipulation. CoRR, abs/2604.26848, 2026. doi: 10.48550/ARXIV.2604.26848. URL https://doi.org/10. 48550/arXiv.2604.26848. arXiv: 2604.26848.",
+            "Zijie Wang, Wei Zhang, Weiming Zhang, Fanqi Zhang, Xiao Tan, Yipeng Qin, and Guanbin Li. World Models as Group Actions. arXiv preprint arXiv:2605.24578, 2026. doi: 10.48550/ARXIV. 2605.24578. URL https://doi.org/10.48550/arXiv.2605.24578.",
+            "Gaoyue Zhou, Hengkai Pan, Yann LeCun, and Lerrel Pinto. DINO-WM: World Models on Pretrained Visual Features enable Zero-shot Planning. In Aarti Singh, Maryam Fazel, Daniel Hsu, Simon Lacoste-Julien, Felix Berkenkamp, Tegan Maharaj, Kiri Wagstaff, and Jerry Zhu (eds.), International Conference on Machine Learning, Proceedings of Machine Learning Research, Vancouver, BC, Canada, July 2025. PMLR / OpenReview.net. URL https://proceedings. mlr.press/v267/zhou25t.html."
+        ],
+        "bbox": [
+            166,
+            200,
+            831,
+            928
+        ],
+        "page_idx": 11
+    },
+    {
+        "type": "page_number",
+        "text": "",
+        "bbox": [
+            490,
+            948,
+            508,
+            959
+        ],
+        "page_idx": 11
+    },
+    {
+        "type": "list",
+        "sub_type": "ref_text",
+        "list_items": [],
+        "bbox": [
+            166,
+            98,
+            831,
+            688
+        ],
+        "page_idx": 12
+    },
+    {
+        "type": "page_number",
+        "text": "13",
+        "bbox": [
+            490,
+            946,
+            508,
+            959
+        ],
+        "page_idx": 12
+    }
+]

@@ -1,0 +1,1822 @@
+[
+    {
+        "type": "text",
+        "text": "Thinking Without Images: Internalizing Visual Manipulation with On-Policy Self-Distillation",
+        "text_level": 1,
+        "bbox": [
+            154,
+            87,
+            843,
+            129
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "Yishuo Cai1∗, Jiahui Liu2∗, Yuanxin Liu1, Haobo Deng2, Linli Yao1, Yuhao Zheng3, Kun Ouyang1, Zhimo Li4, Ziyue Wang1, Xu Sun1†, Haoli Bai5, Xiaohui Li5",
+        "bbox": [
+            260,
+            142,
+            742,
+            195
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "1State Key Laboratory of Multimedia Information Processing, School of Computer Science, Peking University",
+        "bbox": [
+            245,
+            209,
+            749,
+            243
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "2Central South University 3University of Science and Technology of China",
+        "bbox": [
+            184,
+            243,
+            811,
+            260
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "4Peking University 5Huawei Technologies",
+        "bbox": [
+            317,
+            260,
+            678,
+            275
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "Emails: caiyishuo123@gmail.com xusun@pku.edu.cn",
+        "bbox": [
+            252,
+            277,
+            742,
+            292
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "Abstract",
+        "text_level": 2,
+        "bbox": [
+            260,
+            319,
+            339,
+            334
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "“Thinking with Images” has emerged as an effective paradigm for fine-grained visual reasoning: by explicitly zooming into relevant regions and reasoning over crops, models can access local evidence that is difficult to recover from a single global image. However, this benefit comes with redundant tool invocations and longer inference traces. Moreover, when such behaviors are learned mainly from outcome reward, the resulting intermediate crops or visual cues can be noisy or fail to faithfully capture task-relevant visual evidence. In this work, we ask whether the reasoning benefits of “Thinking with Images” can be internalized through Thinking with Imagination: an internal process that decides where to look and imagines what visual cues closer inspection would reveal without actually invoking tools. We propose Imagine-OPD, an on-policy self-distillation framework in which a teacher plays the role of a “Thinking with Images” reasoner during training: it receives privileged zoomed evidence views derived from annotated regions, and supervises the model’s own imagination reasoning trajectories. Imagine-OPD does not require an external teacher or highquality imagination demonstrations. Experiments on vision-centric benchmarks show that Imagine-OPD achieves the best average performance among compared models while significantly reducing inference overhead compared with “Thinking with Images” methods. Our code is publicly available at https://github. com/walkeralan123/Imagine-OPD.",
+        "bbox": [
+            141,
+            341,
+            460,
+            825
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "1 Introduction",
+        "text_level": 2,
+        "bbox": [
+            114,
+            843,
+            258,
+            858
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "While Multimodal Large Language Models (MLLMs) perform well on general vision-language tasks (Bai et al., 2025b,a; OpenAI et al., 2024), they often fail to deliver robust performance on finegrained visual reasoning. In these scenarios, the key visual cues are typically small, localized, and highly susceptible to being diluted by the surrounding background (Wu and Xie, 2023; Fu et al., 2024; Zhang et al., 2025a; Wang et al., 2024; Zhang et al., 2025c; Wei et al., 2026). During inference, the model must identify these localized clues directly from the entire image. This forces critical target details such as low-resolution characters, fine-grained properties, or complex object relations to compete with massive background tokens, thereby hindering accurate distinction in cluttered scenes (Wu and Xie, 2023; Fu et al., 2024; Zhang et al., 2025a; Wang et al., 2026; Wei et al., 2026; Yuan et al., 2026).",
+        "bbox": [
+            112,
+            866,
+            487,
+            900
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "",
+        "bbox": [
+            507,
+            319,
+            884,
+            592
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "To address this limitation, recent “Thinking with Images” methods empower MLLMs with explicit image manipulation tools during reasoning, such as zooming into local regions and reasoning over the resulting intermediate images (Su et al., 2025; Wu and Xie, 2023; Hu et al., 2024; Fu et al., 2025; Zheng et al., 2026; Wang et al., 2025a; Zhang et al., 2025b; Wu et al., 2026). This paradigm is effective because it gives the model direct access to isolated local evidence that matters for the question. However, it also introduces two notable limitations: (1) it requires redundant tool invocations, leading to lengthy inference traces and substantially reduced efficiency (Hu et al., 2024; Zheng et al., 2026; Zhang et al., 2025b; Wei et al., 2026); and (2) when such behaviors are learned mainly from outcome-level reward (Zhang et al., 2025b; Zheng et al., 2026; Wang et al., 2025a; Wu et al., 2026; Wang et al., 2026), the generated intermediate crops or visual cues may be noisy or fail to faithfully capture task-relevant visual evidence (Liu et al., 2025; Li et al., 2026a).",
+        "bbox": [
+            507,
+            599,
+            884,
+            921
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "aside_text",
+        "text": "arXiv:2606.08719v1 [cs.CV] 7 Jun 2026",
+        "bbox": [
+            21,
+            294,
+            60,
+            700
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "page_footnote",
+        "text": "\\*Equal contribution. †Corresponding authors.",
+        "bbox": [
+            134,
+            906,
+            415,
+            921
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "page_number",
+        "text": "1",
+        "bbox": [
+            492,
+            942,
+            502,
+            954
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "image",
+        "img_path": "images/a213015a6f591cf9b7380bc200a6997790c888de3a5dfde408b8e2c338d2db56.jpg",
+        "image_caption": [
+            "Figure 1: From “Thinking with Images” to “Thinking with Imagination”. “Thinking with Images” interleaves text reasoning with explicit tool calls and cropped images, improving access to local evidence but incurring repeated tool interaction and visual encoding. Thinking with Imagination replaces these intermediate images with an internal imagination process that can carry forward the same fine-grained visual evidence without actually invoking tools."
+        ],
+        "image_footnote": [],
+        "content": "```mermaid\ngraph TD\n  A[\"Input\"] --> B[\"Reasoning\"]\n  B --> C[\"Reasoning\"]\n  C --> D[\"...\"]\n  D --> E[\"Answer\"]\n  F[\"Input\"] --> G[\"Reasoning\"]\n  G --> H[\"Reasoning\"]\n  H --> I[\"...\"]\n  I --> J[\"Answer\"]\n  K[\"Tool Calling\"] --> B\n  L[\"Cropped Image\"] --> C\n  M[\"Tool Calling\"] --> C\n  N[\"Cropped Image\"] --> C\n  O[\"Imagination\"] --> G\n  P[\"Imagination\"] --> H\n  Q[\"Image\"] --> G\n  R[\"Image\"] --> H\n```",
+        "sub_type": "flowchart",
+        "bbox": [
+            174,
+            80,
+            823,
+            334
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "text",
+        "text": "",
+        "bbox": [
+            112,
+            429,
+            485,
+            460
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "text",
+        "text": "When humans comprehend complex visual scenes, they often do not need to physically zoom in or crop the image. Instead, they mentally direct their attention to different visual regions, imagining what closer inspection would reveal, and use this imagined evidence to support reasoning. Inspired by this insight, we ask: Can we distill the advantages of “Thinking with Images” via training, thereby enabling the model to perform reasoning without invoking tools during inference?",
+        "bbox": [
+            112,
+            464,
+            487,
+            625
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "text",
+        "text": "To answer this question, we propose Thinking with Imagination, an internalized paradigm that replaces explicit visual manipulation with purely textual “implicit imagination.” In this formulation, the model performs an internal imagination process at each reasoning step: it first decides where to look and then imagines what visual evidence closer inspection of that region would reveal. The entire reasoning trajectory remains textual: each imagination step consists of a region selection and a local observation description, enabling single-pass inference from the original image without any tool calls.",
+        "bbox": [
+            112,
+            629,
+            487,
+            835
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "text",
+        "text": "A natural follow-up question is how to train such imagination capability. Two intuitive approaches each have notable shortcomings. Supervised finetuning (SFT) requires high-quality imagination demonstrations and trains off-policy, creating a mismatch between the training data distribution and the model’s own generation behavior (Gu et al., 2026; Agarwal et al., 2024). Reinforcement learning with verifiable reward (RLVR) supplies outcomelevel reward signals without directly supervising the quality of the imagined content itself (Zheng et al., 2026; Zhang et al., 2025b; Wu et al., 2026; Yuan et al., 2026). We therefore propose Imagine-OPD, an on-policy self-distillation framework that combines the benefits of on-policy training with dense process-level supervision.",
+        "bbox": [
+            112,
+            841,
+            489,
+            921
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "text",
+        "text": "",
+        "bbox": [
+            507,
+            429,
+            884,
+            606
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "text",
+        "text": "Concretely, Imagine-OPD instantiates a “Thinking with Images” teacher and a student that reasons from the original image. Initially, the student samples on-policy imagination trajectories conditioned on the input image and question. For each resulting prefix, a teacher initialized from the same base model conditions on privileged zoomed evidence and provides token-level guidance through a KL distillation objective (Zhao et al., 2026; Zhang et al., 2026; Fu et al., 2026). In this way, the student learns to align its imagination trajectories with the local evidence available to the teacher, while requiring only the global image at inference time. Notably, Imagine-OPD does not require an external teacher model or pre-constructed high-quality imagination demonstrations; the supervision signal comes entirely from privileged visual crops conditioning on the same base model.",
+        "bbox": [
+            507,
+            611,
+            884,
+            898
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "text",
+        "text": "We evaluate Imagine-OPD on four vision-centric benchmarks. Imagine-OPD consistently improves both 4B and 8B backbones across all benchmarks and achieves the best average score among compared proprietary models, open-source MLLMs, and explicit “Thinking with Images” methods. It also runs 1.5–2.7× faster than tool-augmented baselines by using only a single original-image inference pass. Attention analysis further shows increased coverage on annotated evidence regions, indicating that the model better internalizes where to inspect during visual reasoning.",
+        "bbox": [
+            527,
+            904,
+            880,
+            920
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "page_number",
+        "text": "2",
+        "bbox": [
+            492,
+            942,
+            504,
+            954
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "text",
+        "text": "",
+        "bbox": [
+            112,
+            84,
+            489,
+            261
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "Our contributions are as follows:",
+        "bbox": [
+            132,
+            262,
+            379,
+            275
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "list",
+        "sub_type": "text",
+        "list_items": [
+            "• We formulate Thinking with Imagination as an internalized paradigm of “Thinking with Images”, where the model reasons from the original image by deciding where to look, imagining what closer inspection would reveal, and using the imagined local evidence for subsequent reasoning.",
+            "• We propose Imagine-OPD, an on-policy selfdistillation framework in which a “Thinking with Images” teacher reasons with zoomed evidence views and supervises the model’s own imagination trajectories, enabling dense process supervision without requiring highquality imagination demonstrations.",
+            "• Comprehensive experiments show that Imagine-OPD yields strong fine-grained visual reasoning performance across visioncentric benchmarks while substantially reducing the inference overhead compared with “Thinking with Images” methods."
+        ],
+        "bbox": [
+            136,
+            288,
+            489,
+            632
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "2 Related Work",
+        "text_level": 2,
+        "bbox": [
+            112,
+            653,
+            270,
+            669
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "Thinking with Images. Recent multimodal reasoning methods increasingly treat images not only as static inputs, but also as external workspaces that can be actively manipulated during inference (Su et al., 2025). In this “Thinking with Images” paradigm, a model interleaves textual reasoning with visual actions: it decides where to inspect, invokes an operation such as zooming, cropping, drawing, or code-based image editing, and then reasons over the resulting intermediate visual observation (Wu and Xie, 2023; Hu et al., 2024; Fu et al., 2025; Zheng et al., 2026; Zhang et al., 2025b; Wang et al., 2025a; Wu et al., 2026). This paradigm is effective for fine-grained visual reasoning because it makes small, localized evidence directly visible and reduces interference from irrelevant global context. However, when inference-time visual actions are learned mainly from outcome-level reward, the generated crops or visual cues may be noisy, insufficient, or weakly connected to the evidence needed for the answer (Liu et al., 2025; Li et al., 2026a; Du et al., 2025). Our work keeps the central insight of Thinking with Images, namely that reasoning should be guided by local visual evidence, but removes explicit image manipulation at inference time by training the model to internalize the inspection process as textual imagination.",
+        "bbox": [
+            112,
+            680,
+            489,
+            921
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "",
+        "bbox": [
+            507,
+            84,
+            884,
+            277
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "Visual Imagination and Latent Visual Reasoning. Visual imagination studies whether multimodal models can construct intermediate visual content during reasoning, rather than only reasoning over the image representation given at the input. Some methods make this imagination explicit by generating or editing visual states, such as sketches, images, or visual workspaces, which can then be inspected in later reasoning steps (Hu et al., 2024; Li et al., 2025b). Other methods move imagination into latent space, using hidden states or latent visual tokens to represent imagined visual content without rendering it as pixels or text (Li et al., 2025a; Yang et al., 2025; Wang et al., 2025b). While latentspace imagination avoids explicit visual generation, recent analysis suggests that such latent states may be difficult to interpret and not always faithfully connected to the input image or the final answer (Li et al., 2026b). Our work takes a text-space route to visual imagination, making the intermediate process directly readable. More importantly, we do not require high-quality imagination trajectories as supervision.",
+        "bbox": [
+            507,
+            286,
+            884,
+            655
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "On-Policy Distillation and Self-Distillation. Prior work has shown that on-policy distillation can reduce the mismatch between teacher-guided training and autoregressive inference by supervising models on their own generated trajectories (Gu et al., 2026; Lu and Lab, 2025; Agarwal et al., 2024; Zhang et al., 2026; Fu et al., 2026). More recent onpolicy self-distillation methods further show that token-level supervision can be transferred from the model itself when the teacher is given privileged context, such as stronger demonstrations, groundtruth solutions, or richer feedback (Zhao et al., 2026; Shenfeld et al., 2026; Hübotter et al., 2026). Concurrently, Vision-OPD applies on-policy selfdistillation to fine-grained multimodal perception by using a crop-conditioned teacher to supervise a full-image student (Yuan et al., 2026). Imagine-OPD shares the idea of privileged regional supervision, but uses it to learn Thinking with Imagination, enabling it to decide where to inspect and imagine the relevant local evidence without test-time crops or tools.",
+        "bbox": [
+            507,
+            663,
+            884,
+            921
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "page_number",
+        "text": "3",
+        "bbox": [
+            492,
+            942,
+            504,
+            954
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "image",
+        "img_path": "images/808e4eccca619a30e1178eb488505fa9d9fe7ba2166f82950492819a1cd0f76e.jpg",
+        "image_caption": [
+            "Figure 2: A concrete training instance of Imagine-OPD. Given an original image and a question, the student model generates its own imagination trace. A teacher then evaluates the same trajectory with privileged cropped evidence views and answer, providing on-policy supervision through a token-level KL objective."
+        ],
+        "image_footnote": [],
+        "content": "```mermaid\ngraph TD\n  A[\"Original Image\"] --> B[\"Sample Response\"]\n  B --> C[\"Update Student\"]\n  C --> D[\"Minimize KL(πθ || πT)\"]\n  D --> E[\"Crops {V}\"]\n  E --> F[\"Thinking with Images\"]\n  F --> G[\"Original Image I\"]\n  G --> H[\"Where to Look\"]\n  G --> I[\"Zoom-in Invoke\"]\n  G --> J[\"Imagine crop\"]\n```",
+        "sub_type": "flowchart",
+        "bbox": [
+            171,
+            80,
+            823,
+            357
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "text",
+        "text": "",
+        "bbox": [
+            112,
+            436,
+            487,
+            531
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "text",
+        "text": "3 Thinking with Imagination",
+        "text_level": 2,
+        "bbox": [
+            112,
+            546,
+            381,
+            565
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "text",
+        "text": "3.1 From Thinking with Images to Thinking with Imagination",
+        "text_level": 2,
+        "bbox": [
+            112,
+            576,
+            478,
+            607
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "text",
+        "text": "Thinking with Images improves fine-grained visual reasoning by making visual inspection an explicit part of the reasoning process. Given an imagequestion pair $( I , Q )$ , a model interleaves textual reasoning with visual manipulations: at step $k ,$ it selects an operation $^ { a _ { k } , }$ such as cropping or zooming into a region, and obtains an intermediate image ${ \\cal I } _ { k } ^ { \\prime } = \\mathcal { T } ( I , a _ { k } )$ (Wu and Xie, 2023; Zheng et al., 2026; Zhang et al., 2025b). This process can be distilled into two critical steps: deciding where to inspect and obtaining the local evidence revealed by that inspection.",
+        "bbox": [
+            112,
+            614,
+            487,
+            806
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "text",
+        "text": "Humans can also reason about complex scenes by mentally focusing on relevant regions and imagining what closer inspection would reveal, but without physically cropping or manipulating the image. Motivated by this ability, we seek to elicit a similar internal inspection process in MLLMs. Thinking with Imagination implements this idea by replacing each explicit inspection step $( a _ { k } , I _ { k } ^ { \\prime } )$ with a textual imagination step $\\boldsymbol { z } _ { k } = ( \\ell _ { k } , o _ { k } )$ , where $\\ell _ { k }$ specifies the region to mentally inspect and $o _ { k }$ imagines what closer inspection of that region would reveal. In this formulation, $\\ell _ { k }$ plays the role of the inspection decision $a _ { k }$ , while $o _ { k }$ plays the role of the local observation obtained from $I _ { k } ^ { \\prime }$ . Figure 1 summarizes this shift from explicit image manipulation to internal textual imagination.",
+        "bbox": [
+            112,
+            809,
+            487,
+            921
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "text",
+        "text": "",
+        "bbox": [
+            507,
+            436,
+            884,
+            580
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "text",
+        "text": "The resulting reasoning trace interleaves textual reasoning with imagined visual evidence. Let $z _ { 1 : K } = ( z _ { 1 } , \\dots , z _ { K } )$ denote the imagination trajectory, where each step can introduce a local text fragment, subtle attribute, object relation, or spatial cue revealed by imagined closer inspection.",
+        "bbox": [
+            507,
+            582,
+            882,
+            678
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "text",
+        "text": "3.2 Imagine-OPD: Thinking with Imagination via On-Policy Self-Distillation",
+        "text_level": 2,
+        "bbox": [
+            507,
+            690,
+            880,
+            722
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "text",
+        "text": "Learning Thinking with Imagination requires supervision for both parts of each imagination step: the selected inspection target and the imagined local observation. We use zoomed evidence views as the privileged visual context for this supervision. Each training example contains an imagequestion pair $( I , Q )$ , annotated evidence boxes $B _ { 1 : M } = ( B _ { 1 } , \\ldots , B _ { M } )$ , and an answer A. From these boxes, we derive zoomed evidence views ${ \\cal I } _ { 1 : M } ^ { \\prime } = \\{ \\mathrm { c r o p } ( I , B _ { m } ) \\} _ { m = 1 } ^ { M }$ . The student generates an imagination trajectory from $( I , Q )$ , while the teacher plays the role of a Thinking-with-",
+        "bbox": [
+            507,
+            728,
+            884,
+            921
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "page_number",
+        "text": "4",
+        "bbox": [
+            492,
+            942,
+            504,
+            954
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "text",
+        "text": "Images reasoner by evaluating the same trajectory with access to $( I , Q , I _ { 1 : M } ^ { \\prime } , A )$ . The teacher is initialized from the same base model as the student and kept fixed during training.",
+        "bbox": [
+            112,
+            84,
+            487,
+            148
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "We train the student on its own generated trajectories, following the on-policy distillation principle (Gu et al., 2026; Agarwal et al., 2024; Zhao et al., 2026). Let $y = ( z _ { 1 : K } , \\hat { A } ) \\sim \\pi _ { \\theta } ( \\cdot \\mid I , Q )$ denote a student-generated output. At each token position t, the student distribution is $q _ { t } ( \\cdot ) =$ $\\pi _ { \\theta } ( \\cdot \\mid I , Q , y _ { < t } )$ , while the teacher distribution is $p _ { t } ( \\cdot ) = \\pi _ { \\bar { \\theta } } ( \\cdot \\mid I , Q , I _ { 1 : M } ^ { \\prime } , A , y _ { < t } )$ . We minimize the averaged token-level reverse KL along the student rollout:",
+        "bbox": [
+            112,
+            149,
+            489,
+            307
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "equation",
+        "text": "$$\n\\mathcal {L} _ {\\text { distill }} (\\theta) = \\mathbb {E} \\left[ \\frac {1}{| y |} \\sum_ {t = 1} ^ {| y |} D _ {\\mathrm{KL}} (q _ {t} \\| p _ {t}) \\right], \\tag {1}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            154,
+            318,
+            487,
+            368
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "where the expectation is over training examples and student-generated trajectories. Because both distributions are evaluated on the student’s own prefixes, the teacher supervises the decisions the model actually makes, including partially correct or drifting imagination steps. This objective encourages the student to assign higher probability to reasoning continuations that are compatible with the teacher’s zoomed evidence views, while reducing continuations that are weakly supported by the relevant local observations.",
+        "bbox": [
+            112,
+            379,
+            487,
+            554
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "This design uses intermediate images only during training. The teacher can judge the student’s imagination with privileged local evidence, but gradients are applied to the student that condition on the original image and question. Compared with supervised fine-tuning on fixed imagination traces, the supervision is applied on the student’s own prefixes; compared with outcome-level reinforcement learning, every token receives dense evidenceconditioned guidance. Figure 2 illustrates this teacher-student alignment on a concrete training instance. At inference time, the model receives only the original image and question and performs visual reasoning through Thinking with Imagination, without explicit image manipulation.",
+        "bbox": [
+            112,
+            556,
+            489,
+            797
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "4 Experiments",
+        "text_level": 2,
+        "bbox": [
+            112,
+            809,
+            260,
+            826
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "4.1 Experimental Setup",
+        "text_level": 2,
+        "bbox": [
+            112,
+            835,
+            317,
+            852
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "Benchmarks. We conduct evaluations on four vision centric benchmarks: V\\* (Wu and Xie, 2023), HR-Bench-4K, HR-Bench-8K (Wang et al., 2024), and MME-RealWorld-Lite (Zhang et al., 2025c).",
+        "bbox": [
+            112,
+            857,
+            487,
+            921
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "Baselines. We consider three groups of baselines. First, we report proprietary models, including GPT-4o (OpenAI et al., 2024), Gemini-2.5-Flash, Gemini-2.5-Pro (Comanici et al., 2025), and Gemini-3-Flash. Second, we compare against open-source MLLMs across a wide parameter range, including InternVL3-8B (Zhu et al., 2025), Qwen2.5-VL-7B (Bai et al., 2025b), Qwen3-VL-4B, Qwen3-VL-8B, Qwen2.5-VL-32B, Qwen3- VL-30B-Thinking, Qwen3-VL-235B-A22B (Bai et al., 2025a), and Kimi-K2.5 (1T) (Team et al., 2026). Third, we compare against explicit “Thinking with Images” methods, including Pixel-Reasoner (Wang et al., 2025a), Thyme (Zhang et al., 2025b), DeepEyes (Zheng et al., 2026), and TreeVGR-7B (Wang et al., 2026). In addition, we include a GRPO training baseline (Shao et al., 2024) in the ablation analysis. For GRPO, we use learning rate $1 \\times 1 0 ^ { - 6 }$ , 8 rollouts per prompt, temperature 1.0, and a rule-based answer-matching reward.",
+        "bbox": [
+            505,
+            84,
+            884,
+            420
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "Training Data. Our training data are built from the original training set of V\\* (Wu and Xie, 2023). We filter the training set using Qwen3-VL-4B and retain only samples for which the model answers correctly at least 2 times in 4 trials. This procedure yields 19K training samples. Each retained sample is paired with one or more ground-truth bounding boxes, from which we derive the zoomed evidence views used by the teacher during training.",
+        "bbox": [
+            507,
+            431,
+            882,
+            576
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "Training Configuration. Our model is built on Qwen3-VL-4B and Qwen3-VL-8B (Bai et al., 2025a). Training is conducted over 1 epoch with a global batch size of 32 and a learning rate of $1 \\times 1 0 ^ { - 6 }$ on 4 × A800 GPUs. During generation, we sample one rollout per prompt, setting the temperature parameter to 1.0 and capping the maximum response length at 256 tokens. The detailed prompts used in training and inference are provided in Appendix B.",
+        "bbox": [
+            507,
+            583,
+            882,
+            745
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "4.2 Main Results",
+        "text_level": 2,
+        "bbox": [
+            507,
+            755,
+            660,
+            769
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "Consistent improvements across benchmarks. Table 1 demonstrates that Imagine-OPD consistently improves Qwen3-VL backbones on all four benchmarks. Imagine-OPD-4B improves the average score from 70.4 to 76.7, with gains of +7.9 on V\\*, +5.0 on HR-Bench-4K, +5.7 on HR-Bench-8K, and +6.8 on MME-RealWorld-Lite. Imagine-OPD-8B also improves Qwen3-VL-8B from 72.6 to 77.1 average score. These results show that on-policy supervision from zoomed evidence views improves both fine-grained perception and real-world visual reasoning.",
+        "bbox": [
+            507,
+            776,
+            884,
+            921
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "page_number",
+        "text": "5",
+        "bbox": [
+            492,
+            942,
+            504,
+            954
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "table",
+        "img_path": "images/2b681e50753cf3d44c104c1808e4544677725d4cc56af6108ea40c32c575976d.jpg",
+        "table_caption": [
+            "Table 1: Performance comparison across perception-centric and visual reasoning benchmarks. We report accuracy on V\\*, HR-Bench-4K, HR-Bench-8K, and MME-RealWorld-Lite. Missing results are marked with “-”. The best result in each column is boldfaced, and the second-best result is underlined."
+        ],
+        "table_footnote": [],
+        "table_body": "<table><tr><td rowspan=\"2\">Model</td><td colspan=\"3\">V*</td><td colspan=\"3\">HR-Bench-4K</td><td colspan=\"3\">HR-Bench-8K</td><td colspan=\"3\">MME-RealWorld-Lite</td><td rowspan=\"2\">Avg.</td></tr><tr><td>Overall</td><td>Attr.</td><td>Spa.</td><td>Overall</td><td>FSP</td><td>FCP</td><td>Overall</td><td>FSP</td><td>FCP</td><td>Overall</td><td>Rea.</td><td>Perc.</td></tr><tr><td colspan=\"14\">Proprietary Model</td></tr><tr><td>GPT-4o</td><td>67.5</td><td>72.2</td><td>60.5</td><td>65.0</td><td>66.8</td><td>63.3</td><td>59.6</td><td>60.8</td><td>58.5</td><td>52.0</td><td>48.3</td><td>54.4</td><td>61.0</td></tr><tr><td>Gemini-2.5-Flash</td><td>72.3</td><td>77.3</td><td>64.4</td><td>77.5</td><td>81.5</td><td>74.0</td><td>73.7</td><td>75.8</td><td>71.8</td><td>50.2</td><td>49.9</td><td>50.4</td><td>68.4</td></tr><tr><td>Gemini-2.5-Pro</td><td>79.1</td><td>86.8</td><td>68.4</td><td>83.9</td><td>85.5</td><td>82.3</td><td>81.5</td><td>83.0</td><td>80.0</td><td>58.3</td><td>55.1</td><td>59.9</td><td>75.7</td></tr><tr><td>Gemini-3-Flash</td><td>72.3</td><td>64.4</td><td>77.3</td><td>77.5</td><td>81.5</td><td>74.0</td><td>73.7</td><td>75.8</td><td>71.8</td><td>61.2</td><td>51.3</td><td>65.8</td><td>71.2</td></tr><tr><td colspan=\"14\">Open-Source Models</td></tr><tr><td>InternVL3-8B</td><td>70.2</td><td>67.8</td><td>73.7</td><td>70.0</td><td>78.8</td><td>61.3</td><td>69.3</td><td>78.8</td><td>59.8</td><td>48.6</td><td>44.8</td><td>51.0</td><td>64.5</td></tr><tr><td>Qwen2.5-VL-7B</td><td>74.3</td><td>77.4</td><td>69.7</td><td>68.0</td><td>80.3</td><td>55.8</td><td>63.8</td><td>73.8</td><td>53.8</td><td>42.3</td><td>35.9</td><td>46.5</td><td>62.1</td></tr><tr><td>Qwen3-VL-4B</td><td>80.1</td><td>80.9</td><td>78.9</td><td>78.3</td><td>87.5</td><td>69.3</td><td>72.9</td><td>79.3</td><td>66.3</td><td>50.1</td><td>44.8</td><td>53.4</td><td>70.4</td></tr><tr><td>Qwen3-VL-8B</td><td>86.4</td><td>87.0</td><td>85.5</td><td>78.9</td><td>87.8</td><td>70.0</td><td>74.6</td><td>82.3</td><td>66.8</td><td>50.3</td><td>46.2</td><td>52.9</td><td>72.6</td></tr><tr><td>Qwen2.5-VL-32B</td><td>81.2</td><td>77.4</td><td>86.8</td><td>73.4</td><td>87.5</td><td>59.3</td><td>70.4</td><td>82.3</td><td>58.5</td><td>46.2</td><td>39.3</td><td>50.6</td><td>67.8</td></tr><tr><td>Qwen3-VL-30B-Thinking</td><td>82.2</td><td>81.7</td><td>82.9</td><td>78.5</td><td>88.5</td><td>68.5</td><td>74.2</td><td>80.3</td><td>68.3</td><td>53.2</td><td>46.3</td><td>58.0</td><td>72.0</td></tr><tr><td>Qwen3-VL-235B-A22B</td><td>80.6</td><td>82.9</td><td>79.1</td><td>83.0</td><td>89.0</td><td>77.0</td><td>80.4</td><td>83.0</td><td>77.3</td><td>56.5</td><td>50.7</td><td>60.2</td><td>75.1</td></tr><tr><td>Kimi-K2.5 (1T)</td><td>85.9</td><td>87.0</td><td>84.2</td><td>81.7</td><td>87.3</td><td>76.0</td><td>75.1</td><td>82.8</td><td>67.5</td><td>53.8</td><td>49.3</td><td>56.6</td><td>74.1</td></tr><tr><td colspan=\"14\">Reasoning with Tool Methods</td></tr><tr><td>Pixel-Reasoner</td><td>80.6</td><td>83.5</td><td>76.3</td><td>72.9</td><td>86.0</td><td>60.3</td><td>66.9</td><td>80.0</td><td>54.3</td><td>50.1</td><td>45.6</td><td>53.1</td><td>67.6</td></tr><tr><td>Thyme</td><td>82.2</td><td>83.5</td><td>80.3</td><td>77.0</td><td>91.0</td><td>63.0</td><td>72.0</td><td>72.0</td><td>57.5</td><td>55.2</td><td>49.1</td><td>59.1</td><td>71.6</td></tr><tr><td>DeepEyes</td><td>90.1</td><td>91.3</td><td>88.2</td><td>75.1</td><td>91.3</td><td>59.0</td><td>72.6</td><td>86.8</td><td>58.5</td><td>53.2</td><td>46.0</td><td>54.0</td><td>72.8</td></tr><tr><td>TreeVGR-7B</td><td>91.1</td><td>94.0</td><td>87.0</td><td>77.1</td><td>90.3</td><td>64.0</td><td>73.1</td><td>86.5</td><td>59.6</td><td>54.9</td><td>50.7</td><td>66.0</td><td>74.1</td></tr><tr><td colspan=\"14\">Our Models</td></tr><tr><td>Imagine-OPD-4B</td><td>88.0</td><td>89.6</td><td>85.5</td><td>83.3</td><td>90.3</td><td>76.3</td><td>78.6</td><td>88.0</td><td>69.3</td><td>56.9</td><td>53.2</td><td>59.3</td><td>76.7</td></tr><tr><td>Δ (vs Qwen3-VL-4B)</td><td>+7.9</td><td>+8.7</td><td>+6.6</td><td>+5.0</td><td>+2.8</td><td>+7.0</td><td>+5.7</td><td>+8.7</td><td>+3.0</td><td>+6.8</td><td>+8.4</td><td>+5.9</td><td>+6.3</td></tr><tr><td>Imagine-OPD-8B</td><td>87.4</td><td>88.7</td><td>86.8</td><td>83.5</td><td>90.8</td><td>76.3</td><td>79.5</td><td>88.3</td><td>70.8</td><td>58.1</td><td>54.3</td><td>60.6</td><td>77.1</td></tr><tr><td>Δ (vs Qwen3-VL-8B)</td><td>+1.0</td><td>+1.7</td><td>+1.3</td><td>+4.6</td><td>+3.0</td><td>+6.3</td><td>+4.9</td><td>+6.0</td><td>+4.0</td><td>+7.8</td><td>+8.1</td><td>+7.7</td><td>+4.5</td></tr></table>",
+        "bbox": [
+            114,
+            135,
+            882,
+            488
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "text",
+        "text": "",
+        "bbox": [
+            112,
+            510,
+            487,
+            558
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "text",
+        "text": "Strong average performance with small backbones. Imagine-OPD achieves the best average score among all compared models while using only 4B/8B backbones. In particular, Imagine-OPD-8B reaches 77.1 average score, higher than Qwen3- VL-30B-Thinking (72.0), Qwen3-VL-235B-A22B (75.1), and Kimi-K2.5 (1T) (74.1). Imagine-OPD-4B also reaches 76.7 average score, outperforming the Qwen3-VL-8B backbone (72.6) and Gemini-2.5-Pro (75.7) on average.",
+        "bbox": [
+            112,
+            563,
+            489,
+            724
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "text",
+        "text": "Exceeding explicit “Thinking with Images” methods. We further demonstrate the clear superiority of Imagine-OPD over “thinking with images” methods. Imagine-OPD-8B obtains a 77.1 average score, and Imagine-OPD-4B obtains 76.7, outperforming TreeVGR-7B (74.1), DeepEyes (72.8), Thyme (71.6), and Pixel-Reasoner (67.6). Notably, Imagine-OPD improves over TreeVGR-7B by +6.4 on HR-Bench-4K, +6.4 on HR-Bench-8K, and +3.2 on MME-RealWorld-Lite. This suggests that Imagine-OPD distills the advantage of tool-use into the model, instead of relying on iterative crop",
+        "bbox": [
+            112,
+            728,
+            490,
+            921
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "table",
+        "img_path": "images/2b3d5a9308398eaebca1e7389dfe78c2a2abc59cf98bbfdd9725b54915c900bf.jpg",
+        "table_caption": [
+            "Table 2: Attention coverage analysis on TreeBench. We report accuracy and the percentage of relative attention covered by annotated evidence regions on TreeBench (Wang et al., 2026)."
+        ],
+        "table_footnote": [],
+        "table_body": "<table><tr><td>Model</td><td>Acc.</td><td>Coverage (%)</td></tr><tr><td>Qwen3-VL-4B</td><td>42.7</td><td>23.6</td></tr><tr><td>Qwen3-VL-8B</td><td>45.7</td><td>26.0</td></tr><tr><td>Imagine-OPD-4B</td><td>46.4</td><td>27.4</td></tr><tr><td>Imagine-OPD-8B</td><td>49.6</td><td>29.6</td></tr></table>",
+        "bbox": [
+            526,
+            576,
+            867,
+            675
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "text",
+        "text": "operations at test time.",
+        "bbox": [
+            507,
+            700,
+            680,
+            714
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "text",
+        "text": "5 Analysis",
+        "text_level": 2,
+        "bbox": [
+            507,
+            728,
+            618,
+            744
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "text",
+        "text": "5.1 Efficiency Analysis",
+        "text_level": 2,
+        "bbox": [
+            507,
+            753,
+            705,
+            770
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "text",
+        "text": "Figure 4 shows the speed-accuracy trade-off compared with representative Thinking with Image methods, including TreeVGR-7B, DeepEyes, Thyme, and Pixel-Reasoner. Inference speed is measured in samples per second, and benchmark accuracy corresponding to the average score provided in Table 1. Explicit Thinking-with-Images methods obtain competitive accuracy, but their repeated tool calls and visual encoding make inference speed substantially slower. In contrast, Imagine-OPD keeps inference to a single image pass and lies on the speed-accuracy frontier. Concretely, Imagine-OPD is 1.5–2.7× faster than representative explicit Thinking-with-Images methods, while also improving average benchmark performance.",
+        "bbox": [
+            505,
+            776,
+            885,
+            921
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "page_number",
+        "text": "6",
+        "bbox": [
+            492,
+            942,
+            505,
+            954
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "image",
+        "img_path": "images/8dc5fe42a9543115b55b5207b14ce045adb55dc10a0230eae309a407314b0109.jpg",
+        "image_caption": [
+            "Original Image"
+        ],
+        "image_footnote": [],
+        "content": "Scenic canal view with colorful kayakers and historic buildings in the background (no visible text or symbols)",
+        "sub_type": "natural_image",
+        "bbox": [
+            126,
+            95,
+            364,
+            208
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "image",
+        "img_path": "images/308c2341620ce4cdbb1870cd002df45768ebdea5eb86e7065ac96fefd8aa27a2.jpg",
+        "image_caption": [
+            "Qwen3-VL-4B"
+        ],
+        "image_footnote": [],
+        "content": "Thermal image showing heat distribution with a red box highlighting a specific region (no text or symbols present)",
+        "sub_type": "natural_image",
+        "bbox": [
+            381,
+            96,
+            616,
+            208
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "image",
+        "img_path": "images/266021a13baace0eac663abb2abde9a90f85138cc4db01a3ec09fb75c47c9032.jpg",
+        "image_caption": [
+            "Imagine-OPD-4B"
+        ],
+        "image_footnote": [
+            "Question: Is the suitcase on the left or right side of the river? A. right B. left Answer: B Imagine-OPD-4B Response: I first inspect the overall image and identify the region most relevant to the question. To get more detail, I mentally zoom into the left side of the riverbank where people are gathered. I can now see a person standing near a black metal railing, holding a suitcase. The suitcase is positioned on the left side of the river, adjacent to the walkway and the buildings. Using that visual evidence, I determine the answer.<answer>B. left</answer>"
+        ],
+        "content": "Thermal image showing heat distribution with a red box highlighting a specific region (no text or symbols)",
+        "sub_type": "natural_image",
+        "bbox": [
+            636,
+            96,
+            870,
+            208
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "chart",
+        "img_path": "images/3516ce15e44c0a0f225a3e46fe4b12f4d6f9ead588b8ec2d1e3e891090589420.jpg",
+        "content": "| Model               | Inference Speed | Benchmark Accuracy |\n| ------------------- | --------------- | ------------------ |\n| Pixel-Reasoner      | 0.4             | 67.5               |\n| Thyme               | 0.5             | 71.5               |\n| DeepEyes            | 0.5             | 72.5               |\n| TreeVGR-7B          | 0.6             | 73.5               |\n| Qwen3-VL-8B         | 0.7             | 72.5               |\n| Qwen3-VL-4B         | 0.8             | 70.5               |\n| Qwen2.5-VL-7B       | 0.75            | 62.5               |\n| Imagine-OPD-8B      | 0.9             | 77.5               |\n| Imagine-OPD-4B      | 0.9             | 77.0               |",
+        "chart_caption": [
+            "Figure 3: Qualitative attention analysis. Imagine-OPD places more attention on the decisive visual evidence compared with the base model.",
+            "Figure 4: Trade-off between benchmark accuracy and inference speed."
+        ],
+        "chart_footnote": [],
+        "sub_type": "scatterplot",
+        "bbox": [
+            126,
+            411,
+            475,
+            569
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "text",
+        "text": "",
+        "bbox": [
+            112,
+            639,
+            489,
+            751
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "text",
+        "text": "5.2 Attention Analysis",
+        "text_level": 2,
+        "bbox": [
+            112,
+            768,
+            305,
+            784
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "text",
+        "text": "Table 2 reports attention coverage analysis on TreeBench (Wang et al., 2026), a visual grounded reasoning benchmark that provides questionspecific evidence bounding boxes. This allows us to evaluate whether the model attends to the image regions that support the answer. We compute question-conditioned relative attention, map each annotated bounding box to the visual-token grid, and measure the fraction of visual-token attention mass that falls inside the evidence region following prior work (Zhang et al., 2025a; Wei et al., 2026). Compared with the corresponding Qwen3- VL backbones, Imagine-OPD improves both accuracy and evidence region coverage: Imagine-OPD-4B improves coverage from 23.6 to 27.4, and Imagine-OPD-8B improves it from 26.0 to 29.6. This shows that the gains are accompanied by more accurate visual attention allocation, consistent with the goal of internalizing where to look. Figure 3 shows a representative case where Imagine-OPD assigns more relative attention to the decisive region and produces an imagination trajectory grounded in the corresponding region.",
+        "bbox": [
+            112,
+            791,
+            489,
+            921
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "text",
+        "text": "",
+        "bbox": [
+            507,
+            413,
+            884,
+            655
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "text",
+        "text": "5.3 Ablation Study",
+        "text_level": 2,
+        "bbox": [
+            507,
+            671,
+            673,
+            686
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "text",
+        "text": "Tables 3 and 4 isolate the supervision source and training strategy of Imagine-OPD. (1) Zoomed evidence views provide the main teacher signal. In Table 3, removing evidence views and keeping only answer conditioning drops V\\* from 88.0 to 82.2, HR-4K from 83.3 to 78.5, and HR-8K from 78.6 to 73.3. Removing the answer hint is less harmful, indicating that local visual evidence is more important than answer awareness for supervising imagination. Replacing GT boxes with self-proposed boxes recovers part of the gain but remains weaker than using annotated evidence, showing that region quality matters when constructing the teacher’s privileged views. (2) Dense OPD supervision is more effective than outcome reward, but requires a stable teacher policy. Table 4 shows that GRPO improves over the backbone, but remains below OPD with a frozen teacher, suggesting that sparse outcome-level reward is insufficient for learning high-quality imagination trajectories. When the privileged teacher instead uses the current student checkpoint at each update, performance collapses to 0.0 accuracy on all benchmarks. This indicates that the teacher’s distribution must remain a stable reference when transferring privileged zoomed evidence into the student’s textual imagination process.",
+        "bbox": [
+            507,
+            696,
+            884,
+            921
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "page_number",
+        "text": "7",
+        "bbox": [
+            492,
+            942,
+            502,
+            952
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "table",
+        "img_path": "images/b38b9c87488b1ce9baae746d23eea6f324fbbc29d350476f119b2bc5f348f06b.jpg",
+        "table_caption": [
+            "Table 3: Ablation of privileged teacher information. We vary the privileged context available to the teacher in OPD. The full setting uses answer-conditioned evidence views cropped from ground-truth (GT) boxes; “Answer only” removes evidence views, “w/o answer” removes answer, and “Self boxes” constructs evidence views from model-proposed boxes."
+        ],
+        "table_footnote": [],
+        "table_body": "<table><tr><td>Method</td><td>Evidence Views</td><td>Region Source</td><td>Answer</td><td>V*</td><td>HR-4K</td><td>HR-8K</td></tr><tr><td>Qwen3-VL-4B</td><td>-</td><td>-</td><td>-</td><td>80.1</td><td>78.3</td><td>72.9</td></tr><tr><td>w/ answer</td><td>×</td><td>-</td><td>√</td><td>82.2</td><td>78.5</td><td>73.3</td></tr><tr><td>w/ GT boxes</td><td>√</td><td>GT</td><td>×</td><td>87.4</td><td>79.8</td><td>75.4</td></tr><tr><td>w/ Self boxes</td><td>√</td><td>Self</td><td>√</td><td>86.4</td><td>79.8</td><td>75.1</td></tr><tr><td>Imagine-OPD-4B</td><td>√</td><td>GT</td><td>√</td><td>88.0</td><td>83.3</td><td>78.6</td></tr></table>",
+        "bbox": [
+            136,
+            149,
+            860,
+            265
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "table",
+        "img_path": "images/04eabf1faab750ad834df8c324af3454c355b2b55e734d6fedee343af875868a.jpg",
+        "table_caption": [
+            "Table 4: Ablation of training strategy and teacher update. Starting from Qwen3-VL-4B, we compare GRPO with Imagine-OPD. Under Imagine-OPD, the frozen-teacher variant keeps the privileged teacher fixed at the initial checkpoint, while the online-teacher variant uses the current student checkpoint as the privileged teacher at each update."
+        ],
+        "table_footnote": [],
+        "table_body": "<table><tr><td>Method</td><td>V*</td><td>HR-4K</td><td>HR-8K</td></tr><tr><td>Qwen3-VL-4B</td><td>80.1</td><td>78.3</td><td>72.9</td></tr><tr><td>+GRPO</td><td>83.8</td><td>79.5</td><td>74.3</td></tr><tr><td>+Imagine-OPD</td><td></td><td></td><td></td></tr><tr><td>w/ frozen teacher</td><td>88.0</td><td>83.3</td><td>78.6</td></tr><tr><td>w/ online teacher</td><td>0.0</td><td>0.0</td><td>0.0</td></tr></table>",
+        "bbox": [
+            121,
+            397,
+            478,
+            511
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "text",
+        "text": "",
+        "bbox": [
+            112,
+            537,
+            489,
+            746
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "text",
+        "text": "6 Conclusion",
+        "text_level": 2,
+        "bbox": [
+            112,
+            763,
+            247,
+            778
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "text",
+        "text": "We present Imagine-OPD, an on-policy selfdistillation framework that transfers the benefit of “Thinking with Images” into Thinking with Imagination. By training a teacher with zoomed evidence views to supervise the model’s own imagination trajectories, Imagine-OPD learns both where to focus and what visual cues should become available under closer inspection without invoking external tools. Experiments show that Imagine-OPD substantially improves fine-grained visual reasoning and delivers large efficiency gains over toolaugmented visual reasoning, suggesting that the tool-augmented visual reasoning process can be effectively internalized.",
+        "bbox": [
+            112,
+            791,
+            489,
+            921
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "text",
+        "text": "",
+        "bbox": [
+            507,
+            288,
+            884,
+            385
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "text",
+        "text": "Limitations",
+        "text_level": 2,
+        "bbox": [
+            509,
+            399,
+            613,
+            414
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "text",
+        "text": "Our current study focuses on zooming-based intermediate views derived from annotated evidence regions. This keeps the supervision signal clear and stable, but also limits the scope of the current conclusions. More diverse and complex image manipulations may require different supervision mechanisms and may not transfer equally well into Thinking with Imagination. In addition, our current experiments require region annotations available during training, extending the framework to weaker or noisier region supervision is an important direction for future work.",
+        "bbox": [
+            507,
+            425,
+            884,
+            618
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "text",
+        "text": "References",
+        "text_level": 2,
+        "bbox": [
+            510,
+            646,
+            608,
+            663
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "list",
+        "sub_type": "ref_text",
+        "list_items": [
+            "Rishabh Agarwal, Nino Vieillard, Yongchao Zhou, Piotr Stanczyk, Sabela Ramos, Matthieu Geist, and Olivier Bachem. 2024. On-policy distillation of language models: Learning from self-generated mistakes. Preprint, arXiv:2306.13649.",
+            "Shuai Bai, Yuxuan Cai, Ruizhe Chen, Keqin Chen, Xionghui Chen, Zesen Cheng, Lianghao Deng, Wei Ding, Chang Gao, Chunjiang Ge, Wenbin Ge, Zhifang Guo, Qidong Huang, Jie Huang, Fei Huang, Binyuan Hui, Shutong Jiang, Zhaohai Li, Mingsheng Li, and 45 others. 2025a. Qwen3-vl technical report. Preprint, arXiv:2511.21631.",
+            "Shuai Bai, Keqin Chen, Xuejing Liu, Jialin Wang, Wenbin Ge, Sibo Song, Kai Dang, Peng Wang, Shijie Wang, Jun Tang, Humen Zhong, Yuanzhi Zhu, Mingkun Yang, Zhaohai Li, Jianqiang Wan, Pengfei Wang, Wei Ding, Zheren Fu, Yiheng Xu, and 8 oth-",
+            "ers. 2025b. Qwen2.5-vl technical report. Preprint, arXiv:2502.13923.",
+            "Gheorghe Comanici, Eric Bieber, Mike Schaekermann, Ice Pasupat, Noveen Sachdeva, Inderjit Dhillon, Marcel Blistein, Ori Ram, Dan Zhang, Evan Rosen, Luke Marris, Sam Petulla, Colin Gaffney, Asaf Aharoni, Nathan Lintz, Tiago Cardal Pais, Henrik Jacobsson, Idan Szpektor, Nan-Jiang Jiang, and 3416 others. 2025. Gemini 2.5: Pushing the frontier with advanced reasoning, multimodality, long context, and next generation agentic capabilities. Preprint, arXiv:2507.06261.",
+            "Yifan Du, Kun Zhou, Yingqian Min, Yue Ling, Wayne Xin Zhao, and Youbin Wu. 2025. Revisiting the necessity of lengthy chain-of-thought in vision-centric reasoning generalization. Preprint, arXiv:2511.22586.",
+            "Xingyu Fu, Yushi Hu, Bangzheng Li, Yu Feng, Haoyu Wang, Xudong Lin, Dan Roth, Noah A. Smith, Wei-Chiu Ma, and Ranjay Krishna. 2024. Blink: Multimodal large language models can see but not perceive. Preprint, arXiv:2404.12390.",
+            "Xingyu Fu, Minqian Liu, Zhengyuan Yang, John Corring, Yijuan Lu, Jianwei Yang, Dan Roth, Dinei Florencio, and Cha Zhang. 2025. Refocus: Visual editing as a chain of thought for structured image understanding. Preprint, arXiv:2501.05452.",
+            "Yuqian Fu, Haohuan Huang, Kaiwen Jiang, Jiacai Liu, Zhuo Jiang, Yuanheng Zhu, and Dongbin Zhao. 2026. Revisiting on-policy distillation: Empirical failure modes and simple fixes. Preprint, arXiv:2603.25562.",
+            "Yuxian Gu, Li Dong, Furu Wei, and Minlie Huang. 2026. Minillm: On-policy distillation of large language models. Preprint, arXiv:2306.08543.",
+            "Yushi Hu, Weijia Shi, Xingyu Fu, Dan Roth, Mari Ostendorf, Luke Zettlemoyer, Noah A Smith, and Ranjay Krishna. 2024. Visual sketchpad: Sketching as a visual chain of thought for multimodal language models. Preprint, arXiv:2406.09403.",
+            "Jonas Hübotter, Frederike Lübeck, Lejs Behric, Anton Baumann, Marco Bagatella, Daniel Marta, Ido Hakimi, Idan Shenfeld, Thomas Kleine Buening, Carlos Guestrin, and Andreas Krause. 2026. Reinforcement learning via self-distillation. Preprint, arXiv:2601.20802.",
+            "Bangzheng Li, Ximeng Sun, Jiang Liu, Ze Wang, Jialian Wu, Xiaodong Yu, Hao Chen, Emad Barsoum, Muhao Chen, and Zicheng Liu. 2025a. Latent visual reasoning. Preprint, arXiv:2509.24251.",
+            "Chengzu Li, Wenshan Wu, Huanyu Zhang, Yan Xia, Shaoguang Mao, Li Dong, Ivan Vulic, and Furu´ Wei. 2025b. Imagine while reasoning in space: Multimodal visualization-of-thought. Preprint, arXiv:2501.07542.",
+            "Haobin Li, Yutong Yang, Yijie Lin, Xiang Dai, Mouxing Yang, and Xi Peng. 2026a. Reliable thinking with images. Preprint, arXiv:2602.12916.",
+            "You Li, Chi Chen, Yanghao Li, Fanhu Zeng, Kaiyu Huang, Jinan Xu, and Maosong Sun. 2026b. Imagination helps visual reasoning, but not yet in latent space. Preprint, arXiv:2602.22766.",
+            "Zujing Liu, Junwen Pan, Qi She, Yuan Gao, and Guisong Xia. 2025. On the faithfulness of visual thinking: Measurement and enhancement. Preprint, arXiv:2510.23482.",
+            "Kevin Lu and Thinking Machines Lab. 2025. Onpolicy distillation. Thinking Machines Lab: Connectionism. Https://thinkingmachines.ai/blog/onpolicy-distillation.",
+            "OpenAI, :, Aaron Hurst, Adam Lerer, Adam P. Goucher, Adam Perelman, Aditya Ramesh, Aidan Clark, AJ Ostrow, Akila Welihinda, Alan Hayes, Alec Radford, Aleksander M ˛adry, Alex Baker-Whitcomb, Alex Beutel, Alex Borzunov, Alex Carney, Alex Chow, Alex Kirillov, and 401 others. 2024. Gpt-4o system card. Preprint, arXiv:2410.21276.",
+            "Zhihong Shao, Peiyi Wang, Qihao Zhu, Runxin Xu, Junxiao Song, Xiao Bi, Haowei Zhang, Mingchuan Zhang, Y. K. Li, Y. Wu, and Daya Guo. 2024. Deepseekmath: Pushing the limits of mathematical reasoning in open language models. Preprint, arXiv:2402.03300.",
+            "Idan Shenfeld, Mehul Damani, Jonas Hübotter, and Pulkit Agrawal. 2026. Self-distillation enables continual learning. Preprint, arXiv:2601.19897.",
+            "Zhaochen Su, Peng Xia, Hangyu Guo, Zhenhua Liu, Yan Ma, Xiaoye Qu, Jiaqi Liu, Yanshu Li, Kaide Zeng, Zhengyuan Yang, Linjie Li, Yu Cheng, Heng Ji, Junxian He, and Yi R. Fung. 2025. Thinking with images for multimodal reasoning: Foundations, methods, and future frontiers. Preprint, arXiv:2506.23918.",
+            "Kimi Team, Tongtong Bai, Yifan Bai, Yiping Bao, S. H. Cai, Yuan Cao, Y. Charles, H. S. Che, Cheng Chen, Guanduo Chen, Huarong Chen, Jia Chen, Jiahao Chen, Jianlong Chen, Jun Chen, Kefan Chen, Liang Chen, Ruijue Chen, Xinhao Chen, and 307 others. 2026. Kimi k2.5: Visual agentic intelligence. Preprint, arXiv:2602.02276.",
+            "Haochen Wang, Xiangtai Li, Zilong Huang, Anran Wang, Jiacong Wang, Tao Zhang, Jiani Zheng, Sule Bai, Zijian Kang, Jiashi Feng, Zhuochen Wang, and Zhaoxiang Zhang. 2026. Traceable evidence enhanced visual grounded reasoning: Evaluation and methodology. Preprint, arXiv:2507.07999.",
+            "Haozhe Wang, Alex Su, Weiming Ren, Fangzhen Lin, and Wenhu Chen. 2025a. Pixel reasoner: Incentivizing pixel-space reasoning with curiosity-driven reinforcement learning. Preprint, arXiv:2505.15966.",
+            "Qixun Wang, Yang Shi, Yifei Wang, Yuanxing Zhang, Pengfei Wan, Kun Gai, Xianghua Ying, and Yisen Wang. 2025b. Monet: Reasoning in latent visual space beyond images and language. Preprint, arXiv:2511.21395.",
+            "Wenbin Wang, Liang Ding, Minyan Zeng, Xiabin Zhou, Li Shen, Yong Luo, and Dacheng Tao. 2024. Divide, conquer and combine: A training-free framework for high-resolution image perception in multimodal large language models. Preprint, arXiv:2408.15556.",
+            "Lai Wei, Liangbo He, Jun Lan, Lingzhong Dong, Yutong Cai, Siyuan Li, Huijia Zhu, Weiqiang Wang, Linghe Kong, Yue Wang, Zhuosheng Zhang, and Weiran Huang. 2026. Zooming without zooming: Region-to-image distillation for fine-grained multimodal perception. Preprint, arXiv:2602.11858.",
+            "Mingyuan Wu, Jingcheng Yang, Jize Jiang, Meitang Li, Kaizhuo Yan, Hanchao Yu, Minjia Zhang, Chengxiang Zhai, and Klara Nahrstedt. 2026. Vtool-r1: Vlms learn to think with images via reinforcement learning on multimodal tool use. Preprint, arXiv:2505.19255.",
+            "Penghao Wu and Saining Xie. 2023. V\\*: Guided visual search as a core mechanism in multimodal llms. Preprint, arXiv:2312.14135.",
+            "Zeyuan Yang, Xueyang Yu, Delin Chen, Maohao Shen, and Chuang Gan. 2025. Machine mental imagery: Empower multimodal reasoning with latent visual tokens. Preprint, arXiv:2506.17218.",
+            "Qianhao Yuan, Jie Lou, Xing Yu, Hongyu Lin, Le Sun, Xianpei Han, and Yaojie Lu. 2026. Vision-opd: Learning to see fine details for multimodal llms via on-policy self-distillation. Preprint, arXiv:2605.18740.",
+            "Dongxu Zhang, Zhichao Yang, Sepehr Janghorbani, Jun Han, Andrew Ressler II, Qian Qian, Gregory D. Lyng, Sanjit Singh Batra, and Robert E. Tillman. 2026. Fast and effective on-policy distillation from reasoning prefixes. Preprint, arXiv:2602.15260.",
+            "Jiarui Zhang, Mahyar Khayatkhoei, Prateek Chhikara, and Filip Ilievski. 2025a. Mllms know where to look: Training-free perception of small visual details with multimodal llms. Preprint, arXiv:2502.17422.",
+            "Yi-Fan Zhang, Xingyu Lu, Shukang Yin, Chaoyou Fu, Wei Chen, Xiao Hu, Bin Wen, Kaiyu Jiang, Changyi Liu, Tianke Zhang, Haonan Fan, Kaibing Chen, Jiankang Chen, Haojie Ding, Kaiyu Tang, Zhang Zhang, Liang Wang, Fan Yang, Tingting Gao, and Guorui Zhou. 2025b. Thyme: Think beyond images. Preprint, arXiv:2508.11630.",
+            "Yi-Fan Zhang, Huanyu Zhang, Haochen Tian, Chaoyou Fu, Shuangqing Zhang, Junfei Wu, Feng Li, Kun Wang, Qingsong Wen, Zhang Zhang, Liang Wang, Rong Jin, and Tieniu Tan. 2025c. Mme-realworld: Could your multimodal llm challenge high-resolution real-world scenarios that are difficult for humans? Preprint, arXiv:2408.13257.",
+            "Siyan Zhao, Zhihui Xie, Mengchen Liu, Jing Huang, Guan Pang, Feiyu Chen, and Aditya Grover. 2026. Self-distilled reasoner: On-policy self-distillation for large language models. Preprint, arXiv:2601.18734.",
+            "Ziwei Zheng, Michael Yang, Jack Hong, Chenxiao Zhao, Guohai Xu, Le Yang, Chao Shen, and Xing Yu. 2026. Deepeyes: Incentivizing \"thinking with images\" via reinforcement learning. Preprint, arXiv:2505.14362.",
+            "Jinguo Zhu, Weiyun Wang, Zhe Chen, Zhaoyang Liu, Shenglong Ye, Lixin Gu, Hao Tian, Yuchen Duan, Weijie Su, Jie Shao, Zhangwei Gao, Erfei Cui, Xuehui Wang, Yue Cao, Yangzhou Liu, Xingguang Wei, Hongjie Zhang, Haomin Wang, Weiye Xu, and 32 others. 2025. Internvl3: Exploring advanced training and test-time recipes for open-source multimodal models. Preprint, arXiv:2504.10479."
+        ],
+        "bbox": [
+            509,
+            671,
+            885,
+            922
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "page_number",
+        "text": "8",
+        "bbox": [
+            492,
+            942,
+            504,
+            954
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "list",
+        "sub_type": "ref_text",
+        "list_items": [],
+        "bbox": [
+            110,
+            84,
+            490,
+            920
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "list",
+        "sub_type": "ref_text",
+        "list_items": [],
+        "bbox": [
+            507,
+            84,
+            884,
+            920
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "page_number",
+        "text": "9",
+        "bbox": [
+            492,
+            942,
+            504,
+            953
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "list",
+        "sub_type": "ref_text",
+        "list_items": [],
+        "bbox": [
+            107,
+            80,
+            497,
+            925
+        ],
+        "page_idx": 9
+    },
+    {
+        "type": "list",
+        "sub_type": "ref_text",
+        "list_items": [],
+        "bbox": [
+            507,
+            80,
+            885,
+            331
+        ],
+        "page_idx": 9
+    },
+    {
+        "type": "page_number",
+        "text": "10",
+        "bbox": [
+            489,
+            941,
+            509,
+            954
+        ],
+        "page_idx": 9
+    },
+    {
+        "type": "text",
+        "text": "A Relative Attention Map Computation",
+        "text_level": 2,
+        "bbox": [
+            114,
+            84,
+            475,
+            99
+        ],
+        "page_idx": 10
+    },
+    {
+        "type": "text",
+        "text": "Following Zhang et al. (2025a); Wei et al. (2026) on relative attention analysis, we visualize which image regions are preferentially used for answering a question, rather than which regions receive high attention in a generic image-understanding setting. Given an image-question pair (I, Q), we first run the model on the target prompt and collect the answer-to-image attention map:",
+        "bbox": [
+            112,
+            108,
+            487,
+            237
+        ],
+        "page_idx": 10
+    },
+    {
+        "type": "equation",
+        "text": "$$\nA ^ {\\mathrm{task}} = \\operatorname{Attn} (I, Q).\n$$",
+        "text_format": "latex",
+        "bbox": [
+            221,
+            249,
+            376,
+            267
+        ],
+        "page_idx": 10
+    },
+    {
+        "type": "text",
+        "text": "To suppress question-agnostic saliency, we additionally compute a reference attention map under a generic image-description prompt $Q ^ { \\mathrm { r e f } }$ :",
+        "bbox": [
+            112,
+            280,
+            489,
+            329
+        ],
+        "page_idx": 10
+    },
+    {
+        "type": "equation",
+        "text": "$$\nA ^ {\\mathrm{ref}} = \\operatorname{Attn} (I, Q ^ {\\mathrm{ref}}).\n$$",
+        "text_format": "latex",
+        "bbox": [
+            218,
+            338,
+            381,
+            357
+        ],
+        "page_idx": 10
+    },
+    {
+        "type": "text",
+        "text": "We then form the relative attention map by subtracting the reference map and renormalizing:",
+        "bbox": [
+            112,
+            370,
+            487,
+            401
+        ],
+        "page_idx": 10
+    },
+    {
+        "type": "equation",
+        "text": "$$\nA ^ {\\text { rel }} = \\operatorname{Norm} \\left(A ^ {\\text { task }} - A ^ {\\text { ref }}\\right).\n$$",
+        "text_format": "latex",
+        "bbox": [
+            191,
+            413,
+            406,
+            432
+        ],
+        "page_idx": 10
+    },
+    {
+        "type": "text",
+        "text": "In practice, Attn(·) denotes the aggregated attention from generated answer tokens to visual tokens, averaged across the selected layers and heads, and Norm(·) rescales the map to [0, 1] for visualization. This procedure emphasizes image regions whose contribution increases specifically for the target question.",
+        "bbox": [
+            112,
+            444,
+            487,
+            556
+        ],
+        "page_idx": 10
+    },
+    {
+        "type": "text",
+        "text": "For the quantitative coverage metric in Table 2, let Ω denote the set of visual-token positions covered by the annotated evidence box after mapping the box from image coordinates to the visual-token grid. We keep the positive part of the relative attention map, $\\tilde { A } ^ { \\mathrm { r e l } } = \\bar { \\operatorname* { m a x } } ( A ^ { \\mathrm { t a s k } } - A ^ { \\mathrm { r e f } } , 0 )$ , and compute",
+        "bbox": [
+            112,
+            557,
+            489,
+            668
+        ],
+        "page_idx": 10
+    },
+    {
+        "type": "equation",
+        "text": "$$\n\\text {Coverage} = 1 0 0 \\cdot \\frac {\\sum_ {j \\in \\Omega} \\tilde {A} _ {j} ^ {\\mathrm{rel}}}{\\sum_ {j} \\tilde {A} _ {j} ^ {\\mathrm{rel}}}.\n$$",
+        "text_format": "latex",
+        "bbox": [
+            184,
+            668,
+            415,
+            709
+        ],
+        "page_idx": 10
+    },
+    {
+        "type": "text",
+        "text": "Higher coverage indicates that a larger share of the model’s question-specific visual attention falls on the traceable evidence region.",
+        "bbox": [
+            112,
+            714,
+            487,
+            762
+        ],
+        "page_idx": 10
+    },
+    {
+        "type": "text",
+        "text": "B Prompts",
+        "text_level": 2,
+        "bbox": [
+            509,
+            83,
+            621,
+            99
+        ],
+        "page_idx": 10
+    },
+    {
+        "type": "text",
+        "text": "Teacher Prompt. The prompt used for the teacher model is shown below. The teacher receives the original image together with intermediate evidence images and is instructed to reason in text-imagine mode only.",
+        "bbox": [
+            507,
+            108,
+            882,
+            187
+        ],
+        "page_idx": 10
+    },
+    {
+        "type": "text",
+        "text": "Instruction.",
+        "text_level": 2,
+        "bbox": [
+            536,
+            206,
+            633,
+            219
+        ],
+        "page_idx": 10
+    },
+    {
+        "type": "text",
+        "text": "Solve the visual question step by step in text\\_imagine mode only.",
+        "bbox": [
+            534,
+            222,
+            853,
+            254
+        ],
+        "page_idx": 10
+    },
+    {
+        "type": "text",
+        "text": "Reasoning Rule.",
+        "text_level": 2,
+        "bbox": [
+            536,
+            256,
+            668,
+            272
+        ],
+        "page_idx": 10
+    },
+    {
+        "type": "text",
+        "text": "You will receive the original question and original image(s), along with additional context, including intermediate images produced by applying operations such as cropping and zooming to the original image. Use this additional context only as hidden support for visual reasoning. You must restate useful operations, such as cropping or zooming as mental image manipulations.",
+        "bbox": [
+            534,
+            273,
+            858,
+            417
+        ],
+        "page_idx": 10
+    },
+    {
+        "type": "text",
+        "text": "Image sequence: Image 1 is the original image. Image 2 and any subsequent images are intermediate images. Intermediate images produced by applying operations to the original image: zoom. After knowing which region to focus on, try to solve the problem using only Image 1. Do not mention Image 2, the second image, the intermediate image, or any extra image explicitly.",
+        "bbox": [
+            534,
+            418,
+            857,
+            562
+        ],
+        "page_idx": 10
+    },
+    {
+        "type": "text",
+        "text": "Example Format.",
+        "text_level": 2,
+        "bbox": [
+            536,
+            565,
+            677,
+            580
+        ],
+        "page_idx": 10
+    },
+    {
+        "type": "text",
+        "text": "I first inspect the overall image and identify the region most relevant to the question. To get more detail, I mentally zoom into the relevant region after the imagined close inspection. I can now see that the sign is triangular and red, which matches only one of the options. Using that visual evidence, I determine the answer.<answer>Your final answer goes here.</answer>",
+        "bbox": [
+            534,
+            581,
+            858,
+            726
+        ],
+        "page_idx": 10
+    },
+    {
+        "type": "text",
+        "text": "Output Format (strict adherence required).",
+        "text_level": 2,
+        "bbox": [
+            534,
+            728,
+            857,
+            760
+        ],
+        "page_idx": 10
+    },
+    {
+        "type": "text",
+        "text": "1. When using imagine, describe both the mental operation and what becomes clearer after it.",
+        "bbox": [
+            547,
+            764,
+            855,
+            810
+        ],
+        "page_idx": 10
+    },
+    {
+        "type": "text",
+        "text": "2. End with <answer>...</answer>.",
+        "bbox": [
+            546,
+            819,
+            831,
+            834
+        ],
+        "page_idx": 10
+    },
+    {
+        "type": "text",
+        "text": "3. If this is a multiple-choice question and your reasoning conflicts with the options, select the single most plausible option once and finish immediately.",
+        "bbox": [
+            546,
+            841,
+            855,
+            906
+        ],
+        "page_idx": 10
+    },
+    {
+        "type": "page_number",
+        "text": "11",
+        "bbox": [
+            489,
+            941,
+            507,
+            954
+        ],
+        "page_idx": 10
+    },
+    {
+        "type": "text",
+        "text": "Input Template.",
+        "bbox": [
+            139,
+            91,
+            272,
+            107
+        ],
+        "page_idx": 11
+    },
+    {
+        "type": "text",
+        "text": "<image><image>...",
+        "bbox": [
+            139,
+            109,
+            295,
+            123
+        ],
+        "page_idx": 11
+    },
+    {
+        "type": "text",
+        "text": "Question.",
+        "bbox": [
+            141,
+            127,
+            220,
+            142
+        ],
+        "page_idx": 11
+    },
+    {
+        "type": "text",
+        "text": "{question}",
+        "bbox": [
+            139,
+            143,
+            233,
+            158
+        ],
+        "page_idx": 11
+    },
+    {
+        "type": "text",
+        "text": "Ground truth.",
+        "bbox": [
+            141,
+            162,
+            257,
+            175
+        ],
+        "page_idx": 11
+    },
+    {
+        "type": "text",
+        "text": "{answer}",
+        "bbox": [
+            139,
+            179,
+            211,
+            193
+        ],
+        "page_idx": 11
+    },
+    {
+        "type": "text",
+        "text": "Student Prompt. The prompt used for the student model is shown below. In contrast to the teacher, the model receives only the original image and question.",
+        "bbox": [
+            112,
+            212,
+            485,
+            275
+        ],
+        "page_idx": 11
+    },
+    {
+        "type": "text",
+        "text": "Instruction.",
+        "text_level": 2,
+        "bbox": [
+            141,
+            294,
+            236,
+            307
+        ],
+        "page_idx": 11
+    },
+    {
+        "type": "text",
+        "text": "Solve the visual question step by step.",
+        "bbox": [
+            141,
+            311,
+            423,
+            326
+        ],
+        "page_idx": 11
+    },
+    {
+        "type": "text",
+        "text": "Reasoning Rule.",
+        "text_level": 2,
+        "bbox": [
+            141,
+            332,
+            272,
+            347
+        ],
+        "page_idx": 11
+    },
+    {
+        "type": "text",
+        "text": "When closer inspection is needed, you may use imagination for internal visual reasoning, such as mentally cropping or zooming the image. Describe this as reasoning rather than tool use.",
+        "bbox": [
+            139,
+            349,
+            462,
+            426
+        ],
+        "page_idx": 11
+    },
+    {
+        "type": "text",
+        "text": "Example Format.",
+        "text_level": 2,
+        "bbox": [
+            141,
+            434,
+            282,
+            449
+        ],
+        "page_idx": 11
+    },
+    {
+        "type": "text",
+        "text": "I first inspect the overall image and identify the region most relevant to the question. To get more detail, I mentally zoom into the relevant region after the imagined close inspection. I can now see that the sign is triangular and red, which matches only one of the options. Using that visual evidence, I determine the answer.<answer>Your final answer goes here.</answer>",
+        "bbox": [
+            139,
+            450,
+            462,
+            594
+        ],
+        "page_idx": 11
+    },
+    {
+        "type": "text",
+        "text": "Output Format (strict adherence required).",
+        "text_level": 2,
+        "bbox": [
+            139,
+            600,
+            463,
+            632
+        ],
+        "page_idx": 11
+    },
+    {
+        "type": "list",
+        "sub_type": "text",
+        "list_items": [
+            "1. When using imagine, describe both the mental operation and what becomes clearer after it.",
+            "2. End with <answer>...</answer>.",
+            "3. If this is a multiple-choice question and your reasoning conflicts with the options, select the single most plausible option once and finish immediately."
+        ],
+        "bbox": [
+            152,
+            634,
+            460,
+            778
+        ],
+        "page_idx": 11
+    },
+    {
+        "type": "text",
+        "text": "Input Template.",
+        "text_level": 2,
+        "bbox": [
+            141,
+            787,
+            270,
+            803
+        ],
+        "page_idx": 11
+    },
+    {
+        "type": "text",
+        "text": "<image>",
+        "bbox": [
+            139,
+            804,
+            208,
+            818
+        ],
+        "page_idx": 11
+    },
+    {
+        "type": "text",
+        "text": "User’s Question.",
+        "bbox": [
+            141,
+            822,
+            273,
+            838
+        ],
+        "page_idx": 11
+    },
+    {
+        "type": "text",
+        "text": "{question}",
+        "bbox": [
+            139,
+            840,
+            233,
+            854
+        ],
+        "page_idx": 11
+    },
+    {
+        "type": "text",
+        "text": "Self-Bbox Proposal Prompt. For the selfproposed bounding-box ablation, we first ask the model to predict a single bounding box from the original image and question, then crop the corresponding intermediate view from the original image, and finally use these model-proposed intermediate views during training in place of the groundtruth evidence crops.",
+        "bbox": [
+            112,
+            873,
+            487,
+            921
+        ],
+        "page_idx": 11
+    },
+    {
+        "type": "text",
+        "text": "",
+        "bbox": [
+            507,
+            84,
+            884,
+            164
+        ],
+        "page_idx": 11
+    },
+    {
+        "type": "text",
+        "text": "Instruction.",
+        "text_level": 2,
+        "bbox": [
+            536,
+            181,
+            633,
+            196
+        ],
+        "page_idx": 11
+    },
+    {
+        "type": "text",
+        "text": "You are selecting a single intermediate crop for visual question answering.",
+        "bbox": [
+            534,
+            198,
+            855,
+            231
+        ],
+        "page_idx": 11
+    },
+    {
+        "type": "text",
+        "text": "Goal.",
+        "text_level": 2,
+        "bbox": [
+            536,
+            236,
+            583,
+            249
+        ],
+        "page_idx": 11
+    },
+    {
+        "type": "text",
+        "text": "Given the image and the question, identify the smallest single rectangular region in the original image that contains the visual evidence needed to answer the question.",
+        "bbox": [
+            534,
+            252,
+            857,
+            316
+        ],
+        "page_idx": 11
+    },
+    {
+        "type": "text",
+        "text": "Rules.",
+        "text_level": 2,
+        "bbox": [
+            537,
+            322,
+            589,
+            335
+        ],
+        "page_idx": 11
+    },
+    {
+        "type": "list",
+        "sub_type": "text",
+        "list_items": [
+            "1. If one object is sufficient, return a tight box around that object.",
+            "2. If the answer depends on multiple objects or their relationship, return one box covering all necessary evidence.",
+            "3. Use integer pixel coordinates on the original image of size {width}x{height}.",
+            "4. Do not answer the question.",
+            "5. Return exactly one bbox in this format and nothing else: <bbox>[x1, y1, x2, y2]</bbox>.",
+            "6. Always provide your best bbox guess even if the target is small or hard to see. Do not say that the object is absent."
+        ],
+        "bbox": [
+            547,
+            340,
+            857,
+            618
+        ],
+        "page_idx": 11
+    },
+    {
+        "type": "text",
+        "text": "Question.",
+        "text_level": 2,
+        "bbox": [
+            536,
+            627,
+            615,
+            640
+        ],
+        "page_idx": 11
+    },
+    {
+        "type": "text",
+        "text": "{question}",
+        "bbox": [
+            534,
+            644,
+            628,
+            658
+        ],
+        "page_idx": 11
+    },
+    {
+        "type": "page_number",
+        "text": "12",
+        "bbox": [
+            489,
+            941,
+            509,
+            954
+        ],
+        "page_idx": 11
+    }
+]

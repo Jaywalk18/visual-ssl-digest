@@ -1,0 +1,1807 @@
+[
+    {
+        "type": "text",
+        "text": "Securing Self-supervised Data Curation for Foundation Models Robustness",
+        "text_level": 1,
+        "bbox": [
+            230,
+            156,
+            724,
+            204
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "Sandeep Gupta1,2\\* and Roberto Passerone2",
+        "bbox": [
+            287,
+            228,
+            667,
+            247
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "1\\*Centre for Secure Information Technologies (CSIT), Queen’s University Belfast, UK.",
+        "bbox": [
+            184,
+            253,
+            771,
+            285
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "2Department of Information Engineering and Computer Science, University of Trento, Italy.",
+        "bbox": [
+            218,
+            286,
+            734,
+            319
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "\\*Corresponding author(s). E-mail(s): s.gupta@qub.ac.uk;",
+        "bbox": [
+            248,
+            347,
+            705,
+            363
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "Contributing authors: roberto.passerone@unitn.it;",
+        "bbox": [
+            277,
+            363,
+            677,
+            379
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "Abstract",
+        "text_level": 2,
+        "bbox": [
+            440,
+            407,
+            514,
+            419
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "Self-supervised data curation provides a pathway to scaling and improving the generalization capabilities of machine learning models. By leveraging selfsupervised learning (SSL) for data curation, the demand for massive training datasets required by foundation models can be effectively met. SSL greatly alleviates the costs associated with annotation and manual dataset curation while minimizing the need for human oversight. However, the integrity of SSL-curated datasets must be rigorously checked, as reliance on anonymous and unvetted external sources can substantially increase the risk of data poisoning. In this paper, we propose a Poisoned Data Detector (PDD), an active defense mechanism designed to ensure the integrity of SSL-curated datasets prior to foundation model training. PDDs are designed using a combination of the pretrained Image-Bind model and traditional classifiers, including Random Forest (RF), k-Nearest Neighbors (KNN), Naive Bayes (NB), and Support Vector Machines (SVM). We rigorously evaluated PDDs using 176,200 images from three diverse datasets and three different adversarial attacks encompassing both in-distribution and out-of-distribution scenarios. Notably, SVM-PDD achieves superior performance for both in-distribution (Set3–Set5) and out-of-distribution (TrueFace and 140K RealFace) datasets. Our design demonstrates strong scalability and enables the rapid integration of new adversarial attack detectors through an ensemble approach.",
+        "bbox": [
+            201,
+            423,
+            752,
+            684
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "Keywords: Foundation models, self-supervised learning, data curation, poisoning attack",
+        "bbox": [
+            203,
+            695,
+            724,
+            719
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "aside_text",
+        "text": "arXiv:2606.09511v1 [cs.CV] 8 Jun 2026",
+        "bbox": [
+            21,
+            294,
+            60,
+            700
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "page_number",
+        "text": "1",
+        "bbox": [
+            472,
+            764,
+            482,
+            775
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "1 Introduction",
+        "text_level": 2,
+        "bbox": [
+            205,
+            84,
+            381,
+            99
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "text",
+        "text": "Visual Foundation Models (VFMs) have shown the capability to effectively acquire visual features, producing representations that exhibit strong generalization and transferability. These representations integrate both image and text features within a shared semantic space, facilitating their application to a diverse array of downstream tasks in a zero-shot or one-shot manner [1]. VFMs can be pre-trained models typically trained on vast datasets comprising billions of image-text pairs. The training process is efficiently automated through self-supervised data curation using models such as Contrastive Language-Image Pre-training (CLIP) [2] and Deeper Into Neural Networks (DINOv2) [3]. Additionally, large language models (LLMs) enhance the generation of training data by producing images from text prompts. Self-supervised learning (SSL) is a subset of unsupervised learning that extracts discriminative features from unlabeled data to aid in labeling and automate data curation [4]. SSL supports various tasks, including segmentation, classification, and regression, offering a scalable and cost-effective alternative to the resource-intensive and time-consuming process of manual data labeling.",
+        "bbox": [
+            201,
+            112,
+            833,
+            325
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "text",
+        "text": "At present, the prevalent real-world SSL curation pipelines used to produce billionscale datasets for visual foundation models include the CLIP-driven web-scraping approach of LAION [5], the benchmark-driven filtering framework of DataComp [6], and the embedding-based retrieval pipeline employed in DINOv2 [3]. Table 1 compares the three pipelines, each illustrating the shift toward automated, scalable curation in SSL. Although they aim to reduce dependence on labeled data and mitigate noise in web-scale sources, their reliance on large volumes of unvetted external data introduces multiple avenues for potential poisoning attacks.",
+        "bbox": [
+            203,
+            326,
+            835,
+            441
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "table",
+        "img_path": "images/55225d5656bcafcdd24f991162101a54274881fb9ed9b5eb002dffe5442558df.jpg",
+        "table_caption": [
+            "Table 1 A comparison between the prevalent real-world SSL curation pipelines"
+        ],
+        "table_footnote": [],
+        "table_body": "<table><tr><td>Aspect</td><td>LAION [5]</td><td>DataComp [6]</td><td>DINOv2 Retrieval [3]</td></tr><tr><td>Data Modality</td><td>Image-text pairs</td><td>Image-text pairs</td><td>Images only</td></tr><tr><td>Core Focus</td><td>Web scraping + CLIP filtering</td><td>Benchmark for curation strategies</td><td>Embedding-based retrieval from web</td></tr><tr><td>Scale</td><td>5.85B pairs</td><td>12.8B candidates; subsets up to 1B</td><td>1.2B candidates; 142M images</td></tr><tr><td>Key Innovation</td><td>Distributed common crawl parsing + safety scores</td><td>Fixed models for fair data comparison</td><td>Self-supervised kNN expansion</td></tr><tr><td>Output Use</td><td>CLIP/Stable Diffusion training</td><td>Leaderboard-evaluated CLIP models</td><td>ViT self-distillation (e.g., DINOv2)</td></tr></table>",
+        "bbox": [
+            206,
+            478,
+            833,
+            618
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "text",
+        "text": "As VFMs expand in data and model dimensionality, SSL is emerging as a critical research focus [3]. However, poisoning attacks pose a significant threat to VFMs training, as adversaries can manipulate training data or disrupt the training process to maliciously alter the model behavior [7]. As illustrated in Figure 1, Data poisoning attacks involve tampering with training data, whereas model poisoning attacks directly compromise the model itself. Data poisoning attacks can be further classified as dirty-label or clean-label. Dirty-label attacks manipulate both the data content and labels, while clean-label attacks alter only the data content. Pre-labeled datasets or data from anonymous and unverified sources can serve as potential entry points for data poisoning attacks, indirectly compromising the integrity of the final system. Malicious third-party platforms, including Machine Learning as a Service (MLaaS) providers and distributors of pre-trained models and codebases, can introduce model poisoning attacks by intentionally manipulating the target system.",
+        "bbox": [
+            201,
+            642,
+            833,
+            741
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "page_number",
+        "text": "2",
+        "bbox": [
+            514,
+            764,
+            524,
+            775
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "text",
+        "text": "",
+        "bbox": [
+            159,
+            87,
+            789,
+            173
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "Defense strategies against poisoning attacks can be broadly categorized as passive, which focus on post-attack remediation, or active, which implement preventive measures [8]. In this paper, we propose a novel mechanism for detecting poisoned data in datasets curated using SSL for VFM training, which can be described as an active defense mechanism. Malicious actors can exploit SSL pipelines to orchestrate data poisoning attacks and upload tainted datasets online. This vulnerability poses a substantial security risk, particularly in environments where comprehensive monitoring of VFM training is infeasible. Given the potential for significant downstream impact, ensuring the integrity of the training data is as crucial as securing the final VFM deployment.",
+        "bbox": [
+            161,
+            173,
+            793,
+            317
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "image",
+        "img_path": "images/9160d8ead997f255f1e39f227e51ac70d7ff83128d010c83864d0169ad9cfd86.jpg",
+        "image_caption": [
+            "Fig. 1 Illustration of poisoning attacks on data and models. Data poisoning (DP) attacks involve tampering with training data, such as dirty-label or clean-label data poisoning. Model poisoning attacks directly compromise the model itself, depending on whether the victim model is trained in a centralized or distributed manner."
+        ],
+        "image_footnote": [],
+        "content": "```mermaid\ngraph TD\n  A[\"Poisoning Attacks\"] --> B[\"Data\"]\n  A --> C[\"Model\"]\n  B --> D[\"Clean Label\"]\n  B --> E[\"Dirty Label\"]\n  C --> F[\"DP in Central Learning\"]\n  C --> G[\"DP in Distributed Learning\"]\n```",
+        "sub_type": "flowchart",
+        "bbox": [
+            169,
+            332,
+            788,
+            441
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "The main contributions of this paper are highlighted below.",
+        "bbox": [
+            163,
+            521,
+            606,
+            535
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "list",
+        "sub_type": "text",
+        "list_items": [
+            "• Propose a Poisoned Data Detector (PDD) to verify SSL-curated datasets integrity before they are used for foundation model training as an active defense mechanism. Our design exhibits strong scalability and facilitates the rapid integration of new adversarial attack detectors through an ensemble approach.",
+            "• PDDs are designed using a combination of the pretrained ImageBind model and traditional classifiers, including Random Forest (RF), k-Nearest Neighbors (KNN), Naive Bayes (NB), and Support Vector Machines (SVM). Each PDD is trained on 10%, 20%, 30%, 40%, and 50% of the data, yielding twenty PDD variants in total.",
+            "• Rigorous experiments are performed to evaluate twenty PDDs using 176,200 images from three diverse datasets and three different adversarial attacks encompassing both in-distribution (ID) and out-of-distribution (OOD) scenarios. SVM-PDD demonstrates superior performance in detecting poisoned data."
+        ],
+        "bbox": [
+            166,
+            536,
+            789,
+            706
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "The rest of the paper is structured as follows: Section 2 provides an overview of foundation models, self-supervised data curation, and real-world self-supervised data curation pipelines. Section 4 describes data poisoning attacks on data curated using SSL to subvert a VFM during its training phase. Section 5 defines the methodology for designing the proposed solution, including network and dataset selection, poisoned dataset generation, and the poisoned data detector. Section 6 presents the high-level design of the proposed solution for SSL-curated dataset integrity checks and the experimental results. Section 3 discusses the related work to data poisoning attacks. Finally, Section 7 concludes the article and outlines future directions.",
+        "bbox": [
+            161,
+            713,
+            793,
+            741
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "page_number",
+        "text": "3",
+        "bbox": [
+            472,
+            764,
+            482,
+            776
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "",
+        "bbox": [
+            201,
+            87,
+            835,
+            187
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "text",
+        "text": "2 Background",
+        "text_level": 2,
+        "bbox": [
+            203,
+            203,
+            374,
+            221
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "text",
+        "text": "Visual Foundation Models (VFMs) are large-scale pre-trained models that learn rich visual representations from massive image-text or image-only datasets, enabling strong generalization across diverse downstream tasks such as classification, detection, segmentation, and pose estimation in zero- or few-shot settings [1, 9].",
+        "bbox": [
+            201,
+            231,
+            833,
+            291
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "text",
+        "text": "2.1 Self-supervised data curation",
+        "text_level": 2,
+        "bbox": [
+            203,
+            303,
+            539,
+            319
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "text",
+        "text": "Figure 2 depicts a comparison between supervised-, unsupervised-, and self-supervised learning. Supervised learning typically requires large volumes of manually labeled data to train models effectively and achieve superior performance [4]. In contrast, unsupervised learning discovers patterns in unlabeled data without explicit supervision. Given the cost and time associated with manual annotation, self-supervised data curation has emerged as an efficient strategy for generating labeled data, reducing reliance on human labels and supporting the pretraining of foundation models. Recent self-supervised methods have attracted considerable attention for their ability",
+        "bbox": [
+            201,
+            326,
+            835,
+            441
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "image",
+        "img_path": "images/a8384ca2ec2f873f2a411a68f48b1e11830145c7bd3cb54517d03c7e47f4373a.jpg",
+        "image_caption": [
+            "Fig. 2 Illustration of supervised learning, unsupervised learning, and SSL. SSL can automatically generates a large volume of labeled data for visual foundation models training addressing the limitations of manual labeling process."
+        ],
+        "image_footnote": [],
+        "content": "",
+        "bbox": [
+            263,
+            462,
+            784,
+            605
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "text",
+        "text": "to exploit structure in unlabeled data and improve representation learning, helping alleviate some limitations of manual labeling [10]. Self-supervised approaches are commonly grouped into generative, contrastive, and adversarial families, although exact taxonomies vary across surveys. Generative SSL trains an encoder to map input data (x) to a latent representation (z), and a decoder to reconstruct x from z. Contrastive",
+        "bbox": [
+            203,
+            670,
+            835,
+            741
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "page_number",
+        "text": "",
+        "bbox": [
+            514,
+            764,
+            524,
+            775
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "text",
+        "text": "SSL learns representations by maximizing similarity between different views of the same data (x) in the latent space (z). Generative-contrastive SSL employs an encoderdecoder to generate synthetic data, and a discriminator to distinguish it from real data, thereby learning robust representations.",
+        "bbox": [
+            161,
+            87,
+            789,
+            143
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "Methods such as CLIP [2] and DINOv2 [3] efficiently automate the VFM training process. CLIP [2] matches captions to images as a simple pre-training task. CLIP utilizes contrastive learning to jointly train image and text encoders, matching images to their corresponding text descriptions by distinguishing them from other (image, text) pairs within a batch. The method successfully yielded 400 million image-text pairs from the internet, demonstrating its scalability and effectiveness in generating massive datasets in an SSL setting. Like the GPT family, CLIP demonstrates emergent capabilities during pre-training, excelling in tasks such as OCR, geo-localization, and action recognition. DINOv2 [3] automates the creation of tailored, diverse, and curated image datasets, offering a significant improvement over traditional uncurated approaches. DINOv2 is trained using various Vision Transformer (ViT) architectures on a dataset of 142 million images. Subsequently, the curated pre-training dataset is constructed by retrieving images from the uncurated data source that closely resemble those in the curated sources including ImageNet-1k and Google Landmarks. The process involves computing high-dimensional image embeddings using a self-supervised ViT-H/16 model pre-trained on ImageNet-22k. These embeddings are then used to calculate cosine similarity, enabling effective clustering of the uncurated data with kmeans. SSL can serve as an alternative to text-guided pre-training, supporting tasks such as segmentation, classification, and regression. Moreover, LLMs can facilitate image generation from text prompts, further expanding the training data pool.",
+        "bbox": [
+            166,
+            145,
+            793,
+            430
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "2.2 Real-world self-supervised data curation pipelines",
+        "text_level": 2,
+        "bbox": [
+            161,
+            445,
+            702,
+            462
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "While CLIP and DINOv2 established the foundational principles of automated data curation, contemporary foundation-model training relies on substantially larger and more sophisticated pipelines operating at web scale. We outline the three dominant paradigms currently employed to construct billion-scale datasets without requiring any manual labeling.",
+        "bbox": [
+            161,
+            467,
+            793,
+            539
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "2.2.1 LAION-style Pipelines",
+        "text_level": 2,
+        "bbox": [
+            163,
+            552,
+            428,
+            569
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "As described in Table 2, the LAION pipeline is a three-stage, distributed web-scraping and filtering framework designed to construct large-scale, open-source, CLIP-filtered image–text datasets [5]. It begins with massive web archives such as Common Crawl (CC) and produces high-quality image-text pairs (e.g., 5.85 billion in LAION-5B). The pipeline emphasizes aesthetic and semantic alignment without manual curation, relying on CLIP embeddings for automated quality scoring.",
+        "bbox": [
+            161,
+            576,
+            791,
+            662
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "2.2.2 DataComp Benchmark Pipelines",
+        "text_level": 2,
+        "bbox": [
+            161,
+            676,
+            519,
+            692
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "As described in Table 3, DataComp is a benchmark framework for evaluating datacuration strategies rather than a single dataset [6]. It standardizes the model architecture (e.g., CLIP) and training hyperparameters, requiring participants to innovate specifically in data selection and filtering from a shared candidate pool. The framework conducts evaluation through a fixed training pipeline and comprehensive downstream testing (typically across 38-53 tasks). It provides two tracks: Filtering, which permits the use only of the provided candidate pool, and BYOD (‘bring your own data’), which allows the incorporation of external data in addition to the pool. DataComp spans multiple scales, ranging from XS (approximately 412M parameters, ≈4 GPU-hours) to XL (approximately 7B parameters, ≈40k GPU-hours).",
+        "bbox": [
+            161,
+            697,
+            789,
+            741
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "page_number",
+        "text": "",
+        "bbox": [
+            472,
+            764,
+            482,
+            775
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "table",
+        "img_path": "images/1371c3eddfe16a8564b4aa56defdec765e3d8715b13c0ec71f3a927a3787f205.jpg",
+        "table_caption": [
+            "Table 2 LAION high-level architecture stages"
+        ],
+        "table_footnote": [],
+        "table_body": "<table><tr><td>Stage</td><td>Description</td><td>Key Components/Tools</td><td>Data Flow/Input-Output</td></tr><tr><td rowspan=\"2\">Candidate Extraction</td><td rowspan=\"2\">Parse web archives to identify image-text pairs (e.g., &lt;img alt=&quot;..&quot;&gt; tags).</td><td rowspan=\"2\">Distributed cluster (e.g., AWS workers) [11]; HTML parsing on CC snapshots ( $\\approx 300$  TiB/month,  $\\approx 3$ B pages).</td><td>Input: Raw CC HTML files.</td></tr><tr><td>Output:  $\\approx 20-30$ B candidate URL-text pairs (unfiltered).</td></tr><tr><td rowspan=\"2\">Download and Initial Processing</td><td rowspan=\"2\">Download images and compute basic metadata (e.g., resolution, deduplication).</td><td rowspan=\"2\">img2dataset (parallel downloader) [12]; PySpark for deduplication; GPU nodes for fast early filtering.</td><td>Input: Candidate URLs.</td></tr><tr><td>Output: Downloaded images and text ( $\\approx 12-15$ B pairs); remove broken/invalid samples.</td></tr><tr><td rowspan=\"2\">Quality Filtering and Embedding</td><td rowspan=\"2\">Score pairs for semantic alignment (image-text similarity) and safety.</td><td rowspan=\"2\">CLIP, ViT-B/32 or ViT-L/14 for embeddings; cosine similarity threshold (e.g., 0.28 for English); Autofaiss for kNN indexing [13]; NSFW/watermark detectors [14].</td><td>Input: Processed pairs.</td></tr><tr><td>Output: Filtered dataset (e.g., 5.85B pairs in LAION-5B: 2.3B English and 2.2B multilingual, 1B unlabeled); includes embeddings and safety scores.</td></tr></table>",
+        "bbox": [
+            206,
+            102,
+            833,
+            287
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "table",
+        "img_path": "images/82c0758797269355307f0316479e7a7c98ed30e1b94e3f511c7ca239cd3ecf8a.jpg",
+        "table_caption": [
+            "Table 3 DataComp high-level architecture stages"
+        ],
+        "table_footnote": [],
+        "table_body": "<table><tr><td>Stage</td><td>Description</td><td>Key Components/Tools</td><td>Data Flow/Input-Output</td></tr><tr><td rowspan=\"2\">Candidate Pool Generation</td><td rowspan=\"2\">Extract raw image-text pairs from web sources.</td><td rowspan=\"2\">Common Crawl parsing; initial deduplication (e.g., exact/near-duplicates via hashing) [15].</td><td>Input: CC archives ( $\\approx 240T$  tokens total).</td></tr><tr><td>Output: 12.8B uncurated image-text pairs (candidate pool).</td></tr><tr><td rowspan=\"2\">Curation and Filtering</td><td rowspan=\"2\">Apply participant-defined strategies (e.g., quality scoring, mixing). Baselines: CLIP similarity (top 0.3 fraction) and image-based filters (e.g., aesthetic, watermark detection) [16].</td><td rowspan=\"2\">OpenCLIP for scoring [17]; deduplication (rust-based for efficiency); data mixing (e.g., balance classes). YAML configs for Ray-based pipelines.</td><td>Input: Candidate pool.</td></tr><tr><td>Output: Curated subset (e.g., DataComp-1B baseline: 1B high-quality pairs).</td></tr><tr><td rowspan=\"2\">Standardized Training</td><td rowspan=\"2\">Evaluation,Train fixed CLIP model on curated data; test on downstream tasks.</td><td rowspan=\"2\">OpenLM framework [18]; scales: XS/S/M/L/XL; 53 evaluations (e.g., ImageNet zero-shot, segmentation).</td><td>Input: Curated dataset.</td></tr><tr><td>Output: Model performance metrics (e.g., 79.2% ImageNet accuracy for DataComp-1B, +3.7% over OpenAI CLIP).</td></tr></table>",
+        "bbox": [
+            206,
+            321,
+            833,
+            546
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "text",
+        "text": "",
+        "bbox": [
+            201,
+            562,
+            833,
+            663
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "text",
+        "text": "2.2.3 DINOv2 Retrieval Pipeline (LVD-142M)",
+        "text_level": 2,
+        "bbox": [
+            203,
+            676,
+            631,
+            693
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "text",
+        "text": "As described in Table 4, the DINOv2 pipeline is a fully automated, self-supervised system for curating large-scale, image-only datasets without relying on text annotations [3]. Starting from a small set of high-quality ‘seed’ images drawn from curated sources such as ImageNet, the pipeline retrieves visually similar examples from massive uncurated web collections. These images are embedded using a self-supervised ViT-H/16 model and matched via cosine similarity, enabling efficient clustering and large-scale expansion of the curated set. The result is a balanced and diverse dataset—exemplified by LVD-142M (142M images) that supports high-quality pretraining through self-distillation using DINO and iBOT losses. By grounding the selection process in robust visual embeddings rather than labels, the pipeline ensures scalable dataset growth while maintaining semantic coherence and visual quality.",
+        "bbox": [
+            203,
+            697,
+            833,
+            741
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "page_number",
+        "text": "6",
+        "bbox": [
+            512,
+            765,
+            524,
+            776
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "text",
+        "text": "",
+        "bbox": [
+            159,
+            87,
+            793,
+            203
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "table",
+        "img_path": "images/b1b29a84261afb70e30bab789fb2325702ed7f26525aedb3d21f5f3a52829e4a.jpg",
+        "table_caption": [
+            "Table 4 DINOv2 high-level architecture stages"
+        ],
+        "table_footnote": [],
+        "table_body": "<table><tr><td>Stage</td><td>Description</td><td>Key Components/Tools</td><td>Data Flow/Input-Output</td></tr><tr><td rowspan=\"2\">Embedding Generation</td><td rowspan=\"2\">Extract features from curated and uncurated images.</td><td rowspan=\"2\">Pre-trained ViT-H/14 (self-supervised on ImageNet-22k); high-dimensional embeddings (e.g., 1024-dim).</td><td>Input: Curated seeds ( $\\approx$ 1-10M images from ImageNet-22k, Google Landmarks) + uncurated pool (1.2B web images).</td></tr><tr><td>Output: Embeddings for all images.</td></tr><tr><td rowspan=\"2\">Deduplication</td><td rowspan=\"2\">Remove near-duplicates to increase diversity</td><td rowspan=\"2\">Copy detection (e.g., perceptual hashing); filter out test/validation set overlaps.</td><td>Input: Embeddings and images.</td></tr><tr><td>Output: Deduplicated uncurated set ( $\\approx$ reduced by 10-20%).</td></tr><tr><td rowspan=\"2\">Retrieval</td><td rowspan=\"2\">Augmentation, Match uncurated images to seeds via similarity; Balance concepts.</td><td rowspan=\"2\">Cosine similarity and k-means clustering; kNN retrieval; self-supervised expansion.</td><td>Input: Deduplicated embeddings.</td></tr><tr><td>Output: Augmented dataset (LVD-142M: 142M diverse images, balanced across concepts).</td></tr></table>",
+        "bbox": [
+            166,
+            234,
+            789,
+            422
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "text",
+        "text": "While these automated pipelines enable unprecedented scale, their dependence on external, unverified data sources can introduce critical risks of data poisoning.",
+        "bbox": [
+            161,
+            441,
+            791,
+            470
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "text",
+        "text": "3 Related work",
+        "text_level": 2,
+        "bbox": [
+            163,
+            483,
+            349,
+            502
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "text",
+        "text": "Defense mechanisms against poisoning attacks can be divided into passive defenses, which remediate attacks after they occur, and active defenses, which prevent attacks proactively [8]. Training data sanitization employs filtering algorithms to identify, remove, or revise poisoned data points within the training dataset. Model parameter sanitization focuses on detecting anomalies in the victim model parameters and subsequently correcting them to restore normal functionality. Active defense mitigates data poisoning by employing data preprocessing techniques, including cleaning, enhancement, and transformation, to scrutinize raw training data. Robust training methods further strengthen defenses by making the training process resilient to poisoning attacks. Countermeasures against poisoning attacks include training data filtering, robust learning, and auxiliary tools [8]. Training data filtering, employing techniques such as input manipulation detection and gradient shaping, mitigates the impact of outliers and offers attack-agnostic robustness. Model verification and robustification techniques enhance adversarial resilience against model poisoning attacks and effectively detect backdoor attacks. Integrating auxiliary tools like Generative Adversarial Networks (GANs) and robust statistical methods can significantly improve model classification capabilities by refining learned representations and emphasizing critical signal components.",
+        "bbox": [
+            159,
+            513,
+            793,
+            741
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "page_number",
+        "text": "",
+        "bbox": [
+            473,
+            764,
+            482,
+            775
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "text",
+        "text": "",
+        "bbox": [
+            203,
+            87,
+            830,
+            115
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "text",
+        "text": "Fares and Nandakumar [19] propose Attack To Defend (A2D) approach that detects poisoned models by exploiting their inherent susceptibility to adversarial perturbations. The authors introduce Sensitivity to Adversarial Perturbations (SAP) to quantify a model sensitivity to adversarial attacks at a specific perturbation bound. The metric enables a normalized comparison of models adversarial sensitivity (robustness). A poisoned target model exhibits a higher SAP than a benign model, which can be leveraged for detecting poisoned models. Ishmam and Thomas [20] propose semantic shield for defending against backdoor and poisoning attacks on contrastively trained vision language models by enforcing knowledge-guided train-time constraints. This method integrates a prompting technique using an open-source language model to freely extract constituent knowledge elements from any caption.",
+        "bbox": [
+            206,
+            116,
+            833,
+            272
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "text",
+        "text": "Chen et al. [21] present De-Pois, an attack-agnostic defense designed to mitigate diverse poisoning attacks, including Targeted Clean-Label Poisoning, Poisoning Attack With GAN, Label-Flipping Attack, and Regression Attack. The approach involves training a companion model on clean samples to approximate the target model behavior. Poisoned samples are identified by detecting significant discrepancies between the predictions of the companion and target models, eliminating the need for specific knowledge about the attack methodology or underlying machine learning algorithms. Tejankar et al. [22] propose PatchSearch, a method that defends SSL models against patch-based data poisoning attacks by identifying and filtering out poisoned samples. This approach follows a three-stage pipeline: (1) initial model training on a potentially poisoned dataset, (2) identification and removal of poisoned samples using the PatchSearch algorithm, and (3) final model training on the cleaned dataset. Guan et al. [23] propose Shapley Pruning framework that leverages neuron interaction analysis to identify and mitigate backdoor attacks in poisoned models. This method prunes infected neurons, preserving model structure and accuracy.",
+        "bbox": [
+            206,
+            273,
+            831,
+            486
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "text",
+        "text": "Zhang et al. [24] propose Causality-inspired Backdoor Defense (CBD) that learns deconfounded representations for classification. This approach employs causal graph analysis to model backdoor attacks as confounding variables, which introduce spurious correlations between input images and target labels. Specifically, the backdoor trigger is conceptualized as a confounder, establishing a non-causal path exploited by the network during training. This path leads to erroneous predictions when the trigger is present, effectively highlighting the vulnerability targeted by backdoor attacks. Peri et al. [25] propose Deep k-NN, a representation-based defense that detects clean-label poisoning by computing the average distance of each sample to its k-nearest neighbors in the feature space of a lightly fine-tuned proxy model. Poisoned samples within the target class exhibit significantly larger distances than clean samples, enabling outlier removal without requiring a separate clean reference set. Table 5 provides a comparison of existing defenses against data poisoning, with a focus on key aspects relevant to SSL-curated datasets for foundation models.",
+        "bbox": [
+            206,
+            487,
+            833,
+            684
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "text",
+        "text": "Table 5: Comparison of Data Poisoning Defenses",
+        "bbox": [
+            371,
+            695,
+            668,
+            706
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "page_number",
+        "text": "",
+        "bbox": [
+            514,
+            765,
+            524,
+            775
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "table",
+        "img_path": "images/22a6aa29bdf247a271ba7dba86b8a8c02600f52320fee5e995d297aa4995bf55.jpg",
+        "table_caption": [],
+        "table_footnote": [],
+        "table_body": "<table><tr><td>Defense</td><td>Core Mechanism</td><td>Threat Model</td><td>Strengths</td><td>Limitations</td><td>Relevance to SSL Curation</td></tr><tr><td>Activation Clustering, 2018 [26]</td><td>Clusters neuron activations in the target class's penultimate layer (using k-means, k=2); removes the smaller (anomalous) cluster as poisoned.</td><td>Backdoor attacks where poisoned samples form distinct activation clusters from clean ones in the target class.</td><td>Simple, no clean data needed; near-100% F1-score on MNIST/CIFAR-10 backdoors; fast post-training.</td><td>Assumes clear separation in activation space (fails on distributed or clean-label poisons); not robust to adaptive attacks that mimic clean activations.</td><td>Useful for SSL (e.g., DINOv2 embeddings) but requires a preliminary model; untested on massive unlabeled sets.</td></tr><tr><td>Fine-Pruning, 2018 [27]</td><td>Prunes suspicious neurons (identified via activation analysis) and fine-tunes the model on remaining clean data to excise backdoors.</td><td>Backdoor poisoning via data injection; targets DNNs like CNNs/ResNets.</td><td>Retains high clean accuracy post-defense; effective against targeted triggers; lightweight pruning.</td><td>Needs access to the full model; less effective on over-parameterized foundation models; vulnerable if poison embeds deeply.</td><td>Applicable to VFM pre-training but may disrupt SSL representations; scales poorly to billion-scale data without acceleration.</td></tr><tr><td>Deep k-NN, 2021 [25]</td><td>k-NN distance in deep representation space of proxy model; high-distance samples are considered poison</td><td>Clean-label backdoor</td><td>SOTA on clean-label at time; no clean reference needed; works on representations</td><td>Requires held-out set for proxy;  $O(n^2)$  k-NN search (mitigable)</td><td>Embeddings could be used on unlabeled web data for fast outlier detection.</td></tr><tr><td>SPECTRE, 2021 [28]</td><td>Robust covariance estimation on intermediate representations to amplify spectral signatures of poisoned data, enabling backdoor removal via retraining.</td><td>Backdoor attacks (e.g., trigger-based) on distributed training data; assumes small poisoning fraction (&lt;1%).</td><td>Highly effective at low poisoning rates; removes backdoors entirely without trusted data; strong theoretical guarantees.</td><td>Relies on detectable spectral signatures (may fail on subtle clean-label poisons); compute-intensive for very large datasets.</td><td>Could filter unvetted web-scraped data in LAION-style pipelines by scanning embeddings pre-training.</td></tr><tr><td>De-Pois, 2021 [21]</td><td>Trains a mimic model (via GAN-augmented clean data simulation) to replicate clean behavior; filters poisons by prediction divergence from the target model.</td><td>General data poisoning (label-flip, clean-label, backdoor); attack-agnostic.</td><td>Broad applicability (&gt;90% F1 on multiple attacks/datasets); uses GANs for data augmentation without full clean set.</td><td>GAN training overhead; vulnerable to adaptive poisons that align mimic divergence; assumes some clean data access.</td><td>Ideal for SSL (augments unlabeled data); could integrate with ImageBind-like embeddings for pre-training checks.</td></tr><tr><td>Shapley Pruning, 2022 [23]</td><td>Neuron interaction pruning via Shapley values</td><td>Backdoor in poisoned models</td><td>Preserves structure/accuracy; few-shot effective</td><td>Computationally intensive for large models</td><td>Applicable to post-curation model hardening.</td></tr><tr><td>CBD, 2023 [24]</td><td>Causal graph deconfounding for representations</td><td>Backdoor via spurious correlations</td><td>Models confounders explicitly; improves generalization</td><td>Causal graph complexity; training overhead</td><td>Enhances SSL feature robustness against triggers.</td></tr><tr><td>PatchSearch, 2023 [22]</td><td>Iterative clustering of image patches using SSL model features; scores and prunes clusters likely containing patch-based poisons.</td><td>Patch-based backdoors in SSL (e.g., localized triggers in unlabeled images); no trusted data assumed.</td><td>Tailored to SSL vulnerabilities; modular for large-scale filtering.</td><td>Limited to visible patch triggers (not subtle perturbations like PGD); requires initial SSL training on suspect data.</td><td>Directly addresses patch poisons in web-scale SSL curation (e.g., LAION); ensemble-friendly like the paper's PDD.</td></tr><tr><td>Semantic Shield, 2024 [20]</td><td>Knowledge-guided train-time constraints via prompting</td><td>Backdoor/ poisoning in contrastive VLMs</td><td>Integrates LLMs for caption analysis; attack-agnostic</td><td>Computationally heavy prompting; caption-dependent</td><td>Directly targets CLIP-like SSL pipelines.</td></tr><tr><td>A2D, 2024 [19]</td><td>Sensitivity to adversarial perturbations (SAP metric)</td><td>Poisoned models (adversarial susceptibility)</td><td>Normalized robustness comparison; no attack knowledge needed</td><td>Relies on perturbation bounds; less effective on subtle poisons</td><td>Can be useful for post-SSL encoder verification.</td></tr></table>",
+        "bbox": [
+            164,
+            96,
+            794,
+            720
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "page_number",
+        "text": "9",
+        "bbox": [
+            472,
+            765,
+            482,
+            776
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "table",
+        "img_path": "",
+        "table_caption": [],
+        "table_footnote": [],
+        "bbox": [
+            206,
+            95,
+            836,
+            367
+        ],
+        "page_idx": 9
+    },
+    {
+        "type": "text",
+        "text": "4 Problem description",
+        "text_level": 2,
+        "bbox": [
+            203,
+            397,
+            470,
+            416
+        ],
+        "page_idx": 9
+    },
+    {
+        "type": "text",
+        "text": "Figure 3 highlights the critical risks posed by data poisoning attacks to the SSL data curation pipeline, emphasizing how these attacks can compromise the integrity of the training process by introducing malicious data, ultimately leading to intentional manipulation of the VFM [7]. Adversaries can execute poisoning attacks by strategically injecting, deleting, or altering training data, including adversarial examples, with the intent to corrupt the training data and produce defective, biased, or unreliable VFMs [29]. In particular, we investigate data poisoning attacks targeting data curated using SSL, which can manipulate the VFM under development.",
+        "bbox": [
+            201,
+            425,
+            833,
+            541
+        ],
+        "page_idx": 9
+    },
+    {
+        "type": "image",
+        "img_path": "images/5e722577bd3604ce7a6e832419b09da1688cc2da1bb07b1bd6e074b576103c35.jpg",
+        "image_caption": [
+            "Fig. 3 Illustration of a simplified training framework for foundation models, including poisoning attacks and data poisoning detector."
+        ],
+        "image_footnote": [],
+        "content": "```mermaid\ngraph TD\n  A[\"Generative\"] --> B[\"SSL Models\"]\n  C[\"Contrastive\"] --> B\n  D[\"Generative-contrastive\"] --> B\n  B --> E[\"Self-Supervised Data Curation\"]\n  E --> F[\"Foundation Models\"]\n  G[\"Data Poisoning\"] --> E\n  H[\"Model Poisoning\"] --> E\n  I[\"Poisoned Data Detector\"] --> E\n  E --> J[\"Final Data Curation\"]\n```",
+        "sub_type": "flowchart",
+        "bbox": [
+            213,
+            575,
+            821,
+            714
+        ],
+        "page_idx": 9
+    },
+    {
+        "type": "page_number",
+        "text": "",
+        "bbox": [
+            510,
+            764,
+            529,
+            775
+        ],
+        "page_idx": 9
+    },
+    {
+        "type": "text",
+        "text": "Within environments where full oversight of VFM training is impractical, poisoning attacks pose a notable threat [8]. Consequently, securing the training phase is just as crucial as ensuring the integrity of the final VFM deployment. In particular, scenarios in which SSL-curated datasets are sourced externally from anonymous and unvetted sources present a significant risk of both untargeted and targeted data poisoning by malicious actors. Adversaries performing untargeted data poisoning strive for a denial of service (DoS) effect by increasing the overall prediction error rate. In contrast, targeted data poisoning attacks aim to manipulate the VFM predictions for a particular class.",
+        "bbox": [
+            159,
+            87,
+            793,
+            217
+        ],
+        "page_idx": 10
+    },
+    {
+        "type": "text",
+        "text": "5 Methodology",
+        "text_level": 2,
+        "bbox": [
+            163,
+            229,
+            347,
+            247
+        ],
+        "page_idx": 10
+    },
+    {
+        "type": "text",
+        "text": "5.1 Networks",
+        "text_level": 2,
+        "bbox": [
+            163,
+            258,
+            302,
+            273
+        ],
+        "page_idx": 10
+    },
+    {
+        "type": "text",
+        "text": "We select the ConvNeXT1 model, trained on a dataset of 1K classes with 1.3M images, due to its superior performance across a wide range of vision tasks, including ImageNet2 classification, object detection and segmentation on COCO3, and semantic segmentation on ADE20K4 [30]. ConvNeXt is a modernized pure convolutional architecture that achieves Transformer-level performance by adopting several design principles inspired by Vision Transformers and Swin Transformers (e.g., large convolution kernels, inverted bottlenecks, LayerScale, and fewer normalization layers) while remaining entirely convolution-based and containing no self-attention mechanisms. We additionally use a standard Convolutional Neural Network (CNN) as a reference model when generating poisoned datasets to evaluate the proposed solution. CNNs are a subclass of feedforward neural networks specifically designed to extract hierarchical spatial features through learned convolutional filters [31].",
+        "bbox": [
+            161,
+            280,
+            793,
+            454
+        ],
+        "page_idx": 10
+    },
+    {
+        "type": "text",
+        "text": "5.2 Datasets",
+        "text_level": 2,
+        "bbox": [
+            163,
+            464,
+            294,
+            479
+        ],
+        "page_idx": 10
+    },
+    {
+        "type": "text",
+        "text": "We utilize a subset of the ImageNet dataset (Set1, Set2) with 100 classes for our experiments. Table 6 provides details of the various datasets constructed from Set1 and Set2. The model achieves an accuracy of 95.71% on Set1 and 88% on Set2, and the class-wise accuracy is illustrated in Figure 4. Subsequently, we use Set3 and Set4, which contain 10 classes and achieve 99.57% and 100% classification accuracy respectively, when tested with the ConvNeXT pretrained model, to design a poison data detector.",
+        "bbox": [
+            161,
+            487,
+            791,
+            586
+        ],
+        "page_idx": 10
+    },
+    {
+        "type": "text",
+        "text": "We select the Trueface PostSocial [32] and 140K-Real-and-Fake-Faces [33] datasets to evaluate the proposed solution for poisoned data detection. The Trueface PostSocial and 140K-Real-and-Fake-Faces datasets consist of 2,500 and 70,000 real images, respectively. The generation of poisoned images for each dataset is carried out using the Projected Gradient Descent (PGD) [34] attack with a four-layer CNN model containing 102.89 million parameters. Subsequently, both normal and poisoned embeddings are generated using ImageBind [35]. In addition, we generate a small poisoned dataset (100 samples) for different attacks, such as the Fast Gradient Sign Method (FGSM) [36] and Carlini and Wagner (C&W) [37] using Set3, to evaluate the efficacy of PDDs against diverse attacks.",
+        "bbox": [
+            161,
+            587,
+            793,
+            688
+        ],
+        "page_idx": 10
+    },
+    {
+        "type": "page_footnote",
+        "text": "1https://github.com/facebookresearch/ConvNeXt",
+        "bbox": [
+            174,
+            703,
+            475,
+            715
+        ],
+        "page_idx": 10
+    },
+    {
+        "type": "page_footnote",
+        "text": "2https://www.image-net.org/",
+        "bbox": [
+            176,
+            715,
+            354,
+            726
+        ],
+        "page_idx": 10
+    },
+    {
+        "type": "page_footnote",
+        "text": "3https://cocodataset.org",
+        "bbox": [
+            178,
+            726,
+            326,
+            734
+        ],
+        "page_idx": 10
+    },
+    {
+        "type": "page_footnote",
+        "text": "4https://ade20k.csail.mit.edu/",
+        "bbox": [
+            178,
+            734,
+            359,
+            745
+        ],
+        "page_idx": 10
+    },
+    {
+        "type": "page_number",
+        "text": "",
+        "bbox": [
+            468,
+            764,
+            485,
+            775
+        ],
+        "page_idx": 10
+    },
+    {
+        "type": "table",
+        "img_path": "images/49bf2f7c6b41c6788eac6d5a19bec6b8ff44557cc6dbcfec178d003deea82e11.jpg",
+        "table_caption": [
+            "Table 6 Datasets description leverage in the experiments and ConvNeXT classification performance"
+        ],
+        "table_footnote": [],
+        "table_body": "<table><tr><td rowspan=\"2\">Dataset</td><td rowspan=\"2\">Source</td><td rowspan=\"2\">Classes</td><td colspan=\"2\">ConvNeXT classification performance</td></tr><tr><td>Dataset specifications</td><td>Accuracy</td></tr><tr><td rowspan=\"2\">ImageNet100</td><td rowspan=\"2\">Kaggle</td><td rowspan=\"2\">100</td><td>Set1: 130000 (1300 images per class)</td><td>95.71%</td></tr><tr><td>Set2: 5000 (50 images per class)</td><td>88.00%</td></tr><tr><td rowspan=\"2\">ImageNet10 Normal</td><td rowspan=\"2\">Subsets selected from ImageNet100</td><td rowspan=\"2\">10</td><td>Set3: 13000 (1300 images per class)</td><td>99.57%</td></tr><tr><td>Set4: 500 (50 images per class)</td><td>100.00%</td></tr><tr><td rowspan=\"2\">ImageNet10 Poisoned</td><td rowspan=\"2\">Generated using Projected Gradient Descent (PGD) attack</td><td rowspan=\"2\">10</td><td>Set5: 13000 (1300 images per class)</td><td>8.45%</td></tr><tr><td>Set6: 500 (50 images per class)</td><td>9.20%</td></tr></table>",
+        "bbox": [
+            211,
+            101,
+            828,
+            250
+        ],
+        "page_idx": 11
+    },
+    {
+        "type": "chart",
+        "img_path": "images/1716c14e95f6c6335f92009c7c6cce7c4b68aefe555f2c8396f418b3308abf67.jpg",
+        "content": "| Class | Accuracy (%) |\n|-------|--------------|\n| 0     | 100          |\n| 1     | 100          |\n| 2     | 100          |\n| 3     | 100          |\n| 4     | 100          |\n| 5     | 100          |\n| 6     | 100          |\n| 7     | 100          |\n| 8     | 100          |\n| 9     | 100          |\n| 10    | 100          |\n| 11    | 100          |\n| 12    | 100          |\n| 13    | 100          |\n| 14    | 100          |\n| 15    | 100          |\n| 16    | 100          |\n| 17    | 100          |\n| 18    | 85           |\n| 19    | 95           |\n| 20    | 95           |\n| 21    | 95           |\n| 22    | 95           |\n| 23    | 95           |\n| 24    | 95           |\n| 25    | 95           |\n| 26    | 95           |\n| 27    | 95           |\n| 28    | 95           |\n| 29    | 95           |\n| 30    | 65           |\n| 31    | 95           |\n| 32    | 95           |\n| 33    | 95           |\n| 34    | 95           |\n| 35    | 95           |\n| 36    | 95           |\n| 37    | 95           |\n| 38    | 95           |\n| 39    | 95           |\n| 40    | 95           |\n| 41    | 95           |\n| 42    | 95           |\n| 43    | 95           |\n| 44    | 95           |\n| 45    | 95           |\n| 46    | 95           |\n| 47    | 95           |\n| 48    | 80           |\n| 49    | 80           |\n| 50    | 65           |\n| 51    | 80           |\n| 52    | 80           |\n| 53    | 80           |\n| 54    | 80           |\n| 55    | 80           |\n| 56    | 80           |\n| 57    | 80           |\n| 58    | 80           |\n| 59    | 80           |\n| 60    | 80           |\n| 61    | 80           |\n| 62    | 80           |\n| 63    | 80           |\n| 64    | 80           |\n| 65    | 80           |\n| 66    | 80           |\n| 67    | 80           |\n| 68    | 80           |\n| 69    | 80           |\n| 70    | 80           |\n| 71    | 80           |\n| 72    | 80           |\n| 73    | 80           |\n| 74    | 80           |\n| 75    | 80           |\n| 76    | 80           |\n| 77    | 80           |\n| 78    | 80           |\n| 79    | 80           |\n| 80    | 80           |\n| 81    | 80           |\n| 82    | 80           |\n| 83    | 80           |\n| 84    | 80           |\n| 85    | 80           |\n| 86    | 80           |\n| 87    | 80           |\n| 88    | 80           |\n| 89    | 80           |\n| 90    | 80           |\n| 91    | 80           |\n| 92    | 80           |\n| 93    | 80           |\n| 94    | 80           |\n| 95    | 80           |\n| 96    | 80           |\n| 97    | 80           |\n| 98    | 80           |\n| 99    | 80           |",
+        "chart_caption": [
+            "(a) ConvNeXT achieves an 95.71% accuracy on Set1"
+        ],
+        "chart_footnote": [],
+        "sub_type": "bar chart",
+        "bbox": [
+            213,
+            271,
+            835,
+            372
+        ],
+        "page_idx": 11
+    },
+    {
+        "type": "chart",
+        "img_path": "images/6ab501c7afdc71edee9076ba4cec12dc39115cf8aa55eac4984e4521ef76b0ba.jpg",
+        "content": "| Class | Accuracy (%) |\n|-------|--------------|\n| 0     | 95           |\n| 1     | 94           |\n| 2     | 93           |\n| 3     | 92           |\n| 4     | 91           |\n| 5     | 90           |\n| 6     | 89           |\n| 7     | 88           |\n| 8     | 87           |\n| 9     | 86           |\n| 10    | 85           |\n| 11    | 84           |\n| 12    | 83           |\n| 13    | 82           |\n| 14    | 81           |\n| 15    | 80           |\n| 16    | 79           |\n| 17    | 78           |\n| 18    | 77           |\n| 19    | 76           |\n| 20    | 75           |\n| 21    | 74           |\n| 22    | 73           |\n| 23    | 72           |\n| 24    | 71           |\n| 25    | 70           |\n| 26    | 69           |\n| 27    | 68           |\n| 28    | 67           |\n| 29    | 66           |\n| 30    | 65           |\n| 31    | 64           |\n| 32    | 63           |\n| 33    | 62           |\n| 34    | 61           |\n| 35    | 60           |\n| 36    | 59           |\n| 37    | 58           |\n| 38    | 57           |\n| 39    | 56           |\n| 40    | 55           |\n| 41    | 54           |\n| 42    | 53           |\n| 43    | 52           |\n| 44    | 51           |\n| 45    | 50           |\n| 46    | 49           |\n| 47    | 48           |\n| 48    | 47           |\n| 49    | 46           |\n| 50    | 45           |\n| 51    | 44           |\n| 52    | 43           |\n| 53    | 42           |\n| 54    | 41           |\n| 55    | 40           |\n| 56    | 39           |\n| 57    | 38           |\n| 58    | 37           |\n| 59    | 36           |\n| 60    | 35           |\n| 61    | 34           |\n| 62    | 33           |\n| 63    | 32           |\n| 64    | 31           |\n| 65    | 30           |\n| 66    | 29           |\n| 67    | 28           |\n| 68    | 27           |\n| 69    | 26           |\n| 70    | 25           |\n| 71    | 24           |\n| 72    | 23           |\n| 73    | 22           |\n| 74    | 21           |\n| 75    | 20           |\n| 76    | 19           |\n| 77    | 18           |\n| 78    | 17           |\n| 79    | 16           |\n| 80    | 15           |\n| 81    | 14           |\n| 82    | 13           |\n| 83    | 12           |\n| 84    | 11           |\n| 85    | 10           |\n| 86    | 9            |\n| 87    | 8            |\n| 88    | 7            |\n| 89    | 6            |\n| 90    | 5            |\n| 91    | 4            |\n| 92    | 3            |\n| 93    | 2            |\n| 94    | 1            |\n| 95    | 0            |\n| 96    | -1           |\n| 97    | -2           |\n| 98    | -3           |\n| 99    | -4           |",
+        "chart_caption": [
+            "(b) ConvNeXT achieves an 88% accuracy on Set2",
+            "Fig. 4 The ConvNeXT model, with a total of 197.74 million parameters, performance on a 100-class subset of the ImageNet dataset."
+        ],
+        "chart_footnote": [],
+        "sub_type": "bar chart",
+        "bbox": [
+            213,
+            401,
+            835,
+            501
+        ],
+        "page_idx": 11
+    },
+    {
+        "type": "text",
+        "text": "",
+        "bbox": [
+            203,
+            560,
+            831,
+            602
+        ],
+        "page_idx": 11
+    },
+    {
+        "type": "text",
+        "text": "5.3 Poisoned dataset generation",
+        "text_level": 2,
+        "bbox": [
+            203,
+            619,
+            529,
+            634
+        ],
+        "page_idx": 11
+    },
+    {
+        "type": "text",
+        "text": "We use gradient-based method that directly manipulates input data using model loss gradients to generate a poisoned dataset. To determine the most effective method for generating poisoned data, we evaluate the robustness of the ConvNeXT model against various techniques, including adversarial attacks crafted using the FGSM and PGD. The FGSM attack uses the gradients of the loss function with respect to the input data to determine the direction in which the input should be modified to maximize the model’s error. The attack operates in three steps: First, it calculates the loss after a forward pass. Second, it computes the gradient of this loss with respect to the image pixels. Finally, it subtly alters the image pixels in the direction that maximizes the loss. PGD is an iterative method for generating adversarial examples. It works by repeatedly taking a small step in the direction that maximizes the model prediction error (using the FGSM) and then projecting the result back onto the space of valid inputs.",
+        "bbox": [
+            201,
+            642,
+            833,
+            741
+        ],
+        "page_idx": 11
+    },
+    {
+        "type": "page_number",
+        "text": "",
+        "bbox": [
+            510,
+            764,
+            529,
+            775
+        ],
+        "page_idx": 11
+    },
+    {
+        "type": "text",
+        "text": "",
+        "bbox": [
+            159,
+            87,
+            789,
+            173
+        ],
+        "page_idx": 12
+    },
+    {
+        "type": "text",
+        "text": "Figure 5 compares the performance of the ConvNeXT model against the FGSM and PGD attacks with a perturbation radius of 0.1 using $\\ell _ { \\infty }$ on Set3. The optimal value for the perturbation radius is determined empirically. It can be observed that PGD, a multi-step variant of the FGSM algorithm, is more effective at deceiving the model. Therefore, we constructed a 10-class poisoned dataset: Set5 (13,000 images) and Set6 (500 images), using PGD-based adversarial perturbations.",
+        "bbox": [
+            161,
+            173,
+            793,
+            259
+        ],
+        "page_idx": 12
+    },
+    {
+        "type": "chart",
+        "img_path": "images/2d9664d4b08eb93f45c2b20508635518278835e7efe383e47e4869465ed0b45b.jpg",
+        "content": "| Classes | Accuracy |\n| :--- | :--- |\n| 0 | 95.54 |\n| 1 | 92.92 |\n| 2 | 90.31 |\n| 3 | 94.08 |\n| 4 | 96.08 |\n| 5 | 87.77 |\n| 6 | 72.69 |\n| 7 | 91.15 |\n| 8 | 97.92 |\n| 9 | 93.23 |",
+        "chart_caption": [
+            "(a) Performance against the FGSM attack on Set3. Accuracy degrades from 100% to 91.16%."
+        ],
+        "chart_footnote": [],
+        "sub_type": "bar chart",
+        "bbox": [
+            174,
+            290,
+            472,
+            401
+        ],
+        "page_idx": 12
+    },
+    {
+        "type": "chart",
+        "img_path": "images/79037cf4b4b5588f7746fe92fca8da36fc68b32dcf4ab5804a03eb370d4b7b8c.jpg",
+        "content": "| Classes | Accuracy |\n| ------- | -------- |\n| 0       | 6.23     |\n| 1       | 1        |\n| 2       | 10.62    |\n| 3       | 10.62    |\n| 4       | 13       |\n| 5       | 4.54     |\n| 6       | 0.54     |\n| 7       | 6.62     |\n| 8       | 13.85    |\n| 9       | 17.54    |",
+        "chart_caption": [
+            "(b) Performance against the PGD attack on Set3. Accuracy degrades to 8.4% from 100 %",
+            "Fig. 5 ConvNeXT model performance against FGSM and PGD attacks."
+        ],
+        "chart_footnote": [],
+        "sub_type": "bar chart",
+        "bbox": [
+            482,
+            290,
+            781,
+            401
+        ],
+        "page_idx": 12
+    },
+    {
+        "type": "text",
+        "text": "5.4 Poisoned data detection",
+        "text_level": 2,
+        "bbox": [
+            163,
+            475,
+            445,
+            489
+        ],
+        "page_idx": 12
+    },
+    {
+        "type": "text",
+        "text": "As illustrated in Figure 3, we exploit a pretrained ImageBind model5, which has 1.2 billion parameters, to extract embeddings from both the normal and generated poisoned datasets [35]. ImageBind can also provide a single joint embedding $( E _ { \\mathcal { T } , \\mathcal { M } } )$ , where where I represents images and M are other modalities, viz., text, audio, thermal depth, and Inertial Measurement Units (IMUs). Figure 6 compares the embeddings generated by the ImageBind model for the normal and poisoned datasets by plotting their Kullback-Leibler (KL) divergence, i.e., relative entropy, between the probability distributions in both high-dimensional and low-dimensional spaces. These low-dimensional representations are generated using the T-Distributed Stochastic Neighbor Embedding (t-SNE) algorithm [38].",
+        "bbox": [
+            161,
+            498,
+            793,
+            640
+        ],
+        "page_idx": 12
+    },
+    {
+        "type": "text",
+        "text": "The t-SNE dimensionality reduction technique is designed to visualize highdimensional data and assess the separability of two classes. It fits and transforms high-dimensional vectors into a space with a reduced number of dimensions, typically two or three, for better comparison through 2-D or 3-D plots. Figure 6a analyzes conditional probabilities across 26,000 samples of Set3 and Set5, a KL divergence of 3.12 is achieved after 300 iterations. Similarly, Figure 6b analyzes conditional probabilities across 500 samples of Set4 and Set6, a KL divergence of 0.71 is achieved after 300 iterations. Figure 6c and Figure 6d compare the class-wise data distribution of Set4 (Normal) and Set6 (Poisoned), respectively. The result demonstrates the ImageBind model ability to effectively separate normal and poisoned image features, indicating a clear distinction between the two categories.",
+        "bbox": [
+            161,
+            640,
+            793,
+            712
+        ],
+        "page_idx": 12
+    },
+    {
+        "type": "page_footnote",
+        "text": "5https://github.com/facebookresearch/ImageBind",
+        "bbox": [
+            176,
+            728,
+            477,
+            741
+        ],
+        "page_idx": 12
+    },
+    {
+        "type": "page_number",
+        "text": "13",
+        "bbox": [
+            468,
+            764,
+            487,
+            775
+        ],
+        "page_idx": 12
+    },
+    {
+        "type": "chart",
+        "img_path": "images/0e8dbac51df3dd9bd180b4622dc0ac228c1286dbc23979e6cac612d64c7e2bd0.jpg",
+        "content": "| tsne-2d-one | tsne-2d-two | Label    |\n| ----------- | ----------- | -------- |\n| -10         | 5           | Normal   |\n| -5          | 10          | Normal   |\n| 0           | 0           | Poison   |\n| 5           | -5          | Poison   |\n| 10          | 0           | Poison   |\n| 15          | 5           | Poison   |",
+        "chart_caption": [
+            "(a) Set3 (Normal) vs. Set5 (Poisoned)"
+        ],
+        "chart_footnote": [],
+        "sub_type": "scatterplot",
+        "bbox": [
+            216,
+            98,
+            515,
+            239
+        ],
+        "page_idx": 13
+    },
+    {
+        "type": "chart",
+        "img_path": "images/fee42a177376832a7d17723ce322167ee1436de769c8b0bb6869d5f36af4bff9.jpg",
+        "content": "| tsne-2d-one | tsne-2d-two | Label   |\n| ----------- | ----------- | ------- |\n| -10         | 0           | Normal  |\n| -8          | 5           | Normal  |\n| -6          | 8           | Normal  |\n| -4          | 10          | Normal  |\n| -2          | 8           | Normal  |\n| 0           | 5           | Normal  |\n| 2           | 0           | Normal  |\n| 4           | -5          | Normal  |\n| 6           | -10         | Normal  |\n| 8           | -15         | Normal  |\n| -10         | 0           | Poison  |\n| -8          | 5           | Poison  |\n| -6          | 8           | Poison  |\n| -4          | 10          | Poison  |\n| -2          | 8           | Poison  |\n| 0           | 5           | Poison  |\n| 2           | 0           | Poison  |\n| 4           | -5          | Poison  |\n| 6           | -10         | Poison  |\n| 8           | -15         | Poison  |",
+        "chart_caption": [
+            "(b) Set4 (Normal) vs. Set6 (Poisoned)"
+        ],
+        "chart_footnote": [],
+        "sub_type": "scatterplot",
+        "bbox": [
+            526,
+            98,
+            821,
+            239
+        ],
+        "page_idx": 13
+    },
+    {
+        "type": "chart",
+        "img_path": "images/26f9dda10475c4edf131635f92f4ac185ea8a23e382f817d64752f15e228ed30.jpg",
+        "content": "| tsne-2d-one | tsne-2d-two | Label |\n| --- | --- | --- |\n| -15 | 0 | N0 |\n| -10 | 5 | N1 |\n| -5 | 10 | N2 |\n| 0 | 5 | N3 |\n| 5 | 0 | N4 |\n| 10 | -5 | N5 |\n| -15 | -5 | N6 |\n| -10 | -10 | N7 |\n| -5 | -10 | N8 |\n| 0 | -5 | N9 |\n| 5 | 0 | N0 |\n| 10 | 5 | N1 |\n| -15 | 0 | N2 |\n| -10 | 5 | N3 |\n| -5 | 10 | N4 |\n| 0 | 5 | N5 |\n| 5 | 0 | N6 |\n| 10 | -5 | N7 |\n| -15 | 0 | N8 |\n| -10 | 5 | N9 |\n| -5 | 10 | N0 |\n| 0 | 5 | N1 |\n| 5 | 0 | N2 |\n| 10 | -5 | N3 |\n| -15 | 0 | N4 |\n| -10 | 5 | N5 |\n| -5 | 10 | N6 |\n| 0 | 5 | N7 |\n| 5 | 0 | N8 |\n| 10 | -5 | N9 |\n| -15 | 0 | N3 |\n| -10 | 5 | N4 |\n| -5 | 10 | N5 |\n| 0 | 5 | N6 |\n| 5 | 0 | N7 |\n| 10 | -5 | N8 |\n| -15 | 0 | N4 |\n| -10 | 5 | N5 |\n| -5 | 10 | N6 |\n| 0 | 5 | N7 |\n| 5 | 0 | N8 |\n| 10 | -5 | N9 |\n| -15 | 0 | N2 |\n| -10 | 5 | N3 |\n| -5 | 10 | N4 |\n| 0 | 5 | N5 |\n| 5 | 0 | N6 |\n| 10 | -5 | N7 |\n| -15 | 0 | N |\n| -10 | 5 | N1 |\n| -5 | 10 | N2 |\n| 0 | 5 | N3 |\n| 5 | 0 | N4 |\n| 10 | -5 | N5 |\n| -15 | 0 | N4 |\n| -10 | 5 | N3 |\n| -5 | 10 | N4 |\n| 0 | 5 | N4 |\n| 5 | 0 | N4 |\n| 10 | -5 | N4 |\n| -15 | 0 | N9 |\n| -10 | 5 | N9 |\n| -5 | 10 | N9 |\n| 0 | 5 | N9 |\n| 5 | 0 | N9 |\n| 10 | -5 | N9 |\n| -15 | 0 | N7 |\n| -10 | 5 | N7 |\n| -5 | 10 | N7 |\n| 0 | 5 | N7 |\n| 5 | 0 | N7 |\n| 10 | -5 | N7 |\n| -15 | 0 | N8 |\n| -10 | 5 | N8 |\n| -5 | 10 | N8 |\n| 0 | 5 | N8 |\n| 5 | 0 | N8 |\n| 10 | -5 | N8 |\n| -15 | 0 | N6 |\n| -10 | 5 | N6 |\n| -5 | 10 | N6 |\n| 0 | 5 | N6 |\n| 5 | 0 | N6 |\n| 10 | -5 | N6 |\n| -15 | 0 | N9 |\n| -10 | 5 | N9 |\n| -5 | 10 | N9 |\n| 0 | 5 | N9 |\n| 5 | 0 | N9 |\n| 10 | -5 | N9 |\n| -15 | 0 | N8 |\n| -10 | 5 | N8 |\n| -5 | 10 | N8 |\n| 0 | 5 | N8 |\n| 5 | 0 | N8 |\n| 10 | -5 | N8 |\n| -15 | 0 | N7 |\n| -10 | 5 | N7 |\n| -5 | 10 | N7 |\n| 0 | 5 | N7 |\n| 5 | 0 | N7 |\n| 10 | -5 | N7 |\n| -15 | 0 | N6 |\n| -10 | 5 | N6 |\n| -5 | 10 | N6 |\n| 0 | 5 | N6 |\n| 5 | 0 | N6 |\n| 10 | -5 | N6 |\n| -15 | 0 | N9 |",
+        "chart_caption": [
+            "(c) Set4 (Normal class-wise data distribution)"
+        ],
+        "chart_footnote": [],
+        "sub_type": "scatterplot",
+        "bbox": [
+            216,
+            269,
+            509,
+            393
+        ],
+        "page_idx": 13
+    },
+    {
+        "type": "chart",
+        "img_path": "images/eab252a970d35e4162e07ebe91d2600dd41685320fc24180f569e3fb41bf256b.jpg",
+        "content": "| tsne-2d-one | tsne-2d-two | Group |\n| ----------- | ----------- | ----- |\n| -15         | 0           | P0    |\n| -10         | 2.5         | P1    |\n| -5          | 5           | P2    |\n| 0           | 7.5         | P3    |\n| 5           | 5           | P4    |\n| 10          | 2.5         | P5    |\n| 15          | 0           | P6    |\n| 20          | -2.5        | P7    |\n| 25          | -5          | P8    |\n| 30          | -7.5        | P9    |",
+        "chart_caption": [
+            "(d) Set6 (Poisoned class-wise data distribution).",
+            "Fig. 6 A comparison of the embeddings generated by ImageBind model for the normal and poisoned datasets using t-SNE plots."
+        ],
+        "chart_footnote": [],
+        "sub_type": "scatterplot",
+        "bbox": [
+            526,
+            269,
+            821,
+            393
+        ],
+        "page_idx": 13
+    },
+    {
+        "type": "text",
+        "text": "",
+        "bbox": [
+            203,
+            455,
+            833,
+            541
+        ],
+        "page_idx": 13
+    },
+    {
+        "type": "text",
+        "text": "6 Experimental details",
+        "text_level": 2,
+        "bbox": [
+            203,
+            558,
+            475,
+            577
+        ],
+        "page_idx": 13
+    },
+    {
+        "type": "text",
+        "text": "Figure 7 presents the high-level design of the proposed PDD, enabling the verification of SSL curated datasets prior to it is used for foundation model training.",
+        "bbox": [
+            203,
+            587,
+            831,
+            617
+        ],
+        "page_idx": 13
+    },
+    {
+        "type": "text",
+        "text": "6.1 Binary classifiers",
+        "text_level": 2,
+        "bbox": [
+            203,
+            633,
+            418,
+            649
+        ],
+        "page_idx": 13
+    },
+    {
+        "type": "text",
+        "text": "We employ diverse classification algorithms, including Random Forest (RF), k-Nearest Neighbors (KNN), Na¨ıve Bayes (NB), and Support Vector Machines (SVM), to design binary classifiers that distinguish between normal and poisoned images. Table 7 presents the performance (i.e., accuracy) of each classifier trained on Set4 (500 normal images) and Set6 (500 poisoned images) using the holdout testing method. The evaluation process involves dividing the combined dataset of 1,000 images into two non-overlapping subsets for training and testing, with the training size varying from 10% to 50% (with step size of 10%). Subsequently, we evaluate five variants of four classifiers on three diverse datasets, one of which is ID and two are OOD.",
+        "bbox": [
+            201,
+            656,
+            833,
+            741
+        ],
+        "page_idx": 13
+    },
+    {
+        "type": "page_number",
+        "text": "",
+        "bbox": [
+            510,
+            764,
+            529,
+            775
+        ],
+        "page_idx": 13
+    },
+    {
+        "type": "image",
+        "img_path": "images/14d9db1e94c72ff8302a5f16425a3c4632fb7a175eaefdd93e74b10874e4f63e.jpg",
+        "image_caption": [
+            "Fig. 7 A high-level design Poisoned data detector (PDD)."
+        ],
+        "image_footnote": [],
+        "content": "```mermaid\ngraph TD\n  A[\"Self-Supervised Data Curation\"] --> B((Decision))\n  B --> C[\"Foundation Models\"]\n  D[\"ImageBind\"] --> E[\"(Poisoned Data Detector)\"]\n  E --> F[\"(Binary Classifier)\"]\n  F --> B\n```",
+        "sub_type": "flowchart",
+        "bbox": [
+            196,
+            87,
+            757,
+            205
+        ],
+        "page_idx": 14
+    },
+    {
+        "type": "text",
+        "text": "",
+        "bbox": [
+            161,
+            241,
+            793,
+            284
+        ],
+        "page_idx": 14
+    },
+    {
+        "type": "table",
+        "img_path": "images/399d645ee7af08eee032c25971ac1476e0dc202508693adf03494fdf3e13cdc5.jpg",
+        "table_caption": [
+            "Table 7 PDDs are trained on Set4 and Set6 with training sizes ranging from 10% to 50%, and performance is reported in terms of accuracy (%)."
+        ],
+        "table_footnote": [],
+        "table_body": "<table><tr><td rowspan=\"3\">Classifier</td><td rowspan=\"3\">Hyperparameters</td><td colspan=\"5\">Accuracy (%)</td></tr><tr><td colspan=\"5\">Training percentage</td></tr><tr><td>10%</td><td>20%</td><td>30%</td><td>40%</td><td>50%</td></tr><tr><td>SVM</td><td>‘C’: 1, ‘gamma’: 1, ‘kernel’: ‘rbf’</td><td>100.00</td><td>100.00</td><td>100.00</td><td>100.00</td><td>100.00</td></tr><tr><td>RF</td><td>‘bootstrap’: True, ‘max_depth’: 50, ‘max_features’: ‘sqrt’, ‘min_samples_leaf’: 2, ‘min_samples_split’: 10, ‘n_estimators’: 30</td><td>98.22</td><td>98.50</td><td>98.71</td><td>98.83</td><td>99.40</td></tr><tr><td>NB</td><td>‘priors’: None, ‘var_smoothing’: 0.657933224657568</td><td>98.67</td><td>99.25</td><td>99.14</td><td>99.17</td><td>99.00</td></tr><tr><td>KNN</td><td>‘metric’: ‘minkowski’, ‘n_neighbors’: 5, ‘weights’: ‘uniform’</td><td>96.67</td><td>99.00</td><td>99.57</td><td>100.0</td><td>100.0</td></tr></table>",
+        "bbox": [
+            171,
+            331,
+            788,
+            475
+        ],
+        "page_idx": 14
+    },
+    {
+        "type": "text",
+        "text": "We exploit grid search for hyperparameter optimization, systematically exploring a predefined range of values for each selected classifier hyperparameters to determine the optimal settings. This method efficiently identifies the best-performing combination of hyperparameter values for the chosen classifier [39]. Each classifier is trained and evaluated across all grid combinations to identify the top-performing configuration that can deliver superior performance. It can be observed that the SVM-based PDDs outperforms others, primarily due to its effectiveness in handling high-dimensional datasets and scenarios where the number of features surpasses the number of samples [40]. Figure 8 presents the detection error tradeoff (DET) plots of the PDDs designed using SVM, RF, NB, and KNN, with varying training percentages from 10% to 50% (with step size of 10%) of the total samples in the Set4-Set6 dataset.",
+        "bbox": [
+            161,
+            495,
+            793,
+            652
+        ],
+        "page_idx": 14
+    },
+    {
+        "type": "text",
+        "text": "6.2 Evaluation results",
+        "text_level": 2,
+        "bbox": [
+            163,
+            668,
+            389,
+            682
+        ],
+        "page_idx": 14
+    },
+    {
+        "type": "text",
+        "text": "6.2.1 Using different dataset",
+        "text_level": 2,
+        "bbox": [
+            163,
+            690,
+            430,
+            706
+        ],
+        "page_idx": 14
+    },
+    {
+        "type": "text",
+        "text": "We evaluate all twenty PDDs using three distinct datasets. Figure 9a, 9b, and 9c present the performance of each PDD on the Set3–Set5, TrueFace postsocial dataset [32], and 140K RealFace datasets [33], respectively. SVM-PDD achieves superior performance for ID dataset, i.e., Set3–Set5 and for OOD datasets, i.e., TrueFace and 140K RealFace.",
+        "bbox": [
+            161,
+            713,
+            793,
+            741
+        ],
+        "page_idx": 14
+    },
+    {
+        "type": "page_number",
+        "text": "15",
+        "bbox": [
+            468,
+            764,
+            487,
+            775
+        ],
+        "page_idx": 14
+    },
+    {
+        "type": "chart",
+        "img_path": "images/62ce1d7638a33e180b482007598d5e0a813ca551b4d64d6e23716dd7e3f59b25.jpg",
+        "content": "| False Acceptance Rate | False Rejection Rate |\n| --------------------- | -------------------- |\n| 0.0                   | 1.0                  |\n| 0.2                   | 0.2                  |\n| 0.4                   | 0.4                  |\n| 0.6                   | 0.6                  |\n| 0.8                   | 0.8                  |\n| 1.0                   | 1.0                  |",
+        "chart_caption": [
+            "(a) SVM"
+        ],
+        "chart_footnote": [],
+        "sub_type": "line chart",
+        "bbox": [
+            213,
+            98,
+            517,
+            268
+        ],
+        "page_idx": 15
+    },
+    {
+        "type": "chart",
+        "img_path": "images/94c40a8ff93f012b821d75ea50de6b689338a38511de40a5e9c59d16bd923810.jpg",
+        "content": "| False Acceptance Rate | Train with 10.0% | EER = 0.02 | Train with 20.0% | EER = 0.02 | Train with 30.0% | EER = 0.01 | Train with 40.0% | EER = 0.00 | Train with 50.0% | EER = 0.01 |\n| --------------------- | ---------------- | ---------- | ---------------- | ---------- | ---------------- | ---------- | ---------------- | ---------- | ---------------- | ---------- |\n| 0.0                   | 1.0              | 1.0        | 1.0              | 1.0        | 1.0              | 1.0        | 1.0              | 1.0        | 1.0              | 1.0        |\n| 0.2                   | 0.0              | 0.0        | 0.0              | 0.0        | 0.0              | 0.0        | 0.0              | 0.0        | 0.0              | 0.0        |\n| 0.4                   | 0.0              | 0.0        | 0.0              | 0.0        | 0.0              | 0.0        | 0.0              | 0.0        | 0.0              | 0.0        |\n| 0.6                   | 0.0              | 0.0        | 0.0              | 0.0        | 0.0              | 0.0        | 0.0              | 0.0        | 0.0              | 0.0        |\n| 0.8                   | 0.0              | 0.0        | 0.0              | 0.0        | 0.0              | 0.0        | 0.0              | 0.0        | 0.0              | 0.0        |\n| 1.0                   | 0.0              | 0.0        | 0.0              | 0.0        | 0.0              | 0.0        | 0.0              | 0.0        | 0.0              | 0.0        |",
+        "chart_caption": [
+            "(b) RF"
+        ],
+        "chart_footnote": [],
+        "sub_type": "line chart",
+        "bbox": [
+            526,
+            98,
+            821,
+            268
+        ],
+        "page_idx": 15
+    },
+    {
+        "type": "chart",
+        "img_path": "images/0e1e2102fc5e3a498c051ac7eccc675e3727a872222d14c729fdf2533438c0cf.jpg",
+        "content": "| False Acceptance Rate | Train with 10.0% | EER = 0.01 | Train with 20.0% | EER = 0.01 | Train with 30.0% | EER = 0.01 | Train with 40.0% | EER = 0.01 | Train with 50.0% | EER = 0.01 |\n| --------------------- | ---------------- | ---------- | ---------------- | ---------- | ---------------- | ---------- | ---------------- | ---------- | ---------------- | ---------- |\n| 0.0                   | 0.2              | 0.2        | 0.2              | 0.2        | 0.2              | 0.2        | 0.2              | 0.2        | 0.2              | 0.2        |\n| 0.2                   | 0.0              | 0.0        | 0.0              | 0.0        | 0.0              | 0.0        | 0.0              | 0.0        | 0.0              | 0.0        |\n| 0.4                   | 0.0              | 0.0        | 0.0              | 0.0        | 0.0              | 0.0        | 0.0              | 0.0        | 0.0              | 0.0        |\n| 0.6                   | 0.0              | 0.0        | 0.0              | 0.0        | 0.0              | 0.0        | 0.0              | 0.0        | 0.0              | 0.0        |\n| 0.8                   | 0.0              | 0.0        | 0.0              | 0.0        | 0.0              | 0.0        | 0.0              | 0.0        | 0.0              | 0.0        |\n| 1.0                   | 0.0              | 0.0        | 0.0              | 0.0        | 0.0              | 0.0        | 0.0              | 0.0        | 0.0              | 0.0        |",
+        "chart_caption": [
+            "(c) NB"
+        ],
+        "chart_footnote": [],
+        "sub_type": "line chart",
+        "bbox": [
+            213,
+            297,
+            512,
+            467
+        ],
+        "page_idx": 15
+    },
+    {
+        "type": "chart",
+        "img_path": "images/79c66258b828caaef971b5bad1788614cf2e97ebe516cc47f8bcd52887c28cca.jpg",
+        "content": "| False Acceptance Rate | Train with 10.0% | EER = 0.03 | Train with 20.0% | EER = 0.01 | Train with 30.0% | EER = 0.00 | Train with 40.0% | EER = 0.00 | Train with 50.0% | EER = 0.00 |\n| --------------------- | ---------------- | ---------- | ---------------- | ---------- | ---------------- | ---------- | ---------------- | ---------- | ---------------- | ---------- |\n| 0.00                  | 0.25             | 0.25       | 0.12             | 0.12       | 0.01             | 0.01       | 0.01             | 0.01       | 0.01             | 0.01       |\n| 0.05                  | 0.03             | 0.03       | 0.01             | 0.01       | 0.01             | 0.01       | 0.01             | 0.01       | 0.01             | 0.01       |\n| 0.10                  | 0.01             | 0.01       | 0.01             | 0.01       | 0.01             | 0.01       | 0.01             | 0.01       | 0.01             | 0.01       |\n| 0.15                  | 0.01             | 0.01       | 0.01             | 0.01       | 0.01             | 0.01       | 0.01             | 0.01       | 0.01             | 0.01       |\n| 0.20                  | 0.01             | 0.01       | 0.01             | 0.01       | 0.01             | 0.01       | 0.01             | 0.01       | 0.01             | 0.01       |\n| 0.25                  | 0.01             | 0.01       | 0.01             | 0.01       | 0.01             | 0.01       | 0.01             | 0.01       | 0.01             | 0.01       |",
+        "chart_caption": [
+            "(d) KNN",
+            "Fig. 8 DET plots for the PDDs designed using SVM, RF, NB, and KNN with varying training percentage from 10% to 50% of the total Set4-Set6 dataset."
+        ],
+        "chart_footnote": [],
+        "sub_type": "line chart",
+        "bbox": [
+            526,
+            298,
+            821,
+            467
+        ],
+        "page_idx": 15
+    },
+    {
+        "type": "text",
+        "text": "",
+        "bbox": [
+            203,
+            529,
+            831,
+            571
+        ],
+        "page_idx": 15
+    },
+    {
+        "type": "text",
+        "text": "6.2.2 Against different attacks",
+        "text_level": 2,
+        "bbox": [
+            203,
+            590,
+            487,
+            606
+        ],
+        "page_idx": 15
+    },
+    {
+        "type": "text",
+        "text": "Considering the practical challenges of defending against clean-label data poisoning attacks, we also evaluate PDDs against FGSM and C&W attacks to assess their performance on OOD data. In this evaluation, each dataset contains only 100 poisoned samples from the respective attack, as explained in Section 5.2. The performance of PDDs against these two types of poisoned data is reported in Figure 10a and 10b. PDDs have shown good performance to detect FGSM-poisoned data, however, performance in detecting C&W-poisoned data is relatively lower. Studies [41] have reported that C&W are among the most challenging attacks to detect. C&W attack leverages an optimization-based approach to craft adversarial examples, aiming to find the smallest perturbation necessary to cause misclassification by the target model. It minimizes both the magnitude of the perturbation and the distance to the neural network decision boundary. In the future, we will address these limitations by designing PDD ensembles to detect potential types of poisoned data.",
+        "bbox": [
+            201,
+            613,
+            833,
+            741
+        ],
+        "page_idx": 15
+    },
+    {
+        "type": "page_number",
+        "text": "16",
+        "bbox": [
+            510,
+            764,
+            529,
+            775
+        ],
+        "page_idx": 15
+    },
+    {
+        "type": "chart",
+        "img_path": "images/5e280eff85e00afd8affaa24be241e6b539620d3d3fef5fcf991c92ea5c6a809.jpg",
+        "content": "| PDD Level | SVM   | RF    | NB    | KNN   |\n| --------- | ----- | ----- | ----- | ----- |\n| PDD-10%   | 100.00| 98.50 | 99.00 | 97.00 |\n| PDD-20%   | 100.00| 98.50 | 99.50 | 98.00 |\n| PDD-30%   | 100.00| 99.00 | 99.50 | 99.00 |\n| PDD-40%   | 100.00| 99.50 | 99.50 | 99.50 |\n| PDD-50%   | 100.00| 99.50 | 99.50 | 99.50 |",
+        "chart_caption": [
+            "(a) PDDs performance on the Set3 and Set5 combination, containing 13,000 normal and 13,000 poisoned images."
+        ],
+        "chart_footnote": [],
+        "sub_type": "line chart",
+        "bbox": [
+            200,
+            84,
+            759,
+            168
+        ],
+        "page_idx": 16
+    },
+    {
+        "type": "chart",
+        "img_path": "images/ba6f9f6d27d21886b09ad387df8aa04c1fbbfab5ba0760327d39b09b78c77505.jpg",
+        "content": "| PDD Threshold | Accuracy (%) |\n| ------------- | ------------ |\n| PDD-10%       | 83.00        |\n| PDD-20%       | 71.00        |\n| PDD-30%       | 76.00        |\n| PDD-40%       | 91.00        |\n| PDD-50%       | 93.00        |",
+        "chart_caption": [
+            "(b) PDDs performance on the TrueFace dataset containing 5,000 normal and 5,000 poisoned images."
+        ],
+        "chart_footnote": [],
+        "sub_type": "line chart",
+        "bbox": [
+            200,
+            206,
+            757,
+            273
+        ],
+        "page_idx": 16
+    },
+    {
+        "type": "chart",
+        "img_path": "images/1e9c39aa0d742dc2f9246e5e7e1b7a0973fb7c456106d6ebd7a406ca059afbec.jpg",
+        "content": "| PDD Percentage | Accuracy (%) |\n| -------------- | ------------ |\n| PDD-10%        | 100.00       |\n| PDD-20%        | 100.00       |\n| PDD-30%        | 100.00       |\n| PDD-40%        | 100.00       |\n| PDD-50%        | 100.00       |",
+        "chart_caption": [
+            "(c) PDDs performance on the 140k RealFace dataset containing 70,000 normal and 70,000 poisoned images.",
+            "Fig. 9 A comparison of PDDs performance using different datasets. Note: different scaling is used in above figures for better readability."
+        ],
+        "chart_footnote": [],
+        "sub_type": "line chart",
+        "bbox": [
+            201,
+            313,
+            757,
+            378
+        ],
+        "page_idx": 16
+    },
+    {
+        "type": "text",
+        "text": "",
+        "bbox": [
+            161,
+            445,
+            793,
+            502
+        ],
+        "page_idx": 16
+    },
+    {
+        "type": "chart",
+        "img_path": "images/6f5ba4de030a3c0a987ee3191b1217037946499175df371b835c80087d09c401.jpg",
+        "content": "| PDD Level | SVM   | RF    | NB    | KNN   |\n| --------- | ----- | ----- | ----- | ----- |\n| PDD-10%   | 100.00| 97.00 | 90.00 | 92.00 |\n| PDD-20%   | 100.00| 99.00 | 100.00| 95.00 |\n| PDD-30%   | 100.00| 100.00| 98.00 | 97.00 |\n| PDD-40%   | 100.00| 100.00| 100.00| 100.00|\n| PDD-50%   | 100.00| 100.00| 100.00| 100.00|",
+        "chart_caption": [
+            "(a) PDDs performance against FGSM-poisoned images."
+        ],
+        "chart_footnote": [],
+        "sub_type": "line chart",
+        "bbox": [
+            201,
+            521,
+            757,
+            606
+        ],
+        "page_idx": 16
+    },
+    {
+        "type": "chart",
+        "img_path": "images/35221c547f7418cdb0c19104f9aae69eaddf23839d2c6bf6dd9214b8e3f70ec5.jpg",
+        "content": "| PDD Level | Accuracy (%) |\n| --------- | ------------ |\n| PDD-10%   | 60.00        |\n| PDD-20%   | 62.00        |\n| PDD-30%   | 63.00        |\n| PDD-40%   | 63.00        |\n| PDD-50%   | 64.00        |",
+        "chart_caption": [
+            "(b) PDDs performance against C&W-poisoned data.",
+            "Fig. 10 A comparison of PDDs performance against different attacks using only poisoned data. Note: different scaling is used in above figures for better readability."
+        ],
+        "chart_footnote": [],
+        "sub_type": "line chart",
+        "bbox": [
+            205,
+            636,
+            752,
+            701
+        ],
+        "page_idx": 16
+    },
+    {
+        "type": "page_number",
+        "text": "",
+        "bbox": [
+            468,
+            764,
+            487,
+            775
+        ],
+        "page_idx": 16
+    },
+    {
+        "type": "text",
+        "text": "7 Conclusions and future work",
+        "text_level": 2,
+        "bbox": [
+            203,
+            84,
+            571,
+            101
+        ],
+        "page_idx": 17
+    },
+    {
+        "type": "text",
+        "text": "Self-supervised learning (SSL) enables scalable data curation, a cruial step for achieving generalization in machine learning models, particularly large VFMs. SSL meets the data demands of foundation models, however, the robustness of VFMs critically depends on the integrity of SSL-curated datasets used during training, as compromised training data can jeopardize the reliability of the subsequent inference phase. The defense mechanism proposed in this paper is highly scalable and actively detects poisoned data, thereby preserving the integrity of SSL-curated datasets used for foundation model training. We designed PDDs using a combination of the pretrained ImageBind model and four classifiers, namely, RF, KNN, NB, and SVM and evaluated PDDs using 176,200 images from three diverse datasets and three different adversarial attacks encompassing both ID and OOD scenarios. In the future, we will investigate a broader range of adversarial attacks relevant to data poisoning using PDD ensemble. Additionally, we plan to develop a one-class SVM for collective poisoned data detection.",
+        "bbox": [
+            201,
+            112,
+            833,
+            311
+        ],
+        "page_idx": 17
+    },
+    {
+        "type": "text",
+        "text": "Data Availability Statement",
+        "text_level": 2,
+        "bbox": [
+            203,
+            332,
+            532,
+            350
+        ],
+        "page_idx": 17
+    },
+    {
+        "type": "text",
+        "text": "Table 6 provides details of the various pre-trained models and datasets used in this paper and they are publicly available.",
+        "bbox": [
+            203,
+            360,
+            833,
+            390
+        ],
+        "page_idx": 17
+    },
+    {
+        "type": "text",
+        "text": "References",
+        "text_level": 2,
+        "bbox": [
+            203,
+            409,
+            334,
+            426
+        ],
+        "page_idx": 17
+    },
+    {
+        "type": "list",
+        "sub_type": "ref_text",
+        "list_items": [
+            "[1] Liu, F., Zhang, T., Dai, W., Zhang, C., Cai, W., Zhou, X., Chen, D.: Few-shot adaptation of multi-modal foundation models: A survey. Artificial Intelligence Review 57(10), 268 (2024)",
+            "[2] Radford, A., Kim, J.W., Hallacy, C., Ramesh, A., Goh, G., Agarwal, S., Sastry, G., Askell, A., Mishkin, P., Clark, J., et al.: Learning transferable visual models from natural language supervision. In: Proceedings of the International Conference on Machine Learning, pp. 8748–8763 (2021). PMLR",
+            "[3] Oquab, M., Darcet, T., Moutakanni, T., Vo, H.V., Szafraniec, M., Khalidov, V., Fernandez, P., HAZIZA, D., Massa, F., El-Nouby, A., Assran, M., Ballas, N., Galuba, W., Howes, R., Huang, P.-Y., Li, S.-W., Misra, I., Rabbat, M., Sharma, V., Synnaeve, G., Xu, H., Jegou, H., Mairal, J., Labatut, P., Joulin, A., Bojanowski, P.: DINOv2: Learning robust visual features without supervision. Transactions on Machine Learning Research (2024)",
+            "[4] Gui, J., Chen, T., Zhang, J., Cao, Q., Sun, Z., Luo, H., Tao, D.: A survey on self-supervised learning: Algorithms, applications, and future trends. IEEE Transactions on Pattern Analysis and Machine Intelligence (2024)",
+            "[5] Schuhmann, C., Beaumont, R., Vencu, R., Gordon, C., Wightman, R., Cherti, M., Coombes, T., Katta, A., Mullis, C., Wortsman, M., et al.: Laion-5b: An open",
+            "large-scale dataset for training next generation image-text models. Advances in neural information processing systems 35, 25278–25294 (2022)",
+            "[6] Li, J., Fang, A., Smyrnis, G., Ivgi, M., Jordan, M., Gadre, S.Y., Bansal, H., Guha, E., Keh, S.S., Arora, K., et al.: Datacomp-lm: In search of the next generation of training sets for language models. Advances in Neural Information Processing Systems 37, 14200–14282 (2024)",
+            "[7] Wang, Z., Ma, J., Wang, X., Hu, J., Qin, Z., Ren, K.: Threats to training: A survey of poisoning attacks and defenses on machine learning systems. ACM Computing Surveys 55(7), 1–36 (2022)",
+            "[8] Wang, C., Chen, J., Yang, Y., Ma, X., Liu, J.: Poisoning attacks and countermeasures in intelligent networks: Status quo and prospects. Digital Communications and Networks 8(2), 225–234 (2022)",
+            "[9] Gupta, S., Passerone, R.: An investigation of visual foundation models robustness. Machine Learning 114(12), 281 (2025)",
+            "[10] Liu, X., Zhang, F., Hou, Z., Mian, L., Wang, Z., Zhang, J., Tang, J.: Selfsupervised learning: Generative or contrastive. IEEE transactions on knowledge and data engineering 35(1), 857–876 (2021)",
+            "[11] De Palma, G., Giallorenzo, S., Mauro, J., Trentin, M., Zavattaro, G.: An openwhisk extension for topology-aware allocation priority policies. In: Proceedings of the International Conference on Coordination Models and Languages, pp. 201–218 (2024). Springer",
+            "[12] Beaumont, R.: img2dataset: Easily turn large sets of image urls to an image dataset. https://github.com/rom1504/img2dataset. online web resource (Accessed on 01-12-2025 ) (2021)",
+            "[13] Douze, M., Guzhva, A., Deng, C., Johnson, J., Szilvasy, G., Mazar´e, P.-E., Lomeli, M., Hosseini, L., J´egou, H.: The faiss library. IEEE Transactions on Big Data (2025)",
+            "[14] Kastryulin, S., Konev, A., Shishenya, A., Lyapustin, E., Khurshudov, A., Tselousov, A., Vinokurov, N., Kuznedelev, D., Markovich, A., Livshits, G., et al.: Yaart: Yet another art rendering technology. In: Proceedings of the 31st ACM SIGKDD Conference on Knowledge Discovery and Data Mining V. 1, pp. 2313–2324 (2025)",
+            "[15] Wenzek, G., Lachaux, M.-A., Conneau, A., Chaudhary, V., Guzm´an, F., Joulin, A., Grave, E.: Ccnet: Extracting high quality monolingual datasets from web crawl data. In: Proceedings of the Twelfth Language Resources and Evaluation Conference, pp. 4003–4012 (2020)",
+            "[16] Capasso, P., Cattaneo, G., De Marsico, M.: A comprehensive survey on methods for image integrity. ACM Transactions on Multimedia Computing, Communications and Applications 20(11), 1–34 (2024)",
+            "[17] Ilharco, G., Wortsman, M., Carlini, N., Taori, R., Dave, A., Shankar, V., Namkoong, H., Miller, J., Hajishirzi, H., Farhadi, A., et al.: Openclip. https: //github.com/mlf oundations/open clip. online web resource (Accessed on 01-12-2025 ) (2021)",
+            "[18] Ilharco, G., Jordan, M., Heckel, R., Dimakis, A., Farhadi, A., Shankar, V., Schmidt, L.: OpenLM: A minimal but performative language modeling (lm) repository. https://github.com/mlf oundations/open lm/. online web resource (Accessed on 01-12-2025 ) (2023)",
+            "[19] Fares, S., Nandakumar, K.: Attack to defend: Exploiting adversarial attacks for detecting poisoned models. In: Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition, pp. 24726–24735 (2024)",
+            "[20] Ishmam, A.M., Thomas, C.: Semantic shield: Defending vision-language models against backdooring and poisoning via fine-grained knowledge alignment. In: Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition, pp. 24820–24830 (2024)",
+            "[21] Chen, J., Zhang, X., Zhang, R., Wang, C., Liu, L.: De-pois: An attack-agnostic defense against data poisoning attacks. IEEE Transactions on Information Forensics and Security 16, 3412–3425 (2021)",
+            "[22] Tejankar, A., Sanjabi, M., Wang, Q., Wang, S., Firooz, H., Pirsiavash, H., Tan, L.: Defending against patch-based backdoor attacks on self-supervised learning. In: Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition, pp. 12239–12249 (2023)",
+            "[23] Guan, J., Tu, Z., He, R., Tao, D.: Few-shot backdoor defense using shapley estimation. In: Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition, pp. 13358–13367 (2022)",
+            "[24] Zhang, Z., Liu, Q., Wang, Z., Lu, Z., Hu, Q.: Backdoor defense via deconfounded representation learning. In: Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition, pp. 12228–12238 (2023)",
+            "[25] Peri, N., Gupta, N., Huang, W.R., Fowl, L., Zhu, C., Feizi, S., Goldstein, T., Dickerson, J.P.: Deep k-nn defense against clean-label data poisoning attacks. In: Proceedings of the European Conference on Computer Vision, pp. 55–70 (2020). Springer",
+            "[26] Chen, H., Koushanfar, F.: Tutorial: Toward robust deep learning against poisoning attacks. ACM Transactions on Embedded Computing Systems 22(3), 1–15",
+            "[27] Liu, K., Dolan-Gavitt, B., Garg, S.: Fine-pruning: Defending against backdooring attacks on deep neural networks. In: International Symposium on Research in Attacks, Intrusions, and Defenses, pp. 273–294 (2018). Springer",
+            "[28] Hayase, J., Kong, W., Somani, R., Oh, S.: Spectre: Defending against backdoor attacks using robust statistics. In: Proceeding of the International Conference on Machine Learning, pp. 4129–4139 (2021). PMLR",
+            "[29] Zhou, S., Liu, C., Ye, D., Zhu, T., Zhou, W., Yu, P.S.: Adversarial attacks and defenses in deep learning: From a perspective of cybersecurity. ACM Computing Surveys 55(8), 1–39 (2022)",
+            "[30] Liu, Z., Mao, H., Wu, C.-Y., Feichtenhofer, C., Darrell, T., Xie, S.: A convnet for the 2020s. In: Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition, pp. 11976–11986 (2022)",
+            "[31] Li, Z., Liu, F., Yang, W., Peng, S., Zhou, J.: A survey of convolutional neural networks: analysis, applications, and prospects. IEEE transactions on neural networks and learning systems 33(12), 6999–7019 (2021)",
+            "[32] Boato, G., Pasquini, C., Stefani, A.L., Verde, S., Miorandi, D.: Trueface: A dataset for the detection of synthetic face images from social networks. In: Proceedings of the IEEE International Joint Conference on Biometrics (IJCB), pp. 1–7 (2022). IEEE",
+            "[33] Kaggle: Real and Fake Faces. https://www.kaggle.com/datasets/xhlulu/140k-r eal-and-fake-faces. online web resource (Accessed on 01-12-2025 ) (2025)",
+            "[34] Madry, A., Makelov, A., Schmidt, L., Tsipras, D., Vladu, A.: Towards deep learning models resistant to adversarial attacks. In: Proceedings of the International Conference on Learning Representations, pp. 1–27 (2018)",
+            "[35] Girdhar, R., El-Nouby, A., Liu, Z., Singh, M., Alwala, K.V., Joulin, A., Misra, I.: Imagebind: One embedding space to bind them all. In: Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition, pp. 15180– 15190 (2023)",
+            "[36] Goodfellow, I.J., Shlens, J., Szegedy, C.: Explaining and harnessing adversarial examples. In: Proceedings of the 3rd International Conference on Learning Representations, pp. 1–10 (2015)",
+            "[37] Carlini, N., Wagner, D.: Towards evaluating the robustness of neural networks. In: Proceedings of the IEEE Symposium on Security and Privacy (SP), pp. 39–57 (2017). Ieee",
+            "[38] Maaten, L., Hinton, G.: Visualizing data using t-SNE. Journal of machine learning research 9(11) (2008)",
+            "[39] Bischl, B., Binder, M., Lang, M., Pielok, T., Richter, J., Coors, S., Thomas, J., Ullmann, T., Becker, M., Boulesteix, A.-L., et al.: Hyperparameter optimization: Foundations, algorithms, best practices, and open challenges. Wiley Interdisciplinary Reviews: Data Mining and Knowledge Discovery 13(2), 1484 (2023)",
+            "[40] Gupta, S., Raja, K., Passerone, R.: Visual prompt engineering for enhancing facial recognition systems robustness against evasion attacks. IEEE Access (2024)",
+            "[41] Rottmann, M., Maag, K., Peyron, M., Gottschalk, H., Kreji´c, N.: Detection of iterative adversarial attacks via counter attack. Journal of Optimization Theory and Applications 198(3), 892–929 (2023)"
+        ],
+        "bbox": [
+            211,
+            432,
+            835,
+            744
+        ],
+        "page_idx": 17
+    },
+    {
+        "type": "page_number",
+        "text": "18",
+        "bbox": [
+            510,
+            764,
+            529,
+            776
+        ],
+        "page_idx": 17
+    },
+    {
+        "type": "list",
+        "sub_type": "ref_text",
+        "list_items": [],
+        "bbox": [
+            161,
+            83,
+            800,
+            724
+        ],
+        "page_idx": 18
+    },
+    {
+        "type": "page_number",
+        "text": "19",
+        "bbox": [
+            468,
+            764,
+            487,
+            775
+        ],
+        "page_idx": 18
+    },
+    {
+        "type": "list",
+        "sub_type": "ref_text",
+        "list_items": [],
+        "bbox": [
+            206,
+            85,
+            835,
+            734
+        ],
+        "page_idx": 19
+    },
+    {
+        "type": "page_number",
+        "text": "20",
+        "bbox": [
+            509,
+            764,
+            529,
+            775
+        ],
+        "page_idx": 19
+    },
+    {
+        "type": "list",
+        "sub_type": "ref_text",
+        "list_items": [],
+        "bbox": [
+            161,
+            85,
+            796,
+            720
+        ],
+        "page_idx": 20
+    },
+    {
+        "type": "page_number",
+        "text": "",
+        "bbox": [
+            468,
+            764,
+            485,
+            775
+        ],
+        "page_idx": 20
+    },
+    {
+        "type": "list",
+        "sub_type": "ref_text",
+        "list_items": [],
+        "bbox": [
+            206,
+            85,
+            835,
+            281
+        ],
+        "page_idx": 21
+    },
+    {
+        "type": "page_number",
+        "text": "22",
+        "bbox": [
+            509,
+            764,
+            529,
+            775
+        ],
+        "page_idx": 21
+    }
+]
