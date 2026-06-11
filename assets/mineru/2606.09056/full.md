@@ -128,12 +128,106 @@ Our solution to this problem leverages our hierarchical autoencoder’s ability 
 <details>
 <summary>grid of 3d renderings</summary>
 
-| Method          | Context | +4 frames | +16 frames | +64 frames | +256 frames | +512 frames |
-|-----------------|---------|-----------|------------|------------|-------------|-------------|
-| Ground Truth    | ●       | ●         | ●          | ●          | ●           | ●           |
-| Our Method      |         | ●         | ●          | ●          | ●           | ●           |
-| FramePack       |         | ●         | ●          | ●          | ●           | ●           |
-| Full-Res. Rollout |         | ●         | ●          | ●          | ●           | ●           |
+| Method | Frame Length | Ground Truth | Accuracy |
+| --- | --- | --- | --- |
+| Ground Truth | +4 | ● | ● |
+| Ground Truth | +4 | ● | ● |
+| Ground Truth | +4 | ● | ● |
+| Ground Truth | +4 | ● | ● |
+| Ground Truth | +4 | ● | ● |
+| Ground Truth | +4 | ● | ● |
+| Ground Truth | +4 | ● | ● |
+| Ground Truth | +4 (approx) | ● | ● |
+| Ground Truth | +4 (approx) | ● | ● |
+| Ground Truth | +4 (approx) | ● | ● |
+| Ground Truth | +4 (approx) | ● | ● |
+| Ground Truth | +4 (approx) | ● | ● |
+| Ground Truth | +4 (approx) | ● | ● |
+| Ground truth | +4 (approx) | ● | ● |
+| Ground Truth | +4 (approx) | ● | ● |
+| Ground Truth | +4 (approx) | ● | ● |
+| Ground Truth | +4 (approx) | ● | ● |
+| Ground Truth | +4 (approx) | ● | ● |
+| Ground Truth | +4 (approx) | ○ | ○ |
+| Ground Truth | +4 (approx) | ○ | ○ |
+| Ground Truth | +4 (approx) | ○ | ○ |
+| Ground Truth | +4 (approx) | ○ | ○ |
+| Ground Truth | +4 (approx) | ○ | ○ |
+| Ground Truth | +4 (approx) | ○ | ○ |
+| Ground Truth | +4 (approx) | ○ | ○ |
+| Ground Truth | +4 (approx) | ○ | ○ |
+| Ground Truth | +4 (approx) | ○ | ○ |
+| Ground Truth | +4 (approx) | ○ | ○ |
+| Ground Truth | +4 (approx) | ○ | ○ |
+| Ground Truth | +4 (approx) | ○ | ○ |
+| Ground truth | +4 (approx) | ○ | ○ |
+| Ground Truth | +4 (approx) | ○ | ○ |
+| Ground Truth | +4 (approx) | ○ | ○ |
+| Ground Truth | +4 (approx) | ○ | ○ |
+| Ground Truth | +4 (approx) | ○ | ○ |
+| Ground Truth | +4 (approx) | □ | □ |
+| Ground Truth | +4 (approx) | □ | □ |
+| Ground Truth | +4 (approx) | □ | □ |
+| Ground Truth | +4 (approx) | □ | □ |
+| Ground Truth | +4 (approx) | □ | □ |
+| Ground Truth | +4 (approx) | □ | ▢ |
+| Ground Truth | +4 (approx) | □ | ▢ |
+| Ground Truth | +4 (approx) | □ | ▢ |
+| Ground Truth | +4 (approx) | □ | ▢ |
+| Ground Truth | +4 (approx) | □ | ▢ |
+| Ground Truth | +4 (approx) | □ | ▦ |
+| Ground Truth | +4 (approx) | □ | ▦ |
+| Ground Truth | +4 (approx) | □ | ▦ |
+| Ground Truth | +4 (approx) | □ | ▦ |
+| Ground Truth | +4 (approx) | □ | ▦ |
+| Ground Truth | +4 (approx) | □ | ▧ |
+| Ground Truth | +4 (approx) | □ | ▧ |
+| Ground Truth | +4 (approx) | □ | ▧ |
+| Ground Truth | +4 (approx) | □ | ▧ |
+| Ground Truth | +4 (approx) | □ | ▧ |
+| Ground Truth | +4 (approx) | □ | ▪ |
+| Ground Truth | +4 (approx) | □ | ▪ |
+| Ground Truth | +4 (approx) | □ | ▪ |
+| Ground Truth | +4 (approx) | □ | ▪ |
+| Ground Truth | +4 (approx) | □ | ▪ |
+| Ground Truth | +4 (approx) | □ | ▫ |
+| Ground Truth | +4 (approx) | □ | ▫ |
+| Ground Truth | +4 (approx) | □ | ▫ |
+| Ground Truth | +4 (approx) | □ | ▫ |
+| Ground Truth | +4 (approx) | □ | ▫ |
+| Ground Truth | +4 (approx) | □ | ▩ |
+| Ground Truth | +4 (approx) | □ | ▩ |
+| Ground Truth | +4 (approx) | □ | ▩ |
+| Ground Truth | +4 (approx) | □ | ▩ |
+| Ground Truth | +4 (approx) | □ | ▩ |
+| Ground Truth | +4 (approx) | □ | ▪ |
+| Ground Truth | +4 (approx) | □ | ▪ |
+| Ground Truth | +4 (approx) | □ | ▪ |
+| Ground Truth | +4 (approx) | □ | ▪ |
+| Ground Truth | +4 (approx) | □ | ▩ |
+| Ground Truth | +4 (approx) | □ | ▩ |
+| Ground Truth | +4 (approx) | □ | ▩ |
+| Ground Truth | +4 (approx) | □ | ▩ |
+| Ground Truth | +4 (approx) | □ | ▫ |
+| Ground Truth | +4 (approx) | □ | ▫ |
+| Ground Truth | +4 (approx) | □ | ▫ |
+| Ground Truth | +4 (approx) | □ | ▫ |
+| Ground Truth | +4 (approx) | □ | ▪ |
+| Ground Truth | +4 (approx) | □ | ▪ |
+| Ground Truth | +4 (approx) | □ | ▪ |
+| Ground Truth | +4 (approx) | □ | ▪ |
+| Ground Truth | +4 (approx) | □ | ▮ |
+| Ground Truth | +4 (approx) | □ | ▮ |
+| Ground Truth | +4 (approx) | □ | ▮ |
+| Ground Truth | +4 (approx) | □ | ▮ |
+| Ground Truth | +4 (approx) | □ | ▮ |
+| Ground Truth | +4 (approx) | □ | ▫ |
+| Ground Truth | +4 (approx) | □ | ▫ |
+| Ground Truth | +4 (approx) | □ | ▫ |
+| Ground Truth | +4 (approx) | □ | ▫ |
+| Ground Truth | +4 (approx) | □ | ▮ |
+| Ground Truth | +4 (approx) | □ | ▮ |
+| Ground Truth | +4 (approx) | □ | ▮ |
 </details>
 
 Figure 3: Unlike the baselines, our method reliably recalls the scene’s structure, even when many 1frames have elapsed. The top-left panel shows a top-down view of the trajectory the models follow. Blue is context; orange is generated. The points at which frames are shown are marked. We encourage the reader to consult our project website for videos of similar comparisons.
@@ -164,7 +258,7 @@ To measure consistency, we condition each video model on up to 256 frames (depen
 
 We empirically find that measuring consistency can be challenging for two reasons. First, it is difficult to guarantee that the content the models are asked to reproduce has been seen in the context. To alleviate this issue, we generate a 1,000-video test set whose trajectories have high overlap between the context and the remaining trajectory (details in appendix A.1). Second, even well-performing models can produce trajectories that drift slightly compared to the ground truth. This manifests as slight misalignments in otherwise consistent scenes. Several of our metrics (LPIPS, DINOv2, and keypoints) are robust to such shifts, and we empirically find that LPIPS is an especially good measure of consistency in the face of slight misalignments, as previously reported in [51].
 
-![](images/45425defb58b49258756ad2ffac038ba629511c40b64488b5ff03ece9a23f55f.jpg)
+![](images/886d86c583a9d70c084b27e43db9b53c433d21b502c9c95936a68f24005e2e88.jpg)
 
 <details>
 <summary>line chart</summary>
@@ -172,15 +266,15 @@ We empirically find that measuring consistency can be challenging for two reason
 | Frame Count | Random Frames | Autoencoded Frames |
 | ----------- | ------------- | ------------------ |
 | 0           | 0.0           | 0.0                |
-| 128         | 0.55          | 0.35               |
-| 256         | 0.60          | 0.45               |
-| 384         | 0.62          | 0.50               |
-| 512         | 0.65          | 0.55               |
-| 640         | 0.67          | 0.58               |
-| 768         | 0.68          | 0.60               |
+| 128         | 0.55          | 0.25               |
+| 256         | 0.60          | 0.30               |
+| 384         | 0.62          | 0.35               |
+| 512         | 0.65          | 0.38               |
+| 640         | 0.67          | 0.40               |
+| 768         | 0.68          | 0.42               |
 </details>
 
-![](images/d7970c2ff98f45221098313b2d91adb30367de85d13cbaf617d71df49d1074ec.jpg)
+![](images/6114b58a8b6514e3295f56500597aac9fd4cfe9c4ab111a845d7d8ffc185c981.jpg)
 
 <details>
 <summary>line chart</summary>
@@ -189,8 +283,8 @@ We empirically find that measuring consistency can be challenging for two reason
 | ------------------ | ---------- | --------- | ----------- |
 | 0                  | 0          | 0         | 0           |
 | 128                | ~150       | ~100      | ~50         |
-| 256                | ~300       | ~150      | ~60         |
-| 384                | ~450       | ~200      | ~70         |
+| 256                | ~250       | ~150      | ~60         |
+| 384                | ~400       | ~200      | ~70         |
 | 512                | ~600       | ~250      | ~80         |
 | 640                | ~750       | ~300      | ~90         |
 | 768                | ~850       | ~350      | ~100        |
@@ -242,14 +336,14 @@ Figure 5: As our hierarchical autoencoder’s token budget decreases, it discard
 <summary>line chart</summary>
 
 | Frame | Consistency (LPIPS ↓) - Our Method (Hierarchical) | Consistency (LPIPS ↓) - Ablation: Our Method (Cascaded) | Quality (FVD ↓) - Our Method (Hierarchical) | Quality (FVD ↓) - Ablation: Our Method (Cascaded) |
-|-------|--------------------------------------------------|----------------------------------------------------|---------------------------------------------|------------------------------------------------|
-| 0     | 0.1                                              | 0.1                                                | 50                                          | 50                                             |
-| 128   | 0.3                                              | 0.35                                               | 100                                         | 150                                            |
-| 256   | 0.4                                              | 0.4                                                | 150                                         | 200                                            |
-| 384   | 0.45                                             | 0.45                                               | 200                                         | 250                                            |
-| 512   | 0.48                                             | 0.48                                               | 250                                         | 300                                            |
-| 640   | 0.5                                              | 0.5                                                | 300                                         | 350                                            |
-| 768   | 0.55                                             | 0.55                                               | 350                                         | 400                                            |
+|-------|--------------------------------------------------|------------------------------------------------------|---------------------------------------------|----------------------------------------------------|
+| 0     | 0.1                                              | 0.1                                                  | 50                                          | 50                                                 |
+| 128   | 0.3                                              | 0.35                                                 | 100                                         | 150                                                |
+| 256   | 0.4                                              | 0.45                                                 | 150                                         | 200                                                |
+| 384   | 0.45                                             | 0.5                                                  | 200                                         | 250                                                |
+| 512   | 0.48                                             | 0.52                                                 | 250                                         | 300                                                |
+| 640   | 0.5                                              | 0.55                                                 | 300                                         | 350                                                |
+| 768   | 0.52                                             | 0.58                                                 | 350                                         | 400                                                |
 </details>
 
 Figure 6: A cascaded variant of our method, in which the model is trained to operate on downscaled 1(mean-pooled) versions of our highest-resolution hierarchy level instead of using the full latent hierarchy, performs worse on both consistency and quality. For all ablations, we train models with sequence lengths of 1280, where 1/3 as many frames are seen at every level compared to the models in Figure 4. Note that the mean-pooled tokens the cascaded model sees are also visualized in Figure 5.
@@ -516,72 +610,149 @@ Figure 10: Our model’s rollout procedure: On the left, see our model’s full 
 <summary>horizontal bar chart</summary>
 
 | Rollout Step | Blue Segment | Orange Segment |
-| --- | --- | --- |
-| 0 | 10 | 15 |
-| 1 | 12 | 14 |
-| 2 | 8 | 16 |
-| 3 | 9 | 13 |
-| 4 | 7 | 17 |
-| 5 | 10 | 12 |
-| 6 | 11 | 11 |
-| 7 | 13 | 10 |
-| 8 | 14 | 9 |
-| 9 | 15 | 8 |
-| 10 | 16 | 7 |
-| 11 | 17 | 6 |
-| 12 | 18 | 5 |
-| 13 | 19 | 4 |
-| 14 | 20 | 3 |
-| 15 | 21 | 2 |
-| 16 | 22 | 1 |
-| 17 | 23 | 0 |
-| 18 | 24 | 0 |
-| 19 | 25 | 0 |
-| 20 | 26 | 0 |
-| 21 | 27 | 0 |
-| 22 | 28 | 0 |
-| 23 | 29 | 0 |
-| 24 | 30 | 0 |
-| 25 | 31 | 0 |
-| 26 | 32 | 0 |
-| 27 | 33 | 0 |
-| 28 | 34 | 0 |
-| 29 | 35 | 0 |
-| 30 | 36 | 0 |
-| 31 | 37 | 0 |
-| 32 | 38 | 0 |
-| 33 | 39 | 0 |
-| 34 | 40 | 0 |
-| 35 | 41 | 0 |
-| 36 | 42 | 0 |
-| 37 | 43 | 0 |
-| 38 | 44 | 0 |
-| 39 | 45 | 0 |
-| 40 | 46 | 0 |
-| 41 | 47 | 0 |
-| 42 | 48 | 0 |
-| 43 | 49 | 0 |
-| 44 | 50 | 0 |
-| 45 | 51 | 0 |
-| 46 | 52 | 0 |
-| 47 | 53 | 0 |
-| 48 | 54 | 0 |
-| 49 | 55 | 0 |
-| 50 | 56 | 0 |
-| 51 | 57 | 0 |
-| 52 | 58 | 0 |
-| 53 | 59 | 0 |
-| 54 | 60 | 0 |
-| 55 | 61 | 0 |
-| 56 | 62 | 0 |
-| 57 | 63 | 0 |
-| 58 | 64 | 0 |
-| 59 | 65 | 0 |
-| 60 | 66 | 0 |
-| Note: The actual values for the right-side bars are not provided in the code. The actual values are only one data point on the left side of the chart. < | caption_end | > |
+| ------------ | ------------ | -------------- |
+| 0            | 10           | 15             |
+| 1            | 10           | 15             |
+| 2            | 10           | 15             |
+| 3            | 10           | 15             |
+| 4            | 10           | 15             |
+| 5            | 10           | 15             |
+| 6            | 10           | 15             |
+| 7            | 10           | 15             |
+| 8            | 10           | 15             |
+| 9            | 10           | 15             |
+| 10           | 10           | 15             |
+| 11           | 10           | 15             |
+| 12           | 10           | 15             |
+| 13           | 10           | 15             |
+| 14           | 10           | 15             |
+| 15           | 10           | 15             |
+| 16           | 10           | 15             |
+| 17           | 10           | 15             |
+| 18           | 10           | 15             |
+| 19           | 10           | 15             |
+| 20           | 10           | 15             |
+| 21           | 10           | 15             |
+| 22           | 10           | 15             |
+| 23           | 10           | 15             |
+| 24           | 10           | 15             |
+| 25           | 10           | 15             |
+| 26           | 10           | 15             |
+| 27           | 10           | 15             |
+| 28           | 10           | 15             |
+| 29           | 10           | 15             |
+| 30           | 10           | 15             |
+| 31           | 10           | 15             |
+| 32           | 10           | 15             |
+| 33           | 10           | 15             |
+| 34           | 10           | 15             |
+| 35           | 10           | 15             |
+| 36           | 10           | 15             |
+| 37           | 10           | 15             |
+| 38           | 10           | 15             |
+| 39           | 10           | 15             |
+| 40           | 10           | 15             |
+| 41           | 10           | 15             |
+| 42           | 10           | 15             |
+| 43           | 10           | 15             |
+| 44           | 10           | 15             |
+| 45           | 10           | 15             |
+| 46           | 10           | 15             |
+| 47           | 10           | 15             |
+| 48           | 10           | 15             |
+| 49           | 10           | 15             |
+| 50           | 10           | 15             |
+| 51           | 10           | 15             |
+| 52           | 10           | 15             |
+| 53           | 10           | 15             |
+| 54           | 10           | 15             |
+| 55           | 10           | 15             |
+| 56           | 10           | 15             |
+| 57           | 10           | 15             |
+| 58           | 10           | 15             |
+| 59           | 10           | 15             |
+| 60           | 10           | 15             |
+| 61           | 10           | 15             |
+| 62           | 10           | 15             |
+| 63           | 10           | 15             |
+| 64           | 10           | 15             |
+| 65           | 10           | 15             |
+| 66           | 10           | 15             |
+| 67           | 10           | 15             |
+| 68           | 10           | 15             |
+| 69           | 10           | 15             |
+| 70           | 10           | 15             |
+| 71           | 10           | 15             |
+| 72           | 10           | 15             |
+| 73           | 10           | 15             |
+| 74           | 10           | 15             |
+| 75           | 10           | 15             |
+| 76           | 10           | 15             |
+| 77           | 10           | 15             |
+| 78           | 10           | 15             |
+| 79           | 10           | 15             |
+| 80           | 10           | 15             |
+| Note: The actual values for the blue and orange segments are not provided in the code. The actual values are not explicitly provided in the code.
 </details>
 
 ![](images/2bb662b9413798d28a298eaac6cb326744a75990a17830b085f0f23c378f5d59.jpg)
+
+<details>
+<summary>stacked bar chart</summary>
+
+| Rollout Step | Frame Index (Mirrored) | Frame Index (Hierarchical) | Frame Index (Full-Resolution) |
+| --- | --- | --- | --- |
+| 1 | 0.8 | 0.2 | 0.6 |
+| 2 | 0.7 | 0.3 | 0.5 |
+| 3 | 0.9 | 0.4 | 0.7 |
+| 4 | 0.6 | 0.5 | 0.8 |
+| 5 | 0.7 | 0.6 | 0.9 |
+| 6 | 0.8 | 0.7 | 1.0 |
+| 7 | 0.9 | 0.8 | 1.1 |
+| 8 | 0.7 | 0.9 | 1.2 |
+| 9 | 0.8 | 1.0 | 1.3 |
+| 10 | 0.9 | 1.1 | 1.4 |
+| 11 | 0.7 | 1.2 | 1.5 |
+| 12 | 0.8 | 1.3 | 1.6 |
+| 13 | 0.9 | 1.4 | 1.7 |
+| 14 | 0.7 | 1.5 | 1.8 |
+| 15 | 0.8 | 1.6 | 1.9 |
+| 16 | 0.9 | 1.7 | 2.0 |
+| 17 | 0.7 | 1.8 | 2.1 |
+| 18 | 0.8 | 1.9 | 2.2 |
+| 19 | 0.9 | 2.0 | 2.3 |
+| 20 | 0.7 | 2.1 | 2.4 |
+| 21 | 0.8 | 2.2 | 2.5 |
+| 22 | 0.9 | 2.3 | 2.6 |
+| 23 | 0.7 | 2.4 | 2.7 |
+| 24 | 0.8 | 2.5 | 2.8 |
+| 25 | 0.9 | 2.6 | 2.9 |
+| 26 | 0.7 | 2.7 | 3.0 |
+| 27 | 0.8 | 2.8 | 3.1 |
+| 28 | 0.9 | 2.9 | 3.2 |
+| 29 | 0.7 | 3.0 | 3.3 |
+| 30 | 0.8 | 3.1 | 3.4 |
+| 31 | 0.9 | 3.2 | 3.5 |
+| 32 | 0.7 | 3.3 | 3.6 |
+| 33 | 0.8 | 3.4 | 3.7 |
+| 34 | 0.9 | 3.5 | 3.8 |
+| 35 | 0.7 | 3.6 | 3.9 |
+| 36 | 0.8 | 3.7 | 4.0 |
+| 37 | 0.9 | 3.8 | 4.1 |
+| 38 | 0.7 | 3.9 | 4.2 |
+| 39 | 0.8 | 4.0 | 4.3 |
+| 40 | 0.9 | 4.1 | 4.4 |
+| 41 | 0.7 | 4.2 | 4.5 |
+| 42 | 0.8 | 4.3 | 4.6 |
+| 43 | 0.9 | 4.4 | 4.7 |
+| 44 | 0.7 | 4.5 | 4.8 |
+| 45 | 0.8 | 4.6 | 4.9 |
+| 46 | 0.9 | 4.7 | 5.0 |
+| 47 | 0.7 | 4.8 | 5.1 |
+| 48 | 0.8 | 4.9 | 5.2 |
+| 49 | 0.9 | 5.0 | 5.3 |
+| 50 | 0.7 | 5.1 | 5.4 |
+</details>
 
 ![](images/fe2b7ce91f253c18c1fd55c6d41490ce1d8f5ba92b90e59a49450114372ed9c6.jpg)
 

@@ -135,20 +135,22 @@ graph TD
   F --> G["Clean Image"]
     
   H["Full-token alignment"] --> I["Stable spatial preference"]
-  J["MaskAlign"] --> K["Clean-image features"]
-  K --> L["Shared Random Mask"]
-  L --> M["SiT Layers"]
-  M --> N["Alignment on token subsets"]
-  N --> O["Concentration largely reduced"]
+  J["MaskAlign"] --> K["Pre-mask Token Mixing Block"]
+  K --> L["Clean-image features"]
+  L --> M["Shared Random Mask"]
+  M --> N["SiT Layers"]
+  N --> O["Alignment on token subsets"]
+  O --> P["Concentration largely reduced"]
     
     style A fill:#f9f,stroke:#333
     style H fill:#f9f,stroke:#333
     style J fill:#f9f,stroke:#333
-    style K fill:#f9f,stroke:#333
-    style L fill:#f9f,stroke:#333
-    style M fill:#f9f,stroke:#333
-    style N fill:#f9f,stroke:#333
-    style O fill:#f9f,stroke:#333
+    style K fill:#ccf,stroke:#333
+    style L fill:#cfc,stroke:#333
+    style M fill:#fcc,stroke:#333
+    style N fill:#ffc,stroke:#333
+    style O fill:#fcc,stroke:#333
+    style P fill:#fff,stroke:#333
     
     subgraph a_Observation_Alignment_mismatch["\"a) Observation: Alignment mismatch\""]
         B
@@ -165,6 +167,7 @@ graph TD
         M
         N
         O
+        P
     end
     
     subgraph b_Token_level_observation["\"b) Token-level observation\""]
@@ -175,26 +178,22 @@ graph TD
         M
         N
         O
+        P
     end
     
     subgraph c_MaskAlign["\"c) MaskAlign\""]
-  P["Noisy Tokens"] --> Q["Pre-mask Token Mixing Block"]
-  Q --> R["Clean-image features"]
-  R --> S["Shared Random Mask"]
-  S --> T["SiT Layers"]
-  T --> U["Alignment on token subsets"]
-  U --> V["Concentration largely reduced"]
+        K
+        L
+        M
+        N
+        O
+        P
     end
     
-    style A fill:#f9f,stroke:#333
-    style H fill:#f9f,stroke:#333
-    style J fill:#f9f,stroke:#333
-    style K fill:#f9f,stroke:#333
-    style L fill:#f9f,stroke:#333
-    style M fill:#f9f,stroke:#333
-    style N fill:#f9f, stroke:#333
-    style O fill:#f9f,stroke:#333
-    style P fill:#f9f,stroke:#333
+    note1["High-gradient tokens concentrate at specific positions"]
+    note2["Stable spatial preference"]
+    note3["Clean-Image&quot; &quot;25% mask"]
+    note4["Concentration largely reduced"]
 ```
 </details>
 
@@ -502,7 +501,7 @@ Figure 6 Generated samples from SiT-XL/2 + MaskAlign. The class label is “arct
 <details>
 <summary>natural_image</summary>
 
-Collage of ten different animal snub-nosed levers in natural habitat, showing various poses and expressions (no text or symbols)
+Collage of ten different animal snub-nosed bears and their close-ups, shown in natural habitat with no visible text or symbols.
 </details>
 
 Figure 7 Generated samples from SiT-XL/2 + MaskAlign. The class label is “polecat” (358).
@@ -512,7 +511,7 @@ Figure 7 Generated samples from SiT-XL/2 + MaskAlign. The class label is “pole
 <details>
 <summary>natural_image</summary>
 
-Collage of scenic and architectural landmarks including historic stone buildings, a lake, and a castle with boats (no visible text or symbols)
+Collage of scenic and architectural landmarks including a historic castle, a lake, and a castle with boats (no visible text or symbols)
 </details>
 
 Figure 8 Generated samples from SiT-XL/2 + MaskAlign. The class label is “castle” (483).

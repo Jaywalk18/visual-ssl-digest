@@ -143,25 +143,43 @@ Table 1: Quantitative Comparison Results. Although the inherent variations betwe
 
 <table><tr><td>Method</td><td>PSNR↑</td><td>SSIM↑</td><td>LPIPS↓</td><td>FVD↓</td><td>Intra-RPE↓</td><td>Inter-RPE↓</td></tr><tr><td>Lingbot [9]</td><td>10.47</td><td>0.377</td><td>0.599</td><td>560.49</td><td>0.068</td><td>0.219</td></tr><tr><td>MultiWorld [63]</td><td>10.64</td><td>0.366</td><td>0.579</td><td>782.34</td><td>0.074</td><td>0.190</td></tr><tr><td>Ours</td><td>14.12</td><td>0.488</td><td>0.360</td><td>134.9</td><td>0.022</td><td>0.084</td></tr></table>
 
-![](images/57f81ad64390302b4c4782c4e7813c20f215aaee01dd1b25db8a38ecaf804a13.jpg)
+N=2  
+![](images/bcbf342d68a26f9a9016c58d7266141641b92cf1e84127456ff3453d7bdf892f.jpg)
 
 <details>
-<summary>text_image</summary>
+<summary>natural_image</summary>
 
-N=2
-N=3
-N=4
-L60 - C
-R60 - C
-L60 - R60
-C - L60
-L60 - C
-Forward
-Backward
-Left
-Right
+Composite image showing a large aircraft carrier at dusk with multiple bridge structures and overpasses, under a cloudy sky (no visible text or symbols)
 </details>
 
+L60 - C  
+R60 – C
+
+N=3  
+![](images/48483fa831d698d8033023bc1514a3625655d9de6f4d57d65b71f5827945fc75.jpg)
+
+<details>
+<summary>natural_image</summary>
+
+Grid of identical architectural photos showing a traditional tent with wooden structures and animal figures, set against a sandy landscape (no text or symbols visible)
+</details>
+
+L60 – R60  
+C – L60  
+L60 – C
+
+![](images/5e877eb29b1b6e4169607a1d88afa495ac9b98dec25164b38aa96d1dba2cdcec.jpg)
+
+<details>
+<summary>natural_image</summary>
+
+Grid of 20 identical street scenes showing modern buildings and trees, no visible text or symbols
+</details>
+
+Forward  
+Backward  
+Left  
+Right  
 Figure 4: Scalability of agent number. Prisma-World allows for the arbitrary specification of the number of output agents across diverse and complex scenes, while robustly preserving both the visual quality and multi-view consistency in output videos.
 
 Baselines. We compare our proposed method against two baseline frameworks: (1) State-of-the-Art Single-Agent World Models (Lingbot-World [9]): We directly extend the current single-agent world model to facilitate multi-agent video generation. (2) Concurrent Multi-Agent Models (MultiWorld [63]): We compare our approach against concurrent work that similarly tackle the task of multi-agent video generation.

@@ -125,7 +125,7 @@ This section formalizes the memory design space studied by Echo-Memory. The poin
 Backbone. Let $\mathbf { x } _ { 1 : T } \in \mathbb { R } ^ { T \times H \times W \times C }$ be a target video segment of T frames at spatial resolution H×W . A pre-trained video diffusion-transformer [52, 53] models the conditional velocity field $v _ { \theta } \big ( \mathbf { z } _ { t } ; t , \mathbf { c } _ { \mathrm { t e x t } } , \mathbf { c } _ { \mathrm { c t x } } , \mathbf { c } _ { \mathrm { a c t } } \big )$ , where $\mathbf { z } _ { t }$ is the noised VAE-encoded latent at flow-matching timestep $t , \ \mathbf { c } _ { \mathrm { t e x t } }$ is a text embedding, $\mathbf { c } _ { \mathrm { c t x } }$ is a memory context, and $\mathbf { c } _ { \mathrm { a c t } } \in \mathbb { R } ^ { T \times 1 2 }$ is a per-frame relative-RT camera-action sequence. The single-stage training objective is the rectified-flow regression loss applied only on the target frames:
 
 $$
-\mathcal {L} (\theta) = \mathbb {E} _ {t, \mathbf {x}, \mathbf {c}} \left\| v _ {\theta} (\mathbf {z} _ {t}; t, \mathbf {c} _ {\mathrm{text}}, \mathbf {c} _ {\mathrm{ctx}}, \mathbf {c} _ {\mathrm{act}}) - v ^ {\star} \right\| _ {2} ^ {2}, \qquad v ^ {\star} = \mathbf {z} _ {1} - \mathbf {z} _ {0}. \tag {1}
+\mathcal {L} (\theta) = \mathbb {E} _ {t, \mathbf {x}, \mathbf {c}} \left\| v _ {\theta} \left(\mathbf {z} _ {t}; t, \mathbf {c} _ {\mathrm{text}}, \mathbf {c} _ {\mathrm{ctx}}, \mathbf {c} _ {\mathrm{act}}\right) - v ^ {\star} \right\| _ {2} ^ {2}, \quad v ^ {\star} = \mathbf {z} _ {1} - \mathbf {z} _ {0}. \tag {1}
 $$
 
 Per-frame VAE context. We use a per-frame VAE context representation, which produces one latent token group per video frame. This keeps the temporal dimension of $\mathbf { c } _ { \mathrm { c t x } }$ semantically aligned with the target tokens, and makes compression-based memory operations well defined as transformations on the temporal axis of a fixed-length latent stack.
@@ -178,7 +178,24 @@ To keep the comparison fair, the training loop, sampler, and evaluation pipeline
 
 Table 1 Single-stage hyper-parameters shared by all variants. Only context length and memory module vary across rows.
 
-<table><tr><td rowspan="13"></td><td colspan="2">Setting</td><td colspan="5">Value</td></tr><tr><td colspan="2">Backbone</td><td colspan="5">Video DiT (per-frame VAE)</td></tr><tr><td colspan="2">Resolution</td><td colspan="5">352 × 640</td></tr><tr><td colspan="2">Segment length</td><td colspan="5">81 frames</td></tr><tr><td colspan="2">Context length K</td><td colspan="5">{1, 5, 20}, default 5</td></tr><tr><td colspan="2">Memory module</td><td colspan="5">Context, Compression, Spatial, or State-Space</td></tr><tr><td colspan="2">Optimizer</td><td colspan="5">AdamW</td></tr><tr><td colspan="2">Learning rate</td><td colspan="5"> $5 \times 10^{-5}$  ( $1 \times 10^{-4}$  at K=1)</td></tr><tr><td colspan="2">GPUs</td><td colspan="5">8 A100-80G</td></tr><tr><td colspan="2">Total steps</td><td colspan="5">5k</td></tr><tr><td colspan="2">Target-frame-only supervision</td><td colspan="5">enabled</td></tr><tr><td colspan="2">Relative-RT action encoding</td><td colspan="5">enabled</td></tr><tr><td colspan="2">10% overlap-drop policy</td><td colspan="5">enabled</td></tr><tr><td></td><td>f0</td><td>f40</td><td>f80</td><td>f121</td><td>f161</td><td>f202</td><td>f242</td></tr><tr><td>GT</td><td><img src="images/363603ae1bc158624bef01e34498e54f970d61760f15fbf1b91a201ea4fcb346.jpg"/></td><td><img src="images/1fc6710f9de52b38a3367f8f2abf9a97096f0fd873676a6c544510fecbf40e74.jpg"/></td><td><img src="images/5b6c023aa880ec3bdc582b31ce486d1f0b3d912d0e71eba206590489a5626968.jpg"/></td><td><img src="images/7fd084e9bc3688b9cfb37c4d8590da8e6b6df727381a0828e2a4860c6874f236.jpg"/></td><td><img src="images/873e23fcee409dd59258421d79148180611f29040d3653ca507076bf8c2dc568.jpg"/></td><td><img src="images/0a5b2a632c33b9737cd4b7f1760ca9b3b8c36a3848b2b97e2a8bce19d3602c34.jpg"/></td><td><img src="images/69615d423afbc2031012d11493db7fa0459bc658e1e8a00b14efdabef85771c0.jpg"/></td></tr><tr><td>Ctx-5</td><td><img src="images/cf237185ad2dc788c47391fe08973b414f503ce77632473ed45ef9be78b218fa.jpg"/></td><td><img src="images/d4c4b189d1552f9e4faf129321caa6fee3e4f548c53ea6091e386fb3094d5841.jpg"/></td><td><img src="images/b0cb22d745fbb9ea32c50088bc901883a3d7f79490f27042f40d9cc37b610c75.jpg"/></td><td><img src="images/e804b5316439a027c88e30f2e47d214bd9f793abe184ace9969633cd78e41ed3.jpg"/></td><td><img src="images/4a49ab2d1c0ef8b6a06f097386141e6052b9cd55d98982063442cf4cd6d775c8.jpg"/></td><td><img src="images/9cc67a53118958418ea48fd03672b4b2b4bacf3783a667dedd2337eb937aba07.jpg"/></td><td><img src="images/a868b35696eca28272fadf059ac224bc53197d8f0050f7c0972045acf4bfd337.jpg"/></td></tr><tr><td>Ctx-20</td><td><img src="images/cf8c6a7956edf8f9ea70496110be8776da0266727c9f239e512250de136e58c2.jpg"/></td><td><img src="images/2c57088b7817a0043221767d358f0b0d7d586cd93e5f354d5125c4e95920e7d8.jpg"/></td><td><img src="images/7a7610b4c9924e7ed033fbf007e8510b929e41864941b8aa9edd31d2eaca2fe6.jpg"/></td><td><img src="images/674011591b87c74ae4dd140f137762a536de20b83d53b7dfa9b2d532b39070c3.jpg"/></td><td><img src="images/4457a8dd3c831f6bc7db75955a582819a937e7a5dca3d01b938836206a242937.jpg"/></td><td><img src="images/7abd8ec056be9664fe06ff494c60baf6d2e1e40369dcc8721ee97d7b9b2a7aaf.jpg"/></td><td><img src="images/e469f5d5921bf209703551682f74228f4b2d3818bae6c58c5a74b0be7890bb28.jpg"/></td></tr></table>
+<table><tr><td>Setting</td><td>Value</td></tr><tr><td>Backbone</td><td>Video DiT (per-frame VAE)</td></tr><tr><td>Resolution</td><td>352 × 640</td></tr><tr><td>Segment length</td><td>81 frames</td></tr><tr><td>Context length K</td><td>{1,5,20}, default 5</td></tr><tr><td>Memory module</td><td>Context, Compression, Spatial, or State-Space</td></tr><tr><td>Optimizer</td><td>AdamW</td></tr><tr><td>Learning rate</td><td> $5 \times 10^{-5}$  ( $1 \times 10^{-4}$  at K=1)</td></tr><tr><td>GPUs</td><td>8 A100-80G</td></tr><tr><td>Total steps</td><td>5k</td></tr><tr><td>Target-frame-only supervision</td><td>enabled</td></tr><tr><td>Relative-RT action encoding</td><td>enabled</td></tr><tr><td>10% overlap-drop policy</td><td>enabled</td></tr></table>
+
+![](images/7b98789c913c853a25d267c3bda8014cf311038017da62af0745984eb82202d1.jpg)
+
+<details>
+<summary>text_image</summary>
+
+GT
+f0
+f40
+f80
+f121
+f161
+f202
+f242
+Ctx-5
+Ctx-20
+</details>
 
 Figure 3 Replay progression on a fixed GT camera trajectory. The diagnostic samples compare generated multisegment replay against a dataset trajectory at matched time indices. The panel reveals where background structure, object layout, and boundary continuity begin to drift before the final revisit probes are run.
 
@@ -262,7 +279,7 @@ Orange teddy bear sitting on a wooden table in an urban plaza with buildings and
 <details>
 <summary>natural_image</summary>
 
-Illustration of a traditional Mozambique pyramid with a turquoise tree and misty mountains in the background (no text or symbols)
+Illustration of a traditional Mozambique pyramid with a turquoise teddy bear sitting on top, surrounded by misty mountains and trees (no text or symbols)
 </details>
 
 ![](images/2aa4d4c47cc8feedd0fa3514575de23651b6e998f739f6397e73c29b8cbeae88.jpg)
@@ -395,7 +412,7 @@ The Context rows are the key capacity baseline. Moving from the anchor-only I2V 
 
 The alignment plot turns the headline table into a diagnostic rather than a ranking. Replay catches broken generators that cannot follow a camera trajectory, so it remains a useful and inexpensive health signal. However, the rank shift from replay to return shows why it cannot be used as the final memory score: the strongest replay rows can still forget the salient object, while rows with weaker replay fidelity can carry scene
 
-![](images/7b37fce5ad5b9a0af597a2409e739cdab5b9703740586bdf29892d97fef35c1b.jpg)
+![](images/dfe0a001312175aa16940b28ec2083570ac8a58c72f6213c14ba34c09a2007d2.jpg)
 
 <details>
 <summary>text_image</summary>
@@ -457,11 +474,11 @@ The replay cost of block-wise recurrence is also informative. A non-bypassable s
 <details>
 <summary>line chart</summary>
 
-| Raw context length | Replay PSNR | In-domain PSNR | Open VLM judge score |
-| ------------------ | ----------- | -------------- | -------------------- |
-| K=1                | 10.0        | 9.5            | 10                   |
-| K=5                | 12.0        | 10.0           | 50                   |
-| K=20               | 12.5        | 13.0           | 60                   |
+| Raw context length | Replay PSNR | In-domain PSNR | Open VLM |
+| ------------------ | ----------- | -------------- | -------- |
+| K=1                | 10.0        | 9.5            | 10.0     |
+| K=5                | 12.0        | 10.0           | 50.0     |
+| K=20               | 12.5        | 13.0           | 60.0     |
 </details>
 
 ![](images/3e01442a71341e5a86018a77053d2aaedbf69aaaed1c2858ef1df942236831e9.jpg)
@@ -471,13 +488,13 @@ The replay cost of block-wise recurrence is also informative. A non-bypassable s
 
 | Method       | Normalized GPU-hour / step | Normalized Replay PSNR |
 | ------------ | --------------------------- | ---------------------- |
-| SS-Leg.      | 0.05                        | 0.8                    |
-| Ctx-5        | 0.15                        | 0.6                    |
-| K=1          | 0.1                         | 0.1                    |
-| SS-Block     | 0.0                         | 0.0                    |
-| Ctx-20       | 0.7                         | 0.75                   |
-| Comp-W outlier | 0.9                         | 0.8                    |
-| Comp-L       | 1.0                         | 0.1                    |
+| SS-Leg.      | 0.05                        | 0.78                   |
+| Ctx-5        | 0.15                        | 0.58                   |
+| K=1          | 0.10                        | 0.12                   |
+| SS-Block     | 0.00                        | 0.00                   |
+| Ctx-20       | 0.65                        | 0.75                   |
+| Comp-W outlier | 0.75                        | 0.75                   |
+| Comp-L       | 1.00                        | 0.08                   |
 </details>
 
 Figure 9 Context scaling and training efficiency. Left: increasing raw context improves open-domain semantic return much more than the replay image bundle. Right: normalized replay PSNR versus normalized GPU-hour per step illustrates that replay efficiency and semantic memory are different optimization targets.
