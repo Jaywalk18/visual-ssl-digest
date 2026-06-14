@@ -1,0 +1,31 @@
+Submitting 2 PDFs in 1 batch(es)
+
+Batch 1: requesting upload URLs for 2 files
+  batch_id: 2bae3a9b-fc68-444a-a353-63b66b455c7c
+
+Uploading PDFs in parallel (8 workers)...
+Uploaded: 2/2
+
+Polling for extraction to finish...
+  poll 1: 0/2 done
+  poll 2: 2/2 done
+
+Extraction done: 2/2
+
+Downloading + unzipping...
+Unzipped: 2/2
+Built site at H:\Desktop\visual_ssl_digest_site
+skip existing PDF: 2603.14482 - V-JEPA 2.1 Unlocking Dense Features in Video Self-Supervised Learning.pdf
+skip existing PDF: 2606.12601 - Dual-State Slot Attention Decoupling Appearance and Identity for Video O.pdf
+skip existing PDF: 2606.13288 - Cross-Modal Masked Compositional Concept Modeling for Enhancing Visio-Li.pdf
+skip existing PDF: 2606.13289 - HYDRA-X Native Unified Multimodal Models with Holistic Visual Tokenizers.pdf
+skip existing PDF: 2606.13674 - RepWAM World Action Modeling with Representation Visual-Action Tokenizer.pdf
+skip existing PDF: 2606.13676 - Modality Forcing for Scalable Spatial Generation.pdf
+skip existing PDF: 2606.13515 - MaskWAM Unifying Mask Prompting and Prediction for World-Action Models.pdf
+skip existing PDF: 2605.16713 - GeoWorld-VLM Geometry from World Models for Vision-Language Models.pdf
+skip existing PDF: 2606.12979 - EPM-JEPA Operator-Side Experience Modulation in JEPA-Family World Models.pdf
+skip existing PDF: 2606.12633 - ECA Efficient Continual Alignment for Open-Ended Image-to-Text Generatio.pdf
++ F:\miniconda3\python.exe C:\Users\Administrator\.claude\skills\paper-digest-site\scripts\submit_mineru.py --in H:\Desktop\visual_ssl_digest_site\staging_pdfs\2026-06-14 --out H:\Desktop\visual_ssl_digest_site\assets\mineru
++ F:\miniconda3\python.exe C:\Users\Administrator\Documents\New project\scripts\build_visual_ssl_site.py
+no site changes to commit
+published 2026-06-14: 10 indexed arXiv papers
