@@ -1,0 +1,1683 @@
+[
+    {
+        "type": "text",
+        "text": "EPM-JEPA: Operator-Side Experience Modulation in JEPA-Family World Models",
+        "text_level": 1,
+        "bbox": [
+            138,
+            99,
+            859,
+            154
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "Vedant Pandya School of Artificial Intelligence and Data Engineering (SAIDE) Indian Institute of Technology Jodhpur m25ai1132@iitj.ac.in",
+        "bbox": [
+            191,
+            170,
+            802,
+            242
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "June 12, 2026",
+        "bbox": [
+            437,
+            253,
+            558,
+            270
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "Abstract",
+        "text_level": 2,
+        "bbox": [
+            84,
+            297,
+            187,
+            316
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "JEPA-family world models use a static predictor whose weights do not adapt when test-time dynamics diverge from training. We compare two mechanisms for incorporating accumulated experience into a JEPA predictor under distribution shift: operand-side injection, where a compressed experience representation is added as a residual to the predictor’s hidden state (EI-JEPA), and operator-side modulation, where the same representation generates low-rank weight deltas via LoRA applied to the predictor’s weights (EPM-JEPA). On a pre-registered comparison (Moving MNIST, gravity shift), EPM-JEPA (Dn=50 $( D _ { \\mathrm { s h i f t } } ^ { n = 5 0 } = 0 . 7 8 4 8 \\pm 0 . 0 0 7 8$ , three seeds) differs from EI-JEPA (0.8238) by $\\delta \\ : = \\ : 4 . 7 4 \\%$ - Outcome C: a null result - by our stated criterion, a valid outcome. As a secondary, non-pre-registered observation, EPM-JEPA improves 1.90% over a no-memory baseline (0.8000), consistently across seeds, while EI-JEPA underperforms the baseline, indicating the benefit is specific to weight-level modulation. Our primary contribution is a mechanism $D _ { \\mathrm { s h i f t } } ^ { n = 5 \\bar { 0 } }$ dynamical processes - buffer cycling, EMA target drift, and an intrinsic LoRA settling transient of +0.021 - rather than convergence to equilibrium. These findings motivate PEM-JEPA, a physics-grounded successor addressing this dynamical-peak limitation.",
+        "bbox": [
+            86,
+            330,
+            493,
+            709
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "1 Introduction",
+        "text_level": 2,
+        "bbox": [
+            84,
+            734,
+            269,
+            753
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "LeCun’s Joint-Embedding Predictive Architecture (JEPA) [LeCun, 2022] predicts future states in latent space rather than pixel space, sidestepping the intractability of modelling irrelevant perceptual detail. But the predictor is static: when world dynamics shift at test time - a change in gravity, friction, or object behaviour - nothing in the architecture signals that its predictions are now calibrated to a different regime. Memory mechanisms in transformers [Dai et al., 2019, Wu et al., 2022] and differentiable memory models [Graves et al., 2014, 2016] address this on the operand side: accumulated experience augments the predictor’s input, leaving its weights unchanged. An alternative is operator-side modulation - use experience to modify the predictor’s weights directly, so that the computation itself, not just its input context, reflects what the model has seen.",
+        "bbox": [
+            81,
+            767,
+            495,
+            936
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "",
+        "bbox": [
+            501,
+            301,
+            913,
+            391
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "We test this hypothesis with a controlled three-track comparison on Moving MNIST [Srivastava et al., 2015] with a gravity shift (base world: 0 px/frame2; shift world: 0.5 px/frame2, encountered at inference after training on the base world only). Track A is a Vanilla JEPA baseline with no memory. Track B (EI-JEPA) injects a compressed experience representation as a residual into the predictor hidden state - the standard operand-side approach. Track C (EPM-JEPA) routes that same representation through a LoRA modulator that generates persample weight deltas $\\Delta W = U \\cdot \\mathrm { d i a g } ( \\delta ) { \\cdot } V ^ { \\top }$ applied to the predictor’s linear layers - the operator-side alternative.",
+        "bbox": [
+            501,
+            421,
+            916,
+            603
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "On the pre-registered test - $\\mathit { \\Pi } \\cdot \\mathit { \\Pi } \\delta \\ : = \\ : ( D _ { B } - D _ { C } ) / D _ { B } \\ : =$ 4.74%, comparing EPM-JEPA (Track C, 0.7848 ± 0.0078) against EI-JEPA (Track B, 0.8238) - the result is Outcome C (null result, $| \\delta | < 5 \\% )$ , a valid scientific result by our stated definition. As a secondary, non-pre-registered observation, EPM-JEPA also improves 1.90% over the nomemory baseline (Track A, 0.8000), consistent across all three seeds. EI-JEPA itself is worse than Track A, indicating that naive input injection of experience does not help in this setting. The primary contribution is a mechanism analysis showing that the performance trajectory is governed by three independent dynamical processes - buffer cycling, EMA drift, and a LoRA settling transient $D _ { \\mathrm { s h i f t } } ^ { n = 5 0 }$ ble equilibrium. These findings directly motivate PEM-JEPA, a physics-grounded successor designed to address the dynamical-peak limitation identified here. We report all results honestly: the pre-registered test yields a null result; the mechanism characterisation, not the falsification verdict, is the scientific payload.",
+        "bbox": [
+            501,
+            632,
+            916,
+            935
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "aside_text",
+        "text": "arXiv:2606.12979v1 [cs.LG] 11 Jun 2026",
+        "bbox": [
+            22,
+            277,
+            57,
+            717
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "page_number",
+        "text": "1",
+        "bbox": [
+            493,
+            958,
+            504,
+            969
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "2 Related Work",
+        "text_level": 2,
+        "bbox": [
+            83,
+            64,
+            284,
+            82
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "text",
+        "text": "JEPA family. LeCun [2022] proposed the Joint-Embedding Predictive Architecture (JEPA) principle: a predictor should map between abstract latent representations rather than reconstruct observations in pixel space, avoiding the intractable modelling of irrelevant perceptual detail. Assran et al. [2023] instantiated this principle for static images (I-JEPA), learning spatial structure via masked latent prediction without negative pairs. Bardes et al. [2024] extended the architecture to video (V-JEPA), predicting the representations of masked spatiotemporal patches from unmasked context; Assran et al. [2025] further scaled this into V-JEPA 2, which demonstrated that latent video prediction supports downstream understanding, prediction, and planning. EPM-JEPA builds directly on this family: we retain the JEPA prediction objective and EMA target encoder, adding an experience-modulated predictor that adapts to distribution shift online.",
+        "bbox": [
+            81,
+            95,
+            495,
+            367
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "text",
+        "text": "Memory-augmented neural networks. Graves et al. [2014] introduced the Neural Turing Machine, establishing differentiable external memory with attention-based read and write heads; Graves et al. [2016] refined this into the Differentiable Neural Computer, adding dynamic memory allocation and link-based temporal addressing. At the sequence-modelling level, Transformer-XL [Dai et al., 2019] extends context by caching segment-level hidden states across chunks, while Memorizing Transformers [Wu et al., 2022] augment local attention with kNN retrieval over a token-level external memory. EPM-JEPA differs from all of these in that experience is not retrieved as an additional input: it is compressed into a fixedcapacity buffer of boundary-event embeddings and consumed via weight modulation, keeping the predictor’s interface unchanged.",
+        "bbox": [
+            81,
+            385,
+            496,
+            628
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "text",
+        "text": "Parameter-efficient adaptation. Hu et al. [2022] showed that fine-tuning a large language model can be reduced to learning a low-rank decomposition $\\Delta W = U V ^ { \\top }$ added to frozen weights, achieving competitive performance at a fraction of the parameter cost. Ha et al. [2017] proposed generating an entire network’s weights from a smaller conditioning hypernetwork; Perez et al. [2018] introduced feature-wise linear modulation (FiLM), applying learned affine transforms to intermediate representations conditioned on an external signal. EPM-JEPA uses LoRA-style weight modulation, but the modulation vectors are generated online from a live experience buffer rather than from a fixed task embedding, making the weight delta a function of recent distributional history rather than a static fine-tuning target.",
+        "bbox": [
+            81,
+            643,
+            495,
+            872
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "text",
+        "text": "SSL collapse prevention. Bardes et al. [2022] introduced variance-invariance-covariance regularisation (VI-CReg) to prevent dimensional collapse in non-contrastive self-supervised learning, using a per-dimension variance hinge to enforce output diversity. Grill et al. [2020] demonstrated that an online-target EMA network suffices for SSL without negative pairs, provided the target weights lag the online weights via exponential moving average. EPM-JEPA inherits both: the EMA target encoder from BYOL and the VICReg variance hinge. A principal empirical finding of this work is that the two interact adversely with LoRA adaptation dynamics: the LoRA convergence window contracts the output manifold, creating a structural tension between prediction optimality and the variance hinge that cannot be resolved by tuning λ alone.",
+        "bbox": [
+            81,
+            888,
+            493,
+            934
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "text",
+        "text": "",
+        "bbox": [
+            501,
+            68,
+            913,
+            265
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "text",
+        "text": "3 Method",
+        "text_level": 2,
+        "bbox": [
+            503,
+            289,
+            635,
+            306
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "text",
+        "text": "3.1 Problem Setup",
+        "text_level": 2,
+        "bbox": [
+            501,
+            321,
+            702,
+            339
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "text",
+        "text": "We consider the problem of multi-step latent prediction under distribution shift. Let $\\boldsymbol { x } _ { t } ~ \\in ~ \\bar { \\mathbb { R } } ^ { 1 \\times 6 4 \\times 6 4 }$ denote a grayscale video frame at time t. An encoder $E _ { \\phi }$ maps each frame to a latent vector $z _ { t } = E _ { \\phi } ( x _ { t } ) \\in \\mathbb { R } ^ { 6 4 }$ via four strided convolutional layers (channels $1  1 6  3 2 $ $6 4  6 4$ , kernel size 4, stride 2) followed by a linear projection and layer normalisation (≈172k parameters; Listing 1). A frozen EMA target encoder $\\bar { \\bar { E } } _ { \\phi } \\cdot \\mathrm {  ~ a ~ }$ deep copy of $E _ { \\phi }$ whose weights are updated via a cosine-scheduled EMA with $\\tau \\in \\ [ 0 . 9 9 6 , 0 . 9 9 9 9 ]$ - provides stop-gradient prediction targets at three future horizons. A predictor $P _ { \\theta }$ maps the current latent zt to a predicted future latent $\\hat { z } _ { t + k }$ for horizons $k \\in \\{ 5 , 1 0 , 2 0 \\}$ frames ahead (Listing 2). The full training objective is given in Equation 1 and hyperparameter choices are detailed in Section 3.3.",
+        "bbox": [
+            501,
+            347,
+            913,
+            575
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "text",
+        "text": "3.2 Three-Track Architecture Comparison",
+        "text_level": 2,
+        "bbox": [
+            501,
+            594,
+            913,
+            628
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "text",
+        "text": "All three tracks share the same encoder $E _ { \\phi } .$ , EMA target encoder $\\bar { E } _ { \\phi }$ predictor base $P _ { \\theta }$ , experience encoding pipeline, and training objective. They differ only in how accumulated experience, if any, is routed into the predictor. Figure 1 shows the full EPM-JEPA architecture.",
+        "bbox": [
+            501,
+            638,
+            913,
+            714
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "text",
+        "text": "Track A: Vanilla JEPA. Vanilla JEPA is the nomemory baseline. The predictor operates directly on the current latent: $\\hat { z } _ { t + k } ~ = ~ P _ { \\theta } ( z _ { t } )$ . A frozen dummy $\\mathrm { p r o j } _ { B } \\colon { \\mathbb { R } } ^ { 6 4 }  { \\mathbb { R } } ^ { 1 0 2 4 }$ is carried but its output is discarded, preserving parameter-count comparability with Track B.",
+        "bbox": [
+            501,
+            732,
+            913,
+            809
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "text",
+        "text": "Track B: EI-JEPA (Input Injection). EI-JEPA injects aggregated experience as a residual addition to the predictor’s first hidden state: $h _ { 1 } = \\mathrm { G E L U } ( W _ { 1 } z _ { t } +$ $b _ { 1 } ) + \\mathrm { p r o j } _ { B } ( e _ { \\mathrm { a g g } } )$ and $\\hat { z } _ { t + k } = \\mathrm { n o r m } ( W _ { 2 } h _ { 1 } + b _ { 2 } )$ . Here $\\mathrm { p r o j } _ { B } \\colon { \\mathbb { R } } ^ { 6 4 } \\  \\ { \\mathbb { R } } ^ { 1 0 2 4 }$ is a trainable linear map that projects the aggregated experience vector into the predictor’s hidden dimension. This operand-side injection modifies what the predictor operates on at its second layer while leaving the predictor weights unchanged.",
+        "bbox": [
+            501,
+            828,
+            913,
+            934
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "page_number",
+        "text": "",
+        "bbox": [
+            493,
+            958,
+            504,
+            969
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "text",
+        "text": "",
+        "bbox": [
+            81,
+            68,
+            493,
+            99
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "Track C: EPM-JEPA (LoRA Modulation). EPM-JEPA generates per-sample LoRA weight deltas from the aggregated experience vector and applies them to both predictor weight matrices [Hu et al., 2022], making this an operator-side modulation (Listing 3). From $e _ { \\mathrm { a g g } } \\in \\mathbb { R } ^ { 6 4 }$ , two scale vectors are produced: $\\delta _ { \\ell } = \\mathrm { L i n e a r } _ { \\delta _ { \\ell } } ( e _ { \\mathrm { a g g } } ) \\in \\mathbb { R } ^ { r }$ (no bias), with rank $r = 4$ . Each predictor weight matrix $W _ { \\ell }$ is then modulated as $W _ { \\ell } ^ { \\mathrm { e f f } } = W _ { \\ell } + U _ { \\ell } \\mathrm { d i a g } ( \\delta _ { \\ell } ) V _ { \\ell } ^ { \\top }$ , where $U _ { \\ell } , V _ { \\ell }$ are shared low-rank basis matrices $( U _ { 1 } ~ \\in$ $\\mathbb { R } ^ { 1 0 2 4 \\times 4 }$ , $V _ { 1 } ~ \\in ~ \\mathbb { R } ^ { 6 4 \\times 4 }$ , and transposed for layer 2). Because the δ generators carry no bias term, $e _ { \\mathrm { a g g } } \\ = \\ { \\bf 0 }$ (empty buffer) yields $\\Delta W = \\mathbf { 0 }$ , exactly recovering the Track A identity path and ensuring graceful degradation before any experience has been accumulated.",
+        "bbox": [
+            81,
+            114,
+            496,
+            328
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "Memory Subsystem (B and C only). Tracks B and C share a four-component memory pipeline. A boundary detector monitors batch-mean surprisal $\\begin{array} { r } { s _ { t } = \\frac { 1 } { B } \\sum _ { b } \\| z _ { t } ^ { b } - } \\end{array}$ $\\hat { z } _ { t } ^ { b } \\Vert _ { 2 }$ , where $\\hat { z } _ { t } ^ { b }$ is produced by the base predictor (no LoRA) to avoid circular coupling, and maintains EMA running statistics $\\mu _ { s } , \\sigma _ { s }$ (momentum 0.99). A boundary event fires when $s _ { t } > \\mu _ { s } + \\kappa \\sigma _ { s }$ after a 10-step initialisation warmup; $\\kappa = 1 . 5$ for Track C and $\\kappa = 2 . 0$ for Track B (Listing 4). At each boundary event, the batch-mean latent transition $\\left( z _ { t - 1 } , z _ { t } \\right)$ is pushed to a pre-allocated FIFO experience buffer of capacity 256; both tensors are detached before storage. An experience encoder $\\mathrm { ~ - ~ a ~ } 2 \\cdot$ layer transformer [Vaswani et al., 2017] with $d \\ = \\ 6 4$ , two attention heads, and feedforward dimension 128 - encodes each stored pair as a 2-token sequence and meanpools the output to $e _ { i } ~ \\in ~ \\mathbb { R } ^ { 6 4 }$ . An attention aggregation module then computes single-head soft attention over all buffer entries: $\\alpha _ { i } ~ =$ softmax $\\left( W _ { q } ( z _ { t } ) ^ { \\top } W _ { k } ( e _ { i } ) / \\sqrt { 6 4 } \\right)$ , $e _ { \\mathrm { a g g } } = W _ { e } \\sum _ { i } \\alpha _ { i } e _ { i } \\in \\mathbb { R } ^ { 6 4 }$ , with the query derived from the current latent $z _ { t }$ .",
+        "bbox": [
+            81,
+            344,
+            496,
+            647
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "3.3 Training Objective",
+        "text_level": 2,
+        "bbox": [
+            83,
+            664,
+            318,
+            681
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "The total training loss decomposes into a prediction term and a variance regularisation term:",
+        "bbox": [
+            81,
+            689,
+            493,
+            720
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "equation",
+        "text": "$$\n\\begin{array}{l} \\mathcal {L} = \\underbrace {\\mathbb {E} _ {t} \\sum_ {k \\in \\{5 , 1 0 , 2 0 \\}} \\left\\| \\operatorname{sg} [ \\bar {E} _ {\\phi} (x _ {t + k}) ] - P _ {\\theta} (z _ {t}) \\right\\| _ {2} ^ {2}} _ {\\mathcal {L} _ {\\mathrm{pred}}} \\\\ + \\lambda \\underbrace {\\mathbb {E} _ {d} \\max (0 , \\gamma - \\sigma_ {d} (P _ {\\theta} (z _ {t})))} _ {\\mathcal {L} _ {\\mathrm{reg}}} \\tag {1} \\\\ \\end{array}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            135,
+            739,
+            495,
+            837
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "$\\mathcal { L } _ { \\mathrm { p r e d } }$ is the mean squared error between each predicted latent and the corresponding stop-gradient EMA target, averaged over the three horizons $k \\in \\{ 5 , 1 0 , 2 0 \\}$ (Listing $5 ) . \\ L _ { \\mathrm { r e g } }$ is the variance component of VICReg [Bardes et al., 2022]: a per-dimension hinge that penalises the standard deviation of predictor output falling below $\\gamma ,$ without covariance or invariance terms. This minimal regulariser prevents latent collapse while imposing no constraint beyond a soft lower bound on output diversity.",
+        "bbox": [
+            81,
+            844,
+            496,
+            936
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "",
+        "bbox": [
+            501,
+            68,
+            913,
+            113
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "Hyperparameters $\\lambda = 0 . 0 5$ and $\\gamma = 0 . 7 5$ were selected during Phase 1 sequential tuning (Section 4.2) and held fixed across all subsequent experiments. The batch size is 64; the learning rate follows cosine annealing with warm restarts [Loshchilov and Hutter, 2017], with initial rates of $3 \\times 1 0 ^ { - 3 }$ for Tracks A and C and $\\mathrm { \\dot { 2 } \\times 1 0 ^ { - 3 } }$ for Track B. All trainable parameters are updated by a single AdamW [Loshchilov and Hutter, 2019] optimiser group.",
+        "bbox": [
+            501,
+            113,
+            913,
+            236
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "page_number",
+        "text": "3",
+        "bbox": [
+            493,
+            958,
+            504,
+            969
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "3.4 Architecture Diagram",
+        "text_level": 2,
+        "bbox": [
+            83,
+            66,
+            349,
+            84
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "image",
+        "img_path": "images/3fee706bd1be70db93cb3c13ab430bab26743739974e22c0e473203c9dba842c.jpg",
+        "image_caption": [
+            "Figure 1: EPM-JEPA architecture overview. (a) Overall architecture: the encoder maps each input frame to a latent state $z _ { t } ;$ the EMA target encoder provides stop-gradient prediction targets for the JEPA loss; the predictor (with LoRA weight modulation in Track C) produces $\\hat { z } _ { t + k }$ for $k \\in \\{ 5 , 1 0 , 2 0 \\}$ }; the memory subsystem (boundary detector, experience buffer, experience encoder, attention aggregation) encodes accumulated experience into $e _ { \\mathrm { a g g } } . \\ ( \\mathbf { b } )$ Experience encoder detail: each buffered transition pair is encoded by a 2-layer transformer and mean-pooled to $e _ { i } \\in \\mathbb { R } ^ { 6 4 } .$ . (c) Attention aggregation detail: the current latent $z _ { t }$ attends over buffer entries to produce $e _ { \\mathrm { a g g } } .$ (d) Three-track comparison: Track A (Vanilla JEPA, no memory), Track B (EI-JEPA, residual injection), and Track C (EPM-JEPA, LoRA weight modulation) share the encoder, EMA target, and predictor base, differing only in how $e _ { \\mathrm { a g g } }$ is consumed."
+        ],
+        "image_footnote": [],
+        "content": "",
+        "bbox": [
+            86,
+            97,
+            911,
+            518
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "text",
+        "text": "4 Experiments",
+        "text_level": 2,
+        "bbox": [
+            81,
+            662,
+            269,
+            683
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "text",
+        "text": "4.1 Setup",
+        "text_level": 2,
+        "bbox": [
+            83,
+            696,
+            194,
+            714
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "text",
+        "text": "We use a synthetic Moving MNIST variant [Srivastava et al., 2015] as a controlled testbed for distribution shift. Each sequence contains 21 frames $( t ~ = ~ 0 , \\ldots , 2 0 )$ of two MNIST digits moving on a 64 × 64 grayscale canvas, with initial per-digit velocity sampled uniformly from [2, 4] px/frame. Two worlds are generated from the same digit pool: a base world (gravity = 0.0, linear motion) of 10,000 sequences split 8,000/1,000/1,000 (train/val/test), and a shift world (downward gravity $= ~ 0 . 5 ~ \\mathrm { p x / f r a m e ^ { 2 } }$ , Euler-integrated per frame) of 1,000 sequences split 800/100/100. All models are trained exclusively on base-world training sequences; the shift world is held out for evaluation only.",
+        "bbox": [
+            81,
+            723,
+            493,
+            919
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "text",
+        "text": "Experiments run on a single GTX 1050 Ti (4 GB",
+        "bbox": [
+            99,
+            920,
+            491,
+            936
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "text",
+        "text": "VRAM, Pascal compute 6.1) in fp32 precision without AMP or torch.compile. Phase 1 and grid runs use a 600 s time budget; extended multi-seed runs use 3,600 s, with throughput declining from ≈17.6 to ≈9.6 steps/s due to thermal throttling on longer runs. The pri-$D _ { \\mathrm { s h i f t } } ^ { n = 5 0 }$ $\\mathbb { E } [ \\| z _ { t + k } - \\hat { z } _ { t + k } \\| / \\| z _ { t + k } - z _ { t } \\| ]$ averaged over $k \\in \\{ 5 , 1 0 , 2 0 \\}$ , evaluated on the shift-world test set at $N = 5 0$ accumulated shift-world experiences; samples where $\\| z _ { t + k } - z _ { t } \\| <$ $1 0 ^ { - 3 }$ are excluded to guard against degenerate denominators. A score of 1.0 corresponds to trivial constant prediction; lower is better. The secondary metric σembed is the mean per-dimension standard deviation of predictor output over an evaluation batch, used to detect representation collapse. We pre-registered a falsification criterion comparing EPM-JEPA (Track C) against EI-JEPA (Track B): $\\delta = ( D _ { B } - D _ { C } ) / D _ { B }$ , with four outcome classes - $\\delta \\geq 0 . 2 0$ (Outcome A, strong confirmation), $0 . 0 5 \\leq \\delta < 0 . 2 0$ (Outcome B, partial confirmation), $\\vert \\delta \\vert < 0 . 0 5$ (Outcome C, null result), and $\\delta < - 0 . 0 5$ (Outcome D, falsified). Outcome C is explicitly designated a valid scientific result under this definition. The outcome is reported in Section 4.3.",
+        "bbox": [
+            501,
+            666,
+            916,
+            924
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "page_number",
+        "text": "4",
+        "bbox": [
+            493,
+            958,
+            504,
+            970
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "text",
+        "text": "",
+        "bbox": [
+            81,
+            68,
+            495,
+            159
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "4.2 Phase 1: Sequential Hyperparameter Tuning",
+        "text_level": 2,
+        "bbox": [
+            83,
+            183,
+            493,
+            219
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "Phase 1 consists of 25 sequential single-parameter experiments on Track A (seed 42, 600 s budget each), locking the best value found before sweeping the next hyperpa-$D _ { \\mathrm { s h i f t } } ^ { n = 5 0 }$ improved from 1.8156 at random initialisation to 0.8000 at the ratchet’s conclusion - a 55.9% reduction; the full experiment log is in Appendix C. Three findings shaped the locked configuration used for all subsequent experiments. First (F2), learning rate and λ interact: $\\mathrm { L R } = 3 \\times 1 0 ^ { - 3 }$ was the worst performer at $\\lambda = 1 . 0$ but the best at $\\lambda = 0 . 0 5$ , motivating the $\\lambda = 0 . 0 5$ lock and a Phase 2 grid search for Track B’s learning rate. Second (F3), $\\gamma = 0 . 7 5$ is the universal optimum across all tracks; lower values allow latent collapse and higher values over-penalise output variance. Third (F4), HID-DEN\\_ $\\mathrm { D I M } = 1 0 2 4$ outperforms 768 and 512, establishing predictor capacity as a meaningful factor independent of the experience mechanism.",
+        "bbox": [
+            81,
+            228,
+            496,
+            484
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "4.3 Main Result: Three-Track Comparison",
+        "text_level": 2,
+        "bbox": [
+            83,
+            508,
+            496,
+            544
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "Table 1 summarises the primary result: mean $D _ { \\mathrm { s h i f t } } ^ { n = 5 0 }$ at peak step across three seeds per track, bootstrapped 95% confidence intervals, and $\\sigma _ { \\mathrm { e m b e d } }$ .",
+        "bbox": [
+            81,
+            554,
+            491,
+            599
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "On the pre-registered comparison $\\begin{array}{c} \\begin{array} { l l l } { - } & { { \\delta } } & { = } & { \\left( D _ { B } \\ - \\right.} \\end{array}   \\end{array}$ $D _ { C } ) / D _ { B } = 4 . 7 4 \\%$ , where EI-JEPA (Track B) achieves mean Dn=50shift $D _ { \\mathrm { s h i f t } } ^ { n = 5 0 } ~ = ~ 0 . 8 2 3 8$ and EPM-JEPA (Track C) $D _ { \\mathrm { s h i f t } } ^ { n = 5 0 } = 0 . 7 8 4 8 { \\pm } 0 . 0 0 7 8$ at step 10,000 - the result is Outcome C (null result, $| \\delta | < 5 \\% )$ , a valid scientific result under the criterion defined in Section 3.1. As a secondary, non-pre-registered observation, EPM-JEPA also improves 1.90% over Vanilla JEPA’s (Track A) best single-seed result (0.8000) and 2.98% over Track A’s three-run mean (0.8089). We report both results directly: the pre-registered test is null, the secondary comparison is modest but reproduces across all three seeds, and we treat the mechanism characterisation in Section 4.4 as the primary scientific contribution.",
+        "bbox": [
+            81,
+            601,
+            493,
+            813
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "At the per-seed level, all three Track C seeds (0.7776, 0.7838, 0.7931) individually beat Track A’s single best result (0.8000) - a secondary observation, not part of the pre-registered test. Bootstrap 95% CIs over $N = 3$ canonical runs - [0.7776, 0.7931] for Track C and [0.8000, 0.8159] for Track A - do not overlap, suggesting this secondary gap is consistent even at this small N . Track B (EI-JEPA) underperforms both Track A and Track C with mean",
+        "bbox": [
+            81,
+            813,
+            495,
+            936
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "0.8238; operand-side injection of experience into the predictor’s hidden state does not help in this setting. This points to the pathway of experience application - weight modulation versus input modulation - as the determining factor, not merely the presence of a memory mechanism.",
+        "bbox": [
+            501,
+            68,
+            913,
+            143
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "Two caveats accompany Table 1. First, Track A seeds 43 and 44 were thermally truncated at steps 6404 and 6868 respectively; their $D _ { \\mathrm { s h i f t } } ^ { n = 5 0 }$ values (0.8159, 0.8108) may be mildly pessimistic relative to a full-budget run, meaning the true Track A mean is at most equal to its reported value - Track C’s advantage is therefore conservative, not inflated. Second, Track $\\mathrm { ~ C ~ } \\sigma _ { \\mathrm { e m b e d } }$ ranges 0.4123-0.4253 across seeds at peak, below the 0.5 safety threshold; this structural tension between low $D _ { \\mathrm { s h i f t } } ^ { n = 5 0 }$ and low $\\sigma _ { \\mathrm { e m b e d } }$ is examined in Section 4.6.",
+        "bbox": [
+            501,
+            143,
+            913,
+            294
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "$D _ { \\mathrm { s h i f t } } ^ { n = 5 0 }$ at peak step for each canonical run; all three Track C seeds fall below Track A’s best, and the Track A bars for seeds 43 and 44 carry the thermaltruncation caveat described above. Figure 3 shows the training dynamics: the full-range panel shows Tracks A and B descending to the 0.80 region from above 1.0, while Track C (mean ±1 std across three seeds, shaded) converges to a lower floor earlier in training; the zoomed panel isolates the convergence region and annotates the post-peak divergence whose mechanism is analysed in Section 4.4.",
+        "bbox": [
+            501,
+            295,
+            913,
+            460
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "4.4 Mechanism Analysis: Three Dynamical Mechanisms",
+        "text_level": 2,
+        "bbox": [
+            503,
+            479,
+            913,
+            513
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "EPM-JEPA exhibits a characteristic trajectory across $D _ { \\mathrm { s h i f t } } ^ { n = 5 0 }$ improves monotonically from initialisation to a peak near step 10,000, then degrades through the remainder of training to final values of 0.8260-0.8431 (Figure 4). This post-peak divergence is reproducible and not an artefact of a single run. To characterise the underlying dynamics, we run targeted ablation experiments that jointly freeze the experience buffer and EMA target encoder at prescribed steps and continue training; results are summarised in Table 2. We identify three dynamical mechanisms contributing to this trajectory.",
+        "bbox": [
+            501,
+            523,
+            913,
+            705
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "Mechanism 1: Buffer cycling affects peak formation. The experience buffer reaches capacity at approximately step 3700-4200 (256 entries at the observed boundary-event rate), after which each new event evicts the oldest entry and LoRA continues adapting to a continuously cycling experience distribution. The convergence peak at step ≈ 10,000 emerges when the LoRA weight configuration has settled into a distribution consistent with the current cycling prior, roughly 2-3 full buffer turnovers after the buffer first fills. The two step-8000 dual-freeze replications achieve different $D _ { \\mathrm { s h i f t } } ^ { n = 5 0 }$ values at the freeze point (rep 1: 0.7994, rep 2: 0.7882), consistent with run-dependent LoRA adaptation state at that moment; a clean buffer-only ablation (buffer frozen, EMA unfrozen) was not conducted and is a planned follow-up for isolating this mechanism directly.",
+        "bbox": [
+            501,
+            722,
+            913,
+            934
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "page_number",
+        "text": "5",
+        "bbox": [
+            493,
+            958,
+            504,
+            969
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "table",
+        "img_path": "images/9ae7520a3ba2d499a6451f5141b0e6a8ac1883cd3f8983dbb6894e863d23c956.jpg",
+        "table_caption": [
+            "Table 1: Three-track comparison on Moving MNIST with gravity shift. Track C (EPM-JEPA) achieves the best $D _ { \\mathrm { s h i f t } } ^ { n = 5 0 }$ result, $\\delta = 4 . 7 4 \\% ) ;$ as a secondary, non-pre-registered observation, EPM-JEPA is 1.90% below Track A’s best (0.8000), with non-overlapping bootstrap 95% CIs."
+        ],
+        "table_footnote": [],
+        "table_body": "<table><tr><td>Track</td><td>System</td><td> $D_{\\text{shift}}^{n=50}$  (3-seed mean)</td><td>95% CI</td><td> $\\sigma_{\\text{embed}}$ </td></tr><tr><td>A</td><td>Vanilla JEPA</td><td>0.8089</td><td>[0.8000, 0.8159]</td><td>0.5321</td></tr><tr><td>B</td><td>EI-JEPA</td><td>0.8238</td><td>[0.8217, 0.8249]</td><td>0.5324</td></tr><tr><td>C</td><td>EPM-JEPA</td><td>0.7848</td><td>[0.7776, 0.7931]</td><td>0.4123</td></tr></table>",
+        "bbox": [
+            241,
+            133,
+            754,
+            205
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "chart",
+        "img_path": "images/8db40c474655c14f0dc0ef3f7f1dc0d569bf0789832e36a2dc0ccea4c5ad429f.jpg",
+        "content": "| Track | Method | D_shift_n50 (mean) | Difference from mean |\n|-------|--------|---------------------|----------------------|\n| Vanilla JEPA | Track A | 0.8089 | 0.8089 |\n| Vanilla JEPA | Track B | 0.8238 | 0.8238 |\n| Vanilla JEPA | Track C | 0.7848 | 0.7848 |\n| EI-JEPA | Track A | 0.8108 | 0.8108 |\n| EI-JEPA | Track B | 0.8217 | 0.8217 |\n| EI-JEPA | Track C | 0.8217 | 0.8217 |\n| EPM-JEPA | Track A | 0.8159 | 0.8159 |\n| EPM-JEPA | Track B | 0.8241 | 0.8241 |\n| EPM-JEPA | Track C | 0.7776 | 0.7776 |\n| EPM-JEPA | Track C | 0.7931 | 0.7931 |\n| EPM-JEPA | Track C | 0.7838 | 0.7838 |",
+        "chart_caption": [
+            "$D _ { \\mathrm { s h i f t } } ^ { n = 5 0 }$ show mean ± std. The pre-registered comparison (Track C vs Track B) yields Outcome C (null result, $\\delta = 4 . 7 4 \\% , \\ : \\lvert \\delta \\rvert < 5 \\% )$ . As a secondary, non-pre-registered observation, all three Track C seeds achieve lower $D _ { \\mathrm { s h i f t } } ^ { n = 5 \\mathrm { { 0 } } }$ than Track A’s best single-seed result (1.90% advantage), consistent across seeds. Track A seeds 43/44 thermally truncated at 6400/6900 steps and reported with this caveat."
+        ],
+        "chart_footnote": [],
+        "sub_type": "bar chart",
+        "bbox": [
+            210,
+            220,
+            787,
+            486
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "text",
+        "text": "",
+        "bbox": [
+            81,
+            595,
+            493,
+            625
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "text",
+        "text": "Mechanism 2: EMA target drift causes post-peak divergence. Without any freeze, the baseline diverges from its peak of 0.7776 to a final $D _ { \\mathrm { s h i f t } } ^ { n = 5 0 }$ of 0.8349 (∆ = +0.0573) over roughly 12,000 further training steps. All three dual-freeze conditions substantially arrest this diver-$D _ { \\mathrm { s h i f t } } ^ { n = 5 0 }$ replications, and 0.8205 for the step-10000 run. Because freezing the EMA target encoder is the common element across all arrested conditions, this is consistent with slow EMA target drift as the primary driver of post-peak divergence: after LoRA settles, the EMA target encoder continues its momentum-weighted updates (approaching $\\tau  0 . 9 9 9 9$ under the cosine schedule), gradually shifting $D _ { \\mathrm { s h i f t } } ^ { n = 5 0 }$ upward. Freezing the EMA arrests this drift and stabilises the training signal.",
+        "bbox": [
+            81,
+            643,
+            495,
+            885
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "text",
+        "text": "Mechanism 3: LoRA settling is intrinsic and freeze-invariant. After both freezes fire, the LoRA δ generators continue updating under the cosine-decaying learning rate for approximately 2,000 further steps, producing a residual rise in $D _ { \\mathrm { s h i f t } } ^ { n = 5 0 }$ before the model reaches its stable post-freeze configuration. The settling magnitude is consistent between dual-freeze rep $2 ~ \\left( \\Delta \\right. =$ +0.0215, frozen at step 8000) and the late dual-freeze run $( \\Delta \\ : = \\ : + 0 . 0 2 0 9$ , frozen at step 10,000) - an agreement within 0.0006 across a 2,000-step difference in freeze timing - consistent with this transient being intrinsic to LoRA dynamics under decaying learning rate rather than a function of the model state at the freeze point. Rep 1 exhibits a smaller transient $( \\Delta = + 0 . 0 0 5 7 )$ , suggesting that LoRA had largely settled by step 8000 in that replication. The peak is therefore a transient dynamical configuration: any intervention that freezes external signals reveals a residual LoRA settling phase before the model stabilises, and the peak cannot be captured by halting training at step 10,000.",
+        "bbox": [
+            81,
+            904,
+            493,
+            934
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "text",
+        "text": "",
+        "bbox": [
+            501,
+            595,
+            916,
+            868
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "page_number",
+        "text": "6",
+        "bbox": [
+            493,
+            958,
+            504,
+            969
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "chart",
+        "img_path": "images/b2efa0d142c4280a2e3bde958170f6681a0b4fcf0fcf65cd2083691093c31fe6.jpg",
+        "content": "| Training steps | Track A - Vanilla JEPA | Track B - EI-JEPA | Track C - EPM-JEPA (mean +/- 1 std, 3 seeds) | Track A final (0.8000) | EPM-JEPA mean peak (0.784B) |\n| -------------- | ---------------------- | ----------------- | ------------------------------------------ | ---------------------- | --------------------------- |\n| 0              | 1.1                    | 1.1               | 1.1                                        | 1.1                    | 1.1                         |\n| 5000           | 0.8                    | 0.8               | 0.8                                        | 0.8                    | 0.8                         |\n| 10000          | 0.8                    | 0.8               | 0.8                                        | 0.8                    | 0.8                         |\n| 15000          | 0.8                    | 0.8               | 0.8                                        | 0.8                    | 0.8                         |\n| 20000          | 0.8                    | 0.8               | 0.8                                        | 0.8                    | 0.8                         |\n| 25000          | 0.8                    | 0.8               | 0.8                                        | 0.8                    | 0.8                         |",
+        "chart_caption": [
+            "(a) Full training range $( D _ { \\mathrm { s h i f t } } ^ { n = 5 0 } 0 . 6 0 \\ – 1 . 1 5 )$ . Tracks A and B descend from above 1.0; Track C (mean ± 1 std, 3 seeds, shaded) converges to a lower minimum earlier in training."
+        ],
+        "chart_footnote": [],
+        "sub_type": "line chart",
+        "bbox": [
+            86,
+            78,
+            483,
+            258
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "chart",
+        "img_path": "images/d7324f1b505fd4d79a5500490caf4ceb617d927eab1eba2671490518aefc3b0f.jpg",
+        "content": "| Training steps | D_shift_n50 (lower is better) |\n| -------------- | ----------------------------- |\n| 0              | 0.90                          |\n| 5000           | 0.86                          |\n| 10000          | 0.78                          |\n| 15000          | 0.82                          |\n| 20000          | 0.84                          |\n| 25000          | 0.83                          |",
+        "chart_caption": [
+            "(b) Convergence region (0.7400-0.9100). Track C peaks at step ≈10000 (dashed vertical) then diverges (EMA drift, annotated). Tracks A and B enter the visible range from above. See Section 4.4 for ablation isolating the divergence cause."
+        ],
+        "chart_footnote": [],
+        "sub_type": "line chart",
+        "bbox": [
+            514,
+            68,
+            911,
+            247
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "chart",
+        "img_path": "images/2dfeec85e58d17c2813b915c50537385a861791a10c8cbdcbbdcab9f1d7bc143.jpg",
+        "content": "| Training steps | Baseline (seed 42, no freeze) | Dual-freeze buffer+EMA at step 8k (rep 1) | Dual-freeze buffer+EMA at step 8k (rep 2) | Track A baseline |\n| -------------- | ------------------------------ | ------------------------------------------ | ------------------------------------------ | ----------------- |\n| 0              | 0.90                           | 0.90                                       | 0.90                                       | 0.80              |\n| 5000           | 0.88                           | 0.88                                       | 0.88                                       | 0.80              |\n| 10000          | 0.78                           | 0.81                                       | 0.81                                       | 0.80              |\n| 15000          | 0.81                           | 0.81                                       | 0.81                                       | 0.80              |\n| 20000          | 0.83                           | 0.81                                       | 0.81                                       | 0.80              |\n| 25000          | 0.84                           | 0.81                                       | 0.81                                       | 0.80              |",
+        "chart_caption": [
+            "Figure 3: $D _ { \\mathrm { s h i f t } } ^ { n = 5 0 }$ training trajectories - full range and convergence detail. Dashed horizontal lines: Track A final (0.8000) and EPM-JEPA mean peak (0.7848). Shaded band is ±1 std across 3 seeds (Track C only).",
+            "$D _ { \\mathbf { s h i f t } } ^ { n = 5 0 }$ then diverges to 0.8349. Dual-freeze (buffer + EMA at step ≈8000, orange/red) arrests the divergence and reveals an intrinsic +0.0210 settling transient that appears in both replications regardless of timing. Horizontal dotted line: Track A baseline (0.8000). See Table 2 for peak, final, and settling ∆ per condition."
+        ],
+        "chart_footnote": [],
+        "sub_type": "line chart",
+        "bbox": [
+            210,
+            359,
+            787,
+            619
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "text",
+        "text": "4.5 Hyperparameter Sensitivity",
+        "text_level": 2,
+        "bbox": [
+            83,
+            714,
+            405,
+            732
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "text",
+        "text": "Table 3 shows $D _ { \\mathrm { s h i f t } } ^ { n = 5 0 }$ and $\\sigma _ { \\mathrm { e m b e d } }$ at peak step for three values of λ on Track C (seed 42, 60 min budget).",
+        "bbox": [
+            81,
+            748,
+            491,
+            779
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "text",
+        "text": "λ = 0.05 is uniquely optimal: peak $D _ { \\mathrm { s h i f t } } ^ { n = 5 0 } = 0 . 7 7 7 6$ with convergence at step 10,000. Both higher values degrade prediction performance; $\\lambda ~ = ~ 0 . 1 0$ peaks at $D _ { \\mathrm { s h i f t } } ^ { n = 5 0 } = 0 . 8 1 3 9$ , and $\\lambda = 0 . 1 5$ also peaks at step 8,000 with Dn=50shift $D _ { \\mathrm { s h i f t } } ^ { n = 5 0 } = 0 . 8 0 0 9$ . Heavier regularisation shifts the convergence peak 2,000 steps earlier while worsening performance, suggesting the variance hinge interferes with LoRA’s adaptation dynamics before the natural convergence point is reached. Higher λ raises $\\sigma _ { \\mathrm { e m b e d } }$ monotonically $( 0 . 4 1 2 3  0 . 4 6 6 1  0 . 4 7 6 0 )$ , partially recovering output diversity, but no value in the sweep simultaneously achieves $D _ { \\mathrm { s h i f t } } ^ { n = 5 0 } < 0 . 8 0$ and $\\sigma _ { \\mathrm { e m b e d } } \\geq 0 . 5$ at peak. This trade-off is structural: the LoRA weight configuration that achieves the best prediction contracts the output manifold, while the VICReg variance hinge pushes in the opposite direction; increasing λ resolves the collapse concern only by sacrificing the prediction gain that motivates Track C in the first place.",
+        "bbox": [
+            81,
+            782,
+            493,
+            935
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "text",
+        "text": "",
+        "bbox": [
+            501,
+            715,
+            913,
+            838
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "text",
+        "text": "4.6 Representation Health: Embedding Diversity",
+        "text_level": 2,
+        "bbox": [
+            501,
+            859,
+            911,
+            895
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "text",
+        "text": "All three no-freeze Track C seeds reach $\\sigma _ { \\mathrm { e m b e d } }$ ∈ {0.4123, 0.4200, 0.4253} at the prediction peak (step 10,000) - below the 0.5 safety threshold visible in Figure 5. This is not classical representation collapse: the VICReg variance hinge $( \\gamma = 0 . 7 5 )$ remains active throughout training, and no per-dimension constant-output behaviour was observed. Rather, the compression is a transient artefact of LoRA settling - as the experience aggregate $e _ { \\mathrm { a g g } }$ stabilises during the convergence window, the modulated predictor outputs converge to a narrower region of the latent space. Crucially, the dip is selfcorrecting: all three seeds recover above the threshold post-peak, ending at $\\sigma _ { \\mathrm { e m b e d } } ~ \\in ~ \\{ 0 . 5 7 8 7 , 0 . 5 5 9 7 , 0 . 5 9 4 0 \\}$ , confirming that the manifold contraction is coupled to the LoRA adaptation phase rather than representing a permanent structural failure.",
+        "bbox": [
+            501,
+            904,
+            911,
+            935
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "page_number",
+        "text": "7",
+        "bbox": [
+            493,
+            958,
+            503,
+            969
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "table",
+        "img_path": "images/5082d5979da04613dcbf250f4ebd496237df3a493e83fbfce0569dd420db2d51.jpg",
+        "table_caption": [
+            "Table 2: Mechanism ablation summary. All freeze conditions jointly freeze the experience buffer and EMA target at $D _ { \\mathrm { s h i f t } } ^ { n = 5 0 }$ consistent settling (+0.0215 vs +0.0209) across a 2,000-step difference in freeze timing, consistent with an intrinsic LoRA settling transient; rep 1 shows a smaller transient (+0.0057), discussed in the text."
+        ],
+        "table_footnote": [],
+        "table_body": "<table><tr><td>Experiment</td><td>Buffer freeze</td><td>EMA freeze</td><td>Peak  $D_{\\text{shift}}^{n=50}$ </td><td>Final  $D_{\\text{shift}}^{n=50}$ </td><td>Settling  $\\Delta$ </td></tr><tr><td>Baseline (seed 42)</td><td>-</td><td>-</td><td>0.7776</td><td>0.8349</td><td>+0.0573</td></tr><tr><td>Dual-freeze (rep 1)</td><td>step 8000</td><td>step 8000</td><td>0.7994</td><td>0.8051</td><td>+0.0057</td></tr><tr><td>Dual-freeze (rep 2)</td><td>step 8000</td><td>step 8000</td><td>0.7882</td><td>0.8097</td><td>+0.0215</td></tr><tr><td>Dual-freeze (late)</td><td>step 10000</td><td>step 10000</td><td>0.7996</td><td>0.8205</td><td>+0.0209</td></tr></table>",
+        "bbox": [
+            181,
+            133,
+            818,
+            220
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "chart",
+        "img_path": "images/2cd48e70e3075e3026182e6efe42d1cbed5aeeff5d98694ecdd8bda4ce479cbd.jpg",
+        "content": "| Training steps | seed 42 (no freeze) | seed 43 (no freeze) | seed 44 (no freeze) | EMA+buf freeze @~8k, rep 1 | EMA+buf freeze @~8k, rep 2 | Safety threshold (0.5) | Collapse risk zone (embed_std < 0.5) |\n| -------------- | ------------------- | ------------------- | ------------------- | --------------------------- | --------------------------- | ---------------------- | ------------------------------------ |\n| 0              | 0.30                | 0.30                | 0.30                | 0.30                        | 0.30                        | 0.50                   | 0.50                                 |\n| 5000           | 0.45                | 0.42                | 0.46                | 0.41                        | 0.43                        | 0.50                   | 0.50                                 |\n| 10000          | 0.42                | 0.43                | 0.43                | 0.46                        | 0.45                        | 0.50                   | 0.50                                 |\n| 15000          | 0.50                | 0.51                | 0.52                | 0.50                        | 0.51                        | 0.50                   | 0.50                                 |\n| 20000          | 0.57                | 0.58                | 0.59                | 0.52                        | 0.52                        | 0.50                   | 0.50                                 |\n| 25000          | 0.58                | 0.60                | 0.60                | 0.52                        | 0.52                        | 0.50                   | 0.50                                 |",
+        "chart_caption": [
+            "Representation diversity under freeze interventions -Track C (embed\\_std over training steps;safety thresholdat 0.5)",
+            "Figure 5: σembed over training steps for Track C. No-freeze seeds $( 4 2 / 4 3 / 4 4 ,$ , green shades) show $\\sigma _ { \\mathrm { e m b e d } }$ declining through training and falling below the 0.5 safety threshold near peak. Freeze runs (orange) stabilize $\\sigma _ { \\mathrm { e m b e d } }$ above 0.5 after the freeze step. Shaded region below 0.5 marks collapse risk zone. X-axis limited to 25000 steps; seed 44 reaches step 24225."
+        ],
+        "chart_footnote": [],
+        "sub_type": "line chart",
+        "bbox": [
+            212,
+            256,
+            782,
+            474
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "table",
+        "img_path": "images/9022b562af48358300bc95f0de9e55901e383bfcfd323ea31bb70e79524e5c9c.jpg",
+        "table_caption": [
+            "Table 3: LoRA regularization sweep (Track C, seed 42, 60 min). $\\lambda = 0 . 0 5$ is uniquely optimal; both higher values degrade $D _ { \\mathrm { s h i f t } } ^ { n = 5 0 }$ ."
+        ],
+        "table_footnote": [],
+        "table_body": "<table><tr><td> $\\lambda$ </td><td>Peak  $D_{\\text{shift}}^{n=50}$ </td><td>Final  $D_{\\text{shift}}^{n=50}$ </td><td> $\\sigma_{\\text{embed at peak}}$ </td></tr><tr><td>0.05</td><td>0.7776</td><td>0.8349</td><td>0.4123</td></tr><tr><td>0.10</td><td>0.8139</td><td>0.8619</td><td>0.4661</td></tr><tr><td>0.15</td><td>0.8009</td><td>0.8595</td><td>0.4760</td></tr></table>",
+        "bbox": [
+            104,
+            607,
+            473,
+            681
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "text",
+        "text": "",
+        "bbox": [
+            81,
+            707,
+            493,
+            917
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "text",
+        "text": "The freeze runs corroborate this interpretation. Arresting EMA and buffer updates near the peak step keeps $\\sigma _ { \\mathrm { e m b e d } }$ above 0.5 throughout the post-freeze period (final values 0.5213, 0.5200, 0.5467), consistent with the view that EMA drift - not LoRA per se - sustains the contraction beyond step 10,000. However, this is achieved at the $\\mathrm { t h e + 0 . 0 2 1 } D _ { \\mathrm { s h i f t } } ^ { n = 5 0 }$ Section 4.4: the same freeze that stabilises representation health also locks in the LoRA-settling penalty. SVD spectral analysis (effective rank, singular value distribution) was planned to characterise the degree of manifold compression quantitatively, but requires a saved model checkpoint; canonical training runs did not persist weights (see Section 5), and this analysis is deferred to the RunPod scale-up experiment.",
+        "bbox": [
+            99,
+            919,
+            493,
+            934
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "text",
+        "text": "",
+        "bbox": [
+            501,
+            556,
+            915,
+            768
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "text",
+        "text": "4.7 Buffer Attention: Qualitative Analysis",
+        "text_level": 2,
+        "bbox": [
+            501,
+            786,
+            915,
+            820
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "text",
+        "text": "We planned to visualise how EPM-JEPA attends over experience-buffer entries during shift-world inference - specifically, whether recent boundary events receive disproportionate attention weight relative to older entries. However, canonical training runs operated under a wallclock budget with no end-of-run checkpoint save; weights were written only on thermal-pause signal (see Appendix D), and no .pt files were retained for the reported runs. Attention analysis is therefore deferred to the planned RunPod scale-up experiment, where checkpoint saving will be enabled from the first step.",
+        "bbox": [
+            501,
+            828,
+            915,
+            935
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "page_number",
+        "text": "8",
+        "bbox": [
+            493,
+            958,
+            504,
+            969
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "text",
+        "text": "",
+        "bbox": [
+            81,
+            68,
+            495,
+            128
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "text",
+        "text": "5 Discussion",
+        "text_level": 2,
+        "bbox": [
+            83,
+            166,
+            246,
+            185
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "text",
+        "text": "5.1 What we learned",
+        "text_level": 2,
+        "bbox": [
+            83,
+            203,
+            305,
+            220
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "text",
+        "text": "On the pre-registered test - $\\delta = ( D _ { B } - D _ { C } ) / D _ { B } = 4 . 7 4 \\%$ comparing EPM-JEPA (Track C, 0.7848 ± 0.0078 across three seeds at the convergence peak, step 10,000) against EI-JEPA (Track B, mean 0.8238) - the result is Outcome C: a null result $( | \\delta | < 5 \\% )$ that is, by our own stated definition, a valid scientific result. As a secondary, nonpre-registered observation, EPM-JEPA improves 1.90% over the no-memory baseline (Track A best, 0.8000); bootstrap confidence intervals ([0.7776, 0.7931] for Track C; [0.8000, 0.8159] for Track A) do not overlap, suggesting this secondary direction is consistent even if the magnitude is modest. Notably, EI-JEPA itself performs worse than Track A (mean 0.8238 vs 0.8089), demonstrating that naive input injection does not help in this setting - the benefit, where it exists, is specific to weight-level modulation via LoRA: an experience pathway that influences predictor computation rather than predictor input.",
+        "bbox": [
+            81,
+            233,
+            496,
+            491
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "text",
+        "text": "The primary scientific contribution of this work is the mechanism analysis. The $D _ { \\mathrm { s h i f t } } ^ { n = 5 0 }$ trajectory is not converging to a stable equilibrium: it is the outcome of three independent dynamical processes operating on different timescales. Buffer cycling governs peak formation as the finite buffer saturates and begins cycling older experiences out; EMA drift governs post-peak divergence as the slowly moving target encoder continues to pull the prediction target away after LoRA has settled; and the LoRA settling transient (+0.021 in $D _ { \\mathrm { s h i f t } } ^ { n = 5 0 }$ , regardless of freeze timing) is an intrinsic property of the low-rank adaptation dynamics. Freeze-based interventions can arrest EMA drift and thereby stabilise long-run performance, but they cannot eliminate the LoRA settling transient - pointing to the modulation architecture itself, rather than the training schedule, as the lever for future improvement.",
+        "bbox": [
+            81,
+            493,
+            495,
+            734
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "text",
+        "text": "A secondary finding concerns the structural tension between prediction optimality and representation diversity. All three Track C seeds reach $\\sigma _ { \\mathrm { e m b e d } } ~ \\in$ {0.4123, 0.4200, 0.4253} at peak - below the 0.5 safety $D _ { \\mathrm { s h i f t } } ^ { n = 5 0 }$ $\\sigma _ { \\mathrm { e m b e d } }$ $D _ { \\mathrm { s h i f t } } ^ { n = 5 0 }$ and shifts convergence 2,000 steps earlier; no value in $D _ { \\mathrm { s h i f t } } ^ { n = 5 0 } ~ < ~ 0 . 8 0$ $\\sigma _ { \\mathrm { e m b e d } } \\geq 0 . 5$ at peak. The compression is a transient artefact of LoRA adaptation (all seeds recover to 0.56- 0.59 post-peak) and does not constitute representation collapse, but the trade-off is structural and warrants architectural rather than regularisation-based resolution.",
+        "bbox": [
+            81,
+            738,
+            495,
+            936
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "text",
+        "text": "5.2 Limitations",
+        "text_level": 2,
+        "bbox": [
+            503,
+            66,
+            669,
+            82
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "text",
+        "text": "Several limitations qualify the conclusions above. First, all experiments use a single dataset (Moving MNIST) and a single distribution shift type (gravity magnitude), so it is unknown whether the findings generalise to richer visual domains or qualitatively different shifts such as object identity or scene illumination. Second, the preregistered test (Track C vs Track B) produced Outcome $\\mathrm { ~ C ~ } - \\mathrm { ~ a ~ }$ null result, $\\delta = 4 . 7 4 \\% , \\ \\lvert \\delta \\rvert < 5 \\%$ - which is, by our own stated definition, a valid scientific result; the secondary comparison against Track A (1.90%) was not pre-registered and should be interpreted accordingly. Third, Track A and Track B results used for comparison are drawn from thermally truncated runs (Track A runs 2 and 3 ended at steps 6,868 and 6,404 respectively due to GPU thermal throttling), introducing a caveat for the multi-seed reliability claims of the baselines. One run in the Track B bootstrap sample (run\\_id 20260520\\_152549\\_B) used EXP\\_DIM= 32 rather than the locked configuration value of 64; this was a grid-search variant inadvertently included in the canonical bootstrap. Excluding it shifts the Track B mean from 0.8238 to 0.8233 and the pre-registered delta from 4.74% to 4.68% - Outcome C in either case. All bootstrap confidence intervals are derived from $N = 3$ seeds per track; sample sizes are small and CIs should be interpreted as exploratory rather than confirmatory. Fourth, Track $\\mathrm { ~ C ~ } \\sigma _ { \\mathrm { { e m b e d } } }$ falls below 0.5 at the prediction peak; while Section 4.6 argues this is a transient artefact, the absence of a saved checkpoint precludes the SVD spectral analysis that would confirm this interpretation definitively. Fifth, all training was conducted in fp32 on a GTX 1050 Ti 4 GB with no automatic mixed precision and no torch.compile, constraining throughput and precluding experiments at larger batch or model scale. Sixth, the latent dimension is 64 and total trainable parameters range from 388k to 438k across tracks; it is unclear whether the dynamical mechanisms identified here persist at larger scale.",
+        "bbox": [
+            501,
+            90,
+            916,
+            652
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "text",
+        "text": "5.3 Future Work",
+        "text_level": 2,
+        "bbox": [
+            503,
+            667,
+            684,
+            684
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "text",
+        "text": "The mechanism analysis identifies a specific architectural bottleneck: the LoRA settling transient is intrinsic and the prediction peak is dynamical rather than static. PEM-JEPA (our planned successor) addresses this directly by introducing physics-grounded structure into the latent space - explicit kinematic state representations - with the aim of constraining the target distribution so that EMA drift cannot destabilise a settled modulator. The EPM-JEPA results reported here serve as the controlled baseline against which PEM-JEPA will be evaluated: same dataset, same shift type, same pre-registered threshold, enabling a direct attribution of any further improvement to the physics-grounded inductive bias.",
+        "bbox": [
+            501,
+            691,
+            915,
+            888
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "text",
+        "text": "Beyond PEM-JEPA, three directions merit investigation. Scale-up to 3D physics environments with longer prediction horizons $\\left( k > 2 0 \\right)$ and higher-dimensional latents would test whether the buffer-cycling and EMAdrift mechanisms survive in settings with richer state spaces. Alternative modulation parameterisations - full hypernetworks and FiLM conditioning - would clarify whether the settling transient is a property of lowrank adaptation specifically or of weight-modulation approaches broadly; if the transient persists under a full hypernetwork, the bottleneck is in the modulation pathway rather than the rank constraint. Finally, varying the boundary-detector threshold κ and the distribution shift type would test the sensitivity of buffer cycling to the surprisal gate, which we held fixed throughout this study.",
+        "bbox": [
+            501,
+            888,
+            916,
+            935
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "page_number",
+        "text": "9",
+        "bbox": [
+            493,
+            958,
+            504,
+            969
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "text",
+        "text": "",
+        "bbox": [
+            81,
+            68,
+            495,
+            250
+        ],
+        "page_idx": 9
+    },
+    {
+        "type": "text",
+        "text": "6 Conclusion",
+        "text_level": 2,
+        "bbox": [
+            83,
+            273,
+            250,
+            291
+        ],
+        "page_idx": 9
+    },
+    {
+        "type": "text",
+        "text": "We presented EPM-JEPA, a JEPA variant that modulates predictor weights via LoRA conditioned on a compressed representation of past boundary events stored in a fixed-capacity experience buffer. On our pre-registered test $- \\ \\delta = ( D _ { B } - D _ { C } ) / D _ { B } = 4 . 7 4 \\%$ , comparing EPM-$D _ { \\mathrm { s h i f t } } ^ { n = 5 0 } = 0 . 7 8 4 8 \\pm 0 . 0 0 7 8$ three seeds at the convergence peak) against EI-JEPA (Track B, mean 0.8238) - the result is Outcome C: a null result that is, by our own stated definition, a valid scientific result. As a secondary, non-pre-registered observation, Track C improves 1.90% over the no-memory baseline (Track A, 0.8000), consistent in direction across all three seeds. EI-JEPA itself underperforms Track A, establishing that the benefit, where it exists, is specific to weight-level modulation: an experience pathway that shapes predictor computation rather than predictor input. The primary contribution is the mechanism analysis: the Dn=50 $D _ { \\mathrm { s h i f t } } ^ { n = \\bar { 5 } 0 }$ peak is not a stable equilibrium but a dynamical transient produced by three independent processes - buffer cycling, EMA drift, and a LoRA settling transient of +0.021 - operating on different timescales throughout training. Freeze-based interventions arrest EMA drift and stabilise long-run performance, but the LoRA settling transient is intrinsic and irreducible via training-schedule interventions alone, identifying the modulation architecture itself as the lever for future improvement. These findings directly motivate PEM-JEPA, which introduces physics-grounded latent structure to constrain the target distribution and address the dynamical-peak limitation identified here.",
+        "bbox": [
+            81,
+            304,
+            496,
+            758
+        ],
+        "page_idx": 9
+    },
+    {
+        "type": "text",
+        "text": "Reproducibility Statement",
+        "text_level": 2,
+        "bbox": [
+            83,
+            782,
+            387,
+            801
+        ],
+        "page_idx": 9
+    },
+    {
+        "type": "text",
+        "text": "All hyperparameters are reported in Appendix $\\operatorname { A } ;$ run identifiers and per-seed results for Track C are in $\\mathrm { A p \\mathrm { - } }$ pendix B. Dataset generation is fully deterministic given the seeds in Appendix B: Moving MNIST with gravity parameter 0.5 $\\mathrm { p x / f r a m e ^ { 2 } }$ and the train/validation/test $D _ { \\mathrm { s h i f t } } ^ { n = 5 0 }$ defined in Section 3.1 and implemented verbatim in eval.py. Training infrastructure - thermal-pause-resume logic, experiment tracking, and the pre-registered experiment plan - is maintained in a local repository and is available from the corresponding author on reasonable request.",
+        "bbox": [
+            81,
+            813,
+            493,
+            936
+        ],
+        "page_idx": 9
+    },
+    {
+        "type": "text",
+        "text": "",
+        "bbox": [
+            501,
+            68,
+            913,
+            128
+        ],
+        "page_idx": 9
+    },
+    {
+        "type": "page_number",
+        "text": "10",
+        "bbox": [
+            490,
+            958,
+            508,
+            969
+        ],
+        "page_idx": 9
+    },
+    {
+        "type": "text",
+        "text": "References",
+        "text_level": 2,
+        "bbox": [
+            84,
+            64,
+            209,
+            82
+        ],
+        "page_idx": 10
+    },
+    {
+        "type": "list",
+        "sub_type": "ref_text",
+        "list_items": [
+            "Mahmoud Assran, Quentin Duval, Ishan Misra, Piotr Bojanowski, Pascal Vincent, Michael Rubinstein, Yann LeCun, and Nicolas Ballas. Self-supervised learning from images with a joint-embedding predictive architecture. In Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition (CVPR), pages 15619– 15629, 2023.",
+            "Mido Assran, Adrien Bardes, David Fan, Quentin Garrido, Russell Howes, Ishan Khalidov, Timothée Lacaux, Ishan Misra, Michael Rabbat, Roberta Raileanu, et al. V-JEPA 2: Self-supervised video models enable understanding, prediction and planning. arXiv preprint arXiv:2506.09985, 2025.",
+            "Adrien Bardes, Jean Ponce, and Yann LeCun. VICReg: Variance-invariance-covariance regularization for selfsupervised learning. In International Conference on Learning Representations (ICLR), 2022.",
+            "Adrien Bardes, Quentin Garrido, Jean Ponce, Xinlei Chen, Michael Rabbat, Yann LeCun, Mahmoud Assran, and Nicolas Ballas. V-JEPA: Latent video prediction for visual representation learning. In International Conference on Learning Representations (ICLR), 2024.",
+            "Zihang Dai, Zhilin Yang, Yiming Yang, Jaime Carbonell, Quoc Le, and Ruslan Salakhutdinov. Transformer-XL: Attentive language models beyond a fixed-length context. In Proceedings of the 57th Annual Meeting of the Association for Computational Linguistics (ACL), pages 2978–2988, 2019.",
+            "Alex Graves, Greg Wayne, and Ivo Danihelka. Neural turing machines. arXiv preprint arXiv:1410.5401, 2014.",
+            "Alex Graves, Greg Wayne, Malcolm Reynolds, Tim Harley, Ivo Danihelka, Agnieszka Grabska-Barwińska, Sergio Gómez Colmenarejo, Edward Grefenstette, Tiago Ramalho, John Agapiou, et al. Hybrid computing using a neural network with dynamic external memory. Nature, 538(7626):471–476, 2016.",
+            "Jean-Bastien Grill, Florian Strub, Florent Altché, Corentin Tallec, Pierre H. Richemond, Elena Buchatskaya, Carl Doersch, Bernardo Ávila Pires, Zhaohan Daniel Guo, Mohammad Gheshlaghi Azar, et al. Bootstrap your own latent: A new approach to self-supervised learning. In Advances in Neural Information Processing Systems (NeurIPS), volume 33, pages 21271–21284, 2020.",
+            "David Ha, Andrew Dai, and Quoc V. Le. HyperNetworks. In International Conference on Learning Representations (ICLR), 2017.",
+            "Edward J. Hu, Yelong Shen, Phillip Wallis, Zeyuan Allen-Zhu, Yuanzhi Li, Shean Wang, Lu Wang, and Weizhu Chen. LoRA: Low-rank adaptation of large language models. In International Conference on Learning Representations (ICLR), 2022.",
+            "Yann LeCun. A path towards autonomous machine intelligence, 2022. URL https://openreview.net/pdf?id= BZ5a1r-kVsf. OpenReview position paper, version 0.9.2, June 2022.",
+            "Ilya Loshchilov and Frank Hutter. SGDR: Stochastic gradient descent with warm restarts. In International Conference on Learning Representations (ICLR), 2017.",
+            "Ilya Loshchilov and Frank Hutter. Decoupled weight decay regularization. In International Conference on Learning Representations (ICLR), 2019.",
+            "Ethan Perez, Florian Strub, Harm de Vries, Vincent Dumoulin, and Aaron Courville. FiLM: Visual reasoning with a general conditioning layer. In Proceedings of the AAAI Conference on Artificial Intelligence, volume 32, 2018.",
+            "Nitish Srivastava, Elman Mansimov, and Ruslan Salakhutdinov. Unsupervised learning of video representations using LSTMs. In Proceedings of the 32nd International Conference on Machine Learning (ICML), volume 37, pages 843–852, 2015.",
+            "Ashish Vaswani, Noam Shazeer, Niki Parmar, Jakob Uszkoreit, Llion Jones, Aidan N. Gomez, Łukasz Kaiser, and Illia Polosukhin. Attention is all you need. In Advances in Neural Information Processing Systems (NeurIPS), volume 30, 2017.",
+            "Yuhuai Wu, Markus N. Rabe, DeLesley Hutchins, and Christian Szegedy. Memorizing transformers. In International Conference on Learning Representations (ICLR), 2022."
+        ],
+        "bbox": [
+            78,
+            93,
+            919,
+            926
+        ],
+        "page_idx": 10
+    },
+    {
+        "type": "page_number",
+        "text": "11",
+        "bbox": [
+            488,
+            958,
+            506,
+            969
+        ],
+        "page_idx": 10
+    },
+    {
+        "type": "text",
+        "text": "A Hyperparameters",
+        "text_level": 2,
+        "bbox": [
+            84,
+            65,
+            331,
+            85
+        ],
+        "page_idx": 11
+    },
+    {
+        "type": "text",
+        "text": "Table 4 lists hyperparameters shared across all three tracks; Table 5 lists track-specific values.",
+        "bbox": [
+            81,
+            95,
+            758,
+            111
+        ],
+        "page_idx": 11
+    },
+    {
+        "type": "table",
+        "img_path": "images/8e908fc1fa386e9639a212009e44bf91d58b9492936d6de73c7412c3ce417b20.jpg",
+        "table_caption": [
+            "Table 4: Shared hyperparameters (all tracks)."
+        ],
+        "table_footnote": [],
+        "table_body": "<table><tr><td>Hyperparameter</td><td>Value</td><td>Description</td></tr><tr><td>LATENT_DIM</td><td>64</td><td>Encoder output / latent dimension</td></tr><tr><td>HIDDEN_DIM</td><td>1024</td><td>Predictor hidden dimension</td></tr><tr><td>BATCH_SIZE</td><td>64</td><td>Sequences per training batch</td></tr><tr><td>EMA_TAU_BASE</td><td>0.996</td><td>Initial EMA decay (cosine schedule start)</td></tr><tr><td>EMA_TAU_END</td><td>0.9999</td><td>Final EMA decay (cosine schedule end)</td></tr><tr><td>WARMUP_FRAC</td><td>0.05</td><td>Fraction of wall-clock budget used for LR warmup</td></tr><tr><td>GAMMA</td><td>0.75</td><td>VICReg variance hinge threshold γ</td></tr><tr><td>LAMBDA_REG</td><td>0.05</td><td>VICReg variance weight λ</td></tr><tr><td>WEIGHT_DECAY</td><td>0.01</td><td>AdamW weight decay</td></tr><tr><td>BUFFER_CAP</td><td>256</td><td>Experience buffer capacity</td></tr><tr><td>Optimiser</td><td>AdamW</td><td>—</td></tr><tr><td>LR schedule</td><td>Cosine + linear warmup</td><td>—</td></tr></table>",
+        "bbox": [
+            194,
+            146,
+            802,
+            359
+        ],
+        "page_idx": 11
+    },
+    {
+        "type": "table",
+        "img_path": "images/8809c2c3691e379b9bf002a04fd8ba029750ce4eff049ae7d0285a0d41b8e8bc.jpg",
+        "table_caption": [
+            "Table 5: Track-specific hyperparameters. Dashes indicate parameters not present in that track."
+        ],
+        "table_footnote": [],
+        "table_body": "<table><tr><td>Hyperparameter</td><td>Track A</td><td>Track B</td><td>Track C</td></tr><tr><td>LEARNING_RATE</td><td> $3 \\times 10^{-3}$ </td><td> $2 \\times 10^{-3}$ </td><td> $3 \\times 10^{-3}$ </td></tr><tr><td>KAPPA</td><td>-</td><td>2.0</td><td>1.5</td></tr><tr><td>EXP_DIM</td><td>-</td><td>64</td><td>64</td></tr><tr><td>EXP_FF_DIM</td><td>-</td><td>128</td><td>128</td></tr><tr><td>EXP_LAYERS</td><td>-</td><td>2</td><td>2</td></tr><tr><td>EXP_HEADS</td><td>-</td><td>2</td><td>2</td></tr><tr><td>LORA_RANK</td><td>-</td><td>-</td><td>4</td></tr></table>",
+        "bbox": [
+            316,
+            407,
+            679,
+            536
+        ],
+        "page_idx": 11
+    },
+    {
+        "type": "text",
+        "text": "B Per-Seed Results",
+        "text_level": 2,
+        "bbox": [
+            83,
+            568,
+            323,
+            588
+        ],
+        "page_idx": 11
+    },
+    {
+        "type": "text",
+        "text": "Table 6 reports Track C per-seed results at the prediction peak (step 10,000, the reported metric) and at the end of the 60-minute training budget (final step). All three seeds use the locked configuration: $\\mathrm { L R } { = 3 \\times 1 0 ^ { - 3 } , \\lambda } { = 0 . 0 5 }$ γ = 0.75, LORA\\_RANK= 4.",
+        "bbox": [
+            81,
+            599,
+            915,
+            646
+        ],
+        "page_idx": 11
+    },
+    {
+        "type": "table",
+        "img_path": "images/8b6cb37a1ec26cddaab549d16765f0247203e0f7144e12ae8bd6bd7a16ef7a46.jpg",
+        "table_caption": [
+            "Table 6: Track C per-seed results. Peak columns are at step 10,000 (primary reported metric); Final columns are at end of the 60-minute wall-clock budget."
+        ],
+        "table_footnote": [],
+        "table_body": "<table><tr><td rowspan=\"2\">Seed</td><td rowspan=\"2\">Run ID</td><td colspan=\"2\">At peak (step 10,000)</td><td colspan=\"2\">At final step</td></tr><tr><td> $D_{\\text{shift}}^{n=50}$ </td><td> $\\sigma_{\\text{embed}}$ </td><td>Step</td><td> $D_{\\text{shift}}^{n=50}$ </td></tr><tr><td>42</td><td>20260521_001549_C</td><td>0.7776</td><td>0.4123</td><td>22,731</td><td>0.8349</td></tr><tr><td>43</td><td>20260521_135619_C</td><td>0.7931</td><td>0.4200</td><td>17,749</td><td>0.8431</td></tr><tr><td>44</td><td>20260521_213758_C</td><td>0.7838</td><td>0.4253</td><td>24,225</td><td>0.8260</td></tr><tr><td colspan=\"2\">Mean ± std</td><td>0.7848 ± 0.0078</td><td>-</td><td>-</td><td>-</td></tr></table>",
+        "bbox": [
+            241,
+            696,
+            754,
+            809
+        ],
+        "page_idx": 11
+    },
+    {
+        "type": "text",
+        "text": "C Phase 1 Ratchet Log",
+        "text_level": 2,
+        "bbox": [
+            81,
+            842,
+            370,
+            864
+        ],
+        "page_idx": 11
+    },
+    {
+        "type": "text",
+        "text": "Phase 1 comprised 25 experiments on Track A (seed 42, 10-minute wall-clock budget each), ratcheting the shared hyperparameter configuration from a random initialisation baseline to the locked values used in all reported results. Table 7 summarises the ratchet outcome; Table 8 records the three key findings that drove configuration changes. The full per-experiment log is available from the corresponding author.",
+        "bbox": [
+            81,
+            875,
+            916,
+            936
+        ],
+        "page_idx": 11
+    },
+    {
+        "type": "page_number",
+        "text": "12",
+        "bbox": [
+            488,
+            958,
+            508,
+            970
+        ],
+        "page_idx": 11
+    },
+    {
+        "type": "table",
+        "img_path": "images/5e22b06075359069fddcc959df425228668fec162e8e411ff8a15f0d5c9f1732.jpg",
+        "table_caption": [
+            "Table 7: Phase 1 ratchet: start and end points. Run ID corresponds to the final locked-config Track A run."
+        ],
+        "table_footnote": [],
+        "table_body": "<table><tr><td>Milestone</td><td>Run ID</td><td> $D_{\\text{shift}}^{n=50}$ </td><td>Improvement</td></tr><tr><td>Random-init baseline</td><td>-</td><td>1.8156</td><td>-</td></tr><tr><td>Phase 1 best (locked config)</td><td>20260520_005545_A</td><td>0.8000</td><td>55.9%</td></tr></table>",
+        "bbox": [
+            235,
+            92,
+            763,
+            150
+        ],
+        "page_idx": 12
+    },
+    {
+        "type": "table",
+        "img_path": "images/dba3cb69c8d2166e8840c365b98c116c57c33dff99a635dae399c470698ec8e7.jpg",
+        "table_caption": [
+            "Table 8: Key findings from Phase 1 that determined the locked configuration."
+        ],
+        "table_footnote": [],
+        "table_body": "<table><tr><td>Finding</td><td>Parameter(s)</td><td>Description</td></tr><tr><td>F2</td><td>LR × λ</td><td>Learning rate and VICReg weight interact strongly: LR=3 × 10-3was the worst-performing value at λ = 0.01 but the best at λ = 0.05, motivating a joint sweep rather than independent tuning.</td></tr><tr><td>F3</td><td>GAMMA</td><td>γ = 0.75 was optimal across all tracks; lower values permitted representation collapse while higher values over-penalised diversity.</td></tr><tr><td>F4</td><td>HIDDEN_DIM</td><td>Predictor hidden dimension 1024 outperformed 768 and 512, indicating that predictor capacity matters more than width for this task scale.</td></tr></table>",
+        "bbox": [
+            212,
+            189,
+            784,
+            359
+        ],
+        "page_idx": 12
+    },
+    {
+        "type": "text",
+        "text": "D Computational Profile",
+        "text_level": 2,
+        "bbox": [
+            83,
+            378,
+            388,
+            400
+        ],
+        "page_idx": 12
+    },
+    {
+        "type": "text",
+        "text": "All experiments were conducted on a single GTX 1050 Ti (4 GB VRAM, Pascal compute 6.1) in fp32 with no automatic mixed precision and no torch.compile, due to VRAM constraints and driver compatibility. The training loop uses a wall-clock budget rather than a step budget: standard runs use 600 s (≈10,569 steps at ≈17.6 steps/s); extended multi-seed and freeze runs use 3600 s. On extended runs, GPU temperature regularly exceeds safe thresholds, reducing effective throughput to ≈9.6 steps/s due to thermal throttling. To prevent hardware damage, the training loop polls for a pause\\_request.flag file every 50 steps and exits cleanly when the flag is present; training is resumed manually once the GPU cools, with full optimiser and scheduler state restored from checkpoint. Table 9 summarises the hardware and throughput profile.",
+        "bbox": [
+            81,
+            410,
+            913,
+            532
+        ],
+        "page_idx": 12
+    },
+    {
+        "type": "table",
+        "img_path": "images/31c4553b7f0ff4624982f8786555639a046bdbcf119d0de9eb7818cad1ac4abc.jpg",
+        "table_caption": [
+            "Table 9: Hardware and throughput profile."
+        ],
+        "table_footnote": [],
+        "table_body": "<table><tr><td>Item</td><td>Value</td></tr><tr><td>GPU</td><td>NVIDIA GTX 1050 Ti</td></tr><tr><td>VRAM</td><td>4 GB</td></tr><tr><td>Compute capability</td><td>Pascal 6.1</td></tr><tr><td>Precision</td><td>fp32 (no AMP, no torch.compile)</td></tr><tr><td>Standard budget</td><td>600 s ( $\\approx$ 10,569 steps)</td></tr><tr><td>Extended budget</td><td>3600 s</td></tr><tr><td>Throughput (standard runs)</td><td> $\\approx$ 17.6 steps/s</td></tr><tr><td>Throughput (extended runs)</td><td> $\\approx$ 9.6 steps/s (thermal throttling)</td></tr><tr><td>Thermal management</td><td>Pause-resume; flag polled every 50 steps</td></tr></table>",
+        "bbox": [
+            250,
+            569,
+            748,
+            727
+        ],
+        "page_idx": 12
+    },
+    {
+        "type": "page_number",
+        "text": "13",
+        "bbox": [
+            488,
+            958,
+            508,
+            969
+        ],
+        "page_idx": 12
+    },
+    {
+        "type": "text",
+        "text": "E Code Excerpts",
+        "text_level": 2,
+        "bbox": [
+            84,
+            64,
+            297,
+            85
+        ],
+        "page_idx": 13
+    },
+    {
+        "type": "text",
+        "text": "Listings 1-5 reproduce, verbatim, the core PyTorch modules referenced in Section 3 and extracted from train.py.",
+        "bbox": [
+            83,
+            95,
+            903,
+            112
+        ],
+        "page_idx": 13
+    },
+    {
+        "type": "code",
+        "sub_type": "code",
+        "code_caption": [],
+        "code_body": "```python\nclass Encoder(nn.Module):\n    \"\"\"\n    Small CNN encoder: single grayscale frame -> 64 - dim latent.\n\n    Architecture:\n    Conv(1->16, k=4, s=2) -> 32x32\n    Conv(16->32, k=4, s=2) -> 16x16\n    Conv(32->64, k=4, s=2) -> 8x8\n    Conv(64->64, k=4, s=2) -> 4x4\n    Flatten -> 1024\n    Linear(1024, 64) + LayerNorm\n    Total: ~172k params.\n    \"\"\"\n\n    def __init__(self):\n    super().__init__()\n    self.conv = nn.Sequential(\n    nn.Conv2d(1, 16, kernel_size=4, stride=2, padding=1), nn.ReLU(),\n    nn.Conv2d(16, 32, kernel_size=4, stride=2, padding=1), nn.ReLU(),\n    nn.Conv2d(32, 64, kernel_size=4, stride=2, padding=1), nn.ReLU(),\n    nn.Conv2d(64, 64, kernel_size=4, stride=2, padding=1), nn.ReLU(),\n    )\n    self.proj = nn.Linear(64 * 4 * 4, LATENT_DIM)\n    self.norm = nn.LayerNorm(LATENT_DIM)\n\n    def forward(self, x):\n    \"\"\"(B, 1, 64, 64) -> (B, LATENT_DIM).\"\"\"\n    return self.norm(self.proj(self.conv(x).flatten(1)))\n```",
+        "bbox": [
+            83,
+            127,
+            916,
+            417
+        ],
+        "page_idx": 13
+    },
+    {
+        "type": "text",
+        "text": "Listing 1: Encoder: maps a 64×64 grayscale frame to a 64-dimensional latent via four strided convolutions followed by a linear projection and layer normalisation (≈172k parameters).",
+        "bbox": [
+            83,
+            422,
+            911,
+            450
+        ],
+        "page_idx": 13
+    },
+    {
+        "type": "code",
+        "sub_type": "code",
+        "code_caption": [],
+        "code_body": "```python\nclass Predictor(nn.Module):\n    \"\"\"\n    2-layer MLP predictor: latent -> predicted future latent.\n\n    All three tracks use this same base class.\n    Tracks B and C inject experience differently (see [TRACK-B] and [TRACK-C-LORA]).\n    \"\"\"\n\n    def __init__(self):\n    super().__init__()\n    self.fc1 = nn.Linear(LATENT_DIM, HIDDEN_DIM)\n    self.act = nn.GELU()\n    self.fc2 = nn.Linear(HIDDEN_DIM, LATENT_DIM)\n    self.norm = nn.LayerNorm(LATENT_DIM)\n\n    def forward(self, z, a=None): #pylint: disable=unused-argument\n    \"\"\"(B, LATENT_DIM) -> (B, LATENT_DIM).a ignored (Moving MNIST has no actions).\"\"\"\n    return self.norm(self.fc2(self.act(self.fc1(z))))\n```",
+        "bbox": [
+            84,
+            494,
+            916,
+            685
+        ],
+        "page_idx": 13
+    },
+    {
+        "type": "text",
+        "text": "Listing 2: Predictor: 2-layer MLP base shared by all three tracks, mapping the current latent zt to a predicted future latent zˆt+k. Tracks B and C inject experience differently (Listing 3).",
+        "bbox": [
+            83,
+            689,
+            911,
+            718
+        ],
+        "page_idx": 13
+    },
+    {
+        "type": "page_number",
+        "text": "14",
+        "bbox": [
+            488,
+            958,
+            508,
+            969
+        ],
+        "page_idx": 13
+    },
+    {
+        "type": "code",
+        "sub_type": "code",
+        "code_caption": [],
+        "code_body": "```python\nclass LoRAModulator(nn.Module):\n    \"\"\"\n    Low-rank Delta-W modulation of predictor fc1 and fc2.\n\n    Parameters at rank r=4:\n    u1 (HIDDEN_DIM, r), v1 (LATENT_DIM, r) - bases for W1 (64->768)\n    u2 (LATENT_DIM, r), v2 (HIDDEN_DIM, r) - bases for W2 (768->64)\n    delta1_gen: Linear(EXP_DIM, r, bias=False)\n    delta2_gen: Linear(EXP_DIM, r, bias=False)\n\n    Modulated forward (Track C):\n    DeltaW1_i = u1 @ diag(delta1_i) @ v1.T -> applied as (z @ v1) * delta1 @ u1.T\n    DeltaW2_i = u2 @ diag(delta2_i) @ v2.T -> applied as (h1 @ v2) * delta2 @ u2.T\n\n    def __init__(self):\n    super().__init__()\n    r = LORA_RANK\n    self.u1 = nn.Parameter(torch.empty(HIDDEN_DIM, r))\n    self.v1 = nn.Parameter(torch.empty(LATENT_DIM, r))\n    self.u2 = nn.Parameter(torch.empty(LATENT_DIM, r))\n    self.v2 = nn.Parameter(torch.empty(HIDDEN_DIM, r))\n    self.delta1_gen = nn.Linear(EXP_DIM, r, bias=False)\n    self.delta2_gen = nn.Linear(EXP_DIM, r, bias=False)\n    for param in (self.u1, self.v1, self.u2, self.v2):\n    nn.init.normal_(param, std=0.02)\n\n    def forward(self, predictor: Predictor,\n    z: torch.Tensor, e_agg: torch.Tensor) -> torch.Tensor:\n    \"\"\"\n    Run predictor forward with LoRA-modulated weights.\n\n    Args:\n    predictor: Predictor - fc1, act, fc2, norm used directly\n    z: (B, LATENT_DIM)\n    e_agg: (B, EXP_DIM) - zeros when buffer empty -> DeltaW=0\n    Returns:\n    z_pred: (B, LATENT_DIM)\n    \"\"\"\n\n    delta1 = self.delta1_gen(e_agg)  # (B, r)\n    delta2 = self.delta2_gen(e_agg)  # (B, r)\n    # fc1 + DeltaW1: GELU((W1 + U1@diag(delta1)@V1.T) @ z)\n    h1 = predictor.act(\n    predictor.fc1(z) + (z @ self.v1) * delta1 @ self.u1.T\n    )\n    # fc2 + DeltaW2: (W2 + U2@diag(delta2)@V2.T) @ h1\n    h2 = predictor.fc2(h1) + (h1 @ self.v2) * delta2 @ self.u2.T\n    return predictor.norm(h2)\n\n    def delta_scales(self, e_agg: torch.Tensor) -> tuple:\n    \"\"\"Return (delta1, delta2) scale tensors - used for monitoring LoRA activity.\"\"\"\n    return self.delta1_gen(e_agg), self.delta2_gen(e_agg)\n```",
+        "bbox": [
+            101,
+            207,
+            633,
+            734
+        ],
+        "page_idx": 14
+    },
+    {
+        "type": "text",
+        "text": "Listing 3: LoRAModulator (Track C): generates per-sample low-rank weight deltas $\\begin{array} { r } { \\Delta W _ { \\ell } \\ = \\ U _ { \\ell } \\mathrm { d i a g } ( \\delta _ { \\ell } ) V _ { \\ell } ^ { \\top } } \\end{array}$ from the aggregated experience vector $e _ { \\mathrm { a g g } }$ and applies them to the predictor’s two linear layers (rank $r = 4 )$ ; this is the operatorside modulation described in Section 3.2.",
+        "bbox": [
+            83,
+            739,
+            915,
+            782
+        ],
+        "page_idx": 14
+    },
+    {
+        "type": "aside_text",
+        "text": "1\n2\n3\n4\n5\n6\n7\n8\n9\n10\n11\n12\n13\n14\n15\n16\n17\n18\n19\n20\n21\n22\n23\n24\n25\n26\n27\n28\n29\n30\n31\n32\n33\n34\n35\n36\n37\n38\n39\n40\n41\n42\n43\n44\n45\n46\n47\n48\n49\n50\n51\n52",
+        "bbox": [
+            81,
+            207,
+            98,
+            734
+        ],
+        "page_idx": 14
+    },
+    {
+        "type": "page_number",
+        "text": "15",
+        "bbox": [
+            490,
+            958,
+            508,
+            969
+        ],
+        "page_idx": 14
+    },
+    {
+        "type": "code",
+        "sub_type": "code",
+        "code_caption": [],
+        "code_body": "```python\nclass BoundaryDetector:\n    \"\"\"\n    Surprisal-gated event boundary detector.\n\nSurprisal s_t = mean_b ||z_t^b - z_hat_t^b||_2 averaged over the batch.\nRunning mean (mu_s) and variance (var_s) updated via EMA momentum 0.99.\nNo boundary fires during the first 10 steps while statistics stabilize.\nz_hat_t must come from the BASE predictor (no LoRA) to avoid circular coupling.\n\"\"\"\n\ndef __init__(self):\n    self.mu_s = 0.0  # EMA mean of surprisal\n    self.var_s = 1.0  # EMA variance (start high to suppress early spurious fires)\n    self._steps = 0\n\ndef reset(self):\n    \"\"\"Reset running statistics - call between independent training runs.\"\"\"\n    self.mu_s = 0.0\n    self.var_s = 1.0\n    self._steps = 0\n\n@torch.no_grad()\ndef update(self, z_curr: torch.Tensor, z_pred: torch.Tensor) -> bool:\n    \"\"\"\n    Update EMA stats and return True if this step is a boundary event.\n\n    Args:\n    z_curr: (B, LATENT_DIM) current encoder output\n    z_pred: (B, LATENT_DIM) BASE predictor output (no LoRA modulation)\n    Returns:\n    boundary: bool\n    \"\"\"\n\n    s = float(torch.norm(z_curr - z_pred, dim=-1).mean().item())\n    old_mu = self.mu_s\n    self.mu_s = EMA_MOMENTUM * self.mu_s + (1.0 - EMA_MOMENTUM) * s\n    self.var_s = EMA_MOMENTUM * self.var_s + (1.0 - EMA_MOMENTUM) * (s - old_mu) ** 2\n    self._steps += 1\n    if self._steps < 10:\n    return False\n    return s > self.mu_s + KAPPA * math.sqrt(max(self.var_s, 1e-8))\n```",
+        "bbox": [
+            101,
+            93,
+            643,
+            496
+        ],
+        "page_idx": 15
+    },
+    {
+        "type": "text",
+        "text": "Listing 4: BoundaryDetector (Tracks B and C): surprisal-gated event detector. Maintains EMA running statistics of batchmean surprisal and fires a boundary event when surprisal exceeds $\\mu _ { s } + \\kappa \\sigma _ { s }$ after a 10-step warmup (Section 3.2).",
+        "bbox": [
+            83,
+            503,
+            913,
+            534
+        ],
+        "page_idx": 15
+    },
+    {
+        "type": "code",
+        "sub_type": "code",
+        "code_caption": [],
+        "code_body": "```python\ndef pred_loss(z_pred: torch.Tensor, z_targets: list) -> torch.Tensor:\n    \"\"\"\n    Mean MSE over horizon targets. Stopgrad applied to each target here.\n\n    Args:\n    z_pred: (B, LATENT_DIM) - same predictor output reused per horizon\n    z_targets: list of (B, LATENT_DIM) EMA encoder outputs\n    \"\"\"\n    total = sum(nn.functional.mse_loss(z_pred, zt.detach()) for zt in z_targets)\n    return total / len(z_targets)\n\ndef reg_loss(z_pred: torch.Tensor) -> torch.Tensor:\n    \"\"\"\n    VICReg variance term: penalise per-dim std falling below GAMMA.\n\n    L_reg = mean_d( max(0, GAMMA - std_b(z_pred[:, d])) )\n    \"\"\"\n    return torch.clamp(GAMMA - z_pred.std(dim=0), min=0.0).mean()\n\ndef compute_loss(z_pred: torch.Tensor, z_targets: list) -> tuple:\n    \"\"\"Return (total, l_pred, l_reg) - all scalar tensors.\"\"\"\n    lp = pred_loss(z_pred, z_targets)\n    lr = reg_loss(z_pred)\n    return lp + LAMBDA_REG * lr, lp, lr\n```",
+        "bbox": [
+            101,
+            599,
+            589,
+            864
+        ],
+        "page_idx": 15
+    },
+    {
+        "type": "text",
+        "text": "Listing 5: Training loss components: pred\\_loss (mean MSE across the three prediction horizons against stop-gradient EMA targets) and reg\\_loss (VICReg variance hinge), combined in compute\\_loss as $\\mathcal { L } = \\mathcal { L } _ { \\mathrm { p r e d } } + \\lambda \\mathcal { L } _ { \\mathrm { r e g } }$ (Equation 1).",
+        "bbox": [
+            83,
+            871,
+            913,
+            901
+        ],
+        "page_idx": 15
+    },
+    {
+        "type": "aside_text",
+        "text": "1\n2\n3\n4\n5\n6\n7\n8\n9\n10\n11\n12\n13\n14\n15\n16\n17\n18\n19\n20\n21\n22\n23\n24\n25\n26\n27\n28\n29\n30\n31\n32\n33\n34\n35\n36\n37\n38\n39\n40",
+        "bbox": [
+            81,
+            90,
+            98,
+            496
+        ],
+        "page_idx": 15
+    },
+    {
+        "type": "aside_text",
+        "text": "1\n2\n3\n4\n5\n6\n7\n8\n9\n10\n11\n12\n13\n14\n15\n16\n17\n18\n19\n20\n21\n22\n23\n24\n25\n26",
+        "bbox": [
+            84,
+            598,
+            98,
+            863
+        ],
+        "page_idx": 15
+    },
+    {
+        "type": "page_number",
+        "text": "16",
+        "bbox": [
+            488,
+            958,
+            509,
+            970
+        ],
+        "page_idx": 15
+    }
+]

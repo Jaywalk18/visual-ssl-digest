@@ -1,0 +1,97 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>HYDRA-X · 通用视觉自监督研究报</title>
+  <link rel="stylesheet" href="../assets/styles.css?v=20260525j">
+  <link rel="stylesheet" href="../assets/visual-ssl.css?v=20260525j">
+</head>
+<body>
+  <header class="masthead">
+    <div class="masthead-kicker">Visual SSL Research Report · 2026-06-14</div>
+    <a class="masthead-title" href="../index.html">通用视觉自监督研究报</a>
+    <div class="masthead-meta">
+      <span>图像表征 · VFM · JEPA · 视频预训练</span>
+      <span>CCF A/B 会议优先</span>
+      <span>图文精读 · 方法图解</span>
+    </div>
+  </header>
+  <nav class="site-nav" aria-label="主导航">
+    <a class="nav-link" href="../index.html">头版</a>
+<a class="nav-link" href="../issues/2026-06-14.html">今日速递</a>
+<a class="nav-link" href="../pages/catalog.html">论文目录</a>
+<a class="nav-link" href="../pages/timeline.html">时间线</a>
+  </nav>
+  <main><article class="paper-detail">
+  <div class="paper-main">
+    <div class="kicker">arXiv 新增 · P1 · 2026-06-14</div>
+    <h1 class="paper-headline">HYDRA-X：视觉 tokenizer 正在成为自监督表征、生成模型和 MLLM 的共同瓶颈，这篇值得跟进</h1>
+    <p class="dek">提出 holistic visual tokenizer，让 unified multimodal model 的理解与生成共享视觉 token 接口。</p>
+    <p class="byline"><strong>HYDRA-X: Native Unified Multimodal Models with Holistic Visual Tokenizers</strong>　Guozhen Zhang, Xuerui Qiu, Yutao Cui, Tianhui Song, Changlin Li, Junzhe Li, Tao Huang, Xiao Zhang, Yang Li, Jianbing Wu, Miles Yang, Zhao Zhong, Liefeng Bo, Limin Wang；arXiv 元数据未稳定列机构时按作者列表记录。　arXiv 新增　<a href="https://arxiv.org/abs/2606.13289">原文链接</a></p>
+    <div class="paper-facts">
+      <span><b>编号</b>2606.13289</span>
+      <span><b>优先级</b>P1</span>
+      <span><b>类别</b>arXiv 新增</span>
+      <span><b>会议</b>arXiv 新增</span>
+      <span><b>方法</b>HYDRA-X 用单个 ViT 统一 image/video tokenization；采用 frame-level causal temporal attention、hierarchical temporal compression 和轻量 decompressor；在联合 image-video teacher supervision 下把语义结构压进 compact latent。</span>
+      <span><b>来源</b>arXiv / OpenReview</span>
+    </div>
+    <div class="feature-body">
+      <p class="lead dropcap">先说结论。视觉 tokenizer 正在成为自监督表征、生成模型和 MLLM 的共同瓶颈，这篇值得跟进。 提出 holistic visual tokenizer，让 unified multimodal model 的理解与生成共享视觉 token 接口。</p>
+      <figure class="full-fig"><img src="../assets/mineru/2606.13289/images/407fdcd52c302a2ed8fbb41255e069ab181e16a06ec51946bb8a2a9698f3c50a.jpg" alt="Extract the navy blue T-shirt worn by the person in the image"><figcaption><b>Extract the navy blue T-shirt worn by the person in the image</b><span class="fig-en">Extract the navy blue T-shirt worn by the person in the image. Figure 11: Qualitative editing comparison. We compare HYDRA-X against BAGEL (Deng et al., 2025), Qwen-Image-Edit (Wu et al., 2025a), Step1X-Edit (Liu et al., 2025a), and OmniGen2 (Wu et al., 2025c).</span><span class="fig-zh">这张图/表用于判断 HYDRA-X 的实验收益来自哪里。重点看替换、消融或跨模型设置下趋势是否一致，而不是只看单个最高分。</span></figcaption></figure>
+<figure class="full-fig"><img src="../assets/mineru/2606.13289/images/f29c7f598c0077070b5c1a0a57c1f0c758bd3da723fd09e87d6d3b0958bee50f.jpg" alt="Figureure 5 · : Qualitative effect of tokenizer-stage source–target interaction"><figcaption><b>Figureure 5 · : Qualitative effect of tokenizer-stage source–target interaction</b><span class="fig-en">Figure 5: Qualitative effect of tokenizer-stage source–target interaction. Source-image reconstruction produced by HYDRA-X-Indep (independent Sem-ViT encoding of source and target, the conventional pipeline) versus HYDRA-X-STI (joint encoding through tubelet causal attention, our proposal). The two variants share every other architectural component. HYDRA-X-STI preserves identity-sensitive details (object layout, characters, on-screen text) that HYDRA-X-Indep loses, despite both pipelines using the same LLM and the same number of parameters.</span><span class="fig-zh">这张图概括 HYDRA-X 的整体方法流程。阅读时先看模块之间传递的训练信号，再看作者如何把目标拆成可优化的子问题。</span></figcaption></figure>
+      
+      <h2>核心问题</h2>
+      <p>视觉 tokenizer 正在成为自监督表征、生成模型和 MLLM 的共同瓶颈，这篇值得跟进。</p>
+      <h2>方法拆解</h2>
+      <p>HYDRA-X 用单个 ViT 统一 image/video tokenization；采用 frame-level causal temporal attention、hierarchical temporal compression 和轻量 decompressor；在联合 image-video teacher supervision 下把语义结构压进 compact latent。</p>
+      <h2>主要贡献</h2>
+      <p>提出 holistic visual tokenizer，让 unified multimodal model 的理解与生成共享视觉 token 接口。</p>
+      <h2>实验看点</h2>
+      <p>摘要称 7B dense model 在 image/video understanding 与 generation 任务上表现强，并且 latent-level source-target interaction 改善编辑一致性和收敛。</p>
+      <h2>局限与读法</h2>
+      <p>系统规模较大，训练细节和计算成本会决定可复现性；仍需区分 tokenizer 本身与 LLM 规模带来的收益。</p>
+    
+    </div>
+  </div>
+  <aside class="paper-side">
+
+    <div class="side-box"><h4>关键判断</h4><dl><dt>相关性</dt><dd>P1</dd><dt>类别</dt><dd>arXiv 新增</dd><dt>会议</dt><dd>arXiv 新增</dd><dt>读法</dt><dd>方法图优先，表格次之</dd></dl></div>
+    <div class="side-box"><h4>原文</h4><p><a href="https://arxiv.org/abs/2606.13289">https://arxiv.org/abs/2606.13289</a></p></div>
+  </aside>
+</article></main>
+  <aside class="conf-float" data-conf-reminder="2026-06-14-main-ddl" aria-label="CCF A/B 主投稿提醒">
+  <button class="conf-close" type="button" aria-label="关闭会议提醒">×</button>
+  <details open>
+    <summary>CCF A/B 主投稿提醒</summary>
+    <div class="conf-list"><a class="conf-item " href="https://github.com/ccfddl/ccf-deadlines/blob/main/conference/AI/aaai.yml">
+  <span><b>AAAI 2027</b><em>CCF A · Main paper submission</em></span>
+  <strong>43 天</strong>
+  <small>2026-07-27 · CCF DDL: abstract 2026-07-20；进入 1 个月窗口后重点提醒。</small>
+</a></div>
+  </details>
+</aside>
+  <footer class="footer">
+    <div>面向通用视觉自监督、视觉基础模型与多模态表征学习的每日研究报。</div>
+    <div class="muted">Issue 2026-06-14 · Curated readings and figure notes</div>
+  </footer>
+  <script>
+  (() => {
+    const box = document.querySelector('[data-conf-reminder]');
+    if (!box) return;
+    const key = `visualSslConfReminderClosed:${box.dataset.confReminder || '2026-06-14-main-ddl'}`;
+    try {
+      if (localStorage.getItem(key) === '1') box.hidden = true;
+    } catch (err) {}
+    const close = box.querySelector('.conf-close');
+    if (close) {
+      close.addEventListener('click', () => {
+        box.hidden = true;
+        try { localStorage.setItem(key, '1'); } catch (err) {}
+      });
+    }
+  })();
+  </script>
+</body>
+</html>

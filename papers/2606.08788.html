@@ -19,39 +19,39 @@
   </header>
   <nav class="site-nav" aria-label="主导航">
     <a class="nav-link" href="../index.html">头版</a>
-<a class="nav-link" href="../issues/2026-06-11.html">今日速递</a>
+<a class="nav-link" href="../issues/2026-06-14.html">今日速递</a>
 <a class="nav-link" href="../pages/catalog.html">论文目录</a>
 <a class="nav-link" href="../pages/timeline.html">时间线</a>
   </nav>
   <main><article class="paper-detail">
   <div class="paper-main">
     <div class="kicker">arXiv recent-list补漏 · P0 · 2026-06-11</div>
-    <h1 class="paper-headline">MaskAlign：通用视觉自监督模型正越来越多作为生成模型 teacher，MaskAlign 是理解“VFM feature 如何安全蒸馏到生成 latent”的好样本</h1>
-    <p class="dek">把“用 DINO/自监督 VFM 表征加速生成模型训练”拆成 token-level 约束问题，指出 full-token alignment 会产生稳定空间偏置。</p>
-    <p class="byline"><strong>MaskAlign: Token-Subset Representation Alignment for Efficient Diffusion Training</strong>　Lianyu Pang, Tianlin Pan, Cheng Da, Changqian Yu, Huan Yang, Kun Gai, Song Guo, Wenhan Luo；arXiv 元数据未列机构。　arXiv recent-list补漏　<a href="https://arxiv.org/abs/2606.08788">原文链接</a></p>
+    <h1 class="paper-headline">MaskAlign：它和通用视觉自监督的关系在于：明确使用自监督视觉 encoder 的 clean-image representation 监督 diffusion features，并讨论 token-level 对齐偏差</h1>
+    <p class="dek">高相关；详见方法、贡献和实验边界。</p>
+    <p class="byline"><strong>MaskAlign: Token-Subset Representation Alignment for Efficient Diffusion Training</strong>　arXiv recent-list补漏　<a href="https://arxiv.org/abs/2606.08788">原文链接</a></p>
     <div class="paper-facts">
       <span><b>编号</b>2606.08788</span>
       <span><b>优先级</b>P0</span>
       <span><b>类别</b>arXiv recent-list补漏</span>
       <span><b>会议</b>arXiv recent-list补漏</span>
-      <span><b>方法</b>在 diffusion training 中只对随机 token 子集做 representation alignment，并配合 pre-mask token mixing，减少 noisy diffusion token 对 clean-image reference feature 的全量依赖。</span>
+      <span><b>方法</b>明确使用自监督视觉 encoder 的 clean-image representation 监督 diffusion features，并讨论 token-level 对齐偏差</span>
       <span><b>来源</b>arXiv / OpenReview</span>
     </div>
     <div class="feature-body">
-      <p class="lead dropcap">先说结论。通用视觉自监督模型正越来越多作为生成模型 teacher，MaskAlign 是理解“VFM feature 如何安全蒸馏到生成 latent”的好样本。 把“用 DINO/自监督 VFM 表征加速生成模型训练”拆成 token-level 约束问题，指出 full-token alignment 会产生稳定空间偏置。</p>
+      <p class="lead dropcap">先说结论。它和通用视觉自监督的关系在于：明确使用自监督视觉 encoder 的 clean-image representation 监督 diffusion features，并讨论 token-level 对齐偏差。 高相关；详见方法、贡献和实验边界。</p>
       <figure class="full-fig"><img src="../assets/mineru/2606.08788/images/a8c5a93168f7255b971c923dd23dbacf86d9f04792aaa2b4a06d42a500037043.jpg" alt="(d) Alignment-loss gap Figure 2 Token-level behavior and alignment stability under token m"><figcaption><b>(d) Alignment-loss gap Figure 2 Token-level behavior and alignment stability under token m</b><span class="fig-en">(d) Alignment-loss gap Figure 2 Token-level behavior and alignment stability under token masking. (a,b) Heatmaps show the probability that each spatial position appears among the top-10% alignment-gradient tokens, using the same color range [0, 0.8]. For reference, a uniform distribution would correspond to approximately 10% for each position. (a) Full-token alignment exhibits a stable spatial preference. (b) A 25% mask ratio substantially reduces this concentrated pattern. (c) MaskAlign lowers the full-token alignment loss. (d) $L _ { \mathrm { R E P A } } ^ { \mathrm { m a s k } } - L _ { \mathrm { R E P A } } ^ { \mathrm { f u l l } }$</span><span class="fig-zh">这张图/表用于判断 MaskAlign 的实验收益来自哪里。重点看替换、消融或跨模型设置下趋势是否一致，而不是只看单个最高分。</span></figcaption></figure>
 <figure class="full-fig"><img src="../assets/mineru/2606.08788/images/069e1b11c3e8d25478438d728eca6b4d34dc0b5e769cb8e27a0b9391f54e0a1b.jpg" alt="Figureure 1 · MaskAlign generates high-quality ImageNet 256 × 256 samples and reache"><figcaption><b>Figureure 1 · MaskAlign generates high-quality ImageNet 256 × 256 samples and reache</b><span class="fig-en">Figure 1 MaskAlign generates high-quality ImageNet 256 × 256 samples and reaches comparable FID with substantially fewer training iterations, showing faster convergence.</span><span class="fig-zh">这张图来自论文 PDF 的结构化抽取。当前用于辅助理解 MaskAlign 的方法或实验，请结合正文精读段落一起看。</span></figcaption></figure>
       
       <h2>核心问题</h2>
-      <p>通用视觉自监督模型正越来越多作为生成模型 teacher，MaskAlign 是理解“VFM feature 如何安全蒸馏到生成 latent”的好样本。</p>
+      <p>它和通用视觉自监督的关系在于：明确使用自监督视觉 encoder 的 clean-image representation 监督 diffusion features，并讨论 token-level 对齐偏差。</p>
       <h2>方法拆解</h2>
-      <p>在 diffusion training 中只对随机 token 子集做 representation alignment，并配合 pre-mask token mixing，减少 noisy diffusion token 对 clean-image reference feature 的全量依赖。</p>
+      <p>明确使用自监督视觉 encoder 的 clean-image representation 监督 diffusion features，并讨论 token-level 对齐偏差</p>
       <h2>主要贡献</h2>
-      <p>把“用 DINO/自监督 VFM 表征加速生成模型训练”拆成 token-level 约束问题，指出 full-token alignment 会产生稳定空间偏置。</p>
+      <p>高相关；详见方法、贡献和实验边界。</p>
       <h2>实验看点</h2>
-      <p>摘要强调 token-subset alignment 在收敛和生成质量上优于全量对齐，同时降低对完整 clean tokens 的依赖。</p>
+      <p>实验部分建议重点看两类证据：一是作者是否把方法收益和更强数据、更长训练、更大模型区分开；二是跨模型、跨数据或跨任务迁移是否还能保留同样趋势。</p>
       <h2>局限与读法</h2>
-      <p>目标仍是 diffusion training 效率与质量，而非直接训练新的通用视觉 encoder；需要看对下游表征的反向收益。</p>
+      <p>这篇论文的结论需要结合任务设置、训练数据规模和消融实验一起看；不要只凭单个指标判断它对通用视觉表征的价值。</p>
     
     </div>
   </div>
@@ -61,13 +61,13 @@
     <div class="side-box"><h4>原文</h4><p><a href="https://arxiv.org/abs/2606.08788">https://arxiv.org/abs/2606.08788</a></p></div>
   </aside>
 </article></main>
-  <aside class="conf-float" data-conf-reminder="2026-06-11-main-ddl" aria-label="CCF A/B 主投稿提醒">
+  <aside class="conf-float" data-conf-reminder="2026-06-14-main-ddl" aria-label="CCF A/B 主投稿提醒">
   <button class="conf-close" type="button" aria-label="关闭会议提醒">×</button>
   <details open>
     <summary>CCF A/B 主投稿提醒</summary>
     <div class="conf-list"><a class="conf-item " href="https://github.com/ccfddl/ccf-deadlines/blob/main/conference/AI/aaai.yml">
   <span><b>AAAI 2027</b><em>CCF A · Main paper submission</em></span>
-  <strong>46 天</strong>
+  <strong>43 天</strong>
   <small>2026-07-27 · CCF DDL: abstract 2026-07-20；进入 1 个月窗口后重点提醒。</small>
 </a></div>
   </details>
@@ -80,7 +80,7 @@
   (() => {
     const box = document.querySelector('[data-conf-reminder]');
     if (!box) return;
-    const key = `visualSslConfReminderClosed:${box.dataset.confReminder || '2026-06-11-main-ddl'}`;
+    const key = `visualSslConfReminderClosed:${box.dataset.confReminder || '2026-06-14-main-ddl'}`;
     try {
       if (localStorage.getItem(key) === '1') box.hidden = true;
     } catch (err) {}

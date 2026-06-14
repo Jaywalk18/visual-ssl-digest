@@ -9,7 +9,7 @@
 </head>
 <body>
   <header class="masthead">
-    <div class="masthead-kicker">Visual SSL Research Report · 2026-06-11</div>
+    <div class="masthead-kicker">Visual SSL Research Report · 2026-06-14</div>
     <a class="masthead-title" href="index.html">通用视觉自监督研究报</a>
     <div class="masthead-meta">
       <span>图像表征 · VFM · JEPA · 视频预训练</span>
@@ -19,106 +19,106 @@
   </header>
   <nav class="site-nav" aria-label="主导航">
     <a class="nav-link active" href="index.html">头版</a>
-<a class="nav-link" href="issues/2026-06-11.html">今日速递</a>
+<a class="nav-link" href="issues/2026-06-14.html">今日速递</a>
 <a class="nav-link" href="pages/catalog.html">论文目录</a>
 <a class="nav-link" href="pages/timeline.html">时间线</a>
   </nav>
   <main><section class="hero-grid">
   <article class="lead-story">
-    <div class="kicker">今日主线 · arXiv recent-list补漏 + project</div>
-    <h1>Latent Spatial Memory for Video：把视频 world model 的跨帧记忆从 RGB/点云搬到 diffusion latent，直接触及可复用视觉 latent 与长期一致性</h1>
-    <p class="dek">把视频 world model 的跨帧记忆从 RGB/点云搬到 diffusion latent，直接触及可复用视觉 latent 与长期一致性。</p>
-    <figure class="hero-figure"><img src="assets/mineru/2606.09828/images/2cdf044328fb99c24d7a8c22a108c30c69a0e890dc2733a6482d347c39844f10.jpg" alt="Latent Spatial Memory for Video figure"><figcaption>这张图来自论文 PDF 的结构化抽取。当前用于辅助理解 Latent Spatial Memory for Video 的方法或实验，请结合正文精读段落一起看。</figcaption></figure>
-    <div class="paper-actions"><a href="issues/2026-06-11.html">阅读 6 月 11 日速递</a><a href="papers/2606.09828.html">打开主文页</a></div>
+    <div class="kicker">今日主线 · arXiv 更新 (v3)</div>
+    <h1>V-JEPA 2.1：V-JEPA 系列更新到 dense image/video features，把 masked predictive loss、深层自监督和图像/视频 tokenizer 统一到同一表征路线</h1>
+    <p class="dek">V-JEPA 系列更新到 dense image/video features，把 masked predictive loss、深层自监督和图像/视频 tokenizer 统一到同一表征路线。</p>
+    <figure class="hero-figure"><img src="assets/mineru/2603.14482/images/5aabc6ce2892fc6240a1355b3c3c4db80f26ed428a16260ad648107fff6a4b72.jpg" alt="V-JEPA 2.1 figure"><figcaption>这张图/表用于判断 V-JEPA 2.1 的实验收益来自哪里。重点看替换、消融或跨模型设置下趋势是否一致，而不是只看单个最高分。</figcaption></figure>
+    <div class="paper-actions"><a href="issues/2026-06-14.html">阅读 6 月 14 日速递</a><a href="papers/2603.14482.html">打开主文页</a></div>
   </article>
   <aside class="issue-brief">
     <h2>快速摘要</h2>
-    <ul><li><b>今日最值得看</b><span>Latent Spatial Memory / Mirage 与 MaskAlign。前者把视频 world model 的记忆直接放进 diffusion latent，后者讨论如何安全地用自监督 VFM feature 对齐 diffusion token。</span></li><li><b>建议精读顺序</b><span>2606.09828 -&gt; 2606.08788 -&gt; 2606.08332 -&gt; 2606.09311 -&gt; 2606.09056；再按需要读 ATM/Echo-Memory/Prisma-World。</span></li><li><b>新增/更新/过滤数量</b><span>arXiv 官方页面截至本次运行仍停在 Wednesday, 10 June 2026；扫描 Tue/Wed recent 窗口 1609 个唯一 ID，关键词命中 370，人工筛出视觉/表征候选约 30，索引 11，其中真正“今日新公告” 0、recent-list 补漏 10、会议状态 1、过滤/降级约 52。</span></li><li><b>主要判断</b><span>今天不是新的 arXiv 放榜日，而是对近 48 小时世界模型/latent 表征线的补齐：video world model 正在从像素空间记忆转向 latent memory、hierarchical tokens、action-consistency probes。</span></li><li><b>会议动态</b><span>未发现新的 visual SSL OpenReview/ICML spotlight/oral 状态变化；Test-Time Scaling in Multimodal Foundation Models 的 arXiv comments 标注 ACL 2026 Findings，作为会议动态扫读。</span></li></ul>
+    <ul><li><b>今日最值得看</b><span>V-JEPA 2.1 v3 与 Dual-State Slot Attention。前者是通用视频/图像自监督表征的核心更新，后者是无监督视频 object-centric 表征的干净新作。</span></li><li><b>建议精读顺序</b><span>2603.14482 -&gt; 2606.12601 -&gt; 2606.13288 -&gt; 2606.13289 -&gt; 2606.13674；随后按兴趣读 Modality Forcing / MaskWAM / GeoWorld-VLM。</span></li><li><b>新增/更新/过滤数量</b><span>官方 arXiv new 页面最新批次为 Friday, 12 June 2026；本次复用并复核 2026-06-13 抓取的 7 个分类页面，约 724 个去重条目，主索引 10 篇，其中 arXiv 新增 7、arXiv replacement/update 2、会议接收合并 2、过滤/降级约 70+。</span></li><li><b>主要判断</b><span>这批论文的主线不是传统 SimCLR 式图像对比学习，而是 dense JEPA/video SSL、object-centric slots、统一视觉 tokenizer、world-model teacher 四条线同时推进。</span></li><li><b>会议动态</b><span>MACCO 标注 ACL 2026 Main；ECA 标注 ICML 2026；其他会议接收如 SIGGRAPH/ICRA workshop 多偏图形、机器人或应用，未进入主索引。</span></li></ul>
   </aside>
 </section>
 <section class="section-block">
   <div class="section-heading"><h2>今日推荐论文</h2><a href="pages/catalog.html">全目录 →</a></div>
-  <div class="paper-list"><article class="paper-card" data-category="arXiv recent-list补漏 + project" data-priority="P0" data-date="2026-06-11" data-title="latent spatial memory for video world models" data-keywords="latent spatial memory for video world models latent spatial memory for video arxiv recent-list补漏 + project p0 2026-06-11 arxiv recent-list补漏 + project 把视频 world model 的跨帧记忆从 rgb/点云搬到 diffusion latent，直接触及可复用视觉 latent 与长期一致性 高相关；详见方法、贡献和实验边界。">
-  <a class="paper-thumb paper-thumb-text" href="papers/2606.09828.html">
-    <img src="assets/mineru/2606.09828/images/2cdf044328fb99c24d7a8c22a108c30c69a0e890dc2733a6482d347c39844f10.jpg" alt="Latent Spatial Memory for Video figure"><span>P0</span>
+  <div class="paper-list"><article class="paper-card" data-category="arXiv 更新 (v3)" data-priority="P0" data-date="2026-06-14" data-title="v-jepa 2.1: unlocking dense features in video self-supervised learning" data-keywords="v-jepa 2.1: unlocking dense features in video self-supervised learning v-jepa 2.1 arxiv 更新 (v3) p0 2026-06-14 arxiv 更新 (v3) v-jepa 系列更新到 dense image/video features，把 masked predictive loss、深层自监督和图像/视频 tokenizer 统一到同一表征路线 高相关；详见方法、贡献和实验边界。">
+  <a class="paper-thumb paper-thumb-text" href="papers/2603.14482.html">
+    <img src="assets/mineru/2603.14482/images/5aabc6ce2892fc6240a1355b3c3c4db80f26ed428a16260ad648107fff6a4b72.jpg" alt="V-JEPA 2.1 figure"><span>P0</span>
   </a>
   <div>
-    <div class="paper-meta">2026-06-11 · arXiv recent-list补漏 + project · arXiv recent-list补漏 + project</div>
-    <h3><a href="papers/2606.09828.html">Latent Spatial Memory for Video World Models</a></h3>
+    <div class="paper-meta">2026-06-14 · arXiv 更新 (v3) · arXiv 更新 (v3)</div>
+    <h3><a href="papers/2603.14482.html">V-JEPA 2.1: Unlocking Dense Features in Video Self-Supervised Learning</a></h3>
     <p>高相关；详见方法、贡献和实验边界。</p>
-    <p class="card-tech"><b>方法：</b>把视频 world model 的跨帧记忆从 RGB/点云搬到 diffusion latent，直接触及可复用视觉 latent 与长期一致性</p>
-    <div class="paper-actions"><a href="papers/2606.09828.html">读图文页</a><a href="https://arxiv.org/abs/2606.09828">原文</a></div>
+    <p class="card-tech"><b>方法：</b>V-JEPA 系列更新到 dense image/video features，把 masked predictive loss、深层自监督和图像/视频 tokenizer 统一到同一表征路线</p>
+    <div class="paper-actions"><a href="papers/2603.14482.html">读图文页</a><a href="https://arxiv.org/abs/2603.14482">原文</a></div>
   </div>
 </article>
-<article class="paper-card" data-category="arXiv recent-list补漏" data-priority="P0" data-date="2026-06-11" data-title="maskalign: token-subset representation alignment for efficient diffusion training" data-keywords="maskalign: token-subset representation alignment for efficient diffusion training maskalign arxiv recent-list补漏 p0 2026-06-11 arxiv recent-list补漏 明确使用自监督视觉 encoder 的 clean-image representation 监督 diffusion features，并讨论 token-level 对齐偏差 高相关；详见方法、贡献和实验边界。">
-  <a class="paper-thumb paper-thumb-text" href="papers/2606.08788.html">
-    <img src="assets/mineru/2606.08788/images/a8c5a93168f7255b971c923dd23dbacf86d9f04792aaa2b4a06d42a500037043.jpg" alt="MaskAlign figure"><span>P0</span>
+<article class="paper-card" data-category="arXiv 新增" data-priority="P0" data-date="2026-06-14" data-title="dual-state slot attention: decoupling appearance and identity for video object-centric learning" data-keywords="dual-state slot attention: decoupling appearance and identity for video object-centric learning dual-state slot attention arxiv 新增 p0 2026-06-14 arxiv 新增 纯粹面向无监督视频 object-centric 表征，把 appearance 和 identity 拆成双状态 slot，直接命中视频自监督表示 高相关；详见方法、贡献和实验边界。">
+  <a class="paper-thumb paper-thumb-text" href="papers/2606.12601.html">
+    <img src="assets/mineru/2606.12601/images/ddd219c137a1ff1c8dc7d44fec2da2dcb7418d64ce42a1137bb603a373f8c2cd.jpg" alt="Dual-State Slot Attention figure"><span>P0</span>
   </a>
   <div>
-    <div class="paper-meta">2026-06-11 · arXiv recent-list补漏 · arXiv recent-list补漏</div>
-    <h3><a href="papers/2606.08788.html">MaskAlign: Token-Subset Representation Alignment for Efficient Diffusion Training</a></h3>
+    <div class="paper-meta">2026-06-14 · arXiv 新增 · arXiv 新增</div>
+    <h3><a href="papers/2606.12601.html">Dual-State Slot Attention: Decoupling Appearance and Identity for Video Object-Centric Learning</a></h3>
     <p>高相关；详见方法、贡献和实验边界。</p>
-    <p class="card-tech"><b>方法：</b>明确使用自监督视觉 encoder 的 clean-image representation 监督 diffusion features，并讨论 token-level 对齐偏差</p>
-    <div class="paper-actions"><a href="papers/2606.08788.html">读图文页</a><a href="https://arxiv.org/abs/2606.08788">原文</a></div>
+    <p class="card-tech"><b>方法：</b>纯粹面向无监督视频 object-centric 表征，把 appearance 和 identity 拆成双状态 slot，直接命中视频自监督表示</p>
+    <div class="paper-actions"><a href="papers/2606.12601.html">读图文页</a><a href="https://arxiv.org/abs/2606.12601">原文</a></div>
   </div>
 </article>
-<article class="paper-card" data-category="arXiv recent-list补漏" data-priority="P1" data-date="2026-06-11" data-title="smi: efficient self-supervised learning via mutual-information-inspired dependency optimization" data-keywords="smi: efficient self-supervised learning via mutual-information-inspired dependency optimization smi arxiv recent-list补漏 p1 2026-06-11 arxiv recent-list补漏 少数直接面向图像 ssl objective 的新作，目标是降低大 batch、memory bank、momentum encoder 等训练复杂度 高相关；详见方法、贡献和实验边界。">
-  <a class="paper-thumb paper-thumb-text" href="papers/2606.08332.html">
-    <img src="assets/mineru/2606.08332/images/6aff2459bf118cb13d4eb943c19216dabc938036fc76a518816a42800c427c73.jpg" alt="SMI figure"><span>P1</span>
+<article class="paper-card" data-category="ACL 2026 Main + arXiv" data-priority="P1" data-date="2026-06-14" data-title="cross-modal masked compositional concept modeling for enhancing visio-linguistic compositionality" data-keywords="cross-modal masked compositional concept modeling for enhancing visio-linguistic compositionality cross-modal masked compositional concept modeling acl 2026 main + arxiv p1 2026-06-14 acl 2026 main + arxiv 用跨模态 masked concept reconstruction 改造 clip/vlm compositionality，是视觉-语言自监督/弱监督表征的可迁移目标 高相关；详见方法、贡献和实验边界。">
+  <a class="paper-thumb paper-thumb-text" href="papers/2606.13288.html">
+    <img src="assets/mineru/2606.13288/images/76b924999cb829bfafaf0e4fe4df8a1a0c5d4c0a80c21c48ba1de817d43e50ca.jpg" alt="Cross-Modal Masked Compositional Concept Modeling figure"><span>P1</span>
   </a>
   <div>
-    <div class="paper-meta">2026-06-11 · arXiv recent-list补漏 · arXiv recent-list补漏</div>
-    <h3><a href="papers/2606.08332.html">SMI: Efficient Self-Supervised Learning via Mutual-Information-Inspired Dependency Optimization</a></h3>
+    <div class="paper-meta">2026-06-14 · ACL 2026 Main + arXiv · ACL 2026 Main + arXiv</div>
+    <h3><a href="papers/2606.13288.html">Cross-Modal Masked Compositional Concept Modeling for Enhancing Visio-Linguistic Compositionality</a></h3>
     <p>高相关；详见方法、贡献和实验边界。</p>
-    <p class="card-tech"><b>方法：</b>少数直接面向图像 SSL objective 的新作，目标是降低大 batch、memory bank、momentum encoder 等训练复杂度</p>
-    <div class="paper-actions"><a href="papers/2606.08332.html">读图文页</a><a href="https://arxiv.org/abs/2606.08332">原文</a></div>
+    <p class="card-tech"><b>方法：</b>用跨模态 masked concept reconstruction 改造 CLIP/VLM compositionality，是视觉-语言自监督/弱监督表征的可迁移目标</p>
+    <div class="paper-actions"><a href="papers/2606.13288.html">读图文页</a><a href="https://arxiv.org/abs/2606.13288">原文</a></div>
   </div>
 </article>
-<article class="paper-card" data-category="arXiv recent-list补漏" data-priority="P1" data-date="2026-06-11" data-title="ff-jepa: long-horizon planning in world models with latent planners" data-keywords="ff-jepa: long-horizon planning in world models with latent planners ff-jepa arxiv recent-list补漏 p1 2026-06-11 arxiv recent-list补漏 把 jepa latent dynamics 用到更长程规划，并引入 action-free latent planner 作为子目标预测器 中高相关；详见方法、贡献和实验边界。">
-  <a class="paper-thumb paper-thumb-text" href="papers/2606.09311.html">
-    <img src="assets/mineru/2606.09311/images/9fbc6dc5cb8f5469ce190a5f849c37fbfef4507da1d8949c19a5e75858befb14.jpg" alt="FF-JEPA figure"><span>P1</span>
+<article class="paper-card" data-category="arXiv 新增" data-priority="P1" data-date="2026-06-14" data-title="hydra-x: native unified multimodal models with holistic visual tokenizers" data-keywords="hydra-x: native unified multimodal models with holistic visual tokenizers hydra-x arxiv 新增 p1 2026-06-14 arxiv 新增 把图像和视频 tokenization 放进同一个 vit tokenizer，并用教师监督塑形 compact latent，是统一视觉 token 表征路线 高相关；详见方法、贡献和实验边界。">
+  <a class="paper-thumb paper-thumb-text" href="papers/2606.13289.html">
+    <img src="assets/mineru/2606.13289/images/407fdcd52c302a2ed8fbb41255e069ab181e16a06ec51946bb8a2a9698f3c50a.jpg" alt="HYDRA-X figure"><span>P1</span>
   </a>
   <div>
-    <div class="paper-meta">2026-06-11 · arXiv recent-list补漏 · arXiv recent-list补漏</div>
-    <h3><a href="papers/2606.09311.html">FF-JEPA: Long-Horizon Planning in World Models with Latent Planners</a></h3>
+    <div class="paper-meta">2026-06-14 · arXiv 新增 · arXiv 新增</div>
+    <h3><a href="papers/2606.13289.html">HYDRA-X: Native Unified Multimodal Models with Holistic Visual Tokenizers</a></h3>
+    <p>高相关；详见方法、贡献和实验边界。</p>
+    <p class="card-tech"><b>方法：</b>把图像和视频 tokenization 放进同一个 ViT tokenizer，并用教师监督塑形 compact latent，是统一视觉 token 表征路线</p>
+    <div class="paper-actions"><a href="papers/2606.13289.html">读图文页</a><a href="https://arxiv.org/abs/2606.13289">原文</a></div>
+  </div>
+</article>
+<article class="paper-card" data-category="arXiv 新增 + project" data-priority="P1" data-date="2026-06-14" data-title="repwam: world action modeling with representation visual-action tokenizers" data-keywords="repwam: world action modeling with representation visual-action tokenizers repwam arxiv 新增 + project p1 2026-06-14 arxiv 新增 + project 把 wam 从重建型视频 tokenizer 转到 representation-centric visual-action tokenizer，虽偏具身，但方法可迁移到视频 world model 表征 中高相关；详见方法、贡献和实验边界。">
+  <a class="paper-thumb paper-thumb-text" href="papers/2606.13674.html">
+    <img src="assets/mineru/2606.13674/images/27cfed13e884b97a09d551aa3414b9d5c2d58da1caffce9dc79797266d9ec166.jpg" alt="RepWAM figure"><span>P1</span>
+  </a>
+  <div>
+    <div class="paper-meta">2026-06-14 · arXiv 新增 + project · arXiv 新增 + project</div>
+    <h3><a href="papers/2606.13674.html">RepWAM: World Action Modeling with Representation Visual-Action Tokenizers</a></h3>
     <p>中高相关；详见方法、贡献和实验边界。</p>
-    <p class="card-tech"><b>方法：</b>把 JEPA latent dynamics 用到更长程规划，并引入 action-free latent planner 作为子目标预测器</p>
-    <div class="paper-actions"><a href="papers/2606.09311.html">读图文页</a><a href="https://arxiv.org/abs/2606.09311">原文</a></div>
-  </div>
-</article>
-<article class="paper-card" data-category="arXiv recent-list补漏 + project" data-priority="P1" data-date="2026-06-11" data-title="millivid: hierarchical latents for long-range consistency in video generation" data-keywords="millivid: hierarchical latents for long-range consistency in video generation millivid arxiv recent-list补漏 + project p1 2026-06-11 arxiv recent-list补漏 + project 用层级 frame tokens 处理视频长程一致性，和视觉 tokenizer/rae/world model 的 latent 设计高度相关 中高相关；详见方法、贡献和实验边界。">
-  <a class="paper-thumb paper-thumb-text" href="papers/2606.09056.html">
-    <img src="assets/mineru/2606.09056/images/ad9c91eb20595e0af60faa06aa1afff7120f6a0df74fec5d6c4b6cf8a13f34a2.jpg" alt="MilliVid figure"><span>P1</span>
-  </a>
-  <div>
-    <div class="paper-meta">2026-06-11 · arXiv recent-list补漏 + project · arXiv recent-list补漏 + project</div>
-    <h3><a href="papers/2606.09056.html">MilliVid: Hierarchical Latents for Long-Range Consistency in Video Generation</a></h3>
-    <p>中高相关；详见方法、贡献和实验边界。</p>
-    <p class="card-tech"><b>方法：</b>用层级 frame tokens 处理视频长程一致性，和视觉 tokenizer/RAE/world model 的 latent 设计高度相关</p>
-    <div class="paper-actions"><a href="papers/2606.09056.html">读图文页</a><a href="https://arxiv.org/abs/2606.09056">原文</a></div>
+    <p class="card-tech"><b>方法：</b>把 WAM 从重建型视频 tokenizer 转到 representation-centric visual-action tokenizer，虽偏具身，但方法可迁移到视频 world model 表征</p>
+    <div class="paper-actions"><a href="papers/2606.13674.html">读图文页</a><a href="https://arxiv.org/abs/2606.13674">原文</a></div>
   </div>
 </article></div>
 </section></main>
-  <aside class="conf-float" data-conf-reminder="2026-06-11-main-ddl" aria-label="CCF A/B 主投稿提醒">
+  <aside class="conf-float" data-conf-reminder="2026-06-14-main-ddl" aria-label="CCF A/B 主投稿提醒">
   <button class="conf-close" type="button" aria-label="关闭会议提醒">×</button>
   <details open>
     <summary>CCF A/B 主投稿提醒</summary>
     <div class="conf-list"><a class="conf-item " href="https://github.com/ccfddl/ccf-deadlines/blob/main/conference/AI/aaai.yml">
   <span><b>AAAI 2027</b><em>CCF A · Main paper submission</em></span>
-  <strong>46 天</strong>
+  <strong>43 天</strong>
   <small>2026-07-27 · CCF DDL: abstract 2026-07-20；进入 1 个月窗口后重点提醒。</small>
 </a></div>
   </details>
 </aside>
   <footer class="footer">
     <div>面向通用视觉自监督、视觉基础模型与多模态表征学习的每日研究报。</div>
-    <div class="muted">Issue 2026-06-11 · Curated readings and figure notes</div>
+    <div class="muted">Issue 2026-06-14 · Curated readings and figure notes</div>
   </footer>
   <script>
   (() => {
     const box = document.querySelector('[data-conf-reminder]');
     if (!box) return;
-    const key = `visualSslConfReminderClosed:${box.dataset.confReminder || '2026-06-11-main-ddl'}`;
+    const key = `visualSslConfReminderClosed:${box.dataset.confReminder || '2026-06-14-main-ddl'}`;
     try {
       if (localStorage.getItem(key) === '1') box.hidden = true;
     } catch (err) {}

@@ -1,0 +1,451 @@
+# GeoWorld-VLM: Geometry from World Models for Vision-Language Models
+
+Renjie Gu∗, Kaichen Zhou∗, Yan Luo, Mengyu Wang
+
+Harvard AI and Robotics Lab
+
+Kempner Institute for the Study of Natural and Artificial Intelligence
+
+Harvard University
+
+∗Equal contribution as co-first authors
+
+![](images/a71357196fc3392030ab1d7971b7a3b29276850b8c510af1790590606a4fc2e6.jpg)
+
+<details>
+<summary>flowchart</summary>
+
+```mermaid
+graph TD
+  A["Question\nWhere is the fence in the photo?"] --> B["Baseline Normal VLM"]
+  C["Input Image"] --> D["Ours GeoWorld-VLM"]
+  B --> E["Feature Map"]
+  D --> F["Feature Map"]
+  E --> G["Wrong Answer\nThe fence is behind."]
+  F --> H["Correct Answer\nThe fence is at the top."]
+  G --> I["Geometry-enhanced Feature Map"]
+  H --> I
+  I --> J["Output: Ctrl-A, Ctrl-B, VSR, CGCO-1, COCO-2, VG-1, VG-2, Ours"]
+```
+</details>
+
+Figure 1: Overview. Given an input image and a spatial reasoning question, GeoWorld-VLM enhances the spatial understanding of standard vision-language models by injecting world-model priors at the feature-map level. Compared with the original VLM features, GeoWorld-VLM produces more geometry-aware representations, leading to clearer spatial grounding and improved answer accuracy. As shown on the right, our method consistently outperforms strong baselines, including the original Gemma-4, fine-tuned Gemma, and fine-tuned Gemma with DINO features, across diverse spatial reasoning benchmarks such as What’sUp and VSR.
+
+## Abstract
+
+Modern Vision-Language Models (VLMs) achieve strong semantic recognition, yet remain brittle on elementary spatial relations such as left of, on, behind, and between. One cause of this failure arises before language reasoning begins: the visual pathway may compress or discard critical 3D structural cues during feature extraction, so the language model receives image representations that are already insufficient for reliable spatial judgment. We introduce GeoWorld-VLM, a VLM-side distillation framework that transfers geometric structure from frozen camera-conditioned video world models into VLMs. GeoWorld-VLM fine-tunes only the image encoder and multimodal projector, aligning post-projector image features with intermediate world-model representations while leaving the main backbone frozen. Given images, a prompt, and a sampled camera trajectory, the world-model teacher converts static visual input into a synthetic multi-view spatial signal. Training combines spatial answer supervision, teacher-student feature alignment, and a preservation anchor to the original VLM. Since the language model remains frozen, GeoWorld-VLM preserves the original model’s linguistic capabilities while attributing spatial improvements to the enhanced visual pathway. To evaluate the effectiveness and generality of the proposed method, we apply GeoWorld-VLM to two distinct VLM architectures and observe consistent improvements across both backbones. GeoWorld-VLM improves performance by approximately 4% on both the What’sUp and VSR benchmarks, suggesting that world-model-guided visual alignment generalizes across model structures and spatial reasoning datasets. Code could be found: Link.
+
+## 1 Introduction
+
+Vision-Language Models (VLMs) have become fluent semantic recognizers, but they remain unreliable spatial reasoners [29, 48]. Even strong contemporary VLMs struggle with elementary relations such as left of, on top $^ { o f , }$ behind, and between. These failures are surprising because the required reasoning is not linguistic: the model often knows the object names and understands the question, yet still fails to recover the geometric relation. This suggests that the bottleneck lies not in language reasoning alone, but in the visual representation delivered to the language model.
+
+A modern VLM can be viewed as a composition of three modules [18, 30, 50]:
+
+$$
+\operatorname{VLM} \left(x _ {v}, x _ {t}\right) = \operatorname{LLM} \left(\left[ P _ {\theta} \left(V _ {\phi} \left(x _ {v}\right)\right), E \left(x _ {t}\right) \right]\right), \tag {1}
+$$
+
+where $V _ { \phi }$ is the vision encoder, $P _ { \theta }$ is the multimodal projector, E is the text encoder and the LLM performs language-conditioned reasoning. This decomposition exposes three possible places to repair spatial reasoning: the LLM, the text encoder, or the vision encoder & projector. In this paper, we argue that improving the spatial understanding capability of the vision encoder and multimodal projector can effectively enhance VLM performance on spatial intelligence questions.
+
+The key challenge is how to teach the visual pathway geometric structure without relying on real multi-view supervision. Recent world models have demonstrated strong spatial understanding and prediction capabilities across diverse scenarios with sparse observation [42, 52, 41, 56]. As shown in Figure 1, motivated by this observation, we introduce GeoWorld-VLM, a VLM-side distillation framework that transfers spatial structure from frozen camera-conditioned world models into VLMs. Given images, a text prompt, and a sampled egocentric camera trajectory, the world-model teacher produces an intermediate representation that captures how the scene would evolve under viewpoint motion, offering motion-aware geometric cues that are difficult to recover from the static view alone. These cues provide an implicit signal about object layout, relative position, and viewdependent structure, which are often compressed or weakened in standard VLM visual representations. GeoWorld-VLM distills this signal into the VLM by aligning its post-projector image features with the teacher representation in a shared feature space, thereby encouraging the visual pathway to preserve motion-aware spatial structure and scene geometry before these visual tokens are passed to the language model for reasoning. Crucially, GeoWorld-VLM leaves the language model frozen. Within the VLM, we update only the image encoder and multimodal projector, together with lightweight training-time alignment heads. Training combines spatial answer supervision, teacherstudent feature alignment, and a preservation anchor to a frozen copy of the original VLM. This design isolates spatial improvement to the visual interface: text-only behavior is preserved by construction, while the visual tokens entering the LLM become more geometry-aware.
+
+To evaluate the effectiveness and generality of the proposed method, we instantiate our plug-in framework with two representative VLM backbones, Gemma [38] and InternVL3.5 [45], and evaluate them on the What’sUp and VSR benchmarks. Across both architectures and datasets, our method achieves consistent improvements under world-model supervision. Ablation studies further show that supervision from camera-conditioned world models is more effective than using conventional vision foundation models such as DINO [7] or geometry foundation models such as VGGT [43].
+
+• World-model distillation for VLM spatial reasoning. We introduce GeoWorld-VLM, a framework that uses frozen camera-conditioned video world models as geometry teachers for VLMs. By sampling camera trajectories from input images, the teacher provides synthetic multi-view supervision without requiring real multi-view data.  
+• A vision-side repair that preserves the language model. GeoWorld-VLM fine-tunes only the vision encoder and multimodal projector while keeping the LLM and language encoder frozen. This isolates the spatial intervention to the visual interface and preserves text-only behavior by construction.  
+• Broad validation across spatial and embodied benchmarks. We evaluate GeoWorld-VLM across multiple spatial reasoning benchmarks and VLM backbones, demonstrating consistent improvements over the base models and stronger spatial understanding.
+
+## 2 Related Work
+
+## 2.1 Spatial and 3D Reasoning in Vision-Language Models
+
+Modern vision-language models such as GPT-4o [19], GPT-5 [31], Gemini [15], Claude [2], Qwen-VL [3], Qwen2.5-VL [4], Qwen3-VL [33], LLaVA [28], BLIP-2 [24], InstructBLIP [12], PaLI [9], and PaliGemma [5] have shown strong semantic visual understanding, but they remain limited in spatial and 3D reasoning. Benchmarks such as SAT [35], What’s Up [20], BLINK [14], EmbSpatial-Bench [13], and PhysBench [11] reveal persistent failures on relative position, relative depth, perspective taking, ego-motion, object movement, and physical consequence prediction. These failures suggest that VLMs can often recognize objects and parse questions, yet still lack the geometric structure needed to reason about spatial relations. Several works attempt to bridge this gap by injecting 3D representations into language or vision-language models. 3D-LLM [17] introduces 3D scene features into language models for embodied reasoning. Cube-LLM [10] and Language-Image Models with 3D Understanding explore 3D-aware representations for multimodal reasoning. MiniGPT-3D [37] aligns point clouds with language models using 2D priors, while ShapeLLM focuses on 3D object understanding through point-cloud encoders and 3D instruction tuning. 3UR-LLM [49] further extends multimodal language models toward 3D scene understanding. These approaches show that explicit 3D information can improve spatial reasoning, but typically require 3D supervision, point-cloud inputs, specialized architectures, or additional training. Training-free or test-time approaches provide a more flexible alternative. APC [23] uses abstract perspective changes to support perspective-aware reasoning. VAGEN [44] applies multi-turn reasoning and world-model interaction for spatial intelligence. SandboxVLM [29] constructs abstract 3D bounding boxes through proxy elevation, multi-view voting, and box rendering, showing that coarse structural representations [43, 57] can help VLMs reason spatially without retraining. Our work follows the same broad goal of improving VLM spatial intelligence, but differs in where the improvement is applied. Rather than providing external 3D context at test time, GeoWorld-VLM distills geometry into the VLM’s own vision side, improving the visual tokens consumed by the frozen language model.
+
+## 2.2 World Models and Geometric Supervision for VLMs
+
+World models and video generative models provide a natural source of geometric supervision because they could predict how scenes evolve under time, camera motion, and object interaction [42, 41, 52]. Classical world-model approaches such as Dreamer [47], DreamerV2 [54] and DreamerV3 [16] learn predictive latent dynamics for control and planning. More recent generative world models and video models, including Genie [6], VideoPoet [21], Sora-style video models [25], CogVideoX [52], Wan [42], HunyuanVideo [22], Cosmos [1], and Stable Virtual Camera [55], scale this idea to rich visual scenes and viewpoint-conditioned generation. These models implicitly encode cues such as parallax, occlusion, support, relative depth, and object persistence. Recent VLM reasoning methods have begun to exploit such models. MindJourney [51] uses imagined visual trajectories at test time to help VLMs reason about spatial questions. These works suggest that world models contain useful spatial priors, but most use them externally: they generate images, videos, or reconstructed 3D contexts that are then fed back to a VLM during inference. GeoWorld-VLM instead uses the world model as a feature teacher. The teacher receives the initial image, a text condition, and a sampled camera trajectory, producing an intermediate representation shaped by camera-conditioned prediction. We distill this representation into the VLM’s post-projector image feature, while keeping the LLM frozen. This differs from static feature distillation methods based on DINO [7], DINOv2 [32], CLIP [34], or SigLIP [53], which provide strong semantic representations but do not explicitly encode viewpoint-dependent geometry. It also differs from world-model-only image conditioning, where the teacher receives no camera trajectory and therefore behaves more like a static image encoder. By conditioning the world-model teacher on both camera motion and textual context, GeoWorld-VLM transforms a single static image into a synthetic multi-view supervision signal that encodes how the scene would change under viewpoint variation, and transfers this geometry-aware information into the VLM’s visual interface through feature-level alignment.
+
+## 3 Method
+
+We introduce GeoWorld-VLM, a vision-side distillation method that transfers geometric structure from a frozen camera-conditioned video world model into a VLM [5, 45, 39]. As shown in Figure 2, our design follows from a simple hypothesis: spatial failures arise because the visual tokens entering the LLM lack sufficient 3D structure. We therefore keep the LLM frozen and update only the image encoder, multimodal projector, and lightweight alignment heads.
+
+![](images/89f1c30aed1433a72958456cda836cf7f07cf6b94d6933ea149b0343ec3cf62c.jpg)
+
+<details>
+<summary>flowchart</summary>
+
+```mermaid
+graph TD
+  A["Input Prompt"] --> B["Random Selected Camera Poses"]
+  B --> C["World model DIT"]
+  C --> D["World model DIT"]
+  D --> E["Generated Frames"]
+    
+  F["Input Images"] --> G["Vision Blocks"]
+  G --> H["MLP"]
+  H --> I["Alignment"]
+    
+  J["Question"] --> K["Text Encoder"]
+  K --> L["VLM Backbone"]
+  L --> M["The bed is beneath the window. Answer"]
+    
+    style A fill:#f9f,stroke:#333
+    style F fill:#ccf,stroke:#333
+    style J fill:#cfc,stroke:#333
+    style K fill:#fcc,stroke:#333
+```
+</details>
+
+Figure 2: GeoWorld-VLM. During training, GeoWorld-VLM fine-tunes only the vision blocks including vision encoder and multimodal projector. It aligns the latent features produced by the VLM vision encoder with intermediate world-model representations, where the world model takes the input image, text prompt, and randomly sampled camera poses as input. At inference time, GeoWorld-VLM no longer requires the world model and can perform standard VLM inference directly.
+
+## 3.1 Vision-side formulation
+
+Following most VLM architectures, we design a VLM:
+
+$$
+\operatorname{VLM} (x _ {v}, x _ {t}) = \Psi \left([ P _ {\theta} (V _ {\phi} (x _ {v})), E (x _ {t}) ]\right), \tag {2}
+$$
+
+where $V _ { \phi }$ is the image encoder, $P _ { \theta }$ is the multimodal projector, $E$ is the text encoder and $\Psi$ is the main LLM backbone. GeoWorld-VLM updates only $( \phi , \theta )$ . This isolates the intervention to the representation consumed by the LLM: text-only behavior is unchanged by construction, and any spatial improvement must come from better visual tokens rather than language-side adaptation.
+
+## 3.2 Camera-conditioned world-model teacher
+
+Static image teachers such as DINO [7, 32, 36] provide strong semantic features, but they do not explicitly encode how a scene changes under viewpoint motion. This distinction matters for spatial reasoning: relations such as behind, between, support, and occlusion are revealed not only by what objects are present, but by how their projections change as the camera moves. For each training image $x _ { v }$ , we sample an egocentric camera trajectory:
+
+$$
+\pi = (\pi^ {(1)}, \dots , \pi^ {(F)}), \tag {3}
+$$
+
+from translations and rotations, including forward, backward, left, right, forward-left, backwardleft, forward-right, backward-right, and other movements, as provided in LingBot-World [41]. The frozen world-model teacher receives the initial images, the camera trajectory, and a text condition: $( x _ { v } , \pi , c )$ . Here, c is $" \mathbf { A }$ slight camera motion with stable object layout and unchanged spatial relations.". The teacher predicts the scene under the sampled camera motion, and we extract an intermediate hidden representation $g ( x _ { v } ) = \mathcal { T } _ { b ^ { \star } } ( x _ { v } , \pi , c , z _ { t ^ { \star } } )$ where $z _ { t ^ { \star } }$ is the noised video latent at timestep $t ^ { \star }$ and $\mathcal { T } _ { b ^ { \star } }$ denotes the hidden state at teacher block $b ^ { \star }$ . The camera trajectory is essential. If the teacher receives only images, its representation collapses toward a static semantic embedding. Conditioning on camera motion instead forces the teacher feature to encode counterfactual views, making a single image behave like a synthetic multi-view training signal, which could be helpful for spatial understanding.
+
+## 3.3 World-to-VLM alignment
+
+The student produces post-projector image features $h _ { \phi , \theta } ( x _ { v } ) = P _ { \theta } ( V _ { \phi } ( x _ { v } ) )$ . Since the VLM and world model have different representation spaces, we use two lightweight projection heads:
+
+$$
+u _ {s} = f _ {\psi} ^ {s} (h _ {\phi , \theta} (x _ {v})), \qquad u _ {t} = f _ {\psi} ^ {t} (g (x _ {v})). \tag {4}
+$$
+
+<table><tr><td>Model</td><td>Ctrl-A</td><td>Ctrl-B</td><td>COCO-1</td><td>COCO-2</td><td>VG-1</td><td>VG-2</td><td>VSR</td><td>Overall</td></tr><tr><td>Gemma4</td><td>94.17</td><td>79.90</td><td>40.57</td><td>64.55</td><td>69.14</td><td>68.49</td><td>74.36</td><td>61.70</td></tr><tr><td>Gemma4 + FT</td><td>99.03</td><td>92.16</td><td>34.79</td><td>66.82</td><td>77.24</td><td>69.86</td><td>75.56</td><td>62.71</td></tr><tr><td>Gemma4 + DINO</td><td>97.57</td><td>94.61</td><td>36.74</td><td>68.64</td><td>78.10</td><td>70.55</td><td>78.63</td><td>64.40</td></tr><tr><td>Gemma4 + Ours</td><td>99.51</td><td>93.14</td><td>37.46</td><td>70.45</td><td>78.28</td><td>76.71</td><td>80.17</td><td>65.45</td></tr><tr><td>InternVL3.5-2B</td><td>64.08</td><td>81.37</td><td>40.12</td><td>60.00</td><td>65.69</td><td>41.78</td><td>72.82</td><td>57.06</td></tr><tr><td>InternVL3.5-2B + FT</td><td>98.54</td><td>96.08</td><td>31.76</td><td>55.00</td><td>61.38</td><td>41.10</td><td>83.59</td><td>58.14</td></tr><tr><td>InternVL3.5-2B + DINO</td><td>97.57</td><td>99.51</td><td>29.54</td><td>52.73</td><td>51.38</td><td>29.45</td><td>83.25</td><td>54.81</td></tr><tr><td>InternVL3.5-2B + Ours</td><td>99.51</td><td>99.51</td><td>35.77</td><td>60.91</td><td>70.52</td><td>45.89</td><td>80.34</td><td>61.66</td></tr></table>
+
+Table 1: Main results on the combined What’sUp+VSR evaluation suite. GeoWorld-VLM consistently improves the overall score over the original model, task-only fine-tuning, and DINO-based distillation. Best results are shown in bold, and second-best results are underlined.
+
+The alignment loss is
+
+$$
+\mathcal {L} _ {\text { align }} = 1 - \left\langle \frac {u _ {s}}{\| u _ {s} \| _ {2}}, \frac {u _ {t}}{\| u _ {t} \| _ {2}} \right\rangle . \tag {5}
+$$
+
+We align at the post-projector level because this representation is directly consumed by the frozen LLM for multimodal reasoning. Aligning earlier visual features may improve the encoder but does not guarantee that geometry survives the multimodal interface.
+
+## 3.4 Preserving the original interface
+
+World-model alignment alone can move the visual tokens away from the distribution expected by the frozen LLM. To control this shift, we keep a frozen copy of the original vision side, $( \bar { V } _ { \phi ^ { \prime } } , P _ { \theta ^ { \prime } } )$ , and add a post-projector preservation loss:
+
+$$
+\mathcal {L} _ {\text { preserve }} = \left\| \frac {h _ {\phi , \theta}}{\| h _ {\phi , \theta} \| _ {2}} - \frac {h _ {\phi^ {\prime} , \theta^ {\prime}}}{\| h _ {\phi^ {\prime} , \theta^ {\prime}} \| _ {2}} \right\| _ {2} ^ {2}. \tag {6}
+$$
+
+The alignment and preservation losses play complementary roles: alignment injects geometry from the world model, while preservation keeps visual tokens compatible with the frozen language stack.
+
+## 3.5 Training objective
+
+GeoWorld-VLM combines spatial supervision, world-model alignment, and interface preservation:
+
+$$
+\mathcal {L} = \mathcal {L} _ {\text { task }} + \lambda_ {\text { align }} \mathcal {L} _ {\text { align }} + \lambda_ {\text { preserve }} \mathcal {L} _ {\text { preserve }}. \tag {7}
+$$
+
+Here, $\mathcal { L } _ { \mathrm { t a s k } }$ is the option-restricted cross-entropy loss for spatial multiple-choice supervision. Gradients update only $( \phi , \theta , \psi )$ ; the LLM, the world-model teacher, and the frozen reference VLM remain fixed. This design separates the source of supervision from the locus of adaptation. The world model supplies geometry through camera-conditioned prediction; the VLM absorbs that structure only through its vision side; and the LLM remains unchanged. As a result, GeoWorld-VLM tests a focused claim: many spatial reasoning failures in VLMs can be repaired by improving the visual interface itself rather than retraining or modifying the language model.
+
+## 4 Experiments
+
+## 4.1 Experimental Setup
+
+Baselines & VLMs. We evaluate GeoWorld-VLM on two representative vision-language model backbones: google/gemma-4-E4B-it and OpenGVLab/InternVL3\_5-2B-Instruct [46]. For each VLM, we compare four variants. Base denotes the original VLM without additional spatial adaptation. FT denotes task-only fine-tuning, which removes the teacher-student feature alignment loss and the preservation anchor from GeoWorld-VLM and optimizes only the downstream spatial answer supervision. This baseline tests whether the gains can be explained by target-task supervision alone. DINO [36] denotes a DINOv3-based static feature distillation baseline, where the worldmodel teacher is replaced with a frozen DINOv3 encoder and the VLM visual representation is aligned with DINOv3 features. This baseline tests whether generic visual representation distillation is sufficient for spatial reasoning. Ours denotes GeoWorld-VLM, which aligns post-projector image features with intermediate camera-conditioned world-model representations, allowing the student VLM to absorb motion-aware geometric cues from the frozen teacher while preserving compatibility with the original visual interface and leaving the language backbone unchanged.
+
+![](images/d3acd8668d27b1097bc4efd4e85777a4a46c2cec50081bcadc6299831426c978.jpg)
+
+<details>
+<summary>flowchart</summary>
+
+```mermaid
+graph TD
+  A["Input Images"] --> B["Generated Frames"]
+  B --> C["Question: What is the spatial relationship between lamp and desk in the image?"]
+  C --> D["Raw Gemma4: The lamp is at the left side of the desk."]
+  D --> E["Fine-tuned: The lamp is at the left side of the desk."]
+  E --> F["Ours: The lamp is above the desk."]
+  F --> G["Correct Answer: The lamp is above the desk."]
+    
+  H["Input Images"] --> I["Generated Frames"]
+  I --> J["Question: Where is the vehicle in the photo?"]
+  J --> K["Raw Gemma4: The vehicle is on the left."]
+  K --> L["Fine-tuned: The vehicle is on the right."]
+  L --> M["Ours: The vehicle is at the top."]
+  M --> N["Correct Answer: The vehicle is at the top."]
+```
+</details>
+
+Figure 3: Qualitative comparison. We compare the predictions of the original Gemma4, task-only fine-tuned Gemma4, and GeoWorld-VLM on representative spatial reasoning examples. GeoWorld-VLM produces more spatially consistent answers than the baselines, illustrating the benefit of injecting camera-conditioned world-model supervision into the VLM visual pathway.
+
+Datasets. We evaluate GeoWorld-VLM on three spatial reasoning benchmarks: What’sUp [20], Visual Spatial Reasoning (VSR) [27], and EmbSpatial-Bench [13]. Following the evaluation protocol of prior spatial reasoning work [8], we combine What’sUp and VSR into a unified What’sUp+VSR suite. This suite contains controlled spatial relation recognition, natural-image spatial QA, and image-text spatial verification. Specifically, it covers object-centric relation recognition in controlled tabletop scenes, absolute and relative spatial localization in COCO and Visual Genome images, and binary verification of diverse spatial predicates in natural images. We use 3,089 examples for training and the remaining 3,091 examples for evaluation. For EmbSpatial, we use 2,000 examples for training and the remaining 1,640 examples for evaluation. For What’sUp+VSR, we report accuracy on Controlled Images A/B, COCO-based QA, VG-based QA, and VSR, together with the overall average [26, 58]. For EmbSpatial, we report relation-wise accuracy on six spatial relations: left, right, above, under, close, and far, together with the overall average.
+
+Implementation Details. GeoWorld-VLM uses LingBot-World-Fast [40] as a frozen cameraconditioned image-to-video teacher, extracting intermediate DiT features as geometry-aware supervision. For each input image, the teacher takes a fixed lightweight prompt, “A slight camera motion with stable object layout and unchanged spatial relations.”, and a randomly sampled egocentric camera trajectory. On the student side, we align post-projector image features, which are directly consumed by the frozen language model. Following Section 3, we freeze the language model and update only the image encoder, multimodal projector, and lightweight alignment heads. All main fine-tuning experiments are repeated using three different random seeds, and we report the averaged results across these independent runs. Unless otherwise specified, teacher features are extracted from the 24th teacher block using two denoising steps. All methods are trained for three epochs under the same downstream spatial supervision, with detailed hyperparameters provided in Appendix B.
+
+## 4.2 Main Results on What’sUp and VSR
+
+Table 1 reports the main results on the What’sUp+VSR suite. Across both VLM backbones, GeoWorld-VLM achieves the best overall performance. For Gemma4, GeoWorld-VLM improves the overall score from 61.70 to 65.45, outperforming both task-only fine-tuning and DINOv3-based static feature distillation. The gains are especially clear on natural-image spatial reasoning subsets such as COCO-2 and VG-2, where GeoWorld-VLM reaches 70.45 and 76.71, respectively. This suggests that world-model supervision does not merely improve controlled relation recognition, but also transfers to more complex natural-image spatial reasoning. The qualitative examples in Figure 3 further show that GeoWorld-VLM produces more spatially grounded predictions than the baselines. For InternVL3.5-2B, GeoWorld-VLM improves the overall score from 57.06 to 61.66, yielding a 4.60-point gain over the base model and a 3.52-point gain over task-only fine-tuning. In contrast, DINOv3-based feature distillation decreases the overall score to 54.81. This comparison is important because both DINO and GeoWorld-VLM introduce auxiliary feature-level supervision, but only GeoWorld-VLM provides camera-conditioned world-model representations. The result indicates that static visual feature distillation may be insufficient, or even harmful, when the target task requires spatial judgment rather than generic visual discrimination. By contrast, world-model features provide a more geometry-aware supervision signal, while the preservation anchor helps maintain compatibility with the frozen language model. We also observe that the gains are not uniform across all subsets. For example, COCO-1 remains challenging for all adapted variants, and task-only finetuning can even reduce performance on this subset. This suggests that spatial adaptation may shift the visual interface toward the training distribution if it is not properly regularized. GeoWorld-VLM alleviates this issue by combining world-model supervision with the preservation anchor, improving the overall score while maintaining competitive performance across individual subsets. Figure 4 visualizes the overall comparison on the What’sUp+VSR suite. The performance pattern is consistent with Table 1: GeoWorld-VLM improves the visual pathway with geometry-aware supervision and achieves stronger spatial grounding without modifying the frozen language model.
+
+![](images/f99bceb31246710d1f642500463814ab000c189911c3e40e97c984c5f54f117c.jpg)
+
+<details>
+<summary>text_image</summary>
+
+Input Image
+Gemma
+Fine-Tuned
+Dino-Gemma
+Ours
+</details>
+
+Figure 4: Overall comparison on the What’sUp+VSR suite. GeoWorld-VLM improves spatial reasoning performance across diverse sub-benchmarks, showing consistent gains over the original VLM, task-only fine-tuning, and DINOv3-based static feature distillation.
+
+## 4.3 Relation-wise Results on EmbSpatial
+
+Table 2 further evaluates GeoWorld-VLM on EmbSpatial. This benchmark allows us to inspect whether the improvement comes from broad answer-pattern fitting or from better handling of specific spatial relations. For Gemma4, GeoWorld-VLM improves the overall score from 60.55 to 78.78, outperforming task-only fine-tuning and DINOv3-based static feature distillation. The gains are particularly clear on above, under, close, and far, which often require relative layout, support, depth, or distance estimation rather than object recognition alone.
+
+<table><tr><td>Model</td><td>Left</td><td>Right</td><td>Above</td><td>Under</td><td>Close</td><td>Far</td><td>Overall</td></tr><tr><td>Gemma4</td><td>84.53</td><td>60.57</td><td>60.45</td><td>55.35</td><td>53.99</td><td>47.76</td><td>60.55</td></tr><tr><td>Gemma4 + FT</td><td>90.29</td><td>77.78</td><td>86.57</td><td>85.24</td><td>63.04</td><td>58.96</td><td>77.01</td></tr><tr><td>Gemma4 + DINO</td><td>87.05</td><td>71.68</td><td>87.69</td><td>84.50</td><td>65.58</td><td>58.96</td><td>75.91</td></tr><tr><td>Gemma4 + Ours</td><td>89.21</td><td>78.14</td><td>88.43</td><td>86.72</td><td>67.03</td><td>63.06</td><td>78.78</td></tr><tr><td>InternVL3.5-2B</td><td>78.42</td><td>58.42</td><td>64.55</td><td>28.78</td><td>43.12</td><td>42.16</td><td>52.68</td></tr><tr><td>InternVL3.5-2B + FT</td><td>86.69</td><td>82.80</td><td>82.84</td><td>82.29</td><td>65.58</td><td>68.66</td><td>78.17</td></tr><tr><td>InternVL3.5-2B + DINO</td><td>87.41</td><td>78.85</td><td>90.67</td><td>84.50</td><td>67.75</td><td>65.30</td><td>79.09</td></tr><tr><td>InternVL3.5-2B + Ours</td><td>84.89</td><td>81.36</td><td>89.18</td><td>87.82</td><td>69.93</td><td>64.93</td><td>79.70</td></tr></table>
+
+Table 2: Relation-wise results on EmbSpatial. GeoWorld-VLM improves the overall relation accuracy for both VLM backbones and shows strong gains on geometry-sensitive relations such as under, close, and far. The best result is shown in bold and the second-best result is underlined.
+
+<table><tr><td>Model</td><td>Ctrl-A</td><td>Ctrl-B</td><td>COCO-1</td><td>COCO-2</td><td>VG-1</td><td>VG-2</td><td>VSR</td><td>Overall</td></tr><tr><td>Gemma4</td><td>94.17</td><td>79.90</td><td>40.57</td><td>64.55</td><td>69.14</td><td>68.49</td><td>74.36</td><td>61.70</td></tr><tr><td>Gemma4 + I2V</td><td>99.03</td><td>94.12</td><td>35.68</td><td>68.18</td><td>77.59</td><td>67.81</td><td>79.66</td><td>64.01</td></tr><tr><td>Gemma4 + I2V + Camera</td><td>98.06</td><td>93.14</td><td>33.81</td><td>66.36</td><td>77.07</td><td>66.44</td><td>81.03</td><td>63.16</td></tr><tr><td>Gemma4 + I2V + Prompt</td><td>98.54</td><td>93.14</td><td>33.54</td><td>65.45</td><td>76.38</td><td>70.55</td><td>78.46</td><td>62.61</td></tr><tr><td>Gemma4 + I2V + Prompt + Camera</td><td>99.51</td><td>93.14</td><td>37.46</td><td>70.45</td><td>78.28</td><td>76.71</td><td>80.17</td><td>65.45</td></tr></table>
+
+Table 3: Module selection results on the What’sUp+VSR suite. We compare different teacher-side conditioning modules, including image-to-video features alone and variants with prompt or camera conditioning. Based on the overall performance, we select image-to-video features with both prompt and camera conditioning as the default configuration of GeoWorld-VLM. The best result is shown in bold and the second-best result is underlined.
+
+For InternVL3.5-2B, GeoWorld-VLM improves the overall score from 52.68 to 79.70 and slightly surpasses DINOv3-based feature distillation. The strongest gains appear on under and close, suggesting that the world-model teacher is especially useful for relations that depend on scene geometry and viewpoint. Overall, the EmbSpatial results show that GeoWorld-VLM does not simply increase average accuracy; it strengthens spatial judgments that require geometry-aware visual representations. The relation-wise pattern also explains why the improvement is not identical across all categories. Relations such as left and right can often be inferred from 2D image layout, so static visual features or task-only fine-tuning may already provide strong cues. In contrast, relations such as under, close, and far are more sensitive to viewpoint, support, and relative depth. These are precisely the cases where camera-conditioned world-model supervision is expected to be most useful.
+
+## 4.4 Module Selection
+
+Table 3 studies which teacher-side conditioning module provides the most effective supervision for GeoWorld-VLM. Using image-to-video world-model features alone already improves the overall score from 61.70 to 64.01, showing that world-model representations contain spatial information beyond the original VLM visual tokens. However, adding only camera conditioning or only prompt conditioning does not further improve the overall result. The camera-only and prompt-only variants reach 63.16 and 62.61, respectively. This indicates that the two conditioning signals are complementary rather than independently sufficient. Camera trajectories provide geometric transformation cues, but without relation-aware text conditioning, the teacher representation may not focus on the spatial relation queried by the downstream task. Conversely, prompt conditioning alone identifies the relevant relation but lacks the viewpoint variation needed to expose geometry-aware structure. The best performance is obtained when prompt and camera conditioning are used jointly. This full configuration improves the overall score to 65.45, outperforming the base model by 3.75 points and the I2V-only teacher by 1.44 points. The improvement is especially clear on COCO-2 and VG-2, where the full configuration reaches 70.45 and 76.71, respectively. These results suggest that the most useful teacher representation is both question-aware and geometry-aware: the prompt specifies the spatial relation of interest, while the camera trajectory encourages features that encode scene structure under viewpoint changes. Therefore, we use I2V features with both prompt and camera conditioning as the default teacher configuration of GeoWorld-VLM. Beyond module selection, we further conduct parameter ablations on world-model feature extraction layer, denoising step, and the alignment loss coefficient. As shown in Appendix C, GeoWorld-VLM achieves the best overall performance when using the 24th world-model layer, two denoising steps, and $\lambda _ { \mathrm { a l i g n } } = 0 . 1 0$ These results suggest that world-model supervision is most effective when the teacher features are sufficiently spatially structured but not overly dominated by generation-specific dynamics.
+
+<table><tr><td>Model</td><td>Ctrl-A</td><td>Ctrl-B</td><td>COCO-1</td><td>COCO-2</td><td>VG-1</td><td>VG-2</td><td>VSR</td><td>Overall</td></tr><tr><td>Gemma4</td><td>94.17</td><td>79.90</td><td>40.57</td><td>64.55</td><td>69.14</td><td>68.49</td><td>74.36</td><td>61.70</td></tr><tr><td>Gemma4 + Ours, layer 23</td><td>97.57</td><td>94.12</td><td>34.25</td><td>63.64</td><td>77.07</td><td>65.75</td><td>80.68</td><td>63.07</td></tr><tr><td>Gemma4 + Ours, layer 24</td><td>99.51</td><td>93.14</td><td>37.46</td><td>70.45</td><td>78.28</td><td>76.71</td><td>80.17</td><td>65.45</td></tr><tr><td>Gemma4 + Ours, layer 25</td><td>99.03</td><td>95.10</td><td>34.43</td><td>66.82</td><td>76.03</td><td>65.07</td><td>79.66</td><td>63.10</td></tr></table>
+
+Table 4: Ablation on world-model feature extraction layers. Layer 24 achieves the best overall performance, suggesting that intermediate-to-late world-model representations provide the most transferable geometry-aware supervision.
+
+<table><tr><td>Model</td><td>Ctrl-A</td><td>Ctrl-B</td><td>COCO-1</td><td>COCO-2</td><td>VG-1</td><td>VG-2</td><td>VSR</td><td>Overall</td></tr><tr><td>Gemma4</td><td>94.17</td><td>79.90</td><td>40.57</td><td>64.55</td><td>69.14</td><td>68.49</td><td>74.36</td><td>61.70</td></tr><tr><td>Gemma4 + Ours, 0 step</td><td>97.57</td><td>93.14</td><td>34.88</td><td>66.36</td><td>75.34</td><td>71.23</td><td>78.80</td><td>63.00</td></tr><tr><td>Gemma4 + Ours, 1 step</td><td>98.06</td><td>95.10</td><td>34.43</td><td>66.82</td><td>76.90</td><td>65.07</td><td>78.63</td><td>63.00</td></tr><tr><td>Gemma4 + Ours, 2 steps</td><td>99.51</td><td>93.14</td><td>37.46</td><td>70.45</td><td>78.28</td><td>76.71</td><td>80.17</td><td>65.45</td></tr><tr><td>Gemma4 + Ours, 3 steps</td><td>95.63</td><td>88.73</td><td>34.25</td><td>68.18</td><td>70.00</td><td>71.23</td><td>72.31</td><td>60.23</td></tr></table>
+
+Table 5: Ablation on denoising step selection. Using two denoising steps gives the best overall performance, while using three steps leads to clear degradation.
+
+## 4.5 Ablation Studies
+
+After selecting the default teacher-side conditioning module, we further ablate two key design choices in GeoWorld-VLM: the world-model feature extraction layer and the denoising step used for teacher feature extraction. Both factors directly affect the spatial signal transferred from the world-model teacher to the VLM visual interface. Unless otherwise specified, all ablation studies are conducted using Gemma4 as the VLM backbone and are evaluated on the What’sUp+VSR suite under the same experimental setting. More detailed analysis is provided in Appendix C.
+
+World-model layer selection. Table 4 compares layers 23, 24, and 25 of the world-model teacher. Layer 24 achieves the best overall performance, improving the base Gemma4 model from 61.70 to 65.45 and outperforming layers 23 and 25 by 2.38 and 2.35 points, respectively. This suggests that the most transferable spatial supervision lies in an intermediate-to-late region of the worldmodel hierarchy, where the representation has incorporated camera- and prompt-conditioned spatial structure while remaining general enough to supervise the VLM visual pathway.
+
+Denoising step selection. Table 5 evaluates the number of denoising steps used when extracting teacher features. Using zero or one denoising step improves over the base model, but both variants plateau at an overall score of 63.00. Using two denoising steps achieves the best overall performance of 65.45, while using three steps reduces the overall score to 60.23. This indicates that the teacher signal is most useful after a small amount of spatial prediction, but excessive denoising may make the representation too generation-specific and less suitable for aligning the frozen VLM visual interface.
+
+Additional hyperparameter ablation. We additionally ablate the alignment loss coefficient $\lambda _ { \mathrm { a l i g n } }$ in Appendix C.3. The best performance is obtained with $\lambda _ { \mathrm { a l i g n } } = 0 . 1 0$ , suggesting that worldmodel alignment should be strong enough to inject useful spatial structure into the visual pathway, but not so strong that it disrupts the original VLM visual interface and its pretrained multimodal representation.
+
+## 5 Conclusion
+
+We presented GeoWorld-VLM, a vision-side distillation framework that transfers geometric structure from frozen camera-conditioned world models into VLMs. By fine-tuning only the vision encoder and multimodal projector, GeoWorld-VLM aligns visual tokens with world-model representations while keeping the language model frozen and requiring no world-model inference at test time. Across spatial reasoning benchmarks and two VLM backbones, GeoWorld-VLM consistently improves the performance, especially on geometry-sensitive relations such as above, under, close, and far. Ablations show that prompt- and camera-aware intermediate world-model features are most effective. Overall, our results suggest that improving the geometry encoded in visual tokens can mitigate spatial failures in VLMs without retraining the language model, highlighting world models as reusable teachers for spatially grounded multimodal intelligence.
+
+## References
+
+[1] N. Agarwal, A. Ali, M. Bala, Y. Balaji, E. Barker, T. Cai, P. Chattopadhyay, Y. Chen, Y. Cui, Y. Ding, et al. Cosmos world foundation model platform for physical ai. arXiv preprint arXiv:2501.03575, 2025.  
+[2] Anthropic. The Claude 3 model family: Opus, Sonnet, Haiku. Technical report, Anthropic, 2024.  
+[3] J. Bai, S. Bai, S. Yang, S. Wang, S. Tan, P. Wang, J. Lin, C. Zhou, and J. Zhou. Qwen-VL: A versatile vision-language model for understanding, localization, text reading, and beyond. arXiv preprint arXiv:2308.12966, 2023.  
+[4] S. Bai, K. Chen, X. Liu, J. Wang, W. Ge, S. Song, K. Dang, P. Wang, S. Wang, J. Tang, et al. Qwen2.5-VL technical report. arXiv preprint arXiv:2502.13923, 2025.  
+[5] L. Beyer, A. Steiner, A. S. Pinto, A. Kolesnikov, X. Wang, D. Salz, M. Neumann, I. Alabdulmohsin, M. Tschannen, E. Bugliarello, et al. Paligemma: A versatile 3b vlm for transfer. arXiv preprint arXiv:2407.07726, 2024.  
+[6] J. Bruce, M. D. Dennis, A. Edwards, J. Parker-Holder, Y. Shi, E. Hughes, M. Lai, A. Mavalankar, R. Steigerwald, C. Apps, et al. Genie: Generative interactive environments. In Forty-first International Conference on Machine Learning, 2024.  
+[7] M. Caron, H. Touvron, I. Misra, H. Jégou, J. Mairal, P. Bojanowski, and A. Joulin. Emerging properties in self-supervised vision transformers. In Proceedings of the International Conference on Computer Vision (ICCV), 2021.  
+[8] S. Chen, T. Zhu, R. Zhou, J. Zhang, S. Gao, J. C. Niebles, M. Geva, J. He, J. Wu, and M. Li. Why is spatial reasoning hard for vlms? an attention mechanism perspective on focus areas, 2025.  
+[9] X. Chen, X. Wang, S. Changpinyo, A. J. Piergiovanni, P. Padlewski, D. Salz, S. Goodman, A. Grycner, B. Mustafa, L. Beyer, et al. PaLI: A jointly-scaled multilingual language-image model. In International Conference on Learning Representations (ICLR), 2023.  
+[10] J. H. Cho, B. Ivanovic, Y. Cao, E. Schmerling, Y. Wang, X. Weng, B. Li, Y. You, P. Krähenbühl, Y. Wang, et al. Language-image models with 3d understanding. arXiv preprint arXiv:2405.03685, 2024.  
+[11] W. Chow, J. Mao, B. Li, D. Seita, V. Guizilini, and Y. Wang. PhysBench: Benchmarking and enhancing vision-language models for physical world understanding. arXiv preprint arXiv:2501.16411, 2025.  
+[12] W. Dai, J. Li, D. Li, A. M. H. Tiong, J. Zhao, W. Wang, B. Li, P. Fung, and S. Hoi. InstructBLIP: Towards general-purpose vision-language models with instruction tuning. In Advances in Neural Information Processing Systems (NeurIPS), 2023.  
+[13] M. Du, B. Wu, Z. Li, X. Huang, and Z. Wei. EmbSpatial-Bench: Benchmarking spatial understanding for embodied tasks with large vision-language models. In Proceedings of the 62nd Annual Meeting of the Association for Computational Linguistics (ACL), Volume 2: Short Papers, 2024.  
+[14] X. Fu, Y. Hu, B. Li, Y. Feng, H. Wang, X. Lin, D. Roth, N. A. Smith, W.-C. Ma, and R. Krishna. BLINK: Multimodal large language models can see but not perceive. In European Conference on Computer Vision (ECCV), 2024.  
+[15] Gemini Team, Google. Gemini 1.5: Unlocking multimodal understanding across millions of tokens of context. arXiv preprint arXiv:2403.05530, 2024.  
+[16] D. Hafner, J. Pasukonis, J. Ba, and T. Lillicrap. Mastering diverse domains through world models. arXiv preprint arXiv:2301.04104, 2023.  
+[17] Y. Hong, H. Zhen, P. Chen, S. Zheng, Y. Du, Z. Chen, and C. Gan. 3d-llm: Injecting the 3d world into large language models. Advances in Neural Information Processing Systems, 36:20482–20494, 2023.  
+[18] A. Hurst, A. Lerer, A. P. Goucher, A. Perelman, A. Ramesh, A. Clark, A. Ostrow, A. Welihinda, A. Hayes, A. Radford, et al. Gpt-4o system card. arXiv preprint arXiv:2410.21276, 2024.  
+[19] A. Hurst, A. Lerer, A. P. Goucher, A. Perelman, A. Ramesh, et al. GPT-4o system card. arXiv preprint arXiv:2410.21276, 2024.  
+[20] A. Kamath, J. Hessel, and K.-W. Chang. What’s “up” with vision-language models? Investigating their struggle with spatial reasoning. arXiv preprint arXiv:2310.19785, 2023.  
+[21] D. Kondratyuk, L. Yu, X. Gu, J. Lezama, J. Huang, G. Schindler, R. Hornung, V. Birodkar, J. Yan, M.-C. Chiu, et al. Videopoet: A large language model for zero-shot video generation. arXiv preprint arXiv:2312.14125, 2023.  
+[22] W. Kong, Q. Tian, Z. Zhang, R. Min, Z. Dai, J. Zhou, J. Xiong, X. Li, B. Wu, J. Zhang, et al. Hunyuanvideo: A systematic framework for large video generative models. arXiv preprint arXiv:2412.03603, 2024.  
+[23] P. Y. Lee, J. Je, C. Park, M. A. Uy, L. Guibas, and M. Sung. Perspective-aware reasoning in visionlanguage models via mental imagery simulation. In Proceedings of the IEEE/CVF International Conference on Computer Vision, pages 9241–9251, 2025.  
+[24] J. Li, D. Li, S. Savarese, and S. Hoi. BLIP-2: Bootstrapping language-image pre-training with frozen image encoders and large language models. In International Conference on Machine Learning (ICML), 2023.  
+[25] B. Lin, Y. Ge, X. Cheng, Z. Li, B. Zhu, S. Wang, X. He, Y. Ye, S. Yuan, L. Chen, et al. Open-sora plan: Open-source large video generation model. arXiv preprint arXiv:2412.00131, 2024.  
+[26] T.-Y. Lin, M. Maire, S. Belongie, L. Bourdev, R. Girshick, J. Hays, P. Perona, D. Ramanan, C. L. Zitnick, and P. Dollár. Microsoft coco: Common objects in context, 2015.  
+[27] F. Liu, G. Emerson, and N. Collier. Visual spatial reasoning. Transactions of the Association for Computational Linguistics, 11:635–651, 2023.  
+[28] H. Liu, C. Li, Q. Wu, and Y. J. Lee. Visual instruction tuning. In Advances in Neural Information Processing Systems (NeurIPS), 2023.  
+[29] Y. Liu, F. Zhan, K. Zhou, Y. Du, P. P. Liang, and H. Pfister. Abstract 3d perception for spatial intelligence in vision-language models. arXiv preprint arXiv:2511.10946, 2025.  
+[30] G. Luo, G. Yang, Z. Gong, G. Chen, H. Duan, E. Cui, R. Tong, Z. Hou, T. Zhang, Z. Chen, et al. Visual embodied brain: Let multimodal large language models see, think, and control in spaces. arXiv preprint arXiv:2506.00123, 2025.  
+[31] OpenAI. Introducing GPT-5. https://openai.com/index/introducing-gpt-5/, 2025. Accessed: 2026-05-04.  
+[32] M. Oquab, T. Darcet, T. Moutakanni, H. Vo, M. Szafraniec, V. Khalidov, P. Fernandez, D. Haziza, F. Massa, A. El-Nouby, et al. Dinov2: Learning robust visual features without supervision. arXiv preprint arXiv:2304.07193, 2023.  
+[33] Qwen Team. Qwen3-VL technical report. arXiv preprint arXiv:2511.21631, 2025.  
+[34] A. Radford, J. W. Kim, C. Hallacy, A. Ramesh, G. Goh, S. Agarwal, G. Sastry, A. Askell, P. Mishkin, J. Clark, et al. Learning transferable visual models from natural language supervision. In International conference on machine learning, pages 8748–8763. PmLR, 2021.  
+[35] A. Ray, J. Duan, E. Brown, R. Tan, D. Bashkirova, R. Hendrix, K. Ehsani, A. Kembhavi, B. A. Plummer, R. Krishna, K.-H. Zeng, and K. Saenko. SAT: Dynamic spatial aptitude training for multimodal language models. arXiv preprint arXiv:2412.07755, 2024.  
+[36] O. Siméoni, H. V. Vo, M. Seitzer, F. Baldassarre, M. Oquab, C. Jose, V. Khalidov, M. Szafraniec, S. Yi, M. Ramamonjisoa, et al. Dinov3. arXiv preprint arXiv:2508.10104, 2025.  
+[37] Y. Tang, X. Han, X. Li, Q. Yu, Y. Hao, L. Hu, and M. Chen. Minigpt-3d: Efficiently aligning 3d point clouds with large language models using 2d priors. In Proceedings of the 32nd ACM International Conference on Multimedia, pages 6617–6626, 2024.  
+[38] G. Team, T. Mesnard, C. Hardin, R. Dadashi, S. Bhupatiraju, S. Pathak, L. Sifre, M. Rivière, M. S. Kale, J. Love, et al. Gemma: Open models based on gemini research and technology. arXiv preprint arXiv:2403.08295, 2024.  
+[39] Q. Team. Qwen3. 5-omni technical report. arXiv preprint arXiv:2604.15804, 2026.  
+[40] R. Team, Z. Gao, Q. Wang, Y. Zeng, J. Zhu, K. L. Cheng, Y. Li, H. Wang, Y. Xu, S. Ma, Y. Chen, J. Liu, Y. Cheng, Y. Yao, J. Zhu, Y. Meng, K. Zheng, Q. Bai, J. Chen, Z. Shen, Y. Yu, X. Zhu, Y. Shen, and H. Ouyang. Advancing open-source world models, 2026.  
+[41] R. Team, Z. Gao, Q. Wang, Y. Zeng, J. Zhu, K. L. Cheng, Y. Li, H. Wang, Y. Xu, S. Ma, et al. Advancing open-source world models. arXiv preprint arXiv:2601.20540, 2026.  
+[42] T. Wan, A. Wang, B. Ai, B. Wen, C. Mao, C.-W. Xie, D. Chen, F. Yu, H. Zhao, J. Yang, et al. Wan: Open and advanced large-scale video generative models. arXiv preprint arXiv:2503.20314, 2025.  
+[43] J. Wang, M. Chen, N. Karaev, A. Vedaldi, C. Rupprecht, and D. Novotny. Vggt: Visual geometry grounded transformer. In Proceedings of the Computer Vision and Pattern Recognition Conference, pages 5294–5306, 2025.  
+[44] K. Wang, P. Zhang, Z. Wang, Y. Gao, L. Li, Q. Wang, H. Chen, C. Wan, Y. Lu, Z. Yang, et al. Vagen: Reinforcing world model reasoning for multi-turn vlm agents. arXiv preprint arXiv:2510.16907, 2025.  
+[45] W. Wang, Z. Gao, L. Gu, H. Pu, L. Cui, X. Wei, Z. Liu, L. Jing, S. Ye, J. Shao, et al. Internvl3. 5: Advancing open-source multimodal models in versatility, reasoning, and efficiency. arXiv preprint arXiv:2508.18265, 2025.  
+[46] W. Wang, Z. Gao, L. Gu, H. Pu, L. Cui, X. Wei, Z. Liu, L. Jing, S. Ye, J. Shao, Z. Wang, Z. Chen, H. Zhang, G. Yang, H. Wang, Q. Wei, J. Yin, W. Li, E. Cui, G. Chen, Z. Ding, C. Tian, Z. Wu, J. Xie, Z. Li, B. Yang, Y. Duan, X. Wang, Z. Hou, H. Hao, T. Zhang, S. Li, X. Zhao, H. Duan, N. Deng, B. Fu, Y. He, Y. Wang, C. He, B. Shi, J. He, Y. Xiong, H. Lv, L. Wu, W. Shao, K. Zhang, H. Deng, B. Qi, J. Ge, Q. Guo, W. Zhang, S. Zhang, M. Cao, J. Lin, K. Tang, J. Gao, H. Huang, Y. Gu, C. Lyu, H. Tang, R. Wang, H. Lv, W. Ouyang, L. Wang, M. Dou, X. Zhu, T. Lu, D. Lin, J. Dai, W. Su, B. Zhou, K. Chen, Y. Qiao, W. Wang, and G. Luo. Internvl3.5: Advancing open-source multimodal models in versatility, reasoning, and efficiency, 2025.  
+[47] X. Wang, Z. Zhu, G. Huang, B. Wang, X. Chen, and J. Lu. Worlddreamer: Towards general world models for video generation via predicting masked tokens. arXiv preprint arXiv:2401.09985, 2024.  
+[48] C. Wu, J. Li, J. Zhou, J. Lin, K. Gao, K. Yan, S.-m. Yin, S. Bai, X. Xu, Y. Chen, et al. Qwen-image technical report. arXiv preprint arXiv:2508.02324, 2025.  
+[49] H. Xiong, Y. Zhuge, J. Zhu, L. Zhang, and H. Lu. 3ur-llm: An end-to-end multimodal large language model for 3d scene understanding. IEEE Transactions on Multimedia, 2025.  
+[50] J. Yang, R. Tan, Q. Wu, R. Zheng, B. Peng, Y. Liang, Y. Gu, M. Cai, S. Ye, J. Jang, et al. Magma: A foundation model for multimodal ai agents. In Proceedings of the computer vision and pattern recognition conference, pages 14203–14214, 2025.  
+[51] Y. Yang, J. Liu, Z. Zhang, S. Zhou, R. Tan, J. Yang, Y. Du, and C. Gan. Mindjourney: Test-time scaling with world models for spatial reasoning. arXiv preprint arXiv:2507.12508, 2025.  
+[52] Z. Yang, J. Teng, W. Zheng, M. Ding, S. Huang, J. Xu, Y. Yang, W. Hong, X. Zhang, G. Feng, et al. Cogvideox: Text-to-video diffusion models with an expert transformer. arXiv preprint arXiv:2408.06072, 2024.  
+[53] X. Zhai, B. Mustafa, A. Kolesnikov, and L. Beyer. Sigmoid loss for language image pre-training. In Proceedings of the IEEE/CVF international conference on computer vision, pages 11975–11986, 2023.  
+[54] G. Zhao, X. Wang, Z. Zhu, X. Chen, G. Huang, X. Bao, and X. Wang. Drivedreamer-2: Llm-enhanced world models for diverse driving video generation. In Proceedings of the AAAI Conference on Artificial Intelligence, volume 39, pages 10412–10420, 2025.  
+[55] J. Zhou, H. Gao, V. Voleti, A. Vasishta, C.-H. Yao, M. Boss, P. Torr, C. Rupprecht, and V. Jampani. Stable virtual camera: Generative view synthesis with diffusion models. In Proceedings of the IEEE/CVF International Conference on Computer Vision, pages 12405–12414, 2025.  
+[56] K. Zhou, Y. Chen, F. Zhan, H. Hua, G. Chen, X. Chang, A. Qu, Y. Du, Z. Liu, P. P. Liang, et al. Gem-4d: Geometry-enhanced video world models for robot manipulation. arXiv preprint arXiv:2605.22882, 2026.  
+[57] K. Zhou, Y. Wang, G. Chen, G. Beaudouin, F. Zhan, P. P. Liang, and M. Wang. Page-4d: Vggt-4d perception via disentangled pose and geometry estimation. In The Fourteenth International Conference on Learning Representations.  
+[58] B. Zou, M. Cai, J. Zhang, and Y. J. Lee. Vgbench: Evaluating large language models on vector graphics understanding and generation, 2024.
+
+## A More Details about LingBot-World-Fast
+
+GeoWorld-VLM uses LingBot-World-Fast as the default world-model teacher. LingBot-World-Fast is the efficient variant of LingBot-World, an open-source video-based world simulator designed to move beyond passive text-to-video generation toward interactive world modeling [41]. Unlike conventional video generators that mainly synthesize short visual clips, LingBot-World is trained to model temporally extended visual dynamics, action-conditioned scene evolution, and long-range spatial consistency. These properties make it particularly suitable for our setting, where the goal is not to use the generated video as an additional test-time input, but to extract intermediate representations that encode how a static scene may evolve under controlled camera motion.
+
+LingBot-World is developed through a multi-stage training pipeline. The first stage builds on a strong image-to-video diffusion prior, which provides high-fidelity visual generation and general spatiotemporal coherence. The middle-training stage further injects world knowledge and action controllability, enabling the model to maintain scene-level consistency over extended horizons and to respond to user-specified controls. The final post-training stage adapts the model for causal and efficient interactive generation through architectural adaptation and few-step distillation. LingBot-World-Fast corresponds to this efficient post-trained variant, which is optimized for low-latency rollout while preserving the structural and physical regularities learned by the larger world model.
+
+A key feature of LingBot-World-Fast is its action-conditioned architecture. The model takes an initial image or video, noisy video latents, textual conditions, and user-defined action signals as inputs. Its action interface supports both continuous camera motion and discrete control signals. In the original LingBot-World formulation, camera motion is represented with geometric embeddings, while discrete actions such as keyboard-style controls are encoded as action tokens and injected into the diffusion transformer through adaptive normalization. As a result, the hidden states of the model are shaped not only by image appearance and text semantics, but also by the implied camera trajectory and the corresponding counterfactual scene transformation.
+
+This design is aligned with the motivation of GeoWorld-VLM. Spatial relations such as behind, under, between, close, and far are often difficult to infer from object identity alone. They depend on viewpoint, occlusion, support, relative depth, and how object projections change under camera motion. Because LingBot-World-Fast is trained to predict visually coherent future states under controllable motion, its intermediate representations are expected to contain motion-aware geometric cues that are complementary to static visual encoders such as DINO or CLIP. This is why we use LingBot-World-Fast as a feature-level teacher rather than as a video generator during inference.
+
+In our implementation, LingBot-World-Fast is kept frozen throughout training. For each input image, we construct an image-to-video teacher input using a lightweight text condition and a sampled egocentric camera trajectory. We then run the world model for a small number of denoising steps and extract an intermediate hidden state from the diffusion transformer as the teacher representation. The extracted representation is projected into a shared alignment space and used to supervise the VLM post-projector visual tokens. Importantly, the generated frames themselves are not used as additional inputs to the student VLM at test time. The world model is only used during training to provide geometry-aware supervision, so GeoWorld-VLM retains the same inference interface and computational cost as the adapted VLM backbone.
+
+We select LingBot-World-Fast rather than the full LingBot-World-Base model for practical reasons. The fast variant offers a better trade-off between teacher quality and feature extraction cost, which is important because teacher representations must be extracted for thousands of training examples. At the same time, the model remains grounded in the same world-modeling pipeline as the larger base model, including long-horizon consistency, action conditioning, and causal interactive generation. Therefore, LingBot-World-Fast provides a computationally feasible source of camera-conditioned spatial supervision while preserving the core geometric properties needed by GeoWorld-VLM.
+
+## B Training Details
+
+This appendix provides additional implementation and training details for GeoWorld-VLM and the compared distillation baselines.
+
+Training objective. For all GeoWorld-VLM experiments, the language model backbone is frozen, and we update only the vision encoder, the multimodal projector, and the lightweight alignment heads. The training objective consists of three terms:
+
+$$
+\mathcal {L} = \mathcal {L} _ {\text { task }} + \lambda_ {\text { align }} \mathcal {L} _ {\text { align }} + \lambda_ {\text { preserve }} \mathcal {L} _ {\text { preserve }}. \tag {8}
+$$
+
+Here, $\mathcal { L } _ { \mathrm { t a s k } }$ is the cross-entropy loss over multiple-choice option-letter logits. $\mathcal { L } _ { \mathrm { a l i g n } }$ is a cosine alignment loss between the projected student visual representation and the projected teacher representation. $\mathcal { L } _ { \mathrm { p r e s e r v e } }$ is a normalized mean-squared error loss between the current student visual representation and that of the frozen original VLM, which is used to reduce visual-interface drift. Unless otherwise specified, we set $\lambda _ { \mathrm { a l i g n } } = 0 . 1 0$ and $\lambda _ { \mathrm { p r e s e r v e } } = 0 . 0 5$ .
+
+Optimization hyperparameters. All methods are trained for three epochs with AdamW. We use a learning rate of $2 \times 1 0 ^ { - 5 }$ , weight decay of 0.01, gradient accumulation of 1, maximum gradient norm of 1.0, and random seed 42. For Gemma4-based experiments, we use a batch size of 4 for both training and evaluation. For InternVL3.5-2B-based experiments, we generally use a batch size of 2 for the main-suite experiments due to the larger visual-token cost introduced by dynamic image tiling.
+
+Alignment heads. For teacher-student feature alignment, both the student visual features and the teacher features are passed through separate two-layer MLP projection heads. The hidden dimension of the projection head is set to 1024, and the final alignment dimension is set to 512. The alignment loss is computed after both student and teacher features are projected into this shared feature space. This design avoids requiring the raw teacher and student hidden states to have the same dimensionality.
+
+World-model teacher. For GeoWorld-VLM, we use a frozen camera-conditioned video world model as the teacher. The main experiments use the LingBot-Fast image-to-video teacher with 9 frames, 2 teacher denoising steps, and camera perturbation enabled. We extract the teacher representation from transformer block 24. The teacher prompt is:
+
+A slight camera motion with stable object layout and unchanged spatial relations.
+
+This prompt is designed to induce mild viewpoint changes while preserving the object layout and spatial relations in the original image.
+
+World-model visual configuration. For the LingBot/Wan-based teacher, images are processed at resolution 480 × 832 with 9 video frames. The target timestep is set to 300, and the shift parameter is set to 5.0. The VAE stride is (4, 8, 8) and the patch size is (1, 2, 2). The teacher transformer has hidden dimension 5120 and 40 transformer layers. For the LingBot-Fast denoising schedule used in our main experiments, the selected timesteps are
+
+$$
+[ 9 9 9,   9 5 7,   8 9 9,   7 0 2 ],
+$$
+
+with corresponding sigmas
+
+$$
+[ 0. 9 9 9 8, 0. 9 5 8 0, 0. 8 9 9 4, 0. 7 0 2 4 ].
+$$
+
+Unless otherwise specified, we use the two-step teacher setting in the main reported results.
+
+Gemma4 visual processing. For Gemma4, the vision patch size is 16. In our implementation, the observed visual input representation can be organized as patch/token features, and feature alignment is performed over visual token features after projecting both the student and teacher features to the shared 512-dimensional alignment space. This matches the design choice in GeoWorld-VLM: the supervision is applied at the VLM visual interface before the frozen language model consumes the visual tokens.
+
+InternVL3.5 visual processing. For InternVL3.5-2B, we use its dynamic image tiling strategy. Each tile has resolution 448 × 448. In the main reported setting, the maximum number of visual tiles is set to 4. The preprocessing procedure selects the closest aspect-ratio tiling layout under the tile budget, resizes and crops the image into 448-sized tiles, and adds a thumbnail when multiple tiles are used. The prompt is constructed by inserting repeated <IMG\_CONTEXT> tokens according to the number of image tokens and the number of visual tiles. The student visual features are then projected to the shared 512-dimensional alignment space before computing the alignment loss.
+
+DINOv3 distillation baseline. For the DINO baseline, we replace the camera-conditioned worldmodel teacher with a frozen DINOv3 ViT-S/16 encoder. Images are resized to $2 2 4 \times 2 2 4$ , yielding an approximate 14 × 14 spatial grid with patch size 16. When the Hugging Face processor is unavailable, we use a fallback preprocessing pipeline consisting of resizing to $2 2 4 \times 2 2 4$ followed by ImageNet normalization. The DINO visual features are treated as static teacher features and are projected into the same 512-dimensional alignment space as the student features. The alignment loss is again computed using cosine distance. For both Gemma4 and InternVL3.5-2B, the DINO baseline uses the same default loss weights, namely $\lambda _ { \mathrm { a l i g n } } = 0 . 1 0$ and $\lambda _ { \mathrm { p r e s e r v e } } = 0 . 0 5$ , and is trained for three epochs under the same downstream supervision.
+
+Model-specific settings. For Gemma4 with the world-model teacher, the main experiments use the LingBot-Fast image-to-video teacher with 9 frames, 2 denoising steps, transformer block 24, camera perturbation, and the layout-preserving prompt described above. For InternVL3.5-2B with the world-model teacher, we use the same teacher configuration, while adapting the student-side preprocessing to InternVL’s dynamic tiling mechanism. For Gemma4 with DINOv3 and InternVL3.5-2B with DINOv3, the only change is replacing the world-model representation with DINOv3 visual features; the optimization hyperparameters and loss weights are kept the same for a controlled comparison. The time consumed to use our method on Gemma4 is about 5.5 hours if the training set is What’sup and VSR and the compute source is 2 Nvidia H200.
+
+## C Additional Ablation Analysis
+
+The main paper reports the ablation results on world-model layer selection and denoising step selection in Section 4.5. Here, we provide additional analysis of these two design choices and further report the ablation on the alignment loss coefficient.
+
+## C.1 Analysis of World-Model Layer Selection
+
+The layer selection results in Table 4 show that layer 24 provides the strongest overall supervision among the tested layers. This pattern suggests that the usefulness of world-model features is not monotonic with depth. A slightly shallower layer may still retain more local appearance information and may not fully encode the camera- and prompt-conditioned spatial structure needed for downstream spatial reasoning. A later layer, on the other hand, may become more specialized toward the teacher model’s generative objective and less compatible with the frozen VLM visual interface.
+
+Layer 24 appears to offer a better balance. It has already integrated viewpoint-conditioned spatial cues, but its representation remains sufficiently general to serve as a transferable supervision signal. This is consistent with the design goal of GeoWorld-VLM: the teacher feature should provide geometry-aware information without forcing the student visual tokens to imitate generation-specific representations too strongly.
+
+## C.2 Analysis of Denoising Step Selection
+
+The denoising step results in Table 5 show that teacher features are most effective when extracted after two denoising steps. This suggests that a small amount of world-model prediction helps reveal the geometry induced by the sampled camera trajectory. With zero or one denoising step, the teacher representation may still be close to the initial image-conditioned latent and may not fully expose viewpoint-dependent structure. This explains why both settings improve over the base model but remain limited at an overall score of 63.00.
+
+However, more denoising is not necessarily better. Using three denoising steps substantially reduces the overall score. One possible explanation is that later denoising states become increasingly tied to video synthesis rather than representation transfer. They may contain generation-specific artifacts or drift away from the original image evidence, making them less suitable for supervising the VLM visual pathway. Therefore, GeoWorld-VLM benefits most from an intermediate predictive representation: it should be spatially enriched by the world model, but still anchored to the input image.
+
+C.3 Alignment Loss Coefficient
+
+<table><tr><td>Model</td><td>Ctrl-A</td><td>Ctrl-B</td><td>COCO-1</td><td>COCO-2</td><td>VG-1</td><td>VG-2</td><td>VSR</td><td>Overall</td></tr><tr><td>Gemma4</td><td>94.17</td><td>79.90</td><td>40.57</td><td>64.55</td><td>69.14</td><td>68.49</td><td>74.36</td><td>61.70</td></tr><tr><td>Gemma4 + Ours,  $\lambda_{align} = 0.05$ </td><td>99.03</td><td>92.65</td><td>36.21</td><td>66.82</td><td>76.03</td><td>69.86</td><td>77.95</td><td>63.49</td></tr><tr><td>Gemma4 + Ours,  $\lambda_{align} = 0.10$ </td><td>99.51</td><td>93.14</td><td>37.46</td><td>70.45</td><td>78.28</td><td>76.71</td><td>80.17</td><td>65.45</td></tr><tr><td>Gemma4 + Ours,  $\lambda_{align} = 0.15$ </td><td>99.03</td><td>92.16</td><td>35.85</td><td>66.36</td><td>76.90</td><td>72.60</td><td>79.49</td><td>63.88</td></tr><tr><td>Gemma4 + Ours,  $\lambda_{align} = 0.20$ </td><td>98.54</td><td>89.22</td><td>33.99</td><td>69.55</td><td>75.69</td><td>65.75</td><td>79.49</td><td>62.64</td></tr></table>
+
+Table 6: Ablation on the alignment loss coefficient. $\lambda _ { \mathrm { a l i g n } } = 0 . 1 0$ achieves the best overall result, suggesting that world-model alignment should be strong enough to inject spatial structure but not so strong that it disrupts the original VLM visual interface. The best result is shown in bold and the second-best result is underlined.
+
+Table 6 studies the effect of the alignment loss coefficient. The best performance is obtained with $\lambda _ { \mathrm { a l i g n } } = 0 . 1 0$ , which reaches an overall score of 65.45. When the coefficient is too small, the teacher signal may be insufficient to inject useful spatial structure into the student visual representation. When the coefficient is too large, the adapted visual tokens may overfit to the world-model feature space and become less compatible with the frozen language model. Therefore, the alignment loss is best understood as a controlled geometric regularizer rather than a replacement objective for VLM training.
+
+## C.4 Temporal Feature Design of the World-Model Teacher
+
+<table><tr><td>Model</td><td>Ctrl-A</td><td>Ctrl-B</td><td>COCO-1</td><td>COCO-2</td><td>VG-1</td><td>VG-2</td><td>VSR</td><td>Overall</td></tr><tr><td>Gemma4 + Ours, 5 frames</td><td>98.54</td><td>97.06</td><td>34.25</td><td>67.27</td><td>73.97</td><td>71.23</td><td>78.12</td><td>62.77</td></tr><tr><td>Gemma4 + Ours, 13 frames</td><td>99.51</td><td>96.57</td><td>33.54</td><td>64.09</td><td>72.76</td><td>67.12</td><td>77.95</td><td>61.86</td></tr><tr><td>Gemma4 + Ours, first-frame feature</td><td>98.54</td><td>95.10</td><td>32.74</td><td>67.73</td><td>73.10</td><td>65.75</td><td>79.32</td><td>61.92</td></tr><tr><td>Gemma4 + Ours, last-frame feature</td><td>96.60</td><td>91.67</td><td>34.88</td><td>68.18</td><td>76.55</td><td>66.44</td><td>80.51</td><td>63.30</td></tr><tr><td>Gemma4 + Ours, 9 frames + mean pooling</td><td>99.51</td><td>93.14</td><td>37.46</td><td>70.45</td><td>78.28</td><td>76.71</td><td>80.17</td><td>65.45</td></tr></table>
+
+Table 7: Ablation on the temporal feature design of the world-model teacher. The full method uses 9 generated frames and average pooling over all teacher features. This configuration achieves the best overall performance, suggesting that useful spatial cues are distributed across the generated trajectory rather than being concentrated in a single frame. The best result is shown in bold and the second-best result is underlined.
+
+Table 7 studies how the temporal design of the world-model teacher affects spatial reasoning performance on What’sUp+VSR. Using 9 frames with mean-pooled teacher features achieves the best overall score of 65.45. Reducing the number of frames to 5 leads to a lower overall score, suggesting that a shorter generated trajectory may provide insufficient spatial dynamics. Increasing the number of frames to 13 also decreases performance, which indicates that a longer trajectory may introduce additional visual or temporal noise into the teacher signal.
+
+We further compare mean pooling with single-frame feature extraction. Using only the first-frame feature obtains an overall score of 61.92, while using only the last-frame feature reaches 63.30. Both are worse than mean pooling across all frames. This result suggests that the teacher signal is not fully captured by any individual generated frame. Instead, aggregating features across the generated trajectory provides a more stable and informative spatial representation. Therefore, we use 9 frames with mean-pooled teacher features as the default configuration in our main experiments.
+
+## C.5 Teacher Choice and Preservation Objective
+
+<table><tr><td>Model</td><td>Ctrl-A</td><td>Ctrl-B</td><td>COCO-1</td><td>COCO-2</td><td>VG-1</td><td>VG-2</td><td>VSR</td><td>Overall</td></tr><tr><td>Gemma4 + Ours, w/o preservation</td><td>99.03</td><td>94.61</td><td>35.32</td><td>68.18</td><td>74.66</td><td>67.12</td><td>78.97</td><td>63.20</td></tr><tr><td>Gemma4 + VGGT teacher</td><td>98.06</td><td>93.14</td><td>34.61</td><td>70.00</td><td>77.07</td><td>69.86</td><td>79.83</td><td>63.65</td></tr><tr><td>Gemma4 + Ours</td><td>99.51</td><td>93.14</td><td>37.46</td><td>70.45</td><td>78.28</td><td>76.71</td><td>80.17</td><td>65.45</td></tr></table>
+
+Table 8: Ablation on the teacher choice and the preservation objective. Removing the preservation loss degrades overall performance, indicating that preserving the original visual interface is important when aligning the student representation to world-model features. Replacing the imageto-video world-model teacher with VGGT also reduces the overall score, suggesting that dynamic world-model features provide more effective spatial supervision than static geometric features. The best result is shown in bold and the second-best result is underlined.
+
+Table 8 evaluates two additional design choices. First, removing the preservation loss reduces the overall score from 65.45 to 63.20. This indicates that direct alignment to the world-model feature space may disrupt the original VLM visual interface if no constraint is used to preserve the pretrained representation. The preservation loss therefore serves as an important regularizer, allowing the model to absorb geometry-aware teacher information while remaining compatible with the frozen language model.
+
+Second, replacing the image-to-video world-model teacher with VGGT leads to an overall score of 63.65, which is lower than the full method. Although VGGT provides strong static geometric representations, it does not explicitly model how the scene evolves under camera-conditioned generation.
+
+In contrast, the world-model teacher exposes the student to spatial cues along a generated visual trajectory. This comparison supports our hypothesis that dynamic world-model features are more suitable for improving spatial relation understanding in VLMs.
+
+D SAT Results by Ego-Motion Split
+
+<table><tr><td>Split</td><td>Model</td><td>ActCons</td><td>EgoM</td><td>GoalAim</td><td>ObjectM</td><td>Perspect</td><td>Val Acc.</td><td>Test Acc.</td><td>Overall</td></tr><tr><td rowspan="3">EgoM only</td><td>Gemma4 + Ours</td><td>-</td><td>52.43</td><td>-</td><td>-</td><td>-</td><td>51.23</td><td>60.87</td><td>52.43</td></tr><tr><td>Gemma4 + FT-only</td><td>-</td><td>56.22</td><td>-</td><td>-</td><td>-</td><td>54.94</td><td>65.22</td><td>56.22</td></tr><tr><td>Gemma4 + DINO</td><td>-</td><td>63.78</td><td>-</td><td>-</td><td>-</td><td>63.58</td><td>65.22</td><td>63.78</td></tr><tr><td rowspan="3">Non-Ego</td><td>Gemma4 + Ours</td><td>45.55</td><td>-</td><td>69.78</td><td>73.37</td><td>57.46</td><td>58.11</td><td>59.06</td><td>58.24</td></tr><tr><td>Gemma4 + FT-only</td><td>46.36</td><td>-</td><td>68.13</td><td>72.28</td><td>57.46</td><td>58.47</td><td>55.12</td><td>58.03</td></tr><tr><td>Gemma4 + DINO</td><td>45.82</td><td>-</td><td>63.74</td><td>71.20</td><td>60.09</td><td>57.64</td><td>55.91</td><td>57.41</td></tr></table>
+
+Table 9: SAT results after separating ego-motion questions from non-ego questions. The EgoM-only split shows that our world-model alignment performs worse than both FT-only and DINO on egomotion reasoning. On the non-Ego split, our method achieves the best overall accuracy, suggesting that world-model alignment is more effective for non-ego spatial reasoning than for ego-motion reasoning. The best result within each split is shown in bold and the second-best result is underlined.
+
+Table 9 reports SAT results after separating ego-motion questions from the remaining question types. This split is motivated by an important limitation of our current world-model alignment strategy. Although the teacher is generated from a camera-conditioned image-to-video world model, our current implementation aggregates teacher features through mean pooling. This design is effective for extracting stable spatial structure, but it may suppress temporal order and motion direction, both of which are essential for ego-motion reasoning.
+
+The EgoM-only results confirm this limitation. Our method obtains an EgoM score of 52.43, which is lower than FT-only by 3.79 points and lower than DINO by 11.35 points. This suggests that the current world-model representation is not sufficient for modeling ego-centric motion in SAT. In particular, average pooling over generated frames may convert a temporally ordered motion signal into a static scene-level representation, making it difficult for the model to infer self-motion.
+
+For the non-Ego split, our method achieves the best overall score of 58.24, outperforming FT-only by 0.21 points and DINO by 0.83 points. Although the margin over FT-only is modest, the result suggests that world-model alignment is beneficial once ego-motion questions are excluded. The gains are mainly reflected in GoalAim and ObjectM, where our method achieves the best scores among the compared methods. This indicates that the proposed alignment is more suitable for object-centric and goal-oriented spatial reasoning than for ego-motion reasoning.
+
+Overall, the SAT analysis reveals a clear boundary of the proposed method. World-model alignment improves spatial representation on What’sUp+VSR and achieves the best overall result on the non-Ego SAT split, but it struggles with ego-motion reasoning. This observation motivates future extensions that preserve temporal directionality, such as temporal-aware pooling, order-sensitive teacher alignment, or explicit ego-motion supervision.
+
+## E Qualitative Case Studies
+
+We provide qualitative examples from EmbSpatial-Bench to further illustrate how GeoWorld-VLM changes the spatial behavior of the base VLM. As shown in Table 10, Cases 1–5 highlight examples where only our method predicts the correct answer, while the raw model, FT-only baseline, and DINO-aligned baseline all fail. These cases suggest that task supervision or static visual feature alignment alone may still be insufficient for relations that require geometric structure, such as vertical placement, left-right ordering, and viewpoint-dependent distance judgment. In contrast, GeoWorld-VLM benefits from camera-conditioned world-model supervision, which provides a more geometry-aware training signal for adapting the visual interface of the VLM. Table 11 further shows cases where our method corrects errors made by the raw model, while FT-only or DINO alignment may also succeed. Together, these examples support our main finding that world-model alignment can improve spatial reasoning not merely by memorizing task labels, but by encouraging the visual pathway to preserve spatial cues that are useful before language reasoning begins.
+
+<table><tr><td>Image</td><td>Question / Ground Truth</td><td>Model Predictions</td></tr><tr><td><img src="images/3a8b3fff8322f90d1447e7455dd69d894f5b219d3ee50f6ee22fb36a3a8ccedb.jpg"/></td><td>Q: In the image, how do the positions of picture and ottoman interact with each other?GT: The picture is above the ottoman.</td><td>Raw: The picture is on the left side of the ottoman. XFT-only: The picture is on the left side of the ottoman. XDINO: The picture is on the left side of the ottoman. XOurs: The picture is above the ottoman. √</td></tr><tr><td><img src="images/b4f036fea906594f0389a8563445b64858388b84b450048b10502812184961a3.jpg"/></td><td>Q: In the image, how do the positions of television and bar interact with each other?GT: The television is left of the bar.</td><td>Raw: The television is on the right side of the bar. XFT-only: The television is on the right side of the bar. XDINO: The television is on the right side of the bar. XOurs: The television is left of the bar. √</td></tr><tr><td><img src="images/7f6e1e0bbbefc14a03f3e22269959c4511b7e9abf1f3ca20ec16294e8636bc91.jpg"/></td><td>Q: Among the listed objects, which one is farthest from your current location in the image?GT: plant</td><td>Raw: bathtub XFT-only: bathtub XDINO: bathtub XOurs: plant √</td></tr><tr><td><img src="images/e80eb80d83c79241e202093e677d628a710989cd0e607d0c3e2d51062f892966.jpg"/></td><td>Q: From your viewpoint, which object among the options is the nearest within the image?GT: chest</td><td>Raw: bed XFT-only: curtain XDINO: bed XOurs: chest √</td></tr><tr><td><img src="images/237252c30a257f1dd5d618f22c5a18ab586a03a904cb89119227654f11bad7cc.jpg"/></td><td>Q: What is the spatial relationship between chair and bicycle in the image?GT: The chair is at the right side of the bicycle.</td><td>Raw: The chair is below the bicycle. XFT-only: The chair is below the bicycle. XDINO: The chair is below the bicycle. XOurs: The chair is at the right side of the bicycle. √</td></tr></table>
+
+Table 10: Qualitative examples where only our LingBot-teacher alignment method predicts the correct spatial answer.
+
+## E.1 Cases Where Only Our Method Is Correct
+
+## E.2 Cases Where Our Method Corrects the Raw Model
+
+## F Limitations and Broader Impact.
+
+GeoWorld-VLM has several limitations. First, our method depends on the quality of the frozen world-model teacher: if the teacher encodes inaccurate viewpoint dynamics or weak scene geometry, the extracted features may provide noisy supervision. Second, although GeoWorld-VLM requires no world-model inference at test time, training still introduces additional cost because teacher features must be extracted from a large video world model. Finally, the method remains sensitive to feature extraction choices such as teacher layer and denoising step, and the gains are not uni-
+
+<table><tr><td>Image</td><td>Question / Ground Truth</td><td>Model Predictions</td></tr><tr><td><img src="images/613091d1812ebb8ae4d35d8f21d556c2660b11029729fe7bfa510bef7845cbef.jpg"/></td><td>Q: Which object, in relation to your current position, holds the nearest placement in the image?GT: pillow</td><td>Raw: pool table ✗FT-only: pillow ✓DINO: pillow ✓Ours: pillow ✓</td></tr><tr><td><img src="images/17c177585a0bffc281f7cfa3a0d210ba08d66c95042fc4792d675d1fcb156d11.jpg"/></td><td>Q: What is the spatial configuration between monitor and lamp in relation to each other within the image?GT: The monitor is beneath the lamp.</td><td>Raw: The monitor is on the left side of the lamp. ✗FT-only: The monitor is on the left side of the lamp. ✗DINO: The monitor is beneath the lamp. ✓Ours: The monitor is beneath the lamp. ✓</td></tr><tr><td><img src="images/082bf60ec4124ef67c36341c05bfa5de6394b8cf94933fb6c07f2631cc64b29a.jpg"/></td><td>Q: What is the spatial arrangement of wardrobe and curtain in the image concerning each other?GT: The wardrobe is on the right side of the curtain.</td><td>Raw: The wardrobe is outside the curtain. ✗FT-only: The wardrobe is on the right side of the curtain. ✓DINO: The wardrobe is on the right side of the curtain. ✓Ours: The wardrobe is on the right side of the curtain. ✓</td></tr><tr><td><img src="images/5602eb9502bdbb40e191d13b9464ff64e3c3cd88fb2130e4c9829adfbe9ea18d.jpg"/></td><td>Q: How are printer and paper positioned in relation to each other in the image?GT: The printer is at the left side of the paper.</td><td>Raw: The printer is at the right side of the paper. ✗FT-only: The printer is at the left side of the paper. ✓DINO: The printer is at the left side of the paper. ✓Ours: The printer is at the left side of the paper. ✓</td></tr><tr><td><img src="images/e7b53d9058b3f06f22127ae638ccb97e9bf59b2940c34ec57c0b4e98f2703fc8.jpg"/></td><td>Q: What is the spatial arrangement of picture and bin in the image concerning each other?GT: The picture is above the bin.</td><td>Raw: The picture is left of the bin. ✗FT-only: The picture is above the bin. ✓DINO: The picture is above the bin. ✓Ours: The picture is above the bin. ✓</td></tr></table>
+
+Table 11: Qualitative examples where our method corrects errors made by the raw model. FT-only or DINO alignment may also succeed on some of these examples, but the raw VLM fails. form across all spatial relations or subsets. Future work could explore stronger and more efficient teachers, broader embodied evaluations, and more principled criteria for selecting geometry-aware teacher representations. GeoWorld-VLM aims to improve the spatial reasoning ability of visionlanguage models by enhancing the visual representations consumed by a frozen language model. This capability could have positive impacts on embodied AI, assistive agents, robotics, navigation, and multimodal systems that need more reliable understanding of object layout and spatial relations. At the same time, stronger spatial perception may also increase the capability of systems used in surveillance, autonomous decision-making, or other safety-sensitive applications where incorrect spatial judgments could cause harm. Our work is a research study on benchmarked spatial reasoning rather than a deployed system, and we do not release new high-risk datasets, pretrained generative models, or autonomous agents. Future deployments of spatially enhanced VLMs should include careful evaluation under domain-specific safety requirements, robustness testing, and human oversight in high-stakes settings.

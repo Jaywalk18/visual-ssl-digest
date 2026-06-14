@@ -19,20 +19,18 @@
   </header>
   <nav class="site-nav" aria-label="主导航">
     <a class="nav-link" href="../index.html">头版</a>
-<a class="nav-link active" href="../issues/2026-06-11.html">今日速递</a>
+<a class="nav-link" href="../issues/2026-06-14.html">今日速递</a>
 <a class="nav-link" href="../pages/catalog.html">论文目录</a>
 <a class="nav-link" href="../pages/timeline.html">时间线</a>
   </nav>
   <main><article class="paper-detail issue-detail">
   <div class="paper-main">
     <div class="kicker">Daily issue · 2026-06-11 · CCF A/B 会议优先</div>
-    <h1 class="paper-headline">6 月 11 日：Latent Spatial Memory for Video 等视觉表征主线更新</h1>
-    <p class="dek">本期聚焦通用视觉表征、视觉语言预训练与视频自监督中最值得跟进的论文，并保留 CCF A/B、OpenReview 与 arXiv 状态线索。</p>
+    <h1 class="paper-headline">6 月 11 日：Latent Spatial Memory for Video 等视觉表征论文归档</h1>
+    <p class="dek">本页按日期归档近期论文，保留优先级、主题、来源与方法线索，方便回看同一批工作的研究脉络。</p>
     <div class="feature-body">
-      <p class="lead dropcap">先读 Latent Spatial Memory / Mirage，重点看它如何避免 RGB point-cloud render-and-encode loop，这对长期视频表征和生成式 world model 都有直接启发。第二篇读 MaskAlign，把它和昨天的 IDEAL/ARM 放在一起看：这些论文都在处理“视觉 token/latent 应该对齐什么 teacher feature”。第三篇读 SMI，它是今天最纯粹的图像 SSL objective 论文，适合和 Barlow Twins、VICReg、SimCLR/Jepa-style 目标对照。随后读 FF-JEPA 与 MilliVid，前者偏 latent planning，后者偏层级 video tokens；ATM、Echo-Memory、Prisma-World 更适合作为 world model 诊断和系统设计扫读。</p>
+      <p class="lead dropcap">先读 Latent Spatial Memory for Video。把视频 world model 的跨帧记忆从 RGB/点云搬到 diffusion latent，直接触及可复用视觉 latent 与长期一致性。 其余论文按 P1/P2 与主题顺序扫读，重点看方法图、消融设置和是否能迁移到通用视觉表征。</p>
       <h2>论文索引</h2>
-      <table class="compact-table"><thead><tr><th>优先级</th><th>论文</th><th>类型</th><th>相关性</th><th>一句话理由</th></tr></thead><tbody><tr><td>P0</td><td>Latent Spatial Memory for Video World Models</td><td>arXiv recent-list补漏 + project</td><td>高</td><td>把视频 world model 的跨帧记忆从 RGB/点云搬到 diffusion latent，直接触及可复用视觉 latent 与长期一致性。</td></tr><tr><td>P0</td><td>MaskAlign: Token-Subset Representation Alignment for Efficient Diffusion Training</td><td>arXiv recent-list补漏</td><td>高</td><td>明确使用自监督视觉 encoder 的 clean-image representation 监督 diffusion features，并讨论 token-level 对齐偏差。</td></tr><tr><td>P1</td><td>SMI: Efficient Self-Supervised Learning via Mutual-Information-Inspired Dependency Optimization</td><td>arXiv recent-list补漏</td><td>高</td><td>少数直接面向图像 SSL objective 的新作，目标是降低大 batch、memory bank、momentum encoder 等训练复杂度。</td></tr><tr><td>P1</td><td>FF-JEPA: Long-Horizon Planning in World Models with Latent Planners</td><td>arXiv recent-list补漏</td><td>中高</td><td>把 JEPA latent dynamics 用到更长程规划，并引入 action-free latent planner 作为子目标预测器。</td></tr><tr><td>P1</td><td>MilliVid: Hierarchical Latents for Long-Range Consistency in Video Generation</td><td>arXiv recent-list补漏 + project</td><td>中高</td><td>用层级 frame tokens 处理视频长程一致性，和视觉 tokenizer/RAE/world model 的 latent 设计高度相关。</td></tr><tr><td>P2</td><td>ATM: Action-Consistency Transfer Matrix for Diagnosing and Improving Latent World Models</td><td>arXiv recent-list补漏</td><td>中高</td><td>不是新 SSL 训练法，但给 latent world model 的表征/转移质量提供快速诊断。</td></tr><tr><td>P2</td><td>Echo-Memory: A Controlled Study of Memory in Action World Models</td><td>arXiv recent-list补漏 + code</td><td>中高</td><td>系统隔离视频 action-world-model 的记忆机制，对长期视觉一致性评估有参考价值。</td></tr><tr><td>P2</td><td>Prisma-World: Camera-Controllable Multi-Agent Video World Model</td><td>arXiv recent-list补漏 + project</td><td>中</td><td>多 agent 共享场景的一致性问题与多视角视觉 latent/几何对齐相关，但更偏可控生成系统。</td></tr><tr><td>P2</td><td>Securing Self-supervised Data Curation for Foundation Models Robustness</td><td>arXiv recent-list补漏</td><td>中</td><td>关注 SSL-curated foundation-model 数据的投毒检测，方法不一定新，但问题对大规模自监督预训练重要。</td></tr><tr><td>P3</td><td>Thinking Without Images: Internalizing Visual Manipulation with On-Policy Self-Distillation</td><td>arXiv recent-list补漏</td><td>中</td><td>通过 on-policy self-distillation 内化局部视觉证据查看过程，和 VLM 视觉推理/自蒸馏有关。</td></tr><tr><td>扫读</td><td>Test-Time Scaling in Multimodal Foundation Models: A Comprehensive Survey of Generation and Reasoning</td><td>ACL 2026 Findings + arXiv</td><td>中</td><td>会议状态明确，但它是 survey；适合用来快速定位多模态推理/生成 inference-time scaling，而非精读 SSL 方法。</td></tr></tbody></table>
-      <h2>主线阅读</h2>
       <div class="paper-list issue-list"><article class="paper-card" data-category="arXiv recent-list补漏 + project" data-priority="P0" data-date="2026-06-11" data-title="latent spatial memory for video world models" data-keywords="latent spatial memory for video world models latent spatial memory for video arxiv recent-list补漏 + project p0 2026-06-11 arxiv recent-list补漏 + project 把视频 world model 的跨帧记忆从 rgb/点云搬到 diffusion latent，直接触及可复用视觉 latent 与长期一致性 高相关；详见方法、贡献和实验边界。">
   <a class="paper-thumb paper-thumb-text" href="../papers/2606.09828.html">
     <img src="../assets/mineru/2606.09828/images/2cdf044328fb99c24d7a8c22a108c30c69a0e890dc2733a6482d347c39844f10.jpg" alt="Latent Spatial Memory for Video figure"><span>P0</span>
@@ -168,18 +166,17 @@
     </div>
   </div>
   <aside class="paper-side">
-    <div class="side-box"><h4>今日重点</h4><p>TextTeacher、MDM、EvoVid、Ablate-to-Validate。</p></div>
-    <div class="side-box"><h4>会议口径</h4><p>只把 CCF A/B 放进主提醒；临近截止或 CCF C 仅记录。</p></div>
     <div class="side-box"><h4>阅读重点</h4><p>先看 P1/P2 与方法图，再扫状态变化和边界案例。</p></div>
+    <div class="side-box"><h4>会议口径</h4><p>主提醒只保留 CCF A/B；CCF C 与过期截止仅作状态记录。</p></div>
   </aside>
 </article></main>
-  <aside class="conf-float" data-conf-reminder="2026-06-11-main-ddl" aria-label="CCF A/B 主投稿提醒">
+  <aside class="conf-float" data-conf-reminder="2026-06-14-main-ddl" aria-label="CCF A/B 主投稿提醒">
   <button class="conf-close" type="button" aria-label="关闭会议提醒">×</button>
   <details open>
     <summary>CCF A/B 主投稿提醒</summary>
     <div class="conf-list"><a class="conf-item " href="https://github.com/ccfddl/ccf-deadlines/blob/main/conference/AI/aaai.yml">
   <span><b>AAAI 2027</b><em>CCF A · Main paper submission</em></span>
-  <strong>46 天</strong>
+  <strong>43 天</strong>
   <small>2026-07-27 · CCF DDL: abstract 2026-07-20；进入 1 个月窗口后重点提醒。</small>
 </a></div>
   </details>
@@ -192,7 +189,7 @@
   (() => {
     const box = document.querySelector('[data-conf-reminder]');
     if (!box) return;
-    const key = `visualSslConfReminderClosed:${box.dataset.confReminder || '2026-06-11-main-ddl'}`;
+    const key = `visualSslConfReminderClosed:${box.dataset.confReminder || '2026-06-14-main-ddl'}`;
     try {
       if (localStorage.getItem(key) === '1') box.hidden = true;
     } catch (err) {}

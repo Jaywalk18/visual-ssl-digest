@@ -19,39 +19,39 @@
   </header>
   <nav class="site-nav" aria-label="主导航">
     <a class="nav-link" href="../index.html">头版</a>
-<a class="nav-link" href="../issues/2026-06-11.html">今日速递</a>
+<a class="nav-link" href="../issues/2026-06-14.html">今日速递</a>
 <a class="nav-link" href="../pages/catalog.html">论文目录</a>
 <a class="nav-link" href="../pages/timeline.html">时间线</a>
   </nav>
   <main><article class="paper-detail">
   <div class="paper-main">
     <div class="kicker">arXiv recent-list补漏 · P1 · 2026-06-11</div>
-    <h1 class="paper-headline">FF-JEPA：它把 JEPA 从表征预测推向 latent planning，适合作为“视觉自监督表征如何支持行动世界模型”的路线观察</h1>
-    <p class="dek">缓解 JEPA world model 用 CEM 在 latent space 中做长程动作搜索时计算昂贵、容易 collapse、依赖 goal image 的问题。</p>
-    <p class="byline"><strong>FF-JEPA: Long-Horizon Planning in World Models with Latent Planners</strong>　Sergi Masip, Jonathan Swinnen, Yutong Hu, Renaud Detry, Tinne Tuytelaars；arXiv 元数据未列机构。　arXiv recent-list补漏　<a href="https://arxiv.org/abs/2606.09311">原文链接</a></p>
+    <h1 class="paper-headline">FF-JEPA：它和通用视觉自监督的关系在于：把 JEPA latent dynamics 用到更长程规划，并引入 action-free latent planner 作为子目标预测器</h1>
+    <p class="dek">中高相关；详见方法、贡献和实验边界。</p>
+    <p class="byline"><strong>FF-JEPA: Long-Horizon Planning in World Models with Latent Planners</strong>　arXiv recent-list补漏　<a href="https://arxiv.org/abs/2606.09311">原文链接</a></p>
     <div class="paper-facts">
       <span><b>编号</b>2606.09311</span>
       <span><b>优先级</b>P1</span>
       <span><b>类别</b>arXiv recent-list补漏</span>
       <span><b>会议</b>arXiv recent-list补漏</span>
-      <span><b>方法</b>Forward-Forward-JEPA 由标准 action-conditioned forward model 和 action-free latent planner 组成，planner 先预测下一段 latent subgoal，再把长任务拆成短 horizon optimization。</span>
+      <span><b>方法</b>把 JEPA latent dynamics 用到更长程规划，并引入 action-free latent planner 作为子目标预测器</span>
       <span><b>来源</b>arXiv / OpenReview</span>
     </div>
     <div class="feature-body">
-      <p class="lead dropcap">先说结论。它把 JEPA 从表征预测推向 latent planning，适合作为“视觉自监督表征如何支持行动世界模型”的路线观察。 缓解 JEPA world model 用 CEM 在 latent space 中做长程动作搜索时计算昂贵、容易 collapse、依赖 goal image 的问题。</p>
+      <p class="lead dropcap">先说结论。它和通用视觉自监督的关系在于：把 JEPA latent dynamics 用到更长程规划，并引入 action-free latent planner 作为子目标预测器。 中高相关；详见方法、贡献和实验边界。</p>
       <figure class="full-fig"><img src="../assets/mineru/2606.09311/images/9fbc6dc5cb8f5469ce190a5f849c37fbfef4507da1d8949c19a5e75858befb14.jpg" alt="Figureure 5 · : Inference time overhead for each architecture for one planning cycle"><figcaption><b>Figureure 5 · : Inference time overhead for each architecture for one planning cycle</b><span class="fig-en">Fig. 5: Inference time overhead for each architecture for one planning cycle of 25 environment steps. We show the average of 10 measurements taken during model execution.</span><span class="fig-zh">这张图概括 FF-JEPA 的整体方法流程。阅读时先看模块之间传递的训练信号，再看作者如何把目标拆成可优化的子问题。</span></figcaption></figure>
 <figure class="full-fig"><img src="../assets/mineru/2606.09311/images/651e4c852e2b71684d8133397c8d33f6651444b3f8ef974fd4f7d971cf320233.jpg" alt="(b) Latent diffusion planner Fig"><figcaption><b>(b) Latent diffusion planner Fig</b><span class="fig-en">(b) Latent diffusion planner Fig. 2: Training schemes for the two architectures we evaluated. Both models are trained on the latent space defined by the world model’s frozen encoder.</span><span class="fig-zh">这张图概括 FF-JEPA 的整体方法流程。阅读时先看模块之间传递的训练信号，再看作者如何把目标拆成可优化的子问题。</span></figcaption></figure>
       
       <h2>核心问题</h2>
-      <p>它把 JEPA 从表征预测推向 latent planning，适合作为“视觉自监督表征如何支持行动世界模型”的路线观察。</p>
+      <p>它和通用视觉自监督的关系在于：把 JEPA latent dynamics 用到更长程规划，并引入 action-free latent planner 作为子目标预测器。</p>
       <h2>方法拆解</h2>
-      <p>Forward-Forward-JEPA 由标准 action-conditioned forward model 和 action-free latent planner 组成，planner 先预测下一段 latent subgoal，再把长任务拆成短 horizon optimization。</p>
+      <p>把 JEPA latent dynamics 用到更长程规划，并引入 action-free latent planner 作为子目标预测器</p>
       <h2>主要贡献</h2>
-      <p>缓解 JEPA world model 用 CEM 在 latent space 中做长程动作搜索时计算昂贵、容易 collapse、依赖 goal image 的问题。</p>
+      <p>中高相关；详见方法、贡献和实验边界。</p>
       <h2>实验看点</h2>
-      <p>摘要给出 PushT 初步结果，显示层级 latent planner 可减少长程规划失败。</p>
+      <p>实验部分建议重点看两类证据：一是作者是否把方法收益和更强数据、更长训练、更大模型区分开；二是跨模型、跨数据或跨任务迁移是否还能保留同样趋势。</p>
       <h2>局限与读法</h2>
-      <p>机器人/控制语境较强，实验仍是 preliminary；与通用视频表征 benchmark 的关系需要后续证据。</p>
+      <p>这篇论文的结论需要结合任务设置、训练数据规模和消融实验一起看；不要只凭单个指标判断它对通用视觉表征的价值。</p>
     
     </div>
   </div>
@@ -61,13 +61,13 @@
     <div class="side-box"><h4>原文</h4><p><a href="https://arxiv.org/abs/2606.09311">https://arxiv.org/abs/2606.09311</a></p></div>
   </aside>
 </article></main>
-  <aside class="conf-float" data-conf-reminder="2026-06-11-main-ddl" aria-label="CCF A/B 主投稿提醒">
+  <aside class="conf-float" data-conf-reminder="2026-06-14-main-ddl" aria-label="CCF A/B 主投稿提醒">
   <button class="conf-close" type="button" aria-label="关闭会议提醒">×</button>
   <details open>
     <summary>CCF A/B 主投稿提醒</summary>
     <div class="conf-list"><a class="conf-item " href="https://github.com/ccfddl/ccf-deadlines/blob/main/conference/AI/aaai.yml">
   <span><b>AAAI 2027</b><em>CCF A · Main paper submission</em></span>
-  <strong>46 天</strong>
+  <strong>43 天</strong>
   <small>2026-07-27 · CCF DDL: abstract 2026-07-20；进入 1 个月窗口后重点提醒。</small>
 </a></div>
   </details>
@@ -80,7 +80,7 @@
   (() => {
     const box = document.querySelector('[data-conf-reminder]');
     if (!box) return;
-    const key = `visualSslConfReminderClosed:${box.dataset.confReminder || '2026-06-11-main-ddl'}`;
+    const key = `visualSslConfReminderClosed:${box.dataset.confReminder || '2026-06-14-main-ddl'}`;
     try {
       if (localStorage.getItem(key) === '1') box.hidden = true;
     } catch (err) {}
