@@ -19,39 +19,39 @@
   </header>
   <nav class="site-nav" aria-label="主导航">
     <a class="nav-link" href="../index.html">头版</a>
-<a class="nav-link" href="../issues/2026-06-14.html">今日速递</a>
+<a class="nav-link" href="../issues/2026-06-15.html">今日速递</a>
 <a class="nav-link" href="../pages/catalog.html">论文目录</a>
 <a class="nav-link" href="../pages/timeline.html">时间线</a>
   </nav>
   <main><article class="paper-detail">
   <div class="paper-main">
     <div class="kicker">arXiv 新增 · P2 · 2026-06-14</div>
-    <h1 class="paper-headline">MaskWAM：可作为“未来状态预测目标是否应包含 object masks/semantic slots”的扫读参考</h1>
-    <p class="dek">把 WAM 的 RGB prediction 从无结构视觉重建推向 object-centric 语义 grounding，减少语言歧义和背景干扰。</p>
-    <p class="byline"><strong>MaskWAM: Unifying Mask Prompting and Prediction for World-Action Models</strong>　Hanyang Yu, Haitao Lin, Jingbo Zhang, Wenyao Zhang, Chenghao Gu, Heng Li, Ping Tan；arXiv 元数据未稳定列机构时按作者列表记录。　arXiv 新增　<a href="https://arxiv.org/abs/2606.13515">原文链接</a></p>
+    <h1 class="paper-headline">MaskWAM：它和通用视觉自监督的关系在于：把 mask 同时作为 WAM 输入提示和预测目标，给 world-action model 加 object-centric semantic supervision</h1>
+    <p class="dek">中高相关；详见方法、贡献和实验边界。</p>
+    <p class="byline"><strong>MaskWAM: Unifying Mask Prompting and Prediction for World-Action Models</strong>　arXiv 新增　<a href="https://arxiv.org/abs/2606.13515">原文链接</a></p>
     <div class="paper-facts">
       <span><b>编号</b>2606.13515</span>
       <span><b>优先级</b>P2</span>
       <span><b>类别</b>arXiv 新增</span>
       <span><b>会议</b>arXiv 新增</span>
-      <span><b>方法</b>用 unified Mixture of Transformers 同时处理 text prompts、visual mask prompts 与 future mask prediction；mask 既是空间锚点也是预测监督。</span>
+      <span><b>方法</b>把 mask 同时作为 WAM 输入提示和预测目标，给 world-action model 加 object-centric semantic supervision</span>
       <span><b>来源</b>arXiv / OpenReview</span>
     </div>
     <div class="feature-body">
-      <p class="lead dropcap">先说结论。可作为“未来状态预测目标是否应包含 object masks/semantic slots”的扫读参考。 把 WAM 的 RGB prediction 从无结构视觉重建推向 object-centric 语义 grounding，减少语言歧义和背景干扰。</p>
+      <p class="lead dropcap">先说结论。它和通用视觉自监督的关系在于：把 mask 同时作为 WAM 输入提示和预测目标，给 world-action model 加 object-centric semantic supervision。 中高相关；详见方法、贡献和实验边界。</p>
       <figure class="full-fig"><img src="../assets/mineru/2606.13515/images/c266e78b876c43aac723caf03a40a9f922c9ba5ac23159d84586c7e970c77992.jpg" alt="Figureure 2 · MaskWAM architecture"><figcaption><b>Figureure 2 · MaskWAM architecture</b><span class="fig-en">Figure 2 MaskWAM architecture. $( a )$ Training: Noisy RGB and mask latents are channel-concatenated and denoised by a unified DiT. The model jointly optimizes future RGB, future masks, and action chunking under a joint flow-matching framework with decoupled noise schedules $\tau _ { v }$ and $\tau _ { a } . \quad ( b )$ Attention mask: A block-wise causal attention mask enables unified RGB, mask, and action training. (c) Inference: Conditioned on optional first-frame masks to resolve spatial ambiguities, the model leverages KV-caching to efficiently generate actions from partially denoised latents.</span><span class="fig-zh">这张图概括 MaskWAM 的整体方法流程。阅读时先看模块之间传递的训练信号，再看作者如何把目标拆成可优化的子问题。</span></figcaption></figure>
 <figure class="full-fig"><img src="../assets/mineru/2606.13515/images/6e07a4cf0650bba44f60e6aac798c736d6fdd7aaf53919c680ac5f9404137e0a.jpg" alt="Figureure 1 · Overview"><figcaption><b>Figureure 1 · Overview</b><span class="fig-en">Figure 1 Overview. We introduce MaskWAM, an end-to-end WAM that unifies mask prompting and mask prediction, supporting both text prompts and visual prompts. MaskWAM achieves high-precision manipulation and strong generalization in both simulation and real-world tasks.</span><span class="fig-zh">这张图概括 MaskWAM 的整体方法流程。阅读时先看模块之间传递的训练信号，再看作者如何把目标拆成可优化的子问题。</span></figcaption></figure>
       
       <h2>核心问题</h2>
-      <p>可作为“未来状态预测目标是否应包含 object masks/semantic slots”的扫读参考。</p>
+      <p>它和通用视觉自监督的关系在于：把 mask 同时作为 WAM 输入提示和预测目标，给 world-action model 加 object-centric semantic supervision。</p>
       <h2>方法拆解</h2>
-      <p>用 unified Mixture of Transformers 同时处理 text prompts、visual mask prompts 与 future mask prediction；mask 既是空间锚点也是预测监督。</p>
+      <p>把 mask 同时作为 WAM 输入提示和预测目标，给 world-action model 加 object-centric semantic supervision</p>
       <h2>主要贡献</h2>
-      <p>把 WAM 的 RGB prediction 从无结构视觉重建推向 object-centric 语义 grounding，减少语言歧义和背景干扰。</p>
+      <p>中高相关；详见方法、贡献和实验边界。</p>
       <h2>实验看点</h2>
-      <p>摘要称在 LIBERO、RoboTwin 和真实任务上优于 baselines，在语言明确和语言模糊任务中都有收益。</p>
+      <p>实验部分建议重点看两类证据：一是作者是否把方法收益和更强数据、更长训练、更大模型区分开；二是跨模型、跨数据或跨任务迁移是否还能保留同样趋势。</p>
       <h2>局限与读法</h2>
-      <p>机器人控制语境明显；与通用视觉 SSL 的连接在于对象级预测目标，而非直接 benchmark。</p>
+      <p>这篇论文的结论需要结合任务设置、训练数据规模和消融实验一起看；不要只凭单个指标判断它对通用视觉表征的价值。</p>
     
     </div>
   </div>
@@ -61,13 +61,13 @@
     <div class="side-box"><h4>原文</h4><p><a href="https://arxiv.org/abs/2606.13515">https://arxiv.org/abs/2606.13515</a></p></div>
   </aside>
 </article></main>
-  <aside class="conf-float" data-conf-reminder="2026-06-14-main-ddl" aria-label="CCF A/B 主投稿提醒">
+  <aside class="conf-float" data-conf-reminder="2026-06-15-main-ddl" aria-label="CCF A/B 主投稿提醒">
   <button class="conf-close" type="button" aria-label="关闭会议提醒">×</button>
   <details open>
     <summary>CCF A/B 主投稿提醒</summary>
     <div class="conf-list"><a class="conf-item " href="https://github.com/ccfddl/ccf-deadlines/blob/main/conference/AI/aaai.yml">
   <span><b>AAAI 2027</b><em>CCF A · Main paper submission</em></span>
-  <strong>43 天</strong>
+  <strong>42 天</strong>
   <small>2026-07-27 · CCF DDL: abstract 2026-07-20；进入 1 个月窗口后重点提醒。</small>
 </a></div>
   </details>
@@ -80,7 +80,7 @@
   (() => {
     const box = document.querySelector('[data-conf-reminder]');
     if (!box) return;
-    const key = `visualSslConfReminderClosed:${box.dataset.confReminder || '2026-06-14-main-ddl'}`;
+    const key = `visualSslConfReminderClosed:${box.dataset.confReminder || '2026-06-15-main-ddl'}`;
     try {
       if (localStorage.getItem(key) === '1') box.hidden = true;
     } catch (err) {}

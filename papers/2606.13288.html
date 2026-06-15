@@ -19,39 +19,39 @@
   </header>
   <nav class="site-nav" aria-label="主导航">
     <a class="nav-link" href="../index.html">头版</a>
-<a class="nav-link" href="../issues/2026-06-14.html">今日速递</a>
+<a class="nav-link" href="../issues/2026-06-15.html">今日速递</a>
 <a class="nav-link" href="../pages/catalog.html">论文目录</a>
 <a class="nav-link" href="../pages/timeline.html">时间线</a>
   </nav>
   <main><article class="paper-detail">
   <div class="paper-main">
     <div class="kicker">ACL 2026 Main + arXiv · P1 · 2026-06-14</div>
-    <h1 class="paper-headline">Cross-Modal Masked Compositional Concept Modeling：适合作为“视觉-语言自监督目标如何塑形视觉表征”的 P1 精读</h1>
-    <p class="dek">把 CLIP 的 bag-of-words 弱点转化为可训练的跨模态组合概念建模问题，避免只靠 hard negative。</p>
-    <p class="byline"><strong>Cross-Modal Masked Compositional Concept Modeling for Enhancing Visio-Linguistic Compositionality</strong>　Wei Li, Zhen Huang, Xinmei Tian；arXiv 元数据未稳定列机构时按作者列表记录。　ACL 2026 Main + arXiv　<a href="https://arxiv.org/abs/2606.13288">原文链接</a></p>
+    <h1 class="paper-headline">Cross-Modal Masked Compositional Concept Modeling：它和通用视觉自监督的关系在于：用跨模态 masked concept reconstruction 改造 CLIP/VLM compositionality，是视觉-语言自监督/弱监督表征的可迁移目标</h1>
+    <p class="dek">高相关；详见方法、贡献和实验边界。</p>
+    <p class="byline"><strong>Cross-Modal Masked Compositional Concept Modeling for Enhancing Visio-Linguistic Compositionality</strong>　ACL 2026 Main + arXiv　<a href="https://arxiv.org/abs/2606.13288">原文链接</a></p>
     <div class="paper-facts">
       <span><b>编号</b>2606.13288</span>
       <span><b>优先级</b>P1</span>
       <span><b>类别</b>ACL 2026 Main + arXiv</span>
       <span><b>会议</b>ACL 2026 Main + arXiv</span>
-      <span><b>方法</b>MACCO 在一侧模态中 mask compositional concepts，再用另一侧完整上下文重建；配合 inter-modal 与 intra-modal masked-feature 对齐/正则化。</span>
+      <span><b>方法</b>用跨模态 masked concept reconstruction 改造 CLIP/VLM compositionality，是视觉-语言自监督/弱监督表征的可迁移目标</span>
       <span><b>来源</b>arXiv / OpenReview</span>
     </div>
     <div class="feature-body">
-      <p class="lead dropcap">先说结论。适合作为“视觉-语言自监督目标如何塑形视觉表征”的 P1 精读。 把 CLIP 的 bag-of-words 弱点转化为可训练的跨模态组合概念建模问题，避免只靠 hard negative。</p>
+      <p class="lead dropcap">先说结论。它和通用视觉自监督的关系在于：用跨模态 masked concept reconstruction 改造 CLIP/VLM compositionality，是视觉-语言自监督/弱监督表征的可迁移目标。 高相关；详见方法、贡献和实验边界。</p>
       <figure class="full-fig"><img src="../assets/mineru/2606.13288/images/76b924999cb829bfafaf0e4fe4df8a1a0c5d4c0a80c21c48ba1de817d43e50ca.jpg" alt="Figureure 2 · : Our framework employs image and text predictors exclusively during t"><figcaption><b>Figureure 2 · : Our framework employs image and text predictors exclusively during t</b><span class="fig-en">Figure 2: Our framework employs image and text predictors exclusively during training, removing them at inference time. The two image encoders share weights and function as a single encoder, as do the two text encoders.</span><span class="fig-zh">这张图概括 Cross-Modal Masked Compositional Concept Modeling 的整体方法流程。阅读时先看模块之间传递的训练信号，再看作者如何把目标拆成可优化的子问题。</span></figcaption></figure>
 <figure class="full-fig"><img src="../assets/mineru/2606.13288/images/360eb71c12ab443a05299c802d8da7b2b00780c597e5f30d46cb992d0bec5287.jpg" alt="Figureure 1 · : The core idea of our method"><figcaption><b>Figureure 1 · : The core idea of our method</b><span class="fig-en">Figure 1: The core idea of our method. We mask compositional concepts in one modality and reconstruct them conditioned on the full information from the other.</span><span class="fig-zh">这张图来自论文 PDF 的结构化抽取。当前用于辅助理解 Cross-Modal Masked Compositional Concept Modeling 的方法或实验，请结合正文精读段落一起看。</span></figcaption></figure>
       
       <h2>核心问题</h2>
-      <p>适合作为“视觉-语言自监督目标如何塑形视觉表征”的 P1 精读。</p>
+      <p>它和通用视觉自监督的关系在于：用跨模态 masked concept reconstruction 改造 CLIP/VLM compositionality，是视觉-语言自监督/弱监督表征的可迁移目标。</p>
       <h2>方法拆解</h2>
-      <p>MACCO 在一侧模态中 mask compositional concepts，再用另一侧完整上下文重建；配合 inter-modal 与 intra-modal masked-feature 对齐/正则化。</p>
+      <p>用跨模态 masked concept reconstruction 改造 CLIP/VLM compositionality，是视觉-语言自监督/弱监督表征的可迁移目标</p>
       <h2>主要贡献</h2>
-      <p>把 CLIP 的 bag-of-words 弱点转化为可训练的跨模态组合概念建模问题，避免只靠 hard negative。</p>
+      <p>高相关；详见方法、贡献和实验边界。</p>
       <h2>实验看点</h2>
-      <p>摘要称在 5 个 compositional benchmarks 上提升 VLM compositionality，并改善 syntactic/linguistic information 捕获；还对 text-to-image generation 和 MLLM 有正向影响。</p>
+      <p>实验部分建议重点看两类证据：一是作者是否把方法收益和更强数据、更长训练、更大模型区分开；二是跨模型、跨数据或跨任务迁移是否还能保留同样趋势。</p>
       <h2>局限与读法</h2>
-      <p>重点是视觉-语言组合性，不是纯视觉 encoder；需要看它对通用图像 linear probe/zero-shot robustness 的外溢幅度。</p>
+      <p>这篇论文的结论需要结合任务设置、训练数据规模和消融实验一起看；不要只凭单个指标判断它对通用视觉表征的价值。</p>
     
     </div>
   </div>
@@ -61,13 +61,13 @@
     <div class="side-box"><h4>原文</h4><p><a href="https://arxiv.org/abs/2606.13288">https://arxiv.org/abs/2606.13288</a></p></div>
   </aside>
 </article></main>
-  <aside class="conf-float" data-conf-reminder="2026-06-14-main-ddl" aria-label="CCF A/B 主投稿提醒">
+  <aside class="conf-float" data-conf-reminder="2026-06-15-main-ddl" aria-label="CCF A/B 主投稿提醒">
   <button class="conf-close" type="button" aria-label="关闭会议提醒">×</button>
   <details open>
     <summary>CCF A/B 主投稿提醒</summary>
     <div class="conf-list"><a class="conf-item " href="https://github.com/ccfddl/ccf-deadlines/blob/main/conference/AI/aaai.yml">
   <span><b>AAAI 2027</b><em>CCF A · Main paper submission</em></span>
-  <strong>43 天</strong>
+  <strong>42 天</strong>
   <small>2026-07-27 · CCF DDL: abstract 2026-07-20；进入 1 个月窗口后重点提醒。</small>
 </a></div>
   </details>
@@ -80,7 +80,7 @@
   (() => {
     const box = document.querySelector('[data-conf-reminder]');
     if (!box) return;
-    const key = `visualSslConfReminderClosed:${box.dataset.confReminder || '2026-06-14-main-ddl'}`;
+    const key = `visualSslConfReminderClosed:${box.dataset.confReminder || '2026-06-15-main-ddl'}`;
     try {
       if (localStorage.getItem(key) === '1') box.hidden = true;
     } catch (err) {}

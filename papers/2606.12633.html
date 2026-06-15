@@ -19,39 +19,39 @@
   </header>
   <nav class="site-nav" aria-label="主导航">
     <a class="nav-link" href="../index.html">头版</a>
-<a class="nav-link" href="../issues/2026-06-14.html">今日速递</a>
+<a class="nav-link" href="../issues/2026-06-15.html">今日速递</a>
 <a class="nav-link" href="../pages/catalog.html">论文目录</a>
 <a class="nav-link" href="../pages/timeline.html">时间线</a>
   </nav>
   <main><article class="paper-detail">
   <div class="paper-main">
     <div class="kicker">ICML 2026 + arXiv · P3 · 2026-06-14</div>
-    <h1 class="paper-headline">ECA：作为会议动态保留，精读优先级低于 V-JEPA/DSSA/MACCO/HYDRA-X</h1>
-    <p class="dek">在无旧数据 exemplar 的设置下缓解 OpenITG 的灾难性遗忘，强调跨模态表征随数据分布变化持续维护。</p>
-    <p class="byline"><strong>ECA: Efficient Continual Alignment for Open-Ended Image-to-Text Generation</strong>　Jiangtao Kong, Peijun Zhao, Chun-Fu Chen, Youngwook Do, Shaohan Hu, Tianyi Zhou, Huajie Shao；arXiv 元数据未稳定列机构时按作者列表记录。　ICML 2026 + arXiv　<a href="https://arxiv.org/abs/2606.12633">原文链接</a></p>
+    <h1 class="paper-headline">ECA：它和通用视觉自监督的关系在于：ICML 2026 接收；关注预训练 VLM alignment module 的持续适应，和长期维护图文表征相关</h1>
+    <p class="dek">中相关；详见方法、贡献和实验边界。</p>
+    <p class="byline"><strong>ECA: Efficient Continual Alignment for Open-Ended Image-to-Text Generation</strong>　ICML 2026 + arXiv　<a href="https://arxiv.org/abs/2606.12633">原文链接</a></p>
     <div class="paper-facts">
       <span><b>编号</b>2606.12633</span>
       <span><b>优先级</b>P3</span>
       <span><b>类别</b>ICML 2026 + arXiv</span>
       <span><b>会议</b>ICML 2026 + arXiv</span>
-      <span><b>方法</b>提出 continual alignment：只增量适配 pretrained VLM 的 alignment module；使用 Mixture of Query、Fisher Dynamic Expansion 和 embedding dictionary replay。</span>
+      <span><b>方法</b>ICML 2026 接收；关注预训练 VLM alignment module 的持续适应，和长期维护图文表征相关</span>
       <span><b>来源</b>arXiv / OpenReview</span>
     </div>
     <div class="feature-body">
-      <p class="lead dropcap">先说结论。作为会议动态保留，精读优先级低于 V-JEPA/DSSA/MACCO/HYDRA-X。 在无旧数据 exemplar 的设置下缓解 OpenITG 的灾难性遗忘，强调跨模态表征随数据分布变化持续维护。</p>
+      <p class="lead dropcap">先说结论。它和通用视觉自监督的关系在于：ICML 2026 接收；关注预训练 VLM alignment module 的持续适应，和长期维护图文表征相关。 中相关；详见方法、贡献和实验边界。</p>
       <figure class="full-fig"><img src="../assets/mineru/2606.12633/images/18855940e7f2011b1809110406d662b3432c6076fd65e62ae7d0585a1d1bd670.jpg" alt="2 Fisher Dynamic Expansion on Q-Former Figure 2"><figcaption><b>2 Fisher Dynamic Expansion on Q-Former Figure 2</b><span class="fig-en">2 Fisher Dynamic Expansion on Q-Former Figure 2. The framework of our exemplar-free incremental learning approach, ECA, for image-to-text generation. Upper Left: An input image is processed by a frozen visual encoder to produce features. These features enter the Mixture of Query module (❶), which generates query tokens to interact with the Q-Former equipped with Fisher Dynamic Expansion (❷), yielding language-informative visual representations. The representations are fed to the LLM as soft visual prompts to generate text conditioned on visual context. After the current task, visual features update the embedding dictionary via sparse dictionary learning. Upper Right: During training, the Dictionary Replay module (❸) replays the embedding dictionary to retain the former alignment.</span><span class="fig-zh">这张图概括 ECA 的整体方法流程。阅读时先看模块之间传递的训练信号，再看作者如何把目标拆成可优化的子问题。</span></figcaption></figure>
 <figure class="full-fig"><img src="../assets/mineru/2606.12633/images/c0a9f0e73023b35d2cf373ddc70978ff9fb131b0a2c931320f8c48ea88130217.jpg" alt="(b) Our Method Figure 1"><figcaption><b>(b) Our Method Figure 1</b><span class="fig-en">(b) Our Method Figure 1. Comparison between (a) existing task splits (Del Chiaro et al., 2020; Zhang et al., 2023; Lei et al., 2023) and (b) our main topic split. (a) top-left illustrates methods that assume disjoint object categories and discard images containing multiple topics. (a) top-right illustrates methods that rely on disjoint background scenes. (b) defines each task by the image’s dominant semantic category (“main topic”), which accommodates overlapping semantics and shifts in focus across time or environments, yielding a more realistic continual OpenITG setting.</span><span class="fig-zh">这张图/表用于判断 ECA 的实验收益来自哪里。重点看替换、消融或跨模型设置下趋势是否一致，而不是只看单个最高分。</span></figcaption></figure>
       
       <h2>核心问题</h2>
-      <p>作为会议动态保留，精读优先级低于 V-JEPA/DSSA/MACCO/HYDRA-X。</p>
+      <p>它和通用视觉自监督的关系在于：ICML 2026 接收；关注预训练 VLM alignment module 的持续适应，和长期维护图文表征相关。</p>
       <h2>方法拆解</h2>
-      <p>提出 continual alignment：只增量适配 pretrained VLM 的 alignment module；使用 Mixture of Query、Fisher Dynamic Expansion 和 embedding dictionary replay。</p>
+      <p>ICML 2026 接收；关注预训练 VLM alignment module 的持续适应，和长期维护图文表征相关</p>
       <h2>主要贡献</h2>
-      <p>在无旧数据 exemplar 的设置下缓解 OpenITG 的灾难性遗忘，强调跨模态表征随数据分布变化持续维护。</p>
+      <p>中相关；详见方法、贡献和实验边界。</p>
       <h2>实验看点</h2>
-      <p>摘要称构建 4 个 OpenITG incremental benchmarks，并显著优于 IL baselines。</p>
+      <p>实验部分建议重点看两类证据：一是作者是否把方法收益和更强数据、更长训练、更大模型区分开；二是跨模型、跨数据或跨任务迁移是否还能保留同样趋势。</p>
       <h2>局限与读法</h2>
-      <p>主要是 image-to-text generation/continual learning，不是自监督预训练目标；与通用视觉 encoder 关系间接。</p>
+      <p>这篇论文的结论需要结合任务设置、训练数据规模和消融实验一起看；不要只凭单个指标判断它对通用视觉表征的价值。</p>
     
     </div>
   </div>
@@ -61,13 +61,13 @@
     <div class="side-box"><h4>原文</h4><p><a href="https://arxiv.org/abs/2606.12633">https://arxiv.org/abs/2606.12633</a></p></div>
   </aside>
 </article></main>
-  <aside class="conf-float" data-conf-reminder="2026-06-14-main-ddl" aria-label="CCF A/B 主投稿提醒">
+  <aside class="conf-float" data-conf-reminder="2026-06-15-main-ddl" aria-label="CCF A/B 主投稿提醒">
   <button class="conf-close" type="button" aria-label="关闭会议提醒">×</button>
   <details open>
     <summary>CCF A/B 主投稿提醒</summary>
     <div class="conf-list"><a class="conf-item " href="https://github.com/ccfddl/ccf-deadlines/blob/main/conference/AI/aaai.yml">
   <span><b>AAAI 2027</b><em>CCF A · Main paper submission</em></span>
-  <strong>43 天</strong>
+  <strong>42 天</strong>
   <small>2026-07-27 · CCF DDL: abstract 2026-07-20；进入 1 个月窗口后重点提醒。</small>
 </a></div>
   </details>
@@ -80,7 +80,7 @@
   (() => {
     const box = document.querySelector('[data-conf-reminder]');
     if (!box) return;
-    const key = `visualSslConfReminderClosed:${box.dataset.confReminder || '2026-06-14-main-ddl'}`;
+    const key = `visualSslConfReminderClosed:${box.dataset.confReminder || '2026-06-15-main-ddl'}`;
     try {
       if (localStorage.getItem(key) === '1') box.hidden = true;
     } catch (err) {}

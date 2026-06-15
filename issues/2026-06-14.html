@@ -19,20 +19,18 @@
   </header>
   <nav class="site-nav" aria-label="主导航">
     <a class="nav-link" href="../index.html">头版</a>
-<a class="nav-link active" href="../issues/2026-06-14.html">今日速递</a>
+<a class="nav-link" href="../issues/2026-06-15.html">今日速递</a>
 <a class="nav-link" href="../pages/catalog.html">论文目录</a>
 <a class="nav-link" href="../pages/timeline.html">时间线</a>
   </nav>
   <main><article class="paper-detail issue-detail">
   <div class="paper-main">
     <div class="kicker">Daily issue · 2026-06-14 · CCF A/B 会议优先</div>
-    <h1 class="paper-headline">6 月 14 日：V-JEPA 2.1 等视觉表征主线更新</h1>
-    <p class="dek">本期聚焦通用视觉表征、视觉语言预训练与视频自监督中最值得跟进的论文，并保留 CCF A/B、OpenReview 与 arXiv 状态线索。</p>
+    <h1 class="paper-headline">6 月 14 日：V-JEPA 2.1 等视觉表征论文归档</h1>
+    <p class="dek">本页按日期归档近期论文，保留优先级、主题、来源与方法线索，方便回看同一批工作的研究脉络。</p>
     <div class="feature-body">
-      <p class="lead dropcap">先读 V-JEPA 2.1：它是今天唯一必须精读的方法更新，重点看 dense predictive loss、deep self-supervision 和图像/视频 tokenizer。第二篇读 Dual-State Slot Attention，它给视频 object-centric SSL 一个清晰的结构假设：appearance 用于重建，identity 用于跨帧保持。第三篇读 MACCO 与 HYDRA-X，分别代表视觉-语言 masked objective 和统一视觉 tokenizer。RepWAM、MaskWAM、GeoWorld-VLM 更偏 world-action / geometry teacher，可按“视觉 latent 如何支持行动或空间推理”的兴趣扫读；ECA 主要作为 ICML 状态动态保留。</p>
+      <p class="lead dropcap">先读 V-JEPA 2.1。V-JEPA 系列更新到 dense image/video features，把 masked predictive loss、深层自监督和图像/视频 tokenizer 统一到同一表征路线。 其余论文按 P1/P2 与主题顺序扫读，重点看方法图、消融设置和是否能迁移到通用视觉表征。</p>
       <h2>论文索引</h2>
-      <table class="compact-table"><thead><tr><th>优先级</th><th>论文</th><th>类型</th><th>相关性</th><th>一句话理由</th></tr></thead><tbody><tr><td>P0</td><td>V-JEPA 2.1: Unlocking Dense Features in Video Self-Supervised Learning</td><td>arXiv 更新 (v3)</td><td>高</td><td>V-JEPA 系列更新到 dense image/video features，把 masked predictive loss、深层自监督和图像/视频 tokenizer 统一到同一表征路线。</td></tr><tr><td>P0</td><td>Dual-State Slot Attention: Decoupling Appearance and Identity for Video Object-Centric Learning</td><td>arXiv 新增</td><td>高</td><td>纯粹面向无监督视频 object-centric 表征，把 appearance 和 identity 拆成双状态 slot，直接命中视频自监督表示。</td></tr><tr><td>P1</td><td>Cross-Modal Masked Compositional Concept Modeling for Enhancing Visio-Linguistic Compositionality</td><td>ACL 2026 Main + arXiv</td><td>高</td><td>用跨模态 masked concept reconstruction 改造 CLIP/VLM compositionality，是视觉-语言自监督/弱监督表征的可迁移目标。</td></tr><tr><td>P1</td><td>HYDRA-X: Native Unified Multimodal Models with Holistic Visual Tokenizers</td><td>arXiv 新增</td><td>高</td><td>把图像和视频 tokenization 放进同一个 ViT tokenizer，并用教师监督塑形 compact latent，是统一视觉 token 表征路线。</td></tr><tr><td>P1</td><td>RepWAM: World Action Modeling with Representation Visual-Action Tokenizers</td><td>arXiv 新增 + project</td><td>中高</td><td>把 WAM 从重建型视频 tokenizer 转到 representation-centric visual-action tokenizer，虽偏具身，但方法可迁移到视频 world model 表征。</td></tr><tr><td>P2</td><td>Modality Forcing for Scalable Spatial Generation</td><td>arXiv 新增 + project</td><td>中高</td><td>把 T2I 预训练的空间先验转成 image-depth 联合生成/估计，支持“生成式预训练可扩展到空间感知”的判断。</td></tr><tr><td>P2</td><td>MaskWAM: Unifying Mask Prompting and Prediction for World-Action Models</td><td>arXiv 新增</td><td>中高</td><td>把 mask 同时作为 WAM 输入提示和预测目标，给 world-action model 加 object-centric semantic supervision。</td></tr><tr><td>P2</td><td>GeoWorld-VLM: Geometry from World Models for Vision-Language Models</td><td>arXiv 更新</td><td>中高</td><td>用冻结 camera-conditioned video world model 作为几何 teacher 来蒸馏 VLM 视觉通路，是 world-model-as-teacher 的典型案例。</td></tr><tr><td>P3</td><td>EPM-JEPA: Operator-Side Experience Modulation in JEPA-Family World Models</td><td>arXiv 新增</td><td>中</td><td>单独讨论 JEPA predictor 如何在测试分布偏移时吸收经验，结论偏机制分析但主题很对。</td></tr><tr><td>P3</td><td>ECA: Efficient Continual Alignment for Open-Ended Image-to-Text Generation</td><td>ICML 2026 + arXiv</td><td>中</td><td>ICML 2026 接收；关注预训练 VLM alignment module 的持续适应，和长期维护图文表征相关。</td></tr></tbody></table>
-      <h2>主线阅读</h2>
       <div class="paper-list issue-list"><article class="paper-card" data-category="arXiv 更新 (v3)" data-priority="P0" data-date="2026-06-14" data-title="v-jepa 2.1: unlocking dense features in video self-supervised learning" data-keywords="v-jepa 2.1: unlocking dense features in video self-supervised learning v-jepa 2.1 arxiv 更新 (v3) p0 2026-06-14 arxiv 更新 (v3) v-jepa 系列更新到 dense image/video features，把 masked predictive loss、深层自监督和图像/视频 tokenizer 统一到同一表征路线 高相关；详见方法、贡献和实验边界。">
   <a class="paper-thumb paper-thumb-text" href="../papers/2603.14482.html">
     <img src="../assets/mineru/2603.14482/images/5aabc6ce2892fc6240a1355b3c3c4db80f26ed428a16260ad648107fff6a4b72.jpg" alt="V-JEPA 2.1 figure"><span>P0</span>
@@ -156,18 +154,17 @@
     </div>
   </div>
   <aside class="paper-side">
-    <div class="side-box"><h4>今日重点</h4><p>TextTeacher、MDM、EvoVid、Ablate-to-Validate。</p></div>
-    <div class="side-box"><h4>会议口径</h4><p>只把 CCF A/B 放进主提醒；临近截止或 CCF C 仅记录。</p></div>
     <div class="side-box"><h4>阅读重点</h4><p>先看 P1/P2 与方法图，再扫状态变化和边界案例。</p></div>
+    <div class="side-box"><h4>会议口径</h4><p>主提醒只保留 CCF A/B；CCF C 与过期截止仅作状态记录。</p></div>
   </aside>
 </article></main>
-  <aside class="conf-float" data-conf-reminder="2026-06-14-main-ddl" aria-label="CCF A/B 主投稿提醒">
+  <aside class="conf-float" data-conf-reminder="2026-06-15-main-ddl" aria-label="CCF A/B 主投稿提醒">
   <button class="conf-close" type="button" aria-label="关闭会议提醒">×</button>
   <details open>
     <summary>CCF A/B 主投稿提醒</summary>
     <div class="conf-list"><a class="conf-item " href="https://github.com/ccfddl/ccf-deadlines/blob/main/conference/AI/aaai.yml">
   <span><b>AAAI 2027</b><em>CCF A · Main paper submission</em></span>
-  <strong>43 天</strong>
+  <strong>42 天</strong>
   <small>2026-07-27 · CCF DDL: abstract 2026-07-20；进入 1 个月窗口后重点提醒。</small>
 </a></div>
   </details>
@@ -180,7 +177,7 @@
   (() => {
     const box = document.querySelector('[data-conf-reminder]');
     if (!box) return;
-    const key = `visualSslConfReminderClosed:${box.dataset.confReminder || '2026-06-14-main-ddl'}`;
+    const key = `visualSslConfReminderClosed:${box.dataset.confReminder || '2026-06-15-main-ddl'}`;
     try {
       if (localStorage.getItem(key) === '1') box.hidden = true;
     } catch (err) {}
