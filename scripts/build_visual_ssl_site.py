@@ -1356,7 +1356,7 @@ def write_catalog() -> None:
   const prev = root.querySelector('[data-page-prev]');
   const next = root.querySelector('[data-page-next]');
   const state = { category: 'all', priority: 'all', date: 'all', query: '' };
-  const pageSize = 6;
+  const pageSize = 24;
   let page = 1;
 
   const setCardVisible = (card, visible) => {
