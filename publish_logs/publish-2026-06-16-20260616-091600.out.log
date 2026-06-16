@@ -1,0 +1,48 @@
+Submitting 12 PDFs in 1 batch(es)
+
+Batch 1: requesting upload URLs for 12 files
+  batch_id: cc4e286b-20fb-4c9e-8da5-c19dc6cf5a1b
+
+Uploading PDFs in parallel (8 workers)...
+Uploaded: 12/12
+
+Polling for extraction to finish...
+  poll 1: 11/12 done
+  poll 2: 11/12 done
+  poll 3: 11/12 done
+  poll 4: 11/12 done
+  poll 5: 11/12 done
+  poll 6: 11/12 done
+  poll 7: 12/12 done
+
+Extraction done: 12/12
+
+Downloading + unzipping...
+Unzipped: 12/12
+Built site at H:\Desktop\visual_ssl_digest_site
+[master 56c1234a] daily: 2026-06-16 web digest
+ 7 files changed, 5166 insertions(+), 37 deletions(-)
+ create mode 100644 assets/mineru/2606.14317/7401b122-9117-4f79-b046-7cc306abfecf_content_list.json
+ create mode 100644 assets/mineru/2606.14317/bdb8af81-4dd2-4785-96dd-6ae849f63318_content_list.json
+ create mode 100644 assets/mineru/2606.14317/images/0a24a4ac078793af7b49e726df1bad8b57d6874788c4cfbeab3e9cb84a30c73f.jpg
+ create mode 100644 assets/mineru/2606.14317/images/6ce5d36dc04ed1fae61677b0426005560e9eb3078f1cc4ece009ea0549bdae34.jpg
+ create mode 100644 assets/mineru/2606.14317/images/cc8e5d4a93e6795706ca53ecedaf652367ae4889a79dd52e18a050c587ac6c20.jpg
+ create mode 100644 assets/mineru/2606.14317/images/fbc3f8b7dfed7efa811e82814bba68d833373d56e431a2ad06ba1eef606a9069.jpg
+download https://arxiv.org/pdf/2606.14700
+download https://arxiv.org/pdf/2606.13714
+download https://arxiv.org/pdf/2606.14586
+download https://arxiv.org/pdf/2606.14701
+download https://arxiv.org/pdf/2601.22108
+download https://arxiv.org/pdf/2606.14024
+download https://arxiv.org/pdf/2603.12231
+download https://arxiv.org/pdf/2606.13929
+download https://arxiv.org/pdf/2606.13870
+download https://arxiv.org/pdf/2606.14703
+download https://arxiv.org/pdf/2606.14299
+download https://arxiv.org/pdf/2606.14317
++ F:\miniconda3\python.exe C:\Users\Administrator\.claude\skills\paper-digest-site\scripts\submit_mineru.py --in H:\Desktop\visual_ssl_digest_site\staging_pdfs\2026-06-16 --out H:\Desktop\visual_ssl_digest_site\assets\mineru
++ F:\miniconda3\python.exe C:\Users\Administrator\Documents\New project\scripts\build_visual_ssl_site.py
++ git add -A
++ git commit -m daily: 2026-06-16 web digest
++ git push
+published 2026-06-16: 12 indexed arXiv papers

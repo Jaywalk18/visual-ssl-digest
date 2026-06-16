@@ -1,0 +1,37 @@
+Submitting 12 PDFs in 1 batch(es)
+
+Batch 1: requesting upload URLs for 12 files
+  batch_id: ab938857-31c1-4aba-9011-23f98eea8385
+
+Uploading PDFs in parallel (8 workers)...
+Uploaded: 12/12
+
+Polling for extraction to finish...
+  poll 1: 9/12 done
+  poll 2: 11/12 done
+  poll 3: 11/12 done
+  poll 4: 11/12 done
+  poll 5: 11/12 done
+  poll 6: 11/12 done
+  poll 7: 12/12 done
+
+Extraction done: 12/12
+
+Downloading + unzipping...
+Unzipped: 12/12
+Built site at H:\Desktop\visual_ssl_digest_site
+skip existing PDF: 2606.14700 - RepFusion Leveraging Multimodal Priors for Denoising in Representation S.pdf
+skip existing PDF: 2606.13714 - TSA Temporal Slot Activation for Persistent Object-Centric Video Represe.pdf
+skip existing PDF: 2606.14586 - S$^2$COPE Self-Supervised Concept Discovery via Preference Learning.pdf
+skip existing PDF: 2606.14701 - RATS! Patches Talk Through Registers Emergent Parts in Register Attentio.pdf
+skip existing PDF: 2601.22108 - Learning What to Predict Downstream-Guided Task Design for Continued Pre.pdf
+skip existing PDF: 2606.14024 - ViT-Up Faithful Feature Upsampling for Vision Transformers.pdf
+skip existing PDF: 2603.12231 - Temporal Straightening for Latent Planning.pdf
+skip existing PDF: 2606.13929 - Self-Evolving Visual Questioner.pdf
+skip existing PDF: 2606.13870 - Mirage Probes How Vision Models Fake Visual Understanding.pdf
+skip existing PDF: 2606.14703 - Gaze Heads How VLMs Look at What They Describe.pdf
+skip existing PDF: 2606.14299 - What Drives Test-Time Adaptation for CLIP A Controlled Empirical Study f.pdf
+download https://arxiv.org/pdf/2606.14317
++ F:\miniconda3\python.exe C:\Users\Administrator\.claude\skills\paper-digest-site\scripts\submit_mineru.py --in H:\Desktop\visual_ssl_digest_site\staging_pdfs\2026-06-16 --out H:\Desktop\visual_ssl_digest_site\assets\mineru
++ F:\miniconda3\python.exe C:\Users\Administrator\Documents\New project\scripts\build_visual_ssl_site.py
++ git add -A
