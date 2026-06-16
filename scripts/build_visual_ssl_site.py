@@ -1843,6 +1843,8 @@ def write_js() -> None:
    localStorage 键：sslReadIds, sslVisitDays, sslLikedIds, sslDismissedIds。 */
 (function(){
   var RKEY='sslReadIds', VKEY='sslVisitDays', LKEY='sslLikedIds', DKEY='sslDismissedIds';
+  var SYNC_URL='http://127.0.0.1:8765/visual-ssl/preferences';
+  var syncTimer=null, syncInFlight=false;
   function load(k){ try{ return normalize(JSON.parse(localStorage.getItem(k)||'[]')); }catch(e){ return []; } }
   function save(k,v){ try{ localStorage.setItem(k,JSON.stringify(normalize(v))); }catch(e){} }
   function normalize(v){
@@ -1884,6 +1886,29 @@ def write_js() -> None:
   }
   function setStatus(text){
     document.querySelectorAll('[data-pref-status]').forEach(function(el){ el.textContent=text||''; });
+  }
+  function scheduleSync(reason){
+    if(syncTimer) clearTimeout(syncTimer);
+    syncTimer=setTimeout(function(){ syncPrefs(reason||'change'); }, 550);
+  }
+  function syncPrefs(reason){
+    if(syncInFlight || !window.fetch) return;
+    syncInFlight=true;
+    var data=snapshot();
+    data.reason=reason || 'change';
+    fetch(SYNC_URL,{
+      method:'POST',
+      mode:'cors',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify(data)
+    }).then(function(resp){
+      syncInFlight=false;
+      if(!resp.ok) throw new Error('HTTP '+resp.status);
+      setStatus('已自动同步到本机');
+    }).catch(function(){
+      syncInFlight=false;
+      setStatus('本机同步未连接；仍可手动导出');
+    });
   }
   var Game={
     isRead:function(id){ return readSet.indexOf(id)!==-1; },
@@ -1974,6 +1999,7 @@ def write_js() -> None:
     normalize(data.visitDays).forEach(function(day){ add(visits,day); });
     save(RKEY,readSet); save(LKEY,likedSet); save(DKEY,dismissedSet); save(VKEY,visits);
     announce();
+    scheduleSync('import');
     setStatus('已导入偏好：关注 '+likedSet.length+'，略过 '+dismissedSet.length+'。');
   }
   document.addEventListener('click', function(e){
@@ -2004,8 +2030,9 @@ def write_js() -> None:
     reader.readAsText(input.files[0], 'utf-8');
   });
   Game.onChange(renderAll);
-  if(document.readyState!=='loading') renderAll();
-  else document.addEventListener('DOMContentLoaded', renderAll);
+  Game.onChange(function(){ scheduleSync('change'); });
+  if(document.readyState!=='loading'){ renderAll(); scheduleSync('load'); }
+  else document.addEventListener('DOMContentLoaded', function(){ renderAll(); scheduleSync('load'); });
 })();
 """
     (ROOT / "assets" / "ssl-game.js").write_text(js, encoding="utf-8")
