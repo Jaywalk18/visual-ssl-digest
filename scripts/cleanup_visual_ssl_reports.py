@@ -15,6 +15,7 @@ SCRATCH_ARCHIVE = ARCHIVE_ROOT / "scratch"
 DATED_REPORT_RE = re.compile(r"^20\d\d-\d\d-\d\d\.md$")
 DATE_RE = re.compile(r"20\d\d-\d\d-\d\d")
 KEEP_ROOT_FILES = {"latest.md", "package.json"}
+KEEP_ROOT_DIRS = {"archive", "preferences"}
 
 
 def archive_target(path: Path, target_dir: Path) -> Path:
@@ -64,7 +65,7 @@ def cleanup(keep_reports: int, dry_run: bool) -> list[tuple[str, Path, Path]]:
 
     for path in sorted(REPORT_ROOT.iterdir(), key=lambda p: p.name.lower()):
         resolved = path.resolve()
-        if path.name == ARCHIVE_ROOT.name:
+        if path.name in KEEP_ROOT_DIRS:
             continue
         if not str(resolved).lower().startswith(str(root).lower()):
             raise RuntimeError(f"Refusing to archive outside report root: {resolved}")

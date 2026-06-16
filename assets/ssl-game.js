@@ -1,13 +1,22 @@
 
-/* ssl-game.js · 养成系：连续追踪 streak / 进度环 / 标记已读 / 里程碑 / 签到热力图
-   仅使用自己的 localStorage 键：sslReadIds, sslVisitDays。 */
+/* ssl-game.js · 阅读进度 + 偏好池
+   localStorage 键：sslReadIds, sslVisitDays, sslLikedIds, sslDismissedIds。 */
 (function(){
-  var RKEY='sslReadIds', VKEY='sslVisitDays';
-  function load(k){ try{ return JSON.parse(localStorage.getItem(k)||'[]'); }catch(e){ return []; } }
-  function save(k,v){ try{ localStorage.setItem(k,JSON.stringify(v)); }catch(e){} }
+  var RKEY='sslReadIds', VKEY='sslVisitDays', LKEY='sslLikedIds', DKEY='sslDismissedIds';
+  function load(k){ try{ return normalize(JSON.parse(localStorage.getItem(k)||'[]')); }catch(e){ return []; } }
+  function save(k,v){ try{ localStorage.setItem(k,JSON.stringify(normalize(v))); }catch(e){} }
+  function normalize(v){
+    var out=[], seen={};
+    if(!Array.isArray(v)) return out;
+    v.forEach(function(id){ id=String(id||'').trim(); if(id && !seen[id]){ seen[id]=1; out.push(id); } });
+    return out;
+  }
+  function has(list,id){ return list.indexOf(id)!==-1; }
+  function add(list,id){ if(!has(list,id)) list.push(id); }
+  function remove(list,id){ var i=list.indexOf(id); if(i!==-1) list.splice(i,1); }
   function todayStr(d){ d=d||new Date(); return d.toISOString().slice(0,10); }
 
-  var readSet=load(RKEY), visits=load(VKEY);
+  var readSet=load(RKEY), visits=load(VKEY), likedSet=load(LKEY), dismissedSet=load(DKEY);
   (function visit(){ var t=todayStr(); if(visits.indexOf(t)===-1){ visits.push(t); save(VKEY,visits); } })();
 
   function streak(){
@@ -18,10 +27,42 @@
   }
   var listeners=[];
   function emit(){ listeners.forEach(function(fn){ try{ fn(); }catch(e){} }); }
+  function snapshot(){
+    return {
+      schema:'visual-ssl-preferences/v1',
+      exportedAt:new Date().toISOString(),
+      source:location.href,
+      readIds:normalize(readSet),
+      likedIds:normalize(likedSet),
+      dismissedIds:normalize(dismissedSet),
+      visitDays:normalize(visits)
+    };
+  }
+  function announce(){
+    emit();
+    try{ document.dispatchEvent(new CustomEvent('sslPreferenceChanged',{detail:snapshot()})); }catch(e){}
+  }
+  function setStatus(text){
+    document.querySelectorAll('[data-pref-status]').forEach(function(el){ el.textContent=text||''; });
+  }
   var Game={
     isRead:function(id){ return readSet.indexOf(id)!==-1; },
-    toggleRead:function(id){ var i=readSet.indexOf(id); if(i===-1) readSet.push(id); else readSet.splice(i,1); save(RKEY,readSet); emit(); return this.isRead(id); },
+    isLiked:function(id){ return likedSet.indexOf(id)!==-1; },
+    isDismissed:function(id){ return dismissedSet.indexOf(id)!==-1; },
+    toggleRead:function(id){ if(has(readSet,id)) remove(readSet,id); else add(readSet,id); save(RKEY,readSet); announce(); return this.isRead(id); },
+    togglePreference:function(id,kind){
+      if(kind==='like'){
+        if(has(likedSet,id)) remove(likedSet,id); else { add(likedSet,id); remove(dismissedSet,id); }
+      } else if(kind==='dismiss'){
+        if(has(dismissedSet,id)) remove(dismissedSet,id); else { add(dismissedSet,id); remove(likedSet,id); }
+      }
+      save(LKEY,likedSet); save(DKEY,dismissedSet); announce();
+      return kind==='like' ? this.isLiked(id) : this.isDismissed(id);
+    },
     readCount:function(){ return readSet.length; },
+    likedCount:function(){ return likedSet.length; },
+    dismissedCount:function(){ return dismissedSet.length; },
+    snapshot:snapshot,
     streak:streak,
     onChange:function(fn){ listeners.push(fn); }
   };
@@ -51,12 +92,21 @@
     document.querySelectorAll('[data-ring]').forEach(ring);
     document.querySelectorAll('[data-streak]').forEach(function(el){ el.textContent=streak(); });
     document.querySelectorAll('[data-readcount]').forEach(function(el){ el.textContent=readSet.length; });
+    document.querySelectorAll('[data-pref-liked-count]').forEach(function(el){ el.textContent=likedSet.length; });
+    document.querySelectorAll('[data-pref-dismissed-count]').forEach(function(el){ el.textContent=dismissedSet.length; });
     document.querySelectorAll('[data-badges]').forEach(badges);
     document.querySelectorAll('[data-heat]').forEach(heat);
     document.querySelectorAll('[data-pid]').forEach(function(node){
-      var r=Game.isRead(node.dataset.pid);
+      var pid=node.dataset.pid, r=Game.isRead(pid), liked=Game.isLiked(pid), dismissed=Game.isDismissed(pid);
       node.classList.toggle('is-read', r);
+      node.classList.toggle('is-liked', liked);
+      node.classList.toggle('is-dismissed', dismissed);
       var b=node.querySelector('.readbtn'); if(b) b.classList.toggle('on', r);
+      node.querySelectorAll('[data-pref-toggle]').forEach(function(btn){
+        var on=(btn.dataset.prefToggle==='like' && liked) || (btn.dataset.prefToggle==='dismiss' && dismissed);
+        btn.classList.toggle('on', on);
+        btn.setAttribute('aria-pressed', on ? 'true' : 'false');
+      });
     });
     document.querySelectorAll('[data-dayids]').forEach(function(el){
       var ids=(el.dataset.dayids||'').split(',').filter(Boolean);
@@ -65,13 +115,53 @@
       if(badge){ if(read){ badge.hidden=false; badge.textContent='已读 '+read+'/'+ids.length; } else { badge.hidden=true; } }
     });
   }
+  function downloadPrefs(){
+    var data=snapshot();
+    var blob=new Blob([JSON.stringify(data,null,2)],{type:'application/json'});
+    var a=document.createElement('a');
+    a.href=URL.createObjectURL(blob);
+    a.download='visual_ssl_preferences_'+todayStr()+'.json';
+    document.body.appendChild(a);
+    a.click();
+    setTimeout(function(){ URL.revokeObjectURL(a.href); a.remove(); },0);
+    setStatus('已导出 '+data.likedIds.length+' 个关注、'+data.dismissedIds.length+' 个略过。');
+  }
+  function mergePrefs(data){
+    if(!data || typeof data!=='object') throw new Error('JSON 格式不正确');
+    normalize(data.readIds).forEach(function(id){ add(readSet,id); });
+    normalize(data.likedIds).forEach(function(id){ add(likedSet,id); remove(dismissedSet,id); });
+    normalize(data.dismissedIds).forEach(function(id){ if(!has(likedSet,id)) add(dismissedSet,id); });
+    normalize(data.visitDays).forEach(function(day){ add(visits,day); });
+    save(RKEY,readSet); save(LKEY,likedSet); save(DKEY,dismissedSet); save(VKEY,visits);
+    announce();
+    setStatus('已导入偏好：关注 '+likedSet.length+'，略过 '+dismissedSet.length+'。');
+  }
   document.addEventListener('click', function(e){
+    var pref=e.target.closest && e.target.closest('[data-pref-toggle]');
+    if(pref){
+      e.preventDefault(); e.stopPropagation();
+      Game.togglePreference(pref.dataset.prefId, pref.dataset.prefToggle);
+      return;
+    }
+    var exp=e.target.closest && e.target.closest('[data-pref-export]');
+    if(exp){ e.preventDefault(); downloadPrefs(); return; }
     var btn=e.target.closest && e.target.closest('[data-read-toggle]');
     if(!btn) return;
     e.preventDefault(); e.stopPropagation();
     var now=Game.toggleRead(btn.dataset.readToggle);
     btn.classList.toggle('on', now);
     if(now){ btn.classList.remove('pop'); void btn.offsetWidth; btn.classList.add('pop'); }
+  });
+  document.addEventListener('change', function(e){
+    var input=e.target.closest && e.target.closest('[data-pref-import]');
+    if(!input || !input.files || !input.files[0]) return;
+    var reader=new FileReader();
+    reader.onload=function(){
+      try{ mergePrefs(JSON.parse(String(reader.result||''))); }
+      catch(err){ setStatus('导入失败：'+(err && err.message ? err.message : '无法解析 JSON')); }
+      input.value='';
+    };
+    reader.readAsText(input.files[0], 'utf-8');
   });
   Game.onChange(renderAll);
   if(document.readyState!=='loading') renderAll();

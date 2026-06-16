@@ -1040,7 +1040,7 @@ def shell(title: str, body: str, depth: int = 0, active: str = "", display_date:
   <link href="https://fonts.googleapis.com/css2?family=Source+Serif+4:ital,opsz,wght@0,8..60,400;0,8..60,500;0,8..60,600;1,8..60,400&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="{prefix}assets/visual-ssl.css?v={CSS_VERSION}">
 </head>
-<body>
+<body data-paper-data-url="{prefix}data/papers.json">
   <header class="masthead">
     <a class="masthead-title" href="{prefix}index.html">通用视觉自监督研究报</a>
     <div class="masthead-kicker">A Daily Digest of Visual Self-Supervised Learning</div>
@@ -1110,6 +1110,21 @@ def read_btn(pid: str) -> str:
             f'title="标记已读" aria-label="标记已读">{_READ_CHECK}</button>')
 
 
+def preference_buttons(pid: str) -> str:
+    return (
+        f'<div class="prefbar" data-pref-controls="{e(pid)}">'
+        f'<button class="prefbtn like" type="button" data-pref-toggle="like" data-pref-id="{e(pid)}" '
+        f'aria-pressed="false" title="关注这篇">关注</button>'
+        f'<button class="prefbtn dismiss" type="button" data-pref-toggle="dismiss" data-pref-id="{e(pid)}" '
+        f'aria-pressed="false" title="降低这篇权重">略过</button>'
+        f'</div>'
+    )
+
+
+def paper_card_tools(pid: str) -> str:
+    return f'<div class="paper-card-tools">{read_btn(pid)}{preference_buttons(pid)}</div>'
+
+
 def paper_card(p: dict, depth: int = 0) -> str:
     prefix = "../" * depth
     figs = figures_for(p["id"], depth, 1)
@@ -1130,7 +1145,7 @@ def paper_card(p: dict, depth: int = 0) -> str:
     <p class="card-tech"><b>方法：</b>{e(p['method'])}</p>
     <div class="paper-actions"><a href="{prefix}papers/{p['id']}.html">读图文页</a><a href="{e(p['url'])}">原文</a></div>
   </div>
-  {read_btn(p['id'])}
+  {paper_card_tools(p['id'])}
 </article>"""
 
 
@@ -1310,7 +1325,8 @@ def write_paper(p: dict, report_md: str) -> None:
     if p["id"] == "2605.21642":
         side_intro = """    <div class="side-box"><h4>图表导读</h4><p>先看 Figure 1 的替换协议，再看 Table 1-4 和 Mirage / CoVT 的替换实验。</p></div>
 """
-    body = f"""<article class="{article_class}">
+    detail_keywords = " ".join([p["title"], p["short"], p["category"], p["priority"], p["date"], p["venue"], p["method"], p["takeaway"]]).lower()
+    body = f"""<article class="{article_class}" data-pid="{e(p['id'])}" data-category="{e(p['category'])}" data-priority="{e(p['priority'])}" data-date="{e(p['date'])}" data-title="{e(p['title'].lower())}" data-keywords="{e(detail_keywords)}">
   <div class="paper-main">
     <div class="kicker">{e(p['category'])} · {e(p['priority'])} · {e(p['date'])}</div>
     <h1 class="paper-headline">{e(p['short'])}：{e(headline_thesis.rstrip('。'))}</h1>
@@ -1332,6 +1348,7 @@ def write_paper(p: dict, report_md: str) -> None:
   </div>
   <aside class="paper-side">
 {side_intro}
+    <div class="side-box pref-side"><h4>我的偏好</h4><div class="paper-side-tools">{read_btn(p['id'])}{preference_buttons(p['id'])}</div></div>
     <div class="side-box"><h4>关键判断</h4><dl><dt>相关性</dt><dd>{e(p['priority'])}</dd><dt>类别</dt><dd>{e(p['category'])}</dd><dt>会议</dt><dd>{e(p['venue'])}</dd><dt>读法</dt><dd>方法图优先，表格次之</dd></dl></div>
     <div class="side-box"><h4>原文</h4><p><a href="{e(p['url'])}">{e(p['url'])}</a></p></div>
   </aside>
@@ -1366,9 +1383,16 @@ def write_catalog() -> None:
   const pageInfo = root.querySelector('[data-page-info]');
   const prev = root.querySelector('[data-page-prev]');
   const next = root.querySelector('[data-page-next]');
-  const state = { category: 'all', priority: 'all', date: 'all', query: '' };
+  const onlyLiked = root.querySelector('[data-pref-only-liked]');
+  const hideDismissed = root.querySelector('[data-pref-hide-dismissed]');
+  const state = { category: 'all', priority: 'all', date: 'all', query: '', onlyLiked: false, hideDismissed: true };
   const pageSize = 24;
   let page = 1;
+  const readList = (key) => {
+    try { return JSON.parse(localStorage.getItem(key) || '[]'); } catch (err) { return []; }
+  };
+  const likedIds = () => new Set(readList('sslLikedIds'));
+  const dismissedIds = () => new Set(readList('sslDismissedIds'));
 
   const setCardVisible = (card, visible) => {
     card.hidden = !visible;
@@ -1380,6 +1404,8 @@ def write_catalog() -> None:
     if (state.priority !== 'all' && card.dataset.priority !== state.priority) return false;
     if (state.date !== 'all' && card.dataset.date !== state.date) return false;
     if (state.query && !(card.dataset.keywords || '').includes(state.query)) return false;
+    if (state.onlyLiked && !likedIds().has(card.dataset.pid)) return false;
+    if (state.hideDismissed && dismissedIds().has(card.dataset.pid)) return false;
     return true;
   };
 
@@ -1416,8 +1442,24 @@ def write_catalog() -> None:
     page = 1;
     render();
   });
+  if (onlyLiked) {
+    onlyLiked.addEventListener('change', () => {
+      state.onlyLiked = onlyLiked.checked;
+      page = 1;
+      render();
+    });
+  }
+  if (hideDismissed) {
+    hideDismissed.addEventListener('change', () => {
+      state.hideDismissed = hideDismissed.checked;
+      page = 1;
+      render();
+    });
+  }
   prev.addEventListener('click', () => { page -= 1; render(); });
   next.addEventListener('click', () => { page += 1; render(); });
+  document.addEventListener('sslPreferenceChanged', () => { page = 1; render(); });
+  window.SSLCatalogRender = render;
   render();
 })();
 </script>"""
@@ -1425,6 +1467,14 @@ def write_catalog() -> None:
 <section class="catalog-shell" data-catalog>
   <div class="catalog-tools">
     <input class="catalog-search" type="search" data-catalog-search placeholder="搜索标题、主题、方法" aria-label="搜索论文">
+    <section class="pref-panel" aria-label="我的偏好">
+      <div class="pref-panel-title">我的偏好</div>
+      <div class="pref-counts"><span>关注 <b data-pref-liked-count>0</b></span><span>略过 <b data-pref-dismissed-count>0</b></span><span>已读 <b data-readcount>0</b></span></div>
+      <label class="pref-switch"><input type="checkbox" data-pref-only-liked>只看关注</label>
+      <label class="pref-switch"><input type="checkbox" data-pref-hide-dismissed checked>隐藏略过</label>
+      <div class="pref-actions"><button type="button" data-pref-export>导出偏好 JSON</button><label><input type="file" accept="application/json" data-pref-import>导入</label></div>
+      <div class="pref-status" data-pref-status></div>
+    </section>
     {filter_buttons(categories, "category", "全部主题")}
     {filter_buttons(priorities, "priority", "全部优先级")}
     {filter_buttons(dates, "date", "全部日期")}
@@ -1494,6 +1544,7 @@ img{max-width:100%;height:auto;display:block;}
 a{color:var(--accent-deep);text-decoration:none;}
 h1,h2,h3,h4{font-family:var(--serif);font-weight:600;color:var(--ink);text-wrap:balance;word-break:keep-all;}
 p{text-wrap:pretty;}
+.paper-main,.paper-side,.paper-card,.page-header,.lead-story{overflow-wrap:anywhere;}
 
 /* ---------- masthead 报名牌 ---------- */
 .masthead{max-width:var(--page);margin:0 auto;padding:30px 28px 0;display:flex;align-items:flex-end;justify-content:space-between;gap:16px;flex-wrap:wrap;}
@@ -1526,6 +1577,7 @@ main{display:block;}
 @media(max-width:900px){.hero-grid{grid-template-columns:1fr;gap:24px;}}
 .lead-story{min-width:0;}
 .lead-story h1{font-size:clamp(32px,3.4vw,46px);line-height:1.12;letter-spacing:-.02em;margin:0 0 16px;font-family:var(--serif);}
+.lead-story h1,.paper-headline,.paper-card h3{word-break:normal;overflow-wrap:anywhere;}
 .lead-story .dek{font-size:20px;}
 .hero-figure{margin:24px 0 18px;border:1px solid var(--hair);border-radius:8px;overflow:hidden;background:var(--card);}
 .hero-figure img{width:100%;max-height:460px;object-fit:contain;background:#fff;}
@@ -1593,7 +1645,10 @@ main{display:block;}
 .paper-card .paper-actions a{font-size:12.5px;padding:6px 12px;}
 .paper-card .paper-actions a:first-child{background:var(--card);color:var(--ink);border-color:var(--rule);}
 .paper-card .paper-actions a:first-child:hover{background:var(--paper2);}
-.paper-card .readbtn{grid-column:3;}
+.paper-card .paper-card-tools{grid-column:3;display:flex;flex-direction:column;align-items:flex-end;gap:8px;min-width:70px;}
+.paper-card.is-liked{box-shadow:inset 3px 0 0 var(--gold);}
+.paper-card.is-dismissed{opacity:.52;}
+.paper-card.is-dismissed h3 a{text-decoration:line-through;text-decoration-color:var(--rule);}
 
 /* 主题封面（无图时） */
 .paper-thumb-text{position:relative;display:flex!important;flex-direction:column;justify-content:space-between;padding:11px 12px!important;color:#fff!important;background:linear-gradient(135deg,var(--c1,#3a4a63),var(--c2,#26303f))!important;border:0!important;}
@@ -1622,6 +1677,21 @@ main{display:block;}
 .readbtn.on{background:var(--gold);border-color:var(--gold);color:#fff;}
 .readbtn.pop{animation:pop .32s ease;}
 @keyframes pop{0%{transform:scale(.7);}55%{transform:scale(1.18);}100%{transform:scale(1);}}
+.prefbar{display:flex;flex-direction:column;gap:6px;align-items:stretch;}
+.prefbtn{font-family:var(--sans);font-size:12px;line-height:1;border:1px solid var(--hair);border-radius:8px;background:var(--card);color:var(--ink-soft);padding:7px 9px;min-width:58px;cursor:pointer;transition:background .15s,border-color .15s,color .15s;}
+.prefbtn:hover{border-color:var(--rule);background:var(--paper2);}
+.prefbtn.like.on{background:var(--gold-soft);border-color:#dfc28d;color:var(--gold-deep);font-weight:650;}
+.prefbtn.dismiss.on{background:#f1ece5;border-color:var(--rule);color:var(--muted);font-weight:650;}
+.paper-side-tools{display:flex;align-items:flex-start;gap:10px;flex-wrap:wrap;}
+.paper-side-tools .prefbar{flex-direction:row;}
+.pref-side .readbtn{margin-top:1px;}
+@media(max-width:700px){
+  .paper-card{grid-template-columns:104px minmax(0,1fr);gap:12px 14px;}
+  .paper-card .paper-thumb{width:104px;height:76px;}
+  .paper-card h3{font-size:18px;}
+  .paper-card .paper-card-tools{grid-column:1 / -1;flex-direction:row;align-items:center;justify-content:flex-start;min-width:0;}
+  .paper-card .paper-card-tools .prefbar{flex-direction:row;}
+}
 
 /* ============================================================
    PAPER DETAIL · 单栏阅读 + 破栏图
@@ -1699,6 +1769,17 @@ main{display:block;}
 @media(max-width:880px){.catalog-tools{position:static;}}
 .catalog-search{width:100%;font-family:var(--sans);font-size:14px;color:var(--ink);border:1px solid var(--rule);border-radius:9px;padding:10px 12px;background:var(--card);}
 .catalog-search:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-soft);}
+.pref-panel{border-top:2px solid var(--ink);padding-top:14px;}
+.pref-panel-title{font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--accent);font-weight:700;margin-bottom:10px;}
+.pref-counts{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-bottom:12px;}
+.pref-counts span{border:1px solid var(--hair);border-radius:8px;background:var(--card);padding:7px 6px;font-size:11.5px;color:var(--muted);text-align:center;}
+.pref-counts b{display:block;font-family:var(--mono);font-size:15px;color:var(--ink);margin-top:2px;}
+.pref-switch{display:flex;align-items:center;gap:7px;font-size:12.5px;color:var(--ink-soft);margin:7px 0;cursor:pointer;}
+.pref-switch input{accent-color:var(--accent);}
+.pref-actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px;}
+.pref-actions button,.pref-actions label{font-family:var(--sans);font-size:12.5px;border:1px solid var(--rule);border-radius:8px;background:var(--card);color:var(--ink);padding:7px 10px;cursor:pointer;}
+.pref-actions input{display:none;}
+.pref-status{min-height:18px;margin-top:8px;font-size:12px;line-height:1.5;color:var(--muted);}
 .filter-row{display:flex;flex-wrap:wrap;gap:6px;}
 .filter-pill{font-family:var(--sans);font-size:12.5px;color:var(--ink-soft);cursor:pointer;background:var(--card);border:1px solid var(--hair);border-radius:30px;padding:5px 11px;transition:all .14s;white-space:nowrap;}
 .filter-pill:hover{border-color:var(--rule);}
@@ -1758,15 +1839,24 @@ main{display:block;}
 
 def write_js() -> None:
     js = r"""
-/* ssl-game.js · 养成系：连续追踪 streak / 进度环 / 标记已读 / 里程碑 / 签到热力图
-   仅使用自己的 localStorage 键：sslReadIds, sslVisitDays。 */
+/* ssl-game.js · 阅读进度 + 偏好池
+   localStorage 键：sslReadIds, sslVisitDays, sslLikedIds, sslDismissedIds。 */
 (function(){
-  var RKEY='sslReadIds', VKEY='sslVisitDays';
-  function load(k){ try{ return JSON.parse(localStorage.getItem(k)||'[]'); }catch(e){ return []; } }
-  function save(k,v){ try{ localStorage.setItem(k,JSON.stringify(v)); }catch(e){} }
+  var RKEY='sslReadIds', VKEY='sslVisitDays', LKEY='sslLikedIds', DKEY='sslDismissedIds';
+  function load(k){ try{ return normalize(JSON.parse(localStorage.getItem(k)||'[]')); }catch(e){ return []; } }
+  function save(k,v){ try{ localStorage.setItem(k,JSON.stringify(normalize(v))); }catch(e){} }
+  function normalize(v){
+    var out=[], seen={};
+    if(!Array.isArray(v)) return out;
+    v.forEach(function(id){ id=String(id||'').trim(); if(id && !seen[id]){ seen[id]=1; out.push(id); } });
+    return out;
+  }
+  function has(list,id){ return list.indexOf(id)!==-1; }
+  function add(list,id){ if(!has(list,id)) list.push(id); }
+  function remove(list,id){ var i=list.indexOf(id); if(i!==-1) list.splice(i,1); }
   function todayStr(d){ d=d||new Date(); return d.toISOString().slice(0,10); }
 
-  var readSet=load(RKEY), visits=load(VKEY);
+  var readSet=load(RKEY), visits=load(VKEY), likedSet=load(LKEY), dismissedSet=load(DKEY);
   (function visit(){ var t=todayStr(); if(visits.indexOf(t)===-1){ visits.push(t); save(VKEY,visits); } })();
 
   function streak(){
@@ -1777,10 +1867,42 @@ def write_js() -> None:
   }
   var listeners=[];
   function emit(){ listeners.forEach(function(fn){ try{ fn(); }catch(e){} }); }
+  function snapshot(){
+    return {
+      schema:'visual-ssl-preferences/v1',
+      exportedAt:new Date().toISOString(),
+      source:location.href,
+      readIds:normalize(readSet),
+      likedIds:normalize(likedSet),
+      dismissedIds:normalize(dismissedSet),
+      visitDays:normalize(visits)
+    };
+  }
+  function announce(){
+    emit();
+    try{ document.dispatchEvent(new CustomEvent('sslPreferenceChanged',{detail:snapshot()})); }catch(e){}
+  }
+  function setStatus(text){
+    document.querySelectorAll('[data-pref-status]').forEach(function(el){ el.textContent=text||''; });
+  }
   var Game={
     isRead:function(id){ return readSet.indexOf(id)!==-1; },
-    toggleRead:function(id){ var i=readSet.indexOf(id); if(i===-1) readSet.push(id); else readSet.splice(i,1); save(RKEY,readSet); emit(); return this.isRead(id); },
+    isLiked:function(id){ return likedSet.indexOf(id)!==-1; },
+    isDismissed:function(id){ return dismissedSet.indexOf(id)!==-1; },
+    toggleRead:function(id){ if(has(readSet,id)) remove(readSet,id); else add(readSet,id); save(RKEY,readSet); announce(); return this.isRead(id); },
+    togglePreference:function(id,kind){
+      if(kind==='like'){
+        if(has(likedSet,id)) remove(likedSet,id); else { add(likedSet,id); remove(dismissedSet,id); }
+      } else if(kind==='dismiss'){
+        if(has(dismissedSet,id)) remove(dismissedSet,id); else { add(dismissedSet,id); remove(likedSet,id); }
+      }
+      save(LKEY,likedSet); save(DKEY,dismissedSet); announce();
+      return kind==='like' ? this.isLiked(id) : this.isDismissed(id);
+    },
     readCount:function(){ return readSet.length; },
+    likedCount:function(){ return likedSet.length; },
+    dismissedCount:function(){ return dismissedSet.length; },
+    snapshot:snapshot,
     streak:streak,
     onChange:function(fn){ listeners.push(fn); }
   };
@@ -1810,12 +1932,21 @@ def write_js() -> None:
     document.querySelectorAll('[data-ring]').forEach(ring);
     document.querySelectorAll('[data-streak]').forEach(function(el){ el.textContent=streak(); });
     document.querySelectorAll('[data-readcount]').forEach(function(el){ el.textContent=readSet.length; });
+    document.querySelectorAll('[data-pref-liked-count]').forEach(function(el){ el.textContent=likedSet.length; });
+    document.querySelectorAll('[data-pref-dismissed-count]').forEach(function(el){ el.textContent=dismissedSet.length; });
     document.querySelectorAll('[data-badges]').forEach(badges);
     document.querySelectorAll('[data-heat]').forEach(heat);
     document.querySelectorAll('[data-pid]').forEach(function(node){
-      var r=Game.isRead(node.dataset.pid);
+      var pid=node.dataset.pid, r=Game.isRead(pid), liked=Game.isLiked(pid), dismissed=Game.isDismissed(pid);
       node.classList.toggle('is-read', r);
+      node.classList.toggle('is-liked', liked);
+      node.classList.toggle('is-dismissed', dismissed);
       var b=node.querySelector('.readbtn'); if(b) b.classList.toggle('on', r);
+      node.querySelectorAll('[data-pref-toggle]').forEach(function(btn){
+        var on=(btn.dataset.prefToggle==='like' && liked) || (btn.dataset.prefToggle==='dismiss' && dismissed);
+        btn.classList.toggle('on', on);
+        btn.setAttribute('aria-pressed', on ? 'true' : 'false');
+      });
     });
     document.querySelectorAll('[data-dayids]').forEach(function(el){
       var ids=(el.dataset.dayids||'').split(',').filter(Boolean);
@@ -1824,13 +1955,53 @@ def write_js() -> None:
       if(badge){ if(read){ badge.hidden=false; badge.textContent='已读 '+read+'/'+ids.length; } else { badge.hidden=true; } }
     });
   }
+  function downloadPrefs(){
+    var data=snapshot();
+    var blob=new Blob([JSON.stringify(data,null,2)],{type:'application/json'});
+    var a=document.createElement('a');
+    a.href=URL.createObjectURL(blob);
+    a.download='visual_ssl_preferences_'+todayStr()+'.json';
+    document.body.appendChild(a);
+    a.click();
+    setTimeout(function(){ URL.revokeObjectURL(a.href); a.remove(); },0);
+    setStatus('已导出 '+data.likedIds.length+' 个关注、'+data.dismissedIds.length+' 个略过。');
+  }
+  function mergePrefs(data){
+    if(!data || typeof data!=='object') throw new Error('JSON 格式不正确');
+    normalize(data.readIds).forEach(function(id){ add(readSet,id); });
+    normalize(data.likedIds).forEach(function(id){ add(likedSet,id); remove(dismissedSet,id); });
+    normalize(data.dismissedIds).forEach(function(id){ if(!has(likedSet,id)) add(dismissedSet,id); });
+    normalize(data.visitDays).forEach(function(day){ add(visits,day); });
+    save(RKEY,readSet); save(LKEY,likedSet); save(DKEY,dismissedSet); save(VKEY,visits);
+    announce();
+    setStatus('已导入偏好：关注 '+likedSet.length+'，略过 '+dismissedSet.length+'。');
+  }
   document.addEventListener('click', function(e){
+    var pref=e.target.closest && e.target.closest('[data-pref-toggle]');
+    if(pref){
+      e.preventDefault(); e.stopPropagation();
+      Game.togglePreference(pref.dataset.prefId, pref.dataset.prefToggle);
+      return;
+    }
+    var exp=e.target.closest && e.target.closest('[data-pref-export]');
+    if(exp){ e.preventDefault(); downloadPrefs(); return; }
     var btn=e.target.closest && e.target.closest('[data-read-toggle]');
     if(!btn) return;
     e.preventDefault(); e.stopPropagation();
     var now=Game.toggleRead(btn.dataset.readToggle);
     btn.classList.toggle('on', now);
     if(now){ btn.classList.remove('pop'); void btn.offsetWidth; btn.classList.add('pop'); }
+  });
+  document.addEventListener('change', function(e){
+    var input=e.target.closest && e.target.closest('[data-pref-import]');
+    if(!input || !input.files || !input.files[0]) return;
+    var reader=new FileReader();
+    reader.onload=function(){
+      try{ mergePrefs(JSON.parse(String(reader.result||''))); }
+      catch(err){ setStatus('导入失败：'+(err && err.message ? err.message : '无法解析 JSON')); }
+      input.value='';
+    };
+    reader.readAsText(input.files[0], 'utf-8');
   });
   Game.onChange(renderAll);
   if(document.readyState!=='loading') renderAll();

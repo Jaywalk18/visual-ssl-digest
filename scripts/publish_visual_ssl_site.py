@@ -16,6 +16,7 @@ REPORT_ROOT = Path(r"H:\Desktop\visual_ssl_paper_reports")
 REPORT_ARCHIVE_ROOT = REPORT_ROOT / "archive" / "reports"
 GENERATOR = WORKSPACE / "scripts" / "build_visual_ssl_site.py"
 REPORT_CLEANUP = WORKSPACE / "scripts" / "cleanup_visual_ssl_reports.py"
+RETENTION_REPORT = WORKSPACE / "scripts" / "visual_ssl_retention_report.py"
 MINERU_BATCH = Path(r"C:\Users\Administrator\.claude\skills\paper-digest-site\scripts\submit_mineru.py")
 
 
@@ -329,12 +330,18 @@ def main() -> None:
     shutil.copy2(Path(__file__), scripts_dir / "publish_visual_ssl_site.py")
     if REPORT_CLEANUP.exists():
         shutil.copy2(REPORT_CLEANUP, scripts_dir / "cleanup_visual_ssl_reports.py")
+    if RETENTION_REPORT.exists():
+        shutil.copy2(RETENTION_REPORT, scripts_dir / "visual_ssl_retention_report.py")
     validate_site_quality()
     git_commit_and_push(date, push=not args.no_push)
     if REPORT_CLEANUP.exists():
         run([sys.executable, str(REPORT_CLEANUP), "--keep-reports", "7"])
     else:
         print(f"Report cleanup script missing: {REPORT_CLEANUP}", file=sys.stderr)
+    if RETENTION_REPORT.exists():
+        run([sys.executable, str(RETENTION_REPORT), "--today", date])
+    else:
+        print(f"Retention report script missing: {RETENTION_REPORT}", file=sys.stderr)
     print(f"published {date}: {len(papers)} indexed arXiv papers")
 
 
