@@ -1,0 +1,2422 @@
+[
+    {
+        "type": "text",
+        "text": "What Drives Test-Time Adaptation for CLIP? A Controlled Empirical Study from a Update Perspective",
+        "text_level": 1,
+        "bbox": [
+            173,
+            122,
+            823,
+            174
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "Jiazhen Huang1,\\*, Xiao Chen1,\\*, Zhiming Liu1,\\*, Yaru Sun2, Jingyan Jiang2,†, Zhi Wang1,†",
+        "bbox": [
+            184,
+            223,
+            810,
+            239
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "1 Tsinghua University 2 Shenzhen Technology University",
+        "bbox": [
+            308,
+            239,
+            687,
+            255
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "huangjiazhen1125@gmail.com, chen-x25@mails.tsinghua.edu.cn",
+        "bbox": [
+            243,
+            255,
+            751,
+            268
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "Abstract",
+        "text_level": 2,
+        "bbox": [
+            459,
+            304,
+            537,
+            320
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "Vision-Language Models (VLMs) such as CLIP have become a standard backbone for open-vocabulary recognition, yet their zero-shot predictions remain vulnerable to distribution shifts encountered at deployment. Test-Time Adaptation (TTA) has recently been extended to CLIP as a lightweight solution, leading to a rapidly growing body of TTA4CLIP methods. However, empirical progress in this area has largely outpaced our understanding of what truly drives adaptation, where their gains originate, and under which shifts they remain reliable. In this paper, we take a step back from the pursuit of state-of-the-art accuracy and conduct a systematic controlled study of TTA4CLIP. We first organize existing methods into three unified paradigms according to what is updated at test time. We then introduce TTABC, an open-source TTA Benchmark for CLIP, which standardizes evaluation protocols and integrates more than 20 representative methods. Our controlled empirical analysis focuses on three key areas. First, we determine the driving factors in parameter-based methods, revealing that adaptation gains are primarily driven by test-time evidence and reliable proxies rather than heavy optimization. Second, we explore evidence utilization beyond heavy parameter tuning, showing that competitive and efficient performance can be achieved through cross- or current-sample evidence and lightweight prototype updates. Finally, we demonstrate that there is no silver bullet for TTA: no single adaptation paradigm is universally optimal, and the preferred paradigm depends on the nature of shift. We hope our benchmark and study provide a clearer understanding of the current TTA4CLIP landscape and establish a foundation for further research.",
+        "bbox": [
+            228,
+            334,
+            767,
+            638
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "1 Introduction",
+        "text_level": 2,
+        "bbox": [
+            171,
+            662,
+            313,
+            679
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "Vision-language models (VLMs), exemplified by CLIP [37], have achieved remarkable success in open-vocabulary visual recognition [56]. By aligning images and texts in a shared pre-trained representation space, CLIP enables zero-shot transfer across a wide range of downstream tasks [27, 47]. However, despite its strong transferability, CLIP often struggles with downstream distribution shifts, which are common in real-world deployment [51, 31]. This has motivated the extension of Test-Time Adaptation (TTA) [28, 60, 49], originally developed for closed-set vision models [45, 5], to CLIP as a lightweight inference-time technique [42, 22]. We refer to this setting as TTA4CLIP.",
+        "bbox": [
+            169,
+            693,
+            826,
+            792
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "Existing TTA4CLIP methods have reported strong performance, yet empirical progress has outpaced our collective understanding of what actually makes these methods effective. Within each methodological paradigm, new approaches typically improve the state-of-the-art on a limited set of out-of-distribution benchmarks. However, the more fundamental questions: what truly drives adaptation, how adaptation can be achieved without expensive computational costs, and whether these methods are universally applicable across all shift scenarios, remain insufficiently examined.",
+        "bbox": [
+            169,
+            797,
+            826,
+            881
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "aside_text",
+        "text": "arXiv:2606.14299v1 [cs.CV] 12 Jun 2026",
+        "bbox": [
+            22,
+            276,
+            57,
+            717
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "page_footnote",
+        "text": "\\* Equal contribution; † Corresponding authors.",
+        "bbox": [
+            194,
+            888,
+            457,
+            902
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "footer",
+        "text": "Preprint.",
+        "bbox": [
+            171,
+            924,
+            220,
+            936
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "In this work, we deliberately step back from the pursuit of the highest accuracy and instead investigate what TTA4CLIP is truly doing. Although existing TTA4CLIP methods differ substantially in implementation, we show that they can be systematically unified into three paradigms according to what is updated at test time, including (i) parameter-based methods, (ii) state-based methods, and (iii) inference-based methods. The goal of this work is to provide a comprehensive understanding of the current landscape of TTA4CLIP methods while identifying critical open problems for future research. To this end, we introduce TTABC, an open-source Test-Time Adaptation Benchmark for CLIP, which provides rigorous evaluations, comprehensive analyses, and extensive baselines. Building on TTABC, we conduct a controlled empirical study of more than 20 representative methods spanning all three paradigms and covering a broad spectrum of distribution shifts.",
+        "bbox": [
+            169,
+            90,
+            826,
+            229
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "text",
+        "text": "Our study incorporates three key parts:",
+        "bbox": [
+            171,
+            236,
+            429,
+            251
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "list",
+        "sub_type": "text",
+        "list_items": [
+            "• Part 1: Determining factors in test-time parameter update. Heavy parameter optimization yields limited and diminishing returns; instead, adaptation gains are primarily driven by the test-time evidence and reliable proxies.",
+            "• Part 2: Evidence utilization beyond heavy optimization. Competitive and efficient performance can be achieved through prediction refinement from cross/current-sample evidence or lightweight prototype residual updates, bypassing the need for heavy parameter optimization.",
+            "• Part 3: No silver bullet for TTA across shifts. No single adaptation paradigm is universally optimal. The preferred paradigm largely depends on the nature of the shift."
+        ],
+        "bbox": [
+            171,
+            262,
+            563,
+            441
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "text",
+        "text": "Beyond these empirical findings, TTABC is designed as an extensible benchmark package that standardizes experimental protocols and facilitates the integration of new algorithmic implementations. We hope that this benchmark will enable more rigorous evaluation of TTA algorithms across a broader range of base models and distribution shifts, while also encouraging further research into the assumptions that determine when TTA is viable in challenging real-world sce",
+        "bbox": [
+            169,
+            450,
+            563,
+            561
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "image",
+        "img_path": "images/5c3b64f3837527ad30deeab6e92ece981917af98a48b4c63ce52e51e6b29fa22.jpg",
+        "image_caption": [
+            "Figure 1: Overview of our controlled empirical study. We investigate TTA4CLIP through three structured parts: (i) identifying the determining factors in parameter-based updates, (ii) exploring evidence utilization beyond heavy optimization, and (iii) evaluating different paradigms across diverse shifts."
+        ],
+        "image_footnote": [],
+        "content": "```mermaid\ngraph TD\n  A[\"Part 1: Determining Factors in Test-Time Parameter Update\"] --> B[\"TTA4CLIP\"]\n  B --> C[\"Part 2: Evidence Utilization Beyond Heavy Optimization\"]\n  C --> D[\"Part 3: No Silver Bullet for TTA Across Shifts\"]\n  D --> E[\"NATURAL SHIFTS\"]\n  D --> F[\"FINE GRAINED SHIFTS\"]\n  D --> G[\"CORRUPTION SHIFTS\"]\n  E --> H[\"Winner: Parametro-Based (Prototype)\"]\n  F --> I[\"Winner: State-Based (Distribution)\"]\n  G --> J[\"Winner: Parametro-Based (Norm Layers)\"]\n  H --> K[\"CROSS-SAMPLE HISTORY CACHE\"]\n  I --> L[\"CROSS-SAMPLE HISTORY CACHE\"]\n  J --> M[\"CROSS-SAMPLE HISTORY CACHE\"]\n  K --> N[\"STABLE ACCURACY\"]\n  L --> O[\"STABLE ACCURACY\"]\n  M --> P[\"STABLE ACCURACY\"]\n```",
+        "sub_type": "flowchart",
+        "bbox": [
+            581,
+            234,
+            818,
+            417
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "text",
+        "text": "2 TTA4CLIP Taxonomy and Controlled Evaluation Setup",
+        "text_level": 2,
+        "bbox": [
+            171,
+            582,
+            671,
+            599
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "text",
+        "text": "Before presenting the empirical analyses that form the main contributions of this paper, we first fix notation and formalize the TTA setting in Sec. 2.1, introducing our mechanistic taxonomy in Sec. 2.2.",
+        "bbox": [
+            169,
+            613,
+            826,
+            643
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "text",
+        "text": "2.1 Unified Formulation and Settings",
+        "text_level": 2,
+        "bbox": [
+            171,
+            659,
+            444,
+            674
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "text",
+        "text": "Classification with CLIP. A CLIP model contains an image encoder $f _ { \\mathrm { I } } : \\mathcal { X }  \\mathbb { R } ^ { d }$ and a text encoder $f _ { \\mathrm { T } } : \\mathcal { T } \\to \\mathbb { R } ^ { d }$ , which map images and text into a shared embedding space. Given labels $\\mathcal { V } = \\{ 1 , \\ldots , K \\}$ and a prompt template $\\tau ( \\cdot )$ , each class prototype is $\\mathbf { t } _ { y } = f _ { \\mathrm { T } } ( \\tau ( c _ { y } ) )$ . For a test image x, CLIP predicts $\\begin{array} { r } { p _ { \\theta } ( y \\mid \\mathbf { x } ) = \\frac { \\exp ( \\cos \\langle f _ { \\mathrm { I } } ( \\mathbf { x } ) , \\mathbf { t } _ { y } \\rangle / \\gamma ) } { \\sum _ { u ^ { \\prime } = 1 } ^ { K } \\exp \\left( \\cos \\langle f _ { \\mathrm { I } } ( \\mathbf { x } ) , \\mathbf { t } _ { y ^ { \\prime } } \\rangle / \\gamma \\right) } } \\end{array}$ $\\gamma$ and $\\theta = \\left\\{ \\theta _ { \\mathrm { I } } , \\theta _ { \\mathrm { T } } \\right\\}$ . Zero-shot CLIP predicts independently for each sample without adaptation.",
+        "bbox": [
+            169,
+            684,
+            823,
+            767
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "text",
+        "text": "TTA4CLIP. Given the pre-trained model $\\theta = \\{ \\theta _ { \\mathrm { I } } , \\theta _ { \\mathrm { T } } \\}$ , at deployment, the model receives an unlabeled test stream $\\mathcal { D } _ { \\mathrm { t e s t } } \\overset { \\cdot } { = } \\{ { \\bf x } _ { t } \\} _ { t = 1 } ^ { T }$ , potentially shifted from the training distribution. Here, labels and source data are unavailable. The model is only allowed to adjust its prediction during inference given the current test sample or batch without external supervision. We write a general TTA step as:",
+        "bbox": [
+            169,
+            781,
+            823,
+            838
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "equation",
+        "text": "$$\n\\left(s _ {t + 1}, \\phi_ {t + 1}\\right) = \\mathcal {A} (s _ {t}, \\phi_ {t}, \\mathbf {x} _ {t}; \\theta), \\quad \\hat {y} _ {t} = g (s _ {t}, \\phi_ {t}, \\mathbf {x} _ {t}; \\theta), \\tag {1}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            313,
+            845,
+            825,
+            862
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "text",
+        "text": "where $\\boldsymbol { \\mathcal { A } } ( \\cdot )$ denotes the test-time update rule that modifies adaptable variables, and $g ( \\cdot )$ denotes the prediction rule producing the final output. $\\phi _ { t }$ denotes the adaptable model parameters, such as prompts or norm layers; $s _ { t }$ denotes an external state, such as a memory bank or running statistics.",
+        "bbox": [
+            169,
+            869,
+            823,
+            912
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "page_number",
+        "text": "",
+        "bbox": [
+            493,
+            935,
+            503,
+            946
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "text",
+        "text": "Our Proposed Evaluation Platform: TTABC. To make the empirical analyses interpretable, we propose TTABC, a benchmark serving as an evaluation platform that implements all methods within a shared codebase. We integrate 20+ TTA4CLIP methods spanning all three paradigms, with implementation details and hyperparameter configurations given in App. E. We evaluate these methods across four diverse shift categories: (i) natural shifts, including ImageNet-V2 [38], ImageNet-Sketch [46], ImageNet-A [21], and ImageNet-R [18]; (ii) fine-grained categorizations, encompassing Stanford-Cars [24], Food101 [3], FGVC Aircraft [30], OxfordPets [35], Flowers102 [32], SUN397 [48], DTD [7], EuroSAT [17], and UCF101 [43]; (iii) image corruptions, evaluated on ImageNet-C [19]; and (iv) label shifts, which introduce temporal correlation into test stream and can be flexibly overlaid on any of the aforementioned types. Detailed descriptions of the datasets are provided in App. E.1.",
+        "bbox": [
+            169,
+            90,
+            826,
+            229
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "2.2 Mechanistic Taxonomy by Test-Time Update Target",
+        "text_level": 2,
+        "bbox": [
+            171,
+            246,
+            571,
+            261
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "Classical TTA was primarily developed for closed-vocabulary vision models, with representative techniques including batch-normalization (BN) statistics re-estimation [39] and entropy minimization (EM) [45, 33, 4, 6]. These methods typically assume a monolithic classifier whose parameters can be safely adjusted on the target test stream. CLIP challenges this assumption due to its open-vocabulary and multimodal nature, which has prompted recent work on extending TTA to CLIP. Early attempts usually employ test-time tuning [42] inspired by few-shot transfer learning methods [63, 62, 23], adapting VLMs by optimizing learnable tokens or adapters. Later efforts increasingly turn to designing prediction rules for training-free adaptation, such as maintaining external online caches [22, 59] or refining predictions from augmentations [11, 53].",
+        "bbox": [
+            169,
+            271,
+            823,
+            397
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "Despite the apparent diversity of this literature, we argue that all existing TTA4CLIP methods can be systematically organized according to what is updated at test time. This perspective is still underexplored: a recent benchmark [40] simply organizes them into episodic and online TTA, neglecting the essential differences among adaptation paradigms and protocols. For example, an episodic prompt-tuning method can also establish an online knowledge bank to accumulate historical memories [55], and the prompt can be adapted online [57] as well. Therefore, we establish a mechanistic taxonomy based on the test-time update target, dividing TTA4CLIP methods into 3 categories, including: (i) parameter-based; (ii) state-based and (iii) inference-based methods.",
+        "bbox": [
+            169,
+            402,
+            823,
+            513
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "image",
+        "img_path": "images/068c208dc052b8789e5a6d3e8108de2e53b1554a130029faec9fd84c07c8579f.jpg",
+        "image_caption": [
+            "Figure 2: A mechanistic taxonomy of TTA4CLIP. Existing methods are categorized by their test-time update targets, including parameter-based, state-based, and inference-based methods."
+        ],
+        "image_footnote": [],
+        "content": "```mermaid\ngraph TD\n  A[\"TTA4CLIP\"] --> B[\"Parameter-Based Methods\"]\n  A --> C[\"State-Based Methods\"]\n  A --> D[\"Inference-Based Methods\"]\n    \n  B --> E[\"T Prompt Tuning\"]\n  B --> F[\"Prototype\"]\n  B --> G[\"Norm-Layer\"]\n    \n  E --> H[\"TPT\"]\n  E --> I[\"C-TPT\"]\n    \n  I --> J[\"DiffTPT\"]\n  I --> K[\"A-TPT\"]\n    \n  K --> L[\"HisTPT\"]\n  K --> M[\"RLCF\"]\n    \n  M --> N[\"R-TPT\"]\n  M --> O[\"PromptAlign\"]\n    \n  C --> P[\"RAM Cache\"]\n  C --> Q[\"Distribution\"]\n    \n  P --> R[\"TDA\"]\n  P --> S[\"BoostAdapter\"]\n    \n  S --> T[\"DMN\"]\n  S --> U[\"EcaLIP\"]\n    \n  Q --> V[\"DoTA\"]\n  Q --> W[\"OGA\"]\n    \n  W --> X[\"BCA\"]\n    \n  X --> Y[\"OnZeta\"]\n    \n  D --> Z[\"View Aggregation\"]\n  D --> AA[\"Feature Modulation\"]\n    \n  Z --> AB[\"ZERO\"]\n    \n  AA --> AC[\"Panda\"]\n```",
+        "sub_type": "flowchart",
+        "bbox": [
+            222,
+            517,
+            777,
+            705
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "Parameter-based. Parameter-based methods implement the most direct form of adaptation by optimizing an unsupervised objective derived from the test input to update test-time variables ϕt:",
+        "bbox": [
+            169,
+            741,
+            823,
+            770
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "equation",
+        "text": "$$\n\\phi_ {t + 1} = \\phi_ {t} - \\eta \\nabla_ {\\phi} \\mathcal {L} (\\mathbf {x} _ {t}; \\phi_ {t}, \\theta), \\quad s _ {t} \\equiv s _ {0}. \\tag {2}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            349,
+            777,
+            823,
+            792
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "In this setting, ϕt denotes the adapted test-time parameters, such as prompt tokens, while st denotes the external memory or cache state. Here, adaptation is driven by gradient-based backpropagation optimization. The most prominent branch is test-time prompt tuning. TPT [42] freezes both CLIP encoders, attaches learnable tokens to the text prompt, and minimizes marginal predicted entropy over filtered augmented views. Later approaches improve this template by enriching the view set, regularizing the optimization, or introducing auxiliary objectives. DiffTPT [12] uses diffusiongenerated views, while HisTPT [57] exploits historical prompts to improve stability during adaptation. C-TPT [50] and A-TPT [2] constrain the geometry of class text embeddings for better calibration.",
+        "bbox": [
+            169,
+            800,
+            826,
+            912
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "page_number",
+        "text": "3",
+        "bbox": [
+            493,
+            935,
+            503,
+            946
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "R-TPT [41] targets adversarial robustness, and PromptAlign [1] and RLCF [61] incorporate auxiliary alignment or reward signals. Another line of work modulates class prototypes rather than prompts. TPS [44] learns per-class shifts for text prototypes, while DPE [55] co-evolves textual and visual prototypes over the test stream. More recent work such as BATCLIP [29] also adapts normalization or encoder parameters following classical TTA. Most parameter-based methods require no persistent external state and thus are stateless. For exceptions like HisTPT and DPE, Eq. (2) can be rewritten as: $\\phi _ { t + 1 } = \\phi _ { t } - \\eta \\nabla _ { \\phi } \\mathcal { L } ( \\mathbf { x } _ { t } ; \\phi _ { t } , \\boldsymbol { \\theta } , s _ { t } ) , s _ { t + 1 } = \\mathcal { U } ( s _ { t } , \\mathbf { x } _ { t } , \\hat { \\mathbf { y } } _ { t } ; \\boldsymbol { \\theta } )$ , where U denotes the state-update rule.",
+        "bbox": [
+            169,
+            90,
+            826,
+            189
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "text",
+        "text": "State-based. State-based methods keep the adaptable parameters frozen, i.e., $\\phi _ { t } \\equiv \\phi _ { 0 }$ , and instead attach an external state $s _ { t }$ that is updated through a specific read-write rule:",
+        "bbox": [
+            169,
+            203,
+            823,
+            232
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "equation",
+        "text": "$$\ns _ {t + 1} = \\mathcal {U} (s _ {t}, \\mathbf {x} _ {t}, \\hat {\\mathbf {y}} _ {t}; \\theta), \\quad \\phi_ {t} \\equiv \\phi_ {0}. \\tag {3}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            369,
+            239,
+            825,
+            257
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "text",
+        "text": "In this paradigm, adaptation is driven by historical evidence accumulated from the test stream, rather than by gradient-based optimization. Cache-based methods implement this idea by storing and retrieving test features. TDA [22] maintains class-wise high-confidence caches and combines zero-shot logits with nearest-neighbor scores, while using a negative cache to suppress confusing classes. BoostAdapter [58] enriches the cache via regional bootstrapping, DMN [59] separates short-term dynamic memory from long-term static memory for improved stability, and ECALP [26] propagates labels over a graph of cached features. Other methods summarize the stream with compact distributional or relational statistics. DoTA [15] and OGA [13] maintain online Gaussian class densities, BCA [64] performs Bayesian updating over class-conditional parameters and class frequencies, and OnZeta [36] estimates the target class prior from streaming zero-shot predictions.",
+        "bbox": [
+            169,
+            263,
+            826,
+            402
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "text",
+        "text": "Inference-based. While keeping the model frozen, inference-based methods make no modification of either parameters or external state. Instead, they directly refine predictions within the forward pass:",
+        "bbox": [
+            169,
+            417,
+            825,
+            446
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "equation",
+        "text": "$$\n\\phi_ {t} \\equiv \\phi_ {0}, \\quad s _ {t} \\equiv s _ {0}, \\quad \\hat {y} _ {t} = g (\\mathbf {x} _ {t}; \\theta). \\tag {4}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            356,
+            454,
+            825,
+            470
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "text",
+        "text": "Here, adaptation is applied by using only currently available evidence such as augmented views, visual tokens or local patches. ZERO [11] removes TPT’s prompt optimization and relies on confidencefiltered voting over augmented views, while MTA [53] uses mean-shift estimation to obtain a robust feature mode from the same view set. CALIP [14] introduces parameter-free cross-modal attention between visual tokens and text prototypes, and Panda [9] contrasts standard augmentations with negative ones to debias predictions.",
+        "bbox": [
+            169,
+            477,
+            823,
+            561
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "text",
+        "text": "Together, the three paradigms locate adaptation power in different places: parameter-based methods optimize test-time adaptable parameters, state-based methods accumulate historical evidence, and inference-based methods exploit current evidence. This taxonomy guides our later empirical analysis.",
+        "bbox": [
+            169,
+            566,
+            823,
+            609
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "text",
+        "text": "3 Determining Factors in Test-Time Parameter Update",
+        "text_level": 2,
+        "bbox": [
+            169,
+            628,
+            648,
+            647
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "text",
+        "text": "We first discuss the most popular paradigm: parameter-based updates. A common view is that their gains come mainly from optimizing parameters more effectively, e.g., taking stronger updates or designing better losses. Our controlled analysis suggests a different view: the gradient update is only one part of the pipeline, and its effect is largely determined by factors such as available test-time evidence and a reliable unsupervised proxy. We select two representative methods TPT and TPS in this section.",
+        "bbox": [
+            169,
+            660,
+            486,
+            813
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "text",
+        "text": "Stronger updates bring limited returns. The most natural explanation for parameter-based gains is that stronger test-time updates allow the",
+        "bbox": [
+            169,
+            828,
+            485,
+            869
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "text",
+        "text": "model to fit each sample more precisely. In this view, we choose the learning rate and adaptation steps as two forms of update control for controlled experiments. The former controls the magnitude of each gradient update, while the latter controls the depth of adaptation for each sample. Fig. 3(a)",
+        "bbox": [
+            169,
+            869,
+            826,
+            912
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "chart",
+        "img_path": "images/a5b168969ee06276d4ee0960d88eb2f3e18744b8a55012bac74862db9add8944.jpg",
+        "content": "| Learning Rate | TPS   | TPT   |\n| ------------- | ----- | ----- |\n| 10^-4         | 52.0  | 48.0  |\n| 10^-3         | 56.0  | 50.0  |\n| 10^-2         | 58.0  | 53.0  |\n| 10^2          | 58.5  | 47.0  |",
+        "chart_caption": [
+            "(a) Learning rate sensitivity."
+        ],
+        "chart_footnote": [],
+        "sub_type": "line chart",
+        "bbox": [
+            498,
+            657,
+            656,
+            777
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "chart",
+        "img_path": "images/26beb98e0feade8d4b30bbdde7379473be4bd8bb1d6e62e3ed336c039261faa4.jpg",
+        "content": "| Adaptation Step | Acc. (Base) (%) | Acc. (Gained) (%) | Inference Time (x10^5) |\n|---|---|---|---|\n| 1 | 52 | 54 | 3 |\n| 2 | 52 | 54 | 4 |\n| 3 | 54 | 54 | 5 |\n| 4 | 54 | 54 | 6 |\n| 5 | 55 | 54 | 7 |\n| 10 | 55 | 56 | 12 |\n| 15 | 56 | 56 | 18 |\n| 20 | 56 | 56 | 24 |",
+        "chart_caption": [
+            "(b) Scaling adaptation steps.",
+            "Figure 3: Effect of Update Magnitude and Depth. (a) Adjusting the learning rate causes accuracy fluctuations and leads to potentially suboptimal performance; (b) Increasing the adaptation steps yields limited and diminishing returns."
+        ],
+        "chart_footnote": [],
+        "sub_type": "bar-line hybrid",
+        "bbox": [
+            663,
+            657,
+            821,
+            777
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "page_number",
+        "text": "4",
+        "bbox": [
+            491,
+            936,
+            504,
+            946
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "table",
+        "img_path": "images/b3e52bb1f8b02d3f4f69c6f6801dafabe760c6f794d8d739d054c456a56e1cac.jpg",
+        "table_caption": [
+            "Table 1: Main Results on Natural and Corruption Shifts. Accuracy (%) is reported for CLIP ViT-B/16. Values in brackets (↓) denote the performance drop relative to the original ImageNet. Best and second-best results are bolded and underlined, respectively."
+        ],
+        "table_footnote": [],
+        "table_body": "<table><tr><td rowspan=\"2\">Paradigm</td><td rowspan=\"2\">Method</td><td>Original</td><td colspan=\"5\">Natural Shifts</td><td>Corruption</td></tr><tr><td>INet</td><td>I-V2</td><td>I-A</td><td>I-R</td><td>I-S</td><td>Avg.</td><td>Avg.</td></tr><tr><td colspan=\"2\">Zero-Shot CLIP (ViT-B/16)</td><td>66.72</td><td>60.86</td><td>47.87</td><td>73.98</td><td>46.08</td><td>57.20 (↓9.52)</td><td>21.46 (↓45.26)</td></tr><tr><td rowspan=\"11\">Parameter-based</td><td>TPT</td><td>68.85</td><td>63.06</td><td>52.12</td><td>76.52</td><td>47.94</td><td>59.91 (↓8.94)</td><td>25.55 (↓43.30)</td></tr><tr><td>DiffTPT</td><td>68.17</td><td>61.93</td><td>50.87</td><td>76.33</td><td>47.36</td><td>59.12 (↓9.05)</td><td>26.07 (↓42.10)</td></tr><tr><td>HisTPT</td><td>66.60</td><td>60.84</td><td>47.79</td><td>73.94</td><td>45.71</td><td>57.07 (↓9.53)</td><td>25.38 (↓41.22)</td></tr><tr><td>C-TPT</td><td>65.91</td><td>60.04</td><td>46.81</td><td>71.66</td><td>43.97</td><td>55.62 (↓10.29)</td><td>24.80 (↓41.11)</td></tr><tr><td>A-TPT</td><td>68.46</td><td>62.67</td><td>51.69</td><td>76.98</td><td>47.53</td><td>59.72 (↓8.74)</td><td>25.19 (↓43.27)</td></tr><tr><td>R-TPT</td><td>68.68</td><td>62.80</td><td>53.11</td><td>76.20</td><td>46.40</td><td>59.63 (↓9.05)</td><td>4.54 (↓64.14)</td></tr><tr><td>TPS</td><td>70.29</td><td>64.01</td><td>58.44</td><td>79.30</td><td>50.28</td><td>63.01 (↓7.28)</td><td>27.43 (↓42.86)</td></tr><tr><td>DPE</td><td>70.20</td><td>63.61</td><td>56.92</td><td>77.66</td><td>50.79</td><td>62.25 (↓7.96)</td><td>27.74 (↓42.46)</td></tr><tr><td>PromptAlign</td><td>69.69</td><td>63.16</td><td>53.53</td><td>78.46</td><td>48.50</td><td>60.91 (↓8.78)</td><td>28.75 (↓40.94)</td></tr><tr><td>RLCF</td><td>67.43</td><td>61.48</td><td>49.11</td><td>74.99</td><td>46.87</td><td>58.11 (↓9.32)</td><td>25.89 (↓41.54)</td></tr><tr><td>BATCLIP</td><td>66.92</td><td>60.94</td><td>48.57</td><td>75.99</td><td>44.33</td><td>57.46 (↓9.46)</td><td>30.91 (↓36.01)</td></tr><tr><td rowspan=\"8\">State-based</td><td>TDA</td><td>68.43</td><td>61.52</td><td>48.83</td><td>75.06</td><td>48.57</td><td>58.50 (↓9.94)</td><td>27.86 (↓40.57)</td></tr><tr><td>BoostAdapter</td><td>68.39</td><td>61.41</td><td>48.96</td><td>75.42</td><td>48.90</td><td>58.67 (↓9.72)</td><td>28.03 (↓40.36)</td></tr><tr><td>DMN</td><td>67.24</td><td>61.08</td><td>48.60</td><td>74.57</td><td>45.52</td><td>57.44 (↓9.80)</td><td>25.51 (↓41.73)</td></tr><tr><td>ECALP</td><td>70.18</td><td>62.27</td><td>49.12</td><td>77.69</td><td>51.74</td><td>60.21 (↓9.97)</td><td>29.76 (↓40.42)</td></tr><tr><td>DoTA</td><td>70.70</td><td>63.74</td><td>58.43</td><td>77.66</td><td>50.27</td><td>62.53 (↓8.18)</td><td>25.81 (↓44.89)</td></tr><tr><td>OGA</td><td>68.36</td><td>60.64</td><td>48.75</td><td>75.81</td><td>49.38</td><td>58.65 (↓9.72)</td><td>27.37 (↓40.99)</td></tr><tr><td>BCA</td><td>68.14</td><td>63.08</td><td>56.08</td><td>75.25</td><td>35.81</td><td>57.56 (↓10.59)</td><td>3.93 (↓64.21)</td></tr><tr><td>OnZeta</td><td>71.12</td><td>63.34</td><td>48.55</td><td>75.48</td><td>52.06</td><td>59.86 (↓11.26)</td><td>29.38 (↓41.74)</td></tr><tr><td rowspan=\"4\">Inference-based</td><td>ZERO</td><td>68.94</td><td>63.26</td><td>56.08</td><td>76.67</td><td>47.72</td><td>60.93 (↓8.01)</td><td>22.95 (↓45.99)</td></tr><tr><td>MTA</td><td>69.02</td><td>63.17</td><td>54.65</td><td>76.88</td><td>48.36</td><td>60.77 (↓8.25)</td><td>25.42 (↓43.60)</td></tr><tr><td>Panda</td><td>65.86</td><td>60.12</td><td>48.28</td><td>74.22</td><td>46.59</td><td>57.30 (↓8.56)</td><td>26.89 (↓38.97)</td></tr><tr><td>CALIP</td><td>68.39</td><td>61.88</td><td>50.03</td><td>77.72</td><td>48.24</td><td>59.47 (↓8.92)</td><td>27.13 (↓41.26)</td></tr></table>",
+        "bbox": [
+            228,
+            130,
+            764,
+            411
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "shows the performance under different learning rates. Unlike the severe collapse often observed in classical TTA, TTA4CLIP methods are overall more robust to learning-rate changes. However, the accuracy still fluctuates substantially, leading to potentially suboptimal performance. For example, the performance gap between the best and the worst choice reaches 5.3% for TPT and even 7.1% for TPS. Since it is unrealistic to perform task-specific hyperparameter tuning, expecting a universally optimal learning rate is impractical. Fig. 3(b) sweeps the number of adaptation steps from the default value of 1 to 20, and records both the performance gain over the previous recorded step and overall wall-clock time. We can see that TPT climbs from 52.0% at step 1 to only 56.1% at step 20, a nearly 4% gain that comes at a 15× cost (1,546 s → 23,943 s). App. F.4 further shows that TPS is effectively saturated after the first step, achieving less than 0.8% gains thereafter. The gains from additional steps quickly become marginal, while compute scales almost linearly, forming a typical diminishing-returns pattern. Overall, while stronger updates improve performance, the gains are limited and diminishing, motivating us to explore key drivers of test-time updates.",
+        "bbox": [
+            169,
+            412,
+            826,
+            594
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "chart",
+        "img_path": "images/ca13d354234e879d46857e0987ff9173d94d98b2438e5f6a0ef9ec83a7483b9b.jpg",
+        "content": "| Number of Augmented Views | TPS   | TPT   |\n| ------------------------- | ----- | ----- |\n| 1                         | 50.0  | 48.0  |\n| 4                         | 53.0  | 50.0  |\n| 8                         | 55.0  | 51.0  |\n| 16                        | 57.0  | 52.0  |\n| 32                        | 58.0  | 52.5  |\n| 64                        | 59.0  | 53.0  |",
+        "chart_caption": [
+            "(a) Scaling with view quantity."
+        ],
+        "chart_footnote": [],
+        "sub_type": "line chart",
+        "bbox": [
+            176,
+            595,
+            330,
+            715
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "chart",
+        "img_path": "images/d3b807c3dd0d23b8a9c007ab3a57384840291f2107c5c92f1646609d5c13ac7b.jpg",
+        "content": "| Category | Acc. (Gained by ENT-based Filter) (%) | Acc. (Gained by MSP-based Filter) (%) | Acc. (Base) (%) |\n| :--- | :--- | :--- | :--- |\n| TPT | 52 | 49 | +2.96 |\n| TPS | 58 | 50 | +7.72 |\n| TPS | 57 | 51 | +6.14 |\nThe chart displays a stacked bar chart with error bars indicating variability in accuracy percentages across different filter types for each category. The Y-axis represents Accuracy on ImageNet-A (%), and the X-axis represents the categories TPT and TPS. Error bars are shown as standard deviations, with red arrows highlighting the differences between the two filter groups.",
+        "chart_caption": [
+            "(b) Impact of confidence filtering."
+        ],
+        "chart_footnote": [],
+        "sub_type": "stacked bar chart",
+        "bbox": [
+            334,
+            595,
+            486,
+            709
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "chart",
+        "img_path": "images/e3a6b5bf6a2284e2a2c94ccf4bd3accb41887c94639b39eeb9cf658f72567ff1.jpg",
+        "content": "| Method     | Δc_s on ImageNet-A (%) |\n| ---------- | ---------------------- |\n| CrossEnt.  | -1.35                  |\n| InfoNCE    | -1.44                  |\n| RL         | -1.48                  |\n| RL         | -1.51                  |\n| RL         | -2.92                  |\n| RL         | -0.79                  |",
+        "chart_caption": [
+            "(c) Loss function comparison."
+        ],
+        "chart_footnote": [],
+        "sub_type": "bar chart",
+        "bbox": [
+            493,
+            594,
+            648,
+            703
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "chart",
+        "img_path": "images/fc1acfa96a518a712439867634356d9bd2133356fe0573be1d4d4bf08fc7ad23.jpg",
+        "content": "| Test Time | reset interval 1 | reset interval 50 | reset interval 10 | reset interval 500 | reset interval inf | reset interval inf |\n| --------- | ---------------- | ----------------- | ----------------- | ------------------ | ----------------- | ------------------ |\n| 1         | 50               | 50                | 50                | 50                 | 50                | 50                 |\n| 3         | 48               | 48                | 48                | 48                 | 20                | 20                 |\n| 5         | 46               | 46                | 46                | 46                 | 10                | 10                 |\n| 7         | 44               | 44                | 44                | 44                 | 8                 | 8                  |\n| 9         | 42               | 42                | 42                | 42                 | 6                 | 6                  |\n| 11        | 40               | 40                | 40                | 40                 | 5                 | 5                  |\n| 13        | 38               | 38                | 38                | 38                 | 4                 | 4                  |\n| 15        | 36               | 36                | 36                | 36                 | 3                 | 3                  |",
+        "chart_caption": [
+            "(d) Reset interval sensitivity.",
+            "Figure 4: Deconstructing the determining factors of test-time parameter update. First, performance gain is largely driven by (a) the quantity and (b) the quality of test-time evidence. Furthermore, (c) the specific form of unsupervised proxy is secondary to its alignment with predictive correctness, and (d) online parameter updates collapse without stability controls such as periodic resets."
+        ],
+        "chart_footnote": [],
+        "sub_type": "line chart",
+        "bbox": [
+            658,
+            594,
+            810,
+            715
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "Test-time evidence dominates optimization. If stronger updates are not the determining driver, what is? Our focus first turns to test-time evidence, i.e., available information from the test stream. A common procedure in previous works constructs an augmented view for each single sample and then applies an entropy-based confidence filter to obtain a high-quality subset for entropy minimization. Following this, we ablate the number of augmented views N and the filter ratio ρ separately, while fixing the other, to study the quantity and quality of available evidence. As shown in Fig. 4(a), we surprisingly find that increasing N brings substantial and near-monotonic performance gains: with only one update step, TPT and TPS obtain 3.8% and 7.5% gains respectively, even exceeding the optimization gains in Fig. 3. Moreover, Fig. 4(b) simply removes the confidence filter and using all augmented views for adaptation, with App. F.5 further providing a controlled sweep of ρ. The results indicate that the confidence filter brings roughly 3.0% and 7.8% gains for TPT and TPS, also comparable to the gains from evidence quantity. Together, test-time evidence, with a sufficient quantity and quality, dominates the gains in parameter-based TTA. As we show later, such gain can remain substantial even without parameter updates. An auxiliary analysis in App. F.3 further shows that the widely adopted AugMix [20] augmentation is not always superior to simpler random crops, leading to an underexplored, data-centric evidence design as a potential future direction.",
+        "bbox": [
+            169,
+            787,
+            826,
+            912
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "page_number",
+        "text": "",
+        "bbox": [
+            493,
+            936,
+            503,
+            946
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "",
+        "bbox": [
+            169,
+            90,
+            826,
+            189
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "text",
+        "text": "Reliable proxies enable effective selfsupervised update. The next question is: how should such evidence be used when labels are unavailable? Parameter-based TTA requires an unsupervised signal that can decide which views are reliable and in which direction the gradient should move. We refer to such signals as test-time proxies. A proxy may be used as a self-supervised learning objective, such as entropy minimization or contrastive learning, or as a score for evidence selection, such as confidence filtering. Fig. 4(c) compares",
+        "bbox": [
+            169,
+            218,
+            485,
+            385
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "text",
+        "text": "several learning objectives under the same evidence budget, including pseudo-label cross-entropy, InfoNCE [34], and CLIP-reward test-time RL [61]. Among these objectives, entropy minimization remains the strongest and most stable proxy choice in our experiments. Nevertheless, alternative objectives still provide consistent performance gains. This suggests that proxy effectiveness may come from providing a reliable signal, rather than from its specific functional form. We further examine this interpretation through a statistical analysis. In addition to entropy, we consider maximum softmax probability (MSP), defined as the largest predicted class probability. As shown in Fig. 5, entropy and MSP both exhibit strong correlation with ground-truth accuracy, with Pearson correlation coefficients of −0.929 and 0.916, respectively. We then use MSP as an alternative evidence-selection score in Fig. 4(b). As demonstrated, MSP performs similarly to entropy, effectively filtering reliable views and improving performance. Overall, the exact form of the proxy is secondary, as long as it is sufficiently aligned with predictive correctness. A useful proxy does not have to be the optimization loss itself; it can serve either as a learning objective or as a filtering criterion. What matters is whether it can identify reliable evidence or provide a useful update direction from unlabeled test samples. In this view, future works should consider designing more reliable, correctness-aligned proxies to extract useful signals from test-time evidence.",
+        "bbox": [
+            169,
+            385,
+            826,
+            606
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "chart",
+        "img_path": "images/45fe312009967b619686ca3ea10592aa6c233394f57ea61a8631bd6e73a5e656.jpg",
+        "content": "| Entropy | Batch Accuracy (%) |\n| ------- | ------------------ |\n| 0.5     | 0.9                |\n| 1.0     | 0.6                |\n| 1.5     | 0.4                |\n| >1.5    | <0.3               |",
+        "chart_caption": [
+            "(a) Entropy vs Batch Accuracy."
+        ],
+        "chart_footnote": [],
+        "sub_type": "scatterplot",
+        "bbox": [
+            500,
+            198,
+            656,
+            316
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "chart",
+        "img_path": "images/b38b484082abe25f9dbabc5f8e45537d68e50420c62cf752678bb8b213e1895a.jpg",
+        "content": "| MSP  | Batch Accuracy (%) |\n|------|---------------------|\n| 0.5  | 0.3                 |\n| 0.6  | 0.5                 |\n| 0.7  | 0.6                 |\n| 0.8  | 0.7                 |\n| 0.9  | 0.9                 |",
+        "chart_caption": [
+            "(b) MSP vs Batch Accuracy.",
+            "Figure 5: Correlation between Unsupervised Proxies and Batch Accuracy. Both (a) entropy and (b) MSP exhibit a strong Pearson correlation with the ground-truth batch accuracy."
+        ],
+        "chart_footnote": [],
+        "sub_type": "scatterplot",
+        "bbox": [
+            658,
+            198,
+            816,
+            316
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "text",
+        "text": "4 Evidence Utilization Beyond Heavy Optimization",
+        "text_level": 2,
+        "bbox": [
+            169,
+            626,
+            616,
+            645
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "table",
+        "img_path": "images/ac964746f293bbd3a634ffe9dd1fe4794ee60d07a808c6329e95f090331866ed.jpg",
+        "table_caption": [
+            "Table 2: Memory Efficiency Comparison. We record peak memory usage in GiB. Symbols (↑ / ↓) denote the relative change compared to zero-shot CLIP."
+        ],
+        "table_footnote": [],
+        "table_body": "<table><tr><td>Paradigm</td><td>Method</td><td>Mem. (GiB)</td></tr><tr><td>Zero-shot</td><td></td><td>0.75</td></tr><tr><td rowspan=\"3\">Param.</td><td>TPS</td><td> $\\mathbf{0.94}$  ( $\\uparrow 0.19$ )</td></tr><tr><td>TPT</td><td>3.80 ( $\\uparrow 3.05$ )</td></tr><tr><td>BATCLIP</td><td>8.54 ( $\\uparrow 7.79$ )</td></tr><tr><td rowspan=\"3\">State</td><td>OnZeta</td><td> $\\underline{1.31}$  ( $\\uparrow 0.56$ )</td></tr><tr><td>TDA</td><td>1.34 ( $\\uparrow 0.59$ )</td></tr><tr><td>DoTA</td><td>1.99 ( $\\uparrow 1.24$ )</td></tr><tr><td rowspan=\"3\">Infer.</td><td>ZERO</td><td>1.78 ( $\\uparrow 1.03$ )</td></tr><tr><td>MTA</td><td>1.65 ( $\\uparrow 0.90$ )</td></tr><tr><td>Panda</td><td>2.02 ( $\\uparrow 1.27$ )</td></tr></table>",
+        "bbox": [
+            187,
+            708,
+            419,
+            863
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "text",
+        "text": "Sec. 3 shows that parameter optimization contributes far less than prior literature states. We now step beyond this paradigm and move to a popular alternative: how can CLIP exploit test-time evidence without relying on heavy back-propagation? Our results suggest that it can be used in multiple ways: both exploiting current or historical evidence to refine predictions in a training-free manner and confining parameter updates to prototype-level residuals are effective. However, once parameter updates accumulate online, both efficiency and stability become concerns.",
+        "bbox": [
+            444,
+            659,
+            826,
+            797
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "text",
+        "text": "Evidence can be exploited without optimization. Tab. 1 and 3 report the performance of several TTA4CLIP methods on natural-shift and fine-grained datasets, grouped by paradigm. For natural shifts, the",
+        "bbox": [
+            444,
+            814,
+            826,
+            869
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "text",
+        "text": "best state-based method DoTA reaches 64.16%, nearly matching the best parameter-based method TPS (64.46%), and clearly surpassing common prompt-tuning baselines such as TPT (61.70%) and DiffTPT (60.93%). As for fine-grained classification, the contrast becomes stronger: top five methods are all state-based, including OnZeta, ECALP, BoostAdapter, TDA, and OGA, ahead of every parameter-based method. Inference-based methods such as ZERO and CALIP sit in the middle of both rankings, despite using neither gradients nor external state. These results show that test-time evidence does not have to be converted into gradient updates to be useful. Inference-based methods exploit current-sample evidence: for example, from augmented views or intra-image contextual features (e.g., non-[CLS] ViT tokens). State-based methods instead exploit cross-sample evidence accumulated from the test stream. This may take the form of cached features, historical predictions, class-conditional distributional statistics, or relational structures such as graphs. Even without optimization, these methods can achieve competitive performance, and often outperform most parameter-based methods. Together with Sec. 3, we can conclude that: CLIP adapts mainly by accessing more reliable test-time evidence. Optimization captures only one part, whereas appropriate evidence construction and utilization can extract much of the adaptation gains with lower cost.",
+        "bbox": [
+            169,
+            869,
+            825,
+            912
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "page_number",
+        "text": "6",
+        "bbox": [
+            493,
+            936,
+            504,
+            946
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "table",
+        "img_path": "images/440a3e041bd3c88db721d0dd79e21307833b7933c78146acd6475a191c1d5fe2.jpg",
+        "table_caption": [
+            "Table 3: Main Results on Fine-grained Shifts. Accuracy (%) is reported for CLIP ViT-B/16 across 11 downstream datasets. Values in brackets (↓) denote the performance drop relative to the original ImageNet. Best and second-best results are bolded and underlined, respectively."
+        ],
+        "table_footnote": [],
+        "table_body": "<table><tr><td rowspan=\"2\">Paradigm</td><td rowspan=\"2\">Method</td><td>Original</td><td colspan=\"10\">Fine-grained Datasets</td><td>Overall</td></tr><tr><td>INet</td><td>Cal</td><td>Pets</td><td>Cars</td><td>FLW</td><td>Food</td><td>Air</td><td>SUN</td><td>DTD</td><td>SAT</td><td>UCF</td><td>Avg. (↓)</td></tr><tr><td>Zero-Shot</td><td></td><td>66.72</td><td>93.31</td><td>88.20</td><td>65.51</td><td>67.48</td><td>85.22</td><td>23.76</td><td>62.55</td><td>44.39</td><td>42.02</td><td>65.11</td><td>63.76 (↓2.96)</td></tr><tr><td rowspan=\"11\">Parameter-based</td><td>TPT</td><td>68.85</td><td>93.47</td><td>88.17</td><td>67.04</td><td>68.94</td><td>86.29</td><td>23.73</td><td>65.50</td><td>46.57</td><td>42.04</td><td>68.17</td><td>64.99 (↓3.86)</td></tr><tr><td>DiffTPT</td><td>68.17</td><td>93.55</td><td>88.55</td><td>65.86</td><td>68.62</td><td>86.04</td><td>23.97</td><td>65.29</td><td>46.22</td><td>44.54</td><td>68.15</td><td>65.08 (↓3.09)</td></tr><tr><td>HisTPT</td><td>66.60</td><td>93.18</td><td>88.28</td><td>65.44</td><td>69.55</td><td>85.25</td><td>23.85</td><td>62.42</td><td>44.33</td><td>41.72</td><td>65.21</td><td>63.92 (↓2.68)</td></tr><tr><td>C-TPT</td><td>65.91</td><td>91.6</td><td>86.21</td><td>65.09</td><td>70.89</td><td>83.95</td><td>23.46</td><td>62.89</td><td>43.03</td><td>37.32</td><td>62.25</td><td>62.67 (↓3.24)</td></tr><tr><td>A-TPT</td><td>68.46</td><td>91.85</td><td>84.08</td><td>63.28</td><td>66.06</td><td>84.67</td><td>23.61</td><td>65.79</td><td>45.45</td><td>44.30</td><td>62.52</td><td>63.16 (↓5.30)</td></tr><tr><td>R-TPT</td><td>68.68</td><td>93.79</td><td>86.94</td><td>67.16</td><td>68.33</td><td>85.96</td><td>23.73</td><td>65.58</td><td>46.04</td><td>34.67</td><td>67.35</td><td>63.95 (↓4.73)</td></tr><tr><td>TPS</td><td>70.29</td><td>93.83</td><td>80.68</td><td>68.54</td><td>71.70</td><td>82.93</td><td>25.77</td><td>63.70</td><td>54.31</td><td>42.64</td><td>67.59</td><td>65.17 (↓5.12)</td></tr><tr><td>DPE</td><td>70.20</td><td>95.13</td><td>89.15</td><td>69.43</td><td>70.28</td><td>86.23</td><td>25.47</td><td>68.44</td><td>49.23</td><td>37.06</td><td>70.42</td><td>66.08 (↓4.12)</td></tr><tr><td>PromptAlign</td><td>69.69</td><td>93.10</td><td>85.77</td><td>67.19</td><td>66.06</td><td>86.65</td><td>23.82</td><td>65.90</td><td>43.79</td><td>47.20</td><td>67.54</td><td>64.70 (↓4.99)</td></tr><tr><td>RLCF</td><td>67.43</td><td>93.63</td><td>88.77</td><td>66.22</td><td>69.18</td><td>85.59</td><td>24.30</td><td>63.51</td><td>45.57</td><td>42.38</td><td>66.72</td><td>64.59 (↓2.84)</td></tr><tr><td>BATCLIP</td><td>66.92</td><td>93.55</td><td>89.04</td><td>64.93</td><td>68.53</td><td>85.26</td><td>23.28</td><td>65.73</td><td>44.68</td><td>40.21</td><td>65.82</td><td>64.10 (↓2.82)</td></tr><tr><td rowspan=\"8\">State-based</td><td>TDA</td><td>68.43</td><td>93.67</td><td>89.21</td><td>66.76</td><td>70.28</td><td>85.64</td><td>23.64</td><td>65.72</td><td>47.34</td><td>54.14</td><td>68.52</td><td>66.49 (↓1.94)</td></tr><tr><td>BoostAdapter</td><td>68.39</td><td>93.79</td><td>89.18</td><td>66.53</td><td>70.32</td><td>85.82</td><td>23.70</td><td>65.81</td><td>46.87</td><td>54.68</td><td>68.75</td><td>66.55 (↓1.84)</td></tr><tr><td>DMN</td><td>67.24</td><td>93.51</td><td>88.47</td><td>66.21</td><td>67.52</td><td>85.35</td><td>23.70</td><td>61.66</td><td>45.98</td><td>45.68</td><td>67.04</td><td>64.51 (↓2.73)</td></tr><tr><td>ECALP</td><td>70.18</td><td>93.27</td><td>89.15</td><td>68.47</td><td>71.13</td><td>87.14</td><td>26.04</td><td>68.94</td><td>47.81</td><td>55.19</td><td>73.17</td><td>68.03 (↓2.15)</td></tr><tr><td>DoTA</td><td>70.70</td><td>94.44</td><td>88.42</td><td>70.40</td><td>68.98</td><td>85.13</td><td>25.53</td><td>68.83</td><td>48.94</td><td>39.37</td><td>68.97</td><td>65.90 (↓4.80)</td></tr><tr><td>OGA</td><td>68.36</td><td>92.94</td><td>89.70</td><td>67.75</td><td>70.08</td><td>85.58</td><td>23.76</td><td>66.24</td><td>47.64</td><td>53.90</td><td>69.36</td><td>66.70 (↓1.66)</td></tr><tr><td>BCA</td><td>68.14</td><td>94.08</td><td>85.83</td><td>67.27</td><td>66.38</td><td>83.49</td><td>23.19</td><td>64.65</td><td>45.15</td><td>35.52</td><td>66.19</td><td>63.18 (↓4.96)</td></tr><tr><td>OnZeta</td><td>71.12</td><td>91.12</td><td>91.77</td><td>70.68</td><td>71.17</td><td>87.59</td><td>27.33</td><td>70.43</td><td>50.30</td><td>57.95</td><td>75.55</td><td>69.39 (↓1.73)</td></tr><tr><td rowspan=\"4\">Inference-based</td><td>ZERO</td><td>68.94</td><td>94.04</td><td>87.30</td><td>67.28</td><td>66.71</td><td>85.38</td><td>25.44</td><td>65.48</td><td>45.74</td><td>37.20</td><td>66.51</td><td>64.11 (↓4.83)</td></tr><tr><td>MTA</td><td>69.02</td><td>94.04</td><td>87.95</td><td>67.59</td><td>67.40</td><td>86.07</td><td>24.39</td><td>65.28</td><td>45.80</td><td>42.49</td><td>67.62</td><td>64.86 (↓4.16)</td></tr><tr><td>Panda</td><td>65.86</td><td>91.68</td><td>88.06</td><td>65.15</td><td>66.59</td><td>84.91</td><td>23.52</td><td>62.70</td><td>44.39</td><td>48.90</td><td>65.87</td><td>64.18 (↓1.68)</td></tr><tr><td>CALIP</td><td>68.39</td><td>93.63</td><td>88.31</td><td>66.34</td><td>66.14</td><td>85.34</td><td>23.88</td><td>65.86</td><td>45.27</td><td>47.44</td><td>67.09</td><td>64.93 (↓3.46)</td></tr></table>",
+        "bbox": [
+            173,
+            130,
+            823,
+            383
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "text",
+        "text": "",
+        "bbox": [
+            169,
+            390,
+            826,
+            556
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "text",
+        "text": "Lightweight optimization provides a middle ground. The above analysis does not imply that parameter updates are useless. Rather, when parameter updates are needed, the key question is not simply whether to update parameters, but where and how they are updated. Tab. 1 shows that the lightest update scope still performs excellently. TPS updates only a K×d matrix of per-class prototype residuals, yet achieves 58.44% on ImageNet-A and a 64.46% natural-shift average, outperforming all other candidates. DPE, which uses dual evolving prototypes across modalities, follows closely. Prompt tuning occupies the middle tier, while norm-layer tuning remains near the bottom on these natural-shift benchmarks, sometimes only 1 − 2% above zero-shot. This does not necessarily mean that norm-layer adaptation is ineffective in general; as discussed in Sec. 5, such methods are primarily designed for corruptions, where adjusting feature statistics is more relevant. These results suggest that the most competitive parameter-based methods do not require heavy optimization. Instead, they update compact variables outside the backbone, such as class-wise prototype residuals. This provides an efficient middle ground: lightweight residual updates preserve the flexibility of gradient-based adaptation, while reducing the cost of heavy back-propagating through large parts of the model. Tab. 2 further supports this view: TPS requires only 1.30 GiB memory, even lower than those state-based methods, whereas TPT and BATCLIP require 3.80 and 8.54 GiB, respectively.",
+        "bbox": [
+            169,
+            574,
+            826,
+            797
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "text",
+        "text": "Online parameter updating requires efficiency and stability controls. Since Sec. 4 shows that cross-sample evidence can be valuable, it is natural to ask whether one can simply accumulate parameter updates over the test stream. Our analysis suggests that this is risky. Parameter-based methods can suffer from severe stability issues when adapted continuously in online settings. To examine this issue, we modify the per-sample episodic reset mechanism of TPT and introduce a periodic reset interval τ . The model is reset every τ samples, and we report the average accuracy within each 500-sample logging window in Fig. 4(d). We observe a clear collapse phenomenon:",
+        "bbox": [
+            169,
+            814,
+            823,
+            912
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "page_number",
+        "text": "7",
+        "bbox": [
+            493,
+            935,
+            504,
+            946
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "text",
+        "text": "model performance gradually decreases over the test stream, and the degradation becomes more severe as the reset interval increases. When reset is completely removed, model performs well in the first logging window, but rapidly drops below 10% within only four windows and eventually collapses to around 3% near the end of adaptation. This failure is not tied to a specific optimization paradigm. Instead, it arises from the accumulation of noisy self-supervised signals. Once early errors are written into parameters, later updates may reinforce these errors before useful adaptation can build up. This observation indicates that online parameter updating requires explicit stability mechanisms in practice. We suggest three possible strategies: (i) applying periodic reset with an appropriate interval; (ii) integrating external state into the backward pass, as in HisTPT; and (iii) avoiding online parameter updates and instead combining episodic adaptation with an external state, as in DPE.",
+        "bbox": [
+            169,
+            90,
+            826,
+            231
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "text",
+        "text": "Parameter updating also incurs substantial computational cost. Fig. 6 compares the accuracy and per-sample adaptation cost (on a logarithmic scale) of all methods. Among them, parameter-based methods occupy the expensive region. DiffTPT, which relies on an external diffusion model to generate additional views, requires 21.01 seconds per sample, corresponding to nearly 44 hours on the full I-A dataset. TPT takes 0.35 seconds, BATCLIP takes 0.57 seconds, and even the lightweight TPS still requires 0.21 seconds. In contrast, most state-based and inference-based methods remain around 0.10-0.15 seconds per sample and thus can finish adaptation within 20 minutes. Overall, when considering online parameter updating, practical solutions must balance accuracy with efficiency and stability.",
+        "bbox": [
+            169,
+            236,
+            563,
+            431
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "text",
+        "text": "5 No Silver Bullet for TTA Across Shifts",
+        "text_level": 2,
+        "bbox": [
+            171,
+            450,
+            524,
+            467
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "chart",
+        "img_path": "images/f09baf3e04402f47b2ff015161b280daacad6f16c6c9a11fe72a29a5ec9efcd8.jpg",
+        "content": "| Method | Accuracy on ImageNet-A (%) | Samples per Second |\n| --- | --- | --- |\n| DiffTPT | 50.5 | 10^1 |\n| C-TPT | 47.5 | 10^2 |\n| HisTPT | 47.0 | 10^2 |\n| BATCLIP | 48.5 | 10^2 |\n| R-TPT | 53.0 | 10^2 |\n| A-TPT | 51.5 | 10^2 |\n| TPT | 52.0 | 10^2 |\n| RLCE | 49.0 | 10^2 |\n| DPE | 57.0 | 10^2 |\n| ZERO | 56.0 | 10^2 |\n| PromptAlign | 53.5 | 10^2 |\n| BCA | 56.5 | 10^2 |\n| TPS | 58.5 | 10^2 |\n| OGA | 49.5 | 10^3 |\n| TDA | 48.5 | 10^3 |\n| CLIP(ViT-B/16) | 49.0 | 10^3 |\n| Boost_Adapter | 49.5 | 10^3 |\n| CALIP | 50.0 | 10^3 |\n| OnZeta | 49.5 | 10^3 |",
+        "chart_caption": [
+            "Figure 6: Comparison of accuracy and adaptation cost. Parameterbased methods occupy the expensive region, while state/inference-based methods achieve better tradeoff."
+        ],
+        "chart_footnote": [],
+        "sub_type": "scatterplot",
+        "bbox": [
+            578,
+            237,
+            821,
+            416
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "text",
+        "text": "Secs. 3 and 4 show that TTA4CLIP performance is largely",
+        "bbox": [
+            169,
+            483,
+            562,
+            498
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "text",
+        "text": "determined by how each adaptation paradigm handles test-time evidence, rather than by optimization alone. We now ask whether this update perspective remains consistent across different distribution shifts. The answer is complicated: the preferred adaptation paradigm changes with the nature of shift.",
+        "bbox": [
+            169,
+            498,
+            826,
+            540
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "table",
+        "img_path": "images/322f3ccb35a81bf0ac87ea3270e86e9e8987e0837a63df3043885a3b247c5033.jpg",
+        "table_caption": [
+            "Table 4: Norm-layer adaptation specializes in corruption shifts. We compare norm-layer adaptation methods (e.g., DeYO, SAR) with representative TTA4CLIP methods across diverse scenarios."
+        ],
+        "table_footnote": [],
+        "table_body": "<table><tr><td rowspan=\"2\">Method</td><td colspan=\"4\">Characteristics</td><td colspan=\"3\">Avg. Acc (%)</td></tr><tr><td>Norm</td><td>Prom.</td><td>Filt.</td><td>Mult.</td><td>Nat.</td><td>Fine.</td><td>Corr.</td></tr><tr><td>Zero-shot</td><td> $\\times$ </td><td> $\\times$ </td><td> $\\times$ </td><td> $\\times$ </td><td>57.20</td><td>63.76</td><td>21.46</td></tr><tr><td>TPT</td><td> $\\times$ </td><td> $\\checkmark$ </td><td> $\\checkmark$ </td><td> $\\times$ </td><td>59.91</td><td>64.99</td><td>25.55</td></tr><tr><td>TPS</td><td> $\\times$ </td><td> $\\checkmark$ </td><td> $\\checkmark$ </td><td> $\\times$ </td><td>63.01</td><td>65.17</td><td>27.43</td></tr><tr><td>TDA</td><td> $\\times$ </td><td> $\\times$ </td><td> $\\checkmark$ </td><td> $\\checkmark$ </td><td>58.50</td><td>66.49</td><td>27.86</td></tr><tr><td>OnZeta</td><td> $\\times$ </td><td> $\\times$ </td><td> $\\times$ </td><td> $\\checkmark$ </td><td>59.86</td><td>69.39</td><td>29.38</td></tr><tr><td>BATCLIP</td><td> $\\checkmark$ </td><td> $\\checkmark$ </td><td> $\\times$ </td><td> $\\checkmark$ </td><td>57.46</td><td>64.10</td><td>30.91</td></tr><tr><td>Tent</td><td> $\\checkmark$ </td><td> $\\times$ </td><td> $\\times$ </td><td> $\\times$ </td><td>57.55</td><td>64.29</td><td>26.94</td></tr><tr><td>SAR</td><td> $\\checkmark$ </td><td> $\\times$ </td><td> $\\checkmark$ </td><td> $\\times$ </td><td>57.47</td><td>63.93</td><td>31.62</td></tr><tr><td>DeYO</td><td> $\\checkmark$ </td><td> $\\times$ </td><td> $\\checkmark$ </td><td> $\\times$ </td><td>57.86</td><td>64.33</td><td>34.98</td></tr><tr><td>Tent w. Panda</td><td> $\\checkmark$ </td><td> $\\times$ </td><td> $\\checkmark$ </td><td> $\\checkmark$ </td><td>57.77</td><td>64.49</td><td>31.78</td></tr></table>",
+        "bbox": [
+            174,
+            595,
+            591,
+            760
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "text",
+        "text": "Paradigm-wise preferences vary across shifts. As shown in Tabs. 1 and 3, paradigm preferences diverge significantly between natural shifts and fine-grained classification. On natural shifts, lightweight parameter-based (e.g., prototype updates) and inference-based methods generally excel. Since these shifts preserve the original label space and merely introduce superficial visual variations, adjusting visual-textual alignment around existing, meaningful text",
+        "bbox": [
+            607,
+            556,
+            826,
+            763
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "text",
+        "text": "anchors or aggregating diverse augmented views provides sufficient robustness.",
+        "bbox": [
+            171,
+            762,
+            692,
+            777
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "text",
+        "text": "Conversely, state-based methods dominate fine-grained datasets. These tasks often introduce novel, domain-specific classes far from the training distribution. In such scenarios, single-sample augmentations cannot recover the missing class structure. State-based methods are therefore advantageous, as they accumulate cross-sample evidence to organically construct dataset-specific class distributions. Overall, no single paradigm is universally optimal; the key is ensuring that a method’s evidence source and update mechanism align with the structural nature of the shift.",
+        "bbox": [
+            169,
+            782,
+            826,
+            867
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "text",
+        "text": "Corruption favors objective and evidence-aware design. We further consider image corruptions, a standard setting in classical TTA. In addition to existing methods in Tab. 1, we implement 3 representative classical TTA baselines on CLIP, including Tent [45], SAR [33], and DeYO [25]. We also combine Tent with Panda, since Panda is designed specifically for corruption. The results still demonstrate a different preference. Parameter-based norm-layer adaptation methods that are less competitive on natural and fine-grained shifts become much stronger under corruptions, while many methods that perform well on the two shifts fall to the middle. As shown in Tab. 4, DeYO achieves the best accuracy of 34.98%, followed by Panda+Tent (31.78%), SAR (31.62%), and BATCLIP (30.91%). We attribute this to the fact that corruptions, such as noise, blur, and digital artifacts directly perturb low-level visual statistics, thereby changing the activation distributions processed by the visual encoder. Since norm layers control how features are standardized and re-scaled, adapting them is equivalent to re-calibrating corrupted feature statistics.",
+        "bbox": [
+            169,
+            883,
+            826,
+            912
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "page_number",
+        "text": "8",
+        "bbox": [
+            493,
+            935,
+            503,
+            946
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "text",
+        "text": "",
+        "bbox": [
+            169,
+            90,
+            826,
+            231
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "chart",
+        "img_path": "images/dc5b65b36f0327e542daaf7364e60fee043b0ab1d72783ac2899f043083e7fde.jpg",
+        "content": "| Label Shift Strength (α) | StatA | BATCLIP | TDA | BoostAdapter |\n| ------------------------ | ----- | ------- | --- | ------------ |\n| No Shift                 | 47.0  | 49.0    | 49.0 | 49.0         |\n| 0.1                      | 49.0  | 49.0    | 48.5 | 48.5         |\n| 0.01                     | 50.0  | 49.0    | 48.5 | 48.0         |\n| 0.001                    | 53.0  | 49.0    | 48.5 | 47.5         |\n| Seperate                 | 54.0  | 49.0    | 48.5 | 47.0         |",
+        "chart_caption": [
+            "Figure 7: Performance under label shift. Existing TTA4CLIP methods stay relatively stable, but fail to exploit the rich label priors provided."
+        ],
+        "chart_footnote": [],
+        "sub_type": "line chart",
+        "bbox": [
+            176,
+            237,
+            367,
+            380
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "text",
+        "text": "Results also show that updating more parameters is not always better. Starting from naive entropy minimization, designing a more reliable proxy or using more informative evidence already brings large gains. Compared with Tent (26.94%), SAR outperforms by 4.68% through confidence filtering and gradient reweighting, and DeYO further enlarges the gain to 8.04% by exploiting evidence from local patches. By contrast, expanding the update scope to bimodal encoders, as in BATCLIP, reaches a smaller gain. These observations also echo the findings in Sec. 3. For corruptions, the most effective strategy is often not broad parameter updating, but an objective and evidenceaware design along with norm-layer adaptation.",
+        "bbox": [
+            380,
+            236,
+            826,
+            388
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "text",
+        "text": "Label shifts call for shift-aware design. Finally, we consider label shift induced by temporal correlation in the test stream. Specifically, we construct temporally correlated streams using a Dirichlet-based protocol, where smaller concentration values indicate stronger temporal correlation, and additionally consider a separate-class stream",
+        "bbox": [
+            380,
+            402,
+            826,
+            472
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "text",
+        "text": "as the most extreme case. Details are provided in App. E.2. We focus on online methods whose predictions can depend on history-dependent behavior (e.g., state-based, online parameter-based). Fig. 7 shows that existing TTA4CLIP methods are relatively stable under temporal label correlation. They do not exhibit the severe collapse often observed in classical online TTA, likely because CLIP retains strong open-vocabulary semantic priors and does not require adapting a closed-set classifier. Nevertheless, these methods still fail to exploit the rich label prior provided by the correlated stream, with most methods remaining close to zero-shot CLIP and becoming worse as the shift becomes more severe. To further examine whether label priors can be exploited, we include StatA [54], a method specifically designed for correlated test streams. StatA estimates the test-time class prior and uses it to calibrate predictions, allowing the model to convert temporal label structure into useful evidence. As shown, under label shift, StatA achieves consistent and significant gains, with larger improvements under stronger temporal correlation. In the extreme separate case, StatA improves from 46.89% to 53.51%. This highlights an open direction for future research: explicitly modeling and leveraging shifted label priors as evidence.",
+        "bbox": [
+            169,
+            472,
+            826,
+            667
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "text",
+        "text": "6 Conclusion",
+        "text_level": 2,
+        "bbox": [
+            171,
+            684,
+            302,
+            700
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "text",
+        "text": "In this paper, we conduct a systematic controlled empirical study of TTA4CLIP by introducing TTABC, an open-source TTA benchmark that integrates over 20 representative methods across a diverse range of distribution shift scenarios. Our controlled study reveals that adaptation gains are primarily driven by test-time evidence and reliable proxies, effectively outweighing the diminishing returns of heavy parameter optimization. Furthermore, we demonstrate that competitive and highly efficient performance can be achieved without heavy tuning by leveraging cross- or current-sample evidence for prediction refinement, as well as lightweight prototype updates. Finally, we emphasize that there is no silver bullet for TTA; optimal performance requires aligning the adaptation paradigm with the specific nature of the shift (e.g., norm-layer updates for corruptions, or stream-aware designs for label shifts). In conclusion, TTABC establishes a solid foundation for comprehensively understanding the TTA mechanisms of CLIP and provides clear directions for developing robust, efficient, and shift-aware adaptation techniques in complex real-world environments.",
+        "bbox": [
+            169,
+            715,
+            826,
+            883
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "page_number",
+        "text": "9",
+        "bbox": [
+            493,
+            935,
+            504,
+            946
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "text",
+        "text": "References",
+        "text_level": 2,
+        "bbox": [
+            173,
+            89,
+            267,
+            104
+        ],
+        "page_idx": 9
+    },
+    {
+        "type": "list",
+        "sub_type": "ref_text",
+        "list_items": [
+            "[1] Jameel Abdul Samadh, Mohammad Hanan Gani, Noor Hussein, Muhammad Uzair Khattak, Muhammad Muzammal Naseer, Fahad Shahbaz Khan, and Salman H Khan. Align your prompts: Test-time prompting with distribution alignment for zero-shot generalization. Advances in Neural Information Processing Systems, 36:80396–80413, 2023.",
+            "[2] Shihab Aaqil Ahamed, Udaya SKP Thanthrige, Ranga Rodrigo, and Muhammad Haris Khan. A-tpt: Angular diversity calibration properties for test-time prompt tuning of vision-language models. arXiv preprint arXiv:2510.26441, 2025.",
+            "[3] Lukas Bossard, Matthieu Guillaumin, and Luc Van Gool. Food-101 – mining discriminative components with random forests. In European Conference on Computer Vision, 2014.",
+            "[4] Xiao Chen, Zhongjing Du, Jiazhen Huang, Xu Jiang, Li Lu, Jingyan Jiang, and Zhi Wang. Neural collapse in test-time adaptation. arXiv preprint arXiv:2512.10421, 2025.",
+            "[5] Xiao Chen, Jiazhen Huang, Zhiming Liu, Qinting Jiang, Fanding Huang, Jingyan Jiang, and Zhi Wang. Test-time distillation for continual model adaptation. arXiv preprint arXiv:2506.02671, 2025.",
+            "[6] Xiao Chen, Qihui Zhang, and Yan Wang. Cliff: Leveraging ambiguous samples for enhanced test-time adaptation. In 27th European Conference on Artificial Intelligence, volume 392, pages 642–649, 2024.",
+            "[7] Mircea Cimpoi, Subhransu Maji, Iasonas Kokkinos, Sammy Mohamed, and Andrea Vedaldi. Describing textures in the wild. In Proceedings of the IEEE conference on computer vision and pattern recognition, 2014.",
+            "[8] Jia Deng, Wei Dong, Richard Socher, Li-Jia Li, Kai Li, and Li Fei-Fei. Imagenet: A large-scale hierarchical image database. In 2009 IEEE conference on computer vision and pattern recognition, pages 248–255. Ieee, 2009.",
+            "[9] Ruxi Deng, Wenxuan Bao, Tianxin Wei, and Jingrui He. Panda: Test-time adaptation with negative data augmentation. In Proceedings of the AAAI Conference on Artificial Intelligence, volume 40, pages 3551–3559, 2026.",
+            "[10] Alexey Dosovitskiy, Lucas Beyer, Alexander Kolesnikov, Dirk Weissenborn, Xiaohua Zhai, Thomas Unterthiner, Mostafa Dehghani, Matthias Minderer, Georg Heigold, Sylvain Gelly, Jakob Uszkoreit, and Neil Houlsby. An image is worth 16x16 words: Transformers for image recognition at scale. ICLR, 2021.",
+            "[11] Matteo Farina, Gianni Franchi, Giovanni Iacca, Massimiliano Mancini, and Elisa Ricci. Frustratingly easy test-time adaptation of vision-language models. Advances in Neural Information Processing Systems, 37:129062–129093, 2024.",
+            "[12] Chun-Mei Feng, Kai Yu, Yong Liu, Salman Khan, and Wangmeng Zuo. Diverse data augmentation with diffusions for effective test-time prompt tuning. In Proceedings of the IEEE/CVF International Conference on Computer Vision, pages 2704–2714, 2023.",
+            "[13] Clément Fuchs, Maxime Zanella, and Christophe De Vleeschouwer. Online gaussian test-time adaptation of vision-language models. In Proceedings of the Computer Vision and Pattern Recognition Conference, pages 128–137, 2025.",
+            "[14] Ziyu Guo, Renrui Zhang, Longtian Qiu, Xianzheng Ma, Xupeng Miao, Xuming He, and Bin Cui. Calip: Zero-shot enhancement of clip with parameter-free attention. In Proceedings of the AAAI Conference on Artificial Intelligence, volume 37, pages 746–754, 2023.",
+            "[15] Zongbo Han, Jialong Yang, Guangyu Wang, Junfan Li, Qianli Xu, Mike Zheng Shou, and Changqing Zhang. Dota: Distributional test-time adaptation of vision-language models. arXiv preprint arXiv:2409.19375, 2024.",
+            "[16] Kaiming He, Xiangyu Zhang, Shaoqing Ren, and Jian Sun. Deep residual learning for image recognition. In Proceedings of the IEEE conference on computer vision and pattern recognition, pages 770–778, 2016.",
+            "[17] Patrick Helber, Benjamin Bischke, Andreas Dengel, and Damian Borth. Eurosat: A novel dataset and deep learning benchmark for land use and land cover classification. IEEE Journal of Selected Topics in Applied Earth Observations and Remote Sensing, 2019.",
+            "[18] Dan Hendrycks, Steven Basart, Norman Mu, Saurav Kadavath, Frank Wang, Evan Dorundo, Rahul Desai, Tyler Zhu, Samyak Parajuli, Mike Guo, Dawn Song, Jacob Steinhardt, and Justin Gilmer. The many faces of robustness: A critical analysis of out-of-distribution generalization. ICCV, 2021.",
+            "[19] Dan Hendrycks and Thomas Dietterich. Benchmarking neural network robustness to common corruptions and perturbations. arXiv preprint arXiv:1903.12261, 2019.",
+            "[20] Dan Hendrycks, Norman Mu, Ekin D Cubuk, Barret Zoph, Justin Gilmer, and Balaji Lakshminarayanan. Augmix: A simple data processing method to improve robustness and uncertainty. arXiv preprint arXiv:1912.02781, 2019.",
+            "[21] Dan Hendrycks, Kevin Zhao, Steven Basart, Jacob Steinhardt, and Dawn Song. Natural adversarial examples. CVPR, 2021.",
+            "[22] Adilbek Karmanov, Dayan Guan, Shijian Lu, Abdulmotaleb El Saddik, and Eric Xing. Efficient test-time adaptation of vision-language models. In Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition, pages 14162–14171, 2024.",
+            "[23] Muhammad Uzair Khattak, Hanoona Rasheed, Muhammad Maaz, Salman Khan, and Fahad Shahbaz Khan. Maple: Multi-modal prompt learning. In Proceedings of the IEEE/CVF conference on computer vision and pattern recognition, pages 19113–19122, 2023.",
+            "[24] Jonathan Krause, Michael Stark, Jia Deng, and Li Fei-Fei. 3d object representations for fine-grained categorization. In 2013 IEEE International Conference on Computer Vision Workshops, 2013.",
+            "[25] Jonghyun Lee, Dahuin Jung, Saehyung Lee, Junsung Park, Juhyeon Shin, Uiwon Hwang, and Sungroh Yoon. Entropy is not enough for test-time adaptation: From the perspective of disentangled factors. arXiv preprint arXiv:2403.07366, 2024.",
+            "[26] Yushu Li, Yongyi Su, Adam Goodge, Kui Jia, and Xun Xu. Efficient and context-aware label propagation for zero-/few-shot training-free adaptation of vision-language model. arXiv preprint arXiv:2412.18303, 2024.",
+            "[27] Feng Liang, Bichen Wu, Xiaoliang Dai, Kunpeng Li, Yinan Zhao, Hang Zhang, Peizhao Zhang, Peter Vajda, and Diana Marculescu. Open-vocabulary semantic segmentation with mask-adapted clip. In Proceedings of the IEEE/CVF conference on computer vision and pattern recognition, pages 7061–7070, 2023.",
+            "[28] Jian Liang, Ran He, and Tieniu Tan. A comprehensive survey on test-time adaptation under distribution shifts. arXiv preprint arXiv:2303.15361, 2023.",
+            "[29] Sarthak Kumar Maharana, Baoming Zhang, Leonid Karlinsky, Rogerio Feris, and Yunhui Guo. Batclip: Bimodal online test-time adaptation for clip. arXiv preprint arXiv:2412.02837, 2024.",
+            "[30] Subhransu Maji, Esa Rahtu, Juho Kannala, Matthew Blaschko, and Andrea Vedaldi. Fine-grained visual classification of aircraft. Technical report, arXiv, 2013.",
+            "[31] R Thomas McCoy, Ellie Pavlick, and Tal Linzen. Right for the wrong reasons: Diagnosing syntactic heuristics in natural language inference. arXiv preprint arXiv:1902.01007, 2019.",
+            "[32] Maria-Elena Nilsback and Andrew Zisserman. Automated flower classification over a large number of classes. In 2008 Sixth Indian conference on computer vision, graphics & image processing.",
+            "[33] Shuaicheng Niu, Jiaxiang Wu, Yifan Zhang, Zhiquan Wen, Yaofo Chen, Peilin Zhao, and Mingkui Tan. Towards stable test-time adaptation in dynamic wild world. arXiv preprint arXiv:2302.12400, 2023.",
+            "[34] Aaron van den Oord, Yazhe Li, and Oriol Vinyals. Representation learning with contrastive predictive coding. arXiv preprint arXiv:1807.03748, 2018.",
+            "[35] Omkar M Parkhi, Andrea Vedaldi, Andrew Zisserman, and CV Jawahar. Cats and dogs. In 2012 IEEE conference on computer vision and pattern recognition, 2012.",
+            "[36] Qi Qian and Juhua Hu. Online zero-shot classification with clip. In European Conference on Computer Vision, pages 462–477. Springer, 2024.",
+            "[37] Alec Radford, Jong Wook Kim, Chris Hallacy, Aditya Ramesh, Gabriel Goh, Sandhini Agarwal, Girish Sastry, Amanda Askell, Pamela Mishkin, Jack Clark, et al. Learning transferable visual models from natural language supervision. In International conference on machine learning, pages 8748–8763. PmLR, 2021.",
+            "[38] Benjamin Recht, Rebecca Roelofs, Ludwig Schmidt, and Vaishaal Shankar. Do imagenet classifiers generalize to imagenet? In International conference on machine learning, pages 5389–5400. PMLR, 2019.",
+            "[39] Steffen Schneider, Evgenia Rusak, Luisa Eck, Oliver Bringmann, Wieland Brendel, and Matthias Bethge. Removing covariate shift improves robustness against common corruptions. CoRR, abs/2006.16971, 2020.",
+            "[40] Lijun Sheng, Jian Liang, Ran He, Zilei Wang, and Tieniu Tan. The illusion of progress? a critical look at test-time adaptation for vision-language models. arXiv preprint arXiv:2506.24000, 2025.",
+            "[41] Lijun Sheng, Jian Liang, Zilei Wang, and Ran He. R-tpt: Improving adversarial robustness of visionlanguage models through test-time prompt tuning. In Proceedings of the Computer Vision and Pattern Recognition Conference, pages 29958–29967, 2025.",
+            "[42] Manli Shu, Weili Nie, De-An Huang, Zhiding Yu, Tom Goldstein, Anima Anandkumar, and Chaowei Xiao. Test-time prompt tuning for zero-shot generalization in vision-language models. Advances in Neural Information Processing Systems, 35:14274–14289, 2022.",
+            "[43] Khurram Soomro, Amir Roshan Zamir, and Mubarak Shah. Ucf101: A dataset of 101 human actions classes from videos in the wild. arXiv preprint arXiv:1212.0402, 2012.",
+            "[44] Elaine Sui, Xiaohan Wang, and Serena Yeung-Levy. Just shift it: Test-time prototype shifting for zero-shot generalization with vision-language models. In 2025 IEEE/CVF Winter Conference on Applications of Computer Vision (WACV), pages 825–835. IEEE, 2025.",
+            "[45] Dequan Wang, Evan Shelhamer, Shaoteng Liu, Bruno Olshausen, and Trevor Darrell. Tent: Fully test-time adaptation by entropy minimization. arXiv preprint arXiv:2006.10726, 2020.",
+            "[46] Haohan Wang, Songwei Ge, Zachary Lipton, and Eric P Xing. Learning robust global representations by penalizing local predictive power. In Advances in Neural Information Processing Systems, pages 10506–10518, 2019.",
+            "[47] Xiaoshi Wu, Feng Zhu, Rui Zhao, and Hongsheng Li. Cora: Adapting clip for open-vocabulary detection with region prompting and anchor pre-matching. In Proceedings of the IEEE/CVF conference on computer vision and pattern recognition, pages 7031–7040, 2023.",
+            "[48] J. Xiao, J. Hays, K. A. Ehinger, A. Oliva, and A. Torralba. Sun database: Large-scale scene recognition from abbey to zoo. In 2010 IEEE Computer Society Conference on Computer Vision and Pattern Recognition, June 2010.",
+            "[49] Zehao Xiao and Cees GM Snoek. Beyond model adaptation at test time: A survey. arXiv preprint arXiv:2411.03687, 2024.",
+            "[50] Hee Suk Yoon, Eunseop Yoon, Joshua Tian Jin Tee, Mark Hasegawa-Johnson, Yingzhen Li, and Chang D Yoo. C-tpt: Calibrated test-time prompt tuning for vision-language models via text feature dispersion. arXiv preprint arXiv:2403.14119, 2024.",
+            "[51] Jason Yosinski, Jeff Clune, Yoshua Bengio, and Hod Lipson. How transferable are features in deep neural networks? Advances in neural information processing systems, 27, 2014.",
+            "[52] Longhui Yuan, Binhui Xie, and Shuang Li. Robust test-time adaptation in dynamic scenarios. In Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition, pages 15922– 15932, 2023.",
+            "[53] Maxime Zanella and Ismail Ben Ayed. On the test-time zero-shot generalization of vision-language models: Do we really need prompt learning? In Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition, pages 23783–23793, 2024.",
+            "[54] Maxime Zanella, Clément Fuchs, Christophe De Vleeschouwer, and Ismail Ben Ayed. Realistic test-time adaptation of vision-language models. In Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition, pages 25103–25112, 2025.",
+            "[55] Ce Zhang, Simon Stepputtis, Katia Sycara, and Yaqi Xie. Dual prototype evolving for test-time generalization of vision-language models. Advances in Neural Information Processing Systems, 37:32111–32136, 2024.",
+            "[56] Jingyi Zhang, Jiaxing Huang, Sheng Jin, and Shijian Lu. Vision-language models for vision tasks: A survey. IEEE transactions on pattern analysis and machine intelligence, 46(8):5625–5644, 2024.",
+            "[57] Jingyi Zhang, Jiaxing Huang, Xiaoqin Zhang, Ling Shao, and Shijian Lu. Historical test-time prompt tuning for vision foundation models. Advances in Neural Information Processing Systems, 37:12872–12896, 2024.",
+            "[58] Taolin Zhang, Jinpeng Wang, Hang Guo, Tao Dai, Bin Chen, and Shu-Tao Xia. Boostadapter: Improving vision-language test-time adaptation via regional bootstrapping. Advances in Neural Information Processing Systems, 37:67795–67825, 2024.",
+            "[59] Yabin Zhang, Wenjie Zhu, Hui Tang, Zhiyuan Ma, Kaiyang Zhou, and Lei Zhang. Dual memory networks: A versatile adaptation approach for vision-language models. In Proceedings of the IEEE/CVF conference on computer vision and pattern recognition, 2024.",
+            "[60] Hao Zhao, Yuejiang Liu, Alexandre Alahi, and Tao Lin. On pitfalls of test-time adaptation. arXiv preprint arXiv:2306.03536, 2023.",
+            "[61] Shuai Zhao, Xiaohan Wang, Linchao Zhu, and Yi Yang. Test-time adaptation with clip reward for zero-shot generalization in vision-language models. arXiv preprint arXiv:2305.18010, 2023.",
+            "[62] Kaiyang Zhou, Jingkang Yang, Chen Change Loy, and Ziwei Liu. Conditional prompt learning for visionlanguage models. In Proceedings of the IEEE/CVF conference on computer vision and pattern recognition, pages 16816–16825, 2022.",
+            "[63] Kaiyang Zhou, Jingkang Yang, Chen Change Loy, and Ziwei Liu. Learning to prompt for vision-language models. International journal of computer vision, 130(9):2337–2348, 2022.",
+            "[64] Lihua Zhou, Mao Ye, Shuaifeng Li, Nianxin Li, Xiatian Zhu, Lei Deng, Hongbin Liu, and Zhen Lei. Bayesian test-time adaptation for vision-language models. In Proceedings of the Computer Vision and Pattern Recognition Conference, pages 29999–30009, 2025."
+        ],
+        "bbox": [
+            165,
+            107,
+            834,
+            914
+        ],
+        "page_idx": 9
+    },
+    {
+        "type": "page_number",
+        "text": "10",
+        "bbox": [
+            490,
+            935,
+            508,
+            946
+        ],
+        "page_idx": 9
+    },
+    {
+        "type": "list",
+        "sub_type": "ref_text",
+        "list_items": [],
+        "bbox": [
+            166,
+            87,
+            830,
+            914
+        ],
+        "page_idx": 10
+    },
+    {
+        "type": "page_number",
+        "text": "",
+        "bbox": [
+            490,
+            935,
+            506,
+            946
+        ],
+        "page_idx": 10
+    },
+    {
+        "type": "list",
+        "sub_type": "ref_text",
+        "list_items": [],
+        "bbox": [
+            165,
+            87,
+            831,
+            914
+        ],
+        "page_idx": 11
+    },
+    {
+        "type": "page_number",
+        "text": "",
+        "bbox": [
+            490,
+            935,
+            508,
+            946
+        ],
+        "page_idx": 11
+    },
+    {
+        "type": "list",
+        "sub_type": "ref_text",
+        "list_items": [],
+        "bbox": [
+            166,
+            87,
+            831,
+            383
+        ],
+        "page_idx": 12
+    },
+    {
+        "type": "page_number",
+        "text": "",
+        "bbox": [
+            490,
+            935,
+            506,
+            946
+        ],
+        "page_idx": 12
+    },
+    {
+        "type": "text",
+        "text": "A Broader Impacts",
+        "text_level": 2,
+        "bbox": [
+            171,
+            90,
+            352,
+            107
+        ],
+        "page_idx": 13
+    },
+    {
+        "type": "text",
+        "text": "Our systematic study and the introduction of the TTABC benchmark aim to foster transparency and reliability in the deployment of Vision-Language Models (VLMs) under real-world distribution shifts. By demystifying the true drivers of Test-Time Adaptation (TTA), this work might encourage the development of more sustainable, compute-efficient AI systems. However, since TTA methods rely heavily on unsupervised signals and streaming test evidence, there is a latent risk that they may amplify pre-existing model biases or suffer from representation collapse when exposed to severely shifted label priors. Consequently, we urge practitioners to implement careful monitoring and fairness-aware safeguards when deploying these adaptive systems in high-stakes domains such as healthcare or autonomous navigation.",
+        "bbox": [
+            169,
+            119,
+            826,
+            247
+        ],
+        "page_idx": 13
+    },
+    {
+        "type": "text",
+        "text": "B Limitations and Future Work",
+        "text_level": 2,
+        "bbox": [
+            171,
+            265,
+            457,
+            282
+        ],
+        "page_idx": 13
+    },
+    {
+        "type": "text",
+        "text": "While our controlled empirical study provides a comprehensive understanding of the current TTA4CLIP landscape, it is inherently bounded by its focus on image classification tasks and the CLIP-based architecture. Real-world applications often involve more complex scenarios, such as dense visual predictions (e.g., object detection, semantic segmentation) and generative multimodal interactions, which remain underexplored in the context of TTA. Furthermore, although we identify that test-time evidence and reliable proxies are the primary drivers of stable adaptation gains, discovering optimal strategies for dynamically selecting the best adaptation paradigm on-the-fly remains an open challenge. Future work should aim to extend the TTABC benchmark to encompass diverse foundational architectures (e.g., autoregressive generative VLMs), broader downstream tasks, and theoretically grounded methods that can automatically adjust their adaptation mechanisms to continuous, unknown distribution shifts.",
+        "bbox": [
+            169,
+            295,
+            826,
+            448
+        ],
+        "page_idx": 13
+    },
+    {
+        "type": "text",
+        "text": "C Large Language Model (LLM) Usage Statement",
+        "text_level": 2,
+        "bbox": [
+            171,
+            467,
+            612,
+            484
+        ],
+        "page_idx": 13
+    },
+    {
+        "type": "text",
+        "text": "We use the LLM as a general-purpose assistant tool. Specifically, the LLM assists in (i) checking grammar and improving clarity of text descriptions, and (ii) suggesting alternative phrasings for some sections. No parts of the paper are generated entirely by the LLM. All research ideas, experiments, model designs, and results are conceived, implemented, and analyzed solely by the authors. The LLM does not contribute to the development of the methodology, experiments, or analysis presented in this paper. We confirm that the use of the LLM is limited to minor writing support and does not constitute a substantive contribution that would qualify it as a co-author.",
+        "bbox": [
+            169,
+            497,
+            823,
+            597
+        ],
+        "page_idx": 13
+    },
+    {
+        "type": "text",
+        "text": "D Detailed Taxonomy of TTA4CLIP Methods",
+        "text_level": 2,
+        "bbox": [
+            171,
+            614,
+            571,
+            632
+        ],
+        "page_idx": 13
+    },
+    {
+        "type": "text",
+        "text": "In Table 5, we provide a comprehensive taxonomy of all evaluated methods and baselines included in our benchmark. Beyond standard zero-shot and few-shot baselines, we systematically organize TTA4CLIP approaches into our proposed three paradigms: Parameter-based, State-based, and Inference-based methods.",
+        "bbox": [
+            169,
+            645,
+            823,
+            702
+        ],
+        "page_idx": 13
+    },
+    {
+        "type": "text",
+        "text": "To clarify the operational assumptions underlying each method, we further characterize them across four key attributes:",
+        "bbox": [
+            169,
+            707,
+            823,
+            736
+        ],
+        "page_idx": 13
+    },
+    {
+        "type": "list",
+        "sub_type": "text",
+        "list_items": [
+            "• Zero-Shot: Whether the method can be deployed directly without requiring any labeled source data for pre-adaptation (e.g., CoOp).",
+            "• Train Req. (Training Required): Whether the adaptation process involves gradient-based backpropagation to update model parameters.",
+            "• Sample-wise: Whether the method adapts independently per single test sample, as opposed to relying on batch-level statistics.",
+            "• Episodic: Whether the adaptable parameters or external states are strictly reset after each inference step to prevent catastrophic forgetting or error accumulation."
+        ],
+        "bbox": [
+            215,
+            746,
+            823,
+            873
+        ],
+        "page_idx": 13
+    },
+    {
+        "type": "text",
+        "text": "This fine-grained breakdown highlights the structural differences, computational requirements, and stability mechanisms of the current TTA4CLIP landscape.",
+        "bbox": [
+            169,
+            883,
+            823,
+            912
+        ],
+        "page_idx": 13
+    },
+    {
+        "type": "page_number",
+        "text": "14",
+        "bbox": [
+            490,
+            935,
+            508,
+            946
+        ],
+        "page_idx": 13
+    },
+    {
+        "type": "table",
+        "img_path": "images/d37a9f078376862144cce9f1616747231679c626244c95071e5f93510639eb1b.jpg",
+        "table_caption": [
+            "Table 5: Detailed taxonomy of evaluated methods and baselines. We systematically categorize existing approaches based on their adaptation paradigms. Attributes denote whether a method is zero-shot (requires no source data), requires training (parameter updates), performs sample-wise adaptation, and uses episodic resets. (✓: Yes, ✗: No, —: Not Applicable)"
+        ],
+        "table_footnote": [],
+        "table_body": "<table><tr><td>Paradigm</td><td>Category</td><td>Method</td><td>Venue</td><td>Zero-Shot</td><td>Train Req.</td><td>Sample-wise</td><td>Episodic</td></tr><tr><td>Zero-Shot</td><td>—</td><td>CLIP</td><td>ICML&#x27;21</td><td>√</td><td>—</td><td>—</td><td>—</td></tr><tr><td rowspan=\"6\">Few-Shot</td><td rowspan=\"3\">Prompt Learning</td><td>CoOp [63]</td><td>IJCV&#x27;22</td><td>✗</td><td>√</td><td>—</td><td>—</td></tr><tr><td>CoCoOp [62]</td><td>CVPR&#x27;22</td><td>✗</td><td>√</td><td>—</td><td>—</td></tr><tr><td>MaPLe [23]</td><td>CVPR&#x27;23</td><td>✗</td><td>√</td><td>—</td><td>—</td></tr><tr><td rowspan=\"3\">TTA Ensemble</td><td>CoOp+TPT</td><td>—</td><td>✗</td><td>√</td><td>√</td><td>√</td></tr><tr><td>CoCoOp+TPT</td><td>—</td><td>✗</td><td>√</td><td>√</td><td>√</td></tr><tr><td>MaPLe+TPT</td><td>—</td><td>✗</td><td>√</td><td>√</td><td>√</td></tr><tr><td rowspan=\"11\">Parameter-based</td><td rowspan=\"8\">Prompt Learning</td><td>TPT [42]</td><td>NeurIPS&#x27;22</td><td>√</td><td>√</td><td>√</td><td>√</td></tr><tr><td>DiffTPT [12]</td><td>ICCV&#x27;23</td><td>√</td><td>√</td><td>√</td><td>√</td></tr><tr><td>HisTPT [57]</td><td>NeurIPS&#x27;24</td><td>√</td><td>√</td><td>√</td><td>✗</td></tr><tr><td>C-TPT [50]</td><td>ICLR&#x27;24</td><td>√</td><td>√</td><td>√</td><td>√</td></tr><tr><td>A-TPT [2]</td><td>ICLR&#x27;26</td><td>√</td><td>√</td><td>√</td><td>√</td></tr><tr><td>R-TPT [41]</td><td>CVPR&#x27;25</td><td>√</td><td>√</td><td>√</td><td>√</td></tr><tr><td>PromptAlign [1]</td><td>NeurIPS&#x27;23</td><td>✗</td><td>√</td><td>√</td><td>√</td></tr><tr><td>RLCF [61]</td><td>ICLR&#x27;24</td><td>√</td><td>√</td><td>√</td><td>√</td></tr><tr><td rowspan=\"2\">Prototype</td><td>TPS [44]</td><td>WACV&#x27;25</td><td>√</td><td>√</td><td>√</td><td>√</td></tr><tr><td>DPE [55]</td><td>NeurIPS&#x27;24</td><td>√</td><td>√</td><td>√</td><td>✗</td></tr><tr><td>Norm Layer</td><td>BATCLIP [29]</td><td>ICCV&#x27;25</td><td>√</td><td>√</td><td>✗</td><td>✗</td></tr><tr><td rowspan=\"8\">State-based</td><td rowspan=\"4\">Cache</td><td>TDA [22]</td><td>CVPR&#x27;24</td><td>√</td><td>✗</td><td>√</td><td>✗</td></tr><tr><td>BoostAdapter [58]</td><td>NeurIPS&#x27;24</td><td>√</td><td>✗</td><td>√</td><td>✗</td></tr><tr><td>DMN [59]</td><td>CVPR&#x27;24</td><td>√</td><td>✗</td><td>√</td><td>✗</td></tr><tr><td>ECALP [26]</td><td>ICLR&#x27;25</td><td>√</td><td>✗</td><td>√</td><td>✗</td></tr><tr><td rowspan=\"4\">Distribution</td><td>DoTA [15]</td><td>NeurIPS&#x27;25</td><td>√</td><td>✗</td><td>√</td><td>✗</td></tr><tr><td>OGA [13]</td><td>CVPRW&#x27;25</td><td>√</td><td>✗</td><td>√</td><td>✗</td></tr><tr><td>BCA [64]</td><td>CVPR&#x27;25</td><td>√</td><td>✗</td><td>√</td><td>✗</td></tr><tr><td>OnZeta [36]</td><td>ECCV&#x27;24</td><td>√</td><td>✗</td><td>√</td><td>✗</td></tr><tr><td rowspan=\"4\">Inference-based</td><td rowspan=\"2\">View Aggregation</td><td>ZERO [11]</td><td>NeurIPS&#x27;24</td><td>√</td><td>✗</td><td>√</td><td>√</td></tr><tr><td>MTA [53]</td><td>CVPR&#x27;24</td><td>√</td><td>✗</td><td>√</td><td>√</td></tr><tr><td rowspan=\"2\">Feature Modulation</td><td>CALIP [14]</td><td>AAAI&#x27;23</td><td>√</td><td>✗</td><td>√</td><td>√</td></tr><tr><td>Panda [9]</td><td>AAAI&#x27;26</td><td>√</td><td>✗</td><td>✗</td><td>✗</td></tr></table>",
+        "bbox": [
+            174,
+            152,
+            823,
+            515
+        ],
+        "page_idx": 14
+    },
+    {
+        "type": "text",
+        "text": "E Experimental Details of Datasets, Baselines, and Hyperparameters",
+        "text_level": 2,
+        "bbox": [
+            169,
+            539,
+            764,
+            556
+        ],
+        "page_idx": 14
+    },
+    {
+        "type": "text",
+        "text": "E.1 Datasets",
+        "text_level": 2,
+        "bbox": [
+            171,
+            569,
+            276,
+            583
+        ],
+        "page_idx": 14
+    },
+    {
+        "type": "text",
+        "text": "To comprehensively evaluate the generalization capability of VLMs under various distribution shifts, we utilize 15 diverse image classification datasets, categorized into four main groups:",
+        "bbox": [
+            169,
+            595,
+            826,
+            625
+        ],
+        "page_idx": 14
+    },
+    {
+        "type": "text",
+        "text": "1. Original ImageNet (In-Distribution):",
+        "text_level": 2,
+        "bbox": [
+            171,
+            628,
+            450,
+            645
+        ],
+        "page_idx": 14
+    },
+    {
+        "type": "text",
+        "text": "• ImageNet [8]: ImageNet is used as the in-distribution evaluation benchmark. We evaluate models on the standard ImageNet-1K validation set, which contains 50,000 images from 1,000 object categories. This dataset serves as the reference test distribution for assessing standard image classification performance under the original ImageNet data distribution.",
+        "bbox": [
+            171,
+            652,
+            823,
+            709
+        ],
+        "page_idx": 14
+    },
+    {
+        "type": "text",
+        "text": "2. Natural Distribution Shifts (Out-of-Distribution):",
+        "text_level": 2,
+        "bbox": [
+            171,
+            717,
+            537,
+            732
+        ],
+        "page_idx": 14
+    },
+    {
+        "type": "list",
+        "sub_type": "text",
+        "list_items": [
+            "• ImageNet-V2 [38]: ImageNet-V2 is used as a natural distribution-shift test set for ImageNet classification. It contains newly collected images from the same 1,000 ImageNet classes, with 10,000 images in each test set variant. Since the images are collected independently from the original ImageNet validation set while following a similar collection protocol, this benchmark evaluates robustness to natural changes in data sampling and collection procedures.",
+            "• ImageNet-Sketch [46]: ImageNet-Sketch is used to evaluate robustness to a strong modality and style shift from natural photographs to sketch images. It consists of sketch-style images covering the 1,000 ImageNet classes, with approximately 50 images per class. Because sketches remove most color and texture cues while preserving object shape, this dataset tests whether models can generalize beyond photo-realistic visual appearances.",
+            "• ImageNet-A [21]: ImageNet-A is used as a challenging natural adversarial test set. It contains natural, unmodified real-world images from 200 ImageNet classes that are difficult for standard"
+        ],
+        "bbox": [
+            171,
+            739,
+            823,
+            912
+        ],
+        "page_idx": 14
+    },
+    {
+        "type": "page_number",
+        "text": "",
+        "bbox": [
+            490,
+            935,
+            508,
+            946
+        ],
+        "page_idx": 14
+    },
+    {
+        "type": "text",
+        "text": "ImageNet-trained models to classify correctly. This benchmark evaluates model robustness under naturally hard examples involving unusual object appearances, viewpoints, backgrounds, or visual contexts.",
+        "bbox": [
+            183,
+            90,
+            823,
+            132
+        ],
+        "page_idx": 15
+    },
+    {
+        "type": "text",
+        "text": "• ImageNet-R [18]: ImageNet-R is used to test robustness to non-photorealistic visual renditions. It contains 30,000 images from 200 ImageNet classes, including artistic forms such as cartoons, paintings, sculptures, graphics, embroidery, origami, toys, and other renditions. This dataset evaluates whether models can preserve category recognition when object appearance changes substantially in style and texture.",
+        "bbox": [
+            171,
+            135,
+            826,
+            205
+        ],
+        "page_idx": 15
+    },
+    {
+        "type": "table",
+        "img_path": "images/005b96949ac11f606d5a0d31b9fc59642aebce0046bb3be8e646a4e42c5c5986.jpg",
+        "table_caption": [
+            "Table 6: Detailed Results on ImageNet-C (ViT-B/16)[10]. Accuracy (%) across 15 corruption types at severity level 5. The types are grouped into four main categories: Noise, Blur, Weather, and Digital."
+        ],
+        "table_footnote": [],
+        "table_body": "<table><tr><td rowspan=\"2\">Method</td><td colspan=\"4\">Noise</td><td colspan=\"3\">Blur</td><td colspan=\"4\">Weather</td><td colspan=\"4\">Digital</td><td rowspan=\"2\">Avg.</td></tr><tr><td>Gauss.</td><td>Shot</td><td>Impul.</td><td>Defoc.</td><td>Glass</td><td>Motion</td><td>Zoom</td><td>Snow</td><td>Frost</td><td>Fog</td><td>Brit.</td><td>Contr.</td><td>Elastic</td><td>Pixel</td><td>JPEG</td></tr><tr><td>CLIP</td><td>10.62</td><td>11.79</td><td>11.05</td><td>19.81</td><td>13.60</td><td>20.52</td><td>18.85</td><td>27.65</td><td>27.65</td><td>32.31</td><td>46.87</td><td>14.04</td><td>11.16</td><td>27.38</td><td>28.63</td><td>21.46</td></tr><tr><td>CoOp</td><td>16.29</td><td>17.27</td><td>15.85</td><td>26.91</td><td>17.89</td><td>27.82</td><td>25.61</td><td>35.95</td><td>34.33</td><td>40.08</td><td>60.58</td><td>20.52</td><td>15.11</td><td>38.24</td><td>37.51</td><td>28.66</td></tr><tr><td>CoOp+TPT</td><td>15.72</td><td>16.67</td><td>15.36</td><td>27.28</td><td>18.24</td><td>28.14</td><td>26.42</td><td>36.80</td><td>35.17</td><td>41.06</td><td>61.28</td><td>22.21</td><td>16.03</td><td>39.92</td><td>38.51</td><td>29.25</td></tr><tr><td>CoCoOp</td><td>14.48</td><td>15.41</td><td>14.08</td><td>21.58</td><td>13.19</td><td>25.00</td><td>23.49</td><td>28.03</td><td>27.97</td><td>35.40</td><td>53.39</td><td>15.87</td><td>13.29</td><td>29.15</td><td>30.85</td><td>24.08</td></tr><tr><td>CoCoOp+TPT</td><td>14.63</td><td>15.66</td><td>14.28</td><td>22.23</td><td>13.66</td><td>25.20</td><td>23.82</td><td>28.80</td><td>28.72</td><td>35.92</td><td>54.20</td><td>16.45</td><td>13.55</td><td>30.35</td><td>31.83</td><td>24.62</td></tr><tr><td>MaPLe</td><td>15.58</td><td>16.71</td><td>15.83</td><td>26.19</td><td>17.14</td><td>26.97</td><td>24.99</td><td>33.29</td><td>33.34</td><td>38.56</td><td>57.82</td><td>20.10</td><td>14.79</td><td>36.76</td><td>35.87</td><td>27.60</td></tr><tr><td>MaPLe+TPT</td><td>15.45</td><td>16.65</td><td>15.81</td><td>26.39</td><td>17.25</td><td>27.14</td><td>25.18</td><td>33.59</td><td>33.64</td><td>38.79</td><td>58.09</td><td>20.48</td><td>14.99</td><td>37.23</td><td>36.15</td><td>27.79</td></tr><tr><td>TPT</td><td>8.86</td><td>9.63</td><td>9.67</td><td>24.50</td><td>16.14</td><td>24.85</td><td>23.52</td><td>34.47</td><td>32.57</td><td>38.74</td><td>56.30</td><td>19.40</td><td>14.25</td><td>35.35</td><td>35.03</td><td>25.55</td></tr><tr><td>C-TPT</td><td>12.95</td><td>13.57</td><td>13.48</td><td>23.19</td><td>14.93</td><td>24.21</td><td>22.42</td><td>32.96</td><td>30.19</td><td>36.63</td><td>53.69</td><td>17.31</td><td>12.65</td><td>31.96</td><td>31.88</td><td>24.80</td></tr><tr><td>A-TPT</td><td>8.65</td><td>9.40</td><td>9.54</td><td>24.29</td><td>15.93</td><td>24.65</td><td>23.52</td><td>33.95</td><td>32.24</td><td>38.13</td><td>55.84</td><td>18.75</td><td>14.41</td><td>34.31</td><td>34.26</td><td>25.19</td></tr><tr><td>DiffTPT</td><td>10.17</td><td>11.57</td><td>10.33</td><td>24.03</td><td>17.27</td><td>25.13</td><td>24.13</td><td>35.37</td><td>32.13</td><td>38.90</td><td>57.07</td><td>18.37</td><td>16.43</td><td>34.80</td><td>35.30</td><td>26.07</td></tr><tr><td>HisTPT</td><td>13.15</td><td>14.08</td><td>13.27</td><td>24.14</td><td>15.58</td><td>24.17</td><td>22.32</td><td>32.80</td><td>31.03</td><td>37.54</td><td>55.38</td><td>17.19</td><td>13.37</td><td>33.16</td><td>33.47</td><td>25.38</td></tr><tr><td>PromptAlign</td><td>13.91</td><td>15.31</td><td>14.75</td><td>27.28</td><td>18.31</td><td>27.97</td><td>26.85</td><td>34.80</td><td>34.86</td><td>39.53</td><td>58.70</td><td>22.08</td><td>18.21</td><td>40.42</td><td>38.33</td><td>28.75</td></tr><tr><td>RLCF</td><td>13.29</td><td>14.24</td><td>13.51</td><td>24.55</td><td>15.99</td><td>24.77</td><td>22.93</td><td>33.65</td><td>31.62</td><td>38.16</td><td>56.32</td><td>17.47</td><td>13.77</td><td>33.84</td><td>34.28</td><td>25.89</td></tr><tr><td>TPS</td><td>11.04</td><td>12.27</td><td>10.65</td><td>24.42</td><td>16.11</td><td>24.82</td><td>25.41</td><td>35.30</td><td>34.05</td><td>39.61</td><td>55.99</td><td>29.84</td><td>17.05</td><td>38.70</td><td>36.18</td><td>27.43</td></tr><tr><td>DPE</td><td>6.82</td><td>8.09</td><td>6.33</td><td>27.44</td><td>19.00</td><td>27.97</td><td>27.18</td><td>37.58</td><td>35.59</td><td>42.20</td><td>58.96</td><td>22.76</td><td>18.74</td><td>39.67</td><td>37.75</td><td>27.74</td></tr><tr><td>BATCLIP</td><td>19.37</td><td>21.85</td><td>20.11</td><td>24.23</td><td>21.87</td><td>29.60</td><td>29.26</td><td>36.09</td><td>33.67</td><td>42.95</td><td>56.47</td><td>25.62</td><td>27.46</td><td>37.76</td><td>37.41</td><td>30.91</td></tr><tr><td>TDA</td><td>15.73</td><td>16.64</td><td>16.32</td><td>26.03</td><td>17.60</td><td>26.60</td><td>24.65</td><td>35.61</td><td>33.55</td><td>40.07</td><td>57.71</td><td>19.29</td><td>15.93</td><td>36.19</td><td>35.94</td><td>27.86</td></tr><tr><td>BoostAdapter</td><td>15.77</td><td>16.74</td><td>16.41</td><td>26.10</td><td>17.73</td><td>26.80</td><td>24.81</td><td>35.82</td><td>33.94</td><td>40.30</td><td>57.93</td><td>19.37</td><td>16.19</td><td>36.43</td><td>36.04</td><td>28.03</td></tr><tr><td>DMN</td><td>13.25</td><td>14.16</td><td>13.49</td><td>24.23</td><td>15.72</td><td>24.47</td><td>22.63</td><td>33.09</td><td>31.09</td><td>37.60</td><td>55.61</td><td>17.09</td><td>13.43</td><td>33.04</td><td>33.70</td><td>25.51</td></tr><tr><td>DoTA</td><td>5.70</td><td>6.52</td><td>5.32</td><td>22.91</td><td>15.61</td><td>22.81</td><td>24.32</td><td>34.67</td><td>33.73</td><td>39.54</td><td>55.71</td><td>28.90</td><td>18.06</td><td>38.54</td><td>34.87</td><td>25.81</td></tr><tr><td>OGA</td><td>15.17</td><td>16.06</td><td>15.72</td><td>25.25</td><td>17.18</td><td>26.15</td><td>24.31</td><td>34.88</td><td>33.02</td><td>39.74</td><td>57.64</td><td>19.09</td><td>15.96</td><td>35.28</td><td>35.14</td><td>27.37</td></tr><tr><td>BCA</td><td>0.12</td><td>0.14</td><td>0.12</td><td>2.39</td><td>1.13</td><td>1.96</td><td>4.20</td><td>2.83</td><td>4.41</td><td>10.03</td><td>23.02</td><td>1.22</td><td>1.75</td><td>2.56</td><td>3.11</td><td>3.93</td></tr><tr><td>OnZeta</td><td>16.59</td><td>17.61</td><td>17.36</td><td>27.83</td><td>18.87</td><td>28.70</td><td>26.74</td><td>37.30</td><td>35.21</td><td>42.15</td><td>60.73</td><td>18.97</td><td>17.05</td><td>37.77</td><td>37.86</td><td>29.38</td></tr><tr><td>ECALP</td><td>17.45</td><td>18.57</td><td>18.00</td><td>27.76</td><td>19.00</td><td>28.43</td><td>26.54</td><td>37.81</td><td>35.60</td><td>42.38</td><td>60.14</td><td>21.20</td><td>17.38</td><td>38.47</td><td>37.74</td><td>29.76</td></tr><tr><td>ZERO</td><td>3.78</td><td>4.49</td><td>3.73</td><td>20.32</td><td>13.19</td><td>19.54</td><td>22.19</td><td>31.48</td><td>30.81</td><td>36.58</td><td>52.89</td><td>23.46</td><td>15.01</td><td>35.26</td><td>31.51</td><td>22.95</td></tr><tr><td>MTA</td><td>9.20</td><td>9.37</td><td>8.82</td><td>23.92</td><td>15.53</td><td>23.94</td><td>23.11</td><td>34.01</td><td>32.70</td><td>38.70</td><td>56.15</td><td>20.74</td><td>14.63</td><td>35.38</td><td>35.08</td><td>25.42</td></tr><tr><td>CALIP</td><td>14.84</td><td>15.80</td><td>14.93</td><td>25.51</td><td>17.16</td><td>25.96</td><td>24.00</td><td>34.30</td><td>33.13</td><td>38.92</td><td>57.57</td><td>18.67</td><td>14.83</td><td>35.56</td><td>35.75</td><td>27.13</td></tr><tr><td>Panda</td><td>15.33</td><td>16.36</td><td>15.56</td><td>25.62</td><td>16.78</td><td>26.25</td><td>24.04</td><td>33.90</td><td>32.19</td><td>38.90</td><td>55.53</td><td>18.66</td><td>14.85</td><td>34.99</td><td>34.40</td><td>26.89</td></tr></table>",
+        "bbox": [
+            173,
+            260,
+            823,
+            597
+        ],
+        "page_idx": 15
+    },
+    {
+        "type": "text",
+        "text": "3. Fine-grained Classification Shifts:",
+        "text_level": 2,
+        "bbox": [
+            171,
+            614,
+            429,
+            630
+        ],
+        "page_idx": 15
+    },
+    {
+        "type": "list",
+        "sub_type": "text",
+        "list_items": [
+            "• StanfordCars [24]: StanfordCars is used as a fine-grained evaluation benchmark for automobile recognition. The dataset contains 16,185 images from 196 car categories, with an official test split of 8,041 images. Each category corresponds to a specific car make, model, and year, requiring models to distinguish subtle differences in vehicle shape, design, and local visual details.",
+            "• Food101 [3]: Food101 is used as a fine-grained food classification benchmark. It contains 101 food categories with 1,000 images per category, including 250 manually reviewed test images for each class. The dataset is challenging because food images often exhibit large intra-class variation due to differences in ingredients, preparation styles, lighting, viewpoints, and presentation.",
+            "• FGVC Aircraft [30]: FGVC Aircraft is used as a fine-grained aircraft recognition benchmark. The commonly used benchmark contains 10,000 images from 100 aircraft variants, with images organized by visually similar aircraft models. This dataset requires models to identify subtle structural differences, such as wing shape, engine placement, fuselage design, and other finegrained aircraft-specific cues.",
+            "• OxfordPets [35]: OxfordPets is used as a fine-grained pet breed classification benchmark. It contains 37 pet categories, with roughly 200 images per category, covering different breeds of cats and dogs. The images vary significantly in scale, pose, and lighting, making the dataset useful for evaluating fine-grained animal recognition under diverse visual conditions.",
+            "• Flowers102 [32]: Flowers102 is used as a fine-grained flower classification benchmark. It contains 102 flower categories commonly found in the United Kingdom, with each category containing"
+        ],
+        "bbox": [
+            171,
+            638,
+            823,
+            912
+        ],
+        "page_idx": 15
+    },
+    {
+        "type": "page_number",
+        "text": "",
+        "bbox": [
+            490,
+            935,
+            508,
+            946
+        ],
+        "page_idx": 15
+    },
+    {
+        "type": "text",
+        "text": "between 40 and 258 images. The dataset requires models to distinguish visually similar flower species based on subtle differences in color, shape, petal structure, and local appearance.",
+        "bbox": [
+            181,
+            90,
+            823,
+            119
+        ],
+        "page_idx": 16
+    },
+    {
+        "type": "list",
+        "sub_type": "text",
+        "list_items": [
+            "• SUN397 [48]: SUN397 is used as a scene recognition evaluation benchmark. It contains 397 scene categories and 108,754 images, covering diverse indoor, outdoor, natural, and man-made environments. Unlike object-centric datasets, SUN397 evaluates the ability of models to recognize scene-level concepts based on global layout, contextual cues, and object co-occurrence.",
+            "• DTD [7]: DTD is used as a texture recognition benchmark. It contains 5,640 images from 47 describable texture categories, with 120 images per category. Instead of focusing on object identity, this dataset evaluates whether models can recognize visual attributes such as striped, dotted, cracked, woven, porous, or other texture patterns.",
+            "• EuroSAT [17]: EuroSAT is used as a remote sensing classification benchmark. It contains 27,000 labeled satellite images from 10 land use and land cover classes, constructed from Sentinel-2 satellite imagery. This dataset introduces a domain shift from natural ground-level images to overhead remote sensing images, requiring models to classify land patterns such as residential areas, forests, rivers, highways, and agricultural regions.",
+            "• UCF101 [43]: UCF101 is used as an action recognition benchmark adapted to our image-based evaluation setting. The original dataset consists of realistic videos from 101 human action categories collected from YouTube. In our protocol, we use the middle frame of each video as the image input, so the task evaluates whether models can infer action-related semantics from static visual cues such as human pose, objects, and scene context."
+        ],
+        "bbox": [
+            169,
+            121,
+            825,
+            378
+        ],
+        "page_idx": 16
+    },
+    {
+        "type": "text",
+        "text": "4. Corruption Shifts:",
+        "text_level": 2,
+        "bbox": [
+            171,
+            386,
+            321,
+            401
+        ],
+        "page_idx": 16
+    },
+    {
+        "type": "text",
+        "text": "• ImageNet-C [19]: ImageNet-C is used to evaluate robustness to common image corruptions. It is constructed by applying 15 types of algorithmic corruptions to ImageNet validation images, with each corruption applied at 5 severity levels. The corruptions include noise, blur, weather effects, and digital distortions, making this benchmark suitable for assessing model reliability under degraded visual conditions that may occur in real-world deployment.",
+        "bbox": [
+            171,
+            409,
+            823,
+            479
+        ],
+        "page_idx": 16
+    },
+    {
+        "type": "text",
+        "text": "5. Label Shifts:",
+        "text_level": 2,
+        "bbox": [
+            171,
+            487,
+            282,
+            501
+        ],
+        "page_idx": 16
+    },
+    {
+        "type": "text",
+        "text": "• Temporal Correlation: Following prior TTA works [52], we simulate semantic label shifts by sampling using a Dirichlet distribution Dir(α), where a smaller α indicates a more severe class imbalance. Details are provided in App.E.2.",
+        "bbox": [
+            171,
+            510,
+            823,
+            554
+        ],
+        "page_idx": 16
+    },
+    {
+        "type": "text",
+        "text": "E.2 Construction of Temporally Correlated Label-Shift Streams",
+        "text_level": 2,
+        "bbox": [
+            171,
+            579,
+            632,
+            593
+        ],
+        "page_idx": 16
+    },
+    {
+        "type": "text",
+        "text": "We generate non-i.i.d. test streams using a Dirichlet-based protocol to evaluate the robustness of online TTA methods under temporal label correlation [52]. Given a test set with K classes, we first divide the stream into multiple temporal slots. For each class, its samples are allocated across slots according to a Dirichlet distribution,",
+        "bbox": [
+            169,
+            607,
+            823,
+            662
+        ],
+        "page_idx": 16
+    },
+    {
+        "type": "equation",
+        "text": "$$\n\\mathbf {p} _ {k} \\sim \\mathrm{Dir} (\\alpha \\mathbf {1}),\n$$",
+        "text_format": "latex",
+        "bbox": [
+            444,
+            671,
+            550,
+            688
+        ],
+        "page_idx": 16
+    },
+    {
+        "type": "text",
+        "text": "where pk denotes the slot allocation probability for class k. The concentration parameter α controls the strength of temporal correlation. A larger α produces a nearly i.i.d. stream, while a smaller α concentrates samples of the same class into fewer slots, leading to stronger temporal dependency.",
+        "bbox": [
+            169,
+            700,
+            823,
+            742
+        ],
+        "page_idx": 16
+    },
+    {
+        "type": "text",
+        "text": "In addition, we consider a separate-class stream as the most extreme case, corresponding to the limit α → 0. In this setting, classes are randomly permuted, and all samples from the same class appear contiguously before the stream transitions to the next class. This protocol allows us to isolate the effect of temporal label correlation without changing the image distribution or the label set.",
+        "bbox": [
+            169,
+            748,
+            823,
+            804
+        ],
+        "page_idx": 16
+    },
+    {
+        "type": "text",
+        "text": "E.3 Implementation Details and Hyperparameters",
+        "text_level": 2,
+        "bbox": [
+            171,
+            827,
+            537,
+            842
+        ],
+        "page_idx": 16
+    },
+    {
+        "type": "text",
+        "text": "To ensure a fair and controlled comparison, we maintain consistent default hyperparameters across all applicable methods, while following their original implementations for specific configurations. Unless otherwise specified, we use the CLIP ViT-B/16 as the default backbone. All input images are resized to 224 × 224 and normalized according to the pre-trained CLIP statistics.",
+        "bbox": [
+            169,
+            854,
+            825,
+            912
+        ],
+        "page_idx": 16
+    },
+    {
+        "type": "page_number",
+        "text": "17",
+        "bbox": [
+            490,
+            935,
+            508,
+            946
+        ],
+        "page_idx": 16
+    },
+    {
+        "type": "table",
+        "img_path": "images/3d321cdabb6c72abf35d80413d9b5deb09b0232051af8fbec33300315ec1ed72.jpg",
+        "table_caption": [
+            "Table 7: Main Results on Natural and Corruption Shifts. Accuracy (%) is reported for CLIP ResNet-50 [16]."
+        ],
+        "table_footnote": [],
+        "table_body": "<table><tr><td rowspan=\"2\">Method</td><td>Original</td><td colspan=\"5\">Natural Shifts</td><td>Corruption</td></tr><tr><td>INet</td><td>I-V2</td><td>I-A</td><td>I-R</td><td>I-S</td><td>Avg.</td><td>Avg.</td></tr><tr><td>CLIP</td><td>58.15</td><td>51.51</td><td>21.84</td><td>56.12</td><td>33.35</td><td>40.71</td><td>9.82</td></tr><tr><td>CoOp</td><td>63.47</td><td>55.66</td><td>23.19</td><td>56.72</td><td>34.58</td><td>42.54</td><td>12.70</td></tr><tr><td>CoCoOp</td><td>61.74</td><td>54.58</td><td>24.33</td><td>57.09</td><td>34.39</td><td>42.60</td><td>12.29</td></tr><tr><td>TPT</td><td>60.24</td><td>53.86</td><td>23.92</td><td>58.24</td><td>34.93</td><td>42.74</td><td>11.66</td></tr><tr><td>CoOp+TPT</td><td>64.68</td><td>57.14</td><td>24.60</td><td>58.00</td><td>35.51</td><td>43.81</td><td>12.99</td></tr><tr><td>CoCoOp+TPT</td><td>62.45</td><td>55.33</td><td>25.04</td><td>57.86</td><td>34.92</td><td>43.29</td><td>12.44</td></tr><tr><td>DiffTPT</td><td>59.87</td><td>54.90</td><td>24.13</td><td>56.40</td><td>35.18</td><td>42.65</td><td>12.03</td></tr><tr><td>HisTPT</td><td>57.73</td><td>51.51</td><td>21.88</td><td>56.25</td><td>33.38</td><td>40.76</td><td>11.14</td></tr><tr><td>C-TPT</td><td>60.00</td><td>53.81</td><td>22.77</td><td>57.47</td><td>34.17</td><td>42.06</td><td>12.25</td></tr><tr><td>A-TPT</td><td>60.74</td><td>54.68</td><td>24.91</td><td>57.47</td><td>35.27</td><td>43.08</td><td>-</td></tr><tr><td>TPS</td><td>61.56</td><td>54.94</td><td>29.20</td><td>62.27</td><td>37.20</td><td>45.90</td><td>12.81</td></tr><tr><td>DPE</td><td>61.76</td><td>54.58</td><td>27.64</td><td>59.16</td><td>38.18</td><td>44.89</td><td>-</td></tr><tr><td>BATCLIP</td><td>36.36</td><td>37.60</td><td>9.12</td><td>27.59</td><td>5.20</td><td>19.88</td><td>3.20</td></tr><tr><td>RLCF</td><td>59.12</td><td>52.33</td><td>22.51</td><td>57.23</td><td>34.08</td><td>41.54</td><td>11.53</td></tr><tr><td>TDA</td><td>59.78</td><td>52.10</td><td>22.56</td><td>57.19</td><td>35.76</td><td>41.90</td><td>12.47</td></tr><tr><td>BoostAdapter</td><td>59.85</td><td>51.98</td><td>22.56</td><td>57.69</td><td>36.08</td><td>42.08</td><td>12.57</td></tr><tr><td>DMN</td><td>58.15</td><td>51.51</td><td>21.84</td><td>56.12</td><td>33.35</td><td>40.71</td><td>11.26</td></tr><tr><td>DoTA</td><td>61.41</td><td>53.59</td><td>27.95</td><td>58.16</td><td>36.30</td><td>44.00</td><td>12.42</td></tr><tr><td>OGA</td><td>59.30</td><td>49.51</td><td>22.52</td><td>57.13</td><td>35.14</td><td>41.08</td><td>12.21</td></tr><tr><td>BCA</td><td>58.97</td><td>53.37</td><td>26.24</td><td>39.54</td><td>10.58</td><td>32.43</td><td>2.92</td></tr><tr><td>ZERO</td><td>59.86</td><td>54.07</td><td>26.15</td><td>57.36</td><td>33.87</td><td>42.86</td><td>10.40</td></tr><tr><td>OnZeta</td><td>62.69</td><td>54.04</td><td>23.11</td><td>60.54</td><td>38.75</td><td>44.11</td><td>13.65</td></tr><tr><td>ECALP</td><td>61.25</td><td>53.30</td><td>23.32</td><td>60.49</td><td>38.69</td><td>43.95</td><td>14.02</td></tr><tr><td>MTA</td><td>60.21</td><td>53.80</td><td>25.72</td><td>58.50</td><td>34.94</td><td>43.24</td><td>11.20</td></tr></table>",
+        "bbox": [
+            236,
+            125,
+            759,
+            470
+        ],
+        "page_idx": 17
+    },
+    {
+        "type": "text",
+        "text": "For text representations, class prototypes are initialized with the standard template “a photo of a [CLS]”, where [CLS] denotes the corresponding class name. Specifically for prompt-tuning methods, we initialize 4 learnable context tokens with “a\\_photo $\\cdot - 0 \\mathbf { f } _ { - } \\mathbf { a } ^ { , }$ .",
+        "bbox": [
+            169,
+            496,
+            823,
+            539
+        ],
+        "page_idx": 17
+    },
+    {
+        "type": "text",
+        "text": "During TTA, parameter-based methods use the SGD optimizer by default, with a learning rate of $1 \\times 1 0 ^ { - 4 }$ for norm-layer updates and $5 \\times 1 0 ^ { - 3 }$ for others, and we perform an episodic reset per sample for most methods. For methods requiring data augmentation, we set the number of augmented views to N = 64 and filter the top 10% $( \\rho = 0 . 1 )$ of views based on prediction confidence.",
+        "bbox": [
+            169,
+            545,
+            823,
+            599
+        ],
+        "page_idx": 17
+    },
+    {
+        "type": "text",
+        "text": "For batch-wise methods and online adaptation protocols, we adopt a default batch size of 64 and process the test stream in a strictly causal manner. Finally, all experiments are conducted with the same random seed to ensure reproducibility, and are evaluated on Tesla V100S-PCIE-32GB GPUs to accurately measure inference latency and peak memory consumption.",
+        "bbox": [
+            169,
+            606,
+            823,
+            662
+        ],
+        "page_idx": 17
+    },
+    {
+        "type": "text",
+        "text": "E.3.1 Parameter-Based Methods",
+        "text_level": 2,
+        "bbox": [
+            171,
+            676,
+            413,
+            691
+        ],
+        "page_idx": 17
+    },
+    {
+        "type": "text",
+        "text": "Prompt Learning:",
+        "text_level": 2,
+        "bbox": [
+            171,
+            700,
+            303,
+            715
+        ],
+        "page_idx": 17
+    },
+    {
+        "type": "list",
+        "sub_type": "text",
+        "list_items": [
+            "• TPT [42]: For each test image, AugMix produces 63 augmented views, forming a batch of 64 together with the original image. The prompt is updated by marginal entropy minimization on the top 10% most confident views.",
+            "• DiffTPT [12]: We follow the diffusion-augmented prompt tuning setting with 32 diffusiongenerated views. The diffusion guidance scale is set to 3.0 and the number of diffusion steps is 10. Candidate views are filtered using a cosine-similarity selection ratio of 0.8 and a self-entropy selection ratio of 0.3.",
+            "• HisTPT [57]: We use the original sequential adaptation setting without episodic reset. The local knowledge bank size is set to 32, the number of hard-sample features is 16, and the global knowledge bank is updated with EMA momentum 0.99. HisTPT uses a batch size of 1 while retaining the same 4-token prompt initialization.",
+            "• C-TPT [50]: C-TPT inherits the same adaptation pipeline as TPT, including confidence-based view selection, marginal-entropy minimization, batch size 64, and one-step prompt update with SGD. In"
+        ],
+        "bbox": [
+            169,
+            723,
+            823,
+            912
+        ],
+        "page_idx": 17
+    },
+    {
+        "type": "page_number",
+        "text": "18",
+        "bbox": [
+            490,
+            935,
+            508,
+            946
+        ],
+        "page_idx": 17
+    },
+    {
+        "type": "text",
+        "text": "addition, it introduces a text feature dispersion regularizer weighted by λ, which encourages larger dispersion among class text features. We set the regularization weight to $\\lambda = 5 0 . 0$ , and disable the optional two-step optimization scheme.",
+        "bbox": [
+            181,
+            90,
+            823,
+            133
+        ],
+        "page_idx": 18
+    },
+    {
+        "type": "list",
+        "sub_type": "text",
+        "list_items": [
+            "• A-TPT [2]: A-TPT also builds on the TPT framework and preserves the same confidence-based view filtering and entropy-driven adaptation procedure. Its key additional parameter is the angular diversity regularization weight λ, together with a cosine-similarity clamp threshold τ used in the angular constraint. We set $\\tau = 0 . 9 9 9 9$ and optimize with AdamW. Following the original paper, we use $\\lambda = 1 0 . 0$ on natural shift datasets and $\\lambda = 8 0 . 0$ on fine-grained datasets.",
+            "• R-TPT [41]: R-TPT adopts the standard prompt adaptation stage with top-10% confident view selection, but replaces the entropy objective with average entropy minimization and further incorporates adversarially perturbed inputs during evaluation. We use SGD with learning rate $5 \\times 1 0 ^ { - 3 }$ and one adaptation step. For ViT backbones, the PGD perturbation budget is set to $\\epsilon = 4 / 2 5 5$ with one attack step, and the attack step size is $\\epsilon / 4$ . After adaptation, predictions from multiple views are fused using similarity-based weighting.",
+            "• RLCF [61]: RLCF follows the TPT-style adaptation pipeline but replaces the entropy objective with reward-weighted optimization guided by an auxiliary CLIP reward model. We sample the top $K = 3$ candidate classes for each selected view, and compute rewards using a ViT-L/14 reward architecture. Reward centering is enabled, reward standardization is disabled, and reward processing is performed per sample rather than across the batch. We use the weighted reward-score setting, while keeping entropy regularization and multi-reward-model ensembling disabled."
+        ],
+        "bbox": [
+            171,
+            135,
+            823,
+            375
+        ],
+        "page_idx": 18
+    },
+    {
+        "type": "text",
+        "text": "Prototype Modulation:",
+        "text_level": 2,
+        "bbox": [
+            171,
+            383,
+            334,
+            398
+        ],
+        "page_idx": 18
+    },
+    {
+        "type": "list",
+        "sub_type": "text",
+        "list_items": [
+            "• TPS [44]: We use prototype prompts instead of learnable textual prompts. Textual prototypes are constructed per label with the gpt4\\_x\\_templates prototype type, combining template-based descriptions with GPT-4 generated concepts. During adaptation, 64-view batches are used and the top 10% most confident views are selected.",
+            "• DPE [55]: We use a positive cache with shot capacity 3, cache weight $\\alpha = 6 . 0$ , and similarity temperature $\\beta = 5 . 0$ . Text and image prototype residuals are optimized with learning rates $5 \\times 1 0 ^ { - 3 }$ and the InfoNCE alignment loss is weighted by 0.5. The global prototype update threshold is set to 0.1."
+        ],
+        "bbox": [
+            171,
+            407,
+            823,
+            518
+        ],
+        "page_idx": 18
+    },
+    {
+        "type": "text",
+        "text": "Adapter & Norm Layer Tuning:",
+        "text_level": 2,
+        "bbox": [
+            171,
+            529,
+            400,
+            544
+        ],
+        "page_idx": 18
+    },
+    {
+        "type": "list",
+        "sub_type": "text",
+        "list_items": [
+            "• PromptAlign [1]: We adapt MaPLe prompts using $n \\_ c t x = 2$ and prompt depth 3, initialized from the released MaPLe checkpoint. AdamW is used for optimization. Both TPT loss and distribution alignment are enabled, with confidence thresholds 0.1 for TPT and alignment. The distribution alignment loss weight is 100.0, and alignment is applied from layer 0 to layer 3 using pre-computed ImageNet visual statistics.",
+            "• BATCLIP [29]: We tune normalization parameters in a continuous, non-episodic manner. AdamW is used with learning rate $1 \\times 1 0 ^ { - 4 }$ and batch size 64.",
+            "• Tent [45]: We optimize the affine parameters of normalization layers by entropy minimization. The learning rate is $1 \\times 1 0 ^ { - 4 }$ , the batch size is 64, and episodic reset is disabled.",
+            "• SAR [33]: We use continuous normalization-layer adaptation with learning rate $1 \\times 1 0 ^ { - 4 }$ . The entropy filtering margin multiplier is $e _ { 0 } = 0 . 4 0$ , scaled by $\\log C .$ , and the model recovery threshold is $e _ { m } = 0 . 2$ .",
+            "• DeYO [25]: We use learning rate $1 \\times 1 0 ^ { - 4 }$ and continuous adaptation. The DeYO entropy margin multiplier is 0.50, and the base margin is 0.40, both scaled by log C. For PLPD, we use patch-based augmentation with patch length 4, occlusion size 112, and starting coordinates (56, 56). The PLPD threshold is 0.3, with both entropy and PLPD reweighting enabled."
+        ],
+        "bbox": [
+            171,
+            551,
+            823,
+            784
+        ],
+        "page_idx": 18
+    },
+    {
+        "type": "text",
+        "text": "E.3.2 State-Based Methods",
+        "text_level": 2,
+        "bbox": [
+            171,
+            805,
+            375,
+            819
+        ],
+        "page_idx": 18
+    },
+    {
+        "type": "text",
+        "text": "Cache:",
+        "text_level": 2,
+        "bbox": [
+            171,
+            832,
+            225,
+            845
+        ],
+        "page_idx": 18
+    },
+    {
+        "type": "text",
+        "text": "• TDA [22]: We use both positive and negative caches. The positive cache has shot capacity 3, $\\alpha = 2 . 0$ , and $\\beta = 5 . 0$ . The negative cache has shot capacity $2 , \\alpha = 0 . 1 1 7$ , and $\\beta = 1 . 0$ , with entropy thresholds in [0.2, 0.5] and mask thresholds in [0.03, 1.0]. Augmented views are filtered using the top 10% confidence criterion.",
+        "bbox": [
+            171,
+            854,
+            823,
+            911
+        ],
+        "page_idx": 18
+    },
+    {
+        "type": "page_number",
+        "text": "19",
+        "bbox": [
+            490,
+            935,
+            508,
+            946
+        ],
+        "page_idx": 18
+    },
+    {
+        "type": "list",
+        "sub_type": "text",
+        "list_items": [
+            "• BoostAdapter [58]: We retain the same positive and negative cache configuration as TDA. In addition, inference on the original image is enabled and the delta term is set to 0, following the default regional bootstrapping configuration.",
+            "• DMN [59]: We set the memory size to 50 and the memory sharpness parameter to $\\beta = 5 . 5$ The text logit weight is $\\beta _ { 2 } = 1 . 0$ and the memory logit weight is $\\beta _ { 3 } = 0 . 1$ . The mapping module uses the bias form and is applied to all positions without shared parameters.",
+            "• ECALP [26]: We run ECALP in a streaming, non-episodic setting with batch size 1 and prompt templates enabled. The label-propagation graph uses $\\bar { k } _ { \\mathrm { t e x t } } = 3$ text neighbors and $k _ { \\mathrm { i m a g e } } = 8$ image neighbors. We set $\\gamma = 1 0 . 0 , \\stackrel { \\textstyle - } { \\alpha } = \\bar { 1 . } 0 , \\beta \\stackrel { \\textstyle - } { = } 0 . \\bar { 2 } .$ , and perform 3 propagation iterations."
+        ],
+        "bbox": [
+            169,
+            90,
+            823,
+            220
+        ],
+        "page_idx": 19
+    },
+    {
+        "type": "table",
+        "img_path": "images/76580ae06e3306fdb95bc0bd844e4c3ea19d70b9a0a8d3706d2688d6faa2f68d.jpg",
+        "table_caption": [
+            "Table 8: Main Results on Fine-grained Shifts. Accuracy (%) reported for CLIP ResNet-50."
+        ],
+        "table_footnote": [],
+        "table_body": "<table><tr><td rowspan=\"2\">Method</td><td>Original</td><td colspan=\"10\">Fine-grained Datasets</td><td>Overall</td></tr><tr><td>INet</td><td>Cal</td><td>Pets</td><td>Cars</td><td>FLW</td><td>Food</td><td>Air</td><td>SUN</td><td>DTD</td><td>SAT</td><td>UCF</td><td>Avg.</td></tr><tr><td>Zero-shot CLIP</td><td>58.15</td><td>85.72</td><td>83.62</td><td>55.73</td><td>61.67</td><td>75.37</td><td>15.63</td><td>58.80</td><td>40.37</td><td>23.67</td><td>58.82</td><td>55.94</td></tr><tr><td>CoOp</td><td>63.45</td><td>86.65</td><td>86.97</td><td>55.42</td><td>61.71</td><td>77.13</td><td>15.06</td><td>58.15</td><td>37.29</td><td>26.36</td><td>59.03</td><td>56.38</td></tr><tr><td>CoCoOp</td><td>61.74</td><td>88.40</td><td>87.30</td><td>54.68</td><td>65.21</td><td>77.42</td><td>15.42</td><td>59.40</td><td>38.71</td><td>27.32</td><td>59.79</td><td>57.37</td></tr><tr><td>TPT</td><td>60.24</td><td>87.14</td><td>84.68</td><td>57.69</td><td>62.44</td><td>76.48</td><td>17.31</td><td>61.26</td><td>41.02</td><td>24.21</td><td>60.22</td><td>57.25</td></tr><tr><td>CoOp+TPT</td><td>64.90</td><td>87.06</td><td>87.38</td><td>56.34</td><td>61.31</td><td>77.91</td><td>15.90</td><td>59.65</td><td>38.65</td><td>26.54</td><td>60.61</td><td>57.14</td></tr><tr><td>CoCoOp+TPT</td><td>62.50</td><td>88.48</td><td>87.93</td><td>55.59</td><td>65.53</td><td>77.98</td><td>15.39</td><td>60.32</td><td>39.48</td><td>27.73</td><td>60.61</td><td>57.90</td></tr><tr><td>DiffTPT</td><td>60.03</td><td>87.26</td><td>85.31</td><td>57.68</td><td>62.81</td><td>76.90</td><td>16.47</td><td>61.71</td><td>41.67</td><td>27.19</td><td>61.09</td><td>57.81</td></tr><tr><td>HisTPT</td><td>57.73</td><td>85.68</td><td>83.48</td><td>55.88</td><td>61.59</td><td>75.51</td><td>15.60</td><td>58.66</td><td>40.07</td><td>23.58</td><td>58.84</td><td>55.89</td></tr><tr><td>C-TPT</td><td>60.23</td><td>86.69</td><td>83.84</td><td>56.59</td><td>65.25</td><td>76.20</td><td>17.91</td><td>60.46</td><td>41.61</td><td>26.09</td><td>58.90</td><td>57.35</td></tr><tr><td>A-TPT</td><td>59.48</td><td>84.22</td><td>83.59</td><td>54.41</td><td>61.51</td><td>74.02</td><td>16.02</td><td>59.69</td><td>40.60</td><td>22.17</td><td>58.52</td><td>55.48</td></tr><tr><td>TPS</td><td>61.56</td><td>88.40</td><td>78.41</td><td>58.29</td><td>66.46</td><td>73.07</td><td>19.08</td><td>58.82</td><td>46.39</td><td>24.86</td><td>61.27</td><td>57.51</td></tr><tr><td>DPE</td><td>61.76</td><td>88.36</td><td>85.39</td><td>59.22</td><td>63.99</td><td>77.22</td><td>16.89</td><td>63.06</td><td>42.49</td><td>23.69</td><td>63.26</td><td>62.21</td></tr><tr><td>BATCLIP</td><td>36.36</td><td>62.52</td><td>45.27</td><td>6.22</td><td>8.00</td><td>5.56</td><td>3.69</td><td>35.79</td><td>20.45</td><td>14.15</td><td>36.80</td><td>23.85</td></tr><tr><td>Panda</td><td>45.16</td><td>63.37</td><td>48.84</td><td>8.77</td><td>11.04</td><td>14.07</td><td>4.35</td><td>40.66</td><td>21.22</td><td>14.15</td><td>37.80</td><td>26.43</td></tr><tr><td>RLCF</td><td>59.12</td><td>86.45</td><td>84.38</td><td>56.45</td><td>62.40</td><td>76.10</td><td>16.17</td><td>59.57</td><td>41.19</td><td>23.93</td><td>60.51</td><td>56.72</td></tr><tr><td>TDA</td><td>59.76</td><td>88.07</td><td>83.95</td><td>56.88</td><td>65.61</td><td>76.28</td><td>16.50</td><td>60.57</td><td>41.49</td><td>31.74</td><td>61.30</td><td>58.24</td></tr><tr><td>BoostAdapter</td><td>59.87</td><td>87.91</td><td>83.89</td><td>57.17</td><td>65.61</td><td>76.47</td><td>15.90</td><td>60.99</td><td>41.78</td><td>32.33</td><td>61.62</td><td>58.37</td></tr><tr><td>DMN</td><td>58.15</td><td>85.68</td><td>83.62</td><td>55.73</td><td>61.67</td><td>75.37</td><td>15.63</td><td>58.80</td><td>40.37</td><td>23.67</td><td>58.82</td><td>55.94</td></tr><tr><td>DoTA</td><td>61.41</td><td>87.51</td><td>85.01</td><td>61.37</td><td>60.78</td><td>73.81</td><td>18.63</td><td>63.21</td><td>41.61</td><td>23.67</td><td>62.28</td><td>57.79</td></tr><tr><td>OGA</td><td>59.30</td><td>85.80</td><td>84.27</td><td>58.19</td><td>63.38</td><td>75.06</td><td>15.57</td><td>61.67</td><td>41.84</td><td>34.43</td><td>61.12</td><td>58.13</td></tr><tr><td>BCA</td><td>58.97</td><td>86.57</td><td>82.53</td><td>57.95</td><td>58.26</td><td>68.50</td><td>17.04</td><td>59.65</td><td>38.89</td><td>10.28</td><td>59.34</td><td>53.90</td></tr><tr><td>ZERO</td><td>60.32</td><td>86.33</td><td>84.46</td><td>57.80</td><td>58.99</td><td>73.81</td><td>17.64</td><td>60.32</td><td>39.89</td><td>21.62</td><td>59.32</td><td>56.02</td></tr><tr><td>OnZeta</td><td>62.69</td><td>86.13</td><td>87.79</td><td>61.02</td><td>64.43</td><td>79.35</td><td>18.87</td><td>64.37</td><td>44.74</td><td>34.02</td><td>65.29</td><td>60.60</td></tr><tr><td>ECALP</td><td>61.25</td><td>89.74</td><td>84.79</td><td>59.22</td><td>65.29</td><td>78.22</td><td>17.82</td><td>63.15</td><td>45.04</td><td>36.79</td><td>65.42</td><td>60.55</td></tr><tr><td>MTA</td><td>60.21</td><td>87.22</td><td>84.85</td><td>58.72</td><td>60.98</td><td>75.72</td><td>18.15</td><td>60.75</td><td>40.48</td><td>22.56</td><td>60.85</td><td>57.03</td></tr></table>",
+        "bbox": [
+            173,
+            258,
+            823,
+            554
+        ],
+        "page_idx": 19
+    },
+    {
+        "type": "text",
+        "text": "Distribution:",
+        "text_level": 2,
+        "bbox": [
+            171,
+            566,
+            266,
+            579
+        ],
+        "page_idx": 19
+    },
+    {
+        "type": "list",
+        "sub_type": "text",
+        "list_items": [
+            "• DoTA [15]: We initialize the class-wise distribution mean from CLIP text features and set the initial mean value to $1 \\times 1 0 ^ { - 3 }$ . The covariance smoothing parameters are $\\epsilon = 1 \\times 1 0 ^ { - 4 }$ and $\\sigma = 2 \\times 1 0 ^ { - 3 }$ The online update momentum is $\\eta = 0 . 3$ , and the prior blending weight is $\\rho = 0 . 0 2$ .",
+            "• OGA [13]: We use a shot capacity of 8 and confidence threshold $\\tau = 0 . 0 5$ . The precision matrix is estimated with the Ridge-Moore-Penrose form, and mean normalization is disabled.",
+            "• BCA [64]: We use two confidence-controlled count priors. The first branch uses threshold 0.05 with initialization count 20,000, while the second uses threshold 0.65 with initialization count 1. The method operates on confidence-selected augmented predictions with selection ratio 0.1.",
+            "• OnZeta [36]: We run OnZeta without prompt tuning using batch size 1. The text and image temperatures are $\\tau _ { t } = 0 . 0 1$ and $\\tau _ { i } = 0 . 0 4$ . The classifier update coefficient is $c _ { w } = 0 . 5$ , the prior update coefficient is $c _ { r } = 2 0 . 0 $ , and the balancing parameters are $\\alpha = 1 . 0$ and $\\beta = 0 . 8$ . We average predictions over 5 random online orders and use seven hand-crafted prompt templates."
+        ],
+        "bbox": [
+            171,
+            590,
+            823,
+            763
+        ],
+        "page_idx": 19
+    },
+    {
+        "type": "table",
+        "img_path": "images/c6b0cc464f73d20ec1b7e25a30be47264c27cb36d8f638a037225f942e37a2ab.jpg",
+        "table_caption": [
+            "Table 9: Effect of AugMix on TPT and TPS. Accuracy (%) comparison between base augmentations and AugMix."
+        ],
+        "table_footnote": [],
+        "table_body": "<table><tr><td>Method</td><td>Aug. Strategy</td><td>I-A</td><td>Food101</td><td>I-R</td><td>I-V2</td><td>SUN397</td><td>StanfordCars</td></tr><tr><td rowspan=\"2\">TPT</td><td>Base</td><td>53.77</td><td>86.64</td><td>76.58</td><td>63.36</td><td>65.08</td><td>67.23</td></tr><tr><td>AugMix</td><td>52.03</td><td>86.34</td><td>76.54</td><td>62.70</td><td>65.51</td><td>67.07</td></tr><tr><td rowspan=\"2\">TPS</td><td>Base</td><td>62.00</td><td>84.42</td><td>79.30</td><td>64.80</td><td>63.18</td><td>69.02</td></tr><tr><td>AugMix</td><td>58.47</td><td>82.93</td><td>79.29</td><td>64.02</td><td>63.70</td><td>68.54</td></tr></table>",
+        "bbox": [
+            205,
+            816,
+            792,
+            902
+        ],
+        "page_idx": 19
+    },
+    {
+        "type": "page_number",
+        "text": "20",
+        "bbox": [
+            488,
+            935,
+            509,
+            946
+        ],
+        "page_idx": 19
+    },
+    {
+        "type": "text",
+        "text": "E.3.3 Inference-Based Methods",
+        "text_level": 2,
+        "bbox": [
+            171,
+            90,
+            406,
+            104
+        ],
+        "page_idx": 20
+    },
+    {
+        "type": "text",
+        "text": "View Aggregation:",
+        "text_level": 2,
+        "bbox": [
+            171,
+            116,
+            307,
+            131
+        ],
+        "page_idx": 20
+    },
+    {
+        "type": "list",
+        "sub_type": "text",
+        "list_items": [
+            "• ZERO [11]: We use AugMix to generate 63 augmented views per image. The final prediction is obtained by retaining the top 30% most confident views and aggregating their predictions.",
+            "• MTA [53]: We use 64-view AugMix batches without prompt optimization. MTA estimates a feature-space mode by alternating density-based mode updates and confidence-affinity reweighting for up to 5 inner iterations. The local bandwidth is computed from the nearest 30% pairwise feature distances. We set $\\lambda _ { q } = 4 . 0$ for prediction-affinity weighting and $\\lambda _ { y } = 0 . 2$ for the soft assignment temperature."
+        ],
+        "bbox": [
+            169,
+            138,
+            823,
+            239
+        ],
+        "page_idx": 20
+    },
+    {
+        "type": "text",
+        "text": "Feature Modulation:",
+        "text_level": 2,
+        "bbox": [
+            171,
+            247,
+            320,
+            261
+        ],
+        "page_idx": 20
+    },
+    {
+        "type": "list",
+        "sub_type": "text",
+        "list_items": [
+            "• CALIP [14]: We implement the parameter-free attention module without test-time optimization. The visual-guided and textual-blended logit weights are set to $\\beta _ { 2 } = 1 . 0$ and $\\beta _ { 3 } = 0 . 0 1$ , respectively.",
+            "• Panda [9]: We adapt normalization parameters continuously with SGD at learning rate $1 \\times 1 0 ^ { - 4 }$ Negative data augmentation is generated by patch shuffling with patch size $3 2 \\times 3 2$ . The logit-level bias offset strength is set to $\\beta = 0 . 2$ ."
+        ],
+        "bbox": [
+            171,
+            271,
+            825,
+            343
+        ],
+        "page_idx": 20
+    },
+    {
+        "type": "table",
+        "img_path": "images/8aacde9db408ca40a5863d9c24c90daaec9cb8be2a1ccc42100af89779556e07.jpg",
+        "table_caption": [
+            "Table 10: Learning Rate Sensitivity. Accuracy (%) of TPT and TPS on ImageNet-A under different learning rates (with 1 adaptation step)."
+        ],
+        "table_footnote": [],
+        "table_body": "<table><tr><td rowspan=\"2\">Method</td><td colspan=\"6\">Learning Rate</td></tr><tr><td>0.0001</td><td>0.0005</td><td>0.001</td><td>0.005</td><td>0.01</td><td>0.05</td></tr><tr><td>TPT</td><td>48.09</td><td>49.07</td><td>49.68</td><td>52.03</td><td>52.71</td><td>47.44</td></tr><tr><td>TPS</td><td>51.96</td><td>54.63</td><td>56.05</td><td>58.47</td><td>58.75</td><td>59.05</td></tr></table>",
+        "bbox": [
+            297,
+            400,
+            699,
+            472
+        ],
+        "page_idx": 20
+    },
+    {
+        "type": "text",
+        "text": "F Additional Experiments and Analyses",
+        "text_level": 2,
+        "bbox": [
+            169,
+            506,
+            524,
+            523
+        ],
+        "page_idx": 20
+    },
+    {
+        "type": "text",
+        "text": "F.1 Details on ImageNet-C",
+        "text_level": 2,
+        "bbox": [
+            171,
+            540,
+            372,
+            555
+        ],
+        "page_idx": 20
+    },
+    {
+        "type": "text",
+        "text": "Table 6 provides the detailed performance breakdown of various TTA methods on the 15 corruption types of ImageNet-C (severity level 5) using the default CLIP ViT-B/16 backbone. The results demonstrate that while parameter-based and state-based methods struggle to maintain stability across all corruption types, norm-layer tuning methods (e.g., DeYO, SAR) explicitly targeting feature statistics achieve the most consistent robustness against low-level visual perturbations.",
+        "bbox": [
+            169,
+            566,
+            823,
+            638
+        ],
+        "page_idx": 20
+    },
+    {
+        "type": "text",
+        "text": "F.2 Experiments with ResNet-50 Backbone",
+        "text_level": 2,
+        "bbox": [
+            171,
+            656,
+            485,
+            671
+        ],
+        "page_idx": 20
+    },
+    {
+        "type": "text",
+        "text": "To ensure our conclusions are not strictly bound to the ViT architecture, we replicated our evaluations across natural, fine-grained, and corruption shifts using the ResNet-50 (RN50) backbone. As shown in Table 7 and Table 8, the overall performance of RN50 is inherently lower than ViT-B/16. However, the relative rankings among TTA paradigms remain largely consistent: state-based methods excel in semantic fine-grained datasets, lightweight prototype tuning performs well on natural shifts, and heavy parameter updating continues to show limited or negative returns compared to training-free approaches.",
+        "bbox": [
+            169,
+            683,
+            825,
+            781
+        ],
+        "page_idx": 20
+    },
+    {
+        "type": "text",
+        "text": "F.3 Ablation on AugMix Augmentation",
+        "text_level": 2,
+        "bbox": [
+            171,
+            801,
+            457,
+            816
+        ],
+        "page_idx": 20
+    },
+    {
+        "type": "text",
+        "text": "Many prompt-tuning baselines inherently incorporate the AugMix data augmentation strategy by default. However, as demonstrated in Table 9, applying AugMix provides marginal to no improvements across most distribution shifts. In several cases, such as on ImageNet-A and Food-101, it actually degrades the prediction accuracy compared to a standard random crop and flip baseline (Base). Despite this, we retained the AugMix setup in our primary evaluations to strictly align with the established experimental settings of prior works (e.g., C-TPT, A-TPT).",
+        "bbox": [
+            169,
+            827,
+            825,
+            912
+        ],
+        "page_idx": 20
+    },
+    {
+        "type": "page_number",
+        "text": "21",
+        "bbox": [
+            488,
+            935,
+            506,
+            946
+        ],
+        "page_idx": 20
+    },
+    {
+        "type": "table",
+        "img_path": "images/e2866a2a20b8f0db176771939d33d6924bcc42a8c1a073756d7d9696f8d555f3.jpg",
+        "table_caption": [
+            "Table 11: Scaling Adaptation Steps. Accuracy (%) and total inference time (seconds) on ImageNet-A as the number of per-sample gradient steps increases."
+        ],
+        "table_footnote": [],
+        "table_body": "<table><tr><td rowspan=\"2\">Method</td><td rowspan=\"2\">Metric</td><td colspan=\"8\">Adaptation Steps</td></tr><tr><td>1</td><td>2</td><td>3</td><td>4</td><td>5</td><td>10</td><td>15</td><td>20</td></tr><tr><td rowspan=\"2\">TPT</td><td>Acc (%)</td><td>52.03</td><td>53.69</td><td>54.20</td><td>54.79</td><td>54.91</td><td>55.96</td><td>56.13</td><td>56.11</td></tr><tr><td>Time (s)</td><td>1,546</td><td>2,733</td><td>3,899</td><td>5,103</td><td>6,285</td><td>12,142</td><td>18,069</td><td>23,943</td></tr><tr><td rowspan=\"2\">TPS</td><td>Acc (%)</td><td>58.47</td><td>58.87</td><td>59.07</td><td>59.08</td><td>59.16</td><td>59.17</td><td>59.20</td><td>59.21</td></tr><tr><td>Time (s)</td><td>1,263</td><td>1,265</td><td>1,395</td><td>1,832</td><td>2,262</td><td>4,428</td><td>6,592</td><td>8,756</td></tr></table>",
+        "bbox": [
+            205,
+            126,
+            792,
+            229
+        ],
+        "page_idx": 21
+    },
+    {
+        "type": "table",
+        "img_path": "images/d4ef456bdcae2093bb47febd2c2c6fdac9caa4aeec85680543bc4b685363cda6.jpg",
+        "table_caption": [
+            "Table 12: Impact of Confidence Filtering Strategies. Top-1 Accuracy (%) of TPT and TPS on ImageNet-A across different view selection ratios (p)."
+        ],
+        "table_footnote": [],
+        "table_body": "<table><tr><td rowspan=\"2\">Criterion</td><td rowspan=\"2\">Method</td><td colspan=\"5\">Selection Ratio (p)</td></tr><tr><td>1.0 (All)</td><td>0.75</td><td>0.5</td><td>0.25</td><td>0.1 (Top 10%)</td></tr><tr><td rowspan=\"2\">Entropy</td><td>TPT</td><td>49.07</td><td>49.65</td><td>50.24</td><td>51.55</td><td>52.03</td></tr><tr><td>TPS</td><td>50.75</td><td>52.12</td><td>54.51</td><td>57.17</td><td>58.47</td></tr><tr><td rowspan=\"2\">MSP</td><td>TPT</td><td>49.07</td><td>49.55</td><td>50.16</td><td>51.00</td><td>51.72</td></tr><tr><td>TPS</td><td>50.75</td><td>51.72</td><td>53.23</td><td>55.61</td><td>56.89</td></tr></table>",
+        "bbox": [
+            254,
+            279,
+            743,
+            386
+        ],
+        "page_idx": 21
+    },
+    {
+        "type": "text",
+        "text": "F.4 Detailed Analysis of Optimization Hyperparameters",
+        "text_level": 2,
+        "bbox": [
+            171,
+            410,
+            576,
+            425
+        ],
+        "page_idx": 21
+    },
+    {
+        "type": "text",
+        "text": "In Sec. 3 of the main text, we illustrated the limitations of heavy parameter optimization in TTA4CLIP methods in Fig. 3. Here, we provide the exact numerical data for the learning rate sensitivity and the scaling of adaptation steps on the ImageNet-A dataset using the default ViT-B/16 backbone.",
+        "bbox": [
+            169,
+            435,
+            823,
+            478
+        ],
+        "page_idx": 21
+    },
+    {
+        "type": "text",
+        "text": "Table 10 details the accuracy of TPT and TPS across varying learning rates. While TPS shows a relatively monotonic increase before saturating, TPT exhibits high volatility, peaking at an accuracy of 52.71% with a learning rate of 0.01 but collapsing to 47.44% at 0.05. This confirms that without task-specific oracle tuning, parameter-based methods are highly sensitive to learning rate choices and prone to suboptimal performance.",
+        "bbox": [
+            169,
+            483,
+            823,
+            554
+        ],
+        "page_idx": 21
+    },
+    {
+        "type": "text",
+        "text": "Table 11 reports the performance and wall-clock inference time as the number of per-sample adaptation steps increases. The data clearly demonstrates the diminishing returns of prolonged optimization: pushing TPT from 1 to 20 steps yields a marginal ∼ 4.08% accuracy gain but inflates the inference time by over 15× (1, 546s to 23, 943s). Meanwhile, TPS effectively saturates after the very first step, with subsequent steps offering less than 0.8% improvement despite a linear increase in computational cost.",
+        "bbox": [
+            169,
+            559,
+            826,
+            642
+        ],
+        "page_idx": 21
+    },
+    {
+        "type": "text",
+        "text": "F.5 Impact of Confidence Filtering Strategies",
+        "text_level": 2,
+        "bbox": [
+            171,
+            659,
+            501,
+            674
+        ],
+        "page_idx": 21
+    },
+    {
+        "type": "text",
+        "text": "As discussed in Sec. 3 and Fig. 4(b), filtering out noisy augmented views based on model confidence is a critical driver for successful parameter adaptation. In Table 12, we provide the detailed ablation results for TPT and TPS on ImageNet-A across different selection ratios (p). We compare two common confidence criteria: predictive entropy and Maximum Softmax Probability (MSP).",
+        "bbox": [
+            169,
+            684,
+            823,
+            741
+        ],
+        "page_idx": 21
+    },
+    {
+        "type": "text",
+        "text": "The results demonstrate a clear and monotonic performance gain as the selection becomes stricter: utilizing all augmented views $( p = 1 . 0 )$ leads to suboptimal results due to the inclusion of low-quality or semantically distorted views. By enforcing a strict selection threshold (e.g., p = 0.1, keeping only the top 10% most confident views), both methods achieve their peak accuracy. Notably, Entropy-based selection consistently outperforms MSP-based selection across all ratios, suggesting that entropy is a more reliable proxy for identifying high-quality evidence in test-time augmented views.",
+        "bbox": [
+            169,
+            746,
+            826,
+            830
+        ],
+        "page_idx": 21
+    },
+    {
+        "type": "page_number",
+        "text": "",
+        "bbox": [
+            488,
+            935,
+            508,
+            946
+        ],
+        "page_idx": 21
+    }
+]

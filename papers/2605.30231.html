@@ -4,24 +4,26 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Beyond 3D VQAs · 通用视觉自监督研究报</title>
-  <link rel="stylesheet" href="../assets/styles.css?v=20260525j">
-  <link rel="stylesheet" href="../assets/visual-ssl.css?v=20260525j">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Source+Serif+4:ital,opsz,wght@0,8..60,400;0,8..60,500;0,8..60,600;1,8..60,400&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../assets/visual-ssl.css?v=20260615ssl6">
 </head>
 <body>
   <header class="masthead">
-    <div class="masthead-kicker">Visual SSL Research Report · 2026-05-30</div>
     <a class="masthead-title" href="../index.html">通用视觉自监督研究报</a>
+    <div class="masthead-kicker">A Daily Digest of Visual Self-Supervised Learning</div>
     <div class="masthead-meta">
+      <span>2026-05-30</span>
       <span>图像表征 · VFM · JEPA · 视频预训练</span>
-      <span>CCF A/B 会议优先</span>
-      <span>图文精读 · 方法图解</span>
     </div>
   </header>
   <nav class="site-nav" aria-label="主导航">
     <a class="nav-link" href="../index.html">头版</a>
-<a class="nav-link" href="../issues/2026-06-15.html">今日速递</a>
+<a class="nav-link" href="../issues/2026-06-16.html">今日速递</a>
 <a class="nav-link" href="../pages/catalog.html">论文目录</a>
 <a class="nav-link" href="../pages/timeline.html">时间线</a>
+<span class="nav-streak" title="连续追踪天数"><svg viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><path d="M8 0c.7 2.5-1.2 3.7-2 5-1 1.6-1 4 .8 4.8C6.4 8.5 7.4 7.8 8 7c.3 1.3-.4 2 .9 3 .9.7 1.3 1.6 1.1 2.6C9.7 14.6 8.9 16 6.8 16 4.6 16 3 14.3 3 12c0-3.3 2.6-4.8 2.4-8C6.9 4.6 8.4 5 8 0z"/></svg> 连续 <b data-streak>0</b> 天</span>
   </nav>
   <main><article class="paper-detail">
   <div class="paper-main">
@@ -39,8 +41,8 @@
     </div>
     <div class="feature-body">
       <p class="lead dropcap">先说结论。它和通用视觉自监督的关系在于：GASP 用 contrastive correspondence 与 depth consistency 学几何先验，比单纯 3D VQA 微调更接近空间表征预训练。 高相关；详见方法、贡献和实验边界。</p>
-      <figure class="full-fig"><img src="../assets/mineru/2605.30231/images/ea15670a7137dd30884ccced8d0f74aeae18e64329895888f8b3b365528d2ad8.jpg" alt="Figureure 2 · Injecting the Geometric-Aware Spatial Priors (GASP) into VLMs"><figcaption><b>Figureure 2 · Injecting the Geometric-Aware Spatial Priors (GASP) into VLMs</b><span class="fig-en">Figure 2 Injecting the Geometric-Aware Spatial Priors (GASP) into VLMs. Standard approaches rely on fine-tuning with 3D VQA datasets, which may encourage memorizing dataset-specific biases. We instead insert a small correspondence head into the intermediate layers of the LLM backbone. During the training phase, this head is supervised by visual correspondence and depth consistency signals derived from ground-truth point tracks and depth maps. At inference, the head is discarded and the model processes inputs (e.g., VQA) as a standard VLM, without any auxiliary 3D input. Note that the 3D scene example shown is from EgoHumans [24] for illustration; our training data is sourced from DL3DV [30].</span><span class="fig-zh">这张图来自论文 PDF 的结构化抽取。当前用于辅助理解 Beyond 3D VQAs 的方法或实验，请结合正文精读段落一起看。</span></figcaption></figure>
-<figure class="full-fig"><img src="../assets/mineru/2605.30231/images/459239042d8b597437000e304ddf4f9dd37dd81765fe0adda1f87f11d960cd8c.jpg" alt="Figureure 1 · Top: Our proposed framework (GASP) learns geometric consistency by inj"><figcaption><b>Figureure 1 · Top: Our proposed framework (GASP) learns geometric consistency by inj</b><span class="fig-en">Figure 1 Top: Our proposed framework (GASP) learns geometric consistency by injecting the correspondence head into the LLM, supervised by 3D spatial priors. Bottom: Standard spatial VLMs rely on fine-tuning with 3D VQA datasets, which often leads to memorizing data-specific biases. Note that our GASP requires no 3D prior input and processes as a standard VLM during inference.</span><span class="fig-zh">这张图概括 Beyond 3D VQAs 的整体方法流程。阅读时先看模块之间传递的训练信号，再看作者如何把目标拆成可优化的子问题。</span></figcaption></figure>
+      <figure class="full-fig"><img src="../assets/mineru/2605.30231/images/459239042d8b597437000e304ddf4f9dd37dd81765fe0adda1f87f11d960cd8c.jpg" alt="Figureure 1 · Top: Our proposed framework (GASP) learns geometric consistency by inj"><figcaption><b>Figureure 1 · Top: Our proposed framework (GASP) learns geometric consistency by inj</b><span class="fig-en">Figure 1 Top: Our proposed framework (GASP) learns geometric consistency by injecting the correspondence head into the LLM, supervised by 3D spatial priors. Bottom: Standard spatial VLMs rely on fine-tuning with 3D VQA datasets, which often leads to memorizing data-specific biases. Note that our GASP requires no 3D prior input and processes as a standard VLM during inference.</span><span class="fig-zh">这张图概括 Beyond 3D VQAs 的整体方法流程。阅读时先看模块之间传递的训练信号，再看作者如何把目标拆成可优化的子问题。</span></figcaption></figure>
+<figure class="full-fig"><img src="../assets/mineru/2605.30231/images/ea15670a7137dd30884ccced8d0f74aeae18e64329895888f8b3b365528d2ad8.jpg" alt="Figureure 2 · Injecting the Geometric-Aware Spatial Priors (GASP) into VLMs"><figcaption><b>Figureure 2 · Injecting the Geometric-Aware Spatial Priors (GASP) into VLMs</b><span class="fig-en">Figure 2 Injecting the Geometric-Aware Spatial Priors (GASP) into VLMs. Standard approaches rely on fine-tuning with 3D VQA datasets, which may encourage memorizing dataset-specific biases. We instead insert a small correspondence head into the intermediate layers of the LLM backbone. During the training phase, this head is supervised by visual correspondence and depth consistency signals derived from ground-truth point tracks and depth maps. At inference, the head is discarded and the model processes inputs (e.g., VQA) as a standard VLM, without any auxiliary 3D input. Note that the 3D scene example shown is from EgoHumans [24] for illustration; our training data is sourced from DL3DV [30].</span><span class="fig-zh">这张图来自论文 PDF 的结构化抽取。当前用于辅助理解 Beyond 3D VQAs 的方法或实验，请结合正文精读段落一起看。</span></figcaption></figure>
       
       <h2>核心问题</h2>
       <p>它和通用视觉自监督的关系在于：GASP 用 contrastive correspondence 与 depth consistency 学几何先验，比单纯 3D VQA 微调更接近空间表征预训练。</p>
@@ -61,13 +63,13 @@
     <div class="side-box"><h4>原文</h4><p><a href="https://arxiv.org/abs/2605.30231">https://arxiv.org/abs/2605.30231</a></p></div>
   </aside>
 </article></main>
-  <aside class="conf-float" data-conf-reminder="2026-06-15-main-ddl" aria-label="CCF A/B 主投稿提醒">
+  <aside class="conf-float" data-conf-reminder="2026-06-16-main-ddl" aria-label="CCF A/B 主投稿提醒">
   <button class="conf-close" type="button" aria-label="关闭会议提醒">×</button>
   <details open>
     <summary>CCF A/B 主投稿提醒</summary>
     <div class="conf-list"><a class="conf-item " href="https://github.com/ccfddl/ccf-deadlines/blob/main/conference/AI/aaai.yml">
   <span><b>AAAI 2027</b><em>CCF A · Main paper submission</em></span>
-  <strong>42 天</strong>
+  <strong>41 天</strong>
   <small>2026-07-27 · CCF DDL: abstract 2026-07-20；进入 1 个月窗口后重点提醒。</small>
 </a></div>
   </details>
@@ -80,7 +82,7 @@
   (() => {
     const box = document.querySelector('[data-conf-reminder]');
     if (!box) return;
-    const key = `visualSslConfReminderClosed:${box.dataset.confReminder || '2026-06-15-main-ddl'}`;
+    const key = `visualSslConfReminderClosed:${box.dataset.confReminder || '2026-06-16-main-ddl'}`;
     try {
       if (localStorage.getItem(key) === '1') box.hidden = true;
     } catch (err) {}
@@ -93,5 +95,6 @@
     }
   })();
   </script>
+  <script src="../assets/ssl-game.js"></script>
 </body>
 </html>

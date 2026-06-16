@@ -4,24 +4,26 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>2026-06-14 速递 · 通用视觉自监督研究报</title>
-  <link rel="stylesheet" href="../assets/styles.css?v=20260525j">
-  <link rel="stylesheet" href="../assets/visual-ssl.css?v=20260525j">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Source+Serif+4:ital,opsz,wght@0,8..60,400;0,8..60,500;0,8..60,600;1,8..60,400&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../assets/visual-ssl.css?v=20260615ssl6">
 </head>
 <body>
   <header class="masthead">
-    <div class="masthead-kicker">Visual SSL Research Report · 2026-06-14</div>
     <a class="masthead-title" href="../index.html">通用视觉自监督研究报</a>
+    <div class="masthead-kicker">A Daily Digest of Visual Self-Supervised Learning</div>
     <div class="masthead-meta">
+      <span>2026-06-14</span>
       <span>图像表征 · VFM · JEPA · 视频预训练</span>
-      <span>CCF A/B 会议优先</span>
-      <span>图文精读 · 方法图解</span>
     </div>
   </header>
   <nav class="site-nav" aria-label="主导航">
     <a class="nav-link" href="../index.html">头版</a>
-<a class="nav-link" href="../issues/2026-06-15.html">今日速递</a>
+<a class="nav-link" href="../issues/2026-06-16.html">今日速递</a>
 <a class="nav-link" href="../pages/catalog.html">论文目录</a>
 <a class="nav-link" href="../pages/timeline.html">时间线</a>
+<span class="nav-streak" title="连续追踪天数"><svg viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><path d="M8 0c.7 2.5-1.2 3.7-2 5-1 1.6-1 4 .8 4.8C6.4 8.5 7.4 7.8 8 7c.3 1.3-.4 2 .9 3 .9.7 1.3 1.6 1.1 2.6C9.7 14.6 8.9 16 6.8 16 4.6 16 3 14.3 3 12c0-3.3 2.6-4.8 2.4-8C6.9 4.6 8.4 5 8 0z"/></svg> 连续 <b data-streak>0</b> 天</span>
   </nav>
   <main><article class="paper-detail issue-detail">
   <div class="paper-main">
@@ -31,10 +33,8 @@
     <div class="feature-body">
       <p class="lead dropcap">先读 V-JEPA 2.1。V-JEPA 系列更新到 dense image/video features，把 masked predictive loss、深层自监督和图像/视频 tokenizer 统一到同一表征路线。 其余论文按 P1/P2 与主题顺序扫读，重点看方法图、消融设置和是否能迁移到通用视觉表征。</p>
       <h2>论文索引</h2>
-      <div class="paper-list issue-list"><article class="paper-card" data-category="arXiv 更新 (v3)" data-priority="P0" data-date="2026-06-14" data-title="v-jepa 2.1: unlocking dense features in video self-supervised learning" data-keywords="v-jepa 2.1: unlocking dense features in video self-supervised learning v-jepa 2.1 arxiv 更新 (v3) p0 2026-06-14 arxiv 更新 (v3) v-jepa 系列更新到 dense image/video features，把 masked predictive loss、深层自监督和图像/视频 tokenizer 统一到同一表征路线 高相关；详见方法、贡献和实验边界。">
-  <a class="paper-thumb paper-thumb-text" href="../papers/2603.14482.html">
-    <img src="../assets/mineru/2603.14482/images/5aabc6ce2892fc6240a1355b3c3c4db80f26ed428a16260ad648107fff6a4b72.jpg" alt="V-JEPA 2.1 figure"><span>P0</span>
-  </a>
+      <div class="paper-list issue-list"><article class="paper-card" data-pid="2603.14482" data-category="arXiv 更新 (v3)" data-priority="P0" data-date="2026-06-14" data-title="v-jepa 2.1: unlocking dense features in video self-supervised learning" data-keywords="v-jepa 2.1: unlocking dense features in video self-supervised learning v-jepa 2.1 arxiv 更新 (v3) p0 2026-06-14 arxiv 更新 (v3) v-jepa 系列更新到 dense image/video features，把 masked predictive loss、深层自监督和图像/视频 tokenizer 统一到同一表征路线 高相关；详见方法、贡献和实验边界。">
+  <a class="paper-thumb" href="../papers/2603.14482.html"><img src="../assets/mineru/2603.14482/images/5aabc6ce2892fc6240a1355b3c3c4db80f26ed428a16260ad648107fff6a4b72.jpg" alt="V-JEPA 2.1 figure"></a>
   <div>
     <div class="paper-meta">2026-06-14 · arXiv 更新 (v3) · arXiv 更新 (v3)</div>
     <h3><a href="../papers/2603.14482.html">V-JEPA 2.1: Unlocking Dense Features in Video Self-Supervised Learning</a></h3>
@@ -42,11 +42,10 @@
     <p class="card-tech"><b>方法：</b>V-JEPA 系列更新到 dense image/video features，把 masked predictive loss、深层自监督和图像/视频 tokenizer 统一到同一表征路线</p>
     <div class="paper-actions"><a href="../papers/2603.14482.html">读图文页</a><a href="https://arxiv.org/abs/2603.14482">原文</a></div>
   </div>
+  <button class="readbtn" type="button" data-read-toggle="2603.14482" title="标记已读" aria-label="标记已读"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M4 10.5l4 4 8-9"/></svg></button>
 </article>
-<article class="paper-card" data-category="arXiv 新增" data-priority="P0" data-date="2026-06-14" data-title="dual-state slot attention: decoupling appearance and identity for video object-centric learning" data-keywords="dual-state slot attention: decoupling appearance and identity for video object-centric learning dual-state slot attention arxiv 新增 p0 2026-06-14 arxiv 新增 纯粹面向无监督视频 object-centric 表征，把 appearance 和 identity 拆成双状态 slot，直接命中视频自监督表示 高相关；详见方法、贡献和实验边界。">
-  <a class="paper-thumb paper-thumb-text" href="../papers/2606.12601.html">
-    <img src="../assets/mineru/2606.12601/images/ddd219c137a1ff1c8dc7d44fec2da2dcb7418d64ce42a1137bb603a373f8c2cd.jpg" alt="Dual-State Slot Attention figure"><span>P0</span>
-  </a>
+<article class="paper-card" data-pid="2606.12601" data-category="arXiv 新增" data-priority="P0" data-date="2026-06-14" data-title="dual-state slot attention: decoupling appearance and identity for video object-centric learning" data-keywords="dual-state slot attention: decoupling appearance and identity for video object-centric learning dual-state slot attention arxiv 新增 p0 2026-06-14 arxiv 新增 纯粹面向无监督视频 object-centric 表征，把 appearance 和 identity 拆成双状态 slot，直接命中视频自监督表示 高相关；详见方法、贡献和实验边界。">
+  <a class="paper-thumb" href="../papers/2606.12601.html"><img src="../assets/mineru/2606.12601/images/ddd219c137a1ff1c8dc7d44fec2da2dcb7418d64ce42a1137bb603a373f8c2cd.jpg" alt="Dual-State Slot Attention figure"></a>
   <div>
     <div class="paper-meta">2026-06-14 · arXiv 新增 · arXiv 新增</div>
     <h3><a href="../papers/2606.12601.html">Dual-State Slot Attention: Decoupling Appearance and Identity for Video Object-Centric Learning</a></h3>
@@ -54,11 +53,10 @@
     <p class="card-tech"><b>方法：</b>纯粹面向无监督视频 object-centric 表征，把 appearance 和 identity 拆成双状态 slot，直接命中视频自监督表示</p>
     <div class="paper-actions"><a href="../papers/2606.12601.html">读图文页</a><a href="https://arxiv.org/abs/2606.12601">原文</a></div>
   </div>
+  <button class="readbtn" type="button" data-read-toggle="2606.12601" title="标记已读" aria-label="标记已读"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M4 10.5l4 4 8-9"/></svg></button>
 </article>
-<article class="paper-card" data-category="ACL 2026 Main + arXiv" data-priority="P1" data-date="2026-06-14" data-title="cross-modal masked compositional concept modeling for enhancing visio-linguistic compositionality" data-keywords="cross-modal masked compositional concept modeling for enhancing visio-linguistic compositionality cross-modal masked compositional concept modeling acl 2026 main + arxiv p1 2026-06-14 acl 2026 main + arxiv 用跨模态 masked concept reconstruction 改造 clip/vlm compositionality，是视觉-语言自监督/弱监督表征的可迁移目标 高相关；详见方法、贡献和实验边界。">
-  <a class="paper-thumb paper-thumb-text" href="../papers/2606.13288.html">
-    <img src="../assets/mineru/2606.13288/images/76b924999cb829bfafaf0e4fe4df8a1a0c5d4c0a80c21c48ba1de817d43e50ca.jpg" alt="Cross-Modal Masked Compositional Concept Modeling figure"><span>P1</span>
-  </a>
+<article class="paper-card" data-pid="2606.13288" data-category="ACL 2026 Main + arXiv" data-priority="P1" data-date="2026-06-14" data-title="cross-modal masked compositional concept modeling for enhancing visio-linguistic compositionality" data-keywords="cross-modal masked compositional concept modeling for enhancing visio-linguistic compositionality cross-modal masked compositional concept modeling acl 2026 main + arxiv p1 2026-06-14 acl 2026 main + arxiv 用跨模态 masked concept reconstruction 改造 clip/vlm compositionality，是视觉-语言自监督/弱监督表征的可迁移目标 高相关；详见方法、贡献和实验边界。">
+  <a class="paper-thumb" href="../papers/2606.13288.html"><img src="../assets/mineru/2606.13288/images/76b924999cb829bfafaf0e4fe4df8a1a0c5d4c0a80c21c48ba1de817d43e50ca.jpg" alt="Cross-Modal Masked Compositional Concept Modeling figure"></a>
   <div>
     <div class="paper-meta">2026-06-14 · ACL 2026 Main + arXiv · ACL 2026 Main + arXiv</div>
     <h3><a href="../papers/2606.13288.html">Cross-Modal Masked Compositional Concept Modeling for Enhancing Visio-Linguistic Compositionality</a></h3>
@@ -66,11 +64,10 @@
     <p class="card-tech"><b>方法：</b>用跨模态 masked concept reconstruction 改造 CLIP/VLM compositionality，是视觉-语言自监督/弱监督表征的可迁移目标</p>
     <div class="paper-actions"><a href="../papers/2606.13288.html">读图文页</a><a href="https://arxiv.org/abs/2606.13288">原文</a></div>
   </div>
+  <button class="readbtn" type="button" data-read-toggle="2606.13288" title="标记已读" aria-label="标记已读"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M4 10.5l4 4 8-9"/></svg></button>
 </article>
-<article class="paper-card" data-category="arXiv 新增" data-priority="P1" data-date="2026-06-14" data-title="hydra-x: native unified multimodal models with holistic visual tokenizers" data-keywords="hydra-x: native unified multimodal models with holistic visual tokenizers hydra-x arxiv 新增 p1 2026-06-14 arxiv 新增 把图像和视频 tokenization 放进同一个 vit tokenizer，并用教师监督塑形 compact latent，是统一视觉 token 表征路线 高相关；详见方法、贡献和实验边界。">
-  <a class="paper-thumb paper-thumb-text" href="../papers/2606.13289.html">
-    <img src="../assets/mineru/2606.13289/images/407fdcd52c302a2ed8fbb41255e069ab181e16a06ec51946bb8a2a9698f3c50a.jpg" alt="HYDRA-X figure"><span>P1</span>
-  </a>
+<article class="paper-card" data-pid="2606.13289" data-category="arXiv 新增" data-priority="P1" data-date="2026-06-14" data-title="hydra-x: native unified multimodal models with holistic visual tokenizers" data-keywords="hydra-x: native unified multimodal models with holistic visual tokenizers hydra-x arxiv 新增 p1 2026-06-14 arxiv 新增 把图像和视频 tokenization 放进同一个 vit tokenizer，并用教师监督塑形 compact latent，是统一视觉 token 表征路线 高相关；详见方法、贡献和实验边界。">
+  <a class="paper-thumb" href="../papers/2606.13289.html"><img src="../assets/mineru/2606.13289/images/f29c7f598c0077070b5c1a0a57c1f0c758bd3da723fd09e87d6d3b0958bee50f.jpg" alt="HYDRA-X figure"></a>
   <div>
     <div class="paper-meta">2026-06-14 · arXiv 新增 · arXiv 新增</div>
     <h3><a href="../papers/2606.13289.html">HYDRA-X: Native Unified Multimodal Models with Holistic Visual Tokenizers</a></h3>
@@ -78,11 +75,10 @@
     <p class="card-tech"><b>方法：</b>把图像和视频 tokenization 放进同一个 ViT tokenizer，并用教师监督塑形 compact latent，是统一视觉 token 表征路线</p>
     <div class="paper-actions"><a href="../papers/2606.13289.html">读图文页</a><a href="https://arxiv.org/abs/2606.13289">原文</a></div>
   </div>
+  <button class="readbtn" type="button" data-read-toggle="2606.13289" title="标记已读" aria-label="标记已读"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M4 10.5l4 4 8-9"/></svg></button>
 </article>
-<article class="paper-card" data-category="arXiv 新增 + project" data-priority="P1" data-date="2026-06-14" data-title="repwam: world action modeling with representation visual-action tokenizers" data-keywords="repwam: world action modeling with representation visual-action tokenizers repwam arxiv 新增 + project p1 2026-06-14 arxiv 新增 + project 把 wam 从重建型视频 tokenizer 转到 representation-centric visual-action tokenizer，虽偏具身，但方法可迁移到视频 world model 表征 中高相关；详见方法、贡献和实验边界。">
-  <a class="paper-thumb paper-thumb-text" href="../papers/2606.13674.html">
-    <img src="../assets/mineru/2606.13674/images/27cfed13e884b97a09d551aa3414b9d5c2d58da1caffce9dc79797266d9ec166.jpg" alt="RepWAM figure"><span>P1</span>
-  </a>
+<article class="paper-card" data-pid="2606.13674" data-category="arXiv 新增 + project" data-priority="P1" data-date="2026-06-14" data-title="repwam: world action modeling with representation visual-action tokenizers" data-keywords="repwam: world action modeling with representation visual-action tokenizers repwam arxiv 新增 + project p1 2026-06-14 arxiv 新增 + project 把 wam 从重建型视频 tokenizer 转到 representation-centric visual-action tokenizer，虽偏具身，但方法可迁移到视频 world model 表征 中高相关；详见方法、贡献和实验边界。">
+  <a class="paper-thumb" href="../papers/2606.13674.html"><img src="../assets/mineru/2606.13674/images/27cfed13e884b97a09d551aa3414b9d5c2d58da1caffce9dc79797266d9ec166.jpg" alt="RepWAM figure"></a>
   <div>
     <div class="paper-meta">2026-06-14 · arXiv 新增 + project · arXiv 新增 + project</div>
     <h3><a href="../papers/2606.13674.html">RepWAM: World Action Modeling with Representation Visual-Action Tokenizers</a></h3>
@@ -90,11 +86,10 @@
     <p class="card-tech"><b>方法：</b>把 WAM 从重建型视频 tokenizer 转到 representation-centric visual-action tokenizer，虽偏具身，但方法可迁移到视频 world model 表征</p>
     <div class="paper-actions"><a href="../papers/2606.13674.html">读图文页</a><a href="https://arxiv.org/abs/2606.13674">原文</a></div>
   </div>
+  <button class="readbtn" type="button" data-read-toggle="2606.13674" title="标记已读" aria-label="标记已读"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M4 10.5l4 4 8-9"/></svg></button>
 </article>
-<article class="paper-card" data-category="arXiv 新增 + project" data-priority="P2" data-date="2026-06-14" data-title="modality forcing for scalable spatial generation" data-keywords="modality forcing for scalable spatial generation modality forcing for scalable spatial arxiv 新增 + project p2 2026-06-14 arxiv 新增 + project 把 t2i 预训练的空间先验转成 image-depth 联合生成/估计，支持“生成式预训练可扩展到空间感知”的判断 中高相关；详见方法、贡献和实验边界。">
-  <a class="paper-thumb paper-thumb-text" href="../papers/2606.13676.html">
-    <img src="../assets/mineru/2606.13676/images/e006503eed9d23acf4ec937a79c3f01cf8ee9ce5159a18539c4fa4088b9746ce.jpg" alt="Modality Forcing for Scalable Spatial figure"><span>P2</span>
-  </a>
+<article class="paper-card" data-pid="2606.13676" data-category="arXiv 新增 + project" data-priority="P2" data-date="2026-06-14" data-title="modality forcing for scalable spatial generation" data-keywords="modality forcing for scalable spatial generation modality forcing for scalable spatial arxiv 新增 + project p2 2026-06-14 arxiv 新增 + project 把 t2i 预训练的空间先验转成 image-depth 联合生成/估计，支持“生成式预训练可扩展到空间感知”的判断 中高相关；详见方法、贡献和实验边界。">
+  <a class="paper-thumb" href="../papers/2606.13676.html"><img src="../assets/mineru/2606.13676/images/e006503eed9d23acf4ec937a79c3f01cf8ee9ce5159a18539c4fa4088b9746ce.jpg" alt="Modality Forcing for Scalable Spatial figure"></a>
   <div>
     <div class="paper-meta">2026-06-14 · arXiv 新增 + project · arXiv 新增 + project</div>
     <h3><a href="../papers/2606.13676.html">Modality Forcing for Scalable Spatial Generation</a></h3>
@@ -102,11 +97,10 @@
     <p class="card-tech"><b>方法：</b>把 T2I 预训练的空间先验转成 image-depth 联合生成/估计，支持“生成式预训练可扩展到空间感知”的判断</p>
     <div class="paper-actions"><a href="../papers/2606.13676.html">读图文页</a><a href="https://arxiv.org/abs/2606.13676">原文</a></div>
   </div>
+  <button class="readbtn" type="button" data-read-toggle="2606.13676" title="标记已读" aria-label="标记已读"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M4 10.5l4 4 8-9"/></svg></button>
 </article>
-<article class="paper-card" data-category="arXiv 新增" data-priority="P2" data-date="2026-06-14" data-title="maskwam: unifying mask prompting and prediction for world-action models" data-keywords="maskwam: unifying mask prompting and prediction for world-action models maskwam arxiv 新增 p2 2026-06-14 arxiv 新增 把 mask 同时作为 wam 输入提示和预测目标，给 world-action model 加 object-centric semantic supervision 中高相关；详见方法、贡献和实验边界。">
-  <a class="paper-thumb paper-thumb-text" href="../papers/2606.13515.html">
-    <img src="../assets/mineru/2606.13515/images/c266e78b876c43aac723caf03a40a9f922c9ba5ac23159d84586c7e970c77992.jpg" alt="MaskWAM figure"><span>P2</span>
-  </a>
+<article class="paper-card" data-pid="2606.13515" data-category="arXiv 新增" data-priority="P2" data-date="2026-06-14" data-title="maskwam: unifying mask prompting and prediction for world-action models" data-keywords="maskwam: unifying mask prompting and prediction for world-action models maskwam arxiv 新增 p2 2026-06-14 arxiv 新增 把 mask 同时作为 wam 输入提示和预测目标，给 world-action model 加 object-centric semantic supervision 中高相关；详见方法、贡献和实验边界。">
+  <a class="paper-thumb" href="../papers/2606.13515.html"><img src="../assets/mineru/2606.13515/images/c266e78b876c43aac723caf03a40a9f922c9ba5ac23159d84586c7e970c77992.jpg" alt="MaskWAM figure"></a>
   <div>
     <div class="paper-meta">2026-06-14 · arXiv 新增 · arXiv 新增</div>
     <h3><a href="../papers/2606.13515.html">MaskWAM: Unifying Mask Prompting and Prediction for World-Action Models</a></h3>
@@ -114,11 +108,10 @@
     <p class="card-tech"><b>方法：</b>把 mask 同时作为 WAM 输入提示和预测目标，给 world-action model 加 object-centric semantic supervision</p>
     <div class="paper-actions"><a href="../papers/2606.13515.html">读图文页</a><a href="https://arxiv.org/abs/2606.13515">原文</a></div>
   </div>
+  <button class="readbtn" type="button" data-read-toggle="2606.13515" title="标记已读" aria-label="标记已读"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M4 10.5l4 4 8-9"/></svg></button>
 </article>
-<article class="paper-card" data-category="arXiv 更新" data-priority="P2" data-date="2026-06-14" data-title="geoworld-vlm: geometry from world models for vision-language models" data-keywords="geoworld-vlm: geometry from world models for vision-language models geoworld-vlm arxiv 更新 p2 2026-06-14 arxiv 更新 用冻结 camera-conditioned video world model 作为几何 teacher 来蒸馏 vlm 视觉通路，是 world-model-as-teacher 的典型案例 中高相关；详见方法、贡献和实验边界。">
-  <a class="paper-thumb paper-thumb-text" href="../papers/2605.16713.html">
-    <img src="../assets/mineru/2605.16713/images/a71357196fc3392030ab1d7971b7a3b29276850b8c510af1790590606a4fc2e6.jpg" alt="GeoWorld-VLM figure"><span>P2</span>
-  </a>
+<article class="paper-card" data-pid="2605.16713" data-category="arXiv 更新" data-priority="P2" data-date="2026-06-14" data-title="geoworld-vlm: geometry from world models for vision-language models" data-keywords="geoworld-vlm: geometry from world models for vision-language models geoworld-vlm arxiv 更新 p2 2026-06-14 arxiv 更新 用冻结 camera-conditioned video world model 作为几何 teacher 来蒸馏 vlm 视觉通路，是 world-model-as-teacher 的典型案例 中高相关；详见方法、贡献和实验边界。">
+  <a class="paper-thumb" href="../papers/2605.16713.html"><img src="../assets/mineru/2605.16713/images/a71357196fc3392030ab1d7971b7a3b29276850b8c510af1790590606a4fc2e6.jpg" alt="GeoWorld-VLM figure"></a>
   <div>
     <div class="paper-meta">2026-06-14 · arXiv 更新 · arXiv 更新</div>
     <h3><a href="../papers/2605.16713.html">GeoWorld-VLM: Geometry from World Models for Vision-Language Models</a></h3>
@@ -126,11 +119,10 @@
     <p class="card-tech"><b>方法：</b>用冻结 camera-conditioned video world model 作为几何 teacher 来蒸馏 VLM 视觉通路，是 world-model-as-teacher 的典型案例</p>
     <div class="paper-actions"><a href="../papers/2605.16713.html">读图文页</a><a href="https://arxiv.org/abs/2605.16713">原文</a></div>
   </div>
+  <button class="readbtn" type="button" data-read-toggle="2605.16713" title="标记已读" aria-label="标记已读"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M4 10.5l4 4 8-9"/></svg></button>
 </article>
-<article class="paper-card" data-category="arXiv 新增" data-priority="P3" data-date="2026-06-14" data-title="epm-jepa: operator-side experience modulation in jepa-family world models" data-keywords="epm-jepa: operator-side experience modulation in jepa-family world models epm-jepa arxiv 新增 p3 2026-06-14 arxiv 新增 单独讨论 jepa predictor 如何在测试分布偏移时吸收经验，结论偏机制分析但主题很对 中相关；详见方法、贡献和实验边界。">
-  <a class="paper-thumb paper-thumb-text" href="../papers/2606.12979.html">
-    <img src="../assets/mineru/2606.12979/images/3fee706bd1be70db93cb3c13ab430bab26743739974e22c0e473203c9dba842c.jpg" alt="EPM-JEPA figure"><span>P3</span>
-  </a>
+<article class="paper-card" data-pid="2606.12979" data-category="arXiv 新增" data-priority="P3" data-date="2026-06-14" data-title="epm-jepa: operator-side experience modulation in jepa-family world models" data-keywords="epm-jepa: operator-side experience modulation in jepa-family world models epm-jepa arxiv 新增 p3 2026-06-14 arxiv 新增 单独讨论 jepa predictor 如何在测试分布偏移时吸收经验，结论偏机制分析但主题很对 中相关；详见方法、贡献和实验边界。">
+  <a class="paper-thumb" href="../papers/2606.12979.html"><img src="../assets/mineru/2606.12979/images/3fee706bd1be70db93cb3c13ab430bab26743739974e22c0e473203c9dba842c.jpg" alt="EPM-JEPA figure"></a>
   <div>
     <div class="paper-meta">2026-06-14 · arXiv 新增 · arXiv 新增</div>
     <h3><a href="../papers/2606.12979.html">EPM-JEPA: Operator-Side Experience Modulation in JEPA-Family World Models</a></h3>
@@ -138,11 +130,10 @@
     <p class="card-tech"><b>方法：</b>单独讨论 JEPA predictor 如何在测试分布偏移时吸收经验，结论偏机制分析但主题很对</p>
     <div class="paper-actions"><a href="../papers/2606.12979.html">读图文页</a><a href="https://arxiv.org/abs/2606.12979">原文</a></div>
   </div>
+  <button class="readbtn" type="button" data-read-toggle="2606.12979" title="标记已读" aria-label="标记已读"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M4 10.5l4 4 8-9"/></svg></button>
 </article>
-<article class="paper-card" data-category="ICML 2026 + arXiv" data-priority="P3" data-date="2026-06-14" data-title="eca: efficient continual alignment for open-ended image-to-text generation" data-keywords="eca: efficient continual alignment for open-ended image-to-text generation eca icml 2026 + arxiv p3 2026-06-14 icml 2026 + arxiv icml 2026 接收；关注预训练 vlm alignment module 的持续适应，和长期维护图文表征相关 中相关；详见方法、贡献和实验边界。">
-  <a class="paper-thumb paper-thumb-text" href="../papers/2606.12633.html">
-    <img src="../assets/mineru/2606.12633/images/18855940e7f2011b1809110406d662b3432c6076fd65e62ae7d0585a1d1bd670.jpg" alt="ECA figure"><span>P3</span>
-  </a>
+<article class="paper-card" data-pid="2606.12633" data-category="ICML 2026 + arXiv" data-priority="P3" data-date="2026-06-14" data-title="eca: efficient continual alignment for open-ended image-to-text generation" data-keywords="eca: efficient continual alignment for open-ended image-to-text generation eca icml 2026 + arxiv p3 2026-06-14 icml 2026 + arxiv icml 2026 接收；关注预训练 vlm alignment module 的持续适应，和长期维护图文表征相关 中相关；详见方法、贡献和实验边界。">
+  <a class="paper-thumb" href="../papers/2606.12633.html"><img src="../assets/mineru/2606.12633/images/18855940e7f2011b1809110406d662b3432c6076fd65e62ae7d0585a1d1bd670.jpg" alt="ECA figure"></a>
   <div>
     <div class="paper-meta">2026-06-14 · ICML 2026 + arXiv · ICML 2026 + arXiv</div>
     <h3><a href="../papers/2606.12633.html">ECA: Efficient Continual Alignment for Open-Ended Image-to-Text Generation</a></h3>
@@ -150,6 +141,7 @@
     <p class="card-tech"><b>方法：</b>ICML 2026 接收；关注预训练 VLM alignment module 的持续适应，和长期维护图文表征相关</p>
     <div class="paper-actions"><a href="../papers/2606.12633.html">读图文页</a><a href="https://arxiv.org/abs/2606.12633">原文</a></div>
   </div>
+  <button class="readbtn" type="button" data-read-toggle="2606.12633" title="标记已读" aria-label="标记已读"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M4 10.5l4 4 8-9"/></svg></button>
 </article></div>
     </div>
   </div>
@@ -158,13 +150,13 @@
     <div class="side-box"><h4>会议口径</h4><p>主提醒只保留 CCF A/B；CCF C 与过期截止仅作状态记录。</p></div>
   </aside>
 </article></main>
-  <aside class="conf-float" data-conf-reminder="2026-06-15-main-ddl" aria-label="CCF A/B 主投稿提醒">
+  <aside class="conf-float" data-conf-reminder="2026-06-16-main-ddl" aria-label="CCF A/B 主投稿提醒">
   <button class="conf-close" type="button" aria-label="关闭会议提醒">×</button>
   <details open>
     <summary>CCF A/B 主投稿提醒</summary>
     <div class="conf-list"><a class="conf-item " href="https://github.com/ccfddl/ccf-deadlines/blob/main/conference/AI/aaai.yml">
   <span><b>AAAI 2027</b><em>CCF A · Main paper submission</em></span>
-  <strong>42 天</strong>
+  <strong>41 天</strong>
   <small>2026-07-27 · CCF DDL: abstract 2026-07-20；进入 1 个月窗口后重点提醒。</small>
 </a></div>
   </details>
@@ -177,7 +169,7 @@
   (() => {
     const box = document.querySelector('[data-conf-reminder]');
     if (!box) return;
-    const key = `visualSslConfReminderClosed:${box.dataset.confReminder || '2026-06-15-main-ddl'}`;
+    const key = `visualSslConfReminderClosed:${box.dataset.confReminder || '2026-06-16-main-ddl'}`;
     try {
       if (localStorage.getItem(key) === '1') box.hidden = true;
     } catch (err) {}
@@ -190,5 +182,6 @@
     }
   })();
   </script>
+  <script src="../assets/ssl-game.js"></script>
 </body>
 </html>

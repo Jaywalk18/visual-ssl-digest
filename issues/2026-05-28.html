@@ -4,24 +4,26 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>2026-05-28 速递 · 通用视觉自监督研究报</title>
-  <link rel="stylesheet" href="../assets/styles.css?v=20260525j">
-  <link rel="stylesheet" href="../assets/visual-ssl.css?v=20260525j">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Source+Serif+4:ital,opsz,wght@0,8..60,400;0,8..60,500;0,8..60,600;1,8..60,400&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../assets/visual-ssl.css?v=20260615ssl6">
 </head>
 <body>
   <header class="masthead">
-    <div class="masthead-kicker">Visual SSL Research Report · 2026-05-28</div>
     <a class="masthead-title" href="../index.html">通用视觉自监督研究报</a>
+    <div class="masthead-kicker">A Daily Digest of Visual Self-Supervised Learning</div>
     <div class="masthead-meta">
+      <span>2026-05-28</span>
       <span>图像表征 · VFM · JEPA · 视频预训练</span>
-      <span>CCF A/B 会议优先</span>
-      <span>图文精读 · 方法图解</span>
     </div>
   </header>
   <nav class="site-nav" aria-label="主导航">
     <a class="nav-link" href="../index.html">头版</a>
-<a class="nav-link" href="../issues/2026-06-15.html">今日速递</a>
+<a class="nav-link" href="../issues/2026-06-16.html">今日速递</a>
 <a class="nav-link" href="../pages/catalog.html">论文目录</a>
 <a class="nav-link" href="../pages/timeline.html">时间线</a>
+<span class="nav-streak" title="连续追踪天数"><svg viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><path d="M8 0c.7 2.5-1.2 3.7-2 5-1 1.6-1 4 .8 4.8C6.4 8.5 7.4 7.8 8 7c.3 1.3-.4 2 .9 3 .9.7 1.3 1.6 1.1 2.6C9.7 14.6 8.9 16 6.8 16 4.6 16 3 14.3 3 12c0-3.3 2.6-4.8 2.4-8C6.9 4.6 8.4 5 8 0z"/></svg> 连续 <b data-streak>0</b> 天</span>
   </nav>
   <main><article class="paper-detail issue-detail">
   <div class="paper-main">
@@ -31,10 +33,8 @@
     <div class="feature-body">
       <p class="lead dropcap">先读 SPHERE-JEPA。从表示几何解释 JEPA/SSL，直接讨论 hyperspherical uniformity 与 ImageNet linear probe。 其余论文按 P1/P2 与主题顺序扫读，重点看方法图、消融设置和是否能迁移到通用视觉表征。</p>
       <h2>论文索引</h2>
-      <div class="paper-list issue-list"><article class="paper-card" data-category="Visual SSL / representation" data-priority="P0" data-date="2026-05-28" data-title="sphere-jepa: spherical prediction with homogeneous embeddings" data-keywords="sphere-jepa: spherical prediction with homogeneous embeddings sphere-jepa visual ssl / representation p0 2026-05-28 arxiv 从表示几何解释 jepa/ssl，直接讨论 hyperspherical uniformity 与 imagenet linear probe 高相关；详见方法、贡献和实验边界。">
-  <a class="paper-thumb paper-thumb-text" href="../papers/2605.26900.html">
-    <img src="../assets/mineru/2605.26900/images/fe99affe48150a2341eb38a6b63477f237116cd3b5ef785f45850a1fb910e867.jpg" alt="SPHERE-JEPA figure"><span>P0</span>
-  </a>
+      <div class="paper-list issue-list"><article class="paper-card" data-pid="2605.26900" data-category="Visual SSL / representation" data-priority="P0" data-date="2026-05-28" data-title="sphere-jepa: spherical prediction with homogeneous embeddings" data-keywords="sphere-jepa: spherical prediction with homogeneous embeddings sphere-jepa visual ssl / representation p0 2026-05-28 arxiv 从表示几何解释 jepa/ssl，直接讨论 hyperspherical uniformity 与 imagenet linear probe 高相关；详见方法、贡献和实验边界。">
+  <a class="paper-thumb" href="../papers/2605.26900.html"><img src="../assets/mineru/2605.26900/images/fe99affe48150a2341eb38a6b63477f237116cd3b5ef785f45850a1fb910e867.jpg" alt="SPHERE-JEPA figure"></a>
   <div>
     <div class="paper-meta">2026-05-28 · Visual SSL / representation · arXiv</div>
     <h3><a href="../papers/2605.26900.html">SPHERE-JEPA: Spherical Prediction with Homogeneous Embeddings</a></h3>
@@ -42,11 +42,10 @@
     <p class="card-tech"><b>方法：</b>从表示几何解释 JEPA/SSL，直接讨论 hyperspherical uniformity 与 ImageNet linear probe</p>
     <div class="paper-actions"><a href="../papers/2605.26900.html">读图文页</a><a href="https://arxiv.org/abs/2605.26900">原文</a></div>
   </div>
+  <button class="readbtn" type="button" data-read-toggle="2605.26900" title="标记已读" aria-label="标记已读"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M4 10.5l4 4 8-9"/></svg></button>
 </article>
-<article class="paper-card" data-category="Visual SSL / representation" data-priority="P0" data-date="2026-05-28" data-title="gemini embedding 2: a native multimodal embedding model from gemini" data-keywords="gemini embedding 2: a native multimodal embedding model from gemini gemini embedding 2 visual ssl / representation p0 2026-05-28 arxiv 原生视频/音频/图像/文本统一 embedding，代表大模型路线里的多模态表征基座 高相关；详见方法、贡献和实验边界。">
-  <a class="paper-thumb paper-thumb-text" href="../papers/2605.27295.html">
-    <img src="../assets/mineru/2605.27295/images/02d5b573fd2c54d4810a1d8150fb016f102aee7be2cee6be4524efa33a17b710.jpg" alt="Gemini Embedding 2 figure"><span>P0</span>
-  </a>
+<article class="paper-card" data-pid="2605.27295" data-category="Visual SSL / representation" data-priority="P0" data-date="2026-05-28" data-title="gemini embedding 2: a native multimodal embedding model from gemini" data-keywords="gemini embedding 2: a native multimodal embedding model from gemini gemini embedding 2 visual ssl / representation p0 2026-05-28 arxiv 原生视频/音频/图像/文本统一 embedding，代表大模型路线里的多模态表征基座 高相关；详见方法、贡献和实验边界。">
+  <a class="paper-thumb" href="../papers/2605.27295.html"><img src="../assets/mineru/2605.27295/images/02d5b573fd2c54d4810a1d8150fb016f102aee7be2cee6be4524efa33a17b710.jpg" alt="Gemini Embedding 2 figure"></a>
   <div>
     <div class="paper-meta">2026-05-28 · Visual SSL / representation · arXiv</div>
     <h3><a href="../papers/2605.27295.html">Gemini Embedding 2: A Native Multimodal Embedding Model from Gemini</a></h3>
@@ -54,11 +53,10 @@
     <p class="card-tech"><b>方法：</b>原生视频/音频/图像/文本统一 embedding，代表大模型路线里的多模态表征基座</p>
     <div class="paper-actions"><a href="../papers/2605.27295.html">读图文页</a><a href="https://arxiv.org/abs/2605.27295">原文</a></div>
   </div>
+  <button class="readbtn" type="button" data-read-toggle="2605.27295" title="标记已读" aria-label="标记已读"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M4 10.5l4 4 8-9"/></svg></button>
 </article>
-<article class="paper-card" data-category="Visual SSL / representation" data-priority="P0" data-date="2026-05-28" data-title="dv-sft: direct vision supervision for fine-grained visual understanding" data-keywords="dv-sft: direct vision supervision for fine-grained visual understanding dv-sft visual ssl / representation p0 2026-05-28 arxiv 把监督直接打到 visual tokens 上，解决 mllm 中视觉 token 只被文本 loss 间接优化的问题 高相关；详见方法、贡献和实验边界。">
-  <a class="paper-thumb paper-thumb-text" href="../papers/2605.26656.html">
-    <img src="../assets/mineru/2605.26656/images/888fb520239524f7addbe6c66503ce41cb88b4dd321ded68b1f32c739def3d7a.jpg" alt="DV-SFT figure"><span>P0</span>
-  </a>
+<article class="paper-card" data-pid="2605.26656" data-category="Visual SSL / representation" data-priority="P0" data-date="2026-05-28" data-title="dv-sft: direct vision supervision for fine-grained visual understanding" data-keywords="dv-sft: direct vision supervision for fine-grained visual understanding dv-sft visual ssl / representation p0 2026-05-28 arxiv 把监督直接打到 visual tokens 上，解决 mllm 中视觉 token 只被文本 loss 间接优化的问题 高相关；详见方法、贡献和实验边界。">
+  <a class="paper-thumb" href="../papers/2605.26656.html"><img src="../assets/mineru/2605.26656/images/888fb520239524f7addbe6c66503ce41cb88b4dd321ded68b1f32c739def3d7a.jpg" alt="DV-SFT figure"></a>
   <div>
     <div class="paper-meta">2026-05-28 · Visual SSL / representation · arXiv</div>
     <h3><a href="../papers/2605.26656.html">DV-SFT: Direct Vision Supervision for Fine-Grained Visual Understanding</a></h3>
@@ -66,11 +64,10 @@
     <p class="card-tech"><b>方法：</b>把监督直接打到 visual tokens 上，解决 MLLM 中视觉 token 只被文本 loss 间接优化的问题</p>
     <div class="paper-actions"><a href="../papers/2605.26656.html">读图文页</a><a href="https://arxiv.org/abs/2605.26656">原文</a></div>
   </div>
+  <button class="readbtn" type="button" data-read-toggle="2605.26656" title="标记已读" aria-label="标记已读"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M4 10.5l4 4 8-9"/></svg></button>
 </article>
-<article class="paper-card" data-category="ICML 2026" data-priority="P0" data-date="2026-05-28" data-title="foundobj: self-supervised foundation models as rewards for label-free 3d object segmentation" data-keywords="foundobj: self-supervised foundation models as rewards for label-free 3d object segmentation foundobj icml 2026 p0 2026-05-28 arxiv + icml 2026 用自监督 2d/3d foundation models 作为 reward，做无场景标注 3d object discovery 高相关；详见方法、贡献和实验边界。">
-  <a class="paper-thumb paper-thumb-text" href="../papers/2605.27178.html">
-    <img src="../assets/mineru/2605.27178/images/d3041c850935bde78640e096a47095187966b386234f56aca358206d628a6922.jpg" alt="FoundObj figure"><span>P0</span>
-  </a>
+<article class="paper-card" data-pid="2605.27178" data-category="ICML 2026" data-priority="P0" data-date="2026-05-28" data-title="foundobj: self-supervised foundation models as rewards for label-free 3d object segmentation" data-keywords="foundobj: self-supervised foundation models as rewards for label-free 3d object segmentation foundobj icml 2026 p0 2026-05-28 arxiv + icml 2026 用自监督 2d/3d foundation models 作为 reward，做无场景标注 3d object discovery 高相关；详见方法、贡献和实验边界。">
+  <a class="paper-thumb" href="../papers/2605.27178.html"><img src="../assets/mineru/2605.27178/images/d3041c850935bde78640e096a47095187966b386234f56aca358206d628a6922.jpg" alt="FoundObj figure"></a>
   <div>
     <div class="paper-meta">2026-05-28 · ICML 2026 · arXiv + ICML 2026</div>
     <h3><a href="../papers/2605.27178.html">FoundObj: Self-supervised Foundation Models as Rewards for Label-free 3D Object Segmentation</a></h3>
@@ -78,11 +75,10 @@
     <p class="card-tech"><b>方法：</b>用自监督 2D/3D foundation models 作为 reward，做无场景标注 3D object discovery</p>
     <div class="paper-actions"><a href="../papers/2605.27178.html">读图文页</a><a href="https://arxiv.org/abs/2605.27178">原文</a></div>
   </div>
+  <button class="readbtn" type="button" data-read-toggle="2605.27178" title="标记已读" aria-label="标记已读"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M4 10.5l4 4 8-9"/></svg></button>
 </article>
-<article class="paper-card" data-category="Visual SSL / representation" data-priority="P1" data-date="2026-05-28" data-title="omniretriever: any-to-any audio-video-text retrieval via fusion-as-teacher distillation" data-keywords="omniretriever: any-to-any audio-video-text retrieval via fusion-as-teacher distillation omniretriever visual ssl / representation p1 2026-05-28 arxiv teacher-fusion distillation 学任意 audio/video/text 检索 embedding，与 gemini embedding 2 形成对照 中高相关；详见方法、贡献和实验边界。">
-  <a class="paper-thumb paper-thumb-text" href="../papers/2605.26641.html">
-    <img src="../assets/mineru/2605.26641/images/7962636a621cf482569129a5875d25118c49d6e392d975665d5c18b8d81c7cbf.jpg" alt="OmniRetriever figure"><span>P1</span>
-  </a>
+<article class="paper-card" data-pid="2605.26641" data-category="Visual SSL / representation" data-priority="P1" data-date="2026-05-28" data-title="omniretriever: any-to-any audio-video-text retrieval via fusion-as-teacher distillation" data-keywords="omniretriever: any-to-any audio-video-text retrieval via fusion-as-teacher distillation omniretriever visual ssl / representation p1 2026-05-28 arxiv teacher-fusion distillation 学任意 audio/video/text 检索 embedding，与 gemini embedding 2 形成对照 中高相关；详见方法、贡献和实验边界。">
+  <a class="paper-thumb" href="../papers/2605.26641.html"><img src="../assets/mineru/2605.26641/images/7962636a621cf482569129a5875d25118c49d6e392d975665d5c18b8d81c7cbf.jpg" alt="OmniRetriever figure"></a>
   <div>
     <div class="paper-meta">2026-05-28 · Visual SSL / representation · arXiv</div>
     <h3><a href="../papers/2605.26641.html">OmniRetriever: Any-to-Any Audio-Video-Text Retrieval via Fusion-as-Teacher Distillation</a></h3>
@@ -90,11 +86,10 @@
     <p class="card-tech"><b>方法：</b>teacher-fusion distillation 学任意 audio/video/text 检索 embedding，与 Gemini Embedding 2 形成对照</p>
     <div class="paper-actions"><a href="../papers/2605.26641.html">读图文页</a><a href="https://arxiv.org/abs/2605.26641">原文</a></div>
   </div>
+  <button class="readbtn" type="button" data-read-toggle="2605.26641" title="标记已读" aria-label="标记已读"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M4 10.5l4 4 8-9"/></svg></button>
 </article>
-<article class="paper-card" data-category="Visual SSL / representation" data-priority="P1" data-date="2026-05-28" data-title="jlt: clean-latent prediction in latent diffusion transformers" data-keywords="jlt: clean-latent prediction in latent diffusion transformers jlt visual ssl / representation p1 2026-05-28 arxiv 说明 latent diffusion 的预测目标是表示几何选择，不只是 x/epsilon/v 的代数互换 中高相关；详见方法、贡献和实验边界。">
-  <a class="paper-thumb paper-thumb-text" href="../papers/2605.27102.html">
-    <img src="../assets/mineru/2605.27102/images/8b0d4994d7dcb704d12ca49c784550371185875ae443be52b71d988754bf63c1.jpg" alt="JLT figure"><span>P1</span>
-  </a>
+<article class="paper-card" data-pid="2605.27102" data-category="Visual SSL / representation" data-priority="P1" data-date="2026-05-28" data-title="jlt: clean-latent prediction in latent diffusion transformers" data-keywords="jlt: clean-latent prediction in latent diffusion transformers jlt visual ssl / representation p1 2026-05-28 arxiv 说明 latent diffusion 的预测目标是表示几何选择，不只是 x/epsilon/v 的代数互换 中高相关；详见方法、贡献和实验边界。">
+  <a class="paper-thumb" href="../papers/2605.27102.html"><img src="../assets/mineru/2605.27102/images/8b0d4994d7dcb704d12ca49c784550371185875ae443be52b71d988754bf63c1.jpg" alt="JLT figure"></a>
   <div>
     <div class="paper-meta">2026-05-28 · Visual SSL / representation · arXiv</div>
     <h3><a href="../papers/2605.27102.html">JLT: Clean-Latent Prediction in Latent Diffusion Transformers</a></h3>
@@ -102,11 +97,10 @@
     <p class="card-tech"><b>方法：</b>说明 latent diffusion 的预测目标是表示几何选择，不只是 x/epsilon/v 的代数互换</p>
     <div class="paper-actions"><a href="../papers/2605.27102.html">读图文页</a><a href="https://arxiv.org/abs/2605.27102">原文</a></div>
   </div>
+  <button class="readbtn" type="button" data-read-toggle="2605.27102" title="标记已读" aria-label="标记已读"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M4 10.5l4 4 8-9"/></svg></button>
 </article>
-<article class="paper-card" data-category="CVPR 2026 Findings" data-priority="P1" data-date="2026-05-28" data-title="jetvit: efficient high-resolution vision transformer with post-training attention search" data-keywords="jetvit: efficient high-resolution vision transformer with post-training attention search jetvit cvpr 2026 findings p1 2026-05-28 arxiv + cvpr 2026 findings 不重训地把 dinov3/depthanythingv2 这类高分辨率 vfm 加速，影响通用视觉基础模型部署 中高相关；详见方法、贡献和实验边界。">
-  <a class="paper-thumb paper-thumb-text" href="../papers/2605.26636.html">
-    <img src="../assets/mineru/2605.26636/images/f8ca25c60ecd343db86f76ce944e102c8baaabfb24f3fb05e90ff6ec3723c153.jpg" alt="JetViT figure"><span>P1</span>
-  </a>
+<article class="paper-card" data-pid="2605.26636" data-category="CVPR 2026 Findings" data-priority="P1" data-date="2026-05-28" data-title="jetvit: efficient high-resolution vision transformer with post-training attention search" data-keywords="jetvit: efficient high-resolution vision transformer with post-training attention search jetvit cvpr 2026 findings p1 2026-05-28 arxiv + cvpr 2026 findings 不重训地把 dinov3/depthanythingv2 这类高分辨率 vfm 加速，影响通用视觉基础模型部署 中高相关；详见方法、贡献和实验边界。">
+  <a class="paper-thumb" href="../papers/2605.26636.html"><img src="../assets/mineru/2605.26636/images/f8ca25c60ecd343db86f76ce944e102c8baaabfb24f3fb05e90ff6ec3723c153.jpg" alt="JetViT figure"></a>
   <div>
     <div class="paper-meta">2026-05-28 · CVPR 2026 Findings · arXiv + CVPR 2026 Findings</div>
     <h3><a href="../papers/2605.26636.html">JetViT: Efficient High-Resolution Vision Transformer with Post-Training Attention Search</a></h3>
@@ -114,11 +108,10 @@
     <p class="card-tech"><b>方法：</b>不重训地把 DINOv3/DepthAnythingV2 这类高分辨率 VFM 加速，影响通用视觉基础模型部署</p>
     <div class="paper-actions"><a href="../papers/2605.26636.html">读图文页</a><a href="https://arxiv.org/abs/2605.26636">原文</a></div>
   </div>
+  <button class="readbtn" type="button" data-read-toggle="2605.26636" title="标记已读" aria-label="标记已读"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M4 10.5l4 4 8-9"/></svg></button>
 </article>
-<article class="paper-card" data-category="IEEE TIP 2026" data-priority="P1" data-date="2026-05-28" data-title="fast-goal: fast and efficient global-local object alignment learning" data-keywords="fast-goal: fast and efficient global-local object alignment learning fast-goal ieee tip 2026 p1 2026-05-28 arxiv + ieee tip 2026 面向 clip 长文本/局部区域不足，做 global-local 图文对齐微调 中高相关；详见方法、贡献和实验边界。">
-  <a class="paper-thumb paper-thumb-text" href="../papers/2605.26615.html">
-    <img src="../assets/mineru/2605.26615/images/43129930451d0bd1881fe24024e6bc6e3a86bab657beff021669c3b5101cf0c8.jpg" alt="FAST-GOAL figure"><span>P1</span>
-  </a>
+<article class="paper-card" data-pid="2605.26615" data-category="IEEE TIP 2026" data-priority="P1" data-date="2026-05-28" data-title="fast-goal: fast and efficient global-local object alignment learning" data-keywords="fast-goal: fast and efficient global-local object alignment learning fast-goal ieee tip 2026 p1 2026-05-28 arxiv + ieee tip 2026 面向 clip 长文本/局部区域不足，做 global-local 图文对齐微调 中高相关；详见方法、贡献和实验边界。">
+  <a class="paper-thumb" href="../papers/2605.26615.html"><img src="../assets/mineru/2605.26615/images/43129930451d0bd1881fe24024e6bc6e3a86bab657beff021669c3b5101cf0c8.jpg" alt="FAST-GOAL figure"></a>
   <div>
     <div class="paper-meta">2026-05-28 · IEEE TIP 2026 · arXiv + IEEE TIP 2026</div>
     <h3><a href="../papers/2605.26615.html">FAST-GOAL: Fast and Efficient Global-local Object Alignment Learning</a></h3>
@@ -126,11 +119,10 @@
     <p class="card-tech"><b>方法：</b>面向 CLIP 长文本/局部区域不足，做 global-local 图文对齐微调</p>
     <div class="paper-actions"><a href="../papers/2605.26615.html">读图文页</a><a href="https://arxiv.org/abs/2605.26615">原文</a></div>
   </div>
+  <button class="readbtn" type="button" data-read-toggle="2605.26615" title="标记已读" aria-label="标记已读"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M4 10.5l4 4 8-9"/></svg></button>
 </article>
-<article class="paper-card" data-category="Visual SSL / representation" data-priority="P2" data-date="2026-05-28" data-title="q-geomem: question-guided geometric memory for video spatial reasoning" data-keywords="q-geomem: question-guided geometric memory for video spatial reasoning q-geomem visual ssl / representation p2 2026-05-28 arxiv 把问题相关性和相机几何写入视频 memory，对 video-llm temporal grounding 有参考价值 中相关；详见方法、贡献和实验边界。">
-  <a class="paper-thumb paper-thumb-text" href="../papers/2605.27318.html">
-    <img src="../assets/mineru/2605.27318/images/0f90848dd2b155a8e66578bbe6ff57a9965a18f10791fa1158d5bbbdd461485f.jpg" alt="Q-GeoMem figure"><span>P2</span>
-  </a>
+<article class="paper-card" data-pid="2605.27318" data-category="Visual SSL / representation" data-priority="P2" data-date="2026-05-28" data-title="q-geomem: question-guided geometric memory for video spatial reasoning" data-keywords="q-geomem: question-guided geometric memory for video spatial reasoning q-geomem visual ssl / representation p2 2026-05-28 arxiv 把问题相关性和相机几何写入视频 memory，对 video-llm temporal grounding 有参考价值 中相关；详见方法、贡献和实验边界。">
+  <a class="paper-thumb" href="../papers/2605.27318.html"><img src="../assets/mineru/2605.27318/images/0f90848dd2b155a8e66578bbe6ff57a9965a18f10791fa1158d5bbbdd461485f.jpg" alt="Q-GeoMem figure"></a>
   <div>
     <div class="paper-meta">2026-05-28 · Visual SSL / representation · arXiv</div>
     <h3><a href="../papers/2605.27318.html">Q-GeoMem: Question-Guided Geometric Memory for Video Spatial Reasoning</a></h3>
@@ -138,11 +130,10 @@
     <p class="card-tech"><b>方法：</b>把问题相关性和相机几何写入视频 memory，对 Video-LLM temporal grounding 有参考价值</p>
     <div class="paper-actions"><a href="../papers/2605.27318.html">读图文页</a><a href="https://arxiv.org/abs/2605.27318">原文</a></div>
   </div>
+  <button class="readbtn" type="button" data-read-toggle="2605.27318" title="标记已读" aria-label="标记已读"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M4 10.5l4 4 8-9"/></svg></button>
 </article>
-<article class="paper-card" data-category="Visual SSL / representation" data-priority="P2" data-date="2026-05-28" data-title="how and what to imagine? visual thinking in unified multimodal models for cross-view spatial reasoning" data-keywords="how and what to imagine? visual thinking in unified multimodal models for cross-view spatial reasoning how and what to imagine? visual ssl / representation p2 2026-05-28 arxiv 研究统一多模态模型是否真正使用生成的中间视觉思考图 中相关；详见方法、贡献和实验边界。">
-  <a class="paper-thumb paper-thumb-text" href="../papers/2605.27310.html">
-    <img src="../assets/mineru/2605.27310/images/a8c3561623a916a667b5b62f8cf3f2b64b3287aec64c62515d7cd329cf0abb9c.jpg" alt="How and What to Imagine? figure"><span>P2</span>
-  </a>
+<article class="paper-card" data-pid="2605.27310" data-category="Visual SSL / representation" data-priority="P2" data-date="2026-05-28" data-title="how and what to imagine? visual thinking in unified multimodal models for cross-view spatial reasoning" data-keywords="how and what to imagine? visual thinking in unified multimodal models for cross-view spatial reasoning how and what to imagine? visual ssl / representation p2 2026-05-28 arxiv 研究统一多模态模型是否真正使用生成的中间视觉思考图 中相关；详见方法、贡献和实验边界。">
+  <a class="paper-thumb" href="../papers/2605.27310.html"><img src="../assets/mineru/2605.27310/images/a8c3561623a916a667b5b62f8cf3f2b64b3287aec64c62515d7cd329cf0abb9c.jpg" alt="How and What to Imagine? figure"></a>
   <div>
     <div class="paper-meta">2026-05-28 · Visual SSL / representation · arXiv</div>
     <h3><a href="../papers/2605.27310.html">How and What to Imagine? Visual Thinking in Unified Multimodal Models for Cross-View Spatial Reasoning</a></h3>
@@ -150,11 +141,10 @@
     <p class="card-tech"><b>方法：</b>研究统一多模态模型是否真正使用生成的中间视觉思考图</p>
     <div class="paper-actions"><a href="../papers/2605.27310.html">读图文页</a><a href="https://arxiv.org/abs/2605.27310">原文</a></div>
   </div>
+  <button class="readbtn" type="button" data-read-toggle="2605.27310" title="标记已读" aria-label="标记已读"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M4 10.5l4 4 8-9"/></svg></button>
 </article>
-<article class="paper-card" data-category="Visual SSL / representation" data-priority="P2" data-date="2026-05-28" data-title="the rescue effect: spatio-semantic early exit bypasses quantization collapse in clip" data-keywords="the rescue effect: spatio-semantic early exit bypasses quantization collapse in clip the rescue effect visual ssl / representation p2 2026-05-28 arxiv 揭示 int8 clip 的 joint embedding 方向会在深层量化噪声中坍塌 中相关；详见方法、贡献和实验边界。">
-  <a class="paper-thumb paper-thumb-text" href="../papers/2605.26415.html">
-    <img src="../assets/mineru/2605.26415/images/5f909b90b8aef9d5a6a07509778b1f4fd890435b943b0eddef64f00e00c12401.jpg" alt="The Rescue Effect figure"><span>P2</span>
-  </a>
+<article class="paper-card" data-pid="2605.26415" data-category="Visual SSL / representation" data-priority="P2" data-date="2026-05-28" data-title="the rescue effect: spatio-semantic early exit bypasses quantization collapse in clip" data-keywords="the rescue effect: spatio-semantic early exit bypasses quantization collapse in clip the rescue effect visual ssl / representation p2 2026-05-28 arxiv 揭示 int8 clip 的 joint embedding 方向会在深层量化噪声中坍塌 中相关；详见方法、贡献和实验边界。">
+  <a class="paper-thumb" href="../papers/2605.26415.html"><img src="../assets/mineru/2605.26415/images/5f909b90b8aef9d5a6a07509778b1f4fd890435b943b0eddef64f00e00c12401.jpg" alt="The Rescue Effect figure"></a>
   <div>
     <div class="paper-meta">2026-05-28 · Visual SSL / representation · arXiv</div>
     <h3><a href="../papers/2605.26415.html">The Rescue Effect: Spatio-Semantic Early Exit Bypasses Quantization Collapse in CLIP</a></h3>
@@ -162,11 +152,10 @@
     <p class="card-tech"><b>方法：</b>揭示 INT8 CLIP 的 joint embedding 方向会在深层量化噪声中坍塌</p>
     <div class="paper-actions"><a href="../papers/2605.26415.html">读图文页</a><a href="https://arxiv.org/abs/2605.26415">原文</a></div>
   </div>
+  <button class="readbtn" type="button" data-read-toggle="2605.26415" title="标记已读" aria-label="标记已读"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M4 10.5l4 4 8-9"/></svg></button>
 </article>
-<article class="paper-card" data-category="Visual SSL / representation" data-priority="P2" data-date="2026-05-28" data-title="geometry-aware representation denoising for robust multi-view 3d reconstruction" data-keywords="geometry-aware representation denoising for robust multi-view 3d reconstruction geometry-aware representation denoising for robust visual ssl / representation p2 2026-05-28 arxiv 在 3d reconstruction 模型特征空间做 diffusion denoising，体现“修特征而非修像素”的路线 中相关；详见方法、贡献和实验边界。">
-  <a class="paper-thumb paper-thumb-text" href="../papers/2605.26230.html">
-    <img src="../assets/mineru/2605.26230/images/304cae2e8b8271a2b6f95a7e8d2bcb3da4dc83a975603f0e09b457124191cc17.jpg" alt="Geometry-Aware Representation Denoising for Robust figure"><span>P2</span>
-  </a>
+<article class="paper-card" data-pid="2605.26230" data-category="Visual SSL / representation" data-priority="P2" data-date="2026-05-28" data-title="geometry-aware representation denoising for robust multi-view 3d reconstruction" data-keywords="geometry-aware representation denoising for robust multi-view 3d reconstruction geometry-aware representation denoising for robust visual ssl / representation p2 2026-05-28 arxiv 在 3d reconstruction 模型特征空间做 diffusion denoising，体现“修特征而非修像素”的路线 中相关；详见方法、贡献和实验边界。">
+  <a class="paper-thumb" href="../papers/2605.26230.html"><img src="../assets/mineru/2605.26230/images/304cae2e8b8271a2b6f95a7e8d2bcb3da4dc83a975603f0e09b457124191cc17.jpg" alt="Geometry-Aware Representation Denoising for Robust figure"></a>
   <div>
     <div class="paper-meta">2026-05-28 · Visual SSL / representation · arXiv</div>
     <h3><a href="../papers/2605.26230.html">Geometry-Aware Representation Denoising for Robust Multi-view 3D Reconstruction</a></h3>
@@ -174,11 +163,10 @@
     <p class="card-tech"><b>方法：</b>在 3D reconstruction 模型特征空间做 diffusion denoising，体现“修特征而非修像素”的路线</p>
     <div class="paper-actions"><a href="../papers/2605.26230.html">读图文页</a><a href="https://arxiv.org/abs/2605.26230">原文</a></div>
   </div>
+  <button class="readbtn" type="button" data-read-toggle="2605.26230" title="标记已读" aria-label="标记已读"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M4 10.5l4 4 8-9"/></svg></button>
 </article>
-<article class="paper-card" data-category="CVPR 2026" data-priority="P3" data-date="2026-05-28" data-title="mrt: masked region transformer for layered image generation and editing at scale" data-keywords="mrt: masked region transformer for layered image generation and editing at scale mrt cvpr 2026 p3 2026-05-28 arxiv + cvpr 2026 20b masked region diffusion，把选择性 token masking 用在多层透明图像生成/编辑 中相关；详见方法、贡献和实验边界。">
-  <a class="paper-thumb paper-thumb-text" href="../papers/2605.27235.html">
-    <img src="../assets/mineru/2605.27235/images/26207f7ab8b70069ef9056863ed5a7fd0c1e7cdc4a21cdad7b79f0a3e7c32ced.jpg" alt="MRT figure"><span>P3</span>
-  </a>
+<article class="paper-card" data-pid="2605.27235" data-category="CVPR 2026" data-priority="P3" data-date="2026-05-28" data-title="mrt: masked region transformer for layered image generation and editing at scale" data-keywords="mrt: masked region transformer for layered image generation and editing at scale mrt cvpr 2026 p3 2026-05-28 arxiv + cvpr 2026 20b masked region diffusion，把选择性 token masking 用在多层透明图像生成/编辑 中相关；详见方法、贡献和实验边界。">
+  <a class="paper-thumb" href="../papers/2605.27235.html"><img src="../assets/mineru/2605.27235/images/26207f7ab8b70069ef9056863ed5a7fd0c1e7cdc4a21cdad7b79f0a3e7c32ced.jpg" alt="MRT figure"></a>
   <div>
     <div class="paper-meta">2026-05-28 · CVPR 2026 · arXiv + CVPR 2026</div>
     <h3><a href="../papers/2605.27235.html">MRT: Masked Region Transformer for Layered Image Generation and Editing at Scale</a></h3>
@@ -186,11 +174,10 @@
     <p class="card-tech"><b>方法：</b>20B masked region diffusion，把选择性 token masking 用在多层透明图像生成/编辑</p>
     <div class="paper-actions"><a href="../papers/2605.27235.html">读图文页</a><a href="https://arxiv.org/abs/2605.27235">原文</a></div>
   </div>
+  <button class="readbtn" type="button" data-read-toggle="2605.27235" title="标记已读" aria-label="标记已读"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M4 10.5l4 4 8-9"/></svg></button>
 </article>
-<article class="paper-card" data-category="Visual SSL / representation" data-priority="P3" data-date="2026-05-28" data-title="o-marc: omni memory-augmented compression distillation for efficient video understanding" data-keywords="o-marc: omni memory-augmented compression distillation for efficient video understanding o-marc visual ssl / representation p3 2026-05-28 arxiv 对长 audio-video token 序列做 memory compression 和 distillation 中相关；详见方法、贡献和实验边界。">
-  <a class="paper-thumb paper-thumb-text" href="../papers/2605.26584.html">
-    <img src="../assets/mineru/2605.26584/images/b2411251735dceefa6778e52bfa9dc3d0dccb55a004aafbb31a47ca82fffb517.jpg" alt="O-MARC figure"><span>P3</span>
-  </a>
+<article class="paper-card" data-pid="2605.26584" data-category="Visual SSL / representation" data-priority="P3" data-date="2026-05-28" data-title="o-marc: omni memory-augmented compression distillation for efficient video understanding" data-keywords="o-marc: omni memory-augmented compression distillation for efficient video understanding o-marc visual ssl / representation p3 2026-05-28 arxiv 对长 audio-video token 序列做 memory compression 和 distillation 中相关；详见方法、贡献和实验边界。">
+  <a class="paper-thumb" href="../papers/2605.26584.html"><img src="../assets/mineru/2605.26584/images/b2411251735dceefa6778e52bfa9dc3d0dccb55a004aafbb31a47ca82fffb517.jpg" alt="O-MARC figure"></a>
   <div>
     <div class="paper-meta">2026-05-28 · Visual SSL / representation · arXiv</div>
     <h3><a href="../papers/2605.26584.html">O-MARC: Omni Memory-Augmented Compression Distillation for Efficient Video Understanding</a></h3>
@@ -198,11 +185,10 @@
     <p class="card-tech"><b>方法：</b>对长 audio-video token 序列做 memory compression 和 distillation</p>
     <div class="paper-actions"><a href="../papers/2605.26584.html">读图文页</a><a href="https://arxiv.org/abs/2605.26584">原文</a></div>
   </div>
+  <button class="readbtn" type="button" data-read-toggle="2605.26584" title="标记已读" aria-label="标记已读"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M4 10.5l4 4 8-9"/></svg></button>
 </article>
-<article class="paper-card" data-category="ICML 2026" data-priority="P3" data-date="2026-05-28" data-title="simpc: learning self-induced mirror-point consistency for unsupervised point cloud denoising" data-keywords="simpc: learning self-induced mirror-point consistency for unsupervised point cloud denoising simpc icml 2026 p3 2026-05-28 arxiv + icml 2026 无监督 3d 点云去噪中的 mirror-point consistency，几何 ssl 信号明确但任务较专 中相关；详见方法、贡献和实验边界。">
-  <a class="paper-thumb paper-thumb-text" href="../papers/2605.26894.html">
-    <img src="../assets/mineru/2605.26894/images/856cbdc6597c8656d5cfe3521d8a3491723d6f78691cb212e2d2f27ae220d716.jpg" alt="SIMPC figure"><span>P3</span>
-  </a>
+<article class="paper-card" data-pid="2605.26894" data-category="ICML 2026" data-priority="P3" data-date="2026-05-28" data-title="simpc: learning self-induced mirror-point consistency for unsupervised point cloud denoising" data-keywords="simpc: learning self-induced mirror-point consistency for unsupervised point cloud denoising simpc icml 2026 p3 2026-05-28 arxiv + icml 2026 无监督 3d 点云去噪中的 mirror-point consistency，几何 ssl 信号明确但任务较专 中相关；详见方法、贡献和实验边界。">
+  <a class="paper-thumb" href="../papers/2605.26894.html"><img src="../assets/mineru/2605.26894/images/856cbdc6597c8656d5cfe3521d8a3491723d6f78691cb212e2d2f27ae220d716.jpg" alt="SIMPC figure"></a>
   <div>
     <div class="paper-meta">2026-05-28 · ICML 2026 · arXiv + ICML 2026</div>
     <h3><a href="../papers/2605.26894.html">SIMPC: Learning Self-Induced Mirror-Point Consistency for Unsupervised Point Cloud Denoising</a></h3>
@@ -210,11 +196,10 @@
     <p class="card-tech"><b>方法：</b>无监督 3D 点云去噪中的 mirror-point consistency，几何 SSL 信号明确但任务较专</p>
     <div class="paper-actions"><a href="../papers/2605.26894.html">读图文页</a><a href="https://arxiv.org/abs/2605.26894">原文</a></div>
   </div>
+  <button class="readbtn" type="button" data-read-toggle="2605.26894" title="标记已读" aria-label="标记已读"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M4 10.5l4 4 8-9"/></svg></button>
 </article>
-<article class="paper-card" data-category="Visual SSL / representation" data-priority="扫读" data-date="2026-05-28" data-title="pop-up distractions reveal bag-of-events behavior in video large language models" data-keywords="pop-up distractions reveal bag-of-events behavior in video large language models pop-up distractions reveal bag-of-events behavior visual ssl / representation 扫读 2026-05-28 arxiv videollm temporal grounding 诊断：模型可能把视频当事件袋而非时序结构 中相关；详见方法、贡献和实验边界。">
-  <a class="paper-thumb paper-thumb-text" href="../papers/2605.27101.html">
-    <img src="../assets/mineru/2605.27101/images/164973686ac923e04dd671a0364f5c0891055ad020ff8c469849cce087150886.jpg" alt="Pop-Up Distractions Reveal Bag-of-Events Behavior figure"><span>扫读</span>
-  </a>
+<article class="paper-card" data-pid="2605.27101" data-category="Visual SSL / representation" data-priority="扫读" data-date="2026-05-28" data-title="pop-up distractions reveal bag-of-events behavior in video large language models" data-keywords="pop-up distractions reveal bag-of-events behavior in video large language models pop-up distractions reveal bag-of-events behavior visual ssl / representation 扫读 2026-05-28 arxiv videollm temporal grounding 诊断：模型可能把视频当事件袋而非时序结构 中相关；详见方法、贡献和实验边界。">
+  <a class="paper-thumb" href="../papers/2605.27101.html"><img src="../assets/mineru/2605.27101/images/164973686ac923e04dd671a0364f5c0891055ad020ff8c469849cce087150886.jpg" alt="Pop-Up Distractions Reveal Bag-of-Events Behavior figure"></a>
   <div>
     <div class="paper-meta">2026-05-28 · Visual SSL / representation · arXiv</div>
     <h3><a href="../papers/2605.27101.html">Pop-Up Distractions Reveal Bag-of-Events Behavior in Video Large Language Models</a></h3>
@@ -222,6 +207,7 @@
     <p class="card-tech"><b>方法：</b>VideoLLM temporal grounding 诊断：模型可能把视频当事件袋而非时序结构</p>
     <div class="paper-actions"><a href="../papers/2605.27101.html">读图文页</a><a href="https://arxiv.org/abs/2605.27101">原文</a></div>
   </div>
+  <button class="readbtn" type="button" data-read-toggle="2605.27101" title="标记已读" aria-label="标记已读"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M4 10.5l4 4 8-9"/></svg></button>
 </article></div>
     </div>
   </div>
@@ -230,13 +216,13 @@
     <div class="side-box"><h4>会议口径</h4><p>主提醒只保留 CCF A/B；CCF C 与过期截止仅作状态记录。</p></div>
   </aside>
 </article></main>
-  <aside class="conf-float" data-conf-reminder="2026-06-15-main-ddl" aria-label="CCF A/B 主投稿提醒">
+  <aside class="conf-float" data-conf-reminder="2026-06-16-main-ddl" aria-label="CCF A/B 主投稿提醒">
   <button class="conf-close" type="button" aria-label="关闭会议提醒">×</button>
   <details open>
     <summary>CCF A/B 主投稿提醒</summary>
     <div class="conf-list"><a class="conf-item " href="https://github.com/ccfddl/ccf-deadlines/blob/main/conference/AI/aaai.yml">
   <span><b>AAAI 2027</b><em>CCF A · Main paper submission</em></span>
-  <strong>42 天</strong>
+  <strong>41 天</strong>
   <small>2026-07-27 · CCF DDL: abstract 2026-07-20；进入 1 个月窗口后重点提醒。</small>
 </a></div>
   </details>
@@ -249,7 +235,7 @@
   (() => {
     const box = document.querySelector('[data-conf-reminder]');
     if (!box) return;
-    const key = `visualSslConfReminderClosed:${box.dataset.confReminder || '2026-06-15-main-ddl'}`;
+    const key = `visualSslConfReminderClosed:${box.dataset.confReminder || '2026-06-16-main-ddl'}`;
     try {
       if (localStorage.getItem(key) === '1') box.hidden = true;
     } catch (err) {}
@@ -262,5 +248,6 @@
     }
   })();
   </script>
+  <script src="../assets/ssl-game.js"></script>
 </body>
 </html>

@@ -4,24 +4,26 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>2026-06-08 速递 · 通用视觉自监督研究报</title>
-  <link rel="stylesheet" href="../assets/styles.css?v=20260525j">
-  <link rel="stylesheet" href="../assets/visual-ssl.css?v=20260525j">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Source+Serif+4:ital,opsz,wght@0,8..60,400;0,8..60,500;0,8..60,600;1,8..60,400&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../assets/visual-ssl.css?v=20260615ssl6">
 </head>
 <body>
   <header class="masthead">
-    <div class="masthead-kicker">Visual SSL Research Report · 2026-06-08</div>
     <a class="masthead-title" href="../index.html">通用视觉自监督研究报</a>
+    <div class="masthead-kicker">A Daily Digest of Visual Self-Supervised Learning</div>
     <div class="masthead-meta">
+      <span>2026-06-08</span>
       <span>图像表征 · VFM · JEPA · 视频预训练</span>
-      <span>CCF A/B 会议优先</span>
-      <span>图文精读 · 方法图解</span>
     </div>
   </header>
   <nav class="site-nav" aria-label="主导航">
     <a class="nav-link" href="../index.html">头版</a>
-<a class="nav-link" href="../issues/2026-06-15.html">今日速递</a>
+<a class="nav-link" href="../issues/2026-06-16.html">今日速递</a>
 <a class="nav-link" href="../pages/catalog.html">论文目录</a>
 <a class="nav-link" href="../pages/timeline.html">时间线</a>
+<span class="nav-streak" title="连续追踪天数"><svg viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><path d="M8 0c.7 2.5-1.2 3.7-2 5-1 1.6-1 4 .8 4.8C6.4 8.5 7.4 7.8 8 7c.3 1.3-.4 2 .9 3 .9.7 1.3 1.6 1.1 2.6C9.7 14.6 8.9 16 6.8 16 4.6 16 3 14.3 3 12c0-3.3 2.6-4.8 2.4-8C6.9 4.6 8.4 5 8 0z"/></svg> 连续 <b data-streak>0</b> 天</span>
   </nav>
   <main><article class="paper-detail issue-detail">
   <div class="paper-main">
@@ -31,10 +33,8 @@
     <div class="feature-body">
       <p class="lead dropcap">先读 AdaTok。把离散 1D image tokenizer 的 token budget 学成内容条件输出，连接 visual tokenization、latent compression 和 AR image generation。 其余论文按 P1/P2 与主题顺序扫读，重点看方法图、消融设置和是否能迁移到通用视觉表征。</p>
       <h2>论文索引</h2>
-      <div class="paper-list issue-list"><article class="paper-card" data-category="arXiv 新增" data-priority="P0" data-date="2026-06-08" data-title="adatok: self-budgeting image tokenization with quality-preserving dynamic tokens" data-keywords="adatok: self-budgeting image tokenization with quality-preserving dynamic tokens adatok arxiv 新增 p0 2026-06-08 arxiv 新增 把离散 1d image tokenizer 的 token budget 学成内容条件输出，连接 visual tokenization、latent compression 和 ar image generation 高相关；详见方法、贡献和实验边界。">
-  <a class="paper-thumb paper-thumb-text" href="../papers/2606.07185.html">
-    <img src="../assets/mineru/2606.07185/images/ec7117a14ed3a05cdd2fa4b751f3477a92393a7a14fd1cbac046ec9f9d7c76c1.jpg" alt="AdaTok figure"><span>P0</span>
-  </a>
+      <div class="paper-list issue-list"><article class="paper-card" data-pid="2606.07185" data-category="arXiv 新增" data-priority="P0" data-date="2026-06-08" data-title="adatok: self-budgeting image tokenization with quality-preserving dynamic tokens" data-keywords="adatok: self-budgeting image tokenization with quality-preserving dynamic tokens adatok arxiv 新增 p0 2026-06-08 arxiv 新增 把离散 1d image tokenizer 的 token budget 学成内容条件输出，连接 visual tokenization、latent compression 和 ar image generation 高相关；详见方法、贡献和实验边界。">
+  <a class="paper-thumb" href="../papers/2606.07185.html"><img src="../assets/mineru/2606.07185/images/ec7117a14ed3a05cdd2fa4b751f3477a92393a7a14fd1cbac046ec9f9d7c76c1.jpg" alt="AdaTok figure"></a>
   <div>
     <div class="paper-meta">2026-06-08 · arXiv 新增 · arXiv 新增</div>
     <h3><a href="../papers/2606.07185.html">AdaTok: Self-Budgeting Image Tokenization with Quality-Preserving Dynamic Tokens</a></h3>
@@ -42,11 +42,10 @@
     <p class="card-tech"><b>方法：</b>把离散 1D image tokenizer 的 token budget 学成内容条件输出，连接 visual tokenization、latent compression 和 AR image generation</p>
     <div class="paper-actions"><a href="../papers/2606.07185.html">读图文页</a><a href="https://arxiv.org/abs/2606.07185">原文</a></div>
   </div>
+  <button class="readbtn" type="button" data-read-toggle="2606.07185" title="标记已读" aria-label="标记已读"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M4 10.5l4 4 8-9"/></svg></button>
 </article>
-<article class="paper-card" data-category="arXiv 新增" data-priority="P0" data-date="2026-06-08" data-title="tevi: text-conditioned editing of visual representations via sparse autoencoders for improved vision-language alignment" data-keywords="tevi: text-conditioned editing of visual representations via sparse autoencoders for improved vision-language alignment tevi arxiv 新增 p0 2026-06-08 arxiv 新增 用 caption-conditioned sparse autoencoder editing 精简 clip image embedding，直接服务图文表征对齐 高相关；详见方法、贡献和实验边界。">
-  <a class="paper-thumb paper-thumb-text" href="../papers/2606.07451.html">
-    <img src="../assets/mineru/2606.07451/images/page_preview.jpg" alt="TEVI figure"><span>P0</span>
-  </a>
+<article class="paper-card" data-pid="2606.07451" data-category="arXiv 新增" data-priority="P0" data-date="2026-06-08" data-title="tevi: text-conditioned editing of visual representations via sparse autoencoders for improved vision-language alignment" data-keywords="tevi: text-conditioned editing of visual representations via sparse autoencoders for improved vision-language alignment tevi arxiv 新增 p0 2026-06-08 arxiv 新增 用 caption-conditioned sparse autoencoder editing 精简 clip image embedding，直接服务图文表征对齐 高相关；详见方法、贡献和实验边界。">
+  <a class="paper-thumb" href="../papers/2606.07451.html"><img src="../assets/mineru/2606.07451/images/page_preview.jpg" alt="TEVI figure"></a>
   <div>
     <div class="paper-meta">2026-06-08 · arXiv 新增 · arXiv 新增</div>
     <h3><a href="../papers/2606.07451.html">TEVI: Text-Conditioned Editing of Visual Representations via Sparse Autoencoders for Improved Vision-Language Alignment</a></h3>
@@ -54,11 +53,10 @@
     <p class="card-tech"><b>方法：</b>用 caption-conditioned sparse autoencoder editing 精简 CLIP image embedding，直接服务图文表征对齐</p>
     <div class="paper-actions"><a href="../papers/2606.07451.html">读图文页</a><a href="https://arxiv.org/abs/2606.07451">原文</a></div>
   </div>
+  <button class="readbtn" type="button" data-read-toggle="2606.07451" title="标记已读" aria-label="标记已读"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M4 10.5l4 4 8-9"/></svg></button>
 </article>
-<article class="paper-card" data-category="arXiv 新增 + ICML 2026 Poster" data-priority="P1" data-date="2026-06-08" data-title="inside the visual mind: neuroscience-motivated concept circuits for interpreting and steering vision transformers" data-keywords="inside the visual mind: neuroscience-motivated concept circuits for interpreting and steering vision transformers inside the visual mind arxiv 新增 + icml 2026 poster p1 2026-06-08 arxiv 新增 + icml 2026 poster visae 把 sae 概念分解、自动解释和 causal circuit tracing 接到 vit，是理解/steering 视觉表征的高价值工具 高相关；详见方法、贡献和实验边界。">
-  <a class="paper-thumb paper-thumb-text" href="../papers/2606.06664.html">
-    <img src="../assets/mineru/2606.06664/images/39927501e43468cf07f38c189ca6ee1dae6dad1cce2eec234936f937122ed28f.jpg" alt="Inside the Visual Mind figure"><span>P1</span>
-  </a>
+<article class="paper-card" data-pid="2606.06664" data-category="arXiv 新增 + ICML 2026 Poster" data-priority="P1" data-date="2026-06-08" data-title="inside the visual mind: neuroscience-motivated concept circuits for interpreting and steering vision transformers" data-keywords="inside the visual mind: neuroscience-motivated concept circuits for interpreting and steering vision transformers inside the visual mind arxiv 新增 + icml 2026 poster p1 2026-06-08 arxiv 新增 + icml 2026 poster visae 把 sae 概念分解、自动解释和 causal circuit tracing 接到 vit，是理解/steering 视觉表征的高价值工具 高相关；详见方法、贡献和实验边界。">
+  <a class="paper-thumb" href="../papers/2606.06664.html"><img src="../assets/mineru/2606.06664/images/39927501e43468cf07f38c189ca6ee1dae6dad1cce2eec234936f937122ed28f.jpg" alt="Inside the Visual Mind figure"></a>
   <div>
     <div class="paper-meta">2026-06-08 · arXiv 新增 + ICML 2026 Poster · arXiv 新增 + ICML 2026 Poster</div>
     <h3><a href="../papers/2606.06664.html">Inside the Visual Mind: Neuroscience-Motivated Concept Circuits for Interpreting and Steering Vision Transformers</a></h3>
@@ -66,11 +64,10 @@
     <p class="card-tech"><b>方法：</b>ViSAE 把 SAE 概念分解、自动解释和 causal circuit tracing 接到 ViT，是理解/steering 视觉表征的高价值工具</p>
     <div class="paper-actions"><a href="../papers/2606.06664.html">读图文页</a><a href="https://arxiv.org/abs/2606.06664">原文</a></div>
   </div>
+  <button class="readbtn" type="button" data-read-toggle="2606.06664" title="标记已读" aria-label="标记已读"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M4 10.5l4 4 8-9"/></svg></button>
 </article>
-<article class="paper-card" data-category="arXiv 新增" data-priority="P1" data-date="2026-06-08" data-title="lighting-aware representation learning under controllable lighting variation" data-keywords="lighting-aware representation learning under controllable lighting variation lighting-aware representation learning under controllable arxiv 新增 p1 2026-06-08 arxiv 新增 把光照变化从“要被增强抹掉的 nuisance”改成显式训练信号，扩展 contrastive visual representation learning 高相关；详见方法、贡献和实验边界。">
-  <a class="paper-thumb paper-thumb-text" href="../papers/2606.06899.html">
-    <img src="../assets/mineru/2606.06899/images/page_preview.jpg" alt="Lighting-Aware Representation Learning under Controllable figure"><span>P1</span>
-  </a>
+<article class="paper-card" data-pid="2606.06899" data-category="arXiv 新增" data-priority="P1" data-date="2026-06-08" data-title="lighting-aware representation learning under controllable lighting variation" data-keywords="lighting-aware representation learning under controllable lighting variation lighting-aware representation learning under controllable arxiv 新增 p1 2026-06-08 arxiv 新增 把光照变化从“要被增强抹掉的 nuisance”改成显式训练信号，扩展 contrastive visual representation learning 高相关；详见方法、贡献和实验边界。">
+  <a class="paper-thumb" href="../papers/2606.06899.html"><img src="../assets/mineru/2606.06899/images/page_preview.jpg" alt="Lighting-Aware Representation Learning under Controllable figure"></a>
   <div>
     <div class="paper-meta">2026-06-08 · arXiv 新增 · arXiv 新增</div>
     <h3><a href="../papers/2606.06899.html">Lighting-Aware Representation Learning under Controllable Lighting Variation</a></h3>
@@ -78,11 +75,10 @@
     <p class="card-tech"><b>方法：</b>把光照变化从“要被增强抹掉的 nuisance”改成显式训练信号，扩展 contrastive visual representation learning</p>
     <div class="paper-actions"><a href="../papers/2606.06899.html">读图文页</a><a href="https://arxiv.org/abs/2606.06899">原文</a></div>
   </div>
+  <button class="readbtn" type="button" data-read-toggle="2606.06899" title="标记已读" aria-label="标记已读"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M4 10.5l4 4 8-9"/></svg></button>
 </article>
-<article class="paper-card" data-category="arXiv 新增 + CVPR 2026" data-priority="P1" data-date="2026-06-08" data-title="motionenhancer: leveraging video diffusion for motion-enhanced vision-language models" data-keywords="motionenhancer: leveraging video diffusion for motion-enhanced vision-language models motionenhancer arxiv 新增 + cvpr 2026 p1 2026-06-08 arxiv 新增 + cvpr 2026 从 video diffusion model 蒸馏 motion attention prior 给 video vlm，适合跟踪视频表征和生成模型监督的交叉 中高相关；详见方法、贡献和实验边界。">
-  <a class="paper-thumb paper-thumb-text" href="../papers/2606.06853.html">
-    <img src="../assets/mineru/2606.06853/images/3b3b907bc97f098dc4ad888776968647f3aab3fa02ccf054bfa85b380bc9980a.jpg" alt="MotionEnhancer figure"><span>P1</span>
-  </a>
+<article class="paper-card" data-pid="2606.06853" data-category="arXiv 新增 + CVPR 2026" data-priority="P1" data-date="2026-06-08" data-title="motionenhancer: leveraging video diffusion for motion-enhanced vision-language models" data-keywords="motionenhancer: leveraging video diffusion for motion-enhanced vision-language models motionenhancer arxiv 新增 + cvpr 2026 p1 2026-06-08 arxiv 新增 + cvpr 2026 从 video diffusion model 蒸馏 motion attention prior 给 video vlm，适合跟踪视频表征和生成模型监督的交叉 中高相关；详见方法、贡献和实验边界。">
+  <a class="paper-thumb" href="../papers/2606.06853.html"><img src="../assets/mineru/2606.06853/images/3b3b907bc97f098dc4ad888776968647f3aab3fa02ccf054bfa85b380bc9980a.jpg" alt="MotionEnhancer figure"></a>
   <div>
     <div class="paper-meta">2026-06-08 · arXiv 新增 + CVPR 2026 · arXiv 新增 + CVPR 2026</div>
     <h3><a href="../papers/2606.06853.html">MotionEnhancer: Leveraging Video Diffusion for Motion-Enhanced Vision-Language Models</a></h3>
@@ -90,11 +86,10 @@
     <p class="card-tech"><b>方法：</b>从 video diffusion model 蒸馏 motion attention prior 给 video VLM，适合跟踪视频表征和生成模型监督的交叉</p>
     <div class="paper-actions"><a href="../papers/2606.06853.html">读图文页</a><a href="https://arxiv.org/abs/2606.06853">原文</a></div>
   </div>
+  <button class="readbtn" type="button" data-read-toggle="2606.06853" title="标记已读" aria-label="标记已读"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M4 10.5l4 4 8-9"/></svg></button>
 </article>
-<article class="paper-card" data-category="arXiv 新增" data-priority="P2" data-date="2026-06-08" data-title="diagnosing visual ignorance in vision-language models" data-keywords="diagnosing visual ignorance in vision-language models diagnosing visual ignorance in vision-language arxiv 新增 p2 2026-06-08 arxiv 新增 用层替换、mlp probing 和视觉衰减指标诊断 vlm 如何丢失视觉证据，是 v-l 自监督评估的强信号 中高相关；详见方法、贡献和实验边界。">
-  <a class="paper-thumb paper-thumb-text" href="../papers/2606.06890.html">
-    <img src="../assets/mineru/2606.06890/images/page_preview.jpg" alt="Diagnosing Visual Ignorance in Vision-Language figure"><span>P2</span>
-  </a>
+<article class="paper-card" data-pid="2606.06890" data-category="arXiv 新增" data-priority="P2" data-date="2026-06-08" data-title="diagnosing visual ignorance in vision-language models" data-keywords="diagnosing visual ignorance in vision-language models diagnosing visual ignorance in vision-language arxiv 新增 p2 2026-06-08 arxiv 新增 用层替换、mlp probing 和视觉衰减指标诊断 vlm 如何丢失视觉证据，是 v-l 自监督评估的强信号 中高相关；详见方法、贡献和实验边界。">
+  <a class="paper-thumb" href="../papers/2606.06890.html"><img src="../assets/mineru/2606.06890/images/page_preview.jpg" alt="Diagnosing Visual Ignorance in Vision-Language figure"></a>
   <div>
     <div class="paper-meta">2026-06-08 · arXiv 新增 · arXiv 新增</div>
     <h3><a href="../papers/2606.06890.html">Diagnosing Visual Ignorance in Vision-Language Models</a></h3>
@@ -102,11 +97,10 @@
     <p class="card-tech"><b>方法：</b>用层替换、MLP probing 和视觉衰减指标诊断 VLM 如何丢失视觉证据，是 V-L 自监督评估的强信号</p>
     <div class="paper-actions"><a href="../papers/2606.06890.html">读图文页</a><a href="https://arxiv.org/abs/2606.06890">原文</a></div>
   </div>
+  <button class="readbtn" type="button" data-read-toggle="2606.06890" title="标记已读" aria-label="标记已读"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M4 10.5l4 4 8-9"/></svg></button>
 </article>
-<article class="paper-card" data-category="ICLR 2026" data-priority="P2" data-date="2026-06-08" data-title="generalization of diffusion models arises with a balanced representation space" data-keywords="generalization of diffusion models arises with a balanced representation space generalization of diffusion models arises iclr 2026 p2 2026-06-08 arxiv 更新 + iclr 2026 从 representation geometry 解释 diffusion memorization/generalization，对 latent diffusion 与 rae 线索有理论参考 中高相关；详见方法、贡献和实验边界。">
-  <a class="paper-thumb paper-thumb-text" href="../papers/2512.20963.html">
-    <img src="../assets/mineru/2512.20963/images/page_preview.jpg" alt="Generalization of Diffusion Models Arises figure"><span>P2</span>
-  </a>
+<article class="paper-card" data-pid="2512.20963" data-category="ICLR 2026" data-priority="P2" data-date="2026-06-08" data-title="generalization of diffusion models arises with a balanced representation space" data-keywords="generalization of diffusion models arises with a balanced representation space generalization of diffusion models arises iclr 2026 p2 2026-06-08 arxiv 更新 + iclr 2026 从 representation geometry 解释 diffusion memorization/generalization，对 latent diffusion 与 rae 线索有理论参考 中高相关；详见方法、贡献和实验边界。">
+  <a class="paper-thumb" href="../papers/2512.20963.html"><img src="../assets/mineru/2512.20963/images/page_preview.jpg" alt="Generalization of Diffusion Models Arises figure"></a>
   <div>
     <div class="paper-meta">2026-06-08 · ICLR 2026 · arXiv 更新 + ICLR 2026</div>
     <h3><a href="../papers/2512.20963.html">Generalization of Diffusion Models Arises with a Balanced Representation Space</a></h3>
@@ -114,11 +108,10 @@
     <p class="card-tech"><b>方法：</b>从 representation geometry 解释 diffusion memorization/generalization，对 latent diffusion 与 RAE 线索有理论参考</p>
     <div class="paper-actions"><a href="../papers/2512.20963.html">读图文页</a><a href="https://arxiv.org/abs/2512.20963">原文</a></div>
   </div>
+  <button class="readbtn" type="button" data-read-toggle="2512.20963" title="标记已读" aria-label="标记已读"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M4 10.5l4 4 8-9"/></svg></button>
 </article>
-<article class="paper-card" data-category="arXiv 新增 + ICML 2026 Poster" data-priority="P2" data-date="2026-06-08" data-title="breaking the lock-in: diversifying text-to-image generation via representation modulation" data-keywords="breaking the lock-in: diversifying text-to-image generation via representation modulation breaking the lock-in arxiv 新增 + icml 2026 poster p2 2026-06-08 arxiv 新增 + icml 2026 poster 在 diffusion transformer 中对早期 dc feature 做 training-free modulation，说明生成多样性也可从表征频率成分入手 中相关；详见方法、贡献和实验边界。">
-  <a class="paper-thumb paper-thumb-text" href="../papers/2606.06813.html">
-    <img src="../assets/mineru/2606.06813/images/419ca504290db0075648aa82c3e25a4103b83c87a78370e6a9f1f01f557c9b06.jpg" alt="Breaking the Lock-in figure"><span>P2</span>
-  </a>
+<article class="paper-card" data-pid="2606.06813" data-category="arXiv 新增 + ICML 2026 Poster" data-priority="P2" data-date="2026-06-08" data-title="breaking the lock-in: diversifying text-to-image generation via representation modulation" data-keywords="breaking the lock-in: diversifying text-to-image generation via representation modulation breaking the lock-in arxiv 新增 + icml 2026 poster p2 2026-06-08 arxiv 新增 + icml 2026 poster 在 diffusion transformer 中对早期 dc feature 做 training-free modulation，说明生成多样性也可从表征频率成分入手 中相关；详见方法、贡献和实验边界。">
+  <a class="paper-thumb" href="../papers/2606.06813.html"><img src="../assets/mineru/2606.06813/images/419ca504290db0075648aa82c3e25a4103b83c87a78370e6a9f1f01f557c9b06.jpg" alt="Breaking the Lock-in figure"></a>
   <div>
     <div class="paper-meta">2026-06-08 · arXiv 新增 + ICML 2026 Poster · arXiv 新增 + ICML 2026 Poster</div>
     <h3><a href="../papers/2606.06813.html">Breaking the Lock-in: Diversifying Text-to-Image Generation via Representation Modulation</a></h3>
@@ -126,11 +119,10 @@
     <p class="card-tech"><b>方法：</b>在 diffusion transformer 中对早期 DC feature 做 training-free modulation，说明生成多样性也可从表征频率成分入手</p>
     <div class="paper-actions"><a href="../papers/2606.06813.html">读图文页</a><a href="https://arxiv.org/abs/2606.06813">原文</a></div>
   </div>
+  <button class="readbtn" type="button" data-read-toggle="2606.06813" title="标记已读" aria-label="标记已读"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M4 10.5l4 4 8-9"/></svg></button>
 </article>
-<article class="paper-card" data-category="arXiv 更新" data-priority="P3" data-date="2026-06-08" data-title="the dual mechanisms of spatial variable binding in vision-language models" data-keywords="the dual mechanisms of spatial variable binding in vision-language models the dual mechanisms of spatial arxiv 更新 p3 2026-06-08 arxiv 更新 指出 vlm spatial binding 的主信号来自 vision encoder 的全局 token 表征，适合作为 vlm 表征诊断读物 中相关；详见方法、贡献和实验边界。">
-  <a class="paper-thumb paper-thumb-text" href="../papers/2603.22278.html">
-    <img src="../assets/mineru/2603.22278/images/page_preview.jpg" alt="The Dual Mechanisms of Spatial figure"><span>P3</span>
-  </a>
+<article class="paper-card" data-pid="2603.22278" data-category="arXiv 更新" data-priority="P3" data-date="2026-06-08" data-title="the dual mechanisms of spatial variable binding in vision-language models" data-keywords="the dual mechanisms of spatial variable binding in vision-language models the dual mechanisms of spatial arxiv 更新 p3 2026-06-08 arxiv 更新 指出 vlm spatial binding 的主信号来自 vision encoder 的全局 token 表征，适合作为 vlm 表征诊断读物 中相关；详见方法、贡献和实验边界。">
+  <a class="paper-thumb" href="../papers/2603.22278.html"><img src="../assets/mineru/2603.22278/images/page_preview.jpg" alt="The Dual Mechanisms of Spatial figure"></a>
   <div>
     <div class="paper-meta">2026-06-08 · arXiv 更新 · arXiv 更新</div>
     <h3><a href="../papers/2603.22278.html">The Dual Mechanisms of Spatial Variable Binding in Vision-Language Models</a></h3>
@@ -138,11 +130,10 @@
     <p class="card-tech"><b>方法：</b>指出 VLM spatial binding 的主信号来自 vision encoder 的全局 token 表征，适合作为 VLM 表征诊断读物</p>
     <div class="paper-actions"><a href="../papers/2603.22278.html">读图文页</a><a href="https://arxiv.org/abs/2603.22278">原文</a></div>
   </div>
+  <button class="readbtn" type="button" data-read-toggle="2603.22278" title="标记已读" aria-label="标记已读"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M4 10.5l4 4 8-9"/></svg></button>
 </article>
-<article class="paper-card" data-category="arXiv 新增" data-priority="扫读" data-date="2026-06-08" data-title="implicit data synthesis for contrastive unsupervised data augmentation" data-keywords="implicit data synthesis for contrastive unsupervised data augmentation implicit data synthesis for contrastive arxiv 新增 扫读 2026-06-08 arxiv 新增 用网络权重扰动替代数据扰动生成 contrastive samples，实验偏雷达科学数据，但思想可迁移 中相关；详见方法、贡献和实验边界。">
-  <a class="paper-thumb paper-thumb-text" href="../papers/2606.07498.html">
-    <img src="../assets/mineru/2606.07498/images/page_preview.jpg" alt="Implicit Data Synthesis for Contrastive figure"><span>扫读</span>
-  </a>
+<article class="paper-card" data-pid="2606.07498" data-category="arXiv 新增" data-priority="扫读" data-date="2026-06-08" data-title="implicit data synthesis for contrastive unsupervised data augmentation" data-keywords="implicit data synthesis for contrastive unsupervised data augmentation implicit data synthesis for contrastive arxiv 新增 扫读 2026-06-08 arxiv 新增 用网络权重扰动替代数据扰动生成 contrastive samples，实验偏雷达科学数据，但思想可迁移 中相关；详见方法、贡献和实验边界。">
+  <a class="paper-thumb" href="../papers/2606.07498.html"><img src="../assets/mineru/2606.07498/images/page_preview.jpg" alt="Implicit Data Synthesis for Contrastive figure"></a>
   <div>
     <div class="paper-meta">2026-06-08 · arXiv 新增 · arXiv 新增</div>
     <h3><a href="../papers/2606.07498.html">Implicit Data Synthesis for Contrastive Unsupervised Data Augmentation</a></h3>
@@ -150,6 +141,7 @@
     <p class="card-tech"><b>方法：</b>用网络权重扰动替代数据扰动生成 contrastive samples，实验偏雷达科学数据，但思想可迁移</p>
     <div class="paper-actions"><a href="../papers/2606.07498.html">读图文页</a><a href="https://arxiv.org/abs/2606.07498">原文</a></div>
   </div>
+  <button class="readbtn" type="button" data-read-toggle="2606.07498" title="标记已读" aria-label="标记已读"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M4 10.5l4 4 8-9"/></svg></button>
 </article></div>
     </div>
   </div>
@@ -158,13 +150,13 @@
     <div class="side-box"><h4>会议口径</h4><p>主提醒只保留 CCF A/B；CCF C 与过期截止仅作状态记录。</p></div>
   </aside>
 </article></main>
-  <aside class="conf-float" data-conf-reminder="2026-06-15-main-ddl" aria-label="CCF A/B 主投稿提醒">
+  <aside class="conf-float" data-conf-reminder="2026-06-16-main-ddl" aria-label="CCF A/B 主投稿提醒">
   <button class="conf-close" type="button" aria-label="关闭会议提醒">×</button>
   <details open>
     <summary>CCF A/B 主投稿提醒</summary>
     <div class="conf-list"><a class="conf-item " href="https://github.com/ccfddl/ccf-deadlines/blob/main/conference/AI/aaai.yml">
   <span><b>AAAI 2027</b><em>CCF A · Main paper submission</em></span>
-  <strong>42 天</strong>
+  <strong>41 天</strong>
   <small>2026-07-27 · CCF DDL: abstract 2026-07-20；进入 1 个月窗口后重点提醒。</small>
 </a></div>
   </details>
@@ -177,7 +169,7 @@
   (() => {
     const box = document.querySelector('[data-conf-reminder]');
     if (!box) return;
-    const key = `visualSslConfReminderClosed:${box.dataset.confReminder || '2026-06-15-main-ddl'}`;
+    const key = `visualSslConfReminderClosed:${box.dataset.confReminder || '2026-06-16-main-ddl'}`;
     try {
       if (localStorage.getItem(key) === '1') box.hidden = true;
     } catch (err) {}
@@ -190,5 +182,6 @@
     }
   })();
   </script>
+  <script src="../assets/ssl-game.js"></script>
 </body>
 </html>

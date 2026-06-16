@@ -4,24 +4,26 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>2026-05-29 速递 · 通用视觉自监督研究报</title>
-  <link rel="stylesheet" href="../assets/styles.css?v=20260525j">
-  <link rel="stylesheet" href="../assets/visual-ssl.css?v=20260525j">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Source+Serif+4:ital,opsz,wght@0,8..60,400;0,8..60,500;0,8..60,600;1,8..60,400&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../assets/visual-ssl.css?v=20260615ssl6">
 </head>
 <body>
   <header class="masthead">
-    <div class="masthead-kicker">Visual SSL Research Report · 2026-05-29</div>
     <a class="masthead-title" href="../index.html">通用视觉自监督研究报</a>
+    <div class="masthead-kicker">A Daily Digest of Visual Self-Supervised Learning</div>
     <div class="masthead-meta">
+      <span>2026-05-29</span>
       <span>图像表征 · VFM · JEPA · 视频预训练</span>
-      <span>CCF A/B 会议优先</span>
-      <span>图文精读 · 方法图解</span>
     </div>
   </header>
   <nav class="site-nav" aria-label="主导航">
     <a class="nav-link" href="../index.html">头版</a>
-<a class="nav-link" href="../issues/2026-06-15.html">今日速递</a>
+<a class="nav-link" href="../issues/2026-06-16.html">今日速递</a>
 <a class="nav-link" href="../pages/catalog.html">论文目录</a>
 <a class="nav-link" href="../pages/timeline.html">时间线</a>
+<span class="nav-streak" title="连续追踪天数"><svg viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><path d="M8 0c.7 2.5-1.2 3.7-2 5-1 1.6-1 4 .8 4.8C6.4 8.5 7.4 7.8 8 7c.3 1.3-.4 2 .9 3 .9.7 1.3 1.6 1.1 2.6C9.7 14.6 8.9 16 6.8 16 4.6 16 3 14.3 3 12c0-3.3 2.6-4.8 2.4-8C6.9 4.6 8.4 5 8 0z"/></svg> 连续 <b data-streak>0</b> 天</span>
   </nav>
   <main><article class="paper-detail issue-detail">
   <div class="paper-main">
@@ -31,10 +33,8 @@
     <div class="feature-body">
       <p class="lead dropcap">先读 From Pixels to Words --。原生 pixels-to-words one-vision 模型，直接挑战“预训练视觉 encoder + LLM adapter”的主流 VLM 拼接范式。 其余论文按 P1/P2 与主题顺序扫读，重点看方法图、消融设置和是否能迁移到通用视觉表征。</p>
       <h2>论文索引</h2>
-      <div class="paper-list issue-list"><article class="paper-card" data-category="Visual SSL / representation" data-priority="P0" data-date="2026-05-29" data-title="from pixels to words -- towards native one-vision models at scale" data-keywords="from pixels to words -- towards native one-vision models at scale from pixels to words -- visual ssl / representation p0 2026-05-29 arxiv 原生 pixels-to-words one-vision 模型，直接挑战“预训练视觉 encoder + llm adapter”的主流 vlm 拼接范式 高相关；详见方法、贡献和实验边界。">
-  <a class="paper-thumb paper-thumb-text" href="../papers/2605.28820.html">
-    <img src="../assets/mineru/2605.28820/images/105d0f6cafb3370d7c882813790efd313d9f895b65d1f6fcee0eafe4336091d7.jpg" alt="From Pixels to Words -- figure"><span>P0</span>
-  </a>
+      <div class="paper-list issue-list"><article class="paper-card" data-pid="2605.28820" data-category="Visual SSL / representation" data-priority="P0" data-date="2026-05-29" data-title="from pixels to words -- towards native one-vision models at scale" data-keywords="from pixels to words -- towards native one-vision models at scale from pixels to words -- visual ssl / representation p0 2026-05-29 arxiv 原生 pixels-to-words one-vision 模型，直接挑战“预训练视觉 encoder + llm adapter”的主流 vlm 拼接范式 高相关；详见方法、贡献和实验边界。">
+  <a class="paper-thumb" href="../papers/2605.28820.html"><img src="../assets/mineru/2605.28820/images/105d0f6cafb3370d7c882813790efd313d9f895b65d1f6fcee0eafe4336091d7.jpg" alt="From Pixels to Words -- figure"></a>
   <div>
     <div class="paper-meta">2026-05-29 · Visual SSL / representation · arXiv</div>
     <h3><a href="../papers/2605.28820.html">From Pixels to Words -- Towards Native One-Vision Models at Scale</a></h3>
@@ -42,11 +42,10 @@
     <p class="card-tech"><b>方法：</b>原生 pixels-to-words one-vision 模型，直接挑战“预训练视觉 encoder + LLM adapter”的主流 VLM 拼接范式</p>
     <div class="paper-actions"><a href="../papers/2605.28820.html">读图文页</a><a href="https://arxiv.org/abs/2605.28820">原文</a></div>
   </div>
+  <button class="readbtn" type="button" data-read-toggle="2605.28820" title="标记已读" aria-label="标记已读"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M4 10.5l4 4 8-9"/></svg></button>
 </article>
-<article class="paper-card" data-category="Visual SSL / representation" data-priority="P0" data-date="2026-05-29" data-title="which pretraining paradigm better serves spatial intelligence? an empirical comparison of vision-language and video generation models" data-keywords="which pretraining paradigm better serves spatial intelligence? an empirical comparison of vision-language and video generation models which pretraining paradigm better serves visual ssl / representation p0 2026-05-29 arxiv 用 frozen-feature probing 比较 vlm 与 vgm 表征，直接回答语义与几何信息分别从哪类预训练来 高相关；详见方法、贡献和实验边界。">
-  <a class="paper-thumb paper-thumb-text" href="../papers/2605.28132.html">
-    <img src="../assets/mineru/2605.28132/images/436972dad1e99285f157672bf20d749e5b1db031ea833f05e98e0389ef3e7cdf.jpg" alt="Which Pretraining Paradigm Better Serves figure"><span>P0</span>
-  </a>
+<article class="paper-card" data-pid="2605.28132" data-category="Visual SSL / representation" data-priority="P0" data-date="2026-05-29" data-title="which pretraining paradigm better serves spatial intelligence? an empirical comparison of vision-language and video generation models" data-keywords="which pretraining paradigm better serves spatial intelligence? an empirical comparison of vision-language and video generation models which pretraining paradigm better serves visual ssl / representation p0 2026-05-29 arxiv 用 frozen-feature probing 比较 vlm 与 vgm 表征，直接回答语义与几何信息分别从哪类预训练来 高相关；详见方法、贡献和实验边界。">
+  <a class="paper-thumb" href="../papers/2605.28132.html"><img src="../assets/mineru/2605.28132/images/436972dad1e99285f157672bf20d749e5b1db031ea833f05e98e0389ef3e7cdf.jpg" alt="Which Pretraining Paradigm Better Serves figure"></a>
   <div>
     <div class="paper-meta">2026-05-29 · Visual SSL / representation · arXiv</div>
     <h3><a href="../papers/2605.28132.html">Which Pretraining Paradigm Better Serves Spatial Intelligence? An Empirical Comparison of Vision-Language and Video Generation Models</a></h3>
@@ -54,11 +53,10 @@
     <p class="card-tech"><b>方法：</b>用 frozen-feature probing 比较 VLM 与 VGM 表征，直接回答语义与几何信息分别从哪类预训练来</p>
     <div class="paper-actions"><a href="../papers/2605.28132.html">读图文页</a><a href="https://arxiv.org/abs/2605.28132">原文</a></div>
   </div>
+  <button class="readbtn" type="button" data-read-toggle="2605.28132" title="标记已读" aria-label="标记已读"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M4 10.5l4 4 8-9"/></svg></button>
 </article>
-<article class="paper-card" data-category="arXiv cross-list" data-priority="P0" data-date="2026-05-29" data-title="representation-conditioned diffusion models for guided training data generation" data-keywords="representation-conditioned diffusion models for guided training data generation representation-conditioned diffusion models for guided arxiv cross-list p0 2026-05-29 arxiv cross-list 用 dinov2/dinov3/clip 表征条件化扩散模型合成训练数据，把通用视觉表征变成数据生成控制变量 高相关；详见方法、贡献和实验边界。">
-  <a class="paper-thumb paper-thumb-text" href="../papers/2605.27495.html">
-    <img src="../assets/mineru/2605.27495/images/e49a715824f236b8c31d69cfd50f4c4b9c00162aabbd3e52967a42a169086bdd.jpg" alt="Representation-Conditioned Diffusion Models for Guided figure"><span>P0</span>
-  </a>
+<article class="paper-card" data-pid="2605.27495" data-category="arXiv cross-list" data-priority="P0" data-date="2026-05-29" data-title="representation-conditioned diffusion models for guided training data generation" data-keywords="representation-conditioned diffusion models for guided training data generation representation-conditioned diffusion models for guided arxiv cross-list p0 2026-05-29 arxiv cross-list 用 dinov2/dinov3/clip 表征条件化扩散模型合成训练数据，把通用视觉表征变成数据生成控制变量 高相关；详见方法、贡献和实验边界。">
+  <a class="paper-thumb" href="../papers/2605.27495.html"><img src="../assets/mineru/2605.27495/images/e49a715824f236b8c31d69cfd50f4c4b9c00162aabbd3e52967a42a169086bdd.jpg" alt="Representation-Conditioned Diffusion Models for Guided figure"></a>
   <div>
     <div class="paper-meta">2026-05-29 · arXiv cross-list · arXiv cross-list</div>
     <h3><a href="../papers/2605.27495.html">Representation-Conditioned Diffusion Models for Guided Training Data Generation</a></h3>
@@ -66,11 +64,10 @@
     <p class="card-tech"><b>方法：</b>用 DINOv2/DINOv3/CLIP 表征条件化扩散模型合成训练数据，把通用视觉表征变成数据生成控制变量</p>
     <div class="paper-actions"><a href="../papers/2605.27495.html">读图文页</a><a href="https://arxiv.org/abs/2605.27495">原文</a></div>
   </div>
+  <button class="readbtn" type="button" data-read-toggle="2605.27495" title="标记已读" aria-label="标记已读"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M4 10.5l4 4 8-9"/></svg></button>
 </article>
-<article class="paper-card" data-category="Visual SSL / representation" data-priority="P1" data-date="2026-05-29" data-title="beyond surrogate gradients: fully differentiable token pruning for vision-language models" data-keywords="beyond surrogate gradients: fully differentiable token pruning for vision-language models beyond surrogate gradients visual ssl / representation p1 2026-05-29 arxiv diffprune 直接在 visual token representation 上学习可微信息节流，服务 vlm 计算预算 中高相关；详见方法、贡献和实验边界。">
-  <a class="paper-thumb paper-thumb-text" href="../papers/2605.28051.html">
-    <img src="../assets/mineru/2605.28051/images/cebc4688b80ddcd60f0c10356a396bcff7cb254546adb4ee0dd77cd70f16c0d4.jpg" alt="Beyond Surrogate Gradients figure"><span>P1</span>
-  </a>
+<article class="paper-card" data-pid="2605.28051" data-category="Visual SSL / representation" data-priority="P1" data-date="2026-05-29" data-title="beyond surrogate gradients: fully differentiable token pruning for vision-language models" data-keywords="beyond surrogate gradients: fully differentiable token pruning for vision-language models beyond surrogate gradients visual ssl / representation p1 2026-05-29 arxiv diffprune 直接在 visual token representation 上学习可微信息节流，服务 vlm 计算预算 中高相关；详见方法、贡献和实验边界。">
+  <a class="paper-thumb" href="../papers/2605.28051.html"><img src="../assets/mineru/2605.28051/images/cebc4688b80ddcd60f0c10356a396bcff7cb254546adb4ee0dd77cd70f16c0d4.jpg" alt="Beyond Surrogate Gradients figure"></a>
   <div>
     <div class="paper-meta">2026-05-29 · Visual SSL / representation · arXiv</div>
     <h3><a href="../papers/2605.28051.html">Beyond Surrogate Gradients: Fully Differentiable Token Pruning for Vision-Language Models</a></h3>
@@ -78,11 +75,10 @@
     <p class="card-tech"><b>方法：</b>DiffPrune 直接在 visual token representation 上学习可微信息节流，服务 VLM 计算预算</p>
     <div class="paper-actions"><a href="../papers/2605.28051.html">读图文页</a><a href="https://arxiv.org/abs/2605.28051">原文</a></div>
   </div>
+  <button class="readbtn" type="button" data-read-toggle="2605.28051" title="标记已读" aria-label="标记已读"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M4 10.5l4 4 8-9"/></svg></button>
 </article>
-<article class="paper-card" data-category="arXiv cross-list" data-priority="P1" data-date="2026-05-29" data-title="adamerge: salience-aware adaptive token merging for training-free acceleration of vision transformers" data-keywords="adamerge: salience-aware adaptive token merging for training-free acceleration of vision transformers adamerge arxiv cross-list p1 2026-05-29 arxiv cross-list 训练-free vit token merging，把 token 重要性和层级冗余纳入合并决策 中高相关；详见方法、贡献和实验边界。">
-  <a class="paper-thumb paper-thumb-text" href="../papers/2605.27465.html">
-    <img src="../assets/mineru/2605.27465/images/0be6cccf6dd1e40e41be6a24a4ed1a39615bb53cc01eee51226fce75770581fc.jpg" alt="AdaMerge figure"><span>P1</span>
-  </a>
+<article class="paper-card" data-pid="2605.27465" data-category="arXiv cross-list" data-priority="P1" data-date="2026-05-29" data-title="adamerge: salience-aware adaptive token merging for training-free acceleration of vision transformers" data-keywords="adamerge: salience-aware adaptive token merging for training-free acceleration of vision transformers adamerge arxiv cross-list p1 2026-05-29 arxiv cross-list 训练-free vit token merging，把 token 重要性和层级冗余纳入合并决策 中高相关；详见方法、贡献和实验边界。">
+  <a class="paper-thumb" href="../papers/2605.27465.html"><img src="../assets/mineru/2605.27465/images/0be6cccf6dd1e40e41be6a24a4ed1a39615bb53cc01eee51226fce75770581fc.jpg" alt="AdaMerge figure"></a>
   <div>
     <div class="paper-meta">2026-05-29 · arXiv cross-list · arXiv cross-list</div>
     <h3><a href="../papers/2605.27465.html">AdaMerge: Salience-Aware Adaptive Token Merging for Training-Free Acceleration of Vision Transformers</a></h3>
@@ -90,11 +86,10 @@
     <p class="card-tech"><b>方法：</b>训练-free ViT token merging，把 token 重要性和层级冗余纳入合并决策</p>
     <div class="paper-actions"><a href="../papers/2605.27465.html">读图文页</a><a href="https://arxiv.org/abs/2605.27465">原文</a></div>
   </div>
+  <button class="readbtn" type="button" data-read-toggle="2605.27465" title="标记已读" aria-label="标记已读"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M4 10.5l4 4 8-9"/></svg></button>
 </article>
-<article class="paper-card" data-category="Visual SSL / representation" data-priority="P1" data-date="2026-05-29" data-title="sigma: bridging structural and distributional gaps for vision foundation model adaptation" data-keywords="sigma: bridging structural and distributional gaps for vision foundation model adaptation sigma visual ssl / representation p1 2026-05-29 arxiv 面向 dense prediction 的 vfm 参数高效适配，关注结构尺度差异和分布对齐 中高相关；详见方法、贡献和实验边界。">
-  <a class="paper-thumb paper-thumb-text" href="../papers/2605.27893.html">
-    <img src="../assets/mineru/2605.27893/images/bde4fc65b60fedd8171b46dd5d8bcbbec2f9eb97add1247eae9468fc54e045c3.jpg" alt="SIGMA figure"><span>P1</span>
-  </a>
+<article class="paper-card" data-pid="2605.27893" data-category="Visual SSL / representation" data-priority="P1" data-date="2026-05-29" data-title="sigma: bridging structural and distributional gaps for vision foundation model adaptation" data-keywords="sigma: bridging structural and distributional gaps for vision foundation model adaptation sigma visual ssl / representation p1 2026-05-29 arxiv 面向 dense prediction 的 vfm 参数高效适配，关注结构尺度差异和分布对齐 中高相关；详见方法、贡献和实验边界。">
+  <a class="paper-thumb" href="../papers/2605.27893.html"><img src="../assets/mineru/2605.27893/images/bde4fc65b60fedd8171b46dd5d8bcbbec2f9eb97add1247eae9468fc54e045c3.jpg" alt="SIGMA figure"></a>
   <div>
     <div class="paper-meta">2026-05-29 · Visual SSL / representation · arXiv</div>
     <h3><a href="../papers/2605.27893.html">SIGMA: Bridging Structural and Distributional Gaps for Vision Foundation Model Adaptation</a></h3>
@@ -102,11 +97,10 @@
     <p class="card-tech"><b>方法：</b>面向 dense prediction 的 VFM 参数高效适配，关注结构尺度差异和分布对齐</p>
     <div class="paper-actions"><a href="../papers/2605.27893.html">读图文页</a><a href="https://arxiv.org/abs/2605.27893">原文</a></div>
   </div>
+  <button class="readbtn" type="button" data-read-toggle="2605.27893" title="标记已读" aria-label="标记已读"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M4 10.5l4 4 8-9"/></svg></button>
 </article>
-<article class="paper-card" data-category="ICML 2026 + arXiv status" data-priority="P1" data-date="2026-05-29" data-title="pix2key: controllable open-vocabulary retrieval with semantic decomposition and self-supervised visual dictionary learning" data-keywords="pix2key: controllable open-vocabulary retrieval with semantic decomposition and self-supervised visual dictionary learning pix2key icml 2026 + arxiv status p1 2026-05-29 icml 2026 + arxiv status icml 2026 官方索引确认；自监督视觉 dictionary 用于细粒度 composed image retrieval 中高相关；详见方法、贡献和实验边界。">
-  <a class="paper-thumb paper-thumb-text" href="../papers/2602.22510.html">
-    <img src="../assets/mineru/2602.22510/images/18f33dd32a4148a5f3852c4ed6077b9f43e38abe99c7cf41ccfb52f03cba7cfe.jpg" alt="Pix2Key figure"><span>P1</span>
-  </a>
+<article class="paper-card" data-pid="2602.22510" data-category="ICML 2026 + arXiv status" data-priority="P1" data-date="2026-05-29" data-title="pix2key: controllable open-vocabulary retrieval with semantic decomposition and self-supervised visual dictionary learning" data-keywords="pix2key: controllable open-vocabulary retrieval with semantic decomposition and self-supervised visual dictionary learning pix2key icml 2026 + arxiv status p1 2026-05-29 icml 2026 + arxiv status icml 2026 官方索引确认；自监督视觉 dictionary 用于细粒度 composed image retrieval 中高相关；详见方法、贡献和实验边界。">
+  <a class="paper-thumb" href="../papers/2602.22510.html"><img src="../assets/mineru/2602.22510/images/18f33dd32a4148a5f3852c4ed6077b9f43e38abe99c7cf41ccfb52f03cba7cfe.jpg" alt="Pix2Key figure"></a>
   <div>
     <div class="paper-meta">2026-05-29 · ICML 2026 + arXiv status · ICML 2026 + arXiv status</div>
     <h3><a href="../papers/2602.22510.html">Pix2Key: Controllable Open-Vocabulary Retrieval with Semantic Decomposition and Self-Supervised Visual Dictionary Learning</a></h3>
@@ -114,11 +108,10 @@
     <p class="card-tech"><b>方法：</b>ICML 2026 官方索引确认；自监督视觉 dictionary 用于细粒度 composed image retrieval</p>
     <div class="paper-actions"><a href="../papers/2602.22510.html">读图文页</a><a href="https://arxiv.org/abs/2602.22510">原文</a></div>
   </div>
+  <button class="readbtn" type="button" data-read-toggle="2602.22510" title="标记已读" aria-label="标记已读"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M4 10.5l4 4 8-9"/></svg></button>
 </article>
-<article class="paper-card" data-category="arXiv cross-list" data-priority="P2" data-date="2026-05-29" data-title="rover: routing object-centric visual evidence for grounded multi-image reasoning" data-keywords="rover: routing object-centric visual evidence for grounded multi-image reasoning rover arxiv cross-list p2 2026-05-29 arxiv cross-list object-centric evidence routing，把局部 grounding 证据压入可复用 visual working space 中相关；详见方法、贡献和实验边界。">
-  <a class="paper-thumb paper-thumb-text" href="../papers/2605.27959.html">
-    <img src="../assets/mineru/2605.27959/images/ef38c7cac352b15493f5168c559c09126d7f2156bb69a0d2e6408ea21a5c08a7.jpg" alt="ROVER figure"><span>P2</span>
-  </a>
+<article class="paper-card" data-pid="2605.27959" data-category="arXiv cross-list" data-priority="P2" data-date="2026-05-29" data-title="rover: routing object-centric visual evidence for grounded multi-image reasoning" data-keywords="rover: routing object-centric visual evidence for grounded multi-image reasoning rover arxiv cross-list p2 2026-05-29 arxiv cross-list object-centric evidence routing，把局部 grounding 证据压入可复用 visual working space 中相关；详见方法、贡献和实验边界。">
+  <a class="paper-thumb" href="../papers/2605.27959.html"><img src="../assets/mineru/2605.27959/images/2b55f45a26cdc937f604b0d7ab4e926603a1c1455ece8dad4f6c819680a0fe5b.jpg" alt="ROVER figure"></a>
   <div>
     <div class="paper-meta">2026-05-29 · arXiv cross-list · arXiv cross-list</div>
     <h3><a href="../papers/2605.27959.html">ROVER: Routing Object-Centric Visual Evidence for Grounded Multi-Image Reasoning</a></h3>
@@ -126,11 +119,10 @@
     <p class="card-tech"><b>方法：</b>object-centric evidence routing，把局部 grounding 证据压入可复用 visual working space</p>
     <div class="paper-actions"><a href="../papers/2605.27959.html">读图文页</a><a href="https://arxiv.org/abs/2605.27959">原文</a></div>
   </div>
+  <button class="readbtn" type="button" data-read-toggle="2605.27959" title="标记已读" aria-label="标记已读"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M4 10.5l4 4 8-9"/></svg></button>
 </article>
-<article class="paper-card" data-category="ICML 2026" data-priority="P2" data-date="2026-05-29" data-title="self-prophetic decoding to unlock visual search in lvlms" data-keywords="self-prophetic decoding to unlock visual search in lvlms self-prophetic decoding to unlock visual icml 2026 p2 2026-05-29 arxiv + icml 2026 训练-free visual search decoding，用预训练 lvlm 单步能力修复后训练后的多步干扰 中相关；详见方法、贡献和实验边界。">
-  <a class="paper-thumb paper-thumb-text" href="../papers/2605.28741.html">
-    <img src="../assets/mineru/2605.28741/images/72f29c73f81b1991c0321698efb3af955a4d0145701c8b2bc53a3d0991f9ae1e.jpg" alt="Self-Prophetic Decoding to Unlock Visual figure"><span>P2</span>
-  </a>
+<article class="paper-card" data-pid="2605.28741" data-category="ICML 2026" data-priority="P2" data-date="2026-05-29" data-title="self-prophetic decoding to unlock visual search in lvlms" data-keywords="self-prophetic decoding to unlock visual search in lvlms self-prophetic decoding to unlock visual icml 2026 p2 2026-05-29 arxiv + icml 2026 训练-free visual search decoding，用预训练 lvlm 单步能力修复后训练后的多步干扰 中相关；详见方法、贡献和实验边界。">
+  <a class="paper-thumb" href="../papers/2605.28741.html"><img src="../assets/mineru/2605.28741/images/72f29c73f81b1991c0321698efb3af955a4d0145701c8b2bc53a3d0991f9ae1e.jpg" alt="Self-Prophetic Decoding to Unlock Visual figure"></a>
   <div>
     <div class="paper-meta">2026-05-29 · ICML 2026 · arXiv + ICML 2026</div>
     <h3><a href="../papers/2605.28741.html">Self-Prophetic Decoding to Unlock Visual Search in LVLMs</a></h3>
@@ -138,11 +130,10 @@
     <p class="card-tech"><b>方法：</b>训练-free visual search decoding，用预训练 LVLM 单步能力修复后训练后的多步干扰</p>
     <div class="paper-actions"><a href="../papers/2605.28741.html">读图文页</a><a href="https://arxiv.org/abs/2605.28741">原文</a></div>
   </div>
+  <button class="readbtn" type="button" data-read-toggle="2605.28741" title="标记已读" aria-label="标记已读"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M4 10.5l4 4 8-9"/></svg></button>
 </article>
-<article class="paper-card" data-category="Visual SSL / representation" data-priority="P2" data-date="2026-05-29" data-title="look on demand: a cognitive scheduling framework for visual evidence acquisition in multimodal reasoning" data-keywords="look on demand: a cognitive scheduling framework for visual evidence acquisition in multimodal reasoning look on demand visual ssl / representation p2 2026-05-29 arxiv 让语言模型决定何时调用视觉感知模块，适合观察“视觉证据何时进入推理链” 中相关；详见方法、贡献和实验边界。">
-  <a class="paper-thumb paper-thumb-text" href="../papers/2605.28160.html">
-    <img src="../assets/mineru/2605.28160/images/bef88fdb94842b8f03544139b57a76442b8280de06b4e75297aca77e0122ef74.jpg" alt="Look on Demand figure"><span>P2</span>
-  </a>
+<article class="paper-card" data-pid="2605.28160" data-category="Visual SSL / representation" data-priority="P2" data-date="2026-05-29" data-title="look on demand: a cognitive scheduling framework for visual evidence acquisition in multimodal reasoning" data-keywords="look on demand: a cognitive scheduling framework for visual evidence acquisition in multimodal reasoning look on demand visual ssl / representation p2 2026-05-29 arxiv 让语言模型决定何时调用视觉感知模块，适合观察“视觉证据何时进入推理链” 中相关；详见方法、贡献和实验边界。">
+  <a class="paper-thumb" href="../papers/2605.28160.html"><img src="../assets/mineru/2605.28160/images/bef88fdb94842b8f03544139b57a76442b8280de06b4e75297aca77e0122ef74.jpg" alt="Look on Demand figure"></a>
   <div>
     <div class="paper-meta">2026-05-29 · Visual SSL / representation · arXiv</div>
     <h3><a href="../papers/2605.28160.html">Look on Demand: A Cognitive Scheduling Framework for Visual Evidence Acquisition in Multimodal Reasoning</a></h3>
@@ -150,11 +141,10 @@
     <p class="card-tech"><b>方法：</b>让语言模型决定何时调用视觉感知模块，适合观察“视觉证据何时进入推理链”</p>
     <div class="paper-actions"><a href="../papers/2605.28160.html">读图文页</a><a href="https://arxiv.org/abs/2605.28160">原文</a></div>
   </div>
+  <button class="readbtn" type="button" data-read-toggle="2605.28160" title="标记已读" aria-label="标记已读"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M4 10.5l4 4 8-9"/></svg></button>
 </article>
-<article class="paper-card" data-category="arXiv update" data-priority="P2" data-date="2026-05-29" data-title="beyond interpretability: when, why, and how sparse autoencoders enable label-free visual steering" data-keywords="beyond interpretability: when, why, and how sparse autoencoders enable label-free visual steering beyond interpretability arxiv update p2 2026-05-29 arxiv update 在 clip image encoder 激活上训练 sae 并做 label-free steering，连接可解释性与可操作视觉表征 中相关；详见方法、贡献和实验边界。">
-  <a class="paper-thumb paper-thumb-text" href="../papers/2506.01247.html">
-    <img src="../assets/mineru/2506.01247/images/f278e7f16e06b57d3c4bd6808349dfc193d39f72269ca464169999cb142f455b.jpg" alt="Beyond Interpretability figure"><span>P2</span>
-  </a>
+<article class="paper-card" data-pid="2506.01247" data-category="arXiv update" data-priority="P2" data-date="2026-05-29" data-title="beyond interpretability: when, why, and how sparse autoencoders enable label-free visual steering" data-keywords="beyond interpretability: when, why, and how sparse autoencoders enable label-free visual steering beyond interpretability arxiv update p2 2026-05-29 arxiv update 在 clip image encoder 激活上训练 sae 并做 label-free steering，连接可解释性与可操作视觉表征 中相关；详见方法、贡献和实验边界。">
+  <a class="paper-thumb" href="../papers/2506.01247.html"><img src="../assets/mineru/2506.01247/images/f278e7f16e06b57d3c4bd6808349dfc193d39f72269ca464169999cb142f455b.jpg" alt="Beyond Interpretability figure"></a>
   <div>
     <div class="paper-meta">2026-05-29 · arXiv update · arXiv update</div>
     <h3><a href="../papers/2506.01247.html">Beyond Interpretability: When, Why, and How Sparse Autoencoders Enable Label-Free Visual Steering</a></h3>
@@ -162,11 +152,10 @@
     <p class="card-tech"><b>方法：</b>在 CLIP image encoder 激活上训练 SAE 并做 label-free steering，连接可解释性与可操作视觉表征</p>
     <div class="paper-actions"><a href="../papers/2506.01247.html">读图文页</a><a href="https://arxiv.org/abs/2506.01247">原文</a></div>
   </div>
+  <button class="readbtn" type="button" data-read-toggle="2506.01247" title="标记已读" aria-label="标记已读"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M4 10.5l4 4 8-9"/></svg></button>
 </article>
-<article class="paper-card" data-category="arXiv update" data-priority="P3" data-date="2026-05-29" data-title="understanding self-supervised learning via latent distribution matching" data-keywords="understanding self-supervised learning via latent distribution matching understanding self-supervised learning via latent arxiv update p3 2026-05-29 arxiv update 将 ssl 统一为 alignment + latent entropy 的分布匹配视角，理论价值高但视觉实验需看正文 中相关；详见方法、贡献和实验边界。">
-  <a class="paper-thumb paper-thumb-text" href="../papers/2605.03517.html">
-    <img src="../assets/mineru/2605.03517/images/a2aa33e5c6da4cbef99f20122a23bfb3e3e137737d1c480c0f39f052b458336a.jpg" alt="Understanding Self-Supervised Learning via Latent figure"><span>P3</span>
-  </a>
+<article class="paper-card" data-pid="2605.03517" data-category="arXiv update" data-priority="P3" data-date="2026-05-29" data-title="understanding self-supervised learning via latent distribution matching" data-keywords="understanding self-supervised learning via latent distribution matching understanding self-supervised learning via latent arxiv update p3 2026-05-29 arxiv update 将 ssl 统一为 alignment + latent entropy 的分布匹配视角，理论价值高但视觉实验需看正文 中相关；详见方法、贡献和实验边界。">
+  <a class="paper-thumb" href="../papers/2605.03517.html"><img src="../assets/mineru/2605.03517/images/a2aa33e5c6da4cbef99f20122a23bfb3e3e137737d1c480c0f39f052b458336a.jpg" alt="Understanding Self-Supervised Learning via Latent figure"></a>
   <div>
     <div class="paper-meta">2026-05-29 · arXiv update · arXiv update</div>
     <h3><a href="../papers/2605.03517.html">Understanding Self-Supervised Learning via Latent Distribution Matching</a></h3>
@@ -174,11 +163,10 @@
     <p class="card-tech"><b>方法：</b>将 SSL 统一为 alignment + latent entropy 的分布匹配视角，理论价值高但视觉实验需看正文</p>
     <div class="paper-actions"><a href="../papers/2605.03517.html">读图文页</a><a href="https://arxiv.org/abs/2605.03517">原文</a></div>
   </div>
+  <button class="readbtn" type="button" data-read-toggle="2605.03517" title="标记已读" aria-label="标记已读"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M4 10.5l4 4 8-9"/></svg></button>
 </article>
-<article class="paper-card" data-category="Visual SSL / representation" data-priority="P3" data-date="2026-05-29" data-title="proprio: latent self-scoring and inference-time refinement for physically plausible video generation" data-keywords="proprio: latent self-scoring and inference-time refinement for physically plausible video generation proprio visual ssl / representation p3 2026-05-29 arxiv 冻结视频生成模型用 latent perturbation residual 自评分，体现生成模型内部表征的物理一致性信号 中相关；详见方法、贡献和实验边界。">
-  <a class="paper-thumb paper-thumb-text" href="../papers/2605.28230.html">
-    <img src="../assets/mineru/2605.28230/images/e751823f7ff4d3b80ba808270df95b39487345c6871b196fed25835cf7330e8e.jpg" alt="Proprio figure"><span>P3</span>
-  </a>
+<article class="paper-card" data-pid="2605.28230" data-category="Visual SSL / representation" data-priority="P3" data-date="2026-05-29" data-title="proprio: latent self-scoring and inference-time refinement for physically plausible video generation" data-keywords="proprio: latent self-scoring and inference-time refinement for physically plausible video generation proprio visual ssl / representation p3 2026-05-29 arxiv 冻结视频生成模型用 latent perturbation residual 自评分，体现生成模型内部表征的物理一致性信号 中相关；详见方法、贡献和实验边界。">
+  <a class="paper-thumb" href="../papers/2605.28230.html"><img src="../assets/mineru/2605.28230/images/e751823f7ff4d3b80ba808270df95b39487345c6871b196fed25835cf7330e8e.jpg" alt="Proprio figure"></a>
   <div>
     <div class="paper-meta">2026-05-29 · Visual SSL / representation · arXiv</div>
     <h3><a href="../papers/2605.28230.html">Proprio: Latent Self-Scoring and Inference-Time Refinement for Physically Plausible Video Generation</a></h3>
@@ -186,11 +174,10 @@
     <p class="card-tech"><b>方法：</b>冻结视频生成模型用 latent perturbation residual 自评分，体现生成模型内部表征的物理一致性信号</p>
     <div class="paper-actions"><a href="../papers/2605.28230.html">读图文页</a><a href="https://arxiv.org/abs/2605.28230">原文</a></div>
   </div>
+  <button class="readbtn" type="button" data-read-toggle="2605.28230" title="标记已读" aria-label="标记已读"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M4 10.5l4 4 8-9"/></svg></button>
 </article>
-<article class="paper-card" data-category="arXiv cross-list" data-priority="P3" data-date="2026-05-29" data-title="re-triangle: does triangle enable multimodal alignment beyond cosine similarity in retrieval?" data-keywords="re-triangle: does triangle enable multimodal alignment beyond cosine similarity in retrieval? re-triangle arxiv cross-list p3 2026-05-29 arxiv cross-list 复现实验检查 hypersphere triplet area 几何对齐是否稳健，适合和 vlm embedding 几何一起扫 中相关；详见方法、贡献和实验边界。">
-  <a class="paper-thumb paper-thumb-text" href="../papers/2605.27436.html">
-    <img src="../assets/mineru/2605.27436/images/fe10a0eff0dce89fb228877ab9f61e1ed611abc058a0b194187bb55fc37c3997.jpg" alt="RE-TRIANGLE figure"><span>P3</span>
-  </a>
+<article class="paper-card" data-pid="2605.27436" data-category="arXiv cross-list" data-priority="P3" data-date="2026-05-29" data-title="re-triangle: does triangle enable multimodal alignment beyond cosine similarity in retrieval?" data-keywords="re-triangle: does triangle enable multimodal alignment beyond cosine similarity in retrieval? re-triangle arxiv cross-list p3 2026-05-29 arxiv cross-list 复现实验检查 hypersphere triplet area 几何对齐是否稳健，适合和 vlm embedding 几何一起扫 中相关；详见方法、贡献和实验边界。">
+  <a class="paper-thumb" href="../papers/2605.27436.html"><img src="../assets/mineru/2605.27436/images/fe10a0eff0dce89fb228877ab9f61e1ed611abc058a0b194187bb55fc37c3997.jpg" alt="RE-TRIANGLE figure"></a>
   <div>
     <div class="paper-meta">2026-05-29 · arXiv cross-list · arXiv cross-list</div>
     <h3><a href="../papers/2605.27436.html">RE-TRIANGLE: Does TRIANGLE Enable Multimodal Alignment Beyond Cosine Similarity in Retrieval?</a></h3>
@@ -198,11 +185,10 @@
     <p class="card-tech"><b>方法：</b>复现实验检查 hypersphere triplet area 几何对齐是否稳健，适合和 VLM embedding 几何一起扫</p>
     <div class="paper-actions"><a href="../papers/2605.27436.html">读图文页</a><a href="https://arxiv.org/abs/2605.27436">原文</a></div>
   </div>
+  <button class="readbtn" type="button" data-read-toggle="2605.27436" title="标记已读" aria-label="标记已读"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M4 10.5l4 4 8-9"/></svg></button>
 </article>
-<article class="paper-card" data-category="arXiv cross-list" data-priority="扫读" data-date="2026-05-29" data-title="omniverifier-m1: multimodal meta-verifier with explicit structured recalibration" data-keywords="omniverifier-m1: multimodal meta-verifier with explicit structured recalibration omniverifier-m1 arxiv cross-list 扫读 2026-05-29 arxiv cross-list visual verifier 用结构化 meta-verification 和解耦 rl，偏验证器但影响 vlm 训练反馈 中相关；详见方法、贡献和实验边界。">
-  <a class="paper-thumb paper-thumb-text" href="../papers/2605.28805.html">
-    <img src="../assets/mineru/2605.28805/images/5a0da0f383a81451cb489700acf3f6f2f80e03f6e9e0b91e2628a4f2cc4774bf.jpg" alt="OmniVerifier-M1 figure"><span>扫读</span>
-  </a>
+<article class="paper-card" data-pid="2605.28805" data-category="arXiv cross-list" data-priority="扫读" data-date="2026-05-29" data-title="omniverifier-m1: multimodal meta-verifier with explicit structured recalibration" data-keywords="omniverifier-m1: multimodal meta-verifier with explicit structured recalibration omniverifier-m1 arxiv cross-list 扫读 2026-05-29 arxiv cross-list visual verifier 用结构化 meta-verification 和解耦 rl，偏验证器但影响 vlm 训练反馈 中相关；详见方法、贡献和实验边界。">
+  <a class="paper-thumb" href="../papers/2605.28805.html"><img src="../assets/mineru/2605.28805/images/5a0da0f383a81451cb489700acf3f6f2f80e03f6e9e0b91e2628a4f2cc4774bf.jpg" alt="OmniVerifier-M1 figure"></a>
   <div>
     <div class="paper-meta">2026-05-29 · arXiv cross-list · arXiv cross-list</div>
     <h3><a href="../papers/2605.28805.html">OmniVerifier-M1: Multimodal Meta-Verifier with Explicit Structured Recalibration</a></h3>
@@ -210,11 +196,10 @@
     <p class="card-tech"><b>方法：</b>visual verifier 用结构化 meta-verification 和解耦 RL，偏验证器但影响 VLM 训练反馈</p>
     <div class="paper-actions"><a href="../papers/2605.28805.html">读图文页</a><a href="https://arxiv.org/abs/2605.28805">原文</a></div>
   </div>
+  <button class="readbtn" type="button" data-read-toggle="2605.28805" title="标记已读" aria-label="标记已读"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M4 10.5l4 4 8-9"/></svg></button>
 </article>
-<article class="paper-card" data-category="Visual SSL / representation" data-priority="扫读" data-date="2026-05-29" data-title="a self-supervised learning approach to deep filter banks for texture recognition" data-keywords="a self-supervised learning approach to deep filter banks for texture recognition a self-supervised learning approach to visual ssl / representation 扫读 2026-05-29 arxiv 轻量卷积 autoencoder + fisher pooling 的纹理 ssl，任务偏窄但可作为低算力 ssl 参考 中低相关；详见方法、贡献和实验边界。">
-  <a class="paper-thumb paper-thumb-text" href="../papers/2605.27843.html">
-    <img src="../assets/mineru/2605.27843/images/304eefa290fc4043bde5a25d89332ae9122970431d44e6a5b510b43cce46ec01.jpg" alt="A self-supervised learning approach to figure"><span>扫读</span>
-  </a>
+<article class="paper-card" data-pid="2605.27843" data-category="Visual SSL / representation" data-priority="扫读" data-date="2026-05-29" data-title="a self-supervised learning approach to deep filter banks for texture recognition" data-keywords="a self-supervised learning approach to deep filter banks for texture recognition a self-supervised learning approach to visual ssl / representation 扫读 2026-05-29 arxiv 轻量卷积 autoencoder + fisher pooling 的纹理 ssl，任务偏窄但可作为低算力 ssl 参考 中低相关；详见方法、贡献和实验边界。">
+  <a class="paper-thumb" href="../papers/2605.27843.html"><img src="../assets/mineru/2605.27843/images/304eefa290fc4043bde5a25d89332ae9122970431d44e6a5b510b43cce46ec01.jpg" alt="A self-supervised learning approach to figure"></a>
   <div>
     <div class="paper-meta">2026-05-29 · Visual SSL / representation · arXiv</div>
     <h3><a href="../papers/2605.27843.html">A self-supervised learning approach to deep filter banks for texture recognition</a></h3>
@@ -222,6 +207,7 @@
     <p class="card-tech"><b>方法：</b>轻量卷积 autoencoder + Fisher pooling 的纹理 SSL，任务偏窄但可作为低算力 SSL 参考</p>
     <div class="paper-actions"><a href="../papers/2605.27843.html">读图文页</a><a href="https://arxiv.org/abs/2605.27843">原文</a></div>
   </div>
+  <button class="readbtn" type="button" data-read-toggle="2605.27843" title="标记已读" aria-label="标记已读"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M4 10.5l4 4 8-9"/></svg></button>
 </article></div>
     </div>
   </div>
@@ -230,13 +216,13 @@
     <div class="side-box"><h4>会议口径</h4><p>主提醒只保留 CCF A/B；CCF C 与过期截止仅作状态记录。</p></div>
   </aside>
 </article></main>
-  <aside class="conf-float" data-conf-reminder="2026-06-15-main-ddl" aria-label="CCF A/B 主投稿提醒">
+  <aside class="conf-float" data-conf-reminder="2026-06-16-main-ddl" aria-label="CCF A/B 主投稿提醒">
   <button class="conf-close" type="button" aria-label="关闭会议提醒">×</button>
   <details open>
     <summary>CCF A/B 主投稿提醒</summary>
     <div class="conf-list"><a class="conf-item " href="https://github.com/ccfddl/ccf-deadlines/blob/main/conference/AI/aaai.yml">
   <span><b>AAAI 2027</b><em>CCF A · Main paper submission</em></span>
-  <strong>42 天</strong>
+  <strong>41 天</strong>
   <small>2026-07-27 · CCF DDL: abstract 2026-07-20；进入 1 个月窗口后重点提醒。</small>
 </a></div>
   </details>
@@ -249,7 +235,7 @@
   (() => {
     const box = document.querySelector('[data-conf-reminder]');
     if (!box) return;
-    const key = `visualSslConfReminderClosed:${box.dataset.confReminder || '2026-06-15-main-ddl'}`;
+    const key = `visualSslConfReminderClosed:${box.dataset.confReminder || '2026-06-16-main-ddl'}`;
     try {
       if (localStorage.getItem(key) === '1') box.hidden = true;
     } catch (err) {}
@@ -262,5 +248,6 @@
     }
   })();
   </script>
+  <script src="../assets/ssl-game.js"></script>
 </body>
 </html>

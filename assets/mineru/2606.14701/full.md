@@ -1,0 +1,490 @@
+# RATS! Patches Talk Through Registers: Emergent Parts in Register Attention Transformers
+
+Timing Yang1 Predrag Neskovic2 Jansen Seheult3 Wenchao Han3 Anand Bhattad1 Alan Yuille1 Feng Wang1∗
+
+1Johns Hopkins University 2Office of Naval Research, Arlington, VA 3Department of Laboratory Medicine and Pathology, Mayo Clinic, MN, USA
+
+![](images/5959c8216d6dd54a0d6b612bd8642a659501b23900727846d39679fd13efaf6e.jpg)  
+Figure 1: RATS discovers compositional part structure through a register-token bottleneck. Top: unsupervised part segmentations emerge across diverse categories (birds, snake, shark, monkey, fish). Top-right: the bottleneck makes inference scale efficiently with image resolution. Bottom: each block routes patch–patch communication through N register tokens via a three-step compress– communicate–broadcast attention; per-register similarity maps over the patch grid recover semantic parts, which we catalog into a small dictionary of reusable part entries.
+
+## Abstract
+
+When humans see a bird, they recognize far more than just “bird” — they see a head, wings, and talons, a structured assembly of reusable parts that can be identified across every bird they have ever seen. We ask whether a self-supervised visual model can discover the same compositional structure on its own. To this end, we propose RATS (Register Attention Transformers), which decomposes the classification token into N learnable register tokens that route patch information through an $L {  } N {  } N {  } L$ bottleneck via a three-step compress–communicate– broadcast attention. The N registers are partitioned across the H attention heads, so that registers assigned to different heads do not interact with each other. Without auxiliary losses or part annotations, each register spontaneously specializes into a proto-semantic region whose emerging structure resembles object parts. RATS surpasses all baselines by +12 mIoU on average across five segmentation benchmarks, with consistent gains on ADE20K (+1.11 mIoU) and COCO (+0.2 APm). Its register dictionary further exhibits part-level consistency and semantic proximity across related categories. Our results suggest that RATS may provide a useful architectural prior for structured and interpretable visual representation learning.
+
+## 1 Introduction
+
+When a person looks at a photograph of a bird, they do not merely recognize “bird.” They see a head, two wings, talons gripping a branch — a structured assembly of parts, each meaningful on its own and recognizable across every bird they have ever seen. This decomposition is immediate and effortless: humans naturally parse visual scenes into reusable local structures, whether a knife’s metal blade and wooden handle, or a car’s tires, body, and windows. These parts are transferable across instances (all cats have ears), shared across categories (bicycle tires and car tires are fundamentally similar), and composable (different parts combine into different objects). They are, in a precise sense, the atomic vocabulary of visual understanding — and, we argue, the representations that a visual model should discover on its own.
+
+Self-supervised learning has produced surprisingly powerful visual representations. Methods ranging from masked patch prediction [31] and cross-view consistency [13] to self-distillation [11] have shown that rich structure can be learned from images alone, without any labels. The DINO family in particular has pushed this further: DINOv2 [50] features, when visualized via PCA, reveal striking cross-image correspondences—the same principal component highlights cat ears, dog ears, and rabbit ears simultaneously, or maps bicycle wheels onto car wheels across entirely different images. Partlevel structure, it turns out, is already latent in self-supervised features. Yet surfacing it as an explicit, structured representation remains an open problem. Standard ViTs have no mechanism to do so: fully-connected self-attention collapses everything into a single global classification token([CLS]), with no internal token ever asked to represent a specific region or part. The patch tokens, while individually informative, are never grouped into coherent regions—the model has no representational commitment to parts. This suggests a natural next step: rather than treating an image as a flat bag of patch tokens to be globally summarized, can we group these tokens into meaningful region-level representations—letting the model explicitly organize what it has implicitly learned?
+
+Vision Transformers provide no explicit grouping mechanism, and several lines of work address this by introducing intermediate latent tokens as grouping containers. Superpixel-based methods [46] follow image boundaries but are restricted to local context, lacking the global information needed for part identity. Object-centric methods [43, 53, 23] let slot vectors compete to represent scene elements, but reconstruction-driven supervision yields object-level masks rather than part-level semantics, and hard mutual exclusion breaks semantic coherence. GroupViT [65] achieves semantic grouping but requires image-text pairs, specializing tokens to text-described categories rather than structural parts. Perceiver IO [37] compresses inputs into a compact latent array, but each latent is jointly modeled by all attention heads, leading to fully mixed representations that lack independent semantics.
+
+Building on these observations, we propose RATS (Register Attention Transformers), aiming to let self-supervised learning spontaneously surface part-level representations. Concretely, we introduce an $L {  } N {  } N {  } L$ bottleneck in each transformer block that decomposes the [CLS] aggregation into N register tokens: patches aggregate into registers (compress), registers exchange information (communicate), and broadcast back to patches (broadcast). The N registers are partitioned exclusively across the H attention heads, so each head owns an independent register subset that communicates only within the head. Confining each head to its own subspace encourages different heads to specialize to different regions, so part-level structure can emerge (Figure 1). On five segmentation benchmarks, RATS demonstrates stronger part-level grouping than all existing baselines (+12 mIoU). By providing register tokens as initial query tokens, RATS further yields a stronger initialization for dense prediction, outperforming ViT on ADE20K (+1.11 mIoU) and COCO $( \bar { \mathsf { A } } \mathsf { P } ^ { m } + 0 . 2 )$ . Finally, the visual dictionary extracted from the trained registers reveals a level semantic organization: within-supercategory part consistency and cross-category taxonomic proximity.
+
+## 2 Related Work
+
+Self-Supervised Visual Representation Learning and Segmentation. Self-supervised learning has progressed from pretext tasks [25, 49, 67] through contrastive [32, 13, 10] and non-contrastive [27, 14, 6] methods, to self-distillation on Vision Transformers [11] and masked image modeling [31, 5, 64, 69, 63]. The DINO family [11, 50, 54] has demonstrated that self-supervised training can yield patch tokens with strong part-level features alongside a global CLS token, as revealed by PCA visualization of the patch tokens. Several works [2, 47, 62, 35, 16, 29, 71, 3, 58] are related to part/object segmentation and discovery, but these methods fundamentally still extract features from patch tokens. To the best of our knowledge, no existing method provides an architectural mechanism to explicitly extract part-level features through register tokens. RATS addresses this by introducing a register token bottleneck that extracts part-level information from patch tokens into register tokens.
+
+Register Tokens in Visual Representation. Special-purpose learnable tokens have become a standard design pattern in transformers: the CLS token [21, 20] aggregates global semantics for classification, memory tokens [8] provide auxiliary storage for long-range context, and task-specific query tokens in DETR [9] attend to encoder features to produce object detections. In vision, Darcet et al. [18] show that introducing register tokens helps ViTs absorb and discard outlier information, stabilizing the representations of the remaining patch tokens. Building on this, Mamba-R [60] shows that Mamba-based vision models also suffer from the same artifacts and benefit from the same register token fix [66]. Latest models such as Dino v2/v3 [50, 54] and ViT-5 [59] have introduced registers as a default component. RATS repurposes registers entirely: by placing them at the bottleneck of attention and training with DINO self-distillation, each register is forced to specialize to a distinct visual part, turning a cleanup mechanism into a part-level representation primitive.
+
+Learned Latent Queries for Visual Token Aggregation. Set Transformer [41] and Perceiver/IO [37, 36] established the $L {  } N {  } L$ cross-attention bottleneck pattern, but optimize supervised task objectives with no visual grouping semantics; Perceiver IO further entangles all latents through stacked $\mathrm { \Delta } N \times N$ self-attention, preventing any latent from becoming an independent semantic unit. Slot Attention [43] instead uses learnable slot vectors that compete to represent scene elements via pixel reconstruction [7, 26, 22]; DINOSAUR [53] and AdaSlot [23] scale it to real images but remain at object level — reconstruction yields object-level alpha masks, and hard slot competition tears apart semantically coherent regions. Superpixel [46, 38] groups tokens by low-level visual cues but strict spatial locality prevents capturing parts requiring global context; GroupViT [65] achieves semantic grouping but requires image-text pairs. In all cases, no prior work has demonstrated the ability to spontaneously surface semantic part-level representations through self-supervised learning alone. RATS shows that the bottleneck paired with DINO self-distillation suffices to induce structured, transferable part-level primitives.
+
+## 3 Method
+
+RATS makes a single architectural change to a Vision Transformer: every block’s self-attention is augmented with a bottleneck attention that decomposes global aggregation into N learnable register tokens, partitioned exclusively across the H attention heads. We first review the preliminaries (§3.1), then describe the bottleneck block, its training, and the resulting register visualization (§3.2).
+
+## 3.1 Preliminaries
+
+Vision Transformer. A Vision Transformer [21] splits an input image into L patches and adds a global classification [CLS] token, yielding a sequence $\boldsymbol { X } \in \mathbb { R } ^ { ( \overbar { L } + 1 ) \times D }$ that passes through a stack of transformer blocks. With H heads and per-head dimension $d = D / H$ , the multi-head self-attention (MHSA) [57] of a block is defined by
+
+$$
+Q ^ {(h)} = \hat {X} W _ {Q} ^ {(h)}, K ^ {(h)} = \hat {X} W _ {K} ^ {(h)}, V ^ {(h)} = \hat {X} W _ {V} ^ {(h)}, \operatorname{Attn} ^ {(h)} = \operatorname{softmax} \left(\frac {Q ^ {(h)} K ^ {(h) \top}}{\sqrt {d}}\right) V ^ {(h)}, \tag {1}
+$$
+
+where $\hat { X } = \operatorname { L N } ( X )$ is layer normalization [4]. The per-head outputs are concatenated and projected by a learned matrix $W _ { O } \in \mathbb { R } ^ { D \times D }$ , giving $\operatorname { M H S A } ( \hat { X } ) = \operatorname { C o n c a t } ( \operatorname { A t t n } ^ { ( 1 ) } , \dots , \operatorname { A t t n } ^ { ( H ) } ) W _ { O }$ . Both sub-layers employ pre-normalization and residual connections: $X  X + \mathrm { M H S A } ( \mathrm { L N } ( X ) )$ ) and $X  \dot { X } + \mathrm { M L P } ( \mathrm { L N } ( X ) )$ ).
+
+DINO self-distillation. DINO [11] trains a student ViT $f _ { \theta _ { s } }$ to match the output of a teacher ViT $f _ { \theta _ { t } }$ on different augmented crops (views) of the same image: the teacher sees only the global crops $\mathcal { V } ^ { g }$ , while the student sees both global and local crops $\mathcal { V } = \mathcal { V } ^ { g } \cup \mathcal { V } ^ { l }$ . Both networks share the same architecture — a ViT backbone followed by an MLP projection head that maps the global [CLS] vector to a softmax distribution over K learnable prototypes. The student is updated by gradient descent, while the teacher’s weights are an exponential moving average (EMA) of the student’s, $\theta _ { t } \gets \lambda \theta _ { t } + ( 1 - \lambda ) \theta _ { s }$ , where λ is the EMA decay rate. Writing $p _ { t } ( x )$ for the teacher’s distribution on view x after centering and sharpening at a low temperature $\tau _ { t } ,$ and $p _ { s } ( x ^ { \prime } )$ for the student’s distribution at a higher temperature $\tau _ { s }$ , the DINO objective is a cross-entropy summed over all teacher-global to student-view pairs:
+
+![](images/d68741f5906135a2239e1873a7d1f65025486769d048760e56f4e30358883892.jpg)
+
+<details>
+<summary>flowchart</summary>
+
+```mermaid
+graph LR
+  A["QKV linear"] --> B["R¹"]
+  A --> C["R²"]
+  A --> D["..."]
+  A --> E["R^H"]
+  B --> F["P(shared)"]
+  C --> F
+  D --> F
+  E --> F
+  F --> G["P(shared)"]
+  G --> H["Attention"]
+  H --> I["Attention"]
+  I --> J["Attention"]
+  J --> K["concatenate"]
+  K --> L["output projection"]
+    style A fill:#f9f,stroke:#333
+    style L fill:#bbf,stroke:#333
+```
+</details>
+
+Figure 2: Register attention block. The shared QKV linear projects the input $X { = } [ R ; P ]$ once. The register projections are partitioned into H disjoint per-head slices $R ^ { 1 } , \ldots , R ^ { H }$ , while the patch projections $P$ are shared across all heads. Each head runs the three-step attention — compress, communicate, broadcast — between its own register slice and the shared patches. Per-head outputs are concatenated and projected by the output projection $W _ { O }$
+
+$$
+\mathcal {L} _ {\mathrm{DINO}} = \sum_ {x \in \mathcal {V} ^ {g}} \sum_ {\substack {x ^ {\prime} \in \mathcal {V} \\ x ^ {\prime} \neq x}} - p _ {t} (x) ^ {\top} \log p _ {s} \left(x ^ {\prime}\right). \tag{2}
+$$
+
+## 3.2 RATS: Register Attention Transformers
+
+RATS introduces a bottleneck sub-block $\mathrm { R - A t t n } ( \cdot )$ that decomposes the [CLS] token into N learnable register tokens. Block input is $X = [ R ; P ] \in \mathbb { R } ^ { ( N + L ) \times D }$ , where $R \in \mathbb { R } ^ { N \times D }$ are register tokens and $\overset { \vartriangle } { \boldsymbol { P } } \in \mathbb { R } ^ { \boldsymbol { L } \times \boldsymbol { D } }$ are patch tokens. Rather than aggregating all patches into a single [CLS] token, $\mathrm { R - A t t n } ( \cdot )$ routes patch information through N register tokens via an $L {  } N {  } N {  } L$ bottleneck, each operating in a low-rank subspace (rank $\leq n = N / H$ per head). This compression encourages each register to specialize to a proto-semantic, part-level region.
+
+Single-head construction. Let n denote the per-head register count and d the per-head dimension $( n = N$ and $d = D$ when $H = 1 )$ . Applying projection matrices $W _ { Q } , W _ { K } ^ { \bullet } , W _ { V } \in \mathbb { R } ^ { D \times d }$ to the LayerNormed input $\hat { X } = \operatorname { L N } ( X )$ yields register projections $Q _ { R } , K _ { R } , V _ { R } \in \mathbb { R } ^ { n \times d }$ and patch projections $Q _ { P } , K _ { P } , V _ { P } \in \mathbb { R } ^ { L \times d }$ . The attention computation proceeds in three steps:
+
+$$
+\text { compress: } \hat {R} = \operatorname{softmax} \left(\frac {Q _ {R} K _ {P} ^ {\top}}{\sqrt {d}}\right) V _ {P} \in \mathbb {R} ^ {n \times d}, \tag {3}
+$$
+
+$$
+\text { communicate: } \bar {R} = \operatorname{softmax} \left(\frac {\hat {R} \hat {R} ^ {\top}}{\sqrt {d}}\right) \hat {R} \in \mathbb {R} ^ {n \times d}, \tag {4}
+$$
+
+$$
+\text { broadcast: } O _ {P} = \operatorname{softmax} \left(\frac {Q _ {P} \bar {R} ^ {\top}}{\sqrt {d}}\right) \bar {R} \in \mathbb {R} ^ {L \times d}. \tag {5}
+$$
+
+Compress aggregates patch information into registers, communicate exchanges context among registers, and broadcast writes the updated registers back to every patch. Figure 3 visualizes this three-stage pipeline. Intuitively, communicate is self-attention among the registers: since each register already summarizes a coherent region, attending between them lets co-occurring parts exchange context and bind into larger structures—without it, patches would interact only indirectly through the compress–broadcast path, too weakly to capture patch–patch dependencies. Following §3.1, R-Attn replaces only the self-attention sub-layer; it keeps the same pre-norm residual connections and MLP, and the block outputs the updated tokens $[ R ; P ]$ .
+
+Multi-head extension. In the Figure 2, with H heads, per-head dimension $d = D / H$ , and per-head register count $n = N / H$ , the $\mathbf { \check { N } }$ registers are partitioned exclusively across heads. Each head $h = 1 , \ldots , H$ applies Eqs. (3)–(5) independently, using its own register slice $R ^ { h } = R [ h n : ( h + 1 ) n ]$ and the d-dimensional projection slice of the shared $W _ { Q K V }$ . The outputs are assembled and projected:
+
+$$
+\mathrm{R-Attn} (\hat {X}) = \left[ \begin{array}{c c} O _ {R} & O _ {P} \end{array} \right] W _ {O}, \tag {6}
+$$
+
+where ${ \cal O } _ { P } = [ { \cal O } _ { P } ^ { 1 } , \dots , { \cal O } _ { P } ^ { H } ] \in \mathbb { R } ^ { L \times D }$ concatenates heads along the feature axis, and $O _ { R } \in \mathbb { R } ^ { N \times D }$ reassembles the per-head register outputs $R ^ { 1 } , \dots , R ^ { H }$ into the original token and feature layout.
+
+![](images/eb15c4fe813604169d3256d142cec5af335fa510799aecd75b55cd8a5e4a846b.jpg)
+
+<details>
+<summary>text_image</summary>
+
+Image
+R4 L → n Compress R9
+n → n Communicate R4 R9
+R4 0.30 0.12
+R9 0.18 0.27
+n → L Broadcast R9
+</details>
+
+Figure 3: Visualization of the three-stage register attention block. Compress: registers $R _ { 4 }$ and $R _ { 9 }$ attend to distinct image regions (lower vs. upper tier). Communicate: self-attention among registers lets co-occurring parts exchange context and bind into larger structures. Broadcast: each register writes back to its own footprint, closing the $P {  } R {  } R {  } P$ bottleneck and regrouping patches into proto-semantic regions.
+
+Training. RATS is trained with the DINO objective (Eq. 2) without modification. The input sequence $X ^ { ( 0 ) } = \mathbf { \bar { \rho } } [ R \mathbf { : }$ PatchEmbed $( \mathbf { I } ) + E _ { \mathrm { p o s } } ]$ passes through L pre-norm blocks of R-Attn and MLP with residual connections, where positional encoding $E _ { \mathrm { p o s } }$ is applied only to the patch tokens. The mean $\begin{array} { r } { z = \frac { 1 } { N } \sum _ { i = 1 } ^ { N } R _ { i } } \end{array}$ $g _ { \boldsymbol { \theta } _ { i } }$ representation. The teacher shares the same architecture and is updated via EMA; no auxiliary region or part-level objective is used.
+
+Register quality visualization. The similarity map between a register token and the patch tokens serves as a direct measure of the register’s spatial selectivity: a highly localized and semantically coherent activation pattern indicates that the register has specialized to a visual part, while a diffuse or unstructured pattern suggests the register has not learned meaningful grouping. Accordingly, for each register $R _ { i }$ we compute its cosine similarity with every patch token from the last block, yielding a score map $\bar { S _ { i } } \in \mathbb { R } ^ { h \times w }$ . We rank all N registers by their maximum activation and retain the top-τ most salient ones. The score maps are reshaped to the spatial grid and lightly smoothed with a Gaussian filter to reduce fragmentation, then each patch is assigned to its highest-scoring register via argmax to produce a segmentation map, as formalized in Eq. 7 below. Figure 1 (bottom) illustrates this pipeline and the resulting part-level similarity maps.
+
+$$
+\operatorname{Seg} (u, v) = \arg \max _ {i \in \mathcal {T}} \left(G _ {\sigma} * S _ {i}\right) (u, v), \quad S _ {i} (u, v) = \frac {\langle R _ {i} , P _ {u , v} \rangle}{\| R _ {i} \| \| P _ {u , v} \|}. \tag {7}
+$$
+
+where T indexes the top-τ registers ranked by $\operatorname* { m a x } _ { u , v } S _ { i } ( u , v )$ , and $G _ { \sigma }$ is a 2-D isotropic Gaussian kernel with standard deviation σ.
+
+From Registers to a Part Dictionary Each register attends to a specific region rather than summarizing the whole image, so its activation is a localized part feature. Because parts recur across images, these features cluster into a compact dictionary of part entries shared across the dataset. A standard ViT cannot expose such a dictionary: its single global [CLS] token provides no per-region tokens to aggregate. We construct it and evaluate its consistency and cross-category transfer quantitatively in §4.4; Figure 4 shows example entries.
+
+## 4 Experiments
+
+## 4.1 Implementation details.
+
+We pretrain two model scales, RATS-S/B, on ImageNet-1k [19] at 224×224 using the DINO recipe without modification. We evaluate on five benchmarks: COCO 2017 val [42], ADE20K [68], ImageNet val, ImageNet-S919 [24], and PartImageNet [30]. Since ImageNet lacks segmentation masks and COCO instance annotations cover only a small fraction of each image, we adopt SAM 2.1 [39, 51] generated masks as proxy ground truth for these two datasets, and use native annotations for the remaining three. We report many-to-one mIoU (M2O) and ARI as primary metrics. For downstream transfer, we fine-tune with Mask2Former on ADE20K semantic segmentation and COCO detection/instance segmentation, comparing against DINO ViT-S/16 under identical recipes. Full details are provided in Appendix E.
+
+![](images/6a2659eddf8b4bf903b094be5584bff45178df87f27337cb1a95009c4c32e319.jpg)  
+Figure 4: Qualitative visualisation of individual dictionary entries. Each column shows attention overlays of a dictionary entry on two test images. Left: a single entry fires on the same part across different instances within a super-category. Right: Semantically similar dictionary entries (e.g., wheel-like entries) generalize across different super-categories.
+
+## 4.2 Region Part Segmentation
+
+We compare RATS against representative self-supervised ViT backbones (DINOv1 [11], DI-NOv3 [54]), Mamba [28, 70, 61] Backbone pretrained with register [66], superpixel-/region-oriented methods (SPFormer [46], SPiT [1]), and a recent slot-based model (AdaSlot [23]). We report manyto-one mIoU (%) on five benchmarks and the average ARI. As shown in Table 1, RATS establishes a new state of the art on every dataset and improves the average mIoU by +12 over the strongest baseline (AdaSlot), consistent with the design goal of the register bottleneck to produce semantically coherent, part-aware regions. Figure 5 corroborates this qualitatively: where the baselines either fragment the foreground or leak into the background, RATS produces clean, grounded regions.
+
+Image  
+![](images/0c14ed8bfb41c7c3240e43f653131f5428ebdd8708cda89609cb368d1786dd71.jpg)
+
+AdaSlot  
+![](images/3808213636acd165ff888b3951c9d0034029c04502c30ec9bc4eb03c6fd142c8.jpg)
+
+Dinov1  
+![](images/1adddde2ea23d296c8a1cee4661efd47685b8e501992db2365d43c0d46273ef0.jpg)
+
+Dinov3  
+![](images/d803db90fb5aa57229aaf7fb32a53c821ee4afb821f23e9a44bf20811d0ed4db.jpg)
+
+Mamba  
+![](images/8499cd6f425844ef7f1002c70c879551e6e021640865d235bac73c12de6ab9f2.jpg)
+
+Spit  
+![](images/59df3c5e624abf7be7a5a3186e778d91d0324def9f0a47193f2cdac508928710.jpg)
+
+Ours  
+![](images/7bf2799a47b5fd0fbda39acb8bd02f60277ceef5ff3c20b2b0d88486aea6c2af.jpg)
+
+![](images/99d14c8fa2afe231eed570dbed6e84dfa4e689bb622415b600dd189c72564c53.jpg)
+
+![](images/6c085936c872d9b45ff1611f23f0d93d1cba50255b040150552c60aebd2a9cf1.jpg)
+
+![](images/cdb7469104025750f820369bedbb61f5a09cae6c93a0dc2cc29f744ac92ba950.jpg)
+
+![](images/8a0eda71d741f47c39e4239154b2b6e1a7aa27240bf7e5095e1ed585b2b04b16.jpg)
+
+![](images/8516905c388d66e76078f36d69b2ad947d696d9fc986834486333fb67a305743.jpg)
+
+![](images/71f2af6b563d30467b1b0e2eb381831d3df789dfbebee357f7dd5fa32c7be44b.jpg)
+
+![](images/1d68f0e538d59d1c3f01817a18a41dede4a131410f5ae88ff32246806dba602a.jpg)  
+Figure 5: Qualitative comparison of part segmentation. RATS yields cleaner foreground–background separation and more part-coherent regions than the baselines. Extended comparison in Appendix B.
+
+## 4.3 Downstream Transfer
+
+The preceding experiments demonstrate that RATS’s register bottleneck discovers semantically coherent part-level representations. A natural question is whether the register tokens can serve as input queries for query-based decoders such as Mask2Former [15]. To test this, we add the $L {  } N {  } N { \bar {  } } L$ bottleneck to a standard ViT and use the resulting register tokens as queries for Mask2Former, fine-tuning on ADE20K semantic segmentation and COCO 2017 detection/instance segmentation. We compare against the same architecture initialized from a DINO ViT-S/16 checkpoint under identical recipes (full details in Appendix E). As shown in Table 2, RATS pretraining consistently outperforms the DINO baseline on both ADE20K and COCO. The parenthesized values report results when replacing only the backbone, while keeping the original independently learned queries unchanged, thereby isolating the backbone contribution. This reveals that RATS’s gains stem from two complementary sources: the bottleneck training produces stronger backbone features, while the register tokens provide part-level semantic representations that serve as superior query inputs.
+
+<table><tr><td>Method</td><td>Backbone</td><td>#Register</td><td>COCO</td><td>ADE20K</td><td>IN</td><td>IN-S919</td><td>PartIN</td><td>Avg</td><td>ARI</td></tr><tr><td colspan="10">Standard ViT</td></tr><tr><td>DINOv1</td><td>ViT-S/16</td><td>6</td><td>8.53</td><td>15.43</td><td>11.21</td><td>48.28</td><td>25.58</td><td>21.81</td><td>8.7</td></tr><tr><td>DINOv3</td><td>ViT-S/16</td><td>6</td><td>8.17</td><td>13.69</td><td>11.15</td><td>50.25</td><td>27.67</td><td>22.19</td><td>11.1</td></tr><tr><td>DINOv1</td><td>ViT-B/16</td><td>12</td><td>8.55</td><td>15.87</td><td>11.05</td><td>46.94</td><td>25.82</td><td>21.65</td><td>7.9</td></tr><tr><td>DINOv3</td><td>ViT-B/16</td><td>12</td><td>10.49</td><td>18.46</td><td>14.13</td><td>56.43</td><td>32.57</td><td>26.41</td><td>12.3</td></tr><tr><td colspan="10">Mamba with Register</td></tr><tr><td>DINOv1</td><td>Mam.R-B/16</td><td>12</td><td>10.07</td><td>18.95</td><td>13.44</td><td>55.54</td><td>30.11</td><td>25.62</td><td>12.8</td></tr><tr><td colspan="10">Superpixel</td></tr><tr><td>SPFormer</td><td>ViT-S/16</td><td>6</td><td>8.37</td><td>14.65</td><td>12.10</td><td>51.92</td><td>27.21</td><td>22.85</td><td>11.5</td></tr><tr><td>SPiT</td><td>ViT-B/16</td><td>12</td><td>8.41</td><td>12.89</td><td>12.37</td><td>53.47</td><td>27.83</td><td>23.00</td><td>8.5</td></tr><tr><td colspan="10">Slot</td></tr><tr><td>AdaSlot</td><td>ViT-B/16</td><td>33</td><td>12.31</td><td>23.87</td><td>15.49</td><td>54.83</td><td>30.74</td><td>27.45</td><td>19.3</td></tr><tr><td colspan="10">Ours</td></tr><tr><td>DINOv1</td><td>RATS-S/16</td><td>6</td><td>9.91</td><td>17.02</td><td>13.97</td><td>58.84</td><td>33.93</td><td>26.73</td><td>20.4</td></tr><tr><td>DINOv1</td><td>RATS-B/16</td><td>12</td><td>12.99</td><td>21.45</td><td>17.31</td><td>67.89</td><td>41.06</td><td>32.14</td><td>22.0</td></tr><tr><td>DINOv1</td><td>RATS-B/16</td><td>33</td><td>16.89</td><td>27.52</td><td>21.32</td><td>73.62</td><td>46.94</td><td>37.26</td><td>21.1</td></tr><tr><td>DINOv1</td><td>RATS-S/16</td><td>96</td><td>17.31</td><td>26.98</td><td>21.87</td><td>73.18</td><td>46.43</td><td>37.15</td><td>21.7</td></tr><tr><td>DINOv1</td><td>RATS-B/16</td><td>192</td><td>19.32</td><td>30.77</td><td>23.47</td><td>75.39</td><td>48.77</td><td>39.54</td><td>19.6</td></tr></table>
+
+Table 1: part segmentation. M2O mIoU (%) on five benchmarks and mean ARI. RATS outperforms self-supervised, superpixel, and slot-based baselines at matched token budgets, and surpasses AdaSlot with fewer tokens.
+
+<table><tr><td rowspan="2">Pretraining</td><td rowspan="2">#queries</td><td colspan="3">ADE20K (sem. seg.)</td><td colspan="2">COCO 2017 (det. &amp; inst. seg.)</td></tr><tr><td>aAcc (%)</td><td>mIoU (%)</td><td>mAcc (%)</td><td> $AP^b$ (%)</td><td> $AP^m$ (%)</td></tr><tr><td>DINO</td><td>100</td><td>81.37</td><td>45.41</td><td>58.23</td><td>41.1</td><td>37.9</td></tr><tr><td>RATS</td><td>96 (100 init queries)</td><td>81.61 (81.47)</td><td>46.52 (45.83)</td><td>59.37 (60.44)</td><td>41.2</td><td>38.1</td></tr></table>
+
+Table 2: Downstream transfer to ADE20K and COCO 2017. Fine-tuning Mask2Former [15] with ViT-S/16 backbone, initialized from DINO or RATS pretraining (both 100 epochs on ImageNet-1k). Parenthesized values denote results when replacing only the backbone, while keeping the standard learned queries unchanged.
+
+## 4.4 Dictionary Analysis
+
+RATS’s registers produce strong part-level features; we ask whether these can be aggregated into a dictionary of consistent, shared parts per category, and evaluate this on PartImageNet.
+
+Codebook construction. A register that activates on a spatial region attends to that region in its attention map, yielding a localised part feature. We compare four codebook constructions in Fig. 6 (left). Post-hoc K-means serves as an upper bound: it extracts register features within ground-truth part masks and clusters them offline. Learned codebook randomly initialises a set of entries and trains them on ImageNet by minimising the distance between each register and its nearest entry; ground-truth masks are used only afterwards to label each entry with its dominant part. The learned codebook trails K-means on retrieval by a small margin while delivering higher per-entry purity, confirming that RATS’s register features are already well-structured for part discovery. Enlarging the vocabulary (Learned codebook (L)) further raises purity but wastes 90% of entries, exposing a purity–utilisation trade-off. We assess the dictionary along two axes: image-level retrieval (mAP, R@1) under a bag-of-entries representation, and per-entry weighted purity with utilisation (valPw, util%); see Appendix C for definitions.
+
+Qualitative verification. Figure 4 shows that individual entries fire consistently on the same part within a super-category (left) and that functional concepts such as “wheel” transfer across supercategories (right). Fig. 6 (right) further shows that a Pegasus—an unseen composite of horse and bird wings—is decomposed by independently learned entries, supporting zero-shot compositional generalisation. Additional analysis is in Appendix C.
+
+<table><tr><td>Method</td><td>mAP ↑</td><td>R@1 ↑</td><td>valPw ↑</td><td>util% ↑</td></tr><tr><td>Random baseline</td><td>0.16</td><td>0.16</td><td>0.150</td><td>-</td></tr><tr><td>Post-hoc K-means</td><td>0.56</td><td>0.93</td><td>0.306</td><td>100</td></tr><tr><td>Learned codebook</td><td>0.48</td><td>0.83</td><td>0.317</td><td>62</td></tr><tr><td>Learned codebook (L)</td><td>0.45</td><td>0.82</td><td>0.355</td><td>10</td></tr></table>
+
+![](images/5f253ec2f75b293a9f8cfe389efc9c908b555d432eebdf1ed1a27fffe8d6466a.jpg)
+
+![](images/74f9f429c51262bacab780bc83ed3b509dbf48f61c02001872e31e9e2ef061e0.jpg)  
+Entry of Quad Head Bird Wing Quad Body  
+Figure 6: Codebook construction and compositional generalisation. Left: retrieval and purity metrics under different codebook constructions. Right: a Pegasus (unseen composite of horse and bird wings) is decomposed by three independently learned entries, supporting zero-shot decomposition of novel compositions.
+
+## 4.5 Ablation Studies
+
+Design Choices for Register-Based Token Aggregation. We ablate three axes: (i) per-head partition vs shared registers (all heads attend to the full register set); (ii) parameter-free vs learned communicate projections; (iii) RATS vs a Perceiver-IO style structure [36] that compresses patches into 80 latents, processes them with 10 self-attention layers, then decodes via 96 output queries. Table 3 reports cost (NVIDIA A5000 GPU, 512×512, batch=16) and quality averaged over five datasets at top-τ =6. RATS achieves lower latency and memory than ViT-S/16 at identical parameter count with improved segmentation quality, Pareto-dominating all design alternatives.
+
+<table><tr><td>Model</td><td>Params</td><td>Mem</td><td>Latency</td><td>rel. cost</td><td>M2O ↑</td><td>O2O ↑</td><td>ARI ↑</td></tr><tr><td>ViT-S/16 (DINO)</td><td>21.67 M</td><td>1.08 GB</td><td>172.8 ms</td><td>2.12×</td><td>21.8</td><td>19.3</td><td>8.7</td></tr><tr><td>RATS (Baseline)</td><td>21.70 M</td><td>0.49 GB</td><td>81.7 ms</td><td>1.00×</td><td>26.6</td><td>23.1</td><td>19.2</td></tr><tr><td>RATS + learned comm</td><td>22.59 M</td><td>0.49 GB</td><td>82.6 ms</td><td>1.01×</td><td>25.5</td><td>21.9</td><td>17.1</td></tr><tr><td>RATS, shared</td><td>21.70 M</td><td>0.52 GB</td><td>91.7 ms</td><td>1.12×</td><td>25.0</td><td>21.2</td><td>15.1</td></tr><tr><td>Perceiver-IO style</td><td>21.73 M</td><td>0.31 GB</td><td>12.4 ms</td><td>0.15×</td><td>20.2</td><td>18.6</td><td>10.0</td></tr></table>
+
+Table 3: Ablation on attention design choices. Each row varies one design axis from RATS (Baseline). Perceiver-IO minimises cost but sacrifices spatial detail.
+
+Number of per-head registers n and over-segmentation. The register bottleneck compresses patch information into $N { = } n { \times } H$ region tokens, directly controlling grouping granularity. We ablate $n \in \{ 8 , 1 6 , 2 4 , 3 2 \}$ on RATS-S (H=6) at top-τ =40 and report both many-to-one (M2O) and one-toone (O2O) mIoU. M2O reflects clustering quality, while a large M2O–O2O gap indicates that one semantic class is fragmented across multiple registers (over-segmentation). As shown in Table 4, n=16 achieves the best M2O, while smaller n only leads to a slight drop. Larger n tends to increase over-segmentation, whereas smaller n produces coarser but more complete regions.
+
+<table><tr><td rowspan="2">n</td><td colspan="6">mIoU M2O (%) ↑</td><td colspan="6">mIoU O2O (%) ↑</td></tr><tr><td>COCO</td><td>ADE20K</td><td>ImageNet</td><td>IN-S919</td><td>PartIN</td><td>Avg</td><td>COCO</td><td>ADE20K</td><td>ImageNet</td><td>IN-S919</td><td>PartIN</td><td>Avg</td></tr><tr><td>8</td><td>15.67</td><td>23.97</td><td>19.96</td><td>71.47</td><td>45.71</td><td>35.36</td><td>14.70</td><td>21.03</td><td>17.45</td><td>43.10</td><td>32.89</td><td>25.83</td></tr><tr><td>16</td><td>16.77</td><td>26.59</td><td>21.37</td><td>72.72</td><td>45.67</td><td>36.62</td><td>15.81</td><td>22.76</td><td>18.34</td><td>40.28</td><td>30.82</td><td>25.60</td></tr><tr><td>24</td><td>16.89</td><td>26.46</td><td>21.19</td><td>72.30</td><td>46.14</td><td>36.60</td><td>15.70</td><td>22.85</td><td>18.34</td><td>39.65</td><td>30.87</td><td>25.48</td></tr><tr><td>32</td><td>16.13</td><td>25.19</td><td>20.82</td><td>71.81</td><td>46.22</td><td>36.03</td><td>15.65</td><td>22.25</td><td>18.23</td><td>39.79</td><td>31.53</td><td>25.49</td></tr></table>
+
+Table 4: Effect of per-head register count n and over-segmentation. M2O vs. O2O mIoU (%) on RATS-S. Higher M2O reflects better clustering; a large M2O–O2O gap indicates over-segmentation. n=16 achieves the best M2O, while n=8 trades absolute M2O for higher O2O on part-centric classes.
+
+Top-τ region ablation. At inference, we rank registers by activation magnitude and select the top-τ to form the segmentation map. Table 5 reveals a coverage-purity trade-off: increasing τ from 10 to 80 improves mIoU by up to 9.2% on IN-S919, but ARI consistently decreases (e.g., −2.9% on IN-S919), since lower-ranked registers attend to less coherent areas. The metrics saturate beyond τ ≈50, reflecting a natural ranking among visual primitives learned by the bottleneck.
+
+DINO loss placement. We investigate whether each attention head benefits from an independent DINO loss to learn distinct patterns, or whether a single loss over all registers suffices. As shown in
+
+<table><tr><td rowspan="2">Top $_\tau$ </td><td colspan="5">mIoU (M2O, %) ↑</td><td colspan="5">ARI ↑</td></tr><tr><td>COCO</td><td>ADE20K</td><td>ImageNet</td><td>IN-S919</td><td>PartIN</td><td>COCO</td><td>ADE20K</td><td>ImageNet</td><td>IN-S919</td><td>PartIN</td></tr><tr><td>10</td><td>11.76</td><td>20.07</td><td>15.99</td><td>64.00</td><td>37.72</td><td>20.30</td><td>23.55</td><td>23.22</td><td>19.74</td><td>24.00</td></tr><tr><td>30</td><td>15.99</td><td>25.58</td><td>20.66</td><td>71.88</td><td>44.67</td><td>23.01</td><td>24.77</td><td>24.74</td><td>17.78</td><td>21.22</td></tr><tr><td>50</td><td>17.07</td><td>26.87</td><td>21.70</td><td>73.01</td><td>46.18</td><td>22.88</td><td>24.44</td><td>24.39</td><td>17.05</td><td>20.21</td></tr><tr><td>80</td><td>17.30</td><td>26.98</td><td>21.87</td><td>73.18</td><td>46.43</td><td>22.84</td><td>24.39</td><td>24.29</td><td>16.89</td><td>20.11</td></tr></table>
+
+Table 5: Effect of top-τ selection. Larger τ improves spatial coverage (higher mIoU) but dilutes clustering purity (lower ARI), revealing a coverage-purity trade-off.
+
+<table><tr><td rowspan="2">Loss Scope</td><td colspan="5">mIoU (M2O, %) ↑</td></tr><tr><td>COCO</td><td>ADE20K</td><td>ImageNet</td><td>IN-S919</td><td>PartIN</td></tr><tr><td>Per-head</td><td>15.38</td><td>21.82</td><td>18.47</td><td>67.20</td><td>39.76</td></tr><tr><td>All-head</td><td>16.77</td><td>26.59</td><td>21.37</td><td>72.72</td><td>45.67</td></tr></table>
+
+Table 6: DINO loss placement. mIoU (M2O). Per-head: each attention head’s register tokens receive a separate DINO distillation loss. All-head: a single shared DINO loss over all registers.
+
+Table 6, applying a separate DINO loss per head degrades mIoU, indicating that a shared loss over all registers is more effective.
+
+Effect of inference resolution. DINO-based models naturally support variable-resolution inputs at inference. Using RATS-S as a representative model, we sweep resolution from 224 to 1024 and report the mean across checkpoints at epoch 140–200, with the shaded band showing the min–max range (Figure 7). mIoU increases steadily up to 640, as finer patch grids provide more spatial detail for the register bottleneck. Beyond 640, gains saturate on most datasets while ARI begins to decline on ADE20K and PartIN, indicating that excessive patch counts dilute attention coherence.
+
+![](images/c30909c4593024f940c764299caa98c8d92146c5a53d9f1156adb5fde0ec59d0.jpg)  
+Figure 7: Effect of inference resolution (RATS-S). mIoU (M2O, %, blue, left axis) and ARI (gray, right axis) across resolutions 224–1024. Lines show the mean over epoch 140–200; shaded bands show the min–max range. mIoU improves up to 640 then saturates; ARI peaks at intermediate resolutions, revealing a resolution–coherence trade-off.
+
+![](images/e197f644bc054fbd80ee42fd64e97f7cf6f56ee48528900b3e8690159907014b.jpg)  
+Figure 8: Training dynamics (RATS-S). mIoU (M2O, %) across epochs 20–300 on five benchmarks. The gray band marks the optimal window (epoch 160–180). Performance degrades with continued training beyond this point, indicating diminishing returns from over-distillation. Peak values are annotated for each dataset.
+
+Training dynamics. We track mIoU of RATS-S across training epochs to understand when region structure emerges (Figure 8). Performance rises rapidly in early training, reaching ∼85% of peak by epoch 20. All five datasets peak around epoch 160–180, then gradually decline through epoch 300. This degradation indicates diminishing register diversity. The gray band marks the optimal training window of 160–180 epochs.
+
+## 5 Conclusion
+
+We present RATS, a Vision Transformer architecture built on a register-token bottleneck that enables self-supervised models to spontaneously discover part-level representations without any part annotation or auxiliary loss. Experiments show that this simple architectural design surpasses existing methods on part segmentation and provides stronger features and query initialization for downstream dense prediction. The visual dictionary extracted from the trained registers further reveals structured semantic organization, including within-super-category part consistency and cross-category taxonomic proximity. Our results demonstrate that architectural inductive bias alone can serve as an effective prior for part discovery, providing a promising foundation for fine-grained recognition, interpretable visual analysis, and broader compositional visual understanding.
+
+## References
+
+[1] Marius Aasan, Odd Kolbjørnsen, Anne Schistad Solberg, and Adín Ramirez Rivera. A spitting image: Modular superpixel tokenization in vision transformers. In European Conference on Computer Vision, pages 124–142. Springer, 2024.  
+[2] Shir Amir, Yossi Gandelsman, Shai Bagon, and Tali Dekel. Deep vit features as dense visual descriptors. arXiv preprint arXiv:2112.05814, 2(3):4, 2021.  
+[3] Ananthu Aniraj, Cassio F Dantas, Dino Ienco, and Diego Marcos. Pdiscoformer: Relaxing part discovery constraints with vision transformers. In European Conference on Computer Vision, pages 256–272. Springer, 2024.  
+[4] Jimmy Lei Ba, Jamie Ryan Kiros, and Geoffrey E Hinton. Layer normalization. arXiv preprint arXiv:1607.06450, 2016.  
+[5] Hangbo Bao, Li Dong, Songhao Piao, and Furu Wei. Beit: Bert pre-training of image transformers. 2021.  
+[6] Adrien Bardes, Jean Ponce, and Yann LeCun. Vicreg: Variance-invariance-covariance regularization for self-supervised learning. 2021.  
+[7] Christopher P Burgess, Loic Matthey, Nicholas Watters, Rishabh Kabra, Irina Higgins, Matt Botvinick, and Alexander Lerchner. Monet: Unsupervised scene decomposition and representation. arXiv preprint arXiv:1901.11390, 2019.  
+[8] Mikhail S Burtsev, Yuri Kuratov, Anton Peganov, and Grigory V Sapunov. Memory transformer. arXiv preprint arXiv:2006.11527, 2020.  
+[9] Nicolas Carion, Francisco Massa, Gabriel Synnaeve, Nicolas Usunier, Alexander Kirillov, and Sergey Zagoruyko. End-to-end object detection with transformers. In European conference on computer vision, pages 213–229. Springer, 2020.  
+[10] Mathilde Caron, Ishan Misra, Julien Mairal, Priya Goyal, Piotr Bojanowski, and Armand Joulin. Unsupervised learning of visual features by contrasting cluster assignments. volume 33, pages 9912–9924, 2020.  
+[11] Mathilde Caron, Hugo Touvron, Ishan Misra, Hervé Jégou, Julien Mairal, Piotr Bojanowski, and Armand Joulin. Emerging properties in self-supervised vision transformers. In Proceedings of the IEEE/CVF international conference on computer vision, pages 9650–9660, 2021.  
+[12] Kai Chen, Jiaqi Wang, Jiangmiao Pang, Yuhang Cao, Yu Xiong, Xiaoxiao Li, Shuyang Sun, Wansen Feng, Ziwei Liu, Jiarui Xu, et al. Mmdetection: Open mmlab detection toolbox and benchmark, 2019.  
+[13] Ting Chen, Simon Kornblith, Mohammad Norouzi, and Geoffrey Hinton. A simple framework for contrastive learning of visual representations. In International conference on machine learning, pages 1597–1607. PmLR, 2020.  
+[14] Xinlei Chen and Kaiming He. Exploring simple siamese representation learning. In Proceedings of the IEEE/CVF conference on computer vision and pattern recognition, pages 15750–15758, 2021.  
+[15] Bowen Cheng, Ishan Misra, Alexander G Schwing, Alexander Kirillov, and Rohit Girdhar. Masked-attention mask transformer for universal image segmentation. In Proceedings of the IEEE/CVF conference on computer vision and pattern recognition, pages 1290–1299, 2022.  
+[16] Subhabrata Choudhury, Iro Laina, Christian Rupprecht, and Andrea Vedaldi. Unsupervised part discovery from contrastive reconstruction. volume 34, pages 28104–28118, 2021.  
+[17] MMSegmentation Contributors. Mmsegmentation: Openmmlab semantic segmentation toolbox and benchmark, 2020.  
+[18] Timothée Darcet, Maxime Oquab, Julien Mairal, and Piotr Bojanowski. Vision transformers need registers. 2023.  
+[19] Jia Deng, Wei Dong, Richard Socher, Li-Jia Li, Kai Li, and Li Fei-Fei. Imagenet: A largescale hierarchical image database. In 2009 IEEE conference on computer vision and pattern recognition, pages 248–255. Ieee, 2009.  
+[20] Jacob Devlin, Ming-Wei Chang, Kenton Lee, and Kristina Toutanova. Bert: Pre-training of deep bidirectional transformers for language understanding. In Proceedings of the 2019 conference of the North American chapter of the association for computational linguistics: human language technologies, volume 1 (long and short papers), pages 4171–4186, 2019.  
+[21] Alexey Dosovitskiy, Lucas Beyer, Alexander Kolesnikov, Dirk Weissenborn, Xiaohua Zhai, Thomas Unterthiner, Mostafa Dehghani, Matthias Minderer, Georg Heigold, Sylvain Gelly, et al. An image is worth 16x16 words: Transformers for image recognition at scale. arXiv preprint arXiv:2010.11929, 2020.  
+[22] Martin Engelcke, Adam R Kosiorek, Oiwi Parker Jones, and Ingmar Posner. Genesis: Generative scene inference and sampling with object-centric latent representations. 2019.  
+[23] Ke Fan, Zechen Bai, Tianjun Xiao, Tong He, Max Horn, Yanwei Fu, Francesco Locatello, and Zheng Zhang. Adaptive slot attention: Object discovery with dynamic slot number. In Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition, pages 23062–23071, 2024.  
+[24] Shanghua Gao, Zhong-Yu Li, Ming-Hsuan Yang, Ming-Ming Cheng, Junwei Han, and Philip Torr. Large-scale unsupervised semantic segmentation. IEEE transactions on pattern analysis and machine intelligence, 45(6):7457–7476, 2022.  
+[25] Spyros Gidaris, Praveer Singh, and Nikos Komodakis. Unsupervised representation learning by predicting image rotations. 2018.  
+[26] Klaus Greff, Raphaël Lopez Kaufman, Rishabh Kabra, Nick Watters, Christopher Burgess, Daniel Zoran, Loic Matthey, Matthew Botvinick, and Alexander Lerchner. Multi-object representation learning with iterative variational inference. In International conference on machine learning, pages 2424–2433. PMLR, 2019.  
+[27] Jean-Bastien Grill, Florian Strub, Florent Altché, Corentin Tallec, Pierre Richemond, Elena Buchatskaya, Carl Doersch, Bernardo Avila Pires, Zhaohan Guo, Mohammad Gheshlaghi Azar, et al. Bootstrap your own latent-a new approach to self-supervised learning. volume 33, pages 21271–21284, 2020.  
+[28] Albert Gu and Tri Dao. Mamba: Linear-time sequence modeling with selective state spaces. arXiv preprint arXiv:2312.00752, 2023.  
+[29] Mark Hamilton, Zhoutong Zhang, Bharath Hariharan, Noah Snavely, and William T Freeman. Unsupervised semantic segmentation by distilling feature correspondences. 2022.  
+[30] Ju He, Shuo Yang, Shaokang Yang, Adam Kortylewski, Xiaoding Yuan, Jie-Neng Chen, Shuai Liu, Cheng Yang, Qihang Yu, and Alan Yuille. Partimagenet: A large, high-quality dataset of parts. In European Conference on Computer Vision, pages 128–145. Springer, 2022.  
+[31] Kaiming He, Xinlei Chen, Saining Xie, Yanghao Li, Piotr Dollár, and Ross Girshick. Masked autoencoders are scalable vision learners. In Proceedings of the IEEE/CVF conference on computer vision and pattern recognition, pages 16000–16009, 2022.  
+[32] Kaiming He, Haoqi Fan, Yuxin Wu, Saining Xie, and Ross Girshick. Momentum contrast for unsupervised visual representation learning. In Proceedings of the IEEE/CVF conference on computer vision and pattern recognition, pages 9729–9738, 2020.  
+[33] Gao Huang, Yu Sun, Zhuang Liu, Daniel Sedra, and Kilian Q Weinberger. Deep networks with stochastic depth. In European conference on computer vision, pages 646–661. Springer, 2016.  
+[34] Lawrence Hubert and Phipps Arabie. Comparing partitions. Journal of classification, 2(1):193– 218, 1985.  
+[35] Wei-Chih Hung, Varun Jampani, Sifei Liu, Pavlo Molchanov, Ming-Hsuan Yang, and Jan Kautz. Scops: Self-supervised co-part segmentation. In Proceedings of the IEEE/CVF conference on computer vision and pattern recognition, pages 869–878, 2019.  
+[36] Andrew Jaegle, Sebastian Borgeaud, Jean-Baptiste Alayrac, Carl Doersch, Catalin Ionescu, David Ding, Skanda Koppula, Daniel Zoran, Andrew Brock, Evan Shelhamer, et al. Perceiver io: A general architecture for structured inputs & outputs. 2021.  
+[37] Andrew Jaegle, Felix Gimeno, Andy Brock, Oriol Vinyals, Andrew Zisserman, and Joao Carreira. Perceiver: General perception with iterative attention. In International conference on machine learning, pages 4651–4664. PMLR, 2021.  
+[38] Varun Jampani, Deqing Sun, Ming-Yu Liu, Ming-Hsuan Yang, and Jan Kautz. Superpixel sampling networks. In Proceedings of the European conference on computer vision (ECCV), pages 352–368, 2018.  
+[39] Alexander Kirillov, Eric Mintun, Nikhila Ravi, Hanzi Mao, Chloe Rolland, Laura Gustafson, Tete Xiao, Spencer Whitehead, Alexander C Berg, Wan-Yen Lo, et al. Segment anything. In Proceedings of the IEEE/CVF international conference on computer vision, pages 4015–4026, 2023.  
+[40] Harold W Kuhn. The hungarian method for the assignment problem. Naval research logistics quarterly, 2(1-2):83–97, 1955.  
+[41] Juho Lee, Yoonho Lee, Jungtaek Kim, Adam Kosiorek, Seungjin Choi, and Yee Whye Teh. Set transformer: A framework for attention-based permutation-invariant neural networks. In International conference on machine learning, pages 3744–3753. PMLR, 2019.  
+[42] Tsung-Yi Lin, Michael Maire, Serge Belongie, James Hays, Pietro Perona, Deva Ramanan, Piotr Dollár, and C Lawrence Zitnick. Microsoft coco: Common objects in context. In European conference on computer vision, pages 740–755. Springer, 2014.  
+[43] Francesco Locatello, Dirk Weissenborn, Thomas Unterthiner, Aravindh Mahendran, Georg Heigold, Jakob Uszkoreit, Alexey Dosovitskiy, and Thomas Kipf. Object-centric learning with slot attention. volume 33, pages 11525–11538, 2020.  
+[44] Ilya Loshchilov and Frank Hutter. Sgdr: Stochastic gradient descent with warm restarts. 2016.  
+[45] Ilya Loshchilov and Frank Hutter. Decoupled weight decay regularization. 2017.  
+[46] Jieru Mei, Liang-Chieh Chen, Alan Yuille, and Cihang Xie. Spformer: Enhancing vision transformer with superpixel representation. arXiv preprint arXiv:2401.02931, 2024.  
+[47] Luke Melas-Kyriazi, Christian Rupprecht, Iro Laina, and Andrea Vedaldi. Deep spectral methods: A surprisingly strong baseline for unsupervised semantic segmentation and localization. In Proceedings of the IEEE/CVF conference on computer vision and pattern recognition, pages 8364–8375, 2022.  
+[48] Paulius Micikevicius, Sharan Narang, Jonah Alben, Gregory Diamos, Erich Elsen, David Garcia, Boris Ginsburg, Michael Houston, Oleksii Kuchaiev, Ganesh Venkatesh, et al. Mixed precision training. 2017.  
+[49] Mehdi Noroozi and Paolo Favaro. Unsupervised learning of visual representations by solving jigsaw puzzles. In European conference on computer vision, pages 69–84. Springer, 2016.  
+[50] Maxime Oquab, Timothée Darcet, Théo Moutakanni, Huy Vo, Marc Szafraniec, Vasil Khalidov, Pierre Fernandez, Daniel Haziza, Francisco Massa, Alaaeldin El-Nouby, et al. Dinov2: Learning robust visual features without supervision. arXiv preprint arXiv:2304.07193, 2023.  
+[51] Nikhila Ravi, Valentin Gabeur, Yuan-Ting Hu, Ronghang Hu, Chaitanya Ryali, Tengyu Ma, Haitham Khedr, Roman Rädle, Chloe Rolland, Laura Gustafson, et al. Sam 2: Segment anything in images and videos. arXiv preprint arXiv:2408.00714, 2024.  
+[52] Gerard Salton and Christopher Buckley. Term-weighting approaches in automatic text retrieval. Information processing & management, 24(5):513–523, 1988.  
+[53] Maximilian Seitzer, Max Horn, Andrii Zadaianchuk, Dominik Zietlow, Tianjun Xiao, Carl-Johann Simon-Gabriel, Tong He, Zheng Zhang, Bernhard Schölkopf, Thomas Brox, et al. Bridging the gap to real-world object-centric learning. 2022.  
+[54] Oriane Siméoni, Huy V Vo, Maximilian Seitzer, Federico Baldassarre, Maxime Oquab, Cijo Jose, Vasil Khalidov, Marc Szafraniec, Seungeun Yi, Michaël Ramamonjisoa, et al. Dinov3. arXiv preprint arXiv:2508.10104, 2025.  
+[55] Sivic and Zisserman. Video google: A text retrieval approach to object matching in videos. In Proceedings ninth IEEE international conference on computer vision, pages 1470–1477. IEEE, 2003.  
+[56] Aaron Van Den Oord, Oriol Vinyals, et al. Neural discrete representation learning. volume 30, 2017.  
+[57] Ashish Vaswani, Noam Shazeer, Niki Parmar, Jakob Uszkoreit, Llion Jones, Aidan N Gomez, Łukasz Kaiser, and Illia Polosukhin. Attention is all you need. volume 30, 2017.  
+[58] Feng Wang, Jieru Mei, and Alan Yuille. Sclip: Rethinking self-attention for dense visionlanguage inference. In European conference on computer vision, pages 315–332. Springer, 2024.  
+[59] Feng Wang, Sucheng Ren, Tiezheng Zhang, Predrag Neskovic, Anand Bhattad, Cihang Xie, and Alan Yuille. Vit-5: Vision transformers for the mid-2020s. arXiv preprint arXiv:2602.08071, 2026.  
+[60] Feng Wang, Jiahao Wang, Sucheng Ren, Guoyizhe Wei, Jieru Mei, Wei Shao, Yuyin Zhou, Alan Yuille, and Cihang Xie. Mamba-reg: Vision mamba also needs registers. pages 14944–14953, 2025.  
+[61] Feng Wang, Timing Yang, Yaodong Yu, Sucheng Ren, Guoyizhe Wei, Angtian Wang, Wei Shao, Yuyin Zhou, Alan Yuille, and Cihang Xie. Adventurer: Optimizing vision mamba architecture designs for efficiency. In Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition (CVPR), pages 30157–30166, June 2025.  
+[62] Yangtao Wang, Xi Shen, Yuan Yuan, Yuming Du, Maomao Li, Shell Xu Hu, James L Crowley, and Dominique Vaufreydaz. Tokencut: Segmenting objects in images and videos with selfsupervised transformer and normalized cut. IEEE transactions on pattern analysis and machine intelligence, 45(12):15790–15801, 2023.  
+[63] Chen Wei, Haoqi Fan, Saining Xie, Chao-Yuan Wu, Alan Yuille, and Christoph Feichtenhofer. Masked feature prediction for self-supervised visual pre-training. In Proceedings of the IEEE/CVF conference on computer vision and pattern recognition, pages 14668–14678, 2022.  
+[64] Zhenda Xie, Zheng Zhang, Yue Cao, Yutong Lin, Jianmin Bao, Zhuliang Yao, Qi Dai, and Han Hu. Simmim: A simple framework for masked image modeling. In Proceedings of the IEEE/CVF conference on computer vision and pattern recognition, pages 9653–9663, 2022.  
+[65] Jiarui Xu, Shalini De Mello, Sifei Liu, Wonmin Byeon, Thomas Breuel, Jan Kautz, and Xiaolong Wang. Groupvit: Semantic segmentation emerges from text supervision. In Proceedings of the IEEE/CVF conference on computer vision and pattern recognition, pages 18134–18144, 2022.  
+[66] Timing Yang, Guoyizhe Wei, Alan Yuille, and Feng Wang. Rnn as linear transformer: A closer investigation into representational potentials of visual mamba models. arXiv preprint arXiv:2511.18380, 2025.  
+[67] Richard Zhang, Phillip Isola, and Alexei A Efros. Colorful image colorization. In European conference on computer vision, pages 649–666. Springer, 2016.  
+[68] Bolei Zhou, Hang Zhao, Xavier Puig, Sanja Fidler, Adela Barriuso, and Antonio Torralba. Scene parsing through ade20k dataset. In Proceedings of the IEEE conference on computer vision and pattern recognition, pages 633–641, 2017.  
+[69] Jinghao Zhou, Chen Wei, Huiyu Wang, Wei Shen, Cihang Xie, Alan Yuille, and Tao Kong. ibot: Image bert pre-training with online tokenizer. 2021.  
+[70] Lianghui Zhu, Bencheng Liao, Qian Zhang, Xinlong Wang, Wenyu Liu, and Xinggang Wang. Vision mamba: Efficient visual representation learning with bidirectional state space model. 2024.  
+[71] Adrian Ziegler and Yuki M Asano. Self-supervised learning of object parts for semantic segmentation. In Proceedings of the IEEE/CVF conference on computer vision and pattern recognition, pages 14502–14511, 2022.
+
+## Appendix
+
+## A Limitations
+
+RATS has two main limitations. (i) Low-rank attention. To allow registers to spontaneously acquire part-segmentation ability, we adopt the $L {  } N {  } N {  } L$ structure. Because the $L {  } N$ stage compresses information through only $\scriptstyle n = N / H$ registers per head, the resulting attention has rank at most n, which is lower than the rank of standard $L \to L$ self-attention. For tasks that require maintaining a high-rank representation, such as semantic segmentation and object detection, we therefore introduce an additional parallel $L \to L$ branch during fine-tuning to recover full-rank capacity (Appendix. E). (ii) Mismatch with human-defined semantics. The grouping discovered by RATS is obtained without any annotation, so its part boundaries are determined by visual co-occurrence rather than by human-defined taxonomies. Compared with supervised segmentation, which targets human-labelled categories, the resulting regions may not always align with the parts a human would name, and the segmentation should be interpreted as an emergent visual decomposition rather than a label-faithful one.
+
+## B Extended qualitative comparison
+
+Figure 9 extends the qualitative comparison of Figure 5 (main paper) with nine additional images spanning animals (bird, cocker spaniel), vehicles (bicycle, mountain bike), indoor/outdoor scenes (cathedral, bedroom), and challenging compositions (text-covered helmet, sculpture, person with prop). The same column layout is used: input image followed by AdaSlot [23], DINOv1 [11], $\mathrm { D I N O v } 3$ [54], Mamba, SPiT [1], and RATS. Across all nine images, RATS consistently delivers cleaner foreground–background separation and more part-coherent regions than the baselines.
+
+## C Dictionary Evaluation and Structure
+
+This appendix expands on the dictionary analysis reported in Section 4.4 of the main paper. We first describe the image representation, metrics, and codebook variants used in Figure 6, then present the structural analysis behind the qualitative claims in Figure 4.
+
+## C.1 Qualitative analysis of the dictionary
+
+Figure 11 shows register-attention overlays alongside ground-truth segmentations for six dictionary entries, each evaluated on three images from different classes within the same super-category. Each entry consistently highlights the target part across varied instances, closely matching human-annotated boundaries, and the illustrated entries span both deformable biological parts (Bird\_Head, Fish\_Head, Quad\_Foot) and rigid man-made parts (Aero\_Tail, Boat\_Sail, Boat\_Body), confirming that a single learned vocabulary covers heterogeneous domains.
+
+Beyond within-super-category consistency, the dictionary also captures cross-super-category structure. Figure 10 visualizes pairwise cosine similarity between label prototypes (averaged dictionary entries per dominant part label), revealing three semantic patterns. Within-object coherence: strongest off-diagonal similarities link parts of the same super-category (Bird\_Body–Bird\_Head: 0.84; Snake\_Body–Snake\_Head: 0.72), reflecting shared appearance context despite spatial disjointness. Taxonomic proximity: reptiles and snakes form a coherent block (cosines 0.42–0.53), and Bird\_Head–Biped\_Head reach 0.27, capturing cross-category biological similarity without part-label supervision. Functional analogy: rigid parts cluster by geometric function (Car\_Tire–Bike\_Tire: 0.43; Bottle\_Mouth–Bottle\_Body: 0.62), while unrelated parts remain near zero. Together, these patterns show the dictionary discovers multi-level semantic organisation purely from the register bottleneck.
+
+Figure 12 qualitatively validates the latter two patterns. Taxonomic transfer (rows 1–2): Snake\_Head and Reptile\_Head entries transfer bidirectionally, localising heads across turtles, lizards, chameleons, and snakes despite large shape and texture differences. Functional transfer (rows 3–4): Car\_Tire fires on bicycle wheels and Bike\_Tire localises tyres on vans, buses, and race cars. These results confirm that high off-diagonal entries in Figure 10 reflect genuinely reusable part concepts rather than TF-IDF artefacts.
+
+![](images/d81c5612ef360a7383755a61ad40594028920b328580f9df415fec4d13a63529.jpg)
+
+<details>
+<summary>text_image</summary>
+
+Image
+AdaSlot
+Dinov1
+Dinov3
+Mamba
+Spit
+Ours
+</details>
+
+Figure 9: Extended qualitative comparison on part region segmentation. Same column layout as Figure 5 in the main paper. RATS produces consistent foreground–background separation and part-coherent regions across diverse natural images.
+
+## C.2 Codebook construction and metrics
+
+Dictionary construction. We compare two ways of building the codebook of K entries: a post-hoc K-means dictionary built on PartImageNet, and a learned dictionary trained with the backbone on ImageNet. A common labelling procedure, described at the end of this section, attaches a part label to every entry after construction.
+
+![](images/7ade55c0ca37c79a3d96c21fa6f1f4c20a640dcae0133916e27aa41ee279e69a.jpg)
+
+<details>
+<summary>heatmap</summary>
+
+|  | Quad_Head | Car_Body | Quad_Body | Snake_Body | Bottle_Mouth | Bird_Body | Rept_Head | Biped_Head | Rept_Body | Bird_Head | Car_Tire | Bottle_Body | Boat_Body | Snake_Head | Bike_Tire |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| Quad_Head | 1.00 | -0.07 | 0.70 | -0.05 | -0.02 | 0.08 | -0.10 | 0.22 | -0.09 | 0.05 | -0.13 | -0.10 | -0.05 | -0.07 | -0.12 |
+| Car_Body | -0.07 | 1.00 | -0.03 | -0.12 | 0.18 | -0.17 | -0.16 | -0.16 | -0.11 | -0.11 | 0.57 | 0.08 | 0.13 | -0.11 | 0.28 |
+| Quad_Body | 0.70 | -0.03 | 1.00 | -0.09 | -0.10 | -0.01 | -0.08 | 0.15 | -0.03 | -0.03 | 0.00 | -0.15 | -0.11 | -0.16 | -0.00 |
+| Snake_Body | -0.05 | -0.12 | -0.09 | 1.00 | 0.03 | 0.04 | 0.53 | 0.01 | 0.46 | 0.02 | 0.00 | 0.15 | -0.01 | 0.72 | -0.03 |
+| Bottle_Mouth | -0.02 | 0.18 | -0.10 | 0.03 | 1.00 | -0.04 | -0.13 | -0.07 | 0.07 | 0.00 | 0.06 | 0.62 | -0.00 | 0.13 | -0.07 |
+| Bird_Body | 0.08 | -0.17 | -0.01 | 0.04 | -0.04 | 1.00 | 0.13 | 0.11 | -0.00 | 0.84 | -0.08 | -0.01 | 0.04 | 0.02 | 0.02 |
+| Rept_Head | -0.10 | -0.16 | -0.08 | 0.53 | -0.13 | 0.13 | 1.00 | 0.04 | 0.45 | 0.14 | -0.17 | -0.14 | -0.05 | 0.42 | -0.07 |
+| Biped_Head | 0.22 | -0.16 | 0.15 | 0.01 | -0.07 | 0.11 | 0.04 | 1.00 | 0.00 | 0.27 | -0.14 | 0.02 | 0.03 | 0.10 | -0.11 |
+</details>
+
+Figure 10: Pairwise cosine similarity between label prototypes. Each row/column is the averaged dictionary entry of one dominant part label. Three structures emerge—within-object coherence, taxonomic proximity, and functional analogy—analysed in Sec. C.
+
+Post-hoc K-means dictionary. We extract register features $\{ r _ { i } \}$ from the last block of the trained RATS model on every image of the PartImageNet training split. For each register, we check whether its attention map peaks inside a ground-truth ROI mask; only registers whose dominant attention falls within a foreground part region are retained, filtering out registers that primarily attend to background. We then run K-means on the pooled foreground-filtered register features to obtain $K { = } 5 1 2$ centroids $\{ e _ { k } \} _ { k = 1 } ^ { K }$ categories (11 super-categories with ∼ 4 parts each) plus background; setting K roughly an order of magnitude above this label count gives each part several appearance-specific sub-prototypes (e.g. heads of different bird species, tyres of different vehicle models).
+
+$\{ e _ { k } \} _ { k = 1 } ^ { K }$ backbone on ImageNet under the standard self-supervised objective. For each image, the registers $\{ r _ { i } \} _ { i = 1 } ^ { N }$ $k _ { i } ^ { * } = \arg \operatorname* { m i n } _ { k } \bar { \| } r _ { i } - e _ { k } \| \bar { | } _ { 2 }$ the entries are pulled toward their assigned registers via a commitment + codebook loss [56], with an entropy-based diversity term that prevents codebook collapse. Because training sees ImageNet (1000 classes, covering parts not annotated in PartImageNet) rather than PartImageNet’s ∼40 part labels, K is scaled to the pre-training distribution: $K { \bar { = } } 4 0 9 6$ as our default, and $ \tilde { K } { = } 6 5 { , } 5 3 5$ for the large-vocabulary ablation.
+
+Associating entries with semantic part labels. At this point the dictionary is just a set of K unnamed vectors. To turn it into a usable lexicon we need to attach a human-readable part name (e.g. Bird\_Head) to each entry. The intuition is simple: when a register lands in entry $e _ { k } ,$ , what part of the image does it tend to look at? If almost every register that lands in $e _ { k }$ looks at bird heads, we call $e _ { k }$ a Bird\_Head entry. We make this precise on the PartImageNet training split in three steps.
+
+(i) Map each register to a dictionary entry. For every image, the N registers from the last block are hard-assigned to their nearest dictionary entry, $\begin{array} { r } { k _ { i } ^ { * } = \arg \operatorname* { m i n } _ { k } \| r _ { i } - e _ { k } \| _ { 2 } } \end{array}$ . This step uses no part annotations; it is the same matching that the dictionary was built with.
+
+![](images/d315e3344aba3f2be6d4fd3601b4248879c1c9e0c9e16fb2ea8f86a39f99b57c.jpg)  
+Figure 11: Within-super-category consistency of individual dictionary entries. Each column corresponds to one dictionary entry; each of the three (ground-truth part segmentation, registerattention overlay) pairs shows a different PartImageNet class from the same super-category. The attention consistently aligns with the annotated part boundary across instances, and the six entries together span both biological (Bird\_Head, Fish\_Head, Quad\_Foot) and rigid man-made (Aero\_Tail, Boat\_Sail, Boat\_Body) super-categories, despite no part-level supervision being used during training.
+
+(ii) Map each register to a ground-truth part. We now ask: which annotated part does this register attend to? Each register has a spatial attention map over the patch grid (from the L → N stage of the RATS bottleneck), normalised to [0, 1]. The ground-truth segmentation provides a binary mask for every part in the same image. We overlay the attention map onto each part mask and compute the average attention value inside that mask. The part receiving the highest average attention is taken as the register’s part label.  
+(iii) Per-entry voting. After the previous two steps, every register carries two labels: which dictionary entry it belongs to, and which ground-truth part it attends to. For each entry, we count the part labels of all registers assigned to it; the most frequent part becomes the entry’s dominant part, and its proportion is the entry’s purity. For example, if 100 registers land in an entry and 82 of them attend to Bird\_Head, the entry is named Bird\_Head with a purity of 0.82. Higher purity indicates that the
+
+![](images/f14e36be1a890f54cde085147fc8e1182f087766d4a207d68d4e05a34eb7d4da.jpg)
+
+<details>
+<summary>text_image</summary>
+
+Transfer Dictionary Entries Across Categories
+Snake Head
+Reptile Head
+Car Tire
+Bike Tire
+Reptile Head
+Snake Head
+Bike Tire
+Car Tire
+</details>
+
+Figure 12: Cross super-category transfer of dictionary entries. The left column shows a source image whose registers activate a given entry (Snake\_Head, Reptile\_Head, Car\_Tire, or Bike\_Tire); the right three columns apply the same entry to three images drawn from a different super-category (labelled above the arrow). Rows 1–2 demonstrate taxonomic transfer between snake and reptile head entries (heatmap cosine ≈ 0.42–0.53); rows 3–4 demonstrate functional transfer of the wheel concept between car and bike tyre entries (heatmap cosine 0.43). The attention localises the analogous part in the target super-category.
+
+entry more consistently corresponds to a single part. Entries receiving fewer than three registers are discarded, as too few samples cannot yield a reliable statistic.
+
+Inference with the dictionary. Given a new image, we run a single forward pass through the RATS model to obtain each register’s feature $r _ { i }$ and attention map $A _ { i }$ . Matching $r _ { i }$ to its nearest dictionary entry assigns the register the corresponding part label, and the attention map indicates where that part lies in the image. Since multiple registers may be assigned the same part (e.g. several registers all match to Bird\_Head), we merge their attention maps to produce a heatmap that covers the full extent of that part in the image (see Fig. 4 and Fig. 6).
+
+Bag-of-entries representation. Given the register-to-entry assignment described above, we can describe an image by which dictionary entries its registers fall into and how many land in each [55], forming a K-dimensional count vector $\mathrm { t f } _ { j } \in \mathbb { R } ^ { K }$ . Using raw counts directly would bias toward entries that appear frequently across all images (e.g. background). We therefore borrow the TF– IDF scheme [52] from information retrieval: the more images an entry appears in, the lower its $\begin{array} { r } { ( \mathrm { i d f } _ { k } = \log \frac { | \mathcal { D } | } { | \{ j : \mathrm { t f } _ { j , k } > 0 \} | } } \end{array}$ $\ell _ { 2 }$ normalisation, the final representation is $\mathbf { v } _ { j } = \left( { \mathrm { t f } } _ { j } \odot { \mathrm { i d f } } \right) / \left\| { \mathrm { t f } } _ { j } \odot { \mathrm { i d f } } \right\| _ { 2 }$ . Image retrieval then ranks database images by cosine similarity against the query.
+
+Metrics. mAP (mean Average Precision) measures whether the dictionary can help retrieve similar images. Concretely, we take each image, use its bag-of-entries vector to find the most similar images in the database, and check whether the retrieved images belong to the same object category as the query (e.g. both are birds, both are fish). Repeating this for all images and averaging gives mAP. R@1 is a simplified variant that only checks whether the single most similar image shares the query’s category; it saturates quickly on this benchmark and offers limited discriminative power.
+
+valPw measures how specialised the dictionary entries are. Ideally, each entry should correspond to exactly one part (e.g. only bird heads). valPw is the weighted average of all entries’ purities, where the weight of each entry is the number of registers assigned to it—entries matched by more registers are more important and thus count more in the average. Only entries matched by at least three registers are included.
+
+util% measures how many of the K entries are actually used (i.e. matched by at least three registers). For example, if K=4096 but only 400 entries are used, util% is roughly $1 0 \%$ , indicating that most of the dictionary capacity is wasted.
+
+## D Per-head register attention maps
+
+Figure 13 shows attention maps from three heads of the last block on two images containing dense object instances (a fruit grid in row 1 and a sliced-fruit row in row 2). For each head we display two registers and visualise their $L {  } N$ attention overlaid on the image. Two qualitative observations stand out. (i) Within a single head, distinct registers focus on different but often related spatial regions $- \mathrm { e . g . , } R _ { 0 }$ and $R _ { 1 3 }$ in Head 1 both fire on green-fruit clusters but at different positions. (ii) Across heads, the same image region is covered by different register combinations: Head 1 and Head 2 emphasise different inter-fruit boundaries, while Head 3 captures cross-row alignment. These patterns are consistent with the per-head register separation acting as an inductive bias toward diverse spatial decompositions of the input.
+
+![](images/c342d4466f426366bc4e8be6c117676ecbfe05a1bdfa2b8b62631202158cc47b.jpg)
+
+<details>
+<summary>text_image</summary>
+
+Image
+Head1
+R0
+R13
+Head2
+R7
+R9
+R2
+R6
+Head3
+</details>
+
+Figure 13: Per-head register attention maps. Six selected registers from three heads on two denseinstance images; analysed in Sec. D.
+
+![](images/44405d38cb08c2ae6d53ea19085ce44524d97a01f069784b90ae25fd62c41d5f.jpg)
+
+<details>
+<summary>text_image</summary>
+
+ImageNet with SAM Mask
+ADE20K
+ImageNet-S
+COCO with SAM Mask
+PartImageNet
+</details>
+
+Figure 14: Ground-truth annotations across the five evaluation benchmarks. ImageNet and COCO use SAM 2.1 generated masks; ADE20K, ImageNet- $\mathbf { \nabla } \cdot S _ { 9 1 9 }$ , and PartImageNet use their native annotations.
+
+## E Implementation details.
+
+Architecture. We provide two model scales: RATS-S and RATS-B, based on ViT-S/16 (D=384, H=6) and ViT-B/16 (D=768, H=12), both with 12 layers. In each block, MHSA is replaced by the region bottleneck attention. Registers receive no positional encoding and are hard-partitioned into $\scriptstyle { n = N / H }$ per head. By default, RATS-S uses $N { = } \bar { 9 } 6 ~ ( n { = } 1 6 )$ and RATS-B uses $N { = } \bar { 1 } 9 2 ( n { = } 1 6 )$ .
+
+Pretraining. Both models are pretrained on ImageNet-1k at 224×224, following the DINO recipe: AdamW [45] optimizer, cosine weight decay from 0.04 to 0.4, linear warmup (10 epochs) followed by cosine learning rate decay [44], teacher EMA momentum $\lambda { = } 0 . 9 9 6 { \to } 1 . 0$ , output dimension $\dot { K } { = } 6 5 { , } 5 3 6$ , two global crops $( \dot { 2 } 2 \dot { 4 } ^ { 2 } )$ plus ten local crops $( 9 6 ^ { 2 } )$ ), teacher temperature ${ \tau _ { t } } \mathrm { { = } } 0 . 0 7$ , and bf16 mixed precision [48] throughout. RATS-B fully aligns with the official DINO ViT-B hyperparameters: 400 epochs, total batch size 1024, base learning rate $7 . 5 { \times } 1 0 ^ { - 4 }$ , minimum learning rate $2 \times 1 0 ^ { - 6 }$ , drop path [33] 0.1, gradient clipping 0.3, teacher temperature warmup for 50 epochs, and freeze last layer for 3 epochs. RATS-S follows: 300 epochs, total batch size 768 (96 per $\mathrm { G P U } \times 8 \mathrm { G P U s } )$ , base learning rate $2 . 5 { \times } 1 0 ^ { - 4 }$ , minimum learning rate $1 \times 1 0 ^ { - 5 }$ , drop path 0.05, gradient clipping disabled, teacher temperature warmup for 30 epochs, and freeze last layer for 1 epoch. The training objective is solely the DINO student–teacher cross-entropy.
+
+Datasets and evaluation. Evaluating part discovery requires dense region annotations that cover the entire image. However, ImageNet lacks segmentation masks entirely, and COCO, while providing instance annotations, has too few masks with limited spatial coverage to adequately evaluate fullimage region grouping. We therefore adopt SAM 2.1 as proxy ground truth for these two datasets: we run the official sam2.1-hiera-large automatic mask generator with a 128×128 point prompt grid to produce dense, category-agnostic region maps on each image. The remaining three datasets use their native annotations.
+
+We evaluate on five benchmarks: COCO 2017 val (5,000 images, SAM masks), testing grouping in cluttered multi-object scenes; ADE20K validation (2,000 images), testing robustness under large semantic diversity; ImageNet val (50,000 images, SAM masks), testing part-level grouping on objectcentric images; $\mathrm { I m a g e N e t - S _ { 9 1 9 } }$ val (10,767 images), biased toward foreground and part evaluation; and PartImageNet test (2,408 images), with human part annotations. Figure 14 shows representative examples with their ground-truth annotations from each benchmark.
+
+Metrics. We report many-to-one mIoU (M2O) as the primary metric, which greedily assigns each predicted region to the ground-truth region with maximum overlap, allowing multiple predictions to map to the same ground truth. We additionally report ARI (Adjusted Rand Index) [34], which measures agreement between predicted and ground-truth groupings without relying on region-count matching. In ablation studies, we further report one-to-one mIoU (O2O, via Hungarian matching [40]): a large M2O–O2O gap indicates that the model fragments a single semantic region across multiple registers. All segmentation methods are evaluated at $5 1 2 \times 5 1 2$ . Higher resolution provides finer patch grids for the register bottleneck while remaining computationally feasible for all baselines. We ablate resolution sensitivity in Figure 7.
+
+Downstream transfer setting. We fine-tune the pretrained RATS and ViT-S/16 backbone with a Mask2Former [15] decoder on two benchmarks. For ADE20K semantic segmentation, we follow the standard MMSegmentation [17] recipe (crop 512×512, 160K iterations, batch size 8, 96 object queries). For COCO 2017 detection and instance segmentation, we follow the standard MMDetection [12] recipe (1024×1024 input, 368.75K iterations, batch size 8, 96 object queries, AdamW). The baseline uses the same Mask2Former architecture initialized from a DINO [11] ViT-S/16 checkpoint trained for the same 100 epochs, with all fine-tuning hyperparameters kept identical.
+
+During fine-tuning, we restore a parallel L→L self-attention path alongside the register bottleneck, so that each block computes
+
+$$
+X _ {\text {out}} = \underbrace {(L \rightarrow N \rightarrow N \rightarrow L) (X)} _ {\text {bottleneck}} + \underbrace {(L \rightarrow L) (X)} _ {\text {full - rank}}. \tag {8}
+$$
+
+The bottleneck path extracts part-level representations that serve as initial queries for the Mask2Former decoder. However, this path alone is low-rank: each head operates through only $\scriptstyle n = N / H$ registers $( \mathbf { e } . \mathbf { g } . , n { = } 1 6 )$ , producing an attention matrix of rank at most n, which is insufficient to maintain the full expressive capacity of a ViT whose representation rank scales with the patch sequence length $L .$ . The $L \to L$ path restores standard self-attention among all patch tokens, preserving full-rank capacity and ensuring that the fine-tuned model retains the dense representational power required for high-resolution segmentation and detection.

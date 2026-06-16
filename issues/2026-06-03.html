@@ -4,24 +4,26 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>2026-06-03 速递 · 通用视觉自监督研究报</title>
-  <link rel="stylesheet" href="../assets/styles.css?v=20260525j">
-  <link rel="stylesheet" href="../assets/visual-ssl.css?v=20260525j">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Source+Serif+4:ital,opsz,wght@0,8..60,400;0,8..60,500;0,8..60,600;1,8..60,400&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../assets/visual-ssl.css?v=20260615ssl6">
 </head>
 <body>
   <header class="masthead">
-    <div class="masthead-kicker">Visual SSL Research Report · 2026-06-03</div>
     <a class="masthead-title" href="../index.html">通用视觉自监督研究报</a>
+    <div class="masthead-kicker">A Daily Digest of Visual Self-Supervised Learning</div>
     <div class="masthead-meta">
+      <span>2026-06-03</span>
       <span>图像表征 · VFM · JEPA · 视频预训练</span>
-      <span>CCF A/B 会议优先</span>
-      <span>图文精读 · 方法图解</span>
     </div>
   </header>
   <nav class="site-nav" aria-label="主导航">
     <a class="nav-link" href="../index.html">头版</a>
-<a class="nav-link" href="../issues/2026-06-15.html">今日速递</a>
+<a class="nav-link" href="../issues/2026-06-16.html">今日速递</a>
 <a class="nav-link" href="../pages/catalog.html">论文目录</a>
 <a class="nav-link" href="../pages/timeline.html">时间线</a>
+<span class="nav-streak" title="连续追踪天数"><svg viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><path d="M8 0c.7 2.5-1.2 3.7-2 5-1 1.6-1 4 .8 4.8C6.4 8.5 7.4 7.8 8 7c.3 1.3-.4 2 .9 3 .9.7 1.3 1.6 1.1 2.6C9.7 14.6 8.9 16 6.8 16 4.6 16 3 14.3 3 12c0-3.3 2.6-4.8 2.4-8C6.9 4.6 8.4 5 8 0z"/></svg> 连续 <b data-streak>0</b> 天</span>
   </nav>
   <main><article class="paper-detail issue-detail">
   <div class="paper-main">
@@ -31,10 +33,8 @@
     <div class="feature-body">
       <p class="lead dropcap">先读 VISReg。直接改进 JEPA/SSL 防 collapse 正则化，并报告 ImageNet-22K 下接近 DINOv2 OOD 表现。 其余论文按 P1/P2 与主题顺序扫读，重点看方法图、消融设置和是否能迁移到通用视觉表征。</p>
       <h2>论文索引</h2>
-      <div class="paper-list issue-list"><article class="paper-card" data-category="Visual SSL / representation" data-priority="P0" data-date="2026-06-03" data-title="visreg: variance-invariance-sketching regularization for jepa training" data-keywords="visreg: variance-invariance-sketching regularization for jepa training visreg visual ssl / representation p0 2026-06-03 arxiv 直接改进 jepa/ssl 防 collapse 正则化，并报告 imagenet-22k 下接近 dinov2 ood 表现 高相关；详见方法、贡献和实验边界。">
-  <a class="paper-thumb paper-thumb-text" href="../papers/2606.02572.html">
-    <img src="../assets/mineru/2606.02572/images/559377036e71303b5c758b8c3db8f052cc86a179d54b1620617e981a91c7be0a.jpg" alt="VISReg figure"><span>P0</span>
-  </a>
+      <div class="paper-list issue-list"><article class="paper-card" data-pid="2606.02572" data-category="Visual SSL / representation" data-priority="P0" data-date="2026-06-03" data-title="visreg: variance-invariance-sketching regularization for jepa training" data-keywords="visreg: variance-invariance-sketching regularization for jepa training visreg visual ssl / representation p0 2026-06-03 arxiv 直接改进 jepa/ssl 防 collapse 正则化，并报告 imagenet-22k 下接近 dinov2 ood 表现 高相关；详见方法、贡献和实验边界。">
+  <a class="paper-thumb" href="../papers/2606.02572.html"><img src="../assets/mineru/2606.02572/images/559377036e71303b5c758b8c3db8f052cc86a179d54b1620617e981a91c7be0a.jpg" alt="VISReg figure"></a>
   <div>
     <div class="paper-meta">2026-06-03 · Visual SSL / representation · arXiv</div>
     <h3><a href="../papers/2606.02572.html">VISReg: Variance-Invariance-Sketching Regularization for JEPA training</a></h3>
@@ -42,11 +42,10 @@
     <p class="card-tech"><b>方法：</b>直接改进 JEPA/SSL 防 collapse 正则化，并报告 ImageNet-22K 下接近 DINOv2 OOD 表现</p>
     <div class="paper-actions"><a href="../papers/2606.02572.html">读图文页</a><a href="https://arxiv.org/abs/2606.02572">原文</a></div>
   </div>
+  <button class="readbtn" type="button" data-read-toggle="2606.02572" title="标记已读" aria-label="标记已读"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M4 10.5l4 4 8-9"/></svg></button>
 </article>
-<article class="paper-card" data-category="Visual SSL / representation" data-priority="P0" data-date="2026-06-03" data-title="ur-jepa: uniform rectifiability as a regularizer for joint-embedding predictive architectures" data-keywords="ur-jepa: uniform rectifiability as a regularizer for joint-embedding predictive architectures ur-jepa visual ssl / representation p0 2026-06-03 arxiv 同样针对 jepa collapse，但从低维流形/rectifiability 角度替代 isotropic gaussian 先验 高相关；详见方法、贡献和实验边界。">
-  <a class="paper-thumb paper-thumb-text" href="../papers/2606.01443.html">
-    <img src="../assets/mineru/2606.01443/images/77b5edd2e4031db10c16eb9ffdb3a03671041f42db81bb649595bd1da4fe7fdf.jpg" alt="UR-JEPA figure"><span>P0</span>
-  </a>
+<article class="paper-card" data-pid="2606.01443" data-category="Visual SSL / representation" data-priority="P0" data-date="2026-06-03" data-title="ur-jepa: uniform rectifiability as a regularizer for joint-embedding predictive architectures" data-keywords="ur-jepa: uniform rectifiability as a regularizer for joint-embedding predictive architectures ur-jepa visual ssl / representation p0 2026-06-03 arxiv 同样针对 jepa collapse，但从低维流形/rectifiability 角度替代 isotropic gaussian 先验 高相关；详见方法、贡献和实验边界。">
+  <a class="paper-thumb" href="../papers/2606.01443.html"><img src="../assets/mineru/2606.01443/images/77b5edd2e4031db10c16eb9ffdb3a03671041f42db81bb649595bd1da4fe7fdf.jpg" alt="UR-JEPA figure"></a>
   <div>
     <div class="paper-meta">2026-06-03 · Visual SSL / representation · arXiv</div>
     <h3><a href="../papers/2606.01443.html">UR-JEPA: Uniform Rectifiability as a Regularizer for Joint-Embedding Predictive Architectures</a></h3>
@@ -54,11 +53,10 @@
     <p class="card-tech"><b>方法：</b>同样针对 JEPA collapse，但从低维流形/rectifiability 角度替代 isotropic Gaussian 先验</p>
     <div class="paper-actions"><a href="../papers/2606.01443.html">读图文页</a><a href="https://arxiv.org/abs/2606.01443">原文</a></div>
   </div>
+  <button class="readbtn" type="button" data-read-toggle="2606.01443" title="标记已读" aria-label="标记已读"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M4 10.5l4 4 8-9"/></svg></button>
 </article>
-<article class="paper-card" data-category="Visual SSL / representation" data-priority="P1" data-date="2026-06-03" data-title="scaling parallel sequence models to foundation-scale vision encoders" data-keywords="scaling parallel sequence models to foundation-scale vision encoders scaling parallel sequence models to visual ssl / representation p1 2026-06-03 arxiv 面向视觉基础模型的近线性 2d spatial propagation encoder，目标是降低大分辨率预训练成本 高相关；详见方法、贡献和实验边界。">
-  <a class="paper-thumb paper-thumb-text" href="../papers/2606.00746.html">
-    <img src="../assets/mineru/2606.00746/images/c7c626af552a3e710e3e9ba0f82ecc598eea3254213d317b689b74d80ae6dd9a.jpg" alt="Scaling Parallel Sequence Models to figure"><span>P1</span>
-  </a>
+<article class="paper-card" data-pid="2606.00746" data-category="Visual SSL / representation" data-priority="P1" data-date="2026-06-03" data-title="scaling parallel sequence models to foundation-scale vision encoders" data-keywords="scaling parallel sequence models to foundation-scale vision encoders scaling parallel sequence models to visual ssl / representation p1 2026-06-03 arxiv 面向视觉基础模型的近线性 2d spatial propagation encoder，目标是降低大分辨率预训练成本 高相关；详见方法、贡献和实验边界。">
+  <a class="paper-thumb" href="../papers/2606.00746.html"><img src="../assets/mineru/2606.00746/images/c7c626af552a3e710e3e9ba0f82ecc598eea3254213d317b689b74d80ae6dd9a.jpg" alt="Scaling Parallel Sequence Models to figure"></a>
   <div>
     <div class="paper-meta">2026-06-03 · Visual SSL / representation · arXiv</div>
     <h3><a href="../papers/2606.00746.html">Scaling Parallel Sequence Models to Foundation-Scale Vision Encoders</a></h3>
@@ -66,11 +64,10 @@
     <p class="card-tech"><b>方法：</b>面向视觉基础模型的近线性 2D spatial propagation encoder，目标是降低大分辨率预训练成本</p>
     <div class="paper-actions"><a href="../papers/2606.00746.html">读图文页</a><a href="https://arxiv.org/abs/2606.00746">原文</a></div>
   </div>
+  <button class="readbtn" type="button" data-read-toggle="2606.00746" title="标记已读" aria-label="标记已读"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M4 10.5l4 4 8-9"/></svg></button>
 </article>
-<article class="paper-card" data-category="ICML 2026 Spotlight" data-priority="P1" data-date="2026-06-03" data-title="decomposed on-policy distillation for vision-language reasoning: steering gradients for visual grounding" data-keywords="decomposed on-policy distillation for vision-language reasoning: steering gradients for visual grounding decomposed on-policy distillation for vision-language icml 2026 spotlight p1 2026-06-03 arxiv + icml 2026 spotlight 把 vlm 蒸馏梯度拆成 language prior 与 visual grounding，直接处理视觉证据被语言先验淹没的问题 高相关；详见方法、贡献和实验边界。">
-  <a class="paper-thumb paper-thumb-text" href="../papers/2606.00564.html">
-    <img src="../assets/mineru/2606.00564/images/51c27beeaf3f613c47206fe88046dbc3ed0e9301de0040c08ec98bce25b5a03b.jpg" alt="Decomposed On-Policy Distillation for Vision-Language figure"><span>P1</span>
-  </a>
+<article class="paper-card" data-pid="2606.00564" data-category="ICML 2026 Spotlight" data-priority="P1" data-date="2026-06-03" data-title="decomposed on-policy distillation for vision-language reasoning: steering gradients for visual grounding" data-keywords="decomposed on-policy distillation for vision-language reasoning: steering gradients for visual grounding decomposed on-policy distillation for vision-language icml 2026 spotlight p1 2026-06-03 arxiv + icml 2026 spotlight 把 vlm 蒸馏梯度拆成 language prior 与 visual grounding，直接处理视觉证据被语言先验淹没的问题 高相关；详见方法、贡献和实验边界。">
+  <a class="paper-thumb" href="../papers/2606.00564.html"><img src="../assets/mineru/2606.00564/images/51c27beeaf3f613c47206fe88046dbc3ed0e9301de0040c08ec98bce25b5a03b.jpg" alt="Decomposed On-Policy Distillation for Vision-Language figure"></a>
   <div>
     <div class="paper-meta">2026-06-03 · ICML 2026 Spotlight · arXiv + ICML 2026 Spotlight</div>
     <h3><a href="../papers/2606.00564.html">Decomposed On-Policy Distillation for Vision-Language Reasoning: Steering Gradients for Visual Grounding</a></h3>
@@ -78,11 +75,10 @@
     <p class="card-tech"><b>方法：</b>把 VLM 蒸馏梯度拆成 language prior 与 visual grounding，直接处理视觉证据被语言先验淹没的问题</p>
     <div class="paper-actions"><a href="../papers/2606.00564.html">读图文页</a><a href="https://arxiv.org/abs/2606.00564">原文</a></div>
   </div>
+  <button class="readbtn" type="button" data-read-toggle="2606.00564" title="标记已读" aria-label="标记已读"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M4 10.5l4 4 8-9"/></svg></button>
 </article>
-<article class="paper-card" data-category="ICML 2026" data-priority="P1" data-date="2026-06-03" data-title="v-lynx: token interface alignment for video+x llms" data-keywords="v-lynx: token interface alignment for video+x llms v-lynx icml 2026 p1 2026-06-03 arxiv + icml 2026 提出 video llm 内部存在可复用 token interface，用未配对单模态数据对齐新模态到视频 token 流形 高相关；详见方法、贡献和实验边界。">
-  <a class="paper-thumb paper-thumb-text" href="../papers/2606.00508.html">
-    <img src="../assets/mineru/2606.00508/images/8e7517c8a45d86db904c0a41caf4ecc8dfcd73020683d777ecdc6fe7da6b5585.jpg" alt="V-LynX figure"><span>P1</span>
-  </a>
+<article class="paper-card" data-pid="2606.00508" data-category="ICML 2026" data-priority="P1" data-date="2026-06-03" data-title="v-lynx: token interface alignment for video+x llms" data-keywords="v-lynx: token interface alignment for video+x llms v-lynx icml 2026 p1 2026-06-03 arxiv + icml 2026 提出 video llm 内部存在可复用 token interface，用未配对单模态数据对齐新模态到视频 token 流形 高相关；详见方法、贡献和实验边界。">
+  <a class="paper-thumb" href="../papers/2606.00508.html"><img src="../assets/mineru/2606.00508/images/8e7517c8a45d86db904c0a41caf4ecc8dfcd73020683d777ecdc6fe7da6b5585.jpg" alt="V-LynX figure"></a>
   <div>
     <div class="paper-meta">2026-06-03 · ICML 2026 · arXiv + ICML 2026</div>
     <h3><a href="../papers/2606.00508.html">V-LynX: Token Interface Alignment for Video+X LLMs</a></h3>
@@ -90,11 +86,10 @@
     <p class="card-tech"><b>方法：</b>提出 Video LLM 内部存在可复用 token interface，用未配对单模态数据对齐新模态到视频 token 流形</p>
     <div class="paper-actions"><a href="../papers/2606.00508.html">读图文页</a><a href="https://arxiv.org/abs/2606.00508">原文</a></div>
   </div>
+  <button class="readbtn" type="button" data-read-toggle="2606.00508" title="标记已读" aria-label="标记已读"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M4 10.5l4 4 8-9"/></svg></button>
 </article>
-<article class="paper-card" data-category="Visual SSL / representation" data-priority="P2" data-date="2026-06-03" data-title="adacodec: a predictive visual code for video mllms" data-keywords="adacodec: a predictive visual code for video mllms adacodec visual ssl / representation p2 2026-06-03 arxiv 把视频冗余建模为 reference frame + predictive p-token，直接减少重复视觉 token 中高相关；详见方法、贡献和实验边界。">
-  <a class="paper-thumb paper-thumb-text" href="../papers/2606.02569.html">
-    <img src="../assets/mineru/2606.02569/images/cb3f1d02bef5748188599bbf9dfb629fd3f254ae5d9a55ac984520dec3f9b25a.jpg" alt="AdaCodec figure"><span>P2</span>
-  </a>
+<article class="paper-card" data-pid="2606.02569" data-category="Visual SSL / representation" data-priority="P2" data-date="2026-06-03" data-title="adacodec: a predictive visual code for video mllms" data-keywords="adacodec: a predictive visual code for video mllms adacodec visual ssl / representation p2 2026-06-03 arxiv 把视频冗余建模为 reference frame + predictive p-token，直接减少重复视觉 token 中高相关；详见方法、贡献和实验边界。">
+  <a class="paper-thumb" href="../papers/2606.02569.html"><img src="../assets/mineru/2606.02569/images/cb3f1d02bef5748188599bbf9dfb629fd3f254ae5d9a55ac984520dec3f9b25a.jpg" alt="AdaCodec figure"></a>
   <div>
     <div class="paper-meta">2026-06-03 · Visual SSL / representation · arXiv</div>
     <h3><a href="../papers/2606.02569.html">AdaCodec: A Predictive Visual Code for Video MLLMs</a></h3>
@@ -102,11 +97,10 @@
     <p class="card-tech"><b>方法：</b>把视频冗余建模为 reference frame + predictive P-token，直接减少重复视觉 token</p>
     <div class="paper-actions"><a href="../papers/2606.02569.html">读图文页</a><a href="https://arxiv.org/abs/2606.02569">原文</a></div>
   </div>
+  <button class="readbtn" type="button" data-read-toggle="2606.02569" title="标记已读" aria-label="标记已读"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M4 10.5l4 4 8-9"/></svg></button>
 </article>
-<article class="paper-card" data-category="Visual SSL / representation" data-priority="P2" data-date="2026-06-03" data-title="evocut: multi-layer evolution-aware visual token compression for efficient large vision-language models" data-keywords="evocut: multi-layer evolution-aware visual token compression for efficient large vision-language models evocut visual ssl / representation p2 2026-06-03 arxiv 从 vision encoder 多层 token 演化方向估计重要性，比单层 attention/相似度压缩更贴近表征形成过程 中高相关；详见方法、贡献和实验边界。">
-  <a class="paper-thumb paper-thumb-text" href="../papers/2606.01756.html">
-    <img src="../assets/mineru/2606.01756/images/304b777971e6bdeb807239161fdf231942d4d3b43f6913109df5caeb6ea6fb40.jpg" alt="EvoCut figure"><span>P2</span>
-  </a>
+<article class="paper-card" data-pid="2606.01756" data-category="Visual SSL / representation" data-priority="P2" data-date="2026-06-03" data-title="evocut: multi-layer evolution-aware visual token compression for efficient large vision-language models" data-keywords="evocut: multi-layer evolution-aware visual token compression for efficient large vision-language models evocut visual ssl / representation p2 2026-06-03 arxiv 从 vision encoder 多层 token 演化方向估计重要性，比单层 attention/相似度压缩更贴近表征形成过程 中高相关；详见方法、贡献和实验边界。">
+  <a class="paper-thumb" href="../papers/2606.01756.html"><img src="../assets/mineru/2606.01756/images/304b777971e6bdeb807239161fdf231942d4d3b43f6913109df5caeb6ea6fb40.jpg" alt="EvoCut figure"></a>
   <div>
     <div class="paper-meta">2026-06-03 · Visual SSL / representation · arXiv</div>
     <h3><a href="../papers/2606.01756.html">EvoCut: Multi-Layer Evolution-Aware Visual Token Compression for Efficient Large Vision-Language Models</a></h3>
@@ -114,11 +108,10 @@
     <p class="card-tech"><b>方法：</b>从 vision encoder 多层 token 演化方向估计重要性，比单层 attention/相似度压缩更贴近表征形成过程</p>
     <div class="paper-actions"><a href="../papers/2606.01756.html">读图文页</a><a href="https://arxiv.org/abs/2606.01756">原文</a></div>
   </div>
+  <button class="readbtn" type="button" data-read-toggle="2606.01756" title="标记已读" aria-label="标记已读"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M4 10.5l4 4 8-9"/></svg></button>
 </article>
-<article class="paper-card" data-category="ICML 2026 Poster" data-priority="P2" data-date="2026-06-03" data-title="from extrinsic to intrinsic: geodesic-guided representation learning for 3d geometric data" data-keywords="from extrinsic to intrinsic: geodesic-guided representation learning for 3d geometric data from extrinsic to intrinsic icml 2026 poster p2 2026-06-03 arxiv + icml 2026 poster 用内在 geodesic metric 预训练 3d 表征，强调拓扑/流形结构而非外在坐标或语义标签 中高相关；详见方法、贡献和实验边界。">
-  <a class="paper-thumb paper-thumb-text" href="../papers/2606.02268.html">
-    <img src="../assets/mineru/2606.02268/images/4657a71410c9ecc95d11665e7f3db583a794705de1fe2edfdd471fa84811da85.jpg" alt="From Extrinsic to Intrinsic figure"><span>P2</span>
-  </a>
+<article class="paper-card" data-pid="2606.02268" data-category="ICML 2026 Poster" data-priority="P2" data-date="2026-06-03" data-title="from extrinsic to intrinsic: geodesic-guided representation learning for 3d geometric data" data-keywords="from extrinsic to intrinsic: geodesic-guided representation learning for 3d geometric data from extrinsic to intrinsic icml 2026 poster p2 2026-06-03 arxiv + icml 2026 poster 用内在 geodesic metric 预训练 3d 表征，强调拓扑/流形结构而非外在坐标或语义标签 中高相关；详见方法、贡献和实验边界。">
+  <a class="paper-thumb" href="../papers/2606.02268.html"><img src="../assets/mineru/2606.02268/images/4657a71410c9ecc95d11665e7f3db583a794705de1fe2edfdd471fa84811da85.jpg" alt="From Extrinsic to Intrinsic figure"></a>
   <div>
     <div class="paper-meta">2026-06-03 · ICML 2026 Poster · arXiv + ICML 2026 Poster</div>
     <h3><a href="../papers/2606.02268.html">From Extrinsic to Intrinsic: Geodesic-Guided Representation Learning for 3D Geometric Data</a></h3>
@@ -126,11 +119,10 @@
     <p class="card-tech"><b>方法：</b>用内在 geodesic metric 预训练 3D 表征，强调拓扑/流形结构而非外在坐标或语义标签</p>
     <div class="paper-actions"><a href="../papers/2606.02268.html">读图文页</a><a href="https://arxiv.org/abs/2606.02268">原文</a></div>
   </div>
+  <button class="readbtn" type="button" data-read-toggle="2606.02268" title="标记已读" aria-label="标记已读"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M4 10.5l4 4 8-9"/></svg></button>
 </article>
-<article class="paper-card" data-category="Visual SSL / representation" data-priority="P3" data-date="2026-06-03" data-title="scapo: self-supervised category-level articulated pose estimation from a single 3d observation" data-keywords="scapo: self-supervised category-level articulated pose estimation from a single 3d observation scapo visual ssl / representation p3 2026-06-03 arxiv 单帧 rgb-d 下用自监督分解 canonical geometry、part segmentation 与 articulation，方法信号可迁移到对象结构学习 中相关；详见方法、贡献和实验边界。">
-  <a class="paper-thumb paper-thumb-text" href="../papers/2606.01940.html">
-    <img src="../assets/mineru/2606.01940/images/3f497ff2a78349843bb463faa8e0a42cb03bcda5935b394599523465d55cb50b.jpg" alt="SCAPO figure"><span>P3</span>
-  </a>
+<article class="paper-card" data-pid="2606.01940" data-category="Visual SSL / representation" data-priority="P3" data-date="2026-06-03" data-title="scapo: self-supervised category-level articulated pose estimation from a single 3d observation" data-keywords="scapo: self-supervised category-level articulated pose estimation from a single 3d observation scapo visual ssl / representation p3 2026-06-03 arxiv 单帧 rgb-d 下用自监督分解 canonical geometry、part segmentation 与 articulation，方法信号可迁移到对象结构学习 中相关；详见方法、贡献和实验边界。">
+  <a class="paper-thumb" href="../papers/2606.01940.html"><img src="../assets/mineru/2606.01940/images/3f497ff2a78349843bb463faa8e0a42cb03bcda5935b394599523465d55cb50b.jpg" alt="SCAPO figure"></a>
   <div>
     <div class="paper-meta">2026-06-03 · Visual SSL / representation · arXiv</div>
     <h3><a href="../papers/2606.01940.html">SCAPO: Self-Supervised Category-Level Articulated Pose Estimation from a Single 3D Observation</a></h3>
@@ -138,11 +130,10 @@
     <p class="card-tech"><b>方法：</b>单帧 RGB-D 下用自监督分解 canonical geometry、part segmentation 与 articulation，方法信号可迁移到对象结构学习</p>
     <div class="paper-actions"><a href="../papers/2606.01940.html">读图文页</a><a href="https://arxiv.org/abs/2606.01940">原文</a></div>
   </div>
+  <button class="readbtn" type="button" data-read-toggle="2606.01940" title="标记已读" aria-label="标记已读"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M4 10.5l4 4 8-9"/></svg></button>
 </article>
-<article class="paper-card" data-category="Visual SSL / representation" data-priority="P3" data-date="2026-06-03" data-title="infomerge: information-aware token compression for efficient video large language models" data-keywords="infomerge: information-aware token compression for efficient video large language models infomerge visual ssl / representation p3 2026-06-03 arxiv 训练免费的视频 token compression，用 segment-level temporal fingerprint 估计冗余和内容预算 中相关；详见方法、贡献和实验边界。">
-  <a class="paper-thumb paper-thumb-text" href="../papers/2606.02161.html">
-    <img src="../assets/mineru/2606.02161/images/3ff7e0e3815f86dd4515b8b0b5b6192c9ae9811157939c0084150157991972f3.jpg" alt="InfoMerge figure"><span>P3</span>
-  </a>
+<article class="paper-card" data-pid="2606.02161" data-category="Visual SSL / representation" data-priority="P3" data-date="2026-06-03" data-title="infomerge: information-aware token compression for efficient video large language models" data-keywords="infomerge: information-aware token compression for efficient video large language models infomerge visual ssl / representation p3 2026-06-03 arxiv 训练免费的视频 token compression，用 segment-level temporal fingerprint 估计冗余和内容预算 中相关；详见方法、贡献和实验边界。">
+  <a class="paper-thumb" href="../papers/2606.02161.html"><img src="../assets/mineru/2606.02161/images/3ff7e0e3815f86dd4515b8b0b5b6192c9ae9811157939c0084150157991972f3.jpg" alt="InfoMerge figure"></a>
   <div>
     <div class="paper-meta">2026-06-03 · Visual SSL / representation · arXiv</div>
     <h3><a href="../papers/2606.02161.html">InfoMerge: Information-aware Token Compression for Efficient Video Large Language Models</a></h3>
@@ -150,11 +141,10 @@
     <p class="card-tech"><b>方法：</b>训练免费的视频 token compression，用 segment-level temporal fingerprint 估计冗余和内容预算</p>
     <div class="paper-actions"><a href="../papers/2606.02161.html">读图文页</a><a href="https://arxiv.org/abs/2606.02161">原文</a></div>
   </div>
+  <button class="readbtn" type="button" data-read-toggle="2606.02161" title="标记已读" aria-label="标记已读"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M4 10.5l4 4 8-9"/></svg></button>
 </article>
-<article class="paper-card" data-category="Visual SSL / representation" data-priority="扫读" data-date="2026-06-03" data-title="t-clip: enabling thermal perception for contrastive language-image pretraining" data-keywords="t-clip: enabling thermal perception for contrastive language-image pretraining t-clip visual ssl / representation 扫读 2026-06-03 arxiv 热成像是垂直模态，但 dual-lora 拆分全局场景与对象热签名的 clip adaptation 有方法借鉴价值 中低相关；详见方法、贡献和实验边界。">
-  <a class="paper-thumb paper-thumb-text" href="../papers/2606.00673.html">
-    <img src="../assets/mineru/2606.00673/images/23191be03ef98fde1355943faeb614018aa8305e013f06721e920517d4bdd802.jpg" alt="T-CLIP figure"><span>扫读</span>
-  </a>
+<article class="paper-card" data-pid="2606.00673" data-category="Visual SSL / representation" data-priority="扫读" data-date="2026-06-03" data-title="t-clip: enabling thermal perception for contrastive language-image pretraining" data-keywords="t-clip: enabling thermal perception for contrastive language-image pretraining t-clip visual ssl / representation 扫读 2026-06-03 arxiv 热成像是垂直模态，但 dual-lora 拆分全局场景与对象热签名的 clip adaptation 有方法借鉴价值 中低相关；详见方法、贡献和实验边界。">
+  <a class="paper-thumb" href="../papers/2606.00673.html"><img src="../assets/mineru/2606.00673/images/23191be03ef98fde1355943faeb614018aa8305e013f06721e920517d4bdd802.jpg" alt="T-CLIP figure"></a>
   <div>
     <div class="paper-meta">2026-06-03 · Visual SSL / representation · arXiv</div>
     <h3><a href="../papers/2606.00673.html">T-CLIP: Enabling Thermal Perception for Contrastive Language-Image Pretraining</a></h3>
@@ -162,6 +152,7 @@
     <p class="card-tech"><b>方法：</b>热成像是垂直模态，但 dual-LoRA 拆分全局场景与对象热签名的 CLIP adaptation 有方法借鉴价值</p>
     <div class="paper-actions"><a href="../papers/2606.00673.html">读图文页</a><a href="https://arxiv.org/abs/2606.00673">原文</a></div>
   </div>
+  <button class="readbtn" type="button" data-read-toggle="2606.00673" title="标记已读" aria-label="标记已读"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M4 10.5l4 4 8-9"/></svg></button>
 </article></div>
     </div>
   </div>
@@ -170,13 +161,13 @@
     <div class="side-box"><h4>会议口径</h4><p>主提醒只保留 CCF A/B；CCF C 与过期截止仅作状态记录。</p></div>
   </aside>
 </article></main>
-  <aside class="conf-float" data-conf-reminder="2026-06-15-main-ddl" aria-label="CCF A/B 主投稿提醒">
+  <aside class="conf-float" data-conf-reminder="2026-06-16-main-ddl" aria-label="CCF A/B 主投稿提醒">
   <button class="conf-close" type="button" aria-label="关闭会议提醒">×</button>
   <details open>
     <summary>CCF A/B 主投稿提醒</summary>
     <div class="conf-list"><a class="conf-item " href="https://github.com/ccfddl/ccf-deadlines/blob/main/conference/AI/aaai.yml">
   <span><b>AAAI 2027</b><em>CCF A · Main paper submission</em></span>
-  <strong>42 天</strong>
+  <strong>41 天</strong>
   <small>2026-07-27 · CCF DDL: abstract 2026-07-20；进入 1 个月窗口后重点提醒。</small>
 </a></div>
   </details>
@@ -189,7 +180,7 @@
   (() => {
     const box = document.querySelector('[data-conf-reminder]');
     if (!box) return;
-    const key = `visualSslConfReminderClosed:${box.dataset.confReminder || '2026-06-15-main-ddl'}`;
+    const key = `visualSslConfReminderClosed:${box.dataset.confReminder || '2026-06-16-main-ddl'}`;
     try {
       if (localStorage.getItem(key) === '1') box.hidden = true;
     } catch (err) {}
@@ -202,5 +193,6 @@
     }
   })();
   </script>
+  <script src="../assets/ssl-game.js"></script>
 </body>
 </html>

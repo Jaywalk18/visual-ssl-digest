@@ -1,0 +1,1657 @@
+[
+    {
+        "type": "text",
+        "text": "Mirage Probes: How Vision Models Fake Visual Understanding",
+        "text_level": 1,
+        "bbox": [
+            250,
+            122,
+            750,
+            174
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "Daniel Ben-Levi1† Judah Goldfeder1 Weiliang Zhao1 Raz Lapid2 Amit LeVi3",
+        "bbox": [
+            187,
+            223,
+            807,
+            241
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "Allen G Roush4",
+        "bbox": [
+            245,
+            258,
+            359,
+            276
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "Ravid Shwartz-Ziv5",
+        "bbox": [
+            437,
+            258,
+            581,
+            276
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "Hod Lipson1",
+        "bbox": [
+            658,
+            258,
+            751,
+            277
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "1Columbia University",
+        "bbox": [
+            205,
+            295,
+            354,
+            313
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "2Intuit",
+        "bbox": [
+            369,
+            296,
+            416,
+            311
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "3Technion",
+        "bbox": [
+            431,
+            296,
+            503,
+            311
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "4Thoughtworks",
+        "bbox": [
+            519,
+            296,
+            625,
+            311
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "5New York University",
+        "bbox": [
+            640,
+            296,
+            790,
+            313
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "Abstract",
+        "text_level": 2,
+        "bbox": [
+            459,
+            347,
+            537,
+            363
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "Vision-language models (VLMs) can answer image-based questions confidently, and often correctly, even when no image is provided. This mirage behavior inflates benchmark scores without reflecting visual grounding. Prior work treats this as a single failure mode. We argue it is two. Using Mirage Probes, a contrastive probing framework that pairs paraphrased question variants with matched mirage and non-mirage labels on the same image, we show that mirage behavior is linearly decodable from internal activations across residual stream, MLP, post-attention, and attention-head sites in two open-source VLMs. We demonstrate that a Naive Bayes text baseline cannot recover this signal, ruling out surface lexical confounds. Cross-benchmark separability patterns, together with a novel Prior Harnessing Index (PHI) measuring how much a model can answer from text alone, expose two distinct regimes: textual biases, where the model answers from language priors without engaging visual representations, and spurious images, where it constructs false visual content in latent space and answers as if grounded. The distinction has direct mitigation consequences: text-distribution cleaning can address the first regime but cannot reach the second, since spurious-image mirages live in the model’s visual representations rather than its text. Faithful visual grounding will require interventions at the representational level. Code is available here.",
+        "bbox": [
+            228,
+            378,
+            767,
+            627
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "1 Introduction",
+        "text_level": 2,
+        "bbox": [
+            171,
+            651,
+            313,
+            667
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "Vision-language models (VLMs) are increasingly used for tasks that require faithful visual understanding, including visual question answering [Antol et al., 2015, Kafle and Kanan, 2017], document analysis [Mathew et al., 2021, Kim et al., 2022], scientific reasoning [Lu et al., 2022], and medical image interpretation [Li et al., 2023a, Moor et al., 2023, Zhang et al., 2023]. In such settings, a correct answer is insufficient unless it is grounded in the visual input. Yet recent work on mirage behavior [Asadi et al., 2026] challenges the assumption that benchmark success reflects faithful visual reasoning: VLMs can answer image-based questions confidently, and sometimes correctly, even when the image is absent. This suggests that performance on multimodal benchmarks such as MMMU [Yue et al., 2024] and VQA-RAD [Lau et al., 2018] may partly reflect textual priors, dataset regularities, or benchmark-specific shortcuts rather than genuine use of visual evidence.",
+        "bbox": [
+            169,
+            681,
+            826,
+            821
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "To remediate this behavior, we must understand what gives rise to it internally. Prior work largely treats mirages as a single failure mode [Asadi et al., 2026], but the same output-level behavior may arise from different mechanisms. A model may form internal representations consistent with unsupported visual content, effectively behaving as though a spurious image were present. Alternatively, it may answer directly from textual biases (benchmark-specific or distributional priors) without forming any false visual representation. These mechanisms, illustrated in Figure 1, imply different interventions: text-distribution cleaning may reduce shortcut-driven mirages, but may be insufficient when mirage behavior is associated with unsupported visual inference.",
+        "bbox": [
+            169,
+            827,
+            826,
+            898
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "aside_text",
+        "text": "arXiv:2606.13870v1 [cs.CV] 11 Jun 2026",
+        "bbox": [
+            22,
+            276,
+            60,
+            717
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "page_footnote",
+        "text": "†Correspondence to db3651@columbia.edu.",
+        "bbox": [
+            189,
+            905,
+            424,
+            919
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "footer",
+        "text": "Preprint.",
+        "bbox": [
+            171,
+            924,
+            220,
+            936
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "image",
+        "img_path": "images/e8a84cb03f82b6868f2460a77f574cd2605cd560d3a1c96485af9e102c5b019d.jpg",
+        "image_caption": [
+            "Figure 1: Two distinct mirage mechanisms. VLMs seem to exhibit two different kinds of mirage behavior, spurious images and textual biases, depicted here. Each row shows a mirage response to the same question with and without an image present. In the first example, the model achieves mirage behavior by building and referring to a false visual representation. Differently, in the second example, the model does not utilize visual information at all, relying solely on textual priors provided by the rich question distribution to reach the correct response."
+        ],
+        "image_footnote": [],
+        "content": "```mermaid\ngraph TD\n  A[\"Q: Are the kidneys present in this image?\"] --> B[\"A: Yes, the kidneys are ...\"]\n  C[\"Q: This bacteriorhodopsin protein has quaternary structure.\"] --> D[\"A: True, bacteriorhodopsin ...\"]\n  E[\"Q: Are the kidneys present in this image?\"] --> F[\"A: Yes, the kidneys are ...\"]\n  G[\"Q: This bacteriorhodopsin protein has quaternary structure.\"] --> H[\"A: True, bacteriorhodopsin ...\"]\n  I[\"Q: This bacteriorhodopsin protein has quaternary structure.\"] --> J[\"A: True, bacteriorhodopsin ...\"]\n```",
+        "sub_type": "flowchart",
+        "bbox": [
+            259,
+            88,
+            738,
+            238
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "text",
+        "text": "",
+        "bbox": [
+            169,
+            311,
+            823,
+            354
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "text",
+        "text": "In this work, we introduce Mirage Probes, a representation-level framework for studying mirage behavior in VLMs. We construct datasets of mirage-associated and non-mirage-associated imageconditioned responses by comparing model generations with and without visual input, and we build contrastive pairs from lightly paraphrased question variants that preserve image-question semantics while yielding different mirage labels, reducing surface-level textual confounds. We then probe internal activations from open-source VLMs at four sites (namely, residual stream states, MLP outputs, post-attention outputs, and individual attention-head outputs), using probe families that test whether mirage information is encoded as a single linear direction, requires a nonlinear transformation, or is most cleanly recovered from the relational structure between matched contrastive examples.",
+        "bbox": [
+            169,
+            359,
+            826,
+            484
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "text",
+        "text": "Our results show that mirage behavior is linearly decodable from VLM latent representations across all four activation sites when images are provided, indicating that it is not merely an image-absent or output-level artifact. Two-layer MLP probes do not meaningfully outperform linear ones, and contrastive difference probes recover the signal most cleanly. Together, these results are consistent with mirage information being encoded along recoverable linear directions rather than requiring nonlinear extraction. A Naive Bayes textual baseline trained on response text is consistently weaker than our contrastive probes, suggesting that this signal is not reducible to surface lexical features. Separability nonetheless varies sharply across benchmarks: it is strongest on VQA-RAD [Lau et al., 2018], where questions typically require specific visual evidence and provide little textual context, and weaker on benchmarks where answers can more often be inferred from textual priors. We propose, as a hypothesis motivating further mechanistic work, that behavioral mirages conflate at least two representational regimes – spurious images and textual biases – rather than constituting a single phenomenon. More broadly, our findings raise concerns for VLM training and evaluation: reducing textual shortcuts is necessary, but may not be sufficient to ensure faithful visual grounding.",
+        "bbox": [
+            169,
+            491,
+            826,
+            685
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "text",
+        "text": "Our contributions are:",
+        "text_level": 2,
+        "bbox": [
+            171,
+            691,
+            318,
+            704
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "list",
+        "sub_type": "text",
+        "list_items": [
+            "1. We show mirage behavior is linearly decodable from image-present VLM latent space. Linear probes distinguish mirage-associated from non-mirage-associated image-conditioned generations across multiple activation sites, and contrastive difference probes recover this signal most cleanly.",
+            "2. We introduce Mirage Probes, a contrastive probing framework for mirage behavior. By pairing semantically similar question variants with different mirage labels, our framework reduces surface-level textual confounds, as confirmed by comparison against a Naive Bayes textual baseline.",
+            "3. We hypothesize two distinct forms of mirage behavior. Cross-benchmark separability patterns suggest that prior behavioral definitions group together spurious-image mirages and textual-bias mirages, though we leave causal validation of this distinction to future work.",
+            "4. We argue that text-only mitigation may be mechanism-incomplete. Text-distribution cleaning targets textual-bias mirages but is unlikely to address spurious-image mirages, since the latter are associated with internal representations rather than surface textual patterns."
+        ],
+        "bbox": [
+            210,
+            714,
+            826,
+            912
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "page_number",
+        "text": "",
+        "bbox": [
+            493,
+            935,
+            503,
+            946
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "text",
+        "text": "2 Related work",
+        "text_level": 2,
+        "bbox": [
+            171,
+            89,
+            318,
+            104
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "Hallucination in vision-language models. Hallucination in VLMs has been studied extensively, primarily as the assertion of visual content not present in the input image. Object hallucination benchmarks such as POPE [Li et al., 2023b] and CHAIR [Rohrbach et al., 2018] probe whether models invent objects, while subsequent work has extended the analysis to attribute and relational hallucinations [Sun et al., 2024, Jiang et al., 2024]. Recent works provide broad treatments of the phenomenon, its causes, and mitigations [Liu et al., 2024, Bai et al., 2024, Goldfeder et al., 2026].",
+        "bbox": [
+            169,
+            119,
+            826,
+            204
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "Image-absent generation and modality bypass. A growing line of work examines cases in which VLMs appear to bypass visual input. Tong et al. [2024] show that state-of-the-art VLMs frequently fail on visual questions that humans answer trivially. Most directly, Asadi et al. [2026] introduce the term mirage for the observation that VLMs produce confident, often correct answers to imagegrounded questions even when no image is provided, and hypothesize that the same mechanism may operate when images are present. To our knowledge, no prior work has tested this hypothesis at the level of internal representations.",
+        "bbox": [
+            169,
+            218,
+            826,
+            316
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "Probing and mechanistic interpretability of multimodal models. Linear probes on intermediate representations have a long history in NLP interpretability, from early diagnostic classifiers [Alain and Bengio, 2016, Belinkov, 2022] to syntactic probes [Hewitt and Manning, 2019] and the broader study of what linear directions encode in language model representations [Tenney et al., 2019, Park et al., 2023, Lomasov et al., 2025, Theodoridis et al., 2026]. Contrastive probe constructions [Burns et al., 2024, Marks and Tegmark, 2024] have proven particularly effective at recovering features otherwise masked by surface confounds, and we adopt a contrastive-pair design for the same reason. We extend this line of work by targeting a specific behavioral failure, mirage generation, and showing that it has a recoverable latent representation that further admits a two-mechanism decomposition.",
+        "bbox": [
+            169,
+            329,
+            826,
+            455
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "3 Methods",
+        "text_level": 2,
+        "bbox": [
+            171,
+            473,
+            279,
+            489
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "3.1 Mirage Behavior",
+        "text_level": 2,
+        "bbox": [
+            171,
+            503,
+            331,
+            518
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "Let M denote a vision-language model. For each example $i ,$ let $x _ { i }$ be the image, $q _ { i }$ be the textual question, and let",
+        "bbox": [
+            169,
+            529,
+            823,
+            556
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "equation",
+        "text": "$$\nr _ {i} ^ {\\mathrm{img}} = M (x _ {i}, q _ {i}), \\qquad r _ {i} ^ {\\emptyset} = M (\\emptyset , q _ {i})\n$$",
+        "text_format": "latex",
+        "bbox": [
+            369,
+            556,
+            625,
+            575
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "denote the model response with and without the image, respectively. Mirage behavior occurs when the model produces an image-grounded answer even when the image is absent. In this case, the model may appear to use visual evidence, while actually relying on textual priors, dataset regularities, or unsupported internal visual assumptions.",
+        "bbox": [
+            169,
+            577,
+            826,
+            633
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "We define a binary mirage label $y _ { i } \\in \\{ 0 , 1 \\}$ for each with-image response. The label $y _ { i } = 1$ denotes a mirage-like response, and $y _ { i } = 0$ denotes a non-mirage-like response. Since a with-image mirage cannot be directly observed from the output alone, this label is treated as a behavioral proxy obtained $r _ { i } ^ { \\mathrm { i m g } }$ $r _ { i } ^ { \\emptyset }$ recoverable from the model’s internal representations.",
+        "bbox": [
+            169,
+            638,
+            825,
+            712
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "3.2 Dataset Construction",
+        "text_level": 2,
+        "bbox": [
+            171,
+            727,
+            362,
+            741
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "Annotation Scheme. Our goal is to assemble labeled examples of mirage and non-mirage withimage responses. Whether a given with-image generation is actually a mirage cannot be determined from the output alone, so we rely on a heuristic. Following the hypothesis from Asadi et al. [2026] that distribution shift between with-image and without-image responses signals genuine reliance on provided visual input, we adopt the following labeling scheme.",
+        "bbox": [
+            169,
+            752,
+            826,
+            823
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "A response is mirage-like if the with-image and without-image generations produce the same answer and have a bag-of-words vector cosine similarity above 0.7. A response is non-mirage-like if the without-image generation explicitly expresses uncertainty due to missing visual context or states that answering is impossible without the image, both detected through regex checks. A response is ambiguous if the without-image generation is itself mirage-like but the with-image answer differs in either answer or content similarity. We choose to include an explicit ambiguous label because in such cases, it is impossible to determine whether the with-image generation represents a legitimate use of visual information or is just a different mirage answer triggered by the distribution shift of including the image.",
+        "bbox": [
+            169,
+            828,
+            825,
+            912
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "page_number",
+        "text": "",
+        "bbox": [
+            493,
+            936,
+            504,
+            946
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "image",
+        "img_path": "images/80e82c211c708aa2fe3b6ee0d3f6a5fd7545752145101abc279297f2b7a365ff.jpg",
+        "image_caption": [
+            "Figure 2: Contrastive dataset construction overview. In order to produce contrastive pairs, we mutate each base question four times with GPT-4o-mini and generate with and without-image responses to each variant. Then, for each pair of responses, we use cosine similarity and a regex annotator to identify mirage and non-mirage behavior. If a base question’s group contains at least one mirage and non-mirage pair, we store each pair’s with-image response to form a contrastive example."
+        ],
+        "image_footnote": [],
+        "content": "```mermaid\ngraph TD\n  A[\"Image 1: Mutation Instruction\"] --> B[\"Q: <image 1> of Louis Black, believed to be a formerly enslaved man, was painted by which artist?\"]\n  A --> C[\"Image 1: This is a painting of Louis Black, believed to be a formerly enslaved man. Which artist painted this?\"]\n  A --> D[\"Image 1: This is a painting of Louis Black, believed to be a formerly enslaved man. Which artist painted this?\"]\n  C --> E[\"Mouse Icon\"]\n  D --> E\n  E --> F[\"A: James Irvine was a commercial illustrator ...\"]\n  F --> G[\"Mirage Like\"]\n  E --> H[\"Regex Matching\"]\n  H --> I[\"A: James Irvine was a commercial illustrator ...\"]\n  I --> J[\"No Mirage\"]\n```",
+        "sub_type": "flowchart",
+        "bbox": [
+            220,
+            89,
+            750,
+            224
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "text",
+        "text": "",
+        "bbox": [
+            169,
+            304,
+            823,
+            347
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "text",
+        "text": "We also tried two alternative schemes. Folding ambiguous responses into the mirage-like class and labeling non-mirage examples with the B-Clean criterion described by Asadi et al. [2026] (questions that cannot be answered correctly without the image are considered safe), both reduced probe accuracy substantially. Thus, we select the scheme above for our main experiments.",
+        "bbox": [
+            169,
+            352,
+            823,
+            407
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "text",
+        "text": "Benchmarks. We draw questions from four widely-used visual question answering benchmarks chosen to span medical and general expertise, along with free-form and multiple-choice formats. VQA-RAD [Lau et al., 2018] contains clinically generated free-form and yes/no questions about radiology images. MMMU-Pro [Yue et al., 2025] is a multiple-choice expert-level reasoning benchmark spanning college-level subjects across many disciplines, designed to be more robust to text-only shortcut solutions than its predecessor [Yue et al., 2024]. MedXpertQA [Zuo et al., 2025] provides expert-level multiple-choice medical questions targeted at reasoning rather than recall. MicroVQA [Burgess et al., 2025] consists of multiple-choice questions over biomedical microscopy images.",
+        "bbox": [
+            169,
+            424,
+            826,
+            549
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "text",
+        "text": "Contrastive Pairs. Linear probes benefit substantially from training on contrastive pairs, where positive and negative examples differ only in the property of interest [Burns et al., 2024, Marks and Tegmark, 2024]. Without contrastive structure, surface-level features (topic words, response length, question style) often correlate with labels, causing probes to learn shortcuts rather than the target representation.",
+        "bbox": [
+            169,
+            564,
+            823,
+            633
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "text",
+        "text": "For each base question, we generate four mutations using GPT-4o-mini [Hurst et al., 2024]. A mutation rephrases or rearranges the question while preserving its meaning and adding no new information. The intent is mild distributional perturbation, sufficient to flip behavior between mirage and non-mirage for some questions while keeping the image and the underlying intent fixed. When the responses to a base question and its four mutations together contain at least one mirage-like and one non-mirage-like response, we draw a single contrastive pair from that question set. We never draw more than one pair per base question to preserve diversity.",
+        "bbox": [
+            169,
+            638,
+            823,
+            737
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "text",
+        "text": "We construct two datasets per evaluated model. The contrastive-pairs dataset contains only such pairs, with the same image and near-identical question content across both classes. The all-examples dataset contains every response annotated as mirage-like or non-mirage-like, capped at one example per class per base question. The contrastive split aims to test whether the mirage signal survives without surface-level confounds, while the all-examples split contains a larger quantity of examples, which may aid generalization if textual confounds do not override the desired direction. Our dataset construction procedure is summarized in Figure 2.",
+        "bbox": [
+            169,
+            743,
+            823,
+            840
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "text",
+        "text": "3.3 Model Architecture and Activation Extraction",
+        "text_level": 2,
+        "bbox": [
+            171,
+            857,
+            534,
+            871
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "text",
+        "text": "We probe three open-source vision-language models spanning different model sizes and architectures. Ovis2.5-2B [Lu et al., 2024] is a 2B-parameter VLM that aligns vision and language representations through a structured embedding scheme. GLM-4.6-flash [Team GLM et al., 2024] is the smaller variant in the GLM multimodal series. Qwen3-32B-VL-Instruct [Bai et al., 2025] is the 32B-scale vision-language model in the Qwen3 family. Standard VLM design glues a vision encoder to a language model through a learned projection that maps image patch features into the language model’s embedding space [Li et al., 2022, Liu et al., 2023]. In our experiments, image tokens are prepended to the user’s textual query, after which the language model performs standard causal attention.",
+        "bbox": [
+            169,
+            883,
+            823,
+            912
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "page_number",
+        "text": "4",
+        "bbox": [
+            493,
+            936,
+            503,
+            946
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "image",
+        "img_path": "images/60a533c509f6ef66b6203d1f84077681d239f3f25e22b5cdd8c1aada9b6061c8.jpg",
+        "image_caption": [
+            "Figure 3: Activation extraction overview. The VLM first generates a response to a user query, following system prompt instructions and referring to attached images if any are provided. The full conversation, model response included, is then chat-template tokenized and fed into the VLM for extraction. Any images are first processed by the model’s vision encoder and then projected into vision tokens, which are prepended to the user’s query. Then, the model conducts an LLM decoder-only pass over the full conversation, and we extract activations from the residual stream, MLP outputs, post-attention outputs, and individual attention head outputs at each layer."
+        ],
+        "image_footnote": [],
+        "content": "```mermaid\ngraph TD\n  A[\"Tokenization\"] --> B[\"Input: <sys>You are given a radiology image...\"]\n  A --> C[\"Input: <image>...\"]\n  A --> D[\"Input: <user>Is there evidence of pneumonia\"]\n  A --> E[\"Input: <asst>Yes, consolidation is visible in the right lower lobe.\"]\n  G[\"Activation Recording\"] --> H[\"VLM Transformer Layer\"]\n  H --> I[\"Residual Stream\"]\n  H --> J[\"MLP Output\"]\n  H --> K[\"Post-Attention\"]\n  H --> L[\"Attn Heads\"]\n  M[\"System Prompt + Image + Question + Response\"] --> N[\"Vision Tokens\"]\n  M --> O[\"Query Tokens\"]\n  M --> P[\"Response Tokens\"]\n  M --> Q[\"Special Token\"]\n  N --> R[\"...\"]\n  O --> S[\"...\"]\n  P --> T[\"...\"]\n  Q --> U[\"...\"]\n  R --> V[\"...\"]\n  S --> W[\"...\"]\n  T --> X[\"...\"]\n  U --> Y[\"...\"]\n```",
+        "sub_type": "flowchart",
+        "bbox": [
+            202,
+            95,
+            803,
+            247
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "",
+        "bbox": [
+            169,
+            338,
+            823,
+            422
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "We extract activations at four targets within each model: the residual stream at every layer, the MLP output at every layer, the post-attention output at every layer, and every individual attention head output at every layer. We initially included the vision encoder and the projection layers but found their representations carried no detectable mirage signal under any probing strategy and accordingly dropped them from our main analysis.",
+        "bbox": [
+            169,
+            428,
+            823,
+            498
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "For each model and each annotated dataset, we run the model on chat-formatted conversations and cache activations under three pooled token-position aggregations, building on the position scheme introduced by Theodoridis et al. [2026]. The first aggregation, text-nonspecial-mean, averages activations over all non-special response text tokens. The second, vision-tail, averages over all vision tokens and the last special token in the response. The third, vision-text-mean, averages over all vision tokens and all non-special response text tokens jointly. Our activation extraction procedure is illustrated in Figure 3.",
+        "bbox": [
+            169,
+            503,
+            823,
+            601
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "Final per-model dataset sizes are presented in Appendix A. GLM-4.6-flash produces too few nonmirage responses on three of four benchmarks to support stable probing, so we drop it from the main results. MicroVQA yields too few non-mirage responses for stable probing across models, so it is also dropped from the main results. Qualitatively, we note that MicroVQA has the lowest visual reliance among the four benchmarks, which is likely related to its extremely high associated mirage rate. Ovis2.5-2B produces a relatively small viable dataset for some benchmarks, but we retain the model nonetheless, as consistent results across Ovis2.5-2B and Qwen3-32B-VL-Instruct rule out scale-specific artifacts and increase the robustness of our findings.",
+        "bbox": [
+            169,
+            607,
+            826,
+            719
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "3.4 Latent Space Probes",
+        "text_level": 2,
+        "bbox": [
+            171,
+            734,
+            356,
+            750
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "We train four families of probes, each motivated by a different prior on how mirage information could be encoded. Let $h _ { \\ell , i } \\in \\mathbb { R } ^ { d _ { \\ell } }$ denote the activation of example i extracted from layer or component ℓ. In our setting, ℓ may correspond to a residual stream state, an MLP output, a post-attention output, or an individual attention-head output. A probe is a classifier $g _ { \\phi }$ trained to predict the mirage label from the activation:",
+        "bbox": [
+            169,
+            758,
+            826,
+            828
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "equation",
+        "text": "$$\n\\hat {y} _ {i} = g _ {\\phi} (h _ {\\ell , i}).\n$$",
+        "text_format": "latex",
+        "bbox": [
+            447,
+            828,
+            545,
+            844
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "Thus, probe accuracy measures whether mirage behavior is decodable from the model’s latent space.",
+        "bbox": [
+            169,
+            847,
+            826,
+            862
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "Logistic regression is a standard linear probing strategy [Alain and Bengio, 2016, Goldowsky-Dill et al., 2025]. It predicts",
+        "bbox": [
+            169,
+            868,
+            823,
+            896
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "equation",
+        "text": "$$\np (y _ {i} = 1 \\mid h _ {\\ell , i}) = \\sigma (w ^ {\\top} h _ {\\ell , i} + b),\n$$",
+        "text_format": "latex",
+        "bbox": [
+            380,
+            896,
+            612,
+            912
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "page_number",
+        "text": "",
+        "bbox": [
+            493,
+            935,
+            503,
+            946
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "table",
+        "img_path": "images/152321c8f43d8e0655e2f74334564cb3ec78270590db0fa13210a4d4e805f889.jpg",
+        "table_caption": [
+            "Table 1: Residual and attention probing results. We train four probing strategies on our contrastive and all-examples datasets, filtered to each individual benchmark first and then all at once. Results targeting the residual stream are presented on the left, while results on attention heads and post-attention outputs are shown on the right. Our results indicate that mirage behavior is linearly represented in image-present latent space, with consistent non-trivial accuracy across benchmarks and targets.",
+            "Residual"
+        ],
+        "table_footnote": [],
+        "table_body": "<table><tr><td>Strategy</td><td>VQA-RAD</td><td>MMMU-Pro</td><td>MedXpertQA</td><td>All</td></tr><tr><td colspan=\"5\">Ovis - Contrastive</td></tr><tr><td>LogReg</td><td>75.00%</td><td>65.00%</td><td>68.00%</td><td>72.20%</td></tr><tr><td>MLP</td><td>72.20%</td><td>62.60%</td><td>64.00%</td><td>72.80%</td></tr><tr><td>Concat</td><td>67.00%</td><td>58.20%</td><td>52.00%</td><td>64.00%</td></tr><tr><td>Diff</td><td>97.40%</td><td>90.80%</td><td>71.00%</td><td>91.80%</td></tr><tr><td colspan=\"5\">Ovis - All Examples</td></tr><tr><td>LogReg</td><td>68.09%</td><td>73.10%</td><td>57.14%</td><td>71.36%</td></tr><tr><td>MLP</td><td>67.23%</td><td>75.17%</td><td>60.00%</td><td>70.12%</td></tr><tr><td>Concat</td><td>58.72%</td><td>64.14%</td><td>51.43%</td><td>68.64%</td></tr><tr><td>Diff</td><td>98.30%</td><td>88.97%</td><td>57.14%</td><td>92.10%</td></tr><tr><td colspan=\"5\">Qwen - Contrastive</td></tr><tr><td>LogReg</td><td>72.00%</td><td>57.80%</td><td>57.20%</td><td>61.20%</td></tr><tr><td>MLP</td><td>72.40%</td><td>59.60%</td><td>57.40%</td><td>60.40%</td></tr><tr><td>Concat</td><td>67.40%</td><td>53.40%</td><td>50.60%</td><td>57.00%</td></tr><tr><td>Diff</td><td>96.00%</td><td>79.40%</td><td>76.20%</td><td>77.40%</td></tr><tr><td colspan=\"5\">Qwen - All Examples</td></tr><tr><td>LogReg</td><td>61.43%</td><td>65.06%</td><td>63.17%</td><td>59.04%</td></tr><tr><td>MLP</td><td>73.80%</td><td>76.35%</td><td>70.43%</td><td>72.69%</td></tr><tr><td>Concat</td><td>70.14%</td><td>72.87%</td><td>68.70%</td><td>70.41%</td></tr><tr><td>Diff</td><td>95.77%</td><td>80.70%</td><td>76.52%</td><td>84.38%</td></tr></table>",
+        "bbox": [
+            173,
+            169,
+            485,
+            380
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "table",
+        "img_path": "images/e43e034c2d494965e96727cee42a56f505d11591c51c7034e751a19d957e797f.jpg",
+        "table_caption": [
+            "Attention"
+        ],
+        "table_footnote": [],
+        "table_body": "<table><tr><td>Strategy</td><td>VQA-RAD</td><td>MMMU-Pro</td><td>MedXpertQA</td><td>All</td></tr><tr><td colspan=\"5\">Ovis - Contrastive</td></tr><tr><td>LogReg</td><td>74.67%</td><td>68.00%</td><td>70.00%</td><td>73.67%</td></tr><tr><td>MLP</td><td>77.33%</td><td>69.00%</td><td>73.33%</td><td>71.00%</td></tr><tr><td>Concat</td><td>75.67%</td><td>66.33%</td><td>66.67%</td><td>72.33%</td></tr><tr><td>Diff</td><td>87.67%</td><td>91.33%</td><td>71.67%</td><td>85.00%</td></tr><tr><td colspan=\"5\">Ovis - All Examples</td></tr><tr><td>LogReg</td><td>75.18%</td><td>77.01%</td><td>85.71%</td><td>74.07%</td></tr><tr><td>MLP</td><td>75.18%</td><td>75.86%</td><td>90.48%</td><td>73.25%</td></tr><tr><td>Concat</td><td>73.76%</td><td>71.26%</td><td>80.95%</td><td>73.25%</td></tr><tr><td>Diff</td><td>90.78%</td><td>87.36%</td><td>90.48%</td><td>88.89%</td></tr><tr><td colspan=\"5\">Qwen - Contrastive</td></tr><tr><td>LogReg</td><td>81.00%</td><td>63.67%</td><td>69.33%</td><td>64.33%</td></tr><tr><td>MLP</td><td>75.67%</td><td>66.67%</td><td>71.67%</td><td>64.00%</td></tr><tr><td>Concat</td><td>75.33%</td><td>64.33%</td><td>65.00%</td><td>61.33%</td></tr><tr><td>Diff</td><td>95.67%</td><td>81.67%</td><td>83.33%</td><td>82.33%</td></tr><tr><td colspan=\"5\">Qwen - All Examples</td></tr><tr><td>LogReg</td><td>69.05%</td><td>69.62%</td><td>67.07%</td><td>61.52%</td></tr><tr><td>MLP</td><td>75.12%</td><td>75.07%</td><td>74.88%</td><td>73.97%</td></tr><tr><td>Concat</td><td>73.71%</td><td>75.94%</td><td>71.01%</td><td>73.52%</td></tr><tr><td>Diff</td><td>95.77%</td><td>82.32%</td><td>78.74%</td><td>85.39%</td></tr></table>",
+        "bbox": [
+            506,
+            169,
+            821,
+            380
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "text",
+        "text": "where w and b are learned parameters and σ is the sigmoid function. Above-chance accuracy implies the target property is linearly decodable from the model’s representation space, which is the cleanest evidence that the model encodes that property as a feature direction.",
+        "bbox": [
+            169,
+            393,
+            823,
+            436
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "text",
+        "text": "Two-layer MLP probes test whether mirage information is decodable through a lightweight nonlinear transform but not as a single linear separator. A gap between linear and MLP accuracy points to distributed or nonlinear encoding.",
+        "bbox": [
+            169,
+            443,
+            823,
+            484
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "text",
+        "text": "Logistic regression on concatenated activations trains a linear probe on the concatenation of activations from all model layers at once. If the model has L layers, we define",
+        "bbox": [
+            169,
+            491,
+            823,
+            520
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "equation",
+        "text": "$$\n\\bar {h} _ {i} = \\left[ h _ {1, i}; h _ {2, i}; \\dots ; h _ {L, i} \\right],\n$$",
+        "text_format": "latex",
+        "bbox": [
+            408,
+            525,
+            584,
+            542
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "text",
+        "text": "and train logistic regression on $\\bar { h } _ { i }$ . Such probes allow us to determine whether mirage behavior is sparsely represented across layers instead of cleanly identifiable at a specific point.",
+        "bbox": [
+            169,
+            549,
+            823,
+            580
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "text",
+        "text": "Logistic regression on the difference of activations trains on the elementwise difference between $h _ { \\ell , i } ^ { \\mathrm { i m g } }$ image is provided, and let $h _ { \\ell , i } ^ { \\varnothing }$ denote the activation when the image is removed. We define",
+        "bbox": [
+            169,
+            584,
+            823,
+            635
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "equation",
+        "text": "$$\n\\Delta h _ {\\ell , i} = h _ {\\ell , i} ^ {\\mathrm{img}} - h _ {\\ell , i} ^ {\\emptyset}.\n$$",
+        "text_format": "latex",
+        "bbox": [
+            424,
+            643,
+            570,
+            662
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "text",
+        "text": "A linear probe trained on $\\Delta h _ { \\ell , i }$ i tests whether the representational shift caused by adding the image separates mirage-like responses from non-mirage-like responses.",
+        "bbox": [
+            169,
+            667,
+            823,
+            698
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "text",
+        "text": "3.5 Experimental Setup",
+        "text_level": 2,
+        "bbox": [
+            171,
+            713,
+            352,
+            729
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "text",
+        "text": "We train all four types of latent space probes on per-layer activations generated with Ovis and Qwen on conversations from our contrastive and all-examples datasets. Data points where the with-image response is fewer than 10 tokens long are excluded. For each combination of probing strategy, model, and dataset, we conduct four training runs, one on examples exclusively from each of our three retained benchmarks and one on all three benchmarks combined. MLP probes are trained with 2 layers, a hidden dimension of 512, and a GELU activation function. All probes are trained with an Adam optimizer and a learning rate of 0.03, and features are train-set normalized before training.",
+        "bbox": [
+            169,
+            738,
+            825,
+            835
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "text",
+        "text": "Residual stream probes. When targeting the residual stream, we aggregate activations with all three options (text-nonspecial-mean, vision-tail, vision-text-mean). Contrastive probes are trained using a 90/10 train/valid split (approximated with hard-coded values for Ovis) and then evaluated on a held-out class-balanced, benchmark-stratified dataset that consist of up to 100 data points from the all-examples dataset. This procedure allows us to maintain robust evaluation while also using our limited contrastive data to the greatest effect. All-examples probes are trained using a 70/10/20 train/valid/test split. We train probes on 5 seeded splits with 3 random initializations per seed and a 4-option L2 regularization hyperparameter sweep (0, 1, 10, 100) per random initialization, resulting in 12 probes trained per seed. The best of the 12 probes, selected through early stopping on validation accuracy (max 800 epochs), is tested, either once on the held-out portion of the split in the all examples setting or averaged over an additional 5 held-out dataset seeds in the contrastive setting. This procedure is repeated independently for each aggregation strategy. We take our final accuracy for one experimental configuration as the averaged held-out test accuracy across the 5 seeded splits for the aggregation strategy that performed best.",
+        "bbox": [
+            169,
+            842,
+            825,
+            912
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "page_number",
+        "text": "6",
+        "bbox": [
+            493,
+            936,
+            504,
+            946
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "table",
+        "img_path": "images/cb182905724ba1043f7f944dc2ad579dd1317728e68ac4a37d60b369f1f91439.jpg",
+        "table_caption": [
+            "Table 2: Naive Bayes classifier. In order to determine whether or not our probes are simply picking up on surface level confounds, we train a text-based Naive Bayes classifier. The model’s performance indicates that our contrastive probes pick up on deep mirage mechanisms, while all-examples probes are likely distracted by surface-level features."
+        ],
+        "table_footnote": [],
+        "table_body": "<table><tr><td>Model (Setting)</td><td>VQA-RAD</td><td>MMMU-Pro</td><td>MedXpertQA</td><td>All</td></tr><tr><td>Ovis (Contrastive)</td><td>61.88%</td><td>57.67%</td><td>66.67%</td><td>64.85%</td></tr><tr><td>Ovis (All Examples)</td><td>75.38%</td><td>81.11%</td><td>67.50%</td><td>75.74%</td></tr><tr><td>Qwen (Contrastive)</td><td>59.08%</td><td>54.80%</td><td>45.45%</td><td>52.24%</td></tr><tr><td>Qwen (All Examples)</td><td>77.08%</td><td>81.50%</td><td>79.64%</td><td>72.80%</td></tr></table>",
+        "bbox": [
+            171,
+            150,
+            826,
+            212
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "text",
+        "text": "",
+        "bbox": [
+            169,
+            224,
+            826,
+            349
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "text",
+        "text": "MLP and Attention Probes. In order to keep our experiments tractable while adding a huge number of additional targets, we slightly modify the above procedure. First, we only aggregate activations with text-nonspecial-mean, as this strategy generally performs best in the residual setting. Next, we remove the 3 random initializations per seed, drop the number of split seeds to 3, and drop the number of held-out contrastive setting test seeds to 3. All other aspects of the experimental setup are the same. For attention probes, we report the best accuracy for each experimental configuration as the best held-out test accuracy across all of the attention head and post-attention outputs at all layers.",
+        "bbox": [
+            169,
+            354,
+            826,
+            452
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "text",
+        "text": "Prior Harnessing Index. In addition to reporting held-out test set probe accuracies, we calculate and report a novel metric, Prior Harnessing Index (PHI), which represents the amount of information a model is able to glean regarding a correct final answer from a purely textual input distribution. Concretely, we define PHI as",
+        "bbox": [
+            169,
+            458,
+            826,
+            513
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "equation",
+        "text": "$$\n\\operatorname{PHI} (Q) = \\log p (a ^ {*} \\mid Q) - \\log p (a ^ {*} \\mid Q _ {\\emptyset}).\n$$",
+        "text_format": "latex",
+        "bbox": [
+            352,
+            521,
+            642,
+            537
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "text",
+        "text": "Here, $p ( a ^ { * } \\mid Q )$ represents the model’s probability of the correct answer $a ^ { * }$ after conditioning on the question $Q ,$ while $p ( a ^ { * } \\mid Q _ { \\emptyset } )$ ) represents the model’s baseline probability of $a ^ { * }$ under a null prompt (i.e., \"What is the answer?\").",
+        "bbox": [
+            169,
+            544,
+            823,
+            585
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "text",
+        "text": "4 Results",
+        "text_level": 2,
+        "bbox": [
+            171,
+            604,
+            267,
+            619
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "text",
+        "text": "4.1 Mirage Mechanisms Are Linearly Represented in Image-Present Latent Space",
+        "text_level": 2,
+        "bbox": [
+            169,
+            636,
+            756,
+            651
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "text",
+        "text": "As presented in Table 1, we demonstrate that mirage behavior is clearly represented across model layer components through non-trivial probing accuracy. When targeting the residual stream, in Ovis’s contrastive and all-examples settings, we achieve linear probe accuracies of up to 75% and 73%, respectively. Similarly, in Qwen’s contrastive and all-examples settings, we achieve linear probe accuracies of up to 72% and 65%. Attention head and post-attention targets show similar results, with Ovis accuracies of up to 74% and 85% and Qwen accuracies of up to 81% and 69%, respectively. Generally, across all contrastive settings, multi-layer perceptron and concatenated-activations probes do not significantly outperform logistic regression, indicating that mirage mechanisms are represented linearly in latent space. We note that difference-in-activations probes achieve remarkably high accuracy, motivating their use as mirage-behavior classifiers. Probe strategy results on MLP targets, which follow a generally similar trend, are presented in Appendix E.",
+        "bbox": [
+            169,
+            662,
+            826,
+            815
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "text",
+        "text": "4.2 The Mirage Probes Framework Effectively Reduces Surface Level Confounds",
+        "text_level": 2,
+        "bbox": [
+            169,
+            830,
+            748,
+            844
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "text",
+        "text": "Because with-image mirages are invisible from a black-box perspective, we cannot use causal steering to verify that our probes have truly picked up on a mirage representation. Accordingly, we train a Naive Bayes textual classifier following a similar procedure to that used for probe training in order to determine whether or not our probes are detecting surface-level patterns or deeper mirage mechanisms. Detailed training details are discussed in Appendix B, and results are presented in Table 2. Overall, we find that our contrastive Mirage Probes framework significantly reduces surfacelevel separability due to its low semantic and topical variance across class examples. In particular, we note that contrastive setting accuracy ranges from 45% to 66% while all-examples setting accuracy ranges from 67% to 81%, emphasizing the reduction in confounds our framework is able to achieve. Crucially, contrastive logistic regression probe accuracy remains higher than Naive Bayes accuracy across all models, benchmarks, and targets, indicating with high confidence that our probes pick up on deeper mechanistic features. However, we note that increases in probe accuracy on the MMMU-Pro and MedXpertQA benchmarks in the all-examples setting are directly and consistently correlated with sharp increases in surface-level separability, indicating that these probes are likely picking up on textual cues instead of identifying the desired mirage mechanism. Further analysis of per-dataset textual confounds is presented in Appendix D.",
+        "bbox": [
+            169,
+            854,
+            823,
+            912
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "page_number",
+        "text": "7",
+        "bbox": [
+            493,
+            935,
+            504,
+            946
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "table",
+        "img_path": "images/ff03f96c57abba8b4699e999e3e007c92db46d699d9a269663fbe4e893c1d8f3.jpg",
+        "table_caption": [
+            "Table 3: Image reliance per benchmark. We use GPT-5-mini to annotate perceived image reliance across three benchmarks: VQA-RAD, MMMU-Pro, and MedXpertQA. We find that VQA-RAD is the only dataset wherein questions that generate mirage responses are consistently classified as image-reliant, supporting a notion of a distinct, spurious-image-based mirage mechanism."
+        ],
+        "table_footnote": [],
+        "table_body": "<table><tr><td colspan=\"3\">VQA-RAD</td><td colspan=\"3\">MMMU-Pro</td><td colspan=\"3\">MedXpertQA</td></tr><tr><td></td><td>+ Mirage</td><td>- Mirage</td><td></td><td>+ Mirage</td><td>- Mirage</td><td></td><td>+ Mirage</td><td>- Mirage</td></tr><tr><td>Image-Free</td><td>60</td><td>3</td><td>Image-Free</td><td>836</td><td>18</td><td>Image-Free</td><td>2399</td><td>15</td></tr><tr><td>Image-Reliant</td><td>2909</td><td>236</td><td>Image-Reliant</td><td>1139</td><td>1421</td><td>Image-Reliant</td><td>2413</td><td>260</td></tr></table>",
+        "bbox": [
+            173,
+            151,
+            826,
+            228
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "text",
+        "text": "",
+        "bbox": [
+            169,
+            241,
+            826,
+            407
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "text",
+        "text": "4.3 Two Distinct Mirage Mechanisms: Spurious Images and Textual Biases",
+        "text_level": 2,
+        "bbox": [
+            169,
+            422,
+            705,
+            438
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "text",
+        "text": "Across both models and targets, in the contrastive setting, we notice that VQA-RAD examples are consistently more separable than those drawn from the other two datasets. Furthermore, we note that the accuracy achieved by VQA-RAD probes is often higher than the accuracy achieved by training on all three datasets together. We attribute this higher separability to the presence of two markedly different mirage mechanisms, spurious images and textual biases, which are determined by different directions in latent space and thus impede separability when simultaneously present across mirage-labeled examples. We define the usage of spurious images as the use of information pulled from visual priors, or in other words cases where the model constructs false images in latent space in order to answer the user’s query. Differently, we define the usage of textual biases as the use of purely textual priors to answer the provided question, with the model ignoring the presence of visual information altogether.",
+        "bbox": [
+            169,
+            449,
+            823,
+            602
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "text",
+        "text": "We hypothesize that these two distinct mechanisms are natural consequences of VLM reward hacking [Skalse et al., 2025] during the reinforcement learning process and should thus respectively occur when they represent the path of least resistance to answering a question correctly. More concretely, we believe that textual priors will be used to answer any question wherein the model is able to determine a single answer with high confidence without any access to visual information. Spurious images will only be created when the provided textual distribution is not sufficiently rich to answer the question but is instead able to evoke false visual priors that can lead to a correct answer.",
+        "bbox": [
+            169,
+            607,
+            823,
+            705
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "text",
+        "text": "We provide evidence for this interpretation in Table 3 and Table 4. First, in Table 3, we use a few-shot prompted version of GPT-5-mini [Singh et al., 2025] to annotate each benchmark’s questions for perceived image dependence, marking questions that a human could not answer without referencing the provided visual material as image-reliant, and questions that a human could answer from the text alone as image-free. We find that VQA-RAD is the only dataset among the three wherein mirage-like examples are almost always image-reliant, while in the other two datasets, questions are evenly split. This supports the hypothesis that lower probe accuracy for the other benchmarks may be caused by competing mirage directions, as it seems likely that perceived image-reliance is correlated with the richness of the provided textual distribution, and thus VQA-RAD mirages mostly utilize spurious images while the other benchmarks’ mirages rely equally on both mechanisms.",
+        "bbox": [
+            169,
+            710,
+            826,
+            849
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "text",
+        "text": "However, as illustrated in Table 4 (right), notions of human image-reliance and VLM image-reliance are not identical. We train contrastive logistic regression probes on Qwen activations using only image-reliant and non-image reliant examples, respectively, from the MMMU-Pro and MedXpertQA benchmarks. We find that filtering training examples solely based on this criterion does not increase separability. Accordingly, we develop Prior Harnessing Index (described in Section 3.5) as a more accurate representation of VLM image-reliance, as it quantifies the amount of information the model itself is able to get out of the textual distribution without relying on visual cues. As presented in Table 4 (left), while Ovis is able to gain significant correct answer confidence from the textual distributions found in MMMU-Pro and MedXpertQA questions, VQA-RAD questions differently increase uncertainty. Furthermore, only in VQA-RAD are mirage labels highly correlated with low PHI, again explaining why mirage probe separability is higher in the VQA-RAD setting. We thus conclude that it is a combination of perceived image-reliance and the richness of the provided textual distribution that determine which mirage mechanism will be activated for a given question.",
+        "bbox": [
+            169,
+            854,
+            823,
+            912
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "page_number",
+        "text": "8",
+        "bbox": [
+            493,
+            935,
+            503,
+            946
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "table",
+        "img_path": "images/d20159a21f4c5f5cd6184f3a49b5fa2fec28e71baf6fb016e61fb0ed96db2e89.jpg",
+        "table_caption": [
+            "Table 4: VLM image-reliance is not equivalent to human image-reliance. The table on the right shows results attained by training contrastive logistic regression probes on only human-perceived image-free or image-reliant examples from the MMMU-Pro and MedXpertQA datasets. Human-perceived image-reliance conditioning does not improve probe separation. The table on the left shows mirage correlation with PHI scores and mean PHI scores per benchmark. VQA-RAD is the only dataset wherein the question text itself does not significantly boost answer confidence and there is a strong correlation between low PHI and mirage behavior.",
+            "(a) Ovis PHI"
+        ],
+        "table_footnote": [],
+        "table_body": "<table><tr><td>Dataset</td><td>Mirage Corr.</td><td>Mean PHI</td></tr><tr><td>VQA-RAD</td><td>-0.36</td><td>-0.41</td></tr><tr><td>MMMU-Pro</td><td>-0.23</td><td>1.20</td></tr><tr><td>MedXpertQA</td><td>0.14</td><td>0.30</td></tr></table>",
+        "bbox": [
+            179,
+            171,
+            460,
+            237
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "table",
+        "img_path": "images/fe6f34033f057319b3676649fd78ff8f0fa7f28e79af9f1a915b5a030f2b47f5.jpg",
+        "table_caption": [
+            "(b) Reliance-conditioned training"
+        ],
+        "table_footnote": [],
+        "table_body": "<table><tr><td></td><td>TrainImage-Free</td><td>TrainImage-Reliant</td></tr><tr><td>Test Image-Free</td><td>60.00%</td><td>58.20%</td></tr><tr><td>Test Image-Reliant</td><td>61.36%</td><td>58.00%</td></tr></table>",
+        "bbox": [
+            488,
+            171,
+            816,
+            237
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "text",
+        "text": "",
+        "bbox": [
+            169,
+            273,
+            823,
+            398
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "text",
+        "text": "5 Conclusion",
+        "text_level": 2,
+        "bbox": [
+            171,
+            422,
+            299,
+            438
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "text",
+        "text": "We introduce Mirage Probes, a representation-level framework for studying mirage behavior in VLMs. Across two open-source VLMs and three VQA benchmarks, we find that mirage-associated generations are linearly decodable from image-present internal activations across residual stream, MLP, post-attention, and attention-head sites. Contrastive difference probes recover this signal most cleanly, while two-layer MLP probes do not meaningfully outperform linear probes, suggesting that mirage information is encoded along recoverable linear directions rather than requiring nonlinear extraction. A Naive Bayes text baseline remains weaker, indicating that the contrastive probe signal is not reducible to surface lexical features.",
+        "bbox": [
+            169,
+            457,
+            823,
+            568
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "text",
+        "text": "Our results further suggest that behavioral mirages are not a single phenomenon. Cross-benchmark separability patterns are consistent with two regimes: spurious images, where the model behaves as though unsupported visual content were present in latent space, and textual biases, where it answers from text-distributional priors without engaging visual representations. We view this decomposition as an empirically motivated hypothesis, not a causal claim, and validating it will require interventions such as steering, ablations, or activation patching. The mirage mechanism distinction matters for mitigation: text-distribution cleaning may reduce textual-bias mirages, but spurious-image mirages likely require representational interventions. The Mirage Probes framework provides a starting point for diagnosing and ultimately improving faithful visual grounding in VLMs.",
+        "bbox": [
+            169,
+            575,
+            823,
+            700
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "text",
+        "text": "6 Limitations and Broader Impact",
+        "text_level": 2,
+        "bbox": [
+            169,
+            724,
+            477,
+            742
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "text",
+        "text": "Several limitations qualify our findings. Our mirage and non-mirage labels rely on heuristic criteria, which could introduce label noise. Because with-image mirages are not observable from outputs, we cannot causally validate probe-identified directions; our Naive Bayes baseline rules out a specific class of surface-feature confounds, but the central claim remains correlational. Our two-mechanism account (spurious images versus textual priors) is based on cross-benchmark separability differences and should be read as a hypothesis motivating further mechanistic work rather than a settled finding. As diagnostic interpretability research, this work does not introduce new generative capabilities. Its primary positive impact is enabling more faithful evaluation of VLMs in safety-critical domains such as medical image interpretation, where ungrounded mirage responses pose direct risks to users. We do not see a direct path to negative societal impact beyond risks already present in the underlying open-source models we probe.",
+        "bbox": [
+            169,
+            758,
+            826,
+            912
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "page_number",
+        "text": "",
+        "bbox": [
+            493,
+            935,
+            503,
+            946
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "text",
+        "text": "Acknowledgments",
+        "text_level": 2,
+        "bbox": [
+            171,
+            90,
+            330,
+            107
+        ],
+        "page_idx": 9
+    },
+    {
+        "type": "text",
+        "text": "We thank the NSF AI Institute in Dynamic Systems (Grant #2112085) for funding our work.",
+        "bbox": [
+            171,
+            119,
+            781,
+            135
+        ],
+        "page_idx": 9
+    },
+    {
+        "type": "text",
+        "text": "References",
+        "text_level": 2,
+        "bbox": [
+            173,
+            152,
+            267,
+            169
+        ],
+        "page_idx": 9
+    },
+    {
+        "type": "list",
+        "sub_type": "ref_text",
+        "list_items": [
+            "Guillaume Alain and Yoshua Bengio. Understanding intermediate layers using linear classifier probes. arXiv preprint arXiv:1610.01644, 2016.",
+            "Stanislaw Antol, Aishwarya Agrawal, Jiasen Lu, Margaret Mitchell, Dhruv Batra, C Lawrence Zitnick, and Devi Parikh. Vqa: Visual question answering. In Proceedings of the IEEE international conference on computer vision, pages 2425–2433, 2015.",
+            "Mohammad Asadi, Jack W O’Sullivan, Fang Cao, Tahoura Nedaee, Kamyar Rajabalifardi, Fei-Fei Li, Ehsan Adeli, and Euan Ashley. Mirage: The illusion of visual understanding. arXiv preprint arXiv:2603.21687, 2026.",
+            "Shuai Bai, Yuxuan Cai, Ruizhe Chen, Keqin Chen, Xionghui Chen, Zesen Cheng, Lianghao Deng, Wei Ding, Chang Gao, Chunjiang Ge, Wenbin Ge, Zhifang Guo, Qidong Huang, Jie Huang, Fei Huang, Binyuan Hui, Shutong Jiang, Zhaohai Li, Mingsheng Li, Mei Li, Kaixin Li, Zicheng Lin, Junyang Lin, Xuejing Liu, Jiawei Liu, Chenglong Liu, Yang Liu, Dayiheng Liu, Shixuan Liu, Dunjie Lu, Ruilin Luo, Chenxu Lv, Rui Men, Lingchen Meng, Xuancheng Ren, Xingzhang Ren, Sibo Song, Yuchong Sun, Jun Tang, Jianhong Tu, Jianqiang Wan, Peng Wang, Pengfei Wang, Qiuyue Wang, Yuxuan Wang, Tianbao Xie, Yiheng Xu, Haiyang Xu, Jin Xu, Zhibo Yang, Mingkun Yang, Jianxin Yang, An Yang, Bowen Yu, Fei Zhang, Hang Zhang, Xi Zhang, Bo Zheng, Humen Zhong, Jingren Zhou, Fan Zhou, Jing Zhou, Yuanzhi Zhu, and Ke Zhu. Qwen3-vl technical report, 2025. URL https://arxiv.org/abs/2511.21631.",
+            "Zechen Bai, Pichao Wang, Tianjun Xiao, Tong He, Zongbo Han, Zheng Zhang, and Mike Zheng Shou. Hallucination of multimodal large language models: A survey. arXiv preprint arXiv:2404.18930, 2024.",
+            "Yonatan Belinkov. Probing classifiers: Promises, shortcomings, and advances. Computational Linguistics, 48(1):207–219, 2022.",
+            "James Burgess, Jeffrey J Nirschl, Laura Bravo-Sánchez, Alejandro Lozano, Sanket Rajan Gupte, Jesus G Galaz-Montoya, Yuhui Zhang, Yuchang Su, Disha Bhowmik, Zachary Coman, et al. Microvqa: A multimodal reasoning benchmark for microscopy-based scientific research. In Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition, pages 19552–19564, 2025.",
+            "Collin Burns, Haotian Ye, Dan Klein, and Jacob Steinhardt. Discovering latent knowledge in language models without supervision, 2024. URL https://arxiv.org/abs/2212.03827.",
+            "Judah Goldfeder, Philippe Wyder, Yann LeCun, and Ravid Shwartz Ziv. Ai must embrace specialization via superhuman adaptable intelligence. arXiv preprint arXiv:2602.23643, 2026.",
+            "Nicholas Goldowsky-Dill, Bilal Chughtai, Stefan Heimersheim, and Marius Hobbhahn. Detecting strategic deception using linear probes. arXiv preprint arXiv:2502.03407, 2025.",
+            "John Hewitt and Christopher D Manning. A structural probe for finding syntax in word representations. In Proceedings of the 2019 Conference of the North American Chapter of the Association for Computational Linguistics: Human Language Technologies, Volume 1 (Long and Short Papers), pages 4129–4138, 2019.",
+            "Aaron Hurst, Adam Lerer, Adam P Goucher, Adam Perelman, Aditya Ramesh, Aidan Clark, AJ Ostrow, Akila Welihinda, Alan Hayes, Alec Radford, et al. Gpt-4o system card. arXiv preprint arXiv:2410.21276, 2024.",
+            "Chaoya Jiang, Haiyang Xu, Mengfan Dong, Jiaxing Chen, Wei Ye, Ming Yan, Qinghao Ye, Ji Zhang, Fei Huang, and Shikun Zhang. Hallucination augmented contrastive learning for multimodal large language model. In Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition, pages 27036–27046, 2024.",
+            "Kushal Kafle and Christopher Kanan. Visual question answering: Datasets, algorithms, and future challenges. Computer Vision and Image Understanding, 163:3–20, 2017.",
+            "Geewook Kim, Teakgyu Hong, Moonbin Yim, JeongYeon Nam, Jinyoung Park, Jinyeong Yim, Wonseok Hwang, Sangdoo Yun, Dongyoon Han, and Seunghyun Park. Ocr-free document understanding transformer. In European Conference on Computer Vision, pages 498–517. Springer, 2022.",
+            "Jason J Lau, Soumya Gayen, Asma Ben Abacha, and Dina Demner-Fushman. A dataset of clinically generated visual questions and answers about radiology images. Scientific data, 5(1):180251, 2018.",
+            "Chunyuan Li, Cliff Wong, Sheng Zhang, Naoto Usuyama, Haotian Liu, Jianwei Yang, Tristan Naumann, Hoifung Poon, and Jianfeng Gao. Llava-med: Training a large language-and-vision assistant for biomedicine in one day. Advances in Neural Information Processing Systems, 36: 28541–28564, 2023a.",
+            "Junnan Li, Dongxu Li, Caiming Xiong, and Steven Hoi. Blip: Bootstrapping language-image pretraining for unified vision-language understanding and generation. In International conference on machine learning, pages 12888–12900. PMLR, 2022.",
+            "Yifan Li, Yifan Du, Kun Zhou, Jinpeng Wang, Xin Zhao, and Ji-Rong Wen. Evaluating object hallucination in large vision-language models. In Proceedings of the 2023 conference on empirical methods in natural language processing, pages 292–305, 2023b.",
+            "Hanchao Liu, Wenyuan Xue, Yifei Chen, Dapeng Chen, Xiutian Zhao, Ke Wang, Liping Hou, Rongjun Li, and Wei Peng. A survey on hallucination in large vision-language models. arXiv preprint arXiv:2402.00253, 2024.",
+            "Haotian Liu, Chunyuan Li, Qingyang Wu, and Yong Jae Lee. Visual instruction tuning. Advances in neural information processing systems, 36:34892–34916, 2023.",
+            "Semyon Lomasov, Judah Goldfeder, Mehmet Hamza Erol, Matthew So, Yao Yan, Addison Howard, Nathan Kutz, and Ravid Shwartz Ziv. Exploring human-ai conceptual alignment through the prism of chess. arXiv preprint arXiv:2510.26025, 2025.",
+            "Pan Lu, Swaroop Mishra, Tanglin Xia, Liang Qiu, Kai-Wei Chang, Song-Chun Zhu, Oyvind Tafjord, Peter Clark, and Ashwin Kalyan. Learn to explain: Multimodal reasoning via thought chains for science question answering. Advances in neural information processing systems, 35:2507–2521, 2022.",
+            "Shiyin Lu, Yang Li, Qing-Guo Chen, Zhao Xu, Weihua Luo, Kaifu Zhang, and Han-Jia Ye. Ovis: Structural embedding alignment for multimodal large language model. arXiv preprint arXiv:2405.20797, 2024.",
+            "Samuel Marks and Max Tegmark. The geometry of truth: Emergent linear structure in large language model representations of true/false datasets, 2024. URL https://arxiv.org/abs/ 2310.06824.",
+            "Minesh Mathew, Dimosthenis Karatzas, and CV Jawahar. Docvqa: A dataset for vqa on document images. In Proceedings of the IEEE/CVF winter conference on applications of computer vision, pages 2200–2209, 2021.",
+            "Michael Moor, Qian Huang, Shirley Wu, Michihiro Yasunaga, Yash Dalmia, Jure Leskovec, Cyril Zakka, Eduardo Pontes Reis, and Pranav Rajpurkar. Med-flamingo: a multimodal medical few-shot learner. In Machine learning for health (ML4H), pages 353–367. PMLR, 2023.",
+            "Kiho Park, Yo Joong Choe, and Victor Veitch. The linear representation hypothesis and the geometry of large language models. arXiv preprint arXiv:2311.03658, 2023.",
+            "Anna Rohrbach, Lisa Anne Hendricks, Kaylee Burns, Trevor Darrell, and Kate Saenko. Object hallucination in image captioning. In Proceedings of the 2018 Conference on Empirical Methods in Natural Language Processing, pages 4035–4045, 2018.",
+            "Aaditya Singh, Adam Fry, Adam Perelman, Adam Tart, Adi Ganesh, Ahmed El-Kishky, Aidan McLaughlin, Aiden Low, AJ Ostrow, Akhila Ananthram, et al. Openai gpt-5 system card. arXiv preprint arXiv:2601.03267, 2025.",
+            "Joar Skalse, Nikolaus H. R. Howe, Dmitrii Krasheninnikov, and David Krueger. Defining and characterizing reward hacking, 2025. URL https://arxiv.org/abs/2209.13085.",
+            "Zhiqing Sun, Sheng Shen, Shengcao Cao, Haotian Liu, Chunyuan Li, Yikang Shen, Chuang Gan, Liangyan Gui, Yu-Xiong Wang, Yiming Yang, et al. Aligning large multimodal models with factually augmented rlhf. In Findings of the Association for Computational Linguistics: ACL 2024, pages 13088–13110, 2024.",
+            "Team GLM, Aohan Zeng, Bin Xu, Bowen Wang, Chenhui Zhang, Da Yin, Dan Zhang, Diego Rojas, Guanyu Feng, Hanlin Zhao, Hanyu Lai, Hao Yu, Hongning Wang, Jiadai Sun, Jiajie Zhang, Jiale Cheng, Jiayi Gui, Jie Tang, Jing Zhang, Jingyu Sun, Juanzi Li, Lei Zhao, Lindong Wu, Lucen Zhong, Mingdao Liu, Minlie Huang, Peng Zhang, Qinkai Zheng, Rui Lu, Shuaiqi Duan, Shudan Zhang, Shulin Cao, Shuxun Yang, Weng Lam Tam, Wenyi Zhao, Xiao Liu, Xiao Xia, Xiaohan Zhang, Xiaotao Gu, Xin Lv, Xinghan Liu, Xinyi Liu, Xinyue Yang, Xixuan Song, Xunkai Zhang, Yifan An, Yifan Xu, Yilin Niu, Yuantao Yang, Yueyan Li, Yushi Bai, Yuxiao Dong, Zehan Qi, Zhaoyu Wang, Zhen Yang, Zhengxiao Du, Zhenyu Hou, and Zihan Wang. Chatglm: A family of large language models from glm-130b to glm-4 all tools, 2024. URL https://arxiv.org/abs/2406.12793.",
+            "Ian Tenney, Dipanjan Das, and Ellie Pavlick. Bert rediscovers the classical nlp pipeline. In Proceedings of the 57th annual meeting of the association for computational linguistics, pages 4593–4601, 2019.",
+            "Nikos Theodoridis, Reenu Mohandas, Ganesh Sistu, Anthony Scanlan, Ciarán Eising, and Tim Brophy. Probing visual concepts in lightweight vision-language models for automated driving, 2026. URL https://arxiv.org/abs/2603.06054.",
+            "Shengbang Tong, Zhuang Liu, Yuexiang Zhai, Yi Ma, Yann LeCun, and Saining Xie. Eyes wide shut? exploring the visual shortcomings of multimodal llms. In Proceedings of the IEEE/CVF conference on computer vision and pattern recognition, pages 9568–9578, 2024.",
+            "Xiang Yue, Yuansheng Ni, Kai Zhang, Tianyu Zheng, Ruoqi Liu, Ge Zhang, Samuel Stevens, Dongfu Jiang, Weiming Ren, Yuxuan Sun, et al. Mmmu: A massive multi-discipline multimodal understanding and reasoning benchmark for expert agi. In Proceedings of the IEEE/CVF conference on computer vision and pattern recognition, pages 9556–9567, 2024.",
+            "Xiang Yue, Tianyu Zheng, Yuansheng Ni, Yubo Wang, Kai Zhang, Shengbang Tong, Yuxuan Sun, Botao Yu, Ge Zhang, Huan Sun, et al. Mmmu-pro: A more robust multi-discipline multimodal understanding benchmark. pages 15134–15186, 2025.",
+            "Xiaoman Zhang, Chaoyi Wu, Ziheng Zhao, Weixiong Lin, Ya Zhang, Yanfeng Wang, and Weidi Xie. Pmc-vqa: Visual instruction tuning for medical visual question answering. arXiv preprint arXiv:2305.10415, 2023.",
+            "Yuxin Zuo, Shang Qu, Yifei Li, Zhangren Chen, Xuekai Zhu, Ermo Hua, Kaiyan Zhang, Ning Ding, and Bowen Zhou. Medxpertqa: Benchmarking expert-level medical reasoning and understanding. arXiv preprint arXiv:2501.18362, 2025."
+        ],
+        "bbox": [
+            171,
+            176,
+            828,
+            912
+        ],
+        "page_idx": 9
+    },
+    {
+        "type": "page_number",
+        "text": "10",
+        "bbox": [
+            490,
+            935,
+            508,
+            946
+        ],
+        "page_idx": 9
+    },
+    {
+        "type": "list",
+        "sub_type": "ref_text",
+        "list_items": [],
+        "bbox": [
+            166,
+            87,
+            834,
+            914
+        ],
+        "page_idx": 10
+    },
+    {
+        "type": "page_number",
+        "text": "",
+        "bbox": [
+            490,
+            935,
+            506,
+            946
+        ],
+        "page_idx": 10
+    },
+    {
+        "type": "list",
+        "sub_type": "ref_text",
+        "list_items": [],
+        "bbox": [
+            166,
+            87,
+            831,
+            760
+        ],
+        "page_idx": 11
+    },
+    {
+        "type": "page_number",
+        "text": "12",
+        "bbox": [
+            490,
+            935,
+            509,
+            946
+        ],
+        "page_idx": 11
+    },
+    {
+        "type": "text",
+        "text": "Appendix",
+        "text_level": 2,
+        "bbox": [
+            171,
+            90,
+            259,
+            107
+        ],
+        "page_idx": 12
+    },
+    {
+        "type": "text",
+        "text": "A Dataset Sizes",
+        "text_level": 2,
+        "bbox": [
+            171,
+            122,
+            320,
+            138
+        ],
+        "page_idx": 12
+    },
+    {
+        "type": "table",
+        "img_path": "images/12e766861f3af21a436d31884610a716d08378f2746f232c47aeca116866a18b.jpg",
+        "table_caption": [
+            "Table 5: Post-filtering dataset sizes for contrastive and all-examples probe datasets."
+        ],
+        "table_footnote": [],
+        "table_body": "<table><tr><td>Model</td><td>Benchmark</td><td>Contrastive Samples</td><td>All-Examples Samples</td></tr><tr><td>Ovis</td><td>VQA-RAD</td><td>98</td><td>235</td></tr><tr><td>Ovis</td><td>MMMU-Pro</td><td>48</td><td>144</td></tr><tr><td>Ovis</td><td>MedXpertQA</td><td>18</td><td>33</td></tr><tr><td>Ovis</td><td>All</td><td>164</td><td>406</td></tr><tr><td>Qwen</td><td>VQA-RAD</td><td>222</td><td>418</td></tr><tr><td>Qwen</td><td>MMMU-Pro</td><td>314</td><td>792</td></tr><tr><td>Qwen</td><td>MedXpertQA</td><td>202</td><td>410</td></tr><tr><td>Qwen</td><td>All</td><td>738</td><td>1356</td></tr></table>",
+        "bbox": [
+            276,
+            174,
+            720,
+            306
+        ],
+        "page_idx": 12
+    },
+    {
+        "type": "text",
+        "text": "B Naive Bayes Training Details",
+        "text_level": 2,
+        "bbox": [
+            171,
+            328,
+            450,
+            345
+        ],
+        "page_idx": 12
+    },
+    {
+        "type": "text",
+        "text": "For the Naive Bayes text-confound baseline, we train a Laplace-smoothed binary multinomial model over lexical indicators extracted from model responses. Each example is represented by the set of unigrams and bigrams present in the response, using binary presence/absence features rather than counts. Class scores are computed as",
+        "bbox": [
+            169,
+            359,
+            823,
+            415
+        ],
+        "page_idx": 12
+    },
+    {
+        "type": "equation",
+        "text": "$$\n\\log p (y) + \\sum_ {g \\in x} \\log p (g \\mid y),\n$$",
+        "text_format": "latex",
+        "bbox": [
+            403,
+            422,
+            589,
+            455
+        ],
+        "page_idx": 12
+    },
+    {
+        "type": "text",
+        "text": "with add-one smoothing applied to both class priors and feature likelihoods. As in probe training, examples with fewer than 10 response tokens are discarded.",
+        "bbox": [
+            169,
+            462,
+            826,
+            492
+        ],
+        "page_idx": 12
+    },
+    {
+        "type": "text",
+        "text": "For each model/setting/benchmark configuration, we run five seeds. In the all-examples setting, we first construct a class-balanced and benchmark-balanced subset, targeting 500 examples per class when available, and then use an 80/20 class-stratified train/test split. In the contrastive setting, we train on the full contrastive pool for the selected benchmark(s) and evaluate on a class-balanced, benchmark-stratified subset drawn from all-examples responses after removing any overlap with contrastive training questions.",
+        "bbox": [
+            169,
+            497,
+            823,
+            582
+        ],
+        "page_idx": 12
+    },
+    {
+        "type": "text",
+        "text": "We report mean accuracy across the five seeds. We additionally report cross-benchmark transfer by training on one benchmark and testing on another under the same balancing protocol (see below).",
+        "bbox": [
+            169,
+            587,
+            823,
+            617
+        ],
+        "page_idx": 12
+    },
+    {
+        "type": "text",
+        "text": "C Naive Bayes Cross-Benchmark Transfer",
+        "text_level": 2,
+        "bbox": [
+            171,
+            633,
+            545,
+            652
+        ],
+        "page_idx": 12
+    },
+    {
+        "type": "table",
+        "img_path": "images/a80f5f3967199481d7a1faabd178a7b89cc7fc386282046ee5358d186665cbb1.jpg",
+        "table_caption": [
+            "Table 6: Naive Bayes classifier transfer metrics."
+        ],
+        "table_footnote": [],
+        "table_body": "<table><tr><td>Model (Setting)</td><td>vqa→mmmu</td><td>vqa→medx</td><td>mmmu→vqa</td><td>mmmu→medx</td><td>medx→vqa</td><td>medx→mmmu</td></tr><tr><td>Ovis (Contrastive)</td><td>52.00%</td><td>53.33%</td><td>73.62%</td><td>16.67%</td><td>50.43%</td><td>53.83%</td></tr><tr><td>Ovis (All-Examples)</td><td>54.66%</td><td>49.47%</td><td>53.10%</td><td>50.00%</td><td>52.48%</td><td>52.05%</td></tr><tr><td>Qwen (Contrastive)</td><td>51.26%</td><td>46.87%</td><td>41.84%</td><td>49.48%</td><td>54.29%</td><td>51.36%</td></tr><tr><td>Qwen (All-Examples)</td><td>46.34%</td><td>47.45%</td><td>48.66%</td><td>51.31%</td><td>49.71%</td><td>56.92%</td></tr></table>",
+        "bbox": [
+            173,
+            688,
+            823,
+            753
+        ],
+        "page_idx": 12
+    },
+    {
+        "type": "page_number",
+        "text": "13",
+        "bbox": [
+            490,
+            935,
+            508,
+            946
+        ],
+        "page_idx": 12
+    },
+    {
+        "type": "text",
+        "text": "D Phrase-Group Confounds",
+        "text_level": 2,
+        "bbox": [
+            171,
+            89,
+            426,
+            107
+        ],
+        "page_idx": 13
+    },
+    {
+        "type": "table",
+        "img_path": "images/e9b25a090f75aa1cde1a0e04e3908ec868de902d8d5c6751189537a327b577e3.jpg",
+        "table_caption": [
+            "Table 7: Phrase-group class separators for Ovis. Cells show mirage-like example match rate minus non-miragelike example match rate.",
+            "(a) Ovis Contrastive"
+        ],
+        "table_footnote": [],
+        "table_body": "<table><tr><td>Phrase Group</td><td>VQA-RAD</td><td>MMMU-Pro</td><td>MedXpertQA</td></tr><tr><td>reasoning_scaffold</td><td>-8.2%</td><td>+0.0%</td><td>-11.1%</td></tr><tr><td>image_grounding</td><td>-2.0%</td><td>+4.2%</td><td>+11.1%</td></tr><tr><td>uncertainty</td><td>-8.2%</td><td>-8.3%</td><td>-11.1%</td></tr><tr><td>hedging</td><td>-2.0%</td><td>-16.7%</td><td>+0.0%</td></tr><tr><td>answer_boilerplate</td><td>-12.2%</td><td>+4.2%</td><td>+0.0%</td></tr><tr><td>radiology_terms</td><td>+0.0%</td><td>+4.2%</td><td>-11.1%</td></tr></table>",
+        "bbox": [
+            174,
+            164,
+            486,
+            237
+        ],
+        "page_idx": 13
+    },
+    {
+        "type": "table",
+        "img_path": "images/8100621246353a97e36f90dd3d47eebc1e3e1f9d2ccd5a8ae8741458d2a2f5b2.jpg",
+        "table_caption": [
+            "(b) Ovis All-Examples",
+            "Table 8: Phrase-group class separators for Qwen. Cells show mirage-like example match rate minus non-miragelike example match rate."
+        ],
+        "table_footnote": [],
+        "table_body": "<table><tr><td>Phrase Group</td><td>VQA-RAD</td><td>MMMU-Pro</td><td>MedXpertQA</td></tr><tr><td>reasoning_scaffold</td><td>-15.1%</td><td>-32.8%</td><td>-11.0%</td></tr><tr><td>image_grounding</td><td>+8.7%</td><td>+7.1%</td><td>+10.6%</td></tr><tr><td>uncertainty</td><td>-22.6%</td><td>-3.7%</td><td>-9.8%</td></tr><tr><td>hedging</td><td>-22.4%</td><td>-7.6%</td><td>-7.1%</td></tr><tr><td>answer_boilerplate</td><td>-6.4%</td><td>+11.7%</td><td>-0.1%</td></tr><tr><td>radiology_terms</td><td>-3.9%</td><td>+10.2%</td><td>-1.0%</td></tr></table>",
+        "bbox": [
+            509,
+            164,
+            823,
+            237
+        ],
+        "page_idx": 13
+    },
+    {
+        "type": "table",
+        "img_path": "images/c62e207e7e47163f544b4c2b8cb01764c93bfc9c488c544b48dbeaca6092a497.jpg",
+        "table_caption": [
+            "(a) Qwen Contrastive"
+        ],
+        "table_footnote": [],
+        "table_body": "<table><tr><td>Phrase Group</td><td>VQA-RAD</td><td>MMMU-Pro</td><td>MedXpertQA</td></tr><tr><td>reasoning_scaffold</td><td>+0.0%</td><td>-1.9%</td><td>+5.9%</td></tr><tr><td>image_grounding</td><td>+1.8%</td><td>-0.6%</td><td>-4.0%</td></tr><tr><td>uncertainty</td><td>+0.9%</td><td>+0.0%</td><td>-1.0%</td></tr><tr><td>hedging</td><td>+3.6%</td><td>-4.5%</td><td>+1.0%</td></tr><tr><td>answer_boilerplate</td><td>+0.9%</td><td>+0.6%</td><td>-5.9%</td></tr><tr><td>radiology_terms</td><td>+0.0%</td><td>+2.5%</td><td>+2.0%</td></tr></table>",
+        "bbox": [
+            174,
+            286,
+            486,
+            359
+        ],
+        "page_idx": 13
+    },
+    {
+        "type": "table",
+        "img_path": "images/8e5da51c69ede7b2ea9d4443484de8a9072a0e1f4c2caee675a300f0817bda2d.jpg",
+        "table_caption": [
+            "(b) Qwen All-Examples"
+        ],
+        "table_footnote": [],
+        "table_body": "<table><tr><td>Phrase Group</td><td>VQA-RAD</td><td>MMMU-Pro</td><td>MedXpertQA</td></tr><tr><td>reasoning_scaffold</td><td>-4.0%</td><td>+3.6%</td><td>+7.8%</td></tr><tr><td>image_grounding</td><td>+3.0%</td><td>-3.8%</td><td>-32.0%</td></tr><tr><td>uncertainty</td><td>-10.1%</td><td>-0.1%</td><td>+0.8%</td></tr><tr><td>hedging</td><td>-14.3%</td><td>+8.4%</td><td>+4.9%</td></tr><tr><td>answer_boilerplate</td><td>+0.8%</td><td>+14.7%</td><td>-8.6%</td></tr><tr><td>radiology_terms</td><td>+0.0%</td><td>+2.6%</td><td>+0.8%</td></tr></table>",
+        "bbox": [
+            509,
+            286,
+            823,
+            359
+        ],
+        "page_idx": 13
+    },
+    {
+        "type": "text",
+        "text": "E MLP Probe Results",
+        "text_level": 2,
+        "bbox": [
+            171,
+            377,
+            374,
+            393
+        ],
+        "page_idx": 13
+    },
+    {
+        "type": "table",
+        "img_path": "images/ecff49dcdd785f62d3ddf2a9682e952616ef097414e34a4e654b88cd465a9d63.jpg",
+        "table_caption": [
+            "Table 9: Probe strategy performance on MLP-target activations."
+        ],
+        "table_footnote": [],
+        "table_body": "<table><tr><td>Strategy</td><td>VQA-RAD</td><td>MMMU-Pro</td><td>MedXpertQA</td><td>All</td></tr><tr><td colspan=\"5\">Ovis - Contrastive</td></tr><tr><td>LogReg</td><td>76.33%</td><td>61.67%</td><td>63.33%</td><td>72.00%</td></tr><tr><td>MLP</td><td>71.33%</td><td>60.00%</td><td>66.67%</td><td>69.33%</td></tr><tr><td>Concat</td><td>68.33%</td><td>49.00%</td><td>53.33%</td><td>70.67%</td></tr><tr><td>Diff</td><td>88.33%</td><td>91.33%</td><td>58.33%</td><td>89.00%</td></tr><tr><td colspan=\"5\">Ovis - All Examples</td></tr><tr><td>LogReg</td><td>71.63%</td><td>67.82%</td><td>61.90%</td><td>69.96%</td></tr><tr><td>MLP</td><td>71.63%</td><td>65.52%</td><td>85.71%</td><td>70.37%</td></tr><tr><td>Concat</td><td>63.83%</td><td>66.67%</td><td>28.57%</td><td>60.49%</td></tr><tr><td>Diff</td><td>95.04%</td><td>86.21%</td><td>71.43%</td><td>90.95%</td></tr><tr><td colspan=\"5\">Qwen - Contrastive</td></tr><tr><td>LogReg</td><td>74.00%</td><td>59.67%</td><td>60.00%</td><td>59.67%</td></tr><tr><td>MLP</td><td>70.33%</td><td>60.33%</td><td>59.67%</td><td>62.33%</td></tr><tr><td>Concat</td><td>62.67%</td><td>56.67%</td><td>47.33%</td><td>57.00%</td></tr><tr><td>Diff</td><td>93.33%</td><td>78.00%</td><td>80.00%</td><td>81.67%</td></tr><tr><td colspan=\"5\">Qwen - All Examples</td></tr><tr><td>LogReg</td><td>59.13%</td><td>63.08%</td><td>64.23%</td><td>56.99%</td></tr><tr><td>MLP</td><td>71.36%</td><td>75.65%</td><td>68.60%</td><td>72.91%</td></tr><tr><td>Concat</td><td>67.14%</td><td>71.88%</td><td>64.25%</td><td>69.41%</td></tr><tr><td>Diff</td><td>95.77%</td><td>80.00%</td><td>76.81%</td><td>84.93%</td></tr></table>",
+        "bbox": [
+            300,
+            425,
+            696,
+            637
+        ],
+        "page_idx": 13
+    },
+    {
+        "type": "text",
+        "text": "F Compute Resources",
+        "text_level": 2,
+        "bbox": [
+            171,
+            659,
+            375,
+            676
+        ],
+        "page_idx": 13
+    },
+    {
+        "type": "text",
+        "text": "All experiments are run using one or more NVIDIA RTX A6000s, each with 50 gigabytes of VRAM. Full Ovis runs on residual or additional targets (MLP, attention heads, post-attention) take around 12 hours to run with tasks orchestrated across two GPUs. Qwen runs require around 24 hours of activation extraction across four GPUs followed by 12 hours of probing orchestrated across two. All experiments (except for the Qwen activation extraction) could plausibly be run with much less powerful GPUs.",
+        "bbox": [
+            169,
+            689,
+            826,
+            773
+        ],
+        "page_idx": 13
+    },
+    {
+        "type": "page_number",
+        "text": "14",
+        "bbox": [
+            490,
+            935,
+            508,
+            946
+        ],
+        "page_idx": 13
+    }
+]

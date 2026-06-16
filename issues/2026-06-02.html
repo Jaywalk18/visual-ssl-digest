@@ -4,24 +4,26 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>2026-06-02 速递 · 通用视觉自监督研究报</title>
-  <link rel="stylesheet" href="../assets/styles.css?v=20260525j">
-  <link rel="stylesheet" href="../assets/visual-ssl.css?v=20260525j">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Source+Serif+4:ital,opsz,wght@0,8..60,400;0,8..60,500;0,8..60,600;1,8..60,400&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../assets/visual-ssl.css?v=20260615ssl6">
 </head>
 <body>
   <header class="masthead">
-    <div class="masthead-kicker">Visual SSL Research Report · 2026-06-02</div>
     <a class="masthead-title" href="../index.html">通用视觉自监督研究报</a>
+    <div class="masthead-kicker">A Daily Digest of Visual Self-Supervised Learning</div>
     <div class="masthead-meta">
+      <span>2026-06-02</span>
       <span>图像表征 · VFM · JEPA · 视频预训练</span>
-      <span>CCF A/B 会议优先</span>
-      <span>图文精读 · 方法图解</span>
     </div>
   </header>
   <nav class="site-nav" aria-label="主导航">
     <a class="nav-link" href="../index.html">头版</a>
-<a class="nav-link" href="../issues/2026-06-15.html">今日速递</a>
+<a class="nav-link" href="../issues/2026-06-16.html">今日速递</a>
 <a class="nav-link" href="../pages/catalog.html">论文目录</a>
 <a class="nav-link" href="../pages/timeline.html">时间线</a>
+<span class="nav-streak" title="连续追踪天数"><svg viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><path d="M8 0c.7 2.5-1.2 3.7-2 5-1 1.6-1 4 .8 4.8C6.4 8.5 7.4 7.8 8 7c.3 1.3-.4 2 .9 3 .9.7 1.3 1.6 1.1 2.6C9.7 14.6 8.9 16 6.8 16 4.6 16 3 14.3 3 12c0-3.3 2.6-4.8 2.4-8C6.9 4.6 8.4 5 8 0z"/></svg> 连续 <b data-streak>0</b> 天</span>
   </nav>
   <main><article class="paper-detail issue-detail">
   <div class="paper-main">
@@ -31,10 +33,8 @@
     <div class="feature-body">
       <p class="lead dropcap">先读 Internalizing Temporal Consistency in Video。把跨帧一致性从显式 slot 对比损失改成模型结构和重建目标，最接近视频自监督表征。 其余论文按 P1/P2 与主题顺序扫读，重点看方法图、消融设置和是否能迁移到通用视觉表征。</p>
       <h2>论文索引</h2>
-      <div class="paper-list issue-list"><article class="paper-card" data-category="arXiv backfill" data-priority="P0" data-date="2026-06-02" data-title="internalizing temporal consistency in video object-centric learning without explicit regularization" data-keywords="internalizing temporal consistency in video object-centric learning without explicit regularization internalizing temporal consistency in video arxiv backfill p0 2026-06-02 arxiv backfill 把跨帧一致性从显式 slot 对比损失改成模型结构和重建目标，最接近视频自监督表征 高相关；详见方法、贡献和实验边界。">
-  <a class="paper-thumb paper-thumb-text" href="../papers/2605.31508.html">
-    <img src="../assets/mineru/2605.31508/images/5f63c51538eef9e73170b7b0995371e929dd15bb8d36968e86099b494295989a.jpg" alt="Internalizing Temporal Consistency in Video figure"><span>P0</span>
-  </a>
+      <div class="paper-list issue-list"><article class="paper-card" data-pid="2605.31508" data-category="arXiv backfill" data-priority="P0" data-date="2026-06-02" data-title="internalizing temporal consistency in video object-centric learning without explicit regularization" data-keywords="internalizing temporal consistency in video object-centric learning without explicit regularization internalizing temporal consistency in video arxiv backfill p0 2026-06-02 arxiv backfill 把跨帧一致性从显式 slot 对比损失改成模型结构和重建目标，最接近视频自监督表征 高相关；详见方法、贡献和实验边界。">
+  <a class="paper-thumb" href="../papers/2605.31508.html"><img src="../assets/mineru/2605.31508/images/5f63c51538eef9e73170b7b0995371e929dd15bb8d36968e86099b494295989a.jpg" alt="Internalizing Temporal Consistency in Video figure"></a>
   <div>
     <div class="paper-meta">2026-06-02 · arXiv backfill · arXiv backfill</div>
     <h3><a href="../papers/2605.31508.html">Internalizing Temporal Consistency in Video Object-Centric Learning without Explicit Regularization</a></h3>
@@ -42,11 +42,10 @@
     <p class="card-tech"><b>方法：</b>把跨帧一致性从显式 slot 对比损失改成模型结构和重建目标，最接近视频自监督表征</p>
     <div class="paper-actions"><a href="../papers/2605.31508.html">读图文页</a><a href="https://arxiv.org/abs/2605.31508">原文</a></div>
   </div>
+  <button class="readbtn" type="button" data-read-toggle="2605.31508" title="标记已读" aria-label="标记已读"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M4 10.5l4 4 8-9"/></svg></button>
 </article>
-<article class="paper-card" data-category="project" data-priority="P1" data-date="2026-06-02" data-title="soco: benchmarking semantic object correspondence in vision foundation models" data-keywords="soco: benchmarking semantic object correspondence in vision foundation models soco project p1 2026-06-02 arxiv + project 用细粒度语义 correspondence 直接评估 dino/clip/sam 类视觉基础模型是否学到可迁移对象结构 高相关；详见方法、贡献和实验边界。">
-  <a class="paper-thumb paper-thumb-text" href="../papers/2605.31597.html">
-    <img src="../assets/mineru/2605.31597/images/678683846e20c0be0ed44b87ebca855a0564f5e0a573c03e761984447a440f3c.jpg" alt="SOCO figure"><span>P1</span>
-  </a>
+<article class="paper-card" data-pid="2605.31597" data-category="project" data-priority="P1" data-date="2026-06-02" data-title="soco: benchmarking semantic object correspondence in vision foundation models" data-keywords="soco: benchmarking semantic object correspondence in vision foundation models soco project p1 2026-06-02 arxiv + project 用细粒度语义 correspondence 直接评估 dino/clip/sam 类视觉基础模型是否学到可迁移对象结构 高相关；详见方法、贡献和实验边界。">
+  <a class="paper-thumb" href="../papers/2605.31597.html"><img src="../assets/mineru/2605.31597/images/678683846e20c0be0ed44b87ebca855a0564f5e0a573c03e761984447a440f3c.jpg" alt="SOCO figure"></a>
   <div>
     <div class="paper-meta">2026-06-02 · project · arXiv + project</div>
     <h3><a href="../papers/2605.31597.html">SOCO: Benchmarking Semantic Object Correspondence in Vision Foundation Models</a></h3>
@@ -54,11 +53,10 @@
     <p class="card-tech"><b>方法：</b>用细粒度语义 correspondence 直接评估 DINO/CLIP/SAM 类视觉基础模型是否学到可迁移对象结构</p>
     <div class="paper-actions"><a href="../papers/2605.31597.html">读图文页</a><a href="https://arxiv.org/abs/2605.31597">原文</a></div>
   </div>
+  <button class="readbtn" type="button" data-read-toggle="2605.31597" title="标记已读" aria-label="标记已读"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M4 10.5l4 4 8-9"/></svg></button>
 </article>
-<article class="paper-card" data-category="ICML 2026 Poster" data-priority="P2" data-date="2026-06-02" data-title="learning from fine-grained visual discrepancies: mitigating multimodal hallucinations via in-context visual contrastive optimization" data-keywords="learning from fine-grained visual discrepancies: mitigating multimodal hallucinations via in-context visual contrastive optimization learning from fine-grained visual discrepancies icml 2026 poster p2 2026-06-02 arxiv + icml 2026 poster 把视觉负样本做成同上下文对比训练，关注 vlm 是否真的利用细粒度视觉证据 中高相关；详见方法、贡献和实验边界。">
-  <a class="paper-thumb paper-thumb-text" href="../papers/2605.31312.html">
-    <img src="../assets/mineru/2605.31312/images/525bb29f1309c1fe1448e37591fce6d143ebf5a35c7612731feab1bf0449eb46.jpg" alt="Learning from Fine-Grained Visual Discrepancies figure"><span>P2</span>
-  </a>
+<article class="paper-card" data-pid="2605.31312" data-category="ICML 2026 Poster" data-priority="P2" data-date="2026-06-02" data-title="learning from fine-grained visual discrepancies: mitigating multimodal hallucinations via in-context visual contrastive optimization" data-keywords="learning from fine-grained visual discrepancies: mitigating multimodal hallucinations via in-context visual contrastive optimization learning from fine-grained visual discrepancies icml 2026 poster p2 2026-06-02 arxiv + icml 2026 poster 把视觉负样本做成同上下文对比训练，关注 vlm 是否真的利用细粒度视觉证据 中高相关；详见方法、贡献和实验边界。">
+  <a class="paper-thumb" href="../papers/2605.31312.html"><img src="../assets/mineru/2605.31312/images/525bb29f1309c1fe1448e37591fce6d143ebf5a35c7612731feab1bf0449eb46.jpg" alt="Learning from Fine-Grained Visual Discrepancies figure"></a>
   <div>
     <div class="paper-meta">2026-06-02 · ICML 2026 Poster · arXiv + ICML 2026 Poster</div>
     <h3><a href="../papers/2605.31312.html">Learning from Fine-Grained Visual Discrepancies: Mitigating Multimodal Hallucinations via In-Context Visual Contrastive Optimization</a></h3>
@@ -66,11 +64,10 @@
     <p class="card-tech"><b>方法：</b>把视觉负样本做成同上下文对比训练，关注 VLM 是否真的利用细粒度视觉证据</p>
     <div class="paper-actions"><a href="../papers/2605.31312.html">读图文页</a><a href="https://arxiv.org/abs/2605.31312">原文</a></div>
   </div>
+  <button class="readbtn" type="button" data-read-toggle="2605.31312" title="标记已读" aria-label="标记已读"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M4 10.5l4 4 8-9"/></svg></button>
 </article>
-<article class="paper-card" data-category="ICML 2026 Poster" data-priority="P2" data-date="2026-06-02" data-title="diversity matters: revisiting test-time compute in vision-language models" data-keywords="diversity matters: revisiting test-time compute in vision-language models diversity matters icml 2026 poster p2 2026-06-02 arxiv + icml 2026 poster 分析 vlm 推理时 compute 为什么常失效，结论指向视觉-语言表征/输出多样性不足 中相关；详见方法、贡献和实验边界。">
-  <a class="paper-thumb paper-thumb-text" href="../papers/2605.30713.html">
-    <img src="../assets/mineru/2605.30713/images/151b4501e271bb5133b6e44938c448b80687fecfb9c944b8a4c83c71edaa0dd2.jpg" alt="Diversity Matters figure"><span>P2</span>
-  </a>
+<article class="paper-card" data-pid="2605.30713" data-category="ICML 2026 Poster" data-priority="P2" data-date="2026-06-02" data-title="diversity matters: revisiting test-time compute in vision-language models" data-keywords="diversity matters: revisiting test-time compute in vision-language models diversity matters icml 2026 poster p2 2026-06-02 arxiv + icml 2026 poster 分析 vlm 推理时 compute 为什么常失效，结论指向视觉-语言表征/输出多样性不足 中相关；详见方法、贡献和实验边界。">
+  <a class="paper-thumb" href="../papers/2605.30713.html"><img src="../assets/mineru/2605.30713/images/151b4501e271bb5133b6e44938c448b80687fecfb9c944b8a4c83c71edaa0dd2.jpg" alt="Diversity Matters figure"></a>
   <div>
     <div class="paper-meta">2026-06-02 · ICML 2026 Poster · arXiv + ICML 2026 Poster</div>
     <h3><a href="../papers/2605.30713.html">Diversity Matters: Revisiting Test-Time Compute in Vision-Language Models</a></h3>
@@ -78,11 +75,10 @@
     <p class="card-tech"><b>方法：</b>分析 VLM 推理时 compute 为什么常失效，结论指向视觉-语言表征/输出多样性不足</p>
     <div class="paper-actions"><a href="../papers/2605.30713.html">读图文页</a><a href="https://arxiv.org/abs/2605.30713">原文</a></div>
   </div>
+  <button class="readbtn" type="button" data-read-toggle="2605.30713" title="标记已读" aria-label="标记已读"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M4 10.5l4 4 8-9"/></svg></button>
 </article>
-<article class="paper-card" data-category="ICML 2026 Poster" data-priority="P3" data-date="2026-06-02" data-title="toward identifiable sparse autoencoders" data-keywords="toward identifiable sparse autoencoders toward identifiable sparse autoencoders icml 2026 poster p3 2026-06-02 arxiv + icml 2026 poster 不是视觉专属，但 sparse autoencoder 稳定性直接影响 dino/clip 等表征解释 中相关；详见方法、贡献和实验边界。">
-  <a class="paper-thumb paper-thumb-text" href="../papers/2605.31245.html">
-    <img src="../assets/mineru/2605.31245/images/4562eb51a8327b69ab5dacbbb5078ad2159ed44e898f87279f024483dbcb3226.jpg" alt="Toward Identifiable Sparse Autoencoders figure"><span>P3</span>
-  </a>
+<article class="paper-card" data-pid="2605.31245" data-category="ICML 2026 Poster" data-priority="P3" data-date="2026-06-02" data-title="toward identifiable sparse autoencoders" data-keywords="toward identifiable sparse autoencoders toward identifiable sparse autoencoders icml 2026 poster p3 2026-06-02 arxiv + icml 2026 poster 不是视觉专属，但 sparse autoencoder 稳定性直接影响 dino/clip 等表征解释 中相关；详见方法、贡献和实验边界。">
+  <a class="paper-thumb" href="../papers/2605.31245.html"><img src="../assets/mineru/2605.31245/images/4562eb51a8327b69ab5dacbbb5078ad2159ed44e898f87279f024483dbcb3226.jpg" alt="Toward Identifiable Sparse Autoencoders figure"></a>
   <div>
     <div class="paper-meta">2026-06-02 · ICML 2026 Poster · arXiv + ICML 2026 Poster</div>
     <h3><a href="../papers/2605.31245.html">Toward Identifiable Sparse Autoencoders</a></h3>
@@ -90,11 +86,10 @@
     <p class="card-tech"><b>方法：</b>不是视觉专属，但 sparse autoencoder 稳定性直接影响 DINO/CLIP 等表征解释</p>
     <div class="paper-actions"><a href="../papers/2605.31245.html">读图文页</a><a href="https://arxiv.org/abs/2605.31245">原文</a></div>
   </div>
+  <button class="readbtn" type="button" data-read-toggle="2605.31245" title="标记已读" aria-label="标记已读"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M4 10.5l4 4 8-9"/></svg></button>
 </article>
-<article class="paper-card" data-category="Visual SSL / representation" data-priority="P3" data-date="2026-06-02" data-title="regular: relation-grounded latent reasoning for large vision-language models" data-keywords="regular: relation-grounded latent reasoning for large vision-language models regular visual ssl / representation p3 2026-06-02 arxiv 把连续 latent reasoning 绑定到对象和关系证据，对视觉 token/中间表征设计有启发 中相关；详见方法、贡献和实验边界。">
-  <a class="paper-thumb paper-thumb-text" href="../papers/2605.30587.html">
-    <img src="../assets/mineru/2605.30587/images/da791f60fd4fcaf86d2d2bd56a49b6e896a5a45f983a884efe44b71073a959fb.jpg" alt="ReGuLaR figure"><span>P3</span>
-  </a>
+<article class="paper-card" data-pid="2605.30587" data-category="Visual SSL / representation" data-priority="P3" data-date="2026-06-02" data-title="regular: relation-grounded latent reasoning for large vision-language models" data-keywords="regular: relation-grounded latent reasoning for large vision-language models regular visual ssl / representation p3 2026-06-02 arxiv 把连续 latent reasoning 绑定到对象和关系证据，对视觉 token/中间表征设计有启发 中相关；详见方法、贡献和实验边界。">
+  <a class="paper-thumb" href="../papers/2605.30587.html"><img src="../assets/mineru/2605.30587/images/da791f60fd4fcaf86d2d2bd56a49b6e896a5a45f983a884efe44b71073a959fb.jpg" alt="ReGuLaR figure"></a>
   <div>
     <div class="paper-meta">2026-06-02 · Visual SSL / representation · arXiv</div>
     <h3><a href="../papers/2605.30587.html">ReGuLaR: Relation-Grounded Latent Reasoning for Large Vision-Language Models</a></h3>
@@ -102,11 +97,10 @@
     <p class="card-tech"><b>方法：</b>把连续 latent reasoning 绑定到对象和关系证据，对视觉 token/中间表征设计有启发</p>
     <div class="paper-actions"><a href="../papers/2605.30587.html">读图文页</a><a href="https://arxiv.org/abs/2605.30587">原文</a></div>
   </div>
+  <button class="readbtn" type="button" data-read-toggle="2605.30587" title="标记已读" aria-label="标记已读"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M4 10.5l4 4 8-9"/></svg></button>
 </article>
-<article class="paper-card" data-category="Visual SSL / representation" data-priority="扫读" data-date="2026-06-02" data-title="yard: y-architecture register decoding for efficient hallucination mitigation in large vision-language models" data-keywords="yard: y-architecture register decoding for efficient hallucination mitigation in large vision-language models yard visual ssl / representation 扫读 2026-06-02 arxiv 训练免费推理方法，但 register token 替代局部视觉 token 的设计可帮助理解视觉证据粒度 中低相关；详见方法、贡献和实验边界。">
-  <a class="paper-thumb paper-thumb-text" href="../papers/2605.31429.html">
-    <img src="../assets/mineru/2605.31429/images/ebf10e6ce29ebdc6f28679f362cb2e54cc32435d3cd2beac9092377d9ce6f043.jpg" alt="YARD figure"><span>扫读</span>
-  </a>
+<article class="paper-card" data-pid="2605.31429" data-category="Visual SSL / representation" data-priority="扫读" data-date="2026-06-02" data-title="yard: y-architecture register decoding for efficient hallucination mitigation in large vision-language models" data-keywords="yard: y-architecture register decoding for efficient hallucination mitigation in large vision-language models yard visual ssl / representation 扫读 2026-06-02 arxiv 训练免费推理方法，但 register token 替代局部视觉 token 的设计可帮助理解视觉证据粒度 中低相关；详见方法、贡献和实验边界。">
+  <a class="paper-thumb" href="../papers/2605.31429.html"><img src="../assets/mineru/2605.31429/images/a9f1c6025dac4ef6e8c0ad4c082c91f2fa2ab5e19ee6303e3c5cc0ca770ec87d.jpg" alt="YARD figure"></a>
   <div>
     <div class="paper-meta">2026-06-02 · Visual SSL / representation · arXiv</div>
     <h3><a href="../papers/2605.31429.html">YARD: Y-Architecture Register Decoding for Efficient Hallucination Mitigation in Large Vision-Language Models</a></h3>
@@ -114,6 +108,7 @@
     <p class="card-tech"><b>方法：</b>训练免费推理方法，但 register token 替代局部视觉 token 的设计可帮助理解视觉证据粒度</p>
     <div class="paper-actions"><a href="../papers/2605.31429.html">读图文页</a><a href="https://arxiv.org/abs/2605.31429">原文</a></div>
   </div>
+  <button class="readbtn" type="button" data-read-toggle="2605.31429" title="标记已读" aria-label="标记已读"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M4 10.5l4 4 8-9"/></svg></button>
 </article></div>
     </div>
   </div>
@@ -122,13 +117,13 @@
     <div class="side-box"><h4>会议口径</h4><p>主提醒只保留 CCF A/B；CCF C 与过期截止仅作状态记录。</p></div>
   </aside>
 </article></main>
-  <aside class="conf-float" data-conf-reminder="2026-06-15-main-ddl" aria-label="CCF A/B 主投稿提醒">
+  <aside class="conf-float" data-conf-reminder="2026-06-16-main-ddl" aria-label="CCF A/B 主投稿提醒">
   <button class="conf-close" type="button" aria-label="关闭会议提醒">×</button>
   <details open>
     <summary>CCF A/B 主投稿提醒</summary>
     <div class="conf-list"><a class="conf-item " href="https://github.com/ccfddl/ccf-deadlines/blob/main/conference/AI/aaai.yml">
   <span><b>AAAI 2027</b><em>CCF A · Main paper submission</em></span>
-  <strong>42 天</strong>
+  <strong>41 天</strong>
   <small>2026-07-27 · CCF DDL: abstract 2026-07-20；进入 1 个月窗口后重点提醒。</small>
 </a></div>
   </details>
@@ -141,7 +136,7 @@
   (() => {
     const box = document.querySelector('[data-conf-reminder]');
     if (!box) return;
-    const key = `visualSslConfReminderClosed:${box.dataset.confReminder || '2026-06-15-main-ddl'}`;
+    const key = `visualSslConfReminderClosed:${box.dataset.confReminder || '2026-06-16-main-ddl'}`;
     try {
       if (localStorage.getItem(key) === '1') box.hidden = true;
     } catch (err) {}
@@ -154,5 +149,6 @@
     }
   })();
   </script>
+  <script src="../assets/ssl-game.js"></script>
 </body>
 </html>

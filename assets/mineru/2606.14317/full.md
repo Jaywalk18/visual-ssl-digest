@@ -1,0 +1,711 @@
+# CausalMotion: Structured Physical Reasoning as Keyframe and Trajectory Guidance for Training-Free Video Generation
+
+Sihan Zhuang1,2⋆, Xinyuan Chen1†, Tianfan Xue3,1†, Yaohui Wang1† 1Shanghai Artificial Intelligence Laboratory, 2ShanghaiTech University 3The Chinese University of Hong Kong
+
+Prompt: “A timelapse of air being gradually and forcefully extracted from the interior of a thin, sealed balloon.”
+
+![](images/1a8d9cda9388c151dacc729b25a944a526d54064b4fad079083e8cd0dde5cf2c.jpg)
+
+<details>
+<summary>flowchart</summary>
+
+```mermaid
+graph TD
+  A["Keyframe Reasoning"] --> B["Key State 1: Desc1: fully inflated ..."]
+  B --> C["Key State 2: Desc2: partially deflated ..."]
+  C --> D["Key State 3: Desc3: significant smaller..."]
+  D --> E["Trajectory-Guided Generation"]
+  F["VLM Reasoning"] --> G["Physical State Vector{sj} sτj = [x, y, w, h, vx, vy, c"]]
+  G --> H["Interpolation"]
+  H --> I["Time Alignment t_k = argmax IOU(k, t)"]
+  I --> J["Planning Trajectory t=0 to t=46"]
+```
+</details>
+
+Figure 1: Overview of CausalMotion. Our training-free framework performs structured physical reasoning to generate keyframes and trajectories, then guides the diffusion model with these intermediate representations.
+
+## Abstract
+
+Recent advances in diffusion-based video generation have significantly improved visual quality and short-term temporal coherence. However, existing methods still struggle to produce videos with physically consistent and causally plausible dynamics, especially in scenarios involving long-horizon interactions. This limitation arises from the fact that video diffusion models primarily learn physical consistency implicitly, while vision-language models can directly model physical laws. Based on this idea, in this work, we propose CausalMotion, a training-free framework that injects explicit physical reasoning into video generation through structured intermediate representations. Our key idea is to decouple reasoning from generation by leveraging a vision-language model to decompose a text prompt into a sequence of causally consistent keyframes and object-centric motion trajectories. These representations are then aligned and integrated as soft constraints to guide a pretrained video diffusion model during inference. This design enables explicit modeling of object dynamics and causal transitions without requiring additional training or supervision. Extensive experiments show that our method consistently improves physical plausibility and temporal coherence, particularly in dynamicsintensive scenarios, while maintaining high perceptual video quality. Project Page: https://zhuangsh0713.github.io/CausalMotion/.
+
+## 1 Introduction
+
+Video generation aims to synthesize temporally coherent and visually realistic dynamic sequences conditioned on inputs such as text prompts, reference images, or motion signals. Recent advances in generative modeling, particularly diffusion-based approaches [1–3], have significantly improved visual fidelity and short-term temporal consistency. However, these models still struggle with scenarios that require physically consistent and causally valid state transitions, especially in compositional settings involving long-horizon dynamics.
+
+A key limitation of existing approaches is their reliance on implicitly learned statistical correlations from large-scale video data, with limited explicit modeling of causal structure or physical constraints [4]. For instance, Runway Gen 3 [5] generates a candle appearing and being lit when a burning match is lowered into water, producing visually realistic but physically impossible frames. Moreover, high-quality datasets with rich physical interactions are scarce and typically lack structured annotations of causality and physics, making it difficult for models to learn generalizable reasoning capabilities [6]. Consequently, generated videos often exhibit failure modes such as missing intermediate states (e.g., an ice cream cone melts directly from solid to puddle, skipping all softened stages), temporal discontinuities (objects flash from one location to another), or physically implausible behaviors (objects passing through other objects).
+
+In parallel, multimodal large models (MLLMs) [7–11] have demonstrated strong capabilities in cross-modal understanding and structured reasoning. Through chain-of-thought inference [12–15], these models can explicitly decompose complex events into causal steps and infer physically plausible state transitions. For instance, an MLLM can reason that a water droplet on a sloped surface will flow downward along the steepest path. However, MLLMs lack the ability to generate temporally consistent visual content, limiting their direct applicability to video synthesis.
+
+This gap motivates the integration of explicit causal and physical reasoning into video generation without retraining generative models. In this paper, we propose CausalMotion, a training-free, reasoning-guided video generation framework. Our key idea is to decouple reasoning from generation, and use a vision-language model to explicitly structure the generation process via intermediate representations. As illustrated in Figure 1, our framework operates in three stages. First, a VLM decomposes the input prompt into causally consistent keyframes. Using object locations from the first keyframe and textual descriptions of all keyframes, the VLM predicts a motion trajectory (bounding boxes tracking object changes over time). Keyframes and trajectories are temporally aligned, then guide the diffusion model’s latent updates to synthesize the final video.
+
+Our approach introduces explicit causal structure and physical priors without modifying model parameters or requiring supervision. Operating at inference time, it remains lightweight while improving temporal coherence and physical plausibility, achieving a PhyGenBench average score of 0.65 (67% above baseline) and a VBench quality score of 82.52% (surpassing LTX-Video at 80.57% and Wan2.1 at 76.21%).
+
+We summarize our contributions as follows:
+
+• We propose CausalMotion, a training-free framework that integrates vision-language model reasoning into video generation, enabling explicit modeling of causal structure and physical dynamics.  
+• We introduce a structured intermediate representation consisting of keyframes and motion trajectories, which reduces ambiguity in temporal modeling and improves controllability.  
+• Our method operates entirely at inference time, requiring no additional training or annotations, achieving a state-of-the-art average score of 0.65 on PhyGenBench (a 67% improvement over the LTX-Video baseline of 0.39).
+
+## 2 Related Work
+
+## 2.1 Video Generation
+
+Diffusion-based video generation has emerged as the dominant paradigm for high-quality synthesis. Recent models, such as ([1, 2, 16]), achieve strong visual fidelity and short-term temporal consistency by learning spatiotemporal distributions from large-scale data. However, these approaches primarily model statistical correlations rather than explicit causal structure or physical dynamics. As highlighted by VBench [17], current progress largely focuses on perceptual quality and motion smoothness, leaving physical consistency and causal reasoning underexplored. Our work addresses this limitation by introducing explicit, inference-time physical grounding.
+
+## 2.2 Physics-Consistent Video Generation
+
+Simulator-based methods. Methods such as PhysGen [18], NewtonGen [19], and follow-ups [20–23] integrate physics simulators into the generation pipeline by estimating scene properties and explicitly modeling object dynamics. While physically grounded, they rely on simplified assumptions (e.g., rigid-body dynamics) and introduce substantial computational and modeling overhead, limiting scalability to open-world scenarios.
+
+Non-simulator methods. An alternative line of work enforces physical consistency without explicit simulation, either through training-based alignment or foundation-model guidance. Training-based approaches incorporate physical priors via losses, rewards, or reinforcement learning, such as PISA [24], Force Prompting [25], NewtonRewards [26], and PhysRVG [27], but require largescale training and carefully designed supervision, with performance tightly coupled to constraint quality. Complementarily, recent methods leverage vision-language or video foundation models to provide structured guidance, including VLIPP [28], Think Before You Diffuse [29], VideoREPA [30], ProPhy [31], and PhyRPR [32]. These methods inject high-level physical priors via intermediate representations (e.g., motion attributes).
+
+## 2.3 Vision-Language Models for Reasoning
+
+Chain-of-Thought (CoT) prompting [12] enables large models to decompose complex reasoning into structured intermediate steps and has been extended to multimodal settings for physical and causal reasoning. Prior works exploit VLMs to generate intermediate representations such as layouts or semantic plans [33–35], while VChain [36] demonstrates their ability to produce physically plausible intermediate states. Building on these advances, we use VLM reasoning to generate structured guidance (keyframes and physical state representations).
+
+## 3 Method
+
+We propose CausalMotion, a Physical Grounding framework for video generation that improves temporal coherence and physical plausibility without any additional training or fine-tuning. Our key idea is to decouple video generation into structured state reasoning and trajectory-constrained synthesis. Instead of relying on implicit dynamics learned by diffusion models or depending on existing physics simulator, we explicitly model video evolution as a sequence of causally consistent states and physically grounded trajectories, and use them to guide the generation process.
+
+Formally, we reinterpret video generation as a structured state evolution problem, where each frame is constrained by (i) key causal states and (ii) physically consistent object trajectories. As shown in Figure 2, our framework instantiates this idea in three stages: (1) keyframe generation via iterative visual reasoning, (2) physical state and trajectory planning, and (3) trajectory-guided latent-space video generation.
+
+## 3.1 Keyframe Generation via Visual Thought Reasoning
+
+Text prompts often implicitly encode a sequence of state transitions, including object motion, interaction, and transformation. However, such structure is not explicitly modeled in standard video generation pipelines, leading to inconsistencies in long-horizon dynamics.
+
+We address this by leveraging a vision-language model (VLM) to perform Visual Thought Reasoning, which decomposes the input prompt into a sequence of causally consistent intermediate states or events. Given a prompt p, the VLM first performs a global scene understanding step and infers the consequence—the most likely whole state or primary outcome of the described scenario. This global causal constraint anchors the subsequent keyframe generation.
+
+![](images/5cef1f8f5e9ccacc81885c5c13c2a0064572a093d962a2ad94cf5ab8ecfcb2a8.jpg)
+
+<details>
+<summary>flowchart</summary>
+
+```mermaid
+graph TD
+  A["Keyframe Reasoning"] --> B["Grounded SAM2"]
+  B --> C["VLM Physical Reasoning & State Planning"]
+  C --> D["Latency Guided Latent-Space Guidance"]
+  D --> E["LTX-Video"]
+  E --> F["Latent Grid"]
+  F --> G["Blender"]
+  G --> H["Latent Updating"]
+  H --> I["Time Alignment t_k = argmax IOU(k,t)"]
+    
+    subgraph Keyframe Reasoning
+        J["Desc1: A fully inflated balloon hangs motionless..."]
+        K["Desc2: The balloon is partially deflated, with its surface ..."]
+        L["Desc3: The balloon is significantly smaller and..."]
+    end
+    
+    subgraph Trajectory_Guided_Latent_Space_Guidance["Trajectory-Guided Latent-Space Guidance"]
+        M["Gaussian Soft Mask"]
+        N["Latent Grid"]
+        O["Blender"]
+        P["Dynamic Reference Appearance"]
+        Q["Latency Guided Latent-Space Guidance"]
+    end
+    
+  J --> K
+  K --> L
+  L --> M
+  M --> N
+  N --> O
+  O --> P
+  P --> Q
+```
+</details>
+
+Figure 2: The architecture of our method. Given a text prompt, CausalMotion first performs iterative visual reasoning to decompose complex events into causally consistent key states and generates corresponding keyframes that capture critical transitions. It then localizes key objects, predicts sparse physical state vectors, and constructs dense motion trajectories through physicsaware interpolation and temporal alignment. Finally, the generated trajectories are projected into the diffusion latent space, where appearance anchors from keyframes and localized latent updates jointly guide denoising toward physically plausible motion and temporally consistent video generation.
+
+Starting from the initial state and consequence, the model generates a textual description $t x t _ { 0 }$ of the first key state and produces the corresponding image $i m g _ { 0 }$ via a text-to-image model (gpt-image-1 in our experiment). In each subsequent step i, conditioned on the generated history $i m g _ { i - 1 } ,$ previous description $t x t _ { i - 1 }$ and global constraint consequence, the VLM predicts the next textual instruction $t x t _ { i }$ describing the key change at step i, yielding $i m g _ { i }$ . This autoregressive process continues until all key state transitions implied by consequence are covered.
+
+The final output is a Chain of Visual Thoughts and Captions:
+
+$$
+\left\{i m g _ {0}, i m g _ {1}, \dots , i m g _ {N - 1} \right\} \text {and} \left\{t x t _ {0}, t x t _ {1}, \dots , t x t _ {N - 1} \right\},
+$$
+
+which provide structured, interpretable intermediate representations for object detection, trajectory planning, and physics-constrained video generation.
+
+## 3.2 Physical State and Trajectory Planning
+
+Given the generated keyframes, we explicitly construct physically consistent object trajectories by modeling object dynamics as structured physical states rather than implicit motion patterns.
+
+We first obtain the initial spatial locations of key objects identified by the VLM. Specifically, the VLM reasons over the text prompt and the sequence of keyframes to implicitly determine which objects are involved in physical changes. To localize these objects in image space, we apply a segmentation model ([37–42]) to the initial keyframe image $i m g _ { 0 }$ , obtaining bounding boxes for all key objects $\left\{ o _ { k } \right\}$ . Formally, the bounding box of the k-th object at the initial time step is given by:
+
+$$
+b _ {0, k} = S _ {s e g} (i m g _ {0}, o _ {k}), \quad k = 1, 2, \dots , K \tag {1}
+$$
+
+where $S _ { s e g } ( \cdot )$ denotes the segmentation model and $b _ { 0 , k }$ corresponds to the initial bounding box of object $o _ { k }$ . These bounding boxes serve as the spatial initialization for subsequent trajectory planning.
+
+To enable explicit modeling of object dynamics, we introduce a Physical State Vector for each object i at key time τj :
+
+$$
+\mathbf {s} _ {\tau_ {j}} ^ {i} = \left[ x _ {\tau_ {j}} ^ {i}, y _ {\tau_ {j}} ^ {i}, w _ {\tau_ {j}} ^ {i}, h _ {\tau_ {j}} ^ {i}, v _ {x, \tau_ {j}} ^ {i}, v _ {y, \tau_ {j}} ^ {i}, \mathbf {c} _ {\tau_ {j}} ^ {i} \right], \tag {2}
+$$
+
+where $( x , y , w , h )$ denote spatial extent, $( v _ { x } , v _ { y } )$ denote velocity, and c encodes contact relations. This representation unifies geometry, motion, and interaction.
+
+The VLM acts as a high-level physical state planner. Its input consists of: (i) the video description that indicates the dominant physical laws governing the scene (e.g., gravity, momentum conservation, fluid dynamics), (ii) the initial keyframe image img0, and (iii) the initial bounding box locations $\{ b _ { 0 , k } \}$ . Through chain-of-thought reasoning, the VLM outputs key physical states $\{ \mathbf { { \bar { s } } } _ { \tau _ { j } } ^ { i } \}$ at selected timesteps $\{ \tau _ { j } \}$ , inferring object motion based on learned physical priors such as gravity and collision. Specifically, the reasoning process proceeds as: (1) analyzing the scene description to identify applicable physical laws; (2) inferring potential interactions and motion trends under these physical constraints; (3) predicting bounding box positions and scales over time in image space.
+
+Due to the context length constraints, the VLM predicts at a sparse set of key timesteps $( \mathrm { e . g . }$ , 13 timesteps in our experiments). To match the temporal resolution required by the subsequent video diffusion model, we interpolate these key predictions to generate a dense trajectory of $T$ frames (121 frames in our experiments). Given these key states, we construct dense trajectories by interpolating between them using motion models selected according to the inferred physical regime. Specifically,
+
+$$
+b _ {t} ^ {i} = \left\{ \begin{array}{l l} \text { linear   interpolation } & \text {(uniform motion)} \\ b _ {\tau_ {j}} ^ {i} + v _ {\tau_ {j}} ^ {i} \Delta t + \frac {1}{2} a ^ {i} (\Delta t) ^ {2} & \text {(accelerated motion)} \end{array} \right. \tag {3}
+$$
+
+where $\Delta t = t - \tau _ { j }$ . This interpolation preserves the overall motion trend while introducing smooth temporal variation, providing a continuous object motion prior for subsequent high-frame-rate video generation. This also enables modeling of both linear and non-linear motion patterns, avoiding the limitations of naive interpolation.
+
+## 3.3 Time alignment
+
+To ensure consistency between discrete keyframes and continuous trajectories, we assign each keyframe to a trajectory timestep. Let $t _ { k }$ denote the assigned timestep for keyframe k. We perform a greedy assignment that respects temporal ordering: starting from $t _ { 0 } = 0 ,$ , for each subsequent keyframe $k = 1 , \ldots , K - 1$ , we select $t _ { k }$ as the timestep that maximizes the IoU between keyframe k and the trajectory at that timestep, subject to $t _ { k - 1 } < t _ { k } < T$ . Formally,
+
+$$
+t _ {k} = \arg \max _ {t \in (t _ {k - 1}, T - k)} \mathrm{IoU} (k, t), \quad k = 1, 2, \dots , K, \tag {4}
+$$
+
+with $t _ { 0 } = 0$ . This greedy strategy enforces monotonicity while locally maximizing spatial alignment at each step. The resulting mapping $t _ { k }$ provides explicit temporal anchors that bridge keyframe reasoning and trajectory dynamics. Further analysis of the consistency between keyframe predictions and trajectory representations is provided in Appendix A.
+
+## 3.4 Trajectory-Guided Latent-Space Guidance
+
+Beyond keyframe conditioning, we incorporate the physics-aware trajectory from Eq. (3) as a soft constraint during diffusion sampling, enabling a balance between the model prior and physical consistency of interpolated frames.
+
+Following the temporal downsampling structure of the diffusion model, we first encode the per-frame trajectory into the latent temporal space:
+
+$$
+B _ {i, \tau} = \Pi_ {\mathrm{vae}} \left(\frac {1}{| I _ {\tau} |} \sum_ {t \in I _ {\tau}} \bar {b} _ {i} ^ {t}\right), \tag {5}
+$$
+
+where $\Pi _ { \mathrm { v a e } }$ denotes the pixel-to-latent scaling map.
+
+To preserve object appearance across time, we extract an appearance anchor from each keyframe. Specifically, given keyframe k with latent representation $Z _ { k }$ , we crop a local patch around the object position using a Gaussian soft mask:
+
+$$
+A _ {i, \tau_ {k}} = \operatorname{Crop} \left(Z _ {k}, \text { Shrink } (B _ {i, \tau_ {k}}, \rho_ {s})\right). \tag {6}
+$$
+
+These anchors serve as stable visual references during denoising.
+
+However, directly using fixed anchors can lead to temporal inconsistency. To address this, we construct a dynamic reference appearance $P _ { i , \tau } ^ { \mathrm { r e f } }$ at each latent step τ by blending three sources: local propagation from the previous step, and anchors from two neighbouring keyframes:
+
+$$
+P _ {i, \tau} ^ {\text { ref }} = w _ {a} ^ {-} P _ {i, \tau} ^ {(-)} + w _ {p} P _ {i, \tau} ^ {(\text { prev })} + w _ {a} ^ {+} P _ {i, \tau} ^ {(+)}, \quad w _ {a} ^ {-} + w _ {p} + w _ {a} ^ {+} = 1, \tag {7}
+$$
+
+where the weights are adaptively determined based on the temporal position of τ relative to adjacent keyframes. This formulation enables smooth appearance transition while maintaining temporal coherence.
+
+Finally, we enforce trajectory-guided consistency via local latent updates. At each trajectory position $B _ { i , \tau }$ , we define a Gaussian soft mask:
+
+$$
+M _ {i, \tau} (x, y) = \exp \left(- \frac {\| x - c _ {i , \tau} \| ^ {2}}{2 \sigma^ {2}}\right), \tag {8}
+$$
+
+where $c _ { i , \tau }$ denotes the trajectory center. The latent tensor is then updated during each denoising step as:
+
+$$
+L _ {\tau} \leftarrow (1 - \alpha_ {s} M _ {i, \tau}) \odot L _ {\tau} + \alpha_ {s} M _ {i, \tau} \odot P _ {i, \tau} ^ {\text { ref }}, \tag {9}
+$$
+
+where $\alpha _ { s }$ controls the guidance strength. This update is spatially localized, preserving the global generative distribution while enforcing trajectory-aligned motion and appearance consistency.
+
+## 3.5 Implementation
+
+We adopt LTX-Video [43] as the video synthesis backbone, which supports conditioning on multiple keyframes at user-specified temporal indices. To leverage the physics-aware trajectory, we use the temporal anchors $t _ { k }$ obtained from Eq. (4) as the explicit timesteps for keyframe conditioning. For each anchor $t _ { k } ,$ , we provide the corresponding keyframe $i m g _ { k }$ from 3.1.
+
+In addition to keyframe conditioning, LTX-Video expects a scalar guidance strength parameter λ for each keyframe call. For each temporal anchor $t _ { k }$ obtained from Eq. (4), we invoke LTX-Video with the corresponding keyframe k and its associated strength λ (a fixed hyperparameter). We choose an appropriate hyperparameter in our experiment (e.g. 0.9 for all frames).
+
+## 4 Experiments
+
+## 4.1 Experiments Details
+
+For keyframe generation, we adopt gpt-image-1.5, a high-fidelity text-to-image model with strong instruction-following capability and consistent visual rendering across iterative generations. For trajectory reasoning, we employ Qwen-VL-2.5-72B [44] as the vision-language model, leveraging its strong multimodal understanding and structured reasoning ability to infer object dynamics and interactions.
+
+All experiments are conducted at a spatial resolution of $7 2 0 \times 4 8 0$ and a frame rate of 30 FPS. For text-to-video (T2V) generation, we follow the default configuration of LTX-Video, generating videos of 121 frames, corresponding to approximately 4 seconds in duration.
+
+We evaluate our method on both physical reasoning and perceptual quality benchmarks to provide a comprehensive assessment.
+
+PhyGenBench [45] is designed to evaluate physical understanding in video generation. It covers a diverse set of physical phenomena and explicit physical laws across four categories: mechanics, optics, thermal, and material.
+
+VBench [46] is used to evaluate perceptual video quality independent of physical reasoning. It assesses key dimensions of video generation from both temporal and visual quality perspectives. This complementary evaluation allows us to verify that improvements in physical realism do not come at the cost of perceptual quality.
+
+## 4.2 Evaluation
+
+Quantitative comparisons We first quantitatively evaluate our method on PhyGenBench using the PhyGenEval protocol. Table 1 reports the performance across four categories of physical phenomena, including mechanics, optics, thermal, and material properties.
+
+<table><tr><td>Model Variant</td><td>Mechanics ↑</td><td>Optics ↑</td><td>Thermal↑</td><td>Material↑</td><td>Average↑</td></tr><tr><td>CogvideoX-T2V-5B [3]</td><td>0.43</td><td>0.55</td><td>0.40</td><td>0.42</td><td>0.45</td></tr><tr><td>LTX-Video-T2V [43]</td><td>0.35</td><td>0.45</td><td>0.36</td><td>0.38</td><td>0.39</td></tr><tr><td>OpenSora [47]</td><td>0.43</td><td>0.50</td><td>0.44</td><td>0.37</td><td>0.44</td></tr><tr><td>CogvideoX-I2V-5B</td><td>0.48</td><td>0.69</td><td>0.43</td><td>0.41</td><td>0.52</td></tr><tr><td>SVD-XT [48]</td><td>0.46</td><td>0.68</td><td>0.48</td><td>0.41</td><td>0.52</td></tr><tr><td>LTX-Video-I2V</td><td>0.47</td><td>0.65</td><td>0.46</td><td>0.37</td><td>0.50</td></tr><tr><td>SG-I2V [49]</td><td>0.52</td><td>0.69</td><td>0.51</td><td>0.39</td><td>0.54</td></tr><tr><td>LLM-Grounding Video Diffusion [33]</td><td>0.32</td><td>0.41</td><td>0.26</td><td>0.24</td><td>0.31</td></tr><tr><td>PhyT2V [50]</td><td>0.49</td><td>0.61</td><td>0.49</td><td>0.47</td><td>0.52</td></tr><tr><td>VideoDPO [51]</td><td>0.48</td><td>0.60</td><td>0.47</td><td>0.58</td><td>0.54</td></tr><tr><td>Diffphy [29]</td><td>0.53</td><td>0.59</td><td>0.58</td><td>0.46</td><td>0.54</td></tr><tr><td>PhyGDPO [52]</td><td>0.55</td><td>0.60</td><td>0.58</td><td>0.47</td><td>0.55</td></tr><tr><td>VLIPP [28]</td><td>0.55</td><td>0.71</td><td>0.60</td><td>0.53</td><td>0.60</td></tr><tr><td>CausalMotion</td><td>0.61</td><td>0.71</td><td>0.68</td><td>0.61</td><td>0.65</td></tr></table>
+
+Table 1: Quantitative comparison on PhyGenBench across four categories of physical phenomena. Our method achieves the best overall performance, with notable improvements in dynamics-intensive scenarios such as mechanics and thermal.
+
+Our model achieves the best performance across all categories, reaching an average score of 0.65 and outperforming all baselines by a clear margin. Notably, the improvements are most significant in mechanics (+0.06 over VLIPP) and thermal (+0.08 over VLIPP), which require accurate modeling of object dynamics and causal interactions. Compared to strong baselines such as VLIPP [28] and PhyGDPO [52], our method achieves higher performance without requiring additional training in challenging scenarios. It highlights the advantage of structured reasoning and trajectory constraints at inference time.
+
+<table><tr><td rowspan="2">Model Variant</td><td rowspan="2">VBench Quality Score ↑</td><td colspan="4">VLM-as-judge ↑</td></tr><tr><td>Physical plausibility</td><td>Temporal consistency</td><td>Semantic alignment</td><td>Overall</td></tr><tr><td>Wan2.1-T2V-1.3B [53]</td><td>76.21%</td><td>1.58</td><td>3.58</td><td>1.16</td><td>2.10</td></tr><tr><td>VChain</td><td>78.49%</td><td>-</td><td>-</td><td>-</td><td>-</td></tr><tr><td>LTX-Video</td><td>80.57%</td><td>2.53</td><td>3.89</td><td>1.68</td><td>2.70</td></tr><tr><td>-w/o keyframe reasoning</td><td>80.91%</td><td>2.60</td><td>4.65</td><td>2.35</td><td>3.20</td></tr><tr><td>-w/o trajectory physical state</td><td>82.44%</td><td>3.05</td><td>3.65</td><td>3.40</td><td>3.37</td></tr><tr><td>-w/o latent trajectory guidance</td><td>82.46%</td><td>3.20</td><td>3.90</td><td>3.45</td><td>3.55</td></tr><tr><td>CausalMotion</td><td>82.52%</td><td>3.10</td><td>3.95</td><td>3.70</td><td>3.58</td></tr></table>
+
+Table 2: Video quality and high-level consistency evaluation using VBench and VLM-as-judge. Our method improves both perceptual quality and higher-level properties, including physical plausibility, temporal consistency, and semantic alignment.
+
+To further assess perceptual quality, we evaluate our method on VBench using the same 20 prompts as VChain [36] for fair comparison.
+
+As shown in Table 2, our model achieves the highest VBench score (82.52%), indicating that introducing physical constraints does not degrade visual quality. Instead, it slightly improves overall generation quality compared to the base LTX-Video model.
+
+Beyond standard metrics, we employ a vision-language model (Gemini 2.5 Flash [54]) as a judge to evaluate higher-level properties, including physical plausibility, temporal consistency, and semantic alignment. Our method significantly outperforms all models across all dimensions, improving the overall score from 2.70 to 3.58. In particular, the gain in temporal consistency (3.89 → 4.58) indicates that trajectory guidance effectively stabilizes motion across frames, while the large improvement in semantic alignment (1.68 → 4.00) suggests that keyframe reasoning helps better ground the generated content to the input prompt.
+
+Milk is poured into a cup of black coffee.
+
+An ice cream cone is left out in the sun.
+
+![](images/ea253be04153752c1fe18b190015052b40b41ff566116d2753af29b1d789be8c.jpg)
+
+<details>
+<summary>natural_image</summary>
+
+Sequence of four photos showing coffee brewing process: (a) teapot, (b) milk, (c) cup with milk being poured into a glass container, and (d) coffee being poured into a cup.
+</details>
+
+![](images/9268638cbf8d0a7d27cbd22b26816cdea716d0e836352b056423063edbb6ae7d.jpg)
+
+<details>
+<summary>natural_image</summary>
+
+Sequence of 3D-rendered ice cream cone models on a park bench, showing front and side views (no text or symbols)
+</details>
+
+Figure 3: Qualitative comparisons on physical video generation tasks. Left: liquid interaction scenario (milk poured into coffee). Right: thermal state transition scenario (ice cream melting in the sun). (a) Wan2.1-T2V-1.3B; (b) LTX-Video; (c) VLIPP; (d) CausalMotion (ours). Our method produces more physically consistent object interactions and state transitions across both scenarios.
+
+Qualitative comparisons Figure 3 presents qualitative comparisons on two representative physical video generation scenarios: liquid interaction (left) and thermal state transition (right).
+
+In the liquid interaction example, existing methods often generate physically implausible behaviors. LTX-Video produces semantically correct scenes but violates basic physical constraints, such as the coffee liquid surface rising outside the cup. Wan2.1-T2V-1.3B captures the pouring action but fails to model clear liquid state transitions. VLIPP generates unrealistic liquid accumulation above the cup instead of naturally flowing along the cup boundary. In contrast, our method explicitly models object motion and interactions, producing continuous and physically plausible transitions in both liquid height and color blending.
+
+In the thermal transition example, both Wan2.1-T2V-1.3B and LTX-Video struggle to capture realistic melting dynamics, showing limited state changes over time. Although VLIPP depicts melted ice cream accumulating on the ground, the upper scoop remains largely unchanged and fails to exhibit realistic melting behavior. Our method generates a gradual and consistent melting process that better reflects real-world physical dynamics.
+
+## 4.3 Ablation studies
+
+To understand the contribution of each component in our physical grounding framework, we conduct ablation studies by progressively removing key modules: (i) keyframe reasoning, (ii) trajectory-aware physical state planning, and (iii) latent trajectory guidance. Results are reported in Table 3.
+
+Effect of trajectory-aware physical state planning. When removing trajectory physical state modeling, we drop trajectory planning and interpolate keyframes uniformly, and performance drops moderately. We observe consistent degradation in mechanics and material, suggesting that explicit modeling of motion dynamics and object interactions further refines physical realism. Performance on thermal slightly improves, which can be attributed to reduced constraints allowing the generative model to better match appearance-based cues, albeit at the cost of physical consistency.
+
+Effect of latent trajectory guidance.While keyframe alignment still ensures coarse temporal consistency, the absence of continuous trajectory constraints leads to weaker frame-to-frame coherence. This is particularly evident in optics and mechanics, where fine-grained motion consistency is crucial. We observe a slight improvement in material, suggesting that strong guidance may occasionally over-constrain appearance variation.
+
+The full model achieves slightly lower scores in material scenarios. We hypothesize that these categories often involve gradual appearance changes rather than significant spatial motion or geometric transformations. For example, in prompts such as “A timelapse records the oxidation process of a bright and new metal bedframe kept in a damp location over several years,” the object remains largely stationary while its appearance progressively changes over time. In such cases, simple temporal interpolation between keyframes is often sufficient to produce smooth transitions, and additional trajectory-based latent constraints may introduce unnecessary restrictions.
+
+<table><tr><td>Model Variant</td><td>Mechanics ↑</td><td>Optics ↑</td><td>Thermal↑</td><td>Material↑</td><td>Average↑</td></tr><tr><td>Full model</td><td>0.608</td><td>0.713</td><td>0.678</td><td>0.608</td><td>0.654</td></tr><tr><td>-w/o keyframe reasoning</td><td>0.425</td><td>0.600</td><td>0.467</td><td>0.358</td><td>0.471</td></tr><tr><td>-w/o trajectory physical state</td><td>0.583</td><td>0.700</td><td>0.689</td><td>0.592</td><td>0.642</td></tr><tr><td>-w/o latent trajectory guidance</td><td>0.594</td><td>0.680</td><td>0.678</td><td>0.625</td><td>0.645</td></tr></table>
+
+Table 3: Quantitative results for ablation study on PhyGenbench
+
+Figure 4 further illustrates the impact of each component on visual quality and physical consistency. Removing keyframe reasoning leads to incorrect or missing intermediate states, indicating weak causal grounding. Without trajectory-aware physical state planning, object interactions become less realistic, particularly in collision scenarios. Disabling latent trajectory guidance mainly affects temporal smoothness, resulting in less coherent transitions across frames. In contrast, the full model consistently produces gradual, physically plausible dynamics, demonstrating that each component contributes to different aspects of the generation process.
+
+![](images/75fcc91588afe4e8003fd197a40c4cad3ba4cf797c16fc97dddc2ad86cf79309.jpg)  
+Full model
+
+![](images/1b10df57d7171c2afc0b9b6fb4b1180b2ed2d035741a784a34f405d5462fee47.jpg)  
+w/o keyframe reasoning
+
+(a) A tennis ball is gently placed on the surface of a bucket filled with water. (Force)  
+![](images/6558dfe7f7dbd79220303bd3bc856efcd9fcc4e78a101e6a6758f5bd44469054.jpg)  
+Full model
+
+![](images/632e3a36141c88227d93a7657fafc04f0c478838e57349f9ce7e9ba2aa0fea12.jpg)  
+w/o latent guidance  
+(c) A timelapse captures the gradual transformation of butter as the temperature rises significantly. (Heat)
+
+![](images/6251dce5b00cd7bacf2bcbb43ca85e54dc838617fab7170fe6f4cf448ee3a450.jpg)  
+Full model
+
+![](images/b8b614b2663a71ad0efd67dec2bf5bba90ba5a1dd68fe4277d70cdfdb3ee8b4a.jpg)  
+w/o trajectory physical state
+
+(b) A weak, frail porcelain plate is flung with significant speed at a robust, wooden table, where it collides upon impact. (Physical Properties)  
+![](images/1337ba8e037d0a5b351c36575abaf5e8d3387b9ad5e056097f1fe80173432d6d.jpg)  
+Full model
+
+![](images/4e65329ba4c2d6bcc5c3c01b6f16143170d45f11f7cf169ed6875c32dfe900d2.jpg)  
+w/o latent guidance  
+(d) A timelapse captures the reaction as concentrated sulfuric acid is poured onto a cotton ball. (Chemical Properties)  
+Figure 4: Qualitative ablation results. Removing keyframe reasoning (a) leads to missing or incorrect rendering of the tennis ball. Removing trajectory physical state (b) results in unnatural collision dynamics of the plate. Disabling latent trajectory guidance (c) makes butter melting less smooth, and (d) causes the cotton ball to vanish abruptly instead of showing a chemical reaction. The full model maintains gradual transformations and physical consistency across all cases.
+
+## 5 Conclusion
+
+In this work, we proposed CausalMotion, a training-free physical grounding framework that integrates VLM reasoning ability into video generation. By decoupling causal reasoning from visual synthesis, our approach introduces structured intermediate representations and physically grounded trajectories to guide diffusion models toward more coherent and physically plausible outputs. Extensive experiments demonstrate that our method consistently improves physical consistency across diverse scenarios, particularly in mechanics and long-horizon dynamics, while preserving or even enhancing perceptual quality. Our method suggests a new paradigm for video generation, opening up a flexible and scalable direction for integrating higher-level cognition into generative models.
+
+## A Discussion of Trajectory Mapping
+
+In our framework, keyframe generation (Section 3.1) and trajectory reasoning (Section 3.2) are performed in different representational spaces. Keyframes are generated through VLM-based visual reasoning, while trajectory planning operates on object-centric spatial representations initialized from the first frame $i m g _ { 0 }$ . As a result, the two processes are not explicitly aligned in either coordinate system or temporal parametrization.
+
+To analyze the consistency between these two modules, we compute the Intersection-over-Union (IoU) between object bounding boxes from trajectory prediction and those extracted from generated keyframes during temporal alignment (Section 3.3). The frame-wise IoU statistics are shown in Figure 5(a).
+
+![](images/6f5ca7a9d3b960dcb9acacb43f82b125004e3c7e9afde2a1652c515ecd1bb6e8.jpg)
+
+<details>
+<summary>line chart</summary>
+
+| Frame Index | Mean | Median |
+| ----------- | ---- | ------ |
+| 0           | 1.0  | 1.0    |
+| 1           | 0.65 | 0.75   |
+| 2           | 0.55 | 0.55   |
+| 3           | 0.5  | 0.5    |
+</details>
+
+(a) Mean frame-wise IoU over time across all samples.
+
+![](images/a6ca45bcc8886ea3b985aed38dc9c58f67db341514b6d8d06a9e977e60982ac8.jpg)
+
+<details>
+<summary>bar chart</summary>
+
+| Mean IoU per Experiment | Experiment Count |
+| ----------------------- | ---------------- |
+| 0.3                     | 2                |
+| 0.4                     | 6                |
+| 0.5                     | 17               |
+| 0.6                     | 10               |
+| 0.7                     | 17               |
+| 0.8                     | 12               |
+| 0.9                     | 18               |
+| 1.0                     | 14               |
+</details>
+
+(b) Distribution of per-experiment mean IoU.  
+Figure 5: Alignment analysis between trajectory predictions and keyframe object states. (a) shows frame-wise IoU degradation over time, while (b) illustrates variance across different prompts.
+
+Despite being generated independently and potentially under different implicit coordinate systems, we observe that the predicted trajectories and keyframe object states exhibit consistent motion trends. In particular, we observe reasonably consistent spatial overlap trends across both representations, indicating that the VLM reasoning process captures coherent physical dynamics even without explicit spatial supervision.
+
+Figure 5(b) presents the distribution of per-experiment mean IoU values. While the overall average IoU remains relatively high, the distribution shows noticeable variance across prompts. This indicates that alignment quality depends on scene complexity, motion patterns, and the degree of object interaction.
+
+Overall, our analysis shows that although the two modules operate independently, they converge to consistent motion dynamics in most cases, with failures primarily occurring in long-horizon or complex interaction scenarios.
+
+## B Time Cost
+
+Table 4 shows the average runtime of each stage in our method, providing a detailed breakdown of the overall computational cost.  
+Table 4: Average runtime breakdown of different components in our framework.
+
+<table><tr><td>Breakdown</td><td>Time Cost</td><td>Comments</td></tr><tr><td>Keyframe Generation</td><td>271 sec</td><td>GPT-Image-1.5 API inference calls</td></tr><tr><td>Physical State and Trajectory Planning</td><td>69 sec</td><td>Qwen2.5-VL-72B API inference calls</td></tr><tr><td>Trajectory-Guided Latent-Space Guidance</td><td>108 sec</td><td>LTX-Video inference on 1 × NVIDIA A800 GPU</td></tr><tr><td>Total</td><td>448 sec</td><td></td></tr></table>
+
+In total, our method requires approximately 448 seconds per sample. The main computational bottleneck comes from API-based keyframe generation rather than the trajectory guidance module itself. We note that this overhead can be further reduced by replacing external API calls with locally deployed VLMs or more efficient keyframe generation strategies.
+
+## C Intermediate Visualization
+
+To improve the interpretability of our pipeline, we provide intermediate visualizations for representative examples, including generated keyframes, trajectory alignment, and final synthesis results.
+
+Figures 6 and 7 present two examples of our trajectory alignment process under different physical scenarios: object-water interaction and collision dynamics. Each figure is organized as a 2×2 grid, where each sub-panel corresponds to one alignment step between sparse keyframes and the final video timeline. Within each sub-panel, the left image visualizes intermediate motion segments between consecutive keyframes, where overlaid bounding boxes represent the predicted object trajectories over time. The right image shows the corresponding aligned keyframe at the selected timestamp, where blue dashed boxes indicate the aligned object states used for trajectory guidance.
+
+Figure 6 demonstrates a gradual object-water interaction process, where the glass ball progressively approaches and contacts the water surface. Figure 7 shows a fast collision scenario, where the basketball follows a physically plausible bouncing trajectory after impacting the ground. These examples illustrate how our alignment module bridges sparse keyframe reasoning with dense motion guidance, enabling temporally smooth and physically consistent video generation.
+
+![](images/317561c4f763be383f96373a09fceb8a3405122008750ae827f8b1207ac73939.jpg)  
+Figure 6: Trajectory alignment visualization for the prompt: “A glass ball is gently placed on the surface of a bathtub filled with water.” Each sub-panel represents one alignment step. The left image shows intermediate trajectory transitions between adjacent keyframes, while the right image shows the aligned keyframe. Blue dashed boxes denote aligned object states used for dense trajectory guidance.
+
+## D Limitations
+
+Nevertheless, our approach still has limitations. The quality of trajectory planning depends on the reasoning capability of the VLM, and errors may accumulate in complex or highly interactive scenarios. Our trajectory alignment mechanism primarily relies on explicit object motion. Its benefits become limited in scenarios where objects primarily undergo appearance-only changes.
+
+## E Future Work
+
+Although our current framework is designed for physical video generation, the proposed keyframe reasoning and trajectory-guided generation paradigm has broader potential beyond physical scenarios. Future work could extend this framework to more general video generation tasks that require longhorizon temporal planning, such as human activities, multi-agent interactions, and story-driven video generation.
+
+![](images/f7ca6b6d4bb183af781933ee2366337f6dc4ea093fbe4e17f6723a96b980abf7.jpg)
+
+<details>
+<summary>natural_image</summary>
+
+Orange basketball with black seams on a plain gray surface, enclosed in a green bounding box (no text or symbols)
+</details>
+
+![](images/d59329c2e5903e538f288d4adb01cf0e3154efd9c0334309f7202924de8acc76.jpg)
+
+<details>
+<summary>natural_image</summary>
+
+Orange basketball on a concrete floor with a blue dashed square highlighting the ball (no text or symbols)
+</details>
+
+![](images/5aacc0974cc1f7325817dc9bcc06970c44adeee77d37120b92bd32314be32ee4.jpg)
+
+<details>
+<summary>text_image</summary>
+
+alignment #1 @ t = 97
+</details>
+
+![](images/fed4ba1203e664009f4f8e3cbe679bce2a0852d703856f7ec47e3adad5265af0.jpg)
+
+<details>
+<summary>natural_image</summary>
+
+Close-up of an orange basketball on a concrete surface (no text or symbols visible)
+</details>
+
+![](images/81f3b902febe0801c436cb12bfa46c91e172d4af36b9c8868398394385783f6a.jpg)
+
+<details>
+<summary>text_image</summary>
+
+alignment #2 @ t = 109
+</details>
+
+![](images/d19206b9cb7cf84e23030b33b7f687aebac1150568cb860034d516027b271a53.jpg)
+
+<details>
+<summary>natural_image</summary>
+
+Orange basketball on a plain surface with a dashed blue bounding box (no text or symbols)
+</details>
+
+![](images/c254762122a40286abbc3bec066364fb59dadf8bdcb3adbd38cd902ac4dc16d1.jpg)
+
+<details>
+<summary>text_image</summary>
+
+alignment #3 @ t = 120
+</details>
+
+![](images/64d976471c7c5ec21009ac204fc3901520073fac2084650e2b65fe0b353b45be.jpg)
+
+<details>
+<summary>natural_image</summary>
+
+Basketball in mid-air with a dashed blue square overlay, no text or symbols present
+</details>
+
+Figure 7: Trajectory alignment visualization for the prompt: “A vibrant, elastic basketball is thrown forcefully toward the ground.” The example illustrates how our method aligns sparse keyframes with dense trajectories to model physically consistent collision and rebound dynamics.
+
+## F Broader Impact
+
+Our work improves the physical plausibility and controllability of video generation, which can benefit applications such as scientific simulation, education, visual effects, and robotics prototyping. By enabling more structured and interpretable generation, it may also contribute to safer and more controllable generative systems.
+
+However, like other video generation technologies, our method could be misused to create misleading or synthetic media (e.g., deepfakes), potentially contributing to misinformation or manipulation. Additionally, errors in physical reasoning could lead to incorrect interpretations in safety-critical applications.
+
+To mitigate these risks, future work could explore safeguards such as watermarking, usage restrictions, and integration with detection systems for synthetic media. We encourage responsible use aligned with ethical guidelines.
+
+## G More qualitative results
+
+To better illustrate the result of our method, we provide more examples compared with strong baseline VLIPP and PhyGDPO.
+
+A wooden pencil is carefully dipped into a glass of crystal-clear water, showing the intriguing visual shifts and reflections caused by the interaction between the pencil and the liquid.
+
+![](images/e94d431bd460e9d150a8b346ee7ebb179beb98e36a565a297d75f484fcdb8cf4.jpg)
+
+<details>
+<summary>natural_image</summary>
+
+Sequence of nine photos showing a hand holding a pencil and a wooden stick inside a glass, demonstrating a step-by-step cooking or cleaning process (no text or symbols visible)
+</details>
+
+A small burning ball of paper was thrown into a pile of dry paper.  
+![](images/3dade08a8d281e44607758ff001b1d25e64ed51e72b6e60133112d73734f6a52.jpg)
+
+<details>
+<summary>natural_image</summary>
+
+Grid of nine photos showing burning flames with visible smoke and fire, no text or symbols present
+</details>
+
+Figure 8: Additional qualitative comparisons between PhyGDPO, VLIPP, and our method.
+
+A timelapse captures the gradual transformation of butter as the temperature rises significantly.
+
+![](images/0c290f58c725dbbac177967532f58734530d30b4d0e311b3751c3c6662a38e99.jpg)
+
+<details>
+<summary>natural_image</summary>
+
+Sequence of photos showing a block of yellow cheese being poured into a white plate, with no visible text or symbols.
+</details>
+
+A glistening dewdrop is sliding gracefully across the smooth surface of a waxed apple, accentuating its shape as it moves.
+
+![](images/c4519927ce39f65afb082c8618ab57f73c113be788e3a2d407a1335ad1d5f9c7.jpg)
+
+<details>
+<summary>natural_image</summary>
+
+Collage of nine images showing a red apple with water droplets on its surface, against a blurred green background (no text or symbols)
+</details>
+
+A weak, frail porcelain plate is flung with significant speed at a robust, wooden table, where it collides upon impact.
+
+![](images/d0d9c9691719d4ca8649c2aba72a7cb16cfe06fe2bc8a6979bc977a7a51e2584.jpg)
+
+<details>
+<summary>natural_image</summary>
+
+Six-panel image showing a brick wall with scattered white plates and fragmented fragments, arranged in a row (no text or symbols)
+</details>
+
+Concentrated sulfuric acid is poured onto a wooden table.
+
+![](images/fa4f5d469e4a2d95657fc54d498fe58ad6c1f63035e577433bea207ebeccfde8.jpg)
+
+<details>
+<summary>natural_image</summary>
+
+Five-panel image showing a bottle with smoke rising from its tip, and a dark liquid on a wooden surface (no text or symbols)
+</details>
+
+A chameleon eats a flying insect.
+
+![](images/17a04ad4dee097ae34406122ff7c09951ffba15300a51e95894b5f792d355ef2.jpg)
+
+<details>
+<summary>natural_image</summary>
+
+Five-panel sequence showing a green chameleon perched on a branch, with blurred forest background (no text or symbols)
+</details>
+
+An egg falling from the sky towards concrete ground.
+
+![](images/21f0a452aadc01757d0109022617ee2d629dbd1130f6a3b3bc190ae7517224dd.jpg)
+
+<details>
+<summary>natural_image</summary>
+
+Sequence of five 3D-rendered objects on a sandy beach under a blue sky with white clouds, no text or symbols present.
+</details>
+
+Oil is poured into a glass of milk.
+
+![](images/eb4ea5f851806fab74a57dbdee26c4b13a3bdac0ea2f02616c001cda19dc0eb8.jpg)
+
+<details>
+<summary>natural_image</summary>
+
+Sequence of six photos showing a hand pouring liquid from a bottle into a glass, illustrating a stepwise cooking or beverage process (no text or symbols visible)
+</details>
+
+Figure 9: Additional qualitative comparisons between VLIPP and our method on diverse physical phenomena.
+
+A small burning stick was thrown into a pile of hay.
+
+![](images/b6121b5ca3186458612e7e2fc051450721190d2f2c25b8d3f537a0cf4a343e6e.jpg)
+
+<details>
+<summary>natural_image</summary>
+
+Five-panel sequence showing a straw bale with smoke and burning in a barn (no text or symbols visible)
+</details>
+
+A tennis ball is gently placed on the surface of a bucket filled with water.
+
+![](images/469611c80b3edeb6ad33c2b80280038fd0bbfa4151a6ac2a4e0ac70e7888e69c.jpg)
+
+<details>
+<summary>natural_image</summary>
+
+Sequence of five photos showing a hand placing a yellow ball into a metal bucket with water, demonstrating a step-by-step motion (no text or symbols)
+</details>
+
+A timelapse of a water-filled soft cloth being forcefully squeezed by hand, with the pressure intensifying rapidly over time.
+
+![](images/778d16055b153c7e8206712d8476bb6b89ebe0f6e0dce273f954013b995bcb72.jpg)
+
+<details>
+<summary>natural_image</summary>
+
+Sequence of five photos showing hands cleaning a blue cloth on a surface, with water droplets visible in each step (no text or symbols)
+</details>
+
+A ray of light is shining diagonally on a glass bottle in the dark, with the shadow of the glass bottle appearing at the bottom.
+
+![](images/7796f9ee942ff77e86dc32642b31abfc227df4a78b629bc7071719c66d90bc86.jpg)
+
+<details>
+<summary>natural_image</summary>
+
+Sequence of five photos showing a bottle with glowing light and a lit bulb, arranged in a row (no text or symbols)
+</details>
+
+A piece of white chalk is used to write on the rough, dark surface of a blackboard,showcasing the interaction between the chalk and the blackboard surface.
+
+![](images/4291274045cd82a5e5de12ff46dc4d992cd2d19829c15ef6a7de90836d215766.jpg)
+
+<details>
+<summary>natural_image</summary>
+
+Hand holding a white chalk stick on a blackboard, writing on a white line (no text or symbols visible)
+</details>
+
+A magnifying glass is gradually moving closer to a leaf, revealing the intricate details and textures of the veins and surface patterns as it approaches.
+
+![](images/06c0020d32d1418e7e4f28f1bbf60d6a844275809f0382c36b6180065e7d2927.jpg)
+
+<details>
+<summary>natural_image</summary>
+
+Five-panel sequence showing a hand holding a magnifying glass over a green leaf on a wooden surface, with no text or symbols present.
+</details>
+
+A bunch of mist particles are suspended in the air under the sunlight.
+
+![](images/2ee92fe3cfdb79cbcd2962c2a0e3c48640c55af48a6ce233d66deb3d53f6f27a.jpg)
+
+<details>
+<summary>natural_image</summary>
+
+Four-panel photo sequence showing a grassy field with trees and a sprayer, no text or symbols present
+</details>
+
+A timelapse captures the gradual transformation of ice cream as the temperature rises significantly.
+
+![](images/25cbef2f5f578a56add9205d93ab631f0e4440bc7c4cd21d7247bab0ac27bb87.jpg)
+
+<details>
+<summary>natural_image</summary>
+
+Sequence of five photos showing a dessert with ice cream and a bowl of white powder, arranged on a table with food items and spoons (no text or symbols visible)
+</details>
+
+Figure 10: More qualitative results generated by our method across diverse physical domains.
+
+## References
+
+[1] Team Wan, Ang Wang, Baole Ai, Bin Wen, Chaojie Mao, Chen-Wei Xie, Di Chen, Feiwu Yu, Haiming Zhao, Jianxiao Yang, et al. Wan: Open and advanced large-scale video generative models. arXiv preprint arXiv:2503.20314, 2025.  
+[2] Weijie Kong, Qi Tian, Zijian Zhang, Rox Min, Zuozhuo Dai, Jin Zhou, Jiangfeng Xiong, Xin Li, Bo Wu, Jianwei Zhang, et al. Hunyuanvideo: A systematic framework for large video generative models. arXiv preprint arXiv:2412.03603, 2024.  
+[3] Zhuoyi Yang, Jiayan Teng, Wendi Zheng, Ming Ding, Shiyu Huang, Jiazheng Xu, Yuanming Yang, Wenyi Hong, Xiaohan Zhang, Guanyu Feng, et al. Cogvideox: Text-to-video diffusion models with an expert transformer. In International Conference on Learning Representations, volume 2025, pages 83048–83077, 2025.  
+[4] Saman Motamed, Laura Culp, Kevin Swersky, Priyank Jaini, and Robert Geirhos. Do generative video models understand physical principles? In Proceedings of the IEEE/CVF Winter Conference on Applications of Computer Vision (WACV), 2026.  
+[5] Runway Team. Runway. https://runwayml.com, 2024. Platform for AI-powered video editing and generative media creation.  
+[6] Bingyi Kang, Yang Yue, Rui Lu, Zhijie Lin, Yang Zhao, Kaixin Wang, Gao Huang, and Jiashi Feng. How far is video generation from world model: A physical law perspective. In International Conference on Machine Learning, pages 28991–29017. PMLR, 2025.  
+[7] Aaron Hurst, Adam Lerer, Adam P Goucher, Adam Perelman, Aditya Ramesh, Aidan Clark, AJ Ostrow, Akila Welihinda, Alan Hayes, Alec Radford, et al. Gpt-4o system card. arXiv preprint arXiv:2410.21276, 2024.  
+[8] Aixin Liu, Aoxue Mei, Bangcai Lin, Bing Xue, Bingxuan Wang, Bingzheng Xu, Bochao Wu, Bowei Zhang, Chaofan Lin, Chen Dong, et al. Deepseek-v3. 2: Pushing the frontier of open large language models. arXiv preprint arXiv:2512.02556, 2025.  
+[9] Shuai Bai, Yuxuan Cai, Ruizhe Chen, Keqin Chen, Xionghui Chen, Zesen Cheng, Lianghao Deng, Wei Ding, Chang Gao, Chunjiang Ge, et al. Qwen3-vl technical report. arXiv preprint arXiv:2511.21631, 2025.  
+[10] Wenyi Hong, Wenmeng Yu, Xiaotao Gu, Guo Wang, Guobing Gan, Haomiao Tang, Jiale Cheng, Ji Qi, Junhui Ji, Lihang Pan, et al. Glm-4.5 v and glm-4.1 v-thinking: Towards versatile multimodal reasoning with scalable reinforcement learning. arXiv preprint arXiv:2507.01006, 2025.  
+[11] Dong Guo, Faming Wu, Feida Zhu, Fuxing Leng, Guang Shi, Haobin Chen, Haoqi Fan, Jian Wang, Jianyu Jiang, Jiawei Wang, et al. Seed1. 5-vl technical report. arXiv preprint arXiv:2505.07062, 2025.  
+[12] Jason Wei, Xuezhi Wang, Dale Schuurmans, Maarten Bosma, Fei Xia, Ed Chi, Quoc V Le, Denny Zhou, et al. Chain-of-thought prompting elicits reasoning in large language models. Advances in neural information processing systems, 35:24824–24837, 2022.  
+[13] Zhuosheng Zhang, Aston Zhang, Mu Li, and Alex Smola. Automatic chain of thought prompting in large language models. arXiv preprint arXiv:2210.03493, 2022.  
+[14] Renrui Zhang, Dongzhi Jiang, Yichi Zhang, Haokun Lin, Ziyu Guo, Pengshuo Qiu, Aojun Zhou, Pan Lu, Kai-Wei Chang, Yu Qiao, et al. Mathverse: Does your multi-modal llm truly see the diagrams in visual math problems? In European Conference on Computer Vision, pages 169–186. Springer, 2024.  
+[15] Takeshi Kojima, Shixiang Shane Gu, Machel Reid, Yutaka Matsuo, and Yusuke Iwasawa. Large language models are zero-shot reasoners. Advances in neural information processing systems, 35:22199–22213, 2022.  
+[16] Arslan Ali, Junjie Bai, Maciej Bala, Yogesh Balaji, Aaron Blakeman, Tiffany Cai, Jiaxin Cao, Tianshi Cao, Elizabeth Cha, Yu-Wei Chao, et al. World simulation with video foundation models for physical ai. arXiv preprint arXiv:2511.00062, 2025.  
+[17] Dian Zheng, Ziqi Huang, Hongbo Liu, Kai Zou, Yinan He, Fan Zhang, Lulu Gu, Yuanhan Zhang, Jingwen He, Wei-Shi Zheng, et al. Vbench-2.0: Advancing video generation benchmark suite for intrinsic faithfulness. arXiv preprint arXiv:2503.21755, 2025.  
+[18] Shaowei Liu, Zhongzheng Ren, Saurabh Gupta, and Shenlong Wang. Physgen: Rigid-body physics-grounded image-to-video generation. In European Conference on Computer Vision, pages 360–378. Springer, 2024.  
+[19] Yu Yuan, Xijun Wang, Tharindu Wickremasinghe, Zeeshan Nadir, Bole Ma, and Stanley H. Chan. Newtongen: Physics-consistent and controllable text-to-video generation via neural newtonian dynamics. In The Fourteenth International Conference on Learning Representations, 2026.  
+[20] Xiyang Tan, Ying Jiang, Xuan Li, Tianyi Xie, Zeshun Zong, Yin Yang, and Chenfanfu Jiang. Physmotion: Physics-grounded dynamics from a single image. In Thirteenth International Conference on 3D Vision, 2026.  
+[21] Boyuan Chen, Hanxiao Jiang, Shaowei Liu, Saurabh Gupta, Yunzhu Li, Hao Zhao, and Shenlong Wang. Physgen3d: Crafting a miniature interactive world from a single image. In Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition, pages 6178–6189, 2025.  
+[22] Zizhang Li, Hong-Xing Yu, Wei Liu, Yin Yang, Charles Herrmann, Gordon Wetzstein, and Jiajun Wu. Wonderplay: Dynamic 3d scene generation from a single image and actions. In Proceedings of the IEEE/CVF International Conference on Computer Vision, pages 9080–9090, 2025.  
+[23] Wei Liu, Ziyu Chen, Zizhang Li, Yue Wang, Hong-Xing Yu, and Jiajun Wu. Realwonder: Real-time physical action-conditioned video generation. arXiv preprint arXiv:2603.05449, 2026.  
+[24] Chenyu Li, Oscar Michel, Xichen Pan, Sainan Liu, Mike Roberts, and Saining Xie. Pisa experiments: Exploring physics post-training for video diffusion models by watching stuff drop. In International Conference on Machine Learning, pages 35685–35709. PMLR, 2025.  
+[25] Nate Gillman, Charles Herrmann, Michael Freeman, Daksh Aggarwal, Evan Luo, Deqing Sun, and Chen Sun. Force prompting: Video generation models can learn and generalize physicsbased control signals. Advances in Neural Information Processing Systems, 38:103174–103201, 2026.  
+[26] Minh-Quan Le, Yuanzhi Zhu, Vicky Kalogeiton, and Dimitris Samaras. What about gravity in video generation? post-training newton’s laws with verifiable rewards. arXiv preprint arXiv:2512.00425, 2025.  
+[27] Qiyuan Zhang, Biao Gong, Shuai Tan, Zheng Zhang, Yujun Shen, Xing Zhu, Yuyuan Li, Kelu Yao, Chunhua Shen, and Changqing Zou. Physrvg: Physics-aware unified reinforcement learning for video generative models. arXiv preprint arXiv:2601.11087, 2026.  
+[28] Xindi Yang, Baolu Li, Yiming Zhang, Zhenfei Yin, Lei Bai, Liqian Ma, Zhiyong Wang, Jianfei Cai, Tien-Tsin Wong, Huchuan Lu, et al. Vlipp: Towards physically plausible video generation with vision and language informed physical prior. In Proceedings of the IEEE/CVF International Conference on Computer Vision, pages 12360–12370, 2025.  
+[29] Ke Zhang, Cihan Xiao, Yiqun Mei, Jiacong Xu, and Vishal M Patel. Think before you diffuse: Llms-guided physics-aware video generation. arXiv e-prints, pages arXiv–2505, 2025.  
+[30] Xiangdong Zhang, Jiaqi Liao, Shaofeng Zhang, Fanqing Meng, Xiangpeng Wan, Junchi Yan, and Yu Cheng. VideoREPA: Learning physics for video generation through relational alignment with foundation models. In The Thirty-ninth Annual Conference on Neural Information Processing Systems, 2025.  
+[31] Zijun Wang, Panwen Hu, Jing Wang, Terry Jingchen Zhang, Yuhao Cheng, Long Chen, Yiqiang Yan, Zutao Jiang, Hanhui Li, and Xiaodan Liang. Prophy: Progressive physical alignment for dynamic world simulation. In Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition, pages 14492–14501, 2026.  
+[32] Yibo Zhao, Hengjia Li, Xiaofei He, and Boxi Wu. PhyRPR: Training-free physics-constrained video generation. In The First Workshop on Efficient Spatial Reasoning, 2026.  
+[33] Long Lian, Baifeng Shi, Adam Yala, Boyi Li, et al. Llm-grounded video diffusion models. In International Conference on Learning Representations, volume 2024, pages 50207–50227, 2024.  
+[34] Tsung-Han Wu, Long Lian, Joseph E Gonzalez, Boyi Li, and Trevor Darrell. Self-correcting llm-controlled diffusion models. In Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition, pages 6327–6336, 2024.  
+[35] Chenbin Pan, Burhaneddin Yaman, Tommaso Nesti, Abhirup Mallik, Alessandro G Allievi, Senem Velipasalar, and Liu Ren. Vlp: Vision language planning for autonomous driving. In Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition, pages 14760–14769, 2024.  
+[36] Ziqi Huang, Ning Yu, Gordon Chen, Haonan Qiu, Paul Debevec, and Ziwei Liu. VChain: Chain-of-visual-thought for reasoning in video generation. In Annual Meeting of the Association for Computational Linguistics (ACL Findings), 2026, 2026.  
+[37] Nikhila Ravi, Valentin Gabeur, Yuan-Ting Hu, Ronghang Hu, Chaitanya Ryali, Tengyu Ma, Haitham Khedr, Roman Rädle, Chloe Rolland, Laura Gustafson, et al. Sam 2: Segment anything in images and videos. In International Conference on Learning Representations, volume 2025, pages 28085–28128, 2025.  
+[38] Shilong Liu, Zhaoyang Zeng, Tianhe Ren, Feng Li, Hao Zhang, Jie Yang, Qing Jiang, Chunyuan Li, Jianwei Yang, Hang Su, et al. Grounding dino: Marrying dino with grounded pre-training for open-set object detection. In European conference on computer vision, pages 38–55. Springer, 2024.  
+[39] Tianhe Ren, Qing Jiang, Shilong Liu, Zhaoyang Zeng, Wenlong Liu, Han Gao, Hongjie Huang, Zhengyu Ma, Xiaoke Jiang, Yihao Chen, et al. Grounding dino 1.5: Advance the" edge" of open-set object detection. arXiv preprint arXiv:2405.10300, 2024.  
+[40] Tianhe Ren, Shilong Liu, Ailing Zeng, Jing Lin, Kunchang Li, He Cao, Jiayu Chen, Xinyu Huang, Yukang Chen, Feng Yan, et al. Grounded sam: Assembling open-world models for diverse visual tasks. arXiv preprint arXiv:2401.14159, 2024.  
+[41] Alexander Kirillov, Eric Mintun, Nikhila Ravi, Hanzi Mao, Chloe Rolland, Laura Gustafson, Tete Xiao, Spencer Whitehead, Alexander C Berg, Wan-Yen Lo, et al. Segment anything. In Proceedings of the IEEE/CVF international conference on computer vision, pages 4015–4026, 2023.  
+[42] Qing Jiang, Feng Li, Zhaoyang Zeng, Tianhe Ren, Shilong Liu, and Lei Zhang. T-rex2: Towards generic object detection via text-visual prompt synergy. In European Conference on Computer Vision, pages 38–57. Springer, 2024.  
+[43] Yoav HaCohen, Nisan Chiprut, Benny Brazowski, Daniel Shalem, Dudu Moshe, Eitan Richardson, Eran Levin, Guy Shiran, Nir Zabari, Ori Gordon, et al. Ltx-video: Realtime video latent diffusion. arXiv preprint arXiv:2501.00103, 2024.  
+[44] Shuai Bai, Keqin Chen, Xuejing Liu, Jialin Wang, Wenbin Ge, Sibo Song, Kai Dang, Peng Wang, Shijie Wang, Jun Tang, et al. Qwen2. 5-vl technical report. arXiv preprint arXiv:2502.13923, 2025.  
+[45] Fanqing Meng, Jiaqi Liao, Xinyu Tan, Quanfeng Lu, Wenqi Shao, Kaipeng Zhang, Yu Cheng, Dianqi Li, and Ping Luo. Towards world simulator: Crafting physical commonsense-based benchmark for video generation. In Proceedings of the 42nd International Conference on Machine Learning, pages 43781–43806, 2025.  
+[46] Ziqi Huang, Yinan He, Jiashuo Yu, Fan Zhang, Chenyang Si, Yuming Jiang, Yuanhan Zhang, Tianxing Wu, Qingyang Jin, Nattapol Chanpaisit, et al. Vbench: Comprehensive benchmark suite for video generative models. In Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition, pages 21807–21818, 2024.  
+[47] Zangwei Zheng, Xiangyu Peng, Tianji Yang, Chenhui Shen, Shenggui Li, Hongxin Liu, Yukun Zhou, Tianyi Li, and Yang You. Open-sora: Democratizing efficient video production for all. arXiv preprint arXiv:2412.20404, 2024.  
+[48] Andreas Blattmann, Tim Dockhorn, Sumith Kulal, Daniel Mendelevitch, Maciej Kilian, Dominik Lorenz, Yam Levi, Zion English, Vikram Voleti, Adam Letts, et al. Stable video diffusion: Scaling latent video diffusion models to large datasets. arXiv preprint arXiv:2311.15127, 2023.  
+[49] Koichi Namekata, Sherwin Bahmani, Ziyi Wu, Yash Kant, Igor Gilitschenski, and David Lindell. Sg-i2v: Self-guided trajectory control in image-to-video generation. In International Conference on Learning Representations, volume 2025, pages 38483–38505, 2025.  
+[50] Qiyao Xue, Xiangyu Yin, Boyuan Yang, and Wei Gao. Phyt2v: Llm-guided iterative selfrefinement for physics-grounded text-to-video generation. In Proceedings of the Computer Vision and Pattern Recognition Conference, pages 18826–18836, 2025.  
+[51] Runtao Liu, Haoyu Wu, Ziqiang Zheng, Chen Wei, Yingqing He, Renjie Pi, and Qifeng Chen. Videodpo: Omni-preference alignment for video diffusion generation. In Proceedings of the Computer Vision and Pattern Recognition Conference, pages 8009–8019, 2025.  
+[52] Yuanhao Cai, Kunpeng Li, Menglin Jia, Jialiang Wang, Junzhe Sun, Feng Liang, Weifeng Chen, Felix Juefei-Xu, Chu Wang, Ali Thabet, et al. Phygdpo: Physics-aware groupwise direct preference optimization for physically consistent text-to-video generation. arXiv preprint arXiv:2512.24551, 2025.  
+[53] Wan Team. Wan: Open and advanced large-scale video generative models. 2025.  
+[54] Gheorghe Comanici, Eric Bieber, Mike Schaekermann, Ice Pasupat, Noveen Sachdeva, Inderjit Dhillon, Marcel Blistein, Ori Ram, Dan Zhang, Evan Rosen, et al. Gemini 2.5: Pushing the frontier with advanced reasoning, multimodality, long context, and next generation agentic capabilities. arXiv preprint arXiv:2507.06261, 2025.

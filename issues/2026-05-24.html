@@ -4,24 +4,26 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>2026-05-24 速递 · 通用视觉自监督研究报</title>
-  <link rel="stylesheet" href="../assets/styles.css?v=20260525j">
-  <link rel="stylesheet" href="../assets/visual-ssl.css?v=20260525j">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Source+Serif+4:ital,opsz,wght@0,8..60,400;0,8..60,500;0,8..60,600;1,8..60,400&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../assets/visual-ssl.css?v=20260615ssl6">
 </head>
 <body>
   <header class="masthead">
-    <div class="masthead-kicker">Visual SSL Research Report · 2026-05-24</div>
     <a class="masthead-title" href="../index.html">通用视觉自监督研究报</a>
+    <div class="masthead-kicker">A Daily Digest of Visual Self-Supervised Learning</div>
     <div class="masthead-meta">
+      <span>2026-05-24</span>
       <span>图像表征 · VFM · JEPA · 视频预训练</span>
-      <span>CCF A/B 会议优先</span>
-      <span>图文精读 · 方法图解</span>
     </div>
   </header>
   <nav class="site-nav" aria-label="主导航">
     <a class="nav-link" href="../index.html">头版</a>
-<a class="nav-link" href="../issues/2026-06-15.html">今日速递</a>
+<a class="nav-link" href="../issues/2026-06-16.html">今日速递</a>
 <a class="nav-link" href="../pages/catalog.html">论文目录</a>
 <a class="nav-link" href="../pages/timeline.html">时间线</a>
+<span class="nav-streak" title="连续追踪天数"><svg viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><path d="M8 0c.7 2.5-1.2 3.7-2 5-1 1.6-1 4 .8 4.8C6.4 8.5 7.4 7.8 8 7c.3 1.3-.4 2 .9 3 .9.7 1.3 1.6 1.1 2.6C9.7 14.6 8.9 16 6.8 16 4.6 16 3 14.3 3 12c0-3.3 2.6-4.8 2.4-8C6.9 4.6 8.4 5 8 0z"/></svg> 连续 <b data-streak>0</b> 天</span>
   </nav>
   <main><article class="paper-detail issue-detail">
   <div class="paper-main">
@@ -31,10 +33,8 @@
     <div class="feature-body">
       <p class="lead dropcap">先读 TC-JEPA。文本条件不是给 I-JEPA 加一个 caption 头，而是在降低 masked feature prediction 的多解性。 其余论文按 P1/P2 与主题顺序扫读，重点看方法图、消融设置和是否能迁移到通用视觉表征。</p>
       <h2>论文索引</h2>
-      <div class="paper-list issue-list"><article class="paper-card" data-category="JEPA / VLM pretraining" data-priority="P1" data-date="2026-05-24" data-title="text-conditional jepa for learning semantically rich visual representations" data-keywords="text-conditional jepa for learning semantically rich visual representations tc-jepa jepa / vlm pretraining p1 2026-05-24 icml 2026 · ccf a caption-conditioned masked feature prediction with sparse cross-attention text conditioner 视觉自监督和视觉语言预训练之间的边界被进一步打薄：它仍然预测 feature，不直接重建像素，也不完全依赖对比学习。">
-  <a class="paper-thumb paper-thumb-text" href="../papers/2605.03245.html">
-    <img src="../assets/mineru/2605.03245/images/5ceb4d7d2d5e3cfe2efe79262205e252fccb946d687ad798ab297b8ea5cb9f10.jpg" alt="TC-JEPA figure"><span>P1</span>
-  </a>
+      <div class="paper-list issue-list"><article class="paper-card" data-pid="2605.03245" data-category="JEPA / VLM pretraining" data-priority="P1" data-date="2026-05-24" data-title="text-conditional jepa for learning semantically rich visual representations" data-keywords="text-conditional jepa for learning semantically rich visual representations tc-jepa jepa / vlm pretraining p1 2026-05-24 icml 2026 · ccf a caption-conditioned masked feature prediction with sparse cross-attention text conditioner 视觉自监督和视觉语言预训练之间的边界被进一步打薄：它仍然预测 feature，不直接重建像素，也不完全依赖对比学习。">
+  <a class="paper-thumb" href="../papers/2605.03245.html"><img src="../assets/mineru/2605.03245/images/5ceb4d7d2d5e3cfe2efe79262205e252fccb946d687ad798ab297b8ea5cb9f10.jpg" alt="TC-JEPA figure"></a>
   <div>
     <div class="paper-meta">2026-05-24 · JEPA / VLM pretraining · ICML 2026 · CCF A</div>
     <h3><a href="../papers/2605.03245.html">Text-Conditional JEPA for Learning Semantically Rich Visual Representations</a></h3>
@@ -42,11 +42,10 @@
     <p class="card-tech"><b>方法：</b>caption-conditioned masked feature prediction with sparse cross-attention text conditioner</p>
     <div class="paper-actions"><a href="../papers/2605.03245.html">读图文页</a><a href="https://arxiv.org/abs/2605.03245">原文</a></div>
   </div>
+  <button class="readbtn" type="button" data-read-toggle="2605.03245" title="标记已读" aria-label="标记已读"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M4 10.5l4 4 8-9"/></svg></button>
 </article>
-<article class="paper-card" data-category="World model / video SSL" data-priority="P1" data-date="2026-05-24" data-title="self-supervised hierarchical visual reasoning with world model" data-keywords="self-supervised hierarchical visual reasoning with world model resdreamer world model / video ssl p1 2026-05-24 icml 2026 · ccf a hierarchical residual world model for self-supervised visual foresight 它把视频 ssl 的目标从重建下一帧推向重建“低层没有解释完的部分”。">
-  <a class="paper-thumb paper-thumb-text" href="../papers/2605.17537.html">
-    <img src="../assets/mineru/2605.17537/images/a0dc7502024fce90d274bf56b1d2a65bd8aa32135e22d9fba5c9e8d60b8561c4.jpg" alt="ResDreamer figure"><span>P1</span>
-  </a>
+<article class="paper-card" data-pid="2605.17537" data-category="World model / video SSL" data-priority="P1" data-date="2026-05-24" data-title="self-supervised hierarchical visual reasoning with world model" data-keywords="self-supervised hierarchical visual reasoning with world model resdreamer world model / video ssl p1 2026-05-24 icml 2026 · ccf a hierarchical residual world model for self-supervised visual foresight 它把视频 ssl 的目标从重建下一帧推向重建“低层没有解释完的部分”。">
+  <a class="paper-thumb" href="../papers/2605.17537.html"><img src="../assets/mineru/2605.17537/images/a0dc7502024fce90d274bf56b1d2a65bd8aa32135e22d9fba5c9e8d60b8561c4.jpg" alt="ResDreamer figure"></a>
   <div>
     <div class="paper-meta">2026-05-24 · World model / video SSL · ICML 2026 · CCF A</div>
     <h3><a href="../papers/2605.17537.html">Self-supervised Hierarchical Visual Reasoning with World Model</a></h3>
@@ -54,11 +53,10 @@
     <p class="card-tech"><b>方法：</b>hierarchical residual world model for self-supervised visual foresight</p>
     <div class="paper-actions"><a href="../papers/2605.17537.html">读图文页</a><a href="https://arxiv.org/abs/2605.17537">原文</a></div>
   </div>
+  <button class="readbtn" type="button" data-read-toggle="2605.17537" title="标记已读" aria-label="标记已读"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M4 10.5l4 4 8-9"/></svg></button>
 </article>
-<article class="paper-card" data-category="Video MLLM / geometry" data-priority="P1" data-date="2026-05-24" data-title="cambrian-p: pose-grounded video understanding" data-keywords="cambrian-p: pose-grounded video understanding cambrian-p video mllm / geometry p1 2026-05-24 arxiv learnable camera tokens + pose regression head for frame-level grounding 用伪位姿把跨帧 token 固定到共享空间，是视频 vfm/mllm 很值得跟的结构化监督。">
-  <a class="paper-thumb paper-thumb-text" href="../papers/2605.22819.html">
-    <img src="../assets/mineru/2605.22819/images/196c276164ace0119f57c91eb40df268775cbcb87224bca763bc11611dc857ab.jpg" alt="Cambrian-P figure"><span>P1</span>
-  </a>
+<article class="paper-card" data-pid="2605.22819" data-category="Video MLLM / geometry" data-priority="P1" data-date="2026-05-24" data-title="cambrian-p: pose-grounded video understanding" data-keywords="cambrian-p: pose-grounded video understanding cambrian-p video mllm / geometry p1 2026-05-24 arxiv learnable camera tokens + pose regression head for frame-level grounding 用伪位姿把跨帧 token 固定到共享空间，是视频 vfm/mllm 很值得跟的结构化监督。">
+  <a class="paper-thumb" href="../papers/2605.22819.html"><img src="../assets/mineru/2605.22819/images/196c276164ace0119f57c91eb40df268775cbcb87224bca763bc11611dc857ab.jpg" alt="Cambrian-P figure"></a>
   <div>
     <div class="paper-meta">2026-05-24 · Video MLLM / geometry · arXiv</div>
     <h3><a href="../papers/2605.22819.html">Cambrian-P: Pose-Grounded Video Understanding</a></h3>
@@ -66,11 +64,10 @@
     <p class="card-tech"><b>方法：</b>learnable camera tokens + pose regression head for frame-level grounding</p>
     <div class="paper-actions"><a href="../papers/2605.22819.html">读图文页</a><a href="https://arxiv.org/abs/2605.22819">原文</a></div>
   </div>
+  <button class="readbtn" type="button" data-read-toggle="2605.22819" title="标记已读" aria-label="标记已读"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M4 10.5l4 4 8-9"/></svg></button>
 </article>
-<article class="paper-card" data-category="ICML 2026" data-priority="P2" data-date="2026-05-24" data-title="self-supervised weight templates for scalable vision model initialization" data-keywords="self-supervised weight templates for scalable vision model initialization self-supervised weight templates for scalable icml 2026 p2 2026-05-24 arxiv + icml 2026 把自监督目标从激活表征扩展到可缩放视觉模型初始化权重模板 高相关；详见方法、贡献和实验边界。">
-  <a class="paper-thumb paper-thumb-text" href="../papers/2601.19694.html">
-    <span>P2</span><strong>Self-Supervised Weight Templates for Scalable</strong><em>arXiv + ICML 2026</em>
-  </a>
+<article class="paper-card" data-pid="2601.19694" data-category="ICML 2026" data-priority="P2" data-date="2026-05-24" data-title="self-supervised weight templates for scalable vision model initialization" data-keywords="self-supervised weight templates for scalable vision model initialization self-supervised weight templates for scalable icml 2026 p2 2026-05-24 arxiv + icml 2026 把自监督目标从激活表征扩展到可缩放视觉模型初始化权重模板 高相关；详见方法、贡献和实验边界。">
+  <a class="paper-thumb paper-thumb-text" data-topic="default" href="../papers/2601.19694.html"><span>P2</span><strong>Self-Supervised Weight Templates for Scalable</strong><em>arXiv + ICML 2026</em></a>
   <div>
     <div class="paper-meta">2026-05-24 · ICML 2026 · arXiv + ICML 2026</div>
     <h3><a href="../papers/2601.19694.html">Self-Supervised Weight Templates for Scalable Vision Model Initialization</a></h3>
@@ -78,11 +75,10 @@
     <p class="card-tech"><b>方法：</b>把自监督目标从激活表征扩展到可缩放视觉模型初始化权重模板</p>
     <div class="paper-actions"><a href="../papers/2601.19694.html">读图文页</a><a href="https://arxiv.org/abs/2601.19694">原文</a></div>
   </div>
+  <button class="readbtn" type="button" data-read-toggle="2601.19694" title="标记已读" aria-label="标记已读"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M4 10.5l4 4 8-9"/></svg></button>
 </article>
-<article class="paper-card" data-category="Video diagnostics" data-priority="P2" data-date="2026-05-24" data-title="which way did it move? directional motion blindness in video-llms" data-keywords="which way did it move? directional motion blindness in video-llms deltadirect video diagnostics p2 2026-05-24 arxiv feature-delta motion vector objective at projector level 这类诊断比单纯刷视频 qa 更有价值，因为它定位了视觉表征到语言读出的断点。">
-  <a class="paper-thumb paper-thumb-text" href="../papers/2605.22823.html">
-    <img src="../assets/mineru/2605.22823/images/e0379ad71750a9c95b0af4a0f852eab58fca80bee734bb638bb69405e6b5fbbd.jpg" alt="DeltaDirect figure"><span>P2</span>
-  </a>
+<article class="paper-card" data-pid="2605.22823" data-category="Video diagnostics" data-priority="P2" data-date="2026-05-24" data-title="which way did it move? directional motion blindness in video-llms" data-keywords="which way did it move? directional motion blindness in video-llms deltadirect video diagnostics p2 2026-05-24 arxiv feature-delta motion vector objective at projector level 这类诊断比单纯刷视频 qa 更有价值，因为它定位了视觉表征到语言读出的断点。">
+  <a class="paper-thumb" href="../papers/2605.22823.html"><img src="../assets/mineru/2605.22823/images/e0379ad71750a9c95b0af4a0f852eab58fca80bee734bb638bb69405e6b5fbbd.jpg" alt="DeltaDirect figure"></a>
   <div>
     <div class="paper-meta">2026-05-24 · Video diagnostics · arXiv</div>
     <h3><a href="../papers/2605.22823.html">Which Way Did It Move? Directional Motion Blindness in Video-LLMs</a></h3>
@@ -90,11 +86,10 @@
     <p class="card-tech"><b>方法：</b>feature-delta motion vector objective at projector level</p>
     <div class="paper-actions"><a href="../papers/2605.22823.html">读图文页</a><a href="https://arxiv.org/abs/2605.22823">原文</a></div>
   </div>
+  <button class="readbtn" type="button" data-read-toggle="2605.22823" title="标记已读" aria-label="标记已读"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M4 10.5l4 4 8-9"/></svg></button>
 </article>
-<article class="paper-card" data-category="Geometry-grounded VLM" data-priority="P2" data-date="2026-05-24" data-title="geoweaver: grounding visual tokens with geometric evidence before scene reasoning" data-keywords="geoweaver: grounding visual tokens with geometric evidence before scene reasoning geoweaver geometry-grounded vlm p2 2026-05-24 arxiv multi-level geometry bank + residual grounding before llm reasoning 这篇不是 jepa，而是 vlm 视觉 token grounding：冻结几何编码器的证据被分配给多层视觉 token。">
-  <a class="paper-thumb paper-thumb-text" href="../papers/2605.22558.html">
-    <img src="../assets/mineru/2605.22558/images/ed3355dd07fff251346ec70423148172429126b696ac9ad114ee4c8db2e8b217.jpg" alt="GeoWeaver figure"><span>P2</span>
-  </a>
+<article class="paper-card" data-pid="2605.22558" data-category="Geometry-grounded VLM" data-priority="P2" data-date="2026-05-24" data-title="geoweaver: grounding visual tokens with geometric evidence before scene reasoning" data-keywords="geoweaver: grounding visual tokens with geometric evidence before scene reasoning geoweaver geometry-grounded vlm p2 2026-05-24 arxiv multi-level geometry bank + residual grounding before llm reasoning 这篇不是 jepa，而是 vlm 视觉 token grounding：冻结几何编码器的证据被分配给多层视觉 token。">
+  <a class="paper-thumb" href="../papers/2605.22558.html"><img src="../assets/mineru/2605.22558/images/ed3355dd07fff251346ec70423148172429126b696ac9ad114ee4c8db2e8b217.jpg" alt="GeoWeaver figure"></a>
   <div>
     <div class="paper-meta">2026-05-24 · Geometry-grounded VLM · arXiv</div>
     <h3><a href="../papers/2605.22558.html">GeoWeaver: Grounding Visual Tokens with Geometric Evidence before Scene Reasoning</a></h3>
@@ -102,11 +97,10 @@
     <p class="card-tech"><b>方法：</b>multi-level geometry bank + residual grounding before LLM reasoning</p>
     <div class="paper-actions"><a href="../papers/2605.22558.html">读图文页</a><a href="https://arxiv.org/abs/2605.22558">原文</a></div>
   </div>
+  <button class="readbtn" type="button" data-read-toggle="2605.22558" title="标记已读" aria-label="标记已读"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M4 10.5l4 4 8-9"/></svg></button>
 </article>
-<article class="paper-card" data-category="arXiv 新增" data-priority="P3" data-date="2026-05-24" data-title="swift sampling" data-keywords="swift sampling swift sampling arxiv 新增 p3 2026-05-24 arxiv 新增 训练免费地在视觉 latent trajectory 中选高信息帧，可作为视频预训练/评测采样模块 中相关；详见方法、贡献和实验边界。">
-  <a class="paper-thumb paper-thumb-text" href="../papers/2605.22678.html">
-    <span>P3</span><strong>Swift Sampling</strong><em>arXiv 新增</em>
-  </a>
+<article class="paper-card" data-pid="2605.22678" data-category="arXiv 新增" data-priority="P3" data-date="2026-05-24" data-title="swift sampling" data-keywords="swift sampling swift sampling arxiv 新增 p3 2026-05-24 arxiv 新增 训练免费地在视觉 latent trajectory 中选高信息帧，可作为视频预训练/评测采样模块 中相关；详见方法、贡献和实验边界。">
+  <a class="paper-thumb paper-thumb-text" data-topic="default" href="../papers/2605.22678.html"><span>P3</span><strong>Swift Sampling</strong><em>arXiv 新增</em></a>
   <div>
     <div class="paper-meta">2026-05-24 · arXiv 新增 · arXiv 新增</div>
     <h3><a href="../papers/2605.22678.html">Swift Sampling</a></h3>
@@ -114,11 +108,10 @@
     <p class="card-tech"><b>方法：</b>训练免费地在视觉 latent trajectory 中选高信息帧，可作为视频预训练/评测采样模块</p>
     <div class="paper-actions"><a href="../papers/2605.22678.html">读图文页</a><a href="https://arxiv.org/abs/2605.22678">原文</a></div>
   </div>
+  <button class="readbtn" type="button" data-read-toggle="2605.22678" title="标记已读" aria-label="标记已读"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M4 10.5l4 4 8-9"/></svg></button>
 </article>
-<article class="paper-card" data-category="arXiv 新增" data-priority="P3" data-date="2026-05-24" data-title="the matching principle" data-keywords="the matching principle the matching principle arxiv 新增 p3 2026-05-24 arxiv 新增 从几何/协方差角度统一 nuisance-robust representation learning 的损失设计 中相关；详见方法、贡献和实验边界。">
-  <a class="paper-thumb paper-thumb-text" href="../papers/2605.22800.html">
-    <span>P3</span><strong>The Matching Principle</strong><em>arXiv 新增</em>
-  </a>
+<article class="paper-card" data-pid="2605.22800" data-category="arXiv 新增" data-priority="P3" data-date="2026-05-24" data-title="the matching principle" data-keywords="the matching principle the matching principle arxiv 新增 p3 2026-05-24 arxiv 新增 从几何/协方差角度统一 nuisance-robust representation learning 的损失设计 中相关；详见方法、贡献和实验边界。">
+  <a class="paper-thumb paper-thumb-text" data-topic="default" href="../papers/2605.22800.html"><span>P3</span><strong>The Matching Principle</strong><em>arXiv 新增</em></a>
   <div>
     <div class="paper-meta">2026-05-24 · arXiv 新增 · arXiv 新增</div>
     <h3><a href="../papers/2605.22800.html">The Matching Principle</a></h3>
@@ -126,11 +119,10 @@
     <p class="card-tech"><b>方法：</b>从几何/协方差角度统一 nuisance-robust representation learning 的损失设计</p>
     <div class="paper-actions"><a href="../papers/2605.22800.html">读图文页</a><a href="https://arxiv.org/abs/2605.22800">原文</a></div>
   </div>
+  <button class="readbtn" type="button" data-read-toggle="2605.22800" title="标记已读" aria-label="标记已读"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M4 10.5l4 4 8-9"/></svg></button>
 </article>
-<article class="paper-card" data-category="TMLR Accepted / OpenReview" data-priority="状态补录" data-date="2026-05-24" data-title="dinov3" data-keywords="dinov3 dinov3 tmlr accepted / openreview 状态补录 2026-05-24 tmlr accepted / openreview 不是今日新增，但属于通用视觉自监督基础模型的重要里程碑 高相关；详见方法、贡献和实验边界。">
-  <a class="paper-thumb paper-thumb-text" href="../papers/dinov3.html">
-    <span>状态补录</span><strong>DINOv3</strong><em>TMLR Accepted / OpenReview</em>
-  </a>
+<article class="paper-card" data-pid="dinov3" data-category="TMLR Accepted / OpenReview" data-priority="状态补录" data-date="2026-05-24" data-title="dinov3" data-keywords="dinov3 dinov3 tmlr accepted / openreview 状态补录 2026-05-24 tmlr accepted / openreview 不是今日新增，但属于通用视觉自监督基础模型的重要里程碑 高相关；详见方法、贡献和实验边界。">
+  <a class="paper-thumb paper-thumb-text" data-topic="default" href="../papers/dinov3.html"><span>状态补录</span><strong>DINOv3</strong><em>TMLR Accepted / OpenReview</em></a>
   <div>
     <div class="paper-meta">2026-05-24 · TMLR Accepted / OpenReview · TMLR Accepted / OpenReview</div>
     <h3><a href="../papers/dinov3.html">DINOv3</a></h3>
@@ -138,6 +130,7 @@
     <p class="card-tech"><b>方法：</b>不是今日新增，但属于通用视觉自监督基础模型的重要里程碑</p>
     <div class="paper-actions"><a href="../papers/dinov3.html">读图文页</a><a href="https://openreview.net/forum?id=2NlGyqNjns">原文</a></div>
   </div>
+  <button class="readbtn" type="button" data-read-toggle="dinov3" title="标记已读" aria-label="标记已读"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M4 10.5l4 4 8-9"/></svg></button>
 </article></div>
     </div>
   </div>
@@ -146,13 +139,13 @@
     <div class="side-box"><h4>会议口径</h4><p>主提醒只保留 CCF A/B；CCF C 与过期截止仅作状态记录。</p></div>
   </aside>
 </article></main>
-  <aside class="conf-float" data-conf-reminder="2026-06-15-main-ddl" aria-label="CCF A/B 主投稿提醒">
+  <aside class="conf-float" data-conf-reminder="2026-06-16-main-ddl" aria-label="CCF A/B 主投稿提醒">
   <button class="conf-close" type="button" aria-label="关闭会议提醒">×</button>
   <details open>
     <summary>CCF A/B 主投稿提醒</summary>
     <div class="conf-list"><a class="conf-item " href="https://github.com/ccfddl/ccf-deadlines/blob/main/conference/AI/aaai.yml">
   <span><b>AAAI 2027</b><em>CCF A · Main paper submission</em></span>
-  <strong>42 天</strong>
+  <strong>41 天</strong>
   <small>2026-07-27 · CCF DDL: abstract 2026-07-20；进入 1 个月窗口后重点提醒。</small>
 </a></div>
   </details>
@@ -165,7 +158,7 @@
   (() => {
     const box = document.querySelector('[data-conf-reminder]');
     if (!box) return;
-    const key = `visualSslConfReminderClosed:${box.dataset.confReminder || '2026-06-15-main-ddl'}`;
+    const key = `visualSslConfReminderClosed:${box.dataset.confReminder || '2026-06-16-main-ddl'}`;
     try {
       if (localStorage.getItem(key) === '1') box.hidden = true;
     } catch (err) {}
@@ -178,5 +171,6 @@
     }
   })();
   </script>
+  <script src="../assets/ssl-game.js"></script>
 </body>
 </html>

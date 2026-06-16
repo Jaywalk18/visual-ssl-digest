@@ -4,24 +4,26 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>2026-05-31 速递 · 通用视觉自监督研究报</title>
-  <link rel="stylesheet" href="../assets/styles.css?v=20260525j">
-  <link rel="stylesheet" href="../assets/visual-ssl.css?v=20260525j">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Source+Serif+4:ital,opsz,wght@0,8..60,400;0,8..60,500;0,8..60,600;1,8..60,400&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../assets/visual-ssl.css?v=20260615ssl6">
 </head>
 <body>
   <header class="masthead">
-    <div class="masthead-kicker">Visual SSL Research Report · 2026-05-31</div>
     <a class="masthead-title" href="../index.html">通用视觉自监督研究报</a>
+    <div class="masthead-kicker">A Daily Digest of Visual Self-Supervised Learning</div>
     <div class="masthead-meta">
+      <span>2026-05-31</span>
       <span>图像表征 · VFM · JEPA · 视频预训练</span>
-      <span>CCF A/B 会议优先</span>
-      <span>图文精读 · 方法图解</span>
     </div>
   </header>
   <nav class="site-nav" aria-label="主导航">
     <a class="nav-link" href="../index.html">头版</a>
-<a class="nav-link" href="../issues/2026-06-15.html">今日速递</a>
+<a class="nav-link" href="../issues/2026-06-16.html">今日速递</a>
 <a class="nav-link" href="../pages/catalog.html">论文目录</a>
 <a class="nav-link" href="../pages/timeline.html">时间线</a>
+<span class="nav-streak" title="连续追踪天数"><svg viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><path d="M8 0c.7 2.5-1.2 3.7-2 5-1 1.6-1 4 .8 4.8C6.4 8.5 7.4 7.8 8 7c.3 1.3-.4 2 .9 3 .9.7 1.3 1.6 1.1 2.6C9.7 14.6 8.9 16 6.8 16 4.6 16 3 14.3 3 12c0-3.3 2.6-4.8 2.4-8C6.9 4.6 8.4 5 8 0z"/></svg> 连续 <b data-streak>0</b> 天</span>
   </nav>
   <main><article class="paper-detail issue-detail">
   <div class="paper-main">
@@ -31,10 +33,8 @@
     <div class="feature-body">
       <p class="lead dropcap">先读 SLAD。共享 LoRA adapter 减轻 teacher/student 特征错位，适合关注蒸馏式视觉表征压缩。 其余论文按 P1/P2 与主题顺序扫读，重点看方法图、消融设置和是否能迁移到通用视觉表征。</p>
       <h2>论文索引</h2>
-      <div class="paper-list issue-list"><article class="paper-card" data-category="CVPR Findings 2026" data-priority="P1" data-date="2026-05-31" data-title="slad : shared lora adapters for task specific distillation" data-keywords="slad : shared lora adapters for task specific distillation slad cvpr findings 2026 p1 2026-05-31 arxiv + cvpr findings 2026 共享 lora adapter 减轻 teacher/student 特征错位，适合关注蒸馏式视觉表征压缩 中高相关；详见方法、贡献和实验边界。">
-  <a class="paper-thumb paper-thumb-text" href="../papers/2605.29726.html">
-    <img src="../assets/mineru/2605.29726/images/26a34cbd9415912b0c22f5a08f55612fe0aee9bb191032303c4c946189b1e7c9.jpg" alt="SLAD figure"><span>P1</span>
-  </a>
+      <div class="paper-list issue-list"><article class="paper-card" data-pid="2605.29726" data-category="CVPR Findings 2026" data-priority="P1" data-date="2026-05-31" data-title="slad : shared lora adapters for task specific distillation" data-keywords="slad : shared lora adapters for task specific distillation slad cvpr findings 2026 p1 2026-05-31 arxiv + cvpr findings 2026 共享 lora adapter 减轻 teacher/student 特征错位，适合关注蒸馏式视觉表征压缩 中高相关；详见方法、贡献和实验边界。">
+  <a class="paper-thumb" href="../papers/2605.29726.html"><img src="../assets/mineru/2605.29726/images/26a34cbd9415912b0c22f5a08f55612fe0aee9bb191032303c4c946189b1e7c9.jpg" alt="SLAD figure"></a>
   <div>
     <div class="paper-meta">2026-05-31 · CVPR Findings 2026 · arXiv + CVPR Findings 2026</div>
     <h3><a href="../papers/2605.29726.html">SLAD : Shared LoRA Adapters for Task Specific Distillation</a></h3>
@@ -42,11 +42,10 @@
     <p class="card-tech"><b>方法：</b>共享 LoRA adapter 减轻 teacher/student 特征错位，适合关注蒸馏式视觉表征压缩</p>
     <div class="paper-actions"><a href="../papers/2605.29726.html">读图文页</a><a href="https://arxiv.org/abs/2605.29726">原文</a></div>
   </div>
+  <button class="readbtn" type="button" data-read-toggle="2605.29726" title="标记已读" aria-label="标记已读"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M4 10.5l4 4 8-9"/></svg></button>
 </article>
-<article class="paper-card" data-category="KDD Ads Track 2026" data-priority="P2" data-date="2026-05-31" data-title="uninote: a unified embedding model for multimodal representation and ranking" data-keywords="uninote: a unified embedding model for multimodal representation and ranking uninote kdd ads track 2026 p2 2026-05-31 arxiv + kdd ads track 2026 contrastive sft + rl ranking + mrl 的多模态 embedding 方案，工业场景强但表征训练信号可迁移 中高相关；详见方法、贡献和实验边界。">
-  <a class="paper-thumb paper-thumb-text" href="../papers/2605.29287.html">
-    <img src="../assets/mineru/2605.29287/images/bcf4e659d82c99454cb23528452770190d4c312b9a1dc962669a5264aedd5da6.jpg" alt="UniNote figure"><span>P2</span>
-  </a>
+<article class="paper-card" data-pid="2605.29287" data-category="KDD Ads Track 2026" data-priority="P2" data-date="2026-05-31" data-title="uninote: a unified embedding model for multimodal representation and ranking" data-keywords="uninote: a unified embedding model for multimodal representation and ranking uninote kdd ads track 2026 p2 2026-05-31 arxiv + kdd ads track 2026 contrastive sft + rl ranking + mrl 的多模态 embedding 方案，工业场景强但表征训练信号可迁移 中高相关；详见方法、贡献和实验边界。">
+  <a class="paper-thumb" href="../papers/2605.29287.html"><img src="../assets/mineru/2605.29287/images/bcf4e659d82c99454cb23528452770190d4c312b9a1dc962669a5264aedd5da6.jpg" alt="UniNote figure"></a>
   <div>
     <div class="paper-meta">2026-05-31 · KDD Ads Track 2026 · arXiv + KDD Ads Track 2026</div>
     <h3><a href="../papers/2605.29287.html">UniNote: A Unified Embedding Model for Multimodal Representation and Ranking</a></h3>
@@ -54,11 +53,10 @@
     <p class="card-tech"><b>方法：</b>contrastive SFT + RL ranking + MRL 的多模态 embedding 方案，工业场景强但表征训练信号可迁移</p>
     <div class="paper-actions"><a href="../papers/2605.29287.html">读图文页</a><a href="https://arxiv.org/abs/2605.29287">原文</a></div>
   </div>
+  <button class="readbtn" type="button" data-read-toggle="2605.29287" title="标记已读" aria-label="标记已读"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M4 10.5l4 4 8-9"/></svg></button>
 </article>
-<article class="paper-card" data-category="ICML 2026" data-priority="P2" data-date="2026-05-31" data-title="geometry-guided modeling of foundation features enables generalizable object shape deformation learning" data-keywords="geometry-guided modeling of foundation features enables generalizable object shape deformation learning geometry-guided modeling of foundation features icml 2026 p2 2026-05-31 arxiv + icml 2026 把 foundation features 与模板拓扑、视角聚合结合，关注视觉基础特征如何承载几何泛化 中相关；详见方法、贡献和实验边界。">
-  <a class="paper-thumb paper-thumb-text" href="../papers/2605.29661.html">
-    <img src="../assets/mineru/2605.29661/images/2b3ae7291a12bc8565738d8ed3dffb575741e38b63073ad01752cca30df7e677.jpg" alt="Geometry-Guided Modeling of Foundation Features figure"><span>P2</span>
-  </a>
+<article class="paper-card" data-pid="2605.29661" data-category="ICML 2026" data-priority="P2" data-date="2026-05-31" data-title="geometry-guided modeling of foundation features enables generalizable object shape deformation learning" data-keywords="geometry-guided modeling of foundation features enables generalizable object shape deformation learning geometry-guided modeling of foundation features icml 2026 p2 2026-05-31 arxiv + icml 2026 把 foundation features 与模板拓扑、视角聚合结合，关注视觉基础特征如何承载几何泛化 中相关；详见方法、贡献和实验边界。">
+  <a class="paper-thumb" href="../papers/2605.29661.html"><img src="../assets/mineru/2605.29661/images/2b3ae7291a12bc8565738d8ed3dffb575741e38b63073ad01752cca30df7e677.jpg" alt="Geometry-Guided Modeling of Foundation Features figure"></a>
   <div>
     <div class="paper-meta">2026-05-31 · ICML 2026 · arXiv + ICML 2026</div>
     <h3><a href="../papers/2605.29661.html">Geometry-Guided Modeling of Foundation Features Enables Generalizable Object Shape Deformation Learning</a></h3>
@@ -66,11 +64,10 @@
     <p class="card-tech"><b>方法：</b>把 foundation features 与模板拓扑、视角聚合结合，关注视觉基础特征如何承载几何泛化</p>
     <div class="paper-actions"><a href="../papers/2605.29661.html">读图文页</a><a href="https://arxiv.org/abs/2605.29661">原文</a></div>
   </div>
+  <button class="readbtn" type="button" data-read-toggle="2605.29661" title="标记已读" aria-label="标记已读"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M4 10.5l4 4 8-9"/></svg></button>
 </article>
-<article class="paper-card" data-category="Visual SSL / representation" data-priority="P2" data-date="2026-05-31" data-title="minwm: a full-stack open-source framework for real-time interactive video world models" data-keywords="minwm: a full-stack open-source framework for real-time interactive video world models minwm visual ssl / representation p2 2026-05-31 arxiv 把视频 foundation model 改造成可交互 world model 的完整训练链，含 ar 训练和 few-step distillation 中相关；详见方法、贡献和实验边界。">
-  <a class="paper-thumb paper-thumb-text" href="../papers/2605.30263.html">
-    <img src="../assets/mineru/2605.30263/images/aee2645f4e82b01ad6c6e3c9a13d2c7feb12f3d033085669109f3788713cf3c9.jpg" alt="minWM figure"><span>P2</span>
-  </a>
+<article class="paper-card" data-pid="2605.30263" data-category="Visual SSL / representation" data-priority="P2" data-date="2026-05-31" data-title="minwm: a full-stack open-source framework for real-time interactive video world models" data-keywords="minwm: a full-stack open-source framework for real-time interactive video world models minwm visual ssl / representation p2 2026-05-31 arxiv 把视频 foundation model 改造成可交互 world model 的完整训练链，含 ar 训练和 few-step distillation 中相关；详见方法、贡献和实验边界。">
+  <a class="paper-thumb" href="../papers/2605.30263.html"><img src="../assets/mineru/2605.30263/images/aee2645f4e82b01ad6c6e3c9a13d2c7feb12f3d033085669109f3788713cf3c9.jpg" alt="minWM figure"></a>
   <div>
     <div class="paper-meta">2026-05-31 · Visual SSL / representation · arXiv</div>
     <h3><a href="../papers/2605.30263.html">minWM: A Full-Stack Open-Source Framework for Real-Time Interactive Video World Models</a></h3>
@@ -78,11 +75,10 @@
     <p class="card-tech"><b>方法：</b>把视频 foundation model 改造成可交互 world model 的完整训练链，含 AR 训练和 few-step distillation</p>
     <div class="paper-actions"><a href="../papers/2605.30263.html">读图文页</a><a href="https://arxiv.org/abs/2605.30263">原文</a></div>
   </div>
+  <button class="readbtn" type="button" data-read-toggle="2605.30263" title="标记已读" aria-label="标记已读"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M4 10.5l4 4 8-9"/></svg></button>
 </article>
-<article class="paper-card" data-category="Visual SSL / representation" data-priority="P3" data-date="2026-05-31" data-title="videomla: low-rank latent kv cache for minute-scale autoregressive video diffusion" data-keywords="videomla: low-rank latent kv cache for minute-scale autoregressive video diffusion videomla visual ssl / representation p3 2026-05-31 arxiv 研究视频基础模型长时序 attention/kv 压缩，对视频预训练效率有间接价值 中相关；详见方法、贡献和实验边界。">
-  <a class="paper-thumb paper-thumb-text" href="../papers/2605.30351.html">
-    <img src="../assets/mineru/2605.30351/images/0255df1dc865fc49b8e91296a4334fd27c1fc09b93a7dfac74888f4d0848271e.jpg" alt="VideoMLA figure"><span>P3</span>
-  </a>
+<article class="paper-card" data-pid="2605.30351" data-category="Visual SSL / representation" data-priority="P3" data-date="2026-05-31" data-title="videomla: low-rank latent kv cache for minute-scale autoregressive video diffusion" data-keywords="videomla: low-rank latent kv cache for minute-scale autoregressive video diffusion videomla visual ssl / representation p3 2026-05-31 arxiv 研究视频基础模型长时序 attention/kv 压缩，对视频预训练效率有间接价值 中相关；详见方法、贡献和实验边界。">
+  <a class="paper-thumb" href="../papers/2605.30351.html"><img src="../assets/mineru/2605.30351/images/0255df1dc865fc49b8e91296a4334fd27c1fc09b93a7dfac74888f4d0848271e.jpg" alt="VideoMLA figure"></a>
   <div>
     <div class="paper-meta">2026-05-31 · Visual SSL / representation · arXiv</div>
     <h3><a href="../papers/2605.30351.html">VideoMLA: Low-Rank Latent KV Cache for Minute-Scale Autoregressive Video Diffusion</a></h3>
@@ -90,11 +86,10 @@
     <p class="card-tech"><b>方法：</b>研究视频基础模型长时序 attention/KV 压缩，对视频预训练效率有间接价值</p>
     <div class="paper-actions"><a href="../papers/2605.30351.html">读图文页</a><a href="https://arxiv.org/abs/2605.30351">原文</a></div>
   </div>
+  <button class="readbtn" type="button" data-read-toggle="2605.30351" title="标记已读" aria-label="标记已读"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M4 10.5l4 4 8-9"/></svg></button>
 </article>
-<article class="paper-card" data-category="Visual SSL / representation" data-priority="P3" data-date="2026-05-31" data-title="yocausal: how far is video generation from world model? a causality perspective" data-keywords="yocausal: how far is video generation from world model? a causality perspective yocausal visual ssl / representation p3 2026-05-31 arxiv 用真实视频反转构造 causal counterfactual benchmark，适合评估视频 world model 是否学到动态因果 中相关；详见方法、贡献和实验边界。">
-  <a class="paper-thumb paper-thumb-text" href="../papers/2605.30346.html">
-    <img src="../assets/mineru/2605.30346/images/61e057549a87a37b4aa46ac202e412d2c950331e97d27012a29a084deb38a440.jpg" alt="YoCausal figure"><span>P3</span>
-  </a>
+<article class="paper-card" data-pid="2605.30346" data-category="Visual SSL / representation" data-priority="P3" data-date="2026-05-31" data-title="yocausal: how far is video generation from world model? a causality perspective" data-keywords="yocausal: how far is video generation from world model? a causality perspective yocausal visual ssl / representation p3 2026-05-31 arxiv 用真实视频反转构造 causal counterfactual benchmark，适合评估视频 world model 是否学到动态因果 中相关；详见方法、贡献和实验边界。">
+  <a class="paper-thumb" href="../papers/2605.30346.html"><img src="../assets/mineru/2605.30346/images/61e057549a87a37b4aa46ac202e412d2c950331e97d27012a29a084deb38a440.jpg" alt="YoCausal figure"></a>
   <div>
     <div class="paper-meta">2026-05-31 · Visual SSL / representation · arXiv</div>
     <h3><a href="../papers/2605.30346.html">YoCausal: How Far is Video Generation from World Model? A Causality Perspective</a></h3>
@@ -102,11 +97,10 @@
     <p class="card-tech"><b>方法：</b>用真实视频反转构造 causal counterfactual benchmark，适合评估视频 world model 是否学到动态因果</p>
     <div class="paper-actions"><a href="../papers/2605.30346.html">读图文页</a><a href="https://arxiv.org/abs/2605.30346">原文</a></div>
   </div>
+  <button class="readbtn" type="button" data-read-toggle="2605.30346" title="标记已读" aria-label="标记已读"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M4 10.5l4 4 8-9"/></svg></button>
 </article>
-<article class="paper-card" data-category="Visual SSL / representation" data-priority="P3" data-date="2026-05-31" data-title="a geometric view of src: learning representations for stable residual inference" data-keywords="a geometric view of src: learning representations for stable residual inference a geometric view of src visual ssl / representation p3 2026-05-31 arxiv 从 residual margin 与 span geometry 讨论表征稳定性，含 masked within-class self-expressiveness 目标 中低相关；详见方法、贡献和实验边界。">
-  <a class="paper-thumb paper-thumb-text" href="../papers/2605.29673.html">
-    <span>P3</span><strong>A Geometric View of SRC</strong><em>arXiv</em>
-  </a>
+<article class="paper-card" data-pid="2605.29673" data-category="Visual SSL / representation" data-priority="P3" data-date="2026-05-31" data-title="a geometric view of src: learning representations for stable residual inference" data-keywords="a geometric view of src: learning representations for stable residual inference a geometric view of src visual ssl / representation p3 2026-05-31 arxiv 从 residual margin 与 span geometry 讨论表征稳定性，含 masked within-class self-expressiveness 目标 中低相关；详见方法、贡献和实验边界。">
+  <a class="paper-thumb paper-thumb-text" data-topic="default" href="../papers/2605.29673.html"><span>P3</span><strong>A Geometric View of SRC</strong><em>arXiv</em></a>
   <div>
     <div class="paper-meta">2026-05-31 · Visual SSL / representation · arXiv</div>
     <h3><a href="../papers/2605.29673.html">A Geometric View of SRC: Learning Representations for Stable Residual Inference</a></h3>
@@ -114,11 +108,10 @@
     <p class="card-tech"><b>方法：</b>从 residual margin 与 span geometry 讨论表征稳定性，含 masked within-class self-expressiveness 目标</p>
     <div class="paper-actions"><a href="../papers/2605.29673.html">读图文页</a><a href="https://arxiv.org/abs/2605.29673">原文</a></div>
   </div>
+  <button class="readbtn" type="button" data-read-toggle="2605.29673" title="标记已读" aria-label="标记已读"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M4 10.5l4 4 8-9"/></svg></button>
 </article>
-<article class="paper-card" data-category="data scaling" data-priority="扫读" data-date="2026-05-31" data-title="how much is a dataset worth? scaling laws, the vendi score, and matrix spectral functions" data-keywords="how much is a dataset worth? scaling laws, the vendi score, and matrix spectral functions how much is a dataset data scaling 扫读 2026-05-31 arxiv + data scaling 用 imagenet-scale 子集验证数据多样性/谱函数价值，作为视觉预训练数据筛选背景扫读 中低相关；详见方法、贡献和实验边界。">
-  <a class="paper-thumb paper-thumb-text" href="../papers/2605.29448.html">
-    <img src="../assets/mineru/2605.29448/images/03554dc3843d6656b6ab7c614f510150a59c48297772fd6aaf9257f48b5a325e.jpg" alt="How Much Is a Dataset figure"><span>扫读</span>
-  </a>
+<article class="paper-card" data-pid="2605.29448" data-category="data scaling" data-priority="扫读" data-date="2026-05-31" data-title="how much is a dataset worth? scaling laws, the vendi score, and matrix spectral functions" data-keywords="how much is a dataset worth? scaling laws, the vendi score, and matrix spectral functions how much is a dataset data scaling 扫读 2026-05-31 arxiv + data scaling 用 imagenet-scale 子集验证数据多样性/谱函数价值，作为视觉预训练数据筛选背景扫读 中低相关；详见方法、贡献和实验边界。">
+  <a class="paper-thumb" href="../papers/2605.29448.html"><img src="../assets/mineru/2605.29448/images/03554dc3843d6656b6ab7c614f510150a59c48297772fd6aaf9257f48b5a325e.jpg" alt="How Much Is a Dataset figure"></a>
   <div>
     <div class="paper-meta">2026-05-31 · data scaling · arXiv + data scaling</div>
     <h3><a href="../papers/2605.29448.html">How Much Is a Dataset Worth? Scaling Laws, the Vendi Score, and Matrix Spectral Functions</a></h3>
@@ -126,6 +119,7 @@
     <p class="card-tech"><b>方法：</b>用 ImageNet-scale 子集验证数据多样性/谱函数价值，作为视觉预训练数据筛选背景扫读</p>
     <div class="paper-actions"><a href="../papers/2605.29448.html">读图文页</a><a href="https://arxiv.org/abs/2605.29448">原文</a></div>
   </div>
+  <button class="readbtn" type="button" data-read-toggle="2605.29448" title="标记已读" aria-label="标记已读"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M4 10.5l4 4 8-9"/></svg></button>
 </article></div>
     </div>
   </div>
@@ -134,13 +128,13 @@
     <div class="side-box"><h4>会议口径</h4><p>主提醒只保留 CCF A/B；CCF C 与过期截止仅作状态记录。</p></div>
   </aside>
 </article></main>
-  <aside class="conf-float" data-conf-reminder="2026-06-15-main-ddl" aria-label="CCF A/B 主投稿提醒">
+  <aside class="conf-float" data-conf-reminder="2026-06-16-main-ddl" aria-label="CCF A/B 主投稿提醒">
   <button class="conf-close" type="button" aria-label="关闭会议提醒">×</button>
   <details open>
     <summary>CCF A/B 主投稿提醒</summary>
     <div class="conf-list"><a class="conf-item " href="https://github.com/ccfddl/ccf-deadlines/blob/main/conference/AI/aaai.yml">
   <span><b>AAAI 2027</b><em>CCF A · Main paper submission</em></span>
-  <strong>42 天</strong>
+  <strong>41 天</strong>
   <small>2026-07-27 · CCF DDL: abstract 2026-07-20；进入 1 个月窗口后重点提醒。</small>
 </a></div>
   </details>
@@ -153,7 +147,7 @@
   (() => {
     const box = document.querySelector('[data-conf-reminder]');
     if (!box) return;
-    const key = `visualSslConfReminderClosed:${box.dataset.confReminder || '2026-06-15-main-ddl'}`;
+    const key = `visualSslConfReminderClosed:${box.dataset.confReminder || '2026-06-16-main-ddl'}`;
     try {
       if (localStorage.getItem(key) === '1') box.hidden = true;
     } catch (err) {}
@@ -166,5 +160,6 @@
     }
   })();
   </script>
+  <script src="../assets/ssl-game.js"></script>
 </body>
 </html>

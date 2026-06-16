@@ -1,0 +1,100 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Mirage Probes · 通用视觉自监督研究报</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Source+Serif+4:ital,opsz,wght@0,8..60,400;0,8..60,500;0,8..60,600;1,8..60,400&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../assets/visual-ssl.css?v=20260615ssl6">
+</head>
+<body>
+  <header class="masthead">
+    <a class="masthead-title" href="../index.html">通用视觉自监督研究报</a>
+    <div class="masthead-kicker">A Daily Digest of Visual Self-Supervised Learning</div>
+    <div class="masthead-meta">
+      <span>2026-06-16</span>
+      <span>图像表征 · VFM · JEPA · 视频预训练</span>
+    </div>
+  </header>
+  <nav class="site-nav" aria-label="主导航">
+    <a class="nav-link" href="../index.html">头版</a>
+<a class="nav-link" href="../issues/2026-06-16.html">今日速递</a>
+<a class="nav-link" href="../pages/catalog.html">论文目录</a>
+<a class="nav-link" href="../pages/timeline.html">时间线</a>
+<span class="nav-streak" title="连续追踪天数"><svg viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><path d="M8 0c.7 2.5-1.2 3.7-2 5-1 1.6-1 4 .8 4.8C6.4 8.5 7.4 7.8 8 7c.3 1.3-.4 2 .9 3 .9.7 1.3 1.6 1.1 2.6C9.7 14.6 8.9 16 6.8 16 4.6 16 3 14.3 3 12c0-3.3 2.6-4.8 2.4-8C6.9 4.6 8.4 5 8 0z"/></svg> 连续 <b data-streak>0</b> 天</span>
+  </nav>
+  <main><article class="paper-detail">
+  <div class="paper-main">
+    <div class="kicker">arXiv 新增 + VLM representation diagnostics · P2 · 2026-06-16</div>
+    <h1 class="paper-headline">Mirage Probes：多模态自监督/弱监督表征最终要落到 faithful grounding，这篇能帮助判断 benchmark 分数是否虚高</h1>
+    <p class="dek">把“没看图也答对”拆成 textual biases 与 spurious images 两种机制，后者发生在视觉表征层。</p>
+    <p class="byline"><strong>Mirage Probes: How Vision Models Fake Visual Understanding</strong>　Daniel Ben-Levi, Judah Goldfeder, Weiliang Zhao, Raz Lapid, Amit LeVi, Allen G. Roush, Ravid Shwartz-Ziv, Hod Lipson；arXiv 元数据未稳定列机构时按作者列表记录。　arXiv 新增 + VLM representation diagnostics　<a href="https://arxiv.org/abs/2606.13870">原文链接</a></p>
+    <div class="paper-facts">
+      <span><b>编号</b>2606.13870</span>
+      <span><b>优先级</b>P2</span>
+      <span><b>类别</b>arXiv 新增 + VLM representation diagnostics</span>
+      <span><b>会议</b>arXiv 新增 + VLM representation diagnostics</span>
+      <span><b>方法</b>构造 paraphrased question variants 与 mirage/non-mirage labels 的 contrastive probing；在 residual stream、MLP、post-attention、attention heads 中线性解码 mirage 信号。</span>
+      <span><b>来源</b>arXiv / OpenReview</span>
+    </div>
+    <div class="feature-body">
+      <p class="lead dropcap">先说结论。多模态自监督/弱监督表征最终要落到 faithful grounding，这篇能帮助判断 benchmark 分数是否虚高。 把“没看图也答对”拆成 textual biases 与 spurious images 两种机制，后者发生在视觉表征层。</p>
+      <figure class="full-fig"><img src="../assets/mineru/2606.13870/images/80e82c211c708aa2fe3b6ee0d3f6a5fd7545752145101abc279297f2b7a365ff.jpg" alt="Figureure 2 · : Contrastive dataset construction overview"><figcaption><b>Figureure 2 · : Contrastive dataset construction overview</b><span class="fig-en">Figure 2: Contrastive dataset construction overview. In order to produce contrastive pairs, we mutate each base question four times with GPT-4o-mini and generate with and without-image responses to each variant. Then, for each pair of responses, we use cosine similarity and a regex annotator to identify mirage and non-mirage behavior. If a base question’s group contains at least one mirage and non-mirage pair, we store each pair’s with-image response to form a contrastive example.</span><span class="fig-zh">这张图概括 Mirage Probes 的整体方法流程。阅读时先看模块之间传递的训练信号，再看作者如何把目标拆成可优化的子问题。</span></figcaption></figure>
+<figure class="full-fig"><img src="../assets/mineru/2606.13870/images/e8a84cb03f82b6868f2460a77f574cd2605cd560d3a1c96485af9e102c5b019d.jpg" alt="Figureure 1 · : Two distinct mirage mechanisms"><figcaption><b>Figureure 1 · : Two distinct mirage mechanisms</b><span class="fig-en">Figure 1: Two distinct mirage mechanisms. VLMs seem to exhibit two different kinds of mirage behavior, spurious images and textual biases, depicted here. Each row shows a mirage response to the same question with and without an image present. In the first example, the model achieves mirage behavior by building and referring to a false visual representation. Differently, in the second example, the model does not utilize visual information at all, relying solely on textual priors provided by the rich question distribution to reach the correct response.</span><span class="fig-zh">这张图来自论文 PDF 的结构化抽取。当前用于辅助理解 Mirage Probes 的方法或实验，请结合正文精读段落一起看。</span></figcaption></figure>
+      
+      <h2>核心问题</h2>
+      <p>多模态自监督/弱监督表征最终要落到 faithful grounding，这篇能帮助判断 benchmark 分数是否虚高。</p>
+      <h2>方法拆解</h2>
+      <p>构造 paraphrased question variants 与 mirage/non-mirage labels 的 contrastive probing；在 residual stream、MLP、post-attention、attention heads 中线性解码 mirage 信号。</p>
+      <h2>主要贡献</h2>
+      <p>把“没看图也答对”拆成 textual biases 与 spurious images 两种机制，后者发生在视觉表征层。</p>
+      <h2>实验看点</h2>
+      <p>摘要称 Naive Bayes 文本 baseline 无法恢复信号；提出 Prior Harnessing Index 衡量模型从文本先验回答的程度。</p>
+      <h2>局限与读法</h2>
+      <p>是诊断和缓解方向，不是新的预训练算法；需要确认 probe 是否跨架构稳定、干预是否真正提升 grounding。</p>
+    
+    </div>
+  </div>
+  <aside class="paper-side">
+
+    <div class="side-box"><h4>关键判断</h4><dl><dt>相关性</dt><dd>P2</dd><dt>类别</dt><dd>arXiv 新增 + VLM representation diagnostics</dd><dt>会议</dt><dd>arXiv 新增 + VLM representation diagnostics</dd><dt>读法</dt><dd>方法图优先，表格次之</dd></dl></div>
+    <div class="side-box"><h4>原文</h4><p><a href="https://arxiv.org/abs/2606.13870">https://arxiv.org/abs/2606.13870</a></p></div>
+  </aside>
+</article></main>
+  <aside class="conf-float" data-conf-reminder="2026-06-16-main-ddl" aria-label="CCF A/B 主投稿提醒">
+  <button class="conf-close" type="button" aria-label="关闭会议提醒">×</button>
+  <details open>
+    <summary>CCF A/B 主投稿提醒</summary>
+    <div class="conf-list"><a class="conf-item " href="https://github.com/ccfddl/ccf-deadlines/blob/main/conference/AI/aaai.yml">
+  <span><b>AAAI 2027</b><em>CCF A · Main paper submission</em></span>
+  <strong>41 天</strong>
+  <small>2026-07-27 · CCF DDL: abstract 2026-07-20；进入 1 个月窗口后重点提醒。</small>
+</a></div>
+  </details>
+</aside>
+  <footer class="footer">
+    <div>面向通用视觉自监督、视觉基础模型与多模态表征学习的每日研究报。</div>
+    <div class="muted">Issue 2026-06-16 · Curated readings and figure notes</div>
+  </footer>
+  <script>
+  (() => {
+    const box = document.querySelector('[data-conf-reminder]');
+    if (!box) return;
+    const key = `visualSslConfReminderClosed:${box.dataset.confReminder || '2026-06-16-main-ddl'}`;
+    try {
+      if (localStorage.getItem(key) === '1') box.hidden = true;
+    } catch (err) {}
+    const close = box.querySelector('.conf-close');
+    if (close) {
+      close.addEventListener('click', () => {
+        box.hidden = true;
+        try { localStorage.setItem(key, '1'); } catch (err) {}
+      });
+    }
+  })();
+  </script>
+  <script src="../assets/ssl-game.js"></script>
+</body>
+</html>

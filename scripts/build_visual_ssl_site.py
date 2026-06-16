@@ -10,7 +10,7 @@ from pathlib import Path
 
 ROOT = Path(r"H:\Desktop\visual_ssl_digest_site")
 REPORT_ROOT = Path(r"H:\Desktop\visual_ssl_paper_reports")
-CSS_VERSION = "20260525j"
+CSS_VERSION = "20260615ssl6"
 CURRENT_DATE = "2026-05-25"
 
 
@@ -290,6 +290,83 @@ def figure_label_from_caption(caption: str, fallback: str) -> str:
     return clean.split(". ")[0][:90]
 
 
+_IMG_SIZE_CACHE: dict[str, tuple[int, int] | None] = {}
+
+
+def image_size(path: Path) -> tuple[int, int] | None:
+    """Read (width, height) from a JPEG/PNG/GIF without external deps.
+    Returns None if it can't be determined."""
+    key = str(path)
+    if key in _IMG_SIZE_CACHE:
+        return _IMG_SIZE_CACHE[key]
+    size: tuple[int, int] | None = None
+    try:
+        with open(path, "rb") as fh:
+            head = fh.read(26)
+            if head[:8] == b"\x89PNG\r\n\x1a\n" and head[12:16] == b"IHDR":
+                w = int.from_bytes(head[16:20], "big")
+                h = int.from_bytes(head[20:24], "big")
+                size = (w, h)
+            elif head[:6] in (b"GIF87a", b"GIF89a"):
+                w = int.from_bytes(head[6:8], "little")
+                h = int.from_bytes(head[8:10], "little")
+                size = (w, h)
+            elif head[:2] == b"\xff\xd8":  # JPEG
+                fh.seek(2)
+                b = fh.read(1)
+                while b and b != b"":
+                    while b != b"\xff":
+                        b = fh.read(1)
+                        if not b:
+                            break
+                    while b == b"\xff":
+                        b = fh.read(1)
+                    if not b:
+                        break
+                    marker = b[0]
+                    if marker in (0xC0, 0xC1, 0xC2, 0xC3, 0xC5, 0xC6, 0xC7,
+                                  0xC9, 0xCA, 0xCB, 0xCD, 0xCE, 0xCF):
+                        fh.read(3)  # length(2) + precision(1)
+                        hh = fh.read(2)
+                        ww = fh.read(2)
+                        size = (int.from_bytes(ww, "big"), int.from_bytes(hh, "big"))
+                        break
+                    else:
+                        seg_len = int.from_bytes(fh.read(2), "big")
+                        if seg_len < 2:
+                            break
+                        fh.seek(seg_len - 2, 1)
+                        b = fh.read(1)
+    except Exception:
+        size = None
+    _IMG_SIZE_CACHE[key] = size
+    return size
+
+
+def aspect_ratio_str(path: Path, default: str = "16/9") -> str:
+    dims = image_size(path)
+    if not dims or dims[1] == 0:
+        return default
+    return f"{dims[0]}/{dims[1]}"
+
+
+def is_bad_thumbnail(path: Path) -> bool:
+    """True for thin banner strips / equation rows / tiny fragments that make
+    ugly thumbnails (the MinerU 'first image is a header bar' problem)."""
+    dims = image_size(path)
+    if not dims:
+        return False
+    w, h = dims
+    if w == 0 or h == 0:
+        return True
+    ar = w / h
+    if ar > 3.6 or ar < 0.32:   # long thin strip (header/equation) or sliver
+        return True
+    if w < 120 or h < 90:        # too small to read
+        return True
+    return False
+
+
 def content_list_path(pid: str) -> Path | None:
     root = ROOT / "assets" / "mineru" / pid
     paths = sorted(root.glob("*content_list.json"))
@@ -375,6 +452,15 @@ def figures_for(pid: str, depth: int = 1, max_count: int = 2) -> list[dict]:
             score -= 120
         if not cap and selected:
             score -= 250
+        # Reject thin banner strips / equation rows / slivers as thumbnails:
+        # this is the MinerU "first extracted image is a header bar" problem.
+        if is_bad_thumbnail(img_path):
+            score -= 900
+        dims = image_size(img_path)
+        if dims and dims[1]:
+            ar = dims[0] / dims[1]
+            if 0.6 <= ar <= 2.2:   # nicely-proportioned figure
+                score += 60
         fallback_label = "Figure · Extracted visual evidence"
         fallback_en = f"This visual block was extracted from the paper PDF without a structured caption. It is included only as supporting visual evidence for {title}; prefer figures with explicit captions when available."
         selected.append({
@@ -862,10 +948,13 @@ def nav(depth: int = 0, active: str = "") -> str:
         ("pages/catalog.html", "论文目录"),
         ("pages/timeline.html", "时间线"),
     ]
-    return "\n".join(
+    links = "\n".join(
         f'<a class="nav-link{" active" if active == href else ""}" href="{prefix}{href}">{label}</a>'
         for href, label in items
     )
+    flame = '<svg viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><path d="M8 0c.7 2.5-1.2 3.7-2 5-1 1.6-1 4 .8 4.8C6.4 8.5 7.4 7.8 8 7c.3 1.3-.4 2 .9 3 .9.7 1.3 1.6 1.1 2.6C9.7 14.6 8.9 16 6.8 16 4.6 16 3 14.3 3 12c0-3.3 2.6-4.8 2.4-8C6.9 4.6 8.4 5 8 0z"/></svg>'
+    streak = f'<span class="nav-streak" title="连续追踪天数">{flame} 连续 <b data-streak>0</b> 天</span>'
+    return links + "\n" + streak
 
 
 def conference_widget(depth: int = 0) -> str:
@@ -935,17 +1024,18 @@ def shell(title: str, body: str, depth: int = 0, active: str = "", display_date:
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>{e(title)} · 通用视觉自监督研究报</title>
-  <link rel="stylesheet" href="{prefix}assets/styles.css?v={CSS_VERSION}">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Source+Serif+4:ital,opsz,wght@0,8..60,400;0,8..60,500;0,8..60,600;1,8..60,400&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="{prefix}assets/visual-ssl.css?v={CSS_VERSION}">
 </head>
 <body>
   <header class="masthead">
-    <div class="masthead-kicker">Visual SSL Research Report · {e(page_date)}</div>
     <a class="masthead-title" href="{prefix}index.html">通用视觉自监督研究报</a>
+    <div class="masthead-kicker">A Daily Digest of Visual Self-Supervised Learning</div>
     <div class="masthead-meta">
+      <span>{e(page_date)}</span>
       <span>图像表征 · VFM · JEPA · 视频预训练</span>
-      <span>CCF A/B 会议优先</span>
-      <span>图文精读 · 方法图解</span>
     </div>
   </header>
   <nav class="site-nav" aria-label="主导航">
@@ -974,22 +1064,54 @@ def shell(title: str, body: str, depth: int = 0, active: str = "", display_date:
     }}
   }})();
   </script>
+  <script src="{prefix}assets/ssl-game.js"></script>
 </body>
 </html>"""
+
+
+_READ_CHECK = ('<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2.4" '
+               'stroke-linecap="round" stroke-linejoin="round"><path d="M4 10.5l4 4 8-9"/></svg>')
+
+
+def topic_key(category: str) -> str:
+    c = (category or "").lower()
+    if "jepa" in c:
+        return "JEPA"
+    if "token" in c:
+        return "tokenizer"
+    if "video" in c or "motion" in c or "temporal" in c:
+        return "video"
+    if "3d" in c or "point" in c or "geometr" in c or "pose" in c:
+        return "3D"
+    if "diffus" in c or "generat" in c:
+        return "diffusion"
+    if any(k in c for k in ("interpret", "circuit", "diagnos", "probing", "analysis")):
+        return "interpretability"
+    if "contrast" in c:
+        return "contrastive"
+    if any(k in c for k in ("vlm", "vision-language", "vision language", "multimodal", "language", "caption")):
+        return "VLM"
+    return "default"
+
+
+def read_btn(pid: str) -> str:
+    return (f'<button class="readbtn" type="button" data-read-toggle="{e(pid)}" '
+            f'title="标记已读" aria-label="标记已读">{_READ_CHECK}</button>')
 
 
 def paper_card(p: dict, depth: int = 0) -> str:
     prefix = "../" * depth
     figs = figures_for(p["id"], depth, 1)
     if figs:
-        thumb = f"""<img src="{e(figs[0]['src'])}" alt="{e(p['short'])} figure"><span>{e(p['priority'])}</span>"""
+        thumb = (f'<a class="paper-thumb" href="{prefix}papers/{p["id"]}.html">'
+                 f'<img src="{e(figs[0]["src"])}" alt="{e(p["short"])} figure"></a>')
     else:
-        thumb = f"""<span>{e(p['priority'])}</span><strong>{e(p['short'])}</strong><em>{e(p['venue'])}</em>"""
+        thumb = (f'<a class="paper-thumb paper-thumb-text" data-topic="{topic_key(p["category"])}" '
+                 f'href="{prefix}papers/{p["id"]}.html">'
+                 f'<span>{e(p["priority"])}</span><strong>{e(p["short"])}</strong><em>{e(p["venue"])}</em></a>')
     keywords = " ".join([p["title"], p["short"], p["category"], p["priority"], p["date"], p["venue"], p["method"], p["takeaway"]]).lower()
-    return f"""<article class="paper-card" data-category="{e(p['category'])}" data-priority="{e(p['priority'])}" data-date="{e(p['date'])}" data-title="{e(p['title'].lower())}" data-keywords="{e(keywords)}">
-  <a class="paper-thumb paper-thumb-text" href="{prefix}papers/{p['id']}.html">
-    {thumb}
-  </a>
+    return f"""<article class="paper-card" data-pid="{e(p['id'])}" data-category="{e(p['category'])}" data-priority="{e(p['priority'])}" data-date="{e(p['date'])}" data-title="{e(p['title'].lower())}" data-keywords="{e(keywords)}">
+  {thumb}
   <div>
     <div class="paper-meta">{e(p['date'])} · {e(p['category'])} · {e(p['venue'])}</div>
     <h3><a href="{prefix}papers/{p['id']}.html">{e(p['title'])}</a></h3>
@@ -997,6 +1119,7 @@ def paper_card(p: dict, depth: int = 0) -> str:
     <p class="card-tech"><b>方法：</b>{e(p['method'])}</p>
     <div class="paper-actions"><a href="{prefix}papers/{p['id']}.html">读图文页</a><a href="{e(p['url'])}">原文</a></div>
   </div>
+  {read_btn(p['id'])}
 </article>"""
 
 
@@ -1014,6 +1137,10 @@ def write_index(report_md: str) -> None:
         hero_caption = hero_figs[0].get("caption") or hero_figs[0].get("caption_zh") or hero_figs[0].get("caption_en") or hero_figs[0].get("label") or ""
     hero_img = f'<figure class="hero-figure"><img src="{e(hero_figs[0]["src"])}" alt="{e(hero["short"])} figure"><figcaption>{e(hero_caption[:180])}</figcaption></figure>' if hero_figs else ""
     cards = "\n".join(paper_card(p, 0) for p in PAPERS[:5])
+    today_ids = ",".join(p["id"] for p in PAPERS if p["date"] == CURRENT_DATE) or ",".join(p["id"] for p in PAPERS[:5])
+    flame_svg = ('<svg viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><path d="M8 0c.7 2.5-1.2 3.7-2 5'
+                 '-1 1.6-1 4 .8 4.8C6.4 8.5 7.4 7.8 8 7c.3 1.3-.4 2 .9 3 .9.7 1.3 1.6 1.1 2.6C9.7 14.6 8.9 16 6.8 16'
+                 ' 4.6 16 3 14.3 3 12c0-3.3 2.6-4.8 2.4-8C6.9 4.6 8.4 5 8 0z"/></svg>')
     body = f"""<section class="hero-grid">
   <article class="lead-story">
     <div class="kicker">今日主线 · {e(hero['venue'])}</div>
@@ -1023,6 +1150,20 @@ def write_index(report_md: str) -> None:
     <div class="paper-actions"><a href="issues/{CURRENT_DATE}.html">阅读 {zh_date(CURRENT_DATE)}速递</a><a href="papers/{hero['id']}.html">打开主文页</a></div>
   </article>
   <aside class="issue-brief">
+    <div class="prog-widget">
+      <div class="pw-t">我的进度</div>
+      <div class="prog-top">
+        <div class="ringwrap" data-ring data-ids="{today_ids}"></div>
+        <div class="prog-meta">
+          <div class="pm-t">今日精读进度</div>
+          <div class="pm-s">累计已读 <b data-readcount>0</b> 篇</div>
+          <div class="prog-streak">{flame_svg} 连续追踪 <b data-streak>0</b> 天</div>
+        </div>
+      </div>
+      <div data-heat data-weeks="16"></div>
+      <div class="heat-cap"><span>最近 16 周签到</span><span>今天 →</span></div>
+      <div class="badges" data-badges></div>
+    </div>
     <h2>快速摘要</h2>
     <ul>{summary_html}</ul>
   </aside>
@@ -1294,110 +1435,398 @@ def write_timeline() -> None:
     for p in PAPERS:
         grouped.setdefault(p["date"], []).append(p)
     parts = []
-    for date in sorted(grouped, reverse=True):
-        parts.append(f'<section class="timeline-day"><h2>{e(date)}</h2>')
-        for p in grouped[date]:
-            parts.append(f'<article><span>{e(p["priority"])}</span><a href="../papers/{p["id"]}.html">{e(p["short"])}</a><em>{e(p["category"])}</em></article>')
-        parts.append("</section>")
-    body = '<section class="page-header"><h1>时间线</h1><p>新增、更新与状态补录会在这里按天归档。</p></section>' + "\n".join(parts)
+    for day in sorted(grouped, reverse=True):
+        items = grouped[day]
+        day_ids = ",".join(x["id"] for x in items)
+        rows = "\n".join(
+            f'<article data-pid="{e(x["id"])}"><span>{e(x["priority"])}</span>'
+            f'<a href="../papers/{x["id"]}.html">{e(x["short"])}</a>'
+            f'<em>{e(x["category"])}</em></article>'
+            for x in items
+        )
+        parts.append(
+            f'<section class="timeline-day" data-dayids="{e(day_ids)}">'
+            f'<div class="tl-daycol"><h2>{e(zh_date(day))}</h2>'
+            f'<span class="tl-done" data-day-done hidden></span></div>'
+            f'<div class="tl-items">{rows}</div></section>'
+        )
+    body = ('<section class="page-header"><h1>时间线</h1>'
+            '<p>每日刊物按时间倒序归档；已读的论文会在这里同步标记。</p></section>'
+            + "\n".join(parts))
     (ROOT / "pages" / "timeline.html").write_text(shell("时间线", body, 1, "pages/timeline.html"), encoding="utf-8")
 
 
 def write_css() -> None:
-    css = """
-.hero-grid{display:grid;grid-template-columns:minmax(0,1.45fr) minmax(320px,.55fr);gap:36px;align-items:stretch;margin:34px auto 42px;max-width:1500px;padding:0 24px}
-.masthead-meta{display:flex;flex-wrap:wrap;gap:8px 14px}
-.masthead-meta span:before{content:none!important}
-.lead-story{border-top:5px solid #111;padding-top:22px}
-.lead-story h1{font-size:clamp(36px,4.5vw,62px);line-height:1.02;letter-spacing:0;margin:10px 0 18px;font-family:Georgia,'Times New Roman',serif;overflow-wrap:anywhere;word-break:break-word}
-.lead-story .dek{font-size:22px;line-height:1.45;max-width:880px;color:#30302d}
-.issue-brief{border:1px solid #d7d1c6;background:#f7f3ea;padding:22px;border-radius:8px;box-shadow:0 12px 28px rgba(31,31,29,.06)}
-.issue-brief h2{margin:0 0 12px;font-size:22px}
-.issue-brief ul{list-style:none;margin:0;padding:0;display:grid;gap:12px}
-.issue-brief li{border-bottom:1px solid #ddd5c6;padding-bottom:10px}
-.issue-brief li b{display:block;font-size:13px;color:#7d2f24;text-transform:uppercase}
-.issue-brief li span{display:block;font-size:15px;line-height:1.5}
-.section-block{max-width:1500px;margin:0 auto;padding:0 24px 44px}
-.section-heading{display:flex;align-items:end;justify-content:space-between;border-bottom:2px solid #111;margin-bottom:18px}
-.section-heading h2{margin:0 0 8px;font-size:28px}
-.paper-list{display:grid;gap:18px}
-.paper-card{align-items:start;grid-template-columns:minmax(380px,520px) minmax(0,1fr);gap:20px;padding:16px;position:relative;overflow:hidden;background:linear-gradient(135deg,rgba(255,255,255,.76),rgba(247,243,234,.58));border:1px solid rgba(216,208,195,.86);border-top:3px solid #8a2f21;border-radius:8px;box-shadow:0 14px 34px rgba(31,31,29,.08);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px)}
-.paper-card:before{content:"";position:absolute;inset:0;background:linear-gradient(120deg,rgba(255,255,255,.5),rgba(255,255,255,0) 42%);pointer-events:none}
-.paper-card>*{position:relative;z-index:1}
-.paper-card h3{margin-top:0}
-.paper-card .paper-actions{position:relative;z-index:2;margin-top:14px;display:flex;flex-wrap:wrap;gap:10px}
-.paper-card .paper-actions a{white-space:nowrap}
-.paper-thumb.paper-thumb-text{position:relative;display:block;min-height:0;aspect-ratio:16/9;background:#fff;color:#1f1f1d;text-decoration:none;padding:10px;border:1px solid #d8d0c3;border-radius:2px;overflow:hidden}
-.paper-thumb-text img{width:100%;height:100%;max-height:none;object-fit:contain;display:block;margin:0;background:#fff;border:0}
-.paper-thumb-text span{position:absolute;left:10px;top:10px;display:inline-block;margin:0;padding:4px 7px;background:#8a2f21;color:#fff;font-size:12px;line-height:1;font-weight:700;letter-spacing:.04em}
-.paper-thumb-text strong{display:block;font-size:25px;line-height:1.05;margin:10px 0;font-family:Georgia,'Times New Roman',serif}
-.paper-thumb-text em{font-size:12px;color:#6b665f;font-style:normal}
-.hero-figure{margin:24px 0;border-top:1px solid #d8d0c3;border-bottom:1px solid #d8d0c3;padding:16px 0}
-.hero-figure img{width:100%;max-height:430px;object-fit:contain;background:#fff}
-.hero-figure figcaption{font-size:13px;line-height:1.45;color:#5f5b55;margin-top:8px}
-.deep-read .full-fig{margin:28px 0;padding:14px;background:#fbfaf6;border:1px solid #d8d0c3}
-.deep-read .full-fig img{width:100%;max-height:720px;object-fit:contain;background:#fff}
-.deep-read .full-fig figcaption b{display:block;margin-bottom:8px;color:#8a2f21;font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:12px;letter-spacing:.08em;text-transform:uppercase}
-.deep-read .full-fig .fig-en,.deep-read .full-fig .fig-zh{display:block;font-size:14px;line-height:1.62}
-.deep-read .full-fig .fig-en{color:#4f4b45}
-.deep-read .full-fig .fig-zh{margin-top:6px;color:#1f1f1d}
-.deep-read .feature-body{column-count:1;column-width:auto}
-.reading-note{border-left:5px solid #8a2f21;background:#f7f3ea;padding:16px 18px;margin:24px 0}
-.reading-note h2{margin-top:0}
-.method-steps{padding-left:22px;display:grid;gap:10px}
-.method-steps li{line-height:1.62}
-.stat-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px;margin:20px 0}
-.stat-grid div{border:1px solid #d8d0c3;background:#fff;padding:14px}
-.stat-grid b,.stat-grid span,.stat-grid em{display:block}
-.stat-grid b{color:#8a2f21;font-size:13px;text-transform:uppercase}
-.stat-grid span{font-size:20px;line-height:1.25;margin:6px 0}
-.stat-grid em{font-style:normal;color:#64605a;font-size:13px;line-height:1.45}
-.issue-detail .paper-list{break-inside:avoid;column-span:all}
-.empty-state{border:1px solid #d7d1c6;background:#f7f3ea;padding:18px;border-radius:8px;color:#5f5b55}
-.issue-detail .paper-headline{max-width:980px;font-size:clamp(31px,3.35vw,42px);line-height:1.16;text-wrap:pretty;word-break:normal;overflow-wrap:normal;line-break:loose}
-.paper-detail:not(.issue-detail) .paper-main > .dek{max-width:100%;width:100%;text-wrap:wrap;overflow-wrap:normal;word-break:normal;line-break:loose}
-.paper-detail:not(.issue-detail):not(.deep-read) .feature-body{column-count:1;column-gap:0;column-rule:none;max-width:900px}
-.paper-detail:not(.issue-detail):not(.deep-read) .feature-body > p,.paper-detail:not(.issue-detail):not(.deep-read) .feature-body > ul,.paper-detail:not(.issue-detail):not(.deep-read) .feature-body > ol{break-inside:auto}
-.paper-detail:not(.issue-detail):not(.deep-read) .feature-body li{margin:6px 0}
-.page-header{max-width:1500px;margin:32px auto;padding:0 24px;border-bottom:2px solid #111}
-.page-header h1{font-size:54px;line-height:1;margin:0 0 10px;font-family:Georgia,'Times New Roman',serif}
-.catalog-shell{max-width:1500px;margin:0 auto;padding:0 24px 48px}
-.catalog-tools{display:grid;gap:12px;margin:0 0 22px;padding:16px;background:linear-gradient(135deg,rgba(255,255,255,.8),rgba(247,243,234,.62));border:1px solid rgba(216,208,195,.9);border-radius:8px;box-shadow:0 12px 28px rgba(31,31,29,.06)}
-.catalog-search{width:100%;box-sizing:border-box;border:1px solid #d8d0c3;border-radius:6px;background:rgba(255,255,255,.82);padding:10px 12px;font:inherit;color:#1f1f1d}
-.catalog-search:focus{outline:2px solid rgba(138,47,33,.28);outline-offset:1px}
-.filter-row{display:flex;flex-wrap:wrap;gap:8px}
-.filter-pill{border:1px solid #d8d0c3;border-radius:999px;background:rgba(255,255,255,.72);color:#4f4b45;padding:7px 10px;font-size:13px;line-height:1;cursor:pointer}
-.filter-pill:hover{border-color:#8a2f21;color:#8a2f21}
-.filter-pill.is-active{background:#8a2f21;border-color:#8a2f21;color:#fff}
-.catalog-status{font-size:13px;color:#6b665f}
-.catalog-list{margin-top:0}
-.catalog-pager{display:flex;align-items:center;justify-content:center;gap:14px;margin-top:24px}
-.catalog-pager button{border:1px solid #d8d0c3;border-radius:6px;background:#fff;color:#1f1f1d;padding:8px 12px;cursor:pointer}
-.catalog-pager button:disabled{opacity:.42;cursor:not-allowed}
-.catalog-pager span{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;color:#6b665f}
-.timeline-day{max-width:1100px;margin:28px auto;padding:0 24px}
-.timeline-day h2{border-bottom:2px solid #111;padding-bottom:8px}
-.timeline-day article{display:grid;grid-template-columns:70px 1fr 240px;gap:16px;border-bottom:1px solid #ddd;padding:12px 0}
-.timeline-day span{font-weight:700;color:#8a2f21}
-.timeline-day em{font-style:normal;color:#65615a}
-.conf-float{position:fixed;right:18px;bottom:18px;z-index:45;width:min(360px,calc(100vw - 32px));background:#fbfaf6;border:1px solid #d8d0c3;border-radius:8px;box-shadow:0 16px 36px rgba(31,31,29,.18);padding:14px 42px 14px 14px}
-.conf-float details{margin:0}
-.conf-float summary{cursor:pointer;font-weight:700;color:#1f1f1d;list-style:none}
-.conf-float summary::-webkit-details-marker{display:none}
-.conf-close{position:absolute;right:10px;top:9px;width:24px;height:24px;border:1px solid #d8d0c3;border-radius:999px;background:#fff;color:#5f5b55;font-size:17px;line-height:20px;cursor:pointer;padding:0}
-.conf-close:hover{border-color:#8a2f21;color:#8a2f21}
-.conf-list{display:grid;gap:8px;margin-top:10px}
-.conf-item{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:4px 10px;text-decoration:none;color:#1f1f1d;border-left:4px solid #b8afa1;background:#fff;padding:9px 10px;border-radius:6px}
-.conf-item b,.conf-item em,.conf-item small{display:block}
-.conf-item em{font-style:normal;font-size:12px;color:#6b665f;margin-top:2px}
-.conf-item strong{color:#5b5a56;font-size:13px;white-space:nowrap}
-.conf-item small{grid-column:1/-1;color:#6b665f;line-height:1.45}
-.conf-item.urgent{border-left-color:#8a2f21}
-.conf-item.urgent strong,.conf-item.soon strong{color:#8a2f21}
-.conf-item.past{opacity:.72}
-@media (max-width:900px){.hero-grid{grid-template-columns:1fr;padding:0 12px;box-sizing:border-box;max-width:100%;width:100%;margin-left:0;margin-right:0}.lead-story h1{font-size:40px}.paper-card{grid-template-columns:1fr}.timeline-day article{grid-template-columns:60px 1fr}.timeline-day em{grid-column:2}.stat-grid{grid-template-columns:1fr}.paper-thumb.paper-thumb-text{aspect-ratio:16/10}.conf-float{position:static;width:auto;margin:16px 12px;box-sizing:border-box}}
+    css = r"""
+/* ============================================================
+   通用视觉自监督研究报 · 设计 v6 · 极简学术博客 + 养成系
+   自包含样式（shell 不再加载旧 styles.css）。
+   暖纸白 + 一种低饱和钢蓝 accent；养成元素用暖黄铜。
+   英文固有名词加重、中文做解释；图按原始比例不裁切。
+   ============================================================ */
+:root{
+  --paper:#fcfbf8;--paper2:#f5f3ed;--card:#ffffff;
+  --ink:#1b1a17;--ink-soft:#3c3933;--muted:#6f6a61;--muted-2:#9a9488;
+  --hair:#e7e3da;--hair2:#efece4;--rule:#d3cdc1;
+  --accent:#355d86;--accent-deep:#274964;--accent-soft:#e6edf4;--accent-line:rgba(53,93,134,.28);
+  --gold:#b07d3a;--gold-deep:#8a5d24;--gold-soft:#f4ead7;--alert:#b0492f;
+  --serif:"Source Serif 4","Songti SC","Noto Serif SC",Georgia,"Times New Roman",serif;
+  --sans:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Hiragino Sans GB","Microsoft YaHei",system-ui,sans-serif;
+  --mono:"JetBrains Mono","SF Mono",ui-monospace,Consolas,monospace;
+  --page:min(94vw,1480px);--read:46rem;
+}
+*{box-sizing:border-box;}
+html{-webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility;}
+body{margin:0;background:var(--paper);color:var(--ink);font-family:var(--serif);font-size:18px;line-height:1.72;font-feature-settings:"kern","liga";}
+img{max-width:100%;height:auto;display:block;}
+::selection{background:var(--accent-soft);color:var(--ink);}
+a{color:var(--accent-deep);text-decoration:none;}
+h1,h2,h3,h4{font-family:var(--serif);font-weight:600;color:var(--ink);text-wrap:balance;word-break:keep-all;}
+p{text-wrap:pretty;}
+
+/* ---------- masthead 报名牌 ---------- */
+.masthead{max-width:var(--page);margin:0 auto;padding:30px 28px 0;display:flex;align-items:flex-end;justify-content:space-between;gap:16px;flex-wrap:wrap;}
+.masthead-title{order:1;font-family:var(--serif);font-weight:600;font-size:clamp(22px,2.3vw,28px);letter-spacing:-.015em;color:var(--ink);text-decoration:none;display:block;}
+.masthead-title:hover{color:var(--accent-deep);}
+.masthead-kicker{order:0;flex-basis:100%;font-family:var(--sans);font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted-2);margin-bottom:5px;}
+.masthead-meta{order:2;text-align:right;display:flex;flex-direction:column;gap:2px;font-family:var(--sans);font-size:11.5px;color:var(--muted-2);}
+.masthead-meta span{white-space:nowrap;}
+.masthead-meta span:first-child{font-family:var(--mono);letter-spacing:.04em;}
+
+/* ---------- nav ---------- */
+.site-nav{max-width:var(--page);margin:16px auto 0;padding:0 28px;display:flex;gap:24px;align-items:center;border-bottom:1px solid var(--hair);font-family:var(--sans);font-size:14px;flex-wrap:wrap;}
+.nav-link{color:var(--muted);text-decoration:none;padding:11px 0;border-bottom:2px solid transparent;margin-bottom:-1px;transition:color .15s;}
+.nav-link:hover{color:var(--ink);}
+.nav-link.active{color:var(--ink);border-bottom-color:var(--accent);}
+.nav-streak{margin-left:auto;display:inline-flex;align-items:center;gap:6px;font-family:var(--sans);font-size:12.5px;font-weight:600;color:var(--gold-deep);background:var(--gold-soft);border:1px solid #e7d3ad;border-radius:30px;padding:4px 11px 4px 9px;white-space:nowrap;}
+.nav-streak svg{width:13px;height:13px;}
+.nav-streak b{font-variant-numeric:tabular-nums;}
+
+main{display:block;}
+
+/* ---------- kicker / headline / dek ---------- */
+.kicker{font-family:var(--sans);font-weight:600;font-size:11.5px;letter-spacing:.13em;text-transform:uppercase;color:var(--accent);margin:0 0 12px;display:block;}
+.dek{font-family:var(--serif);font-size:20px;line-height:1.55;color:var(--ink-soft);margin:0 0 22px;max-width:60ch;}
+
+/* ============================================================
+   HOME · hero + brief（两栏）
+   ============================================================ */
+.hero-grid{display:grid;grid-template-columns:minmax(0,1fr) 320px;gap:clamp(40px,5vw,72px);align-items:start;max-width:var(--page);margin:34px auto 8px;padding:0 28px;}
+@media(max-width:900px){.hero-grid{grid-template-columns:1fr;gap:24px;}}
+.lead-story{min-width:0;}
+.lead-story h1{font-size:clamp(32px,3.4vw,46px);line-height:1.12;letter-spacing:-.02em;margin:0 0 16px;font-family:var(--serif);}
+.lead-story .dek{font-size:20px;}
+.hero-figure{margin:24px 0 18px;border:1px solid var(--hair);border-radius:8px;overflow:hidden;background:var(--card);}
+.hero-figure img{width:100%;max-height:460px;object-fit:contain;background:#fff;}
+.hero-figure figcaption{font-family:var(--sans);font-size:13px;color:var(--muted);line-height:1.6;padding:10px 14px;border-top:1px solid var(--hair);}
+.paper-actions{display:flex;gap:10px;flex-wrap:wrap;align-items:center;font-family:var(--sans);margin-top:16px;}
+.paper-actions a{font-size:13.5px;font-weight:500;color:var(--ink);text-decoration:none;border:1px solid var(--rule);border-radius:8px;padding:8px 15px;white-space:nowrap;transition:background .15s,border-color .15s,transform .15s;}
+.paper-actions a:hover{background:var(--paper2);border-color:var(--ink-soft);}
+.paper-actions a:first-child{background:var(--ink);color:var(--paper);border-color:var(--ink);}
+.paper-actions a:first-child:hover{background:var(--accent-deep);border-color:var(--accent-deep);transform:translateY(-1px);}
+
+/* 右栏 brief + 进度 */
+.issue-brief{font-family:var(--sans);position:sticky;top:22px;}
+.issue-brief h2{font-family:var(--sans);font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--accent);font-weight:600;margin:0 0 12px;}
+.issue-brief ul{list-style:none;margin:0 0 4px;padding:0;}
+.issue-brief li{padding:0 0 12px;margin-bottom:12px;border-bottom:1px solid var(--hair);}
+.issue-brief li b{display:block;font-size:12px;color:var(--ink);font-weight:600;margin-bottom:3px;}
+.issue-brief li span{display:block;font-size:13px;line-height:1.55;color:var(--ink-soft);}
+
+/* 我的进度 widget */
+.prog-widget{font-family:var(--sans);border-top:2px solid var(--ink);padding-top:16px;margin-top:4px;}
+.prog-widget .pw-t{font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--accent);font-weight:600;margin-bottom:14px;}
+.prog-top{display:flex;align-items:center;gap:14px;margin-bottom:16px;}
+.ringwrap{position:relative;width:64px;height:64px;flex:none;}
+.ringsvg{width:64px;height:64px;transform:rotate(-90deg);}
+.ring-bg{fill:none;stroke:var(--hair);stroke-width:6;}
+.ring-fg{fill:none;stroke:var(--gold);stroke-width:6;stroke-linecap:round;transition:stroke-dashoffset .7s cubic-bezier(.4,0,.2,1);}
+.ring-num{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;line-height:1;}
+.ring-num b{font-family:var(--serif);font-size:20px;font-weight:600;color:var(--ink);}
+.ring-num span{font-size:10px;color:var(--muted-2);margin-top:1px;}
+.prog-meta .pm-t{font-size:13px;font-weight:600;color:var(--ink);}
+.prog-meta .pm-s{font-size:12px;color:var(--muted);line-height:1.5;margin-top:3px;}
+.prog-streak{display:inline-flex;align-items:center;gap:5px;font-size:12.5px;color:var(--gold-deep);font-weight:600;margin-top:6px;}
+.prog-streak svg{width:12px;height:12px;}
+.heat-grid{display:flex;gap:3px;}
+.heat-col{display:flex;flex-direction:column;gap:3px;}
+.heat-cell{width:11px;height:11px;border-radius:2.5px;background:var(--hair2);border:1px solid rgba(0,0,0,.03);}
+.heat-cell.on{background:var(--gold);}
+.heat-cell.fut{opacity:.35;}
+.heat-cap{font-size:11px;color:var(--muted-2);margin-top:8px;display:flex;justify-content:space-between;}
+.heat-cap span{white-space:nowrap;}
+.badges{display:flex;gap:8px;flex-wrap:wrap;margin-top:14px;}
+.badge{width:38px;height:38px;border-radius:50%;display:grid;place-items:center;font-family:var(--sans);font-weight:700;font-size:12px;color:var(--muted-2);background:var(--paper2);border:1.5px dashed var(--rule);}
+.badge.on{color:#fff;background:radial-gradient(circle at 32% 28%,#cd9a55,var(--gold-deep));border:1.5px solid var(--gold-deep);box-shadow:0 2px 8px rgba(176,125,58,.28);}
+
+/* ---------- section ---------- */
+.section-block{max-width:var(--page);margin:0 auto;padding:18px 28px 44px;}
+.section-heading{display:flex;align-items:baseline;justify-content:space-between;border-top:2px solid var(--ink);padding-top:14px;margin-bottom:6px;}
+.section-heading h2{margin:0;font-family:var(--sans);font-weight:600;font-size:15px;letter-spacing:.02em;}
+.section-heading a{font-family:var(--sans);font-size:13px;color:var(--muted);}
+.paper-list{display:flex;flex-direction:column;}
+
+/* ---------- paper-card（横向条目 + 缩略图 + 已读勾） ---------- */
+.paper-card{position:relative;display:grid;grid-template-columns:148px minmax(0,1fr) auto;gap:18px;align-items:start;padding:18px 0;border-top:1px solid var(--hair);}
+.paper-card .paper-thumb{grid-column:1;width:148px;height:96px;border-radius:8px;overflow:hidden;border:1px solid var(--hair);background:var(--paper2);text-decoration:none;display:block;}
+.paper-card .paper-thumb img{width:100%;height:100%;object-fit:cover;background:#fff;}
+.paper-card > div{grid-column:2;min-width:0;}
+.paper-meta{font-family:var(--sans);font-size:12px;color:var(--muted);margin-bottom:5px;}
+.paper-card h3{margin:0 0 6px;font-family:var(--serif);font-size:20px;line-height:1.28;font-weight:600;}
+.paper-card h3 a{color:var(--ink);text-decoration:none;}
+.paper-card:hover h3 a{text-decoration:underline;text-decoration-color:var(--accent-line);text-underline-offset:3px;}
+.paper-card p{margin:0 0 6px;font-size:16px;line-height:1.6;color:var(--ink-soft);}
+.paper-card .card-tech{font-family:var(--sans);font-size:12.5px;color:var(--muted);}
+.paper-card .card-tech b{color:var(--ink-soft);}
+.paper-card .paper-actions{margin-top:10px;}
+.paper-card .paper-actions a{font-size:12.5px;padding:6px 12px;}
+.paper-card .paper-actions a:first-child{background:var(--card);color:var(--ink);border-color:var(--rule);}
+.paper-card .paper-actions a:first-child:hover{background:var(--paper2);}
+.paper-card .readbtn{grid-column:3;}
+
+/* 主题封面（无图时） */
+.paper-thumb-text{position:relative;display:flex!important;flex-direction:column;justify-content:space-between;padding:11px 12px!important;color:#fff!important;background:linear-gradient(135deg,var(--c1,#3a4a63),var(--c2,#26303f))!important;border:0!important;}
+.paper-thumb-text::after{content:"";position:absolute;inset:0;opacity:.14;mix-blend-mode:overlay;background-image:repeating-linear-gradient(45deg,#fff 0 1px,transparent 1px 9px);}
+.paper-thumb-text strong{position:relative;font-family:var(--sans);font-weight:700;font-size:15px;line-height:1.1;letter-spacing:.04em;}
+.paper-thumb-text span{position:relative;align-self:flex-start;order:-1;font-family:var(--sans);font-size:10.5px;font-weight:700;background:rgba(255,255,255,.22);border-radius:20px;padding:2px 8px;}
+.paper-thumb-text em{position:relative;font-family:var(--sans);font-size:10px;font-style:normal;opacity:.85;}
+[data-topic="JEPA"]{--c1:#3f4d8f;--c2:#272f5c;}
+[data-topic="tokenizer"]{--c1:#1f7a73;--c2:#124b46;}
+[data-topic="VLM"]{--c1:#6d4a86;--c2:#412a54;}
+[data-topic="video"]{--c1:#b1565a;--c2:#6f2f34;}
+[data-topic="3D"]{--c1:#9a6b2f;--c2:#5e3f18;}
+[data-topic="diffusion"]{--c1:#3273a3;--c2:#1d4868;}
+[data-topic="interpretability"]{--c1:#3f7d54;--c2:#244a31;}
+[data-topic="contrastive"]{--c1:#a35f33;--c2:#643619;}
+[data-topic="default"]{--c1:#4a5568;--c2:#2c333f;}
+
+/* 已读态 */
+.paper-card.is-read{opacity:.6;}
+.paper-card.is-read h3 a{text-decoration:line-through;text-decoration-color:var(--rule);}
+
+/* readbtn 通用 */
+.readbtn{flex:none;width:30px;height:30px;border-radius:50%;cursor:pointer;border:1.5px solid var(--rule);background:var(--card);color:var(--muted-2);display:grid;place-items:center;transition:all .15s;padding:0;}
+.readbtn svg{width:15px;height:15px;}
+.readbtn:hover{border-color:var(--gold);color:var(--gold-deep);}
+.readbtn.on{background:var(--gold);border-color:var(--gold);color:#fff;}
+.readbtn.pop{animation:pop .32s ease;}
+@keyframes pop{0%{transform:scale(.7);}55%{transform:scale(1.18);}100%{transform:scale(1);}}
+
+/* ============================================================
+   PAPER DETAIL · 单栏阅读 + 破栏图
+   ============================================================ */
+.paper-detail{max-width:var(--page);margin:0 auto;padding:30px 28px 50px;display:grid;grid-template-columns:minmax(0,1fr) 232px;gap:clamp(28px,4vw,56px);align-items:start;}
+@media(max-width:1040px){.paper-detail{grid-template-columns:1fr;}}
+.paper-main{min-width:0;max-width:var(--read);margin:0 auto;}
+.paper-headline{font-size:clamp(28px,3vw,40px);line-height:1.16;letter-spacing:-.015em;margin:0 0 16px;}
+.byline{font-family:var(--sans);font-size:13.5px;color:var(--muted);line-height:1.6;margin:0 0 18px;}
+.byline strong{color:var(--ink-soft);font-weight:600;}
+.paper-facts{display:flex;flex-wrap:wrap;gap:8px 22px;border-top:1px solid var(--hair);border-bottom:1px solid var(--hair);padding:12px 0;margin:0 0 30px;font-family:var(--sans);font-size:12.5px;color:var(--muted);}
+.paper-facts span b{color:var(--ink-soft);font-weight:600;margin-right:6px;}
+.feature-body{font-size:18px;}
+.feature-body h2{font-size:25px;line-height:1.25;margin:42px 0 14px;letter-spacing:-.01em;}
+.feature-body h2::before{content:"";display:block;width:26px;height:2px;background:var(--accent);margin-bottom:14px;}
+.feature-body h3{font-size:19px;margin:26px 0 8px;}
+.feature-body p{margin:0 0 18px;}
+.feature-body strong{font-weight:640;color:var(--ink);}
+.lead{font-size:19.5px;line-height:1.7;color:var(--ink);}
+.lead.dropcap::first-letter{font-family:var(--serif);font-weight:600;float:left;font-size:3.5em;line-height:.86;padding:6px 10px 0 0;margin:4px 2px 0 0;color:var(--accent);}
+
+/* 破栏图：图按原始比例，绝不裁切 */
+.full-fig{margin:30px 0;max-width:none;}
+.full-fig img{width:100%;max-height:760px;object-fit:contain;background:#fff;border:1px solid var(--hair);border-radius:6px;}
+.full-fig figcaption{font-family:var(--sans);margin-top:12px;}
+.full-fig figcaption b{display:block;font-weight:600;font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--accent-deep);margin-bottom:7px;}
+.full-fig .fig-en,.full-fig .fig-zh{display:block;line-height:1.6;}
+.full-fig .fig-zh{font-size:14.5px;color:var(--ink-soft);}
+.full-fig .fig-en{font-family:var(--serif);font-style:italic;font-size:13.5px;color:var(--muted);margin-top:7px;padding-top:7px;border-top:1px dashed var(--hair);}
+
+.reading-note{background:var(--paper2);border:1px solid var(--hair);border-radius:10px;padding:18px 22px;margin:26px 0;}
+.reading-note h2{font-family:var(--sans);font-size:16px;font-weight:600;margin:0 0 8px;letter-spacing:.02em;}
+.reading-note h2::before{display:none;}
+.reading-note p{font-size:15.5px;line-height:1.66;margin:0 0 10px;color:var(--ink-soft);}
+.reading-note p:last-child{margin:0;}
+.method-steps{margin:18px 0;padding-left:1.4rem;}
+.method-steps li{margin:10px 0;line-height:1.62;}
+.method-steps li::marker{color:var(--accent);font-weight:600;}
+.method-steps b{font-weight:640;}
+.stat-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:1px;background:var(--hair);border:1px solid var(--hair);border-radius:10px;overflow:hidden;margin:22px 0;}
+.stat-grid div{background:var(--card);padding:16px 18px;}
+.stat-grid b{display:block;font-family:var(--sans);font-size:11.5px;letter-spacing:.04em;color:var(--accent-deep);text-transform:uppercase;font-weight:600;margin-bottom:6px;}
+.stat-grid span{display:block;font-family:var(--mono);font-size:15px;color:var(--ink);line-height:1.4;}
+.stat-grid em{display:block;font-style:normal;font-size:13px;color:var(--muted);margin-top:5px;line-height:1.5;}
+@media(max-width:640px){.stat-grid{grid-template-columns:1fr;}}
+.marginalia{font-family:var(--sans);font-size:13px;color:var(--ink-soft);background:var(--gold-soft);border:1px solid #e7d3ad;border-radius:10px;padding:14px 16px;margin:24px 0;}
+.marginalia b{color:var(--gold-deep);}
+.compact-table{width:100%;border-collapse:collapse;font-family:var(--sans);font-size:13px;margin:14px 0 8px;}
+.compact-table th,.compact-table td{border:1px solid var(--hair);padding:8px 10px;text-align:left;vertical-align:top;}
+.compact-table th{background:var(--paper2);font-weight:600;color:var(--ink);}
+.compact-table td{color:var(--ink-soft);}
+.issue-list{display:flex;flex-direction:column;}
+.empty-state{font-family:var(--sans);color:var(--muted);font-size:14px;border:1px dashed var(--rule);border-radius:10px;padding:24px;text-align:center;}
+
+/* 右侧 side-box */
+.paper-side{font-family:var(--sans);position:sticky;top:22px;display:flex;flex-direction:column;gap:16px;}
+@media(max-width:1040px){.paper-side{position:static;}}
+.side-box{border:1px solid var(--hair);border-radius:10px;background:var(--card);padding:14px 16px;}
+.side-box h4{font-family:var(--sans);font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted-2);font-weight:600;margin:0 0 8px;}
+.side-box p{font-size:13px;line-height:1.6;color:var(--ink-soft);margin:0;}
+.side-box a{color:var(--accent-deep);word-break:break-all;}
+.side-box dl{margin:0;display:grid;grid-template-columns:auto 1fr;gap:6px 12px;font-size:12.5px;}
+.side-box dt{color:var(--muted);}
+.side-box dd{margin:0;color:var(--ink);font-weight:500;}
+
+/* ============================================================
+   CATALOG
+   ============================================================ */
+.page-header{max-width:var(--page);margin:30px auto 0;padding:0 28px;}
+.page-header h1{font-size:34px;margin:0 0 6px;}
+.page-header p{font-family:var(--sans);font-size:14.5px;color:var(--muted);margin:0;}
+.catalog-shell{max-width:var(--page);margin:18px auto 0;padding:0 28px 60px;display:grid;grid-template-columns:248px minmax(0,1fr);gap:clamp(28px,3.5vw,52px);align-items:start;}
+@media(max-width:880px){.catalog-shell{grid-template-columns:1fr;}}
+.catalog-tools{font-family:var(--sans);position:sticky;top:22px;display:flex;flex-direction:column;gap:18px;}
+@media(max-width:880px){.catalog-tools{position:static;}}
+.catalog-search{width:100%;font-family:var(--sans);font-size:14px;color:var(--ink);border:1px solid var(--rule);border-radius:9px;padding:10px 12px;background:var(--card);}
+.catalog-search:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-soft);}
+.filter-row{display:flex;flex-wrap:wrap;gap:6px;}
+.filter-pill{font-family:var(--sans);font-size:12.5px;color:var(--ink-soft);cursor:pointer;background:var(--card);border:1px solid var(--hair);border-radius:30px;padding:5px 11px;transition:all .14s;white-space:nowrap;}
+.filter-pill:hover{border-color:var(--rule);}
+.filter-pill.is-active{background:var(--ink);color:var(--paper);border-color:var(--ink);}
+.catalog-status{font-family:var(--sans);font-size:13px;color:var(--muted);}
+.catalog-list{margin-top:0;}
+.catalog-pager{display:flex;align-items:center;justify-content:center;gap:14px;margin-top:24px;font-family:var(--sans);grid-column:2;}
+@media(max-width:880px){.catalog-pager{grid-column:1;}}
+.catalog-pager button{border:1px solid var(--rule);border-radius:8px;background:var(--card);color:var(--ink);padding:8px 14px;cursor:pointer;font-size:13px;}
+.catalog-pager button:disabled{opacity:.4;cursor:not-allowed;}
+.catalog-pager span{font-family:var(--mono);color:var(--muted);font-size:13px;}
+
+/* ============================================================
+   TIMELINE
+   ============================================================ */
+.timeline-day{max-width:var(--page);margin:0 auto;padding:24px 28px;border-top:1px solid var(--hair);display:grid;grid-template-columns:132px minmax(0,1fr);gap:clamp(16px,3vw,40px);}
+.timeline-day:first-of-type{border-top:0;}
+.timeline-day h2{position:sticky;top:18px;align-self:start;font-family:var(--serif);font-size:20px;font-weight:600;margin:0;color:var(--ink);white-space:nowrap;}
+.tl-daycol{position:sticky;top:18px;align-self:start;}
+.tl-daycol h2{position:static;}
+.tl-done{display:inline-flex;margin-top:8px;font-family:var(--sans);font-size:11.5px;font-weight:600;color:var(--gold-deep);background:var(--gold-soft);border:1px solid #e7d3ad;border-radius:20px;padding:2px 9px;}
+.timeline-day > div,.timeline-day .tl-items{display:flex;flex-direction:column;}
+.timeline-day article{display:grid;grid-template-columns:auto 1fr auto;gap:6px 14px;align-items:center;padding:12px 0;border-top:1px solid var(--hair2);text-decoration:none;}
+.timeline-day article:first-child{border-top:0;}
+.timeline-day span{font-family:var(--sans);font-size:11.5px;font-weight:600;color:var(--accent-deep);background:var(--accent-soft);border-radius:20px;padding:3px 9px;white-space:nowrap;}
+.timeline-day a{font-family:var(--serif);font-size:17px;font-weight:600;color:var(--ink);text-decoration:none;}
+.timeline-day a:hover{text-decoration:underline;text-decoration-color:var(--accent-line);text-underline-offset:3px;}
+.timeline-day em{font-family:var(--sans);font-size:12px;font-style:normal;color:var(--muted);}
+@media(max-width:620px){.timeline-day{grid-template-columns:1fr;gap:12px;}.timeline-day h2{position:static;}.timeline-day article{grid-template-columns:auto 1fr;}.timeline-day em{grid-column:2;}}
+
+/* ============================================================
+   CCF DDL 浮窗（极简化）
+   ============================================================ */
+.conf-float{position:fixed;right:20px;bottom:20px;z-index:40;width:min(300px,calc(100vw - 36px));background:var(--card);border:1px solid var(--hair);border-left:3px solid var(--alert);border-radius:10px;box-shadow:0 8px 28px rgba(27,26,23,.12);padding:13px 38px 13px 15px;font-family:var(--sans);}
+.conf-float details{margin:0;}
+.conf-float summary{cursor:pointer;font-weight:600;font-size:12.5px;color:var(--ink);list-style:none;}
+.conf-float summary::-webkit-details-marker{display:none;}
+.conf-close{position:absolute;right:9px;top:9px;width:24px;height:24px;border:0;background:none;color:var(--muted-2);font-size:17px;line-height:1;cursor:pointer;}
+.conf-close:hover{color:var(--ink);}
+.conf-list{display:grid;gap:8px;margin-top:10px;}
+.conf-item{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:3px 10px;text-decoration:none;color:var(--ink);}
+.conf-item b{font-size:12.5px;color:var(--ink);font-weight:600;}
+.conf-item em{font-style:normal;font-size:11px;color:var(--muted-2);}
+.conf-item strong{font-family:var(--mono);font-size:13px;font-weight:600;color:var(--alert);white-space:nowrap;}
+.conf-item small{grid-column:1/-1;color:var(--muted);font-size:11px;line-height:1.4;}
+.conf-item.urgent strong{color:var(--alert);}
+.conf-item.past{opacity:.6;}
+
+/* ---------- footer ---------- */
+.footer{max-width:var(--page);margin:60px auto 0;padding:22px 28px 50px;border-top:1px solid var(--hair);font-family:var(--sans);font-size:12.5px;color:var(--muted);line-height:1.7;}
+.footer .muted{color:var(--muted-2);}
+
+@media(prefers-reduced-motion:reduce){.ring-fg{transition:none;}.readbtn.pop{animation:none;}}
 """
     (ROOT / "assets" / "visual-ssl.css").write_text(css, encoding="utf-8")
+
+
+def write_js() -> None:
+    js = r"""
+/* ssl-game.js · 养成系：连续追踪 streak / 进度环 / 标记已读 / 里程碑 / 签到热力图
+   仅使用自己的 localStorage 键：sslReadIds, sslVisitDays。 */
+(function(){
+  var RKEY='sslReadIds', VKEY='sslVisitDays';
+  function load(k){ try{ return JSON.parse(localStorage.getItem(k)||'[]'); }catch(e){ return []; } }
+  function save(k,v){ try{ localStorage.setItem(k,JSON.stringify(v)); }catch(e){} }
+  function todayStr(d){ d=d||new Date(); return d.toISOString().slice(0,10); }
+
+  var readSet=load(RKEY), visits=load(VKEY);
+  (function visit(){ var t=todayStr(); if(visits.indexOf(t)===-1){ visits.push(t); save(VKEY,visits); } })();
+
+  function streak(){
+    var set={}; visits.forEach(function(d){ set[d]=1; });
+    var n=0, d=new Date();
+    while(set[todayStr(d)]){ n++; d.setDate(d.getDate()-1); }
+    return n;
+  }
+  var listeners=[];
+  function emit(){ listeners.forEach(function(fn){ try{ fn(); }catch(e){} }); }
+  var Game={
+    isRead:function(id){ return readSet.indexOf(id)!==-1; },
+    toggleRead:function(id){ var i=readSet.indexOf(id); if(i===-1) readSet.push(id); else readSet.splice(i,1); save(RKEY,readSet); emit(); return this.isRead(id); },
+    readCount:function(){ return readSet.length; },
+    streak:streak,
+    onChange:function(fn){ listeners.push(fn); }
+  };
+  window.SSLGame=Game;
+
+  function ring(el){
+    var total=+el.dataset.total||10, done=0;
+    if(el.dataset.ids){ var ids=el.dataset.ids.split(',').filter(Boolean); done=ids.filter(function(id){return readSet.indexOf(id)!==-1;}).length; total=ids.length||1; }
+    else { done=Math.min(readSet.length,total); }
+    var pct=total?done/total:0, r=26, C=2*Math.PI*r;
+    el.innerHTML='<svg viewBox="0 0 64 64" class="ringsvg"><circle cx="32" cy="32" r="'+r+'" class="ring-bg"></circle><circle cx="32" cy="32" r="'+r+'" class="ring-fg" stroke-dasharray="'+C+'" stroke-dashoffset="'+(C*(1-pct))+'"></circle></svg><div class="ring-num"><b>'+done+'</b><span>/'+total+'</span></div>';
+  }
+  var MILE=[10,50,100,250,500];
+  function badges(el){ var c=readSet.length; el.innerHTML=MILE.map(function(m){ return '<span class="badge'+(c>=m?' on':'')+'" title="累计精读 '+m+' 篇">'+m+'</span>'; }).join(''); }
+  function heat(el){
+    var set={}; visits.forEach(function(d){ set[d]=1; });
+    var weeks=+el.dataset.weeks||16, today=new Date();
+    var start=new Date(today); start.setDate(start.getDate()-(weeks*7-1));
+    var dow=(start.getDay()+6)%7; start.setDate(start.getDate()-dow);
+    var html='<div class="heat-grid">';
+    for(var w=0;w<weeks;w++){ html+='<div class="heat-col">';
+      for(var dd=0;dd<7;dd++){ var d=new Date(start); d.setDate(d.getDate()+w*7+dd); var fut=d>today; html+='<i class="heat-cell'+(set[todayStr(d)]?' on':'')+(fut?' fut':'')+'" title="'+todayStr(d)+'"></i>'; }
+      html+='</div>'; }
+    html+='</div>'; el.innerHTML=html;
+  }
+  function renderAll(){
+    document.querySelectorAll('[data-ring]').forEach(ring);
+    document.querySelectorAll('[data-streak]').forEach(function(el){ el.textContent=streak(); });
+    document.querySelectorAll('[data-readcount]').forEach(function(el){ el.textContent=readSet.length; });
+    document.querySelectorAll('[data-badges]').forEach(badges);
+    document.querySelectorAll('[data-heat]').forEach(heat);
+    document.querySelectorAll('[data-pid]').forEach(function(node){
+      var r=Game.isRead(node.dataset.pid);
+      node.classList.toggle('is-read', r);
+      var b=node.querySelector('.readbtn'); if(b) b.classList.toggle('on', r);
+    });
+    document.querySelectorAll('[data-dayids]').forEach(function(el){
+      var ids=(el.dataset.dayids||'').split(',').filter(Boolean);
+      var read=ids.filter(function(id){return Game.isRead(id);}).length;
+      var badge=el.querySelector('[data-day-done]');
+      if(badge){ if(read){ badge.hidden=false; badge.textContent='已读 '+read+'/'+ids.length; } else { badge.hidden=true; } }
+    });
+  }
+  document.addEventListener('click', function(e){
+    var btn=e.target.closest && e.target.closest('[data-read-toggle]');
+    if(!btn) return;
+    e.preventDefault(); e.stopPropagation();
+    var now=Game.toggleRead(btn.dataset.readToggle);
+    btn.classList.toggle('on', now);
+    if(now){ btn.classList.remove('pop'); void btn.offsetWidth; btn.classList.add('pop'); }
+  });
+  Game.onChange(renderAll);
+  if(document.readyState!=='loading') renderAll();
+  else document.addEventListener('DOMContentLoaded', renderAll);
+})();
+"""
+    (ROOT / "assets" / "ssl-game.js").write_text(js, encoding="utf-8")
 
 
 def main() -> None:
@@ -1430,6 +1859,7 @@ def main() -> None:
     (ROOT / "data" / "papers.json").write_text(json.dumps(PAPERS, ensure_ascii=False, indent=2), encoding="utf-8")
     (ROOT / ".nojekyll").write_text("", encoding="utf-8")
     write_css()
+    write_js()
     write_index(report_md)
     write_issue(report_md)
     write_archive_issues()
