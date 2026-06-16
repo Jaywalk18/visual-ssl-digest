@@ -10,6 +10,7 @@ from pathlib import Path
 
 ROOT = Path(r"H:\Desktop\visual_ssl_digest_site")
 REPORT_ROOT = Path(r"H:\Desktop\visual_ssl_paper_reports")
+REPORT_ARCHIVE_ROOT = REPORT_ROOT / "archive" / "reports"
 CSS_VERSION = "20260615ssl6"
 CURRENT_DATE = "2026-05-25"
 
@@ -247,10 +248,20 @@ def latest_report_path() -> Path:
     latest = REPORT_ROOT / "latest.md"
     if latest.exists():
         return latest
-    reports = sorted(REPORT_ROOT.glob("20??-??-??.md"), key=lambda p: p.name)
+    reports = report_paths()
     if not reports:
         raise FileNotFoundError(f"No Markdown reports found under {REPORT_ROOT}")
     return reports[-1]
+
+
+def report_paths() -> list[Path]:
+    paths: dict[str, Path] = {}
+    for root in (REPORT_ARCHIVE_ROOT, REPORT_ROOT):
+        if not root.exists():
+            continue
+        for path in root.glob("20??-??-??.md"):
+            paths[path.name] = path
+    return sorted(paths.values(), key=lambda p: p.name)
 
 
 def flatten_caption(value) -> str:
@@ -733,7 +744,7 @@ def merge_report_papers(report_papers: list[dict]) -> list[dict]:
 def load_catalog_papers(current_report_path: Path, current_report_md: str, current_date: str) -> list[dict]:
     report_papers = parse_paper_index(current_report_md, current_date)
     seen_dates = {current_date}
-    for report_path in sorted(REPORT_ROOT.glob("20??-??-??.md"), key=lambda p: p.name, reverse=True):
+    for report_path in sorted(report_paths(), key=lambda p: p.name, reverse=True):
         report_date = report_date_from_path(report_path)
         if report_date in seen_dates:
             continue

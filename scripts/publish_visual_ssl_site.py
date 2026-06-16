@@ -13,7 +13,9 @@ from pathlib import Path
 WORKSPACE = Path(r"C:\Users\Administrator\Documents\New project")
 SITE_ROOT = Path(r"H:\Desktop\visual_ssl_digest_site")
 REPORT_ROOT = Path(r"H:\Desktop\visual_ssl_paper_reports")
+REPORT_ARCHIVE_ROOT = REPORT_ROOT / "archive" / "reports"
 GENERATOR = WORKSPACE / "scripts" / "build_visual_ssl_site.py"
+REPORT_CLEANUP = WORKSPACE / "scripts" / "cleanup_visual_ssl_reports.py"
 MINERU_BATCH = Path(r"C:\Users\Administrator\.claude\skills\paper-digest-site\scripts\submit_mineru.py")
 
 
@@ -30,17 +32,28 @@ def strip_md(text: str) -> str:
 
 def report_path_for(date: str | None) -> Path:
     if date:
-        path = REPORT_ROOT / f"{date}.md"
-        if not path.exists():
-            raise FileNotFoundError(path)
-        return path
+        for root in (REPORT_ROOT, REPORT_ARCHIVE_ROOT):
+            path = root / f"{date}.md"
+            if path.exists():
+                return path
+        raise FileNotFoundError(REPORT_ROOT / f"{date}.md")
     latest = REPORT_ROOT / "latest.md"
     if latest.exists():
         return latest
-    reports = sorted(REPORT_ROOT.glob("20??-??-??.md"), key=lambda p: p.name)
+    reports = report_paths()
     if not reports:
         raise FileNotFoundError(f"No reports found under {REPORT_ROOT}")
     return reports[-1]
+
+
+def report_paths() -> list[Path]:
+    paths: dict[str, Path] = {}
+    for root in (REPORT_ARCHIVE_ROOT, REPORT_ROOT):
+        if not root.exists():
+            continue
+        for path in root.glob("20??-??-??.md"):
+            paths[path.name] = path
+    return sorted(paths.values(), key=lambda p: p.name)
 
 
 def report_date(path: Path, text: str) -> str:
@@ -314,8 +327,14 @@ def main() -> None:
     scripts_dir.mkdir(exist_ok=True)
     shutil.copy2(GENERATOR, scripts_dir / "build_visual_ssl_site.py")
     shutil.copy2(Path(__file__), scripts_dir / "publish_visual_ssl_site.py")
+    if REPORT_CLEANUP.exists():
+        shutil.copy2(REPORT_CLEANUP, scripts_dir / "cleanup_visual_ssl_reports.py")
     validate_site_quality()
     git_commit_and_push(date, push=not args.no_push)
+    if REPORT_CLEANUP.exists():
+        run([sys.executable, str(REPORT_CLEANUP), "--keep-reports", "7"])
+    else:
+        print(f"Report cleanup script missing: {REPORT_CLEANUP}", file=sys.stderr)
     print(f"published {date}: {len(papers)} indexed arXiv papers")
 
 
