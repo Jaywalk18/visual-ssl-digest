@@ -18,7 +18,7 @@ graph TD
   F["VLM Reasoning"] --> G["Physical State Vector{sj} sτj = [x, y, w, h, vx, vy, c"]]
   G --> H["Interpolation"]
   H --> I["Time Alignment t_k = argmax IOU(k, t)"]
-  I --> J["Planning Trajectory t=0 to t=46"]
+  I --> J["Planning Trajectory t=0 t=32 t=46"]
 ```
 </details>
 
@@ -81,36 +81,25 @@ We address this by leveraging a vision-language model (VLM) to perform Visual Th
 
 ```mermaid
 graph TD
-  A["Keyframe Reasoning"] --> B["Grounded SAM2"]
-  B --> C["VLM Physical Reasoning & State Planning"]
-  C --> D["Latency Guided Latent-Space Guidance"]
-  D --> E["LTX-Video"]
-  E --> F["Latent Grid"]
-  F --> G["Blender"]
-  G --> H["Latent Updating"]
-  H --> I["Time Alignment t_k = argmax IOU(k,t)"]
+  A["Keyframe Reasoning"] --> B["Desc1: A fully inflated balloon hangs motionless..."]
+  B --> C["Desc2: The balloon is partially deflated, with its surface ..."]
+  C --> D["Desc3: The balloon is significantly smaller and..."]
+  D --> E["Time Alignment t_k = argmax IOU(k,t)"]
     
-    subgraph Keyframe Reasoning
-        J["Desc1: A fully inflated balloon hangs motionless..."]
-        K["Desc2: The balloon is partially deflated, with its surface ..."]
-        L["Desc3: The balloon is significantly smaller and..."]
-    end
+  F["VLM Physical Reasoning & State Planning"] --> G["Ballon:[269,95,177,224"]]
+  G --> H["Physical State Vector{s_j} s_{tj} = [x,y,w,h,v_x,v_y,c"]]
+  H --> I["Interpolation Model (linear, uniform, quadratic acceleration)"]
     
-    subgraph Trajectory_Guided_Latent_Space_Guidance["Trajectory-Guided Latent-Space Guidance"]
-        M["Gaussian Soft Mask"]
-        N["Latent Grid"]
-        O["Blender"]
-        P["Dynamic Reference Appearance"]
-        Q["Latency Guided Latent-Space Guidance"]
-    end
+  J["Trajectory-Guided Latent-Space Guidance"] --> K["LTX-Video"]
+  K --> L["Latent Grid"]
+  L --> M["Blender"]
+  M --> N["+"]
+  N --> O["Latent Updating"]
+  O --> P["L ← (1 − αsM_i,τ) ⊙ L_t + αsM_i,τ ⊙ P_i,τ^ref"]
     
-  J --> K
-  K --> L
-  L --> M
-  M --> N
-  N --> O
-  O --> P
-  P --> Q
+    style A fill:#f9f,stroke:#333
+    style F fill:#ccf,stroke:#333
+    style J fill:#cfc,stroke:#333
 ```
 </details>
 
@@ -257,15 +246,15 @@ An ice cream cone is left out in the sun.
 <details>
 <summary>natural_image</summary>
 
-Sequence of four photos showing coffee brewing process: (a) teapot, (b) milk, (c) cup with milk being poured into a glass container, and (d) coffee being poured into a cup.
+Sequence of four photos showing coffee brewing process: (a) mixing coffee cup, (b) pouring coffee into glass, (c) pouring milk into cup, and (d) adding white powder to a coffee cup.
 </details>
 
-![](images/9268638cbf8d0a7d27cbd22b26816cdea716d0e836352b056423063edbb6ae7d.jpg)
+![](images/6ce5d36dc04ed1fae61677b0426005560e9eb3078f1cc4ece009ea0549bdae34.jpg)
 
 <details>
 <summary>natural_image</summary>
 
-Sequence of 3D-rendered ice cream cone models on a park bench, showing front and side views (no text or symbols)
+Sequence of 3D-rendered ice cream cone models on a park bench, showing front, side, and perspective views (no text or symbols)
 </details>
 
 Figure 3: Qualitative comparisons on physical video generation tasks. Left: liquid interaction scenario (milk poured into coffee). Right: thermal state transition scenario (ice cream melting in the sun). (a) Wan2.1-T2V-1.3B; (b) LTX-Video; (c) VLIPP; (d) CausalMotion (ours). Our method produces more physically consistent object interactions and state transitions across both scenarios.
@@ -429,7 +418,7 @@ alignment #1 @ t = 97
 <details>
 <summary>natural_image</summary>
 
-Close-up of an orange basketball on a concrete surface (no text or symbols visible)
+Close-up of an orange basketball on a concrete surface, no text or symbols visible
 </details>
 
 ![](images/81f3b902febe0801c436cb12bfa46c91e172d4af36b9c8868398394385783f6a.jpg)
@@ -494,7 +483,7 @@ A small burning ball of paper was thrown into a pile of dry paper.
 <details>
 <summary>natural_image</summary>
 
-Grid of nine photos showing burning flames with visible smoke and fire, no text or symbols present
+Grid of nine photos showing burning flames with smoke and a magnified inset, no text or symbols present.
 </details>
 
 Figure 8: Additional qualitative comparisons between PhyGDPO, VLIPP, and our method.
@@ -516,7 +505,7 @@ A glistening dewdrop is sliding gracefully across the smooth surface of a waxed 
 <details>
 <summary>natural_image</summary>
 
-Collage of nine images showing a red apple with water droplets on its surface, against a blurred green background (no text or symbols)
+Grid of nine close-up photos of a red apple with water droplets, set against a blurred green background (no text or symbols)
 </details>
 
 A weak, frail porcelain plate is flung with significant speed at a robust, wooden table, where it collides upon impact.
@@ -556,7 +545,7 @@ An egg falling from the sky towards concrete ground.
 <details>
 <summary>natural_image</summary>
 
-Sequence of five 3D-rendered objects on a sandy beach under a blue sky with white clouds, no text or symbols present.
+Sequence of five 3D-rendered objects on a sandy beach under a blue sky with white clouds (no text or symbols)
 </details>
 
 Oil is poured into a glass of milk.
@@ -566,7 +555,7 @@ Oil is poured into a glass of milk.
 <details>
 <summary>natural_image</summary>
 
-Sequence of six photos showing a hand pouring liquid from a bottle into a glass, illustrating a stepwise cooking or beverage process (no text or symbols visible)
+Sequence of six photos showing a hand pouring liquid into a glass, illustrating a stepwise cooking or beverage process (no text or symbols visible)
 </details>
 
 Figure 9: Additional qualitative comparisons between VLIPP and our method on diverse physical phenomena.
@@ -588,7 +577,7 @@ A tennis ball is gently placed on the surface of a bucket filled with water.
 <details>
 <summary>natural_image</summary>
 
-Sequence of five photos showing a hand placing a yellow ball into a metal bucket with water, demonstrating a step-by-step motion (no text or symbols)
+Sequence of five photos showing a hand placing a yellow ball into a metal bucket with water, demonstrating a physical experiment (no text or symbols)
 </details>
 
 A timelapse of a water-filled soft cloth being forcefully squeezed by hand, with the pressure intensifying rapidly over time.
