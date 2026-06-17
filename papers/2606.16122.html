@@ -1,0 +1,101 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Thinking with Visual Grounding · 通用视觉自监督研究报</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Source+Serif+4:ital,opsz,wght@0,8..60,400;0,8..60,500;0,8..60,600;1,8..60,400&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../assets/visual-ssl.css?v=20260615ssl6">
+</head>
+<body data-paper-data-url="../data/papers.json">
+  <header class="masthead">
+    <a class="masthead-title" href="../index.html">通用视觉自监督研究报</a>
+    <div class="masthead-kicker">A Daily Digest of Visual Self-Supervised Learning</div>
+    <div class="masthead-meta">
+      <span>2026-06-17</span>
+      <span>图像表征 · VFM · JEPA · 视频预训练</span>
+    </div>
+  </header>
+  <nav class="site-nav" aria-label="主导航">
+    <a class="nav-link" href="../index.html">头版</a>
+<a class="nav-link" href="../issues/2026-06-17.html">今日速递</a>
+<a class="nav-link" href="../pages/catalog.html">论文目录</a>
+<a class="nav-link" href="../pages/timeline.html">时间线</a>
+<span class="nav-streak" title="连续追踪天数"><svg viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><path d="M8 0c.7 2.5-1.2 3.7-2 5-1 1.6-1 4 .8 4.8C6.4 8.5 7.4 7.8 8 7c.3 1.3-.4 2 .9 3 .9.7 1.3 1.6 1.1 2.6C9.7 14.6 8.9 16 6.8 16 4.6 16 3 14.3 3 12c0-3.3 2.6-4.8 2.4-8C6.9 4.6 8.4 5 8 0z"/></svg> 连续 <b data-streak>0</b> 天</span>
+  </nav>
+  <main><article class="paper-detail" data-pid="2606.16122" data-category="arXiv 新增 + visually grounded reasoning supervision" data-priority="P2" data-date="2026-06-17" data-title="thinking with visual grounding" data-keywords="thinking with visual grounding thinking with visual grounding arxiv 新增 + visually grounded reasoning supervision p2 2026-06-17 arxiv 新增 + visually grounded reasoning supervision 把 vlm reasoning traces 绑定到点/框视觉证据，属于可扩展视觉 grounding 监督 中高相关；详见方法、贡献和实验边界。">
+  <div class="paper-main">
+    <div class="kicker">arXiv 新增 + visually grounded reasoning supervision · P2 · 2026-06-17</div>
+    <h1 class="paper-headline">Thinking with Visual Grounding：视觉-语言自监督/弱监督的关键不是只产出文字链路，而是把监督落实到视觉区域</h1>
+    <p class="dek">让中间思考步骤必须显示证据区域，减少“语言看似合理但没看图”的训练信号污染。</p>
+    <p class="byline"><strong>Thinking with Visual Grounding</strong>　Junkai Zhang , Yihe Deng , Kai-Wei Chang , Wei Wang；arXiv 元数据未稳定列机构时按作者列表记录。　arXiv 新增 + visually grounded reasoning supervision　<a href="https://arxiv.org/abs/2606.16122">原文链接</a></p>
+    <div class="paper-facts">
+      <span><b>编号</b>2606.16122</span>
+      <span><b>优先级</b>P2</span>
+      <span><b>类别</b>arXiv 新增 + visually grounded reasoning supervision</span>
+      <span><b>会议</b>arXiv 新增 + visually grounded reasoning supervision</span>
+      <span><b>方法</b>Visually grounded thinking：合成正确 reasoning traces，提取所需视觉对象，用 SAM3-based agent 生成 mask，再用 answer correctness + dense grounding rewards 做 RL。</span>
+      <span><b>来源</b>arXiv / OpenReview</span>
+    </div>
+    <div class="feature-body">
+      <p class="lead dropcap">先说结论。视觉-语言自监督/弱监督的关键不是只产出文字链路，而是把监督落实到视觉区域。</p>
+      <figure class="full-fig"><img src="../assets/mineru/2606.16122/images/466a4484c152795fb142af8e1105f49f49c7546cfd02a9268ad79a7163fb9720.jpg" alt="Figureure 1 · : Thinking in pure natural language vs"><figcaption><b>Figureure 1 · : Thinking in pure natural language vs</b><span class="fig-en">Figure 1: Thinking in pure natural language vs. visually grounded thinking in box mode and point mode.</span><span class="fig-zh">这张图来自论文 PDF 的结构化抽取。当前用于辅助理解 Thinking with Visual Grounding 的方法或实验，请结合正文精读段落一起看。</span></figcaption></figure>
+<figure class="full-fig"><img src="../assets/mineru/2606.16122/images/12af276c0a60f776cbf65a1358bbd152a91fcf21b2624212ccbae7833ccad27e.jpg" alt="Figureure 2 · : A real example of a visually grounded thinking model’s output in the"><figcaption><b>Figureure 2 · : A real example of a visually grounded thinking model’s output in the</b><span class="fig-en">Figure 2: A real example of a visually grounded thinking model’s output in the evaluation benchmark.</span><span class="fig-zh">这张图来自论文 PDF 的结构化抽取。当前用于辅助理解 Thinking with Visual Grounding 的方法或实验，请结合正文精读段落一起看。</span></figcaption></figure>
+      
+      <h2>核心问题</h2>
+      <p>视觉-语言自监督/弱监督的关键不是只产出文字链路，而是把监督落实到视觉区域。</p>
+      <h2>方法拆解</h2>
+      <p>Visually grounded thinking：合成正确 reasoning traces，提取所需视觉对象，用 SAM3-based agent 生成 mask，再用 answer correctness + dense grounding rewards 做 RL。</p>
+      <h2>主要贡献</h2>
+      <p>让中间思考步骤必须显示证据区域，减少“语言看似合理但没看图”的训练信号污染。</p>
+      <h2>实验看点</h2>
+      <p>两个 counting 和四个 spatial reasoning benchmark 上，Gemma3-4B-IT 加入 grounded thinking 后超过原模型和非 grounding baseline，部分空间任务接近/超过同家族 27B。</p>
+      <h2>局限与读法</h2>
+      <p>训练依赖合成流水线和 SAM3 agent；和通用视觉 encoder 预训练之间还有一层 VLM 后训练距离。</p>
+    
+    </div>
+  </div>
+  <aside class="paper-side">
+
+    <div class="side-box pref-side"><h4>我的偏好</h4><div class="paper-side-tools"><button class="readbtn" type="button" data-read-toggle="2606.16122" title="标记已读" aria-label="标记已读"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M4 10.5l4 4 8-9"/></svg></button><div class="prefbar" data-pref-controls="2606.16122"><button class="prefbtn like" type="button" data-pref-toggle="like" data-pref-id="2606.16122" aria-pressed="false" title="关注这篇">关注</button><button class="prefbtn dismiss" type="button" data-pref-toggle="dismiss" data-pref-id="2606.16122" aria-pressed="false" title="降低这篇权重">略过</button></div></div></div>
+    <div class="side-box"><h4>关键判断</h4><dl><dt>相关性</dt><dd>P2</dd><dt>类别</dt><dd>arXiv 新增 + visually grounded reasoning supervision</dd><dt>会议</dt><dd>arXiv 新增 + visually grounded reasoning supervision</dd><dt>读法</dt><dd>方法图优先，表格次之</dd></dl></div>
+    <div class="side-box"><h4>原文</h4><p><a href="https://arxiv.org/abs/2606.16122">https://arxiv.org/abs/2606.16122</a></p></div>
+  </aside>
+</article></main>
+  <aside class="conf-float" data-conf-reminder="2026-06-17-main-ddl" aria-label="CCF A/B 主投稿提醒">
+  <button class="conf-close" type="button" aria-label="关闭会议提醒">×</button>
+  <details open>
+    <summary>CCF A/B 主投稿提醒</summary>
+    <div class="conf-list"><a class="conf-item " href="https://github.com/ccfddl/ccf-deadlines/blob/main/conference/AI/aaai.yml">
+  <span><b>AAAI 2027</b><em>CCF A · Main paper submission</em></span>
+  <strong>40 天</strong>
+  <small>2026-07-27 · CCF DDL: abstract 2026-07-20；进入 1 个月窗口后重点提醒。</small>
+</a></div>
+  </details>
+</aside>
+  <footer class="footer">
+    <div>面向通用视觉自监督、视觉基础模型与多模态表征学习的每日研究报。</div>
+    <div class="muted">Issue 2026-06-17 · Curated readings and figure notes</div>
+  </footer>
+  <script>
+  (() => {
+    const box = document.querySelector('[data-conf-reminder]');
+    if (!box) return;
+    const key = `visualSslConfReminderClosed:${box.dataset.confReminder || '2026-06-17-main-ddl'}`;
+    try {
+      if (localStorage.getItem(key) === '1') box.hidden = true;
+    } catch (err) {}
+    const close = box.querySelector('.conf-close');
+    if (close) {
+      close.addEventListener('click', () => {
+        box.hidden = true;
+        try { localStorage.setItem(key, '1'); } catch (err) {}
+      });
+    }
+  })();
+  </script>
+  <script src="../assets/ssl-game.js"></script>
+</body>
+</html>

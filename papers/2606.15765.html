@@ -25,42 +25,42 @@
 <a class="nav-link" href="../pages/timeline.html">时间线</a>
 <span class="nav-streak" title="连续追踪天数"><svg viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><path d="M8 0c.7 2.5-1.2 3.7-2 5-1 1.6-1 4 .8 4.8C6.4 8.5 7.4 7.8 8 7c.3 1.3-.4 2 .9 3 .9.7 1.3 1.6 1.1 2.6C9.7 14.6 8.9 16 6.8 16 4.6 16 3 14.3 3 12c0-3.3 2.6-4.8 2.4-8C6.9 4.6 8.4 5 8 0z"/></svg> 连续 <b data-streak>0</b> 天</span>
   </nav>
-  <main><article class="paper-detail" data-pid="2606.15765" data-category="arXiv 新增 + frozen VFM routing" data-priority="P1" data-date="2026-06-17" data-title="task-instructed causal routing of vision foundation models for multi-task learning" data-keywords="task-instructed causal routing of vision foundation models for multi-task learning task-instructed causal routing of vision arxiv 新增 + frozen vfm routing p1 2026-06-17 arxiv 新增 + frozen vfm routing 把多个冻结 vfm 的互补偏置做 token-level task routing，可作为 vfm ensemble/adapter 设计参考 中高相关；详见方法、贡献和实验边界。">
+  <main><article class="paper-detail" data-pid="2606.15765" data-category="arXiv 新增 + frozen VFM routing / dense transfer" data-priority="P1" data-date="2026-06-17" data-title="task-instructed causal routing of vision foundation models for multi-task learning" data-keywords="task-instructed causal routing of vision foundation models for multi-task learning task-instructed causal routing of vision arxiv 新增 + frozen vfm routing / dense transfer p1 2026-06-17 arxiv 新增 + frozen vfm routing / dense transfer 把多个 frozen vfms 当专家，用任务指令和 counterfactual loss 做 token-level 路由 中高相关；详见方法、贡献和实验边界。">
   <div class="paper-main">
-    <div class="kicker">arXiv 新增 + frozen VFM routing · P1 · 2026-06-17</div>
-    <h1 class="paper-headline">Task-Instructed Causal Routing of Vision：通用视觉表征的现实形态越来越像多个 frozen VFMs 的组合，TIGER 是“如何可靠融合这些表征”的有用案例</h1>
-    <p class="dek">把 VFM 的不同预训练偏置当作互补专家，而不是强行用单一 backbone 统一所有 dense prediction 任务。</p>
-    <p class="byline"><strong>Task-Instructed Causal Routing of Vision Foundation Models for Multi-Task Learning</strong>　Donghyun Han, Yuseok Bae, Jung Uk Kim, Hyung-Il Kim；arXiv 元数据未稳定列机构时按作者列表记录。　arXiv 新增 + frozen VFM routing　<a href="https://arxiv.org/abs/2606.15765">原文链接</a></p>
+    <div class="kicker">arXiv 新增 + frozen VFM routing / dense transfer · P1 · 2026-06-17</div>
+    <h1 class="paper-headline">Task-Instructed Causal Routing of Vision：对通用视觉自监督的意义在于：不同 SSL/弱监督底座的 inductive bias 可能需要被路由组合，而不是单模型吞并</h1>
+    <p class="dek">不是再训一个视觉底座，而是协调不同预训练目标形成的互补知识，适合 dense prediction 多任务迁移。</p>
+    <p class="byline"><strong>Task-Instructed Causal Routing of Vision Foundation Models for Multi-Task Learning</strong>　Donghyun Han , Yuseok Bae , Jung Uk Kim , Hyung-Il Kim；arXiv 元数据未稳定列机构时按作者列表记录。　arXiv 新增 + frozen VFM routing / dense transfer　<a href="https://arxiv.org/abs/2606.15765">原文链接</a></p>
     <div class="paper-facts">
       <span><b>编号</b>2606.15765</span>
       <span><b>优先级</b>P1</span>
-      <span><b>类别</b>arXiv 新增 + frozen VFM routing</span>
-      <span><b>会议</b>arXiv 新增 + frozen VFM routing</span>
-      <span><b>方法</b>TIGER 使用自然语言 task instructions 引导 routing network，在 token level 给多个冻结 VFM experts 分配权重；counterfactual loss 根据剔除专家后的预测变化约束路由与专家因果贡献一致。</span>
+      <span><b>类别</b>arXiv 新增 + frozen VFM routing / dense transfer</span>
+      <span><b>会议</b>arXiv 新增 + frozen VFM routing / dense transfer</span>
+      <span><b>方法</b>Task-Instruction-Guided Expert Routing：自然语言任务指令驱动 routing network，在 token 级给 heterogeneous VFM experts 分权，并用排除专家后的预测变化定义因果贡献。</span>
       <span><b>来源</b>arXiv / OpenReview</span>
     </div>
     <div class="feature-body">
-      <p class="lead dropcap">先说结论。通用视觉表征的现实形态越来越像多个 frozen VFMs 的组合，TIGER 是“如何可靠融合这些表征”的有用案例。 把 VFM 的不同预训练偏置当作互补专家，而不是强行用单一 backbone 统一所有 dense prediction 任务。</p>
+      <p class="lead dropcap">先说结论。对通用视觉自监督的意义在于：不同 SSL/弱监督底座的 inductive bias 可能需要被路由组合，而不是单模型吞并。 不是再训一个视觉底座，而是协调不同预训练目标形成的互补知识，适合 dense prediction 多任务迁移。</p>
       <figure class="full-fig"><img src="../assets/mineru/2606.15765/images/192d5b8eb7a6a28078549500938285d2a046554ed16fc04c2f779ec4169a6b84.jpg" alt="Figureure 2 · : Overview of TIGER"><figcaption><b>Figureure 2 · : Overview of TIGER</b><span class="fig-en">Fig. 2: Overview of TIGER. Frozen vision experts provide heterogeneous features that are fused through instruction-guided expert routing. Task-conditioned queries, interaction attention layers, and a shared decoder collectively produce task-specific dense predictions.</span><span class="fig-zh">这张图概括 Task-Instructed Causal Routing of Vision 的整体方法流程。阅读时先看模块之间传递的训练信号，再看作者如何把目标拆成可优化的子问题。</span></figcaption></figure>
 <figure class="full-fig"><img src="../assets/mineru/2606.15765/images/0d4e4ed60ffc3dc8efe19442a9a6033a0521c1055b53a3d374b4b68b2ec31b9c.jpg" alt="Figureure 4 · : Qualitative comparison on the NYUD-v2 dataset"><figcaption><b>Figureure 4 · : Qualitative comparison on the NYUD-v2 dataset</b><span class="fig-en">Fig. 4: Qualitative comparison on the NYUD-v2 dataset. Across all tasks, TIGER better preserves structural details and object contours, demonstrating stronger multitask consistency.</span><span class="fig-zh">这张图/表用于判断 Task-Instructed Causal Routing of Vision 的实验收益来自哪里。重点看替换、消融或跨模型设置下趋势是否一致，而不是只看单个最高分。</span></figcaption></figure>
       
       <h2>核心问题</h2>
-      <p>通用视觉表征的现实形态越来越像多个 frozen VFMs 的组合，TIGER 是“如何可靠融合这些表征”的有用案例。</p>
+      <p>对通用视觉自监督的意义在于：不同 SSL/弱监督底座的 inductive bias 可能需要被路由组合，而不是单模型吞并。</p>
       <h2>方法拆解</h2>
-      <p>TIGER 使用自然语言 task instructions 引导 routing network，在 token level 给多个冻结 VFM experts 分配权重；counterfactual loss 根据剔除专家后的预测变化约束路由与专家因果贡献一致。</p>
+      <p>Task-Instruction-Guided Expert Routing：自然语言任务指令驱动 routing network，在 token 级给 heterogeneous VFM experts 分权，并用排除专家后的预测变化定义因果贡献。</p>
       <h2>主要贡献</h2>
-      <p>把 VFM 的不同预训练偏置当作互补专家，而不是强行用单一 backbone 统一所有 dense prediction 任务。</p>
+      <p>不是再训一个视觉底座，而是协调不同预训练目标形成的互补知识，适合 dense prediction 多任务迁移。</p>
       <h2>实验看点</h2>
-      <p>在 NYUD-v2 和 Pascal Context multi-task dense prediction benchmark 上超过近期 MTL baseline，同时保持所有 VFMs frozen。</p>
+      <p>在 NYUD-v2 和 Pascal Context 多任务 dense prediction 上优于近期 MTL baselines，所有 VFMs 保持 frozen。</p>
       <h2>局限与读法</h2>
-      <p>偏迁移/多任务工程，不是从零自监督预训练；需要看专家集合、任务指令模板和路由计算成本。</p>
+      <p>方法依赖已有 VFM 池；若专家过多，计算和路由稳定性会成为问题。</p>
     
     </div>
   </div>
   <aside class="paper-side">
 
     <div class="side-box pref-side"><h4>我的偏好</h4><div class="paper-side-tools"><button class="readbtn" type="button" data-read-toggle="2606.15765" title="标记已读" aria-label="标记已读"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M4 10.5l4 4 8-9"/></svg></button><div class="prefbar" data-pref-controls="2606.15765"><button class="prefbtn like" type="button" data-pref-toggle="like" data-pref-id="2606.15765" aria-pressed="false" title="关注这篇">关注</button><button class="prefbtn dismiss" type="button" data-pref-toggle="dismiss" data-pref-id="2606.15765" aria-pressed="false" title="降低这篇权重">略过</button></div></div></div>
-    <div class="side-box"><h4>关键判断</h4><dl><dt>相关性</dt><dd>P1</dd><dt>类别</dt><dd>arXiv 新增 + frozen VFM routing</dd><dt>会议</dt><dd>arXiv 新增 + frozen VFM routing</dd><dt>读法</dt><dd>方法图优先，表格次之</dd></dl></div>
+    <div class="side-box"><h4>关键判断</h4><dl><dt>相关性</dt><dd>P1</dd><dt>类别</dt><dd>arXiv 新增 + frozen VFM routing / dense transfer</dd><dt>会议</dt><dd>arXiv 新增 + frozen VFM routing / dense transfer</dd><dt>读法</dt><dd>方法图优先，表格次之</dd></dl></div>
     <div class="side-box"><h4>原文</h4><p><a href="https://arxiv.org/abs/2606.15765">https://arxiv.org/abs/2606.15765</a></p></div>
   </aside>
 </article></main>

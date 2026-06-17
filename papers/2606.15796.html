@@ -25,42 +25,42 @@
 <a class="nav-link" href="../pages/timeline.html">时间线</a>
 <span class="nav-streak" title="连续追踪天数"><svg viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><path d="M8 0c.7 2.5-1.2 3.7-2 5-1 1.6-1 4 .8 4.8C6.4 8.5 7.4 7.8 8 7c.3 1.3-.4 2 .9 3 .9.7 1.3 1.6 1.1 2.6C9.7 14.6 8.9 16 6.8 16 4.6 16 3 14.3 3 12c0-3.3 2.6-4.8 2.4-8C6.9 4.6 8.4 5 8 0z"/></svg> 连续 <b data-streak>0</b> 天</span>
   </nav>
-  <main><article class="paper-detail" data-pid="2606.15796" data-category="arXiv 新增 + MM-DiT interpretability" data-priority="P2" data-date="2026-06-17" data-title="diffract: diffusion feature reconstruction and attribution for circuit tracing" data-keywords="diffract: diffusion feature reconstruction and attribution for circuit tracing diffract arxiv 新增 + mm-dit interpretability p2 2026-06-17 arxiv 新增 + mm-dit interpretability 把 transcoder circuit tracing 扩展到多模态 diffusion transformer，可解释 text/image feature 如何跨 denoising 传播 中高相关；详见方法、贡献和实验边界。">
+  <main><article class="paper-detail" data-pid="2606.15796" data-category="arXiv 新增 + diffusion transformer feature circuits" data-priority="P2" data-date="2026-06-17" data-title="diffract: diffusion feature reconstruction and attribution for circuit tracing" data-keywords="diffract: diffusion feature reconstruction and attribution for circuit tracing diffract arxiv 新增 + diffusion transformer feature circuits p2 2026-06-17 arxiv 新增 + diffusion transformer feature circuits 把 transcoder circuit tracing 扩展到 flux 类 mm-dit，解释 denoising 过程中的语义传播 中高相关；详见方法、贡献和实验边界。">
   <div class="paper-main">
-    <div class="kicker">arXiv 新增 + MM-DiT interpretability · P2 · 2026-06-17</div>
-    <h1 class="paper-headline">DifFRACT：如果 RAE/DiT 成为视觉表征新接口，理解其内部 feature circuit 会影响后续表征蒸馏和控制</h1>
-    <p class="dek">把 LLM 中的 transcoder circuit tracing 推到 multimodal diffusion transformers，解释 attribute binding 与 text/image semantic propagation。</p>
-    <p class="byline"><strong>DifFRACT: Diffusion Feature Reconstruction and Attribution for Circuit Tracing</strong>　Artyom Mazur, Nina Konovalova, Aibek Alanov；arXiv 元数据未稳定列机构时按作者列表记录。　arXiv 新增 + MM-DiT interpretability　<a href="https://arxiv.org/abs/2606.15796">原文链接</a></p>
+    <div class="kicker">arXiv 新增 + diffusion transformer feature circuits · P2 · 2026-06-17</div>
+    <h1 class="paper-headline">DifFRACT：扩散模型特征越来越像视觉表征来源，理解其语义电路对后续多模态预训练有帮助</h1>
+    <p class="dek">比 attention map/SAE 更细地揭示 attribute binding 和 cross-stream semantic propagation，并支持 circuit-guided interventions。</p>
+    <p class="byline"><strong>DifFRACT: Diffusion Feature Reconstruction and Attribution for Circuit Tracing</strong>　Artyom Mazur , Nina Konovalova , Aibek Alanov；arXiv 元数据未稳定列机构时按作者列表记录。　arXiv 新增 + diffusion transformer feature circuits　<a href="https://arxiv.org/abs/2606.15796">原文链接</a></p>
     <div class="paper-facts">
       <span><b>编号</b>2606.15796</span>
       <span><b>优先级</b>P2</span>
-      <span><b>类别</b>arXiv 新增 + MM-DiT interpretability</span>
-      <span><b>会议</b>arXiv 新增 + MM-DiT interpretability</span>
-      <span><b>方法</b>在 FLUX.1[schnell] 的 MLP sublayers 上训练 timestep-conditioned transcoders，用替换和线性化得到 feature-to-feature attribution 与可解释 circuits。</span>
+      <span><b>类别</b>arXiv 新增 + diffusion transformer feature circuits</span>
+      <span><b>会议</b>arXiv 新增 + diffusion transformer feature circuits</span>
+      <span><b>方法</b>为 diffusion transformer 的 MLP sublayers 训练 timestep-conditioned transcoders，并在替换 MLP 后线性化剩余计算，得到 feature-to-feature attribution。</span>
       <span><b>来源</b>arXiv / OpenReview</span>
     </div>
     <div class="feature-body">
-      <p class="lead dropcap">先说结论。如果 RAE/DiT 成为视觉表征新接口，理解其内部 feature circuit 会影响后续表征蒸馏和控制。 把 LLM 中的 transcoder circuit tracing 推到 multimodal diffusion transformers，解释 attribute binding 与 text/image semantic propagation。</p>
+      <p class="lead dropcap">先说结论。扩散模型特征越来越像视觉表征来源，理解其语义电路对后续多模态预训练有帮助。 比 attention map/SAE 更细地揭示 attribute binding 和 cross-stream semantic propagation，并支持 circuit-guided interventions。</p>
       <figure class="full-fig"><img src="../assets/mineru/2606.15796/images/12823771cba6cc3b23f69ca964a144a2eaedf61712b11163cebf5b2899366497.jpg" alt="Figureure 25 · : Mean absolute error between the original model’s block output and th"><figcaption><b>Figureure 25 · : Mean absolute error between the original model’s block output and th</b><span class="fig-en">Figure 25: Mean absolute error between the original model’s block output and the LRM’s block output at each of the analyzed blocks, for the image and text streams. Error grows monotonically with depth as floating-point discrepancies accumulate, but stays within numerical-precision range across all 16 LRM blocks.</span><span class="fig-zh">这张图来自论文 PDF 的结构化抽取。当前用于辅助理解 DifFRACT 的方法或实验，请结合正文精读段落一起看。</span></figcaption></figure>
 <figure class="full-fig"><img src="../assets/mineru/2606.15796/images/5856a0e4f470453d318ae19ca4c510afed2e03bb6e363371963255cac40dc33d.jpg" alt="Figureure 26 · : Generated images for 10 prompts"><figcaption><b>Figureure 26 · : Generated images for 10 prompts</b><span class="fig-en">Figure 26: Generated images for 10 prompts. Row 1: original FLUX.1[schnell]. Rows 2–5: LRM applied only at step t = 0, 1, 2, 3 respectively, with the other steps run by the original model.</span><span class="fig-zh">这张图来自论文 PDF 的结构化抽取。当前用于辅助理解 DifFRACT 的方法或实验，请结合正文精读段落一起看。</span></figcaption></figure>
       
       <h2>核心问题</h2>
-      <p>如果 RAE/DiT 成为视觉表征新接口，理解其内部 feature circuit 会影响后续表征蒸馏和控制。</p>
+      <p>扩散模型特征越来越像视觉表征来源，理解其语义电路对后续多模态预训练有帮助。</p>
       <h2>方法拆解</h2>
-      <p>在 FLUX.1[schnell] 的 MLP sublayers 上训练 timestep-conditioned transcoders，用替换和线性化得到 feature-to-feature attribution 与可解释 circuits。</p>
+      <p>为 diffusion transformer 的 MLP sublayers 训练 timestep-conditioned transcoders，并在替换 MLP 后线性化剩余计算，得到 feature-to-feature attribution。</p>
       <h2>主要贡献</h2>
-      <p>把 LLM 中的 transcoder circuit tracing 推到 multimodal diffusion transformers，解释 attribute binding 与 text/image semantic propagation。</p>
+      <p>比 attention map/SAE 更细地揭示 attribute binding 和 cross-stream semantic propagation，并支持 circuit-guided interventions。</p>
       <h2>实验看点</h2>
-      <p>摘要称 transcoders 在 sparsity-faithfulness tradeoff 上匹配或略优于 SAE，并能做比 SAE steering 更精确的 circuit-guided interventions。</p>
+      <p>摘要称 transcoders 在 sparsity-faithfulness tradeoff 上匹配或略优 SAE，干预比 SAE steering 更精确有效。</p>
       <h2>局限与读法</h2>
-      <p>面向生成模型解释，不直接训练视觉 encoder；结论是否跨 DiT 架构、采样步数和更大模型稳定需要验证。</p>
+      <p>聚焦生成模型可解释性；对判别式视觉表征迁移的直接收益有限。</p>
     
     </div>
   </div>
   <aside class="paper-side">
 
     <div class="side-box pref-side"><h4>我的偏好</h4><div class="paper-side-tools"><button class="readbtn" type="button" data-read-toggle="2606.15796" title="标记已读" aria-label="标记已读"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M4 10.5l4 4 8-9"/></svg></button><div class="prefbar" data-pref-controls="2606.15796"><button class="prefbtn like" type="button" data-pref-toggle="like" data-pref-id="2606.15796" aria-pressed="false" title="关注这篇">关注</button><button class="prefbtn dismiss" type="button" data-pref-toggle="dismiss" data-pref-id="2606.15796" aria-pressed="false" title="降低这篇权重">略过</button></div></div></div>
-    <div class="side-box"><h4>关键判断</h4><dl><dt>相关性</dt><dd>P2</dd><dt>类别</dt><dd>arXiv 新增 + MM-DiT interpretability</dd><dt>会议</dt><dd>arXiv 新增 + MM-DiT interpretability</dd><dt>读法</dt><dd>方法图优先，表格次之</dd></dl></div>
+    <div class="side-box"><h4>关键判断</h4><dl><dt>相关性</dt><dd>P2</dd><dt>类别</dt><dd>arXiv 新增 + diffusion transformer feature circuits</dd><dt>会议</dt><dd>arXiv 新增 + diffusion transformer feature circuits</dd><dt>读法</dt><dd>方法图优先，表格次之</dd></dl></div>
     <div class="side-box"><h4>原文</h4><p><a href="https://arxiv.org/abs/2606.15796">https://arxiv.org/abs/2606.15796</a></p></div>
   </aside>
 </article></main>

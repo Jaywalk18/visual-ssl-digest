@@ -25,42 +25,42 @@
 <a class="nav-link" href="../pages/timeline.html">时间线</a>
 <span class="nav-streak" title="连续追踪天数"><svg viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><path d="M8 0c.7 2.5-1.2 3.7-2 5-1 1.6-1 4 .8 4.8C6.4 8.5 7.4 7.8 8 7c.3 1.3-.4 2 .9 3 .9.7 1.3 1.6 1.1 2.6C9.7 14.6 8.9 16 6.8 16 4.6 16 3 14.3 3 12c0-3.3 2.6-4.8 2.4-8C6.9 4.6 8.4 5 8 0z"/></svg> 连续 <b data-streak>0</b> 天</span>
   </nav>
-  <main><article class="paper-detail" data-pid="2606.14765" data-category="arXiv 新增 + video SSL" data-priority="P0" data-date="2026-06-17" data-title="momentum-guided semantic forecasting (mofore) for self-supervised video representation learning" data-keywords="momentum-guided semantic forecasting (mofore) for self-supervised video representation learning momentum-guided semantic forecasting (mofore) for arxiv 新增 + video ssl p0 2026-06-17 arxiv 新增 + video ssl 直接把视频 ssl 从 masked reconstruction 推到未来 latent embedding forecasting，是今天最贴合主方向的条目 高相关；详见方法、贡献和实验边界。">
+  <main><article class="paper-detail" data-pid="2606.14765" data-category="arXiv 新增 + self-supervised video representation" data-priority="P0" data-date="2026-06-17" data-title="momentum-guided semantic forecasting (mofore) for self-supervised video representation learning" data-keywords="momentum-guided semantic forecasting (mofore) for self-supervised video representation learning momentum-guided semantic forecasting (mofore) for arxiv 新增 + self-supervised video representation p0 2026-06-17 arxiv 新增 + self-supervised video representation 用 long-range latent forecasting 结合 contrastive regularization 学视频语义表征，是干净的视频 ssl 条目 高相关；详见方法、贡献和实验边界。">
   <div class="paper-main">
-    <div class="kicker">arXiv 新增 + video SSL · P0 · 2026-06-17</div>
-    <h1 class="paper-headline">Momentum-Guided Semantic Forecasting (MoFore) for：这是今天最直接的视觉自监督论文，和 VideoMAE、V-JEPA、predictive latent video modeling 可直接对照</h1>
-    <p class="dek">把 video SSL 的目标从像素/patch 重建转为 long-range semantic forecasting，强调 temporal consistency 和 category-level embedding structure。</p>
-    <p class="byline"><strong>Momentum-Guided Semantic Forecasting (MoFore) for Self-Supervised Video Representation Learning</strong>　Qinwu Xu；arXiv 元数据未稳定列机构时按作者列表记录。　arXiv 新增 + video SSL　<a href="https://arxiv.org/abs/2606.14765">原文链接</a></p>
+    <div class="kicker">arXiv 新增 + self-supervised video representation · P0 · 2026-06-17</div>
+    <h1 class="paper-headline">Momentum-Guided Semantic Forecasting (MoFore) for：和 TDV 共同指向“视频时间预测替代图像增强/遮挡”的 SSL 方向，值得并读</h1>
+    <p class="dek">避免像素重建，把训练目标放在语义 latent 预测和 temporal consistency 上，强调 motion-aware organization。</p>
+    <p class="byline"><strong>Momentum-Guided Semantic Forecasting (MoFore) for Self-Supervised Video Representation Learning</strong>　Qinwu Xu；arXiv 元数据未稳定列机构时按作者列表记录。　arXiv 新增 + self-supervised video representation　<a href="https://arxiv.org/abs/2606.14765">原文链接</a></p>
     <div class="paper-facts">
       <span><b>编号</b>2606.14765</span>
       <span><b>优先级</b>P0</span>
-      <span><b>类别</b>arXiv 新增 + video SSL</span>
-      <span><b>会议</b>arXiv 新增 + video SSL</span>
-      <span><b>方法</b>从 temporally distant context clips 预测未来 latent embeddings，用 randomized temporal-gap forecasting 覆盖不同时间尺度，并用 contrastive regularization 防 collapse。</span>
+      <span><b>类别</b>arXiv 新增 + self-supervised video representation</span>
+      <span><b>会议</b>arXiv 新增 + self-supervised video representation</span>
+      <span><b>方法</b>Momentum-Guided Semantic Forecasting：从时间上相隔较远的 context clips 预测未来 latent embeddings，并用 randomized temporal-gap forecasting 提升多时间尺度鲁棒性。</span>
       <span><b>来源</b>arXiv / OpenReview</span>
     </div>
     <div class="feature-body">
-      <p class="lead dropcap">先说结论。这是今天最直接的视觉自监督论文，和 VideoMAE、V-JEPA、predictive latent video modeling 可直接对照。 把 video SSL 的目标从像素/patch 重建转为 long-range semantic forecasting，强调 temporal consistency 和 category-level embedding structure。</p>
+      <p class="lead dropcap">先说结论。和 TDV 共同指向“视频时间预测替代图像增强/遮挡”的 SSL 方向，值得并读。 避免像素重建，把训练目标放在语义 latent 预测和 temporal consistency 上，强调 motion-aware organization。</p>
       <figure class="full-fig"><img src="../assets/mineru/2606.14765/images/08d3350f9347969461e2efa05a8848f47ac7627fbfdf990134831e9bd4cf890c.jpg" alt="Figureure 1 · : Architecture of the proposed momentum-guided long-range predictive l"><figcaption><b>Figureure 1 · : Architecture of the proposed momentum-guided long-range predictive l</b><span class="fig-en">Figure 1: Architecture of the proposed momentum-guided long-range predictive learning framework.</span><span class="fig-zh">这张图概括 Momentum-Guided Semantic Forecasting (MoFore) for 的整体方法流程。阅读时先看模块之间传递的训练信号，再看作者如何把目标拆成可优化的子问题。</span></figcaption></figure>
 <figure class="full-fig"><img src="../assets/mineru/2606.14765/images/68a7f21c1b119948ca3e22d4f0c47766b27eec7cac33ad32febad8b039b73adf.jpg" alt="QUERY: HulaHoop Figure 5: Nearest-neighbor retrieval results for a Hula Hoop query video"><figcaption><b>QUERY: HulaHoop Figure 5: Nearest-neighbor retrieval results for a Hula Hoop query video</b><span class="fig-en">QUERY: HulaHoop Figure 5: Nearest-neighbor retrieval results for a Hula Hoop query video. Failure cases reveal that the current representation occasionally groups actions with similar pose geometry and repetitive motion patterns despite different semantic meanings.</span><span class="fig-zh">这张图/表用于判断 Momentum-Guided Semantic Forecasting (MoFore) for 的实验收益来自哪里。重点看替换、消融或跨模型设置下趋势是否一致，而不是只看单个最高分。</span></figcaption></figure>
       
       <h2>核心问题</h2>
-      <p>这是今天最直接的视觉自监督论文，和 VideoMAE、V-JEPA、predictive latent video modeling 可直接对照。</p>
+      <p>和 TDV 共同指向“视频时间预测替代图像增强/遮挡”的 SSL 方向，值得并读。</p>
       <h2>方法拆解</h2>
-      <p>从 temporally distant context clips 预测未来 latent embeddings，用 randomized temporal-gap forecasting 覆盖不同时间尺度，并用 contrastive regularization 防 collapse。</p>
+      <p>Momentum-Guided Semantic Forecasting：从时间上相隔较远的 context clips 预测未来 latent embeddings，并用 randomized temporal-gap forecasting 提升多时间尺度鲁棒性。</p>
       <h2>主要贡献</h2>
-      <p>把 video SSL 的目标从像素/patch 重建转为 long-range semantic forecasting，强调 temporal consistency 和 category-level embedding structure。</p>
+      <p>避免像素重建，把训练目标放在语义 latent 预测和 temporal consistency 上，强调 motion-aware organization。</p>
       <h2>实验看点</h2>
-      <p>在 UCF101 上无动作标签训练，报告 temporal stability、embedding category structure 和 motion-aware retrieval 的定量/定性结果。</p>
+      <p>在 UCF101 上报告无动作标签训练后出现 temporal stability、category-level structure 和动作相关检索组织。</p>
       <h2>局限与读法</h2>
-      <p>实验范围目前偏小，UCF101 不能代表大规模开放视频；需要看 latent teacher、backbone、batch size 和 temporal gap 设计是否能扩展。</p>
+      <p>实验目前看起来偏小规模；需要检查是否有 Kinetics/SSv2 等更大视频迁移，单作者稿也要特别看复现细节。</p>
     
     </div>
   </div>
   <aside class="paper-side">
 
     <div class="side-box pref-side"><h4>我的偏好</h4><div class="paper-side-tools"><button class="readbtn" type="button" data-read-toggle="2606.14765" title="标记已读" aria-label="标记已读"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M4 10.5l4 4 8-9"/></svg></button><div class="prefbar" data-pref-controls="2606.14765"><button class="prefbtn like" type="button" data-pref-toggle="like" data-pref-id="2606.14765" aria-pressed="false" title="关注这篇">关注</button><button class="prefbtn dismiss" type="button" data-pref-toggle="dismiss" data-pref-id="2606.14765" aria-pressed="false" title="降低这篇权重">略过</button></div></div></div>
-    <div class="side-box"><h4>关键判断</h4><dl><dt>相关性</dt><dd>P0</dd><dt>类别</dt><dd>arXiv 新增 + video SSL</dd><dt>会议</dt><dd>arXiv 新增 + video SSL</dd><dt>读法</dt><dd>方法图优先，表格次之</dd></dl></div>
+    <div class="side-box"><h4>关键判断</h4><dl><dt>相关性</dt><dd>P0</dd><dt>类别</dt><dd>arXiv 新增 + self-supervised video representation</dd><dt>会议</dt><dd>arXiv 新增 + self-supervised video representation</dd><dt>读法</dt><dd>方法图优先，表格次之</dd></dl></div>
     <div class="side-box"><h4>原文</h4><p><a href="https://arxiv.org/abs/2606.14765">https://arxiv.org/abs/2606.14765</a></p></div>
   </aside>
 </article></main>
