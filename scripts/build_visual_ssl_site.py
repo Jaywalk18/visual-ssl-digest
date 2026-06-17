@@ -1887,6 +1887,32 @@ def write_js() -> None:
   function setStatus(text){
     document.querySelectorAll('[data-pref-status]').forEach(function(el){ el.textContent=text||''; });
   }
+  function applyPrefs(data){
+    if(!data || typeof data!=='object') return false;
+    var before=JSON.stringify(snapshot());
+    normalize(data.readIds).forEach(function(id){ add(readSet,id); });
+    normalize(data.likedIds).forEach(function(id){ add(likedSet,id); remove(dismissedSet,id); });
+    normalize(data.dismissedIds).forEach(function(id){ if(!has(likedSet,id)) add(dismissedSet,id); });
+    normalize(data.visitDays).forEach(function(day){ add(visits,day); });
+    save(RKEY,readSet); save(LKEY,likedSet); save(DKEY,dismissedSet); save(VKEY,visits);
+    return before!==JSON.stringify(snapshot());
+  }
+  function pullPrefs(){
+    if(!window.fetch) return Promise.resolve(false);
+    return fetch(SYNC_URL,{method:'GET',mode:'cors',cache:'no-store'}).then(function(resp){
+      if(!resp.ok) throw new Error('HTTP '+resp.status);
+      return resp.json();
+    }).then(function(data){
+      if(!data || !data.preferences) return false;
+      var changed=applyPrefs(data.preferences);
+      if(changed) announce();
+      setStatus('已从本机同步偏好');
+      return changed;
+    }).catch(function(){
+      setStatus('本机同步未连接；仍可手动导出');
+      return false;
+    });
+  }
   function scheduleSync(reason){
     if(syncTimer) clearTimeout(syncTimer);
     syncTimer=setTimeout(function(){ syncPrefs(reason||'change'); }, 550);
@@ -1993,11 +2019,7 @@ def write_js() -> None:
   }
   function mergePrefs(data){
     if(!data || typeof data!=='object') throw new Error('JSON 格式不正确');
-    normalize(data.readIds).forEach(function(id){ add(readSet,id); });
-    normalize(data.likedIds).forEach(function(id){ add(likedSet,id); remove(dismissedSet,id); });
-    normalize(data.dismissedIds).forEach(function(id){ if(!has(likedSet,id)) add(dismissedSet,id); });
-    normalize(data.visitDays).forEach(function(day){ add(visits,day); });
-    save(RKEY,readSet); save(LKEY,likedSet); save(DKEY,dismissedSet); save(VKEY,visits);
+    applyPrefs(data);
     announce();
     scheduleSync('import');
     setStatus('已导入偏好：关注 '+likedSet.length+'，略过 '+dismissedSet.length+'。');
@@ -2031,8 +2053,12 @@ def write_js() -> None:
   });
   Game.onChange(renderAll);
   Game.onChange(function(){ scheduleSync('change'); });
-  if(document.readyState!=='loading'){ renderAll(); scheduleSync('load'); }
-  else document.addEventListener('DOMContentLoaded', function(){ renderAll(); scheduleSync('load'); });
+  function boot(){
+    renderAll();
+    pullPrefs().then(function(){ renderAll(); scheduleSync('load'); });
+  }
+  if(document.readyState!=='loading') boot();
+  else document.addEventListener('DOMContentLoaded', boot);
 })();
 """
     (ROOT / "assets" / "ssl-game.js").write_text(js, encoding="utf-8")

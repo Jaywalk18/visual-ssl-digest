@@ -20,7 +20,7 @@
   </header>
   <nav class="site-nav" aria-label="主导航">
     <a class="nav-link" href="../index.html">头版</a>
-<a class="nav-link" href="../issues/2026-06-16.html">今日速递</a>
+<a class="nav-link" href="../issues/2026-06-17.html">今日速递</a>
 <a class="nav-link" href="../pages/catalog.html">论文目录</a>
 <a class="nav-link" href="../pages/timeline.html">时间线</a>
 <span class="nav-streak" title="连续追踪天数"><svg viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><path d="M8 0c.7 2.5-1.2 3.7-2 5-1 1.6-1 4 .8 4.8C6.4 8.5 7.4 7.8 8 7c.3 1.3-.4 2 .9 3 .9.7 1.3 1.6 1.1 2.6C9.7 14.6 8.9 16 6.8 16 4.6 16 3 14.3 3 12c0-3.3 2.6-4.8 2.4-8C6.9 4.6 8.4 5 8 0z"/></svg> 连续 <b data-streak>0</b> 天</span>
@@ -28,32 +28,32 @@
   <main><article class="paper-detail" data-pid="2606.14317" data-category="arXiv 新增 + video generation representation" data-priority="扫读" data-date="2026-06-16" data-title="causalmotion: structured physical reasoning as keyframe and trajectory guidance for training-free video generation" data-keywords="causalmotion: structured physical reasoning as keyframe and trajectory guidance for training-free video generation causalmotion arxiv 新增 + video generation representation 扫读 2026-06-16 arxiv 新增 + video generation representation 用 vlm 生成 causally consistent keyframes 和 object-centric trajectories 约束视频扩散，偏生成但有结构表征信号 中相关；详见方法、贡献和实验边界。">
   <div class="paper-main">
     <div class="kicker">arXiv 新增 + video generation representation · 扫读 · 2026-06-16</div>
-    <h1 class="paper-headline">CausalMotion：只需扫读，关注 object-centric trajectory 是否能反哺视频表征学习或 world-model teacher</h1>
-    <p class="dek">把显式物理/因果 reasoning 和生成模型解耦，用中间结构表征改善长时交互视频。</p>
-    <p class="byline"><strong>CausalMotion: Structured Physical Reasoning as Keyframe and Trajectory Guidance for Training-Free Video Generation</strong>　Sihan Zhuang, Xinyuan Chen, Tianfan Xue, Yaohui Wang；arXiv 元数据未稳定列机构时按作者列表记录。　arXiv 新增 + video generation representation　<a href="https://arxiv.org/abs/2606.14317">原文链接</a></p>
+    <h1 class="paper-headline">CausalMotion：它和通用视觉自监督的关系在于：用 VLM 生成 causally consistent keyframes 和 object-centric trajectories 约束视频扩散，偏生成但有结构表征信号</h1>
+    <p class="dek">中相关；详见方法、贡献和实验边界。</p>
+    <p class="byline"><strong>CausalMotion: Structured Physical Reasoning as Keyframe and Trajectory Guidance for Training-Free Video Generation</strong>　arXiv 新增 + video generation representation　<a href="https://arxiv.org/abs/2606.14317">原文链接</a></p>
     <div class="paper-facts">
       <span><b>编号</b>2606.14317</span>
       <span><b>优先级</b>扫读</span>
       <span><b>类别</b>arXiv 新增 + video generation representation</span>
       <span><b>会议</b>arXiv 新增 + video generation representation</span>
-      <span><b>方法</b>VLM 将 prompt 分解为 keyframes 与 object-centric motion trajectories，再作为 soft constraints 指导预训练 video diffusion model。</span>
+      <span><b>方法</b>用 VLM 生成 causally consistent keyframes 和 object-centric trajectories 约束视频扩散，偏生成但有结构表征信号</span>
       <span><b>来源</b>arXiv / OpenReview</span>
     </div>
     <div class="feature-body">
-      <p class="lead dropcap">先说结论。只需扫读，关注 object-centric trajectory 是否能反哺视频表征学习或 world-model teacher。 把显式物理/因果 reasoning 和生成模型解耦，用中间结构表征改善长时交互视频。</p>
+      <p class="lead dropcap">先说结论。它和通用视觉自监督的关系在于：用 VLM 生成 causally consistent keyframes 和 object-centric trajectories 约束视频扩散，偏生成但有结构表征信号。 中相关；详见方法、贡献和实验边界。</p>
       <figure class="full-fig"><img src="../assets/mineru/2606.14317/images/1a8d9cda9388c151dacc729b25a944a526d54064b4fad079083e8cd0dde5cf2c.jpg" alt="Figureure 1 · : Overview of CausalMotion"><figcaption><b>Figureure 1 · : Overview of CausalMotion</b><span class="fig-en">Figure 1: Overview of CausalMotion. Our training-free framework performs structured physical reasoning to generate keyframes and trajectories, then guides the diffusion model with these intermediate representations.</span><span class="fig-zh">这张图概括 CausalMotion 的整体方法流程。阅读时先看模块之间传递的训练信号，再看作者如何把目标拆成可优化的子问题。</span></figcaption></figure>
 <figure class="full-fig"><img src="../assets/mineru/2606.14317/images/5cef1f8f5e9ccacc81885c5c13c2a0064572a093d962a2ad94cf5ab8ecfcb2a8.jpg" alt="Figureure 2 · : The architecture of our method"><figcaption><b>Figureure 2 · : The architecture of our method</b><span class="fig-en">Figure 2: The architecture of our method. Given a text prompt, CausalMotion first performs iterative visual reasoning to decompose complex events into causally consistent key states and generates corresponding keyframes that capture critical transitions. It then localizes key objects, predicts sparse physical state vectors, and constructs dense motion trajectories through physicsaware interpolation and temporal alignment. Finally, the generated trajectories are projected into the diffusion latent space, where appearance anchors from keyframes and localized latent updates jointly guide denoising toward physically plausible motion and temporally consistent video generation.</span><span class="fig-zh">这张图概括 CausalMotion 的整体方法流程。阅读时先看模块之间传递的训练信号，再看作者如何把目标拆成可优化的子问题。</span></figcaption></figure>
       
       <h2>核心问题</h2>
-      <p>只需扫读，关注 object-centric trajectory 是否能反哺视频表征学习或 world-model teacher。</p>
+      <p>它和通用视觉自监督的关系在于：用 VLM 生成 causally consistent keyframes 和 object-centric trajectories 约束视频扩散，偏生成但有结构表征信号。</p>
       <h2>方法拆解</h2>
-      <p>VLM 将 prompt 分解为 keyframes 与 object-centric motion trajectories，再作为 soft constraints 指导预训练 video diffusion model。</p>
+      <p>用 VLM 生成 causally consistent keyframes 和 object-centric trajectories 约束视频扩散，偏生成但有结构表征信号</p>
       <h2>主要贡献</h2>
-      <p>把显式物理/因果 reasoning 和生成模型解耦，用中间结构表征改善长时交互视频。</p>
+      <p>中相关；详见方法、贡献和实验边界。</p>
       <h2>实验看点</h2>
-      <p>摘要称在 dynamics-intensive scenarios 中提升 physical plausibility 和 temporal coherence，同时保持感知质量。</p>
+      <p>实验部分建议重点看两类证据：一是作者是否把方法收益和更强数据、更长训练、更大模型区分开；二是跨模型、跨数据或跨任务迁移是否还能保留同样趋势。</p>
       <h2>局限与读法</h2>
-      <p>training-free generation 方法，不直接学习视觉 encoder；与通用视觉 SSL 的关系主要在 structured intermediate representation。</p>
+      <p>这篇论文的结论需要结合任务设置、训练数据规模和消融实验一起看；不要只凭单个指标判断它对通用视觉表征的价值。</p>
     
     </div>
   </div>
@@ -64,13 +64,13 @@
     <div class="side-box"><h4>原文</h4><p><a href="https://arxiv.org/abs/2606.14317">https://arxiv.org/abs/2606.14317</a></p></div>
   </aside>
 </article></main>
-  <aside class="conf-float" data-conf-reminder="2026-06-16-main-ddl" aria-label="CCF A/B 主投稿提醒">
+  <aside class="conf-float" data-conf-reminder="2026-06-17-main-ddl" aria-label="CCF A/B 主投稿提醒">
   <button class="conf-close" type="button" aria-label="关闭会议提醒">×</button>
   <details open>
     <summary>CCF A/B 主投稿提醒</summary>
     <div class="conf-list"><a class="conf-item " href="https://github.com/ccfddl/ccf-deadlines/blob/main/conference/AI/aaai.yml">
   <span><b>AAAI 2027</b><em>CCF A · Main paper submission</em></span>
-  <strong>41 天</strong>
+  <strong>40 天</strong>
   <small>2026-07-27 · CCF DDL: abstract 2026-07-20；进入 1 个月窗口后重点提醒。</small>
 </a></div>
   </details>
@@ -83,7 +83,7 @@
   (() => {
     const box = document.querySelector('[data-conf-reminder]');
     if (!box) return;
-    const key = `visualSslConfReminderClosed:${box.dataset.confReminder || '2026-06-16-main-ddl'}`;
+    const key = `visualSslConfReminderClosed:${box.dataset.confReminder || '2026-06-17-main-ddl'}`;
     try {
       if (localStorage.getItem(key) === '1') box.hidden = true;
     } catch (err) {}

@@ -20,7 +20,7 @@
   </header>
   <nav class="site-nav" aria-label="主导航">
     <a class="nav-link" href="../index.html">头版</a>
-<a class="nav-link" href="../issues/2026-06-16.html">今日速递</a>
+<a class="nav-link" href="../issues/2026-06-17.html">今日速递</a>
 <a class="nav-link" href="../pages/catalog.html">论文目录</a>
 <a class="nav-link" href="../pages/timeline.html">时间线</a>
 <span class="nav-streak" title="连续追踪天数"><svg viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><path d="M8 0c.7 2.5-1.2 3.7-2 5-1 1.6-1 4 .8 4.8C6.4 8.5 7.4 7.8 8 7c.3 1.3-.4 2 .9 3 .9.7 1.3 1.6 1.1 2.6C9.7 14.6 8.9 16 6.8 16 4.6 16 3 14.3 3 12c0-3.3 2.6-4.8 2.4-8C6.9 4.6 8.4 5 8 0z"/></svg> 连续 <b data-streak>0</b> 天</span>
@@ -28,32 +28,32 @@
   <main><article class="paper-detail" data-pid="2606.14586" data-category="arXiv 新增 + self-supervised concept discovery" data-priority="P0" data-date="2026-06-16" data-title="s$^2$cope: self-supervised concept discovery via preference learning" data-keywords="s$^2$cope: self-supervised concept discovery via preference learning s$^2$cope arxiv 新增 + self-supervised concept discovery p0 2026-06-16 arxiv 新增 + self-supervised concept discovery 用 vllm 主动假设/验证/强化视觉属性，尝试让可解释概念从自监督偏好循环中出现 高相关；详见方法、贡献和实验边界。">
   <div class="paper-main">
     <div class="kicker">arXiv 新增 + self-supervised concept discovery · P0 · 2026-06-16</div>
-    <h1 class="paper-headline">S$^2$COPE：这篇直指“自监督特征不透明”的痛点，值得和 concept bottleneck、SAE/VLM interpretability 一起精读</h1>
-    <p class="dek">把“可解释概念发现”从静态 prompt/filter 流水线改成模型自身参与的自监督偏好优化。</p>
-    <p class="byline"><strong>S$^2$COPE: Self-Supervised Concept Discovery via Preference Learning</strong>　Shilong Xiang, Zirui Zhang, Chengzhi Mao；arXiv 元数据未稳定列机构时按作者列表记录。　arXiv 新增 + self-supervised concept discovery　<a href="https://arxiv.org/abs/2606.14586">原文链接</a></p>
+    <h1 class="paper-headline">S$^2$COPE：它和通用视觉自监督的关系在于：用 VLLM 主动假设/验证/强化视觉属性，尝试让可解释概念从自监督偏好循环中出现</h1>
+    <p class="dek">高相关；详见方法、贡献和实验边界。</p>
+    <p class="byline"><strong>S$^2$COPE: Self-Supervised Concept Discovery via Preference Learning</strong>　arXiv 新增 + self-supervised concept discovery　<a href="https://arxiv.org/abs/2606.14586">原文链接</a></p>
     <div class="paper-facts">
       <span><b>编号</b>2606.14586</span>
       <span><b>优先级</b>P0</span>
       <span><b>类别</b>arXiv 新增 + self-supervised concept discovery</span>
       <span><b>会议</b>arXiv 新增 + self-supervised concept discovery</span>
-      <span><b>方法</b>Self-Supervised Concept discOvery via Preference lEarning：VLLM 从 raw imagery 中提出候选视觉属性、验证并通过 preference objective 强化，不使用人工标签。</span>
+      <span><b>方法</b>用 VLLM 主动假设/验证/强化视觉属性，尝试让可解释概念从自监督偏好循环中出现</span>
       <span><b>来源</b>arXiv / OpenReview</span>
     </div>
     <div class="feature-body">
-      <p class="lead dropcap">先说结论。这篇直指“自监督特征不透明”的痛点，值得和 concept bottleneck、SAE/VLM interpretability 一起精读。 把“可解释概念发现”从静态 prompt/filter 流水线改成模型自身参与的自监督偏好优化。</p>
+      <p class="lead dropcap">先说结论。它和通用视觉自监督的关系在于：用 VLLM 主动假设/验证/强化视觉属性，尝试让可解释概念从自监督偏好循环中出现。 高相关；详见方法、贡献和实验边界。</p>
       <figure class="full-fig"><img src="../assets/mineru/2606.14586/images/9f3a576723d73ab6af17aea79df1d66dac535dccea23dec155fc86bad7151c61.jpg" alt="Figureure 2 · : Overview of the $\mathbf { S ^ { 2 } C O P E }$ Discovery Loop"><figcaption><b>Figureure 2 · : Overview of the $\mathbf { S ^ { 2 } C O P E }$ Discovery Loop</b><span class="fig-en">Figure 2: Overview of the $\mathbf { S ^ { 2 } C O P E }$ Discovery Loop. Our framework operates as an end-toend, self-supervised discovery process. In iteration k, the VLLM policy $\pi _ { k }$ uses high-temperature sampling to hypothesize diverse candidate concepts $C ( x )$ for an unlabeled image x. To evaluate these proposals without human labels, we compute a self-supervised, cross-modal contrastive reward $R ( c , x )$ based on visual invariance. A candidate concept receives a high reward only if it is stable across augmented views (the positive set) while maintaining specificity against unrelated batch images. This automatically filters out generic, noisy descriptions (Answer $\mathbf { A } )$ in favor of discriminative, structured attributes (Answer B). An Easy-Negative pairing strategy (selecting pairs with the largest reward gap) converts these rewards into preference pairs $( c _ { w } , c _ { l } )$ to form dataset $\mathcal { D } _ { k }$ . Finally, Direct Preference Optimization (DPO) internalizes this invariance by updating the VLLM concept generator’s weights, yielding a refined policy $\pi _ { k + 1 }$ that iteratively transforms the VLLM into a self-supervised concept miner.</span><span class="fig-zh">这张图概括 S$^2$COPE 的整体方法流程。阅读时先看模块之间传递的训练信号，再看作者如何把目标拆成可优化的子问题。</span></figcaption></figure>
 <figure class="full-fig"><img src="../assets/mineru/2606.14586/images/7fe224bee91c4cb9f5ed8c7ddf12b5b5b853dc1cb4425e9ba52924df8984dba0.jpg" alt="Figureure 1 · : Self-Supervised Visual Concept Discovery"><figcaption><b>Figureure 1 · : Self-Supervised Visual Concept Discovery</b><span class="fig-en">Figure 1: Self-Supervised Visual Concept Discovery. (Left) Standard contrastive learning yields discriminative but opaque, high-dimensional feature vectors that act as uninterpretable &quot;black boxes.&quot; (Right) In contrast, $\mathbf { \bar { S } } ^ { 2 } \mathbf { \bar { C } } \mathbf { O P E }$ discovers explicitly interpretable concepts $( \mathrm { e . g . }$ , &quot;bright yellow body&quot;) directly from unannotated images. By utilizing Vision-Large-Language Models as a broad semantic prior, our self-supervised preference optimization loop grounds raw visual features into discrete, human-readable attributes, yielding transparent representations that improve classification accuracy on unseen data.</span><span class="fig-zh">这张图/表用于判断 S$^2$COPE 的实验收益来自哪里。重点看替换、消融或跨模型设置下趋势是否一致，而不是只看单个最高分。</span></figcaption></figure>
       
       <h2>核心问题</h2>
-      <p>这篇直指“自监督特征不透明”的痛点，值得和 concept bottleneck、SAE/VLM interpretability 一起精读。</p>
+      <p>它和通用视觉自监督的关系在于：用 VLLM 主动假设/验证/强化视觉属性，尝试让可解释概念从自监督偏好循环中出现。</p>
       <h2>方法拆解</h2>
-      <p>Self-Supervised Concept discOvery via Preference lEarning：VLLM 从 raw imagery 中提出候选视觉属性、验证并通过 preference objective 强化，不使用人工标签。</p>
+      <p>用 VLLM 主动假设/验证/强化视觉属性，尝试让可解释概念从自监督偏好循环中出现</p>
       <h2>主要贡献</h2>
-      <p>把“可解释概念发现”从静态 prompt/filter 流水线改成模型自身参与的自监督偏好优化。</p>
+      <p>高相关；详见方法、贡献和实验边界。</p>
       <h2>实验看点</h2>
-      <p>摘要称在自然、医学、物理域均能发现领域概念，并在 unseen data 下游 top-1 分类最高带来 24 点绝对提升。</p>
+      <p>实验部分建议重点看两类证据：一是作者是否把方法收益和更强数据、更长训练、更大模型区分开；二是跨模型、跨数据或跨任务迁移是否还能保留同样趋势。</p>
       <h2>局限与读法</h2>
-      <p>实验跨了医学/物理垂直域，通用自然图像上的收益需要单独看；VLLM 作为主动参与者也可能引入语言先验偏置。</p>
+      <p>这篇论文的结论需要结合任务设置、训练数据规模和消融实验一起看；不要只凭单个指标判断它对通用视觉表征的价值。</p>
     
     </div>
   </div>
@@ -64,13 +64,13 @@
     <div class="side-box"><h4>原文</h4><p><a href="https://arxiv.org/abs/2606.14586">https://arxiv.org/abs/2606.14586</a></p></div>
   </aside>
 </article></main>
-  <aside class="conf-float" data-conf-reminder="2026-06-16-main-ddl" aria-label="CCF A/B 主投稿提醒">
+  <aside class="conf-float" data-conf-reminder="2026-06-17-main-ddl" aria-label="CCF A/B 主投稿提醒">
   <button class="conf-close" type="button" aria-label="关闭会议提醒">×</button>
   <details open>
     <summary>CCF A/B 主投稿提醒</summary>
     <div class="conf-list"><a class="conf-item " href="https://github.com/ccfddl/ccf-deadlines/blob/main/conference/AI/aaai.yml">
   <span><b>AAAI 2027</b><em>CCF A · Main paper submission</em></span>
-  <strong>41 天</strong>
+  <strong>40 天</strong>
   <small>2026-07-27 · CCF DDL: abstract 2026-07-20；进入 1 个月窗口后重点提醒。</small>
 </a></div>
   </details>
@@ -83,7 +83,7 @@
   (() => {
     const box = document.querySelector('[data-conf-reminder]');
     if (!box) return;
-    const key = `visualSslConfReminderClosed:${box.dataset.confReminder || '2026-06-16-main-ddl'}`;
+    const key = `visualSslConfReminderClosed:${box.dataset.confReminder || '2026-06-17-main-ddl'}`;
     try {
       if (localStorage.getItem(key) === '1') box.hidden = true;
     } catch (err) {}

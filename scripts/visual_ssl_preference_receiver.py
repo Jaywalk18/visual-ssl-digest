@@ -98,6 +98,7 @@ def make_handler(output: Path):
                 "output": str(output),
                 "exists": output.exists(),
                 "updatedAt": datetime.fromtimestamp(output.stat().st_mtime, timezone.utc).isoformat() if output.exists() else None,
+                "preferences": json.loads(output.read_text(encoding="utf-8")) if output.exists() else None,
             }
             self._headers(200)
             self.wfile.write(json.dumps(payload, ensure_ascii=False).encode("utf-8"))

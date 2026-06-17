@@ -14,30 +14,30 @@
     <a class="masthead-title" href="index.html">通用视觉自监督研究报</a>
     <div class="masthead-kicker">A Daily Digest of Visual Self-Supervised Learning</div>
     <div class="masthead-meta">
-      <span>2026-06-16</span>
+      <span>2026-06-17</span>
       <span>图像表征 · VFM · JEPA · 视频预训练</span>
     </div>
   </header>
   <nav class="site-nav" aria-label="主导航">
     <a class="nav-link active" href="index.html">头版</a>
-<a class="nav-link" href="issues/2026-06-16.html">今日速递</a>
+<a class="nav-link" href="issues/2026-06-17.html">今日速递</a>
 <a class="nav-link" href="pages/catalog.html">论文目录</a>
 <a class="nav-link" href="pages/timeline.html">时间线</a>
 <span class="nav-streak" title="连续追踪天数"><svg viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><path d="M8 0c.7 2.5-1.2 3.7-2 5-1 1.6-1 4 .8 4.8C6.4 8.5 7.4 7.8 8 7c.3 1.3-.4 2 .9 3 .9.7 1.3 1.6 1.1 2.6C9.7 14.6 8.9 16 6.8 16 4.6 16 3 14.3 3 12c0-3.3 2.6-4.8 2.4-8C6.9 4.6 8.4 5 8 0z"/></svg> 连续 <b data-streak>0</b> 天</span>
   </nav>
   <main><section class="hero-grid">
   <article class="lead-story">
-    <div class="kicker">今日主线 · arXiv 新增 + representation autoencoder</div>
-    <h1>RepFusion：把 RAE 视觉表征空间里的 denoising 交给 MLLM 先验，是“语义 latent + 生成预训练”的强信号</h1>
-    <p class="dek">把 RAE 视觉表征空间里的 denoising 交给 MLLM 先验，是“语义 latent + 生成预训练”的强信号。</p>
-    <figure class="hero-figure"><img src="assets/mineru/2606.14700/images/ab4d332d3f8de107675cc247bcd4fbac90b7181f72c4aa0a502ac0d77f07c411.jpg" alt="RepFusion figure"><figcaption>这张图/表用于判断 RepFusion 的实验收益来自哪里。重点看替换、消融或跨模型设置下趋势是否一致，而不是只看单个最高分。</figcaption></figure>
-    <div class="paper-actions"><a href="issues/2026-06-16.html">阅读 6 月 16 日速递</a><a href="papers/2606.14700.html">打开主文页</a></div>
+    <div class="kicker">今日主线 · arXiv 新增 + video SSL</div>
+    <h1>Momentum-Guided Semantic Forecasting (MoFore) for：直接把视频 SSL 从 masked reconstruction 推到未来 latent embedding forecasting，是今天最贴合主方向的条目</h1>
+    <p class="dek">直接把视频 SSL 从 masked reconstruction 推到未来 latent embedding forecasting，是今天最贴合主方向的条目。</p>
+    <figure class="hero-figure"><img src="assets/mineru/2606.14765/images/08d3350f9347969461e2efa05a8848f47ac7627fbfdf990134831e9bd4cf890c.jpg" alt="Momentum-Guided Semantic Forecasting (MoFore) for figure"><figcaption>这张图概括 Momentum-Guided Semantic Forecasting (MoFore) for 的整体方法流程。阅读时先看模块之间传递的训练信号，再看作者如何把目标拆成可优化的子问题。</figcaption></figure>
+    <div class="paper-actions"><a href="issues/2026-06-17.html">阅读 6 月 17 日速递</a><a href="papers/2606.14765.html">打开主文页</a></div>
   </article>
   <aside class="issue-brief">
     <div class="prog-widget">
       <div class="pw-t">我的进度</div>
       <div class="prog-top">
-        <div class="ringwrap" data-ring data-ids="2606.14700,2606.13714,2606.14586,2606.14701,2601.22108,2606.14024,2603.12231,2606.13929,2606.13870,2606.14703,2606.14299,2606.14317"></div>
+        <div class="ringwrap" data-ring data-ids="2606.14765,2606.15553,2606.15527,2606.16193,2606.15765,2606.15134,2605.18324,2606.15796,2606.15169,2606.16783,2606.16993,2603.04239,2606.14757"></div>
         <div class="prog-meta">
           <div class="pm-t">今日精读进度</div>
           <div class="pm-s">累计已读 <b data-readcount>0</b> 篇</div>
@@ -49,87 +49,87 @@
       <div class="badges" data-badges></div>
     </div>
     <h2>快速摘要</h2>
-    <ul><li><b>今日最值得看</b><span>RepFusion、TSA、S$^2$COPE。前者看 RAE/MLLM 先验如何进入视觉 latent denoising；TSA 是干净的无监督视频 object-centric 表征；S$^2$COPE 直接挑战“自监督特征不可解释”。</span></li><li><b>建议精读顺序</b><span>RepFusion -&gt; TSA -&gt; S$^2$COPE -&gt; RATS -&gt; Learning What to Predict -&gt; ViT-Up -&gt; Temporal Straightening；VLM 诊断类放到第二轮。</span></li><li><b>新增/更新/过滤数量</b><span>arXiv Monday, 15 June 2026 批次：7 个分类页合计 601 个去重 listing entry；主索引 12 篇，其中 arXiv 新增/交叉 10、arXiv replacement/update 2、会议状态合并 1；高关键词过滤/降级约 80+。</span></li><li><b>主要判断</b><span>今天的主线是 representation-space generation、object-centric video SSL、self-supervised concept/part discovery、VLM grounding diagnostics，比传统对比学习更偏“结构化视觉表征”。</span></li><li><b>来源状态</b><span>arXiv 官方 new 页面可访问；export API 对本次 id-list metadata 查询返回 503，因此以官方分类页、单篇 abs 页、ICML/CVPR/OpenReview 页面直查为准。</span></li></ul>
+    <ul><li><b>今日最值得看</b><span>MoFore、Drift-RAE、SSync。今天最核心的是视频 latent 预测、RAE latent distillation、object-centric video slot 表征三条线，都是通用视觉自监督/表征学习的直接材料。</span></li><li><b>建议精读顺序</b><span>MoFore -&gt; Drift-RAE -&gt; SSync -&gt; CSAE -&gt; TIGER -&gt; SAGA -&gt; RAEv2；VLM/DiT 解释与 world-model 条目放第二轮。</span></li><li><b>新增/更新/过滤数量</b><span>arXiv Tuesday, 16 June 2026 批次：7 个分类页合并 1483 个 unique arXiv ID；主索引 13 篇，其中新投稿/交叉 10、replacement/status update 3；历史 seen-file 命中 13，垂直/低相关过滤与降级约 120+。</span></li><li><b>主要判断</b><span>今天的主线从“单一 SSL loss”转向 representation-space training：视频预测在 latent 里做，扩散模型在 RAE latent 里蒸馏，object-centric slot 用选择性蒸馏对齐，MLLM/VFM 作为视觉表征的解释器和路由器。</span></li><li><b>来源状态</b><span>arXiv 官方 new 页面和单篇 abs 页可访问；export.arxiv.org id-list 查询本次超时，因此以官方 listing/abs 页、arXiv comments 和可达项目页为准。</span></li></ul>
   </aside>
 </section>
 <section class="section-block">
   <div class="section-heading"><h2>今日推荐论文</h2><a href="pages/catalog.html">全目录 →</a></div>
-  <div class="paper-list"><article class="paper-card" data-pid="2606.14700" data-category="arXiv 新增 + representation autoencoder" data-priority="P0" data-date="2026-06-16" data-title="repfusion: leveraging multimodal priors for denoising in representation space" data-keywords="repfusion: leveraging multimodal priors for denoising in representation space repfusion arxiv 新增 + representation autoencoder p0 2026-06-16 arxiv 新增 + representation autoencoder 把 rae 视觉表征空间里的 denoising 交给 mllm 先验，是“语义 latent + 生成预训练”的强信号 高相关；详见方法、贡献和实验边界。">
-  <a class="paper-thumb" href="papers/2606.14700.html"><img src="assets/mineru/2606.14700/images/ab4d332d3f8de107675cc247bcd4fbac90b7181f72c4aa0a502ac0d77f07c411.jpg" alt="RepFusion figure"></a>
+  <div class="paper-list"><article class="paper-card" data-pid="2606.14765" data-category="arXiv 新增 + video SSL" data-priority="P0" data-date="2026-06-17" data-title="momentum-guided semantic forecasting (mofore) for self-supervised video representation learning" data-keywords="momentum-guided semantic forecasting (mofore) for self-supervised video representation learning momentum-guided semantic forecasting (mofore) for arxiv 新增 + video ssl p0 2026-06-17 arxiv 新增 + video ssl 直接把视频 ssl 从 masked reconstruction 推到未来 latent embedding forecasting，是今天最贴合主方向的条目 高相关；详见方法、贡献和实验边界。">
+  <a class="paper-thumb" href="papers/2606.14765.html"><img src="assets/mineru/2606.14765/images/08d3350f9347969461e2efa05a8848f47ac7627fbfdf990134831e9bd4cf890c.jpg" alt="Momentum-Guided Semantic Forecasting (MoFore) for figure"></a>
   <div>
-    <div class="paper-meta">2026-06-16 · arXiv 新增 + representation autoencoder · arXiv 新增 + representation autoencoder</div>
-    <h3><a href="papers/2606.14700.html">RepFusion: Leveraging Multimodal Priors for Denoising in Representation Space</a></h3>
+    <div class="paper-meta">2026-06-17 · arXiv 新增 + video SSL · arXiv 新增 + video SSL</div>
+    <h3><a href="papers/2606.14765.html">Momentum-Guided Semantic Forecasting (MoFore) for Self-Supervised Video Representation Learning</a></h3>
     <p>高相关；详见方法、贡献和实验边界。</p>
-    <p class="card-tech"><b>方法：</b>把 RAE 视觉表征空间里的 denoising 交给 MLLM 先验，是“语义 latent + 生成预训练”的强信号</p>
-    <div class="paper-actions"><a href="papers/2606.14700.html">读图文页</a><a href="https://arxiv.org/abs/2606.14700">原文</a></div>
+    <p class="card-tech"><b>方法：</b>直接把视频 SSL 从 masked reconstruction 推到未来 latent embedding forecasting，是今天最贴合主方向的条目</p>
+    <div class="paper-actions"><a href="papers/2606.14765.html">读图文页</a><a href="https://arxiv.org/abs/2606.14765">原文</a></div>
   </div>
-  <div class="paper-card-tools"><button class="readbtn" type="button" data-read-toggle="2606.14700" title="标记已读" aria-label="标记已读"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M4 10.5l4 4 8-9"/></svg></button><div class="prefbar" data-pref-controls="2606.14700"><button class="prefbtn like" type="button" data-pref-toggle="like" data-pref-id="2606.14700" aria-pressed="false" title="关注这篇">关注</button><button class="prefbtn dismiss" type="button" data-pref-toggle="dismiss" data-pref-id="2606.14700" aria-pressed="false" title="降低这篇权重">略过</button></div></div>
+  <div class="paper-card-tools"><button class="readbtn" type="button" data-read-toggle="2606.14765" title="标记已读" aria-label="标记已读"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M4 10.5l4 4 8-9"/></svg></button><div class="prefbar" data-pref-controls="2606.14765"><button class="prefbtn like" type="button" data-pref-toggle="like" data-pref-id="2606.14765" aria-pressed="false" title="关注这篇">关注</button><button class="prefbtn dismiss" type="button" data-pref-toggle="dismiss" data-pref-id="2606.14765" aria-pressed="false" title="降低这篇权重">略过</button></div></div>
 </article>
-<article class="paper-card" data-pid="2606.13714" data-category="arXiv 新增 + object-centric video SSL" data-priority="P0" data-date="2026-06-16" data-title="tsa: temporal slot activation for persistent object-centric video representation" data-keywords="tsa: temporal slot activation for persistent object-centric video representation tsa arxiv 新增 + object-centric video ssl p0 2026-06-16 arxiv 新增 + object-centric video ssl 无监督视频 object-centric 表征，直接处理遮挡/缺席时 slot 漂移和错误重建耦合 高相关；详见方法、贡献和实验边界。">
-  <a class="paper-thumb" href="papers/2606.13714.html"><img src="assets/mineru/2606.13714/images/61c7fb3c10cd3616c1fb7b2dbfc0b6b37f6cda6bdd302619069e593200704563.jpg" alt="TSA figure"></a>
+<article class="paper-card" data-pid="2606.15553" data-category="arXiv 新增 + RAE distillation" data-priority="P0" data-date="2026-06-17" data-title="distilling drifting transformers with representation autoencoders" data-keywords="distilling drifting transformers with representation autoencoders distilling drifting transformers with representation arxiv 新增 + rae distillation p0 2026-06-17 arxiv 新增 + rae distillation 针对 dino/rae 语义 latent 的各向异性和曲率问题，讨论怎样稳定蒸馏 flow/diffusion 模型 高相关；详见方法、贡献和实验边界。">
+  <a class="paper-thumb" href="papers/2606.15553.html"><img src="assets/mineru/2606.15553/images/2de44df2aac76d66a6d93fa39d6bc6e6f034139bb68fdeaa9d1194ed51d897b5.jpg" alt="Distilling Drifting Transformers with Representation figure"></a>
   <div>
-    <div class="paper-meta">2026-06-16 · arXiv 新增 + object-centric video SSL · arXiv 新增 + object-centric video SSL</div>
-    <h3><a href="papers/2606.13714.html">TSA: Temporal Slot Activation for Persistent Object-Centric Video Representation</a></h3>
+    <div class="paper-meta">2026-06-17 · arXiv 新增 + RAE distillation · arXiv 新增 + RAE distillation</div>
+    <h3><a href="papers/2606.15553.html">Distilling Drifting Transformers with Representation Autoencoders</a></h3>
     <p>高相关；详见方法、贡献和实验边界。</p>
-    <p class="card-tech"><b>方法：</b>无监督视频 object-centric 表征，直接处理遮挡/缺席时 slot 漂移和错误重建耦合</p>
-    <div class="paper-actions"><a href="papers/2606.13714.html">读图文页</a><a href="https://arxiv.org/abs/2606.13714">原文</a></div>
+    <p class="card-tech"><b>方法：</b>针对 DINO/RAE 语义 latent 的各向异性和曲率问题，讨论怎样稳定蒸馏 flow/diffusion 模型</p>
+    <div class="paper-actions"><a href="papers/2606.15553.html">读图文页</a><a href="https://arxiv.org/abs/2606.15553">原文</a></div>
   </div>
-  <div class="paper-card-tools"><button class="readbtn" type="button" data-read-toggle="2606.13714" title="标记已读" aria-label="标记已读"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M4 10.5l4 4 8-9"/></svg></button><div class="prefbar" data-pref-controls="2606.13714"><button class="prefbtn like" type="button" data-pref-toggle="like" data-pref-id="2606.13714" aria-pressed="false" title="关注这篇">关注</button><button class="prefbtn dismiss" type="button" data-pref-toggle="dismiss" data-pref-id="2606.13714" aria-pressed="false" title="降低这篇权重">略过</button></div></div>
+  <div class="paper-card-tools"><button class="readbtn" type="button" data-read-toggle="2606.15553" title="标记已读" aria-label="标记已读"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M4 10.5l4 4 8-9"/></svg></button><div class="prefbar" data-pref-controls="2606.15553"><button class="prefbtn like" type="button" data-pref-toggle="like" data-pref-id="2606.15553" aria-pressed="false" title="关注这篇">关注</button><button class="prefbtn dismiss" type="button" data-pref-toggle="dismiss" data-pref-id="2606.15553" aria-pressed="false" title="降低这篇权重">略过</button></div></div>
 </article>
-<article class="paper-card" data-pid="2606.14586" data-category="arXiv 新增 + self-supervised concept discovery" data-priority="P0" data-date="2026-06-16" data-title="s$^2$cope: self-supervised concept discovery via preference learning" data-keywords="s$^2$cope: self-supervised concept discovery via preference learning s$^2$cope arxiv 新增 + self-supervised concept discovery p0 2026-06-16 arxiv 新增 + self-supervised concept discovery 用 vllm 主动假设/验证/强化视觉属性，尝试让可解释概念从自监督偏好循环中出现 高相关；详见方法、贡献和实验边界。">
-  <a class="paper-thumb" href="papers/2606.14586.html"><img src="assets/mineru/2606.14586/images/9f3a576723d73ab6af17aea79df1d66dac535dccea23dec155fc86bad7151c61.jpg" alt="S$^2$COPE figure"></a>
+<article class="paper-card" data-pid="2606.15527" data-category="arXiv 新增 + object-centric video SSL" data-priority="P0" data-date="2026-06-17" data-title="selective synergistic learning for video object-centric learning" data-keywords="selective synergistic learning for video object-centric learning selective synergistic learning for video arxiv 新增 + object-centric video ssl p0 2026-06-17 arxiv 新增 + object-centric video ssl 不再做全 patch 密集对齐，而是选择性蒸馏 encoder 边界和 decoder 内部区域，直接服务视频 slot 表征 高相关；详见方法、贡献和实验边界。">
+  <a class="paper-thumb" href="papers/2606.15527.html"><img src="assets/mineru/2606.15527/images/41b54993e074e0803224bd6b81a4d961f9e54800f680dc5b175ee07b1a0179ec.jpg" alt="Selective Synergistic Learning for Video figure"></a>
   <div>
-    <div class="paper-meta">2026-06-16 · arXiv 新增 + self-supervised concept discovery · arXiv 新增 + self-supervised concept discovery</div>
-    <h3><a href="papers/2606.14586.html">S$^2$COPE: Self-Supervised Concept Discovery via Preference Learning</a></h3>
+    <div class="paper-meta">2026-06-17 · arXiv 新增 + object-centric video SSL · arXiv 新增 + object-centric video SSL</div>
+    <h3><a href="papers/2606.15527.html">Selective Synergistic Learning for Video Object-Centric Learning</a></h3>
     <p>高相关；详见方法、贡献和实验边界。</p>
-    <p class="card-tech"><b>方法：</b>用 VLLM 主动假设/验证/强化视觉属性，尝试让可解释概念从自监督偏好循环中出现</p>
-    <div class="paper-actions"><a href="papers/2606.14586.html">读图文页</a><a href="https://arxiv.org/abs/2606.14586">原文</a></div>
+    <p class="card-tech"><b>方法：</b>不再做全 patch 密集对齐，而是选择性蒸馏 encoder 边界和 decoder 内部区域，直接服务视频 slot 表征</p>
+    <div class="paper-actions"><a href="papers/2606.15527.html">读图文页</a><a href="https://arxiv.org/abs/2606.15527">原文</a></div>
   </div>
-  <div class="paper-card-tools"><button class="readbtn" type="button" data-read-toggle="2606.14586" title="标记已读" aria-label="标记已读"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M4 10.5l4 4 8-9"/></svg></button><div class="prefbar" data-pref-controls="2606.14586"><button class="prefbtn like" type="button" data-pref-toggle="like" data-pref-id="2606.14586" aria-pressed="false" title="关注这篇">关注</button><button class="prefbtn dismiss" type="button" data-pref-toggle="dismiss" data-pref-id="2606.14586" aria-pressed="false" title="降低这篇权重">略过</button></div></div>
+  <div class="paper-card-tools"><button class="readbtn" type="button" data-read-toggle="2606.15527" title="标记已读" aria-label="标记已读"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M4 10.5l4 4 8-9"/></svg></button><div class="prefbar" data-pref-controls="2606.15527"><button class="prefbtn like" type="button" data-pref-toggle="like" data-pref-id="2606.15527" aria-pressed="false" title="关注这篇">关注</button><button class="prefbtn dismiss" type="button" data-pref-toggle="dismiss" data-pref-id="2606.15527" aria-pressed="false" title="降低这篇权重">略过</button></div></div>
 </article>
-<article class="paper-card" data-pid="2606.14701" data-category="arXiv 新增 + register/part representation" data-priority="P1" data-date="2026-06-16" data-title="rats! patches talk through registers: emergent parts in register attention transformers" data-keywords="rats! patches talk through registers: emergent parts in register attention transformers rats! patches talk through registers arxiv 新增 + register/part representation p1 2026-06-16 arxiv 新增 + register/part representation 让自监督视觉模型通过 register bottleneck 自发形成 proto-semantic parts，兼顾结构和解释性 高相关；详见方法、贡献和实验边界。">
-  <a class="paper-thumb" href="papers/2606.14701.html"><img src="assets/mineru/2606.14701/images/7ade55c0ca37c79a3d96c21fa6f1f4c20a640dcae0133916e27aa41ee279e69a.jpg" alt="RATS! Patches Talk Through Registers figure"></a>
+<article class="paper-card" data-pid="2606.16193" data-category="arXiv 新增 + MLLM visual concept interpretability" data-priority="P1" data-date="2026-06-17" data-title="cascaded sparse autoencoders learn multi-level visual concepts in multimodal llms" data-keywords="cascaded sparse autoencoders learn multi-level visual concepts in multimodal llms cascaded sparse autoencoders learn multi-level arxiv 新增 + mllm visual concept interpretability p1 2026-06-17 arxiv 新增 + mllm visual concept interpretability 用级联 sae 学“概念的概念”，对理解 mllm 视觉表征层级很有价值 高相关；详见方法、贡献和实验边界。">
+  <a class="paper-thumb" href="papers/2606.16193.html"><img src="assets/mineru/2606.16193/images/fe0bb2c03c2603133a08b2c78d6bd6a01bc2e8f422b980a2626b76f17b85e179.jpg" alt="Cascaded Sparse Autoencoders Learn Multi-Level figure"></a>
   <div>
-    <div class="paper-meta">2026-06-16 · arXiv 新增 + register/part representation · arXiv 新增 + register/part representation</div>
-    <h3><a href="papers/2606.14701.html">RATS! Patches Talk Through Registers: Emergent Parts in Register Attention Transformers</a></h3>
+    <div class="paper-meta">2026-06-17 · arXiv 新增 + MLLM visual concept interpretability · arXiv 新增 + MLLM visual concept interpretability</div>
+    <h3><a href="papers/2606.16193.html">Cascaded Sparse Autoencoders Learn Multi-Level Visual Concepts in Multimodal LLMs</a></h3>
     <p>高相关；详见方法、贡献和实验边界。</p>
-    <p class="card-tech"><b>方法：</b>让自监督视觉模型通过 register bottleneck 自发形成 proto-semantic parts，兼顾结构和解释性</p>
-    <div class="paper-actions"><a href="papers/2606.14701.html">读图文页</a><a href="https://arxiv.org/abs/2606.14701">原文</a></div>
+    <p class="card-tech"><b>方法：</b>用级联 SAE 学“概念的概念”，对理解 MLLM 视觉表征层级很有价值</p>
+    <div class="paper-actions"><a href="papers/2606.16193.html">读图文页</a><a href="https://arxiv.org/abs/2606.16193">原文</a></div>
   </div>
-  <div class="paper-card-tools"><button class="readbtn" type="button" data-read-toggle="2606.14701" title="标记已读" aria-label="标记已读"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M4 10.5l4 4 8-9"/></svg></button><div class="prefbar" data-pref-controls="2606.14701"><button class="prefbtn like" type="button" data-pref-toggle="like" data-pref-id="2606.14701" aria-pressed="false" title="关注这篇">关注</button><button class="prefbtn dismiss" type="button" data-pref-toggle="dismiss" data-pref-id="2606.14701" aria-pressed="false" title="降低这篇权重">略过</button></div></div>
+  <div class="paper-card-tools"><button class="readbtn" type="button" data-read-toggle="2606.16193" title="标记已读" aria-label="标记已读"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M4 10.5l4 4 8-9"/></svg></button><div class="prefbar" data-pref-controls="2606.16193"><button class="prefbtn like" type="button" data-pref-toggle="like" data-pref-id="2606.16193" aria-pressed="false" title="关注这篇">关注</button><button class="prefbtn dismiss" type="button" data-pref-toggle="dismiss" data-pref-id="2606.16193" aria-pressed="false" title="降低这篇权重">略过</button></div></div>
 </article>
-<article class="paper-card" data-pid="2601.22108" data-category="self-supervised objective design" data-priority="P1" data-date="2026-06-16" data-title="learning what to predict: downstream-guided task design for continued pretraining" data-keywords="learning what to predict: downstream-guided task design for continued pretraining learning what to predict self-supervised objective design p1 2026-06-16 arxiv 更新 + self-supervised objective design v-pretraining 用少量下游反馈设计无标签 batch 的 targets/views/masks，直接影响自监督预训练目标选择 高相关；详见方法、贡献和实验边界。">
-  <a class="paper-thumb" href="papers/2601.22108.html"><img src="assets/mineru/2601.22108/images/0f1d382fd86bf35a8c7119681b4df2f9a6a781e4b938d0f33e5b4a2ce3868608.jpg" alt="Learning What to Predict figure"></a>
+<article class="paper-card" data-pid="2606.15765" data-category="arXiv 新增 + frozen VFM routing" data-priority="P1" data-date="2026-06-17" data-title="task-instructed causal routing of vision foundation models for multi-task learning" data-keywords="task-instructed causal routing of vision foundation models for multi-task learning task-instructed causal routing of vision arxiv 新增 + frozen vfm routing p1 2026-06-17 arxiv 新增 + frozen vfm routing 把多个冻结 vfm 的互补偏置做 token-level task routing，可作为 vfm ensemble/adapter 设计参考 中高相关；详见方法、贡献和实验边界。">
+  <a class="paper-thumb" href="papers/2606.15765.html"><img src="assets/mineru/2606.15765/images/192d5b8eb7a6a28078549500938285d2a046554ed16fc04c2f779ec4169a6b84.jpg" alt="Task-Instructed Causal Routing of Vision figure"></a>
   <div>
-    <div class="paper-meta">2026-06-16 · self-supervised objective design · arXiv 更新 + self-supervised objective design</div>
-    <h3><a href="papers/2601.22108.html">Learning What to Predict: Downstream-Guided Task Design for Continued Pretraining</a></h3>
-    <p>高相关；详见方法、贡献和实验边界。</p>
-    <p class="card-tech"><b>方法：</b>V-pretraining 用少量下游反馈设计无标签 batch 的 targets/views/masks，直接影响自监督预训练目标选择</p>
-    <div class="paper-actions"><a href="papers/2601.22108.html">读图文页</a><a href="https://arxiv.org/abs/2601.22108">原文</a></div>
+    <div class="paper-meta">2026-06-17 · arXiv 新增 + frozen VFM routing · arXiv 新增 + frozen VFM routing</div>
+    <h3><a href="papers/2606.15765.html">Task-Instructed Causal Routing of Vision Foundation Models for Multi-Task Learning</a></h3>
+    <p>中高相关；详见方法、贡献和实验边界。</p>
+    <p class="card-tech"><b>方法：</b>把多个冻结 VFM 的互补偏置做 token-level task routing，可作为 VFM ensemble/adapter 设计参考</p>
+    <div class="paper-actions"><a href="papers/2606.15765.html">读图文页</a><a href="https://arxiv.org/abs/2606.15765">原文</a></div>
   </div>
-  <div class="paper-card-tools"><button class="readbtn" type="button" data-read-toggle="2601.22108" title="标记已读" aria-label="标记已读"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M4 10.5l4 4 8-9"/></svg></button><div class="prefbar" data-pref-controls="2601.22108"><button class="prefbtn like" type="button" data-pref-toggle="like" data-pref-id="2601.22108" aria-pressed="false" title="关注这篇">关注</button><button class="prefbtn dismiss" type="button" data-pref-toggle="dismiss" data-pref-id="2601.22108" aria-pressed="false" title="降低这篇权重">略过</button></div></div>
+  <div class="paper-card-tools"><button class="readbtn" type="button" data-read-toggle="2606.15765" title="标记已读" aria-label="标记已读"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M4 10.5l4 4 8-9"/></svg></button><div class="prefbar" data-pref-controls="2606.15765"><button class="prefbtn like" type="button" data-pref-toggle="like" data-pref-id="2606.15765" aria-pressed="false" title="关注这篇">关注</button><button class="prefbtn dismiss" type="button" data-pref-toggle="dismiss" data-pref-id="2606.15765" aria-pressed="false" title="降低这篇权重">略过</button></div></div>
 </article></div>
 </section></main>
-  <aside class="conf-float" data-conf-reminder="2026-06-16-main-ddl" aria-label="CCF A/B 主投稿提醒">
+  <aside class="conf-float" data-conf-reminder="2026-06-17-main-ddl" aria-label="CCF A/B 主投稿提醒">
   <button class="conf-close" type="button" aria-label="关闭会议提醒">×</button>
   <details open>
     <summary>CCF A/B 主投稿提醒</summary>
     <div class="conf-list"><a class="conf-item " href="https://github.com/ccfddl/ccf-deadlines/blob/main/conference/AI/aaai.yml">
   <span><b>AAAI 2027</b><em>CCF A · Main paper submission</em></span>
-  <strong>41 天</strong>
+  <strong>40 天</strong>
   <small>2026-07-27 · CCF DDL: abstract 2026-07-20；进入 1 个月窗口后重点提醒。</small>
 </a></div>
   </details>
 </aside>
   <footer class="footer">
     <div>面向通用视觉自监督、视觉基础模型与多模态表征学习的每日研究报。</div>
-    <div class="muted">Issue 2026-06-16 · Curated readings and figure notes</div>
+    <div class="muted">Issue 2026-06-17 · Curated readings and figure notes</div>
   </footer>
   <script>
   (() => {
     const box = document.querySelector('[data-conf-reminder]');
     if (!box) return;
-    const key = `visualSslConfReminderClosed:${box.dataset.confReminder || '2026-06-16-main-ddl'}`;
+    const key = `visualSslConfReminderClosed:${box.dataset.confReminder || '2026-06-17-main-ddl'}`;
     try {
       if (localStorage.getItem(key) === '1') box.hidden = true;
     } catch (err) {}

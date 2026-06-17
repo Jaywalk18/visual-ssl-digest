@@ -20,7 +20,7 @@
   </header>
   <nav class="site-nav" aria-label="主导航">
     <a class="nav-link" href="../index.html">头版</a>
-<a class="nav-link" href="../issues/2026-06-16.html">今日速递</a>
+<a class="nav-link" href="../issues/2026-06-17.html">今日速递</a>
 <a class="nav-link" href="../pages/catalog.html">论文目录</a>
 <a class="nav-link" href="../pages/timeline.html">时间线</a>
 <span class="nav-streak" title="连续追踪天数"><svg viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><path d="M8 0c.7 2.5-1.2 3.7-2 5-1 1.6-1 4 .8 4.8C6.4 8.5 7.4 7.8 8 7c.3 1.3-.4 2 .9 3 .9.7 1.3 1.6 1.1 2.6C9.7 14.6 8.9 16 6.8 16 4.6 16 3 14.3 3 12c0-3.3 2.6-4.8 2.4-8C6.9 4.6 8.4 5 8 0z"/></svg> 连续 <b data-streak>0</b> 天</span>
@@ -28,32 +28,32 @@
   <main><article class="paper-detail" data-pid="2606.14024" data-category="arXiv 新增 + DINO/VFM dense features" data-priority="P1" data-date="2026-06-16" data-title="vit-up: faithful feature upsampling for vision transformers" data-keywords="vit-up: faithful feature upsampling for vision transformers vit-up arxiv 新增 + dino/vfm dense features p1 2026-06-16 arxiv 新增 + dino/vfm dense features 不训练新 backbone，而是让低分辨率 vit/dino 特征在连续坐标上忠实上采样，服务 dense transfer 中高相关；详见方法、贡献和实验边界。">
   <div class="paper-main">
     <div class="kicker">arXiv 新增 + DINO/VFM dense features · P1 · 2026-06-16</div>
-    <h1 class="paper-headline">ViT-Up：DINO/ViT 特征如何用于 dense 任务是通用视觉表征落地的核心问题，建议 P1 读实验和失败案例</h1>
-    <p class="dek">把 task-agnostic dense feature upsampling 从“看图像细节”转为“忠实保持 ViT feature space”。</p>
-    <p class="byline"><strong>ViT-Up: Faithful Feature Upsampling for Vision Transformers</strong>　Krispin Wandel, Jingchuan Wang, Hesheng Wang；arXiv 元数据未稳定列机构时按作者列表记录。　arXiv 新增 + DINO/VFM dense features　<a href="https://arxiv.org/abs/2606.14024">原文链接</a></p>
+    <h1 class="paper-headline">ViT-Up：它和通用视觉自监督的关系在于：不训练新 backbone，而是让低分辨率 ViT/DINO 特征在连续坐标上忠实上采样，服务 dense transfer</h1>
+    <p class="dek">中高相关；详见方法、贡献和实验边界。</p>
+    <p class="byline"><strong>ViT-Up: Faithful Feature Upsampling for Vision Transformers</strong>　arXiv 新增 + DINO/VFM dense features　<a href="https://arxiv.org/abs/2606.14024">原文链接</a></p>
     <div class="paper-facts">
       <span><b>编号</b>2606.14024</span>
       <span><b>优先级</b>P1</span>
       <span><b>类别</b>arXiv 新增 + DINO/VFM dense features</span>
       <span><b>会议</b>arXiv 新增 + DINO/VFM dense features</span>
-      <span><b>方法</b>用中间 ViT hidden states 构造 layer-wise query，在任意连续图像坐标预测 backbone-aligned feature，避免外部 image guidance 带来的 leakage/fragmentation。</span>
+      <span><b>方法</b>不训练新 backbone，而是让低分辨率 ViT/DINO 特征在连续坐标上忠实上采样，服务 dense transfer</span>
       <span><b>来源</b>arXiv / OpenReview</span>
     </div>
     <div class="feature-body">
-      <p class="lead dropcap">先说结论。DINO/ViT 特征如何用于 dense 任务是通用视觉表征落地的核心问题，建议 P1 读实验和失败案例。 把 task-agnostic dense feature upsampling 从“看图像细节”转为“忠实保持 ViT feature space”。</p>
+      <p class="lead dropcap">先说结论。它和通用视觉自监督的关系在于：不训练新 backbone，而是让低分辨率 ViT/DINO 特征在连续坐标上忠实上采样，服务 dense transfer。 中高相关；详见方法、贡献和实验边界。</p>
       <figure class="full-fig"><img src="../assets/mineru/2606.14024/images/7a0e8c44ddc0f8f8ced451da0d210be19b4d4cdecf72ef11c5fb665fca8dd296.jpg" alt="Figureure 7 · Upsampling versus artifact suppression"><figcaption><b>Figureure 7 · Upsampling versus artifact suppression</b><span class="fig-en">Fig. 7. Upsampling versus artifact suppression. For each example, the top row shows DINOv2-based features and the bottom row shows DINOv3-based features under the same visualization protocol. DINOv2 exhibits stronger spatial leakage and position-dependent artifacts, while DINOv3 provides a cleaner dense feature field. Image-guided upsamplers can suppress such artifacts by injecting high-resolution image cues, whereas ViT-Up reconstructs the target ViT representation more directly. This explains the trade-off observed across backbones: artifact-prone features favor suppression-based behavior, while clean modern ViT features favor faithful reconstruction.</span><span class="fig-zh">这张可视化用来解释 ViT-Up 学到的中间表征或对齐关系。重点看它是否支持正文里的机制判断。</span></figcaption></figure>
 <figure class="full-fig"><img src="../assets/mineru/2606.14024/images/febd8642456f1ad71782510ce7b1de701edfb9611993ecb34be5b0659760d8c1.jpg" alt="Figureure 3 · Qualitative comparison of feature upsampling methods on DINOv3-S+"><figcaption><b>Figureure 3 · Qualitative comparison of feature upsampling methods on DINOv3-S+</b><span class="fig-en">Fig. 3. Qualitative comparison of feature upsampling methods on DINOv3-S+. All methods use a 448×448 input image; the native backbone produces a 28×28 feature grid, and upsampled feature maps are shown at 448×448 output resolution. We show two examples: a vegetable-store scene in the top two rows and a traffic scene in the bottom two rows. For each example, the top row visualizes the feature structure using PCA, including the input image, the original $2 8 \times 2 8$ backbone feature map, and the upsampled feature maps produced by ViT-Up, NAF [14], UpLiFT [13], AnyUp [12], and JAFAR [8]. The bottom row shows the corresponding query-based similarity maps, including the input image with the query point encircled in blue, the similarity map obtained from the low-resolution backbone features, and the similarity maps obtained from the upsampled features of each method. ViT-Up produces coherent PCA structures and semantically selective similarity maps that remain aligned with the queried region. In contrast, NAF, AnyUp, and JAFAR can produce visually sharp but fragmented feature maps with leakage into nearby structures, while UpLiFT tends to produce smoother features and weaker similarity responses for small semantic regions.</span><span class="fig-zh">这张图/表用于判断 ViT-Up 的实验收益来自哪里。重点看替换、消融或跨模型设置下趋势是否一致，而不是只看单个最高分。</span></figcaption></figure>
       
       <h2>核心问题</h2>
-      <p>DINO/ViT 特征如何用于 dense 任务是通用视觉表征落地的核心问题，建议 P1 读实验和失败案例。</p>
+      <p>它和通用视觉自监督的关系在于：不训练新 backbone，而是让低分辨率 ViT/DINO 特征在连续坐标上忠实上采样，服务 dense transfer。</p>
       <h2>方法拆解</h2>
-      <p>用中间 ViT hidden states 构造 layer-wise query，在任意连续图像坐标预测 backbone-aligned feature，避免外部 image guidance 带来的 leakage/fragmentation。</p>
+      <p>不训练新 backbone，而是让低分辨率 ViT/DINO 特征在连续坐标上忠实上采样，服务 dense transfer</p>
       <h2>主要贡献</h2>
-      <p>把 task-agnostic dense feature upsampling 从“看图像细节”转为“忠实保持 ViT feature space”。</p>
+      <p>中高相关；详见方法、贡献和实验边界。</p>
       <h2>实验看点</h2>
-      <p>摘要称在 dense prediction 和 semantic correspondence 上超过 image-guided upsamplers；DINOv3-S+ 上 Cityscapes +2.07 mIoU、SPair-71k +4.17 PCK@0.10，DINOv3-B 增益更大。</p>
+      <p>实验部分建议重点看两类证据：一是作者是否把方法收益和更强数据、更长训练、更大模型区分开；二是跨模型、跨数据或跨任务迁移是否还能保留同样趋势。</p>
       <h2>局限与读法</h2>
-      <p>它是 feature adaptor，不是新的 SSL 预训练；如果 backbone 特征缺失语义或几何，upsampling 不能凭空补齐。</p>
+      <p>这篇论文的结论需要结合任务设置、训练数据规模和消融实验一起看；不要只凭单个指标判断它对通用视觉表征的价值。</p>
     
     </div>
   </div>
@@ -64,13 +64,13 @@
     <div class="side-box"><h4>原文</h4><p><a href="https://arxiv.org/abs/2606.14024">https://arxiv.org/abs/2606.14024</a></p></div>
   </aside>
 </article></main>
-  <aside class="conf-float" data-conf-reminder="2026-06-16-main-ddl" aria-label="CCF A/B 主投稿提醒">
+  <aside class="conf-float" data-conf-reminder="2026-06-17-main-ddl" aria-label="CCF A/B 主投稿提醒">
   <button class="conf-close" type="button" aria-label="关闭会议提醒">×</button>
   <details open>
     <summary>CCF A/B 主投稿提醒</summary>
     <div class="conf-list"><a class="conf-item " href="https://github.com/ccfddl/ccf-deadlines/blob/main/conference/AI/aaai.yml">
   <span><b>AAAI 2027</b><em>CCF A · Main paper submission</em></span>
-  <strong>41 天</strong>
+  <strong>40 天</strong>
   <small>2026-07-27 · CCF DDL: abstract 2026-07-20；进入 1 个月窗口后重点提醒。</small>
 </a></div>
   </details>
@@ -83,7 +83,7 @@
   (() => {
     const box = document.querySelector('[data-conf-reminder]');
     if (!box) return;
-    const key = `visualSslConfReminderClosed:${box.dataset.confReminder || '2026-06-16-main-ddl'}`;
+    const key = `visualSslConfReminderClosed:${box.dataset.confReminder || '2026-06-17-main-ddl'}`;
     try {
       if (localStorage.getItem(key) === '1') box.hidden = true;
     } catch (err) {}

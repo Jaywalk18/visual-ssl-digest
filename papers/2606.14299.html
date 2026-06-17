@@ -20,7 +20,7 @@
   </header>
   <nav class="site-nav" aria-label="主导航">
     <a class="nav-link" href="../index.html">头版</a>
-<a class="nav-link" href="../issues/2026-06-16.html">今日速递</a>
+<a class="nav-link" href="../issues/2026-06-17.html">今日速递</a>
 <a class="nav-link" href="../pages/catalog.html">论文目录</a>
 <a class="nav-link" href="../pages/timeline.html">时间线</a>
 <span class="nav-streak" title="连续追踪天数"><svg viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><path d="M8 0c.7 2.5-1.2 3.7-2 5-1 1.6-1 4 .8 4.8C6.4 8.5 7.4 7.8 8 7c.3 1.3-.4 2 .9 3 .9.7 1.3 1.6 1.1 2.6C9.7 14.6 8.9 16 6.8 16 4.6 16 3 14.3 3 12c0-3.3 2.6-4.8 2.4-8C6.9 4.6 8.4 5 8 0z"/></svg> 连续 <b data-streak>0</b> 天</span>
@@ -28,32 +28,32 @@
   <main><article class="paper-detail" data-pid="2606.14299" data-category="arXiv 新增 + CLIP adaptation benchmark" data-priority="P3" data-date="2026-06-16" data-title="what drives test-time adaptation for clip? a controlled empirical study from an update perspective" data-keywords="what drives test-time adaptation for clip? a controlled empirical study from an update perspective what drives test-time adaptation for arxiv 新增 + clip adaptation benchmark p3 2026-06-16 arxiv 新增 + clip adaptation benchmark 系统拆解 tta4clip 的更新范式，帮助判断 clip/vlm 表征在分布偏移下到底靠什么适应 中相关；详见方法、贡献和实验边界。">
   <div class="paper-main">
     <div class="kicker">arXiv 新增 + CLIP adaptation benchmark · P3 · 2026-06-16</div>
-    <h1 class="paper-headline">What Drives Test-Time Adaptation for：CLIP 仍是通用视觉-语言表征底座，理解其测试时适应机制对后续 SSL/VLM 评估有帮助</h1>
-    <p class="dek">说明 TTA 增益主要来自 test-time evidence 和可靠 proxy，而不是更重的优化本身；不同 shift 需要不同范式。</p>
-    <p class="byline"><strong>What Drives Test-Time Adaptation for CLIP? A Controlled Empirical Study from an Update Perspective</strong>　Jiazhen Huang, Xiao Chen, Zhiming Liu, Yaru Sun, Jingyan Jiang, Zhi Wang；arXiv 元数据未稳定列机构时按作者列表记录。　arXiv 新增 + CLIP adaptation benchmark　<a href="https://arxiv.org/abs/2606.14299">原文链接</a></p>
+    <h1 class="paper-headline">What Drives Test-Time Adaptation for：它和通用视觉自监督的关系在于：系统拆解 TTA4CLIP 的更新范式，帮助判断 CLIP/VLM 表征在分布偏移下到底靠什么适应</h1>
+    <p class="dek">中相关；详见方法、贡献和实验边界。</p>
+    <p class="byline"><strong>What Drives Test-Time Adaptation for CLIP? A Controlled Empirical Study from an Update Perspective</strong>　arXiv 新增 + CLIP adaptation benchmark　<a href="https://arxiv.org/abs/2606.14299">原文链接</a></p>
     <div class="paper-facts">
       <span><b>编号</b>2606.14299</span>
       <span><b>优先级</b>P3</span>
       <span><b>类别</b>arXiv 新增 + CLIP adaptation benchmark</span>
       <span><b>会议</b>arXiv 新增 + CLIP adaptation benchmark</span>
-      <span><b>方法</b>把 TTA4CLIP 方法按 test-time update 对象统一为三类，构建 TTABC benchmark，比较 20+ 代表方法。</span>
+      <span><b>方法</b>系统拆解 TTA4CLIP 的更新范式，帮助判断 CLIP/VLM 表征在分布偏移下到底靠什么适应</span>
       <span><b>来源</b>arXiv / OpenReview</span>
     </div>
     <div class="feature-body">
-      <p class="lead dropcap">先说结论。CLIP 仍是通用视觉-语言表征底座，理解其测试时适应机制对后续 SSL/VLM 评估有帮助。 说明 TTA 增益主要来自 test-time evidence 和可靠 proxy，而不是更重的优化本身；不同 shift 需要不同范式。</p>
+      <p class="lead dropcap">先说结论。它和通用视觉自监督的关系在于：系统拆解 TTA4CLIP 的更新范式，帮助判断 CLIP/VLM 表征在分布偏移下到底靠什么适应。 中相关；详见方法、贡献和实验边界。</p>
       <figure class="full-fig"><img src="../assets/mineru/2606.14299/images/5c3b64f3837527ad30deeab6e92ece981917af98a48b4c63ce52e51e6b29fa22.jpg" alt="Figureure 1 · : Overview of our controlled empirical study"><figcaption><b>Figureure 1 · : Overview of our controlled empirical study</b><span class="fig-en">Figure 1: Overview of our controlled empirical study. We investigate TTA4CLIP through three structured parts: (i) identifying the determining factors in parameter-based updates, (ii) exploring evidence utilization beyond heavy optimization, and (iii) evaluating different paradigms across diverse shifts.</span><span class="fig-zh">这张图概括 What Drives Test-Time Adaptation for 的整体方法流程。阅读时先看模块之间传递的训练信号，再看作者如何把目标拆成可优化的子问题。</span></figcaption></figure>
 <figure class="full-fig"><img src="../assets/mineru/2606.14299/images/f09baf3e04402f47b2ff015161b280daacad6f16c6c9a11fe72a29a5ec9efcd8.jpg" alt="Figureure 6 · : Comparison of accuracy and adaptation cost"><figcaption><b>Figureure 6 · : Comparison of accuracy and adaptation cost</b><span class="fig-en">Figure 6: Comparison of accuracy and adaptation cost. Parameterbased methods occupy the expensive region, while state/inference-based methods achieve better tradeoff.</span><span class="fig-zh">这张图/表用于判断 What Drives Test-Time Adaptation for 的实验收益来自哪里。重点看替换、消融或跨模型设置下趋势是否一致，而不是只看单个最高分。</span></figcaption></figure>
       
       <h2>核心问题</h2>
-      <p>CLIP 仍是通用视觉-语言表征底座，理解其测试时适应机制对后续 SSL/VLM 评估有帮助。</p>
+      <p>它和通用视觉自监督的关系在于：系统拆解 TTA4CLIP 的更新范式，帮助判断 CLIP/VLM 表征在分布偏移下到底靠什么适应。</p>
       <h2>方法拆解</h2>
-      <p>把 TTA4CLIP 方法按 test-time update 对象统一为三类，构建 TTABC benchmark，比较 20+ 代表方法。</p>
+      <p>系统拆解 TTA4CLIP 的更新范式，帮助判断 CLIP/VLM 表征在分布偏移下到底靠什么适应</p>
       <h2>主要贡献</h2>
-      <p>说明 TTA 增益主要来自 test-time evidence 和可靠 proxy，而不是更重的优化本身；不同 shift 需要不同范式。</p>
+      <p>中相关；详见方法、贡献和实验边界。</p>
       <h2>实验看点</h2>
-      <p>摘要称系统分析 parameter-based、cross/current-sample evidence 和 prototype updates，结论是不存 universal best TTA。</p>
+      <p>实验部分建议重点看两类证据：一是作者是否把方法收益和更强数据、更长训练、更大模型区分开；二是跨模型、跨数据或跨任务迁移是否还能保留同样趋势。</p>
       <h2>局限与读法</h2>
-      <p>不是预训练或自监督算法；更适合作为部署/robustness 读物。</p>
+      <p>这篇论文的结论需要结合任务设置、训练数据规模和消融实验一起看；不要只凭单个指标判断它对通用视觉表征的价值。</p>
     
     </div>
   </div>
@@ -64,13 +64,13 @@
     <div class="side-box"><h4>原文</h4><p><a href="https://arxiv.org/abs/2606.14299">https://arxiv.org/abs/2606.14299</a></p></div>
   </aside>
 </article></main>
-  <aside class="conf-float" data-conf-reminder="2026-06-16-main-ddl" aria-label="CCF A/B 主投稿提醒">
+  <aside class="conf-float" data-conf-reminder="2026-06-17-main-ddl" aria-label="CCF A/B 主投稿提醒">
   <button class="conf-close" type="button" aria-label="关闭会议提醒">×</button>
   <details open>
     <summary>CCF A/B 主投稿提醒</summary>
     <div class="conf-list"><a class="conf-item " href="https://github.com/ccfddl/ccf-deadlines/blob/main/conference/AI/aaai.yml">
   <span><b>AAAI 2027</b><em>CCF A · Main paper submission</em></span>
-  <strong>41 天</strong>
+  <strong>40 天</strong>
   <small>2026-07-27 · CCF DDL: abstract 2026-07-20；进入 1 个月窗口后重点提醒。</small>
 </a></div>
   </details>
@@ -83,7 +83,7 @@
   (() => {
     const box = document.querySelector('[data-conf-reminder]');
     if (!box) return;
-    const key = `visualSslConfReminderClosed:${box.dataset.confReminder || '2026-06-16-main-ddl'}`;
+    const key = `visualSslConfReminderClosed:${box.dataset.confReminder || '2026-06-17-main-ddl'}`;
     try {
       if (localStorage.getItem(key) === '1') box.hidden = true;
     } catch (err) {}
