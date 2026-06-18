@@ -20,7 +20,7 @@
   </header>
   <nav class="site-nav" aria-label="主导航">
     <a class="nav-link" href="../index.html">头版</a>
-<a class="nav-link" href="../issues/2026-06-17.html">今日速递</a>
+<a class="nav-link" href="../issues/2026-06-18.html">今日速递</a>
 <a class="nav-link" href="../pages/catalog.html">论文目录</a>
 <a class="nav-link" href="../pages/timeline.html">时间线</a>
 <span class="nav-streak" title="连续追踪天数"><svg viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><path d="M8 0c.7 2.5-1.2 3.7-2 5-1 1.6-1 4 .8 4.8C6.4 8.5 7.4 7.8 8 7c.3 1.3-.4 2 .9 3 .9.7 1.3 1.6 1.1 2.6C9.7 14.6 8.9 16 6.8 16 4.6 16 3 14.3 3 12c0-3.3 2.6-4.8 2.4-8C6.9 4.6 8.4 5 8 0z"/></svg> 连续 <b data-streak>0</b> 天</span>
@@ -28,32 +28,32 @@
   <main><article class="paper-detail" data-pid="2606.16353" data-category="arXiv 新增 + streaming video latent memory" data-priority="P2" data-date="2026-06-17" data-title="what should a streaming video model remember?" data-keywords="what should a streaming video model remember? what should a streaming video arxiv 新增 + streaming video latent memory p2 2026-06-17 arxiv 新增 + streaming video latent memory 讨论流式视频模型到底该保留哪些 latent evidence，贴近长视频表征和 token/memory 压缩 中高相关；详见方法、贡献和实验边界。">
   <div class="paper-main">
     <div class="kicker">arXiv 新增 + streaming video latent memory · P2 · 2026-06-17</div>
-    <h1 class="paper-headline">What Should a Streaming Video：长视频预训练/后训练的核心约束是 token 与记忆预算，这篇给出了可读的 latent evidence 设计</h1>
-    <p class="dek">把历史帧注入从“越多越好”改为 budgeted online latent evidence allocation，避免历史信息稀释当前场景感知。</p>
-    <p class="byline"><strong>What Should a Streaming Video Model Remember?</strong>　Haonan Ge , Yiwei Wang , Hang Wu , Yujun Cai；arXiv 元数据未稳定列机构时按作者列表记录。　arXiv 新增 + streaming video latent memory　<a href="https://arxiv.org/abs/2606.16353">原文链接</a></p>
+    <h1 class="paper-headline">What Should a Streaming Video：它和通用视觉自监督的关系在于：讨论流式视频模型到底该保留哪些 latent evidence，贴近长视频表征和 token/memory 压缩</h1>
+    <p class="dek">中高相关；详见方法、贡献和实验边界。</p>
+    <p class="byline"><strong>What Should a Streaming Video Model Remember?</strong>　arXiv 新增 + streaming video latent memory　<a href="https://arxiv.org/abs/2606.16353">原文链接</a></p>
     <div class="paper-facts">
       <span><b>编号</b>2606.16353</span>
       <span><b>优先级</b>P2</span>
       <span><b>类别</b>arXiv 新增 + streaming video latent memory</span>
       <span><b>会议</b>arXiv 新增 + streaming video latent memory</span>
-      <span><b>方法</b>SelectStream：surprise-driven adaptive windowing、priority-preserving consolidation、query-conditioned graph reasoning，在固定容量 latent memory graph 中写入/保存/检索证据。</span>
+      <span><b>方法</b>讨论流式视频模型到底该保留哪些 latent evidence，贴近长视频表征和 token/memory 压缩</span>
       <span><b>来源</b>arXiv / OpenReview</span>
     </div>
     <div class="feature-body">
-      <p class="lead dropcap">先说结论。长视频预训练/后训练的核心约束是 token 与记忆预算，这篇给出了可读的 latent evidence 设计。 把历史帧注入从“越多越好”改为 budgeted online latent evidence allocation，避免历史信息稀释当前场景感知。</p>
+      <p class="lead dropcap">先说结论。它和通用视觉自监督的关系在于：讨论流式视频模型到底该保留哪些 latent evidence，贴近长视频表征和 token/memory 压缩。 中高相关；详见方法、贡献和实验边界。</p>
       <figure class="full-fig"><img src="../assets/mineru/2606.16353/images/15d19ac6eb60a6f1b644151165bc12115239bfb82236d180d90442db992f99eb.jpg" alt="Figureure 2 · : Overview of SelectStream"><figcaption><b>Figureure 2 · : Overview of SelectStream</b><span class="fig-en">Figure 2: Overview of SelectStream. The model writes projected VLM visual embeddings into a budgeted latent memory graph, retrieves a query-conditioned evidence subgraph, and injects calibrated latent evidence tokens into a frozen MLLM for answer generation.</span><span class="fig-zh">这张图概括 What Should a Streaming Video 的整体方法流程。阅读时先看模块之间传递的训练信号，再看作者如何把目标拆成可优化的子问题。</span></figcaption></figure>
 <figure class="full-fig"><img src="../assets/mineru/2606.16353/images/4c0ecd9c99e7288b9d35769a3970f2b2d308c8873ebf6bde24ea39057edcb737.jpg" alt="Figureure 1 · : Motivation of SelectStream"><figcaption><b>Figureure 1 · : Motivation of SelectStream</b><span class="fig-en">Figure 1: Motivation of SelectStream. Relevant events may appear sparsely over a long stream, while later queries require evidence beyond the recent context. The example shows a counting question where inserted movie clips form sparse surprise peaks. The right panel illustrates the desired trade-off: stronger long-range memory and efficiency without sacrificing current-scene perception.</span><span class="fig-zh">这张图来自论文 PDF 的结构化抽取。当前用于辅助理解 What Should a Streaming Video 的方法或实验，请结合正文精读段落一起看。</span></figcaption></figure>
       
       <h2>核心问题</h2>
-      <p>长视频预训练/后训练的核心约束是 token 与记忆预算，这篇给出了可读的 latent evidence 设计。</p>
+      <p>它和通用视觉自监督的关系在于：讨论流式视频模型到底该保留哪些 latent evidence，贴近长视频表征和 token/memory 压缩。</p>
       <h2>方法拆解</h2>
-      <p>SelectStream：surprise-driven adaptive windowing、priority-preserving consolidation、query-conditioned graph reasoning，在固定容量 latent memory graph 中写入/保存/检索证据。</p>
+      <p>讨论流式视频模型到底该保留哪些 latent evidence，贴近长视频表征和 token/memory 压缩</p>
       <h2>主要贡献</h2>
-      <p>把历史帧注入从“越多越好”改为 budgeted online latent evidence allocation，避免历史信息稀释当前场景感知。</p>
+      <p>中高相关；详见方法、贡献和实验边界。</p>
       <h2>实验看点</h2>
-      <p>StreamingBench 82.67%、OVO-Bench 67.03%、offline video benchmarks 平均 74.4%，优于 recent-window 和现有 streaming memory 方法。</p>
+      <p>实验部分建议重点看两类证据：一是作者是否把方法收益和更强数据、更长训练、更大模型区分开；二是跨模型、跨数据或跨任务迁移是否还能保留同样趋势。</p>
       <h2>局限与读法</h2>
-      <p>依赖 frozen VLM 和查询条件；记忆图机制是否学习通用视频表征还需进一步证据。</p>
+      <p>这篇论文的结论需要结合任务设置、训练数据规模和消融实验一起看；不要只凭单个指标判断它对通用视觉表征的价值。</p>
     
     </div>
   </div>
@@ -64,13 +64,13 @@
     <div class="side-box"><h4>原文</h4><p><a href="https://arxiv.org/abs/2606.16353">https://arxiv.org/abs/2606.16353</a></p></div>
   </aside>
 </article></main>
-  <aside class="conf-float" data-conf-reminder="2026-06-17-main-ddl" aria-label="CCF A/B 主投稿提醒">
+  <aside class="conf-float" data-conf-reminder="2026-06-18-main-ddl" aria-label="CCF A/B 主投稿提醒">
   <button class="conf-close" type="button" aria-label="关闭会议提醒">×</button>
   <details open>
     <summary>CCF A/B 主投稿提醒</summary>
     <div class="conf-list"><a class="conf-item " href="https://github.com/ccfddl/ccf-deadlines/blob/main/conference/AI/aaai.yml">
   <span><b>AAAI 2027</b><em>CCF A · Main paper submission</em></span>
-  <strong>40 天</strong>
+  <strong>39 天</strong>
   <small>2026-07-27 · CCF DDL: abstract 2026-07-20；进入 1 个月窗口后重点提醒。</small>
 </a></div>
   </details>
@@ -83,7 +83,7 @@
   (() => {
     const box = document.querySelector('[data-conf-reminder]');
     if (!box) return;
-    const key = `visualSslConfReminderClosed:${box.dataset.confReminder || '2026-06-17-main-ddl'}`;
+    const key = `visualSslConfReminderClosed:${box.dataset.confReminder || '2026-06-18-main-ddl'}`;
     try {
       if (localStorage.getItem(key) === '1') box.hidden = true;
     } catch (err) {}

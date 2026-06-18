@@ -1,0 +1,894 @@
+# Last But Not Least: Boundary Attention CalibratiON for Multimodal KV Cache Compression
+
+Tianhao Chen1 Yuheng Wu1 Kelu Yao4 Xiaogang Xu3 Xiaobin Hu2,‡ Dongman Lee1,‡
+
+1 KAIST 2 National University of Singapore
+
+3 The Chinese University of Hong Kong 4 Zhejiang Laboratory
+
+‡ Corresponding Authors
+
+ https://ryu1ion.github.io/official\_BACON/
+
+## Abstract
+
+Multimodal Large Language Models (MLLMs) achieve strong vision-language reasoning, but long visual contexts enlarge the KV cache and increase decoding latency. Existing compression methods rely on observation window attention for stable token-importance estimation, yet this aggregation can dilute sparse visual evidence and discard answer-critical tokens under aggressive compression. Therefore, we identify last-query attention as a complementary source for recovering such evidence, but its answer-irrelevant signals can mislead retention. We propose BACON, a plug-and-play method that calibrates observation window attention with last-query evidence and suppresses isolated noise via intra-layer coherence and interlayer persistence. Across diverse benchmarks, models, budgets, and compression methods, BACON improves multimodal KV compression by 7.5% on average under the most aggressive budget, with gains up to 30.9%.
+
+## 1 Introduction
+
+Multimodal Large Language Models (MLLMs) have become a central foundation for visionlanguage intelligence, extending the reasoning and generation capabilities of Large Language Models (LLMs) to multimodal scenarios through visual encoders and projection modules. Despite strong performance across multimodal tasks, efficient inference remains challenging as visual inputs become longer and denser. Visual tokens substantially increase the prefill length (Kwon et al., 2023), and the KV cache must retain their representations across layers and attention heads for subsequent decoding. KV cache compression has therefore become an important direction for reducing the memory and latency cost of MLLM inference.
+
+Existing KV cache compression methods typically retain cached tokens according to their estimated importance. A common strategy is to estimate this importance from an observation window (Li et al., 2024b), i.e., the final segment of prompt queries, by averaging the attention each cached token receives from these queries. While this averaging reduces query-specific noise and stabilizes importance estimation, it also introduces a fundamental limitation: sparse answer-relevant visual evidence can be obscured by query-dependent attention signals unrelated to the target answer (Kang et al., 2025). Consequently, window aggregation can dilute sparse visual evidence and bias retention away from answer-critical visual tokens, especially under aggressive compression, as illustrated in Fig. 1 and Fig. 2(a).
+
+![](images/97e8b3091a5377667fde7a19ccf7e53b240f6ca634fc391f82967558b803c768.jpg)
+
+<details>
+<summary>text_image</summary>
+
+Who has prepared the directory of services ?
+6T Answer Location
+Largely discarded
+Base
+PLatte River Power Supply
+District ✗
+Fully retained
+PLATTE COUNTY VOLUNTEERS
+AGAINST HENDER ✓
+BACON (Ours)
+</details>
+
+Figure 1: Visual Importance Estimation under low budget on SnapKV: Observation window vs. BACON
+
+We investigate this limitation by analyzing attention dynamics in MLLM KV cache compression. Our analysis in Fig. 2(b) and 2(c) shows that the last prompt query can reveal important boundary evidence weakened by observation window aggregation. However, it is not sufficiently reliable as a standalone retention criterion: as shown in Fig. 3(a), nearly 70% of its high-attention tokens are non-evidential. Directly incorporating lastquery attention into token retention can therefore assign excessive importance to answer-irrelevant high-attention tokens, while weakening the stability provided by observation window aggregation. This leads to a key insight: the last query is not least for token retention; it reveals visual evidence missed by observation window aggregation, but this evidence should be calibrated against the window-based signal before guiding token retention.
+
+![](images/73913f07db3b6cd11968b4a81ed04737c5bf49a67e78979fe09d18d671693178.jpg)
+
+<details>
+<summary>bar chart</summary>
+
+| Category          | Budget 256 | Budget 64 |
+| ----------------- | ---------- | --------- |
+| All visual tokens | ~100%      | ~35%      |
+| Answer evidence   | ~100%      | ~65%      |
+</details>
+
+![](images/ae494a80d4c4b98578679c5b37eb7bc47b76395091f7ab523cf20e8d8c58c613.jpg)
+
+<details>
+<summary>line chart</summary>
+
+| Query window | Prompt query | Window average | Answer output |
+| ------------ | ------------ | -------------- | ------------- |
+| 1            | ~15%         | ~30%           | 100%          |
+| 8            | ~18%         | ~30%           | 100%          |
+| 16           | ~22%         | ~30%           | 100%          |
+| 24           | ~28%         | ~30%           | 100%          |
+| Last         | ~60%         | ~30%           | 100%          |
+</details>
+
+![](images/7c8c4fc3043de03029e5b1f82f53731816b985cf6c92d4a88a49ddce054d0560.jpg)
+
+<details>
+<summary>line chart</summary>
+
+| Visual evidence rank | True answer attention | Last query | Window average |
+| -------------------- | --------------------- | ---------- | -------------- |
+| 1                    | 1.0                   | 0.5        | 0.2            |
+| 5                    | 0.6                   | 0.4        | 0.2            |
+| 10                   | 0.4                   | 0.3        | 0.2            |
+| 15                   | 0.3                   | 0.2        | 0.2            |
+| 20                   | 0.2                   | 0.15       | 0.15           |
+| 25                   | 0.15                  | 0.1        | 0.1            |
+| 30                   | 0.1                   | 0.05       | 0.05           |
+</details>
+
+Figure 2: Observation window aggregation can dilute sparse visual evidence, while the last query recovers these evidence. (a) Under aggressive KV compression, SparseMM discard answer-critical visual evidence and produce incorrect predictions, suggesting observation window attention can miss sparse evidence under tight cache budgets. (b) The last query is more sensitive than earlier prompt queries to answer-relevant tokens, showing its ability to capture boundary-emergent evidence. (c) Compared with window-averaged attention, last-query attention better highlights visually important tokens and closely matches the answer’s attention distribution over visual tokens.
+
+Motivated by this insight, we propose Boundary Attention CalibratiON (BACON), a plug-and-play token retention mechanism for MLLM KV cache compression. BACON keeps observation window attention as the stable basis of existing retention scores and uses last-query attention to calibrate it with boundary-emergent evidence. However, such boundary evidence must be distinguished from noisy high-attention signals before being directly incorporated into token retention. BACON therefore filters last-query signals through local coherence within each layer and persistence across adjacent layers, as discovered in Fig. 3(b) and 3(c). In this way, BACON recovers visual evidence diluted by window aggregation while avoiding the noise introduced by directly using last-query attention. As shown in Fig. 1, BACON successfully captures key visual information needed for questions compared to base counterparts. More visualization results are available in B.4.
+
+In summary, our contributions are as follows. (1) We identify observation window aggregation as a key limitation why sparse but answer-critical visual evidence can be diluted and discarded during aggressive KV cache compression. (2) We propose BACON, a plug-and-play boundary attention calibration method that leverages evidence revealed by the last query to calibrate stable but diluted observation window attention, while suppressing isolated noise through intra-layer coherence and inter-layer persistence. (3) We conduct extensive experiments spanning multimodal understanding, video reasoning, GUI grounding, and long-context text tasks, with (M)LLMs of different scales and architectures, multiple KV compression methods, and diverse cache budgets, showing that BACON consistently improves existing compression methods without introducing extra inference cost.
+
+## 2 Related Work
+
+Multimodal Large Language Models. Recent Multimodal Large Language Models (MLLMs) extend LLMs with visual encoders and projection modules, aligning visual features with the language embedding space for joint vision-language reasoning. Representative models, such as LLaVA (Liu et al., 2024), InternVL (Zhu et al., 2025), and Qwen3-VL (Bai et al., 2025), have achieved strong performance across diverse multimodal tasks. Recent advances further support high-resolution inputs (Guo et al., 2024), dynamic image tiling (Li et al., 2024a), and multi-frame video reasoning (Maaz et al., 2024), improving fine-grained perception and long-context multimodal understanding. However, the resulting growth in visual context length substantially increases KV cache memory and decoding latency, making efficient inference critical for scalable deployment.
+
+Efficient Inference and KV Cache Compression in MLLMs. Efficient MLLM inference has been explored mainly through visual-token reduction and KV cache compression. Visual-token reduction methods prune intermediate visual tokens (Chen et al., 2024), merge redundant tokens (Shang et al., 2025), or adapt input resolution (Wang et al., 2024), reducing computation but often modifying the visual processing pipeline or effective visual context. In contrast, KV cache compression reduces memory and decoding cost after prefill while preserving the original input representation and forward pipeline (Kim et al., 2026a; Fu et al., 2025). In LLMs, StreamingLLM (Xiao et al., 2024) and H2O (Zhang et al., 2023) motivate retention through attention sinks and heavy hitters, while SnapKV (Li et al., 2024b), PyramidKV (Cai et al., 2024), and AdaKV (Feng et al., 2026) rely on observation window importance estimation and non-uniform layer/head budgets. Recent MLLM-oriented methods further adapt cache compression to multimodal inference (Wan et al., 2024): SparseMM (Wang et al., 2025) allocates modality-sensitive budgets, InfiniPotV (Kim et al., 2026b) uses value-normbased visual KV selection, and MixKV (Liu et al., 2025) balances attention-based importance with semantic diversity. Despite these advances, most attention-based methods still use observation window attention as the primary retention signal. BA-CON is orthogonal to these methods: it calibrates window-based retention with last-query boundary evidence while preserving the original budget allocation and decoding pipeline.
+
+![](images/614d44b90a66f29bd9b976a9a5e8888f8334ba83ab00050e4751f55b05b9d422.jpg)
+
+<details>
+<summary>pie chart</summary>
+
+| Category | Percentage (%) |
+| :--- | :--- |
+| Answer evidence | 9.0 |
+| Low-use visual tokens | 21.9 |
+| Low-use text tokens | 2.0 |
+| Other visual tokens | 40.1 |
+| Other text tokens | 27.0 |
+| Redundant | (not labeled with value) |
+</details>
+
+(a) Last-Query Attention Composition
+
+![](images/4db6e01a0a9a73afaf47d5da6c84776dd3ab37aed3d6f57f9b18f7416e3c0ebb.jpg)
+
+<details>
+<summary>text_image</summary>
+
+If EVIDENCE
+Neighboring Coherence
+Neighboring Coherence
+If NOISE
+Isolated Spike
+</details>
+
+(b) Intra-Layer Coherence Pattern
+
+![](images/0535798c28d48f7cbdd92da37c4aca3a577444392cbf0149af5c1e10fe360f91.jpg)
+
+<details>
+<summary>heatmap</summary>
+
+| Layer          | Persistent Trace |
+| -------------- | ---------------- |
+| Layer l + 2    | 1.0              |
+| Layer l + 1    | 0.6              |
+| Layer l        | 0.4              |
+| Layer l - 1    | 0.2              |
+| Layer l - 2    | 0.0              |
+</details>
+
+(c) Inter-Layer Persistence Pattern  
+Figure 3: Why last-query attention needs calibration. (a) The last query can highlight answer evidence, but most of its high-attention tokens are not useful: only about 9% correspond to truly important evidence, while around 70% are answer-irrelevant noise. (b) Important visual evidence usually appears as a local region, where neighboring tokens also receive high attention; in contrast, noise often appears as an isolated attention spike. (c) Important visual evidence also remains salient across adjacent layers, while noisy spikes are less consistent.
+
+## 3 Motivation Study
+
+In this section, we analyze the attention patterns and paired failure cases of Qwen2-VL under SparseMM compression on DocVQA and present our key findings below:
+
+➊ Low-budget compression discards visual evidence. To understand failures under tight cache budgets, we compare paired cases in which SparseMM succeeds with a larger budget but fails with a smaller budget. As shown in Fig. 2(a), the low-budget setting removes nearly 70% of the visual tokens retained by the high-budget setting and discards approximately 30% of the answer-aligned evidence. And many of the removed evidence tokens correspond to low-attention visual regions that are still essential for grounding the answer. This finding indicates that aggressive compression can eliminate not only redundant visual context but also weak yet semantically decisive evidence. As visual tokens generally receive lower attention than text tokens (Chen et al., 2024), they are especially vulnerable under low-budget selection, which motivates a retention signal beyond raw observation window attention.
+
+➋ Last query captures boundary evidence. We next examine where the missing evidence appears in the attention dynamics by comparing prompt queries at different positions with observation window attention. Fig. 2(b) shows that earlier prompt queries cover only limited answer-aligned evidence, whereas the last query captures a much larger portion of tokens that are important for the answer. Fig. 2(c) further shows that this advantage is especially clear for visual tokens: last-query attention assigns higher saliency to visually important tokens and more closely matches the answer’s attention distribution over visual tokens than observation window attention. These results suggest that while observation window aggregation can dilute sparse visual evidence, the last query remains sensitive to boundary-emergent visual signals that are closely tied to the forthcoming answer.
+
+➌ Intra-layer coherence and inter-layer persistence calibrate noisy boundary evidence. Although last-query attention can discover boundary evidence weakened by observation window aggregation, Fig. 3(a) shows that its high-attention tokens are highly mixed: only 9% correspond to true answer evidence, whereas nearly 70% are answerirrelevant noise. Directly using raw last-query attention for retention would therefore introduce irrelevant signals that interfere with important boundary evidence. As shown in Figs. 3(b) and 3(c), true evidence exhibits stronger intra-layer coherence and inter-layer persistence: high attention extends from evidence tokens to neighboring tokens within the same layer and remains concentrated on the same token positions across adjacent layers. In contrast, answer-irrelevant high-attention tokens are more isolated within a layer and less stable across layers.
+
+These observations suggest that important boundary evidence should be salient to the last query while at the same time exhibiting intra-layer coherence and inter-layer persistence.
+
+## 4 Methodology
+
+## 4.1 Preliminaries: Attention-Based KV Cache Compression
+
+Given a multimodal prompt $\mathbf { X } ~ = ~ \{ \mathbf { x } _ { i } \} _ { i = 1 } ^ { T }$ , an MLLM computes the KV cache during prefill and reuses it during autoregressive decoding. For layer l and attention head $h ,$ , we denote the cached keys and values by $\mathbf { K } _ { h } ^ { l } , \mathbf { V } _ { h } ^ { l } \in \mathbb { R } ^ { T \times d }$ , where $T$ is the sequence length and d is the head dimension. KV cache compression retains a compact subset of KV pairs under a budget $K _ { l , h }$ by ranking candidate tokens for each layer-head pair.
+
+Most attention-based methods estimate token importance by averaging attention over an observation window W near the end of the prompt. Let $\mathbf { A } ^ { l , h } \in \mathbb { R } ^ { T \times T }$ denote the causal attention matrix, where Al,h $A _ { q , i } ^ { l , h }$ is the attention weight from query position q to key position i. The observation window score Bl,h $B _ { i } ^ { l , h }$ is
+
+$$
+B _ {i} ^ {l, h} = \frac {1}{| \mathcal {W} |} \sum_ {q \in \mathcal {W}} A _ {q, i} ^ {l, h}. \tag {1}
+$$
+
+$B _ { i } ^ { l , h }$ provides a stable relevance estimate, Sec. 3 shows that observation window aggregation can dilute sparse but answer-critical vi-$B _ { i } ^ { l , h }$ as the backbone score and calibrates it with boundaryemergent evidence exposed by the last query. Fig. 4 gives an overview of BACON.
+
+## 4.2 Boundary-Emergent Evidence Modeling
+
+BACON is motivated by the observation in Sec. 3 that the last prompt query can expose boundaryemergent evidence weakened by observation window aggregation, while raw last-query attention may also contain answer-irrelevant spikes. Let the last query position in the prompt be $T$ . We define the last-query attention score as
+
+$$
+Q _ {i} ^ {l, h} = A _ {T, i} ^ {l, h}. \tag {2}
+$$
+
+We decompose last-query saliency into a stable window signal, a boundary-emergent evidence component, and a noise component:
+
+$$
+Q _ {i} ^ {l, h} = B _ {i} ^ {l, h} + \Delta_ {i} ^ {l, h} + \xi_ {i} ^ {l, h}, \tag {3}
+$$
+
+![](images/1a1e149d653b88c2d61c68eba9567622316a0537e4da8eda3f5c416975cb1d0e.jpg)
+
+<details>
+<summary>flowchart</summary>
+
+```mermaid
+graph TD
+  A["Prefill"] --> B["Obs. Win"]
+  B --> C["Attn. Weight Calc"]
+  C --> D{Query-Key Attention}
+  D --> E["Selected KVs"]
+  D --> F["Observation Window"]
+  D --> G["Last Query"]
+  E --> H["Compressed KVs"]
+  F --> H
+  G --> H
+  H --> I["Concatenate KVs"]
+  I --> J["Select KVs"]
+  J --> K["Layer I - n"]
+  J --> L["Layer I - 1"]
+  J --> M["Layer I"]
+  K --> N["Intra-layer Support"]
+  L --> N
+  M --> N
+  N --> O["Inter-layer Support"]
+  O --> P["Boundary Evidence"]
+  P --> Q["Window Score B vs. Q"]
+  Q --> R["B Boundary Residual"]
+  R --> S["Last-Query Score Q"]
+  S --> T["Boundary Evidence"]
+```
+</details>
+
+Figure 4: Overview of BACON. BACON extracts boundary evidence from observation window and lastquery attention, then calibrates it with intra-layer coherence and inter-layer persistence to produce an evidenceaware score for head-wise KV cache compression.
+
+where $\Delta _ { i } ^ { l , h }$ denotes evidence revealed by the last prompt query, and $\xi _ { i } ^ { l , h }$ denotes non-evidential noise. Since $\Delta _ { i } ^ { l , h }$ is not directly observable, BA-CON estimates it as the boundary evidence esti-$E _ { i } ^ { l , h }$ using the positive gap between last-query attention and observation window attention:
+
+$$
+E _ {i} ^ {l, h} = \left[ Q _ {i} ^ {l, h} - B _ {i} ^ {l, h} \right] _ {+}, \tag {4}
+$$
+
+where $[ x ] _ { + } = \operatorname* { m a x } ( x , 0 )$ . The positive residual $E _ { i } ^ { l , h }$ measures how much more token i is attended by the last query than by the observation window, thereby identifying evidence that may be diluted in $B _ { i } ^ { l , h }$ as the retention basis.
+
+## 4.3 Structural Calibration of Boundary Evidence
+
+As shown in Sec. 3, useful boundary evidence tends to exhibit intra-layer coherence and inter-layer persistence. BACON therefore refines the boundary residual with these two structural cues. For each layer-head pair, we write the residual scores as $\mathbf { e } ^ { l , h } \in \mathbb { R } ^ { T }$ , whose i-th entry is $E _ { i } ^ { l , h }$ .
+
+Intra-layer coherence. BACON measures intralayer coherence by aggregating boundary residuals over neighboring token positions. For token i, we define a radius-r neighborhood, with $r \ = \ 5$ by default:
+
+$$
+\mathcal {N} _ {r} (i) = \{u \mid | u - i | \leq r, 1 \leq u \leq T \}. \tag {5}
+$$
+
+The row-normalized neighborhood operator $\mathbf { P } _ { r } \in$ $\mathbb { R } ^ { T \times T }$ is
+
+$$
+(\mathbf {P} _ {r}) _ {i, u} = \frac {\mathbf {1} \{u \in \mathcal {N} _ {r} (i) \}}{| \mathcal {N} _ {r} (i) |}. \tag {6}
+$$
+
+The intra-layer coherence score is
+
+$$
+\mathbf {l} ^ {l, h} = \mathbf {P} _ {r} \mathbf {e} ^ {l, h}, \quad L _ {i} ^ {l, h} = (\mathbf {l} ^ {l, h}) _ {i}. \tag {7}
+$$
+
+Inter-layer persistence. BACON measures interlayer persistence by tracing boundary residuals at the same token position across preceding layers. For layer l, the causal layer set is
+
+$$
+\mathcal {P} _ {m} (l) = \{j \mid \max (1, l - m) \leq j <   l \}, \tag {8}
+$$
+
+where m is the persistence depth, with $m = 4$ by default. The inter-layer persistence score is
+
+$$
+T _ {i} ^ {l, h} = \frac {1}{| \mathcal {P} _ {m} (l) |} \sum_ {j \in \mathcal {P} _ {m} (l)} E _ {i} ^ {j, h}. \tag {9}
+$$
+
+If Pm(l) = ∅, we set T l,hi $\mathcal { P } _ { m } ( l ) = \emptyset$ $T _ { i } ^ { l , h } = 0 ;$ using only preceding layers keeps the formulation causal and compatible with layer-by-layer compression.
+
+Structurally calibrated boundary evidence. BA-CON combines the original boundary estimate with its intra-layer coherence and inter-layer persistence:
+
+$$
+V _ {i} ^ {l, h} = E _ {i} ^ {l, h} + L _ {i} ^ {l, h} + T _ {i} ^ {l, h}. \tag {10}
+$$
+
+In vector form,
+
+$$
+\mathbf {v} ^ {l, h} = (\mathbf {I} + \mathbf {P} _ {r}) \mathbf {e} ^ {l, h} + \mathbf {t} ^ {l, h}, \tag {11}
+$$
+
+where $\mathbf { t } ^ { l , h }$ denotes the inter-layer persistence vector. BACON thus converts noisy last-query saliency into structurally calibrated boundary evidence without task-specific weighting.
+
+## 4.4 Variance-Constrained Score Calibration
+
+The structurally calibrated boundary evidence V l,hi $V _ { i } ^ { l , h }$ is used as a controlled calibration term rather than a replacement for the backbone score. To ensure comparability across layers and heads, BACON matches the variance of boundary evidence to the local variation of the observation window score.
+
+For each layer-head pair, let $\mathcal { T } _ { l , h }$ be the candidate set. We define the scale-matching region under the backbone score as
+
+$$
+M _ {l, h} = \min (\rho K _ {l, h}, | \mathcal {I} _ {l, h} |), \tag {12}
+$$
+
+$$
+\mathcal {M} _ {l, h} = \mathrm{TopK} _ {i \in \mathcal {I} _ {l, h}} \left(B _ {i} ^ {l, h}, M _ {l, h}\right), \tag {13}
+$$
+
+where $\rho$ is an expansion factor, set to $\rho = 2$ by default. BACON obtains the calibration coefficient by solving
+
+$$
+\begin{array}{l} \lambda^ {l, h} = \arg \min _ {\lambda \geq 0} \left(\operatorname{Std} _ {i \in \mathcal {M} _ {l, h}} \left(\lambda V _ {i} ^ {l, h}\right) \right. \tag {14} \\ \left. - \gamma \operatorname{Std} _ {i \in \mathcal {M} _ {l, h}} (B _ {i} ^ {l, h})\right) ^ {2}, \\ \end{array}
+$$
+
+where $\gamma$ controls the global calibration strength. This objective has the closed-form solution
+
+$$
+\lambda^ {l, h} = \gamma \cdot \frac {\mathrm{Std} _ {i \in \mathcal {M} _ {l , h}} (B _ {i} ^ {l , h})}{\mathrm{Std} _ {i \in \mathcal {M} _ {l , h}} (V _ {i} ^ {l , h}) + \epsilon}, \tag {15}
+$$
+
+where ϵ is a small constant for numerical stability. The final BACON score is
+
+$$
+S _ {i} ^ {l, h} = B _ {i} ^ {l, h} + \lambda^ {l, h} V _ {i} ^ {l, h}. \tag {16}
+$$
+
+This preserves the stable observation window score while injecting boundary evidence at a calibrated scale.
+
+Finally, BACON selects the retained token set
+
+$$
+\mathcal {K} _ {l, h} = \mathrm{TopK} _ {i \in \mathcal {I} _ {l, h}} \left(S _ {i} ^ {l, h}, K _ {l, h}\right), \tag {17}
+$$
+
+and constructs the compressed cache by retaining $\{ \mathbf { K } _ { h , i } ^ { l } , \mathbf { V } _ { h , i } ^ { l } \mid i \in \mathcal { K } _ { l , h } \}$ .
+
+## 5 Experiment
+
+## 5.1 Experiment Settings
+
+Model Details. We evaluate BACON across diverse model architectures and scales. For multimodal understanding, we use LLaVA-NeXT-Mistral-7B (Liu et al., 2024), InternVL3-8B (Zhu et al., 2025), Qwen2-VL-7B-Instruct (Wang et al., 2024), and Qwen3-VL-30B-A3B-Instruct (Bai et al., 2025). For text-only evaluation, we use Mistral-7B-Instruct-v0.2 (Jiang et al., 2023) and Llama3.1-8B-Instruct (Grattafiori et al., 2024).
+
+Benchmark Details. We evaluate BACON on image understanding, video understanding, GUI grounding, and long-context text tasks. For image understanding, we use DocVQA (Mathew et al., 2021), TextVQA (Singh et al., 2019), MMMU (Yue et al., 2024), ChartQA (Masry et al., 2022), and TextCaps (Sidorov et al., 2020). For video understanding, we use VATEX (Wang et al., 2019) and NextQA (Xiao et al., 2021). For GUI grounding, we use ScreenSpot (Li et al., 2025). For text understanding, we use LongBench (Bai et al., 2024).
+
+Implementation Details. We apply BACON to various KV cache compression methods, including SnapKV, PyramidKV, AdaKV, and SparseMM, under different cache budgets. More experiment details are provided in A.
+
+## 5.2 Main Results
+
+Performance on image understanding benchmarks. Table 1 summarizes BACON integrated
+
+Table 1: Main results on image understanding benchmarks. SparseMM is excluded in InternVL3-8B and Qwen3-VL-30B-A3B settings due to the unreleased profiling file. Arrows show deltas over Base, and “Full KV” denotes caching all KV pairs as the upper bound.
+
+<table><tr><td rowspan="2">Method</td><td rowspan="2">Variant</td><td colspan="3">DocVQA (%)</td><td colspan="3">TextVQA (%)</td><td colspan="3">ChartQA (%)</td><td colspan="3">MMMU (%)</td><td colspan="3">TextCaps</td></tr><tr><td>256</td><td>128</td><td>64</td><td>256</td><td>128</td><td>64</td><td>256</td><td>128</td><td>64</td><td>256</td><td>128</td><td>64</td><td>256</td><td>128</td><td>64</td></tr><tr><td colspan="17">Qwen2-VL-7B-Instruct</td></tr><tr><td>Full KV</td><td>Upper</td><td></td><td>93.7</td><td></td><td></td><td>-</td><td></td><td></td><td>71.3</td><td></td><td></td><td>49.9</td><td></td><td></td><td>1.473</td><td></td></tr><tr><td rowspan="3">SnapKV</td><td>Base</td><td>88.6</td><td>82.1</td><td>70.1</td><td>80.6</td><td>77.0</td><td>70.3</td><td>70.0</td><td>69.6</td><td>66.2</td><td>49.9</td><td>49.8</td><td>49.6</td><td>1.361</td><td>1.141</td><td>0.787</td></tr><tr><td>+MixKV</td><td>91.8</td><td>83.9</td><td>70.9</td><td>82.6</td><td>81.0</td><td>73.5</td><td>70.0</td><td>70.2</td><td>67.2</td><td>49.9</td><td>49.9</td><td>49.7</td><td>1.470</td><td>1.332</td><td>0.919</td></tr><tr><td>+BACON</td><td>93.1↑4.5</td><td>91.5↑9.4</td><td>85.5↑15.4</td><td>83.1↑2.5</td><td>82.6↑5.6</td><td>78.2↑7.9</td><td>70.2↑0.2</td><td>70.2↑0.6</td><td>69.6↑3.4</td><td>49.9→0.0</td><td>49.9↑0.1</td><td>50.0↑0.4</td><td>1.488↑0.127</td><td>1.426↑0.285</td><td>1.178↑0.391</td></tr><tr><td rowspan="3">PyramidKV</td><td>Base</td><td>83.4</td><td>75.6</td><td>60.5</td><td>77.7</td><td>74.9</td><td>66.8</td><td>71.1</td><td>68.9</td><td>65.2</td><td>49.9</td><td>49.8</td><td>49.6</td><td>1.147</td><td>0.993</td><td>0.600</td></tr><tr><td>+MixKV</td><td>85.0</td><td>77.5</td><td>61.3</td><td>80.9</td><td>77.2</td><td>69.4</td><td>71.0</td><td>71.1</td><td>66.4</td><td>49.9</td><td>49.8</td><td>49.6</td><td>1.383</td><td>1.145</td><td>0.662</td></tr><tr><td>+BACON</td><td>92.3↑8.9</td><td>89.3↑13.7</td><td>79.2↑18.7</td><td>82.5↑4.8</td><td>80.0↑5.1</td><td>75.1↑8.3</td><td>71.2↑0.1</td><td>70.6↑1.7</td><td>69.2↑4.0</td><td>49.9→0.0</td><td>49.9↑0.1</td><td>49.8↑0.2</td><td>1.461↑0.314</td><td>1.344↑0.351</td><td>1.073↑0.473</td></tr><tr><td rowspan="3">AdaKV</td><td>Base</td><td>88.4</td><td>81.3</td><td>69.4</td><td>80.5</td><td>75.9</td><td>70.8</td><td>69.8</td><td>69.6</td><td>66.6</td><td>49.9</td><td>49.7</td><td>49.6</td><td>1.300</td><td>1.099</td><td>0.771</td></tr><tr><td>+MixKV</td><td>91.4</td><td>82.7</td><td>70.7</td><td>82.5</td><td>79.1</td><td>72.6</td><td>70.2</td><td>70.2</td><td>67.8</td><td>49.9</td><td>49.9</td><td>49.6</td><td>1.454</td><td>1.271</td><td>0.874</td></tr><tr><td>+BACON</td><td>93.0↑4.6</td><td>91.1↑9.8</td><td>86.2↑16.8</td><td>82.8↑2.3</td><td>81.2↑5.3</td><td>78.5↑7.7</td><td>70.2↑0.4</td><td>70.2↑0.6</td><td>69.6↑3.0</td><td>49.9→0.0</td><td>49.8↑0.1</td><td>49.8↑0.2</td><td>1.473↑0.173</td><td>1.371↑0.272</td><td>1.144↑0.373</td></tr><tr><td rowspan="3">SparseMM</td><td>Base</td><td>93.1</td><td>91.4</td><td>87.3</td><td>82.6</td><td>82.1</td><td>76.9</td><td>70.2</td><td>70.0</td><td>69.6</td><td>49.8</td><td>49.8</td><td>49.6</td><td>1.481</td><td>1.427</td><td>1.044</td></tr><tr><td>+MixKV</td><td>93.9</td><td>92.9</td><td>88.6</td><td>82.5</td><td>82.5</td><td>80.9</td><td>69.6</td><td>69.8</td><td>70.8</td><td>49.8</td><td>49.8</td><td>49.7</td><td>1.480</td><td>1.456</td><td>1.303</td></tr><tr><td>+BACON</td><td>93.8↑0.7</td><td>93.2↑1.8</td><td>92.0↑4.7</td><td>82.6→0.0</td><td>82.4↑0.3</td><td>81.6↑4.7</td><td>70.6↑0.4</td><td>70.4↑0.4</td><td>70.2↑0.6</td><td>49.9↑0.1</td><td>49.8→0.0</td><td>49.8↑0.2</td><td>1.506↑0.025</td><td>1.511↑0.084</td><td>1.431↑0.387</td></tr><tr><td colspan="17">LLaVA-NeXT-Mistral-7B</td></tr><tr><td>Full KV</td><td>Upper</td><td></td><td>62.7</td><td></td><td></td><td>68.4</td><td></td><td></td><td>51.8</td><td></td><td></td><td>34.7</td><td></td><td></td><td>0.704</td><td></td></tr><tr><td rowspan="3">SnapKV</td><td>Base</td><td>58.1</td><td>55.2</td><td>46.2</td><td>66.0</td><td>63.0</td><td>58.9</td><td>49.8</td><td>48.4</td><td>47.2</td><td>34.7</td><td>34.9</td><td>34.8</td><td>0.651</td><td>0.560</td><td>0.442</td></tr><tr><td>+MixKV</td><td>60.4</td><td>57.5</td><td>48.2</td><td>67.5</td><td>66.1</td><td>61.3</td><td>49.8</td><td>48.6</td><td>46.8</td><td>34.6</td><td>34.8</td><td>34.8</td><td>0.710</td><td>0.656</td><td>0.510</td></tr><tr><td>+BACON</td><td>59.7↑1.6</td><td>57.8↑2.6</td><td>53.9↑7.7</td><td>67.1↑1.1</td><td>66.2↑3.2</td><td>62.8↑3.9</td><td>50.0↑0.2</td><td>49.6↑1.2</td><td>49.2↑2.0</td><td>34.8↑0.1</td><td>34.9→0.0</td><td>34.8→0.0</td><td>0.686↑0.035</td><td>0.676↑0.116</td><td>0.512↑0.070</td></tr><tr><td rowspan="3">PyramidKV</td><td>Base</td><td>57.5</td><td>54.3</td><td>43.8</td><td>65.2</td><td>63.1</td><td>55.7</td><td>43.6</td><td>42.7</td><td>38.6</td><td>34.8</td><td>35.0</td><td>34.7</td><td>0.652</td><td>0.581</td><td>0.436</td></tr><tr><td>+MixKV</td><td>60.3</td><td>56.7</td><td>45.6</td><td>67.2</td><td>65.8</td><td>57.8</td><td>44.3</td><td>42.6</td><td>39.1</td><td>34.7</td><td>34.9</td><td>34.7</td><td>0.685</td><td>0.644</td><td>0.505</td></tr><tr><td>+BACON</td><td>60.6↑3.1</td><td>59.0↑4.7</td><td>52.4↑8.6</td><td>67.4↑2.2</td><td>66.0↑2.9</td><td>59.8↑4.1</td><td>45.0↑1.4</td><td>43.9↑1.2</td><td>39.9↑1.3</td><td>35.0↑0.2</td><td>35.0→0.0</td><td>34.8↑0.1</td><td>0.685↑0.033</td><td>0.650↑0.069</td><td>0.505↑0.069</td></tr><tr><td rowspan="3">AdaKV</td><td>Base</td><td>58.3</td><td>56.1</td><td>47.6</td><td>65.4</td><td>62.7</td><td>57.8</td><td>49.6</td><td>48.8</td><td>47.4</td><td>34.7</td><td>34.9</td><td>34.8</td><td>0.645</td><td>0.568</td><td>0.441</td></tr><tr><td>+MixKV</td><td>59.3</td><td>57.5</td><td>49.5</td><td>67.2</td><td>64.4</td><td>59.6</td><td>49.6</td><td>49.2</td><td>46.8</td><td>34.7</td><td>34.9</td><td>34.8</td><td>0.701</td><td>0.660</td><td>0.506</td></tr><tr><td>+BACON</td><td>59.3↑1.0</td><td>58.4↑2.3</td><td>55.2↑7.6</td><td>67.1↑1.7</td><td>65.5↑2.8</td><td>61.5↑3.7</td><td>50.0↑0.4</td><td>50.2↑1.4</td><td>49.0↑1.6</td><td>34.8↑0.1</td><td>34.9→0.0</td><td>34.8→0.0</td><td>0.694↑0.049</td><td>0.671↑0.103</td><td>0.510↑0.069</td></tr><tr><td rowspan="3">SparseMM</td><td>Base</td><td>58.5</td><td>58.9</td><td>57.5</td><td>67.2</td><td>67.4</td><td>65.2</td><td>50.6</td><td>49.8</td><td>49.4</td><td>34.7</td><td>34.7</td><td>34.8</td><td>0.670</td><td>0.600</td><td>0.489</td></tr><tr><td>+MixKV</td><td>58.9</td><td>59.0</td><td>58.7</td><td>67.4</td><td>67.6</td><td>67.1</td><td>51.0</td><td>50.4</td><td>50.0</td><td>34.8</td><td>34.7</td><td>34.7</td><td>0.685</td><td>0.620</td><td>0.569</td></tr><tr><td>+BACON</td><td>59.7↑1.2</td><td>59.3↑0.4</td><td>58.3↑0.8</td><td>68.0↑0.8</td><td>67.8↑0.4</td><td>67.3↑2.1</td><td>50.6→0.0</td><td>50.4↑0.6</td><td>49.8↑0.4</td><td>34.8↑0.1</td><td>34.8↑0.1</td><td>34.9↑0.1</td><td>0.686↑0.016</td><td>0.625↑0.025</td><td>0.572↑0.083</td></tr><tr><td colspan="17">InternVL3-8B</td></tr><tr><td>Full KV</td><td>Upper</td><td></td><td>91.1</td><td></td><td></td><td>81.6</td><td></td><td></td><td>77.8</td><td></td><td></td><td>55.3</td><td></td><td></td><td>1.111</td><td></td></tr><tr><td rowspan="3">SnapKV</td><td>Base</td><td>89.5</td><td>85.4</td><td>75.1</td><td>80.7</td><td>78.8</td><td>72.3</td><td>77.4</td><td>75.9</td><td>71.6</td><td>55.3</td><td>55.2</td><td>55.2</td><td>1.083</td><td>0.999</td><td>0.804</td></tr><tr><td>+MixKV</td><td>89.5</td><td>86.4</td><td>75.5</td><td>81.2</td><td>79.2</td><td>73.6</td><td>77.6</td><td>76.0</td><td>72.2</td><td>55.3</td><td>55.2</td><td>55.1</td><td>1.103</td><td>1.016</td><td>0.821</td></tr><tr><td>+BACON</td><td>90.0↑0.5</td><td>88.7↑3.3</td><td>84.9↑9.8</td><td>81.4↑0.7</td><td>81.2↑2.4</td><td>76.7↑4.4</td><td>77.4→0.0</td><td>77.3↑1.4</td><td>75.6↑4.0</td><td>55.4↑0.1</td><td>55.3↑0.1</td><td>55.2→0.0</td><td>1.102↑0.019</td><td>1.020↑0.021</td><td>0.856↑0.052</td></tr><tr><td rowspan="3">PyramidKV</td><td>Base</td><td>87.6</td><td>82.5</td><td>69.2</td><td>78.4</td><td>76.1</td><td>68.8</td><td>76.4</td><td>74.8</td><td>71.1</td><td>55.2</td><td>55.2</td><td>55.1</td><td>0.977</td><td>0.902</td><td>0.688</td></tr><tr><td>+MixKV</td><td>87.7</td><td>83.4</td><td>69.4</td><td>79.4</td><td>76.9</td><td>68.9</td><td>76.7</td><td>75.2</td><td>71.7</td><td>55.3</td><td>55.3</td><td>55.2</td><td>1.024</td><td>0.936</td><td>0.719</td></tr><tr><td>+BACON</td><td>89.6↑2.0</td><td>87.7↑5.2</td><td>80.7↑11.5</td><td>81.1↑2.7</td><td>79.7↑3.6</td><td>74.4↑5.6</td><td>77.5↑1.1</td><td>76.9↑2.1</td><td>74.3↑3.2</td><td>55.3↑0.1</td><td>55.4↑0.2</td><td>55.3↑0.2</td><td>1.027↑0.050</td><td>0.945↑0.043</td><td>0.782↑0.094</td></tr><tr><td rowspan="3">AdaKV</td><td>Base</td><td>89.5</td><td>85.7</td><td>76.9</td><td>80.7</td><td>78.5</td><td>72.4</td><td>77.2</td><td>75.5</td><td>72.6</td><td>55.6</td><td>55.2</td><td>55.2</td><td>1.092</td><td>0.983</td><td>0.847</td></tr><tr><td>+MixKV</td><td>89.3</td><td>86.4</td><td>77.2</td><td>81.1</td><td>79.3</td><td>73.2</td><td>76.9</td><td>76.1</td><td>72.5</td><td>55.3</td><td>55.2</td><td>55.1</td><td>1.091</td><td>1.027</td><td>0.869</td></tr><tr><td>+BACON</td><td>89.5→0.0</td><td>88.6↑2.9</td><td>85.8↑8.9</td><td>81.4↑0.7</td><td>80.4↑1.9</td><td>76.8↑4.4</td><td>77.1↓0.1</td><td>76.8↑1.3</td><td>75.4↑2.8</td><td>55.6→0.0</td><td>55.2→0.0</td><td>55.3↑0.1</td><td>1.102↑0.010</td><td>1.030↑0.047</td><td>0.872↑0.025</td></tr><tr><td colspan="17">Qwen3-VL-30B-A3B</td></tr><tr><td>Full KV</td><td>Upper</td><td></td><td>95.5</td><td></td><td></td><td>84.3</td><td></td><td></td><td>74.4</td><td></td><td></td><td>52.56</td><td></td><td></td><td>0.328</td><td></td></tr><tr><td rowspan="3">SnapKV</td><td>Base</td><td>94.7</td><td>91.5</td><td>78.9</td><td>83.4</td><td>81.8</td><td>75.8</td><td>74.7</td><td>73.2</td><td>70.4</td><td>52.33</td><td>52.67</td><td>51.56</td><td>0.354</td><td>0.348</td><td>0.273</td></tr><tr><td>+MixKV</td><td>95.3</td><td>92.7</td><td>81.0</td><td>84.0</td><td>83.0</td><td>78.8</td><td>74.9</td><td>74.8</td><td>72.4</td><td>52.78</td><td>53.00</td><td>51.89</td><td>0.357</td><td>0.426</td><td>0.334</td></tr><tr><td>+BACON</td><td>95.4↑0.7</td><td>95.1↑3.6</td><td>90.3↑11.4</td><td>83.8↑0.4</td><td>83.7↑1.9</td><td>81.4↑5.6</td><td>75.1↑0.4</td><td>74.9↑1.7</td><td>73.6↑3.2</td><td>53.11↑0.78</td><td>53.00↑0.33</td><td>52.33↑0.77</td><td>0.347↓0.007</td><td>0.435↑0.087</td><td>0.355↑0.082</td></tr><tr><td rowspan="3">PyramidKV</td><td>Base</td><td>86.9</td><td>88.0</td><td>74.4</td><td>80.3</td><td>80.0</td><td>73.2</td><td>72.3</td><td>72.6</td><td>68.5</td><td>52.89</td><td>52.22</td><td>51.78</td><td>0.326</td><td>0.338</td><td>0.266</td></tr><tr><td>+MixKV</td><td>89.3</td><td>90.2</td><td>76.3</td><td>82.3</td><td>82.9</td><td>77.2</td><td>74.0</td><td>74.5</td><td>71.8</td><td>53.44</td><td>52.89</td><td>52.11</td><td>0.401</td><td>0.398</td><td>0.370</td></tr><tr><td>+BACON</td><td>94.8↑7.9</td><td>94.3↑6.3</td><td>87.2↑12.8</td><td>83.7↑3.4</td><td>83.1↑3.1</td><td>79.3↑6.1</td><td>74.7↑2.4</td><td>74.6↑2.0</td><td>73.2↑4.7</td><td>53.44↑0.55</td><td>53.56↑1.34</td><td>52.00↑0.22</td><td>0.425↑0.099</td><td>0.375↑0.037</td><td>0.387↑0.121</td></tr><tr><td rowspan="3">AdaKV</td><td>Base</td><td>94.8</td><td>91.8</td><td>80.8</td><td>83.0</td><td>81.4</td><td>75.2</td><td>74.9</td><td>73.2</td><td>70.8</td><td>52.44</td><td>52.33</td><td>52.44</td><td>0.347</td><td>0.325</td><td>0.293</td></tr><tr><td>+MixKV</td><td>95.5</td><td>93.5</td><td>83.3</td><td>84.4</td><td>82.8</td><td>78.5</td><td>74.8</td><td>74.7</td><td>72.9</td><td>52.89</td><td>52.56</td><td>51.78</td><td>0.351</td><td>0.414</td><td>0.353</td></tr><tr><td>+BACON</td><td>95.7↑0.9</td><td>95.0↑3.2</td><td>90.6↑9.8</td><td>83.3↑0.3</td><td>83.7↑2.3</td><td>80.7↑5.5</td><td>75.0↑0.1</td><td>74.5↑1.3</td><td>73.2↑2.4</td><td>53.11↑0.67</td><td>53.00↑0.67</td><td>53.67↑1.23</td><td>0.352↑0.005</td><td>0.417↑0.092</td><td>0.361↑0.068</td></tr></table>
+
+Table 2: Results on video understanding benchmarks with Qwen2-VL-7B.
+
+<table><tr><td rowspan="3">Method</td><td rowspan="3">Variant</td><td colspan="12">VATEX</td><td colspan="3">NextQA</td></tr><tr><td colspan="3">CIDEr</td><td colspan="3">BLEU-4</td><td colspan="3">METEOR</td><td colspan="3">ROUGE-L</td><td colspan="3">WUPS</td></tr><tr><td>512</td><td>256</td><td>128</td><td>512</td><td>256</td><td>128</td><td>512</td><td>256</td><td>128</td><td>512</td><td>256</td><td>128</td><td>512</td><td>256</td><td>128</td></tr><tr><td>Full KV</td><td>Upper</td><td></td><td>49.61</td><td></td><td></td><td>21.91</td><td></td><td></td><td>23.83</td><td></td><td></td><td>44.15</td><td></td><td></td><td>26.30</td><td></td></tr><tr><td rowspan="3">SnapKV</td><td>Base</td><td>48.14</td><td>46.51</td><td>46.27</td><td>21.22</td><td>20.60</td><td>20.26</td><td>23.70</td><td>23.22</td><td>22.18</td><td>43.80</td><td>43.53</td><td>42.68</td><td>25.97</td><td>25.69</td><td>25.84</td></tr><tr><td>+MixKV</td><td>48.55</td><td>47.68</td><td>45.95</td><td>21.34</td><td>20.82</td><td>20.32</td><td>23.00</td><td>23.42</td><td>22.07</td><td>43.90</td><td>43.55</td><td>42.93</td><td>25.99</td><td>25.93</td><td>25.60</td></tr><tr><td>+BACON</td><td>48.67</td><td>48.02</td><td>46.02</td><td>21.38</td><td>21.26</td><td>20.38</td><td>23.79</td><td>23.42</td><td>22.63</td><td>43.96</td><td>43.57</td><td>42.79</td><td>26.15</td><td>25.94</td><td>26.02</td></tr><tr><td rowspan="3">AdaKV</td><td>Base</td><td>48.20</td><td>46.20</td><td>45.37</td><td>21.55</td><td>20.43</td><td>20.28</td><td>23.62</td><td>23.29</td><td>22.85</td><td>43.85</td><td>43.26</td><td>42.67</td><td>25.72</td><td>25.70</td><td>25.65</td></tr><tr><td>+MixKV</td><td>48.68</td><td>47.46</td><td>45.39</td><td>21.22</td><td>20.78</td><td>20.34</td><td>23.68</td><td>23.28</td><td>22.87</td><td>43.92</td><td>43.32</td><td>42.68</td><td>25.99</td><td>26.01</td><td>25.86</td></tr><tr><td>+BACON</td><td>48.82</td><td>47.85</td><td>45.33</td><td>21.55</td><td>21.24</td><td>20.54</td><td>23.68</td><td>23.45</td><td>23.15</td><td>44.06</td><td>43.41</td><td>42.76</td><td>25.96</td><td>25.95</td><td>25.86</td></tr><tr><td rowspan="3">PyramidKV</td><td>Base</td><td>46.09</td><td>46.03</td><td>44.36</td><td>20.58</td><td>20.29</td><td>19.26</td><td>23.28</td><td>22.86</td><td>22.02</td><td>43.25</td><td>42.41</td><td>42.18</td><td>25.88</td><td>25.69</td><td>25.63</td></tr><tr><td>+MixKV</td><td>46.13</td><td>45.67</td><td>44.50</td><td>20.48</td><td>20.29</td><td>19.55</td><td>23.22</td><td>22.87</td><td>22.11</td><td>43.30</td><td>42.69</td><td>42.16</td><td>25.87</td><td>25.72</td><td>25.52</td></tr><tr><td>+BACON</td><td>46.57</td><td>46.22</td><td>45.70</td><td>20.81</td><td>20.25</td><td>19.70</td><td>23.26</td><td>22.89</td><td>22.24</td><td>43.31</td><td>42.65</td><td>42.36</td><td>26.04</td><td>25.80</td><td>25.65</td></tr><tr><td rowspan="3">SparseMM</td><td>Base</td><td>47.91</td><td>47.16</td><td>46.12</td><td>20.79</td><td>20.24</td><td>19.77</td><td>23.52</td><td>23.18</td><td>22.24</td><td>43.67</td><td>43.53</td><td>42.63</td><td>26.37</td><td>25.94</td><td>25.71</td></tr><tr><td>+MixKV</td><td>48.65</td><td>47.44</td><td>45.99</td><td>20.99</td><td>20.54</td><td>19.82</td><td>23.46</td><td>23.10</td><td>22.55</td><td>43.85</td><td>43.22</td><td>42.66</td><td>26.13</td><td>25.98</td><td>25.83</td></tr><tr><td>+BACON</td><td>48.90</td><td>47.57</td><td>46.38</td><td>21.28</td><td>20.81</td><td>20.03</td><td>23.68</td><td>23.31</td><td>22.38</td><td>44.06</td><td>43.56</td><td>42.74</td><td>26.33</td><td>26.17</td><td>26.07</td></tr></table>
+
+with representative KV compression baselines across multiple MLLMs, benchmarks, and cache budgets. The results show three main advantages. (i) Consistent effectiveness. BACON consistently improves compressed inference, especially under aggressive budgets where sparse visual evidence is more likely to be discarded. For example, on Qwen2-VL-7B with PyramidKV at budget 64, BACON improves DocVQA by +18.7 points and TextVQA by +8.3 points; similar gains with SnapKV and AdaKV indicate that last-query calibration helps recover visual evidence weakened by observation window aggregation. (ii) Broad applicability. BACON benefits diverse compression paradigms, including attention-based selection, adaptive allocation, and head-/layer-wise budget allocation. On LLaVA-NeXT-Mistral-7B at budget 64, it improves PyramidKV by +8.6 points on DocVQA and SparseMM by +2.1 points on TextVQA. Since BACON only refines within-head token scores without changing the compression operator or budget allocation, it can be directly integrated into existing KV compression pipelines. (iii) Model compatibility. BACON generalizes from 7B-scale MLLMs to stronger architectures, including InternVL3-8B and the 30B-scale MoE model Qwen3-VL-30B-A3B. With PyramidKV at budget 64, it improves Qwen3-VL-30B-A3B by +12.8 points on DocVQA and +6.1 points on TextVQA, supporting its role as a plug-and-play calibration method across model families and scales.
+
+Performance on video understanding benchmarks. Beyond static image benchmarks, we evaluate BACON on video understanding tasks, where relevant evidence can be distributed across frames. As shown in Table 2, BACON improves compressed inference on both VATEX and NextQA across different compression backbones and cache budgets. On VATEX, BACON yields broad gains across methods and budgets, suggesting better preservation of fine-grained visual-temporal cues. On NextQA, it improves WUPS in most settings, indicating that the calibrated retention signal also benefits video question answering. These results show that BACON generalizes beyond imagelevel grounding while remaining compatible with diverse compression strategies. A few metric-level fluctuations suggest that some videos may benefit from broader temporal coverage retained by the base score. Overall, BACON provides a complementary calibration signal for compressed videolanguage inference.
+
+Table 3: Results on ScreenSpot GUI grounding benchmark with Qwen2-VL-7B.
+
+<table><tr><td rowspan="2">Method</td><td rowspan="2">Variant</td><td colspan="2">Mobile Text</td><td colspan="2">Mobile Icon</td><td colspan="2">Desktop Text</td><td colspan="2">Desktop Icon</td><td colspan="2">Web Text</td><td colspan="2">Web Icon</td><td colspan="2">Average</td></tr><tr><td>128</td><td>64</td><td>128</td><td>64</td><td>128</td><td>64</td><td>128</td><td>64</td><td>128</td><td>64</td><td>128</td><td>64</td><td>128</td><td>64</td></tr><tr><td>Full KV</td><td>-</td><td colspan="2">39.4</td><td colspan="2">32.1</td><td colspan="2">17.5</td><td colspan="2">10.0</td><td colspan="2">7.0</td><td colspan="2">6.8</td><td colspan="2">18.8</td></tr><tr><td rowspan="3">SnapKV</td><td>Base</td><td>24.5</td><td>15.4</td><td>10.5</td><td>4.8</td><td>19.1</td><td>9.3</td><td>4.3</td><td>4.3</td><td>5.7</td><td>6.5</td><td>6.8</td><td>5.8</td><td>11.8</td><td>7.7</td></tr><tr><td>+ MixKV</td><td>24.9</td><td>15.8</td><td>10.8</td><td>4.8</td><td>19.6</td><td>10.8</td><td>4.3</td><td>4.3</td><td>6.1</td><td>6.5</td><td>6.8</td><td>6.3</td><td>12.1</td><td>8.1</td></tr><tr><td>+ BACON</td><td>24.9</td><td>15.8</td><td>10.7</td><td>5.7</td><td>21.1</td><td>13.7</td><td>4.3</td><td>5.7</td><td>7.0</td><td>6.4</td><td>8.2</td><td>6.3</td><td>12.7</td><td>9.0</td></tr><tr><td rowspan="3">AdaKV</td><td>Base</td><td>26.1</td><td>15.4</td><td>11.8</td><td>4.2</td><td>19.1</td><td>11.3</td><td>5.7</td><td>5.0</td><td>4.8</td><td>6.5</td><td>6.3</td><td>5.8</td><td>12.3</td><td>8.0</td></tr><tr><td>+ MixKV</td><td>26.6</td><td>14.6</td><td>11.3</td><td>4.8</td><td>20.1</td><td>11.3</td><td>5.7</td><td>5.0</td><td>5.7</td><td>5.7</td><td>6.3</td><td>6.3</td><td>12.6</td><td>8.0</td></tr><tr><td>+ BACON</td><td>26.6</td><td>15.4</td><td>12.0</td><td>5.0</td><td>19.5</td><td>13.9</td><td>5.7</td><td>5.0</td><td>5.7</td><td>6.7</td><td>6.8</td><td>6.3</td><td>12.7</td><td>8.7</td></tr><tr><td rowspan="3">PyramidKV</td><td>Base</td><td>24.5</td><td>13.9</td><td>8.2</td><td>6.6</td><td>20.1</td><td>9.8</td><td>3.6</td><td>5.0</td><td>6.1</td><td>6.1</td><td>6.2</td><td>5.3</td><td>11.5</td><td>7.8</td></tr><tr><td>+ MixKV</td><td>24.5</td><td>13.2</td><td>8.7</td><td>7.0</td><td>19.1</td><td>10.3</td><td>3.6</td><td>5.0</td><td>6.5</td><td>6.1</td><td>6.6</td><td>5.8</td><td>11.5</td><td>7.9</td></tr><tr><td>+ BACON</td><td>24.8</td><td>13.5</td><td>8.9</td><td>6.7</td><td>20.1</td><td>10.3</td><td>4.3</td><td>5.7</td><td>7.8</td><td>6.2</td><td>6.3</td><td>5.8</td><td>12.0</td><td>8.0</td></tr><tr><td rowspan="3">SparseMM</td><td>Base</td><td>22.7</td><td>15.8</td><td>9.2</td><td>4.4</td><td>18.6</td><td>9.8</td><td>4.6</td><td>4.3</td><td>7.0</td><td>4.5</td><td>8.7</td><td>5.8</td><td>11.9</td><td>7.4</td></tr><tr><td>+ MixKV</td><td>21.5</td><td>14.6</td><td>10.2</td><td>4.4</td><td>17.0</td><td>10.3</td><td>2.9</td><td>4.3</td><td>7.4</td><td>3.9</td><td>8.2</td><td>5.8</td><td>11.2</td><td>7.2</td></tr><tr><td>+ BACON</td><td>22.7</td><td>16.9</td><td>10.2</td><td>4.5</td><td>19.6</td><td>10.3</td><td>4.9</td><td>5.0</td><td>7.6</td><td>5.2</td><td>8.3</td><td>8.2</td><td>12.2</td><td>8.4</td></tr></table>
+
+Table 4: Results on LongBench long context understanding benchmark with Mistral-7B-Instruct-v0.2.
+
+<table><tr><td rowspan="2">Methods</td><td colspan="3">Single-Doc QA</td><td colspan="3">Multi-Doc QA</td><td colspan="3">Summarization</td><td colspan="3">Few-shot</td><td colspan="2">Synthetic</td><td colspan="2">Code</td><td rowspan="2">Avg.</td></tr><tr><td>NrtvQA</td><td>Qasper</td><td>MF-en</td><td>HotpotQA</td><td>2WikiMQA</td><td>Musique</td><td>GovReport</td><td>QMSum</td><td>MultiNews</td><td>TREC</td><td>TriviaQA</td><td>SAMSum</td><td>PCount</td><td>PRe</td><td>Lcc</td><td>RB-P</td></tr><tr><td>Full KV</td><td>26.77</td><td>32.51</td><td>49.36</td><td>43.58</td><td>27.35</td><td>18.86</td><td>33.09</td><td>24.38</td><td>27.03</td><td>71.00</td><td>86.23</td><td>42.99</td><td>2.89</td><td>86.98</td><td>47.16</td><td>48.03</td><td>41.76</td></tr><tr><td colspan="18">KV Cache Budget = 1024</td></tr><tr><td>SnapKV</td><td>25.06</td><td>28.92</td><td>49.17</td><td>40.41</td><td>26.11</td><td>18.14</td><td>25.91</td><td>23.99</td><td>25.73</td><td>67.00</td><td>86.24</td><td>41.57</td><td>2.98</td><td>87.48</td><td>46.13</td><td>46.09</td><td>40.06</td></tr><tr><td>+ MixKV</td><td>24.73</td><td>29.88</td><td>48.62</td><td>39.68</td><td>26.41</td><td>18.56</td><td>26.15</td><td>23.70</td><td>26.16</td><td>69.00</td><td>86.25</td><td>43.25</td><td>3.21</td><td>85.84</td><td>46.27</td><td>46.32</td><td>40.25</td></tr><tr><td>+ BACON</td><td>25.89</td><td>31.15</td><td>49.42</td><td>40.27</td><td>26.47</td><td>18.94</td><td>26.32</td><td>24.38</td><td>26.37</td><td>71.00</td><td>86.43</td><td>43.56</td><td>3.36</td><td>87.21</td><td>46.19</td><td>46.68</td><td>40.85</td></tr><tr><td>AdaKV</td><td>25.28</td><td>31.02</td><td>48.53</td><td>41.06</td><td>26.49</td><td>19.28</td><td>25.74</td><td>24.02</td><td>25.55</td><td>68.50</td><td>86.28</td><td>42.43</td><td>2.94</td><td>88.10</td><td>46.35</td><td>46.58</td><td>40.51</td></tr><tr><td>+ MixKV</td><td>25.60</td><td>30.94</td><td>48.79</td><td>40.72</td><td>26.56</td><td>19.25</td><td>26.74</td><td>23.98</td><td>25.68</td><td>69.00</td><td>86.25</td><td>43.39</td><td>2.96</td><td>86.88</td><td>46.78</td><td>46.01</td><td>40.60</td></tr><tr><td>+ BACON</td><td>26.99</td><td>31.11</td><td>48.90</td><td>41.43</td><td>26.68</td><td>19.87</td><td>26.65</td><td>24.57</td><td>25.91</td><td>71.00</td><td>86.49</td><td>43.33</td><td>3.03</td><td>88.23</td><td>46.94</td><td>46.64</td><td>41.11</td></tr><tr><td>PyramidKV</td><td>24.68</td><td>27.34</td><td>48.53</td><td>39.91</td><td>25.78</td><td>18.71</td><td>25.73</td><td>23.50</td><td>25.37</td><td>68.50</td><td>85.80</td><td>41.29</td><td>2.66</td><td>86.73</td><td>45.60</td><td>46.30</td><td>39.78</td></tr><tr><td>+ MixKV</td><td>23.72</td><td>29.85</td><td>48.12</td><td>39.17</td><td>26.78</td><td>19.29</td><td>26.67</td><td>23.59</td><td>26.47</td><td>70.00</td><td>85.63</td><td>43.00</td><td>3.13</td><td>84.05</td><td>46.10</td><td>45.50</td><td>40.07</td></tr><tr><td>+ BACON</td><td>24.86</td><td>30.94</td><td>48.74</td><td>40.51</td><td>26.73</td><td>19.52</td><td>26.92</td><td>23.67</td><td>27.48</td><td>71.00</td><td>86.14</td><td>42.98</td><td>3.21</td><td>86.28</td><td>46.22</td><td>46.63</td><td>40.74</td></tr><tr><td colspan="18">KV Cache Budget = 512</td></tr><tr><td>SnapKV</td><td>24.15</td><td>26.67</td><td>48.94</td><td>37.38</td><td>25.90</td><td>17.18</td><td>23.80</td><td>22.83</td><td>24.32</td><td>65.50</td><td>85.88</td><td>42.07</td><td>3.17</td><td>87.13</td><td>45.01</td><td>45.80</td><td>39.11</td></tr><tr><td>+ MixKV</td><td>24.04</td><td>27.03</td><td>48.18</td><td>37.79</td><td>26.03</td><td>17.54</td><td>24.56</td><td>23.43</td><td>25.20</td><td>66.50</td><td>86.16</td><td>42.92</td><td>3.26</td><td>87.04</td><td>45.39</td><td>45.82</td><td>39.43</td></tr><tr><td>+ BACON</td><td>25.21</td><td>27.81</td><td>49.17</td><td>38.47</td><td>26.30</td><td>17.74</td><td>24.83</td><td>23.95</td><td>24.83</td><td>69.00</td><td>86.36</td><td>42.92</td><td>3.44</td><td>87.20</td><td>45.85</td><td>45.96</td><td>39.94</td></tr><tr><td>AdaKV</td><td>24.67</td><td>26.93</td><td>48.39</td><td>38.47</td><td>26.07</td><td>17.14</td><td>23.80</td><td>23.50</td><td>24.10</td><td>66.00</td><td>86.11</td><td>42.00</td><td>3.29</td><td>87.33</td><td>45.70</td><td>46.02</td><td>39.35</td></tr><tr><td>+ MixKV</td><td>24.30</td><td>27.85</td><td>48.40</td><td>38.33</td><td>25.76</td><td>18.34</td><td>24.39</td><td>23.61</td><td>24.80</td><td>67.50</td><td>85.92</td><td>42.49</td><td>2.99</td><td>87.12</td><td>46.53</td><td>45.77</td><td>39.63</td></tr><tr><td>+ BACON</td><td>24.85</td><td>28.50</td><td>48.84</td><td>38.49</td><td>25.83</td><td>18.30</td><td>24.83</td><td>23.62</td><td>25.34</td><td>70.00</td><td>86.35</td><td>43.30</td><td>3.14</td><td>87.64</td><td>45.96</td><td>45.81</td><td>40.05</td></tr><tr><td>PyramidKV</td><td>23.39</td><td>24.80</td><td>47.56</td><td>38.23</td><td>25.29</td><td>17.32</td><td>23.47</td><td>23.02</td><td>23.67</td><td>66.00</td><td>85.31</td><td>41.48</td><td>2.86</td><td>86.30</td><td>45.35</td><td>43.54</td><td>38.60</td></tr><tr><td>+ MixKV</td><td>22.99</td><td>25.38</td><td>47.89</td><td>38.21</td><td>24.09</td><td>17.76</td><td>23.98</td><td>22.78</td><td>24.92</td><td>67.50</td><td>85.41</td><td>41.73</td><td>3.19</td><td>86.41</td><td>45.24</td><td>44.35</td><td>38.86</td></tr><tr><td>+ BACON</td><td>23.06</td><td>27.29</td><td>48.13</td><td>38.41</td><td>26.25</td><td>18.21</td><td>24.06</td><td>23.06</td><td>24.76</td><td>69.50</td><td>86.07</td><td>42.33</td><td>3.22</td><td>86.91</td><td>45.82</td><td>44.45</td><td>39.47</td></tr></table>
+
+Performance on GUI grounding benchmarks. GUI grounding requires models to identify finegrained interface elements, making it sensitive to information loss under KV compression. We evaluate BACON on ScreenSpot with Qwen2-VL-7B to test whether it preserves interface evidence under compressed caches. As shown in Table 3, BA-CON improves average performance across different compression backbones under both 128 and 64 budgets, with stronger gains under the tighter budget. This suggests that BACON helps retain weak but critical GUI evidence that may be diluted by observation window aggregation. Minor drops on a few subsets reflect the sensitivity of GUI grounding to small retention changes under tight budgets, rather than a systematic limitation. These results validate BACON as a complementary calibration signal for memory-efficient GUI agent deployment.
+
+Performance on long-context text benchmarks. To evaluate BACON beyond multimodal tasks, we further test it on LongBench with Mistral-7B-Instruct-v0.2. As shown in Table 4, BACON improves average performance across compression backbones and cache budgets, showing that boundary-aware calibration is not limited to visual tokens and can also refine token scoring in language-only settings. The rare regressions are mainly concentrated in Synthetic and Code tasks, where performance often depends on exact positions, copied strings, or short-range syntactic dependencies. In these cases, small changes in retained tokens can affect task-specific exactness, making boundary calibration less uniformly beneficial than in semantic understanding tasks. Nevertheless, the overall gains show that BACON remains effective in text-only settings, while its larger improvements on MLLM benchmarks further support our motivation that sparse multimodal evidence is particularly vulnerable to observation window aggregation. Additional results on Llama3.1- 8B-Instruct are provided in B.1.
+
+Table 5: Ablation and efficiency analysis of BACON. Left: component ablation on LLaVA-NeXT-Mistral-7B under budget 64. Right: efficiency comparison with fixed input length 32000.
+
+<table><tr><td rowspan="2">Backbone</td><td rowspan="2">E</td><td rowspan="2">L</td><td rowspan="2">T</td><td colspan="5">Budget 64</td></tr><tr><td>ChartQA</td><td>DocVQA</td><td>TextVQA</td><td>MMMU</td><td>TextCaps</td></tr><tr><td rowspan="5">SnapKV</td><td>X</td><td>X</td><td>X</td><td>47.2</td><td>46.2</td><td>58.9</td><td>34.8</td><td>0.442</td></tr><tr><td>√</td><td>X</td><td>√</td><td>47.8</td><td>52.1</td><td>62.0</td><td>34.8</td><td>0.482</td></tr><tr><td>√</td><td>√</td><td>X</td><td>47.9</td><td>51.7</td><td>61.6</td><td>34.8</td><td>0.465</td></tr><tr><td>X</td><td>√</td><td>√</td><td>46.8</td><td>50.7</td><td>60.9</td><td>34.8</td><td>0.508</td></tr><tr><td>√</td><td>√</td><td>√</td><td>49.2</td><td>53.9</td><td>62.8</td><td>34.8</td><td>0.512</td></tr><tr><td rowspan="5">AdaKV</td><td>X</td><td>X</td><td>X</td><td>47.4</td><td>47.6</td><td>57.8</td><td>34.8</td><td>0.441</td></tr><tr><td>√</td><td>X</td><td>√</td><td>48.7</td><td>52.3</td><td>59.3</td><td>34.8</td><td>0.495</td></tr><tr><td>√</td><td>√</td><td>X</td><td>47.9</td><td>54.8</td><td>60.9</td><td>34.8</td><td>0.477</td></tr><tr><td>X</td><td>√</td><td>√</td><td>47.7</td><td>51.4</td><td>59.5</td><td>34.8</td><td>0.469</td></tr><tr><td>√</td><td>√</td><td>√</td><td>49.0</td><td>55.2</td><td>61.5</td><td>34.8</td><td>0.510</td></tr><tr><td rowspan="5">SparseMM</td><td>X</td><td>X</td><td>X</td><td>49.4</td><td>57.5</td><td>65.2</td><td>34.8</td><td>0.490</td></tr><tr><td>√</td><td>X</td><td>√</td><td>49.6</td><td>58.1</td><td>66.2</td><td>34.7</td><td>0.553</td></tr><tr><td>√</td><td>√</td><td>X</td><td>49.4</td><td>58.3</td><td>66.7</td><td>34.9</td><td>0.540</td></tr><tr><td>X</td><td>√</td><td>√</td><td>49.2</td><td>57.9</td><td>66.4</td><td>34.7</td><td>0.547</td></tr><tr><td>√</td><td>√</td><td>√</td><td>49.8</td><td>58.3</td><td>67.3</td><td>34.9</td><td>0.572</td></tr></table>
+
+<table><tr><td>Backbone</td><td>Method</td><td>Lat.</td><td>Mem.</td></tr><tr><td>Full KV</td><td>Base</td><td>63.93</td><td>22.27</td></tr><tr><td rowspan="3">SnapKV</td><td>Base</td><td>28.60</td><td>18.27</td></tr><tr><td>+ MixKV</td><td>28.66</td><td>18.27</td></tr><tr><td>+ BACON</td><td>28.68</td><td>18.28</td></tr><tr><td rowspan="3">SparseMM</td><td>Base</td><td>28.62</td><td>17.74</td></tr><tr><td>+ MixKV</td><td>28.15</td><td>17.74</td></tr><tr><td>+ BACON</td><td>28.01</td><td>17.75</td></tr><tr><td rowspan="3">PyramidKV</td><td>Base</td><td>28.52</td><td>18.27</td></tr><tr><td>+ MixKV</td><td>28.72</td><td>18.27</td></tr><tr><td>+ BACON</td><td>28.21</td><td>18.29</td></tr><tr><td rowspan="3">AdaKV</td><td>Base</td><td>28.67</td><td>17.74</td></tr><tr><td>+ MixKV</td><td>28.40</td><td>17.74</td></tr><tr><td>+ BACON</td><td>28.34</td><td>17.76</td></tr></table>
+
+## 5.3 Ablation Study & Analysis
+
+Ablation of BACON components. Table 5 ablates the three key components of BACON, including boundary evidence E, intra-layer coherence L, and inter-layer persistence T , under budget 64. Across different compression backbones, the full BACON consistently achieves the best performance, demonstrating the complementarity of these components under aggressive KV compression. The gains are especially pronounced on DocVQA, TextVQA, and TextCaps, indicating that OCR-intensive tasks are highly sensitive to the loss of sparse visual evidence caused by observation window aggregation. Here, E provides a boundary-aware correction for recovering evidence weakened by window aggregation, while L and T strengthen intra-layer coherence and inter-layer persistence to reduce answer-irrelevant high-attention responses. The weaker performance of partial variants further suggests that effective token retention requires both boundary-sensitive evidence discovery and structure-aware evidence calibration. Additional ablation results on Qwen2- VL-7B and other cache budgets are provided in B.2. We also provide detailed hyperparameter sensitivity analysis in B.3.
+
+Efficiency Analysis of BACON. Table 5 evaluates the inference latency and peak memory consumption of BACON when integrated with representative KV cache compression backbones. BACON preserves the efficiency benefits of compressed inference and introduces negligible additional runtime or memory overhead over the original compression methods. This is because BACON only refines token-retention scores during prefill and does not change the compressed cache size or decoding procedure. Therefore, its accuracy gains are obtained without additional inference cost.
+
+## 6 Conclusion
+
+In this work, we analyze attention-based KV cache compression in MLLMs and identify a key limitation of observation window attention: its aggregation can dilute sparse visual evidence under tight budgets despite providing stable token-importance estimates. Motivated by this insight, we propose BACON, a plug-and-play boundary attention calibration method that refines observation window retention scores with last-query evidence. BA-CON further suppresses noisy boundary saliency through intra-layer coherence and inter-layer persistence, thereby producing a stronger retention signal without modifying the original compression pipeline. Extensive experiments spanning multimodal understanding, video reasoning, GUI grounding, and long-context text tasks across different model scales, architectures, compression methods, and cache budgets show that BACON consistently improves existing KV compression methods while requiring no extra method modification or additional inference cost.
+
+## 7 Limitations
+
+BACON is designed as a training-free and plugand-play mechanism, enabling broad compatibility with existing KV cache compression pipelines without additional model updates. This design choice naturally focuses BACON on improving tokenretention quality under a fixed compression policy. As a result, it does not explicitly exploit training signals to adapt retention behavior to sample-level evidence distributions, task characteristics, or input complexity. Incorporating BACON into training could further enable the model to learn more adaptive compression strategies for different samples and tasks. In addition, KV cache compression methods integrated with BACON can be applied to many latency-sensitive scenarios, such as realtime multimodal assistants, GUI agents, embodied systems, and edge-device deployment. However, their use should be carefully controlled in high-precision or safety-critical applications. If compression is applied too aggressively or without appropriate validation, answer-critical visual or textual evidence may be discarded, leading to degraded model performance and potentially affecting downstream functionality. Future deployment should therefore consider task-specific reliability requirements and provide safeguards, such as budget constraints, confidence checks, or fallback mechanisms to less compressed inference when necessary.
+
+## References
+
+Shuai Bai, Yuxuan Cai, Ruizhe Chen, Keqin Chen, Xionghui Chen, Zesen Cheng, Lianghao Deng, Wei Ding, Chang Gao, Chunjiang Ge, and 1 others. 2025. Qwen3-vl technical report. arXiv preprint arXiv:2511.21631.  
+Yushi Bai, Xin Lv, Jiajie Zhang, Hongchang Lyu, Jiankai Tang, Zhidian Huang, Zhengxiao Du, Xiao Liu, Aohan Zeng, Lei Hou, and 1 others. 2024. Longbench: A bilingual, multitask benchmark for long context understanding. In Proceedings of the 62nd annual meeting of the association for computational linguistics (volume 1: Long papers), pages 3119– 3137.  
+Zefan Cai, Yichi Zhang, Bofei Gao, Yuliang Liu, Yucheng Li, Tianyu Liu, Keming Lu, Wayne Xiong, Yue Dong, Junjie Hu, and 1 others. 2024. Pyramidkv: Dynamic kv cache compression based on pyramidal information funneling. arXiv preprint arXiv:2406.02069.  
+Liang Chen, Haozhe Zhao, Tianyu Liu, Shuai Bai, Junyang Lin, Chang Zhou, and Baobao Chang. 2024. An image is worth 1/2 tokens after layer 2: Plug-and-play inference acceleration for large vision-language models. In European Conference on Computer Vision, pages 19–35. Springer.  
+Yuan Feng, Junlin Lv, Yukun Cao, Xike Xie, and S Kevin Zhou. 2026. Ada-kv: Optimizing kv cache eviction by adaptive budget allocation for efficient llm inference. Advances in Neural Information Processing Systems, 38:113152–113188.  
+Yu Fu, Zefan Cai, Abedelkadir Asi, Wayne Xiong, Yue Dong, and Wen Xiao. 2025. Not all heads matter: A head-level kv cache compression method with integrated retrieval and reasoning. In International Conference on Learning Representations, volume 2025, pages 99269–99290.  
+Aaron Grattafiori, Abhimanyu Dubey, Abhinav Jauhri, Abhinav Pandey, Abhishek Kadian, Ahmad Al-Dahle, Aiesha Letman, Akhil Mathur, Alan Schelten, Alex Vaughan, and 1 others. 2024. The llama 3 herd of models. arXiv preprint arXiv:2407.21783.  
+Zonghao Guo, Ruyi Xu, Yuan Yao, Junbo Cui, Zanlin Ni, Chunjiang Ge, Tat-Seng Chua, Zhiyuan Liu, and Gao Huang. 2024. Llava-uhd: an lmm perceiving any aspect ratio and high-resolution images. In European Conference on Computer Vision, pages 390–406. Springer.  
+Albert Q. Jiang, Alexandre Sablayrolles, Arthur Mensch, Chris Bamford, Devendra Singh Chaplot, Diego de las Casas, Florian Bressand, Gianna Lengyel, Guillaume Lample, Lucile Saulnier, Lélio Renard Lavaud, Marie-Anne Lachaux, Pierre Stock, Teven Le Scao, Thibaut Lavril, Thomas Wang, Timothée Lacroix, and William El Sayed. 2023. Mistral 7b. Preprint, arXiv:2310.06825.  
+Seil Kang, Jinyeong Kim, Junhyeok Kim, and Seong Jae Hwang. 2025. See what you are told: Visual attention sink in large multimodal models. arXiv preprint arXiv:2503.03321.  
+Jang-Hyun Kim, Jinuk Kim, Sangwoo Kwon, Jae W Lee, Sangdoo Yun, and Hyun Oh Song. 2026a. Kvzip: Query-agnostic kv cache compression with context reconstruction. Advances in Neural Information Processing Systems, 38:167563–167591.  
+Minsoo Kim, Kyuhong Shim, Jungwook Choi, and Simyung Chang. 2026b. Infinipot-v: Memoryconstrained kv cache compression for streaming video understanding. Advances in Neural Information Processing Systems, 38:138983–139013.  
+Woosuk Kwon, Zhuohan Li, Siyuan Zhuang, Ying Sheng, Lianmin Zheng, Cody Hao Yu, Joseph Gonzalez, Hao Zhang, and Ion Stoica. 2023. Efficient memory management for large language model serving with pagedattention. In Proceedings of the 29th symposium on operating systems principles, pages 611–626.  
+Bo Li, Yuanhan Zhang, Dong Guo, Renrui Zhang, Feng Li, Hao Zhang, Kaichen Zhang, Peiyuan Zhang, Yanwei Li, Ziwei Liu, and 1 others. 2024a. Llavaonevision: Easy visual task transfer. arXiv preprint arXiv:2408.03326.  
+Kaixin Li, Ziyang Meng, Hongzhan Lin, Ziyang Luo, Yuchen Tian, Jing Ma, Zhiyong Huang, and Tat-Seng Chua. 2025. Screenspot-pro: Gui grounding for professional high-resolution computer use. In Proceedings of the 33rd ACM International Conference on Multimedia, pages 8778–8786.  
+Yuhong Li, Yingbing Huang, Bowen Yang, Bharat Venkitesh, Acyr Locatelli, Hanchen Ye, Tianle Cai, Patrick Lewis, and Deming Chen. 2024b. Snapkv: Llm knows what you are looking for before generation. Advances in Neural Information Processing Systems, 37:22947–22970.  
+Haotian Liu, Chunyuan Li, Yuheng Li, Bo Li, Yuanhan Zhang, Sheng Shen, and Yong Jae Lee. 2024. Llavanext: Improved reasoning, ocr, and world knowledge.  
+Xuyang Liu, Xiyan Gui, Yuchao Zhang, and Linfeng Zhang. 2025. Mixing importance with diversity: Joint optimization for kv cache compression in large vision-language models. arXiv preprint arXiv:2510.20707.  
+Muhammad Maaz, Hanoona Rasheed, Salman Khan, and Fahad Khan. 2024. Video-chatgpt: Towards detailed video understanding via large vision and language models. In Proceedings of the 62nd Annual Meeting of the Association for Computational Linguistics (Volume 1: Long Papers), pages 12585– 12602.  
+Ahmed Masry, Xuan Long Do, Jia Qing Tan, Shafiq Joty, and Enamul Hoque. 2022. Chartqa: A benchmark for question answering about charts with visual and logical reasoning. In Findings of the association for computational linguistics: ACL 2022, pages 2263– 2279.  
+Minesh Mathew, Dimosthenis Karatzas, and CV Jawahar. 2021. Docvqa: A dataset for vqa on document images. In Proceedings of the IEEE/CVF winter conference on applications of computer vision, pages 2200–2209.  
+Yuzhang Shang, Mu Cai, Bingxin Xu, Yong Jae Lee, and Yan Yan. 2025. Llava-prumerge: Adaptive token reduction for efficient large multimodal models. In Proceedings of the IEEE/CVF International Conference on Computer Vision, pages 22857–22867.  
+Oleksii Sidorov, Ronghang Hu, Marcus Rohrbach, and Amanpreet Singh. 2020. Textcaps: a dataset for image captioning with reading comprehension. In European conference on computer vision, pages 742– 758. Springer.  
+Amanpreet Singh, Vivek Natarajan, Meet Shah, Yu Jiang, Xinlei Chen, Dhruv Batra, Devi Parikh, and Marcus Rohrbach. 2019. Towards vqa models  
+that can read. In Proceedings of the IEEE/CVF conference on computer vision and pattern recognition, pages 8317–8326.  
+Zhongwei Wan, Ziang Wu, Che Liu, Jinfa Huang, Zhihong Zhu, Peng Jin, Longyue Wang, and Li Yuan. 2024. Look-m: Look-once optimization in kv cache for efficient multimodal long-context inference. In Findings of the Association for Computational Linguistics: EMNLP 2024, pages 4065–4078.  
+Jiahui Wang, Zuyan Liu, Yongming Rao, and Jiwen Lu. 2025. Sparsemm: Head sparsity emerges from visual concept responses in mllms. In Proceedings of the IEEE/CVF International Conference on Computer Vision, pages 23177–23187.  
+Peng Wang, Shuai Bai, Sinan Tan, Shijie Wang, Zhihao Fan, Jinze Bai, Keqin Chen, Xuejing Liu, Jialin Wang, Wenbin Ge, and 1 others. 2024. Qwen2- vl: Enhancing vision-language model’s perception of the world at any resolution. arXiv preprint arXiv:2409.12191.  
+Xin Wang, Jiawei Wu, Junkun Chen, Lei Li, Yuan-Fang Wang, and William Yang Wang. 2019. Vatex: A large-scale, high-quality multilingual dataset for video-and-language research. In Proceedings of the IEEE/CVF international conference on computer vision, pages 4581–4591.  
+Guangxuan Xiao, Yuandong Tian, Beidi Chen, Song Han, and Mike Lewis. 2024. Efficient streaming language models with attention sinks. In International Conference on Learning Representations, volume 2024, pages 21875–21895.  
+Junbin Xiao, Xindi Shang, Angela Yao, and Tat-Seng Chua. 2021. Next-qa: Next phase of questionanswering to explaining temporal actions. In Proceedings of the IEEE/CVF conference on computer vision and pattern recognition, pages 9777–9786.  
+Xiang Yue, Yuansheng Ni, Kai Zhang, Tianyu Zheng, Ruoqi Liu, Ge Zhang, Samuel Stevens, Dongfu Jiang, Weiming Ren, Yuxuan Sun, and 1 others. 2024. Mmmu: A massive multi-discipline multimodal understanding and reasoning benchmark for expert agi. In Proceedings of the IEEE/CVF conference on computer vision and pattern recognition, pages 9556– 9567.  
+Zhenyu Zhang, Ying Sheng, Tianyi Zhou, Tianlong Chen, Lianmin Zheng, Ruisi Cai, Zhao Song, Yuandong Tian, Christopher Ré, Clark Barrett, and 1 others. 2023. H2o: Heavy-hitter oracle for efficient generative inference of large language models. Advances in Neural Information Processing Systems, 36:34661–34710.  
+Jinguo Zhu, Weiyun Wang, Zhe Chen, Zhaoyang Liu, Shenglong Ye, Lixin Gu, Hao Tian, Yuchen Duan, Weijie Su, Jie Shao, and 1 others. 2025. Internvl3: Exploring advanced training and test-time recipes for open-source multimodal models. arXiv preprint arXiv:2504.10479.
+
+## A Detailed Experiment Setting
+
+## A.1 Implementation Details.
+
+All experiments were conducted on NVIDIA RTX 3090 and NVIDIA H800 GPUs. BACON is implemented as a plug-and-play modification to existing KV cache compression methods and is applied only during the prefill-stage cache selection. It does not require model retraining, additional supervision, or changes to the original model parameters. For each compression method, we keep its original layer-wise and head-wise cache budget allocation unchanged, and only modify the within-head token retention score. Unless otherwise specified, all results are obtained under the same decoding settings as the corresponding baseline.
+
+## A.2 Model Details.
+
+We introduce more details on the models we used in our experiments:
+
+LLaVA-NeXT-Mistral-7B. LLaVA-NeXT-Mistral-7B is a representative open-source MLLM built upon the Mistral-7B language backbone. It follows the common vision-language architecture that combines a pretrained visual encoder, a multimodal projector, and an autoregressive LLM. Compared with earlier LLaVA models, LLaVA-NeXT improves high-resolution image understanding, OCR ability, and visual reasoning by using dynamic high-resolution image processing and stronger instruction-tuning data. In our experiments, this model serves as a strong 7B-scale MLLM baseline for evaluating KV cache compression under image-text reasoning tasks.
+
+Qwen2-VL-7B-Instruct. Qwen2-VL-7B-Instruct is an instruction-tuned vision-language model from the Qwen2-VL series. It supports flexible visual inputs, including images with different resolutions and aspect ratios, and is designed for fine-grained visual understanding, document comprehension, OCR-related reasoning, and general multimodal dialogue. The model adopts a unified multimodal generation framework in which visual tokens are injected into the language model and processed together with textual instructions. We use Qwen2-VL-7B-Instruct as a high-performing 7Bscale MLLM to evaluate whether BACON remains effective on modern multimodal architectures with stronger visual perception capability.
+
+Qwen3-VL-30B-A3B-Instruct. Qwen3-VL-30B-A3B-Instruct is a larger-scale multimodal model from the Qwen3-VL family. It is designed for comprehensive vision-language understanding, including image understanding, video understanding, spatial reasoning, grounding, and long-form visual comprehension. Unlike dense 7B-scale MLLMs, this model adopts a larger mixture-ofexperts-style architecture, with around 30B total parameters and a smaller number of active parameters during inference. We include Qwen3-VL-30B-A3B-Instruct to examine whether BACON can generalize beyond 7B-scale dense MLLMs and remain effective for larger multimodal backbones with stronger reasoning capacity.
+
+InternVL3-8B. InternVL3-8B is an advanced open-source MLLM from the InternVL3 series. Different from many MLLMs that mainly adapt a pretrained text-only LLM to visual inputs, InternVL3 emphasizes native multimodal pretraining, where multimodal and linguistic abilities are jointly acquired during training. The model is designed to improve multimodal perception, reasoning, GUI understanding, document analysis, and other vision-language tasks. We use InternVL3-8B as another 8B-scale MLLM backbone to test the robustness of BACON across different multimodal training paradigms and architectural designs.
+
+Mistral-7B-Instruct-v0.2. Mistral-7B-Instructv0.2 is an instruction-tuned text-only LLM based on the Mistral-7B architecture. It is a compact yet strong decoder-only transformer model and has been widely used in long-context language understanding and generation benchmarks. Since it does not contain a visual encoder or multimodal projector, all input tokens are textual. We include this model to evaluate whether the proposed boundaryaware KV retention strategy is also beneficial for text-only long-context inference, rather than being limited to multimodal visual-token compression.
+
+Llama-3.1-8B-Instruct. Llama-3.1-8B-Instruct is an instruction-tuned text-only LLM from the Llama 3.1 family. It is an autoregressive decoderonly transformer optimized for multilingual dialogue and general text generation. The model uses grouped-query attention to improve inference scalability and supports long-context processing. In our experiments, Llama-3.1-8B-Instruct provides an additional text-only backbone for evaluating BA-CON on long-context language tasks, allowing us to test whether the proposed retention mechanism generalizes across different LLM families.
+
+## A.3 Benchmark Details.
+
+We provide details for each benchmark used in our experiments:
+
+DocVQA. DocVQA evaluates visual question answering over document images. Given a document image and a natural-language question, the model is required to locate relevant textual or structural evidence from the document and generate the correct answer. This benchmark emphasizes OCR ability, document layout understanding, and finegrained evidence localization. We report ANLS as the evaluation metric.
+
+ChartQA. ChartQA evaluates question answering over chart images. It requires the model to understand chart structures, recognize visual elements such as bars, lines, legends, axes, and labels, and perform numerical or logical reasoning based on the chart content. We report relaxed accuracy, which allows minor numerical deviations from the reference answer.
+
+TextVQA. TextVQA evaluates question answering over natural images containing scene text. The model must jointly recognize visual content, read text appearing in the image, and reason over both visual and textual evidence to answer the question. This benchmark is useful for measuring whether compressed KV caches preserve sparse but answercritical OCR evidence.
+
+TextCaps. TextCaps evaluates image captioning with reading comprehension. Unlike standard image captioning benchmarks, many correct captions require the model to incorporate text appearing in the image. Therefore, TextCaps tests both visual description ability and scene-text understanding.
+
+MMMU. MMMU is a multi-discipline multimodal reasoning benchmark built from collegelevel materials such as exams, quizzes, and textbooks. It covers diverse subjects including science, engineering, medicine, business, and the humanities. Solving MMMU requires models to combine visual perception, domain knowledge, and multistep reasoning. We use the testmini split in our experiments.
+
+VATEX. VATEX is a large-scale video captioning benchmark. Given a video clip, the model is required to generate a natural-language description of the visual content. Since useful evidence is distributed across multiple frames, VATEX is used to evaluate the effectiveness of BACON under longer multimodal contexts. We report standard captioning metrics, including CIDEr, BLEU-4, METEOR,
+
+and ROUGE-L.
+
+NExT-QA. NExT-QA is a video question answering benchmark designed to evaluate temporal and causal reasoning. The questions often require understanding action sequences, object interactions, temporal order, and causal relations across video frames. This benchmark allows us to test whether BACON can preserve temporally distributed evidence in video-language reasoning.
+
+ScreenSpot. ScreenSpot evaluates GUI grounding ability. Given a screenshot and a naturallanguage instruction, the model must identify the target user-interface element. The benchmark covers mobile, web, and desktop environments, and includes both text-based and icon/widget-based elements. This setting is challenging because the target evidence is often small, spatially localized, and visually similar to nearby interface components.
+
+LongBench. LongBench evaluates long-context understanding for text-only LLMs. It includes tasks from single-document question answering, multi-document question answering, summarization, few-shot learning, synthetic reasoning, and code completion. In our experiments, LongBench is used to assess whether BACON also generalizes to text-only long-context inference, where the input consists entirely of textual tokens rather than visual tokens.
+
+## A.4 Baseline Details.
+
+We provide more details on the baseline used to compare with our methods in the experiment:
+
+SnapKV. SnapKV is a training-free KV cache compression method that exploits the observation that attention patterns during prefilling can reveal tokens that are likely to remain important during decoding. It estimates token importance using attention from a local observation window near the end of the prompt and retains the most salient KV pairs under a given budget. SnapKV provides a simple and efficient attention-based compression baseline.
+
+PyramidKV. PyramidKV compresses the KV cache with a pyramid-like budget allocation strategy across transformer layers. Instead of assigning the same retention budget to every layer, it allocates different budgets according to layer depth, reflecting the intuition that different layers contribute differently to context retention and generation. This baseline evaluates whether BACON can improve token selection under non-uniform layer-wise budget allocation.
+
+Table 6: Results on LongBench long context understanding benchmark with Llama3.1-8B-Instruct.
+
+<table><tr><td rowspan="2">Methods</td><td colspan="6">Information Localization</td><td colspan="6">Information Aggregation</td><td colspan="4">Synthetic / Code</td><td rowspan="2">Avg.</td></tr><tr><td>NrtvQA</td><td>Qasper</td><td>MF-en</td><td>HotpotQA</td><td>2WikiMQA</td><td>Musique</td><td>GovReport</td><td>QMSum</td><td>MultiNews</td><td>TREC</td><td>TriviaQA</td><td>SAMSum</td><td>PCount</td><td>PRe</td><td>Lcc</td><td>RB-P</td></tr><tr><td>Full KV</td><td>28.29</td><td>45.53</td><td>54.94</td><td>56.02</td><td>46.66</td><td>31.34</td><td>35.19</td><td>25.28</td><td>27.16</td><td>72.50</td><td>91.65</td><td>43.59</td><td>8.91</td><td>99.50</td><td>52.73</td><td>49.20</td><td>48.03</td></tr><tr><td colspan="18">KV Cache Budget = 1024</td></tr><tr><td>SnapKV</td><td>27.54</td><td>44.04</td><td>54.64</td><td>55.24</td><td>46.18</td><td>30.70</td><td>28.30</td><td>24.42</td><td>25.78</td><td>68.00</td><td>91.83</td><td>42.44</td><td>8.46</td><td>99.50</td><td>52.27</td><td>48.72</td><td>46.75</td></tr><tr><td>+ MixKV</td><td>27.61</td><td>44.06</td><td>54.47</td><td>55.66</td><td>45.76</td><td>31.11</td><td>28.48</td><td>24.59</td><td>26.41</td><td>69.50</td><td>91.74</td><td>42.58</td><td>7.76</td><td>99.50</td><td>52.88</td><td>48.64</td><td>46.92</td></tr><tr><td>+ BACON</td><td>27.83</td><td>44.31</td><td>54.81</td><td>56.02</td><td>46.32</td><td>31.56</td><td>28.72</td><td>24.66</td><td>26.59</td><td>72.00</td><td>91.90</td><td>43.07</td><td>8.59</td><td>99.50</td><td>52.51</td><td>48.90</td><td>47.33</td></tr><tr><td>AdaKV</td><td>28.03</td><td>43.34</td><td>55.36</td><td>55.67</td><td>45.90</td><td>31.23</td><td>28.47</td><td>24.25</td><td>25.94</td><td>68.50</td><td>91.62</td><td>42.25</td><td>8.43</td><td>99.50</td><td>52.28</td><td>49.23</td><td>46.88</td></tr><tr><td>+ MixKV</td><td>28.21</td><td>43.38</td><td>54.71</td><td>55.79</td><td>46.10</td><td>31.55</td><td>29.06</td><td>24.09</td><td>26.15</td><td>70.50</td><td>91.73</td><td>43.11</td><td>8.26</td><td>99.50</td><td>52.68</td><td>49.25</td><td>47.13</td></tr><tr><td>+ BACON</td><td>28.13</td><td>44.05</td><td>55.27</td><td>56.04</td><td>46.64</td><td>31.52</td><td>29.31</td><td>24.28</td><td>26.31</td><td>72.50</td><td>91.73</td><td>43.63</td><td>8.29</td><td>99.50</td><td>52.62</td><td>49.34</td><td>47.45</td></tr><tr><td>PyramidKV</td><td>28.06</td><td>42.63</td><td>54.19</td><td>55.65</td><td>46.23</td><td>31.46</td><td>27.67</td><td>24.85</td><td>25.79</td><td>68.00</td><td>91.79</td><td>41.57</td><td>8.34</td><td>99.50</td><td>51.35</td><td>48.01</td><td>46.57</td></tr><tr><td>+ MixKV</td><td>28.54</td><td>43.18</td><td>54.67</td><td>55.56</td><td>46.06</td><td>30.82</td><td>28.26</td><td>24.76</td><td>26.35</td><td>69.50</td><td>91.34</td><td>43.05</td><td>8.18</td><td>99.50</td><td>51.58</td><td>48.47</td><td>46.86</td></tr><tr><td>+ BACON</td><td>28.57</td><td>42.89</td><td>54.81</td><td>55.75</td><td>46.38</td><td>31.73</td><td>28.45</td><td>25.12</td><td>25.81</td><td>72.50</td><td>92.34</td><td>43.14</td><td>8.49</td><td>99.50</td><td>51.63</td><td>48.38</td><td>47.22</td></tr><tr><td colspan="18">KV Cache Budget = 512</td></tr><tr><td>SnapKV</td><td>27.40</td><td>38.23</td><td>53.49</td><td>55.04</td><td>45.30</td><td>29.92</td><td>25.48</td><td>24.21</td><td>24.39</td><td>64.00</td><td>92.05</td><td>41.92</td><td>8.17</td><td>99.50</td><td>52.18</td><td>47.46</td><td>45.55</td></tr><tr><td>+ MixKV</td><td>27.46</td><td>38.58</td><td>53.18</td><td>55.66</td><td>45.47</td><td>30.48</td><td>25.63</td><td>24.47</td><td>24.97</td><td>68.00</td><td>92.04</td><td>43.25</td><td>7.67</td><td>99.50</td><td>51.86</td><td>47.52</td><td>45.98</td></tr><tr><td>+ BACON</td><td>27.62</td><td>38.79</td><td>53.73</td><td>55.72</td><td>45.66</td><td>31.10</td><td>25.94</td><td>24.92</td><td>25.25</td><td>71.50</td><td>92.26</td><td>43.05</td><td>8.34</td><td>99.50</td><td>52.22</td><td>47.73</td><td>46.46</td></tr><tr><td>AdaKV</td><td>27.38</td><td>40.76</td><td>53.41</td><td>55.67</td><td>45.53</td><td>29.81</td><td>25.96</td><td>24.38</td><td>24.61</td><td>66.00</td><td>92.35</td><td>42.27</td><td>8.01</td><td>99.50</td><td>52.75</td><td>48.26</td><td>46.04</td></tr><tr><td>+ MixKV</td><td>27.36</td><td>42.28</td><td>53.04</td><td>55.78</td><td>45.39</td><td>29.95</td><td>26.06</td><td>24.64</td><td>24.46</td><td>69.50</td><td>92.07</td><td>43.24</td><td>8.09</td><td>99.50</td><td>52.72</td><td>48.44</td><td>46.41</td></tr><tr><td>+ BACON</td><td>27.62</td><td>42.53</td><td>53.20</td><td>55.99</td><td>45.68</td><td>30.04</td><td>26.19</td><td>24.83</td><td>24.84</td><td>72.00</td><td>92.71</td><td>43.37</td><td>8.04</td><td>99.50</td><td>53.09</td><td>48.59</td><td>46.76</td></tr><tr><td>PyramidKV</td><td>27.15</td><td>40.52</td><td>53.15</td><td>55.19</td><td>45.57</td><td>29.90</td><td>25.29</td><td>24.19</td><td>24.31</td><td>62.50</td><td>91.30</td><td>42.08</td><td>8.57</td><td>99.50</td><td>50.79</td><td>46.31</td><td>45.40</td></tr><tr><td>+ MixKV</td><td>27.11</td><td>41.12</td><td>53.34</td><td>55.40</td><td>45.08</td><td>30.45</td><td>25.64</td><td>24.49</td><td>24.39</td><td>67.00</td><td>91.06</td><td>42.71</td><td>8.59</td><td>99.50</td><td>50.74</td><td>46.67</td><td>45.83</td></tr><tr><td>+ BACON</td><td>27.89</td><td>41.37</td><td>53.67</td><td>56.07</td><td>46.46</td><td>30.62</td><td>25.57</td><td>24.70</td><td>24.42</td><td>71.50</td><td>91.77</td><td>43.65</td><td>8.62</td><td>99.50</td><td>51.26</td><td>46.82</td><td>46.49</td></tr></table>
+
+AdaKV. AdaKV performs adaptive KV cache compression by dynamically assigning retention budgets according to token or head importance. Compared with fixed-budget strategies, AdaKV aims to preserve more KV pairs in more informative regions while applying stronger compression to less important ones. We include AdaKV to evaluate whether BACON remains effective when the compression budget is adaptively distributed rather than uniformly assigned.
+
+SparseMM. SparseMM is a multimodal KV cache compression baseline designed for efficient MLLM inference. It exploits sparsity in multimodal attention and applies head-wise KV retention to reduce redundant visual and textual tokens while preserving task-relevant evidence. Since SparseMM provides optimized head-wise budget allocation, it is a strong baseline for evaluating whether BACON can further improve within-head token selection without changing the original budget assignment.
+
+MixKV. MixKV is a plug-and-play KV cache compression method for large vision-language models. It selects KV pairs by jointly considering token importance and diversity, aiming to preserve both highly attended tokens and semantically diverse contextual information. MixKV further adopts head-wise adaptive mixing to balance these criteria across attention heads. We use MixKV as a strong plug-in baseline and compare BACON against it under the same models, budgets, and evaluation settings.
+
+## A.5 Evaluation Metrics Details.
+
+We follow the official evaluation protocol of each benchmark. Specifically, DocVQA is evaluated with ANLS, which measures normalized string similarity and accounts for minor OCR or formatting variations in document question answering. ChartQA uses relaxed accuracy, allowing small numerical deviations from the reference answer. TextVQA, MMMU, NExT-QA, ScreenSpot, and LongBench are evaluated with accuracy-based metrics according to their standard answer-matching or task-specific scoring rules. For captioning benchmarks, TextCaps and VATEX are evaluated with standard generation metrics, including CIDEr, BLEU-4, METEOR, and ROUGE-L, which measure caption quality from complementary perspectives such as n-gram precision, semantic overlap, and recall-oriented similarity. These metrics together assess answer correctness, caption generation quality, visual grounding accuracy, temporal reasoning, and long-context understanding.
+
+## B Additional Experiment Results
+
+## B.1 Additional results on LongBench
+
+Table 6 provides additional LongBench results with LLaMA under KV cache budgets of 1024 and 512. The results further support the generality of BACON beyond multimodal benchmarks. Across different compression backbones, BACON consistently improves the average performance over the corresponding base methods and MixKV-enhanced variants, showing that boundary-evidence calibration remains effective for long-context language understanding. The gains are particularly stable under the smaller budget of 512, where aggressive compression makes evidence retention more challenging. This suggests that BACON can better preserve tokens that become important near the generation boundary, rather than relying only on window-averaged attention signals.
+
+Table 7: Additional ablation results of BACON on LLaVA-NeXT-Mistral-7B under budget 128.
+
+<table><tr><td rowspan="2">Backbone</td><td rowspan="2">E</td><td rowspan="2">L</td><td rowspan="2">T</td><td colspan="5">Budget 128</td></tr><tr><td>ChartQA</td><td>DocVQA</td><td>TextVQA</td><td>MMMU</td><td>TextCaps</td></tr><tr><td rowspan="5">SnapKV</td><td>X</td><td>X</td><td>X</td><td>48.4</td><td>55.2</td><td>63.0</td><td>34.9</td><td>0.560</td></tr><tr><td>√</td><td>X</td><td>√</td><td>49.3</td><td>56.3</td><td>63.7</td><td>34.9</td><td>0.632</td></tr><tr><td>√</td><td>√</td><td>X</td><td>49.1</td><td>57.1</td><td>65.4</td><td>34.8</td><td>0.624</td></tr><tr><td>X</td><td>√</td><td>√</td><td>48.9</td><td>56.6</td><td>64.6</td><td>34.9</td><td>0.644</td></tr><tr><td>√</td><td>√</td><td>√</td><td>49.6</td><td>57.8</td><td>66.2</td><td>34.9</td><td>0.676</td></tr><tr><td rowspan="5">AdaKV</td><td>X</td><td>X</td><td>X</td><td>48.8</td><td>56.1</td><td>62.7</td><td>34.9</td><td>0.568</td></tr><tr><td>√</td><td>X</td><td>√</td><td>45.0</td><td>57.6</td><td>65.1</td><td>34.9</td><td>0.606</td></tr><tr><td>√</td><td>√</td><td>X</td><td>44.5</td><td>57.4</td><td>65.4</td><td>34.7</td><td>0.626</td></tr><tr><td>X</td><td>√</td><td>√</td><td>45.3</td><td>57.0</td><td>63.2</td><td>34.9</td><td>0.619</td></tr><tr><td>√</td><td>√</td><td>√</td><td>50.2</td><td>58.4</td><td>65.5</td><td>34.9</td><td>0.641</td></tr><tr><td rowspan="5">SparseMM</td><td>X</td><td>X</td><td>X</td><td>49.8</td><td>58.9</td><td>67.4</td><td>34.7</td><td>0.600</td></tr><tr><td>√</td><td>X</td><td>√</td><td>50.2</td><td>59.2</td><td>67.8</td><td>34.7</td><td>0.597</td></tr><tr><td>√</td><td>√</td><td>X</td><td>50.0</td><td>58.9</td><td>67.5</td><td>34.7</td><td>0.604</td></tr><tr><td>X</td><td>√</td><td>√</td><td>49.9</td><td>58.6</td><td>66.7</td><td>34.7</td><td>0.605</td></tr><tr><td>√</td><td>√</td><td>√</td><td>50.4</td><td>59.3</td><td>67.8</td><td>34.8</td><td>0.626</td></tr></table>
+
+Table 8: Additional ablation results of BACON on Qwen2-VL-7B under budgets 64 and 128.
+
+<table><tr><td rowspan="2">Backbone</td><td rowspan="2">E</td><td rowspan="2">L</td><td rowspan="2">T</td><td colspan="5">Budget 64</td><td colspan="5">Budget 128</td></tr><tr><td>ChartQA</td><td>DocVQA</td><td>TextVQA</td><td>MMMU</td><td>TextCaps</td><td>ChartQA</td><td>DocVQA</td><td>TextVQA</td><td>MMMU</td><td>TextCaps</td></tr><tr><td rowspan="5">SnapKV</td><td>X</td><td>X</td><td>X</td><td>66.2</td><td>70.1</td><td>70.3</td><td>49.6</td><td>0.787</td><td>69.6</td><td>82.1</td><td>77.0</td><td>49.8</td><td>1.141</td></tr><tr><td>√</td><td>X</td><td>√</td><td>68.1</td><td>84.0</td><td>77.1</td><td>50.0</td><td>1.114</td><td>70.4</td><td>90.6</td><td>81.9</td><td>49.8</td><td>1.410</td></tr><tr><td>√</td><td>√</td><td>X</td><td>68.2</td><td>83.5</td><td>76.4</td><td>49.9</td><td>1.151</td><td>69.7</td><td>88.3</td><td>81.4</td><td>50.0</td><td>1.401</td></tr><tr><td>X</td><td>√</td><td>√</td><td>67.5</td><td>84.7</td><td>77.3</td><td>50.0</td><td>1.133</td><td>69.9</td><td>87.7</td><td>81.8</td><td>49.8</td><td>1.408</td></tr><tr><td>√</td><td>√</td><td>√</td><td>69.6</td><td>85.5</td><td>78.2</td><td>50.0</td><td>1.178</td><td>70.2</td><td>91.5</td><td>82.6</td><td>49.9</td><td>1.426</td></tr><tr><td rowspan="5">AdaKV</td><td>X</td><td>X</td><td>X</td><td>66.6</td><td>69.4</td><td>70.8</td><td>49.6</td><td>0.771</td><td>69.6</td><td>81.3</td><td>75.9</td><td>49.7</td><td>1.099</td></tr><tr><td>√</td><td>X</td><td>√</td><td>67.8</td><td>85.6</td><td>77.0</td><td>49.8</td><td>1.103</td><td>70.1</td><td>88.6</td><td>79.2</td><td>49.8</td><td>1.359</td></tr><tr><td>√</td><td>√</td><td>X</td><td>67.9</td><td>84.3</td><td>76.4</td><td>49.8</td><td>1.146</td><td>69.4</td><td>85.3</td><td>80.4</td><td>49.7</td><td>1.363</td></tr><tr><td>X</td><td>√</td><td>√</td><td>68.3</td><td>81.7</td><td>77.6</td><td>49.6</td><td>1.111</td><td>69.8</td><td>86.5</td><td>81.1</td><td>49.7</td><td>1.348</td></tr><tr><td>√</td><td>√</td><td>√</td><td>69.6</td><td>86.2</td><td>78.5</td><td>49.8</td><td>1.144</td><td>70.2</td><td>91.1</td><td>81.2</td><td>49.8</td><td>1.371</td></tr><tr><td rowspan="5">SparseMM</td><td>X</td><td>X</td><td>X</td><td>69.6</td><td>87.3</td><td>76.9</td><td>49.6</td><td>1.044</td><td>70.0</td><td>91.4</td><td>82.1</td><td>49.8</td><td>1.427</td></tr><tr><td>√</td><td>X</td><td>√</td><td>69.9</td><td>90.5</td><td>81.1</td><td>49.8</td><td>1.388</td><td>70.4</td><td>92.3</td><td>82.3</td><td>49.6</td><td>1.471</td></tr><tr><td>√</td><td>√</td><td>X</td><td>70.0</td><td>91.9</td><td>80.7</td><td>49.8</td><td>1.415</td><td>70.1</td><td>93.0</td><td>82.1</td><td>49.8</td><td>1.503</td></tr><tr><td>X</td><td>√</td><td>√</td><td>69.8</td><td>89.4</td><td>81.2</td><td>49.6</td><td>1.407</td><td>69.7</td><td>92.3</td><td>82.3</td><td>49.8</td><td>1.498</td></tr><tr><td>√</td><td>√</td><td>√</td><td>70.2</td><td>92.0</td><td>81.6</td><td>49.8</td><td>1.432</td><td>70.4</td><td>93.2</td><td>82.4</td><td>49.8</td><td>1.511</td></tr></table>
+
+We also observe that the improvements are not limited to a single task group. BACON achieves consistent gains on information localization tasks, such as QA over single-document and multi-document inputs, indicating that calibrated boundary evidence helps recover fine-grained relevant context. Meanwhile, it also improves many information aggregation and few-shot tasks, suggesting that the proposed calibration does not sacrifice global context modeling. A few metrics show smaller gains or occasional non-best results, especially in tasks where the baseline already performs close to the Full KV upper bound or where the score is saturated, such as passage retrieval. Overall, these appendix results demonstrate that BA-CON is not specific to visual-token compression, but provides a broadly applicable score calibration mechanism for KV cache compression.
+
+## B.2 Additional ablation results
+
+We provide additional ablation results in Tables 7 and 8 to further validate the component design of BACON beyond the main setting. The full BA-CON variant consistently achieves the best or nearbest performance across different models, compression backbones, benchmarks, and cache budgets, confirming the complementary roles of boundary evidence $E ,$ , local coherence $L ,$ and cross-layer trace support T . Removing any component often weakens performance or leads to less stable results, especially on evidence-sensitive tasks such as DocVQA, TextVQA, and TextCaps. These additional results further demonstrate that BACON’s component design remains robust across broader model and budget settings.
+
+## B.3 Hyperparameter Sensitivity Analysis
+
+Table 9 reports the sensitivity of BACON to the inter-layer persistence range m and the intra-layer neighborhood radius r on SnapKV under compression budget at 64. Overall, BACON exhibits stable performance across a moderate range of hyperparameter values, indicating that its gains do not rely on a narrowly tuned configuration. For the interlayer range m, performance improves substantially when moving from $m = 0$ to moderate values, suggesting that inter-layer persistence provides useful structural validation for boundary evidence. The results remain close when m varies from 2 to 8, with only minor fluctuations across DocVQA, ChartQA, and TextVQA. Similarly, for the neighborhood radius r, BACON consistently outperforms the noneighborhood setting and maintains comparable results for $r = 3 , 5 , 7$ , showing that local coherence is beneficial as long as the neighborhood is not overly restricted or overly broad. Performance degradation appears mainly at excessively large ranges, such as $m \ = \ 1 0 \ \mathrm { o r } \ r \ = \ 9$ , where the support signals may become less discriminative by incorporating irrelevant surrounding or crosslayer information. These results demonstrate that BACON is robust to reasonable hyperparameter choices, while the default setting achieves a favorable balance between evidence recovery and noise suppression.
+
+Table 9: Parameter sensitivity analysis of BACON on SnapKV. Left: sensitivity to the inter-layer persistence range m. Right: sensitivity to the intra-layer neighborhood r. The default settings used in our main experiments are marked with ∗.
+
+<table><tr><td rowspan="2">m</td><td colspan="3">Budget 64</td></tr><tr><td>DocVQA</td><td>ChartQA</td><td>TextVQA</td></tr><tr><td>0</td><td>51.7</td><td>47.9</td><td>61.6</td></tr><tr><td>2</td><td>53.4</td><td>48.2</td><td>62.1</td></tr><tr><td>4*</td><td>53.9</td><td>49.2</td><td>62.8</td></tr><tr><td>6</td><td>53.9</td><td>48.9</td><td>62.9</td></tr><tr><td>8</td><td>53.5</td><td>48.8</td><td>62.7</td></tr><tr><td>10</td><td>52.0</td><td>47.7</td><td>62.0</td></tr></table>
+
+## B.4 Additional visualization results
+
+Here we provide more visualization results on how BACON improve visual evidence retention compared to baseline methods, as shown in Fig. 5
+
+<table><tr><td rowspan="2">r</td><td colspan="3">Budget 64</td></tr><tr><td>DocVQA</td><td>ChartQA</td><td>TextVQA</td></tr><tr><td>0</td><td>52.1</td><td>47.8</td><td>62.0</td></tr><tr><td>3</td><td>53.7</td><td>48.8</td><td>62.8</td></tr><tr><td>5*</td><td>53.9</td><td>49.2</td><td>62.8</td></tr><tr><td>7</td><td>53.7</td><td>49.1</td><td>62.9</td></tr><tr><td>9</td><td>53.7</td><td>48.9</td><td>62.5</td></tr></table>
+
+Original  
+![](images/e93aba2dfb3a0bc6b76c1a3efabef2a26bb75c2b8106eac5bd8bfe80a1763713.jpg)
+
+<details>
+<summary>text_image</summary>
+
+MONDAY, MAY 15
+8:15 to
+Exhibits Open
+8:56 a.m. Capt. Jack Stoney Room
+8:58 a.m. OPENING GENERAL SESSION
+Leamington Hall
+(Ladies are invited to hear Dr.
+Klaus and Dr. Feinberg)
+Presiding: Charles D. Nesbit,
+IARW Chairman
+8:58 to
+"Opening Remarks"
+9:03 a.m. Charles D. Nesbit, IARW Chair-
+man
+9:03 to Report of IARW Nominating Com-
+mittee James G. Talbot, Chairman
+9:07 a.m. Report of TRRF Nominating Com-
+mittee Willis S. McLeese, Chairman
+9:08 to "Be Tomorrow's Person Today"
+9:53 a.m. Dr. Gunther Klaus, Managing
+Director, Institute for Advanced
+Planning, Beverly Hills, Califor-
+nia
+9:53 to Questions and Answers
+10:08 a.m.
+10:09 to "People Are Your Future. For
+Good or Ill, You and Your Com-
+pany Depend on Their Wisdom,
+Their Motivation and Their
+Energy"
+10:59 to Dr. Mortimer R. Feinberg, Chair-
+man of the Board, BFS Psycho-
+logical Associates, Inc., New
+York City
+11:14 a.m. Questions and Answers
+</details>
+
+Base
+
+<table><tr><td colspan="2">MONDAY, MAY 15</td></tr><tr><td>8:15 to
+8:56 a.m.</td><td>Exhibits Open
+Capt. Jack Stoney Room</td></tr><tr><td>8:58 a.m.</td><td>OPENING GENERAL SESSION
+Leamington Hall
+(Ladies are invited to hear Dr.
+Klaus and Dr. Feinberg)
+Presiding: Charles D. Nesbit,
+IARW Chairman</td></tr><tr><td>8:58 to
+9:03 a.m.</td><td>&quot;Opening Remarks&quot;
+Charles D. Nesbit, IARW Chair-
+man</td></tr><tr><td rowspan="2">9:03 to
+9:07 a.m.</td><td>Report of IARW Nominating Com-
+mittee
+James G. Talbot, Chairman</td></tr><tr><td>Report of TRRF Nominating Com-
+mittee
+Willis S. McLeese, Chairman</td></tr><tr><td>9:08 to
+9:53 a.m.</td><td>&quot;Be Tomorrow&#x27;s Person Today&quot;
+Dr. Gunther Klaus, Managing
+Director, Institute for Advanced
+Planning, Beverly Hills, Califor-
+nia</td></tr><tr><td>9:53 to
+10:08 a.m.</td><td>Questions and Answers</td></tr><tr><td>10:09 to
+10:59 a.m.</td><td>&quot;People Are Your Future. For
+Good or Ill, You and Your Com-
+pany Depend on Their Wisdom,
+Their Motivation and Their
+Energy&quot;
+Dr. Mortimer R. Feinberg, Chair-
+man of the Board, BFS Psycho-
+logical Associates, Inc., New
+York City</td></tr><tr><td>10:59 to
+11:14 a.m.</td><td>Questions and Answers</td></tr></table>
+
+BACON  
+![](images/ffebead1e46d3f1ac6936d60f35ef42b0a0f95f5502d3c71368aca6663105ddb.jpg)
+
+<details>
+<summary>text_image</summary>
+
+MONDAY, MAY 15
+8:15 to
+Exhibits Open
+8:56 a.m. Capt. Jack Stoney Room
+8:58 a.m. OPENING GENERAL SESSION
+Leamington Hall
+(Ladies are invited to hear Dr.
+Klaus and Dr. Feinberg)
+Presiding: Charles D. Nesbit,
+IARW Chairman
+8:58 to
+"Opening Remarks"
+9:03 a.m. Charles D. Nesbit, IARW Chair-
+man
+9:03 to Report of IARW Nominating Com-
+mittee James G. Talbot, Chairman
+9:07 a.m. Report of TRRF Nominating Com-
+mittee Willis S. McLeese, Chairman
+9:08 to "Be Tomorrow's Person Today"
+9:53 a.m. Dr. Gunther Klaus, Managing
+Director, Institute for Advanced
+Planning, Beverly Hills, Califor-
+nia
+9:53 to Questions and Answers
+10:08 a.m.
+10:09 to "People Are Your Future. For
+10:59 a.m. Good or Ill, You and Your Com-
+pany Depend on Their Wisdom,
+Their Motivation and Their
+Energy"
+Dr. Mortimer R. Feinberg, Chair-
+man of the Board, BFS Psycho-
+logical Associates, Inc., New
+York City
+10:59 to Questions and Answers
+11:14 a.m.
+</details>
+
+Q: What was the final event ?  
+GT: questions and answers | Questions and Answers  
+Base: Questions (Wrong)  
+BACON: Questions and Answers (Correct)
+
+Figure 5: Additional visualizations comparing evidence importance estimation between window attention and BACON.  
+![](images/2a9d12cb8af11325ea3659f411a14fcc6c8d2060dafbbf432bcdd31cc9b8c110.jpg)
+
+<details>
+<summary>text_image</summary>
+
+Original
+Design
+Important Fax Message
+Please Deliver Immediately
+To: Malcolm Whitehead, MD
+Kings College School of Medicine &
+Dentistry
+Date: January 22, 2001
+Time: 4:15 PM EST
+From: Karen D. Mittleman, PhD
+Phone: 609-924-1116
+Senior Medical Writer
+Fax: 609-897-2304
+E-mail: kmittle@dwrite.com
+Number of pages (including cover sheet): 4
+Re: Low-Dose Review Paper Response
+Dear Dr. Whitehead:
+Attached are the reviewers' comments and the letter from Alastair MacIennan
+regarding the low-dose review paper submitted to Climactenic. We will address
+the reviewers' concerns and send you a revised copy for review within the next
+few weeks.
+Respectfully,
+Karen D. Mittleman, PhD
+189 WALL STREET, PRINCETON, NEW JERSEY 00540 + 005024-1116 + FAX: 005027-2304
+Source: https://www.industrydocuments.ucsf.edu/docs/zkiew00217
+DWRITE 045608
+</details>
+
+![](images/0995d5571e647965f3e504e9ac86b907d70ac01579731339e1682e3988d96fd1.jpg)
+
+<details>
+<summary>text_image</summary>
+
+Base
+Design
+Important Fax Message
+Please Deliver Immediately
+To: Malcolm Whitehead, MD
+Kings College School of Medicine &
+Dentistry
+Fax: 44-207-501-9564
+Date: January 22, 2001
+Time: 4:15 PM EST
+From: Karen D. Mittleman, PhD
+Senior Medical Writer
+Phone: 609-924-1116
+Fax: 609-897-2304
+E-mail: kmfile@dwrite.com
+Number of pages (including cover sheet): 4
+Re: Low-Dose Review Paper Response
+Dear Dr. Whitehead:
+Attached are the reviewers' comments and the letter from Alastair MacI annan
+regarding the low-dose review paper submitted to Cimactenc. We will address
+the reviewers' concerns and send you a revised copy for review within the next
+few weeks.
+Respectfully,
+Karen D. Mittleman, PhD
+189 WALL STREET, PRINCETON, NEW JERSEY 05540 + 609264-1116 + FAX: 009397-2204
+Source: https://www.industrydocuments.ucf.edu/docs/azjw/0217
+DWRITE 046508
+</details>
+
+![](images/60600ac4e9b96299d58918a277aaad2454d902baa0573c7b5cd5608cae467994.jpg)
+
+<details>
+<summary>text_image</summary>
+
+BACON
+Design
+Important Fax Message
+Please Deliver Immediately
+To: Malcolm Whitehead, MD
+Kings College School of Medicine &
+Dentistry
+Date: January 22, 2001
+From: Karen D. Mittleman, PhD
+Sentinel Medical Writer
+Time: 4:15 PM EST
+Phone: 609-924-1116
+Fax: 609-897-2304
+E-mail: kmrlife@dwrite.com
+Number of pages (including cover sheet): 4
+Re: Low-Dose Review Paper Response
+Dear Dr. Whitehead.
+Attached are the reviewers' comments and the letter from Alastar MacIennan
+regarding the low-dose review paper submitted to Cimactenc. We will address
+the reviewers' concerns and send you a revised copy for review within the next
+few weeks.
+Respectfully.
+Karen D. Mittleman, PhD
+109 WALL STREET, PRINCETON, NEW JERSEY 08540 + 60928+1116 + FAX: 009407-2204
+Source: https://www.industrydocuments.ucsf.edu/docs/szjsw/0217
+DWRITE 0646588
+</details>
+
+Q: Who is the sender of the Fax?  
+GT: Karen D Mittleman, PhD  
+Base: Karen D. Mccormick (Wrong)  
+BACON: Karen D. Mittleman (Correct)
+
+Figure 5: Additional visualizations comparing evidence importance estimation between window attention and BACON.
+
+![](images/61f5c12015d8ac6e99f1208839c62fb235441192522b37f467af20c1e579aa27.jpg)
+
+<details>
+<summary>table</summary>
+
+Consumer Dynamics
+GPC
+| Category | Retention of Franchises: (%) | Rate of Switching Leases (%) | Rate of Quitting Leases (%) | Single Brand Users in the Franchise: (%) | Share of Industry Switchers Gained: (%) | Share of the 21-25 Segment: (%) |
+| :--- | :--- | :--- | :--- | :--- | :--- | :--- |
+| Retention of Franchises: | 83.6% | 0.0% | 9.0% | 48.5% | 11.4% | 2.5% |
+| Rate of Switching Leases | (103) | (85) | (85) | (69) | (285) | (64) |
+Source: US$88,195-695, 12-March Data
+Source: https://www.industrydocuments.edu/eBook.org/2007
+</details>
+
+Q: what is the heading of this page?  
+GT: Consumer Dynamics GPC | Consumer Dynamics  
+Base: Consumer Product Safety Commission (Wrong)
+
+![](images/9b0ecf22995dac1deb9045f747c7a260e1f1458cb0c212f8afdbec4cbd46073b.jpg)
+
+<details>
+<summary>text_image</summary>
+
+Base
+B&AV
+Consumer Dynamics
+GPC
+Index
+Retention of Franchise:
+83.6% (103)
+Rate of Switching Losses
+9.0% (85)
+Rate of Quitting Losses
+7.4% (89)
+Single Brand Users in the Franchise:
+48.5% (69)
+Share of Industry Switchers Gained:
+11.4% (285)
+Share of the 21-25 Segment:
+2.5% (64)
+Source: USTR 105-035, 12-March Date
+</details>
+
+BACON: Consumer Dynamics (Correct)
+
+![](images/4da32579da94a092920fee97b7fa3d66bc598fb4637412fc580e4f80888d048a.jpg)
+
+<details>
+<summary>text_image</summary>
+
+BACON
+Consumer Dynamics
+GPC
+• Retention of Franchise:
+• Rate of Switching Losses
+• Rate of Quitting Losses
+• Single Brand Users in the Franchise:
+• Share of Industry Switchers Gained:
+• Share of the 21-25 Segment:
+Index
+83.6% (103)
+9.0% (85)
+7.4% (89)
+48.5% (69)
+11.4% (285)
+2.5% (64)
+Source: USSR 195-935, 12 March Date
+</details>
+
+Figure 5: Additional visualizations comparing evidence importance estimation between window attention and BACON.
+
+![](images/904e1021108f3371bddc24cbffbf59e8e6eebbd9b15b65d30f80a616e2e49b16.jpg)
+
+<details>
+<summary>flowchart</summary>
+
+```mermaid
+graph TD
+  A["Original"] --> B["ORGANIZATIONAL PLAN"]
+  B --> C["LABORATORY RESEARCH DIVISION"]
+  C --> D["THE SANGEL ROBERT'S NOBLE FOUNDATION, INC."]
+  D --> E["LABORATORY RESEARCH DIVISION"]
+  E --> F["Research Service Department"]
+  E --> G["Research Department"]
+  F --> H["Library"]
+  F --> I["Bookroom"]
+  F --> J["Shop Facilities"]
+  G --> K["Protein Section"]
+  G --> L["Growth and Respiratory Section"]
+  G --> M["Small Animal Section"]
+```
+</details>
+
+Q: which is the root node in the chart?  
+laboratory research division | LABORATORY RESEARCH DIVISION  
+Base: LABORATORY INFORMATION SYSTEMS (Wrong)
+
+![](images/4bc2d8a739d6c92d9d69365f6211a36fe1ce5530b136a3c488ec464dbbad0e56.jpg)
+
+<details>
+<summary>flowchart</summary>
+
+```mermaid
+graph TD
+  A["Figure 1"] --> B["ORGANATIONAL PLAN"]
+  B --> C["LABOLOGY RESEARCH DIVISION"]
+  C --> D["THE MANUEL ROBERT'S NOBLE FOUNDATION, INC."]
+  C --> E["LABORATORY RESEARCH DIVISION"]
+  E --> F["Research Service Department"]
+  E --> G["Research Department Office"]
+  F --> H["Library"]
+  F --> I["Backroom"]
+  F --> J["Shop Facilities"]
+  G --> K["Proteal Section"]
+  G --> L["Growth and Registration Section"]
+  G --> M["Small Adrenal Section"]
+```
+</details>
+
+BACON: LABORATORY RESEARCH DIVISION (Correct)
+
+![](images/2c4b93eff4203f545ffeb3e81d974da85f64d41b137fb004f76b2c45e0ced092.jpg)
+
+<details>
+<summary>flowchart</summary>
+
+```mermaid
+graph TD
+  A["Figure 1"] --> B["ORGANATIONAL PLAN"]
+  B --> C["LABORATORY RESEARCH DIVISION"]
+  C --> D["Research Services Experiment"]
+  C --> E["Research Department Office"]
+  D --> F["Library"]
+  D --> G["Backroom"]
+  D --> H["Shop Facilities"]
+  E --> I["Physician Section"]
+  E --> J["Growth and Respiratory Section"]
+  E --> K["Small Animal Section"]
+```
+</details>
+
+Figure 5: Additional visualizations comparing evidence importance estimation between window attention and BACON.

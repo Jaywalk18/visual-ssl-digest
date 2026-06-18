@@ -1,0 +1,101 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>ThinkJEPA · 通用视觉自监督研究报</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Source+Serif+4:ital,opsz,wght@0,8..60,400;0,8..60,500;0,8..60,600;1,8..60,400&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../assets/visual-ssl.css?v=20260615ssl6">
+</head>
+<body data-paper-data-url="../data/papers.json">
+  <header class="masthead">
+    <a class="masthead-title" href="../index.html">通用视觉自监督研究报</a>
+    <div class="masthead-kicker">A Daily Digest of Visual Self-Supervised Learning</div>
+    <div class="masthead-meta">
+      <span>2026-06-18</span>
+      <span>图像表征 · VFM · JEPA · 视频预训练</span>
+    </div>
+  </header>
+  <nav class="site-nav" aria-label="主导航">
+    <a class="nav-link" href="../index.html">头版</a>
+<a class="nav-link" href="../issues/2026-06-18.html">今日速递</a>
+<a class="nav-link" href="../pages/catalog.html">论文目录</a>
+<a class="nav-link" href="../pages/timeline.html">时间线</a>
+<span class="nav-streak" title="连续追踪天数"><svg viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><path d="M8 0c.7 2.5-1.2 3.7-2 5-1 1.6-1 4 .8 4.8C6.4 8.5 7.4 7.8 8 7c.3 1.3-.4 2 .9 3 .9.7 1.3 1.6 1.1 2.6C9.7 14.6 8.9 16 6.8 16 4.6 16 3 14.3 3 12c0-3.3 2.6-4.8 2.4-8C6.9 4.6 8.4 5 8 0z"/></svg> 连续 <b data-streak>0</b> 天</span>
+  </nav>
+  <main><article class="paper-detail" data-pid="2603.22281" data-category="arXiv replacement + VLM-guided JEPA latent world model" data-priority="P1" data-date="2026-06-18" data-title="thinkjepa: empowering latent world models with large vision-language reasoning model" data-keywords="thinkjepa: empowering latent world models with large vision-language reasoning model thinkjepa arxiv replacement + vlm-guided jepa latent world model p1 2026-06-18 arxiv replacement + vlm-guided jepa latent world model 把 v-jepa2 式 dense latent prediction 和 vlm 长程语义推理结合，是昨天 tdv/mofore 后续最自然的更新项 中高相关；详见方法、贡献和实验边界。">
+  <div class="paper-main">
+    <div class="kicker">arXiv replacement + VLM-guided JEPA latent world model · P1 · 2026-06-18</div>
+    <h1 class="paper-headline">ThinkJEPA：它是“JEPA + VLM teacher/semantic prior”的代表性更新，适合跟昨天的视频 SSL 条目连续阅读</h1>
+    <p class="dek">承认 V-JEPA2 类模型擅长 dense future prediction，但短窗口容易偏低层外推；VLM 则补充长程语义但不适合做 dense predictor。</p>
+    <p class="byline"><strong>ThinkJEPA: Empowering Latent World Models with Large Vision-Language Reasoning Model</strong>　Haichao Zhang , Yijiang Li , Shwai He , Tushar Nagarajan , Mingfei Chen , Jianglin Lu , Ang Li , Yun Fu；arXiv 元数据未稳定列机构时按作者列表记录。　arXiv replacement + VLM-guided JEPA latent world model　<a href="https://arxiv.org/abs/2603.22281">原文链接</a></p>
+    <div class="paper-facts">
+      <span><b>编号</b>2603.22281</span>
+      <span><b>优先级</b>P1</span>
+      <span><b>类别</b>arXiv replacement + VLM-guided JEPA latent world model</span>
+      <span><b>会议</b>arXiv replacement + VLM-guided JEPA latent world model</span>
+      <span><b>方法</b>ThinkJEPA 用 VLM 的长程语义推理指导 JEPA-style latent world model，把密集短窗 latent prediction 和稀疏长程语义 grounding 结合。</span>
+      <span><b>来源</b>arXiv / OpenReview</span>
+    </div>
+    <div class="feature-body">
+      <p class="lead dropcap">先说结论。它是“JEPA + VLM teacher/semantic prior”的代表性更新，适合跟昨天的视频 SSL 条目连续阅读。 承认 V-JEPA2 类模型擅长 dense future prediction，但短窗口容易偏低层外推；VLM 则补充长程语义但不适合做 dense predictor。</p>
+      <figure class="full-fig"><img src="../assets/mineru/2603.22281/images/a15080ebd7c7f3934967b0dec11bf176b22158c77da57b102c06766669532c10.jpg" alt="Figureure 1 · : Overall Architecture of ThinkJEPA"><figcaption><b>Figureure 1 · : Overall Architecture of ThinkJEPA</b><span class="fig-en">Figure 1: Overall Architecture of ThinkJEPA. ThinkJEPA couples a dense JEPA branch for fine-grained latent dynamics modeling with a uniformly sampled VLM-thinker branch that provides long-horizon semantic guidance. The VLM guidance—including visual tokens from the ViT visual tokenizer and intermediate hidden states from the language model—is distilled by a pyramidal representation extraction module and injected into the V-JEPA predictor via layer-wise modulation. Concretely, guidance derived from language-model layers $\{ L _ { 0 } , \dots , L _ { N } \}$ is mapped to modulation parameters for predictor layers $\{ T _ { 0 } , \dots , T _ { K } \}$ . The predicted future latents are concatenated with past teacher latents to form the full latent sequence, which is then fed into a task head to produce downstream trajectory predictions.</span><span class="fig-zh">这张图概括 ThinkJEPA 的整体方法流程。阅读时先看模块之间传递的训练信号，再看作者如何把目标拆成可优化的子问题。</span></figcaption></figure>
+<figure class="full-fig"><img src="../assets/mineru/2603.22281/images/7eb285d8689f37e72fdbce45385715847aa59aa50bd383fa780c2979d2dab8b7.jpg" alt="Figureure 2 · : Qualitative results"><figcaption><b>Figureure 2 · : Qualitative results</b><span class="fig-en">Figure 2: Qualitative results. Predicted future hand-manipulation trajectories visualized as heat maps overlaid on the reference frame. Colors indicate temporal progression from blue (earlier) to red (later). Ideally, trajectories transition smoothly from blue to red, indicating coherent motion over time. ThinkJEPA produces smoother trajectories with better temporal consistency and joint alignment.</span><span class="fig-zh">这张图/表用于判断 ThinkJEPA 的实验收益来自哪里。重点看替换、消融或跨模型设置下趋势是否一致，而不是只看单个最高分。</span></figcaption></figure>
+      
+      <h2>核心问题</h2>
+      <p>它是“JEPA + VLM teacher/semantic prior”的代表性更新，适合跟昨天的视频 SSL 条目连续阅读。</p>
+      <h2>方法拆解</h2>
+      <p>ThinkJEPA 用 VLM 的长程语义推理指导 JEPA-style latent world model，把密集短窗 latent prediction 和稀疏长程语义 grounding 结合。</p>
+      <h2>主要贡献</h2>
+      <p>承认 V-JEPA2 类模型擅长 dense future prediction，但短窗口容易偏低层外推；VLM 则补充长程语义但不适合做 dense predictor。</p>
+      <h2>实验看点</h2>
+      <p>v2 于 2026-06-16 更新；摘要围绕 action-conditioned latent world modeling 和语义指导预测展开。</p>
+      <h2>局限与读法</h2>
+      <p>含 Robotics 分类和 action-conditioned 数据，通用图像 SSL 相关性不如 SPHERE-JEPA/TDV/MoFore 直接。</p>
+    
+    </div>
+  </div>
+  <aside class="paper-side">
+
+    <div class="side-box pref-side"><h4>我的偏好</h4><div class="paper-side-tools"><button class="readbtn" type="button" data-read-toggle="2603.22281" title="标记已读" aria-label="标记已读"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M4 10.5l4 4 8-9"/></svg></button><div class="prefbar" data-pref-controls="2603.22281"><button class="prefbtn like" type="button" data-pref-toggle="like" data-pref-id="2603.22281" aria-pressed="false" title="关注这篇">关注</button><button class="prefbtn dismiss" type="button" data-pref-toggle="dismiss" data-pref-id="2603.22281" aria-pressed="false" title="降低这篇权重">略过</button></div></div></div>
+    <div class="side-box"><h4>关键判断</h4><dl><dt>相关性</dt><dd>P1</dd><dt>类别</dt><dd>arXiv replacement + VLM-guided JEPA latent world model</dd><dt>会议</dt><dd>arXiv replacement + VLM-guided JEPA latent world model</dd><dt>读法</dt><dd>方法图优先，表格次之</dd></dl></div>
+    <div class="side-box"><h4>原文</h4><p><a href="https://arxiv.org/abs/2603.22281">https://arxiv.org/abs/2603.22281</a></p></div>
+  </aside>
+</article></main>
+  <aside class="conf-float" data-conf-reminder="2026-06-18-main-ddl" aria-label="CCF A/B 主投稿提醒">
+  <button class="conf-close" type="button" aria-label="关闭会议提醒">×</button>
+  <details open>
+    <summary>CCF A/B 主投稿提醒</summary>
+    <div class="conf-list"><a class="conf-item " href="https://github.com/ccfddl/ccf-deadlines/blob/main/conference/AI/aaai.yml">
+  <span><b>AAAI 2027</b><em>CCF A · Main paper submission</em></span>
+  <strong>39 天</strong>
+  <small>2026-07-27 · CCF DDL: abstract 2026-07-20；进入 1 个月窗口后重点提醒。</small>
+</a></div>
+  </details>
+</aside>
+  <footer class="footer">
+    <div>面向通用视觉自监督、视觉基础模型与多模态表征学习的每日研究报。</div>
+    <div class="muted">Issue 2026-06-18 · Curated readings and figure notes</div>
+  </footer>
+  <script>
+  (() => {
+    const box = document.querySelector('[data-conf-reminder]');
+    if (!box) return;
+    const key = `visualSslConfReminderClosed:${box.dataset.confReminder || '2026-06-18-main-ddl'}`;
+    try {
+      if (localStorage.getItem(key) === '1') box.hidden = true;
+    } catch (err) {}
+    const close = box.querySelector('.conf-close');
+    if (close) {
+      close.addEventListener('click', () => {
+        box.hidden = true;
+        try { localStorage.setItem(key, '1'); } catch (err) {}
+      });
+    }
+  })();
+  </script>
+  <script src="../assets/ssl-game.js"></script>
+</body>
+</html>

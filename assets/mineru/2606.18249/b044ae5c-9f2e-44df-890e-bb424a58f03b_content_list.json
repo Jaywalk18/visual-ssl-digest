@@ -1,0 +1,1814 @@
+[
+    {
+        "type": "text",
+        "text": "Unified Multimodal Autoregressive Modeling with Shared Context—Visual Tokenizer is Key to Unification",
+        "text_level": 1,
+        "bbox": [
+            122,
+            127,
+            875,
+            181
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "Wujian Peng1,2,\\*,#, Lingchen Meng3,\\*,‡, Yuxuan Cai3, Xianwei Zhuang3, Yuhuan Yang3, Rongyao Fang3, Chenfei Wu3, Junyang Lin3, Zuxuan Wu1,2,†, Shuai Bai3,†",
+        "bbox": [
+            184,
+            217,
+            815,
+            273
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "1Institute of Trustworthy Embodied AI, Fudan University 2Shanghai Innovation Institute 3Qwen Team, Alibaba Inc.",
+        "bbox": [
+            282,
+            282,
+            715,
+            320
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "∗Equal Contributions, #Work done during internship at Qwen Team ‡Project Lead, †Corresponding authors",
+        "bbox": [
+            250,
+            330,
+            750,
+            369
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "Abstract",
+        "text_level": 2,
+        "bbox": [
+            457,
+            404,
+            540,
+            420
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "Unified Multimodal Modeling aims to integrate visual understanding and generation within a single system. However, existing approaches typically rely on two disparate visual tokenizers, which splits the representation space and hinders truly unified modeling. We propose UniAR, a unified autoregressive framework where a single discrete visual tokenizer serves as the key bridge between understanding and generation, enabling a shared context in which the model can directly interpret its own generated visual tokens without additional re-encoding. UniAR adapts a pretrained vision encoder with multi-level feature fusion and a lookup-free bitwise quantization scheme, preserving both high-level semantics and low-level details while scaling the effective visual vocabulary at minimal cost. Building on this, the unified autoregressive model adopts parallel-bitwise-prediction to jointly predict spatially grouped, multi-level visual codes, substantially reducing visual sequence length and accelerating generation. Finally, a diffusion-based visual decoder operates on discrete visual tokens to decode high-fidelity images. Through large-scale pre-training, followed by supervised fine-tuning and reinforcement learning, UniAR achieves state-of-the-art performance on image generation and image editing while remaining competitive on multimodal understanding benchmarks.",
+        "bbox": [
+            138,
+            431,
+            859,
+            652
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "Website: https://sharelab-sii.github.io/uniar-web",
+        "bbox": [
+            138,
+            664,
+            511,
+            679
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "1 Introduction",
+        "text_level": 2,
+        "bbox": [
+            109,
+            722,
+            261,
+            739
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "Recent years have witnessed significant progress in visual understanding [1, 22, 43] and generation [11, 34, 60], largely driven by two distinct paradigms: autoregressive modeling and denoising diffusion. Increasingly, Unified Multimodal Models (UMMs) aim to integrate both capabilities into a single system [5, 10, 51, 58], enabling a model to understand and generate visual content in shared context—i.e. , to directly interpret its own visual generations without re-encoding. However, this integration is non-trivial due to an inherent tension in visual representation: understanding relies on high-level semantics, whereas generation demands low-level, high-frequency details. As a result, most existing works rely on two separate visual tokenizers [5, 10], which places understanding and generation in different representation spaces. Consequently, generated images must be re-encoded by the understanding tokenizer before the model can interpret them, breaking the desired “shared-context” goal and hindering true unification.",
+        "bbox": [
+            107,
+            751,
+            888,
+            910
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "header",
+        "text": "",
+        "bbox": [
+            114,
+            66,
+            163,
+            104
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "header",
+        "text": "Qwen",
+        "bbox": [
+            166,
+            75,
+            235,
+            95
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "header",
+        "text": "Y",
+        "bbox": [
+            609,
+            78,
+            642,
+            103
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "header",
+        "text": "Institute of TrustworthyEmbodied AI Fudan University",
+        "bbox": [
+            643,
+            78,
+            880,
+            104
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "aside_text",
+        "text": "arXiv:2606.18249v1 [cs.CV] 16 Jun 2026",
+        "bbox": [
+            22,
+            276,
+            60,
+            720
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "image",
+        "img_path": "images/11af19715637cfbc163bdb83c446e48981bc0d98a1b3fda96d114bef60dd8b01.jpg",
+        "image_caption": [
+            "Figure 1 Visual content generated by UniAR. UniAR produces high-fidelity visual content with demonstrated efficacy in instruction-following and text rendering, alongside versatile image editing capabilities."
+        ],
+        "image_footnote": [],
+        "content": "FERRA\nSMOKED PORTER\nFRESH THE VILLLEY\nUniAR\n• Unifying understanding, generation and editing via auto-regressive modeling\n• A single shared visual tokenizer to unify the representation space\n• Bitwise quantization of multi-level features\n• Parallel bitwise prediction mechanism to speed up inference\n• Three-stage training procedures\n• Achieving 32x or even 64x compression ratio\nAdd a boat on the water\nChange the background to a beach\nChange the goat into a rabbit\nChange the color of the toy to blue",
+        "sub_type": "text_image",
+        "bbox": [
+            112,
+            95,
+            883,
+            428
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "text",
+        "text": "Using a single tokenizer to unify visual understanding and generation is a promising direction [14, 51, 58]. However, this approach faces non-trivial challenges: (1) how to design visual tokens that simultaneously meet the needs of both generation and understanding, and (2) how to scale up the tokenizer vocabulary at minimal cost. Motivated by these challenges, we propose UniAR, a Unified Auto-Regressive framework that leverages a single visual tokenizer to effectively unify generation and understanding in a shared context. To the best of our knowledge, UniAR is the first unified model to leverage multi-level bitwise visual tokens, achieving effective and efficient visual understanding and generation.",
+        "bbox": [
+            109,
+            494,
+            888,
+            606
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "text",
+        "text": "Specifically, we fuse multi-level visual features to improve representational capacity, preserving low-level details from shallow layers and high-level semantics from deeper layers, so that the resulting representation supports both discriminative and generative tasks. Moreover, we adopt a lookup-free binary quantization scheme that maps visual features to discrete binary vectors [18, 70]. In contrast to conventional vector quantization [56], this scheme removes the need for an explicit codebook and exponentially scales the theoretical vocabulary size (e.g. , a 64-bit vector yields $2 ^ { 6 4 }$ unique codes), substantially expanding the vocabulary with only a small overhead. Building on this discrete visual tokenizer, we use a unified autoregressive model under a next-token prediction paradigm to jointly model understanding, generation, and editing. We further introduce a parallel bitwise prediction mechanism that predicts multi-level visual binary vectors within each $2 \\times 2$ spatial grid simultaneously, effectively reducing the visual sequence length and achieving 32× visual compression ratio in autoregressive prediction. Finally, we employ a DiT-based visual decoder with resolution upsampling, which conditions solely on visual tokens (without text prompts) to reconstruct high-fidelity images; when employing upsampling, a 1024 × 1024 image requires predicting only 256 visual tokens.",
+        "bbox": [
+            109,
+            612,
+            887,
+            832
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "text",
+        "text": "We train the autoregressive model via three stages: large-scale pretraining on multimodal corpora, supervised fine-tuning on curated high-quality data, and reinforcement learning to further improve generation performance. Throughout the training process of the autoregressive model, the visual tokenizer and the visual decoder are kept frozen, and the decoder is introduced only during reinforcement learning to decode images for reward computation. Extensive experiments show that UniAR delivers state-of-the-art text rendering and instruction-following performance for image generation, while remaining competitive on multimodal understanding. Our contributions are three-fold:",
+        "bbox": [
+            109,
+            839,
+            887,
+            905
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "page_number",
+        "text": "2",
+        "bbox": [
+            491,
+            936,
+            504,
+            949
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "text",
+        "text": "",
+        "bbox": [
+            109,
+            98,
+            887,
+            145
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "list",
+        "sub_type": "text",
+        "list_items": [
+            "• We propose UniAR, a unified autoregressive framework with a single discrete visual tokenizer for unified modeling. In particular, multi-level feature fusion bridges the needs of generation and understanding, while lookup-free bitwise quantization scales up the tokenizer vocabulary efficiently.",
+            "• We introduce a unified autoregressive modeling paradigm with parallel bitwise prediction, together with a DiT-based decoder equipped with resolution upsampling, enabling efficient high-resolution generation with compact visual sequences.",
+            "• Extensive experiments validate the effectiveness of UniAR, achieving state-of-the-art image generation performance while remaining competitive on standard multimodal understanding benchmarks."
+        ],
+        "bbox": [
+            129,
+            148,
+            887,
+            297
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "2 Related Works",
+        "text_level": 2,
+        "bbox": [
+            109,
+            311,
+            277,
+            327
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "2.1 Visual Tokenizers",
+        "text_level": 2,
+        "bbox": [
+            109,
+            339,
+            305,
+            354
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "Visual understanding and generation impose distinct requirements on visual tokenization. Understanding tasks typically prioritize high-level semantic representations [6, 45, 55], whereas generative tasks require high-frequency details such as texture and color [7, 56, 57]. Previous works have attempted to accommodate both objectives by integrating dual-tokenizers [5, 53, 54]; however, this inherently partitions the visual context. Several studies have sought to bridge this gap by developing unified tokenizers supporting both objectives simultaneously [17, 35, 50, 71] or dual-codebook design [36, 44]. In this work, we employ a multi-level feature visual tokenizer that integrates features from various ViT layers to satisfy the requirements of both generation and comprehension. We quantize the visual features into discrete binary tokens, enabling autoregressive visual modeling for both tasks. In this respect, UniAR is closely related to Infinity [18], which also adopts binary visual quantization [70]. However, there are several differences. Infinity is designed specifically for generation, while UniAR targets unified multimodal modeling. Moreover, Infinity is optimized for reconstruction, whereas UniAR learns semantic multi-level features that support both generation and understanding. The two methods also differ in modeling paradigm: Infinity adopts next-scale prediction, while UniAR uses standard next-token prediction for both vision and language.",
+        "bbox": [
+            109,
+            363,
+            888,
+            585
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "2.2 Unified Multimodal Models",
+        "text_level": 2,
+        "bbox": [
+            109,
+            598,
+            387,
+            614
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "Existing research explores various strategies for unified modeling. One paradigm [27, 42, 60] decouples tasks by interfacing a cascaded architecture composed of a frozen LMM and a diffusion model. However, these frameworks often lack architectural synergy between the understanding and generation components. Alternatively, another paradigm [10, 33, 37, 63, 72] employs hybrid Transformers that generate text autoregressively and images via flow-matching. However, these approaches typically rely on divergent training objectives or disrupt the inherent causal mechanisms of standard LLMs and LMMs, which increase the training cost. Distinct from these approaches, our UniAR achieves deep integration by employing a unified visual tokenizer to align the representation space, and modeling both generation and understanding within a unified autoregressive framework.",
+        "bbox": [
+            109,
+            623,
+            888,
+            765
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "Among existing works, X-Omni [14] is most closely related to ours. However, UniAR distinguishes itself in several dimensions: (1) Quantization: instead of an explicit codebook, we employ lookup-free bitwise quantization across multi-level features, which expands theoretical codebook size with much lower overhead; (2) Efficiency: we introduce a parallel-bitwise-prediction paradigm, quadrupling the inference speed via reduced autoregressive steps; (3) Lightweight: UniAR achieves competitive results with significantly fewer parameters, i.e. a more compact visual tokenizer (400M vs. 1B) and diffusion decoder (2.5B vs. 12B); and (4) AR-centric: X-Omni’s visual decoder feeds both text prompts and visual features, while our visual decoder is independent of text inputs; it functions purely for image decoding, leaving all semantic and structural generation to the autoregressive model.",
+        "bbox": [
+            109,
+            772,
+            888,
+            914
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "page_number",
+        "text": "3",
+        "bbox": [
+            493,
+            936,
+            504,
+            949
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "image",
+        "img_path": "images/ee17be807edc325240075986013b5d0e9fe90e35925633a5c476a847036142da.jpg",
+        "image_caption": [
+            "Figure 2 UniAR Framework Overview. Our architecture integrates a unified visual tokenizer for bitwise quantization of image features into discrete semantic tokens, a unified autoregressive backbone that unifies generation and understanding via next-token prediction, and a DiT-based decoder for high-fidelity image decoding from predicted tokens. For visual generation, the auto-regressive model performs parallel bitwise prediction that predicts the next group of bit indices in parallel as shown in the right part. Notably, both the text and visual decoders are only required during inference and are not utilized during the pretraining stage."
+        ],
+        "image_footnote": [],
+        "content": "```mermaid\ngraph TD\n  A[\"Discrete textual token\"] --> B[\"Text Decoder\"]\n  C[\"Bitwise discrete visual token\"] --> D[\"Visual Decoder\"]\n  B --> E[\"Unified Auto-Regressive Model\"]\n  D --> E\n  E --> F[\"Unified Visual Tokenizer\"]\n  E --> G[\"Text Tokenizer\"]\n  E --> H[\"Text Tokenizer\"]\n  E --> I[\"Unified Visual Tokenizer\"]\n  J[\"Parallel bitwise prediction\"] --> K[\"Bitwise d^BSQ\"]\n  K --> L[\"Parallel group g = n^level × n^spatial\"]\n```",
+        "sub_type": "flowchart",
+        "bbox": [
+            133,
+            95,
+            867,
+            296
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "text",
+        "text": "3 UniAR",
+        "text_level": 2,
+        "bbox": [
+            109,
+            416,
+            212,
+            431
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "text",
+        "text": "The overall architecture of UniAR comprises three core components: (1) a unified visual tokenizer that encodes images into discrete semantic tokens shared across understanding, generation and editing tasks (Sec. 3.1); (2) a unified autoregressive model for the joint prediction of visual and text tokens (Sec. 3.2); and (3) a DiT-based visual decoder that translates visual tokens back into pixel space (Sec. 3.3).",
+        "bbox": [
+            109,
+            445,
+            888,
+            510
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "text",
+        "text": "3.1 Unified Visual Tokenizing",
+        "text_level": 2,
+        "bbox": [
+            109,
+            523,
+            375,
+            542
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "text",
+        "text": "To facilitate autoregressive image generation, visual inputs need to be encoded into discrete tokens. Unlike traditional reconstruction-based paradigms [48, 56, 67, 70], UniAR adapts continuous features from semantic vision encoder into discrete representations. Specifically, we integrate Binary Spherical Quantization (BSQ) [70] into the visual encoder of a pre-trained Large Multimodal Model (LMM), and end-to-end finetune the model with visual understanding objectives. Unlike the conventional VQ-VAE [56], which maps visual feature to a specific index in an explicit codebook, BSQ quantizes features as a binary vector $\\mathbf { u } \\in \\{ \\hat { 0 } , 1 \\} ^ { d ^ { B S Q } }$ . This approach enables the construction of vastly larger implicit vocabularies with minimal overhead, as the codebook size scales exponentially with the quantization dimension. In our approach, we set the BSQ dimension $d ^ { B S Q } = 6 4 \\AA$ , theoretically providing an expansive codebook of $2 ^ { 6 4 }$ unique tokens. The quantization process is formally defined as:",
+        "bbox": [
+            109,
+            547,
+            888,
+            708
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "equation",
+        "text": "$$\n\\mathbf {v} = \\text { Encoder } x\n$$",
+        "text_format": "latex",
+        "bbox": [
+            393,
+            709,
+            495,
+            720
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "equation",
+        "text": "$$\n\\left. \\begin{array}{l} \\mathbf {u} = \\text {BSQMLP} _ {i n} \\mathbf {v} \\\\ \\mathbf {v} ^ {\\prime} = \\text {MLP} _ {o u t} \\mathbf {u} \\end{array} \\right\\} _ {\\substack {\\text {BSQ - added} \\\\ \\text {parameters},}} \\tag{1}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            390,
+            724,
+            885,
+            762
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "equation",
+        "text": "$$\n\\mathbf {v} = \\operatorname{Mergerv} ^ {\\prime}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            393,
+            766,
+            491,
+            781
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "text",
+        "text": "where x represents the input image and v denotes the raw features extracted by the vision encoder. $\\mathrm { M L P } _ { i n }$ and $\\mathrm { M L P } _ { o u t }$ refer to projection modules that map visual features to and from the BSQ quantization space, respectively. The binary vector u $\\in \\{ 0 , 1 \\} ^ { 6 4 }$ serves as the discrete bitwise representation, from which $\\mathbf { v } ^ { \\prime }$ is reconstructed. Following the BSQ quantize module, a spatial merger Merger aggregates $2 \\times 2$ visual features into one token $\\mathbf { v , }$ projecting it to the hidden dimension of the LLM.",
+        "bbox": [
+            109,
+            789,
+            887,
+            869
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "text",
+        "text": "To further enrich the representation capacity, we adopt a multi-level fusing scheme that aggregates information across multiple layers of the visual encoder. Specifically, in addition to the final layer, we incorporate three intermediate layers into the quantization process [1, 41]. This hierarchical design facilitates the extraction of multi-granular visual cues for both generation and understanding tasks.",
+        "bbox": [
+            109,
+            875,
+            887,
+            909
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "page_number",
+        "text": "4",
+        "bbox": [
+            493,
+            936,
+            504,
+            949
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "text",
+        "text": "",
+        "bbox": [
+            109,
+            98,
+            887,
+            130
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "Following the original BSQ formulation, we employ the soft entropy loss for quantization. In contrast, we replace the standard Mean Squared Error (MSE) loss of reconstruction-based decoder with the Cross-Entropy (CE) loss of LMM. Formally, the overall training objective is defined as follows:",
+        "bbox": [
+            109,
+            137,
+            887,
+            186
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "equation",
+        "text": "$$\n\\mathcal {L} = \\mathcal {L} ^ {\\mathrm{CE}} \\lambda^ {\\mathrm{BSQ}} \\cdot \\mathcal {L} ^ {\\mathrm{BSQ}}, \\tag {2}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            419,
+            195,
+            885,
+            213
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "where $\\mathcal { L } ^ { \\mathrm { C E } }$ is the CE loss of the original LMM and $\\mathcal { L } ^ { \\mathrm { B S Q } }$ is the original BSQ soft entropy loss. Once the discrete adaptation procedure is complete, the vision encoder is frozen to guarantee consistent visual indices for unified autoregressive modeling.",
+        "bbox": [
+            109,
+            224,
+            887,
+            273
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "3.2 Unified Auto-Regressive Modeling",
+        "text_level": 2,
+        "bbox": [
+            109,
+            289,
+            444,
+            306
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "Our unified autoregressive model is built upon a pre-trained LLM backbone, integrated with the discrete visual tokenizer described in Sec. 3.1. We treat visual understanding and generation tasks equally, utilizing teacher-forcing paradigm for both modalities. To handle autoregressive prediction over an expansive discrete vocabulary, we implement bitwise prediction [18], applying a Cross-Entropy loss directly to the quantized bit vectors. Furthermore, to maximize the efficiency of autoregressive modeling while minimizing the visual context length, we introduce parallel bitwise prediction. This strategy enables the model to concurrently predict a group of BSQ indices, leveraging the compressed representations provided by the spatial merger and multi-level DeepStack. The visual prediction head comprises an RMSNorm layer followed by a linear projection. Given the LLM hidden states $\\mathbf { h } \\in \\mathbb { R } ^ { d ^ { \\mathrm { L L M } } }$ , the visual prediction logits y are computed as:",
+        "bbox": [
+            109,
+            314,
+            888,
+            459
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "equation",
+        "text": "$$\n\\operatorname{logits} ^ {v i s} = W ^ {v i s} \\text { RMSNorm } \\mathbf {h}, \\tag {3}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            388,
+            469,
+            885,
+            487
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "$W ^ { v i s } \\in \\mathbb { R } ^ { d ^ { L L M } \\times d ^ { v i s } }$ For each input visual token, UniAR predicts the next group BSQ indices. Therefore, the output dimension is defined as $d ^ { v i s } = 2 \\times d ^ { B S Q } \\times g .$ , where the group size $g = n ^ { l e v e l } \\times n ^ { s p a t i a l }$ , representing the number of hierarchical DeepStack levels and spatial units in the spatial merger, respectively. For text generation, we retain the original output layer of the LLM.",
+        "bbox": [
+            109,
+            500,
+            887,
+            580
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "Finally, the total training objective, $\\mathcal { L } ^ { A R }$ is as follows:",
+        "bbox": [
+            109,
+            587,
+            496,
+            604
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "equation",
+        "text": "$$\n\\mathcal {L} ^ {A R} = \\mathcal {L} ^ {\\text { text }} \\lambda^ {\\text { vis }} \\cdot \\mathcal {L} ^ {\\text { vis }}, \\tag {4}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            408,
+            614,
+            885,
+            633
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "where $\\mathcal L ^ { t e x t }$ and $\\mathcal { L } ^ { v i s }$ denote the auto-regressive loss of text tokens and visual tokens, respectively; $\\lambda ^ { v i s }$ is the corresponding factor of visual part. This unified scheme enables multimodal large-scale pretraining while reconciling the discrepancies between visual understanding and generation.",
+        "bbox": [
+            109,
+            645,
+            887,
+            694
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "Furthermore, to bridge the gap between teacher-forcing training and autoregressive inference, we implement random visual index flipping for generation tasks, following [18]. Specifically, given visual BSQ indices u ∈ {0, 1}seq×dBSQ , $\\mathbf { u } \\in \\{ 0 , 1 \\} ^ { s e q \\times d ^ { B S Q } }$ we randomly invert a subset of the bits. This perturbation simulates the cumulative errors typically encountered during autoregressive sampling, while the original, uncorrupted indices are retained as ground-truth labels. This technique significantly improves the stability of the visual generation. Consequently, the model produces high-quality images even under high-temperature sampling. This flipping strategy is critical for the subsequent reinforcement learning phase, as it facilitates stable exploration in high-temperature regimes.",
+        "bbox": [
+            109,
+            700,
+            887,
+            830
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "3.3 Visual Decoding",
+        "text_level": 2,
+        "bbox": [
+            109,
+            844,
+            294,
+            862
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "We build our visual decoder upon a pretrained single-stream Diffusion Transformer (DiT), to reconstruct pixels from the visual tokens. To integrate visual guidance, we fuse the conditioning visual signal $f _ { v }$ with the noisy hidden states z via element-wise addition [14, 69]. We optimize the decoder using Conditional Flow Matching (CFM) [28], with training objective formulated as:",
+        "bbox": [
+            109,
+            869,
+            887,
+            902
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "page_number",
+        "text": "5",
+        "bbox": [
+            493,
+            936,
+            504,
+            948
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "",
+        "bbox": [
+            109,
+            98,
+            887,
+            130
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "equation",
+        "text": "$$\n\\mathcal {L} ^ {\\mathrm{CFM}} = \\mathbb {E} _ {t, p _ {t} z | \\epsilon , p \\epsilon} \\| \\mathcal {D} _ {\\Theta} z \\oplus f _ {v}, t - u _ {t} z | \\epsilon \\| _ {2} ^ {2}, \\tag {5}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            349,
+            141,
+            885,
+            160
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "text",
+        "text": "where DΘ denotes the visual decoder and z ∈ ℝh×w×ddit $\\mathcal { D } _ { \\Theta }$ $z \\in \\mathbb { R } ^ { h \\times w \\times d ^ { d i t } }$ represents the DiT internal hidden state. To obtain the visual conditioning signal $f _ { v } ,$ we process the predicted visual BSQ indices u as follows. At each autoregressive step, the model predicts a $2 \\times 2$ spatial region, where each grid cell contains $n ^ { l e v e l }$ BSQ vectors from different encoder layers. For the spatial dimension, we flatten the $2 \\times 2$ grid into the sequence dimension while preserving the original spatial order. For the multi-level features at each spatial position, we concatenate them along the feature dimension and project the result to $d ^ { d i t }$ , yielding $f _ { v } \\in \\mathbb { R } ^ { h \\times w \\times d ^ { d i t } }$ . By fusing $f _ { v }$ with z via element-wise addition, the decoder reconstructs images with visual guidance.",
+        "bbox": [
+            107,
+            174,
+            888,
+            289
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "text",
+        "text": "To alleviate the computational burden of the autoregressive model, we introduce a resolution upsampling strategy. This enables UniAR to synthesize high-resolution images while maintaining a low autoregressive budget. Specifically, we apply 2D bicubic interpolation to $f _ { v }$ to reach the target resolution. Notably, we place all semantic and layout generation within the AR model, while the visual decoder functions only as a token-to-image translator. Therefore, unlike X-Omni [14] and NextFlow [68], our decoder does not take any textual prompts as input, and is conditioned solely on $f _ { v }$ .",
+        "bbox": [
+            109,
+            295,
+            887,
+            391
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "text",
+        "text": "4 Experiments",
+        "text_level": 2,
+        "bbox": [
+            109,
+            407,
+            261,
+            425
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "text",
+        "text": "4.1 Training Recipe",
+        "text_level": 2,
+        "bbox": [
+            109,
+            435,
+            289,
+            453
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "text",
+        "text": "We employ Qwen3-8B [65] as the LLM backbone, a BSQ-quantized SigLiP2-So400M ViT [55, 70] with DeepStack [1, 41] connections as the visual tokenizer, and a visual conditioned Stable Diffusion 3.5 Medium DiT [11] as the visual decoder. The training of UniAR proceeds in a sequential, modular fashion. We first adapt the visual encoder into a discrete tokenizer via bitwise quantization (Sec. 3.1), after which it is frozen to ensure the visual codebook unchanged. We then train the DiT-based visual decoder (Sec. 3.3) to reconstruct images from the frozen encoder’s discrete indices, after which it is also frozen. With both components fixed, we proceed to train the autoregressive model.",
+        "bbox": [
+            107,
+            459,
+            888,
+            570
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "text",
+        "text": "We optimize the autoregressive model using a three-stage training procedure, during which the visual tokenizer and decoder are kept frozen. Since the next-token prediction involves only discrete visual tokens, the visual decoder is omitted during the initial two stages and only introduced during reinforcement learning to decode images for reward signals acquisition. We incorporate four task-specific Transformer layers following the LLM backbone dedicated to visual generation, which mitigates task competition between generation and understanding.",
+        "bbox": [
+            107,
+            577,
+            887,
+            672
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "text",
+        "text": "Pre-Training. The pretraining corpus comprises approximately 1T tokens, partitioned into 800B tokens for 8K context length pretraining and 200B tokens for 32K context length pretraining. We maintain a 1:1 ratio between visual understanding and generation data. For visual generation, the maximum resolution is constrained to $5 1 2 \\times 5 1 2$ pixels during the 8K stage, and subsequently increased to 960 × 960 pixels for the 32K stage. During the pretraining, the tokens of visual generation are formulated as:",
+        "bbox": [
+            107,
+            679,
+            887,
+            758
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "text",
+        "text": "text prompt <image\\_gen> H W <vision\\_start> visual tokens <vision\\_end>,",
+        "bbox": [
+            112,
+            766,
+            617,
+            782
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "text",
+        "text": "where the special token <image\\_gen> serves as a task-specific indicator for visual generation mode. To provide a spatial prior, we define H and W as the vertical and horizontal grid dimensions, respectively, which specify the token-count resolution for the generated output. Notably, while $\\mathcal L ^ { t e x t }$ is computed exclusively on the visual understanding datasets, $\\mathcal { L } ^ { \\mathrm { v i s } }$ is optimized across both understanding and generation tasks, enforcing a unified representation space.",
+        "bbox": [
+            107,
+            789,
+            887,
+            869
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "text",
+        "text": "Supervised-Fine-Tuning. For SFT, we utilize a combination of public synthetic data and re-synthesized data, incorporating prompts from [3, 4] alongside prompts sampled from our pre-training corpus. We adopt the",
+        "bbox": [
+            109,
+            875,
+            887,
+            909
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "page_number",
+        "text": "6",
+        "bbox": [
+            493,
+            936,
+            504,
+            949
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "table",
+        "img_path": "images/1d85e0bb16ceb1368d5d4d0ce8e7963c6885083e684c85cedf54efeb13b4436e.jpg",
+        "table_caption": [
+            "Table 1 Performance comparison on GenEval. † denotes results with prompt rewriting, and ‡ denotes results from [64]."
+        ],
+        "table_footnote": [],
+        "table_body": "<table><tr><td>Method</td><td>Single</td><td>Two</td><td>Counting</td><td>Colors</td><td>Position</td><td>Color Attr.</td><td>Overall</td></tr><tr><td colspan=\"8\">Gen. Only Models</td></tr><tr><td>SDXL</td><td>0.98</td><td>0.74</td><td>0.39</td><td>0.85</td><td>0.15</td><td>0.23</td><td>0.55</td></tr><tr><td>DALLE-3</td><td>0.96</td><td>0.87</td><td>0.47</td><td>0.83</td><td>0.43</td><td>0.45</td><td>0.67</td></tr><tr><td>SD3-medium</td><td>0.99</td><td>0.94</td><td>0.72</td><td>0.89</td><td>0.33</td><td>0.60</td><td>0.74</td></tr><tr><td> $FLUX.1-dev^†$ </td><td>0.98</td><td>0.93</td><td>0.75</td><td>0.93</td><td>0.68</td><td>0.65</td><td>0.82</td></tr><tr><td colspan=\"8\">Unified Models</td></tr><tr><td>Emu3-Gen $^†$ </td><td>0.99</td><td>0.81</td><td>0.42</td><td>0.80</td><td>0.49</td><td>0.45</td><td>0.66</td></tr><tr><td>Show-o2</td><td>1.00</td><td>0.87</td><td>0.58</td><td>0.92</td><td>0.52</td><td>0.62</td><td>0.76</td></tr><tr><td>Janus-Pro</td><td>0.99</td><td>0.89</td><td>0.59</td><td>0.90</td><td>0.79</td><td>0.66</td><td>0.80</td></tr><tr><td>UniWorld-V1 $^†$ </td><td>0.98</td><td>0.93</td><td>0.81</td><td>0.89</td><td>0.74</td><td>0.71</td><td>0.84</td></tr><tr><td>BAGEL</td><td>0.99</td><td>0.94</td><td>0.81</td><td>0.88</td><td>0.64</td><td>0.63</td><td>0.82</td></tr><tr><td> $BAGEL^†$ </td><td>0.98</td><td>0.95</td><td>0.84</td><td>0.95</td><td>0.78</td><td>0.77</td><td>0.88</td></tr><tr><td>OmniGen2 $^†$ </td><td>0.99</td><td>0.96</td><td>0.74</td><td>0.98</td><td>0.72</td><td>0.75</td><td>0.86</td></tr><tr><td>X-Omni $^†$ </td><td>0.98</td><td>0.95</td><td>0.75</td><td>0.91</td><td>0.71</td><td>0.68</td><td>0.83</td></tr><tr><td>Emu3.5</td><td>-</td><td>-</td><td>-</td><td>-</td><td>-</td><td>-</td><td>0.86</td></tr><tr><td> $NextFlow^†$ </td><td>1.00</td><td>0.92</td><td>0.75</td><td>0.90</td><td>0.76</td><td>0.70</td><td>0.84</td></tr><tr><td>GPT-4o $^‡$ </td><td>0.99</td><td>0.92</td><td>0.85</td><td>0.92</td><td>0.75</td><td>0.61</td><td>0.84</td></tr><tr><td>UNIAR (ours)</td><td>1.00</td><td>0.95</td><td>0.75</td><td>0.94</td><td>0.77</td><td>0.67</td><td>0.85</td></tr><tr><td> $UNIAR^† (ours)$ </td><td>0.99</td><td>0.96</td><td>0.70</td><td>0.93</td><td>0.77</td><td>0.83</td><td>0.86</td></tr></table>",
+        "bbox": [
+            125,
+            125,
+            870,
+            452
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "text",
+        "text": "ChatML format for visual generation. In total, the SFT stage consists of approximately 50B tokens.",
+        "bbox": [
+            109,
+            476,
+            816,
+            493
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "text",
+        "text": "Reinforcement-Fine-Tuning. The next-token prediction scheme in UniAR’s visual generation paradigm enables the seamless integration of reinforcement learning over discrete visual tokens. We introduce a reinforcement fine-tuning stage to further refine the model’s generation performance in image quality, text rendering and instruction following. The RL stage is applied exclusively to image generation task, while image editing and multimodal understanding tasks are not involved in this stage. More details about this stage can be found in Sec. A.2.",
+        "bbox": [
+            109,
+            500,
+            885,
+            595
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "text",
+        "text": "4.2 Main Results",
+        "text_level": 2,
+        "bbox": [
+            109,
+            609,
+            264,
+            625
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "text",
+        "text": "To comprehensively evaluate the performance of our unified model, we conduct a systematic assessment across a suite of benchmarks spanning visual content generation, image editing, and multimodal understanding.",
+        "bbox": [
+            109,
+            635,
+            883,
+            667
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "text",
+        "text": "Instruction Following. GenEval [15] is a widely-used benchmark for evaluating instruction-following in text-to-image synthesis. As shown in Tab. 1, UniAR achieves an overall score of 0.86, surpassing both the proprietary model GPT-4o [20] and the generation-only model Flux.1-dev. This result demonstrates UniAR’s superior capability in precise instruction following during image generation, particularly in terms of accurate object counting, color-attribute binding, and spatial relationships.",
+        "bbox": [
+            109,
+            674,
+            885,
+            753
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "text",
+        "text": "Text Rendering. Text rendering is a pivotal capability for generative models, directly impacting their practical utility and user experience. However, it remains a significant challenge for existing text-to-image models. We evaluate UniAR on the English subsets of OneIG-Bench [2] and LongText-Bench [14], with quantitative results summarized in Tab. 2. UniAR demonstrates state-of-the-art performance in this domain. Specifically, it achieves a score of 0.873 on OneIG-EN, surpassing GPT-4o [20]. Furthermore, on LongText-EN, which is a benchmark specifically tailored for long text rendering, UniAR reaches 0.917, outperforming Gemini 2.5 Flash Image [8]. These results underscore that UniAR is effective in text rendering.",
+        "bbox": [
+            109,
+            760,
+            887,
+            872
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "text",
+        "text": "Image Editing. We evaluate the image editing capabilities on ImgEdit Bench [66], with results shown in Tab. 3. Our model achieves an overall score of 3.73, surpassing the Flux.1 Kontext [21] specifically designed for editing tasks, as well as powerful unified models such as BAGEL [10] and OmniGen2 [61]. This demonstrates that our UniAR possesses strong image editing capabilities.",
+        "bbox": [
+            109,
+            878,
+            887,
+            912
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "page_number",
+        "text": "7",
+        "bbox": [
+            493,
+            936,
+            504,
+            948
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "table",
+        "img_path": "images/d2dfe466a5c02979ea9a764fa7e88319c143aefa101b776fe101214a1b9e95a6.jpg",
+        "table_caption": [
+            "Table 2 Comparison of text rendering performance. We conduct evaluation on the English splits of OneIG-Bench and LongText-Bench. UniAR achieves strong text rendering performance, outperforming GPT-4o on OneIG-Bench and surpassing Gemini 2.5 Flash Image on LongText-Bench."
+        ],
+        "table_footnote": [],
+        "table_body": "<table><tr><td>Method</td><td>Model Type</td><td>OneIG-EN</td><td>LongText-EN</td></tr><tr><td>FLUX.1-dev</td><td></td><td>0.523</td><td>0.607</td></tr><tr><td>HiDream-I1-Full</td><td></td><td>0.707</td><td>0.543</td></tr><tr><td>Kolors 2.0</td><td>Generation Only</td><td>0.427</td><td>0.258</td></tr><tr><td>Seedream 3.0</td><td></td><td>0.865</td><td>0.896</td></tr><tr><td>Qwen-Image</td><td></td><td>0.891</td><td>0.943</td></tr><tr><td>Janus-Pro</td><td></td><td>0.001</td><td>0.019</td></tr><tr><td>BAGEL</td><td></td><td>0.244</td><td>0.373</td></tr><tr><td>OmniGen2</td><td></td><td>0.680</td><td>0.561</td></tr><tr><td>X-Omni</td><td>Unified Model</td><td>0.901</td><td>0.900</td></tr><tr><td>GPT-4o</td><td></td><td>0.857</td><td>0.956</td></tr><tr><td>Gemini 2.5 Flash Image</td><td></td><td>0.894</td><td>0.869</td></tr><tr><td>UNIAR (ours)</td><td></td><td>0.873</td><td>0.917</td></tr></table>",
+        "bbox": [
+            223,
+            148,
+            776,
+            371
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "table",
+        "img_path": "images/96c00ad0696b1789db04d81482573efb6264d11a917c1a3fdbbb5734c863c0f0.jpg",
+        "table_caption": [
+            "Table 3 Performance comparison on ImgEdit-Bench."
+        ],
+        "table_footnote": [],
+        "table_body": "<table><tr><td>Method</td><td colspan=\"10\">Add Adjust Extract Replace Remove Background Style Hybrid Action Overall</td></tr><tr><td></td><td colspan=\"10\">Gen. Only Models</td></tr><tr><td>MagicBrush</td><td>2.84</td><td>1.58</td><td>1.51</td><td>1.97</td><td>1.58</td><td>1.75</td><td>2.38</td><td>1.62</td><td>1.22</td><td>1.90</td></tr><tr><td>Instruct-Pix2Pix</td><td>2.45</td><td>1.83</td><td>1.44</td><td>2.01</td><td>1.50</td><td>1.44</td><td>3.55</td><td>1.20</td><td>1.46</td><td>1.88</td></tr><tr><td>AnyEdit</td><td>3.18</td><td>2.95</td><td>1.88</td><td>2.47</td><td>2.23</td><td>2.24</td><td>2.85</td><td>1.56</td><td>2.65</td><td>2.45</td></tr><tr><td>UltraEdit</td><td>3.44</td><td>2.81</td><td>2.13</td><td>2.96</td><td>1.45</td><td>2.83</td><td>3.76</td><td>1.91</td><td>2.98</td><td>2.70</td></tr><tr><td>ICEdit</td><td>3.58</td><td>3.39</td><td>1.73</td><td>3.15</td><td>2.93</td><td>3.08</td><td>3.84</td><td>2.04</td><td>3.68</td><td>3.05</td></tr><tr><td>Step1X-Edit</td><td>3.88</td><td>3.14</td><td>1.76</td><td>3.40</td><td>2.41</td><td>3.16</td><td>4.63</td><td>2.64</td><td>2.52</td><td>3.06</td></tr><tr><td>FLUX.1 Kontext [Dev]</td><td>4.12</td><td>3.80</td><td>2.04</td><td>4.22</td><td>3.09</td><td>3.97</td><td>4.51</td><td>3.35</td><td>4.25</td><td>3.71</td></tr><tr><td>Qwen-Image-Edit</td><td>4.38</td><td>4.16</td><td>3.43</td><td>4.66</td><td>4.14</td><td>4.38</td><td>4.81</td><td>3.82</td><td>4.69</td><td>4.27</td></tr><tr><td></td><td colspan=\"10\">Unified Models</td></tr><tr><td>OmniGen</td><td>3.47</td><td>3.04</td><td>1.71</td><td>2.94</td><td>2.43</td><td>3.21</td><td>4.19</td><td>2.24</td><td>3.38</td><td>2.96</td></tr><tr><td>BAGEL</td><td>3.56</td><td>3.31</td><td>1.70</td><td>3.3</td><td>2.62</td><td>3.24</td><td>4.49</td><td>2.38</td><td>4.17</td><td>3.20</td></tr><tr><td>UniWorld-V1</td><td>3.82</td><td>3.64</td><td>2.27</td><td>3.47</td><td>3.24</td><td>2.99</td><td>4.21</td><td>2.96</td><td>2.74</td><td>3.26</td></tr><tr><td>OmniGen2</td><td>3.57</td><td>3.06</td><td>1.77</td><td>3.74</td><td>3.20</td><td>3.57</td><td>4.81</td><td>2.52</td><td>4.68</td><td>3.44</td></tr><tr><td>GPT-Image-1 [High]</td><td>4.61</td><td>4.33</td><td>2.90</td><td>4.35</td><td>3.66</td><td>4.57</td><td>4.93</td><td>3.96</td><td>4.89</td><td>4.20</td></tr><tr><td>UNIAR (ours)</td><td>3.91</td><td>3.48</td><td>2.75</td><td>3.94</td><td>3.64</td><td>3.74</td><td>4.27</td><td>3.06</td><td>4.70</td><td>3.73</td></tr></table>",
+        "bbox": [
+            127,
+            407,
+            870,
+            689
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "text",
+        "text": "",
+        "bbox": [
+            109,
+            712,
+            885,
+            744
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "text",
+        "text": "Multimodal Understanding. We conduct a comprehensive comparison across several multimodal understanding benchmarks, as shown in Tab. 4. UniAR significantly outperforms existing unified models on OCR-oriented tasks, such as OCRBench [32], DocVQA [39], and InfoVQA [40], as well as video understanding benchmark like MVBench [25]. Our model achieves results surpassing LLaVA-Onevision on the overall performance, and even obtains performance comparable to state-of-the-art open-source VLMs, e.g. Qwen3-VL [1]. However, we observe that performance on MMMU slightly lags behind. We attribute this gap to two primary factors: (1) Lack of pure-text data during pretraining, of which broad linguistic and factual knowledge is particularly beneficial; (2) We have not integrated reinforcement learning for understanding, which is proved to be effective for improving performance on reasoning-related tasks [24, 52].",
+        "bbox": [
+            109,
+            751,
+            888,
+            893
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "page_number",
+        "text": "8",
+        "bbox": [
+            493,
+            936,
+            504,
+            949
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "table",
+        "img_path": "images/b93d99bc14908506f859cc06ea85c7773691c5bd7e23fcac1ae69041b545d4e3.jpg",
+        "table_caption": [
+            "Table 4 Comparison on multimodal understanding benchmarks."
+        ],
+        "table_footnote": [],
+        "table_body": "<table><tr><td>Method</td><td>RLWDQA</td><td>MMMU</td><td>ChartQA</td><td>OCRBench</td><td>DocVQA</td><td>InfoVQA</td><td>MVBench</td></tr><tr><td colspan=\"8\">Und. Only Models</td></tr><tr><td>LLaVA-1.6 [30]</td><td>-</td><td>35.1</td><td>54.8</td><td>-</td><td>74.4</td><td>37.1</td><td>-</td></tr><tr><td>LLaVA-OV [22]</td><td>66.3</td><td>48.8</td><td>80.0</td><td>-</td><td>87.5</td><td>68.8</td><td>56.7</td></tr><tr><td>Qwen3-VL [1]</td><td>71.5</td><td>69.6</td><td>89.6</td><td>896</td><td>96.1</td><td>83.1</td><td>68.7</td></tr><tr><td colspan=\"8\">Unified Models</td></tr><tr><td>Emu3 [58]</td><td>-</td><td>31.6</td><td>-</td><td>687</td><td>76.3</td><td>43.8</td><td>-</td></tr><tr><td>Janus-Pro [5]</td><td>-</td><td>41.0</td><td>-</td><td>-</td><td>-</td><td>-</td><td>-</td></tr><tr><td>BLIP3-o [3]</td><td>-</td><td>50.6</td><td>-</td><td>-</td><td>-</td><td>-</td><td>-</td></tr><tr><td>Mogao [26]</td><td>-</td><td>44.2</td><td>-</td><td>-</td><td>-</td><td>-</td><td>-</td></tr><tr><td>BAGEL [10]</td><td>-</td><td>55.3</td><td>-</td><td>-</td><td>-</td><td>-</td><td>-</td></tr><tr><td>Show-o2 [63]</td><td>-</td><td>48.9</td><td>-</td><td>-</td><td>-</td><td>-</td><td>56.4</td></tr><tr><td>X-Omni [14]</td><td>-</td><td>-</td><td>-</td><td>704</td><td>88.6</td><td>-</td><td>-</td></tr><tr><td>UNIAR (Ours)</td><td>68.5</td><td>44.3</td><td>75.9</td><td>833</td><td>91.4</td><td>70.0</td><td>62.3</td></tr></table>",
+        "bbox": [
+            122,
+            122,
+            877,
+            358
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "table",
+        "img_path": "images/cd8578dbc9563b07701a2f8eae08d9e99e5dc4ae47e97bc9a6eaf96a4957054b.jpg",
+        "table_caption": [
+            "Table 5 Results on multimodal benchmarks. # Patches denotes the number of visual patches for the LLM."
+        ],
+        "table_footnote": [],
+        "table_body": "<table><tr><td>Model</td><td>ViT</td><td># Patches</td><td>OKVQA</td><td>TextVQA</td><td>DocVQA</td><td>InfoVQA</td><td>ChartQA</td><td>SEED</td><td>MME</td></tr><tr><td>DINOv2</td><td>L/14</td><td>576</td><td>54.1</td><td>13.4</td><td>7.3</td><td>21.3</td><td>10.8</td><td>57.0</td><td>1345</td></tr><tr><td>CLIP</td><td>L/14</td><td>576</td><td>60.0</td><td>47.5</td><td>25.6</td><td>21.8</td><td>19.2</td><td>70.1</td><td>1481</td></tr><tr><td>SigLIP</td><td>L/14</td><td>576</td><td>59.3</td><td>44.1</td><td>16.9</td><td>20.7</td><td>14.4</td><td>66.8</td><td>1416</td></tr><tr><td>SigLIP 2 (NaFlex)</td><td>So/16</td><td>576</td><td>60.6</td><td>59.9</td><td>28.9</td><td>25.0</td><td>18.4</td><td>73.1</td><td>1536</td></tr><tr><td>COMP-SigLIP</td><td>So/14</td><td>576</td><td>61.0</td><td>62.5</td><td>34.0</td><td>26.0</td><td>25.0</td><td>74.3</td><td>1543</td></tr><tr><td>AIMv2 (336px)</td><td>L/14</td><td>576</td><td>60.8</td><td>53.6</td><td>26.6</td><td>22.8</td><td>19.2</td><td>71.8</td><td>1472</td></tr><tr><td>UNIAR-SigLIP2</td><td>So/16</td><td>576</td><td>60.4</td><td>63.1</td><td>38.0</td><td>23.8</td><td>26.8</td><td>72.8</td><td>1537</td></tr></table>",
+        "bbox": [
+            117,
+            396,
+            883,
+            534
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "text",
+        "text": "4.3 Visual Tokenizer for Multimodal Understanding",
+        "text_level": 2,
+        "bbox": [
+            109,
+            556,
+            555,
+            574
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "text",
+        "text": "Setup. We follow the setup of AIMv2 [12] for multimodal instruction tuning. Specifically, we use a two-layer MLP to connect the visual tokenizer and the LLM, Llama 3.0-8B [16]. The parameters of the visual tokenizer are kept frozen, while the MLP connector and the LLM are trainable. We adopt the same hyperparameter settings as in AIMv2 and train the model for one epoch on the LLaVA-SFT dataset [29].",
+        "bbox": [
+            107,
+            580,
+            888,
+            646
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "text",
+        "text": "Evaluation. We conduct evaluations on general knowledge tasks (OKVQA [46], SEED-Bench [23], MME [13]) and text-rich tasks (InfoVQA [40], TextVQA [49], DocVQA [39], and ChartQA [38]). As shown in Tab. 5, our visual tokenizer exhibits strong multimodal understanding capabilities, achieving the best performance on TextVQA, DocVQA and ChartQA and outperforming strong baselines such as AIMv2 [12], SigLIP2 [55] and CoMP-SigLIP [6].",
+        "bbox": [
+            107,
+            652,
+            887,
+            734
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "text",
+        "text": "4.4 Ablation Studies",
+        "text_level": 2,
+        "bbox": [
+            109,
+            746,
+            294,
+            762
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "text",
+        "text": "Random visual index flip. To simulate the error accumulation faced by autoregressive generation, we apply random flipping to the bitwise visual index during pretraining. As shown in figure 4, we sample images under different temperatures and observe that the introduction of visual index flipping substantially stabilizes the generation process, enabling the model to produce coherent outputs even at higher temperatures. This improved robustness to accumulated errors is particularly important for reinforcement learning, where high-temperature is needed to encourage exploration.",
+        "bbox": [
+            107,
+            771,
+            887,
+            867
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "text",
+        "text": "Multi-level visual features. A key design of UniAR lies in modeling the visual tokenizer with multi-level features, which aims to preserve both low-level details and high-level semantics. To validate this, we train the visual decoder conditioned on features from different ViT layers. As shown in figure 3, deep-layer features mainly capture high-level semantics (e.g. , object categories) but lose high-frequency details, whereas shallowlayer features better support fine-grained reconstruction. Conditioning on multi-level features yields the best reconstruction quality. Interestingly, although our visual tokenizer is trained for multimodal understanding rather than image reconstruction, it can still recover most visual details under the 1024-resolution setting, including accurate rendering of textual content. This unexpectedly strong reconstruction performance further confirms the effectiveness of multi-level feature modeling in UniAR.",
+        "bbox": [
+            109,
+            873,
+            887,
+            905
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "page_number",
+        "text": "9",
+        "bbox": [
+            493,
+            936,
+            504,
+            949
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "image",
+        "img_path": "images/70bdd247441511b01be095500b1d56f07cad12e54ba9f525de9221244cf3a93b.jpg",
+        "image_caption": [
+            "Figure 3 Image reconstruction conditioned on different levels of visual features. Shallow features preserve fine details while deep features capture semantics; multi-level conditioning yields the best results. Although our tokenizer is not trained for reconstruction, it still achieves strong reconstructions (b), highlighting the effectiveness of multi-level features."
+        ],
+        "image_footnote": [],
+        "content": "",
+        "bbox": [
+            117,
+            97,
+            883,
+            311
+        ],
+        "page_idx": 9
+    },
+    {
+        "type": "image",
+        "img_path": "images/9548f36070c1847ca92937518e961a00cbf92b73e0050276a3b5fd00aaba90bc.jpg",
+        "image_caption": [],
+        "image_footnote": [],
+        "content": "",
+        "bbox": [
+            112,
+            378,
+            163,
+            465
+        ],
+        "page_idx": 9
+    },
+    {
+        "type": "image",
+        "img_path": "images/b6596eb604771f00576f7f4c3afcbb1b2d771b1a0469cfdab1c20c1b104b12ab.jpg",
+        "image_caption": [],
+        "image_footnote": [],
+        "content": "",
+        "bbox": [
+            166,
+            378,
+            215,
+            465
+        ],
+        "page_idx": 9
+    },
+    {
+        "type": "image",
+        "img_path": "images/e3080e22b799cda619736bd2a130281bf832f1153b160a4ff5a4c1f37bceb6ee.jpg",
+        "image_caption": [],
+        "image_footnote": [],
+        "content": "",
+        "bbox": [
+            217,
+            378,
+            264,
+            465
+        ],
+        "page_idx": 9
+    },
+    {
+        "type": "image",
+        "img_path": "images/f08303a27104270de571077b430daa9d74896146b883fe6aea7510db8a1139d9.jpg",
+        "image_caption": [],
+        "image_footnote": [],
+        "content": "",
+        "bbox": [
+            267,
+            378,
+            315,
+            465
+        ],
+        "page_idx": 9
+    },
+    {
+        "type": "image",
+        "img_path": "images/39fe82bf4e4d131979d4716fde0c15a67345df7f5aad71464d89092bf1517345.jpg",
+        "image_caption": [
+            "Figure 4 Impact of random bitwise visual index flipping during pre-training. Top row: without flipping; Bottom row: with flipping."
+        ],
+        "image_footnote": [],
+        "content": "",
+        "bbox": [
+            316,
+            378,
+            367,
+            465
+        ],
+        "page_idx": 9
+    },
+    {
+        "type": "image",
+        "img_path": "images/6c400d073b66a311ac9dc2a3a38106f59e1c05e1dfa4f48bbd470c0b5e8dfaeb.jpg",
+        "image_caption": [
+            "User: a beautiful vase placing on a table, and pictures hanging on the wall. <image\\_gen>",
+            "User: What is between th vase and th table?",
+            "Assistant: Between the vase and the table is a circular, wove placemat.",
+            "： User: How many pictures are hanging on the wall?",
+            "Assistant: There are two pictures hanging on the wall.",
+            "Figure 5 Emergent interleaved generation–understanding. Although not trained on interleaved multi-turn data, UniAR can answer fine-grained questions about its own generated image within the same context, without an extra visual re-encoding step."
+        ],
+        "image_footnote": [],
+        "content": "",
+        "bbox": [
+            483,
+            380,
+            571,
+            465
+        ],
+        "page_idx": 9
+    },
+    {
+        "type": "text",
+        "text": "",
+        "bbox": [
+            107,
+            558,
+            887,
+            672
+        ],
+        "page_idx": 9
+    },
+    {
+        "type": "text",
+        "text": "4.5 Emerging Properties.",
+        "text_level": 2,
+        "bbox": [
+            109,
+            684,
+            328,
+            702
+        ],
+        "page_idx": 9
+    },
+    {
+        "type": "text",
+        "text": "By using a single visual tokenizer for both understanding and generation, UniAR unifies the representation space and enables an emergent capability for interleaved generation–understanding in a shared context. Notably, our training data does not contain multi-turn, interleaved generation-then-understanding dialogues. Nevertheless, as shown in figure 5, when prompted with a vague instruction, UniAR first generates an image and can then accurately answer follow-up questions about fine-grained details that were not specified in the original prompt. This suggests that UniAR can directly interpret its own generated visual content within the same context, without an additional visual encoding pass. In contrast, approaches that rely on separate tokenizers (e.g. BAGEL and Janus-Pro) require re-encoding for understanding the generated image.",
+        "bbox": [
+            107,
+            709,
+            888,
+            835
+        ],
+        "page_idx": 9
+    },
+    {
+        "type": "page_number",
+        "text": "10",
+        "bbox": [
+            488,
+            936,
+            509,
+            949
+        ],
+        "page_idx": 9
+    },
+    {
+        "type": "text",
+        "text": "4.6 Effectiveness of Reinforcement Learning",
+        "text_level": 2,
+        "bbox": [
+            109,
+            107,
+            485,
+            125
+        ],
+        "page_idx": 10
+    },
+    {
+        "type": "text",
+        "text": "UniAR utilizes a discrete visual tokenizer and performs image prediction via auto-regression. This design is highly conducive to enhancing model capabilities through reinforcement learning. As illustrated in figure 6, the model’s text rendering performance improves significantly as the RL steps increase. When trained for 500 steps at a 512-pixel resolution, the score on OneIG-EN rose from 71.1 to 84.0. After an additional 100 steps of training at a higher resolution of 960, the metric further advanced to 87.3. This demonstrates that reinforcement learning can effectively improve the model performance.",
+        "bbox": [
+            109,
+            131,
+            488,
+            320
+        ],
+        "page_idx": 10
+    },
+    {
+        "type": "chart",
+        "img_path": "images/e19059cd6f100f1d17238298fcbd21ba5d81968813b0e5f9dbd8884d632f3252.jpg",
+        "content": "| Model              | Score |\n| ------------------ | ----- |\n| SFT                | 71.1  |\n| RL100 (res-512)   | 81.0  |\n| RL200 (res-512)   | 84.3  |\n| RL300 (res-512)   | 84.2  |\n| RL500 (res-512)   | 84.0  |\n| RL100 (res-960)   | 87.3  |",
+        "chart_caption": [
+            "Figure 6 As the reinforcement learning steps increases, the text rendering capability improves significantly."
+        ],
+        "chart_footnote": [],
+        "sub_type": "line chart",
+        "bbox": [
+            506,
+            107,
+            883,
+            280
+        ],
+        "page_idx": 10
+    },
+    {
+        "type": "text",
+        "text": "5 Conclusion",
+        "text_level": 2,
+        "bbox": [
+            109,
+            349,
+            246,
+            366
+        ],
+        "page_idx": 10
+    },
+    {
+        "type": "text",
+        "text": "We proposed UniAR, a unified autoregressive framework that unifies understanding, generation, and editing into a single model. UniAR is built upon three key designs. First, it adopts a unified visual tokenizer that maps both generative and understanding tasks into the same semantic space, further strengthening model unification. Second, we successfully incorporate bitwise visual tokens for unified modeling, which substantially enlarges the representational capacity while incurring less computational overhead; meanwhile, we model multi-level visual features to improve expressiveness. Third, we introduce a parallel bitwise prediction mechanism together with a visual decoder with resolution upsampling, which significantly accelerates autoregressive prediction. Experiments shown that UniAR achieves strong performance across generation, understanding, and editing.",
+        "bbox": [
+            107,
+            378,
+            888,
+            521
+        ],
+        "page_idx": 10
+    },
+    {
+        "type": "text",
+        "text": "Acknowledgments",
+        "text_level": 2,
+        "bbox": [
+            109,
+            537,
+            284,
+            555
+        ],
+        "page_idx": 10
+    },
+    {
+        "type": "text",
+        "text": "This work is supported by the National Natural Science Foundation of China (Grant No. 62472098) and the Science and Technology Commission of Shanghai Municipality (No. 25511106100).",
+        "bbox": [
+            107,
+            566,
+            885,
+            599
+        ],
+        "page_idx": 10
+    },
+    {
+        "type": "text",
+        "text": "Impact Statement",
+        "text_level": 2,
+        "bbox": [
+            109,
+            614,
+            272,
+            631
+        ],
+        "page_idx": 10
+    },
+    {
+        "type": "text",
+        "text": "This paper presents work whose goal is to advance the field of Machine Learning. There are many potential societal consequences of our work, none which we feel must be specifically highlighted here.",
+        "bbox": [
+            107,
+            643,
+            885,
+            676
+        ],
+        "page_idx": 10
+    },
+    {
+        "type": "text",
+        "text": "Appendix",
+        "text_level": 2,
+        "bbox": [
+            109,
+            691,
+            205,
+            709
+        ],
+        "page_idx": 10
+    },
+    {
+        "type": "text",
+        "text": "A Implementation Details",
+        "text_level": 2,
+        "bbox": [
+            109,
+            719,
+            366,
+            736
+        ],
+        "page_idx": 10
+    },
+    {
+        "type": "text",
+        "text": "A.1 Pre-training and Supervised Fine-tuning",
+        "text_level": 2,
+        "bbox": [
+            109,
+            747,
+            495,
+            765
+        ],
+        "page_idx": 10
+    },
+    {
+        "type": "text",
+        "text": "Our pre-training procedure is divided into two sequential stages with maximum sequence lengths of 8K and 32K tokens, respectively. We employ native resolution visual encoding during training, allowing for flexible data processing based on total token counts. For both understanding and generation tasks, we maintain a constant compression ratio of 32 × 32. Consequently, a 512 × 512 image is represented by 256 tokens for autoregressive modeling. For the 8K stage, generation resolution is capped at a resolution of 512 × 512 pixels. While at the 32K stage, the generation resolution limit is increased to 960 × 960 pixels. Images exceeding these constraints are down-scaled while preserving their original aspect ratio. During PT, SFT and RL stages, the vision encoder remains frozen, while the Large Language Model and the spatial merger are fully trainable. Data is structured into three distinct formats to support unified modeling:",
+        "bbox": [
+            107,
+            772,
+            887,
+            914
+        ],
+        "page_idx": 10
+    },
+    {
+        "type": "page_number",
+        "text": "11",
+        "bbox": [
+            488,
+            936,
+            506,
+            949
+        ],
+        "page_idx": 10
+    },
+    {
+        "type": "table",
+        "img_path": "images/baaac8f3cac1d53bc558b27994a516d45ac82fb6bb6798288fdc14d3060d80b4.jpg",
+        "table_caption": [
+            "Table 6 Training hyperparameter configurations of UniAR."
+        ],
+        "table_footnote": [],
+        "table_body": "<table><tr><td>Hyperparameters</td><td>PT-8K</td><td>PT-32K</td><td>SFT</td></tr><tr><td>Learning rate (max:min)</td><td>5e-4:5e-5</td><td>5e-5:1e-5</td><td>1e-5:1e-6</td></tr><tr><td>LR scheduler</td><td>Cosine</td><td>Cosine</td><td>Cosine</td></tr><tr><td>Weight decay</td><td>0.05</td><td>0.05</td><td>0.05</td></tr><tr><td>Gradient norm clip</td><td>1.0</td><td>1.0</td><td>1.0</td></tr><tr><td>Optimizer</td><td colspan=\"3\">AdamW ( $\\beta_1 = 0.9, \\beta_2 = 0.98$ )</td></tr><tr><td>Loss weight (Text: Vis)</td><td></td><td>1:10</td><td></td></tr><tr><td>Warm-up steps</td><td>500</td><td>500</td><td>500</td></tr><tr><td>Global batch size</td><td>512</td><td>128</td><td>64</td></tr><tr><td>Training tokens</td><td>800B</td><td>200B</td><td>50B</td></tr></table>",
+        "bbox": [
+            215,
+            122,
+            782,
+            286
+        ],
+        "page_idx": 11
+    },
+    {
+        "type": "list",
+        "sub_type": "text",
+        "list_items": [
+            "• visual understanding: {prompt; image\\_tokens; answers} ;",
+            "• text-to-image generation: {prompt; image\\_tokens}",
+            "• image editing: {prompt; reference\\_image\\_tokens; image\\_tokens}."
+        ],
+        "bbox": [
+            133,
+            309,
+            635,
+            372
+        ],
+        "page_idx": 11
+    },
+    {
+        "type": "text",
+        "text": "The bold parts indicate the tokens that contribute to the autoregressive loss. For subsequent Supervised Fine-Tuning (SFT), we adapt these templates into the ChatML format to facilitate multi-turn dialogue and instruction following. We list the detailed training recipe in Tab. 6.",
+        "bbox": [
+            109,
+            378,
+            885,
+            428
+        ],
+        "page_idx": 11
+    },
+    {
+        "type": "text",
+        "text": "A.2 Reinforcement Learning",
+        "text_level": 2,
+        "bbox": [
+            109,
+            441,
+            362,
+            459
+        ],
+        "page_idx": 11
+    },
+    {
+        "type": "text",
+        "text": "Reward system. We adopt multiple rewards to improve different aspects of the model. Specifically, for image quality, we use HPSv2 [62] and UnifiedReward [59] to enhance aesthetic quality and reduce artifacts. For text rendering, we apply PaddleOCR [9] to recognize texts in generated images and compute the reward based on the edit distance to the ground-truth text, encouraging accurate text rendering. For instruction following, we use the object-detector-based reward from FlowGRPO [31], which checks whether the generated image correctly reflects fine-grained concepts in the prompt, including object categories, counts, attributes, and relations. Finally, all rewards are normalized to the range 0, 1 and averaged as the final reward for each sample.",
+        "bbox": [
+            107,
+            467,
+            888,
+            593
+        ],
+        "page_idx": 11
+    },
+    {
+        "type": "text",
+        "text": "Data collection. To maximize coverage across diverse domains, we curate prompts from multiple sources, including (1) prompts sampled from our SFT data, (2) open-source datasets such as BLIP3o-60k [3] and ShareGPT-4o-Image [4], the GenEval training set and the OCR training set created by FlowGRPO [31], and (3) long-text prompts synthesized using a large language model.",
+        "bbox": [
+            107,
+            599,
+            887,
+            666
+        ],
+        "page_idx": 11
+    },
+    {
+        "type": "text",
+        "text": "Training details. We optimize the model with GRPO [47], using a constant learning rate of $5 \\times 1 0 ^ { - 6 }$ . To prevent over-optimization, we add a KL-divergence term to the training loss with a coefficient of 0.01. Each batch contains 32 randomly sampled prompts, and we generate 16 images for each prompt. We train in two stages: (1) 500 steps at $5 1 2 \\times 5 1 2$ resolution to quickly improve image quality and instruction following; (2) 100 additional steps at a higher 960 × 960 resolution to enhance long-text rendering.",
+        "bbox": [
+            107,
+            671,
+            887,
+            751
+        ],
+        "page_idx": 11
+    },
+    {
+        "type": "text",
+        "text": "A.3 Evaluation Configurations",
+        "text_level": 2,
+        "bbox": [
+            109,
+            765,
+            377,
+            782
+        ],
+        "page_idx": 11
+    },
+    {
+        "type": "text",
+        "text": "Autoregressive sampling. For both text-to-image generation and image editing, we adopt classifier-free guidance (CFG) [19] during autoregressive sampling to improve instruction following. Specifically, we compute the final prediction by combining the conditional and unconditional predictions with a guidance scale $s = 2 . 5$ for GenEval and s = 2.0 for other benchmarks. During evaluation, we set the sampling temperature to 0.1.",
+        "bbox": [
+            107,
+            789,
+            887,
+            869
+        ],
+        "page_idx": 11
+    },
+    {
+        "type": "text",
+        "text": "Inference resolutions. On GenEval and ImgEdit, we autoregressively generate $5 1 2 \\times 5 1 2$ visual tokens and apply ×2 upsampling in the DiT decoder to obtain 1024 × 1024 output images. For text-rendering benchmarks (LongText Bench and OneIG-Bench), we autoregressively generate 1280 × 704 images and do not use decoder super-resolution.",
+        "bbox": [
+            109,
+            876,
+            885,
+            910
+        ],
+        "page_idx": 11
+    },
+    {
+        "type": "page_number",
+        "text": "12",
+        "bbox": [
+            488,
+            936,
+            509,
+            949
+        ],
+        "page_idx": 11
+    },
+    {
+        "type": "table",
+        "img_path": "images/7a6f5a3ccce67279de6d2a7b07d75de09542bb851278d97f5c1944f46b04d35b.jpg",
+        "table_caption": [
+            "Table 7 Training efficiency comparison between continuous and discrete visual tokens."
+        ],
+        "table_footnote": [],
+        "table_body": "<table><tr><td></td><td>Continuous</td><td>Discrete</td></tr><tr><td>Time/Iter (s)</td><td>35.4</td><td>24.5</td></tr></table>",
+        "bbox": [
+            135,
+            135,
+            439,
+            183
+        ],
+        "page_idx": 12
+    },
+    {
+        "type": "table",
+        "img_path": "images/ae29c54cbb84d5baa6749606c170ce2296c47764e2c2c73c1d0e822647a2457a.jpg",
+        "table_caption": [
+            "Table 8 GPU hours for each training stage. The total training cost is approximately 33k GPU hours."
+        ],
+        "table_footnote": [],
+        "table_body": "<table><tr><td></td><td>PT-8K</td><td>PT-32K</td><td>SFT</td><td>RL</td></tr><tr><td>GPU Hours</td><td>19k</td><td>10k</td><td>2k</td><td>1.9k</td></tr></table>",
+        "bbox": [
+            527,
+            135,
+            854,
+            183
+        ],
+        "page_idx": 12
+    },
+    {
+        "type": "table",
+        "img_path": "images/c653352693823f8ade9b74a07281b681b27da916d81d570f40bbc684bc5058c3.jpg",
+        "table_caption": [
+            "Table 9 Inference efficiency comparison."
+        ],
+        "table_footnote": [],
+        "table_body": "<table><tr><td></td><td>Downsample ratio</td><td>#Token</td><td>Time (s)</td></tr><tr><td>Janus-Pro (7B)</td><td>×16</td><td>4096</td><td>101.9</td></tr><tr><td>X-Omni (7B)</td><td>×16</td><td>4096</td><td>119.7</td></tr><tr><td>UniAR (8B) w/o decoder upsample</td><td>×32</td><td>1024</td><td>53.5</td></tr><tr><td>UniAR (8B) w/ decoder upsample</td><td>×64</td><td>256</td><td>13.0</td></tr></table>",
+        "bbox": [
+            207,
+            220,
+            792,
+            316
+        ],
+        "page_idx": 12
+    },
+    {
+        "type": "text",
+        "text": "",
+        "bbox": [
+            109,
+            339,
+            885,
+            369
+        ],
+        "page_idx": 12
+    },
+    {
+        "type": "text",
+        "text": "A.4 Training and Inference Cost Analysis",
+        "text_level": 2,
+        "bbox": [
+            109,
+            386,
+            467,
+            402
+        ],
+        "page_idx": 12
+    },
+    {
+        "type": "text",
+        "text": "Regarding training efficiency, discrete visual tokens improve pre-training throughput by approximately 30% over continuous tokens at a sequence length of 8K, as visual inputs can be pre-tokenized and stored as bit-packed representations offline. Detailed training elapsed times are provided in Tab. 7. We also report the training time for each stage in Tab. 8.",
+        "bbox": [
+            109,
+            410,
+            887,
+            474
+        ],
+        "page_idx": 12
+    },
+    {
+        "type": "text",
+        "text": "Regarding inference efficiency for image generation, we compare UniAR with Janus-Pro [5] and X-Omni [14]. We report the time required for the autoregressive generation stage, excluding the cost of the visual decoder. All models are evaluated on the same A100 GPU without CFG, and we report the time required to generate a 1024-resolution image. UniAR achieves significantly faster generation, mainly due to its higher 32× downsampling ratio, which quadratically reduces the number of prediction steps. When the decoder uses upsampling, the number of predicted tokens is further reduced to 256, leading to an additional speedup.",
+        "bbox": [
+            109,
+            481,
+            888,
+            578
+        ],
+        "page_idx": 12
+    },
+    {
+        "type": "text",
+        "text": "B Limitations and Future Works",
+        "text_level": 2,
+        "bbox": [
+            109,
+            592,
+            416,
+            608
+        ],
+        "page_idx": 12
+    },
+    {
+        "type": "text",
+        "text": "Due to resource constraints, we do not include pure-text data in joint pre-training, leaving considerable room for optimizing the data mixture for both understanding and generation. In addition, our RL training is currently limited to image generation. In the future, we aim to further explore large-scale pre-training by scaling both the dataset size and model parameters. Furthermore, we find that there is much room in our post-training, particularly through Reinforcement Learning. We will focus on developing reward models for specific domains, such as aesthetics, instruction-following, and text-rendering. Finally, we plan to extend the capabilities of each individual domain while exploring the synergy between them.",
+        "bbox": [
+            109,
+            622,
+            887,
+            733
+        ],
+        "page_idx": 12
+    },
+    {
+        "type": "page_number",
+        "text": "13",
+        "bbox": [
+            488,
+            936,
+            509,
+            949
+        ],
+        "page_idx": 12
+    },
+    {
+        "type": "text",
+        "text": "References",
+        "text_level": 2,
+        "bbox": [
+            112,
+            95,
+            212,
+            112
+        ],
+        "page_idx": 13
+    },
+    {
+        "type": "list",
+        "sub_type": "ref_text",
+        "list_items": [
+            "[1] Shuai Bai, Yuxuan Cai, Ruizhe Chen, Keqin Chen, Xionghui Chen, Zesen Cheng, Lianghao Deng, Wei Ding, Chang Gao, Chunjiang Ge, Wenbin Ge, Zhifang Guo, Qidong Huang, Jie Huang, Fei Huang, Binyuan Hui, Shutong Jiang, Zhaohai Li, Mingsheng Li, Mei Li, Kaixin Li, Zicheng Lin, Junyang Lin, Xuejing Liu, Jiawei Liu, Chenglong Liu, Yang Liu, Dayiheng Liu, Shixuan Liu, Dunjie Lu, Ruilin Luo, Chenxu Lv, Rui Men, Lingchen Meng, Xuancheng Ren, Xingzhang Ren, Sibo Song, Yuchong Sun, Jun Tang, Jianhong Tu, Jianqiang Wan, Peng Wang, Pengfei Wang, Qiuyue Wang, Yuxuan Wang, Tianbao Xie, Yiheng Xu, Haiyang Xu, Jin Xu, Zhibo Yang, Mingkun Yang, Jianxin Yang, An Yang, Bowen Yu, Fei Zhang, Hang Zhang, Xi Zhang, Bo Zheng, Humen Zhong, Jingren Zhou, Fan Zhou, Jing Zhou, Yuanzhi Zhu, and Ke Zhu. Qwen3-vl technical report. arXiv preprint arXiv:2511.21631, 2025.",
+            "[2] Jingjing Chang, Yixiao Fang, Peng Xing, Shuhan Wu, Wei Cheng, Rui Wang, Xianfang Zeng, Gang Yu, and Hai-Bao Chen. Oneig-bench: Omni-dimensional nuanced evaluation for image generation. In NeurIPS, 2025.",
+            "[3] Jiuhai Chen, Zhiyang Xu, Xichen Pan, Yushi Hu, Can Qin, Tom Goldstein, Lifu Huang, Tianyi Zhou, Saining Xie, Silvio Savarese, et al. Blip3-o: A family of fully open unified multimodal models-architecture, training and dataset. arXiv preprint arXiv:2505.09568, 2025.",
+            "[4] Junying Chen, Zhenyang Cai, Pengcheng Chen, Shunian Chen, Ke Ji, Xidong Wang, Yunjin Yang, and Benyou Wang. Sharegpt-4o-image: Aligning multimodal models with gpt-4o-level image generation. arXiv preprint arXiv:2506.18095, 2025.",
+            "[5] Xiaokang Chen, Zhiyu Wu, Xingchao Liu, Zizheng Pan, Wen Liu, Zhenda Xie, Xingkai Yu, and Chong Ruan. Janus-pro: Unified multimodal understanding and generation with data and model scaling. arXiv preprint arXiv:2501.17811, 2025.",
+            "[6] Yitong Chen, Lingchen Meng, Wujian Peng, Zuxuan Wu, and Yu-Gang Jiang. Comp: Continual multimodal pre-training for vision foundation models. arXiv preprint arXiv:2503.18931, 2025.",
+            "[7] Yitong Chen, Zuxuan Wu, Xipeng Qiu, and Yu-Gang Jiang. Catok: Taming mean flows for one-dimensional causal image tokenization. In CVPR, 2026.",
+            "[8] Gheorghe Comanici, Eric Bieber, Mike Schaekermann, Ice Pasupat, Noveen Sachdeva, Inderjit Dhillon, Marcel Blistein, Ori Ram, Dan Zhang, Evan Rosen, et al. Gemini 2.5: Pushing the frontier with advanced reasoning, multimodality, long context, and next generation agentic capabilities. arXiv preprint arXiv:2507.06261, 2025.",
+            "[9] Cheng Cui, Ting Sun, Manhui Lin, Tingquan Gao, Yubo Zhang, Jiaxuan Liu, Xueqing Wang, Zelun Zhang, Changda Zhou, Hongen Liu, Yue Zhang, Wenyu Lv, Kui Huang, Yichao Zhang, Jing Zhang, Jun Zhang, Yi Liu, Dianhai Yu, and Yanjun Ma. Paddleocr 3.0 technical report, 2025. URL https://arxiv.org/abs/2507.05595.",
+            "[10] Chaorui Deng, Deyao Zhu, Kunchang Li, Chenhui Gou, Feng Li, Zeyu Wang, Shu Zhong, Weihao Yu, Xiaonan Nie, Ziang Song, et al. Emerging properties in unified multimodal pretraining. arXiv preprint arXiv:2505.14683, 2025.",
+            "[11] Patrick Esser, Sumith Kulal, Andreas Blattmann, Rahim Entezari, Jonas Müller, Harry Saini, Yam Levi, Dominik Lorenz, Axel Sauer, Frederic Boesel, et al. Scaling rectified flow transformers for high-resolution image synthesis. In ICML, 2024.",
+            "[12] Enrico Fini, Mustafa Shukor, Xiujun Li, Philipp Dufter, Michal Klein, David Haldimann, Sai Aitharaju, Victor G Turrisi da Costa, Louis Béthune, Zhe Gan, et al. Multimodal autoregressive pre-training of large vision encoders. In CVPR, pages 9641–9654, 2025.",
+            "[13] Chaoyou Fu, Peixian Chen, Yunhang Shen, Yulei Qin, Mengdan Zhang, Xu Lin, Jinrui Yang, Xiawu Zheng, Ke Li, Xing Sun, et al. Mme: A comprehensive evaluation benchmark for multimodal large language models. In NeurIPS, 2025.",
+            "[14] Zigang Geng, Yibing Wang, Yeyao Ma, Chen Li, Yongming Rao, Shuyang Gu, Zhao Zhong, Qinglin Lu, Han Hu, Xiaosong Zhang, et al. X-omni: Reinforcement learning makes discrete autoregressive image generative models great again. arXiv preprint arXiv:2507.22058, 2025.",
+            "[15] Dhruba Ghosh, Hannaneh Hajishirzi, and Ludwig Schmidt. Geneval: An object-focused framework for evaluating text-to-image alignment. In NeurIPS, 2023.",
+            "[16] Aaron Grattafiori, Abhimanyu Dubey, Abhinav Jauhri, Abhinav Pandey, Abhishek Kadian, Ahmad Al-Dahle, Aiesha Letman, Akhil Mathur, Alan Schelten, Alex Vaughan, et al. The llama 3 herd of models. arXiv preprint arXiv:2407.21783, 2024.",
+            "[17] Jiaming Han, Hao Chen, Yang Zhao, Hanyu Wang, Qi Zhao, Ziyan Yang, Hao He, Xiangyu Yue, and Lu Jiang. Vision as a dialect: Unifying visual understanding and generation via text-aligned representations. In NeurIPS, 2025.",
+            "[18] Jian Han, Jinlai Liu, Yi Jiang, Bin Yan, Yuqi Zhang, Zehuan Yuan, Bingyue Peng, and Xiaobing Liu. Infinity: Scaling bitwise autoregressive modeling for high-resolution image synthesis. In CVPR, 2025.",
+            "[19] Jonathan Ho and Tim Salimans. Classifier-free diffusion guidance. arXiv preprint arXiv:2207.12598, 2022.",
+            "[20] Aaron Hurst, Adam Lerer, Adam P Goucher, Adam Perelman, Aditya Ramesh, Aidan Clark, AJ Ostrow, Akila Welihinda, Alan Hayes, Alec Radford, et al. Gpt-4o system card. arXiv preprint arXiv:2410.21276, 2024.",
+            "[21] Black Forest Labs, Stephen Batifol, Andreas Blattmann, Frederic Boesel, Saksham Consul, Cyril Diagne, Tim Dockhorn, Jack English, Zion English, Patrick Esser, et al. Flux. 1 kontext: Flow matching for in-context image generation and editing in latent space. arXiv preprint arXiv:2506.15742, 2025.",
+            "[22] Bo Li, Yuanhan Zhang, Dong Guo, Renrui Zhang, Feng Li, Hao Zhang, Kaichen Zhang, Yanwei Li, Ziwei Liu, and Chunyuan Li. Llava-onevision: Easy visual task transfer. arXiv preprint arXiv:2408.03326, 2024.",
+            "[23] Bohao Li, Rui Wang, Guangzhi Wang, Yuying Ge, Yixiao Ge, and Ying Shan. Seed-bench: Benchmarking multimodal llms with generative comprehension. In CVPR, 2024.",
+            "[24] Jiaze Li, Jingyang Chen, Yuxun Qu, Jianzhong Ju, Zhenbo Luo, Jian Luan, Shĳie Xu, Zhenru Lin, Junyou Zhu, Boshen Xu, et al. Xiaomi mimo-vl-miloco technical report. arXiv preprint arXiv:2512.17436, 2025.",
+            "[25] Kunchang Li, Yali Wang, Yinan He, Yizhuo Li, Yi Wang, Yi Liu, Zun Wang, Jilan Xu, Guo Chen, Ping Luo, et al. Mvbench: A comprehensive multi-modal video understanding benchmark. In CVPR, pages 22195–22206, 2024.",
+            "[26] Chao Liao, Liyang Liu, Xun Wang, Zhengxiong Luo, Xinyu Zhang, Wenliang Zhao, Jie Wu, Liang Li, Zhi Tian, and Weilin Huang. Mogao: An omni foundation model for interleaved multi-modal generation. arXiv preprint arXiv:2505.05472, 2025.",
+            "[27] Bin Lin, Zongjian Li, Xinhua Cheng, Yuwei Niu, Yang Ye, Xianyi He, Shenghai Yuan, Wangbo Yu, Shaodong Wang, Yunyang Ge, et al. Uniworld: High-resolution semantic encoders for unified visual understanding and generation. arXiv preprint arXiv:2506.03147, 2025.",
+            "[28] Yaron Lipman, Ricky TQ Chen, Heli Ben-Hamu, Maximilian Nickel, and Matt Le. Flow matching for generative modeling. arXiv preprint arXiv:2210.02747, 2022.",
+            "[29] Haotian Liu, Chunyuan Li, Yuheng Li, and Yong Jae Lee. Improved baselines with visual instruction tuning. In Proceedings of the IEEE/CVF conference on computer vision and pattern recognition, pages 26296–26306, 2024.",
+            "[30] Haotian Liu, Chunyuan Li, Yuheng Li, Bo Li, Yuanhan Zhang, Sheng Shen, and Yong Jae Lee. Llavanext: Improved reasoning, ocr, and world knowledge, 2024.",
+            "[31] Jie Liu, Gongye Liu, Jiajun Liang, Yangguang Li, Jiaheng Liu, Xintao Wang, Pengfei Wan, Di Zhang, and Wanli Ouyang. Flow-grpo: Training flow matching models via online rl. In NeurIPS, volume 38, pages 40783–40818, 2025.",
+            "[32] Yuliang Liu, Zhang Li, Mingxin Huang, Biao Yang, Wenwen Yu, Chunyuan Li, Xu-Cheng Yin, Cheng-Lin Liu, Lianwen Jin, and Xiang Bai. Ocrbench: on the hidden mystery of ocr in large multimodal models. Science China Information Sciences, 67(12):220102, 2024.",
+            "[33] Zhiheng Liu, Weiming Ren, Haozhe Liu, Zĳian Zhou, Shoufa Chen, Haonan Qiu, Xiaoke Huang, Zhaochong An, Fanny Yang, Aditya Patel, et al. Tuna: Taming unified visual representations for native unified multimodal models. arXiv preprint arXiv:2512.02014, 2025.",
+            "[34] Zhuohan Liu, Wujian Peng, Yitong Chen, and Zuxuan Wu. Compositional text-to-image generation via region-aware bimodal direct preference optimization. In CVPR, pages 36604–36614, 2026.",
+            "[35] Jiasen Lu, Liangchen Song, Mingze Xu, Byeongjoo Ahn, Yanjun Wang, Chen Chen, Afshin Dehghan, and Yinfei Yang. Atoken: A unified tokenizer for vision. arXiv preprint arXiv:2509.14476, 2025.",
+            "[36] Chuofan Ma, Yi Jiang, Junfeng Wu, Jihan Yang, Xin Yu, Zehuan Yuan, Bingyue Peng, and Xiaojuan Qi. Unitok: A unified tokenizer for visual generation and understanding. In NeurIPS, volume 38, pages 129274–129297, 2025.",
+            "[37] Yiyang Ma, Xingchao Liu, Xiaokang Chen, Wen Liu, Chengyue Wu, Zhiyu Wu, Zizheng Pan, Zhenda Xie, Haowei Zhang, Xingkai Yu, et al. Janusflow: Harmonizing autoregression and rectified flow for unified multimodal understanding and generation. In CVPR, 2025.",
+            "[38] Ahmed Masry, Xuan Long Do, Jia Qing Tan, Shafiq Joty, and Enamul Hoque. Chartqa: A benchmark for question answering about charts with visual and logical reasoning. In Findings of the association for computational linguistics: ACL 2022, pages 2263–2279, 2022.",
+            "[39] Minesh Mathew, Dimosthenis Karatzas, and CV Jawahar. Docvqa: A dataset for vqa on document images. In WACV, pages 2200–2209, 2021.",
+            "[40] Minesh Mathew, Viraj Bagal, Rubèn Tito, Dimosthenis Karatzas, Ernest Valveny, and CV Jawahar. Infographicvqa. In WACV, pages 1697–1706, 2022.",
+            "[41] Lingchen Meng, Jianwei Yang, Rui Tian, Xiyang Dai, Zuxuan Wu, Jianfeng Gao, and Yu-Gang Jiang. Deepstack: Deeply stacking visual tokens is surprisingly simple and effective for lmms. In NeurIPS, 2024.",
+            "[42] Xichen Pan, Satya Narayan Shukla, Aashu Singh, Zhuokai Zhao, Shlok Kumar Mishra, Jialiang Wang, Zhiyang Xu, Jiuhai Chen, Kunpeng Li, Felix Juefei-Xu, et al. Transfer between modalities with metaqueries. arXiv preprint arXiv:2504.06256, 2025.",
+            "[43] Wujian Peng, Lingchen Meng, Yitong Chen, Yiweng Xie, Yang Liu, Tao Gui, Hang Xu, Xipeng Qiu, Zuxuan Wu, and Yu-Gang Jiang. Inst-it: Boosting instance understanding via explicit visual prompt instruction tuning. In NeurIPS, 2025.",
+            "[44] Liao Qu, Huichao Zhang, Yiheng Liu, Xu Wang, Yi Jiang, Yiming Gao, Hu Ye, Daniel K. Du, Zehuan Yuan, and Xinglong Wu. Tokenflow: Unified image tokenizer for multimodal understanding and generation. In CVPR, 2025.",
+            "[45] Alec Radford, Jong Wook Kim, Chris Hallacy, Aditya Ramesh, Gabriel Goh, Sandhini Agarwal, Girish Sastry, Amanda Askell, Pamela Mishkin, Jack Clark, et al. Learning transferable visual models from natural language supervision. In ICML. PmLR, 2021.",
+            "[46] Dustin Schwenk, Apoorv Khandelwal, Christopher Clark, Kenneth Marino, and Roozbeh Mottaghi. A-okvqa: A benchmark for visual question answering using world knowledge. In ECCV, pages 146–162. Springer, 2022.",
+            "[47] Zhihong Shao, Peiyi Wang, Qihao Zhu, Runxin Xu, Junxiao Song, Xiao Bi, Haowei Zhang, Mingchuan Zhang, YK Li, Yang Wu, et al. Deepseekmath: Pushing the limits of mathematical reasoning in open language models. arXiv preprint arXiv:2402.03300, 2024.",
+            "[48] Fengyuan Shi, Zhuoyan Luo, Yixiao Ge, Yujiu Yang, Ying Shan, and Limin Wang. Scalable image tokenization with index backpropagation quantization. In Proceedings of the IEEE/CVF International Conference on Computer Vision, pages 16037–16046, 2025.",
+            "[49] Amanpreet Singh, Vivek Natarajan, Meet Shah, Yu Jiang, Xinlei Chen, Dhruv Batra, Devi Parikh, and Marcus Rohrbach. Towards vqa models that can read. In CVPR, pages 8317–8326, 2019.",
+            "[50] Hao Tang, Chenwei Xie, Xiaoyi Bao, Tingyu Weng, Pandeng Li, Yun Zheng, and Liwei Wang. Unilip: Adapting clip for unified multimodal understanding, generation and editing. arXiv preprint arXiv:2507.23278, 2025.",
+            "[51] Chameleon Team. Chameleon: Mixed-modal early-fusion foundation models. arXiv preprint arXiv:2405.09818, 2024.",
+            "[52] Kimi Team, Angang Du, Bohong Yin, Bowei Xing, Bowen Qu, Bowen Wang, Cheng Chen, Chenlin Zhang, Chenzhuang Du, Chu Wei, et al. Kimi-vl technical report. arXiv preprint arXiv:2504.07491, 2025.",
+            "[53] Rui Tian, Mingfei Gao, Haiming Gang, Jiasen Lu, Zhe Gan, Yinfei Yang, Zuxuan Wu, and Afshin Dehghan. Unigen-1.5: Enhancing image generation and editing through reward unification in reinforcement learning. arXiv preprint arXiv:2511.14760, 2025.",
+            "[54] Rui Tian, Mingfei Gao, Mingze Xu, Jiaming Hu, Jiasen Lu, Zuxuan Wu, Yinfei Yang, and Afshin Dehghan. Unigen: Enhanced training & test-time strategies for unified multimodal understanding and generation. In NeurIPS, 2025.",
+            "[55] Michael Tschannen, Alexey Gritsenko, Xiao Wang, Muhammad Ferjad Naeem, Ibrahim Alabdulmohsin, Nikhil Parthasarathy, Talfan Evans, Lucas Beyer, Ye Xia, Basil Mustafa, et al. Siglip 2: Multilingual vision-language encoders with improved semantic understanding, localization, and dense features. arXiv preprint arXiv:2502.14786, 2025.",
+            "[56] Aaron Van Den Oord, Oriol Vinyals, et al. Neural discrete representation learning. In NeurIPS, 2017.",
+            "[57] Junke Wang, Yi Jiang, Zehuan Yuan, Bingyue Peng, Zuxuan Wu, and Yu-Gang Jiang. Omnitokenizer: A joint image-video tokenizer for visual generation. NeurIPS, 37:28281–28295, 2024.",
+            "[58] Xinlong Wang, Xiaosong Zhang, Zhengxiong Luo, Quan Sun, Yufeng Cui, Jinsheng Wang, Fan Zhang, Yueze Wang, Zhen Li, Qiying Yu, et al. Emu3: Next-token prediction is all you need. arXiv preprint arXiv:2409.18869, 2024.",
+            "[59] Yibin Wang, Yuhang Zang, Hao Li, Cheng Jin, and Jiaqi Wang. Unified reward model for multimodal understanding and generation. arXiv preprint arXiv:2503.05236, 2025.",
+            "[60] Chenfei Wu, Jiahao Li, Jingren Zhou, Junyang Lin, Kaiyuan Gao, Kun Yan, Sheng-ming Yin, Shuai Bai, Xiao Xu, Yilei Chen, et al. Qwen-image technical report. arXiv preprint arXiv:2508.02324, 2025.",
+            "[61] Chenyuan Wu, Pengfei Zheng, Ruiran Yan, Shitao Xiao, Xin Luo, Yueze Wang, Wanli Li, Xiyan Jiang, Yexin Liu, Junjie Zhou, et al. Omnigen2: Exploration to advanced multimodal generation. arXiv preprint arXiv:2506.18871, 2025.",
+            "[62] Xiaoshi Wu, Yiming Hao, Keqiang Sun, Yixiong Chen, Feng Zhu, Rui Zhao, and Hongsheng Li. Human preference score v2: A solid benchmark for evaluating human preferences of text-to-image synthesis. arXiv preprint arXiv:2306.09341, 2023.",
+            "[63] Jinheng Xie, Zhenheng Yang, and Mike Zheng Shou. Show-o2: Improved native unified multimodal models. In NeurIPS, volume 38, pages 47490–47518, 2025.",
+            "[64] Zhiyuan Yan, Junyan Ye, Weĳia Li, Zilong Huang, Shenghai Yuan, Xiangyang He, Kaiqing Lin, Jun He, Conghui He, and Li Yuan. Gpt-imgeval: A comprehensive benchmark for diagnosing gpt4o in image generation. arXiv preprint arXiv:2504.02782, 2025.",
+            "[65] An Yang, Anfeng Li, Baosong Yang, Beichen Zhang, Binyuan Hui, Bo Zheng, Bowen Yu, Chang Gao, Chengen Huang, Chenxu Lv, et al. Qwen3 technical report. arXiv preprint arXiv:2505.09388, 2025.",
+            "[66] Yang Ye, Xianyi He, Zongjian Li, Bin Lin, Shenghai Yuan, Zhiyuan Yan, Bohan Hou, and Li Yuan. Imgedit: A unified image editing dataset and benchmark. In NeurIPS, 2025.",
+            "[67] Lĳun Yu, José Lezama, Nitesh Bharadwaj Gundavarapu, Luca Versari, Kihyuk Sohn, David Minnen, Yong Cheng, Agrim Gupta, Xiuye Gu, Alexander G Hauptmann, et al. Language model beats diffusion-tokenizer is key to visual generation. In ICLR, 2024.",
+            "[68] Huichao Zhang, Liao Qu, Yiheng Liu, Hang Chen, Yangyang Song, Yongsheng Dong, Shikun Sun, Xian Li, Xu Wang, Yi Jiang, et al. Nextflow: Unified sequential modeling activates multimodal understanding and generation. arXiv preprint arXiv:2601.02204, 2026.",
+            "[69] Lvmin Zhang, Anyi Rao, and Maneesh Agrawala. Adding conditional control to text-to-image diffusion models. In ICCV, pages 3836–3847, 2023.",
+            "[70] Yue Zhao, Yuanjun Xiong, and Philipp Krähenbühl. Image and video tokenization with binary spherical quantization. In ICLR, 2025.",
+            "[71] Yue Zhao, Fuzhao Xue, Scott Reed, Linxi Fan, Yuke Zhu, Jan Kautz, Zhiding Yu, Philipp Krähenbühl, and De-An Huang. Qlip: Text-aligned visual tokenization unifies auto-regressive multimodal understanding and generation. arXiv preprint arXiv:2502.05178, 2025.",
+            "[72] Chunting Zhou, Lili Yu, Arun Babu, Kushal Tirumala, Michihiro Yasunaga, Leonid Shamis, Jacob Kahn, Xuezhe Ma, Luke Zettlemoyer, and Omer Levy. Transfusion: Predict the next token and diffuse images with one multi-modal model. In ICLR, 2025."
+        ],
+        "bbox": [
+            112,
+            119,
+            892,
+            887
+        ],
+        "page_idx": 13
+    },
+    {
+        "type": "page_number",
+        "text": "14",
+        "bbox": [
+            488,
+            936,
+            508,
+            949
+        ],
+        "page_idx": 13
+    },
+    {
+        "type": "list",
+        "sub_type": "ref_text",
+        "list_items": [],
+        "bbox": [
+            106,
+            93,
+            893,
+            902
+        ],
+        "page_idx": 14
+    },
+    {
+        "type": "page_number",
+        "text": "15",
+        "bbox": [
+            488,
+            936,
+            509,
+            949
+        ],
+        "page_idx": 14
+    },
+    {
+        "type": "list",
+        "sub_type": "ref_text",
+        "list_items": [],
+        "bbox": [
+            106,
+            93,
+            892,
+            907
+        ],
+        "page_idx": 15
+    },
+    {
+        "type": "page_number",
+        "text": "16",
+        "bbox": [
+            488,
+            936,
+            508,
+            949
+        ],
+        "page_idx": 15
+    },
+    {
+        "type": "list",
+        "sub_type": "ref_text",
+        "list_items": [],
+        "bbox": [
+            106,
+            93,
+            892,
+            843
+        ],
+        "page_idx": 16
+    },
+    {
+        "type": "page_number",
+        "text": "",
+        "bbox": [
+            488,
+            936,
+            508,
+            949
+        ],
+        "page_idx": 16
+    }
+]

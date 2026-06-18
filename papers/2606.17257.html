@@ -1,0 +1,101 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Pulling The REINS · 通用视觉自监督研究报</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Source+Serif+4:ital,opsz,wght@0,8..60,400;0,8..60,500;0,8..60,600;1,8..60,400&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../assets/visual-ssl.css?v=20260615ssl6">
+</head>
+<body data-paper-data-url="../data/papers.json">
+  <header class="masthead">
+    <a class="masthead-title" href="../index.html">通用视觉自监督研究报</a>
+    <div class="masthead-kicker">A Daily Digest of Visual Self-Supervised Learning</div>
+    <div class="masthead-meta">
+      <span>2026-06-18</span>
+      <span>图像表征 · VFM · JEPA · 视频预训练</span>
+    </div>
+  </header>
+  <nav class="site-nav" aria-label="主导航">
+    <a class="nav-link" href="../index.html">头版</a>
+<a class="nav-link" href="../issues/2026-06-18.html">今日速递</a>
+<a class="nav-link" href="../pages/catalog.html">论文目录</a>
+<a class="nav-link" href="../pages/timeline.html">时间线</a>
+<span class="nav-streak" title="连续追踪天数"><svg viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><path d="M8 0c.7 2.5-1.2 3.7-2 5-1 1.6-1 4 .8 4.8C6.4 8.5 7.4 7.8 8 7c.3 1.3-.4 2 .9 3 .9.7 1.3 1.6 1.1 2.6C9.7 14.6 8.9 16 6.8 16 4.6 16 3 14.3 3 12c0-3.3 2.6-4.8 2.4-8C6.9 4.6 8.4 5 8 0z"/></svg> 连续 <b data-streak>0</b> 天</span>
+  </nav>
+  <main><article class="paper-detail" data-pid="2606.17257" data-category="arXiv 新增 + video diffusion representation steering" data-priority="P3" data-date="2026-06-18" data-title="pulling the reins: training-free safety alignment of video diffusion models via representation steering" data-keywords="pulling the reins: training-free safety alignment of video diffusion models via representation steering pulling the reins arxiv 新增 + video diffusion representation steering p3 2026-06-18 arxiv 新增 + video diffusion representation steering 不是 ssl 训练法，但说明安全相关结构可在线性表示方向中分离，适合作为生成模型 hidden representation 读物 中相关；详见方法、贡献和实验边界。">
+  <div class="paper-main">
+    <div class="kicker">arXiv 新增 + video diffusion representation steering · P3 · 2026-06-18</div>
+    <h1 class="paper-headline">Pulling The REINS：作为 P3 读物，它说明视频生成模型 hidden representation 中已有可操作语义方向</h1>
+    <p class="dek">显示安全/不安全生成轨迹可由中间层表示中的单一方向区分，支持无需 fine-tune 的表示空间干预。</p>
+    <p class="byline"><strong>Pulling The REINS: Training-Free Safety Alignment of Video Diffusion Models via Representation Steering</strong>　Rohit Kundu , Arindam Dutta , Sarosij Bose , Athula Balachandran , Amit K. Roy-Chowdhury；arXiv 元数据未稳定列机构时按作者列表记录。　arXiv 新增 + video diffusion representation steering　<a href="https://arxiv.org/abs/2606.17257">原文链接</a></p>
+    <div class="paper-facts">
+      <span><b>编号</b>2606.17257</span>
+      <span><b>优先级</b>P3</span>
+      <span><b>类别</b>arXiv 新增 + video diffusion representation steering</span>
+      <span><b>会议</b>arXiv 新增 + video diffusion representation steering</span>
+      <span><b>方法</b>REINS 在视频 diffusion transformer 的 hidden states 中找到安全相关线性方向，并在推理时注入该方向做 training-free safety steering。</span>
+      <span><b>来源</b>arXiv / OpenReview</span>
+    </div>
+    <div class="feature-body">
+      <p class="lead dropcap">先说结论。作为 P3 读物，它说明视频生成模型 hidden representation 中已有可操作语义方向。 显示安全/不安全生成轨迹可由中间层表示中的单一方向区分，支持无需 fine-tune 的表示空间干预。</p>
+      <figure class="full-fig"><img src="../assets/mineru/2606.17257/images/395a070dbb935762d1813dffc6d09ffe4176c12456ffb01881585be66bfc40ba.jpg" alt="Figureure 2 · : Qualitative results: For each prompt, we show baseline generation an"><figcaption><b>Figureure 2 · : Qualitative results: For each prompt, we show baseline generation an</b><span class="fig-en">Figure 2: Qualitative results: For each prompt, we show baseline generation and REINS-steered generation using identical random seeds for paired comparison. REINS redirects harmful content toward safe content. Some explicit content has been censored.</span><span class="fig-zh">这张图/表用于判断 Pulling The REINS 的实验收益来自哪里。重点看替换、消融或跨模型设置下趋势是否一致，而不是只看单个最高分。</span></figcaption></figure>
+<figure class="full-fig"><img src="../assets/mineru/2606.17257/images/fafea116bdbbb9254748f336ee113a307bb1a64a20edfa789fa477ec7afdf145.jpg" alt="Figureure 3 · : Effective steering range across transformer layers"><figcaption><b>Figureure 3 · : Effective steering range across transformer layers</b><span class="fig-en">Figure 3: Effective steering range across transformer layers. We apply REINS at a fixed steering strength across candidate layers and measure safety rate and VQ/MQ win rates. The shaded effective steering range highlights the band of intermediate layers (∼50% depth) where safety improves substantially while VQ and MQ remain near baseline. The operating region predicted by the information-steerability tradeoff. Outside this band, two diagnostic failure modes emerge: early layers lack composed safety features, leaving steering ineffective; late layers produce a degenerate safety rate of 1.0 via generation collapse (in (a), MQ falls past layer 25). The same band is recovered under both classifiers, confirming the profile is a property of the model’s representation rather than the calibration classifier.</span><span class="fig-zh">这张图来自论文 PDF 的结构化抽取。当前用于辅助理解 Pulling The REINS 的方法或实验，请结合正文精读段落一起看。</span></figcaption></figure>
+      
+      <h2>核心问题</h2>
+      <p>作为 P3 读物，它说明视频生成模型 hidden representation 中已有可操作语义方向。</p>
+      <h2>方法拆解</h2>
+      <p>REINS 在视频 diffusion transformer 的 hidden states 中找到安全相关线性方向，并在推理时注入该方向做 training-free safety steering。</p>
+      <h2>主要贡献</h2>
+      <p>显示安全/不安全生成轨迹可由中间层表示中的单一方向区分，支持无需 fine-tune 的表示空间干预。</p>
+      <h2>实验看点</h2>
+      <p>摘要称通过 Supervised PCA 找方向，在中间 transformer layer steering 可减少 unsafe generations。</p>
+      <h2>局限与读法</h2>
+      <p>需要安全标签；目标是安全对齐而非自监督表征学习。</p>
+    
+    </div>
+  </div>
+  <aside class="paper-side">
+
+    <div class="side-box pref-side"><h4>我的偏好</h4><div class="paper-side-tools"><button class="readbtn" type="button" data-read-toggle="2606.17257" title="标记已读" aria-label="标记已读"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M4 10.5l4 4 8-9"/></svg></button><div class="prefbar" data-pref-controls="2606.17257"><button class="prefbtn like" type="button" data-pref-toggle="like" data-pref-id="2606.17257" aria-pressed="false" title="关注这篇">关注</button><button class="prefbtn dismiss" type="button" data-pref-toggle="dismiss" data-pref-id="2606.17257" aria-pressed="false" title="降低这篇权重">略过</button></div></div></div>
+    <div class="side-box"><h4>关键判断</h4><dl><dt>相关性</dt><dd>P3</dd><dt>类别</dt><dd>arXiv 新增 + video diffusion representation steering</dd><dt>会议</dt><dd>arXiv 新增 + video diffusion representation steering</dd><dt>读法</dt><dd>方法图优先，表格次之</dd></dl></div>
+    <div class="side-box"><h4>原文</h4><p><a href="https://arxiv.org/abs/2606.17257">https://arxiv.org/abs/2606.17257</a></p></div>
+  </aside>
+</article></main>
+  <aside class="conf-float" data-conf-reminder="2026-06-18-main-ddl" aria-label="CCF A/B 主投稿提醒">
+  <button class="conf-close" type="button" aria-label="关闭会议提醒">×</button>
+  <details open>
+    <summary>CCF A/B 主投稿提醒</summary>
+    <div class="conf-list"><a class="conf-item " href="https://github.com/ccfddl/ccf-deadlines/blob/main/conference/AI/aaai.yml">
+  <span><b>AAAI 2027</b><em>CCF A · Main paper submission</em></span>
+  <strong>39 天</strong>
+  <small>2026-07-27 · CCF DDL: abstract 2026-07-20；进入 1 个月窗口后重点提醒。</small>
+</a></div>
+  </details>
+</aside>
+  <footer class="footer">
+    <div>面向通用视觉自监督、视觉基础模型与多模态表征学习的每日研究报。</div>
+    <div class="muted">Issue 2026-06-18 · Curated readings and figure notes</div>
+  </footer>
+  <script>
+  (() => {
+    const box = document.querySelector('[data-conf-reminder]');
+    if (!box) return;
+    const key = `visualSslConfReminderClosed:${box.dataset.confReminder || '2026-06-18-main-ddl'}`;
+    try {
+      if (localStorage.getItem(key) === '1') box.hidden = true;
+    } catch (err) {}
+    const close = box.querySelector('.conf-close');
+    if (close) {
+      close.addEventListener('click', () => {
+        box.hidden = true;
+        try { localStorage.setItem(key, '1'); } catch (err) {}
+      });
+    }
+  })();
+  </script>
+  <script src="../assets/ssl-game.js"></script>
+</body>
+</html>

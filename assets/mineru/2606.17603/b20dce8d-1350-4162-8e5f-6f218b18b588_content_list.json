@@ -1,0 +1,3519 @@
+[
+    {
+        "type": "text",
+        "text": "Expanding SPHERE-JEPA: A Family of Statistical Regularizers for the Hypersphere",
+        "text_level": 1,
+        "bbox": [
+            112,
+            98,
+            880,
+            151
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "Léo Nicollier",
+        "bbox": [
+            112,
+            181,
+            222,
+            195
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "Université Paris-Saclay, CNRS, ENS Paris-Saclay, Centre Borelli, France Advanced Track and Trace",
+        "bbox": [
+            114,
+            198,
+            609,
+            223
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "leo.nicollier@gmail.com",
+        "bbox": [
+            725,
+            183,
+            883,
+            196
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "Enric Meinhardt-Llopis",
+        "bbox": [
+            112,
+            238,
+            308,
+            253
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "Université Paris-Saclay, CNRS, ENS Paris-Saclay, Centre Borelli, France",
+        "bbox": [
+            114,
+            253,
+            607,
+            267
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "Max Dunitz",
+        "bbox": [
+            112,
+            281,
+            217,
+            294
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "Advanced Track and Trace",
+        "bbox": [
+            114,
+            296,
+            292,
+            308
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "Marc Pic",
+        "bbox": [
+            112,
+            323,
+            192,
+            335
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "Advanced Track and Trace",
+        "bbox": [
+            114,
+            339,
+            292,
+            351
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "Pablo Musé",
+        "bbox": [
+            112,
+            366,
+            214,
+            378
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "IIE, Facultad de Ingeniería, Universidad de la Republica, Uruguay Université Paris-Saclay, CNRS, ENS Paris-Saclay, Centre Borelli, France",
+        "bbox": [
+            114,
+            381,
+            609,
+            409
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "Gabriele Facciolo",
+        "bbox": [
+            112,
+            422,
+            258,
+            436
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "Université Paris-Saclay, CNRS, ENS Paris-Saclay, Centre Borelli, France Institut Universitaire de France",
+        "bbox": [
+            114,
+            436,
+            607,
+            464
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "Abstract",
+        "text_level": 2,
+        "bbox": [
+            457,
+            497,
+            539,
+            513
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "In Self-Supervised Learning (SSL), preventing representation collapse by explicitly enforcing a uniform distribution on the unit hypersphere has proven to be effective. However, current frameworks typically rely on sliced statistical regularizers such as SIGReg (used in LeJEPA) and SUSReg (used in SPHERE-JEPA), which approximate this continuous objective via Monte Carlo sampling along random 1D directions. This stochasticity injects projection variance into the training gradients, destabilizing optimization, and hindering convergence. In this work, we first show that analytically integrating out these random projections natively yields a deterministic Maximum Mean Discrepancy (MMD), bypassing the variance of sliced methods. Motivated by this equivalence, we formulate full-dimensional objectives for MMD, Kernel Stein Discrepancy (KSD), and Kullback–Leibler (KL) divergence directly on the sphere to enforce a uniform distribution. To prevent spatial bias, we equip these tests with rotationally invariant kernels constructed via spectral theory, systematically evaluating two canonical families: smooth exponential decay (Heat) and strict frequency cutoff (Bandlimited) filters. Empirically, removing projection-induced noise results in more stable optimization, faster convergence, and consistent improvements over stochastic sliced regularizers on ImageNet and Galaxy10. Furthermore, we reveal that the choice of the statistical test shapes the geometry of the learned latent space: MMD and KSD favor locally clustered organization suitable for object-centric domains, whereas the continuous KDE-based KL divergence promotes fine-grained instance separation, yielding the strongest results on unclustered procedural texture retrieval.",
+        "bbox": [
+            169,
+            532,
+            823,
+            834
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "1 Introduction",
+        "text_level": 2,
+        "bbox": [
+            112,
+            862,
+            261,
+            878
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "A central paradigm in modern Self-Supervised Learning (SSL) is the multi-view formulation, where an encoder learns representations by minimizing an invariance objective across augmented views of the same input (Chen et al., 2020; Grill et al., 2020). To prevent representation collapse, modern architectures employ explicit global regularization (Balestriero and LeCun, 2025). Recent findings demonstrate that enforcing a uniform distribution on the unit hypersphere $\\mathbb { S } ^ { d - 1 }$ is an optimal target, minimizing worst-case errors for downstream evaluations (Nicollier et al., 2026).",
+        "bbox": [
+            111,
+            893,
+            883,
+            925
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "aside_text",
+        "text": "arXiv:2606.17603v1 [cs.LG] 16 Jun 2026",
+        "bbox": [
+            22,
+            277,
+            57,
+            717
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "page_number",
+        "text": "1",
+        "bbox": [
+            493,
+            948,
+            503,
+            959
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "",
+        "bbox": [
+            109,
+            103,
+            883,
+            165
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "text",
+        "text": "To enforce hyperspherical uniformity, frameworks such as SPHERE-JEPA (Nicollier et al., 2026) (via SUS-Reg) rely on sliced statistical regularizers, which project representations onto random 1D directions and compute the Epps-Pulley (Epps and Pulley, 1983) (EP) test. However, relying on this Monte Carlo approximation naturally injects “projection variance” into the training gradients, destabilizing optimization and slowing convergence. Concurrently, KerJEPA (Zimmermann et al., 2025) demonstrated that analogous sliced regularizers enforcing Gaussian embeddings can be analytically integrated to entirely bypass this variance, resulting in stable, closed-form Maximum Mean Discrepancy (MMD).",
+        "bbox": [
+            109,
+            171,
+            883,
+            280
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "text",
+        "text": "In this work, we extend this insight to the uniform distribution on the sphere. Building upon the equivalence established by KerJEPA, we demonstrate that analytically integrating out the random projections over $\\mathbb { S } ^ { d - 1 }$ similarly yields a deterministic, closed-form Maximum Mean Discrepancy (MMD). Motivated by the strict suboptimality of 1D proxies, we focus only on exact multivariate statistics. While KerJEPA successfully employed MMD and Kernel Stein Discrepancy (KSD) (Liu et al., 2016) to enforce unconstrained Gaussian priors in Euclidean spaces, we adapt these exact multivariate statistical tests—alongside the Kullback-Leibler (KL) divergence (Kullback and Leibler, 1951)—to operate directly on the manifold, thereby enforcing hyperspherical uniformity.",
+        "bbox": [
+            109,
+            285,
+            883,
+            407
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "text",
+        "text": "Because standard empirical distribution tests do not generalize beyond 1D, exact high-dimensional statistical testing intrinsically relies on kernel methods. However, to ensure that the kernel does not privilege any specific region of the hypersphere $\\mathbb { S } ^ { d - 1 }$ , we restrict our focus to rotationally invariant kernels. Any such kernel is characterized by the Laplacian’s eigenvalues. Leveraging this spectral foundation, we systematically evaluate three distinct kernels: the exact kernel implicitly induced by the analytical integration of SUSReg (Nicollier et al., 2026), alongside two canonical frequency filters adapted to the sphere: the Heat kernel (acting as a smooth exponential decay) and the Bandlimited kernel (enforcing a strict frequency cutoff).",
+        "bbox": [
+            109,
+            412,
+            883,
+            521
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "text",
+        "text": "In summary, our main contributions are as follows:",
+        "bbox": [
+            112,
+            526,
+            482,
+            541
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "list",
+        "sub_type": "text",
+        "list_items": [
+            "• Deterministic Hyperspherical Regularization: We derive a deterministic formulation of the SUSReg objective by analytically integrating the random 1D projections. This results in a closedform Maximum Mean Discrepancy (MMD) objective directly defined on $\\mathbb { S } ^ { d - 1 }$ , removing Monte Carlo projection sampling during training.",
+            "• Hyperspherical Statistical Regularizers: We adapt multivariate statistical objectives— Maximum Mean Discrepancy (MMD), Kernel Stein Discrepancy (KSD), and Kullback–Leibler (KL) divergence—to enforce uniform priors directly on the hyperspherical manifold.",
+            "• Kernel Choice from Spectral Characterization: Guided by the spectral characterization of rotationally invariant kernels on the sphere, we study two kernel families on the hypersphere: Heat and Bandlimited kernels.",
+            "• Improved Representation Quality: Across MMD and KSD variants, our deterministic objectives consistently outperform SUSReg, yielding gains of up to +1.3/ + 1.6 points (linear/k-NN) on ImageNet-100 and +5.1/ + 4.1 points on Galaxy10."
+        ],
+        "bbox": [
+            153,
+            564,
+            883,
+            811
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "text",
+        "text": "The remainder of this paper is organized as follows. Section 2 reviews the standard multi-view SSL framework on the hypersphere. In Section 3, we demonstrate the suboptimality of sliced proxies and establish their equivalence to a closed-form MMD. Section 4 introduces the exact multivariate statistical tests, and Section 5 details the design of our rotationally invariant spectral kernels. We derive explicit closed-form training objectives in Section 6. Finally, Section 7 presents our empirical evaluation across multiple benchmarks, and Section 8 concludes the work. Detailed proofs and derivations are deferred to the Appendices.",
+        "bbox": [
+            109,
+            833,
+            883,
+            925
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "page_number",
+        "text": "2",
+        "bbox": [
+            493,
+            948,
+            504,
+            959
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "text",
+        "text": "2 Preliminaries: Self-Supervised Learning on the Hypersphere",
+        "text_level": 2,
+        "bbox": [
+            112,
+            101,
+            683,
+            119
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "A central paradigm in modern Self-Supervised Learning (SSL) is the multi-view formulation, in which different augmented views of the same sample are used as supervisory signals (Chen et al., 2020; Grill et al., 2020). Formally, we consider a dataset of N independent samples. Each sample is processed through a stochastic data augmentation pipeline to generate $V _ { a }$ views $x _ { n , v } \\in \\mathbb { R } ^ { D }$ , where $n \\in \\{ 1 , \\ldots , N \\}$ and $v \\in \\{ 1 , \\ldots , V _ { a } \\}$ . Among these, we distinguish $V _ { g } \\leq V _ { a }$ global views—which typically correspond to large-scale crops—from the remaining local views.",
+        "bbox": [
+            111,
+            133,
+            883,
+            226
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "An encoder network $f _ { \\theta }$ maps each view to a representation $z _ { n , v } = f _ { \\theta } ( x _ { n , v } ) \\in \\mathbb { R } ^ { d }$ . Following the exact formulation introduced by SPHERE-JEPA (Nicollier et al., 2026), these embeddings are subsequently $\\ell _ { 2 ^ { - } }$ normalized to lie on the unit hypersphere:",
+        "bbox": [
+            111,
+            232,
+            883,
+            277
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "equation",
+        "text": "$$\n\\tilde {z} _ {n, v} = \\frac {z _ {n , v}}{\\| z _ {n , v} \\|} \\in \\mathbb {S} ^ {d - 1}.\n$$",
+        "text_format": "latex",
+        "bbox": [
+            421,
+            289,
+            576,
+            318
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "To enforce representation consistency across augmentations, the model minimizes an alignment objective. This multi-view invariance loss can be formulated as:",
+        "bbox": [
+            112,
+            335,
+            880,
+            364
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "equation",
+        "text": "$$\n\\mathcal {L} _ {\\mathrm{inv}} = \\frac {1}{V _ {a}} \\sum_ {v = 1} ^ {V _ {a}} \\| \\tilde {z} _ {n, v} - \\mu_ {n} \\| _ {2} ^ {2}, \\quad \\mu_ {n} = \\frac {1}{V _ {g}} \\sum_ {v ^ {\\prime} = 1} ^ {V _ {g}} \\tilde {z} _ {n, v ^ {\\prime}}. \\tag {1}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            316,
+            376,
+            883,
+            417
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "However, optimizing ${ \\mathcal { L } } _ { \\mathrm { i n v } }$ alone is degenerate, as the network can easily achieve zero loss by mapping all inputs to a single constant vector (Grill et al., 2020) (representation collapse). To prevent such trivial solutions and strictly control the global geometry of the representation space, SSL frameworks introduce an explicit regularization term (Caron et al., 2021; Balestriero and LeCun, 2025), leading to the general training objective:",
+        "bbox": [
+            111,
+            435,
+            883,
+            511
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "equation",
+        "text": "$$\n\\mathcal {L} = (1 - \\lambda) \\mathcal {L} _ {\\text { inv }} + \\lambda \\mathcal {L} _ {\\text { reg }}, \\tag {2}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            410,
+            512,
+            880,
+            527
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "where $\\lambda \\in ( 0 , 1 )$ is a hyperparameter that controls the trade-off between the two objectives. In this formulation, while ${ \\mathcal { L } } _ { \\mathrm { i n v } }$ attracts views of the same instance, $\\mathcal { L } _ { \\mathrm { r e g } }$ constrains the global distribution of the embeddings. Based on spherical uniformity optimality (Nicollier et al., 2026), our goal is to design $\\mathcal { L } _ { \\mathrm { r e g } }$ such that it explicitly enforces the uniform distribution on the hypersphere, $q = \\mathrm { U n i f } ( \\mathbb { S } ^ { d - 1 } )$ . The critical question then becomes: how should we practically compute the discrepancy between the empirical embeddings and this continuous uniform target?",
+        "bbox": [
+            111,
+            535,
+            883,
+            626
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "3 Beyond Sliced Methods: Full-Dimensional Tests",
+        "text_level": 2,
+        "bbox": [
+            112,
+            645,
+            578,
+            662
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "To regularize high-dimensional representation spaces, recent frameworks (Balestriero and LeCun, 2025; Nicollier et al., 2026) rely on sliced methods. Justified by the Cramér-Wold theorem (Cuesta-Albertos et al., 2007), these approaches project the embeddings onto random 1D directions, effectively reducing the complex multi-dimensional distribution matching problem into a series of tractable 1D statistical tests. However, approximating this continuous objective via Monte Carlo sampling inherently injects an artificial projection variance into the training gradients. Fortunately, this stochasticity is unnecessary.",
+        "bbox": [
+            111,
+            676,
+            883,
+            768
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "Equivalence to a Closed-Form MMD. By leveraging Bochner’s (Rahimi and Recht, 2007) and Fubini’s theorems, we can analytically integrate out all possible random projection directions $a \\in \\mathbb { S } ^ { d - 1 }$ . As detailed in Appendix A, we apply the analytical integration framework from KerJEPA (Zimmermann et al., 2025)— which has recently established this for the Gaussian distribution—to the uniform distribution on $\\mathbb { S } ^ { d - 1 }$ . Specifically, let X and Y be random variables on $\\mathbb { S } ^ { d - 1 }$ (representing, for instance, the empirical embedding distribution and the uniform target), and let $\\operatorname { E P } ( \\cdot , \\cdot )$ denote the 1D Epps-Pulley discrepancy (Balestriero and LeCun, 2025). This exact integration reveals that the expected sliced Epps-Pulley discrepancy natively yields a deterministic Maximum Mean Discrepancy (Gretton et al., 2012) (MMD) with an induced kernel $\\bar { k } { : }$",
+        "bbox": [
+            111,
+            775,
+            883,
+            897
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "equation",
+        "text": "$$\n\\mathbb {E} _ {a \\sim \\operatorname{Unif} (\\mathbb {S} ^ {d - 1})} \\left[ \\mathrm{EP} (a ^ {\\top} X, a ^ {\\top} Y) \\right] = \\mathrm{MMD} _ {k} ^ {2} (X, Y). \\tag {3}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            328,
+            907,
+            880,
+            926
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "page_number",
+        "text": "3",
+        "bbox": [
+            493,
+            948,
+            503,
+            959
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "chart",
+        "img_path": "images/b1a4e30f82884ffec44f87ad2f9440a665f584d6e56b5c1e87353072034553ff.jpg",
+        "content": "",
+        "chart_caption": [
+            "Figure 1: Projection Variance. Variance comparison between standard SUSReg (dashed) and its induced MMD estimator (solid) on $\\dot { \\mathbb { S } } ^ { 2 5 5 }$ ."
+        ],
+        "chart_footnote": [],
+        "sub_type": "line chart",
+        "bbox": [
+            117,
+            108,
+            483,
+            262
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "chart",
+        "img_path": "images/aac90534013dc76d9bc3e309cebf58178d08e4be5e8131c701dbcce14a499514.jpg",
+        "content": "| Epoch | SUSReg (stochastic) | MMD induced SUSReg k̄ |\n|-------|---------------------|----------------------|\n| 0     | 0.1                 | 0.1                  |\n| 25    | 0.4                 | 0.5                  |\n| 50    | 0.55                | 0.6                  |\n| 75    | 0.6                 | 0.65                 |\n| 100   | 0.65                | 0.68                 |\n| 125   | 0.68                | 0.7                  |\n| 150   | 0.7                 | 0.71                 |\n| 175   | 0.7                 | 0.72                 |\n| 200   | 0.7                 | 0.72                 |",
+        "chart_caption": [
+            "Figure 2: Training Dynamics. The closed-form MMD (solid) entirely eliminates projection noise, achieving notably faster convergence."
+        ],
+        "chart_footnote": [],
+        "sub_type": "line chart",
+        "bbox": [
+            516,
+            103,
+            880,
+            268
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "text",
+        "text": "Crucially, because the projection directions are distributed uniformly, the induced kernel $\\bar { k }$ is rotationally invariant and admits the following explicit 1D integral representation:",
+        "bbox": [
+            111,
+            353,
+            883,
+            383
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "equation",
+        "text": "$$\n\\bar {k} (x, y) = \\int_ {- 1} ^ {1} \\exp \\left(- (1 - x ^ {\\top} y) t ^ {2}\\right) \\rho_ {d} (t) d t, \\tag {4}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            346,
+            393,
+            883,
+            428
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "text",
+        "text": "where $\\rho _ { d } ( t ) \\propto ( 1 - t ^ { 2 } ) ^ { \\frac { d - 3 } { 2 } }$ is the marginal density of the hypersphere. In practice, we compute this exact kernel using Gauss-Jacobi quadrature. This numerical scheme naturally absorbs the geometric density $\\rho _ { d } ( t )$ into its precomputed weights, transforming the analytical integral into a simple, deterministic dot product.",
+        "bbox": [
+            111,
+            440,
+            883,
+            488
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "text",
+        "text": "The Cost of Projection Variance. Compared to our exact formulation, evaluating the sliced objective via standard Monte Carlo sampling inherently suffers from projection noise (Figure 1). This artificial variance destabilizes the training gradients and bounds optimization efficiency, converging to the true MMD only in the infinite-projection limit. By eliminating this stochasticity, our deterministic closed-form MMD achieves notably faster convergence and superior training dynamics, as demonstrated by the accelerated training convergence on ImageNet-100 (Figure 2). Motivated by the strict empirical and theoretical suboptimality of 1D proxies, we discard sliced approximations to focus on exact multivariate discrepancies natively on the manifold.",
+        "bbox": [
+            111,
+            494,
+            883,
+            613
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "text",
+        "text": "4 Statistical Tests for Hyperspherical Uniformity",
+        "text_level": 2,
+        "bbox": [
+            111,
+            633,
+            565,
+            652
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "text",
+        "text": "As established in Section 2, our objective is to match the empirical distribution of representations with the uniform target $q \\ : = \\ : \\mathrm { U n i f } ( \\mathbb { S } ^ { d - 1 } )$ . For each view $v ,$ let $\\hat { p } _ { v }$ denote the empirical distribution of normalized embeddings $\\{ \\tilde { z } _ { n , v } \\} _ { n = 1 } ^ { N }$ . To enforce uniformity across views, we minimize the general regularization loss",
+        "bbox": [
+            111,
+            666,
+            883,
+            713
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "equation",
+        "text": "$$\n\\mathcal {L} _ {\\text { reg }} = \\frac {1}{V _ {a}} \\sum_ {v = 1} ^ {V _ {a}} D (\\hat {p} _ {v}, q), \\tag {5}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            413,
+            722,
+            882,
+            763
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "text",
+        "text": "where D is a statistical discrepancy measure between probability distributions. The choice of this discrepancy is not a detail; it dictates how the algorithm behaves and shapes the geometry of the learned latent space. Because different statistical tests penalize deviations from uniformity in distinct ways, they implicitly favor different topological arrangements—such as locally clustered spaces suited for object-centric classification, or unclustered, mutually repelled spaces optimal for continuous textures.",
+        "bbox": [
+            111,
+            773,
+            883,
+            849
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "text",
+        "text": "For notational simplicity, we drop the view index v when the context is clear, denoting the empirical distribution simply as ${ \\hat { p } } .$",
+        "bbox": [
+            111,
+            856,
+            882,
+            887
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "text",
+        "text": "Motivated by the exact high-dimensional equivalence demonstrated in Section 3, we bypass stochastic 1D approximations to evaluate $D ( \\hat { p } , q )$ directly through full-dimensional statistical tests on the manifold. All the following discrepancies rely on a positive definite base kernel k $\\mathrm { : ~ } \\mathbb { S } ^ { d - 1 } \\times \\mathbb { S } ^ { d - 1 }  \\mathbb { R }$ . We introduce and formulate objectives for the following three distinct statistical tests:",
+        "bbox": [
+            111,
+            893,
+            883,
+            925
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "page_number",
+        "text": "4",
+        "bbox": [
+            493,
+            948,
+            504,
+            959
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "text",
+        "text": "",
+        "bbox": [
+            111,
+            103,
+            883,
+            133
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "Maximum Mean Discrepancy (MMD). MMD quantifies the distance between distributions by comparing their kernel mean embeddings (Gretton et al., 2012). In our framework, the squared MMD between the empirical batch distribution $\\hat { p }$ and the continuous uniform target $q ,$ given a positive definite base kernel $k ,$ expands as:",
+        "bbox": [
+            111,
+            148,
+            883,
+            209
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "equation",
+        "text": "$$\nD _ {\\mathrm{MMD} ^ {2}} (\\hat {p}, q) = \\mathbb {E} _ {x, x ^ {\\prime} \\sim \\hat {p}} [ k (x, x ^ {\\prime}) ] + \\mathbb {E} _ {y, y ^ {\\prime} \\sim q} [ k (y, y ^ {\\prime}) ] - 2 \\mathbb {E} _ {x \\sim \\hat {p}, y \\sim q} [ k (x, y) ]. \\tag {6}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            246,
+            219,
+            883,
+            237
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "As detailed in Appendix C, because the target $q$ is uniform and the kernel is rotationally invariant, all expectations with respect to q reduce to analytic constants. As a result, the training objective $D _ { \\mathrm { M M D } } ( \\hat { p } , q )$ simplifies: it relies solely on pairwise kernel similarities within the empirical batch $\\hat { p } ,$ eliminating the need for target sampling.",
+        "bbox": [
+            111,
+            244,
+            883,
+            306
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "Kernel Stein Discrepancy (KSD). KSD quantifies distribution mismatch by evaluating how well empirical samples satisfy Stein’s identity for a target distribution (Liu et al., 2016). Formally, the squared KSD for our empirical batch $\\hat { p }$ against the uniform target $q$ is defined as the expectation of a Stein kernel $k _ { q } \\mathrm { : }$",
+        "bbox": [
+            111,
+            320,
+            883,
+            367
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "equation",
+        "text": "$$\nD _ {\\mathrm{KSD} ^ {2}} (\\hat {p}, q) = \\mathbb {E} _ {x, x ^ {\\prime} \\sim \\hat {p}} [ k _ {q} (x, x ^ {\\prime}) ]. \\tag {7}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            383,
+            376,
+            883,
+            393
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "The full construction of this Stein kernel, detailed in Appendix B, relies on the target distribution’s score function, $s _ { q } ( x ) = \\nabla _ { x } \\log q ( x )$ , and a base reproducing kernel k. Because the uniform target q has a constant density on the hypersphere $\\dot { \\mathbb S } ^ { d - 1 }$ , its score function vanishes. Consequently, the objective $D _ { \\mathrm { K S D } } ( \\hat { p } , q )$ can be evaluated in closed form using only the base kernel’s first and second derivatives with respect to the pairwise cosine similarity.",
+        "bbox": [
+            111,
+            401,
+            883,
+            477
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "Kullback-Leibler (KL) Divergence via Kernel Density Estimation. The standard KL divergence measures the relative entropy between distributions. To match our empirical batch $\\hat { p }$ with the uniform target $q ,$ , the objective takes the form:",
+        "bbox": [
+            111,
+            492,
+            883,
+            537
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "equation",
+        "text": "$$\n\\mathrm{KL} (\\hat {p} \\| q) = \\mathbb {E} _ {x \\sim \\hat {p}} [ \\log \\hat {p} (x) - \\log q (x) ]. \\tag {8}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            369,
+            547,
+            882,
+            564
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "However, this standard formulation cannot directly compare the discrete empirical distribution $\\hat { p }$ against the continuous target $q .$ To resolve this domain gap, we construct a continuous surrogate for the batch using a Kernel Density Estimator (KDE), $\\tilde { p } ( x ) = \\mathbb { E } _ { x ^ { \\prime } \\sim \\hat { p } } [ k ( x , x ^ { \\prime } ) ]$ ]. Assuming this smooth surrogate faithfully captures the underlying data distribution, substituting it into the equation above yields our tractable sample-based objective:",
+        "bbox": [
+            111,
+            573,
+            883,
+            647
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "equation",
+        "text": "$$\nD _ {\\mathrm{KL}} (\\hat {p}, q) \\approx \\mathbb {E} _ {x \\sim \\hat {p}} [ \\log \\tilde {p} (x) - \\log q (x) ]. \\tag {9}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            366,
+            648,
+            880,
+            666
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "5 Spectral Kernel Design on the Hypersphere",
+        "text_level": 2,
+        "bbox": [
+            112,
+            681,
+            540,
+            700
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "The effectiveness of MMD, KSD, and KL-based discrepancies depends on the properties of the kernel k. To prevent the regularization objective from biasing the representation space toward any preferred direction, we constrain the kernel to be rotationally invariant (zonal): $k ( x , y ) = \\varphi ( x ^ { \\top } y )$ . We systematically normalize it so that $\\varphi ( 1 ) = 1$ .",
+        "bbox": [
+            111,
+            714,
+            883,
+            775
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "Viewed through the lens of spectral theory, the hypersphere is equipped with the Laplace-Beltrami operator, whose eigenfunctions are the spherical harmonics. By Schoenberg’s theorem (Schoenberg, 1942), any valid positive-definite zonal kernel on $\\mathbb { S } ^ { d - 1 }$ admits a spectral expansion over normalized Gegenbauer polynomials $\\tilde { C } _ { \\ell } ^ { ( \\alpha ) }$ 1981), we can explicitly control the smoothness of the Reproducing Kernel Hilbert Space (RKHS) in which we measure the discrepancies by defining these coefficients as weights $w ( \\lambda _ { \\ell } )$ that depend on the smoothness of the corresponding mode:",
+        "bbox": [
+            111,
+            782,
+            883,
+            888
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "equation",
+        "text": "$$\n\\varphi (c) = \\frac {1}{Z} \\sum_ {\\ell = 0} ^ {\\infty} w (\\lambda_ {\\ell}) \\tilde {C} _ {\\ell} ^ {(\\alpha)} (c), \\tag {10}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            400,
+            890,
+            883,
+            928
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "page_number",
+        "text": "5",
+        "bbox": [
+            493,
+            948,
+            504,
+            959
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "chart",
+        "img_path": "images/7ec244cdc9d79f714a0537022c5c60255f8a50bfb51e4b2d6f69a703954ccba2.jpg",
+        "content": "| ⟨x, y⟩ | Heat Kernel — t = 4/d | Heat Kernel — t = 5/d | Heat Kernel — t = 6/d | Bandlimited Kernel | SUSReg induced kernel |\n| ------ | --------------------- | --------------------- | --------------------- | ------------------ | --------------------- |\n| -1.00  | 0.0                   | 0.03                  | 0.27                  | 1.0                | 0.45                  |\n| -0.75  | 0.0                   | 0.05                  | 0.32                  | 0.8                | 0.47                  |\n| -0.50  | 0.0                   | 0.07                  | 0.37                  | 0.6                | 0.49                  |\n| -0.25  | 0.0                   | 0.10                  | 0.42                  | 0.4                | 0.51                  |\n| 0.00   | 0.0                   | 0.15                  | 0.47                  | 0.2                | 0.53                  |\n| 0.25   | 0.05                  | 0.22                  | 0.52                  | 0.1                | 0.55                  |\n| 0.50   | 0.15                  | 0.32                  | 0.60                  | 0.3                | 0.57                  |\n| 0.75   | 0.35                  | 0.48                  | 0.72                  | 0.6                | 0.61                  |\n| 1.00   | 1.0                   | 1.0                   | 1.0                   | 1.0                | 1.0                   |",
+        "chart_caption": [
+            "Figure 3: Profiles of normalized zonal kernels on the hypersphere $\\mathbb { S } ^ { d - 1 } ~ ( d = 2 5 6 )$ . We compare the heat kernel at different scale parameters $( t \\in \\{ 4 / d , 5 / d , 6 / d \\} )$ and the Bandlimited kernel against the implicit kernel induced by the SUSReg objective. All kernels are evaluated as a function of the pairwise cosine similarity $c = x ^ { \\top } y \\in [ - 1 , 1 ]$ ."
+        ],
+        "chart_footnote": [],
+        "sub_type": "line chart",
+        "bbox": [
+            158,
+            104,
+            841,
+            359
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "text",
+        "text": "where $c = x ^ { \\top } y , \\alpha = ( d - 2 ) / 2$ , and $\\lambda _ { \\ell } = \\ell ( \\ell + d - 2 )$ are the Laplacian eigenvalues. The normalization constant $\\begin{array} { r } { Z = \\sum _ { \\ell = 0 } ^ { \\infty } w ( \\lambda _ { \\ell } ) \\tilde { C } _ { \\ell } ^ { ( \\alpha ) } ( 1 ) } \\end{array}$ enforces $\\varphi ( 1 ) = 1$ .",
+        "bbox": [
+            109,
+            470,
+            883,
+            507
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "text",
+        "text": "Importantly, each eigenvalue $\\lambda _ { \\ell }$ equals the Dirichlet energy of its corresponding eigenfunction. Because these kernels heavily penalize high-energy (unsmooth) functions, statistical tests derived from this general expansion are broadly referred to as “Sobolev tests” in the statistics literature (Giné, 1975; Jupp, 2008).",
+        "bbox": [
+            109,
+            512,
+            883,
+            559
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "text",
+        "text": "In practice, the spectral weights $w ( \\lambda _ { \\ell } )$ act as frequency filters. Low values of ℓ correspond to smooth, global geometric variations, while higher values capture increasingly oscillatory spatial patterns. This framework naturally motivates two canonical filter choices natively adapted to the sphere’s geometry (illustrated in Figure 3):",
+        "bbox": [
+            109,
+            564,
+            883,
+            626
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "list",
+        "sub_type": "text",
+        "list_items": [
+            "• Heat Kernel (Smooth Decay): Applying an exponential decay $w ( \\lambda _ { \\ell } ) = e ^ { - t \\lambda _ { \\ell } }$ , where $t > 0$ is a scale parameter, yields the heat kernel (Zhao and Song, 2018). This progressive damping of highly oscillatory patterns results in a stable, multi-scale similarity measure.",
+            "• Bandlimited Kernel (Hard Cutoff): Alternatively, applying a strict low-pass filter $w ( \\lambda _ { \\ell } ) = \\mathbf { 1 } _ { \\ell \\leq L }$ yields a bandlimited kernel. This acts as an exact projection onto the first L eigenmodes, capturing global geometry while rigorously filtering out fine-grained spatial noise."
+        ],
+        "bbox": [
+            153,
+            657,
+            879,
+            777
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "text",
+        "text": "Certain weight functions that lead to kernels with known closed form include the chordal distance kernel of the Giné $S _ { n }$ test, the Poisson kernel, and (in terms of sums of special functions) the thin-plate spline kernel of order one Beatson et al. (2018); Jupp (2008).",
+        "bbox": [
+            109,
+            811,
+            883,
+            858
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "text",
+        "text": "Having established these rigorous kernel families, the final step is to integrate them into our general discrepancy measures. Because these specific filters yield well-behaved scalar functions of the pairwise cosine similarity $\\varphi ( c )$ , they allow us to transform the abstract statistical tests introduced in Section 4 into exact, computationally tractable training objectives, as we derive in the next section.",
+        "bbox": [
+            109,
+            864,
+            883,
+            925
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "page_number",
+        "text": "6",
+        "bbox": [
+            493,
+            948,
+            503,
+            959
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "text",
+        "text": "6 Explicit Forms of the Statistical Tests",
+        "text_level": 2,
+        "bbox": [
+            112,
+            101,
+            488,
+            119
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "text",
+        "text": "Using the rotationally invariant zonal kernels $\\varphi ( c )$ evaluated on the pairwise cosine similarity $c = x ^ { \\top } y$ , the general discrepancies introduced in Section 4 evaluate analytically. This yields the following deterministic, closed-form objectives (complete derivations are deferred to Appendices B, C and D):",
+        "bbox": [
+            111,
+            133,
+            883,
+            180
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "equation",
+        "text": "$$\nD _ {\\mathrm{MMD}} = \\frac {1}{C _ {\\text {norm / MMD}}} \\left(\\mathbb {E} _ {x, y \\sim \\hat {p}} [ \\varphi (c) ] - C _ {\\text {bias / MMD}}\\right), \\tag {11}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            269,
+            191,
+            883,
+            223
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "equation",
+        "text": "$$\nD _ {\\mathrm{KSD}} = \\frac {1}{C _ {\\text {norm / KSD}}} \\mathbb {E} _ {x, y \\sim \\hat {p}} \\left[ \\frac {1}{2} \\left((c ^ {2} - 1) \\varphi^ {\\prime \\prime} (c) + c (d - 1) \\varphi^ {\\prime} (c)\\right) \\right], \\tag {12}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            276,
+            224,
+            880,
+            260
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "equation",
+        "text": "$$\nD _ {\\mathrm{KL}} = \\frac {1}{C _ {\\text { norm } / \\mathrm{KL}}} \\left(\\mathbb {E} _ {x \\sim \\hat {p}} \\left[ \\log \\mathbb {E} _ {y \\sim \\hat {p} _ {- x}} [ \\varphi (c) ] \\right] - C _ {\\text { bias } / \\mathrm{KL}}\\right). \\tag {13}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            285,
+            263,
+            880,
+            294
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "text",
+        "text": "For MMD and KSD, expectations over the empirical distribution $\\hat { p }$ are computed using standard Vestimators. For the KL divergence, $\\hat { p } _ { - x }$ denotes the leave-one-out empirical estimator to prevent trivial self-similarity singularities.",
+        "bbox": [
+            111,
+            311,
+            883,
+            357
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "text",
+        "text": "To ensure strict comparability across objectives, each discrepancy is offset and scaled by analytic constants such that a total representation collapse to a Dirac delta distribution $( \\mathrm { i . e . , ~ } c = 1 $ for all pairs) yields a worst-case loss of exactly 1. Assuming a normalized base kernel $\\varphi ( 1 ) = 1$ , these constants are defined as follows:",
+        "bbox": [
+            111,
+            364,
+            883,
+            422
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "list",
+        "sub_type": "text",
+        "list_items": [
+            "• MMD: $\\begin{array} { r } { C _ { \\mathrm { b i a s / M M D } } = \\int _ { - 1 } ^ { 1 } \\varphi ( v ) \\rho _ { d } ( v ) d v } \\end{array}$ is evaluated numerically via highly efficient Gauss-Jacobi quadrature utilizing the hyperspherical marginal density $\\rho _ { d } ( v ) \\propto ( 1 - v ^ { 2 } ) ^ { \\frac { d - 3 } { 2 } }$ , and $C _ { \\mathrm { n o r m / M M D } } =$ $1 - C _ { \\mathrm { b i a s / M M D } }$ .",
+            "$\\begin{array} { r } { C _ { \\mathrm { n o r m / K S D } } = \\frac { d - 1 } { 2 } \\varphi ^ { \\prime } ( 1 ) } \\end{array}$ uniform target).",
+            "$\\bullet \\mathrm { \\bf ~ K L } \\colon C _ { \\mathrm { b i a s / K L } } = \\log | \\mathbb { S } ^ { d - 1 } | \\mathrm { \\ a n d \\ } C _ { \\mathrm { n o r m / K L } } = - C _ { \\mathrm { b i a s / K L } } .$"
+        ],
+        "bbox": [
+            151,
+            441,
+            883,
+            563
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "text",
+        "text": "In summary, Equations (11)–(13) provide the exact, closed-form objectives that replace stochastic 1D approximations. Computationally, for a batch size $B ,$ our exact formulation scales as $\\mathcal { O } ( B ^ { 2 } )$ , whereas sliced methods scale as $\\mathcal { O } ( B | \\boldsymbol { A } | )$ , where |A| is the number of random projections. As a result, exact tests are strictly cheaper to compute when the batch size satisfies $B < | { \\mathcal { A } } |$ . Because standard sliced implementations default to $| \\mathcal { A } | = 1 0 2 4$ projections (Nicollier et al., 2026), our exact objectives require less compute time for reasonable batch sizes, but become more expensive when scaling B beyond this threshold.",
+        "bbox": [
+            111,
+            578,
+            883,
+            667
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "text",
+        "text": "7 Experimental Evaluation",
+        "text_level": 2,
+        "bbox": [
+            112,
+            686,
+            367,
+            705
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "text",
+        "text": "We empirically validate our exact, full-dimensional statistical tests across a diverse suite of benchmarks. Through these experiments, we aim to answer three practical questions: (1) Does analytically bypassing projection variance (via the induced kernel) consistently improve representation quality over stochastic baselines like $\\mathrm { S U S R e g ? }$ (2) How do the different spectral kernels (Induced SUSReg, Heat, and Bandlimited) compare empirically? (3) How do the different exact tests (MMD, KSD, and KL-based) behave depending on the underlying topology of the dataset (e.g., clustered object classes versus unclustered continuous textures)?",
+        "bbox": [
+            111,
+            720,
+            883,
+            825
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "text",
+        "text": "Unless otherwise specified, all models employ a projection head outputting to $\\mathbb { S } ^ { 2 5 5 }$ . To ensure fair comparisons, we maintain consistent hyperparameter configurations across methods. Specifically, we set the regularization weight to $\\lambda = 0 . 0 5$ for MMD and KSD, strictly matching the established baseline in SPHERE-JEPA (Nicollier et al., 2026). For the KL divergence, we set $\\lambda = 0 . 5 ;$ ; this value is motivated by its structural similarity to the InfoNCE objective, which, when explicitly decomposed into an invariance loss and a repulsive contrastive term, naturally induces an effective regularization weight of 0.5. Furthermore, for all experiments utilizing the heat kernel, we set the temperature to $t = 5 / d$ for MMD and KSD, and $t = 2 / d$ for the KDE-based KL divergence; an ablation justifying these specific thermal operating points is provided in Appendix E.",
+        "bbox": [
+            111,
+            833,
+            883,
+            925
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "page_number",
+        "text": "7",
+        "bbox": [
+            493,
+            948,
+            504,
+            959
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "image",
+        "img_path": "images/5715deec4f1ce08f06be613ad2ea4677227afdd54a3d1ea4ca143a472205dcf9.jpg",
+        "image_caption": [
+            "Figure 4: Examples of images from the datasets used in our experiments. The first row shows samples from ImageNet100, and the second row shows samples from Galaxy10."
+        ],
+        "image_footnote": [],
+        "content": "",
+        "bbox": [
+            119,
+            104,
+            880,
+            256
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "text",
+        "text": "",
+        "bbox": [
+            109,
+            327,
+            883,
+            372
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "text",
+        "text": "7.1 Standard Pretraining (ImageNet-100 & Galaxy10)",
+        "text_level": 2,
+        "bbox": [
+            112,
+            390,
+            532,
+            407
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "text",
+        "text": "We first evaluate the quality of the representations by pretraining a ResNet-18 (He et al., 2016) on ImageNet-100 (Deng et al., 2009) for 200 epochs and a ResNet-50 (He et al., 2016) on the Galaxy10 dataset (Leung and Bovy, 2018) for 200 epochs (see Figure 4 for dataset samples). Because our exact regularizers estimate the hyperspherical distribution directly from the empirical batch, maintaining consistent statistics is critical; we therefore strictly fix the global batch size to 256 across all runs. We subsequently assess the semantic quality of the frozen features using standard linear probing and k-NN classification.",
+        "bbox": [
+            109,
+            417,
+            883,
+            508
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "text",
+        "text": "As shown in Table 1, the exact deterministic regularizers consistently outperform the stochastic SUSReg baseline across both datasets. On ImageNet-100, MMD and KSD variants improve linear probing accuracy by up to 1.3% and k-NN accuracy by up to 1.6%. On Galaxy10, the performance gains reach up to 5.1% in linear probing and 4.1% in k-NN classification.",
+        "bbox": [
+            109,
+            516,
+            883,
+            575
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "text",
+        "text": "The direct comparison between SUSReg and MMD equipped with the analytically induced kernel ¯k isolates the impact of projection noise, as both objectives share the same continuous limit. Replacing the stochastic 1D projections with the exact evaluation yields a performance increase of 1.0% on ImageNet-100 and 4.7% on Galaxy10 for linear probing. Among the spectral kernels, the Bandlimited filter (L = 2) slightly outperforms the smooth Heat kernel and the Induced kernel on these multi-class tasks. Conversely, the KDE-based KL divergence underperforms on both datasets, scoring below the baseline on ImageNet-100. This indicates that the continuous repulsion enforced by the KL objective penalizes the local macroscopic clustering necessary for category-level semantic classification.",
+        "bbox": [
+            109,
+            583,
+            883,
+            705
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "text",
+        "text": "7.2 Instance-Level Texture Retrieval",
+        "text_level": 2,
+        "bbox": [
+            112,
+            722,
+            401,
+            736
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "text",
+        "text": "Given that the KL divergence underperformed on class-heavy datasets like ImageNet, we hypothesize that its continuous surrogate formulation might be optimally suited for purely unclustered distributions. To verify this, we investigate instance-level discrimination via nearest-neighbor retrieval on four procedural texture datasets (Cloud, Disk, Flake, Wood) introduced in SPHERE-JEPA (Nicollier et al., 2026) (see Figure 5 for dataset samples). Following their exact evaluation protocol, this benchmark provides a strictly continuous visual domain where discrete object classes do not exist. Detailed per-dataset results are provided in Appendix F.",
+        "bbox": [
+            109,
+            750,
+            883,
+            856
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "text",
+        "text": "Remarkably, as detailed in Table 2, the KDE-based KL divergence strongly dominates its MMD and KSD counterparts in this scenario. KL (Heat) achieves a top-1 retrieval accuracy (Recall@1) of 95.3%, representing a substantial +6.6 point improvement over the stochastic SUSReg baseline (88.7%) and outperforming the best alternative continuous metric, KSD (Heat), by +3.3 points. Similar margins are observed across the mean Average Precision (mAP) metrics, demonstrating robust improvements in both the projection head and the underlying embeddings.",
+        "bbox": [
+            109,
+            863,
+            883,
+            925
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "page_number",
+        "text": "8",
+        "bbox": [
+            493,
+            948,
+            503,
+            959
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "table",
+        "img_path": "images/0a39cf203eae45308b3732f5ad5bd2657a2b039d6cb2f484640630f3e63bb513.jpg",
+        "table_caption": [
+            "Table 1: Linear probing and k-NN classification accuracy (%) for standard pretraining on ImageNet-100 and Galaxy10. Values are reported as mean ± sample standard deviation over seeds. Bold values indicate the best mean performance within each dataset and protocol."
+        ],
+        "table_footnote": [],
+        "table_body": "<table><tr><td rowspan=\"2\">Method</td><td colspan=\"2\">ImageNet-100</td><td colspan=\"2\">Galaxy10</td></tr><tr><td>Linear</td><td>k-NN</td><td>Linear</td><td>k-NN</td></tr><tr><td>SUSReg (Stochastic Baseline)</td><td>71.22 ± 0.58</td><td>65.67 ± 0.56</td><td>72.13 ± 1.39</td><td>68.67 ± 1.04</td></tr><tr><td>MMD (Induced SUSReg k̄)</td><td>72.17 ± 0.40</td><td>67.02 ± 0.23</td><td>76.78 ± 0.31</td><td>71.67 ± 0.89</td></tr><tr><td>MMD (Heat, t = 5/d)</td><td>72.19 ± 0.26</td><td>67.21 ± 0.22</td><td>76.31 ± 0.56</td><td>71.91 ± 0.62</td></tr><tr><td>MMD (Bandlimited, L = 2)</td><td>72.26 ± 0.44</td><td>67.25 ± 0.43</td><td>76.21 ± 0.49</td><td>72.73 ± 1.00</td></tr><tr><td>KSD (Heat, t = 5/d)</td><td>72.55 ± 0.29</td><td>66.71 ± 0.31</td><td>76.76 ± 0.40</td><td>72.03 ± 0.57</td></tr><tr><td>KSD (Bandlimited, L = 2)</td><td>72.19 ± 0.38</td><td>66.91 ± 0.14</td><td>77.21 ± 0.55</td><td>72.70 ± 0.77</td></tr><tr><td>KL (Heat)</td><td>67.72 ± 0.21</td><td>62.09 ± 0.42</td><td>75.76 ± 0.99</td><td>70.29 ± 0.85</td></tr></table>",
+        "bbox": [
+            119,
+            157,
+            879,
+            347
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "table",
+        "img_path": "images/31b04e66e4180411097e6b5e7089b36e9854320e39ce641418ee8234f9801119.jpg",
+        "table_caption": [
+            "Table 2: Average procedural texture retrieval performance across four datasets. The continuous KL divergence strongly dominates on these unclustered domains."
+        ],
+        "table_footnote": [],
+        "table_body": "<table><tr><td>Method</td><td>Recall@1</td><td>Recall@3</td><td>Recall@5</td><td>mAP</td><td>mAP (emb)</td></tr><tr><td>SUSReg (Stochastic Baseline)</td><td>88.7</td><td>96.1</td><td>97.7</td><td>92.6</td><td>91.4</td></tr><tr><td>MMD (Induced SUSReg  $\\bar{k}$ )</td><td>89.1</td><td>96.1</td><td>97.8</td><td>92.9</td><td>91.1</td></tr><tr><td>MMD (Heat,  $t = 5/d$ )</td><td>91.4</td><td>97.0</td><td>98.3</td><td>94.4</td><td>93.2</td></tr><tr><td>MMD (Bandlimited,  $L = 2$ )</td><td>91.5</td><td>96.6</td><td>97.7</td><td>94.3</td><td>93.7</td></tr><tr><td>KSD (Heat,  $t = 5/d$ )</td><td>92.0</td><td>97.1</td><td>98.2</td><td>94.8</td><td>93.5</td></tr><tr><td>KSD (Bandlimited,  $L = 2$ )</td><td>91.6</td><td>96.6</td><td>97.7</td><td>94.3</td><td>93.6</td></tr><tr><td>KL (Heat)</td><td>95.3</td><td>97.6</td><td>98.3</td><td>96.7</td><td>96.3</td></tr></table>",
+        "bbox": [
+            119,
+            402,
+            877,
+            588
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "text",
+        "text": "",
+        "bbox": [
+            111,
+            613,
+            883,
+            643
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "text",
+        "text": "This performance gap directly validates our geometric intuition. Because procedural textures lack semantic element clusters, the continuous KL divergence optimally regularizes the manifold by uniformly repelling all instances individually, leading to exact hyperspherical uniformity. Conversely, point-based integral metrics like MMD and KSD inherently accommodate and even encourage macroscopic local clustering. While this behavior is highly beneficial for multi-class discrimination (e.g., ImageNet) where semantic grouping is desirable, it proves fundamentally suboptimal for continuous, instance-level texture spaces.",
+        "bbox": [
+            111,
+            650,
+            883,
+            742
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "text",
+        "text": "8 Conclusion",
+        "text_level": 2,
+        "bbox": [
+            112,
+            762,
+            246,
+            777
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "text",
+        "text": "In this work, we first demonstrated that sliced statistical regularizers for hyperspherical uniformity are strictly suboptimal compared to their analytically integrated Maximum Mean Discrepancy (MMD) equivalent. Building on this insight, we introduced a broader family of exact, full-dimensional regularizers based on MMD, Kernel Stein Discrepancy (KSD), and the Kullback-Leibler (KL) divergence. To avoid spatial bias, we grounded these tests in spectral theory, explicitly motivating the use of two canonical kernels: the Heat and Bandlimited filters.",
+        "bbox": [
+            111,
+            795,
+            883,
+            886
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "text",
+        "text": "Empirically, our exact formulations confirmed that completely bypassing Monte Carlo projection noise systematically improves representation quality across all evaluated datasets. On object-centric domains, MMD and KSD equipped with our canonical spectral kernels achieved similar state-of-the-art performance, outperforming both the standard stochastic baseline and its exact SUSReg-induced kernel. Finally, we revealed how the choice of statistical discrepancy fundamentally shapes the learned topology: while MMD and KSD inherently accommodate the local clustering necessary for distinct classes, the continuous KDE-based KL divergence optimally forces fine-grained instance repulsion, yielding vastly superior performance on unclustered procedural textures.",
+        "bbox": [
+            111,
+            893,
+            883,
+            925
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "page_number",
+        "text": "9",
+        "bbox": [
+            493,
+            948,
+            504,
+            959
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "text",
+        "text": "",
+        "bbox": [
+            109,
+            103,
+            883,
+            195
+        ],
+        "page_idx": 9
+    },
+    {
+        "type": "text",
+        "text": "Despite these theoretical and empirical advantages, it is important to contextualize the computational tradeoffs of exact manifold regularizers. Because our full-dimensional tests rely on exact pairwise kernel evaluations, their computational complexity scales quadratically with the global batch size, $\\mathcal { O } ( B ^ { 2 } )$ . In contrast, stochastic sliced methods like SUSReg compute 1D statistics and scale linearly with respect to the batch size, O(B|A|), where |A| is the number of random projections. Consequently, while our exact regularizers strictly dominate in standard training regimes, projection-based approaches remain a highly practical and necessary alternative when scaling SSL architectures to massive batch sizes where quadratic complexity becomes computationally prohibitive.",
+        "bbox": [
+            109,
+            200,
+            883,
+            323
+        ],
+        "page_idx": 9
+    },
+    {
+        "type": "text",
+        "text": "References",
+        "text_level": 2,
+        "bbox": [
+            112,
+            342,
+            215,
+            358
+        ],
+        "page_idx": 9
+    },
+    {
+        "type": "list",
+        "sub_type": "ref_text",
+        "list_items": [
+            "R. Balestriero and Y. LeCun. Lejepa: Provable and scalable self-supervised learning without the heuristics, 2025. URL https://arxiv.org/abs/2511.08544.",
+            "A. Barp, C. J. Oates, E. Porcu, and M. Girolami. A Riemann–Stein kernel method. Bernoulli, 28(4):2181 – 2208, 2022. doi: 10.3150/21-BEJ1415. URL https://doi.org/10.3150/21-BEJ1415.",
+            "R. K. Beatson, W. Zu Castell, et al. Thinplate splines on the sphere. SIGMA. Symmetry, Integrability and Geometry: Methods and Applications, 14:083, 2018.",
+            "M. Caron, H. Touvron, I. Misra, H. Jégou, J. Mairal, P. Bojanowski, and A. Joulin. Emerging properties in self-supervised vision transformers. In Proceedings of the IEEE/CVF international conference on computer vision, pages 9650–9660, 2021.",
+            "T. Chen, S. Kornblith, M. Norouzi, and G. Hinton. A simple framework for contrastive learning of visual representations. In International conference on machine learning, pages 1597–1607. PmLR, 2020.",
+            "K. Chwialkowski, H. Strathmann, and A. Gretton. A kernel test of goodness of fit. In M. F. Balcan and K. Q. Weinberger, editors, Proceedings of The 33rd International Conference on Machine Learning, volume 48 of Proceedings of Machine Learning Research, pages 2606–2615, New York, New York, USA, 20–22 Jun 2016. PMLR. URL https://proceedings.mlr.press/v48/chwialkowski16.html.",
+            "J. A. Cuesta-Albertos, R. Fraiman, and T. Ransford. A sharp form of the Cramér–Wold theorem. Journal of Theoretical Probability, 2007.",
+            "J. Deng, W. Dong, R. Socher, L.-J. Li, K. Li, and L. Fei-Fei. Imagenet: A large-scale hierarchical image database. In IEEE Conference on Computer Vision and Pattern Recognition (CVPR), 2009.",
+            "T. W. Epps and L. B. Pulley. A test for normality based on the empirical characteristic function. Biometrika, 70(3):723–726, 1983. ISSN 00063444. URL http://www.jstor.org/stable/2336512.",
+            "E. Giné. Invariant tests for uniformity on compact riemannian manifolds based on sobolev norms. The Annals of statistics, 3(6):1243–1266, 1975.",
+            "A. Gretton, K. M. Borgwardt, M. J. Rasch, B. Schölkopf, and A. Smola. A kernel two-sample test. J. Mach. Learn. Res., 13(null):723–773, Mar. 2012. ISSN 1532-4435.",
+            "J.-B. Grill, F. Strub, F. Altché, C. Tallec, P. Richemond, E. Buchatskaya, C. Doersch, B. Avila Pires, Z. Guo, M. Gheshlaghi Azar, et al. Bootstrap your own latent-a new approach to self-supervised learning. Advances in neural information processing systems, 33:21271–21284, 2020.",
+            "K. He, X. Zhang, S. Ren, and J. Sun. Deep residual learning for image recognition. In Proceedings of the IEEE conference on computer vision and pattern recognition, pages 770–778, 2016.",
+            "P. E. Jupp. Data-driven Sobolev tests of uniformity on compact Riemannian manifolds. The Annals of Statistics, 36(3):1246 – 1260, 2008. doi: 10.1214/009053607000000541. URL https://doi.org/10.1214/ 009053607000000541.",
+            "S. Kolouri, K. Nadjahi, S. Shahrampour, and U. Şimşekli. Generalized sliced probability metrics. In ICASSP 2022-2022 IEEE International Conference on Acoustics, Speech and Signal Processing (ICASSP), pages 4513–4517. IEEE, 2022.",
+            "S. Kullback and R. A. Leibler. On information and sufficiency. The Annals of Mathematical Statistics, 22 (1):79–86, 1951. ISSN 00034851. URL http://www.jstor.org/stable/2236703.",
+            "H. W. Leung and J. Bovy. Deep learning of multi-element abundances from high-resolution spectroscopic data. Monthly Notices of the Royal Astronomical Society, Nov. 2018. ISSN 1365-2966. doi: 10.1093/ mnras/sty3217. URL http://dx.doi.org/10.1093/mnras/sty3217.",
+            "Q. Liu, J. Lee, and M. Jordan. A kernelized stein discrepancy for goodness-of-fit tests. In International conference on machine learning, pages 276–284. PMLR, 2016.",
+            "K. Nadjahi, A. Durmus, L. Chizat, S. Kolouri, S. Shahrampour, and U. Simsekli. Statistical and topological properties of sliced probability divergences. Advances in Neural Information Processing Systems, 33: 20802–20812, 2020.",
+            "L. Nicollier, M. Dunitz, M. Pic, P. Musé, E. Meinhardt-Llopis, and G. Facciolo. Sphere-jepa: Spherical prediction with homogeneous embeddings, 2026. URL https://arxiv.org/abs/2605.26900.",
+            "X. Qu and B. C. Vemuri. Theory and applications of kernel stein’s method on riemannian manifolds, 2025. URL https://arxiv.org/abs/2501.00695.",
+            "A. Rahimi and B. Recht. Random features for large-scale kernel machines. In J. Platt, D. Koller, Y. Singer, and S. Roweis, editors, Advances in Neural Information Processing Systems, volume 20. Curran Associates, Inc., 2007. URL https://proceedings.neurips.cc/paper\\_files/paper/2007/file/ 013a006f03dbc5392effeb8f18fda755-Paper.pdf.",
+            "R. M. Rustamov. Closed-form expressions for maximum mean discrepancy with applications to wasserstein auto-encoders. Stat, 10(1):e329, 2021.",
+            "A. Sablayrolles, M. Douze, C. Schmid, and H. Jégou. Spreading vectors for similarity search, 2019. URL https://arxiv.org/abs/1806.03198.",
+            "I. J. Schoenberg. Positive definite functions on spheres. Duke Mathematical Journal, 9(1):96 – 108, 1942. doi: 10.1215/S0012-7094-42-00908-6. URL https://doi.org/10.1215/S0012-7094-42-00908-6.",
+            "G. Wahba. Spline interpolation and smoothing on the sphere. SIAM Journal on Scientific and Statistical Computing, 2(1):5–16, 1981.",
+            "W. Xu and T. Matsuda. A stein goodness-of-fit test for directional distributions. In International Conference on Artificial Intelligence and Statistics, pages 320–329. PMLR, 2020.",
+            "C. Zhao and J. S. Song. Exact heat kernel on a hypersphere and its applications in kernel svm. Frontiers in Applied Mathematics and Statistics, 4, Jan. 2018. ISSN 2297-4687. doi: 10.3389/fams.2018.00001. URL http://dx.doi.org/10.3389/fams.2018.00001.",
+            "E. Zimmermann, H. Wiltzer, J. Szeto, D. Alvarez-Melis, and L. Mackey. Kerjepa: Kernel discrepancies for euclidean self-supervised learning, 2025. URL https://arxiv.org/abs/2512.19605."
+        ],
+        "bbox": [
+            106,
+            363,
+            890,
+            929
+        ],
+        "page_idx": 9
+    },
+    {
+        "type": "page_number",
+        "text": "10",
+        "bbox": [
+            490,
+            948,
+            508,
+            959
+        ],
+        "page_idx": 9
+    },
+    {
+        "type": "list",
+        "sub_type": "ref_text",
+        "list_items": [],
+        "bbox": [
+            107,
+            98,
+            890,
+            917
+        ],
+        "page_idx": 10
+    },
+    {
+        "type": "page_number",
+        "text": "11",
+        "bbox": [
+            488,
+            948,
+            506,
+            959
+        ],
+        "page_idx": 10
+    },
+    {
+        "type": "text",
+        "text": "A Formal Equivalence and Analytical Integration of Sliced Discrepancies",
+        "text_level": 2,
+        "bbox": [
+            112,
+            101,
+            779,
+            119
+        ],
+        "page_idx": 11
+    },
+    {
+        "type": "text",
+        "text": "In this section, we provide the formal proofs supporting the theoretical claims made in Section 3. Specifically, we establish that the expected value of the sliced Epps-Pulley (EP) test—which serves as the core statistical regularizer in stochastic methods like SUSReg—is equivalent to a full-dimensional Maximum Mean Discrepancy (MMD) natively operating on $\\mathbb { S } ^ { d - 1 }$ .",
+        "bbox": [
+            111,
+            133,
+            883,
+            196
+        ],
+        "page_idx": 11
+    },
+    {
+        "type": "text",
+        "text": "We proceed in three logical steps: (1) we show via Bochner’s theorem that the 1D EP test is equivalent to a 1D MMD; (2) we prove via Fubini’s theorem that integrating this 1D MMD over all uniform random projections yields a valid full-dimensional MMD; and (3) we geometrically derive the explicit 1D integral form of the induced kernel ¯k introduced in the main text.",
+        "bbox": [
+            111,
+            200,
+            883,
+            262
+        ],
+        "page_idx": 11
+    },
+    {
+        "type": "text",
+        "text": "Lemma 1 (The 1D Epps-Pulley Test is a 1D MMD [p. 4 (Rustamov, 2021)]). Let U and V be scalar random variables with characteristic functions $\\varphi _ { U }$ and $\\varphi _ { V }$ . The Epps-Pulley discrepancy is defined as",
+        "bbox": [
+            111,
+            267,
+            883,
+            299
+        ],
+        "page_idx": 11
+    },
+    {
+        "type": "equation",
+        "text": "$$\n\\mathrm{EP} (U, V) = \\int_ {\\mathbb {R}} \\left| \\varphi_ {U} (t) - \\varphi_ {V} (t) \\right| ^ {2} w (t) d t, \\tag {14}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            357,
+            306,
+            883,
+            339
+        ],
+        "page_idx": 11
+    },
+    {
+        "type": "text",
+        "text": "where $\\begin{array} { r } { w ( t ) = \\frac { 1 } { \\sqrt { 2 \\pi } } \\exp \\left( - \\frac { t ^ { 2 } } { 2 } \\right) } \\end{array}$ . This formulation is equivalent to a Maximum Mean Discrepancy:",
+        "bbox": [
+            112,
+            348,
+            802,
+            375
+        ],
+        "page_idx": 11
+    },
+    {
+        "type": "equation",
+        "text": "$$\n\\mathrm{EP} (U, V) = \\mathrm{MMD} _ {k _ {1}} ^ {2} (U, V), \\tag {15}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            401,
+            383,
+            883,
+            402
+        ],
+        "page_idx": 11
+    },
+    {
+        "type": "text",
+        "text": "where $\\begin{array} { r } { k _ { 1 } ( u , v ) = \\exp \\left( - \\frac { ( u - v ) ^ { 2 } } { 2 } \\right) } \\end{array}$ is the standard Gaussian base kernel.",
+        "bbox": [
+            112,
+            412,
+            614,
+            436
+        ],
+        "page_idx": 11
+    },
+    {
+        "type": "text",
+        "text": "Proof. By Bochner’s theorem (Rahimi and Recht, 2007), a continuous, translation-invariant positive definite kernel $k _ { 1 } ( u , v ) = \\psi ( u - v )$ admits a spectral representation via the inverse Fourier transform of a density $w ( t )$ :",
+        "bbox": [
+            111,
+            450,
+            883,
+            496
+        ],
+        "page_idx": 11
+    },
+    {
+        "type": "equation",
+        "text": "$$\n\\psi (\\tau) = \\int_ {\\mathbb {R}} e ^ {i t \\tau} w (t) d t.\n$$",
+        "text_format": "latex",
+        "bbox": [
+            419,
+            497,
+            578,
+            527
+        ],
+        "page_idx": 11
+    },
+    {
+        "type": "text",
+        "text": "Specifically, the standard Gaussian density $\\begin{array} { r } { w ( t ) = \\frac { 1 } { \\sqrt { 2 \\pi } } \\exp ( - t ^ { 2 } / 2 ) } \\end{array}$ of the standard Gaussian base kernel $\\begin{array} { r } { k _ { 1 } ( u , v ) = \\exp \\left( - \\frac { ( u - v ) ^ { 2 } } { 2 } \\right) } \\end{array}$ . For such translation-invariant kernels, the squared MMD between the distributions of $U$ and V can be evaluated directly in the frequency domain as the weighted $L ^ { 2 }$ distance between their characteristic functions:",
+        "bbox": [
+            111,
+            532,
+            883,
+            604
+        ],
+        "page_idx": 11
+    },
+    {
+        "type": "equation",
+        "text": "$$\n\\mathrm{MMD} _ {k _ {1}} ^ {2} (U, V) = \\int_ {\\mathbb {R}} \\bigl | \\varphi_ {U} (t) - \\varphi_ {V} (t) \\bigr | ^ {2} w (t) d t.\n$$",
+        "text_format": "latex",
+        "bbox": [
+            339,
+            614,
+            656,
+            646
+        ],
+        "page_idx": 11
+    },
+    {
+        "type": "text",
+        "text": "This frequency-domain formulation natively matches the exact definition of the EP test, concluding the proof. □",
+        "bbox": [
+            111,
+            654,
+            883,
+            685
+        ],
+        "page_idx": 11
+    },
+    {
+        "type": "text",
+        "text": "Lemma 2 (Expected Sliced MMD is a Full-Dimensional MMD [p. 4, Eq. (4)-(6)(Kolouri et al., 2022)). Let X and Y be random variables in $\\mathbb { R } ^ { d }$ , and let $k _ { 1 }$ be a continuous positive definite kernel on R. Define the integrated kernel on $\\mathbb { R } ^ { d } \\times \\mathbb { R } ^ { d }$ as:",
+        "bbox": [
+            112,
+            691,
+            883,
+            739
+        ],
+        "page_idx": 11
+    },
+    {
+        "type": "equation",
+        "text": "$$\n\\bar {k} (x, y) = \\mathbb {E} _ {a \\sim \\mathrm{Unif} (\\mathbb {S} ^ {d - 1})} \\big [ k _ {1} (a ^ {\\top} x, a ^ {\\top} y) \\big ].\n$$",
+        "text_format": "latex",
+        "bbox": [
+            362,
+            747,
+            635,
+            768
+        ],
+        "page_idx": 11
+    },
+    {
+        "type": "text",
+        "text": "Then $\\bar { k }$ is a valid positive definite kernel on $\\mathbb { R } ^ { d }$ , and the expected 1D MMD over random uniform projections $i s$ identically equal to the MMD induced by ¯k:",
+        "bbox": [
+            112,
+            777,
+            883,
+            809
+        ],
+        "page_idx": 11
+    },
+    {
+        "type": "equation",
+        "text": "$$\n\\mathbb {E} _ {a \\sim \\mathrm{Unif} (\\mathbb {S} ^ {d - 1})} \\left[ \\mathrm{MMD} _ {k _ {1}} ^ {2} (a ^ {\\top} X, a ^ {\\top} Y) \\right] = \\mathrm{MMD} _ {\\bar {k}} ^ {2} (X, Y).\n$$",
+        "text_format": "latex",
+        "bbox": [
+            310,
+            816,
+            684,
+            838
+        ],
+        "page_idx": 11
+    },
+    {
+        "type": "text",
+        "text": "Remark 1. It is worth noting that the integrated kernel ¯k on $\\mathbb { R } ^ { d }$ inherits not just the positive-definiteness of the base kernel $k _ { 1 }$ , but also its characteristic property. It is an easy matter to verify that ¯k is characteristic when $k _ { 1 }$ is directly, using the Cramér-Wold theorem; it follows also as a special case of $/ p .$ 4, Proposition 1 (Nadjahi et al., 2020)]. Thus, the induced full-dimensional MMD divergence remains a (definite) metric on probability measures $i f k _ { 1 }$ is.",
+        "bbox": [
+            112,
+            848,
+            885,
+            925
+        ],
+        "page_idx": 11
+    },
+    {
+        "type": "page_number",
+        "text": "12",
+        "bbox": [
+            488,
+            946,
+            509,
+            959
+        ],
+        "page_idx": 11
+    },
+    {
+        "type": "text",
+        "text": "Proof. Since $k _ { 1 }$ is positive definite on R, for any fixed direction $a ~ \\in ~ \\mathbb { S } ^ { d - 1 }$ , the function $k _ { a } ( x , y ) \\ : =$ $k _ { 1 } ( a ^ { \\top } x , a ^ { \\top } y )$ is a positive definite kernel on $\\mathbb { R } ^ { d }$ . Indeed, for any $x _ { 1 } , \\ldots , x _ { n } \\in \\mathbb { R } ^ { d }$ and coefficients $c _ { 1 } , \\ldots , c _ { n } \\in \\mathbb { R }$ ,",
+        "bbox": [
+            111,
+            103,
+            883,
+            148
+        ],
+        "page_idx": 12
+    },
+    {
+        "type": "equation",
+        "text": "$$\n\\sum_ {i, j} c _ {i} c _ {j} k _ {a} (x _ {i}, x _ {j}) = \\sum_ {i, j} c _ {i} c _ {j} k _ {1} (a ^ {\\top} x _ {i}, a ^ {\\top} x _ {j}) \\geq 0.\n$$",
+        "text_format": "latex",
+        "bbox": [
+            330,
+            151,
+            668,
+            184
+        ],
+        "page_idx": 12
+    },
+    {
+        "type": "text",
+        "text": "Because the expectation of positive definite kernels remains positive definite, the integrated kernel $\\bar { k } ( x , y ) =$ $\\mathbb { E } _ { a } [ k _ { a } ( x , y ) ]$ is a valid positive definite kernel on $\\mathbb { R } ^ { d }$ .",
+        "bbox": [
+            111,
+            193,
+            883,
+            224
+        ],
+        "page_idx": 12
+    },
+    {
+        "type": "text",
+        "text": "To prove the equality of the discrepancies, we expand the expected one-dimensional MMD:",
+        "bbox": [
+            111,
+            232,
+            767,
+            248
+        ],
+        "page_idx": 12
+    },
+    {
+        "type": "equation",
+        "text": "$$\n\\mathbb {E} _ {a} \\left[ \\mathrm{MMD} _ {k _ {1}} ^ {2} (a ^ {\\top} X, a ^ {\\top} Y) \\right] = \\mathbb {E} _ {a} \\left[ \\mathbb {E} _ {X, X ^ {\\prime}} [ k _ {1} (a ^ {\\top} X, a ^ {\\top} X ^ {\\prime}) ] + \\mathbb {E} _ {Y, Y ^ {\\prime}} [ k _ {1} (a ^ {\\top} Y, a ^ {\\top} Y ^ {\\prime}) ] \\right.\n$$",
+        "text_format": "latex",
+        "bbox": [
+            222,
+            260,
+            774,
+            285
+        ],
+        "page_idx": 12
+    },
+    {
+        "type": "equation",
+        "text": "$$\n\\left. - 2 \\mathbb {E} _ {X, Y} [ k _ {1} (a ^ {\\top} X, a ^ {\\top} Y) ] \\right].\n$$",
+        "text_format": "latex",
+        "bbox": [
+            467,
+            287,
+            653,
+            311
+        ],
+        "page_idx": 12
+    },
+    {
+        "type": "text",
+        "text": "By Fubini’s theorem, we can safely exchange the expectations over the random directions a and the random variables $X , Y \\colon$ :",
+        "bbox": [
+            111,
+            325,
+            883,
+            354
+        ],
+        "page_idx": 12
+    },
+    {
+        "type": "equation",
+        "text": "$$\n\\mathbb {E} _ {a} \\big [ \\mathrm{MMD} _ {k _ {1}} ^ {2} (a ^ {\\top} X, a ^ {\\top} Y) \\big ] = \\mathbb {E} _ {X, X ^ {\\prime}} \\big [ \\mathbb {E} _ {a} [ k _ {1} (a ^ {\\top} X, a ^ {\\top} X ^ {\\prime}) ] \\big ] + \\mathbb {E} _ {Y, Y ^ {\\prime}} \\big [ \\mathbb {E} _ {a} [ k _ {1} (a ^ {\\top} Y, a ^ {\\top} Y ^ {\\prime}) ] \\big ]\n$$",
+        "text_format": "latex",
+        "bbox": [
+            202,
+            367,
+            794,
+            387
+        ],
+        "page_idx": 12
+    },
+    {
+        "type": "equation",
+        "text": "$$\n- 2 \\mathbb {E} _ {X, Y} \\left[ \\mathbb {E} _ {a} [ k _ {1} (a ^ {\\top} X, a ^ {\\top} Y) ] \\right].\n$$",
+        "text_format": "latex",
+        "bbox": [
+            398,
+            388,
+            609,
+            407
+        ],
+        "page_idx": 12
+    },
+    {
+        "type": "text",
+        "text": "Substituting the definition of the integrated kernel $\\bar { k }$ into the expectations yields exactly the full-dimensional formulation $\\mathrm { M M D } _ { \\bar { k } } ^ { 2 } ( X , Y )$ . □",
+        "bbox": [
+            111,
+            421,
+            883,
+            454
+        ],
+        "page_idx": 12
+    },
+    {
+        "type": "text",
+        "text": "Derivation of the Explicit Integral Form. By sequentially applying Lemma 1 and Lemma 2, we have established that the expected sliced objective resolves exactly to $\\bar { \\mathbb { E } _ { a } } [ \\mathrm { E P } ( a ^ { \\top } X , a ^ { \\top } Y ) ] = \\mathrm { M M D } _ { k } ^ { 2 } ( X , Y )$ . To compute this deterministically in practice, we must derive the explicit form of the induced kernel $\\bar { k } ( x , y )$ .",
+        "bbox": [
+            111,
+            474,
+            883,
+            522
+        ],
+        "page_idx": 12
+    },
+    {
+        "type": "text",
+        "text": "For unit vectors $x , y \\in \\mathbb { S } ^ { d - 1 }$ , the standard Gaussian base kernel evaluates to:",
+        "bbox": [
+            111,
+            527,
+            665,
+            544
+        ],
+        "page_idx": 12
+    },
+    {
+        "type": "equation",
+        "text": "$$\nk _ {1} (a ^ {\\top} x, a ^ {\\top} y) = \\exp \\left(- \\frac {(a ^ {\\top} (x - y)) ^ {2}}{2}\\right).\n$$",
+        "text_format": "latex",
+        "bbox": [
+            357,
+            556,
+            638,
+            590
+        ],
+        "page_idx": 12
+    },
+    {
+        "type": "text",
+        "text": "Let $c = x ^ { \\top } y$ denote the cosine similarity. On the unit sphere, the distance between embeddings is $\\| x - y \\| =$ p2(1 − c). We can therefore factorize the random projection along the unit direction u = x−y∥x−y∥ $\\sqrt { 2 ( 1 - c ) }$ $\\begin{array} { r } { u = \\frac { x - y } { \\Vert x - y \\Vert } } \\end{array}$ as:",
+        "bbox": [
+            112,
+            604,
+            883,
+            638
+        ],
+        "page_idx": 12
+    },
+    {
+        "type": "equation",
+        "text": "$$\na ^ {\\top} (x - y) = \\| x - y \\| (a ^ {\\top} u) = \\sqrt {2 (1 - c)} \\cdot t,\n$$",
+        "text_format": "latex",
+        "bbox": [
+            346,
+            652,
+            653,
+            671
+        ],
+        "page_idx": 12
+    },
+    {
+        "type": "text",
+        "text": "where $t = a ^ { \\top } u$ . Since the vector a is drawn uniformly from $\\mathbb { S } ^ { d - 1 }$ and $u$ is fixed, the scalar projection $t \\in [ - 1 , 1 ]$ natively follows the hyperspherical marginal distribution, whose probability density is:",
+        "bbox": [
+            111,
+            683,
+            883,
+            715
+        ],
+        "page_idx": 12
+    },
+    {
+        "type": "equation",
+        "text": "$$\n\\rho_ {d} (t) = \\frac {\\Gamma (d / 2)}{\\sqrt {\\pi} \\Gamma ((d - 1) / 2)} (1 - t ^ {2}) ^ {\\frac {d - 3}{2}}.\n$$",
+        "text_format": "latex",
+        "bbox": [
+            369,
+            727,
+            627,
+            761
+        ],
+        "page_idx": 12
+    },
+    {
+        "type": "text",
+        "text": "Substituting this geometric projection back into the kernel expectation, the multidimensional integration over the random directions a simplifies into a single 1D integral. The exponent simplifies cleanly since $\\frac { 1 } { 2 } ( \\sqrt { 2 ( 1 - c ) } t ) ^ { 2 } = ( 1 - c ) t ^ { 2 }$ , yielding:",
+        "bbox": [
+            111,
+            772,
+            883,
+            820
+        ],
+        "page_idx": 12
+    },
+    {
+        "type": "equation",
+        "text": "$$\n\\bar {k} (x, y) = \\int_ {- 1} ^ {1} \\exp \\left(- (1 - c) t ^ {2}\\right) \\rho_ {d} (t) d t.\n$$",
+        "text_format": "latex",
+        "bbox": [
+            361,
+            832,
+            635,
+            867
+        ],
+        "page_idx": 12
+    },
+    {
+        "type": "text",
+        "text": "This derivation confirms that the induced kernel is strictly rotationally invariant—depending solely on the cosine similarity c—and matches the explicit equation presented in Section 3. Furthermore, this form naturally justifies the use of Gauss-Jacobi quadrature for fast, deterministic, and fully differentiable evaluations.",
+        "bbox": [
+            111,
+            878,
+            883,
+            925
+        ],
+        "page_idx": 12
+    },
+    {
+        "type": "page_number",
+        "text": "13",
+        "bbox": [
+            490,
+            948,
+            508,
+            959
+        ],
+        "page_idx": 12
+    },
+    {
+        "type": "text",
+        "text": "B Kernel Stein Discrepancy on the Hypersphere",
+        "text_level": 2,
+        "bbox": [
+            112,
+            101,
+            565,
+            119
+        ],
+        "page_idx": 13
+    },
+    {
+        "type": "text",
+        "text": "In this appendix, we derive a closed-form expression of the Kernel Stein Discrepancy (KSD) for the uniform distribution on the hypersphere $\\mathbb { S } ^ { d - 1 }$ , yielding the explicit objective $D _ { \\mathrm { K S D } }$ presented in Section 6.",
+        "bbox": [
+            109,
+            133,
+            883,
+            165
+        ],
+        "page_idx": 13
+    },
+    {
+        "type": "text",
+        "text": "While the theoretical properties and consistency of this generalized Riemannian KSD have been established in Qu and Vemuri (2025), we provide here a self-contained derivation explicitly tailored to our uniformity test.",
+        "bbox": [
+            109,
+            171,
+            883,
+            217
+        ],
+        "page_idx": 13
+    },
+    {
+        "type": "text",
+        "text": "The Riemann-Stein Framework. Building upon the geometric Stein kernel framework (Barp et al., 2022) and its directional formulation (Xu and Matsuda, 2020), let M be a Riemannian manifold and q a target density. The main idea behind the Stein method is to find an operator A such that $\\mathbb { E } _ { x \\sim q } [ { \\cal A } f ( x ) ] = 0$ for any suitable test function $f .$ By Stokes theorem, on a compact manifold without boundary, the integral of the divergence of any vector field is zero. To construct our operator $\\mathcal { A } _ { X }$ , we consider the density-weighted vector field $Y = f \\cdot q \\cdot X$ , where $f$ is a scalar test function and $X$ is a fixed vector field. Expanding its divergence via the standard product rule yields:",
+        "bbox": [
+            109,
+            231,
+            883,
+            338
+        ],
+        "page_idx": 13
+    },
+    {
+        "type": "equation",
+        "text": "$$\n\\begin{array}{l} \\operatorname{div} (f q X) = \\langle \\nabla (f q), X \\rangle + f q \\operatorname{div} (X) \\\\ = q \\langle \\nabla f, X \\rangle + f \\langle \\nabla q, X \\rangle + f q \\operatorname{div} (X). \\\\ \\end{array}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            331,
+            347,
+            666,
+            381
+        ],
+        "page_idx": 13
+    },
+    {
+        "type": "text",
+        "text": "Factoring out q and using the identity $\\nabla q = q \\nabla$ log q, we obtain div $\\ b ( f q X ) = q \\mathcal { A } _ { X } f$ , which defines the general Stein operator acting on $f$ along X:",
+        "bbox": [
+            111,
+            388,
+            883,
+            420
+        ],
+        "page_idx": 13
+    },
+    {
+        "type": "equation",
+        "text": "$$\n\\mathcal {A} _ {X} f (x) = \\left\\langle X (x), \\nabla f (x) \\right\\rangle + \\left(\\operatorname{div} (X) (x) + \\left\\langle X (x), \\nabla \\log q (x) \\right\\rangle\\right) f (x). \\tag {16}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            263,
+            426,
+            880,
+            444
+        ],
+        "page_idx": 13
+    },
+    {
+        "type": "text",
+        "text": "Since $\\begin{array} { r } { \\int _ { \\mathcal { M } } \\mathrm { d i v } ( f q X ) d \\mu = 0 } \\end{array}$ , it immediately follows that the expectation under q is zero: $\\mathbb { E } _ { q } [ \\mathcal { A } _ { X } f ] = 0 .$ .",
+        "bbox": [
+            111,
+            450,
+            841,
+            468
+        ],
+        "page_idx": 13
+    },
+    {
+        "type": "text",
+        "text": "Strategic Choice of Vector Field. The general Stein operator defined in (16) is valid for any smooth vector field X. However, evaluating this operator depends on computing the divergence div(X), which often leads to numerically unstable expressions (such as Jacobian derivatives in local spherical coordinates).",
+        "bbox": [
+            109,
+            481,
+            883,
+            527
+        ],
+        "page_idx": 13
+    },
+    {
+        "type": "text",
+        "text": "To circumvent this issue, we will choose X to be a divergence-free vector field, more specifically a Killing vector field or infinitessimal isometry.",
+        "bbox": [
+            111,
+            534,
+            883,
+            565
+        ],
+        "page_idx": 13
+    },
+    {
+        "type": "text",
+        "text": "For the hypersphere $\\mathbb { S } ^ { d - 1 }$ , these isometries are generated by the Lie algebra ${ \\mathfrak { s o } } ( d )$ consisting of all skewsymmetric matrices of size $d \\times d .$ . We adopt its canonical orthonormal basis, given by the matrices $E _ { i j }$ for $1 \\leq i < j \\leq d \\colon$",
+        "bbox": [
+            111,
+            571,
+            883,
+            616
+        ],
+        "page_idx": 13
+    },
+    {
+        "type": "equation",
+        "text": "$$\nE _ {i j} = \\frac {1}{\\sqrt {2}} \\left(e _ {i} e _ {j} ^ {\\top} - e _ {j} e _ {i} ^ {\\top}\\right) \\in \\mathfrak {s o} (d),\n$$",
+        "text_format": "latex",
+        "bbox": [
+            382,
+            616,
+            617,
+            646
+        ],
+        "page_idx": 13
+    },
+    {
+        "type": "text",
+        "text": "/here $e _ { i }$ is the i-th canonical basis vector of $\\mathbb { R } ^ { d } .$ . Applying these matrices to a point $x \\in \\mathbb { S } ^ { d - 1 }$ yields a basis of Killing vector fields. By setting our generic field to $X ( x ) = E _ { i j } x$ , the divergence term in (16) vanishes.",
+        "bbox": [
+            111,
+            650,
+            882,
+            681
+        ],
+        "page_idx": 13
+    },
+    {
+        "type": "text",
+        "text": "Furthermore, since our target distribution q is the uniform density on $\\mathbb { S } ^ { d - 1 }$ , its log-derivative vanishes $\\left( \\nabla \\log q \\equiv 0 \\right)$ . Equation (16) therefore reduces to:",
+        "bbox": [
+            111,
+            688,
+            883,
+            719
+        ],
+        "page_idx": 13
+    },
+    {
+        "type": "equation",
+        "text": "$$\n\\mathcal {A} _ {i j} f (x) = \\left(E _ {i j} x\\right) ^ {\\top} \\nabla_ {x} f (x). \\tag {17}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            401,
+            727,
+            880,
+            744
+        ],
+        "page_idx": 13
+    },
+    {
+        "type": "text",
+        "text": "Constructing the Stein Kernel. The mechanism of the Kernel Stein Discrepancy established by Chwialkowski et al. (2016), evaluates the discrepancy by taking the supremum over a unit ball in a Reproducing Kernel Hilbert Space (RKHS). Thanks to the reproducing property, this supremum evaluates in closed form to the expectation of a symmetric Stein kernel $k _ { q } ( x , y )$ .",
+        "bbox": [
+            109,
+            758,
+            883,
+            821
+        ],
+        "page_idx": 13
+    },
+    {
+        "type": "text",
+        "text": "This Stein kernel is constructed by applying the Stein operator to a base scalar reproducing kernel $k ( x , y )$ on both variables. Because this directional approach utilizes a set of independent operators—one for each skew-symmetric matrix in the Lie algebra ${ \\mathfrak { s o } } ( d )$ —the overall Stein kernel on the hypersphere is formed by applying the double operator along each valid direction and summing the results over the entire basis:",
+        "bbox": [
+            109,
+            825,
+            883,
+            887
+        ],
+        "page_idx": 13
+    },
+    {
+        "type": "equation",
+        "text": "$$\nk _ {q} (x, y) = \\sum_ {1 \\leq i <   j \\leq d} \\left(\\mathcal {A} _ {i j} ^ {x} \\mathcal {A} _ {i j} ^ {y} k\\right) (x, y). \\tag {18}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            374,
+            895,
+            880,
+            928
+        ],
+        "page_idx": 13
+    },
+    {
+        "type": "page_number",
+        "text": "14",
+        "bbox": [
+            490,
+            948,
+            509,
+            960
+        ],
+        "page_idx": 13
+    },
+    {
+        "type": "text",
+        "text": "Let us expand the inner term. First, applying the operator with respect to y yields a row vector:",
+        "bbox": [
+            111,
+            103,
+            810,
+            119
+        ],
+        "page_idx": 14
+    },
+    {
+        "type": "equation",
+        "text": "$$\n\\mathcal {A} _ {i j} ^ {y} k (x, y) = \\left(E _ {i j} y\\right) ^ {\\top} \\nabla_ {y} k (x, y) = \\nabla_ {y} ^ {\\top} k (x, y) \\left(E _ {i j} y\\right).\n$$",
+        "text_format": "latex",
+        "bbox": [
+            315,
+            128,
+            679,
+            148
+        ],
+        "page_idx": 14
+    },
+    {
+        "type": "text",
+        "text": "Next, applying the operator with respect to x to this result requires the Hessian of the kernel, obtained via standard multivariable calculus:",
+        "bbox": [
+            111,
+            159,
+            883,
+            189
+        ],
+        "page_idx": 14
+    },
+    {
+        "type": "equation",
+        "text": "$$\n\\left(\\mathcal {A} _ {i j} ^ {x} \\mathcal {A} _ {i j} ^ {y} k\\right) (x, y) = \\left(E _ {i j} x\\right) ^ {\\top} \\left[ \\nabla_ {x} \\left(\\nabla_ {y} ^ {\\top} k (x, y)\\right) \\right] \\left(E _ {i j} y\\right). \\tag {19}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            315,
+            208,
+            883,
+            234
+        ],
+        "page_idx": 14
+    },
+    {
+        "type": "text",
+        "text": "Specialization to Radial Kernels. We now specialize to radial (zonal) kernels on the sphere, which only depend on the inner product $c : = x ^ { \\top } y$ . Let $k ( x , y ) = \\phi ( c )$ for $x , y \\in \\mathbb { S } ^ { d - 1 }$ , where $\\phi : [ - 1 , 1 ] $ R is twice differentiable.",
+        "bbox": [
+            111,
+            248,
+            883,
+            292
+        ],
+        "page_idx": 14
+    },
+    {
+        "type": "text",
+        "text": "Using this notation, we have $\\phi ^ { \\prime } ( c ) = \\nabla _ { y } k ( x , y ) x$ .",
+        "bbox": [
+            112,
+            301,
+            464,
+            316
+        ],
+        "page_idx": 14
+    },
+    {
+        "type": "text",
+        "text": "Differentiating with respect to x yields the Hessian:",
+        "bbox": [
+            112,
+            324,
+            486,
+            339
+        ],
+        "page_idx": 14
+    },
+    {
+        "type": "equation",
+        "text": "$$\n\\nabla_ {x} \\nabla_ {y} ^ {\\top} k (x, y) = \\phi^ {\\prime \\prime} (c) y x ^ {\\top} + \\phi^ {\\prime} (c) I. \\tag {20}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            370,
+            349,
+            883,
+            369
+        ],
+        "page_idx": 14
+    },
+    {
+        "type": "text",
+        "text": "Evaluating the Sum over the Lie Algebra. Substituting (20) back into (19), the term for a single basis vector becomes:",
+        "bbox": [
+            111,
+            387,
+            883,
+            416
+        ],
+        "page_idx": 14
+    },
+    {
+        "type": "equation",
+        "text": "$$\n\\begin{array}{l} \\big (\\mathcal {A} _ {i j} ^ {x} \\mathcal {A} _ {i j} ^ {y} k \\big) (x, y) = (E _ {i j} x) ^ {\\top} \\big (\\phi^ {\\prime \\prime} (c) y x ^ {\\top} + \\phi^ {\\prime} (c) I \\big) (E _ {i j} y) \\\\ = \\phi^ {\\prime \\prime} (c) \\big ((E _ {i j} x) ^ {\\top} y \\big) \\big (x ^ {\\top} E _ {i j} y \\big) + \\phi^ {\\prime} (c) \\big ((E _ {i j} x) ^ {\\top} (E _ {i j} y) \\big). \\tag {21} \\\\ \\end{array}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            250,
+            428,
+            883,
+            470
+        ],
+        "page_idx": 14
+    },
+    {
+        "type": "text",
+        "text": "To compute the sum over $1 \\leq i < j \\leq d ,$ , an expansion using linear algebra yields the matrix M :",
+        "bbox": [
+            112,
+            479,
+            802,
+            496
+        ],
+        "page_idx": 14
+    },
+    {
+        "type": "equation",
+        "text": "$$\nM (x, y) := \\sum_ {1 \\leq i <   j \\leq d} (E _ {i j} x) (E _ {i j} y) ^ {\\top} = \\frac {1}{2} \\left(c   I - y x ^ {\\top}\\right). \\tag {22}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            313,
+            506,
+            883,
+            544
+        ],
+        "page_idx": 14
+    },
+    {
+        "type": "text",
+        "text": "We can now evaluate the two terms in (21) using M:",
+        "bbox": [
+            112,
+            563,
+            496,
+            578
+        ],
+        "page_idx": 14
+    },
+    {
+        "type": "text",
+        "text": "The $\\phi ^ { \\prime \\prime } ( c )$ term (Quadratic Form): Since $E _ { i j }$ is skew-symmetric $( E _ { i j } ^ { \\top } = - E _ { i j } )$ , we can manipulate the transposes: $( E _ { i j } x ) ^ { \\top } y = - x ^ { \\top } E _ { i j } y = y ^ { \\top } E _ { i j } x$ . Moreover, the scalar $x ^ { \\top } E _ { i j } y$ equals its transpose $- y ^ { \\top } E _ { i j } x$ . The product thus becomes:",
+        "bbox": [
+            111,
+            585,
+            883,
+            632
+        ],
+        "page_idx": 14
+    },
+    {
+        "type": "equation",
+        "text": "$$\n\\big ((E _ {i j} x) ^ {\\top} y \\big) \\big (x ^ {\\top} E _ {i j} y \\big) = (y ^ {\\top} E _ {i j} x) (- y ^ {\\top} E _ {i j} x) = - (y ^ {\\top} E _ {i j} x) ^ {2}.\n$$",
+        "text_format": "latex",
+        "bbox": [
+            284,
+            643,
+            710,
+            662
+        ],
+        "page_idx": 14
+    },
+    {
+        "type": "text",
+        "text": "Summing this quadratic expression is equivalent to evaluating the form $y ^ { \\top } M x$ on the matrix M defined in (22), because $\\begin{array} { r } { \\sum _ { i < j } ( y ^ { \\top } E _ { i j } \\bar { x } ) ( y ^ { \\top } E _ { i j } ^ { \\top } x ) = y ^ { \\top } } \\end{array}$ M x. Evaluating this explicitly yields:",
+        "bbox": [
+            111,
+            680,
+            883,
+            715
+        ],
+        "page_idx": 14
+    },
+    {
+        "type": "equation",
+        "text": "$$\ny ^ {\\top} M x = y ^ {\\top} \\left(\\frac {1}{2} (c I - y x ^ {\\top})\\right) x = \\frac {1}{2} \\big (c (y ^ {\\top} x) - (y ^ {\\top} y) (x ^ {\\top} x) \\big) = \\frac {1}{2} (c ^ {2} - 1). \\tag {23}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            238,
+            724,
+            883,
+            758
+        ],
+        "page_idx": 14
+    },
+    {
+        "type": "text",
+        "text": "The $\\phi ^ { \\prime } ( c )$ term (Trace): The dot product of two vectors $u ^ { \\top } v$ is equal to the trace of their outer product $\\operatorname { T r } ( v u ^ { \\top } )$ . Therefore:",
+        "bbox": [
+            111,
+            777,
+            883,
+            810
+        ],
+        "page_idx": 14
+    },
+    {
+        "type": "equation",
+        "text": "$$\n\\sum_ {1 \\leq i <   j \\leq d} (E _ {i j} x) ^ {\\top} (E _ {i j} y) = \\sum_ {1 \\leq i <   j \\leq d} \\operatorname{Tr} \\bigl ((E _ {i j} y) (E _ {i j} x) ^ {\\top} \\bigr) = \\operatorname{Tr} (M).\n$$",
+        "text_format": "latex",
+        "bbox": [
+            274,
+            821,
+            718,
+            854
+        ],
+        "page_idx": 14
+    },
+    {
+        "type": "text",
+        "text": "Taking the trace of M from (22), $\\operatorname { T r } ( I ) = d$ and $\\mathrm { T r } ( y x ^ { \\top } ) = x ^ { \\top } y = c ,$ yields:",
+        "bbox": [
+            112,
+            866,
+            658,
+            883
+        ],
+        "page_idx": 14
+    },
+    {
+        "type": "equation",
+        "text": "$$\n\\operatorname{Tr} (M) = \\operatorname{Tr} \\left(\\frac {1}{2} (c I - y x ^ {\\top})\\right) = \\frac {1}{2} (c d - c) = \\frac {c (d - 1)}{2}. \\tag {24}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            303,
+            893,
+            883,
+            928
+        ],
+        "page_idx": 14
+    },
+    {
+        "type": "page_number",
+        "text": "15",
+        "bbox": [
+            490,
+            948,
+            508,
+            959
+        ],
+        "page_idx": 14
+    },
+    {
+        "type": "text",
+        "text": "Closed Form. Combining these two evaluated sums, we obtain our remarkably simple closed form for the Stein kernel of the uniform distribution on $\\mathbb { S } ^ { d - 1 }$ , depending on the first two derivatives of the radial kernel ϕ:",
+        "bbox": [
+            109,
+            103,
+            883,
+            146
+        ],
+        "page_idx": 15
+    },
+    {
+        "type": "equation",
+        "text": "$$\nk _ {q} (x, y) = \\frac {1}{2} \\left[ \\left(c ^ {2} - 1\\right) \\phi^ {\\prime \\prime} (c) + c (d - 1) \\phi^ {\\prime} (c) \\right], \\quad c = x ^ {\\top} y. \\tag {25}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            294,
+            148,
+            880,
+            175
+        ],
+        "page_idx": 15
+    },
+    {
+        "type": "text",
+        "text": "Normalization for Representation Learning. Substituting this closed-form Stein kernel back into the expectation over the empirical distribution $\\hat { p }$ yields our raw KSD objective. As established in Section 6, we scale this discrepancy such that a worst-case representation collapse evaluates exactly to 1. In the event of collapse $( x = y$ , yielding $c = 1 )$ , the term $( c ^ { 2 } - 1 ) \\phi ^ { \\prime \\prime } ( c )$ vanishes, and the expectation evaluates to exactly $\\textstyle { \\frac { d - 1 } { 2 } } \\bar { \\phi ^ { \\prime } } ( 1 )$ .",
+        "bbox": [
+            111,
+            188,
+            883,
+            266
+        ],
+        "page_idx": 15
+    },
+    {
+        "type": "text",
+        "text": "By defining the normalization constant $\\begin{array} { r } { C _ { \\mathrm { n o r m / K S D } } = \\frac { d - 1 } { 2 } \\phi ^ { \\prime } ( 1 ) } \\end{array}$ , we scale the objective such that a complete point collapse $( c = 1 )$ evaluates to exactly 1, yielding the final explicit form $D _ { \\mathrm { K S D } }$ presented in Section 6:",
+        "bbox": [
+            111,
+            273,
+            883,
+            305
+        ],
+        "page_idx": 15
+    },
+    {
+        "type": "equation",
+        "text": "$$\nD _ {\\mathrm{KSD}} = \\frac {1}{C _ {\\text {norm} / \\mathrm{KSD}}} \\mathbb {E} _ {x, y \\sim \\hat {p}} \\left[ \\frac {1}{2} \\left((c ^ {2} - 1) \\phi^ {\\prime \\prime} (c) + c (d - 1) \\phi^ {\\prime} (c)\\right) \\right]. \\tag {26}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            274,
+            316,
+            880,
+            349
+        ],
+        "page_idx": 15
+    },
+    {
+        "type": "text",
+        "text": "C Maximum Mean Discrepancy on the Hypersphere",
+        "text_level": 2,
+        "bbox": [
+            112,
+            368,
+            598,
+            385
+        ],
+        "page_idx": 15
+    },
+    {
+        "type": "text",
+        "text": "In this appendix, we detail the derivation of the Maximum Mean Discrepancy (MMD) (Gretton et al., 2012) on $\\mathbb { S } ^ { d - 1 }$ and specialize it to the rotationally invariant zonal kernels introduced in Section 5, yielding the explicit objective presented in Section 6.",
+        "bbox": [
+            111,
+            401,
+            883,
+            446
+        ],
+        "page_idx": 15
+    },
+    {
+        "type": "text",
+        "text": "Maximum Mean Discrepancy on a Manifold. Let $\\mu$ be the Haar measure on $\\mathbb { S } ^ { d - 1 }$ , and let",
+        "bbox": [
+            112,
+            462,
+            815,
+            478
+        ],
+        "page_idx": 15
+    },
+    {
+        "type": "equation",
+        "text": "$$\nk: \\mathbb {S} ^ {d - 1} \\times \\mathbb {S} ^ {d - 1} \\to \\mathbb {R}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            424,
+            489,
+            573,
+            503
+        ],
+        "page_idx": 15
+    },
+    {
+        "type": "text",
+        "text": "be a positive definite kernel with an associated reproducing kernel Hilbert space (RKHS) H. For two probability densities $p$ and $q$ on $\\mathbb { S } ^ { d - 1 }$ (with respect to $\\mu )$ , the squared Maximum Mean Discrepancy is defined as the distance between their mean embeddings:",
+        "bbox": [
+            111,
+            518,
+            883,
+            565
+        ],
+        "page_idx": 15
+    },
+    {
+        "type": "equation",
+        "text": "$$\n\\mathrm{MMD} ^ {2} (p, q) = \\| \\mu_ {p} - \\mu_ {q} \\| _ {\\mathcal {H}} ^ {2},\n$$",
+        "text_format": "latex",
+        "bbox": [
+            401,
+            577,
+            596,
+            594
+        ],
+        "page_idx": 15
+    },
+    {
+        "type": "text",
+        "text": "where the mean embedding of a distribution r is given by $\\begin{array} { r } { \\mu _ { r } = \\int _ { \\mathbb { S } ^ { d - 1 } } k ( \\cdot , x ) r ( x ) \\mu ( d x ) } \\end{array}$",
+        "bbox": [
+            111,
+            604,
+            733,
+            622
+        ],
+        "page_idx": 15
+    },
+    {
+        "type": "text",
+        "text": "Expanding the RKHS norm yields the classical expression:",
+        "bbox": [
+            112,
+            628,
+            535,
+            643
+        ],
+        "page_idx": 15
+    },
+    {
+        "type": "equation",
+        "text": "$$\n\\mathrm{MMD} ^ {2} (p, q) = \\mathbb {E} _ {x, x ^ {\\prime} \\sim p} [ k (x, x ^ {\\prime}) ] + \\mathbb {E} _ {y, y ^ {\\prime} \\sim q} [ k (y, y ^ {\\prime}) ] - 2 \\mathbb {E} _ {x \\sim p, y \\sim q} [ k (x, y) ]. \\tag {27}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            246,
+            656,
+            880,
+            672
+        ],
+        "page_idx": 15
+    },
+    {
+        "type": "text",
+        "text": "Zonal Kernels and the Uniform Target. Following Section 4, we evaluate the discrepancy between the empirical distribution of the embeddings, $p = { \\hat { p } } .$ , and the uniform target distribution, $q = \\mathrm { U n i f } ( \\mathbb { S } ^ { d - 1 } )$ . Furthermore, as established in Section 5, we restrict our focus to rotationally invariant zonal kernels of the form:",
+        "bbox": [
+            111,
+            691,
+            883,
+            750
+        ],
+        "page_idx": 15
+    },
+    {
+        "type": "equation",
+        "text": "$$\nk (x, y) = \\varphi (c), \\qquad \\text {where} \\quad c := x ^ {\\top} y \\in [ - 1, 1 ].\n$$",
+        "text_format": "latex",
+        "bbox": [
+            334,
+            752,
+            663,
+            768
+        ],
+        "page_idx": 15
+    },
+    {
+        "type": "text",
+        "text": "Substituting these into Equation (27), the empirical MMD becomes:",
+        "bbox": [
+            111,
+            784,
+            604,
+            799
+        ],
+        "page_idx": 15
+    },
+    {
+        "type": "equation",
+        "text": "$$\n\\mathrm{MMD} ^ {2} (\\hat {p}, q) = \\mathbb {E} _ {x, x ^ {\\prime} \\sim \\hat {p}} \\left[ \\varphi \\left(x ^ {\\top} x ^ {\\prime}\\right) \\right] + \\mathbb {E} _ {y, y ^ {\\prime} \\sim q} \\left[ \\varphi \\left(y ^ {\\top} y ^ {\\prime}\\right) \\right] - 2 \\mathbb {E} _ {x \\sim \\hat {p}, y \\sim q} \\left[ \\varphi \\left(x ^ {\\top} y\\right) \\right]. \\tag {28}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            236,
+            811,
+            880,
+            829
+        ],
+        "page_idx": 15
+    },
+    {
+        "type": "text",
+        "text": "Because $q$ is uniform, by rotational invariance, if $y \\sim q$ and $x \\in \\mathbb { S } ^ { d - 1 }$ is a fixed vector, the inner product $v = x ^ { \\top } y$ follows a known distribution with density:",
+        "bbox": [
+            111,
+            848,
+            883,
+            878
+        ],
+        "page_idx": 15
+    },
+    {
+        "type": "equation",
+        "text": "$$\n\\rho_ {d} (v) = \\frac {(1 - v ^ {2}) ^ {\\frac {d - 3}{2}}}{B \\left(\\frac {1}{2} , \\frac {d - 1}{2}\\right)}, \\qquad v \\in [ - 1, 1 ],\n$$",
+        "text_format": "latex",
+        "bbox": [
+            367,
+            891,
+            630,
+            928
+        ],
+        "page_idx": 15
+    },
+    {
+        "type": "page_number",
+        "text": "16",
+        "bbox": [
+            490,
+            948,
+            508,
+            959
+        ],
+        "page_idx": 15
+    },
+    {
+        "type": "text",
+        "text": "where $B ( \\cdot , \\cdot )$ denotes the Beta function. Consequently, expectations involving the uniform target reduce to a tractable one-dimensional integral over $[ - 1 , 1 ]$ . We define this analytic bias constant as:",
+        "bbox": [
+            111,
+            103,
+            883,
+            133
+        ],
+        "page_idx": 16
+    },
+    {
+        "type": "equation",
+        "text": "$$\nC _ {\\mathrm{bias/MMD}} := \\int_ {- 1} ^ {1} \\varphi (v) \\rho_ {d} (v) d v.\n$$",
+        "text_format": "latex",
+        "bbox": [
+            388,
+            143,
+            609,
+            176
+        ],
+        "page_idx": 16
+    },
+    {
+        "type": "text",
+        "text": "Because both the target-target expectation and the cross-term expectation integrate over the uniform measure $q ,$ they simplify identically to this constant:",
+        "bbox": [
+            111,
+            191,
+            880,
+            222
+        ],
+        "page_idx": 16
+    },
+    {
+        "type": "equation",
+        "text": "$$\n\\mathbb {E} _ {y, y ^ {\\prime} \\sim q} \\big [ \\varphi (y ^ {\\top} y ^ {\\prime}) \\big ] = C _ {\\mathrm{bias/MMD}},\n$$",
+        "text_format": "latex",
+        "bbox": [
+            393,
+            229,
+            612,
+            248
+        ],
+        "page_idx": 16
+    },
+    {
+        "type": "equation",
+        "text": "$$\n\\mathbb {E} _ {x \\sim \\hat {p}, y \\sim q} [ \\varphi (x ^ {\\top} y) ] = C _ {\\mathrm{bias/MMD}}.\n$$",
+        "text_format": "latex",
+        "bbox": [
+            383,
+            250,
+            612,
+            268
+        ],
+        "page_idx": 16
+    },
+    {
+        "type": "text",
+        "text": "Substituting these identities back into Equation (28) yields the unnormalized objective:",
+        "bbox": [
+            111,
+            284,
+            740,
+            299
+        ],
+        "page_idx": 16
+    },
+    {
+        "type": "equation",
+        "text": "$$\n\\mathrm{MMD} ^ {2} (\\hat {p}, q) = \\mathbb {E} _ {x, x ^ {\\prime} \\sim \\hat {p}} \\big [ \\varphi (x ^ {\\top} x ^ {\\prime}) \\big ] - C _ {\\text {bias / MMD}}. \\tag {29}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            334,
+            306,
+            883,
+            325
+        ],
+        "page_idx": 16
+    },
+    {
+        "type": "text",
+        "text": "Normalization for Representation Learning. To ensure comparable gradients and bounded objectives across different kernels and dimensionalities, we scale this raw discrepancy to obtain a worst-case collapse value of exactly 1. Total representation collapse occurs when all embeddings are mapped to the same point on the hypersphere $( { \\mathrm { i . e . , ~ } } x = x ^ { \\prime }$ , yielding $x ^ { \\top } x ^ { \\prime } = 1 )$ .",
+        "bbox": [
+            111,
+            340,
+            883,
+            402
+        ],
+        "page_idx": 16
+    },
+    {
+        "type": "text",
+        "text": "Since our kernels are systematically normalized such that $\\varphi ( 1 ) = 1$ , the maximum possible value of the unnormalized MMD is $1 - C _ { \\mathrm { b i a s / M M D } }$ . By defining the normalization constant $C _ { \\mathrm { n o r m / M M D } } = 1 - C _ { \\mathrm { b i a s / M M D } }$ , we obtain the final explicit regularization objective $D _ { \\mathrm { M M D } }$ presented in Section 6:",
+        "bbox": [
+            111,
+            407,
+            883,
+            454
+        ],
+        "page_idx": 16
+    },
+    {
+        "type": "equation",
+        "text": "$$\nD _ {\\mathrm{MMD}} = \\frac {1}{C _ {\\text {norm / MMD}}} \\left(\\mathbb {E} _ {x, x ^ {\\prime} \\sim \\hat {p}} [ \\varphi (c) ] - C _ {\\text {bias / MMD}}\\right). \\tag {30}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            316,
+            460,
+            880,
+            494
+        ],
+        "page_idx": 16
+    },
+    {
+        "type": "text",
+        "text": "D Kullback–Leibler Divergence on the Hypersphere",
+        "text_level": 2,
+        "bbox": [
+            112,
+            508,
+            591,
+            526
+        ],
+        "page_idx": 16
+    },
+    {
+        "type": "text",
+        "text": "In this appendix, we detail the derivation of the Kullback–Leibler (KL) divergence on the hypersphere $\\mathbb { S } ^ { d - 1 }$ and show how a Kernel Density Estimation (KDE) approach leads to the explicit, closed-form objective $D _ { \\mathrm { K I } }$ L presented in Section 6.",
+        "bbox": [
+            111,
+            539,
+            883,
+            585
+        ],
+        "page_idx": 16
+    },
+    {
+        "type": "text",
+        "text": "Kullback–Leibler Divergence on a Manifold. Let $\\mu$ be the Haar measure on $\\mathbb { S } ^ { d - 1 }$ . For two probability densities $p$ and $q$ on $\\mathbb { S } ^ { d - 1 }$ (with respect to $\\mu )$ , the Kullback–Leibler divergence is defined as:",
+        "bbox": [
+            111,
+            599,
+            883,
+            631
+        ],
+        "page_idx": 16
+    },
+    {
+        "type": "equation",
+        "text": "$$\n\\mathrm{KL} (p \\| q) = \\int_ {\\mathbb {S} ^ {d - 1}} p (x) \\log \\frac {p (x)}{q (x)} \\mu (d x). \\tag {31}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            367,
+            640,
+            880,
+            671
+        ],
+        "page_idx": 16
+    },
+    {
+        "type": "text",
+        "text": "Equivalently, writing the expectation with respect to $p ,$ we have:",
+        "bbox": [
+            112,
+            678,
+            578,
+            694
+        ],
+        "page_idx": 16
+    },
+    {
+        "type": "equation",
+        "text": "$$\n\\mathrm{KL} (p \\| q) = \\mathbb {E} _ {x \\sim p} [ \\log p (x) - \\log q (x) ]. \\tag {32}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            367,
+            703,
+            880,
+            719
+        ],
+        "page_idx": 16
+    },
+    {
+        "type": "text",
+        "text": "Uniform Reference Distribution. We now specialize to the case where the target reference distribution is the uniform measure on the hypersphere, $q = \\mathrm { U n i f } ( \\mathbb { S } ^ { d - 1 } )$ . The density of the uniform distribution with respect to the Haar measure is constant and equal to $q ( x ) = 1 / | \\mathbb { S } ^ { d - 1 } |$ , where",
+        "bbox": [
+            111,
+            734,
+            883,
+            781
+        ],
+        "page_idx": 16
+    },
+    {
+        "type": "equation",
+        "text": "$$\n| \\mathbb {S} ^ {d - 1} | = \\frac {2 \\pi^ {d / 2}}{\\Gamma (d / 2)}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            441,
+            789,
+            557,
+            821
+        ],
+        "page_idx": 16
+    },
+    {
+        "type": "text",
+        "text": "denotes the surface area of the hypersphere. Substituting this constant density into Equation (32) yields:",
+        "bbox": [
+            111,
+            830,
+            867,
+            845
+        ],
+        "page_idx": 16
+    },
+    {
+        "type": "equation",
+        "text": "$$\n\\mathrm{KL} (p \\| q) = \\mathbb {E} _ {x \\sim p} [ \\log p (x) ] + \\log | \\mathbb {S} ^ {d - 1} |. \\tag {33}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            361,
+            853,
+            880,
+            872
+        ],
+        "page_idx": 16
+    },
+    {
+        "type": "text",
+        "text": "This establishes that minimizing the KL divergence to the uniform distribution is fundamentally equivalent to maximizing the differential entropy of $p .$ The geometric constant governing this shift is defined in our formulation as $C _ { \\mathrm { b i a s / K L } } = \\log | \\mathbb { S } ^ { d - 1 } |$ .",
+        "bbox": [
+            111,
+            878,
+            883,
+            926
+        ],
+        "page_idx": 16
+    },
+    {
+        "type": "page_number",
+        "text": "17",
+        "bbox": [
+            490,
+            948,
+            508,
+            959
+        ],
+        "page_idx": 16
+    },
+    {
+        "type": "text",
+        "text": "Sample-Based Approximations and Gradient Stability. In practical representation learning, we only have access to a discrete empirical distribution $\\hat { p }$ derived from a finite minibatch of embeddings. Because the exact differential entropy $\\mathbb { E } _ { { x } \\sim { \\hat { p } } } [ \\log { \\hat { p } ( x ) } ]$ diverges for a discrete sum of Dirac deltas, we must rely on continuous, sample-based approximations.",
+        "bbox": [
+            109,
+            103,
+            883,
+            165
+        ],
+        "page_idx": 17
+    },
+    {
+        "type": "text",
+        "text": "While some existing methods (such as the KoLeo estimator (Sablayrolles et al., 2019)) approximate this entropy using nearest-neighbor distances, we explicitly discard this approach. The reliance on a hard min operator to identify the closest neighbor inherently induces highly non-smooth, unstable gradients during backpropagation, severely destabilizing optimization.",
+        "bbox": [
+            109,
+            171,
+            883,
+            233
+        ],
+        "page_idx": 17
+    },
+    {
+        "type": "text",
+        "text": "Instead, to obtain a robust, smoothly differentiable, and full-dimensional statistical test that seamlessly integrates with our rotationally invariant kernels $k ( x , x ^ { \\prime } ) = \\varphi ( c )$ , we construct a continuous surrogate for the empirical density using Kernel Density Estimation (KDE). To prevent trivial self-similarity singularities—where the density estimate at x is entirely dominated by the kernel evaluating its own embedding $( x ^ { \\top } x = 1 )$ —we strictly evaluate this density using a leave-one-out estimator, denoted $\\hat { p } _ { - x } \\colon$",
+        "bbox": [
+            109,
+            239,
+            883,
+            316
+        ],
+        "page_idx": 17
+    },
+    {
+        "type": "equation",
+        "text": "$$\n\\tilde {p} (x) = \\mathbb {E} _ {x ^ {\\prime} \\sim \\hat {p} _ {- x}} \\big [ \\varphi (x ^ {\\top} x ^ {\\prime}) \\big ].\n$$",
+        "text_format": "latex",
+        "bbox": [
+            406,
+            327,
+            593,
+            347
+        ],
+        "page_idx": 17
+    },
+    {
+        "type": "text",
+        "text": "Replacing the exact density $p ( x )$ in Equation (33) with this leave-one-out surrogate yields our unnormalized KDE-based objective.",
+        "bbox": [
+            109,
+            357,
+            883,
+            388
+        ],
+        "page_idx": 17
+    },
+    {
+        "type": "text",
+        "text": "Normalization for Representation Learning. As established in Section 6, we systematically scale our discrepancies such that a worst-case representation collapse evaluates exactly to 1. In the event of total collapse, all normalized embeddings map to the exact same coordinate $( x = x ^ { \\prime }$ , yielding $c = 1 )$ . Because our zonal kernels are calibrated such that $\\varphi ( 1 ) = 1$ , the leave-one-out density estimate $\\tilde { p } ( x )$ equals 1, and its logarithm evaluates to exactly 0.",
+        "bbox": [
+            109,
+            404,
+            883,
+            481
+        ],
+        "page_idx": 17
+    },
+    {
+        "type": "text",
+        "text": "To map this boundary condition consistently across all tests, we apply the scaling constant $C _ { \\mathrm { n o r m / K L } }$ alongside the analytic bias $C _ { \\mathrm { b i a s / K I } }$ defined above. This yields the final explicit, normalized objective $D _ { \\mathrm { K L } }$ as implemented in Section 6:",
+        "bbox": [
+            109,
+            487,
+            883,
+            532
+        ],
+        "page_idx": 17
+    },
+    {
+        "type": "equation",
+        "text": "$$\nD _ {\\mathrm{KL}} = \\frac {1}{C _ {\\mathrm{norm} / \\mathrm{KL}}} \\left(\\mathbb {E} _ {x \\sim \\hat {p}} \\left[ \\log \\mathbb {E} _ {x ^ {\\prime} \\sim \\hat {p} _ {- x}} [ \\varphi (c) ] \\right] - C _ {\\mathrm{bias} / \\mathrm{KL}}\\right). \\tag {34}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            297,
+            545,
+            883,
+            578
+        ],
+        "page_idx": 17
+    },
+    {
+        "type": "text",
+        "text": "E Ablation of the Temperature for the Heat Kernel",
+        "text_level": 2,
+        "bbox": [
+            112,
+            595,
+            591,
+            614
+        ],
+        "page_idx": 17
+    },
+    {
+        "type": "text",
+        "text": "The regularizing behavior of the heat kernel inherently depends on its scale parameter $t ,$ which dictates the exponential decay of the spectral weights $w ( \\lambda _ { \\ell } ) = e ^ { - t \\lambda _ { \\ell } }$ . On the hypersphere $\\mathbb { S } ^ { d - 1 }$ , the natural baseline for this time step scales inversely with the dimension, establishing $1 / d$ as a unit.",
+        "bbox": [
+            109,
+            628,
+            883,
+            676
+        ],
+        "page_idx": 17
+    },
+    {
+        "type": "text",
+        "text": "To determine a good smoothing factor, we focus our ablation on the critical region where the kernel’s spatial profile exhibits the most significant structural variations. As visualized in Figure 3, this corresponds to the temperature range of $t \\in \\{ 4 / d , 5 / d , 6 / d \\}$ . It is worth noting that for density-based evaluations—such as the KDE approximation used in the KL divergence—the requirements are different. In such cases, a much smaller temperature (strictly evaluated at $2 / d )$ is necessary to ensure the density approximation remains theoretically valid.",
+        "bbox": [
+            109,
+            681,
+            883,
+            772
+        ],
+        "page_idx": 17
+    },
+    {
+        "type": "text",
+        "text": "The empirical sensitivity of the MMD and KSD objectives to the temperature parameter is detailed in Table 3 for ImageNet-100. An observation is the optimization instability of the KSD objective at $t = 4 / d ,$ , which can lead to representation collapse in some runs. This collapse explains the large variance across random seeds (yielding a standard deviation of ±35.20% for linear probing) observed on ImageNet-100.",
+        "bbox": [
+            109,
+            779,
+            883,
+            842
+        ],
+        "page_idx": 17
+    },
+    {
+        "type": "text",
+        "text": "F Texture Retrieval Evaluation",
+        "text_level": 2,
+        "bbox": [
+            112,
+            859,
+            406,
+            878
+        ],
+        "page_idx": 17
+    },
+    {
+        "type": "text",
+        "text": "Following the experimental framework established by SPHERE-JEPA (Nicollier et al., 2026), we evaluate our method on their nonparametric texture retrieval task. This task is specifically designed to assess the geometry of learned representations: given a query image, the objective is to retrieve another view of the same texture instance among visually similar candidate samples.",
+        "bbox": [
+            109,
+            893,
+            883,
+            925
+        ],
+        "page_idx": 17
+    },
+    {
+        "type": "page_number",
+        "text": "18",
+        "bbox": [
+            490,
+            948,
+            508,
+            959
+        ],
+        "page_idx": 17
+    },
+    {
+        "type": "table",
+        "img_path": "images/0c6057d5ea928c72acfbb99c0dd30b436004e807066f3df85496c8c30d48b3ae.jpg",
+        "table_caption": [
+            "Table 3: ImageNet-100 heat-kernel temperature sensitivity. Linear probing and k-NN classification accuracy (%) are reported as mean ± sample standard deviation over seeds."
+        ],
+        "table_footnote": [],
+        "table_body": "<table><tr><td rowspan=\"2\">Temperature</td><td colspan=\"2\">MMD (Heat)</td><td colspan=\"2\">KSD (Heat)</td></tr><tr><td>Linear</td><td>k-NN</td><td>Linear</td><td>k-NN</td></tr><tr><td>4/d</td><td>72.25 ± 0.70</td><td>66.48 ± 0.21</td><td>53.80 ± 35.20</td><td>49.93 ± 32.62</td></tr><tr><td>5/d</td><td>72.55 ± 0.29</td><td>66.71 ± 0.31</td><td>72.55 ± 0.29</td><td>66.71 ± 0.31</td></tr><tr><td>6/d</td><td>71.73 ± 0.49</td><td>66.64 ± 0.60</td><td>72.44 ± 0.30</td><td>67.27 ± 0.42</td></tr></table>",
+        "bbox": [
+            222,
+            143,
+            777,
+            243
+        ],
+        "page_idx": 18
+    },
+    {
+        "type": "text",
+        "text": "",
+        "bbox": [
+            109,
+            270,
+            883,
+            301
+        ],
+        "page_idx": 18
+    },
+    {
+        "type": "text",
+        "text": "We adopt their exact evaluation protocol, procedural datasets, and data augmentation pipeline, which we briefly summarize below.",
+        "bbox": [
+            109,
+            308,
+            883,
+            338
+        ],
+        "page_idx": 18
+    },
+    {
+        "type": "text",
+        "text": "F.1 Datasets",
+        "text_level": 2,
+        "bbox": [
+            112,
+            359,
+            225,
+            372
+        ],
+        "page_idx": 18
+    },
+    {
+        "type": "text",
+        "text": "We use the four procedural texture datasets introduced in Nicollier et al. (2026): Disk, Cloud, Flake, and Wood. As originally described by the authors, each dataset is generated from a distinct stochastic process (e.g., heavy-tailed noise, Brownian motion, Perlin noise).",
+        "bbox": [
+            111,
+            387,
+            883,
+            434
+        ],
+        "page_idx": 18
+    },
+    {
+        "type": "text",
+        "text": "As illustrated in Figure 5, samples within a given dataset are generated using different random seeds. This yields images that share a similar statistical structure while remaining visually distinct. Following their standard setup, each texture family consists of 10,000 training, 500 validation, and 10,000 test samples.",
+        "bbox": [
+            109,
+            440,
+            883,
+            487
+        ],
+        "page_idx": 18
+    },
+    {
+        "type": "text",
+        "text": "F.2 Data Augmentation and View Generation",
+        "text_level": 2,
+        "bbox": [
+            112,
+            506,
+            470,
+            522
+        ],
+        "page_idx": 18
+    },
+    {
+        "type": "text",
+        "text": "To generate multiple views from each texture image $( V _ { g } = 2$ views per image by default), we directly apply the stochastic spatial and photometric augmentation pipeline proposed in Nicollier et al. (2026).",
+        "bbox": [
+            109,
+            535,
+            883,
+            566
+        ],
+        "page_idx": 18
+    },
+    {
+        "type": "text",
+        "text": "As visualized in Figure 6, each view is generated using a random affine transformation (incorporating rotation, translation, scaling, and shear), followed by photometric augmentations such as brightness/contrast adjustments and random erasing. These transformations introduce significant spatial variability while preserving the underlying texture statistics. The exact same augmentation pipeline is applied at test time to ensure consistency.",
+        "bbox": [
+            109,
+            573,
+            883,
+            648
+        ],
+        "page_idx": 18
+    },
+    {
+        "type": "text",
+        "text": "F.3 Quantitative Results",
+        "text_level": 2,
+        "bbox": [
+            112,
+            669,
+            313,
+            684
+        ],
+        "page_idx": 18
+    },
+    {
+        "type": "text",
+        "text": "Evaluation is performed within mini-batches of size B = 100. For each query, similarity is computed against the other samples in the batch, and retrieval performance is measured based on the ranking of these candidates. We report nearest-neighbor retrieval performance using Recall@K $( K \\in \\{ 1 , 3 , 5 \\} )$ ) and mean Average Precision (mAP). To ensure the regularizers effectively structure the underlying feature space rather than just the projection space, we evaluate both on the projection head outputs (mAP) and directly on the frozen backbone embeddings (mAP emb).",
+        "bbox": [
+            109,
+            696,
+            883,
+            789
+        ],
+        "page_idx": 18
+    },
+    {
+        "type": "text",
+        "text": "Table 2 summarizes the average performance across all four texture domains. Tables 4, 5, 6, and 7 provide the detailed breakdown for each individual dataset.",
+        "bbox": [
+            109,
+            795,
+            883,
+            825
+        ],
+        "page_idx": 18
+    },
+    {
+        "type": "text",
+        "text": "Superiority of Exact Hyperspherical Uniformity. As shown in Table 2, KL (Heat) consistently and significantly outperforms all other methods on average. The performance gains are particularly striking in the top-1 retrieval metric, where KL (Heat) achieves an average Recall@1 of 95.3%, representing a substantial +6.6 absolute points improvement over the stochastic SUSReg baseline (88.7%). This dominant trend is consistent across all individual datasets, where KL (Heat) even nearly saturates performance on the easier domains (e.g., 99.4% Recall@1 on Wood).",
+        "bbox": [
+            109,
+            833,
+            883,
+            925
+        ],
+        "page_idx": 18
+    },
+    {
+        "type": "page_number",
+        "text": "19",
+        "bbox": [
+            490,
+            948,
+            508,
+            959
+        ],
+        "page_idx": 18
+    },
+    {
+        "type": "image",
+        "img_path": "images/4d679708e77edff9331f2b35e7b81f8e27eb4c3d6ed80c29be0bdab357b361a8.jpg",
+        "image_caption": [],
+        "image_footnote": [],
+        "content": "Abstract grayscale texture with no discernible objects, text, or symbols",
+        "sub_type": "natural_image",
+        "bbox": [
+            124,
+            99,
+            372,
+            292
+        ],
+        "page_idx": 19
+    },
+    {
+        "type": "image",
+        "img_path": "images/af662f165b47c463d43fe5fd649a0ad76a8d351182abdbc128fb5cb8d91aaf3b.jpg",
+        "image_caption": [],
+        "image_footnote": [],
+        "content": "Abstract grayscale texture with no discernible text, symbols, or structured elements",
+        "sub_type": "natural_image",
+        "bbox": [
+            374,
+            99,
+            622,
+            292
+        ],
+        "page_idx": 19
+    },
+    {
+        "type": "image",
+        "img_path": "images/18e153a7d40ad4e1fe656f6a91e9ab812fca788048ee63523abb5fe897decc8b.jpg",
+        "image_caption": [],
+        "image_footnote": [],
+        "content": "Grayscale abstract texture with no discernible text, symbols, or structured elements",
+        "sub_type": "natural_image",
+        "bbox": [
+            625,
+            99,
+            872,
+            292
+        ],
+        "page_idx": 19
+    },
+    {
+        "type": "image",
+        "img_path": "images/55efda412d7ba491d57c93711673a61a734c82a5390d80ba8136baf3c09d1399.jpg",
+        "image_caption": [],
+        "image_footnote": [],
+        "content": "Abstract pattern of black and white dots on a gray background (no text or symbols)",
+        "sub_type": "natural_image",
+        "bbox": [
+            122,
+            297,
+            372,
+            489
+        ],
+        "page_idx": 19
+    },
+    {
+        "type": "image",
+        "img_path": "images/d1b2449496a52f8351b45493f5ef292c45e9e1a552129d2b874af6ba05a91940.jpg",
+        "image_caption": [],
+        "image_footnote": [],
+        "content": "Abstract pattern of scattered black and white dots on a gray background (no text or symbols)",
+        "sub_type": "natural_image",
+        "bbox": [
+            374,
+            297,
+            622,
+            489
+        ],
+        "page_idx": 19
+    },
+    {
+        "type": "image",
+        "img_path": "images/eb7311f0113a84218bb1b806f3fcf350d1025a58b6e2c6fa63078c110158cd62.jpg",
+        "image_caption": [],
+        "image_footnote": [],
+        "content": "Microscopic view of scattered black and white particles on a gray background (no text or symbols)",
+        "sub_type": "natural_image",
+        "bbox": [
+            625,
+            297,
+            872,
+            489
+        ],
+        "page_idx": 19
+    },
+    {
+        "type": "image",
+        "img_path": "images/0df34ddfd35724d584b6eeebfffac6f7231f293d02922b476a00329be6be337a.jpg",
+        "image_caption": [],
+        "image_footnote": [],
+        "content": "Abstract grayscale pattern with scattered star-like and starburst shapes (no text or symbols)",
+        "sub_type": "natural_image",
+        "bbox": [
+            122,
+            496,
+            372,
+            688
+        ],
+        "page_idx": 19
+    },
+    {
+        "type": "image",
+        "img_path": "images/d8469526fc793bd6cb11fc520e414e73f28b481d4cbf59964b246575b244943f.jpg",
+        "image_caption": [],
+        "image_footnote": [],
+        "content": "Abstract grayscale pattern with star-like and radiating shapes (no text or symbols)",
+        "sub_type": "natural_image",
+        "bbox": [
+            374,
+            496,
+            622,
+            688
+        ],
+        "page_idx": 19
+    },
+    {
+        "type": "image",
+        "img_path": "images/9f4b6356a3b36f014ee8401b7b1ad83e75218465170b703cc09c28a279b7fb1f.jpg",
+        "image_caption": [],
+        "image_footnote": [],
+        "content": "Abstract grayscale pattern with scattered star-like shapes and dots (no text or symbols)",
+        "sub_type": "natural_image",
+        "bbox": [
+            625,
+            496,
+            872,
+            688
+        ],
+        "page_idx": 19
+    },
+    {
+        "type": "image",
+        "img_path": "images/1db04904e01f76cd131a06498c8156d222af7616e16ae6b8287fed832257bf34.jpg",
+        "image_caption": [],
+        "image_footnote": [],
+        "content": "Abstract pattern of wavy black and white lines on a light background (no text or symbols)",
+        "sub_type": "natural_image",
+        "bbox": [
+            122,
+            693,
+            372,
+            886
+        ],
+        "page_idx": 19
+    },
+    {
+        "type": "image",
+        "img_path": "images/e204cd1cc2f72baaf05039546a73a1b9a94055f5ed546052195b9d1bf0d5e00e.jpg",
+        "image_caption": [],
+        "image_footnote": [],
+        "content": "Abstract pattern of wavy black lines on white background (no text or symbols)",
+        "sub_type": "natural_image",
+        "bbox": [
+            374,
+            693,
+            622,
+            886
+        ],
+        "page_idx": 19
+    },
+    {
+        "type": "image",
+        "img_path": "images/ae41618fa29e2624ffaac9ecc1b718d21b42ff26fdbcfd499e36b4994dedbe86.jpg",
+        "image_caption": [
+            "Figure 5: Examples of procedural textures used for retrieval evaluation, as introduced in Nicollier et al. (2026). Each row corresponds to a texture family (top to bottom: cloud, disk, flake, wood). Images within a row are generated from the same stochastic process with different random seeds, resulting in strong statistical similarity but distinct visual realizations. 20 20"
+        ],
+        "image_footnote": [],
+        "content": "Abstract pattern of black wavy lines on white background, no text or symbols present",
+        "sub_type": "natural_image",
+        "bbox": [
+            625,
+            693,
+            872,
+            886
+        ],
+        "page_idx": 19
+    },
+    {
+        "type": "page_number",
+        "text": "",
+        "bbox": [
+            488,
+            946,
+            508,
+            959
+        ],
+        "page_idx": 19
+    },
+    {
+        "type": "image",
+        "img_path": "images/a04a4ae5fa48217f6fee80782235e1164bea7a65b71209f0ba2628b1f9e95c55.jpg",
+        "image_caption": [],
+        "image_footnote": [],
+        "content": "Abstract geometric composition with overlapping colored polygons (blue, yellow, red, green) on a starry background with scattered white dots (no text or symbols)",
+        "sub_type": "natural_image",
+        "bbox": [
+            133,
+            113,
+            467,
+            396
+        ],
+        "page_idx": 20
+    },
+    {
+        "type": "image",
+        "img_path": "images/c8e8d8b9bb9c4e5455593b71efc848e0a4b3dbaf1679532737ee0c25c5dc6a00.jpg",
+        "image_caption": [],
+        "image_footnote": [],
+        "content": "Black-and-white image showing scattered bright white dots against a dark background, resembling stars or particles (no text or symbols)",
+        "sub_type": "natural_image",
+        "bbox": [
+            511,
+            111,
+            696,
+            253
+        ],
+        "page_idx": 20
+    },
+    {
+        "type": "image",
+        "img_path": "images/558b15420568e37b8bc600850839368fbdb6632d2d2de79c37d74d37d6323666.jpg",
+        "image_caption": [],
+        "image_footnote": [],
+        "content": "Dark field image showing scattered bright spots with a black rectangle in the center (no text or symbols)",
+        "sub_type": "natural_image",
+        "bbox": [
+            697,
+            111,
+            882,
+            253
+        ],
+        "page_idx": 20
+    },
+    {
+        "type": "image",
+        "img_path": "images/f61a4481a275f478c3ee932b88479071a3d6c21264064440c2f7ef7480a6e457.jpg",
+        "image_caption": [],
+        "image_footnote": [],
+        "content": "Microscopic view of scattered bright spots on a gray background with a black square in the bottom right corner (no text or symbols)",
+        "sub_type": "natural_image",
+        "bbox": [
+            511,
+            258,
+            696,
+            401
+        ],
+        "page_idx": 20
+    },
+    {
+        "type": "image",
+        "img_path": "images/4af768d052d811eb3eb998ada88aeaf74f8f4f1f7c1e0b5d871eef0b1df8aa1f.jpg",
+        "image_caption": [
+            "Figure 6: Left: effective source regions induced by independently sampled random affine transformations. Right: corresponding augmented views obtained after applying the complete affine and photometric transformation pipeline from Nicollier et al. (2026)."
+        ],
+        "image_footnote": [],
+        "content": "Microscopic view of scattered white particles on a gray background with a black rectangular region in the top-right corner (no text or symbols)",
+        "sub_type": "natural_image",
+        "bbox": [
+            697,
+            258,
+            882,
+            401
+        ],
+        "page_idx": 20
+    },
+    {
+        "type": "text",
+        "text": "Continuous vs. Stochastic Regularization. The aggregated results clearly validate our theoretical analysis regarding representation geometry in nonparametric settings. The continuous, full-dimensional regularizers—specifically MMD and KSD utilizing Heat or Bandlimited kernels—consistently yield better instance-level discrimination than both the stochastic baseline (SUSReg) and the induced MMD approach. For instance, replacing the induced MMD with a continuous Heat kernel MMD improves the average Recall@1 by +2.3 points (from 89.1% to 91.4%). This confirms that continuous structural constraints pave the way for the substantial jump achieved by the exact KL penalty.",
+        "bbox": [
+            109,
+            494,
+            883,
+            601
+        ],
+        "page_idx": 20
+    },
+    {
+        "type": "text",
+        "text": "Backbone vs. Projection Head. Finally, comparing the average mAP evaluated on the projection head (96.7% for KL Heat) to the mAP on the frozen backbone embeddings (96.3% for KL Heat) reveals that the structural improvements transfer successfully to the core representations. While there is a standard, slight drop when evaluating the embeddings directly across all methods, models regularized with continuous metrics maintain excellent embedding performance. This confirms that the uniformly distributed geometry is genuinely learned by the backbone and not merely overfitted within the projection head.",
+        "bbox": [
+            109,
+            607,
+            883,
+            700
+        ],
+        "page_idx": 20
+    },
+    {
+        "type": "table",
+        "img_path": "images/687e981c1a3565ac67a08537dbb90b2e15c225e3c99c0b1a804c3873018fca4d.jpg",
+        "table_caption": [
+            "Table 4: Disk Texture"
+        ],
+        "table_footnote": [],
+        "table_body": "<table><tr><td>Method</td><td>Recall@1</td><td>Recall@3</td><td>Recall@5</td><td>mAP</td><td>mAP (emb)</td></tr><tr><td>SUSReg (Stochastic Baseline)</td><td>88.7</td><td>95.5</td><td>97.2</td><td>92.4</td><td>90.1</td></tr><tr><td>MMD (Induced SUSReg  $\\bar{k}$ )</td><td>87.9</td><td>95.1</td><td>97.1</td><td>91.9</td><td>88.8</td></tr><tr><td>MMD (Heat,  $t = 5/d$ )</td><td>91.7</td><td>96.4</td><td>97.8</td><td>94.4</td><td>93.1</td></tr><tr><td>MMD (Bandlimited,  $L = 2$ )</td><td>90.5</td><td>95.0</td><td>96.2</td><td>93.1</td><td>92.9</td></tr><tr><td>KSD (Heat,  $t = 5/d$ )</td><td>91.9</td><td>96.5</td><td>97.7</td><td>94.5</td><td>92.5</td></tr><tr><td>KSD (Bandlimited,  $L = 2$ )</td><td>91.1</td><td>95.7</td><td>96.7</td><td>93.7</td><td>93.3</td></tr><tr><td>KL (Heat)</td><td>97.0</td><td>98.7</td><td>99.1</td><td>97.9</td><td>97.2</td></tr></table>",
+        "bbox": [
+            174,
+            738,
+            823,
+            896
+        ],
+        "page_idx": 20
+    },
+    {
+        "type": "page_number",
+        "text": "21",
+        "bbox": [
+            488,
+            946,
+            506,
+            959
+        ],
+        "page_idx": 20
+    },
+    {
+        "type": "table",
+        "img_path": "images/f8f581c05b324acf8008265941157c29588aa79f7cf1d71743f7aef21b8896a8.jpg",
+        "table_caption": [
+            "Table 5: Cloud Texture"
+        ],
+        "table_footnote": [],
+        "table_body": "<table><tr><td>Method</td><td>Recall@1</td><td>Recall@3</td><td>Recall@5</td><td>mAP</td><td>mAP (emb)</td></tr><tr><td>SUSReg (Stochastic Baseline)</td><td>89.7</td><td>95.4</td><td>96.8</td><td>92.9</td><td>91.4</td></tr><tr><td>MMD (Induced SUSReg  $\\bar{k}$ )</td><td>90.2</td><td>95.9</td><td>97.6</td><td>93.4</td><td>91.4</td></tr><tr><td>MMD (Heat,  $t = 5/d$ ) 93.1</td><td>97.0</td><td>98.1</td><td>95.3</td><td>94.1</td><td></td></tr><tr><td>MMD (Bandlimited,  $L = 2$ ) 93.3</td><td>97.0</td><td>97.7</td><td>95.3</td><td>95.0</td><td></td></tr><tr><td>KSD (Heat,  $t = 5/d$ )</td><td>93.4</td><td>97.0</td><td>97.9</td><td>95.4</td><td>94.6</td></tr><tr><td>KSD (Bandlimited,  $L = 2$ )</td><td>91.5</td><td>95.9</td><td>96.9</td><td>94.0</td><td>93.1</td></tr><tr><td>KL (Heat)</td><td>96.3</td><td>98.0</td><td>98.5</td><td>97.3</td><td>96.2</td></tr></table>",
+        "bbox": [
+            163,
+            170,
+            834,
+            327
+        ],
+        "page_idx": 21
+    },
+    {
+        "type": "table",
+        "img_path": "images/fa2bf8727c1ef872f8105e48c38b5201de7d3aa9d6d52d360894cbc6028e7dbe.jpg",
+        "table_caption": [
+            "Table 6: Wood Texture"
+        ],
+        "table_footnote": [],
+        "table_body": "<table><tr><td>Method</td><td>Recall@1</td><td>Recall@3</td><td>Recall@5</td><td>mAP</td><td>mAP (emb)</td></tr><tr><td>SUSReg (Stochastic Baseline)</td><td>93.3</td><td>99.1</td><td>99.7</td><td>96.2</td><td>95.6</td></tr><tr><td>MMD (Induced SUSReg  $\\bar{k}$ )</td><td>95.0</td><td>99.4</td><td>99.7</td><td>97.2</td><td>96.3</td></tr><tr><td>MMD (Heat,  $t = 5/d$ )</td><td>95.7</td><td>99.4</td><td>99.8</td><td>97.6</td><td>96.7</td></tr><tr><td>MMD (Bandlimited,  $L = 2$ )</td><td>96.0</td><td>99.4</td><td>99.7</td><td>97.7</td><td>96.4</td></tr><tr><td>KSD (Heat,  $t = 5/d$ )</td><td>96.9</td><td>99.6</td><td>99.9</td><td>98.3</td><td>97.3</td></tr><tr><td>KSD (Bandlimited,  $L = 2$ )</td><td>97.4</td><td>99.6</td><td>99.8</td><td>98.5</td><td>97.7</td></tr><tr><td>KL (Heat)</td><td>99.4</td><td>99.8</td><td>99.9</td><td>99.7</td><td>99.2</td></tr></table>",
+        "bbox": [
+            174,
+            446,
+            823,
+            603
+        ],
+        "page_idx": 21
+    },
+    {
+        "type": "table",
+        "img_path": "images/29d313d3abc4131dacb6b5f733882603bdc5e2231b5fd8bbd39aaff69bf53068.jpg",
+        "table_caption": [
+            "Table 7: Flake Texture"
+        ],
+        "table_footnote": [],
+        "table_body": "<table><tr><td>Method</td><td>Recall@1</td><td>Recall@3</td><td>Recall@5</td><td>mAP</td><td>mAP (emb)</td></tr><tr><td>SUSReg (Stochastic Baseline)</td><td>83.0</td><td>94.3</td><td>97.3</td><td>89.1</td><td>88.6</td></tr><tr><td>MMD (Induced SUSReg  $\\bar{k}$ )</td><td>83.5</td><td>94.2</td><td>97.3</td><td>89.3</td><td>88.0</td></tr><tr><td>MMD (Heat,  $t = 5/d$ )</td><td>85.0</td><td>95.4</td><td>97.7</td><td>90.5</td><td>89.1</td></tr><tr><td>MMD (Bandlimited,  $L = 2$ )</td><td>86.1</td><td>95.0</td><td>97.2</td><td>90.9</td><td>90.3</td></tr><tr><td>KSD (Heat,  $t = 5/d$ )</td><td>86.0</td><td>95.2</td><td>97.5</td><td>91.0</td><td>89.8</td></tr><tr><td>KSD (Bandlimited,  $L = 2$ )</td><td>86.2</td><td>95.1</td><td>97.2</td><td>91.0</td><td>90.3</td></tr><tr><td>KL (Heat)</td><td>88.6</td><td>94.0</td><td>95.8</td><td>91.7</td><td>92.5</td></tr></table>",
+        "bbox": [
+            174,
+            722,
+            823,
+            878
+        ],
+        "page_idx": 21
+    },
+    {
+        "type": "page_number",
+        "text": "22",
+        "bbox": [
+            488,
+            948,
+            508,
+            959
+        ],
+        "page_idx": 21
+    }
+]

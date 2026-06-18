@@ -20,7 +20,7 @@
   </header>
   <nav class="site-nav" aria-label="主导航">
     <a class="nav-link" href="../index.html">头版</a>
-<a class="nav-link" href="../issues/2026-06-17.html">今日速递</a>
+<a class="nav-link" href="../issues/2026-06-18.html">今日速递</a>
 <a class="nav-link" href="../pages/catalog.html">论文目录</a>
 <a class="nav-link" href="../pages/timeline.html">时间线</a>
 <span class="nav-streak" title="连续追踪天数"><svg viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><path d="M8 0c.7 2.5-1.2 3.7-2 5-1 1.6-1 4 .8 4.8C6.4 8.5 7.4 7.8 8 7c.3 1.3-.4 2 .9 3 .9.7 1.3 1.6 1.1 2.6C9.7 14.6 8.9 16 6.8 16 4.6 16 3 14.3 3 12c0-3.3 2.6-4.8 2.4-8C6.9 4.6 8.4 5 8 0z"/></svg> 连续 <b data-streak>0</b> 天</span>
@@ -28,32 +28,32 @@
   <main><article class="paper-detail" data-pid="2606.15134" data-category="arXiv 新增 + MLLM-derived visual embedding supervision" data-priority="P1" data-date="2026-06-17" data-title="beyond scalar distances: semantic attribute gradients from frozen mllms for visual embeddings" data-keywords="beyond scalar distances: semantic attribute gradients from frozen mllms for visual embeddings beyond scalar distances arxiv 新增 + mllm-derived visual embedding supervision p1 2026-06-17 arxiv 新增 + mllm-derived visual embedding supervision 用冻结 mllm 的属性级判断来训练视觉 encoder，比传统 scalar metric loss 更细 中高相关；详见方法、贡献和实验边界。">
   <div class="paper-main">
     <div class="kicker">arXiv 新增 + MLLM-derived visual embedding supervision · P1 · 2026-06-17</div>
-    <h1 class="paper-headline">Beyond Scalar Distances：代表 VLM/MLLM 作为 teacher 反哺通用视觉 embedding 的路线，和蒸馏式自监督高度相关</h1>
-    <p class="dek">把图像检索训练从“拉近/推远一个标量”升级为属性解析的弱监督信号，推理时丢弃 MLLM。</p>
-    <p class="byline"><strong>Beyond Scalar Distances: Semantic Attribute Gradients from Frozen MLLMs for Visual Embeddings</strong>　Shubhang Bhatnagar , Dheeraj Baiju , Narendra Ahuja；arXiv 元数据未稳定列机构时按作者列表记录。　arXiv 新增 + MLLM-derived visual embedding supervision　<a href="https://arxiv.org/abs/2606.15134">原文链接</a></p>
+    <h1 class="paper-headline">Beyond Scalar Distances：它和通用视觉自监督的关系在于：用冻结 MLLM 的属性级判断来训练视觉 encoder，比传统 scalar metric loss 更细</h1>
+    <p class="dek">中高相关；详见方法、贡献和实验边界。</p>
+    <p class="byline"><strong>Beyond Scalar Distances: Semantic Attribute Gradients from Frozen MLLMs for Visual Embeddings</strong>　arXiv 新增 + MLLM-derived visual embedding supervision　<a href="https://arxiv.org/abs/2606.15134">原文链接</a></p>
     <div class="paper-facts">
       <span><b>编号</b>2606.15134</span>
       <span><b>优先级</b>P1</span>
       <span><b>类别</b>arXiv 新增 + MLLM-derived visual embedding supervision</span>
       <span><b>会议</b>arXiv 新增 + MLLM-derived visual embedding supervision</span>
-      <span><b>方法</b>Semantic Attribute Gradients：冻结 MLLM 观察图像对并预测是否同类，用 GRPO 奖励让视觉 tokens 暴露可区分属性，再用 attention distillation 和 metric-learning loss 固化到 encoder。</span>
+      <span><b>方法</b>用冻结 MLLM 的属性级判断来训练视觉 encoder，比传统 scalar metric loss 更细</span>
       <span><b>来源</b>arXiv / OpenReview</span>
     </div>
     <div class="feature-body">
-      <p class="lead dropcap">先说结论。代表 VLM/MLLM 作为 teacher 反哺通用视觉 embedding 的路线，和蒸馏式自监督高度相关。 把图像检索训练从“拉近/推远一个标量”升级为属性解析的弱监督信号，推理时丢弃 MLLM。</p>
+      <p class="lead dropcap">先说结论。它和通用视觉自监督的关系在于：用冻结 MLLM 的属性级判断来训练视觉 encoder，比传统 scalar metric loss 更细。 中高相关；详见方法、贡献和实验边界。</p>
       <figure class="full-fig"><img src="../assets/mineru/2606.15134/images/e19e20d4008599c88bb55a067f7acc881d964935502406e19185f502e11877a2.jpg" alt="Figureure 2 · : Overview"><figcaption><b>Figureure 2 · : Overview</b><span class="fig-en">Figure 2: Overview. SAGA uses a frozen MLLM as an attribute-aware supervisor for deep metric learning. For an image pair $\left( \mathbf { I } _ { a } , \mathbf { I } _ { b } \right)$ , the trainable vision encoder $f _ { \theta }$ produces patch tokens $\mathbf { X } _ { a } , \mathbf { X } _ { b } .$ which feed three losses with complementary roles. (1) The tokens and a comparison prompt $T _ { \mathrm { i n s t } }$ t are fed to the frozen MLLM $p _ { \psi } ,$ which samples G responses ending in a same/different-class verdict; the GRPO loss $\mathcal { L } _ { \mathrm { G R P O } }$ rewards correct verdicts and back-propagates through $p _ { \psi }$ into $f _ { \theta } ,$ pushing it to encode the discriminative attributes the MLLM relied on when making correct predictions. (2) The MLLM’s attention α from the same forward pass reveals which patch tokens the MLLM attended to while describing each image’s attributes; on correct rollouts, the per-image mean attribute-attention α¯ is distilled into the pooler’s attention $\beta$ via ${ \mathcal { L } } _ { \mathrm { K I } }$ , encouraging $c _ { \phi }$ to pool over those regions when forming embeddings $z _ { a } , z _ { b } .$ . (3) The pooler $c _ { \phi }$ aggregates the tokens into embeddings $\mathbf { z } _ { a } , \mathbf { z } _ { b } ,$ , which a deep metric learning loss $\mathcal { L } _ { \mathrm { D M L } }$ shapes for nearest-neighbor search. The MLLM is frozen throughout and discarded at inference.</span><span class="fig-zh">这张图概括 Beyond Scalar Distances 的整体方法流程。阅读时先看模块之间传递的训练信号，再看作者如何把目标拆成可优化的子问题。</span></figcaption></figure>
 <figure class="full-fig"><img src="../assets/mineru/2606.15134/images/860dfd1309b481032a63ddc47ddf19a06953c5f0140ede325c7015439644b617.jpg" alt="Image 2: Blue Grosbeak Figure 1: Using only class labels for images reduces supervision to"><figcaption><b>Image 2: Blue Grosbeak Figure 1: Using only class labels for images reduces supervision to</b><span class="fig-en">Image 2: Blue Grosbeak Figure 1: Using only class labels for images reduces supervision to a scalar, whereas an MLLM resolves it into attributes. A class-label loss collapses the difference between two very similarlooking bird species into a single ‘different’ scalar, pushing every embedding dimension apart, even those potentially encoding shared attributes like blue plumage and leg color. A frozen MLLM, by contrast, can identify which attributes match and include them in reaching the same-/different-species verdict. Our method, SAGA, harnesses this by rewarding correct verdicts and reinforcing precisely those feature components (directions) that the MLLM’s discrimination relies on, while leaving shared-attribute directions untouched.</span><span class="fig-zh">这张图来自论文 PDF 的结构化抽取。当前用于辅助理解 Beyond Scalar Distances 的方法或实验，请结合正文精读段落一起看。</span></figcaption></figure>
       
       <h2>核心问题</h2>
-      <p>代表 VLM/MLLM 作为 teacher 反哺通用视觉 embedding 的路线，和蒸馏式自监督高度相关。</p>
+      <p>它和通用视觉自监督的关系在于：用冻结 MLLM 的属性级判断来训练视觉 encoder，比传统 scalar metric loss 更细。</p>
       <h2>方法拆解</h2>
-      <p>Semantic Attribute Gradients：冻结 MLLM 观察图像对并预测是否同类，用 GRPO 奖励让视觉 tokens 暴露可区分属性，再用 attention distillation 和 metric-learning loss 固化到 encoder。</p>
+      <p>用冻结 MLLM 的属性级判断来训练视觉 encoder，比传统 scalar metric loss 更细</p>
       <h2>主要贡献</h2>
-      <p>把图像检索训练从“拉近/推远一个标量”升级为属性解析的弱监督信号，推理时丢弃 MLLM。</p>
+      <p>中高相关；详见方法、贡献和实验边界。</p>
       <h2>实验看点</h2>
-      <p>CUB-200-2011、Cars-196、FGVC-Aircraft、iNaturalist Aves 零样本检索 Recall@1 比强 baseline 提高 3-6 点。</p>
+      <p>实验部分建议重点看两类证据：一是作者是否把方法收益和更强数据、更长训练、更大模型区分开；二是跨模型、跨数据或跨任务迁移是否还能保留同样趋势。</p>
       <h2>局限与读法</h2>
-      <p>仍使用类别/检索任务约束，不是纯无标签 SSL；细粒度数据集是否过窄需要看。</p>
+      <p>这篇论文的结论需要结合任务设置、训练数据规模和消融实验一起看；不要只凭单个指标判断它对通用视觉表征的价值。</p>
     
     </div>
   </div>
@@ -64,13 +64,13 @@
     <div class="side-box"><h4>原文</h4><p><a href="https://arxiv.org/abs/2606.15134">https://arxiv.org/abs/2606.15134</a></p></div>
   </aside>
 </article></main>
-  <aside class="conf-float" data-conf-reminder="2026-06-17-main-ddl" aria-label="CCF A/B 主投稿提醒">
+  <aside class="conf-float" data-conf-reminder="2026-06-18-main-ddl" aria-label="CCF A/B 主投稿提醒">
   <button class="conf-close" type="button" aria-label="关闭会议提醒">×</button>
   <details open>
     <summary>CCF A/B 主投稿提醒</summary>
     <div class="conf-list"><a class="conf-item " href="https://github.com/ccfddl/ccf-deadlines/blob/main/conference/AI/aaai.yml">
   <span><b>AAAI 2027</b><em>CCF A · Main paper submission</em></span>
-  <strong>40 天</strong>
+  <strong>39 天</strong>
   <small>2026-07-27 · CCF DDL: abstract 2026-07-20；进入 1 个月窗口后重点提醒。</small>
 </a></div>
   </details>
@@ -83,7 +83,7 @@
   (() => {
     const box = document.querySelector('[data-conf-reminder]');
     if (!box) return;
-    const key = `visualSslConfReminderClosed:${box.dataset.confReminder || '2026-06-17-main-ddl'}`;
+    const key = `visualSslConfReminderClosed:${box.dataset.confReminder || '2026-06-18-main-ddl'}`;
     try {
       if (localStorage.getItem(key) === '1') box.hidden = true;
     } catch (err) {}

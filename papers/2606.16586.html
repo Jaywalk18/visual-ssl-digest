@@ -20,7 +20,7 @@
   </header>
   <nav class="site-nav" aria-label="主导航">
     <a class="nav-link" href="../index.html">头版</a>
-<a class="nav-link" href="../issues/2026-06-17.html">今日速递</a>
+<a class="nav-link" href="../issues/2026-06-18.html">今日速递</a>
 <a class="nav-link" href="../pages/catalog.html">论文目录</a>
 <a class="nav-link" href="../pages/timeline.html">时间线</a>
 <span class="nav-streak" title="连续追踪天数"><svg viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><path d="M8 0c.7 2.5-1.2 3.7-2 5-1 1.6-1 4 .8 4.8C6.4 8.5 7.4 7.8 8 7c.3 1.3-.4 2 .9 3 .9.7 1.3 1.6 1.1 2.6C9.7 14.6 8.9 16 6.8 16 4.6 16 3 14.3 3 12c0-3.3 2.6-4.8 2.4-8C6.9 4.6 8.4 5 8 0z"/></svg> 连续 <b data-streak>0</b> 天</span>
@@ -28,32 +28,32 @@
   <main><article class="paper-detail" data-pid="2606.16586" data-category="arXiv 新增 + MLLM local cue self-improvement" data-priority="P3" data-date="2026-06-17" data-title="locus: local visual cue search for enhancing fine-grained perception in multimodal large language models" data-keywords="locus: local visual cue search for enhancing fine-grained perception in multimodal large language models locus arxiv 新增 + mllm local cue self-improvement p3 2026-06-17 arxiv 新增 + mllm local cue self-improvement 训练时用局部 crop cue 教 mllm 找回 full image 支持区域，改善细粒度证据选择 中相关；详见方法、贡献和实验边界。">
   <div class="paper-main">
     <div class="kicker">arXiv 新增 + MLLM local cue self-improvement · P3 · 2026-06-17</div>
-    <h1 class="paper-headline">LOCUS：可作为 VLM 自监督式局部证据训练的 P3 读物，和 grounded thinking 方向互补</h1>
-    <p class="dek">把 fine-grained perception failure 解释为 visual context rot，并用可验证 proxy task 让模型内化局部证据搜索。</p>
-    <p class="byline"><strong>LOCUS: Local Visual Cue Search for Enhancing Fine-Grained Perception in Multimodal Large Language Models</strong>　Zhou Tao , Fang Zhang , Zewen Ding , Shida Wang , Xiaokun Sun , YongXiang Hua , Haoyu Cao , Linli Xu；arXiv 元数据未稳定列机构时按作者列表记录。　arXiv 新增 + MLLM local cue self-improvement　<a href="https://arxiv.org/abs/2606.16586">原文链接</a></p>
+    <h1 class="paper-headline">LOCUS：它和通用视觉自监督的关系在于：训练时用局部 crop cue 教 MLLM 找回 full image 支持区域，改善细粒度证据选择</h1>
+    <p class="dek">中相关；详见方法、贡献和实验边界。</p>
+    <p class="byline"><strong>LOCUS: Local Visual Cue Search for Enhancing Fine-Grained Perception in Multimodal Large Language Models</strong>　arXiv 新增 + MLLM local cue self-improvement　<a href="https://arxiv.org/abs/2606.16586">原文链接</a></p>
     <div class="paper-facts">
       <span><b>编号</b>2606.16586</span>
       <span><b>优先级</b>P3</span>
       <span><b>类别</b>arXiv 新增 + MLLM local cue self-improvement</span>
       <span><b>会议</b>arXiv 新增 + MLLM local cue self-improvement</span>
-      <span><b>方法</b>Local Visual Cue Search：训练阶段给 local crop visual cue，用 IoU reward 要求模型在原图中定位其空间支持；推理阶段保持普通图文接口。</span>
+      <span><b>方法</b>训练时用局部 crop cue 教 MLLM 找回 full image 支持区域，改善细粒度证据选择</span>
       <span><b>来源</b>arXiv / OpenReview</span>
     </div>
     <div class="feature-body">
-      <p class="lead dropcap">先说结论。可作为 VLM 自监督式局部证据训练的 P3 读物，和 grounded thinking 方向互补。 把 fine-grained perception failure 解释为 visual context rot，并用可验证 proxy task 让模型内化局部证据搜索。</p>
+      <p class="lead dropcap">先说结论。它和通用视觉自监督的关系在于：训练时用局部 crop cue 教 MLLM 找回 full image 支持区域，改善细粒度证据选择。 中相关；详见方法、贡献和实验边界。</p>
       <figure class="full-fig"><img src="../assets/mineru/2606.16586/images/a2ff6e0ced5a6f5f5b5bd0a177623c81bdbb38cfc41201462581719ad1584a38.jpg" alt="(b) VQA Accuracy by IoU Level Figure 2: Grounding quality vs"><figcaption><b>(b) VQA Accuracy by IoU Level Figure 2: Grounding quality vs</b><span class="fig-en">(b) VQA Accuracy by IoU Level Figure 2: Grounding quality vs. VQA correctness on V\*Bench direct\_attributes with Qwen2.5-VL-7B-Instruct. (a) Mean IoU and success rate (IoU ≥ 0.5) for correct vs. wrong answers. (b) VQA accuracy by grounding IoU.</span><span class="fig-zh">这张图/表用于判断 LOCUS 的实验收益来自哪里。重点看替换、消融或跨模型设置下趋势是否一致，而不是只看单个最高分。</span></figcaption></figure>
 <figure class="full-fig"><img src="../assets/mineru/2606.16586/images/7a8e04813a6e4af8776eb4a3891d1efe1d276751e92ebe2153ce3609d8686348.jpg" alt="Figureure 1 · : Motivation of LOCUS"><figcaption><b>Figureure 1 · : Motivation of LOCUS</b><span class="fig-en">Figure 1: Motivation of LOCUS. Left: fine-grained evidence occupies only a few visual tokens and is weakly attended by the base model, causing visual context rot. Right: LOCUS uses training-time local visual cue search to improve evidence selection while keeping inference unchanged.</span><span class="fig-zh">这张图来自论文 PDF 的结构化抽取。当前用于辅助理解 LOCUS 的方法或实验，请结合正文精读段落一起看。</span></figcaption></figure>
       
       <h2>核心问题</h2>
-      <p>可作为 VLM 自监督式局部证据训练的 P3 读物，和 grounded thinking 方向互补。</p>
+      <p>它和通用视觉自监督的关系在于：训练时用局部 crop cue 教 MLLM 找回 full image 支持区域，改善细粒度证据选择。</p>
       <h2>方法拆解</h2>
-      <p>Local Visual Cue Search：训练阶段给 local crop visual cue，用 IoU reward 要求模型在原图中定位其空间支持；推理阶段保持普通图文接口。</p>
+      <p>训练时用局部 crop cue 教 MLLM 找回 full image 支持区域，改善细粒度证据选择</p>
       <h2>主要贡献</h2>
-      <p>把 fine-grained perception failure 解释为 visual context rot，并用可验证 proxy task 让模型内化局部证据搜索。</p>
+      <p>中相关；详见方法、贡献和实验边界。</p>
       <h2>实验看点</h2>
-      <p>摘要称在细粒度感知、hallucination、general understanding 和 reasoning benchmark 上提升，同时 attention 更聚焦任务相关区域。</p>
+      <p>实验部分建议重点看两类证据：一是作者是否把方法收益和更强数据、更长训练、更大模型区分开；二是跨模型、跨数据或跨任务迁移是否还能保留同样趋势。</p>
       <h2>局限与读法</h2>
-      <p>更像 VLM 后训练/对齐，不是底层视觉 SSL；需看是否牺牲全局语义和开放域泛化。</p>
+      <p>这篇论文的结论需要结合任务设置、训练数据规模和消融实验一起看；不要只凭单个指标判断它对通用视觉表征的价值。</p>
     
     </div>
   </div>
@@ -64,13 +64,13 @@
     <div class="side-box"><h4>原文</h4><p><a href="https://arxiv.org/abs/2606.16586">https://arxiv.org/abs/2606.16586</a></p></div>
   </aside>
 </article></main>
-  <aside class="conf-float" data-conf-reminder="2026-06-17-main-ddl" aria-label="CCF A/B 主投稿提醒">
+  <aside class="conf-float" data-conf-reminder="2026-06-18-main-ddl" aria-label="CCF A/B 主投稿提醒">
   <button class="conf-close" type="button" aria-label="关闭会议提醒">×</button>
   <details open>
     <summary>CCF A/B 主投稿提醒</summary>
     <div class="conf-list"><a class="conf-item " href="https://github.com/ccfddl/ccf-deadlines/blob/main/conference/AI/aaai.yml">
   <span><b>AAAI 2027</b><em>CCF A · Main paper submission</em></span>
-  <strong>40 天</strong>
+  <strong>39 天</strong>
   <small>2026-07-27 · CCF DDL: abstract 2026-07-20；进入 1 个月窗口后重点提醒。</small>
 </a></div>
   </details>
@@ -83,7 +83,7 @@
   (() => {
     const box = document.querySelector('[data-conf-reminder]');
     if (!box) return;
-    const key = `visualSslConfReminderClosed:${box.dataset.confReminder || '2026-06-17-main-ddl'}`;
+    const key = `visualSslConfReminderClosed:${box.dataset.confReminder || '2026-06-18-main-ddl'}`;
     try {
       if (localStorage.getItem(key) === '1') box.hidden = true;
     } catch (err) {}

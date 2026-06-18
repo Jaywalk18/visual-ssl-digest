@@ -20,7 +20,7 @@
   </header>
   <nav class="site-nav" aria-label="主导航">
     <a class="nav-link" href="../index.html">头版</a>
-<a class="nav-link active" href="../issues/2026-06-17.html">今日速递</a>
+<a class="nav-link" href="../issues/2026-06-18.html">今日速递</a>
 <a class="nav-link" href="../pages/catalog.html">论文目录</a>
 <a class="nav-link" href="../pages/timeline.html">时间线</a>
 <span class="nav-streak" title="连续追踪天数"><svg viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><path d="M8 0c.7 2.5-1.2 3.7-2 5-1 1.6-1 4 .8 4.8C6.4 8.5 7.4 7.8 8 7c.3 1.3-.4 2 .9 3 .9.7 1.3 1.6 1.1 2.6C9.7 14.6 8.9 16 6.8 16 4.6 16 3 14.3 3 12c0-3.3 2.6-4.8 2.4-8C6.9 4.6 8.4 5 8 0z"/></svg> 连续 <b data-streak>0</b> 天</span>
@@ -28,13 +28,11 @@
   <main><article class="paper-detail issue-detail">
   <div class="paper-main">
     <div class="kicker">Daily issue · 2026-06-17 · CCF A/B 会议优先</div>
-    <h1 class="paper-headline">6 月 17 日：You Don&#x27;t Need Strong Assumptions 等视觉表征主线更新</h1>
-    <p class="dek">本期聚焦通用视觉表征、视觉语言预训练与视频自监督中最值得跟进的论文，并保留 CCF A/B、OpenReview 与 arXiv 状态线索。</p>
+    <h1 class="paper-headline">6 月 17 日：You Don&#x27;t Need Strong Assumptions 等视觉表征论文归档</h1>
+    <p class="dek">本页按日期归档近期论文，保留优先级、主题、来源与方法线索，方便回看同一批工作的研究脉络。</p>
     <div class="feature-body">
-      <p class="lead dropcap">先读 TDV，因为它直接提出少假设的 video SSL：不用增强、mask 或 crop，而是用 temporal difference 连接当前视觉表征、运动编码和下一帧表征。第二篇读 MoFore，它是更轻量也更直观的 long-range latent forecasting，可和 TDV 对照“预测什么、跨多远、如何防 collapse”。第三篇读 Drift-RAE，重点不是 FID 数字，而是 RAE/DINO latent 的曲率、各向异性和 distillation 稳定性。随后读 SSync、SAGA、TIGER/CSAE：分别对应 object-centric video SSL、MLLM 属性级视觉 embedding 监督、冻结 VFM 组合和表征可解释性。MVEB、SelectStream、Thinking with Visual Grounding、DifFRACT/LOCUS 放第二轮扫读，主要看评测协议、latent memory 和 VLM grounding 训练信号。</p>
+      <p class="lead dropcap">先读 You Don&#x27;t Need Strong Assumptions。几乎正面挑战 augmentation/masking/cropping 假设，用视频 temporal difference 学视觉表征。 其余论文按 P1/P2 与主题顺序扫读，重点看方法图、消融设置和是否能迁移到通用视觉表征。</p>
       <h2>论文索引</h2>
-      <table class="compact-table"><thead><tr><th>优先级</th><th>论文</th><th>类型</th><th>相关性</th><th>一句话理由</th></tr></thead><tbody><tr><td>P0</td><td>You Don&#x27;t Need Strong Assumptions: Visual Representation Learning via Temporal Differences</td><td>arXiv 新增 + video SSL / JEPA-adjacent predictive representation</td><td>高</td><td>几乎正面挑战 augmentation/masking/cropping 假设，用视频 temporal difference 学视觉表征。</td></tr><tr><td>P0</td><td>Momentum-Guided Semantic Forecasting (MoFore) for Self-Supervised Video Representation Learning</td><td>arXiv 新增 + self-supervised video representation</td><td>高</td><td>用 long-range latent forecasting 结合 contrastive regularization 学视频语义表征，是干净的视频 SSL 条目。</td></tr><tr><td>P0</td><td>Distilling Drifting Transformers with Representation Autoencoders</td><td>arXiv 新增 + representation autoencoder distillation</td><td>高</td><td>接续 RAE/DiT 热点，讨论 DINO-rich latent 的曲率/各向异性如何影响 flow/distillation。</td></tr><tr><td>P1</td><td>Selective Synergistic Learning for Video Object-Centric Learning</td><td>arXiv 新增 + video object-centric learning</td><td>高</td><td>对 slot-based video object-centric learning 的 dense alignment 代价与错误传播做了针对性改造。</td></tr><tr><td>P1</td><td>Task-Instructed Causal Routing of Vision Foundation Models for Multi-Task Learning</td><td>arXiv 新增 + frozen VFM routing / dense transfer</td><td>中高</td><td>把多个 frozen VFMs 当专家，用任务指令和 counterfactual loss 做 token-level 路由。</td></tr><tr><td>P1</td><td>Beyond Scalar Distances: Semantic Attribute Gradients from Frozen MLLMs for Visual Embeddings</td><td>arXiv 新增 + MLLM-derived visual embedding supervision</td><td>中高</td><td>用冻结 MLLM 的属性级判断来训练视觉 encoder，比传统 scalar metric loss 更细。</td></tr><tr><td>P1</td><td>Cascaded Sparse Autoencoders Learn Multi-Level Visual Concepts in Multimodal LLMs</td><td>arXiv 新增 + MLLM visual concept interpretability</td><td>中高</td><td>用 cascaded sparse autoencoders 在 MLLM 内部学习分层视觉概念，直连自监督表征可解释性。</td></tr><tr><td>P2</td><td>MVEB: Massive Video Embedding Benchmark</td><td>arXiv 新增 + video embedding benchmark</td><td>中高</td><td>23-task video embedding benchmark，给视频表征模型提供统一评测面。</td></tr><tr><td>P2</td><td>What Should a Streaming Video Model Remember?</td><td>arXiv 新增 + streaming video latent memory</td><td>中高</td><td>讨论流式视频模型到底该保留哪些 latent evidence，贴近长视频表征和 token/memory 压缩。</td></tr><tr><td>P2</td><td>Thinking with Visual Grounding</td><td>arXiv 新增 + visually grounded reasoning supervision</td><td>中高</td><td>把 VLM reasoning traces 绑定到点/框视觉证据，属于可扩展视觉 grounding 监督。</td></tr><tr><td>P2</td><td>DifFRACT: Diffusion Feature Reconstruction and Attribution for Circuit Tracing</td><td>arXiv 新增 + diffusion transformer feature circuits</td><td>中高</td><td>把 transcoder circuit tracing 扩展到 FLUX 类 MM-DiT，解释 denoising 过程中的语义传播。</td></tr><tr><td>P3</td><td>LOCUS: Local Visual Cue Search for Enhancing Fine-Grained Perception in Multimodal Large Language Models</td><td>arXiv 新增 + MLLM local cue self-improvement</td><td>中</td><td>训练时用局部 crop cue 教 MLLM 找回 full image 支持区域，改善细粒度证据选择。</td></tr><tr><td>扫读</td><td>Position: The Systemic Lack of Agency in Visual Reasoning</td><td>arXiv 新增 + ICML 2026 accepted position</td><td>中</td><td>ICML 2026 接收的视觉推理 position paper，强调 VLM 缺少主动视觉探索能力。</td></tr></tbody></table>
-      <h2>主线阅读</h2>
       <div class="paper-list issue-list"><article class="paper-card" data-pid="2606.15956" data-category="arXiv 新增 + video SSL / JEPA-adjacent predictive representation" data-priority="P0" data-date="2026-06-17" data-title="you don&#x27;t need strong assumptions: visual representation learning via temporal differences" data-keywords="you don&#x27;t need strong assumptions: visual representation learning via temporal differences you don&#x27;t need strong assumptions arxiv 新增 + video ssl / jepa-adjacent predictive representation p0 2026-06-17 arxiv 新增 + video ssl / jepa-adjacent predictive representation 几乎正面挑战 augmentation/masking/cropping 假设，用视频 temporal difference 学视觉表征 高相关；详见方法、贡献和实验边界。">
   <a class="paper-thumb" href="../papers/2606.15956.html"><img src="../assets/mineru/2606.15956/images/fecd2661dea94c99b09330a069928295ea038276c025a7e4829edc3710b5f33d.jpg" alt="You Don&#x27;t Need Strong Assumptions figure"></a>
   <div>
@@ -181,18 +179,17 @@
     </div>
   </div>
   <aside class="paper-side">
-    <div class="side-box"><h4>今日重点</h4><p>TextTeacher、MDM、EvoVid、Ablate-to-Validate。</p></div>
-    <div class="side-box"><h4>会议口径</h4><p>只把 CCF A/B 放进主提醒；临近截止或 CCF C 仅记录。</p></div>
     <div class="side-box"><h4>阅读重点</h4><p>先看 P1/P2 与方法图，再扫状态变化和边界案例。</p></div>
+    <div class="side-box"><h4>会议口径</h4><p>主提醒只保留 CCF A/B；CCF C 与过期截止仅作状态记录。</p></div>
   </aside>
 </article></main>
-  <aside class="conf-float" data-conf-reminder="2026-06-17-main-ddl" aria-label="CCF A/B 主投稿提醒">
+  <aside class="conf-float" data-conf-reminder="2026-06-18-main-ddl" aria-label="CCF A/B 主投稿提醒">
   <button class="conf-close" type="button" aria-label="关闭会议提醒">×</button>
   <details open>
     <summary>CCF A/B 主投稿提醒</summary>
     <div class="conf-list"><a class="conf-item " href="https://github.com/ccfddl/ccf-deadlines/blob/main/conference/AI/aaai.yml">
   <span><b>AAAI 2027</b><em>CCF A · Main paper submission</em></span>
-  <strong>40 天</strong>
+  <strong>39 天</strong>
   <small>2026-07-27 · CCF DDL: abstract 2026-07-20；进入 1 个月窗口后重点提醒。</small>
 </a></div>
   </details>
@@ -205,7 +202,7 @@
   (() => {
     const box = document.querySelector('[data-conf-reminder]');
     if (!box) return;
-    const key = `visualSslConfReminderClosed:${box.dataset.confReminder || '2026-06-17-main-ddl'}`;
+    const key = `visualSslConfReminderClosed:${box.dataset.confReminder || '2026-06-18-main-ddl'}`;
     try {
       if (localStorage.getItem(key) === '1') box.hidden = true;
     } catch (err) {}

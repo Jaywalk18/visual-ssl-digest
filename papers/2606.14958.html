@@ -20,7 +20,7 @@
   </header>
   <nav class="site-nav" aria-label="主导航">
     <a class="nav-link" href="../index.html">头版</a>
-<a class="nav-link" href="../issues/2026-06-17.html">今日速递</a>
+<a class="nav-link" href="../issues/2026-06-18.html">今日速递</a>
 <a class="nav-link" href="../pages/catalog.html">论文目录</a>
 <a class="nav-link" href="../pages/timeline.html">时间线</a>
 <span class="nav-streak" title="连续追踪天数"><svg viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><path d="M8 0c.7 2.5-1.2 3.7-2 5-1 1.6-1 4 .8 4.8C6.4 8.5 7.4 7.8 8 7c.3 1.3-.4 2 .9 3 .9.7 1.3 1.6 1.1 2.6C9.7 14.6 8.9 16 6.8 16 4.6 16 3 14.3 3 12c0-3.3 2.6-4.8 2.4-8C6.9 4.6 8.4 5 8 0z"/></svg> 连续 <b data-streak>0</b> 天</span>
@@ -28,32 +28,32 @@
   <main><article class="paper-detail" data-pid="2606.14958" data-category="arXiv 新增 + video embedding benchmark" data-priority="P2" data-date="2026-06-17" data-title="mveb: massive video embedding benchmark" data-keywords="mveb: massive video embedding benchmark mveb arxiv 新增 + video embedding benchmark p2 2026-06-17 arxiv 新增 + video embedding benchmark 23-task video embedding benchmark，给视频表征模型提供统一评测面 中高相关；详见方法、贡献和实验边界。">
   <div class="paper-main">
     <div class="kicker">arXiv 新增 + video embedding benchmark · P2 · 2026-06-17</div>
-    <h1 class="paper-headline">MVEB：视频 SSL 和视频基础模型需要比 Kinetics/UCF 更丰富的迁移评估，MVEB 值得作为后续论文的评测参照</h1>
-    <p class="dek">系统比较 33 个模型，指出 MLLM embeddings、multimodal binding、generative MLLMs 在不同任务上的优势和崩溃点。</p>
-    <p class="byline"><strong>MVEB: Massive Video Embedding Benchmark</strong>　Adnan El Assadi , Roman Solomatin , Isaac Chung , Chenghao Xiao , Deep Shah , Manan Dey , Shriya Sudhakar , Zacharie Bugaud , Wissam Siblini , Ayush Sunil Munot , Yashwanth Devavarapu , Rakshitha Ireddi , Michelle Yang , Márton Kardos , Niklas Muennighoff , Kenneth Enevoldsen；arXiv 元数据未稳定列机构时按作者列表记录。　arXiv 新增 + video embedding benchmark　<a href="https://arxiv.org/abs/2606.14958">原文链接</a></p>
+    <h1 class="paper-headline">MVEB：它和通用视觉自监督的关系在于：23-task video embedding benchmark，给视频表征模型提供统一评测面</h1>
+    <p class="dek">中高相关；详见方法、贡献和实验边界。</p>
+    <p class="byline"><strong>MVEB: Massive Video Embedding Benchmark</strong>　arXiv 新增 + video embedding benchmark　<a href="https://arxiv.org/abs/2606.14958">原文链接</a></p>
     <div class="paper-facts">
       <span><b>编号</b>2606.14958</span>
       <span><b>优先级</b>P2</span>
       <span><b>类别</b>arXiv 新增 + video embedding benchmark</span>
       <span><b>会议</b>arXiv 新增 + video embedding benchmark</span>
-      <span><b>方法</b>MVEB 从 184-task pool 中压缩出 23 个任务，覆盖 classification、zero-shot classification、clustering、pair classification、retrieval 与 video-centric QA，并集成到 MTEB 生态。</span>
+      <span><b>方法</b>23-task video embedding benchmark，给视频表征模型提供统一评测面</span>
       <span><b>来源</b>arXiv / OpenReview</span>
     </div>
     <div class="feature-body">
-      <p class="lead dropcap">先说结论。视频 SSL 和视频基础模型需要比 Kinetics/UCF 更丰富的迁移评估，MVEB 值得作为后续论文的评测参照。 系统比较 33 个模型，指出 MLLM embeddings、multimodal binding、generative MLLMs 在不同任务上的优势和崩溃点。</p>
+      <p class="lead dropcap">先说结论。它和通用视觉自监督的关系在于：23-task video embedding benchmark，给视频表征模型提供统一评测面。 中高相关；详见方法、贡献和实验边界。</p>
       <figure class="full-fig"><img src="../assets/mineru/2606.14958/images/1378a919941b4fb8b744fee60dfda75469e89ac302312746c90ed77745c6e52e.jpg" alt="Figureure 2 · : Per-category mean scores for five representative models spanning the"><figcaption><b>Figureure 2 · : Per-category mean scores for five representative models spanning the</b><span class="fig-en">Figure 2: Per-category mean scores for five representative models spanning the four paradigms. LCO-Embedding-Omni-7B, eBind-full, PE-AV-large, and BidirLM-Omni-2.5B trace broadly similar but distinct shapes; Qwen2.5-Omni-7B (generative MLLM used as embedder) collapses inward across every category. No single model dominates all six.</span><span class="fig-zh">这张图来自论文 PDF 的结构化抽取。当前用于辅助理解 MVEB 的方法或实验，请结合正文精读段落一起看。</span></figcaption></figure>
 <figure class="full-fig"><img src="../assets/mineru/2606.14958/images/b8e10ce6dd04886c5708180524aeb75e4ae6967cdd2dcb73a6f54285f5a5777c.jpg" alt="Figureure 1 · : Overview of task types and example subtypes in MVEB+."><figcaption><b>Figureure 1 · : Overview of task types and example subtypes in MVEB+.</b><span class="fig-en">Figure 1: Overview of task types and example subtypes in MVEB+.</span><span class="fig-zh">这张图概括 MVEB 的整体方法流程。阅读时先看模块之间传递的训练信号，再看作者如何把目标拆成可优化的子问题。</span></figcaption></figure>
       
       <h2>核心问题</h2>
-      <p>视频 SSL 和视频基础模型需要比 Kinetics/UCF 更丰富的迁移评估，MVEB 值得作为后续论文的评测参照。</p>
+      <p>它和通用视觉自监督的关系在于：23-task video embedding benchmark，给视频表征模型提供统一评测面。</p>
       <h2>方法拆解</h2>
-      <p>MVEB 从 184-task pool 中压缩出 23 个任务，覆盖 classification、zero-shot classification、clustering、pair classification、retrieval 与 video-centric QA，并集成到 MTEB 生态。</p>
+      <p>23-task video embedding benchmark，给视频表征模型提供统一评测面</p>
       <h2>主要贡献</h2>
-      <p>系统比较 33 个模型，指出 MLLM embeddings、multimodal binding、generative MLLMs 在不同任务上的优势和崩溃点。</p>
+      <p>中高相关；详见方法、贡献和实验边界。</p>
       <h2>实验看点</h2>
-      <p>摘要称没有单一模型全胜；audio 对 video embedding 的帮助取决于标签来源，视觉标签任务中可能伤害结果。</p>
+      <p>实验部分建议重点看两类证据：一是作者是否把方法收益和更强数据、更长训练、更大模型区分开；二是跨模型、跨数据或跨任务迁移是否还能保留同样趋势。</p>
       <h2>局限与读法</h2>
-      <p>是评测基准而非训练方法；数据组成和任务去重决定结论外推性。</p>
+      <p>这篇论文的结论需要结合任务设置、训练数据规模和消融实验一起看；不要只凭单个指标判断它对通用视觉表征的价值。</p>
     
     </div>
   </div>
@@ -64,13 +64,13 @@
     <div class="side-box"><h4>原文</h4><p><a href="https://arxiv.org/abs/2606.14958">https://arxiv.org/abs/2606.14958</a></p></div>
   </aside>
 </article></main>
-  <aside class="conf-float" data-conf-reminder="2026-06-17-main-ddl" aria-label="CCF A/B 主投稿提醒">
+  <aside class="conf-float" data-conf-reminder="2026-06-18-main-ddl" aria-label="CCF A/B 主投稿提醒">
   <button class="conf-close" type="button" aria-label="关闭会议提醒">×</button>
   <details open>
     <summary>CCF A/B 主投稿提醒</summary>
     <div class="conf-list"><a class="conf-item " href="https://github.com/ccfddl/ccf-deadlines/blob/main/conference/AI/aaai.yml">
   <span><b>AAAI 2027</b><em>CCF A · Main paper submission</em></span>
-  <strong>40 天</strong>
+  <strong>39 天</strong>
   <small>2026-07-27 · CCF DDL: abstract 2026-07-20；进入 1 个月窗口后重点提醒。</small>
 </a></div>
   </details>
@@ -83,7 +83,7 @@
   (() => {
     const box = document.querySelector('[data-conf-reminder]');
     if (!box) return;
-    const key = `visualSslConfReminderClosed:${box.dataset.confReminder || '2026-06-17-main-ddl'}`;
+    const key = `visualSslConfReminderClosed:${box.dataset.confReminder || '2026-06-18-main-ddl'}`;
     try {
       if (localStorage.getItem(key) === '1') box.hidden = true;
     } catch (err) {}

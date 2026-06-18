@@ -20,7 +20,7 @@
   </header>
   <nav class="site-nav" aria-label="主导航">
     <a class="nav-link" href="../index.html">头版</a>
-<a class="nav-link" href="../issues/2026-06-17.html">今日速递</a>
+<a class="nav-link" href="../issues/2026-06-18.html">今日速递</a>
 <a class="nav-link" href="../pages/catalog.html">论文目录</a>
 <a class="nav-link" href="../pages/timeline.html">时间线</a>
 <span class="nav-streak" title="连续追踪天数"><svg viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><path d="M8 0c.7 2.5-1.2 3.7-2 5-1 1.6-1 4 .8 4.8C6.4 8.5 7.4 7.8 8 7c.3 1.3-.4 2 .9 3 .9.7 1.3 1.6 1.1 2.6C9.7 14.6 8.9 16 6.8 16 4.6 16 3 14.3 3 12c0-3.3 2.6-4.8 2.4-8C6.9 4.6 8.4 5 8 0z"/></svg> 连续 <b data-streak>0</b> 天</span>
@@ -28,32 +28,32 @@
   <main><article class="paper-detail" data-pid="2606.14795" data-category="arXiv 新增 + ICML 2026 accepted position" data-priority="扫读" data-date="2026-06-17" data-title="position: the systemic lack of agency in visual reasoning" data-keywords="position: the systemic lack of agency in visual reasoning position arxiv 新增 + icml 2026 accepted position 扫读 2026-06-17 arxiv 新增 + icml 2026 accepted position icml 2026 接收的视觉推理 position paper，强调 vlm 缺少主动视觉探索能力 中相关；详见方法、贡献和实验边界。">
   <div class="paper-main">
     <div class="kicker">arXiv 新增 + ICML 2026 accepted position · 扫读 · 2026-06-17</div>
-    <h1 class="paper-headline">Position：会议状态明确，适合作为扫读；它提醒视觉表征不能只看语义检索，还要看主动证据发现</h1>
-    <p class="dek">把 VLM “强识别不等于主动视觉推理”的缺口作为系统性问题提出，并给出 passive capacity 之外的诊断维度。</p>
-    <p class="byline"><strong>Position: The Systemic Lack of Agency in Visual Reasoning</strong>　Yizhao Huang , Haoyang Chen , Shiqin Wang , Pohsun Huang , Jiayuan Li , Haoyuan Du , Yandong Shi , Zheng Wang , Zhixiang Wang；arXiv 元数据未稳定列机构时按作者列表记录。　arXiv 新增 + ICML 2026 accepted position　<a href="https://arxiv.org/abs/2606.14795">原文链接</a></p>
+    <h1 class="paper-headline">Position：它和通用视觉自监督的关系在于：ICML 2026 接收的视觉推理 position paper，强调 VLM 缺少主动视觉探索能力</h1>
+    <p class="dek">中相关；详见方法、贡献和实验边界。</p>
+    <p class="byline"><strong>Position: The Systemic Lack of Agency in Visual Reasoning</strong>　arXiv 新增 + ICML 2026 accepted position　<a href="https://arxiv.org/abs/2606.14795">原文链接</a></p>
     <div class="paper-facts">
       <span><b>编号</b>2606.14795</span>
       <span><b>优先级</b>扫读</span>
       <span><b>类别</b>arXiv 新增 + ICML 2026 accepted position</span>
       <span><b>会议</b>arXiv 新增 + ICML 2026 accepted position</span>
-      <span><b>方法</b>提出 Visual Implicit Reasoning Diagnosing Benchmark (V-IRD)，要求模型自主发现并利用隐藏视觉证据，而不是被动按显式目标检索语义。</span>
+      <span><b>方法</b>ICML 2026 接收的视觉推理 position paper，强调 VLM 缺少主动视觉探索能力</span>
       <span><b>来源</b>arXiv / OpenReview</span>
     </div>
     <div class="feature-body">
-      <p class="lead dropcap">先说结论。会议状态明确，适合作为扫读；它提醒视觉表征不能只看语义检索，还要看主动证据发现。 把 VLM “强识别不等于主动视觉推理”的缺口作为系统性问题提出，并给出 passive capacity 之外的诊断维度。</p>
+      <p class="lead dropcap">先说结论。它和通用视觉自监督的关系在于：ICML 2026 接收的视觉推理 position paper，强调 VLM 缺少主动视觉探索能力。 中相关；详见方法、贡献和实验边界。</p>
       <figure class="full-fig"><img src="../assets/mineru/2606.14795/images/0138b81cd9920202806993f1e0d7ae9237c0ae3ba19ea439eb04e1aa59510cf9.jpg" alt="Figureure 2 · Framework for verifying implicit reasoning capability"><figcaption><b>Figureure 2 · Framework for verifying implicit reasoning capability</b><span class="fig-en">Figure 2. Framework for verifying implicit reasoning capability. To rigorously assess implicit reasoning independent of knowledge retrieval, we employ a filtered evaluation pipeline. We first validate prior knowledge across domains to ensure the model possesses the necessary factual basis, eliminating errors caused by knowledge gaps. Verified instances then proceed to Visual Implicit Reasoning, where the model needs to autonomously chain Implicit Information to derive the Target answer. This design ensures that performance metrics strictly reflect the model’s capability to reason with unstated visual cues rather than its memorized knowledge base.</span><span class="fig-zh">这张图概括 Position 的整体方法流程。阅读时先看模块之间传递的训练信号，再看作者如何把目标拆成可优化的子问题。</span></figcaption></figure>
 <figure class="full-fig"><img src="../assets/mineru/2606.14795/images/f7de1ebccd0f7f429e33ffea9d686e64c56c8d5772e16790e0349407f5c2bddf.jpg" alt="Figureure 1 · Agency in visual reasoning"><figcaption><b>Figureure 1 · Agency in visual reasoning</b><span class="fig-en">Figure 1. Agency in visual reasoning. Left: Comparison of active agency vs. passive capacity in visual reasoning. Unlike humans actively retrieve implicit visual cues to reason about physical properties, current VLMs tend to ignore the implicit information and give wrong answers. Right: Our taxonomy highlights Autonomous Information Retrieval (Q4) as the critical gap. Success here requires visual agency, the ability to actively seek unmentioned visual evidence without explicit prompting which current models lack.</span><span class="fig-zh">这张图/表用于判断 Position 的实验收益来自哪里。重点看替换、消融或跨模型设置下趋势是否一致，而不是只看单个最高分。</span></figcaption></figure>
       
       <h2>核心问题</h2>
-      <p>会议状态明确，适合作为扫读；它提醒视觉表征不能只看语义检索，还要看主动证据发现。</p>
+      <p>它和通用视觉自监督的关系在于：ICML 2026 接收的视觉推理 position paper，强调 VLM 缺少主动视觉探索能力。</p>
       <h2>方法拆解</h2>
-      <p>提出 Visual Implicit Reasoning Diagnosing Benchmark (V-IRD)，要求模型自主发现并利用隐藏视觉证据，而不是被动按显式目标检索语义。</p>
+      <p>ICML 2026 接收的视觉推理 position paper，强调 VLM 缺少主动视觉探索能力</p>
       <h2>主要贡献</h2>
-      <p>把 VLM “强识别不等于主动视觉推理”的缺口作为系统性问题提出，并给出 passive capacity 之外的诊断维度。</p>
+      <p>中相关；详见方法、贡献和实验边界。</p>
       <h2>实验看点</h2>
-      <p>摘要称 prominent VLMs 难以使用 reference objects 和自发关注需要探索的视觉证据。</p>
+      <p>实验部分建议重点看两类证据：一是作者是否把方法收益和更强数据、更长训练、更大模型区分开；二是跨模型、跨数据或跨任务迁移是否还能保留同样趋势。</p>
       <h2>局限与读法</h2>
-      <p>position/benchmark 型论文，不提供新的 SSL 训练算法；和通用视觉表征学习的关系主要是评估缺口。</p>
+      <p>这篇论文的结论需要结合任务设置、训练数据规模和消融实验一起看；不要只凭单个指标判断它对通用视觉表征的价值。</p>
     
     </div>
   </div>
@@ -64,13 +64,13 @@
     <div class="side-box"><h4>原文</h4><p><a href="https://arxiv.org/abs/2606.14795">https://arxiv.org/abs/2606.14795</a></p></div>
   </aside>
 </article></main>
-  <aside class="conf-float" data-conf-reminder="2026-06-17-main-ddl" aria-label="CCF A/B 主投稿提醒">
+  <aside class="conf-float" data-conf-reminder="2026-06-18-main-ddl" aria-label="CCF A/B 主投稿提醒">
   <button class="conf-close" type="button" aria-label="关闭会议提醒">×</button>
   <details open>
     <summary>CCF A/B 主投稿提醒</summary>
     <div class="conf-list"><a class="conf-item " href="https://github.com/ccfddl/ccf-deadlines/blob/main/conference/AI/aaai.yml">
   <span><b>AAAI 2027</b><em>CCF A · Main paper submission</em></span>
-  <strong>40 天</strong>
+  <strong>39 天</strong>
   <small>2026-07-27 · CCF DDL: abstract 2026-07-20；进入 1 个月窗口后重点提醒。</small>
 </a></div>
   </details>
@@ -83,7 +83,7 @@
   (() => {
     const box = document.querySelector('[data-conf-reminder]');
     if (!box) return;
-    const key = `visualSslConfReminderClosed:${box.dataset.confReminder || '2026-06-17-main-ddl'}`;
+    const key = `visualSslConfReminderClosed:${box.dataset.confReminder || '2026-06-18-main-ddl'}`;
     try {
       if (localStorage.getItem(key) === '1') box.hidden = true;
     } catch (err) {}

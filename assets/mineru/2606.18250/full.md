@@ -1,0 +1,603 @@
+# Future Dynamic 3D Reconstruction: A 3D World Model with Disentangled Ego-Motion
+
+Nils Morbitzer \* 1 2 Jonathan Evers \* 1 3 Artem Savkin 3 Thomas Stauner 3 Nassir Navab 1 2 Federico Tombari 1 2 Stefano Gasperini 1 2 4
+
+## Abstract
+
+Forecasting the evolution of dynamic environments is crucial for autonomous agents. While generative world models have recently achieved high photorealism in 2D video synthesis by mixing ego-motion and environmental dynamics within the image plane, they exhibit physical inconsistencies, such as morphing or vanishing objects, especially over long time horizons. In this paper, we propose FR3D, a world model that predicts a persistent 3D latent representation for future dynamic 3D reconstruction. Unlike prior works that treat the world as a sequence of imagebased features, FR3D explicitly decouples the 3D evolution of the scene from the agent’s trajectory, treating the inferred ego-motion as a latent proxy for action. This disentanglement resolves the ambiguities between self-motion and world-motion, ensuring geometric consistency into the future. Furthermore, we introduce a teacher-student distillation strategy that leverages the spatial ”common sense” of off-the-shelf foundation models, leading to robust zero-shot generalization. Extensive experiments demonstrate FR3D’s strong performance for future dynamic 3D reconstruction from monocular observations across multiple datasets, even 2 seconds into the future. Project page: https://fr3d-wm.github.io.
+
+## 1. Introduction
+
+Anticipating future events is a key ability for intelligent agents operating in complex environments, from robotics to autonomous navigation (Dosovitskiy & Koltun, 2017; Hu et al., 2020; 2021). To estimate the unfolding of these events, agents rely on a world model: an internal engine designed to capture the underlying dynamics of the environment. Ha and Schmidhuber (2018) originally formalized the concept of a world model as a generative simulator that directly synthesizes the evolution of the environment in sensor space. Conversely, more recent perspectives by LeCun (2022; 2024) argue that generative photorealism is often irrelevant, advocating instead for world models that prioritize abstract, task-relevant predictive representations in latent space. Despite these divergent philosophies on how to represent the world, a key consensus remains: a world model’s core capability is the accurate estimation of future states given a history of observations and potential actions.
+
+![](images/dbe1e2e51459a3bfee41f08d03f2e8359f4a6293206128411171a5bbbc338724.jpg)
+
+<details>
+<summary>text_image</summary>
+
+input context
+oracle context
+prediction [ours]
+oracle
+input context
+oracle context
+prediction [ours]
+oracle
+</details>
+
+Figure 1. The proposed FR3D is a 3D world model predicting future 3D reconstruction of dynamic scenes that takes monocular images as input. FR3D disentangles the forecasting of the induced ego-camera motion from that of the 3D scene structure. As shown in these future predictions of challenging scenes, FR3D successfully handles dynamic scenes with traffic in both directions (above) and estimates turning events smoothly (below).
+
+In recent years, generative world models have demonstrated a remarkable success at simulating complex environments, with 2D video diffusion models achieving unprecedented levels of photorealism (Brooks et al., 2024; Agarwal et al., 2025; Google DeepMind, 2025). These 2D generative models are particularly useful as interactive environments for video games (Bruce et al., 2024) or controlled experimental environments in real-world simulators for autonomous systems (Hu et al., 2023). However, by operating strictly in the image plane, these models mix camera trajectories with scene evolution. This entanglement fundamentally limits the model’s ability to maintain a coherent 3D geometric structure throughout the rollout, often leading to ”hallucinated” physics where objects morph or vanish due to ego-motion (Hu et al., 2023).
+
+For an agent to interact meaningfully with the physical world, e.g., performing tasks in it, such as in autonomous driving, geometric integrity must take precedence over photorealism. Without a strong 3D inductive bias, temporal rollouts inevitably lead to inconsistent depth-dependent motion parallax and violations of object consistency. While most current world models operate only in pixel space or image-based feature space (Hafner et al., 2023; Bardes et al., 2024; Wang et al., 2024b; Zhou et al., 2025; Baldassarre et al., 2025), treating the world as a sequence of 2D planes, the physical world is inherently 3-dimensional, leading to inconsistencies, especially over longer time horizons (Xiao et al., 2024). Instead, attempts in 3D have mostly focused on occupancy prediction (Zheng et al., 2024), on the synthesis of sensor data (Zhang et al., 2024), or do not disentangle egomotion and world-motion (Hu et al., 2021). Furthermore, existing state-of-the-art models achieve generalization only through extreme scale, requiring even 22M GPU hours and 20M hours of video data (Agarwal et al., 2025), making them highly impractical for specific downstream tasks.
+
+In this work, we bridge the gap between dynamic 3D reconstruction and latent world modeling. While 3D reconstruction is retrospective and prior world models focus on 2D pixels or mix ego-motion with world-motion, we introduce a model that maintains a persistent 3D latent representation into the future. As shown in Figure 1, our model explicitly decouples the evolution of the 3D scene from the agent’s future trajectory within the same coordinate frame, treating the inferred ego-motion as a latent proxy for action. By disentangling ego-motion from world-motion, the model resolves the fundamental ambiguity between the changes caused by the self (ego-motion) and those caused by external entities (world-motion). Additionally, to bypass the prohibitive costs of large-scale training, we propose a teacher-student distillation strategy that leverages the spatial ”common sense” of off-the-shelf foundation models. This allows our model to achieve robust zero-shot generalization with significantly lower data and compute requirements. We term our method FR3D, for future dynamic 3D reconstruction, and we summarize our contributions as follows:
+
+• We introduce the task of future dynamic 3D reconstruction from monocular observations, leading to a new paradigm for 3D world models.  
+• We present FR3D, the first world model for dynamic 3D reconstruction that learns to propagate scene states and agent poses within a unified 3D latent space.  
+• We show that disentangling ego-motion from environmental dynamics enables significantly more stable long-horizon predictions, even 2 seconds ahead.  
+• We introduce an efficient training strategy that achieves strong zero-shot performance by distilling geometric priors from foundation models.
+
+## 2. Related Work
+
+## 2.1. Feature Prediction World Models
+
+An emerging paradigm for future-frame prediction and scene understanding focuses on estimating future visual features instead of raw RGB values (Karypidis et al., 2025a; Zhou et al., 2025; Baldassarre et al., 2025; Boduljak et al., 2025). FUTURIST (Karypidis et al., 2025b) introduces a multi-modal forecasting strategy for depth and semantic segmentation. Despite impressive results, it relies on task- and dataset-specific encoders, limiting its generalization. DINO-Foresight (Karypidis et al., 2025a), DINO-WM (Zhou et al., 2025), DINO-world (Baldassarre et al., 2025) demonstrate that pre-trained, general-purpose features of established visual foundation models (VFM) can serve as a state space for world models. While the former focuses on common scene understanding tasks such as semantic segmentation, depth, and surface normals, the latter introduces an approach for modeling visual dynamics via 2D RGB reconstruction. While previously mentioned approaches perform deterministic forecasting, VFMF (Boduljak et al., 2025) proposes a generative forecaster to model the probabilistic nature of future predictions. To achieve this, the authors encode VFM features into a compact latent space suitable for diffusion.
+
+Whereas prior works (Karypidis et al., 2025b;a; Boduljak et al., 2025) mainly focus on forecasting 2D or 2.5D tasks, we address the problem of future 3D scene prediction and reconstruction by forecasting both ego-camera motion and 3D scene dynamics, yielding strong forecasting performance even when reasoning 2 seconds into the future. In addition, prior work still relies on dataset-specific decoders/heads to make its predictions interpretable. Instead, we aim for zeroshot generalizable performance. To address this, we propose injecting our approach to estimate all the scene information necessary for 3D reconstruction in a pre-trained reconstruction model’s latent space and use its decoders/heads to make our latent predictions interpretable.
+
+![](images/8c6996a61a654e1859e912e2e7e22f756b8e1e8ab4e5de0595ae6690e8bb8746.jpg)
+
+<details>
+<summary>flowchart</summary>
+
+```mermaid
+graph TD
+  A["2D input image t₁"] --> B["encoder"]
+  B --> C["state t₀"]
+  C --> D["head"]
+  D --> E["3D scene reconstruction t₁"]
+  E --> F["train time"]
+  F --> G["2D input image tₙ₋₁"]
+  G --> H["encoder"]
+  H --> I["state tₙ₋₁"]
+  I --> J["head"]
+  J --> K["3D scene reconstruction tₙ"]
+  K --> L["train time"]
+  L --> M["2D input image tₙ₊₁"]
+  M --> N["encoder"]
+  N --> O["State tₙ"]
+  O --> P["train time"]
+  P --> Q["2D input image tₙ₋₁"]
+  Q --> R["context frames"]
+  R --> S["3D scene reconstruction tₙ₊₁"]
+  S --> T["train time"]
+  T --> U["2D input image tₙ₋₁"]
+  U --> V["context frames"]
+  V --> W["3D scene reconstruction tₙ₊₁"]
+  W --> X["train time"]
+  X --> Y["2D input image tₙ₊₁"]
+  Y --> Z["context frames"]
+  Z --> AA["3D scene reconstruction tₙ₊₁"]
+  AA --> AB["train time"]
+  AB --> AC["2D input image tₙ₊₁"]
+  AC --> AD["context frames"]
+  AD --> AE["3D scene reconstruction tₙ₊₁"]
+  AE --> AF["train time"]
+  AF --> AG["2D input image tₙ₊₁"]
+  AG --> AH["context frames"]
+  AH --> AI["3D scene reconstruction tₙ₊₁"]
+  AI --> AJ["train time"]
+  AJ --> AK["2D input image tₙ₊₁"]
+  AK --> AL["context frames"]
+  AL --> AM["3D scene reconstruction tₙ₊₁"]
+  AM --> AN["train time"]
+  AN --> AO["2D input image tₙ₊₁"]
+  AO --> AP["context frames"]
+  AP --> AQ["3D scene reconstruction tₙ₊₁"]
+  AQ --> AR["train time"]
+  AR --> AS["2D input image tₙ₊₁"]
+  AS --> AT["context frames"]
+  AT --> AU["3D scene reconstruction tₙ₊₁"]
+  AU --> AV["train time"]
+  AV --> AW["2D input image tₙ₊₁"]
+  AW --> AX["context frames"]
+  AX --> AY["3D scene reconstruction tₙ₊₁"]
+  AY --> AZ["train time"]
+  AZ --> BA["2D input image tₙ₊₁"]
+  BA --> BB["context frames"]
+  BB --> BC["3D scene reconstruction tₙ₊₁"]
+  BC --> BD["train time"]
+  BD --> BE["2D input image tₙ₊₁"]
+  BE --> BF["context frames"]
+  BF --> BG["3D scene reconstruction tₙ₊₁"]
+  BG --> BH["train time"]
+  BH --> BI["2D input image tₙ₊₁"]
+  BI --> BJ["context frames"]
+  BJ --> BK["3D scene reconstruction tₙ₊₁"]
+  BK --> BL["train time"]
+  BL --> BM["2D input image tₙ₊₁"]
+  BM --> BN["context frames"]
+  BN --> BO["3D scene reconstruction tₙ₊₁"]
+  BO --> BP["train time"]
+  BP --> BQ["2D input image tₙ₊₁"]
+  BQ --> BR["context frames"]
+  BR --> BS["3D scene reconstruction tₙ₊₁"]
+  BS --> BT["train time"]
+  BT --> BU["2D input image tₙ₊₁"]
+  BU --> BV["context frames"]
+  BV --> BW["3D scene reconstruction tₙ₊₁"]
+  BW --> BX["train time"]
+  BX --> BY["2D input image tₙ₊₁"]
+  BY --> BZ["context frames"]
+  BZ --> CA["3D scene reconstruction tₙ₊₁"]
+  CA --> CB["train time"]
+  CB --> CC["2D input image tₙ₊₁"]
+  CC --> CD["context frames"]
+  CD --> CE["3D scene reconstruction tₙ₊₁"]
+  CE --> CF["train time"]
+  CF --> CG["2D input image tₙ₊₁"]
+  CG --> CH["context frames"]
+  CH --> CI["3D scene reconstruction tₙ₊₁"]
+  CI --> CJ["train time"]
+  CJ --> CK["2D input image tₙ₊₁"]
+  CK --> CL["context frames"]
+  CL --> CM["3D scene reconstruction tₙ₊₁"]
+  CM --> CN["train time"]
+  CN --> CO["2D input image tₙ₊₁"]
+  CO --> CP["context frames"]
+  CP --> CQ["3D scene reconstruction tₙ₊₁"]
+  CQ --> CR["train time"]
+  CR --> CS["2D input image tₙ₊₁"]
+  CS --> CT["context frames"]
+  CT --> CU["3D scene reconstruction tₙ₊₁"]
+  CU --> CV["train time"]
+  CV --> CW["2D input image tₙ₊₁"]
+```
+</details>
+
+Figure 2. The proposed FR3D takes in input a sequence of images as context (up to time $t _ { N } ) ,$ , and outputs a unified 3D scene reconstruction with ego camera poses autoregressively for the next timestamps (from $t _ { N + 1 }$ onwards) without accessing the corresponding images. Tokens and state are internal representations of the scene from previous frames, and the model estimates future tokens and decodes them into a 3D reconstruction by leveraging an off-the-shelf foundation model (its encoder, its decoder used to combine the current tokens with the state, and its heads), such as CUT3R (Wang et al., 2025b). The future prediction is performed by two masked transformers: one for ego poses and one for scene geometry. FR3D is trained autoregressively in a teacher-student paradigm by mimicking the token space of the frozen foundation model via a smooth L1 loss.
+
+## 2.2. 3D World Models
+
+World modeling has shifted from 2D pixel synthesis to spatially aware 3D representations, improving geometric consistency. For example, Copilot4D (Zhang et al., 2024) formulates future scene prediction as discrete diffusion over point clouds, whereas DiST-4D (Guo et al., 2025) adopts a disentangled spatiotemporal diffusion design that incorporates LiDAR-derived metric depth for 4D scene generation. In contrast, OccWorld (Zheng et al., 2024) predicts future 4D occupancy grids to densely model how scenes evolve. Drive-OccWorld (Yang et al., 2025) integrates action conditioning to enable controllable generation and leverages this generative capability for end-to-end planning. While these models show a significant leap forward, they often rely on expensive occupancy annotations or sensor data such as LiDAR point clouds, or fail to explicitly disentangle the egomotion from the environment’s dynamics. Instead, FR3D introduces a unified 3D latent space that decouples these two motion components, enabling more stable long-horizon predictions.
+
+## 2.3. Feed-Forward 3D Reconstruction
+
+Traditional geometry-based pipelines, such as Structurefrom-Motion (Schonberger & Frahm ¨ , 2016) and Multi-View Stereo (Schonberger et al. ¨ , 2016), tackle 3D reconstruction through a sequence of interdependent subproblems, including feature matching, pose estimation, and depth estimation. Because each stage is not solved perfectly and depends on the estimated outputs of preceding steps, errors inevitably accumulate and propagate, often degrading the quality of the final reconstruction.
+
+More recently, learning-based approaches have overcome these limitations by jointly addressing multiple reconstruction tasks. DUSt3R (Wang et al., 2024a) introduces a transformer-based framework that directly predicts dense 3D pointmaps from image pairs, effectively associating 2D pixels with 3D geometry in a feed-forward manner. This representation enables the estimation of complete scene parameters, including 3D structure, camera poses, and intrinsics. Building on this, MASt3R (Leroy et al., 2024) improves DUSt3R’s matching accuracy by incorporating a local dense feature head and explicitly training for metric 3D reconstruction. VGGT (Wang et al., 2025a) demonstrates that scenes can be reconstructed from an arbitrary number of images without additional global optimization.
+
+While DUSt3R (Wang et al., 2024a) and many subsequent works focus on offline 3D reconstruction, where all observations are available a priori, online 3D reconstruction methods aim to incrementally recover scene geometry from a continuous stream of incoming data. To this end,
+
+Spann3R (Wang & Agapito, 2025) introduces a spatial memory mechanism that learns to retain and update information from past observations, enabling progressive scene reconstruction. CUT3R (Wang et al., 2025b) proposes a compact latent state representation that not only stores previously observed geometry but can also be read out to reason about unobserved regions given a camera pose.
+
+While previous feed-forward 3D reconstruction methods focus on reconstructing already observed information, our approach forecasts future 3D scene information, including static and dynamic 3D structures and the camera poses.
+
+## 3. Method
+
+## 3.1. Preliminaries
+
+In a nutshell, a world model predicts how an environment evolves over time from observations, actions, and uncertainty. Let t denote a discrete time step, $x _ { t }$ the observation at time $t , a _ { t }$ the action taken, and $s _ { t }$ the underlying system state. The observation is first encoded as
+
+$$
+h _ {t} = \operatorname{Encoder} (x _ {t}).
+$$
+
+Given the encoded observation $h _ { t } .$ , the current state $s _ { t } ,$ the action $a _ { t } .$ , and a latent variable $u _ { t } ,$ a predictor models the state transition as
+
+$$
+s _ {t + 1} = \operatorname{Predictor} (h _ {t}, s _ {t}, a _ {t}, u _ {t}).
+$$
+
+The latent variable $u _ { t }$ represents unobserved or unknown factors, enabling the model to capture a distribution over plausible future states rather than a single deterministic outcome (LeCun, 2022).
+
+## 3.2. Future 3D Scene Prediction
+
+Our approach targets predicting how a 3D scene evolves over time and forecasting the most likely camera motion. Displayed in Figure 2, we propose a world modeling approach for dynamic 3D reconstruction. Our key idea is to learn how to temporally operate in the latent space of a pre-trained, feed-forward 3D reconstruction model, thereby effectively disentangling camera motion from the reconstructed 3D scene structure and potentially induced motion. For that, we propose an autoregressive teacher-student distillation training strategy that yields the first 3D world model for dynamic 3D reconstruction learning to propagate scene states and agent poses within a unified 3D latent space.
+
+Let $I \in \mathbb { R } ^ { N \times 3 \times H \times W }$ denote a sequence of N context images $I _ { t }$ of size $H \times W$ where $t \in [ 1 , N ]$ represents time. As depicted in Figure 2, we first encode I (observations) using a pre-defined encoder $\mathcal { E }$ of a pre-trained, feed-forward 3D reconstruction model R yielding per-frame image tokens:
+
+$$
+F = \mathcal {E} (I) \in \mathbb {R} ^ {N \times D \times H _ {F} \times W _ {F}} \tag {1}
+$$
+
+where D is the image token dimension and $H _ { F } \times W _ { F }$ are the tokens’ map spatial resolution.
+
+Following CUT3R (Wang et al., 2025b), we encode past information in a state $s _ { t - 1 } ~ \in ~ \mathbb { R } ^ { 7 6 8 \times 7 6 8 }$ . State $s _ { t - 1 }$ and image token $F _ { t }$ interact via two interconnected transformer decoders $\mathcal { D } _ { F }$ and $\mathcal { D } _ { s }$ using cross-attention. This yield, first, image token $F _ { t } ^ { \prime }$ enriched with past information from the state $s _ { t - 1 }$ and updated state information $s _ { t } \mathrm { i }$ :
+
+$$
+\left[ z _ {t} ^ {\prime}, F _ {t} ^ {\prime} \right], s _ {t} = \mathcal {D} _ {F} \left(\left[ z, F _ {t} \right]\right) \text {   \circledcirc   } \mathcal {D} _ {s} \left(s _ {t - 1}\right) \tag {2}
+$$
+
+where we define $\mathcal { D } _ { F } \hookrightarrow \mathcal { D } _ { s }$ as interaction via crossattention between selected layers of $\mathcal { D } _ { F }$ and $\mathcal { D } _ { s }$ .
+
+## 3.3. Disentangling Ego-Motion from World Motion
+
+Prior works on world modeling (Zhou et al., 2025; Karypidis et al., 2025a; Boduljak et al., 2025) focus on forecasting spatial image tokens, thereby modeling ego- and world-motion dynamics induced by the image in a shared (spatial) feature space. In contrast, we propose to additionally learn to operate in the latent space of camera poses. This has two advantages: First, it directly provides all the parameters needed to reconstruct a dynamic 3D environment from only images as input (assuming camera intrinsics remain constant). Second, disentangling pose and spatial latent variables allows us to distinguish between motion induced by the ego-camera and actual 3D scene dynamics.
+
+To handle state-enriched pose $z _ { t } ^ { \prime }$ and spatial tokens $F _ { t } ^ { \prime } ,$ we introduce two separate Masked Transformer architectures: a Pose Masked Transformer $M _ { z }$ and a Spatial Masked Transformer $M _ { F } , M _ { z }$ forecasts the most likely next pose token and $M _ { F }$ the corresponding spatial tokens. Then these predicted tokens are decoded using pre-trained heads to predict intrinsics, camera pose, and multi-view-consistent depth.
+
+While it is possible to learn forecasting of pose and depth independently, we found that sharing information between $M _ { z }$ and $M _ { F }$ mutually benefits both (see Table 3). This observation is intuitively plausible: On the one hand, reasoning about the next pose by extrapolating the ego-camera motion from the past timesteps simplifies the forecasting of depth regarding static scene structure. This is because camera translation and rotation fully determine how the projected, static scene structure changes from time step t to $t + 1$ , assuming both time steps share the same static visual content without occlusions. This is mostly the case for smooth camera trajectories, such as for autonomous driving, except for dynamic regions. On the other hand, reasoning about the next depth prediction directly constrains where the observing camera can be located. More specifically, depth predicted in the camera frame at time $t + 1$ directly induces the distance between the camera and the scene geometry, and from which view it is observed. Therefore, we get our forecasted 3D scene tokens by:
+
+$$
+\left[ z _ {t _ {N + 1}} ^ {\prime}, F _ {t _ {N + 1}} ^ {\prime} \right] = \tag {3}
+$$
+
+$$
+M _ {z} ([ z _ {t _ {1}} ^ {\prime},..., z _ {t _ {N}} ^ {\prime} ]) \circlearrowright M _ {F} ([ F _ {t _ {1}} ^ {\prime},..., F _ {t _ {N}} ^ {\prime} ])
+$$
+
+In summary, by allowing information sharing between $M _ { z }$ and $M _ { F }$ , we implicitly couple the pose and depth forecasting tasks, thereby enforcing their interdependence and constraining the space of possible solutions.
+
+## 3.4. Efficient Training Strategy & Inference
+
+Training on latent space Our main training objective is to learn how to operate on the latent space of a frozen, feed-forward 3D reconstruction model. To achieve this, we employ a teacher-student-distillation strategy, i.e., we leverage our pre-trained 3D reconstruction model as a teacher to train our student forecasting model. As shown in Figure 2, given an image sequence of length $N + 1$ , we precompute state-enriched 3D scene tokens using our teacher model at every timestep. Meanwhile, we use the first N state-enriched tokens as input to our models $M _ { z }$ and $M _ { F }$ to forecast the next most-likely 3D scene tokens. Inspired by Karypidis et al. (2025a), we formulate the task of future 3D scene prediction as a continuous regression problem. We apply a smooth L1 loss ℓ between predicted 3D scene $[ z _ { t _ { N + 1 } } ^ { \prime } , F _ { t _ { N + 1 } } ^ { \prime } ]$ reconstruction model (teacher), $[ \tilde { z } _ { t _ { N + 1 } } ^ { \prime } , \tilde { F } _ { t _ { N + 1 } } ^ { \prime } ]$ , yielding:
+
+$$
+\mathcal {L} _ {\text { pose }} = \mathbb {E} _ {s \sim \mathcal {S}} \left[ \ell \left(\tilde {z} _ {t _ {N + 1}} ^ {\prime}, z _ {t _ {N + 1}} ^ {\prime}\right) \right] \text {   and   } \tag {4}
+$$
+
+$$
+\mathcal {L} _ {\text { spatial }} = \mathbb {E} _ {s \sim \mathcal {S}} \left[ \frac {1}{| \Omega |} \sum_ {p \in \Omega} \ell \left(\tilde {F} _ {t _ {N + 1}} ^ {\prime} (p), F _ {t _ {N + 1}} ^ {\prime} (p)\right) \right] \tag {5}
+$$
+
+where $s$ denotes our training sequences and Ω denotes the set of spatial token locations.
+
+Our final loss is a weighted sum of Equations 4 and 5:
+
+$$
+\mathcal {L} = \mathcal {L} _ {\text { spatial }} + \lambda \mathcal {L} _ {\text { pose }} \tag {6}
+$$
+
+where $\lambda = 1 0$ . It is treated as a fixed hyperparameter chosen to balance the relative scale of the two loss terms; we do not claim optimality with respect to λ.
+
+Auto-regressive token prediction In addition, we propose an autoregressive training paradigm. More specifically, our context 3D scene tokens do not only encompass those generated by the teacher but also those from the student. Implementation-wise, we use a sliding-window approach that gradually increases the number of scene tokens predicted by the student relative to those from the teacher, while keeping the context length $N _ { c } = 4 .$ . This strategy benefits FR3D in two ways: First, we further robustify our student model to forecast plausible next 3D scene tokens despite providing auto-regressive, self-predicted, noisy scene tokens as input; thereby improving FR3D’s performance on longer contexts and aligning the training and test setups. Second, we artificially expand the training dataset to ensure our student model can handle longer token sequences, reducing drift in its predictions.
+
+Inference After training our pose and spatial forecasting models, FR3D can temporally operate on the latent space of CUT3R (Wang et al., 2025b). In contrast to prior works that rely on dataset-specific decoders (Karypidis et al., 2025a; Boduljak et al., 2025), our frameworks’ main advantage is that we can leverage CUT3R’s full pipeline, i.e., encoder, decoders, and heads, which are pre-trained for approximately a month on 32 datasets, thereby inheriting its strong generalization capability.
+
+For the inference, we (1) extract state-enriched CUT3R 3D scene tokens from all context input images. (2) the 3D scene tokens (i.e., pose+spatial) are passed to their respective masked transformer to forecast the next most-likely state-enriched token. We (3) follow an autoregressive rollout strategy. As we learn the distribution of state-enriched CUT3R 3D scene tokens directly, we do not need to update CUT3R’s state at inference time. The tokens implicitly contain state information.
+
+## 4. Experiments & Results
+
+## 4.1. Experimental Setup
+
+## 4.1.1. DATASETS & EVALUATION METRICS
+
+For training FR3D, we used the Waymo Open Dataset (Sun et al., 2020), as it is part of our oracle’s (i.e., CUT3R’s (Wang et al., 2025b)) training distribution, thereby delivering reliable supervision for our student model FR3D. We evaluate our approach in a zero-shot manner on the KITTI (Geiger et al., 2013) and nuScenes (Caesar et al., 2020) datasets. Notably, these two datasets are out-oftraining distribution for FR3D and our oracle (see CUT3R’s appendix Table 6 (Wang et al., 2025b)). We report standard depth-estimation metrics (AbsR and $\delta _ { 1 } )$ up to 80m across all datasets, using per-frame scale-and-shift alignment of predictions to the ground-truth. We also report depth evaluation using ground-truth median scaling in the supplementary material, showing the same trend. For pose estimation, we report Absolute Translation Error (ATE), Relative Translation Error $\mathrm { ( R P E _ { t } ) }$ , and Relative Rotation Error $( \mathrm { R P E _ { R } } )$ after applying Sim(3) alignment with the ground truth, as in CUT3R (Wang et al., 2025b). More specifically, for aligning the poses, we always consider the last context frame as our trajectory’s starting point and forecast at least two additional camera poses to yield a meaningful alignment (since two points connected by a line always result in perfect alignment). Furthermore, to showcase FR3D’s abilities in dynamic indoor settings, we fine-tuned a model on the Dynamic-RE10K (Chen et al., 2026) (see Table 16 of the supplementary material).
+
+Table 1. Zero-shot depth estimation comparison on KITTI (Geiger et al., 2013) and nuScenes (Caesar et al., 2020). We evaluate KITTI at a resolution of $5 1 2 \times 1 4 4$ and nuScenes at $5 1 2 \times 2 8 8$ .
+
+<table><tr><td rowspan="3">METHOD</td><td colspan="6">KITTI</td><td colspan="6">nuScenes</td></tr><tr><td colspan="2">T+0.6S</td><td colspan="2">T+1.0S</td><td colspan="2">T+2.0S</td><td colspan="2">T+0.75S</td><td colspan="2">T+1.25S</td><td colspan="2">T+2.5S</td></tr><tr><td>AbsR ↓</td><td> $\delta_1 \uparrow$ </td><td>AbsR ↓</td><td> $\delta_1 \uparrow$ </td><td>AbsR ↓</td><td> $\delta_1$ </td><td>AbsR ↓</td><td> $\delta_1 \uparrow$ </td><td>AbsR ↓</td><td> $\delta_1 \uparrow$ </td><td>AbsR ↓</td><td> $\delta_1 \uparrow$ </td></tr><tr><td>CUT3R (Oracle)</td><td>0.088</td><td>0.916</td><td>0.087</td><td>0.918</td><td>0.086</td><td>0.921</td><td>0.161</td><td>0.777</td><td>0.162</td><td>0.776</td><td>0.163</td><td>0.771</td></tr><tr><td>Copy Last</td><td>0.141</td><td>0.825</td><td>0.163</td><td>0.789</td><td>0.190</td><td>0.742</td><td>0.201</td><td>0.710</td><td>0.218</td><td>0.685</td><td>0.242</td><td>0.650</td></tr><tr><td>DINO-Foresight</td><td>0.128</td><td>0.857</td><td>0.156</td><td>0.807</td><td>0.197</td><td>0.745</td><td>0.223</td><td>0.705</td><td>0.242</td><td>0.673</td><td>0.283</td><td>0.609</td></tr><tr><td>CUT3R-Foresight</td><td>0.131</td><td>0.847</td><td>0.157</td><td>0.756</td><td>0.200</td><td>0.725</td><td>0.185</td><td>0.737</td><td>0.205</td><td>0.701</td><td>0.249</td><td>0.638</td></tr><tr><td>FR3D</td><td>0.116</td><td>0.868</td><td>0.132</td><td>0.835</td><td>0.178</td><td>0.758</td><td>0.182</td><td>0.740</td><td>0.197</td><td>0.710</td><td>0.229</td><td>0.660</td></tr></table>
+
+Table 2. Zero-shot pose estimation comparison on KITTI (Geiger et al., 2013) and nuScenes (Caesar et al., 2020). We evaluate KITTI at a resolution of $5 1 2 \times 1 4 4$ and nuScenes at $5 1 2 \times 2 8 8$ .
+
+<table><tr><td rowspan="3">METHOD</td><td colspan="6">KITTI</td><td colspan="6">nuScenes</td></tr><tr><td colspan="3">T+1.0S</td><td colspan="3">T+2.0S</td><td colspan="3">T+1.25S</td><td colspan="3">T+2.5S</td></tr><tr><td>ATE ↓</td><td>RPE $_t$  ↓</td><td>RPER↓</td><td>ATE ↓</td><td>RPE $_t$  ↓</td><td>RPER↓</td><td>ATE ↓</td><td>RPE $_t$  ↓</td><td>RPER↓</td><td>ATE ↓</td><td>RPE $_t$  ↓</td><td>RPER↓</td></tr><tr><td>CUT3R (Oracle)</td><td>0.066</td><td>0.122</td><td>0.236</td><td>0.119</td><td>0.146</td><td>0.251</td><td>0.098</td><td>0.150</td><td>0.254</td><td>0.226</td><td>0.219</td><td>0.273</td></tr><tr><td>CUT3R-Foresight +  $M_z$ </td><td>0.424</td><td>0.493</td><td>1.128</td><td>0.626</td><td>0.482</td><td>1.262</td><td>0.459</td><td>0.541</td><td>0.791</td><td>0.812</td><td>0.608</td><td>0.997</td></tr><tr><td>FR3D</td><td>0.256</td><td>0.340</td><td>0.729</td><td>0.403</td><td>0.306</td><td>0.857</td><td>0.192</td><td>0.262</td><td>0.616</td><td>0.437</td><td>0.335</td><td>0.660</td></tr></table>
+
+## 4.1.2. BASELINES
+
+Since the task studied in this work is newly defined, there are few methods that directly address the same problem setting. We therefore select baselines from closely related tasks: First, we report our oracle CUT3R (Wang et al., 2025b) and Copy Last as our upper and lower bounds, respectively. Copy Last forecasts depth for subsequent timesteps based on the last observed 3D scene tokens. In addition, we report DINO-Foresight (Karypidis et al., 2025a), a recent work tackling future depth, segmentation, and normals prediction. For fair comparisons, we removed the PCA downprojection module to utilize the full feature resolution of DINOv2 (Oquab et al., 2024) and formulated the depth estimation downstream task as a standard regression rather than a classification problem. We train DINO-Foresight on the same training set as our method. Lastly, we created CUT3R-Foresight as an additional baseline, replacing DI-NOv2 (Oquab et al., 2024) image features with CUT3R scene tokens.
+
+## 4.1.3. IMPLEMENTATION DETAILS
+
+All models are implemented in PyTorch. Our world model consists of a spatial transformer and a pose transformer with cross-attention-based information sharing. The spatial transformer uses 12 layers with 8 attention heads and a hidden dimension of 1152, operating on high-resolution grid features of size $2 1 \times 3 2 \times 3 3 2 8 .$ . The pose transformer comprises 4 layers with 4 attention heads and a hidden dimension of 1152, processing pose tokens of dimension $1 \times 1 \times 7 6 8$ . We insert four cross-attention layers between the two transformers, equally spaced throughout the network depth. Both transformers build upon the implementation of DINO-Foresight (Karypidis et al., 2025a) and (Besnier & Chen, 2023). As our representative 3D reconstruction model, we chose CUT3R (Wang et al., 2025b). We train FR3D autoregressively with a fixed context length of 4 frames and an increasing rollout horizon during training, capped at a 5-step prediction. For computational efficiency, features extracted by the CUT3R backbone are precomputed and cached for all training sequences. Optimization uses AdamW with $\beta _ { 1 } = 0 . 9 , \beta _ { 2 } = 0 . 9 9$ . We use an effective batch size of 32 across 8 NVIDIA A100 GPUs for most training runs. The learning rate is set to $1 \times 1 0 ^ { - 4 }$ during pretraining and $5 \times 1 0 ^ { - 5 }$ during finetuning, both with cosine annealing schedules. Training proceeds for several pretraining epochs, followed by a small number of finetuning epochs. The training objective is a SmoothL1 reconstruction loss with $\beta = 0 . 1$ .
+
+## 4.2. Quantitative Results
+
+## 4.2.1. ZERO-SHOT EVALUATION
+
+Tables 1 and 2 report the zero-shot performance of FR3D on depth and pose, respectively, on both KITTI (Geiger et al., 2013) and nuScenes (Caesar et al., 2020). Across both outputs and all timestamps, the proposed FR3D delivers strong results, also at long time horizons (2 seconds and beyond), surpassing all baselines. Compared to DINO-Foresight (Karypidis et al., 2025a), our model generalizes better thanks to how we leverage the off-the-shelf foundation model. For reference, we first report the performance of our oracle model CUT3R (Wang et al., 2025b), which serves as an upper bound as it has access to all images (i.e., context and future frames) of the evaluated sequence. In addition, we show the performance of the Copy Last baseline and our CUT3R-Foresight, which replaces DINOv2 (Oquab et al., 2024) with CUT3R in DINO-Foresight.
+
+Table 3. Ablation study of our approach FR3D’s key components on the Waymo Open Dataset (Sun et al., 2020). A0-A6 use a resolution of $2 2 4 \times 2 2 4$ , while A7-A9 use $\hat { 5 } 1 2 \times 3 3 6$ .
+
+<table><tr><td rowspan="3">ID</td><td rowspan="3">METHOD</td><td colspan="4">DEPTH</td><td colspan="6">CAMERA POSE</td></tr><tr><td colspan="2">T+1.0S</td><td colspan="2">T+2.0S</td><td colspan="3">T+1.0S</td><td colspan="3">T+2.0S</td></tr><tr><td>AbsR ↓</td><td> $\delta_1 \uparrow$ </td><td>AbsR ↓</td><td> $\delta_1 \uparrow$ </td><td>ATE ↓</td><td> $RPE_t \downarrow$ </td><td> $RPE_R \downarrow$ </td><td>ATE ↓</td><td> $RPE_t \downarrow$ </td><td> $RPE_R \downarrow$ </td></tr><tr><td>A0</td><td>CUT3R (Oracle) @224</td><td>0.136</td><td>0.824</td><td>0.132</td><td>0.829</td><td>0.137</td><td>0.232</td><td>0.303</td><td>0.251</td><td>0.279</td><td>0.322</td></tr><tr><td>A1</td><td>Copy Last @224</td><td>0.189</td><td>0.726</td><td>0.21</td><td>0.688</td><td>-</td><td>-</td><td>-</td><td>-</td><td>-</td><td>-</td></tr><tr><td>A2</td><td>CUT3R-Foresight @224</td><td>0.158</td><td>0.782</td><td>0.183</td><td>0.735</td><td>-</td><td>-</td><td>-</td><td>-</td><td>-</td><td>-</td></tr><tr><td>A3</td><td>A2 + pose model  $M_z$ </td><td>0.158</td><td>0.782</td><td>0.183</td><td>0.735</td><td>0.489</td><td>0.570</td><td>0.507</td><td>0.895</td><td>0.654</td><td>0.724</td></tr><tr><td>A4</td><td>A3 + autoregressive</td><td>0.156</td><td>0.783</td><td>0.179</td><td>0.741</td><td>0.405</td><td>0.475</td><td>0.636</td><td>0.670</td><td>0.499</td><td>0.988</td></tr><tr><td>A5</td><td>A3 + info share</td><td>0.150</td><td>0.795</td><td>0.173</td><td>0.755</td><td>0.223</td><td>0.312</td><td>0.410</td><td>0.389</td><td>0.346</td><td>0.431</td></tr><tr><td>A6</td><td>A4 + A5 = FR3D @224</td><td>0.142</td><td>0.804</td><td>0.158</td><td>0.777</td><td>0.219</td><td>0.327</td><td>0.403</td><td>0.442</td><td>0.338</td><td>0.398</td></tr><tr><td>A7</td><td>CUT3R (Oracle) @512</td><td>0.105</td><td>0.887</td><td>0.104</td><td>0.889</td><td>0.085</td><td>0.131</td><td>0.201</td><td>0.168</td><td>0.169</td><td>0.209</td></tr><tr><td>A8</td><td>Copy Last @512</td><td>0.171</td><td>0.771</td><td>0.196</td><td>0.723</td><td>-</td><td>-</td><td>-</td><td>-</td><td>-</td><td>-</td></tr><tr><td>A9</td><td>FR3D @512</td><td>0.131</td><td>0.840</td><td>0.152</td><td>0.800</td><td>0.173</td><td>0.241</td><td>0.356</td><td>0.532</td><td>0.368</td><td>0.388</td></tr></table>
+
+## 4.2.2. COMPONENT ABLATION ON WAYMO
+
+To assess the impact of individual design choices, we perform an ablation study on the Waymo Open Dataset (Sun et al., 2020), shown in Table 3. We report the performance for both forecasting depth and camera pose 1 and 2 seconds ahead. Additional time steps are shown in supplementary material A.2. Methods A0–A6 are trained and evaluated using an input resolution of 224 × 224, while methods A7- A9 are subsequently fine-tuned on 512 × 336, which yields superior results across the board.
+
+As before, we report our teacher model CUT3R (Wang et al., 2025b) (A0) and the Copy Last baseline (A1) as upper and lower bounds, respectively. Especially for longer horizons of 1 and 2 seconds, A1 performs poorly on depth forecasting due to its naive prediction strategy of reusing the last observed 3D scene tokens for all future time steps.
+
+We started from a modified version of DINO-Foresight (Karypidis et al., 2025a): First, to simplify our training setup, we removed the PCA module, thereby avoiding information loss through feature compression (Boduljak et al., 2025); second, we adapted their architecture to operate on the multi-scale state-enriched 3D scene token of our reconstruction model, allowing us to reuse its strongly generalizable decoder heads to predict depth. We define this method as CUT3R-Foresight (A2). By learning to forecast how spatial tokens change over time, A2 already shows a significant improvement over A1. Though better than A1, A2 still struggles to forecast depth at longer time horizons, especially 2 seconds ahead.
+
+To additionally predict ego-camera motion, we add our Pose Masked Transformer Mz (A3). A3 can reason about both depth and ego-camera motion, thereby enabling it to tackle future 3D scene reconstruction. However, the results for depth and pose forecasting, especially at a 2-second prediction horizon, remain modest on this early baseline. Notably, the Spatial Masked Transformer and Pose Masked Transformer still predict depth and pose independently.
+
+A4 introduces our autoregressive training strategy. For depth, this yields a small but consistent improvement that tends to increase with longer time horizons. For pose forecasting, despite a higher rotational error compared to A3, the gains in ATE and translational RPE indicate that the component primarily benefits position estimation.
+
+A5 enables information sharing between the Spatial and Pose Masked Transformer via cross-attention on top of A3 to enforce interdependence between both prediction tasks. As a result, A5 yields strong future prediction performance, significantly outperforming methods A1 - A4.
+
+Finally, by combining strategies A4 and A5, we yield FR3D (A6), achieving the strongest performance for future depth prediction and competitive performance for forecasting egocamera poses compared to A5. Especially for predictions 2 seconds into the future, FR3D achieves significant performance gains over A5, confirming that both information sharing and autoregressive training individually contribute
+
+Table 4. Quantitative depth evaluation on the Waymo Open Dataset (Sun et al., 2020). All use a resolution of $5 1 2 \times 3 3 6$ .
+
+<table><tr><td rowspan="2">METHOD</td><td colspan="2">T+1.0s</td><td colspan="2">T+2.0s</td></tr><tr><td>AbsR ↓</td><td> $\delta_1 \uparrow$ </td><td>AbsR ↓</td><td> $\delta_1 \uparrow$ </td></tr><tr><td>CUT3R-Prompt</td><td>0.198</td><td>0.690</td><td>0.228</td><td>0.620</td></tr><tr><td>DINO-Foresight</td><td>0.155</td><td>0.800</td><td>0.232</td><td>0.678</td></tr><tr><td>FR3D</td><td>0.131</td><td>0.840</td><td>0.152</td><td>0.800</td></tr></table>
+
+to our final method.
+
+## 4.2.3. QUANTITATIVE EVALUATION ON WAYMO
+
+Table 4 reports the quantitative depth comparison of FR3D against two additional baselines on the Waymo Open Dataset (Sun et al., 2020): DINO-Foresight (Karypidis et al., 2025a) and CUT3R-Prompt. CUT3R-Prompt utilizes CUT3R’s state readout mechanism to estimate the point map based on GT poses provided as input. As shown, FR3D outperforms both of them. Please note that CUT3R-Prompt relies on GT poses and that its state readout mechanism was trained on 32 datasets, while ours inherits CUT3R’s generalization capability, only training on Waymo, highlighting our training strategy’s effectiveness.
+
+## 4.2.4. DISENTANGLEMENT ANALYSIS ON WAYMO
+
+We conducted two additional experiments to further investigate FR3D’s disentanglement. We define disentanglement as separating motion observed from the visual space (e.g., images) into two distinct yet interconnected sources, ego-(camera) and world- (scene) components.
+
+Table 5. Ablation on the disentanglement of environment dynamics from the camera motion measuring relative depth change for static and dynamic regions respectively. The “Alignment” column indicates whether frame-wise scale alignment was applied.
+
+<table><tr><td>Region</td><td>Alignment</td><td>T+0.4S</td><td>T+0.6S</td><td>T+1.0S</td></tr><tr><td rowspan="2">static</td><td>✗</td><td>1.32</td><td>1.87</td><td>6.73</td></tr><tr><td>√</td><td>0.40</td><td>0.63</td><td>1.64</td></tr><tr><td rowspan="2">dynamic</td><td>✗</td><td>8.41</td><td>12.55</td><td>17.82</td></tr><tr><td>√</td><td>7.64</td><td>11.43</td><td>12.97</td></tr></table>
+
+First, we filter the Waymo Open Dataset (Sun et al., 2020) to obtain a subset of scenes without ego-camera motion. This fixed-camera setting allows us to analyze whether predicted environment dynamics are disentangled from camera motion. Specifically, we measure the relative depth change between a source depth frame $D _ { \mathrm { s o u r c e } }$ and a target depth frame $D _ { \mathrm { t a r g e t } }$ using the mean absolute log-ratio as a temporal depthchange metric, reported as a percentage. We set $D _ { \mathrm { s o u r c e } } =$ $D _ { \mathrm { T } + 0 . 2 \mathrm { S } }$ and ${ \cal D } _ { \mathrm { t a r g e t } } \in \{ D _ { \mathrm { T + 0 . 4 s } } , D _ { \mathrm { T + 0 . 6 s } } , D _ { \mathrm { T + 1 . 0 s } } \}$ , and report results in Table 5 for static and dynamic regions, both with and without frame-wise scale alignment. Static and dynamic regions are separated using the motion mask $M = M _ { \mathrm { s o u r c e } } \cup M _ { \mathrm { t a r g e t } } ,$ , where $M _ { \mathrm { s o u r c e } }$ and $M _ { \mathrm { t a r g e t } }$ denote the source and target ground-truth motion masks, respectively.
+
+We observe a drift when forecasting at longer horizons (see also Table 14 in the supplementary material). This can be seen with static regions changing over time and with the relative change between source and target increasing over time. By aligning the frame-wise scale, the drift in static regions between source and target frame decreases to 0.4 - 1.6%. Intuitively, frame-wise alignment reduces the relative depth change for dynamic regions less than for static regions. In summary, regardless of the scale alignment, static regions in FR3D’s depth predictions generally expose much less relative change (in %) than dynamic regions.
+
+Table 6. Ablation on the disentanglement of camera pose prediction accuracy encountering static and dynamic scenes.
+
+<table><tr><td>Metric</td><td>Scene Motion</td><td>T+0.6S</td><td>T+1.0S</td><td>T+2.0S</td></tr><tr><td rowspan="2">ATE</td><td>static</td><td>0.05</td><td>0.17</td><td>0.59</td></tr><tr><td>dynamic</td><td>0.07</td><td>0.17</td><td>0.51</td></tr><tr><td rowspan="2"> $RPE_t$ </td><td>static</td><td>0.12</td><td>0.24</td><td>0.40</td></tr><tr><td>dynamic</td><td>0.13</td><td>0.24</td><td>0.35</td></tr><tr><td rowspan="2"> $RPE_R$ </td><td>static</td><td>0.50</td><td>0.50</td><td>0.58</td></tr><tr><td>dynamic</td><td>0.32</td><td>0.30</td><td>0.30</td></tr></table>
+
+We further report pose accuracy for static and dynamic scenes on Waymo, respectively. Table 6 shows that FR3D’s predicted poses are motion-robust: errors are consistent across static and dynamic scenes through 1s and slightly improve for dynamics at 2s.
+
+## 4.3. Qualitative Results
+
+In the qualitative results, we show the context frames as RGB and the 3D reconstruction produced by our model and the oracle. We indicate the ego-camera poses estimated by the oracle in green, both for the context and the future frames. Instead, the forecasted ego trajectory is indicated in blue. As an upper bound, we show the 3D reconstruction performance of the oracle, given the future input images.
+
+Figure 3 shows qualitative zero-shot results of FR3D on nuScenes (Caesar et al., 2020) and KITTI (Geiger et al., 2013), with two different challenging dynamic scenes for each dataset. Significant domain shifts occur between Waymo (where the FR3D forecasting model is trained) and the two datasets here. For example, the aspect ratio of the KITTI inputs is significantly wider than that of Waymo (Figure 1). Yet, all scenes show remarkable forecasting performance by FR3D, closely matching its oracle model. The scene at the top left depicts a particularly interesting scenario, where a white car is performing a right turn, while the ego vehicle is turning left onto the same street. FR3D successfully forecasts the ego-motion and the trajectory of the other traffic participant, despite being conditioned only on 4 context images. This shows the benefits of our disentanglement between ego-motion and world-motion, with our model handling the challenging motions independently. The effectiveness of this strategy is also visible in the Waymo (Sun et al., 2020) scene at the top of Figure 1, with traffic plausibly forecasted to head in opposite directions and at different speeds.
+
+![](images/ec67ffd92194d992b0d716d27eb73b8425fec3a9faa803f3104c6bd2686977c1.jpg)
+
+<details>
+<summary>text_image</summary>
+
+zero-shot on nuScenes
+zero-shot on KITTI
+input context
+input context
+input context
+prediction [ours]
+oracle
+prediction [ours]
+oracle
+output context
+output context
+output context
+output context
+output context
+output context
+output context
+output context
+output context
+output context
+output context
+output context
+output context
+output context
+output context
+output context
+output context
+output context
+output context
+output context
+output context
+output context
+output context
+output context
+output context
+output context
+output context
+output context
+output context
+output context
+output context
+output context
+output context
+output context
+</details>
+
+Figure 3. Qualitative results on challenging zero-shot dynamic scenes from nuScenes (Caesar et al., 2020) and KITTI (Geiger et al., 2013).
+
+The KITTI scene at the top right of Figure 3 also shows an interesting example where a bicyclist is turning left, and the ego vehicle is making a slight left turn, too. Remarkably, the bicyclist’s motion is forecasted plausibly despite its slim profile, while simultaneously predicting a plausible ego-motion trajectory to smoothly follow the white van. Furthermore, Figure 3 shows a black vehicle overtaking on the left and a nearly stationary truck (bottom left scene) and two vehicles following one another (bottom right scene). Figure 1 shows a left turn scenario with our model estimating a long, smooth trajectory across the rollout to follow the curve. Comparing this estimate with the oracle trajectory, it can be seen that the oracle’s estimates are jittery, introducing significant noise into the training signal of FR3D. However, our autoregressive training helps FR3D be more robust to noisy tokens. Since our forecasting model does not predict RGB, we augment the point clouds with the RGB frames.
+
+## 5. Conclusion
+
+In this work, we introduced FR3D, a 3D world model that predicts the future 3D reconstruction of a scene given a sequence of inputs. By disentangling ego-motion from scene dynamics within a common latent space, our model maintains geometric integrity even far into the future (e.g., 2 seconds). Thanks to our teacher-student strategy leveraging an off-the-shelf foundation model, FR3D shows robust zero-shot generalization without requiring large-scale training. Ultimately, FR3D introduces a new paradigm for world models to operate in the dynamic physical world.
+
+We refer to the supplementary material for additional results indoors, on static and dynamic regions, other time horizons, depth evaluation using ground-truth median scaling, further geometric analyses, failure cases, and details on runtime and efficiency.
+
+Limitations Due to a training data bias on the longitudinal motion of dynamic objects, we notice that our model struggles with objects moving laterally (e.g., cross traffic), exhibiting a tendency to estimate their motion as a mix of lateral and longitudinal motion. We show an example of this in Figure 5 of the supplementary material. This could be addressed by training on more diverse data. Additionally, we observe scale drift in FR3D’s predictions, which worsens with each rollout. We believe that additional geometric constraints could improve the predictions.
+
+## Acknowledgements
+
+This project was supported by the BMW Group. In addition, Stefano Gasperini was supported by the German Federal Ministry of Research, Technology and Space (BMFTR) through the Robotics Institute Germany (RIG).
+
+## Impact Statement
+
+This paper introduces future 3D scene prediction and reconstruction, a new 3D computer vision task that can be relevant for safety-critical applications such as autonomous navigation and real-world robotics. To tackle this task, we propose FR3D, a framework for 3D world modeling predicting a persistent 3D latent representation for future dynamic 3D reconstruction by effectively disentangling ego-motion and world-motion. We introduce a teacher-student distillation strategy to bring the up-to-present predictions of a pre-trained 3D reconstruction model to the future by learning to operate on its latent space.
+
+Despite a really data-efficient training strategy, our approach shows robust zero-shot generalization. Extensive experiments demonstrate FR3D’s strong performance for future dynamic 3D reconstruction from monocular observations across multiple datasets, even 2 seconds into the future. This may support applications such as planning, navigation, and real-world understanding.
+
+However, the method can fail under heavy distribution shift, degrade under sensor noise or adversarial inputs, and is prone to long-tail scenarios. In such cases, forecasting future ego-pose and scene structure can suffer from degradation. Furthermore, the method could be misused by overly trusting its forecasting outputs, risking unsafe deployment without more thorough validation, particularly in the described failure modes above.
+
+Our results are validated on three different autonomous driving datasets predicting future pose and depth; however, real-world deployment requires additional safety validation.
+
+To reduce risks, we recommend training and evaluating our method in more diverse environments with challenging motion patterns, implementing fail-safe mechanisms in case of deployment, and further investigating how to integrate uncertainty to model the multi-modal future distribution.
+
+## References
+
+Agarwal, N., Ali, A., Bala, M., Balaji, Y., Barker, E., Cai, T., Chattopadhyay, P., Chen, Y., Cui, Y., Ding, Y., et al. Cosmos world foundation model platform for physical ai. arXiv preprint arXiv:2501.03575, 2025.  
+Baldassarre, F., Szafraniec, M., Terver, B., Khalidov, V., Massa, F., LeCun, Y., Labatut, P., Seitzer, M., and Bo-
+
+janowski, P. Back to the features: Dino as a foundation for video world models. arXiv preprint arXiv:2507.19468, 2025.
+
+Bardes, A., Garrido, Q., Ponce, J., Chen, X., Rabbat, M., LeCun, Y., Assran, M., and Ballas, N. Revisiting feature prediction for learning visual representations from video. Transactions on Machine Learning Research (TMLR), 2024.
+
+Besnier, V. and Chen, M. A pytorch reproduction of masked generative image transformer. arXiv preprint arXiv:2310.14400, 2023.
+
+Boduljak, G., Lan, Y., Rupprecht, C., and Vedaldi, A. Vfmf: World modeling by forecasting vision foundation model features. arXiv preprint arXiv:2512.11225, 2025.
+
+Brooks, T., Peebles, B., Connor, C., Smith, M., Misra, I., Aditya, R., Radford, A., Sukthankar, R., Karpathy, A., Russell, B., et al. Video generation models as world simulators, 2024. URL https://openai.com/ind ex/video-generation-models-as-world-s imulators. Accessed: 2026-01-13.
+
+Bruce, J., Dennis, M. D., Edwards, A., Parker-Holder, J., Shi, Y., Hughes, E., Lai, M., Mavalankar, A., Steigerwald, R., Apps, C., et al. Genie: Generative interactive environments. In International Conference on Machine Learning (ICML), 2024.
+
+Caesar, H., Bankiti, V., Lang, A. H., Vora, S., Liong, V. E., Xu, Q., Krishnan, A., Pan, Y., Baldan, G., and Beijbom, O. nuscenes: A multimodal dataset for autonomous driving. In Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition (CVPR), pp. 11621–11631, 2020.
+
+Chen, X., Zhou, W., and Cheng, Z. Wildrayzer: Selfsupervised large view synthesis in dynamic environments. In Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition (CVPR), 2026.
+
+Dawid, A. and LeCun, Y. Introduction to latent variable energy-based models: a path toward autonomous machine intelligence. Journal of Statistical Mechanics: Theory and Experiment, 2024(10):104011, 2024.
+
+Dosovitskiy, A. and Koltun, V. Learning to act by predicting the future. In International Conference on Learning Representations (ICLR), 2017.
+
+Gao, S., Yang, J., Chen, L., Chitta, K., Qiu, Y., Geiger, A., Zhang, J., and Li, H. Vista: A generalizable driving world model with high fidelity and versatile controllability. Advances in Neural Information Processing Systems (NeurIPS), 37:91560–91596, 2024.
+
+Geiger, A., Lenz, P., Stiller, C., and Urtasun, R. Vision meets robotics: The kitti dataset. The International Journal of Robotics Research, 32(11):1231–1237, 2013.  
+Google DeepMind. Veo 3: A state-of-the-art video generation model. https://deepmind.google/mode ls/veo/, 2025. Accessed: 2026-01-13.  
+Guo, J., Ding, Y., Chen, X., Chen, S., Li, B., Zou, Y., Lyu, X., Tan, F., Qi, X., Li, Z., and Zhao, H. Dist-4d: Disentangled spatiotemporal diffusion with metric depth for 4d driving scene generation. Proceedings of the IEEE/CVF International Conference on Computer Vision (ICCV), 2025.  
+Ha, D. and Schmidhuber, J. Recurrent world models facilitate policy evolution. Advances in Neural Information Processing systems (NeurIPS), 31, 2018.  
+Hafner, D., Pasukonis, J., Ba, J., and Lillicrap, T. Mastering diverse domains through world models. arXiv preprint arXiv:2301.04104, 2023.  
+Hu, A., Cotter, F., Mohan, N., Gurau, C., and Kendall, A. Probabilistic future prediction for video scene understanding. In European Conference on Computer Vision (ECCV), pp. 767–785. Springer, 2020.  
+Hu, A., Murez, Z., Mohan, N., Dudas, S., Hawke, J., Badrinarayanan, V., Cipolla, R., and Kendall, A. Fiery: Future instance prediction in bird’s-eye view from surround monocular cameras. In Proceedings of the IEEE/CVF International Conference on Computer Vision (ICCV), pp. 15273–15282, 2021.  
+Hu, A., Russell, L., Yeo, H., Murez, Z., Fedoseev, G., Kendall, A., Shotton, J., and Corrado, G. GAIA-1: A generative world model for autonomous driving. arXiv preprint arXiv:2309.17080, 2023.  
+Karypidis, E., Kakogeorgiou, I., Gidaris, S., and Komodakis, N. Dino-foresight: Looking into the future with dino. Advances in Neural Information Processing systems (NeurIPS), 39, 2025a.  
+Karypidis, E., Kakogeorgiou, I., Gidaris, S., and Komodakis, N. Advancing semantic future prediction through multimodal visual sequence transformers. In Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition (CVPR), pp. 3793–3803, 2025b.  
+Keetha, N., Muller, N., Sch ¨ onberger, J., Porzi, L., Zhang, Y., ¨ Fischer, T., Knapitsch, A., Zauss, D., Weber, E., Antunes, N., et al. Mapanything: Universal feed-forward metric 3d reconstruction. International Conference on 3D Vision (3DV), 2026.  
+LeCun, Y. A path towards autonomous machine intelligence, 2022. URL https://openreview.net/pdf?i d=BZ5a1r-kVsf. Version 0.9.2, OpenReview.  
+Leroy, V., Cabon, Y., and Revaud, J. Grounding image matching in 3d with mast3r. In European Conference on Computer Vision (ECCV), pp. 71–91. Springer, 2024.  
+Oquab, M., Darcet, T., Moutakanni, T., Vo, H. V., Szafraniec, M., Khalidov, V., Fernandez, P., HAZIZA, D., Massa, F., El-Nouby, A., Assran, M., Ballas, N., Galuba, W., Howes, R., Huang, P.-Y., Li, S.-W., Misra, I., Rabbat, M., Sharma, V., Synnaeve, G., Xu, H., Jegou, H., Mairal, J., Labatut, P., Joulin, A., and Bojanowski, P. DINOv2: Learning robust visual features without supervision. Transactions on Machine Learning Research (TMLR), 2024. ISSN 2835-8856.  
+Schonberger, J. L. and Frahm, J.-M. Structure-from-motion ¨ revisited. In Proceedings of the IEEE conference on computer vision and pattern recognition (CVPR), 2016.  
+Schonberger, J. L., Zheng, E., Pollefeys, M., and Frahm, ¨ J.-M. Pixelwise view selection for unstructured multiview stereo. In European Conference on Computer Vision (ECCV), 2016.  
+Sun, P., Kretzschmar, H., Dotiwalla, X., Chouard, A., Patnaik, V., Tsui, P., Guo, J., Zhou, Y., Chai, Y., Caine, B., et al. Scalability in perception for autonomous driving: Waymo open dataset. In Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition (CVPR), pp. 2446–2454, 2020.  
+Wang, H. and Agapito, L. 3d reconstruction with spatial memory. In International Conference on 3D Vision (3DV), 2025.  
+Wang, J., Chen, M., Karaev, N., Vedaldi, A., Rupprecht, C., and Novotny, D. Vggt: Visual geometry grounded transformer. In Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition (CVPR), pp. 5294–5306, 2025a.  
+Wang, Q., Zhang, Y., Holynski, A., Efros, A. A., and Kanazawa, A. Continuous 3d perception model with persistent state. In Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition (CVPR), pp. 10510–10522, 2025b.  
+Wang, S., Leroy, V., Cabon, Y., Chidlovskii, B., and Revaud, J. Dust3r: Geometric 3d vision made easy. In Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition (CVPR), pp. 20697–20709, 2024a.  
+Wang, X., Zhu, Z., Huang, G., Chen, X., Zhu, J., and Lu, J. DriveDreamer: Towards real-world-drive world models for autonomous driving. In European Conference on Computer Vision (ECCV), pp. 55–72. Springer, 2024b.  
+Xiao, Y., Wang, Q., Zhang, S., Xue, N., Peng, S., Shen, Y., and Zhou, X. Spatialtracker: Tracking any 2d pixels in 3d space. In Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition (CVPR), pp. 20406–20417, 2024.  
+Yang, Y., Mei, J., Ma, Y., Du, S., Chen, W., Qian, Y., Feng, Y., and Liu, Y. Driving in the occupancy world: Visioncentric 4d occupancy forecasting and planning via world models for autonomous driving. In Proceedings of the AAAI Conference on Artificial Intelligence, volume 39, pp. 9327–9335, 2025.  
+Zhang, L., Xiong, Y., Yang, Z., Casas, S., Hu, R., and Urtasun, R. Copilot4d: Learning unsupervised world models for autonomous driving via discrete diffusion. In International Conference on Learning Representations (ICLR), 2024.  
+Zheng, W., Chen, W., Huang, Y., Zhang, B., Duan, Y., and Lu, J. OccWorld: Learning a 3d occupancy world model for autonomous driving. In European Conference on Computer Vision (ECCV), pp. 55–72. Springer, 2024.  
+Zhou, G., Pan, H., LeCun, Y., and Pinto, L. Dino-wm: World models on pre-trained visual features enable zeroshot planning. In International Conference on Machine Learning (ICML), 2025.
+
+## A. Additional Quantitative Results
+
+## A.1. Static and Dynamic Scene Predictions
+
+In Tables 7 and 8, we evaluate FR3D’s forecasting performance on static and dynamic regions of the Waymo dataset (Sun et al., 2020) separately. This is interesting as it shows the impact of our disentanglement of ego-motion and world-motion. Thanks to that, static regions are anchored in 3D space, allowing them to be estimated significantly more reliably than in our CUT3R-Foresight baseline, even 2 seconds into the future. In particular, at 2 seconds, our FR3D delivers depth estimates comparable to our CUT3R-Foresight baseline at 1 second. Instead, dynamic regions remain challenging and only marginally improve thanks to FR3D, leaving room for future work. These experiments were done at low resolution, i.e., 224 × 224.
+
+Table 7. Quantitative evaluation of our approach FR3D on depth forecasting for static regions on the Waymo Open Dataset (Sun et al., 2020). We forecast depth for the following time horizons: 0.2s, 0.6s, 1.0s and 2.0s. We evaluate at a resolution of 224 × 224.
+
+<table><tr><td rowspan="2">METHOD</td><td colspan="2">T+0.2S</td><td colspan="2">T+0.6S</td><td colspan="2">T+1.0S</td><td colspan="2">T+2.0S</td></tr><tr><td>AbsR ↓</td><td> $\delta_1 \uparrow$ </td><td>AbsR ↓</td><td> $\delta_1 \uparrow$ </td><td>AbsR ↓</td><td> $\delta_1 \uparrow$ </td><td>AbsR ↓</td><td> $\delta_1 \uparrow$ </td></tr><tr><td>CUT3R (Oracle)</td><td>0.131</td><td>0.826</td><td>0.132</td><td>0.825</td><td>0.133</td><td>0.828</td><td>0.132</td><td>0.825</td></tr><tr><td>Copy Last</td><td>0.148</td><td>0.798</td><td>0.166</td><td>0.764</td><td>0.179</td><td>0.738</td><td>0.200</td><td>0.699</td></tr><tr><td>CUT3R-Foresight</td><td>0.136</td><td>0.821</td><td>0.138</td><td>0.816</td><td>0.148</td><td>0.795</td><td>0.170</td><td>0.751</td></tr><tr><td>FR3D</td><td>0.132</td><td>0.828</td><td>0.131</td><td>0.824</td><td>0.133</td><td>0.817</td><td>0.145</td><td>0.794</td></tr></table>
+
+Table 8. Quantitative evaluation of our approach FR3D on depth forecasting for dynamic regions on the Waymo Open Dataset (Sun et al., 2020). We forecast depth for the following time horizons: 0.2s, 0.6s, 1.0s and 2.0s. We evaluate at a resolution of 224 × 224.
+
+<table><tr><td rowspan="2">METHOD</td><td colspan="2">T+0.2S</td><td colspan="2">T+0.6S</td><td colspan="2">T+1.0S</td><td colspan="2">T+2.0S</td></tr><tr><td>AbsR ↓</td><td> $\delta_1 \uparrow$ </td><td>AbsR ↓</td><td> $\delta_1 \uparrow$ </td><td>AbsR ↓</td><td> $\delta_1 \uparrow$ </td><td>AbsR ↓</td><td> $\delta_1 \uparrow$ </td></tr><tr><td>CUT3R (Oracle)</td><td>0.165</td><td>0.778</td><td>0.165</td><td>0.778</td><td>0.164</td><td>0.780</td><td>0.164</td><td>0.782</td></tr><tr><td>Copy Last</td><td>0.216</td><td>0.708</td><td>0.290</td><td>0.611</td><td>0.329</td><td>0.563</td><td>0.365</td><td>0.512</td></tr><tr><td>CUT3R-Foresight</td><td>0.177</td><td>0.760</td><td>0.229</td><td>0.688</td><td>0.285</td><td>0.612</td><td>0.353</td><td>0.521</td></tr><tr><td>FR3D</td><td>0.176</td><td>0.761</td><td>0.220</td><td>0.698</td><td>0.264</td><td>0.636</td><td>0.337</td><td>0.542</td></tr></table>
+
+## A.2. Different Time Horizons
+
+Table 9. Quantitative evaluation of our approach FR3D on shorter time horizons on the Waymo Open Dataset (Sun et al., 2020). We report 0.2s and 0.6s as well as 0.6s in the future for depth and pose evaluation, respectively.
+
+<table><tr><td rowspan="3">METHOD</td><td colspan="4">DEPTH</td><td colspan="3">CAMERA POSE</td></tr><tr><td colspan="2">T+0.2s</td><td colspan="2">T+0.6s</td><td colspan="3">T+0.6s</td></tr><tr><td>AbsR ↓</td><td> $\delta_1 \uparrow$ </td><td>AbsR ↓</td><td> $\delta_1 \uparrow$ </td><td>ATE ↓</td><td> $RPE_t \downarrow$ </td><td> $RPE_R \downarrow$ </td></tr><tr><td>Oracle @224</td><td>0.140</td><td>0.817</td><td>0.137</td><td>0.82</td><td>0.092</td><td>0.204</td><td>0.292</td></tr><tr><td>Copy Last @224</td><td>0.153</td><td>0.792</td><td>0.175</td><td>0.751</td><td>-</td><td>-</td><td>-</td></tr><tr><td>CUT3R-Foresight +  $M_z$ @224</td><td>0.138</td><td>0.817</td><td>0.144</td><td>0.807</td><td>0.284</td><td>0.471</td><td>0.439</td></tr><tr><td>FR3D @224</td><td>0.135</td><td>0.823</td><td>0.137</td><td>0.815</td><td>0.091</td><td>0.190</td><td>0.435</td></tr><tr><td>Oracle @512</td><td>0.107</td><td>0.884</td><td>0.106</td><td>0.886</td><td>0.054</td><td>0.111</td><td>0.196</td></tr><tr><td>Copy-Last @512</td><td>0.126</td><td>0.851</td><td>0.154</td><td>0.802</td><td>-</td><td>-</td><td>-</td></tr><tr><td>FR3D@512</td><td>0.110</td><td>0.879</td><td>0.121</td><td>0.858</td><td>0.065</td><td>0.131</td><td>0.370</td></tr></table>
+
+We report additional time horizons for forecasting depth and pose in our zero-shot setting on KITTI (Geiger et al., 2013) and nuScenes (Caesar et al., 2020). These results align with those in the main paper, with the baseline degrading faster than our
+
+model over larger times.
+
+## A.3. Depth Evaluation using Ground-Truth Median Scaling
+
+Table 10. Zero-shot depth comparison on KITTI (Geiger et al., 2013) and nuScenes (Caesar et al., 2020). We evaluate KITTI at a resolution of 512 × 144 and nuScenes at 512 × 288 using ground-truth median scaling.
+
+<table><tr><td rowspan="3">METHOD</td><td colspan="6">KITTI</td><td colspan="6">nuScenes</td></tr><tr><td colspan="2">T+0.6S</td><td colspan="2">T+1.0S</td><td colspan="2">T+2.0S</td><td colspan="2">T+0.75S</td><td colspan="2">T+1.25S</td><td colspan="2">T+2.5S</td></tr><tr><td>AbsR ↓</td><td> $\delta_1 \uparrow$ </td><td>AbsR ↓</td><td> $\delta_1 \uparrow$ </td><td>AbsR ↓</td><td> $\delta_1$ </td><td>AbsR ↓</td><td> $\delta_1 \uparrow$ </td><td>AbsR ↓</td><td> $\delta_1 \uparrow$ </td><td>AbsR ↓</td><td> $\delta_1 \uparrow$ </td></tr><tr><td>CUT3R (Oracle)</td><td>0.090</td><td>0.911</td><td>0.090</td><td>0.913</td><td>0.089</td><td>0.918</td><td>0.153</td><td>0.781</td><td>0.153</td><td>0.780</td><td>0.156</td><td>0.774</td></tr><tr><td>Copy Last</td><td>0.150</td><td>0.815</td><td>0.176</td><td>0.772</td><td>0.206</td><td>0.724</td><td>0.202</td><td>0.696</td><td>0.221</td><td>0.666</td><td>0.251</td><td>0.623</td></tr><tr><td>DINO-Foresight</td><td>0.136</td><td>0.843</td><td>0.170</td><td>0.775</td><td>0.229</td><td>0.688</td><td>0.244</td><td>0.649</td><td>0.269</td><td>0.601</td><td>0.348</td><td>0.498</td></tr><tr><td>CUT3R-Foresight</td><td>0.134</td><td>0.843</td><td>0.161</td><td>0.793</td><td>0.208</td><td>0.709</td><td>0.180</td><td>0.729</td><td>0.206</td><td>0.683</td><td>0.253</td><td>0.614</td></tr><tr><td>FR3D</td><td>0.122</td><td>0.863</td><td>0.142</td><td>0.832</td><td>0.195</td><td>0.738</td><td>0.176</td><td>0.734</td><td>0.193</td><td>0.703</td><td>0.227</td><td>0.645</td></tr></table>
+
+Table 11. Depth ablation study of our approach FR3D on the Waymo Open Dataset (Sun et al., 2020) using ground-truth median scaling. A0-A6 use a resolution of 224 × 224 while A7-A9 use 512 × 336.
+
+<table><tr><td rowspan="2">ID</td><td rowspan="2">METHOD</td><td colspan="2">T+0.2S</td><td colspan="2">T+0.6S</td><td colspan="2">T+1.0S</td><td colspan="2">T+2.0S</td></tr><tr><td>AbsR ↓</td><td> $\delta_1 \uparrow$ </td><td>AbsR ↓</td><td> $\delta_1 \uparrow$ </td><td>AbsR ↓</td><td> $\delta_1 \uparrow$ </td><td>AbsR ↓</td><td> $\delta_1 \uparrow$ </td></tr><tr><td>A0</td><td>CUT3R (Oracle) @224</td><td>0.139</td><td>0.802</td><td>0.137</td><td>0.806</td><td>0.136</td><td>0.809</td><td>0.133</td><td>0.813</td></tr><tr><td>A1</td><td>Copy Last @224</td><td>0.154</td><td>0.777</td><td>0.179</td><td>0.732</td><td>0.196</td><td>0.701</td><td>0.219</td><td>0.657</td></tr><tr><td>A2/A3</td><td>CUT3R-Foresight @224</td><td>0.139</td><td>0.802</td><td>0.149</td><td>0.785</td><td>0.166</td><td>0.754</td><td>0.196</td><td>0.697</td></tr><tr><td>A4</td><td>A3 + autoregressive</td><td>0.140</td><td>0.801</td><td>0.148</td><td>0.786</td><td>0.164</td><td>0.759</td><td>0.192</td><td>0.709</td></tr><tr><td>A5</td><td>A3 + info share</td><td>0.139</td><td>0.803</td><td>0.145</td><td>0.794</td><td>0.159</td><td>0.770</td><td>0.188</td><td>0.722</td></tr><tr><td>A6</td><td>A4 + A5 = FR3D @224</td><td>0.136</td><td>0.808</td><td>0.142</td><td>0.794</td><td>0.151</td><td>0.778</td><td>0.175</td><td>0.735</td></tr><tr><td>A7</td><td>CUT3R (Oracle) @512</td><td>0.109</td><td>0.870</td><td>0.108</td><td>0.872</td><td>0.107</td><td>0.872</td><td>0.107</td><td>0.875</td></tr><tr><td>A8</td><td>Copy Last @512</td><td>0.130</td><td>0.836</td><td>0.161</td><td>0.781</td><td>0.181</td><td>0.745</td><td>0.208</td><td>0.693</td></tr><tr><td>A9</td><td>FR3D @512</td><td>0.113</td><td>0.864</td><td>0.127</td><td>0.836</td><td>0.138</td><td>0.814</td><td>0.166</td><td>0.766</td></tr></table>
+
+Table 12. Quantitative evaluation of FR3D on depth forecasting for static regions on the Waymo Open Dataset (Sun et al., 2020) using ground-truth median scaling. We forecast depth for the time horizons: 0.2s, 0.6s, 1.0s, 2.0s. We evaluate at a resolution of 224 × 224.
+
+<table><tr><td rowspan="2">METHOD</td><td colspan="2">T+0.2S</td><td colspan="2">T+0.6S</td><td colspan="2">T+1.0S</td><td colspan="2">T+2.0S</td></tr><tr><td>AbsR ↓</td><td> $\delta_1 \uparrow$ </td><td>AbsR ↓</td><td> $\delta_1 \uparrow$ </td><td>AbsR ↓</td><td> $\delta_1 \uparrow$ </td><td>AbsR ↓</td><td> $\delta_1 \uparrow$ </td></tr><tr><td>CUT3R (Oracle)</td><td>0.137</td><td>0.805</td><td>0.135</td><td>0.809</td><td>0.133</td><td>0.812</td><td>0.131</td><td>0.817</td></tr><tr><td>Copy Last</td><td>0.149</td><td>0.784</td><td>0.171</td><td>0.742</td><td>0.186</td><td>0.713</td><td>0.208</td><td>0.669</td></tr><tr><td>CUT3R-Foresight</td><td>0.136</td><td>0.807</td><td>0.143</td><td>0.794</td><td>0.157</td><td>0.766</td><td>0.185</td><td>0.712</td></tr><tr><td>FR3D</td><td>0.132</td><td>0.813</td><td>0.136</td><td>0.802</td><td>0.143</td><td>0.789</td><td>0.164</td><td>0.750</td></tr></table>
+
+Table 13. Quantitative evaluation of FR3D on depth forecasting for dynamic regions on the Waymo Open Dataset (Sun et al., 2020) using ground-truth median scaling. We forecast depth for the time horizons: 0.2s, 0.6s, 1.0s, 2.0s. We evaluate at a resolution of 224 × 224.
+
+<table><tr><td rowspan="2">METHOD</td><td colspan="2">T+0.2S</td><td colspan="2">T+0.6S</td><td colspan="2">T+1.0S</td><td colspan="2">T+2.0S</td></tr><tr><td>AbsR ↓</td><td> $\delta_1 \uparrow$ </td><td>AbsR ↓</td><td> $\delta_1 \uparrow$ </td><td>AbsR ↓</td><td> $\delta_1 \uparrow$ </td><td>AbsR ↓</td><td> $\delta_1 \uparrow$ </td></tr><tr><td>CUT3R (Oracle)</td><td>0.170</td><td>0.759</td><td>0.171</td><td>0.759</td><td>0.167</td><td>0.765</td><td>0.167</td><td>0.767</td></tr><tr><td>Copy Last</td><td>0.220</td><td>0.690</td><td>0.297</td><td>0.590</td><td>0.334</td><td>0.540</td><td>0.369</td><td>0.490</td></tr><tr><td>CUT3R-Foresight</td><td>0.181</td><td>0.742</td><td>0.233</td><td>0.669</td><td>0.286</td><td>0.590</td><td>0.349</td><td>0.502</td></tr><tr><td>FR3D</td><td>0.179</td><td>0.745</td><td>0.222</td><td>0.683</td><td>0.261</td><td>0.622</td><td>0.327</td><td>0.526</td></tr></table>
+
+Table 10, 11, 12, and 13 report depth evaluation similar to Table 1, 3 (left part), 7, and 8 respectively but using ground-truth median scaling to align predicted and ground-truth depth for evaluation. The reported results align with those in the main paper, with the baselines degrading faster than our model over longer time horizons. For all evaluations, we included our oracle CUT3R (Wang et al., 2025b) as reference.
+
+Table 10 evaluates FR3D’s zero-shot performance on depth forecasting on the KITTI (Geiger et al., 2013) and nuScenes (Caesar et al., 2020) dataset against three baselines, Copy Last, DINO-Foresight (Karypidis et al., 2025a), and CUT3R-Foresight. FR3D outperforms all of them at all time horizons across both datasets.
+
+Table 11 shows our ablation study regarding depth prediction accuracy on the Waymo Open dataset (Sun et al., 2020). A0 - A6 operate on a resolution of $2 2 4 \times 2 2 4$ , while A7 - A9 use $5 1 2 \times 3 3 6$ . For both resolutions, the Copy Last baseline (A1) performs the worst, strongly degrading with longer time horizons. Our CUT3R-Foresight baseline A2 significantly improves over A1, indicating that CUT3R’s spatial features can serve as representation space for depth forecasting. While A4 and A5 yield approximately the same performance for 0.2s as A2, autoregressive training and information sharing between pose and depth especially help for longer time horizons (i.e., 0.6s, 1.0s, and 2.0s) with information sharing being more beneficial. Combining both yields FR3D (A6) showing the strongest depth forecasting performance. Fine-tuning on higher input image resolution leads again to better performance (A9).
+
+Table 12 and 13 evaluate FR3D’s depth forecasting performance for static and dynamic regions against Copy Last and CUT3R-Foresight on the Waymo Open dataset (Sun et al., 2020). FR3D outperforms both of them being especially strong for static regions supporting our assumption that sharing information between pose and depth primarily benefits the depth prediction of static scene parts. Although FR3D outperforms the baselines in depth forecasting for dynamic regions, accurately modeling scene dynamics remains challenging.
+
+## B. Additional Qualitative Results
+
+![](images/9fb9a69b13b9277b0fccfc276834eb5370811f408e350ccf7b5e7ef0aff90d61.jpg)
+
+<details>
+<summary>text_image</summary>
+
+zero-shot on nuScenes
+input context
+prediction [ours]
+oracle
+oracle context
+</details>
+
+Figure 4. Zero-shot prediction of our model on the nuScenes dataset. The example shows a turning scenario.
+
+In Figure 4, we show an interesting qualitative result with a zero-shot prediction of our model on the nuScenes (Caesar et al., 2020) dataset. The scene exhibits a left-hand turn. In the context, it can be seen that the turn has just started (visible in the camera poses). Our model correctly predicts a smooth completion of the turn throughout the rollout (blue cameras). Remarkably, the pose prediction of the oracle (right) is more jittery than that of our model, although our model is trained to mimic the oracle predictions. However, we can explain the improvement as our model learns on noisy tokens thanks to our autoregressive strategy. This makes it robust against the oracle tokens, too.
+
+In Figure 5, we show two failure cases of our model on Waymo scenes. As discussed in the limitations (Section 5), our model has a bias toward longitudinal motion and struggles with lateral motion. As a result, it combines lateral and longitudinal motion when lateral motion occurs. More diverse training data should mitigate this, but it is out of the scope of this work.
+
+## C. Scale Drift
+
+We further investigate to which extend our model is prone to scale drift. Table 14 shows the average relative depth scale, comparing FR3D with its oracle. FR3D shows depth drift, acting as a “persistent 3D world model up to scale” (persistent here means in a coherent/joint coordinate system over time). Considering that FR3D was trained on a single dataset only while CUT3R utilized 32 datasets (Wang et al., 2025b), we believe that extended training with more data diversity could mitigate it. Another option could be introducing a scale token to decouple scale prediction from spatial tokens (similar to MapAnything (Keetha et al., 2026)). Please note that CUT3R has access to future frames for depth prediction, while FR3D forecasts depth.
+
+![](images/e30a62adfa095f7863f962c76251993cc72103f08479be2e0e29d61cc6d516b9.jpg)  
+Figure 5. Failure cases from two scenes of the Waymo dataset, where our model mixes longitudinal and lateral motion for the dynamic objects. In both cases, the ego vehicle is slowing down approaching an intersection. Context and rollouts are displayed together in the 3D reconstruction. CUT3R’s reconstruction on the full sequence is included as reference in the bottom row.
+
+Table 14. Evaluation on scale drift of our approach FR3D on depth forecasting on the Waymo Open Dataset (Sun et al., 2020). We forecast depth for the following time horizons: 0.2s, 0.6s, 1.0s and 2.0s. We compare against CUT3R’s relative depth scale for the respective time steps.
+
+<table><tr><td>METHOD</td><td>T+0.2s</td><td>T+0.6s</td><td>T+1.0s</td><td>T+2.0s</td></tr><tr><td>CUT3R (Oracle)</td><td>1.67</td><td>1.68</td><td>1.68</td><td>1.67</td></tr><tr><td>FR3D</td><td>1.54</td><td>1.42</td><td>1.31</td><td>1.18</td></tr></table>
+
+## D. Shape Stability
+
+Additionally, we conducted an experiment to assess the shape stability of dynamic objects for 4D consistency evaluation. First, we extract the predicted 3D point cloud of each dynamic object at time and use 4D consistent instance labels from the Waymo val split. Both are transformed into the same coordinate frame by compensating the ego-motion given predicted ego poses. Moreover, we remove object motion, by estimating the rigid transformation between both object point clouds using ICP. Then, we remove monocular scale drift by estimating a single global scale correction from static background pixels. Finally, we measure the remaining difference between both aligned point clouds using symmetric Chamfer distance.
+
+In Table 15 compare the shape stability of CUT3R’s and FR3D’s dynamic reconstruction. Both methods show very similar performance, with nearly identical Chamfer distances across all time steps. The error remains stable as the temporal gap increases, indicating consistent shape preservation over time.
+
+Table 15. Ablation on shape stability comparing CUT3R and FR3D on the Waymo val split (Sun et al., 2020) using symmetric Chamfer distance.
+
+<table><tr><td>METHOD</td><td>T+0.2S → T+0.4S</td><td>T+0.4S → T+0.6S</td><td>T+0.8S → T+1.0S</td></tr><tr><td>CUT3R</td><td>0.148</td><td>0.143</td><td>0.146</td></tr><tr><td>FR3D</td><td>0.157</td><td>0.141</td><td>0.141</td></tr></table>
+
+## E. Beyond Driving
+
+Our paper mainly focuses on the driving domain due to its structured nature. Nevertheless, we conducted an experiment where we fine-tune FR3D on Dynamic-RE10K (Chen et al., 2026), a large-scale real-world, dynamic, indoor dataset. Since Dynamic-RE10K does not provide GT depth and pose, we follow DINO-Foresight and evaluate against our oracle CUT3R (Wang et al., 2025b). We report rollouts (i.e., t+k) in frames rather than seconds for Dynamic-RE10K, since the frame rate varies across scenes. As shown in Table 16, FR3D outperforms the baseline for depth and closely follows CUT3R’s trajectory.
+
+Table 16. Quantitative evaluation on the Dynamic-RE10K dataset (Chen et al., 2026).
+
+<table><tr><td rowspan="2">METHOD</td><td colspan="2">T+1</td><td colspan="2">T+3</td><td colspan="2">T+5</td></tr><tr><td>AbsR ↓</td><td> $\delta_1 \uparrow$ </td><td>AbsR ↓</td><td> $\delta_1 \uparrow$ </td><td>AbsR ↓</td><td> $\delta_1 \uparrow$ </td></tr><tr><td>Copy Last</td><td>0.03</td><td>0.98</td><td>0.08</td><td>0.91</td><td>0.12</td><td>0.86</td></tr><tr><td>FR3D (finetuned)</td><td>0.02</td><td>0.99</td><td>0.06</td><td>0.96</td><td>0.10</td><td>0.90</td></tr><tr><td rowspan="2">METHOD</td><td colspan="3">T+3</td><td colspan="3">T+5</td></tr><tr><td>ATE ↓</td><td> $RPE_t \downarrow$ </td><td> $RPE_R \downarrow$ </td><td>ATE ↓</td><td> $RPE_t \downarrow$ </td><td> $RPE_R \downarrow$ </td></tr><tr><td>FR3D (finetuned)</td><td>0.01</td><td>0.03</td><td>0.51</td><td>0.02</td><td>0.04</td><td>0.63</td></tr></table>
+
+## F. Details on the Masked Transformer Architecture
+
+Both the spatial and pose forecasting modules follow a masked-token prediction formulation inspired by DINO-Foresight (Karypidis et al., 2025a). During training, tokens corresponding to future timesteps are replaced by learned mask tokens and reconstructed from context tokens in a single forward pass (i.e., prediction is not iterative MaskGIT-style refinement). The spatial masked transformer operates on a spatio-temporal grid of state-enriched spatial tokens with learned 2D spatial positional encodings and temporal positional encodings, and each layer consists of temporal self-attention across frames followed by spatial self-attention within each frame. The pose masked transformer processes pose tokens using temporal self-attention with learned temporal positional encodings. The two streams are coupled via bidirectional cross-attention layers inserted at multiple depths, allowing spatial tokens to condition on predicted ego-motion and pose tokens to condition on scene geometry.
+
+## G. Runtime & Efficiency
+
+As shown in Table 17, we conducted a profiling of peak VRAM and inference latency comparison of FR3D against Vista (Gao et al., 2024), a recent 2D video world model for driving scenes. We report inference latency when forecasting 2 seconds into the future using 4 context frames.
+
+Table 17. Evaluation of runtime and efficiency of FR3D compared to Vista (Gao et al., 2024). We report peak VRAM and inference latency.
+
+<table><tr><td>METHOD</td><td>VRAM (GB)</td><td>Latency (s)</td></tr><tr><td>Vista</td><td>11.60</td><td>24.57</td></tr><tr><td>FR3D</td><td>5.75</td><td>0.85</td></tr></table>
+
+Furthermore, Table 18 shows a detailed profiling of the latency of FR3D’s individual key steps.
+
+Table 18. Latency profiling of FR3D’s individual key steps. We report peak VRAM and inference latency.
+
+<table><tr><td>MODULE</td><td>Latency (s)</td></tr><tr><td>Context Step (CUT3R)</td><td>0.044</td></tr><tr><td>Forecast Step (FR3D)</td><td>0.038</td></tr><tr><td>Head Prediction Step (CUT3R or FR3D)</td><td>0.017</td></tr><tr><td>Context for 4 frames (CUT3R)</td><td>0.175</td></tr><tr><td>Forecast for 10 frames (FR3D)</td><td>0.545</td></tr><tr><td>Total (FR3D)</td><td>0.854</td></tr></table>
+
+We used a NVIDIA A100-SXM4-40GB GPU for all profiling experiments.
+
+## H. Notation Table
+
+For clarity, Table 19 summarizes the main symbols used throughout the method section, including the notation for observations, latent 3D scene tokens, forecasting modules, and training objectives.
+
+Table 19. Notation used throughout the paper and supplementary material.
+
+<table><tr><td>Symbol</td><td>Meaning</td></tr><tr><td colspan="2">General world-model notation</td></tr><tr><td>t</td><td>Discrete time step</td></tr><tr><td>xt</td><td>Observation at time t</td></tr><tr><td>at</td><td>Action taken at time t</td></tr><tr><td>st</td><td>System state at time t</td></tr><tr><td>ht</td><td>Encoded observation at time t</td></tr><tr><td>ut</td><td>Latent variable representing unobserved or unknown factors</td></tr><tr><td colspan="2">Input and reconstruction notation</td></tr><tr><td>I</td><td>Sequence of context images</td></tr><tr><td>It</td><td>Context image at time t</td></tr><tr><td>N</td><td>Number of context images</td></tr><tr><td>H, W</td><td>Input image height and width</td></tr><tr><td>R</td><td>Pre-trained feed-forward 3D reconstruction model</td></tr><tr><td>E</td><td>Pre-trained image encoder of R</td></tr><tr><td>F</td><td>Sequence of per-frame image tokens</td></tr><tr><td>Ft</td><td>Image tokens at time t</td></tr><tr><td>D</td><td>Image-token feature dimension</td></tr><tr><td>HF, WF</td><td>Spatial resolution of the image-token map</td></tr><tr><td>@</td><td>Input image resolution at which a model is evaluated, e.g. CUT3R (Oracle) @224</td></tr><tr><td colspan="2">Latent 3D scene forecasting notation</td></tr><tr><td>DF</td><td>Transformer decoder operating on image tokens</td></tr><tr><td>Ds</td><td>Transformer decoder operating on state tokens</td></tr><tr><td>Ft&#x27;</td><td>State-enriched spatial image tokens at time t</td></tr><tr><td>zt&#x27;</td><td>State-enriched pose token at time t</td></tr><tr><td>st-1, st</td><td>Previous and updated recurrent scene states</td></tr><tr><td>()</td><td>Cross-attention interaction between transformer modules</td></tr><tr><td>Mz</td><td>Pose Masked Transformer</td></tr><tr><td>MF</td><td>Spatial Masked Transformer</td></tr><tr><td>ztN+1</td><td>Predicted next pose token</td></tr><tr><td>FtN+1</td><td>Predicted next spatial tokens</td></tr><tr><td>ztN+1</td><td>Teacher pose token at time tN+1</td></tr><tr><td>FtN+1</td><td>Teacher spatial tokens at time tN+1</td></tr><tr><td colspan="2">Training notation</td></tr><tr><td>S</td><td>Set of training sequences</td></tr><tr><td>Ω</td><td>Set of spatial token locations</td></tr><tr><td>p</td><td>Spatial token location, p ∈ Ω</td></tr><tr><td>l</td><td>Smooth L1 loss</td></tr><tr><td>Lpose</td><td>Pose-token distillation loss</td></tr><tr><td>Lspatial</td><td>Spatial-token distillation loss</td></tr><tr><td>L</td><td>Final weighted training objective</td></tr><tr><td>λ</td><td>Weight of the pose loss term</td></tr><tr><td>Nc</td><td>Context length used for forecasting</td></tr><tr><td>β1, β2</td><td>AdamW momentum coefficients</td></tr><tr><td>β</td><td>Smooth L1 threshold at which the loss changes between L1 and L2 behavior</td></tr><tr><td colspan="2">Fixed-camera disentanglement analysis</td></tr><tr><td>Dsource</td><td>Source depth frame</td></tr><tr><td>Dtarget</td><td>Target depth frame</td></tr><tr><td>Dt+Δ</td><td>Depth frame at time offset Δ from t</td></tr><tr><td>M</td><td>Motion mask used to separate static and dynamic regions</td></tr><tr><td>Msource</td><td>Ground-truth motion mask of the source frame</td></tr><tr><td>Mtarget</td><td>Ground-truth motion mask of the target frame</td></tr><tr><td>Msource ∪ Mtarget</td><td>Union of source and target motion masks</td></tr></table>

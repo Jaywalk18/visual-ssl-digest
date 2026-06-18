@@ -14,30 +14,30 @@
     <a class="masthead-title" href="index.html">通用视觉自监督研究报</a>
     <div class="masthead-kicker">A Daily Digest of Visual Self-Supervised Learning</div>
     <div class="masthead-meta">
-      <span>2026-06-17</span>
+      <span>2026-06-18</span>
       <span>图像表征 · VFM · JEPA · 视频预训练</span>
     </div>
   </header>
   <nav class="site-nav" aria-label="主导航">
     <a class="nav-link active" href="index.html">头版</a>
-<a class="nav-link" href="issues/2026-06-17.html">今日速递</a>
+<a class="nav-link" href="issues/2026-06-18.html">今日速递</a>
 <a class="nav-link" href="pages/catalog.html">论文目录</a>
 <a class="nav-link" href="pages/timeline.html">时间线</a>
 <span class="nav-streak" title="连续追踪天数"><svg viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><path d="M8 0c.7 2.5-1.2 3.7-2 5-1 1.6-1 4 .8 4.8C6.4 8.5 7.4 7.8 8 7c.3 1.3-.4 2 .9 3 .9.7 1.3 1.6 1.1 2.6C9.7 14.6 8.9 16 6.8 16 4.6 16 3 14.3 3 12c0-3.3 2.6-4.8 2.4-8C6.9 4.6 8.4 5 8 0z"/></svg> 连续 <b data-streak>0</b> 天</span>
   </nav>
   <main><section class="hero-grid">
   <article class="lead-story">
-    <div class="kicker">今日主线 · arXiv 新增 + video SSL / JEPA-adjacent predictive representation</div>
-    <h1>You Don&#x27;t Need Strong Assumptions：几乎正面挑战 augmentation/masking/cropping 假设，用视频 temporal difference 学视觉表征</h1>
-    <p class="dek">几乎正面挑战 augmentation/masking/cropping 假设，用视频 temporal difference 学视觉表征。</p>
-    <figure class="hero-figure"><img src="assets/mineru/2606.15956/images/fecd2661dea94c99b09330a069928295ea038276c025a7e4829edc3710b5f33d.jpg" alt="You Don&#x27;t Need Strong Assumptions figure"><figcaption>这张图概括 You Don&#x27;t Need Strong Assumptions 的整体方法流程。阅读时先看模块之间传递的训练信号，再看作者如何把目标拆成可优化的子问题。</figcaption></figure>
-    <div class="paper-actions"><a href="issues/2026-06-17.html">阅读 6 月 17 日速递</a><a href="papers/2606.15956.html">打开主文页</a></div>
+    <div class="kicker">今日主线 · arXiv 新增 + SSL regularizer / JEPA collapse prevention</div>
+    <h1>Expanding SPHERE-JEPA：把 SPHERE/LeJEPA 的随机 sliced uniformity 正则改成确定性 hypersphere divergence，是今天最贴近通用 SSL 训练目标的条目</h1>
+    <p class="dek">把 SPHERE/LeJEPA 的随机 sliced uniformity 正则改成确定性 hypersphere divergence，是今天最贴近通用 SSL 训练目标的条目。</p>
+    <figure class="hero-figure"><img src="assets/mineru/2606.17603/images/b1a4e30f82884ffec44f87ad2f9440a665f584d6e56b5c1e87353072034553ff.jpg" alt="Expanding SPHERE-JEPA figure"><figcaption>这张图/表用于判断 Expanding SPHERE-JEPA 的实验收益来自哪里。重点看替换、消融或跨模型设置下趋势是否一致，而不是只看单个最高分。</figcaption></figure>
+    <div class="paper-actions"><a href="issues/2026-06-18.html">阅读 6 月 18 日速递</a><a href="papers/2606.17603.html">打开主文页</a></div>
   </article>
   <aside class="issue-brief">
     <div class="prog-widget">
       <div class="pw-t">我的进度</div>
       <div class="prog-top">
-        <div class="ringwrap" data-ring data-ids="2606.15956,2606.14765,2606.15553,2606.15527,2606.15765,2606.15134,2606.16193,2606.14958,2606.16353,2606.16122,2606.15796,2606.16586,2606.14795"></div>
+        <div class="ringwrap" data-ring data-ids="2606.17603,2606.18249,2606.17678,2606.17590,2603.22281,2606.17389,2606.18250,2605.20708,2606.17539,2606.17798,2602.06806,2606.17257,2606.14782,2606.17815"></div>
         <div class="prog-meta">
           <div class="pm-t">今日精读进度</div>
           <div class="pm-s">累计已读 <b data-readcount>0</b> 篇</div>
@@ -49,87 +49,87 @@
       <div class="badges" data-badges></div>
     </div>
     <h2>快速摘要</h2>
-    <ul><li><b>今日最值得看</b><span>TDV、MoFore、Drift-RAE。前两篇把视频时间结构作为 SSL 监督主线，第三篇继续推进 RAE/DiT 表征空间蒸馏。</span></li><li><b>建议精读顺序</b><span>TDV -&gt; MoFore -&gt; Drift-RAE -&gt; SSync -&gt; SAGA -&gt; TIGER/CSAE；视频 benchmark 与 VLM grounding 读第二轮。</span></li><li><b>新增/更新/过滤数量</b><span>arXiv Tuesday, 16 June 2026 批次：7 个分类页合计 750 个去重 listing entry；主索引 13 篇，均为 seen-file 未记录的 arXiv 新增/交叉条目；会议状态合并 1 个主项，另观察 1 个 ICME spotlight 降级项；score&gt;=20 的关键词候选 121 条，过滤/降级 108 条。</span></li><li><b>主要判断</b><span>今天主线从“更强增强/更大 mask”转向 视频 temporal difference / latent forecasting、RAE latent geometry、object-centric video learning、MLLM-derived visual supervision。</span></li><li><b>来源状态</b><span>arXiv 官方 new 页面可访问并显示 Tuesday, 16 June 2026；export API 大批量查询出现 429/503，因此以官方列表页和单篇 abs 页直查为准。</span></li></ul>
+    <ul><li><b>今日最值得看</b><span>Expanding SPHERE-JEPA、UniAR、See First / VEPA。第一篇直接改写 JEPA/SSL 的 hypersphere regularization，后两篇分别推进共享视觉 tokenizer 和证据先行的 VLM 对齐。</span></li><li><b>建议精读顺序</b><span>SPHERE-JEPA -&gt; UniAR -&gt; VEPA -&gt; TivTok/ThinkJEPA -&gt; Visuals Lie/FR3D/DAR；P3 和扫读项放到最后看风险、压缩和安全含义。</span></li><li><b>新增/更新/过滤数量</b><span>7 个 arXiv 官方分类页合计 1046 个 listing entry，按 arXiv ID 去重后 718 篇；主索引 14 篇，其中 arXiv 新增 10、replacement/状态更新 4；score&gt;=12 的候选 81 条，过滤/降级 69 条（另有 2 篇人工从低分候选提升）。</span></li><li><b>主要判断</b><span>今天主线不是单一大模型，而是 训练目标正则化、视觉 tokenizer 统一、视觉证据绑定、视频 token/记忆压缩、DiT/扩散表征解释 五条并行推进。</span></li><li><b>会议/状态</b><span>ICML 2026 官方 Downloads 确认 UniAR、FR3D、RAIGen、Attention Sinks；Visuals Lie 有 ICLR 2026 Workshop OpenReview；若只看 arXiv comments 会漏掉部分状态强度。</span></li><li><b>来源状态</b><span>arXiv 官方 new 页面显示 Wednesday, 17 June 2026；export API 返回 503，因此以官方 list 页和单篇 abs 页为准。</span></li></ul>
   </aside>
 </section>
 <section class="section-block">
   <div class="section-heading"><h2>今日推荐论文</h2><a href="pages/catalog.html">全目录 →</a></div>
-  <div class="paper-list"><article class="paper-card" data-pid="2606.15956" data-category="arXiv 新增 + video SSL / JEPA-adjacent predictive representation" data-priority="P0" data-date="2026-06-17" data-title="you don&#x27;t need strong assumptions: visual representation learning via temporal differences" data-keywords="you don&#x27;t need strong assumptions: visual representation learning via temporal differences you don&#x27;t need strong assumptions arxiv 新增 + video ssl / jepa-adjacent predictive representation p0 2026-06-17 arxiv 新增 + video ssl / jepa-adjacent predictive representation 几乎正面挑战 augmentation/masking/cropping 假设，用视频 temporal difference 学视觉表征 高相关；详见方法、贡献和实验边界。">
-  <a class="paper-thumb" href="papers/2606.15956.html"><img src="assets/mineru/2606.15956/images/fecd2661dea94c99b09330a069928295ea038276c025a7e4829edc3710b5f33d.jpg" alt="You Don&#x27;t Need Strong Assumptions figure"></a>
+  <div class="paper-list"><article class="paper-card" data-pid="2606.17603" data-category="arXiv 新增 + SSL regularizer / JEPA collapse prevention" data-priority="P0" data-date="2026-06-18" data-title="expanding sphere-jepa: a family of statistical regularizers for the hypersphere" data-keywords="expanding sphere-jepa: a family of statistical regularizers for the hypersphere expanding sphere-jepa arxiv 新增 + ssl regularizer / jepa collapse prevention p0 2026-06-18 arxiv 新增 + ssl regularizer / jepa collapse prevention 把 sphere/lejepa 的随机 sliced uniformity 正则改成确定性 hypersphere divergence，是今天最贴近通用 ssl 训练目标的条目 高相关；详见方法、贡献和实验边界。">
+  <a class="paper-thumb" href="papers/2606.17603.html"><img src="assets/mineru/2606.17603/images/b1a4e30f82884ffec44f87ad2f9440a665f584d6e56b5c1e87353072034553ff.jpg" alt="Expanding SPHERE-JEPA figure"></a>
   <div>
-    <div class="paper-meta">2026-06-17 · arXiv 新增 + video SSL / JEPA-adjacent predictive representation · arXiv 新增 + video SSL / JEPA-adjacent predictive representation</div>
-    <h3><a href="papers/2606.15956.html">You Don&#x27;t Need Strong Assumptions: Visual Representation Learning via Temporal Differences</a></h3>
+    <div class="paper-meta">2026-06-18 · arXiv 新增 + SSL regularizer / JEPA collapse prevention · arXiv 新增 + SSL regularizer / JEPA collapse prevention</div>
+    <h3><a href="papers/2606.17603.html">Expanding SPHERE-JEPA: A Family of Statistical Regularizers for the Hypersphere</a></h3>
     <p>高相关；详见方法、贡献和实验边界。</p>
-    <p class="card-tech"><b>方法：</b>几乎正面挑战 augmentation/masking/cropping 假设，用视频 temporal difference 学视觉表征</p>
-    <div class="paper-actions"><a href="papers/2606.15956.html">读图文页</a><a href="https://arxiv.org/abs/2606.15956">原文</a></div>
+    <p class="card-tech"><b>方法：</b>把 SPHERE/LeJEPA 的随机 sliced uniformity 正则改成确定性 hypersphere divergence，是今天最贴近通用 SSL 训练目标的条目</p>
+    <div class="paper-actions"><a href="papers/2606.17603.html">读图文页</a><a href="https://arxiv.org/abs/2606.17603">原文</a></div>
   </div>
-  <div class="paper-card-tools"><button class="readbtn" type="button" data-read-toggle="2606.15956" title="标记已读" aria-label="标记已读"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M4 10.5l4 4 8-9"/></svg></button><div class="prefbar" data-pref-controls="2606.15956"><button class="prefbtn like" type="button" data-pref-toggle="like" data-pref-id="2606.15956" aria-pressed="false" title="关注这篇">关注</button><button class="prefbtn dismiss" type="button" data-pref-toggle="dismiss" data-pref-id="2606.15956" aria-pressed="false" title="降低这篇权重">略过</button></div></div>
+  <div class="paper-card-tools"><button class="readbtn" type="button" data-read-toggle="2606.17603" title="标记已读" aria-label="标记已读"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M4 10.5l4 4 8-9"/></svg></button><div class="prefbar" data-pref-controls="2606.17603"><button class="prefbtn like" type="button" data-pref-toggle="like" data-pref-id="2606.17603" aria-pressed="false" title="关注这篇">关注</button><button class="prefbtn dismiss" type="button" data-pref-toggle="dismiss" data-pref-id="2606.17603" aria-pressed="false" title="降低这篇权重">略过</button></div></div>
 </article>
-<article class="paper-card" data-pid="2606.14765" data-category="arXiv 新增 + self-supervised video representation" data-priority="P0" data-date="2026-06-17" data-title="momentum-guided semantic forecasting (mofore) for self-supervised video representation learning" data-keywords="momentum-guided semantic forecasting (mofore) for self-supervised video representation learning momentum-guided semantic forecasting (mofore) for arxiv 新增 + self-supervised video representation p0 2026-06-17 arxiv 新增 + self-supervised video representation 用 long-range latent forecasting 结合 contrastive regularization 学视频语义表征，是干净的视频 ssl 条目 高相关；详见方法、贡献和实验边界。">
-  <a class="paper-thumb" href="papers/2606.14765.html"><img src="assets/mineru/2606.14765/images/08d3350f9347969461e2efa05a8848f47ac7627fbfdf990134831e9bd4cf890c.jpg" alt="Momentum-Guided Semantic Forecasting (MoFore) for figure"></a>
+<article class="paper-card" data-pid="2606.18249" data-category="arXiv 新增 + ICML 2026 Poster + unified visual tokenizer" data-priority="P0" data-date="2026-06-18" data-title="unified multimodal autoregressive modeling with shared context-visual tokenizer is key to unification" data-keywords="unified multimodal autoregressive modeling with shared context-visual tokenizer is key to unification unified multimodal autoregressive modeling with arxiv 新增 + icml 2026 poster + unified visual tokenizer p0 2026-06-18 arxiv 新增 + icml 2026 poster + unified visual tokenizer 用共享离散视觉 tokenizer 同时服务理解和生成，直接触及视觉表征空间是否能统一的问题 高相关；详见方法、贡献和实验边界。">
+  <a class="paper-thumb" href="papers/2606.18249.html"><img src="assets/mineru/2606.18249/images/ee17be807edc325240075986013b5d0e9fe90e35925633a5c476a847036142da.jpg" alt="Unified Multimodal Autoregressive Modeling with figure"></a>
   <div>
-    <div class="paper-meta">2026-06-17 · arXiv 新增 + self-supervised video representation · arXiv 新增 + self-supervised video representation</div>
-    <h3><a href="papers/2606.14765.html">Momentum-Guided Semantic Forecasting (MoFore) for Self-Supervised Video Representation Learning</a></h3>
+    <div class="paper-meta">2026-06-18 · arXiv 新增 + ICML 2026 Poster + unified visual tokenizer · arXiv 新增 + ICML 2026 Poster + unified visual tokenizer</div>
+    <h3><a href="papers/2606.18249.html">Unified Multimodal Autoregressive Modeling with Shared Context-Visual Tokenizer is Key to Unification</a></h3>
     <p>高相关；详见方法、贡献和实验边界。</p>
-    <p class="card-tech"><b>方法：</b>用 long-range latent forecasting 结合 contrastive regularization 学视频语义表征，是干净的视频 SSL 条目</p>
-    <div class="paper-actions"><a href="papers/2606.14765.html">读图文页</a><a href="https://arxiv.org/abs/2606.14765">原文</a></div>
+    <p class="card-tech"><b>方法：</b>用共享离散视觉 tokenizer 同时服务理解和生成，直接触及视觉表征空间是否能统一的问题</p>
+    <div class="paper-actions"><a href="papers/2606.18249.html">读图文页</a><a href="https://arxiv.org/abs/2606.18249">原文</a></div>
   </div>
-  <div class="paper-card-tools"><button class="readbtn" type="button" data-read-toggle="2606.14765" title="标记已读" aria-label="标记已读"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M4 10.5l4 4 8-9"/></svg></button><div class="prefbar" data-pref-controls="2606.14765"><button class="prefbtn like" type="button" data-pref-toggle="like" data-pref-id="2606.14765" aria-pressed="false" title="关注这篇">关注</button><button class="prefbtn dismiss" type="button" data-pref-toggle="dismiss" data-pref-id="2606.14765" aria-pressed="false" title="降低这篇权重">略过</button></div></div>
+  <div class="paper-card-tools"><button class="readbtn" type="button" data-read-toggle="2606.18249" title="标记已读" aria-label="标记已读"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M4 10.5l4 4 8-9"/></svg></button><div class="prefbar" data-pref-controls="2606.18249"><button class="prefbtn like" type="button" data-pref-toggle="like" data-pref-id="2606.18249" aria-pressed="false" title="关注这篇">关注</button><button class="prefbtn dismiss" type="button" data-pref-toggle="dismiss" data-pref-id="2606.18249" aria-pressed="false" title="降低这篇权重">略过</button></div></div>
 </article>
-<article class="paper-card" data-pid="2606.15553" data-category="arXiv 新增 + representation autoencoder distillation" data-priority="P0" data-date="2026-06-17" data-title="distilling drifting transformers with representation autoencoders" data-keywords="distilling drifting transformers with representation autoencoders distilling drifting transformers with representation arxiv 新增 + representation autoencoder distillation p0 2026-06-17 arxiv 新增 + representation autoencoder distillation 接续 rae/dit 热点，讨论 dino-rich latent 的曲率/各向异性如何影响 flow/distillation 高相关；详见方法、贡献和实验边界。">
-  <a class="paper-thumb" href="papers/2606.15553.html"><img src="assets/mineru/2606.15553/images/2de44df2aac76d66a6d93fa39d6bc6e6f034139bb68fdeaa9d1194ed51d897b5.jpg" alt="Distilling Drifting Transformers with Representation figure"></a>
+<article class="paper-card" data-pid="2606.17678" data-category="arXiv 新增 + MLLM visual evidence pre-alignment" data-priority="P0" data-date="2026-06-18" data-title="see first, answer later: visual evidence pre-alignment via sufficiency-driven rl" data-keywords="see first, answer later: visual evidence pre-alignment via sufficiency-driven rl see first, answer later arxiv 新增 + mllm visual evidence pre-alignment p0 2026-06-18 arxiv 新增 + mllm visual evidence pre-alignment 在预训练和后训练之间加入视觉证据充分性目标，目标是让多模态模型先绑定证据再回答 高相关；详见方法、贡献和实验边界。">
+  <a class="paper-thumb" href="papers/2606.17678.html"><img src="assets/mineru/2606.17678/images/26508b3a912e59ce6435504c6e74bd48e75003ce3cfb255f96b0bc3cd5ac9947.jpg" alt="See First, Answer Later figure"></a>
   <div>
-    <div class="paper-meta">2026-06-17 · arXiv 新增 + representation autoencoder distillation · arXiv 新增 + representation autoencoder distillation</div>
-    <h3><a href="papers/2606.15553.html">Distilling Drifting Transformers with Representation Autoencoders</a></h3>
+    <div class="paper-meta">2026-06-18 · arXiv 新增 + MLLM visual evidence pre-alignment · arXiv 新增 + MLLM visual evidence pre-alignment</div>
+    <h3><a href="papers/2606.17678.html">See First, Answer Later: Visual Evidence Pre-Alignment via Sufficiency-Driven RL</a></h3>
     <p>高相关；详见方法、贡献和实验边界。</p>
-    <p class="card-tech"><b>方法：</b>接续 RAE/DiT 热点，讨论 DINO-rich latent 的曲率/各向异性如何影响 flow/distillation</p>
-    <div class="paper-actions"><a href="papers/2606.15553.html">读图文页</a><a href="https://arxiv.org/abs/2606.15553">原文</a></div>
+    <p class="card-tech"><b>方法：</b>在预训练和后训练之间加入视觉证据充分性目标，目标是让多模态模型先绑定证据再回答</p>
+    <div class="paper-actions"><a href="papers/2606.17678.html">读图文页</a><a href="https://arxiv.org/abs/2606.17678">原文</a></div>
   </div>
-  <div class="paper-card-tools"><button class="readbtn" type="button" data-read-toggle="2606.15553" title="标记已读" aria-label="标记已读"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M4 10.5l4 4 8-9"/></svg></button><div class="prefbar" data-pref-controls="2606.15553"><button class="prefbtn like" type="button" data-pref-toggle="like" data-pref-id="2606.15553" aria-pressed="false" title="关注这篇">关注</button><button class="prefbtn dismiss" type="button" data-pref-toggle="dismiss" data-pref-id="2606.15553" aria-pressed="false" title="降低这篇权重">略过</button></div></div>
+  <div class="paper-card-tools"><button class="readbtn" type="button" data-read-toggle="2606.17678" title="标记已读" aria-label="标记已读"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M4 10.5l4 4 8-9"/></svg></button><div class="prefbar" data-pref-controls="2606.17678"><button class="prefbtn like" type="button" data-pref-toggle="like" data-pref-id="2606.17678" aria-pressed="false" title="关注这篇">关注</button><button class="prefbtn dismiss" type="button" data-pref-toggle="dismiss" data-pref-id="2606.17678" aria-pressed="false" title="降低这篇权重">略过</button></div></div>
 </article>
-<article class="paper-card" data-pid="2606.15527" data-category="arXiv 新增 + video object-centric learning" data-priority="P1" data-date="2026-06-17" data-title="selective synergistic learning for video object-centric learning" data-keywords="selective synergistic learning for video object-centric learning selective synergistic learning for video arxiv 新增 + video object-centric learning p1 2026-06-17 arxiv 新增 + video object-centric learning 对 slot-based video object-centric learning 的 dense alignment 代价与错误传播做了针对性改造 高相关；详见方法、贡献和实验边界。">
-  <a class="paper-thumb" href="papers/2606.15527.html"><img src="assets/mineru/2606.15527/images/41b54993e074e0803224bd6b81a4d961f9e54800f680dc5b175ee07b1a0179ec.jpg" alt="Selective Synergistic Learning for Video figure"></a>
+<article class="paper-card" data-pid="2606.17590" data-category="arXiv 新增 + video tokenizer / latent factorization" data-priority="P1" data-date="2026-06-18" data-title="tivtok: broadcasting time-invariant tokens for scalable video tokenization" data-keywords="tivtok: broadcasting time-invariant tokens for scalable video tokenization tivtok arxiv 新增 + video tokenizer / latent factorization p1 2026-06-18 arxiv 新增 + video tokenizer / latent factorization 把长视频 token 分成跨帧可复用的 time-invariant tokens 和帧特异 residual tokens，适合跟视频预训练效率问题一起读 中高相关；详见方法、贡献和实验边界。">
+  <a class="paper-thumb" href="papers/2606.17590.html"><img src="assets/mineru/2606.17590/images/1fbf1275392dea82f27aa320f11105480d32a5eff37767b45a943f13ead2875b.jpg" alt="TivTok figure"></a>
   <div>
-    <div class="paper-meta">2026-06-17 · arXiv 新增 + video object-centric learning · arXiv 新增 + video object-centric learning</div>
-    <h3><a href="papers/2606.15527.html">Selective Synergistic Learning for Video Object-Centric Learning</a></h3>
-    <p>高相关；详见方法、贡献和实验边界。</p>
-    <p class="card-tech"><b>方法：</b>对 slot-based video object-centric learning 的 dense alignment 代价与错误传播做了针对性改造</p>
-    <div class="paper-actions"><a href="papers/2606.15527.html">读图文页</a><a href="https://arxiv.org/abs/2606.15527">原文</a></div>
-  </div>
-  <div class="paper-card-tools"><button class="readbtn" type="button" data-read-toggle="2606.15527" title="标记已读" aria-label="标记已读"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M4 10.5l4 4 8-9"/></svg></button><div class="prefbar" data-pref-controls="2606.15527"><button class="prefbtn like" type="button" data-pref-toggle="like" data-pref-id="2606.15527" aria-pressed="false" title="关注这篇">关注</button><button class="prefbtn dismiss" type="button" data-pref-toggle="dismiss" data-pref-id="2606.15527" aria-pressed="false" title="降低这篇权重">略过</button></div></div>
-</article>
-<article class="paper-card" data-pid="2606.15765" data-category="arXiv 新增 + frozen VFM routing / dense transfer" data-priority="P1" data-date="2026-06-17" data-title="task-instructed causal routing of vision foundation models for multi-task learning" data-keywords="task-instructed causal routing of vision foundation models for multi-task learning task-instructed causal routing of vision arxiv 新增 + frozen vfm routing / dense transfer p1 2026-06-17 arxiv 新增 + frozen vfm routing / dense transfer 把多个 frozen vfms 当专家，用任务指令和 counterfactual loss 做 token-level 路由 中高相关；详见方法、贡献和实验边界。">
-  <a class="paper-thumb" href="papers/2606.15765.html"><img src="assets/mineru/2606.15765/images/192d5b8eb7a6a28078549500938285d2a046554ed16fc04c2f779ec4169a6b84.jpg" alt="Task-Instructed Causal Routing of Vision figure"></a>
-  <div>
-    <div class="paper-meta">2026-06-17 · arXiv 新增 + frozen VFM routing / dense transfer · arXiv 新增 + frozen VFM routing / dense transfer</div>
-    <h3><a href="papers/2606.15765.html">Task-Instructed Causal Routing of Vision Foundation Models for Multi-Task Learning</a></h3>
+    <div class="paper-meta">2026-06-18 · arXiv 新增 + video tokenizer / latent factorization · arXiv 新增 + video tokenizer / latent factorization</div>
+    <h3><a href="papers/2606.17590.html">TivTok: Broadcasting Time-Invariant Tokens for Scalable Video Tokenization</a></h3>
     <p>中高相关；详见方法、贡献和实验边界。</p>
-    <p class="card-tech"><b>方法：</b>把多个 frozen VFMs 当专家，用任务指令和 counterfactual loss 做 token-level 路由</p>
-    <div class="paper-actions"><a href="papers/2606.15765.html">读图文页</a><a href="https://arxiv.org/abs/2606.15765">原文</a></div>
+    <p class="card-tech"><b>方法：</b>把长视频 token 分成跨帧可复用的 time-invariant tokens 和帧特异 residual tokens，适合跟视频预训练效率问题一起读</p>
+    <div class="paper-actions"><a href="papers/2606.17590.html">读图文页</a><a href="https://arxiv.org/abs/2606.17590">原文</a></div>
   </div>
-  <div class="paper-card-tools"><button class="readbtn" type="button" data-read-toggle="2606.15765" title="标记已读" aria-label="标记已读"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M4 10.5l4 4 8-9"/></svg></button><div class="prefbar" data-pref-controls="2606.15765"><button class="prefbtn like" type="button" data-pref-toggle="like" data-pref-id="2606.15765" aria-pressed="false" title="关注这篇">关注</button><button class="prefbtn dismiss" type="button" data-pref-toggle="dismiss" data-pref-id="2606.15765" aria-pressed="false" title="降低这篇权重">略过</button></div></div>
+  <div class="paper-card-tools"><button class="readbtn" type="button" data-read-toggle="2606.17590" title="标记已读" aria-label="标记已读"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M4 10.5l4 4 8-9"/></svg></button><div class="prefbar" data-pref-controls="2606.17590"><button class="prefbtn like" type="button" data-pref-toggle="like" data-pref-id="2606.17590" aria-pressed="false" title="关注这篇">关注</button><button class="prefbtn dismiss" type="button" data-pref-toggle="dismiss" data-pref-id="2606.17590" aria-pressed="false" title="降低这篇权重">略过</button></div></div>
+</article>
+<article class="paper-card" data-pid="2603.22281" data-category="arXiv replacement + VLM-guided JEPA latent world model" data-priority="P1" data-date="2026-06-18" data-title="thinkjepa: empowering latent world models with large vision-language reasoning model" data-keywords="thinkjepa: empowering latent world models with large vision-language reasoning model thinkjepa arxiv replacement + vlm-guided jepa latent world model p1 2026-06-18 arxiv replacement + vlm-guided jepa latent world model 把 v-jepa2 式 dense latent prediction 和 vlm 长程语义推理结合，是昨天 tdv/mofore 后续最自然的更新项 中高相关；详见方法、贡献和实验边界。">
+  <a class="paper-thumb" href="papers/2603.22281.html"><img src="assets/mineru/2603.22281/images/a15080ebd7c7f3934967b0dec11bf176b22158c77da57b102c06766669532c10.jpg" alt="ThinkJEPA figure"></a>
+  <div>
+    <div class="paper-meta">2026-06-18 · arXiv replacement + VLM-guided JEPA latent world model · arXiv replacement + VLM-guided JEPA latent world model</div>
+    <h3><a href="papers/2603.22281.html">ThinkJEPA: Empowering Latent World Models with Large Vision-Language Reasoning Model</a></h3>
+    <p>中高相关；详见方法、贡献和实验边界。</p>
+    <p class="card-tech"><b>方法：</b>把 V-JEPA2 式 dense latent prediction 和 VLM 长程语义推理结合，是昨天 TDV/MoFore 后续最自然的更新项</p>
+    <div class="paper-actions"><a href="papers/2603.22281.html">读图文页</a><a href="https://arxiv.org/abs/2603.22281">原文</a></div>
+  </div>
+  <div class="paper-card-tools"><button class="readbtn" type="button" data-read-toggle="2603.22281" title="标记已读" aria-label="标记已读"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M4 10.5l4 4 8-9"/></svg></button><div class="prefbar" data-pref-controls="2603.22281"><button class="prefbtn like" type="button" data-pref-toggle="like" data-pref-id="2603.22281" aria-pressed="false" title="关注这篇">关注</button><button class="prefbtn dismiss" type="button" data-pref-toggle="dismiss" data-pref-id="2603.22281" aria-pressed="false" title="降低这篇权重">略过</button></div></div>
 </article></div>
 </section></main>
-  <aside class="conf-float" data-conf-reminder="2026-06-17-main-ddl" aria-label="CCF A/B 主投稿提醒">
+  <aside class="conf-float" data-conf-reminder="2026-06-18-main-ddl" aria-label="CCF A/B 主投稿提醒">
   <button class="conf-close" type="button" aria-label="关闭会议提醒">×</button>
   <details open>
     <summary>CCF A/B 主投稿提醒</summary>
     <div class="conf-list"><a class="conf-item " href="https://github.com/ccfddl/ccf-deadlines/blob/main/conference/AI/aaai.yml">
   <span><b>AAAI 2027</b><em>CCF A · Main paper submission</em></span>
-  <strong>40 天</strong>
+  <strong>39 天</strong>
   <small>2026-07-27 · CCF DDL: abstract 2026-07-20；进入 1 个月窗口后重点提醒。</small>
 </a></div>
   </details>
 </aside>
   <footer class="footer">
     <div>面向通用视觉自监督、视觉基础模型与多模态表征学习的每日研究报。</div>
-    <div class="muted">Issue 2026-06-17 · Curated readings and figure notes</div>
+    <div class="muted">Issue 2026-06-18 · Curated readings and figure notes</div>
   </footer>
   <script>
   (() => {
     const box = document.querySelector('[data-conf-reminder]');
     if (!box) return;
-    const key = `visualSslConfReminderClosed:${box.dataset.confReminder || '2026-06-17-main-ddl'}`;
+    const key = `visualSslConfReminderClosed:${box.dataset.confReminder || '2026-06-18-main-ddl'}`;
     try {
       if (localStorage.getItem(key) === '1') box.hidden = true;
     } catch (err) {}
