@@ -883,4 +883,8 @@ Table 5: Cloud Texture
 
 Table 6: Wood Texture
 
-<table><tr><td>Method</td><td>Recall@1<
+<table><tr><td>Method</td><td>Recall@1</td><td>Recall@3</td><td>Recall@5</td><td>mAP</td><td>mAP (emb)</td></tr><tr><td>SUSReg (Stochastic Baseline)</td><td>93.3</td><td>99.1</td><td>99.7</td><td>96.2</td><td>95.6</td></tr><tr><td>MMD (Induced SUSReg  $\bar{k}$ )</td><td>95.0</td><td>99.4</td><td>99.7</td><td>97.2</td><td>96.3</td></tr><tr><td>MMD (Heat,  $t = 5/d$ )</td><td>95.7</td><td>99.4</td><td>99.8</td><td>97.6</td><td>96.7</td></tr><tr><td>MMD (Bandlimited,  $L = 2$ )</td><td>96.0</td><td>99.4</td><td>99.7</td><td>97.7</td><td>96.4</td></tr><tr><td>KSD (Heat,  $t = 5/d$ )</td><td>96.9</td><td>99.6</td><td>99.9</td><td>98.3</td><td>97.3</td></tr><tr><td>KSD (Bandlimited,  $L = 2$ )</td><td>97.4</td><td>99.6</td><td>99.8</td><td>98.5</td><td>97.7</td></tr><tr><td>KL (Heat)</td><td>99.4</td><td>99.8</td><td>99.9</td><td>99.7</td><td>99.2</td></tr></table>
+
+Table 7: Flake Texture
+
+<table><tr><td>Method</td><td>Recall@1</td><td>Recall@3</td><td>Recall@5</td><td>mAP</td><td>mAP (emb)</td></tr><tr><td>SUSReg (Stochastic Baseline)</td><td>83.0</td><td>94.3</td><td>97.3</td><td>89.1</td><td>88.6</td></tr><tr><td>MMD (Induced SUSReg  $\bar{k}$ )</td><td>83.5</td><td>94.2</td><td>97.3</td><td>89.3</td><td>88.0</td></tr><tr><td>MMD (Heat,  $t = 5/d$ )</td><td>85.0</td><td>95.4</td><td>97.7</td><td>90.5</td><td>89.1</td></tr><tr><td>MMD (Bandlimited,  $L = 2$ )</td><td>86.1</td><td>95.0</td><td>97.2</td><td>90.9</td><td>90.3</td></tr><tr><td>KSD (Heat,  $t = 5/d$ )</td><td>86.0</td><td>95.2</td><td>97.5</td><td>91.0</td><td>89.8</td></tr><tr><td>KSD (Bandlimited,  $L = 2$ )</td><td>86.2</td><td>95.1</td><td>97.2</td><td>91.0</td><td>90.3</td></tr><tr><td>KL (Heat)</td><td>88.6</td><td>94.0</td><td>95.8</td><td>91.7</td><td>92.5</td></tr></table>

@@ -29,11 +29,9 @@ Who has prepared the directory of services ?
 6T Answer Location
 Largely discarded
 Base
-PLatte River Power Supply
-District ✗
 Fully retained
-PLATTE COUNTY VOLUNTEERS
-AGAINST HENDER ✓
+PLatte River Power Supply District
+PLATTE COUNTY VOLUNTEERS AGAINST HENDER
 BACON (Ours)
 </details>
 
@@ -48,8 +46,8 @@ We investigate this limitation by analyzing attention dynamics in MLLM KV cache 
 
 | Category          | Budget 256 | Budget 64 |
 | ----------------- | ---------- | --------- |
-| All visual tokens | ~100%      | ~35%      |
-| Answer evidence   | ~100%      | ~65%      |
+| All visual tokens | ~70%       | ~35%      |
+| Answer evidence   | ~30%       | ~65%      |
 </details>
 
 ![](images/ae494a80d4c4b98578679c5b37eb7bc47b76395091f7ab523cf20e8d8c58c613.jpg)
@@ -73,13 +71,13 @@ We investigate this limitation by analyzing attention dynamics in MLLM KV cache 
 
 | Visual evidence rank | True answer attention | Last query | Window average |
 | -------------------- | --------------------- | ---------- | -------------- |
-| 1                    | 1.0                   | 0.5        | 0.2            |
+| 0                    | 1.0                   | 0.5        | 0.2            |
 | 5                    | 0.6                   | 0.4        | 0.2            |
-| 10                   | 0.4                   | 0.3        | 0.2            |
-| 15                   | 0.3                   | 0.2        | 0.2            |
-| 20                   | 0.2                   | 0.15       | 0.15           |
-| 25                   | 0.15                  | 0.1        | 0.1            |
-| 30                   | 0.1                   | 0.05       | 0.05           |
+| 10                   | 0.3                   | 0.3        | 0.2            |
+| 15                   | 0.2                   | 0.2        | 0.2            |
+| 20                   | 0.15                  | 0.15       | 0.15           |
+| 25                   | 0.1                   | 0.1        | 0.1            |
+| 30                   | 0.1                   | 0.1        | 0.1            |
 </details>
 
 Figure 2: Observation window aggregation can dilute sparse visual evidence, while the last query recovers these evidence. (a) Under aggressive KV compression, SparseMM discard answer-critical visual evidence and produce incorrect predictions, suggesting observation window attention can miss sparse evidence under tight cache budgets. (b) The last query is more sensitive than earlier prompt queries to answer-relevant tokens, showing its ability to capture boundary-emergent evidence. (c) Compared with window-averaged attention, last-query attention better highlights visually important tokens and closely matches the answer’s attention distribution over visual tokens.
@@ -106,7 +104,7 @@ Efficient Inference and KV Cache Compression in MLLMs. Efficient MLLM inference 
 | Low-use text tokens | 2.0 |
 | Other visual tokens | 40.1 |
 | Other text tokens | 27.0 |
-| Redundant | (not labeled with value) |
+| Redundant | (not labeled but visually present) |
 </details>
 
 (a) Last-Query Attention Composition
@@ -132,8 +130,8 @@ Isolated Spike
 
 | Layer          | Persistent Trace |
 | -------------- | ---------------- |
-| Layer l + 2    | 1.0              |
-| Layer l + 1    | 0.6              |
+| Layer l + 2     | 1.0              |
+| Layer l + 1     | 0.6              |
 | Layer l        | 0.4              |
 | Layer l - 1    | 0.2              |
 | Layer l - 2    | 0.0              |
@@ -200,13 +198,13 @@ graph TD
   G --> H
   H --> I["Concatenate KVs"]
   I --> J["Select KVs"]
-  J --> K["Layer I - n"]
-  J --> L["Layer I - 1"]
-  J --> M["Layer I"]
-  K --> N["Intra-layer Support"]
-  L --> N
-  M --> N
-  N --> O["Inter-layer Support"]
+  J --> K["Inter-layer Support"]
+  K --> L["Layer I - n"]
+  K --> M["Layer I - 1"]
+  K --> N["Layer I"]
+  L --> O["Intra-layer Support"]
+  M --> O
+  N --> O
   O --> P["Boundary Evidence"]
   P --> Q["Window Score B vs. Q"]
   Q --> R["B Boundary Residual"]
@@ -333,7 +331,7 @@ Performance on image understanding benchmarks. Table 1 summarizes BACON integrat
 
 Table 1: Main results on image understanding benchmarks. SparseMM is excluded in InternVL3-8B and Qwen3-VL-30B-A3B settings due to the unreleased profiling file. Arrows show deltas over Base, and “Full KV” denotes caching all KV pairs as the upper bound.
 
-<table><tr><td rowspan="2">Method</td><td rowspan="2">Variant</td><td colspan="3">DocVQA (%)</td><td colspan="3">TextVQA (%)</td><td colspan="3">ChartQA (%)</td><td colspan="3">MMMU (%)</td><td colspan="3">TextCaps</td></tr><tr><td>256</td><td>128</td><td>64</td><td>256</td><td>128</td><td>64</td><td>256</td><td>128</td><td>64</td><td>256</td><td>128</td><td>64</td><td>256</td><td>128</td><td>64</td></tr><tr><td colspan="17">Qwen2-VL-7B-Instruct</td></tr><tr><td>Full KV</td><td>Upper</td><td></td><td>93.7</td><td></td><td></td><td>-</td><td></td><td></td><td>71.3</td><td></td><td></td><td>49.9</td><td></td><td></td><td>1.473</td><td></td></tr><tr><td rowspan="3">SnapKV</td><td>Base</td><td>88.6</td><td>82.1</td><td>70.1</td><td>80.6</td><td>77.0</td><td>70.3</td><td>70.0</td><td>69.6</td><td>66.2</td><td>49.9</td><td>49.8</td><td>49.6</td><td>1.361</td><td>1.141</td><td>0.787</td></tr><tr><td>+MixKV</td><td>91.8</td><td>83.9</td><td>70.9</td><td>82.6</td><td>81.0</td><td>73.5</td><td>70.0</td><td>70.2</td><td>67.2</td><td>49.9</td><td>49.9</td><td>49.7</td><td>1.470</td><td>1.332</td><td>0.919</td></tr><tr><td>+BACON</td><td>93.1↑4.5</td><td>91.5↑9.4</td><td>85.5↑15.4</td><td>83.1↑2.5</td><td>82.6↑5.6</td><td>78.2↑7.9</td><td>70.2↑0.2</td><td>70.2↑0.6</td><td>69.6↑3.4</td><td>49.9→0.0</td><td>49.9↑0.1</td><td>50.0↑0.4</td><td>1.488↑0.127</td><td>1.426↑0.285</td><td>1.178↑0.391</td></tr><tr><td rowspan="3">PyramidKV</td><td>Base</td><td>83.4</td><td>75.6</td><td>60.5</td><td>77.7</td><td>74.9</td><td>66.8</td><td>71.1</td><td>68.9</td><td>65.2</td><td>49.9</td><td>49.8</td><td>49.6</td><td>1.147</td><td>0.993</td><td>0.600</td></tr><tr><td>+MixKV</td><td>85.0</td><td>77.5</td><td>61.3</td><td>80.9</td><td>77.2</td><td>69.4</td><td>71.0</td><td>71.1</td><td>66.4</td><td>49.9</td><td>49.8</td><td>49.6</td><td>1.383</td><td>1.145</td><td>0.662</td></tr><tr><td>+BACON</td><td>92.3↑8.9</td><td>89.3↑13.7</td><td>79.2↑18.7</td><td>82.5↑4.8</td><td>80.0↑5.1</td><td>75.1↑8.3</td><td>71.2↑0.1</td><td>70.6↑1.7</td><td>69.2↑4.0</td><td>49.9→0.0</td><td>49.9↑0.1</td><td>49.8↑0.2</td><td>1.461↑0.314</td><td>1.344↑0.351</td><td>1.073↑0.473</td></tr><tr><td rowspan="3">AdaKV</td><td>Base</td><td>88.4</td><td>81.3</td><td>69.4</td><td>80.5</td><td>75.9</td><td>70.8</td><td>69.8</td><td>69.6</td><td>66.6</td><td>49.9</td><td>49.7</td><td>49.6</td><td>1.300</td><td>1.099</td><td>0.771</td></tr><tr><td>+MixKV</td><td>91.4</td><td>82.7</td><td>70.7</td><td>82.5</td><td>79.1</td><td>72.6</td><td>70.2</td><td>70.2</td><td>67.8</td><td>49.9</td><td>49.9</td><td>49.6</td><td>1.454</td><td>1.271</td><td>0.874</td></tr><tr><td>+BACON</td><td>93.0↑4.6</td><td>91.1↑9.8</td><td>86.2↑16.8</td><td>82.8↑2.3</td><td>81.2↑5.3</td><td>78.5↑7.7</td><td>70.2↑0.4</td><td>70.2↑0.6</td><td>69.6↑3.0</td><td>49.9→0.0</td><td>49.8↑0.1</td><td>49.8↑0.2</td><td>1.473↑0.173</td><td>1.371↑0.272</td><td>1.144↑0.373</td></tr><tr><td rowspan="3">SparseMM</td><td>Base</td><td>93.1</td><td>91.4</td><td>87.3</td><td>82.6</td><td>82.1</td><td>76.9</td><td>70.2</td><td>70.0</td><td>69.6</td><td>49.8</td><td>49.8</td><td>49.6</td><td>1.481</td><td>1.427</td><td>1.044</td></tr><tr><td>+MixKV</td><td>93.9</td><td>92.9</td><td>88.6</td><td>82.5</td><td>82.5</td><td>80.9</td><td>69.6</td><td>69.8</td><td>70.8</td><td>49.8</td><td>49.8</td><td>49.7</td><td>1.480</td><td>1.456</td><td>1.303</td></tr><tr><td>+BACON</td><td>93.8↑0.7</td><td>93.2↑1.8</td><td>92.0↑4.7</td><td>82.6→0.0</td><td>82.4↑0.3</td><td>81.6↑4.7</td><td>70.6↑0.4</td><td>70.4↑0.4</td><td>70.2↑0.6</td><td>49.9↑0.1</td><td>49.8→0.0</td><td>49.8↑0.2</td><td>1.506↑0.025</td><td>1.511↑0.084</td><td>1.431↑0.387</td></tr><tr><td colspan="17">LLaVA-NeXT-Mistral-7B</td></tr><tr><td>Full KV</td><td>Upper</td><td></td><td>62.7</td><td></td><td></td><td>68.4</td><td></td><td></td><td>51.8</td><td></td><td></td><td>34.7</td><td></td><td></td><td>0.704</td><td></td></tr><tr><td rowspan="3">SnapKV</td><td>Base</td><td>58.1</td><td>55.2</td><td>46.2</td><td>66.0</td><td>63.0</td><td>58.9</td><td>49.8</td><td>48.4</td><td>47.2</td><td>34.7</td><td>34.9</td><td>34.8</td><td>0.651</td><td>0.560</td><td>0.442</td></tr><tr><td>+MixKV</td><td>60.4</td><td>57.5</td><td>48.2</td><td>67.5</td><td>66.1</td><td>61.3</td><td>49.8</td><td>48.6</td><td>46.8</td><td>34.6</td><td>34.8</td><td>34.8</td><td>0.710</td><td>0.656</td><td>0.510</td></tr><tr><td>+BACON</td><td>59.7↑1.6</td><td>57.8↑2.6</td><td>53.9↑7.7</td><td>67.1↑1.1</td><td>66.2↑3.2</td><td>62.8↑3.9</td><td>50.0↑0.2</td><td>49.6↑1.2</td><td>49.2↑2.0</td><td>34.8↑0.1</td><td>34.9→0.0</td><td>34.8→0.0</td><td>0.686↑0.035</td><td>0.676↑0.116</td><td>0.512↑0.070</td></tr><tr><td rowspan="3">PyramidKV</td><td>Base</td><td>57.5</td><td>54.3</td><td>43.8</td><td>65.2</td><td>63.1</td><td>55.7</td><td>43.6</td><td>42.7</td><td>38.6</td><td>34.8</td><td>35.0</td><td>34.7</td><td>0.652</td><td>0.581</td><td>0.436</td></tr><tr><td>+MixKV</td><td>60.3</td><td>56.7</td><td>45.6</td><td>67.2</td><td>65.8</td><td>57.8</td><td>44.3</td><td>42.6</td><td>39.1</td><td>34.7</td><td>34.9</td><td>34.7</td><td>0.685</td><td>0.644</td><td>0.505</td></tr><tr><td>+BACON</td><td>60.6↑3.1</td><td>59.0↑4.7</td><td>52.4↑8.6</td><td>67.4↑2.2</td><td>66.0↑2.9</td><td>59.8↑4.1</td><td>45.0↑1.4</td><td>43.9↑1.2</td><td>39.9↑1.3</td><td>35.0↑0.2</td><td>35.0→0.0</td><td>34.8↑0.1</td><td>0.685↑0.033</td><td>0.650↑0.069</td><td>0.505↑0.069</td></tr><tr><td rowspan="3">AdaKV</td><td>Base</td><td>58.3</td><td>56.1</td><td>47.6</td><td>65.4</td><td>62.7</td><td>57.8</td><td>49.6</td><td>48.8</td><td>47.4</td><td>34.7</td><td>34.9</td><td>34.8</td><td>0.645</td><td>0.568</td><td>0.441</td></tr><tr><td>+MixKV</td><td>59.3</td><td>57.5</td><td>49.5</td><td>67.2</td><td>64.4</td><td>59.6</td><td>49.6</td><td>49.2</td><td>46.8</td><td>34.7</td><td>34.9</td><td>34.8</td><td>0.701</td><td>0.660</td><td>0.506</td></tr><tr><td>+BACON</td><td>59.3↑1.0</td><td>58.4↑2.3</td><td>55.2↑7.6</td><td>67.1↑1.7</td><td>65.5↑2.8</td><td>61.5↑3.7</td><td>50.0↑0.4</td><td>50.2↑1.4</td><td>49.0↑1.6</td><td>34.8↑0.1</td><td>34.9→0.0</td><td>34.8→0.0</td><td>0.694↑0.049</td><td>0.671↑0.103</td><td>0.510↑0.069</td></tr><tr><td rowspan="3">SparseMM</td><td>Base</td><td>58.5</td><td>58.9</td><td>57.5</td><td>67.2</td><td>67.4</td><td>65.2</td><td>50.6</td><td>49.8</td><td>49.4</td><td>34.7</td><td>34.7</td><td>34.8</td><td>0.670</td><td>0.600</td><td>0.489</td></tr><tr><td>+MixKV</td><td>58.9</td><td>59.0</td><td>58.7</td><td>67.4</td><td>67.6</td><td>67.1</td><td>51.0</td><td>50.4</td><td>50.0</td><td>34.8</td><td>34.7</td><td>34.7</td><td>0.685</td><td>0.620</td><td>0.569</td></tr><tr><td>+BACON</td><td>59.7↑1.2</td><td>59.3↑0.4</td><td>58.3↑0.8</td><td>68.0↑0.8</td><td>67.8↑0.4</td><td>67.3↑2.1</td><td>50.6→0.0</td><td>50.4↑0.6</td><td>49.8↑0.4</td><td>34.8↑0.1</td><td>34.8↑0.1</td><td>34.9↑0.1</td><td>0.686↑0.016</td><td>0.625↑0.025</td><td>0.572↑0.083</td></tr><tr><td colspan="17">InternVL3-8B</td></tr><tr><td>Full KV</td><td>Upper</td><td></td><td>91.1</td><td></td><td></td><td>81.6</td><td></td><td></td><td>77.8</td><td></td><td></td><td>55.3</td><td></td><td></td><td>1.111</td><td></td></tr><tr><td rowspan="3">SnapKV</td><td>Base</td><td>89.5</td><td>85.4</td><td>75.1</td><td>80.7</td><td>78.8</td><td>72.3</td><td>77.4</td><td>75.9</td><td>71.6</td><td>55.3</td><td>55.2</td><td>55.2</td><td>1.083</td><td>0.999</td><td>0.804</td></tr><tr><td>+MixKV</td><td>89.5</td><td>86.4</td><td>75.5</td><td>81.2</td><td>79.2</td><td>73.6</td><td>77.6</td><td>76.0</td><td>72.2</td><td>55.3</td><td>55.2</td><td>55.1</td><td>1.103</td><td>1.016</td><td>0.821</td></tr><tr><td>+BACON</td><td>90.0↑0.5</td><td>88.7↑3.3</td><td>84.9↑9.8</td><td>81.4↑0.7</td><td>81.2↑2.4</td><td>76.7↑4.4</td><td>77.4→0.0</td><td>77.3↑1.4</td><td>75.6↑4.0</td><td>55.4↑0.1</td><td>55.3↑0.1</td><td>55.2→0.0</td><td>1.102↑0.019</td><td>1.020↑0.021</td><td>0.856↑0.052</td></tr><tr><td rowspan="3">PyramidKV</td><td>Base</td><td>87.6</td><td>82.5</td><td>69.2</td><td>78.4</td><td>76.1</td><td>68.8</td><td>76.4</td><td>74.8</td><td>71.1</td><td>55.2</td><td>55.2</td><td>55.1</td><td>0.977</td><td>0.902</td><td>0.688</td></tr><tr><td>+MixKV</td><td>87.7</td><td>83.4</td><td>69.4</td><td>79.4</td><td>76.9</td><td>68.9</td><td>76.7</td><td>75.2</td><td>71.7</td><td>55.3</td><td>55.3</td><td>55.2</td><td>1.024</td><td>0.936</td><td>0.719</td></tr><tr><td>+BACON</td><td>89.6↑2.0</td><td>87.7↑5.2</td><td>80.7↑11.5</td><td>81.1↑2.7</td><td>79.7↑3.6</td><td>74.4↑5.6</td><td>77.5↑1.1</td><td>76.9↑2.1</td><td>74.3↑3.2</td><td>55.3↑0.1</td><td>55.4↑0.2</td><td>55.3↑0.2</td><td>1.027↑0.050</td><td>0.945↑0.043</td><td>0.782↑0.094</td></tr><tr><td rowspan="3">AdaKV</td><td>Base</td><td>89.5</td><td>85.7</td><td>76.9</td><td>80.7</td><td>78.5</td><td>72.4</td><td>77.2</td><td>75.5</td><td>72.6</td><td>55.6</td><td>55.2</td><td>55.2</td><td>1.092</td><td>0.983</td><td>0.847</td></tr><tr><td>+MixKV</td><td>89.3</td><td>86.4</td><td>77.2</td><td>81.1</td><td>79.3</td><td>73.2</td><td>76.9</td><td>76.1</td><td>72.5</td><td>55.3</td><td>55.2</td><td>55.1</td><td>1.091</td><td>1.027</td><td>0.869</td></tr><tr><td>+BACON</td><td>89.5→0.0</td><td>88.6↑2.9</td><td>85.8↑8.9</td><td>81.4↑0.7</td><td>80.4↑1.9</td><td>76.8↑4.4</td><td>77.1↓0.1</td><td>76.8↑1.3</td><td>75.4↑2.8</td><td>55.6→0.0</td><td>55.2→0.0</td><td>55.3↑0.1</td><td>1.102↑0.010</td><td>1.030↑0.047</td><td>0.872↑0.025</td></tr><tr><td colspan="17">Qwen3-VL-30B-A3B</td></tr><tr><td>Full KV</td><td>Upper</td><td></td><td>95.5</td><td></td><td></td><td>84.3</td><td></td><td></td><td>74.4</td><td></td><td></td><td>52.56</td><td></td><td></td><td>0.328</td><td></td></tr><tr><td rowspan="3">SnapKV</td><td>Base</td><td>94.7</td><td>91.5</td><td>78.9</td><td>83.4</td><td>81.8</td><td>75.8</td><td>74.7</td><td>73.2</td><td>70.4</td><td>52.33</td><td>52.67</td><td>51.56</td><td>0.354</td><td>0.348</td><td>0.273</td></tr><tr><td>+MixKV</td><td>95.3</td><td>92.7</td><td>81.0</td><td>84.0</td><td>83.0</td><td>78.8</td><td>74.9</td><td>74.8</td><td>72.4</td><td>52.78</td><td>53.00</td><td>51.89</td><td>0.357</td><td>0.426</td><td>0.334</td></tr><tr><td>+BACON</td><td>95.4↑0.7</td><td>95.1↑3.6</td><td>90.3↑11.4</td><td>83.8↑0.4</td><td>83.7↑1.9</td><td>81.4↑5.6</td><td>75.1↑0.4</td><td>74.9↑1.7</td><td>73.6↑3.2</td><td>53.11↑0.78</td><td>53.00↑0.33</td><td>52.33↑0.77</td><td>0.347↓0.007</td><td>0.435↑0.087</td><td>0.355↑0.082</td></tr><tr><td rowspan="3">PyramidKV</td><td>Base</td><td>86.9</td><td>88.0</td><td>74.4</td><td>80.3</td><td>80.0</td><td>73.2</td><td>72.3</td><td>72.6</td><td>68.5</td><td>52.89</td><td>52.22</td><td>51.78</td><td>0.326</td><td>0.338</td><td>0.266</td></tr><tr><td>+MixKV</td><td>89.3</td><td>90.2</td><td>76.3</td><td>82.3</td><td>82.9</td><td>77.2</td><td>74.0</td><td>74.5</td><td>71.8</td><td>53.44</td><td>52.89</td><td>52.11</td><td>0.401</td><td>0.398</td><td>0.370</td></tr><tr><td>+BACON</td><td>94.8↑7.9</td><td>94.3↑6.3</td><td>87.2↑12.8</td><td>83.7↑3.4</td><td>83.1↑3.1</td><td>79.3↑6.1</td><td>74.7↑2.4</td><td>74.6↑2.0</td><td>73.2↑4.7</td><td>53.44↑0.55</td><td>53.56↑1.34</td><td>52.00↑0.22</td><td>0.425↑0.099</td><td>0.375↑0.037</td><td>0.387↑0.121</td></tr><tr><td rowspan="3">AdaKV</td><td>Base</td><td>94.8</td><td>91.8</td><td>80.8</td><td>83.0</td><td>81.4</td><td>75.2</td><td>74.9</td><td>73.2</td><td>70.8</td><td>52.44</td><td>52.33</td><td>52.44</td><td>0.347</td><td>0.325</td><td>0.293</td></tr><tr><td>+MixKV</td><td>95.5</td><td>93.5</td><td>83.3</td><td>84.4</td><td>82.8</td><td>78.5</td><td>74.8</td><td>74.7</td><td>72.9</td><td>52.89</td><td>52.56</td><td>51.78</td><td>0.351</td><td>0.414</td><td>0.353</td></tr><tr><td>+BACON</td><td>95.7↑0.9</td><td>95.0↑3.2</td><td>90.6↑9.8</td><td>83.3↑0.3</td><td>83.7↑2.3</td><td>80.7↑5.5</td><td>75.0↑0.1</td><td>74.5↑1.3</td><td>73.2↑2.4</td><td>53.11↑0.67</td><td>53.00↑0.67</td><td>53.67↑1.23</td><td>0.352↑0.005</td><td>0.417↑0.092</td><td>0.361↑0.068</td></tr></table>
+<table><tr><td rowspan="2">Method</td><td rowspan="2">Variant</td><td colspan="3">DocVQA (%)</td><td colspan="3">TextVQA (%)</td><td colspan="3">ChartQA (%)</td><td colspan="3">MMMU (%)</td><td colspan="3">TextCaps</td></tr><tr><td>256</td><td>128</td><td>64</td><td>256</td><td>128</td><td>64</td><td>256</td><td>128</td><td>64</td><td>256</td><td>128</td><td>64</td><td>256</td><td>128</td><td>64</td></tr><tr><td colspan="17">Qwen2-VL-7B-Instruct</td></tr><tr><td>Full KV</td><td>Upper</td><td></td><td>93.7</td><td></td><td></td><td>-</td><td></td><td>71.3</td><td></td><td></td><td>49.9</td><td></td><td></td><td>1.473</td><td></td><td></td></tr><tr><td rowspan="3">SnapKV</td><td>Base</td><td>88.6</td><td>82.1</td><td>70.1</td><td>80.6</td><td>77.0</td><td>70.3</td><td>70.0</td><td>69.6</td><td>66.2</td><td>49.9</td><td>49.8</td><td>49.6</td><td>1.361</td><td>1.141</td><td>0.787</td></tr><tr><td>+MixKV</td><td>91.8</td><td>83.9</td><td>70.9</td><td>82.6</td><td>81.0</td><td>73.5</td><td>70.0</td><td>70.2</td><td>67.2</td><td>49.9</td><td>49.9</td><td>49.7</td><td>1.470</td><td>1.332</td><td>0.919</td></tr><tr><td>+BACON</td><td>93.1↑4.5</td><td>91.5↑9.4</td><td>85.5↑15.4</td><td>83.1↑2.5</td><td>82.6↑5.6</td><td>78.2↑7.9</td><td>70.2↑0.2</td><td>70.2↑0.6</td><td>69.6↑3.4</td><td>49.9→0.0</td><td>49.9↑0.1</td><td>50.0↑0.4</td><td>1.488↑0.127</td><td>1.426↑0.285</td><td>1.178↑0.391</td></tr><tr><td rowspan="3">PyramidKV</td><td>Base</td><td>83.4</td><td>75.6</td><td>60.5</td><td>77.7</td><td>74.9</td><td>66.8</td><td>71.1</td><td>68.9</td><td>65.2</td><td>49.9</td><td>49.8</td><td>49.6</td><td>1.147</td><td>0.993</td><td>0.600</td></tr><tr><td>+MixKV</td><td>85.0</td><td>77.5</td><td>61.3</td><td>80.9</td><td>77.2</td><td>69.4</td><td>71.0</td><td>71.1</td><td>66.4</td><td>49.9</td><td>49.8</td><td>49.6</td><td>1.383</td><td>1.145</td><td>0.662</td></tr><tr><td>+BACON</td><td>92.3↑8.9</td><td>89.3↑13.7</td><td>79.2↑18.7</td><td>82.5↑4.8</td><td>80.0↑5.1</td><td>75.1↑8.3</td><td>71.2↑0.1</td><td>70.6↑1.7</td><td>69.2↑4.0</td><td>49.9→0.0</td><td>49.9↑0.1</td><td>49.8↑0.2</td><td>1.461↑0.314</td><td>1.344↑0.351</td><td>1.073↑0.473</td></tr><tr><td rowspan="3">AdaKV</td><td>Base</td><td>88.4</td><td>81.3</td><td>69.4</td><td>80.5</td><td>75.9</td><td>70.8</td><td>69.8</td><td>69.6</td><td>66.6</td><td>49.9</td><td>49.7</td><td>49.6</td><td>1.300</td><td>1.099</td><td>0.771</td></tr><tr><td>+MixKV</td><td>91.4</td><td>82.7</td><td>70.7</td><td>82.5</td><td>79.1</td><td>72.6</td><td>70.2</td><td>70.2</td><td>67.8</td><td>49.9</td><td>49.9</td><td>49.6</td><td>1.454</td><td>1.271</td><td>0.874</td></tr><tr><td>+BACON</td><td>93.0↑4.6</td><td>91.1↑9.8</td><td>86.2↑16.8</td><td>82.8↑2.3</td><td>81.2↑5.3</td><td>78.5↑7.7</td><td>70.2↑0.4</td><td>70.2↑0.6</td><td>69.6↑3.0</td><td>49.9→0.0</td><td>49.8↑0.1</td><td>49.8↑0.2</td><td>1.473↑0.173</td><td>1.371↑0.272</td><td>1.144↑0.373</td></tr><tr><td rowspan="3">SparseMM</td><td>Base</td><td>93.1</td><td>91.4</td><td>87.3</td><td>82.6</td><td>82.1</td><td>76.9</td><td>70.2</td><td>70.0</td><td>69.6</td><td>49.8</td><td>49.8</td><td>49.6</td><td>1.481</td><td>1.427</td><td>1.044</td></tr><tr><td>+MixKV</td><td>93.9</td><td>92.9</td><td>88.6</td><td>82.5</td><td>82.5</td><td>80.9</td><td>69.6</td><td>69.8</td><td>70.8</td><td>49.8</td><td>49.8</td><td>49.7</td><td>1.480</td><td>1.456</td><td>1.303</td></tr><tr><td>+BACON</td><td>93.8↑0.7</td><td>93.2↑1.8</td><td>92.0↑4.7</td><td>82.6→0.0</td><td>82.4↑0.3</td><td>81.6↑4.7</td><td>70.6↑0.4</td><td>70.4↑0.4</td><td>70.2↑0.6</td><td>49.9↑0.1</td><td>49.8→0.0</td><td>49.8↑0.2</td><td>1.506↑0.025</td><td>1.511↑0.084</td><td>1.431↑0.387</td></tr><tr><td colspan="17">LLaVA-NeXT-Mistral-7B</td></tr><tr><td>Full KV</td><td>Upper</td><td></td><td>62.7</td><td></td><td></td><td>68.4</td><td></td><td></td><td>51.8</td><td></td><td></td><td>34.7</td><td></td><td></td><td>0.704</td><td></td></tr><tr><td rowspan="3">SnapKV</td><td>Base</td><td>58.1</td><td>55.2</td><td>46.2</td><td>66.0</td><td>63.0</td><td>58.9</td><td>49.8</td><td>48.4</td><td>47.2</td><td>34.7</td><td>34.9</td><td>34.8</td><td>0.651</td><td>0.560</td><td>0.442</td></tr><tr><td>+MixKV</td><td>60.4</td><td>57.5</td><td>48.2</td><td>67.5</td><td>66.1</td><td>61.3</td><td>49.8</td><td>48.6</td><td>46.8</td><td>34.6</td><td>34.8</td><td>34.8</td><td>0.710</td><td>0.656</td><td>0.510</td></tr><tr><td>+BACON</td><td>59.7↑1.6</td><td>57.8↑2.6</td><td>53.9↑7.7</td><td>67.1↑1.1</td><td>66.2↑3.2</td><td>62.8↑3.9</td><td>50.0↑0.2</td><td>49.6↑1.2</td><td>49.2↑2.0</td><td>34.8↑0.1</td><td>34.9→0.0</td><td>34.8→0.0</td><td>0.686↑0.035</td><td>0.676↑0.116</td><td>0.512↑0.070</td></tr><tr><td rowspan="3">PyramidKV</td><td>Base</td><td>57.5</td><td>54.3</td><td>43.8</td><td>65.2</td><td>63.1</td><td>55.7</td><td>43.6</td><td>42.7</td><td>38.6</td><td>34.8</td><td>35.0</td><td>34.7</td><td>0.652</td><td>0.581</td><td>0.436</td></tr><tr><td>+MixKV</td><td>60.3</td><td>56.7</td><td>45.6</td><td>67.2</td><td>65.8</td><td>57.8</td><td>44.3</td><td>42.6</td><td>39.1</td><td>34.7</td><td>34.9</td><td>34.7</td><td>0.685</td><td>0.644</td><td>0.505</td></tr><tr><td>+BACON</td><td>60.6↑3.1</td><td>59.0↑4.7</td><td>52.4↑8.6</td><td>67.4↑2.2</td><td>66.0↑2.9</td><td>59.8↑4.1</td><td>45.0↑1.4</td><td>43.9↑1.2</td><td>39.9↑1.3</td><td>35.0↑0.2</td><td>35.0→0.0</td><td>34.8↑0.1</td><td>0.685↑0.033</td><td>0.650↑0.069</td><td>0.505↑0.069</td></tr><tr><td rowspan="3">AdaKV</td><td>Base</td><td>58.3</td><td>56.1</td><td>47.6</td><td>65.4</td><td>62.7</td><td>57.8</td><td>49.6</td><td>48.8</td><td>47.4</td><td>34.7</td><td>34.9</td><td>34.8</td><td>0.645</td><td>0.568</td><td>0.441</td></tr><tr><td>+MixKV</td><td>59.3</td><td>57.5</td><td>49.5</td><td>67.2</td><td>64.4</td><td>59.6</td><td>49.6</td><td>49.2</td><td>46.8</td><td>34.7</td><td>34.9</td><td>34.8</td><td>0.701</td><td>0.660</td><td>0.506</td></tr><tr><td>+BACON</td><td>59.3↑1.0</td><td>58.4↑2.3</td><td>55.2↑7.6</td><td>67.1↑1.7</td><td>65.5↑2.8</td><td>61.5↑3.7</td><td>50.0↑0.4</td><td>50.2↑1.4</td><td>49.0↑1.6</td><td>34.8↑0.1</td><td>34.9→0.0</td><td>34.8→0.0</td><td>0.694↑0.049</td><td>0.671↑0.103</td><td>0.510↑0.069</td></tr><tr><td rowspan="3">SparseMM</td><td>Base</td><td>58.5</td><td>58.9</td><td>57.5</td><td>67.2</td><td>67.4</td><td>65.2</td><td>50.6</td><td>49.8</td><td>49.4</td><td>34.7</td><td>34.7</td><td>34.8</td><td>0.670</td><td>0.600</td><td>0.489</td></tr><tr><td>+MixKV</td><td>58.9</td><td>59.0</td><td>58.7</td><td>67.4</td><td>67.6</td><td>67.1</td><td>51.0</td><td>50.4</td><td>50.0</td><td>34.8</td><td>34.7</td><td>34.7</td><td>0.685</td><td>0.620</td><td>0.569</td></tr><tr><td>+BACON</td><td>59.7↑1.2</td><td>59.3↑0.4</td><td>58.3↑0.8</td><td>68.0↑0.8</td><td>67.8↑0.4</td><td>67.3↑2.1</td><td>50.6→0.0</td><td>50.4↑0.6</td><td>49.8↑0.4</td><td>34.8↑0.1</td><td>34.8↑0.1</td><td>34.9↑0.1</td><td>0.686↑0.016</td><td>0.625↑0.025</td><td>0.572↑0.083</td></tr><tr><td colspan="17">InternVL3-8B</td></tr><tr><td>Full KV</td><td>Upper</td><td></td><td>91.1</td><td></td><td></td><td>81.6</td><td></td><td></td><td>77.8</td><td></td><td></td><td>55.3</td><td></td><td></td><td>1.111</td><td></td></tr><tr><td rowspan="3">SnapKV</td><td>Base</td><td>89.5</td><td>85.4</td><td>75.1</td><td>80.7</td><td>78.8</td><td>72.3</td><td>77.4</td><td>75.9</td><td>71.6</td><td>55.3</td><td>55.2</td><td>55.2</td><td>1.083</td><td>0.999</td><td>0.804</td></tr><tr><td>+MixKV</td><td>89.5</td><td>86.4</td><td>75.5</td><td>81.2</td><td>79.2</td><td>73.6</td><td>77.6</td><td>76.0</td><td>72.2</td><td>55.3</td><td>55.2</td><td>55.1</td><td>1.103</td><td>1.016</td><td>0.821</td></tr><tr><td>+BACON</td><td>90.0↑0.5</td><td>88.7↑3.3</td><td>84.9↑9.8</td><td>81.4↑0.7</td><td>81.2↑2.4</td><td>76.7↑4.4</td><td>77.4→0.0</td><td>77.3↑1.4</td><td>75.6↑4.0</td><td>55.4↑0.1</td><td>55.3↑0.1</td><td>55.2→0.0</td><td>1.102↑0.019</td><td>1.020↑0.021</td><td>0.856↑0.052</td></tr><tr><td rowspan="3">PyramidKV</td><td>Base</td><td>87.6</td><td>82.5</td><td>69.2</td><td>78.4</td><td>76.1</td><td>68.8</td><td>76.4</td><td>74.8</td><td>71.1</td><td>55.2</td><td>55.2</td><td>55.1</td><td>0.977</td><td>0.902</td><td>0.688</td></tr><tr><td>+MixKV</td><td>87.7</td><td>83.4</td><td>69.4</td><td>79.4</td><td>76.9</td><td>68.9</td><td>76.7</td><td>75.2</td><td>71.7</td><td>55.3</td><td>55.3</td><td>55.2</td><td>1.024</td><td>0.936</td><td>0.719</td></tr><tr><td>+BACON</td><td>89.6↑2.0</td><td>87.7↑5.2</td><td>80.7↑11.5</td><td>81.1↑2.7</td><td>79.7↑3.6</td><td>74.4↑5.6</td><td>77.5↑1.1</td><td>76.9↑2.1</td><td>74.3↑3.2</td><td>55.3↑0.1</td><td>55.4↑0.2</td><td>55.3↑0.2</td><td>1.027↑0.050</td><td>0.945↑0.043</td><td>0.782↑0.094</td></tr><tr><td rowspan="3">AdaKV</td><td>Base</td><td>89.5</td><td>85.7</td><td>76.9</td><td>80.7</td><td>78.5</td><td>72.4</td><td>77.2</td><td>75.5</td><td>72.6</td><td>55.6</td><td>55.2</td><td>55.2</td><td>1.092</td><td>0.983</td><td>0.847</td></tr><tr><td>+MixKV</td><td>89.3</td><td>86.4</td><td>77.2</td><td>81.1</td><td>79.3</td><td>73.2</td><td>76.9</td><td>76.1</td><td>72.5</td><td>55.3</td><td>55.2</td><td>55.1</td><td>1.091</td><td>1.027</td><td>0.869</td></tr><tr><td>+BACON</td><td>89.5→0.0</td><td>88.6↑2.9</td><td>85.8↑8.9</td><td>81.4↑0.7</td><td>80.4↑1.9</td><td>76.8↑4.4</td><td>77.1↓0.1</td><td>76.8↑1.3</td><td>75.4↑2.8</td><td>55.6→0.0</td><td>55.2→0.0</td><td>55.3↑0.1</td><td>1.102↑0.010</td><td>1.030↑0.047</td><td>0.872↑0.025</td></tr><tr><td colspan="17">Qwen3-VL-30B-A3B</td></tr><tr><td>Full KV</td><td>Upper</td><td></td><td>95.5</td><td></td><td></td><td>84.3</td><td></td><td></td><td>74.4</td><td></td><td></td><td>52.56</td><td></td><td></td><td>0.328</td><td></td></tr><tr><td rowspan="3">SnapKV</td><td>Base</td><td>94.7</td><td>91.5</td><td>78.9</td><td>83.4</td><td>81.8</td><td>75.8</td><td>74.7</td><td>73.2</td><td>70.4</td><td>52.33</td><td>52.67</td><td>51.56</td><td>0.354</td><td>0.348</td><td>0.273</td></tr><tr><td>+MixKV</td><td>95.3</td><td>92.7</td><td>81.0</td><td>84.0</td><td>83.0</td><td>78.8</td><td>74.9</td><td>74.8</td><td>72.4</td><td>52.78</td><td>53.00</td><td>51.89</td><td>0.357</td><td>0.426</td><td>0.334</td></tr><tr><td>+BACON</td><td>95.4↑0.7</td><td>95.1↑3.6</td><td>90.3↑11.4</td><td>83.8↑0.4</td><td>83.7↑1.9</td><td>81.4↑5.6</td><td>75.1↑0.4</td><td>74.9↑1.7</td><td>73.6↑3.2</td><td>53.11↑0.78</td><td>53.00↑0.33</td><td>52.33↑0.77</td><td>0.347↓0.007</td><td>0.435↑0.087</td><td>0.355↑0.082</td></tr><tr><td rowspan="3">PyramidKV</td><td>Base</td><td>86.9</td><td>88.0</td><td>74.4</td><td>80.3</td><td>80.0</td><td>73.2</td><td>72.3</td><td>72.6</td><td>68.5</td><td>52.89</td><td>52.22</td><td>51.78</td><td>0.326</td><td>0.338</td><td>0.266</td></tr><tr><td>+MixKV</td><td>89.3</td><td>90.2</td><td>76.3</td><td>82.3</td><td>82.9</td><td>77.2</td><td>74.0</td><td>74.5</td><td>71.8</td><td>53.44</td><td>52.89</td><td>52.11</td><td>0.401</td><td>0.398</td><td>0.370</td></tr><tr><td>+BACON</td><td>94.8↑7.9</td><td>94.3↑6.3</td><td>87.2↑12.8</td><td>83.7↑3.4</td><td>83.1↑3.1</td><td>79.3↑6.1</td><td>74.7↑2.4</td><td>74.6↑2.0</td><td>73.2↑4.7</td><td>53.44↑0.55</td><td>53.56↑1.34</td><td>52.00↑0.22</td><td>0.425↑0.099</td><td>0.375↑0.037</td><td>0.387↑0.121</td></tr><tr><td rowspan="3">AdaKV</td><td>Base</td><td>94.8</td><td>91.8</td><td>80.8</td><td>83.0</td><td>81.4</td><td>75.2</td><td>74.9</td><td>73.2</td><td>70.8</td><td>52.44</td><td>52.33</td><td>52.44</td><td>0.347</td><td>0.325</td><td>0.293</td></tr><tr><td>+MixKV</td><td>95.5</td><td>93.5</td><td>83.3</td><td>84.4</td><td>82.8</td><td>78.5</td><td>74.8</td><td>74.7</td><td>72.9</td><td>52.89</td><td>52.56</td><td>51.78</td><td>0.351</td><td>0.414</td><td>0.353</td></tr><tr><td>+BACON</td><td>95.7↑0.9</td><td>95.0↑3.2</td><td>90.6↑9.8</td><td>83.3↑0.3</td><td>83.7↑2.3</td><td>80.7↑5.5</td><td>75.0↑0.1</td><td>74.5↑1.3</td><td>73.2↑2.4</td><td>53.11↑0.67</td><td>53.00↑0.67</td><td>53.67↑1.23</td><td>0.352↑0.005</td><td>0.417↑0.092</td><td>0.361↑0.068</td></tr></table>
 
 Table 2: Results on video understanding benchmarks with Qwen2-VL-7B.
 
@@ -664,8 +662,8 @@ E-mail: kmittle@dwrite.com
 Number of pages (including cover sheet): 4
 Re: Low-Dose Review Paper Response
 Dear Dr. Whitehead:
-Attached are the reviewers' comments and the letter from Alastair MacIennan
-regarding the low-dose review paper submitted to Climactenic. We will address
+Attached are the reviewers' comments and the letter from Alastair MacLeenan
+regarding the low-dose review paper submitted to Climacteric. We will address
 the reviewers' concerns and send you a revised copy for review within the next
 few weeks.
 Respectfully,
@@ -687,7 +685,6 @@ Please Deliver Immediately
 To: Malcolm Whitehead, MD
 Kings College School of Medicine &
 Dentistry
-Fax: 44-207-501-9564
 Date: January 22, 2001
 Time: 4:15 PM EST
 From: Karen D. Mittleman, PhD
@@ -698,13 +695,13 @@ E-mail: kmfile@dwrite.com
 Number of pages (including cover sheet): 4
 Re: Low-Dose Review Paper Response
 Dear Dr. Whitehead:
-Attached are the reviewers' comments and the letter from Alastair MacI annan
+Attached are the reviewers' comments and the letter from Alastair MacI.annan
 regarding the low-dose review paper submitted to Cimactenc. We will address
 the reviewers' concerns and send you a revised copy for review within the next
 few weeks.
 Respectfully,
 Karen D. Mittleman, PhD
-189 WALL STREET, PRINCETON, NEW JERSEY 05540 + 609264-1116 + FAX: 009397-2204
+189 WALL STREET, PRINCETON, NEW JERSEY 00540 + 609-924-1116 + FAX: 009107-2204
 Source: https://www.industrydocuments.ucf.edu/docs/azjw/0217
 DWRITE 046508
 </details>
@@ -727,7 +724,7 @@ Sentinel Medical Writer
 Time: 4:15 PM EST
 Phone: 609-924-1116
 Fax: 609-897-2304
-E-mail: kmrlife@dwrite.com
+E-mail: kmrlite@dwrite.com
 Number of pages (including cover sheet): 4
 Re: Low-Dose Review Paper Response
 Dear Dr. Whitehead.
@@ -737,7 +734,7 @@ the reviewers' concerns and send you a revised copy for review within the next
 few weeks.
 Respectfully.
 Karen D. Mittleman, PhD
-109 WALL STREET, PRINCETON, NEW JERSEY 08540 + 60928+1116 + FAX: 009407-2204
+109 WALL STREET, PRINCETON, NEW JERSEY 08540 + 600924-1116 + FAX: 009407-2204
 Source: https://www.industrydocuments.ucsf.edu/docs/szjsw/0217
 DWRITE 0646588
 </details>
@@ -749,19 +746,22 @@ BACON: Karen D. Mittleman (Correct)
 
 Figure 5: Additional visualizations comparing evidence importance estimation between window attention and BACON.
 
-![](images/61f5c12015d8ac6e99f1208839c62fb235441192522b37f467af20c1e579aa27.jpg)
+![](images/78d966b39f0037aae8bc3633051d43b6493990b5aa33fd181f7d956f95ba377d.jpg)
 
 <details>
 <summary>table</summary>
 
 Consumer Dynamics
 GPC
-| Category | Retention of Franchises: (%) | Rate of Switching Leases (%) | Rate of Quitting Leases (%) | Single Brand Users in the Franchise: (%) | Share of Industry Switchers Gained: (%) | Share of the 21-25 Segment: (%) |
+| Category | Retention of Franchise: (%) | Rate of Switching Losses (%) | Rate of Quitting Losses (%) | Single Brand Users in the Franchise: (%) | Share of Industry Switchers Gained: (%) | Share of the 21-25 Segment: (%) |
 | :--- | :--- | :--- | :--- | :--- | :--- | :--- |
-| Retention of Franchises: | 83.6% | 0.0% | 9.0% | 48.5% | 11.4% | 2.5% |
-| Rate of Switching Leases | (103) | (85) | (85) | (69) | (285) | (64) |
-Source: US$88,195-695, 12-March Data
-Source: https://www.industrydocuments.edu/eBook.org/2007
+| Retention of Franchise: | 83.6% | 83.6 | 83.6 | 48.5% | 48.5% | 48.5% |
+| Rate of Switching Losses | 9.0% | 9.0 | 9.0 | 11.4% | 11.4% | 11.4% |
+| Rate of Quitting Losses | 7.4% | 7.4 | 7.4 | 2.5% | 2.5% | 2.5% |
+| Single Brand Users in the Franchise: | (69) | (69) | (69) | (69) | (69) | (69) |
+| Share of Industry Switchers Gained: | (285) | (285) | (285) | (64) | (64) | (64) |
+Source: US$R, US-$5, US, 12-Month Data
+Source: https://www.industrydocuments.edu/education@1007
 </details>
 
 Q: what is the heading of this page?  
@@ -795,7 +795,7 @@ Source: USTR 105-035, 12-March Date
 
 BACON: Consumer Dynamics (Correct)
 
-![](images/4da32579da94a092920fee97b7fa3d66bc598fb4637412fc580e4f80888d048a.jpg)
+![](images/0eb0a1e5f07c3f630fbd4a3facae1cff66c7dd6718b97432295814d4a03d6e64.jpg)
 
 <details>
 <summary>text_image</summary>
@@ -803,25 +803,19 @@ BACON: Consumer Dynamics (Correct)
 BACON
 Consumer Dynamics
 GPC
-• Retention of Franchise:
-• Rate of Switching Losses
-• Rate of Quitting Losses
-• Single Brand Users in the Franchise:
-• Share of Industry Switchers Gained:
-• Share of the 21-25 Segment:
 Index
-83.6% (103)
-9.0% (85)
-7.4% (89)
-48.5% (69)
-11.4% (285)
-2.5% (64)
-Source: USSR 195-935, 12 March Date
+Retention of Franchise: 83.6% (103)
+Rate of Switching Losses 9.0% (85)
+Rate of Quitting Losses 7.4% (89)
+Single Brand Users in the Franchise: 48.5% (69)
+Share of Industry Switchers Galled: 11.4% (285)
+Share of the 21-25 Segment: 2.5% (64)
+Source: USSR 195-095, 12-March Date
 </details>
 
 Figure 5: Additional visualizations comparing evidence importance estimation between window attention and BACON.
 
-![](images/904e1021108f3371bddc24cbffbf59e8e6eebbd9b15b65d30f80a616e2e49b16.jpg)
+![](images/8a1eb392c5a05178e81049738d96d58a3cf0d0f3155ba2b747ef81c52b07f2c6.jpg)
 
 <details>
 <summary>flowchart</summary>
@@ -829,17 +823,17 @@ Figure 5: Additional visualizations comparing evidence importance estimation bet
 ```mermaid
 graph TD
   A["Original"] --> B["ORGANIZATIONAL PLAN"]
-  B --> C["LABORATORY RESEARCH DIVISION"]
-  C --> D["THE SANGEL ROBERT'S NOBLE FOUNDATION, INC."]
+  B --> C["LAROLATORY RESEARCH DIVISION"]
+  C --> D["THE SANGEL ROBERTS NOBLE FOUNDATION, INC."]
   D --> E["LABORATORY RESEARCH DIVISION"]
   E --> F["Research Service Department"]
-  E --> G["Research Department"]
+  E --> G["Research Department Office"]
   F --> H["Library"]
-  F --> I["Bookroom"]
+  F --> I["Stockroom"]
   F --> J["Shop Facilities"]
-  G --> K["Protein Section"]
-  G --> L["Growth and Respiratory Section"]
-  G --> M["Small Animal Section"]
+  G --> K["Prostate Section"]
+  G --> L["Growth and Registration Section"]
+  G --> M["Email Animal Section"]
 ```
 </details>
 
@@ -855,39 +849,38 @@ Base: LABORATORY INFORMATION SYSTEMS (Wrong)
 ```mermaid
 graph TD
   A["Figure 1"] --> B["ORGANATIONAL PLAN"]
-  B --> C["LABOLOGY RESEARCH DIVISION"]
-  C --> D["THE MANUEL ROBERT'S NOBLE FOUNDATION, INC."]
-  C --> E["LABORATORY RESEARCH DIVISION"]
-  E --> F["Research Service Department"]
-  E --> G["Research Department Office"]
-  F --> H["Library"]
-  F --> I["Backroom"]
-  F --> J["Shop Facilities"]
-  G --> K["Proteal Section"]
-  G --> L["Growth and Registration Section"]
-  G --> M["Small Adrenal Section"]
+  B --> C["LABORATORY RESEARCH DIVISION"]
+  C --> D["Research Service Department"]
+  C --> E["Research Department Office"]
+  D --> F["Library"]
+  D --> G["Backroom"]
+  D --> H["Shop Facilities"]
+  E --> I["Proteal Section"]
+  E --> J["Growth and Registration Section"]
+  E --> K["Small Adrenal Section"]
 ```
 </details>
 
 BACON: LABORATORY RESEARCH DIVISION (Correct)
 
-![](images/2c4b93eff4203f545ffeb3e81d974da85f64d41b137fb004f76b2c45e0ced092.jpg)
+![](images/43186bc08c6b5cb238d67fc134d01079d011c28de1bc7b192edaf48bd2d09e5e.jpg)
 
 <details>
 <summary>flowchart</summary>
 
 ```mermaid
 graph TD
-  A["Figure 1"] --> B["ORGANATIONAL PLAN"]
-  B --> C["LABORATORY RESEARCH DIVISION"]
-  C --> D["Research Services Experiment"]
-  C --> E["Research Department Office"]
-  D --> F["Library"]
-  D --> G["Backroom"]
-  D --> H["Shop Facilities"]
-  E --> I["Physician Section"]
-  E --> J["Growth and Respiratory Section"]
-  E --> K["Small Animal Section"]
+  A["Figure 1: ORGANIZATIONAL PLAN"] --> B["LABOCCIPAL RESEARCH DIVISION"]
+  B --> C["THE SAMUEL ROBERT'S MOBILE FOUNDATION, INC."]
+  C --> D["LAROVIATORY RESEARCH DIVISION"]
+  D --> E["Research Service Department"]
+  D --> F["Research Department Office"]
+  E --> G["Library"]
+  E --> H["Backroom"]
+  E --> I["Shop Facilities"]
+  F --> J["Physician Services Section"]
+  F --> K["Growth and Respiratory Section"]
+  F --> L["Small Animal Services Section"]
 ```
 </details>
 
