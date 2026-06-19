@@ -1,0 +1,2368 @@
+[
+    {
+        "type": "text",
+        "text": "MoVerse: Real-Time Video World Modeling with Panoramic Gaussian Scaffold",
+        "text_level": 1,
+        "bbox": [
+            161,
+            75,
+            836,
+            125
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "Yang Zhou13∗† , Ziheng Wang23∗† , Yuqin Lu13∗† , Haofeng Liu3‡ , Jun Liang3‡ , Shengfeng He4 , Jing Li3",
+        "bbox": [
+            145,
+            146,
+            846,
+            164
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "1South China University of Technology 2Columbia University 3Orange Team, Moku Lab, HUJING Digital Media & Entertainment Group 4Singapore Management University",
+        "bbox": [
+            116,
+            176,
+            879,
+            209
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "Abstract. We present MoVerse, a real-time video world model that creates an interactively navigable scene from a single narrow-field-of-view image. This setting is challenging because the input observes only a small fraction of the environment, while interactive roaming requires a complete surrounding world, persistent geometry, controllable camera motion, and temporally coherent high-fidelity observations. MoVerse addresses this problem by separating world construction from observation rendering. It first expands the input into a gravity-aligned 360◦ panorama with topology-aware diffusion, closing the missing field of view before 3D reasoning. It then lifts the panorama into a persistent 3D Gaussian scaffold using panoramic geometry-aware residual prediction, yielding a dense and directly renderable spatial memory. Finally, a Gaussian-conditioned video renderer translates scaffold renderings along user-specified camera trajectories into photorealistic video. To make this renderer practical for interaction, we train a bidirectional diffusion teacher for high-quality conditional rendering and distill it into a causal autoregressive student for bounded-latency streaming. This design combines the controllability and long-range consistency of explicit 3D representations with the perceptual quality of generative video models. MoVerse supports real-time scene roaming at 8 FPS on a single NVIDIA RTX 4090 GPU, demonstrating a practical path toward single-image world creation with interactive video output.",
+        "bbox": [
+            133,
+            239,
+            864,
+            467
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "Project Homepage: https://orange-3dv-team.github.io/MoVerse/",
+        "bbox": [
+            135,
+            493,
+            589,
+            507
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "Date: June 18, 2026",
+        "bbox": [
+            137,
+            508,
+            272,
+            521
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "image",
+        "img_path": "images/e17bb6a626dee9b99c61c37d7c44df1c6ea1512739428a6bd108f8b44045f4c2.jpg",
+        "image_caption": [],
+        "image_footnote": [],
+        "content": "Illustration of a thatched cottage in a green field with trees and hills, displayed within a game controller interface (no text or symbols on the scene itself)",
+        "sub_type": "natural_image",
+        "bbox": [
+            114,
+            568,
+            883,
+            818
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "list",
+        "sub_type": "text",
+        "list_items": [
+            "∗ Work done during an internship at Orange Team, Moku Lab, HUJING Digital Media & Entertainment Group.",
+            "† Equal contribution.",
+            "‡ Project leader."
+        ],
+        "bbox": [
+            135,
+            830,
+            823,
+            868
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "aside_text",
+        "text": "arXiv:2606.13376v2 [cs.CV] 17 Jun 2026",
+        "bbox": [
+            22,
+            276,
+            58,
+            717
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "header",
+        "text": "YOUKU",
+        "bbox": [
+            696,
+            30,
+            883,
+            61
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "1 Introduction",
+        "text_level": 2,
+        "bbox": [
+            111,
+            80,
+            272,
+            98
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "text",
+        "text": "Generating a navigable world from a single narrow-field-of-view (NFOV) image is fundamentally underconstrained. The input observes only a small frustum, while interactive applications such as VR prototyping, digital twins, content creation, and embodied-agent simulation require a user to move through a complete, spatially persistent environment. A practical system must therefore solve three coupled problems: it must complete the missing field of view, convert that completion into a camera-controllable scene representation, and render high-quality temporally coherent video during interaction.",
+        "bbox": [
+            109,
+            113,
+            887,
+            205
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "text",
+        "text": "Existing approaches usually emphasize only part of this requirement. Explicit 3D methods build persistent scene assets, such as point clouds, meshes, or 3D Gaussian scenes, and then render novel views from them [1, 2, 3, 4, 5, 6, 7, 8, 9]. Their explicit state provides durable spatial memory, accurate camera control, and high frame-rate rendering. However, when the asset is lifted directly from a single NFOV image, most of the scene must be inferred from weak evidence; when additional views are synthesized before reconstruction, the resulting asset can inherit cross-view inconsistencies and generation cost. Direct rendering from such assets may expose holes, floaters, depth errors, or limited perceptual quality, especially under large viewpoint changes.",
+        "bbox": [
+            109,
+            209,
+            888,
+            332
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "text",
+        "text": "Implicit video and world models take the opposite route [10, 11, 12, 13, 14, 15, 16, 17, 18, 19]. They generate observations during interaction and store history in attention windows, recurrent states, or key–value caches. These models can produce visually strong videos, but their long-range geometry is only as stable as the implicit memory retained by the model. As the user follows a long trajectory or revisits a previously seen region, the scene can drift, change identity, or develop boundary discontinuities that are difficult to correct online.",
+        "bbox": [
+            109,
+            335,
+            887,
+            426
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "text",
+        "text": "Hybrid systems use explicit geometry as a condition for generative rendering [20, 21, 22, 23, 24, 25]. They show that a geometric anchor can constrain camera motion and scene layout while a learned renderer improves appearance. However, the strength of the anchor and the deployability of the renderer remain in tension: sparse or coarse anchors give limited spatial guidance, whereas strong generative renderers are often too expensive or too bidirectional for real-time interaction. This motivates a design in which the explicit condition is dense, panoramic, directly renderable, and reusable, while the video model is distilled into a causal renderer for streaming use.",
+        "bbox": [
+            109,
+            430,
+            887,
+            537
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "text",
+        "text": "We present MoVerse, a three-stage system for real-time video world modeling with panoramic Gaussian guidance. Given a single NFOV image, MoVerse first generates a gravity-aligned 360◦ equirectangular panorama, then lifts the panorama into a persistent 3D Gaussian scaffold, and finally renders interactive video through a Gaussian-conditioned autoregressive video model. The key design choice is to separate world construction from observation rendering: Stages I and II build a reusable scaffold offline, while Stage III turns scaffold renderings along user-specified camera trajectories into high-fidelity video online.",
+        "bbox": [
+            109,
+            541,
+            887,
+            633
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "text",
+        "text": "MoVerse is organized around three technical components:",
+        "bbox": [
+            109,
+            637,
+            527,
+            652
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "text",
+        "text": "• Geometry-aware panoramic generation. Stage I closes the missing field of view before 3D lifting. It canonicalizes an unposed NFOV input into a gravity-aligned panoramic frame using differentiable autoleveling, then performs masked latent diffusion completion with circular latent encoding and shift-equivariant generation to respect the horizontal S1 topology of ERP panoramas. The model is trained on Horizon360, a curated set of canonicalized panoramas with yaw-centered perspective-view supervision.",
+        "bbox": [
+            109,
+            660,
+            888,
+            736
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "text",
+        "text": "• Panoramic Gaussian scaffold construction. Stage II converts the completed panorama into a directly renderable 3DGS scene using a feed-forward panoramic Gaussian generator. The scaffold is initialized by spherical back-projection from panorama depth, uses latitude-aware scale correction proportional to cos ϕ, and predicts residuals in angular–inverse-depth space so that Gaussian updates remain consistent with ERP geometry and horizontal closure.",
+        "bbox": [
+            109,
+            743,
+            887,
+            820
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "text",
+        "text": "• Gaussian-conditioned streaming video rendering. Stage III renders the scaffold along the requested camera trajectory and translates the resulting RGB conditioning stream into final video. A bidirectional teacher, initialized from Wan2.1-T2V, learns dense Gaussian-conditioned video rendering with shared positional coordinates between target and condition tokens. It is then distilled into a causal autoregressive student using self-forcing and distribution matching, enabling bounded-latency streaming with a local key–value cache while the explicit scaffold carries long-range spatial memory.",
+        "bbox": [
+            109,
+            825,
+            887,
+            902
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "page_number",
+        "text": "2",
+        "bbox": [
+            493,
+            936,
+            504,
+            948
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "image",
+        "img_path": "images/f8dfd543981e634aebc2b6a59e10ca86377cc387d9a2be51a946a8f9f8c9a2a7.jpg",
+        "image_caption": [
+            "Figure 1 MoVerse pipeline overview. From a single narrow-field-of-view input image, Stage I synthesizes a gravity-aligned 360◦ panorama, Stage II lifts the panorama into a persistent 3D Gaussian scaffold, and Stage III renders Gaussianconditioned video along user-specified camera trajectories for real-time interactive roaming."
+        ],
+        "image_footnote": [],
+        "content": "```mermaid\ngraph TD\n  A[\"(a) Panoramic Generation\"] --> B[\"Pano DiT\"]\n  B --> C[\"User Controlled Interactive Render\"]\n  D[\"(b) Gaussian Generation & Rendering\"] --> E[\"Pano Gaussian Generator\"]\n  E --> F[\"User Controlled Interactive Render\"]\n  G[\"(c) Autoregressive Video Refinement\"] --> H[\"VAE\"]\n  H --> I[\"KV Cache\"]\n  I --> J[\"Self-Attention\"]\n  I --> K[\"Cross-Attention\"]\n  I --> L[\"FFN\"]\n  I --> M[\"Wan2.1-1.3B DiT\"]\n  M --> N[\"VAE\"]\n  N --> O[\"Output\"]\n    style A fill:#f9f,stroke:#333\n    style D fill:#f9f,stroke:#333\n    style G fill:#f9f,stroke:#333\n```",
+        "sub_type": "flowchart",
+        "bbox": [
+            116,
+            84,
+            849,
+            324
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "",
+        "bbox": [
+            125,
+            396,
+            606,
+            412
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "This factorization gives each stage a clear role. The panorama generator supplies complete omnidirectional evidence instead of asking the 3D module to hallucinate most of the world. The Gaussian predictor turns that evidence into a persistent renderable asset rather than leaving scene state inside a video model. The causal renderer improves perceptual quality and temporal coherence without replacing the camera motion and layout encoded by the scaffold. In our deployment configuration, this design supports real-time roaming at 8 FPS on a single NVIDIA RTX 4090 GPU.",
+        "bbox": [
+            109,
+            417,
+            885,
+            508
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "Stage-wise positioning. The three stages connect several lines of prior work. Stage I builds on panorama outpainting and 360◦ generation [26, 27, 28, 29], but emphasizes gravity canonicalization and spherical topology. Stage II follows feed-forward 3DGS reconstruction [30, 31, 32, 33, 34, 35], but specializes residual Gaussian prediction to ERP panoramas. Stage III adopts the conditioning pattern of camera-controlled video and novel-view synthesis [23, 21, 22] on top of modern video generators [36, 37, 38], realizing causal streaming rather than offline clip refinement.",
+        "bbox": [
+            109,
+            518,
+            887,
+            609
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "2 Method",
+        "text_level": 2,
+        "bbox": [
+            109,
+            633,
+            227,
+            648
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "2.1 Overview",
+        "text_level": 2,
+        "bbox": [
+            109,
+            667,
+            235,
+            681
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "Given a single NFOV image $I \\in \\mathbb { R } ^ { H \\times W \\times 3 }$ , MoVerse produces a real-time navigable video stream through three sequential stages, as illustrated in Fig. 1. The pipeline first completes the missing omnidirectional context, then stores the completed world in a persistent Gaussian scaffold, and finally renders interactive observations by translating scaffold renderings into temporally coherent video.",
+        "bbox": [
+            109,
+            693,
+            885,
+            753
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "list",
+        "sub_type": "text",
+        "list_items": [
+            "1. Stage I: Panoramic Generation $( I \\to P )$ . The input image is expanded into a gravity-aligned $3 6 0 ^ { \\circ }$ equirectangular panorama P . This step closes the missing field of view before any 3D lifting, providing structurally complete observations for every viewing direction and eliminating the need for the subsequent 3D stage to hallucinate large unobserved regions.",
+            "2. Stage II: Gaussian Scene Generation $( P \\to { \\mathcal { G } } )$ . The panorama is lifted into a panoramic 3D Gaussian scene $\\mathcal { G } = \\{ ( \\mu _ { k } , \\Sigma _ { k } , \\alpha _ { k } , c _ { k } ) \\} _ { k = 1 } ^ { K }$ , where each Gaussian is parameterized by its center $\\mu _ { k }$ , covariance $\\Sigma _ { k }$ , opacity $\\alpha _ { k }$ , and appearance $c _ { k }$ . Unlike point-cloud or mesh representations, 3D Gaussians are directly splatting-renderable at real-time frame rates, yielding a dense, camera-controllable RGB conditioning video $\\hat { V } _ { 1 : T } = \\{ \\hat { V } _ { t } \\} _ { t = 1 } ^ { T }$ 1 that is substantially more informative than sparse point-cloud projections, but still"
+        ],
+        "bbox": [
+            109,
+            762,
+            887,
+            906
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "page_number",
+        "text": "3",
+        "bbox": [
+            493,
+            936,
+            504,
+            949
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "image",
+        "img_path": "images/409a47f502658aa0004265812fcf43a8e0a1ec8f17d086ae754f8193eb02ff85.jpg",
+        "image_caption": [
+            "Figure 2 Stage I panoramic generation. The input NFOV image is auto-leveled into a gravity-aligned canonical viewing space and then completed as a topology-aware ERP panorama. Circular latent encoding and shift-equivariant generation preserve the horizontal $S ^ { 1 }$ boundary."
+        ],
+        "image_footnote": [],
+        "content": "```mermaid\ngraph TD\n  A[\"Perspective sampling\"] --> B[\"Gravity-Aligned\"]\n  B --> C[\"Perspective sampling\"]\n  C --> D[\"Warping\"]\n  D --> E[\"Canonical Viewing Space\"]\n  E --> F[\"Differentiable Auto-Leveling\"]\n  F --> G[\"Geometric Encoder\"]\n  G --> H[\"Dense Correspondence\"]\n  H --> I[\"Soft-argmin Solver\"]\n  I --> J[\"Rigid Correspondence\"]\n  J --> K[\"Vertical Embedding Structure\"]\n    \n  L[\"Text Encoder\"] --> M[\"Add Noise\"]\n  M --> N[\"Horizontal Shift\"]\n  N --> O[\"DiT LoRA\"]\n  O --> P[\"Diffusion Loss\"]\n  P --> Q[\"Horizontal Shift\"]\n  Q --> R[\"Siamese Consistency Loss\"]\n    \n  S[\"Text Encoder\"] --> T[\"Add Noise\"]\n  T --> U[\"Horizontal Shift\"]\n  U --> V[\"DiT LoRA\"]\n  V --> W[\"Diffusion Loss\"]\n  W --> X[\"Horizontal Shift\"]\n  X --> Y[\"Siamese Consistency Loss\"]\n    \n  Z[\"Text Encoder\"] --> AA[\"Add Noise\"]\n  AA --> AB[\"Horizontal Shift\"]\n  AB --> AC[\"DiT LoRA\"]\n  AC --> AD[\"Diffusion Loss\"]\n```",
+        "sub_type": "flowchart",
+        "bbox": [
+            114,
+            78,
+            883,
+            361
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "text",
+        "text": "imperfect as final photorealistic observations.",
+        "bbox": [
+            130,
+            430,
+            457,
+            445
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "text",
+        "text": "3. Stage III: Gaussian-Conditioned Video Rendering $( \\hat { V } _ { 1 : T }  V _ { 1 : T } )$ . A learned video renderer translates the Gaussian-rendered conditioning video $\\hat { V } _ { 1 : T }$ into a high-fidelity output video $V _ { 1 : T } = \\{ V _ { t } \\} _ { t = 1 } ^ { T }$ . By generating sequences rather than independent frames, the renderer maintains temporal coherence across successive viewpoints while enhancing perceptual quality without changing the camera motion or scene layout implied by the scaffold.",
+        "bbox": [
+            109,
+            452,
+            888,
+            529
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "text",
+        "text": "Offline vs. online split. Stages I and II are executed once as offline scaffold construction: given a new input image, they produce a persistent 3DGS asset in seconds. Stage III operates online: at interaction time, the scaffold is rendered at the user-requested camera trajectory, and the video renderer streams enhanced frames in real time. This separation ensures that the computationally heavier generative steps (panorama synthesis, 3D lifting) do not bottleneck interactive exploration, while the explicit scaffold provides durable geometric memory that prevents drift across arbitrarily long trajectories.",
+        "bbox": [
+            109,
+            540,
+            887,
+            632
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "text",
+        "text": "2.2 Stage I: Panoramic Generation",
+        "text_level": 2,
+        "bbox": [
+            109,
+            650,
+            408,
+            666
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "text",
+        "text": "Stage I expands the input NFOV image I into a complete equirectangular panorama $P \\in \\mathbb { R } ^ { H _ { e } \\times W _ { e } \\times 3 }$ . Image outpainting and completion have progressed from GAN-based extrapolation to diffusion-based inpainting and latent completion [39, 40, 41, 42, 43]. In parallel, recent panoramic generation methods have adapted diffusion priors to 360◦ content synthesis, including text-to-panorama generation, perspective-conditioned panorama outpainting, and immersive world generation [44, 45, 26, 28, 27, 5, 46]. Rather than treating this step as generic image outpainting, we formulate it as geometry-aware panoramic completion. The generated panorama should provide complete 360◦ scene context, maintain a gravity-aligned horizon, and respect the horizontal $S ^ { 1 }$ periodicity of ERP images. We denote this stage as",
+        "bbox": [
+            109,
+            675,
+            887,
+            797
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "equation",
+        "text": "$$\nP = G _ {\\theta} (I), \\tag {1}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            455,
+            806,
+            885,
+            824
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "text",
+        "text": "where $G _ { \\theta }$ first canonicalizes the input view and then completes the surrounding omnidirectional scene. Fig. 2 summarizes the resulting Stage I pipeline: the input is stabilized into a canonical panoramic frame, used as masked visual context for diffusion-based completion, and decoded with topology-aware operations to produce a horizontally closed ERP panorama.",
+        "bbox": [
+            109,
+            832,
+            885,
+            893
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "text",
+        "text": "The generator is implemented as a conditional latent diffusion completion model, following the common practice of performing high-resolution synthesis in a compressed latent space [42]. Let E and D denote the latent encoder and decoder. During training, a canonical target panorama is encoded as $z _ { 0 } = \\mathcal { E } ( P )$ , and a binary ERP mask M marks the known region induced by the sampled input view. The visible reference latent is",
+        "bbox": [
+            109,
+            898,
+            883,
+            914
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "page_number",
+        "text": "4",
+        "bbox": [
+            493,
+            936,
+            504,
+            949
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "text",
+        "text": "",
+        "bbox": [
+            109,
+            80,
+            887,
+            138
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "equation",
+        "text": "$$\nz _ {\\text { ref }} = z _ {0} \\odot M. \\tag {2}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            447,
+            142,
+            885,
+            157
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "where ⊙ denotes element-wise multiplication, with M broadcast across latent channels. At inference time, the known latent context is instead formed from the input image after projection and canonical alignment. During denoising, the network predicts the injected noise from the noisy latent, the mask, and the known visual context:",
+        "bbox": [
+            109,
+            162,
+            887,
+            223
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "equation",
+        "text": "$$\n\\hat {\\epsilon} = \\epsilon_ {\\theta} (z _ {t} \\oplus M \\oplus z _ {\\text { ref }}, t, \\tau (y)), \\tag {3}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            395,
+            224,
+            885,
+            239
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "where $\\oplus$ denotes channel-wise concatenation and $\\tau ( y )$ is the conditioning embedding. The corresponding latent diffusion objective is",
+        "bbox": [
+            109,
+            246,
+            885,
+            277
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "equation",
+        "text": "$$\n\\mathcal {L} _ {\\mathrm{LDM}} = \\mathbb {E} _ {z _ {0}, \\epsilon , t} \\left[ \\| \\epsilon - \\epsilon_ {\\theta} (z _ {t} \\oplus M \\oplus z _ {\\text { ref }}, t, \\tau (y)) \\| _ {2} ^ {2} \\right]. \\tag {4}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            321,
+            287,
+            885,
+            313
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "This masked latent formulation preserves the observed input while synthesizing the unobserved panoramic field of view.",
+        "bbox": [
+            109,
+            323,
+            885,
+            354
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "A direct perspective-to-ERP outpainting pipeline is insufficient for this purpose because it ignores two domain gaps. The first is projective variance. Real input images are generally unposed: arbitrary pitch and roll distort the projected ERP observation, causing straight walls, floor boundaries, and horizons to become curved or tilted. Many panorama outpainting pipelines project the input view into ERP using predefined camera assumptions or known extrinsics [26, 28, 27, 5, 46], which limits robustness for unconstrained photographs. These non-linear distortions conflict with the structural priors that image diffusion models learn from perspective imagery. The second is topological severing. ERP panoramas are horizontally periodic: the left and right image boundaries correspond to adjacent azimuthal directions on the same physical sphere. Standard diffusion backbones, VAEs, and positional encodings are designed for bounded Euclidean images and can therefore introduce artificial seams at this boundary. Existing works mitigate this issue through circular blending, synchronized denoising, circular padding, or specialized panoramic operators [45, 47, 48, 49], but these treatments do not fully remove the underlying mismatch between Euclidean image grids and the closed azimuthal topology. We address these two gaps in order: first by defining a gravity-aligned canonical panoramic representation, and then by enforcing topology-aware completion in the latent generation process.",
+        "bbox": [
+            109,
+            358,
+            887,
+            571
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "2.2.1 Canonical panoramic representation.",
+        "text_level": 2,
+        "bbox": [
+            109,
+            588,
+            415,
+            603
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "We complete the scene in a canonical viewing space C. This space removes pitch and roll ambiguity by aligning the environmental horizon with the equator of the ERP canvas. The output of Stage I is therefore not merely a visually plausible panorama, but a normalized panoramic observation with stable longitude–latitude coordinates. In this representation, vertical architectural structures remain plumb and the horizon remains level. A separate yaw-centered target convention, described below in the training data construction, places the input view at the center of the panorama rather than near the periodic boundary. We write the gravity canonicalization abstractly as",
+        "bbox": [
+            109,
+            609,
+            887,
+            715
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "equation",
+        "text": "$$\nz _ {\\text { can }} = \\mathcal {T} _ {\\text { align }} (z _ {\\text { ref }}), \\tag {5}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            434,
+            717,
+            885,
+            733
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "where $\\tau _ { \\mathrm { a l i g n } }$ maps the observed latent context into the gravity-aligned panoramic frame.",
+        "bbox": [
+            109,
+            739,
+            745,
+            755
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "2.2.2 Differentiable auto-leveling.",
+        "text_level": 2,
+        "bbox": [
+            109,
+            772,
+            356,
+            787
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "We adopt differentiable auto-leveling to estimate $\\tau _ { \\mathrm { a l i g n } }$ for uncalibrated perspective inputs without requiring camera extrinsics at inference time. The auto-leveling module first predicts a dense 2D correspondence field",
+        "bbox": [
+            109,
+            794,
+            887,
+            825
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "equation",
+        "text": "$$\nP _ {\\text { dense }} \\in \\mathbb {R} ^ {H _ {I} \\times W _ {I} \\times 2}, \\tag {6}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            426,
+            837,
+            885,
+            854
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "which represents pixel-wise shifts toward a gravity-leveled reference. Instead of directly using this dense field as a free-form spatial warp, the correspondences are passed through a rigid transformation bottleneck implemented by a differentiable soft-argmin solver. The solver searches for a low-dimensional rigid spherical transformation $\\hat { R }$ whose reprojection best explains the dense correspondences, including the gravity-alignment rotation needed to remove pitch and roll under the canonical yaw convention. The actual canonical warp is then performed by spherical grid sampling:",
+        "bbox": [
+            109,
+            864,
+            887,
+            912
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "page_number",
+        "text": "5",
+        "bbox": [
+            493,
+            936,
+            504,
+            948
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "",
+        "bbox": [
+            109,
+            80,
+            887,
+            127
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "equation",
+        "text": "$$\nz _ {\\text { can }} = \\mathcal {W} (z _ {\\text { ref }}, \\hat {R}), \\tag {7}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            434,
+            136,
+            885,
+            152
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "text",
+        "text": "where W denotes differentiable spherical sampling.",
+        "bbox": [
+            109,
+            161,
+            478,
+            176
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "text",
+        "text": "This constraint is important for stable diffusion-based training. Although spatial transformer networks provide a general mechanism for differentiable image warping [50], an unconstrained spatial transformer can absorb high-frequency reconstruction gradients as local non-rigid distortions, producing unstable jelly-like warps. The rigid bottleneck instead restricts alignment updates to globally coherent camera rotations. To stabilize early training, we also apply an auxiliary geometric anchor to the dense correspondence prediction:",
+        "bbox": [
+            109,
+            181,
+            887,
+            257
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "equation",
+        "text": "$$\n\\mathcal {L} _ {\\mathrm{flow}} = \\operatorname{Smooth} _ {L _ {1}} (P _ {\\mathrm{dense}}, P _ {\\mathrm{GT}}), \\tag {8}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            385,
+            267,
+            885,
+            284
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "text",
+        "text": "where $P _ { \\mathrm { G T } }$ is analytically obtained from canonicalized panorama–view pairs. The final warp still passes through the rigid solver, so the dense field supervises alignment evidence rather than becoming a free-form deformation field.",
+        "bbox": [
+            109,
+            292,
+            885,
+            338
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "text",
+        "text": "2.2.3 Topology-aware panoramic completion.",
+        "text_level": 2,
+        "bbox": [
+            109,
+            354,
+            434,
+            369
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "text",
+        "text": "After canonicalization, the generator completes the missing field of view while preserving the horizontal closure of the ERP domain. We use circular latent encoding so that horizontal convolutional padding in the latent autoencoder wraps around the azimuthal axis rather than introducing artificial image borders. This makes the latent compression and reconstruction process consistent with the periodic condition of ERP panoramas.",
+        "bbox": [
+            109,
+            377,
+            888,
+            438
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "text",
+        "text": "We further encourage shift-equivariant diffusion generation. Let $\\operatorname { R o l l } _ { \\delta } ( \\cdot )$ denote a horizontal circular shift by offset δ. For the canonical diffusion input ${ \\cal X } = z _ { t } \\oplus { \\cal M } \\oplus z _ { \\mathrm { c a n } } .$ the base and shifted branches are",
+        "bbox": [
+            109,
+            443,
+            887,
+            474
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "equation",
+        "text": "$$\n\\hat {\\epsilon} _ {\\text { base }} = \\epsilon_ {\\theta} (X, t, \\tau (y)), \\tag {9}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            424,
+            484,
+            885,
+            500
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "equation",
+        "text": "$$\n\\hat {\\epsilon} _ {\\text { shifted }} = \\epsilon_ {\\theta} (\\operatorname{Roll} _ {\\delta} (X), t, \\tau (y)). \\tag {10}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            392,
+            508,
+            885,
+            525
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "text",
+        "text": "The shift-consistency objective is",
+        "bbox": [
+            109,
+            529,
+            352,
+            545
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "equation",
+        "text": "$$\n\\mathcal {L} _ {\\mathrm{shift}} = \\mathbb {E} _ {z _ {0}, \\epsilon , t, \\delta} \\left[ \\| \\mathrm{Roll} _ {\\delta} (\\hat {\\epsilon} _ {\\mathrm{base}}) - \\hat {\\epsilon} _ {\\mathrm{shifted}} \\| _ {2} ^ {2} \\right]. \\tag {11}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            344,
+            554,
+            885,
+            580
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "text",
+        "text": "For transformer-based diffusion backbones, this circular shift can be implemented efficiently by shifting positional coordinates rather than physically rolling all latent tokens. During inference, random horizontal shifts can also be applied across denoising steps and inverted at the end, so no fixed tensor boundary consistently acts as the seam location.",
+        "bbox": [
+            109,
+            585,
+            887,
+            647
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "text",
+        "text": "2.2.4 Canonical training data.",
+        "text_level": 2,
+        "bbox": [
+            109,
+            664,
+            326,
+            679
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "text",
+        "text": "The panoramic generator is trained with Horizon360, a curated collection of gravity-aligned indoor and outdoor panoramas. Existing omnidirectional datasets and scene resources provide diverse panoramic content [51, 52, 53, 3], but raw panoramas often contain inconsistent pitch, roll, and horizon placement. The raw panoramas are therefore canonicalized by rotating the spherical image so that the true horizon aligns with the ERP equator and physical verticals remain plumb, following the geometric intuition behind panoramic layout and horizon estimation [54, 55, 56, 57, 58]. Fig. 3 visualizes this rectification process. This provides the diffusion model with a consistent structural prior instead of asking it to learn from panoramas with arbitrary tilt and roll.",
+        "bbox": [
+            109,
+            686,
+            887,
+            808
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "text",
+        "text": "To expose the model to realistic input photographs, perspective views are sampled from the canonical panoramas with variable yaw, pitch, roll, field of view, and aspect ratio. The sampling distribution mixes common handheld captures with more extreme camera poses, so the auto-leveling module learns both small everyday misalignments and challenging out-of-distribution tilts. We also circularly roll each target panorama by the input yaw so that the observed view is centered in the canonical canvas:",
+        "bbox": [
+            109,
+            811,
+            887,
+            888
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "equation",
+        "text": "$$\nP _ {\\text { centered }} = \\operatorname{Roll} (P _ {\\mathrm{ERP}}, - \\psi_ {\\text { input }}). \\tag {12}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            385,
+            898,
+            885,
+            915
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "page_number",
+        "text": "6",
+        "bbox": [
+            493,
+            936,
+            504,
+            949
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "image",
+        "img_path": "images/bb9125f2333781d06f057f170e242037b5b7fa6da86ea58aee7d0cba83790db6.jpg",
+        "image_caption": [
+            "Canonicalization",
+            "Figure 3 Canonical panorama construction. Raw unaligned panoramas are rotated on the sphere so that the horizon coincides with the ERP equator and physical verticals become plumb, yielding the canonical training targets used by Stage I."
+        ],
+        "image_footnote": [],
+        "content": "WARPED\nLEVEL",
+        "sub_type": "text_image",
+        "bbox": [
+            112,
+            95,
+            885,
+            375
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "text",
+        "text": "This yaw-centered convention keeps the known region away from the periodic boundary and makes completion more stable.",
+        "bbox": [
+            109,
+            441,
+            883,
+            470
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "text",
+        "text": "The Stage I training objective combines the standard latent diffusion loss with the geometric and topological regularizers:",
+        "bbox": [
+            109,
+            476,
+            883,
+            506
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "equation",
+        "text": "$$\n\\mathcal {L} _ {\\text { stage1 }} = \\mathcal {L} _ {\\mathrm{LDM}} + \\lambda_ {\\text { shift }} \\mathcal {L} _ {\\text { shift }} + \\lambda_ {\\text { flow }} \\mathcal {L} _ {\\text { flow }}. \\tag {13}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            346,
+            507,
+            885,
+            523
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "text",
+        "text": "The final output $P = G _ { \\theta } ( I )$ is an equirectangular, gravity-aligned, horizontally periodic panorama centered around the input view, which serves as the canonical panoramic input for the following 3D construction stage.",
+        "bbox": [
+            109,
+            527,
+            883,
+            558
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "text",
+        "text": "2.3 Stage II: Gaussian Scene Generation",
+        "text_level": 2,
+        "bbox": [
+            109,
+            575,
+            452,
+            592
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "text",
+        "text": "Stage II converts the gravity-aligned panorama P from Stage I into a persistent, directly renderable 3D Gaussian scaffold ${ \\mathcal { G } } ,$ , building a dense and stable geometry-and-appearance anchor for downstream synthesis. We therefore utilize a feed-forward 3DGS predictor: it runs once per input panorama, produces an explicit representation that can be reused during interaction, and yields informative RGB conditioning frames for the video renderer. Fig. 4 summarizes this panorama-to-Gaussian pathway: the model constructs an ERP-aware spherical Gaussian initialization and then predicts residual corrections to geometry and appearance before producing a standard splatting-renderable 3DGS asset.",
+        "bbox": [
+            109,
+            599,
+            885,
+            705
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "text",
+        "text": "2.3.1 Panoramic Gaussian initialization.",
+        "text_level": 2,
+        "bbox": [
+            109,
+            724,
+            392,
+            736
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "text",
+        "text": "The input panorama is represented in equirectangular projection (ERP). Each pixel $( u , v )$ corresponds to a longitude–latitude pair",
+        "bbox": [
+            109,
+            746,
+            883,
+            775
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "equation",
+        "text": "$$\n\\theta = \\left(\\frac {u}{W} - \\frac {1}{2}\\right) 2 \\pi , \\quad \\phi = \\left(\\frac {1}{2} - \\frac {v}{H}\\right) \\pi , \\tag {14}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            349,
+            775,
+            885,
+            808
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "text",
+        "text": "and hence to a unit viewing direction",
+        "bbox": [
+            109,
+            811,
+            382,
+            825
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "equation",
+        "text": "$$\n\\mathbf {d} (\\theta , \\phi) = \\bigl (\\cos \\phi \\sin \\theta , - \\sin \\phi , \\cos \\phi \\cos \\theta \\bigr). \\tag {15}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            344,
+            834,
+            883,
+            851
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "text",
+        "text": "Given an estimated panorama depth map $D ,$ we instantiate Gaussians on a strided ERP grid $\\Omega ^ { \\prime } = \\{ ( u _ { k } , v _ { k } ) \\} _ { k = 1 } ^ { K }$ with resolution $H ^ { \\prime } \\times W ^ { \\prime }$ , s o $K = H ^ { \\prime } W ^ { \\prime }$ . For each grid location, let",
+        "bbox": [
+            109,
+            858,
+            883,
+            888
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "equation",
+        "text": "$$\n\\theta_ {k} = \\theta (u _ {k}), \\quad \\phi_ {k} = \\phi (v _ {k}), \\quad \\mathbf {d} _ {k} = \\mathbf {d} (\\theta_ {k}, \\phi_ {k}), \\quad D _ {k} = D (u _ {k}, v _ {k}). \\tag {16}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            248,
+            897,
+            885,
+            914
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "page_number",
+        "text": "7",
+        "bbox": [
+            493,
+            936,
+            503,
+            946
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "image",
+        "img_path": "images/439893ab816692eb2d7cfda4a3253963421a96121a191db00a3cdd0145795d2d.jpg",
+        "image_caption": [
+            "Figure 4 Stage II Gaussian scene generation. Given the completed gravity-aligned panorama from Stage I, MoVerse initializes Gaussian primitives in the panoramic domain with latitude-aware scaling, and predicts residual Gaussian attributes in angular–inverse-depth space to obtain a persistent 3DGS scaffold for downstream video rendering."
+        ],
+        "image_footnote": [],
+        "content": "```mermaid\ngraph TD\n  A[\"Panorama\"] --> B[\"Initializer\"]\n  B --> C[\"Initial Gaussians\"]\n  C --> D[\"Final Gaussians\"]\n  D --> E[\"Attribute Delta\"]\n  E --> F[\"Attribute Predictor\"]\n  F --> A\n```",
+        "sub_type": "flowchart",
+        "bbox": [
+            112,
+            80,
+            885,
+            223
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "text",
+        "text": "The initial Gaussian center is obtained by spherical back-projection,",
+        "bbox": [
+            109,
+            297,
+            602,
+            314
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "equation",
+        "text": "$$\n\\mu_ {k} = D _ {k} \\mathbf {d} _ {k}. \\tag {17}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            452,
+            325,
+            885,
+            342
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "text",
+        "text": "We also initialize the Gaussian scale in an ERP-aware manner. Since the spherical area represented by an ERP pixel is proportional to cos $\\phi _ { k }$ , the tangential footprint associated with longitude spacing should shrink toward high latitudes. We therefore set the initial scale as",
+        "bbox": [
+            109,
+            352,
+            885,
+            397
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "equation",
+        "text": "$$\ns _ {k} \\propto D _ {k} \\cos \\phi_ {k}, \\tag {18}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            441,
+            410,
+            885,
+            426
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "text",
+        "text": "with a lower bound to avoid degenerate splats near the poles. Each primitive then carries a center, anisotropic scale, rotation, color, and opacity, yielding",
+        "bbox": [
+            109,
+            436,
+            883,
+            468
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "equation",
+        "text": "$$\n\\mathcal {G} = \\left\\{\\left(\\mu_ {k}, s _ {k}, q _ {k}, c _ {k}, \\alpha_ {k}\\right) \\right\\} _ {k = 1} ^ {K}, \\tag {19}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            393,
+            477,
+            885,
+            496
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "text",
+        "text": "where $\\mu _ { k }$ is the Gaussian center, $s _ { k }$ denotes the 3D scale vector, $q _ { k }$ a quaternion rotation, $c _ { k }$ RGB appearance, and $\\alpha _ { k }$ opacity.",
+        "bbox": [
+            109,
+            506,
+            885,
+            537
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "text",
+        "text": "2.3.2 Depth-guided residual prediction.",
+        "text_level": 2,
+        "bbox": [
+            109,
+            554,
+            393,
+            569
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "text",
+        "text": "Our panoramic Gaussian generator follows the depth-guided residual 3DGS prediction principle of SHARP [35], but adapts it from perspective images to equirectangular panoramas. This adaptation replaces planar camera assumptions with spherical geometry: pixel displacements correspond to angular changes, sampling density varies with latitude, and the horizontal boundary must remain topologically closed. Starting from the initialized scaffold, we extract multi-scale image features with a pretrained vision backbone and decode them with a $\\mathrm { D P T - s t y }$ le feature head into geometry and texture features. The feature head processes the encoder features from the panorama depth model and further fuses an explicit feature input formed by concatenating the RGB panorama with inverse depth, i.e., $[ P , D ^ { - 1 } ]$ . Let $\\mathbf { f } _ { k }$ denote the decoded feature vector at grid location $k ,$ and let $h _ { \\psi }$ denote the lightweight residual prediction head with learnable parameters $\\psi .$ . The head predicts residual Gaussian parameters as",
+        "bbox": [
+            109,
+            577,
+            887,
+            728
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "equation",
+        "text": "$$\n\\left(\\Delta \\theta_ {k}, \\Delta \\phi_ {k}, \\Delta z _ {k}, \\Delta s _ {k}, \\Delta q _ {k}, \\Delta c _ {k}, \\Delta \\alpha_ {k}\\right) = h _ {\\psi} (\\mathbf {f} _ {k}). \\tag {20}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            326,
+            739,
+            885,
+            756
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "text",
+        "text": "The prediction head is zero-initialized, so before learning the network reproduces the initialized spherical scaffold. Training therefore starts from a physically meaningful initialization and only learns local corrections. This residual formulation is intended to keep the scaffold anchored to the panorama and the provided depth geometry, while still allowing the network to correct local errors needed for multi-view renderability.",
+        "bbox": [
+            109,
+            766,
+            887,
+            828
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "text",
+        "text": "2.3.3 Attribute composition.",
+        "text_level": 2,
+        "bbox": [
+            109,
+            845,
+            320,
+            859
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "text",
+        "text": "We compose all predicted Gaussian quantities as residuals around the initialized scaffold. The most important case is the Gaussian center, because ERP panoramas use an angular image domain rather than a planar one. In a pinhole camera, image-plane offsets are naturally expressed in normalized device coordinates. In an ERP panorama, horizontal motion changes longitude and vertical motion changes latitude. For each primitive $k ,$ we therefore predict position offsets $( \\Delta \\theta _ { k } , \\Delta \\phi _ { k } , \\Delta z _ { k } )$ and apply them in angular–inverse-depth space before spherical back-projection:",
+        "bbox": [
+            109,
+            868,
+            885,
+            914
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "page_number",
+        "text": "8",
+        "bbox": [
+            493,
+            936,
+            503,
+            948
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "text",
+        "text": "",
+        "bbox": [
+            109,
+            80,
+            887,
+            127
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "equation",
+        "text": "$$\n\\theta_ {k} ^ {\\prime} = \\theta_ {k} + \\lambda_ {x y} \\Delta \\theta_ {k}, \\qquad \\phi_ {k} ^ {\\prime} = \\mathrm{clip} (\\phi_ {k} + \\lambda_ {x y} \\Delta \\phi_ {k}, - \\pi / 2 + \\epsilon , \\pi / 2 - \\epsilon), \\qquad D _ {k} ^ {\\prime} = \\frac {1}{\\mathrm{softplus} (\\rho_ {k} + \\lambda_ {z} \\Delta z _ {k}) + \\epsilon}, (2 1)\n$$",
+        "text_format": "latex",
+        "bbox": [
+            122,
+            137,
+            887,
+            170
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "text",
+        "text": "where $\\rho _ { k } = \\mathrm { s o f t p l u s } ^ { - 1 } ( D _ { k } ^ { - 1 } )$ is the unconstrained parameter corresponding to the base inverse depth, and $\\lambda _ { x y } , \\lambda _ { z }$ control the residual magnitude. The corrected center is then",
+        "bbox": [
+            109,
+            179,
+            885,
+            212
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "equation",
+        "text": "$$\n\\mu_ {k} = D _ {k} ^ {\\prime} \\mathbf {d} (\\theta_ {k} ^ {\\prime}, \\phi_ {k} ^ {\\prime}). \\tag {22}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            433,
+            223,
+            885,
+            239
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "text",
+        "text": "This angular composition makes the learned displacement consistent with the ERP sampling grid and preserves the horizontal $S ^ { 1 }$ closure of the panorama.",
+        "bbox": [
+            109,
+            250,
+            883,
+            281
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "text",
+        "text": "Other attributes follow the same residual composition. Scale is applied as a bounded multiplicative update to the latitude-corrected base scale, quaternions are residual updates to the identity rotation, colors are initialized from the panorama, and opacities from a constant prior; the corresponding activations keep scales positive and colors and opacities in valid ranges. During training, these residuals provide local corrections while keeping scales positive, colors in range, and opacities valid. The final output is flattened into a standard 3DGS set and can be rendered by an off-the-shelf splatting renderer without special panoramic logic.",
+        "bbox": [
+            109,
+            285,
+            885,
+            377
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "text",
+        "text": "2.3.4 Training objective.",
+        "text_level": 2,
+        "bbox": [
+            109,
+            393,
+            290,
+            409
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "text",
+        "text": "We train Stage II on HM3D dataset [59] using differentiable rendering. For each training scene, the model takes an ERP panorama and its depth as input, predicts a 3DGS scaffold, and renders it into the target view. Let $R ( { \\mathcal { G } } )$ denote the rendering of the predicted Gaussians at the target camera, and let $I ^ { t g t }$ be the corresponding ground-truth image. The main reconstruction objective combines pixel, perceptual, and structural terms:",
+        "bbox": [
+            109,
+            416,
+            888,
+            479
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "equation",
+        "text": "$$\n\\mathcal {L} _ {\\mathrm{tgt}} = \\lambda_ {1} \\| R (\\mathcal {G}) - I ^ {t g t} \\| _ {1} + \\lambda_ {\\mathrm{lpips}} \\operatorname{LPIPS} (R (\\mathcal {G}), I ^ {t g t}) + \\lambda_ {\\mathrm{ssim}} \\bigl (1 - \\operatorname{SSIM} (R (\\mathcal {G}), I ^ {t g t}) \\bigr). \\tag {23}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            205,
+            488,
+            885,
+            507
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "text",
+        "text": "This term trains the scaffold to be directly renderable from target viewpoint. To keep the scaffold anchored to the observed input, we also render it back to the source panorama or its corresponding source views and apply a source reconstruction loss. For geometric stability, we include an inverse-depth loss when depth supervision is available:",
+        "bbox": [
+            109,
+            517,
+            885,
+            575
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "equation",
+        "text": "$$\n\\mathcal {L} _ {\\text { depth }} = \\| D _ {\\text { pred }} ^ {- 1} - D _ {\\text { gt }} ^ {- 1} \\| _ {1}. \\tag {24}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            406,
+            575,
+            885,
+            594
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "text",
+        "text": "We further regularize the angular–depth position residuals,",
+        "bbox": [
+            109,
+            599,
+            537,
+            616
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "equation",
+        "text": "$$\n\\mathcal {L} _ {\\Delta} = \\operatorname{mean} \\bigl (\\max (| \\Delta_ {\\theta \\phi z} | - \\delta , 0) \\bigr), \\tag {25}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            383,
+            627,
+            885,
+            643
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "text",
+        "text": "which allows small local corrections but discourages large deviations from the depth-initialized scaffold. The final objective is",
+        "bbox": [
+            109,
+            654,
+            885,
+            684
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "equation",
+        "text": "$$\n\\mathcal {L} _ {\\mathrm{GS}} = \\mathcal {L} _ {\\mathrm{tgt}} + \\lambda_ {\\mathrm{src}} \\mathcal {L} _ {\\mathrm{src}} + \\lambda_ {\\mathrm{depth}} \\mathcal {L} _ {\\mathrm{depth}} + \\lambda_ {\\Delta} \\mathcal {L} _ {\\Delta}. \\tag {26}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            334,
+            686,
+            885,
+            702
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "text",
+        "text": "This objective matches the intended role of Stage II: the scaffold should be faithful to the input panorama, stable as geometry, and directly renderable from novel viewpoints.",
+        "bbox": [
+            109,
+            707,
+            887,
+            738
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "text",
+        "text": "2.4 Stage III: Gaussian-Conditioned Video Rendering",
+        "text_level": 2,
+        "bbox": [
+            109,
+            756,
+            558,
+            773
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "text",
+        "text": "Stage III acts as a renderer over the Gaussian scaffold. Given a user-specified camera trajectory $\\{ \\pi _ { t } \\} _ { t = 1 } ^ { T }$ , the Stage II scaffold is first rendered by 3D Gaussian splatting into a controllable conditioning stream,",
+        "bbox": [
+            109,
+            782,
+            885,
+            814
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "equation",
+        "text": "$$\n\\hat {V} _ {t} = \\operatorname{Render} (\\mathcal {G}, \\pi_ {t}), \\quad \\hat {V} _ {1: T} = \\{\\hat {V} _ {t} \\} _ {t = 1} ^ {T}. \\tag {27}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            357,
+            824,
+            885,
+            842
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "text",
+        "text": "The rendered frames inherit the key advantages of the explicit scaffold: they follow the requested camera motion, preserve a persistent scene layout, and remain spatially anchored over long trajectories. However, they are still imperfect as final observations. A feed-forward panoramic Gaussian scaffold may contain floaters in depth-ambiguous regions, grazing-angle aliasing on floors and ceilings, disocclusion holes when the camera moves away from the input pose, and residual temporal splatting artifacts under sub-pixel motion. Stage III converts this dense but imperfect RGB stream $\\hat { V } _ { 1 : T }$ into the final video $V _ { 1 : T } = \\{ V _ { t } \\} _ { t = 1 } ^ { T }$ .",
+        "bbox": [
+            109,
+            852,
+            887,
+            914
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "page_number",
+        "text": "9",
+        "bbox": [
+            493,
+            936,
+            504,
+            949
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "image",
+        "img_path": "images/77160372621cefc1de23f213e645f0e10d213e5bc4e8155bb88d2868695785d5.jpg",
+        "image_caption": [
+            "Figure 5 Stage III Real Time Rendering. The rendered image latents are passed through a causal auto-rergessive DiT to generate clean images. We use MemRoPE to manage KV Cache for infinite exploration."
+        ],
+        "image_footnote": [],
+        "content": "```mermaid\ngraph TD\n  A[\"Denoising loop (T=2 steps)\"] --> B[\"KA\"]\n  B --> C[\"KV cache history (MemRoPE)\"]\n  C --> D[\"Causal DiT (noisy → clean)\"]\n  D --> E[\"Layer 1\"]\n  D --> F[\"Layer 2\"]\n  D --> G[\"...\"]\n  D --> H[\"Layer N\"]\n  I[\"Clean rerun → next-block KV\"] --> J[\"Layer 1\"]\n  I --> K[\"Layer 2\"]\n  I --> L[\"...\"]\n  I --> M[\"Layer N\"]\n  N[\"VAE\"] --> O[\"Image of residential buildings\"]\n  P[\"Height Concat\"] --> Q[\"× T steps (re-noise to next o, consistency inference)\"] --> D\n  Q --> R[\"Layer 1\"]\n  Q --> S[\"Layer 2\"]\n  Q --> T[\"...\"]\n  Q --> U[\"Layer N\"]\n  V[\"Random Latent Noise\"] --> W[\"Input Latent\"]\n  X[\"Rendered Frames Latent\"] --> Y[\"Input Latent\"]\n  Z[\"Green Block\"] --> AA[\"+\"]\n  AB[\"Gray Block\"] --> AC[\"+\"]\n  AD[\"Red Block\"] --> AE[\"+\"]\n  AF[\"Blue Block\"] --> AG[\"+\"]\n  AH[\"White Block\"] --> AI[\"+\"]\n  AJ[\"Light Gray Block\"] --> AK[\"+\"]\n  AL[\"Light Grey Block\"] --> AM[\"+\"]\n  AN[\"Light Pink Block\"] --> AO[\"+\"]\n  AP[\"Light Red Block\"] --> AQ[\"+\"]\n  AR[\"Light Pink Block\"] --> AS[\"+\"]\n  AT[\"Light Pink Block\"] --> AU[\"+\"]\n  AV[\"Light Pink Block\"] --> AW[\"+\"]\n  AX[\"Light Pink Block\"] --> AY[\"+\"]\n  AZ[\"Light Pink Block\"] --> BA[\"+\"]\n  BB[\"Light Pink Block\"] --> BC[\"+\"]\n  BD[\"Light Pink Block\"] --> BE[\"+\"]\n  BF[\"Light Pink Block\"] --> BG[\"+\"]\n  BH[\"Light Pink Block\"] --> BI[\"+\"]\n  BJ[\"Light Pink Block\"] --> BK[\"+\"]\n  BL[\"Light Pink Block\"] --> BM[\"+\"]\n  BN[\"Light Pink Block\"] --> BO[\"+\"]\n  BP[\"Light Pink Block\"] --> BQ[\"+\"]\n  BR[\"Light Pink Block\"] --> BS[\"+\"]\n  BT[\"Light Pink Block\"] --> BU[\"+\"]\n  BV[\"Light Pink Block\"] --> BW[\"+\"]\n  BX[\"Light Pink Block\"] --> BY[\"+\"]\n  BZ[\"Light Pink Block\"] --> BQ\n  CA[\"Light Pink Block\"] --> CA\n  CB[\"Light Pink Block\"] --> CB\n  CC[\"Light Pink Block\"] --> CC\n  DD[\"Light Pink Block\"] --> DD\n  DX[\"Light Pink Block\"] --> DX\n  DB[\"X\"] --> DC\n  DBX[\"X\"] --> DC\n```",
+        "sub_type": "flowchart",
+        "bbox": [
+            114,
+            78,
+            883,
+            388
+        ],
+        "page_idx": 9
+    },
+    {
+        "type": "text",
+        "text": "",
+        "bbox": [
+            109,
+            445,
+            883,
+            477
+        ],
+        "page_idx": 9
+    },
+    {
+        "type": "text",
+        "text": "This design closes the three-stage factorization. Stage I has already completed the missing field of view, and Stage II has already anchored that completion into an explicit 3DGS scene. Stage III therefore does not need to hallucinate a world from scratch. Instead, it enhances appearance and repairs local rendering artifacts while respecting the camera motion and scene layout implied by the scaffold. In this sense, MoVerse differs from purely implicit video world models: long-range spatial memory is stored in ${ \\mathcal { G } } _ { : }$ while the video model performs local, high-quality observation rendering.",
+        "bbox": [
+            109,
+            479,
+            883,
+            571
+        ],
+        "page_idx": 9
+    },
+    {
+        "type": "text",
+        "text": "2.4.1 Bidirectional conditional teacher.",
+        "text_level": 2,
+        "bbox": [
+            109,
+            589,
+            388,
+            602
+        ],
+        "page_idx": 9
+    },
+    {
+        "type": "text",
+        "text": "We first adapt a modern text-to-video diffusion transformer, initialized from Wan2.1-T2V-1.3B [36], into a bidirectional Gaussian-conditioned video renderer. The teacher models",
+        "bbox": [
+            109,
+            611,
+            883,
+            641
+        ],
+        "page_idx": 9
+    },
+    {
+        "type": "equation",
+        "text": "$$\np (V _ {1: T} \\mid \\hat {V} _ {1: T}, \\tau), \\tag {28}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            436,
+            652,
+            883,
+            670
+        ],
+        "page_idx": 9
+    },
+    {
+        "type": "text",
+        "text": "where $\\tau$ is a text prompt. The prompt provides a weak semantic prior, while the Gaussian-rendered RGB stream is the dominant spatial condition. This prevents the video generator from behaving as a free textto-video model: its role is to translate the scaffold rendering into a cleaner observation, not to replace the scaffold.",
+        "bbox": [
+            109,
+            681,
+            883,
+            742
+        ],
+        "page_idx": 9
+    },
+    {
+        "type": "text",
+        "text": "Let $z \\in \\mathbb { R } ^ { C \\times T \\times H \\times W }$ be the VAE latent of the target video $V _ { 1 : T }$ and $c \\in \\mathbb { R } ^ { C \\times T \\times H \\times W }$ be the VAE latent of the Gaussian-rendered conditioning video $\\hat { V } _ { 1 : T }$ . At diffusion time t, the noisy target latent is",
+        "bbox": [
+            109,
+            746,
+            883,
+            777
+        ],
+        "page_idx": 9
+    },
+    {
+        "type": "equation",
+        "text": "$$\nz _ {t} = (1 - \\sigma_ {t}) z + \\sigma_ {t} \\epsilon , \\quad \\epsilon \\sim \\mathcal {N} (0, I). \\tag {29}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            361,
+            790,
+            883,
+            806
+        ],
+        "page_idx": 9
+    },
+    {
+        "type": "text",
+        "text": "We concatenate the noisy target tokens and conditioning tokens as",
+        "bbox": [
+            109,
+            818,
+            591,
+            833
+        ],
+        "page_idx": 9
+    },
+    {
+        "type": "equation",
+        "text": "$$\n\\tilde {z} = \\left[ z _ {t} \\| c \\right]. \\tag {30}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            450,
+            845,
+            883,
+            862
+        ],
+        "page_idx": 9
+    },
+    {
+        "type": "text",
+        "text": "The two halves use shared rotary positional indices: every conditioning token receives the same spatial– temporal position code as its aligned target token. This shared-RoPE design makes the condition and target collide at the same location in the transformer coordinate system, encouraging the model to treat c as a dense aligned rendering condition rather than as a separate video placed at an offset position.",
+        "bbox": [
+            109,
+            873,
+            883,
+            904
+        ],
+        "page_idx": 9
+    },
+    {
+        "type": "page_number",
+        "text": "10",
+        "bbox": [
+            488,
+            936,
+            508,
+            949
+        ],
+        "page_idx": 9
+    },
+    {
+        "type": "text",
+        "text": "",
+        "bbox": [
+            109,
+            80,
+            887,
+            112
+        ],
+        "page_idx": 10
+    },
+    {
+        "type": "text",
+        "text": "The teacher is trained with a flow-matching objective, evaluated only on the target half of the concatenated tokens:",
+        "bbox": [
+            109,
+            114,
+            885,
+            143
+        ],
+        "page_idx": 10
+    },
+    {
+        "type": "equation",
+        "text": "$$\n\\mathcal {L} _ {\\text { teacher }} = \\mathbb {E} _ {z, c, \\tau , \\sigma_ {t}, \\epsilon} \\left[ \\| v _ {\\theta} (\\tilde {z}, \\tau , t) - (\\epsilon - z) \\| _ {2} ^ {2} \\right], \\tag {31}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            338,
+            142,
+            885,
+            167
+        ],
+        "page_idx": 10
+    },
+    {
+        "type": "text",
+        "text": "where $v _ { \\theta }$ denotes the diffusion transformer prediction. The bidirectional teacher can attend to the full clip, so it serves as a quality model for Gaussian-conditioned video rendering rather than as the final deployment model.",
+        "bbox": [
+            109,
+            171,
+            887,
+            217
+        ],
+        "page_idx": 10
+    },
+    {
+        "type": "text",
+        "text": "2.4.2 Causal student for streaming interaction.",
+        "text_level": 2,
+        "bbox": [
+            109,
+            234,
+            444,
+            250
+        ],
+        "page_idx": 10
+    },
+    {
+        "type": "text",
+        "text": "The bidirectional teacher is unsuitable for interactive roaming because it requires access to the full video window and performs multi-step generation over all frames jointly. We therefore distill it into a causal autoregressive student. The student generates one latent block at a time, conditions on the current Gaussian-rendered frame block, and attends to recently generated history through a local key–value cache. This converts the teacher into a bounded-latency renderer that can stream frames as the user changes the camera trajectory.",
+        "bbox": [
+            109,
+            258,
+            887,
+            335
+        ],
+        "page_idx": 10
+    },
+    {
+        "type": "text",
+        "text": "The distillation follows the Self Forcing [60] and DMD [61] principle. During training, the student is rolled out autoregressively and is exposed to its own generated context, so it learns to remain stable under the same causal conditions used at inference. A short bidirectional-to-causal warm-up [16] initializes the student before distribution matching. Within distribution matching, we adopt RAVEN [62]: each self-rollout is repacked into a teacher-forcing sequence of clean endpoints and noisy intermediates, so the DMD gradient also flows through the clean half’s QKV projections and supervises how the student encodes its own past context into the KV cache used by future blocks. The resulting model trades global bidirectional refinement for low-latency local refinement. This trade-off is appropriate for MoVerse because the explicit scaffold, not the video model cache, carries long-range scene consistency.",
+        "bbox": [
+            109,
+            338,
+            888,
+            474
+        ],
+        "page_idx": 10
+    },
+    {
+        "type": "text",
+        "text": "2.4.3 Training data mixture.",
+        "text_level": 2,
+        "bbox": [
+            109,
+            492,
+            313,
+            507
+        ],
+        "page_idx": 10
+    },
+    {
+        "type": "text",
+        "text": "$( V _ { 1 : T } ^ { \\mathrm { g t } } , \\hat { V } _ { 1 : T } , \\tau )$ $V _ { 1 : T } ^ { \\mathrm { g t } }$ $\\hat { V } _ { 1 : T }$ conditioned rendering, and τ is a caption. The purpose of the mixture is not to simply aggregate datasets, but to expose the renderer to progressively more realistic versions of the signal it will receive at deployment: cameraaligned but incomplete geometric projections, genuine Gaussian splatting artifacts, and finally renderings from panorama-conditioned scaffolds.",
+        "bbox": [
+            109,
+            516,
+            888,
+            594
+        ],
+        "page_idx": 10
+    },
+    {
+        "type": "text",
+        "text": "The first family uses real videos with known or recoverable camera motion to synthesize trajectory-aligned proxy renderings from a single reference view. We estimate depth for the reference frame, lift it once into a world-space point set, and reproject it through the remaining cameras. The resulting conditioning videos preserve the target trajectory and coarse scene layout, but they naturally contain missing regions, broken boundaries, and many-to-one warp artifacts. These examples are useful precisely because they isolate the basic inpainting problem caused by camera translation: the renderer must complete newly exposed regions while respecting the motion and layout encoded by the geometric projection.",
+        "bbox": [
+            109,
+            598,
+            887,
+            705
+        ],
+        "page_idx": 10
+    },
+    {
+        "type": "text",
+        "text": "The second family replaces point reprojection with rendered Gaussian scaffolds constructed from sparse real-video keyframes. For each scene, several keyframe-level Gaussian predictions are brought into a common metric frame, merged, and rendered along the original camera path. These conditioning videos are no longer generic warps; they are actual splatting renderings, and therefore expose the model to the failure modes of Gaussian representations: depth-dependent floaters, imperfect opacity accumulation, anisotropic support errors, and aliasing on grazing surfaces. This family teaches the video model to act as a renderer for explicit Gaussian geometry rather than merely as a video inpainting model.",
+        "bbox": [
+            109,
+            709,
+            887,
+            815
+        ],
+        "page_idx": 10
+    },
+    {
+        "type": "text",
+        "text": "The third family matches the MoVerse interface most closely. Instead of starting from a NFOV image, we start from panoramic observations, construct a Gaussian scaffold with the same panorama-to-Gaussian pathway used by Stage II, and render that scaffold along immersive camera trajectories. We build such pairs from UE-rendered panoramas and additional panoramic sources, including LayerPano3D [3], Matterport3D [52], and Polyhaven HDRIs [53]. These samples provide the strongest supervision for the deployment-time interface because the condition $\\ddot { V } _ { 1 : T }$ is produced by rendering a panorama-conditioned scaffold. They are complemented by the first two families, which provide broader scene diversity and denser coverage of generic disocclusion and Gaussian-rendering artifacts.",
+        "bbox": [
+            109,
+            819,
+            888,
+            911
+        ],
+        "page_idx": 10
+    },
+    {
+        "type": "page_number",
+        "text": "11",
+        "bbox": [
+            490,
+            936,
+            506,
+            949
+        ],
+        "page_idx": 10
+    },
+    {
+        "type": "text",
+        "text": "",
+        "bbox": [
+            109,
+            80,
+            887,
+            109
+        ],
+        "page_idx": 11
+    },
+    {
+        "type": "text",
+        "text": "The mixture therefore follows a representation-driven progression:",
+        "bbox": [
+            109,
+            114,
+            586,
+            131
+        ],
+        "page_idx": 11
+    },
+    {
+        "type": "text",
+        "text": "trajectory-aligned geometric proxy → explicit Gaussian render → panorama-conditioned Gaussian render. (32)",
+        "bbox": [
+            109,
+            142,
+            887,
+            172
+        ],
+        "page_idx": 11
+    },
+    {
+        "type": "text",
+        "text": "This curriculum first teaches robust artifact repair under camera motion, then specializes the renderer to Gaussian splatting artifacts, and finally adapts it to the Stage II-to-Stage III interface used by MoVerse at deployment.",
+        "bbox": [
+            109,
+            172,
+            887,
+            218
+        ],
+        "page_idx": 11
+    },
+    {
+        "type": "text",
+        "text": "2.4.4 Real-time inference.",
+        "text_level": 2,
+        "bbox": [
+            109,
+            234,
+            305,
+            250
+        ],
+        "page_idx": 11
+    },
+    {
+        "type": "text",
+        "text": "At deployment, the distilled student runs causally with K = 1 latent frame per autoregressive block. Under the Wan VAE temporal stride, each latent block corresponds to four pixel-space frames. We use a two-step denoising schedule and a MemRoPE-style local key–value cache [63]: one sink frame, one long-term EMA memory token, and a sliding window of three local frames, with online RoPE indexing that keeps temporal positions inside the trained range over long rollouts. This cache maintains short-horizon temporal continuity, while the Stage II scaffold anchors long-horizon spatial consistency. The standard VAE decoder is replaced by a TAEHV decoder [64] for faster streaming.",
+        "bbox": [
+            109,
+            257,
+            888,
+            364
+        ],
+        "page_idx": 11
+    },
+    {
+        "type": "text",
+        "text": "These choices deliberately trade global bidirectional refinement for bounded-latency local refinement. Since every output block is conditioned on the current scaffold rendering, the model does not need to remember the entire world in its hidden state. In our deployment configuration, this causal renderer reaches 8 FPS end-to-end roaming of the scene on a single NVIDIA RTX 4090 GPU.",
+        "bbox": [
+            109,
+            368,
+            887,
+            429
+        ],
+        "page_idx": 11
+    },
+    {
+        "type": "text",
+        "text": "3 Results",
+        "text_level": 2,
+        "bbox": [
+            109,
+            452,
+            225,
+            469
+        ],
+        "page_idx": 11
+    },
+    {
+        "type": "text",
+        "text": "In this section, we present qualitative results for MoVerse across the full pipeline and its three stages.",
+        "bbox": [
+            109,
+            484,
+            841,
+            501
+        ],
+        "page_idx": 11
+    },
+    {
+        "type": "text",
+        "text": "3.1 Full pipeline results",
+        "text_level": 2,
+        "bbox": [
+            109,
+            518,
+            316,
+            535
+        ],
+        "page_idx": 11
+    },
+    {
+        "type": "text",
+        "text": "Fig. 6 shows end-to-end results produced from a single NFOV image. Each example contains the input image, the gravity-aligned ERP panorama from Stage I, Gaussian-rendered conditioning frames from the Stage II 3D Gaussian scaffold, and the final observations generated by the Stage III causal autoregressive renderer under the same camera trajectory. The results illustrate the complementary roles of the explicit scaffold and the learned renderer: the 3D Gaussian scaffold provides camera-controllable spatial structure, while the Gaussian-conditioned video renderer improves perceptual quality and temporal continuity.",
+        "bbox": [
+            109,
+            542,
+            887,
+            633
+        ],
+        "page_idx": 11
+    },
+    {
+        "type": "text",
+        "text": "3.2 Stage I: Panoramic Generation",
+        "text_level": 2,
+        "bbox": [
+            109,
+            652,
+            408,
+            667
+        ],
+        "page_idx": 11
+    },
+    {
+        "type": "text",
+        "text": "Fig. 7 evaluates the Stage I panoramic generation module. Given a perspective NFOV input, Stage I synthesizes a gravity-aligned ERP panorama that can be reprojected into multiple perspective views. We include seam-crossing views to examine whether the generated panorama remains coherent under the horizontal S1 topology of the ERP domain.",
+        "bbox": [
+            109,
+            676,
+            887,
+            737
+        ],
+        "page_idx": 11
+    },
+    {
+        "type": "text",
+        "text": "3.3 Stage II: Gaussian Scene Generation",
+        "text_level": 2,
+        "bbox": [
+            109,
+            755,
+            454,
+            771
+        ],
+        "page_idx": 11
+    },
+    {
+        "type": "text",
+        "text": "Fig. 8 visualizes trajectories rendered directly from the Stage II 3D Gaussian scaffold. The scaffold produces camera-controllable Gaussian-rendered observations that preserve the global layout of the completed panorama.",
+        "bbox": [
+            109,
+            779,
+            887,
+            811
+        ],
+        "page_idx": 11
+    },
+    {
+        "type": "text",
+        "text": "3.4 Stage III: Gaussian-Conditioned Video Rendering",
+        "text_level": 2,
+        "bbox": [
+            109,
+            828,
+            558,
+            845
+        ],
+        "page_idx": 11
+    },
+    {
+        "type": "text",
+        "text": "Fig. 9 shows outputs from the autoregressive video renderer. The renderer translates Gaussian-rendered conditioning frames into final video observations while streaming along user-specified camera trajectories. Across the shown trajectories, it enhances the scaffold renderings into visually coherent observations while preserving the scene layout imposed by the explicit representation.",
+        "bbox": [
+            109,
+            852,
+            887,
+            914
+        ],
+        "page_idx": 11
+    },
+    {
+        "type": "page_number",
+        "text": "12",
+        "bbox": [
+            488,
+            936,
+            509,
+            949
+        ],
+        "page_idx": 11
+    },
+    {
+        "type": "image",
+        "img_path": "images/c00e32ec6799c0d51b6e4c90ef8627435bbad0b9fc622e384b1608433fd001bf.jpg",
+        "image_caption": [
+            "Figure 6 Full pipeline results. For each scene, the first column shows the input NFOV image and the Stage I gravity-aligned ERP panorama. The remaining columns show Stage II Gaussian scaffold renderings and the corresponding Stage III autoregressive video-rendering outputs along the same camera trajectory."
+        ],
+        "image_footnote": [],
+        "content": "",
+        "bbox": [
+            112,
+            241,
+            883,
+            699
+        ],
+        "page_idx": 12
+    },
+    {
+        "type": "page_number",
+        "text": "13",
+        "bbox": [
+            490,
+            936,
+            508,
+            949
+        ],
+        "page_idx": 12
+    },
+    {
+        "type": "image",
+        "img_path": "images/4b50f020a1780486a281dd0a3cb9c7dfad7c1610a41c5417c66113168c7e8e1d.jpg",
+        "image_caption": [
+            "Figure 7 Stage I panoramic generation results. Each example shows a perspective NFOV input, the completed gravityaligned ERP panorama, and perspective views rendered from the panorama, including seam-crossing views."
+        ],
+        "image_footnote": [],
+        "content": "",
+        "bbox": [
+            151,
+            108,
+            844,
+            851
+        ],
+        "page_idx": 13
+    },
+    {
+        "type": "page_number",
+        "text": "14",
+        "bbox": [
+            490,
+            936,
+            508,
+            949
+        ],
+        "page_idx": 13
+    },
+    {
+        "type": "image",
+        "img_path": "images/1936ff936af92fc962f7c49dbd09d6c10bade9b56eaf817de034fd5163fca31d.jpg",
+        "image_caption": [
+            "Figure 8 Stage II Gaussian scaffold rendering results. For each scene, the first column shows the input condition, and the remaining columns show novel-view frames rendered directly from the 3D Gaussian scaffold along two camera trajectories."
+        ],
+        "image_footnote": [],
+        "content": "",
+        "bbox": [
+            109,
+            241,
+            885,
+            700
+        ],
+        "page_idx": 14
+    },
+    {
+        "type": "page_number",
+        "text": "15",
+        "bbox": [
+            490,
+            936,
+            508,
+            949
+        ],
+        "page_idx": 14
+    },
+    {
+        "type": "image",
+        "img_path": "images/fd3c6d06c7f387ec6da72fec44145049d6664df2388ce934a349a7fb557ad822.jpg",
+        "image_caption": [
+            "Figure 9 Stage III autoregressive rendering results. For each scene, the first column shows the Gaussian-rendered input condition, and the remaining columns show frames generated by the causal autoregressive renderer along two camera trajectories."
+        ],
+        "image_footnote": [],
+        "content": "Collage of interior and exterior views of a modern luxury hotel with traditional Chinese architecture, featuring dining areas, water features, and a pool (no visible text or signage)",
+        "sub_type": "natural_image",
+        "bbox": [
+            151,
+            80,
+            846,
+            450
+        ],
+        "page_idx": 15
+    },
+    {
+        "type": "image",
+        "img_path": "images/af5828896e2e693f7cf3638a00bbbef30f9bb0c8d1d5318967e28ccbc64956a9.jpg",
+        "image_caption": [
+            "Figure 10 Bidirectional conditional teacher results. For each scene, the first column shows the Gaussian-rendered input condition, and the remaining columns show frames synthesized by the bidirectional Gaussian-conditioned video renderer along two camera trajectories."
+        ],
+        "image_footnote": [],
+        "content": "Collage of futuristic interior views including a planetarium, spacecraft, and cosmic structures with glowing elements (no visible text or symbols)",
+        "sub_type": "natural_image",
+        "bbox": [
+            151,
+            506,
+            846,
+            864
+        ],
+        "page_idx": 15
+    },
+    {
+        "type": "page_number",
+        "text": "16",
+        "bbox": [
+            490,
+            936,
+            508,
+            949
+        ],
+        "page_idx": 15
+    },
+    {
+        "type": "text",
+        "text": "3.5 Bidirectional Conditional Teacher Results",
+        "text_level": 2,
+        "bbox": [
+            109,
+            79,
+            496,
+            95
+        ],
+        "page_idx": 16
+    },
+    {
+        "type": "text",
+        "text": "Fig. 10 shows results from the bidirectional conditional teacher. The teacher is implemented as a bidirectional Gaussian-conditioned video renderer and can attend to the full temporal window, serving as a quality model for Gaussian-conditioned video rendering. These results provide the visual target used to guide distillation of the causal autoregressive student.",
+        "bbox": [
+            109,
+            104,
+            887,
+            165
+        ],
+        "page_idx": 16
+    },
+    {
+        "type": "text",
+        "text": "4 Discussion",
+        "text_level": 2,
+        "bbox": [
+            109,
+            188,
+            256,
+            205
+        ],
+        "page_idx": 16
+    },
+    {
+        "type": "text",
+        "text": "MoVerse explores a hybrid route between explicit 3D reconstruction and implicit video world modeling. Its central design choice is to store long-range spatial memory in a persistent panoramic 3D Gaussian scaffold, while using a causal video renderer only for local, high-fidelity observation synthesis. This separation is useful in practice: the scaffold fixes the camera trajectory and scene layout over long horizons, and the video model can focus on repairing splatting artifacts, filling small disocclusions, and improving perceptual realism. The three-stage factorization also makes the system modular. Improvements in panorama generation, feed-forward Gaussian prediction, or video distillation can be incorporated independently without changing the overall interface between stages.",
+        "bbox": [
+            109,
+            219,
+            887,
+            340
+        ],
+        "page_idx": 16
+    },
+    {
+        "type": "text",
+        "text": "At the same time, this factorization exposes several limitations. First, the final world is bounded by the quality of Stage I panoramic completion. If the generated panorama introduces semantically inconsistent rooms, incorrect horizon structure, or implausible content behind the camera, Stage II will faithfully lift those errors into the scaffold, and Stage III may render them more convincingly rather than correct them. Second, the Gaussian scaffold remains an approximate geometric representation. Depth ambiguity, thin structures, reflective surfaces, transparent objects, and regions near the poles of the ERP domain can still produce floaters, holes, or unstable opacity accumulation under large translations. Third, the causal video renderer trades global clip-level optimization for streaming latency. Although the explicit scaffold provides long-range spatial consistency, the renderer may still introduce short-term texture drift, over-smoothing, or delayed correction when the conditioning render is severely degraded. Finally, the current system depends on a staged training pipeline and multiple data sources, including canonical panoramas, depth-supervised Gaussian prediction, and paired scaffold-render/video data; simplifying this supervision remains an important direction for broader deployment.",
+        "bbox": [
+            109,
+            345,
+            888,
+            542
+        ],
+        "page_idx": 16
+    },
+    {
+        "type": "text",
+        "text": "Future work should strengthen the feedback between stages rather than treating them as a one-way pipeline. For example, uncertainty from the panoramic generator could guide Gaussian density allocation, scaffold rendering errors could trigger local panorama or geometry refinement, and the video renderer could expose consistency signals back to the scaffold. Another promising direction is to extend the static-scene assumption toward dynamic objects and editable worlds, where the persistent scaffold must support object-level manipulation as well as camera motion. Overall, MoVerse shows that real-time video world modeling need not choose between explicit geometry and generative video. A dense panoramic Gaussian scaffold can provide durable spatial memory and controllability, while a distilled autoregressive renderer supplies interactive visual quality, enabling single-image world creation with real-time roaming.",
+        "bbox": [
+            109,
+            547,
+            887,
+            684
+        ],
+        "page_idx": 16
+    },
+    {
+        "type": "text",
+        "text": "Acknowledgements",
+        "text_level": 2,
+        "bbox": [
+            109,
+            707,
+            310,
+            724
+        ],
+        "page_idx": 16
+    },
+    {
+        "type": "text",
+        "text": "We thank Jie Ma and Ben Hu for their valuable assistance with data collection, curation, and preprocessing.",
+        "bbox": [
+            109,
+            738,
+            887,
+            753
+        ],
+        "page_idx": 16
+    },
+    {
+        "type": "text",
+        "text": "References",
+        "text_level": 2,
+        "bbox": [
+            109,
+            777,
+            228,
+            794
+        ],
+        "page_idx": 16
+    },
+    {
+        "type": "list",
+        "sub_type": "ref_text",
+        "list_items": [
+            "[1] H.-X. Yu, H. Duan, J. Hur, K. Sargent, M. Rubinstein, W. T. Freeman, F. Cole, D. Sun, N. Snavely, J. Wu et al., “Wonderjourney: Going from anywhere to everywhere,” in Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition, 2024, pp. 6658–6667.",
+            "[2] H.-X. Yu, H. Duan, C. Herrmann, W. T. Freeman, and J. Wu, “Wonderworld: Interactive 3d scene generation from a single image,” in Proceedings of the Computer Vision and Pattern Recognition Conference, 2025, pp. 5916–5926.",
+            "[3] S. Yang, J. Tan, M. Zhang, T. Wu, G. Wetzstein, Z. Liu, and D. Lin, “Layerpano3d: Layered 3d panorama for hyper-immersive scene generation,” in Proceedings of the special interest group on computer graphics and interactive techniques conference conference papers, 2025, pp. 1–10.",
+            "[4] K. Zheng, Y. Fan, J. Gu, Z. Xu, X. He, and X. E. Wang, “Self-evolving 3d scene generation from a single image,” arXiv preprint arXiv:2512.08905, 2025.",
+            "[5] H. Team, Z. Wang, Y. Liu, J. Wu, Z. Gu, H. Wang, X. Zuo, T. Huang, W. Li, S. Zhang et al., “Hunyuanworld 1.0: Generating immersive, explorable, and interactive 3d worlds from words or pixels,” arXiv preprint arXiv:2507.21809, 2025.",
+            "[6] M.-A. Schneider, L. Höllein, and M. Nießner, “Worldexplorer: Towards generating fully navigable 3d scenes,” in Proceedings of the SIGGRAPH Asia 2025 Conference Papers, 2025, pp. 1–11.",
+            "[7] Z. Yang, W. Ge, Y. Li, J. Chen, H. Li, M. An, F. Kang, H. Xue, B. Xu, Y. Yin et al., “Matrix-3d: Omnidirectional explorable 3d world generation,” arXiv preprint arXiv:2508.08086, 2025.",
+            "[8] T. Shen, S. Bahmani, K. He, S. G. Srinivasan, T. Cao, J. Ren, R. Li, Z. Wang, N. Sharp, Z. Gojcic et al., “Lyra 2.0: Explorable generative 3d worlds,” arXiv preprint arXiv:2604.13036, 2026.",
+            "[9] T. HY-World, C. Cao, X. Zuo, Z. Wang, Y. Zhang, J. Wu, Z. Liu, Y. Gong, Y. Liu, B. Yuan et al., “Hy-world 2.0: A multi-modal world model for reconstructing, generating, and simulating 3d worlds,” arXiv preprint arXiv:2604.14268, 2026.",
+            "[10] G. DeepMind, “Genie 3: A new frontier for world models,” https://deepmind.google/blog/ genie-3-a-new-frontier-for-world-models/, 2025.",
+            "[11] WorldLabs, “RTFM: A real-time frame model,” https://www.worldlabs.ai/blog/rtfm, 2025.",
+            "[12] J. Yu, J. Bai, Y. Qin, Q. Liu, X. Wang, P. Wan, D. Zhang, and X. Liu, “Context as memory: Scene-consistent interactive long video generation with memory retrieval,” in Proceedings of the SIGGRAPH Asia 2025 Conference Papers, 2025, pp. 1–11.",
+            "[13] X. He, C. Peng, Z. Liu, B. Wang, Y. Zhang, Q. Cui, F. Kang, B. Jiang, M. An, Y. Ren et al., “Matrix-game 2.0: An open-source real-time and streaming interactive world model,” arXiv preprint arXiv:2508.13009, 2025.",
+            "[14] T. HunyuanWorld, “Hy-world 1.5: A systematic framework for interactive world modeling with real-time latency and geometric consistency,” arXiv preprint, 2025.",
+            "[15] X. Mao, S. Lin, Z. Li, C. Li, W. Peng, T. He, J. Pang, M. Chi, Y. Qiao, and K. Zhang, “Yume: An interactive world generation model,” arXiv preprint arXiv:2507.17744, 2025.",
+            "[16] Y. Hong, Y. Mei, C. Ge, Y. Xu, Y. Zhou, S. Bi, Y. Hold-Geoffroy, M. Roberts, M. Fisher, E. Shechtman et al., “Relic: Interactive video world model with long-horizon memory,” arXiv preprint arXiv:2512.04040, 2025.",
+            "[17] R. Team, Z. Gao, Q. Wang, Y. Zeng, J. Zhu, K. L. Cheng, Y. Li, H. Wang, Y. Xu, S. Ma et al., “Advancing open-source world models,” arXiv preprint arXiv:2601.20540, 2026.",
+            "[18] Z. Wang, Z. Liu, J. Li, K. Huang, B. Xu, F. Kang, M. An, P. Wang, B. Jiang, Y. Wei et al., “Matrix-game 3.0: Real-time and streaming interactive world model with long-horizon memory,” arXiv preprint arXiv:2604.08995, 2026.",
+            "[19] H. Zhu, H. Liu, Y. Zhao, T. Ye, J. Chen, J. Yu, T. He, S. Han, and E. Xie, “Sana-wm: Efficient minute-scale world modeling with hybrid linear diffusion transformer,” arXiv preprint arXiv:2605.15178, 2026.",
+            "[20] J. Wang, L. Ye, T. Lu, J. Xiao, J. Zhang, Y. Guo, X. Liu, R. Chellappa, C. Peng, A. Yuille et al., “Evoworld: Evolving panoramic world generation with explicit 3d memory,” arXiv preprint arXiv:2510.01183, 2025.",
+            "[21] X. Ren, T. Shen, J. Huang, H. Ling, Y. Lu, M. Nimier-David, T. Müller, A. Keller, S. Fidler, and J. Gao, “Gen3c: 3d-informed world-consistent video generation with precise camera control,” in Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition, 2025, pp. 6121–6132.",
+            "[22] M. Yu, W. Hu, J. Xing, and Y. Shan, “Trajectorycrafter: Redirecting camera trajectory for monocular videos via diffusion models,” in Proceedings of the IEEE/CVF international conference on computer vision, 2025, pp. 100–111.",
+            "[23] H. Liu, Y. Zhou, Z. Wang, Z. Xu, Z. Peng, J. Ma, J. Liang, S. He, and J. Li, “Mocam: Unified novel view synthesis via structured denoising dynamics,” arXiv preprint arXiv:2605.12119, 2026.",
+            "[24] P. Wang, L. Chen, Z. Ma, Y. Guo, G. Zhang, and L. Zhang, “One2scene: Geometric consistent explorable 3d scene generation from a single image,” arXiv preprint arXiv:2602.19766, 2026.",
+            "[25] I. Team, D. Shen, G. Zhang, H. Liu, H. Ji, J. Liu, J. Guo, N. Wang, S. Pan, W. Pan et al., “Inspatio-worldfm: An open-source real-time generative frame model,” arXiv preprint arXiv:2603.11911, 2026.",
+            "[26] T. Wu, C. Zheng, and T.-J. Cham, “Panodiffusion: 360-degree panorama outpainting via diffusion,” in ICLR, 2024.",
+            "[27] H. Feng, D. Zhang, X. Li, B. Du, and L. Qi, “Dit360: High-fidelity panoramic image generation via hybrid training,” arXiv preprint arXiv:2510.11712, 2025.",
+            "[28] D. Zheng, C. Zhang, X.-M. Wu, C. Li, C. Lv, J.-F. Hu, and W.-S. Zheng, “Panorama generation from nfov image done right,” in CVPR, 2025, pp. 21 610–21 619.",
+            "[29] X. Yuan, S. Tang, K. Li, and P. Wang, “Camfreediff: camera-free image to panorama generation with diffusion model,” in CVPR, 2025, pp. 16 408–16 417.",
+            "[30] L. Jiang, Y. Mao, L. Xu, T. Lu, K. Ren, Y. Jin, X. Xu, M. Yu, J. Pang, F. Zhao et al., “Anysplat: Feed-forward 3d gaussian splatting from unconstrained views,” ACM Transactions on Graphics (TOG), vol. 44, no. 6, pp. 1–16, 2025.",
+            "[31] J. Kim and S. Lee, “Vg3t: Visual geometry grounded gaussian transformer,” arXiv preprint arXiv:2512.05988, 2025.",
+            "[32] Z. Chen, C. Wu, Z. Shen, C. Zhao, W. Ye, H. Feng, E. Ding, and S.-H. Zhang, “Splatter-360: Generalizable 360 gaussian splatting for wide-baseline panoramic images,” in Proceedings of the Computer Vision and Pattern Recognition Conference, 2025, pp. 21 590–21 599.",
+            "[33] C. Zhang, H. Xu, Q. Wu, C. C. Gambardella, D. Phung, and J. Cai, “Pansplat: 4k panorama synthesis with feed-forward gaussian splatting,” in Proceedings of the Computer Vision and Pattern Recognition Conference, 2025, pp. 11 437–11 447.",
+            "[34] J. Ren, M. Xiang, J. Zhu, and Y. Dai, “Panosplatt3r: Leveraging perspective pretraining for generalized unposed wide-baseline panorama reconstruction,” in Proceedings of the IEEE/CVF International Conference on Computer Vision, 2025, pp. 28 959–28 969.",
+            "[35] L. Mescheder, W. Dong, S. Li, X. Bai, M. Santos, P. Hu, B. Lecouat, M. Zhen, A. Delaunoy, T. Fang et al., “Sharp monocular view synthesis in less than a second,” arXiv preprint arXiv:2512.10685, 2025.",
+            "[36] T. Wan, A. Wang, B. Ai, B. Wen, C. Mao, C.-W. Xie, D. Chen, F. Yu, H. Zhao, J. Yang et al., “Wan: Open and advanced large-scale video generative models,” arXiv preprint arXiv:2503.20314, 2025.",
+            "[37] Z. Yang, J. Teng, W. Zheng, M. Ding, S. Huang, J. Xu, Y. Yang, W. Hong, X. Zhang, G. Feng et al., “Cogvideox: Text-to-video diffusion models with an expert transformer,” arXiv preprint arXiv:2408.06072, 2024.",
+            "[38] W. Kong, Q. Tian, Z. Zhang, R. Min, Z. Dai, J. Zhou, J. Xiong, X. Li, B. Wu, J. Zhang et al., “Hunyuanvideo: A systematic framework for large video generative models,” arXiv preprint arXiv:2412.03603, 2024.",
+            "[39] C. Zheng, T.-J. Cham, and J. Cai, “Pluralistic image completion,” in CVPR, 2019, pp. 1438–1447.",
+            "[40] Y. Wang, X. Tao, X. Shen, and J. Jia, “Wide-context semantic image extrapolation,” in CVPR, 2019, pp. 1399–1408.",
+            "[41] S. Zhao, J. Cui, Y. Sheng, Y. Dong, X. Liang, E. I. Chang, and Y. Xu, “Large scale image completion via co-modulated generative adversarial networks,” arXiv preprint arXiv:2103.10428, 2021.",
+            "[42] R. Rombach, A. Blattmann, D. Lorenz, P. Esser, and B. Ommer, “High-resolution image synthesis with latent diffusion models,” in CVPR, 2022, pp. 10 684–10 695.",
+            "[43] A. Lugmayr, M. Danelljan, A. Romero, F. Yu, R. Timofte, and L. Van Gool, “Repaint: Inpainting using denoising diffusion probabilistic models,” in CVPR, 2022, pp. 11 461–11 471.",
+            "[44] J. Li and M. Bansal, “Panogen: Text-conditioned panoramic environment generation for vision-and-language navigation,” NeurIPS, vol. 36, pp. 21 878–21 894, 2023.",
+            "[45] M. Feng, J. Liu, M. Cui, and X. Xie, “Diffusion360: Seamless 360 degree panoramic image generation based on diffusion models,” arXiv preprint arXiv:2311.13141, 2023.",
+            "[46] Y. Lu, J. Zhang, T. Fang, J.-D. Nahmias, Y. Tsin, L. Quan, X. Cao, Y. Yao, and S. Li, “Matrix3d: Large photogrammetry model all-in-one,” in CVPR, 2025, pp. 11 250–11 263.",
+            "[47] Y. Lee, K. Kim, H. Kim, and M. Sung, “Syncdiffusion: Coherent montage via synchronized joint diffusions,” NeurIPS, vol. 36, pp. 50 648–50 660, 2023.",
+            "[48] Q. Wang, W. Li, C. Mou, X. Cheng, and J. Zhang, “360dvd: Controllable panorama video generation with 360-degree video diffusion model,” in CVPR, 2024, pp. 6913–6923.",
+            "[49] K. Liao, X. Xu, C. Lin, W. Ren, Y. Wei, and Y. Zhao, “Cylin-painting: Seamless 360 panoramic image outpainting and beyond,” IEEE TIP, vol. 33, pp. 382–394, 2023.",
+            "[50] M. Jaderberg, K. Simonyan, A. Zisserman et al., “Spatial transformer networks,” NeurIPS, vol. 28, 2015.",
+            "[51] J. Xiao, K. A. Ehinger, A. Oliva, and A. Torralba, “Recognizing scene viewpoint using panoramic place representation,” in CVPR. IEEE, 2012, pp. 2695–2702.",
+            "[52] A. Chang, A. Dai, T. Funkhouser, M. Halber, M. Niebner, M. Savva, S. Song, A. Zeng, and Y. Zhang, “Matterport3d: Learning from rgb-d data in indoor environments,” in 2017 International Conference on 3D Vision (3DV). IEEE Computer Society, 2017, pp. 667–676.",
+            "[53] Poly Haven, “Poly haven hdris,” https://polyhaven.com/hdris, accessed: December 2025.",
+            "[54] Y. Zhang, S. Song, P. Tan, and J. Xiao, “Panocontext: A whole-room 3d context model for panoramic scene understanding,” in ECCV. Springer, 2014, pp. 668–686.",
+            "[55] C. Zou, A. Colburn, Q. Shan, and D. Hoiem, “Layoutnet: Reconstructing the 3d room layout from a single rgb image,” in CVPR, 2018, pp. 2051–2059.",
+            "[56] C. Sun, C.-W. Hsiao, M. Sun, and H.-T. Chen, “Horizonnet: Learning room layout with 1d representation and pano stretch data augmentation,” in CVPR, 2019, pp. 1047–1056.",
+            "[57] Z. Jiang, Z. Xiang, J. Xu, and M. Zhao, “Lgt-net: Indoor panoramic room layout estimation with geometry-aware transformer network,” in CVPR, 2022, pp. 1654–1663.",
+            "[58] C. Sun, M. Sun, and H.-T. Chen, “Hohonet: 360 indoor holistic understanding with latent horizontal features,” in CVPR, 2021, pp. 2573–2582.",
+            "[59] S. K. Ramakrishnan, A. Gokaslan, E. Wijmans, O. Maksymets, A. Clegg, J. M. Turner, E. Undersander, W. Galuba, A. Westbury, A. X. Chang, M. Savva, Y. Zhao, and D. Batra, “Habitat-matterport 3d dataset (HM3d): 1000 large-scale 3d environments for embodied AI,” in Thirty-fifth Conference on Neural Information Processing Systems Datasets and Benchmarks Track, 2021. [Online]. Available: https://arxiv.org/abs/2109.08238",
+            "[60] X. Huang, Z. Li, G. He, M. Zhou, and E. Shechtman, “Self forcing: Bridging the train-test gap in autoregressive video diffusion,” Advances in Neural Information Processing Systems, vol. 38, pp. 167 283–167 308, 2026.",
+            "[61] T. Yin, M. Gharbi, R. Zhang, E. Shechtman, F. Durand, W. T. Freeman, and T. Park, “One-step diffusion with distribution matching distillation.” in CVF Conference on Computer Vision and Pattern Recognition (CVPR), 2023, pp. 6613–6623.",
+            "[62] Y. Lu, R. Zuo, and J. Deng, “Raven: Real-time autoregressive video extrapolation with consistency-model grpo,” arXiv preprint arXiv:2605.15190, 2026.",
+            "[63] Y. Kim, Q. Hu, C.-C. J. Kuo, and P. A. Beerel, “Memrope: Training-free infinite video generation via evolving memory tokens,” arXiv preprint arXiv:2603.12513, 2026.",
+            "[64] O. Boer Bohan, “Taehv: Tiny autoencoder for hunyuan video,” https://github.com/madebyollin/taehv, 2025."
+        ],
+        "bbox": [
+            117,
+            808,
+            887,
+            883
+        ],
+        "page_idx": 16
+    },
+    {
+        "type": "page_number",
+        "text": "17",
+        "bbox": [
+            490,
+            936,
+            508,
+            949
+        ],
+        "page_idx": 16
+    },
+    {
+        "type": "list",
+        "sub_type": "ref_text",
+        "list_items": [],
+        "bbox": [
+            107,
+            75,
+            893,
+            917
+        ],
+        "page_idx": 17
+    },
+    {
+        "type": "page_number",
+        "text": "18",
+        "bbox": [
+            488,
+            936,
+            508,
+            949
+        ],
+        "page_idx": 17
+    },
+    {
+        "type": "list",
+        "sub_type": "ref_text",
+        "list_items": [],
+        "bbox": [
+            106,
+            75,
+            892,
+            917
+        ],
+        "page_idx": 18
+    },
+    {
+        "type": "page_number",
+        "text": "19",
+        "bbox": [
+            488,
+            936,
+            508,
+            949
+        ],
+        "page_idx": 18
+    },
+    {
+        "type": "list",
+        "sub_type": "ref_text",
+        "list_items": [],
+        "bbox": [
+            106,
+            75,
+            892,
+            569
+        ],
+        "page_idx": 19
+    },
+    {
+        "type": "page_number",
+        "text": "20",
+        "bbox": [
+            488,
+            936,
+            508,
+            949
+        ],
+        "page_idx": 19
+    }
+]

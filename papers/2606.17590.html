@@ -20,7 +20,7 @@
   </header>
   <nav class="site-nav" aria-label="主导航">
     <a class="nav-link" href="../index.html">头版</a>
-<a class="nav-link" href="../issues/2026-06-18.html">今日速递</a>
+<a class="nav-link" href="../issues/2026-06-19.html">今日速递</a>
 <a class="nav-link" href="../pages/catalog.html">论文目录</a>
 <a class="nav-link" href="../pages/timeline.html">时间线</a>
 <span class="nav-streak" title="连续追踪天数"><svg viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><path d="M8 0c.7 2.5-1.2 3.7-2 5-1 1.6-1 4 .8 4.8C6.4 8.5 7.4 7.8 8 7c.3 1.3-.4 2 .9 3 .9.7 1.3 1.6 1.1 2.6C9.7 14.6 8.9 16 6.8 16 4.6 16 3 14.3 3 12c0-3.3 2.6-4.8 2.4-8C6.9 4.6 8.4 5 8 0z"/></svg> 连续 <b data-streak>0</b> 天</span>
@@ -28,32 +28,32 @@
   <main><article class="paper-detail" data-pid="2606.17590" data-category="arXiv 新增 + video tokenizer / latent factorization" data-priority="P1" data-date="2026-06-18" data-title="tivtok: broadcasting time-invariant tokens for scalable video tokenization" data-keywords="tivtok: broadcasting time-invariant tokens for scalable video tokenization tivtok arxiv 新增 + video tokenizer / latent factorization p1 2026-06-18 arxiv 新增 + video tokenizer / latent factorization 把长视频 token 分成跨帧可复用的 time-invariant tokens 和帧特异 residual tokens，适合跟视频预训练效率问题一起读 中高相关；详见方法、贡献和实验边界。">
   <div class="paper-main">
     <div class="kicker">arXiv 新增 + video tokenizer / latent factorization · P1 · 2026-06-18</div>
-    <h1 class="paper-headline">TivTok：视频 SSL 和视频基础模型都会受 token budget 限制，TivTok 提供了可迁移的时间不变/变化分解思路</h1>
-    <p class="dek">把视频 token 压缩从“更少 token”改成“哪些 token 可跨时间复用”，更贴近长视频建模的冗余结构。</p>
-    <p class="byline"><strong>TivTok: Broadcasting Time-Invariant Tokens for Scalable Video Tokenization</strong>　Weiliang Chen , Yuanhui Huang , Xuebo Wang , Yueqi Duan；arXiv 元数据未稳定列机构时按作者列表记录。　arXiv 新增 + video tokenizer / latent factorization　<a href="https://arxiv.org/abs/2606.17590">原文链接</a></p>
+    <h1 class="paper-headline">TivTok：它和通用视觉自监督的关系在于：把长视频 token 分成跨帧可复用的 time-invariant tokens 和帧特异 residual tokens，适合跟视频预训练效率问题一起读</h1>
+    <p class="dek">中高相关；详见方法、贡献和实验边界。</p>
+    <p class="byline"><strong>TivTok: Broadcasting Time-Invariant Tokens for Scalable Video Tokenization</strong>　arXiv 新增 + video tokenizer / latent factorization　<a href="https://arxiv.org/abs/2606.17590">原文链接</a></p>
     <div class="paper-facts">
       <span><b>编号</b>2606.17590</span>
       <span><b>优先级</b>P1</span>
       <span><b>类别</b>arXiv 新增 + video tokenizer / latent factorization</span>
       <span><b>会议</b>arXiv 新增 + video tokenizer / latent factorization</span>
-      <span><b>方法</b>TivTok 把视频表示拆成 Time-Invariant tokens 和 Time-Variant tokens，前者广播复用静态背景/对象外观，后者编码帧级残差；Scope-Induced Factorization 用不同 attention scope 诱导这种分解。</span>
+      <span><b>方法</b>把长视频 token 分成跨帧可复用的 time-invariant tokens 和帧特异 residual tokens，适合跟视频预训练效率问题一起读</span>
       <span><b>来源</b>arXiv / OpenReview</span>
     </div>
     <div class="feature-body">
-      <p class="lead dropcap">先说结论。视频 SSL 和视频基础模型都会受 token budget 限制，TivTok 提供了可迁移的时间不变/变化分解思路。 把视频 token 压缩从“更少 token”改成“哪些 token 可跨时间复用”，更贴近长视频建模的冗余结构。</p>
+      <p class="lead dropcap">先说结论。它和通用视觉自监督的关系在于：把长视频 token 分成跨帧可复用的 time-invariant tokens 和帧特异 residual tokens，适合跟视频预训练效率问题一起读。 中高相关；详见方法、贡献和实验边界。</p>
       <figure class="full-fig"><img src="../assets/mineru/2606.17590/images/1fbf1275392dea82f27aa320f11105480d32a5eff37767b45a943f13ead2875b.jpg" alt="Figureure 2 · TivTok architecture overview"><figcaption><b>Figureure 2 · TivTok architecture overview</b><span class="fig-en">Fig. 2 TivTok architecture overview. Given an input video, the encoder applies Scope-Induced Factorization (SIF) by assigning different attention scopes to the two token groups: TIV tokens attend to the full clip to aggregate shared information, while each TV token attends to its corresponding frame together with the TIV tokens to model frame-local variation. The compressed representation contains a shared set of TIV tokens and per-frame TV tokens. In the decoder, Invariant Broadcasting (IB) reuses the same TIV tokens at every time step and combines them with the corresponding TV tokens for parallel reconstruction.</span><span class="fig-zh">这张图概括 TivTok 的整体方法流程。阅读时先看模块之间传递的训练信号，再看作者如何把目标拆成可优化的子问题。</span></figcaption></figure>
 <figure class="full-fig"><img src="../assets/mineru/2606.17590/images/a09342628b02135b15ba99254d1ca8d7e8f9751c2dbeea5942dd097afdbbcaaf.jpg" alt="Figureure 1 · Overview of TivTok and its reuse-aware video tokenization"><figcaption><b>Figureure 1 · Overview of TivTok and its reuse-aware video tokenization</b><span class="fig-en">Fig. 1 Overview of TivTok and its reuse-aware video tokenization. Top-left: reconstruction FVD is compared across video lengths, with marker size indicating the number of tokens; TivTok keeps a compact token budget while maintaining competitive reconstruction quality in long-video settings. Bottom-left: conventional tokenization treats persistent content and frame-specific variation uniformly when allocating representation capacity. Right: in contrast, the boxing and billiards examples illustrate how TivTok separates reusable Time-Invariant (TIV) tokens from frame-specific Time-Variant (TV) tokens. TIV tokens capture content shared over time, such as scene layout and object appearance, while TV tokens represent frame-specific changes such as object position and local motion. Broadcasting TIV tokens across frames and chunks allows persistent information to be reused rather than re-encoded at every frame.</span><span class="fig-zh">这张图概括 TivTok 的整体方法流程。阅读时先看模块之间传递的训练信号，再看作者如何把目标拆成可优化的子问题。</span></figcaption></figure>
       
       <h2>核心问题</h2>
-      <p>视频 SSL 和视频基础模型都会受 token budget 限制，TivTok 提供了可迁移的时间不变/变化分解思路。</p>
+      <p>它和通用视觉自监督的关系在于：把长视频 token 分成跨帧可复用的 time-invariant tokens 和帧特异 residual tokens，适合跟视频预训练效率问题一起读。</p>
       <h2>方法拆解</h2>
-      <p>TivTok 把视频表示拆成 Time-Invariant tokens 和 Time-Variant tokens，前者广播复用静态背景/对象外观，后者编码帧级残差；Scope-Induced Factorization 用不同 attention scope 诱导这种分解。</p>
+      <p>把长视频 token 分成跨帧可复用的 time-invariant tokens 和帧特异 residual tokens，适合跟视频预训练效率问题一起读</p>
       <h2>主要贡献</h2>
-      <p>把视频 token 压缩从“更少 token”改成“哪些 token 可跨时间复用”，更贴近长视频建模的冗余结构。</p>
+      <p>中高相关；详见方法、贡献和实验边界。</p>
       <h2>实验看点</h2>
-      <p>摘要强调对长视频生成/建模的 token 成本改善，同时减少重复编码 persistent content。</p>
+      <p>实验部分建议重点看两类证据：一是作者是否把方法收益和更强数据、更长训练、更大模型区分开；二是跨模型、跨数据或跨任务迁移是否还能保留同样趋势。</p>
       <h2>局限与读法</h2>
-      <p>以视频生成 tokenization 为主，是否提升通用视频表征迁移仍需看下游评估。</p>
+      <p>这篇论文的结论需要结合任务设置、训练数据规模和消融实验一起看；不要只凭单个指标判断它对通用视觉表征的价值。</p>
     
     </div>
   </div>
@@ -64,13 +64,13 @@
     <div class="side-box"><h4>原文</h4><p><a href="https://arxiv.org/abs/2606.17590">https://arxiv.org/abs/2606.17590</a></p></div>
   </aside>
 </article></main>
-  <aside class="conf-float" data-conf-reminder="2026-06-18-main-ddl" aria-label="CCF A/B 主投稿提醒">
+  <aside class="conf-float" data-conf-reminder="2026-06-19-main-ddl" aria-label="CCF A/B 主投稿提醒">
   <button class="conf-close" type="button" aria-label="关闭会议提醒">×</button>
   <details open>
     <summary>CCF A/B 主投稿提醒</summary>
     <div class="conf-list"><a class="conf-item " href="https://github.com/ccfddl/ccf-deadlines/blob/main/conference/AI/aaai.yml">
   <span><b>AAAI 2027</b><em>CCF A · Main paper submission</em></span>
-  <strong>39 天</strong>
+  <strong>38 天</strong>
   <small>2026-07-27 · CCF DDL: abstract 2026-07-20；进入 1 个月窗口后重点提醒。</small>
 </a></div>
   </details>
@@ -83,7 +83,7 @@
   (() => {
     const box = document.querySelector('[data-conf-reminder]');
     if (!box) return;
-    const key = `visualSslConfReminderClosed:${box.dataset.confReminder || '2026-06-18-main-ddl'}`;
+    const key = `visualSslConfReminderClosed:${box.dataset.confReminder || '2026-06-19-main-ddl'}`;
     try {
       if (localStorage.getItem(key) === '1') box.hidden = true;
     } catch (err) {}

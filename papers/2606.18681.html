@@ -1,0 +1,101 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Moving Beyond Diversity · 通用视觉自监督研究报</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Source+Serif+4:ital,opsz,wght@0,8..60,400;0,8..60,500;0,8..60,600;1,8..60,400&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../assets/visual-ssl.css?v=20260615ssl6">
+</head>
+<body data-paper-data-url="../data/papers.json">
+  <header class="masthead">
+    <a class="masthead-title" href="../index.html">通用视觉自监督研究报</a>
+    <div class="masthead-kicker">A Daily Digest of Visual Self-Supervised Learning</div>
+    <div class="masthead-meta">
+      <span>2026-06-19</span>
+      <span>图像表征 · VFM · JEPA · 视频预训练</span>
+    </div>
+  </header>
+  <nav class="site-nav" aria-label="主导航">
+    <a class="nav-link" href="../index.html">头版</a>
+<a class="nav-link" href="../issues/2026-06-19.html">今日速递</a>
+<a class="nav-link" href="../pages/catalog.html">论文目录</a>
+<a class="nav-link" href="../pages/timeline.html">时间线</a>
+<span class="nav-streak" title="连续追踪天数"><svg viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><path d="M8 0c.7 2.5-1.2 3.7-2 5-1 1.6-1 4 .8 4.8C6.4 8.5 7.4 7.8 8 7c.3 1.3-.4 2 .9 3 .9.7 1.3 1.6 1.1 2.6C9.7 14.6 8.9 16 6.8 16 4.6 16 3 14.3 3 12c0-3.3 2.6-4.8 2.4-8C6.9 4.6 8.4 5 8 0z"/></svg> 连续 <b data-streak>0</b> 天</span>
+  </nav>
+  <main><article class="paper-detail" data-pid="2606.18681" data-category="arXiv 新增 + ECCV 2026 under review + VLM token pruning" data-priority="P0" data-date="2026-06-19" data-title="moving beyond diversity: visual token pruning as subspace reconstruction for efficient vlms" data-keywords="moving beyond diversity: visual token pruning as subspace reconstruction for efficient vlms moving beyond diversity arxiv 新增 + eccv 2026 under review + vlm token pruning p0 2026-06-19 arxiv 新增 + eccv 2026 under review + vlm token pruning 把视觉 token pruning 从多样性最大化改成子空间重建误差最小化，直接影响 vlm 视觉表征保真 高相关；详见方法、贡献和实验边界。">
+  <div class="paper-main">
+    <div class="kicker">arXiv 新增 + ECCV 2026 under review + VLM token pruning · P0 · 2026-06-19</div>
+    <h1 class="paper-headline">Moving Beyond Diversity：长上下文 MLLM 的核心瓶颈是哪些视觉 token 可删、哪些必须保留，SPARE 对通用视觉 token 表征有直接启发</h1>
+    <p class="dek">论文指出仅靠 cosine diversity 会丢掉 feature magnitude；还观察到低 image-text relevance 的 token 可能更能保留上下文。</p>
+    <p class="byline"><strong>Moving Beyond Diversity: Visual Token Pruning as Subspace Reconstruction for Efficient VLMs</strong>　Jaeyeon Lee , Shunjie Wen , Dong-Wan Choi；arXiv 元数据未稳定列机构时按作者列表记录。　arXiv 新增 + ECCV 2026 under review + VLM token pruning　<a href="https://arxiv.org/abs/2606.18681">原文链接</a></p>
+    <div class="paper-facts">
+      <span><b>编号</b>2606.18681</span>
+      <span><b>优先级</b>P0</span>
+      <span><b>类别</b>arXiv 新增 + ECCV 2026 under review + VLM token pruning</span>
+      <span><b>会议</b>arXiv 新增 + ECCV 2026 under review + VLM token pruning</span>
+      <span><b>方法</b>SPARE 将 token pruning 形式化为 column subset selection，通过投影残差迭代选择最能重建原始 feature subspace 的视觉 token。</span>
+      <span><b>来源</b>arXiv / OpenReview</span>
+    </div>
+    <div class="feature-body">
+      <p class="lead dropcap">先说结论。长上下文 MLLM 的核心瓶颈是哪些视觉 token 可删、哪些必须保留，SPARE 对通用视觉 token 表征有直接启发。 论文指出仅靠 cosine diversity 会丢掉 feature magnitude；还观察到低 image-text relevance 的 token 可能更能保留上下文。</p>
+      <figure class="full-fig"><img src="../assets/mineru/2606.18681/images/b96c256bb152148a0f101f35f01a11404137f992469e4bb5ef423296b28715e6.jpg" alt="Figureure 2 · : Overview of SPARE"><figcaption><b>Figureure 2 · : Overview of SPARE</b><span class="fig-en">Fig. 2: Overview of SPARE. SPARE approximates the visual subspace by iteratively selecting tokens based on reconstruction residuals, while incorporating antirelevance guidance derived from image–text semantic alignment to preserve complementary contextual information.</span><span class="fig-zh">这张图概括 Moving Beyond Diversity 的整体方法流程。阅读时先看模块之间传递的训练信号，再看作者如何把目标拆成可优化的子问题。</span></figcaption></figure>
+<figure class="full-fig"><img src="../assets/mineru/2606.18681/images/9744d9a7bb2f2e0f03cf1ce6494d83db185332a9c72e53bdefee50c89c878e67.jpg" alt="Fig"><figcaption><b>Fig</b><span class="fig-en">Fig. A2: Qualitative Comparison. Visualizations of retained tokens under different token retention budgets, comparing SPARE with CDPruner [36].</span><span class="fig-zh">这张图/表用于判断 Moving Beyond Diversity 的实验收益来自哪里。重点看替换、消融或跨模型设置下趋势是否一致，而不是只看单个最高分。</span></figcaption></figure>
+      
+      <h2>核心问题</h2>
+      <p>长上下文 MLLM 的核心瓶颈是哪些视觉 token 可删、哪些必须保留，SPARE 对通用视觉 token 表征有直接启发。</p>
+      <h2>方法拆解</h2>
+      <p>SPARE 将 token pruning 形式化为 column subset selection，通过投影残差迭代选择最能重建原始 feature subspace 的视觉 token。</p>
+      <h2>主要贡献</h2>
+      <p>论文指出仅靠 cosine diversity 会丢掉 feature magnitude；还观察到低 image-text relevance 的 token 可能更能保留上下文。</p>
+      <h2>实验看点</h2>
+      <p>摘要强调 compositional multi-skill reasoning 任务上，重建驱动 pruning 比 diversity-only 策略更稳。</p>
+      <h2>局限与读法</h2>
+      <p>仍是推理侧 token selection，不是预训练目标；ECCV 状态只是 under review，不能当接收。</p>
+    
+    </div>
+  </div>
+  <aside class="paper-side">
+
+    <div class="side-box pref-side"><h4>我的偏好</h4><div class="paper-side-tools"><button class="readbtn" type="button" data-read-toggle="2606.18681" title="标记已读" aria-label="标记已读"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M4 10.5l4 4 8-9"/></svg></button><div class="prefbar" data-pref-controls="2606.18681"><button class="prefbtn like" type="button" data-pref-toggle="like" data-pref-id="2606.18681" aria-pressed="false" title="关注这篇">关注</button><button class="prefbtn dismiss" type="button" data-pref-toggle="dismiss" data-pref-id="2606.18681" aria-pressed="false" title="降低这篇权重">略过</button></div></div></div>
+    <div class="side-box"><h4>关键判断</h4><dl><dt>相关性</dt><dd>P0</dd><dt>类别</dt><dd>arXiv 新增 + ECCV 2026 under review + VLM token pruning</dd><dt>会议</dt><dd>arXiv 新增 + ECCV 2026 under review + VLM token pruning</dd><dt>读法</dt><dd>方法图优先，表格次之</dd></dl></div>
+    <div class="side-box"><h4>原文</h4><p><a href="https://arxiv.org/abs/2606.18681">https://arxiv.org/abs/2606.18681</a></p></div>
+  </aside>
+</article></main>
+  <aside class="conf-float" data-conf-reminder="2026-06-19-main-ddl" aria-label="CCF A/B 主投稿提醒">
+  <button class="conf-close" type="button" aria-label="关闭会议提醒">×</button>
+  <details open>
+    <summary>CCF A/B 主投稿提醒</summary>
+    <div class="conf-list"><a class="conf-item " href="https://github.com/ccfddl/ccf-deadlines/blob/main/conference/AI/aaai.yml">
+  <span><b>AAAI 2027</b><em>CCF A · Main paper submission</em></span>
+  <strong>38 天</strong>
+  <small>2026-07-27 · CCF DDL: abstract 2026-07-20；进入 1 个月窗口后重点提醒。</small>
+</a></div>
+  </details>
+</aside>
+  <footer class="footer">
+    <div>面向通用视觉自监督、视觉基础模型与多模态表征学习的每日研究报。</div>
+    <div class="muted">Issue 2026-06-19 · Curated readings and figure notes</div>
+  </footer>
+  <script>
+  (() => {
+    const box = document.querySelector('[data-conf-reminder]');
+    if (!box) return;
+    const key = `visualSslConfReminderClosed:${box.dataset.confReminder || '2026-06-19-main-ddl'}`;
+    try {
+      if (localStorage.getItem(key) === '1') box.hidden = true;
+    } catch (err) {}
+    const close = box.querySelector('.conf-close');
+    if (close) {
+      close.addEventListener('click', () => {
+        box.hidden = true;
+        try { localStorage.setItem(key, '1'); } catch (err) {}
+      });
+    }
+  })();
+  </script>
+  <script src="../assets/ssl-game.js"></script>
+</body>
+</html>

@@ -1,0 +1,1969 @@
+[
+    {
+        "type": "text",
+        "text": "Dual-Channel Grounded World Modeling (DCGWM):",
+        "text_level": 1,
+        "bbox": [
+            181,
+            89,
+            816,
+            114
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "Structural Prevention of Objective Interference Collapse",
+        "text_level": 1,
+        "bbox": [
+            225,
+            119,
+            772,
+            138
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "via Heterogeneous External Grounding with Inward-Only Gradient Flow",
+        "text_level": 1,
+        "bbox": [
+            145,
+            150,
+            849,
+            170
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "Akshay Hazare",
+        "bbox": [
+            428,
+            184,
+            568,
+            200
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "Independent Researcher",
+        "bbox": [
+            411,
+            205,
+            584,
+            220
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "akshayhazare07@gmail.com",
+        "bbox": [
+            395,
+            224,
+            601,
+            241
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "June 16, 2026",
+        "bbox": [
+            447,
+            244,
+            550,
+            258
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "Abstract",
+        "text_level": 2,
+        "bbox": [
+            459,
+            330,
+            539,
+            347
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "Joint Embedding Predictive Architectures (JEPAs) have emerged as a leading approach to learning world model representations. We identify a failure mode that arises when a JEPA-based world model must ground its latent space against two qualitatively distinct external signals: physical dynamics, which produce sparse, high-magnitude, constraintsatisfying gradient corrections, and social-behavioral dynamics, which produce diffuse, distribution-matching gradient corrections. We term this failure Objective Interference Collapse (OIC): we argue that joint learning of both signals in a shared latent space causes the dominant channel to systematically collapse the representational subspace of the subordinate channel, in a manner not resolvable by loss weighting alone.",
+        "bbox": [
+            179,
+            357,
+            816,
+            497
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "We propose Dual-Channel Grounded World Modeling (DCGWM), an architecture designed to structurally prevent OIC through a partitioned latent space Z = Z\\_p ⊕ Z\\_b with inward-only gradient flow. The Physical Grounding Channel updates only Z\\_p via VICReg-style alignment to physical measurements; the Social-Behavioral Grounding Channel updates only Z\\_b via alignment to trajectories from an emergent multi-agent simulation. An Inter-Channel Interface Module couples the two subspaces at the task level without cross-subspace gradients. An Asymmetric Grounding Adherence Loss controls rollout drift using a hard hinge penalty for physical violations and a soft KL penalty for behavioral divergence, reflecting the categorical asymmetry between the two grounding statistics. A Generative Rendering Layer for visualization is architecturally isolated from the latent world model.",
+        "bbox": [
+            179,
+            507,
+            816,
+            676
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "We present three theoretical results concerning the architecture's structural properties: that the partition removes the gradient-interference pathway implicated in OIC; that each grounded subspace inherits anti-collapse guarantees from its alignment objective; and that generative isolation is necessary under a stated assumption on the generative objective's geometry. This manuscript establishes the problem formulation and architecture; experimental validation is ongoing and will be reported in a future revision.",
+        "bbox": [
+            179,
+            688,
+            816,
+            782
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "1. Introduction",
+        "text_level": 2,
+        "bbox": [
+            120,
+            113,
+            261,
+            131
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "text",
+        "text": "This manuscript establishes the problem formulation and architecture. Experimental validation is ongoing and will be reported in a future revision.",
+        "bbox": [
+            119,
+            143,
+            877,
+            180
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "text",
+        "text": "World modeling -- the problem of learning a compact predictive representation of environment dynamics -- has seen substantial recent progress through Joint Embedding Predictive Architectures [LeCun, 2022; Bardes et al., 2024]. JEPA-trained models learn by predicting masked future representations rather than pixel content, avoiding the high-frequency reconstruction pressure that causes collapse in generative world models. V-JEPA-2 [Meta AI, 2025] demonstrates that this approach encodes strong physical priors. WMReward [Yuan et al., 2026] uses V-JEPA-2's surprise score as an inference-time reward to steer video generation toward physical plausibility, winning the ICCV 2025 PhysicsIQ Challenge.",
+        "bbox": [
+            117,
+            189,
+            879,
+            335
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "text",
+        "text": "These are advances in physical grounding. A distinct and unaddressed problem is what happens when a world model must simultaneously represent physical dynamics and social-behavioral dynamics. We observe that these two representation requirements are governed by processes with structurally incompatible gradient dynamics: physical grounding produces sparse, highmagnitude, constraint-satisfying corrections concentrated in specific latent dimensions; behavioral grounding produces diffuse, lower-magnitude, distribution-matching corrections spread across many latent dimensions. We conjecture that joint learning in a shared latent space causes the dominant channel to systematically collapse the representational subspace of the other, and that this is not resolvable by loss weighting because the incompatibility is geometric.",
+        "bbox": [
+            117,
+            361,
+            877,
+            525
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "text",
+        "text": "Separately, Domain Expansion [Huang et al., 2026] and GradOPS [Zhu et al., 2025] have established that structural latent space partitioning prevents gradient interference between internal task objectives more effectively than loss weighting. Our work brings structural partitioning to the external grounding problem, applied specifically to grounding sources with incompatible statistical structures. This is a distinct problem: Domain Expansion addresses internal task gradient conflict; we address external signal statistical incompatibility.",
+        "bbox": [
+            117,
+            551,
+            877,
+            659
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "text",
+        "text": "We also identify a second unaddressed failure mode: rollout drift, in which multi-step latent predictions accumulate error that moves the predicted state away from the grounded manifold. We address this with a novel Asymmetric Grounding Adherence Loss that applies structurally different penalties to physical and behavioral drift, reflecting their different tolerance structures.",
+        "bbox": [
+            117,
+            686,
+            877,
+            760
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "text",
+        "text": "This paper's contributions are:",
+        "bbox": [
+            120,
+            787,
+            357,
+            806
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "list",
+        "sub_type": "text",
+        "list_items": [
+            "• Formalization of objective interference collapse as a conjectured failure mode in joint latent world modeling, with supporting structural argument",
+            "• The DCGWM architecture designed to prevent this collapse through explicit latent space partitioning, inward-only gradient flow, and separated grounding"
+        ],
+        "bbox": [
+            176,
+            814,
+            846,
+            893
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "text",
+        "text": "channels",
+        "text_level": 2,
+        "bbox": [
+            179,
+            90,
+            250,
+            106
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "list",
+        "sub_type": "text",
+        "list_items": [
+            "• The Asymmetric Grounding Adherence Loss (L\\_AGA), to our knowledge, the first loss designed specifically for rollout drift prevention under heterogeneous grounding sources with incompatible tolerance structures.",
+            "• An Isolation Necessity theorem showing, under stated assumptions, that any nonzero generative gradient weight causes world model representational drift.",
+            "• A structural argument that NTP-trained LLMs face inherent limitations in world modeling tasks requiring simultaneous physical and behavioral grounding, arising from NTP's implicit geometric bias toward subspace collapse."
+        ],
+        "bbox": [
+            176,
+            114,
+            872,
+            271
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "This paper is a position and architecture contribution. The failure modes are formalized and the architecture is specified with sufficient precision for implementation. Empirical validation of all claims is ongoing and will be reported in a subsequent revision.",
+        "bbox": [
+            148,
+            297,
+            831,
+            345
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "2. Background and Related Work",
+        "text_level": 2,
+        "bbox": [
+            120,
+            390,
+            423,
+            407
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "2.1 Representation Collapse: A Five-Mode Taxonomy",
+        "text_level": 2,
+        "bbox": [
+            119,
+            431,
+            560,
+            450
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "We distinguish five collapse modes relevant to world modeling. The first four are established in the literature; the fifth is proposed here.",
+        "bbox": [
+            119,
+            459,
+            874,
+            494
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "Complete collapse. All embeddings converge to a constant function [Chen & He, 2020]. Prevented in JEPA by stop-gradient on the target branch.",
+        "bbox": [
+            119,
+            523,
+            872,
+            559
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "Dimensional collapse. Embeddings span a strict subspace of the available space [Jing et al., 2022]. Prevented by VICReg-style variance and covariance regularization [Bardes et al., 2021].",
+        "bbox": [
+            119,
+            569,
+            872,
+            604
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "Neural collapse. Last-layer features converge to class means forming a Simplex ETF during the terminal phase of supervised training [Papyan et al., 2020]. An optimization artifact that does not benefit generalization [Hui et al., 2022].",
+        "bbox": [
+            119,
+            614,
+            874,
+            669
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "Capacity loss. Representation rank decreases under non-stationarity in RL, limiting continued learning [Kumar et al., 2021; Moalla et al., 2024].",
+        "bbox": [
+            119,
+            679,
+            874,
+            715
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "Objective interference collapse (proposed). The representational subspace of one grounding objective is collapsed by a competing grounding objective with incompatible statistical structure when both are learned in a shared latent space. Formalized in Section 3.1.",
+        "bbox": [
+            119,
+            724,
+            874,
+            777
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "2.2 Structural Approaches to Multi-Objective Latent Conflicts",
+        "text_level": 2,
+        "bbox": [
+            119,
+            816,
+            635,
+            834
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "Domain Expansion [Huang et al., 2026] assigns each internal training objective to a mutually orthogonal subspace via an orthogonal pooling mechanism, preventing gradient interference between supervised task losses. GradOPS [Zhu et al., 2025] deconflicts task gradients through orthogonal projection at optimization time. Both address internal task gradient conflict.",
+        "bbox": [
+            117,
+            844,
+            874,
+            898
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "",
+        "bbox": [
+            119,
+            90,
+            795,
+            108
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "text",
+        "text": "DCGWM differs from both in three specific ways: (1) our partition anchors subspaces to external grounding sources outside the gradient graph, not internal task objectives; (2) our inward-only constraint prevents gradient flow from external sources into non-designated subspaces entirely, not merely projects existing gradients; (3) the incompatibility we address is between external signal statistics with different generative processes, not between supervised loss terms with similar statistical structure.",
+        "bbox": [
+            117,
+            136,
+            877,
+            243
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "text",
+        "text": "2.3 Physical Grounding in World Models",
+        "text_level": 2,
+        "bbox": [
+            119,
+            282,
+            460,
+            301
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "text",
+        "text": "WMReward [Yuan et al., 2026] uses V-JEPA-2's surprise score as an inference-time reward to steer video generation toward physical plausibility. Chen et al. [2026] survey the imperative of physical grounding. GVP-WM [Ziakas et al., 2026] formulates grounding as latent-space trajectory optimization under world-model dynamics. GIRL [2026] uses a cross-modal grounding signal with uncertainty-adaptive trust-region regularization to limit imagination drift. None of these works addresses behavioral grounding, the incompatibility between physical and behavioral signals, or asymmetric rollout drift penalties.",
+        "bbox": [
+            117,
+            310,
+            879,
+            435
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "text",
+        "text": "2.4 Social Simulation and Behavioral Prediction",
+        "text_level": 2,
+        "bbox": [
+            119,
+            474,
+            519,
+            492
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "text",
+        "text": "OASIS [CAMEL-AI, 2024] supports large-scale multi-agent social simulation. MiroFish [Guo, 2025] uses OASIS-based emergent simulation for social prediction. IndoorWorld [2025] combines physical environments with social agent simulation at the task level. None routes emergent simulation outputs as a continuous external grounding signal into a dedicated latent subspace of a world model through inward-only gradient flow.",
+        "bbox": [
+            117,
+            502,
+            877,
+            592
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "text",
+        "text": "2.5 NTP Geometry and Representation Collapse in LLMs",
+        "text_level": 2,
+        "bbox": [
+            119,
+            630,
+            596,
+            648
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "text",
+        "text": "Recent theoretical work has characterized the implicit geometric bias of next-token prediction. Zhao et al. [2024] show that NTP training implicitly favors logit matrices with sparse plus lowrank structure, and that contexts sharing the same next-token support set converge to nearly collinear representations -- a phenomenon termed subspace collapse. This is a consequence of the NTP objective's geometry, not of insufficient model capacity. Separately, representational collapse in transformers occurs as sequence length grows due to softmax attention's inability to maintain distinct attention patterns [Barbero et al., 2024]. These two mechanisms produce a characteristic rank deficiency in LLM representations that is independent of scale.",
+        "bbox": [
+            117,
+            657,
+            877,
+            801
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "text",
+        "text": "3. Dual-Channel Grounded World Modeling",
+        "text_level": 2,
+        "bbox": [
+            119,
+            847,
+            521,
+            867
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "text",
+        "text": "3.1 Objective Interference Collapse: Definition and Structural Argument",
+        "text_level": 1,
+        "bbox": [
+            119,
+            104,
+            722,
+            125
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "Definition (Objective Interference Collapse). Let Z be a shared latent space optimized jointly under grounding objectives G\\_p (physical) and G\\_b (behavioral) with gradient fields $g \\_ p = \\nabla _ { - } Z$ L\\_G\\_p and g\\_b = ∇\\_Z L\\_G\\_b. G\\_p and G\\_b have incompatible statistical structures if: (a) g\\_p is low-entropy and concentrated -- physical constraints eliminate large regions of state space, producing sparse high-magnitude corrections in specific latent dimensions; and (b) g\\_b is highentropy and diffuse -- behavioral distributions are stochastic, producing small-magnitude corrections distributed across many dimensions. We conjecture that under joint optimization, the channel with higher ||g|| at each step dominates the gradient update, systematically reducing the effective rank of the subordinate channel's representational subspace.",
+        "bbox": [
+            147,
+            137,
+            841,
+            279
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "Supporting argument for the conjecture. The gradient update at step t is proportional to $\\mathrm { { \\tt ~ g ~ p ~ } ^ { + } }$ $\\mathrm { g \\_ b . \\ I f \\ | | g \\_ p | | > > \\ | | g \\_ b | | }$ at step t (physical dominates), the update moves Z toward the physical optimum $\\mathsf { Z } \\lrcorner \\mathsf { p } ^ { * } . \\mathrm { A t } \\mathsf { Z } \\lrcorner \\mathsf { p } ^ { * }$ , the physical loss is minimized and $\\underline { { \\mathsf { g } } } \\_ { \\mathsf { p } } \\approx 0 .$ . However, g\\_b at $\\boldsymbol { \\mathrm { Z } } \\boldsymbol { \\mathrm { p } } ^ { * }$ is not necessarily zero -- the behavioral optimum $Z \\_ \\mathrm { b ^ { * } }$ may differ from $\\boldsymbol { Z } \\underline { { \\mathsf { p } } } ^ { * }$ . The subsequent updates from g\\_b will disturb the physical subspace, and the next physical correction will reconcentrate the latent space toward $\\boldsymbol { Z } \\boldsymbol { \\underline { { \\mathrm { ~ p } } } } ^ { * }$ , overwriting behavioral structure. This dynamic prevents Z\\_b from developing a stable full-rank structure. The reverse holds when $\\| \\mathbf { g } \\_ { \\mathbf { b } } \\| > > \\|$ g\\_p||. We acknowledge this argument is not a formal proof -- it does not account for adaptive optimizers, learning rate schedules, or batch effects. Empirical validation is required and is planned.",
+        "bbox": [
+            117,
+            311,
+            877,
+            491
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "Why loss weighting does not resolve this. A scalar reweighting α $\\mathrm { ~ g ~ } \\underline { { \\mathsf { p } } } \\mathrm { ~ + ~ } \\beta \\mathrm { ~ g ~ }$ \\_b changes the relative magnitudes but does not change the geometric structure of the conflict. At any fixed (α, β), one channel will still dominate in the dimensions where its gradient is concentrated. The correct resolution is structural: separate the parameter spaces so the gradients from each channel cannot interact.",
+        "bbox": [
+            117,
+            518,
+            877,
+            607
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "3.2 Architecture Overview",
+        "text_level": 2,
+        "bbox": [
+            119,
+            647,
+            341,
+            662
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "code",
+        "sub_type": "code",
+        "code_caption": [],
+        "code_body": "```txt\nPhysical Measurements → PGC [inward-only ∇] → Γ\nZ_b] → detach() → GRL → User\nSocial Simulation → SBGC [inward-only ∇] → ↓\n|→ LWME [Z_p ⊕\n```",
+        "bbox": [
+            176,
+            671,
+            857,
+            741
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "Architectural invariants:",
+        "text_level": 2,
+        "bbox": [
+            120,
+            766,
+            313,
+            782
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "Invariant 1: Z\\_p and Z\\_b have no shared parameters and no direct gradient path between them",
+        "bbox": [
+            147,
+            792,
+            836,
+            825
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "Invariant 2: PGC gradients update only $\\mathbb { W } _ { \\underline { { \\mathbf { \\lambda } } } } \\mathfrak { p } ;$ SBGC gradients update only W\\_b",
+        "bbox": [
+            147,
+            835,
+            769,
+            854
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "Invariant 3: The interface module applies no gradient from $\\boldsymbol { Z } _ { \\perp } \\mathbf { p }$ into Z\\_b or vice versa",
+        "bbox": [
+            147,
+            861,
+            813,
+            880
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "Invariant 4: The GRL receives detached latent representations; no L\\_gen gradient reaches",
+        "bbox": [
+            147,
+            887,
+            841,
+            904
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "3.3 Latent World Modeling Engine",
+        "text_level": 2,
+        "bbox": [
+            119,
+            145,
+            410,
+            162
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "text",
+        "text": "The LWME implements a JEPA with structured latent space $Z = \\mathrm { Z } \\ \\mathsf { p } \\oplus \\mathrm { Z } \\ \\mathsf { b }$ , where ⊕ denotes a direct sum enforced architecturally rather than merely as concatenation. Three mechanisms enforce the partition:",
+        "bbox": [
+            117,
+            172,
+            877,
+            227
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "list",
+        "sub_type": "text",
+        "list_items": [
+            "• Dedicated weight groups $\\mathbb { W } _ { \\mathrm { ~ p ~ } }$ and W\\_b with no shared parameters. Each grounding channel's optimizer has write access only to its designated weight group.",
+            "Independent layer normalization statistics per subspace, preventing normalization parameters from becoming a shared information pathway.",
+            "• Mutual information minimization: L\\_ $\\underline { { \\mathrm { d i s } } } = \\beta \\cdot \\mathrm { I } ( \\mathrm { z } \\mathrm { \\underline { { p } } } ; \\mathrm { z } \\mathrm { \\underline { { b } } } )$ , implemented as a gradient reversal adversarial objective penalizing the encoder for encoding information about one subspace from the other."
+        ],
+        "bbox": [
+            176,
+            236,
+            870,
+            375
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "text",
+        "text": "The prediction objective uses separate predictor heads per subspace:",
+        "bbox": [
+            119,
+            404,
+            650,
+            422
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "equation",
+        "text": "$$\nL \\_ p r e d = | | s g (z \\_ p ^ {\\wedge} t a r g e t) - f \\_ p (z \\_ p ^ {\\wedge} c t x) | | ^ {2} + | | s g (z \\_ b ^ {\\wedge} t a r g e t) - f \\_ b (z \\_ b ^ {\\wedge} c t x) | | ^ {2}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            184,
+            431,
+            810,
+            452
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "text",
+        "text": "where sg denotes stop-gradient on the target branch. Separate heads prevent prediction gradients from mixing subspace representations through the predictor network.",
+        "bbox": [
+            119,
+            462,
+            874,
+            498
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "text",
+        "text": "Note on complete collapse prevention. We inherit JEPA's stop-gradient mechanism for preventing complete collapse. This is empirically well-validated in standard JEPA [Bardes et al., 2024] but its formal proof relies on the exponential moving average target network. In our partitioned formulation with separate predictor heads, a separate formal analysis is required. We treat complete collapse prevention as empirically supported but not formally proven for DCGWM specifically.",
+        "bbox": [
+            145,
+            525,
+            841,
+            619
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "text",
+        "text": "3.4 Physical Grounding Channel",
+        "text_level": 2,
+        "bbox": [
+            119,
+            657,
+            393,
+            674
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "text",
+        "text": "The PGC receives physical measurements m\\_p from a source external to the LWME and enforces inward-only gradient flow into $\\boldsymbol { Z } _ { \\perp } \\mathbf { p }$ through three mechanisms: (a) gradient masking restricting PGC loss gradients to $\\mathbb { W } _ { \\underline { { \\mathbf { \\Pi } } } } \\mathfrak { p } ;$ (b) stop-gradient applied to $z \\_ { \\mathrm { ~ b ~ } }$ in all PGC loss computations; (c) exclusion of GRL parameters from the PGC optimizer.",
+        "bbox": [
+            117,
+            684,
+            877,
+            756
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "text",
+        "text": "Primary mechanism -- VICReg alignment at the $\\boldsymbol { Z } _ { \\perp } \\mathbf { p }$ boundary:",
+        "bbox": [
+            119,
+            784,
+            612,
+            803
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "equation",
+        "text": "$$\nL \\_ P G C = \\lambda \\_ v \\cdot \\operatorname{Var} (z \\_ p) + \\lambda \\_ c \\cdot \\operatorname{Cov} (z \\_ p) + \\lambda \\_ i \\cdot | | z \\_ p - e n c \\_ p (m \\_ p) | | ^ {2}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            214,
+            813,
+            779,
+            833
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "text",
+        "text": "where $\\mathrm { V a r ( z \\underline { { \\tau } } p ) = \\Sigma \\underline { { j } } \\ m a x ( 0 , \\ \\gamma \\cdot \\ s t d ( z \\underline { { \\ p } } \\underline { { \\ j } } ) ) }$ penalizes variance collapse per dimension, and $\\mathrm { { C o v ( z \\ _ p ) = ( 1 / d \\underline { { { \\ p } } } ^ { \\wedge 2 } ) \\ { \\Sigma } _ { - } \\{ i \\not = j \\} \\ [ C o v ( z \\ p ) \\Pi _ { - } \\{ i j \\} ] ^ { \\wedge } 2 } }$ penalizes redundancy between dimensions. VICReg is used rather than InfoNCE because continuous physical state spaces do not admit natural negative pair definitions. The variance and covariance terms are designed to maintain full rank within $Z _ { \\mathbf { \\alpha } } \\mathbf { p } \\gets$ this inherits directly from the VICReg guarantees of Bardes et al. [2021].",
+        "bbox": [
+            117,
+            842,
+            877,
+            897
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "header",
+        "text": "LWME",
+        "bbox": [
+            148,
+            90,
+            212,
+            104
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "text",
+        "text": "",
+        "bbox": [
+            119,
+            90,
+            877,
+            127
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "text",
+        "text": "Relation to SIGReg. An alternative anti-collapse mechanism for $\\boldsymbol { Z } _ { \\perp } \\mathbf { p }$ is the SIGReg regularizer introduced by LeJEPA [Balestriero and LeCun, 2025] and scaled to action-conditioned world modeling in LeWorldModel [Maes et al., 2026], which enforces an isotropic Gaussian latent distribution via the Cramér-Wold criterion applied to random one-dimensional projections. Klindt et al. [2026] prove that LeJEPA recovers true latent variables up to rotation -- a linear identifiability result -- when the underlying generative process is Gaussian-stationary with additive noise. We retain VICReg as the default mechanism for $\\boldsymbol { Z } _ { \\perp } \\mathbf { p }$ because its per-dimension hinge on standard deviation provides a deterministic lower bound that maps directly onto interpretable physical-constraint regularization, whereas SIGReg enforces a distributional shape that is harder to relate to specific physical invariants. However, for deployments where physical observations are well-modeled by stationary Gaussian latent dynamics, SIGReg may be substituted, in which case the anti-collapse guarantee within $\\boldsymbol { Z } _ { \\perp } \\mathbf { p }$ strengthens from full rank to linear identifiability. The choice between VICReg and SIGReg is orthogonal to the partition-andinward-only-gradient design that defines DCGWM.",
+        "bbox": [
+            119,
+            135,
+            879,
+            388
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "text",
+        "text": "Alternative mechanisms for different deployment contexts:",
+        "bbox": [
+            120,
+            415,
+            580,
+            434
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "text",
+        "text": "Continuous regularization: $L \\_ P G C \\_ r e g = m a x ( 0 , \\ | | z \\_ p - e n c \\_ p ( m \\_ p ) | | \\cdot 2 - \\varepsilon \\_ p )$ for online deployment with real-time physical measurements.",
+        "bbox": [
+            176,
+            441,
+            874,
+            478
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "text",
+        "text": "Probabilistic Bayesian update: p(z\\_p | m\\_p) ∝ p(m $p \\mid z \\_ p ) \\cdot p ( z \\_ p )$ , implemented as a learned Kalman-style gate, for sensor-fusion contexts with measurement uncertainty.",
+        "bbox": [
+            176,
+            484,
+            874,
+            522
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "text",
+        "text": "3.5 Social-Behavioral Grounding Channel",
+        "text_level": 2,
+        "bbox": [
+            119,
+            558,
+            470,
+            577
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "text",
+        "text": "The SBGC grounds Z\\_b using emergent collective dynamics from an N-agent simulation system external to the LWME. The simulation instantiates N agents $\\{ \\mathsf { a \\_ l } , . . . , \\mathsf { a \\_ N } \\}$ each with independently sampled personality parameters $\\Theta _ { - 1 , \\ast }$ , memory state µ\\_i, and social graph edges E\\_i. Agents interact over T timesteps, producing population-level behavioral trajectories $\\textrm { B } =$ $\\{ \\mathsf { b \\_ l } , . . . , \\mathsf { b \\_ T } \\}$ .",
+        "bbox": [
+            119,
+            585,
+            877,
+            676
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "text",
+        "text": "Three properties of this grounding signal distinguish it from single-model behavioral prediction and from prior uses of simulation:",
+        "bbox": [
+            119,
+            704,
+            877,
+            741
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "list",
+        "sub_type": "text",
+        "list_items": [
+            "Emergent irreducibility: B arises from N-agent interaction and cannot be reproduced by querying any single agent or model. This is the defining property that makes SBGC a genuinely new class of grounding source.",
+            "• Statistical coverage: N simultaneous trajectories approximate the behavioral state distribution more densely than any parameterized single-model prior.",
+            "Cascade naturalism: herd effects, opinion polarization, and conformity dynamics emerge from agent interaction rather than being parameterized, capturing"
+        ],
+        "bbox": [
+            174,
+            750,
+            857,
+            891
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "text",
+        "text": "phenomena that supervised behavioral datasets cannot represent.",
+        "bbox": [
+            176,
+            90,
+            679,
+            108
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "text",
+        "text": "Remark on Social-JEPA isomorphism. Zhang et al. [2026a] (Social-JEPA) show that independent JEPA models trained on shared environments spontaneously converge to geometrically isomorphic latent spaces, traced to the predictive sufficiency and linear equivalence invariance of the JEPA objective. Naively, this would suggest that $\\boldsymbol { Z } _ { \\perp } \\mathbf { p }$ and $Z \\_ { \\mathrm { b } , }$ both trained under JEPA-style prediction within the same LWME, should tend toward alignment, undermining the partition. Three properties of DCGWM block this: (1) $\\boldsymbol { Z } _ { \\perp } \\mathbf { p }$ and Z\\_b are exposed to structurally nonoverlapping external grounding signals (physical measurements versus emergent multi-agent trajectories), so the predictive-sufficiency premise for cross-subspace isomorphism does not hold by construction; (2) the disentanglement penalty $\\mathrm { L \\_ d i s = \\beta \\cdot \\Delta I ( z \\_ p ; \\ z \\_ b ) }$ explicitly penalizes mutual information across subspaces, breaking the linear equivalence symmetry that Social-JEPA identifies as the source of isomorphism; (3) separate predictor heads $\\mathrm { ~ f ~ } \\underline { { \\mathfrak { p } } }$ and f\\_b prevent a shared predictor network from acting as a common geometric reference frame between subspaces. The Social-JEPA result therefore reinforces, rather than threatens, the case for explicit architectural separation when two subspaces must remain functionally distinct under a JEPA training objective.",
+        "bbox": [
+            119,
+            114,
+            877,
+            387
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "text",
+        "text": "The SBGC objective with inward-only gradient flow to W\\_b:",
+        "bbox": [
+            120,
+            414,
+            599,
+            431
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "equation",
+        "text": "$$\nL \\_ S B G C = | | z \\_ b - e n c \\_ b (B) | | ^ {2} + \\lambda \\_ v \\cdot V a r (z \\_ b) + \\lambda \\_ c \\cdot C o v (z \\_ b)\n$$",
+        "text_format": "latex",
+        "bbox": [
+            240,
+            441,
+            754,
+            463
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "text",
+        "text": "Open problem: behavioral encoder fidelity. The quality of Z\\_b grounding depends on enc\\_b's ability to faithfully map population-level emergent trajectories into Z\\_b. We have not proven that enc\\_b converges to a faithful mapping, nor characterized the conditions under which it does. This is an open empirical question.",
+        "bbox": [
+            148,
+            489,
+            844,
+            554
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "text",
+        "text": "3.6 Inter-Channel Interface Module",
+        "text_level": 2,
+        "bbox": [
+            119,
+            590,
+            419,
+            607
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "text",
+        "text": "Physical and behavioral world state are correlated: agents respond to physical events; collective behavior influences physical systems through action. The interface module I captures this dependency without creating cross-subspace gradient paths.",
+        "bbox": [
+            119,
+            618,
+            875,
+            674
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "equation",
+        "text": "$$\nL \\_ I = L \\_ c o n s i s t e n c y (z \\_ p, z \\_ b) - \\lambda \\_ I \\cdot L \\_ d i s e n t a n g l e (z \\_ p, z \\_ b)\n$$",
+        "text_format": "latex",
+        "bbox": [
+            256,
+            702,
+            740,
+            722
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "text",
+        "text": "L\\_consistency penalizes joint predictions violating known physical-behavioral correlations. L\\_disentangle is a gradient reversal adversarial term penalizing $\\boldsymbol { Z } _ { \\perp } \\mathbf { p }$ for encoding behavioral information and $Z _ { - } \\mathbf { b }$ for encoding physical information. The module applies corrections additively and independently to each subspace with no shared intermediate activation, enforcing Invariant 3 (no cross-propagation) at the interface level.",
+        "bbox": [
+            119,
+            729,
+            877,
+            821
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "text",
+        "text": "Three failure modes at the interface and their prevention:",
+        "bbox": [
+            120,
+            849,
+            563,
+            867
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "text",
+        "text": "Behavioral dominance $( | | \\mathbf { g } \\_ { \\mathsf { b } } | | > > | | \\mathbf { g } \\_ { \\mathsf { p } } | | )$ : prevented by adaptive gradient magnitude normalization equalizing channel gradient norms before applying to their subspaces.",
+        "bbox": [
+            233,
+            875,
+            857,
+            895
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "text",
+        "text": "",
+        "bbox": [
+            176,
+            90,
+            831,
+            125
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "text",
+        "text": "Physical dominance (||g\\_p|| >> ||g\\_b||): prevented by the stop-gradient constraint ensuring PGC gradients never reach W\\_b regardless of their magnitude.",
+        "bbox": [
+            176,
+            133,
+            834,
+            170
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "text",
+        "text": "Disentanglement collapse (λ\\_I too large): prevented by lower-bounding the consistency term at the level of known physical-behavioral correlations, preventing full orthogonality.",
+        "bbox": [
+            176,
+            176,
+            849,
+            231
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "text",
+        "text": "Open problem: interface convergence. We have not proven that L\\_I has a stable equilibrium, nor that adaptive λ\\_I converges. The dual objective structure -- consistency and disentanglement in tension -- may oscillate under certain hyperparameter configurations. Empirical characterization of the stability region for λ\\_I is needed.",
+        "bbox": [
+            147,
+            257,
+            844,
+            320
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "text",
+        "text": "3.7 Asymmetric Grounding Adherence Loss (L\\_AGA)",
+        "text_level": 2,
+        "bbox": [
+            119,
+            358,
+            566,
+            377
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "text",
+        "text": "L\\_PGC and L\\_SBGC ground the LWME at single steps during training. L\\_AGA addresses a distinct failure mode: rollout drift, in which multi-step latent predictions accumulate error that moves the predicted trajectory away from the grounded manifold. This was identified by GIRL [2026] as the central failure mode of latent world models at long horizons. L\\_AGA is, to our knowledge, the first loss designed for this problem under heterogeneous grounding sources with incompatible tolerance structures.",
+        "bbox": [
+            117,
+            385,
+            877,
+            492
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "equation",
+        "text": "$$\nL \\_ A G A = L \\_ A G A \\_ p (z \\_ p ^ {\\wedge} (1: T)) + L \\_ A G A \\_ b (z \\_ b ^ {\\wedge} (1: T))\n$$",
+        "text_format": "latex",
+        "bbox": [
+            277,
+            522,
+            718,
+            542
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "text",
+        "text": "Physical adherence -- squared hinge penalty:",
+        "bbox": [
+            119,
+            571,
+            470,
+            589
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "equation",
+        "text": "$$\nL \\_ A G A \\_ p = (1 / T) \\cdot \\Sigma \\_ t \\max (0, d \\_ p (z \\_ p ^ {\\wedge} (t), G \\_ p ^ {\\wedge} (t)) - \\varepsilon \\_ p) ^ {\\wedge} 2\n$$",
+        "text_format": "latex",
+        "bbox": [
+            256,
+            598,
+            736,
+            619
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "text",
+        "text": "where d\\_p measures distance from the physical grounding manifold $\\mathrm { ~ G ~ p ~ } ^ { \\wedge } ( \\mathrm { t } )$ and $\\varepsilon _ { \\mathrm { ~ p ~ } }$ is a hard physical tolerance. The squared hinge reflects the hard-bounded nature of physical law -- violations are categorically wrong and penalized quadratically beyond tolerance. Zero penalty within tolerance allows measurement noise without overcorrection.",
+        "bbox": [
+            117,
+            628,
+            877,
+            700
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "text",
+        "text": "Behavioral adherence -- soft KL divergence:",
+        "bbox": [
+            119,
+            729,
+            468,
+            747
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "equation",
+        "text": "$$\nL \\_ A G A \\_ b = (1 / T) \\cdot \\Sigma \\_ t K L (q \\_ b (z \\_ b ^ {\\wedge} (t)) | | p \\_ b ^ {\\wedge} (t))\n$$",
+        "text_format": "latex",
+        "bbox": [
+            297,
+            757,
+            696,
+            777
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "text",
+        "text": "where q\\_b is the distribution over Z\\_b induced by the rollout and $\\mathsf { p \\_ b } ^ { \\wedge } ( \\mathsf { t } )$ is the behavioral distribution anchored by SBGC at step t. The KL divergence applies a soft, continuous penalty proportional to distributional distance, appropriate for stochastic behavioral dynamics where some divergence is expected and not categorically wrong.",
+        "bbox": [
+            117,
+            786,
+            877,
+            859
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "text",
+        "text": "Operational definition of $\\mathsf { p \\_ b } ^ { \\wedge } ( \\mathsf { t } )$ . Re-executing the full N-agent simulation at each rollout step is computationally intractable for typical horizons. We instead define $\\mathsf { p \\_ b } ^ { \\wedge } ( \\mathsf { t } )$ as an amortized projection. During the SBGC alignment phase, enc\\_b is trained to map simulation trajectory windows into Z\\_b, inducing a parameterized conditional distribution p\\_b(z\\_b | c) over behavioral states conditioned on observable context c. At rollout time, c is constructed from the rolloutinduced observable context, enc\\_b is evaluated with parameters frozen, and p\\_ $\\underline { { \\mathsf { b } } } ^ { \\wedge } ( \\mathrm { t } )$ is read out from the resulting distributional anchor. L\\_AGA\\_b therefore regularizes the rollout against the SBGC-learned behavioral manifold rather than against fresh simulation samples. The cost is that p\\_ $\\mathsf { b } ^ { \\wedge } ( \\mathsf { t } )$ inherits any bias in enc\\_b's coverage of the underlying simulation distribution; this is the same fidelity gap discussed as an open problem in Section 3.5, and any systematic bias in enc\\_b propagates additively into L\\_AGA\\_b's effective target.",
+        "bbox": [
+            117,
+            868,
+            877,
+            905
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "text",
+        "text": "",
+        "bbox": [
+            117,
+            90,
+            877,
+            252
+        ],
+        "page_idx": 9
+    },
+    {
+        "type": "text",
+        "text": "The asymmetry between the squared hinge and KL formulations is the novel contribution of L\\_AGA. It is not an arbitrary design choice: it reflects and reinforces the structural incompatibility between physical and behavioral grounding statistics that motivates the entire DCGWM architecture. Physical state violations are hard constraint violations; behavioral state divergence is distributional distance. These require different penalty geometries. Gradient flow from $\\mathrm { L \\_ A G A \\_ p }$ updates only $\\mathbb { W } _ { \\underline { { \\mathbf { \\Pi } } } } \\mathfrak { p } ;$ gradient flow from L\\_AGA\\_b updates only $\\mathrm { ~ W ~ } _ { - } \\mathrm { b } ,$ , maintaining the inward-only constraint.",
+        "bbox": [
+            117,
+            280,
+            879,
+            406
+        ],
+        "page_idx": 9
+    },
+    {
+        "type": "text",
+        "text": "3.8 Isolation Necessity Theorem",
+        "text_level": 2,
+        "bbox": [
+            120,
+            443,
+            387,
+            462
+        ],
+        "page_idx": 9
+    },
+    {
+        "type": "text",
+        "text": "Theorem (Isolation Necessity). Let L\\_gen be any generative rendering objective that rewards retention of high-frequency perceptual statistics in outputs, and let L\\_pred be the LWME's masked latent prediction objective that rewards discarding of unpredictable high-frequency content. Assume (A1) the LWME latent space has a unique optimum $Z ^ { * }$ under L\\_pred, and (A2) $Z ^ { * }$ lies at a saddle point of L\\_gen in the high-frequency latent subspace -- i.e., L\\_gen is not minimized at $Z ^ { * } .$ Then for any $a > 0$ in the effective objective α L\\_gen + L\\_pred, gradient-based optimization will drift Z away from $Z ^ { * } .$ .",
+        "bbox": [
+            148,
+            476,
+            848,
+            587
+        ],
+        "page_idx": 9
+    },
+    {
+        "type": "text",
+        "text": "Proof sketch under assumptions A1-A2. At Z\\*, $\\nabla _ { - } Z \\mathrm { ~ L ~ }$ \\_pred = 0 by definition of optimum. By A2, ∇\\_Z L\\_gen $\\neq 0$ at $Z ^ { * }$ in the high-frequency subspace. Therefore the gradient of the combined objective α $\\nabla \\_ Z \\mathrm { L } \\_ { \\mathrm { g e n } } + \\nabla \\_ Z \\mathrm { L } \\_ { \\mathrm { p r e d } } = \\alpha \\nabla \\_ Z \\mathrm { L } \\_ { \\mathrm { g e n } } \\neq 0$ at $Z ^ { * }$ . Any gradient step moves Z away from $Z ^ { * }$ . The step moves toward a local minimum of L\\_gen, which by A2 differs from $Z ^ { * }$ . Since ${ \\mathfrak { a } } > 0$ implies a nonzero step in this direction, Z drifts from $Z ^ { * }$ . The unique resolution is ${ \\mathfrak { a } } = 0$ . □",
+        "bbox": [
+            117,
+            617,
+            877,
+            727
+        ],
+        "page_idx": 9
+    },
+    {
+        "type": "text",
+        "text": "Assumption A2 is the critical unproven assumption. We argue it holds for any generative objective rewarding perceptual fidelity (which requires high-frequency statistics) combined with any predictive objective implementing masked prediction with stop-gradient (which discards unpredictable high-frequency content). We present this as a theorem under stated assumptions, not as an unconditional result. Formal proof of A2 under general conditions is an open problem.",
+        "bbox": [
+            147,
+            756,
+            846,
+            835
+        ],
+        "page_idx": 9
+    },
+    {
+        "type": "text",
+        "text": "Architectural enforcement: the GRL is trained in a separate optimization pass with LWME parameters frozen. The GRL receives latent representations through a detach() operation. No gradient from L\\_gen reaches any LWME or grounding channel parameter.",
+        "bbox": [
+            117,
+            861,
+            877,
+            898
+        ],
+        "page_idx": 9
+    },
+    {
+        "type": "text",
+        "text": "",
+        "bbox": [
+            119,
+            90,
+            694,
+            108
+        ],
+        "page_idx": 10
+    },
+    {
+        "type": "text",
+        "text": "3.9 Complete Loss and Training Procedure",
+        "text_level": 2,
+        "bbox": [
+            119,
+            146,
+            477,
+            165
+        ],
+        "page_idx": 10
+    },
+    {
+        "type": "text",
+        "text": "The complete DCGWM training objective at joint fine-tuning phase:",
+        "bbox": [
+            119,
+            174,
+            653,
+            191
+        ],
+        "page_idx": 10
+    },
+    {
+        "type": "equation",
+        "text": "$$\nL \\_ t o t a l = L \\_ p r e d + \\alpha \\_ p \\cdot L \\_ P G C + \\alpha \\_ b \\cdot L \\_ S B G C + \\alpha \\_ I \\cdot L \\_ I + \\alpha \\_ A G A \\cdot L \\_ A G A + \\beta \\cdot L \\_ d i s\n$$",
+        "text_format": "latex",
+        "bbox": [
+            132,
+            202,
+            861,
+            220
+        ],
+        "page_idx": 10
+    },
+    {
+        "type": "text",
+        "text": "Training phases:",
+        "bbox": [
+            120,
+            251,
+            253,
+            268
+        ],
+        "page_idx": 10
+    },
+    {
+        "type": "text",
+        "text": "Phase 1 (LWME pre-training): L\\_pred only, grounding channels inactive, GRL inactive",
+        "bbox": [
+            148,
+            277,
+            826,
+            294
+        ],
+        "page_idx": 10
+    },
+    {
+        "type": "text",
+        "text": "Phase 2 (PGC alignment): L\\_PGC active, W\\_p only, W\\_b and GRL frozen",
+        "bbox": [
+            148,
+            303,
+            728,
+            320
+        ],
+        "page_idx": 10
+    },
+    {
+        "type": "text",
+        "text": "Phase 3 (SBGC alignment): L\\_SBGC active, W\\_b only, W\\_p and GRL frozen",
+        "bbox": [
+            148,
+            328,
+            754,
+            345
+        ],
+        "page_idx": 10
+    },
+    {
+        "type": "text",
+        "text": "Phase 4 (Joint fine-tuning): all terms active, adaptive gradient magnitude normalization, L\\_AGA applied over T-step rollouts",
+        "bbox": [
+            148,
+            353,
+            828,
+            388
+        ],
+        "page_idx": 10
+    },
+    {
+        "type": "text",
+        "text": "Phase 5 (GRL training): L\\_gen only, LWME fully frozen, detached latent conditioning",
+        "bbox": [
+            148,
+            397,
+            818,
+            415
+        ],
+        "page_idx": 10
+    },
+    {
+        "type": "text",
+        "text": "4. Why DCGWM Addresses Collapse Modes That LLMs Cannot",
+        "text_level": 2,
+        "bbox": [
+            119,
+            459,
+            699,
+            479
+        ],
+        "page_idx": 10
+    },
+    {
+        "type": "text",
+        "text": "4.1 The NTP Geometric Bias Toward Subspace Collapse",
+        "text_level": 2,
+        "bbox": [
+            119,
+            500,
+            584,
+            518
+        ],
+        "page_idx": 10
+    },
+    {
+        "type": "text",
+        "text": "The theoretical basis for NTP-induced representational collapse is now well-established. Zhao et al. [2024] show that NTP training implicitly solves a rank-constrained, nuclear-norm regularized optimization: the minimum-norm solution to the NTP objective favors logit matrices with a dominant low-rank component reflecting the co-occurrence sparsity pattern of the training corpus. The consequence is subspace collapse: representations of contexts with identical nexttoken support sets converge to nearly collinear directions in embedding space, regardless of model size.",
+        "bbox": [
+            117,
+            527,
+            877,
+            652
+        ],
+        "page_idx": 10
+    },
+    {
+        "type": "text",
+        "text": "This is not a capacity problem. Larger models minimize the NTP loss more completely, which means they more completely collapse the representations of support-equivalent contexts. Scale makes NTP-induced subspace collapse more severe, not less, as the model approaches the entropy lower bound of the NTP objective.",
+        "bbox": [
+            117,
+            681,
+            874,
+            753
+        ],
+        "page_idx": 10
+    },
+    {
+        "type": "text",
+        "text": "For world modeling specifically, this means: two physically distinct scenes that happen to predict similar next-token distributions -- e.g., two scenes that both lead to descriptions using common words -- will have collapsed representations in an NTP-trained model. The model cannot distinguish them for physical prediction, regardless of scale.",
+        "bbox": [
+            117,
+            782,
+            874,
+            854
+        ],
+        "page_idx": 10
+    },
+    {
+        "type": "text",
+        "text": "4.2 Why RLHF Compounds Rather Than Corrects This",
+        "text_level": 2,
+        "bbox": [
+            119,
+            104,
+            583,
+            125
+        ],
+        "page_idx": 11
+    },
+    {
+        "type": "text",
+        "text": "RLHF fine-tuning reduces representation diversity further. The reward model concentrates gradients on high-reward output distributions, reducing the effective rank of the representation space toward the dimensions relevant to reward prediction. SIGMA [2026] tracks this via eigenspectrum of embedding Gram matrices, finding covariance shrinkage over RLHF training. The result is a two-stage collapse: NTP collapses the representation space; RLHF collapses the output distribution over that already-compressed space.",
+        "bbox": [
+            117,
+            133,
+            877,
+            242
+        ],
+        "page_idx": 11
+    },
+    {
+        "type": "text",
+        "text": "RLHF cannot repair NTP subspace collapse because RLHF operates on the already-collapsed representation. Reward gradients cannot recover information that was discarded during NTP training. The information-theoretic lower bound on NTP loss is achieved by discarding withinsupport-set variation; RLHF has no incentive to recover it.",
+        "bbox": [
+            117,
+            268,
+            877,
+            342
+        ],
+        "page_idx": 11
+    },
+    {
+        "type": "text",
+        "text": "4.3 What DCGWM Is Designed to Prevent and What It Does Not",
+        "text_level": 2,
+        "bbox": [
+            119,
+            378,
+            660,
+            397
+        ],
+        "page_idx": 11
+    },
+    {
+        "type": "text",
+        "text": "We state precisely what DCGWM addresses:",
+        "bbox": [
+            120,
+            406,
+            472,
+            424
+        ],
+        "page_idx": 11
+    },
+    {
+        "type": "text",
+        "text": "Designed to prevent: Dimensional collapse within Z\\_p and Z\\_b independently, by VICReg variance and covariance terms (inherits from Bardes et al. [2021]). Generative objective contamination of LWME representations, by the Isolation Necessity theorem under assumptions A1-A2. Rollout drift beyond specified tolerances for physical state and behavioral distribution, by L\\_AGA's hinge and KL terms.",
+        "bbox": [
+            117,
+            452,
+            877,
+            542
+        ],
+        "page_idx": 11
+    },
+    {
+        "type": "text",
+        "text": "Structurally prevented, not formally proven: Objective interference collapse -- the architectural partition with separate gradient paths structurally prevents the dominant channel's gradients from reaching the subordinate subspace. The conjecture that this collapse would otherwise occur, and that the partition is sufficient to prevent it, requires empirical validation.",
+        "bbox": [
+            117,
+            571,
+            877,
+            643
+        ],
+        "page_idx": 11
+    },
+    {
+        "type": "text",
+        "text": "Not addressed: NTP subspace collapse. DCGWM does not fix LLMs. It replaces the NTP objective with JEPA masked prediction, sidestepping NTP's geometric bias rather than correcting it. LLMs trained with NTP retain their subspace collapse characteristics; DCGWM avoids these by using a different training objective from the ground up.",
+        "bbox": [
+            117,
+            671,
+            877,
+            744
+        ],
+        "page_idx": 11
+    },
+    {
+        "type": "text",
+        "text": "Open problems: Complete collapse prevention in the partitioned JEPA formulation (unproven). Interface module convergence (unproven). Behavioral encoder fidelity (unvalidated). The saddle assumption A2 in the Isolation Necessity theorem (unproven in general).",
+        "bbox": [
+            117,
+            771,
+            877,
+            828
+        ],
+        "page_idx": 11
+    },
+    {
+        "type": "text",
+        "text": "4.4 The Structural Argument for DCGWM vs. LLMs for World Modeling",
+        "text_level": 2,
+        "bbox": [
+            119,
+            863,
+            732,
+            882
+        ],
+        "page_idx": 11
+    },
+    {
+        "type": "text",
+        "text": "An LLM used as a world model faces three structural obstacles arising from NTP:",
+        "bbox": [
+            119,
+            95,
+            758,
+            112
+        ],
+        "page_idx": 12
+    },
+    {
+        "type": "list",
+        "sub_type": "text",
+        "list_items": [
+            "Subspace collapse destroys within-support-set representational diversity, making physically distinct states with similar token distributions indistinguishable in the model's representation. This appears difficult to overcome through prompting, finetuning, or scaling alone.",
+            "• No external grounding mechanism exists in standard LLM architectures. Physical constraint satisfaction and behavioral distribution accuracy depend entirely on what was present in the training corpus, not on continuous correction from external reality.",
+            "The NTP objective has no mechanism for maintaining representational diversity across the full latent space. Any fine-tuning step that reduces NTP loss further compresses the representation."
+        ],
+        "bbox": [
+            176,
+            121,
+            859,
+            333
+        ],
+        "page_idx": 12
+    },
+    {
+        "type": "text",
+        "text": "DCGWM addresses all three by design: JEPA masked prediction avoids NTP's geometric bias; PGC and SBGC provide continuous external grounding; VICReg and L\\_AGA maintain representational diversity. This is not an incremental improvement on LLMs as world models -- it is a different architecture starting from different objectives.",
+        "bbox": [
+            117,
+            359,
+            877,
+            434
+        ],
+        "page_idx": 12
+    },
+    {
+        "type": "text",
+        "text": "5. Precise Prior Art Differentiation",
+        "text_level": 2,
+        "bbox": [
+            119,
+            479,
+            434,
+            497
+        ],
+        "page_idx": 12
+    },
+    {
+        "type": "text",
+        "text": "5.1 Domain Expansion [Huang et al., 2026]",
+        "text_level": 2,
+        "bbox": [
+            119,
+            520,
+            477,
+            539
+        ],
+        "page_idx": 12
+    },
+    {
+        "type": "text",
+        "text": "Domain Expansion partitions a latent space into orthogonal subspaces for internal supervised task objectives. DCGWM differs in four specific ways: (1) our subspaces are anchored to external grounding sources outside the gradient graph, not internal task losses; (2) inward-only gradient flow prevents any external gradient from reaching non-designated subspaces entirely, not merely projects existing gradients orthogonally; (3) the SBGC uses emergent simulation as external ground truth, which has no analog in Domain Expansion; (4) the Isolation Necessity constraint and L\\_AGA have no analog in Domain Expansion. The failure mode addressed (external signal statistical incompatibility) is distinct from Domain Expansion's target (internal task gradient conflict).",
+        "bbox": [
+            117,
+            547,
+            877,
+            709
+        ],
+        "page_idx": 12
+    },
+    {
+        "type": "text",
+        "text": "5.2 WMReward [Yuan et al., 2026]",
+        "text_level": 2,
+        "bbox": [
+            119,
+            747,
+            410,
+            766
+        ],
+        "page_idx": 12
+    },
+    {
+        "type": "text",
+        "text": "WMReward uses V-JEPA-2's surprise score as an inference-time reward for a separate video generator. DCGWM subsumes physical grounding as a special case of L\\_PGC but adds: a dedicated behavioral subspace and SBGC; formal characterization of the incompatibility between physical and behavioral signals; L\\_AGA for rollout drift; the Isolation Necessity theorem formally justifying the gradient separation that WMReward achieves architecturally without justification.",
+        "bbox": [
+            117,
+            775,
+            875,
+            883
+        ],
+        "page_idx": 12
+    },
+    {
+        "type": "text",
+        "text": "5.3 GIRL [2026]",
+        "text_level": 2,
+        "bbox": [
+            120,
+            104,
+            259,
+            125
+        ],
+        "page_idx": 13
+    },
+    {
+        "type": "text",
+        "text": "GIRL addresses latent imagination drift with a cross-modal grounding signal and uncertaintyadaptive trust-region KL regularization. L\\_AGA is distinguished by: operating on two structurally incompatible grounding sources rather than one; using asymmetric penalty functions (hard hinge vs. soft KL) derived from the incompatibility characterization; and maintaining the inward-only gradient constraint on each term independently.",
+        "bbox": [
+            117,
+            132,
+            877,
+            224
+        ],
+        "page_idx": 13
+    },
+    {
+        "type": "text",
+        "text": "5.4 ThinkJEPA [Zhang et al., 2026b]",
+        "text_level": 2,
+        "bbox": [
+            119,
+            242,
+            424,
+            261
+        ],
+        "page_idx": 13
+    },
+    {
+        "type": "text",
+        "text": "ThinkJEPA [Zhang et al., 2026b] fuses a dense-frame JEPA branch for fine-grained motion modeling with a sparsely sampled vision-language model thinker branch providing high-level semantic guidance, combined through a dual-temporal pathway feeding a shared JEPA predictor. Architecturally it shares with DCGWM the use of two heterogeneous signal sources feeding a JEPA-style latent predictor. The differences are structural and bear directly on the problem DCGWM targets. (1) ThinkJEPA's VLM thinker injects guidance signals into the shared JEPA predictor, so gradients propagate across both pathways and there is no architectural protection against gradient interference between the two signal sources -- the conflict, if any, is left to be resolved by loss weighting. (2) ThinkJEPA operates in a single latent space rather than a partitioned $Z = \\mathrm { Z } \\ \\mathrm { p } \\oplus \\mathrm { Z } \\ \\mathrm { b } .$ , so the two signals compete for the same representational capacity. (3) ThinkJEPA's two sources (dense visual dynamics and VLM semantic guidance) are not characterized as having incompatible gradient statistics; both are vision-language signals operating at different temporal scales, and the paper does not formulate objective interference collapse as a concern. ThinkJEPA validates the empirical value of heterogeneous signal fusion in JEPA-based world models; DCGWM addresses the specific failure mode that arises when those signals have structurally incompatible geometry rather than merely different temporal scales.",
+        "bbox": [
+            119,
+            268,
+            877,
+            559
+        ],
+        "page_idx": 13
+    },
+    {
+        "type": "text",
+        "text": "5.5 The Novel Conjunction",
+        "text_level": 2,
+        "bbox": [
+            119,
+            595,
+            346,
+            614
+        ],
+        "page_idx": 13
+    },
+    {
+        "type": "text",
+        "text": "To the best of our knowledge, no prior work combines all of: (a) external heterogeneous grounding sources with incompatible statistical structures; (b) inward-only gradient flow as the separation mechanism; (c) emergent multi-agent simulation as behavioral ground truth for a dedicated latent subspace; (d) asymmetric rollout drift penalties reflecting grounding source tolerance structures; (e) formal generative isolation necessity. We invite identification of any prior work combining these elements.",
+        "bbox": [
+            117,
+            623,
+            877,
+            733
+        ],
+        "page_idx": 13
+    },
+    {
+        "type": "text",
+        "text": "6. Limitations and Open Problems",
+        "text_level": 2,
+        "bbox": [
+            119,
+            777,
+            433,
+            797
+        ],
+        "page_idx": 13
+    },
+    {
+        "type": "text",
+        "text": "We state the limitations of this work precisely, without minimization:",
+        "bbox": [
+            119,
+            809,
+            658,
+            827
+        ],
+        "page_idx": 13
+    },
+    {
+        "type": "text",
+        "text": "No empirical validation. All claims in this paper are theoretical or structural. The objective interference collapse conjecture, the behavioral encoder fidelity assumption, the interface convergence assumption, and the L\\_AGA effectiveness claim are unvalidated. This is an architecture paper; experimental validation is ongoing.",
+        "bbox": [
+            119,
+            854,
+            877,
+            893
+        ],
+        "page_idx": 13
+    },
+    {
+        "type": "text",
+        "text": "",
+        "bbox": [
+            119,
+            90,
+            877,
+            127
+        ],
+        "page_idx": 14
+    },
+    {
+        "type": "text",
+        "text": "Objective interference collapse is a conjecture. The supporting argument in Section 3.1 is intuitive but not a formal proof. The argument does not account for adaptive optimizers, batch normalization dynamics, residual connections, or the specific geometry of JEPA's stop-gradient formulation. The conjecture could be false under some training configurations.",
+        "bbox": [
+            119,
+            154,
+            877,
+            228
+        ],
+        "page_idx": 14
+    },
+    {
+        "type": "text",
+        "text": "Isolation Necessity has an unproven assumption. Assumption A2 -- that the LWME optimum Z\\* lies at a saddle of L\\_gen in the high-frequency subspace -- is argued but not proven. Architectures that modify either the generative or predictive objective may not satisfy A2.",
+        "bbox": [
+            119,
+            253,
+            877,
+            310
+        ],
+        "page_idx": 14
+    },
+    {
+        "type": "text",
+        "text": "Interface convergence is unproven. The dual objective L\\_I has consistency and disentanglement in tension. We have not proven this has a stable equilibrium under gradientbased optimization. Empirical stability characterization is required.",
+        "bbox": [
+            119,
+            337,
+            877,
+            392
+        ],
+        "page_idx": 14
+    },
+    {
+        "type": "text",
+        "text": "Behavioral encoder fidelity is assumed. enc\\_b must faithfully map emergent simulation trajectories into Z\\_b. LLM agents in simulation exhibit stronger herd behavior than real humans [Park et al., 2023] and simulation fidelity is bounded by knowledge graph quality. The gap between simulated and real behavioral distributions is uncharacterized.",
+        "bbox": [
+            119,
+            419,
+            877,
+            492
+        ],
+        "page_idx": 14
+    },
+    {
+        "type": "text",
+        "text": "Complete collapse prevention is unproven for DCGWM. We inherit JEPA's empirical protection against complete collapse but have not formally proven it transfers to the partitioned formulation with separate predictor heads.",
+        "bbox": [
+            119,
+            518,
+            877,
+            574
+        ],
+        "page_idx": 14
+    },
+    {
+        "type": "text",
+        "text": "Minimality is not proven. We claim DCGWM is a sufficient architecture for preventing objective interference collapse. We do not claim or prove minimality -- that no simpler architecture achieves the same guarantees.",
+        "bbox": [
+            119,
+            601,
+            877,
+            656
+        ],
+        "page_idx": 14
+    },
+    {
+        "type": "text",
+        "text": "Falsification design for the OIC conjecture. We sketch the empirical test required to falsify the objective interference collapse conjecture. The minimal evaluation compares three architectures on a shared task suite: (i) baseline JEPA with a single shared latent space jointly trained under L\\_PGC + L\\_SBGC across a grid of loss weights (α\\_p, α\\_b); (ii) full DCGWM with the partition and inward-only gradient flow; (iii) ablation DCGWM with the partition removed but L\\_dis retained as a soft disentanglement signal -- the critical condition distinguishing structural prevention from regularization-based mitigation. The conjecture predicts: condition (i) exhibits progressive rank deficiency in the subordinate channel's effective subspace under joint training, measurable as decline in the entropy of the eigenspectrum of the per-channel latent covariance; condition (ii) maintains stable effective rank in both subspaces across training; condition (iii) degrades toward (i) as training progresses, with the rate of degradation increasing with the imbalance between ||g\\_p|| and ||g\\_b||. Primary metrics: per-channel effective rank, downstream physical prediction accuracy under behavioral signal scaling, and downstream behavioral prediction accuracy under physical signal scaling. The conjecture is falsified if (iii) does not degrade or if (i) maintains stable per-channel rank under any weighting schedule that achieves comparable downstream accuracy on both channels. Experimental work toward this evaluation is in progress and will be reported in a subsequent revision.",
+        "bbox": [
+            119,
+            665,
+            877,
+            900
+        ],
+        "page_idx": 14
+    },
+    {
+        "type": "text",
+        "text": "",
+        "bbox": [
+            119,
+            90,
+            874,
+            161
+        ],
+        "page_idx": 15
+    },
+    {
+        "type": "text",
+        "text": "7. Conclusion",
+        "text_level": 2,
+        "bbox": [
+            120,
+            208,
+            246,
+            224
+        ],
+        "page_idx": 15
+    },
+    {
+        "type": "text",
+        "text": "We have proposed and formalized objective interference collapse as a conjectured failure mode arising when physical and behavioral grounding signals with incompatible statistical structures compete in a shared latent space. We have proposed DCGWM as an architecture that is designed to structurally prevent this failure through explicit latent space partitioning with inward-only gradient flow, separate external grounding channels, an inter-channel interface module, an Asymmetric Grounding Adherence Loss for rollout drift, and an architecturally isolated generative rendering layer.",
+        "bbox": [
+            117,
+            239,
+            875,
+            364
+        ],
+        "page_idx": 15
+    },
+    {
+        "type": "text",
+        "text": "We have proven dimensional collapse prevention within each subspace (inheriting VICReg) and generative isolation necessity (under stated assumptions). For rollout drift, we introduce L\\_AGA and provide a structural argument for why asymmetric adherence penalties are appropriate for heterogeneous grounding sources. We further provide structural arguments for objective interference collapse prevention and for the limitations of NTP-trained LLMs in tasks requiring simultaneous physical and behavioral world grounding.",
+        "bbox": [
+            117,
+            388,
+            870,
+            492
+        ],
+        "page_idx": 15
+    },
+    {
+        "type": "text",
+        "text": "The central open problems are: empirical validation of the interference collapse conjecture; formal proof of Assumption A2 in the Isolation Necessity theorem; characterization of interface module convergence; and behavioral encoder fidelity. Experimental validation addressing Claims 1-5 identified in this paper is ongoing and will be reported in a subsequent revision.",
+        "bbox": [
+            119,
+            515,
+            874,
+            587
+        ],
+        "page_idx": 15
+    },
+    {
+        "type": "text",
+        "text": "References",
+        "text_level": 2,
+        "bbox": [
+            120,
+            667,
+            223,
+            684
+        ],
+        "page_idx": 15
+    },
+    {
+        "type": "list",
+        "sub_type": "ref_text",
+        "list_items": [
+            "Balestriero, R. and LeCun, Y. (2025). LeJEPA: Provable and scalable self-supervised learning without the heuristics. arXiv:2511.08544.",
+            "Bardes et al. (2021). VICReg: Variance-invariance-covariance regularization for self-supervised learning. ICLR 2022.",
+            "Bardes et al. (2024). Revisiting feature prediction for learning visual representations from video. arXiv:2404.08471.",
+            "Barbero et al. (2024). Transformers need glasses! Information over-squashing in language tasks. NeurIPS 2024.",
+            "CAMEL-AI (2024). OASIS: Open agent social interaction simulations. github.com/camel-ai/oasis.",
+            "Chen & He (2020). Exploring simple siamese representation learning. CVPR 2021.",
+            "Chen et al. (2026). From generative engines to actionable simulators: The imperative of physical grounding in world models. arXiv:2601.15533.",
+            "GIRL (2026). Generative imagination reinforcement learning via information-theoretic hallucination control. arXiv:2604.07426.",
+            "Guo, H. (2025). MiroFish: Universal swarm intelligence engine. github.com/666ghj/MiroFish.",
+            "Hafner et al. (2020). Dream to control: Learning behaviors by latent imagination. ICLR 2020.",
+            "Huang et al. (2026). Domain expansion: A latent space construction framework for multi-task learning. arXiv:2601.20069.",
+            "Hui et al. (2022). Limitations of neural collapse for understanding generalization in deep learning. arXiv:2202.08384.",
+            "IndoorWorld (2025). Integrating physical task solving and social simulation in a heterogeneous multi-agent environment. arXiv:2506.12331.",
+            "Jing et al. (2022). Understanding dimensional collapse in contrastive self-supervised learning. ICLR 2022.",
+            "Kumar et al. (2021). Implicit under-parameterization inhibits data-efficient deep reinforcement learning. ICLR 2021.",
+            "Klindt, D., LeCun, Y., and Balestriero, R. (2026). When does LeJEPA learn a world model? arXiv:2605.26379.",
+            "LeCun, Y. (2022). A path towards autonomous machine intelligence. OpenReview.",
+            "Maes, L., Le Lidec, Q., Scieur, D., LeCun, Y., and Balestriero, R. (2026). LeWorldModel: Stable end-toend joint-embedding predictive architecture from pixels. arXiv:2603.19312.",
+            "Meta AI Research (2025). V-JEPA-2: Self-supervised video models as world models.",
+            "Moalla et al. (2024). No representation, no trust: Connecting representation, collapse, and trust issues in PPO. arXiv:2405.00662.",
+            "Papyan et al. (2020). Prevalence of neural collapse during the terminal phase of deep learning training. PNAS 117(40).",
+            "Park et al. (2023). Generative agents: Interactive simulacra of human behavior. UIST 2023.",
+            "SIGMA (2026). Scalable spectral insights for LLM model collapse. arXiv:2601.03385."
+        ],
+        "bbox": [
+            173,
+            690,
+            874,
+            897
+        ],
+        "page_idx": 15
+    },
+    {
+        "type": "list",
+        "sub_type": "ref_text",
+        "list_items": [],
+        "bbox": [
+            174,
+            90,
+            869,
+            520
+        ],
+        "page_idx": 16
+    },
+    {
+        "type": "ref_text",
+        "text": "Yuan et al. (2026). Inference-time physics alignment of video generative models with latent world models. arXiv:2601.10553.",
+        "bbox": [
+            178,
+            542,
+            864,
+            571
+        ],
+        "page_idx": 16
+    },
+    {
+        "type": "ref_text",
+        "text": "Zhang, H., Wang, Y., Duan, Y., Fu, R., Zhao, D., Fan, S., Cao, S., Guo, W., and Zhou, X. (2026a). Social-JEPA: Emergent geometric isomorphism in independently trained world models. arXiv:2603.02263.",
+        "bbox": [
+            179,
+            575,
+            856,
+            604
+        ],
+        "page_idx": 16
+    },
+    {
+        "type": "ref_text",
+        "text": "Zhang, H., Li, Y., He, S., Nagarajan, T., Chen, M., Lu, J., Li, A., and Fu, Y. (2026b). ThinkJEPA: Empowering latent world models with large vision-language reasoning model. arXiv:2603.22281.",
+        "bbox": [
+            179,
+            609,
+            808,
+            638
+        ],
+        "page_idx": 16
+    },
+    {
+        "type": "ref_text",
+        "text": "Zhao, Y., Behnia, T., Vakilian, V., and Thrampoulidis, C. (2024). Implicit geometry of next-token prediction: From language sparsity patterns to model representations. arXiv:2408.15417.",
+        "bbox": [
+            179,
+            642,
+            803,
+            671
+        ],
+        "page_idx": 16
+    },
+    {
+        "type": "ref_text",
+        "text": "Zhu et al. (2025). Gradient deconfliction via orthogonal projections onto subspaces for multi-task learning. WSDM 2025. arXiv:2503.03438.",
+        "bbox": [
+            179,
+            675,
+            866,
+            704
+        ],
+        "page_idx": 16
+    },
+    {
+        "type": "ref_text",
+        "text": "Ziakas et al. (2026). Grounding generated videos in feasible plans via world models. arXiv:2602.01960.",
+        "bbox": [
+            179,
+            708,
+            848,
+            724
+        ],
+        "page_idx": 16
+    }
+]

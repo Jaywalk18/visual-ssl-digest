@@ -1,0 +1,764 @@
+# UniTemp: Unlocking Video Generation in Any Temporal Order via Bidirectional Distillation
+
+Lin Zhang1∗, Sicheng Mo3, Zefan Cai1, Jinhong Lin1, Zihao Lin4, Jiuxiang Gu2, Krishna Kumar Singh2, Yuheng Li2†, and Yin Li1†
+
+1 University of Wisconsin Madison
+
+2 Adobe Research
+
+3 University of California Los Angeles
+
+4 University of California Davis
+
+https://lzhangbj.github.io/projects/unitemp/
+
+Abstract. Autoregressive video diffusion models have emerged as a promising approach for long video generation, achieving strong performance in streaming settings. However, existing methods are restricted to forward temporal generation, whereas practical video creation often requires flexible generation order, e.g., conditioning on future context to extend backward, or on both past and future context for inbetween generation. We bridge this gap by training an autoregressive model that supports generation in arbitrary temporal directions. A key technical challenge arises from the Causal 3D VAE widely used in video diffusion models, which encodes latents strictly conditioned on past context. While suited for forward generation, this causal structure causes interblock discontinuities when generation proceeds backward. To address this, we introduce blockwise anchor latents, a set of auxiliary latents that restore the missing past context at block boundaries during backward generation. Built on this design, we propose UniTemp, a bidirectional distillation framework that trains a single autoregressive student model for any-direction video generation. At inference time, UniTemp conditions on arbitrary past and/or future frames, improving controllability for both bidirectional and inbetween generation. Experiments show that UniTemp maintains competitive performance on short and long video generation compared to forward-only methods, while enabling diverse workflows such as bidirectional video extension, inbetween generation, looping video generation, scene transition, and visual story generation.
+
+Keywords: Video Generation · Autoregressive Models · Video Editing
+
+## 1 Introduction
+
+Diffusion transformers [11,20,28] have dominated the video generation landscape, achieving high-quality synthesis across diverse visual domains [3,16,19,21,30,36,
+
+![](images/698b4da139480310a3af2619be7cc9e6c3e053e9469d4c417904ee63cb7c8774.jpg)
+
+<details>
+<summary>flowchart</summary>
+
+```mermaid
+graph TD
+  A["Forward AR Rollout"] --> B["Long Shot Video"]
+  C["Backward AR Rollout"] --> D["Long Shot Video"]
+  B --> E["Looping Long-Shot Video"]
+  D --> E
+  E --> F["Scene 1"]
+  E --> G["Scene 2"]
+  E --> H["Scene 3"]
+  E --> I["Scene 4"]
+    style A fill:#f9f,stroke:#333
+    style C fill:#f9f,stroke:#333
+    style B fill:#ccf,stroke:#333
+    style D fill:#ccf,stroke:#333
+    style E fill:#cfc,stroke:#333
+    style F fill:#ffc,stroke:#333
+    style G fill:#ffc,stroke:#333
+    style H fill:#ffc,stroke:#333
+    style I fill:#ffc,stroke:#333
+```
+</details>
+
+Fig. 1: We present UniTemp, a unified distillation framework that delivers a single model capable of flexibly generating video conditioned on past context, future context, or both, and supporting a wide range of generation tasks.
+
+43]. Despite their impressive performance, these models require multiple denoising steps with full-sequence attention at inference, making them computationally expensive and difficult to scale to long video generation. Recently, asymmetric distillation [39, 40] has been introduced to address these limitations by distilling a large multi-step full-attention teacher model into a few-step autoregressive student. By generating videos block by block and caching key-value (KV) pairs, such models enable efficient streaming video generation [41].
+
+Existing autoregressive video generators support only forward (causal) video generation, where each block is conditioned exclusively on generated past content. Real-world video creation workflows, however, often require flexible temporal ordering and iterative editing of generated content. For example, a user may wish to generate a prologue for an existing clip (backward extension), fill a temporal gap between two segments (inbetween generation), or generate key frames first then connect them into a visual story. While solutions have been developed [2,8,10,15,27,29,32], they each address a specific temporal conditioning mode. An open question remains: can we develop a unified autoregressive model capable of flexibly generating video conditioned on past context, future context, or both, thereby supporting a wide range of generation tasks at real-time speed?
+
+In this work, we aim to enable autoregressive video generation in any temporal direction. A natural starting point is to extend existing forward-only asymmetric distillation [13] to also support backward generation. However, we find that such a naive approach leads to noticeable inter-block discontinuities and boundary flickering in the generated content, particularly in scenes with high motion dynamics. We trace the root cause of these artifacts to the Causal 3D VAE [42], a component widely adopted in modern video diffusion models [16, 19, 30, 36, 43] for efficient spatio-temporal encoding. Causal 3D VAE encodes video frames into latents that are strictly conditioned on its preceding context. While this causal structure aligns naturally with forward generation, it creates a fundamental mismatch for backward generation: when generating backward, the past context that the decoder expects is unavailable, causing visible discontinuities at block boundaries. Retraining a non-causal VAE is impractical, as it would forfeit compatibility with existing pre-trained teacher models.
+
+To address this issue, we introduce blockwise anchor latents, a mechanism that restores the missing past context at block boundaries during backward generation. The key intuition is to jointly denoise a small set of auxiliary latents standing for preceding video tokens alongside the target block under fullsequence attention, allowing the generated frames to attend to a proxy of prior local context even when generating in reverse order. These anchor latents act as a bridge between consecutive blocks, providing smooth, artifact-free transitions without requiring any modification to the pre-trained VAE or teacher model.
+
+Built on our design, we present UniTemp, a unified distillation framework that trains a single autoregressive student model, supervised by a frozen teacher diffusion model, to support generation in any direction. UniTemp adopts an efficient training procedure via shared models between forward and backward generation tasks. During inference, UniTemp flexibly conditions on past context, future context, or both, enabling any-direction video generation and unlocking a diverse set of applications all in one model (see Fig. 1).
+
+## Our contributions are summarized as follows.
+
+1. We introduce UniTemp, a unified distillation framework that enables autoregressive video generation in any temporal direction. The framework maintains training efficiency while delivering a single model for flexible test-time conditioning with fast inference.
+
+2. We show that directly training on backward generation leads to severe interblock flickering. We trace this artifact to the causal structure of the Causal 3D VAE, then introduce blockwise anchor latents that restore the missing past context at block boundaries, substantially reducing visual artifacts.
+
+3. We demonstrate competitive performance on short, long, and inbetween video generation compared to forward-only methods, while unlocking new capabilities such as bidirectional video extension, scene transition, looping video generation, and visual story generation.
+
+## 2 Related Work
+
+Temporal dependency in video generation. Video generation tasks differ in their temporal conditioning: text-to-video [3, 21, 30] generates from scratch, video extension [2, 10] conditions on the past, and inbetween generation [7, 23, 29, 32] conditions on both endpoints. Supporting all these modes in a single model remains an open challenge. Prior methods for flexible conditioning adopt mask-guided inpainting with full-sequence attention. MCVD [29] concatenates past and future frames with noisy targets along the channel dimension, randomly masking past or future frames to handle both extension and interpolation. RaMViD [12] randomly masks subsets of frames during training, applying diffusion only to the masked frames to enable conditioning on arbitrary positions. VACE [15] unified a broad range of generation and editing tasks through an input video mask that distinguishes guided regions from generated ones. However, these approaches require full-sequence denoising with sophisticated input formats (e.g., masks) and redundant feature extraction, and thus are slow at inference. They also pose training difficulties because they require massive real video data for pretraining or fine-tuning. Our method instead unifies these tasks within a single distillation framework. During training, this distillation approach remains efficient and does not require real video data, unlike previous pretraining- or fine-tuning-based approaches. During inference, we adopt temporal position indices in RoPE [26] to specify conditioning positions, and use KV caches to avoid redundant computation over previously generated blocks, thereby achieving much faster inference.
+
+VAE in latent video diffusion models. Generating videos directly in pixel space is computationally prohibitive. Latent diffusion models [24] address this by compressing videos into a compact latent space via a variational autoencoder (VAE) and training a diffusion model in that space. State-of-the-art models [3, 16, 30, 36] adopt diffusion transformers (DiT) [20] as the backbone, operating on spatio-temporal latent tokens with self-attention and text conditioning via cross-attention. A critical design choice is the VAE architecture. Causal 3D VAEs [42] have become the dominant choice for their advantages in (1) unified image and video tokenization, (2) improved generation quality, and (3) reduced memory usage, and are widely adopted by state-of-the-art video diffusion models including CogVideoX [36], Cosmos [19], HunyuanVideo [16], and Wan [30]. However, a causal 3D VAE introduces a temporal bias: each latent’s encoding and decoding depend only on its past context. This bias, which has not been well studied in prior work, becomes a critical obstacle when generation proceeds backward, as we will show in Sec. 4.1. In this work, we address this issue with blockwise anchor latents, a sequence of preceding video latents that participate in the denoising of each block, effectively stabilizing reverse block generation and largely reducing artifacts.
+
+Autoregressive video generation via distillation. Pretraining video generation models on massive long-video datasets is challenging. Asymmetric distillation [41] was proposed as a post-training technique that distills a multi-step fullattention teacher trained on short horizons into a few-step autoregressive student for long video generation. The student generates videos block by block with KV caching, enabling efficient streaming synthesis for long videos. Self-Forcing [13] further bridges the train-test distribution gap by conditioning on the student’s own rollouts rather than ground truth videos during training, largely reducing quality degradation over long horizons. Subsequent work has stabilized long generation through training-based [5, 17, 18, 35] and training-free [4, 37, 38] techniques. These methods, however, support only forward generation. Our UniTemp builds on the Self-Forcing framework for efficient training but departs from prior work by training a single student for any-direction generation.
+
+## 3 Preliminaries
+
+## 3.1 Latent Video Diffusion Models and Causal 3D VAE
+
+Latent video diffusion models [24] (LVDMs) encode frames $\{ x _ { i } \}$ into VAE latents $\left\{ z _ { i } \right\}$ , then use a denoiser (e.g., U-Net [25] or DiT [20]) to generate latents from noise. At each noise level t, the denoiser maps noisy latents $\{ z _ { i } ^ { t } \}$ to cleaner latents $\{ z _ { i } ^ { t - 1 } \}$ conditioned on text.
+
+Most recent LVDMs adopt a Causal 3D VAE [16,19,30,36,42,43], which uses an encoder $\mathcal { E }$ and a decoder D to encode and decode each latent $z _ { i }$ using its past context $z _ { \leq i }$ , as shown in Fig. 3. With a temporal compression factor of 4, z0 is a special image latent encoding the initial frame $x _ { 0 }$ , and $z _ { i } \ ( i > 0 )$ encodes every four consecutive frames $( x _ { 4 i } , \ldots , x _ { 4 i + 3 } )$ . This supports streaming and joint image-video tokenization [42], but creates a forward temporal bias (Sec. 4.1).
+
+## 3.2 Self-Forcing
+
+Self-Forcing [13] distills a slow teacher, such as Wan2.1 [30], into a few-step autoregressive student $G ^ { \theta }$ through two training stages. Stage 1 initializes $G ^ { \bar { \theta } }$ $\{ z _ { l } ^ { t } \} _ { l = 1 } ^ { L }$ denoising steps $\{ t _ { i } \} _ { i = 1 } ^ { N }$ , by regressing each noisy latent to its clean target:
+
+$$
+L _ {\text { init }} = \mathbb {E} _ {z ^ {0}, i} \left\| G ^ {\theta} (z ^ {t _ {i}}, t _ {i}) - z ^ {0} \right\| _ {2} ^ {2} \tag {1}
+$$
+
+where $z ^ { 0 }$ denotes the clean latent and $z _ { t _ { i } }$ is the noisy latent at denoising step $t _ { i }$ along the teacher’s ODE trajectory. Stage 2 trains $G ^ { \theta }$ in the same blockwise autoregressive rollout used at inference, where each block is denoised conditioned on previously generated blocks rather than ground truth. For block size $B =$ 3, this follows $( z _ { 0 } , z _ { 1 } , z _ { 2 } ) \  \ ( z _ { 3 } , z _ { 4 } , z _ { 5 } ) \  \ \cdot \cdot \cdot  \ ( z _ { 1 8 } , z _ { 1 9 } , z _ { 2 0 } )$ . Distribution matching distillation (DMD) [39, 40] matches the student’s output distribution to the teacher’s by updating $\dot { G } ^ { \theta }$ with:
+
+$$
+\nabla_ {\theta} D _ {\mathrm{KL}} = \mathbb {E} _ {z \sim \mathcal {N} (0; I), x = G ^ {\theta} (z)} \left(s _ {\text {real}} (x) - s _ {\text {fake}} (x)\right) \frac {\partial G ^ {\theta}}{\partial \theta} \tag {2}
+$$
+
+where $s _ { \mathrm { r e a l } }$ is computed from the frozen teacher and $s _ { \mathrm { f a k e } }$ from a fake denoiser $\mu _ { \mathrm { f a k e } } ^ { \phi }$ µ fake trained to approximate the student’s distribution:
+
+$$
+L _ {\text {denoise}} ^ {\phi} = \left\| \mu_ {\text {fake}} ^ {\phi} (z ^ {t _ {i}}, t _ {i}) - z ^ {0} \right\| _ {2} ^ {2} \tag {3}
+$$
+
+$[ 9 ] , \mu _ { \mathrm { f a k e } } ^ { \phi }$ $L _ { \mathrm { d e n o i s e } } ^ { \phi } .$ $G ^ { \theta }$ Eq. (2) to match the teacher, as shown in Fig. 3.
+
+## 4 Methods
+
+Existing autoregressive distillation supports only forward generation, which limits practical video creation workflows. We aim to distill a student model that supports generation in any temporal order at test time. In Sec. 4.1, we first describe a critical issue: inter-block flickering in backward generation, which results from the latent causality induced by the causal 3D VAE. We then propose blockwise anchor latents as our solution to effectively stabilize backward generation. Finally, in Sec. 4.2, we discuss our unified distillation framework, as well as its versatility in any-order generation at test time. By default, we use a block size of $B = 3$ in this section.
+
+## 4.1 Blockwise Anchor Latents for Backward Generation
+
+A unified generation framework necessitates backward generation capability. An intuitive approach is to extend Self-Forcing [13] for backward generation by reversing the student’s block generation order, i.e., $( z _ { 0 } , z _ { 1 } , z _ { 2 } ) \  \ \cdot \cdot \ $ $( z _ { 1 5 } , z _ { 1 6 } , z _ { 1 7 } ) \ \gets \ ( z _ { 1 8 } , z _ { 1 9 } , z _ { 2 0 } )$ , with each block generated conditioned on its future blocks. In practice, however, we observe severe flickering in backwardgenerated videos, as shown in Fig. 2. This flickering appears periodically at block boundaries, often as ghosting/flashing artifacts covering the whole image, and is more obvious in high-motion local regions.
+
+Evaluating periodic flickering. To better understand this issue, we need a metric to evaluate these flickering artifacts. Temporal flickering in VBench [14] serves as a good starting point, but with two drawbacks: (1) it averages frameframe pixel differences over the whole video rather than in local temporal context, and thus fails to identify when the flickering happens, (2) it is highly influenced by video dynamics, where high-dynamic scenes are more likely to have lower flickering scores. We thus define Flickering Ratio on top of temporal flickering to address these two problems. For two neighboring latents $z _ { i }$ and $z _ { i + 1 }$ corresponding to frames $( x _ { 4 i } , x _ { 4 i + 1 } , x _ { 4 i + 2 } , x _ { 4 i + 3 } )$ and $( x _ { 4 i + 4 } , x _ { 4 i + 5 } , x _ { 4 i + 6 } , x _ { 4 i + 7 } )$ , respectively, we compute the flickering ratio (FR) as:
+
+$$
+\mathrm{FR} (z _ {i}, z _ {i + 1}) = \frac {\sum_ {h , w , c} | x _ {4 i + 4} (h , w , c) - x _ {4 i + 3} (h , w , c) |}{\sum_ {h , w , c} | x _ {4 i + 3} (h , w , c) - x _ {4 i + 2} (h , w , c) |}, \tag {4}
+$$
+
+The numerator measures the pixel L1 distance between decoded frames at latent boundary $x _ { 4 i + 3 } \  \ x _ { 4 i + 4 }$ . The denominator measures the pixel L1 difference between two frames decoded by the same latent, which serves as a good indicator of dynamics in the local clip. By dividing, we measure cross-latent flickering relative to the local dynamics, which is more robust than simple pixel differences.
+
+We sample a set of dynamic prompts to measure FR. For each video, we split FR into the following two groups and average the value within each group: (1) inter-block FR, where $z _ { i }$ and $z _ { i + 1 }$ belong to different generated blocks, and (2) intra-block FR, where $z _ { i }$ and $z _ { i + 1 }$ belong to the same generated block. Specifically, since intra-block latents can mutually attend to each other with fullsequence self-attention at every layer, they are expected to demonstrate higher temporal smoothness, thus lower FR. Inter-block latents can only attend in one direction through cached keys and values, and therefore should demonstrate higher FR. We validate this empirically in Tab. 1, where both forward and backward generation show inter-block FRs larger than 1 (1.15/1.42), while intra-block FRs remain at smaller values (0.93/0.89).
+
+![](images/130d10ea3f4543fcdcee797473a8de1756ca3afa400146f5384051bdd67d09a4.jpg)
+
+<details>
+<summary>natural_image</summary>
+
+Illustration of a cartoon character surrounded by mushrooms in a green field, with two close-ups of the faces (no text or symbols)
+</details>
+
+![](images/f5f538049f312ffa22143c3be9dd086c4eb24a15942cf099d507e356cd4b61d3.jpg)
+
+<details>
+<summary>natural_image</summary>
+
+Composite image showing a person walking on a white sculpture with scenic background (no text or symbols)
+</details>
+
+![](images/c68a592b5c040576bce6b714bdb8641d55c1f0268e5abf521b6d2dc447184d0f.jpg)
+
+<details>
+<summary>natural_image</summary>
+
+Two-panel photo sequence showing a shark leaping out of blue water, with visible splash and tail (no text or symbols)
+</details>
+
+Fig. 2: Visualization of inter-block flickering in backward generation. Without anchor latents, visible discontinuities appear at block boundaries.
+
+Flickering due to causal 3D VAE. The abnormally high inter-block FR in backward generation (1.42) aligns with our aforementioned empirical observation of cross-block flickering. We attribute this to the causal dependency in the encoded latents $\left\{ z _ { i } \right\}$ , which is introduced by a Causal 3D VAE. A Causal 3D VAE imposes a strong dependency of each generated latent $z _ { i }$ on its past context $z _ { < i }$ but not future context $z _ { > i } ,$ , as shown in Fig. 3 left. In the forward process, generation of each latent $z _ { i }$ naturally follows this causality since it can always attend to past latents $z _ { < i } .$ . However, in backward generation, the latent $z _ { i }$ near the left boundary of a block $( z _ { i } , z _ { i + 1 } , z _ { i + 2 } )$ can only attend to its future context $z _ { > i }$ , without past context. In contrast, full-sequence attention is applied within the block so that $z _ { i + 1 }$ and $z _ { i + 2 }$ have local past context $\left( z _ { i } \right)$ and $\left( z _ { i } , z _ { i + 1 } \right)$ , respectively. Intra-block FR in backward generation can therefore maintain a low value, as in forward generation.
+
+Blockwise anchor latents. Motivated by our analysis, we seek to solve this inter-block flickering issue via an approximation of the missing past context. Specifically, in every backward-generated block, we expand its block size from B to $( P + B )$ , where $P$ is the number of anchor latents. Each block is now $\left( z _ { i - P } , . . . , z _ { i - 1 } , z _ { i } , z _ { i + 1 } , z _ { i + 2 } \right)$ instead of $( z _ { i } , z _ { i + 1 } , z _ { i + 2 } )$ . This expanded block is jointly denoised with full-sequence self-attention within the block, while attending to stored KV cache entries of future latents $z _ { > i + 2 }$ to receive future conditioning. Note that while these anchor latents $\big ( z _ { i - P } , . . . , z _ { i - 1 } \big )$ can fill in the missing past context for $z _ { i } ,$ , they themselves (especially $z _ { i - P } )$ now stay near the left boundary of the block, lacking their own past context. Therefore, after denoising, we discard the denoised anchor latents and do not include them as outputs. This idea is illustrated in Fig. 3 right.
+
+We empirically verify that these anchor latents effectively reduce inter-block flickering, as shown in Tab. 1. We defer the detailed discussion of our validation to Sec. 5.2.
+
+![](images/614c4c4f6995d1549dfd57a417f9aec19f8b1697a7ef2e71db8d89e7cd373ad6.jpg)
+
+<details>
+<summary>flowchart</summary>
+
+```mermaid
+graph TD
+    subgraph Left_Causal_3D_Encoder[ Causal 3D Encoder ]
+        direction TB
+  I1["Image"] --> V1["V"]
+  I2["Image"] --> V2["V"]
+  I3["Image"] --> V3["V"]
+  I4["Image"] --> V4["V"]
+  I5["Image"] --> V5["V"]
+  I6["Image"] --> V6["V"]
+  I7["Image"] --> V7["V"]
+  I8["Image"] --> V8["V"]
+  I9["Image"] --> V9["V"]
+  I10["Image"] --> V10["V"]
+  I11["Image"] --> V11["V"]
+  I12["Image"] --> V12["V"]
+  I13["Image"] --> V13["V"]
+  I14["Image"] --> V14["V"]
+  I15["Image"] --> V15["V"]
+  I16["Image"] --> V16["V"]
+  I17["Image"] --> V17["V"]
+  I18["Image"] --> V18["V"]
+  I19["Image"] --> V19["V"]
+  I20["Image"] --> V20["V"]
+  I21["Image"] --> V21["V"]
+  I22["Image"] --> V22["V"]
+  I23["Image"] --> V23["V"]
+  I24["Image"] --> V24["V"]
+  I25["Image"] --> V25["V"]
+  I26["Image"] --> V26["V"]
+  I27["Image"] --> V27["V"]
+  I28["Image"] --> V28["V"]
+  I29["Image"] --> V29["V"]
+  I30["Image"] --> V30["V"]
+  I31["Image"] --> V31["V"]
+  I32["Image"] --> V32["V"]
+  I33["Image"] --> V33["V"]
+  I34["Image"] --> V34["V"]
+  I35["Image"] --> V35["V"]
+  I36["Image"] --> V36["V"]
+  I37["Image"] --> V37["V"]
+  I38["Image"] --> V38["V"]
+  I39["Image"] --> V39["V"]
+  I40["Image"] --> V40["V"]
+    end
+
+    subgraph Right_AR_Rollout[ Forward AR rollout ]
+        direction TB
+        I1["I V V"]
+        I2["I V V V V V"]
+        I3["I V V V V V V"]
+        I4["I V V V V V V V"]
+        I5["I V V V V V V V"]
+        I6["I V V V V V V V"]
+        I7["I V V V V V V V"]
+        I8["I V V V V V V V"]
+        I9["I V V V V V V V"]
+        I10["I V V V V V V"]
+        I11["I V V V V V V"]
+        I12["I V V V V V V"]
+        I13["I V V V V V V"]
+        I14["I V V V V V V"]
+        I15["I V V V V V V"]
+        I16["I V V V V V V"]
+        I17["I V V V V V V"]
+        I18["I V V V V V V"]
+        I19["I V V V V V<br>V 0 1 2 3 4 5 6 7 8 9 10 11"]
+
+    subgraph Right_AR_Rollout_Backward_AR_Rollout[ Backward AR rollout ]
+        direction TB
+        I1I[I WV
+I2I
+I3I
+I4I
+I5I
+I6I
+I7I
+I8I
+I9I
+I10I
+I11I
+I12I
+I13I
+I14I
+I15I
+I16I
+I17I
+I18I
+I19I
+I20I
+I21I
+I22I
+I23I
+I24I
+I25I
+I26I
+I27I
+I28I
+I29I
+I30I
+I31I
+I32I
+I33I
+I34I
+I35I
+I36I
+I37I
+I38I
+I39I
+I40I
+Teacher
+Critic μφ_fake
+DMD_Gradient
+Student G°
+    end
+
+    subgraph Right_AR_Rollout_Backward_AR_Rollout_Backward_AR_Rollout_Backward_AR_Rollout_Backward_AR_Rollout_Backward_AR_Rollout_Backward_AR_Rollout_Backward_AR_Rollout_Backward_AR_Rollout_Backward_AR_Rollout_Backward_AR_Rollout_Backward_AR_Rollout_Backward_AR_Rollout_Backward_AR_RLA_DMD_Gradient
+    direction TB
+    style Left_Causal_3D_Encoder fill:#f9f,stroke:#333
+    style Right_AR_Rollout_Backward_AR_Rollout_Backward_AR_Rollout_Backward_AR_Rollout_Backward_AR_Rollout_Backward_AR_RLA_DMD_Gradient fill:#ccf,stroke:#333
+    style Right_AR_Rollout_Backward_AR_Rollout_Backward_AR_Rollout_Backward_AR_RLA_DMD_Gradient fill:#cfc,stroke:#333
+```
+</details>
+
+Fig. 3: Left: Causal design of the frozen 3D VAE. It encodes video into spatialtemporal latents (V) with a leading image latent (I). Each latent is dependent on its past context. Right: Overview of UniTemp. We distill a teacher model into a unified autoregressive student $G ^ { \theta }$ trained on its self-rollout in both forward and backward directions. In backward generation, we introduce blockwise anchor latents (dashed circles) to reduce inter-block flickering. The anchor latents only serve to stabilize generated content by providing approximate missing past context. After being denoised with the current block, they are discarded and not included as outputs.
+
+## 4.2 Unified Training with Bidirectional Distillation
+
+We now integrate blockwise anchor latents into the following unified framework for any-order temporal generation.
+
+Bidirectional distillation. During training, we adopt Self-Forcing [13] as the training algorithm and train on both forward and backward tasks, as shown in Fig. 3. The forward generation pipeline faithfully follows the original Self-Forcing with blockwise $\left( B = 3 \right)$ autoregressive generation. In backward generation, we introduce anchor latents to expand the block size from B to $( P + B )$ , while the DMD [39, 40] loss is applied to the student’s output without anchor latents.
+
+Unified models. Since training includes two directional targets, one option is to use separate models for forward and backward generation, i.e., (1) separate generators. We can use two generators $G _ {  } ^ { \theta }$ and $G _ {  } ^ { \theta }$ to generate forward and backward videos, respectively, (2) separate fake critics. We can use two fake critics $\mu _ { \mathrm { f a k e } ,  } ^ { \phi }$ and $\mu _ { \mathrm { f a k e } ,  } ^ { \phi }$ to approximate the distributions of the forward- and backward-generated videos, respectively. However, separating models as in previous methods [32] incurs potentially higher memory cost during training and inference. Separate generators also lose the ability to support flexible temporal conditioning $( e . g .$ ., inbetween generation) at test time. Therefore, we adopt a unified model design, sharing a single student model $G ^ { \theta }$ and a single fake critic model µϕfake $\mu _ { \mathrm { f a k e } } ^ { \phi }$ across both generation tasks. Such a shared design can also reduce the performance gap between forward and backward generation, as shown in Sec. 5.2.
+
+## 4.3 Versatile Test-Time Functions
+
+By training a shared generator in both directions, UniTemp allows generating each block conditioned on any combination of past and future KV caches, thereby unlocking versatile test-time functions as follows:
+
+Both-end-guided sink latents. Sink latents [33] have proven to significantly improve inference performance and efficiency over long horizons. While previous methods [4, 5, 17, 18, 35, 37, 38] can only place sink latents at past positions to stabilize long video generation, we can now shift these latents into the future by reapplying their RoPE [4, 26, 37] temporal indices, simulating future sink latents for forward generation. Similarly, in backward generation, we can reposition earlier generated future latents into the past. This yields both-end-guided sink latents, further reducing quality drift and content variation in long video generation.
+
+Inbetween generation. Surprisingly, we observe that, although the block size is set to B (or P +B with anchor latents) during training, the test-time block size can be flexibly set to any value as long as the maximum attention horizon is less than that in training, i.e. 21. This enables inbetween generation [6,7,23,29,30,32], which infills the content of K latents between a head block and a tail block. Specifically, given a head block of B latents and a tail block of B latents, we can first obtain their KV caches by feeding them to the denoiser with clean context noise and a frame gap of K in their RoPE temporal indices. Then, we can produce the intermediate K latents from noise by applying full-sequence self-attention within the K latents and attending to the head and tail KV caches.
+
+We evaluate and show results in Sec. 5.1. Furthermore, we demonstrate diverse applications in Sec. 5.3, showing flexible temporal generation including looping video generation, scene transition, and visual story generation.
+
+## 5 Experiments and Results
+
+Training details. We train UniTemp following the training procedure of Self-Forcing [13]. Specifically, we use Wan2.1 T2V 14B [30] as the pretrained teacher model. The student is a 1.3B model initialized from Wan2.1 T2V 1.3B with 4 denoising steps (1000.0, 937.5, 833.3, 625.0). In the first stage, we use the teacher to generate 16K ODE pairs, and train the student model for 6K iterations with a batch size of 128. Both forward and backward attention masks are applied in each training iteration. In the second stage, we train the student for 600 iterations with a batch size of 64 on the rewritten VidProm [31] prompts. We apply exponential moving average (EMA) to the student model with a decay rate of 0.999 starting from iteration 200. We choose a block size of B = 3 and an anchor latent size of $P = 3$ for backward generation, unless otherwise specified.
+
+Evaluation protocol. We primarily evaluate using metrics in VBench [14]. While our trained model supports a diverse set of applications, we focus on the following dimensions: (1) Flickering ratio. This is the proposed metric described in Sec. 4.1. Since flickering is more obvious in high-dynamic video, we use an LLM to generate 128 high-dynamic video prompts to evaluate the flickering ratio. (2) Single-direction short video generation. Following conventional evaluation protocol in previous works [13, 35], we generate 5s videos using 946 official VBench prompts rewritten by Qwen2.5-7B-Instruct [34]. Metrics are computed in the official VBench codebase. (3) Single-direction long video generation. Following previous approaches [5,17,37], we randomly sample 128 prompts from MovieGen-Bench [22] to generate 100s long videos for each prompt. We then use metrics in VBench to evaluate video quality at 10s, 30s, and 100s. We compare to a set of strong long video generation baseline approaches based on Self-Forcing [13], including LongLive [35], Rolling-Forcing [17], and Infinity-Rope [37]. (4) Inbetween video generation. We use Wan2.1 T2V 14B to generate 5s ground-truth videos using the same 128 prompts from MovieGenBench. We keep the head block (9 frames) and tail block (12 frames) as conditions, and fill the inbetween region. In addition to VBench metrics, we additionally measure head / tail frame flickering, the pixel consistency between generated and ground-truth condition frames, and FID / FVD between generated and ground-truth videos. We compare to Wan FLF2V 14B [30] and Generative Inbetweening (GI) [32].
+
+Table 1: Ablation study on anchor latents for backward generation.
+
+<table><tr><td rowspan="2">Direction</td><td rowspan="2">Num Anchor P</td><td colspan="2">Anchor as Output</td><td rowspan="2">Inter-block FR ↓</td><td rowspan="2">Intra-block FR ↓</td></tr><tr><td>Train</td><td>Inference</td></tr><tr><td>→</td><td>0</td><td>✗</td><td>✗</td><td>1.15</td><td>0.93</td></tr><tr><td>←</td><td>0</td><td>✗</td><td>✗</td><td>1.42</td><td>0.89</td></tr><tr><td>←</td><td>1</td><td>✗</td><td>✗</td><td>1.26</td><td>0.93</td></tr><tr><td>←</td><td>2</td><td>✗</td><td>✗</td><td>1.23</td><td>0.93</td></tr><tr><td>←</td><td>3</td><td>✗</td><td>✗</td><td>1.07</td><td>0.97</td></tr><tr><td>←</td><td>3</td><td>✗</td><td>√</td><td>1.46</td><td>0.99</td></tr><tr><td>←</td><td>3</td><td>√</td><td>✗</td><td>1.08</td><td>0.97</td></tr><tr><td>←</td><td>3</td><td>√</td><td>√</td><td>1.48</td><td>0.98</td></tr></table>
+
+Table 2: Ablation study on training with shared models. Results evaluated with VBench [14] on 5s short video generation.
+
+<table><tr><td>Direction</td><td>Shared  $G^{\phi}$ </td><td>Shared  $\mu_{\text{fake}}^{\phi}$ </td><td>Quality ↑</td><td>Semantics ↑</td><td>Total ↑</td></tr><tr><td rowspan="3"> $\rightarrow$ </td><td>✗</td><td>✗</td><td>84.47</td><td>79.23</td><td>83.42</td></tr><tr><td>√</td><td>✗</td><td>84.64</td><td>79.18</td><td>83.54</td></tr><tr><td>√</td><td>√</td><td>84.89</td><td>79.51</td><td>83.81</td></tr><tr><td rowspan="3"> $\leftarrow$ </td><td>✗</td><td>✗</td><td>85.17</td><td>80.61</td><td>84.26</td></tr><tr><td>√</td><td>✗</td><td>85.02</td><td>79.74</td><td>83.96</td></tr><tr><td>√</td><td>√</td><td>85.12</td><td>80.69</td><td>84.23</td></tr></table>
+
+## 5.1 Results and Discussion
+
+Single-direction short video generation. Tab. 2 reports VBench results on 5s video generation. The configuration with separate $G ^ { \theta }$ and separate $\mu _ { \mathrm { f a k e } } ^ { \phi }$ (first row) corresponds to the Self-Forcing [13] baseline. In comparison, our unified method achieves competitive performance in both directions compared to the Self-Forcing baseline. We also observe slightly higher performance in backward generation. This can be attributed to learning asymmetry rooted in forward bias in the latent space.
+
+Table 3: Long video generation evaluated with VBench [14]. We compare forward-only baselines with UniTemp in both directions under various sink latent configurations. Past/future sink latents provide temporal anchoring to control content variation over long durations.
+
+<table><tr><td>Direction</td><td>Method</td><td>Past Sink</td><td>Future Sink</td><td>Dur.</td><td>Subj. ↑</td><td>BG ↑</td><td>Flicker ↑</td><td>Smooth ↑</td><td>Dynamic ↑</td><td>Aes. ↑</td><td>Img. ↑</td></tr><tr><td rowspan="18">→</td><td rowspan="3">LongLive [35]</td><td rowspan="3">√</td><td rowspan="3">✗</td><td>10s</td><td>96.84</td><td>96.26</td><td>97.77</td><td>98.84</td><td>36.72</td><td>62.53</td><td>70.65</td></tr><tr><td>30s</td><td>96.45</td><td>95.45</td><td>97.65</td><td>98.75</td><td>38.28</td><td>61.12</td><td>69.20</td></tr><tr><td>100s</td><td>96.48</td><td>95.52</td><td>97.71</td><td>98.76</td><td>36.72</td><td>61.81</td><td>69.22</td></tr><tr><td rowspan="3">Rolling-Forcing [17]</td><td rowspan="3">√</td><td rowspan="3">✗</td><td>10s</td><td>96.78</td><td>95.48</td><td>97.65</td><td>98.70</td><td>28.12</td><td>62.03</td><td>71.16</td></tr><tr><td>30s</td><td>96.60</td><td>95.37</td><td>97.65</td><td>98.72</td><td>31.25</td><td>60.98</td><td>70.96</td></tr><tr><td>100s</td><td>96.06</td><td>95.19</td><td>97.45</td><td>98.57</td><td>29.69</td><td>58.96</td><td>70.99</td></tr><tr><td rowspan="3">Infinity-Rope [37]</td><td rowspan="3">√</td><td rowspan="3">✗</td><td>10s</td><td>95.48</td><td>94.74</td><td>96.29</td><td>97.93</td><td>64.06</td><td>61.17</td><td>70.18</td></tr><tr><td>30s</td><td>95.11</td><td>94.63</td><td>96.13</td><td>97.82</td><td>59.38</td><td>58.78</td><td>69.38</td></tr><tr><td>100s</td><td>94.93</td><td>94.53</td><td>96.05</td><td>97.74</td><td>55.47</td><td>56.26</td><td>69.39</td></tr><tr><td rowspan="3">Self-Forcing [13]</td><td rowspan="3">√</td><td rowspan="3">✗</td><td>10s</td><td>96.47</td><td>95.36</td><td>96.36</td><td>98.31</td><td>64.06</td><td>62.74</td><td>71.23</td></tr><tr><td>30s</td><td>95.75</td><td>95.01</td><td>95.88</td><td>98.08</td><td>64.06</td><td>59.84</td><td>70.33</td></tr><tr><td>100s</td><td>96.14</td><td>94.84</td><td>96.01</td><td>98.12</td><td>62.50</td><td>56.85</td><td>70.75</td></tr><tr><td rowspan="3">UniTemp</td><td rowspan="3">√</td><td rowspan="3">✗</td><td>10s</td><td>95.40</td><td>94.37</td><td>95.11</td><td>97.69</td><td>81.25</td><td>61.64</td><td>70.22</td></tr><tr><td>30s</td><td>94.36</td><td>93.54</td><td>94.53</td><td>97.43</td><td>92.97</td><td>57.70</td><td>69.10</td></tr><tr><td>100s</td><td>93.95</td><td>93.23</td><td>94.43</td><td>97.37</td><td>87.50</td><td>56.55</td><td>69.53</td></tr><tr><td rowspan="3">UniTemp</td><td rowspan="3">√</td><td rowspan="3">√</td><td>10s</td><td>97.60</td><td>96.30</td><td>97.50</td><td>98.50</td><td>46.80</td><td>62.70</td><td>70.70</td></tr><tr><td>30s</td><td>97.40</td><td>96.00</td><td>97.00</td><td>98.10</td><td>44.50</td><td>62.90</td><td>70.80</td></tr><tr><td>100s</td><td>97.30</td><td>95.80</td><td>96.90</td><td>98.00</td><td>44.50</td><td>62.30</td><td>71.30</td></tr><tr><td rowspan="6">←</td><td rowspan="3">UniTemp</td><td rowspan="3">✗</td><td rowspan="3">√</td><td>10s</td><td>94.91</td><td>94.57</td><td>95.94</td><td>98.10</td><td>71.09</td><td>63.35</td><td>70.38</td></tr><tr><td>30s</td><td>93.89</td><td>93.67</td><td>94.93</td><td>97.73</td><td>81.25</td><td>60.31</td><td>70.71</td></tr><tr><td>100s</td><td>93.94</td><td>93.50</td><td>94.67</td><td>97.64</td><td>85.16</td><td>59.02</td><td>70.51</td></tr><tr><td rowspan="3">UniTemp</td><td rowspan="3">√</td><td rowspan="3">√</td><td>10s</td><td>96.87</td><td>96.03</td><td>97.13</td><td>98.34</td><td>55.47</td><td>62.95</td><td>70.39</td></tr><tr><td>30s</td><td>96.80</td><td>95.60</td><td>97.04</td><td>98.28</td><td>60.16</td><td>62.69</td><td>70.49</td></tr><tr><td>100s</td><td>96.75</td><td>96.00</td><td>97.04</td><td>98.28</td><td>56.25</td><td>62.83</td><td>70.31</td></tr></table>
+
+![](images/c30c161e7450133d454e0affb95c089f696b362d2b24e22784001de878a44928.jpg)
+
+<details>
+<summary>text_image</summary>
+
+LongLive
+RollingForcing
+InfinityRope
+UniTemp →
+Past
+UniTemp →
+Past + Future
+UniTemp ←
+Future
+UniTemp ←
+Future + Past
+</details>
+
+Fig. 4: Long video generation results. Past + future sink latents provide strong conditioning to reduce content variation over long durations.
+
+Single-direction long video generation. Tab. 3 compares long video generation at 10s, 30s, and 100s. Existing training-based long video generation methods (LongLive [35], Rolling-Forcing [17]) achieve high temporal consistency but produce extremely low-dynamic content (36.72/28.12). Note that this is a tradeoff in VBench metrics: more dynamic content usually leads to lower temporal consistency, because there are larger differences between neighboring frames. In comparison, training-free methods with past sink latents [4] can already achieve strong consistency with slightly degraded dynamics and aesthetic quality. E.g., from 10s to 100s, Infinity-Rope’s dynamic degree / aesthetic quality drops from 64.06/61.17 to 55.47/56.26, while Self-Forcing’s dynamic degree / aesthetic quality decreases from 64.06/62.74 to 62.74/56.85. Our UniTemp inherits such stable long video generation capability but with increased dynamic degree, which leads to lower frame consistency. However, we can control such dynamics-consistency tradeoff by switching between single-end sink latents and both-ends sink latents. In forward generation, by enabling both-end-guided sink latents, the generated content faithfully follows the sink frames, effectively reducing drifting from 10s to 100s with (1) stable and high subject consistency (97.60 → 97.30) (2) lower but stable dynamic degree (46.80 → 44.50) and (3) stable aesthetic quality (62.70 → 62.30). Backward generation shows similar patterns. Furthermore, we can see the visual results in Fig. 4, where UniTemp can generate stable long videos with content variations controlled by single / both sink latents.
+
+Inbetween video generation Tab. 4 evaluates inbetween generation given the first and last frames. Wan FLF2V [30] is a large 14B-parameter model with high computational cost that has been trained for inbetween generation tasks on a large amount of video data. GI is built on Stable Video Diffusion [1] with a fine-tuned backward image-to-video diffusion model. At inference, the denoising steps need to be run for both forward and backward image-to-video generation, leading to inefficiency in both memory and speed. Both Wan FLF2V and GI support only a single frame on each side for conditioning.
+
+In comparison, UniTemp is not specifically trained for inbetween generation tasks and has only one unified model. The shared architecture allows simultaneously conditioning on both head and tail frames, while its autoregressive nature allows conditioning on flexible numbers of head and tail frames. UniTemp shows strong performance by outperforming GI and Wan FLF2V in background consistency, image quality, and video distribution. Different from GI and Wan FLF2V, UniTemp can reuse latents of conditioning frames and thus does not need to reproduce the conditioning frames, leading to much higher boundary consistency. Qualitatively, as shown in Fig. 5, GI often assumes linear motion between head and tail frames, resulting in sometimes unnatural content and sudden blending effects, especially when the head and tail frames are far apart (the second case). In contrast, Wan FLF2V and UniTemp can generate intermediate content with natural variations, while UniTemp is much more efficient in both training and inference.
+
+## 5.2 Ablation Studies
+
+Effect of anchor latents Tab. 1 reports inter-block and intra-block flickering ratio for varying numbers of anchor latents P . The baseline without anchor latents exhibits a backward inter-block flickering ratio of 1.42, confirming substantial boundary artifacts. Increasing P progressively reduces this: P =1 (1.26), P =2 (1.23), P =3 (1.07). At P =3=B, the ratio approaches the ideal value of 1.0. In addition, we investigate whether the anchor latents should be included as outputs in training and inference. When included as outputs in training, the loss is applied to the anchor latents. As discussed in Sec. 4.1, anchor latents themselves are generated without past context. Therefore, once included in the outputs at test time, they are positioned near block boundaries and still show inter-block flickering, as validated in Tab. $1 \ ( 1 . 0 7  1 . 4 6 , 1 . 0 8  1 . 4 8 )$ . We show video visualizations of this flickering in the appendix.
+
+Table 4: Inbetween video generation evaluation. We compare UniTemp against Wan FLF2V [30] and GI [32] on bounded generation given head and tail frames. Head/tail flickering measures boundary consistency with the ground-truth frames.
+
+<table><tr><td rowspan="2">Method</td><td colspan="7">VBench Dimensions</td><td colspan="2">Boundary</td><td colspan="2">Distribution</td></tr><tr><td>Subj. ↑</td><td>BG ↑</td><td>Flicker ↑</td><td>Smooth ↑</td><td>Dynamic ↑</td><td>Aes. ↑</td><td>Img. ↑</td><td>Head ↑</td><td>Tail ↑</td><td>FID ↓</td><td>FVD ↓</td></tr><tr><td>GI [32]</td><td>94.48</td><td>92.90</td><td>97.27</td><td>98.75</td><td>62.50</td><td>60.19</td><td>62.88</td><td>96.29</td><td>97.47</td><td>34.21</td><td>34.66</td></tr><tr><td>Wan FLF2V [30]</td><td>93.44</td><td>93.63</td><td>97.38</td><td>98.54</td><td>64.84</td><td>64.38</td><td>64.59</td><td>98.88</td><td>98.52</td><td>23.31</td><td>27.77</td></tr><tr><td>UniTemp</td><td>93.81</td><td>93.71</td><td>97.18</td><td>98.46</td><td>63.28</td><td>65.75</td><td>66.68</td><td>99.52</td><td>98.16</td><td>24.94</td><td>25.00</td></tr><tr><td>Ground-truth</td><td>94.11</td><td>94.78</td><td>97.64</td><td>98.66</td><td>57.81</td><td>61.17</td><td>64.25</td><td>100.00</td><td>100.00</td><td>-</td><td>-</td></tr></table>
+
+![](images/ddd4232224b6a85ed353c116c93624bff194f7a68169e86fac2daa31ae0c75ec.jpg)
+
+<details>
+<summary>text_image</summary>
+
+Head
+Generated
+Tail
+GI
+Wan
+FLF2V
+UniTemp
+Head
+Generated
+Tail
+</details>
+
+Fig. 5: Visualization of inbetween video generation. Given the head (leftmost) and tail (rightmost) frames, UniTemp infills temporally coherent content.
+
+Unified vs. separate models. Tab. 2 compares three training configurations. Overall, training direction-specific separate models for either the student generator $G ^ { \theta }$ or fake diffusion model $\mu _ { \mathrm { f a k e } } ^ { \phi }$ does not bring significant performance gains but introduces higher training cost. Our unified training framework can also reduce the performance difference between forward (84.89/79.51/83.81) and backward (85.12/80.69/84.23) generation. This demonstrates the effectiveness and efficiency of our unified training framework.
+
+## 5.3 Applications
+
+Since UniTemp enables flexible conditioning at inference time, we demonstrate its effectiveness across several applications. Implementation details for these applications are provided in the supplementary material.
+
+Looping video generation. By shifting the head conditioning frames to the future and then generating the intermediate content between them, we can easily achieve looping video generation, as shown in Fig. 6.
+
+Scene transition. When the head and tail conditioning frames are very different, we face the challenging task of scene transition. Surprisingly, we find that
+
+![](images/94dfa169b44fc906b0a9c66bf9e9cf3cb0e6fffa9ee3ce13780bea2a26b2e05a.jpg)
+
+<details>
+<summary>text_image</summary>
+
+Head
+Generated
+Tail
+</details>
+
+Fig. 6: Looping video generation given the same head and tail frames.
+
+![](images/ca92199a05b097c7f4629d86c930beb93fbff33f0b73354c17b5e795df030626.jpg)
+
+<details>
+<summary>text_image</summary>
+
+Head
+Generated
+Tail
+</details>
+
+Fig. 7: Scene transition given distinct head and tail frames.
+
+UniTemp can perform reasonably well in this task between contrasting scenes. As shown in Fig. 7, UniTemp is able to associate visually similar content and apply a smooth transition.
+
+Long-shot visual story generation. With versatile generation orders (forward, backward, inbetween) and conditioning frames, we are now able to build visual stories in any order we want, instead of only extending forward. For example, in Fig. 1, we can generate multiple key scenes first, then flexibly extend forward / backward / infill between any two existing scenes, allowing looping long-shot visual story generation across different numbers of scenes and durations.
+
+## 6 Conclusion and Discussion
+
+We presented UniTemp, a unified autoregressive video generation framework that supports generation in any temporal order. We identified the cross-block flickering issue in backward-generated videos, which is associated with the causal temporal bias of Causal 3D VAE latents. We proposed blockwise anchor latents to help restore missing past context at block boundaries. Built on a unified distillation framework, UniTemp trains a single student model for both forward and backward generation. Computed features can then be shared across anydirection generation workflows, enabling efficient inference. The resulting model achieves competitive performance on short and long video generation as well as inbetween generation, while unlocking applications such as looping video, scene transitions, and visual story generation, without task-specific fine-tuning.
+
+Limitations. Backward generation incurs additional per-block computation due to the jointly denoised anchor latents; forward generation is unaffected. The causal VAE and teacher model remain inherently forward-biased: anchor latents mitigate but do not fully eliminate this asymmetry. Exploring bidirectional VAE architectures that maintain compatibility with existing pre-trained teachers is a promising direction for future work.
+
+## References
+
+1. Blattmann, A., Dockhorn, T., Kulal, S., Mendelevitch, D., Kilian, M., Lorber, D., Levi, Y., English, Z., Voleti, V., Letts, A., Jampani, V., Rombach, R.: Stable video diffusion: Scaling latent video diffusion models to large datasets. In: Proceedings of the International Conference on Learning Representations (ICLR) (2024)  
+2. Blattmann, A., Dockhorn, T., Kulal, S., Mendelevitch, D., Kilian, M., Lorenz, D., Levi, Y., English, Z., Voleti, V., Letts, A., Jampani, V., Rombach, R.: Stable video diffusion: Scaling latent video diffusion models to large datasets. arXiv preprint arXiv:2311.15127 (2023)  
+3. Brooks, T., Peebles, B., Holmes, C., DePue, W., Guo, Y., Jing, L., Schnurr, D., Taylor, J., Luhman, T., Luhman, E., Ng, C., Wang, R., Ramesh, A.: Video generation models as world simulators. OpenAI Technical Report (2024)  
+4. Chen, J., Fu, Z., He, X.: Infinite-forcing: Towards infinite-long video generation (2025), https://github.com/SOTAMak1r/Infinite-Forcing  
+5. Cui, J., Wu, J., Li, M., Yang, T., Li, X., Wang, R., Bai, A., Ban, Y., Hsieh, C.J.: Self-forcing++: Towards minute-scale high-quality video generation. arXiv preprint arXiv:2510.02283 (2025)  
+6. Danier, D., Zhang, F., Bull, D.: Ldmvfi: Video frame interpolation with latent diffusion models. In: AAAI (2024)  
+7. Feng, H., Ding, Z., Xia, Z., Niklaus, S., Abrevaya, V., Black, M.J., Zhang, X.: Explorative inbetweening of time and space. arXiv preprint arXiv:2403.14611 (2024)  
+8. Geyer, M., Bar-Tal, O., Bagon, S., Dekel, T.: Tokenflow: Consistent diffusion features for consistent video editing. In: Proceedings of the International Conference on Learning Representations (ICLR) (2024)  
+9. Goodfellow, I., Pouget-Abadie, J., Mirza, M., Xu, B., Warde-Farley, D., Ozair, S., Courville, A., Bengio, Y.: Generative adversarial nets. In: Advances in Neural Information Processing Systems (NeurIPS) (2014)  
+10. Henschel, R., Khachatryan, L., Poghosyan, H., Hayrapetyan, D., Tadevosyan, V., Wang, Z., Navasardyan, S., Shi, H.: Streamingt2v: Consistent, dynamic, and extendable long video generation from text. In: Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition (CVPR) (2025)  
+11. Ho, J., Jain, A., Abbeel, P.: Denoising diffusion probabilistic models. In: Advances in Neural Information Processing Systems (NeurIPS) (2020)  
+12. Höppe, T., Mehrjou, A., Bauer, S., Nielsen, D., Dittadi, A.: Diffusion models for video prediction and infilling. In: Transactions on Machine Learning Research (TMLR) (2022)  
+13. Huang, X., Li, Z., He, G., Zhou, M., Shechtman, E.: Self-forcing: Bridging the train-test gap in autoregressive video diffusion. arXiv preprint arXiv:2506.08009 (2025)  
+14. Huang, Z., He, Y., Yu, J., Zhang, F., Si, C., Jiang, Y., Zhang, Y., Wu, T., Jin, Q., Chanpaisit, N., et al.: Vbench: Comprehensive benchmark suite for video generative models. In: Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition (CVPR) (2024)  
+15. Jiang, Z., Han, Z., et al.: Vace: All-in-one video creation and editing. In: Proceedings of the IEEE/CVF International Conference on Computer Vision (ICCV) (2025)  
+16. Kong, W., Tian, Q., Zhang, Z., Min, R., et al.: Hunyuanvideo: A systematic framework for large video generative models. arXiv preprint arXiv:2412.03603 (2024)  
+17. Liu, K., Hu, W., Xu, J., Shan, Y., Lu, S.: Rolling forcing: Autoregressive long video diffusion in real time. arXiv preprint arXiv:2509.25161 (2025)  
+18. Lu, Y., Zeng, Y., Li, H., Ouyang, H., Wang, Q., Cheng, K.L., Zhu, J., Cao, H., Zhang, Z., Zhu, X., Shen, Y., Zhang, M.: Reward forcing: Efficient streaming video generation with rewarded distribution matching distillation. arXiv preprint arXiv:2512.04678 (2025)  
+19. NVIDIA: Cosmos world foundation model platform for physical ai. arXiv preprint arXiv:2501.03575 (2025)  
+20. Peebles, W., Xie, S.: Scalable diffusion models with transformers. In: Proceedings of the IEEE/CVF International Conference on Computer Vision (ICCV) (2023)  
+21. Polyak, A., Zohar, A., Brown, A., Tjandra, A., Sinha, A., Lee, A., Vyas, A., Shi, B., Ma, C.Y., Chuang, C.Y., et al.: Movie gen: A cast of media foundation models. arXiv preprint arXiv:2410.13720 (2024)  
+22. Polyak, A., Zohar, A., Brown, A., Tjandra, A., Sinha, A., Lee, A., Vyas, A., Shi, B., Ma, C.Y., Chuang, C.Y., et al.: Movie gen: A cast of media foundation models. arXiv preprint arXiv:2410.13720 (2024)  
+23. Reda, F., Kontkanen, J., Tabellion, E., Sun, D., Pantofaru, C., Curless, B.: FILM: Frame interpolation for large motion. In: Proceedings of the European Conference on Computer Vision (ECCV). pp. 250–266 (2022)  
+24. Rombach, R., Blattmann, A., Lorenz, D., Esser, P., Ommer, B.: High-resolution image synthesis with latent diffusion models. In: Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition (CVPR) (2022)  
+25. Ronneberger, O., Fischer, P., Brox, T.: U-net: Convolutional networks for biomedical image segmentation. In: Medical Image Computing and Computer-Assisted Intervention (MICCAI) (2015)  
+26. Su, J., Ahmed, M., Lu, Y., Pan, S., Bo, W., Liu, Y.: Roformer: Enhanced transformer with rotary position embedding. Neurocomputing 568, 127063 (2024)  
+27. Tanveer, M., Zhou, Y., Niklaus, S., Amiri, A.M., Zhang, H., Singh, K.K., Zhao, N.: Multicoin: Multi-modal controllable video inbetweening. arXiv preprint arXiv:2510.08561 (2025)  
+28. Vaswani, A., Shazeer, N., Parmar, N., Uszkoreit, J., Jones, L., Gomez, A.N., Kaiser, L., Polosukhin, I.: Attention is all you need. In: Advances in Neural Information Processing Systems (NeurIPS) (2017)  
+29. Voleti, V., Jolicoeur-Martineau, A., Pal, C.: Mcvd: Masked conditional video diffusion for prediction, generation, and interpolation. In: Advances in Neural Information Processing Systems (NeurIPS) (2022)  
+30. Wan-AI: Wan2.1: Text-to-video generation model. https://github.com/Wan-AI/ Wan2.1 (2024)  
+31. Wang, W., Yang, Y.: Vidprom: A million-scale real-world video prompt-gallery dataset for text-to-video diffusion models. In: NeurIPS Datasets and Benchmarks (2024)  
+32. Wang, X., Zhou, B., Curless, B., Kemelmacher-Shlizerman, I., Holynski, A., Seitz, S.M.: Generative inbetweening: Adapting image-to-video models for keyframe interpolation. In: Proceedings of the International Conference on Learning Representations (ICLR) (2025)  
+33. Xiao, G., Tian, Y., Chen, B., Han, S., Lewis, M.: Efficient streaming language models with attention sinks. In: Proceedings of the International Conference on Learning Representations (ICLR) (2024)  
+34. Yang, A., Yang, B., Zhang, B., Hui, B., Zheng, B., Yu, B., Li, C., Liu, D., Huang, F., Wei, H., et al.: Qwen2.5 technical report. arXiv preprint arXiv:2412.15115 (2024)  
+35. Yang, S., Huang, W., Chu, R., Xiao, Y., Zhao, Y., Wang, X., Li, M., Xie, E., Chen, Y., Lu, Y., Han, S., Chen, Y.: Longlive: Real-time interactive long video generation. arXiv preprint arXiv:2509.22622 (2025)  
+36. Yang, Z., Teng, J., Zheng, W., Ding, M., Huang, S., Xu, J., Yang, Y., Hong, W., Zhang, X., Feng, G., et al.: Cogvideox: Text-to-video diffusion models with an expert transformer. In: Proceedings of the International Conference on Learning Representations (ICLR) (2025)  
+37. Yesiltepe, H., Meral, T.H.S., Akan, A.K., Oktay, K., Yanardag, P.: Infinity-rope: Action-controllable infinite video generation emerges from autoregressive selfrollout. arXiv preprint arXiv:2511.20649 (2025)  
+38. Yi, J., Jang, W., Cho, P.H., Nam, J., Yoon, H., Kim, S.: Deep forcing: Training-free long video generation with deep sink and participative compression. arXiv preprint arXiv:2512.05081 (2025)  
+39. Yin, T., Gharbi, M., Park, T., Zhang, R., Shechtman, E., Durand, F., Freeman, W.T.: Improved distribution matching distillation for fast image synthesis. In: Advances in Neural Information Processing Systems (NeurIPS) (2024)  
+40. Yin, T., Gharbi, M., Zhang, R., Shechtman, E., Durand, F., Freeman, W.T., Park, T.: One-step diffusion with distribution matching distillation. In: Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition (CVPR) (2024)  
+41. Yin, T., Zhang, Q., Zhang, R., Freeman, W.T., Durand, F., Shechtman, E., Huang, X.: From slow bidirectional to fast causal video generators. arXiv preprint arXiv:2412.07772 (2024)  
+42. Yu, L., Lezama, J., Gundavarapu, N.B., Versari, L., Sohn, K., Minnen, D., Cheng, Y., Gupta, A., Gu, X., Hauptmann, A.G., et al.: Language model beats diffusion – tokenizer is key to visual generation. In: Proceedings of the International Conference on Learning Representations (ICLR) (2024)  
+43. Zheng, Z., Peng, X., Yang, T., Shen, C., Li, S., Liu, H., Zhou, Y., Li, T., You, Y.: Open-sora: Democratizing efficient video production for all. arXiv preprint arXiv:2412.20404 (2024)
+
+# UniTemp: Unlocking Video Generation in Any Temporal Order via Bidirectional Distillation Supplementary Material
+
+We use numbers (e.g., Sec. 1) to refer to the main paper and capital letters (e.g., Sec. A) to refer to this supplement.
+
+A Implementation Details . . 18
+
+A.1 Training Details . . . 18  
+A.2 Evaluation Details . . 19
+
+B Anchor Latents Details 21
+
+B.1 Stage-1 Training . . . 21  
+B.2 Stage-2 Training . . . 23  
+B.3 Inference . 25  
+B.4 Further Ablation Studies on Anchor Latents . . . 25
+
+C Training and Inference Efficiency . . . . 27  
+D Detailed Results . . 27  
+E Subjective Assessment . . 28
+
+## A Implementation Details
+
+## A.1 Training Details
+
+Stage-1 training. In the first stage, we initialize the student model by training it to approximate the teacher’s ODE trajectories. We use the Wan2.1 T2V 14B [30] teacher model to generate 16K ODE trajectory pairs with a timestep shift of 5.0 and classifier-free guidance scale of 3.0 from the VidProm [31] dataset. The student model is initialized from the pretrained Wan2.1 T2V 1.3B and trained with the AdamW optimizer with a learning rate of $2 e \mathrm { ~ - ~ } 6 , \ \beta _ { 1 } = 0 . 9$ , $\beta _ { 2 } = 0 . 9 9 9$ , weight decay = 0.01, a total batch size of 128 across 8x8 H100/A100 GPUs, for a total of 6K iterations. Denoising steps: 1000/937.50/833.33/625.00. We use mixed precision (bfloat16) training with gradient checkpointing and FSDP. Both forward and backward attention masks are applied in each training iteration to enable bidirectional training. Block size is $B = 3$ with anchor latent size $P = 3$ . We train with a diffusion forcing schedule, i.e., independently sampling denoising steps $t _ { i }$ for each block in one sample, following the implementation in Self-Forcing [13].
+
+Stage-2 training. In the second stage, we perform distribution matching distillation (DMD) [39, 40] to further train the student model for autoregressive generation. The student model is initialized from the Stage-1 checkpoint. We still use the pretrained Wan2.1 T2V 14B as the real score network, which is kept frozen during training. For the generator (student), we use the AdamW optimizer with a learning rate of $2 e - 6 , \beta _ { 1 } = 0 . 0 , \beta _ { 2 } = 0 . 9 9 9$ , weight decay = 0.01. For the fake critic model, we use the AdamW optimizer with a learning rate of $4 e { - } 7 , \beta _ { 1 } = 0 . 0 , \beta _ { 2 } = 0 . 9 9 9$ , weight decay = 0.01. The total batch size is 64 across 8x8 H100/A100 GPUs. We train for 600 iterations and apply exponential moving average (EMA) with a decay rate of 0.99 starting from iteration 200 on the generator. Training is video data free: we only use text prompts from VidProm [31] (rewritten by Qwen2.5-7B-Instruct [34]) without any video data. The denoising schedule is kept the same as in stage-1, i.e., [1000.00, 937.50, 833.33, 625.00] (4 steps) with a timestep shift of 5.0. When training the fake critic model, we freeze the student model and ask the fake critic model to approximate videos generated by the frozen student model in both forward and backward directions. When training the student model (generator), we freeze the fake critic model, and send the latents generated by the student to both the fake critic model and the real score teacher network to compute the DMD gradients. We train the student model every 5 steps and the fake critic model every step.
+
+## A.2 Evaluation Details
+
+Flickering ratio. To evaluate inter-block flickering artifacts that are more pronounced in high-dynamic scenes, we use an LLM to generate 128 high-dynamic video prompts describing scenes with significant motion (e.g., fast-moving objects, dynamic camera movements, action sequences). For each generated video, we compute the flickering ratio (FR) as defined in Eq. (1) of the main paper. We split the FR measurements into two groups:
+
+– Inter-block FR: computed between adjacent latents $z _ { i }$ and $z _ { i + 1 }$ that belong to different generated blocks, i.e. at block boundaries.  
+– Intra-block FR: computed between adjacent latents $z _ { i }$ and $z _ { i + 1 }$ that belong to the same generated block.
+
+We average the FR values within each group across all prompts. An ideal model should have both inter-block and intra-block FR close to 1.0, indicating uniform temporal smoothness regardless of block boundaries.
+
+Single-direction short video generation. We follow the standard VBench [14] evaluation protocol. We generate 5-second videos (81 pixel frames, 21 latent frames) using 946 official VBench prompts rewritten by Qwen2.5-7B-Instruct [34], following Self-Forcing [13]. All metrics are computed using the official VBench codebase with default settings. We generate 5 samples per prompt and report averaged scores across 16 VBench quality and semantic dimensions. To ensure fair comparison, we reimplement the Self-Forcing [13] baseline using an identical stage-1 and stage-2 training protocol but with forward-only generation. Note that our training protocol is identical to the original Self-Forcing except for the stage-1 sampled ODE pairs, which are not disclosed in Self-Forcing.
+
+Long video generation. Following previous practice [5, 17, 37] on long video generation evaluation, we randomly sample 128 prompts from MovieGenBench [22] and generate long videos at durations of 10s, 30s, and 100s for each prompt. When evaluating both the baseline Self-Forcing and our UniTemp, we follow the training-free techniques introduced in [4], i.e., treating the initially generated block as sink latents and applying RoPE [26] re-indexing after retrieving KV cache. Note that InfinityRope [37] also follows these techniques. In practice, besides always attending to the sink latents, each block also attends to its neighboring generated latents with a local attention window of 6 latents. When applying future sink latents, we shift the second generated block to future positions with a distance of 3 latent positions via RoPE re-indexing, simulating future conditioning. Note that the concept of past and future sink latents becomes diffenrence for backward generation, where conventional sink latents now becomes the future latents, while the past sink latents are placed with a distance of 3 latents before the current block. We compare to the following baselines:
+
+– LongLive [35]: A training-based method that extends Self-Forcing for realtime interactive long video generation. It fine-tunes a short-clip autoregressive model with additional training on long video sequences, achieving high temporal consistency at the cost of reduced content dynamics.
+
+– Rolling-Forcing [17]: A training-based method that stabilizes long video generation by denoising frames together in a rolling window for mutual refinement, breaking the chain of error accumulation in standard autoregressive generation. It also adopts attention sink mechanism that anchors the video to preserve global context provided by the initial sink latents.
+
+– Infinity-Rope [37]: A training-free method that enables infinite-length video generation by extending RoPE [26] temporal indices beyond the training horizon. It uses past sink latents with re-indexed temporal positions for long-term stability.
+
+Inbetween video generation. Our inbetween generation evaluation follows this protocol:
+
+1. Ground truth generation: We use the Wan2.1 T2V 14B teacher model to generate 5-second videos (81 pixel frames $x _ { 0 \to 8 0 }$ and 21 latent frames $z _ { 0  2 0 } )$ as ground truth, using the same 128 prompts in Sec. A.2 from MovieGen-Bench [22].
+
+2. Condition extraction: We keep the first 9 pixel frames and their corresponding 3 latent frames $\left( z _ { 0 } , z _ { 1 } , z _ { 2 } \right)$ as the head condition, and the last 12 pixel frames and their corresponding 3 latent frames $\left( z _ { 1 8 } , z _ { 1 9 } , z _ { 2 0 } \right)$ as the tail condition. The model is tasked with generating intermediate frames. The number of generated frames depends on the method.
+
+3. UniTemp inference: The baseline methods only support single-frame conditioning at each end, so we feed in $x _ { 8 }$ and $x _ { 6 9 }$ as the head and tail condition frames. For UniTemp, we condition on 3 head $\left( z _ { 0 } , z _ { 1 } , z _ { 2 } \right)$ and 3 tail $\left( z _ { 1 8 } , z _ { 1 9 } , z _ { 2 0 } \right)$ latent frames. We first compute KV cache for the input head latents. For the tail latents, their KV caches are computed by additionally attending to the head latents’ KV cache. The 15 intermediate latents are then jointly denoised as a single large block with full-sequence self-attention, while attending to the KV cache of both head and tail blocks. The final output video is composed by concatenating the latent sequence of (head latents, generated intermediate latents, tail latents) and decoding it into a video via the Causal VAE decoder. We extract frames 8 → 69 (62 frames) for evaluation and comparison with baseline methods.
+
+We evaluate the complete video sequence (head frames, generated intermediate frames, tail frames) using VBench [14] metrics. Additionally, we compare FID and FVD between the generated video and the ground truth video to evaluate distribution similarity. Notice that Wan FLF2V and GI both regenerate the conditioning frames, while UniTemp only decode conditioning latents into frames. To evaluate consistency at boundaries, we also compute the temporal flickering (i.e., 1− average pixel L1 distance) between the groundtruth head/tail frames and the generated head/tail frames. We compare to the following baselines:
+
+– Wan FLF2V [30]: A large 14B-parameter model that has been trained for inbetween generation tasks on a large amount of video data.  
+Generative Inbetweening (GI) [32]: Built on Stable Video Diffusion [1], GI adapts an image-to-video diffusion model for keyframe interpolation by training a separate backward generation branch. At inference, it runs both forward and backward image-to-video generation from the two conditioning frames and blends the results via weighted averaging. This requires running the full denoising process twice (once per direction), leading to higher computational cost. GI only supports single-frame conditioning at each end and generates 25 intermediate frames at 1024 × 576 resolution, which are resized to the target resolution for evaluation.
+
+## B Anchor Latents Details
+
+We describe how backward generation with anchor latents is implemented during Stage-1 training, Stage-2 training, and inference, and discuss several alternative design choices. We also include the detailed attention masks and generation orders in Fig. 8 and Fig. 9, respectively. Finally, in Sec. B.4, we present ablation results analyzing the effects of these design choices across the three stages.
+
+## B.1 Stage-1 Training
+
+In Stage-1 (ODE initialization), we apply both forward and backward attention masks for bidirectional autoregressive training. Within each block, all input latents share the same noise level, and can mutually attend to each other in all attention layers. The noise levels for different blocks are sampled independently. Throughout all our experiments, we always use a block size of 3 for forward generation. Backward block size is set to B in baseline methods, or P + B when anchor latents are used. For ablation, we also tried simply increasing the block size in backward generation to P + B without using anchor latents, as shown in Fig. 8 (c). By default, we set both B and P to 3. We show the attention masks in Fig. 8, where (a) and (d) are our final unified attention masks used in training for forward and backward generation, respectively.
+
+![](images/fc13ca639d4fcc15a266233bb7e30a255c37464192fbc4571137f261f486a4c7.jpg)  
+Fig. 8: Attention masks for Stage-1 training. Attended latents are filled with green color. (a) Forward causal mask: each block attends to all previously generated blocks. (b) Baseline backward attention mask with block size $B { = } 3$ and without anchor latents: each block attends to future blocks, while we introduce a dummy initial block (shown in blue) to resolve the image/video latent ambiguity. (c) Baseline backward attention mask with block size $B { = } 6$ and without anchor latents: we generate 6 latents in each block in backward order. A dummy initial block is not necessary since the model can distinguish image/video latents by the number of latents in the first generated block in forward $\left( B { = } 3 \right)$ and backward $\left( B { = } 6 \right)$ generation. (d) Our UniTemp backward attention mask with block size $B { = } 3$ and anchor size $P { = } 3 { : }$ we introduce anchor latents (shown in yellow) to be jointly denoised with each block, serving as past context to stabilize backward generation and resolve the inter-block flickering issue. Anchor latents share the same noise level as the corresponding generated latents, while different blocks have different noise levels to learn diffusion forcing. Zoom in to check the frame indices of the anchor latents.
+
+Note that in the baseline method (b), when we use block size $B = 3$ in both forward and backward generation, a conflict arises on the first block’s generation: the forward pass generates its first block $\left( z _ { 0 } , z _ { 1 } , z _ { 2 } \right)$ where $z _ { \mathrm { 0 } }$ is a special image latent, while the backward pass generates its first block $\left( z _ { 1 8 } , z _ { 1 9 } , z _ { 2 0 } \right)$ where z18 is a video latent. The RoPE mechanism treats these two cases identically. Therefore, the model can get confused about whether the first block should start with an image or a video latent. To resolve this, during backward generation, we $( z _ { 0 } ^ { \varnothing } , z _ { 1 } ^ { \varnothing } , z _ { 2 } ^ { \varnothing } )$ first block $\left( z _ { 1 8 } , z _ { 1 9 } , z _ { 2 0 } \right)$ . With 6 latents in attention, RoPE can thus distinguish the two cases and allow the model to generate correctly. Loss is not applied on the dummy block. The noise level is sampled independently for the dummy block and the real initial block $\left( z _ { 0 } , z _ { 1 } , z _ { 2 } \right)$ . In stage-2 training, we also prepend a dummy block in the baseline model’s backward generation, as introduced later in Sec. B.2.
+
+When the backward block size differs from the forward block size, such a dummy block is unnecessary, because the first block in backward generation contains a different number of latents than in forward generation, e.g., $( z _ { 1 5 } , z _ { 1 6 } , z _ { 1 7 } , z _ { 1 8 } , z _ { 1 9 } , z _ { 2 0 } )$ in backward versus $\left( z _ { 0 } , z _ { 1 } , z _ { 2 } \right)$ in forward, which helps the model easily distinguish the two cases. This includes cases when backward block size is 6 (Fig. 8 (c)) or when anchor latents are included (Fig. 8 (d)).
+
+When anchor latents are introduced in Stage-1 training, they have corresponding ground-truth denoising targets from the sampled ODE pairs. To allow fast training, we sample from these anchor latents’ positions two times: One for the anchor latents, which is sampled to have the same noise level as the corresponding generated latents, i.e., the $P + B$ latents within one block has the same noise level; The other one for the actual generated latents in the previous block. Noise levels in different blocks are sampled independently to learn diffusion forcing. This replication design ensures denoising of one block does not rely on its previous block, thus faithfully following the backward generation order.
+
+In practice, we can choose to apply loss on these anchor latents or not. In this way, in stage-1 training, we have different options:
+
+– Do not use anchor latents yet keep the same total block size, as in Fig. 8 (c).  
+– Use anchor latents as in Fig. 8 (d), but do not apply loss on them.  
+– Use anchor latents as in Fig. 8 (d), and apply loss on them.
+
+We discuss these options in Sec. B.4.
+
+## B.2 Stage-2 Training
+
+In Stage-2 training, the student model (generator) generates videos. The entire generated video is supervised by the DMD loss to match the teacher’s output distribution. We can simply reverse the block generation order to simulate backward generation. We design the generation order and attended positions to match stage-1, as shown in Fig. 9.
+
+As aforementioned, in the baseline method with $B = 3$ in both forward and backward generation and without anchor latents, a conflict arises on the first block’s generation. Therefore, in backward generation, before we generate the actual first block, we generate an initial dummy block without gradients. We store the KV cache of this dummy block to condition the generation of the actual first block, after which the latents and KV cache of the dummy block are discarded, as shown in Fig. 9 (b).
+
+![](images/41a59e0e133320c0c3ad697049a052c81160e1e49e5dab98a4b3106bf8f67105.jpg)
+
+<details>
+<summary>flowchart</summary>
+
+```mermaid
+graph TD
+  A["1"] --> B["1"]
+  C["2"] --> D["2"]
+  E["3"] --> F["3"]
+  G["4"] --> H["4"]
+  I["5"] --> J["5"]
+  K["6"] --> L["6"]
+  M["7"] --> N["7"]
+  O["8"] --> P["8"]
+  Q["9"] --> R["9"]
+  S["10"] --> T["10"]
+  U["11"] --> V["11"]
+  W["12"] --> X["12"]
+  Y["13"] --> Z["13"]
+  AA["14"] --> AB["14"]
+  AC["15"] --> AD["15"]
+  AE["16"] --> AF["16"]
+  AG["17"] --> AH["17"]
+  AI["18"] --> AJ["18"]
+  AK["19"] --> AL["19"]
+  AM["20"] --> AN["20"]
+```
+</details>
+
+(a) Forward
+
+![](images/892a6de14b8b48c6aed652cab6f1a9471704789323e1573384537c0207b8b96d.jpg)
+
+<details>
+<summary>flowchart</summary>
+
+```mermaid
+graph TD
+  A["Root"] --> B["1"]
+  A --> C["V"]
+  A --> D["V"]
+  B --> E["0"]
+  C --> F["1"]
+  C --> G["2"]
+  C --> H["3"]
+  C --> I["4"]
+  C --> J["5"]
+  C --> K["6"]
+  C --> L["7"]
+  C --> M["8"]
+  C --> N["9"]
+  C --> O["10"]
+  C --> P["11"]
+  C --> Q["12"]
+  C --> R["13"]
+  C --> S["14"]
+  C --> T["15"]
+  C --> U["16"]
+  C --> V["17"]
+  C --> W["18"]
+  C --> X["19"]
+  C --> Y["20"]
+```
+</details>
+
+(b) Baseline Backward (B = 3, no anchor)
+
+![](images/f3a860827f9754ccee9bebd693e7fbfc14725caec61ae55703d130c69fd7e244.jpg)
+
+<details>
+<summary>flowchart</summary>
+
+```mermaid
+graph TD
+  A["1"] --> B["0"]
+  A --> C["1"]
+  A --> D["2"]
+  A --> E["3"]
+  A --> F["4"]
+  A --> G["5"]
+  A --> H["6"]
+  A --> I["7"]
+  A --> J["8"]
+  A --> K["9"]
+  A --> L["10"]
+  A --> M["11"]
+  A --> N["12"]
+  A --> O["13"]
+  A --> P["14"]
+  A --> Q["15"]
+  A --> R["16"]
+  A --> S["17"]
+  A --> T["18"]
+  A --> U["19"]
+  A --> V["20"]
+```
+</details>
+
+(c) Baseline Backward (B = 6, no anchor)
+
+![](images/1f8358f5a605c9e33ef4a2e12a8cc65c1fc9a6deff61505c0f187b8e739c0e03.jpg)
+
+<details>
+<summary>flowchart</summary>
+
+```mermaid
+graph TD
+  I["1"] --> V1["V"]
+  V1 --> V2["V"]
+  V2 --> V3["V"]
+  V3 --> V4["V"]
+  V4 --> V5["V"]
+  V5 --> V6["V"]
+  V6 --> V7["V"]
+  V7 --> V8["V"]
+  V8 --> V9["V"]
+  V9 --> V10["V"]
+  V10 --> V11["V"]
+  V11 --> V12["V"]
+  V12 --> V13["V"]
+  V13 --> V14["V"]
+  V14 --> V15["V"]
+  V15 --> V16["V"]
+  V16 --> V17["V"]
+  V17 --> V18["V"]
+  V18 --> V19["V"]
+  V19 --> V20["V"]
+```
+</details>
+
+(d) UniTemp Backward (B = P = 3)  
+Fig. 9: Generation order and attended tokens in Stage-2 training. (a) Forward generation: blocks are generated in causal order, each attending to KV cache of all previous blocks. (b) Baseline backward generation with block size B = 3 and without anchor latents: blocks are generated in reverse order, each attending to KV cache of future blocks. A dummy block (shown in blue) is initially generated to serve as a condition to resolve the image/video latent ambiguity. (c) Baseline backward generation with block size B = 6 and without anchor latents: blocks are generated in reverse order, each attending to KV cache of future blocks. (d) Our UniTemp backward generation with block size B = 3 and anchor size P = 3: anchor latents (shown in yellow) serve as past context and are jointly denoised within each block. The generated latents can attend to this approximate past context.
+
+The DMD loss in Stage-2 is applied to the entire video sequence generated by the student, rather than to each latent individually as in Stage-1. When anchor latents are enabled, the student’s generated sequence strictly does not contain these anchor latents. Therefore, unlike Stage-1 where we can optionally apply loss on the anchor latents, in Stage-2 we cannot apply loss on them. This gives us two options in stage-2 training:
+
+Table 5: Ablation on anchor latent configurations during training and inference. We vary backward block size, anchor latent usage in Stage-1/Stage-2, loss on anchors, and whether to generate anchor latents at inference. Using anchor latents at inference means we generate anchor latents but do not include them in output, as in Fig. 9 (d). While not using anchor latents at inference means every generated latent is decoded into outputs, as in Fig. 9 (b,c). Flickering ratio (FR) is reported for both forward (→) and backward (←) generation and inter/intra-block boundaries. Lower FR indicates smoother transitions.
+
+<table><tr><td rowspan="2">#</td><td rowspan="2">Backward Block Size B</td><td rowspan="2">Num Anchor P</td><td colspan="2">Stage-1</td><td rowspan="2">Stage-2 Anchor</td><td rowspan="2">Inference Anchor</td><td colspan="2">Forward FR</td><td colspan="2">Backward FR</td></tr><tr><td>Anchor</td><td>Loss on Anchor</td><td>Inter ↓</td><td>Intra ↓</td><td>Inter ↓</td><td>Intra ↓</td></tr><tr><td>0</td><td></td><td></td><td colspan="2">Self-Forcing (forward only)</td><td></td><td></td><td>1.15</td><td>0.93</td><td>-</td><td>-</td></tr><tr><td colspan="11">Without anchor latents</td></tr><tr><td>1</td><td>3</td><td>0</td><td>✕</td><td>-</td><td>✕</td><td>✕</td><td>1.16</td><td>0.87</td><td>1.42</td><td>0.89</td></tr><tr><td>2</td><td>6</td><td>0</td><td>✕</td><td>-</td><td>✕</td><td>✕</td><td>1.16</td><td>0.91</td><td>1.48</td><td>0.98</td></tr><tr><td>3</td><td>6</td><td>0</td><td>✕</td><td>-</td><td>✕</td><td>√</td><td>1.16</td><td>0.91</td><td>1.08</td><td>0.98</td></tr><tr><td colspan="11">With anchor latents (P=3)</td></tr><tr><td>4</td><td>3</td><td>3</td><td>√</td><td>✕</td><td>✕</td><td>✕</td><td>1.17</td><td>0.90</td><td>1.45</td><td>1.04</td></tr><tr><td>5</td><td>3</td><td>3</td><td>√</td><td>✕</td><td>✕</td><td>√</td><td>1.17</td><td>0.90</td><td>1.17</td><td>1.03</td></tr><tr><td>6</td><td>3</td><td>3</td><td>√</td><td>✕</td><td>√</td><td>✕</td><td>1.13</td><td>0.88</td><td>1.46</td><td>0.99</td></tr><tr><td>7</td><td>3</td><td>3</td><td>√</td><td>✕</td><td>√</td><td>√</td><td>1.13</td><td>0.88</td><td>1.07</td><td>0.97</td></tr><tr><td>8</td><td>3</td><td>3</td><td>√</td><td>√</td><td>✕</td><td>✕</td><td>1.14</td><td>0.89</td><td>1.45</td><td>0.99</td></tr><tr><td>9</td><td>3</td><td>3</td><td>√</td><td>√</td><td>✕</td><td>√</td><td>1.14</td><td>0.89</td><td>1.37</td><td>0.95</td></tr><tr><td>8</td><td>3</td><td>3</td><td>√</td><td>√</td><td>√</td><td>✕</td><td>1.13</td><td>0.91</td><td>1.38</td><td>0.99</td></tr><tr><td>9</td><td>3</td><td>3</td><td>√</td><td>√</td><td>√</td><td>√</td><td>1.13</td><td>0.91</td><td>1.15</td><td>0.95</td></tr></table>
+
+– Use anchor latents as in Fig. 9 (d).  
+– Do not use anchor latents as in Fig. 9 (c).
+
+## B.3 Inference
+
+In UniTemp, at inference time, we generate the anchor latents but do not include them in the final output video, like in Fig. 9 (d). In this way, the anchor latents only serve as stabilizing current block’s generation. On the other hand, we can also include them in the final output video for visualization, i.e., directly expand block size from B to P + B and follow generation order as in Fig. 9 (c) at test time. While this can trigger the inter-block flickering issue (since the anchor latents are generated without past context), it can help us visualize the anchor latents to understand what they represent. This gives us two options in inference:
+
+– Using anchor latents as in Fig. 9 (d).
+
+– Do not use anchor latents as in Fig. 9 (c).
+
+## B.4 Further Ablation Studies on Anchor Latents
+
+We provide additional ablation studies on anchor latents beyond those in the main paper, by training/testing models after applying different design choices in stage-1 training, stage-2 training, and inference as discussed above. We provide quantitative results in Tab. 5 and Tab. 6. Besides, we also provide visualizations in the attached main.html file.
+
+Table 6: Ablation on the number of anchor latents P . All models follow the same configuration as EXP-7 in Tab. 5, except for the number of anchor latents P . Increasing P progressively reduces backward inter-block FR, with $P { = } 3 { = } B$ achieving the best result.
+
+<table><tr><td rowspan="2">#</td><td rowspan="2">Num Anchor P</td><td colspan="2">Forward FR</td><td colspan="2">Backward FR</td></tr><tr><td>Inter ↓</td><td>Intra ↓</td><td>Inter ↓</td><td>Intra ↓</td></tr><tr><td>10</td><td>1</td><td>1.13</td><td>0.90</td><td>1.26</td><td>0.93</td></tr><tr><td>11</td><td>2</td><td>1.09</td><td>0.91</td><td>1.23</td><td>0.93</td></tr><tr><td>7</td><td>3</td><td>1.13</td><td>0.88</td><td>1.07</td><td>0.97</td></tr></table>
+
+Including anchor latents as outputs at inference time. As shown in Tab. 5, we find it is crucial to discard the generated anchor latents to allow different blocks overlap during inference, no matter how the model is trained. For the baseline that does not incorporate anchor latents during training and uses block size $B = 6$ in backward generation, we can still discard the first 3 latents generated in each block, simulating the anchor latent effect at test time by following the generation order in Fig. 9 (d). This simple step can largely help alleviate the inter-block flickering issue, decreasing the backward inter-block FR from 1.48 to 1.08. This also gives another interpretation of the anchor latents: they enable overlaping different blocks’ generation, thus improving continuity of the generated video.
+
+Use of anchor latents during training. As shown in Tab. 5, it is important to keep stage-1 and stage-2 consistent. When we introduce anchor latents in one stage but not the other, the performance will degrade (e.g., from 1.07 in Exp-7 to 1.17 in Exp-5 and 1.37 in Exp-9 for backward generation). Also, adding loss to anchor latents in stage-1 can slightly hurt performance (from 1.07 in Exp-7 to 1.15 in Exp-9 for backward generation). We hypothesize that this is because, at test time, the anchor latents are not decoded but only help in stailizing current block’s generation. Therefore, adding loss on them is uncecessary and can distract the model from optimizing current block’s generation.
+
+Effects of anchor latent numbers P . Tab. 6 ablates the number of anchor latents $P \in \{ 1 , 2 , 3 \}$ . Increasing P progressively reduces backward inter-block FR: P =1 (1.26), P =2 (1.23), P =3 (1.07). At $P { = } 3 { = } B ,$ the anchor provides a full block of past context, and the ratio approaches the ideal value of 1.0.
+
+What do anchor latents represent? By decoding anchor latents into actual videos following the generation order in Fig. 9 (c), as in Exp-6 of Tab. 5 and the attached main.html file, we can observe that the anchor latents can be decoded into video latents. This shows they are indeed approximation of the past video latents. This further verifies our motivation that the generation of each latent should be conditioned on some past context.
+
+Our final model corresponds to Exp-7 in Tab. 5, where we introduce anchor latents in Stage-1 and Stage-2 and discard them at inference, without applying loss on anchor latents in Stage-1.
+
+## C Training and Inference Efficiency
+
+We provide detailed training and inference efficiency measurements in Tab. 7.
+
+Table 7: Training and inference efficiency. We report training cost, autoregressive video generation inference cost, and inbetween generation inference cost. Training is measured per GPU on 8x8 H100s; inference is measured on a H100.
+
+<table><tr><td>Model</td><td>Past Sink</td><td>Future Sink</td><td>FPS↑</td><td>First-frame↓ Latency(s)</td><td>VRAM↓ (GiB)</td></tr><tr><td>LongLive [35]</td><td>✓</td><td>×</td><td>12.6</td><td>0.79</td><td>20.39</td></tr><tr><td>RollingForcing(RF) [17]</td><td>✓</td><td>×</td><td>4.5</td><td>5.58</td><td>22.99</td></tr><tr><td>Infinity-Rope [37]</td><td>✓</td><td>×</td><td>16.2</td><td>0.61</td><td>17.37</td></tr><tr><td>Self-Forcing [13]</td><td>✓</td><td>×</td><td>14.8</td><td>0.61</td><td>19.18</td></tr><tr><td>UniTemp-F</td><td>✓</td><td>×</td><td>14.8</td><td>0.61</td><td>19.18</td></tr><tr><td>UniTemp-F</td><td>✓</td><td>✓</td><td>13.6</td><td>0.61</td><td>20.14</td></tr><tr><td>UniTemp-B</td><td>×</td><td>✓</td><td>9.3</td><td>0.71</td><td>20.16</td></tr><tr><td>UniTemp-B</td><td>✓</td><td>✓</td><td>8.6</td><td>0.71</td><td>21.11</td></tr><tr><td>VACE [15]</td><td>×</td><td>×</td><td>0.08</td><td>157.14</td><td>27.98</td></tr><tr><td>VACE [15]</td><td>×</td><td>×</td><td>0.07</td><td>160.84</td><td>27.98</td></tr></table>
+
+(a) Autoregressive video generation inference cost.
+
+<table><tr><td>Generator $G^{\theta}$ </td><td>Unified $\mu_{\text{fake}}^{\phi}$ </td><td>VRAM(GiB)Stage-1 / 2</td><td>Time(hr)Stage-1 / 2</td></tr><tr><td>Forward only</td><td>-</td><td>47.3 / 63.5</td><td>11 / 1.5</td></tr><tr><td>Backward only</td><td>-</td><td>47.3 / 72.0</td><td>11 / 2.0</td></tr><tr><td>Unified</td><td>×</td><td>51.9 / 76.3</td><td>16 / 3.5</td></tr><tr><td>Unified</td><td>√</td><td>51.9 / 72.0</td><td>16 / 3.0</td></tr></table>
+
+(b) Per-GPU training cost on 8x8 H100s.
+
+<table><tr><td>Model</td><td>Params(B)</td><td>Time(s)</td></tr><tr><td>Wan FLF2V [30]</td><td>14</td><td>1966.3</td></tr><tr><td>GI [32]</td><td>1.5</td><td>295.7</td></tr><tr><td>UniTemp</td><td>1.3</td><td>9.0</td></tr></table>
+
+(c) Inbetween generation inference cost.
+
+## D Detailed Results
+
+In this section, we include more quantitative evaluation results on short video generation in Tab. 8.
+
+Table 8: Detailed VBench scores for single-direction short video generation. We report all 16 VBench dimensions along with the aggregated quality, semantics, and total scores. Our unified training framework helps obtain a model for both forward and backward generation while maintaining similar performance compared to singledirection only models.
+
+<table><tr><td rowspan="2">Model</td><td>subject consistency</td><td colspan="2">background consistency</td><td colspan="2">esthetic quality</td><td colspan="2">image quality</td><td colspan="2">object class</td><td colspan="2">multi-object</td><td colspan="2">color</td><td colspan="2">spatial relation</td><td colspan="2">scene</td><td colspan="2">temporal style</td><td colspan="2">overall consistency</td><td colspan="2">human action</td><td colspan="2">temporal flicker</td><td colspan="2">motion smoothness</td><td colspan="2">dynamic</td><td colspan="2">appearance style</td><td colspan="2">quality</td><td colspan="2">semantics</td><td colspan="2">total</td><td></td></tr><tr><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr><tr><td>Forward only (Self-Forcing)</td><td>96.54</td><td>95.83</td><td></td><td>66.10</td><td></td><td>69.81</td><td></td><td>93.64</td><td></td><td>80.87</td><td></td><td>87.39</td><td></td><td>76.78</td><td></td><td>54.45</td><td></td><td>23.87</td><td></td><td>26.60</td><td></td><td>96.60</td><td></td><td>98.26</td><td></td><td>98.31</td><td></td><td>65.00</td><td></td><td>20.86</td><td></td><td>84.47</td><td>79.23</td><td></td><td>83.42</td><td></td><td></td><td></td></tr><tr><td>UniTemp- Forward</td><td>95.94</td><td>95.15</td><td></td><td>65.73</td><td></td><td>69.34</td><td></td><td>93.62</td><td></td><td>82.21</td><td></td><td>86.71</td><td></td><td>77.09</td><td></td><td>56.45</td><td></td><td>24.01</td><td></td><td>26.52</td><td></td><td>96.80</td><td></td><td>97.67</td><td></td><td>97.85</td><td></td><td>81.67</td><td></td><td>20.49</td><td></td><td>84.89</td><td>79.51</td><td></td><td>83.81</td><td></td><td></td><td></td></tr><tr><td>UniTemp- Backward</td><td>96.67</td><td>95.95</td><td></td><td>66.90</td><td></td><td>70.14</td><td></td><td>95.21</td><td></td><td>86.20</td><td></td><td>87.19</td><td></td><td>81.49</td><td></td><td>56.42</td><td></td><td>24.15</td><td></td><td>26.83</td><td></td><td>95.20</td><td></td><td>98.51</td><td></td><td>98.10</td><td></td><td>70.56</td><td></td><td>20.66</td><td></td><td>85.12</td><td>80.69</td><td></td><td>84.23</td><td></td><td></td><td></td></tr><tr><td>Backward only</td><td>96.13</td><td>95.45</td><td></td><td>65.89</td><td></td><td>69.54</td><td></td><td>95.32</td><td></td><td>86.91</td><td></td><td>88.88</td><td></td><td>78.49</td><td></td><td>56.58</td><td></td><td>24.02</td><td></td><td>26.54</td><td></td><td>95.60</td><td></td><td>98.13</td><td></td><td>97.65</td><td></td><td>82.22</td><td></td><td>20.74</td><td></td><td>85.17</td><td>80.61</td><td></td><td>84.26</td><td></td><td></td><td></td></tr></table>
+
+## E Subjective Assessment
+
+We conduct a user study with A/B tests to subjectively assess cross-block flickering. Each user watches 20 random pairs of videos generated with and without anchor latents, then chooses the one with less cross-block flickering. Tab. 9 shows an 87% preference for videos generated with anchor latents and 80.5% agreement with our flickering ratio (FR).
+
+Table 9: User study for evaluating cross-block flickering. We report preference between videos generated with and without anchor latents, together with agreement between user preference and the proposed flickering ratio (FR).
+
+<table><tr><td rowspan="2">Number of Responses</td><td colspan="2">Preference Rate</td><td rowspan="2">Agreement with FR</td></tr><tr><td>w/ Anchor</td><td>w/o Anchor</td></tr><tr><td>200</td><td>87%</td><td>13%</td><td>80.5%</td></tr></table>

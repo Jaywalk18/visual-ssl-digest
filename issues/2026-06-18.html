@@ -20,7 +20,7 @@
   </header>
   <nav class="site-nav" aria-label="主导航">
     <a class="nav-link" href="../index.html">头版</a>
-<a class="nav-link active" href="../issues/2026-06-18.html">今日速递</a>
+<a class="nav-link" href="../issues/2026-06-19.html">今日速递</a>
 <a class="nav-link" href="../pages/catalog.html">论文目录</a>
 <a class="nav-link" href="../pages/timeline.html">时间线</a>
 <span class="nav-streak" title="连续追踪天数"><svg viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><path d="M8 0c.7 2.5-1.2 3.7-2 5-1 1.6-1 4 .8 4.8C6.4 8.5 7.4 7.8 8 7c.3 1.3-.4 2 .9 3 .9.7 1.3 1.6 1.1 2.6C9.7 14.6 8.9 16 6.8 16 4.6 16 3 14.3 3 12c0-3.3 2.6-4.8 2.4-8C6.9 4.6 8.4 5 8 0z"/></svg> 连续 <b data-streak>0</b> 天</span>
@@ -28,13 +28,11 @@
   <main><article class="paper-detail issue-detail">
   <div class="paper-main">
     <div class="kicker">Daily issue · 2026-06-18 · CCF A/B 会议优先</div>
-    <h1 class="paper-headline">6 月 18 日：Expanding SPHERE-JEPA 等视觉表征主线更新</h1>
-    <p class="dek">本期聚焦通用视觉表征、视觉语言预训练与视频自监督中最值得跟进的论文，并保留 CCF A/B、OpenReview 与 arXiv 状态线索。</p>
+    <h1 class="paper-headline">6 月 18 日：Expanding SPHERE-JEPA 等视觉表征论文归档</h1>
+    <p class="dek">本页按日期归档近期论文，保留优先级、主题、来源与方法线索，方便回看同一批工作的研究脉络。</p>
     <div class="feature-body">
-      <p class="lead dropcap">先读 Expanding SPHERE-JEPA，它最接近通用视觉 SSL 的核心训练问题：如何在 hypersphere 上防 collapse、稳定 uniformity 正则，并减少 sliced projection 带来的梯度噪声。第二篇读 UniAR，重点不是“又一个统一多模态模型”，而是它把理解和生成放进同一个离散视觉 tokenizer 空间，这会影响后续视觉 token 是否可复用。第三篇读 See First / VEPA，它和昨天的 grounded thinking 方向连续：多模态模型应该先绑定足够视觉证据，再回答。随后读 TivTok、ThinkJEPA、FR3D，把视频 tokenization、latent world model 和 3D geometric consistency 串起来；Visuals Lie、DAR、RAIGen 作为解释/诊断线第二轮精读。REINS、BACON、DIFE 只需扫读机制和失败模式。</p>
+      <p class="lead dropcap">先读 Expanding SPHERE-JEPA。把 SPHERE/LeJEPA 的随机 sliced uniformity 正则改成确定性 hypersphere divergence，是今天最贴近通用 SSL 训练目标的条目。 其余论文按 P1/P2 与主题顺序扫读，重点看方法图、消融设置和是否能迁移到通用视觉表征。</p>
       <h2>论文索引</h2>
-      <table class="compact-table"><thead><tr><th>优先级</th><th>论文</th><th>类型</th><th>相关性</th><th>一句话理由</th></tr></thead><tbody><tr><td>P0</td><td>Expanding SPHERE-JEPA: A Family of Statistical Regularizers for the Hypersphere</td><td>arXiv 新增 + SSL regularizer / JEPA collapse prevention</td><td>高</td><td>把 SPHERE/LeJEPA 的随机 sliced uniformity 正则改成确定性 hypersphere divergence，是今天最贴近通用 SSL 训练目标的条目。</td></tr><tr><td>P0</td><td>Unified Multimodal Autoregressive Modeling with Shared Context-Visual Tokenizer is Key to Unification</td><td>arXiv 新增 + ICML 2026 Poster + unified visual tokenizer</td><td>高</td><td>用共享离散视觉 tokenizer 同时服务理解和生成，直接触及视觉表征空间是否能统一的问题。</td></tr><tr><td>P0</td><td>See First, Answer Later: Visual Evidence Pre-Alignment via Sufficiency-Driven RL</td><td>arXiv 新增 + MLLM visual evidence pre-alignment</td><td>高</td><td>在预训练和后训练之间加入视觉证据充分性目标，目标是让多模态模型先绑定证据再回答。</td></tr><tr><td>P1</td><td>TivTok: Broadcasting Time-Invariant Tokens for Scalable Video Tokenization</td><td>arXiv 新增 + video tokenizer / latent factorization</td><td>中高</td><td>把长视频 token 分成跨帧可复用的 time-invariant tokens 和帧特异 residual tokens，适合跟视频预训练效率问题一起读。</td></tr><tr><td>P1</td><td>ThinkJEPA: Empowering Latent World Models with Large Vision-Language Reasoning Model</td><td>arXiv replacement + VLM-guided JEPA latent world model</td><td>中高</td><td>把 V-JEPA2 式 dense latent prediction 和 VLM 长程语义推理结合，是昨天 TDV/MoFore 后续最自然的更新项。</td></tr><tr><td>P1</td><td>Visuals Lie, Consistency Speaks: Disentangling Spatial Attention from Reliability in Vision-Language Models</td><td>arXiv 新增 + ICLR 2026 Workshop on Multimodal Intelligence</td><td>中高</td><td>把 VLM 的视觉 attention 紧凑性和答案可靠性拆开诊断，提醒表征可解释性不能只看显著图。</td></tr><tr><td>P1</td><td>Future Dynamic 3D Reconstruction: A 3D World Model with Disentangled Ego-Motion</td><td>arXiv 新增 + ICML 2026 Poster + 3D latent world model</td><td>中高</td><td>把未来视频预测提升到 persistent 3D latent reconstruction，并显式解耦 ego-motion 和 scene dynamics。</td></tr><tr><td>P2</td><td>Rethinking Cross-Layer Information Routing in Diffusion Transformers</td><td>arXiv replacement + diffusion transformer representation routing</td><td>中高</td><td>系统诊断 DiT residual stream 的层间信息膨胀、梯度衰减和冗余，对 RAE/DiT 表征空间优化有参考价值。</td></tr><tr><td>P2</td><td>Reinforcing Dual-Path Reasoning in Spatial Vision Language Models</td><td>arXiv 新增 + spatial VLM RL / 3D grounding</td><td>中高</td><td>把语言推理路径和 detect-then-reason 3D grounding 路径分开训练，适合扫 VLM 视觉证据后训练。</td></tr><tr><td>P2</td><td>LiveStarPro: Proactive Streaming Video Understanding with Hierarchical Memory for Long-Horizon Streams</td><td>arXiv 新增 + streaming video memory</td><td>中高</td><td>聚焦连续视频流中何时响应、如何保留层级记忆，可作为长视频表征/记忆预算的应用侧读物。</td></tr><tr><td>P2</td><td>RAIGen: Rare Attribute Identification in Text-to-Image Generative Models</td><td>arXiv replacement + ICML 2026 Poster + sparse autoencoder interpretability</td><td>中高</td><td>用 Matryoshka Sparse Autoencoders 做 label-free rare-attribute discovery，和扩散模型内部视觉概念分析有关。</td></tr><tr><td>P3</td><td>Pulling The REINS: Training-Free Safety Alignment of Video Diffusion Models via Representation Steering</td><td>arXiv 新增 + video diffusion representation steering</td><td>中</td><td>不是 SSL 训练法，但说明安全相关结构可在线性表示方向中分离，适合作为生成模型 hidden representation 读物。</td></tr><tr><td>P3</td><td>Last But Not Least: Boundary Attention CalibratiON for Multimodal KV Cache Compression</td><td>arXiv replacement + MLLM visual token retention</td><td>中</td><td>关注 aggressive KV cache 压缩下答案关键视觉 token 的保留问题，和视觉 token selection/long context 直接相关。</td></tr><tr><td>扫读</td><td>Beyond Native Success: Auditing Deployment-Interface Exposure of CLIP Backdoors</td><td>arXiv 新增 + CLIP security / deployment interface audit</td><td>中</td><td>从 feature extraction、retrieval、reranking 等部署接口审计 CLIP 后门暴露，安全方向但对复用视觉表征有警示。</td></tr></tbody></table>
-      <h2>主线阅读</h2>
       <div class="paper-list issue-list"><article class="paper-card" data-pid="2606.17603" data-category="arXiv 新增 + SSL regularizer / JEPA collapse prevention" data-priority="P0" data-date="2026-06-18" data-title="expanding sphere-jepa: a family of statistical regularizers for the hypersphere" data-keywords="expanding sphere-jepa: a family of statistical regularizers for the hypersphere expanding sphere-jepa arxiv 新增 + ssl regularizer / jepa collapse prevention p0 2026-06-18 arxiv 新增 + ssl regularizer / jepa collapse prevention 把 sphere/lejepa 的随机 sliced uniformity 正则改成确定性 hypersphere divergence，是今天最贴近通用 ssl 训练目标的条目 高相关；详见方法、贡献和实验边界。">
   <a class="paper-thumb" href="../papers/2606.17603.html"><img src="../assets/mineru/2606.17603/images/b1a4e30f82884ffec44f87ad2f9440a665f584d6e56b5c1e87353072034553ff.jpg" alt="Expanding SPHERE-JEPA figure"></a>
   <div>
@@ -192,18 +190,17 @@
     </div>
   </div>
   <aside class="paper-side">
-    <div class="side-box"><h4>今日重点</h4><p>TextTeacher、MDM、EvoVid、Ablate-to-Validate。</p></div>
-    <div class="side-box"><h4>会议口径</h4><p>只把 CCF A/B 放进主提醒；临近截止或 CCF C 仅记录。</p></div>
     <div class="side-box"><h4>阅读重点</h4><p>先看 P1/P2 与方法图，再扫状态变化和边界案例。</p></div>
+    <div class="side-box"><h4>会议口径</h4><p>主提醒只保留 CCF A/B；CCF C 与过期截止仅作状态记录。</p></div>
   </aside>
 </article></main>
-  <aside class="conf-float" data-conf-reminder="2026-06-18-main-ddl" aria-label="CCF A/B 主投稿提醒">
+  <aside class="conf-float" data-conf-reminder="2026-06-19-main-ddl" aria-label="CCF A/B 主投稿提醒">
   <button class="conf-close" type="button" aria-label="关闭会议提醒">×</button>
   <details open>
     <summary>CCF A/B 主投稿提醒</summary>
     <div class="conf-list"><a class="conf-item " href="https://github.com/ccfddl/ccf-deadlines/blob/main/conference/AI/aaai.yml">
   <span><b>AAAI 2027</b><em>CCF A · Main paper submission</em></span>
-  <strong>39 天</strong>
+  <strong>38 天</strong>
   <small>2026-07-27 · CCF DDL: abstract 2026-07-20；进入 1 个月窗口后重点提醒。</small>
 </a></div>
   </details>
@@ -216,7 +213,7 @@
   (() => {
     const box = document.querySelector('[data-conf-reminder]');
     if (!box) return;
-    const key = `visualSslConfReminderClosed:${box.dataset.confReminder || '2026-06-18-main-ddl'}`;
+    const key = `visualSslConfReminderClosed:${box.dataset.confReminder || '2026-06-19-main-ddl'}`;
     try {
       if (localStorage.getItem(key) === '1') box.hidden = true;
     } catch (err) {}

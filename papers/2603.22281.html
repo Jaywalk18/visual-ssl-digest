@@ -20,7 +20,7 @@
   </header>
   <nav class="site-nav" aria-label="主导航">
     <a class="nav-link" href="../index.html">头版</a>
-<a class="nav-link" href="../issues/2026-06-18.html">今日速递</a>
+<a class="nav-link" href="../issues/2026-06-19.html">今日速递</a>
 <a class="nav-link" href="../pages/catalog.html">论文目录</a>
 <a class="nav-link" href="../pages/timeline.html">时间线</a>
 <span class="nav-streak" title="连续追踪天数"><svg viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><path d="M8 0c.7 2.5-1.2 3.7-2 5-1 1.6-1 4 .8 4.8C6.4 8.5 7.4 7.8 8 7c.3 1.3-.4 2 .9 3 .9.7 1.3 1.6 1.1 2.6C9.7 14.6 8.9 16 6.8 16 4.6 16 3 14.3 3 12c0-3.3 2.6-4.8 2.4-8C6.9 4.6 8.4 5 8 0z"/></svg> 连续 <b data-streak>0</b> 天</span>
@@ -28,32 +28,32 @@
   <main><article class="paper-detail" data-pid="2603.22281" data-category="arXiv replacement + VLM-guided JEPA latent world model" data-priority="P1" data-date="2026-06-18" data-title="thinkjepa: empowering latent world models with large vision-language reasoning model" data-keywords="thinkjepa: empowering latent world models with large vision-language reasoning model thinkjepa arxiv replacement + vlm-guided jepa latent world model p1 2026-06-18 arxiv replacement + vlm-guided jepa latent world model 把 v-jepa2 式 dense latent prediction 和 vlm 长程语义推理结合，是昨天 tdv/mofore 后续最自然的更新项 中高相关；详见方法、贡献和实验边界。">
   <div class="paper-main">
     <div class="kicker">arXiv replacement + VLM-guided JEPA latent world model · P1 · 2026-06-18</div>
-    <h1 class="paper-headline">ThinkJEPA：它是“JEPA + VLM teacher/semantic prior”的代表性更新，适合跟昨天的视频 SSL 条目连续阅读</h1>
-    <p class="dek">承认 V-JEPA2 类模型擅长 dense future prediction，但短窗口容易偏低层外推；VLM 则补充长程语义但不适合做 dense predictor。</p>
-    <p class="byline"><strong>ThinkJEPA: Empowering Latent World Models with Large Vision-Language Reasoning Model</strong>　Haichao Zhang , Yijiang Li , Shwai He , Tushar Nagarajan , Mingfei Chen , Jianglin Lu , Ang Li , Yun Fu；arXiv 元数据未稳定列机构时按作者列表记录。　arXiv replacement + VLM-guided JEPA latent world model　<a href="https://arxiv.org/abs/2603.22281">原文链接</a></p>
+    <h1 class="paper-headline">ThinkJEPA：它和通用视觉自监督的关系在于：把 V-JEPA2 式 dense latent prediction 和 VLM 长程语义推理结合，是昨天 TDV/MoFore 后续最自然的更新项</h1>
+    <p class="dek">中高相关；详见方法、贡献和实验边界。</p>
+    <p class="byline"><strong>ThinkJEPA: Empowering Latent World Models with Large Vision-Language Reasoning Model</strong>　arXiv replacement + VLM-guided JEPA latent world model　<a href="https://arxiv.org/abs/2603.22281">原文链接</a></p>
     <div class="paper-facts">
       <span><b>编号</b>2603.22281</span>
       <span><b>优先级</b>P1</span>
       <span><b>类别</b>arXiv replacement + VLM-guided JEPA latent world model</span>
       <span><b>会议</b>arXiv replacement + VLM-guided JEPA latent world model</span>
-      <span><b>方法</b>ThinkJEPA 用 VLM 的长程语义推理指导 JEPA-style latent world model，把密集短窗 latent prediction 和稀疏长程语义 grounding 结合。</span>
+      <span><b>方法</b>把 V-JEPA2 式 dense latent prediction 和 VLM 长程语义推理结合，是昨天 TDV/MoFore 后续最自然的更新项</span>
       <span><b>来源</b>arXiv / OpenReview</span>
     </div>
     <div class="feature-body">
-      <p class="lead dropcap">先说结论。它是“JEPA + VLM teacher/semantic prior”的代表性更新，适合跟昨天的视频 SSL 条目连续阅读。 承认 V-JEPA2 类模型擅长 dense future prediction，但短窗口容易偏低层外推；VLM 则补充长程语义但不适合做 dense predictor。</p>
+      <p class="lead dropcap">先说结论。它和通用视觉自监督的关系在于：把 V-JEPA2 式 dense latent prediction 和 VLM 长程语义推理结合，是昨天 TDV/MoFore 后续最自然的更新项。 中高相关；详见方法、贡献和实验边界。</p>
       <figure class="full-fig"><img src="../assets/mineru/2603.22281/images/a15080ebd7c7f3934967b0dec11bf176b22158c77da57b102c06766669532c10.jpg" alt="Figureure 1 · : Overall Architecture of ThinkJEPA"><figcaption><b>Figureure 1 · : Overall Architecture of ThinkJEPA</b><span class="fig-en">Figure 1: Overall Architecture of ThinkJEPA. ThinkJEPA couples a dense JEPA branch for fine-grained latent dynamics modeling with a uniformly sampled VLM-thinker branch that provides long-horizon semantic guidance. The VLM guidance—including visual tokens from the ViT visual tokenizer and intermediate hidden states from the language model—is distilled by a pyramidal representation extraction module and injected into the V-JEPA predictor via layer-wise modulation. Concretely, guidance derived from language-model layers $\{ L _ { 0 } , \dots , L _ { N } \}$ is mapped to modulation parameters for predictor layers $\{ T _ { 0 } , \dots , T _ { K } \}$ . The predicted future latents are concatenated with past teacher latents to form the full latent sequence, which is then fed into a task head to produce downstream trajectory predictions.</span><span class="fig-zh">这张图概括 ThinkJEPA 的整体方法流程。阅读时先看模块之间传递的训练信号，再看作者如何把目标拆成可优化的子问题。</span></figcaption></figure>
 <figure class="full-fig"><img src="../assets/mineru/2603.22281/images/7eb285d8689f37e72fdbce45385715847aa59aa50bd383fa780c2979d2dab8b7.jpg" alt="Figureure 2 · : Qualitative results"><figcaption><b>Figureure 2 · : Qualitative results</b><span class="fig-en">Figure 2: Qualitative results. Predicted future hand-manipulation trajectories visualized as heat maps overlaid on the reference frame. Colors indicate temporal progression from blue (earlier) to red (later). Ideally, trajectories transition smoothly from blue to red, indicating coherent motion over time. ThinkJEPA produces smoother trajectories with better temporal consistency and joint alignment.</span><span class="fig-zh">这张图/表用于判断 ThinkJEPA 的实验收益来自哪里。重点看替换、消融或跨模型设置下趋势是否一致，而不是只看单个最高分。</span></figcaption></figure>
       
       <h2>核心问题</h2>
-      <p>它是“JEPA + VLM teacher/semantic prior”的代表性更新，适合跟昨天的视频 SSL 条目连续阅读。</p>
+      <p>它和通用视觉自监督的关系在于：把 V-JEPA2 式 dense latent prediction 和 VLM 长程语义推理结合，是昨天 TDV/MoFore 后续最自然的更新项。</p>
       <h2>方法拆解</h2>
-      <p>ThinkJEPA 用 VLM 的长程语义推理指导 JEPA-style latent world model，把密集短窗 latent prediction 和稀疏长程语义 grounding 结合。</p>
+      <p>把 V-JEPA2 式 dense latent prediction 和 VLM 长程语义推理结合，是昨天 TDV/MoFore 后续最自然的更新项</p>
       <h2>主要贡献</h2>
-      <p>承认 V-JEPA2 类模型擅长 dense future prediction，但短窗口容易偏低层外推；VLM 则补充长程语义但不适合做 dense predictor。</p>
+      <p>中高相关；详见方法、贡献和实验边界。</p>
       <h2>实验看点</h2>
-      <p>v2 于 2026-06-16 更新；摘要围绕 action-conditioned latent world modeling 和语义指导预测展开。</p>
+      <p>实验部分建议重点看两类证据：一是作者是否把方法收益和更强数据、更长训练、更大模型区分开；二是跨模型、跨数据或跨任务迁移是否还能保留同样趋势。</p>
       <h2>局限与读法</h2>
-      <p>含 Robotics 分类和 action-conditioned 数据，通用图像 SSL 相关性不如 SPHERE-JEPA/TDV/MoFore 直接。</p>
+      <p>这篇论文的结论需要结合任务设置、训练数据规模和消融实验一起看；不要只凭单个指标判断它对通用视觉表征的价值。</p>
     
     </div>
   </div>
@@ -64,13 +64,13 @@
     <div class="side-box"><h4>原文</h4><p><a href="https://arxiv.org/abs/2603.22281">https://arxiv.org/abs/2603.22281</a></p></div>
   </aside>
 </article></main>
-  <aside class="conf-float" data-conf-reminder="2026-06-18-main-ddl" aria-label="CCF A/B 主投稿提醒">
+  <aside class="conf-float" data-conf-reminder="2026-06-19-main-ddl" aria-label="CCF A/B 主投稿提醒">
   <button class="conf-close" type="button" aria-label="关闭会议提醒">×</button>
   <details open>
     <summary>CCF A/B 主投稿提醒</summary>
     <div class="conf-list"><a class="conf-item " href="https://github.com/ccfddl/ccf-deadlines/blob/main/conference/AI/aaai.yml">
   <span><b>AAAI 2027</b><em>CCF A · Main paper submission</em></span>
-  <strong>39 天</strong>
+  <strong>38 天</strong>
   <small>2026-07-27 · CCF DDL: abstract 2026-07-20；进入 1 个月窗口后重点提醒。</small>
 </a></div>
   </details>
@@ -83,7 +83,7 @@
   (() => {
     const box = document.querySelector('[data-conf-reminder]');
     if (!box) return;
-    const key = `visualSslConfReminderClosed:${box.dataset.confReminder || '2026-06-18-main-ddl'}`;
+    const key = `visualSslConfReminderClosed:${box.dataset.confReminder || '2026-06-19-main-ddl'}`;
     try {
       if (localStorage.getItem(key) === '1') box.hidden = true;
     } catch (err) {}

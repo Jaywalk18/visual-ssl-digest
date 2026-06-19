@@ -1,0 +1,101 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Reasoning as Intersection · 通用视觉自监督研究报</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Source+Serif+4:ital,opsz,wght@0,8..60,400;0,8..60,500;0,8..60,600;1,8..60,400&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../assets/visual-ssl.css?v=20260615ssl6">
+</head>
+<body data-paper-data-url="../data/papers.json">
+  <header class="masthead">
+    <a class="masthead-title" href="../index.html">通用视觉自监督研究报</a>
+    <div class="masthead-kicker">A Daily Digest of Visual Self-Supervised Learning</div>
+    <div class="masthead-meta">
+      <span>2026-06-19</span>
+      <span>图像表征 · VFM · JEPA · 视频预训练</span>
+    </div>
+  </header>
+  <nav class="site-nav" aria-label="主导航">
+    <a class="nav-link" href="../index.html">头版</a>
+<a class="nav-link" href="../issues/2026-06-19.html">今日速递</a>
+<a class="nav-link" href="../pages/catalog.html">论文目录</a>
+<a class="nav-link" href="../pages/timeline.html">时间线</a>
+<span class="nav-streak" title="连续追踪天数"><svg viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><path d="M8 0c.7 2.5-1.2 3.7-2 5-1 1.6-1 4 .8 4.8C6.4 8.5 7.4 7.8 8 7c.3 1.3-.4 2 .9 3 .9.7 1.3 1.6 1.1 2.6C9.7 14.6 8.9 16 6.8 16 4.6 16 3 14.3 3 12c0-3.3 2.6-4.8 2.4-8C6.9 4.6 8.4 5 8 0z"/></svg> 连续 <b data-streak>0</b> 天</span>
+  </nav>
+  <main><article class="paper-detail" data-pid="2606.18441" data-category="arXiv 新增 + video evidence alignment" data-priority="P1" data-date="2026-06-19" data-title="reasoning as intersection: consensus-frame alignment for visual focus in video-mllms" data-keywords="reasoning as intersection: consensus-frame alignment for visual focus in video-mllms reasoning as intersection arxiv 新增 + video evidence alignment p1 2026-06-19 arxiv 新增 + video evidence alignment 用视频内生线索构造 consensus frame prior，让 video-mllm 学会把推理奖励绑定到证据帧 中高相关；详见方法、贡献和实验边界。">
+  <div class="paper-main">
+    <div class="kicker">arXiv 新增 + video evidence alignment · P1 · 2026-06-19</div>
+    <h1 class="paper-headline">Reasoning as Intersection：视频自监督/基础模型需要稳定抽取长视频证据，VideoCFR 的 frame-use reward 可迁移到视频表征学习</h1>
+    <p class="dek">把 outcome-only RL 改成无需人工 temporal annotation 的 process-level reward，解决视频问答中“不知道该看哪一帧”的问题。</p>
+    <p class="byline"><strong>Reasoning as Intersection: Consensus-Frame Alignment for Visual Focus in Video-MLLMs</strong>　Chengwen Liu , Zhe Huang , Jisheng Dang , Hong Peng , Qi Tian , Tat-Seng Chua；arXiv 元数据未稳定列机构时按作者列表记录。　arXiv 新增 + video evidence alignment　<a href="https://arxiv.org/abs/2606.18441">原文链接</a></p>
+    <div class="paper-facts">
+      <span><b>编号</b>2606.18441</span>
+      <span><b>优先级</b>P1</span>
+      <span><b>类别</b>arXiv 新增 + video evidence alignment</span>
+      <span><b>会议</b>arXiv 新增 + video evidence alignment</span>
+      <span><b>方法</b>CF-GRPO 从 temporal coverage、scene transition 和 query-conditioned visual relevance 构造 consensus frame prior，再让模型侧 frame-use score 与该 prior 对齐。</span>
+      <span><b>来源</b>arXiv / OpenReview</span>
+    </div>
+    <div class="feature-body">
+      <p class="lead dropcap">先说结论。视频自监督/基础模型需要稳定抽取长视频证据，VideoCFR 的 frame-use reward 可迁移到视频表征学习。 把 outcome-only RL 改成无需人工 temporal annotation 的 process-level reward，解决视频问答中“不知道该看哪一帧”的问题。</p>
+      <figure class="full-fig"><img src="../assets/mineru/2606.18441/images/cc29971503a0498da4fbbb6a6ff244e8abf98b4760bd5462847eec6bd3b96767.jpg" alt="Figureure 2 · : Overview of the CF-GRPO framework"><figcaption><b>Figureure 2 · : Overview of the CF-GRPO framework</b><span class="fig-en">Figure 2: Overview of the CF-GRPO framework. Panel A constructs a multi-source consensus prior from uniform coverage, scene transitions, and query-conditioned semantic relevance. Panel B incorporates CFR into GRPO, rewarding overlap between the consensus prior and the model-side frame-use distribution while preserving accuracy, temporal, and structural rewards.</span><span class="fig-zh">这张图概括 Reasoning as Intersection 的整体方法流程。阅读时先看模块之间传递的训练信号，再看作者如何把目标拆成可优化的子问题。</span></figcaption></figure>
+<figure class="full-fig"><img src="../assets/mineru/2606.18441/images/567559c7f1d8fa6f362809d88c2071c9f5e71158b201001fe6328bf4ee623641.jpg" alt="Figureure 1 · : Motivation of consensus-frame alignment"><figcaption><b>Figureure 1 · : Motivation of consensus-frame alignment</b><span class="fig-en">Figure 1: Motivation of consensus-frame alignment. In long-video QA, single-source sampling or diffuse frame use can anchor the response to visually plausible but incorrect frames. VideoCFR constructs a consensus prior from temporal coverage, scene-transition, and query-relevance cues, and uses this prior as training-time evidence guidance for aligning generation with frames that support the answer.</span><span class="fig-zh">这张图来自论文 PDF 的结构化抽取。当前用于辅助理解 Reasoning as Intersection 的方法或实验，请结合正文精读段落一起看。</span></figcaption></figure>
+      
+      <h2>核心问题</h2>
+      <p>视频自监督/基础模型需要稳定抽取长视频证据，VideoCFR 的 frame-use reward 可迁移到视频表征学习。</p>
+      <h2>方法拆解</h2>
+      <p>CF-GRPO 从 temporal coverage、scene transition 和 query-conditioned visual relevance 构造 consensus frame prior，再让模型侧 frame-use score 与该 prior 对齐。</p>
+      <h2>主要贡献</h2>
+      <p>把 outcome-only RL 改成无需人工 temporal annotation 的 process-level reward，解决视频问答中“不知道该看哪一帧”的问题。</p>
+      <h2>实验看点</h2>
+      <p>摘要称 VideoCFR 在复杂视频推理 benchmark 上竞争力强，并给出可解释的 evidence-frame 关注视图。</p>
+      <h2>局限与读法</h2>
+      <p>依赖 consensus prior 的启发式质量；更偏 Video-MLLM 后训练，和纯视觉 SSL 仍有距离。</p>
+    
+    </div>
+  </div>
+  <aside class="paper-side">
+
+    <div class="side-box pref-side"><h4>我的偏好</h4><div class="paper-side-tools"><button class="readbtn" type="button" data-read-toggle="2606.18441" title="标记已读" aria-label="标记已读"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M4 10.5l4 4 8-9"/></svg></button><div class="prefbar" data-pref-controls="2606.18441"><button class="prefbtn like" type="button" data-pref-toggle="like" data-pref-id="2606.18441" aria-pressed="false" title="关注这篇">关注</button><button class="prefbtn dismiss" type="button" data-pref-toggle="dismiss" data-pref-id="2606.18441" aria-pressed="false" title="降低这篇权重">略过</button></div></div></div>
+    <div class="side-box"><h4>关键判断</h4><dl><dt>相关性</dt><dd>P1</dd><dt>类别</dt><dd>arXiv 新增 + video evidence alignment</dd><dt>会议</dt><dd>arXiv 新增 + video evidence alignment</dd><dt>读法</dt><dd>方法图优先，表格次之</dd></dl></div>
+    <div class="side-box"><h4>原文</h4><p><a href="https://arxiv.org/abs/2606.18441">https://arxiv.org/abs/2606.18441</a></p></div>
+  </aside>
+</article></main>
+  <aside class="conf-float" data-conf-reminder="2026-06-19-main-ddl" aria-label="CCF A/B 主投稿提醒">
+  <button class="conf-close" type="button" aria-label="关闭会议提醒">×</button>
+  <details open>
+    <summary>CCF A/B 主投稿提醒</summary>
+    <div class="conf-list"><a class="conf-item " href="https://github.com/ccfddl/ccf-deadlines/blob/main/conference/AI/aaai.yml">
+  <span><b>AAAI 2027</b><em>CCF A · Main paper submission</em></span>
+  <strong>38 天</strong>
+  <small>2026-07-27 · CCF DDL: abstract 2026-07-20；进入 1 个月窗口后重点提醒。</small>
+</a></div>
+  </details>
+</aside>
+  <footer class="footer">
+    <div>面向通用视觉自监督、视觉基础模型与多模态表征学习的每日研究报。</div>
+    <div class="muted">Issue 2026-06-19 · Curated readings and figure notes</div>
+  </footer>
+  <script>
+  (() => {
+    const box = document.querySelector('[data-conf-reminder]');
+    if (!box) return;
+    const key = `visualSslConfReminderClosed:${box.dataset.confReminder || '2026-06-19-main-ddl'}`;
+    try {
+      if (localStorage.getItem(key) === '1') box.hidden = true;
+    } catch (err) {}
+    const close = box.querySelector('.conf-close');
+    if (close) {
+      close.addEventListener('click', () => {
+        box.hidden = true;
+        try { localStorage.setItem(key, '1'); } catch (err) {}
+      });
+    }
+  })();
+  </script>
+  <script src="../assets/ssl-game.js"></script>
+</body>
+</html>

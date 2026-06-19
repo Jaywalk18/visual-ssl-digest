@@ -1,0 +1,572 @@
+# Moving Beyond Diversity: Visual Token Pruning as Subspace Reconstruction for Efficient VLMs
+
+Jaeyeon Lee, Shunjie Wen and Dong-Wan Choi
+
+Inha University {dlwodus159, wenshunjie}@inha.edu, dchoi@inha.ac.kr
+
+Abstract. Despite their remarkable performance, Vision Language Models (VLMs) incur substantial computational overhead due to the large number of visual tokens. While diversity maximization has become a dominant strategy for token reduction, existing methods rely on cosinebased normalized similarity that discards magnitude information, failing to faithfully approximate the original feature representation and leading to suboptimal performance, particularly on compositional multiskill reasoning tasks. In this paper, we introduce SPARE, a subSPAce REconstruction method that reformulates token pruning as a column subset selection problem and explicitly minimizes reconstruction error. By iteratively selecting tokens with large projection residuals, SPARE performs reconstruction-driven pruning beyond angular diversity. Moreover, we reveal a counterintuitive anti-relevance phenomenon: tokens with lower image-text relevance score can better preserve contextual information. Based on this finding, we incorporate anti-relevance into SPARE as an additional selection criterion to promote context-aware token selection. Extensive experiments across multiple VLMs and benchmarks demonstrate that SPARE consistently achieves state-of-the-art performance, with strong gains on compositional tasks. When applied to LLaVA, SPARE removes up to 94% of visual tokens while retaining 95% of the baseline performance, all in a fully training-free manner.
+
+Keywords: Vision Language Models · Model Efficiency · Token Pruning
+
+## 1 Introduction
+
+Building upon the success of Large Language Models (LLMs) [7, 17, 31], recent works have increasingly extended them to the visual domain, giving rise to modern Vision Language Models (VLMs) [2, 19, 24, 38]. A common design directly incorporates visual tokens into the LLM input sequence alongside textual tokens, achieving strong performance across diverse vision-language benchmarks. However, due to the spatial nature of images, visual inputs can produce thousands or even tens of thousands of tokens, especially for high-resolution images or videos, substantially increasing the computational cost of VLMs. To alleviate this bottleneck, numerous approaches aim to reduce the number of visual tokens in VLMs.
+
+![](images/94ac50d18483bd7bd546852e2615403f32093c9f168c595ba45e47206ddc34e8.jpg)
+
+<details>
+<summary>flowchart</summary>
+
+```mermaid
+graph TD
+  A["Original Tokens"] --> B["selected"]
+  B --> C["pruned"]
+  C --> D["Direction × Magnitude"]
+  D --> E["Normalized Cosine Similarity"]
+  E --> F["Direction √ Magnitude"]
+  F --> G["SPARE (Ours)"]
+```
+</details>
+
+(a) Comparison of Representation Preservation
+
+![](images/e89beb01498eddadb72c56ea344b81214e09e84d31760d2e379baa4ed422ab49.jpg)
+
+<details>
+<summary>radial bar chart</summary>
+
+| Category | Value |
+|---|---|
+| r+o+g+s | +12.5 |
+| r+o+k+g | +2.6 |
+| o+k+s | +33.3 |
+| r+o+s | +24.3 |
+| g+o+s | +15.0 |
+| o+m+s | +7.8 |
+| r+k+g | +7.0 |
+| r+o | +20.0 |
+| o+s | +9.2 |
+| r+k | +0.0 |
+| ocr | +0.8 |
+| rec | +12.5 |
+| r+o+g+s | - |
+| o+o+g+s | - |
+| o+o+k+s | - |
+| r+o+g+s | - |
+| o+o+s | - |
+| r+o+s | - |
+| o+o+s | - |
+| r+o | - |
+| o+o+s | - |
+| r+o+g | - |
+| o+o+s | - |
+| r+o | - |
+| o+o+s | - |
+| r+o | - |
+| o+o+s | - |
+| r+o | - |
+| o+o+s | - |
+| r+o | - |
+| o+o+s | - |
+| r+o | - |
+| o+o+s | - |
+| r+o | - |
+| o+o+s | - |
+| r+o | - |
+| o+o+s | 0.0 |
+| r+o | 0.0 |
+| o+o+s | 0.0 |
+| r+o | 0.0 |
+| o+o+s | 0.0 |
+| r+o | 0.0 |
+| o+o+s | 0.0 |
+| r+o | 0.0 |
+| o+o+s | 0.0 |
+| r+o | 0.0 |
+| o+o+s | 0.0 |
+| r+e | 0.0 |
+| o+e | 0.0 |
+| r+e | 0.0 |
+| o+e | 0.0 |
+| r+e | 0.0 |
+| o+e | 0.0 |
+| r+e | 0.0 |
+| o+e | 0.0 |
+| r+e | 0.0 |
+| o+e | 0.0 |
+| r+e | 0.0 |
+| o+o | 0.0 |
+| o+o | 0.0 |
+| r+o | 0.0 |
+| o+o | 0.0 |
+| r+o | 0.0 |
+| o+o | 0.0 |
+| r+o | 0.0 |
+| o+o | 0.0 |
+| r+o | 0.0 |
+| o+o | 0.0 |
+| r+o | 0.0 |
+| o+o | 0.0 |
+| v: Recognition
+r: recognition
+o: ocrl
+g: generation
+s: spatial
+k: knowledge
+m: mathematics
+</details>
+
+(b) Multi-Skill Performance Gap  
+Fig. 1: Diversity-Based Token Selection vs. SPARE (Ours). (a) Each visual token is represented as a vector in the embedding space. Diversity-based methods (e.g., CDPruner [36]) select tokens based on normalized angular dispersion, whereas SPARE performs subspace reconstruction that accounts for both direction and magnitude. (b) Performance gap (SPARE – CDPruner) on multi-skill task combinations in MM-Vet [35] using LLaVA-1.5-7B [22] under visual token pruning.
+
+Recent progress in visual token reduction falls into two paradigms: attentionbased and diversity-based approaches. Attention-based methods [6,34,37] select tokens using attention scores from vision encoders or LLMs, whereas diversitybased methods [18, 33, 36] reduce redundancy by minimizing similarity among selected tokens. Since attention-based reduction can underperform even random pruning [32, 33] and is often incompatible with efficient attention operators [8], diversity-based strategies become the predominant direction in recent research due to their strong performance.
+
+However, existing diversity-based methods [1, 33, 36] still remain limited because they rely on cosine-based normalized similarity. By treating token pruning as a dispersion problem, these approaches deliberately discard token magnitudes through normalization, rather than explicitly approximating the original feature representation. As a result, the selected tokens may deviate substantially from the overall representation formed by the full token set (see Fig. 1a), leading to larger reconstruction errors from the original feature matrix (see Table 6). As presented in Fig. 1b, this limitation translates into suboptimal performance, particularly on challenging reasoning tasks that require multi-skill compositional understanding (e.g., “What is the number displayed on the motorcycle on the right?”, requiring all of recognition, OCR and spatial reasoning skills).
+
+To address this, we propose SPARE, a subSPAce REconstruction token pruning method that reformulates visual token pruning from the perspective of the column subset selection problem (CSSP) [4, 11]. Instead of merely encouraging inter-token dispersion based on normalized similarity, SPARE explicitly aims to approximate the original feature matrix using a subset of tokens. To this end, SPARE performs greedy subspace reconstruction by iteratively selecting the token with the largest projection error (i.e., residual norm) relative to the current subset, a strategy grounded in the rank-revealing QR (RRQR) principle [5]. Since the residual norm inherently captures both directional and magnitude information, SPARE preserves the original feature representation more faithfully (see Fig. 1a) than diversity-based approaches operating in a normalized angular space.
+
+Beyond faithful visual reconstruction, we further observe an anti-relevance phenomenon in visual token selection with respect to the textual query, i.e., retaining tokens with lower image-text relevance score can yield better downstream performance. This is contrary to the common belief among prior approaches [30, 36] that tokens with higher image-text relevance, as measured by CLIP [27], are more important for preserving task-relevant information. To examine this assumption, we explicitly quantify image-text relevance and analyze its influence on token selection and downstream performance. Our analysis reveals a critical mismatch: maximizing such relevance does not guarantee the preservation of task-relevant information. Even slight pruning biased toward lowrelevance tokens (i.e., retaining most high-relevance ones) can cause substantial performance degradation on certain benchmarks. Motivated by this finding, we incorporate anti-relevance as an additional guiding principle within our SPARE method.
+
+Grounded in this design, we summarize our contributions as follows. (1) This is the first work to reformulate visual token pruning as a CSSP, providing an explicit approximation framework for token selection in VLMs. In particular, we explicitly consider the token’s magnitude during selection, moving beyond normalized similarity and enabling reconstruction-based representation preservation. (2) We systematically analyze the role of image-text relevance and reveal an anti-relevance phenomenon, demonstrating the effectiveness of anti-relevance guidance in token selection. (3) SPARE is training-free and plug-and-play, retaining 95% of the baseline performance even after pruning up to 94% of visual tokens, and consistently outperforming prior methods across benchmarks, particularly on challenging multi-skill compositional tasks (see Fig. 1b).
+
+## 2 Related Works
+
+Modern Vision Language Models (VLMs) increasingly adopt high-resolution and multi-frame inputs, resulting in thousands or even tens of thousands of visual tokens per sample [20, 23, 38]. For example, LLaVA-NeXT [23] processes up to 2,880 visual tokens for high-resolution images, while video-capable models such as InternVL [38] and LLaVA-NeXT-Interleave [20] can involve tens of thousands of tokens due to temporal accumulation. This growth in token counts has motivated extensive research on improving the efficiency of VLMs. Existing token reduction approaches can be broadly categorized into two branches: attentionbased and diversity-based strategies.
+
+Attention-Based Visual Token Reduction in VLMs. This line of work evaluates token importance individually using attention scores derived from vision encoders or LLMs, pruning tokens deemed less influential based on their attention values. For example, FastV [6] prunes tokens according to their average attention scores after the shallow layers, while SparseVLM [37] and PDrop [34] employ image-text attention for multi-stage token pruning within LLM layers.
+
+However, recent studies [32,33] report that attention-based pruning can perform even worse than random pruning under certain settings. Moreover, because token selection relies on intermediate attention extraction, it complicates integration with efficient attention implementations such as FlashAttention [8].
+
+Diversity-Based Visual Token Reduction in VLMs. In contrast to attentionbased methods that assess token importance individually, diversity-based approaches operate at the set level, minimizing redundancy by encouraging mutual dissimilarity among selected tokens. DivPrune [1] formulates token selection as a max-min diversity problem to greedily select the most distant tokens, while DART [33] first identifies pivot tokens before expanding to diverse neighbors. Similarly, CDPruner [36] employs a determinantal point process to maximize statistical diversity among selected tokens.
+
+Compared to attention-based methods, diversity-based approaches have shown stronger empirical performance and dominate recent state-of-the-art token reduction results. However, because their underlying view frames token selection as a dispersion problem rather than an approximation problem, they naturally rely on normalized similarity metrics. Consequently, they do not explicitly preserve the original feature subspace structure. This limitation motivates us to reformulate visual token pruning as a column subset selection problem (CSSP) and address it from a reconstruction perspective.
+
+Column Subset Selection Problem. The column subset selection problem (CSSP) [4] is a fundamental matrix approximation problem that seeks a subset of columns minimizing the reconstruction error of the original matrix. Existing solution algorithms are either randomized [9, 10] or deterministic [5, 15]. In this work, we adopt a deterministic approach based on rank-revealing QR (RRQR) factorization [5] to ensure consistent and reproducible token selection. Specifically, RRQR permutes columns according to their contribution to the dominant structure of the feature matrix, yielding a stable and representative subset.
+
+## 3 Method
+
+We first formalize the visual token pruning problem within the VLM pipeline, and then present our SPARE method in detail. The conceptual overview of SPARE is illustrated in Fig. 2.
+
+## 3.1 Problem Formulation
+
+Vision Language Model Pipeline. A typical modern VLM consists of a vision encoder, a multimodal projector, and an LLM, as shown in the left panel of Fig. 2. Given an image I, the vision encoder followed by the multimodal projector produces a sequence of visual tokens $\mathbf { X } _ { v } = [ { \mathbf { x } } _ { 1 } , \ldots , { \mathbf { x } } _ { N } ] \in \mathbb { R } ^ { N \times d }$ , where N denotes the number of visual tokens and d is the embedding dimension of the
+
+LLM. Given a text input $T ,$ , the tokenizer produces textual token embeddings $\mathbf { X } _ { t } = [ \mathbf { t } _ { 1 } , \dots , \mathbf { t } _ { M } ] \in \mathbb { R } ^ { M \times d }$ , where M denotes the number of textual tokens. The visual and textual token embeddings are concatenated and fed into the LLM as a multimodal input sequence. The LLM then models the conditional probability of an output sequence $Y = ( y _ { 1 } , \dots , y _ { \ell } )$ as:
+
+$$
+P (Y \mid I, T) = \prod_ {i = 1} ^ {\ell} P (y _ {i} \mid y _ {<   i}, I, T), \tag {1}
+$$
+
+where ℓ is the number of output tokens.
+
+In modern VLMs, the number of visual tokens is typically much larger than that of textual tokens $( i . e . , N \gg M )$ , leading to significant computational and memory overhead in the LLM. Therefore, reducing the number of visual tokens while preserving task-relevant information becomes a critical problem.
+
+Visual Token Pruning Problem. Given visual token embeddings $\mathbf { X } _ { v } \in \mathbb { R } ^ { N \times d }$ and textual token embeddings $\mathbf { X } _ { t } \in \mathbb { R } ^ { M \times d }$ , the goal of visual token pruning is to select a subset of visual tokens that preserves the output behavior of the VLM. More specifically, we seek a subset of indices ${ \mathcal { S } } \subset \{ 1 , \ldots , N \}$ with $| S | = k \ll N ,$ and denote by $\bar { \mathbf { X } } _ { v } \in \mathbb { R } ^ { k \times d }$ the visual token embeddings corresponding to the selected indices ${ \mathcal { S } } .$ . Let $\mathcal { F } ( \mathbf { X } _ { v } , \mathbf { X } _ { t } )$ denote the output distribution of the LLM given visual and textual embeddings. Then, the ideal objective of visual token pruning can be formulated as:
+
+$$
+\min _ {\mathcal {S} \subset \{1, \dots , N \}} \mathcal {L} \left(\mathcal {F} \left(\tilde {\mathbf {X}} _ {v}, \mathbf {X} _ {t}\right), \mathcal {F} \left(\mathbf {X} _ {v}, \mathbf {X} _ {t}\right)\right) \quad \text {s.t.} | \mathcal {S} | = k. \tag {2}
+$$
+
+where $\mathcal L ( \cdot , \cdot )$ measures the discrepancy between the two output distributions.
+
+However, directly minimizing Eq. (2) is intractable in dynamic pruning, as pruning is performed prior to LLM inference and evaluating the discrepancy requires executing the full autoregressive process. Consequently, existing token pruning methods rely on heuristic strategies. Some estimate token importance based on attention scores, while others encourage diversity among selected tokens to better cover the visual feature space. Nevertheless, the fundamental difficulty discussed in Section 2 still remains.
+
+## 3.2 Visual Token Selection via Subspace Reconstruction
+
+Token Selection as Reconstruction. To address the fundamental challenge above, we reinterpret visual token pruning as a reconstruction problem at the input level. Rather than relying on importance or diversity measures, we aim to directly approximate the original visual embeddings as follows:
+
+$$
+\min _ {\mathcal {S} \subset \{1, \dots , N \}} \mathcal {L} \left(\tilde {\mathbf {X}} _ {v}, \mathbf {X} _ {v}\right) \quad \text {s.t.} | \mathcal {S} | = k. \tag {3}
+$$
+
+Thus, Eq. (3) provides a tractable objective for approximating the ideal formulation in Eq. (2).
+
+![](images/b96c256bb152148a0f101f35f01a11404137f992469e4bb5ef423296b28715e6.jpg)
+
+<details>
+<summary>flowchart</summary>
+
+```mermaid
+graph TD
+  A["LLM"] --> B["X_t"]
+  A --> C["X_v"]
+  B --> D["SPARE Pruning"]
+  C --> D
+  D --> E["X_v"]
+  E --> F["MM-Projector"]
+  F --> G["Tokenizer"]
+  G --> H["Visual Input"]
+  H --> I["Text Input"]
+    
+  J["Subspace Reconstruction"] --> K["x1 x2"]
+  K --> L["Candidates"]
+  L --> M["x1 x2"]
+  M --> N["S = span{x1,x2}"]
+    
+  O["Anti-Relevance Guidance"] --> P["Text Embeddings E_T,j"]
+  P --> Q["E_I,n"]
+  Q --> R["Image Embeddings: Image/Text Token, Semantic Alignment, Guiding Signal"]
+  P --> S["Mean: ρ0 ... ρi"]
+  S --> T["r = x_p - Π_S x_p"]
+  T --> U["x1 x2"]
+  U --> V["S = span{x1,x2}"]
+```
+</details>
+
+Fig. 2: Overview of SPARE. SPARE approximates the visual subspace by iteratively selecting tokens based on reconstruction residuals, while incorporating antirelevance guidance derived from image–text semantic alignment to preserve complementary contextual information.
+
+Reconstruction as CSSP. More concretely, we formalize the reconstruction loss in $\operatorname { E q . } \left( 3 \right)$ as a column subset selection problem (CSSP) [4,11]. Accordingly, given the visual embedding matrix $\mathbf { X } _ { v } \in \mathbb { R } ^ { \bar { N } \times d }$ , our aim is to select a subset of k columns of $\mathbf { X } _ { v } ^ { \top } \in \mathbb { R } ^ { d \times N }$ (i.e., tokens) whose span best approximates the original feature subspace. Using the Frobenius norm, the objective can be written as:
+
+$$
+\min _ {\mathcal {S} \subset \{1, \dots , N \}} \left\| \mathbf {X} _ {v} ^ {\top} - \boldsymbol {\Pi} _ {\mathcal {S}} \mathbf {X} _ {v} ^ {\top} \right\| _ {F} ^ {2} \quad \text {s.t.} | \mathcal {S} | = k. \tag {4}
+$$
+
+where $\mathbf { I I } _ { S } = \tilde { \mathbf { X } } _ { v } ^ { \top } ( \tilde { \mathbf { X } } _ { v } \tilde { \mathbf { X } } _ { v } ^ { \top } ) ^ { - 1 } \tilde { \mathbf { X } } _ { v } \in \mathbb { R } ^ { d \times d }$ denotes the orthogonal projection matrix onto the column space spanned by the selected visual tokens.
+
+Since the CSSP is NP-hard [28], exact optimization of Eq. (4) is computationally infeasible. We therefore employ a greedy subspace approximation method based on rank-revealing QR (RRQR) factorization [5]. RRQR iteratively selects tokens whose embeddings exhibit the largest projection residual with respect to the span of the currently selected subset. To evaluate this residual, the approximation subspace must be explicitly represented, and hence we maintain an orthonormal basis for the selected tokens using the Gram–Schmidt process [3]. The procedure proceeds as follows, as illustrated in the top-right panel of Fig. 2:
+
+1. Setup. Let $s$ and $\mathcal { Q }$ denote the selected token indices and the orthonormal basis, respectively.  
+2. Compute residuals. For each candidate token $( i . e . , \mathrm { c o l u m n } ) \ \mathbf { x } _ { i } .$ compute the residual $r _ { i }$ with respect to the current subspace as:
+
+$$
+r _ {i} = \| \mathbf {x} _ {i} - \boldsymbol {\Pi} _ {\mathcal {S}} \mathbf {x} _ {i} \| _ {2} ^ {2} = \| \mathbf {x} _ {i} \| _ {2} ^ {2} - \sum_ {\mathbf {q} \in \mathcal {Q}} \left(\mathbf {x} _ {i} ^ {\top} \mathbf {q}\right) ^ {2}. \tag {5}
+$$
+
+3. Select token. Choose the token with the largest residual and add its index to ${ \mathcal { S } } .$ .
+
+![](images/6673431d26bebbf2558f887a152f5518567f08ba3b037c827e7a730e9bf39170.jpg)  
+Fig. 3: Impact of Normal-Relevance and Anti-Relevance in Isolation. Performance comparison of top-k visual token selection based on image–text normal-relevance or anti-relevance across varying token retention levels on four benchmarks.
+
+4. Update basis. Orthonormalize the selected token against the existing basis using Gram-Schmidt and append the resulting normalized vector to Q.  
+5. Iterate. Repeat the above steps until $| S | = k$
+
+Through this iterative process, the span of the selected tokens progressively approximates the dominant subspace of the original visual embeddings. Such RRQR-based greedy selection is known to admit provable approximation guarantees for the CSSP objective [4] while remaining computationally efficient and deterministic.
+
+Theoretical Bound. The reconstruction objective in Eq. (4) minimizes the perturbation introduced by token pruning at the visual embedding level. To relate this to the ideal objective in Eq. (2), which measures the discrepancy between LLM outputs, we adopt the standard Lipschitz stability perspective commonly used in neural network analysis [12]. Specifically, assuming the LLM output function $\mathcal F ( \cdot , \cdot )$ is locally L-Lipschitz with respect to perturbations in the visual embeddings, we obtain:
+
+$$
+\left\| \mathcal {F} (\tilde {\mathbf {X}} _ {v}, \mathbf {X} _ {t}) - \mathcal {F} (\mathbf {X} _ {v}, \mathbf {X} _ {t}) \right\| \leq L \left\| \tilde {\mathbf {X}} _ {v} - \mathbf {X} _ {v} \right\|. \tag {6}
+$$
+
+This bound suggests that minimizing the reconstruction error of the visual embeddings helps control the change in the output distribution of the LLM.
+
+## 3.3 Anti-Relevance Guided Token Selection
+
+Anti-Relevance Phenomenon. Although our reconstruction-based strategy effectively captures the structure of the visual embedding space, it does not utilize any information from the textual query. This raises a crucial yet unresolved question: which visual tokens should be retained to best answer the query. To investigate this, we analyze how image–text relevance scores influence performance by varying both the token selection criterion and the number of retained tokens. The relevance score is measured as the cosine similarity between image and text token embeddings in the CLIP space [27], as commonly adopted in prior works [30, 36]. For clarity, we consider two extreme criteria without any additional guidance: normal-relevance and anti-relevance. The former preferentially selects tokens with higher relevance scores, whereas the latter prioritizes those with lower relevance scores. Contrary to the common intuition that normalrelevance would outperform anti-relevance, the empirical results in Fig. 3 show the opposite trend. Specifically, anti-relevance consistently outperforms normalrelevance by a large margin across all settings. Moreover, the performance of normal-relevance drops sharply even after pruning only a small number of visual tokens, even though these tokens are supposed to be more relevant according to CLIP-based similarity scores. This phenomenon is further supported by the visualization in Fig. 4, where semantically meaningful regions tend to receive relatively low relevance scores, while background areas unrelated to the query often exhibit higher relevance scores. This suggests that tokens highly aligned with the query often correspond to less informative regions in the CLIP space, whereas tokens with lower similarity may contain complementary contextual information that is crucial for reasoning.
+
+![](images/ebbb70fb5cc6d59e3a4af493ce876593b2b178690795a0c52b2ccca7ae01c833.jpg)  
+Fig. 4: Visualizations. Visualization of image–text relevance scores on the POPE benchmark [21]. Red indicates higher relevance, while blue indicates lower relevance.
+
+Anti-Relevance Guidance. Motivated by the empirical observation above, we introduce an anti-relevance score that explicitly favors visual tokens with lower similarity to the textual query. For each n-th visual token, the anti-relevance score is defined as:
+
+$$
+\rho_ {n} = \frac {1}{M} \sum_ {j = 1} ^ {M} \big (- \cos (\mathbf {E} _ {I, n}, \mathbf {E} _ {T, j}) \big), \quad \forall n \in \{1, \dots , N \},
+$$
+
+where $\mathbf { E } _ { I , n }$ and $\mathbf { E } _ { T , j }$ denote the CLIP image and text embeddings, respectively, and M is the number of text tokens. This formulation assigns larger values to tokens with lower image–text similarity, thereby emphasizing anti-relevance. Since absolute similarity values may vary significantly across images, we apply z-score normalization within each image to capture token-wise deviations from the image-specific similarity distribution. The normalized scores are then transformed using the softplus function to ensure non-negative weights compatible with the reconstruction-based selection process.
+
+Finally, the anti-relevance scores are incorporated into the reconstructionbased token selection as a multiplicative guidance term. Specifically, at each iteration we select the token index that maximizes the product of the reconstruction residual $r _ { n }$ and the anti-relevance score $\rho _ { n } \colon$
+
+$$
+n ^ {*} = \arg \max _ {n \notin \mathcal {S}} (r _ {n} \rho_ {n}),
+$$
+
+where n denotes a visual token index and S is the set of indices corresponding to already selected tokens. This formulation favors tokens that are both important for reconstructing the visual subspace and informative from the anti-relevance perspective.
+
+## 3.4 SPARE: Overall Process
+
+In summary, the overall pipeline of SPARE is illustrated in Fig. 2, and the detailed procedure is described in Algorithm 1. SPARE starts by computing anti-relevance scores for all visual tokens using CLIP similarity (Lines 3–4), as described in Section 3.3. Then, it performs visual token selection by jointly considering subspace reconstruction and anti-relevance. To reconstruct the original visual subspace, SPARE iteratively computes the residual of each token with respect to the span of the currently selected subset and selects the token with the largest residual. The initial residuals are set to their norms according to Eq. (5) (Line 6). Simultaneously, the anti-relevance scores are combined to guide the selection toward tokens that provide complementary contextual information beyond direct query align-
+
+Algorithm 1 SPARE  
+Input: Visual token matrix $X_{v} \in R^{N \times d}$ , image embeddings $E_{I} \in R^{N \times C}$ , text embeddings $E_{T} \in R^{M \times C}$ , budget $k \leq N$ Output: Selection mask $S \in \{0,1\}^{N}$ 1: $S \leftarrow 0_{N}$ ; $Q \leftarrow \emptyset$ 2: —— Anti-Relevance Computation ——
+
+3: $\rho_{n} \leftarrow \frac{1}{M} \sum_{j=1}^{M} (-\cos(\mathbf{E}_{I,n}, \mathbf{E}_{T,j}))$ , $\forall n$ 4: $\rho_{n} \leftarrow \text{softplus}\left(\frac{\rho_{n}-\mu_{\rho}}{\sigma_{\rho}}\right)$ , $\forall n$ 5: —— —— Visual Token Selection ——
+
+6: $r_{n} \leftarrow \|X_{v,n}\|_{2}^{2}$ , $\forall n$ 7: for t = 1 to k do
+
+8: $p \leftarrow \arg\max_{n \in \{i | S_{i}=0\}} (r_{n} \rho_{n})$ 9: $S_{p} \leftarrow 1$ ; $v \leftarrow X_{v,p}$ 10: for $q \in Q$ do
+
+11: $v \leftarrow v - (q \cdot v) q$ 12: end for
+
+13: $q \leftarrow v / \|v\|_{2}$ 14: $Q \leftarrow Q \cup \{q\}$ 15: $r_{n} \leftarrow r_{n} - (X_{v,n} \cdot q)^{2}$ , $\forall n$ s.t. $S_{n} = 0$ 16: end for
+
+17: return S
+
+ment (Line 8). This joint criterion enables SPARE to preserve the structural representation of the visual embedding space while prioritizing tokens that provide complementary contextual information for query understanding.
+
+## 4 Experiments
+
+We evaluate SPARE on diverse VLMs and benchmarks to examine three aspects: (i) its robustness under aggressive token reduction, (ii) its effectiveness for multiskill compositional reasoning across different VLM architectures, and (iii) the contributions of subspace reconstruction and anti-relevance guidance.
+
+Table 1: Performance Comparison on LLaVA-1.5-7B.
+
+<table><tr><td>Method</td><td> $VQA^{V2}$ </td><td>GQA</td><td> $SQA^{Img}$ </td><td> $VQA^{Text}$ </td><td>POPE</td><td>MME</td><td> $MMB^{EN}$ </td><td> $MMB^{CN}$ </td><td>MMVet</td><td>Rel. Acc</td></tr><tr><td colspan="11">Total 576 tokens</td></tr><tr><td>LLaVA-1.5-7B</td><td>78.5</td><td>61.9</td><td>69.5</td><td>58.2</td><td>85.9</td><td>1506.5</td><td>64.7</td><td>58.1</td><td>31.3</td><td>100.0%</td></tr><tr><td colspan="11">Retain 128 tokens (↓ 77.8%)</td></tr><tr><td>SparseVLM (ICML 25)</td><td>76.3</td><td>58.4</td><td>68.5</td><td>56.7</td><td>85.0</td><td>1428.9</td><td>64.3</td><td>58.2</td><td>28.9</td><td>97.0</td></tr><tr><td>PruMerge+ (ICCV 25)</td><td>74.0</td><td>57.6</td><td>68.2</td><td>54.8</td><td>81.0</td><td>1376.9</td><td>60.7</td><td>54.6</td><td>27.7</td><td>93.5</td></tr><tr><td>DART (EMNLP 25)</td><td>76.0</td><td>58.7</td><td>69.2</td><td>56.5</td><td>80.2</td><td>1476.3</td><td>63.1</td><td>57.3</td><td>28.7</td><td>96.4</td></tr><tr><td>CDPruner (NeurIPS 25)</td><td>76.6</td><td>59.8</td><td>69.0</td><td>56.2</td><td>87.6</td><td>1437.8</td><td>63.0</td><td>55.2</td><td>32.0</td><td>98.0</td></tr><tr><td>SPARE (Ours)</td><td>76.7</td><td>60.0</td><td>68.6</td><td>56.6</td><td>87.5</td><td>1415.6</td><td>62.5</td><td>56.4</td><td>32.8</td><td>98.3</td></tr><tr><td colspan="11">Retain 64 tokens (↓ 88.9%)</td></tr><tr><td>SparseVLM (ICML 25)</td><td>70.3</td><td>53.7</td><td>69.7</td><td>53.5</td><td>77.6</td><td>1289.5</td><td>60.2</td><td>52.6</td><td>24.3</td><td>89.5</td></tr><tr><td>PruMerge+ (ICCV 25)</td><td>71.5</td><td>55.2</td><td>68.0</td><td>53.7</td><td>75.8</td><td>1325.2</td><td>59.2</td><td>52.3</td><td>26.3</td><td>90.2</td></tr><tr><td>DART (EMNLP 25)</td><td>72.8</td><td>56.3</td><td>68.8</td><td>54.3</td><td>74.2</td><td>1408.3</td><td>61.6</td><td>53.9</td><td>26.6</td><td>92.1</td></tr><tr><td>CDPruner (NeurIPS 25)</td><td>75.4</td><td>58.6</td><td>68.1</td><td>55.2</td><td>87.5</td><td>1408.2</td><td>61.0</td><td>53.4</td><td>29.8</td><td>95.6</td></tr><tr><td>SPARE (Ours)</td><td>75.8</td><td>59.1</td><td>68.1</td><td>55.8</td><td>87.3</td><td>1400.3</td><td>61.5</td><td>54.0</td><td>31.6</td><td>96.6</td></tr><tr><td colspan="11">Retain 32 tokens (↓ 94.4%)</td></tr><tr><td>DART (EMNLP 25)</td><td>67.9</td><td>52.8</td><td>69.2</td><td>52.0</td><td>65.5</td><td>1298.0</td><td>58.8</td><td>48.8</td><td>22.7</td><td>85.6</td></tr><tr><td>CDPruner (NeurIPS 25)</td><td>73.6</td><td>56.9</td><td>69.3</td><td>53.2</td><td>87.8</td><td>1377.8</td><td>59.5</td><td>49.6</td><td>27.9</td><td>93.0</td></tr><tr><td>SPARE (Ours)</td><td>74.0</td><td>57.5</td><td>69.3</td><td>54.0</td><td>87.5</td><td>1364.3</td><td>60.6</td><td>50.3</td><td>31.4</td><td>94.7</td></tr></table>
+
+Table 2: Performance Comparison on LLaVA-1.5-13B.
+
+<table><tr><td>Method</td><td> $VQA^{V2}$ </td><td>GQA</td><td> $SQA^{Img}$ </td><td> $VQA^{Text}$ </td><td>POPE</td><td>MME</td><td> $MMB^{EN}$ </td><td> $MMB^{CN}$ </td><td>MMVet</td><td>Rel. Acc</td></tr><tr><td colspan="11">Total 576 tokens</td></tr><tr><td>LLaVA-1.5-13B</td><td>80.0</td><td>63.3</td><td>72.8</td><td>61.2</td><td>86.0</td><td>1531.2</td><td>68.5</td><td>63.5</td><td>36.2</td><td>100.0%</td></tr><tr><td colspan="11">Retain 128 tokens (↓77.8%)</td></tr><tr><td>SparseVLM (ICML 25)</td><td>77.1</td><td>58.7</td><td>74.1</td><td>59.1</td><td>84.2</td><td>1494.3</td><td>68.5</td><td>63.1</td><td>35.7</td><td>97.9</td></tr><tr><td>PruMerge+ (ICCV 25)</td><td>75.1</td><td>57.4</td><td>71.8</td><td>56.6</td><td>80.9</td><td>1403.2</td><td>64.9</td><td>60.2</td><td>31.8</td><td>93.2</td></tr><tr><td>DART (EMNLP 25)</td><td>77.6</td><td>61.0</td><td>74.4</td><td>59.0</td><td>81.9</td><td>1534.8</td><td>67.6</td><td>63.3</td><td>31.9</td><td>97.1</td></tr><tr><td>CDPruner (NeurIPS 25)</td><td>77.7</td><td>59.8</td><td>72.6</td><td>58.4</td><td>86.9</td><td>1468.5</td><td>67.5</td><td>61.4</td><td>37.1</td><td>97.9</td></tr><tr><td>SPARE (Ours)</td><td>78.0</td><td>59.7</td><td>72.8</td><td>58.6</td><td>87.3</td><td>1449.8</td><td>66.9</td><td>62.1</td><td>37.3</td><td>98.0</td></tr><tr><td colspan="11">Retain 64 tokens (↓88.9%)</td></tr><tr><td>SparseVLM (ICML 25)</td><td>71.3</td><td>55.7</td><td>72.5</td><td>55.8</td><td>76.2</td><td>1353.5</td><td>63.0</td><td>58.6</td><td>28.4</td><td>89.7</td></tr><tr><td>PruMerge+ (ICCV 25)</td><td>72.4</td><td>55.6</td><td>71.7</td><td>55.7</td><td>74.1</td><td>1332.5</td><td>63.9</td><td>58.9</td><td>30.1</td><td>90.0</td></tr><tr><td>DART (EMNLP 25)</td><td>73.7</td><td>57.1</td><td>73.9</td><td>55.8</td><td>75.6</td><td>1433.0</td><td>65.5</td><td>61.0</td><td>30.4</td><td>92.5</td></tr><tr><td>CDPruner (NeurIPS 25)</td><td>76.7</td><td>59.4</td><td>72.5</td><td>57.6</td><td>87.1</td><td>1436.7</td><td>65.5</td><td>58.9</td><td>36.0</td><td>96.3</td></tr><tr><td>SPARE (Ours)</td><td>77.1</td><td>59.4</td><td>72.3</td><td>58.1</td><td>87.0</td><td>1467.4</td><td>66.2</td><td>60.1</td><td>37.0</td><td>97.2</td></tr><tr><td colspan="11">Retain 32 tokens (↓94.4%)</td></tr><tr><td>DART (EMNLP 25)</td><td>68.3</td><td>54.0</td><td>72.8</td><td>52.7</td><td>66.7</td><td>1319.7</td><td>61.9</td><td>57.0</td><td>26.5</td><td>86.0</td></tr><tr><td>CDPruner (NeurIPS 25)</td><td>75.2</td><td>58.4</td><td>71.9</td><td>55.2</td><td>87.6</td><td>1417.3</td><td>63.7</td><td>56.6</td><td>29.5</td><td>92.6</td></tr><tr><td>SPARE (Ours)</td><td>75.7</td><td>58.4</td><td>73.2</td><td>56.3</td><td>87.7</td><td>1420.9</td><td>63.7</td><td>56.5</td><td>34.7</td><td>94.7</td></tr></table>
+
+## 4.1 Experimental Setup
+
+Models. We evaluate SPARE on several representative VLM backbones, including LLaVA-1.5-7B and LLaVA-1.5-13B [22] for standard image understanding, as well as LLaVA-NeXT-7B [23], which supports high-resolution inputs with up to 2,880 visual tokens per image. We further evaluate Qwen2.5-VL-7B [2], which adopts dynamic image resolutions and produces input-dependent numbers of visual tokens.
+
+Benchmarks. We evaluate on nine widely used benchmarks: VQAv2 [14], GQA [16], SQA-IMG [26], TextVQA [29], POPE [21], MME [13], MMBench-EN [25], MMBench-CN [25], and MM-Vet [35]. These benchmarks cover diverse multimodal tasks, including visual question answering, OCR-based reasoning, hallucination evaluation, and multi-skill compositional reasoning.
+
+Table 3: Performance Comparison on LLaVA-NeXT-7B.
+
+<table><tr><td>Method</td><td> $VQA^{V2}$ </td><td>GQA</td><td> $SQA^{Img}$ </td><td> $VQA^{Text}$ </td><td>POPE</td><td>MME</td><td> $MMB^{EN}$ </td><td> $MMB^{CN}$ </td><td>MMVet</td><td>Rel. Acc</td></tr><tr><td colspan="11">Retain 2880 tokens (100%)</td></tr><tr><td>LLaVA-NeXT-7B</td><td>81.3</td><td>62.5</td><td>67.5</td><td>60.3</td><td>86.8</td><td>1511.8</td><td>65.8</td><td>57.3</td><td>40.0</td><td>100.0%</td></tr><tr><td colspan="11">Retain 640 tokens (↓ 77.8%)</td></tr><tr><td>DART (EMNLP 25)</td><td>80.6</td><td>63.1</td><td>69.2</td><td>62.5</td><td>85.9</td><td>1486.4</td><td>66.5</td><td>59.4</td><td>38.1</td><td>100.4</td></tr><tr><td>CDPruner (NeurIPS 25)</td><td>79.8</td><td>62.6</td><td>67.9</td><td>57.4</td><td>87.3</td><td>1461.5</td><td>66.2</td><td>57.6</td><td>40.1</td><td>99.2</td></tr><tr><td>SPARE (Ours)</td><td>79.9</td><td>62.6</td><td>68.0</td><td>59.0</td><td>87.4</td><td>1480.4</td><td>66.5</td><td>57.7</td><td>37.7</td><td>99.1</td></tr><tr><td colspan="11">Retain 320 tokens (↓ 88.9%)</td></tr><tr><td>DART (EMNLP 25)</td><td>78.5</td><td>61.4</td><td>68.3</td><td>58.3</td><td>83.5</td><td>1421.6</td><td>65.5</td><td>56.7</td><td>37.1</td><td>97.1</td></tr><tr><td>CDPruner (NeurIPS 25)</td><td>78.4</td><td>61.4</td><td>67.6</td><td>57.4</td><td>87.3</td><td>1471.1</td><td>65.5</td><td>55.5</td><td>37.6</td><td>97.6</td></tr><tr><td>SPARE (Ours)</td><td>78.4</td><td>61.3</td><td>67.6</td><td>57.5</td><td>87.2</td><td>1451.5</td><td>65.3</td><td>56.9</td><td>39.6</td><td>98.2</td></tr><tr><td colspan="11">Retain 160 tokens (↓ 94.4%)</td></tr><tr><td>DART (EMNLP 25)</td><td>73.7</td><td>57.3</td><td>68.4</td><td>50.1</td><td>77.1</td><td>1388.4</td><td>60.9</td><td>52.9</td><td>31.4</td><td>90.1</td></tr><tr><td>CDPruner (NeurIPS 25)</td><td>76.7</td><td>60.8</td><td>67.1</td><td>55.3</td><td>86.9</td><td>1436.2</td><td>64.2</td><td>54.4</td><td>35.2</td><td>95.4</td></tr><tr><td>SPARE (Ours)</td><td>76.6</td><td>61.0</td><td>67.5</td><td>55.9</td><td>86.4</td><td>1409.9</td><td>64.3</td><td>55.2</td><td>37.7</td><td>96.2</td></tr></table>
+
+Implementation Details. All experiments are conducted on NVIDIA A6000 GPUs. Unless otherwise specified, we follow the default inference configurations of each backbone and apply SPARE in a training-free, plug-and-play manner. Additional implementation details are provided in the Appendix.
+
+## 4.2 Overall Results
+
+LLaVA-1.5-7B and LLaVA-1.5-13B. As shown in Tables 1 and 2, SPARE consistently outperforms state-of-the-art pruning methods across diverse benchmarks on both LLaVA-1.5-7B and LLaVA-1.5-13B [22]. The advantage becomes more pronounced under aggressive pruning settings (i.e., 94.4% token reduction), where preserving the original visual representation becomes increasingly difficult. Even under such extreme reduction, SPARE retains about 95% of the baseline performance and surpasses nearly all methods evaluated at 88.9% pruning, except CDPruner [36]. While CDPruner remains the strongest competitor, SPARE maintains a clear margin on several benchmarks, particularly on MM-Vet [35], which evaluates multi-skill compositional reasoning.
+
+LLaVA-NeXT-7B. We further evaluate SPARE under higher-resolution settings using LLaVA-NeXT-7B [23]. As shown in Table 3, SPARE achieves strong overall performance across pruning ratios. When retaining 22.2% of tokens (approximately 640 tokens), the improvement becomes less pronounced, likely because the large number of preserved tokens reduces the impact of token selection in this high-resolution setting. Nevertheless, under extreme pruning (i.e., 94.4% token reduction), SPARE again demonstrates strong robustness, preserving about 96% of the original performance and showing clear advantages on multi-skill compositional reasoning (i.e., MM-Vet [35]).
+
+Multi-Skill Compositional Tasks. As observed in Tables 1–3, SPARE shows a particularly large advantage on MM-Vet [35], a multi-skill reasoning benchmark. To better understand this gap, we conduct a more detailed analysis by grouping questions according to the number of required reasoning skills. Using the LLaVA-1.5-7B results with 32 retained visual tokens, we compare the average performance of SPARE and CDPruner [36] across these groups. As shown in
+
+Table 4: Performance Comparison on Multi-Skill Benchmark. Grouped by the number of required reasoning skills (1–4), reporting the average performance for each corresponding skill count.
+
+<table><tr><td>Method</td><td>1-Skill</td><td>2-Skill</td><td>3-Skill</td><td>4-Skill</td></tr><tr><td colspan="5">Retain 32 tokens</td></tr><tr><td>CDPruner (NeurIPS 25)</td><td>50.4</td><td>27.8</td><td>6.5</td><td>17.9</td></tr><tr><td>SPARE (Ours)</td><td>44.7</td><td>32.3</td><td>21.1</td><td>22.9</td></tr></table>
+
+Table 6: Reconstruction Error. Measured as the Frobenius norm between the feature matrices before and after pruning.
+
+<table><tr><td>Method</td><td>GQA↓</td><td>SQA↓</td><td>POPE↓</td><td>MME↓</td></tr><tr><td colspan="5">Reconstruction Error (Retain 32 tokens)</td></tr><tr><td>DART (EMNLP 25)</td><td>398.4</td><td>376.2</td><td>417.9</td><td>409.3</td></tr><tr><td>CDPruner (NeurIPS 25)</td><td>240.8</td><td>210.4</td><td>239.1</td><td>229.5</td></tr><tr><td>SPARE (Ours)</td><td>228.2</td><td>178.9</td><td>224.7</td><td>209.5</td></tr></table>
+
+Table 5: Performance Comparison on Qwen2.5-VL-7B.
+
+<table><tr><td>Method</td><td>GQA</td><td>SQA</td><td>POPE</td><td>MME</td></tr><tr><td colspan="5">All tokens (100%)</td></tr><tr><td>Qwen2.5-VL-7B</td><td>60.9</td><td>88.4</td><td>86.3</td><td>2307.6</td></tr><tr><td colspan="5">Retain 20% tokens</td></tr><tr><td>CDPruner (NeurIPS 25)</td><td>58.7</td><td>84.3</td><td>84.3</td><td>2166.9</td></tr><tr><td>SPARE (Ours)</td><td>59.4</td><td>84.9</td><td>85.3</td><td>1997.3</td></tr><tr><td colspan="5">Retain 10% tokens</td></tr><tr><td>CDPruner (NeurIPS 25)</td><td>56.0</td><td>82.1</td><td>80.0</td><td>2008.7</td></tr><tr><td>SPARE (Ours)</td><td>57.2</td><td>82.5</td><td>83.7</td><td>1923.3</td></tr></table>
+
+Table 7: Efficiency Comparison with Different Pruning Methods on LLaVA-1.5-7B.
+
+<table><tr><td>Method</td><td># Tokens</td><td>Prefill (ms/sample)</td><td>KV Cache (MB)</td><td>Acc (%)</td></tr><tr><td>LLaVA-1.5-7B</td><td>576</td><td>130</td><td>347.7</td><td>58.2</td></tr><tr><td>DART (EMNLP 25)</td><td>64</td><td>60</td><td>109.6</td><td>54.3</td></tr><tr><td>CDPruner (NeurIPS 25)</td><td>64</td><td>45</td><td>91.8</td><td>55.2</td></tr><tr><td>SPARE (Ours)</td><td>64</td><td>45</td><td>91.8</td><td>55.8</td></tr></table>
+
+Table 4, CDPruner performs better than SPARE only on single-skill questions (e.g., recognition or OCR). However, as the number of required skills increases, SPARE shows increasingly larger gains. This trend highlights the advantage of our reconstruction-based token selection in preserving complementary contextual information necessary for compositional reasoning. See the Appendix for the full results.
+
+Qwen2.5-VL-7B. To further evaluate SPARE on a recent VLM, we conduct experiments on Qwen2.5-VL-7B [2]. Unlike LLaVA, Qwen adopts dynamicresolution visual processing, where the number of visual tokens varies across images. This property makes it difficult to directly apply CLIP-based image–text relevance, as CLIP [27] operates on fixed-resolution inputs that are not naturally compatible with Qwen’s visual representations. Since CDPruner [36] also relies on CLIP similarity, we remove image–text relevance from both methods to ensure a fair comparison. Under this setting, CDPruner reduces to a purely diversitybased selection strategy, allowing us to directly compare diversity-based selection with our reconstruction-based approach. As shown in Table 5, the reconstructionbased strategy outperforms diversity-based selection on most benchmarks. These results suggest that the strength of SPARE stems not only from anti-relevance guidance but also from its principled reconstruction of the visual subspace, supporting the effectiveness of reconstruction-based token selection.
+
+## 4.3 Further Analysis
+
+Reconstruction Error. We evaluate how well the selected tokens preserve the original visual representation by measuring the reconstruction error after pruning. Specifically, on LLaVA-1.5-7B [22], we retain only 32 visual tokens and compute the Frobenius norm between the original and pruned feature matrices, averaged over images within each benchmark. To focus on the intrinsic reconstruction capability of each selection strategy, we consider a text-agnostic
+
+![](images/b1b7f56f8b3dcfc4393668c0c6b192d999f644a003bfcc8dd8a1ba05e21cf12a.jpg)  
+Reconstruction-Based Selection w/ Anti-Relevance w/ Normal Relevance
+
+Fig. 5: Ablation Study of SPARE Components. Comparison on LLaVA-1.5-7B [22] across four benchmarks under three variants: (1) reconstruction-based selection, (2) with anti-relevance guidance, and (3) with normal-relevance guidance.
+
+setting where image–text relevance is not used. Under this setting, we compare SPARE with diversity-based methods, including DART (diversity-only) [33] and CDPruner [36]. As shown in Table 6, reconstruction-based selection consistently yields smaller reconstruction errors than diversity-based methods across multiple benchmarks. These results indicate that SPARE more faithfully preserves the original visual feature space, supporting the effectiveness of reconstruction-based token selection.
+
+Efficiency Analysis. We now evaluate the efficiency of SPARE by measuring prefilling time and KV cache memory consumption. All experiments are conducted using LLaVA-1.5-7B while retaining 64 visual tokens on the TextVQA benchmark [29]. For reliable measurement, we perform a warm-up over 20 samples before evaluation, and report KV cache memory based on the peak usage during inference. As shown in Table 7, SPARE reduces the per-sample prefilling time by 2.9× and decreases KV cache memory usage by 3.8×. Compared to other pruning methods, SPARE achieves the highest computational efficiency while maintaining competitive accuracy.
+
+Ablation Study. We conduct an ablation study to analyze the contributions of reconstruction-based selection and anti-relevance guidance in SPARE. Specifically, we compare three variants: (1) reconstruction-based selection alone, (2) reconstruction with anti-relevance guidance, and (3) reconstruction with normalrelevance guidance. All experiments are performed on LLaVA-1.5-7B [22], evaluating accuracy under different visual token budgets.
+
+As shown in Fig. 5, reconstruction-based selection alone already exhibits strong robustness under aggressive pruning. On SQA and POPE, it retains only 32 visual tokens (i.e. 94% reduction) while preserving about 98% of the baseline performance. Incorporating anti-relevance guidance further improves performance across most token budgets. In contrast, normal-relevance guidance consistently underperforms anti-relevance, supporting our design choice. Interestingly, on SQA [26], relevance guidance does not always improve over reconstructiononly selection. We attribute this to the nature of SQA questions, which often require holistic understanding of scientific diagrams rather than focusing on textaligned regions. This observation highlights the potential need for task-adaptive token selection strategies, which we leave for future work.
+
+![](images/3f2f6b40963838670d5342bc34d30f0a4113d3a90a1feb117bb8d563c1d6c60c.jpg)  
+Fig. 6: Visualizations of SPARE. Reconstruction-based selection focuses on structure, Anti-Relevance captures context but is redundant, while SPARE balances both.
+
+Visualizations. Lastly, we provide qualitative visualizations to better understand the roles of SPARE’s components. Specifically, we visualize the tokens retained by reconstruction-based selection alone and anti-relevance alone (via top-k selection), while keeping 32 tokens on LLaVA-1.5-7B [22]. As shown in Fig. 6, reconstruction-based selection primarily preserves the global visual structure but may overlook regions closely aligned with the textual query. In contrast, anti-relevance captures query-related regions but often produces redundant selections and may miss visually important areas that are not directly aligned with the text (e.g., object boundaries required for size comparison). SPARE combines the strengths of both components, preserving the visual structure while selecting contextually informative tokens, which leads to strong question-answering performance. Additional visualizations are provided in the Appendix.
+
+## 5 Conclusion
+
+Visual token pruning is often treated as a heuristic selection problem. In this work, we revisit it from a structural perspective and formulate visual token pruning as a column subset selection problem. Based on this formulation, we propose SPARE, a token pruning method that selects tokens by reconstructing the original visual feature subspace through a rank-revealing QR procedure. Beyond structural reconstruction, we identify an anti-relevance phenomenon: tokens with lower image–text relevance often contain complementary contextual cues that are critical for reasoning. By integrating this anti-relevance guidance with reconstruction-based selection, SPARE balances global structural preservation and query-aware token prioritization. Extensive experiments demonstrate that SPARE remains robust even under extreme token reduction (e.g., 94%) and consistently improves performance on challenging multi-skill compositional reasoning tasks, while operating in a fully training-free manner. These findings suggest that preserving the visual subspace structure provides a principled foundation for efficient and reliable token selection in VLMs.
+
+## References
+
+1. Alvar, S.R., Singh, G., Akbari, M., Zhang, Y.: DivPrune: Diversity-based Visual Token Pruning for Large Multimodal Models. In: IEEE/CVF Conference on Computer Vision and Pattern Recognition, CVPR (2025)  
+2. Bai, S., Chen, K., Liu, X., Wang, J., Ge, W., Song, S., Dang, K., Wang, P., Wang, S., Tang, J., Zhong, H., Zhu, Y., Yang, M., Li, Z., Wan, J., Wang, P., Ding, W., Fu, Z., Xu, Y., Ye, J., Zhang, X., Xie, T., Cheng, Z., Zhang, H., Yang, Z., Xu, H., Lin, J.: Qwen2.5-VL Technical Report. CoRR (2025)  
+3. Bjorck, A.: Numerics of gram-schmidt orthogonalization. Linear Algebra and its Applications (1994)  
+4. Boutsidis, C., Mahoney, M.W., Drineas, P.: An Improved Approximation Algorithm for the Column Subset Selection Problem. In: Proceedings of the Twentieth Annual ACM-SIAM Symposium on Discrete Algorithms, SODA (2009)  
+5. Chan, T.F.: Rank Revealing QR Factorizations. Linear algebra and its applications (1987)  
+6. Chen, L., Zhao, H., Liu, T., Bai, S., Lin, J., Zhou, C., Chang, B.: An Image is Worth 1/2 Tokens After Layer 2: Plug-and-Play Inference Acceleration for Large Vision-Language Models. In: 18th European Conference on Computer Vision, ECCV (2024)  
+7. Chiang, W.L., Li, Z., Lin, Z., Sheng, Y., Wu, Z., Zhang, H., Zheng, L., Zhuang, S., Zhuang, Y., Gonzalez, J.E., Stoica, I., Xing, E.P.: Vicuna: An open-source chatbot impressing gpt-4 with 90%\* chatgpt quality (2023), https://lmsys.org/blog/ 2023-03-30-vicuna/  
+8. Dao, T., Fu, D.Y., Ermon, S., Rudra, A., Ré, C.: FlashAttention: Fast and Memory-Efficient Exact Attention with IO-Awareness. In: Advances in Neural Information Processing Systems 35: Annual Conference on Neural Information Processing Systems, NeurIPS (2022)  
+9. Deshpande, A., Rademacher, L., Vempala, S.S., Wang, G.: Matrix Approximation and Projective Clustering via Volume Sampling. Theory Comput. (2006)  
+10. Drineas, P., Mahoney, M.W., Muthukrishnan, S.: Relative-Error CUR Matrix Decompositions. SIAM J. Matrix Anal. Appl. (2008)  
+11. Farahat, A.K., Elgohary, A., Ghodsi, A., Kamel, M.S.: Greedy Column Subset Selection for Large-Scale Data Sets. Knowl. Inf. Syst. (2015)  
+12. Fazlyab, M., Robey, A., Hassani, H., Morari, M., Pappas, G.J.: Efficient and Accurate Estimation of Lipschitz Constants for Deep Neural Networks. In: Annual Conference on Neural Information Processing Systems, NeurIPS. pp. 11423–11434 (2019)  
+13. Fu, C., Chen, P., Shen, Y., Qin, Y., Zhang, M., Lin, X., Yang, J., Zheng, X., Li, K., Sun, X., Wu, Y., Ji, R., Shan, C., He, R.: MME: A comprehensive evaluation benchmark for multimodal large language models. In: The Thirty-ninth Annual Conference on Neural Information Processing Systems Datasets and Benchmarks Track (2025)  
+14. Goyal, Y., Khot, T., Summers-Stay, D., Batra, D., Parikh, D.: Making the V in VQA matter: Elevating the role of image understanding in visual question answering. In: 2017 IEEE Conference on Computer Vision and Pattern Recognition, CVPR 2017, Honolulu, HI, USA, July 21-26, 2017 (2017)  
+15. Gu, M., Eisenstat, S.C.: Efficient Algorithms for Computing a Strong Rank-Revealing QR Factorization. SIAM J. Sci. Comput. (1996)  
+16. Hudson, D.A., Manning, C.D.: GQA: A new dataset for real-world visual reasoning and compositional question answering. In: IEEE Conference on Computer Vision and Pattern Recognition, CVPR 2019, Long Beach, CA, USA, June 16-20, 2019 (2019)  
+17. Jiang, A.Q., Sablayrolles, A., Mensch, A., Bamford, C., Chaplot, D.S., de Las Casas, D., Bressand, F., Lengyel, G., Lample, G., Saulnier, L., Lavaud, L.R., Lachaux, M., Stock, P., Scao, T.L., Lavril, T., Wang, T., Lacroix, T., Sayed, W.E.: Mistral 7b. CoRR (2023)  
+18. Kim, Y., Zhang, Y., Liu, H., Jung, A., Lee, S., Hong, S.: Training-Free Token Pruning via Zeroth-Order Gradient Estimation in Vision-Language Models. CoRR (2025)  
+19. Li, B., Zhang, Y., Guo, D., Zhang, R., Li, F., Zhang, H., Zhang, K., Zhang, P., Li, Y., Liu, Z., Li, C.: LLaVA-OneVision: Easy Visual Task Transfer. Trans. Mach. Learn. Res. (2025)  
+20. Li, F., Zhang, R., Zhang, H., Zhang, Y., Li, B., Li, W., Ma, Z., Li, C.: Llava-nextinterleave: Tackling multi-image, video, and 3d in large multimodal models. CoRR (2024)  
+21. Li, Y., Du, Y., Zhou, K., Wang, J., Zhao, W.X., Wen, J.: Evaluating Object Hallucination in Large Vision-Language Models. In: Proceedings of the 2023 Conference on Empirical Methods in Natural Language Processing, EMNLP (2023)  
+22. Liu, H., Li, C., Li, Y., Lee, Y.J.: Improved baselines with visual instruction tuning. In: IEEE/CVF Conference on Computer Vision and Pattern Recognition, CVPR 2024, Seattle, WA, USA, June 16-22, 2024 (2024)  
+23. Liu, H., Li, C., Li, Y., Li, B., Zhang, Y., Shen, S., Lee, Y.J.: Llava-next: Improved reasoning, ocr, and world knowledge (2024), https://llava-vl.github.io/blog/ 2024-01-30-llava-next/  
+24. Liu, H., Li, C., Wu, Q., Lee, Y.J.: Visual Instruction Tuning. In: Advances in Neural Information Processing Systems 36: Annual Conference on Neural Information Processing Systems, NeurIPS (2023)  
+25. Liu, Y., Duan, H., Zhang, Y., Li, B., Zhang, S., Zhao, W., Yuan, Y., Wang, J., He, C., Liu, Z., Chen, K., Lin, D.: Mmbench: Is your multi-modal model an all-around player? In: Computer Vision - ECCV 2024 - 18th European Conference, Milan, Italy, September 29-October 4, 2024, Proceedings, Part VI (2024)  
+26. Lu, P., Mishra, S., Xia, T., Qiu, L., Chang, K., Zhu, S., Tafjord, O., Clark, P., Kalyan, A.: Learn to explain: Multimodal reasoning via thought chains for science question answering. In: Advances in Neural Information Processing Systems 35: Annual Conference on Neural Information Processing Systems 2022, NeurIPS 2022, New Orleans, LA, USA, November 28 - December 9, 2022 (2022)  
+27. Radford, A., Kim, J.W., Hallacy, C., Ramesh, A., Goh, G., Agarwal, S., Sastry, G., Askell, A., Mishkin, P., Clark, J., Krueger, G., Sutskever, I.: Learning transferable visual models from natural language supervision. In: Proceedings of the 38th International Conference on Machine Learning, ICML 2021, 18-24 July 2021, Virtual Event (2021)  
+28. Shitov, Y.: Column subset selection is NP-complete. Linear Algebra and its Applications 610, 52–58 (2021)  
+29. Singh, A., Natarajan, V., Shah, M., Jiang, Y., Chen, X., Batra, D., Parikh, D., Rohrbach, M.: Towards VQA models that can read. In: IEEE Conference on Computer Vision and Pattern Recognition, CVPR 2019, Long Beach, CA, USA, June 16-20, 2019 (2019)  
+30. Song, D., Wang, W., Chen, S., Wang, X., Guan, M.X., Wang, B.: Less is More: A Simple yet Effective Token Reduction Method for Efficient Multi-modal LLMs. In: Proceedings of the 31st International Conference on Computational Linguistics, COLING (2025)  
+31. Touvron, H., Lavril, T., Izacard, G., Martinet, X., Lachaux, M., Lacroix, T., Rozière, B., Goyal, N., Hambro, E., Azhar, F., Rodriguez, A., Joulin, A., Grave, E., Lample, G.: Llama: Open and efficient foundation language models. CoRR (2023), https://doi.org/10.48550/arXiv.2302.13971  
+32. Wen, Z., Gao, Y., Li, W., He, C., Zhang, L.: Token Pruning in Multimodal Large Language Models: Are We Solving the Right Problem? In: Findings of the Association for Computational Linguistics, ACL (2025)  
+33. Wen, Z., Gao, Y., Wang, S., Zhang, J., Zhang, Q., Li, W., He, C., Zhang, L.: Stop Looking for "Important Tokens" in Multimodal Language Models: Duplication Matters More. In: Proceedings of the 2025 Conference on Empirical Methods in Natural Language Processing, EMNLP (2025)  
+34. Xing, L., Huang, Q., Dong, X., Lu, J., Zhang, P., Zang, Y., Cao, Y., He, C., Wang, J., Wu, F., Lin, D.: PyramidDrop: Accelerating Your Large Vision-Language Models via Pyramid Visual Redundancy Reduction. CoRR (2024)  
+35. Yu, W., Yang, Z., Li, L., Wang, J., Lin, K., Liu, Z., Wang, X., Wang, L.: MM-Vet: Evaluating Large Multimodal Models for Integrated Capabilities. In: Forty-first International Conference on Machine Learning, ICML (2024)  
+36. Zhang, Q., Liu, M., Li, L., Lu, M., Zhang, Y., Pan, J., She, Q., Zhang, S.: Beyond Attention or Similarity: Maximizing Conditional Diversity for Token Pruning in MLLMs. In: The Thirty-ninth Annual Conference on Neural Information Processing Systems, NeurIPS (2025)  
+37. Zhang, Y., Fan, C., Ma, J., Zheng, W., Huang, T., Cheng, K., Gudovskiy, D.A., Okuno, T., Nakata, Y., Keutzer, K., Zhang, S.: SparseVLM: Visual Token Sparsification for Efficient Vision-Language Model Inference. In: Forty-second International Conference on Machine Learning, ICML (2025)  
+38. Zhu, J., Wang, W., Chen, Z., Liu, Z., Ye, S., Gu, L., Tian, H., Duan, Y., Su, W., Shao, J., Gao, Z., Cui, E., Wang, X., Cao, Y., Liu, Y., Wei, X., Zhang, H., Wang, H., Xu, W., Li, H., Wang, J., Deng, N., Li, S., He, Y., Jiang, T., Luo, J., Wang, Y., He, C., Shi, B., Zhang, X., Shao, W., He, J., Xiong, Y., Qu, W., Sun, P., Jiao, P., Lv, H., Wu, L., Zhang, K., Deng, H., Ge, J., Chen, K., Wang, L., Dou, M., Lu, L., Zhu, X., Lu, T., Lin, D., Qiao, Y., Dai, J., Wang, W.: InternVL3: Exploring Advanced Training and Test-Time Recipes for Open-Source Multimodal Models. CoRR (2025)
+
+# Supplementary Material
+
+## Moving Beyond Diversity: Visual Token Pruning as Subspace Reconstruction for Efficient VLMs
+
+## A Appendix
+
+In this appendix, we first present detailed descriptions of the experimental setup, including the models, benchmarks, and implementation details. We then provide additional experimental results, sensitivity analysis, and visualizations.
+
+## A.1 Details of Experimental Setup
+
+## Model Details.
+
+• LLaVA-1.5 [22]. A widely used open-source vision-language model that processes 336 × 336 images and produces 576 visual tokens per image. The architecture consists of a CLIP ViT-L/14 vision encoder [27], a two-layer MLP multimodal projector with GELU activation, and a large language model based on Vicuna [7].  
+• LLaVA-NeXT [23]. An improved version of LLaVA designed for highresolution visual understanding. In our experiments, we fix the resolution of input images to 672 × 672 resolution, resulting in 2880 visual tokens per image. The architecture largely follows that of LLaVA-1.5 [22].  
+• Qwen2.5-VL [2]. A recent model based on the Qwen-VL architecture, designed to improve multimodal perception and reasoning. It employs a Naive Dynamic Resolution (NDR) strategy to process images of arbitrary aspect ratios, dynamically generating a variable number of visual tokens. The architecture consists of a ViT-based vision encoder with Multimodal Rotary Positional Embedding (MRoPE), a vision-language merger, and the Qwen2.5 large language model. This design enables the model to capture spatial and temporal relationships while supporting long-context sequences of up to 128K tokens.
+
+## Benchmark Details.
+
+• VQAv2 [14]. A balanced visual question answering benchmark designed to reduce language priors by pairing visually similar images that correspond to different answers for the same question. The dataset contains about 1.1M image–question pairs from approximately 200K MS COCO images, each annotated with ten human-provided answers.  
+• GQA [16]. A large-scale benchmark for compositional visual reasoning designed to mitigate strong statistical biases in earlier VQA datasets. It contains over 22M questions over 113K images from Visual Genome scene graphs, where each question is associated with a structured semantic representation.
+
+• SQA [26]. A large-scale multimodal benchmark designed to evaluate multihop reasoning across diverse scientific domains. It contains 21K questions spanning natural science, social science, and language science, many of which are annotated with grounded lectures and explanations. In our experiments, we use the SQA-IMG subset, which contains questions paired with images for multimodal reasoning evaluation.
+
+• TextVQA [29]. A visual question answering benchmark designed to evaluate a model’s ability to read and reason about text embedded in real-world images. It contains 45K human-generated questions over 28K images from Open Images v3, requiring both visual understanding and optical character recognition.
+
+• POPE [21]. A benchmark designed to evaluate object hallucination in vision-language models. It formulates hallucination detection as a binary question answering task about object presence under three evaluation settings: random, popular, and adversarial.
+
+• MME [13]. A comprehensive benchmark designed to evaluate the perception and cognition abilities of multimodal large language models. It uses concise yes/no questions and includes paired questions with opposite answers across 14 subtasks covering visual perception and cognitive reasoning.
+
+• MMBench [25]. A comprehensive bilingual benchmark for evaluating finegrained multimodal perception and reasoning abilities of vision-language models. It contains 3,217 carefully curated multiple-choice questions in English and Chinese across 20 ability dimensions and adopts the CircularEval strategy to reduce position bias.
+
+• MM-Vet [35]. A benchmark designed to evaluate large multimodal models on complex tasks that require integrating multiple vision-language capabilities. It contains 218 open-ended questions over 200 curated images and assesses combinations of six core capabilities, including recognition, OCR, knowledge, language generation, spatial reasoning, and math. For evaluation, we use GPT-4.1 as the judge to score model responses.
+
+Implementation Details. All experiments are conducted on 4×NVIDIA A6000 GPUs with a batch size of 1. SPARE is fully training-free and applied at inference time. Specifically, visual token pruning is performed after the multimodal projector and before the visual tokens are passed to the LLM.
+
+For LLaVA, we use the official implementations1, while experiments on Qwen2.5- VL are conducted using the lmms-eval2 evaluation framework. We evaluate three pruning ratios corresponding to 77.8%, 88.9%, and 94.4% token reduction for the LLaVA models, and report the overall performance using the average relative accuracy across benchmarks. For Qwen2.5-VL, we evaluate settings that retain 20% and 10% of the visual tokens for each image, reflecting its dynamic tokenization rather than using a fixed token budget.
+
+Table A1: Performance Comparison on LLaVA-NeXT-13B.
+
+<table><tr><td>Method</td><td> $VQA^{V2}$ </td><td>GQA</td><td> $SQA^{Img}$ </td><td> $VQA^{Text}$ </td><td>POPE</td><td>MME</td><td> $MMB^{EN}$ </td><td> $MMB^{CN}$ </td><td>MMVet</td><td>Rel. Acc</td></tr><tr><td colspan="11">Retain 2880 tokens (100%)</td></tr><tr><td>LLaVA-NeXT-13B</td><td>82.3</td><td>64.4</td><td>73.1</td><td>63.2</td><td>85.3</td><td>1539.5</td><td>68.5</td><td>61.2</td><td>45.0</td><td>100.0%</td></tr><tr><td colspan="11">Retain 640 tokens (↓ 77.8%)</td></tr><tr><td>DART (EMNLP 25)</td><td>81.8</td><td>64.4</td><td>73.7</td><td>64.7</td><td>84.7</td><td>1558.1</td><td>68.6</td><td>64.0</td><td>44.3</td><td>100.7</td></tr><tr><td>CDPruner (NeurIPS 25)</td><td>81.0</td><td>64.0</td><td>71.9</td><td>61.0</td><td>87.6</td><td>1539.2</td><td>69.1</td><td>62.5</td><td>39.0</td><td>98.3</td></tr><tr><td>SPARE (Ours)</td><td>80.7</td><td>64.0</td><td>71.4</td><td>61.1</td><td>87.3</td><td>1579.6</td><td>68.6</td><td>63.0</td><td>41.3</td><td>99.1</td></tr><tr><td colspan="11">Retain 320 tokens (↓ 88.9%)</td></tr><tr><td>DART (EMNLP 25)</td><td>79.7</td><td>62.2</td><td>72.1</td><td>58.8</td><td>81.7</td><td>1528.6</td><td>66.6</td><td>61.9</td><td>39.9</td><td>96.3</td></tr><tr><td>CDPruner (NeurIPS 25)</td><td>79.5</td><td>63.1</td><td>71.1</td><td>58.8</td><td>87.5</td><td>1496.7</td><td>66.5</td><td>62.0</td><td>40.8</td><td>97.1</td></tr><tr><td>SPARE (Ours)</td><td>79.0</td><td>63.4</td><td>70.7</td><td>59.3</td><td>87.2</td><td>1528.6</td><td>67.0</td><td>62.5</td><td>39.5</td><td>97.2</td></tr><tr><td colspan="11">Retain 160 tokens (↓ 94.4%)</td></tr><tr><td>DART (EMNLP 25)</td><td>75.1</td><td>58.1</td><td>71.3</td><td>49.6</td><td>75.7</td><td>1448.4</td><td>63.6</td><td>57.7</td><td>34.8</td><td>89.4</td></tr><tr><td>CDPruner (NeurIPS 25)</td><td>77.8</td><td>62.1</td><td>70.4</td><td>56.7</td><td>88.5</td><td>1484.7</td><td>66.2</td><td>60.4</td><td>38.0</td><td>95.2</td></tr><tr><td>SPARE (Ours)</td><td>77.3</td><td>62.0</td><td>70.8</td><td>57.9</td><td>87.6</td><td>1532.3</td><td>67.3</td><td>61.8</td><td>36.2</td><td>95.6</td></tr></table>
+
+Table A2: Detailed Results on the Multi-Skill Benchmark.
+
+<table><tr><td rowspan="2">Method</td><td colspan="2">1-Skill</td><td colspan="3">2-Skill</td><td colspan="5">3-Skill</td><td colspan="2">4-Skill</td><td rowspan="2">Total</td></tr><tr><td>r</td><td>o</td><td>rk</td><td>rs</td><td>ro</td><td>rkg</td><td>os</td><td>osm</td><td>ros</td><td>ogs</td><td>rogs</td><td>rokg</td></tr><tr><td colspan="14">Retain 32 tokens (↓94.4%)</td></tr><tr><td>CDPruner (NeurIPS 25)</td><td>60.8</td><td>40.0</td><td>16.7</td><td>56.7</td><td>50.0</td><td>19.8</td><td>15.4</td><td>19.3</td><td>0.0</td><td>0.0</td><td>37.5</td><td>16.2</td><td>27.9</td></tr><tr><td>SPARE (Ours)</td><td>48.6</td><td>40.8</td><td>16.7</td><td>50.0</td><td>70.0</td><td>26.8</td><td>24.6</td><td>27.1</td><td>24.3</td><td>15.0</td><td>50.0</td><td>18.8</td><td>31.4</td></tr></table>
+
+## A.2 Additional Experiments and Analyses
+
+Performance Comparison on LLaVA-NeXT-13B. We further evaluate SPARE on a larger model, LLaVA-NeXT-13B [23], to examine the generalization of our method. As shown in Table A1, SPARE achieves strong overall performance across pruning ratios. Similar to the observations on LLaVA-NeXT-7B [23], the improvement becomes less pronounced when retaining 22.2% of tokens (Retain 640 tokens), likely because the large number of preserved tokens reduces the impact of token selection in this high-resolution setting. Nevertheless, under extreme pruning (i.e., 94.4% token reduction), SPARE again demonstrates strong robustness, preserving about 96% of the original performance.
+
+Performance Comparison on Multi-Skill Benchmark. We provide a detailed comparison of compositional benchmark across internal tasks, grouped by the number of required reasoning skills. Specifically, we report the results of LLaVA-1.5-7B [22] on the MM-Vet benchmark [35] with 32 retained visual tokens. In table A2, the symbols r, o, k, g, s, and m denote recognition, OCR, knowledge, generation, spatial reasoning and math, respectively. For brevity, we do not report categories where both SPARE and CDPruner [36] achieve zero performance. As shown in Table A2, while SPARE does not show a clear advantage on single-skill tasks, it consistently outperforms CDPruner [36] on tasks requiring multiple reasoning skills, suggesting that SPARE is particularly effective for compositional reasoning.
+
+Sensitivity Analysis of Anti-Relevance Measurement. To analyze the impact of different formulations for deriving anti-relevance, we evaluate several design choices. Specifically, we first compute the cosine similarity between image and text embeddings to obtain the relevance scores. We then consider two aggregation strategies over text tokens, taking either the mean or the maximum value. Afterward, we apply different normalization schemes, including the commonly used min–max normalization [18,36] and our formulation based on zscore normalization followed by a softplus function. We conduct the analysis on LLaVA-NeXT-7B [23] with 160 retained visual tokens (i.e., 94.4% token reduction). As shown in Table A3, although the performance differences are modest, mean aggregation with z-score normalization followed by a softplus function yields more stable results across benchmarks. Based on these observations, we adopt this metric for computing anti-relevance in SPARE.
+
+Table A3: Analysis of Anti-Relevance Measurement Strategies.
+
+<table><tr><td colspan="2">Metric</td><td>GQA</td><td>SQA</td><td>POPE</td><td>MME</td></tr><tr><td colspan="6">Retain 2880 tokens</td></tr><tr><td colspan="2">LLaVA-NeXT-7B</td><td>62.5</td><td>67.5</td><td>86.8</td><td>1511.8</td></tr><tr><td colspan="6">Retain 160 tokens (↓94.4%)</td></tr><tr><td rowspan="2">min-max normalization</td><td>mean</td><td>60.8</td><td>67.1</td><td>86.0</td><td>1400.8</td></tr><tr><td>max</td><td>60.8</td><td>67.6</td><td>86.0</td><td>1400.8</td></tr><tr><td rowspan="2">z-score + softplus</td><td>mean</td><td>61.0</td><td>67.5</td><td>86.4</td><td>1409.9</td></tr><tr><td>max</td><td>60.7</td><td>67.5</td><td>86.4</td><td>1409.9</td></tr></table>
+
+Visualizations. To further investigate the behavior of SPARE, we provide additional visualizations. In Fig. A1, we visualize the image-text relevance scores to examine their distribution across visual tokens. As shown, objects that are semantically related to the textual query often exhibit relatively low relevance scores, while some background regions or visually dominant areas receive higher relevance values. This observation motivates the use of our anti-relevance guidance, which enables token selection to incorporate contextual information beyond image-only selection that ignores the textual query.
+
+In Fig. A2, we further present visualization results under different token retention budgets and compare our method with CDPruner [36]. As the number of retained tokens decreases, a difference between the two approaches becomes evident, with our method maintaining more informative visual evidence under extremely low token budgets, highlighting the importance of reconstruction-based token selection.
+
+![](images/55ac8529d8e66cfdd2aa84b442edaefaf03aac44224b13361cb3b466b26845f8.jpg)
+
+![](images/7661cc9baab7af92ceaa13379f734d6d91910decf7c2c99d88d21ffdf4e6434d.jpg)  
+Fig. A1: Visualizations of Image-Text Relevance on the POPE Benchmark [21]. Red denotes higher relevance, while blue denotes lower relevance.
+
+![](images/aecb5b28962dab4c9e8f4e673edf19afbf7faaaa4e45648230629e85fec9c511.jpg)  
+Q: “Which animal in the picture is larger, the cat or the dog?”
+
+![](images/3d32393973eb17d935fc9a0cc0f8f86397949b9ad6e69cae2af76c0841ed717b.jpg)  
+A: cat
+
+![](images/d76d3cab4850893a22093c68840bcafcdcb12fe8de52bab6353d0116ea47edc6.jpg)
+
+<details>
+<summary>text_image</summary>
+
+CDPruner
+Retain 128 tokens
+Retain 64 tokens
+Retain 32 tokens
+The cat is larger than the dog in the picture.
+The cat is larger than the dog in the picture.
+The dog is larger than the cat in the picture.
+SPARE (Ours)
+The cat is larger than the dog in the picture.
+The cat is larger than the dog in the picture.
+The cat is larger than the dog in the picture.
+</details>
+
+![](images/b8ed05c43ee3851d724a91f95db2455e67e5e2913473f385751eb1dc63dc8bdc.jpg)  
+Q: “Is the spoon made of the same material as the chopsticks?”
+
+![](images/a1a4ed33f17ba6b19941ef44330d09ab44c10db6b8b101f5045f077bce89623b.jpg)  
+A: yes
+
+![](images/d7df041c612fe6cb7d0e06f15c4cd0905ddda3d859e608cc89973319b0113145.jpg)
+
+<details>
+<summary>text_image</summary>
+
+Retain 128 tokens
+Retain 64 tokens
+Retain 32 tokens
+CDPruner
+Yes, the spoon is made
+of the same material as
+the chopsticks.
+Yes, the spoon is made
+of the same material as
+the chopsticks.
+No, the spoon is made
+of a different material
+than the chopsticks.
+SPARE (Ours)
+Yes, the spoon and the
+chopsticks are made
+of the same material.
+Yes, the spoon is made
+of the same material as
+the chopsticks.
+Yes, the spoon is made
+of the same material as
+the chopsticks.
+</details>
+
+![](images/6e254da8e647c3ac5547f6aa7269fbb0350f156beb6a50567b8288cd06055af3.jpg)  
+Q: “What is the make of the car on the left?”
+
+![](images/d316590ee66bd0c0a27a7f4639f7b00d443a2b49d347428f7ee6af26f43c29ed.jpg)  
+A: volkswagen
+
+![](images/9744d9a7bb2f2e0f03cf1ce6494d83db185332a9c72e53bdefee50c89c878e67.jpg)
+
+<details>
+<summary>text_image</summary>
+
+CDPruner
+Retain 128 tokens
+Retain 64 tokens
+Retain 32 tokens
+The make of the car on
+the left is a Volkswagen.
+The make of the car
+on the left is a Ford.
+The make of the car
+on the left is a Ford.
+SPARE (Ours)
+The make of the car on
+the left is a Volkswagen.
+The make of the car on
+the left is a Volkswagen.
+The make of the car
+on the left is a Ford.
+</details>
+
+Fig. A2: Qualitative Comparison. Visualizations of retained tokens under different token retention budgets, comparing SPARE with CDPruner [36].
