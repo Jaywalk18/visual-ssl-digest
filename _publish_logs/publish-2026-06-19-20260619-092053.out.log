@@ -1,0 +1,252 @@
+Submitting 2 PDFs in 1 batch(es)
+
+Batch 1: requesting upload URLs for 2 files
+  batch_id: 613854ee-a321-4ed0-abbd-9c5789ab2bf2
+
+Uploading PDFs in parallel (8 workers)...
+Uploaded: 2/2
+
+Polling for extraction to finish...
+  poll 1: 0/2 done
+  poll 2: 2/2 done
+
+Extraction done: 2/2
+
+Downloading + unzipping...
+Unzipped: 2/2
+Built site at H:\Desktop\visual_ssl_digest_site
+[master 298d5a7f] daily: 2026-06-19 web digest
+ 218 files changed, 9403 insertions(+), 6 deletions(-)
+ create mode 100644 assets/mineru/2602.07544/07c67279-35f7-4001-9189-faed6bbbd28a_content_list.json
+ create mode 100644 assets/mineru/2602.07544/full.md
+ create mode 100644 assets/mineru/2602.07544/images/046b35e47e4454d67d7e881ad0751bd0571e3a25ad42d9c0de8cc754de951872.jpg
+ create mode 100644 assets/mineru/2602.07544/images/085274c71f4a53a2d4b2e43524cae3b37f59dc4a89c159e95ad19f3ea19ad334.jpg
+ create mode 100644 assets/mineru/2602.07544/images/08d81ceb33a1178d01b65a4f79304c93b05e617c9610827f6c3da4d9c741672a.jpg
+ create mode 100644 assets/mineru/2602.07544/images/0910d81a7e35084eb0816c2012ba509b0fcdb5a0b55f27e8f5faa2401a712fcc.jpg
+ create mode 100644 assets/mineru/2602.07544/images/0c8ca1bc4bf0ab35d4ee1938891675479235a7a43e4f6c0ae73b96d47e4f1c30.jpg
+ create mode 100644 assets/mineru/2602.07544/images/0ea2ea1f5bc8ebc05912fc5509b4487a53f2c7e75820902cdc9dca1a74af510a.jpg
+ create mode 100644 assets/mineru/2602.07544/images/1011cecf861c4a2645b6b7fa0a6969f82c537e2605793e1b77aa5f105db64067.jpg
+ create mode 100644 assets/mineru/2602.07544/images/128554b7c35c28c32899430bf7c640e8a86ed88228814a3ad219e8713aa8a8a7.jpg
+ create mode 100644 assets/mineru/2602.07544/images/142b94841e912cd239e31b5b5ddafa6efd261ab80de74fd94ebf901c5daf2b17.jpg
+ create mode 100644 assets/mineru/2602.07544/images/18a945842f80590e3f36ea7b977ab98cdad7216e738e2b0557a0ccc5a3752497.jpg
+ create mode 100644 assets/mineru/2602.07544/images/1d422d297d231fcc0a29b6c1b76d7b2b99ce77bd9334b0614c4921f489c2a27f.jpg
+ create mode 100644 assets/mineru/2602.07544/images/1d60c3b6b701d420c3291881b0b22060e74e15dbc49ee280108d334b08bc3e33.jpg
+ create mode 100644 assets/mineru/2602.07544/images/1d912edc512a09ba7b7dff7ca3e0e993713f9da1746a62898b4008047c2be1e0.jpg
+ create mode 100644 assets/mineru/2602.07544/images/1f0b7d5706cf3f43e868ef392675e27802da4b1f9ad220264a70c1f7f1a7e999.jpg
+ create mode 100644 assets/mineru/2602.07544/images/21604f9b3cfb7450a789f19553b355b02c59340d707e63331f2e853385c3ed73.jpg
+ create mode 100644 assets/mineru/2602.07544/images/2b7fc390423d1b9a8ef3dd10e2b68c27c3a369ed26fa7e519f7ad052672fbcf5.jpg
+ create mode 100644 assets/mineru/2602.07544/images/2beced7c60402748294f0a59bd83475ce076a5d5f93b434b1140b2f68cba419c.jpg
+ create mode 100644 assets/mineru/2602.07544/images/2d83b05653c19dd48a5876f039e08b687825f0cca2ad07525d429be8b7a55741.jpg
+ create mode 100644 assets/mineru/2602.07544/images/30c99772a96cdc03bea5a99750cf1e0edd12775e952f3f265c4aa1245070bdce.jpg
+ create mode 100644 assets/mineru/2602.07544/images/3187f1958324e2e3f2276f080e90f5fc2f8897dbf87422c2c2075f9f1123f5f4.jpg
+ create mode 100644 assets/mineru/2602.07544/images/355f9cd9725a8ade47bfa73e60233159ccc7e7f5d49d1105c1e008c180debee1.jpg
+ create mode 100644 assets/mineru/2602.07544/images/3734823b0ea6f9c4201678ad9b0ec9ff03a4ff00cc37541c82070c6a41dd89d3.jpg
+ create mode 100644 assets/mineru/2602.07544/images/37d565fb50f24f5a54bf7c5667036b96fd37f655b4f7ee36f85113dc970e643f.jpg
+ create mode 100644 assets/mineru/2602.07544/images/38b74aa6ec18ff6b8aac141eb058c596f247e6a15f75df9dcef9944c14c6057c.jpg
+ create mode 100644 assets/mineru/2602.07544/images/39922be2e22fbea429d2a354048b92f7f301392505bb7497394e54c5a7556abe.jpg
+ create mode 100644 assets/mineru/2602.07544/images/3acec9967fc032f49c851ebceb43b7a07113e7ef05f314c5aa2126b8d58a8402.jpg
+ create mode 100644 assets/mineru/2602.07544/images/3b22b1fd2eb9f3b31086f336638b1b2996bab64c983b3bd7612dd9973d84ed52.jpg
+ create mode 100644 assets/mineru/2602.07544/images/3d9d8fdeb65544c0ef15ede7a0a465e635c3a07c323bcacf7f725854560929be.jpg
+ create mode 100644 assets/mineru/2602.07544/images/3e253a235524cafc2a650002e00f60a3adaebd633c0a51bad39b8d6ae728ffb7.jpg
+ create mode 100644 assets/mineru/2602.07544/images/421d9b509fdf2b86d4f1808d9a4107d7597a1bde6e7badd6e70820e6e6765a49.jpg
+ create mode 100644 assets/mineru/2602.07544/images/43802907035f645fdb78b31283e14e74965700262523d6c0790f4a91fcd0414f.jpg
+ create mode 100644 assets/mineru/2602.07544/images/44cd22ba0dd72c20811c329ae6f55b20dc2461239488c7addbaad96b5d957082.jpg
+ create mode 100644 assets/mineru/2602.07544/images/486429ecd1ff6262c521c25bb86a7904770c980bc0cf2a05893ad81e7ac16455.jpg
+ create mode 100644 assets/mineru/2602.07544/images/48d476726bc4b216c267db9377e2fb3ff1fb236b34c1a2938ae3471bc96ab625.jpg
+ create mode 100644 assets/mineru/2602.07544/images/48dba3e2d1e7aafdf12b6afddbb4ebe180791950dd4f82059ab43df75c4d7e97.jpg
+ create mode 100644 assets/mineru/2602.07544/images/4b1f23ed5fbba48352089d8df0d8f20bea75a794f3a18dd33c37bfd88c483550.jpg
+ create mode 100644 assets/mineru/2602.07544/images/4cf49700ec8cfb96ab6cea3a0f59783e58ec0a85d1f8b8d5eca844c437133810.jpg
+ create mode 100644 assets/mineru/2602.07544/images/4f13db36d1d987f182832b2555c9400da9073156b1d22fe29e03e9e830837db9.jpg
+ create mode 100644 assets/mineru/2602.07544/images/4f3d42e2d3dc129bcf914c8b9d9d3b577a2855fe550375a62918d7b89663969a.jpg
+ create mode 100644 assets/mineru/2602.07544/images/51f17e59f3756a3cdc24edc52c15842092f997e8a652a8c74010d6b72703ca79.jpg
+ create mode 100644 assets/mineru/2602.07544/images/532e345c26affcab1084bcff53cd01715f72cc3a4eba978e81a0f7b59b0f7309.jpg
+ create mode 100644 assets/mineru/2602.07544/images/5368bd6d70cf8af4a9d74e9b96da8da89080f68586a6a89d20a0bfefcc3dc25c.jpg
+ create mode 100644 assets/mineru/2602.07544/images/5490e783e83f5872a9eb67024acdae81d2e8b3ff2095ca1b5506eccdd8864b2d.jpg
+ create mode 100644 assets/mineru/2602.07544/images/55dedce0f0a2698416e823bc69e5028e668b96c71b112da590a752e9fbd3b94a.jpg
+ create mode 100644 assets/mineru/2602.07544/images/583e26e35b63309d62a7fd7d0566464cb4d2afb73a62bab2932c3f93f812dafb.jpg
+ create mode 100644 assets/mineru/2602.07544/images/58dfcf4d0141e1332db19142c1b2d1782ec2a457ed40f3946eaeeb2d70eb4c8e.jpg
+ create mode 100644 assets/mineru/2602.07544/images/599e6a4c9b9cc90769783405faf85a9164f403656c1b6204f0686e857aaf4052.jpg
+ create mode 100644 assets/mineru/2602.07544/images/5a39d897fc8e192c3a7b359a5234beb3fccc085b38c2836b2fc33c552776e6e5.jpg
+ create mode 100644 assets/mineru/2602.07544/images/5acde5dc442d47bdf7efef65555b912595440f0b3e09d25765ac519b36ac1433.jpg
+ create mode 100644 assets/mineru/2602.07544/images/5ace4310dde8aa1cc449a9f9bd16e385c7cb8c156323200e70d74e699c6ec2ea.jpg
+ create mode 100644 assets/mineru/2602.07544/images/5bf2f77c1722cec31703e4f424c3629145db4a922f3ed9bf2b40851d0e0bbaa6.jpg
+ create mode 100644 assets/mineru/2602.07544/images/5cda296f7b211141a1bd3e479590de1dc3b899afec00749bb81dc486928b30fe.jpg
+ create mode 100644 assets/mineru/2602.07544/images/5dc10ff7282669e313ca1af6ac5d175698074c60ac4d660a787057dc26ad0f79.jpg
+ create mode 100644 assets/mineru/2602.07544/images/6238b94a293af0e2363cb714713ea1a14dc97a14c86e6838054189ae7ae2262f.jpg
+ create mode 100644 assets/mineru/2602.07544/images/62a665d17435cc07562d63b450accc9dbcf747382923478d22cf8850586801e4.jpg
+ create mode 100644 assets/mineru/2602.07544/images/6318a2449657b62ed9159fc5a5522d06f8fdc527a4863d56179d33519117437d.jpg
+ create mode 100644 assets/mineru/2602.07544/images/6366e9a96e4a6c022f1310999cf0623f8003b96be671f9f9d36614251669a023.jpg
+ create mode 100644 assets/mineru/2602.07544/images/63e47e4440af298e0179c3f4864a0a68a2967ccd2822a3acfa978d5b53529c54.jpg
+ create mode 100644 assets/mineru/2602.07544/images/6466ddf31eef3183b1b9718e40a140c196d043baa7dc1c939fc43038c0213aac.jpg
+ create mode 100644 assets/mineru/2602.07544/images/661094a8fbd17d9cf1fd70eb9aad5c9cbe118a4a00f83a6f7c964a784e8bffd8.jpg
+ create mode 100644 assets/mineru/2602.07544/images/685f3d334dcaee9f02bfb2704672fe5dee42b510630a564c38af558de7a7e57d.jpg
+ create mode 100644 assets/mineru/2602.07544/images/68cbd98c2d2ae42d397ed0aab7c3f288facefa390833f9c0982a664fe52db59c.jpg
+ create mode 100644 assets/mineru/2602.07544/images/6af93deccff223d7fef05cb9f1e449dd6245a69787454f842f201ac56473a7a9.jpg
+ create mode 100644 assets/mineru/2602.07544/images/6b6f0605cae6ac1e00a3478925b9ee5b7685f26b0da182f6aa3f2402e9abfbfa.jpg
+ create mode 100644 assets/mineru/2602.07544/images/6dfd7b319ca4eddf5cc92b2e5b62478604cf81ea4bc5d7b591c6c807dcbf6e80.jpg
+ create mode 100644 assets/mineru/2602.07544/images/6e5647456e668ef4ee95d0dff87d3d27abf70bfbe544a64f5b3811799078defb.jpg
+ create mode 100644 assets/mineru/2602.07544/images/70a70233f7caa11b1756a4a62e824e0dd17276d9a1044e00a17b0353797b7557.jpg
+ create mode 100644 assets/mineru/2602.07544/images/7385b1eac0ed3fe9349204fa05e4784bbe1e9da28afbda2ec424627d9889775b.jpg
+ create mode 100644 assets/mineru/2602.07544/images/75e1a128bb08faee45b6e3b2e340f5b9dad1564b7be08f09a3fd05aed2369748.jpg
+ create mode 100644 assets/mineru/2602.07544/images/75ed70a2e06cbc8444b9421f66b5b70c156756ce72206797efeb16b4e514a827.jpg
+ create mode 100644 assets/mineru/2602.07544/images/76dff336b83a4ed10a2dd194da0e7bd48d15daacfad5d0b455cd72d3affe65d2.jpg
+ create mode 100644 assets/mineru/2602.07544/images/776598710683da83a39928c053b56bb9efbcc11bedb50de1d5bda226e550ff2b.jpg
+ create mode 100644 assets/mineru/2602.07544/images/78c5186d05fe478d907416ef702fa000c076acfda74dd701947510f431280a9e.jpg
+ create mode 100644 assets/mineru/2602.07544/images/7c76ebb3815297502444e19ca0d8437348ae4bb7b8ccb4139e514aa47aff2ffa.jpg
+ create mode 100644 assets/mineru/2602.07544/images/7da093163ad455fcbf7f2eb0e138a53adae4224c8edd98ec574114b23cb565f9.jpg
+ create mode 100644 assets/mineru/2602.07544/images/7f001cbb5f00389e019b53dbbe80b7d22bebdf6d85c6123aed0d7792d791fc3d.jpg
+ create mode 100644 assets/mineru/2602.07544/images/7f7a91be9580ab3989f0f7ebbbbd1eddd17f15aafc9624909f2c3072b1a2bb9b.jpg
+ create mode 100644 assets/mineru/2602.07544/images/7fe560b57a94729df5460d31ee03191ea86643bce8767bf1bed720d18d0e9b04.jpg
+ create mode 100644 assets/mineru/2602.07544/images/87a7e72dcd4fbee1aad1a1aabc2335db38421b1f7ee23dcd343f79b916031112.jpg
+ create mode 100644 assets/mineru/2602.07544/images/883c1024c99789c6cbf9958a2edb4147c175f63c39bd928a85d4167a0784d5a4.jpg
+ create mode 100644 assets/mineru/2602.07544/images/8b79cd4a5e1b62371fe6bf7acac87fddfb5767214b10d492d40c8f956ec267ea.jpg
+ create mode 100644 assets/mineru/2602.07544/images/982c003594bc2341e1c4e10db9fa528d12b047a0d76e08176ca56b807acd7e3c.jpg
+ create mode 100644 assets/mineru/2602.07544/images/98a67c08ed863426a5174adf27dc9efe768fafc217df93dc474c35f97ea9c31a.jpg
+ create mode 100644 assets/mineru/2602.07544/images/9a0081c62c59ec349b2bbf07625670b279a24f8bd7806c625a5c430047384920.jpg
+ create mode 100644 assets/mineru/2602.07544/images/9afcbc137467e80909905cf56021e3d6fb27c77752a0c6151ba65efc66f54476.jpg
+ create mode 100644 assets/mineru/2602.07544/images/9c0aeecbdbf115b8ff155b5f866d9987d7cf5b6f590cc5b48c973ae792036571.jpg
+ create mode 100644 assets/mineru/2602.07544/images/9dc84fb97870d5753376c0a7c6bfb92488832b7bbe7c713841cf5ba05509d8de.jpg
+ create mode 100644 assets/mineru/2602.07544/images/9f147ed9d746fbb79387acae0e21adbb54a6ff3e12a356e5541b616f4982dda8.jpg
+ create mode 100644 assets/mineru/2602.07544/images/9fb17a31f1d13a18278570451377e1b15289edb909be595daa308fc33a188b84.jpg
+ create mode 100644 assets/mineru/2602.07544/images/a04bcd6e12628c498285c3587508c72b291c08f56f421fd79512c8c0edcb02f9.jpg
+ create mode 100644 assets/mineru/2602.07544/images/a18c8b21a9d86ef317f206574e9dd4e6000f4b568cfe91cb978f16a6abe9b0dc.jpg
+ create mode 100644 assets/mineru/2602.07544/images/a1e12556f694fcb9daab5a2592c8fca7b16d630bfd06fb58a79fb041b33a9994.jpg
+ create mode 100644 assets/mineru/2602.07544/images/a2d8327989996ffbff5134fe95bcc57e23f18b8ef607f615114c647860e020ef.jpg
+ create mode 100644 assets/mineru/2602.07544/images/a40ae14cb468bf6d75f973b11746ee82f85a026c49712055df5eb9ef032d2464.jpg
+ create mode 100644 assets/mineru/2602.07544/images/a45881da219aa13676af49c5e0bb3aa0543072b7151dd9dd67e53db6db91c37e.jpg
+ create mode 100644 assets/mineru/2602.07544/images/a45f9fb62802d67269e8bbbda6dfd75694a3a6130d095435c85a1b423c11e77d.jpg
+ create mode 100644 assets/mineru/2602.07544/images/a62f44ab0b125a5aabc99efeb0ec979f571b6a90fc6f5fd58cf27e297700047f.jpg
+ create mode 100644 assets/mineru/2602.07544/images/a76bea22131b35136dcb3377ee11710d94200ba552710fd44e30b11cdaffb887.jpg
+ create mode 100644 assets/mineru/2602.07544/images/a96481c3db19ea9a890cc6410866a2a23785a4ed0bf977d8af4d4cc5b182e60a.jpg
+ create mode 100644 assets/mineru/2602.07544/images/a9799f495e6b4e23cb13eaf05211c6c5df1e8dae316da11f0556c7fb1a825ca0.jpg
+ create mode 100644 assets/mineru/2602.07544/images/ab8c522fb6fd96082738d495177e4fed471f82278933a80abeb02944b6ffbf61.jpg
+ create mode 100644 assets/mineru/2602.07544/images/ac81c85bcaa8a6c1746ab36dee8830c31562bada27a415a8240721907b20b14a.jpg
+ create mode 100644 assets/mineru/2602.07544/images/ad6158dce04bf74d9b25b7dd70c3fc0591bc875d097b158e42cb5aae9b41c5e2.jpg
+ create mode 100644 assets/mineru/2602.07544/images/ae1f39fc58012de38b644d6ca9cc41a6ff778a6f29202416a5e0070d33c6366f.jpg
+ create mode 100644 assets/mineru/2602.07544/images/b130ced45f1ba20cd49f4ccce54a4a6a192740a3a989d104b5cfaebc67e3065c.jpg
+ create mode 100644 assets/mineru/2602.07544/images/b1824b19ade2204414c78edfed8daf7482015827790301f1e8feb40b8edec1b1.jpg
+ create mode 100644 assets/mineru/2602.07544/images/b25929e262cf3c2138ffa72dd9110939cba77b3e384921cbc6158f0a5bd90e4f.jpg
+ create mode 100644 assets/mineru/2602.07544/images/b2e55685ef187e085dc3a297fb3f8222a0be53b85f4c9e0a6cc26794f6e96dd7.jpg
+ create mode 100644 assets/mineru/2602.07544/images/b47a686bb26e7e86a90efc1f51829794ae0c41e919a7de9474bb10d7d7c9484d.jpg
+ create mode 100644 assets/mineru/2602.07544/images/b54d96cc81d27a8d491ed578a1e50e9d2d4ee54c1c6a0af11365c9beb6095159.jpg
+ create mode 100644 assets/mineru/2602.07544/images/b9be68d6c70becfce2d6506f5eaa32e83506ff3a99d32d74c31f53edb875ae87.jpg
+ create mode 100644 assets/mineru/2602.07544/images/b9f4781f9d173cf30ca99e6ccec4a0b05e12a56ff94c36f47f503a97da063781.jpg
+ create mode 100644 assets/mineru/2602.07544/images/ba29fe1ca8632dda402a53eb96933cb688ac59f82836c75f6eb1e40aecf190fe.jpg
+ create mode 100644 assets/mineru/2602.07544/images/ba6816dd35503387f8b8234931717defb092a4f48663e472d6286e6c6218516f.jpg
+ create mode 100644 assets/mineru/2602.07544/images/bbc5b4bda18a091772afb3729752f449fb341c0f23696bcc65a22cee35379030.jpg
+ create mode 100644 assets/mineru/2602.07544/images/bd3a9b62113c94df4ca4ab995b329c77156256515cd3b1ec46a14d2e56aae3c9.jpg
+ create mode 100644 assets/mineru/2602.07544/images/bd572e378070aead9df2626c1518a667f0580958345b6cc7267f1696055f85a0.jpg
+ create mode 100644 assets/mineru/2602.07544/images/bdb40849c712f5c437baa80323afadcd18a755ddcc227e33af4accbea1bbd0b8.jpg
+ create mode 100644 assets/mineru/2602.07544/images/bf8750f067ac6125c7f2929853f3c3c1eb865fe4094c32a19d8bf04aab1ce3ef.jpg
+ create mode 100644 assets/mineru/2602.07544/images/bf9add4a744f767020386913933c58e0ac56536145eaf02838be0b28e13cc50e.jpg
+ create mode 100644 assets/mineru/2602.07544/images/c05be823c3ef00cbec862d52dfbc2e6f874903d5aaa69fadf3a6c50bcb2ca38e.jpg
+ create mode 100644 assets/mineru/2602.07544/images/c09f116076525bbaeedc3fb89eda5c4d8377c0b733e65875f1ec5ad8b4641b80.jpg
+ create mode 100644 assets/mineru/2602.07544/images/c1c068602d0e4ec29ae932431fd732d99010b8dc2f5f8688489f7c998b9a7bd7.jpg
+ create mode 100644 assets/mineru/2602.07544/images/c21ecf096d8b5e28e2563561d2aa32cf9da0c6fcc6c87f0704b967d5407d4009.jpg
+ create mode 100644 assets/mineru/2602.07544/images/c22a845ac726d15406a4eefef02b56d3f9c4bbc55169f6d8c40eb34ecaaefea6.jpg
+ create mode 100644 assets/mineru/2602.07544/images/c465ef5e88fc1567d8acb02c27f1a1b208662415ac8c058bc38c67183e518852.jpg
+ create mode 100644 assets/mineru/2602.07544/images/c55a4e7cea230cdf41582ac32d3d1ec7e3ea31e55be122c0135de3e9f3fa56c3.jpg
+ create mode 100644 assets/mineru/2602.07544/images/c5b5821bfc5949000a553806d57a00a43a97d12193432fcd28d2bdb9c09303cc.jpg
+ create mode 100644 assets/mineru/2602.07544/images/c71d172304a655fb713bbc751aec0ba995a7ec0ac8e067c05656874d83cbe04f.jpg
+ create mode 100644 assets/mineru/2602.07544/images/c75e2bb53f23aca870ecd6683f4333b39180255be5f8bc18f54d378611c41305.jpg
+ create mode 100644 assets/mineru/2602.07544/images/c788c88e601e129a0a9f7a0e92b213596bac2d122786f327b53a7e3cb0a0df4d.jpg
+ create mode 100644 assets/mineru/2602.07544/images/ce699cc2fda01a3719bb44f17250d8f2bb1313ed79f9d914dbba4b2aa5ee6847.jpg
+ create mode 100644 assets/mineru/2602.07544/images/cf640cdcb746ff8042bf804c406e418e3ec42a7e9b81719ccd357df05e7af9fb.jpg
+ create mode 100644 assets/mineru/2602.07544/images/d09fbd2edff3f7a858e0ae924ed9da0db69233b7d83fdeb1de867478e72b4cd8.jpg
+ create mode 100644 assets/mineru/2602.07544/images/d10fa78157d359c4e7890a241289ab11107b62b5f5d583f9cf6210c9b381d61e.jpg
+ create mode 100644 assets/mineru/2602.07544/images/d1e8a2f26cca86367f27cb7973b88b719ee7f11fbb36f282f7856d2f5d377c40.jpg
+ create mode 100644 assets/mineru/2602.07544/images/d4badf936d4f51c33409ef982cea42edac899edf74d0459c7501d9888f176818.jpg
+ create mode 100644 assets/mineru/2602.07544/images/d6063e7445972eea788376c080ab8e38095a6d00b20b9f1c5a5b0d595450db79.jpg
+ create mode 100644 assets/mineru/2602.07544/images/d7c182a692d046db41f24c82c07e20263350d1afb1156a798295388c3f479aaf.jpg
+ create mode 100644 assets/mineru/2602.07544/images/d7fedfe07a8149f3600f941cbfb78d705c9452a645e51594c8f500c3ee0d4761.jpg
+ create mode 100644 assets/mineru/2602.07544/images/db23ff0102ca96e710f27fd973623b1c646e2fe805817f6a33e22477d38d819d.jpg
+ create mode 100644 assets/mineru/2602.07544/images/dbffa567cd74f646cb591a5da7e7769af78fe1d7736901b825ba91197046f2a3.jpg
+ create mode 100644 assets/mineru/2602.07544/images/dd5114a8f48818d4f2cf10cafd432ce8edd636f3c06fc6930e4e7790b819565e.jpg
+ create mode 100644 assets/mineru/2602.07544/images/de38815764b8b50873732ffd80a30e32f480104a6dea50cfd52ab5f930a781d5.jpg
+ create mode 100644 assets/mineru/2602.07544/images/e06ac2c0f064f63ec1753078276631f0be2d5bc54e197242ea8fa2ef6cecd126.jpg
+ create mode 100644 assets/mineru/2602.07544/images/e07666d7d16dd1b0d10dc2376ae5719ebb2b6fb822200815b21d7a3150c44d60.jpg
+ create mode 100644 assets/mineru/2602.07544/images/e195592a3e608917999042cc73861f45039d38d1c1bdeddf2dfd107b2049f4c9.jpg
+ create mode 100644 assets/mineru/2602.07544/images/e3470d564c510c4b68a646ededa5613c40f74dfd3f4455cdb6d1ec16acad84bc.jpg
+ create mode 100644 assets/mineru/2602.07544/images/e7f4098a6874abb01b3f049b2d0a40c22a657e273a65c0a2c809d19b67b145a5.jpg
+ create mode 100644 assets/mineru/2602.07544/images/e9beb14727b1b1f865a19f6f02f7ceebb31ffe23980172f03f58bb79edf4db56.jpg
+ create mode 100644 assets/mineru/2602.07544/images/ed6171ce936616e1211aca6846df31b6acce0e831d261bee7bbe1d1e813f4b24.jpg
+ create mode 100644 assets/mineru/2602.07544/images/eda3d4f4942a6cc71b18198d911fbcb45a3919b3f056bbcf16d46a6d329ff7ac.jpg
+ create mode 100644 assets/mineru/2602.07544/images/ee3ed3a5ccf846cfac40b47e76f5d8a57b5e5499063a5d7b82e2647d849a7b0a.jpg
+ create mode 100644 assets/mineru/2602.07544/images/eedb8c4ebbf68377bbb128fe302454f0c44251f72062d68b04f7662e262ace6a.jpg
+ create mode 100644 assets/mineru/2602.07544/images/ef5e5114d55c8f6ae304e09bccb02bf6493c47148aee0e88f371d3949e4e8b01.jpg
+ create mode 100644 assets/mineru/2602.07544/images/f0e4c3d26a0017e22c70916ff4058fd808f91092c9b2d23ca78ac14445865cab.jpg
+ create mode 100644 assets/mineru/2602.07544/images/f3643c9b1d860de99d10b16f889fd99039886caaebfa24728717d0f4b21170b7.jpg
+ create mode 100644 assets/mineru/2602.07544/images/f91ce006c46d56e4bc8396211228cd2733a5813faaa98b4ae832e848c1dd2014.jpg
+ create mode 100644 assets/mineru/2602.07544/images/f976c4d4ecf7e470460e7f954d4992487d0fd6de44bb5266ae4d92008f16de5c.jpg
+ create mode 100644 assets/mineru/2602.07544/images/fcd862865ded220f334c1336d6da1b8b84e7c3f93b8d050c2f15f6f4d456bcf4.jpg
+ create mode 100644 assets/mineru/2602.07544/images/fed3f647dbd8e2169dc6d054218ad31edced62fd16f0c60a9211fd2c261f380c.jpg
+ create mode 100644 assets/mineru/2602.07544/images/ff0e6fab236e12e058cd7817f579152eeacfd79e8c9d9fb04aad499b3c74dbce.jpg
+ create mode 100644 assets/mineru/2606.18586/d6fe9205-68a1-4a22-bba4-1b676eb58941_content_list.json
+ create mode 100644 assets/mineru/2606.18586/full.md
+ create mode 100644 assets/mineru/2606.18586/images/05268b04e50b9bae95640f00a1577fafe263c2dc1020cabeaf3a8c4c31d5256f.jpg
+ create mode 100644 assets/mineru/2606.18586/images/057d697e71eddcf24c3f0c276d8c54d6bd8309e851c30e5099cca6db6eadc50a.jpg
+ create mode 100644 assets/mineru/2606.18586/images/0a4bb71478f5ef2c6beef317f3c5c413da9e63da0dadffddf2ab279a9cd6e917.jpg
+ create mode 100644 assets/mineru/2606.18586/images/0a4bbc45799522a0c79bb1f8fc08c2fad12f11c60be51ed68f4b936ea34ded16.jpg
+ create mode 100644 assets/mineru/2606.18586/images/11578f6b41b5d475d091926c37f2ffc9b8fcad10bd930d2b475520ce1de8b690.jpg
+ create mode 100644 assets/mineru/2606.18586/images/1564d7234a896a0c6df52b820a0a0c3b9ff2c53b7a511931d97594e028d8ec5e.jpg
+ create mode 100644 assets/mineru/2606.18586/images/15a39bf8ea4f9020f32415d3f20aed230868e2e2aad02acb51e7131905cacc44.jpg
+ create mode 100644 assets/mineru/2606.18586/images/20e981a77db486e80a91ec87bbbeeb4b50c1a9c6032992ad37fb64ad3f110b15.jpg
+ create mode 100644 assets/mineru/2606.18586/images/27e055454cc3d14e6a273e5cb42f7ed3080b6ececfe2cb9e1006981259373270.jpg
+ create mode 100644 assets/mineru/2606.18586/images/3097fbc7e94887630219e26cefd0903255780c960ab0112661c9b4d4a9f1e24a.jpg
+ create mode 100644 assets/mineru/2606.18586/images/35ad4981ba50bce2ba6c72ddaf39382e603da9e7a9419206fd86c1edbf8bee89.jpg
+ create mode 100644 assets/mineru/2606.18586/images/36ae57f8e66d7881852b2af5db9b856011952316105d394374d1323652d6ba00.jpg
+ create mode 100644 assets/mineru/2606.18586/images/387bbdc88933995455268b466b286d2c4d40b0f3017d09984dab032170ce496f.jpg
+ create mode 100644 assets/mineru/2606.18586/images/3d8d54daf48eb1bd3e06ff7a5afe3db2cc98cbe6eb299bc468e44292d81bbae8.jpg
+ create mode 100644 assets/mineru/2606.18586/images/3f6a2cfed4978225724650c01fd3defd7a7c6c7fbf6fa1c23eac32bd394bad3e.jpg
+ create mode 100644 assets/mineru/2606.18586/images/4431d65c5384ef2b7b639cfbc4a88ae0a713677ea309d77426672a7c13e4c97d.jpg
+ create mode 100644 assets/mineru/2606.18586/images/46c90b205af9640049f50383767bf74471d1352acbf9a1df69fd68ce7d50fd71.jpg
+ create mode 100644 assets/mineru/2606.18586/images/4790a336ec54dcedcbb2f3349484a577e7def03e86e29148d4b2a468fab329b8.jpg
+ create mode 100644 assets/mineru/2606.18586/images/484cd390b9f8e86dca19e258782947792beb4d6d51e7afeb38c1b8204d76fbc6.jpg
+ create mode 100644 assets/mineru/2606.18586/images/4c5f38255e004c0c86874c04f8420f37f3a03959c4b90882045d7fff0d954851.jpg
+ create mode 100644 assets/mineru/2606.18586/images/4c8c21c3b0533f88ea6cb8ff66e3ff4d9b039aa6626d23354cb487809ed77bcc.jpg
+ create mode 100644 assets/mineru/2606.18586/images/4f99f7b7b5164f5cd5bebd3fad15210e51bde0453d2ef48d4d4b55d0db598fd0.jpg
+ create mode 100644 assets/mineru/2606.18586/images/511747276c4bb55d44e993c7731ff2a1d21759454ae0b7a7ccfad2fd62b7b60a.jpg
+ create mode 100644 assets/mineru/2606.18586/images/55df023648493fc2604e632b13b72d915897470855fb976ad43e9eadd99f8466.jpg
+ create mode 100644 assets/mineru/2606.18586/images/592cfc2d34bb9be4b76ff33bcba61f3b2a8793bf01f8a73ab70ea32cda5ec3fa.jpg
+ create mode 100644 assets/mineru/2606.18586/images/6a515f2a3fea2a63f471a72fe63a7e5e3e38f2f8f1e1ec071cf82ced85cdda29.jpg
+ create mode 100644 assets/mineru/2606.18586/images/6b945dd0e329269a15f88753e614ade2906a610e2d9c10713f23f4f4b2b3ceb8.jpg
+ create mode 100644 assets/mineru/2606.18586/images/70741444a827ae1d0b933cf08dcee3f0e221c81315a173489ecfe5df89b7887e.jpg
+ create mode 100644 assets/mineru/2606.18586/images/797c1a3e5a4db8bb67ffb35f4d0fcf884e4c2d9d919110db9b14d8d616fe004e.jpg
+ create mode 100644 assets/mineru/2606.18586/images/7de2af4e9b42c6b7b2b85acc6a9cc9c421038855042a29dc27ade5ae9274f20a.jpg
+ create mode 100644 assets/mineru/2606.18586/images/8905bdff859687c71317be0bcaa9f8599c48657b61cbde30ecf83fd93de8db37.jpg
+ create mode 100644 assets/mineru/2606.18586/images/94ccb08a9720a4de31e9415652d772ea9d56ac8731e8d473c1e45facca5abb3b.jpg
+ create mode 100644 assets/mineru/2606.18586/images/a83224f822e0052892f2d09de2f82cb8c540a29ef9390ba09dcff29c6f2e3157.jpg
+ create mode 100644 assets/mineru/2606.18586/images/ac7051600a33a06ec0e4d24212fa0517c7aedc1abcb92daeb79ef6acfe96912c.jpg
+ create mode 100644 assets/mineru/2606.18586/images/b266f7a914d848e61ca418c2bf3881269bb0a3952906693ec351ef5f4c2a9209.jpg
+ create mode 100644 assets/mineru/2606.18586/images/b87c69eac345bf637500d6d4825e1f7dcbcd4462e2046ba908a0e7ae77ed905c.jpg
+ create mode 100644 assets/mineru/2606.18586/images/bb36a83fd2e671fc8ba05fd6a91075411d666797f0519cf98c47f96b9c5a8054.jpg
+ create mode 100644 assets/mineru/2606.18586/images/c07356d206912cbff3f5d2f42be6add5297f68ed729513404e9ca9ecd79ac43b.jpg
+ create mode 100644 assets/mineru/2606.18586/images/c3bb639e606d53d22a3bbe11f5bf8c724a61ad6a0d026a9728a0dc266c7aa201.jpg
+ create mode 100644 assets/mineru/2606.18586/images/c8712e5bbae0af27468b691e3ab865248c5446f4eed465776a159e885c4a8591.jpg
+ create mode 100644 assets/mineru/2606.18586/images/c8b62c768353f252f97fd04c45bd19cdea596d4a38bbf7d2212680e4f3345ed6.jpg
+ create mode 100644 assets/mineru/2606.18586/images/cb962b7f3c3d8c6929c8b866e7dea10b4f3efeb9adacb1d68cee9eeb8b7a7ddc.jpg
+ create mode 100644 assets/mineru/2606.18586/images/cbdcf7c9909483ee4d7f718e3c4d8a95fdc8beb5bb2c433bf9290fa7fb8ba89e.jpg
+ create mode 100644 assets/mineru/2606.18586/images/d6dad699379f2c9f960668b621ad47318c264587f75fd7b45a2428e764c0b0e3.jpg
+ create mode 100644 assets/mineru/2606.18586/images/e06a40c5f6197de6a81227b574d1d2b0a786d03a016faf88149977de103686e6.jpg
+ create mode 100644 assets/mineru/2606.18586/images/e0991c72db9d35323db217529fc688026a23b5b9eb80782fc82b0119224c192c.jpg
+ create mode 100644 assets/mineru/2606.18586/images/e420c482277fe6cdf9d7b08425d5d1534040c8d565b62ae2debc6c38f6e01e00.jpg
+ create mode 100644 assets/mineru/2606.18586/images/ebd207d6faafcae820bc9daacf2a2c495d41c5b8228964badf24bc649f3ea8c0.jpg
+skip existing PDF: 2606.19120 - Seeing Before Reasoning Decoupling Perception and Reasoning for Shortcut.pdf
+skip existing PDF: 2606.18974 - Visual-OPSD Cross-Modal On-Policy Self-Distillation for Efficient Unifie.pdf
+skip existing PDF: 2606.18681 - Moving Beyond Diversity Visual Token Pruning as Subspace Reconstruction.pdf
+skip existing PDF: 2507.07574 - Beyond the Linear Separability Ceiling Aligning Representations in VLMs.pdf
+skip existing PDF: 2606.18441 - Reasoning as Intersection Consensus-Frame Alignment for Visual Focus in.pdf
+skip existing PDF: 2606.01711 - Improving Visual Token Reduction via Rectifying Distortions for Efficien.pdf
+download https://arxiv.org/pdf/2602.07544
+skip existing PDF: 2606.19062 - DREAM Extending Vision-Language Models with Dual-Objective Encoding for.pdf
+skip existing PDF: 2606.19053 - Benchmarking Large Vision-Language Models on Fine-Grained Image Tasks Fr.pdf
+skip existing PDF: 2606.18839 - Semantic Robustness Certification for Vision-Language Models.pdf
+skip existing PDF: 2606.18885 - LARE Low-Attention Region Encoding for Text-Image Retrieval.pdf
+download https://arxiv.org/pdf/2606.18586
+skip existing PDF: 2606.18702 - UniTemp Unlocking Video Generation in Any Temporal Order via Bidirection.pdf
+skip existing PDF: 2606.18478 - Data-Forcing Distillation Restoring Diversity and Fidelity in Few-Step V.pdf
++ F:\miniconda3\python.exe C:\Users\Administrator\.claude\skills\paper-digest-site\scripts\submit_mineru.py --in H:\Desktop\visual_ssl_digest_site\staging_pdfs\2026-06-19 --out H:\Desktop\visual_ssl_digest_site\assets\mineru
++ F:\miniconda3\python.exe C:\Users\Administrator\Documents\New project\scripts\build_visual_ssl_site.py
++ git add -A
++ git commit -m daily: 2026-06-19 web digest
++ git push
