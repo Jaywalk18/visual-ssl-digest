@@ -41,7 +41,8 @@
     </div>
     <div class="feature-body">
       <p class="lead dropcap">先说结论。视觉-语言 SSL 大量依赖 contrastive negatives，ELVA 对负样本粒度和 ranking signal 的处理值得借鉴。 强调复杂检索 query 中不同负样本带有不同粒度信息，不能都当二分类负例处理。</p>
-      <aside class="marginalia"><b>图像状态</b> 这篇暂未抽到足够稳定的 pipeline / motivation 图，因此正文以方法和实验解读为主。</aside>
+      <figure class="full-fig"><img src="../assets/mineru/2606.20280/images/1a7ce8b8fa3126beb1465056c2dbea0f50cfeb5e699c0872cdd28724025c37cc.jpg" alt="Figureure 2 · : Overview of the proposed ELVA framework"><figcaption><b>Figureure 2 · : Overview of the proposed ELVA framework</b><span class="fig-en">Fig. 2: Overview of the proposed ELVA framework. ELVA leverage the threestage training framework for UMR tasks. Stage 1-2 as the pre-training and instruction tuning stage following [35], obtained the preliminary model struggle with the grain blindness. Stage 3 employ the RL tuning to incentivizing the ranking ability to address the issue. Given the input query q and candidates including pos. and N x neg., we first perform G rollouts to output G independent sets of embeddings from policy model. Then we compute the reward $r _ { i }$ for each output $o _ { i }$ using our proposed reward functions, detailed in Section 3.4. Finally, we optimize the policy model with GRPO [11] while ensuring that the model remains close to the reference policy model, via KL divergence.</span><span class="fig-zh">这张图概括 ELVA 的整体方法流程。阅读时先看模块之间传递的训练信号，再看作者如何把目标拆成可优化的子问题。</span></figcaption></figure>
+<figure class="full-fig"><img src="../assets/mineru/2606.20280/images/56a92d3b78b3cd3661e64a50bd8c11a10d0d463cb257f86d429ade38f7f00702.jpg" alt="Baseline"><figcaption><b>Baseline</b><span class="fig-en">Baseline</span><span class="fig-zh">这张图来自论文 PDF 的结构化抽取。当前用于辅助理解 ELVA 的方法或实验，请结合正文精读段落一起看。</span></figcaption></figure>
       
       <h2>核心问题</h2>
       <p>视觉-语言 SSL 大量依赖 contrastive negatives，ELVA 对负样本粒度和 ranking signal 的处理值得借鉴。</p>

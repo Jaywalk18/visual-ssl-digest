@@ -1,0 +1,2789 @@
+[
+    {
+        "type": "text",
+        "text": "Spatial-Aware Reduction Framework: Towards Efficient and Faithful Visual State Space Models",
+        "text_level": 1,
+        "bbox": [
+            196,
+            109,
+            776,
+            154
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "Jindi Lv \\* 1 Aoyu Li \\* 1 Yuhao Zhou 1 Zheng Zhu 2 Xiaofeng Wang 2 3 Qing Ye 1 Yueqi Duan 3 Wentao Feng 1 Jiancheng Lv 1",
+        "bbox": [
+            197,
+            198,
+            772,
+            229
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "Project page: https://spatial-aware-reduction-framework.github.io/",
+        "bbox": [
+            267,
+            231,
+            705,
+            247
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "chart",
+        "img_path": "images/1a1f0c5244d26b93a7de002c5f2826b34b632053753073bc649b67b240f9adc2.jpg",
+        "content": "| Model | base model (%) | ToMe (%) |\n| :--- | :--- | :--- |\n| ViT-B/16 | 84.6 | 83.4 |\n| VMamba-B | 83.9 | 19.7 |",
+        "chart_caption": [],
+        "chart_footnote": [],
+        "sub_type": "bar chart",
+        "bbox": [
+            94,
+            256,
+            287,
+            385
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "chart",
+        "img_path": "images/b5ef78d71094b12514dda553d5529dc33e46976516e74964742b75cb4751af48.jpg",
+        "content": "| Pruning Rate (%) | ToMe   | ours   |\n| ---------------- | ------ | ------ |\n| 0                | 83.9   | 83.9   |\n| 20               | 35.7   | 82.6   |\n| 40               | 14.3   | 78.1   |",
+        "chart_caption": [
+            "(a) Accuracy of token reduction: ViT-B vs. VMamba-B",
+            "(b) Accuracy comparison on VMamba-B: ToMe vs. ours."
+        ],
+        "chart_footnote": [],
+        "sub_type": "line chart",
+        "bbox": [
+            305,
+            256,
+            488,
+            395
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "chart",
+        "img_path": "images/492f192f3fb08265936e375ddaf5db4c5965cc14f802ba911873f9ea0b10264b.jpg",
+        "content": "| Pruning Rate (%) | Throughput (imgs/s) |\n| ---------------- | ------------------- |\n| 0                | 542                 |\n| 20               | 681                 |\n| 25               | 673                 |\n| 30               | 807                 |\n| 35               | 839                 |\n| 35               | 961                 |\n| 40               | 936                 |",
+        "chart_caption": [
+            "(c) Throughput comparison on VMamba-B: ToMe vs. ours."
+        ],
+        "chart_footnote": [],
+        "sub_type": "line chart",
+        "bbox": [
+            504,
+            256,
+            691,
+            395
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "chart",
+        "img_path": "images/57e1b6d80b337d9bcfc9cca86565ef2fa5d276bdd330a004abe0359303ad229d.jpg",
+        "content": "| Method         | Accuracy (%) |\n| -------------- | ------------ |\n| ToMe           | 19.7%        |\n| spatial-aware  | 76.4%        |\n| window aware   | 80.9%        |",
+        "chart_caption": [
+            "(d) Performance gains via spatial and window awareness",
+            "Figure 1. Motivation and efficacy of the proposed spatial-aware token reduction framework."
+        ],
+        "chart_footnote": [],
+        "sub_type": "line chart",
+        "bbox": [
+            709,
+            256,
+            880,
+            378
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "Abstract",
+        "text_level": 2,
+        "bbox": [
+            241,
+            465,
+            318,
+            479
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "Mamba demonstrates strong efficiency in modeling long visual sequences. However, when token reduction is applied to structurally enhanced Mamba variants, these models exhibit a severe performance collapse. We attribute this degradation to the spatially agnostic nature of existing reduction methods, which violate the twodimensional structural premise required by the selective scanning mechanism. In this work, we propose STORM, a spatial-aware token reduction framework designed to maintain structural integrity throughout the compression process. STORM reformulates reduction into a structured operation on spatial units, enforcing localized constraints to maintain both grid topology and neighborhood coherence. As a plug-andplay module, STORM equips existing reduction pipelines with explicit spatial awareness without any training. Empirical results demonstrate that STORM achieves state-of-the-art pruning accuracy across diverse vision Mamba backbones under training-free settings. Notably, STORM delivers a substantial accuracy recovery on VMamba, outperforming prior methods by up to 63.3% in top-1 accuracy. Meanwhile, STORM incurs only a 1.0% accuracy drop on PlainMamba, achieving performance comparable to ViT.",
+        "bbox": [
+            116,
+            484,
+            444,
+            832
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "",
+        "bbox": [
+            527,
+            465,
+            854,
+            527
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "1. Introduction",
+        "text_level": 2,
+        "bbox": [
+            498,
+            556,
+            629,
+            571
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "Recently, Mamba architectures based on state space models (SSMs) (Gu et al., 2022; Smith et al., 2023; Gu & Dao, 2023; Fu et al., 2023) have emerged as an efficient solution for capturing long-range dependencies in vision tasks (Guo et al., 2024; Liang et al., 2024; Li et al., 2024; Zhu et al., 2024; Ma et al., 2024; Liu et al., 2024a; Ruan et al., 2024). By incorporating a selective scanning mechanism, Mamba effectively reduces computational complexity from the quadratic scaling of Transformers (Liu et al., 2021; Yin et al., 2022) to a linear regime. Building on this efficiency, integrating token reduction techniques such as pruning (Fayyaz et al., 2022; Rao et al., 2021; Yin et al., 2022; Kong et al., 2022; Katharopoulos et al., 2020) and merging (Bolya et al., 2023; Liang et al., 2022; Ryoo et al., 2021) offers a promising avenue to further optimize Mamba for practical deployment.",
+        "bbox": [
+            496,
+            582,
+            888,
+            809
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "Nevertheless, existing token reduction methods exhibit limited compatibility with Mamba architectures compared to Transformers (Liu et al., 2021; Dosovitskiy et al., 2021; Touvron et al., 2021; Wang et al., 2021; Xu et al., 2022b; 2023), as evidenced in Figure 1a. This degradation can be attributed to the fact that Transformers leverage self-attention to enable global token interactions, whereas Mamba relies on sequential scanning with strict recursive dependencies (Lv et al., 2026). This chain-like structure renders Mamba highly susceptible to cascading information loss under token reduction, ultimately resulting in performance collapse.",
+        "bbox": [
+            495,
+            816,
+            888,
+            906
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "aside_text",
+        "text": "arXiv:2606.19932v1 [cs.CV] 18 Jun 2026",
+        "bbox": [
+            22,
+            276,
+            57,
+            717
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "page_footnote",
+        "text": "1Sichuan University 2GigaAI 3Tsinghua University. Correspondence to: Wentao Feng <Wtfeng2021@scu.edu.cn>, Qing Ye <yeqing@scu.edu.cn>.",
+        "bbox": [
+            84,
+            840,
+            477,
+            882
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "footer",
+        "text": "Preprint. June 19, 2026.",
+        "bbox": [
+            84,
+            892,
+            233,
+            906
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "page_number",
+        "text": "1",
+        "bbox": [
+            480,
+            924,
+            491,
+            935
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "image",
+        "img_path": "images/6b5060ac9acb38620e5a9ee13e982a83b43af434a1a7c80e56c4aa9a1d37ba11.jpg",
+        "image_caption": [
+            "Figure 2. Pipeline of conventional token reduction in VMamba. The flattening operation explicitly disrupts spatial structure, causing misaligned representations after pruning."
+        ],
+        "image_footnote": [],
+        "content": "```mermaid\ngraph TD\n  A[\"Input Image\"] --> B[\"flatten\"]\n  B --> C{Neural Network}\n  C --> D[\"Flattened Sequence 1-4\"]\n  D --> E[\"Re Map\"]\n  E --> F[\"planned Output\"]\n  F --> G[\"Re Map\"]\n  G --> H[\"Flattened Sequence 15-18\"]\n    style A fill:#f9f,stroke:#333\n    style B fill:#ccf,stroke:#333\n    style C fill:#cfc,stroke:#333\n    style D fill:#fcc,stroke:#333\n    style E fill:#cff,stroke:#333\n    style F fill:#ffc,stroke:#333\n    style G fill:#cfc,stroke:#333\n    style H fill:#fcc,stroke:#333\n```",
+        "sub_type": "flowchart",
+        "bbox": [
+            114,
+            80,
+            450,
+            325
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "text",
+        "text": "",
+        "bbox": [
+            84,
+            400,
+            475,
+            476
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "text",
+        "text": "In response, a new line of token reduction methods (Zhan et al., 2024a;b; Ma et al., 2025; Shi et al., 2024a; Park et al., 2025) has been specifically developed for vision Mamba architectures. These methods perform well on vanilla Mamba architectures (Zhu et al., 2024) but fail to generalize to the structurally enhanced variants (Huang et al., 2024; Hatamizadeh & Kautz, 2025; Pei et al., 2025) such as VMamba (Liu et al., 2024b). We attribute this limitation to an architectural evolution in VMamba, which introduces a 2D Selective Scan (SS2D) mechanism to strengthen global modeling. However, existing token reduction strategies remain spatially agnostic, violating the spatially sensitive structural assumptions required by SS2D.",
+        "bbox": [
+            84,
+            483,
+            473,
+            679
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "text",
+        "text": "To further elucidate this phenomenon, we present an illustrative example of token reduction on VMamba in Figure 2. In practice, these methods transform the 2D token layout into a sequential representation for reduction and then remap retained tokens back to a 2D structure to accommodate SS2D. This pipeline inevitably disrupts the original spatial relationships among tokens, resulting in spatial-semantic misalignment within the compressed representation. Inspired by this insight, we hypothesize that preserving the model’s intrinsic structured representation during token reduction is critical to maintaining architectural efficacy.",
+        "bbox": [
+            84,
+            686,
+            475,
+            852
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "text",
+        "text": "To validate this hypothesis, we introduce a structured reduction paradigm that operates on spatial primitives rather than globally flattened tokens. This approach preserves native structural integrity by independently reducing tokens within each row and column through two decoupled stages. As shown in Figure 1d, this simple paradigm shift yields a dramatic accuracy recovery from 19.7% to 76.4% under identical settings. This stark contrast confirms our insight that maintaining spatial consistency, not merely retaining salient tokens, is the key to effective compression in spatially-sensitive architectures.",
+        "bbox": [
+            84,
+            859,
+            475,
+            906
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "text",
+        "text": "",
+        "bbox": [
+            496,
+            84,
+            887,
+            205
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "text",
+        "text": "Based on this principled shift, we propose STORM, a novel Spatial-aware TOken Reduction framework for vision Mamba. By design, STORM serves as a seamless plug-in that equips existing reduction pipelines with structured spatial awareness. Building upon the above structured reduction paradigm, the framework further incorporates a localized windowing mechanism to protect fine-grained semantics. This mechanism confines reduction operations within coherent local neighborhoods, suppressing cross-region interference. By jointly enforcing global layout regularity and local contextual fidelity, STORM ensures representational integrity throughout the compression.",
+        "bbox": [
+            496,
+            212,
+            888,
+            395
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "text",
+        "text": "Empirical results validate STORM’s effectiveness and generalizability in a training-free setting. As a versatile module, it enables substantial performance recovery on spatiallysensitive architectures and delivers consistent improvements across diverse Mamba backbones. As shown in Figures 1b and 1c, STORM consistently yields superior accuracy and throughput across all reduction ratios, notably surpassing ToMe (Bolya et al., 2023) by 61.2% in top-1 accuracy.",
+        "bbox": [
+            496,
+            401,
+            888,
+            523
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "text",
+        "text": "We highlight the main contributions of this paper below:",
+        "bbox": [
+            496,
+            530,
+            870,
+            546
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "list",
+        "sub_type": "text",
+        "list_items": [
+            "• We identify that spatial-structural integrity is the critical factor in performance degradation, and propose a structured reduction paradigm that operates on spatial primitives to effectively mitigate this issue.",
+            "• We propose a generic spatial-aware token reduction framework that incorporates localized neighborhood constraints to safeguard fine-grained semantics while preserving the benefits of organized spatial units.",
+            "• Our framework establishes a new state-of-the-art for vision Mamba reduction, consistently delivering superior accuracy and throughput across diverse backbones."
+        ],
+        "bbox": [
+            516,
+            561,
+            887,
+            748
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "text",
+        "text": "2. Related Work",
+        "text_level": 2,
+        "bbox": [
+            496,
+            765,
+            638,
+            781
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "text",
+        "text": "2.1. Visual State Space Models",
+        "text_level": 2,
+        "bbox": [
+            496,
+            791,
+            714,
+            806
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "text",
+        "text": "SSMs (Gu & Dao, 2023; Mehta et al., 2023; Wang et al., 2023; Fu et al., 2023) were originally developed for sequence modeling in NLP to capture long-range dependencies with linear computational complexity, exemplified by S4’s (Gu et al., 2022) structured diagonal state representations. To adapt SSMs for vision tasks, S4ND (Nguyen et al., 2022) introduced diagonal-normalized parameters but remained limited in capturing input-dependent spatial context. ViM (Zhu et al., 2024) addressed this by incorporating bidirectional scanning to enhance global awareness in visual representations. VMamba (Liu et al., 2024b) then introduced SS2D with four cross-directional scan paths, enabling comprehensive spatial modeling while maintaining linear computational efficiency. PlainMamba (Yang et al., 2024) further improved spatial modeling by adopting continuous 2D scanning that preserves token adjacency along the scanning path. More recent works have continued to refine spatial structure: Shi et al. (Shi et al., 2024b) proposed multi-scale 2D scanning by fusing features at multiple resolutions, and LocalMamba (Huang et al., 2024) adopted window-based scanning to better capture local spatial dependencies.",
+        "bbox": [
+            496,
+            814,
+            888,
+            906
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "header",
+        "text": "Spatial-Aware Reduction Framework: Towards Efficient and Faithful Visual State Space Models",
+        "bbox": [
+            181,
+            56,
+            792,
+            70
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "page_number",
+        "text": "2",
+        "bbox": [
+            480,
+            922,
+            491,
+            934
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "text",
+        "text": "",
+        "bbox": [
+            84,
+            84,
+            475,
+            327
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "Despite these advances, vision Mamba models remain highly vulnerable to token reduction. In particular, spatially agnostic pruning inevitably disrupts the token connectivity required for their chain-like state propagation, leading to severe information loss. Although methods such as AMVim (Lv et al., 2026) improve robustness through multiscale asymmetric scanning, this strategy cannot effectively generalize to the spatially structured architectural paradigm of vision Mamba. Consequently, the absence of a robust token reduction formulation remains a major bottleneck for the practical deployment of vision Mamba models.",
+        "bbox": [
+            84,
+            334,
+            477,
+            501
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "2.2. Token Reduction",
+        "text_level": 2,
+        "bbox": [
+            84,
+            516,
+            238,
+            531
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "Token reduction improves computational efficiency by removing or consolidating redundant tokens during inference. Most existing approaches are developed for ViTs (Touvron et al., 2021; Wang et al., 2021; Bao et al., 2022) and can be broadly divided into token pruning (Rao et al., 2021; Yin et al., 2022; Kong et al., 2022; Liang et al., 2022) and token merging (Bolya et al., 2023; Chen et al., 2023; Marin et al., 2021; Xu et al., 2022a; Ryoo et al., 2021). Pruning methods discard low-importance tokens, as in DynamicViT (Rao et al., 2021) with a Gumbel Softmax strategy or EViT (Liang et al., 2022) using classification token attention. Merging methods reduce token counts by aggregating semantically similar tokens, exemplified by the trainingfree ToMe (Bolya et al., 2023) approach based on bipartite matching. Despite their success in ViTs, these techniques cannot be directly transferred to Mamba due to fundamentally different underlying mechanisms.",
+        "bbox": [
+            84,
+            540,
+            477,
+            797
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "Recent work has explored token reduction specifically for vision Mamba architectures. For example, Zhan et al. (Zhan et al., 2024a) proposed a pruning-aware hidden state alignment strategy to selectively skip less important tokens. In subsequent work, they introduced a hybrid criterion that jointly models token importance and similarity (Zhan et al.,",
+        "bbox": [
+            84,
+            804,
+            477,
+            896
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "2024b). More recently, MTR (Ma et al., 2025) was designed to estimate token importance by classifying tokens into three predefined categories. Although these methods show promise on vanilla Mamba models (Zhu et al., 2024), they remain limited in their ability to preserve the structural spatial relationships essential for more advanced variants (Liu et al., 2024b; Yang et al., 2024; Huang et al., 2024; Xie et al., 2024). To this end, instead of designing yet another specialized reduction method, we propose a spatial-aware framework that functions as a seamless wrapper for existing approaches. By equipping established reduction criteria with spatial intelligence, our framework maintains robust performance even under aggressive pruning ratios.",
+        "bbox": [
+            496,
+            84,
+            887,
+            282
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "3. Method",
+        "text_level": 2,
+        "bbox": [
+            496,
+            300,
+            588,
+            316
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "3.1. Preliminaries",
+        "text_level": 2,
+        "bbox": [
+            496,
+            325,
+            625,
+            340
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "Mamba architectures are built upon discretized SSMs, which provide an efficient recurrent formulation for sequence modeling. A continuous-time SSM, parameterized by (A, B, C), is converted into a discrete recurrence via zero-order hold discretization with step size ∆:",
+        "bbox": [
+            496,
+            349,
+            887,
+            426
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "equation",
+        "text": "$$\nh _ {t} = \\overline {{{\\mathbf {A}}}} h _ {t - 1} + \\overline {{{\\mathbf {B}}}} x _ {t}, \\tag {1}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            620,
+            435,
+            885,
+            459
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "equation",
+        "text": "$$\ny _ {t} = \\mathbf {C h} _ {t},\n$$",
+        "text_format": "latex",
+        "bbox": [
+            624,
+            457,
+            694,
+            470
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "where $\\overline { { \\mathbf { A } } } = \\exp ( \\Delta \\mathbf { A } )$ and $\\overline { { \\mathbf { B } } } = ( \\Delta \\mathbf { A } ) ^ { - 1 } ( \\exp ( \\Delta \\mathbf { A } ) - \\mathbf { I } )$ · ∆B. Building on this formulation, Mamba introduces selectivity by conditioning $( \\mathbf { B } , \\mathbf { C } , \\Delta )$ on the input $x _ { t } ,$ enabling adaptive and data-dependent state transitions with linear computational complexity.",
+        "bbox": [
+            496,
+            481,
+            888,
+            559
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "To adapt this sequential model to 2D visual data, architectures such as VMamba employ a SS2D mechanism. Given a 2D feature map $\\mathbf { X } \\in \\mathbb { R } ^ { \\tilde { H } \\times \\tilde { W } \\times C }$ , SS2D performs ordered scans along complementary spatial dimensions to construct a structured state transition graph. A horizontal scan processes each row i from left to right:",
+        "bbox": [
+            496,
+            565,
+            888,
+            656
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "equation",
+        "text": "$$\nh _ {i, j} ^ {\\rightarrow} = \\overline {{{\\mathbf {A}}}} \\odot h _ {i, j - 1} ^ {\\rightarrow} + \\overline {{{\\mathbf {B}}}} \\odot \\mathbf {X} _ {i, j}, \\quad j = 1, \\dots , W, \\tag {2}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            519,
+            665,
+            885,
+            685
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "where ⊙ denotes element-wise multiplication (parametrizing selectivity) and $h _ { i , 0 } ^ {  } = \\mathbf { 0 }$ . A subsequent vertical scan processes each column j from top to bottom:",
+        "bbox": [
+            496,
+            693,
+            887,
+            739
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "equation",
+        "text": "$$\nh _ {i, j} ^ {\\downarrow} = \\overline {{{\\mathbf {A}}}} \\odot h _ {i - 1, j} ^ {\\downarrow} + \\overline {{{\\mathbf {B}}}} \\odot \\mathbf {X} _ {i, j}, \\quad i = 1, \\dots , H, \\tag {3}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            519,
+            746,
+            885,
+            767
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "with $h _ { 0 , j } ^ { \\downarrow } = \\mathbf { 0 }$ . The outputs from both directions are fused to form the final representation:",
+        "bbox": [
+            496,
+            777,
+            885,
+            809
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "equation",
+        "text": "$$\n\\mathbf {Y} _ {i, j} = \\mathbf {C} \\odot h _ {i, j} ^ {\\rightarrow} + \\mathbf {C} \\odot h _ {i, j} ^ {\\downarrow}. \\tag {4}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            593,
+            816,
+            885,
+            838
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "This process tightly aligns state evolution with the spatial logic of the 2D lattice, establishing an inherently spatialaware computational pattern. This design imposes a fundamental premise: the model’s efficacy necessitates an intact and regular token grid topology. Disrupting this spatial structure irrecoverably compromises the causal state propagation defined by the scanning order.",
+        "bbox": [
+            496,
+            845,
+            888,
+            906
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "header",
+        "text": "Spatial-Aware Reduction Framework: Towards Efficient and Faithful Visual State Space Models",
+        "bbox": [
+            181,
+            56,
+            792,
+            71
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "page_number",
+        "text": "3",
+        "bbox": [
+            480,
+            922,
+            491,
+            934
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "image",
+        "img_path": "images/97c4f1542470dcb1ed9c886012285b5fe652a717c1d91988d120a18101a48578.jpg",
+        "image_caption": [
+            "Figure 3. Overview of STORM. The framework performs spatially structured token reduction in two decoupled stages: row-wise and then column-wise reduction within localized windows, preserving the 2D grid layout required for selective scanning."
+        ],
+        "image_footnote": [],
+        "content": "```mermaid\ngraph LR\n  A[\"input\"] --> B[\"Mamba\"]\n  B --> C[\"2D scanning\"]\n  C --> D[\"STORM\"]\n  D --> E[\"row-wise reduction\"]\n  D --> F[\"column-wise reduction\"]\n  E --> G[\"pruned output\"]\n  F --> G\n    style A fill:#f9f,stroke:#333\n    style B fill:#ccf,stroke:#333\n    style C fill:#cfc,stroke:#333\n    style D fill:#fcc,stroke:#333\n    style E fill:#cff,stroke:#333\n    style F fill:#ffc,stroke:#333\n```",
+        "sub_type": "flowchart",
+        "bbox": [
+            91,
+            80,
+            883,
+            224
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "text",
+        "text": "",
+        "bbox": [
+            84,
+            282,
+            475,
+            330
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "text",
+        "text": "3.2. Overall Framework",
+        "text_level": 2,
+        "bbox": [
+            84,
+            345,
+            259,
+            359
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "text",
+        "text": "In this work, we propose STORM, a lightweight framework that refactors token reduction into a spatially structured process, as illustrated in Figure 3. By design, STORM explicitly preserves the grid structure assumed by SS2Dbased reasoning, ensuring alignment with the underlying computation pattern.",
+        "bbox": [
+            84,
+            369,
+            473,
+            460
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "text",
+        "text": "The framework enforces a dimensionally decomposed workflow that processes tokens sequentially along rows and columns. This design mirrors the directional scanning logic of SS2D, ensuring that the compressed tokens form a regular sub-grid whose spatial adjacency remains aligned with the model’s intrinsic state propagation paths. To protect local semantics and suppress cross-region interference, STORM incorporates a localized windowing mechanism that confines reduction decisions to non-overlapping segments along each spatial dimension. This preserves neighborhood coherence while supporting effective compression. Importantly, within each stage, all row or column operations are executed in parallel, maintaining high efficiency.",
+        "bbox": [
+            84,
+            467,
+            475,
+            664
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "text",
+        "text": "By integrating structured spatial reduction with localized constraints, STORM enables existing token reduction methods to operate in harmony with the spatial premises of vision Mamba models, achieving both computational efficiency and robust representational integrity.",
+        "bbox": [
+            84,
+            671,
+            475,
+            748
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "text",
+        "text": "3.3. Structured Spatial Reduction",
+        "text_level": 2,
+        "bbox": [
+            84,
+            763,
+            323,
+            777
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "text",
+        "text": "The structured spatial reduction component implements the core operational shift from globally flattened token processing to dimension-wise reduction within the feature grid. Given an input feature map $\\mathbf { X } \\in \\mathbb { R } ^ { H \\times W \\times C } ,$ the goal is to produce a compressed output $\\mathbf { X } ^ { \\prime } \\in \\mathbb { R } ^ { H ^ { \\prime } \\times W ^ { \\prime } \\times \\mathbf { \\bar { C } } }$ that preserves the exact topological relationships required for faithful recurrent scanning.",
+        "bbox": [
+            84,
+            786,
+            475,
+            892
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "text",
+        "text": "We define a generic reduction operator R(·) that encapsulates any base token reduction method, such as importancebased pruning or similarity-driven merging. Reduction is performed in two successive stages aligned with the spatial dimensions of the grid, first along rows and then along columns, ensuring the output remains a regular sub-grid.",
+        "bbox": [
+            496,
+            282,
+            887,
+            375
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "text",
+        "text": "Horizontal (Row-wise) reduction. In the first stage, the feature map is decomposed into row-wise sequences by fixing the row index i. Each row is represented as",
+        "bbox": [
+            496,
+            381,
+            887,
+            426
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "equation",
+        "text": "$$\n\\mathbf {X} _ {i,:} = \\{\\mathbf {X} _ {i, j} \\} _ {j = 1} ^ {W}, \\quad \\mathbf {X} _ {i,:} \\in \\mathbb {R} ^ {W \\times C}.\n$$",
+        "text_format": "latex",
+        "bbox": [
+            566,
+            433,
+            813,
+            454
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "text",
+        "text": "The reduction operator R is applied independently to each row,",
+        "bbox": [
+            496,
+            460,
+            885,
+            487
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "equation",
+        "text": "$$\n\\widetilde {\\mathbf {X}} _ {i,:} = \\mathcal {R} (\\mathbf {X} _ {i,:}), \\quad \\widetilde {\\mathbf {X}} _ {i,:} \\in \\mathbb {R} ^ {W ^ {\\prime} \\times C}. \\tag {5}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            573,
+            487,
+            885,
+            507
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "text",
+        "text": "Stacking all reduced rows along the height dimension yields an intermediate feature map X ∈ RH×W′×C . $\\mathbf { \\tilde { X } } \\in \\mathbb { R } ^ { H \\times W ^ { \\prime } \\times C }$",
+        "bbox": [
+            496,
+            511,
+            885,
+            542
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "text",
+        "text": "Vertical (Column-wise) reduction. In the second stage, the intermediate feature map X is further decomposed into column-wise sequences by fixing the column index j. Each column is given by",
+        "bbox": [
+            496,
+            549,
+            885,
+            609
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "equation",
+        "text": "$$\n\\widetilde {\\mathbf {X}} _ {:, j} = \\{\\widetilde {\\mathbf {X}} _ {i, j} \\} _ {i = 1} ^ {H}, \\quad \\widetilde {\\mathbf {X}} _ {:, j} \\in \\mathbb {R} ^ {H \\times C}.\n$$",
+        "text_format": "latex",
+        "bbox": [
+            566,
+            614,
+            813,
+            636
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "text",
+        "text": "The same reduction operator R is applied independently to each column,",
+        "bbox": [
+            496,
+            643,
+            885,
+            672
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "equation",
+        "text": "$$\n\\mathbf {X} _ {:, j} ^ {\\prime} = \\mathcal {R} (\\widetilde {\\mathbf {X}} _ {:, j}), \\quad \\mathbf {X} _ {:, j} ^ {\\prime} \\in \\mathbb {R} ^ {H ^ {\\prime} \\times C}. \\tag {6}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            571,
+            679,
+            885,
+            700
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "text",
+        "text": "Aggregating all reduced columns produces the final output X′ ∈ RH′×W′×C . $\\mathbf { X } ^ { \\prime } \\in \\mathbb { R } ^ { H ^ { \\prime } \\times W ^ { \\prime } \\times C }$",
+        "bbox": [
+            496,
+            707,
+            885,
+            736
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "text",
+        "text": "Through this formulation, the output forms a contiguous sub-grid whose topology aligns perfectly with the scanning paths assumed by the underlying SS2D mechanism. Consequently, the structured reduction preserves the causal dependencies of state propagation, enabling compression without disrupting the model’s learned dynamics.",
+        "bbox": [
+            495,
+            744,
+            887,
+            835
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "text",
+        "text": "3.4. Localized Window Mechanism",
+        "text_level": 2,
+        "bbox": [
+            496,
+            851,
+            745,
+            864
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "text",
+        "text": "While structured spatial reduction preserves the global grid topology required by SS2D, unconstrained reduction within an entire row or column may still introduce long-range interference that disrupts local semantic coherence. In SS2D, state propagation is inherently sequential and localitysensitive, as each state update depends on a compact neighborhood along the scanning path. Reduction decisions that span distant spatial regions therefore risk collapsing semantically unrelated tokens, leading to distorted state transitions.",
+        "bbox": [
+            496,
+            875,
+            885,
+            905
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "header",
+        "text": "Spatial-Aware Reduction Framework: Towards Efficient and Faithful Visual State Space Models",
+        "bbox": [
+            181,
+            56,
+            790,
+            70
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "page_number",
+        "text": "4",
+        "bbox": [
+            480,
+            922,
+            491,
+            934
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "text",
+        "text": "",
+        "bbox": [
+            84,
+            84,
+            475,
+            191
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "To address this issue, STORM introduces a localized window mechanism that constrains reduction to spatially contiguous neighborhoods. For row-wise reduction, each row sequence $\\mathbf { X } _ { i , : } ~ \\in ~ \\mathbb { R } ^ { W \\times C }$ is partitioned into K nonoverlapping windows,",
+        "bbox": [
+            84,
+            196,
+            477,
+            273
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "equation",
+        "text": "$$\n\\mathbf {X} _ {i,:} = \\bigcup_ {k = 1} ^ {K} \\mathbf {X} _ {i,:} ^ {(k)}, \\quad \\mathbf {X} _ {i,:} ^ {(k)} \\in \\mathbb {R} ^ {L \\times C}, \\tag {7}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            161,
+            284,
+            475,
+            325
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "where L denotes the window length and $K = W / L$ . Reduction is applied independently within each window,",
+        "bbox": [
+            84,
+            335,
+            475,
+            367
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "equation",
+        "text": "$$\n\\widetilde {\\mathbf {X}} _ {i,:} ^ {(k)} = \\mathcal {R} \\big (\\mathbf {X} _ {i,:} ^ {(k)} \\big), \\quad \\widetilde {\\mathbf {X}} _ {i,:} ^ {(k)} \\in \\mathbb {R} ^ {L ^ {\\prime} \\times C}, \\tag {8}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            155,
+            375,
+            473,
+            398
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "and the reduced windows are concatenated in their original order to form the reduced row",
+        "bbox": [
+            84,
+            406,
+            473,
+            436
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "equation",
+        "text": "$$\n\\widetilde {\\mathbf {X}} _ {i,:} = \\bigcup_ {k = 1} ^ {K} \\widetilde {\\mathbf {X}} _ {i,:} ^ {(k)}, \\quad \\widetilde {\\mathbf {X}} _ {i,:} \\in \\mathbb {R} ^ {W ^ {\\prime} \\times C}. \\tag {9}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            158,
+            445,
+            473,
+            486
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "An analogous procedure is applied during column-wise reduction. Each column sequence $\\widetilde { \\mathbf { X } } _ { : , j } ~ \\in ~ \\mathbb { R } ^ { H \\times C }$ is partitioned into non-overlapping vertical windows, and the same reduction operator R is applied independently within each window. The reduced windows are concatenated in their original order to form $\\mathbf { X } _ { : , j } ^ { \\prime } \\in \\mathbb { R } ^ { H ^ { \\prime } \\times C }$ , ensuring that reduction decisions remain confined to spatially coherent neighborhoods along the vertical scanning dimension.",
+        "bbox": [
+            84,
+            503,
+            475,
+            625
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "By confining reduction to localized windows, STORM preserves the short-range spatial dependencies essential for stable state evolution in SS2D. This mechanism safeguards local contextual coherence, complementing the global topological regularity enforced by structured spatial reduction. Together, dimension-wise processing and localized windowing enable STORM to perform aggressive token reduction while faithfully respecting the structural and semantic foundations of SS2D-based vision Mamba architectures.",
+        "bbox": [
+            84,
+            631,
+            477,
+            767
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "3.5. Theoretical Analysis",
+        "text_level": 2,
+        "bbox": [
+            84,
+            784,
+            263,
+            799
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "To investigate why global reduction collapses performance and how STORM guarantees stability, we analyze VSSM hidden state dynamics under token compression.",
+        "bbox": [
+            84,
+            806,
+            473,
+            854
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "Error Formulation. Following Sec. 3.1, the state update is $h _ { t } = { \\overline { { \\mathbf { A } } } } _ { t } h _ { t - 1 } + { \\overline { { \\mathbf { B } } } } _ { t } x _ { t } . { \\mathrm { ~ L e t } } { \\mathcal { S } } = \\{ x _ { 1 } , \\dots , x _ { T } \\}$ be the sequence from grid X. Token reduction yields a compressed sequence $\\hat { \\cal S } = \\{ \\hat { x } _ { 1 } , \\ldots , \\hat { x } _ { T ^ { \\prime } } \\} \\ ( T ^ { \\prime } < T )$ and a corrupted state $\\hat { h } _ { t } = \\overline { { \\mathbf { A } } } _ { t } \\hat { h } _ { t - 1 } + \\overline { { \\mathbf { B } } } _ { t } \\hat { x } _ { t } .$ . Assuming a stable parameterization where $\\begin{array} { r } { \\| \\prod _ { k = \\tau + 1 } ^ { t } \\overline { { \\mathbf { A } } } _ { k } \\| _ { 2 } \\leq \\gamma ^ { t - \\tau } \\left( \\gamma < 1 \\right) } \\end{array}$ , the final state error $\\mathcal { E } _ { T } = \\mathbb { E } [ \\| \\hat { h } _ { T } - h _ { T } \\| ^ { 2 } ]$ is upper-bounded by:",
+        "bbox": [
+            84,
+            859,
+            475,
+            906
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "",
+        "bbox": [
+            496,
+            83,
+            887,
+            151
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "equation",
+        "text": "$$\n\\mathcal {E} _ {T} \\leq C \\sum_ {t = 1} ^ {T ^ {\\prime}} \\gamma^ {T ^ {\\prime} - t} \\cdot \\mathbb {E} [ \\| \\hat {x} _ {t} - x _ {\\mathcal {M} (t)} \\| ^ {2} ], \\tag {10}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            558,
+            165,
+            885,
+            208
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "where M(t) maps the reduced index to its original position, and $C = \\operatorname* { m a x } _ { t } \\| \\overline { { \\mathbf { B } } } _ { t } \\| _ { 2 } ^ { 2 }$ .",
+        "bbox": [
+            496,
+            222,
+            885,
+            253
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "Dilemma of Agnostic Methods. We define the spatial displacement as $\\mathcal { D } ( x _ { i } , x _ { j } ) = \\| p ( x _ { i } ) - p ( x _ { j } ) \\| _ { 2 }$ , where $p ( \\cdot )$ outputs 2D lattice coordinates. Standard 2D images inherently possess spatial locality, where tokens within a local neighborhood share coherent semantic features.",
+        "bbox": [
+            496,
+            258,
+            888,
+            335
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "Global methods (e.g., ToMe, EViT) cluster tokens based solely on feature similarity. Because they lack spatial constraints, they routinely merge non-local tokens and align them sequentially after reduction. This forces the scanning trajectory to perform long-range spatial jumps, rendering the displacement between consecutive tokens $\\mathcal { D } ( \\hat { x } _ { t - 1 } , \\hat { x } _ { t } )$ unconstrained. By disrupting the 2D grid topology, the local representation continuity is completely shattered. Consequently, the individual token reconstruction error $\\mathbb { E } [ \\| \\hat { x } _ { t } - x _ { \\mathcal { M } ( t ) } \\| ^ { 2 } ]$ scales unpredictably with the severity of trajectory scrambling, causing the cumulative error bound in Eq. (9) to diverge and leading to catastrophic performance collapse.",
+        "bbox": [
+            496,
+            342,
+            888,
+            540
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "Error Bounding via STORM. STORM resolves this vulnerability via two geometric constraints: 1) Dimension Decomposition: Separating reduction into row and column sub-grids (Sec. 3.3) ensures $\\hat { S }$ remains a structurally valid sub-lattice, preventing arbitrary trajectory permutations. 2) Window Constraints: Although reduction metrics are computed globally, compression actions are restricted within local windows $\\Omega _ { k }$ of length L (Sec. 3.4). The maximal mapping displacement is strictly bounded by the window scale:",
+        "bbox": [
+            496,
+            546,
+            888,
+            696
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "equation",
+        "text": "$$\n\\max _ {t \\in \\Omega_ {k}} \\mathcal {D} (\\hat {x} _ {t}, x _ {\\mathcal {M} (t)}) \\leq \\alpha \\cdot L, \\tag {11}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            596,
+            702,
+            885,
+            726
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "where α is the pixel pitch. This strictly preserves spatial locality. Since the maximum reconstruction discrepancy is bounded by a monotonic function of the window size, maxt $\\mathbb { E } [ \\| \\hat { x } _ { t } - x _ { \\mathcal { M } ( t ) } \\| ^ { 2 } ] \\le g ( \\alpha L )$ , substituting this into $\\operatorname { E q . } ( 9 )$ establishes a tight upper bound:",
+        "bbox": [
+            496,
+            736,
+            887,
+            811
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "equation",
+        "text": "$$\n\\mathcal {E} _ {T} \\leq C \\cdot \\frac {1 - \\gamma^ {T ^ {\\prime}}}{1 - \\gamma} \\cdot g (\\alpha L). \\tag {12}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            596,
+            825,
+            885,
+            861
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "As L remains small, $g ( \\alpha L )  0 \\quad$ , rigorously suppressing error accumulation and guaranteeing stable state propagation.",
+        "bbox": [
+            496,
+            875,
+            888,
+            906
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "header",
+        "text": "Spatial-Aware Reduction Framework: Towards Efficient and Faithful Visual State Space Models",
+        "bbox": [
+            181,
+            56,
+            790,
+            71
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "page_number",
+        "text": "5",
+        "bbox": [
+            480,
+            922,
+            491,
+            934
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "4. Experiments",
+        "text_level": 2,
+        "bbox": [
+            84,
+            83,
+            218,
+            99
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "text",
+        "text": "4.1. Datasets and Settings",
+        "text_level": 2,
+        "bbox": [
+            84,
+            109,
+            267,
+            125
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "text",
+        "text": "We conduct comprehensive experiments on the ImageNet-1K (Deng et al., 2009) and COCO 2017 (Lin et al., 2014) datasets. To examine the generalization of STORM, we evaluate it on multiple Mamba backbones, including VMamba (Liu et al., 2024b), PlainMamba (Yang et al., 2024), and LocalMamba (Huang et al., 2024). The effectiveness of STORM is evaluated on both token pruning and token merging methods, specifically EViT (Liang et al., 2022) and ToMe (Bolya et al., 2023).",
+        "bbox": [
+            84,
+            132,
+            475,
+            268
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "text",
+        "text": "All reported results are obtained under a training-free setting. Unless otherwise specified, the default window size of STORM is set to 5. All experiments are conducted using 4 × NVIDIA RTX 4090 GPUs. Implement details are provided in the Appendix 6.",
+        "bbox": [
+            84,
+            276,
+            475,
+            351
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "text",
+        "text": "4.2. Image Classification",
+        "text_level": 2,
+        "bbox": [
+            84,
+            368,
+            261,
+            383
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "text",
+        "text": "Table 1 compares the performance of token reduction methods on ImageNet-1K classification under training-free settings. The results show that STORM consistently achieves the highest accuracy across all model scales and backbones, demonstrating superior robustness to compression.",
+        "bbox": [
+            84,
+            392,
+            475,
+            467
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "text",
+        "text": "STORM significantly mitigates the performance drop caused by token reduction. On VMamba-S, STORM (ToMe) limits accuracy loss to 2.8%, compared to a 50.8% drop with standard ToMe. On PlainMamba, STORM reduces the gap to just 1.0%. This improvement stems from STORM’s structured reduction paradigm, which preserves the 2D spatial layout required by the scanning mechanism, maintaining model integrity where spatially-agnostic methods fail. Results on LocalMamba are provided in Appendix 7.1.",
+        "bbox": [
+            84,
+            474,
+            475,
+            609
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "text",
+        "text": "4.3. Object Detection and Instance Segmentation",
+        "text_level": 2,
+        "bbox": [
+            84,
+            627,
+            429,
+            643
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "text",
+        "text": "Table 2 compares the performance of various token reduction methods on object detection and instance segmentation tasks. The results show that our STORM framework consistently achieves the best performance across both tasks on all evaluated Mamba backbones, substantially outperforming prior methods under training-free settings.",
+        "bbox": [
+            84,
+            650,
+            475,
+            696
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "text",
+        "text": "",
+        "bbox": [
+            496,
+            84,
+            885,
+            130
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "text",
+        "text": "STORM enables a dramatic accuracy recovery on VMamba, elevating its detection $\\mathsf { A P } ^ { \\mathsf { b } }$ score from a collapsed state near 3.7 to a competitive 46.2. On PlainMamba, STORM also provides a clear and consistent improvement over baseline reduction methods. These results demonstrate that STORM delivers superior robustness in downstream dense prediction tasks, effectively preserving model performance during compression. Tiny-scale results are reported in Appendix 7.2.",
+        "bbox": [
+            496,
+            137,
+            887,
+            258
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "text",
+        "text": "4.4. Robustness Analysis",
+        "text_level": 2,
+        "bbox": [
+            496,
+            275,
+            671,
+            289
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "text",
+        "text": "Comparison with SOTA methods. Table 3 compares the performance of recent Mamba-specific token reduction methods on ImageNet-1K classification under training-free settings. The results demonstrate that STORM framework achieves the highest top-1 accuracy across both model scales while maintaining comparable computational efficiency.",
+        "bbox": [
+            496,
+            301,
+            885,
+            393
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "text",
+        "text": "STORM recovers nearly all of the baseline accuracy, reaching 82.0% and 83.3% on the small and base models, respectively. In stark contrast, even the latest dedicated methods suffer severe degradation: HSA (Zhan et al., 2024a) drops to 46.2%, MTR (Ma et al., 2025) reaches only 47.9%, and QuarterMap (Chi et al., 2025) achieves only 64.2% on the small model. This decisive advantage stems from STORM’s core design. While other methods are tailored to the scan mechanism, they remain spatially agnostic. STORM explicitly preserves the critical 2D token grid, aligning compression with the model’s structural bias and delivering substantially more robust performance.",
+        "bbox": [
+            496,
+            401,
+            887,
+            582
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "text",
+        "text": "Robustness across various reduction ratios. Figure 4 (a) compares the accuracy of ToMe and STORM (ToMe) on VMamba-S across increasing reduction ratios. STORM maintains significantly higher accuracy under aggressive compression, overcoming the inherent matching limit of ToMe’s global bipartite algorithm. Notably, STORM retains 71.7% accuracy at a 40% reduction rate, surpassing the",
+        "bbox": [
+            496,
+            594,
+            887,
+            700
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "chart",
+        "img_path": "images/bf627770682accd90eaff91d41459c1475a90b0a236c6c27ababa3a63debb410.jpg",
+        "content": "| Reduction Ratio (%) | ToMe   | STORM (ToMe) |\n| ------------------- | ------ | ------------ |\n| 0                   | 83.7   | 83.7         |\n| 10                  | 52.1   | 82.2         |\n| 20                  | 23.3   | 80.0         |\n| 30                  | 17.6   | 78.0         |\n| 40                  | -      | 71.7         |\n| 45                  | -      | 70.3         |",
+        "chart_caption": [
+            "(a) Accuracy"
+        ],
+        "chart_footnote": [],
+        "sub_type": "line chart",
+        "bbox": [
+            86,
+            726,
+            472,
+            847
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "chart",
+        "img_path": "images/71b10bc2a05e9a6d247a7b1db3e79505ec58fe8fa86bcdb58cb62a56d7a27b5c.jpg",
+        "content": "| Reduction Ratio (%) | ToMe Throughput (img/s) | STORM (ToMe) Throughput (img/s) |\n| ------------------- | ------------------------ | -------------------------------- |\n| 0                   | 764                      | 764                              |\n| 10                  | 826                      | 826                              |\n| 20                  | 1023                     | 1040                             |\n| 30                  | 1080                     | 1135                             |\n| 40                  | -                        | 1451                             |\n| 45                  | -                        | 1538                             |",
+        "chart_caption": [
+            "(b) Throughput",
+            "Figure 4. Comparison with conventional token reduction methods on VMamba-S in terms of top-1 accuracy and throughput across varying reduction ratios. STORM shows markedly stronger robustness than ToMe while enabling more aggressive reduction."
+        ],
+        "chart_footnote": [],
+        "sub_type": "line chart",
+        "bbox": [
+            496,
+            726,
+            883,
+            847
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "header",
+        "text": "Spatial-Aware Reduction Framework: Towards Efficient and Faithful Visual State Space Models",
+        "bbox": [
+            181,
+            56,
+            790,
+            70
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "page_number",
+        "text": "6",
+        "bbox": [
+            480,
+            922,
+            491,
+            934
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "table",
+        "img_path": "images/404fd33cea5bbb99f51bdd5ae88fd587c2fd4e0d76b6c7cd5b76b752bf2c2b07.jpg",
+        "table_caption": [
+            "Table 1. Performance comparison on ImageNet-1K. The symbol “+” denotes the application of token reduction methods to off-theshelf models, with training-free accuracy reported. The symbol △ indicates the performance difference between the baseline and the reduced model. STORM consistently yields substantial improvements over traditional reduction methods across diverse models."
+        ],
+        "table_footnote": [],
+        "table_body": "<table><tr><td>Method</td><td>GFlops</td><td>Params (M)</td><td>Acc1 (%)</td><td> $\\Delta (\\%)$ </td></tr><tr><td colspan=\"5\">VMamba</td></tr><tr><td>VMamba-T</td><td>4.91</td><td>30</td><td>82.6</td><td>0.0</td></tr><tr><td>+EViT</td><td>3.00</td><td>30</td><td>15.2</td><td>67.4↓</td></tr><tr><td>+ToMe</td><td>3.27</td><td>30</td><td>31.5</td><td>51.1↓</td></tr><tr><td>+STORM (EViT)</td><td>3.00</td><td>30</td><td>78.5</td><td>4.1↓</td></tr><tr><td>+STORM (ToMe)</td><td>3.00</td><td>30</td><td>78.8</td><td>3.8↓</td></tr><tr><td>VMamba-S</td><td>8.72</td><td>50</td><td>83.7</td><td>0.0</td></tr><tr><td>+EViT</td><td>5.30</td><td>50</td><td>23.0</td><td>60.7↓</td></tr><tr><td>+ToMe</td><td>5.57</td><td>50</td><td>32.9</td><td>50.8↓</td></tr><tr><td>+STORM (EViT)</td><td>5.31</td><td>50</td><td>80.5</td><td>3.2↓</td></tr><tr><td>+STORM (ToMe)</td><td>5.31</td><td>50</td><td>80.9</td><td>2.8↓</td></tr><tr><td>VMamba-B</td><td>15.36</td><td>89</td><td>83.9</td><td>0.0</td></tr><tr><td>+EViT</td><td>9.33</td><td>89</td><td>24.4</td><td>59.5↓</td></tr><tr><td>+ToMe</td><td>9.69</td><td>89</td><td>35.7</td><td>48.2↓</td></tr><tr><td>+STORM (EViT)</td><td>9.33</td><td>89</td><td>82.2</td><td>1.7↓</td></tr><tr><td>+STORM (ToMe)</td><td>9.33</td><td>89</td><td>82.6</td><td>1.3↓</td></tr><tr><td colspan=\"5\">PlainMamba</td></tr><tr><td>PlainMamba-L1</td><td>3.02</td><td>7</td><td>77.7</td><td>0.0</td></tr><tr><td>+EViT</td><td>2.45</td><td>7</td><td>66.1</td><td>11.6↓</td></tr><tr><td>+ToMe</td><td>2.46</td><td>7</td><td>69.6</td><td>8.1↓</td></tr><tr><td>+STORM (EViT)</td><td>2.45</td><td>7</td><td>75.3</td><td>2.4↓</td></tr><tr><td>+STORM (ToMe)</td><td>2.45</td><td>7</td><td>75.4</td><td>2.3↓</td></tr><tr><td>PlainMamba-L2</td><td>8.08</td><td>26</td><td>81.6</td><td>0.0</td></tr><tr><td>+EViT</td><td>6.42</td><td>26</td><td>76.6</td><td>5.0↓</td></tr><tr><td>+ToMe</td><td>6.43</td><td>26</td><td>76.7</td><td>4.9↓</td></tr><tr><td>+STORM (EViT)</td><td>6.42</td><td>26</td><td>80.5</td><td>1.1↓</td></tr><tr><td>+STORM (ToMe)</td><td>6.42</td><td>26</td><td>80.6</td><td>1.0↓</td></tr><tr><td>PlainMamba-L3</td><td>14.44</td><td>51</td><td>82.2</td><td>0.0</td></tr><tr><td>+EViT</td><td>9.74</td><td>51</td><td>75.2</td><td>7.0↓</td></tr><tr><td>+ToMe</td><td>9.75</td><td>51</td><td>76.1</td><td>6.1↓</td></tr><tr><td>+STORM (EViT)</td><td>9.74</td><td>51</td><td>80.1</td><td>2.1↓</td></tr><tr><td>+STORM (ToMe)</td><td>9.74</td><td>51</td><td>80.9</td><td>1.3↓</td></tr></table>",
+        "bbox": [
+            86,
+            166,
+            473,
+            680
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "text",
+        "text": "accuracy achieved by ToMe at a much lower 10% reduction.",
+        "bbox": [
+            84,
+            715,
+            475,
+            732
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "text",
+        "text": "Figure 4 (b) compares the throughput of the two methods. STORM achieves higher throughput across all reduction ratios, which results from its structured design. ToMe relies on global similarity computations over a flattened sequence, creating a scalability bottleneck. STORM decomposes reduction into parallel row/column operations, replacing a single large computation with many smaller independent ones. This design not only preserves spatial integrity but also reduces overall complexity, enabling both stronger robustness and faster inference. We provide corresponding results of EViT on Appendix 7.3.",
+        "bbox": [
+            84,
+            739,
+            475,
+            905
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "table",
+        "img_path": "images/63a2582cc9d9a1931b28486aa39c9d7bedfa55879fe903aec4eb4957b2cdfc55.jpg",
+        "table_caption": [
+            "Table 2. Performance comparison on object detection and instance segmentation. The symbol “+” denotes the application of token reduction methods to off-the-shelf models under training-free settings. STORM achieves the best performance across both tasks, with particularly strong results on the VMamba backbone."
+        ],
+        "table_footnote": [],
+        "table_body": "<table><tr><td>Method</td><td> $AP^b$ </td><td> $AP_{50}^b$ </td><td> $AP_{75}^b$ </td><td> $AP^m$ </td><td> $AP_{50}^m$ </td><td> $AP_{75}^m$ </td></tr><tr><td colspan=\"7\">VMamba</td></tr><tr><td>VMamba-S</td><td>48.7</td><td>70.0</td><td>53.5</td><td>43.7</td><td>67.3</td><td>47.0</td></tr><tr><td>+EViT</td><td>3.6</td><td>10.0</td><td>2.0</td><td>1.3</td><td>4.0</td><td>0.6</td></tr><tr><td>+ToMe</td><td>2.8</td><td>7.8</td><td>1.5</td><td>0.9</td><td>2.8</td><td>0.5</td></tr><tr><td>+STORM (EViT)</td><td>44.7</td><td>69.7</td><td>50.6</td><td>40.4</td><td>66.6</td><td>43.0</td></tr><tr><td>+STORM (ToMe)</td><td>44.2</td><td>69.5</td><td>49.8</td><td>39.8</td><td>66.0</td><td>42.1</td></tr><tr><td>VMamba-B</td><td>49.2</td><td>71.4</td><td>54.0</td><td>44.1</td><td>68.3</td><td>47.7</td></tr><tr><td>+EViT</td><td>3.7</td><td>10.5</td><td>2.0</td><td>1.3</td><td>4.2</td><td>0.5</td></tr><tr><td>+ToMe</td><td>2.8</td><td>8.2</td><td>1.4</td><td>0.9</td><td>3.1</td><td>0.4</td></tr><tr><td>+STORM (EViT)</td><td>46.2</td><td>70.7</td><td>52.0</td><td>40.9</td><td>67.5</td><td>43.9</td></tr><tr><td>+STORM (ToMe)</td><td>45.7</td><td>70.6</td><td>51.3</td><td>40.4</td><td>67.0</td><td>43.3</td></tr><tr><td colspan=\"7\">PlainMamba</td></tr><tr><td>PlainMamba-L2</td><td>46.0</td><td>66.9</td><td>50.1</td><td>40.6</td><td>63.8</td><td>43.6</td></tr><tr><td>+EViT</td><td>34.9</td><td>54.3</td><td>37.3</td><td>31.1</td><td>51.3</td><td>32.7</td></tr><tr><td>+ToMe</td><td>33.7</td><td>53.1</td><td>35.6</td><td>30.2</td><td>50.2</td><td>31.6</td></tr><tr><td>+STORM (EViT)</td><td>39.1</td><td>61.8</td><td>42.0</td><td>34.7</td><td>57.9</td><td>36.4</td></tr><tr><td>+STORM (ToMe)</td><td>40.7</td><td>63.0</td><td>43.5</td><td>35.7</td><td>59.1</td><td>37.4</td></tr><tr><td>PlainMamba-L3</td><td>46.8</td><td>68.0</td><td>51.1</td><td>41.2</td><td>64.7</td><td>43.9</td></tr><tr><td>+EViT</td><td>36.4</td><td>55.3</td><td>39.3</td><td>32.6</td><td>52.5</td><td>34.7</td></tr><tr><td>+ToMe</td><td>35.4</td><td>54.2</td><td>38.0</td><td>31.5</td><td>51.5</td><td>33.0</td></tr><tr><td>+STORM (EViT)</td><td>39.4</td><td>62.2</td><td>41.9</td><td>34.8</td><td>58.3</td><td>36.6</td></tr><tr><td>+STORM (ToMe)</td><td>40.8</td><td>63.8</td><td>43.7</td><td>35.9</td><td>59.7</td><td>37.9</td></tr></table>",
+        "bbox": [
+            500,
+            154,
+            885,
+            513
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "text",
+        "text": "Robustness on random reduction. Table 4 compares the performance of different token reduction strategies under training-free settings. The results demonstrate that STORM significantly outperforms the conventional ToMe method across all reduction ratios. Notably, even when employing a random token selection strategy, STORM still maintains robust performance. At a high reduction ratio of 36%, STORM (random) preserves 69.1% accuracy, a stark contrast to the 11.7% achieved by ToMe.",
+        "bbox": [
+            496,
+            546,
+            888,
+            681
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "text",
+        "text": "This resilience stems from STORM’s structured design. The method preserves the 2D token layout during compression, ensuring the model’s scanning mechanism remains functional. Thus, performance depends more on spatial integrity than on the specific token selection criterion, making STORM a fundamentally robust reduction framework.",
+        "bbox": [
+            496,
+            689,
+            888,
+            781
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "text",
+        "text": "Comparison with conventional spatial reduction.",
+        "text_level": 2,
+        "bbox": [
+            496,
+            792,
+            841,
+            808
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "text",
+        "text": "Figure 5 compares STORM with conventional spatial reduction methods, pooling and downsampling, across varying token reduction ratios. The results show that STORM maintains significantly higher accuracy under aggressive compression, outperforming both pooling and downsampling by a substantial margin as the reduction ratio increases.",
+        "bbox": [
+            496,
+            814,
+            888,
+            905
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "header",
+        "text": "Spatial-Aware Reduction Framework: Towards Efficient and Faithful Visual State Space Models",
+        "bbox": [
+            181,
+            56,
+            790,
+            70
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "page_number",
+        "text": "7",
+        "bbox": [
+            480,
+            922,
+            491,
+            934
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "table",
+        "img_path": "images/ca9fcfa756cf26f88d5ff2900e4ece147d31d8dbe369a6c0d01bbf7232445589.jpg",
+        "table_caption": [
+            "Table 3. Performance comparison with Mamba-specific token reduction methods on ImageNet-1K classification under trainingfree settings. The “+” symbol indicates the integration of a token reduction method into VMamba. STORM achieves the highest top-1 accuracy across all model scales with comparable FLOPs."
+        ],
+        "table_footnote": [],
+        "table_body": "<table><tr><td rowspan=\"2\">Method</td><td colspan=\"2\">Acc1 (%)</td><td colspan=\"2\">GFlops</td></tr><tr><td>small</td><td>base</td><td>small</td><td>base</td></tr><tr><td>VMamba (baseline)</td><td>83.7</td><td>83.9</td><td>8.72</td><td>15.36</td></tr><tr><td>+HSA</td><td>46.2</td><td>45.0</td><td>6.10</td><td>11.00</td></tr><tr><td>+MTR</td><td>47.9</td><td>49.4</td><td>6.29</td><td>11.08</td></tr><tr><td>+QuarterMap</td><td>64.2</td><td>69.9</td><td>6.22</td><td>11.01</td></tr><tr><td>+STORM (ToMe)</td><td>82.0</td><td>83.3</td><td>6.11</td><td>11.00</td></tr></table>",
+        "bbox": [
+            86,
+            154,
+            475,
+            267
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "text",
+        "text": "This divergence stems from the fundamental difference in reduction strategy. Pooling and downsampling perform fixed, local aggregation regardless of content, which preserves spatial regularity but inevitably discards fine-grained information. In contrast, STORM retains content-aware selection while enforcing spatial organization. This allows it to maintain both structural integrity and semantic fidelity under aggressive compression, leading to superior performance where simple resolution scaling fails.",
+        "bbox": [
+            84,
+            316,
+            475,
+            454
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "text",
+        "text": "Robustness under fine-tuning. Table 5 presents the finetuning results of different token reduction methods on VMamba-T and VMamba-S under varying reduction ratios. STORM consistently achieves the highest accuracy across both backbones and all reduction ratios after finetuning, substantially outperforming the baseline ToMe. For instance, on VMamba-T at a 0.32 reduction ratio, ToMe recovers to only 32.7%, while STORM reaches 78.4%. A similar trend holds on VMamba-S, where STORM achieves 80.4% at a 0.36 reduction ratio compared to 31.3% for ToMe. These results demonstrate that STORM maintains strong robustness under fine-tuning, effectively recovering performance even under aggressive token reduction.",
+        "bbox": [
+            84,
+            465,
+            477,
+            662
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "chart",
+        "img_path": "images/c142d1d166639c467995b43b54409ca5e436c1c6586153b8a3338c428dc29692.jpg",
+        "content": "| Reduction Ratio(%) | pooling | downsample | STORM (ToMe) |\n| ------------------ | ------- | ---------- | ------------ |\n| 0                  | 83.7    | 83.7       | 83.7         |\n| 10                 | 51.6    | 72.7       | 82.2         |\n| 15                 | 48.3    | 71.9       | 80.9         |\n| 20                 | 44.3    | 70.1       | 80.0         |\n| 25                 | 42.3    | 66.6       | 78.0         |\n| 30                 | 35.1    | 62.0       | 73.3         |",
+        "chart_caption": [
+            "Figure 5. Comparison of STORM with conventional spatial reduction methods across varying token reduction ratios. By integrating structured reduction with content-aware token selection, STORM maintains significantly higher accuracy under aggressive compression, demonstrating superior robustness."
+        ],
+        "chart_footnote": [],
+        "sub_type": "line chart",
+        "bbox": [
+            89,
+            712,
+            470,
+            830
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "table",
+        "img_path": "images/7564b0798d38f51e431d9a624759df26d9bc1e2e76cd3baaffc179b739ee7e8e.jpg",
+        "table_caption": [
+            "Table 4. Comparison of token reduction strategies under trainingfree settings. Random pruning results are averaged over five runs. STORM significantly outperforms conventional methods in both guided and random reduction, confirming its inherent robustness."
+        ],
+        "table_footnote": [],
+        "table_body": "<table><tr><td>Method</td><td>Reduction Ratio</td><td>GFlops</td><td>Acc1 (%)</td><td> $\\Delta$  (%)</td></tr><tr><td rowspan=\"5\">ToMe</td><td>0</td><td>8.72</td><td>83.7</td><td>0</td></tr><tr><td>0.18</td><td>5.57</td><td>32.9</td><td>0</td></tr><tr><td>0.23</td><td>4.87</td><td>23.3</td><td>0</td></tr><tr><td>0.29</td><td>4.07</td><td>17.6</td><td>0</td></tr><tr><td>0.36</td><td>3.40</td><td>11.7</td><td>0</td></tr><tr><td rowspan=\"5\">STORM (random)</td><td>0</td><td>8.72</td><td>83.7</td><td>0</td></tr><tr><td>0.18</td><td>5.31</td><td>79.0±0.3</td><td>46.1↑</td></tr><tr><td>0.23</td><td>4.61</td><td>77.1±0.5</td><td>53.8↑</td></tr><tr><td>0.29</td><td>3.81</td><td>74.4±0.9</td><td>56.8↑</td></tr><tr><td>0.36</td><td>3.15</td><td>69.1±1.0</td><td>57.4↑</td></tr><tr><td rowspan=\"5\">STORM (ToMe)</td><td>0</td><td>8.72</td><td>83.7</td><td>0</td></tr><tr><td>0.18</td><td>5.31</td><td>80.9</td><td>48.0↑</td></tr><tr><td>0.23</td><td>4.61</td><td>80.0</td><td>56.7↑</td></tr><tr><td>0.29</td><td>3.81</td><td>78.0</td><td>60.4↑</td></tr><tr><td>0.36</td><td>3.15</td><td>73.3</td><td>61.6↑</td></tr></table>",
+        "bbox": [
+            500,
+            141,
+            885,
+            407
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "text",
+        "text": "4.5. Ablation Study",
+        "text_level": 2,
+        "bbox": [
+            496,
+            436,
+            635,
+            452
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "text",
+        "text": "Effect of structured reduction. Figure 6 compares the conventional ToMe method with STORM (ToMe)-w/o win, a structured variant that reduces tokens within rows and columns while omitting local constraints. The results demonstrate that the structured variant achieves dramatically higher accuracy than ToMe across all reduction ratios. For instance, at a 29% reduction, it retains 71.4% accuracy compared to only 17.6% for ToMe.",
+        "bbox": [
+            495,
+            465,
+            888,
+            585
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "text",
+        "text": "This decisive improvement demonstrates that the core effectiveness of our framework stems from its structured spatial reduction paradigm. By operating on organized rows and columns instead of a globally flattened sequence, the method inherently preserves the 2D token grid. This fundamental spatial alignment effectively prevents the performance collapse inherent in conventional reduction approaches.",
+        "bbox": [
+            495,
+            594,
+            888,
+            686
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "chart",
+        "img_path": "images/6d4378772374f6281ebc631554b00f9b2e320333d9c2bf0c37f19ae02e60bb8d.jpg",
+        "content": "| Reduction Ratio(%) | ToMe   | STORM (ToMe)-w/o win | STORM (ToMe) |\n| ------------------ | ------ | ------------------- | ------------ |\n| 0                  | 83.7   | 83.7                | 83.7         |\n| 12                 | 52.1   | 81.2                | 82.2         |\n| 18                 | 32.9   | 78.7                | 80.9         |\n| 22                 | 23.3   | 75.8                | 80.0         |\n| 28                 | 17.6   | 71.4                | 78.0         |\n| 35                 | 11.7   | 65.3                | 73.3         |",
+        "chart_caption": [
+            "Figure 6. Ablation study on STORM. STORM (ToMe)-w/o win denotes the variant with structured spatial reduction only, without the localized windowing constraint. STORM significantly outperforms ToMe, and performance is further improved when the windowing constraint is applied."
+        ],
+        "chart_footnote": [],
+        "sub_type": "line chart",
+        "bbox": [
+            500,
+            713,
+            887,
+            832
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "header",
+        "text": "Spatial-Aware Reduction Framework: Towards Efficient and Faithful Visual State Space Models",
+        "bbox": [
+            181,
+            56,
+            790,
+            70
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "page_number",
+        "text": "8",
+        "bbox": [
+            480,
+            922,
+            491,
+            934
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "image",
+        "img_path": "images/d342859c2dc0f13ba0154d2d4f7c633d8886aeb68d56daeab4b5f8718ab5eb30.jpg",
+        "image_caption": [
+            "Figure 7. Visualization of reduction tokens at varying compression ratios. ToMe produces fragmented and spatially inconsistent representations. Structured spatial reduction (without windowing) restores layout regularity but sacrifices fine-grained details. In contrast, the full STORM framework consistently preserves both structural integrity and semantic coherence across all pruning levels."
+        ],
+        "image_footnote": [],
+        "content": "Original Image\nPruned to 48×48\nPruned to 36×36\nPruned to 24×24\nOriginal Image\nPruned to 48×48\nPruned to 36×36\nPruned to 24×24\nToMe\nSTORM (ToMe)\nw/o win\nSTORM (ToMe)",
+        "sub_type": "text_image",
+        "bbox": [
+            91,
+            85,
+            883,
+            318
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "table",
+        "img_path": "images/fc02818c262e65c0254d581a1e29b1397a57d4577ffe397207d01025c95c41bd.jpg",
+        "table_caption": [
+            "Table 5. Comparison of token reduction methods after fine-tuning on VMamba-T and VMamba-S. All methods are fine-tuned for 5 epochs with a learning rate of 1e-5. STORM consistently outperforms ToMe across all reduction ratios, demonstrating strong recoverability after fine-tuning."
+        ],
+        "table_footnote": [],
+        "table_body": "<table><tr><td>Method</td><td>Reduction Ratio</td><td>GFlops</td><td>Fine-tuned Acc1 (%)</td></tr><tr><td>VMamba-T</td><td>0</td><td>4.91</td><td>-</td></tr><tr><td>+ToMe</td><td>0.20</td><td>2.97</td><td>47.9</td></tr><tr><td>+ToMe</td><td>0.32</td><td>2.11</td><td>32.7</td></tr><tr><td>+STORM (ToMe)</td><td>0.20</td><td>2.71</td><td>80.7</td></tr><tr><td>+STORM (ToMe)</td><td>0.32</td><td>1.86</td><td>78.4</td></tr><tr><td>VMamba-S</td><td>0</td><td>8.72</td><td>-</td></tr><tr><td>+ToMe</td><td>0.23</td><td>4.87</td><td>48.1</td></tr><tr><td>+ToMe</td><td>0.36</td><td>3.40</td><td>31.3</td></tr><tr><td>+STORM (ToMe)</td><td>0.23</td><td>4.61</td><td>82.1</td></tr><tr><td>+STORM (ToMe)</td><td>0.36</td><td>3.15</td><td>80.4</td></tr></table>",
+        "bbox": [
+            86,
+            460,
+            475,
+            648
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "text",
+        "text": "",
+        "bbox": [
+            84,
+            675,
+            433,
+            690
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "text",
+        "text": "Effect of window constraints. Figure 6 compares the complete STORM framework with its ablated version that removes local windowing (STORM (ToMe)-w/o win). The results show that our full method consistently achieves higher accuracy, with the performance gap widening under more aggressive reduction. For example, at a 36% reduction ratio, the complete framework retains 73.3% accuracy, while the variant without windows drops to 65.3%.",
+        "bbox": [
+            84,
+            700,
+            473,
+            821
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "text",
+        "text": "This demonstrates that localized constraints are vital under high compression. While structured reduction preserves global scanning paths, windowing maintains local semantic coherence by preventing cross-region merging. This combination of global structure and local fidelity is key to robust performance during extreme pruning. We include the ablation study of window size in the Appendix 7.5.",
+        "bbox": [
+            84,
+            829,
+            475,
+            906
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "text",
+        "text": "",
+        "bbox": [
+            496,
+            390,
+            885,
+            421
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "text",
+        "text": "4.6. Visualization",
+        "text_level": 2,
+        "bbox": [
+            496,
+            436,
+            622,
+            450
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "text",
+        "text": "Figure 7 visualizes the token groups retained after compression. The results show that ToMe produces scattered and semantically inconsistent clusters, often breaking objects apart. The structured variant organizes tokens into a regular grid, restoring spatial order but blurring fine details. In contrast, STORM maintains semantically coherent groups where object outlines remain sharp and local features are preserved, demonstrating its effectiveness in balancing structural integrity with semantic fidelity.",
+        "bbox": [
+            495,
+            460,
+            887,
+            597
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "text",
+        "text": "5. Conclusion",
+        "text_level": 2,
+        "bbox": [
+            496,
+            616,
+            616,
+            631
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "text",
+        "text": "This paper identifies that the failure of token reduction in vision Mamba stems from the disruption of 2D spatial structure. We propose STORM, a plug-and-play framework that enforces structured spatial reduction with local window constraints, preserving both global grid topology and local semantic coherence. Without training, STORM enables robust and aggressive compression and achieves superior performance across diverse architectures and tasks.",
+        "bbox": [
+            495,
+            642,
+            887,
+            763
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "text",
+        "text": "Acknowledgment",
+        "text_level": 2,
+        "bbox": [
+            496,
+            782,
+            648,
+            799
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "text",
+        "text": "This work was supported by National Major Scientific Instrument and Equipment Development Project of National Natural Science Foundation of China under Grant 62427820; in part by National Natural Science Foundation of China under Grant 62306198.",
+        "bbox": [
+            495,
+            808,
+            885,
+            883
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "header",
+        "text": "Spatial-Aware Reduction Framework: Towards Efficient and Faithful Visual State Space Models",
+        "bbox": [
+            181,
+            56,
+            790,
+            70
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "page_number",
+        "text": "9",
+        "bbox": [
+            480,
+            922,
+            491,
+            934
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "text",
+        "text": "Impact Statement",
+        "text_level": 2,
+        "bbox": [
+            86,
+            83,
+            240,
+            99
+        ],
+        "page_idx": 9
+    },
+    {
+        "type": "text",
+        "text": "This paper presents work whose goal is to advance the field of Machine Learning. There are many potential societal consequences of our work, none which we feel must be specifically highlighted here.",
+        "bbox": [
+            84,
+            109,
+            473,
+            170
+        ],
+        "page_idx": 9
+    },
+    {
+        "type": "text",
+        "text": "References",
+        "text_level": 2,
+        "bbox": [
+            86,
+            189,
+            181,
+            205
+        ],
+        "page_idx": 9
+    },
+    {
+        "type": "list",
+        "sub_type": "ref_text",
+        "list_items": [
+            "Bao, H., Dong, L., Piao, S., and Wei, F. Beit: BERT pretraining of image transformers. In The Tenth International Conference on Learning Representations, ICLR 2022, 2022.",
+            "Bolya, D., Fu, C., Dai, X., Zhang, P., Feichtenhofer, C., and Hoffman, J. Token merging: Your vit but faster. In The Eleventh International Conference on Learning Representations, ICLR 2023, 2023.",
+            "Chen, M., Shao, W., Xu, P., Lin, M., Zhang, K., Chao, F., Ji, R., Qiao, Y., and Luo, P. Diffrate : Differentiable compression rate for efficient vision transformers. In IEEE/CVF International Conference on Computer Vision, ICCV 2023, pp. 17118–17128, 2023.",
+            "Chi, T., Chiang, H., Marculescu, D., and Wu, K. Quartermap: Efficient post-training token pruning for visual state space models. CoRR, abs/2507.09514, 2025.",
+            "Deng, J., Dong, W., Socher, R., Li, L., Li, K., and Fei-Fei, L. Imagenet: A large-scale hierarchical image database. In 2009 IEEE Computer Society Conference on Computer Vision and Pattern Recognition (CVPR 2009), pp. 248– 255, 2009.",
+            "Dosovitskiy, A., Beyer, L., Kolesnikov, A., Weissenborn, D., Zhai, X., Unterthiner, T., Dehghani, M., Minderer, M., Heigold, G., Gelly, S., Uszkoreit, J., and Houlsby, N. An image is worth 16x16 words: Transformers for image recognition at scale. In 9th International Conference on Learning Representations, ICLR 2021, 2021.",
+            "Fayyaz, M., Koohpayegani, S. A., Jafari, F. R., Sengupta, S., Joze, H. R. V., Sommerlade, E., Pirsiavash, H., and Gall, J. Adaptive token sampling for efficient vision transformers. In Computer Vision - ECCV 2022 - 17th European Conference, Lecture Notes in Computer Science, pp. 396– 414, 2022.",
+            "Fu, D. Y., Dao, T., Saab, K. K., Thomas, A. W., Rudra, A., and Re, C. Hungry hungry hippos: Towards language ´ modeling with state space models. In The Eleventh International Conference on Learning Representations, ICLR 2023, 2023.",
+            "Gu, A. and Dao, T. Mamba: Linear-time sequence modeling with selective state spaces. CoRR, abs/2312.00752, 2023."
+        ],
+        "bbox": [
+            86,
+            213,
+            475,
+            905
+        ],
+        "page_idx": 9
+    },
+    {
+        "type": "ref_text",
+        "text": "Gu, A., Goel, K., and Re, C. Efficiently modeling long ´ sequences with structured state spaces. In The Tenth International Conference on Learning Representations, ICLR 2022, 2022.",
+        "bbox": [
+            498,
+            83,
+            887,
+            143
+        ],
+        "page_idx": 9
+    },
+    {
+        "type": "ref_text",
+        "text": "Guo, H., Li, J., Dai, T., Ouyang, Z., Ren, X., and Xia, S. Mambair: A simple baseline for image restoration with state-space model. In Computer Vision - ECCV 2024 - 18th European Conference, Lecture Notes in Computer Science, pp. 222–241, 2024.",
+        "bbox": [
+            498,
+            155,
+            887,
+            232
+        ],
+        "page_idx": 9
+    },
+    {
+        "type": "ref_text",
+        "text": "Hatamizadeh, A. and Kautz, J. Mambavision: A hybrid mamba-transformer vision backbone. In IEEE/CVF Conference on Computer Vision and Pattern Recognition, CVPR 2025, pp. 25261–25270, 2025.",
+        "bbox": [
+            498,
+            242,
+            887,
+            301
+        ],
+        "page_idx": 9
+    },
+    {
+        "type": "ref_text",
+        "text": "Huang, T., Pei, X., You, S., Wang, F., Qian, C., and Xu, C. Localmamba: Visual state space model with windowed selective scan. In Computer Vision - ECCV 2024 Workshops, Lecture Notes in Computer Science, pp. 12–22, 2024.",
+        "bbox": [
+            498,
+            311,
+            887,
+            388
+        ],
+        "page_idx": 9
+    },
+    {
+        "type": "ref_text",
+        "text": "Katharopoulos, A., Vyas, A., Pappas, N., and Fleuret, F. Transformers are rnns: Fast autoregressive transformers with linear attention. In Proceedings of the 37th International Conference on Machine Learning, ICML 2020, Proceedings of Machine Learning Research, pp. 5156– 5165, 2020.",
+        "bbox": [
+            498,
+            398,
+            887,
+            489
+        ],
+        "page_idx": 9
+    },
+    {
+        "type": "ref_text",
+        "text": "Kong, Z., Dong, P., Ma, X., Meng, X., Niu, W., Sun, M., Shen, X., Yuan, G., Ren, B., Tang, H., Qin, M., and Wang, Y. Spvit: Enabling faster vision transformers via latency-aware soft token pruning. In Computer Vision - ECCV 2022 - 17th European Conference, Lecture Notes in Computer Science, pp. 620–640, 2022.",
+        "bbox": [
+            498,
+            500,
+            887,
+            590
+        ],
+        "page_idx": 9
+    },
+    {
+        "type": "ref_text",
+        "text": "Li, K., Li, X., Wang, Y., He, Y., Wang, Y., Wang, L., and Qiao, Y. Videomamba: State space model for efficient video understanding. In Computer Vision - ECCV 2024 - 18th European Conference, Lecture Notes in Computer Science, pp. 237–255, 2024.",
+        "bbox": [
+            498,
+            601,
+            887,
+            676
+        ],
+        "page_idx": 9
+    },
+    {
+        "type": "ref_text",
+        "text": "Liang, D., Zhou, X., Xu, W., Zhu, X., Zou, Z., Ye, X., Tan, X., and Bai, X. Pointmamba: A simple state space model for point cloud analysis. In Advances in Neural Information Processing Systems 38: Annual Conference on Neural Information Processing Systems 2024, NeurIPS 2024, 2024.",
+        "bbox": [
+            498,
+            686,
+            887,
+            777
+        ],
+        "page_idx": 9
+    },
+    {
+        "type": "ref_text",
+        "text": "Liang, Y., Ge, C., Tong, Z., Song, Y., Wang, J., and Xie, P. Not all patches are what you need: Expediting vision transformers via token reorganizations. CoRR, abs/2202.07800, 2022.",
+        "bbox": [
+            498,
+            789,
+            887,
+            848
+        ],
+        "page_idx": 9
+    },
+    {
+        "type": "ref_text",
+        "text": "Lin, T., Maire, M., Belongie, S. J., Hays, J., Perona, P., Ramanan, D., Dollar, P., and Zitnick, C. L. Microsoft´ COCO: common objects in context. In Computer Vision -",
+        "bbox": [
+            498,
+            859,
+            887,
+            905
+        ],
+        "page_idx": 9
+    },
+    {
+        "type": "header",
+        "text": "Spatial-Aware Reduction Framework: Towards Efficient and Faithful Visual State Space Models",
+        "bbox": [
+            181,
+            56,
+            790,
+            71
+        ],
+        "page_idx": 9
+    },
+    {
+        "type": "page_number",
+        "text": "10",
+        "bbox": [
+            477,
+            922,
+            495,
+            934
+        ],
+        "page_idx": 9
+    },
+    {
+        "type": "list",
+        "sub_type": "ref_text",
+        "list_items": [
+            "ECCV 2014 - 13th European Conference, Lecture Notes in Computer Science, pp. 740–755, 2014.",
+            "Liu, J., Yang, H., Zhou, H., Xi, Y., Yu, L., Li, C., Liang, Y., Shi, G., Yu, Y., Zhang, S., Zheng, H., and Wang, S. Swin-umamba: Mamba-based unet with imagenet-based pretraining. In Medical Image Computing and Computer Assisted Intervention - MICCAI 2024 - 27th International Conference, Lecture Notes in Computer Science, pp. 615– 625, 2024a.",
+            "Liu, Y., Tian, Y., Zhao, Y., Yu, H., Xie, L., Wang, Y., Ye, Q., Jiao, J., and Liu, Y. Vmamba: Visual state space model. In Advances in Neural Information Processing Systems 38: Annual Conference on Neural Information Processing Systems 2024, NeurIPS 2024, 2024b.",
+            "Liu, Z., Lin, Y., Cao, Y., Hu, H., Wei, Y., Zhang, Z., Lin, S., and Guo, B. Swin transformer: Hierarchical vision transformer using shifted windows. In 2021 IEEE/CVF International Conference on Computer Vision, ICCV 2021, pp. 9992–10002, 2021.",
+            "Lv, J., Zhou, Y., Shi, M., Liang, Z., Zhang, P., Peng, X., Zhao, W., Zhu, Z., Lv, J., Ye, Q., et al. Pruning-robust mamba with asymmetric multi-scale scanning paths. Advances in Neural Information Processing Systems, 38: 114103–114124, 2026.",
+            "Ma, J., Li, F., and Wang, B. U-mamba: Enhancing longrange dependency for biomedical image segmentation. CoRR, abs/2401.04722, 2024.",
+            "Ma, Q., Zhang, Z., Su, C., Chen, J., Song, Z., Zheng, H., and Gao, W. Training-free token reduction for vision mamba. CoRR, abs/2507.14042, 2025.",
+            "Marin, D., Chang, J. R., Ranjan, A., Prabhu, A., Rastegari, M., and Tuzel, O. Token pooling in vision transformers. CoRR, abs/2110.03860, 2021.",
+            "Mehta, H., Gupta, A., Cutkosky, A., and Neyshabur, B. Long range language modeling via gated state spaces. In The Eleventh International Conference on Learning Representations, ICLR 2023, 2023.",
+            "Nguyen, E., Goel, K., Gu, A., Downs, G. W., Shah, P., Dao, T., Baccus, S., and Re, C. S4ND: modeling images and ´ videos as multidimensional signals with state spaces. In Advances in Neural Information Processing Systems 35: Annual Conference on Neural Information Processing Systems 2022, NeurIPS 2022, 2022.",
+            "Park, J., Son, M., and Kim, C. Towards efficient vision state space models via token merging. CoRR, abs/2508.13599, 2025.",
+            "Pei, X., Huang, T., and Xu, C. Efficientvmamba: Atrous selective scan for light weight visual mamba. In Thirty-Ninth AAAI Conference on Artificial Intelligence, Thirty-Seventh Conference on Innovative Applications of Artificial Intelligence, Fifteenth Symposium on Educational Advances in Artificial Intelligence, AAAI 2025, pp. 6443– 6451, 2025.",
+            "Rao, Y., Zhao, W., Liu, B., Lu, J., Zhou, J., and Hsieh, C. Dynamicvit: Efficient vision transformers with dynamic token sparsification. In Advances in Neural Information Processing Systems 34: Annual Conference on Neural Information Processing Systems 2021, NeurIPS 2021, pp. 13937–13949, 2021.",
+            "Ruan, J., Li, J., and Xiang, S. Vm-unet: Vision mamba unet for medical image segmentation. ACM Transactions on Multimedia Computing, Communications and Applications, 2024.",
+            "Ryoo, M. S., Piergiovanni, A. J., Arnab, A., Dehghani, M., and Angelova, A. Tokenlearner: What can 8 learned tokens do for images and videos? CoRR, abs/2106.11297, 2021.",
+            "Shi, M., Zhou, Y., Yu, R., Li, Z., Liang, Z., Zhao, X., Peng, X., Rajpurohit, T., Vedantam, S. R., Zhao, W., Wang, K., and You, Y. Faster vision mamba is rebuilt in minutes via merged token re-training. CoRR, abs/2412.12496, 2024a.",
+            "Shi, Y., Dong, M., and Xu, C. Multi-scale vmamba: Hierarchy in hierarchy visual state space model. In Advances in Neural Information Processing Systems 38: Annual Conference on Neural Information Processing Systems 2024, NeurIPS 2024, 2024b.",
+            "Smith, J. T. H., Warrington, A., and Linderman, S. W. Simplified state space layers for sequence modeling. In The Eleventh International Conference on Learning Representations, ICLR 2023, 2023.",
+            "Touvron, H., Cord, M., Douze, M., Massa, F., Sablayrolles, A., and Jegou, H. Training data-efficient image transform- ´ ers & distillation through attention. In Proceedings of the 38th International Conference on Machine Learning, ICML 2021, Proceedings of Machine Learning Research, pp. 10347–10357, 2021.",
+            "Wang, J., Zhu, W., Wang, P., Yu, X., Liu, L., Omar, M., and Hamid, R. Selective structured state-spaces for longform video understanding. In IEEE/CVF Conference on Computer Vision and Pattern Recognition, CVPR 2023, pp. 6387–6397, 2023.",
+            "Wang, W., Xie, E., Li, X., Fan, D., Song, K., Liang, D., Lu, T., Luo, P., and Shao, L. Pyramid vision transformer: A",
+            "versatile backbone for dense prediction without convolutions. In 2021 IEEE/CVF International Conference on Computer Vision, ICCV 2021, pp. 548–558, 2021.",
+            "Xie, F., Zhang, W., Wang, Z., and Ma, C. Quadmamba: Learning quadtree-based selective scan for visual state space model. In Advances in Neural Information Processing Systems 38: Annual Conference on Neural Information Processing Systems 2024, NeurIPS 2024, 2024.",
+            "Xu, J., Mello, S. D., Liu, S., Byeon, W., Breuel, T. M., Kautz, J., and Wang, X. Groupvit: Semantic segmentation emerges from text supervision. In IEEE/CVF Conference on Computer Vision and Pattern Recognition, CVPR 2022, pp. 18113–18123, 2022a.",
+            "Xu, X., Li, C., Chen, Y., Chang, X., Liu, J., and Wang, S. No token left behind: Efficient vision transformer via dynamic token idling. In Liu, T., Webb, G. I., Yue, L., and Wang, D. (eds.), AI 2023: Advances in Artificial Intelligence - 36th Australasian Joint Conference on Artificial Intelligence, AI 2023, Lecture Notes in Computer Science, pp. 28–41, 2023.",
+            "Xu, Y., Zhang, Z., Zhang, M., Sheng, K., Li, K., Dong, W., Zhang, L., Xu, C., and Sun, X. Evo-vit: Slow-fast token evolution for dynamic vision transformer. In Proceedings of the AAAI conference on artificial intelligence, volume 36, pp. 2964–2972, 2022b.",
+            "Yang, C., Chen, Z., Espinosa, M., Ericsson, L., Wang, Z., Liu, J., and Crowley, E. J. Plainmamba: Improving nonhierarchical mamba in visual recognition. In 35th British Machine Vision Conference, BMVC 2024, 2024.",
+            "Yin, H., Vahdat, A., Alvarez, J. M., Mallya, A., Kautz, J., ´ and Molchanov, P. A-vit: Adaptive tokens for efficient vision transformer. In IEEE/CVF Conference on Computer Vision and Pattern Recognition, CVPR 2022, pp. 10799–10808, 2022.",
+            "Zhan, Z., Kong, Z., Gong, Y., Wu, Y., Meng, Z., Zheng, H., Shen, X., Ioannidis, S., Niu, W., Zhao, P., and Wang, Y. Exploring token pruning in vision state space models. In Advances in Neural Information Processing Systems 38: Annual Conference on Neural Information Processing Systems 2024, NeurIPS 2024, 2024a.",
+            "Zhan, Z., Wu, Y., Kong, Z., Yang, C., Gong, Y., Shen, X., Lin, X., Zhao, P., and Wang, Y. Rethinking token reduction for state space models. In Proceedings of the 2024 Conference on Empirical Methods in Natural Language Processing, EMNLP 2024, pp. 1686–1697, 2024b.",
+            "Zhu, L., Liao, B., Zhang, Q., Wang, X., Liu, W., and Wang, X. Vision mamba: Efficient visual representation learning with bidirectional state space model. In Forty-first"
+        ],
+        "bbox": [
+            84,
+            83,
+            480,
+            906
+        ],
+        "page_idx": 10
+    },
+    {
+        "type": "list",
+        "sub_type": "ref_text",
+        "list_items": [],
+        "bbox": [
+            498,
+            83,
+            888,
+            906
+        ],
+        "page_idx": 10
+    },
+    {
+        "type": "header",
+        "text": "Spatial-Aware Reduction Framework: Towards Efficient and Faithful Visual State Space Models",
+        "bbox": [
+            181,
+            56,
+            790,
+            71
+        ],
+        "page_idx": 10
+    },
+    {
+        "type": "page_number",
+        "text": "",
+        "bbox": [
+            477,
+            922,
+            493,
+            934
+        ],
+        "page_idx": 10
+    },
+    {
+        "type": "list",
+        "sub_type": "ref_text",
+        "list_items": [],
+        "bbox": [
+            84,
+            83,
+            480,
+            907
+        ],
+        "page_idx": 11
+    },
+    {
+        "type": "ref_text",
+        "text": "International Conference on Machine Learning, ICML 2024, Proceedings of Machine Learning Research, pp. 62429–62442, 2024.",
+        "bbox": [
+            514,
+            85,
+            887,
+            128
+        ],
+        "page_idx": 11
+    },
+    {
+        "type": "header",
+        "text": "Spatial-Aware Reduction Framework: Towards Efficient and Faithful Visual State Space Models",
+        "bbox": [
+            181,
+            56,
+            790,
+            71
+        ],
+        "page_idx": 11
+    },
+    {
+        "type": "page_number",
+        "text": "12",
+        "bbox": [
+            477,
+            922,
+            495,
+            934
+        ],
+        "page_idx": 11
+    },
+    {
+        "type": "text",
+        "text": "6. Implementation Details",
+        "text_level": 2,
+        "bbox": [
+            84,
+            83,
+            307,
+            99
+        ],
+        "page_idx": 12
+    },
+    {
+        "type": "text",
+        "text": "6.1. Reduction Ratios Configuration",
+        "text_level": 2,
+        "bbox": [
+            84,
+            109,
+            341,
+            125
+        ],
+        "page_idx": 12
+    },
+    {
+        "type": "text",
+        "text": "In our experiments, VMamba and LocalMamba share an identical pruning configuration: we designate the even-indexed blocks of Stages 1–3 as pruning anchors for VMamba. By uniformly distributing the token reduction budget across these anchors, we control the final output resolution of Stage 3 to $\\{ 9 \\times 9 , 8 \\times 8 , 7 \\times 7 , 6 \\times 6 , 5 \\times 5 \\}$ , which corresponds to overall reduction ratios of [0.12, 0.18, 0.23, 0.29, 0.36], respectively. Stage 4 is excluded from the pruning process, as its high semantic density and low spatial resolution lead to diminishing returns in computational efficiency gains while risking the loss of critical features.",
+        "bbox": [
+            84,
+            132,
+            887,
+            223
+        ],
+        "page_idx": 12
+    },
+    {
+        "type": "text",
+        "text": "In our PlainMamba experiments, we designate layers [4, 10, 16, 22] as pruning anchors. By uniformly distributing the token reduction budget across these anchors, we control the equivalent final output resolution to $\\{ 9 \\times 9 , 6 \\times 6 , 4 \\times 4 , 3 \\times 3 \\}$ , which corresponds to overall reduction ratios of [0.25, 0.39, 0.52, 0.55], respectively.",
+        "bbox": [
+            84,
+            229,
+            887,
+            277
+        ],
+        "page_idx": 12
+    },
+    {
+        "type": "text",
+        "text": "6.2. Adaptation of EViT to Mamba",
+        "text_level": 2,
+        "bbox": [
+            84,
+            292,
+            333,
+            308
+        ],
+        "page_idx": 12
+    },
+    {
+        "type": "text",
+        "text": "We follow HSA (Zhan et al., 2024a) to adapt EViT (Liang et al., 2022) to the Mamba architecture. The SSM block produces a selectivity parameter that governs input-dependent gating. Token importance is derived by aggregating this selectivity across the four scan directions of VMamba and averaging over the feature dimension, yielding a scalar score per token. Tokens with lower scores are treated as less informative and are prioritized for removal.",
+        "bbox": [
+            84,
+            316,
+            887,
+            377
+        ],
+        "page_idx": 12
+    },
+    {
+        "type": "text",
+        "text": "6.3. Non-Divisible Window Handling",
+        "text_level": 2,
+        "bbox": [
+            84,
+            393,
+            346,
+            409
+        ],
+        "page_idx": 12
+    },
+    {
+        "type": "text",
+        "text": "We partition the feature map into spatial windows via sequential row/column splitting. When the spatial dimension is not divisible by the window size, the remaining tokens form a smaller window without padding or truncation. These irregular windows are processed identically to regular ones, as our scoring and pruning operations are agnostic to window shape.",
+        "bbox": [
+            84,
+            417,
+            887,
+            463
+        ],
+        "page_idx": 12
+    },
+    {
+        "type": "text",
+        "text": "6.4. Reduction Budget Allocation",
+        "text_level": 2,
+        "bbox": [
+            84,
+            479,
+            320,
+            494
+        ],
+        "page_idx": 12
+    },
+    {
+        "type": "text",
+        "text": "The overall keep ratio $\\rho \\in ( 0 , 1 ]$ is distributed across pruning anchors and their constituent windows. The total tokens to remove, $R _ { \\mathrm { t o t a l } } = \\lceil ( 1 - \\rho ) \\cdot N \\rceil$ , is evenly partitioned among K anchors, with any remainder assigned incrementally to the first anchors. Within each anchor, the budget is further subdivided across windows following a row/column-wise paradigm with uniform spacing, ensuring balanced spatial coverage. For multi-stage backbones, the per-anchor budget is scaled proportionally to the token count at each stage, distributing reduction pressure equitably across different spatial resolutions.",
+        "bbox": [
+            84,
+            502,
+            887,
+            579
+        ],
+        "page_idx": 12
+    },
+    {
+        "type": "text",
+        "text": "7. More Experiments",
+        "text_level": 2,
+        "bbox": [
+            84,
+            597,
+            267,
+            614
+        ],
+        "page_idx": 12
+    },
+    {
+        "type": "text",
+        "text": "7.1. Image Classification on LocalMamba",
+        "text_level": 2,
+        "bbox": [
+            84,
+            623,
+            377,
+            638
+        ],
+        "page_idx": 12
+    },
+    {
+        "type": "table",
+        "img_path": "images/26da2d033824558799e0348f4829082b99d5a29cf3213354f3fed8067070684a.jpg",
+        "table_caption": [
+            "Table 6. Performance comparison on ImageNet-1K. The symbol $\" + \"$ denotes the application of token reduction methods to off-the-shelf models, with training-free accuracy reported. The symbol △ indicates the performance difference between the baseline and the reduced model. STORM consistently yields substantial improvements over traditional reduction methods on LocalMamba."
+        ],
+        "table_footnote": [],
+        "table_body": "<table><tr><td>Method</td><td>GFlops</td><td>Params</td><td>Acc1(%)</td><td>Δ(%)</td></tr><tr><td colspan=\"5\">LocalMamba</td></tr><tr><td>LocalVMamba-S</td><td>11.37</td><td>50M</td><td>83.7</td><td>0.0</td></tr><tr><td>+EViT</td><td>6.70</td><td>50M</td><td>19.3</td><td>64.4↓</td></tr><tr><td>+ToMe</td><td>6.96</td><td>50M</td><td>28.7</td><td>55.0↓</td></tr><tr><td>+STORM (EViT)</td><td>6.70</td><td>50M</td><td>78.5</td><td>5.2↓</td></tr><tr><td>+STORM (ToMe)</td><td>6.70</td><td>50M</td><td>79.6</td><td>4.1↓</td></tr></table>",
+        "bbox": [
+            222,
+            698,
+            751,
+            821
+        ],
+        "page_idx": 12
+    },
+    {
+        "type": "text",
+        "text": "Table 6 compares token reduction methods on LocalMamba-S under training-free settings. The results show that conventional methods cause severe performance degradation, with EViT and ToMe dropping accuracy to 19.3% and 28.7%, respectively. In contrast, STORM enables a strong recovery: STORM (ToMe) retains 79.6% accuracy, limiting the loss to only 4.1%.",
+        "bbox": [
+            84,
+            837,
+            887,
+            883
+        ],
+        "page_idx": 12
+    },
+    {
+        "type": "text",
+        "text": "This outcome further validates STORM’s generalizability to Mamba variants with strong local inductive biases. LocalMamba explicitly emphasizes neighborhood interactions, which are disrupted by global flattening in conventional reduction. STORM’s row-column reduction preserves both local window structure and global layout, thereby maintaining the model’s intended local-to-glue reasoning. The consistent success across VMamba, PlainMamba, and LocalMamba underscores that structured spatial preservation is a universally effective principle for token reduction in vision Mamba families.",
+        "bbox": [
+            84,
+            890,
+            887,
+            905
+        ],
+        "page_idx": 12
+    },
+    {
+        "type": "header",
+        "text": "Spatial-Aware Reduction Framework: Towards Efficient and Faithful Visual State Space Models",
+        "bbox": [
+            181,
+            56,
+            790,
+            70
+        ],
+        "page_idx": 12
+    },
+    {
+        "type": "page_number",
+        "text": "13",
+        "bbox": [
+            477,
+            922,
+            495,
+            934
+        ],
+        "page_idx": 12
+    },
+    {
+        "type": "text",
+        "text": "",
+        "bbox": [
+            84,
+            85,
+            887,
+            148
+        ],
+        "page_idx": 13
+    },
+    {
+        "type": "table",
+        "img_path": "images/4d748738f444da378c8b17c162075eaf7e4c328086f01fb54e0ed8dc7d1ba30a.jpg",
+        "table_caption": [
+            "Table 7. Performance comparison on object detection and instance segmentation on tiny-scale models. The symbol “+” denotes the application of token reduction methods to off-the-shelf models under training-free settings. STORM achieves the best performance across both tasks, with particularly strong results on the VMamba backbone."
+        ],
+        "table_footnote": [],
+        "table_body": "<table><tr><td>Method</td><td> $AP^b$ </td><td> $AP_{50}^b$ </td><td> $AP_{75}^b$ </td><td> $AP^m$ </td><td> $AP_{50}^m$ </td><td> $AP_{75}^m$ </td></tr><tr><td colspan=\"7\">VMamba</td></tr><tr><td>VMamba-T</td><td>47.3</td><td>69.3</td><td>52.0</td><td>42.7</td><td>66.4</td><td>45.9</td></tr><tr><td>+EViT</td><td>2.7</td><td>7.9</td><td>1.4</td><td>1.0</td><td>3.0</td><td>0.5</td></tr><tr><td>+ToMe</td><td>2.6</td><td>7.9</td><td>1.2</td><td>0.9</td><td>3.2</td><td>0.3</td></tr><tr><td>+STORM (EViT)</td><td>43.1</td><td>68.2</td><td>48.5</td><td>39.1</td><td>65.1</td><td>41.8</td></tr><tr><td>+STORM (ToMe)</td><td>42.7</td><td>68.1</td><td>47.7</td><td>38.7</td><td>64.7</td><td>41.2</td></tr><tr><td colspan=\"7\">PlainMamba</td></tr><tr><td>PlainMamba-L1</td><td>44.1</td><td>64.8</td><td>47.9</td><td>39.1</td><td>61.6</td><td>41.9</td></tr><tr><td>+EViT</td><td>30.9</td><td>48.9</td><td>32.4</td><td>27.8</td><td>46.2</td><td>28.7</td></tr><tr><td>+ToMe</td><td>31.1</td><td>49.1</td><td>32.9</td><td>28.1</td><td>46.5</td><td>28.9</td></tr><tr><td>+STORM (EViT)</td><td>38.2</td><td>59.9</td><td>40.8</td><td>34.3</td><td>56.1</td><td>36.2</td></tr><tr><td>+STORM (ToMe)</td><td>39.8</td><td>61.3</td><td>42.9</td><td>35.4</td><td>57.6</td><td>37.6</td></tr></table>",
+        "bbox": [
+            204,
+            204,
+            771,
+            429
+        ],
+        "page_idx": 13
+    },
+    {
+        "type": "text",
+        "text": "7.2. Downstream Tasks with Tiny-scale Models",
+        "text_level": 2,
+        "bbox": [
+            84,
+            450,
+            416,
+            467
+        ],
+        "page_idx": 13
+    },
+    {
+        "type": "text",
+        "text": "Table 7 evaluates token reduction performance on smaller model variants, VMamba-T and PlainMamba-L1. The results show that conventional reduction methods lead to severe performance degradation, especially on VMamba-T where EViT and ToMe drop $\\mathsf { A P } ^ { b }$ to 2.7 and 2.6 respectively. STORM again delivers a strong recovery, raising $\\mathsf { A P } ^ { b }$ to 43.1 with STORM (EViT) and 42.7 with STORM (ToMe). A similar trend is observed on PlainMamba-L1, where STORM improves $\\mathsf { A P } ^ { b }$ by about 8–9 points over the baseline reduction methods.",
+        "bbox": [
+            84,
+            474,
+            888,
+            551
+        ],
+        "page_idx": 13
+    },
+    {
+        "type": "text",
+        "text": "These results demonstrate that STORM’s effectiveness generalizes to more compact model architectures. Even with fewer parameters, the spatially sensitive modules in VMamba-T remain vulnerable to structural disruption from conventional reduction. By preserving the 2D token layout through row-column processing, STORM maintains the spatial alignment required by these modules, thereby enabling robust compression across different model scales. This consistent performance gain confirms that structured spatial reduction is a scalable and architecture-agnostic principle for efficient Mamba models.",
+        "bbox": [
+            84,
+            558,
+            887,
+            635
+        ],
+        "page_idx": 13
+    },
+    {
+        "type": "text",
+        "text": "7.3. Robustness across Various Reduction Ratios with EViT",
+        "text_level": 2,
+        "bbox": [
+            84,
+            650,
+            503,
+            666
+        ],
+        "page_idx": 13
+    },
+    {
+        "type": "text",
+        "text": "Figure 8 (a) compares the accuracy of EViT and STORM (EViT) on VMamba-S across increasing reduction ratios. STORM maintains significantly higher accuracy under aggressive compression. Notably, at a 40% reduction rate, STORM retains",
+        "bbox": [
+            84,
+            674,
+            887,
+            705
+        ],
+        "page_idx": 13
+    },
+    {
+        "type": "chart",
+        "img_path": "images/11f382be3591c257851afbca819a91af68e51a657634a2116422f5398f19acc3.jpg",
+        "content": "| Reduction Ratio (%) | EViT   | STORM (EViT) |\n| ------------------- | ------ | ------------ |\n| 0                   | 83.7   | 83.7         |\n| 10                  | 34.6   | 82.0         |\n| 20                  | 18.5   | 78.7         |\n| 30                  | 15.2   | 76.8         |\n| 40                  | 14.2   | 73.1         |\n| 45                  | 15.1   | 72.8         |",
+        "chart_caption": [
+            "(a) Accuracy"
+        ],
+        "chart_footnote": [],
+        "sub_type": "line chart",
+        "bbox": [
+            86,
+            726,
+            472,
+            847
+        ],
+        "page_idx": 13
+    },
+    {
+        "type": "chart",
+        "img_path": "images/2c325aef8979842532889924a901164ac2c82674e724400c9710d9477e5c7a4f.jpg",
+        "content": "| Reduction Ratio (%) | EViT Throughput (img/s) | STORM Throughput (img/s) |\n| ------------------- | ------------------------ | ------------------------ |\n| 0                   | 764                      | 764                      |\n| 10                  | 970                      | 886                      |\n| 20                  | 1212                     | 1106                     |\n| 30                  | 1342                     | 1216                     |\n| 40                  | 1713                     | 1546                     |\n| 45                  | 1775                     | 1624                     |",
+        "chart_caption": [
+            "(b) Throughput",
+            "Figure 8. Comparison with conventional token reduction methods on VMamba-S in terms of top-1 accuracy and throughput across varying reduction ratios. STORM achieves superior robustness with only a minor efficiency cost, delivering a better trade-off."
+        ],
+        "chart_footnote": [],
+        "sub_type": "line chart",
+        "bbox": [
+            498,
+            726,
+            885,
+            847
+        ],
+        "page_idx": 13
+    },
+    {
+        "type": "header",
+        "text": "Spatial-Aware Reduction Framework: Towards Efficient and Faithful Visual State Space Models",
+        "bbox": [
+            181,
+            56,
+            790,
+            70
+        ],
+        "page_idx": 13
+    },
+    {
+        "type": "page_number",
+        "text": "14",
+        "bbox": [
+            477,
+            922,
+            495,
+            934
+        ],
+        "page_idx": 13
+    },
+    {
+        "type": "chart",
+        "img_path": "images/3f5cb7a16a4dc08c12bcab85f6608709f1df1fce3d27e44f705f7ad2a88f364f.jpg",
+        "content": "| Resolution | STORM (EViT) | EViT  |\n| ---------- | ------------ | ----- |\n| 224        | 78.8         | 21.6  |\n| 288        | 80.6         | 19.2  |\n| 336        | 80.5         | 15.8  |\n| 384        | 80.8         | 13.2  |\n| 512        | 80.1         | 8.1   |",
+        "chart_caption": [
+            "(a) Accuracy"
+        ],
+        "chart_footnote": [],
+        "sub_type": "line chart",
+        "bbox": [
+            91,
+            85,
+            480,
+            205
+        ],
+        "page_idx": 14
+    },
+    {
+        "type": "chart",
+        "img_path": "images/c05e4062cd9859c36e884e28fdc7979815d7a1541397257049e7e6f07bb5e4e2.jpg",
+        "content": "| Resolution | STORM (EViT) | EViT   |\n| ---------- | ------------ | ------ |\n| 224        | 1072         | 1166   |\n| 288        | 762          | 830    |\n| 336        | 489          | 520    |\n| 384        | 341          | 371    |\n| 512        | 223          | 242    |",
+        "chart_caption": [
+            "(b) Throughput",
+            "Figure 9. Evaluation of STORM (EViT) on VMamba-S across different input resolutions. STORM achieves stable top-1 accuracy around 80% with only gradual throughput degradation, exhibiting superior robustness and a favorable trade-off compared to naive scaling."
+        ],
+        "chart_footnote": [],
+        "sub_type": "line chart",
+        "bbox": [
+            506,
+            87,
+            883,
+            205
+        ],
+        "page_idx": 14
+    },
+    {
+        "type": "text",
+        "text": "72.8% accuracy, while EViT suffers a severe collapse to 15.2%.",
+        "bbox": [
+            84,
+            295,
+            504,
+            311
+        ],
+        "page_idx": 14
+    },
+    {
+        "type": "text",
+        "text": "Figure 8 (b) compares the throughput of the two methods. EViT achieves a modestly higher throughput than STORM across most ratios, which stems from the additional computational overhead of STORM’s structured row-column operations. This minor efficiency cost, however, is justified by its dramatic accuracy advantage. By prioritizing the preservation of spatial integrity and model performance, STORM achieves the best accuracy-efficiency trade-off, delivering robust compression where conventional methods fail.",
+        "bbox": [
+            83,
+            318,
+            888,
+            393
+        ],
+        "page_idx": 14
+    },
+    {
+        "type": "text",
+        "text": "7.4. Robustness across Various Resolutions",
+        "text_level": 2,
+        "bbox": [
+            84,
+            411,
+            387,
+            425
+        ],
+        "page_idx": 14
+    },
+    {
+        "type": "text",
+        "text": "Figure 9 (a) compares the top-1 accuracy of EViT and STORM (EViT) on VMamba-S across resolutions from 224 to 512. STORM maintains stable accuracy around 80.5%–81.1%, while EViT collapses from 21.6% at 224 to only 8.1% at 512. At 512 resolution, STORM outperforms EViT by nearly tenfold.",
+        "bbox": [
+            83,
+            433,
+            888,
+            481
+        ],
+        "page_idx": 14
+    },
+    {
+        "type": "text",
+        "text": "Figure 9 (b) compares throughput. EViT achieves higher throughput than STORM across all resolutions (e.g., 1166 vs. 1072 img/s at 224), but the gap gradually narrows as resolution increases (from 94 at 224 to 19 at 512). Despite STORM’s modest efficiency disadvantage, its dramatic accuracy gain more than justifies the trade-off, delivering superior robustness where EViT fails.",
+        "bbox": [
+            83,
+            487,
+            888,
+            546
+        ],
+        "page_idx": 14
+    },
+    {
+        "type": "text",
+        "text": "7.5. Effect of Window Size",
+        "text_level": 2,
+        "bbox": [
+            84,
+            563,
+            274,
+            578
+        ],
+        "page_idx": 14
+    },
+    {
+        "type": "text",
+        "text": "Window size is a key hyperparameter in STORM that balances local coherence with structured reduction. Figure 10 shows its impact on VMamba-S under two reduction ratios. As window size increases, accuracy consistently decreases for both settings, declining from 80.9% to 79.9% at ratio 0.18, and from 78.0% to 74.0% at ratio 0.29.",
+        "bbox": [
+            83,
+            587,
+            888,
+            633
+        ],
+        "page_idx": 14
+    },
+    {
+        "type": "text",
+        "text": "This trend confirms that localized windowing is most effective when token interactions are confined to compact neighborhoods. Small windows enforce strong semantic coherence among nearby tokens, preventing cross-region merging and preserving fine details. As windows expand, reduction decisions increasingly span distant regions, reintroducing interference and gradually converging toward the less robust behavior of the window-free variant. Therefore, maintaining a compact window is essential for STORM to achieve optimal robustness under aggressive compression.",
+        "bbox": [
+            83,
+            640,
+            888,
+            717
+        ],
+        "page_idx": 14
+    },
+    {
+        "type": "chart",
+        "img_path": "images/a922fc6225a20e6a41ce83d2cc2138bdb76fe4b62cef58b9af83141eb11b16b8.jpg",
+        "content": "| Window Size | Reduction ratio=0.18 | Reduction ratio=0.29 |\n| ----------- | -------------------- | -------------------- |\n| 1           | 78.1%                | 69.1%                |\n| 5           | 80.9%                | 78.0%                |\n| 10          | 80.7%                | 76.5%                |\n| 15          | 80.3%                | 75.1%                |\n| 20          | 79.9%                | 74.0%                |",
+        "chart_caption": [
+            "Figure 10. Effect of window size in STORM (ToMe) on VMamba-S. Accuracy consistently declines as the window expands under both reduction ratios, indicating that compact windows are essential for maintaining local semantic coherence during structured reduction."
+        ],
+        "chart_footnote": [],
+        "sub_type": "line chart",
+        "bbox": [
+            294,
+            734,
+            679,
+            854
+        ],
+        "page_idx": 14
+    },
+    {
+        "type": "header",
+        "text": "Spatial-Aware Reduction Framework: Towards Efficient and Faithful Visual State Space Models",
+        "bbox": [
+            181,
+            56,
+            792,
+            71
+        ],
+        "page_idx": 14
+    },
+    {
+        "type": "page_number",
+        "text": "15",
+        "bbox": [
+            477,
+            922,
+            495,
+            934
+        ],
+        "page_idx": 14
+    },
+    {
+        "type": "text",
+        "text": "8. Visualization",
+        "text_level": 2,
+        "bbox": [
+            84,
+            83,
+            220,
+            99
+        ],
+        "page_idx": 15
+    },
+    {
+        "type": "text",
+        "text": "Figures 11 and 12 visualizes the token merging results of STORM (ToMe) under extreme compression, where the token layout is reduced from 26×26 to 6×6 (approximately 95% token reduction). The results show that patches from the same semantic region, such as object parts or continuous textures, are consistently merged into single tokens, forming spatially regular and semantically coherent groups.",
+        "bbox": [
+            84,
+            109,
+            887,
+            170
+        ],
+        "page_idx": 15
+    },
+    {
+        "type": "text",
+        "text": "This structural preservation under near complete token removal validates the core design of STORM. While conventional methods often fragment objects and disrupt spatial adjacency, STORM’s row wise and column wise reduction maintains both neighborhood integrity and global layout regularity. The visualization therefore provides an intuitive explanation for STORM’s robust quantitative performance, demonstrating that its structured approach retains essential visual semantics even under aggressive pruning.",
+        "bbox": [
+            84,
+            176,
+            887,
+            253
+        ],
+        "page_idx": 15
+    },
+    {
+        "type": "header",
+        "text": "Spatial-Aware Reduction Framework: Towards Efficient and Faithful Visual State Space Models",
+        "bbox": [
+            181,
+            56,
+            790,
+            70
+        ],
+        "page_idx": 15
+    },
+    {
+        "type": "page_number",
+        "text": "16",
+        "bbox": [
+            477,
+            922,
+            495,
+            934
+        ],
+        "page_idx": 15
+    },
+    {
+        "type": "image",
+        "img_path": "images/0596a881f713af7b9ae3cfa8e8d308e1e5b5a1a39151a9f35756b5cae635927f.jpg",
+        "image_caption": [
+            "Figure 11. Visualization of extreme token reduction with STORM (ToMe). The figure illustrates the merging results on ImageNet-1k validation images when tokens are aggressively pruned from 26×26 to 6×6 (approximately 95% token reduction). Patches sharing the same color are merged into a single token, demonstrating how STORM preserves structural groups even under extreme compression."
+        ],
+        "image_footnote": [],
+        "content": "",
+        "bbox": [
+            135,
+            89,
+            838,
+            847
+        ],
+        "page_idx": 16
+    },
+    {
+        "type": "header",
+        "text": "Spatial-Aware Reduction Framework: Towards Efficient and Faithful Visual State Space Models",
+        "bbox": [
+            181,
+            56,
+            790,
+            70
+        ],
+        "page_idx": 16
+    },
+    {
+        "type": "page_number",
+        "text": "17",
+        "bbox": [
+            477,
+            922,
+            495,
+            934
+        ],
+        "page_idx": 16
+    },
+    {
+        "type": "image",
+        "img_path": "images/59561a7111741ea203b482821d05f9c8fdedbf47b80487715cef09816c8d3271.jpg",
+        "image_caption": [
+            "Figure 12. More visualization on images. Continuation of Figure 11"
+        ],
+        "image_footnote": [],
+        "content": "",
+        "bbox": [
+            135,
+            101,
+            836,
+            858
+        ],
+        "page_idx": 17
+    },
+    {
+        "type": "header",
+        "text": "Spatial-Aware Reduction Framework: Towards Efficient and Faithful Visual State Space Models",
+        "bbox": [
+            181,
+            56,
+            790,
+            70
+        ],
+        "page_idx": 17
+    },
+    {
+        "type": "page_number",
+        "text": "18",
+        "bbox": [
+            477,
+            922,
+            495,
+            934
+        ],
+        "page_idx": 17
+    }
+]

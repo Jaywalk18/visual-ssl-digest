@@ -41,7 +41,8 @@
     </div>
     <div class="feature-body">
       <p class="lead dropcap">先说结论。视觉 SSL/VFM 的效率问题会从 ViT token pruning 扩展到 SSM/Mamba，STORM 给出结构保持的通用警告。 指出常规 token pruning 对 Mamba/SSM 视觉模型尤其危险，因为 selective scanning 依赖二维结构前提；压缩不只是保留重要 token，还要保留空间结构。</p>
-      <aside class="marginalia"><b>图像状态</b> 这篇暂未抽到足够稳定的 pipeline / motivation 图，因此正文以方法和实验解读为主。</aside>
+      <figure class="full-fig"><img src="../assets/mineru/2606.19932/images/57e1b6d80b337d9bcfc9cca86565ef2fa5d276bdd330a004abe0359303ad229d.jpg" alt="(d) Performance gains via spatial and window awareness Figure 1"><figcaption><b>(d) Performance gains via spatial and window awareness Figure 1</b><span class="fig-en">(d) Performance gains via spatial and window awareness Figure 1. Motivation and efficacy of the proposed spatial-aware token reduction framework.</span><span class="fig-zh">这张图概括 Spatial-Aware Reduction Framework 的整体方法流程。阅读时先看模块之间传递的训练信号，再看作者如何把目标拆成可优化的子问题。</span></figcaption></figure>
+<figure class="full-fig"><img src="../assets/mineru/2606.19932/images/6b5060ac9acb38620e5a9ee13e982a83b43af434a1a7c80e56c4aa9a1d37ba11.jpg" alt="Figureure 2 · Pipeline of conventional token reduction in VMamba"><figcaption><b>Figureure 2 · Pipeline of conventional token reduction in VMamba</b><span class="fig-en">Figure 2. Pipeline of conventional token reduction in VMamba. The flattening operation explicitly disrupts spatial structure, causing misaligned representations after pruning.</span><span class="fig-zh">这张图概括 Spatial-Aware Reduction Framework 的整体方法流程。阅读时先看模块之间传递的训练信号，再看作者如何把目标拆成可优化的子问题。</span></figcaption></figure>
       
       <h2>核心问题</h2>
       <p>视觉 SSL/VFM 的效率问题会从 ViT token pruning 扩展到 SSM/Mamba，STORM 给出结构保持的通用警告。</p>

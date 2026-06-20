@@ -41,7 +41,8 @@
     </div>
     <div class="feature-body">
       <p class="lead dropcap">先说结论。视频基础模型的核心目标不只是生成清晰帧，还要学到可持续演化的世界状态，这对 JEPA/world-model 线很关键。 指出现有视频/world models 可能只维护被观察到的 tracking shot，而缺少独立演化的 persistent state core。</p>
-      <aside class="marginalia"><b>图像状态</b> 这篇暂未抽到足够稳定的 pipeline / motivation 图，因此正文以方法和实验解读为主。</aside>
+      <figure class="full-fig"><img src="../assets/mineru/2606.20545/images/8c2b942334a6a536ea30af2484585510156075a85ea18497737841f7f48e8a90.jpg" alt="Figureure 2 · WRBench method overview"><figcaption><b>Figureure 2 · WRBench method overview</b><span class="fig-en">Figure 2 WRBench method overview. Natural-25 event-view records supply the scene, event, and viewpoint intervention; WRBenchLib translates each record into a generated video and provenance record per model; the evaluation suite scores six diagnostic dimensions from control execution to re-observed-state consistency; and human preference annotation calibrates each dimension independently.</span><span class="fig-zh">这张图概括 Current World Models Lack a 的整体方法流程。阅读时先看模块之间传递的训练信号，再看作者如何把目标拆成可优化的子问题。</span></figcaption></figure>
+<figure class="full-fig"><img src="../assets/mineru/2606.20545/images/6e01dbfcf990f58c7a3d32b1c18fc9492412d4894c39055d611486d13d1b6e50.jpg" alt="Figureure 1 · WRBench Teaser"><figcaption><b>Figureure 1 · WRBench Teaser</b><span class="fig-en">Figure 1 WRBench Teaser. A shared scene, event, and viewpoint intervention test whether visible and returned evidence support the same evolving world state. The returned target must preserve the event endpoint, not merely reappear plausibly.</span><span class="fig-zh">这张图来自论文 PDF 的结构化抽取。当前用于辅助理解 Current World Models Lack a 的方法或实验，请结合正文精读段落一起看。</span></figcaption></figure>
       
       <h2>核心问题</h2>
       <p>视频基础模型的核心目标不只是生成清晰帧，还要学到可持续演化的世界状态，这对 JEPA/world-model 线很关键。</p>

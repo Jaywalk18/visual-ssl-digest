@@ -41,7 +41,8 @@
     </div>
     <div class="feature-body">
       <p class="lead dropcap">先说结论。它提示视觉-语言表征缺的可能不是推理能力，而是输入级空间锚定；对视觉 attention/grounding 训练有参考价值。 把 VLM fine-tuning/对齐问题部分转移到输入层：与其只调权重或加长 prompt，不如让视觉输入自身携带几何定位信息。</p>
-      <aside class="marginalia"><b>图像状态</b> 这篇暂未抽到足够稳定的 pipeline / motivation 图，因此正文以方法和实验解读为主。</aside>
+      <figure class="full-fig"><img src="../assets/mineru/2606.19944/images/e25c53fab885cb8f28e28af9acdfa6b5a4e83f112cb40215c071ccd1fe59b816.jpg" alt="A:Cat Fig"><figcaption><b>A:Cat Fig</b><span class="fig-en">A:Cat Fig. 3. Qualitative comparison showing the benefit of Timage. Left: random question embedding covers irrelevant content and misleads the model to “Book”. Right: cSB renders a semantically grounded, non-occluding overlay that preserves foreground saliency and guides attention to the window region, yielding the correct “Cat”.</span><span class="fig-zh">这张图/表用于判断 Timage 的实验收益来自哪里。重点看替换、消融或跨模型设置下趋势是否一致，而不是只看单个最高分。</span></figcaption></figure>
+<figure class="full-fig"><img src="../assets/mineru/2606.19944/images/bb91a5659c8b44b32284bcb08a758ff32d65470d6f3cf2dd58d40c23efd53a0a.jpg" alt="Figureure 2 · Overview of Timage"><figcaption><b>Figureure 2 · Overview of Timage</b><span class="fig-en">Fig. 2. Overview of Timage. From an image and its question we build a feasible manifold Ω through an Admissible Mask that merges semantic relevance with a hard non-occlusion prior. A Constrained Schr¨odinger Bridge then renders the inlaid text via a projected stochastic process, guaranteeing both geometric validity and downstream accuracy.</span><span class="fig-zh">这张图概括 Timage 的整体方法流程。阅读时先看模块之间传递的训练信号，再看作者如何把目标拆成可优化的子问题。</span></figcaption></figure>
       
       <h2>核心问题</h2>
       <p>它提示视觉-语言表征缺的可能不是推理能力，而是输入级空间锚定；对视觉 attention/grounding 训练有参考价值。</p>
