@@ -1,0 +1,384 @@
+# Triangular Consistency as a Universal Constraint for Learning Optical Flow
+
+Yi Xiao1, Carlos Rodriguez Coronel1, Jing Zhan1, Haniyeh Ehsani Oskouie2,
+
+Alex Wong3, and Dong Lao1
+
+Correspond to: {yi.xiao,dong.lao}@lsu.edu
+
+1 Louisiana State University, Baton Rouge, LA 70803, USA
+
+2 University of California, Los Angeles, Los Angeles, CA 90025, USA
+
+3 Yale University, New Haven, CT 06520, USA
+
+Abstract. We propose triangular consistency as a first-principled constraint for optical flow, which is agnostic to network architecture, supervision type, and dataset, and applies to both image-pair and multi-frame settings. This simple but powerful constraint is to compose two flows to induce a third flow and enforce consistency among the three. The composed flows may arise from (i) image pairs, yielding cycle consistency; (ii) multiple video frames, producing longer-range motion through temporal chaining; or (iii) image pairs combined with controlled synthetic transformations, which becomes data augmentation. This triangular consistency introduces negligible computational overhead and requires no additional annotations. Since it is derived directly from the geometry of optical flow, it does not rely on model-specific assumptions and serves as a “universal” plug-and-play component for optical flow training. Experiments show consistent improvement across supervised, unsupervised, and transfer learning settings.
+
+Keywords: Optical Flow · Motion Correspondence
+
+## 1 Introduction
+
+The concept of optical flow was invented by J. J. Gibson in the 1940s to describe visual motion projected onto the retina [13], decades before the emergence of computer vision. When the term was later adopted by computer scientists [14]4, it was formalized as estimating an instantaneous image-velocity field satisfying differential brightness constancy. As temporal sampling inevitably yields discrete frames, this instantaneous quantity must be inferred from frame pairs or short frame sequences. At first glance, this appears to be a straightforward computational discretization. However, there is a fundamental disconnect: motion, either in the physical world or projected to the retina, has no notion of discrete frames. Visual motion arises from continuous interaction with a physical world in which points move along trajectories. At its core, this displacement field represents a (non-rigid) mapping between coordinate systems of the underlying scene. Such mappings obey a fundamental physical rule: they agree under composition [26,29,36]. If one transports coordinates from an initial configuration to an intermediate one, and another transports them to a final one, their composition uniquely determines the displacement between the initial and final states. Such transformations can be chained indefinitely, yet consistency always holds. As such, compositional consistency is first-principled: it is neither a computational assumption nor a regularization heuristic; it is directly grounded in the physics of the scene.
+
+On the other hand, in our current computational systems, by design, temporal sampling inevitably introduces discretization, yielding “frames”, yet the consistency under compositions of coordinate transformations always holds. Modern learning-based optical flow methods [10,45,47], however, are predominantly formulated as predicting displacement between two frames. While some multi-frame training paradigms [18,30,40] also exploit consistency constraints, they focus on linear symmetry assumptions (see Sec. 5.2). Yet, the physical prior that optical flows must agree under composition remains largely unexplored.
+
+In this paper, we aim to fill this gap. We study triangular consistency, the simplest form of compositional consistency that considers three frames: given two consecutive optical flows, their composition should match the flow directly estimated between the first and the last frames. Cycle consistency [38], where forward and backward flows between image pairs compose to the identity mapping, becomes a special case of triangular consistency. In more general cases, temporal chaining in videos and consistency under controlled transformations arise from the same principle, as detailed in Sec. 3. This first-principled compositional relation provides a strong and universal supervision signal. When ground truth is unavailable, it acts as a constraint for self-supervision; when ground truth is available, it enables controlled data augmentation by generating new pseudolabels through composition. To our knowledge, triangular consistency has not been systematically adopted or investigated in optical flow literature, and we present the first comprehensive evaluation of this principle across supervised, unsupervised, and transfer learning, spanning multiple architectures and datasets. Through the experiments, we examine how far compositional consistency can improve optical flow accuracy. Specifically, our contributions are:
+
+– Universal geometric constraint. We formalize triangular consistency, the minimal compositional relation among three flows, and instantiate it as a robust loss that is agnostic to architecture, supervision type, and dataset.  
+Three training regimes, one principle. We show how the same compositional rule yields (i) temporal compositional supervision on frame triplets, (ii) cycle consistency as a special case, and (iii) an asymmetric, analytic augmentation scheme that generates exact flow targets under affine transforms.  
+– Practical integration. The resulting losses are lightweight, require no additional labels, and can be added to existing pipelines without modifying the estimator, which is also demonstrated empirically.
+
+– Consistent empirical gains. Across transfer, unsupervised, and supervised training, triangular consistency improves accuracy and/or cross-dataset generalization, with strong gains in transfer and out-of-domain evaluation.
+
+We observe up to 18.1% gain under single-epoch adaptation, 6-8% improvements under unsupervised training, and up to 23.1% cross-dataset gain under supervised training. In summary, triangular consistency provides a simple yet principled mechanism to improve optical flow learning. It can be readily integrated into existing training pipelines without architectural modifications or additional human supervision, yielding consistent improvements. We include code in the supplementary material, which will be open-sourced upon publication.
+
+## 2 Related Work
+
+Literature about optical flow is extensive, and we only highlight some of the most relevant advancements, especially those built on consistency.
+
+Optical flow was formulated with explicit data terms and regularization in earlier model-based and variational literature [1, 3, 5, 6, 14, 39, 43, 54]. Modern learning-based methods largely inherit this framing but replace hand-crafted priors with learned matching and refinement. Representative milestones include FlowNet [10], pyramidal warping and cost volumes in PWC-Net [45], and the strong all-pairs iterative paradigm of RAFT [47], followed by architectural variants improving either efficiency or robustness [9, 15, 42, 46, 51, 56]. While these works mainly advance architectures and data scale, our focus is orthogonal: we introduce a first-principled supervision derived from the compositional nature of displacement fields. Therefore, it can be integrated into existing training pipelines without modifying the estimator.
+
+Self-supervision and consistency as supervision. When ground-truth flow is unavailable, supervision is commonly derived from view synthesis: a predicted flow is used to warp one frame to the other, and the discrepancy provides a training signal. Early unsupervised deep flow methods already established this photometric-warping paradigm [38]. Because brightness constancy is imperfect and breaks under occlusion, modern pipelines typically incorporate robust penalties, explicit occlusion reasoning, or distillation/pseudo-labeling to filter unreliable regions [18,22,31,32,35,50]. A complementary family of supervision signals is consistency: enforcing agreement among predictions produced from different directions, frames, or transformations. Pairwise forward-backward (cycle) consistency is widely used, including in multi-frame unsupervised frameworks such as ARFlow [30] and SMURF [41]. More broadly, recent work has shown that explicitly imposing different forms of consistency (e.g., occlusion consistency, transformation consistency) can improve flow learning even on top of strong baselines [19]. Transformation-driven supervision has also been explored by constructing reliable targets from controlled perturbations [30]. These methods motivate our direction but typically instantiate specific proxy constraints (often pairwise) tied to particular training setups. In contrast, we derive a single compositional relation directly from flow geometry, and use it as a universal constraint that subsumes cycle consistency as a special case while extending naturally to temporal chaining and controlled augmentation (Fig. 1).
+
+![](images/df2d8bbc5dd09eda18e43e3ece4bc3af3ad2a35312cb8ab67eeecfc2edf1ed65.jpg)
+
+<details>
+<summary>flowchart</summary>
+
+```mermaid
+graph TD
+  A["Human Figure I0"] -->|Identity Mapping| B["Human Figure I1"]
+  B -->|W10| C["Human Figure I2"]
+  C -->|W01| A
+```
+</details>
+
+Cycle Consistency
+
+![](images/359f160145de9158a3a7d92efe06bd9bec9567c7cbf59fab63e3399ea67a767b.jpg)
+
+<details>
+<summary>flowchart</summary>
+
+```mermaid
+graph TD
+  A["I0"] -->|w01| B["I1"]
+  C["I2"] -->|w12| D["I1"]
+  E["I0"] -->|w02| F["I2"]
+```
+</details>
+
+Temporal Compositional Consistency
+
+![](images/8c47f760e6fdd253acf547ceab99a866e6c31af771624b39202953c7c54685d3.jpg)
+
+<details>
+<summary>flowchart</summary>
+
+```mermaid
+graph TD
+  A["I0"] -->|w'01| B["I1"]
+  B -->|w'x = I1A-1x| C["I1'"]
+  C -->|Controlled Augmentation| D["I1"]
+  D -->|w01| A
+```
+</details>
+
+Augmentation Consistency  
+Fig. 1: Triangular consistency as a universal compositional principle. Optical flow fields compose. Triangular consistency enforces that the flow between two frames agrees with the composition of intermediate flows. Cycle consistency arises as a special case when the composition returns to the same frame (left). The same principle naturally generalizes to video through temporal chaining across multiple frames (middle), and further extends to synthetic transformations, enabling controlled data augmentation for optical flow without additional annotations (right).
+
+Composition, chaining, and long-range correspondence. Displacement fields composition has long been exploited when moving beyond two-frame estimation [25, 27, 49, 57]. Layered motion models provide a principled view of why composition may fail at occlusion boundaries and how multiple motions can coexist [26, 28, 44], and recent benchmarks further emphasize multi-layer and non-Lambertian challenges [52]. In parallel, recent advances in dense and point-based tracking revisit optical flow as a building block for constructing longterm trajectories through chaining and temporal refinement [7, 8, 23, 29, 36, 48]. These works appropriately recognize composition as a fundamental mechanism for long-horizon correspondence, but they primarily employ chaining to initialize correspondence. Our contribution differs in scope and objective. We formulate composition as an explicit supervision signal through the simplest non-trivial compositional structure, a triangle, and evaluate it systematically across supervised, unsupervised, and adaptation settings. By treating composition as a universal learning constraint rather than solely as a tracking strategy, triangular consistency introduces a principled supervision mechanism that has not been explicitly incorporated into the optical-flow training pipeline.
+
+## 3 Method
+
+## 3.1 Formalization
+
+Let $I _ { t } : \varOmega \to \mathbb { R } ^ { k } \ ( k = 3$ for RGB) denote an image at time t, where $\varOmega \subset \mathbb { R } ^ { 2 }$ is the image domain. Let $v _ { t , t + 1 } : \varOmega \to \mathbb { R } ^ { 2 }$ denote the optical flow from frame t to t + 1, and define the corresponding warp $w _ { t , t + 1 } ( x ) = x + v _ { t , t + 1 } ( x )$ . Similarly, for any pair (t, s) we write $w _ { t , s } ( x ) = x + v _ { t , s } ( x )$ .
+
+Compositional Structure. As in Sec. 1, displacement fields are non-rigid coordinate transformations and therefore compose. Given three frames $I _ { t } , I _ { t + 1 } , I _ { t + 2 }$ from the same scene, the composed warp from t to $t + 2$ is
+
+$$
+\widetilde {w} _ {t, t + 2} (x) = w _ {t + 1, t + 2} \bigl (w _ {t, t + 1} (x) \bigr). \tag {1}
+$$
+
+In displacement form (i.e. optical flow vectors) this becomes
+
+$$
+\widetilde {v} _ {t, t + 2} (x) = v _ {t, t + 1} (x) + v _ {t + 1, t + 2} \bigl (x + v _ {t, t + 1} (x) \bigr). \tag {2}
+$$
+
+Triangular consistency requires that this composed flow agree with the directly estimated flow $v _ { t , t + 2 } \colon$
+
+$$
+v _ {t, t + 2} (x) \approx v _ {t, t + 1} (x) + v _ {t + 1, t + 2} \bigl (x + v _ {t, t + 1} (x) \bigr). \tag {3}
+$$
+
+Equation (3) expresses the simplest non-trivial compositional relation among three frames. As shown in Fig. 1, cycle consistency is a special case where the composition returns to the same frame, while temporal chaining and controlled augmentation arise from the same triangular structure.
+
+Triangular Consistency Loss. We thus define the triangular residual at pixel x as $r _ { t , t + 1 , t + 2 } ( x ) = v _ { t , t + 2 } ( x ) - \widetilde v _ { t , t + 2 } ( x )$ . To mitigate the effect of outliers, we penalize it with a robust norm $\rho ( \cdot )$ , yielding triangular consistency loss
+
+$$
+\mathcal {L} _ {\mathrm{tri}} = \sum_ {x \in \Omega} M _ {t, t + 1, t + 2} (x) \rho (\| r _ {t, t + 1, t + 2} (x) \| _ {2}), \tag {4}
+$$
+
+where $M _ { t , t + 1 , t + 2 } ( x ) \in [ 0 , 1 ]$ is a validity mask discussed below.
+
+Occlusion. The compositional rule in $\operatorname { E q . } \left( 3 \right)$ is derived from physical coordinate transformations and therefore holds in general cases. However, in 2D images, pixels may become occluded or disoccluded between frames. In such regions, the mapping $w _ { t , t + 2 }$ is not the composition of visible correspondences unless a full layered motion model is available [17, 26, 44]. Since typical optical flow methods do not explicitly maintain a multi-layer representation, compositional consistency may be violated at occlusion boundaries.
+
+To address this, we construct $M _ { t , t + 1 , t + 2 } ( x )$ using forward-backward consistency checks. Regions that violate such consistency constraints are downweighted. This ensures that triangular consistency is enforced primarily on regions where valid motion correspondences can be established across frames.
+
+## 3.2 Learning Objective
+
+The triangular relation in Eq. (3) applies to multiple settings shown in Fig. 1. In practice, each instantiation is implemented as a distinct constraint, all grounded in the same underlying compositional principle.
+
+Cycle Consistency. When $( i , j , k ) = ( t , t + 1 , t )$ , triangular consistency reduces to forward-backward cycle consistency: $v _ { t , t + 1 } ( x ) + v _ { t + 1 , t } ( x + v _ { t , t + 1 } ( x ) )$ ≈ 0. The corresponding loss is $\begin{array} { r } { \mathcal { L } _ { \mathrm { c y c l e } } = \sum _ { x } \rho ( \| v _ { t , t + 1 } ( x ) + v _ { t + 1 , t } ( x + v _ { t , t + 1 } ( x ) ) \| _ { 2 } ) } \end{array}$ .
+
+Temporal Compositional Consistency. For three distinct frames $( t , t +$ $1 , t + 2 )$ , we enforce $v _ { t , t + 2 } ( x ) = v _ { t , t + 1 } ( x ) + v _ { t + 1 , t + 2 } ( x + v _ { t , t + 1 } ( x ) )$ , leading to $\begin{array} { r } { \mathcal { L } _ { \mathrm { t e m p o r a l } } = \sum _ { x } \rho ( \| v _ { t , t + 2 } ( x ) - \widetilde { v } _ { t , t + 2 } ( x ) \| _ { 2 } ) } \end{array}$ .
+
+Augmentation Consistency. Let $A$ be a sampled affine transformation. Given $I _ { 1 } ^ { \prime } = A ( I _ { 1 } )$ ), the induced analytical flow from $I _ { 1 }$ to $I _ { 1 } ^ { \prime }$ is $v _ { 1 , 1 ^ { \prime } } ( x ) = A ( x ) - x$ . Triangular consistency enforces $v _ { 0 , 1 ^ { \prime } } ( x ) = v _ { 0 , 1 } ( x ) + v _ { 1 , 1 ^ { \prime } } ( x + v _ { 0 , 1 } ( x ) )$ . The loss is $\begin{array} { r } { \mathcal { L } _ { \mathrm { a u g } } = \sum _ { x } \rho ( \| v _ { 0 , 1 ^ { \prime } } ( x ) - v _ { 0 , 1 } ( x ) - v _ { 1 , 1 ^ { \prime } } ( x + v _ { 0 , 1 } ( x ) ) \| _ { 2 } ) } \end{array}$ .
+
+Complete Objective. Let $\mathcal { L } _ { \mathrm { b a s e } }$ denote the baseline loss (supervised loss, photometric reconstruction, flow smoothness, etc.). The total objective becomes
+
+$$
+\mathcal {L} _ {\text {total}} = \mathcal {L} _ {\text {base}} + \lambda_ {\text {cycle}} \mathcal {L} _ {\text {cycle}} + \lambda_ {\text {temporal}} \mathcal {L} _ {\text {temporal}} + \lambda_ {\text {aug}} \mathcal {L} _ {\text {aug}}. \tag {5}
+$$
+
+As a result, the training objective is architecture-agnostic and can be directly integrated into existing optical flow models without modification, functioning as a plug-and-play supervision component.
+
+## 3.3 Implementations
+
+Flow Composition. Given a predicted flow $v _ { a b }$ from frame $I _ { a }$ to $I _ { b }$ , we interpret it as a coordinate transformation $w _ { a b } ( x ) = x + v _ { a b } ( x )$ . Composition follows directly from $\mathrm { E q . } ( 2 ) \colon \widetilde { v } _ { a c } ( x ) = v _ { a b } ( x ) + v _ { b c } ( x + v _ { a b } ( x ) )$ . The term $v _ { b c } ( x + v _ { a b } ( x ) )$ requires evaluating the second flow at displaced coordinates. This is implemented by bilinear interpolation on a coordinate grid. Coordinates that fall outside image bounds are treated as invalid and excluded from the loss. Importantly, we do not warp images to construct supervision. Instead, the augmentation is applied directly to the coordinate system of the flow field. As a result, the supervision depends purely on the geometric relation between coordinates and is independent of color, texture, or image-feature consistency.
+
+Controlled Augmentation. For augmentation consistency, we apply a sampled transformation consisting of translation $\boldsymbol { t } = ( t _ { x } , t _ { y } ) ^ { \top }$ , rotation $\theta ,$ and scale s. Given the image center $\bar { c } = ( c _ { x } , c _ { y } ) ^ { \top }$ , the forward transform from $I _ { 1 }$ to $I _ { 1 } ^ { \prime }$ is
+
+$$
+A (x) = R _ {s} (x - c) + c + t, \qquad R _ {s} = s \left( \begin{array}{c c} \cos \theta & - \sin \theta \\ \sin \theta & \cos \theta \end{array} \right).
+$$
+
+For resampling, we use the corresponding inverse map $A ^ { - 1 } ( x ) = M x + b .$ , where
+
+$$
+M = R _ {s} ^ {- 1} = \frac {1}{s} \left( \begin{array}{c c} \cos \theta & \sin \theta \\ - \sin \theta & \cos \theta \end{array} \right), \qquad b = c - M (c + t).
+$$
+
+This gives an exact inverse mapping, and $I _ { 1 } ^ { \prime }$ can be sampled from $I _ { 1 }$ accordingly.
+
+Now let $v _ { 0 1 }$ be the optical flow from $I _ { 0 }$ to $I _ { 1 }$ , either from the ground truth or model prediction. Define base pixel coordinates x and transported coordinates $y = x + v _ { 0 1 } ( x )$ . The augmented target position is
+
+$$
+y ^ {\prime} = A (y).
+$$
+
+The induced flow from $I _ { 0 }$ to the augmented frame $I _ { 1 } ^ { \prime }$ is then
+
+$$
+v _ {0 1} ^ {\prime} (x) = y ^ {\prime} - x.
+$$
+
+The construction above is entirely analytical and computed in closed form. The augmented flow $v _ { 0 1 } ^ { \prime }$ is obtained through direct coordinate transformation and does not require any image resampling or grid-based interpolation. Consequently, the supervision signal is free from interpolation artifacts regardless of the magnitude or complexity of the sampled affine transformation.
+
+Importantly, although the augmented image may contain invalid regions due to pixels mapping outside the image domain, the induced optical flow field remains well-defined for every pixel in the source frame. The benefit from this property is non-trivial for supervising optical flow: the augmented ground-truth flow preserves all the spatial regularities and smoothness of the original displacement field without invalid pixels at image boundaries or artifacts caused by resampling. As a result, triangular augmentation provides a stable and artifactfree supervision signal even under aggressive transformations.
+
+Occlusion Masking. In supervised training, annotation validity is handled by the dataset-provided validity mask together with magnitude-based filtering that excludes extreme motions after augmentation. No additional occlusion estimation is introduced, and supervision remains reliable due to closed-form mappings.
+
+In self-supervised settings, occlusion must be handled explicitly. We therefore rely on bidirectional consistency to infer reliable correspondences. Specifically, forward and backward flows are composed and evaluated in coordinate space: a pixel is considered reliable if mapping it forward and then backward returns it close to its original position. Pixels that violate this coordinate-consistency condition are down-weighted through an occlusion mask derived from the residual. Importantly, this procedure evaluates the consistency of coordinate mappings rather than color similarity via reprojection [38]. In addition, residuals are computed directly from the predicted flows and penalized using robust losses, so that unreliable regions are softly suppressed.
+
+Speed. The proposed constraint introduces negligible computational overhead. At 386×496, the interpolation required for flow composition and evaluation takes approximately 0.00030 seconds, while affine augmentation together with the corresponding coordinate transformation requires 0.00073 seconds on an Nvidia RTX Pro 6000 Blackwell GPU. In a practical self-supervised adaptation setting (Sec. 4.1) using a RAFT-Large [47] model at the same resolution and saturating GPU memory with batch size 12, the compositional operations and loss evaluation together take 0.00065 seconds per iteration, while augmentation costs 0.0017 seconds, in total accounting for 0.12% of the total training wall-clock time, indicating that triangular consistency can be incorporated into existing training pipelines with essentially no measurable slowdown.
+
+## 4 Experiments
+
+To isolate the effect of the proposed compositional constraint, we select on two widely used yet relatively minimal optical flow frameworks as baselines. For unsupervised learning, we adopt ARFlow [30]. For self-supervised adaptation and supervised learning, we use RAFT [47]. These choices allow us to attribute performance changes directly to triangular consistency without auxiliary engineering components. Many subsequent methods, including SMURF [41], largely combine ARFlow-style self-supervised objectives with RAFT-style architectures. Crucially, our method introduces only additional supervision constraints and does not alter the estimator itself, making it compatible with existing and future optical flow architectures. Therefore, improvements observed in our experiments are expected to translate naturally to downstream frameworks.
+
+![](images/63264c5ae2bb1e2ad752ed86ff8395f675b74a49fc89f57cd5d18c858db6394f.jpg)
+
+<details>
+<summary>flowchart</summary>
+
+```mermaid
+graph TD
+  A["Inputs"] --> B["Teacher"]
+  A --> C["Student"]
+  B --> D["Composition"]
+  C --> E["Augmentation"]
+  D --> F["M02"]
+  D --> G["v02"]
+  E --> H["v'01"]
+  E --> I["v'12"]
+  E --> J["v'01'"]
+  E --> K["v'01'"]
+  E --> L["v'02'"]
+  F --> M["M02"]
+  G --> N["v'01'"]
+  H --> O["Laug"]
+  I --> P["Ltemporal"]
+  J --> Q["Ltemporal"]
+  K --> R["Ltemporal"]
+  L --> S["Ltemporal"]
+    style A fill:#f9f,stroke:#333
+    style B fill:#ccf,stroke:#333
+    style C fill:#cfc,stroke:#333
+    style D fill:#ffc,stroke:#333
+    style E fill:#fcc,stroke:#333
+    style F fill:#cff,stroke:#333
+    style G fill:#ffc,stroke:#333
+    style H fill:#ffc,stroke:#333
+    style I fill:#ffc,stroke:#333
+    style J fill:#ffc,stroke:#333
+    style K fill:#ffc,stroke:#333
+    style L fill:#ffc,stroke:#333
+    style M fill:#cfc,stroke:#333
+    style N fill:#cfc,stroke:#333
+    style O fill:#cfc,stroke:#333
+    style P fill:#cfc,stroke:#333
+    style Q fill:#cfc,stroke:#333
+    style R fill:#cfc,stroke:#333
+    style S fill:#cfc,stroke:#333
+```
+</details>
+
+Fig. 2: Self-supervised adaptation with triangular consistency. Given input frames $\left( I _ { 0 } , I _ { 1 } , I _ { 2 } \right)$ , the teacher network predicts flows v˜01 and $\tilde { v } _ { 1 2 }$ , which are composed to produce the reference flow $\tilde { v } _ { 0 2 }$ . The student network predicts $v _ { 0 2 }$ and is trained by enforcing consistency with this composed reference. In parallel, a random affine transformation generates an augmented frame ${ \tilde { I } } _ { 1 } ,$ inducing the analytically defined flow $\tilde { v } _ { 0 1 } ^ { \prime }$ . The student prediction $v _ { 0 1 } ^ { \prime }$ is required to match this reference. The teacher parameters are updated using an exponential moving average (EMA) of the student.
+
+Benchmarks. We train and evaluate across synthetic and real-world dataset: FlyingChairs [10] and FlyingThings3D [34] are used for pre-training and provide large synthetic motion with diverse displacements and occlusions; MPI-Sintel [4] (Clean/Final) offers complex non-rigid motion, with Final introducing effects such as motion blur and atmospheric distortions; KITTI [12] is a real driving benchmark with ground truth derived from LiDAR/3D reconstruction; and we report zero-shot transfer on HD1K [24] (high-resolution driving sequences) and Middlebury [2] (real scenes with small-to-medium motions). We report standard endpoint error (EPE), and also report F1 on KITTI, the outlier rate measuring the fraction of pixels whose endpoint error exceeds a dataset-defined threshold [12]. Because our central claim also concerns generalization under a geometric constraint, we emphasize cross-dataset evaluation whenever in-domain performance saturates. Due to page limit, we highlight the core results and discussions in the main paper; datasets, hyperparameters, ablations, additional experiments, visualizations, and code, are in the supplementary material.
+
+## 4.1 Self-Supervised Adaptation
+
+Before full-scale training, we first test how triangular consistency alone can improve an optical flow model. We therefore adapt pre-trained optical-flow models to new domains without using labeled data. Our goal is to push the limit of using only consistency as supervision, without any auxiliary signals (e.g., photometric reconstruction or smoothness), even if they do not require labels. To this end, we perform a few-shot experiment: a single epoch of self-supervised adaptation, after which the adapted model is evaluated on frames that were not used during the adaptation stage, resembling a practical test-time adaptation scenario.
+
+Method. We start from RAFT models pretrained on FlyingChairs or FlyingThings3D and adapt them to Sintel using no labels and no photometric or smoothness losses-only triangular consistency. We adapt on Sintel’s unlabeled test split and evaluate on the labeled training split, with the evaluation frames disjoint from the adaptation frames. This yields a lightweight, test-time-style calibration setting: with batch size 12, one epoch corresponds to 45 iterations and takes 84 seconds on an NVIDIA RTX Pro 6000 Blackwell GPU. Notably, to isolate the effect of the proposed constraint, we freeze normalization statistics during adaptation (no running-stat updates, verified by sanity check), preventing spurious gains from re-estimating internal statistics on the target domain.
+
+As in Fig. 2, temporal consistency is applied to the predicted flows $v _ { 0 1 }$ , v12, and $v _ { 0 2 }$ by penalizing the discrepancy between the directly predicted flow $v _ { \mathrm { 0 2 } }$ and the composed flow $\widetilde { v } _ { 0 2 }$ . This effectively chains two smaller-displacement (typically more accurate) flows to supervise a larger-displacement flow. In parallel, we enforce augmentation consistency in the same manner. A random affine transformation is sampled and applied to frame $I _ { 1 }$ to produce the augmented frame $\tilde { I } _ { 1 }$ . The induced flow $\tilde { v } _ { 0 1 }$ from $I _ { 0 }$ to ${ \tilde { I } } _ { 1 }$ is computed analytically, and the loss is computed between the model prediction $v _ { 0 1 } ^ { \prime }$ and the reference flow $\tilde { v } _ { 0 1 }$ .
+
+Results. Table 1 demonstrates that consistency alone already leads to substantial improvements in optical flow. Even with only an extremely small adaptation budget, the pre-trained models consistently improve across Sintel benchmarks by up to 18.1%. These gains are particularly notable given the extremely constrained setting: the adaptation is performed using only unlabeled data and relies only on the proposed consistency objectives. The fact that such a minimal
+
+Table 1: Self-supervised adaptation by triangular consistency. Under extremely constrained settings: one epoch (45 iterations) using unlabeled data and only triangular consistency, accuracy improve significantly.
+
+<table><tr><td>Pre-training</td><td>Method</td><td>Clean</td><td>Final</td></tr><tr><td rowspan="3">FlyingChairs</td><td>Pre-trained</td><td>2.54</td><td>4.67</td></tr><tr><td>+ consistency</td><td>2.08</td><td>3.95</td></tr><tr><td>Improvement</td><td>18.1%</td><td>15.4%</td></tr><tr><td rowspan="3">FlyingThings3D</td><td>Pre-trained</td><td>2.01</td><td>3.41</td></tr><tr><td>+ consistency</td><td>1.73</td><td>3.13</td></tr><tr><td>Improvement</td><td>13.9%</td><td>8.2%</td></tr></table>
+
+signal can reliably improve pre-trained models suggests that triangular consistency unlocks a surprisingly strong supervision source for domain adaptation. This is particularly valuable for active learning [55], where high-quality labeled data are scarce and costly to obtain.
+
+![](images/d7f42ea416ef2c120991ec6271b97ac71af09128d0d54e581ced8d1528ed326f.jpg)
+
+<details>
+<summary>natural_image</summary>
+
+Comparison of 3D heatmaps and visualizations across four methods: Image, ARFlow, Ours, and GT, showing different thermal or structural models.
+</details>
+
+Fig. 3: Qualitative comparison on MPI-Sintel. Regions highlighted by dashed circles illustrate typical improvements introduced by triangular consistency. Our method produces motion fields that better align with the structural boundaries and motion continuity of the scene, reflecting the geometric consistency enforced during training.
+
+## 4.2 Unsupervised Training
+
+Encouraged by the improvements observed in the self-supervised adaptation, we now integrate triangular consistency, including both temporal and augmentation consistency, into a complete unsupervised optical flow training pipeline.
+
+Method. We build upon ARFlow [30], a widely used unsupervised optical flow framework. ARFlow natively supports loading three consecutive frames during training, allowing triangular consistency to be incorporated without modifying the data loading pipeline. ARFlow primarily relies on photometric reconstruction together with occlusion-aware bidirectional consistency and symmetric augmentation consistency between transformed image pairs as supervision signals. Note that our augmentation consistency differs from ARFlow, since the augmentation is asymmetric, derived from analytically transformed flow fields. We therefore directly add the temporal compositional loss and augmentation consistency loss described in Sec. 4.1. Unlike the self-supervised adaptation experiment, which adapts pre-trained models using unlabeled data, here we train models from scratch using the unlabeled Sintel and KITTI training sets.
+
+Results. Figure 3 presents qualitative comparisons on several challenging Sintel sequences. Because triangular consistency constrains the geometry of motion correspondences, its effect is visible in the structural coherence of the predicted flow fields. In particular, motion boundaries and large coherent regions exhibit improved alignment with the ground truth. The highlighted regions illustrate typical cases where enforcing consistency across composed flows leads to more stable motion estimates, especially for articulated objects and regions undergoing complex motion. Table 2 shows that adding triangular consistency improves unsupervised learning in both in-domain accuracy and cross-dataset transfer. When training on Sintel, we reduce EPE on both Clean/Final and also improve zero-shot evaluation on HD1K and Middlebury, indicating that compositional and analytic-augmentation constraints provide supervision complementary to photometric reconstruction and bidirectional consistency.
+
+Table 2: Unsupervised learning with triangular consistency. When training on Sintel, triangular consistency improves both training/validation accuracy and crossdataset performance. When training on KITTI, the training/validation error remains nearly unchanged, but zero-shot transfer improves noticeably.
+
+<table><tr><td rowspan="2">Source</td><td rowspan="2">Method</td><td colspan="2">Sintel (train/val)</td><td rowspan="2">KITTI (train/val) F1 (%)</td><td rowspan="2">HD1K EPE</td><td rowspan="2">Middlebury EPE</td></tr><tr><td>Clean EPE</td><td>Final EPE</td></tr><tr><td rowspan="3">Sintel</td><td>ARFlow</td><td>2.79 / 4.78</td><td>3.73 / 5.89</td><td>-</td><td>1.40</td><td>0.35</td></tr><tr><td>+ ours</td><td>2.58 / 4.48</td><td>3.49 / 5.86</td><td>-</td><td>1.24</td><td>0.33</td></tr><tr><td>Improvement</td><td>7.5% / 6.3%</td><td>6.4% / 0.5%</td><td>-</td><td>11.4%</td><td>5.7%</td></tr><tr><td rowspan="3">KITTI</td><td>ARFlow</td><td>-</td><td>-</td><td>9.87 / 11.80</td><td>2.32</td><td>0.55</td></tr><tr><td>+ ours</td><td>-</td><td>-</td><td>9.94 / 11.44</td><td>1.99</td><td>0.54</td></tr><tr><td>Improvement</td><td>-</td><td>-</td><td>-0.7% / 3.1%</td><td>14.2%</td><td>1.8%</td></tr></table>
+
+When training on KITTI, the in-domain metrics largely saturate (EPE unchanged and F1 changes marginally), yet transfer improves noticeably: evaluation on HD1K and Middlebury is better despite no improvement on KITTI itself. This behavior is consistent with the motion-statistics note in Sec. 5.3: the added constraint acts primarily as a regularizer for generalization rather than a source of additional in-domain fit once the training distribution is narrow.
+
+The benefit becomes evident when evaluating zero-shot transfer. Models trained with triangular consistency achieve substantially better performance on HD1K and Middlebury, reducing EPE by 14.2% and 1.8%, respectively. This suggests that the proposed consistency constraints encourage the model to learn motion relationships that extend beyond the narrow motion patterns present in KITTI. Notably, the same trend is observed in the supervised setting, where triangular consistency introduces motion variations that improve cross-dataset generalization even when the training-set accuracy itself does not change.
+
+## 4.3 Supervised Training
+
+Finally, we evaluate triangular consistency under a supervised setting. In this setting, we strictly follow the original RAFT training pipeline [47] and introduce triangular consistency only as a controlled data augmentation mechanism.
+
+Method. We apply controlled affine transformations to the target image of an optical flow pair. Using the analytic formulation described in Sec. 3.3, the corresponding ground-truth flow is transformed accordingly to produce a consistent augmented training pair. The model is then trained using these augmented samples. This augmentation effectively enforces triangular consistency between the original and transformed flows while preserving exact supervision. Importantly, this is the only modification to the RAFT training pipeline and introduces negligible computational overhead. All other training settings, including architecture, optimization schedule, and losses, remain unchanged.
+
+Results. Table 3 shows that triangular consistency consistently improves optical flow end point error under supervised training. We trained RAFT on Sintel and KITTI and report the training EPE to demonstrate goodness of fit. We note that while Sintel is a synthetic dataset, the motion generated comprise of large motion (e.g., action and combat), which presents a bias when transferred to datasets where capturing motions observed in natural interactions (Middlebury). By inducing artificial motion as data augmentation, where we assume affine transformations of the image to represent typical camera motions, the triangular consistency serves as a regularizer that enables RAFT trained on Sintel to generalize to Middlebury. Hence, despite Sintel having high-fidelity supervision, the proposed triangular consistency still improves generalization by 6.9%.
+
+Table 3: Triangular consistency as data augmentation for supervised training. We follow the RAFT training pipeline and introduce triangular consistency only through controlled data augmentation. This slightly improves validation accuracy and further improves zero-shot transfer across datasets.
+
+<table><tr><td rowspan="2">Source</td><td rowspan="2">Method</td><td colspan="2">Sintel (train/val)</td><td rowspan="2">KITTI (train/val) F1 (%)</td><td rowspan="2">HD1K EPE</td><td rowspan="2">Middlebury EPE</td></tr><tr><td>Clean EPE</td><td>Final EPE</td></tr><tr><td rowspan="3">Sintel</td><td>RAFT</td><td>0.76 / 2.08</td><td>1.22 / 3.41</td><td>-</td><td>0.67</td><td>0.29</td></tr><tr><td>+ ours</td><td>0.71 / 2.02</td><td>1.16 / 3.44</td><td>-</td><td>0.66</td><td>0.27</td></tr><tr><td>Improvement</td><td>6.6% / 2.9%</td><td>4.9% / -0.9%</td><td>-</td><td>1.5%</td><td>6.9%</td></tr><tr><td rowspan="3">KITTI</td><td>RAFT</td><td>-</td><td>-</td><td>1.53 / 5.27</td><td>1.08</td><td>0.69</td></tr><tr><td>+ ours</td><td>-</td><td>-</td><td>1.56 / 5.02</td><td>0.83</td><td>0.56</td></tr><tr><td>Improvement</td><td>-</td><td>-</td><td>-2.0% / 4.7%</td><td>23.1%</td><td>18.8%</td></tr></table>
+
+The training set bias is even more pronounced in transferring a model trained on KITTI to HD1K and Middlebury. Due to KITTI being a real outdoor driving dataset, the motion pattern observed is consistently constrained planar motion, where forward ego-motion dominates, and viewpoints, motion directions, and displacement magnitudes follow relatively predictable structures determined by vehicle dynamics and frame rate. On the other hand, Middlebury unconstrained motion of people interacting with objects, but conservative in camera motion. Training with our triangular consistency naturally introduces a much larger set of motion pattern variations to the KITTI dataset. This can be seen as the EPE on KITTI training set increased slightly as some of the motion patterns induced by our method does not follow that of the dataset. Yet, these variations do serve as a regularizer for the estimated motion leading to an improvement of 23.1% and 18.8% on HD1K and Middlebury, respectively.
+
+This experiment highlights the effectiveness of triangular consistency as a data augmentation mechanism for supervised optical flow training. To the best of our knowledge, existing augmentation strategies preserve correspondence by applying identical transformations to both images in a pair [30, 41, 47]. In contrast, our method introduces an asymmetric augmentation by transforming only the target image while analytically updating the ground-truth flow. This enables the model to observe a broader set of motion patterns while maintaining exact supervision. In principle, the same formulation could also be applied to the source image or both images jointly, but we choose to keep the augmentation simple. The results demonstrate the importance of such augmentation, particularly for datasets like KITTI where motion statistics are highly constrained.
+
+## 5 Discussion and Conclusion
+
+## 5.1 Why such a simple constraint was overlooked?
+
+At first glance, triangular consistency may appear almost self-evident. The compositional nature of displacement fields has been recognized and exploited in tasks involving long-range correspondence [7, 26, 29]. We were therefore somewhat surprised that such a straightforward geometric relation has not been systematically used for training optical flow. One likely reason is historical: optical flow estimation has been formulated as a pairwise problem [14, 33]. Although multi-frame formulations were explored in classical optimization-based methods, they typically required solving large coupled systems over many frames [11, 16], making them computationally demanding. Modern learning-based optical flow models [10, 45, 47] inherit this pairwise design, and most supervision signals are likewise defined only for pairs of frames.
+
+There are also practical reasons. Standard optical-flow training pipelines apply identical geometric transformations to both images to preserve correspondences [30, 41, 47]. In contrast, we augment only the target image and update the ground-truth flow analytically, producing a broader family of motion patterns while retaining exact labels. Also, naively composing flows or applying geometric augmentation often introduces interpolation artifacts or invalid correspondences, particularly near occlusion boundaries, including image borders. Our affine formulation alleviates this issue since induced flow can be computed in closed form, even when the transformed image extends beyond the image domain. This avoids interpolation artifacts and allows triangular consistency to be implemented as a stable training signal. Conceptually, this strategy is similar to AugUndo [53], which introduces controlled geometric perturbations to generate additional supervision for depth prediction. In retrospect, the idea may appear simple, but our experiments show that incorporating this geometric constraint leads to consistent improvements across multiple training regimes.
+
+## 5.2 Geometric Supervision for Optical Flow
+
+Most geometric priors in optical flow are relatively local. A common example is spatial smoothness, which assumes neighboring pixels move coherently [1, 5, 20, 39]. Other methods employ 3D priors as auxiliary supervision signals [9,21,37,58]. Another widely used constraint is forward-backward symmetry [18,30,40], written as $w _ { 1 0 } \approx - w _ { 1 2 }$ (note that this differs from forward-backward compositional consistency $w _ { 1 0 } ( w _ { 1 2 } ) \approx \mathrm { I d } )$ . While effective, it stems from a linear approximation assumption about the trajectory. Triangular consistency instead arises from a more fundamental property: optical flow represents a mapping between coordinate systems, and such mappings compose by construction. Importantly, this relation holds regardless of the specific trajectory taken by the point.
+
+Our compositional constraints do not depend on image appearance and are therefore robust to illumination changes, shadows, reflections, or imaging noise. In this sense, triangular consistency additionally encourages globally coherent motion estimates across frames, which is evident in Fig. 3. Unlike smoothness priors, the proposed constraint is parameter-free and does not require specifying motion regularization. The consistent improvements observed in unsupervised learning, self-supervised adaptation, and supervised training suggest that incorporating such first-principled geometric structure remains a powerful yet underexplored direction for learning-based motion estimation. In this work, we focus only on the simplest non-trivial instance of such a compositional structure: a triangle. In principle, these transformations can be chained indefinitely over longer temporal sequences, potentially enabling even stronger supervision signals.
+
+## 5.3 Limitations
+
+Despite its generality, the effectiveness of triangular consistency depends on the motion statistics of the data. For example, we observe less improvement on the KITTI benchmark, which contains highly restrained motion patterns dominated by forward ego-motion in driving scenes. Consequently, viewpoints, motion directions, and displacement magnitudes follow relatively predictable patterns. In such environments, compositional constraints provide extra supervision, but the benefit is less visible when evaluation follows the original in-domain motion statistics. Importantly, triangular consistency does not hurt performance on KITTI, while models trained on KITTI still demonstrate improvement when tested on HD1K and Middlebury. This observation suggests that geometric consistency constraints are most beneficial when the data contains complex and varied motion that cannot be captured by simple priors.
+
+Another limitation arises from occlusion and multi-layer motion. The compositional relation assumes that a single-layer correspondence exists across frames. In real scenes, occlusions and independently moving objects may violate this assumption. While our implementation mitigates this issue through occlusion masking, incorporating explicit layered motion models or more advanced visibility reasoning may further improve robustness in such scenarios.
+
+## 5.4 Conclusion
+
+In this work, we revisit a simple yet fundamental property of motion: displacement fields compose. From this observation, we derive triangular consistency for optical flow, a minimal compositional constraint that links motion estimates across three frames and can be integrated into existing optical flow pipelines with negligible computational overhead. Despite its simplicity, enforcing this geometric relation during training consistently improves optical flow estimation across unsupervised learning, self-supervised adaptation, and supervised training. The proposed constraint depends only on the geometry of motion and therefore remains agnostic to image appearance, network architecture, and supervision type. It is fast to compute and functions as a plug-and-play supervision component compatible with existing methods. More broadly, our results suggest that the geometry of motion remains underutilized and may serve as a powerful source of supervision for learning-based vision systems.
+
+## References
+
+1. Bailer, C., Taetz, B., Stricker, D.: Flow fields: Dense correspondence fields for highly accurate large displacement optical flow estimation. In: Proceedings of the IEEE international conference on computer vision. pp. 4015–4023 (2015)  
+2. Baker, S., Scharstein, D., Lewis, J.P., Roth, S., Black, M.J., Szeliski, R.: A database and evaluation methodology for optical flow. International journal of computer vision 92(1), 1–31 (2011)  
+3. Brox, T., Malik, J.: Large displacement optical flow: descriptor matching in variational motion estimation. IEEE transactions on pattern analysis and machine intelligence 33(3), 500–513 (2010)  
+4. Butler, D.J., Wulff, J., Stanley, G.B., Black, M.J.: A naturalistic open source movie for optical flow evaluation. In: European conference on computer vision. pp. 611– 625. Springer (2012)  
+5. Chen, Q., Koltun, V.: Full flow: Optical flow estimation by global optimization over regular grids. In: Proceedings of the IEEE conference on computer vision and pattern recognition. pp. 4706–4714 (2016)  
+6. Chen, Z., Jin, H., Lin, Z., Cohen, S., Wu, Y.: Large displacement optical flow from nearest neighbor fields. In: Proceedings of the IEEE Conference on Computer Vision and Pattern Recognition. pp. 2443–2450 (2013)  
+7. Cho, S., Huang, J., Kim, S., Lee, J.Y.: Flowtrack: Revisiting optical flow for longrange dense tracking. In: Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition. pp. 19268–19277 (2024)  
+8. Doersch, C., Yang, Y., Vecerik, M., Gokay, D., Gupta, A., Aytar, Y., Carreira, J., Zisserman, A.: Tapir: Tracking any point with per-frame initialization and temporal refinement. In: Proceedings of the IEEE/CVF International Conference on Computer Vision. pp. 10061–10072 (2023)  
+9. Dong, Q., Cao, C., Fu, Y.: Rethinking optical flow from geometric matching consistent perspective. In: Proceedings of the IEEE/CVF Conference on computer vision and pattern recognition. pp. 1337–1347 (2023)  
+10. Dosovitskiy, A., Fischer, P., Ilg, E., Hausser, P., Hazirbas, C., Golkov, V., Van Der Smagt, P., Cremers, D., Brox, T.: Flownet: Learning optical flow with convolutional networks. In: Proceedings of the IEEE international conference on computer vision. pp. 2758–2766 (2015)  
+11. Garg, R., Pizarro, L., Rueckert, D., Agapito, L.: Dense multi-frame optic flow for non-rigid objects using subspace constraints. In: Asian Conference on Computer Vision. pp. 460–473. Springer (2010)  
+12. Geiger, A., Lenz, P., Urtasun, R.: Are we ready for autonomous driving? the kitti vision benchmark suite. In: 2012 IEEE conference on computer vision and pattern recognition. pp. 3354–3361. IEEE (2012)  
+13. Gibson, J.J.: The perception of the visual world. (1950)  
+14. Horn, B.K., Schunck, B.G.: Determining optical flow. Artificial intelligence 17(1-3), 185–203 (1981)  
+15. Huang, Z., Shi, X., Zhang, C., Wang, Q., Cheung, K.C., Qin, H., Dai, J., Li, H.: Flowformer: A transformer architecture for optical flow. In: European conference on computer vision. pp. 668–685. Springer (2022)  
+16. Irani, M.: Multi-frame optical flow estimation using subspace constraints. In: Proceedings of the Seventh IEEE International Conference on Computer Vision. vol. 1, pp. 626–633. IEEE (1999)  
+17. Jackson, J.D., Yezzi, A.J., Soatto, S.: Dynamic shape and appearance modeling via moving and deforming layers. International Journal of Computer Vision 79(1), 71–84 (2008)  
+18. Janai, J., Guney, F., Ranjan, A., Black, M., Geiger, A.: Unsupervised learning of multi-frame optical flow with occlusions. In: Proceedings of the European conference on computer vision (ECCV). pp. 690–706 (2018)  
+19. Jeong, J., Lin, J.M., Porikli, F., Kwak, N.: Imposing consistency for optical flow estimation. In: Proceedings of the IEEE/CVF conference on Computer Vision and Pattern Recognition. pp. 3181–3191 (2022)  
+20. Jiang, S., Lu, Y., Li, H., Hartley, R.: Learning optical flow from a few matches. In: Proceedings of the IEEE/CVF conference on computer vision and pattern recognition. pp. 16592–16600 (2021)  
+21. Jiao, Y., Tran, T.D., Shi, G.: Effiscene: Efficient per-pixel rigidity inference for unsupervised joint learning of optical flow, depth, camera pose and motion segmentation. In: Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition. pp. 5538–5547 (2021)  
+22. Jonschkowski, R., Stone, A., Barron, J.T., Gordon, A., Konolige, K., Angelova, A.: What matters in unsupervised optical flow. In: European conference on computer vision. pp. 557–572. Springer (2020)  
+23. Karaev, N., Rocco, I., Graham, B., Neverova, N., Vedaldi, A., Rupprecht, C.: Cotracker: It is better to track together. In: European conference on computer vision. pp. 18–35. Springer (2024)  
+24. Kondermann, D., Nair, R., Honauer, K., Krispin, K., Andrulis, J., Brock, A., Gussefeld, B., Rahimimoghaddam, M., Hofmann, S., Brenner, C., et al.: The hci benchmark suite: Stereo and flow ground truth with uncertainties for urban autonomous driving. In: Proceedings of the IEEE Conference on Computer Vision and Pattern Recognition Workshops. pp. 19–28 (2016)  
+25. Lao, D., Sundaramoorthi, G.: Minimum delay moving object detection. In: Proceedings of the IEEE Conference on Computer Vision and Pattern Recognition. pp. 4250–4259 (2017)  
+26. Lao, D., Sundaramoorthi, G.: Extending layered models to 3d motion. In: Proceedings of the European conference on computer vision (ECCV). pp. 435–451 (2018)  
+27. Lao, D., Wang, C., Wong, A., Soatto, S.: Diffeomorphic template registration for atmospheric turbulence mitigation. In: Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition. pp. 25107–25116 (2024)  
+28. Lao, D., Zhu, P., Wonka, P., Sundaramoorthi, G.: Flow-guided video inpainting with scene templates. In: Proceedings of the IEEE/CVF international conference on computer vision. pp. 14599–14608 (2021)  
+29. Le Moing, G., Ponce, J., Schmid, C.: Dense optical tracking: Connecting the dots. In: Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition. pp. 19187–19197 (2024)  
+30. Liu, L., Zhang, J., He, R., Liu, Y., Wang, Y., Tai, Y., Luo, D., Wang, C., Li, J., Huang, F.: Learning by analogy: Reliable supervision from transformations for unsupervised optical flow estimation. In: Proceedings of the IEEE/CVF conference on computer vision and pattern recognition. pp. 6489–6498 (2020)  
+31. Liu, P., King, I., Lyu, M.R., Xu, J.: Ddflow: Learning optical flow with unlabeled data distillation. In: Proceedings of the AAAI conference on artificial intelligence. vol. 33, pp. 8770–8777 (2019)  
+32. Liu, P., Lyu, M., King, I., Xu, J.: Selflow: Self-supervised learning of optical flow. In: Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition (CVPR) (June 2019)  
+33. Lucas, B.D., Kanade, T.: An iterative image registration technique with an application to stereo vision. In: IJCAI’81: 7th international joint conference on Artificial intelligence. vol. 2, pp. 674–679 (1981)  
+34. Mayer, N., Ilg, E., Hausser, P., Fischer, P., Cremers, D., Dosovitskiy, A., Brox, T.: A large dataset to train convolutional networks for disparity, optical flow, and scene flow estimation. In: Proceedings of the IEEE conference on computer vision and pattern recognition. pp. 4040–4048 (2016)  
+35. Meister, S., Hur, J., Roth, S.: Unflow: Unsupervised learning of optical flow with a bidirectional census loss. In: Proceedings of the AAAI conference on artificial intelligence. vol. 32 (2018)  
+36. Neoral, M., Šer\`ych, J., Matas, J.: Mft: Long-term tracking of every pixel. In: Proceedings of the IEEE/CVF Winter Conference on Applications of Computer Vision. pp. 6837–6847 (2024)  
+37. Poggi, M., Tosi, F.: Flowseek: optical flow made easier with depth foundation models and motion bases. In: Proceedings of the IEEE/CVF International Conference on Computer Vision. pp. 5667–5679 (2025)  
+38. Ren, Z., Yan, J., Ni, B., Liu, B., Yang, X., Zha, H.: Unsupervised deep learning for optical flow estimation. In: Proceedings of the AAAI conference on artificial intelligence. vol. 31 (2017)  
+39. Revaud, J., Weinzaepfel, P., Harchaoui, Z., Schmid, C.: Epicflow: Edge-preserving interpolation of correspondences for optical flow. In: Proceedings of the IEEE conference on computer vision and pattern recognition. pp. 1164–1172 (2015)  
+40. Shi, X., Huang, Z., Bian, W., Li, D., Zhang, M., Cheung, K.C., See, S., Qin, H., Dai, J., Li, H.: Videoflow: Exploiting temporal cues for multi-frame optical flow estimation. In: Proceedings of the IEEE/CVF International Conference on Computer Vision. pp. 12469–12480 (2023)  
+41. Stone, A., Maurer, D., Ayvaci, A., Angelova, A., Jonschkowski, R.: Smurf: Selfteaching multi-frame unsupervised raft with full-image warping. In: Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition (CVPR). pp. 3887–3896 (June 2021)  
+42. Sui, X., Li, S., Geng, X., Wu, Y., Xu, X., Liu, Y., Goh, R., Zhu, H.: Craft: Cross-attentional flow transformer for robust optical flow. In: Proceedings of the IEEE/CVF conference on Computer Vision and Pattern Recognition. pp. 17602– 17611 (2022)  
+43. Sun, D., Roth, S., Black, M.J.: Secrets of optical flow estimation and their principles. In: 2010 IEEE computer society conference on computer vision and pattern recognition. pp. 2432–2439. IEEE (2010)  
+44. Sun, D., Sudderth, E.B., Black, M.J.: Layered segmentation and optical flow estimation over time. In: 2012 IEEE Conference on Computer Vision and Pattern Recognition. pp. 1768–1775. IEEE (2012)  
+45. Sun, D., Yang, X., Liu, M.Y., Kautz, J.: Pwc-net: Cnns for optical flow using pyramid, warping, and cost volume. In: Proceedings of the IEEE conference on computer vision and pattern recognition. pp. 8934–8943 (2018)  
+46. Sun, S., Chen, Y., Zhu, Y., Guo, G., Li, G.: Skflow: Learning optical flow with super kernels. Advances in Neural Information Processing Systems 35, 11313– 11326 (2022)  
+47. Teed, Z., Deng, J.: Raft: Recurrent all-pairs field transforms for optical flow. In: European conference on computer vision. pp. 402–419. Springer (2020)  
+48. Wang, Q., Chang, Y.Y., Cai, R., Li, Z., Hariharan, B., Holynski, A., Snavely, N.: Tracking everything everywhere all at once. In: Proceedings of the IEEE/CVF International Conference on Computer Vision. pp. 19795–19806 (2023)  
+49. Wang, X., Jabri, A., Efros, A.A.: Learning correspondence from the cycleconsistency of time. In: Proceedings of the IEEE/CVF conference on computer vision and pattern recognition. pp. 2566–2576 (2019)  
+50. Wang, Y., Yang, Y., Yang, Z., Zhao, L., Wang, P., Xu, W.: Occlusion aware unsupervised learning of optical flow. In: Proceedings of the IEEE conference on computer vision and pattern recognition. pp. 4884–4893 (2018)  
+51. Wang, Y., Lipson, L., Deng, J.: Sea-raft: Simple, efficient, accurate raft for optical flow. In: European Conference on Computer Vision. pp. 36–54. Springer (2024)  
+52. Wen, H., Liang, E., Deng, J.: Layeredflow: A real-world benchmark for nonlambertian multi-layer optical flow. In: European Conference on Computer Vision. pp. 477–495. Springer (2024)  
+53. Wu, Y., Liu, T.Y., Park, H., Soatto, S., Lao, D., Wong, A.: Augundo: Scaling up augmentations for monocular depth completion and estimation. In: European Conference on Computer Vision. pp. 274–293. Springer (2024)  
+54. Xu, L., Jia, J., Matsushita, Y.: Motion detail preserving optical flow estimation. IEEE Transactions on Pattern Analysis and Machine Intelligence 34(9), 1744–1757 (2011)  
+55. Yuan, S., Sun, X., Kim, H., Yu, S., Tomasi, C.: Optical flow training under limited label budget via active learning. ArXiv abs/2203.05053 (2022), https://api. semanticscholar.org/CorpusID:247362834  
+56. Zhao, S., Zhao, L., Zhang, Z., Zhou, E., Metaxas, D.: Global matching with overlapping attention for optical flow estimation. In: Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition. pp. 17592–17601 (2022)  
+57. Zhou, T., Jae Lee, Y., Yu, S.X., Efros, A.A.: Flowweb: Joint image set alignment by weaving consistent, pixel-wise correspondences. In: Proceedings of the IEEE Conference on Computer Vision and Pattern Recognition. pp. 1191–1200 (2015)  
+58. Zou, Y., Luo, Z., Huang, J.B.: Df-net: Unsupervised joint learning of depth and flow using cross-task consistency. In: Proceedings of the European conference on computer vision (ECCV). pp. 36–53 (2018)

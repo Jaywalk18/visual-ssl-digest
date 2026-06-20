@@ -20,7 +20,7 @@
   </header>
   <nav class="site-nav" aria-label="主导航">
     <a class="nav-link" href="../index.html">头版</a>
-<a class="nav-link" href="../issues/2026-06-19.html">今日速递</a>
+<a class="nav-link" href="../issues/2026-06-20.html">今日速递</a>
 <a class="nav-link" href="../pages/catalog.html">论文目录</a>
 <a class="nav-link" href="../pages/timeline.html">时间线</a>
 <span class="nav-streak" title="连续追踪天数"><svg viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><path d="M8 0c.7 2.5-1.2 3.7-2 5-1 1.6-1 4 .8 4.8C6.4 8.5 7.4 7.8 8 7c.3 1.3-.4 2 .9 3 .9.7 1.3 1.6 1.1 2.6C9.7 14.6 8.9 16 6.8 16 4.6 16 3 14.3 3 12c0-3.3 2.6-4.8 2.4-8C6.9 4.6 8.4 5 8 0z"/></svg> 连续 <b data-streak>0</b> 天</span>
@@ -28,32 +28,32 @@
   <main><article class="paper-detail" data-pid="2606.19062" data-category="arXiv 新增 + video-text retrieval representation" data-priority="P2" data-date="2026-06-19" data-title="dream: extending vision-language models with dual-objective encoding for cross-modal retrieval" data-keywords="dream: extending vision-language models with dual-objective encoding for cross-modal retrieval dream arxiv 新增 + video-text retrieval representation p2 2026-06-19 arxiv 新增 + video-text retrieval representation 双路径 representation enhancement/alignment 做视频检索，方法上涉及视觉-语言表征预训练 中高相关；详见方法、贡献和实验边界。">
   <div class="paper-main">
     <div class="kicker">arXiv 新增 + video-text retrieval representation · P2 · 2026-06-19</div>
-    <h1 class="paper-headline">DREAM：跨模态检索仍是评估视觉-语言表征的常用入口，DREAM 可作为今天 P0/P1 自蒸馏线的应用侧参照</h1>
-    <p class="dek">把视频检索中的时间依赖、语言结构和跨模态 alignment 放进同一编码框架。</p>
-    <p class="byline"><strong>DREAM: Extending Vision-Language Models with Dual-Objective Encoding for Cross-Modal Retrieval</strong>　Kaleem Ullah , Altaf Hussain , Muhammad Munsif , Sung Wook Baik；arXiv 元数据未稳定列机构时按作者列表记录。　arXiv 新增 + video-text retrieval representation　<a href="https://arxiv.org/abs/2606.19062">原文链接</a></p>
+    <h1 class="paper-headline">DREAM：它和通用视觉自监督的关系在于：双路径 representation enhancement/alignment 做视频检索，方法上涉及视觉-语言表征预训练</h1>
+    <p class="dek">中高相关；详见方法、贡献和实验边界。</p>
+    <p class="byline"><strong>DREAM: Extending Vision-Language Models with Dual-Objective Encoding for Cross-Modal Retrieval</strong>　arXiv 新增 + video-text retrieval representation　<a href="https://arxiv.org/abs/2606.19062">原文链接</a></p>
     <div class="paper-facts">
       <span><b>编号</b>2606.19062</span>
       <span><b>优先级</b>P2</span>
       <span><b>类别</b>arXiv 新增 + video-text retrieval representation</span>
       <span><b>会议</b>arXiv 新增 + video-text retrieval representation</span>
-      <span><b>方法</b>DREAM 结合 masked/permuted language modeling 与层级 vision encoder，做 visual/textual dual-path representation enhancement and alignment。</span>
+      <span><b>方法</b>双路径 representation enhancement/alignment 做视频检索，方法上涉及视觉-语言表征预训练</span>
       <span><b>来源</b>arXiv / OpenReview</span>
     </div>
     <div class="feature-body">
-      <p class="lead dropcap">先说结论。跨模态检索仍是评估视觉-语言表征的常用入口，DREAM 可作为今天 P0/P1 自蒸馏线的应用侧参照。 把视频检索中的时间依赖、语言结构和跨模态 alignment 放进同一编码框架。</p>
+      <p class="lead dropcap">先说结论。它和通用视觉自监督的关系在于：双路径 representation enhancement/alignment 做视频检索，方法上涉及视觉-语言表征预训练。 中高相关；详见方法、贡献和实验边界。</p>
       <figure class="full-fig"><img src="../assets/mineru/2606.19062/images/2b0e72fd761a8e77b26a5b61e7de238b04bf1db15be4dbf06cee06b8a2d499bc.jpg" alt="Figureure 3 · Text encoder architecture illustrating two complementary language mode"><figcaption><b>Figureure 3 · Text encoder architecture illustrating two complementary language mode</b><span class="fig-en">Fig. 3. Text encoder architecture illustrating two complementary language modeling strategies within a multi-head attention framework. (a) A transformerbased encoder processes input text, which is first tokenized using byte pair encoding and enriched with positional encodings. (b) The architecture branches into two parallel modeling objectives: masked language modeling (MLM), where selected tokens are masked and predicted based on visible context (including self), and permuted language modeling (PLM), where input tokens are shuffled and processed through a dual-stream attention mechanism. In PLM, the content stream can see all tokens, while the query stream cannot attend to itself.</span><span class="fig-zh">这张图概括 DREAM 的整体方法流程。阅读时先看模块之间传递的训练信号，再看作者如何把目标拆成可优化的子问题。</span></figcaption></figure>
 <figure class="full-fig"><img src="../assets/mineru/2606.19062/images/adbdbde00768c54692ce7140ac29b82a47530a7018253748a0109e0b89f31f0b.jpg" alt="Figureure 2 · Overview of the visual feature encoder architecture"><figcaption><b>Figureure 2 · Overview of the visual feature encoder architecture</b><span class="fig-en">Fig. 2. Overview of the visual feature encoder architecture. The top (a) shows a four-stage hierarchical transformer that encodes video frames into multiscale token representations. The bottom-left (b) illustrates the Cascaded Group Attention module, which enhances feature refinement through token interaction and attention. The bottom-right (c) section shows grouped tokens processed across multiple attention heads for feature integration.</span><span class="fig-zh">这张图概括 DREAM 的整体方法流程。阅读时先看模块之间传递的训练信号，再看作者如何把目标拆成可优化的子问题。</span></figcaption></figure>
       
       <h2>核心问题</h2>
-      <p>跨模态检索仍是评估视觉-语言表征的常用入口，DREAM 可作为今天 P0/P1 自蒸馏线的应用侧参照。</p>
+      <p>它和通用视觉自监督的关系在于：双路径 representation enhancement/alignment 做视频检索，方法上涉及视觉-语言表征预训练。</p>
       <h2>方法拆解</h2>
-      <p>DREAM 结合 masked/permuted language modeling 与层级 vision encoder，做 visual/textual dual-path representation enhancement and alignment。</p>
+      <p>双路径 representation enhancement/alignment 做视频检索，方法上涉及视觉-语言表征预训练</p>
       <h2>主要贡献</h2>
-      <p>把视频检索中的时间依赖、语言结构和跨模态 alignment 放进同一编码框架。</p>
+      <p>中高相关；详见方法、贡献和实验边界。</p>
       <h2>实验看点</h2>
-      <p>摘要报告在 MSRVTT、MSVD、LSMDC 上取得新的 R@1 结果，并展示跨帧 attention 的一致性。</p>
+      <p>实验部分建议重点看两类证据：一是作者是否把方法收益和更强数据、更长训练、更大模型区分开；二是跨模型、跨数据或跨任务迁移是否还能保留同样趋势。</p>
       <h2>局限与读法</h2>
-      <p>主要是 retrieval benchmark，不是通用预训练论文；需扫读 encoder 设计和 loss，少看 SOTA 宣称。</p>
+      <p>这篇论文的结论需要结合任务设置、训练数据规模和消融实验一起看；不要只凭单个指标判断它对通用视觉表征的价值。</p>
     
     </div>
   </div>
@@ -64,13 +64,13 @@
     <div class="side-box"><h4>原文</h4><p><a href="https://arxiv.org/abs/2606.19062">https://arxiv.org/abs/2606.19062</a></p></div>
   </aside>
 </article></main>
-  <aside class="conf-float" data-conf-reminder="2026-06-19-main-ddl" aria-label="CCF A/B 主投稿提醒">
+  <aside class="conf-float" data-conf-reminder="2026-06-20-main-ddl" aria-label="CCF A/B 主投稿提醒">
   <button class="conf-close" type="button" aria-label="关闭会议提醒">×</button>
   <details open>
     <summary>CCF A/B 主投稿提醒</summary>
     <div class="conf-list"><a class="conf-item " href="https://github.com/ccfddl/ccf-deadlines/blob/main/conference/AI/aaai.yml">
   <span><b>AAAI 2027</b><em>CCF A · Main paper submission</em></span>
-  <strong>38 天</strong>
+  <strong>37 天</strong>
   <small>2026-07-27 · CCF DDL: abstract 2026-07-20；进入 1 个月窗口后重点提醒。</small>
 </a></div>
   </details>
@@ -83,7 +83,7 @@
   (() => {
     const box = document.querySelector('[data-conf-reminder]');
     if (!box) return;
-    const key = `visualSslConfReminderClosed:${box.dataset.confReminder || '2026-06-19-main-ddl'}`;
+    const key = `visualSslConfReminderClosed:${box.dataset.confReminder || '2026-06-20-main-ddl'}`;
     try {
       if (localStorage.getItem(key) === '1') box.hidden = true;
     } catch (err) {}

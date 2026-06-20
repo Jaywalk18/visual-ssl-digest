@@ -1,0 +1,538 @@
+# UNIEGO: Proxies as Mediators for Unified Egocentric Video Representation Learning
+
+Wenhao Chi, Arkaprava Sinha, Dominick Reilly, Hieu Le, Srijan Das University of North Carolina at Charlotte
+
+## Abstract
+
+Egocentric video understanding is inherently limited by the narrow perspective of wearable cameras: a single viewpoint, a single modality, a single model cannot capture the full richness of human action. We argue that a truly expressive egocentric representation must subsume complementary knowledge across viewpoints, modalities, and foundation model representations, yet remain deployable from egocentric video alone. To this end, we introduce a hierarchical multi-teacher distillation framework that produces UNIEGO, a unified egocentric encoder trained with nine teachers spanning ego-exo viewpoints, RGB, depth, and skeleton modalities, and four foundation models. Rather than distilling directly from heterogeneous teachers whose incompatible architectures and feature geometries induce conflicting gradients, our framework interposes a layer of representation-specific Proxy models that translate diverse teacher knowledge into a homogeneous egocentric space. A second distillation stage, Selective Proxy Distillation (SPD), then adaptively selects, for each training sample, the subset of proxies that are both correct and confident, distilling exclusively from reliable supervision and suppressing erroneous signals. SPD is further stabilized by initializing UNIEGO as a learned convex combination of proxy parameters, placing the unified model in a well-conditioned region of the loss landscape before distillation begins. UNIEGO achieves stateof-the-art performance across three egocentric video understanding tasks - action recognition, video retrieval, and action segmentation on three challenging egoexo benchmarks, outperforming naive multi-teacher distillation baselines and demonstrating that structured, proxy-mediated knowledge transfer yields richer and more discriminative egocentric representations. We release code and models at https://github.com/Wenhao-Chi/UNIEGO.
+
+## 1 Introduction
+
+Understanding human actions from egocentric video is a fundamental challenge in visual perception, with broad applications spanning augmented reality, assistive robotics, and procedural activity analysis [45, 7, 42]. Yet, learning a truly expressive egocentric representation from a single model remains elusive. Wearable cameras impose a narrow field of view and suffer from persistent selfocclusions, obscuring the actor’s body and surrounding scene context [13]. Complementary modalities such as depth and skeleton which encode the geometric structure of human motion are discarded entirely [49, 30, 4]. Moreover, the rich, diverse representational knowledge encapsulated within large-scale foundation models (FMs) remains untapped [52, 5, 50, 17]. Consequently, a standalone egocentric model is fundamentally limited. We argue that overcoming these limitations requires a unified egocentric representation, a single, comprehensive embedding that subsumes complementary knowledge across modalities (RGB, depth, skeleton), viewpoints (egocentric and exocentric), and diverse representations from heterogeneous foundation models, yet operates solely on egocentric video at inference. Such a representation would unlock richer action understanding across a broad spectrum of downstream egocentric tasks.
+
+These diverse perceptual signals spanning viewpoints, modalities, and FM representations naturally suggest a multi-teacher knowledge distillation framework, a paradigm explored extensively in concurrent work [34, 40, 46, 1]. However, existing methods distill homogeneous representations into a single student, sidestepping the deeper structural challenges that arise in the egocentric setting. First, teachers here are fundamentally heterogeneous: skeleton-based models operate over graph-structured neural architectures incompatible with video encoders [9, 8], while exocentric RGB teachers encode scene geometry from an entirely different viewpoint, introducing a substantial “representational gap" [27, 21]. Second, naïvely forcing an egocentric student to reconcile these incompatible feature spaces simultaneously leads to “conflicting gradient signals" and degrades optimization [25, 51, 41]. Thus, the ego student is asked not merely to learn, but to simultaneously bridge modality gaps, close viewpoint gaps, and absorb diverse representational priors, an ill-posed objective for a single distillation stage. This motivates a more principled approach to unified egocentric representation learning.
+
+We address these challenges by introducing a hierarchical multi-teacher distillation framework that consolidates diverse perceptual signals across viewpoints, modalities, and FM representations into UNIEGO, a single unified egocentric encoder (see Figure 1). Rather than distilling directly from heterogeneous teachers, our framework first translates each teacher’s knowledge into a studentcompatible space through a set of representation-specific Proxy models. Each proxy shares the architecture of UNIEGO and operates on egocentric video. Therefore, the proxy learning diminishes the representational gap induced by heterogeneous teacher architectures and viewpoints by converting incompatible feature geometries into a homogeneous egocentric embedding space.
+
+Further, the first distillation level naturally exposes the reliability of each supervision signal on a perinstance basis: a proxy that cannot correctly classify a given sample carries no trustworthy knowledge to transfer. Our proposed hierarchical framework exploits this signal through Selective Proxy Distillation (SPD), which selects, for each training sample, the subset of proxies whose predictions are both correct and confident, distilling exclusively from this reliable subset and suppressing erroneous supervision entirely. To further stabilize optimization, SPD is initialized via a learned convex combination of proxy parameters, placing UNIEGO in a flat, well-conditioned region of the loss landscape prior to distillation. Together, proxy merging and proxy selection collectively mitigate the conflicting gradient problem inherent to naive multi-teacher distillation.
+
+The outcome of our hierarchical distillation framework is UNIEGO, a unified egocentric encoder trained with 9 teachers spanning ego-exo viewpoints, RGB, depth, and skeleton modalities, and four FMs. UNIEGO outperforms naive multi-teacher distillation baselines across three egocentric video understanding tasks - action recognition, video retrieval, and action segmentation on three challenging ego-exo benchmarks [38, 22, 14]. Moreover, UNIEGO generalizes across video backbone architectures, including compact models with as few as 22M parameters. We summarize our contributions as follows:
+
+• We introduce UNIEGO, a unified egocentric encoder trained via a novel hierarchical distillation framework with nine teachers across ego-exo viewpoints, three modalities, and four foundation models, using representation-specific proxies as structured mediators.
+
+• We propose three tightly coupled components: (i) Proxy Learning, which converts heterogeneous, multi-modal teacher supervision into a pool of architecturally homogeneous egocentric proxies, bridging the modality and viewpoint gap; (ii) Selective Proxy Distillation (SPD), a sample-wise selective distillation mechanism that dynamically routes supervision from the most reliable proxies, mitigating conflicting gradients across heterogeneous teachers; and (iii) Proxy Merging, a learned convex initialization of UNIEGO that places the unified model in a well-conditioned region of the loss landscape, stabilizing SPD’s optimization.
+
+• UNIEGO achieves state-of-the-art performance across three egocentric video understanding tasks on three challenging benchmarks, demonstrating that hierarchical proxy-mediated distillation yields richer, more discriminative egocentric representations than direct multiteacher supervision.
+
+![](images/8b0b9243ac87125b2fffd31dc3199db7dbb48caf21a184369cec9134da88a8a8.jpg)
+
+<details>
+<summary>flowchart</summary>
+
+```mermaid
+graph TD
+  A["Exo ViT"] --> C["Student"]
+  B["Ego Depth"] --> C["Student"]
+  D["Exo Skeleton"] --> C["Student"]
+  E["Ego DINOv2"] --> C["Student"]
+```
+</details>
+
+![](images/3f8644ad19c3926615b86d408b283695545748b89069fdb4b0303c2d05577d5e.jpg)
+
+<details>
+<summary>flowchart</summary>
+
+```mermaid
+graph TD
+  A["Student parameter"] --> B["Exo Skeleton"]
+  C["Gradient direction"] --> B
+  D["Ego DINOv2"] --> E["Central Node"]
+  F["Ego Depth"] --> E
+  G["Exo ViT"] --> E
+  B --> H["Red Arrow to Center"]
+  E --> H
+    style A fill:#f9f,stroke:#333
+    style C fill:#f9f,stroke:#333
+    style D fill:#ccf,stroke:#333
+    style F fill:#ccf,stroke:#333
+    style G fill:#cfc,stroke:#333
+```
+</details>
+
+![](images/7201f3f45c4e4967b3e69c84ab721a5c8a8345e3a6082b39c4476f9dfacfe67a.jpg)
+
+<details>
+<summary>flowchart</summary>
+
+```mermaid
+graph TD
+  A["Input Module 1"] --> D["Pool of Proxies"]
+  B["Input Module 2"] --> D
+  C["Input Module 3"] --> D
+  E["Input Module 4"] --> D
+  F["Input Module 5"] --> D
+  G["Input Module 6"] --> D
+  H["Input Module 7"] --> D
+  I["Input Module 8"] --> D
+  J["Input Module 9"] --> D
+  K["Input Module 10"] --> D
+  L["Input Module 11"] --> D
+  M["Input Module 12"] --> D
+  N["Input Module 13"] --> D
+  O["Input Module 14"] --> D
+  P["Input Module 15"] --> D
+  Q["Input Module 16"] --> D
+  R["Input Module 17"] --> D
+  S["Input Module 18"] --> D
+  T["Input Module 19"] --> D
+  U["Input Module 20"] --> D
+    V["UNIEGO Student"]
+```
+</details>
+
+![](images/9fa104728b49c1fef9cfb1df10d720eac6de8a60eefa7af5d7583beffb235123.jpg)
+
+<details>
+<summary>flowchart</summary>
+
+```mermaid
+graph TD
+  A["Unified Proxy Space"] --> B["Exo Skeleton"]
+  A --> C["Ego DINOv2"]
+  A --> D["Exo ViT"]
+  B --> E["Red Star"]
+  C --> E
+  D --> E
+  E --> F["Ego Depth"]
+```
+</details>
+
+Figure 1: (a) Naive multi-teacher distillation with heterogeneous teachers for learning unified egocentric representations results in representational gaps and conflicting gradients, as illustrated in (b). (c) In contrast, our proposed UNIEGO adopts a hierarchical distillation framework that mitigates these limitations through proxy-mediated learning, as shown in (d). Black dashed arrows illustrate the effects of this framework, shifting teachers into a unified representation space.
+
+## 2 Related Work
+
+## 2.1 Egocentric Representation Learning
+
+Over the past few years, egocentric representation learning has become a central problem in video understanding. Early works, such as EgoVLP [24] and LaViLa [54], focused on learning egocentric representations from egocentric videos alone [7, 13, 42, 31]. This is challenging: egocentric cameras move with the person, hands and objects frequently occlude one another, and the same action can look very different depending on the wearer and environment. More recent works augment egocentric representation learning with signals beyond the raw ego video, typically leveraging synchronized exocentric viewpoints [21, 48, 32, 10, 27] or additional modalities [12, 47, 44, 33]. For example, ViewpointRosetta [27] uses diffusion models to learn a mapping between egocentric and exocentric representation spaces, EgoDTM [47] learns 3D-aware egocentric representations through distillation from a depth-modality trained teacher. These methods typically exploit a single specific auxiliary signal (viewpoint/modality). In contrast our work aims to consolidate many heterogeneous teachers, spanning auxiliary viewpoints and modalities, into a single egocentric encoder.
+
+## 2.2 Multi-teacher knowledge distillation
+
+Knowledge distillation was originally introduced as a way to compress the knowledge of a large model, or an ensemble of models, into a single deployable student [15]. This idea has since been extended to multi-teacher distillation, where a student learns from several teachers rather than a single teacher. For example, approaches like AMTML-KD [26] and CA-MKD [53] adaptively distill from an ensemble of teachers operating on a single input modality, learning instance-level importance weights for each teacher. More recent work has considered a more heterogeneous form of multi-teacher distillation, where teachers are differentiated by their architecture or input modalities. For example, AM-RADIO [34] and Theia [40] both distill multiple vision foundation models with different architectures and pretraining objectives into a single universal model. The key differences between these approaches and UNIEGO are that: (1) we learn egocentric representation learning that has not been explored by existing works, (2) we leverage a more diverse set of teachers spanning various architectures, modalities, and viewpoints; and (3) we selectively choose which teachers to distill from rather than treating all teacher as equally useful.
+
+## 3 Method: Hierarchical Distillation Framework
+
+In this section, we present UNIEGO, a hierarchical multi-teacher distillation framework for egocentric $\boldsymbol { \mathcal { D } } = \{ ( x _ { i } ^ { e } , \{ x _ { i } ^ { r } \} _ { r = 1 } ^ { R } , y _ { i } ) \} _ { i = 1 } ^ { N }$ $\boldsymbol { x } _ { i } ^ { e }$ egocentric video clip, $\boldsymbol { x } _ { i } ^ { r }$ denotes the input to the r-th teacher model $\mathcal { T } _ { r } .$ , and $y _ { i } \in \mathcal { V }$ is the groundtruth action label. In practice, $\boldsymbol { x } _ { i } ^ { r }$ may coincide with $\boldsymbol { x } _ { i } ^ { e }$ , correspond to its exocentric counterpart, or constitute an entirely different modality (e.g., skeleton or depth), each paired with its associated teacher $\mathcal { T } _ { r }$ . Each teacher thus encodes a distinct representation, modality, or viewpoint. The objective is to learn a unified egocentric encoder $f ( \cdot )$ such that the resulting representation $f ( x ^ { e } )$ subsumes $\{ \mathcal { T } _ { r } ( x ^ { r } ) \} _ { r = } ^ { R }$ egocentric stream $x ^ { e }$ at inference.
+
+Level-I: Proxy Learning  
+Level-II: Proxy Merging and Selective Proxy Distillation  
+![](images/9c40f9e4441e36d1cb069d55ec6336ab6378127e564dd2d47284834ff9e7b23d.jpg)
+
+<details>
+<summary>flowchart</summary>
+
+```mermaid
+graph TD
+  A["Exo ViT"] --> B["T1"]
+  C["Ego Depth"] --> D["T2"]
+  E["Exo Skeleton"] --> F["T3"]
+  G["..."] --> H["TR"]
+  I["Ego DINOv2"] --> J["TR"]
+  B --> K["..."]
+  D --> K
+  F --> K
+  H --> K
+  J --> K
+  K --> L["P1"]
+  K --> M["P2"]
+  K --> N["P3"]
+  K --> O["PR"]
+  L --> P["a1*"]
+  M --> Q["a2*"]
+  N --> R["a3*"]
+  O --> S["aR*"]
+  P --> T["Weighted Merging"]
+  Q --> T
+  R --> T
+  S --> T
+  T --> U["UNIEGO"]
+  U --> V["Action Classification"]
+  W["Top-K Proxy Selection"] --> X["P1"]
+  W --> Y["P2"]
+  W --> Z["P3"]
+  W --> AA["..."]
+  W --> AB["PR"]
+  U --> AC["Distillation"]
+  AC --> AD["EGO RGB Input"]
+```
+</details>
+
+Figure 2: Overview of UNIEGO. UNIEGO learns a unified egocentric encoder through a twolevel proxy-mediated distillation framework. In Level-I (left), heterogeneous teachers spanning viewpoints, modalities, and foundation representations independently supervise egocentric proxy models, converting diverse teacher signals into a homogeneous proxy space. In Level-II (right), the proxy parameters are first merged to initialize the unified model, after which Selective Proxy Distillation (SPD) performs sample-wise reliability filtering and distills only from proxies that are correct and confident. At inference, only the final UNIEGO model operates using egocentric input.
+
+Overview. UNIEGO employs a hierarchical knowledge distillation strategy comprising two levels, as illustrated in Figure 2. In the first level, we train a set of representation-specific Proxy models by independently distilling knowledge from each teacher $\mathcal { T } _ { r }$ . Each proxy specializes in transferring representation- or modality- or viewpoint-specific information from its corresponding teacher, while bridging the domain gap between heterogeneous teacher representations and the egocentric input space, converting diverse supervisory signals into a homogeneous egocentric proxy space. In the second level, we perform Selective Proxy Distillation (SPD), which aggregates knowledge from all proxy models into the final UNIEGO model, initialized via a principled proxy merging strategy. The resulting Unified Egocentric Model effectively aggregates complementary knowledge from multiple teachers, with proxies acting as intermediaries for structured knowledge transfer. In the following subsections, we detail each component of UNIEGO’s learning paradigm.
+
+## 3.1 Level-I: Proxy Learning
+
+In the first distillation level, we train R proxy models $\{ P _ { r } \} _ { r = 1 } ^ { R }$ by independently distilling featurelevel knowledge from each teacher Tr into an egocentric student. Thus, for an egocentric video $\boldsymbol { x } _ { i } ^ { e }$ $\{ x _ { i } ^ { r } \} _ { r = 1 } ^ { R }$ from both egocentric and exocentric viewpoints, we extract representations via $R$ teacher networks $\{ \mathcal { T } _ { r } \} _ { r = 1 } ^ { R }$ , each providing viewpoint- and modality-specific supervision signals.
+
+All proxies share the same architecture but are trained with independent parameters. Since some teachers are foundation models that yield only feature embeddings rather than action logits, we adopt feature-level distillation throughout the entirety of this stage. Specifically, let $h _ { i } , z _ { i } = \mathsf { \bar { f } } ( x _ { i } ^ { e } )$ ) denote the feature embedding and action logits of the proxy student, and $h _ { i } ^ { r } = \dot { \mathcal { T } } _ { r } ( x _ { i } ^ { r } )$ the teacher’s feature embedding. Each proxy $P _ { r }$ is optimized via:
+
+$$
+\mathcal {L} _ {\mathrm{I}} ^ {r} = \frac {1}{N} \sum_ {i = 1} ^ {N} \left(\lambda_ {\mathrm{I}} D _ {\cos} (h _ {i}, h _ {i} ^ {r}) + \lambda_ {\mathrm{cls}} \mathrm{CE} (z _ {i}, y _ {i})\right), \tag {1}
+$$
+
+where $D _ { \mathrm { c o s } }$ denotes cosine distance and CE is the cross-entropy loss.
+
+Despite being induced by heterogeneous teachers, all proxies share the same egocentric architecture. $\{ P _ { r } \} _ { r = 1 } ^ { R } ,$ partitioned as $\mathcal { P } = \mathsf { \bar { \mathcal { P } } } _ { \mathrm { e g o } } \cup \mathcal { P } _ { \mathrm { e x o } }$ according to viewpoint. Each proxy $P _ { r }$ subsequently serves as a mediator in the second distillation level, reducing the modality and viewpoint gap between the original teachers and the final unified model.
+
+## 3.2 Level-II: Selective Proxy Distillation (SPD)
+
+$\{ P _ { r } \} _ { r = 1 } ^ { R } .$ knowledge into a single unified egocentric model $f ( \theta _ { U } ; \cdot )$ ). We first introduce a principled initialization of $\theta _ { U }$ via proxy merging, followed by SPD, which selectively transfers knowledge from the most reliable proxies for each training sample.
+
+Proxy Merging Initialization. We initialize $\theta _ { U }$ as an optimally weighted combination of the proxy parameters. Let $\theta _ { r }$ denote the parameters of proxy $P _ { r }$ . We solve for merging coefficients $\alpha ^ { * } \in \Delta ^ { \tilde { R } }$ that minimize the action classification loss over the training set:
+
+$$
+\theta_ {U} \leftarrow \theta_ {\text { merge }} ^ {*}, \quad \theta_ {\text { merge }} ^ {*} = \sum_ {r = 1} ^ {R} \alpha_ {r} ^ {*} \theta_ {r}, \quad \alpha^ {*} = \underset {\alpha \in \Delta^ {R}} {\arg \min} \frac {1}{N} \sum_ {i = 1} ^ {N} \mathrm{CE} \left(f \left(\sum_ {r = 1} ^ {R} \alpha_ {r} \theta_ {r}; x _ {i} ^ {e}\right), y _ {i}\right), \tag {2}
+$$
+
+$\Delta ^ { R } = \{ \alpha \in \mathbb { R } _ { > 0 } ^ { R } \mid \sum _ { r = 1 } ^ { R } \alpha _ { r } = 1 \}$ $f ( \theta ; x _ { i } ^ { e } )$ model with parameters θ evaluated on $\boldsymbol { x } _ { i } ^ { e }$ . This initialization places $\theta _ { U }$ in a favourable region of the optimization landscape, providing a stable starting point for subsequent distillation.
+
+Proposition 1 (Proxy Merged Initialization as a Loss Upper Bound for UNIEGO) Let ${ \mathcal { L } } ( \theta ) ~ =$ $\begin{array} { r } { \frac { 1 } { N } \sum _ { i = 1 } ^ { N } \mathrm { C E } ( f ( \theta ; x _ { i } ^ { e } ) , y _ { i } ) } \end{array}$ $\mathcal { L }$ containing $\{ \theta _ { r } \} _ { r = 1 } ^ { R }$ . Then for any $\alpha \in \Delta ^ { R }$ :
+
+$$
+\mathcal {L} \left(\sum_ {r = 1} ^ {R} \alpha_ {r} \theta_ {r}\right) \leq \sum_ {r = 1} ^ {R} \alpha_ {r} \mathcal {L} (\theta_ {r}), \tag {3}
+$$
+
+and consequently the optimally merged initialization satisfies: $\begin{array} { r } { \mathcal { L } ( \theta _ { m e r g e } ^ { * } ) \leq \operatorname* { m i n } _ { r } \mathcal { L } ( \theta _ { r } ) } \end{array}$ .
+
+The first inequality follows directly from Jensen’s inequality [3] applied to the convex loss ${ \mathcal { L } } .$ The second follows by noting that $\alpha ^ { * }$ is chosen to minimize $\begin{array} { r } { \mathcal { L } ( \mathbf { \bar { \sum } } _ { r } \alpha _ { r } \mathbf { \bar { \boldsymbol { \theta } } } _ { r } ) } \end{array}$ , and the degenerate solution $\alpha _ { r } = 1$ for any single r is feasible in $\Delta ^ { R }$ , so the optimum is no worse than the best individual proxy. $\theta _ { \mathrm { m e r g e } } ^ { * }$ convexity, placing UNIEGO in a flatter, better-generalizing region of the loss landscape [16, 11]. This favorable initialization reduces the optimization burden of SPD, as distillation begins from a point that already encodes the consensus of all R proxy representations rather than the bias of any single one.
+
+Proxy Selection. Rather than distilling from all proxies uniformly, SPD selects a reliable subset $S _ { i } \subseteq \{ 1 , \dots , R \}$ for each sample $\ v x _ { i } ^ { e }$ . We adopt a correctness-filtered small-loss criterion: a proxy $P _ { r }$ is considered a reliable candidate only if it correctly predicts the action class, i.e., $\hat { y } _ { i } ^ { r } = y _ { i }$ , where $\hat { y } _ { i } ^ { r } = \arg \operatorname* { m a x } _ { c } ( z _ { i } ^ { r } ) _ { c }$ . The candidate set is thus:
+
+$$
+\mathcal {C} _ {i} = \{r \in \{1, \dots , R \} \mid \hat {y} _ {i} ^ {r} = y _ {i} \}. \tag {4}
+$$
+
+Among candidates, proxy reliability is quantified by the cross-entropy loss $s _ { i } ^ { r } = \mathrm { C E } ( z _ { i } ^ { r } , y _ { i } )$ , where a lower loss indicates higher predictive confidence. When $| { \mathcal { C } } _ { i } | > 0$ , the top-k proxies with the lowest $s _ { i } ^ { r }$ are selected to form $S _ { i }$ . When ${ \mathcal { C } } _ { i } = \emptyset .$ , we set $\mathcal { S } _ { i } = \varnothing$ and skip distillation entirely for sample i, preventing the unified model from absorbing erroneous supervision.
+
+Selective Proxy Distillation. For samples where $\boldsymbol { S } _ { i } \neq \boldsymbol { \emptyset }$ , SPD transfers knowledge from the selected proxies to UNIEGO. Since all proxies are trained for action classification, they provide both feature embeddings and action logits. We therefore combine feature-level and logit-level distillation. Let $h _ { i } ^ { U } , z _ { i } ^ { U } = f ( \theta _ { U } ; x _ { i } ^ { e } )$ $\check { h } _ { i } ^ { P _ { r } } , z _ { i } ^ { P _ { r } } = f ( \theta _ { r } ; x _ { i } ^ { e } )$ UNIEGO and the r-th proxy $P _ { r } ,$ respectively. The per-sample SPD loss is:
+
+$$
+\mathcal {L} _ {\text { distill }} ^ {U} (i) = \frac {\beta_ {\text { feat }}}{| \mathcal {S} _ {i} |} \sum_ {j \in \mathcal {S} _ {i}} D _ {\cos} (h _ {i} ^ {U}, h _ {i} ^ {P _ {j}}) + \frac {\beta_ {\text { logit }}}{| \mathcal {S} _ {i} |} \sum_ {j \in \mathcal {S} _ {i}} D _ {\mathrm{KL}} \Big (\sigma (z _ {i} ^ {P _ {j}}) \| \sigma (z _ {i} ^ {U}) \Big), \tag {5}
+$$
+
+where $D _ { \mathrm { c o s } }$ and $D _ { \mathrm { K I } }$ denote cosine distance and KL divergence, $\sigma ( \cdot )$ is the softmax function, and $\beta _ { \mathrm { f e a t } } , \beta _ { \mathrm { l o g i t } }$ are loss weights. The total Level-II objective is:
+
+$$
+\mathcal {L} _ {\mathrm{II}} = \frac {1}{N} \sum_ {i = 1} ^ {N} \left(\mathbb {I} (| \mathcal {S} _ {i} | > 0) \mathcal {L} _ {\text { distill }} ^ {U} (i) + \beta_ {\mathrm{cls}} \mathrm{CE} (z _ {i} ^ {U}, y _ {i})\right), \tag {6}
+$$
+
+where $\beta _ { \mathrm { c l s } }$ is the classification loss weight and I(·) is the indicator function. During inference, only UNIEGO with egocentric input $x ^ { e }$ is required:
+
+$$
+\hat {y} = \arg \max _ {c} z _ {c} ^ {U}. \tag {7}
+$$
+
+No teacher network, exocentric stream, or proxy is needed at test time.
+
+## 4 Experiments
+
+We evaluate UNIEGO on three egocentric datasets across three video understanding tasks: action recognition, video retrieval, and action segmentation. In all experiments, UNIEGO requires only egocentric RGB video at inference.
+
+## 4.1 Experimental Setting
+
+Datasets. We evaluate on three publicly available ego-exo datasets: EgoExo-Fitness [22], Assembly101 [38], and EgoExo4D [14]. For EgoExo-Fitness and EgoExo4D, we follow the official evaluation splits [22, 14]. For Assembly101, we pair egocentric videos from the helmet-mounted ego04 camera with exocentric videos from the frontal exo03 camera, yielding 46,202 training and 15,307 test samples across 24 action classes. Further dataset details are provided in the Appendix.
+
+Implementation Details. We use TimeSformer [2] as the egocentric student backbone
+
+for UNIEGO $f ( \cdot )$ unless stated, which takes 8 frames sampled at $2 2 4 \times 2 2 4$ and produces a 768-dimensional video representation. During training, UNIEGO learns from multiple teacher representations $\mathcal { T } _ { r }$ which are detailed in Table 1. We apply a linear projection layer to align all teacher representations into the 768-dimensional student space to handle the dimensional mismatch between the student $( h _ { i } )$ and various teacher features $( h _ { i } ^ { r } )$ . All proxies are trained, following TimeSformer [2] default configuration, for 15 epochs using SGD with a base learning rate of 0.005, momentum of 0.9, and weight decay of $1 \times 1 0 ^ { - 4 }$ . We scale the learning rate by factors of 0.1 and 0.01 at epochs 11 and 14, respectively. All models are trained with a total batch size of 8 distributed across 4 NVIDIA RTX A5000 GPUs.
+
+In Level-I, we train 9 proxies across 6 teacher architectures and ego-exo viewpoints (Table 1), with loss weights $\lambda _ { \mathrm { I } } = 5$ and $\lambda _ { \mathrm { c l s } } = 1$ . In Level-II, the proxy merging coefficients $\alpha ^ { * }$ are optimized on the training set using Adam [18] for 2 epochs with a learning rate of 0.02 and weight decay of 0.01. For proxy selection, we set $K = 1$ for EgoExo-Fitness and Assembly101, and $\bar { K } = 2$ for EgoExo4D (ablated in Table 8). The Level-II loss weights are $\beta _ { \mathrm { f e a t } } = 5 , \beta _ { \mathrm { c l s } } = 1$ throughout, and $\beta _ { \mathrm { l o g i t } } = 1$ for EgoExo-Fitness and EgoExo4D and 5 for Assembly101, with KL divergence temperature $\tau = 1$ . All hyperparameters are selected on the respective validation sets.
+
+## 4.2 Comparison with State-of-the-Art
+
+Table 2 compares UNIEGO with recent methods across three egocentric action recognition benchmarks under two inference protocols: exocentric inference, where exocentric streams are available at test time, and egocentric inference, where only egocentric video is provided. The former serves as a privileged-view upper bound [22, 38], as exocentric cameras in these datasets capture global body pose and scene layout that are largely occluded in the egocentric field of view. All baselines except ST-GCN [49] utilize RGB input at inference.
+
+Table 1: Teacher pool for Level-I proxy learning.
+
+<table><tr><td>Modality</td><td>Viewpoint</td><td>Teacher Model</td><td>Feature Dim.</td></tr><tr><td rowspan="2">RGB</td><td>Ego</td><td>DINOv2 [29]</td><td>1024</td></tr><tr><td>Ego</td><td>SigLIP [52]</td><td>1152</td></tr><tr><td>Depth</td><td>Ego</td><td>DepthAnything [50]</td><td>1024</td></tr><tr><td rowspan="3">RGB</td><td>Exo</td><td>TimeSformer [2]</td><td>768</td></tr><tr><td>Exo</td><td>DINOv2 [29]</td><td>1024</td></tr><tr><td>Exo</td><td>Sk-Ego [37]</td><td>512</td></tr><tr><td rowspan="2">Skeleton</td><td>Exo</td><td>SigLIP [52]</td><td>1152</td></tr><tr><td>Exo</td><td>ST-GCN [49]</td><td>256</td></tr><tr><td>Depth</td><td>Exo</td><td>DepthAnything [50]</td><td>1024</td></tr></table>
+
+Table 2: Comparison with state-of-the-art methods on three egocentric action recognition datasets (EgoExo-Fitness, Assembly101, EgoExo4D). Dist. indicates whether the model performs distillation and Acc. indicates Top-1 accuracy.  
+(a) EgoExo-Fitness.
+
+<table><tr><td>Method</td><td>Dist.</td><td>Acc.</td></tr><tr><td colspan="3">Exocentric inference</td></tr><tr><td>TimeSformer [2]</td><td>✗</td><td>88.9</td></tr><tr><td>ST-GCN [49]</td><td>✗</td><td>87.5</td></tr><tr><td colspan="3">Egocentric inference</td></tr><tr><td>I3D [6]</td><td>✗</td><td>74.7</td></tr><tr><td>EgoVLP [24]</td><td>✗</td><td>74.7</td></tr><tr><td>ViFi-CLIP [35]</td><td>✗</td><td>81.8</td></tr><tr><td> $\pi$ -ViT [36]</td><td>√</td><td>80.1</td></tr><tr><td>TimeSformer [2]</td><td>✗</td><td>80.3</td></tr><tr><td>Multiteacher Dist. [2]</td><td>√</td><td>81.5</td></tr><tr><td>UNIEGO (Ours)</td><td>√</td><td>84.7</td></tr></table>
+
+(b) Assembly101.
+
+<table><tr><td>Method</td><td>Dist.</td><td>Acc.</td></tr><tr><td colspan="3">Exocentric inference</td></tr><tr><td>TimeSformer [2]</td><td>✕</td><td>62.7</td></tr><tr><td>ST-GCN [49]</td><td>✕</td><td>46.2</td></tr><tr><td colspan="3">Egocentric inference</td></tr><tr><td>TSM+TA [23, 39]</td><td>✕</td><td>40.5</td></tr><tr><td>ViFi-CLIP [35]</td><td>✕</td><td>46.6</td></tr><tr><td> $\pi$ -ViT [36]</td><td>√</td><td>47.8</td></tr><tr><td>TimeSformer [2]</td><td>✕</td><td>47.6</td></tr><tr><td>Multiteacher Dist. [2]</td><td>√</td><td>48.2</td></tr><tr><td>UNIEGO (Ours)</td><td>√</td><td>50.7</td></tr></table>
+
+(c) EgoExo4D.
+
+<table><tr><td>Method</td><td>Dist.</td><td>Acc.</td></tr><tr><td colspan="3">Exocentric inference</td></tr><tr><td>TimeSformer [2]</td><td>✕</td><td>26.0</td></tr><tr><td>ST-GCN [49]</td><td>✕</td><td>42.9</td></tr><tr><td colspan="3">Egocentric inference</td></tr><tr><td>VI Encoder [28]</td><td>√</td><td>40.3</td></tr><tr><td>EgoVLPv2 [31]</td><td>√</td><td>39.1</td></tr><tr><td>Ego-Exo MAE [21]</td><td>√</td><td>37.2</td></tr><tr><td>Viewpoint Distillation [15]</td><td>√</td><td>38.2</td></tr><tr><td>TimeSformer [2]</td><td>✕</td><td>39.9</td></tr><tr><td>Multiteacher Dist. [2]</td><td>√</td><td>40.6</td></tr><tr><td>UNIEGO (Ours)</td><td>√</td><td>41.1</td></tr></table>
+
+Table 3: Performance on Video Retrieval
+
+<table><tr><td rowspan="2">Method</td><td colspan="2">EgoExo-Fitness</td><td colspan="2">Assembly101</td><td colspan="2">EgoExo4D</td></tr><tr><td>mAP</td><td>R@1</td><td>mAP</td><td>R@1</td><td>mAP</td><td>R@1</td></tr><tr><td>Timesformer</td><td>0.474</td><td>0.712</td><td>0.226</td><td>0.410</td><td>0.167</td><td>0.326</td></tr><tr><td>Multiteacher Dist.</td><td>0.486</td><td>0.720</td><td>0.228</td><td>0.413</td><td>0.178</td><td>0.331</td></tr><tr><td>UNIEGO (Ours)</td><td>0.543</td><td>0.748</td><td>0.253</td><td>0.424</td><td>0.182</td><td>0.340</td></tr></table>
+
+Table 4: Performance on Egocentric Temporal Action Segmentation on Assembly101.
+
+<table><tr><td>Feature Backbone (Method)</td><td>F1@10</td><td>F1@25</td><td>F1@50</td><td>Edit</td><td>Acc</td></tr><tr><td>TimeSformer (Ego only)</td><td>16.2</td><td>14.1</td><td>10.4</td><td>18.7</td><td>34.4</td></tr><tr><td>TimeSformer (Multiteacher Dist.)</td><td>15.3</td><td>13.2</td><td>9.8</td><td>18.4</td><td>34.2</td></tr><tr><td>UNIEGO (Ours)</td><td>19.6</td><td>16.9</td><td>12.3</td><td>19.4</td><td>34.7</td></tr></table>
+
+UNIEGO consistently outperforms the TimeSformer backbone by +4.4%, +3.1%, and +1.2% on EgoExo-Fitness, Assembly101, and EgoExo4D respectively, demonstrating the benefit of consolidating diverse multi-teacher supervision. Against the strongest distillation baseline π-ViT [36], UNIEGO achieves gains of +4.6% and +2.9% on EgoExo-Fitness and Assembly101. Furthermore, UNIEGO consistently surpasses naive multi-teacher distillation [34, 40], confirming that proxymediated hierarchical distillation is essential for reconciling heterogeneous teacher representations into a unified egocentric encoder.
+
+The largest gains are observed on EgoExo-Fitness, where exocentric proxies $\mathcal { P } _ { \mathrm { e x o } }$ are particularly strong as many actions in this dataset involve full-body motion that is inherently occluded from the egocentric viewpoint, making exocentric supervision especially informative. Conversely, on EgoExo4D, exocentric proxies are weaker, as evidenced by the baseline TimeSformer achieving only 26.0% under exocentric inference, below its egocentric counterpart. Nevertheless, UNIEGO remains robust to this proxy inconsistency across viewpoints, as the adaptive selection mechanism in SPD suppresses unreliable proxies and routes supervision from the most discriminative sources available. Across all three benchmarks, UNIEGO achieves state-of-the-art action recognition performance under egocentric inference.
+
+Generalization Across Backbone Architectures. We verify that UNIEGO is architecture-agnostic by replacing the proxy and unified model backbone with UniFormer-S [20] and ViFi-CLIP [35] (Table 5). Across both alternatives, our hierarchical distillation framework consistently outperforms naive multiteacher distillation, confirming that the gains of UNIEGO are not tied to a specific video encoder. Notably, UniFormer-S, a compact 22M model yields significant classification improvements, demonstrating that our framework is equally effective for learning efficient unified egocentric representations which is crucial for deployment in resource-constrained egocentric applications.
+
+Table 5: Backbone robustness. UNIEGO improves across diverse egocentric backbones.
+
+<table><tr><td>Backbone</td><td>Method</td><td>EEF</td></tr><tr><td rowspan="3">TimeSformer [2]</td><td>baseline</td><td>80.3</td></tr><tr><td>Multiteacher Dist.</td><td>81.5</td></tr><tr><td>UNIEGO (Ours)</td><td>84.7</td></tr><tr><td rowspan="3">Uniformer-S [20]</td><td>baseline</td><td>68.4</td></tr><tr><td>Multiteacher Dist.</td><td>69.0</td></tr><tr><td>UNIEGO (Ours)</td><td>73.5</td></tr><tr><td rowspan="3">ViFi-CLIP [35]</td><td>baseline</td><td>81.8</td></tr><tr><td>Multiteacher Dist.</td><td>81.7</td></tr><tr><td>UNIEGO (Ours)</td><td>83.8</td></tr></table>
+
+Video Retrieval & Temporal Action Segmentation. Table 3 evaluates UNIEGO on video retrieval, performed by extracting features from action recognition trained backbones and computing their pairwise similarity across the test set. On EgoExo-Fitness, naive multi-teacher distillation yields only a marginal improvement of +0.012 mAP over the baseline, whereas SPD achieves a substantially larger gain of +0.057 mAP. This trend remains consistent across datasets, confirming that proxymediated distillation yields highly discriminative egocentric representations.
+
+Table 6: Ablation of components of UNIEGO.
+
+<table><tr><td>Proxy Learning</td><td>Proxy Merging</td><td>SPD</td><td>EEF</td><td>A101</td></tr><tr><td>✗</td><td>✗</td><td>✗</td><td>80.3</td><td>47.6</td></tr><tr><td>√</td><td>✗</td><td>✗</td><td>82.1</td><td>48.7</td></tr><tr><td>√</td><td>✗</td><td>√</td><td>82.3</td><td>48.9</td></tr><tr><td>√</td><td>√</td><td>✗</td><td>81.4</td><td>48.3</td></tr><tr><td>√</td><td>√</td><td>√</td><td>84.7</td><td>50.7</td></tr></table>
+
+Table 7: Alternative proxy merging strategies.
+
+<table><tr><td>Merging Strategy</td><td>EEF</td><td>A101</td></tr><tr><td>Best Proxy</td><td>83.7</td><td>50.6</td></tr><tr><td>Average</td><td>83.4</td><td>50.2</td></tr><tr><td>Layer-level</td><td>84.2</td><td>50.6</td></tr><tr><td>Parameter-level</td><td>83.6</td><td>50.4</td></tr><tr><td>Proxy Merging (Ours)</td><td>84.7</td><td>50.7</td></tr></table>
+
+Table 8: Strategies for Selective Proxy distillation.
+
+<table><tr><td>Distillation Strategy</td><td>EEF</td><td>A101</td></tr><tr><td>No Distillation</td><td>80.3</td><td>47.6</td></tr><tr><td>All Proxies</td><td>82.8</td><td>49.9</td></tr><tr><td>Top-1(Ego) + Top-1(Exo)</td><td>83.2</td><td>49.5</td></tr><tr><td>Top-3</td><td>83.2</td><td>50.0</td></tr><tr><td>Top-2</td><td>84.3</td><td>50.1</td></tr><tr><td>Top-1</td><td>84.7</td><td>50.7</td></tr></table>
+
+For temporal action segmentation on Assembly101, we extract features from three egocentric TimeSformer backbones: i) trained from scratch, ii) naive multi-teacher distillation, and iii) UNIEGO, and feed them into a fixed temporal encoder [43]. We evaluate the performance via F1 score, Edit distance, and frame accuracy. As shown in Table 4, UNIEGO features yield the strongest performance across all metrics. Notably, naive multi-teacher distillation degrades performance on all metrics relative to the scratch baseline, confirming that directly distilling heterogeneous teachers disrupts fine-grained temporal representations. In contrast, UNIEGO’s hierarchical distillation preserves the local temporal structure essential for frame-wise discrimination and boundary-sensitive segmentation.
+
+## 4.3 Ablation Studies and Model Diagnosis
+
+We perform all the ablations and diagnosis of UNIEGO on the EgoExo-Fitness (EEF) and Assembly101 (A101) datasets.
+
+Effect of Each Component. Table 6 ablates the three key components of UNIEGO: Proxy Learning, Proxy Merging Initialization, and SPD. Starting from the egocentric-only baseline, adding Level-I proxy learning followed by simultaneous distillation from all proxies yields gains of +1.8% and +1.1% on EEF and A101, respectively, highlighting the role of proxies as mediators. Then, replacing the simultaneous distillation in level-II with SPD further improves performance by +0.2% on both datasets, demonstrating that instance-adaptive proxy selection yields more reliable supervision than distilling from all proxies indiscriminately. We also observe that proxy merging initialization provides a strong starting point for SPD, as the merged model already achieves higher accuracy than the baseline. Finally, prepending proxy merging initialization before SPD achieves 84.7% and 50.7% on EEF and A101 resulting in overall improvements of +4.4% and +3.1% over the baseline. These results confirm the contribution of each component in our hierarchical distillation framework.
+
+Alternative proxy merging strategies Table 7 compares different strategies for initializing UNIEGO before SPD. Best Proxy uses the strongest individual proxy as the initialization, while Average uniformly averages the weights of all trained proxies. We also compare against finegrained learnable merging strategies: Layer-level learns separate merging weights for each layer, and Parameter-level learns separate merging weights for individual parameters. Although fine-grained merging offers greater flexibility, it does not improve performance in practice. Both layer-level and parameter-level merging outperform uniform averaging yet fall short of our global merging strategy, suggesting that a globally consistent combination of proxy parameters is more effective than local merging at the level of individual layers or parameter groups, likely due to the importance of maintaining parameter consistency across the full model.
+
+Alternative SPD strategies. In Table 8, we investigate various selective distillation strategies following the proxy merging initialization. SPD outperforms distillation from all proxies simultaneously, confirming that selective supervision mitigates conflicting gradients across homogeneous proxies. Enforcing viewpoint diversity via a $T o p \ – { I ( \bar { E g } o ) } + T o p \ – { I ( \bar { E x } \bar { o } ) }$ selection strategy degrades performance, particularly on Assembly101, indicating that global proxy selection is preferable, i.e., not all training samples contain discriminative information from every viewpoint, and forcing viewpoint-balanced selection introduces noisy supervision into UNIEGO. Among $K \in \{ 1 , 2 , 3 \}$ , all top-K variants outperform naive proxy distillation, demonstrating the robustness of the selection mechanism, with K = 1 yielding the best overall performance.
+
+![](images/16e2723abb6057ad43f3ac3f4bc65a7f4f79dfaf0df50f88f371e4ff9a38ecd4.jpg)
+
+<details>
+<summary>heatmap</summary>
+
+|        | Ego DINO | Ego SigLip | Ego Depth | Exo RGB | Exo SKL | Exo SigLip | Exo SkEgo | Exo Depth | Exo DINO |
+| ------ | -------- | ---------- | --------- | ------- | ------- | ---------- | --------- | --------- | -------- |
+| Ego DINO | 0.8      | 0.6        | 0.4       | 0.2     | 0.1     | 0.3        | 0.5       | 0.7       | 0.9      |
+| Ego SigLip | 0.7      | 0.5        | 0.3       | 0.1     | 0.2     | 0.4        | 0.6       | 0.8       | 0.7      |
+| Exo Depth | 0.6      | 0.4        | 0.2       | 0.3     | 0.5     | 0.7        | 0.9       | 0.6       | 0.5      |
+| Exo RGB | 0.5      | 0.3        | 0.1       | 0.4     | 0.6     | 0.8        | 0.7       | 0.5       | 0.4      |
+| Exo SKL | 0.4      | 0.2        | 0.3       | 0.5     | 0.7     | 0.9        | 0.6       | 0.4       | 0.3      |
+| Exo SigLip | 0.3      | 0.1        | 0.4       | 0.6     | 0.8     | 0.7       | 0.5       | 0.3       | 0.2      |
+| Exo SkEgo | 0.2      | 0.3        | 0.5       | 0.7     | 0.9     | 0.6       | 0.4       | 0.2       | 0.1      |
+| Exo Depth | 0.1      | 0.4        | 0.6       | 0.8     | 0.7     | 0.5       | 0.3       | 0.1       | 0.2      |
+| Exo DINO | 0.2      | 0.5        | 0.7       | 0.9     | 0.6     | 0.4       | 0.2       | 0.3       | 0.4      |
+</details>
+
+Figure 3: Teacher vs Proxy Centered Kernel Alignment scores  
+![](images/65f2b90308f2ec46a2a43186a6fba194ffbfc14ab3c125641abacbc864bd4fe1.jpg)
+
+<details>
+<summary>line chart</summary>
+
+| Epoch | Direct Multimodal Distillation | Selective Proxy Distillation (Top 3) | All Proxy Distillation | Selective Proxy Distillation (Top 1) |
+|-------|----------------------------------|----------------------------------------|------------------------|----------------------------------------|
+| 1     | 50                               | 50                                     | 55                     | 40                                     |
+| 2     | 60                               | 25                                     | 40                     | 18                                     |
+| 3     | 62                               | 20                                     | 35                     | 15                                     |
+| 4     | 63                               | 18                                     | 35                     | 12                                     |
+| 5     | 64                               | 17                                     | 35                     | 10                                     |
+| 6     | 65                               | 16                                     | 35                     | 9                                      |
+| 7     | 66                               | 15                                     | 35                     | 8                                      |
+| 8     | 67                               | 15                                     | 35                     | 9                                      |
+| 9     | 68                               | 16                                     | 35                     | 10                                     |
+| 10    | 69                               | 17                                     | 35                     | 11                                     |
+| 11    | 70                               | 18                                     | 35                     | 12                                     |
+| 12    | 70                               | 19                                     | 35                     | 10                                     |
+| 13    | 70                               | 20                                     | 35                     | 12                                     |
+| 14    | 70                               | 20                                     | 35                     | 14                                     |
+| 15    | 70                               | 20                                     | 35                     | 15                                     |
+</details>
+
+Figure 4: Gradient Conflict Rate across distillation strategies
+
+![](images/afc1dcde4f7e95b3b41b913017e7a48ab46298a255d94550139563abafe73e54.jpg)
+
+<details>
+<summary>line chart</summary>
+
+| Epoch | Direct Multimodal Distillation | Selective Proxy Distillation (Top 3) | Selective Proxy Distillation (Top 1) | All Proxy Distillation |
+|-------|----------------------------------|----------------------------------------|----------------------------------------|------------------------|
+| 1     | -0.025                           | -0.025                                 | 0.000                                  | -0.025                 |
+| 2     | -0.050                           | 0.025                                  | 0.050                                  | -0.025                 |
+| 3     | -0.060                           | 0.050                                  | 0.060                                  | -0.025                 |
+| 4     | -0.065                           | 0.060                                  | 0.070                                  | -0.025                 |
+| 5     | -0.070                           | 0.065                                  | 0.075                                  | -0.025                 |
+| 6     | -0.075                           | 0.070                                  | 0.080                                  | -0.025                 |
+| 7     | -0.075                           | 0.075                                  | 0.085                                  | -0.025                 |
+| 8     | -0.075                           | 0.075                                  | 0.085                                  | -0.025                 |
+| 9     | -0.075                           | 0.075                                  | 0.085                                  | -0.025                 |
+| 10    | -0.075                           | 0.075                                  | 0.085                                  | -0.025                 |
+| 11    | -0.075                           | 0.075                                  | 0.085                                  | -0.025                 |
+| 12    | -0.075                           | 0.075                                  | 0.085                                  | -0.025                 |
+| 13    | -0.075                           | 0.075                                  | 0.085                                  | -0.025                 |
+| 14    | -0.075                           | 0.075                                  | 0.085                                  | -0.025                 |
+| 15    | -0.075                           | 0.075                                  | 0.085                                  | -0.025                 |
+</details>
+
+Figure 5: Cosine Similarity among teacher and proxy gradients
+
+## 5 Does UNIEGO Mitigate Representational Gap and Conflicting Gradients?
+
+The answer is “Yes". We provide a model analysis to confirm that our hierarchical distillation framework addresses the two core failure modes of naive multi-teacher distillation: representational gap and conflicting gradients.
+
+Representational Gap. To quantify the representational gap among the R teachers, we visualize their pairwise linear Centered Kernel Alignment (CKA) [19] in Figure 3. The lower triangle displays teacher-pair similarities and the upper triangle displays proxy-pair similarities on EgoExo-Fitness. The substantially higher pairwise CKA among proxies than among teachers confirms that Level-I proxy learning projects heterogeneous teacher representations into a homogeneous egocentric embedding space, directly alleviating the representational gap that impedes naive multi-teacher distillation.
+
+Conflicting Gradients. Figures 4 and 5 report the gradient conflict rate which is defined as the fraction of distillation gradients that oppose the classification gradient, i.e., cos $( \nabla _ { \mathrm { c l s } } , \nabla _ { \mathrm { k d } } ) < 0$ , and the average cosine similarity across training epochs, respectively. Direct multi-teacher distillation exhibits severe gradient interference, confirming that heterogeneous teacher supervision actively opposes the primary task objective. Distilling from all proxies simultaneously reduces the conflict rate to 42–50% and shifts the cosine similarity toward zero, indicating partial mitigation. SPD further suppresses conflicts by routing supervision exclusively through reliable proxies, yielding consistently cooperative distillation and classification gradients. Together, these results confirm that proxy learning and SPD collectively transform a conflicting multi-teacher optimization landscape into a coherent one.
+
+## 6 Conclusion
+
+We presented UNIEGO, a unified egocentric encoder that consolidates diverse perceptual knowledge across viewpoints, modalities, and foundation model representations into a single model. The core of UNIEGO lies a hierarchical distillation framework in which representation-specific proxies serve as structured mediators, dissolving the representational gap between heterogeneous teachers before selective, reliability-guided distillation assembles their collective knowledge into a coherent unified representation. The result is an egocentric encoder that sees further, knows more, and generalizes better without requiring more than a single egocentric camera at inference.
+
+While we hope UNIEGO inspires broader exploration into systematically harvesting and reconciling diverse supervisory signals for richer egocentric perception, the current framework has an important limitation. Specifically, UNIEGO relies on a small-loss criterion for proxy selection, a heuristic that, while effective, does not exploit the full potential of the proxy pool. A learned selection mechanism, one that dynamically weighs proxy reliability as a function of both the input and the training state could yield richer and more adaptive supervision. Designing such an adaptive proxy selection strategy is non-trivial, and we leave this as a promising direction for future work.
+
+## Acknowledgements
+
+This work was supported in part by the National Science Foundation (IIS-2245652) and the University of North Carolina at Charlotte. Computational resources were provided by the NSF National AI Research Resource Pilot (NAIRR240338) and NCShare.
+
+## References
+
+[1] Varun Belagali, Saarthak Kapse, Pierre Marza, Srijan Das, Zilinghan Li, Sofiène Boutaj, Pushpak Pati, Srikar Yellapragada, Tarak Nath Nandi, Ravi K Madduri, Joel Saltz, Prateek Prasanna, Stergios Christodoulidis, Maria Vakalopoulou, and Dimitris Samaras. Ticon: A slide-level tile contextualizer for histopathology representation learning, 2025.  
+[2] Gedas Bertasius, Heng Wang, and Lorenzo Torresani. Is space-time attention all you need for video understanding? In Proceedings of the International Conference on Machine Learning (ICML), July 2021.  
+[3] Stephen Boyd and Lieven Vandenberghe. Convex Optimization. Cambridge University Press, 2004.  
+[4] Zhe Cao, Gines Hidalgo Martinez, Tomas Simon, Shih-En Wei, and Yaser Sheikh. Openpose: Realtime multi-person 2d pose estimation using part affinity fields. IEEE Transactions on Pattern Analysis and Machine Intelligence, 2019.  
+[5] Mathilde Caron, Hugo Touvron, Ishan Misra, Hervé Jégou, Julien Mairal, Piotr Bojanowski, and Armand Joulin. Emerging properties in self-supervised vision transformers. In Proceedings of the IEEE/CVF International Conference on Computer Vision, pages 9650–9660, 2021.  
+[6] Joao Carreira and Andrew Zisserman. Quo vadis, action recognition? a new model and the kinetics dataset. In Conference on Computer Vision and Pattern Recognition, pages 4724–4733. IEEE, 2017.  
+[7] Dima Damen, Hazel Doughty, Giovanni Maria Farinella, Sanja Fidler, Antonino Furnari, Evangelos Kazakos, Davide Moltisanti, Jonathan Munro, Toby Perrett, Will Price, and Michael Wray. Scaling egocentric vision: The epic-kitchens dataset. In European Conference on Computer Vision (ECCV), 2018.  
+[8] Srijan Das, Rui Dai, Di Yang, and Francois Bremond. Vpn++: Rethinking video-pose embeddings for understanding activities of daily living. IEEE Transactions on Pattern Analysis and Machine Intelligence, pages 1–1, 2021.  
+[9] Srijan Das, Saurav Sharma, Rui Dai, Francois Bremond, and Monique Thonnat. Vpn: Learning video-pose embedding for activities of daily living. In European Conference on Computer Vision, pages 72–90. Springer, 2020.  
+[10] Zi-Yi Dou, Xitong Yang, Tushar Nagarajan, Huiyu Wang, Jing Huang, Nanyun Peng, Kris Kitani, and Fu-Jen Chu. Unlocking exocentric video-language data for egocentric video representation learning, 2024.  
+[11] Jonathan Frankle, Gintare Karolina Dziugaite, Daniel M Roy, and Michael Carlin. Linear mode connectivity and the lottery ticket hypothesis. In International Conference on Machine Learning (ICML), 2020.  
+[12] Xinyu Gong, Sreyas Mohan, Naina Dhingra, Jean-Charles Bazin, Yilei Li, Zhangyang Wang, and Rakesh Ranjan. Mmg-ego4d: Multi-modal generalization in egocentric action recognition. In Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition (CVPR), 2023.  
+[13] Kristen Grauman, Andrew Westbury, Eugene Byrne, Zachary Chavis, Antonino Furnari, Rohit Girdhar, Jackson Hamburger, Hao Jiang, Miao Liu, Xingyu Liu, Miguel Martin, Tushar Nagarajan, Ilija Radosavovic, Santhosh Kumar Ramakrishnan, Fiona Ryan, Jayant Sharma, Michael Wray, Mengmeng Xu, Eric Zhongcong Xu, Chen Zhao, Siddhant Bansal, Dhruv Batra,
+
+Vincent Cartillier, Sean Crane, Tien Do, Morrie Doulaty, Akshay Erapalli, Christoph Feichtenhofer, Adriano Fragomeni, Qichen Fu, Abrham Gebreselasie, Cristina Gonzalez, James Hillis, Xuhua Huang, Yifei Huang, Wenqi Jia, Weslie Khoo, Jachym Kolar, Satwik Kottur, Anurag Kumar, Federico Landini, Chao Li, Yanghao Li, Zhenqiang Li, Karttikeya Mangalam, Raghava Modhugu, Jonathan Munro, Tullie Murrell, Takumi Nishiyasu, Will Price, Paola Ruiz Puentes, Merey Ramazanova, Leda Sari, Kiran Somasundaram, Audrey Southerland, Yusuke Sugano, Ruijie Tao, Minh Vo, Yuchen Wang, Xindi Wu, Takuma Yagi, Ziwei Zhao, Yunyi Zhu, Pablo Arbelaez, David Crandall, Dima Damen, Giovanni Maria Farinella, Christian Fuegen, Bernard Ghanem, Vamsi Krishna Ithapu, C. V. Jawahar, Hanbyul Joo, Kris Kitani, Haizhou Li, Richard Newcombe, Aude Oliva, Hyun Soo Park, James M. Rehg, Yoichi Sato, Jianbo Shi, Mike Zheng Shou, Antonio Torralba, Lorenzo Torresani, Mingfei Yan, and Jitendra Malik. Ego4d: Around the world in 3,000 hours of egocentric video. In Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition, pages 18995–19012, 2022.
+
+[14] Kristen Grauman, Andrew Westbury, Lorenzo Torresani, Kris Kitani, Jitendra Malik, Triantafyllos Afouras, Kumar Ashutosh, Vijay Baiyya, Siddhant Bansal, Bikram Boote, Eugene Byrne, Zachary Chavis, Joya Chen, Feng Cheng, Fu-Jen Chu, Sean Crane, Avijit Dasgupta, Jing Dong, María Escobar, Cristhian Forigua, Abrham Kahsay Gebreselasie, Sanjay Haresh, Jing Huang, Md Mohaiminul Islam, Suyog Dutt Jain, Rawal Khirodkar, Devansh Kukreja, Kevin J. Liang, Jia-Wei Liu, Sagnik Majumder, Yongsen Mao, Miguel Martin, Effrosyni Mavroudi, Tushar Nagarajan, Francesco Ragusa, Santhosh K. Ramakrishnan, Luigi Seminara, Arjun Somayazulu, Yale Song, Shan Su, Zihui Xue, Edward Zhang, Jinxu Zhang, Ángela Castillo, Changan Chen, Xinzhu Fu, Ryosuke Furuta, Cristina González, Prince Gupta, Jiabo Hu, Yifei Huang, Yiming Huang, Weslie Khoo, Anushk Kumar, Robert Kuo, Sach Lakhavani, Miao Liu, Romy Mi Luo, Zhengyi Luo, Brighid Meredith, Austin Miller, Oluwatumininu Oguntola, Xiaqing Pan, Penny Peng, Shraman Pramanick, Merey Ramazanova, Fiona Ryan, W. Shan, Kiran Somasundaram, Chenan Song, Audrey Southerland, Masatoshi Tateno, Huiyu Wang, Yuchen Wang, Takuma Yagi, Mingfei Yan, Xitong Yang, Ze Yu, Shengxin Zha, Chen Zhao, Ziwei Zhao, Zhifan Zhu, J. F. Zhuo, Pablo Arbeláez, Gedas Bertasius, David J. Crandall, Dima Damen, Jakob Julian Engel, Giovanni Maria Farinella, Antonino Furnari, Bernard Ghanem, Judy Hoffman, C. V. Jawahar, Richard A. Newcombe, Hyun Soo Park, James M. Rehg, Yoichi Sato, Manolis Savva, Jianbo Shi, Mike Zheng Shou, and Michael Wray. Ego-exo4d: Understanding skilled human activity from first- and third-person perspectives. 2024 IEEE/CVF Conference on Computer Vision and Pattern Recognition (CVPR), pages 19383–19400, 2023.  
+[15] Geoffrey Hinton, Oriol Vinyals, and Jeff Dean. Distilling the knowledge in a neural network, 2015.  
+[16] Pavel Izmailov, Dmitrii Podoprikhin, Timur Garipov, Dmitry Vetrov, and Andrew Gordon Wilson. Averaging weights leads to wider optima and better generalization. In Uncertainty in Artificial Intelligence (UAI), 2018.  
+[17] Qiuhong Ke, Mohammed Bennamoun, Senjian An, Ferdous Sohel, and Farid Boussaid. Learning clip representations for skeleton-based 3d action recognition. IEEE Transactions on Image Processing, 27(6):2842–2855, June 2018.  
+[18] Diederik P Kingma and Jimmy Ba. Adam: A method for stochastic optimization. In International Conference on Learning Representations (ICLR), 2015.  
+[19] Simon Kornblith, Mohammad Norouzi, Honglak Lee, and Geoffrey Hinton. Similarity of neural network representations revisited. In Proceedings of the 36th International Conference on Machine Learning (ICML), 2019.  
+[20] Kunchang Li, Yali Wang, Junhao Zhang, Peng Gao, Guanglu Song, Yu Liu, Hongsheng Li, and Yu Jiao Qiao. Uniformer: Unifying convolution and self-attention for visual recognition. IEEE Transactions on Pattern Analysis and Machine Intelligence, 45:12581–12600, 2022.  
+[21] Yanghao Li, Tushar Nagarajan, Bo Xiong, and Kristen Grauman. Ego-exo: Transferring visual representations from third-person to first-person videos. In Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition (CVPR), pages 10995–11005, 2021.  
+[22] Yuan-Ming Li, Wei-Jin Huang, An-Lan Wang, Ling-An Zeng, Jing-Ke Meng, and Wei-Shi Zheng. Egoexo-fitness: towards egocentric and exocentric full-body action understanding. In European Conference on Computer Vision, pages 363–382. Springer, 2024.  
+[23] Ji Lin, Chuang Gan, and Song Han. Tsm: Temporal shift module for efficient video understanding. In Proceedings of the IEEE International Conference on Computer Vision, 2019.  
+[24] Kevin Qinghong Lin, Alex Jinpeng Wang, Mattia Soldan, Michael Wray, Rui Yan, Eric Zhongcong Xu, Difei Gao, Rongcheng Tu, Wenzhe Zhao, Weijie Kong, et al. Egocentric videolanguage pretraining. arXiv preprint arXiv:2206.01670, 2022.  
+[25] Bo Liu, Xingchao Liu, Xiaojie Jin, Peter Stone, and Qiang Liu. Conflict-averse gradient descent for multi-task learning. In M. Ranzato, A. Beygelzimer, Y. Dauphin, P.S. Liang, and J. Wortman Vaughan, editors, Advances in Neural Information Processing Systems, volume 34, pages 18873–18885. Curran Associates, Inc., 2021.  
+[26] Yuang Liu, Wei Zhang, and Jun Wang. Adaptive multi-teacher multi-level knowledge distillation. Neurocomputing, 2020.  
+[27] Mi Luo, Zihui Xue, Alex Dimakis, and Kristen Grauman. Viewpoint rosetta stone: Unlocking unpaired ego-exo videos for view-invariant representation learning. In Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition, 2025.  
+[28] Aaron van den Oord, Yazhe Li, and Oriol Vinyals. Representation learning with contrastive predictive coding. arXiv preprint arXiv:1807.03748, 2018.  
+[29] Maxime Oquab, Timothée Darcet, Theo Moutakanni, Huy V. Vo, Marc Szafraniec, Vasil Khalidov, Pierre Fernandez, Daniel Haziza, Francisco Massa, Alaaeldin El-Nouby, Russell Howes, Po-Yao Huang, Hu Xu, Vasu Sharma, Shang-Wen Li, Wojciech Galuba, Mike Rabbat, Mido Assran, Nicolas Ballas, Gabriel Synnaeve, Ishan Misra, Hervé Jégou, Julien Mairal, Patrick Labatut, Armand Joulin, and Piotr Bojanowski. Dinov2: Learning robust visual features without supervision. Transactions on Machine Learning Research (TMLR), 2024.  
+[30] Dario Pavllo, Christoph Feichtenhofer, David Grangier, and Michael Auli. 3d human pose estimation in video with temporal convolutions and semi-supervised training. In Conference on Computer Vision and Pattern Recognition (CVPR), 2019.  
+[31] Shraman Pramanick, Yale Song, Sayan Nag, Kevin Qinghong Lin, Hardik Shah, Mike Zheng Shou, Rama Chellappa, and Pengchuan Zhang. Egovlpv2: Egocentric video-language pretraining with fusion in the backbone. In Proceedings of the IEEE/CVF International Conference on Computer Vision, pages 5285–5297, 2023.  
+[32] Camillo Quattrocchi, Antonino Furnari, Daniele Di Mauro, Mario Valerio Giuffrida, and Giovanni Maria Farinella. Synchronization is all you need: Exocentric-to-egocentric transfer for temporal action segmentation with unlabeled synchronized video pairs. In European Conference on Computer Vision (ECCV), 2024.  
+[33] Gorjan Radevski, Dusan Grujicic, Marie-Francine Moens, Matthew Blaschko, and Tinne Tuytelaars. Multimodal distillation for egocentric action recognition. In Proceedings of the IEEE/CVF International Conference on Computer Vision (ICCV), 2023.  
+[34] Mike Ranzinger, Greg Heinrich, Jan Kautz, and Pavlo Molchanov. Am-radio: Agglomerative vision foundation model reduce all domains into one. In Proceedings of the IEEE/CVF conference on computer vision and pattern recognition, 2024.  
+[35] Hanoona Rasheed, Muhammad Uzair Khattak, Muhammad Maaz, Salman Khan, and Fahad Shahbaz Khan. Finetuned clip models are efficient video learners. In The IEEE/CVF Conference on Computer Vision and Pattern Recognition, 2023.  
+[36] Dominick Reilly and Srijan Das. Just add π! pose induced video transformers for understanding activities of daily living. In Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition (CVPR), June 2024.  
+[37] Dominick Reilly, Manish Kumar Govind, Le Xue, and Srijan Das. From my view to yours: Ego-augmented learning in large vision language models for understanding exocentric daily living activities, 2025.  
+[38] Fadime Sener, Dibyadip Chatterjee, Daniel Shelepov, Kun He, Dipika Singhania, Robert Wang, and Angela Yao. Assembly101: A large-scale multi-view video dataset for understanding procedural activities. 2022 IEEE/CVF Conference on Computer Vision and Pattern Recognition (CVPR), pages 21064–21074, 2022.  
+[39] Fadime Sener, Dipika Singhania, and Angela Yao. Temporal aggregate representations for long-range video understanding. In European conference on computer vision, pages 154–171. Springer, 2020.  
+[40] Jinghuan Shang, Karl Schmeckpeper, Brandon B May, Maria Vittoria Minniti, Tarik Kelestemur, David Watkins, and Laura Herlant. Theia: Distilling diverse vision foundation models for robot learning. arXiv preprint arXiv:2407.20179, 2024.  
+[41] Guangyuan Shi, Qimai Li, Wenlong Zhang, Jiaxin Chen, and Xiao-Ming Wu. Recon: Reducing conflicting gradients from the root for multi-task learning. In International Conference on Learning Representations (ICLR), 2023.  
+[42] Gunnar A Sigurdsson, Abhinav Gupta, Cordelia Schmid, Ali Farhadi, and Karteek Alahari. Charades-ego: A large-scale dataset of paired third and first person videos. arXiv preprint arXiv:1804.09626, 2018.  
+[43] Arkaprava Sinha, Monish Soundar Raj, Pu Wang, Ahmed Helmy, and Srijan Das. Mstemba: Multi-scale temporal mamba for efficient temporal action detection. arXiv preprint arXiv:2501.06138, 2025.  
+[44] Shuhan Tan, Tushar Nagarajan, and Kristen Grauman. Egodistill: Egocentric head motion distillation for efficient video understanding. arXiv preprint arXiv:2301.02217, 2023.  
+[45] Anirudh Thatipelli, Shao-Yuan Lo, and Amit K. Roy-Chowdhury. Egocentric and exocentric methods: A short survey. Computer Vision and Image Understanding, 257:104371, 2025.  
+[46] Thomas Wimmer, Prune Truong, Marie-Julie Rakotosaona, Michael Oechsle, Federico Tombari, Bernt Schiele, and Jan Eric Lenssen. Anyup: Universal feature upsampling. In Proceedings of the International Conference on Learning Representations (ICLR), 2026.  
+[47] Boshen Xu, Yuting Mei, Xinbi Liu, Sipeng Zheng, and Qin Jin. Egodtm: Towards 3d-aware egocentric video-language pretraining. In Advances in Neural Information Processing Systems (NeurIPS), 2025.  
+[48] Zihui Xue and Kristen Grauman. Learning fine-grained view-invariant representations from unpaired ego-exo videos via temporal alignment. In Advances in Neural Information Processing Systems (NeurIPS), 2023.  
+[49] Sijie Yan, Yuanjun Xiong, and Dahua Lin. Spatial temporal graph convolutional networks for skeleton-based action recognition. In Thirty-second AAAI conference on artificial intelligence, 2018.  
+[50] Lihe Yang, Bingyi Kang, Zilong Huang, Zhen Zhao, Xiaogang Xu, Jiashi Feng, and Hengshuang Zhao. Depth anything v2. In Advances in Neural Information Processing Systems, 2024.  
+[51] Tianhe Yu, Saurabh Kumar, Abhishek Gupta, Sergey Levine, Karol Hausman, and Chelsea Finn. Gradient surgery for multi-task learning. In H. Larochelle, M. Ranzato, R. Hadsell, M. F. Balcan, and H. Lin, editors, Advances in Neural Information Processing Systems, volume 33, pages 5434–5445. Curran Associates, Inc., 2020.  
+[52] Xiaohua Zhai, Basil Mustafa, Alexander Kolesnikov, and Lucas Beyer. Sigmoid loss for language image pre-training. In Proceedings of the IEEE/CVF International Conference on Computer Vision. IEEE, 2023.  
+[53] Hailin Zhang, Defang Chen, and Can Wang. Confidence-aware multi-teacher knowledge distillation. In ICASSP 2022 - 2022 IEEE International Conference on Acoustics, Speech and Signal Processing (ICASSP), 2022.  
+[54] Yue Zhao, Ishan Misra, Philipp Krahenbuhl, and Rohit Girdhar. Learning video representations from large language models. 2023 IEEE/CVF Conference on Computer Vision and Pattern Recognition (CVPR), pages 6586–6597, 2022.
+
+## A Overview
+
+The appendix is categorized into the following parts:
+
+• Section B: Detailed Data Description  
+• Section C: Proxy Performances  
+• Section D: Analysis of Proxy Selection  
+• Section E: Analysis of Proxy Merging  
+• Section F: Action Analysis
+
+## B Detailed Dataset Description
+
+EgoExo-Fitness [22] is a full-body action understanding dataset containing synchronized egocentric and exocentric videos of fitness activities. It consists of 12 action categories and approximately 32 hours of video. Following the official split, we use 3,522 training samples and 912 test samples, with action sequences ranging from 10 to 30 seconds in duration.
+
+Assembly101 [38] is a large-scale procedural activity dataset comprising 167 hours of video, recording subjects performing object assembly tasks from multiple viewpoints. In our experiments, we pair the egocentric videos from the helmet-mounted ego04 camera with the corresponding exocentric videos in front exo03 camera. The resulting split contains 46,202 training samples and 15,307 test samples over 24 action classes.
+
+EgoExo4D [14] is a large-scale egocentric-exocentric video dataset covering a diverse range of skilled human activities. For each sample, we pair the egocentric video with the exocentric view annotated as the best view by human annotators. The dataset split used in our experiments contains 30,660 training samples and 9,356 test samples across 665 action classes.
+
+## C Proxy Performances
+
+Table 9: Performance of the base ego model and different ego/exo proxy models across EgoExo-Fitness (EEF), Assembly101 (A101), and Ego-Exo4D (EE4D).
+
+<table><tr><td>Modality</td><td>Viewpoint</td><td>Model</td><td>EEF</td><td>A101</td><td>EE4D</td></tr><tr><td>RGB [2]</td><td>Ego</td><td>Base Ego ModelTimeSformer</td><td>80.3</td><td>47.6</td><td>39.9</td></tr><tr><td>Depth [50]</td><td>Ego</td><td>Ego Proxies ( $\mathcal{P}_{ego}$ )DepthAnything</td><td>80.3</td><td>48.2</td><td>40.1</td></tr><tr><td>DINOv2 [29]</td><td>Ego</td><td>DINOv2</td><td>80.9</td><td>48.4</td><td>40.2</td></tr><tr><td>SigLip [52]</td><td>Ego</td><td>SigLip</td><td>80.7</td><td>48.4</td><td>40.6</td></tr><tr><td colspan="6">Exo Proxies ( $\mathcal{P}_{exo}$ )</td></tr><tr><td>RGB [2]</td><td>Exo</td><td>TimeSformer</td><td>81.9</td><td>49.5</td><td>40.0</td></tr><tr><td>Skeleton [49]</td><td>Exo</td><td>ST-GCN</td><td>81.9</td><td>48.4</td><td>40.3</td></tr><tr><td>Depth [50]</td><td>Exo</td><td>DepthAnything</td><td>80.3</td><td>48.5</td><td>39.9</td></tr><tr><td>DINOv2 [29]</td><td>Exo</td><td>DINOv2</td><td>80.7</td><td>48.2</td><td>39.5</td></tr><tr><td>Sk-Ego [37]</td><td>Exo</td><td>Sk-Ego</td><td>81.9</td><td>48.3</td><td>40.2</td></tr><tr><td>SigLip [52]</td><td>Exo</td><td>SigLip</td><td>80.3</td><td>48.0</td><td>40.6</td></tr></table>
+
+In Table 9, we report the action classification performance of all proxies (Pr) after Level-I distillation. We observe that not all proxies outperform the base ego model, motivating the need for proxy selection. Nevertheless, the final performance of UNIEGO surpasses that of all individual proxies, corroborating the effectiveness of our proposed hierarchical distillation framework.
+
+## D Analysis of Proxy Selection.
+
+In Figure 6, we analyze the selection frequency of each proxy during the Level-II selective proxy distillation (SPD). First, every proxy is selected to some extent across all benchmarks, indicating that SPD does not collapse to a single teacher. Unsurprisingly, we find that the routing distributions are not consistent across benchmarks, and that proxy selection is strongly correlated with the distinct dataset characteristics. On EgoExo-Fitness, the SPD primarily selects Exo Skeleton and Exo RGB. This is consistent with the nature of the dataset, which consists largely of full-body fitness motions: exocentric and skeleton-based proxies provide supervision for body pose and motion patterns that are often only partially visible from a head-mounted camera. In Assembly101, the selection is more diverse, assigning a larger weight to egocentric proxies. This suggests that, compared to EgoExo-Fitness, more actions in Assembly101 rely on egocentric cues such as local hand-object interactions and subtle manipulation dynamics. On EgoExo4D, there is a notable increase in the selection of the Exo SkEgo proxy. We attribute this to the high-resolution, spatially localized nature of the benchmark: action-relevant regions can occupy only a small part of the full frame, and the SkEgo crop provides a more focused view of these regions.
+
+![](images/ef0939de6e8533ce2e4d509121823fa1efafb2e3b335312a0178e576ba9c41b1.jpg)
+
+<details>
+<summary>radar chart</summary>
+
+| Category       | A101  | EEF   | EE4D  |
+| -------------- | ----- | ----- | ----- |
+| Ego Depth      | 0.5   | 0.3   | 0.4   |
+| Ego DINOv2     | 0.6   | 0.2   | 0.5   |
+| Ego SigLIP     | 0.7   | 0.1   | 0.6   |
+| Exo Depth      | 0.8   | 0.2   | 0.7   |
+| Exo DINOv2     | 0.9   | 0.3   | 0.8   |
+| Exo RGB        | 1.0   | 0.4   | 0.9   |
+| Exo SigLIP     | 0.8   | 0.3   | 0.7   |
+| Exo SkEgo      | 0.7   | 0.2   | 0.6   |
+| Exo Skeleton   | 0.6   | 0.1   | 0.5   |
+</details>
+
+Figure 6: Selective Proxy Distillation Statistics.
+
+Table 10: Effect of different proxy initialization strategies before and after SPD on EgoExo-Fitness (EEF) and Assembly101 (A101).
+
+<table><tr><td rowspan="2">Method</td><td colspan="2">EEF</td><td colspan="2">A101</td></tr><tr><td>Before SPD</td><td>After SPD</td><td>Before SPD</td><td>After SPD</td></tr><tr><td>Best Proxy</td><td>81.9</td><td>83.7</td><td>49.5</td><td>50.6</td></tr><tr><td>Average</td><td>79.9</td><td>83.4</td><td>42.9</td><td>50.2</td></tr><tr><td>Layer-level</td><td>80.9</td><td>84.2</td><td>43.5</td><td>50.6</td></tr><tr><td>Parameter-level</td><td>79.8</td><td>83.6</td><td>43.4</td><td>50.4</td></tr><tr><td>Model-level</td><td>81.4</td><td>84.7</td><td>48.3</td><td>50.7</td></tr></table>
+
+## E Analysis of Proxy Merging
+
+Table 10 compares action classification performance of UNIEGO under different proxy merging initialization strategies, before and after SPD, on EgoExo-Fitness and Assembly101. Across all initialization strategies, SPD consistently improves performance, confirming the importance of the second distillation level. Notably, the best-performing initialization prior to SPD, i.e., the single Best Proxy, does not yield the strongest post-SPD accuracy. Instead, the model soup, i.e., the learned convex combination of all proxy parameters, provides the most effective initialization for SPD. This suggests that the advantage of proxy merging lies not in its standalone classification performance but in its ability to place UNIEGO in a well-conditioned region of the loss landscape that is maximally amenable to subsequent distillation.
+
+## F Action Analysis
+
+As shown in Table 11 and Table 12, exo\_rgb is the most frequently selected proxy on both datasets, with a sample-weighted selection rate of 0.349 on EEF and 0.182 on A101, followed by exo\_skl. However, the class-level separation between the top-ranked and second-ranked proxies differs substantially across datasets. The average per-class gap between the top-1 and top-2 proxies is 0.186 on EEF, but only 0.069 on A101. This suggests that EEF classes often have a more clearly preferred proxy, whereas A101 exhibits a flatter proxy distribution, where several proxies can have similar selection rates for the same class.
+
+Table 11: Per-class top-1 proxy selection rates on EEF (12 classes)
+
+<table><tr><td>class_name</td><td>none</td><td>exo_rgb</td><td>exo_skl</td><td>exo_siglip</td><td>ego_siglip</td><td>exo_skego</td><td>ego_depth</td><td>exo_depth</td><td>exo_dino</td><td>ego_dino</td></tr><tr><td>Kneeling pushing-ups</td><td>0.053</td><td>0.139</td><td>0.172</td><td>0.053</td><td>0.053</td><td>0.139</td><td>0.013</td><td>0.179</td><td>0.106</td><td>0.093</td></tr><tr><td>Push-ups</td><td>0.000</td><td>0.500</td><td>0.400</td><td>0.000</td><td>0.025</td><td>0.042</td><td>0.008</td><td>0.017</td><td>0.000</td><td>0.008</td></tr><tr><td>Kneeling Torso Twist</td><td>0.046</td><td>0.431</td><td>0.218</td><td>0.030</td><td>0.005</td><td>0.056</td><td>0.117</td><td>0.041</td><td>0.036</td><td>0.020</td></tr><tr><td>Knee Raise &amp; Abd. Contract</td><td>0.055</td><td>0.290</td><td>0.428</td><td>0.014</td><td>0.028</td><td>0.048</td><td>0.055</td><td>0.034</td><td>0.021</td><td>0.028</td></tr><tr><td>Shoulder Bridge</td><td>0.000</td><td>0.987</td><td>0.013</td><td>0.000</td><td>0.000</td><td>0.000</td><td>0.000</td><td>0.000</td><td>0.000</td><td>0.000</td></tr><tr><td>Sit-ups</td><td>0.057</td><td>0.172</td><td>0.261</td><td>0.070</td><td>0.013</td><td>0.108</td><td>0.076</td><td>0.146</td><td>0.045</td><td>0.051</td></tr><tr><td>Leg Reverse Lunge</td><td>0.038</td><td>0.106</td><td>0.477</td><td>0.068</td><td>0.068</td><td>0.114</td><td>0.023</td><td>0.045</td><td>0.053</td><td>0.008</td></tr><tr><td>Leg Lunge With Knee Lift</td><td>0.118</td><td>0.300</td><td>0.291</td><td>0.073</td><td>0.036</td><td>0.109</td><td>0.036</td><td>0.018</td><td>0.009</td><td>0.009</td></tr><tr><td>Sumo Squat</td><td>0.112</td><td>0.388</td><td>0.233</td><td>0.017</td><td>0.017</td><td>0.198</td><td>0.009</td><td>0.009</td><td>0.000</td><td>0.017</td></tr><tr><td>Jumping Jacks</td><td>0.042</td><td>0.242</td><td>0.347</td><td>0.126</td><td>0.016</td><td>0.153</td><td>0.016</td><td>0.005</td><td>0.021</td><td>0.032</td></tr><tr><td>High Knee</td><td>0.054</td><td>0.264</td><td>0.271</td><td>0.085</td><td>0.078</td><td>0.078</td><td>0.008</td><td>0.054</td><td>0.054</td><td>0.054</td></tr><tr><td>Clap Jacks</td><td>0.011</td><td>0.345</td><td>0.414</td><td>0.029</td><td>0.023</td><td>0.063</td><td>0.029</td><td>0.057</td><td>0.011</td><td>0.017</td></tr></table>
+
+Table 12: Per-class top-1 proxy selection rates on A101 (24 classes).
+
+<table><tr><td>class_name</td><td>none</td><td>exo_rgb</td><td>exo_skl</td><td>exo_siglip</td><td>ego_siglip</td><td>exo_skego</td><td>ego_depth</td><td>exo_depth</td><td>exo_dino</td><td>ego_dino</td></tr><tr><td>pick up</td><td>0.049</td><td>0.256</td><td>0.125</td><td>0.089</td><td>0.079</td><td>0.104</td><td>0.079</td><td>0.042</td><td>0.076</td><td>0.102</td></tr><tr><td>put down</td><td>0.051</td><td>0.204</td><td>0.122</td><td>0.107</td><td>0.106</td><td>0.103</td><td>0.091</td><td>0.045</td><td>0.076</td><td>0.094</td></tr><tr><td>inspect</td><td>0.186</td><td>0.136</td><td>0.108</td><td>0.080</td><td>0.066</td><td>0.092</td><td>0.085</td><td>0.052</td><td>0.091</td><td>0.105</td></tr><tr><td>rotate</td><td>0.307</td><td>0.123</td><td>0.085</td><td>0.056</td><td>0.049</td><td>0.090</td><td>0.088</td><td>0.037</td><td>0.083</td><td>0.082</td></tr><tr><td>unscrew</td><td>0.042</td><td>0.196</td><td>0.124</td><td>0.100</td><td>0.100</td><td>0.123</td><td>0.124</td><td>0.044</td><td>0.064</td><td>0.085</td></tr><tr><td>position</td><td>0.107</td><td>0.139</td><td>0.081</td><td>0.075</td><td>0.086</td><td>0.143</td><td>0.125</td><td>0.048</td><td>0.088</td><td>0.108</td></tr><tr><td>screw</td><td>0.048</td><td>0.250</td><td>0.078</td><td>0.099</td><td>0.087</td><td>0.088</td><td>0.128</td><td>0.042</td><td>0.087</td><td>0.091</td></tr><tr><td>remove</td><td>0.187</td><td>0.125</td><td>0.138</td><td>0.064</td><td>0.067</td><td>0.098</td><td>0.090</td><td>0.044</td><td>0.085</td><td>0.102</td></tr><tr><td>position screw on</td><td>0.134</td><td>0.141</td><td>0.086</td><td>0.104</td><td>0.084</td><td>0.088</td><td>0.111</td><td>0.039</td><td>0.107</td><td>0.106</td></tr><tr><td>remove screw from</td><td>0.201</td><td>0.115</td><td>0.117</td><td>0.092</td><td>0.068</td><td>0.071</td><td>0.083</td><td>0.043</td><td>0.141</td><td>0.071</td></tr><tr><td>pass</td><td>0.165</td><td>0.142</td><td>0.089</td><td>0.059</td><td>0.067</td><td>0.123</td><td>0.086</td><td>0.040</td><td>0.130</td><td>0.098</td></tr><tr><td>tilt up</td><td>0.291</td><td>0.143</td><td>0.041</td><td>0.058</td><td>0.082</td><td>0.057</td><td>0.102</td><td>0.042</td><td>0.087</td><td>0.097</td></tr><tr><td>attempt to position</td><td>0.413</td><td>0.084</td><td>0.097</td><td>0.036</td><td>0.025</td><td>0.088</td><td>0.089</td><td>0.035</td><td>0.048</td><td>0.085</td></tr><tr><td>push</td><td>0.336</td><td>0.063</td><td>0.098</td><td>0.076</td><td>0.096</td><td>0.102</td><td>0.061</td><td>0.054</td><td>0.078</td><td>0.036</td></tr><tr><td>tilt down</td><td>0.224</td><td>0.179</td><td>0.116</td><td>0.078</td><td>0.068</td><td>0.108</td><td>0.046</td><td>0.041</td><td>0.079</td><td>0.059</td></tr><tr><td>pull</td><td>0.370</td><td>0.082</td><td>0.123</td><td>0.042</td><td>0.062</td><td>0.071</td><td>0.076</td><td>0.027</td><td>0.120</td><td>0.029</td></tr><tr><td>attempt to remove</td><td>0.595</td><td>0.067</td><td>0.031</td><td>0.029</td><td>0.012</td><td>0.084</td><td>0.061</td><td>0.006</td><td>0.027</td><td>0.088</td></tr><tr><td>attempt to pick up</td><td>0.754</td><td>0.040</td><td>0.022</td><td>0.025</td><td>0.020</td><td>0.047</td><td>0.025</td><td>0.017</td><td>0.017</td><td>0.032</td></tr><tr><td>clap</td><td>0.007</td><td>0.883</td><td>0.047</td><td>0.010</td><td>0.005</td><td>0.015</td><td>0.005</td><td>0.007</td><td>0.012</td><td>0.007</td></tr><tr><td>attempt to unscrew</td><td>0.515</td><td>0.095</td><td>0.075</td><td>0.037</td><td>0.050</td><td>0.025</td><td>0.079</td><td>0.008</td><td>0.017</td><td>0.100</td></tr><tr><td>attempt to put down</td><td>0.988</td><td>0.012</td><td>0.000</td><td>0.000</td><td>0.000</td><td>0.000</td><td>0.000</td><td>0.000</td><td>0.000</td><td>0.000</td></tr><tr><td>spin</td><td>0.452</td><td>0.170</td><td>0.064</td><td>0.053</td><td>0.027</td><td>0.059</td><td>0.037</td><td>0.027</td><td>0.032</td><td>0.080</td></tr><tr><td>attempt to screw</td><td>0.951</td><td>0.019</td><td>0.010</td><td>0.000</td><td>0.000</td><td>0.010</td><td>0.000</td><td>0.000</td><td>0.010</td><td>0.000</td></tr><tr><td>shake</td><td>0.783</td><td>0.075</td><td>0.000</td><td>0.025</td><td>0.000</td><td>0.017</td><td>0.008</td><td>0.000</td><td>0.042</td><td>0.050</td></tr></table>
+
+Interestingly, exo\_depth shows a highly class-specific behavior. Although it has the lowest aggregate selection rate among all proxies (0.042 on A101 and 0.052 on EEF), it is the most frequently selected proxy for Kneeling push-ups on EEF, with a selection rate of 0.179, exceeding the second-ranked proxy, exo\_rgb, at 0.139. This indicates that depth can provide useful supervision for specific classes where geometric cues, such as body-to-floor distance, are discriminative. However, its low aggregate selection rate also suggests that this benefit is not broadly shared across classes.
+
+The behavior of ego-side proxies also differs across the two datasets. On EEF, all ego-side proxies have relatively low selection rates, around 0.03, suggesting that third-person supervision is more reliable for large whole-body fitness motions. In contrast, on A101, ego\_dino and ego\_depth reach selection rates of approximately 0.091 and rank among the middle group of proxies. Each of them is also the most frequently selected proxy for at least one attempt-to-\* class. This difference is consistent with the task characteristics of A101: fine-grained assembly actions are often handand object-centric, and egocentric observations may capture local manipulation details that are less visible from exocentric views.

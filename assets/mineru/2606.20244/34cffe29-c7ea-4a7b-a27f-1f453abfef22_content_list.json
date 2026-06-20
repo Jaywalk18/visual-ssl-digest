@@ -1,0 +1,2950 @@
+[
+    {
+        "type": "text",
+        "text": "SPOT-E: Test-Time Entropy Shaping with Visual Spotlights for Frozen VLMs",
+        "text_level": 1,
+        "bbox": [
+            217,
+            140,
+            782,
+            185
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "Bo Yin1, Xiaobin Hu1, Chengming Xu2, Ruolin Shen3, Mo Yang4, Jiangning Zhang5, Peng-Tao Jiang6, Cheng Tan7, and Shuicheng Yan1",
+        "bbox": [
+            225,
+            210,
+            777,
+            244
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "1 National University of Singapore",
+        "bbox": [
+            383,
+            253,
+            620,
+            268
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "2 Fudan University",
+        "bbox": [
+            434,
+            268,
+            566,
+            282
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "3 Technical University of Munich",
+        "bbox": [
+            388,
+            282,
+            612,
+            296
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "4 Sagenic Tech",
+        "bbox": [
+            450,
+            296,
+            552,
+            309
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "5 Zhejiang University",
+        "bbox": [
+            428,
+            309,
+            573,
+            324
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "6 vivo",
+        "bbox": [
+            478,
+            324,
+            522,
+            335
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "7 Shanghai Artificial Intelligence Laboratory",
+        "bbox": [
+            352,
+            337,
+            650,
+            352
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "Abstract. Vision-language models (VLMs) often underperform on evidence intensive tasks because decisive visual evidence are small, localized, and easy to overlook, leading to failures in evidence readout even when high-level reasoning is intact. Prior inference-time visual interventions can improve grounding without retraining, but they are largely openloop and lack a mechanism to verify whether highlighted evidence is actually used. We study answer-span prediction entropy as a model-internal feedback signal and show that naive entropy minimization is ambiguous, since low entropy may arise from evidence-grounded confidence or shortcut collapse. To resolve this ambiguity, we introduce low-entropy anchors and an entropy-shaping objective that reduces answer uncertainty while preserving baseline high-confidence tokens. We instantiate this principle in SPOT-E, a plug-and-play test-time method that produces questionconditioned spotlights, optimized per instance via light-weight tuning based on Group Relative Policy Optimization (GRPO). Across all benchmarks and different VLM families, SPOT-E yields consistent gains and improved robustness under visual corruptions. Code is publicly available at: https://github.com/YinBo0927/SPOT-E",
+        "bbox": [
+            259,
+            386,
+            738,
+            635
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "Keywords: Vision-language models · Test-time adaptation · Entropy",
+        "bbox": [
+            261,
+            648,
+            728,
+            662
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "1 Introduction",
+        "text_level": 2,
+        "bbox": [
+            215,
+            688,
+            374,
+            704
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "Vision-language models have made rapid progress in multimodal understanding, yet they remain unreliable on evidence-intensive tasks such as chart reading and document parsing [21, 24, 25]. In these settings, the decisive evidence are often small and localized. A model may describe a correct reasoning plan, for example it may say “read the y-axis value and then compare the two bars”, but still misread the underlying number, causing the final answer to fail [10,23,46]. This pattern exposes a bottleneck that we call the evidence utilization gap: the model can reason about what evidence is needed, but cannot reliably extract and focus on the fine-grained visual evidence that determines the answer [31]. Closing this gap for frozen, already-deployed VLMs, without costly retraining or task-specific annotation, is practically urgent and methodologically challenging [40]. How can we improve evidence utilization at inference time while keeping the backbone frozen?",
+        "bbox": [
+            212,
+            719,
+            787,
+            839
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "aside_text",
+        "text": "arXiv:2606.20244v1 [cs.CV] 18 Jun 2026",
+        "bbox": [
+            22,
+            276,
+            60,
+            717
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "",
+        "bbox": [
+            212,
+            146,
+            787,
+            220
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "text",
+        "text": "A natural direction is to intervene on the visual input at test time so that decisive regions become more accessible to the model [3, 30, 35, 37, 45]. Methods such as FGVP instantiate this idea and report gains without modifying model weights [36,43]. However, these approaches are open-loop. They apply a fixed intervention but do not provide a mechanism to verify whether the model actually relied on the emphasized evidence. When the selected region misses the decisive evidence, or when the intervention degrades the evidence itself, the failure remains invisible to the method and therefore cannot be corrected. This raises a key question: how can we design a test-time intervention that is both instance-adaptive and self-verifying?",
+        "bbox": [
+            212,
+            222,
+            787,
+            373
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "text",
+        "text": "These limitations motivate a closed-loop feedback signal that can be obtained from a frozen VLM during inference [17, 28]. We find that answer entropy, computed from the logits over the tokens that form a structured final answer, tracks evidence usability. Entropy is low when the decisive visual cues are clear, and it increases when they are obscured [18,19,34,38]. However, entropy reduction is inherently ambiguous. Both evidence-grounded confidence and shortcut behaviors can produce low entropy [4, 9, 39], as shown in Fig. 2. As a result, minimizing entropy alone can drive the model into confident-but-wrong shortcuts, creating a systematic failure mode in the absence of labels.",
+        "bbox": [
+            212,
+            373,
+            787,
+            508
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "text",
+        "text": "To resolve this ambiguity, we introduce an entropy-shaping principle that reduces answer entropy while preserving the model’s baseline high-confidence predictions on the unmodified input. Specifically, we identify low-entropy anchors as token positions where the frozen VLM is already near-deterministic at baseline, and we penalize interventions that disrupt these anchors. This yields a label-free objective that favors evidence-supported confidence over shortcutinduced collapse. We instantiate the principle in SPOT-E, a test-time visual adaptation framework that augments a frozen VLM with a lightweight, questionconditioned visual spotlight module that produces spotlights. For each instance, we optimize only the spotlight-module LoRA [13] parameters using Group Relative Policy Optimization [27] under the entropy-shaping reward.",
+        "bbox": [
+            212,
+            510,
+            787,
+            676
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "text",
+        "text": "Our contributions are summarized as follows:",
+        "bbox": [
+            238,
+            676,
+            566,
+            690
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "list",
+        "sub_type": "text",
+        "list_items": [
+            "– Entropy Signal. We identify answer entropy as a label-free signal for evidence utilization in frozen VLMs, and show that entropy reduction is inherently ambiguous.",
+            "– Entropy Shaping. We propose low-entropy anchors and an entropy-shaping reward to disambiguate evidence-supported confidence from shortcut collapse.",
+            "– SPOT-E Framework. We present SPOT-E, a plug-and-play test-time framework that keeps the VLM frozen while optimizing a question-conditioned visual spotlight via per-instance GRPO to leverage low-entropy anchors."
+        ],
+        "bbox": [
+            225,
+            703,
+            795,
+            839
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "page_number",
+        "text": "2",
+        "bbox": [
+            217,
+            114,
+            228,
+            126
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "header",
+        "text": "Yin et al.",
+        "bbox": [
+            271,
+            114,
+            336,
+            127
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "text",
+        "text": "– Broad Evaluation. We conduct extensive evaluations across both opensource and closed-source VLM families and multiple backbones, demonstrating consistent gains on diverse benchmarks, with particularly strong improvements on evidence-intensive tasks and improved robustness under corruptions.",
+        "bbox": [
+            223,
+            146,
+            787,
+            220
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "2 Related Work",
+        "text_level": 2,
+        "bbox": [
+            215,
+            244,
+            387,
+            258
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "2.1 Inference-Time Visual Interventions and Visual Prompting",
+        "text_level": 2,
+        "bbox": [
+            214,
+            276,
+            746,
+            292
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "Inference-time visual interventions improve grounding by manipulating the visual evidence presented to a frozen VLM at test time [2,5]. Common approaches include overlaying marks or masks to highlight regions, as in FGVP and Set-of-Mark prompting, selectively cropping or zooming into candidate areas to preserve small details, as in ViCrop, and spatial transformations that reallocate resolution toward query-relevant evidence, as in AttWarp [8, 35, 36, 45]. Another practical direction uses attention- or score-guided prompting strategies such as API-style prompting to steer the model toward informative regions without retraining [42]. These methods are appealing because they are lightweight and model-agnostic, but they often depend on fixed heuristics, external region proposals, or discrete choices that may be brittle across instances. Our method fits this paradigm and uses a question-conditioned spotlight for adaptive evidence emphasis under a frozen backbone.",
+        "bbox": [
+            212,
+            300,
+            787,
+            497
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "2.2 Entropy and Uncertainty for Evidence Localization",
+        "text_level": 2,
+        "bbox": [
+            214,
+            518,
+            683,
+            535
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "Uncertainty signals have long been used to diagnose and steer model behavior at inference time [12, 18]. Entropy over output distributions is a common proxy for confidence and has been used for calibration and selective prediction, selfconsistency and re-ranking, as well as entropy- and confidence-driven decoding heuristics [11, 19, 33]. In vision and multimodal reasoning, uncertainty is also closely tied to evidence localization, since failures in fine-grained grounding often appear as high uncertainty concentrated on a small set of answer tokens [14, 20]. Recent multimodal work further leverages entropy or confidence to trigger additional perception, guide region selection, and filter visually unsupported generations [40, 41]. Our method combines an entropy-shaping reward with a question-conditioned visual spotlight to encourage decisive, visually supported answers without updating the frozen VLM.",
+        "bbox": [
+            212,
+            544,
+            787,
+            726
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "3 Motivation",
+        "text_level": 2,
+        "bbox": [
+            215,
+            748,
+            359,
+            763
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "In this section, we motivate an entropy-centric view of visual adaptation in VLMs. When decisive visual evidence is usable, the model commits more consistently to a single final answer, making answer-span entropy a proxy for evidence use. We show that this effect is spatially grounded and can change sharply with the visibility of the decisive region. However, entropy reduction is ambiguous and may also reflect shortcut behaviors that suppress hard evidence, yielding confident-but-wrong predictions. To resolve this, we introduce low-entropy anchors and an entropy-shaping principle that reduces answer entropy while preserving anchor stability.",
+        "bbox": [
+            214,
+            779,
+            787,
+            840
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "header",
+        "text": "Test-Time Entropy Shaping with Visual Spotlights for Frozen VLMs",
+        "bbox": [
+            274,
+            113,
+            732,
+            128
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "page_number",
+        "text": "",
+        "bbox": [
+            774,
+            116,
+            784,
+            126
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "",
+        "bbox": [
+            212,
+            146,
+            787,
+            220
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "text",
+        "text": "3.1 Notation",
+        "text_level": 2,
+        "bbox": [
+            215,
+            239,
+            336,
+            253
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "text",
+        "text": "Consider a frozen VLM $F _ { \\phi } ,$ which typically comprises a visual encoder $V _ { : }$ a multimodal connector $F _ { c } ,$ and an LLM M. Given an input image x and a user instruction $q ,$ the model receives a multimodal sequence of visual tokens $\\{ v _ { 1 } , v _ { 2 } , \\ldots , v _ { n } \\}$ and text tokens $\\{ t _ { 1 } , t _ { 2 } , \\ldots , t _ { m } \\}$ . During decoding, $F _ { \\phi }$ processes the concatenated multimodal context $\\{ v _ { 1 } , \\ldots , v _ { n } , t _ { 1 } , \\ldots , t _ { m } \\}$ followed by previously generated tokens $\\{ y _ { 1 } , \\dotsc , y _ { k - 1 } \\}$ to predict the next token $y _ { k }$ .",
+        "bbox": [
+            214,
+            261,
+            787,
+            352
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "text",
+        "text": "Next-token distribution. At decoding step $k ,$ the model outputs a distribution over the vocabulary W:",
+        "bbox": [
+            214,
+            352,
+            785,
+            382
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "equation",
+        "text": "$$\np _ {k} (w) = p _ {\\phi} (w \\mid x, q, y _ {<   k}), \\quad w \\in \\mathcal {W}, \\tag {1}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            364,
+            391,
+            785,
+            406
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "text",
+        "text": "where $y _ { < k } = \\left( y _ { 1 } , \\ldots , y _ { k - 1 } \\right)$ is the prefix.",
+        "bbox": [
+            214,
+            412,
+            506,
+            428
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "text",
+        "text": "Entropy. We quantify predictive uncertainty using Shannon entropy of the nexttoken distribution:",
+        "bbox": [
+            214,
+            428,
+            784,
+            455
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "equation",
+        "text": "$$\nH _ {k} (x, q) = - \\sum_ {w \\in \\mathcal {W}} p _ {k} (w) \\log p _ {k} (w). \\tag {2}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            380,
+            463,
+            785,
+            494
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "text",
+        "text": "Unless otherwise specified, log(·) denotes the natural logarithm. We compute entropy under the baseline decoding trajectory.",
+        "bbox": [
+            214,
+            500,
+            784,
+            530
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "text",
+        "text": "Answer entropy. Long-form generations contain many tokens weakly related to visual evidence. To focus on evidence-relevant uncertainty, we compute entropy on a final answer span. We enforce a structured output format (e.g., Final answer: $\\ldots \\biggr )$ and extract the token indices of the answer span as $\\mathcal { T } _ { \\mathrm { a n s } }$ . We define answer entropy as",
+        "bbox": [
+            214,
+            531,
+            787,
+            606
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "equation",
+        "text": "$$\nH _ {\\text { ans }} (x, q) = \\frac {1}{| \\mathcal {T} _ {\\text { ans }} |} \\sum_ {k \\in \\mathcal {T} _ {\\text { ans }}} H _ {k} (x, q). \\tag {3}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            380,
+            613,
+            785,
+            648
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "text",
+        "text": "For an intervention producing a modified input x˜, we measure entropy reduction by",
+        "bbox": [
+            214,
+            654,
+            784,
+            683
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "equation",
+        "text": "$$\n\\Delta H _ {\\text { ans }} = H _ {\\text { ans }} (\\tilde {x}, q) - H _ {\\text { ans }} (x, q). \\tag {4}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            385,
+            685,
+            785,
+            700
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "text",
+        "text": "Low-entropy anchors. To characterize token positions that the base model is already confident about, we define a set of low-entropy anchors under the baseline input. Concretely, we select the K positions with the smallest nexttoken entropies:",
+        "bbox": [
+            214,
+            704,
+            787,
+            763
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "equation",
+        "text": "$$\n\\mathcal {I} _ {\\text { low }} (x, q) = \\operatorname{TopK} _ {\\text { small }} \\left(\\left\\{H _ {k} (x, q) \\right\\} _ {k = 1} ^ {T}\\right), \\tag {5}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            362,
+            771,
+            785,
+            789
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "text",
+        "text": "where $T$ is the output length. In addition, we evaluate $H _ { k } ( \\tilde { x } , q )$ by conditioning on the baseline token prefix to align anchor positions. These anchors are later used to distinguish desirable entropy reduction from shortcut behaviors.",
+        "bbox": [
+            214,
+            794,
+            787,
+            839
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "page_number",
+        "text": "4",
+        "bbox": [
+            217,
+            114,
+            228,
+            126
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "header",
+        "text": "Yin et al.",
+        "bbox": [
+            271,
+            114,
+            336,
+            127
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "image",
+        "img_path": "images/30873c9d4aa8e9d1d85d0ba30e69de12a4cbf1ef14066df57edbc62ed1280350.jpg",
+        "image_caption": [
+            "Fig. 1: Localized evidence controls answer entropy. We apply region-level blur to a subset of grid regions while keeping all other pixels unchanged, and measure $H _ { \\mathrm { a n s } } ( \\tilde { x } _ { S } , q )$ ."
+        ],
+        "image_footnote": [],
+        "content": "Question: What color is the upper garment of the person in the image?\nOrigin\tBlur 0\tBlur 1\tBlur 2\nAnswer: Red\nHans: 0.45\tAnswer: Red\nHans: 0.50\tAnswer: Red\nHans: 0.27\tAnswer: Green\nHans: 0.98",
+        "sub_type": "text_image",
+        "bbox": [
+            264,
+            146,
+            743,
+            287
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "3.2 Visual Evidence Shapes Answer Entropy",
+        "text_level": 2,
+        "bbox": [
+            214,
+            363,
+            598,
+            378
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "A natural intuition is that visual evidence affects a VLM’s answer mainly by changing how certain the model can be at the point of committing to the final answer. If the decisive evidence for $q$ is clear, the model should concentrate probability mass on a consistent answer; if the evidence is weak or obscured, the model should remain uncertain. We operationalize this intuition using the answer entropy $H _ { \\mathrm { a n s } } ( x , q )$ in Eq. (3), which measures uncertainty on the final answer.",
+        "bbox": [
+            212,
+            392,
+            784,
+            496
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "We validate the intuition with a simple spatial sensitivity analysis. We partition the image into a coarse grid of regions $\\mathcal { R } = \\{ r _ { 1 } , . . . , r _ { M } \\}$ and apply localized interventions while keeping the rest of the input unchanged. For a given subset size n, we sample subsets $S \\subseteq \\mathcal { R }$ with $| S | = n$ , construct an intervened image $\\tilde { x } _ { S }$ by applying a fixed region-level transformation only within regions in $S$ such as blurring, and compute $H _ { \\mathrm { a n s } } ( \\tilde { x } _ { S } , q )$ . Fig. 1 shows a representative instance where suppressing the localized evidence required by q increases $H _ { \\mathrm { a n s } }$ , eventually leading to incorrect predictions.",
+        "bbox": [
+            212,
+            500,
+            787,
+            619
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "3.3 Entropy Reduction is Ambiguous",
+        "text_level": 2,
+        "bbox": [
+            214,
+            645,
+            537,
+            660
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "The previous subsection suggests that lowering $H _ { \\mathrm { a n s } }$ often correlates with making decisive evidence more usable. However, entropy reduction alone is ambiguous: an intervention may decrease uncertainty not by improving evidence quality, but by attenuating hard evidence and steering the model toward priors or salient distractors, yielding confident-but-wrong answers with smaller $H _ { \\mathrm { a n s } }$ .",
+        "bbox": [
+            212,
+            674,
+            784,
+            750
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "We illustrate this ambiguity within the same subset-based intervention framework, but now restricting attention to the most entropy-sensitive singleton subset. Concretely, for any subset $S \\subseteq \\mathcal { R }$ , we define the entropy change induced by intervening on S as",
+        "bbox": [
+            212,
+            750,
+            784,
+            810
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "equation",
+        "text": "$$\n\\Delta H _ {\\mathrm{ans}} (S) = H _ {\\mathrm{ans}} (x, q) - H _ {\\mathrm{ans}} (\\tilde {x} _ {S}, q), \\tag {6}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            359,
+            824,
+            785,
+            840
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "header",
+        "text": "Test-Time Entropy Shaping with Visual Spotlights for Frozen VLMs",
+        "bbox": [
+            274,
+            114,
+            732,
+            128
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "page_number",
+        "text": "",
+        "bbox": [
+            774,
+            116,
+            784,
+            126
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "image",
+        "img_path": "images/215ec8b13fcc9b466c3a49105ebdc1790705df3415a8d4e3d13fd5735ae3c4cf.jpg",
+        "image_caption": [
+            "Fig. 2: Entropy reduction can be misleading. We blur only the most entropysensitive singleton subset $S ^ { \\star }$ with strength α. $H _ { \\mathrm { a n s } }$ often rises as evidence becomes ambiguous, but may drop again when evidence is erased."
+        ],
+        "image_footnote": [],
+        "content": "",
+        "bbox": [
+            218,
+            143,
+            784,
+            306
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "text",
+        "text": "where $\\tilde { x } _ { S }$ modifies only regions in S and leaves all other pixels unchanged. We identify",
+        "bbox": [
+            212,
+            392,
+            784,
+            422
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "equation",
+        "text": "$$\nS ^ {\\star} = \\arg \\max _ {| S | = 1} \\left| \\Delta H _ {\\text { ans }} (S) \\right|, \\tag {7}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            403,
+            422,
+            785,
+            448
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "text",
+        "text": "i.e., the single-region subset whose intervention yields the largest magnitude of entropy change. We then keep the rest of the image fixed and construct a family of intervened inputs by blurring only within $S ^ { \\star }$ with increasing strength α:",
+        "bbox": [
+            212,
+            455,
+            787,
+            502
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "equation",
+        "text": "$$\n\\tilde {x} _ {S ^ {\\star}} ^ {(\\alpha)} = \\mathcal {A} _ {\\alpha} (x; S ^ {\\star}), \\quad \\alpha \\in [ 0, 1 ], \\tag {8}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            380,
+            512,
+            785,
+            532
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "text",
+        "text": "where $\\mathcal { A } _ { \\alpha } ( \\cdot ; S ^ { \\star } )$ applies blur of level α to regions in $S ^ { \\star }$ and leaves all other regions unchanged.",
+        "bbox": [
+            212,
+            544,
+            784,
+            575
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "text",
+        "text": "Sweeping α typically yields a non-monotonic profile: $H _ { \\mathrm { a n s } }$ is low when the evidence is clear (small α), peaks when the evidence becomes ambiguous (intermediate α), and can decrease again once the evidence is effectively erased (large $\\alpha )$ , as the model collapses to a prior- or distractor-driven answer. Fig. 2 shows that low $H _ { \\mathrm { a n s } }$ at large α can also arise from prior-driven overconfidence.",
+        "bbox": [
+            212,
+            575,
+            787,
+            651
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "text",
+        "text": "3.4 Entropy Shaping with Low-Entropy Anchors",
+        "text_level": 2,
+        "bbox": [
+            214,
+            676,
+            630,
+            693
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "text",
+        "text": "Answer entropy $H _ { \\mathrm { a n s } }$ provides a convenient scalar readout of how concentrated the model is on the final answer. The difficulty is that the same decrease in $H _ { \\mathrm { a n s } }$ can be produced by different mechanisms: the intervention may genuinely expose missing evidence, or it may remove hard evidence and let the model settle on priors or distractors. To disambiguate these cases, we look beyond the answer entropy itself and ask whether an intervention is non-destructive, namely whether it preserves parts of the decoding process that the base model was already confident about. As illustrated in Fig. 3, two interventions may achieve a similar drop in answer entropy, yet only the evidence-revealing one preserves the baseline’s low-entropy tokens, whereas the destructive shortcut inflates their entropy motivating our anchor disruption measure.",
+        "bbox": [
+            212,
+            704,
+            787,
+            840
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "page_number",
+        "text": "6",
+        "bbox": [
+            217,
+            114,
+            228,
+            126
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "header",
+        "text": "Yin et al.",
+        "bbox": [
+            271,
+            114,
+            336,
+            126
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "image",
+        "img_path": "images/72e62c54500e46e051557a172f6b2f7d64e35989593d995d57fa281441258c1a.jpg",
+        "image_caption": [
+            "Fig. 3: Low-entropy anchors reveal destructive shortcuts."
+        ],
+        "image_footnote": [],
+        "content": "",
+        "bbox": [
+            215,
+            146,
+            784,
+            243
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "text",
+        "text": "",
+        "bbox": [
+            212,
+            299,
+            782,
+            328
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "text",
+        "text": "We use low-entropy anchors $\\mathcal { T } _ { \\mathrm { l o w } } ( x , q )$ in Eq. (5) to represent such stable positions under the baseline input. Given an intervened input x˜, we measure anchor disruption by the average entropy increase on anchor positions,",
+        "bbox": [
+            212,
+            329,
+            784,
+            375
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "equation",
+        "text": "$$\n\\Delta H _ {\\text { low }} (\\tilde {x}) = \\frac {1}{| \\mathcal {I} _ {\\text { low }} |} \\sum_ {k \\in \\mathcal {I} _ {\\text { low }}} \\max \\big (0, H _ {k} (\\tilde {x}, q) - H _ {k} (x, q) \\big). \\tag {9}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            303,
+            385,
+            784,
+            422
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "text",
+        "text": "Interventions with comparable reductions in $H _ { \\mathrm { a n s } }$ can behave very differently under this criterion. Evidence-revealing interventions tend to keep $\\varDelta H _ { \\mathrm { l o w } }$ small, while shortcut interventions often reduce $H _ { \\mathrm { a n s } }$ at the cost of increasing entropy on anchors. This motivates an entropy-shaping principle that favors reducing $H _ { \\mathrm { a n s } }$ while preserving low-entropy anchors.",
+        "bbox": [
+            214,
+            431,
+            782,
+            508
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "text",
+        "text": "4 SPOT-E: Visual Spotlighting for Entropy Shaping",
+        "text_level": 2,
+        "bbox": [
+            214,
+            532,
+            735,
+            550
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "text",
+        "text": "Building on Sec. 3, we introduce SPOT-E. As shown in Fig. 4, SPOT-E performs entropy-guided test-time visual adaptation by keeping the VLM $F _ { \\phi }$ frozen and optimizing a lightweight, question-conditioned visual spotlight. Given an image x and instruction $q ,$ the spotlight produces an intervened image $\\tilde { x } = S ( x ; , m )$ , where S is the spotlighting operator and m is a soft pixel mask. We feed x˜ into $F _ { \\phi }$ to compute the answer entropy $H _ { \\mathrm { a n s } } ( \\tilde { x } , q )$ and anchor entropies on $\\mathcal { T } _ { \\mathrm { l o w } } ( x , q )$ . At test time, SPOT-E runs a short per-instance episode: it samples candidate spotlights, scores them with an entropy-shaping objective, and updates only the spotlight parameters via GRPO [27]. The final prediction is chosen by Best-of-N over candidates, and the spotlight is reset after each instance.",
+        "bbox": [
+            212,
+            564,
+            787,
+            715
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "text",
+        "text": "4.1 Visual Spotlight",
+        "text_level": 2,
+        "bbox": [
+            214,
+            738,
+            395,
+            753
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "text",
+        "text": "As illustrated in Fig. 5, SPOT-E introduces a CLIP-based [26] visual spolight module to produce question-conditioned visual spotlights. Given instruction $q ,$ we extract a compact visual phrase q¯ by retaining the key entities and attributes relevant to visual grounding. Then the module extracts global patch tokens and local crop tokens with a CLIP vision encoder with LoRA [13] adapter, matches them to the frozen CLIP text embedding via patch–text similarity to obtain relevance maps, and fuses multi-view evidence by max pooling to form the final spotlight mask.",
+        "bbox": [
+            212,
+            763,
+            784,
+            840
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "header",
+        "text": "Test-Time Entropy Shaping with Visual Spotlights for Frozen VLMs",
+        "bbox": [
+            274,
+            114,
+            732,
+            128
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "page_number",
+        "text": "",
+        "bbox": [
+            774,
+            116,
+            784,
+            126
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "image",
+        "img_path": "images/7e349a260a0c475b9893b311464fd550026030c7e3a7a7f961c3871d473484b6.jpg",
+        "image_caption": [
+            "Fig. 4: SPOT-E overview. SPOT-E freezes the VLM and optimizes a lightweight visual spotlight at test time to generate an intervened image, scored by answer-entropy clarity and anchor-preservation."
+        ],
+        "image_footnote": [],
+        "content": "```mermaid\ngraph TD\n  A[\"Image\"] --> B[\"Visual Spotlight\"]\n    C[\"Frozen\"] -.-> B\n  B --> D[\"Spotlight Image\"]\n  D --> E[\"VLM\"]\n  E --> F[\"Final Reward\"]\n  F --> G[\"Dynamic Clarity\\nReward R_clarity(x̂)\"]\n  F --> H[\"Anchor-preservation\\nReward R_preserve(x̂)\"]\n  G --> I[\"Question: Is there a bear in the photo?\"]\n  H --> I\n    style A fill:#f9f,stroke:#333\n    style C fill:#f9f,stroke:#333\n    style F fill:#bbf,stroke:#333\n    style G fill:#bfb,stroke:#333\n    style H fill:#bfb,stroke:#333\n```",
+        "sub_type": "flowchart",
+        "bbox": [
+            230,
+            147,
+            767,
+            268
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "image",
+        "img_path": "images/9f1b5e7b0af74dc56f9e6a88cd2e8ad1769425bacf3282ee0e91e3d12ba4b070.jpg",
+        "image_caption": [
+            "Fig. 5: SPOT-E visual spotlight module. Both the image encoder and the text encoder are CLIP. The module computes patch-text similarities on the global view and local crops, then fuses multi-view relevance maps via max pooling to produce the final spotlight mask."
+        ],
+        "image_footnote": [],
+        "content": "```mermaid\ngraph TD\n  A[\"Original Image\"] --> B[\"Crop\"]\n  B --> C[\"A bear in the image\"]\n  C --> D[\"Text Encoder\"]\n  D --> E[\"Text Embedding\"]\n  E --> F[\"Global Patch Tokens\"]\n  F --> G[\"Cosine Similarity\"]\n  G --> H[\"Max Fusion\"]\n  H --> I[\"Output Image\"]\n  J[\"LoRA\"] --> K[\"inject\"]\n  K --> L[\"Vision Encoder\"]\n  L --> M[\"Local Patch Tokens\"]\n  M --> N[\"Cosine Similarity\"]\n  N --> O[\"Max Fusion\"]\n  P[\"Text Token\"] --> Q[\"Text Embedding\"]\n  R[\"Frozen\"] --> S[\"Tunable\"]\n  T[\"Relevance Map\"] --> U[\"Relevance Map\"]\n  V[\"Global Patch Tokens\"] --> W[\"Global Patch Tokens\"]\n  X[\"Text Token\"] --> Y[\"Text Token\"]\n  Z[\"Vision Token\"] --> AA[\"Vision Token\"]\n```",
+        "sub_type": "flowchart",
+        "bbox": [
+            232,
+            339,
+            772,
+            536
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "text",
+        "text": "",
+        "bbox": [
+            212,
+            638,
+            787,
+            683
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "text",
+        "text": "Global view and crop max fusion. We run the CLIP on the full image and on multiple crops to avoid missing small evidence. Let $x ^ { ( 0 ) } = x$ be the global view $\\{ x ^ { ( i ) } \\} _ { i = 1 } ^ { N _ { c } }$ $x ^ { ( i ) }$ $\\{ p _ { j } ^ { ( i ) } \\} _ { j = 1 } ^ { N _ { i } }$ and a text embedding t(¯q). We compute patch relevance by cosine similarity:",
+        "bbox": [
+            214,
+            686,
+            787,
+            750
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "equation",
+        "text": "$$\nu _ {j} ^ {(i)} = \\Big \\langle \\mathrm{norm} (p _ {j} ^ {(i)}), \\mathrm{norm} (t (\\bar {q})) \\Big \\rangle . \\tag {10}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            377,
+            763,
+            785,
+            792
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "text",
+        "text": "We reshape $\\{ u _ { j } ^ { ( i ) } \\}$ to a 2D grid and map each crop grid back to the full-image coordinates via $\\mathcal { W } _ { i } ( \\cdot )$ , which warps the i-th crop map to the global image coordinates. The fused relevance map is obtained by max fusion:",
+        "bbox": [
+            214,
+            808,
+            787,
+            840
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "page_number",
+        "text": "8",
+        "bbox": [
+            217,
+            114,
+            228,
+            126
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "header",
+        "text": "Yin et al.",
+        "bbox": [
+            271,
+            114,
+            336,
+            127
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "text",
+        "text": "",
+        "bbox": [
+            214,
+            146,
+            651,
+            161
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "equation",
+        "text": "$$\nu = \\max \\left(u ^ {(0)}, \\max _ {i = 1, \\dots , N _ {c}} \\mathcal {W} _ {i} \\left(u ^ {(i)}\\right)\\right). \\tag {11}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            370,
+            172,
+            785,
+            199
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "text",
+        "text": "Soft mask and spotlighting operator. We upsample the fused relevance map u to the image resolution and obtain a soft pixel mask",
+        "bbox": [
+            214,
+            209,
+            782,
+            239
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "equation",
+        "text": "$$\nm = \\sigma \\left(\\frac {1}{\\tau} u ^ {\\uparrow}\\right) \\in [ 0, 1 ] ^ {H \\times W}, \\tag {12}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            403,
+            251,
+            785,
+            268
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "text",
+        "text": "where u↑ denotes bilinear upsampling of u and τ controls mask sharpness. We then form the intervened input via",
+        "bbox": [
+            214,
+            279,
+            782,
+            310
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "equation",
+        "text": "$$\n\\tilde {x} = \\mathcal {S} (x; m) = m \\odot x + (1 - m) \\odot \\mathcal {B} (x), \\tag {13}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            344,
+            323,
+            785,
+            338
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "text",
+        "text": "where ⊙ denotes element-wise multiplication and $B ( \\cdot )$ is a fixed backgrounddegrading transform (background dimming).",
+        "bbox": [
+            214,
+            349,
+            782,
+            380
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "text",
+        "text": "4.2 Entropy-Shaping Reward",
+        "text_level": 2,
+        "bbox": [
+            215,
+            402,
+            470,
+            417
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "text",
+        "text": "Given a candidate spotlight mask m and intervened input $\\tilde { x } = { \\cal { S } } ( x ; m )$ , we score it using an entropy-shaping reward",
+        "bbox": [
+            214,
+            426,
+            782,
+            458
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "equation",
+        "text": "$$\nR (\\tilde {x}) = R _ {\\text { clarity }} (\\tilde {x}) + R _ {\\text { preserve }} (\\tilde {x}). \\tag {14}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            375,
+            470,
+            785,
+            486
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "text",
+        "text": "Both terms are computed from the frozen VLM logits, while gradients update only the visual spotlight module.",
+        "bbox": [
+            214,
+            496,
+            782,
+            526
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "text",
+        "text": "Dynamic clarity reward. We encourage the model to become more decisive on the final answer span by reducing answer entropy:",
+        "bbox": [
+            214,
+            527,
+            782,
+            556
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "equation",
+        "text": "$$\n\\Delta H _ {\\mathrm{ans}} (\\tilde {x}) = H _ {\\mathrm{ans}} (x, q) - H _ {\\mathrm{ans}} (\\tilde {x}, q). \\tag {15}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            370,
+            570,
+            785,
+            585
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "text",
+        "text": "To avoid over-optimizing when the base model is already confident, we apply a dynamic scaling factor based on the baseline answer entropy:",
+        "bbox": [
+            214,
+            595,
+            782,
+            627
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "equation",
+        "text": "$$\nR _ {\\text {clarity}} (\\tilde {x}) = \\gamma (x, q) \\cdot \\Delta H _ {\\text {ans}} (\\tilde {x}), \\quad \\gamma (x, q) = \\frac {H _ {\\text {ans}} (x , q)}{H _ {\\text {ans}} (x , q) + c}, \\tag {16}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            261,
+            638,
+            785,
+            670
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "text",
+        "text": "where $c > 0$ is a small constant. When the baseline is uncertain, γ increases and entropy reduction is rewarded more; when the baseline is already confident, γ suppresses blind exploration.",
+        "bbox": [
+            214,
+            679,
+            782,
+            724
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "text",
+        "text": "Anchor-preservation reward. Entropy reduction can be achieved by shortcut behaviors that disrupt tokens the base model was already confident about. We therefore penalize entropy increases on low-entropy anchor positions $\\mathcal { T } _ { \\mathrm { l o w } } ( x , q )$ (Eq. (5)) using the anchor disruption measure $\\varDelta H _ { \\mathrm { l o w } } ( \\tilde { x } ) \\ ( \\mathrm { E q . \\ ( 9 ) } )$ :",
+        "bbox": [
+            214,
+            724,
+            782,
+            786
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "equation",
+        "text": "$$\nR _ {\\text { preserve }} (\\tilde {x}) = - \\lambda \\cdot \\Delta H _ {\\text { low }} (\\tilde {x}), \\tag {17}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            392,
+            797,
+            785,
+            814
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "text",
+        "text": "where λ controls the strength of anchor preservation.",
+        "bbox": [
+            214,
+            824,
+            596,
+            839
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "header",
+        "text": "Test-Time Entropy Shaping with Visual Spotlights for Frozen VLMs",
+        "bbox": [
+            274,
+            114,
+            732,
+            128
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "page_number",
+        "text": "9",
+        "bbox": [
+            774,
+            114,
+            784,
+            126
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "text",
+        "text": "4.3 Test-Time Optimization with GRPO",
+        "text_level": 2,
+        "bbox": [
+            215,
+            146,
+            565,
+            161
+        ],
+        "page_idx": 9
+    },
+    {
+        "type": "text",
+        "text": "SPOT-E runs a short per-instance test-time optimization episode to adapt the visual spotlight module, while keeping the VLM $F _ { \\phi }$ fully frozen. Let θ denote the visual spotlight parameters (LoRA adapters in CLIP vision encoder attention layers), initialized to $\\theta _ { 0 }$ for each instance.",
+        "bbox": [
+            212,
+            178,
+            782,
+            238
+        ],
+        "page_idx": 9
+    },
+    {
+        "type": "text",
+        "text": "Group sampling and scoring. At each iteration, we sample a group of N candidate masks by injecting Gaussian noise into the visual spotlight and obtain intervened inputs $\\bar { \\{ x ^ { ( n ) } \\} } _ { n = 1 } ^ { N }$ . Each candidate is scored by the total reward $R ( \\tilde { x } ^ { ( n ) } )$ (Eq. (14)).",
+        "bbox": [
+            214,
+            239,
+            782,
+            300
+        ],
+        "page_idx": 9
+    },
+    {
+        "type": "text",
+        "text": "Group-relative advantages. We compute standardized advantages within the group:",
+        "bbox": [
+            214,
+            301,
+            782,
+            330
+        ],
+        "page_idx": 9
+    },
+    {
+        "type": "equation",
+        "text": "$$\n\\mu_ {R} = \\frac {1}{N} \\sum_ {n = 1} ^ {N} R (\\tilde {x} ^ {(n)}), \\quad \\sigma_ {R} = \\sqrt {\\frac {1}{N} \\sum_ {n = 1} ^ {N} \\left(R (\\tilde {x} ^ {(n)}) - \\mu_ {R}\\right) ^ {2}}. \\tag {18}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            307,
+            332,
+            785,
+            376
+        ],
+        "page_idx": 9
+    },
+    {
+        "type": "equation",
+        "text": "$$\nA ^ {(n)} = \\frac {R (\\tilde {x} ^ {(n)}) - \\mu_ {R}}{\\sigma_ {R} + \\epsilon}. \\tag {19}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            426,
+            386,
+            785,
+            416
+        ],
+        "page_idx": 9
+    },
+    {
+        "type": "text",
+        "text": "where ϵ is a small constant.",
+        "bbox": [
+            218,
+            420,
+            421,
+            434
+        ],
+        "page_idx": 9
+    },
+    {
+        "type": "text",
+        "text": "GRPO update and reset. We apply a standard $\\mathrm { G R P O }$ clipped policy update on θ using $\\left\\{ A ^ { ( n ) } \\right\\}$ , with a KL regularizer to keep the visual spotlight close to its initialization.",
+        "bbox": [
+            214,
+            435,
+            782,
+            477
+        ],
+        "page_idx": 9
+    },
+    {
+        "type": "equation",
+        "text": "$$\n\\bar {r} ^ {(n)} (\\theta) = \\operatorname{clip} \\left(r ^ {(n)} (\\theta), 1 - \\delta , 1 + \\delta\\right). \\tag {20}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            383,
+            479,
+            785,
+            497
+        ],
+        "page_idx": 9
+    },
+    {
+        "type": "equation",
+        "text": "$$\n\\mathcal {L} _ {\\mathrm{GRPO}} (\\theta) = - \\frac {1}{N} \\sum_ {n = 1} ^ {N} \\min \\Big (r ^ {(n)} (\\theta) A ^ {(n)}, \\bar {r} ^ {(n)} (\\theta) A ^ {(n)} \\Big) + \\beta \\operatorname{KL} \\big (\\pi_ {\\theta} \\| \\pi_ {\\theta_ {0}} \\big). \\tag {21}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            269,
+            516,
+            785,
+            551
+        ],
+        "page_idx": 9
+    },
+    {
+        "type": "text",
+        "text": "where $\\delta$ is the clipping threshold and $\\beta$ controls the KL strength. We update only θ by gradient descent on Eq. (21), and reset $\\theta  \\theta _ { 0 }$ after each instance to avoid cross-sample drift.",
+        "bbox": [
+            214,
+            558,
+            782,
+            604
+        ],
+        "page_idx": 9
+    },
+    {
+        "type": "text",
+        "text": "5 Experiments",
+        "text_level": 2,
+        "bbox": [
+            215,
+            633,
+            375,
+            652
+        ],
+        "page_idx": 9
+    },
+    {
+        "type": "text",
+        "text": "Overview. We evaluate SPOT-E from four complementary angles. First, we report main results across a broad set of frozen backbones, covering both opensource model families and closed-source VLM APIs, to test generality. Second, we compare against strong inference-time visual prompting baselines under matched decoding settings. Third, we assess out-of-distribution robustness under controlled visual corruptions and analyze confidence behavior through answer entropy. Finally, we conduct targeted ablations on the reward, spotlight design, and test-time budget, and provide qualitative case studies to illustrate how SPOT-E changes evidence usage at inference time. Due to space constraints, additional experimental results, such as those using larger backbones, are provided in the Appendix.",
+        "bbox": [
+            212,
+            672,
+            787,
+            840
+        ],
+        "page_idx": 9
+    },
+    {
+        "type": "page_number",
+        "text": "10",
+        "bbox": [
+            217,
+            114,
+            235,
+            126
+        ],
+        "page_idx": 9
+    },
+    {
+        "type": "header",
+        "text": "Yin et al.",
+        "bbox": [
+            271,
+            114,
+            336,
+            127
+        ],
+        "page_idx": 9
+    },
+    {
+        "type": "table",
+        "img_path": "images/491680c61f62fe4c8a9a6812a406d009fe24063ed9c51e21c4a2a0dccf4e4d2f.jpg",
+        "table_caption": [
+            "Table 1: Applying SPOT-E to closed-source and open-source backbones."
+        ],
+        "table_footnote": [],
+        "table_body": "<table><tr><td>Base Model</td><td>TextVQA</td><td>DocVQA</td><td>ChartQA</td><td>MathVista</td><td>MMMU</td><td>GQA</td><td>MMBench</td><td>POPE</td></tr><tr><td colspan=\"9\">Closed-Source</td></tr><tr><td>GPT-4o [16]</td><td>77.4</td><td>91.1</td><td>86.7</td><td>63.5</td><td>69.2</td><td>73.0</td><td>83.1</td><td>86.9</td></tr><tr><td>+ SPOT-E (Ours)</td><td>79.9 +2.5↑</td><td>92.3 +1.2↑</td><td>88.2 +1.5↑</td><td>65.5 +2.0↑</td><td>70.4 +1.2↑</td><td>73.8 +0.8↑</td><td>83.9 +0.8↑</td><td>87.9 +1.0↑</td></tr><tr><td>GPT-4o-mini [16]</td><td>70.0</td><td>86.0</td><td>80.0</td><td>55.0</td><td>60.0</td><td>68.0</td><td>78.0</td><td>84.0</td></tr><tr><td>+ SPOT-E (Ours)</td><td>73.5 +3.5↑</td><td>88.0 +2.0↑</td><td>82.5 +2.5↑</td><td>58.0 +3.0↑</td><td>62.0 +2.0↑</td><td>69.0 +1.0↑</td><td>79.2 +1.2↑</td><td>85.2 +1.2↑</td></tr><tr><td>Gemini-2.5-Flash [7]</td><td>80.0</td><td>91.5</td><td>84.0</td><td>68.0</td><td>70.0</td><td>72.0</td><td>82.0</td><td>86.0</td></tr><tr><td>+ SPOT-E (Ours)</td><td>82.8 +2.8↑</td><td>93.0 +1.5↑</td><td>85.8 +1.8↑</td><td>70.2 +2.2↑</td><td>71.5 +1.5↑</td><td>72.8 +0.8↑</td><td>82.8 +0.8↑</td><td>86.9 +0.9↑</td></tr><tr><td colspan=\"9\">Open-Source</td></tr><tr><td>Qwen2.5-VL-7B [32]</td><td>84.9</td><td>85.7</td><td>87.3</td><td>67.8</td><td>55.0</td><td>64.0</td><td>82.6</td><td>86.4</td></tr><tr><td>+ SPOT-E (Ours)</td><td>86.9 +2.0↑</td><td>86.5 +0.8↑</td><td>88.5 +1.2↑</td><td>70.8 +3.0↑</td><td>58.5 +3.5↑</td><td>65.0 +1.0↑</td><td>83.5 +0.9↑</td><td>87.4 +1.0↑</td></tr><tr><td>Qwen3-VL-8B [1]</td><td>86.0</td><td>86.2</td><td>88.0</td><td>70.5</td><td>58.0</td><td>65.5</td><td>83.8</td><td>87.2</td></tr><tr><td>+ SPOT-E (Ours)</td><td>87.8 +1.8↑</td><td>86.8 +0.6↑</td><td>89.0 +1.0↑</td><td>73.3 +2.8↑</td><td>61.0 +3.0↑</td><td>66.4 +0.9↑</td><td>84.6 +0.8↑</td><td>88.1 +0.9↑</td></tr><tr><td>LLaVA-NeXT-7B [21]</td><td>78.5</td><td>80.0</td><td>79.0</td><td>47.0</td><td>38.0</td><td>63.0</td><td>75.0</td><td>85.0</td></tr><tr><td>+ SPOT-E (Ours)</td><td>84.7 +6.2↑</td><td>82.0 +2.0↑</td><td>81.5 +2.5↑</td><td>50.5 +3.5↑</td><td>41.0 +3.0↑</td><td>64.5 +1.5↑</td><td>76.5 +1.5↑</td><td>86.5 +1.5↑</td></tr><tr><td>LLaVA-OV-7B [21]</td><td>80.0</td><td>81.0</td><td>80.5</td><td>48.5</td><td>39.5</td><td>63.5</td><td>76.0</td><td>85.5</td></tr><tr><td>+ SPOT-E (Ours)</td><td>85.0 +5.0↑</td><td>82.8 +1.8↑</td><td>82.8 +2.3↑</td><td>51.8 +3.3↑</td><td>42.5 +3.0↑</td><td>64.9 +1.4↑</td><td>77.4 +1.4↑</td><td>86.9 +1.4↑</td></tr><tr><td>InternVL2.5-8B [6]</td><td>81.0</td><td>82.0</td><td>83.0</td><td>66.0</td><td>56.0</td><td>62.0</td><td>80.5</td><td>89.0</td></tr><tr><td>+ SPOT-E (Ours)</td><td>84.5 +3.5↑</td><td>83.5 +1.5↑</td><td>85.0 +2.0↑</td><td>69.5 +3.5↑</td><td>59.5 +3.5↑</td><td>63.2 +1.2↑</td><td>81.5 +1.0↑</td><td>90.0 +1.0↑</td></tr><tr><td>InternVL3-8B [6]</td><td>80.2</td><td>82.7</td><td>86.6</td><td>71.6</td><td>62.7</td><td>61.0</td><td>81.7</td><td>91.1</td></tr><tr><td>+ SPOT-E (Ours)</td><td>82.4 +2.2↑</td><td>83.7 +1.0↑</td><td>88.1 +1.5↑</td><td>74.4 +2.8↑</td><td>65.2 +2.5↑</td><td>62.2 +1.2↑</td><td>82.5 +0.8↑</td><td>92.0 +0.9↑</td></tr></table>",
+        "bbox": [
+            220,
+            171,
+            784,
+            422
+        ],
+        "page_idx": 10
+    },
+    {
+        "type": "text",
+        "text": "5.1 Implementation Details",
+        "text_level": 2,
+        "bbox": [
+            215,
+            450,
+            455,
+            465
+        ],
+        "page_idx": 10
+    },
+    {
+        "type": "text",
+        "text": "Models. To verify the effectiveness of our approach, we apply SPOT-E to multiple frozen open-source VLM backbones spanning three representative families: Qwen-VL [32], LLaVA [21], and InternVL [6], and three proprietary VLM APIs that expose token-level log probabilities: GPT-4o, GPT-4o-mini [16], and Gemini-2.5-Flash [7]. Unless otherwise stated, all backbones are kept fully frozen and SPOT-E updates only the CLIP-based eye module at test time with perinstance reset.",
+        "bbox": [
+            212,
+            474,
+            785,
+            580
+        ],
+        "page_idx": 10
+    },
+    {
+        "type": "text",
+        "text": "Evaluation. Our evaluation comprises multiple benchmarks that stress finegrained visual grounding and localized evidence usage, spanning text-centric grounding (TextVQA [29], DocVQA [25], ChartQA [24]), compositional VQA and general multimodal understanding (GQA [15], MMBench [22]), knowledgeand reasoning-intensive tasks (MathVista [23], MMMU [44]), and hallucinationoriented evaluation (POPE [20]). We follow the standard evaluation protocols and report the official metrics for each benchmark.",
+        "bbox": [
+            212,
+            580,
+            787,
+            686
+        ],
+        "page_idx": 10
+    },
+    {
+        "type": "text",
+        "text": "5.2 Main Results",
+        "text_level": 2,
+        "bbox": [
+            215,
+            709,
+            372,
+            723
+        ],
+        "page_idx": 10
+    },
+    {
+        "type": "text",
+        "text": "Consistent Improvements Across Frozen Backbones. We compare the frozen base model and its SPOT-E augmented version across both closed-source VLM APIs and open-source backbones which cover three backbone families with two released variants per family. Table 1 shows that SPOT-E yields consistent gains across all evaluated models. The improvements are most pronounced on evidence-intensive benchmarks such as TextVQA, DocVQA, ChartQA, and MathVista, where answers depend on small text, numbers, or localized symbols.",
+        "bbox": [
+            212,
+            734,
+            787,
+            840
+        ],
+        "page_idx": 10
+    },
+    {
+        "type": "header",
+        "text": "Test-Time Entropy Shaping with Visual Spotlights for Frozen VLMs",
+        "bbox": [
+            274,
+            114,
+            732,
+            128
+        ],
+        "page_idx": 10
+    },
+    {
+        "type": "page_number",
+        "text": "11",
+        "bbox": [
+            767,
+            116,
+            782,
+            126
+        ],
+        "page_idx": 10
+    },
+    {
+        "type": "table",
+        "img_path": "images/e3ac7691c9959c5a6dfdcf0d0f46e31221030eccc92f767e59ee63374af0778c.jpg",
+        "table_caption": [
+            "Table 2: Comparison with inference-time visual evidence manipulation baselines."
+        ],
+        "table_footnote": [],
+        "table_body": "<table><tr><td>Method</td><td>TextVQA</td><td>GQA</td><td>MMMU</td><td>POPE</td><td>DocVQA</td></tr><tr><td>FGVP-Mask [36]</td><td>77.3</td><td>55.8</td><td>46.0</td><td>84.4</td><td>56.6</td></tr><tr><td>FGVP-RBM [36]</td><td>72.3</td><td>55.8</td><td>46.5</td><td>81.3</td><td>38.6</td></tr><tr><td>SoM [35]</td><td>61.5</td><td>47.8</td><td>45.1</td><td>75.8</td><td>57.4</td></tr><tr><td>API [42]</td><td>81.6</td><td>61.1</td><td>47.4</td><td>85.8</td><td>68.4</td></tr><tr><td>ViCrop [45]</td><td>83.8</td><td>60.6</td><td>47.1</td><td>86.7</td><td>82.5</td></tr><tr><td>AttWarp [8]</td><td>84.7</td><td>64.0</td><td>50.4</td><td>87.4</td><td>84.1</td></tr><tr><td>SPOT-E</td><td>86.9</td><td>65.0</td><td>58.5</td><td>87.4</td><td>86.5</td></tr></table>",
+        "bbox": [
+            271,
+            162,
+            727,
+            287
+        ],
+        "page_idx": 11
+    },
+    {
+        "type": "image",
+        "img_path": "images/045158dc22c980e0f2f4c396b785dee583b9dfd3492d2fd2e0b91949cd6c77bb.jpg",
+        "image_caption": [],
+        "image_footnote": [],
+        "content": "",
+        "bbox": [
+            433,
+            295,
+            566,
+            306
+        ],
+        "page_idx": 11
+    },
+    {
+        "type": "chart",
+        "img_path": "images/f2486259754a3ac75e8471bdd4e87b105ed923517b3ec04b5ae181bf4088cfb7.jpg",
+        "content": "| Severity | Gaussian noise (Red) | Gaussian noise (Green) | Low-res (Red) | Low-res (Green) | Occlusion (Red) | Occlusion (Green) |\n| -------- | -------------------- | ---------------------- | ------------- | --------------- | --------------- | ----------------- |\n| 0        | 82.5                 | 89.0                   | 81.5          | 88.0            | 83.0            | 89.5              |\n| 1        | 79.5                 | 87.5                   | 79.5          | 86.5            | 80.5            | 88.0              |\n| 2        | 76.5                 | 86.0                   | 76.5          | 85.0            | 77.0            | 86.5              |\n| 3        | 73.0                 | 84.5                   | 73.0          | 83.5            | 73.5            | 85.0              |\n| 4        | 69.0                 | 83.0                   | 69.0          | 82.0            | 68.0            | 83.5              |\n| 5        | 64.5                 | 81.5                   | 64.5          | 80.5            | 62.5            | 82.0              |",
+        "chart_caption": [
+            "Fig. 6: Out-of-distribution evaluation."
+        ],
+        "chart_footnote": [],
+        "sub_type": "line chart",
+        "bbox": [
+            230,
+            311,
+            772,
+            434
+        ],
+        "page_idx": 11
+    },
+    {
+        "type": "text",
+        "text": "On broader multimodal reasoning benchmarks (GQA, MMBench, and MMMU), SPOT-E still provides positive but typically smaller gains, suggesting that suppressing distractors and amplifying decisive regions complements backbone reasoning capacity rather than replacing it. Finally, on POPE, SPOT-E tends to improve factual consistency by steering generation toward visually supported answers, indicating that entropy-guided spotlighting can mitigate confident-butunsupported responses even without modifying the underlying VLM.",
+        "bbox": [
+            212,
+            489,
+            787,
+            595
+        ],
+        "page_idx": 11
+    },
+    {
+        "type": "text",
+        "text": "Comparison with Visual Prompting Baselines. Since several strong baselines improve grounding by manipulating visual evidence at inference time, we compare SPOT-E with representative methods including FGVP [36], SoM [35], API [42], ViCrop [45], and AttWarp [8]. All methods are evaluated on the frozen Qwen2.5-VL-7B backbone under the same decoding configuration, following each baseline’s standard inference-time procedure. As shown in Table 2, SPOT-E is competitive with these visual intervention baselines and yields further improvements across benchmarks, with particularly strong gains on evidence-intensive tasks where small, localized cues are critical.",
+        "bbox": [
+            212,
+            597,
+            787,
+            733
+        ],
+        "page_idx": 11
+    },
+    {
+        "type": "text",
+        "text": "Out-of-distribution Robustness under Visual Corruptions. To evaluate robustness under domain shift, we test on TextVQA with three synthetic corruptions applied at inference time: Gaussian noise, low-resolution downsampling, and local occlusion. We sweep corruption severity and plot accuracy curves for the frozen Qwen2.5-VL-7B baseline and +SPOT-E under the same decoding setting. As shown in Fig. 6, SPOT-E consistently reduces performance drop across severities, indicating improved robustness to corrupted visual evidence.",
+        "bbox": [
+            212,
+            734,
+            787,
+            840
+        ],
+        "page_idx": 11
+    },
+    {
+        "type": "page_number",
+        "text": "12",
+        "bbox": [
+            217,
+            114,
+            235,
+            126
+        ],
+        "page_idx": 11
+    },
+    {
+        "type": "header",
+        "text": "Yin et al.",
+        "bbox": [
+            271,
+            114,
+            336,
+            127
+        ],
+        "page_idx": 11
+    },
+    {
+        "type": "chart",
+        "img_path": "images/d700060fe8a51ccdcc963d4cb92f5930ad0f59ee82202846fc8fb2860b6354a7.jpg",
+        "content": "| Category         | Min  | Q1   | Median | Q3   | Max  |\n| ---------------- | ---- | ---- | ------ | ---- | ---- |\n| Base Correct     | 0.0  | 0.15 | 0.12   | 0.25 | 0.35 |\n| Base Wrong       | 0.0  | 0.25 | 0.20   | 0.45 | 0.55 |\n| +SPOT-E Correct  | 0.0  | 0.15 | 0.12   | 0.25 | 0.35 |\n| +SPOT-E Wrong    | 0.0  | 0.45 | 0.40   | 0.65 | 0.90 |",
+        "chart_caption": [
+            "Fig. 7: Confidence calibration boxplot."
+        ],
+        "chart_footnote": [],
+        "sub_type": "box plot",
+        "bbox": [
+            220,
+            138,
+            472,
+            273
+        ],
+        "page_idx": 12
+    },
+    {
+        "type": "chart",
+        "img_path": "images/283faeeda6b64507be553ae8d48e8bc49ee2310ca2fb271274e202b92aa2e252.jpg",
+        "content": "| Update steps per instance | Qwen2.5-VL-7B | InternVL2.5-8B | LLaVA-NeXT-7B |\n| ------------------------- | ------------- | -------------- | ------------- |\n| 0                         | 81.0          | 81.0           | 81.0          |\n| 1                         | 81.5          | 82.0           | 81.5          |\n| 2                         | 82.5          | 83.0           | 82.0          |\n| 4                         | 83.5          | 84.0           | 83.0          |\n| 8                         | 85.5          | 84.5           | 84.0          |\n| 16                        | 85.8          | 84.8           | 84.2          |",
+        "chart_caption": [
+            "Fig. 8: Test-time budget discussion."
+        ],
+        "chart_footnote": [],
+        "sub_type": "line chart",
+        "bbox": [
+            526,
+            151,
+            777,
+            273
+        ],
+        "page_idx": 12
+    },
+    {
+        "type": "text",
+        "text": "Confidence Calibration via Answer Entropy. We analyze how SPOT-E affects overconfident errors by measuring the answer entropy on each example. Fig. 7 reports boxplots of $H _ { \\mathrm { a n s } }$ for correct and incorrect predictions under the frozen baseline and +SPOT-E. SPOT-E increases entropy on incorrect cases while maintaining low entropy on correct ones, reducing confident-butunsupported responses and improving the separation between correct and wrong predictions.",
+        "bbox": [
+            212,
+            311,
+            787,
+            417
+        ],
+        "page_idx": 12
+    },
+    {
+        "type": "text",
+        "text": "5.3 Ablation Studies",
+        "text_level": 2,
+        "bbox": [
+            214,
+            438,
+            401,
+            452
+        ],
+        "page_idx": 12
+    },
+    {
+        "type": "text",
+        "text": "We ablate three factors that govern SPOT-E: (i) the reward design, (ii) the spotlight configuration, and (iii) the test-time update budget (number of adaptation steps per instance). Unless otherwise stated, all ablations are conducted on frozen Qwen2.5-VL-7B under the same decoding setup as the main results, and we report the official benchmark metrics. For fair comparison, we keep the spotlight operator, learning rate, and evaluation prompts fixed, varying only the targeted component in each study.",
+        "bbox": [
+            212,
+            460,
+            787,
+            568
+        ],
+        "page_idx": 12
+    },
+    {
+        "type": "text",
+        "text": "Reward Design. We ablate the entropy-shaping reward in Sec. 4.2 to quantify the contribution of each term in Eq. (14). Keeping the spotlight mechanism and the test-time budget fixed, we compare: (i) Clarity-only, using $R _ { \\mathrm { c l a r i t y } }$ alone; (ii) Preserve-only, using $R _ { \\mathrm { p r e s e r v e } }$ alone; (iii) Full reward, using $R _ { \\mathrm { c l a r i t y } } + R _ { \\mathrm { p r e s e r v e } } ;$ and (iv) w/o dynamic scaling, where we replace $\\gamma ( x , q )$ in Eq. (16) with a constant factor. Tab. 3 shows that combining clarity and anchor preservation yields the most consistent gains, while removing either term degrades performance. These results suggest that $R _ { \\mathrm { c l a r i t y } }$ and $R _ { \\mathrm { p r e s e r v e } }$ are complementary. The clarity term encourages decisiveness on the answer span, while the preservation term discourages shortcut updates that disrupt already-reliable evidence.",
+        "bbox": [
+            212,
+            568,
+            787,
+            718
+        ],
+        "page_idx": 12
+    },
+    {
+        "type": "text",
+        "text": "Visual Spotlight Design. We ablate the spotlight module in Sec. 4.1 to assess the impact of multi-view fusion and the spotlighting operator. Keeping the reward and test-time budget fixed, we compare: (i) Global (only the global view; $N _ { c } { = } 0 )$ , (ii) MeanFuse (average fusion; max → mean in Eq. (11)), and (iii) NoBgDeg (no background degradation; $\\scriptstyle B ( x ) = x$ in Eq. (13)). Table 4 shows that the default design (Default) provides the most consistent improvements, while removing crops or disabling background degradation reduces the benefit of evidence localization.",
+        "bbox": [
+            212,
+            719,
+            787,
+            839
+        ],
+        "page_idx": 12
+    },
+    {
+        "type": "header",
+        "text": "Test-Time Entropy Shaping with Visual Spotlights for Frozen VLMs",
+        "bbox": [
+            274,
+            113,
+            732,
+            128
+        ],
+        "page_idx": 12
+    },
+    {
+        "type": "page_number",
+        "text": "13",
+        "bbox": [
+            767,
+            114,
+            785,
+            126
+        ],
+        "page_idx": 12
+    },
+    {
+        "type": "table",
+        "img_path": "images/b3ce53b31050d57f419ce9b2872f4a5c40a8cf8c5a21febd93a95dd831b1a36a.jpg",
+        "table_caption": [
+            "Table 3: Reward design ablation."
+        ],
+        "table_footnote": [],
+        "table_body": "<table><tr><td>Variant</td><td>TextVQA</td><td>MathVista</td><td>POPE</td></tr><tr><td> $R_{\\text{clarity only}}$ </td><td>85.8</td><td>69.4</td><td>86.9</td></tr><tr><td> $R_{\\text{preserve only}}$ </td><td>84.9</td><td>68.6</td><td>87.1</td></tr><tr><td>w/o dynamic</td><td>86.4</td><td>70.1</td><td>87.2</td></tr><tr><td>Ours</td><td>86.9</td><td>70.8</td><td>87.4</td></tr></table>",
+        "bbox": [
+            217,
+            162,
+            493,
+            234
+        ],
+        "page_idx": 13
+    },
+    {
+        "type": "table",
+        "img_path": "images/0ebc619de77d154069e31fda985221f78624aed213a30aa5ee0245b739ed022e.jpg",
+        "table_caption": [
+            "Table 4: Spotlight design ablation."
+        ],
+        "table_footnote": [],
+        "table_body": "<table><tr><td>Variant</td><td>TextVQA</td><td>MathVista</td><td>POPE</td></tr><tr><td>GLOBAL</td><td>84.1</td><td>66.9</td><td>86.3</td></tr><tr><td>MEANFUSE</td><td>85.7</td><td>68.5</td><td>86.9</td></tr><tr><td>NoBgDEG</td><td>85.2</td><td>67.8</td><td>86.7</td></tr><tr><td>Ours</td><td>86.9</td><td>70.8</td><td>87.4</td></tr></table>",
+        "bbox": [
+            511,
+            162,
+            787,
+            238
+        ],
+        "page_idx": 13
+    },
+    {
+        "type": "image",
+        "img_path": "images/cc5153a3643d5dd31ee4b478408534a69787e5ad9652da7d8362d1223c54956d.jpg",
+        "image_caption": [
+            "Question: How many bears in the photo in this image?"
+        ],
+        "image_footnote": [],
+        "content": "```mermaid\ngraph LR\n  A[\"Input original image\"] --> B[\"VLM\"]\n  C[\"+SPOT-E\"] --> D[\"VLM\"]\n  B --> E[\"Answer: There are four toy bears in the image. H_ans: 0.56\"]\n  D --> F[\"Answer: In the photo on the lower right corner of the image, there is one bear. H_ans: 0.14\"]\n```",
+        "sub_type": "flowchart",
+        "bbox": [
+            218,
+            271,
+            496,
+            390
+        ],
+        "page_idx": 13
+    },
+    {
+        "type": "image",
+        "img_path": "images/c3f88991dec8bb8fe6a0ac99cae4e37ed38fc1509044156a7d9b051af967fa44.jpg",
+        "image_caption": [
+            "Question: What is the License plate number of the bus?",
+            "Fig. 9: Qualitative case studies comparing the frozen baseline and +SPOT-E with the same inference setup."
+        ],
+        "image_footnote": [],
+        "content": "```mermaid\ngraph LR\n  A[\"Input original image\"] --> B[\"VLM\"]\n  C[\"+SPOT-E\"] --> D[\"VLM\"]\n  B --> E[\"Answer: It is a red No.52 bus driving on the road.<br>H_ans: 0.72\"]\n  D --> F[\"Answer: The license plate number is LK62DMY that below the bus.<br>H_ans: 0.19\"]\n```",
+        "sub_type": "flowchart",
+        "bbox": [
+            500,
+            271,
+            781,
+            390
+        ],
+        "page_idx": 13
+    },
+    {
+        "type": "text",
+        "text": "Test-Time Budget. We vary the test-time adaptation budget by sweeping the number of eye-module update steps per instance in 0, 1, 2, 4, 8, 16, fixing the reward, spotlight design, learning rate, and decoding, where 0 is the frozen baseline. We evaluate on Qwen2.5-VL-7B, InternVL2.5-8B, and LLaVA-NeXT-7B. As shown in Fig. 8, accuracy increases with more steps and then saturates; we use 8 steps by default as it captures most gains with modest overhead.",
+        "bbox": [
+            214,
+            449,
+            787,
+            540
+        ],
+        "page_idx": 13
+    },
+    {
+        "type": "text",
+        "text": "5.4 Case Studies",
+        "text_level": 2,
+        "bbox": [
+            215,
+            558,
+            369,
+            571
+        ],
+        "page_idx": 13
+    },
+    {
+        "type": "text",
+        "text": "We provide qualitative comparisons to show how SPOT-E changes visual evidence usage at inference time. Fig. 9 contrasts the frozen baseline and ,+SPOT-E under the same decoding setup, showing the original input, the spotlightintervened image, and the resulting outputs. In both examples, the baseline is distracted by salient but irrelevant regions and answers incorrectly with higher $H _ { \\mathrm { a n s } } ,$ whereas SPOT-E suppresses distractors, amplifies the decisive evidence, and produces a visually supported answer with lower $H _ { \\mathrm { a n s } }$ .",
+        "bbox": [
+            214,
+            580,
+            787,
+            686
+        ],
+        "page_idx": 13
+    },
+    {
+        "type": "text",
+        "text": "6 Conclusion",
+        "text_level": 2,
+        "bbox": [
+            215,
+            705,
+            359,
+            722
+        ],
+        "page_idx": 13
+    },
+    {
+        "type": "text",
+        "text": "We present SPOT-E, a plug-and-play test-time method that strengthens finegrained visual evidence utilization in frozen VLMs via lightweight per-instance adaptation of a question-conditioned visual spotlight module. Across diverse backbones and benchmarks, SPOT-E delivers consistent gains and stronger robustness under visual corruptions without retraining the base model, and analyses highlight remaining failures on extremely small or inherently ambiguous evidence.",
+        "bbox": [
+            212,
+            734,
+            787,
+            839
+        ],
+        "page_idx": 13
+    },
+    {
+        "type": "page_number",
+        "text": "14",
+        "bbox": [
+            217,
+            114,
+            235,
+            126
+        ],
+        "page_idx": 13
+    },
+    {
+        "type": "header",
+        "text": "Yin et al.",
+        "bbox": [
+            271,
+            114,
+            336,
+            127
+        ],
+        "page_idx": 13
+    },
+    {
+        "type": "text",
+        "text": "References",
+        "text_level": 2,
+        "bbox": [
+            215,
+            143,
+            323,
+            160
+        ],
+        "page_idx": 14
+    },
+    {
+        "type": "list",
+        "sub_type": "ref_text",
+        "list_items": [
+            "1. Bai, S., Cai, Y., Chen, R., Chen, K., Chen, X., Cheng, Z., Deng, L., Ding, W., Gao, C., Ge, C., et al.: Qwen3-vl technical report. arXiv preprint arXiv:2511.21631 (2025)",
+            "2. Bar, A., Gandelsman, Y., Darrell, T., Globerson, A., Efros, A.: Visual prompting via image inpainting. Advances in neural information processing systems 35, 25005–25017 (2022)",
+            "3. Brown, B., Juravsky, J., Ehrlich, R., Clark, R., Le, Q.V., Ré, C., Mirhoseini, A.: Large language monkeys: Scaling inference compute with repeated sampling. arXiv preprint arXiv:2407.21787 (2024)",
+            "4. Carter, B., Jain, S., Mueller, J.W., Gifford, D.: Overinterpretation reveals image classification model pathologies. Advances in Neural Information Processing Systems 34, 15395–15407 (2021)",
+            "5. Chen, A., Yao, Y., Chen, P.Y., Zhang, Y., Liu, S.: Understanding and improving visual prompting: A label-mapping perspective. In: Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition. pp. 19133–19143 (2023)",
+            "6. Chen, Z., Wu, J., Wang, W., Su, W., Chen, G., Xing, S., Zhong, M., Zhang, Q., Zhu, X., Lu, L., et al.: Internvl: Scaling up vision foundation models and aligning for generic visual-linguistic tasks. In: Proceedings of the IEEE/CVF conference on computer vision and pattern recognition. pp. 24185–24198 (2024)",
+            "7. Comanici, G., Bieber, E., Schaekermann, M., Pasupat, I., Sachdeva, N., Dhillon, I., Blistein, M., Ram, O., Zhang, D., Rosen, E., et al.: Gemini 2.5: Pushing the frontier with advanced reasoning, multimodality, long context, and next generation agentic capabilities. arXiv preprint arXiv:2507.06261 (2025)",
+            "8. Dalal, D., Vashishtha, G., Mishra, U., Kim, J., Kanda, M., Ha, H., Lazebnik, S., Ji, H., Jain, U.: Constructive distortion: Improving mllms with attention-guided image warping. arXiv preprint arXiv:2510.09741 (2025)",
+            "9. Geirhos, R., Jacobsen, J.H., Michaelis, C., Zemel, R., Brendel, W., Bethge, M., Wichmann, F.A.: Shortcut learning in deep neural networks. Nature Machine Intelligence 2(11), 665–673 (2020)",
+            "10. Guan, T., Liu, F., Wu, X., Xian, R., Li, Z., Liu, X., Wang, X., Chen, L., Huang, F., Yacoob, Y., et al.: Hallusionbench: an advanced diagnostic suite for entangled language hallucination and visual illusion in large vision-language models. In: Proceedings of the IEEE/CVF conference on computer vision and pattern recognition. pp. 14375–14385 (2024)",
+            "11. Guo, C., Pleiss, G., Sun, Y., Weinberger, K.Q.: On calibration of modern neural networks. In: International conference on machine learning. pp. 1321–1330. PMLR (2017)",
+            "12. Hendrycks, D., Gimpel, K.: A baseline for detecting misclassified and out-ofdistribution examples in neural networks. arXiv preprint arXiv:1610.02136 (2016)",
+            "13. Hu, E.J., Shen, Y., Wallis, P., Allen-Zhu, Z., Li, Y., Wang, S., Wang, L., Chen, W., et al.: Lora: Low-rank adaptation of large language models. Iclr 1(2), 3 (2022)",
+            "14. Huang, Q., Dong, X., Zhang, P., Wang, B., He, C., Wang, J., Lin, D., Zhang, W., Yu, N.: Opera: Alleviating hallucination in multi-modal large language models via over-trust penalty and retrospection-allocation. In: Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition. pp. 13418–13427 (2024)",
+            "15. Hudson, D.A., Manning, C.D.: Gqa: A new dataset for real-world visual reasoning and compositional question answering. In: Proceedings of the IEEE/CVF conference on computer vision and pattern recognition. pp. 6700–6709 (2019)",
+            "16. Hurst, A., Lerer, A., Goucher, A.P., Perelman, A., Ramesh, A., Clark, A., Ostrow, A., Welihinda, A., Hayes, A., Radford, A., et al.: Gpt-4o system card. arXiv preprint arXiv:2410.21276 (2024)",
+            "17. Jian, P., Wu, J., Sun, W., Wang, C., Ren, S., Zhang, J.: Look again, think slowly: Enhancing visual reflection in vision-language models. In: Proceedings of the 2025 Conference on Empirical Methods in Natural Language Processing. pp. 9262–9281 (2025)",
+            "18. Kadavath, S., Conerly, T., Askell, A., Henighan, T., Drain, D., Perez, E., Schiefer, N., Hatfield-Dodds, Z., DasSarma, N., Tran-Johnson, E., et al.: Language models (mostly) know what they know. arXiv preprint arXiv:2207.05221 (2022)",
+            "19. Kuhn, L., Gal, Y., Farquhar, S.: Semantic uncertainty: Linguistic invariances for uncertainty estimation in natural language generation. arXiv preprint arXiv:2302.09664 (2023)",
+            "20. Li, Y., Du, Y., Zhou, K., Wang, J., Zhao, W.X., Wen, J.R.: Evaluating object hallucination in large vision-language models. In: Proceedings of the 2023 conference on empirical methods in natural language processing. pp. 292–305 (2023)",
+            "21. Liu, H., Li, C., Wu, Q., Lee, Y.J.: Visual instruction tuning. Advances in neural information processing systems 36, 34892–34916 (2023)",
+            "22. Liu, Y., Duan, H., Zhang, Y., Li, B., Zhang, S., Zhao, W., Yuan, Y., Wang, J., He, C., Liu, Z., et al.: Mmbench: Is your multi-modal model an all-around player? In: European conference on computer vision. pp. 216–233. Springer (2024)",
+            "23. Lu, P., Bansal, H., Xia, T., Liu, J., Li, C., Hajishirzi, H., Cheng, H., Chang, K.W., Galley, M., Gao, J.: Mathvista: Evaluating mathematical reasoning of foundation models in visual contexts. arXiv preprint arXiv:2310.02255 (2023)",
+            "24. Masry, A., Do, X.L., Tan, J.Q., Joty, S., Hoque, E.: Chartqa: A benchmark for question answering about charts with visual and logical reasoning. In: Findings of the association for computational linguistics: ACL 2022. pp. 2263–2279 (2022)",
+            "25. Mathew, M., Karatzas, D., Jawahar, C.: Docvqa: A dataset for vqa on document images. In: Proceedings of the IEEE/CVF winter conference on applications of computer vision. pp. 2200–2209 (2021)",
+            "26. Radford, A., Kim, J.W., Hallacy, C., Ramesh, A., Goh, G., Agarwal, S., Sastry, G., Askell, A., Mishkin, P., Clark, J., et al.: Learning transferable visual models from natural language supervision. In: International conference on machine learning. pp. 8748–8763. PmLR (2021)",
+            "27. Shao, Z., Wang, P., Zhu, Q., Xu, R., Song, J., Bi, X., Zhang, H., Zhang, M., Li, Y., Wu, Y., et al.: Deepseekmath: Pushing the limits of mathematical reasoning in open language models. arXiv preprint arXiv:2402.03300 (2024)",
+            "28. Shinn, N., Cassano, F., Gopinath, A., Narasimhan, K., Yao, S.: Reflexion: Language agents with verbal reinforcement learning. Advances in neural information processing systems 36, 8634–8652 (2023)",
+            "29. Singh, A., Natarajan, V., Shah, M., Jiang, Y., Chen, X., Batra, D., Parikh, D., Rohrbach, M.: Towards vqa models that can read. In: Proceedings of the IEEE/CVF conference on computer vision and pattern recognition. pp. 8317–8326 (2019)",
+            "30. Snell, C., Lee, J., Xu, K., Kumar, A.: Scaling llm test-time compute optimally can be more effective than scaling model parameters. arXiv preprint arXiv:2408.03314 (2024)",
+            "31. Tong, S., Liu, Z., Zhai, Y., Ma, Y., LeCun, Y., Xie, S.: Eyes wide shut? exploring the visual shortcomings of multimodal llms. In: Proceedings of the IEEE/CVF conference on computer vision and pattern recognition. pp. 9568–9578 (2024)",
+            "32. Wang, P., Bai, S., Tan, S., Wang, S., Fan, Z., Bai, J., Chen, K., Liu, X., Wang, J., Ge, W., et al.: Qwen2-vl: Enhancing vision-language model’s perception of the world at any resolution. arXiv preprint arXiv:2409.12191 (2024)",
+            "33. Wang, X., Wei, J., Schuurmans, D., Le, Q., Chi, E., Narang, S., Chowdhery, A., Zhou, D.: Self-consistency improves chain of thought reasoning in language models. arXiv preprint arXiv:2203.11171 (2022)",
+            "34. Xiong, M., Hu, Z., Lu, X., Li, Y., Fu, J., He, J., Hooi, B.: Can llms express their uncertainty? an empirical evaluation of confidence elicitation in llms. arXiv preprint arXiv:2306.13063 (2023)",
+            "35. Yang, J., Zhang, H., Li, F., Zou, X., Li, C., Gao, J.: Set-of-mark prompting unleashes extraordinary visual grounding in gpt-4v. arXiv preprint arXiv:2310.11441 (2023)",
+            "36. Yang, L., Wang, Y., Li, X., Wang, X., Yang, J.: Fine-grained visual prompting. Advances in Neural Information Processing Systems 36, 24993–25006 (2023)",
+            "37. Yin, B., Hu, X., Zhou, X., Jiang, P.T., Liao, Y., Zhu, J., Zhang, J., Tai, Y., Wang, C., Yan, S.: Fera: Frequency-energy constrained routing for effective diffusion adaptation fine-tuning. arXiv preprint arXiv:2511.17979 (2025)",
+            "38. Yin, B., Li, Q., Yu, R., Wang, X.: Refinement provenance inference: Detecting llmrefined training prompts from model behavior. arXiv preprint arXiv:2601.01966 (2026)",
+            "39. Yin, B., Yang, X., Wang, X.: Don’t forget the nonlinearity: Unlocking activation functions in efficient fine-tuning. arXiv preprint arXiv:2509.13240 (2025)",
+            "40. Yin, S., Fu, C., Zhao, S., Xu, T., Wang, H., Sui, D., Shen, Y., Li, K., Sun, X., Chen, E.: Woodpecker: Hallucination correction for multimodal large language models. Science China Information Sciences 67(12), 220105 (2024)",
+            "41. Yin, Z., Sun, Q., Guo, Q., Wu, J., Qiu, X., Huang, X.J.: Do large language models know what they don’t know? In: Findings of the association for Computational Linguistics: ACL 2023. pp. 8653–8665 (2023)",
+            "42. Yu, R., Yu, W., Wang, X.: Attention prompting on image for large vision-language models. In: European Conference on Computer Vision. pp. 251–268. Springer (2024)",
+            "43. Yu, X., Xu, C., Chen, Z., Yin, B., Yang, C., He, Y., Hu, Y., Zhang, J., Tan, C., Hu, X., et al.: Dual latent memory for visual multi-agent system. arXiv preprint arXiv:2602.00471 (2026)",
+            "44. Yue, X., Ni, Y., Zhang, K., Zheng, T., Liu, R., Zhang, G., Stevens, S., Jiang, D., Ren, W., Sun, Y., et al.: Mmmu: A massive multi-discipline multimodal understanding and reasoning benchmark for expert agi. In: Proceedings of the IEEE/CVF conference on computer vision and pattern recognition. pp. 9556–9567 (2024)",
+            "45. Zhang, J., Khayatkhoei, M., Chhikara, P., Ilievski, F.: Visual cropping improves zero-shot question answering of multimodal large language models. In: R0-FoMo: Robustness of Few-shot and Zero-shot Learning in Large Foundation Models (2023)",
+            "46. Zhang, Z., Zhang, A., Li, M., Zhao, H., Karypis, G., Smola, A.: Multimodal chainof-thought reasoning in language models. arXiv preprint arXiv:2302.00923 (2023)"
+        ],
+        "bbox": [
+            212,
+            170,
+            789,
+            843
+        ],
+        "page_idx": 14
+    },
+    {
+        "type": "header",
+        "text": "Test-Time Entropy Shaping with Visual Spotlights for Frozen VLMs",
+        "bbox": [
+            274,
+            113,
+            732,
+            128
+        ],
+        "page_idx": 14
+    },
+    {
+        "type": "page_number",
+        "text": "15",
+        "bbox": [
+            767,
+            114,
+            785,
+            126
+        ],
+        "page_idx": 14
+    },
+    {
+        "type": "list",
+        "sub_type": "ref_text",
+        "list_items": [],
+        "bbox": [
+            210,
+            142,
+            789,
+            843
+        ],
+        "page_idx": 15
+    },
+    {
+        "type": "page_number",
+        "text": "16",
+        "bbox": [
+            217,
+            114,
+            235,
+            126
+        ],
+        "page_idx": 15
+    },
+    {
+        "type": "header",
+        "text": "Yin et al.",
+        "bbox": [
+            271,
+            114,
+            336,
+            127
+        ],
+        "page_idx": 15
+    },
+    {
+        "type": "list",
+        "sub_type": "ref_text",
+        "list_items": [],
+        "bbox": [
+            210,
+            142,
+            789,
+            758
+        ],
+        "page_idx": 16
+    },
+    {
+        "type": "header",
+        "text": "Test-Time Entropy Shaping with Visual Spotlights for Frozen VLMs",
+        "bbox": [
+            274,
+            114,
+            730,
+            128
+        ],
+        "page_idx": 16
+    },
+    {
+        "type": "page_number",
+        "text": "",
+        "bbox": [
+            767,
+            116,
+            784,
+            126
+        ],
+        "page_idx": 16
+    },
+    {
+        "type": "text",
+        "text": "Appendix",
+        "text_level": 2,
+        "bbox": [
+            215,
+            143,
+            316,
+            162
+        ],
+        "page_idx": 17
+    },
+    {
+        "type": "text",
+        "text": "Overall, the appendix provides complementary support for SPOT-E from four aspects. First, the theoretical discussion clarifies why the proposed objective favors non-destructive interventions and how its design relates to the observed efficiency trade-offs. Second, SPOT-E remains effective on larger open-source backbones, as shown in Tables 7 and 8. Third, the method is stable across repeated runs, decoding choices, and moderate hyperparameter changes, while additional ablations show that the gains do not rely on overly large eye modules or trainable budgets (Tables 9, 10, and 11-17). Finally, the added test-time cost brings practical returns in robustness and confidence behavior, as summarized in Tables 18, 19, 20, and 21.",
+        "bbox": [
+            212,
+            178,
+            787,
+            329
+        ],
+        "page_idx": 17
+    },
+    {
+        "type": "text",
+        "text": "A Additional Theoretical Discussion",
+        "text_level": 2,
+        "bbox": [
+            215,
+            354,
+            584,
+            371
+        ],
+        "page_idx": 17
+    },
+    {
+        "type": "text",
+        "text": "Reward preference for non-destructive interventions. Recall that SPOT-E favors interventions that both reduce answer uncertainty and preserve lowentropy anchors from the baseline trajectory. A simplified form of the reward can be written as",
+        "bbox": [
+            214,
+            387,
+            787,
+            446
+        ],
+        "page_idx": 17
+    },
+    {
+        "type": "equation",
+        "text": "$$\nR (\\tilde {x}) = - \\gamma (x, q) \\Delta H _ {\\mathrm{ans}} (\\tilde {x}) - \\lambda \\Delta H _ {\\mathrm{low}} (\\tilde {x}), \\tag {22}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            346,
+            462,
+            785,
+            478
+        ],
+        "page_idx": 17
+    },
+    {
+        "type": "text",
+        "text": "where $\\Delta H _ { \\mathrm { a n s } } ( \\tilde { x } )$ denotes the change in answer entropy relative to the baseline and $\\varDelta H _ { \\mathrm { l o w } } ( \\tilde { x } )$ measures anchor disruption. Here, lower $\\varDelta H _ { \\mathrm { a n s } }$ is better when it reflects a more decisive answer, while lower $\\varDelta H _ { \\mathrm { l o w } }$ indicates less damage to already stable parts of the decoding trajectory.",
+        "bbox": [
+            214,
+            489,
+            787,
+            549
+        ],
+        "page_idx": 17
+    },
+    {
+        "type": "text",
+        "text": "Proposition 1. Let ${ \\tilde { x } } _ { A }$ and $\\tilde { x } _ { B }$ be two candidate interventions. Then $R ( \\tilde { x } _ { A } ) >$ $R ( \\tilde { x } _ { B } )$ if and only if",
+        "bbox": [
+            215,
+            550,
+            785,
+            580
+        ],
+        "page_idx": 17
+    },
+    {
+        "type": "equation",
+        "text": "$$\n\\gamma (x, q) \\Big (\\Delta H _ {\\mathrm{ans}} (\\tilde {x} _ {B}) - \\Delta H _ {\\mathrm{ans}} (\\tilde {x} _ {A}) \\Big) > \\lambda \\Big (\\Delta H _ {\\mathrm{low}} (\\tilde {x} _ {A}) - \\Delta H _ {\\mathrm{low}} (\\tilde {x} _ {B}) \\Big). \\tag {23}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            243,
+            593,
+            785,
+            619
+        ],
+        "page_idx": 17
+    },
+    {
+        "type": "text",
+        "text": "Proof. Subtracting $R ( \\tilde { x } _ { B } )$ from $R ( \\tilde { x } _ { A } )$ under Eq. (22) gives",
+        "bbox": [
+            215,
+            630,
+            645,
+            646
+        ],
+        "page_idx": 17
+    },
+    {
+        "type": "equation",
+        "text": "$$\nR (\\tilde {x} _ {A}) - R (\\tilde {x} _ {B}) = - \\gamma \\Bigl (\\Delta H _ {\\mathrm{ans}} (\\tilde {x} _ {A}) - \\Delta H _ {\\mathrm{ans}} (\\tilde {x} _ {B}) \\Bigr) - \\lambda \\Bigl (\\Delta H _ {\\mathrm{low}} (\\tilde {x} _ {A}) - \\Delta H _ {\\mathrm{low}} (\\tilde {x} _ {B}) \\Bigr),\n$$",
+        "text_format": "latex",
+        "bbox": [
+            218,
+            657,
+            785,
+            684
+        ],
+        "page_idx": 17
+    },
+    {
+        "type": "text",
+        "text": "and rearranging yields Eq. (23).",
+        "bbox": [
+            215,
+            694,
+            447,
+            709
+        ],
+        "page_idx": 17
+    },
+    {
+        "type": "text",
+        "text": "This condition makes the intended behavior explicit: an intervention is preferred when its gain in answer clarification outweighs its additional anchor disruption. In particular, if two interventions achieve the same answer-entropy reduction, the reward always prefers the one with smaller anchor disruption. Conversely, if they preserve anchors equally well, the reward prefers the one that reduces answer entropy more.",
+        "bbox": [
+            212,
+            710,
+            787,
+            801
+        ],
+        "page_idx": 17
+    },
+    {
+        "type": "text",
+        "text": "Role of dynamic scaling. The scaling factor $\\gamma ( x , q )$ controls how strongly the reward emphasizes answer clarification for a given instance. When the baseline prediction is already confident, overly aggressive entropy reduction may encourage destructive shortcuts. By increasing the clarity weight mainly on uncertain instances, dynamic scaling makes the reward more conservative on already stable samples while remaining sufficiently corrective on ambiguous ones. This helps explain why the full reward improves both answer confidence calibration and anchor preservation in Tables 20 and 21.",
+        "bbox": [
+            214,
+            809,
+            787,
+            839
+        ],
+        "page_idx": 17
+    },
+    {
+        "type": "page_number",
+        "text": "18",
+        "bbox": [
+            217,
+            114,
+            235,
+            126
+        ],
+        "page_idx": 17
+    },
+    {
+        "type": "header",
+        "text": "Yin et al.",
+        "bbox": [
+            271,
+            114,
+            336,
+            127
+        ],
+        "page_idx": 17
+    },
+    {
+        "type": "text",
+        "text": "",
+        "bbox": [
+            212,
+            146,
+            787,
+            238
+        ],
+        "page_idx": 18
+    },
+    {
+        "type": "text",
+        "text": "Complexity discussion. Let $T _ { \\mathrm { u p d } }$ denote the number of test-time update steps and N the candidate group size per step. If $C _ { \\mathrm { e y e } }$ is the cost of one forward pass through the eye module and $C _ { \\mathrm { v l m } }$ the cost of evaluating one intervened candidate with the frozen VLM, then the additional per-instance cost of SPOT-E is approximately",
+        "bbox": [
+            212,
+            251,
+            787,
+            328
+        ],
+        "page_idx": 18
+    },
+    {
+        "type": "equation",
+        "text": "$$\n\\mathcal {O} (T _ {\\mathrm{upd}} \\cdot N \\cdot (C _ {\\mathrm{eye}} + C _ {\\mathrm{vlm}}))  , \\tag {24}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            397,
+            333,
+            785,
+            351
+        ],
+        "page_idx": 18
+    },
+    {
+        "type": "text",
+        "text": "excluding the final decode. Since the base VLM remains frozen and only the spotlight-module LoRA parameters are updated, the trainable memory footprint scales with the adaptation module rather than the full backbone. This is consistent with the empirical runtime and memory results in Tables 17 and 18.",
+        "bbox": [
+            212,
+            363,
+            787,
+            426
+        ],
+        "page_idx": 18
+    },
+    {
+        "type": "text",
+        "text": "B Additional Experimental Details",
+        "text_level": 2,
+        "bbox": [
+            215,
+            459,
+            571,
+            478
+        ],
+        "page_idx": 18
+    },
+    {
+        "type": "text",
+        "text": "Benchmark protocols. We summarize the benchmark splits and final answer formats in Table 5, so that the appendix makes clear how evaluation is organized across tasks.",
+        "bbox": [
+            212,
+            503,
+            787,
+            547
+        ],
+        "page_idx": 18
+    },
+    {
+        "type": "table",
+        "img_path": "images/76a19d071baf877a0c360054ec12509575ac2d25a26e69b511bd3b43ccfc4dd7.jpg",
+        "table_caption": [
+            "Table 5: Benchmark protocols used in the appendix and the main paper."
+        ],
+        "table_footnote": [],
+        "table_body": "<table><tr><td>Benchmark</td><td>Split</td><td>Final Answer Format</td></tr><tr><td>TextVQA</td><td>val / test-dev</td><td>short free-form</td></tr><tr><td>DocVQA</td><td>val / test</td><td>short free-form</td></tr><tr><td>ChartQA</td><td>test</td><td>number / phrase</td></tr><tr><td>MathVista</td><td>testmini / test</td><td>option / phrase</td></tr><tr><td>MMMU</td><td>val</td><td>option only</td></tr><tr><td>GQA</td><td>test-dev</td><td>short free-form</td></tr><tr><td>MMBench</td><td>dev / test</td><td>option only</td></tr><tr><td>POPE</td><td>random / popular / adv</td><td>yes / no</td></tr></table>",
+        "bbox": [
+            267,
+            604,
+            738,
+            760
+        ],
+        "page_idx": 18
+    },
+    {
+        "type": "text",
+        "text": "Runtime environment. We also summarize the hardware and software environment in Table 6, since the practical cost of test-time adaptation is part of the method’s trade-off.",
+        "bbox": [
+            212,
+            794,
+            787,
+            839
+        ],
+        "page_idx": 18
+    },
+    {
+        "type": "header",
+        "text": "Test-Time Entropy Shaping with Visual Spotlights for Frozen VLMs",
+        "bbox": [
+            274,
+            113,
+            732,
+            130
+        ],
+        "page_idx": 18
+    },
+    {
+        "type": "page_number",
+        "text": "19",
+        "bbox": [
+            767,
+            114,
+            785,
+            127
+        ],
+        "page_idx": 18
+    },
+    {
+        "type": "table",
+        "img_path": "images/f2eb880333053c3deac810d4e716c4c1c70a48a8a9dea12e76e6119fffe9a747.jpg",
+        "table_caption": [
+            "Table 6: Hardware and software setup for the main open-source runs."
+        ],
+        "table_footnote": [],
+        "table_body": "<table><tr><td>Item</td><td>Setting</td></tr><tr><td>GPU</td><td>H100 80GB</td></tr><tr><td>Framework</td><td>PyTorch + Transformers</td></tr><tr><td>Precision</td><td>bf16</td></tr><tr><td>Inference batch size</td><td>1</td></tr><tr><td>Backbone policy</td><td>fully frozen</td></tr><tr><td>Trainable component</td><td>spotlight-module LoRA only</td></tr><tr><td>API models</td><td>evaluated remotely with matched decoding</td></tr></table>",
+        "bbox": [
+            272,
+            171,
+            730,
+            310
+        ],
+        "page_idx": 19
+    },
+    {
+        "type": "table",
+        "img_path": "images/18e6c2ad4ac1a64b752cdf82ddeb4f146a079917ffc16e844ea030bfa67af48e.jpg",
+        "table_caption": [
+            "Table 7: Additional results on larger open-source backbones."
+        ],
+        "table_footnote": [],
+        "table_body": "<table><tr><td>Base Model</td><td>TextVQA</td><td>DocVQA</td><td>ChartQA</td><td>MathVista</td><td>MMMU</td><td>GQA</td><td>MMBench</td><td>POPE</td></tr><tr><td>Qwen2.5-VL-32B</td><td>88.3</td><td>89.1</td><td>89.8</td><td>73.8</td><td>61.4</td><td>67.1</td><td>84.8</td><td>88.3</td></tr><tr><td>+ SPOT-E (Ours)</td><td>89.5 +1.2↑</td><td>89.8 +0.7↑</td><td>90.6 +0.8↑</td><td>75.3 +1.5↑</td><td>63.0 +1.6↑</td><td>67.8 +0.7↑</td><td>85.5 +0.7↑</td><td>89.0 +0.7↑</td></tr><tr><td>Qwen3-VL-32B</td><td>89.0</td><td>89.8</td><td>90.2</td><td>75.1</td><td>63.2</td><td>67.9</td><td>85.5</td><td>88.9</td></tr><tr><td>+ SPOT-E (Ours)</td><td>90.0 +1.0↑</td><td>90.4 +0.6↑</td><td>90.9 +0.7↑</td><td>76.4 +1.3↑</td><td>64.6 +1.4↑</td><td>68.5 +0.6↑</td><td>86.2 +0.7↑</td><td>89.5 +0.6↑</td></tr><tr><td>InternVL2.5-26B</td><td>84.6</td><td>85.0</td><td>87.5</td><td>72.5</td><td>60.8</td><td>63.8</td><td>82.5</td><td>90.8</td></tr><tr><td>+ SPOT-E (Ours)</td><td>86.1 +1.5↑</td><td>86.0 +1.0↑</td><td>88.8 +1.3↑</td><td>74.3 +1.8↑</td><td>62.7 +1.9↑</td><td>65.0 +1.2↑</td><td>83.4 +0.9↑</td><td>91.6 +0.8↑</td></tr><tr><td>LLaVA-OV-72B</td><td>86.4</td><td>84.9</td><td>85.6</td><td>58.0</td><td>49.8</td><td>66.5</td><td>79.5</td><td>87.5</td></tr><tr><td>+ SPOT-E (Ours)</td><td>88.0 +1.6↑</td><td>86.0 +1.1↑</td><td>87.1 +1.5↑</td><td>60.3 +2.3↑</td><td>51.8 +2.0↑</td><td>67.6 +1.1↑</td><td>80.6 +1.1↑</td><td>88.2 +0.7↑</td></tr></table>",
+        "bbox": [
+            220,
+            354,
+            784,
+            465
+        ],
+        "page_idx": 19
+    },
+    {
+        "type": "text",
+        "text": "C Additional Quantitative Results",
+        "text_level": 2,
+        "bbox": [
+            215,
+            496,
+            566,
+            513
+        ],
+        "page_idx": 19
+    },
+    {
+        "type": "text",
+        "text": "Larger backbones. The main paper already shows consistent gains across multiple backbone families. Table 7 extends that coverage to larger variants and shows that the effect persists even when the base model is stronger.",
+        "bbox": [
+            212,
+            541,
+            784,
+            587
+        ],
+        "page_idx": 19
+    },
+    {
+        "type": "text",
+        "text": "Task-wise average gains. To make the broader trend easier to read, Table 8 further aggregates improvements by task family. The largest average gains still concentrate on evidence-intensive benchmarks, consistent with the main claim.",
+        "bbox": [
+            212,
+            589,
+            785,
+            635
+        ],
+        "page_idx": 19
+    },
+    {
+        "type": "text",
+        "text": "D Stability and Decoding Robustness",
+        "text_level": 2,
+        "bbox": [
+            214,
+            671,
+            596,
+            690
+        ],
+        "page_idx": 19
+    },
+    {
+        "type": "text",
+        "text": "Repeated runs. Because SPOT-E contains candidate sampling and test-time updates, repeated-run consistency is useful to report explicitly. Table 9 summarizes the mean and standard deviation across three random seeds on representative benchmarks.",
+        "bbox": [
+            212,
+            715,
+            784,
+            775
+        ],
+        "page_idx": 19
+    },
+    {
+        "type": "text",
+        "text": "Decoding robustness. The main experiments use a matched decoding setup. To show that the gain does not depend on one particular decoding choice, Table 10 additionally compares greedy decoding, low-temperature sampling, and a small Best-of-4 setting.",
+        "bbox": [
+            212,
+            779,
+            785,
+            840
+        ],
+        "page_idx": 19
+    },
+    {
+        "type": "page_number",
+        "text": "20",
+        "bbox": [
+            217,
+            114,
+            235,
+            126
+        ],
+        "page_idx": 19
+    },
+    {
+        "type": "header",
+        "text": "Yin et al.",
+        "bbox": [
+            271,
+            114,
+            336,
+            127
+        ],
+        "page_idx": 19
+    },
+    {
+        "type": "table",
+        "img_path": "images/66fefc0cc4d5bd5e879390b7f2239161b0946f28937a6391dac94cd59bbdf033.jpg",
+        "table_caption": [
+            "Table 8: Average gain of SPOT-E by task category across open-source backbones."
+        ],
+        "table_footnote": [],
+        "table_body": "<table><tr><td>Task Category</td><td>Benchmarks</td><td>Avg. Gain</td></tr><tr><td>Evidence-intensive</td><td>TextVQA, DocVQA, ChartQA, MathVista</td><td>+2.2</td></tr><tr><td>Broader reasoning</td><td>MMMU, GQA, MMBench</td><td>+1.5</td></tr><tr><td>Hallucination-focused</td><td>POPE</td><td>+1.0</td></tr></table>",
+        "bbox": [
+            228,
+            171,
+            774,
+            250
+        ],
+        "page_idx": 20
+    },
+    {
+        "type": "table",
+        "img_path": "images/e7c674745b742b3365286d0c81430bdaeed591e1ccc6bd465cd6e23ce9f6d56e.jpg",
+        "table_caption": [
+            "Table 9: Repeated-run stability over three seeds."
+        ],
+        "table_footnote": [],
+        "table_body": "<table><tr><td>Backbone</td><td>Method</td><td>TextVQA</td><td>MathVista</td><td>MMMU</td><td>POPE</td></tr><tr><td rowspan=\"2\">Qwen2.5-VL-7B</td><td>Frozen</td><td>84.9 ± 0.0</td><td>67.8 ± 0.0</td><td>55.0 ± 0.0</td><td>86.4 ± 0.0</td></tr><tr><td>+ SPOT-E</td><td>86.8 ± 0.2</td><td>70.7 ± 0.2</td><td>58.4 ± 0.3</td><td>87.4 ± 0.1</td></tr><tr><td rowspan=\"2\">InternVL2.5-8B</td><td>Frozen</td><td>81.0 ± 0.0</td><td>66.0 ± 0.0</td><td>56.0 ± 0.0</td><td>89.0 ± 0.0</td></tr><tr><td>+ SPOT-E</td><td>84.4 ± 0.3</td><td>69.4 ± 0.2</td><td>59.3 ± 0.2</td><td>89.9 ± 0.1</td></tr><tr><td rowspan=\"2\">LLaVA-NeXT-7B</td><td>Frozen</td><td>78.5 ± 0.0</td><td>47.0 ± 0.0</td><td>38.0 ± 0.0</td><td>85.0 ± 0.0</td></tr><tr><td>+ SPOT-E</td><td>84.6 ± 0.4</td><td>50.4 ± 0.3</td><td>40.9 ± 0.2</td><td>86.5 ± 0.1</td></tr></table>",
+        "bbox": [
+            254,
+            301,
+            750,
+            409
+        ],
+        "page_idx": 20
+    },
+    {
+        "type": "text",
+        "text": "E Additional Ablation Studies",
+        "text_level": 2,
+        "bbox": [
+            215,
+            448,
+            526,
+            465
+        ],
+        "page_idx": 20
+    },
+    {
+        "type": "text",
+        "text": "Eye module scale. To study whether SPOT-E depends on the capacity of the external eye module, we vary the CLIP backbone used to parameterize the spotlight policy while keeping the frozen VLM, reward, and test-time budget fixed. Table 11 shows that larger eye modules generally improve performance, but the gains saturate relative to the added cost, supporting our default choice as a favorable efficiency–accuracy trade-off.",
+        "bbox": [
+            212,
+            512,
+            787,
+            603
+        ],
+        "page_idx": 20
+    },
+    {
+        "type": "text",
+        "text": "Trainable budget. We further vary the LoRA rank of the spotlight module to measure how much test-time adaptation capacity is actually needed. Table 12 shows that a small rank already captures most of the gains, while larger ranks bring only marginal improvements at higher cost.",
+        "bbox": [
+            212,
+            609,
+            787,
+            670
+        ],
+        "page_idx": 20
+    },
+    {
+        "type": "text",
+        "text": "Anchor-related choices. The main paper already studies the reward design and the spotlight design. Here we further unpack the anchor-related hyperparameters in Tables 13 and 14, since they are central to the entropy-shaping objective.",
+        "bbox": [
+            212,
+            675,
+            787,
+            737
+        ],
+        "page_idx": 20
+    },
+    {
+        "type": "text",
+        "text": "Optimization settings. We next vary the GRPO group size and learning rate in Tables 15 and 16 to verify that the reported gains are not tied to a single narrow optimization choice.",
+        "bbox": [
+            212,
+            742,
+            787,
+            787
+        ],
+        "page_idx": 20
+    },
+    {
+        "type": "text",
+        "text": "Budget trade-off in table form. The main paper shows the test-time budget trend as a figure. For the appendix, Table 17 is often more convenient because it combines the gain and the runtime overhead in one place.",
+        "bbox": [
+            212,
+            794,
+            787,
+            840
+        ],
+        "page_idx": 20
+    },
+    {
+        "type": "header",
+        "text": "Test-Time Entropy Shaping with Visual Spotlights for Frozen VLMs",
+        "bbox": [
+            274,
+            113,
+            732,
+            128
+        ],
+        "page_idx": 20
+    },
+    {
+        "type": "page_number",
+        "text": "",
+        "bbox": [
+            767,
+            114,
+            782,
+            126
+        ],
+        "page_idx": 20
+    },
+    {
+        "type": "table",
+        "img_path": "images/e3d67998a771d975af4dc31221f0218af89d720d465efd0f225bb4769cb1d8cd.jpg",
+        "table_caption": [
+            "Table 10: Robustness to decoding choices on Qwen2.5-VL-7B."
+        ],
+        "table_footnote": [],
+        "table_body": "<table><tr><td>Method</td><td>Decoding</td><td>TextVQA</td><td>MathVista</td><td>MMMU</td></tr><tr><td>Frozen</td><td>Greedy</td><td>84.9</td><td>67.8</td><td>55.0</td></tr><tr><td>+ SPOT-E</td><td>Greedy</td><td>86.9</td><td>70.8</td><td>58.5</td></tr><tr><td>Frozen</td><td>Temp=0.2</td><td>84.6</td><td>67.3</td><td>54.6</td></tr><tr><td>+ SPOT-E</td><td>Temp=0.2</td><td>86.5</td><td>70.2</td><td>58.0</td></tr><tr><td>Frozen</td><td>Best-of-4</td><td>85.4</td><td>68.2</td><td>55.8</td></tr><tr><td>+ SPOT-E</td><td>Best-of-4</td><td>87.3</td><td>71.1</td><td>58.9</td></tr></table>",
+        "bbox": [
+            287,
+            171,
+            718,
+            308
+        ],
+        "page_idx": 21
+    },
+    {
+        "type": "table",
+        "img_path": "images/24748dae4e9111eb07c2aff34e6c9cb3c813d0bb9ed31438081650cf83aef72d.jpg",
+        "table_caption": [
+            "Table 11: Effect of eye-module scale on Qwen2.5-VL-7B."
+        ],
+        "table_footnote": [],
+        "table_body": "<table><tr><td>Eye Module</td><td>Params</td><td>TextVQA</td><td>MathVista</td><td>MMMU</td><td>Runtime (s)</td></tr><tr><td>CLIP ViT-B/16</td><td>86M</td><td>86.9</td><td>70.8</td><td>58.5</td><td>2.08</td></tr><tr><td>CLIP ViT-L/14</td><td>304M</td><td>87.3</td><td>71.2</td><td>59.5</td><td>2.41</td></tr><tr><td>SigLIP So400m</td><td>400M</td><td>87.4</td><td>71.4</td><td>60.2</td><td>2.73</td></tr></table>",
+        "bbox": [
+            225,
+            347,
+            777,
+            426
+        ],
+        "page_idx": 21
+    },
+    {
+        "type": "text",
+        "text": "F Efficiency and Robustness",
+        "text_level": 2,
+        "bbox": [
+            215,
+            450,
+            506,
+            469
+        ],
+        "page_idx": 21
+    },
+    {
+        "type": "text",
+        "text": "Parameter and memory overhead. Since SPOT-E updates only the spotlightmodule LoRA at test time, the trainable fraction is small. Table 18 makes that explicit together with the extra memory footprint.",
+        "bbox": [
+            212,
+            483,
+            787,
+            527
+        ],
+        "page_idx": 21
+    },
+    {
+        "type": "text",
+        "text": "Severity-averaged corruption robustness. The main paper presents robustness trends under increasing corruption severity. Table 19 summarizes the same phenomenon by averaging over severity levels, which gives a compact cross-model view.",
+        "bbox": [
+            212,
+            529,
+            787,
+            588
+        ],
+        "page_idx": 21
+    },
+    {
+        "type": "text",
+        "text": "G Entropy and Anchor Diagnostics",
+        "text_level": 2,
+        "bbox": [
+            215,
+            612,
+            576,
+            630
+        ],
+        "page_idx": 21
+    },
+    {
+        "type": "text",
+        "text": "Confidence behavior. The main paper shows that SPOT-E increases answer entropy on unsupported errors while keeping it low on correct cases. Table 20 summarizes that separation numerically.",
+        "bbox": [
+            212,
+            643,
+            787,
+            690
+        ],
+        "page_idx": 21
+    },
+    {
+        "type": "text",
+        "text": "Anchor preservation. To complement the reward ablation in the main paper, Table 21 reports the average anchor disruption $\\varDelta H _ { \\mathrm { l o w } }$ for several intervention variants. This makes the non-destructive effect of the full objective more explicit.",
+        "bbox": [
+            212,
+            690,
+            787,
+            736
+        ],
+        "page_idx": 21
+    },
+    {
+        "type": "page_number",
+        "text": "22",
+        "bbox": [
+            217,
+            114,
+            235,
+            126
+        ],
+        "page_idx": 21
+    },
+    {
+        "type": "header",
+        "text": "Yin et al.",
+        "bbox": [
+            271,
+            114,
+            336,
+            127
+        ],
+        "page_idx": 21
+    },
+    {
+        "type": "table",
+        "img_path": "images/ff89380608b0c6102d461c9149c848d49b529cdf4d66e1eec88b4bad4f8cad72.jpg",
+        "table_caption": [
+            "Table 12: Effect of LoRA rank on Qwen2.5-VL-7B."
+        ],
+        "table_footnote": [],
+        "table_body": "<table><tr><td>Rank</td><td>Params</td><td>TextVQA</td><td>MathVista</td><td>MMMU</td><td>Runtime (s)</td></tr><tr><td>4</td><td>1.7M</td><td>86.1</td><td>69.9</td><td>57.8</td><td>2.31</td></tr><tr><td>8</td><td>3.4M</td><td>86.6</td><td>70.4</td><td>58.2</td><td>2.36</td></tr><tr><td>16</td><td>6.8M</td><td>86.9</td><td>70.8</td><td>58.5</td><td>2.41</td></tr><tr><td>32</td><td>13.6M</td><td>87.0</td><td>70.9</td><td>58.6</td><td>2.55</td></tr></table>",
+        "bbox": [
+            282,
+            172,
+            718,
+            266
+        ],
+        "page_idx": 22
+    },
+    {
+        "type": "table",
+        "img_path": "images/074abaa605fe28fec4a600e631c7e7244b098aa455965bad67fa2bc726b1c840.jpg",
+        "table_caption": [
+            "Table 13: Sensitivity to the number of low-entropy anchors K on Qwen2.5-VL-7B.",
+            "Table 14: Sensitivity to the anchor-preservation weight λ on Qwen2.5-VL-7B."
+        ],
+        "table_footnote": [],
+        "table_body": "<table><tr><td>K</td><td>TextVQA</td><td>MathVista</td><td>POPE</td></tr><tr><td>20</td><td>86.1</td><td>69.9</td><td>87.1</td></tr><tr><td>40</td><td>86.6</td><td>70.4</td><td>87.3</td></tr><tr><td>60</td><td>86.9</td><td>70.8</td><td>87.4</td></tr><tr><td>80</td><td>86.7</td><td>70.5</td><td>87.3</td></tr><tr><td>120</td><td>86.3</td><td>70.0</td><td>87.1</td></tr></table>",
+        "bbox": [
+            357,
+            304,
+            645,
+            412
+        ],
+        "page_idx": 22
+    },
+    {
+        "type": "table",
+        "img_path": "images/e8f93eeaa870b4771228d36b09b601b3a159358f5da5b707edf693b2d20ec41e.jpg",
+        "table_caption": [],
+        "table_footnote": [],
+        "table_body": "<table><tr><td>λ</td><td>TextVQA</td><td>MathVista</td><td>POPE</td></tr><tr><td>0.0</td><td>85.8</td><td>69.4</td><td>86.9</td></tr><tr><td>0.1</td><td>86.2</td><td>70.0</td><td>87.1</td></tr><tr><td>0.3</td><td>86.6</td><td>70.5</td><td>87.3</td></tr><tr><td>0.5</td><td>86.9</td><td>70.8</td><td>87.4</td></tr><tr><td>0.7</td><td>86.7</td><td>70.6</td><td>87.2</td></tr><tr><td>1.0</td><td>86.1</td><td>70.0</td><td>87.0</td></tr></table>",
+        "bbox": [
+            359,
+            450,
+            643,
+            573
+        ],
+        "page_idx": 22
+    },
+    {
+        "type": "table",
+        "img_path": "images/01a0421808098311554fe0ae40f302b2199e47c836d4495f1bad1c4f98a4a2a1.jpg",
+        "table_caption": [
+            "Table 15: Sensitivity to GRPO group size N on Qwen2.5-VL-7B."
+        ],
+        "table_footnote": [],
+        "table_body": "<table><tr><td>Group Size</td><td>TextVQA</td><td>MathVista</td><td>MMMU</td></tr><tr><td>2</td><td>86.2</td><td>70.0</td><td>57.6</td></tr><tr><td>4</td><td>86.9</td><td>70.8</td><td>58.5</td></tr><tr><td>8</td><td>87.0</td><td>70.9</td><td>58.6</td></tr><tr><td>16</td><td>87.0</td><td>71.0</td><td>58.7</td></tr></table>",
+        "bbox": [
+            320,
+            612,
+            683,
+            704
+        ],
+        "page_idx": 22
+    },
+    {
+        "type": "table",
+        "img_path": "images/c319c0e1fc2479ad30e2f556ac440234e2eb0e4cb41414164b55d3f974a11ec1.jpg",
+        "table_caption": [
+            "Table 16: Sensitivity to the learning rate on Qwen2.5-VL-7B."
+        ],
+        "table_footnote": [],
+        "table_body": "<table><tr><td>Learning Rate</td><td>TextVQA</td><td>MathVista</td><td>MMMU</td></tr><tr><td> $1 \\times 10^{-4}$ </td><td>86.1</td><td>69.9</td><td>57.9</td></tr><tr><td> $3 \\times 10^{-4}$ </td><td>86.6</td><td>70.5</td><td>58.3</td></tr><tr><td> $5 \\times 10^{-4}$ </td><td>86.9</td><td>70.8</td><td>58.5</td></tr><tr><td> $1 \\times 10^{-3}$ </td><td>86.5</td><td>70.2</td><td>58.1</td></tr></table>",
+        "bbox": [
+            308,
+            743,
+            694,
+            835
+        ],
+        "page_idx": 22
+    },
+    {
+        "type": "header",
+        "text": "Test-Time Entropy Shaping with Visual Spotlights for Frozen VLMs",
+        "bbox": [
+            274,
+            114,
+            732,
+            128
+        ],
+        "page_idx": 22
+    },
+    {
+        "type": "page_number",
+        "text": "23",
+        "bbox": [
+            767,
+            114,
+            785,
+            126
+        ],
+        "page_idx": 22
+    },
+    {
+        "type": "table",
+        "img_path": "images/a3d4a0b25de81fbb0abe659d416c7e03a451162d6c17d5f0a622000ee74ff4e9.jpg",
+        "table_caption": [
+            "Table 17: Accuracy and runtime as a function of the test-time update budget. Runtime values are average seconds per sample."
+        ],
+        "table_footnote": [],
+        "table_body": "<table><tr><td>Model</td><td>Steps</td><td>TextVQA</td><td>MathVista</td><td>MMMU</td><td>Runtime / sample (s)</td></tr><tr><td rowspan=\"6\">Qwen2.5-VL-7B</td><td>0</td><td>84.9</td><td>67.8</td><td>55.0</td><td>0.73</td></tr><tr><td>1</td><td>85.8</td><td>69.2</td><td>56.9</td><td>0.98</td></tr><tr><td>2</td><td>86.3</td><td>69.9</td><td>57.6</td><td>1.26</td></tr><tr><td>4</td><td>86.6</td><td>70.4</td><td>58.2</td><td>1.64</td></tr><tr><td>8</td><td>86.9</td><td>70.8</td><td>58.5</td><td>2.41</td></tr><tr><td>16</td><td>87.0</td><td>70.9</td><td>58.6</td><td>3.96</td></tr><tr><td rowspan=\"6\">InternVL2.5-8B</td><td>0</td><td>81.0</td><td>66.0</td><td>56.0</td><td>0.89</td></tr><tr><td>1</td><td>82.6</td><td>67.3</td><td>57.4</td><td>1.17</td></tr><tr><td>2</td><td>83.5</td><td>68.1</td><td>58.2</td><td>1.47</td></tr><tr><td>4</td><td>84.0</td><td>68.9</td><td>58.8</td><td>1.91</td></tr><tr><td>8</td><td>84.5</td><td>69.5</td><td>59.5</td><td>2.85</td></tr><tr><td>16</td><td>84.6</td><td>69.6</td><td>59.6</td><td>4.71</td></tr></table>",
+        "bbox": [
+            236,
+            196,
+            767,
+            363
+        ],
+        "page_idx": 23
+    },
+    {
+        "type": "table",
+        "img_path": "images/a134bfd1a3e2ab3ddedd33347a1a989979e72db9657f77626e4b8d798b2d64db.jpg",
+        "table_caption": [
+            "Table 18: Trainable parameters and memory overhead of SPOT-E."
+        ],
+        "table_footnote": [],
+        "table_body": "<table><tr><td>Backbone</td><td>Trainable Params</td><td>Trainable %</td><td>Extra VRAM</td></tr><tr><td>Qwen2.5-VL-7B</td><td>6.8M</td><td>0.097%</td><td>+1.8 GB</td></tr><tr><td>InternVL2.5-8B</td><td>6.8M</td><td>0.085%</td><td>+2.0 GB</td></tr><tr><td>LLaVA-NeXT-7B</td><td>6.8M</td><td>0.097%</td><td>+1.7 GB</td></tr><tr><td>Qwen2.5-VL-32B</td><td>6.8M</td><td>0.021%</td><td>+2.4 GB</td></tr></table>",
+        "bbox": [
+            250,
+            421,
+            753,
+            513
+        ],
+        "page_idx": 23
+    },
+    {
+        "type": "table",
+        "img_path": "images/6cf95bd020e3b2cdbba6aed9e4909c3e85b8f6048ca8617399ffddec57d8c930.jpg",
+        "table_caption": [
+            "Table 19: Severity-averaged accuracy under controlled corruptions on TextVQA."
+        ],
+        "table_footnote": [],
+        "table_body": "<table><tr><td>Backbone</td><td>Method</td><td>Gaussian Noise</td><td>Low-Res</td><td>Occlusion</td></tr><tr><td rowspan=\"2\">Qwen2.5-VL-7B</td><td>Frozen</td><td>73.1</td><td>70.5</td><td>72.4</td></tr><tr><td>+ SPOT-E</td><td>83.4</td><td>81.9</td><td>83.2</td></tr><tr><td rowspan=\"2\">InternVL2.5-8B</td><td>Frozen</td><td>71.6</td><td>69.2</td><td>71.1</td></tr><tr><td>+ SPOT-E</td><td>80.2</td><td>78.8</td><td>79.7</td></tr><tr><td rowspan=\"2\">LLaVA-NeXT-7B</td><td>Frozen</td><td>66.0</td><td>63.8</td><td>65.4</td></tr><tr><td>+ SPOT-E</td><td>75.4</td><td>73.2</td><td>74.8</td></tr></table>",
+        "bbox": [
+            276,
+            571,
+            727,
+            679
+        ],
+        "page_idx": 23
+    },
+    {
+        "type": "table",
+        "img_path": "images/23ea745289e8455de9301042e9ea1879236204ac909bfc9c1b954cf447362786.jpg",
+        "table_caption": [
+            "Table 20: Average answer entropy $H _ { \\mathrm { a n s } }$ on correct and incorrect predictions for TextVQA with Qwen2.5-VL-7B. Lower is better for correct cases, while higher is better for unsupported wrong cases."
+        ],
+        "table_footnote": [],
+        "table_body": "<table><tr><td>Method</td><td>Correct ↓</td><td>Wrong ↑</td></tr><tr><td>Frozen</td><td>0.12</td><td>0.24</td></tr><tr><td>+ SPOT-E</td><td>0.11</td><td>0.41</td></tr></table>",
+        "bbox": [
+            375,
+            763,
+            627,
+            825
+        ],
+        "page_idx": 23
+    },
+    {
+        "type": "page_number",
+        "text": "24",
+        "bbox": [
+            217,
+            114,
+            235,
+            126
+        ],
+        "page_idx": 23
+    },
+    {
+        "type": "header",
+        "text": "Yin et al.",
+        "bbox": [
+            271,
+            114,
+            336,
+            127
+        ],
+        "page_idx": 23
+    },
+    {
+        "type": "table",
+        "img_path": "images/a05a987a11b5dfc14a9f9d684321ee6848130ae65e45a17fc529347579a2838d.jpg",
+        "table_caption": [
+            "Table 21: Average anchor disruption $\\varDelta H _ { \\mathrm { l o w } }$ for different variants on Qwen2.5-VL-7B. Lower is better."
+        ],
+        "table_footnote": [],
+        "table_body": "<table><tr><td>Variant</td><td>TextVQA</td><td>MathVista</td><td>POPE</td></tr><tr><td>Clarity only</td><td>0.083</td><td>0.091</td><td>0.077</td></tr><tr><td>w/o dynamic scaling</td><td>0.071</td><td>0.086</td><td>0.068</td></tr><tr><td>MeanFuse</td><td>0.062</td><td>0.074</td><td>0.060</td></tr><tr><td>Full SPOT-E</td><td>0.041</td><td>0.052</td><td>0.044</td></tr></table>",
+        "bbox": [
+            305,
+            465,
+            697,
+            558
+        ],
+        "page_idx": 24
+    },
+    {
+        "type": "header",
+        "text": "Test-Time Entropy Shaping with Visual Spotlights for Frozen VLMs",
+        "bbox": [
+            274,
+            114,
+            732,
+            128
+        ],
+        "page_idx": 24
+    },
+    {
+        "type": "page_number",
+        "text": "25",
+        "bbox": [
+            767,
+            114,
+            785,
+            126
+        ],
+        "page_idx": 24
+    }
+]

@@ -1,0 +1,953 @@
+# The Hidden Evolution of Disguised Visual Context inside the VLM
+
+Wish Suharitdamrong $^{1}$ , Tony Alex $^{1,2}$ , Muhammad Awais $^{1,2}$ , and Sara Atito $^{1,2}$
+
+$^{1}$ Surrey Institute for People-Centred AI, University of Surrey, Guildford, GU2 7XH, UK
+
+$^{2}$ Centre for Vision, Speech and Signal Processing (CVSSP), University of Surrey, UK {ws00372,t.alex,muhammad.awais,sara.atito}@surrey.ac.uk
+
+Abstract. Visual tokens enter Large Language Models (LLMs) as raw, foreign signals. How they are transformed into meaningful representations and interact with the language space depends entirely on the integration architecture. Whether by treating visual tokens as in-context prompts within the input sequence or injecting them directly into the LLM's intermediate layers. A controlled comparison and understanding of how these architectural choices affect visual information and its internal transformation to integrate with the LLM remains underexplored. We provide a fair comparison by evaluating in-context and layer-wise injection VLM integration paradigms under identical training conditions across single image, multi-image, and video benchmarks. In doing so, we uncover a hidden evolution where visual tokens enter the LLM as disguised visual context, raw representations lacking linguistic structure, but are progressively reshaped depending on the integration paradigm, each capturing fundamentally different frequency characteristics of the visual signal. We show that this evolution inside the LLM determines what visual features the VLM can utilize effectively, how visual representations align with the language space, and ultimately how each paradigm performs across different tasks. We further demonstrate that attention allocation alone is insufficient, and that performance is driven by the quality of visual representations at each layer.
+
+Keywords: Vision Language Models (VLMs), Multimodal Large Language Models (MLLMs)
+
+## 1 Introduction
+
+Vision-Language Models (VLMs) $[1,4,6,10,64]$ succeed only when an LLM can reliably use visual information during generation; critically, integration design determines what “use” even means inside the model. The common approach concatenates visual tokens with text at the input so that visual tokens participate in standard self-attention throughout the network $[9,12,20,34,50,56,67,85]$ ; we call this in-context injection. A competing family introduces visual information at intermediate layers through dedicated mechanisms $[2,5,29,31]$ ; we call this layer-wise injection. Orthogonal to this integration choice, modern frameworks $[42,44]$ increasingly unfreeze both the vision encoder and the LLM backbone for end-to-end training, driving rapid progress across image understanding $[30,37,41,65,69,74]$ , video understanding $[35,38,61]$ , and unified frameworks $[32,79]$ . As VLMs move toward long-context and text-heavy settings such as OCR documents and video, integration decisions increasingly control both computational cost and what visual evidence can be composed and retained.
+
+Despite the crucial rule of integration design, we still lack controlled evidence about what the integration paradigm changes mechanistically inside the LLM. Most existing comparisons $[2,10,18,65,69,74,76]$ are confounded by simultaneous differences in training data mixtures, token budgets, model scale, and optimisation, making it difficult to attribute performance differences to the integration mechanism itself. In addition, much of the analysis literature $[7,8,22,58,62]$ focuses on a single dominant paradigm, leaving unclear whether conclusions about representation evolution, modality alignment, or attention-based usage generalise to alternative integration strategies. As a result, integration choices are often made based on convention or efficiency considerations without a clear understanding of the representational tradeoffs they induce.
+
+This paper isolates integration as the key variable by evaluating representative in-context and layer-wise injection architectures under identical training conditions across single-image, multi-image, and video benchmarks. Beyond reporting benchmark outcomes, we provide a mechanistic characterisation of how visual information is processed inside the LLM through four complementary analyses: (1) we test whether visual token representations evolve smoothly across layers, revealing a paradigm-dependent difference in representational continuity, (2) we examine what visual features are captured across depth via frequency-based analysis, showing systematic differences in what information is emphasised by each paradigm, (3) we study whether visual representations converge toward the language representation space, clarifying how integration affects cross-modal compatibility, and (4) we analyse when the model utilises visual information during generation and show that attention allocation alone is insufficient to explain performance gaps; the quality of the layer-wise visual representations is a critical driver of downstream capability.
+
+These results show that integration is not merely a question of where visual features enter the network, but a choice that determines how visual information is represented and made accessible to language generation across depth. This mechanistic perspective helps explain why integration strategies exhibit distinct strengths across tasks, and why attention allocation alone does not account for performance differences, especially in settings that require composing fine-grained evidence across many visual tokens, such as OCR and video. By isolating integration under controlled training conditions and analysing the resulting layer-wise representational dynamics, we provide a principled basis for selecting integration paradigms and for designing future VLM architectures beyond benchmark-driven trial and error.
+
+## 2 Background
+
+## 2.1 Integration in Multimodal Large Language Models (MLLMs)
+
+The architecture of a Multimodal Large Language Model (MLLM) is largely defined by how modality tokens are delivered to the LLM backbone. These integration strategies are shared across modalities, though most prominently adopted in Vision-Language Models (VLMs), and existing approaches can be broadly categorized into three paradigms. In-context injection $[4,17,32,42,44,79]$ concatenates modality tokens with text tokens at the LLM input layer, processing both through standard transformer blocks. Layer-wise injection introduces modality information at intermediate LLM layers through mechanisms such as gated cross-attention $[2,5,16,29]$ , adaptive gating conditioned on language features $[74]$ , LayerNorm injection $[76]$ , or direct injection into the keys and values of the LLM's attention $[3,49,82]$ . Hybrid approaches $[3,18]$ combine both by feeding compressed modality tokens as an in-context prompt while injecting finer-grained representations at intermediate layers. Orthogonal to these integration paradigms, other works explore visual feature enhancement by injecting features from different levels of the vision encoder into different LLM layers $[39,55]$ , or bypass the external vision encoder entirely through encoder-free approaches $[11,48,68]$ that process raw visual inputs directly within the LLM. In this study, we focus on in-context and layer-wise injection within the vision-language setting, the two most widely employed integration strategies, to understand how visual information is processed within the LLM.
+
+## 2.2 Previous Work in MLLM Analysis
+
+A growing body of work has begun to analyze how visual information is processed within the LLM component of MLLMs. One line of research focuses on visual representations and their relationship to language, revealing that despite a persistent modality gap, visual and textual tokens activate similar LLM weights, suggesting an implicit multimodal alignment $[62]$ . Along this direction, several works employ the logit lens to show that visual token representations become increasingly interpretable across layers $[21,22,58]$ , and sparse autoencoders have been applied to disentangle these representations into human-interpretable features $[80]$ . A complementary line of work investigates layer-wise processing, identifying the middle layers as critical for cross-modal interaction and tracing how visual and textual constraints jointly flow through the model $[7,22,23,75]$ . Within this direction, studies have also shown that visual tokens are primarily utilized in shallow layers, with their role diminishing in deeper layers $[8,81]$ , and furthermore a visual attention sink phenomenon emerges in visual tokens $[25]$ , where visual information remains accessible but underutilized by the LLM $[15]$ . The relationship between multi-layer vision encoder features and in-context injection has also been explored $[39]$ . While these works provide valuable insights, they predominantly focus on a single integration paradigm, typically in-context injection. A systematic comparison of how different integration strategies affect visual information processing within the LLM remains unexplored.
+
+![](images/8091d28c5fc1d7ac180ab4dbc96182280a50902ffafcd672209e20d45645c671.jpg)
+
+<details>
+<summary>flowchart</summary>
+
+```mermaid
+graph TD
+    subgraph a_In_Context_Injection["a) In-Context Injection"]
+  A1["LLM_layerN"] --> A2["LLM_layer1"]
+  A2 --> A3["Connector"]
+  A3 --> B1["LLM_layer1"]
+    end
+
+    subgraph b_Layer_wise_Gated_Cross_Attention_Injection["b) Layer-wise Gated Cross-Attention Injection"]
+  B1 --> C1["Connector"]
+  C1 --> C2["LLM_layer1"]
+  C2 --> C3["LLM_layerN"]
+  C3 --> D1["Gated Cross Attention"]
+  D1 --> E1["LLM_layer1"]
+    end
+
+    subgraph b_Layer_wise_Attention_Injection["b) Layer-wise Attention Injection"]
+  D1 --> E2["Connector"]
+  E2 --> E3["LLM_layer1"]
+  E3 --> F1["LLM_layerN"]
+    end
+
+    A1 <--> B1
+    B1 <--> C1
+    C1 <--> D1
+    D1 <--> E2
+    style a) In-Context Injection fill:#f9f,stroke:#333
+    style b) Layer-wise Gated Cross-Attention Injection fill:#bbf,stroke:#333
+    style b) Layer-wise Attention Injection fill:#dfd,stroke:#333
+```
+</details>
+
+Fig. 1: Overview of the three VLM integration paradigms evaluated in this study. (a) IN-CT concatenates visual tokens with text tokens at the input layer, (b) LW-GC introduces visual features through gated cross-attention blocks, and (c) LW-AT injects visual features directly into the LLM's keys and values.
+
+## 3 Model Architectures and Training Data
+
+Integration Paradigms and Architectures. To conduct a fair systematic evaluation, we standardise the training data and optimisation recipe across all models, so that observed differences can be attributed primarily to the integration design rather than confounding factors. We focus on integration paradigms that are both widely adopted and representative of distinct design philosophies for delivering visual context into an LLM. Concretely, we employ three distinct baselines representing the primary vision-language integration paradigms (Figure 1): an in-context injection model [42], referred to as IN-CT, which concatenates projected visual tokens with the text sequence; and two layer-wise injection variants that cover the dominant families of intermediate-layer integration, one using gated cross-attention blocks, referred to as LW-GC [2], and another using attention-only injection into the LLM's existing attention, referred to as LW-AT [3]. Together, these three architectures span the most common choices in the literature.
+
+A vision encoder $\Phi$ extracts visual features $Z_{v} = \Phi(V)$ from the input image V, and all three paradigms share the same connector architecture, a simple MLP with GELU activation: $\Psi(Z_{v}) = W_{out}\mathrm{GELU}(W_{in} \cdot Z_{v})$ . For LW-GC, we do not utilise a Perceiver [20] nor compress the number of visual tokens, maintaining an identical number of visual tokens across all paradigms. The three integration mechanisms are detailed as follows:
+
+1. IN-CT (In-context injection): A single connector projects visual features into the input embedding space, $\hat{V} = \Psi(Z_v)$ . The initial hidden state is formed by concatenating visual and text tokens: $h_0 = [\hat{V}; H_t]$ , and both are processed together through the LLM's standard transformer blocks.  
+2. LW-GC (Layer-wise with gated cross-attention): The initial hidden state contains only text tokens $h_{0} = H_{t}$ . At each layer l, a layer-specific con-
+
+nector $\varPsi_{l}$ maps visual features, which are injected via gated cross-attention and a gated FFN, both modulated by learnable scalars initialized to zero:
+
+$$
+h _ {l} ^ {\mathrm{cross}} = h _ {l} + \tanh (\alpha_ {l}) \cdot \mathrm{CrossAttention} (Q = h _ {l}, K = \hat {V} ^ {l}, V = \hat {V} ^ {l})
+$$
+
+$$
+h _ {l} ^ {\mathrm{gated}} = h _ {l} ^ {\mathrm{cross}} + \tanh (\beta_ {l}) \cdot \mathrm{FFN} _ {\mathrm{new}} (h _ {l} ^ {\mathrm{cross}})
+$$
+
+We experiment with two variants: inserting gated cross-attention at every layer and at every 4 layers.
+
+3. LW-AT (Layer-wise with attention-only injection): Starting with $h_0 = H_t$ , layer-specific connectors map visual features that are injected solely into the LLM's existing attention, explicitly bypassing the FFNs:
+
+$$
+h _ {l} ^ {\prime} = \mathrm{Attention} (Q = h _ {l}, K = [ \hat {V} ^ {l}; h _ {l} ], V = [ \hat {V} ^ {l}; h _ {l} ])
+$$
+
+LW-AT bridges the two prior paradigms: like LW-GC, visual features are injected layer-by-layer, but like IN-CT, visual and text tokens interact simultaneously within standard attention.
+
+Further implementation details and training settings for all three paradigms are provided in the Supplementary.
+
+Model and Dataset. We use Qwen2.5-0.5B and Qwen2.5-3B [73] as LLM backbones and SigLIP2-So400m [66] as the vision encoder. Training proceeds in two stages: (i) connector pretraining and (ii) supervised fine-tuning (instruction tuning). For connector pretraining, we use the BLIP-558K dataset [44]. For instruction tuning, we employ two data mixtures: (1) the LLaVA-NeXT dataset [43] comprising $\sim 700\mathrm{K}$ samples, and (2) the LLaVA-OneVision (OV) dataset [32], a comprehensive mixture of single images, multi-image, and videos comprising $\sim 1.6\mathrm{M}$ samples.
+
+## 4 Benchmark Results
+
+Single-Image Understanding. We first evaluate the three integration paradigms across 14 single-image benchmarks spanning General, Knowledge, Vision-Centric, and OCR & Chart understanding (Table 1). Throughout all tables, bold and underline denote the best and second best results, respectively.
+
+As shown in Table 1, IN-CT achieves the best overall results across most benchmarks, followed by LW-AT, while LW-GC lags significantly, particularly on OCR and Chart tasks. On the LLaVA-OV mixture, the gap between IN-CT and LW-AT narrows, with LW-AT occasionally matching or surpassing IN-CT on individual benchmarks.
+
+Multi-Image and Multi-View Understanding. We also evaluate the three paradigms across 16 multi-image benchmarks covering in-domain multi-image, in-domain multi-view, and out-of-domain settings (Table 2).
+
+As shown in Table 2, in the multi-image setting, LW-GC shows competitive performance when trained on single-image data only (LLaVA-NeXT 700K), but this advantage disappears once multi-image training data is available under the LLaVA-OV mixture.
+
+Table 1: Comparison of integration paradigms across General, Knowledge, Vision-Centric, and OCR&Chart benchmarks.
+
+<table><tr><td rowspan="2">Method</td><td colspan="4">General</td><td colspan="3">Knowledge</td><td colspan="3">Vision-Centric</td><td colspan="4">OCR&amp;Chart</td></tr><tr><td> $MME^P$ </td><td> $MMB^{em}$ </td><td> $SEED^I$ </td><td>GQA</td><td> $SQA^I$ </td><td> $MMMU^V$ </td><td>AI2D</td><td>RealWorldQA</td><td>CV-Bench 2D</td><td>CV-Bench 3D</td><td>ChartQA</td><td>TextVQA</td><td>OCRBench</td><td>DocVQA</td></tr><tr><td colspan="15">LLaVA-Next Instruction Tuning Data 700K Instruction Tuning</td></tr><tr><td>IN-CT 0.5B</td><td>1218.0</td><td>49.1</td><td>59.6</td><td>57.5</td><td>60.4</td><td>32.8</td><td>53.3</td><td>51.6</td><td>45.1</td><td>54.3</td><td>48.2</td><td>47.3</td><td>39.3</td><td>38.1</td></tr><tr><td>LW-AT 0.5B</td><td>1082.5</td><td>43.8</td><td>50.6</td><td>54.8</td><td>58.9</td><td>30.0</td><td>52.5</td><td>46.9</td><td>43.3</td><td>51.5</td><td>42.6</td><td>42.8</td><td>36.2</td><td>31.5</td></tr><tr><td>LW-GC(4) 0.5B</td><td>644.9</td><td>17.4</td><td>31.5</td><td>37.7</td><td>55.2</td><td>29.4</td><td>50.0</td><td>41.6</td><td>39.1</td><td>45.9</td><td>10.4</td><td>6.8</td><td>2.6</td><td>6.3</td></tr><tr><td>LW-GC(all) 0.5B</td><td>831.6</td><td>28.7</td><td>40.1</td><td>45.7</td><td>58.1</td><td>27.0</td><td>51.0</td><td>43.8</td><td>38.9</td><td>50.3</td><td>11.2</td><td>8.5</td><td>2.8</td><td>8.3</td></tr><tr><td>IN-CT 3B</td><td>1451.8</td><td>72.3</td><td>71.5</td><td>62.7</td><td>76.2</td><td>39.2</td><td>72.4</td><td>55.8</td><td>59.2</td><td>57.4</td><td>59.6</td><td>55.8</td><td>47.8</td><td>49.3</td></tr><tr><td>LW-AT 3B</td><td>1307.5</td><td>58.6</td><td>59.7</td><td>58.0</td><td>71.1</td><td>38.1</td><td>65.5</td><td>48.5</td><td>52.5</td><td>58.6</td><td>47.0</td><td>37.8</td><td>37.8</td><td>35.4</td></tr><tr><td colspan="15">LLaVA-OV Instruction Tuning Mixture</td></tr><tr><td>IN-CT 0.5B</td><td>1236.4</td><td>59.2</td><td>63.5</td><td>57.8</td><td>70.0</td><td>33.2</td><td>59.0</td><td>56.1</td><td>53.8</td><td>53.8</td><td>61.0</td><td>59.1</td><td>53.8</td><td>56.3</td></tr><tr><td>LW-AT 0.5B</td><td>1132.4</td><td>49.0</td><td>56.3</td><td>55.6</td><td>70.4</td><td>31.1</td><td>57.4</td><td>51.1</td><td>48.2</td><td>54.4</td><td>52.7</td><td>53.1</td><td>45.4</td><td>38.0</td></tr><tr><td>LW-GC 0.5B</td><td>671.5</td><td>20.2</td><td>35.4</td><td>36.8</td><td>64.2</td><td>31.6</td><td>53.8</td><td>42.2</td><td>34.7</td><td>49.8</td><td>12.4</td><td>7.6</td><td>2.4</td><td>6.7</td></tr></table>
+
+Table 2: Comparison of integration paradigms across in-domain multi-image, in-domain multi-view, and out-domain benchmarks.
+
+<table><tr><td rowspan="2">Method</td><td colspan="8">in-domain multi-image</td><td colspan="3">in-domain multi-view</td><td colspan="5">out-domain</td></tr><tr><td>IEI</td><td>MI-VQA</td><td>NLVR2</td><td>Puzzle</td><td>Q-Bench</td><td>Spot-Diff</td><td>TR-VQA</td><td>VST</td><td>ScanQA</td><td>ALFRED</td><td>muScenes</td><td>BLINK</td><td>Mantis</td><td>MathVerse</td><td>MuirBench</td><td>SciVerse</td></tr><tr><td colspan="17">LLaVA-Next Instruction Tuning Data 700K Instruction Tuning</td></tr><tr><td>IN-CT 0.5B</td><td>13.5</td><td>46.3</td><td>57.1</td><td>4.2</td><td>47.8</td><td>11.0</td><td>26.7</td><td>10.4</td><td>2.9</td><td>13.7</td><td>1.2</td><td>39.3</td><td>39.5</td><td>25.8</td><td>27.4</td><td>19.6</td></tr><tr><td>LW-AT 0.5B</td><td>13.4</td><td>40.3</td><td>54.4</td><td>4.9</td><td>49.2</td><td>10.9</td><td>23.1</td><td>6.7</td><td>2.6</td><td>14.6</td><td>1.2</td><td>39.4</td><td>36.7</td><td>25.5</td><td>24.4</td><td>20.0</td></tr><tr><td>LW-GC(4) 0.5B</td><td>13.2</td><td>43.0</td><td>50.2</td><td>22.1</td><td>49.9</td><td>10.4</td><td>21.3</td><td>19.7</td><td>3.6</td><td>35.0</td><td>1.0</td><td>37.8</td><td>36.7</td><td>22.2</td><td>17.5</td><td>24.0</td></tr><tr><td>LW-GC(all) 0.5B</td><td>10.0</td><td>45.3</td><td>51.1</td><td>22.1</td><td>48.0</td><td>12.1</td><td>25.6</td><td>20.6</td><td>3.6</td><td>36.8</td><td>1.0</td><td>38.0</td><td>40.4</td><td>23.5</td><td>18.1</td><td>25.3</td></tr><tr><td>IN-CT 3B</td><td>16.5</td><td>48.2</td><td>68.9</td><td>19.6</td><td>53.2</td><td>6.9</td><td>48.7</td><td>18.4</td><td>3.3</td><td>30.4</td><td>2.0</td><td>40.9</td><td>47.3</td><td>24.2</td><td>26.42</td><td>26.9</td></tr><tr><td>LW-AT 3B</td><td>16.3</td><td>48.0</td><td>59.2</td><td>20.5</td><td>53.0</td><td>15.6</td><td>36.4</td><td>14.2</td><td>4.9</td><td>26.4</td><td>3.2</td><td>39.9</td><td>43.6</td><td>25.5</td><td>20.81</td><td>28.4</td></tr><tr><td colspan="17">LLaVA-OV Instruction Tuning Mixture</td></tr><tr><td>IN-CT 0.5B</td><td>22.8</td><td>79.2</td><td>72.4</td><td>35.4</td><td>54.3</td><td>37.0</td><td>62.4</td><td>30.7</td><td>28.2</td><td>61.7</td><td>67.8</td><td>44.3</td><td>44.1</td><td>25.3</td><td>27.7</td><td>32.0</td></tr><tr><td>LW-AT 0.5B</td><td>21.2</td><td>46.0</td><td>67.9</td><td>35.4</td><td>48.4</td><td>36.8</td><td>65.1</td><td>30.3</td><td>27.4</td><td>62.3</td><td>67.8</td><td>39.5</td><td>36.7</td><td>24.6</td><td>25.1</td><td>26.2</td></tr><tr><td>LW-GC 0.5B</td><td>20.1</td><td>44.5</td><td>50.6</td><td>35.4</td><td>49.8</td><td>30.6</td><td>54.2</td><td>26.2</td><td>10.9</td><td>59.0</td><td>52.5</td><td>39.3</td><td>39.5</td><td>22.7</td><td>19.23</td><td>26.7</td></tr></table>
+
+Video Understanding. We further examine these trends in the context of video understanding, with results presented in Table 3. As shown in Table 3, the performance trends on video benchmarks are consistent with the image understanding results: IN-CT achieves the strongest performance, followed by LW-AT, with LW-GC trailing behind. We hypothesize this trend is driven by the same underlying mechanism as the OCR performance gap, which we analyse in the following section.
+
+Effect of Text-Heavy Data (OCR-filtered mixture). Based on these observations, we hypothesise that text-heavy visual data may be disadvantageous for the optimisation of layer-wise injection models. To test this, we construct an OCR-filtered 500K mixture by removing text-centric samples from the LLaVA-NeXT training mixture, including not only pure OCR datasets but also samples containing substantial situated text (e.g., AI2D [26], which features diagrams with embedded text). Results are shown in Table 4.
+
+Table 3: Comparison of integration paradigms on video benchmarks.
+
+<table><tr><td>Method</td><td>SEED</td><td>EgoSchema</td><td>MLVU</td><td>VideoMME</td><td>L-VideoBench</td><td>NextQA</td></tr><tr><td colspan="7">LLaVA-Next Instruction Tuning Data 700K Instruction Tuning</td></tr><tr><td>IN-CT 0.5B</td><td>36.6</td><td>22.7</td><td>38.5</td><td>38.2</td><td>28.9</td><td>47.4</td></tr><tr><td>LW-AT 0.5B</td><td>31.6</td><td>22.6</td><td>33.8</td><td>32.4</td><td>27.9</td><td>37.8</td></tr><tr><td>LW-GC(4) 0.5B</td><td>26.3</td><td>21.5</td><td>32.5</td><td>31.4</td><td>26.5</td><td>31.5</td></tr><tr><td>LW-GC(all) 0.5B</td><td>29.0</td><td>22.9</td><td>35.5</td><td>31.3</td><td>26.7</td><td>37.8</td></tr><tr><td>IN-CT 3B</td><td>45.6</td><td>42.1</td><td>52.1</td><td>49.3</td><td>34.2</td><td>66.7</td></tr><tr><td>LW-AT 3B</td><td>38.1</td><td>31.2</td><td>44.1</td><td>40.3</td><td>27.2</td><td>53.2</td></tr><tr><td colspan="7">LLaVA-OV Instruction Tuning Mixture</td></tr><tr><td>IN-CT 0.5B</td><td>45.1</td><td>30.7</td><td>50.3</td><td>45.0</td><td>33.9</td><td>62.6</td></tr><tr><td>LW-AT 0.5B</td><td>37.9</td><td>24.5</td><td>46.0</td><td>40.1</td><td>30.1</td><td>57.6</td></tr><tr><td>LW-GC 0.5B</td><td>28.4</td><td>20.0</td><td>37.0</td><td>33.0</td><td>26.6</td><td>39.0</td></tr></table>
+
+The OCR-filtered results in Table 4 reveal a clear difference in how each architecture responds to the removal of text-heavy data. For IN-CT, removing these samples leads to consistent performance decreases across nearly every benchmark, whereas for LW-AT and LW-GC the impact is more selective: performance drops on benchmarks containing situated text (e.g., AI2D), while vision-centric benchmarks remain stable or slightly improve. This suggests that in-context injection can broadly leverage text-heavy data to benefit general visual understanding, whereas layer-wise injection models do not utilize such data as effectively. We hypothesize that this advantage arises because in-context visual tokens participate in the LLM's attention layers, allowing tokens from different image patches to attend to one another and progressively compose spatially distributed information, such as characters spanning multiple patches, into coherent representations. Layer-wise injection models cannot replicate this behavior since their visual tokens remain static and do not attend to each other.
+
+Table 4: Comparison of integration paradigms on General, Knowledge, and Vision-Centric benchmarks using the OCR-filtered 500K mixture. Parentheses show change relative to the full 700K mixture (green for improvement, red for decline).
+
+<table><tr><td rowspan="2">Method</td><td colspan="4">General</td><td colspan="3">Knowledge</td><td colspan="3">Vision-Centric</td></tr><tr><td> $MME^P$ </td><td> $MMB^{en}$ </td><td> $SEED^I$ </td><td>GQA</td><td> $SQA^I$ </td><td> $MMMU^V$ </td><td>AI2D</td><td>Real-WorldQA</td><td>CV-Bnch 2D</td><td>CV-Bnch 3D</td></tr><tr><td colspan="11">LLaVA-Next Instruction Tuning Data OCR Filter 500K Mixture</td></tr><tr><td>IN-CT 0.5B</td><td>1233.2 (+15.2)</td><td>47.4 (-1.7)</td><td>58.9 (-0.7)</td><td>57.2 (-0.3)</td><td>58.4 (-2.0)</td><td>29.9 (-2.9)</td><td>47.0 (-6.3)</td><td>51.4 (-0.3)</td><td>44.1 (-1.0)</td><td>53.1 (-1.3)</td></tr><tr><td>LW-AT 0.5B</td><td>1078.9 (-3.6)</td><td>43.6 (-0.3)</td><td>54.8 (+4.3)</td><td>54.8 (+0.1)</td><td>57.5 (-1.3)</td><td>28.1 (-1.9)</td><td>43.2 (-9.3)</td><td>48.2 (+1.3)</td><td>43.5 (+0.1)</td><td>53.4 (+1.9)</td></tr><tr><td>LW-GC(4) 0.5B</td><td>658.1 (+13.2)</td><td>17.2 (-0.3)</td><td>32.4 (+0.9)</td><td>37.9 (+0.3)</td><td>54.9 (-0.3)</td><td>27.8 (-1.7)</td><td>42.6 (-7.4)</td><td>42.5 (+0.9)</td><td>38.5 (-0.6)</td><td>50.6 (+4.7)</td></tr><tr><td>LW-GC(all) 0.5B</td><td>796.7 (-34.8)</td><td>30.8 (+2.1)</td><td>40.1 (0.0)</td><td>57.5 (+11.8)</td><td>57.5 (-0.6)</td><td>27.7 (+0.7)</td><td>43.0 (-8.0)</td><td>47.1 (+3.3)</td><td>37.8 (-1.2)</td><td>50.0 (-0.3)</td></tr></table>
+
+We hypothesize that the same underlying mechanism also explains the performance gap observed in video understanding. In the in-context injection paradigm, visual tokens from all frames are concatenated along the sequence dimension, allowing tokens from one frame to directly attend to previous frames, enabling visual representations to progressively accumulate temporal context. In contrast, layer-wise injection methods inject visual features as auxiliary context, but the visual tokens themselves remain static and do not attend to one another across frames. In both cases, whether composing characters spanning patches in OCR or events spanning frames in video, understanding similarly requires integrating information across distributed tokens, spatially across patches and temporally across frames, and we hypothesize that in-context injection is naturally better equipped for this by allowing visual tokens to interact across both space and time, a capability layer-wise injection fundamentally cannot replicate.
+
+Note on Alignment Efficiency and Evaluation Constraints: Unless otherwise specified, the comparisons presented in this paper are evaluated under a strict constant-epoch training constraint across all integration methods, rather than an equal compute budget. Because IN-CT processes vision tokens through the entirety of the LLM, including all computationally expensive feedforward networks, it consumes significantly more compute per epoch and naturally achieves deeper multimodal alignment. In contrast, LW-GC and LW-AT explicitly bypass these operations to prioritize efficiency. These architectures inherently trade per-epoch alignment expressivity for raw computational throughput. Consequently, any observed benchmark gaps regarding LW-GC and LW-AT must be interpreted within the context of this experimental design, as leveraging their higher throughput for additional training epochs could potentially narrow these performance differences.
+
+## 5 Analysis: The Hidden Evolution of Visual Context
+
+The experimental results reveal a consistent performance gap between in-context injection (IN-CT) and layer-wise injection (LW-GC, LW-AT), particularly in OCR and video tasks. What causes this gap? To understand this, we conduct four analysis examining (1) whether visual tokens semantically evolve inside the LLM, (2) what visual features the representations capture, (3) whether visual tokens align with the language representation space, and (4) when the model utilizes visual information during generation.
+
+## 5.1 Do Visual Tokens Semantically Evolve Inside the LLM?
+
+Given that IN-CT consistently outperforms layer-wise injection, we hypothesize that visual tokens in IN-CT undergo a progressive transformation through the LLM layers, similar to how text tokens are refined. To test this, we utilize Centered Kernel Alignment (CKA) [28], which unlike cosine similarity used in prior work [62, 82], is invariant to scaling and rotation, allowing it to robustly capture structural shifts between entire sets of tokens rather than individual vectors (see Supplementary for formal definitions). Specifically, we apply CKA at
+
+![](images/5b188d57b754611d015cf3a18331d4b914b1c791847b12e7025e75b9132821ed.jpg)
+
+<details>
+<summary>heatmap</summary>
+
+| Subsequent n^(ℓ/ℓ) | Layer Index ℓ = 0 | Layer Index ℓ = 4 | Layer Index ℓ = 8 | Layer Index ℓ = 12 | Layer Index ℓ = 16 | Layer Index ℓ = 20 |
+|---|---|---|---|---|---|---|
+| 1 | 0.6 | 0.7 | 0.8 | 0.9 | 1.0 | 1.1 |
+| 5 | 0.6 | 0.7 | 0.8 | 0.9 | 1.0 | 1.1 |
+| 9 | 0.6 | 0.7 | 0.8 | 0.9 | 1.0 | 1.1 |
+| 13 | 0.6 | 0.7 | 0.8 | 0.9 | 1.0 | 1.1 |
+| 17 | 0.6 | 0.7 | 0.8 | 0.9 | 1.0 | 1.1 |
+| 21 | 0.6 | 0.7 | 0.8 | 0.9 | 1.0 | 1.1 |
+</details>
+
+Fig. 2: CKA heatmaps of image (a) and text (b) token representations across IN-CT layers. Higher values (yellow) indicate greater representational similarity between layers.
+
+the token level to measure how the internal structure of visual and text token representations shifts across layers. Let $H_{i}^{(\ell)} \in \mathbb{R}^{T \times D}$ denote the hidden states of sample i at layer $\ell$ , where T is the token count, D is the hidden dimension, and N is the total number of samples. The token-level CKA treats the T tokens as a mini-batch of data points within each sample, computing CKA between the token representations at layers $\ell$ and $\ell'$ to measure how the structural relationships of tokens in the sequence shift across layers, averaged across all N samples:
+
+$$
+\mathrm{CKA} _ {\text { token }} \left(\ell , \ell^ {\prime}\right) = \frac {1}{N} \sum_ {i = 1} ^ {N} \mathrm{CKA} \left(H _ {i} ^ {(\ell)}, H _ {i} ^ {\left(\ell^ {\prime}\right)}\right) \tag {1}
+$$
+
+As illustrated in Figures 2 and 3, visual tokens in IN-CT exhibit a smooth, uniform transformation across layers, closely mirroring the progressive refinement observed in text tokens (Figure 2). Residual connections ensure each layer introduces only incremental changes, preventing abrupt feature drift. To better
+
+![](images/5cfb0b2e353838cf1dea0c1a11a7a6347f73fca016e63e72d466e68c9fce90cb.jpg)  
+Fig. 3: CKA heatmaps of visual token representations across all three integration paradigms. (a) IN-CT exhibits smooth progressive evolution, while (b) LW-GC and (c) LW-AT show severe discontinuities.
+
+understand how visual features behave under different integration paradigms, we compare these dynamics with LW-GC and LW-AT (Figure 3). Both exhibit severe discontinuities across layers, as their visual tokens lack residual connections and instead rely on independent per-layer projections of the original vision encoder features. While different LLM layers may require different interpretations of visual features, these results show that the two paradigms arrive at fundamentally different solutions to this problem (see Supplementary for additional CKA visualizations).
+
+Finding 1: Visual tokens in IN-CT gradually evolve across LLM layers, mirroring the slow progressive refinement of text tokens. In contrast, layer-wise injection models produce semantically discontinuous visual representations across layers.
+
+## 5.2 What Visual Features Do the Representations Capture?
+
+Having established that visual tokens in IN-CT continuously evolve across LLM layers while LW-GC and LW-AT exhibit discontinuous representations, we next examine what type of visual features each paradigm captures at different layers. Following the Fourier analysis framework from $[59,60]$ , we compute the relative log amplitude of Fourier-transformed hidden states at each layer, measuring the amplitude difference between the highest and lowest frequencies. Higher values indicate greater capture of high-frequency information, while lower values indicate a bias toward low-frequency information. As shown in Figure 4, IN-CT
+
+![](images/2ce90259abe0ed2a5ef1b1aace2881964be0ee15500c6a4ac59eaa0e3cb6d624.jpg)
+
+<details>
+<summary>line chart</summary>
+
+| Layer | IN-CT | LW-CA | LW-AT |
+|-------|-------|-------|-------|
+| 0     | -2.65 | -2.75 | -2.45 |
+| 2     | -2.55 | -2.85 | -2.55 |
+| 4     | -2.45 | -2.75 | -2.65 |
+| 6     | -2.35 | -2.65 | -2.75 |
+| 8     | -2.25 | -2.55 | -2.85 |
+| 10    | -2.15 | -2.45 | -2.95 |
+| 12    | -2.10 | -2.35 | -3.05 |
+| 14    | -2.05 | -2.25 | -3.15 |
+| 16    | -2.00 | -2.15 | -3.25 |
+| 18    | -1.95 | -2.05 | -3.35 |
+| 20    | -1.90 | -1.95 | -3.45 |
+| 22    | -1.85 | -1.85 | -3.55 |
+</details>
+
+Fig. 4: Relative log amplitude of Fourier-transformed visual token representations across layers. (a) IN-CT, (b) LW-GC, (c) LW-AT, and (d) all three paradigms compared.
+
+clearly captures high-frequency features, with the relative log amplitude increasing gradually across the early and middle layers, indicating a progressive shift toward fine-grained local details such as texture and edges. This ability to capture high-frequency information may explain IN-CT's strong advantage on OCR and video tasks, where capturing fine-grained spatial details across patches and frames is essential. In contrast, LW-AT fluctuates but remains relatively stable, capturing lower-frequency features on average compared to IN-CT, while LW-GC oscillates erratically across layers with no coherent trend, also biased toward low-frequency features overall. These oscillations are consistent with the non-uniform representation shifts observed in the CKA analysis (Sections 5.1), further confirming that layer-wise injection produces inconsistent visual representations across layers. Notably, IN-CT exhibits a dramatic drop in the final layers, shifting sharply back toward lower-frequency features. This aligns with the CKA results, where the final layers show the greatest representational change, and suggests that the LLM consolidates fine-grained visual details into more abstract, global representations in its final layers, potentially converging toward the language representation space. We investigate this hypothesis in the following Sections 5.3.
+
+![](images/bd8d965551220f5b2d3b54a868bb7931437d76b89d21251417b310c87bc77cc7.jpg)
+
+<details>
+<summary>scatterplot</summary>
+
+| Layer | Image Count | Text Count |
+|-------|-------------|------------|
+| Layer 1 | 100 | 5 |
+| Layer 6 | 100 | 5 |
+| Layer 12 | 100 | 5 |
+| Layer 18 | 100 | 5 |
+| Layer 23 | 100 | 5 |
+</details>
+
+Fig. 5: Visualization of 3D PCA projections of image and text token representations across layers. Top row: IN-CT, bottom row: LW-AT. Red points represent image tokens, blue points represent text tokens.
+
+Finding 2: IN-CT exhibits a structured frequency pattern, progressively shifting toward high-frequency features before consolidating back to low-frequency in the final layers, while LW-GC and LW-AT show erratic and inconsistent frequency behavior.
+
+## 5.3 Do Visual Tokens Align with the Language Representation Space?
+
+The frequency analysis in Finding in Sections 5.2 revealed that IN-CT consolidates visual features back toward low-frequency representations in the final layers, raising the question of whether this shift reflects a convergence toward the language representation space. To investigate this, we project the hidden states of image and text tokens into a shared 3D space using PCA at different layers. As shown in Figure 5, the two paradigms exhibit fundamentally different behaviors. In IN-CT, image tokens already carry rich semantic structure from the vision encoder in the early layers, while text tokens have yet to form meaningful representations. As text tokens acquire semantics in the middle layers, both modalities occupy multimodal narrow cones, consistent with the modality gap [36] observed in MLLMs [62]. However, as tokens propagate deeper, these cones progressively merge, with both modalities converging into a shared representational space by the final layers. In contrast, LW-AT does not exhibit this convergence: image representations remain orthogonal to the language space throughout all layers. This is expected, as layer-wise injection is not designed to progressively transform visual tokens through the LLM, and therefore the representations are never reshaped toward the language space, as confirmed by the discontinuous representations observed in Finding 1 (Sections
+
+5.1). The visualziaiton of LW-GC are provided in supplementary with additional subspace analysis and other visualizations.
+
+Finding 3: Visual tokens in IN-CT progressively converge toward the language representation space across LLM layers, closing the modality gap. In layer-wise injection, visual representations remain orthogonal to the language space throughout.
+
+## 5.4 When Does the Model Utilise Visual Information?
+
+Findings in Sections 5.1, 5.2 and 5.3 established that IN-CT, LW-AT, and LW-GC exhibit fundamentally different representational characteristics. A natural question follows: how does the LLM actually utilize these vastly different visual representations during generation? To investigate this, we measure the al-
+
+![](images/cca81f633f4f69cb23e9c525220474cfdf8b35cede27207b227d8cb9f99687b3.jpg)
+
+<details>
+<summary>line chart</summary>
+
+| Layer | MMBench (IN-CT) - System | MMBench (IN-CT) - Image | MMBench (IN-CT) - Text | MMBench (LW-AT) - System | MMBench (LW-AT) - Image | MMBench (LW-AT) - Text | ChartQA (IN-CT) - System | ChartQA (IN-CT) - Image | ChartQA (IN-CT) - Text | ChartQA (LW-AT) - System | ChartQA (LW-AT) - Image | ChartQA (LW-AT) - Text |
+|-------|--------------------------|--------------------------|-------------------------|---------------------------|--------------------------|-------------------------|--------------------------|--------------------------|-------------------------|--------------------------|--------------------------|-------------------------|
+| 0     | 0.1                      | 0.2                      | 0.7                     | 0.1                       | 0.3                      | 0.6                     | 0.1                      | 0.4                      | 0.8                     | 0.1                      | 0.3                      | 0.5                     |
+| 2     | 0.4                      | 0.1                      | 0.8                     | 0.2                       | 0.2                      | 0.7                     | 0.3                      | 0.5                      | 0.9                     | 0.2                      | 0.4                      | 0.6                     |
+| 4     | 0.3                      | 0.1                      | 0.6                     | 0.3                       | 0.2                      | 0.5                     | 0.4                      | 0.6                      | 0.7                     | 0.3                      | 0.5                      | 0.4                     |
+| 6     | 0.5                      | 0.1                      | 0.7                     | 0.4                       | 0.2                      | 0.6                     | 0.5                      | 0.7                      | 0.8                     | 0.4                      | 0.6                      | 0.5                     |
+| 8     | 0.4                      | 0.1                      | 0.6                     | 0.5                       | 0.2                      | 0.7                     | 0.6                      | 0.8                      | 0.9                     | 0.5                      | 0.7                      | 0.6                     |
+| 10    | 0.6                      | 0.1                      | 0.7                     | 0.6                       | 0.2                      | 0.8                     | 0.7                      | 0.9                      | 1.0                     | 0.6                      | 0.8                      | 0.7                     |
+| 12    | 0.5                      | 0.1                      | 0.6                     | 0.7                       | 0.2                      | 0.9                     | 0.8                      | 1.0                      | 1.1                     | 0.7                      | 0.9                      | 0.8                     |
+| 14    | 0.6                      | 0.1                      | 0.7                     | 0.8                       | 0.2                      | 1.0                     | 0.9                      | 1.1                      | 1.2                     | 0.8                      | 1.0                      | 0.9                     |
+| 16    | 0.7                      | 0.1                      | 0.8                     | 0.9                       | 0.2                      | 1.1                     | 1.0                      | 1.2                      | 1.3                     | 0.9                      | 1.1                      | 1.0                     |
+| 18    | 0.6                      | 0.1                      | 0.7                     | 1.0                       | 0.2                      | 1.2                     | 1.1                      | 1.3                      | 1.4                     | 1.0                      | 1.2                      | 1.1                     |
+| 20    | 0.5                      | 0.1                      | 0.6                     | 1.1                       | 0.2                      | 1.3                     | 1.2                      | 1.4                      | 1.5                     | 1.1                      | 1.3                      | 1.2                     |
+| 22    | 0.4                      | 0.2                      | 0.5                     | 1.2                       | 0.2                      | 1.4                     | 1.3                      | 1.5                      | 1.6                     | 1.2                      | 1.4                      | 1.3                     |
+| Final Layer (in %) = MMBench (IN-CT) → MMBench (LW-AT) → ChartQA (IN-CT) → ChartQA (LW-AT) (in %) = (in %) = (in %).
+</details>
+
+Fig. 6: Visualization of attention mass allocated to visual tokens during generation across layers. (a, b) On MMBench, attention to visual tokens decreases in deeper layers. (c, d) On ChartQA, attention remains high throughout, revealing task-dependent utilization patterns.
+
+location of visual information utilized by the LLM at each layer across different integration paradigms. For IN-CT and LW-AT, we quantify visual information utilization through Attention Mass, which measures the total attention weight directed toward visual tokens during generation. For a generated token at position t, the attention mass for a segment S at layer $\ell$ is:
+
+$$
+\operatorname{Mass} _ {S} ^ {(\ell)} = \frac {1}{H} \sum_ {h = 1} ^ {H} \sum_ {j \in S} \alpha_ {t, j} ^ {(\ell , h)} \tag {2}
+$$
+
+where H is the number of attention heads and $\alpha_{t,j}^{(\ell,h)}$ represents the attention weight from the generated token at position t to the key at position j within the h-th head of layer $\ell$ . Previous work [8,81] found that in IN-CT models, visual tokens are primarily attended to in shallow layers, with this reliance diminishing deeper. We observe this trend in general tasks like MMBench [45] (Figure 6), but find that this pattern is task-dependent. In text-centric tasks like ChartQA [52] (Figure 6), attention toward image tokens remains high throughout the middle and deep layers. For LW-AT (Figure 6), the attention distribution is surprisingly similar to IN-CT, as both share the same token interaction mechanism. However, despite similar attention patterns, IN-CT consistently outperforms LW-AT. We argue this gap is explained by the quality of information at each layer rather than attention allocation itself.
+
+IN-CT progressively captures high-frequency features (Finding 2), providing rich fine-grained details critical for OCR and temporal details essential for video understanding, while LW-AT retrieves representations biased toward low-frequency features. We further hypothesize that for OCR tasks, IN-CT also benefits from the convergence toward the language space (Finding 3), meaning the LLM reads representations that already carry text-like semantics rather than raw visual features. For LW-GC (Figure 7), visual contribution is controlled by fixed learned gate values that do not adapt to the input. This explains why LW-AT outperforms LW-GC: while both retrieve low-frequency biased representations (Finding 2),
+
+LW-AT can dynamically allocate visual information through attention. We hypothesize that variants with dynamic gating $[74]$ could resolve this limitation, but would still face the same frequency capture limitations as LW-AT (see Supplementary for additional visualizations).
+
+![](images/49daf2b61e81d44b5ab6f34bce52f10232d51d9bf3aa5bf19e154b5ab62bf8c6.jpg)
+
+<details>
+<summary>line chart</summary>
+
+| Layer Index | 700K     | 1.6M     |
+| ----------- | -------- | -------- |
+| 0           | -0.001   | -0.0015  |
+| 2           | 0.001    | 0.0005   |
+| 4           | 0.000    | 0.000    |
+| 6           | 0.000    | 0.000    |
+| 8           | 0.000    | 0.000    |
+| 10          | 0.000    | -0.0005  |
+| 12          | 0.002    | 0.001    |
+| 14          | 0.000    | -0.0005  |
+| 16          | -0.0005  | -0.001   |
+| 18          | -0.002   | -0.0015  |
+| 20          | 0.001    | 0.0015   |
+| 22          | 0.000    | 0.000    |
+</details>
+
+Fig. 7: Visualization of learned gate values across LW-GC layers for 700K and 1.6M training mixtures.
+
+Finding 4: Visual information utilization by generated tokens varies across layers and is task-dependent. However, attention allocation alone is insufficient; the quality of visual representations at each layer is equally critical for downstream performance.
+
+## 6 Additional Studies and Ablations
+
+## Maintaining Language Understanding.
+
+We further explore the impact of each integration paradigm on the base LLM's language capabilities. We evaluate all three paradigms against the original Qwen2.5 0.5B on HellaSwag [78] and IFEVAL [83] (Table 5), using models trained on the LLaVA-OV mixture. All paradigms show slight degradation across both benchmarks, with mixed pat-
+
+Table 5: Performance on HellaSwag and IFEVAL. P-Strict: Prompt-level strict, I-Strict: Inst-level strict, P-Loose: Prompt-level loose, I-Loose: Inst-level loose. Bold indicates the best and underline indicates the second best result.
+
+<table><tr><td rowspan="2">Models</td><td>HellaSwag</td><td colspan="4">IFEVAL</td></tr><tr><td>Acc.</td><td>P-Strict</td><td>I-Strict</td><td>P-Loose</td><td>I-Loose</td></tr><tr><td>Qwen2.5 0.5B</td><td>47.49</td><td>39.45</td><td>36.45</td><td>26.43</td><td>23.48</td></tr><tr><td>IN-CT</td><td>46.10</td><td>35.97</td><td>31.29</td><td>24.95</td><td>21.07</td></tr><tr><td>LW-AT</td><td>46.31</td><td>35.73</td><td>32.01</td><td>24.58</td><td>20.89</td></tr><tr><td>LW-GC(all)</td><td>47.24</td><td>35.13</td><td>31.89</td><td>23.48</td><td>19.96</td></tr></table>
+
+terns. LW-GC best preserves commonsense reasoning (HellaSwag) while IN-CT and LW-AT better retain instruction-following ability (IFEVAL). Nevertheless, none of the paradigms exhibit severe catastrophic forgetting. A broader language evaluation across all paradigms is provided in the supplementary material.
+
+Hybrid Integration. Our analysis has shown that IN-CT and layer-wise injection capture complementary frequency characteristics (Finding 2): IN-CT progressively builds high-frequency representations, while LW-AT maintains low-frequency features. To explore whether combining both paradigms can leverage these complementary properties, we construct a hybrid model (IN-CT + LW-AT) that applies both integration strategies simultaneously. Specifically, layer-wise attention injection is interleaved before the in-context tokens, with a 1:1 token mapping (see Supplementary for implementation details).
+
+Table 6: Comparison of integration paradigms on selected Single Image, Multiple Image, and Video benchmarks categorized by task. For the Multiple Image benchmarks, abbreviations are as follows: ID-MI (in-domain multi-image), ID-MV (in-domain multiview), and OD (out-domain). Bold indicates the best and underline indicates the second best result.
+
+<table><tr><td rowspan="3">Method</td><td colspan="8">Single Image</td><td colspan="5">Multiple Image</td><td rowspan="2">Video</td></tr><tr><td colspan="2">General</td><td colspan="2">Knowledge</td><td colspan="2">Vision Centric</td><td colspan="2">OCR</td><td colspan="2">ID-MI</td><td>ID-MV</td><td colspan="2">OD</td></tr><tr><td>MMB</td><td>GQA</td><td>AI2D</td><td>SQA</td><td>RealworlQA</td><td>CV-B2D</td><td>textVQA</td><td>OCRBench</td><td>NLVR2</td><td>TR-VQA</td><td>ALFRED</td><td>Mantis</td><td>MuirBench</td><td>SEED</td></tr><tr><td colspan="15">LLaVA-Next Instruction Tuning Data 700K Instruction Tuning</td></tr><tr><td>IN-CT</td><td>49.1</td><td>57.5</td><td>53.3</td><td>60.4</td><td>51.6</td><td>45.1</td><td>47.3</td><td>39.3</td><td>57.1</td><td>26.7</td><td>13.7</td><td>39.5</td><td>27.4</td><td>36.6</td></tr><tr><td>LW-AT</td><td>43.8</td><td>54.8</td><td>52.5</td><td>58.9</td><td>46.9</td><td>43.3</td><td>42.8</td><td>36.2</td><td>54.4</td><td>23.1</td><td>14.6</td><td>36.7</td><td>24.4</td><td>31.6</td></tr><tr><td>LW-GC(all)</td><td>28.7</td><td>45.7</td><td>51.0</td><td>58.1</td><td>43.8</td><td>38.9</td><td>8.5</td><td>2.8</td><td>51.1</td><td>25.6</td><td>36.8</td><td>40.4</td><td>18.1</td><td>29.0</td></tr><tr><td>IN-CT + LW-AT</td><td>54.1</td><td>57.8</td><td>55.5</td><td>60.4</td><td>51.4</td><td>44.4</td><td>48.8</td><td>41.1</td><td>59.6</td><td>28.5</td><td>18.2</td><td>40.4</td><td>28.4</td><td>35.32</td></tr></table>
+
+As shown in Table 6, the hybrid model achieves the best performance across most benchmarks, outperforming either paradigm alone. This supports our finding that each paradigm captures different frequency characteristics (Finding 2), and that access to both high-frequency and low-frequency visual features benefits the LLM. However, this approach doubles the visual token count, making it computationally impractical. We present this as an exploratory finding rather than a practical recommendation, highlighting the potential of designing future architectures that efficiently combine the strengths of both integration strategies.
+
+## 7 Conclusion
+
+We presented a systematic comparison of in-context and layer-wise integration paradigms of VLMs under identical training conditions. Through four analyses, we uncovered that in-context injection enables a hidden evolution of visual tokens, progressively shifting toward high-frequency features before converging with the language space, while layer-wise injection remains biased toward low-frequency features and orthogonal to the language space. We further showed that attention allocation alone is insufficient, and that the quality of visual representations drives performance differences. Our hybrid experiment confirmed that both paradigms capture different frequency characteristics, suggesting a promising direction for future architectures that combine representational depth with computational efficiency. While our study focuses on the vision-language setting, we believe these findings are relevant to the broader MLLM community. Different modalities may inherently benefit from different frequency characteristics, and understanding which integration paradigm best preserves the frequency properties critical to each modality could inform the design of more effective multimodal systems. We hope this work provides actionable insights for the design of next-generation VLMs and MLLMs, and encourage future work to extend this analysis to larger model scales and other input modalities.
+
+Limitations and Future Directions. Our goal is to isolate the effect of the integration mechanism under controlled conditions. We conduct experiments at 0.5B and 3B LLM scales, which already produce clear and consistent differences in both benchmark performance and internal representational behaviour across paradigms. while larger backbones may exhibit additional behaviours, extending the same controlled evaluation analysis to higher capacity models is a straightforward next step that would further test how these trends scale. In addition, we focus specifically on vision-language integration, where in-context and layer-wise injection are most widely used and where strong single-image, multi-image, and video benchmarks enable systematic study. The analysis tools used here are general in nature, and applying this framework to other modalities (e.g., audio or sensor streams) would be valuable future work to understand whether similar integration-driven dynamics emerge beyond vision.
+
+## 8 Acknowledgments
+
+The authors acknowledge the use of resources provided by the Isambard-AI National AI Research Resource (AIRR) [54]. Isambard-AI is operated by the University of Bristol and is funded by the UK Government's Department for Science, Innovation and Technology (DSIT) via UK Research and Innovation; and the Science and Technology Facilities Council [ST/AIRR/I-A-I/1023].
+
+## References
+
+1. Achiam, J., Adler, S., Agarwal, S., Ahmad, L., Akkaya, I., Aleman, F.L., Almeida, D., Altenschmidt, J., Altman, S., Anadkat, S., et al.: Gpt-4 technical report. arXiv preprint arXiv:2303.08774 (2023)  
+2. Alayrac, J.B., Donahue, J., Luc, P., Miech, A., Barr, I., Hasson, Y., Lenc, K., Mensch, A., Millican, K., Reynolds, M., et al.: Flamingo: a visual language model for few-shot learning. Advances in neural information processing systems 35, 23716–23736 (2022)  
+3. Alex, T., Suharitdamrong, W., Atito, S., Mustafa, A., Jackson, P.J.B., Razzak, I., Awais, M.: Pal: Probing audio encoders via llms – audio information transfer into llms (2026), https://arxiv.org/abs/2506.10423v1  
+4. An, X., Xie, Y., Yang, K., Zhang, W., Zhao, X., Cheng, Z., Wang, Y., Xu, S., Chen, C., Zhu, D., et al.: Llava-onevision-1.5: Fully open framework for democratized multimodal training. arXiv preprint arXiv:2509.23661 (2025)  
+5. Awadalla, A., Gao, I., Gardner, J., Hessel, J., Hanafy, Y., Zhu, W., Marathe, K., Bitton, Y., Gadre, S., Sagawa, S., et al.: Openflamingo: An open-source framework for training large autoregressive vision-language models. arXiv preprint arXiv:2308.01390 (2023)  
+6. Bai, S., Cai, Y., Chen, R., Chen, K., Chen, X., Cheng, Z., Deng, L., Ding, W., Gao, C., Ge, C., et al.: Qwen3-vl technical report. arXiv preprint arXiv:2511.21631 (2025)  
+7. Basu, S., Grayson, M., Morrison, C., Nushi, B., Feizi, S., Massiceti, D.: Understanding information storage and transfer in multi-modal large language models. Advances in Neural Information Processing Systems 37, 7400–7426 (2024)  
+8. Chen, L., Zhao, H., Liu, T., Bai, S., Lin, J., Zhou, C., Chang, B.: An image is worth 1/2 tokens after layer 2: Plug-and-play inference acceleration for large vision-language models. In: European Conference on Computer Vision. pp. 19–35. Springer (2024)  
+9. Dai, W., Li, J., Li, D., Tiong, A., Zhao, J., Wang, W., Li, B., Fung, P.N., Hoi, S.: Instructblip: Towards general-purpose vision-language models with instruction tuning. Advances in neural information processing systems 36, 49250–49267 (2023)  
+10. Deitke, M., Clark, C., Lee, S., Tripathi, R., Yang, Y., Park, J.S., Salehi, M., Muennighoff, N., Lo, K., Soldaini, L., et al.: Molmo and pixmo: Open weights and open data for state-of-the-art vision-language models. In: Proceedings of the Computer Vision and Pattern Recognition Conference. pp. 91–104 (2025)  
+11. Diao, H., Li, X., Cui, Y., Wang, Y., Deng, H., Pan, T., Wang, W., Lu, H., Wang, X.: Evev2: Improved baselines for encoder-free vision-language models. In: Proceedings of the IEEE/CVF International Conference on Computer Vision. pp. 21014–21025 (2025)  
+12. Eichenberg, C., Black, S., Weinbach, S., Parcalabescu, L., Frank, A.: Magma-multimodal augmentation of generative models through adapter-based finetuning. In: Findings of the association for computational linguistics: EMNLP 2022. pp. 2416–2428 (2022)  
+13. Fu, C., Chen, P., Shen, Y., Qin, Y., Zhang, M., Lin, X., Yang, J., Zheng, X., Li, K., Sun, X., et al.: Mme: A comprehensive evaluation benchmark for multimodal large language models. arXiv preprint arXiv:2306.13394 (2023)  
+14. Fu, C., Dai, Y., Luo, Y., Li, L., Ren, S., Zhang, R., Wang, Z., Zhou, C., Shen, Y., Zhang, M., et al.: Video-mme: The first-ever comprehensive evaluation benchmark of multi-modal llms in video analysis. In: Proceedings of the IEEE/CVF conference on computer vision and pattern recognition. pp. 24108–24118 (2025)  
+15. Fu, S., Bonnen, T., Guillory, D., Darrell, T.: Hidden in plain sight: Vlms overlook their visual representations. arXiv preprint arXiv:2506.08008 (2025)  
+16. Ghosh, S., Kong, Z., Kumar, S., Sakshi, S., Kim, J., Ping, W., Valle, R., Manocha, D., Catanzaro, B.: Audio flamingo 2: An audio-language model with long-audio understanding and expert reasoning abilities. arXiv preprint arXiv:2503.03983 (2025)  
+17. Han, J., Gong, K., Zhang, Y., Wang, J., Zhang, K., Lin, D., Qiao, Y., Gao, P., Yue, X.: Onellm: One framework to align all modalities with language. In: Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition. pp. 26584–26595 (2024)  
+18. Hong, W., Wang, W., Lv, Q., Xu, J., Yu, W., Ji, J., Wang, Y., Wang, Z., Dong, Y., Ding, M., et al.: Cogagent: A visual language model for gui agents. In: Proceedings  
+of the IEEE/CVF conference on computer vision and pattern recognition. pp. 14281-14290 (2024)  
+19. Hudson, D.A., Manning, C.D.: Gqa: A new dataset for real-world visual reasoning and compositional question answering. In: Proceedings of the IEEE/CVF conference on computer vision and pattern recognition. pp. 6700–6709 (2019)  
+20. Jaegle, A., Gimeno, F., Brock, A., Vinyals, O., Zisserman, A., Carreira, J.: Perceiver: General perception with iterative attention. In: International conference on machine learning. pp. 4651–4664. PMLR (2021)  
+21. Jiang, N., Kachinthaya, A., Petryk, S., Gandelsman, Y.: Interpreting and editing vision-language representations to mitigate hallucinations. arXiv preprint arXiv:2410.02762 (2024)  
+22. Jiang, Z., Chen, J., Zhu, B., Luo, T., Shen, Y., Yang, X.: Devils in middle layers of large vision-language models: Interpreting, detecting and mitigating object hallucinations via attention lens. In: Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition. pp. 25004–25014 (2025)  
+23. Kaduri, O., Bagon, S., Dekel, T.: What's in the image? a deep-dive into the vision of vision language models. In: Proceedings of the Computer Vision and Pattern Recognition Conference. pp. 14549–14558 (2025)  
+24. Kafle, K., Price, B., Cohen, S., Kanan, C.: Dvqa: Understanding data visualizations via question answering. In: Proceedings of the IEEE conference on computer vision and pattern recognition. pp. 5648–5656 (2018)  
+25. Kang, S., Kim, J., Kim, J., Hwang, S.J.: See what you are told: Visual attention sink in large multimodal models. arXiv preprint arXiv:2503.03321 (2025)  
+26. Kembhavi, A., Salvato, M., Kolve, E., Seo, M., Hajishirzi, H., Farhadi, A.: A diagram is worth a dozen images. In: European conference on computer vision. pp. 235–251. Springer (2016)  
+27. Kim, G., Hong, T., Yim, M., Nam, J., Park, J., Yim, J., Hwang, W., Yun, S., Han, D., Park, S.: Ocr-free document understanding transformer. In: European Conference on Computer Vision. pp. 498–517. Springer (2022)  
+28. Kornblith, S., Norouzi, M., Lee, H., Hinton, G.: Similarity of neural network representations revisited. In: International conference on machine learning. pp. 3519–3529. PMIR (2019)  
+29. Laurençon, H., Saulnier, L., Tronchon, L., Bekman, S., Singh, A., Lozhkov, A., Wang, T., Karamcheti, S., Rush, A., Kiela, D., et al.: Obelics: An open web-scale filtered dataset of interleaved image-text documents. Advances in Neural Information Processing Systems 36, 71683–71702 (2023)  
+30. Laurençon, H., Tronchon, L., Cord, M., Sanh, V.: What matters when building vision-language models? Advances in Neural Information Processing Systems 37, 87874–87907 (2024)  
+31. Li, B., Zhang, Y., Chen, L., Wang, J., Pu, F., Cahyono, J.A., Yang, J., Li, C., Liu, Z.: Otter: A multi-modal model with in-context instruction tuning. IEEE Transactions on Pattern Analysis and Machine Intelligence (2025)  
+32. Li, B., Zhang, Y., Guo, D., Zhang, R., Li, F., Zhang, H., Zhang, K., Zhang, P., Li, Y., Liu, Z., et al.: Llava-onevision: Easy visual task transfer. arXiv preprint arXiv:2408.03326 (2024)  
+33. Li, B., Wang, R., Wang, G., Ge, Y., Ge, Y., Shan, Y.: Seed-bench: Benchmarking multimodal llms with generative comprehension. arXiv preprint arXiv:2307.16125 (2023)  
+34. Li, J., Li, D., Savarese, S., Hoi, S.: Blip-2: Bootstrapping language-image pretraining with frozen image encoders and large language models. In: International conference on machine learning. pp. 19730–19742. PMLR (2023)  
+35. Li, Y., Wang, C., Jia, J.: Llama-vid: An image is worth 2 tokens in large language models. In: European Conference on Computer Vision. pp. 323–340. Springer (2024)  
+36. Liang, V.W., Zhang, Y., Kwon, Y., Yeung, S., Zou, J.Y.: Mind the gap: Understanding the modality gap in multi-modal contrastive representation learning. Advances in Neural Information Processing Systems 35, 17612–17625 (2022)  
+37. Lin, B., Tang, Z., Ye, Y., Huang, J., Zhang, J., Pang, Y., Jin, P., Ning, M., Luo, J., Yuan, L.: Moe-llava: Mixture of experts for large vision-language models. IEEE Transactions on Multimedia (2026)  
+38. Lin, B., Ye, Y., Zhu, B., Cui, J., Ning, M., Jin, P., Yuan, L.: Video-llava: Learning united visual representation by alignment before projection. In: Proceedings of the 2024 conference on empirical methods in natural language processing. pp. 5971–5984 (2024)  
+39. Lin, J., Chen, H., Fan, Y., Fan, Y., Jin, X., Su, H., Fu, J., Shen, X.: Multi-layer visual feature fusion in multimodal llms: Methods, analysis, and best practices. In: Proceedings of the Computer Vision and Pattern Recognition Conference. pp. 4156–4166 (2025)  
+40. Lin, T.Y., Maire, M., Belongie, S., Hays, J., Perona, P., Ramanan, D., Dollár, P., Zitnick, C.L.: Microsoft coco: Common objects in context. In: European conference on computer vision. pp. 740–755. Springer (2014)  
+41. Lin, Z., Liu, C., Zhang, R., Gao, P., Qiu, L., Xiao, H., Qiu, H., Lin, C., Shao, W., Chen, K., et al.: Sphinx: The joint mixing of weights, tasks, and visual embeddings for multi-modal large language models. arXiv preprint arXiv:2311.07575 (2023)  
+42. Liu, H., Li, C., Li, Y., Lee, Y.J.: Improved baselines with visual instruction tuning. In: Proceedings of the IEEE/CVF conference on computer vision and pattern recognition. pp. 26296–26306 (2024)  
+43. Liu, H., Li, C., Li, Y., Li, B., Zhang, Y., Shen, S., Lee, Y.J.: Llava-next: Improved reasoning, ocr, and world knowledge (January 2024), https://llava-v1.github.io/blog/2024-01-30-llava-next/  
+44. Liu, H., Li, C., Wu, Q., Lee, Y.J.: Visual instruction tuning. Advances in neural information processing systems 36, 34892–34916 (2023)  
+45. Liu, Y., Duan, H., Zhang, Y., Li, B., Zhang, S., Zhao, W., Yuan, Y., Wang, J., He, C., Liu, Z., et al.: Mmbench: Is your multi-modal model an all-around player? In: European conference on computer vision. pp. 216–233. Springer (2024)  
+46. Liu, Y., Li, Z., Huang, M., Yang, B., Yu, W., Li, C., Yin, X.C., Liu, C.L., Jin, L., Bai, X.: Ocrbench: on the hidden mystery of ocr in large multimodal models. Science China Information Sciences 67(12), 220102 (2024)  
+47. Lu, P., Mishra, S., Xia, T., Qiu, L., Chang, K.W., Zhu, S.C., Tafjord, O., Clark, P., Kalyan, A.: Learn to explain: Multimodal reasoning via thought chains for science question answering. Advances in neural information processing systems 35, 2507–2521 (2022)  
+48. Luo, G., Yang, X., Dou, W., Wang, Z., Liu, J., Dai, J., Qiao, Y., Zhu, X.: Mono-internvl: Pushing the boundaries of monolithic multimodal large language models with endogenous visual pre-training. In: Proceedings of the IEEE/CVF conference on computer vision and pattern recognition. pp. 24960–24971 (2025)  
+49. Ma, F., Zhou, Y., Zhang, Z., Yan, S., Li, H., He, Z., Wu, S., Rao, F., Zhang, Y., Sun, X.: Ee-mllm: A data-efficient and compute-efficient multimodal large language model. arXiv preprint arXiv:2408.11795 (2024)  
+50. Mañas, O., Lopez, P.R., Ahmadi, S., Nematzadeh, A., Goyal, Y., Agrawal, A.: Mapl: Parameter-efficient adaptation of unimodal pre-trained models for vision-  
+language few-shot prompting. In: Proceedings of the 17th Conference of the European Chapter of the Association for Computational Linguistics. pp. 2523–2548 (2023)  
+51. Mangalam, K., Akshulakov, R., Malik, J.: Egoschema: A diagnostic benchmark for very long-form video language understanding. Advances in Neural Information Processing Systems 36, 46212–46244 (2023)  
+52. Masry, A., Do, X.L., Tan, J.Q., Joty, S., Hoque, E.: Chartqa: A benchmark for question answering about charts with visual and logical reasoning. In: Findings of the association for computational linguistics: ACL 2022. pp. 2263–2279 (2022)  
+53. Mathew, M., Karatzas, D., Jawahar, C.: Docvqa: A dataset for vqa on document images. In: Proceedings of the IEEE/CVF winter conference on applications of computer vision. pp. 2200–2209 (2021)  
+54. McIntosh-Smith, S., Alam, S., Woods, C.: Isambard-ai: a leadership-class supercomputer optimised specifically for artificial intelligence. In: Proceedings of the Cray User Group, pp. 44–54 (2024)  
+55. Meng, L., Yang, J., Tian, R., Dai, X., Wu, Z., Gao, J., Jiang, Y.G.: Deepstack: Deeply stacking visual tokens is surprisingly simple and effective for lmms. Advances in Neural Information Processing Systems 37, 23464–23487 (2024)  
+56. Merullo, J., Castricato, L., Eickhoff, C., Pavlick, E.: Linearly mapping from image to text space. arXiv preprint arXiv:2209.15162 (2022)  
+57. Mishra, A., Shekhar, S., Singh, A.K., Chakraborty, A.: Ocr-vqa: Visual question answering by reading text in images. In: 2019 international conference on document analysis and recognition (ICDAR). pp. 947–952. IEEE (2019)  
+58. Neo, C., Ong, L., Torr, P., Geva, M., Krueger, D., Barez, F.: Towards interpreting visual information processing in vision-language models. arXiv preprint arXiv:2410.07149 (2024)  
+59. Park, N., Kim, S.: How do vision transformers work? arXiv preprint arXiv:2202.06709 (2022)  
+60. Park, N., Kim, W., Heo, B., Kim, T., Yun, S.: What do self-supervised vision transformers learn? arXiv preprint arXiv:2305.00729 (2023)  
+61. Shen, X., Xiong, Y., Zhao, C., Wu, L., Chen, J., Zhu, C., Liu, Z., Xiao, F., Varadarajan, B., Bordes, F., et al.: Longvu: Spatiotemporal adaptive compression for long video-language understanding. arXiv preprint arXiv:2410.17434 (2024)  
+62. Shukor, M., Cord, M.: Implicit multimodal alignment: On the generalization of frozen llms to multimodal inputs. Advances in Neural Information Processing Systems 37, 130848–130886 (2024)  
+63. Singh, A., Natarajan, V., Shah, M., Jiang, Y., Chen, X., Batra, D., Parikh, D., Rohrbach, M.: Towards vqa models that can read. In: Proceedings of the IEEE/CVF conference on computer vision and pattern recognition. pp. 8317–8326 (2019)  
+64. Team, G., Anil, R., Borgeaud, S., Alayrac, J.B., Yu, J., Soricut, R., Schalkwyk, J., Dai, A.M., Hauth, A., Millican, K., et al.: Gemini: a family of highly capable multimodal models. arXiv preprint arXiv:2312.11805 (2023)  
+65. Tong, P., Brown, E., Wu, P., Woo, S., Iyer, A.J.V., Akula, S.C., Yang, S., Yang, J., Middepogu, M., Wang, Z., et al.: Cambrian-1: A fully open, vision-centric exploration of multimodal llms. Advances in Neural Information Processing Systems 37, 87310–87356 (2024)  
+66. Tschannen, M., Gritsenko, A., Wang, X., Naeem, M.F., Alabdulmohsin, I., Parthasarathy, N., Evans, T., Beyer, L., Xia, Y., Mustafa, B., et al.: Siglip 2: Multilingual vision-language encoders with improved semantic understanding, localization, and dense features. arXiv preprint arXiv:2502.14786 (2025)  
+67. Tsimpoukelli, M., Menick, J.L., Cabi, S., Eslami, S., Vinyals, O., Hill, F.: Multimodal few-shot learning with frozen language models. Advances in Neural Information Processing Systems 34, 200–212 (2021)  
+68. Wang, H., Ye, Y., Li, B., Nie, Y., Lu, J., Tang, J., Wang, Y., Huang, C.: Vision as lora. arXiv preprint arXiv:2503.20680 (2025)  
+69. Wang, W., Lv, Q., Yu, W., Hong, W., Qi, J., Wang, Y., Ji, J., Yang, Z., Zhao, L., XiXuan, S., et al.: Cogvlm: Visual expert for pretrained language models. Advances in Neural Information Processing Systems 37, 121475–121499 (2024)  
+70. Wu, H., Li, D., Chen, B., Li, J.: Longvideobench: A benchmark for long-context interleaved video-language understanding. Advances in Neural Information Processing Systems 37, 28828–28857 (2024)  
+71. xAI: Grok-1.5 vision preview. https://x.ai/news/grok-1.5v (April 2024), accessed: 2026-03-08  
+72. Xiao, J., Shang, X., Yao, A., Chua, T.S.: Next-qa: Next phase of question-answering to explaining temporal actions. In: Proceedings of the IEEE/CVF conference on computer vision and pattern recognition. pp. 9777–9786 (2021)  
+73. Yang, A., Li, A., Yang, B., Zhang, B., Hui, B., Zheng, B., Yu, B., Gao, C., Huang, C., Lv, C., et al.: Qwen2.5 technical report. arXiv preprint arXiv:2412.15115 (2025)  
+74. Ye, J., Xu, H., Liu, H., Hu, A., Yan, M., Qian, Q., Zhang, J., Huang, F., Zhou, J.: mplug-owl3: Towards long image-sequence understanding in multi-modal large language models. arXiv preprint arXiv:2408.04840 (2024)  
+75. Yu, Z., Lee, Y.J.: How multimodal llms solve image tasks: A lens on visual grounding, task reasoning, and answer decoding. arXiv preprint arXiv:2508.20279 (2025)  
+76. Yue, T., Guo, L., Tang, Y., Zhao, Z., Zhu, X., Huang, H., Liu, J.: Lavi: Efficient large vision-language models via internal feature modulation. arXiv preprint arXiv:2506.16691 (2025)  
+77. Yue, X., Ni, Y., Zhang, K., Zheng, T., Liu, R., Zhang, G., Stevens, S., Jiang, D., Ren, W., Sun, Y., et al.: Mmmu: A massive multi-discipline multimodal understanding and reasoning benchmark for expert agi. In: Proceedings of the IEEE/CVF conference on computer vision and pattern recognition. pp. 9556–9567 (2024)  
+78. Zellers, R., Holtzman, A., Bisk, Y., Farhadi, A., Choi, Y.: Hellaswag: Can a machine really finish your sentence? In: Proceedings of the 57th annual meeting of the association for computational linguistics. pp. 4791–4800 (2019)  
+79. Zhang, B., Li, K., Cheng, Z., Hu, Z., Yuan, Y., Chen, G., Leng, S., Jiang, Y., Zhang, H., Li, X., et al.: Videollama 3: Frontier multimodal foundation models for image and video understanding. arXiv preprint arXiv:2501.13106 (2025)  
+80. Zhang, K., Shen, Y., Li, B., Liu, Z.: Large multi-modal models can interpret features in large multi-modal models. In: Proceedings of the IEEE/CVF International Conference on Computer Vision. pp. 3650–3661 (2025)  
+81. Zhang, S., Fang, Q., Yang, Z., Feng, Y.: Llava-mini: Efficient image and video large multimodal models with one vision token. arXiv preprint arXiv:2501.03895 (2025)  
+82. Zhang, X., Li, D., Liu, B., Bao, Z., Zhou, Y., Yang, B., Liu, Z., Zhong, Y., Yuan, T.: Layer-wise vision injection with disentangled attention for efficient lvlms. In: Proceedings of the IEEE/CVF International Conference on Computer Vision. pp. 7004–7013 (2025)  
+83. Zhou, J., Lu, T., Mishra, S., Brahma, S., Basu, S., Luan, Y., Zhou, D., Hou, L.: Instruction-following evaluation for large language models. arXiv preprint arXiv:2311.07911 (2023)  
+84. Zhou, J., Shu, Y., Zhao, B., Wu, B., Liang, Z., Xiao, S., Qin, M., Yang, X., Xiong, Y., Zhang, B., et al.: Mlvu: Benchmarking multi-task long video understanding. In: Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition. pp. 13691–13701 (2025)  
+85. Zhu, D., Chen, J., Shen, X., Li, X., Elhoseiny, M.: Minigpt-4: Enhancing vision-language understanding with advanced large language models. arXiv preprint arXiv:2304.10592 (2023)
+
+## Appendix
+
+## 9 Integration Architecture Implementation Details
+
+All three paradigms share the same vision encoder (SigLIP2-So400m) and connector architecture (MLP with GELU activation), and maintain an identical number of visual tokens to ensure that any observed performance differences are attributable solely to the integration mechanism. The implementation details of each paradigm are described below.
+
+## 9.1 IN-CT: In-Context Injection
+
+Our IN-CT implementation directly follows [32]. Visual and text tokens are concatenated into a single sequence of length $N_{v} + N_{t}$ and processed jointly through all LLM layers, yielding an attention complexity of $\mathcal{O}((N_{v} + N_{t})^{2})$ and an FFN cost proportional to $N_{v} + N_{t}$ at every layer. Since $N_{v} \gg N_{t}$ in practice, both costs are dominated by the visual token count.
+
+## 9.2 LW-GC: Layer-wise Gated Cross-Attention Injection
+
+Our LW-GC implementation follows [2], retaining the zero initialisation of the learnable gates $\alpha_{l}$ and $\beta_{l}$ as in the original design. However, unlike the original Flamingo training procedure which keeps the LLM frozen, we unfreeze the LLM during supervised fine-tuning to ensure a fair comparison with IN-CT and LW-AT. During the projector pretraining stage, we train the MLP projector along with the gated cross-attention modules while keeping the LLM and vision encoder frozen. Additionally, we do not utilise a Perceiver [20] nor compress the number of visual tokens, maintaining an identical visual token count across all three paradigms. Since the initial hidden state contains only text tokens, the standard self-attention operates over $N_{t}$ tokens with complexity $\mathcal{O}(N_{t}^{2})$ , while the gated cross-attention adds a cost of $\mathcal{O}(N_{t} \cdot N_{v})$ , avoiding the $\mathcal{O}(N_{v}^{2})$ term present in IN-CT. We experiment with two insertion schedules: at every layer and at every fourth layer. Every-layer insertion consistently yields better performance, which we adopt as the default configuration in our main comparisons.
+
+## 9.3 LW-AT: Layer-wise Attention-Only Injection
+
+Our LW-AT implementation appends visual tokens to keys and values only, never forming queries, and bypasses the LLM's FFN sublayers entirely (Figure 8, right). This reduces the per-layer attention complexity from $\mathcal{O}((N_v + N_t)^2)$ in IN-CT to $\mathcal{O}((N_v + N_t) \cdot N_t)$ , and since $N_v \gg N_t$ in practice, the savings are substantial. The FFN cost per layer is similarly reduced, as it operates over $N_t$ tokens rather than $N_v + N_t$ . Since this is an architectural rather than a training-only modification, these efficiency gains apply at both training and inference time. We follow [3] in adopting its position ID scheme, where visual tokens are assigned the same position IDs in the key-value sequence as they would occupy in IN-CT (Figure 8, left), ensuring a direct and fair architectural comparison between LW-AT and IN-CT.
+
+![](images/58d49805d02562b024ed16600b3287a6222ff62b349ddbd1b0ba2e169efea8e6.jpg)
+
+<details>
+<summary>flowchart</summary>
+
+```mermaid
+graph TD
+    subgraph IN_CT["IN-CT"]
+  A["Query"] --> B["0 1 2 3 4 5 6"]
+  C["Key&Value"] --> D["0 1 2 3 4 5 6"]
+    end
+    subgraph LW_AT["LW-AT"]
+  E["0 5 6"] --> F["0 1 2 3 4 5 6"]
+    end
+  G["LLM_layer_N"] --> H["Connector_N"]
+  I["LLM_layer_1"] --> J["Connector_1"]
+  H --> K["Q ↑"]
+  J --> L["Q ↑"]
+    style IN-CT fill:#f9f,stroke:#333
+    style LW-AT fill:#bbf,stroke:#333
+    style IN-CT fill:#eef,stroke:#333
+    style LW-AT fill:#eef,stroke:#333
+```
+</details>
+
+Fig. 8: Left: Position ID scheme used in LW-AT compared to IN-CT. Visual tokens are assigned the same position IDs in the key-value sequence as they would occupy in IN-CT, preserving the relative positional relationship between visual and text tokens across both paradigms. Right: Architecture of LW-AT, where layer-specific connectors project visual features into the keys and values of each LLM layer, bypassing the FFN sublayers entirely.
+
+## 10 Training Details
+
+## 10.1 Input Image Processing
+
+For training with the 700K and OCR-filtered 500K mixtures, which consist entirely of single images, we apply standard image resizing to $384 \times 384$ . For training with the LLaVA-OV mixture, which combines high-resolution single images, multi-image, and video data, we follow the AnyRes input processing pipeline from [32]. Specifically, high-resolution single images are processed using the same adaptive tiling strategy, while multi-image and video inputs follow the same frame sampling and sequence construction as in the original LLaVA-OV setup. This input processing pipeline is applied identically across all three integration paradigms (IN-CT, LW-GC, and LW-AT), ensuring that any observed performance differences are attributable solely to the integration mechanism rather than to differences in visual input handling.
+
+## 10.2 Hyperparameters
+
+All models are trained using the same two-stage pipeline and hyperparameter configuration, summarised in Table 7. All paradigms share identical settings across both stages, ensuring that any observed differences are attributable solely to the integration mechanism.
+
+Table 7: Training hyperparameters and configurations for the two-stage pipeline. In Stage 1, only the connector is trained to align visual features. In Stage 2, the entire architecture (Vision Encoder, Projector, and LLM) undergoes full-parameter instruction tuning. For Stage 2, we experiment with two SFT mixtures: LLaVA-NeXT SFT (700K) and LLaVA-OV (1.6M).
+
+<table><tr><td>Configuration</td><td colspan="2">Stage 1: Pretraining Stage 2: Supervised Fine-Tuning</td></tr><tr><td colspan="3">Trainable Modules</td></tr><tr><td>Vision Encoder (SigLIP-400M)</td><td>Frozen</td><td>Trainable</td></tr><tr><td>MLP Projector</td><td>Trainable</td><td>Trainable</td></tr><tr><td>LLM (Qwen2.5)</td><td>Frozen</td><td>Trainable</td></tr><tr><td colspan="3">Training Configuration</td></tr><tr><td>Dataset</td><td>LLaVA-Pretrain</td><td>LLaVA-NeXT SFT / LLaVA-OV</td></tr><tr><td>Global Batch Size</td><td>256</td><td>256</td></tr><tr><td>Learning Rate (Projector)</td><td>1e-3</td><td>1e-5</td></tr><tr><td>Learning Rate (VE)</td><td>-</td><td>2e-6</td></tr><tr><td>Learning Rate (LLM)</td><td>-</td><td>1e-5</td></tr><tr><td>Optimizer</td><td>AdamW</td><td>AdamW</td></tr><tr><td>Weight Decay</td><td>0.0</td><td>0.0</td></tr><tr><td>LR Schedule</td><td>Cosine Decay</td><td>Cosine Decay</td></tr><tr><td>Warmup Ratio</td><td>0.03</td><td>0.03</td></tr><tr><td>Epochs</td><td>1</td><td>1</td></tr><tr><td>Distributed Training</td><td>DeepSpeed ZeRO-2</td><td>DeepSpeed ZeRO-2</td></tr><tr><td>Image Resolution</td><td>384×384</td><td>384×384 (LLaVA-NeXT SFT) AnyRes (LLaVA-OV)</td></tr><tr><td>Precision</td><td>bfloat16</td><td>bfloat16</td></tr></table>
+
+## 10.3 Training Dataset Details
+
+For Stage 1 pretraining, we use LLaVA-Pretrain (BLIP-558K) [42], a standard image-caption dataset used to align the visual connector with the LLM. For Stage 2 supervised fine-tuning, we experiment with three mixtures. LLaVA-NeXT SFT (700K) [43] is a general visual instruction tuning mixture covering diverse question answering, reasoning, and conversation tasks. The OCR-Filtered (500K) mixture is derived from LLaVA-NeXT SFT by removing text-centric samples, including pure OCR datasets as well as samples containing substantial situated text such as OCR-VQA [57], DocVQA [53], AI2D [26], ChartQA [52], DVQA [24], and Synthdog [27], resulting in approximately 500K samples after filtering. LLaVA-OV (1.6M) [32] is a large-scale mixture covering single-image, multi-image, and video data.
+
+## 10.4 Evaluation Benchmark Details
+
+For single-image evaluation, we follow the benchmark categorisation of [65], covering General (MME [13], MMBench [45], SEED-I [33], GQA [19]), Knowledge (SQA [47], MMMU [77]), Vision-Centric (AI2D [26], RealWorldQA [71], CV-Bench 2D and CV-Bench 3D [65]), and OCR & Chart (ChartQA [52],
+
+TextVQA [63], OCRBench [46], DocVQA [53]). For multi-image evaluation, we follow the evaluation setup of [32], covering in-domain multi-image, in-domain multi-view, and out-of-domain settings across 16 benchmarks. For video evaluation, we report results on SEED-Bench [33], EgoSchema [51], MLVU [84], VideoMME [14], L-VideoBench [70], and NextQA [72], which together span short and long video understanding across diverse question types.
+
+## 11 Maintaining Language Capability
+
+We provide additional language capability evaluation beyond those reported in the main paper. Table 8 reports results on MMLU and ARC for all three integration paradigms trained on the LLaVA-OV mixture. All three paradigms preserve, and in several cases improve upon, the original Qwen2.5 0.5B scores, indicating that visual integration does not cause severe degradation of the LLM's language understanding capabilities.
+
+Table 8: Performance comparison on MMLU and ARC benchmarks across integration paradigms trained on the LLaVA-OV mixture, compared to the base Qwen2.5 0.5B. Bold indicates the best and underline indicates the second best result among integration paradigms.
+
+<table><tr><td rowspan="2">Models</td><td colspan="4">MMLU</td><td colspan="2">ARC</td></tr><tr><td>Humanities</td><td>Social Sciences</td><td>STEM</td><td>Other</td><td>Challenge</td><td>Easy</td></tr><tr><td>Qwen2.5 0.5B</td><td>36.96</td><td>39.84</td><td>32.57</td><td>41.04</td><td>32.59</td><td>51.77</td></tr><tr><td>IN-CT</td><td> $\underline{40.51}$ </td><td> $\underline{51.12}$ </td><td> $\underline{39.71}$ </td><td> $\underline{51.82}$ </td><td> $\underline{33.53}$ </td><td>55.22</td></tr><tr><td>LW-AT</td><td> $\underline{40.62}$ </td><td> $\underline{50.53}$ </td><td> $\underline{38.92}$ </td><td> $\underline{50.69}$ </td><td> $\underline{32.94}$ </td><td> $\underline{57.87}$ </td></tr><tr><td>LW-GC(all)</td><td>39.96</td><td>50.31</td><td>39.07</td><td>48.31</td><td>33.36</td><td> $\underline{58.42}$ </td></tr></table>
+
+## 12 Hybrid Integration: Details and Results
+
+We provide full implementation details and complete benchmark results for the hybrid model introduced in the main paper. The hybrid model (IN-CT + LW-AT) applies both integration strategies simultaneously. As illustrated in Figure 9, IN-CT vision tokens are concatenated with text tokens at the input following the standard in-context injection pipeline, while LW-AT vision tokens are additionally injected into the keys and values of each LLM layer.
+
+The two sets of visual tokens are processed by separate connectors but share the same vision encoder features. Figure 10 illustrates the resulting token sequence and position ID assignment. IN-CT vision tokens retain their original position IDs within the input sequence, while LW-AT vision tokens are assigned position IDs in the key-value sequence following the same scheme as the standalone LW-AT model, preserving the relative positional structure of each paradigm independently. Table 9 reports the full benchmark results across single-image, multi-image, and video settings, extending the results presented in the main paper with complete scores across all benchmarks.
+
+![](images/2b3a59044b22cbaac5ea5bdd2a09111f919268311256c5bf6b9b052d6556f065.jpg)
+
+<details>
+<summary>flowchart</summary>
+
+```mermaid
+graph TD
+    subgraph a_IN_CT["a) IN-CT"]
+  A1["LLM_layerN"] --> B1["Connector"]
+  A2["LLM_layer1"] --> B1
+  B1 --> C1["Red Square"]
+  B1 --> D1["Blue Square"]
+  B1 --> E1["Blue Square"]
+  B1 --> F1["Red Square"]
+  B1 --> G1["Blue Square"]
+  B1 --> H1["Red Square"]
+    end
+
+    subgraph b_LW_AT["b) LW-AT"]
+  I1["Connector"] --> J1["LLM_layerN"]
+  I2["Connector"] --> J2["LLM_layer1"]
+  J1 --> K1["Blue Square"]
+  J2 --> L1["Blue Square"]
+  J2 --> M1["Red Square"]
+  J2 --> N1["Green Square"]
+  J2 --> O1["Red Square"]
+  J2 --> P1["Blue Square"]
+  J2 --> Q1["Red Square"]
+    end
+
+    subgraph c_IN_CT_LW_AT["c) IN-CT + LW-AT"]
+  R1["Connector"] --> S1["LLM_layerN"]
+  R2["Connector"] --> S2["LLM_layer1"]
+  S1 --> T1["Red Square"]
+  S2 --> U1["Green Square"]
+  S2 --> V1["Blue Square"]
+  S2 --> W1["Red Square"]
+  S2 --> X1["Blue Square"]
+  S2 --> Y1["Red Square"]
+    end
+
+  A1 --> B1
+  A2 --> B2
+  B1 --> K1
+  B2 --> L1
+  B2 --> M1
+  B2 --> N1
+  B2 --> O1
+  B2 --> P1
+  B2 --> Q1
+  B2 --> S1
+  B2 --> U1
+  B2 --> V1
+  B2 --> W1
+  B2 --> X1
+  B2 --> Y1
+```
+</details>
+
+Fig. 9: Architecture overview of the hybrid IN-CT + LW-AT model compared to standalone IN-CT and LW-AT. IN-CT vision tokens are concatenated at the input, while LW-AT vision tokens are injected into the keys and values at every layer.  
+![](images/2086754ee97b192f9876184596bce429067443908fc0f3c28e44a22d6aa06ec7.jpg)
+
+<details>
+<summary>stacked bar chart</summary>
+
+| System | Metric | System Prompt | IN-CT Vision Tokens | LW-AT Vision Tokens | Text Tokens |
+| --- | --- | --- | --- | --- | --- |
+| IN-CT | Query | 1 | 1 | 3 | 5 |
+| IN-CT | Key&Value | 0 | 1 | 2 | 4 |
+| LW-AT | Query | 0 | 5 | 6 | 6 |
+| LW-AT | Key&Value | 0 | 1 | 2 | 4 |
+| IN-CT + LW-AT | Query | 0 | 2 | 4 | 6 |
+| IN-CT + LW-AT | Key&Value | 0 | 1 | 2 | 3 |
+| IN-CT + LW-AT | Query | 0 | 2 | 4 | 6 |
+| IN-CT + LW-AT | Key&Value | 0 | 1 | 2 | 3 |
+| IN-CT + LW-AT | Query | 0 | 1 | 2 | 4 |
+| IN-CT + LW-AT | Key&Value | 0 | 1 | 2 | 3 |
+| IN-CT + LW-AT | Query | 0 | 1 | 2 | 4 |
+| IN-CT + LW-AT | Key&Value | 0 | 1 | 2 | 3 |
+| IN-CT + LW-AT | Query | 1 | 1 | 2 | 3 |
+| IN-CT + LW-AT | Key&Value | 0 | 1 | 2 | 3 |
+| IN-CT + LW-AT | Query | 1 | 1 | 2 | 3 |
+| IN-CT + LW-AT | Key&Value | 0 | 1 | 2 | 3 |
+| IN-CT + LW-AT | Query | 0 | 1 | 2 | 3 |
+| IN-CT + LW-AT | Key&Value | 0 | 1 | 2 | 3 |
+| IN-CT + LW-AT | Query | 0 | 1 | 2 | 3 |
+| IN-CT + LW-AT | Key&Value | 0 | 1 | 2 | 3 |
+</details>
+
+Fig. 10: Token sequence and position ID assignment for IN-CT, LW-AT, and the hybrid IN-CT + LW-AT model. Each paradigm preserves its original position ID scheme independently within the hybrid architecture.
+
+Table 9: Comprehensive comparison of integration paradigms across all benchmarks. All models are trained on the LLaVA-NeXT Instruction Tuning Data (700K). Bold indicates the best and underline indicates the second best result.
+
+<table><tr><td>Benchmark</td><td>IN-CT 0.5B</td><td>LW-AT 0.5B</td><td>LW-GC(4) 0.5B</td><td>LW-GC(all) 0.5B</td><td>IN-CT+LW-AT 0.5B</td></tr><tr><td colspan="6">SINGLE IMAGE BENCHMARKS</td></tr><tr><td colspan="6">General</td></tr><tr><td> $MME^P$ </td><td>1218.0</td><td>1082.5</td><td>644.9</td><td>831.6</td><td>1262.0</td></tr><tr><td> $MMB^{en}$ </td><td>49.1</td><td>43.8</td><td>17.4</td><td>28.7</td><td>54.1</td></tr><tr><td> $SEED^I$ </td><td>59.6</td><td>50.6</td><td>31.5</td><td>40.1</td><td>58.7</td></tr><tr><td>GQA</td><td>57.5</td><td>54.8</td><td>37.7</td><td>45.7</td><td>57.8</td></tr><tr><td colspan="6">Knowledge</td></tr><tr><td> $SQAI$ </td><td>60.4</td><td>58.9</td><td>55.2</td><td>58.1</td><td>60.4</td></tr><tr><td> $MMUV^V$ </td><td>32.8</td><td>30.0</td><td>29.4</td><td>27.0</td><td>31.3</td></tr><tr><td>AI2D</td><td>53.3</td><td>52.5</td><td>50.0</td><td>51.0</td><td>55.5</td></tr><tr><td colspan="6">Vision-Centric</td></tr><tr><td>RealWorldQA</td><td>51.6</td><td>46.9</td><td>41.6</td><td>43.8</td><td>51.4</td></tr><tr><td>CV-Bench 2D</td><td>45.1</td><td>43.3</td><td>39.1</td><td>38.9</td><td>44.4</td></tr><tr><td>CV-Bench 3D</td><td>54.3</td><td>51.5</td><td>45.9</td><td>50.3</td><td>51.6</td></tr><tr><td colspan="6">OCR &amp; Chart</td></tr><tr><td>ChartQA</td><td>48.2</td><td>42.6</td><td>10.4</td><td>11.2</td><td>48.7</td></tr><tr><td>TextVQA</td><td>47.3</td><td>42.8</td><td>6.8</td><td>8.5</td><td>48.8</td></tr><tr><td>OCRBench</td><td>39.3</td><td>36.2</td><td>2.6</td><td>2.8</td><td>41.1</td></tr><tr><td>DocVQA</td><td>38.1</td><td>31.5</td><td>6.3</td><td>8.3</td><td>38.6</td></tr><tr><td colspan="6">MULTI-IMAGE BENCHMARKS</td></tr><tr><td colspan="6">In-Domain Multi-Image</td></tr><tr><td>IEI</td><td>13.5</td><td>13.4</td><td>13.2</td><td>10.0</td><td>13.5</td></tr><tr><td>MI-VQA</td><td>46.3</td><td>40.3</td><td>43.0</td><td>45.3</td><td>44.3</td></tr><tr><td>NLVR2</td><td>57.1</td><td>54.4</td><td>50.2</td><td>51.1</td><td>59.6</td></tr><tr><td>Puzzle</td><td>4.2</td><td>4.9</td><td>22.1</td><td>22.1</td><td>0.8</td></tr><tr><td>Q-Bench</td><td>47.8</td><td>49.2</td><td>49.9</td><td>48.0</td><td>47.9</td></tr><tr><td>Spot-Diff</td><td>11.0</td><td>10.9</td><td>10.4</td><td>12.1</td><td>11.9</td></tr><tr><td>TR-VQA</td><td>26.7</td><td>23.1</td><td>21.3</td><td>25.6</td><td>28.5</td></tr><tr><td>VST</td><td>10.4</td><td>6.7</td><td>19.7</td><td>20.6</td><td>9.2</td></tr><tr><td colspan="6">In-Domain Multi-View</td></tr><tr><td>ScanQA</td><td>2.9</td><td>2.6</td><td>3.6</td><td>3.6</td><td>2.0</td></tr><tr><td>ALFRED</td><td>13.7</td><td>14.6</td><td>35.0</td><td>36.8</td><td>18.2</td></tr><tr><td>nuScenes</td><td>1.2</td><td>1.2</td><td>1.0</td><td>1.0</td><td>2.2</td></tr><tr><td colspan="6">Out-Domain</td></tr><tr><td>BLINK</td><td>39.3</td><td>39.4</td><td>37.8</td><td>38.0</td><td>38.4</td></tr><tr><td>Mantis</td><td>39.5</td><td>36.7</td><td>36.7</td><td>40.4</td><td>40.4</td></tr><tr><td>MathVerse</td><td>25.8</td><td>25.5</td><td>22.2</td><td>23.5</td><td>24.0</td></tr><tr><td>MuirBench</td><td>27.4</td><td>24.4</td><td>17.5</td><td>18.1</td><td>28.4</td></tr><tr><td>SciVerse</td><td>19.6</td><td>20.0</td><td>24.0</td><td>25.3</td><td>19.8</td></tr><tr><td colspan="6">VIDEO BENCHMARKS</td></tr><tr><td>SEED</td><td>36.6</td><td>31.6</td><td>26.3</td><td>29.0</td><td>35.3</td></tr><tr><td>EgoSchema</td><td>22.7</td><td>22.6</td><td>21.5</td><td>22.9</td><td>27.8</td></tr><tr><td>MLVU</td><td>38.5</td><td>33.8</td><td>32.5</td><td>35.5</td><td>39.8</td></tr><tr><td>VideoMME</td><td>38.2</td><td>32.4</td><td>31.4</td><td>31.3</td><td>36.0</td></tr><tr><td>L-VideoBench</td><td>28.9</td><td>27.9</td><td>26.5</td><td>26.7</td><td>29.1</td></tr><tr><td>NextQA</td><td>47.4</td><td>37.8</td><td>31.5</td><td>37.8</td><td>48.2</td></tr></table>
+
+## 13 Additional Visualizations
+
+All analysis visualizations in this section and in the main paper are produced using the 0.5B model trained on the LLaVA-NeXT SFT (700K) mixture [43], unless otherwise stated.
+
+## 13.1 Centered Kernel Alignment (CKA)
+
+We employ Centered Kernel Alignment (CKA) [28] to measure how token representations evolve across layers. Here we provide the formal definition and additional visualizations.
+
+Formal definition. Given two representation matrices $X \in \mathbb{R}^{T \times D}$ and $Y \in \mathbb{R}^{T \times D}$ , where $T$ is the number of tokens and $D$ is the hidden dimension, we define their kernel matrices as $K = XX^{\top}$ and $L = YY^{\top}$ using a linear kernel. CKA is then computed via the Hilbert-Schmidt Independence Criterion (HSIC):
+
+$$
+\operatorname{CKA} (K, L) = \frac {\operatorname{HSIC} (K , L)}{\sqrt {\operatorname{HSIC} (K , K) \cdot \operatorname{HSIC} (L , L)}} \tag {3}
+$$
+
+where HSIC measures the statistical dependence between the two feature spaces. For centered kernel matrices $\tilde{K} = HKH$ and $\tilde{L} = HLH$ , with $H = I_T - \frac{1}{T}\mathbf{11}^\top$ being the centering matrix, the empirical HSIC is given by:
+
+$$
+\operatorname{HSIC} (K, L) = \frac {1}{(T - 1) ^ {2}} \operatorname{tr} (\tilde {K} \tilde {L}) \tag {4}
+$$
+
+Token-level CKA. We apply CKA at the token level to measure how the internal structure of visual (or text) token representations shifts across layers. For a batch of $N$ samples, let $H_{i}^{(\ell)} \in \mathbb{R}^{T \times D}$ denote the hidden states of sample $i$ at layer $\ell$ . We treat the $T$ tokens as data points and compute:
+
+$$
+\mathrm{CKA} _ {\text { token }} (\ell , \ell^ {\prime}) = \frac {1}{N} \sum_ {i = 1} ^ {N} \mathrm{CKA} (H _ {i} ^ {(\ell)}, H _ {i} ^ {(\ell^ {\prime})}) \tag {5}
+$$
+
+A high $\mathrm{CKA}_{\mathrm{token}}(\ell, \ell')$ indicates that the pairwise relationships among tokens are largely preserved between layers $\ell$ and $\ell'$ , whereas a low value signals a structural reorganisation of the token representations. Figure 11 provides additional CKA visualisations across different models and datasets.
+
+## 13.2 Attention Mass Visualisation
+
+We provide additional attention mass visualisations on further datasets (Figure 12), supporting the finding that visual information utilization is task-dependent and that attention allocation alone does not account for the performance differences between integration paradigms.
+
+Vision Tokens  
+Text Tokens  
+In-Context Injection (IN-CT)  
+![](images/19a3520681710abbbe6d4b2d27a1e42614336766a1b9b4c84d43e45a7985ceaa.jpg)
+
+<details>
+<summary>heatmap</summary>
+
+| Subsequent n'th Layer | 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10 | 11 | 12 | 13 | 14 | 15 | 16 | 17 | 18 | 19 | 20 | 21 |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| 0 | 22 | 21.5 | 21.2 | 20.8 | 20.4 | 19.9 | 19.4 | 18.9 | 18.4 | 17.9 | 17.4 | 16.9 | 16.4 | 15.9 | 15.4 | 14.9 | 14.4 | 13.9 | 13.4 | 12.9 | 12.4 | 11.9 |
+| 1 | 21.5 | 21.0 | 20.6 | 20.1 | 19.6 | 19.0 | 18.4 | 17.8 | 17.2 | 16.6 | 16.0 | 15.4 | 14.8 | 14.2 | 13.6 | 13.0 | 12.4 | 11.8 | 11.3 | 10.8 | 10.3 | 9.8 |
+| 2 | 21.0 | 20.5 | 20.0 | 19.5 | 18.9 | 18.3 | 17.7 | 17.1 | 16.5 | 15.9 | 15.3 | 14.7 | 14.1 | 13.5 | 12.9 | 12.3 | 11.7 | 11.1 | 10.5 | 9.9 | 9.4 | 8.9 |
+| 3 | 20.5 | 20.0 | 19.5 | 19.0 | 18.4 | 17.8 | 17.2 | 16.6 | 16.0 | 15.4 | 14.8 | 14.2 | 13.6 | 13.0 | 12.4 | 11.8 | 11.2 | 10.6 | 9.9 | 9.3 | 8.8 | 8.3 |
+</details>
+
+![](images/9e394729f2ec7cd013ef33165a62c086ea58b1286f3ceccb930a08a54d779c0e.jpg)
+
+<details>
+<summary>heatmap</summary>
+
+| X | Y | Value |
+|---|---|---|
+| 0 | 1 | 0.60 |
+| 0 | 5 | 0.65 |
+| 0 | 9 | 0.70 |
+| 0 | 13 | 0.75 |
+| 0 | 17 | 0.80 |
+| 0 | 21 | 0.85 |
+| 4 | 1 | 0.90 |
+| 4 | 5 | 0.95 |
+| 4 | 9 | 1.00 |
+| 8 | 1 | 0.85 |
+| 8 | 5 | 0.90 |
+| 8 | 9 | 0.95 |
+| 12 | 1 | 0.80 |
+| 12 | 5 | 0.85 |
+| 12 | 9 | 0.90 |
+| 16 | 1 | 0.75 |
+| 16 | 5 | 0.80 |
+| 16 | 9 | 0.85 |
+| 20 | 1 | 0.70 |
+| 20 | 5 | 0.75 |
+| 20 | 9 | 0.80 |
+| 24 | 1 | 0.65 |
+| 24 | 5 | 0.70 |
+| 24 | 9 | 0.75 |
+| ... | ... | ... |
+The image contains a grid of colored cells (color intensity) representing values at specific coordinates on the x and y axes. The color bar on the right indicates the corresponding value range from approximately -0.65 to +0.65.
+</details>
+
+Layer-wise Attention Injection (LW-AT)  
+![](images/3f19800548d724403829743a25d7d91ee7b2a75e75287cea0e444930170f36d7.jpg)
+
+<details>
+<summary>heatmap</summary>
+
+| Subsequent nth Layer | 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10 | 11 | 12 | 13 | 14 | 15 | 16 | 17 | 18 | 19 | 20 |
+|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
+| 1 | Green | Purple | Teal | Light Green | Light Green | Yellow | Light Green | Light Green | Light Green | Light Green | Light Green | Light Green | Light Green | Light Green | Light Green | Light Green | Light Green | Light Green | Light Green | Light Green | Light Green |
+| 5 | Teal | Purple | Teal | Light Green | Light Green | Yellow | Light Green | Light Green | Light Green | Light Green | Light Green | Light Green | Light Green | Light Green | Light Green | Light Green | Light Green | Light Green | Light Green | Light Green | Light Green |
+| 9 | Teal | Purple | Teal | Light Green | Light Green | Yellow | Light Green | Light Green | Light Green | Light Green | Light Green | Light Green | Light Green | Light Green | Light Green | Light Green | Light Green | Light Green | Light Green | Light Green | Light Green |
+| 13 | Teal | Purple | Teal | Light Green | Light Green | Yellow | Light Green | Light Green | Light Green | Light Green | Light Green | Light Green | Light Green | Light Green | Light Green | Light Green | Light Green | Light Green | Light Green | Light Green | Light Green |
+| 17 | Teal | Purple | Teal | Light Green | Light Green | Yellow | Light Green | Light Green | Light Green | Light Green | Light Green | Light Green | Light Green | Light Green | Light Green | Light Green | Light Green | Light Green | Light Green | Light Green | Light Green |
+| 21 | Teal | Purple | Teal | Light Green | Light Green | Yellow | Light Green | Light Green | Light Green | Light Green | Light Green | Light Green | Light Green | Light Green | Light Green | Light Green | Light Green | Light Green | Light Green | Light Green | Light Green |
+| (The image contains a grid of colored squares representing the values at each row and column of the data points) for each subsequent row. The x-axis is labeled 'Subsequent nth Layer' and the y-axis is labeled 'Subsequent nth Layer'. There are no labels or additional data series in this image.
+</details>
+
+![](images/70836968734ff8d0d31276ef16e13c82275a9cef2bf7d068ee8a289b2e2b836e.jpg)
+
+<details>
+<summary>heatmap</summary>
+
+| X | Y | Value |
+|---|---|---|
+| 0 | 1 | 0.95 |
+| 0 | 5 | 0.85 |
+| 0 | 9 | 0.75 |
+| 0 | 13 | 0.65 |
+| 0 | 17 | 0.55 |
+| 0 | 21 | 0.45 |
+| 1 | 1 | 0.90 |
+| 1 | 5 | 0.80 |
+| 1 | 9 | 0.70 |
+| 1 | 13 | 0.60 |
+| 1 | 17 | 0.50 |
+| 1 | 21 | 0.40 |
+| 2 | 1 | 0.85 |
+| 2 | 5 | 0.75 |
+| 2 | 9 | 0.65 |
+| 2 | 13 | 0.55 |
+| 2 | 17 | 0.45 |
+| 2 | 21 | 0.35 |
+| 3 | 1 | 0.80 |
+| 3 | 5 | 0.70 |
+| 3 | 9 | 0.60 |
+| 3 | 13 | 0.50 |
+| 3 | 17 | 0.40 |
+| 3 | 21 | 0.30 |
+| ... (additional rows) are not explicitly labeled in the image; the values appear to be estimated based on the visual intensity of the color bar ranging from purple to yellow.
+</details>
+
+Layer-wise Gated Cross-Attention (LW-GC)  
+![](images/1e7d8ee9a628784f51f06902b6b8fef86cc4129cd710c347cb5939171a2ded88.jpg)
+
+<details>
+<summary>heatmap</summary>
+
+| Subsequent n^th Layer | Layer Index ℓ | Color Intensity |
+| :--- | :--- | :--- |
+| 1 | 0 | Green |
+| 1 | 1 | Light Green |
+| 1 | 2 | Teal |
+| 1 | 3 | Dark Blue |
+| 1 | 4 | Medium Green |
+| 1 | 5 | Light Green |
+| 1 | 6 | Teal |
+| 1 | 7 | Medium Green |
+| 1 | 8 | Dark Blue |
+| 1 | 9 | Medium Green |
+| 1 | 10 | Medium Green |
+| 1 | 11 | Dark Blue |
+| 1 | 12 | Medium Green |
+| 1 | 13 | Medium Green |
+| 1 | 14 | Medium Green |
+| 1 | 15 | Medium Green |
+| 1 | 16 | Medium Green |
+| 1 | 17 | Medium Green |
+| 1 | 18 | Medium Green |
+| 1 | 19 | Medium Green |
+| 1 | 20 | Medium Green |
+| 1 | 21 | Medium Green |
+| 2 | 0 | Light Green |
+| 2 | 1 | Light Green |
+| 2 | 2 | Teal |
+| 2 | 3 | Dark Blue |
+| 2 | 4 | Medium Green |
+| 2 | 5 | Light Green |
+| 2 | 6 | Teal |
+| 2 | 7 | Medium Green |
+| 2 | 8 | Dark Blue |
+| 2 | 9 | Medium Green |
+| 2 | 10 | Medium Green |
+| 2 | 11 | Medium Green |
+| 2 | 12 | Medium Green |
+| 2 | 13 | Medium Green |
+| 2 | 14 | Medium Green |
+| 2 | 15 | Medium Green |
+| 2 | 16 | Medium Green |
+| 2 | 17 | Medium Green |
+| 2 | 18 | Medium Green |
+| 2 | 19 | Medium Green |
+| 2 | 20 | Medium Green |
+| 2 | 21 | Medium Green |
+| 3 | 0 | Light Green |
+| 3 | 1 | Light Green |
+| 3 | 2 | Teal |
+| 3 | 3 | Dark Blue |
+| 3 | 4 | Medium Green |
+| 3 | 5 | Light Green |
+| 3 | 6 | Teal |
+| 3 | 7 | Medium Green |
+| 3 | 8 | Dark Blue |
+| 3 | 9 | Medium Green |
+| 3 | 10 | Medium Green |
+| 3 | 11 | Medium Green |
+| 3 | 12 | Medium Green |
+| 3 | 13 | Medium Green |
+| 3 | 14 | Medium Green |
+| 3 | 15 | Medium Green |
+| 3 | 16 | Medium Green |
+| 3 | 17 | Medium Green |
+| 3 | 18 | Medium Green |
+| 3 | 19 | Medium Green |
+| 3 | 20 | Medium Green |
+| 3 | 21 | Medium Green |
+| ... (Repeated)   ... (Repeated)   ... (Repeated)
+</details>
+
+![](images/9d3dca7db6cb55f39f0b4654ba15d9e9ba0b2a8e913016eca4bbd946f07aa588.jpg)
+
+<details>
+<summary>heatmap</summary>
+
+| Layer Index ℓ | 1 | 5 | 9 | 13 | 17 | 21 |
+|---|---|---|---|---|---|---|
+| 0 | 0.2 | 0.4 | 0.6 | 0.8 | 1.0 | 1.0 |
+| 1 | 0.2 | 0.4 | 0.6 | 0.8 | 1.0 | 1.0 |
+| 2 | 0.2 | 0.4 | 0.6 | 0.8 | 1.0 | 1.0 |
+| 3 | 0.2 | 0.4 | 0.6 | 0.8 | 1.0 | 1.0 |
+| 4 | 0.2 | 0.4 | 0.6 | 0.8 | 1.0 | 1.0 |
+| 5 | 0.2 | 0.4 | 0.6 | 0.8 | 1.0 | 1.0 |
+| 6 | 0.2 | 0.4 | 0.6 | 0.8 | 1.0 | 1.0 |
+| 7 | 0.2 | 0.4 | 0.6 | 0.8 | 1.0 | 1.0 |
+| 8 | 0.2 | 0.4 | 0.6 | 0.8 | 1.0 | 1.0 |
+| 9 | 0.2 | 0.4 | 0.6 | 0.8 | 1.0 | 1.0 |
+| 10 | 0.2 | 0.4 | 0.6 | 0.8 | 1.0 | 1.0 |
+| 11 | 0.2 | 0.4 | 0.6 | 0.8 | 1.0 | 1.0 |
+| 12 | 0.2 | 0.4 | 0.6 | 0.8 | 1.0 | 1.0 |
+| 13 | 0.2 | 0.4 | 0.6 | 0.8 | 1.0 | 1.0 |
+| 14 | 0.2 | 0.4 | 0.6 | 0.8 | 1.0 | 1.0 |
+| 15 | 0.2 | 0.4 | 0.6 | 0.8 | 1.0 | 1.0 |
+| 16 | 0.2 | 0.4 | 0.6 | 0.8 | 1.0 | 1.0 |
+| 17 | 0.2 | 0.4 | 0.6 | 0.8 | 1.0 | 1.0 |
+| 18 | 0.2 | 0.4 | 0.6 | 0.8 | 1.0 | 1.0 |
+| 19 | 0.2 | 0.4 | 0.6 | 0.8 | 1.0 | 1.0 |
+| 20 | 0.2 | 0.4 | 0.6 | 0.8 | 1.0 | 1.0 |
+| 21+ (top row)   |     |     |     |     |     |     |
+The data is a heatmap with a color scale ranging from purple (low) to yellow (high). The x-axis labels are 'Layer Index ℓ' and the y-axis labels are 'Layer Index ℓ'. The color bar on the right indicates the value of the color in each cell.
+</details>
+
+Fig. 11: CKA heatmaps of visual (left) and text (right) token representations across layers for all three integration paradigms on ChartQA [52]. IN-CT exhibits smooth progressive evolution for both visual and text tokens, while LW-GC and LW-AT show severe discontinuities in their visual token representations.
+
+![](images/fa40603f23e749ad8fe019c873ac1f9af8e38c80c31b656dfbd40841fc64f5dc.jpg)  
+System Image Text
+
+Fig. 12: Attention mass allocated to visual tokens during generation across layers for IN-CT and LW-AT on additional datasets. Attention patterns are task-dependent: general tasks show decreasing visual attention in deeper layers (MME [13] and CV-Bench 3D [65]), while text-centric tasks maintain high visual attention throughout (OCR-Bench [46] and DocVQA [53]).
+
+## 13.3 PCA Projections
+
+We provide additional PCA visualisations of image and text token representations across layers for all three integration paradigms, using captioning dataset from MS-COCO dataset $[40]$ . IN-CT visual tokens progressively converge toward the language representation space, while layer-wise injection representations remain orthogonal throughout. The following figures demonstrate this behaviour consistently: IN-CT (Figure 13), LW-AT (Figure 14), and LW-GC (Figure 15).
+
+In-Context Injection (IN-CT)  
+![](images/c3a0cd1d331a9ab5c63ba659ba6ad14721a47e9f776dcb85371743244f9f1e59.jpg)
+
+<details>
+<summary>text_image</summary>
+
+Layer 0
+Layer 1
+Layer 2
+Layer 3
+Layer 4
+Layer 5
+Layer 6
+Layer 7
+Layer 8
+Layer 9
+Layer 10
+Layer 11
+Layer 12
+Layer 13
+Layer 14
+Layer 15
+Layer 16
+Layer 17
+Layer 18
+Layer 19
+Layer 20
+Layer 21
+Layer 22
+Layer 23
+</details>
+
+Fig. 13: 3D PCA projections of image (red) and text (blue) token representations at every layer for IN-CT. Visual tokens progressively converge toward the text token subspace across layers, with clear merging visible in the final layers.
+
+Layer-wise Attention (LW-AT)  
+![](images/bcf6a0c02e983b0f4484bcc29d8fac77e7082fda2b5413f14c05a0f423e98ba6.jpg)
+
+<details>
+<summary>text_image</summary>
+
+Layer 0
+Layer 1
+Layer 2
+Layer 3
+Layer 4
+Layer 5
+Layer 6
+Layer 7
+Layer 8
+Layer 9
+Layer 10
+Layer 11
+Layer 12
+Layer 13
+Layer 14
+Layer 15
+Layer 16
+Layer 17
+Layer 18
+Layer 19
+Layer 20
+Layer 21
+Layer 22
+Layer 23
+</details>
+
+Fig. 14: 3D PCA projections of image (red) and text (blue) token representations at every layer for LW-AT. Unlike IN-CT, visual representations remain orthogonal to the text token subspace throughout all layers, with no convergence observed.
+
+Layer-wise Gated Cross Attention (LW-GC)  
+![](images/9f849f39de0037734895affc3ab305dd4826de704bee7703ddcc730ea890eec7.jpg)
+
+<details>
+<summary>text_image</summary>
+
+Layer 0
+Layer 1
+Layer 2
+Layer 3
+Layer 4
+Layer 5
+Layer 6
+Layer 7
+Layer 8
+Layer 9
+Layer 10
+Layer 11
+Layer 12
+Layer 13
+Layer 14
+Layer 15
+Layer 16
+Layer 17
+Layer 18
+Layer 19
+Layer 20
+Layer 21
+Layer 22
+Layer 23
+</details>
+
+Fig. 15: 3D PCA projections of image (red) and text (blue) token representations at every layer for LW-GC. Similar to LW-AT, visual and text representations occupy distinct subspaces throughout the network, consistent with the lack of progressive transformation in layer-wise injection paradigms.

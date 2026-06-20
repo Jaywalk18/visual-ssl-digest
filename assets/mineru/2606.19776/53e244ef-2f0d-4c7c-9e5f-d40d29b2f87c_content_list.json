@@ -1,0 +1,1945 @@
+[
+    {
+        "type": "text",
+        "text": "Occ-VLM: Occupancy Grounded Vision Language Model for Indoor Scene Understanding",
+        "text_level": 1,
+        "bbox": [
+            79,
+            48,
+            917,
+            107
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "Jianing Li, Zhou Fang, Yijiang Liu, and Li Du",
+        "bbox": [
+            249,
+            141,
+            745,
+            160
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "School of Electronic Science and Engineering, Nanjing University",
+        "bbox": [
+            176,
+            175,
+            818,
+            195
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "Abstract. Recently, vision-language models (VLMs) have made significant progress in 3D scene understanding, driving advances in applications such as embodied intelligence and robotic vision. However, existing approaches typically either rely directly on explicit 3D inputs (e.g., point clouds or RGB-D sequences), or introduce an additional 3D geometry encoder to derive 3D-aware visual tokens from 2D images. Such designs structurally decouple 3D geometric perception from the rich 2D semantics learned via vision-language pre-training, hindering the development of a unified 3D vision-language representation. In this work, we propose Occ-VLM, a novel framework for 3D scene understanding that operates purely on posed RGB images and employs a single 2D vision encoder. Specifically, Occ-VLM reconstructs 3D scene occupancy as an auxiliary geometric prior, which is utilized to spatially associate foreground 2D tokens with 3D space. These tokens are then decoded by a Large Language Model (LLM) for unified scene understanding. Extensive experiments demonstrate that Occ-VLM achieves both accurate geometric perception and robust vision-language reasoning: it attains state-of-the-art performance on multi-view occupancy prediction, while performing on par with 3D-input VLMs on 3D Visual Question Answering (VQA) and 3D dense captioning benchmarks. Code is available at https://github.com/NorthSummer/Occ-VLM.git.",
+        "bbox": [
+            147,
+            245,
+            849,
+            619
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "1 Introduction",
+        "text_level": 2,
+        "bbox": [
+            79,
+            653,
+            309,
+            673
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "Vision-Language Models (VLMs) [1, 4, 23, 27, 28, 48] have achieved remarkable progress on multimodal understanding tasks. Mainstream VLMs are primarily designed for 2D visual understanding. Given images or videos as input, a pretrained 2D vision encoder extracts visual tokens, which are then projected into the language space, fused with text tokens, and finally fed into a Large Language Model (LLM) for reasoning and generation. In this way, VLMs can follow human instructions and answer questions grounded in image and video content, thereby achieving a unified cross-modal understanding of visual information.",
+        "bbox": [
+            77,
+            695,
+            917,
+            850
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "Building upon the success of VLMs in 2D visual understanding, an increasing number of studies have explored how to extend their capabilities to 3D scene understanding (Fig. 1). Early works primarily employed 3D data such as point clouds as input [15, 38, 54]. These methods typically use a point-based 3D encoder to extract 3D tokens and align them with text tokens. However, due to the unstructured nature of point clouds, such methods often require complex alignment processes at both the object and scene levels. Subsequently, research shifted towards utilizing RGB-D data [39,58,59]. These methods exploit explicit depth information to unproject 2D tokens into 3D space through techniques like 3D positional encoding and voxelization, significantly simplifying the crossmodal alignment. Nevertheless, due to their strict reliance on depth sensors, their application scenarios remain limited; when only RGB inputs are available, their performance degrades noticeably.",
+        "bbox": [
+            77,
+            852,
+            917,
+            947
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "aside_text",
+        "text": "arXiv:2606.19776v1 [cs.CV] 18 Jun 2026",
+        "bbox": [
+            38,
+            214,
+            84,
+            778
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "image",
+        "img_path": "images/fe9915e6d07465037b479aeb8252e6fc2ebd49b125bc4fe0549b3635e7db18dd.jpg",
+        "image_caption": [
+            "Fig. 1: Comparison of 3D VLM architectures. (a) Point-based and (b) RGBD-based methods both rely on explicit 3D data inputs. (c) Dual-encoder methods enable RGBonly scene understanding but necessitate an additional geometric encoder. (d) Our proposed Occ-VLM achieves RGB-only scene understanding using a single 2D encoder."
+        ],
+        "image_footnote": [],
+        "content": "",
+        "bbox": [
+            96,
+            79,
+            912,
+            243
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "text",
+        "text": "",
+        "bbox": [
+            72,
+            382,
+            917,
+            536
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "text",
+        "text": "To overcome this reliance on explicit 3D data, recent research has begun to focus on RGB-only 3D VLM architectures. These methods [51, 57] typically take RGB videos as input and introduce a frozen pre-trained visual geometry encoder (e.g., a VGGT [47]) alongside task-specific decoders. This dual-encoder architecture reconstructs the scene geometry from monocular inputs to extract 3D features, which are then fused with 2D tokens. Although this paradigm improves geometric perception accuracy without requiring explicit 3D inputs, it introduces high architectural complexity and computational overhead. This raises an important question: Can we design a VLM capable of comprehensive 3D scene understanding using purely RGB inputs and a single 2D encoder?",
+        "bbox": [
+            72,
+            539,
+            917,
+            733
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "text",
+        "text": "To address this question, we propose Occ-VLM. Given posed RGB images, we first employ an Occ adapter to lift the 2D encoder features into 3D occupancy grids, utilizing an occupancy decoder to predict 3D semantic occupancy and explicitly recover scene geometry. Based on this, we further introduce an occupancy-aware 3D token representation. Specifically, this module samples occupied regions in 3D space and projects them onto the 2D feature planes to sample corresponding features, thereby generating spatially aware foreground 3D tokens to be fed into the LLM for spatial reasoning. In contrast to prior works that treat 3D perception as an isolated task, we view it as a bidirectional 2D–3D bridge. Our central insight is that while occupancy prediction facilitates geometric reconstruction, the rich semantics encoded in the 2D encoder can, in turn, significantly enhance 3D scene recovery. Extensive experiments support this perspective: on the multi-view 3D semantic occupancy prediction task, Occ-VLM achieves state-of-the-art accuracy, while attaining competitive performance on 3D VQA and 3D dense captioning datasets compared to methods relying on explicit 3D inputs.",
+        "bbox": [
+            72,
+            734,
+            917,
+            947
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "page_number",
+        "text": "",
+        "bbox": [
+            79,
+            17,
+            94,
+            29
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "header",
+        "text": "J. Li et al.",
+        "bbox": [
+            159,
+            14,
+            261,
+            30
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "text",
+        "text": "",
+        "bbox": [
+            77,
+            55,
+            917,
+            151
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "Our main contributions are summarized as follows:",
+        "bbox": [
+            116,
+            152,
+            653,
+            170
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "list",
+        "sub_type": "text",
+        "list_items": [
+            "– We propose Occ-VLM, a 3D vision-language model that operates purely on RGB images. Despite relying solely on a single 2D vision encoder, Occ-VLM achieves comprehensive 3D scene understanding, unifying accurate geometric perception and vision-language spatial reasoning.",
+            "– We design the Occ adapter to bridge 2D semantics and 3D spatial reasoning. It effectively lifts the rich semantic knowledge from 2D pre-training into 3D space while preserving the VLM’s instruction-following and vision-language reasoning capabilities.",
+            "– Occ-VLM attains state-of-the-art performance on the multi-view 3D semantic occupancy prediction task, demonstrating the effectiveness of our bidirectional 2D-3D modeling.",
+            "– Extensive experiments on 3D VQA and 3D dense captioning benchmarks reveal that Occ-VLM achieves leading performance among 2D-input 3D VLMs and performs competitively against models that rely on explicit 3D inputs."
+        ],
+        "bbox": [
+            89,
+            186,
+            917,
+            458
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "2 Related Work",
+        "text_level": 2,
+        "bbox": [
+            79,
+            486,
+            329,
+            507
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "2.1 2D Vision Language Models",
+        "text_level": 2,
+        "bbox": [
+            79,
+            526,
+            484,
+            546
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "Vision-Language Models (VLMs) have achieved significant progress in joint imagetext understanding. Existing 2D VLMs typically employ vision-language pretrained Vision Transformers (ViTs) as vision encoders to extract semantically discriminative features. A key design choice lies in the multimodal projector that bridges visual representations and the token embedding space of language models. One line of work, represented by BLIP-2 [23], InstructBLIP [13], Flamingo [1], and Qwen-VL [4], adopts the Q-Former architecture that employs learnable queries to aggregate visual information. An alternative approach, exemplified by LLaVA [28] and its variants [24, 26, 27, 29, 48], utilizes lightweight MLP-based projectors to directly map visual tokens into the language model’s embedding space. Recent works such as LLaVA-One-Vision [2,21] extend these architectures to support both image and video inputs within a unified framework, enabling spatiotemporal reasoning across visual modalities.",
+        "bbox": [
+            79,
+            557,
+            924,
+            809
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "2.2 3D Vision Language Models",
+        "text_level": 2,
+        "bbox": [
+            79,
+            837,
+            484,
+            858
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "Building upon the success of VLMs in 2D tasks, increasing attention has shifted toward extending their capabilities to 3D domains. Existing 3D VLMs can be categorized into three types based on their input modalities: point-based, RGB-Dbased, and RGB-based methods. Point-based methods [15,37,38,41,54] directly adopt point clouds as 3D visual input. These approaches leverage point-cloud encoders pretrained on 3D recognition tasks to extract scene-level or object-level features, which are then projected into compact 3D visual tokens via a Q-Former or MLP. In parallel, RGB-D-based methods [7,14,16,17,31,32,39,49,58,59] take multi-view RGB-D images as input. They typically extract dense visual features from RGB images using pretrained 2D encoders, and then lift these features into 3D space by leveraging the associated depth maps, yielding spatially consistent 3D visual tokens. RGB-based methods have recently emerged as an alternative that relies solely on RGB inputs. These models typically employ a dual-encoder architecture [10, 51, 57] or neural rendering techniques [36, 43] to encode scene geometry. Despite these advances, existing methods either rely on explicit 3D inputs (limiting practicality and scalability) or adopt complex architectures that compromise simplicity and extensibility. To address this, we explore a concise and efficient 3D VLM based solely on RGB inputs, built upon the native VLM architecture.",
+        "bbox": [
+            79,
+            869,
+            917,
+            947
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "header",
+        "text": "Occ-VLM",
+        "bbox": [
+            740,
+            16,
+            837,
+            30
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "page_number",
+        "text": "",
+        "bbox": [
+            903,
+            17,
+            917,
+            29
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "",
+        "bbox": [
+            77,
+            55,
+            922,
+            346
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "text",
+        "text": "2.3 3D Occupancy Prediction",
+        "text_level": 2,
+        "bbox": [
+            79,
+            370,
+            455,
+            390
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "text",
+        "text": "Occupancy networks [33,35] were originally proposed as an implicit scene representation to determine the occupancy status of arbitrary 3D coordinates. Specifically, the 3D space is discretized into uniform voxel grids, and models predict occupancy status for each cell given point clouds or images as input. In the context of autonomous driving, subsequent work [5, 19, 20, 25, 34, 50] augments occupancy grids with semantic labels to enable fine-grained scene understanding. More recently, embodied occupancy prediction [18, 46, 52] has emerged as a related paradigm that performs egocentric monocular occupancy estimation and incrementally aggregates predictions into a global representation through continuous agent-scene interaction. This formulation enables globally consistent 3D scene modeling, making it well-suited for embodied AI applications.",
+        "bbox": [
+            79,
+            396,
+            922,
+            609
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "text",
+        "text": "3 Method",
+        "text_level": 2,
+        "bbox": [
+            79,
+            634,
+            239,
+            653
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "text",
+        "text": "3.1 Overview",
+        "text_level": 2,
+        "bbox": [
+            79,
+            669,
+            256,
+            687
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "text",
+        "text": "In this section, we present Occ-VLM, a vision-language model designed for 3D indoor scene understanding from posed multi-view images. Our approach begins by encoding each input frame into multi-view tokens using a frozen 2D vision encoder. However, these tokens lack explicit 3D structural information. To address this, we introduce a Occ adapter that enables the model to estimate 3D scene occupancy while keeping the 2D vision encoder parameters fixed (Sec. 3.2). Leveraging the predicted occupancy, we construct an Occupancy-aware 3D Token Representation and perform structured sampling of 3D tokens in foreground regions to concentrate on geometrically relevant areas (Sec. 3.3). Finally, we propose a two-stage training strategy that jointly facilitates occupancy reasoning and empowers the model to generate semantically coherent responses for 3D scene question answering (Sec. 3.4). Fig. 2 illustrates the architecture of our proposed Occ-VLM.",
+        "bbox": [
+            79,
+            695,
+            922,
+            947
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "page_number",
+        "text": "",
+        "bbox": [
+            79,
+            17,
+            94,
+            29
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "header",
+        "text": "J. Li et al.",
+        "bbox": [
+            159,
+            14,
+            261,
+            30
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "image",
+        "img_path": "images/5755d8f7abfdcba27d4828278e7d4150c248c9b522023158dd95c9e26962f723.jpg",
+        "image_caption": [
+            "Fig. 2: Architecture of Occ-VLM. Taking multi-view RGB images as input, we first extract image tokens using a 2D vision encoder. These tokens are then processed by the Occ Adapter and Occupancy Decoder to predict scene occupancy. Subsequently, we sample foreground tokens guided by the predicted occupancy and incorporate 3D geometric cues through 3D Positional Embeddings. These occupancy-aware tokens are finally input into an LLM decoder for unified vision-language reasoning tasks."
+        ],
+        "image_footnote": [],
+        "content": "```mermaid\ngraph TD\n  A[\"Vision Input (RGB Images)\"] --> B[\"Vision Encoder\"]\n  B --> C[\"Occ-Adapter\"]\n  C --> D[\"Occ Decoder\"]\n  D --> E[\"Predicted Occupancy\"]\n  B --> F[\"Occupancy-aware Sampler\"]\n  F --> G[\"3D Tokens\"]\n  F --> H[\"Concat\"]\n  B --> I[\"LLM Decoder\"]\n  I --> J[\"Answer in corner of room next to window\"]\n  B --> K[\"3D Visual Question\"]\n  K --> L[\"Image Tokens\"]\n  K --> M[\"Frame 1\"]\n  K --> N[\"Frame 2\"]\n  K --> O[\"Frame 3\"]\n  K --> P[\"Frame N\"]\n    style A fill:#f9f,stroke:#333\n    style B fill:#ccf,stroke:#333\n    style C fill:#cfc,stroke:#333\n    style D fill:#fcc,stroke:#333\n    style E fill:#cff,stroke:#333\n    style F fill:#ffc,stroke:#333\n    style G fill:#cfc,stroke:#333\n    style H fill:#fcc,stroke:#333\n    style I fill:#cfc,stroke:#333\n    style J fill:#fcc,stroke:#333\n    style K fill:#ffc,stroke:#333\n    style L fill:#cfc,stroke:#333\n```",
+        "sub_type": "flowchart",
+        "bbox": [
+            99,
+            66,
+            893,
+            250
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "3.2 Adapting 2D Vision Encoder to Predict Scene Occupancy",
+        "text_level": 2,
+        "bbox": [
+            75,
+            429,
+            847,
+            450
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "To more effectively capture the geometric attributes of multi-view tokens within 3D LVLMs, we introduce the Occ adapter (Fig. 3). This module equips the model with dense geometric perception capabilities while fully preserving its pre-trained vision-language proficiency. Based on the predicted 3D occupancy, we spatially associate multi-view tokens with occupancy grids, seamlessly disentangling foreground tokens (non-empty grids) from background regions.",
+        "bbox": [
+            72,
+            466,
+            917,
+            583
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "Mid-layer Activation. Since the 2D vision encoder relies on massive parameters and large-scale pre-training to achieve robust semantic understanding, fully fine-tuning it for geometric adaptation would inevitably degrade its inherent capabilities and incur substantial computational overhead. Instead, to preserve the original pre-trained parameters, we keep the entire encoder frozen and instanti-$\\{ \\ell _ { k } \\} _ { k = 1 } ^ { K }$ of these copied layers, a lightweight Transformer-based adapter $\\mathcal { A } _ { k }$ is appended to reduce token dimension via intra-frame self-attention:",
+        "bbox": [
+            72,
+            583,
+            920,
+            738
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "equation",
+        "text": "$$\n\\tilde {\\mathbf {H}} ^ {(k)} = \\mathcal {A} _ {k} \\left(\\mathbf {H} ^ {\\left(\\ell_ {k}\\right)}\\right) = \\mathrm{LN} \\left(\\mathbf {H} ^ {\\prime} + \\text {FFN} \\left(\\mathrm{LN} \\left(\\mathbf {H} ^ {\\prime}\\right)\\right)\\right), \\tag {1}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            239,
+            752,
+            917,
+            791
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "equation",
+        "text": "$$\n\\mathbf {H} ^ {\\prime} = \\mathrm{LN} \\big (\\mathbf {H} ^ {(\\ell_ {k})} + \\mathrm{MHSA} (\\mathbf {H} ^ {(\\ell_ {k})}) \\big),\n$$",
+        "text_format": "latex",
+        "bbox": [
+            319,
+            788,
+            677,
+            811
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "where $\\mathbf { H } ^ { ( \\ell _ { k } ) }$ denotes the hidden states from layer $\\ell _ { k } , \\tilde { \\mathbf { H } } ^ { ( k ) }$ represents the adapted features for downstream 3D occupancy prediction, and MHSA, FFN, and LN denote Multi-Head Self-Attention, Feed-Forward Network, and Layer Normalization, respectively.",
+        "bbox": [
+            72,
+            830,
+            917,
+            908
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "Multi-level Token Aggregation. We then fuse the adapted tokens across scales utilizing a top-down convolutional feature pyramid. Starting from the deepest layer (coarsest resolution), features are progressively upsampled and aggregated with finer-level tokens:",
+        "bbox": [
+            72,
+            910,
+            917,
+            949
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "header",
+        "text": "Occ-VLM",
+        "bbox": [
+            738,
+            14,
+            837,
+            30
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "page_number",
+        "text": "5",
+        "bbox": [
+            903,
+            16,
+            917,
+            29
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "image",
+        "img_path": "images/9603a8c466813c3dac00052fdb3cb3ac97d9ba17f8da59975a63ab12619dd608.jpg",
+        "image_caption": [
+            "Fig. 3: Architecture of the proposed Occ adapter. The adapter consists of three key components: (1) Mid-layer Activation, which selectively extracts multi-scale semantic features from intermediate layers of the frozen vision encoder; (2) Multi-level Token Aggregation, which hierarchically fuses these features to integrate coarse-to-fine representations. (3) 3D Occupancy Decoding, which samples 2D features via anchor projection and grid sampling, and employs 3D convolutions to predict 3D occupancy."
+        ],
+        "image_footnote": [],
+        "content": "```mermaid\ngraph TD\n    subgraph Vision Encoder\n  A[\"Input Image\"] --> B[\"Copied l1-th layer\"]\n  B --> C[\"Adaption Layer\"]\n  C --> D[\"Recovers & Reviscates\"]\n  D --> E[\"Copy\"]\n  E --> F[\"Last layer\"]\n    end\n\n    subgraph Conv Layer\n  G[\"Conv Layer\"] --> H[\"+\"]\n  I[\"Conv Layer\"] --> J[\"+\"]\n  K[\"Conv Layer\"] --> L[\"+\"]\n  M[\"3D Conv\"] --> N[\"F20\"]\n  O[\"3D Grid Anchor\"] --> P[\"F20\"]\n  Q[\"Final Output\"] --> R[\"F20\"]\n    end\n\n    subgraph Final Layer\n  S[\"Input Image\"] --> T[\"Copied l2-th layer\"]\n  T --> U[\"Adaption Layer\"]\n  U --> V[\"Recovers & Reviscates\"]\n  V --> W[\"Copy\"]\n  W --> X[\"Last layer\"]\n  X --> Y[\"H(a)\"]\n    end\n\n  B --> Z[\"Copy\"]\n  Z --> AA[\"H(b)\"]\n  AA --> AB[\"...\"]\n  AB --> AC[\"l2-th layer\"]\n  AC --> AD[\"H(a)\"]\n  AD --> AE[\"...\"]\n  AE --> AF[\"L2-th layer\"]\n  AF --> AG[\"H(a)\"]\n  AG --> AH[\"...\"]\n  AH --> AI[\"Last layer\"]\n  AI --> AJ[\"H(a)\"]\n  AJ --> AK[\"Output\"]\n\n    subgraph Final Layer\n  AL[\"Input Image\"] --> AM[\"Copied l3-th layer\"]\n  AM --> AN[\"Adaption Layer\"]\n  AN --> AO[\"Recovers & Reviscates\"]\n  AO --> AP[\"Copy\"]\n  AP --> AQ[\"H(b)\"]\n  AQ --> AR[\"...\"]\n  AR --> AS[\"l2-th layer\"]\n  AS --> AT[\"H(a)\"]\n  AT --> AU[\"...\"]\n  AU --> AV[\"L2-th layer\"]\n  AV --> AW[\"H(a)\"]\n    end\n\n    subgraph Final Layer\n  AX[\"Input Image\"] --> AY[\"Copied l4-th layer\"]\n  AY --> AZ[\"Adaption Layer\"]\n  AZ --> BA[\"Recovers & Reviscates\"]\n  BA --> BB[\"Copy\"]\n  BB --> BC[\"H(c)\"]\n  BC --> BD[\"L2-th layer\"]\n  BD --> BE[\"H(a)\"]\n    end\n\n    subgraph Final Layer\n  BF[\"Input Image\"] --> BG[\"Copied l5-th layer\"]\n  BG --> BH[\"Adaption Layer\"]\n  BH --> BI[\"Recovers & Reviscates\"]\n  BI --> BJ[\"Copy\"]\n  BJ --> BK[\"H(d)\"]\n  BK --> BL[\"L2-th layer\"]\n  BL --> BM[\"H(a)\"]\n    end\n\n    style Vision Encoder fill:#f9f,stroke:#333\n    style Final Layer fill:#bbf,stroke:#333\n```",
+        "sub_type": "flowchart",
+        "bbox": [
+            96,
+            74,
+            917,
+            232
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "text",
+        "text": "",
+        "bbox": [
+            72,
+            404,
+            917,
+            443
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "equation",
+        "text": "$$\n\\mathbf {F} _ {2 D} ^ {(k)} = \\mathcal {N} _ {k} (\\tilde {\\mathbf {H}} ^ {(k)}) = \\operatorname{Conv} \\left(\\operatorname{Conv} \\left(\\tilde {\\mathbf {H}} ^ {(k)}\\right) + \\text { Upsample } \\left(\\mathbf {F} _ {2 D} ^ {(k + 1)}\\right)\\right), \\tag {2}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            167,
+            452,
+            917,
+            484
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "text",
+        "text": "where Conv denotes a 2D convolutional layer, Upsample matches spatial resolutions, and F(k) $\\mathbf { F } _ { 2 D } ^ { ( k ) }$ is the aggregated multi-scale feature map at level k. We denote the highest-resolution aggregated feature map as $\\mathbf { F } _ { 2 D }$ for subsequent projection. 3D Occupancy Decoding. In an indoor scene, we process N sampled images, each associated with camera intrinsics ${ \\bf K } _ { v } \\in \\mathbb { R } ^ { 3 \\times 3 }$ and extrinsics ${ \\bf E } _ { v } = [ { \\bf R } _ { v } \\ ]$ $\\mathbf { t } _ { v } ] \\in \\mathbb { R } ^ { 3 \\times 4 }$ $\\{ \\mathbf { a } _ { i } \\} _ { i = 1 } ^ { M }$ view features $\\mathbf { F } _ { 2 D }$ . For each anchor ${ \\bf a } _ { i }$ and view v, the 2D sampling coordinate $\\mathbf { p } _ { i , v }$ is computed via perspective projection:",
+        "bbox": [
+            72,
+            494,
+            917,
+            652
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "equation",
+        "text": "$$\n\\mathbf {p} _ {i, v} = \\pi \\big (\\mathbf {K} _ {v} (\\mathbf {R} _ {v} \\mathbf {a} _ {i} + \\mathbf {t} _ {v}) \\big), \\tag {3}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            355,
+            661,
+            917,
+            684
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "text",
+        "text": "Utilizing differentiable grid sampling $\\varPhi _ { : }$ , we aggregate the multi-view 2D features into a unified 3D volume:",
+        "bbox": [
+            72,
+            694,
+            917,
+            733
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "equation",
+        "text": "$$\n\\mathbf {F} _ {3 D} = \\left\\{\\frac {1}{| \\mathcal {V} _ {i} |} \\sum_ {v \\in \\mathcal {V} _ {i}} \\varPhi_ {\\mathbf {p} _ {i, v}} (\\mathbf {F} _ {2 D, v}) \\right\\} _ {i = 1} ^ {M} \\in \\mathbb {R} ^ {M \\times D}, \\tag {4}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            254,
+            739,
+            917,
+            800
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "text",
+        "text": "where $\\nu _ { i }$ denotes the set of valid views where anchor ${ \\bf a } _ { i }$ projects within the image plane, $| \\nu _ { i } |$ is its cardinality, and D denotes the feature dimension. Subsequently, a 3D CNN decoder $\\mathcal { D } _ { 3 D }$ predicts per-voxel semantic labels:",
+        "bbox": [
+            72,
+            808,
+            917,
+            866
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "equation",
+        "text": "$$\n\\mathbf {O} = \\arg \\max \\left(\\operatorname{softmax} (\\mathcal {D} _ {3 D} (\\mathbf {F} _ {3 D}))\\right) \\in \\{0, 1, \\dots , N _ {c} - 1 \\} ^ {M}, \\tag {5}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            186,
+            876,
+            917,
+            900
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "text",
+        "text": "where class 0 indicates empty space and classes $\\{ 1 , \\ldots , N _ { c } - 1 \\}$ denote specific occupied semantics. The centers of the occupied grids are then extracted as:",
+        "bbox": [
+            72,
+            908,
+            917,
+            947
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "page_number",
+        "text": "6",
+        "bbox": [
+            77,
+            16,
+            94,
+            29
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "header",
+        "text": "J. Li et al.",
+        "bbox": [
+            159,
+            14,
+            261,
+            30
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "text",
+        "text": "$\\mathcal { G } = \\{ \\mathbf { a } _ { i } \\ | \\ \\mathbf { O } _ { i } > 0 \\}$ , which serves as the explicit structural prior for subsequent 3D token sampling.",
+        "bbox": [
+            75,
+            55,
+            917,
+            95
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "text",
+        "text": "3.3 Occupancy-aware 3D Token Representation",
+        "text_level": 2,
+        "bbox": [
+            75,
+            120,
+            675,
+            139
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "text",
+        "text": "Building upon the Occ adapter, we reconstruct multi-view posed images into a 3D semantic occupancy representation, enabling dense scene geometry perception within the 3D VLM framework. Subsequently, exploiting the sparse distributional properties of objects in 3D space, we perform spatially-aware sampling over the multi-view image tokens to effectively align them with the underlying 3D structure.",
+        "bbox": [
+            72,
+            149,
+            917,
+            263
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "text",
+        "text": "Occupancy-aware Foreground Token Sampling. Given the set of occupied grid centers $\\mathbf { G } = \\{ \\mathbf { a } _ { j } \\} _ { j = 1 } ^ { | \\mathbf { G } | }$ 1 predicted by the Occ adapter, we extract high-level semantic tokens from the final layer of the 2D encoder, denoted as $\\mathbf { H } ^ { ( \\ell _ { \\mathrm { l a s t } } ) }$ . To fully leverage the explicit 3D geometric prior estimated by the Occ adapter and effectively bridge the 3D scene with 2D images, we reuse the spatial projection correspondence established in Eq. (3). We treat the predicted occupancy grids as a geometric mask. Specifically, for each occupied center $\\mathbf { a } _ { j } \\in \\mathbf { G }$ , we project it back onto the image planes of all valid views $v \\in \\mathcal V _ { j }$ and sample the corresponding image features. This process constructs a set of foreground tokens, denoted as ${ \\mathcal { T } } _ { \\mathrm { f g } } .$ :",
+        "bbox": [
+            72,
+            266,
+            917,
+            465
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "equation",
+        "text": "$$\n\\mathcal {T} _ {\\mathrm{fg}} = \\left\\{\\mathbf {t} _ {j, v} = \\varPhi_ {\\mathbf {p} _ {j, v}} \\left(\\mathbf {H} _ {v} ^ {\\left(\\ell_ {\\text { last }}\\right)}\\right) \\mid \\mathbf {a} _ {j} \\in \\mathbf {G}, v \\in \\mathcal {V} _ {j} \\right\\}. \\tag {6}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            251,
+            466,
+            917,
+            497
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "text",
+        "text": "By selectively sampling only the tokens anchored to valid 3D geometric structures, we automatically filter out irrelevant background information. Crucially, since our LLM (Qwen2) is pre-trained on video-language data, we flatten the sampled multi-view spatial tokens along the sequence dimension, treating them analogously to temporal frames in video representations. This formulation allows us to directly leverage the LLM’s inherent capacity for processing multi-frame inputs to achieve implicit cross-view interactions, ensuring that the final input sequence compactly captures the holistic consistency of the 3D scene.",
+        "bbox": [
+            72,
+            500,
+            917,
+            656
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "text",
+        "text": "3D Position Encoding. After obtaining the sampled foreground tokens $\\mathbf { t } _ { j , v } \\in$ $\\tau _ { \\mathrm { f g } }$ , we inject them with occupancy-aware spatial location information. For a token corresponding to the 3D coordinate ${ \\mathbf a } _ { j } \\in \\mathbb { R } ^ { 3 }$ , we apply sinusoidal positional encoding $\\mathrm { P E } ( \\mathbf { a } _ { j } )$ and add it to the feature:",
+        "bbox": [
+            75,
+            656,
+            917,
+            734
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "equation",
+        "text": "$$\n\\mathbf {t} _ {j, v} ^ {*} = \\mathbf {t} _ {j, v} + \\mathrm{PE} (\\mathbf {a} _ {j}). \\tag {7}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            389,
+            747,
+            917,
+            767
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "text",
+        "text": "Since the positional encoding $\\mathrm { P E } ( \\mathbf { a } _ { j } )$ explicitly reflects the 3D structural prior derived from the occupancy prediction, this encoding strategy ensures that the LLM receives tokens that are not only semantically rich but also spatially anchored, facilitating precise 3D reasoning.",
+        "bbox": [
+            72,
+            777,
+            917,
+            855
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "text",
+        "text": "3.4 Training",
+        "text_level": 2,
+        "bbox": [
+            75,
+            879,
+            249,
+            900
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "text",
+        "text": "We adopt a two-stage training strategy for Occ-VLM. In the first stage, we train the Occ adapter offline. Subsequently, in the second stage, we integrate the pre-trained Occ adapter into the overall Occ-VLM framework to perform visual instruction tuning. The specific details of each stage are elaborated below.",
+        "bbox": [
+            75,
+            908,
+            917,
+            947
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "header",
+        "text": "Occ-VLM",
+        "bbox": [
+            738,
+            14,
+            837,
+            30
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "page_number",
+        "text": "",
+        "bbox": [
+            903,
+            16,
+            917,
+            29
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "text",
+        "text": "",
+        "bbox": [
+            79,
+            55,
+            917,
+            92
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "text",
+        "text": "Supervised 3D Semantic Occupancy Prediction. In the first stage, we train the Occ adapter on a 3D semantic occupancy prediction task, enabling the model to predict volumetric scene occupancy from posed images. We supervise this process using the occupancy GT with the Scene-Class Affinity Loss proposed in MonoScene [5], thereby constraining the predictions from both semantic and geometric perspectives. Throughout this stage, the parameters of the 2D encoder are kept frozen. This preserves the vision–language capabilities of the 2D encoder acquired during pre-training, while allowing the Occ adapter to learn an effective mapping from 2D semantics to 3D occupancy grids.",
+        "bbox": [
+            77,
+            95,
+            917,
+            269
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "text",
+        "text": "Visual Instruction Tuning. In the second stage, our objective is to enable the LLM to generate structured and semantically consistent responses from the sampled 3D tokens. Specifically, given the occupancy-aware 3D tokens $\\tau _ { \\mathrm { f g } }$ and the textual tokens corresponding to the input prompt, the LLM performs autoregressive decoding. We optimize the model using the standard cross-entropy loss over the predicted token distribution, allowing the LLM to generate correct answers conditioned jointly on the 3D tokens and the linguistic context.",
+        "bbox": [
+            79,
+            269,
+            917,
+            406
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "text",
+        "text": "4 Experiment",
+        "text_level": 2,
+        "bbox": [
+            79,
+            439,
+            295,
+            461
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "text",
+        "text": "4.1 Settings",
+        "text_level": 2,
+        "bbox": [
+            79,
+            482,
+            239,
+            502
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "text",
+        "text": "In this section, we comprehensively evaluate the 3D scene understanding capabilities of Occ-VLM from two perspectives: 3D geometric perception and 3D visual language reasoning capabilities. We begin by introducing the detailed experimental settings.",
+        "bbox": [
+            79,
+            518,
+            917,
+            596
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "text",
+        "text": "Benchmarks. For 3D geometric perception, we evaluate our model on the multiview 3D semantic occupancy prediction benchmark of EmbodiedScan [18]. The test set of this benchmark contains scenes collected from ScanNet [12], Matterport3D [6], and 3RScan [45], enabling a thorough assessment of the model’s 3D reconstruction quality and semantic understanding under cross-scene and cross-distribution conditions. Furthermore, we benchmark the model’s 3D vision language reasoning capability on SQA3D, ScanQA (for 3D VQA), and Scan2Cap (for 3D dense captioning).",
+        "bbox": [
+            79,
+            596,
+            917,
+            752
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "text",
+        "text": "Metrics. Following standard protocols for the 3D occupancy prediction task, we utilize Intersection over Union (IoU) and mean IoU (mIoU) to quantify prediction accuracy at both category-specific and global levels. For the vision-language tasks, we measure the semantic fidelity and linguistic quality of the generated responses using a comprehensive suite of established metrics: Exact Match@1 (EM@1), BLEU-4 (B-4), METEOR (M), ROUGE-L (R), and CIDEr (C).",
+        "bbox": [
+            79,
+            752,
+            917,
+            869
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "text",
+        "text": "Implementation Details. For the architecture of Occ-VLM, we inherit the model design of LLaVA-Video [56], adopting SigLIP [55] as the 2D vision encoder and Qwen2-7B-Instruct [42] as the LLM decoder. We initialize our model with LLaVA-Video’s pre-trained weights and proceed with task-specific fine-tuning.",
+        "bbox": [
+            79,
+            869,
+            917,
+            947
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "page_number",
+        "text": "8",
+        "bbox": [
+            79,
+            16,
+            94,
+            29
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "header",
+        "text": "J. Li et al.",
+        "bbox": [
+            159,
+            14,
+            261,
+            30
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "table",
+        "img_path": "images/61a0d0aac12a6925d6ddc4e3b8c5153952f5a47632f5988f745b3bbeb9e308b5.jpg",
+        "table_caption": [
+            "Table 1: Quantitative results on the EmbodiedScan multi-view occupancy prediction benchmark. We report performance on 11 common categories selected from the 81 categories in the dataset. The best result within each modality is shown in bold."
+        ],
+        "table_footnote": [],
+        "table_body": "<table><tr><td rowspan=\"2\">Method</td><td rowspan=\"2\">Venue</td><td rowspan=\"2\">Input</td><td rowspan=\"2\">mIoU</td><td>empty</td><td>floor</td><td>wall</td><td>chair</td><td>cabinet</td><td>door</td><td>table</td><td>couch</td><td>shelf</td><td>window</td><td>bed</td></tr><tr><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr><tr><td>SPVCNN [40]</td><td>ECCV&#x27;20</td><td>PC</td><td>7.32</td><td>63.04</td><td>61.30</td><td>38.82</td><td>25.10</td><td>15.28</td><td>7.55</td><td>26.60</td><td>16.23</td><td>18.19</td><td>8.26</td><td>25.64</td></tr><tr><td>Cylinder3D [60]</td><td>CVPR&#x27;21</td><td>PC</td><td>11.52</td><td>70.22</td><td>63.53</td><td>44.18</td><td>41.54</td><td>20.63</td><td>17.35</td><td>34.02</td><td>35.67</td><td>26.48</td><td>15.98</td><td>42.89</td></tr><tr><td>Mink-Net [11]</td><td>CVPR&#x27;19</td><td>PC</td><td>15.56</td><td>69.92</td><td>60.52</td><td>51.74</td><td>49.44</td><td>23.08</td><td>24.33</td><td>45.77</td><td>43.52</td><td>29.74</td><td>23.02</td><td>39.04</td></tr><tr><td>OccNet [44]</td><td>ICCV&#x27;23</td><td>RGB</td><td>8.07</td><td>37.15</td><td>46.90</td><td>25.63</td><td>20.94</td><td>13.17</td><td>18.40</td><td>26.81</td><td>22.86</td><td>13.59</td><td>13.49</td><td>26.75</td></tr><tr><td>SurroundOcc [50]</td><td>ICCV&#x27;23</td><td>RGB</td><td>9.10</td><td>38.54</td><td>46.17</td><td>23.55</td><td>23.04</td><td>13.60</td><td>19.15</td><td>27.79</td><td>22.28</td><td>13.11</td><td>13.72</td><td>24.32</td></tr><tr><td>EmbodiedScan [18]</td><td>CVPR&#x27;24</td><td>RGB</td><td>14.52</td><td>48.81</td><td>49.57</td><td>32.32</td><td>32.12</td><td>20.95</td><td>24.30</td><td>27.95</td><td>30.51</td><td>27.30</td><td>19.03</td><td>35.40</td></tr><tr><td>SliceOcc [22]</td><td>ICRA&#x27;25</td><td>RGB</td><td>15.45</td><td>49.32</td><td>51.39</td><td>33.29</td><td>31.65</td><td>22.39</td><td>25.14</td><td>29.57</td><td>32.78</td><td>26.83</td><td>19.88</td><td>38.88</td></tr><tr><td>Occ-VLM</td><td></td><td>RGB</td><td>18.41</td><td>49.03</td><td>51.10</td><td>32.31</td><td>35.01</td><td>24.61</td><td>25.86</td><td>32.67</td><td>37.93</td><td>28.51</td><td>20.92</td><td>39.53</td></tr></table>",
+        "bbox": [
+            99,
+            123,
+            893,
+            292
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "table",
+        "img_path": "images/5e72c08a104406631ef9555660a955193e90119cb4bed381daff1a0dee8bad8a.jpg",
+        "table_caption": [
+            "Fig. 4: Qualitative results on EmbodiedScan Multi-view 3D semantic occupancy prediction benchmark."
+        ],
+        "table_footnote": [],
+        "table_body": "<table><tr><td>3D Scenes</td><td>Occ GT</td><td>EmbodiedScan</td><td>Ours</td></tr><tr><td></td><td></td><td></td><td></td></tr><tr><td></td><td></td><td></td><td></td></tr><tr><td></td><td></td><td></td><td></td></tr></table>",
+        "bbox": [
+            217,
+            317,
+            786,
+            570
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "text",
+        "text": "During the first training stage, the Occ adapter is trained for 32 epochs on the EmbodiedScan-Occ dataset to establish the 3D occupancy prediction capability. Subsequently, in the second stage, we conduct visual instruction tuning following the standard LLaVA instruction format, where Occ-VLM is fine-tuned for 3 epochs jointly on the ScanQA, SQA3D, and Scan2Cap datasets.",
+        "bbox": [
+            72,
+            666,
+            920,
+            765
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "text",
+        "text": "4.2 Evaluation on 3D Occupancy Prediction",
+        "text_level": 2,
+        "bbox": [
+            75,
+            796,
+            634,
+            816
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "text",
+        "text": "Quantitative results. We first evaluated the performance of Occ-VLM in 3D geometric perception. Table 1 presents the results of multi-view 3D semantic occupancy prediction on the EmbodiedScan dataset. To ensure a fair comparison, we selected state-of-the-art occupancy prediction models as baselines, encompassing both point-cloud-based (PC-based) and RGB-based methods. Experimental results demonstrated that Occ-VLM achieved an mIoU of 18.41% across",
+        "bbox": [
+            72,
+            830,
+            920,
+            949
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "header",
+        "text": "Occ-VLM",
+        "bbox": [
+            738,
+            14,
+            837,
+            30
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "page_number",
+        "text": "9",
+        "bbox": [
+            903,
+            16,
+            917,
+            30
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "table",
+        "img_path": "images/6a33e5b1b901e03903e1db40b0d22f94d19e3345a1a303163ee80d4ff7e87a6b.jpg",
+        "table_caption": [
+            "Table 2: Quantitative comparison results on the ScanQA and SQA3D benchmarks. We compared our method with three categories of approaches: (1) task-specific models, (2) 3D-input 3D VLMs, and (3) 2D-Input 3D VLMs. For each method category, we highlighted the best performance metrics in bold."
+        ],
+        "table_footnote": [],
+        "table_body": "<table><tr><td rowspan=\"2\">Method</td><td rowspan=\"2\">Venue</td><td rowspan=\"2\">Input</td><td colspan=\"5\">ScanQA (val)</td><td>Sqa3D (test)</td></tr><tr><td>EM@1</td><td>B-4</td><td>R</td><td>M</td><td>C</td><td>EM@1</td></tr><tr><td colspan=\"9\">Task-specific</td></tr><tr><td>ScanQA [3]</td><td>CVPR&#x27;22</td><td>PC</td><td>21.1</td><td>10.1</td><td>33.3</td><td>13.1</td><td>64.9</td><td>-</td></tr><tr><td>SQA3D [30]</td><td>ICLR&#x27;23</td><td>PC</td><td>-</td><td>-</td><td>-</td><td>-</td><td>-</td><td>46.6</td></tr><tr><td>3D-Vista [3]</td><td>ICCV&#x27;23</td><td>PC</td><td>22.4</td><td>10.4</td><td>35.7</td><td>13.9</td><td>69.6</td><td>48.5</td></tr><tr><td colspan=\"9\">3D-input VLM</td></tr><tr><td>3D-LLM [16]</td><td>NIPS&#x27;23</td><td>PC+RGB</td><td>20.5</td><td>12.0</td><td>35.7</td><td>14.5</td><td>69.4</td><td>-</td></tr><tr><td>LL3DA [7]</td><td>CVPR&#x27;24</td><td>PC</td><td>-</td><td>13.5</td><td>37.3</td><td>15.9</td><td>76.8</td><td>-</td></tr><tr><td>Chat-Scene [17]</td><td>NIPS&#x27;24</td><td>PC</td><td>21.6</td><td>14.3</td><td>41.6</td><td>18.0</td><td>87.7</td><td>54.6</td></tr><tr><td>Scene-LLM [18]</td><td>WACV&#x27;25</td><td>PC+RGB</td><td>27.2</td><td>12.0</td><td>40.0</td><td>16.6</td><td>80.0</td><td>54.2</td></tr><tr><td>Video-3D-LLM [58]</td><td>CVPR&#x27;25</td><td>RGBD</td><td>30.1</td><td>15.8</td><td>49.0</td><td>19.8</td><td>102.1</td><td>58.5</td></tr><tr><td>LLaVA-3D [59]</td><td>ICCV&#x27;25</td><td>RGBD</td><td>30.6</td><td>16.4</td><td>49.6</td><td>20.8</td><td>103.1</td><td>60.1</td></tr><tr><td colspan=\"9\">2D-input VLM</td></tr><tr><td>LLaVA-OV [53]</td><td>TMLR&#x27;24</td><td>RGB</td><td>17.1</td><td>-</td><td>29.4</td><td>13.0</td><td>50.0</td><td>25.4</td></tr><tr><td>LLaVA-Video</td><td>TMLR&#x27;25</td><td>RGB</td><td>-</td><td>3.1</td><td>44.6</td><td>17.7</td><td>88.7</td><td>48.5</td></tr><tr><td>SplatTalk [43]</td><td>ICCV&#x27;25</td><td>RGB</td><td>22.4</td><td>-</td><td>38.5</td><td>15.6</td><td>77.5</td><td>49.4</td></tr><tr><td>Spatial-MLLM [51]</td><td>NIPS&#x27;25</td><td>RGB</td><td>26.3</td><td>14.8</td><td>45.0</td><td>18.4</td><td>91.8</td><td>55.9</td></tr><tr><td> $LLaVA^3$ [36]</td><td>AAAI&#x27;26</td><td>RGB</td><td>26.0</td><td>-</td><td>39.6</td><td>15.8</td><td>77.6</td><td>-</td></tr><tr><td>Occ-VLM (Ours)</td><td></td><td>RGB</td><td>29.6</td><td>15.7</td><td>48.2</td><td>19.5</td><td>100.0</td><td>58.5</td></tr></table>",
+        "bbox": [
+            96,
+            141,
+            898,
+            471
+        ],
+        "page_idx": 9
+    },
+    {
+        "type": "text",
+        "text": "81 categories, which not only significantly outperformed all RGB-based methods but also surpassed all PC-based baselines in overall performance. Furthermore, Occ-VLM exhibited substantial gains in prediction accuracy across multiple individual categories. We attributed this performance improvement to the Occ adapter, which bridged 2D semantics and 3D geometry. It successfully translated the rich semantic priors of the pre-trained 2D encoder into spatial cues, revealing a key property: powerful 2D semantic representations inherently facilitated better 3D geometric perception. By lifting these 2D semantic features, the model achieved a significantly more accurate comprehension of 3D scenes.",
+        "bbox": [
+            72,
+            508,
+            917,
+            682
+        ],
+        "page_idx": 9
+    },
+    {
+        "type": "text",
+        "text": "Qualitative results: We present the visualizations of Occ-VLM for the 3D semantic occupancy prediction task in Fig. 4. Three representative scenes from the ScanNet and 3RScan datasets were selected for qualitative comparison. Specifically, for each scene, the figure sequentially displays the scene mesh, the occupancy GT, the prediction of EmbodiedScan, and the prediction of our Occ-VLM. Qualitative comparisons demonstrated that, compared to EmbodiedScan, Occ-VLM achieved noticeably higher semantic accuracy and a more complete geometric reconstruction.",
+        "bbox": [
+            72,
+            684,
+            920,
+            840
+        ],
+        "page_idx": 9
+    },
+    {
+        "type": "text",
+        "text": "4.3 Evaluation on 3D VQA",
+        "text_level": 2,
+        "bbox": [
+            75,
+            873,
+            428,
+            892
+        ],
+        "page_idx": 9
+    },
+    {
+        "type": "text",
+        "text": "We evaluated Occ-VLM on the 3D VQA task, with experimental results on the ScanQA validation set and the SQA3D test set reported in Table 2. To facilitate a clear comparison, we categorized the baselines into three groups: (1) taskspecific models designed exclusively for 3D VQA; (2) 3D-input VLMs that ingested point clouds or RGB-D data; and (3) 2D-input VLMs that relied solely on RGB images, encompassing both dual-encoder and neural-renderingbased approaches. As Occ-VLM utilized only RGB inputs during both training and inference, it fell into the 2D-input VLM category.",
+        "bbox": [
+            72,
+            908,
+            920,
+            949
+        ],
+        "page_idx": 9
+    },
+    {
+        "type": "page_number",
+        "text": "10",
+        "bbox": [
+            79,
+            16,
+            104,
+            30
+        ],
+        "page_idx": 9
+    },
+    {
+        "type": "header",
+        "text": "J. Li et al.",
+        "bbox": [
+            159,
+            14,
+            261,
+            30
+        ],
+        "page_idx": 9
+    },
+    {
+        "type": "table",
+        "img_path": "images/94e64133b08360328ccd0c9ca0203cb956be9ca48e092bc3c74278f43107e2fd.jpg",
+        "table_caption": [
+            "Fig. 5: Qualitative results of Occ-VLM on the ScanQA validation set, showing 3D occupancy prediction and 3D VQA outputs across four scenes."
+        ],
+        "table_footnote": [],
+        "table_body": "<table><tr><td colspan=\"4\">3D Scenes</td></tr><tr><td></td><td></td><td></td><td></td></tr><tr><td colspan=\"4\">Occupancy Prediction</td></tr><tr><td></td><td></td><td></td><td></td></tr><tr><td colspan=\"4\">3D Visual Question Answering</td></tr><tr><td>What is next to the couch? shelf next to tall shelf Where is the white keyboard located? on desk on small desk</td><td>What type of board hangs on a wall? whiteboard white What colors are in the picture above a counter? yellow and blue gold white and blue</td><td>What shape is the rack in the middle of the two windows? rectangle rectangular What shape does the sink have? square square</td><td>How many chairs surround the table nearest to the plant? 4 4 What chairs are closest to plant? 2 chairs 2 brown spotted chairs</td></tr></table>",
+        "bbox": [
+            133,
+            65,
+            883,
+            391
+        ],
+        "page_idx": 10
+    },
+    {
+        "type": "text",
+        "text": "",
+        "bbox": [
+            72,
+            497,
+            917,
+            611
+        ],
+        "page_idx": 10
+    },
+    {
+        "type": "text",
+        "text": "Quantitative results. On the ScanQA validation set, Occ-VLM achieved an EM@1 score of 29.6%, outperforming the 2D-input SOTA Spatial-MLLM. Notably, while Spatial-MLLM adopts a dual-encoder architecture, our model relies on a single 2D vision encoder and attains higher accuracy with a more lightweight design. Compared to neural-rendering-based methods such as SplatTalk and LLaVA3, Occ-VLM demonstrated a clear advantage, improving the EM@1 score by 3.9%. This margin widened further when compared to video-based baselines (e.g., LLaVA-OV and LLaVA-Video), emphasizing the effectiveness of our occupancy-aware 3D token representation. Furthermore, Occ-VLM remained highly competitive against 3D-input VLMs, surpassing the point-cloud-based LL3DA and 3D-LLM by 4.7% and 5.8% EM@1, respectively. Notably, the performance gap between Occ-VLM and the state-of-the-art 3D-input method was a marginal 1.0%.",
+        "bbox": [
+            75,
+            616,
+            917,
+            868
+        ],
+        "page_idx": 10
+    },
+    {
+        "type": "text",
+        "text": "Occ-VLM also demonstrated robust performance on the SQA3D test set. Compared to task-specific models such as 3D-Vista, it improved the EM@1 score by a substantial 10%. Among 2D-input VLMs, Occ-VLM surpassed Spatial-MLLM by 2.6% EM@1. Moreover, relative to 3D-input VLMs, it outperformed",
+        "bbox": [
+            75,
+            871,
+            917,
+            949
+        ],
+        "page_idx": 10
+    },
+    {
+        "type": "header",
+        "text": "Occ-VLM",
+        "bbox": [
+            738,
+            14,
+            837,
+            30
+        ],
+        "page_idx": 10
+    },
+    {
+        "type": "page_number",
+        "text": "",
+        "bbox": [
+            893,
+            16,
+            915,
+            30
+        ],
+        "page_idx": 10
+    },
+    {
+        "type": "table",
+        "img_path": "images/3918b0d3ae0502e8f28380a273f45120bda9f51d3c6ba0ff05ee394f8d53fa4e.jpg",
+        "table_caption": [
+            "Table 3: Quantitative comparison results on the Scan2Cap benchmark. We compared our method with three categories of approaches: (1) task-specific models, (2) 3D-input 3D VLMs, and (3) 2D-Input 3D VLMs. For each method category, we highlighted the best performance metrics in bold."
+        ],
+        "table_footnote": [],
+        "table_body": "<table><tr><td>Method</td><td>Venue</td><td>Input</td><td>C@0.5</td><td>B-4@0.5</td><td>M@0.5</td><td>R@0.5</td></tr><tr><td colspan=\"7\">Task-specific</td></tr><tr><td>Scan2Cap [9]</td><td>CVPR&#x27;21</td><td>PC</td><td>39.1</td><td>23.3</td><td>22.0</td><td>44.8</td></tr><tr><td>Vote2Cap-DETR [8]</td><td>CVPR&#x27;23</td><td>PC</td><td>61.8</td><td>34.5</td><td>26.2</td><td>54.4</td></tr><tr><td colspan=\"7\">3D-input VLM</td></tr><tr><td>LL3DA [7]</td><td>CVPR&#x27;24</td><td>PC</td><td>65.2</td><td>36.8</td><td>26.0</td><td>55.0</td></tr><tr><td>Chat-Scene [17]</td><td>NIPS&#x27;24</td><td>PC</td><td>77.1</td><td>36.5</td><td>-</td><td>-</td></tr><tr><td>Video-3D-LLM [58]</td><td>CVPR&#x27;25</td><td>RGBD</td><td>80.0</td><td>40.2</td><td>28.5</td><td>61.7</td></tr><tr><td>LLaVA-3D [59]</td><td>ICCV&#x27;25</td><td>RGBD</td><td>79.2</td><td>41.1</td><td>30.2</td><td>63.4</td></tr><tr><td colspan=\"7\">2D-input VLM</td></tr><tr><td>Occ-VLM (Ours)</td><td></td><td>RGB</td><td>76.5</td><td>38.9</td><td>28.2</td><td>60.8</td></tr></table>",
+        "bbox": [
+            157,
+            141,
+            847,
+            334
+        ],
+        "page_idx": 11
+    },
+    {
+        "type": "text",
+        "text": "Chat-Scene and Scene-LLM by 1.7% and 2.1% EM@1, respectively, and achieved comparable performance to the strongest 3D-input baselines (e.g., Video-3D-LLM and LLaVA-3D). Overall, these results indicate that despite relying entirely on 2D image inputs, Occ-VLM is highly competitive with models that leverage explicit 3D information for visual reasoning, highlighting its robust cross-modal understanding and superior spatial semantic modeling capabilities.",
+        "bbox": [
+            77,
+            367,
+            917,
+            484
+        ],
+        "page_idx": 11
+    },
+    {
+        "type": "text",
+        "text": "Qualitative results. In Fig. 5, we visualize the performance of Occ-VLM across four ScanNet scenes. The three rows display the scene mesh, the occupancy prediction generated by Occ-VLM, and the corresponding 3D VQA results, respectively. The four columns represent different scenes where we highlight specific capabilities, including spatial relationship reasoning, object recognition, attribute identification (e.g., color, material, and shape), and object counting. As evidenced by these visualizations, Occ-VLM demonstrates the capability to simultaneously perform reliable scene structure prediction and vision-language reasoning, thereby exhibiting a comprehensive understanding of 3D scenes.",
+        "bbox": [
+            77,
+            484,
+            917,
+            658
+        ],
+        "page_idx": 11
+    },
+    {
+        "type": "text",
+        "text": "4.4 Evaluation on 3D Dense Caption",
+        "text_level": 2,
+        "bbox": [
+            79,
+            684,
+            542,
+            705
+        ],
+        "page_idx": 11
+    },
+    {
+        "type": "text",
+        "text": "We further evaluated Occ-VLM on the 3D dense captioning task. Unlike 3D VQA, this task requires the model to generate detailed descriptions for specific objects marked by 3D bounding boxes. This places higher demands on the model’s ability to understand fine-grained scene details. We evaluated our approach on the Scan2Cap dataset, comparing it with task-specific models and 3D-input VLMs.",
+        "bbox": [
+            77,
+            713,
+            917,
+            830
+        ],
+        "page_idx": 11
+    },
+    {
+        "type": "text",
+        "text": "Quantitative results. As shown in Table 3, Occ-VLM clearly outperformed 3Dinput task-specific models. Furthermore, it remained highly competitive against 3D-input VLMs. Specifically, Occ-VLM surpassed the point-cloud-based LL3DA across all standard metrics. It also achieved performance comparable to the stateof-the-art Video-3D-LLM and LLaVA-3D, with only a marginal gap of 0.3% and 2.0% in the ROUGE@0.5 metric, respectively.",
+        "bbox": [
+            77,
+            830,
+            917,
+            949
+        ],
+        "page_idx": 11
+    },
+    {
+        "type": "page_number",
+        "text": "",
+        "bbox": [
+            79,
+            16,
+            104,
+            30
+        ],
+        "page_idx": 11
+    },
+    {
+        "type": "header",
+        "text": "J. Li et al.",
+        "bbox": [
+            159,
+            14,
+            261,
+            30
+        ],
+        "page_idx": 11
+    },
+    {
+        "type": "table",
+        "img_path": "images/bbc20380574aff7f08ac34177443c7d06ddb15c9f6b217e77f5fdbd10308758a.jpg",
+        "table_caption": [
+            "Table 4: Ablation study on token representation across ScanQA, SQA3D, and Scan2Cap benchmarks."
+        ],
+        "table_footnote": [],
+        "table_body": "<table><tr><td rowspan=\"2\">Token Representation</td><td colspan=\"2\">ScanQA</td><td>Sqa3D</td><td colspan=\"2\">Scan2Cap</td></tr><tr><td>EM@1</td><td>C</td><td>EM@1</td><td>C@0.5</td><td>R@0.5</td></tr><tr><td>Video w/o PE</td><td>29.7</td><td>100.5</td><td>57.8</td><td>30.1</td><td>58.1</td></tr><tr><td>Video w/ PE</td><td>29.6</td><td>100.0</td><td>58.5</td><td>76.5</td><td>60.8</td></tr><tr><td>Occ Grid w/o PE</td><td>25.4</td><td>88.2</td><td>57.6</td><td>28.6</td><td>57.3</td></tr><tr><td>Occ Grid w/ PE</td><td>26.3</td><td>90.1</td><td>57.8</td><td>67.0</td><td>60.8</td></tr></table>",
+        "bbox": [
+            215,
+            105,
+            782,
+            222
+        ],
+        "page_idx": 12
+    },
+    {
+        "type": "table",
+        "img_path": "images/a30fa90a7511e8f37cfd21580dabe95b3053da497f57ddf9980296fb5cf50b70.jpg",
+        "table_caption": [
+            "Table 5: Impact of varying the number of input views on the model’s scene understanding capabilities. The default view number used in the main experiments is marked with †."
+        ],
+        "table_footnote": [],
+        "table_body": "<table><tr><td rowspan=\"2\">Input View Number</td><td colspan=\"2\">EmbodiedScan-Occ</td><td colspan=\"2\">ScanQA</td><td>SQA3D</td><td colspan=\"2\">Scan2Cap</td><td rowspan=\"2\">Visual Length Avg.</td></tr><tr><td>mIoU</td><td>IoU (Empty)</td><td>EM@1</td><td>C</td><td>EM@1</td><td>C@0.5</td><td>R@0.5</td></tr><tr><td>8</td><td>16.48</td><td>45.24</td><td>27.6</td><td>92.6</td><td>55.5</td><td>62.3</td><td>60.0</td><td>1,462 tokens</td></tr><tr><td>16</td><td>17.86</td><td>47.76</td><td>29.0</td><td>98.0</td><td>57.2</td><td>68.8</td><td>60.8</td><td>2,878 tokens</td></tr><tr><td>24</td><td>18.29</td><td>48.42</td><td>29.2</td><td>98.6</td><td>58.3</td><td>71.9</td><td>61.0</td><td>4,253 tokens</td></tr><tr><td> $32^†$ </td><td>18.41</td><td>49.03</td><td>29.6</td><td>100.0</td><td>58.5</td><td>76.5</td><td>60.8</td><td>5,336 tokens</td></tr></table>",
+        "bbox": [
+            125,
+            310,
+            874,
+            404
+        ],
+        "page_idx": 12
+    },
+    {
+        "type": "text",
+        "text": "4.5 Ablation study",
+        "text_level": 2,
+        "bbox": [
+            79,
+            443,
+            326,
+            463
+        ],
+        "page_idx": 12
+    },
+    {
+        "type": "text",
+        "text": "Ablation for token representation. To evaluate the effectiveness of the proposed occupancy-aware 3D token representation, we conducted an ablation study, as detailed in Table 4. These experiments isolated the impact of different token representation strategies while keeping the overall Occ-VLM architecture constant. Specifically, we compared the \"Video\" setting (where foreground video tokens sampled via occupancy projection are organized in temporal order) with the \"Occ Grid\" setting (where tokens are spatially aggregated and indexed by 3D occupancy grid centers). Furthermore, we investigated the necessity of explicit spatial information by adding or removing 3D positional encoding (PE). The quantitative results demonstrate that the \"Video\" representation consistently outperforms the \"Occ Grid\" approach on both the 3D VQA and 3D dense captioning tasks. This suggests that preserving the fine-grained temporal semantics of video sequences is highly advantageous for complex scene understanding. Crucially, removing 3D PE leads to a severe performance drop across both representation strategies, particularly in 3D dense captioning. This significant decline highlights the essential role of explicit 3D spatial awareness provided by PE, which serves as a vital geometric anchor for precise 3d vision language reasoning and caption generation.",
+        "bbox": [
+            77,
+            481,
+            917,
+            830
+        ],
+        "page_idx": 12
+    },
+    {
+        "type": "text",
+        "text": "Ablation for input view number. We investigated how the number of input views affects model performance. As shown in Table 5, the results demonstrate a clear positive correlation between the number of views and both the geometric reconstruction quality and the vision language reasoning capabilities of the model. Specifically, increasing the input views expands the scene’s visual coverage and reduces occlusions, which significantly improves the mIoU for occupancy prediction. This improved scene completeness directly benefits downstream vision-language tasks: as the model gathers more comprehensive visual information, performance on ScanQA, SQA3D, and Scan2Cap steadily increases. Fig. 6 further illustrates these trends. Notably, as the occupancy prediction mIoU improves, the proportion of foreground tokens relative to total image tokens decreases (see the red line in Fig. 6a). We attribute this to the higher occupancy prediction recall enabled by more input views. This allows the model to localize foreground regions more precisely, thereby effectively filtering out redundant background tokens.",
+        "bbox": [
+            79,
+            832,
+            917,
+            947
+        ],
+        "page_idx": 12
+    },
+    {
+        "type": "header",
+        "text": "Occ-VLM",
+        "bbox": [
+            740,
+            16,
+            837,
+            30
+        ],
+        "page_idx": 12
+    },
+    {
+        "type": "page_number",
+        "text": "13",
+        "bbox": [
+            893,
+            16,
+            917,
+            30
+        ],
+        "page_idx": 12
+    },
+    {
+        "type": "chart",
+        "img_path": "images/4a8c4beba612c7ec8aae5df98745da0785c0f1f155617443d74e1c1fa65488d7.jpg",
+        "content": "| Number of Input Views | Visual Length | Occupancy Prediction Accuracy (%) |\n|---|---|---|\n| 8 | 1462 | 15.5 |\n| 12 | 2124 | 16.5 |\n| 16 | 2978 | 17.0 |\n| 20 | 3571 | 17.5 |\n| 24 | 4259 | 17.8 |\n| 28 | 4837 | 18.0 |\n| 32 | 5516 | 18.2 |",
+        "chart_caption": [
+            "(a) Occupancy Performance"
+        ],
+        "chart_footnote": [],
+        "sub_type": "bar-line hybrid",
+        "bbox": [
+            118,
+            53,
+            489,
+            208
+        ],
+        "page_idx": 13
+    },
+    {
+        "type": "chart",
+        "img_path": "images/2e7c8f4a004efa1c495073dc95da1515a4ba175343f1f03d0b01dc128188f7f9.jpg",
+        "content": "| Number of Input Views | ScanQA EM@1 | SQA3D EM@1 |\n| --------------------- | ----------- | ---------- |\n| 8                     | 27.5        | 26.3       |\n| 12                    | 29.0        | 27.0       |\n| 16                    | 29.5        | 27.8       |\n| 20                    | 29.0        | 28.2       |\n| 24                    | 29.5        | 28.8       |\n| 28                    | 29.8        | 29.0       |\n| 32                    | 30.0        | 28.8       |",
+        "chart_caption": [
+            "(b) 3D VQA Performance",
+            "Fig. 6: Additional results on the number of input views. More input views lead to higher occupancy prediction accuracy and consistent improvements on 3D VQA and 3D dense captioning."
+        ],
+        "chart_footnote": [],
+        "sub_type": "line chart",
+        "bbox": [
+            503,
+            53,
+            874,
+            208
+        ],
+        "page_idx": 13
+    },
+    {
+        "type": "text",
+        "text": "",
+        "bbox": [
+            72,
+            334,
+            917,
+            510
+        ],
+        "page_idx": 13
+    },
+    {
+        "type": "text",
+        "text": "5 Conclusion",
+        "text_level": 2,
+        "bbox": [
+            75,
+            541,
+            285,
+            559
+        ],
+        "page_idx": 13
+    },
+    {
+        "type": "text",
+        "text": "In this paper, we propose Occ-VLM, a novel 3D vision-language model designed for indoor scene understanding that relies solely on posed RGB images as input. Through the introduced Occ adapter, Occ-VLM effectively utilizes a single frozen 2D vision encoder to simultaneously perform scene geometry perception and 3D vision-language reasoning. Our extensive evaluations reveal a crucial insight: the pre-trained knowledge embedded within a 2D vision encoder can be seamlessly extended to unleash explicit 3D geometric perception abilities. Furthermore, this learned geometry perception serves as a critical spatial guide that fundamentally improves 3D vision-language reasoning. Occ-VLM proves that an RGB-only architecture can achieve profound 3D scene understanding, paving a new direction for this field without the need for explicit 3D inputs.",
+        "bbox": [
+            72,
+            580,
+            917,
+            796
+        ],
+        "page_idx": 13
+    },
+    {
+        "type": "page_number",
+        "text": "14",
+        "bbox": [
+            79,
+            16,
+            104,
+            30
+        ],
+        "page_idx": 13
+    },
+    {
+        "type": "header",
+        "text": "J. Li et al.",
+        "bbox": [
+            159,
+            14,
+            261,
+            30
+        ],
+        "page_idx": 13
+    },
+    {
+        "type": "text",
+        "text": "This appendix material contains:",
+        "bbox": [
+            111,
+            56,
+            464,
+            74
+        ],
+        "page_idx": 14
+    },
+    {
+        "type": "text",
+        "text": "– Sec. A Additional Analysis",
+        "bbox": [
+            89,
+            87,
+            418,
+            105
+        ],
+        "page_idx": 14
+    },
+    {
+        "type": "list",
+        "sub_type": "text",
+        "list_items": [
+            "• Sec. A.1 Additional Performance on SQA3D",
+            "• Sec. A.2 Activated Layers of Occ Adapter",
+            "• Sec. A.3 Computational Efficiency and Module Complexity"
+        ],
+        "bbox": [
+            133,
+            107,
+            801,
+            165
+        ],
+        "page_idx": 14
+    },
+    {
+        "type": "text",
+        "text": "– Sec. B Additional Qualitative Results",
+        "bbox": [
+            89,
+            165,
+            527,
+            183
+        ],
+        "page_idx": 14
+    },
+    {
+        "type": "text",
+        "text": "A Additional Analysis",
+        "text_level": 2,
+        "bbox": [
+            75,
+            214,
+            418,
+            237
+        ],
+        "page_idx": 14
+    },
+    {
+        "type": "text",
+        "text": "A.1 Additional Performance on Sqa3D",
+        "text_level": 2,
+        "bbox": [
+            75,
+            255,
+            566,
+            274
+        ],
+        "page_idx": 14
+    },
+    {
+        "type": "table",
+        "img_path": "images/aa56c3e2455826878816b4d013445a828f8555e0b97bbfb8be11e3a0d1e04da1.jpg",
+        "table_caption": [
+            "Table 6: Additional quantitative results on Sqa3D test set."
+        ],
+        "table_footnote": [],
+        "table_body": "<table><tr><td rowspan=\"2\">Methods</td><td>EM</td><td colspan=\"6\">Category</td></tr><tr><td>EM@1</td><td>What</td><td>Is</td><td>How</td><td>Can</td><td>Which</td><td>Others</td></tr><tr><td colspan=\"8\">Task-specific methods</td></tr><tr><td>Sqa3D</td><td>46.6</td><td>31.6</td><td>63.8</td><td>46.0</td><td>69.5</td><td>43.9</td><td>45.3</td></tr><tr><td>3D-Vista</td><td>48.5</td><td>34.8</td><td>63.3</td><td>45.4</td><td>69.8</td><td>47.2</td><td>48.1</td></tr><tr><td colspan=\"8\">3D-input VLM</td></tr><tr><td>Scene-LLM</td><td>54.2</td><td>40.9</td><td>69.1</td><td>45.0</td><td>70.8</td><td>47.2</td><td>52.3</td></tr><tr><td>Chat-Scene</td><td>54.6</td><td>45.4</td><td>67.0</td><td>52.0</td><td>69.5</td><td>49.9</td><td>55.0</td></tr><tr><td>Video-3D-LLM</td><td>58.4</td><td>52.2</td><td>72.3</td><td>54.8</td><td>69.8</td><td>50.7</td><td>56.0</td></tr><tr><td colspan=\"8\">2D-input VLM</td></tr><tr><td>LLaVA-Video</td><td>48.5</td><td>42.7</td><td>56.3</td><td>47.5</td><td>55.3</td><td>50.1</td><td>47.2</td></tr><tr><td>Spatial-MLLM</td><td>55.9</td><td>45.9</td><td>71.6</td><td>55.1</td><td>69.5</td><td>52.0</td><td>53.0</td></tr><tr><td>Occ-VLM (Ours)</td><td>58.5</td><td>52.0</td><td>72.2</td><td>55.2</td><td>71.7</td><td>51.4</td><td>55.4</td></tr></table>",
+        "bbox": [
+            123,
+            356,
+            878,
+            578
+        ],
+        "page_idx": 14
+    },
+    {
+        "type": "text",
+        "text": "Table 6 reports the additional performance of Occ-VLM and baseline models across all question types on the SQA3D dataset, along with supplementary analysis. As shown, Occ-VLM achieved the best results among all 2D-input VLMs in most question categories, consistent with its overall performance. Moreover, compared to one of the state-of-the-art 3D-VLMs, Video-3D-LLM, Occ-VLM also surpassed it in certain question types such as “Can” and “Which”.",
+        "bbox": [
+            72,
+            616,
+            917,
+            733
+        ],
+        "page_idx": 14
+    },
+    {
+        "type": "text",
+        "text": "A.2 Activated Layers of Occ Adapter",
+        "text_level": 2,
+        "bbox": [
+            75,
+            760,
+            552,
+            780
+        ],
+        "page_idx": 14
+    },
+    {
+        "type": "text",
+        "text": "We further analyzed the impact of the activation layer selection for the 2D vision encoder within the Occ Adapter. By default, we activated the {8, 12, 16, 24}-th layers of the vision encoder, and aggregated the output tokens from these layers for 3D occupancy decoding. In this experiment, we gradually reduced the number of activated layers to observe the performance changes of Occ-VLM in terms of geometric perception and 3D vision-language reasoning. As shown in Table 7, from a geometric perception perspective, reducing the activated layers in the Occ Adapter led to a decline in occupancy prediction accuracy. In particular, when the active layers were reduced from {16, 24} to only {24}, the mIoU decreased by 0.92%, and the IoU (empty) dropped by 1.54%. A similar trend was also observed in vision-language reasoning: when the Occ Adapter retained only a single active layer, the model’s performance on both 3D VQA and 3D dense captioning tasks dropped significantly. This indicates a strong correlation between the geometric perception capability of Occ-VLM and its vision-language reasoning ability.",
+        "bbox": [
+            72,
+            793,
+            920,
+            949
+        ],
+        "page_idx": 14
+    },
+    {
+        "type": "header",
+        "text": "Occ-VLM",
+        "bbox": [
+            740,
+            14,
+            837,
+            30
+        ],
+        "page_idx": 14
+    },
+    {
+        "type": "page_number",
+        "text": "",
+        "bbox": [
+            893,
+            16,
+            917,
+            30
+        ],
+        "page_idx": 14
+    },
+    {
+        "type": "table",
+        "img_path": "images/f0bd948bbf93e1c6c681dd979b65b45e777425690c283eff368ca5213823809c.jpg",
+        "table_caption": [
+            "Table 7: Impact of varying the activated layer index of the Occ Adapter. The default setting used in the main experiments is marked with †."
+        ],
+        "table_footnote": [],
+        "table_body": "<table><tr><td rowspan=\"2\">Activated Layer Index</td><td colspan=\"2\">Embodiedscan-Occ</td><td colspan=\"2\">ScanQA</td><td>SQA3D</td><td colspan=\"2\">Scan2Cap</td></tr><tr><td>mIoU</td><td>IoU (Empty)</td><td>EM@1</td><td>C</td><td>EM@1</td><td>C@0.5</td><td>R@0.5</td></tr><tr><td>{24}</td><td>16.66</td><td>46.45</td><td>28.6</td><td>96.5</td><td>58.3</td><td>68.9</td><td>60.5</td></tr><tr><td>{16, 24}</td><td>17.58</td><td>47.99</td><td>29.5</td><td>99.6</td><td>58.5</td><td>73.2</td><td>61.2</td></tr><tr><td>{12, 16, 24}</td><td>18.30</td><td>47.82</td><td>29.6</td><td>100.1</td><td>58.6</td><td>74.1</td><td>61.3</td></tr><tr><td> $\\{8, 12, 16, 24\\}^\\dagger$ </td><td>18.41</td><td>49.03</td><td>29.6</td><td>100.0</td><td>58.5</td><td>76.5</td><td>60.8</td></tr></table>",
+        "bbox": [
+            118,
+            105,
+            874,
+            217
+        ],
+        "page_idx": 15
+    },
+    {
+        "type": "text",
+        "text": "",
+        "bbox": [
+            77,
+            258,
+            917,
+            377
+        ],
+        "page_idx": 15
+    },
+    {
+        "type": "text",
+        "text": "A.3 Computational Efficiency and Module Complexity",
+        "text_level": 2,
+        "bbox": [
+            79,
+            419,
+            760,
+            440
+        ],
+        "page_idx": 15
+    },
+    {
+        "type": "text",
+        "text": "To further clarify the design efficiency of Occ-VLM, we emphasize that our approach avoids the need for explicit depth estimation, point cloud processing, or a separate, heavy 3D geometry encoder. Crucially, the Occ-Adapter shares the 2D visual encoder with the underlying VLM, which minimizes redundant computation. To quantify this module-level efficiency, Table 8 compares the computational cost and parameter count of our Occ-Adapter against representative 3D geometric encoders (e.g., VGGT and Depth-Anything v2) under a 32-view input setting on ScanNet scenes.",
+        "bbox": [
+            79,
+            468,
+            917,
+            624
+        ],
+        "page_idx": 15
+    },
+    {
+        "type": "text",
+        "text": "Besides, when computing the cost based only on the activated layers, the Occ-Adapter achieves an ultra-low FLOPs of merely 2.6T, compared to dedicated geometry modules (e.g., 38.2T for Depth-Anything v2). This substantiates our design choice of achieving effective 3D reasoning without incurring the heavy overhead of a separate 3D geometry encoder.",
+        "bbox": [
+            79,
+            627,
+            917,
+            725
+        ],
+        "page_idx": 15
+    },
+    {
+        "type": "table",
+        "img_path": "images/807d67fee2fc7622b62b1fc4ed47dd7fc3509705e309bec57d3c9e28a4860d6a.jpg",
+        "table_caption": [
+            "Table 8: Cost comparison of representative geometry modules under a 32-view input setting on ScanNet scenes."
+        ],
+        "table_footnote": [],
+        "table_body": "<table><tr><td>Module / Model</td><td>Input Size</td><td>FLOPs (↓)</td><td>Params (↓)</td></tr><tr><td>VGGT</td><td>518 × 518</td><td>124.6T</td><td>1.2B</td></tr><tr><td>Depth-Anything v2</td><td>518 × 518</td><td>38.2T</td><td>335.3M</td></tr><tr><td>Occ-Adapter</td><td>384 × 384</td><td>11.3T</td><td>161.24M</td></tr></table>",
+        "bbox": [
+            159,
+            817,
+            845,
+            905
+        ],
+        "page_idx": 15
+    },
+    {
+        "type": "page_number",
+        "text": "16",
+        "bbox": [
+            79,
+            16,
+            104,
+            30
+        ],
+        "page_idx": 15
+    },
+    {
+        "type": "header",
+        "text": "J. Li et al.",
+        "bbox": [
+            159,
+            14,
+            261,
+            30
+        ],
+        "page_idx": 15
+    },
+    {
+        "type": "text",
+        "text": "B Additional Qualitative Results",
+        "text_level": 2,
+        "bbox": [
+            77,
+            53,
+            571,
+            74
+        ],
+        "page_idx": 16
+    },
+    {
+        "type": "text",
+        "text": "We present the visualization results of 3D dense captioning in Fig. 7. This visualization maintains the same scene setup as Fig. 5 in the paper and highlights the corresponding 3D bounding boxes within the context of the caption question.",
+        "bbox": [
+            72,
+            95,
+            920,
+            156
+        ],
+        "page_idx": 16
+    },
+    {
+        "type": "table",
+        "img_path": "images/a8489fe86c4bc163eb9e2c5d0b664fcd330ee30d6cbf1bd05506d7b3e554ea2d.jpg",
+        "table_caption": [
+            "Fig. 7: Additional qualitative results on Scan2Cap dataset."
+        ],
+        "table_footnote": [],
+        "table_body": "<table><tr><td colspan=\"4\">3D Scenes</td></tr><tr><td></td><td></td><td></td><td></td></tr><tr><td colspan=\"4\">Occupancy Prediction</td></tr><tr><td></td><td></td><td></td><td></td></tr><tr><td colspan=\"4\">3D Dense Captioning</td></tr><tr><td>Q: Given an object located at &lt;coord&gt;, describe the object in detail.\nA: This is a black monitor. it is to the right of another monitor.\nGT: this is an off-white and black monitor. it is on the right closely to an all white monitor that is similar in size.</td><td>Q: Given an object located at &lt;coord&gt;, describe the object in detail.\nA: The trash can is in the back left corner of the room. it is behind the red chair.\nGT: a white trash can. it is behind a black office chair.</td><td>Q: Given an object located at &lt;coord&gt;, describe the object in detail.\nA: This is a square window. it is to the left of a shelf.\nGT: there is a window. it is to the left of the desk and shelves.</td><td>Q: Given an object located at &lt;coord&gt;, describe the object in detail.\nA: This is a round table. it is in between two chairs.\nGT: there is a circular table. it is surrounded by chairs.</td></tr><tr><td>Q: Given an object located at &lt;coord&gt;, describe the object in detail.\nA: This is a white cabinet. it is to the left of a couch.\nGT: this is an off-white and black monitor. it is on the right closely to an all white monitor that is similar in size.</td><td>Q: Given an object located at &lt;coord&gt;, describe the object in detail.\nA: The picture is above the cabinet. the picture is a rectangle with brown edges.\nGT: a rectangle shape picture frame. it is attached to the wall.</td><td>Q: Given an object located at &lt;coord&gt;, describe the object in detail.\nA: This is a brown dresser. it is to the right of the bed.\nGT: there is a brown, rectangular dresser. it is next to the bed.</td><td>Q: Given an object located at &lt;coord&gt;, describe the object in detail.\nA: This is a chair. it sets at a table with 3 other chairs.\nGT: there is a rectangular chair. it is at a table next to a plant</td></tr></table>",
+        "bbox": [
+            113,
+            198,
+            903,
+            600
+        ],
+        "page_idx": 16
+    },
+    {
+        "type": "text",
+        "text": "References",
+        "text_level": 2,
+        "bbox": [
+            77,
+            708,
+            234,
+            728
+        ],
+        "page_idx": 16
+    },
+    {
+        "type": "list",
+        "sub_type": "ref_text",
+        "list_items": [
+            "1. Alayrac, J.B., Donahue, J., Luc, P., Miech, A., Barr, I., Hasson, Y., Lenc, K., Mensch, A., Millican, K., Reynolds, M., et al.: Flamingo: a visual language model for few-shot learning. NeurIPS 35, 23716–23736 (2022)",
+            "2. An, X., Xie, Y., Yang, K., Zhang, W., Zhao, X., Cheng, Z., Wang, Y., Xu, S., Chen, C., Zhu, D., et al.: Llava-onevision-1.5: Fully open framework for democratized multimodal training. arXiv preprint arXiv:2509.23661 (2025)",
+            "3. Azuma, D., Miyanishi, T., Kurita, S., Kawanabe, M.: Scanqa: 3d question answering for spatial scene understanding. In: CVPR. pp. 19129–19139 (2022)",
+            "4. Bai, J., Bai, S., Yang, S., Wang, S., Tan, S., Wang, P., Lin, J., Zhou, C., Zhou, J.: Qwen-vl: A frontier large vision-language model with versatile abilities. arXiv preprint arXiv:2308.12966 1(2), 3 (2023)",
+            "5. Cao, A.Q., De Charette, R.: Monoscene: Monocular 3d semantic scene completion. In: CVPR. pp. 3991–4001 (2022)",
+            "6. Chang, A., Dai, A., Funkhouser, T., Halber, M., Niebner, M., Savva, M., Song, S., Zeng, A., Zhang, Y.: Matterport3d: Learning from rgb-d data in indoor environments. In: 3DV (2017)",
+            "7. Chen, S., Chen, X., Zhang, C., Li, M., Yu, G., Fei, H., Zhu, H., Fan, J., Chen, T.: Ll3da: Visual interactive instruction tuning for omni-3d understanding reasoning and planning. In: CVPR. pp. 26428–26438 (2024)",
+            "8. Chen, S., Zhu, H., Chen, X., Lei, Y., Yu, G., Chen, T.: End-to-end 3d dense captioning with vote2cap-detr. In: Proceedings of the IEEE/CVF conference on computer vision and pattern recognition. pp. 11124–11133 (2023)",
+            "9. Chen, Z., Gholami, A., Nießner, M., Chang, A.X.: Scan2cap: Context-aware dense captioning in rgb-d scans. In: CVPR. pp. 3193–3203 (2021)",
+            "10. Cheng, A.C., Fu, Y., Chen, Y., Liu, Z., Li, X., Radhakrishnan, S., Han, S., Lu, Y., Kautz, J., Molchanov, P., et al.: 3d aware region prompted vision language model. arXiv preprint arXiv:2509.13317 (2025)",
+            "11. Choy, C., Gwak, J., Savarese, S.: 4d spatio-temporal convnets: Minkowski convolutional neural networks. In: Proceedings of the IEEE/CVF conference on computer vision and pattern recognition. pp. 3075–3084 (2019)",
+            "12. Dai, A., Chang, A.X., Savva, M., Halber, M., Funkhouser, T., Nießner, M.: Scannet: Richly-annotated 3d reconstructions of indoor scenes. In: CVPR. pp. 5828–5839 (2017)",
+            "13. Dai, W., Li, J., Li, D., Tiong, A.M.H., Zhao, J., Wang, W., Li, B., Fung, P., Hoi, S.: Instructblip: Towards general-purpose vision-language models with instruction tuning (2023), https://arxiv.org/abs/2305.06500",
+            "14. Fu, R., Liu, J., Chen, X., Nie, Y., Xiong, W.: Scene-llm: Extending language model for 3d visual understanding and reasoning. arXiv preprint arXiv:2403.11401 (2024)",
+            "15. Guo, Z., Zhang, R., Zhu, X., Tang, Y., Ma, X., Han, J., Chen, K., Gao, P., Li, X., Li, H., et al.: Point-bind & point-llm: Aligning point cloud with multi-modality for 3d understanding, generation, and instruction following. arXiv preprint arXiv:2309.00615 (2023)",
+            "16. Hong, Y., Zhen, H., Chen, P., Zheng, S., Du, Y., Chen, Z., Gan, C.: 3d-llm: Injecting the 3d world into large language models. NeurIPS 36, 20482–20494 (2023)",
+            "17. Huang, H., Chen, Y., Wang, Z., Huang, R., Xu, R., Wang, T., Liu, L., Cheng, X., Zhao, Y., Pang, J., et al.: Chat-scene: Bridging 3d scene and large language models with object identifiers. In: NeurIPS (2024)",
+            "18. Huang, J., Yong, S., Ma, X., Linghu, X., Li, P., Wang, Y., Li, Q., Zhu, S.C., Jia, B., Huang, S.: An embodied generalist agent in 3d world. arXiv preprint arXiv:2311.12871 (2023)",
+            "19. Huang, Y., Zheng, W., Zhang, Y., Zhou, J., Lu, J.: Tri-perspective view for visionbased 3d semantic occupancy prediction. In: CVPR. pp. 9223–9232 (2023)",
+            "20. Huang, Y., Zheng, W., Zhang, Y., Zhou, J., Lu, J.: Gaussianformer: Scene as gaussians for vision-based 3d semantic occupancy prediction. In: ECCV. pp. 376– 393. Springer (2024)",
+            "21. Li, B., Zhang, Y., Guo, D., Zhang, R., Li, F., Zhang, H., Zhang, K., Zhang, P., Li, Y., Liu, Z., et al.: Llava-onevision: Easy visual task transfer. arXiv preprint arXiv:2408.03326 (2024)",
+            "22. Li, J., Lu, M., Liu, J., Wang, H., Gu, C., Zheng, W., Du, L., Zhang, S.: Sliceocc: Indoor 3d semantic occupancy prediction with vertical slice representation. In: ICRA. pp. 15762–15768. IEEE (2025)",
+            "23. Li, J., Li, D., Savarese, S., Hoi, S.: Blip-2: Bootstrapping language-image pretraining with frozen image encoders and large language models. In: ICML. pp. 19730–19742. PMLR (2023)",
+            "24. Li, Y., Zhang, Y., Wang, C., Zhong, Z., Chen, Y., Chu, R., Liu, S., Jia, J.: Minigemini: Mining the potential of multi-modality vision language models. arXiv preprint arXiv:2403.18814 (2024)",
+            "25. Li, Y., Yu, Z., Choy, C., Xiao, C., Alvarez, J.M., Fidler, S., Feng, C., Anandkumar, A.: Voxformer: Sparse voxel transformer for camera-based 3d semantic scene completion. In: CVPR. pp. 9087–9098 (2023)",
+            "26. Lin, B., Ye, Y., Zhu, B., Cui, J., Ning, M., Jin, P., Yuan, L.: Video-llava: Learning united visual representation by alignment before projection. In: Proceedings of the 2024 conference on empirical methods in natural language processing. pp. 5971– 5984 (2024)",
+            "27. Liu, H., Li, C., Li, Y., Lee, Y.J.: Improved baselines with visual instruction tuning. In: CVPR. pp. 26296–26306 (2024)",
+            "28. Liu, H., Li, C., Wu, Q., Lee, Y.J.: Visual instruction tuning. NeurIPS 36, 34892– 34916 (2023)",
+            "29. Liu, S., Cheng, H., Liu, H., Zhang, H., Li, F., Ren, T., Zou, X., Yang, J., Su, H., Zhu, J., et al.: Llava-plus: Learning to use tools for creating multimodal agents. In: European conference on computer vision. pp. 126–142. Springer (2024)",
+            "30. Ma, X., Yong, S., Zheng, Z., Li, Q., Liang, Y., Zhu, S.C., Huang, S.: Sqa3d: Situated question answering in 3d scenes. ICLR (2023)",
+            "31. Majumdar, A., Ajay, A., Zhang, X., Putta, P., Yenamandra, S., Henaff, M., Silwal, S., Mcvay, P., Maksymets, O., Arnaud, S., et al.: Openeqa: Embodied question answering in the era of foundation models. In: CVPR. pp. 16488–16498 (2024)",
+            "32. Man, Y., Zheng, S., Bao, Z., Hebert, M., Gui, L., Wang, Y.X.: Lexicon3d: Probing visual foundation models for complex 3d scene understanding. NeurIPS 37, 76819– 76847 (2024)",
+            "33. Mescheder, L., Oechsle, M., Niemeyer, M., Nowozin, S., Geiger, A.: Occupancy networks: Learning 3d reconstruction in function space. In: Proceedings of the IEEE/CVF conference on computer vision and pattern recognition. pp. 4460–4470 (2019)",
+            "34. Pan, M., Liu, J., Zhang, R., Huang, P., Li, X., Xie, H., Wang, B., Liu, L., Zhang, S.: Renderocc: Vision-centric 3d occupancy prediction with 2d rendering supervision. In: ICRA. pp. 12404–12411. IEEE (2024)",
+            "35. Peng, S., Niemeyer, M., Mescheder, L., Pollefeys, M., Geiger, A.: Convolutional occupancy networks. In: European Conference on Computer Vision. pp. 523–540. Springer (2020)",
+            "36. Petit, D., Bourgeois, S., Gay-Bellile, V., Chabot, F., Barthe, L.: Llava 3: Representing 3d scenes like a cubist painter to boost 3d scene understanding of vlms. arXiv preprint arXiv:2511.16454 (2025)",
+            "37. Qi, Z., Dong, R., Zhang, S., Geng, H., Han, C., Ge, Z., Yi, L., Ma, K.: Shapellm: Universal 3d object understanding for embodied interaction. In: ECCV. pp. 214– 238. Springer (2024)",
+            "38. Qi, Z., Fang, Y., Sun, Z., Wu, X., Wu, T., Wang, J., Lin, D., Zhao, H.: Gpt4point: A unified framework for point-language understanding and generation. In: CVPR. pp. 26417–26427 (2024)",
+            "39. Qi, Z., Zhang, Z., Fang, Y., Wang, J., Zhao, H.: Gpt4scene: Understand 3d scenes from videos with vision-language models. arXiv preprint arXiv:2501.01428 (2025)",
+            "40. Tang, H., Liu, Z., Zhao, S., Lin, Y., Lin, J., Wang, H., Han, S.: Searching efficient 3d architectures with sparse point-voxel convolution. In: European conference on computer vision. pp. 685–702. Springer (2020)",
+            "41. Tang, Y., Han, X., Li, X., Yu, Q., Hao, Y., Hu, L., Chen, M.: Minigpt-3d: Efficiently aligning 3d point clouds with large language models using 2d priors. In: ACM MM. pp. 6617–6626 (2024)",
+            "42. Team, Q., et al.: Qwen2 technical report. arXiv preprint arXiv:2407.10671 2(8) (2024)",
+            "43. Thai, A., Peng, S., Genova, K., Guibas, L., Funkhouser, T.: Splattalk: 3d vqa with gaussian splatting. arXiv preprint arXiv:2503.06271 (2025)",
+            "44. Tong, W., Sima, C., Wang, T., Chen, L., Wu, S., Deng, H., Gu, Y., Lu, L., Luo, P., Lin, D., et al.: Scene as occupancy. In: Proceedings of the IEEE/CVF International Conference on Computer Vision. pp. 8406–8415 (2023)",
+            "45. Wald, J., Avetisyan, A., Navab, N., Tombari, F., Nießner, M.: Rio: 3d object instance re-localization in changing indoor environments. In: ICCV. pp. 7658–7667 (2019)",
+            "46. Wang, H., Wei, X., Zhang, X., Li, J., Bai, C., Li, Y., Lu, M., Zheng, W., Zhang, S.: Embodiedocc++: Boosting embodied 3d occupancy prediction with plane regularization and uncertainty sampler. In: Proceedings of the 33rd ACM International Conference on Multimedia. pp. 925–934 (2025)",
+            "47. Wang, J., Chen, M., Karaev, N., Vedaldi, A., Rupprecht, C., Novotny, D.: Vggt: Visual geometry grounded transformer. In: Proceedings of the Computer Vision and Pattern Recognition Conference. pp. 5294–5306 (2025)",
+            "48. Wang, P., Bai, S., Tan, S., Wang, S., Fan, Z., Bai, J., Chen, K., Liu, X., Wang, J., Ge, W., et al.: Qwen2-vl: Enhancing vision-language model’s perception of the world at any resolution. arXiv preprint arXiv:2409.12191 (2024)",
+            "49. Wang, Z., Huang, H., Zhao, Y., Zhang, Z., Zhao, Z.: Chat-3d: Data-efficiently tuning large language model for universal dialogue of 3d scenes. arXiv preprint arXiv:2308.08769 (2023)",
+            "50. Wei, Y., Zhao, L., Zheng, W., Zhu, Z., Zhou, J., Lu, J.: Surroundocc: Multicamera 3d occupancy prediction for autonomous driving. In: ICCV. pp. 21729– 21740 (2023)",
+            "51. Wu, D., Liu, F., Hung, Y.H., Duan, Y.: Spatial-mllm: Boosting mllm capabilities in visual-based spatial intelligence. arXiv preprint arXiv:2505.23747 (2025)",
+            "52. Wu, Y., Zheng, W., Zuo, S., Huang, Y., Zhou, J., Lu, J.: Embodiedocc: Embodied 3d occupancy prediction for vision-based online scene understanding. In: Proceedings of the IEEE/CVF International Conference on Computer Vision. pp. 26360– 26370 (2025)",
+            "53. Xing, L., Huang, Q., Dong, X., Lu, J., Zhang, P., Zang, Y., Cao, Y., He, C., Wang, J., Wu, F., et al.: Conical visual concentration for efficient large visionlanguage models. In: Proceedings of the Computer Vision and Pattern Recognition Conference. pp. 14593–14603 (2025)",
+            "54. Xu, R., Wang, X., Wang, T., Chen, Y., Pang, J., Lin, D.: Pointllm: Empowering large language models to understand point clouds. In: ECCV. pp. 131–147. Springer (2024)",
+            "55. Zhai, X., Mustafa, B., Kolesnikov, A., Beyer, L.: Sigmoid loss for language image pre-training. In: Proceedings of the IEEE/CVF international conference on computer vision. pp. 11975–11986 (2023)",
+            "56. Zhang, Y., Wu, J., Li, W., Li, B., Ma, Z., Liu, Z., Li, C.: Video instruction tuning with synthetic data (2024)",
+            "57. Zheng, D., Huang, S., Li, Y., Wang, L.: Learning from videos for 3d world: Enhancing mllms with 3d vision geometry priors. arXiv preprint arXiv:2505.24625 (2025)",
+            "58. Zheng, D., Huang, S., Wang, L.: Video-3d llm: Learning position-aware video representation for 3d scene understanding. In: CVPR. pp. 8995–9006 (2025)",
+            "59. Zhu, C., Wang, T., Zhang, W., Pang, J., Liu, X.: Llava-3d: A simple yet effective pathway to empowering lmms with 3d-awareness. arXiv preprint arXiv:2409.18125 (2024)",
+            "60. Zhu, X., Zhou, H., Wang, T., Hong, F., Ma, Y., Li, W., Li, H., Lin, D.: Cylindrical and asymmetrical 3d convolution networks for lidar segmentation. In: Proceedings of the IEEE/CVF conference on computer vision and pattern recognition. pp. 9939–9948 (2021)"
+        ],
+        "bbox": [
+            87,
+            751,
+            917,
+            949
+        ],
+        "page_idx": 16
+    },
+    {
+        "type": "header",
+        "text": "Occ-VLM",
+        "bbox": [
+            738,
+            14,
+            837,
+            30
+        ],
+        "page_idx": 16
+    },
+    {
+        "type": "page_number",
+        "text": "",
+        "bbox": [
+            893,
+            16,
+            917,
+            30
+        ],
+        "page_idx": 16
+    },
+    {
+        "type": "list",
+        "sub_type": "ref_text",
+        "list_items": [],
+        "bbox": [
+            75,
+            55,
+            924,
+            949
+        ],
+        "page_idx": 17
+    },
+    {
+        "type": "page_number",
+        "text": "18",
+        "bbox": [
+            79,
+            16,
+            104,
+            30
+        ],
+        "page_idx": 17
+    },
+    {
+        "type": "header",
+        "text": "J. Li et al.",
+        "bbox": [
+            157,
+            14,
+            263,
+            30
+        ],
+        "page_idx": 17
+    },
+    {
+        "type": "list",
+        "sub_type": "ref_text",
+        "list_items": [],
+        "bbox": [
+            75,
+            55,
+            917,
+            949
+        ],
+        "page_idx": 18
+    },
+    {
+        "type": "header",
+        "text": "Occ-VLM",
+        "bbox": [
+            738,
+            14,
+            837,
+            30
+        ],
+        "page_idx": 18
+    },
+    {
+        "type": "page_number",
+        "text": "",
+        "bbox": [
+            893,
+            16,
+            917,
+            30
+        ],
+        "page_idx": 18
+    },
+    {
+        "type": "list",
+        "sub_type": "ref_text",
+        "list_items": [],
+        "bbox": [
+            75,
+            55,
+            920,
+            949
+        ],
+        "page_idx": 19
+    },
+    {
+        "type": "page_number",
+        "text": "20",
+        "bbox": [
+            79,
+            16,
+            104,
+            30
+        ],
+        "page_idx": 19
+    },
+    {
+        "type": "header",
+        "text": "J. Li et al.",
+        "bbox": [
+            159,
+            14,
+            261,
+            30
+        ],
+        "page_idx": 19
+    },
+    {
+        "type": "list",
+        "sub_type": "ref_text",
+        "list_items": [],
+        "bbox": [
+            72,
+            55,
+            924,
+            274
+        ],
+        "page_idx": 20
+    },
+    {
+        "type": "header",
+        "text": "Occ-VLM",
+        "bbox": [
+            738,
+            14,
+            837,
+            30
+        ],
+        "page_idx": 20
+    },
+    {
+        "type": "page_number",
+        "text": "21",
+        "bbox": [
+            891,
+            16,
+            915,
+            30
+        ],
+        "page_idx": 20
+    }
+]

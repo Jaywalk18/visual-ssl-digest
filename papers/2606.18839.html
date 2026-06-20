@@ -20,7 +20,7 @@
   </header>
   <nav class="site-nav" aria-label="主导航">
     <a class="nav-link" href="../index.html">头版</a>
-<a class="nav-link" href="../issues/2026-06-19.html">今日速递</a>
+<a class="nav-link" href="../issues/2026-06-20.html">今日速递</a>
 <a class="nav-link" href="../pages/catalog.html">论文目录</a>
 <a class="nav-link" href="../pages/timeline.html">时间线</a>
 <span class="nav-streak" title="连续追踪天数"><svg viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><path d="M8 0c.7 2.5-1.2 3.7-2 5-1 1.6-1 4 .8 4.8C6.4 8.5 7.4 7.8 8 7c.3 1.3-.4 2 .9 3 .9.7 1.3 1.6 1.1 2.6C9.7 14.6 8.9 16 6.8 16 4.6 16 3 14.3 3 12c0-3.3 2.6-4.8 2.4-8C6.9 4.6 8.4 5 8 0z"/></svg> 连续 <b data-streak>0</b> 天</span>
@@ -28,32 +28,32 @@
   <main><article class="paper-detail" data-pid="2606.18839" data-category="arXiv 新增 + ICML accepted + VLM robustness" data-priority="P2" data-date="2026-06-19" data-title="semantic robustness certification for vision-language models" data-keywords="semantic robustness certification for vision-language models semantic robustness certification for vision-language arxiv 新增 + icml accepted + vlm robustness p2 2026-06-19 arxiv 新增 + icml accepted + vlm robustness 把 vlm 鲁棒性认证从像素/几何扰动推进到语义扰动，和开放词表视觉表征边界有关 中高相关；详见方法、贡献和实验边界。">
   <div class="paper-main">
     <div class="kicker">arXiv 新增 + ICML accepted + VLM robustness · P2 · 2026-06-19</div>
-    <h1 class="paper-headline">Semantic Robustness Certification for Vision-Language：通用视觉表征不仅要可迁移，也要对语义变体稳定；这篇给了可检查的认证视角</h1>
-    <p class="dek">首次系统化 VLM semantic-level transformations 下的 robustness certification，而不只看 pixel-level attack。</p>
-    <p class="byline"><strong>Semantic Robustness Certification for Vision-Language Models</strong>　Peiyu Yang , Paul Montague , Feng Liu , Andrew C. Cullen , Amardeep Kaur , Christopher Leckie , Sarah M. Erfani；arXiv 元数据未稳定列机构时按作者列表记录。　arXiv 新增 + ICML accepted + VLM robustness　<a href="https://arxiv.org/abs/2606.18839">原文链接</a></p>
+    <h1 class="paper-headline">Semantic Robustness Certification for Vision-Language：它和通用视觉自监督的关系在于：把 VLM 鲁棒性认证从像素/几何扰动推进到语义扰动，和开放词表视觉表征边界有关</h1>
+    <p class="dek">中高相关；详见方法、贡献和实验边界。</p>
+    <p class="byline"><strong>Semantic Robustness Certification for Vision-Language Models</strong>　arXiv 新增 + ICML accepted + VLM robustness　<a href="https://arxiv.org/abs/2606.18839">原文链接</a></p>
     <div class="paper-facts">
       <span><b>编号</b>2606.18839</span>
       <span><b>优先级</b>P2</span>
       <span><b>类别</b>arXiv 新增 + ICML accepted + VLM robustness</span>
       <span><b>会议</b>arXiv 新增 + ICML accepted + VLM robustness</span>
-      <span><b>方法</b>用 text prompts 作为 semantic proxies 参数化语义变换，并在闭式决策边界下给出 prediction 不变的 extent intervals。</span>
+      <span><b>方法</b>把 VLM 鲁棒性认证从像素/几何扰动推进到语义扰动，和开放词表视觉表征边界有关</span>
       <span><b>来源</b>arXiv / OpenReview</span>
     </div>
     <div class="feature-body">
-      <p class="lead dropcap">先说结论。通用视觉表征不仅要可迁移，也要对语义变体稳定；这篇给了可检查的认证视角。 首次系统化 VLM semantic-level transformations 下的 robustness certification，而不只看 pixel-level attack。</p>
+      <p class="lead dropcap">先说结论。它和通用视觉自监督的关系在于：把 VLM 鲁棒性认证从像素/几何扰动推进到语义扰动，和开放词表视觉表征边界有关。 中高相关；详见方法、贡献和实验边界。</p>
       <figure class="full-fig"><img src="../assets/mineru/2606.18839/images/2cf20ac35f961d79f4a2df8c112b26f48214dd219176b9e52f3196d7b102e7eb.jpg" alt="Figureure 2 · Illustration of the semantic transformation in a threedimensional visu"><figcaption><b>Figureure 2 · Illustration of the semantic transformation in a threedimensional visu</b><span class="fig-en">Figure 2. Illustration of the semantic transformation in a threedimensional visualization of the VLM embedding space.</span><span class="fig-zh">这张可视化用来解释 Semantic Robustness Certification for Vision-Language 学到的中间表征或对齐关系。重点看它是否支持正文里的机制判断。</span></figcaption></figure>
 <figure class="full-fig"><img src="../assets/mineru/2606.18839/images/8e40a741dfe0c46dc1a3e8b083a5f4aaa6ac07b76fddbe3b93963c4ddc2ec1a8.jpg" alt="Figureure 11 · Semantic strength via similarity"><figcaption><b>Figureure 11 · Semantic strength via similarity</b><span class="fig-en">Figure 11. Semantic strength via similarity. For each dataset, we sample 20 semantic pairs $( a , a ^ { \prime } )$ and randomly split images from the two classes into two disjoint subsets. We compute class mean visual embeddings $\bar { z } _ { a } , \bar { z } _ { a ^ { \prime } }$ on images from one subset and form the semantic direction by $v _ { a , a ^ { \prime } } = \bar { z } _ { a ^ { \prime } } - \bar { z } _ { a }$ . We then score images in the other subset by $t ( x _ { i } ) = \langle z _ { i } , v _ { a , a ^ { \prime } } \rangle$ with $z _ { i } = f _ { \mathrm { i m g } } ( x _ { i } )$ , sort by t(xi), and partition into equal-count quantile bins. The plot shows the fraction of samples with label $y _ { a ^ { \prime } }$ across bins. Solid lines are averages over pairs and shaded bands are 95% normal approximation confidence intervals across pairs.</span><span class="fig-zh">这张可视化用来解释 Semantic Robustness Certification for Vision-Language 学到的中间表征或对齐关系。重点看它是否支持正文里的机制判断。</span></figcaption></figure>
       
       <h2>核心问题</h2>
-      <p>通用视觉表征不仅要可迁移，也要对语义变体稳定；这篇给了可检查的认证视角。</p>
+      <p>它和通用视觉自监督的关系在于：把 VLM 鲁棒性认证从像素/几何扰动推进到语义扰动，和开放词表视觉表征边界有关。</p>
       <h2>方法拆解</h2>
-      <p>用 text prompts 作为 semantic proxies 参数化语义变换，并在闭式决策边界下给出 prediction 不变的 extent intervals。</p>
+      <p>把 VLM 鲁棒性认证从像素/几何扰动推进到语义扰动，和开放词表视觉表征边界有关</p>
       <h2>主要贡献</h2>
-      <p>首次系统化 VLM semantic-level transformations 下的 robustness certification，而不只看 pixel-level attack。</p>
+      <p>中高相关；详见方法、贡献和实验边界。</p>
       <h2>实验看点</h2>
-      <p>摘要强调可量化 shape、size、style 等语义变化范围内预测是否稳定。</p>
+      <p>实验部分建议重点看两类证据：一是作者是否把方法收益和更强数据、更长训练、更大模型区分开；二是跨模型、跨数据或跨任务迁移是否还能保留同样趋势。</p>
       <h2>局限与读法</h2>
-      <p>鲁棒性/认证方向，不是 SSL 训练目标；需要看 semantic proxy 是否覆盖真实图像分布变化。</p>
+      <p>这篇论文的结论需要结合任务设置、训练数据规模和消融实验一起看；不要只凭单个指标判断它对通用视觉表征的价值。</p>
     
     </div>
   </div>
@@ -64,13 +64,13 @@
     <div class="side-box"><h4>原文</h4><p><a href="https://arxiv.org/abs/2606.18839">https://arxiv.org/abs/2606.18839</a></p></div>
   </aside>
 </article></main>
-  <aside class="conf-float" data-conf-reminder="2026-06-19-main-ddl" aria-label="CCF A/B 主投稿提醒">
+  <aside class="conf-float" data-conf-reminder="2026-06-20-main-ddl" aria-label="CCF A/B 主投稿提醒">
   <button class="conf-close" type="button" aria-label="关闭会议提醒">×</button>
   <details open>
     <summary>CCF A/B 主投稿提醒</summary>
     <div class="conf-list"><a class="conf-item " href="https://github.com/ccfddl/ccf-deadlines/blob/main/conference/AI/aaai.yml">
   <span><b>AAAI 2027</b><em>CCF A · Main paper submission</em></span>
-  <strong>38 天</strong>
+  <strong>37 天</strong>
   <small>2026-07-27 · CCF DDL: abstract 2026-07-20；进入 1 个月窗口后重点提醒。</small>
 </a></div>
   </details>
@@ -83,7 +83,7 @@
   (() => {
     const box = document.querySelector('[data-conf-reminder]');
     if (!box) return;
-    const key = `visualSslConfReminderClosed:${box.dataset.confReminder || '2026-06-19-main-ddl'}`;
+    const key = `visualSslConfReminderClosed:${box.dataset.confReminder || '2026-06-20-main-ddl'}`;
     try {
       if (localStorage.getItem(key) === '1') box.hidden = true;
     } catch (err) {}
