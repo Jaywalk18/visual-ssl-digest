@@ -1217,9 +1217,13 @@ def write_issue(report_md: str) -> None:
     if issue_papers:
         cards = "\n".join(paper_card(p, 1) for p in issue_papers)
         issue_title = f"{zh_date(CURRENT_DATE)}：{issue_papers[0]['short']} 等视觉表征主线更新"
+        focus_text = "、".join(p["short"] for p in issue_papers[:4])
+        reading_text = "先看 P1/P2 与方法图，再扫状态变化和边界案例。"
     else:
         cards = '<p class="empty-state">今天没有通过去重与方向过滤的新论文；目录和首页继续保留最近一期可精读论文，便于回看。</p>'
         issue_title = f"{zh_date(CURRENT_DATE)}：无新增通用视觉自监督论文"
+        focus_text = "无新增；沿用上一期 P0/P1 精读队列。"
+        reading_text = "今天只需复核来源状态和去重说明，再回看上一期主论文。"
     body = f"""<article class="paper-detail issue-detail">
   <div class="paper-main">
     <div class="kicker">Daily issue · {e(CURRENT_DATE)} · CCF A/B 会议优先</div>
@@ -1234,9 +1238,9 @@ def write_issue(report_md: str) -> None:
     </div>
   </div>
   <aside class="paper-side">
-    <div class="side-box"><h4>今日重点</h4><p>TextTeacher、MDM、EvoVid、Ablate-to-Validate。</p></div>
+    <div class="side-box"><h4>今日重点</h4><p>{e(focus_text)}</p></div>
     <div class="side-box"><h4>会议口径</h4><p>只把 CCF A/B 放进主提醒；临近截止或 CCF C 仅记录。</p></div>
-    <div class="side-box"><h4>阅读重点</h4><p>先看 P1/P2 与方法图，再扫状态变化和边界案例。</p></div>
+    <div class="side-box"><h4>阅读重点</h4><p>{e(reading_text)}</p></div>
   </aside>
 </article>"""
     (ROOT / "issues" / f"{CURRENT_DATE}.html").write_text(shell(f"{CURRENT_DATE} 速递", body, 1, f"issues/{CURRENT_DATE}.html"), encoding="utf-8")
