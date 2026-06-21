@@ -28,32 +28,32 @@
   <main><article class="paper-detail" data-pid="2606.19584" data-category="arXiv 新增 + ICLR 2026 Poster + language-steered VFM" data-priority="P0" data-date="2026-06-20" data-title="language-instructed vision embeddings for controllable and generalizable perception" data-keywords="language-instructed vision embeddings for controllable and generalizable perception language-instructed vision embeddings for controllable arxiv 新增 + iclr 2026 poster + language-steered vfm p0 2026-06-20 arxiv 新增 + iclr 2026 poster + language-steered vfm 让语言在推理时动态指导视觉 encoder 生成任务中心 embedding，直接挑战静态视觉特征范式 高相关；详见方法、贡献和实验边界。">
   <div class="paper-main">
     <div class="kicker">arXiv 新增 + ICLR 2026 Poster + language-steered VFM · P0 · 2026-06-20</div>
-    <h1 class="paper-headline">Language-Instructed Vision Embeddings for Controllable：它和通用视觉自监督的关系在于：让语言在推理时动态指导视觉 encoder 生成任务中心 embedding，直接挑战静态视觉特征范式</h1>
-    <p class="dek">高相关；详见方法、贡献和实验边界。</p>
-    <p class="byline"><strong>Language-Instructed Vision Embeddings for Controllable and Generalizable Perception</strong>　arXiv 新增 + ICLR 2026 Poster + language-steered VFM　<a href="https://arxiv.org/abs/2606.19584">原文链接</a></p>
+    <h1 class="paper-headline">Language-Instructed Vision Embeddings for Controllable：通用 VFM 的关键问题之一是同一图像在不同任务下应该读出不同信息，LIVE 正面处理这个问题</h1>
+    <p class="dek">把“通用视觉表征”从静态 feature extractor 推向可控、任务条件化的视觉 embedding。</p>
+    <p class="byline"><strong>Language-Instructed Vision Embeddings for Controllable and Generalizable Perception</strong>　Chengzhi Mao, Xudong Lin, Wen-Sheng Chu；arXiv/OpenReview 显示 Google 相关作者线索。　arXiv 新增 + ICLR 2026 Poster + language-steered VFM　<a href="https://arxiv.org/abs/2606.19584">原文链接</a></p>
     <div class="paper-facts">
       <span><b>编号</b>2606.19584</span>
       <span><b>优先级</b>P0</span>
       <span><b>类别</b>arXiv 新增 + ICLR 2026 Poster + language-steered VFM</span>
       <span><b>会议</b>arXiv 新增 + ICLR 2026 Poster + language-steered VFM</span>
-      <span><b>方法</b>让语言在推理时动态指导视觉 encoder 生成任务中心 embedding，直接挑战静态视觉特征范式</span>
+      <span><b>方法</b>在推理时用语言指令控制视觉 encoder 生成任务相关 embedding，而不是只让语言 decoder 消费固定视觉特征。</span>
       <span><b>来源</b>arXiv / OpenReview</span>
     </div>
     <div class="feature-body">
-      <p class="lead dropcap">先说结论。它和通用视觉自监督的关系在于：让语言在推理时动态指导视觉 encoder 生成任务中心 embedding，直接挑战静态视觉特征范式。 高相关；详见方法、贡献和实验边界。</p>
+      <p class="lead dropcap">先说结论。通用 VFM 的关键问题之一是同一图像在不同任务下应该读出不同信息，LIVE 正面处理这个问题。 把“通用视觉表征”从静态 feature extractor 推向可控、任务条件化的视觉 embedding。</p>
       <figure class="full-fig"><img src="../assets/mineru/2606.19584/images/34dc6ada9a7539f939f850d7e94deb379d90b0ae9522949e724e03c8c8658e14.jpg" alt="Figureure 11 · : Illustration for baselines compared with in our paper"><figcaption><b>Figureure 11 · : Illustration for baselines compared with in our paper</b><span class="fig-en">Figure 11: Illustration for baselines compared with in our paper. We take the two tower architecture (A), add the text query embedding to the embedding (B), and adding query to the text answer as description following Menon et al. (C).</span><span class="fig-zh">这张图概括 Language-Instructed Vision Embeddings for Controllable 的整体方法流程。阅读时先看模块之间传递的训练信号，再看作者如何把目标拆成可优化的子问题。</span></figcaption></figure>
 <figure class="full-fig"><img src="../assets/mineru/2606.19584/images/de19dbfaa19079d5d25e03e3e894ec61952d0e457eeca36c6160545b5e16dbd5.jpg" alt="Figureure 10 · : Comparison with existing methods"><figcaption><b>Figureure 10 · : Comparison with existing methods</b><span class="fig-en">Figure 10: Comparison with existing methods. Note that B, C, E requires large language model based decoders. D does not have a embedding to perform zero-shot retrieval.</span><span class="fig-zh">这张图/表用于判断 Language-Instructed Vision Embeddings for Controllable 的实验收益来自哪里。重点看替换、消融或跨模型设置下趋势是否一致，而不是只看单个最高分。</span></figcaption></figure>
       
       <h2>核心问题</h2>
-      <p>它和通用视觉自监督的关系在于：让语言在推理时动态指导视觉 encoder 生成任务中心 embedding，直接挑战静态视觉特征范式。</p>
+      <p>通用 VFM 的关键问题之一是同一图像在不同任务下应该读出不同信息，LIVE 正面处理这个问题。</p>
       <h2>方法拆解</h2>
-      <p>让语言在推理时动态指导视觉 encoder 生成任务中心 embedding，直接挑战静态视觉特征范式</p>
+      <p>在推理时用语言指令控制视觉 encoder 生成任务相关 embedding，而不是只让语言 decoder 消费固定视觉特征。</p>
       <h2>主要贡献</h2>
-      <p>高相关；详见方法、贡献和实验边界。</p>
+      <p>把“通用视觉表征”从静态 feature extractor 推向可控、任务条件化的视觉 embedding。</p>
       <h2>实验看点</h2>
-      <p>实验部分建议重点看两类证据：一是作者是否把方法收益和更强数据、更长训练、更大模型区分开；二是跨模型、跨数据或跨任务迁移是否还能保留同样趋势。</p>
+      <p>摘要称在 MMVP 与 VQA 类任务上改善视觉 hallucination 和泛化，并能处理未见指令。</p>
       <h2>局限与读法</h2>
-      <p>这篇论文的结论需要结合任务设置、训练数据规模和消融实验一起看；不要只凭单个指标判断它对通用视觉表征的价值。</p>
+      <p>需要警惕 prompt bias；它更多是 adaptive perception 机制，不是完整新预训练目标。</p>
     
     </div>
   </div>

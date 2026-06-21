@@ -28,32 +28,32 @@
   <main><article class="paper-detail" data-pid="2606.19932" data-category="arXiv 新增 + ICML 2026 + visual token reduction" data-priority="P0" data-date="2026-06-20" data-title="spatial-aware reduction framework: towards efficient and faithful visual state space models" data-keywords="spatial-aware reduction framework: towards efficient and faithful visual state space models spatial-aware reduction framework arxiv 新增 + icml 2026 + visual token reduction p0 2026-06-20 arxiv 新增 + icml 2026 + visual token reduction 说明视觉 mamba/state space 的 token reduction 必须保持二维网格拓扑，否则会严重损伤表征 高相关；详见方法、贡献和实验边界。">
   <div class="paper-main">
     <div class="kicker">arXiv 新增 + ICML 2026 + visual token reduction · P0 · 2026-06-20</div>
-    <h1 class="paper-headline">Spatial-Aware Reduction Framework：它和通用视觉自监督的关系在于：说明视觉 Mamba/State Space 的 token reduction 必须保持二维网格拓扑，否则会严重损伤表征</h1>
-    <p class="dek">高相关；详见方法、贡献和实验边界。</p>
-    <p class="byline"><strong>Spatial-Aware Reduction Framework: Towards Efficient and Faithful Visual State Space Models</strong>　arXiv 新增 + ICML 2026 + visual token reduction　<a href="https://arxiv.org/abs/2606.19932">原文链接</a></p>
+    <h1 class="paper-headline">Spatial-Aware Reduction Framework：视觉 SSL/VFM 进入效率阶段后，压缩是否保留空间结构会直接影响表征质量</h1>
+    <p class="dek">指出视觉 SSM 的 selective scanning 依赖空间结构，普通 token pruning 会破坏模型隐含的二维归纳偏置。</p>
+    <p class="byline"><strong>Spatial-Aware Reduction Framework: Towards Efficient and Faithful Visual State Space Models</strong>　Jindi Lv, Aoyu Li, Yuhao Zhou, Zheng Zhu, Xiaofeng Wang, Qing Ye, Yueqi Duan, Wentao Feng, Jiancheng Lv；arXiv 元数据未稳定列机构。　arXiv 新增 + ICML 2026 + visual token reduction　<a href="https://arxiv.org/abs/2606.19932">原文链接</a></p>
     <div class="paper-facts">
       <span><b>编号</b>2606.19932</span>
       <span><b>优先级</b>P0</span>
       <span><b>类别</b>arXiv 新增 + ICML 2026 + visual token reduction</span>
       <span><b>会议</b>arXiv 新增 + ICML 2026 + visual token reduction</span>
-      <span><b>方法</b>说明视觉 Mamba/State Space 的 token reduction 必须保持二维网格拓扑，否则会严重损伤表征</span>
+      <span><b>方法</b>把 token reduction 约束到空间单元上，保持二维网格拓扑和邻域一致性，作为 training-free plug-in 接入 vision Mamba/SSM pipeline。</span>
       <span><b>来源</b>arXiv / OpenReview</span>
     </div>
     <div class="feature-body">
-      <p class="lead dropcap">先说结论。它和通用视觉自监督的关系在于：说明视觉 Mamba/State Space 的 token reduction 必须保持二维网格拓扑，否则会严重损伤表征。 高相关；详见方法、贡献和实验边界。</p>
+      <p class="lead dropcap">先说结论。视觉 SSL/VFM 进入效率阶段后，压缩是否保留空间结构会直接影响表征质量。 指出视觉 SSM 的 selective scanning 依赖空间结构，普通 token pruning 会破坏模型隐含的二维归纳偏置。</p>
       <figure class="full-fig"><img src="../assets/mineru/2606.19932/images/57e1b6d80b337d9bcfc9cca86565ef2fa5d276bdd330a004abe0359303ad229d.jpg" alt="(d) Performance gains via spatial and window awareness Figure 1"><figcaption><b>(d) Performance gains via spatial and window awareness Figure 1</b><span class="fig-en">(d) Performance gains via spatial and window awareness Figure 1. Motivation and efficacy of the proposed spatial-aware token reduction framework.</span><span class="fig-zh">这张图概括 Spatial-Aware Reduction Framework 的整体方法流程。阅读时先看模块之间传递的训练信号，再看作者如何把目标拆成可优化的子问题。</span></figcaption></figure>
 <figure class="full-fig"><img src="../assets/mineru/2606.19932/images/6b5060ac9acb38620e5a9ee13e982a83b43af434a1a7c80e56c4aa9a1d37ba11.jpg" alt="Figureure 2 · Pipeline of conventional token reduction in VMamba"><figcaption><b>Figureure 2 · Pipeline of conventional token reduction in VMamba</b><span class="fig-en">Figure 2. Pipeline of conventional token reduction in VMamba. The flattening operation explicitly disrupts spatial structure, causing misaligned representations after pruning.</span><span class="fig-zh">这张图概括 Spatial-Aware Reduction Framework 的整体方法流程。阅读时先看模块之间传递的训练信号，再看作者如何把目标拆成可优化的子问题。</span></figcaption></figure>
       
       <h2>核心问题</h2>
-      <p>它和通用视觉自监督的关系在于：说明视觉 Mamba/State Space 的 token reduction 必须保持二维网格拓扑，否则会严重损伤表征。</p>
+      <p>视觉 SSL/VFM 进入效率阶段后，压缩是否保留空间结构会直接影响表征质量。</p>
       <h2>方法拆解</h2>
-      <p>说明视觉 Mamba/State Space 的 token reduction 必须保持二维网格拓扑，否则会严重损伤表征</p>
+      <p>把 token reduction 约束到空间单元上，保持二维网格拓扑和邻域一致性，作为 training-free plug-in 接入 vision Mamba/SSM pipeline。</p>
       <h2>主要贡献</h2>
-      <p>高相关；详见方法、贡献和实验边界。</p>
+      <p>指出视觉 SSM 的 selective scanning 依赖空间结构，普通 token pruning 会破坏模型隐含的二维归纳偏置。</p>
       <h2>实验看点</h2>
-      <p>实验部分建议重点看两类证据：一是作者是否把方法收益和更强数据、更长训练、更大模型区分开；二是跨模型、跨数据或跨任务迁移是否还能保留同样趋势。</p>
+      <p>摘要称在多种 vision Mamba backbone 上恢复压缩后的准确率，VMamba top-1 recovery 相对既有方法有显著改善。</p>
       <h2>局限与读法</h2>
-      <p>这篇论文的结论需要结合任务设置、训练数据规模和消融实验一起看；不要只凭单个指标判断它对通用视觉表征的价值。</p>
+      <p>主要面向 Mamba/SSM，不一定直接迁移到普通 ViT；极端压缩率与 dense tasks 仍需细看。</p>
     
     </div>
   </div>

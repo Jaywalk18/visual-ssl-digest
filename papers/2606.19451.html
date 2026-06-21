@@ -28,32 +28,32 @@
   <main><article class="paper-detail" data-pid="2606.19451" data-category="arXiv 新增 + ICML 2026 + object-centric SSL" data-priority="P0" data-date="2026-06-20" data-title="3d-dlp: self-supervised 3d object-centric scene representation learning" data-keywords="3d-dlp: self-supervised 3d object-centric scene representation learning 3d-dlp arxiv 新增 + icml 2026 + object-centric ssl p0 2026-06-20 arxiv 新增 + icml 2026 + object-centric ssl 用自监督重建把 rgb-d/voxel 场景分解成 3d latent particles，是今天最直接的通用视觉表征学习论文 高相关；详见方法、贡献和实验边界。">
   <div class="paper-main">
     <div class="kicker">arXiv 新增 + ICML 2026 + object-centric SSL · P0 · 2026-06-20</div>
-    <h1 class="paper-headline">3D-DLP：它和通用视觉自监督的关系在于：用自监督重建把 RGB-D/voxel 场景分解成 3D latent particles，是今天最直接的通用视觉表征学习论文</h1>
-    <p class="dek">高相关；详见方法、贡献和实验边界。</p>
-    <p class="byline"><strong>3D-DLP: Self-Supervised 3D Object-Centric Scene Representation Learning</strong>　arXiv 新增 + ICML 2026 + object-centric SSL　<a href="https://arxiv.org/abs/2606.19451">原文链接</a></p>
+    <h1 class="paper-headline">3D-DLP：对象中心、无标注重建、可解释 latent 都是通用视觉 SSL 的核心问题；无新增日仍值得排在第一精读</h1>
+    <p class="dek">将 DLP 式对象中心表征扩展到 3D 场景，强调 compact、可组合、可操控的实体级 latent space。</p>
+    <p class="byline"><strong>3D-DLP: Self-Supervised 3D Object-Centric Scene Representation Learning</strong>　Ellina Zhang, Madhaven Iyengar, Amir Zadeh, Chuan Li, Deepak Pathak, David Held, Tal Daniel；机构以作者/项目页线索为准。　arXiv 新增 + ICML 2026 + object-centric SSL　<a href="https://arxiv.org/abs/2606.19451">原文链接</a></p>
     <div class="paper-facts">
       <span><b>编号</b>2606.19451</span>
       <span><b>优先级</b>P0</span>
       <span><b>类别</b>arXiv 新增 + ICML 2026 + object-centric SSL</span>
       <span><b>会议</b>arXiv 新增 + ICML 2026 + object-centric SSL</span>
-      <span><b>方法</b>用自监督重建把 RGB-D/voxel 场景分解成 3D latent particles，是今天最直接的通用视觉表征学习论文</span>
+      <span><b>方法</b>把 RGB-D 或 voxel 场景分解成 3D latent particles，每个粒子编码 3D keypoint、bounding box 和 appearance feature，并通过自监督重建得到可解释分割。</span>
       <span><b>来源</b>arXiv / OpenReview</span>
     </div>
     <div class="feature-body">
-      <p class="lead dropcap">先说结论。它和通用视觉自监督的关系在于：用自监督重建把 RGB-D/voxel 场景分解成 3D latent particles，是今天最直接的通用视觉表征学习论文。 高相关；详见方法、贡献和实验边界。</p>
+      <p class="lead dropcap">先说结论。对象中心、无标注重建、可解释 latent 都是通用视觉 SSL 的核心问题；无新增日仍值得排在第一精读。 将 DLP 式对象中心表征扩展到 3D 场景，强调 compact、可组合、可操控的实体级 latent space。</p>
       <figure class="full-fig"><img src="../assets/mineru/2606.19451/images/30a16240d174fd36b1ecb85c50159cddea25d534b75cc5438210266e902af1a6.jpg" alt="Figureure 15 · Occupancy Voxels Scene Reconstruction Comparison"><figcaption><b>Figureure 15 · Occupancy Voxels Scene Reconstruction Comparison</b><span class="fig-en">Figure 15. Occupancy Voxels Scene Reconstruction Comparison. Reconstruction of input occupancy voxels from various datasets. AE-Autoencoder, VAE-Variational autoencoder.</span><span class="fig-zh">这张图/表用于判断 3D-DLP 的实验收益来自哪里。重点看替换、消融或跨模型设置下趋势是否一致，而不是只看单个最高分。</span></figcaption></figure>
 <figure class="full-fig"><img src="../assets/mineru/2606.19451/images/4a21d823aae32acc972260212d5fe6b39548ae6a46fff1fdb648c428561ccbdc.jpg" alt="Figureure 13 · 3D-DLP-D Scene Decomposition"><figcaption><b>Figureure 13 · 3D-DLP-D Scene Decomposition</b><span class="fig-en">Figure 13. 3D-DLP-D Scene Decomposition. 3D-DLP-D extends 2D DLP by learning latent particles jointly from RGB and depth images. It models appearance features separately for color and depth channels, while explicit attributes such as keypoints and bounding boxes are learned jointly across all channels.</span><span class="fig-zh">这张图来自论文 PDF 的结构化抽取。当前用于辅助理解 3D-DLP 的方法或实验，请结合正文精读段落一起看。</span></figcaption></figure>
       
       <h2>核心问题</h2>
-      <p>它和通用视觉自监督的关系在于：用自监督重建把 RGB-D/voxel 场景分解成 3D latent particles，是今天最直接的通用视觉表征学习论文。</p>
+      <p>对象中心、无标注重建、可解释 latent 都是通用视觉 SSL 的核心问题；无新增日仍值得排在第一精读。</p>
       <h2>方法拆解</h2>
-      <p>用自监督重建把 RGB-D/voxel 场景分解成 3D latent particles，是今天最直接的通用视觉表征学习论文</p>
+      <p>把 RGB-D 或 voxel 场景分解成 3D latent particles，每个粒子编码 3D keypoint、bounding box 和 appearance feature，并通过自监督重建得到可解释分割。</p>
       <h2>主要贡献</h2>
-      <p>高相关；详见方法、贡献和实验边界。</p>
+      <p>将 DLP 式对象中心表征扩展到 3D 场景，强调 compact、可组合、可操控的实体级 latent space。</p>
       <h2>实验看点</h2>
-      <p>实验部分建议重点看两类证据：一是作者是否把方法收益和更强数据、更长训练、更大模型区分开；二是跨模型、跨数据或跨任务迁移是否还能保留同样趋势。</p>
+      <p>摘要报告在 simulated/real-world 数据中得到可解释 latent，并在 manipulation 下游中优于缺少显式 3D 表示的基线。</p>
       <h2>局限与读法</h2>
-      <p>这篇论文的结论需要结合任务设置、训练数据规模和消融实验一起看；不要只凭单个指标判断它对通用视觉表征的价值。</p>
+      <p>验证偏机器人/3D 场景，离纯 2D web-scale 图像 SSL 仍有距离；需要看对象分解在更开放图像/视频上的泛化。</p>
     
     </div>
   </div>
