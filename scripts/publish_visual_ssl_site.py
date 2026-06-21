@@ -317,7 +317,9 @@ def main() -> None:
 
     if papers and not args.no_mineru:
         staging = download_pdfs(papers, date)
-        if MINERU_BATCH.exists():
+        if not any(staging.glob("*.pdf")):
+            print(f"{date}: no P0/P1/P2/P3/扫读 PDFs to submit to MinerU")
+        elif MINERU_BATCH.exists():
             remove_pdf_preview_fallbacks(papers)
             run([sys.executable, str(MINERU_BATCH), "--in", str(staging), "--out", str(SITE_ROOT / "assets" / "mineru")])
             cleanup_mineru_json(papers)

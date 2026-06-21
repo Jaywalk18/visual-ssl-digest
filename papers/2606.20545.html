@@ -20,7 +20,7 @@
   </header>
   <nav class="site-nav" aria-label="主导航">
     <a class="nav-link" href="../index.html">头版</a>
-<a class="nav-link" href="../issues/2026-06-20.html">今日速递</a>
+<a class="nav-link" href="../issues/2026-06-21.html">今日速递</a>
 <a class="nav-link" href="../pages/catalog.html">论文目录</a>
 <a class="nav-link" href="../pages/timeline.html">时间线</a>
 <span class="nav-streak" title="连续追踪天数"><svg viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><path d="M8 0c.7 2.5-1.2 3.7-2 5-1 1.6-1 4 .8 4.8C6.4 8.5 7.4 7.8 8 7c.3 1.3-.4 2 .9 3 .9.7 1.3 1.6 1.1 2.6C9.7 14.6 8.9 16 6.8 16 4.6 16 3 14.3 3 12c0-3.3 2.6-4.8 2.4-8C6.9 4.6 8.4 5 8 0z"/></svg> 连续 <b data-streak>0</b> 天</span>
@@ -28,32 +28,32 @@
   <main><article class="paper-detail" data-pid="2606.20545" data-category="arXiv 新增 + world-model diagnostic benchmark" data-priority="P2" data-date="2026-06-20" data-title="current world models lack a persistent state core" data-keywords="current world models lack a persistent state core current world models lack a arxiv 新增 + world-model diagnostic benchmark p2 2026-06-20 arxiv 新增 + world-model diagnostic benchmark wrbench 追问世界模型是否在目标离开视野后继续推进状态，是视频基础模型的重要诊断 中相关；详见方法、贡献和实验边界。">
   <div class="paper-main">
     <div class="kicker">arXiv 新增 + world-model diagnostic benchmark · P2 · 2026-06-20</div>
-    <h1 class="paper-headline">Current World Models Lack a：视频基础模型的核心目标不只是生成清晰帧，还要学到可持续演化的世界状态，这对 JEPA/world-model 线很关键</h1>
-    <p class="dek">指出现有视频/world models 可能只维护被观察到的 tracking shot，而缺少独立演化的 persistent state core。</p>
-    <p class="byline"><strong>Current World Models Lack a Persistent State Core</strong>　Jinpeng Lu, Dexu Zhu, Haoyuan Shi, Linghan Cai, Guo Tang, Yinda Chen, Jie Cao, Duyu Tang；arXiv 元数据未稳定列机构。　arXiv 新增 + world-model diagnostic benchmark　<a href="https://arxiv.org/abs/2606.20545">原文链接</a></p>
+    <h1 class="paper-headline">Current World Models Lack a：它和通用视觉自监督的关系在于：WRBench 追问世界模型是否在目标离开视野后继续推进状态，是视频基础模型的重要诊断</h1>
+    <p class="dek">中相关；详见方法、贡献和实验边界。</p>
+    <p class="byline"><strong>Current World Models Lack a Persistent State Core</strong>　arXiv 新增 + world-model diagnostic benchmark　<a href="https://arxiv.org/abs/2606.20545">原文链接</a></p>
     <div class="paper-facts">
       <span><b>编号</b>2606.20545</span>
       <span><b>优先级</b>P2</span>
       <span><b>类别</b>arXiv 新增 + world-model diagnostic benchmark</span>
       <span><b>会议</b>arXiv 新增 + world-model diagnostic benchmark</span>
-      <span><b>方法</b>WRBench 把 camera motion 当成 observability intervention，检查世界模型在目标离开视野后是否继续推进内部状态，而不是只在返回时恢复旧状态。</span>
+      <span><b>方法</b>WRBench 追问世界模型是否在目标离开视野后继续推进状态，是视频基础模型的重要诊断</span>
       <span><b>来源</b>arXiv / OpenReview</span>
     </div>
     <div class="feature-body">
-      <p class="lead dropcap">先说结论。视频基础模型的核心目标不只是生成清晰帧，还要学到可持续演化的世界状态，这对 JEPA/world-model 线很关键。 指出现有视频/world models 可能只维护被观察到的 tracking shot，而缺少独立演化的 persistent state core。</p>
+      <p class="lead dropcap">先说结论。它和通用视觉自监督的关系在于：WRBench 追问世界模型是否在目标离开视野后继续推进状态，是视频基础模型的重要诊断。 中相关；详见方法、贡献和实验边界。</p>
       <figure class="full-fig"><img src="../assets/mineru/2606.20545/images/8c2b942334a6a536ea30af2484585510156075a85ea18497737841f7f48e8a90.jpg" alt="Figureure 2 · WRBench method overview"><figcaption><b>Figureure 2 · WRBench method overview</b><span class="fig-en">Figure 2 WRBench method overview. Natural-25 event-view records supply the scene, event, and viewpoint intervention; WRBenchLib translates each record into a generated video and provenance record per model; the evaluation suite scores six diagnostic dimensions from control execution to re-observed-state consistency; and human preference annotation calibrates each dimension independently.</span><span class="fig-zh">这张图概括 Current World Models Lack a 的整体方法流程。阅读时先看模块之间传递的训练信号，再看作者如何把目标拆成可优化的子问题。</span></figcaption></figure>
 <figure class="full-fig"><img src="../assets/mineru/2606.20545/images/6e01dbfcf990f58c7a3d32b1c18fc9492412d4894c39055d611486d13d1b6e50.jpg" alt="Figureure 1 · WRBench Teaser"><figcaption><b>Figureure 1 · WRBench Teaser</b><span class="fig-en">Figure 1 WRBench Teaser. A shared scene, event, and viewpoint intervention test whether visible and returned evidence support the same evolving world state. The returned target must preserve the event endpoint, not merely reappear plausibly.</span><span class="fig-zh">这张图来自论文 PDF 的结构化抽取。当前用于辅助理解 Current World Models Lack a 的方法或实验，请结合正文精读段落一起看。</span></figcaption></figure>
       
       <h2>核心问题</h2>
-      <p>视频基础模型的核心目标不只是生成清晰帧，还要学到可持续演化的世界状态，这对 JEPA/world-model 线很关键。</p>
+      <p>它和通用视觉自监督的关系在于：WRBench 追问世界模型是否在目标离开视野后继续推进状态，是视频基础模型的重要诊断。</p>
       <h2>方法拆解</h2>
-      <p>WRBench 把 camera motion 当成 observability intervention，检查世界模型在目标离开视野后是否继续推进内部状态，而不是只在返回时恢复旧状态。</p>
+      <p>WRBench 追问世界模型是否在目标离开视野后继续推进状态，是视频基础模型的重要诊断</p>
       <h2>主要贡献</h2>
-      <p>指出现有视频/world models 可能只维护被观察到的 tracking shot，而缺少独立演化的 persistent state core。</p>
+      <p>中相关；详见方法、贡献和实验边界。</p>
       <h2>实验看点</h2>
-      <p>摘要称覆盖 23 个模型、4 类控制范式、9600 个视频；失败模式跨模型家族和规模都存在。</p>
+      <p>实验部分建议重点看两类证据：一是作者是否把方法收益和更强数据、更长训练、更大模型区分开；二是跨模型、跨数据或跨任务迁移是否还能保留同样趋势。</p>
       <h2>局限与读法</h2>
-      <p>是诊断 benchmark，偏生成世界模型，不是视觉 SSL 训练论文；需关注评估链的人类校准和视频生成模型选择。</p>
+      <p>这篇论文的结论需要结合任务设置、训练数据规模和消融实验一起看；不要只凭单个指标判断它对通用视觉表征的价值。</p>
     
     </div>
   </div>
@@ -64,13 +64,13 @@
     <div class="side-box"><h4>原文</h4><p><a href="https://arxiv.org/abs/2606.20545">https://arxiv.org/abs/2606.20545</a></p></div>
   </aside>
 </article></main>
-  <aside class="conf-float" data-conf-reminder="2026-06-20-main-ddl" aria-label="CCF A/B 主投稿提醒">
+  <aside class="conf-float" data-conf-reminder="2026-06-21-main-ddl" aria-label="CCF A/B 主投稿提醒">
   <button class="conf-close" type="button" aria-label="关闭会议提醒">×</button>
   <details open>
     <summary>CCF A/B 主投稿提醒</summary>
     <div class="conf-list"><a class="conf-item " href="https://github.com/ccfddl/ccf-deadlines/blob/main/conference/AI/aaai.yml">
   <span><b>AAAI 2027</b><em>CCF A · Main paper submission</em></span>
-  <strong>37 天</strong>
+  <strong>36 天</strong>
   <small>2026-07-27 · CCF DDL: abstract 2026-07-20；进入 1 个月窗口后重点提醒。</small>
 </a></div>
   </details>
@@ -83,7 +83,7 @@
   (() => {
     const box = document.querySelector('[data-conf-reminder]');
     if (!box) return;
-    const key = `visualSslConfReminderClosed:${box.dataset.confReminder || '2026-06-20-main-ddl'}`;
+    const key = `visualSslConfReminderClosed:${box.dataset.confReminder || '2026-06-21-main-ddl'}`;
     try {
       if (localStorage.getItem(key) === '1') box.hidden = true;
     } catch (err) {}

@@ -20,7 +20,7 @@
   </header>
   <nav class="site-nav" aria-label="主导航">
     <a class="nav-link" href="../index.html">头版</a>
-<a class="nav-link" href="../issues/2026-06-20.html">今日速递</a>
+<a class="nav-link" href="../issues/2026-06-21.html">今日速递</a>
 <a class="nav-link" href="../pages/catalog.html">论文目录</a>
 <a class="nav-link" href="../pages/timeline.html">时间线</a>
 <span class="nav-streak" title="连续追踪天数"><svg viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><path d="M8 0c.7 2.5-1.2 3.7-2 5-1 1.6-1 4 .8 4.8C6.4 8.5 7.4 7.8 8 7c.3 1.3-.4 2 .9 3 .9.7 1.3 1.6 1.1 2.6C9.7 14.6 8.9 16 6.8 16 4.6 16 3 14.3 3 12c0-3.3 2.6-4.8 2.4-8C6.9 4.6 8.4 5 8 0z"/></svg> 连续 <b data-streak>0</b> 天</span>
@@ -28,32 +28,32 @@
   <main><article class="paper-detail" data-pid="2606.19944" data-category="arXiv 新增 + ECCV + input-level VLM alignment" data-priority="P2" data-date="2026-06-20" data-title="timage: a generative text-in-image paradigm for fine-tuning vision-language models" data-keywords="timage: a generative text-in-image paradigm for fine-tuning vision-language models timage arxiv 新增 + eccv + input-level vlm alignment p2 2026-06-20 arxiv 新增 + eccv + input-level vlm alignment 把 query 渲染进图像作为显式空间锚点，提醒 vlm 对齐可以发生在输入重构层 中相关；详见方法、贡献和实验边界。">
   <div class="paper-main">
     <div class="kicker">arXiv 新增 + ECCV + input-level VLM alignment · P2 · 2026-06-20</div>
-    <h1 class="paper-headline">Timage：它提示视觉-语言表征缺的可能不是推理能力，而是输入级空间锚定；对视觉 attention/grounding 训练有参考价值</h1>
-    <p class="dek">把 VLM fine-tuning/对齐问题部分转移到输入层：与其只调权重或加长 prompt，不如让视觉输入自身携带几何定位信息。</p>
-    <p class="byline"><strong>Timage: A Generative Text-in-Image Paradigm for Fine-Tuning Vision-Language Models</strong>　Yifeng Wu, Huimin Huang, Ruiluo Wu, Chunyi Lin, Guanhua Chen, Xian Wu, Wang Song, Ruize Han；arXiv 元数据未稳定列机构。　arXiv 新增 + ECCV + input-level VLM alignment　<a href="https://arxiv.org/abs/2606.19944">原文链接</a></p>
+    <h1 class="paper-headline">Timage：它和通用视觉自监督的关系在于：把 query 渲染进图像作为显式空间锚点，提醒 VLM 对齐可以发生在输入重构层</h1>
+    <p class="dek">中相关；详见方法、贡献和实验边界。</p>
+    <p class="byline"><strong>Timage: A Generative Text-in-Image Paradigm for Fine-Tuning Vision-Language Models</strong>　arXiv 新增 + ECCV + input-level VLM alignment　<a href="https://arxiv.org/abs/2606.19944">原文链接</a></p>
     <div class="paper-facts">
       <span><b>编号</b>2606.19944</span>
       <span><b>优先级</b>P2</span>
       <span><b>类别</b>arXiv 新增 + ECCV + input-level VLM alignment</span>
       <span><b>会议</b>arXiv 新增 + ECCV + input-level VLM alignment</span>
-      <span><b>方法</b>Timage 用 Constrained Schrödinger Bridge 生成文字 overlay，将 query 以可读且不遮挡关键前景的方式渲染到图像内，作为空间语义锚点。</span>
+      <span><b>方法</b>把 query 渲染进图像作为显式空间锚点，提醒 VLM 对齐可以发生在输入重构层</span>
       <span><b>来源</b>arXiv / OpenReview</span>
     </div>
     <div class="feature-body">
-      <p class="lead dropcap">先说结论。它提示视觉-语言表征缺的可能不是推理能力，而是输入级空间锚定；对视觉 attention/grounding 训练有参考价值。 把 VLM fine-tuning/对齐问题部分转移到输入层：与其只调权重或加长 prompt，不如让视觉输入自身携带几何定位信息。</p>
+      <p class="lead dropcap">先说结论。它和通用视觉自监督的关系在于：把 query 渲染进图像作为显式空间锚点，提醒 VLM 对齐可以发生在输入重构层。 中相关；详见方法、贡献和实验边界。</p>
       <figure class="full-fig"><img src="../assets/mineru/2606.19944/images/e25c53fab885cb8f28e28af9acdfa6b5a4e83f112cb40215c071ccd1fe59b816.jpg" alt="A:Cat Fig"><figcaption><b>A:Cat Fig</b><span class="fig-en">A:Cat Fig. 3. Qualitative comparison showing the benefit of Timage. Left: random question embedding covers irrelevant content and misleads the model to “Book”. Right: cSB renders a semantically grounded, non-occluding overlay that preserves foreground saliency and guides attention to the window region, yielding the correct “Cat”.</span><span class="fig-zh">这张图/表用于判断 Timage 的实验收益来自哪里。重点看替换、消融或跨模型设置下趋势是否一致，而不是只看单个最高分。</span></figcaption></figure>
 <figure class="full-fig"><img src="../assets/mineru/2606.19944/images/bb91a5659c8b44b32284bcb08a758ff32d65470d6f3cf2dd58d40c23efd53a0a.jpg" alt="Figureure 2 · Overview of Timage"><figcaption><b>Figureure 2 · Overview of Timage</b><span class="fig-en">Fig. 2. Overview of Timage. From an image and its question we build a feasible manifold Ω through an Admissible Mask that merges semantic relevance with a hard non-occlusion prior. A Constrained Schr¨odinger Bridge then renders the inlaid text via a projected stochastic process, guaranteeing both geometric validity and downstream accuracy.</span><span class="fig-zh">这张图概括 Timage 的整体方法流程。阅读时先看模块之间传递的训练信号，再看作者如何把目标拆成可优化的子问题。</span></figcaption></figure>
       
       <h2>核心问题</h2>
-      <p>它提示视觉-语言表征缺的可能不是推理能力，而是输入级空间锚定；对视觉 attention/grounding 训练有参考价值。</p>
+      <p>它和通用视觉自监督的关系在于：把 query 渲染进图像作为显式空间锚点，提醒 VLM 对齐可以发生在输入重构层。</p>
       <h2>方法拆解</h2>
-      <p>Timage 用 Constrained Schrödinger Bridge 生成文字 overlay，将 query 以可读且不遮挡关键前景的方式渲染到图像内，作为空间语义锚点。</p>
+      <p>把 query 渲染进图像作为显式空间锚点，提醒 VLM 对齐可以发生在输入重构层</p>
       <h2>主要贡献</h2>
-      <p>把 VLM fine-tuning/对齐问题部分转移到输入层：与其只调权重或加长 prompt，不如让视觉输入自身携带几何定位信息。</p>
+      <p>中相关；详见方法、贡献和实验边界。</p>
       <h2>实验看点</h2>
-      <p>摘要称在 VMCBench 上，配合 7B backbone 可超过更大闭源系统和参数调优基线。</p>
+      <p>实验部分建议重点看两类证据：一是作者是否把方法收益和更强数据、更长训练、更大模型区分开；二是跨模型、跨数据或跨任务迁移是否还能保留同样趋势。</p>
       <h2>局限与读法</h2>
-      <p>输入重构方法可能改变原图分布，且不一定适合所有视觉任务；ECCV comments 未标明年份或主会/附属状态。</p>
+      <p>这篇论文的结论需要结合任务设置、训练数据规模和消融实验一起看；不要只凭单个指标判断它对通用视觉表征的价值。</p>
     
     </div>
   </div>
@@ -64,13 +64,13 @@
     <div class="side-box"><h4>原文</h4><p><a href="https://arxiv.org/abs/2606.19944">https://arxiv.org/abs/2606.19944</a></p></div>
   </aside>
 </article></main>
-  <aside class="conf-float" data-conf-reminder="2026-06-20-main-ddl" aria-label="CCF A/B 主投稿提醒">
+  <aside class="conf-float" data-conf-reminder="2026-06-21-main-ddl" aria-label="CCF A/B 主投稿提醒">
   <button class="conf-close" type="button" aria-label="关闭会议提醒">×</button>
   <details open>
     <summary>CCF A/B 主投稿提醒</summary>
     <div class="conf-list"><a class="conf-item " href="https://github.com/ccfddl/ccf-deadlines/blob/main/conference/AI/aaai.yml">
   <span><b>AAAI 2027</b><em>CCF A · Main paper submission</em></span>
-  <strong>37 天</strong>
+  <strong>36 天</strong>
   <small>2026-07-27 · CCF DDL: abstract 2026-07-20；进入 1 个月窗口后重点提醒。</small>
 </a></div>
   </details>
@@ -83,7 +83,7 @@
   (() => {
     const box = document.querySelector('[data-conf-reminder]');
     if (!box) return;
-    const key = `visualSslConfReminderClosed:${box.dataset.confReminder || '2026-06-20-main-ddl'}`;
+    const key = `visualSslConfReminderClosed:${box.dataset.confReminder || '2026-06-21-main-ddl'}`;
     try {
       if (localStorage.getItem(key) === '1') box.hidden = true;
     } catch (err) {}

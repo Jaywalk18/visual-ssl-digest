@@ -20,7 +20,7 @@
   </header>
   <nav class="site-nav" aria-label="主导航">
     <a class="nav-link" href="../index.html">头版</a>
-<a class="nav-link active" href="../issues/2026-06-20.html">今日速递</a>
+<a class="nav-link" href="../issues/2026-06-21.html">今日速递</a>
 <a class="nav-link" href="../pages/catalog.html">论文目录</a>
 <a class="nav-link" href="../pages/timeline.html">时间线</a>
 <span class="nav-streak" title="连续追踪天数"><svg viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><path d="M8 0c.7 2.5-1.2 3.7-2 5-1 1.6-1 4 .8 4.8C6.4 8.5 7.4 7.8 8 7c.3 1.3-.4 2 .9 3 .9.7 1.3 1.6 1.1 2.6C9.7 14.6 8.9 16 6.8 16 4.6 16 3 14.3 3 12c0-3.3 2.6-4.8 2.4-8C6.9 4.6 8.4 5 8 0z"/></svg> 连续 <b data-streak>0</b> 天</span>
@@ -28,13 +28,11 @@
   <main><article class="paper-detail issue-detail">
   <div class="paper-main">
     <div class="kicker">Daily issue · 2026-06-20 · CCF A/B 会议优先</div>
-    <h1 class="paper-headline">6 月 20 日：3D-DLP 等视觉表征主线更新</h1>
-    <p class="dek">本期聚焦通用视觉表征、视觉语言预训练与视频自监督中最值得跟进的论文，并保留 CCF A/B、OpenReview 与 arXiv 状态线索。</p>
+    <h1 class="paper-headline">6 月 20 日：3D-DLP 等视觉表征论文归档</h1>
+    <p class="dek">本页按日期归档近期论文，保留优先级、主题、来源与方法线索，方便回看同一批工作的研究脉络。</p>
     <div class="feature-body">
-      <p class="lead dropcap">先读 3D-DLP：它是今天唯一明确自监督、对象中心、可解释 3D 表征的主线论文，也是最贴近通用视觉 SSL 的条目。第二篇读 LIVE，它把语言从后端 decoder 的消费方变成视觉 encoder 的动态控制信号，和“冻结视觉前端是否足够”这个问题直接相关。第三、四篇读 LEAP 与 STORM：前者讲如何更有效蒸馏 DINOv2/ViT 类 VFM 特征，后者讲 token reduction 不能破坏二维结构。随后读 UNIEGO、Hidden Evolution、SPOT-E 来看 VLM/Video 表征如何被多教师蒸馏、在 LLM 内部演化、以及在测试时被证据 spotlight 校正；NEST/MM-CBM/Timage/ELVA 偏评测、解释和检索，只需按需扫读。PRISM/LGM/World Core 偏生成和 world-model 诊断，适合关注 latent representation 与视觉 tokenization 的读者补充。</p>
+      <p class="lead dropcap">先读 3D-DLP。用自监督重建把 RGB-D/voxel 场景分解成 3D latent particles，是今天最直接的通用视觉表征学习论文。 其余论文按 P1/P2 与主题顺序扫读，重点看方法图、消融设置和是否能迁移到通用视觉表征。</p>
       <h2>论文索引</h2>
-      <table class="compact-table"><thead><tr><th>优先级</th><th>论文</th><th>类型</th><th>相关性</th><th>一句话理由</th></tr></thead><tbody><tr><td>P0</td><td>3D-DLP: Self-Supervised 3D Object-Centric Scene Representation Learning</td><td>arXiv 新增 + ICML 2026 + object-centric SSL</td><td>高</td><td>用自监督重建把 RGB-D/voxel 场景分解成 3D latent particles，是今天最直接的通用视觉表征学习论文。</td></tr><tr><td>P0</td><td>Language-Instructed Vision Embeddings for Controllable and Generalizable Perception</td><td>arXiv 新增 + ICLR 2026 Poster + language-steered VFM</td><td>高</td><td>让语言在推理时动态指导视觉 encoder 生成任务中心 embedding，直接挑战静态视觉特征范式。</td></tr><tr><td>P0</td><td>LEAP: Layer-skipping Efficiency via Adaptive Progression for Vision Transformer Distillation</td><td>arXiv 新增 + ViT/VFM feature distillation</td><td>高</td><td>把教师 ViT 的中间层当成自适应课程，缓解小模型直接模仿高层 DINOv2/VFM 特征的容量落差。</td></tr><tr><td>P0</td><td>Spatial-Aware Reduction Framework: Towards Efficient and Faithful Visual State Space Models</td><td>arXiv 新增 + ICML 2026 + visual token reduction</td><td>高</td><td>说明视觉 Mamba/State Space 的 token reduction 必须保持二维网格拓扑，否则会严重损伤表征。</td></tr><tr><td>P1</td><td>UNIEGO: Proxies as Mediators for Unified Egocentric Video Representation Learning</td><td>arXiv 新增 + video representation + multi-teacher distillation</td><td>中高</td><td>用 proxy 中介层融合 ego/exo、RGB/depth/skeleton 与多个 foundation teacher，适合作为视频 SSL 蒸馏读物。</td></tr><tr><td>P1</td><td>The Hidden Evolution of Disguised Visual Context inside the VLM</td><td>arXiv 新增 + VLM representation diagnosis</td><td>中高</td><td>比较视觉 token 作为上下文输入或层内注入时在 LLM 内部如何变成语言可用表征。</td></tr><tr><td>P1</td><td>SPOT-E: Test-Time Entropy Shaping with Visual Spotlights for Frozen VLMs</td><td>arXiv 新增 + frozen VLM grounding</td><td>中高</td><td>用问题条件 spotlight 和 entropy shaping 让冻结 VLM 读到小而关键的视觉证据。</td></tr><tr><td>P1</td><td>SpatialSV: Internalizing Interpretable 3D Spatial Awareness in MLLMs via Task-Oriented Visual Supervision</td><td>arXiv 新增 + IJCAI 2026 + 3D visual supervision</td><td>中高</td><td>把 MLLM 的 2D visual features 主动 lift 到深度、位姿、点云等显式 3D 表示。</td></tr><tr><td>P2</td><td>NEST: Narrative Event Structures in Time for Long Video Understanding</td><td>arXiv 新增 + long video benchmark</td><td>中高</td><td>以电影级长视频事件结构测试模型是否理解跨时间叙事，而不只是 needle retrieval。</td></tr><tr><td>P2</td><td>Multimodal Concept Bottleneck Models</td><td>arXiv 新增 + NeurIPS 2025 MI workshop + CLIP interpretability</td><td>中高</td><td>把图像和文本 embedding 映射到可解释概念瓶颈，适合评估 CLIP/VLM 表征是否可解释。</td></tr><tr><td>P2</td><td>Timage: A Generative Text-in-Image Paradigm for Fine-Tuning Vision-Language Models</td><td>arXiv 新增 + ECCV + input-level VLM alignment</td><td>中</td><td>把 query 渲染进图像作为显式空间锚点，提醒 VLM 对齐可以发生在输入重构层。</td></tr><tr><td>P2</td><td>ELVA: Exploring Ranking-Driven Universal Multimodal Retrieval</td><td>arXiv 新增 + ECCV 2026 + multimodal retrieval</td><td>中</td><td>用 ranking-driven RLVR 缓解复杂检索 query 的 grain blindness，和视觉-语言对比学习负样本设计有关。</td></tr><tr><td>P2</td><td>Current World Models Lack a Persistent State Core</td><td>arXiv 新增 + world-model diagnostic benchmark</td><td>中</td><td>WRBench 追问世界模型是否在目标离开视野后继续推进状态，是视频基础模型的重要诊断。</td></tr><tr><td>P3</td><td>Through the PRISM: Preference Representation in Intermediate States of Video Diffusion Models</td><td>arXiv 新增 + video diffusion latent preference</td><td>中</td><td>从冻结视频扩散模型的 noisy latents 中读出偏好信号，偏生成但涉及 latent representation 可判别性。</td></tr><tr><td>P3</td><td>Variable-Length Tokenization via Learnable Global Merging for Diffusion Transformers</td><td>arXiv 新增 + diffusion tokenizer / visual tokens</td><td>中</td><td>用 learnable global merging 做可变长视觉 tokenization，和视觉 latent 压缩/对齐有关。</td></tr></tbody></table>
-      <h2>主线阅读</h2>
       <div class="paper-list issue-list"><article class="paper-card" data-pid="2606.19451" data-category="arXiv 新增 + ICML 2026 + object-centric SSL" data-priority="P0" data-date="2026-06-20" data-title="3d-dlp: self-supervised 3d object-centric scene representation learning" data-keywords="3d-dlp: self-supervised 3d object-centric scene representation learning 3d-dlp arxiv 新增 + icml 2026 + object-centric ssl p0 2026-06-20 arxiv 新增 + icml 2026 + object-centric ssl 用自监督重建把 rgb-d/voxel 场景分解成 3d latent particles，是今天最直接的通用视觉表征学习论文 高相关；详见方法、贡献和实验边界。">
   <a class="paper-thumb" href="../papers/2606.19451.html"><img src="../assets/mineru/2606.19451/images/30a16240d174fd36b1ecb85c50159cddea25d534b75cc5438210266e902af1a6.jpg" alt="3D-DLP figure"></a>
   <div>
@@ -203,18 +201,17 @@
     </div>
   </div>
   <aside class="paper-side">
-    <div class="side-box"><h4>今日重点</h4><p>TextTeacher、MDM、EvoVid、Ablate-to-Validate。</p></div>
-    <div class="side-box"><h4>会议口径</h4><p>只把 CCF A/B 放进主提醒；临近截止或 CCF C 仅记录。</p></div>
     <div class="side-box"><h4>阅读重点</h4><p>先看 P1/P2 与方法图，再扫状态变化和边界案例。</p></div>
+    <div class="side-box"><h4>会议口径</h4><p>主提醒只保留 CCF A/B；CCF C 与过期截止仅作状态记录。</p></div>
   </aside>
 </article></main>
-  <aside class="conf-float" data-conf-reminder="2026-06-20-main-ddl" aria-label="CCF A/B 主投稿提醒">
+  <aside class="conf-float" data-conf-reminder="2026-06-21-main-ddl" aria-label="CCF A/B 主投稿提醒">
   <button class="conf-close" type="button" aria-label="关闭会议提醒">×</button>
   <details open>
     <summary>CCF A/B 主投稿提醒</summary>
     <div class="conf-list"><a class="conf-item " href="https://github.com/ccfddl/ccf-deadlines/blob/main/conference/AI/aaai.yml">
   <span><b>AAAI 2027</b><em>CCF A · Main paper submission</em></span>
-  <strong>37 天</strong>
+  <strong>36 天</strong>
   <small>2026-07-27 · CCF DDL: abstract 2026-07-20；进入 1 个月窗口后重点提醒。</small>
 </a></div>
   </details>
@@ -227,7 +224,7 @@
   (() => {
     const box = document.querySelector('[data-conf-reminder]');
     if (!box) return;
-    const key = `visualSslConfReminderClosed:${box.dataset.confReminder || '2026-06-20-main-ddl'}`;
+    const key = `visualSslConfReminderClosed:${box.dataset.confReminder || '2026-06-21-main-ddl'}`;
     try {
       if (localStorage.getItem(key) === '1') box.hidden = true;
     } catch (err) {}
