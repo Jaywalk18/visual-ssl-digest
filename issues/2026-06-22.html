@@ -20,7 +20,7 @@
   </header>
   <nav class="site-nav" aria-label="主导航">
     <a class="nav-link" href="../index.html">头版</a>
-<a class="nav-link active" href="../issues/2026-06-22.html">今日速递</a>
+<a class="nav-link" href="../issues/2026-06-23.html">今日速递</a>
 <a class="nav-link" href="../pages/catalog.html">论文目录</a>
 <a class="nav-link" href="../pages/timeline.html">时间线</a>
 <span class="nav-streak" title="连续追踪天数"><svg viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><path d="M8 0c.7 2.5-1.2 3.7-2 5-1 1.6-1 4 .8 4.8C6.4 8.5 7.4 7.8 8 7c.3 1.3-.4 2 .9 3 .9.7 1.3 1.6 1.1 2.6C9.7 14.6 8.9 16 6.8 16 4.6 16 3 14.3 3 12c0-3.3 2.6-4.8 2.4-8C6.9 4.6 8.4 5 8 0z"/></svg> 连续 <b data-streak>0</b> 天</span>
@@ -28,13 +28,11 @@
   <main><article class="paper-detail issue-detail">
   <div class="paper-main">
     <div class="kicker">Daily issue · 2026-06-22 · CCF A/B 会议优先</div>
-    <h1 class="paper-headline">6 月 22 日：3D-DLP 等视觉表征主线更新</h1>
-    <p class="dek">本期聚焦通用视觉表征、视觉语言预训练与视频自监督中最值得跟进的论文，并保留 CCF A/B、OpenReview 与 arXiv 状态线索。</p>
+    <h1 class="paper-headline">6 月 22 日：3D-DLP 等视觉表征论文归档</h1>
+    <p class="dek">本页按日期归档近期论文，保留优先级、主题、来源与方法线索，方便回看同一批工作的研究脉络。</p>
     <div class="feature-body">
-      <p class="lead dropcap">今天仍不要追新列表，因为 arXiv 与会议公开源没有推进到新的稳定批次。第一篇读 3D-DLP，它最直接对应对象中心自监督和可解释 3D latent；第二篇读 LIVE，看语言条件如何影响视觉 encoder 而不是只影响 decoder。随后读 LEAP 和 STORM，分别对应 VFM 蒸馏课程和视觉 token/空间结构保真；最后读 UNIEGO，把视频多教师蒸馏作为可迁移思路扫一遍。其余上一期 VLM grounding、检索、benchmark 与生成 latent 条目今天只需按需回看，不重复列为新增推荐。</p>
+      <p class="lead dropcap">先读 3D-DLP。仍是上一批最贴近通用视觉 SSL 的对象中心 3D 表征论文，值得先精读。 其余论文按 P1/P2 与主题顺序扫读，重点看方法图、消融设置和是否能迁移到通用视觉表征。</p>
       <h2>论文索引</h2>
-      <table class="compact-table"><thead><tr><th>优先级</th><th>论文</th><th>类型</th><th>相关性</th><th>一句话理由</th></tr></thead><tbody><tr><td>状态补录</td><td>3D-DLP: Self-Supervised 3D Object-Centric Scene Representation Learning</td><td>连续无新增日复盘 + ICML 2026 + object-centric SSL</td><td>高</td><td>仍是上一批最贴近通用视觉 SSL 的对象中心 3D 表征论文，值得先精读。</td></tr><tr><td>状态补录</td><td>Language-Instructed Vision Embeddings for Controllable and Generalizable Perception</td><td>连续无新增日复盘 + ICLR 2026 Poster + language-steered VFM</td><td>高</td><td>把语言从 decoder 消费信号变成视觉 encoder 控制信号，是静态 VFM 之外的 adaptive representation 路线。</td></tr><tr><td>状态补录</td><td>LEAP: Layer-skipping Efficiency via Adaptive Progression for Vision Transformer Distillation</td><td>连续无新增日复盘 + ViT/VFM feature distillation</td><td>高</td><td>用教师中间层组织课程学习，缓解小 ViT 直接模仿 DINOv2/VFM 高层特征的容量落差。</td></tr><tr><td>状态补录</td><td>Spatial-Aware Reduction Framework: Towards Efficient and Faithful Visual State Space Models</td><td>连续无新增日复盘 + ICML 2026 + visual token reduction</td><td>高</td><td>提醒视觉 SSM/Mamba 压缩不能只看 token 重要性，还必须保持二维空间拓扑。</td></tr><tr><td>状态补录</td><td>UNIEGO: Proxies as Mediators for Unified Egocentric Video Representation Learning</td><td>连续无新增日复盘 + video representation + multi-teacher distillation</td><td>中高</td><td>用 proxy 层调和 ego/exo、多模态和多个 foundation teacher，是视频 SSL 蒸馏的实用路线。</td></tr></tbody></table>
-      <h2>主线阅读</h2>
       <div class="paper-list issue-list"><article class="paper-card" data-pid="2606.19451" data-category="连续无新增日复盘 + ICML 2026 + object-centric SSL" data-priority="状态补录" data-date="2026-06-22" data-title="3d-dlp: self-supervised 3d object-centric scene representation learning" data-keywords="3d-dlp: self-supervised 3d object-centric scene representation learning 3d-dlp 连续无新增日复盘 + icml 2026 + object-centric ssl 状态补录 2026-06-22 连续无新增日复盘 + icml 2026 + object-centric ssl 仍是上一批最贴近通用视觉 ssl 的对象中心 3d 表征论文，值得先精读 高相关；详见方法、贡献和实验边界。">
   <a class="paper-thumb" href="../papers/2606.19451.html"><img src="../assets/mineru/2606.19451/images/30a16240d174fd36b1ecb85c50159cddea25d534b75cc5438210266e902af1a6.jpg" alt="3D-DLP figure"></a>
   <div>
@@ -93,18 +91,17 @@
     </div>
   </div>
   <aside class="paper-side">
-    <div class="side-box"><h4>今日重点</h4><p>3D-DLP、Language-Instructed Vision Embeddings for Controllable、LEAP、Spatial-Aware Reduction Framework</p></div>
-    <div class="side-box"><h4>会议口径</h4><p>只把 CCF A/B 放进主提醒；临近截止或 CCF C 仅记录。</p></div>
     <div class="side-box"><h4>阅读重点</h4><p>先看 P1/P2 与方法图，再扫状态变化和边界案例。</p></div>
+    <div class="side-box"><h4>会议口径</h4><p>主提醒只保留 CCF A/B；CCF C 与过期截止仅作状态记录。</p></div>
   </aside>
 </article></main>
-  <aside class="conf-float" data-conf-reminder="2026-06-22-main-ddl" aria-label="CCF A/B 主投稿提醒">
+  <aside class="conf-float" data-conf-reminder="2026-06-23-main-ddl" aria-label="CCF A/B 主投稿提醒">
   <button class="conf-close" type="button" aria-label="关闭会议提醒">×</button>
   <details open>
     <summary>CCF A/B 主投稿提醒</summary>
     <div class="conf-list"><a class="conf-item " href="https://github.com/ccfddl/ccf-deadlines/blob/main/conference/AI/aaai.yml">
   <span><b>AAAI 2027</b><em>CCF A · Main paper submission</em></span>
-  <strong>35 天</strong>
+  <strong>34 天</strong>
   <small>2026-07-27 · CCF DDL: abstract 2026-07-20；进入 1 个月窗口后重点提醒。</small>
 </a></div>
   </details>
@@ -117,7 +114,7 @@
   (() => {
     const box = document.querySelector('[data-conf-reminder]');
     if (!box) return;
-    const key = `visualSslConfReminderClosed:${box.dataset.confReminder || '2026-06-22-main-ddl'}`;
+    const key = `visualSslConfReminderClosed:${box.dataset.confReminder || '2026-06-23-main-ddl'}`;
     try {
       if (localStorage.getItem(key) === '1') box.hidden = true;
     } catch (err) {}
