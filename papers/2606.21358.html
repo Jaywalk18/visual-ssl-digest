@@ -25,42 +25,42 @@
 <a class="nav-link" href="../pages/timeline.html">时间线</a>
 <span class="nav-streak" title="连续追踪天数"><svg viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><path d="M8 0c.7 2.5-1.2 3.7-2 5-1 1.6-1 4 .8 4.8C6.4 8.5 7.4 7.8 8 7c.3 1.3-.4 2 .9 3 .9.7 1.3 1.6 1.1 2.6C9.7 14.6 8.9 16 6.8 16 4.6 16 3 14.3 3 12c0-3.3 2.6-4.8 2.4-8C6.9 4.6 8.4 5 8 0z"/></svg> 连续 <b data-streak>0</b> 天</span>
   </nav>
-  <main><article class="paper-detail" data-pid="2606.21358" data-category="arXiv 新增 · video VLM distillation" data-priority="P1" data-date="2026-06-24" data-title="levil: label-efficient video learning via zero-shot distillation over vlm-generated pseudo-label spaces" data-keywords="levil: label-efficient video learning via zero-shot distillation over vlm-generated pseudo-label spaces levil arxiv 新增 · video vlm distillation p1 2026-06-24 arxiv 新增 · video vlm distillation vlm 伪标签空间 + 零样本蒸馏，适合跟视频表征预训练一起读 高相关；详见方法、贡献和实验边界。">
+  <main><article class="paper-detail" data-pid="2606.21358" data-category="arXiv 新增 · video distillation / pseudo labels" data-priority="P2" data-date="2026-06-24" data-title="levil: label-efficient video learning via zero-shot distillation over vlm-generated pseudo-label spaces" data-keywords="levil: label-efficient video learning via zero-shot distillation over vlm-generated pseudo-label spaces levil arxiv 新增 · video distillation / pseudo labels p2 2026-06-24 arxiv 新增 · video distillation / pseudo labels 用 vlm 生成语义 pseudo-label space 训练视频 encoder，是低标注视频预训练的可迁移思路 中高相关；详见方法、贡献和实验边界。">
   <div class="paper-main">
-    <div class="kicker">arXiv 新增 · video VLM distillation · P1 · 2026-06-24</div>
-    <h1 class="paper-headline">LEViL：它是蒸馏式视频自监督/弱监督的实用路线，关注“如何把 VLM 语义转成纯视频 encoder 表征”</h1>
-    <p class="dek">把 annotation-free video pretraining 和 target-label-set-aware fine-tuning 接起来，让小标注场景继续保留 VLM 语义监督。</p>
-    <p class="byline"><strong>LEViL: Label-Efficient Video Learning via Zero-Shot Distillation over VLM-Generated Pseudo-Label Spaces</strong>　Aslı Çelik；机构以 arXiv 最终版为准。　arXiv 新增 · video VLM distillation　<a href="https://arxiv.org/abs/2606.21358">原文链接</a></p>
+    <div class="kicker">arXiv 新增 · video distillation / pseudo labels · P2 · 2026-06-24</div>
+    <h1 class="paper-headline">LEViL：这是一条 VLM teacher -&gt; video encoder 的自监督/弱监督蒸馏路线，适合关注视频 foundation representation 的读者扫读</h1>
+    <p class="dek">把人工标注的大规模 source video pretraining 改成 annotation-free video pretraining + target-label-set-aware fine-tuning。</p>
+    <p class="byline"><strong>LEViL: Label-Efficient Video Learning via Zero-Shot Distillation over VLM-Generated Pseudo-Label Spaces</strong>　Aslı Çelik；arXiv 页面未列稳定机构。　arXiv 新增 · video distillation / pseudo labels　<a href="https://arxiv.org/abs/2606.21358">原文链接</a></p>
     <div class="paper-facts">
       <span><b>编号</b>2606.21358</span>
-      <span><b>优先级</b>P1</span>
-      <span><b>类别</b>arXiv 新增 · video VLM distillation</span>
-      <span><b>会议</b>arXiv 新增 · video VLM distillation</span>
-      <span><b>方法</b>VLM 先为未标注视频生成文本描述，再构造可解释 semantic pseudo-label space；冻结 video-language model 生成 soft targets，训练 student video encoder。</span>
+      <span><b>优先级</b>P2</span>
+      <span><b>类别</b>arXiv 新增 · video distillation / pseudo labels</span>
+      <span><b>会议</b>arXiv 新增 · video distillation / pseudo labels</span>
+      <span><b>方法</b>先让 VLM 为未标注视频生成文本描述，再构建 interpretable semantic pseudo-label space；冻结的视频语言模型输出 zero-shot soft target distributions，训练 student video encoder。</span>
       <span><b>来源</b>arXiv / OpenReview</span>
     </div>
     <div class="feature-body">
-      <p class="lead dropcap">先说结论。它是蒸馏式视频自监督/弱监督的实用路线，关注“如何把 VLM 语义转成纯视频 encoder 表征”。 把 annotation-free video pretraining 和 target-label-set-aware fine-tuning 接起来，让小标注场景继续保留 VLM 语义监督。</p>
+      <p class="lead dropcap">先说结论。这是一条 VLM teacher -&gt; video encoder 的自监督/弱监督蒸馏路线，适合关注视频 foundation representation 的读者扫读。 把人工标注的大规模 source video pretraining 改成 annotation-free video pretraining + target-label-set-aware fine-tuning。</p>
       <figure class="full-fig"><img src="../assets/mineru/2606.21358/images/c8713aa0ad52d9b927b37946cbc2d8234a349f5f416c7e04da8021d7d6178d76.jpg" alt="Figureure 2 · Overview of the pseudo-label space construction pipeline"><figcaption><b>Figureure 2 · Overview of the pseudo-label space construction pipeline</b><span class="fig-en">Fig. 2. Overview of the pseudo-label space construction pipeline. A vision-language model first generates open-vocabulary descriptions of unlabeled video clips. The captions are then processed and filtered to construct a pseudo-label vocabulary comprising actions, objects, and action–object interactions for annotation-free video pretraining.</span><span class="fig-zh">这张图概括 LEViL 的整体方法流程。阅读时先看模块之间传递的训练信号，再看作者如何把目标拆成可优化的子问题。</span></figcaption></figure>
 <figure class="full-fig"><img src="../assets/mineru/2606.21358/images/7d6e38714122232628cc6a13227e4fb5d44b6cc2ce34e2a2a2058c79d51dbd1e.jpg" alt="Figureure 3 · Overview of zero-shot distillation over the caption-derived pseudo-lab"><figcaption><b>Figureure 3 · Overview of zero-shot distillation over the caption-derived pseudo-lab</b><span class="fig-en">Fig. 3. Overview of zero-shot distillation over the caption-derived pseudo-label space. A frozen video-language model compares each unlabeled video with the pseudo-labels in a joint video–text embedding space to generate soft semantic target distributions. A student video encoder is then pretrained to reproduce these distributions, enabling annotation-free representation learning.</span><span class="fig-zh">这张图概括 LEViL 的整体方法流程。阅读时先看模块之间传递的训练信号，再看作者如何把目标拆成可优化的子问题。</span></figcaption></figure>
       
       <h2>核心问题</h2>
-      <p>它是蒸馏式视频自监督/弱监督的实用路线，关注“如何把 VLM 语义转成纯视频 encoder 表征”。</p>
+      <p>这是一条 VLM teacher -&gt; video encoder 的自监督/弱监督蒸馏路线，适合关注视频 foundation representation 的读者扫读。</p>
       <h2>方法拆解</h2>
-      <p>VLM 先为未标注视频生成文本描述，再构造可解释 semantic pseudo-label space；冻结 video-language model 生成 soft targets，训练 student video encoder。</p>
+      <p>先让 VLM 为未标注视频生成文本描述，再构建 interpretable semantic pseudo-label space；冻结的视频语言模型输出 zero-shot soft target distributions，训练 student video encoder。</p>
       <h2>主要贡献</h2>
-      <p>把 annotation-free video pretraining 和 target-label-set-aware fine-tuning 接起来，让小标注场景继续保留 VLM 语义监督。</p>
+      <p>把人工标注的大规模 source video pretraining 改成 annotation-free video pretraining + target-label-set-aware fine-tuning。</p>
       <h2>实验看点</h2>
-      <p>在 UCF101、HMDB51 的 limited-label regimes 下优于半监督视频识别 baselines，并显示无标注预训练可作为 full-data fine-tuning 初始化。</p>
+      <p>摘要强调目标是提升下游 action recognition 的 label efficiency；重点看 pseudo-label space 对跨域视频动作的覆盖度。</p>
       <h2>局限与读法</h2>
-      <p>实验主要是经典动作识别数据集；pseudo-label space 的质量依赖上游 VLM，开放视频噪声下仍需验证。</p>
+      <p>VLM 生成描述会继承 caption bias；如果目标动作细粒度且视觉差异小，文本 pseudo-label 可能不够精确。</p>
     
     </div>
   </div>
   <aside class="paper-side">
 
     <div class="side-box pref-side"><h4>我的偏好</h4><div class="paper-side-tools"><button class="readbtn" type="button" data-read-toggle="2606.21358" title="标记已读" aria-label="标记已读"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M4 10.5l4 4 8-9"/></svg></button><div class="prefbar" data-pref-controls="2606.21358"><button class="prefbtn like" type="button" data-pref-toggle="like" data-pref-id="2606.21358" aria-pressed="false" title="关注这篇">关注</button><button class="prefbtn dismiss" type="button" data-pref-toggle="dismiss" data-pref-id="2606.21358" aria-pressed="false" title="降低这篇权重">略过</button></div></div></div>
-    <div class="side-box"><h4>关键判断</h4><dl><dt>相关性</dt><dd>P1</dd><dt>类别</dt><dd>arXiv 新增 · video VLM distillation</dd><dt>会议</dt><dd>arXiv 新增 · video VLM distillation</dd><dt>读法</dt><dd>方法图优先，表格次之</dd></dl></div>
+    <div class="side-box"><h4>关键判断</h4><dl><dt>相关性</dt><dd>P2</dd><dt>类别</dt><dd>arXiv 新增 · video distillation / pseudo labels</dd><dt>会议</dt><dd>arXiv 新增 · video distillation / pseudo labels</dd><dt>读法</dt><dd>方法图优先，表格次之</dd></dl></div>
     <div class="side-box"><h4>原文</h4><p><a href="https://arxiv.org/abs/2606.21358">https://arxiv.org/abs/2606.21358</a></p></div>
   </aside>
 </article></main>

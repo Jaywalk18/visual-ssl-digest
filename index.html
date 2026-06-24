@@ -27,9 +27,9 @@
   </nav>
   <main><section class="hero-grid">
   <article class="lead-story">
-    <div class="kicker">今日主线 · arXiv 新增 · video JEPA / long-form representation</div>
-    <h1>P-JEPA：长视频版 JEPA，直接命中通用视频/视觉表征自监督</h1>
-    <p class="dek">长视频版 JEPA，直接命中通用视频/视觉表征自监督。</p>
+    <div class="kicker">今日主线 · arXiv 新增 · video JEPA / long-duration representation</div>
+    <h1>P-JEPA：把 JEPA 式预测目标改造成长时程 procedural video 表征学习，是今天最贴近通用视频 SSL 的主线</h1>
+    <p class="dek">把 JEPA 式预测目标改造成长时程 procedural video 表征学习，是今天最贴近通用视频 SSL 的主线。</p>
     <figure class="hero-figure"><img src="assets/mineru/2606.23256/images/a081f80f1e851863064858959b78dc9223c3aabbf9214bb628e885ad5c66800b.jpg" alt="P-JEPA figure"><figcaption>这张图概括 P-JEPA 的整体方法流程。阅读时先看模块之间传递的训练信号，再看作者如何把目标拆成可优化的子问题。</figcaption></figure>
     <div class="paper-actions"><a href="issues/2026-06-24.html">阅读 6 月 24 日速递</a><a href="papers/2606.23256.html">打开主文页</a></div>
   </article>
@@ -37,7 +37,7 @@
     <div class="prog-widget">
       <div class="pw-t">我的进度</div>
       <div class="prog-top">
-        <div class="ringwrap" data-ring data-ids="2606.23256,2606.23436,2606.21358,2606.21590,2606.21292,2606.23611,2606.21705,2606.22220,2606.23041,2606.22749,2606.23626,2602.03531,2606.23200,2511.15098"></div>
+        <div class="ringwrap" data-ring data-ids="2606.23256,2606.21590,2606.22220,2606.23436,2606.23611,2606.21197,2606.21358,2606.23041,2606.21705,2606.21292,2606.22383,2606.23132,2606.21838"></div>
         <div class="prog-meta">
           <div class="pm-t">今日精读进度</div>
           <div class="pm-s">累计已读 <b data-readcount>0</b> 篇</div>
@@ -49,65 +49,65 @@
       <div class="badges" data-badges></div>
     </div>
     <h2>快速摘要</h2>
-    <ul><li><b>今日最值得看</b><span>P-JEPA 和 STAITUS。前者把 JEPA 式 masked latent prediction 推到 30 分钟级程序视频，后者重新拆解 video object-centric slots 的 appearance/pose 纠缠，是今天最贴近通用视觉自监督表征的两条线。</span></li><li><b>建议精读顺序</b><span>P-JEPA -&gt; STAITUS -&gt; RBFN projection heads -&gt; Casper3D -&gt; Self-Filtering。然后读 LEViL、Discrete-token DD、MultiMem；SPAR/RaysUp/DiT-Reward 可按生成-理解统一与 dense feature 接口兴趣扫读。</span></li><li><b>新增/更新/过滤数量</b><span>扫描 7 个 arXiv 官方 new 页面，共 2739 个 listing entry，跨分类去重 1881 个 arXiv ID；今日索引 14 篇，其中 arXiv 新增/交叉 12、replacement/状态更新 2、会议状态合并 6、过滤/降级候选约 96。</span></li><li><b>主要判断</b><span>Tuesday 批次恢复更新后，主线从上一期的对象中心 3D/语言条件 VFM，转向 长视频 JEPA、视频对象中心 identity、VLM 蒸馏、SSL projector 诊断、2D VFM 到 3D semantic state。</span></li><li><b>会议/状态</b><span>ECCV 2026 状态明显：Discrete-token dataset distillation、MultiMem、SPAR、RaysUp、NGPS 均带 ECCV 2026 线索；另有 CVPR 2026/ICPR 2026 replacement 更新。OpenReview 搜索主要返回历史 ICLR/NeurIPS/TMLR 记录，未发现新的强相关 24-48h OpenReview 接收变化。</span></li><li><b>来源状态</b><span>arXiv cs.CV/cs.LG/cs.AI/cs.CL/stat.ML/cs.MM/eess.IV 均显示 Showing new listings for Tuesday, 23 June 2026。</span></li></ul>
+    <ul><li><b>今日最值得看</b><span>P-JEPA 和 Radial Basis Function Networks as Projection Heads in Self-Supervised Learning。前者把 JEPA 式预测目标推进到长时程 procedural video 表征，后者直接改 SSL projector 并给出 label-free 表征质量指标。</span></li><li><b>建议精读顺序</b><span>先读 P-JEPA -&gt; RBFN Projection Head -&gt; MultiMem -&gt; STAITUS，抓住视频 SSL、投影头、跨模态对比学习和对象中心视频表征四条主线；随后读 Self-Filtering 与 SAE/VLM concepts；P2/P3 条目按任务相关性扫读。</span></li><li><b>新增/更新/过滤数量</b><span>arXiv 官方 7 个 new 页面显示 Tuesday, 23 June 2026：2739 raw listing entries，跨分类去重 1881 个 arXiv ID；今日入选 13 篇，replacement/状态更新 4 条，会议状态新增 0，过滤/降级 23 条。</span></li><li><b>主要判断</b><span>今天恢复到正常 arXiv 新批次：通用视觉 SSL 的新增重点不在纯 MIM 大模型，而在 video JEPA、SSL projector 诊断、multi-modal contrastive memorization、object-centric video slots、CLIP 数据自过滤。</span></li><li><b>会议/状态</b><span>OpenReview/ICML/CVPR 侧未发现过去 24-48 小时内可合并的新接收、spotlight/oral 或 workshop 状态；今天主要是 arXiv 新增与 replacement 更新。</span></li><li><b>来源状态</b><span>主来源为 arXiv cs.CV/cs.LG/cs.AI/cs.CL/cs.MM/stat.ML/eess.IV 官方列表页；逐篇补查 arXiv abs 页，避免只靠标题筛选。</span></li></ul>
   </aside>
 </section>
 <section class="section-block">
   <div class="section-heading"><h2>今日推荐论文</h2><a href="pages/catalog.html">全目录 →</a></div>
-  <div class="paper-list"><article class="paper-card" data-pid="2606.23256" data-category="arXiv 新增 · video JEPA / long-form representation" data-priority="P0" data-date="2026-06-24" data-title="p-jepa: procedural video representation learning via joint embedding predictive architecture" data-keywords="p-jepa: procedural video representation learning via joint embedding predictive architecture p-jepa arxiv 新增 · video jepa / long-form representation p0 2026-06-24 arxiv 新增 · video jepa / long-form representation 长视频版 jepa，直接命中通用视频/视觉表征自监督 高相关；详见方法、贡献和实验边界。">
+  <div class="paper-list"><article class="paper-card" data-pid="2606.23256" data-category="arXiv 新增 · video JEPA / long-duration representation" data-priority="P0" data-date="2026-06-24" data-title="p-jepa: procedural video representation learning via joint embedding predictive architecture" data-keywords="p-jepa: procedural video representation learning via joint embedding predictive architecture p-jepa arxiv 新增 · video jepa / long-duration representation p0 2026-06-24 arxiv 新增 · video jepa / long-duration representation 把 jepa 式预测目标改造成长时程 procedural video 表征学习，是今天最贴近通用视频 ssl 的主线 高相关；详见方法、贡献和实验边界。">
   <a class="paper-thumb" href="papers/2606.23256.html"><img src="assets/mineru/2606.23256/images/a081f80f1e851863064858959b78dc9223c3aabbf9214bb628e885ad5c66800b.jpg" alt="P-JEPA figure"></a>
   <div>
-    <div class="paper-meta">2026-06-24 · arXiv 新增 · video JEPA / long-form representation · arXiv 新增 · video JEPA / long-form representation</div>
+    <div class="paper-meta">2026-06-24 · arXiv 新增 · video JEPA / long-duration representation · arXiv 新增 · video JEPA / long-duration representation</div>
     <h3><a href="papers/2606.23256.html">P-JEPA: Procedural Video Representation Learning via Joint Embedding Predictive Architecture</a></h3>
     <p>高相关；详见方法、贡献和实验边界。</p>
-    <p class="card-tech"><b>方法：</b>长视频版 JEPA，直接命中通用视频/视觉表征自监督</p>
+    <p class="card-tech"><b>方法：</b>把 JEPA 式预测目标改造成长时程 procedural video 表征学习，是今天最贴近通用视频 SSL 的主线</p>
     <div class="paper-actions"><a href="papers/2606.23256.html">读图文页</a><a href="https://arxiv.org/abs/2606.23256">原文</a></div>
   </div>
   <div class="paper-card-tools"><button class="readbtn" type="button" data-read-toggle="2606.23256" title="标记已读" aria-label="标记已读"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M4 10.5l4 4 8-9"/></svg></button><div class="prefbar" data-pref-controls="2606.23256"><button class="prefbtn like" type="button" data-pref-toggle="like" data-pref-id="2606.23256" aria-pressed="false" title="关注这篇">关注</button><button class="prefbtn dismiss" type="button" data-pref-toggle="dismiss" data-pref-id="2606.23256" aria-pressed="false" title="降低这篇权重">略过</button></div></div>
 </article>
-<article class="paper-card" data-pid="2606.23436" data-category="arXiv 新增 · object-centric video SSL" data-priority="P0" data-date="2026-06-24" data-title="rethinking object-centric representations for video dynamics modeling" data-keywords="rethinking object-centric representations for video dynamics modeling rethinking object-centric representations for video arxiv 新增 · object-centric video ssl p0 2026-06-24 arxiv 新增 · object-centric video ssl 把 slot consistency 的失败机制讲清楚，并给出可迁移的 appearance/pose 解耦 高相关；详见方法、贡献和实验边界。">
-  <a class="paper-thumb" href="papers/2606.23436.html"><img src="assets/mineru/2606.23436/images/dd6e53c5bdfd91f9297da253d627508ff5a3a71555a7e211b38c1ac25bd4bb64.jpg" alt="Rethinking Object-Centric Representations for Video figure"></a>
-  <div>
-    <div class="paper-meta">2026-06-24 · arXiv 新增 · object-centric video SSL · arXiv 新增 · object-centric video SSL</div>
-    <h3><a href="papers/2606.23436.html">Rethinking Object-Centric Representations for Video Dynamics Modeling</a></h3>
-    <p>高相关；详见方法、贡献和实验边界。</p>
-    <p class="card-tech"><b>方法：</b>把 slot consistency 的失败机制讲清楚，并给出可迁移的 appearance/pose 解耦</p>
-    <div class="paper-actions"><a href="papers/2606.23436.html">读图文页</a><a href="https://arxiv.org/abs/2606.23436">原文</a></div>
-  </div>
-  <div class="paper-card-tools"><button class="readbtn" type="button" data-read-toggle="2606.23436" title="标记已读" aria-label="标记已读"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M4 10.5l4 4 8-9"/></svg></button><div class="prefbar" data-pref-controls="2606.23436"><button class="prefbtn like" type="button" data-pref-toggle="like" data-pref-id="2606.23436" aria-pressed="false" title="关注这篇">关注</button><button class="prefbtn dismiss" type="button" data-pref-toggle="dismiss" data-pref-id="2606.23436" aria-pressed="false" title="降低这篇权重">略过</button></div></div>
-</article>
-<article class="paper-card" data-pid="2606.21358" data-category="arXiv 新增 · video VLM distillation" data-priority="P1" data-date="2026-06-24" data-title="levil: label-efficient video learning via zero-shot distillation over vlm-generated pseudo-label spaces" data-keywords="levil: label-efficient video learning via zero-shot distillation over vlm-generated pseudo-label spaces levil arxiv 新增 · video vlm distillation p1 2026-06-24 arxiv 新增 · video vlm distillation vlm 伪标签空间 + 零样本蒸馏，适合跟视频表征预训练一起读 高相关；详见方法、贡献和实验边界。">
-  <a class="paper-thumb" href="papers/2606.21358.html"><img src="assets/mineru/2606.21358/images/c8713aa0ad52d9b927b37946cbc2d8234a349f5f416c7e04da8021d7d6178d76.jpg" alt="LEViL figure"></a>
-  <div>
-    <div class="paper-meta">2026-06-24 · arXiv 新增 · video VLM distillation · arXiv 新增 · video VLM distillation</div>
-    <h3><a href="papers/2606.21358.html">LEViL: Label-Efficient Video Learning via Zero-Shot Distillation over VLM-Generated Pseudo-Label Spaces</a></h3>
-    <p>高相关；详见方法、贡献和实验边界。</p>
-    <p class="card-tech"><b>方法：</b>VLM 伪标签空间 + 零样本蒸馏，适合跟视频表征预训练一起读</p>
-    <div class="paper-actions"><a href="papers/2606.21358.html">读图文页</a><a href="https://arxiv.org/abs/2606.21358">原文</a></div>
-  </div>
-  <div class="paper-card-tools"><button class="readbtn" type="button" data-read-toggle="2606.21358" title="标记已读" aria-label="标记已读"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M4 10.5l4 4 8-9"/></svg></button><div class="prefbar" data-pref-controls="2606.21358"><button class="prefbtn like" type="button" data-pref-toggle="like" data-pref-id="2606.21358" aria-pressed="false" title="关注这篇">关注</button><button class="prefbtn dismiss" type="button" data-pref-toggle="dismiss" data-pref-id="2606.21358" aria-pressed="false" title="降低这篇权重">略过</button></div></div>
-</article>
-<article class="paper-card" data-pid="2606.21590" data-category="arXiv 新增 · SSL projector / representation diagnostics" data-priority="P1" data-date="2026-06-24" data-title="radial basis function networks as projection heads in self-supervised learning" data-keywords="radial basis function networks as projection heads in self-supervised learning radial basis function networks as arxiv 新增 · ssl projector / representation diagnostics p1 2026-06-24 arxiv 新增 · ssl projector / representation diagnostics 从 projector 结构和无标签诊断切入 ssl 表征质量，值得方法线精读 高相关；详见方法、贡献和实验边界。">
+<article class="paper-card" data-pid="2606.21590" data-category="arXiv 新增 · SSL projector / label-free representation metric" data-priority="P0" data-date="2026-06-24" data-title="radial basis function networks as projection heads in self-supervised learning" data-keywords="radial basis function networks as projection heads in self-supervised learning radial basis function networks as arxiv 新增 · ssl projector / label-free representation metric p0 2026-06-24 arxiv 新增 · ssl projector / label-free representation metric 直接改 simclr/byol/moco/swav/simsiam 的 projection head，并用 rbf 参数估计表征质量 高相关；详见方法、贡献和实验边界。">
   <a class="paper-thumb" href="papers/2606.21590.html"><img src="assets/mineru/2606.21590/images/bbda13cb5a052866f471a1f0e0c7ff79534d232f32f09eb78149101d6161633f.jpg" alt="Radial Basis Function Networks as figure"></a>
   <div>
-    <div class="paper-meta">2026-06-24 · arXiv 新增 · SSL projector / representation diagnostics · arXiv 新增 · SSL projector / representation diagnostics</div>
+    <div class="paper-meta">2026-06-24 · arXiv 新增 · SSL projector / label-free representation metric · arXiv 新增 · SSL projector / label-free representation metric</div>
     <h3><a href="papers/2606.21590.html">Radial Basis Function Networks as Projection Heads in Self-Supervised Learning</a></h3>
     <p>高相关；详见方法、贡献和实验边界。</p>
-    <p class="card-tech"><b>方法：</b>从 projector 结构和无标签诊断切入 SSL 表征质量，值得方法线精读</p>
+    <p class="card-tech"><b>方法：</b>直接改 SimCLR/BYOL/MoCo/SwAV/SimSiam 的 projection head，并用 RBF 参数估计表征质量</p>
     <div class="paper-actions"><a href="papers/2606.21590.html">读图文页</a><a href="https://arxiv.org/abs/2606.21590">原文</a></div>
   </div>
   <div class="paper-card-tools"><button class="readbtn" type="button" data-read-toggle="2606.21590" title="标记已读" aria-label="标记已读"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M4 10.5l4 4 8-9"/></svg></button><div class="prefbar" data-pref-controls="2606.21590"><button class="prefbtn like" type="button" data-pref-toggle="like" data-pref-id="2606.21590" aria-pressed="false" title="关注这篇">关注</button><button class="prefbtn dismiss" type="button" data-pref-toggle="dismiss" data-pref-id="2606.21590" aria-pressed="false" title="降低这篇权重">略过</button></div></div>
 </article>
-<article class="paper-card" data-pid="2606.21292" data-category="arXiv 新增 · 2D VFM to 3D semantics" data-priority="P1" data-date="2026-06-24" data-title="lightweight 3d feature pretraining by bayesian inversion of 2d foundation models" data-keywords="lightweight 3d feature pretraining by bayesian inversion of 2d foundation models lightweight 3d feature pretraining by arxiv 新增 · 2d vfm to 3d semantics p1 2026-06-24 arxiv 新增 · 2d vfm to 3d semantics 把 2d 自监督/语言对齐特征 bayesian 反演成 3d semantic state，迁移价值高 高相关；详见方法、贡献和实验边界。">
-  <a class="paper-thumb" href="papers/2606.21292.html"><img src="assets/mineru/2606.21292/images/ab27e95d9228dd0b97c7c54b7757ceadd3558b437feeb0c82959ca70df93400d.jpg" alt="Lightweight 3D Feature Pretraining by figure"></a>
+<article class="paper-card" data-pid="2606.22220" data-category="arXiv 新增/更新 · multimodal contrastive learning" data-priority="P1" data-date="2026-06-24" data-title="multimem: measuring and mitigating memorization in multi-modal contrastive learning" data-keywords="multimem: measuring and mitigating memorization in multi-modal contrastive learning multimem arxiv 新增/更新 · multimodal contrastive learning p1 2026-06-24 arxiv 新增/更新 · multimodal contrastive learning 给跨模态对比学习定义 memorization 度量，指出文本语义错配是主要记忆化来源 高相关；详见方法、贡献和实验边界。">
+  <a class="paper-thumb" href="papers/2606.22220.html"><img src="assets/mineru/2606.22220/images/bdeb0573ef6c69d2f9d209bf13d3990f453c34813e6f22bb20cc971569dd7ed8.jpg" alt="MultiMem figure"></a>
   <div>
-    <div class="paper-meta">2026-06-24 · arXiv 新增 · 2D VFM to 3D semantics · arXiv 新增 · 2D VFM to 3D semantics</div>
-    <h3><a href="papers/2606.21292.html">Lightweight 3D Feature Pretraining by Bayesian Inversion of 2D Foundation Models</a></h3>
+    <div class="paper-meta">2026-06-24 · arXiv 新增/更新 · multimodal contrastive learning · arXiv 新增/更新 · multimodal contrastive learning</div>
+    <h3><a href="papers/2606.22220.html">MultiMem: Measuring and Mitigating Memorization in Multi-Modal Contrastive Learning</a></h3>
     <p>高相关；详见方法、贡献和实验边界。</p>
-    <p class="card-tech"><b>方法：</b>把 2D 自监督/语言对齐特征 Bayesian 反演成 3D semantic state，迁移价值高</p>
-    <div class="paper-actions"><a href="papers/2606.21292.html">读图文页</a><a href="https://arxiv.org/abs/2606.21292">原文</a></div>
+    <p class="card-tech"><b>方法：</b>给跨模态对比学习定义 memorization 度量，指出文本语义错配是主要记忆化来源</p>
+    <div class="paper-actions"><a href="papers/2606.22220.html">读图文页</a><a href="https://arxiv.org/abs/2606.22220">原文</a></div>
   </div>
-  <div class="paper-card-tools"><button class="readbtn" type="button" data-read-toggle="2606.21292" title="标记已读" aria-label="标记已读"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M4 10.5l4 4 8-9"/></svg></button><div class="prefbar" data-pref-controls="2606.21292"><button class="prefbtn like" type="button" data-pref-toggle="like" data-pref-id="2606.21292" aria-pressed="false" title="关注这篇">关注</button><button class="prefbtn dismiss" type="button" data-pref-toggle="dismiss" data-pref-id="2606.21292" aria-pressed="false" title="降低这篇权重">略过</button></div></div>
+  <div class="paper-card-tools"><button class="readbtn" type="button" data-read-toggle="2606.22220" title="标记已读" aria-label="标记已读"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M4 10.5l4 4 8-9"/></svg></button><div class="prefbar" data-pref-controls="2606.22220"><button class="prefbtn like" type="button" data-pref-toggle="like" data-pref-id="2606.22220" aria-pressed="false" title="关注这篇">关注</button><button class="prefbtn dismiss" type="button" data-pref-toggle="dismiss" data-pref-id="2606.22220" aria-pressed="false" title="降低这篇权重">略过</button></div></div>
+</article>
+<article class="paper-card" data-pid="2606.23436" data-category="arXiv 新增 · object-centric video / slots" data-priority="P1" data-date="2026-06-24" data-title="rethinking object-centric representations for video dynamics modeling" data-keywords="rethinking object-centric representations for video dynamics modeling rethinking object-centric representations for video arxiv 新增 · object-centric video / slots p1 2026-06-24 arxiv 新增 · object-centric video / slots 解释 slot temporal consistency 为什么会锁背景，并用 appearance/pose 解耦修复视频对象表征 高相关；详见方法、贡献和实验边界。">
+  <a class="paper-thumb" href="papers/2606.23436.html"><img src="assets/mineru/2606.23436/images/dd6e53c5bdfd91f9297da253d627508ff5a3a71555a7e211b38c1ac25bd4bb64.jpg" alt="Rethinking Object-Centric Representations for Video figure"></a>
+  <div>
+    <div class="paper-meta">2026-06-24 · arXiv 新增 · object-centric video / slots · arXiv 新增 · object-centric video / slots</div>
+    <h3><a href="papers/2606.23436.html">Rethinking Object-Centric Representations for Video Dynamics Modeling</a></h3>
+    <p>高相关；详见方法、贡献和实验边界。</p>
+    <p class="card-tech"><b>方法：</b>解释 slot temporal consistency 为什么会锁背景，并用 appearance/pose 解耦修复视频对象表征</p>
+    <div class="paper-actions"><a href="papers/2606.23436.html">读图文页</a><a href="https://arxiv.org/abs/2606.23436">原文</a></div>
+  </div>
+  <div class="paper-card-tools"><button class="readbtn" type="button" data-read-toggle="2606.23436" title="标记已读" aria-label="标记已读"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M4 10.5l4 4 8-9"/></svg></button><div class="prefbar" data-pref-controls="2606.23436"><button class="prefbtn like" type="button" data-pref-toggle="like" data-pref-id="2606.23436" aria-pressed="false" title="关注这篇">关注</button><button class="prefbtn dismiss" type="button" data-pref-toggle="dismiss" data-pref-id="2606.23436" aria-pressed="false" title="降低这篇权重">略过</button></div></div>
+</article>
+<article class="paper-card" data-pid="2606.23611" data-category="arXiv 新增 · CLIP data filtering / bootstrapped pretraining" data-priority="P1" data-date="2026-06-24" data-title="data selection through iterative self-filtering for vision-language settings" data-keywords="data selection through iterative self-filtering for vision-language settings data selection through iterative self-filtering arxiv 新增 · clip data filtering / bootstrapped pretraining p1 2026-06-24 arxiv 新增 · clip data filtering / bootstrapped pretraining 让 clip 在训练过程中自举选择 clean + diverse 数据，是视觉语言预训练数据闭环的实用方向 高相关；详见方法、贡献和实验边界。">
+  <a class="paper-thumb" href="papers/2606.23611.html"><img src="assets/mineru/2606.23611/images/d75ede7fdacd9e0b7fcbb83cfbcea349940650d794eb8c61249af8b0f1482b60.jpg" alt="Data Selection Through Iterative Self-Filtering figure"></a>
+  <div>
+    <div class="paper-meta">2026-06-24 · arXiv 新增 · CLIP data filtering / bootstrapped pretraining · arXiv 新增 · CLIP data filtering / bootstrapped pretraining</div>
+    <h3><a href="papers/2606.23611.html">Data Selection Through Iterative Self-Filtering for Vision-Language Settings</a></h3>
+    <p>高相关；详见方法、贡献和实验边界。</p>
+    <p class="card-tech"><b>方法：</b>让 CLIP 在训练过程中自举选择 clean + diverse 数据，是视觉语言预训练数据闭环的实用方向</p>
+    <div class="paper-actions"><a href="papers/2606.23611.html">读图文页</a><a href="https://arxiv.org/abs/2606.23611">原文</a></div>
+  </div>
+  <div class="paper-card-tools"><button class="readbtn" type="button" data-read-toggle="2606.23611" title="标记已读" aria-label="标记已读"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M4 10.5l4 4 8-9"/></svg></button><div class="prefbar" data-pref-controls="2606.23611"><button class="prefbtn like" type="button" data-pref-toggle="like" data-pref-id="2606.23611" aria-pressed="false" title="关注这篇">关注</button><button class="prefbtn dismiss" type="button" data-pref-toggle="dismiss" data-pref-id="2606.23611" aria-pressed="false" title="降低这篇权重">略过</button></div></div>
 </article></div>
 </section></main>
   <aside class="conf-float" data-conf-reminder="2026-06-24-main-ddl" aria-label="CCF A/B 主投稿提醒">

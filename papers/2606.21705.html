@@ -25,42 +25,42 @@
 <a class="nav-link" href="../pages/timeline.html">时间线</a>
 <span class="nav-streak" title="连续追踪天数"><svg viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><path d="M8 0c.7 2.5-1.2 3.7-2 5-1 1.6-1 4 .8 4.8C6.4 8.5 7.4 7.8 8 7c.3 1.3-.4 2 .9 3 .9.7 1.3 1.6 1.1 2.6C9.7 14.6 8.9 16 6.8 16 4.6 16 3 14.3 3 12c0-3.3 2.6-4.8 2.4-8C6.9 4.6 8.4 5 8 0z"/></svg> 连续 <b data-streak>0</b> 天</span>
   </nav>
-  <main><article class="paper-detail" data-pid="2606.21705" data-category="ECCV 2026 · arXiv 新增 · dataset distillation" data-priority="P2" data-date="2026-06-24" data-title="structural assessment for understanding and guiding dataset distillation in discrete token space" data-keywords="structural assessment for understanding and guiding dataset distillation in discrete token space structural assessment for understanding and eccv 2026 · arxiv 新增 · dataset distillation p2 2026-06-24 eccv 2026 · arxiv 新增 · dataset distillation eccv 接收；用离散视觉 token 解释/指导数据蒸馏，适合方法扫读 中高相关；详见方法、贡献和实验边界。">
+  <main><article class="paper-detail" data-pid="2606.21705" data-category="arXiv 新增 · dataset distillation / visual tokens" data-priority="P2" data-date="2026-06-24" data-title="structural assessment for understanding and guiding dataset distillation in discrete token space" data-keywords="structural assessment for understanding and guiding dataset distillation in discrete token space structural assessment for understanding and arxiv 新增 · dataset distillation / visual tokens p2 2026-06-24 arxiv 新增 · dataset distillation / visual tokens 用离散视觉 tokenizer 分析蒸馏数据的 compositional structure，可作为表征/数据质量诊断工具 中高相关；详见方法、贡献和实验边界。">
   <div class="paper-main">
-    <div class="kicker">ECCV 2026 · arXiv 新增 · dataset distillation · P2 · 2026-06-24</div>
-    <h1 class="paper-headline">Structural Assessment for Understanding and：视觉 SSL/VFM 的数据效率问题离不开 distilled data 与 tokenized latent space，这篇给了可测结构指标</h1>
-    <p class="dek">把 dataset distillation 的有效性从“分布距离”转向“语义 token 组合是否均衡”，并用高 structural-score 样本指导 diffusion-based DD。</p>
-    <p class="byline"><strong>Structural Assessment for Understanding and Guiding Dataset Distillation in Discrete Token Space</strong>　Yue Cao, Jianyang Gu, Vyacheslav Kungurtsev, Yu Hu, Jozsef Hamari, Zheng Liu, Mohsen Zardadi；机构以 arXiv 最终版为准。　ECCV 2026 · arXiv 新增 · dataset distillation　<a href="https://arxiv.org/abs/2606.21705">原文链接</a></p>
+    <div class="kicker">arXiv 新增 · dataset distillation / visual tokens · P2 · 2026-06-24</div>
+    <h1 class="paper-headline">Structural Assessment for Understanding and：它不是直接训练通用 SSL 模型，但提供了表征/数据质量诊断工具，对用视觉 tokenizer 做数据压缩和蒸馏很有价值</h1>
+    <p class="dek">把 dataset distillation 的质量评价从全局分布匹配推进到离散视觉 token 的 compositional structure。</p>
+    <p class="byline"><strong>Structural Assessment for Understanding and Guiding Dataset Distillation in Discrete Token Space</strong>　Yue Cao, Jianyang Gu, Vyacheslav Kungurtsev, Yu Hu, Jozsef Hamari, Zheng Liu, Mohsen Zardadi；arXiv 页面未列稳定机构。　arXiv 新增 · dataset distillation / visual tokens　<a href="https://arxiv.org/abs/2606.21705">原文链接</a></p>
     <div class="paper-facts">
       <span><b>编号</b>2606.21705</span>
       <span><b>优先级</b>P2</span>
-      <span><b>类别</b>ECCV 2026 · arXiv 新增 · dataset distillation</span>
-      <span><b>会议</b>ECCV 2026 · arXiv 新增 · dataset distillation</span>
-      <span><b>方法</b>用 discrete visual tokenizer 的有限 vocabulary 统计 semantic concepts 及其组合，提出 structural score 衡量 distilled dataset 的 token composition adequacy。</span>
+      <span><b>类别</b>arXiv 新增 · dataset distillation / visual tokens</span>
+      <span><b>会议</b>arXiv 新增 · dataset distillation / visual tokens</span>
+      <span><b>方法</b>用离散视觉 tokenizer 分析 distilled datasets 捕获了哪些语义 concepts 及其组合方式，提出 structural score 评估 token composition 的充分性。</span>
       <span><b>来源</b>arXiv / OpenReview</span>
     </div>
     <div class="feature-body">
-      <p class="lead dropcap">先说结论。视觉 SSL/VFM 的数据效率问题离不开 distilled data 与 tokenized latent space，这篇给了可测结构指标。 把 dataset distillation 的有效性从“分布距离”转向“语义 token 组合是否均衡”，并用高 structural-score 样本指导 diffusion-based DD。</p>
+      <p class="lead dropcap">先说结论。它不是直接训练通用 SSL 模型，但提供了表征/数据质量诊断工具，对用视觉 tokenizer 做数据压缩和蒸馏很有价值。 把 dataset distillation 的质量评价从全局分布匹配推进到离散视觉 token 的 compositional structure。</p>
       <figure class="full-fig"><img src="../assets/mineru/2606.21705/images/b5b847f6e7d64ec644124cfe01c20d7331abb354e2d21a4bba316f780e7ba452.jpg" alt="Figureure 3 · : The ablation study of diferent combinations of token statistics (HHI"><figcaption><b>Figureure 3 · : The ablation study of diferent combinations of token statistics (HHI</b><span class="fig-en">Fig. 3: The ablation study of diferent combinations of token statistics (HHI, JSD, COV) in predicting model accuracy via linear regression. Each subplot shows the relationship between the adopted token statistics and model accuracy across various distilled datasets, with Mean Squared Error (MSE) reported.</span><span class="fig-zh">这张图/表用于判断 Structural Assessment for Understanding and 的实验收益来自哪里。重点看替换、消融或跨模型设置下趋势是否一致，而不是只看单个最高分。</span></figcaption></figure>
 <figure class="full-fig"><img src="../assets/mineru/2606.21705/images/43d66a6c37163505ce742a258d0778a25c366cc13615f8604184bb4ba6257612.jpg" alt="Figureure 4 · : Qualitative comparison of images with high and low values of JSD, CO"><figcaption><b>Figureure 4 · : Qualitative comparison of images with high and low values of JSD, CO</b><span class="fig-en">Fig. 4: Qualitative comparison of images with high and low values of JSD, COV, and HHI metrics. Each row corresponds to one metric, with images on the left exhibiting high values and those on the right showing low values.</span><span class="fig-zh">这张图/表用于判断 Structural Assessment for Understanding and 的实验收益来自哪里。重点看替换、消融或跨模型设置下趋势是否一致，而不是只看单个最高分。</span></figcaption></figure>
       
       <h2>核心问题</h2>
-      <p>视觉 SSL/VFM 的数据效率问题离不开 distilled data 与 tokenized latent space，这篇给了可测结构指标。</p>
+      <p>它不是直接训练通用 SSL 模型，但提供了表征/数据质量诊断工具，对用视觉 tokenizer 做数据压缩和蒸馏很有价值。</p>
       <h2>方法拆解</h2>
-      <p>用 discrete visual tokenizer 的有限 vocabulary 统计 semantic concepts 及其组合，提出 structural score 衡量 distilled dataset 的 token composition adequacy。</p>
+      <p>用离散视觉 tokenizer 分析 distilled datasets 捕获了哪些语义 concepts 及其组合方式，提出 structural score 评估 token composition 的充分性。</p>
       <h2>主要贡献</h2>
-      <p>把 dataset distillation 的有效性从“分布距离”转向“语义 token 组合是否均衡”，并用高 structural-score 样本指导 diffusion-based DD。</p>
+      <p>把 dataset distillation 的质量评价从全局分布匹配推进到离散视觉 token 的 compositional structure。</p>
       <h2>实验看点</h2>
-      <p>摘要称 balanced token composition 对 validation performance 更关键；原分布 divergence 不一定有害。</p>
+      <p>摘要称 token composition 更均衡的 distilled datasets 验证性能更好，且 high structural score samples 可指导 diffusion-based dataset distillation。</p>
       <h2>局限与读法</h2>
-      <p>它更偏数据蒸馏解释/选择，不是新的 encoder 预训练目标；tokenizer 选择会影响结论。</p>
+      <p>依赖 tokenizer 的语义质量；如果 tokenizer 对某些下游任务不敏感，structural score 也可能误导。</p>
     
     </div>
   </div>
   <aside class="paper-side">
 
     <div class="side-box pref-side"><h4>我的偏好</h4><div class="paper-side-tools"><button class="readbtn" type="button" data-read-toggle="2606.21705" title="标记已读" aria-label="标记已读"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M4 10.5l4 4 8-9"/></svg></button><div class="prefbar" data-pref-controls="2606.21705"><button class="prefbtn like" type="button" data-pref-toggle="like" data-pref-id="2606.21705" aria-pressed="false" title="关注这篇">关注</button><button class="prefbtn dismiss" type="button" data-pref-toggle="dismiss" data-pref-id="2606.21705" aria-pressed="false" title="降低这篇权重">略过</button></div></div></div>
-    <div class="side-box"><h4>关键判断</h4><dl><dt>相关性</dt><dd>P2</dd><dt>类别</dt><dd>ECCV 2026 · arXiv 新增 · dataset distillation</dd><dt>会议</dt><dd>ECCV 2026 · arXiv 新增 · dataset distillation</dd><dt>读法</dt><dd>方法图优先，表格次之</dd></dl></div>
+    <div class="side-box"><h4>关键判断</h4><dl><dt>相关性</dt><dd>P2</dd><dt>类别</dt><dd>arXiv 新增 · dataset distillation / visual tokens</dd><dt>会议</dt><dd>arXiv 新增 · dataset distillation / visual tokens</dd><dt>读法</dt><dd>方法图优先，表格次之</dd></dl></div>
     <div class="side-box"><h4>原文</h4><p><a href="https://arxiv.org/abs/2606.21705">https://arxiv.org/abs/2606.21705</a></p></div>
   </aside>
 </article></main>

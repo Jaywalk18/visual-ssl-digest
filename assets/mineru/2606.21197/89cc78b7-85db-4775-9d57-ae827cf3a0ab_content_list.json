@@ -1,0 +1,1867 @@
+[
+    {
+        "type": "text",
+        "text": "Extraction and Analysis of Multimodal Concepts in Vision Language Models through Sparse Autoencoders",
+        "text_level": 1,
+        "bbox": [
+            220,
+            140,
+            781,
+            205
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "Sergio Lanza<sup>[0009−0004−8777−7070]</sup> and Jae Hee Lee<sup>[0000−0001−9840−780X]</sup> Stefan Wermter<sup>[0000−0003−1343−4775]</sup>",
+        "bbox": [
+            245,
+            233,
+            754,
+            263
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "Knowledge Technology, Department of Informatics, University of Hamburg, Hamburg, Germany sergio.lanza@uni-hamburg.de, jae.hee.lee@uni-hamburg.de, stefan.wermter@uni-hamburg.de https://www.inf.uni-hamburg.de/en/inst/ab/wtm.html",
+        "bbox": [
+            294,
+            277,
+            710,
+            347
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "Abstract. Vision Language Models (VLMs) have demonstrated impressive performance in tasks requiring joint understanding of images and text, such as image captioning and Visual Question Answering (VQA), but our understanding of their internal processes remains limited. Recently, Sparse Autoencoders (SAEs) have emerged as a promising tool to support the interpretation of concepts encoded in VLMs. However, most SAE-based approaches focus only on textual or visual concepts separately, ignoring multimodal concepts. This limitation hinders a comprehensive understanding of VLMs, since concepts that integrate both modalities can be misclassified. Moreover, previous visual approaches often produce lowquality visual concept descriptions that are vague or incomplete, limiting their usefulness for understanding model reasoning. We propose a framework based on SAEs to extract and analyze visual, textual, and multimodal concepts from VLMs. For each neuron, we propose a candidate humaninterpretable concept and compute the alignment between the concept and the dataset samples using cosine similarity scores. Experiments on a VQA dataset (LLaVA-NeXT) demonstrate that our framework improves visual concept quality by up to 45% compared to existing SAE-based methods, while maintaining high textual concept quality and enabling systematic identification of multimodal concepts. This work contributes new insights into the conceptual space of VLMs, providing a structured approach to distinguish between visual, textual, and multimodal concepts. The code is available at https://github.com/PHDLanza/Multidata\\_SAE.",
+        "bbox": [
+            261,
+            377,
+            743,
+            698
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "1 Introduction",
+        "text_level": 2,
+        "bbox": [
+            217,
+            719,
+            375,
+            736
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "Vision Language Models (VLMs) have achieved remarkable results in several tasks from image captioning to Visual Question Answering (VQA), yet understanding their internal mechanisms remains a critical challenge [10,15]. Mechanistic Interpretability (MI) addresses this challenge by studying the internal computation responsible for a model’s output [3]. One prominent direction within MI is Concept Extraction, which aims to identify human-understandable concepts encoded in the model activations to improve model transparency and interpretability [11]. Sparse Autoencoders (SAEs), in particular, have received great attention within Concept Extraction methods for extracting interpretable features encoded in pre-trained models, especially Large Language Models (LLMs) [4,5,6]. SAEs project the high-dimensional embeddings of the LLM into a sparse representation composed of human-understandable features, or concepts, making this approach efective and scalable for concept extraction [3].",
+        "bbox": [
+            214,
+            748,
+            789,
+            840
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "aside_text",
+        "text": "arXiv:2606.21197v1 [cs.CV] 19 Jun 2026",
+        "bbox": [
+            22,
+            276,
+            58,
+            717
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "",
+        "bbox": [
+            214,
+            146,
+            787,
+            253
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "text",
+        "text": "However, most SAE-based works focus exclusively on textual concepts, with limited explorations of visual concepts and, to the best of our knowledge, no systematic study of multimodal concepts, i.e., concepts represented jointly in the visual and textual inputs. This gap limits our understanding of VLMs. Recent studies suggest how VLMs encode multimodal information, but rely disproportionately on one modality depending on the task [19]. Understanding which information is encoded by which modality sheds light on the reasoning ability of VLMs and how they align and process inputs across modalities. For example, a neuron may encode a concept that is jointly grounded in the image (an object or region) and in the question-answer text (a property, relation, or action).",
+        "bbox": [
+            214,
+            253,
+            787,
+            419
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "text",
+        "text": "In this paper, we present a novel concept extraction framework based on SAEs that integrates visual, textual, and multimodal analysis. For each neuron in the SAE, we select the most representative images and textual samples that most strongly trigger it, then we infer candidate human-interpretable concepts from each modality, and finally, we evaluate which concept best represents the neuron’s activation (see Figure 1). The extraction is performed by an external VLM, LLaVA 72B, following prior works on SAE [4,5,7]. The evaluation, instead, is computed using CLIP [18] and ALIGN [9] similarities, which provides a shared space for text-image alignment [17,18].",
+        "bbox": [
+            214,
+            419,
+            787,
+            555
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "text",
+        "text": "This work contributes new insights into the concepts encoded inside VLMs, providing a structured approach to distinguish between visual, textual, and multimodal concepts. Our novel contribution is divided into two main components:",
+        "bbox": [
+            214,
+            555,
+            787,
+            602
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "text",
+        "text": "– Integrated multimodal concept extraction: We extend SAE analysis to extract visual, textual, and multimodal concepts in a unified framework, maintaining high concept quality across the three modalities.",
+        "bbox": [
+            223,
+            614,
+            787,
+            660
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "text",
+        "text": "– Improved visual concept quality: We introduce a new visual concept extraction technique that yields more precise and semantically grounded visual concepts. Our results on a VQA dataset, LLaVA-NeXT, show an improvement of up to 45% in cosine similarity alignment between concept descriptions and their images compared to the existing SAE method.",
+        "bbox": [
+            223,
+            660,
+            787,
+            738
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "text",
+        "text": "2 Background",
+        "text_level": 2,
+        "bbox": [
+            215,
+            761,
+            370,
+            779
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "text",
+        "text": "Sparse Autoencoders (SAEs) [5] have been used to discover concepts encoded in the pretrained models. Specifically, it is an autoencoder that consists of a single high-dimensional hidden-layer (from 2× to over 100× the activation dimension)",
+        "bbox": [
+            214,
+            794,
+            787,
+            840
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "page_number",
+        "text": "2",
+        "bbox": [
+            217,
+            114,
+            228,
+            126
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "header",
+        "text": "S. Lanza et al.",
+        "bbox": [
+            269,
+            114,
+            369,
+            128
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "text",
+        "text": "trained to reconstruct the activation from the model of interest. During the training phase, SAEs incentivize sparsity in the hidden layer, i.e., they minimize the number of activated neurons inside the layer. Models that enhance sparsity help encode neurons representing a single, distinct concept called monosemantic neurons, which faithfully represent the backbone computation [6].",
+        "bbox": [
+            214,
+            146,
+            787,
+            222
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "As defined by Pach et al. [15], an SAE consists of two linear layers:",
+        "bbox": [
+            240,
+            222,
+            725,
+            237
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "equation",
+        "text": "$$\nW _ {\\mathrm{enc}} \\in \\mathbb {R} ^ {d \\times \\omega}, W _ {\\mathrm{dec}} \\in \\mathbb {R} ^ {\\omega \\times d},\n$$",
+        "text_format": "latex",
+        "bbox": [
+            390,
+            246,
+            612,
+            263
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "as encoder and decoder, respectively. The ω term represents the dimension of the SAE hidden layer defined as $\\omega : = d \\cdot \\varepsilon ,$ where ε is the expansion factor and d the embedding dimension of the hosted model. Given an input $x \\in \\mathbb { R } ^ { d }$ , the SAE computes the latent activation $z \\in \\mathbb { R } ^ { \\omega }$ and reconstruction $\\hat { x } \\in \\mathbb R ^ { d }$ as:",
+        "bbox": [
+            214,
+            273,
+            787,
+            335
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "equation",
+        "text": "$$\n\\begin{array}{r l} & z = \\mathrm{TopK} \\big (\\mathrm{ReLU} \\big (W _ {\\mathrm{enc}} ^ {\\top} (x - b) \\big) \\big), \\\\ & \\hat {x} = W _ {\\mathrm{dec}} ^ {\\top} z + b, \\end{array}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            380,
+            344,
+            620,
+            383
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "where TopK is the activation function that retains the highest K (a hyperparameter) values in the latent neurons while zeroing out all the others, enforcing sparsity in the latent representation, and b is the bias term. The SAE is trained to minimize the reconstruction loss:",
+        "bbox": [
+            214,
+            392,
+            787,
+            454
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "equation",
+        "text": "$$\n\\mathcal {L} (x) = \\| x - \\hat {x} \\| _ {2}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            439,
+            464,
+            563,
+            481
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "encouraging faithful reconstruction of the original embedding based on the SAE neurons. Since the hidden layer of an SAE can comprise more than 100k neurons, it is infeasible to manually associate each neuron with a concept based on the triggered inputs. The most commonly used approach involves collecting dataset samples (texts or images) that activate the same neuron and then querying an LLM, denoted as explainer, to infer a common concept [4,5,7].",
+        "bbox": [
+            212,
+            489,
+            787,
+            584
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "3 Related Work",
+        "text_level": 2,
+        "bbox": [
+            215,
+            604,
+            388,
+            619
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "3.1 Sparse AutoEncoders for VLMs",
+        "text_level": 2,
+        "bbox": [
+            215,
+            633,
+            527,
+            648
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "The success of SAEs in the Language context has recently afected the concept extraction research for VLMs. Particularly, the approach of Zhang et al. [21] automatically detects and extracts concepts from individual SAE neurons injected into a VLM. For each neuron in the latent space of the SAE, the top 5 images with the highest average activations are forwarded to the explainer, LLaVA 72B, [13] that performs a zero-shot concept extraction task. To ensure that the explainer focuses solely on the most interesting regions, they apply a masking process on the image patches: only the patches that activate the selected neuron are shown to LLaVA-72B, while all others are masked in black. A related line of research studied the layers in the CLIP embedding [12,15] using a similar masking technique and exploiting CLIP’s semantic labelling capabilities to assess concepts within subpatches of the image. However, all these works do not consider textual concepts or analyze them superficially, limiting the insight that users can obtain, although all of them suggest the possible presence of these concepts in the VLM [12,15,21]. Moreover, the masking process removes too much contextual information, limiting the interpretability and reducing the accuracy of concepts extracted. Our work addresses these limitations by jointly extracting and evaluating visual, textual, and multimodal concepts within a single SAE-based framework and improving the extraction process with additional textual information (see Section 4.1).",
+        "bbox": [
+            214,
+            659,
+            787,
+            842
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "header",
+        "text": "Extraction and Analysis of Multimodal Concepts in VLMs through SAEs",
+        "bbox": [
+            235,
+            114,
+            727,
+            128
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "page_number",
+        "text": "3",
+        "bbox": [
+            774,
+            114,
+            785,
+            127
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "",
+        "bbox": [
+            214,
+            146,
+            787,
+            253
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "text",
+        "text": "4 Methodology",
+        "text_level": 2,
+        "bbox": [
+            215,
+            273,
+            380,
+            291
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "text",
+        "text": "4.1 Multimodal Concept Extraction",
+        "text_level": 2,
+        "bbox": [
+            215,
+            303,
+            527,
+            319
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "text",
+        "text": "Inspired by previous work [12,21], we design our novel concept hypothesis extractor leveraging an external VLM as an explainer. All experiments are conducted on a VQA dataset; VQA is a task where a model answers a question about an image and is evaluated against a ground-truth answer. First, we feed a set of VQA samples into a VLM augmented with a pretrained SAE to record which sample strongly activates the studied SAE neurons. For each VQA sample j, which comprises an image and a textual question–answer pair, we record two separate SAE activation tensors corresponding to visual and textual tokens defined as:",
+        "bbox": [
+            214,
+            325,
+            787,
+            449
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "equation",
+        "text": "$$\nV ^ {(j)} = [ v _ {1} ^ {(j)}, \\ldots , v _ {P} ^ {(j)} ] \\in \\mathbb {R} ^ {P \\times \\omega}, \\qquad T ^ {(j)} = [ t _ {1} ^ {(j)}, \\ldots , t _ {N _ {j}} ^ {(j)} ] \\in \\mathbb {R} ^ {N _ {j} \\times \\omega}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            263,
+            469,
+            733,
+            489
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "text",
+        "text": "where $v _ { i } ^ { ( j ) }$ and $t _ { i } ^ { ( j ) }$ are the activation vectors for the i-th visual patch or textual token respectively, $P$ represents the number of visual patches per image $( 2 4 ~ \\times$ 24), $N _ { j }$ corresponds to the number of textual tokens encoded in the j-th sample and ω denotes the hidden dimension of SAE. From these matrices, we compute the average activations normalized for patches, $\\bar { V } ^ { ( j ) } \\in \\mathbb { R } ^ { \\omega }$ , or tokens, $\\bar { T } ^ { ( j ) } \\in \\mathbb { R } ^ { \\omega }$ ， defined as:",
+        "bbox": [
+            214,
+            501,
+            787,
+            594
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "equation",
+        "text": "$$\n\\bar {V} ^ {(j)} = \\frac {1}{P} \\sum_ {i = 1} ^ {P} v _ {i} ^ {(j)}, \\qquad \\bar {T} ^ {(j)} = \\frac {1}{N _ {j}} \\sum_ {i = 1} ^ {N _ {j}} t _ {i} ^ {(j)}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            352,
+            599,
+            648,
+            643
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "text",
+        "text": "For each SAE neuron $k ,$ we then select the top-5 samples that maximize $\\bar { V } _ { k } ^ { ( j ) }$ (visual) and $\\bar { T } _ { k } ^ { \\left( j \\right) }$ (textual), and query the explainer to extract the hypothesis. As illustrated in Figure 1, in the visual extraction process, we apply a black mask to the patches that do not activate the targeted neuron, following prior studies [15,21], while including the corresponding VQA question and answer alongside the image input. We introduce this element following evidence that additional related text improves visual understanding accuracy in VLMs [14,20]. For textual extraction, we apply a similar procedure: we highlight the specific tokens that trigger the neuron by enclosing them in brackets and pass these sentences to the external VLM, including the corresponding VQA images. This approach mirrors the visual process and provides richer multimodal grounding in the textual extraction.",
+        "bbox": [
+            212,
+            654,
+            787,
+            840
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "page_number",
+        "text": "4",
+        "bbox": [
+            218,
+            114,
+            228,
+            126
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "header",
+        "text": "S. Lanza et al.",
+        "bbox": [
+            269,
+            114,
+            369,
+            128
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "text",
+        "text": "4.2 Metrics",
+        "text_level": 2,
+        "bbox": [
+            215,
+            146,
+            326,
+            161
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "After the extraction of the concept hypotheses (see Section 4.1), each SAE neuron yields up to two hypotheses: visual, textual, or no hypothesis if the available data are insuficient to produce a shared concept.",
+        "bbox": [
+            214,
+            175,
+            787,
+            220
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "To quantitatively evaluate the hypotheses, we require a precise and modalityindependent measure. We therefore adopt CLIP ViT-B/32 [18] and ALIGN [9] as our evaluators, two vision-language models trained to align images and text in a shared embedding space, which have been used in prior interpretability works [21,15]. We utilize CLIP and ALIGN in two evaluation settings.",
+        "bbox": [
+            214,
+            220,
+            787,
+            299
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "image",
+        "img_path": "images/8153d0822f259ac7d3d1f5288103cbeb37e9e439f54ab0b2b67c97b4e1b36435.jpg",
+        "image_caption": [
+            "Fig. 1: Overview of our multimodal concept extraction framework. (A) VQA sample is processed through a VLM with an integrated SAE that projects activations into a sparse hidden layer, producing visual and textual tokens. (B) For a target SAE neuron, we select the visual and textual tokens that strongly activate it and construct modality-specific inputs: non-activating visual tokens (or patches) are black masked, while activating textual tokens are highlighted. From these inputs, we construct two queries, each augmented with complementary information (the question–answer pair for visual extraction and the unmodified image for textual extraction). (C) An external VLM (the explainer) extracts concept hypotheses from the queries. (D) CLIP/ALIGN evaluates hypothesis data alignment to classify each neuron as visual, textual, or multimodal."
+        ],
+        "image_footnote": [],
+        "content": "",
+        "bbox": [
+            276,
+            325,
+            720,
+            625
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "header",
+        "text": "Extraction and Analysis of Multimodal Concepts in VLMs through SAEs",
+        "bbox": [
+            235,
+            114,
+            727,
+            128
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "page_number",
+        "text": "5",
+        "bbox": [
+            774,
+            114,
+            785,
+            127
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "Hypothesis–data alignment In the first setting, for each hypothesis and each evaluator, we input to the model the same data used in the extraction, specifically blurred image patches for visual hypotheses and token sequences for textual hypotheses, and compute the similarity score for all the hypotheses. In preliminary experiments, we observed that black masking degraded the CLIP and ALIGN reliability; therefore, we blurred the inactive patches, leading to more stable and interpretable outcomes. We obtain a similarity matrix of scores for each modality comparing the sets of data used in the extraction process and all the hypotheses, and we rank the highest score for each row. This procedure assesses the alignment between the hypothesis and the data from which it was generated. To account for semantic similarity among hypotheses, we consider a hypothesis validated if its score on the data that generated it ranks within the top n predictions. In our experiments, we use $n \\in \\{ 1 , 2 , \\ldots , 5 \\}$",
+        "bbox": [
+            214,
+            146,
+            787,
+            345
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "text",
+        "text": "Multimodal neuron assignment For neurons with both a visual hypothesis $h _ { \\mathrm { v i s } }$ and a textual hypothesis $h _ { \\mathrm { t e x t } }$ , we assign a modality label based on semantic consistency between the two hypotheses. We encode $h _ { \\mathrm { v i s } }$ and $h _ { \\mathrm { t e x t } }$ using the text encoders of CLIP and ALIGN and compute cosine similarity. We label a neuron as multimodal if both similarities exceed a threshold $\\tau ~ ( \\tau = 0 . 8$ in our experiments); otherwise, we assign it to the modality whose hypothesis yields the higher hypothesis–data alignment score. In Section 5.4, we report a sensitivity analysis over other τ values.",
+        "bbox": [
+            214,
+            372,
+            787,
+            494
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "text",
+        "text": "Category-based evaluation For the second setting, we follow the evaluation procedure of Zhang et al. [21] to ensure a direct comparison with our baseline. Each visual hypothesis is mapped to a specific visual category, and then we compute the CLIP and ALIGN scores between the samples and the assigned category label. An external VLM performs the category mapping, and the six categories follow the taxonomy introduced in [2]. While the first setting ofers a more fine-grained evaluation and explicitly accounts for textual and multimodal concepts, we also adopt the second to enable a fair comparison with our baseline (see Section 5), which focuses solely on visual concepts.",
+        "bbox": [
+            214,
+            522,
+            787,
+            661
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "text",
+        "text": "Additional textual evaluation Finally, we assess the quality of textual extraction to verify that textual hypotheses are not biased by the inclusion of visual information during the extraction procedure. Following prior works described in Section 2, we query an external LLM explainer with randomly sampled textual sentences from LLaVA-NeXT together with the analyzed hypothesis. The explainer predicts whether the hypothesis is efectively represented in the sentences, and then we compute the accuracy and the precision against the ground-truth annotations. We utilize the evaluation protocol of Paulo et al. [17], specifically, we adopt the detection score, which evaluates hypothesis presence at the sentence level, and the fuzzing score, focused on hypothesis presence at the token level.",
+        "bbox": [
+            214,
+            689,
+            787,
+            842
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "page_number",
+        "text": "6",
+        "bbox": [
+            217,
+            114,
+            228,
+            126
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "header",
+        "text": "S. Lanza et al.",
+        "bbox": [
+            269,
+            114,
+            369,
+            128
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "text",
+        "text": "5 Experiments",
+        "text_level": 2,
+        "bbox": [
+            215,
+            143,
+            375,
+            162
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "text",
+        "text": "In this section, we present the details of the quality and modality distribution of extracted concepts. We compared our results to Zhang et al. [21], referring to it as our baseline. To be consistent with the baseline, our analysis focuses only on the first 5000 neurons of the SAE.",
+        "bbox": [
+            214,
+            176,
+            787,
+            238
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "text",
+        "text": "5.1 Models",
+        "text_level": 2,
+        "bbox": [
+            215,
+            258,
+            325,
+            273
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "text",
+        "text": "For consistency with prior work [21], we adopt the same VLMs and SAE. The SAE is trained on frozen embeddings extracted from the LLaVA-NeXT-8B-HF model [13] with Top-k activation (k = 256) and a latent space $\\omega = 2 ^ { 1 7 }$ neurons. Based on prior work, we select the SAE trained on the $2 4 ^ { \\mathrm { t h } }$ transformer layer, which empirically yields the highest visual interpretability. For concept hypothesis extraction as an explainer, we adopt LLaVA-72B and select the five best samples to remain consistent with our baseline. For the textual analysis only, we utilize Llama-3.1-70B-Instruct [8], an LLM already adopted in another textual SAE analysis work [17] to avoid undesired visual bias that the VLM could bring. All experiments are run on two NVIDIA H100 GPUs: a complete run of the framework, from activation extraction to concept evaluation, requires approximately 30 hours of computation.",
+        "bbox": [
+            212,
+            284,
+            787,
+            467
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "table",
+        "img_path": "images/cab0d134971f61a5ea968d0f13841d53e9293c1f40bbc558c65c4ae1a118a405.jpg",
+        "table_caption": [
+            "Table 1: Comparison of correct visual concept extraction rates between our framework (Ours) and the baseline [21] using CLIP and ALIGN scores. Our method outperforms the baseline at all thresholds by an average margin of 41% (CLIP) and 45% (ALIGN)."
+        ],
+        "table_footnote": [],
+        "table_body": "<table><tr><td rowspan=\"2\">Thresh.</td><td>Base (CLIP)</td><td>Ours (CLIP)</td><td>Base (ALIGN)</td><td>Ours (ALIGN)</td></tr><tr><td>Avg (↑)</td><td>Avg (↑)</td><td>Avg (↑)</td><td>Avg (↑)</td></tr><tr><td>1</td><td>0.15</td><td>0.45</td><td>0.13</td><td>0.47</td></tr><tr><td>2</td><td>0.22</td><td>0.61</td><td>0.20</td><td>0.65</td></tr><tr><td>3</td><td>0.26</td><td>0.69</td><td>0.24</td><td>0.69</td></tr><tr><td>4</td><td>0.29</td><td>0.75</td><td>0.26</td><td>0.74</td></tr><tr><td>5</td><td>0.31</td><td>0.79</td><td>0.27</td><td>0.80</td></tr><tr><td>Avg</td><td>0.246</td><td>0.658</td><td>0.220</td><td>0.670</td></tr></table>",
+        "bbox": [
+            228,
+            565,
+            772,
+            702
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "text",
+        "text": "5.2 Datasets",
+        "text_level": 2,
+        "bbox": [
+            215,
+            753,
+            334,
+            768
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "text",
+        "text": "To remain consistent with our visual baseline, our main experiment uses the LLaVA-NeXT dataset [13], which follows the VQA format: each sample comprises an image, a corresponding question, and an answer. We also replicate our experiments on a subset of the COCO dataset [16] to evaluate the generalizability of our approach with a diferent set of data (see Appendix A). Due to computational constraints and to remain consistent with our baseline, we use a subset of it, specifically the first 15% of LLaVA-NeXT [21]. All prompts used are reported in the Appendix C.",
+        "bbox": [
+            214,
+            779,
+            787,
+            840
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "header",
+        "text": "Extraction and Analysis of Multimodal Concepts in VLMs through SAEs",
+        "bbox": [
+            235,
+            114,
+            727,
+            128
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "page_number",
+        "text": "7",
+        "bbox": [
+            774,
+            116,
+            785,
+            127
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "text",
+        "text": "",
+        "bbox": [
+            212,
+            146,
+            789,
+            208
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "text",
+        "text": "5.3 Multimodal Extraction",
+        "text_level": 2,
+        "bbox": [
+            215,
+            234,
+            454,
+            250
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "text",
+        "text": "In Table 3, we show the number of concept hypotheses extracted by our framework and the baseline (see Appendix B for some qualitative examples). Although our framework extracts fewer visual concepts compared to the baseline, we argue that the concepts identified by our approach are more semantically representative of the images utilized to extract them. To validate this claim, we compute the direct concept alignment scores following the procedures described in Section 4.2. As illustrated in Table 1, our approach consistently outperforms the baseline with higher accuracy in all thresholds and in both metrics, indicating a stronger alignment between images and the identified visual and multimodal concepts. To confirm this, Figure 2 shows that our approach identifies fewer concepts with low CLIP scores compared to the baseline. Instead, in Table 2, our framework",
+        "bbox": [
+            212,
+            263,
+            789,
+            433
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "chart",
+        "img_path": "images/9035fc7bcaf5f0a333573d1fb2afb809ffed1260e111727e0cfb24adf20660f1.jpg",
+        "content": "",
+        "chart_caption": [
+            "Fig. 2: Distribution of the CLIP and ALIGN scores for the proposed model (Ours) compared to the baseline. For each sample, we compute the average between the CLIP and ALIGN scores. The histogram illustrates the percentage of samples across similarity score intervals, highlighting a shift toward higher average similarity values in the proposed method relative to the baseline distribution."
+        ],
+        "chart_footnote": [],
+        "bbox": [
+            277,
+            462,
+            725,
+            688
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "text",
+        "text": "achieves comparable or slightly superior results in the category-concept alignment score. Finally, in Table 4 we assessed the quality of textual concepts using the",
+        "bbox": [
+            214,
+            809,
+            787,
+            840
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "page_number",
+        "text": "8",
+        "bbox": [
+            217,
+            114,
+            228,
+            127
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "header",
+        "text": "S. Lanza et al.",
+        "bbox": [
+            269,
+            114,
+            370,
+            128
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "text",
+        "text": "Interpretability score [17]. We compare our approach with other similar SAEs using only the textual approach, obtaining similar results.",
+        "bbox": [
+            214,
+            146,
+            787,
+            178
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "table",
+        "img_path": "images/d51d676d4a010900ad99b5b8bee6858de48e1c422a9161bfffbf9adde062c468.jpg",
+        "table_caption": [
+            "Table 2: Average accuracy of correct visual concept categorization through CLIP and ALIGN similarities with [2] labels."
+        ],
+        "table_footnote": [],
+        "table_body": "<table><tr><td rowspan=\"2\">Label</td><td colspan=\"2\">Baseline (CLIP)</td><td colspan=\"2\">Ours (CLIP)</td><td colspan=\"2\">Baseline (ALIGN)</td><td colspan=\"2\">Ours (ALIGN)</td></tr><tr><td>Avg (↑)</td><td>Var (↓)</td><td>Avg (↑)</td><td>Var (↓)</td><td>Avg (↑)</td><td>Var (↓)</td><td>Avg (↑)</td><td>Var (↓)</td></tr><tr><td>scene</td><td>18.84</td><td> $9.4 \\times 10^{-3}$ </td><td>26.58</td><td> $1.3 \\times 100^{-2}$ </td><td>16.84</td><td> $1.5 \\times 10^{-6}$ </td><td>16.94</td><td> $1.4 \\times 10^{-6}$ </td></tr><tr><td>object</td><td>40.65</td><td> $2.3 \\times 10^{-2}$ </td><td>39.02</td><td> $2.2 \\times 10^{-2}$ </td><td>16.69</td><td> $1.4 \\times 10^{-6}$ </td><td>16.73</td><td> $1.4 \\times 10^{-6}$ </td></tr><tr><td>part</td><td>23.24</td><td> $8.7 \\times 10^{-3}$ </td><td>20.93</td><td> $5.0 \\times 10^{-3}$ </td><td>16.69</td><td> $1.0 \\times 10^{-6}$ </td><td>16.66</td><td> $1.8 \\times 10^{-6}$ </td></tr><tr><td>material</td><td>5.36</td><td> $1.0 \\times 10^{-3}$ </td><td>4.98</td><td> $6.0 \\times 10^{-4}$ </td><td>16.59</td><td> $1.0 \\times 10^{-6}$ </td><td>16.57</td><td> $1.8 \\times 10^{-6}$ </td></tr><tr><td>texture</td><td>4.69</td><td> $3.0 \\times 10^{-3}$ </td><td>9.61</td><td> $8.4 \\times 10^{-3}$ </td><td>16.69</td><td> $1.9 \\times 10^{-6}$ </td><td>16.86</td><td> $1.8 \\times 10^{-6}$ </td></tr><tr><td>color</td><td>32.27</td><td> $2.8 \\times 10^{-2}$ </td><td>25.76</td><td> $2.1 \\times 10^{-2}$ </td><td>16.82</td><td> $2.1 \\times 10^{-6}$ </td><td>16.69</td><td> $2.0 \\times 10^{-6}$ </td></tr><tr><td>Avg</td><td>20.84</td><td> $1.2 \\times 10^{-2}$ </td><td>21.98</td><td> $1.1 \\times 10^{-2}$ </td><td>16.72</td><td> $1.4 \\times 10^{-6}$ </td><td>16.74</td><td> $1.6 \\times 10^{-6}$ </td></tr></table>",
+        "bbox": [
+            220,
+            246,
+            779,
+            378
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "table",
+        "img_path": "images/6c5936b6ee1537f18e970ed638af0d67cf1b89b47bea718da71d09dc336182ab.jpg",
+        "table_caption": [
+            "Table 3: Number of concept hypotheses from our framework and the baseline [21]."
+        ],
+        "table_footnote": [],
+        "table_body": "<table><tr><td>Modality</td><td>Zhang</td><td>Ours</td></tr><tr><td>Textual</td><td>-</td><td>2291</td></tr><tr><td>Visual</td><td>1391</td><td>470</td></tr><tr><td>Multimodal</td><td>-</td><td>132</td></tr></table>",
+        "bbox": [
+            217,
+            510,
+            395,
+            577
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "table",
+        "img_path": "images/3d6a05020ebfe282364435a4c4e24c513238c19b5a78c93887a74c87ad84b8b0.jpg",
+        "table_caption": [],
+        "table_footnote": [],
+        "table_body": "<table><tr><td>Models</td><td>Det.</td><td>Fuzz.</td></tr><tr><td>Gemma 2 9b</td><td>0.76</td><td>0.74</td></tr><tr><td>Llama 3.1 8b</td><td>0.81</td><td>0.83</td></tr><tr><td>LLaVA (Ours)</td><td>0.78</td><td>0.80</td></tr></table>",
+        "bbox": [
+            410,
+            508,
+            594,
+            577
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "table",
+        "img_path": "images/aca0fc1ee6fcbc0059d8ebd03f589b9cc08b537c3fe6b9769b22097c42cf7f50.jpg",
+        "table_caption": [
+            "Table 5: Multimodal concept counts at diferent thresholds (249 SAE neurons)."
+        ],
+        "table_footnote": [],
+        "table_body": "<table><tr><td colspan=\"2\">Threshold Count</td></tr><tr><td>0.70</td><td>223</td></tr><tr><td>0.80</td><td>132</td></tr><tr><td>0.90</td><td>23</td></tr></table>",
+        "bbox": [
+            622,
+            510,
+            758,
+            578
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "text",
+        "text": "5.4 Analysis for multimodal threshold",
+        "text_level": 2,
+        "bbox": [
+            215,
+            631,
+            544,
+            647
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "text",
+        "text": "In this section, we analyze the efect of diferent values of the threshold τ . Table 5 reports the number of neurons whose visual and textual hypotheses exceed each threshold for both CLIP and ALIGN. As expected, increasing τ results in a stricter criterion and, as a consequence, a smaller number of multimodal concepts. Conversely, decreasing τ increases the number of multimodal concepts. Based on this analysis, we select an intermediate threshold of $\\tau = 0 . 8$ which balances between coverage and semantic consistency.",
+        "bbox": [
+            214,
+            656,
+            789,
+            763
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "text",
+        "text": "5.5 Qualitative Intervention",
+        "text_level": 2,
+        "bbox": [
+            215,
+            784,
+            462,
+            800
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "text",
+        "text": "In this experiment, we want to evaluate the impact of specific concepts on text generation qualitatively [15]. We tested the LLaVA-NeXT-8B-HF model, already integrated with our SAE, with the instruction “Tell me a story about a person”. The prompt is provided in two versions: one with an associated image as additional input and one without, to observe how visual information afects the intervention. During the new generation, we force the target neuron’s activation to the fixed value α = 60, nearly 20 times the average activation of an SAE neuron, following past results [15]. We select three concepts, one from each modality, to analyze which modality has the biggest impact on text generation. As illustrated in Figure 3, the output modifications are more pronounced generally when the input includes an image, suggesting that visual features amplify the efect of concept-level intervention, and meanwhile multimodal concepts seem to afect the output production more than the other two categories.",
+        "bbox": [
+            214,
+            809,
+            787,
+            840
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "header",
+        "text": "Extraction and Analysis of Multimodal Concepts in VLMs through SAEs",
+        "bbox": [
+            236,
+            114,
+            727,
+            128
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "page_number",
+        "text": "9",
+        "bbox": [
+            774,
+            114,
+            785,
+            127
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "text",
+        "text": "",
+        "bbox": [
+            214,
+            146,
+            787,
+            315
+        ],
+        "page_idx": 9
+    },
+    {
+        "type": "image",
+        "img_path": "images/b277946fb092580c210c14a26d088c6f2a876043d24c33865e12b492dddb1cff.jpg",
+        "image_caption": [
+            "Fig. 3: Qualitative example for intervention experiments using the prompt “Tell me a story about a person”. (A) We generate two outputs, with and without an image prompt. (B) We show six intervention outputs, where three concepts are injected independently for each prompt. The concepts are selected from the three categories: textual, visual, and multimodal. Words referring to the injected concept are highlighted in red."
+        ],
+        "image_footnote": [],
+        "content": "",
+        "bbox": [
+            218,
+            345,
+            782,
+            470
+        ],
+        "page_idx": 9
+    },
+    {
+        "type": "text",
+        "text": "6 Discussion",
+        "text_level": 2,
+        "bbox": [
+            215,
+            643,
+            354,
+            661
+        ],
+        "page_idx": 9
+    },
+    {
+        "type": "text",
+        "text": "Our work primarily focuses on a single SAE and a single VLM as an explainer. Future work will extend the generalizability of the proposed framework across multiple architectures. Our concepts are generated from two independent prompts, designed to produce concise and interpretable descriptions rather than longer, free-form explanations. While this choice improves consistency and evaluation reliability, particularly because CLIP and ALIGN are more efective on shortmedium length texts, it may restrict the diversity and semantic richness of the extracted concepts. Finally, our findings reveal a clear correlation between SAE’s concept alteration with the text output, but they do not establish a causal relationship.",
+        "bbox": [
+            214,
+            689,
+            789,
+            840
+        ],
+        "page_idx": 9
+    },
+    {
+        "type": "page_number",
+        "text": "10",
+        "bbox": [
+            217,
+            114,
+            236,
+            127
+        ],
+        "page_idx": 9
+    },
+    {
+        "type": "header",
+        "text": "S. Lanza et al.",
+        "bbox": [
+            269,
+            114,
+            370,
+            128
+        ],
+        "page_idx": 9
+    },
+    {
+        "type": "text",
+        "text": "7 Conclusion",
+        "text_level": 2,
+        "bbox": [
+            215,
+            143,
+            359,
+            160
+        ],
+        "page_idx": 10
+    },
+    {
+        "type": "text",
+        "text": "In this paper, we demonstrate that an SAE encodes textual and visual multimodal concepts condensed into a shared latent space. Based on this property, we design a novel framework that performs dual-modality concept extraction, enriching both visual and textual hypotheses with multimodal information. Our results exhibit a significant improvement in the quality of interpretable SAE neurons connected to visual concepts, achieving an average improvement of 41% and 45% for CLIP and ALIGN scores, maintaining good quality textual production, and providing a more comprehensive understanding of the internal reasoning of VLMs. Finally, our intervention studies confirm the influence of multimodal and visual concepts on text generation. Overall, this work ofers a new understanding of the concept space representation of VLMs by leveraging a new SAE-based approach. We hope this work encourages future research on scalable SAE integration, multimodal interpretability, and concept-guided control in multimodal reasoning systems.",
+        "bbox": [
+            212,
+            175,
+            787,
+            373
+        ],
+        "page_idx": 10
+    },
+    {
+        "type": "text",
+        "text": "8 Acknowledgments",
+        "text_level": 2,
+        "bbox": [
+            215,
+            393,
+            426,
+            410
+        ],
+        "page_idx": 10
+    },
+    {
+        "type": "text",
+        "text": "The authors gratefully acknowledge funding from Horizon Europe under the MSCA grant agreements No 101072488 (TRAIL),No 101226624 (GREET), and No 101168792 (SWEET), as well as from the German Research Foundation (DFG), project number 551629603.",
+        "bbox": [
+            214,
+            424,
+            787,
+            486
+        ],
+        "page_idx": 10
+    },
+    {
+        "type": "text",
+        "text": "References",
+        "text_level": 2,
+        "bbox": [
+            215,
+            507,
+            325,
+            523
+        ],
+        "page_idx": 10
+    },
+    {
+        "type": "ref_text",
+        "text": "1. Antol, S., Agrawal, A., Lu, J., Mitchell, M., Batra, D., Zitnick, C.L., Parikh, D.: VQA: Visual Question Answering. In: International Conference on Computer Vision (ICCV) (2015)",
+        "bbox": [
+            223,
+            537,
+            787,
+            577
+        ],
+        "page_idx": 10
+    },
+    {
+        "type": "ref_text",
+        "text": "2. Bau, D., Zhou, B., Khosla, A., Oliva, A., Torralba, A.: Network dissection: Quanti fying interpretability of deep visual representations. In: 2017 IEEE Conference on Computer Vision and Pattern Recognition (CVPR). pp. 3319–3327. Honolulu, HI (Jul 2017). https://doi.org/10.1109/CVPR.2017.354, https://ieeexplore.ieee. org/document/8099837",
+        "bbox": [
+            223,
+            578,
+            787,
+            645
+        ],
+        "page_idx": 10
+    },
+    {
+        "type": "ref_text",
+        "text": "3. Bereska, L., Gavves, S.: Mechanistic interpretability for AI safety - a review. Transactions on Machine Learning Research (2024), https://openreview.net/forum?id= ePUVetPKu6",
+        "bbox": [
+            223,
+            647,
+            787,
+            686
+        ],
+        "page_idx": 10
+    },
+    {
+        "type": "ref_text",
+        "text": "4. Bricken, Trenton, Templeton, Adly, Batson, Joshua, Chen Brian, Jermyn Adam: Towards monosemanticity: decomposing language models with dictionary learning (Oct 2023), https://transformer-circuits.pub/2023/monosemantic-features",
+        "bbox": [
+            225,
+            688,
+            785,
+            728
+        ],
+        "page_idx": 10
+    },
+    {
+        "type": "ref_text",
+        "text": "5. Cunningham, H., Ewart, A., Riggs, L., Huben, R., Sharkey, L.: Sparse autoencoders find highly interpretable features in language models. arXiv preprint arXiv:2309.08600 (Oct 2023). https://doi.org/10.48550/arXiv.2309.08600, https: //arxiv.org/abs/2309.08600",
+        "bbox": [
+            225,
+            729,
+            787,
+            782
+        ],
+        "page_idx": 10
+    },
+    {
+        "type": "ref_text",
+        "text": "6. Elhage, N., Hume, T., Olsson, C., Schiefer, N., Henighan, T., Kravec, S., Hatfield-Dodds, Z., Lasenby, e.a.: Toy models of superposition. arXiv preprint arXiv:2209.10652 (Sep 2022). https://doi.org/10.48550/arXiv.2209.10652, https: //arxiv.org/abs/2209.10652",
+        "bbox": [
+            223,
+            784,
+            787,
+            838
+        ],
+        "page_idx": 10
+    },
+    {
+        "type": "header",
+        "text": "Extraction and Analysis of Multimodal Concepts in VLMs through SAEs",
+        "bbox": [
+            236,
+            114,
+            727,
+            128
+        ],
+        "page_idx": 10
+    },
+    {
+        "type": "page_number",
+        "text": "11",
+        "bbox": [
+            767,
+            116,
+            785,
+            127
+        ],
+        "page_idx": 10
+    },
+    {
+        "type": "ref_text",
+        "text": "7. Gao, L., la Tour, T.D., Tillman, H., Goh, G., Troll, R., Radford, A., Sutskever, I., Leike, J., Wu, J.: Scaling and evaluating sparse autoencoders. arXiv preprint arXiv:2406.04093 (Jun 2024). https://doi.org/10.48550/arXiv.2406.04093, https: //arxiv.org/abs/2406.04093",
+        "bbox": [
+            223,
+            147,
+            787,
+            202
+        ],
+        "page_idx": 11
+    },
+    {
+        "type": "ref_text",
+        "text": "8. Grattafiori, A., Dubey, A., Jauhri, A., Pandey, A., Kadian, A., Al-Dahle, A., Letman, A., Mathur, A., Schelten, A., et al.: The llama 3 herd of models (2024), https: //arxiv.org/abs/2407.21783",
+        "bbox": [
+            223,
+            203,
+            787,
+            244
+        ],
+        "page_idx": 11
+    },
+    {
+        "type": "ref_text",
+        "text": "9. Jia, C., Yang, Y., Xia, Y., Chen, Y.T., Parekh, Z., Pham, H., Le, Q., Sung, Y.H., Li, Z., Duerig, T.: Scaling up visual and vision-language representation learning with noisy text supervision. In: Meila, M., Zhang, T. (eds.) Proceedings of the 38th International Conference on Machine Learning. vol. 139, pp. 4904–4916 (18–24 Jul 2021), https://proceedings.mlr.press/v139/jia21b.html",
+        "bbox": [
+            223,
+            244,
+            787,
+            313
+        ],
+        "page_idx": 11
+    },
+    {
+        "type": "ref_text",
+        "text": "10. Kaduri, O., Bagon, S., Dekel, T.: What’s in the image? a deep-dive into the vision of vision language models. In: Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition (CVPR). pp. 14549–14558 (June 2025), https://openaccess.thecvf.com/content/CVPR2025/html/Kaduri\\_Whats\\_in\\_the\\_ Image\\_A\\_Deep-Dive\\_into\\_the\\_Vision\\_of\\_CVPR\\_2025\\_paper.html",
+        "bbox": [
+            217,
+            314,
+            787,
+            382
+        ],
+        "page_idx": 11
+    },
+    {
+        "type": "ref_text",
+        "text": "11. Lee, J.H., Lanza, S., Wermter, S.: From neural activations to concepts: A survey on explaining concepts in neural networks (2024), https://neurosymbolic-ai-journal. com/system/files/nai-paper-697.pdf",
+        "bbox": [
+            218,
+            383,
+            787,
+            424
+        ],
+        "page_idx": 11
+    },
+    {
+        "type": "ref_text",
+        "text": "12. Lim, H., Choi, J., Choo, J., Schneider, S.: Sparse autoencoders reveal selective remapping of visual concepts during adaptation. arXiv preprint arXiv:2412.05276 (Mar 2025). https://doi.org/10.48550/arXiv.2412.05276, https://arxiv.org/ abs/2412.05276",
+        "bbox": [
+            218,
+            424,
+            787,
+            479
+        ],
+        "page_idx": 11
+    },
+    {
+        "type": "ref_text",
+        "text": "13. Liu, H., Li, C., Li, Y., Li, B., Zhang, Y., Shen, S., Lee, Y.J.: Llava-next: Improved reasoning, ocr, and world knowledge (January 2024), https://llava-vl.github.io/ blog/2024-01-30-llava-next/",
+        "bbox": [
+            217,
+            479,
+            787,
+            520
+        ],
+        "page_idx": 11
+    },
+    {
+        "type": "ref_text",
+        "text": "14. Ma, P., Rietdorf, L., Kotovenko, D., Hu, V.T., Ommer, B.: Does vlm classification benefit from llm description semantics? In: Proceedings of the Thirty-Ninth AAAI Conference on Artificial Intelligence (2025). https://doi.org/10.1609/aaai.v39i6. 32638, https://doi.org/10.1609/aaai.v39i6.32638",
+        "bbox": [
+            218,
+            521,
+            787,
+            575
+        ],
+        "page_idx": 11
+    },
+    {
+        "type": "ref_text",
+        "text": "15. Pach, M., Karthik, S., Bouniot, Q., Belongie, S., Akata, Z.: Sparse autoencoders learn monosemantic Features in vision-language models. Poster on Neural Information Processing Systems (NeurIPS 2025) (Apr 2025). https://doi.org/10.48550/arXiv. 2504.02821, https://neurips.cc/virtual/2025/loc/san-diego/poster/119210",
+        "bbox": [
+            218,
+            575,
+            787,
+            632
+        ],
+        "page_idx": 11
+    },
+    {
+        "type": "ref_text",
+        "text": "16. Park, D.H., Hendricks, L.A., Akata, Z., Rohrbach, A., Schiele, B., Darrell, T., Rohrbach, M.: Multimodal explanations: Justifying decisions and pointing to the evidence. CoRR (2018), http://arxiv.org/abs/1802.08129",
+        "bbox": [
+            217,
+            632,
+            787,
+            674
+        ],
+        "page_idx": 11
+    },
+    {
+        "type": "ref_text",
+        "text": "17. Paulo, G., Mallen, A., Juang, C., Belrose, N.: Automatically interpreting millions of features in large language models. arXiv preprint arXiv:2410.13928 (Dec 2024). https://doi.org/10.48550/arXiv.2410.13928, https://arxiv.org/ abs/2410.13928",
+        "bbox": [
+            217,
+            674,
+            787,
+            728
+        ],
+        "page_idx": 11
+    },
+    {
+        "type": "ref_text",
+        "text": "18. Radford, A., Kim, J.W., Hallacy, C., Ramesh, A., Goh, G., Agarwal, S., Sastry, G., Askell, A., Mishkin, P., Clark, J., Krueger, G., Sutskever, I.: Learning transferable visual models from natural language supervision. In: Proceedings of the 38th International Conference on Machine Learning. vol. 139, pp. 8748–8763 (18–24 Jul 2021), https://proceedings.mlr.press/v139/radford21a.html",
+        "bbox": [
+            217,
+            729,
+            787,
+            797
+        ],
+        "page_idx": 11
+    },
+    {
+        "type": "ref_text",
+        "text": "19. Sim, M.Y., Zhang, W.E., Dai, X., Fang, B.: Can VLMs actually see and read? a survey on modality collapse in vision-language models. In: Che, W., Nabende, J., Shutova, E., Pilehvar, M.T. (eds.) Findings of the Association for Computational Linguistics:",
+        "bbox": [
+            215,
+            797,
+            787,
+            840
+        ],
+        "page_idx": 11
+    },
+    {
+        "type": "page_number",
+        "text": "12",
+        "bbox": [
+            217,
+            114,
+            236,
+            127
+        ],
+        "page_idx": 11
+    },
+    {
+        "type": "header",
+        "text": "S. Lanza et al.",
+        "bbox": [
+            269,
+            114,
+            370,
+            128
+        ],
+        "page_idx": 11
+    },
+    {
+        "type": "ref_text",
+        "text": "ACL 2025. pp. 24452–24470. Association for Computational Linguistics, Vienna, Austria (Jul 2025). https://doi.org/10.18653/v1/2025.findings-acl.1256, https: //aclanthology.org/2025.findings-acl.1256/",
+        "bbox": [
+            243,
+            148,
+            787,
+            188
+        ],
+        "page_idx": 12
+    },
+    {
+        "type": "ref_text",
+        "text": "20. Zang, Y., Yun, T., Tan, H., Bui, T., Sun, C.: Pre-trained vision-language models learn discoverable visual concepts. Transactions on Machine Learning Research (2025), https://openreview.net/forum?id=Vq0wMFBjo2",
+        "bbox": [
+            217,
+            189,
+            785,
+            229
+        ],
+        "page_idx": 12
+    },
+    {
+        "type": "ref_text",
+        "text": "21. Zhang, K., Shen, Y., Li, B., Liu, Z.: Large multimodal models can interpret features in large multimodal models. Proceedings of the IEEE/CVF International Conference on Computer Vision (ICCV) (Nov 2025), https://openaccess.thecvf. com/content/ICCV2025/papers/Zhang\\_Large\\_Multi-modal\\_Models\\_Can\\_Interpret\\_ Features\\_in\\_Large\\_Multi-modal\\_Models\\_ICCV\\_2025\\_paper.pdf",
+        "bbox": [
+            217,
+            229,
+            785,
+            299
+        ],
+        "page_idx": 12
+    },
+    {
+        "type": "text",
+        "text": "A Analysis on COCO dataset",
+        "text_level": 2,
+        "bbox": [
+            215,
+            335,
+            519,
+            353
+        ],
+        "page_idx": 12
+    },
+    {
+        "type": "text",
+        "text": "In this section, we report additional results of our framework applied to a diferent VQA dataset based on COCO[1], using the SAE injected into LLaVA-NeXT-8B-HF model. Although SAEs are generally not conditioned on the dataset used during inference, with this test, we verify whether our framework preserves this property for the first 1000 neurons.",
+        "bbox": [
+            212,
+            367,
+            787,
+            445
+        ],
+        "page_idx": 12
+    },
+    {
+        "type": "table",
+        "img_path": "images/135b6a94cae986eb9ed75a526dd88d454c383cca0351062cebca246b58ca5e0e.jpg",
+        "table_caption": [
+            "Table 6: COCO generalization results for the first 1000 neurons."
+        ],
+        "table_footnote": [],
+        "table_body": "<table><tr><td>Dataset</td><td>#Text</td><td>#Visual</td><td>#Multimodal</td></tr><tr><td>LLaVA-NeXT (main)</td><td>639</td><td>85</td><td>19</td></tr><tr><td>COCO (subset)</td><td>537</td><td>57</td><td>9</td></tr></table>",
+        "bbox": [
+            310,
+            500,
+            687,
+            553
+        ],
+        "page_idx": 12
+    },
+    {
+        "type": "text",
+        "text": "We also compare concept hypotheses across datasets using CLIP and ALIGN embeddings to estimate the overlap and stability of extracted concepts.",
+        "bbox": [
+            215,
+            584,
+            785,
+            614
+        ],
+        "page_idx": 12
+    },
+    {
+        "type": "table",
+        "img_path": "images/5a7c85b9aee2d792b5d57e85463f4e42161c7de5facf9adb5a7f231513e03071.jpg",
+        "table_caption": [
+            "Table 7: Average similarity scores between the two dataset"
+        ],
+        "table_footnote": [],
+        "table_body": "<table><tr><td colspan=\"3\">Metric LLaVA-NeXT COCO</td></tr><tr><td>CLIP</td><td>639</td><td>85</td></tr><tr><td>ALIGN</td><td>537</td><td>57</td></tr></table>",
+        "bbox": [
+            387,
+            670,
+            611,
+            723
+        ],
+        "page_idx": 12
+    },
+    {
+        "type": "text",
+        "text": "B Qualitative Examples",
+        "text_level": 2,
+        "bbox": [
+            215,
+            777,
+            465,
+            795
+        ],
+        "page_idx": 12
+    },
+    {
+        "type": "text",
+        "text": "In this section, we present qualitative examples of concepts grouped by modality (Figures 4, 5, and 6):",
+        "bbox": [
+            214,
+            809,
+            787,
+            840
+        ],
+        "page_idx": 12
+    },
+    {
+        "type": "header",
+        "text": "Extraction and Analysis of Multimodal Concepts in VLMs through SAEs",
+        "bbox": [
+            236,
+            114,
+            727,
+            128
+        ],
+        "page_idx": 12
+    },
+    {
+        "type": "page_number",
+        "text": "13",
+        "bbox": [
+            767,
+            114,
+            785,
+            127
+        ],
+        "page_idx": 12
+    },
+    {
+        "type": "image",
+        "img_path": "images/7273c7a26560722ea9ab1c448528e8527ffd0128db4691d64711b7c53067c381.jpg",
+        "image_caption": [
+            "Water activites",
+            "Intheimage, thereis a<< kay>> <<aker>><< >><< padd>><<ling>><<through rough waters and waves in a small canoe or<< kavak>>. It is important for the <<kayaker >>",
+            "For those who want to learn how to<< paddle>>on a surf<<board>> like the woman in the image, here are [...]",
+            "Before going<< kay>><<aking>> in the conditions shownin the image, one should take several precautions to ensure<< a>> safe [...",
+            "In this scenario, a person<< kay>><<aking>> in a calm body of water, some precautions should b taken to<< ensure>> [...]"
+        ],
+        "image_footnote": [
+            "The two individuals in the image are engaging in<< water>> sports, specifically, one issurfing while the other is<< paddle>><<boarding> [..."
+        ],
+        "content": "",
+        "bbox": [
+            303,
+            247,
+            697,
+            310
+        ],
+        "page_idx": 13
+    },
+    {
+        "type": "image",
+        "img_path": "images/80fd04bdf7a092014e532be7a04a18ca26667c75411afd03a95c686f34fad5a2.jpg",
+        "image_caption": [
+            "Breakfast food",
+            "'The breakfast plate includes ingredients such as bread,<< eggs>>,<< bacon>>,<< and>> cheese. These ingredients can be combine [...]"
+        ],
+        "image_footnote": [
+            "\"To create a similar dish to the one in the image, gather ingredients such as <<sausages>>. bread<<.>> vegetables<< like>> broccoli and carrots [...]",
+            "\"To enhance the flavor of an omelet<< using>>the ingredients visible in the image. one could incorporate the<< chopped>> vegetables,such [...]",
+            "[...]you<< can>> create a flavor-packed egg<< f>>rittata, whisk<<ing>> the eggs<< and>> pouring them<< over>> [...]",
+            "'To prepare a similar meal at home consisting of sandwiches and fries, one could follow these steps: Gather ingredients: bread<<,>> choice<< of>> <<meats >> [...]"
+        ],
+        "content": "",
+        "bbox": [
+            305,
+            484,
+            700,
+            549
+        ],
+        "page_idx": 13
+    },
+    {
+        "type": "text",
+        "text": "Fig. 4: Examples of multimodal concepts. The textual tokens that trigger the SAE neuron are highlighted with «».",
+        "bbox": [
+            215,
+            717,
+            785,
+            750
+        ],
+        "page_idx": 13
+    },
+    {
+        "type": "page_number",
+        "text": "14",
+        "bbox": [
+            217,
+            114,
+            236,
+            127
+        ],
+        "page_idx": 13
+    },
+    {
+        "type": "header",
+        "text": "S. Lanza et al.",
+        "bbox": [
+            269,
+            114,
+            369,
+            128
+        ],
+        "page_idx": 13
+    },
+    {
+        "type": "image",
+        "img_path": "images/0c750ad4da2cda1c0ad76a64f82fe9a61cd75ad8dc2cdbe200928ffd647bc1ce.jpg",
+        "image_caption": [
+            "Fig. 5: Examples of visual concepts."
+        ],
+        "image_footnote": [],
+        "content": "",
+        "bbox": [
+            302,
+            188,
+            700,
+            333
+        ],
+        "page_idx": 14
+    },
+    {
+        "type": "text",
+        "text": "Preparation and Strategy in Sports",
+        "text_level": 2,
+        "bbox": [
+            383,
+            429,
+            614,
+            445
+        ],
+        "page_idx": 14
+    },
+    {
+        "type": "text",
+        "text": "During a baseball game, an on-deck batter may analyze their teammate's at-bat to gather useful insights and strategize their approach<< when>> it's their<< turn>> bat By observing the opposing pitcher's technique",
+        "bbox": [
+            303,
+            460,
+            697,
+            493
+        ],
+        "page_idx": 14
+    },
+    {
+        "type": "text",
+        "text": "The next course of action for the player warming up, who is standing near the catcher and the umpire, would be to prepare himself for<< turn>> bat. It's likely that he is observin",
+        "bbox": [
+            308,
+            500,
+            694,
+            532
+        ],
+        "page_idx": 14
+    },
+    {
+        "type": "text",
+        "text": "\"While the boy in the baseball uniform is swinging his baseball bat on the field, the other plavers waiting for<< turn>> can take advantage of the opportunity to observe his technique and learn from it.",
+        "bbox": [
+            310,
+            537,
+            694,
+            569
+        ],
+        "page_idx": 14
+    },
+    {
+        "type": "text",
+        "text": "Black and white photography",
+        "text_level": 2,
+        "bbox": [
+            401,
+            625,
+            594,
+            640
+        ],
+        "page_idx": 14
+    },
+    {
+        "type": "text",
+        "text": "'Based on the<< black>><< and>> white nature of the photo depicting a baseball team, it can be inferred that the era when this photo was taken is likely to be in the early-to-mid 20th century. and>> white[..]",
+        "bbox": [
+            308,
+            659,
+            687,
+            690
+        ],
+        "page_idx": 14
+    },
+    {
+        "type": "text",
+        "text": "The choice of black<< and>> white for this image of a person surfing might have been made for several reasons. \\n\\nFirstly, black<< and>> white photography [..]",
+        "bbox": [
+            303,
+            705,
+            697,
+            728
+        ],
+        "page_idx": 14
+    },
+    {
+        "type": "text",
+        "text": "One possible reason for the black<< and>> white photograph could be that the image is an older photograph [..]",
+        "bbox": [
+            305,
+            741,
+            699,
+            763
+        ],
+        "page_idx": 14
+    },
+    {
+        "type": "text",
+        "text": "Fig. 6: Examples of textual concepts.The textual tokens that trigger the SAE neuron are highlighted with «».",
+        "bbox": [
+            215,
+            773,
+            785,
+            805
+        ],
+        "page_idx": 14
+    },
+    {
+        "type": "header",
+        "text": "Extraction and Analysis of Multimodal Concepts in VLMs through SAEs",
+        "bbox": [
+            236,
+            114,
+            727,
+            128
+        ],
+        "page_idx": 14
+    },
+    {
+        "type": "page_number",
+        "text": "15",
+        "bbox": [
+            767,
+            114,
+            785,
+            127
+        ],
+        "page_idx": 14
+    },
+    {
+        "type": "text",
+        "text": "Below are the prompts used to query the LLaVA-72B model (Figures 7, 8, 9), inspired by or directly taken from [21]. The first prompt maps each visual hypothesis to one of six predefined labels, and the next two prompts generate visual and textual hypotheses (see Section 4.1).",
+        "bbox": [
+            214,
+            175,
+            787,
+            239
+        ],
+        "page_idx": 15
+    },
+    {
+        "type": "image",
+        "img_path": "images/6a8d5fb6f73e267475aa69f96b8b466fade5150baad46b7ea0ec92007e74e4d5.jpg",
+        "image_caption": [
+            "Fig. 7: Labelling Prompt (LLaVA 72B)"
+        ],
+        "image_footnote": [],
+        "content": "",
+        "bbox": [
+            215,
+            113,
+            784,
+            503
+        ],
+        "page_idx": 15
+    },
+    {
+        "type": "text",
+        "text": "The last two prompts are used to query Llama 3.1 70B, which evaluates textual concepts (Figures 10 and 11) based on [17].",
+        "bbox": [
+            215,
+            566,
+            785,
+            599
+        ],
+        "page_idx": 15
+    },
+    {
+        "type": "page_number",
+        "text": "16",
+        "bbox": [
+            217,
+            114,
+            236,
+            127
+        ],
+        "page_idx": 15
+    },
+    {
+        "type": "image",
+        "img_path": "images/774179921f51b02afc7f3c2821a579bced5dfcc3d6144b36b44a2a023c02a18b.jpg",
+        "image_caption": [
+            "Fig. 8: Visual Generation Guidelines (LLaVA 72B)"
+        ],
+        "image_footnote": [],
+        "content": "",
+        "bbox": [
+            217,
+            337,
+            784,
+            606
+        ],
+        "page_idx": 16
+    },
+    {
+        "type": "header",
+        "text": "Extraction and Analysis of Multimodal Concepts in VLMs through SAEs",
+        "bbox": [
+            236,
+            114,
+            727,
+            128
+        ],
+        "page_idx": 16
+    },
+    {
+        "type": "page_number",
+        "text": "17",
+        "bbox": [
+            767,
+            114,
+            785,
+            128
+        ],
+        "page_idx": 16
+    },
+    {
+        "type": "image",
+        "img_path": "images/65a480b8131486c061bf30c0e343707942a686d3847fc4482285d5f382c3e1b2.jpg",
+        "image_caption": [
+            "Fig. 9: A4: Textual Generation Guidelines (LLaVA 72B)"
+        ],
+        "image_footnote": [],
+        "content": "",
+        "bbox": [
+            217,
+            281,
+            784,
+            662
+        ],
+        "page_idx": 17
+    },
+    {
+        "type": "page_number",
+        "text": "18",
+        "bbox": [
+            217,
+            114,
+            236,
+            127
+        ],
+        "page_idx": 17
+    },
+    {
+        "type": "header",
+        "text": "S. Lanza et al.",
+        "bbox": [
+            269,
+            114,
+            370,
+            128
+        ],
+        "page_idx": 17
+    },
+    {
+        "type": "image",
+        "img_path": "images/4d722fc4ba9b4cf14ad37bfd3d39eb244152c6b3d8e7ca59edd7ec75630f46d8.jpg",
+        "image_caption": [
+            "Fig. 10: Detection score prompt (Llama 3.1 70B)"
+        ],
+        "image_footnote": [],
+        "content": "",
+        "bbox": [
+            217,
+            207,
+            782,
+            739
+        ],
+        "page_idx": 18
+    },
+    {
+        "type": "header",
+        "text": "Extraction and Analysis of Multimodal Concepts in VLMs through SAEs",
+        "bbox": [
+            236,
+            114,
+            727,
+            128
+        ],
+        "page_idx": 18
+    },
+    {
+        "type": "page_number",
+        "text": "19",
+        "bbox": [
+            767,
+            114,
+            785,
+            127
+        ],
+        "page_idx": 18
+    },
+    {
+        "type": "image",
+        "img_path": "images/d28ae62c9287a946e3efb18c32e34bab5b39988954338a96bb59a7cec9b49311.jpg",
+        "image_caption": [
+            "Fig. 11: Fuzzing score prompt (Llama 3.1 70B)"
+        ],
+        "image_footnote": [],
+        "content": "",
+        "bbox": [
+            215,
+            178,
+            784,
+            766
+        ],
+        "page_idx": 19
+    },
+    {
+        "type": "page_number",
+        "text": "20",
+        "bbox": [
+            217,
+            114,
+            236,
+            127
+        ],
+        "page_idx": 19
+    },
+    {
+        "type": "header",
+        "text": "S. Lanza et al.",
+        "bbox": [
+            269,
+            114,
+            369,
+            128
+        ],
+        "page_idx": 19
+    }
+]

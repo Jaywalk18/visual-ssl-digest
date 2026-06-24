@@ -25,42 +25,42 @@
 <a class="nav-link" href="../pages/timeline.html">时间线</a>
 <span class="nav-streak" title="连续追踪天数"><svg viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><path d="M8 0c.7 2.5-1.2 3.7-2 5-1 1.6-1 4 .8 4.8C6.4 8.5 7.4 7.8 8 7c.3 1.3-.4 2 .9 3 .9.7 1.3 1.6 1.1 2.6C9.7 14.6 8.9 16 6.8 16 4.6 16 3 14.3 3 12c0-3.3 2.6-4.8 2.4-8C6.9 4.6 8.4 5 8 0z"/></svg> 连续 <b data-streak>0</b> 天</span>
   </nav>
-  <main><article class="paper-detail" data-pid="2606.22220" data-category="ECCV 2026 · arXiv 新增 · multimodal contrastive learning" data-priority="P2" data-date="2026-06-24" data-title="multimem: measuring and mitigating memorization in multi-modal contrastive learning" data-keywords="multimem: measuring and mitigating memorization in multi-modal contrastive learning multimem eccv 2026 · arxiv 新增 · multimodal contrastive learning p2 2026-06-24 eccv 2026 · arxiv 新增 · multimodal contrastive learning eccv 接收；多模态对比学习的记忆度量与缓解，贴近 vlm 预训练质量控制 中高相关；详见方法、贡献和实验边界。">
+  <main><article class="paper-detail" data-pid="2606.22220" data-category="arXiv 新增/更新 · multimodal contrastive learning" data-priority="P1" data-date="2026-06-24" data-title="multimem: measuring and mitigating memorization in multi-modal contrastive learning" data-keywords="multimem: measuring and mitigating memorization in multi-modal contrastive learning multimem arxiv 新增/更新 · multimodal contrastive learning p1 2026-06-24 arxiv 新增/更新 · multimodal contrastive learning 给跨模态对比学习定义 memorization 度量，指出文本语义错配是主要记忆化来源 高相关；详见方法、贡献和实验边界。">
   <div class="paper-main">
-    <div class="kicker">ECCV 2026 · arXiv 新增 · multimodal contrastive learning · P2 · 2026-06-24</div>
-    <h1 class="paper-headline">MultiMem：CLIP/VLM 预训练本质上是大规模对比学习，记忆噪声与错配会直接影响通用视觉表征质量</h1>
-    <p class="dek">把 supervised/vision SSL 中已讨论较多的 memorization 问题扩展到 multi-modal contrastive learning，指出 text modality 对 memorization 影响最大。</p>
-    <p class="byline"><strong>MultiMem: Measuring and Mitigating Memorization in Multi-Modal Contrastive Learning</strong>　Wenhao Wang, Franziska Boenisch, Michael Backes, Adam Dziedzic；机构以 arXiv 最终版为准。　ECCV 2026 · arXiv 新增 · multimodal contrastive learning　<a href="https://arxiv.org/abs/2606.22220">原文链接</a></p>
+    <div class="kicker">arXiv 新增/更新 · multimodal contrastive learning · P1 · 2026-06-24</div>
+    <h1 class="paper-headline">MultiMem：通用视觉表征越来越依赖图文/多模态对比学习，理解记忆化来源是数据清洗、augmentation 和训练目标设计的基础</h1>
+    <p class="dek">把视觉 SSL 已有的 memorization/generalization 问题扩展到图文/视频/音频等多模态对比学习，指出文本是驱动记忆化的主导模态，其后是视频、图像和音频。</p>
+    <p class="byline"><strong>MultiMem: Measuring and Mitigating Memorization in Multi-Modal Contrastive Learning</strong>　Wenhao Wang, Franziska Boenisch, Michael Backes, Adam Dziedzic；arXiv 页面未列稳定机构。　arXiv 新增/更新 · multimodal contrastive learning　<a href="https://arxiv.org/abs/2606.22220">原文链接</a></p>
     <div class="paper-facts">
       <span><b>编号</b>2606.22220</span>
-      <span><b>优先级</b>P2</span>
-      <span><b>类别</b>ECCV 2026 · arXiv 新增 · multimodal contrastive learning</span>
-      <span><b>会议</b>ECCV 2026 · arXiv 新增 · multimodal contrastive learning</span>
-      <span><b>方法</b>提出 MultiMem 指标衡量多模态对比学习中的 memorization，并用跨模态 targeted augmentations 缓解噪声/离群样本记忆。</span>
+      <span><b>优先级</b>P1</span>
+      <span><b>类别</b>arXiv 新增/更新 · multimodal contrastive learning</span>
+      <span><b>会议</b>arXiv 新增/更新 · multimodal contrastive learning</span>
+      <span><b>方法</b>提出 MultiMem 指标，度量 multi-modal contrastive learning 中样本/模态级 memorization，并分析 cross-modal semantic misalignment 对记忆化的影响。</span>
       <span><b>来源</b>arXiv / OpenReview</span>
     </div>
     <div class="feature-body">
-      <p class="lead dropcap">先说结论。CLIP/VLM 预训练本质上是大规模对比学习，记忆噪声与错配会直接影响通用视觉表征质量。 把 supervised/vision SSL 中已讨论较多的 memorization 问题扩展到 multi-modal contrastive learning，指出 text modality 对 memorization 影响最大。</p>
+      <p class="lead dropcap">先说结论。通用视觉表征越来越依赖图文/多模态对比学习，理解记忆化来源是数据清洗、augmentation 和训练目标设计的基础。 把视觉 SSL 已有的 memorization/generalization 问题扩展到图文/视频/音频等多模态对比学习，指出文本是驱动记忆化的主导模态，其后是视频、图像和音频。</p>
       <figure class="full-fig"><img src="../assets/mineru/2606.22220/images/bdeb0573ef6c69d2f9d209bf13d3990f453c34813e6f22bb20cc971569dd7ed8.jpg" alt="Figureure 14 · Performance for AudioCLIP under in-training regrouping when using nois"><figcaption><b>Figureure 14 · Performance for AudioCLIP under in-training regrouping when using nois</b><span class="fig-en">Figure 14. Performance for AudioCLIP under in-training regrouping when using noise-based augmentation and gradient clipping.</span><span class="fig-zh">这张图/表用于判断 MultiMem 的实验收益来自哪里。重点看替换、消融或跨模型设置下趋势是否一致，而不是只看单个最高分。</span></figcaption></figure>
 <figure class="full-fig"><img src="../assets/mineru/2606.22220/images/6ba938f21991f3210a9dd123d1b8201bd3505a1d5ebbf7aeccffbe994eebcdee.jpg" alt="Figureure 15 · Performance for AudioCLIP under in-training regrouping vs"><figcaption><b>Figureure 15 · Performance for AudioCLIP under in-training regrouping vs</b><span class="fig-en">Figure 15. Performance for AudioCLIP under in-training regrouping vs. in-training removal.</span><span class="fig-zh">这张图/表用于判断 MultiMem 的实验收益来自哪里。重点看替换、消融或跨模型设置下趋势是否一致，而不是只看单个最高分。</span></figcaption></figure>
       
       <h2>核心问题</h2>
-      <p>CLIP/VLM 预训练本质上是大规模对比学习，记忆噪声与错配会直接影响通用视觉表征质量。</p>
+      <p>通用视觉表征越来越依赖图文/多模态对比学习，理解记忆化来源是数据清洗、augmentation 和训练目标设计的基础。</p>
       <h2>方法拆解</h2>
-      <p>提出 MultiMem 指标衡量多模态对比学习中的 memorization，并用跨模态 targeted augmentations 缓解噪声/离群样本记忆。</p>
+      <p>提出 MultiMem 指标，度量 multi-modal contrastive learning 中样本/模态级 memorization，并分析 cross-modal semantic misalignment 对记忆化的影响。</p>
       <h2>主要贡献</h2>
-      <p>把 supervised/vision SSL 中已讨论较多的 memorization 问题扩展到 multi-modal contrastive learning，指出 text modality 对 memorization 影响最大。</p>
+      <p>把视觉 SSL 已有的 memorization/generalization 问题扩展到图文/视频/音频等多模态对比学习，指出文本是驱动记忆化的主导模态，其后是视频、图像和音频。</p>
       <h2>实验看点</h2>
-      <p>系统分析 image、video、audio、text 等模态；摘要称 targeted augmentations 可降低 MultiMem 并提升模型性能。</p>
+      <p>摘要称 targeted augmentations across modalities 能降低 MultiMem 并改善泛化；这对 CLIP 类训练中的噪声 caption 与 rare samples 处理很关键。</p>
       <h2>局限与读法</h2>
-      <p>memorization 降低与下游泛化之间可能存在任务相关 trade-off；需要看指标是否稳定预测真实安全/泛化风险。</p>
+      <p>指标是否能预测大规模 web 数据上的 downstream 泛化仍需验证；不同模态数据规模不平衡时，MultiMem 的可比性要细看。</p>
     
     </div>
   </div>
   <aside class="paper-side">
 
     <div class="side-box pref-side"><h4>我的偏好</h4><div class="paper-side-tools"><button class="readbtn" type="button" data-read-toggle="2606.22220" title="标记已读" aria-label="标记已读"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M4 10.5l4 4 8-9"/></svg></button><div class="prefbar" data-pref-controls="2606.22220"><button class="prefbtn like" type="button" data-pref-toggle="like" data-pref-id="2606.22220" aria-pressed="false" title="关注这篇">关注</button><button class="prefbtn dismiss" type="button" data-pref-toggle="dismiss" data-pref-id="2606.22220" aria-pressed="false" title="降低这篇权重">略过</button></div></div></div>
-    <div class="side-box"><h4>关键判断</h4><dl><dt>相关性</dt><dd>P2</dd><dt>类别</dt><dd>ECCV 2026 · arXiv 新增 · multimodal contrastive learning</dd><dt>会议</dt><dd>ECCV 2026 · arXiv 新增 · multimodal contrastive learning</dd><dt>读法</dt><dd>方法图优先，表格次之</dd></dl></div>
+    <div class="side-box"><h4>关键判断</h4><dl><dt>相关性</dt><dd>P1</dd><dt>类别</dt><dd>arXiv 新增/更新 · multimodal contrastive learning</dd><dt>会议</dt><dd>arXiv 新增/更新 · multimodal contrastive learning</dd><dt>读法</dt><dd>方法图优先，表格次之</dd></dl></div>
     <div class="side-box"><h4>原文</h4><p><a href="https://arxiv.org/abs/2606.22220">https://arxiv.org/abs/2606.22220</a></p></div>
   </aside>
 </article></main>

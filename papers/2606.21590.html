@@ -25,42 +25,42 @@
 <a class="nav-link" href="../pages/timeline.html">时间线</a>
 <span class="nav-streak" title="连续追踪天数"><svg viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><path d="M8 0c.7 2.5-1.2 3.7-2 5-1 1.6-1 4 .8 4.8C6.4 8.5 7.4 7.8 8 7c.3 1.3-.4 2 .9 3 .9.7 1.3 1.6 1.1 2.6C9.7 14.6 8.9 16 6.8 16 4.6 16 3 14.3 3 12c0-3.3 2.6-4.8 2.4-8C6.9 4.6 8.4 5 8 0z"/></svg> 连续 <b data-streak>0</b> 天</span>
   </nav>
-  <main><article class="paper-detail" data-pid="2606.21590" data-category="arXiv 新增 · SSL projector / representation diagnostics" data-priority="P1" data-date="2026-06-24" data-title="radial basis function networks as projection heads in self-supervised learning" data-keywords="radial basis function networks as projection heads in self-supervised learning radial basis function networks as arxiv 新增 · ssl projector / representation diagnostics p1 2026-06-24 arxiv 新增 · ssl projector / representation diagnostics 从 projector 结构和无标签诊断切入 ssl 表征质量，值得方法线精读 高相关；详见方法、贡献和实验边界。">
+  <main><article class="paper-detail" data-pid="2606.21590" data-category="arXiv 新增 · SSL projector / label-free representation metric" data-priority="P0" data-date="2026-06-24" data-title="radial basis function networks as projection heads in self-supervised learning" data-keywords="radial basis function networks as projection heads in self-supervised learning radial basis function networks as arxiv 新增 · ssl projector / label-free representation metric p0 2026-06-24 arxiv 新增 · ssl projector / label-free representation metric 直接改 simclr/byol/moco/swav/simsiam 的 projection head，并用 rbf 参数估计表征质量 高相关；详见方法、贡献和实验边界。">
   <div class="paper-main">
-    <div class="kicker">arXiv 新增 · SSL projector / representation diagnostics · P1 · 2026-06-24</div>
-    <h1 class="paper-headline">Radial Basis Function Networks as：它直接作用于视觉 SSL 的训练头和表征评估，是今天最贴近传统 SSL pipeline 的论文之一</h1>
-    <p class="dek">把通常训练后丢弃的 projector 变成可解释诊断器，尝试减少依赖 linear probe 的昂贵标注评估。</p>
-    <p class="byline"><strong>Radial Basis Function Networks as Projection Heads in Self-Supervised Learning</strong>　Andreas Schliebitz, Heiko Tapken, Martin Atzmueller；机构以 arXiv 最终版为准。　arXiv 新增 · SSL projector / representation diagnostics　<a href="https://arxiv.org/abs/2606.21590">原文链接</a></p>
+    <div class="kicker">arXiv 新增 · SSL projector / label-free representation metric · P0 · 2026-06-24</div>
+    <h1 class="paper-headline">Radial Basis Function Networks as：它直接作用于视觉 SSL 训练管线中最常被忽视的 projector，是低成本诊断和改造 SSL 表征的实用方向</h1>
+    <p class="dek">挑战“projector 训练后丢弃、表征只能靠线性 probe 评估”的惯例，把 projector 本身变成可解释的 representation diagnostic。</p>
+    <p class="byline"><strong>Radial Basis Function Networks as Projection Heads in Self-Supervised Learning</strong>　Andreas Schliebitz, Heiko Tapken, Martin Atzmueller；arXiv 页面未列稳定机构。　arXiv 新增 · SSL projector / label-free representation metric　<a href="https://arxiv.org/abs/2606.21590">原文链接</a></p>
     <div class="paper-facts">
       <span><b>编号</b>2606.21590</span>
-      <span><b>优先级</b>P1</span>
-      <span><b>类别</b>arXiv 新增 · SSL projector / representation diagnostics</span>
-      <span><b>会议</b>arXiv 新增 · SSL projector / representation diagnostics</span>
-      <span><b>方法</b>用 radial basis function network 替换 SimCLR/MoCo/BYOL/SwAV/SimSiam 常用 MLP projection head，并从 RBF centers/shapes 定义 label-free SNS 表征质量指标。</span>
+      <span><b>优先级</b>P0</span>
+      <span><b>类别</b>arXiv 新增 · SSL projector / label-free representation metric</span>
+      <span><b>会议</b>arXiv 新增 · SSL projector / label-free representation metric</span>
+      <span><b>方法</b>用 RBFN 替换 SSL 中常见的 MLP projection head，并从 RBF centers/shapes 推出 Scale-Normalized Separation (SNS)，作为不依赖标签和线性 probe 的表征质量指标。</span>
       <span><b>来源</b>arXiv / OpenReview</span>
     </div>
     <div class="feature-body">
-      <p class="lead dropcap">先说结论。它直接作用于视觉 SSL 的训练头和表征评估，是今天最贴近传统 SSL pipeline 的论文之一。 把通常训练后丢弃的 projector 变成可解释诊断器，尝试减少依赖 linear probe 的昂贵标注评估。</p>
+      <p class="lead dropcap">先说结论。它直接作用于视觉 SSL 训练管线中最常被忽视的 projector，是低成本诊断和改造 SSL 表征的实用方向。 挑战“projector 训练后丢弃、表征只能靠线性 probe 评估”的惯例，把 projector 本身变成可解释的 representation diagnostic。</p>
       <figure class="full-fig"><img src="../assets/mineru/2606.21590/images/bbda13cb5a052866f471a1f0e0c7ff79534d232f32f09eb78149101d6161633f.jpg" alt="Figureure 2 · Batch-normalized RBFN prediction head used by some architectures after"><figcaption><b>Figureure 2 · Batch-normalized RBFN prediction head used by some architectures after</b><span class="fig-en">Fig. 2. Batch-normalized RBFN prediction head used by some architectures after the projector, consisting of a single RBF layer sandwiched between two linear layers.</span><span class="fig-zh">这张图概括 Radial Basis Function Networks as 的整体方法流程。阅读时先看模块之间传递的训练信号，再看作者如何把目标拆成可优化的子问题。</span></figcaption></figure>
 <figure class="full-fig"><img src="../assets/mineru/2606.21590/images/82258392ac292a09920ed66afacd4310563141eb0eddeae29e38dba448188cb2.jpg" alt="Figureure 1 · RBFN projection head with stacked linear and RBF layers featuring RBF "><figcaption><b>Figureure 1 · RBFN projection head with stacked linear and RBF layers featuring RBF </b><span class="fig-en">Fig. 1. RBFN projection head with stacked linear and RBF layers featuring RBF nonlinearities, preceded by an optional batch normalization step (disabled by default).</span><span class="fig-zh">这张图来自论文 PDF 的结构化抽取。当前用于辅助理解 Radial Basis Function Networks as 的方法或实验，请结合正文精读段落一起看。</span></figcaption></figure>
       
       <h2>核心问题</h2>
-      <p>它直接作用于视觉 SSL 的训练头和表征评估，是今天最贴近传统 SSL pipeline 的论文之一。</p>
+      <p>它直接作用于视觉 SSL 训练管线中最常被忽视的 projector，是低成本诊断和改造 SSL 表征的实用方向。</p>
       <h2>方法拆解</h2>
-      <p>用 radial basis function network 替换 SimCLR/MoCo/BYOL/SwAV/SimSiam 常用 MLP projection head，并从 RBF centers/shapes 定义 label-free SNS 表征质量指标。</p>
+      <p>用 RBFN 替换 SSL 中常见的 MLP projection head，并从 RBF centers/shapes 推出 Scale-Normalized Separation (SNS)，作为不依赖标签和线性 probe 的表征质量指标。</p>
       <h2>主要贡献</h2>
-      <p>把通常训练后丢弃的 projector 变成可解释诊断器，尝试减少依赖 linear probe 的昂贵标注评估。</p>
+      <p>挑战“projector 训练后丢弃、表征只能靠线性 probe 评估”的惯例，把 projector 本身变成可解释的 representation diagnostic。</p>
       <h2>实验看点</h2>
-      <p>覆盖五种经典 SSL 架构和四个图像分类数据集；SNS 与 logistic regression 指标呈强相关，RBFN head 可作为 MLP head 的竞争性替代。</p>
+      <p>摘要称在 MoCo、SimCLR、BYOL、SwAV、SimSiam 五个 SSL 框架和四个图像分类数据集上测试，RBFN projection heads 保持/改善 downstream 表现，并让 SNS 与表征质量关联。</p>
       <h2>局限与读法</h2>
-      <p>“label-free 质量代理”很有用，但是否能预测 dense prediction、检索或 out-of-distribution 泛化仍需细看。</p>
+      <p>SNS 是否能替代真实 downstream evaluation 还要看任务类型；RBF 参数的稳定性可能受 batch、augmentation、embedding dimension 影响。</p>
     
     </div>
   </div>
   <aside class="paper-side">
 
     <div class="side-box pref-side"><h4>我的偏好</h4><div class="paper-side-tools"><button class="readbtn" type="button" data-read-toggle="2606.21590" title="标记已读" aria-label="标记已读"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M4 10.5l4 4 8-9"/></svg></button><div class="prefbar" data-pref-controls="2606.21590"><button class="prefbtn like" type="button" data-pref-toggle="like" data-pref-id="2606.21590" aria-pressed="false" title="关注这篇">关注</button><button class="prefbtn dismiss" type="button" data-pref-toggle="dismiss" data-pref-id="2606.21590" aria-pressed="false" title="降低这篇权重">略过</button></div></div></div>
-    <div class="side-box"><h4>关键判断</h4><dl><dt>相关性</dt><dd>P1</dd><dt>类别</dt><dd>arXiv 新增 · SSL projector / representation diagnostics</dd><dt>会议</dt><dd>arXiv 新增 · SSL projector / representation diagnostics</dd><dt>读法</dt><dd>方法图优先，表格次之</dd></dl></div>
+    <div class="side-box"><h4>关键判断</h4><dl><dt>相关性</dt><dd>P0</dd><dt>类别</dt><dd>arXiv 新增 · SSL projector / label-free representation metric</dd><dt>会议</dt><dd>arXiv 新增 · SSL projector / label-free representation metric</dd><dt>读法</dt><dd>方法图优先，表格次之</dd></dl></div>
     <div class="side-box"><h4>原文</h4><p><a href="https://arxiv.org/abs/2606.21590">https://arxiv.org/abs/2606.21590</a></p></div>
   </aside>
 </article></main>

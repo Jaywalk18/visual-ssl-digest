@@ -25,42 +25,42 @@
 <a class="nav-link" href="../pages/timeline.html">时间线</a>
 <span class="nav-streak" title="连续追踪天数"><svg viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><path d="M8 0c.7 2.5-1.2 3.7-2 5-1 1.6-1 4 .8 4.8C6.4 8.5 7.4 7.8 8 7c.3 1.3-.4 2 .9 3 .9.7 1.3 1.6 1.1 2.6C9.7 14.6 8.9 16 6.8 16 4.6 16 3 14.3 3 12c0-3.3 2.6-4.8 2.4-8C6.9 4.6 8.4 5 8 0z"/></svg> 连续 <b data-streak>0</b> 天</span>
   </nav>
-  <main><article class="paper-detail" data-pid="2606.23041" data-category="ECCV 2026 · arXiv 新增 · unified multimodal tokenizer" data-priority="P2" data-date="2026-06-24" data-title="spar: semantic-pixel self-alignment and adaptive routing for unified multimodal models" data-keywords="spar: semantic-pixel self-alignment and adaptive routing for unified multimodal models spar eccv 2026 · arxiv 新增 · unified multimodal tokenizer p2 2026-06-24 eccv 2026 · arxiv 新增 · unified multimodal tokenizer eccv 接收；关注 semantic-pixel 自对齐和动态 token routing，适合 vfm/vlm 方向扫读 中高相关；详见方法、贡献和实验边界。">
+  <main><article class="paper-detail" data-pid="2606.23041" data-category="arXiv 新增 · semantic-pixel alignment / unified tokenizer" data-priority="P2" data-date="2026-06-24" data-title="spar: semantic-pixel self-alignment and adaptive routing for unified multimodal models" data-keywords="spar: semantic-pixel self-alignment and adaptive routing for unified multimodal models spar arxiv 新增 · semantic-pixel alignment / unified tokenizer p2 2026-06-24 arxiv 新增 · semantic-pixel alignment / unified tokenizer 试图把语义理解特征和像素重建特征放到统一 tokenizer/路由框架，和 rae/vae-for-dit 线索相关 中高相关；详见方法、贡献和实验边界。">
   <div class="paper-main">
-    <div class="kicker">ECCV 2026 · arXiv 新增 · unified multimodal tokenizer · P2 · 2026-06-24</div>
-    <h1 class="paper-headline">SPAR：通用视觉基础模型正在从“只理解”走向理解-生成统一，semantic-pixel alignment 是关键接口问题</h1>
-    <p class="dek">试图把视觉理解 token 与生成重建 token 放进统一 latent space，减少外部 teacher 依赖。</p>
-    <p class="byline"><strong>SPAR: Semantic-Pixel Self-Alignment and Adaptive Routing for Unified Multimodal Models</strong>　Hongxiang Li, Hongxu Chen, Chenyang Zhu, Xiaoshuang Huang, Jiayin Cai, Xiaolong Jiang, Yao Hu, Long Chen；机构以 arXiv 最终版为准。　ECCV 2026 · arXiv 新增 · unified multimodal tokenizer　<a href="https://arxiv.org/abs/2606.23041">原文链接</a></p>
+    <div class="kicker">arXiv 新增 · semantic-pixel alignment / unified tokenizer · P2 · 2026-06-24</div>
+    <h1 class="paper-headline">SPAR：RAE、VAE、tokenizer、semantic-pixel alignment 都在影响下一代视觉基础模型预训练；这篇可作为多模态统一 tokenizer 路线扫读</h1>
+    <p class="dek">试图解决 MLLM 视觉理解特征与生成/重建特征之间的 feature discrepancy，并减少对外部 teacher 的依赖。</p>
+    <p class="byline"><strong>SPAR: Semantic-Pixel Self-Alignment and Adaptive Routing for Unified Multimodal Models</strong>　Hongxiang Li, Hongxu Chen, Chenyang Zhu, Xiaoshuang Huang, Jiayin Cai, Xiaolong Jiang, Yao Hu, Long Chen；arXiv 页面未列稳定机构。　arXiv 新增 · semantic-pixel alignment / unified tokenizer　<a href="https://arxiv.org/abs/2606.23041">原文链接</a></p>
     <div class="paper-facts">
       <span><b>编号</b>2606.23041</span>
       <span><b>优先级</b>P2</span>
-      <span><b>类别</b>ECCV 2026 · arXiv 新增 · unified multimodal tokenizer</span>
-      <span><b>会议</b>ECCV 2026 · arXiv 新增 · unified multimodal tokenizer</span>
-      <span><b>方法</b>用 asymmetric dual-stream tokenizer 同时保留 semantic perception 与 pixel reconstruction，再让 diffusion model 用 tokenizer 作为 internal alignment teacher，并通过 Dynamic Token Routing 聚合多层 MLLM features。</span>
+      <span><b>类别</b>arXiv 新增 · semantic-pixel alignment / unified tokenizer</span>
+      <span><b>会议</b>arXiv 新增 · semantic-pixel alignment / unified tokenizer</span>
+      <span><b>方法</b>提出 Semantic-Pixel self-alignment 与 Adaptive Routing；用非对称双流 tokenizer 同时保持 discriminative semantic features 和 pixel-level reconstruction capability。</span>
       <span><b>来源</b>arXiv / OpenReview</span>
     </div>
     <div class="feature-body">
-      <p class="lead dropcap">先说结论。通用视觉基础模型正在从“只理解”走向理解-生成统一，semantic-pixel alignment 是关键接口问题。 试图把视觉理解 token 与生成重建 token 放进统一 latent space，减少外部 teacher 依赖。</p>
+      <p class="lead dropcap">先说结论。RAE、VAE、tokenizer、semantic-pixel alignment 都在影响下一代视觉基础模型预训练；这篇可作为多模态统一 tokenizer 路线扫读。 试图解决 MLLM 视觉理解特征与生成/重建特征之间的 feature discrepancy，并减少对外部 teacher 的依赖。</p>
       <figure class="full-fig"><img src="../assets/mineru/2606.23041/images/ecb49ad6c2359cd30b65077c62a5a4ea45da658f8b4962d3d833fe8c78ed5667.jpg" alt="Figureure 3 · : Overview of the unified multimodal model"><figcaption><b>Figureure 3 · : Overview of the unified multimodal model</b><span class="fig-en">Fig. 3: Overview of the unified multimodal model. The frozen MLLM processes multimodal inputs and learnable queries. The DTR adaptively aggregates multi-layer MLLM hidden states based on distinct token semantics to condition the DiT. Furthermore, the optimized tokenizer serves as an internal alignment teacher, establishing a self-alignment paradigm that eliminates reliance on external learners.</span><span class="fig-zh">这张图概括 SPAR 的整体方法流程。阅读时先看模块之间传递的训练信号，再看作者如何把目标拆成可优化的子问题。</span></figcaption></figure>
 <figure class="full-fig"><img src="../assets/mineru/2606.23041/images/685a49ed554225349d06fb2844ebf51b6141cd011dd05978566d2a384562934a.jpg" alt="Figureure 1 · : (a) Image Reconstruction: When modeling directly within the semantic"><figcaption><b>Figureure 1 · : (a) Image Reconstruction: When modeling directly within the semantic</b><span class="fig-en">Fig. 1: (a) Image Reconstruction: When modeling directly within the semantic representation space, existing methods sufer from lossy compression and struggle to preserve high-frequency details. In contrast, our method efectively recovers these crucial pixel-level details. (b) Representation Alignment Paradigm: Unlike existing approaches that rely on external semantic encoders to guide the generative model, our framework natively employs the unified tokenizer itself as an alignment teacher.</span><span class="fig-zh">这张图概括 SPAR 的整体方法流程。阅读时先看模块之间传递的训练信号，再看作者如何把目标拆成可优化的子问题。</span></figcaption></figure>
       
       <h2>核心问题</h2>
-      <p>通用视觉基础模型正在从“只理解”走向理解-生成统一，semantic-pixel alignment 是关键接口问题。</p>
+      <p>RAE、VAE、tokenizer、semantic-pixel alignment 都在影响下一代视觉基础模型预训练；这篇可作为多模态统一 tokenizer 路线扫读。</p>
       <h2>方法拆解</h2>
-      <p>用 asymmetric dual-stream tokenizer 同时保留 semantic perception 与 pixel reconstruction，再让 diffusion model 用 tokenizer 作为 internal alignment teacher，并通过 Dynamic Token Routing 聚合多层 MLLM features。</p>
+      <p>提出 Semantic-Pixel self-alignment 与 Adaptive Routing；用非对称双流 tokenizer 同时保持 discriminative semantic features 和 pixel-level reconstruction capability。</p>
       <h2>主要贡献</h2>
-      <p>试图把视觉理解 token 与生成重建 token 放进统一 latent space，减少外部 teacher 依赖。</p>
+      <p>试图解决 MLLM 视觉理解特征与生成/重建特征之间的 feature discrepancy，并减少对外部 teacher 的依赖。</p>
       <h2>实验看点</h2>
-      <p>摘要称在 unified architecture 中取得强 generation/reconstruction quality，同时保持 foundational visual understanding。</p>
+      <p>摘要称轻量 semantic stream 锚定判别特征，Transformer-augmented pixel stream 恢复重建细节；需要看它在理解和生成任务上的共同收益。</p>
       <h2>局限与读法</h2>
-      <p>生成/理解统一模型的评估常受 benchmark 选择影响；还需看视觉 encoder 表征是否真正提升而非只改善重建。</p>
+      <p>统一理解/生成模型容易在任务间折中；self-alignment 是否足以替代强 teacher，需要看 ablation。</p>
     
     </div>
   </div>
   <aside class="paper-side">
 
     <div class="side-box pref-side"><h4>我的偏好</h4><div class="paper-side-tools"><button class="readbtn" type="button" data-read-toggle="2606.23041" title="标记已读" aria-label="标记已读"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M4 10.5l4 4 8-9"/></svg></button><div class="prefbar" data-pref-controls="2606.23041"><button class="prefbtn like" type="button" data-pref-toggle="like" data-pref-id="2606.23041" aria-pressed="false" title="关注这篇">关注</button><button class="prefbtn dismiss" type="button" data-pref-toggle="dismiss" data-pref-id="2606.23041" aria-pressed="false" title="降低这篇权重">略过</button></div></div></div>
-    <div class="side-box"><h4>关键判断</h4><dl><dt>相关性</dt><dd>P2</dd><dt>类别</dt><dd>ECCV 2026 · arXiv 新增 · unified multimodal tokenizer</dd><dt>会议</dt><dd>ECCV 2026 · arXiv 新增 · unified multimodal tokenizer</dd><dt>读法</dt><dd>方法图优先，表格次之</dd></dl></div>
+    <div class="side-box"><h4>关键判断</h4><dl><dt>相关性</dt><dd>P2</dd><dt>类别</dt><dd>arXiv 新增 · semantic-pixel alignment / unified tokenizer</dd><dt>会议</dt><dd>arXiv 新增 · semantic-pixel alignment / unified tokenizer</dd><dt>读法</dt><dd>方法图优先，表格次之</dd></dl></div>
     <div class="side-box"><h4>原文</h4><p><a href="https://arxiv.org/abs/2606.23041">https://arxiv.org/abs/2606.23041</a></p></div>
   </aside>
 </article></main>
