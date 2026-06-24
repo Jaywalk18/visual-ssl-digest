@@ -1,0 +1,101 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>A Comprehensive Study on Visual · 通用视觉自监督研究报</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Source+Serif+4:ital,opsz,wght@0,8..60,400;0,8..60,500;0,8..60,600;1,8..60,400&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../assets/visual-ssl.css?v=20260615ssl6">
+</head>
+<body data-paper-data-url="../data/papers.json">
+  <header class="masthead">
+    <a class="masthead-title" href="../index.html">通用视觉自监督研究报</a>
+    <div class="masthead-kicker">A Daily Digest of Visual Self-Supervised Learning</div>
+    <div class="masthead-meta">
+      <span>2026-06-24</span>
+      <span>图像表征 · VFM · JEPA · 视频预训练</span>
+    </div>
+  </header>
+  <nav class="site-nav" aria-label="主导航">
+    <a class="nav-link" href="../index.html">头版</a>
+<a class="nav-link" href="../issues/2026-06-24.html">今日速递</a>
+<a class="nav-link" href="../pages/catalog.html">论文目录</a>
+<a class="nav-link" href="../pages/timeline.html">时间线</a>
+<span class="nav-streak" title="连续追踪天数"><svg viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><path d="M8 0c.7 2.5-1.2 3.7-2 5-1 1.6-1 4 .8 4.8C6.4 8.5 7.4 7.8 8 7c.3 1.3-.4 2 .9 3 .9.7 1.3 1.6 1.1 2.6C9.7 14.6 8.9 16 6.8 16 4.6 16 3 14.3 3 12c0-3.3 2.6-4.8 2.4-8C6.9 4.6 8.4 5 8 0z"/></svg> 连续 <b data-streak>0</b> 天</span>
+  </nav>
+  <main><article class="paper-detail" data-pid="2511.15098" data-category="arXiv replacement · CVPR 2026 · visual token efficiency" data-priority="扫读" data-date="2026-06-24" data-title="a comprehensive study on visual token redundancy for discrete diffusion-based multimodal large language models" data-keywords="a comprehensive study on visual token redundancy for discrete diffusion-based multimodal large language models a comprehensive study on visual arxiv replacement · cvpr 2026 · visual token efficiency 扫读 2026-06-24 arxiv replacement · cvpr 2026 · visual token efficiency cvpr 2026 状态更新；视觉 token 冗余诊断对 vlm 表征接口有参考 中相关；详见方法、贡献和实验边界。">
+  <div class="paper-main">
+    <div class="kicker">arXiv replacement · CVPR 2026 · visual token efficiency · 扫读 · 2026-06-24</div>
+    <h1 class="paper-headline">A Comprehensive Study on Visual：视觉 token 压缩是否丢信息，会直接影响多模态视觉表征能否被语言模型可靠读取</h1>
+    <p class="dek">指出 visual redundancy 主要在 from-scratch dMLLM 长回答任务中出现；不同 dMLLM 架构适合不同加速策略。</p>
+    <p class="byline"><strong>A Comprehensive Study on Visual Token Redundancy for Discrete Diffusion-based Multimodal Large Language Models</strong>　Duo Li, Zuhao Yang, Xiaoqin Zhang, Ling Shao, Shijian Lu；机构以 arXiv 最终版为准。　arXiv replacement · CVPR 2026 · visual token efficiency　<a href="https://arxiv.org/abs/2511.15098">原文链接</a></p>
+    <div class="paper-facts">
+      <span><b>编号</b>2511.15098</span>
+      <span><b>优先级</b>扫读</span>
+      <span><b>类别</b>arXiv replacement · CVPR 2026 · visual token efficiency</span>
+      <span><b>会议</b>arXiv replacement · CVPR 2026 · visual token efficiency</span>
+      <span><b>方法</b>系统分析 discrete diffusion-based MLLM 中视觉 token redundancy 随架构和任务如何变化，以及 pruning/layer-skipping 对回答质量和效率的影响。</span>
+      <span><b>来源</b>arXiv / OpenReview</span>
+    </div>
+    <div class="feature-body">
+      <p class="lead dropcap">先说结论。视觉 token 压缩是否丢信息，会直接影响多模态视觉表征能否被语言模型可靠读取。 指出 visual redundancy 主要在 from-scratch dMLLM 长回答任务中出现；不同 dMLLM 架构适合不同加速策略。</p>
+      <figure class="full-fig"><img src="../assets/mineru/2511.15098/images/37eb37004ca25e5098a9b24a8955ed83587fb79dcc4c7c869f51c80f32f940b6.jpg" alt="Figureure 1 · LEFT: Visual token pruning affects dMLLMs much more than autoregressiv"><figcaption><b>Figureure 1 · LEFT: Visual token pruning affects dMLLMs much more than autoregressiv</b><span class="fig-en">Figure 1. LEFT: Visual token pruning affects dMLLMs much more than autoregressive MLLMs. Three representative pruning methods [1, 5, 64] are applied to LLaVA-NeXT [30] (solid lines), LaViDa-Dream [25], and LLaDA-V [61] (dotted lines). RIGHT: Performance vs. pruning start step. Unlike AR-to-diffusion LaViDa-Dream, the from-scratch LLaDA-V consistently recovers pruning-induced information loss, achieving much higher accuracy when pruning starts at different denoising steps (projected to 0–100 for visualization).</span><span class="fig-zh">这张图/表用于判断 A Comprehensive Study on Visual 的实验收益来自哪里。重点看替换、消融或跨模型设置下趋势是否一致，而不是只看单个最高分。</span></figcaption></figure>
+<figure class="full-fig"><img src="../assets/mineru/2511.15098/images/8b66daf3fd6637ccb29477bd23b9594e7de0e37d93ab4d32d425b50a681390e1.jpg" alt="(h) Figure 2"><figcaption><b>(h) Figure 2</b><span class="fig-en">(h) Figure 2. Visualization of the fraction of attention from answer tokens to each token type across layers, and of logit dynamics across denoising steps. (a, d) show the heatmaps and attention ratio variations of LaViDa-Dream [25] (representing AR-to-diffusion dMLLMs) across both short- and long-answer tasks. (b, e) correspond to LLaDA-V [61] (representing from-scratch dMLLMs) on paragraph-level long-answer tasks (Video Detail Description [34]). (c, f) present LLaDA-V on sentence-level long-answer tasks (InfoVQA [39] and DocVQA [38]). (g) shows the attention ratio trends of LLaDA-V on short-answer tasks, and (h) depicts those of MLLMs on both shortand long-answer tasks. We observe three key patterns: (1) Compared with MLLMs, both dMLLM variants exhibit stronger reliance on visual tokens, leading to a more pronounced performance drop when visual tokens are pruned. (2) The self-attention intensity among answer tokens progressively increases from MLLMs to LaViDa-Dream and LLaDA-V, endowing dMLLMs, especially LLaDA-V, with a stronger capacity to recover lost information through bidirectional contextual refinement. (3) Steps 7–8 in (c) and (f) reveal a consistent pattern where a rise in logits follows a preceding surge in answer-token self-attention, suggesting that stronger self-attention facilitates information restoration during denoising.</span><span class="fig-zh">这张图/表用于判断 A Comprehensive Study on Visual 的实验收益来自哪里。重点看替换、消融或跨模型设置下趋势是否一致，而不是只看单个最高分。</span></figcaption></figure>
+      
+      <h2>核心问题</h2>
+      <p>视觉 token 压缩是否丢信息，会直接影响多模态视觉表征能否被语言模型可靠读取。</p>
+      <h2>方法拆解</h2>
+      <p>系统分析 discrete diffusion-based MLLM 中视觉 token redundancy 随架构和任务如何变化，以及 pruning/layer-skipping 对回答质量和效率的影响。</p>
+      <h2>主要贡献</h2>
+      <p>指出 visual redundancy 主要在 from-scratch dMLLM 长回答任务中出现；不同 dMLLM 架构适合不同加速策略。</p>
+      <h2>实验看点</h2>
+      <p>摘要报告 progressive/late-step pruning 更适合 from-scratch dMLLM，layer-skipping 更适合 AR-to-diffusion dMLLM。</p>
+      <h2>局限与读法</h2>
+      <p>这是更新版，且重点是 MLLM 推理效率，不是预训练自监督；按状态变化扫读即可。</p>
+    
+    </div>
+  </div>
+  <aside class="paper-side">
+
+    <div class="side-box pref-side"><h4>我的偏好</h4><div class="paper-side-tools"><button class="readbtn" type="button" data-read-toggle="2511.15098" title="标记已读" aria-label="标记已读"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M4 10.5l4 4 8-9"/></svg></button><div class="prefbar" data-pref-controls="2511.15098"><button class="prefbtn like" type="button" data-pref-toggle="like" data-pref-id="2511.15098" aria-pressed="false" title="关注这篇">关注</button><button class="prefbtn dismiss" type="button" data-pref-toggle="dismiss" data-pref-id="2511.15098" aria-pressed="false" title="降低这篇权重">略过</button></div></div></div>
+    <div class="side-box"><h4>关键判断</h4><dl><dt>相关性</dt><dd>扫读</dd><dt>类别</dt><dd>arXiv replacement · CVPR 2026 · visual token efficiency</dd><dt>会议</dt><dd>arXiv replacement · CVPR 2026 · visual token efficiency</dd><dt>读法</dt><dd>方法图优先，表格次之</dd></dl></div>
+    <div class="side-box"><h4>原文</h4><p><a href="https://arxiv.org/abs/2511.15098">https://arxiv.org/abs/2511.15098</a></p></div>
+  </aside>
+</article></main>
+  <aside class="conf-float" data-conf-reminder="2026-06-24-main-ddl" aria-label="CCF A/B 主投稿提醒">
+  <button class="conf-close" type="button" aria-label="关闭会议提醒">×</button>
+  <details open>
+    <summary>CCF A/B 主投稿提醒</summary>
+    <div class="conf-list"><a class="conf-item " href="https://github.com/ccfddl/ccf-deadlines/blob/main/conference/AI/aaai.yml">
+  <span><b>AAAI 2027</b><em>CCF A · Main paper submission</em></span>
+  <strong>33 天</strong>
+  <small>2026-07-27 · CCF DDL: abstract 2026-07-20；进入 1 个月窗口后重点提醒。</small>
+</a></div>
+  </details>
+</aside>
+  <footer class="footer">
+    <div>面向通用视觉自监督、视觉基础模型与多模态表征学习的每日研究报。</div>
+    <div class="muted">Issue 2026-06-24 · Curated readings and figure notes</div>
+  </footer>
+  <script>
+  (() => {
+    const box = document.querySelector('[data-conf-reminder]');
+    if (!box) return;
+    const key = `visualSslConfReminderClosed:${box.dataset.confReminder || '2026-06-24-main-ddl'}`;
+    try {
+      if (localStorage.getItem(key) === '1') box.hidden = true;
+    } catch (err) {}
+    const close = box.querySelector('.conf-close');
+    if (close) {
+      close.addEventListener('click', () => {
+        box.hidden = true;
+        try { localStorage.setItem(key, '1'); } catch (err) {}
+      });
+    }
+  })();
+  </script>
+  <script src="../assets/ssl-game.js"></script>
+</body>
+</html>

@@ -1,0 +1,101 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>NGPS · 通用视觉自监督研究报</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Source+Serif+4:ital,opsz,wght@0,8..60,400;0,8..60,500;0,8..60,600;1,8..60,400&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../assets/visual-ssl.css?v=20260615ssl6">
+</head>
+<body data-paper-data-url="../data/papers.json">
+  <header class="masthead">
+    <a class="masthead-title" href="../index.html">通用视觉自监督研究报</a>
+    <div class="masthead-kicker">A Daily Digest of Visual Self-Supervised Learning</div>
+    <div class="masthead-meta">
+      <span>2026-06-24</span>
+      <span>图像表征 · VFM · JEPA · 视频预训练</span>
+    </div>
+  </header>
+  <nav class="site-nav" aria-label="主导航">
+    <a class="nav-link" href="../index.html">头版</a>
+<a class="nav-link" href="../issues/2026-06-24.html">今日速递</a>
+<a class="nav-link" href="../pages/catalog.html">论文目录</a>
+<a class="nav-link" href="../pages/timeline.html">时间线</a>
+<span class="nav-streak" title="连续追踪天数"><svg viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><path d="M8 0c.7 2.5-1.2 3.7-2 5-1 1.6-1 4 .8 4.8C6.4 8.5 7.4 7.8 8 7c.3 1.3-.4 2 .9 3 .9.7 1.3 1.6 1.1 2.6C9.7 14.6 8.9 16 6.8 16 4.6 16 3 14.3 3 12c0-3.3 2.6-4.8 2.4-8C6.9 4.6 8.4 5 8 0z"/></svg> 连续 <b data-streak>0</b> 天</span>
+  </nav>
+  <main><article class="paper-detail" data-pid="2606.23200" data-category="ECCV 2026 · arXiv 新增 · medical denoising / transferable SSL mechanism" data-priority="扫读" data-date="2026-06-24" data-title="ngps: structure-preserving self-supervised denoising via neighbor-guided patch sampling" data-keywords="ngps: structure-preserving self-supervised denoising via neighbor-guided patch sampling ngps eccv 2026 · arxiv 新增 · medical denoising / transferable ssl mechanism 扫读 2026-06-24 eccv 2026 · arxiv 新增 · medical denoising / transferable ssl mechanism 医学应用降级为扫读；方法里的邻域 patch pseudo-target 有可迁移性 中相关；详见方法、贡献和实验边界。">
+  <div class="paper-main">
+    <div class="kicker">ECCV 2026 · arXiv 新增 · medical denoising / transferable SSL mechanism · 扫读 · 2026-06-24</div>
+    <h1 class="paper-headline">NGPS：虽然应用垂直，但自监督 pseudo-target 构造方式可借鉴到视频/多帧图像 restoration</h1>
+    <p class="dek">把“结构匹配”和“信号检索”解耦，减少错位 slice 作为 pseudo target 时造成的 ghosting/blur。</p>
+    <p class="byline"><strong>NGPS: Structure-Preserving Self-Supervised Denoising via Neighbor-Guided Patch Sampling</strong>　Jaehyun Cho, YoungJoon Yoo；机构以 arXiv 最终版为准。　ECCV 2026 · arXiv 新增 · medical denoising / transferable SSL mechanism　<a href="https://arxiv.org/abs/2606.23200">原文链接</a></p>
+    <div class="paper-facts">
+      <span><b>编号</b>2606.23200</span>
+      <span><b>优先级</b>扫读</span>
+      <span><b>类别</b>ECCV 2026 · arXiv 新增 · medical denoising / transferable SSL mechanism</span>
+      <span><b>会议</b>ECCV 2026 · arXiv 新增 · medical denoising / transferable SSL mechanism</span>
+      <span><b>方法</b>在邻近 slice 自监督 denoising 中，用 guide image 搜索结构相似 patch，再从 raw noisy neighbor 取监督信号，避免显式 registration。</span>
+      <span><b>来源</b>arXiv / OpenReview</span>
+    </div>
+    <div class="feature-body">
+      <p class="lead dropcap">先说结论。虽然应用垂直，但自监督 pseudo-target 构造方式可借鉴到视频/多帧图像 restoration。 把“结构匹配”和“信号检索”解耦，减少错位 slice 作为 pseudo target 时造成的 ghosting/blur。</p>
+      <figure class="full-fig"><img src="../assets/mineru/2606.23200/images/e4796bfc6abf9c1d5f0cc0f38957678a7925d18810beae579ffe81227e3f6ec3.jpg" alt="Figureure 2 · : Overall NGPS pipeline"><figcaption><b>Figureure 2 · : Overall NGPS pipeline</b><span class="fig-en">Fig. 2: Overall NGPS pipeline. A noisy slice triplet is low-pass filtered to produce noise-attenuated guide (“Pseudo-Clean”) slices, whose pairwise diferences yield direction-aware threshold masks with reduced sensitivity to raw noise. For each masked location, NGPS searches a local window in the adjacent slice for the Top-K similar patches (green); the matched coordinates are then used to retrieve and average the corresponding center-pixel values from the original noisy adjacent slice, forming directionaware retrieved targets. Unmasked static pixels use same-coordinate neighboring supervision to compute $\mathcal { L } _ { N 2 N }$ (blue), whereas masked pixels use the retrieved targets to compute L&lt;sub&gt;NGP&lt;/sub&gt; &lt;sub&gt;S&lt;/sub&gt; (purple). The two reconstruction terms are summed as L&lt;sub&gt;recon&lt;/sub&gt;; regional consistency is applied separately to static regions as described in Sec. 3.4.</span><span class="fig-zh">这张图概括 NGPS 的整体方法流程。阅读时先看模块之间传递的训练信号，再看作者如何把目标拆成可优化的子问题。</span></figcaption></figure>
+<figure class="full-fig"><img src="../assets/mineru/2606.23200/images/3fd22f2ead053bba102f0e7875168e9a7fb37fa831a1e844d1d9ed7680823a6f.jpg" alt="(c) High-frequency distribution of pixels Fig"><figcaption><b>(c) High-frequency distribution of pixels Fig</b><span class="fig-en">(c) High-frequency distribution of pixels Fig. 1: Illustration of inter-slice anatomical misalignment and the resulting critical information loss from conventional masking strategies $( \tau = 0 . 1 )$ in 2.5 mm LIDC-IDRI data [2]. (a) The absolute diference map $( | n - ( n + 1 ) | )$ ) and the masked pixels (highlighted in red). (b) The histogram revealing the severity of this spatial information loss within critical Regions of Interest (ROIs) across the validation set. (c) The split violin plot showing that the discarded (masked) pixels are heavily concentrated in the high-frequency spectrum (high gradient magnitude) compared to the retained pixels.</span><span class="fig-zh">这张图来自论文 PDF 的结构化抽取。当前用于辅助理解 NGPS 的方法或实验，请结合正文精读段落一起看。</span></figcaption></figure>
+      
+      <h2>核心问题</h2>
+      <p>虽然应用垂直，但自监督 pseudo-target 构造方式可借鉴到视频/多帧图像 restoration。</p>
+      <h2>方法拆解</h2>
+      <p>在邻近 slice 自监督 denoising 中，用 guide image 搜索结构相似 patch，再从 raw noisy neighbor 取监督信号，避免显式 registration。</p>
+      <h2>主要贡献</h2>
+      <p>把“结构匹配”和“信号检索”解耦，减少错位 slice 作为 pseudo target 时造成的 ghosting/blur。</p>
+      <h2>实验看点</h2>
+      <p>在 CT 和 synthetic-Rician MRI 设置下报告 fidelity 与 structure-sensitive metrics 改善。</p>
+      <h2>局限与读法</h2>
+      <p>医学 volumetric denoising 垂直性强，不应作为通用视觉主线精读；迁移价值主要在局部 patch matching 的自监督目标设计。</p>
+    
+    </div>
+  </div>
+  <aside class="paper-side">
+
+    <div class="side-box pref-side"><h4>我的偏好</h4><div class="paper-side-tools"><button class="readbtn" type="button" data-read-toggle="2606.23200" title="标记已读" aria-label="标记已读"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M4 10.5l4 4 8-9"/></svg></button><div class="prefbar" data-pref-controls="2606.23200"><button class="prefbtn like" type="button" data-pref-toggle="like" data-pref-id="2606.23200" aria-pressed="false" title="关注这篇">关注</button><button class="prefbtn dismiss" type="button" data-pref-toggle="dismiss" data-pref-id="2606.23200" aria-pressed="false" title="降低这篇权重">略过</button></div></div></div>
+    <div class="side-box"><h4>关键判断</h4><dl><dt>相关性</dt><dd>扫读</dd><dt>类别</dt><dd>ECCV 2026 · arXiv 新增 · medical denoising / transferable SSL mechanism</dd><dt>会议</dt><dd>ECCV 2026 · arXiv 新增 · medical denoising / transferable SSL mechanism</dd><dt>读法</dt><dd>方法图优先，表格次之</dd></dl></div>
+    <div class="side-box"><h4>原文</h4><p><a href="https://arxiv.org/abs/2606.23200">https://arxiv.org/abs/2606.23200</a></p></div>
+  </aside>
+</article></main>
+  <aside class="conf-float" data-conf-reminder="2026-06-24-main-ddl" aria-label="CCF A/B 主投稿提醒">
+  <button class="conf-close" type="button" aria-label="关闭会议提醒">×</button>
+  <details open>
+    <summary>CCF A/B 主投稿提醒</summary>
+    <div class="conf-list"><a class="conf-item " href="https://github.com/ccfddl/ccf-deadlines/blob/main/conference/AI/aaai.yml">
+  <span><b>AAAI 2027</b><em>CCF A · Main paper submission</em></span>
+  <strong>33 天</strong>
+  <small>2026-07-27 · CCF DDL: abstract 2026-07-20；进入 1 个月窗口后重点提醒。</small>
+</a></div>
+  </details>
+</aside>
+  <footer class="footer">
+    <div>面向通用视觉自监督、视觉基础模型与多模态表征学习的每日研究报。</div>
+    <div class="muted">Issue 2026-06-24 · Curated readings and figure notes</div>
+  </footer>
+  <script>
+  (() => {
+    const box = document.querySelector('[data-conf-reminder]');
+    if (!box) return;
+    const key = `visualSslConfReminderClosed:${box.dataset.confReminder || '2026-06-24-main-ddl'}`;
+    try {
+      if (localStorage.getItem(key) === '1') box.hidden = true;
+    } catch (err) {}
+    const close = box.querySelector('.conf-close');
+    if (close) {
+      close.addEventListener('click', () => {
+        box.hidden = true;
+        try { localStorage.setItem(key, '1'); } catch (err) {}
+      });
+    }
+  })();
+  </script>
+  <script src="../assets/ssl-game.js"></script>
+</body>
+</html>
